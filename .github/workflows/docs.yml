@@ -33,6 +33,7 @@ jobs:
         run: |
           cd doc
           quarto render
+          touch _build/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
