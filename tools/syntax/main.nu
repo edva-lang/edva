@@ -302,11 +302,15 @@ export def gen-vscode [] {
 # -----------------------------------------------------------------------------
 
 export def sync-helix [] {
-  let ts_dir = ($env.PWD | path join "../tree-sitter-dva")
+  let ts_dir = if (($env.PWD | path join "../tree-sitter-edva") | path exists) {
+    $env.PWD | path join "../tree-sitter-edva"
+  } else {
+    $env.PWD | path join "../tree-sitter-dva"
+  }
   let hx_dir = ($env.HOME | path join ".config/helix/runtime/queries/dva")
 
   if not ($ts_dir | path exists) {
-    print $"[!] tree-sitter-dva not found at ($ts_dir)"
+    print $"[!] tree-sitter-edva not found at ($ts_dir)"
     return
   }
 
