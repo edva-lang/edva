@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master, main ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-24.04
@@ -26,11 +30,8 @@ jobs:
         with:
           version: '0.115.1'
 
-      - name: Build compiler
+      - name: Build compiler and run test suite
         run: ./build.sh
-
-      - name: Run test suite
-        run: ./run_tests.sh
 
       - name: Verify 2-stage fixed point
         run: make fixed-point
