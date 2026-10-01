@@ -16,6 +16,7 @@ target triple = "x86_64-pc-linux-gnu"
 @"var.expr::empty_fndef" = external global ptr
 @"var.runtime::empty_fndef" = external global ptr
 @"var.types::codegen_layout" = external global ptr
+@"var.ast::cell_var_names" = external global ptr
 @"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"codegen::default_codegen_opts", ptr null }

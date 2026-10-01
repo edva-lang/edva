@@ -2,7 +2,7 @@
 
 Formal specification of the Dva programming language: lexical structure,
 grammar, and semantics. This document is generated from and kept consistent
-with the compiler source (`src/*.odin`); where prose and code disagree, the
+with the compiler source; where prose and code disagree, the
 code wins.
 
 ---
@@ -100,7 +100,7 @@ The lexer produces the following token classes:
   type declaration, `#foreign` foreign binding, `#pragma`, `#private`); `#!`
   compile-time execution; `@` (cycle) and `\` (lambda) are atomic.
 
-Operator inventory (see `src/lexer.odin` for the exact table):
+Operator inventory (see `src/lexer.dva` for the exact table):
 
 ```
 $ $> $>> ; , - -> . .. : :: ::= := = == => + ++ += +> * / > < <+ <-

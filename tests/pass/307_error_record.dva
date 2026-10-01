@@ -1,0 +1,63 @@
+// tests/pass/307_error_record.dva
+// Verifies Error is an ordinary inspectable record with non-poisonous choices
+// and that unit-success ramifications (< | E >) support --! propagation.
+
+fail_err: () => < | Error >
+fail_err = !=>
+   <- Error(42, "operation failed", "worker.dva", 15, 8, (101, 202)) +>
+
+ok_unit: () => < | Error >
+ok_unit = !=>
+   <++>
+
+step_unit: () => < | Error >
+step_unit = !=>
+   res1 = ok_unit!
+   res1--!
+   print("unit step ok")
+   res2 = fail_err!
+   res2--!
+   print("should not reach here")
+   <++>
+
+fail_str: () => < | String >
+fail_str = !=>
+   <- "string failure" +>
+
+ok_str_unit: () => < | String >
+ok_str_unit = !=>
+   <++>
+
+step_str_unit: () => < | String >
+step_str_unit = !=>
+   s1 = ok_str_unit!
+   s1--!
+   print("str unit step ok")
+   s2 = fail_str!
+   s2--!
+   print("should not reach here")
+   <++>
+
+main: () => ()
+main = !=>
+   r = step_unit!
+   r
+      | print("unexpected ok")
+      | e =>
+         print("caught error:")
+         print(e.msg)
+         print_int(e.code)
+         print(e.file)
+         print_int(e.line)
+         print_int(e.col)
+         print_int(e.context.0)
+         print_int(e.context.1)
+
+   rs = step_str_unit!
+   rs
+      | print("unexpected str ok")
+      | s =>
+         print("caught str:")
+         print(s)
+
+main!

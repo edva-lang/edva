@@ -9,7 +9,7 @@ fi
 echo "Generating token enums from tools/tokens.txt..."
 nu tools/gen_tokens.nu
 
-echo "Generating operator tables from process/spec/operators.yaml..."
+echo "Generating operator tables from operators.yaml..."
 nu tools/opgen/main.nu
 
 echo "Building self-hosted compiler (edva)..."

@@ -1,6 +1,6 @@
 // codegen/match.dva
 
-#use "../llvm"
+#use(import) llvm
 #use "../ast"
 #use "str"
 #use "../tast"
@@ -77,11 +77,31 @@ codegen_emit_cmp = cg, op, t =>
          ct_flag = types::ctfe_eval_type_flag(cg, ast::Expr(Bin, (op, t.1, t.2)))
          ct_flag.1
             |
-               i1t = llvm::LLVMInt1Type!
-               cval = llvm::LLVMConstInt(i1t, ct_flag.0, 0)
+               i1t = LLVMInt1Type!
+               cval = LLVMConstInt(i1t, ct_flag.0, 0)
                (cval, ast::ValueType(Flag))
             | codegen_emit_cmp_eval(cg, op, t)
       | codegen_emit_cmp_eval(cg, op, t)
+
+expr_enum_dtype: types::Cg, ast::Expr => String
+expr_enum_dtype = cg, e =>
+   e
+      [Var v] types::var_dtype(cg, v)
+      [Member m]
+         m.is_module_access
+            | ""
+            |
+               tgt_name = m.target [Var v] v | ""
+               tgt_name != ""
+                  |
+                     pdt = types::var_dtype(cg, tgt_name)
+                     pti = pdt != "" | types::typedef_ti(cg, pdt) |
+                        ast::TypeInfo(Prim, ast::ValueType(Unknown))
+                     fnames = types::var_fnames(cg, tgt_name)
+                     mi = types::member_static_index(cg, m, fnames)
+                     mi.1 | types::record_field_dtype(cg, pti, mi.0) | ""
+                  | ""
+      | ""
 
 codegen_emit_cmp_eval: types::Cg, ast::BinaryOp,
    (ast::BinaryOp, ast::Expr, ast::Expr) => (Addr, ast::ValueType)
@@ -92,6 +112,20 @@ codegen_emit_cmp_eval = cg, op, t =>
    rr = expr::codegen_eval(cg, t.2)
    r_rt = cg.last_rt
    r_fvts = cg.last_fvts
+   is_eq = op [Eq, NotEq]
+   both_e = is_eq && types::is_enum_vt(lr.1) && types::is_enum_vt(rr.1)
+   both_e
+      |
+         l_name = expr_enum_dtype(cg, t.1)
+         r_name = expr_enum_dtype(cg, t.2)
+         ename = l_name != "" | l_name | r_name
+         ename != ""
+            | cg.last_type = ename
+            |
+               ti = types::typedef_ti(cg, types::resolve_type_name(cg, cg.last_type))
+               is_e = ti [Enum _]
+               !is_e | cg.last_type = ""
+      | 0
    l_un = lr.1 [Unit]
    r_un = rr.1 [Unit]
    is_bad = l_un || r_un
@@ -152,6 +186,300 @@ codegen_emit_cmp_enum_order_error = cg, op =>
       "branches instead.", 0, 0)
    (Addr(0), ast::ValueType(Unknown))
 
+find_enum_slots_search: types::Cg, Int, Int => ast::EnumSlots
+find_enum_slots_search = cg, i, n => ast::EnumSlots()
+
+find_enum_slots_for_cmp: types::Cg => ast::EnumSlots
+find_enum_slots_for_cmp = cg =>
+   cg.last_type != ""
+      |
+         resolved = types::resolve_type_name(cg, cg.last_type)
+         ti = types::typedef_ti(cg, resolved)
+         ti
+            [Enum s] s
+            |
+               cg.current_module != ""
+                  |
+                     ti_mod = types::typedef_ti(cg, cg.current_module + "::" + cg.last_type)
+                     ti_mod [Enum s] s | ast::EnumSlots()
+                  | ast::EnumSlots()
+      | ast::EnumSlots()
+
+find_enum_slots_from_ti: types::Cg, ast::TypeInfo => ast::EnumSlots
+find_enum_slots_from_ti = cg, ti =>
+   ti
+      [Enum s] s
+      [TypeVar name]
+         td_ti = types::typedef_ti(cg, name)
+         td_ti [Enum s] s | ast::EnumSlots()
+      | ast::EnumSlots()
+
+enum_slots_have_payload: ast::EnumSlots, Int, Int => <>
+enum_slots_have_payload = slots, i, n =>
+   i == n
+      | <->
+      |
+         s = slots(i) | _ | ast::EnumSlotInfo(("", <->, ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         s.has_payload | <+> | enum_slots_have_payload(slots, i + 1, n)
+
+enum_slots_have_unit: ast::EnumSlots, Int, Int => <>
+enum_slots_have_unit = slots, i, n =>
+   i == n
+      | <->
+      |
+         s = slots(i) | _ | ast::EnumSlotInfo(("", <->, ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         !s.has_payload | <+> | enum_slots_have_unit(slots, i + 1, n)
+
+codegen_emit_enum_deep_cmp: types::Cg, ast::BinaryOp, (Addr, ast::ValueType),
+   (Addr, ast::ValueType), ast::EnumSlots => (Addr, ast::ValueType)
+
+codegen_emit_enum_deep_cmp_depth: types::Cg, ast::BinaryOp, (Addr, ast::ValueType),
+   (Addr, ast::ValueType), ast::EnumSlots, Int => (Addr, ast::ValueType)
+
+codegen_compare_payload: types::Cg, Addr, Addr, ast::ValueType,
+   ast::TypeInfo, Int => Addr
+
+codegen_record_pay_eq: types::Cg, Addr, Addr, Addr,
+   ast::FieldTypes, Int => Addr
+
+codegen_error_pay_eq: types::Cg, Addr, Addr => Addr
+
+codegen_record_pay_eq = cg, l_rec, r_rec, rec_struct_t, fields, depth =>
+   i64t = LLVMInt64Type!
+   i1t = LLVMInt1Type!
+   l_i = LLVMBuildPtrToInt(cg.builder, l_rec, i64t, "rec.l.i")
+   r_i = LLVMBuildPtrToInt(cg.builder, r_rec, i64t, "rec.r.i")
+   ptr_eq = LLVMBuildICmp(cg.builder, 32, l_i, r_i, "rec.ptr.eq")
+   nf = ?fields
+   nf == 0 || rec_struct_t == Addr(0)
+      | ptr_eq
+      |
+         entry_b = LLVMGetInsertBlock(cg.builder)
+         ptr_neq_b = LLVMAppendBasicBlock(cg.current_fn, "rec.ptr.neq")
+         cmp_fields_b = LLVMAppendBasicBlock(cg.current_fn, "rec.fields.cmp")
+         rec_exit_b = LLVMAppendBasicBlock(cg.current_fn, "rec.cmp.exit")
+         LLVMBuildCondBr(cg.builder, ptr_eq, rec_exit_b, ptr_neq_b)
+
+         LLVMPositionBuilderAtEnd(cg.builder, ptr_neq_b)
+         l_null = LLVMBuildICmp(cg.builder, 32, l_i,
+            LLVMConstInt(i64t, 0, 0), "l.null")
+         r_null = LLVMBuildICmp(cg.builder, 32, r_i,
+            LLVMConstInt(i64t, 0, 0), "r.null")
+         any_null = LLVMBuildOr(cg.builder, l_null, r_null, "any.null")
+         LLVMBuildCondBr(cg.builder, any_null, rec_exit_b, cmp_fields_b)
+
+         LLVMPositionBuilderAtEnd(cg.builder, cmp_fields_b)
+         eq_acc = LLVMConstInt(i1t, 1, 0)
+         ?fields @ fi =>
+            rf = fields(fi) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
+               ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->, ast::Expr(Int, 0)))
+            fvt = rf.val_type
+            fty = types::llvm_type_of_vt(fvt)
+            lg = LLVMBuildStructGEP2(cg.builder, rec_struct_t, l_rec, fi, "l.rf.gep")
+            lv = LLVMBuildLoad2(cg.builder, fty, lg, "l.rf")
+            rg = LLVMBuildStructGEP2(cg.builder, rec_struct_t, r_rec, fi, "r.rf.gep")
+            rv = LLVMBuildLoad2(cg.builder, fty, rg, "r.rf")
+            feq = codegen_compare_payload(cg, lv, rv, fvt, rf.rec_type, depth)
+            eq_acc = LLVMBuildAnd(cg.builder, eq_acc, feq, "rec.fld.and")
+         fields_end_b = LLVMGetInsertBlock(cg.builder)
+         stmt::branch_to(cg, rec_exit_b)
+
+         LLVMPositionBuilderAtEnd(cg.builder, rec_exit_b)
+         phi = LLVMBuildPhi(cg.builder, i1t, "rec.eq.phi")
+         stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 1, 0), entry_b)
+         stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 0, 0), ptr_neq_b)
+         stmt::llvm_add_incoming1(cg, phi, eq_acc, fields_end_b)
+         phi
+
+codegen_error_pay_eq = cg, l_val, r_val =>
+   i64t = LLVMInt64Type!
+   i1t = LLVMInt1Type!
+   l_i = LLVMBuildPtrToInt(cg.builder, l_val, i64t, "err.l.i")
+   r_i = LLVMBuildPtrToInt(cg.builder, r_val, i64t, "err.r.i")
+   ptr_eq = LLVMBuildICmp(cg.builder, 32, l_i, r_i, "err.ptr.eq")
+   entry_b = LLVMGetInsertBlock(cg.builder)
+   ptr_neq_b = LLVMAppendBasicBlock(cg.current_fn, "err.ptr.neq")
+   cmp_fields_b = LLVMAppendBasicBlock(cg.current_fn, "err.fields.cmp")
+   err_exit_b = LLVMAppendBasicBlock(cg.current_fn, "err.cmp.exit")
+   LLVMBuildCondBr(cg.builder, ptr_eq, err_exit_b, ptr_neq_b)
+
+   LLVMPositionBuilderAtEnd(cg.builder, ptr_neq_b)
+   l_null = LLVMBuildICmp(cg.builder, 32, l_i,
+      LLVMConstInt(i64t, 0, 0), "l.err.null")
+   r_null = LLVMBuildICmp(cg.builder, 32, r_i,
+      LLVMConstInt(i64t, 0, 0), "r.err.null")
+   any_null = LLVMBuildOr(cg.builder, l_null, r_null, "any.err.null")
+   LLVMBuildCondBr(cg.builder, any_null, err_exit_b, cmp_fields_b)
+
+   LLVMPositionBuilderAtEnd(cg.builder, cmp_fields_b)
+   err_t = main::error_struct_type(cg)
+   vts = types::error_field_vts!
+   eq_acc = LLVMConstInt(i1t, 1, 0)
+   ?vts @ i =>
+      fvt = vts(i) | _ | ast::ValueType(Unknown)
+      fti = types::error_field_ti_by_idx(i)
+      fty = types::llvm_type_of_vt(fvt)
+      lg = LLVMBuildStructGEP2(cg.builder, err_t, l_val, i, "l.err.gep")
+      lv = LLVMBuildLoad2(cg.builder, fty, lg, "l.err.fld")
+      rg = LLVMBuildStructGEP2(cg.builder, err_t, r_val, i, "r.err.gep")
+      rv = LLVMBuildLoad2(cg.builder, fty, rg, "r.err.fld")
+      feq = codegen_compare_payload(cg, lv, rv, fvt, fti, 2)
+      eq_acc = LLVMBuildAnd(cg.builder, eq_acc, feq, "err.fld.and")
+   fields_end_b = LLVMGetInsertBlock(cg.builder)
+   stmt::branch_to(cg, err_exit_b)
+
+   LLVMPositionBuilderAtEnd(cg.builder, err_exit_b)
+   phi = LLVMBuildPhi(cg.builder, i1t, "err.eq.phi")
+   stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 1, 0), entry_b)
+   stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 0, 0), ptr_neq_b)
+   stmt::llvm_add_incoming1(cg, phi, eq_acc, fields_end_b)
+   phi
+
+codegen_compare_payload = cg, l_val, r_val, pay_vt, pay_ti, depth =>
+   types::is_int_vt(pay_vt)
+      | LLVMBuildICmp(cg.builder, 32, l_val, r_val, "pay.int.eq")
+      |
+         types::is_float_vt(pay_vt)
+            | codegen_emit_fcmp(cg, ast::BinaryOp(Eq), l_val, r_val)
+            |
+               types::is_flag_vt(pay_vt)
+                  | LLVMBuildICmp(cg.builder, 32, l_val, r_val, "pay.flag.eq")
+                  |
+                     types::is_str_vt(pay_vt)
+                        | stmt::codegen_string_eq(cg, l_val, r_val)
+                        |
+                           depth > 1
+                              |
+                                 i64t = LLVMInt64Type!
+                                 l_i = LLVMBuildPtrToInt(cg.builder, l_val, i64t, "pay.ptr.l")
+                                 r_i = LLVMBuildPtrToInt(cg.builder, r_val, i64t, "pay.ptr.r")
+                                 LLVMBuildICmp(cg.builder, 32, l_i, r_i, "pay.ptr.eq")
+                              |
+                                 types::is_enum_vt(pay_vt)
+                                    |
+                                       nested_slots = find_enum_slots_from_ti(cg, pay_ti)
+                                       ?nested_slots > 0
+                                          |
+                                             deep = codegen_emit_enum_deep_cmp_depth(cg,
+                                                ast::BinaryOp(Eq), (l_val, ast::ValueType(Enum)),
+                                                (r_val, ast::ValueType(Enum)), nested_slots, depth + 1)
+                                             deep.0
+                                          |
+                                             i64t = LLVMInt64Type!
+                                             l_i = LLVMBuildPtrToInt(cg.builder, l_val, i64t, "pay.ptr.l")
+                                             r_i = LLVMBuildPtrToInt(cg.builder, r_val, i64t, "pay.ptr.r")
+                                             LLVMBuildICmp(cg.builder, 32, l_i, r_i, "pay.ptr.eq")
+                                    |
+                                       is_err = pay_vt [Error]
+                                       is_err
+                                          | codegen_error_pay_eq(cg, l_val, r_val)
+                                          |
+                                             is_rec = pay_vt [Record]
+                                             is_rec
+                                                |
+                                                   rec_ti = types::resolve_record_ti(cg, pay_ti)
+                                                   rm = runtime::record_meta_from_ti(cg, rec_ti)
+                                                   rec_fields = rec_ti [Rec rr] rr.0 | ast::FieldTypes()
+                                                   codegen_record_pay_eq(cg, l_val, r_val, rm.0, rec_fields, depth + 1)
+                                                |
+                                                   i64t = LLVMInt64Type!
+                                                   l_i = LLVMBuildPtrToInt(cg.builder, l_val, i64t, "pay.ptr.l")
+                                                   r_i = LLVMBuildPtrToInt(cg.builder, r_val, i64t, "pay.ptr.r")
+                                                   LLVMBuildICmp(cg.builder, 32, l_i, r_i, "pay.ptr.eq")
+
+codegen_emit_enum_deep_cmp = cg, op, lr, rr, slots =>
+   codegen_emit_enum_deep_cmp_depth(cg, op, lr, rr, slots, 0)
+
+codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
+   l_gep = LLVMBuildStructGEP2(cg.builder,
+      cg.union_t, lr.0, 0, "enum.l.tag.gep")
+   l_tag = LLVMBuildLoad2(cg.builder,
+      LLVMInt64Type!, l_gep, "enum.l.tag")
+   r_gep = LLVMBuildStructGEP2(cg.builder,
+      cg.union_t, rr.0, 0, "enum.r.tag.gep")
+   r_tag = LLVMBuildLoad2(cg.builder,
+      LLVMInt64Type!, r_gep, "enum.r.tag")
+   tags_eq = LLVMBuildICmp(cg.builder, 32,
+      l_tag, r_tag, "enum.tag.eq")
+   n_slots = ?slots
+   has_any_pay = enum_slots_have_payload(slots, 0, n_slots)
+   !has_any_pay || n_slots == 0
+      |
+         res = op [NotEq] LLVMBuildNot(cg.builder,
+            tags_eq, "enum.tag.ne") | tags_eq
+         (res, ast::ValueType(Flag))
+      |
+         i1t = LLVMInt1Type!
+         i64t = LLVMInt64Type!
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         entry_bb = LLVMGetInsertBlock(cg.builder)
+         tag_match_bb = LLVMAppendBasicBlock(cg.current_fn, "enum.tag.match")
+         exit_bb = LLVMAppendBasicBlock(cg.current_fn, "enum.cmp.exit")
+         LLVMBuildCondBr(cg.builder, tags_eq, tag_match_bb, exit_bb)
+
+         has_unit = enum_slots_have_unit(slots, 0, n_slots)
+         unit_bb = has_unit
+            | LLVMAppendBasicBlock(cg.current_fn, "enum.unit.match")
+            | Addr(0)
+         has_unit
+            |
+               LLVMPositionBuilderAtEnd(cg.builder, unit_bb)
+               stmt::branch_to(cg, exit_bb)
+
+         unreachable_bb = LLVMAppendBasicBlock(cg.current_fn, "enum.unreachable")
+         LLVMPositionBuilderAtEnd(cg.builder, unreachable_bb)
+         _ = LLVMBuildUnreachable(cg.builder)
+
+         LLVMPositionBuilderAtEnd(cg.builder, tag_match_bb)
+         sw = LLVMBuildSwitch(cg.builder, l_tag, unreachable_bb, n_slots)
+
+         pay_ends = types::Addrs()
+         pay_vals = types::Addrs()
+
+         ?slots @ si =>
+            sl = slots(si) | _ | ast::EnumSlotInfo(("", <->, ast::ValueType(Unknown),
+               ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+            case_tag = LLVMConstInt(i64t, si, 0)
+            !sl.has_payload
+               | LLVMAddCase(sw, case_tag, unit_bb)
+            sl.has_payload
+               |
+                  case_bb = LLVMAppendBasicBlock(cg.current_fn,
+                     "enum.pay.case." + str::from_int(si))
+                  LLVMAddCase(sw, case_tag, case_bb)
+                  LLVMPositionBuilderAtEnd(cg.builder, case_bb)
+                  l_pay_gep = LLVMBuildStructGEP2(cg.builder, cg.union_t,
+                     lr.0, 1, "l.pay.gep")
+                  l_pay_ptr = LLVMBuildLoad2(cg.builder, i8p,
+                     l_pay_gep, "l.pay.ptr")
+                  r_pay_gep = LLVMBuildStructGEP2(cg.builder, cg.union_t,
+                     rr.0, 1, "r.pay.gep")
+                  r_pay_ptr = LLVMBuildLoad2(cg.builder, i8p,
+                     r_pay_gep, "r.pay.ptr")
+                  l_pay_val = eval_heap_pay_value(cg, l_pay_ptr, sl.payload_type)
+                  r_pay_val = eval_heap_pay_value(cg, r_pay_ptr, sl.payload_type)
+                  pay_eq = codegen_compare_payload(cg, l_pay_val, r_pay_val,
+                     sl.payload_type, sl.payload_record, depth)
+                  end_bb = LLVMGetInsertBlock(cg.builder)
+                  stmt::branch_to(cg, exit_bb)
+                  pay_ends += end_bb
+                  pay_vals += pay_eq
+
+         LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+         phi = LLVMBuildPhi(cg.builder, i1t, "enum.eq.phi")
+         stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 0, 0), entry_bb)
+         has_unit
+            | stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 1, 0), unit_bb)
+         ?pay_ends @ pi =>
+            p_end = pay_ends(pi) | _ | Addr(0)
+            p_val = pay_vals(pi) | _ | Addr(0)
+            stmt::llvm_add_incoming1(cg, phi, p_val, p_end)
+
+         res = op [NotEq] LLVMBuildNot(cg.builder, phi, "enum.ne") | phi
+         (res, ast::ValueType(Flag))
+
 codegen_emit_cmp_nonmixed: types::Cg, ast::BinaryOp, (Addr, ast::ValueType),
    (Addr, ast::ValueType) => (Addr, ast::ValueType)
 codegen_emit_cmp_nonmixed = cg, op, lr, rr =>
@@ -162,19 +490,8 @@ codegen_emit_cmp_nonmixed = cg, op, lr, rr =>
          both_enum = is_eq_op && types::is_enum_vt(lr.1) && types::is_enum_vt(rr.1)
          both_enum
             |
-               l_gep = llvm::LLVMBuildStructGEP2(cg.builder,
-                  cg.union_t, lr.0, 0, "enum.l.tag.gep")
-               l_tag = llvm::LLVMBuildLoad2(cg.builder,
-                  llvm::LLVMInt64Type!, l_gep, "enum.l.tag")
-               r_gep = llvm::LLVMBuildStructGEP2(cg.builder,
-                  cg.union_t, rr.0, 0, "enum.r.tag.gep")
-               r_tag = llvm::LLVMBuildLoad2(cg.builder,
-                  llvm::LLVMInt64Type!, r_gep, "enum.r.tag")
-               eq' = llvm::LLVMBuildICmp(cg.builder, 32,
-                  l_tag, r_tag, "enum.tag.eq")
-               res = op [NotEq] llvm::LLVMBuildNot(cg.builder,
-                  eq', "enum.tag.ne") | eq'
-               (res, ast::ValueType(Flag))
+               slots = find_enum_slots_for_cmp(cg)
+               codegen_emit_enum_deep_cmp(cg, op, lr, rr, slots)
             |
                flag_ram = types::is_any_ram_vt(lr.1) || types::is_any_ram_vt(rr.1)
                flag_ram
@@ -186,7 +503,7 @@ codegen_emit_cmp_nonmixed = cg, op, lr, rr =>
                            eq' = stmt::codegen_string_eq(cg, lr.0, rr.0)
                            op
                               [Eq] (eq', ast::ValueType(Flag))
-                              [NotEq] (llvm::LLVMBuildNot(cg.builder, eq',
+                              [NotEq] (LLVMBuildNot(cg.builder, eq',
                                  "str.neq"), ast::ValueType(Flag))
                               | (eq', ast::ValueType(Flag))
                         |
@@ -197,22 +514,22 @@ codegen_emit_cmp_nonmixed = cg, op, lr, rr =>
                               |
                                  l' = lr.0
                                  r' = rr.0
-                                 i64t = llvm::LLVMInt64Type!
+                                 i64t = LLVMInt64Type!
                                  u_l = types::is_unsigned_vt(lr.1)
                                  u_r = types::is_unsigned_vt(rr.1)
                                  is_u = u_l || u_r
                                  l_ptr = types::is_ptr_vt(lr.1) ||
-                                    llvm::LLVMGetTypeKind(
-                                       llvm::LLVMTypeOf(l')) == 12
+                                    LLVMGetTypeKind(
+                                       LLVMTypeOf(l')) == 12
                                  l_ptr
-                                    | l' = llvm::LLVMBuildPtrToInt(
+                                    | l' = LLVMBuildPtrToInt(
                                        cg.builder, l', i64t, "ptr.int.l")
                                     | l' = stmt::coerce_int_ext(cg, l', i64t, u_l)
                                  r_ptr = types::is_ptr_vt(rr.1) ||
-                                    llvm::LLVMGetTypeKind(
-                                       llvm::LLVMTypeOf(r')) == 12
+                                    LLVMGetTypeKind(
+                                       LLVMTypeOf(r')) == 12
                                  r_ptr
-                                    | r' = llvm::LLVMBuildPtrToInt(
+                                    | r' = LLVMBuildPtrToInt(
                                        cg.builder, r', i64t, "ptr.int.r")
                                     | r' = stmt::coerce_int_ext(cg, r', i64t, u_r)
                                  (codegen_emit_icmp(cg, op, l', r', is_u),
@@ -922,7 +1239,7 @@ ctfe_lower_record = cg, r =>
       vt = ctfe_val_vt(elem)
       ev = ctfe_lower(cg, elem, vt)
       fvals += ev.0
-      ftypes += llvm::LLVMTypeOf(ev.0)
+      ftypes += LLVMTypeOf(ev.0)
       fvts += ev.1
    st = types::struct_type_n(cg, ftypes, nf)
    fnames = r.1
@@ -939,12 +1256,12 @@ ctfe_lower_record = cg, r =>
    esb = &buf
    nf @ i =>
       @[esb + i * 8] = fvals(i)!!
-   const_struct = llvm::LLVMConstStruct(esb, nf, 0)
+   const_struct = LLVMConstStruct(esb, nf, 0)
    gname = "ctfe.rec." + str::from_int(?cg.typedefs)
-   gv = llvm::LLVMAddGlobal(cg.module, st, gname)
-   llvm::LLVMSetInitializer(gv, const_struct)
-   llvm::LLVMSetGlobalConstant(gv, 1)
-   llvm::LLVMSetUnnamedAddr(gv, 1)
+   gv = LLVMAddGlobal(cg.module, st, gname)
+   LLVMSetInitializer(gv, const_struct)
+   LLVMSetGlobalConstant(gv, 1)
+   LLVMSetUnnamedAddr(gv, 1)
    (gv, ast::ValueType(Record))
 
 ctfe_lower_map: types::Cg, (types::CtVals, types::CtVals) => (Addr, ast::ValueType)
@@ -980,9 +1297,9 @@ ctfe_lower_map = cg, m =>
                      -->
                   |
                      idx' = (idx' + 1) .&. (cap' - 1)
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
-   i64t = llvm::LLVMInt64Type!
-   i8t = llvm::LLVMInt8Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   i64t = LLVMInt64Type!
+   i8t = LLVMInt8Type!
    first_k = n > 0 | m.0(0)!! | types::CtVal(None)
    is_str_k = first_k [Str]
    key_elem_t = is_str_k | i8p | i64t
@@ -1002,14 +1319,14 @@ ctfe_lower_map = cg, m =>
             k_ev = ctfe_lower(cg, k_ct, ctfe_val_vt(k_ct))
             @[ksb + i * 8] = k_ev.0
          |
-            @[ksb + i * 8] = llvm::LLVMConstNull(key_elem_t)
-   const_keys = llvm::LLVMConstArray2(key_elem_t, ksb, cap')
-   keys_arr_t = llvm::LLVMArrayType(key_elem_t, cap')
+            @[ksb + i * 8] = LLVMConstNull(key_elem_t)
+   const_keys = LLVMConstArray2(key_elem_t, ksb, cap')
+   keys_arr_t = LLVMArrayType(key_elem_t, cap')
    kg_name = "ctfe.map.keys." + str::from_int(?cg.typedefs)
-   kg = llvm::LLVMAddGlobal(cg.module, keys_arr_t, kg_name)
-   llvm::LLVMSetInitializer(kg, const_keys)
-   llvm::LLVMSetGlobalConstant(kg, 1)
-   llvm::LLVMSetUnnamedAddr(kg, 1)
+   kg = LLVMAddGlobal(cg.module, keys_arr_t, kg_name)
+   LLVMSetInitializer(kg, const_keys)
+   LLVMSetGlobalConstant(kg, 1)
+   LLVMSetUnnamedAddr(kg, 1)
 
    vbuf = {cap' * 8}
    vsb = &vbuf
@@ -1021,42 +1338,42 @@ ctfe_lower_map = cg, m =>
             v_ev = ctfe_lower(cg, v_ct, ctfe_val_vt(v_ct))
             @[vsb + i * 8] = v_ev.0
          |
-            @[vsb + i * 8] = llvm::LLVMConstNull(val_elem_t)
-   const_vals = llvm::LLVMConstArray2(val_elem_t, vsb, cap')
-   vals_arr_t = llvm::LLVMArrayType(val_elem_t, cap')
+            @[vsb + i * 8] = LLVMConstNull(val_elem_t)
+   const_vals = LLVMConstArray2(val_elem_t, vsb, cap')
+   vals_arr_t = LLVMArrayType(val_elem_t, cap')
    vg_name = "ctfe.map.vals." + str::from_int(?cg.typedefs)
-   vg = llvm::LLVMAddGlobal(cg.module, vals_arr_t, vg_name)
-   llvm::LLVMSetInitializer(vg, const_vals)
-   llvm::LLVMSetGlobalConstant(vg, 1)
-   llvm::LLVMSetUnnamedAddr(vg, 1)
+   vg = LLVMAddGlobal(cg.module, vals_arr_t, vg_name)
+   LLVMSetInitializer(vg, const_vals)
+   LLVMSetGlobalConstant(vg, 1)
+   LLVMSetUnnamedAddr(vg, 1)
 
    sbuf = {cap' * 8}
    ssb = &sbuf
    cap' @ i =>
       st3 = states(i)!!
-      @[ssb + i * 8] = llvm::LLVMConstInt(i8t, st3, 0)
-   const_states = llvm::LLVMConstArray2(i8t, ssb, cap')
-   states_arr_t = llvm::LLVMArrayType(i8t, cap')
+      @[ssb + i * 8] = LLVMConstInt(i8t, st3, 0)
+   const_states = LLVMConstArray2(i8t, ssb, cap')
+   states_arr_t = LLVMArrayType(i8t, cap')
    sg_name = "ctfe.map.states." + str::from_int(?cg.typedefs)
-   sg = llvm::LLVMAddGlobal(cg.module, states_arr_t, sg_name)
-   llvm::LLVMSetInitializer(sg, const_states)
-   llvm::LLVMSetGlobalConstant(sg, 1)
-   llvm::LLVMSetUnnamedAddr(sg, 1)
+   sg = LLVMAddGlobal(cg.module, states_arr_t, sg_name)
+   LLVMSetInitializer(sg, const_states)
+   LLVMSetGlobalConstant(sg, 1)
+   LLVMSetUnnamedAddr(sg, 1)
 
    mbuf = {5 * 8}
    msb = &mbuf
-   @[msb] = llvm::LLVMConstInt(i64t, n, 0)
-   @[msb + 8] = llvm::LLVMConstInt(i64t, cap', 0)
+   @[msb] = LLVMConstInt(i64t, n, 0)
+   @[msb + 8] = LLVMConstInt(i64t, cap', 0)
    @[msb + 16] = kg
    @[msb + 24] = vg
    @[msb + 32] = sg
-   const_map = llvm::LLVMConstStruct(msb, 5, 0)
+   const_map = LLVMConstStruct(msb, 5, 0)
    mt = runtime::map_struct_type(cg)
    mg_name = "ctfe.map." + str::from_int(?cg.typedefs)
-   mg = llvm::LLVMAddGlobal(cg.module, mt, mg_name)
-   llvm::LLVMSetInitializer(mg, const_map)
-   llvm::LLVMSetGlobalConstant(mg, 1)
-   llvm::LLVMSetUnnamedAddr(mg, 1)
+   mg = LLVMAddGlobal(cg.module, mt, mg_name)
+   LLVMSetInitializer(mg, const_map)
+   LLVMSetGlobalConstant(mg, 1)
+   LLVMSetUnnamedAddr(mg, 1)
 
    n > 0
       |
@@ -1077,10 +1394,10 @@ ctfe_lower = cg, cv, vt =>
       |
          cv
             [Int n]
-               val' = llvm::LLVMConstInt(llvm::LLVMInt64Type!, n, 0)
+               val' = LLVMConstInt(LLVMInt64Type!, n, 0)
                (val', vt)
             [Float f]
-               val' = llvm::LLVMConstReal(llvm::LLVMDoubleType!, f)
+               val' = LLVMConstReal(LLVMDoubleType!, f)
                (val', vt)
             [Str s]
                val' = stmt::codegen_string_literal(cg, s)
@@ -1158,12 +1475,12 @@ codegen_emit_cmp_flag_ram_error = cg, op =>
 codegen_emit_fcmp: types::Cg, ast::BinaryOp, Addr, Addr => Addr
 codegen_emit_fcmp = cg, op, l, r =>
    op
-      [Gt] llvm::LLVMBuildFCmp(cg.builder, 2, l, r, "fcmptmp")
-      [Lt] llvm::LLVMBuildFCmp(cg.builder, 4, l, r, "fcmptmp")
-      [Eq] llvm::LLVMBuildFCmp(cg.builder, 1, l, r, "fcmptmp")
-      [NotEq] llvm::LLVMBuildFCmp(cg.builder, 14, l, r, "fcmptmp")
-      [NotGt] llvm::LLVMBuildFCmp(cg.builder, 5, l, r, "fcmptmp")
-      [NotLt] llvm::LLVMBuildFCmp(cg.builder, 3, l, r, "fcmptmp")
+      [Gt] LLVMBuildFCmp(cg.builder, 2, l, r, "fcmptmp")
+      [Lt] LLVMBuildFCmp(cg.builder, 4, l, r, "fcmptmp")
+      [Eq] LLVMBuildFCmp(cg.builder, 1, l, r, "fcmptmp")
+      [NotEq] LLVMBuildFCmp(cg.builder, 14, l, r, "fcmptmp")
+      [NotGt] LLVMBuildFCmp(cg.builder, 5, l, r, "fcmptmp")
+      [NotLt] LLVMBuildFCmp(cg.builder, 3, l, r, "fcmptmp")
       | Addr(0)
 
 // ICmp predicates: EQ=32 NE=33 SGT=38 SLE=41 SLT=40 SGE=39.
@@ -1173,21 +1490,21 @@ codegen_emit_icmp = cg, op, l, r, is_unsigned =>
    is_unsigned
       |
          op
-            [Gt] llvm::LLVMBuildICmp(cg.builder, 34, l, r, "cmptmp")
-            [Lt] llvm::LLVMBuildICmp(cg.builder, 36, l, r, "cmptmp")
-            [Eq] llvm::LLVMBuildICmp(cg.builder, 32, l, r, "cmptmp")
-            [NotEq] llvm::LLVMBuildICmp(cg.builder, 33, l, r, "cmptmp")
-            [NotGt] llvm::LLVMBuildICmp(cg.builder, 37, l, r, "cmptmp")
-            [NotLt] llvm::LLVMBuildICmp(cg.builder, 35, l, r, "cmptmp")
+            [Gt] LLVMBuildICmp(cg.builder, 34, l, r, "cmptmp")
+            [Lt] LLVMBuildICmp(cg.builder, 36, l, r, "cmptmp")
+            [Eq] LLVMBuildICmp(cg.builder, 32, l, r, "cmptmp")
+            [NotEq] LLVMBuildICmp(cg.builder, 33, l, r, "cmptmp")
+            [NotGt] LLVMBuildICmp(cg.builder, 37, l, r, "cmptmp")
+            [NotLt] LLVMBuildICmp(cg.builder, 35, l, r, "cmptmp")
             | Addr(0)
       |
          op
-            [Gt] llvm::LLVMBuildICmp(cg.builder, 38, l, r, "cmptmp")
-            [Lt] llvm::LLVMBuildICmp(cg.builder, 40, l, r, "cmptmp")
-            [Eq] llvm::LLVMBuildICmp(cg.builder, 32, l, r, "cmptmp")
-            [NotEq] llvm::LLVMBuildICmp(cg.builder, 33, l, r, "cmptmp")
-            [NotGt] llvm::LLVMBuildICmp(cg.builder, 41, l, r, "cmptmp")
-            [NotLt] llvm::LLVMBuildICmp(cg.builder, 39, l, r, "cmptmp")
+            [Gt] LLVMBuildICmp(cg.builder, 38, l, r, "cmptmp")
+            [Lt] LLVMBuildICmp(cg.builder, 40, l, r, "cmptmp")
+            [Eq] LLVMBuildICmp(cg.builder, 32, l, r, "cmptmp")
+            [NotEq] LLVMBuildICmp(cg.builder, 33, l, r, "cmptmp")
+            [NotGt] LLVMBuildICmp(cg.builder, 41, l, r, "cmptmp")
+            [NotLt] LLVMBuildICmp(cg.builder, 39, l, r, "cmptmp")
             | Addr(0)
 
 // --- bitwise -----------------------------------------------------------------
@@ -1217,44 +1534,44 @@ codegen_emit_logical_scalar = cg, is_and, lr, t =>
    codegen_check_logical_ram_layout(cg, is_and, t.1, t.2)
    rname = ram_expr_dtype(cg, t.2)
    pre = is_and | "and" | "or"
-   then_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, pre + ".then")
-   else_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, pre + ".else")
-   exit_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, pre + ".exit")
-   llvm::LLVMBuildCondBr(cg.builder, stmt::codegen_cond_value(cg, lr.0, lr.1),
+   then_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".then")
+   else_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".else")
+   exit_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".exit")
+   LLVMBuildCondBr(cg.builder, stmt::codegen_cond_value(cg, lr.0, lr.1),
       then_bb, else_bb)
 
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, then_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, then_bb)
    cg.exited = <->
    then_val = is_and | expr::codegen_eval(cg, t.2) | lr
    t_term = cg.exited
-   t_end = llvm::LLVMGetInsertBlock(cg.builder)
+   t_end = LLVMGetInsertBlock(cg.builder)
    stmt::branch_to(cg, exit_bb)
 
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, else_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, else_bb)
    cg.exited = <->
    else_val = is_and | lr | expr::codegen_eval(cg, t.2)
    e_term = cg.exited
-   e_end = llvm::LLVMGetInsertBlock(cg.builder)
+   e_end = LLVMGetInsertBlock(cg.builder)
    stmt::branch_to(cg, exit_bb)
 
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    // Valid ram logical operations use either two Flags or two heap rams.
    // The checker above rejects mixed representations, so no flag
    // lifting is needed to form this phi.
-   i1t = llvm::LLVMInt1Type!
-   res_union = llvm::LLVMTypeOf(lr.0) != i1t
+   i1t = LLVMInt1Type!
+   res_union = LLVMTypeOf(lr.0) != i1t
    tv0 = then_val.0
    ev0 = else_val.0
    res_vt = t_term | else_val.1 | then_val.1
    res_lt = res_union
-      | llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+      | LLVMPointerType(LLVMInt8Type!, 0)
       | types::llvm_type_of_vt(res_vt)
-   phi = llvm::LLVMBuildPhi(cg.builder, res_lt, pre + ".phi")
+   phi = LLVMBuildPhi(cg.builder, res_lt, pre + ".phi")
    t_term
-      | stmt::llvm_add_incoming1(cg, phi, llvm::LLVMConstNull(res_lt), t_end)
+      | stmt::llvm_add_incoming1(cg, phi, LLVMConstNull(res_lt), t_end)
       | stmt::llvm_add_incoming1(cg, phi, stmt::coerce_int(cg, tv0, res_lt), t_end)
    e_term
-      | stmt::llvm_add_incoming1(cg, phi, llvm::LLVMConstNull(res_lt), e_end)
+      | stmt::llvm_add_incoming1(cg, phi, LLVMConstNull(res_lt), e_end)
       | stmt::llvm_add_incoming1(cg, phi, stmt::coerce_int(cg, ev0, res_lt), e_end)
    rname != "" | cg.last_type = rname | 0
    (phi, res_vt)
@@ -1392,22 +1709,22 @@ codegen_choice_match_entry = cg, cond_val, cond_type, ev =>
                args = types::Addrs()
                args += cond_val
                pr = expr::call_named(cg, pred_info.0, args)
-               stmt::coerce_int(cg, pr.0, llvm::LLVMInt1Type!)
+               stmt::coerce_int(cg, pr.0, LLVMInt1Type!)
             |
                cval = expr::codegen_eval(cg, ev)
                types::is_str_vt(cond_type)
                   | stmt::codegen_string_eq(cg, cond_val, cval.0)
                   |
                      types::is_flag_vt(cond_type)
-                        | stmt::coerce_int(cg, cval.0, llvm::LLVMInt1Type!)
+                        | stmt::coerce_int(cg, cval.0, LLVMInt1Type!)
                         |
                            cond_ll = cond_val != Addr(0) | cond_val |
-                              llvm::LLVMConstNull(types::llvm_type_of_vt(cond_type))
-                           tgt_ty = llvm::LLVMTypeOf(cond_ll)
+                              LLVMConstNull(types::llvm_type_of_vt(cond_type))
+                           tgt_ty = LLVMTypeOf(cond_ll)
                            cint = stmt::coerce_int_ext(cg, cval.0, tgt_ty,
                               types::is_unsigned_vt(cval.1))
-                           cint_safe = cint != Addr(0) | cint | llvm::LLVMConstNull(tgt_ty)
-                           llvm::LLVMBuildICmp(cg.builder, 32, cond_ll,
+                           cint_safe = cint != Addr(0) | cint | LLVMConstNull(tgt_ty)
+                           LLVMBuildICmp(cg.builder, 32, cond_ll,
                               cint_safe, "val.match")
 
 // "cond == v1 || cond == v2 || ..." for a comma OR-list guard.
@@ -1418,11 +1735,11 @@ codegen_choice_match = cg, cond_val, cond_type, values =>
 codegen_choice_match_at: types::Cg, Addr, ast::ValueType, ast::Exprs, Int, Int, Addr => Addr
 codegen_choice_match_at = cg, cond_val, cond_type, values, i, n, m =>
    i == n
-      | (m == Addr(0) | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0) | m)
+      | (m == Addr(0) | LLVMConstInt(LLVMInt1Type!, 0, 0) | m)
       |
          ev = values(i)!!
          eq = codegen_choice_match_entry(cg, cond_val, cond_type, ev)
-         m2 = m == Addr(0) | eq | llvm::LLVMBuildOr(cg.builder, m, eq, "val.or")
+         m2 = m == Addr(0) | eq | LLVMBuildOr(cg.builder, m, eq, "val.or")
          codegen_choice_match_at(cg, cond_val, cond_type, values, i + 1, n, m2)
 
 // A predicate guard test: "x [n => n > 0] body". The predicate is applied to
@@ -1444,8 +1761,8 @@ codegen_eval_predicate = cg, pred, cond_val, cond_type =>
                0
             | 0
          bv = expr::codegen_eval(cg, f.body)
-         stmt::coerce_int(cg, bv.0, llvm::LLVMInt1Type!)
-      | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0)
+         stmt::coerce_int(cg, bv.0, LLVMInt1Type!)
+      | LLVMConstInt(LLVMInt1Type!, 0, 0)
 
 // A branch's test flag: a value-guard equality, or a predicate applied to the
 // scrutinee.
@@ -1454,7 +1771,7 @@ branch_test = cg, br, cond_val, cond_type =>
    br.kind
       [Case] codegen_choice_match(cg, cond_val, cond_type, br.case_values)
       [Predicate] codegen_eval_predicate(cg, br.pred_fn, cond_val, cond_type)
-      | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0)
+      | LLVMConstInt(LLVMInt1Type!, 0, 0)
 
 // Whether a choice can be lowered to an integer switch: every branch is a
 // Case guard with integer literal constants, except a trailing bare fallback.
@@ -1559,7 +1876,7 @@ codegen_add_phi_incomings_chain_at = cg, phi, res_lt, vals, bbs, exits, i, n =>
       |
          e = exits(i)!!
          e
-            | stmt::llvm_add_incoming1(cg, phi, llvm::LLVMConstNull(res_lt),
+            | stmt::llvm_add_incoming1(cg, phi, LLVMConstNull(res_lt),
                bbs(i)!!)
             | stmt::llvm_add_incoming1(cg, phi,
                stmt::choice_coerce(cg, vals(i)!!, res_lt),
@@ -1575,13 +1892,13 @@ codegen_eval_choice_switch_case_values_at = sw_inst, i64t, cvals, j, ncv, case_b
          cv = cvals(j)!!
          cv
             [Int n]
-               cval' = llvm::LLVMConstInt(i64t, n, 0)
-               llvm::LLVMAddCase(sw_inst, cval', case_bb)
+               cval' = LLVMConstInt(i64t, n, 0)
+               LLVMAddCase(sw_inst, cval', case_bb)
                codegen_eval_choice_switch_case_values_at(sw_inst, i64t,
                   cvals, j + 1, ncv, case_bb)
             [Rune n]
-               cval' = llvm::LLVMConstInt(i64t, n, 0)
-               llvm::LLVMAddCase(sw_inst, cval', case_bb)
+               cval' = LLVMConstInt(i64t, n, 0)
+               LLVMAddCase(sw_inst, cval', case_bb)
                codegen_eval_choice_switch_case_values_at(sw_inst, i64t,
                   cvals, j + 1, ncv, case_bb)
             | codegen_eval_choice_switch_case_values_at(sw_inst, i64t,
@@ -1597,19 +1914,19 @@ codegen_eval_choice_switch_cases_at = cg, c, sw_inst, i64t, i, nb, vals, vts, bb
             [Case]
                case_c_name = "inexhaustive.case" + str::from_int(i) + "." +
                   str::from_int(types::g.tmpc)
-               case_bb = llvm::LLVMAppendBasicBlock(cg.current_fn,
+               case_bb = LLVMAppendBasicBlock(cg.current_fn,
                   case_c_name)
                ncv = ?br.case_values
                codegen_eval_choice_switch_case_values_at(sw_inst, i64t,
                   br.case_values, 0, ncv, case_bb)
-               llvm::LLVMPositionBuilderAtEnd(cg.builder, case_bb)
+               LLVMPositionBuilderAtEnd(cg.builder, case_bb)
                cg.exited = <->
                saved_nbindings = ?cg.bindings
                bv = expr::codegen_eval(cg, br.block)
                cg.bindings = runtime::binding_truncate(cg.bindings, saved_nbindings)
                vals += bv.0
                vts += bv.1
-               bbs += llvm::LLVMGetInsertBlock(cg.builder)
+               bbs += LLVMGetInsertBlock(cg.builder)
                exits += cg.exited
                stmt::branch_to(cg, exit_bb)
                codegen_eval_choice_switch_cases_at(cg, c, sw_inst, i64t,
@@ -1626,29 +1943,29 @@ codegen_eval_choice_switch = cg, c, cond_val, cond_type =>
 
 codegen_eval_choice_switch_valid: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType => (Addr, ast::ValueType)
 codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
-   i64t = llvm::LLVMInt64Type!
+   i64t = LLVMInt64Type!
    exit_c_name = "inexhaustive.exit." + str::from_int(types::g.tmpc)
    default_c_name = "inexhaustive.default." + str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   exit_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, exit_c_name)
-   default_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, default_c_name)
-   is_i64 = llvm::LLVMTypeOf(cond_val) == i64t
-   is_int = llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(cond_val)) == 8
+   exit_bb = LLVMAppendBasicBlock(cg.current_fn, exit_c_name)
+   default_bb = LLVMAppendBasicBlock(cg.current_fn, default_c_name)
+   is_i64 = LLVMTypeOf(cond_val) == i64t
+   is_int = LLVMGetTypeKind(LLVMTypeOf(cond_val)) == 8
    sw_val = is_i64
       | cond_val
       |
          is_int
-            | llvm::LLVMBuildZExt(cg.builder, cond_val, i64t, "sw.zext")
-            | llvm::LLVMBuildPtrToInt(cg.builder, cond_val, i64t, "sw.ptr2int")
+            | LLVMBuildZExt(cg.builder, cond_val, i64t, "sw.zext")
+            | LLVMBuildPtrToInt(cg.builder, cond_val, i64t, "sw.ptr2int")
    nb = ?c.branches
-   sw_inst = llvm::LLVMBuildSwitch(cg.builder, sw_val, default_bb, nb)
+   sw_inst = LLVMBuildSwitch(cg.builder, sw_val, default_bb, nb)
    vals = types::Addrs()
    vts = ast::VTypes()
    bbs = types::Addrs()
    exits = types::Flags()
    codegen_eval_choice_switch_cases_at(cg, c, sw_inst, i64t, 0, nb, vals,
       vts, bbs, exits, exit_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, default_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, default_bb)
    last_br = c.branches(nb - 1)!!
    last_is_bare = last_br.kind [Bare]
    last_is_bare
@@ -1661,16 +1978,16 @@ codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
          types::choice_branch_capture(cg)
          vals += bv.0
          vts += bv.1
-         bbs += llvm::LLVMGetInsertBlock(cg.builder)
+         bbs += LLVMGetInsertBlock(cg.builder)
          exits += cg.exited
          stmt::branch_to(cg, exit_bb)
       |
          vals += Addr(0)
          vts += ast::ValueType(Unknown)
-         bbs += llvm::LLVMGetInsertBlock(cg.builder)
+         bbs += LLVMGetInsertBlock(cg.builder)
          exits += <+>
          stmt::branch_to(cg, exit_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    cg.discard_result
       | (Addr(0), ast::ValueType(Unit))
       |
@@ -1680,12 +1997,12 @@ codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
             (!last_is_bare && !c.is_exhaustive)
          res_vt = has_un | ast::ValueType(Unit) | res_vt0
          n_live = choice_count_live(exits, 0, 0)
-         res_lt = res_val == Addr(0) | i64t | llvm::LLVMTypeOf(res_val)
+         res_lt = res_val == Addr(0) | i64t | LLVMTypeOf(res_val)
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
             | (Addr(0), res_vt)
             |
-               phi = llvm::LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
+               phi = LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
                codegen_add_phi_incomings_at(cg, phi, res_lt, vals, bbs, exits,
                   0, ?exits)
                (phi, res_vt)
@@ -1700,20 +2017,20 @@ codegen_eval_choice_case_chain_at = cg, c, cond_val, cond_type, curr_check_bb, k
          next_c_name = "choice.next" + str::from_int(k) + "." +
             str::from_int(types::g.tmpc)
          types::g.tmpc = types::g.tmpc + 1
-         case_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, case_c_name)
-         next_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, next_c_name)
+         case_bb = LLVMAppendBasicBlock(cg.current_fn, case_c_name)
+         next_bb = LLVMAppendBasicBlock(cg.current_fn, next_c_name)
          br = c.branches(k)!!
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, curr_check_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, curr_check_bb)
          mm = branch_test(cg, br, cond_val, cond_type)
-         llvm::LLVMBuildCondBr(cg.builder, mm, case_bb, next_bb)
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, case_bb)
+         LLVMBuildCondBr(cg.builder, mm, case_bb, next_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, case_bb)
          cg.exited = <->
          saved_nbindings = ?cg.bindings
          bv = expr::codegen_eval(cg, br.block)
          cg.bindings = runtime::binding_truncate(cg.bindings, saved_nbindings)
          vals += bv.0
          vts += bv.1
-         bbs += llvm::LLVMGetInsertBlock(cg.builder)
+         bbs += LLVMGetInsertBlock(cg.builder)
          exits += cg.exited
          stmt::branch_to(cg, exit_bb)
          codegen_eval_choice_case_chain_at(cg, c, cond_val, cond_type,
@@ -1722,8 +2039,8 @@ codegen_eval_choice_case_chain_at = cg, c, cond_val, cond_type, curr_check_bb, k
 // "scrutinee [v1] a [v2] b | fallback" — conditional chain per branch.
 codegen_eval_choice_case_chain: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType => (Addr, ast::ValueType)
 codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
-   exit_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
-   curr_check_bb = llvm::LLVMGetInsertBlock(cg.builder)
+   exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+   curr_check_bb = LLVMGetInsertBlock(cg.builder)
    vals = types::Addrs()
    vts = ast::VTypes()
    bbs = types::Addrs()
@@ -1733,7 +2050,7 @@ codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
    nchain = last_is_bare | nb - 1 | nb
    final_check_bb = codegen_eval_choice_case_chain_at(cg, c, cond_val,
       cond_type, curr_check_bb, 0, nchain, vals, vts, bbs, exits, exit_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, final_check_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, final_check_bb)
    last_is_bare
       |
          brd = c.branches(nb - 1)!!
@@ -1745,16 +2062,16 @@ codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
          types::choice_branch_capture(cg)
          vals += bv.0
          vts += bv.1
-         bbs += llvm::LLVMGetInsertBlock(cg.builder)
+         bbs += LLVMGetInsertBlock(cg.builder)
          exits += cg.exited
          stmt::branch_to(cg, exit_bb)
       |
          vals += Addr(0)
          vts += ast::ValueType(Unknown)
-         bbs += llvm::LLVMGetInsertBlock(cg.builder)
+         bbs += LLVMGetInsertBlock(cg.builder)
          exits += <+>
          stmt::branch_to(cg, exit_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    cg.discard_result
       | (Addr(0), ast::ValueType(Unit))
       |
@@ -1765,13 +2082,13 @@ codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
          res_vt = has_un | ast::ValueType(Unit) | res_vt0
          n_live = choice_count_live(exits, 0, 0)
          res_lt = res_val == Addr(0)
-            | llvm::LLVMInt64Type!
-            | llvm::LLVMTypeOf(res_val)
+            | LLVMInt64Type!
+            | LLVMTypeOf(res_val)
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
             | (Addr(0), res_vt)
             |
-               phi = llvm::LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
+               phi = LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
                codegen_add_phi_incomings_chain_at(cg, phi, res_lt, vals, bbs,
                   exits, 0, ?exits)
                (phi, res_vt)
@@ -1790,15 +2107,21 @@ codegen_eval_choice_case = cg, c, cond_val, cond_type =>
 // i8* -> String, else Int).
 vt_of_llvm_type: Addr => ast::ValueType
 vt_of_llvm_type = t =>
-   t
-      [llvm::LLVMDoubleType!] ast::ValueType(Float)
-      [llvm::LLVMFloatType!] ast::ValueType(F32)
-      [llvm::LLVMInt1Type!] ast::ValueType(Ram)
-      [llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)] ast::ValueType(Str)
+   t == LLVMDoubleType!
+      | ast::ValueType(Float)
       |
-         llvm::LLVMGetTypeKind(t) == 10
-            | ast::ValueType(Record)
-            | ast::ValueType(Int)
+         t == LLVMFloatType!
+            | ast::ValueType(F32)
+            |
+               t == LLVMInt1Type!
+                  | ast::ValueType(Ram)
+                  |
+                     t == LLVMPointerType(LLVMInt8Type!, 0)
+                        | ast::ValueType(Str)
+                        |
+                           LLVMGetTypeKind(t) == 10
+                              | ast::ValueType(Record)
+                              | ast::ValueType(Int)
 
 struct_sub_fvts: Addr => ast::VTypes
 struct_sub_fvts = st =>
@@ -1806,13 +2129,13 @@ struct_sub_fvts = st =>
    st == Addr(0)
       | res
       |
-         is_struct = llvm::LLVMGetTypeKind(st) == 10
+         is_struct = LLVMGetTypeKind(st) == 10
          !is_struct
             | res
             |
-               n = llvm::LLVMCountStructElementTypes(st)
+               n = LLVMCountStructElementTypes(st)
                n @ i =>
-                  ft = llvm::LLVMStructGetTypeAtIndex(st, i)
+                  ft = LLVMStructGetTypeAtIndex(st, i)
                   res += vt_of_llvm_type(ft)
                res
 
@@ -1827,9 +2150,9 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
    cond_val == Addr(0)
       | (Addr(0), ast::ValueType(Unknown))
       |
-         i1t = llvm::LLVMInt1Type!
-         is_heap = llvm::LLVMTypeOf(cond_val) != i1t &&
-            llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(cond_val)) == 12
+         i1t = LLVMInt1Type!
+         is_heap = LLVMTypeOf(cond_val) != i1t &&
+            LLVMGetTypeKind(LLVMTypeOf(cond_val)) == 12
          use_pay = codegen_choice_uses_payload(is_heap, dtype)
          pos_pay_type' = ast::ValueType(Unknown)
          pos_rec' = ast::TypeInfo(Prim, ast::ValueType(Unknown))
@@ -1843,13 +2166,13 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
          then_b = c.branches(0)!!
          t0 = types::g.tmpc
          types::g.tmpc = types::g.tmpc + 1
-         exit_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
-         then_bb = llvm::LLVMAppendBasicBlock(cg.current_fn,
+         exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+         then_bb = LLVMAppendBasicBlock(cg.current_fn,
             "choice.case0." + str::from_int(t0))
          cval = stmt::codegen_cond_value(cg, cond_val, cond_type)
-         llvm::LLVMBuildCondBr(cg.builder, cval, then_bb, exit_bb)
+         LLVMBuildCondBr(cg.builder, cval, then_bb, exit_bb)
 
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, then_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, then_bb)
          cg.exited = <->
          t_is_under = then_b.block [Var vv] (vv == "_") | <->
          pos_pay_type' == ast::ValueType(Unknown) && is_heap
@@ -1881,7 +2204,7 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
          types::choice_branch_capture(cg)
          stmt::branch_to(cg, exit_bb)
 
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
          (Addr(0), ast::ValueType(Unit))
 
 codegen_eval_choice_bare: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType, String => (Addr, ast::ValueType)
@@ -1892,8 +2215,8 @@ codegen_eval_choice_bare = cg, c, cond_val, cond_type, dtype =>
          ?c.branches == 1
             | codegen_eval_choice_bare_single(cg, c, cond_val, cond_type, dtype)
             |
-               i1t = llvm::LLVMInt1Type!
-               is_heap = (llvm::LLVMTypeOf(cond_val) != i1t)
+               i1t = LLVMInt1Type!
+               is_heap = (LLVMTypeOf(cond_val) != i1t)
                then_b = c.branches(0)!!
                else_b = c.branches(1)!!
                has_extractor = choice_branch_is_payload_extractor(then_b) ||
@@ -1917,10 +2240,10 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
    ti = types::typedef_ti(cg, dtype)
    niche = is_typed_mode | types::is_niche_ram_ti(cg, ti) |
       (<->, <->, ast::ValueType(Unknown))
-   i1t = llvm::LLVMInt1Type!
-   cond_kind = llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(cond_val))
+   i1t = LLVMInt1Type!
+   cond_kind = LLVMGetTypeKind(LLVMTypeOf(cond_val))
    is_unboxed = is_typed_mode && cond_kind == 10
-   is_heap = !niche.0 && llvm::LLVMTypeOf(cond_val) != i1t && cond_kind == 12
+   is_heap = !niche.0 && LLVMTypeOf(cond_val) != i1t && cond_kind == 12
    use_pay = codegen_choice_uses_payload(is_heap || is_unboxed || niche.0,
       dtype)
    pos_pay_type' = ast::ValueType(Unknown)
@@ -1958,23 +2281,23 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
    else_b = c.branches(1)!!
    t0 = types::g.tmpc
    types::g.tmpc = types::g.tmpc + 1
-   exit_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
-   then_bb = llvm::LLVMAppendBasicBlock(cg.current_fn,
+   exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+   then_bb = LLVMAppendBasicBlock(cg.current_fn,
       "choice.case0." + str::from_int(t0))
-   else_bb = llvm::LLVMAppendBasicBlock(cg.current_fn,
+   else_bb = LLVMAppendBasicBlock(cg.current_fn,
       "choice.next0." + str::from_int(t0))
    cval = niche.0
       |
-         null_c = llvm::LLVMConstNull(llvm::LLVMTypeOf(cond_val))
+         null_c = LLVMConstNull(LLVMTypeOf(cond_val))
          niche.1
-            | llvm::LLVMBuildICmp(cg.builder, 33, cond_val, null_c,
+            | LLVMBuildICmp(cg.builder, 33, cond_val, null_c,
                "niche.ne.null")
-            | llvm::LLVMBuildICmp(cg.builder, 32, cond_val, null_c,
+            | LLVMBuildICmp(cg.builder, 32, cond_val, null_c,
                "niche.eq.null")
       | stmt::codegen_cond_value(cg, cond_val, cond_type)
-   llvm::LLVMBuildCondBr(cg.builder, cval, then_bb, else_bb)
+   LLVMBuildCondBr(cg.builder, cval, then_bb, else_bb)
 
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, then_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, then_bb)
    cg.exited = <->
    // The payload is extracted lazily inside the matched branch: a unit slot
    // (e.g. the negative of "< Int | >") has a null payload pointer, and
@@ -1990,7 +2313,7 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
             |
                is_unboxed
                   |
-                     pay_raw = llvm::LLVMBuildExtractValue(cg.builder,
+                     pay_raw = LLVMBuildExtractValue(cg.builder,
                         cond_val, 1, "ram.pay")
                      convert_unboxed_pay(cg, pay_raw, pos_pay_type')
                   | Addr(0)
@@ -2029,10 +2352,10 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
    tv_fvts = cg.last_fvts
    tv_dt = cg.last_type
    tv_cfn = cg.last_closure_fn
-   t_end = llvm::LLVMGetInsertBlock(cg.builder)
+   t_end = LLVMGetInsertBlock(cg.builder)
    stmt::branch_to(cg, exit_bb)
 
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, else_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, else_bb)
    cg.exited = <->
    e_is_under = else_b.block [Var vv] (vv == "_") | <->
    pay2 = niche.0
@@ -2043,7 +2366,7 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
             |
                is_unboxed
                   |
-                     pay_raw2 = llvm::LLVMBuildExtractValue(cg.builder,
+                     pay_raw2 = LLVMBuildExtractValue(cg.builder,
                         cond_val, 1, "ram.pay")
                      convert_unboxed_pay(cg, pay_raw2, neg_pay_type')
                   | Addr(0)
@@ -2080,10 +2403,10 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
       use_pay, e_is_under)
    types::choice_branch_capture(cg)
    e_term = cg.exited
-   e_end = llvm::LLVMGetInsertBlock(cg.builder)
+   e_end = LLVMGetInsertBlock(cg.builder)
    stmt::branch_to(cg, exit_bb)
 
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    !t_term
       |
          cg.last_rt = tv_rt
@@ -2117,9 +2440,9 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
                               |
                                  res_val2 = tv.0 != Addr(0) | tv.0 | ev.0
                                  res_lt2 = res_val2 == Addr(0)
-                                    | llvm::LLVMInt64Type!
-                                    | llvm::LLVMTypeOf(res_val2)
-                                 phi = llvm::LLVMBuildPhi(cg.builder,
+                                    | LLVMInt64Type!
+                                    | LLVMTypeOf(res_val2)
+                                 phi = LLVMBuildPhi(cg.builder,
                                     res_lt2, "choice.phi")
                                  stmt::llvm_add_incoming1(cg, phi,
                                     stmt::choice_coerce(cg, tv.0, res_lt2), t_end)
@@ -2182,50 +2505,71 @@ ram_neg_rec = ti =>
 union_pay_ptr: types::Cg, Addr => Addr
 union_pay_ptr = cg, union_ptr =>
    union_ptr == Addr(0) ||
-      llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(union_ptr)) != 12
+      LLVMGetTypeKind(LLVMTypeOf(union_ptr)) != 12
       | Addr(0)
       |
-         pgep = llvm::LLVMBuildStructGEP2(cg.builder, cg.union_t,
+         pgep = LLVMBuildStructGEP2(cg.builder, cg.union_t,
             union_ptr, 1, "pay.gep")
-         llvm::LLVMBuildLoad2(cg.builder,
-            llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), pgep, "payload.ptr")
+         LLVMBuildLoad2(cg.builder,
+            LLVMPointerType(LLVMInt8Type!, 0), pgep, "payload.ptr")
 
 // A boxed Int payload's value through the null-check chain: a null box (a
 // unit slot) yields 0. The builder lands in the merge block, so the branch
 // body evaluates there.
 union_int_chain: types::Cg, Addr => Addr
 union_int_chain = cg, ppay =>
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
-   i64t = llvm::LLVMInt64Type!
-   nullbit = llvm::LLVMBuildICmp(cg.builder, 32, ppay,
-      llvm::LLVMConstNull(i8p), "pay.int.null")
-   load_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "pay.int.load")
-   null_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "pay.int.nullbb")
-   merge_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "pay.int.merge")
-   llvm::LLVMBuildCondBr(cg.builder, nullbit, null_bb, load_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, load_bb)
-   val = llvm::LLVMBuildLoad2(cg.builder, i64t, ppay, "pay.int.val")
-   llvm::LLVMBuildBr(cg.builder, merge_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, null_bb)
-   llvm::LLVMBuildBr(cg.builder, merge_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
-   phi = llvm::LLVMBuildPhi(cg.builder, i64t, "pay.int.phi")
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   i64t = LLVMInt64Type!
+   nullbit = LLVMBuildICmp(cg.builder, 32, ppay,
+      LLVMConstNull(i8p), "pay.int.null")
+   load_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.int.load")
+   null_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.int.nullbb")
+   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.int.merge")
+   LLVMBuildCondBr(cg.builder, nullbit, null_bb, load_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, load_bb)
+   val = LLVMBuildLoad2(cg.builder, i64t, ppay, "pay.int.val")
+   LLVMBuildBr(cg.builder, merge_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, null_bb)
+   LLVMBuildBr(cg.builder, merge_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
+   phi = LLVMBuildPhi(cg.builder, i64t, "pay.int.phi")
    stmt::llvm_add_incoming1(cg, phi, val, load_bb)
-   stmt::llvm_add_incoming1(cg, phi, llvm::LLVMConstInt(i64t, 0, 0), null_bb)
+   stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i64t, 0, 0), null_bb)
+   phi
+
+union_float_chain: types::Cg, Addr => Addr
+union_float_chain = cg, ppay =>
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   f64t = LLVMDoubleType!
+   nullbit = LLVMBuildICmp(cg.builder, 32, ppay,
+      LLVMConstNull(i8p), "pay.float.null")
+   load_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.float.load")
+   null_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.float.nullbb")
+   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "pay.float.merge")
+   LLVMBuildCondBr(cg.builder, nullbit, null_bb, load_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, load_bb)
+   val = LLVMBuildLoad2(cg.builder, f64t, ppay, "pay.float.val")
+   LLVMBuildBr(cg.builder, merge_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, null_bb)
+   LLVMBuildBr(cg.builder, merge_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
+   phi = LLVMBuildPhi(cg.builder, f64t, "pay.float.phi")
+   stmt::llvm_add_incoming1(cg, phi, val, load_bb)
+   stmt::llvm_add_incoming1(cg, phi, LLVMConstNull(f64t), null_bb)
    phi
 
 // Loads the active payload value of a heap union: a pointer-shaped payload is
 // the slot value itself; a scalar is boxed and loaded through.
 union_payload: types::Cg, Addr, ast::ValueType => Addr
 union_payload = cg, union_ptr, pay_type =>
-   pgep = llvm::LLVMBuildStructGEP2(cg.builder, cg.union_t, union_ptr, 1, "pay.gep")
-   pay_ptr = llvm::LLVMBuildLoad2(cg.builder, llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), pgep, "pay.ptr")
+   pgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, union_ptr, 1, "pay.gep")
+   pay_ptr = LLVMBuildLoad2(cg.builder, LLVMPointerType(LLVMInt8Type!, 0), pgep, "pay.ptr")
    is_scalar = (types::is_int_vt(pay_type) || types::is_float_vt(pay_type))
    is_scalar
       |
          types::is_float_vt(pay_type)
-            | llvm::LLVMBuildLoad2(cg.builder, llvm::LLVMDoubleType!, pay_ptr, "pay.load")
-            | llvm::LLVMBuildLoad2(cg.builder, llvm::LLVMInt64Type!, pay_ptr, "pay.load")
+            | LLVMBuildLoad2(cg.builder, LLVMDoubleType!, pay_ptr, "pay.load")
+            | LLVMBuildLoad2(cg.builder, LLVMInt64Type!, pay_ptr, "pay.load")
       | pay_ptr
 
 // Evaluates a bare branch body of a heap-ram choice: a lambda binds the
@@ -2237,9 +2581,9 @@ eval_heap_branch = cg, body, ppay, pay_type =>
       [Fn f]
          pname = f.params(0)!!
          pv = eval_heap_pay_value(cg, ppay, pay_type)
-         slot = types::hoisted_alloca(cg, llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0),
+         slot = types::hoisted_alloca(cg, LLVMPointerType(LLVMInt8Type!, 0),
             "var." + pname)
-         llvm::LLVMBuildStore(cg.builder, pv, slot)
+         LLVMBuildStore(cg.builder, pv, slot)
          rm0 = pay_type [Record] cg.last_rt | Addr(0)
          fn0 = pay_type [Record] cg.last_fnames | ast::Names()
          fv0 = pay_type [Record] cg.last_fvts | ast::VTypes()
@@ -2278,10 +2622,10 @@ eval_heap_branch = cg, body, ppay, pay_type =>
 // explicit bare payload extractor, but the branch result remains its body.
 eval_heap_branch_with_under: types::Cg, ast::Expr, Addr, ast::ValueType => (Addr, ast::ValueType)
 eval_heap_branch_with_under = cg, body, ppay, pay_type =>
-   slot = types::hoisted_alloca(cg, llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0),
+   slot = types::hoisted_alloca(cg, LLVMPointerType(LLVMInt8Type!, 0),
       "var._")
    pv = eval_heap_pay_value(cg, ppay, pay_type)
-   llvm::LLVMBuildStore(cg.builder, pv, slot)
+   LLVMBuildStore(cg.builder, pv, slot)
    rm0 = pay_type [Record] cg.last_rt | Addr(0)
    fn0 = pay_type [Record] cg.last_fnames | ast::Names()
    fv0 = pay_type [Record] cg.last_fvts | ast::VTypes()
@@ -2303,11 +2647,11 @@ ram_ti_is_heap = cg, ti =>
 load_flag_pay: types::Cg, Addr => Addr
 load_flag_pay = cg, ppay =>
    ppay == Addr(0)
-      | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0)
+      | LLVMConstInt(LLVMInt1Type!, 0, 0)
       |
-         b_ptr = llvm::LLVMBuildPointerCast(cg.builder, ppay,
-            llvm::LLVMPointerType(llvm::LLVMInt1Type!, 0), "pay.bool")
-         llvm::LLVMBuildLoad2(cg.builder, llvm::LLVMInt1Type!, b_ptr,
+         b_ptr = LLVMBuildPointerCast(cg.builder, ppay,
+            LLVMPointerType(LLVMInt1Type!, 0), "pay.bool")
+         LLVMBuildLoad2(cg.builder, LLVMInt1Type!, b_ptr,
             "pay.bool.val")
 
 is_flag_pay_vt: types::Cg, ast::ValueType => <>
@@ -2323,15 +2667,14 @@ is_flag_pay_vt = cg, pay_type =>
 // slot value itself.
 eval_heap_pay_value: types::Cg, Addr, ast::ValueType => Addr
 eval_heap_pay_value = cg, ppay, pay_type =>
-   llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(ppay)) != 12
+   LLVMGetTypeKind(LLVMTypeOf(ppay)) != 12
       | ppay
       |
          types::is_int_vt(pay_type)
             | union_int_chain(cg, ppay)
             |
                types::is_float_vt(pay_type)
-                  | llvm::LLVMBuildLoad2(cg.builder, llvm::LLVMDoubleType!,
-                     ppay, "pay.load")
+                  | union_float_chain(cg, ppay)
                   |
                      is_flag_pay_vt(cg, pay_type)
                         | load_flag_pay(cg, ppay)
@@ -2349,23 +2692,23 @@ eval_heap_under = cg, ppay, pay_type =>
          types::is_int_vt(pay_type)
             |
                slot' = types::hoisted_alloca(cg,
-                  llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), "var._")
+                  LLVMPointerType(LLVMInt8Type!, 0), "var._")
                v1 = union_int_chain(cg, ppay)
-               llvm::LLVMBuildStore(cg.builder, v1, slot')
+               LLVMBuildStore(cg.builder, v1, slot')
                v2 = union_int_chain(cg, ppay)
                (v2, pay_type)
             |
                is_flag_pay_vt(cg, pay_type)
                   |
                      slot' = types::hoisted_alloca(cg,
-                        llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), "var._")
+                        LLVMPointerType(LLVMInt8Type!, 0), "var._")
                      vf = load_flag_pay(cg, ppay)
-                     llvm::LLVMBuildStore(cg.builder, vf, slot')
+                     LLVMBuildStore(cg.builder, vf, slot')
                      (vf, pay_type)
                   |
                      slot' = types::hoisted_alloca(cg,
-                        llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), "var._")
-                     llvm::LLVMBuildStore(cg.builder, ppay, slot')
+                        LLVMPointerType(LLVMInt8Type!, 0), "var._")
+                     LLVMBuildStore(cg.builder, ppay, slot')
                      (ppay, pay_type)
 
 // '| _': yields the payload for a plain value, or aborts with the Error dump
@@ -2377,15 +2720,15 @@ codegen_error_or_yield = cg, pay_val, pay_type =>
    pay_type
       [Error]
          slot1 = types::hoisted_alloca(cg,
-            llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), "var._")
+            LLVMPointerType(LLVMInt8Type!, 0), "var._")
          slot2 = types::hoisted_alloca(cg,
-            llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), "var._")
-         llvm::LLVMBuildStore(cg.builder, pay_val, slot1)
-         llvm::LLVMBuildStore(cg.builder, pay_val, slot2)
+            LLVMPointerType(LLVMInt8Type!, 0), "var._")
+         LLVMBuildStore(cg.builder, pay_val, slot1)
+         LLVMBuildStore(cg.builder, pay_val, slot2)
          main::codegen_emit_error_panic(cg, pay_val)
          cg.exited = <+>
-         dead = llvm::LLVMAppendBasicBlock(cg.current_fn, "err.abort")
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, dead)
+         dead = LLVMAppendBasicBlock(cg.current_fn, "err.abort")
+         LLVMPositionBuilderAtEnd(cg.builder, dead)
          (Addr(0), ast::ValueType(Unknown))
       | (pay_val, pay_type)
 
@@ -2430,14 +2773,14 @@ codegen_variant_tag_match_at: types::Cg, Addr, ast::EnumSlots, ast::Names,
    Int, Int, Addr => Addr
 codegen_variant_tag_match_at = cg, tag, slots, names, i, n, m =>
    i == n
-      | m == Addr(0) | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0) | m
+      | m == Addr(0) | LLVMConstInt(LLVMInt1Type!, 0, 0) | m
       |
          label = names(i) | _ | ""
          idx = types::enum_slot_index(slots, types::decl_bare_name(label, 0))
-         eq = llvm::LLVMBuildICmp(cg.builder, 32, tag,
-            llvm::LLVMConstInt(llvm::LLVMInt64Type!, idx, 0), "tag.match")
+         eq = LLVMBuildICmp(cg.builder, 32, tag,
+            LLVMConstInt(LLVMInt64Type!, idx, 0), "tag.match")
          m2 = m == Addr(0) | eq |
-            llvm::LLVMBuildOr(cg.builder, m, eq, "tag.or")
+            LLVMBuildOr(cg.builder, m, eq, "tag.or")
          codegen_variant_tag_match_at(cg, tag, slots, names, i + 1, n, m2)
 
 codegen_eval_choice_variant_at: types::Cg, ast::ChoiceExpr, Addr, ast::EnumSlots, Addr, Int, Int, types::Addrs, ast::VTypes, types::Addrs, types::Flags, Addr => Addr
@@ -2450,20 +2793,20 @@ codegen_eval_choice_variant_at = cg, c, cond_val, slots, curr_check_bb, k, nvars
          next_c_name = "choice.next" + str::from_int(k) + "." +
             str::from_int(types::g.tmpc)
          types::g.tmpc = types::g.tmpc + 1
-         case_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, case_c_name)
-         next_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, next_c_name)
+         case_bb = LLVMAppendBasicBlock(cg.current_fn, case_c_name)
+         next_bb = LLVMAppendBasicBlock(cg.current_fn, next_c_name)
          br = c.branches(k)!!
          label = br.variant_names(0) | _ | ""
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, curr_check_bb)
-         tgep = llvm::LLVMBuildStructGEP2(cg.builder, cg.union_t, cond_val,
+         LLVMPositionBuilderAtEnd(cg.builder, curr_check_bb)
+         tgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, cond_val,
             0, "tag.gep")
-         tag = llvm::LLVMBuildLoad2(cg.builder, llvm::LLVMInt64Type!, tgep,
+         tag = LLVMBuildLoad2(cg.builder, LLVMInt64Type!, tgep,
             "tag.id")
          nv = ?br.variant_names
          match = codegen_variant_tag_match_at(cg, tag, slots,
             br.variant_names, 0, nv, Addr(0))
-         llvm::LLVMBuildCondBr(cg.builder, match, case_bb, next_bb)
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, case_bb)
+         LLVMBuildCondBr(cg.builder, match, case_bb, next_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, case_bb)
          cg.exited = <->
          ptype = types::enum_slot_payload(slots, label)
          slot_ti = types::enum_slot_ti(slots, label)
@@ -2472,7 +2815,7 @@ codegen_eval_choice_variant_at = cg, c, cond_val, slots, curr_check_bb, k, nvars
          cg.bindings = runtime::binding_truncate(cg.bindings, saved_nbindings)
          vals += bv.0
          vts += bv.1
-         bbs += llvm::LLVMGetInsertBlock(cg.builder)
+         bbs += LLVMGetInsertBlock(cg.builder)
          exits += cg.exited
          stmt::branch_to(cg, exit_bb)
          codegen_eval_choice_variant_at(cg, c, cond_val, slots, next_bb,
@@ -2492,8 +2835,8 @@ codegen_eval_choice_variant = cg, c, cond_val, cond_type, dtype =>
 codegen_eval_choice_variant_valid: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType,
    String => (Addr, ast::ValueType)
 codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
-   exit_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
-   curr_check_bb = llvm::LLVMGetInsertBlock(cg.builder)
+   exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+   curr_check_bb = LLVMGetInsertBlock(cg.builder)
    vals = types::Addrs()
    vts = ast::VTypes()
    bbs = types::Addrs()
@@ -2514,14 +2857,14 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
    types::codegen_check_enum_choice_coverage(cg, slots, c.branches)
    final_check_bb = codegen_eval_choice_variant_at(cg, c, cond_val, slots,
       curr_check_bb, 0, nvars, vals, vts, bbs, exits, exit_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, final_check_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, final_check_bb)
    last_is_bare
       |
          brd = c.branches(nb - 1)!!
-         pgep = llvm::LLVMBuildStructGEP2(cg.builder, cg.union_t, cond_val,
+         pgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, cond_val,
             1, "pay.gep")
-         pay_ptr = llvm::LLVMBuildLoad2(cg.builder,
-            llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), pgep, "payload.ptr")
+         pay_ptr = LLVMBuildLoad2(cg.builder,
+            LLVMPointerType(LLVMInt8Type!, 0), pgep, "payload.ptr")
          cg.exited = <->
          types::choice_branch_reset(cg)
          saved_nbindings = ?cg.bindings
@@ -2530,16 +2873,16 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
          types::choice_branch_capture(cg)
          vals += bv.0
          vts += bv.1
-         bbs += llvm::LLVMGetInsertBlock(cg.builder)
+         bbs += LLVMGetInsertBlock(cg.builder)
          exits += cg.exited
          stmt::branch_to(cg, exit_bb)
       |
          vals += Addr(0)
          vts += ast::ValueType(Unknown)
-         bbs += llvm::LLVMGetInsertBlock(cg.builder)
+         bbs += LLVMGetInsertBlock(cg.builder)
          exits += <+>
          stmt::branch_to(cg, exit_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    cg.discard_result
       | (Addr(0), ast::ValueType(Unit))
       |
@@ -2550,13 +2893,13 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
          res_vt = has_un | ast::ValueType(Unit) | res_vt0
          n_live = choice_count_live(exits, 0, 0)
          res_lt = res_val == Addr(0)
-            | llvm::LLVMInt64Type!
-            | llvm::LLVMTypeOf(res_val)
+            | LLVMInt64Type!
+            | LLVMTypeOf(res_val)
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
             | (Addr(0), res_vt)
             |
-               phi = llvm::LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
+               phi = LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
                codegen_add_phi_incomings_chain_at(cg, phi, res_lt, vals, bbs,
                   exits, 0, ?exits)
                (phi, res_vt)
@@ -2566,17 +2909,17 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
 eval_variant_branch: types::Cg, ast::ChoiceBranch, Addr, ast::ValueType,
    ast::TypeInfo => (Addr, ast::ValueType)
 eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
-   pgep = llvm::LLVMBuildStructGEP2(cg.builder, cg.union_t, cond_val,
+   pgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, cond_val,
       1, "pay.gep")
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
-   pay_ptr = llvm::LLVMBuildLoad2(cg.builder, i8p, pgep, "payload.ptr")
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   pay_ptr = LLVMBuildLoad2(cg.builder, i8p, pgep, "payload.ptr")
    nb = ?br.bind_vars
    nb > 0
       |
          pname = br.bind_vars(0)!!
          pv = eval_heap_pay_value(cg, pay_ptr, ptype)
          slot = types::hoisted_alloca(cg, i8p, "var." + pname)
-         llvm::LLVMBuildStore(cg.builder, pv, slot)
+         LLVMBuildStore(cg.builder, pv, slot)
          rec_ti = types::resolve_record_ti(cg, slot_ti)
          rec_info = rec_ti
             [Rec rr]
@@ -2645,7 +2988,7 @@ codegen_eval_choice = cg, c =>
          untyped_fn != ""
             |
                u_res = expr::codegen_untyped_fn_value_error(cg, untyped_fn)
-               u_res | _ | (llvm::LLVMConstInt(llvm::LLVMInt64Type!, 0, 0),
+               u_res | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0),
                   ast::ValueType(Unknown))
             | codegen_eval_choice_after_fn_values(cg, c)
 
@@ -2887,33 +3230,51 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                raw_val = vname != ""
                   |
                      types::var_slot(cg, vname)
-                        | s => llvm::LLVMBuildLoad2(cg.builder, bty, s, "bf.load")
+                        | s => LLVMBuildLoad2(cg.builder, bty, s, "bf.load")
                         | bv.0
-                  | llvm::LLVMBuildLoad2(cg.builder, bty, bv.0, "bf.load")
+                  | LLVMBuildLoad2(cg.builder, bty, bv.0, "bf.load")
                sh = bf.bit_offset > 0
-                  | llvm::LLVMBuildLShr(cg.builder, raw_val,
-                     llvm::LLVMConstInt(bty, bf.bit_offset, 0), "bf.shr")
+                  | LLVMBuildLShr(cg.builder, raw_val,
+                     LLVMConstInt(bty, bf.bit_offset, 0), "bf.shr")
                   | raw_val
                fmask = (1 .<. bf.bit_width) - 1
-               masked = llvm::LLVMBuildAnd(cg.builder, sh,
-                  llvm::LLVMConstInt(bty, fmask, 0), "bf.mask")
-               ext = llvm::LLVMBuildZExt(cg.builder, masked,
-                  llvm::LLVMInt64Type!, "bf.ext")
+               masked = LLVMBuildAnd(cg.builder, sh,
+                  LLVMConstInt(bty, fmask, 0), "bf.mask")
+               ext = LLVMBuildZExt(cg.builder, masked,
+                  LLVMInt64Type!, "bf.ext")
                (ext, ast::ValueType(Int))
             |
                types::init_error(cg, "E3017", "Unknown bitfield member '" +
                   t.field_name + "'.", t.line, t.col)
                (Addr(0), ast::ValueType(Unknown))
       |
-         fnames = vname != "" | types::var_fnames(cg, vname) | cg.last_fnames
-         rt = vname != ""
+         is_err = (bv.1 [Error]) || (vname != "" && types::var_dtype(cg, vname) == "Error")
+         fnames = is_err
+            | types::error_field_names!
             |
-               types::var_rt(cg, vname)
-                  | _
+               vname != ""
+                  | types::var_fnames(cg, vname)
+                  | cg.last_fnames
+         rt = is_err
+            | main::error_struct_type(cg)
+            |
+               vname != ""
+                  |
+                     v_rt = types::var_rt(cg, vname)
+                     v_rt | _ | cg.last_rt
                   | cg.last_rt
-            | cg.last_rt
-         fvts = vname != "" | var_fvts(cg, vname) | cg.last_fvts
-         pdt0 = vname != "" | types::var_dtype(cg, vname) | cg.last_type
+         fvts = is_err
+            | types::error_field_vts!
+            |
+               vname != ""
+                  | var_fvts(cg, vname)
+                  | cg.last_fvts
+         pdt0 = is_err
+            | "Error"
+            |
+               vname != ""
+                  | types::var_dtype(cg, vname)
+                  | cg.last_type
          parent_dtype = pdt0 != "" | pdt0 | types::typedef_name_of_rt(cg, rt)
          mi = types::member_static_index(cg, t, fnames)
          !mi.1
@@ -2935,7 +3296,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                      fgep == Addr(0)
                         | (Addr(0), ast::ValueType(Unknown))
                         |
-                           ft = llvm::LLVMStructGetTypeAtIndex(rt, idx)
+                           ft = LLVMStructGetTypeAtIndex(rt, idx)
                            fvt = member_field_vt(cg, fvts, idx, ft)
                            parent_ti = parent_dtype != ""
                               | types::typedef_ti(cg, parent_dtype)
@@ -2991,7 +3352,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                                                 | 0
                                           | 0
                                        res =
-                                          llvm::LLVMBuildLoad2(cg.builder, ft,
+                                          LLVMBuildLoad2(cg.builder, ft,
                                              fgep, "field.load")
                                        (res, fvt)
 
@@ -3028,7 +3389,7 @@ codegen_eval_member_rec_reflect = cg, t, ti =>
                         "cycle index).", t.line, t.col)
                      (Addr(0), ast::ValueType(Unknown), <+>)
                   |
-                     llvm::LLVMIsConstant(idx_v.0) == 0
+                     LLVMIsConstant(idx_v.0) == 0
                         |
                            types::init_error(cg, "E3170", "Record field index " +
                               "'T.(i)' must be a compile-time constant " +
@@ -3036,7 +3397,7 @@ codegen_eval_member_rec_reflect = cg, t, ti =>
                               t.line, t.col)
                            (Addr(0), ast::ValueType(Unknown), <+>)
                         |
-                           idx = llvm::LLVMConstIntGetZExtValue(idx_v.0)
+                           idx = LLVMConstIntGetZExtValue(idx_v.0)
                            idx < 0 || idx !< nfields
                               |
                                  types::init_error(cg, "E3171",
@@ -3074,7 +3435,7 @@ codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
                         "cycle index).", t.line, t.col)
                      (Addr(0), ast::ValueType(Unknown), <+>)
                   |
-                     llvm::LLVMIsConstant(idx_v.0) == 0
+                     LLVMIsConstant(idx_v.0) == 0
                         |
                            types::init_error(cg, "E3170", "Enum variant index " +
                               "'T.(i)' must be a compile-time constant " +
@@ -3082,7 +3443,7 @@ codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
                               t.line, t.col)
                            (Addr(0), ast::ValueType(Unknown), <+>)
                         |
-                           idx = llvm::LLVMConstIntGetZExtValue(idx_v.0)
+                           idx = LLVMConstIntGetZExtValue(idx_v.0)
                            idx < 0 || idx !< nslots
                               |
                                  types::init_error(cg, "E3171",
@@ -3163,7 +3524,7 @@ codegen_unresolved_module_member = cg, t =>
          types::has_fn_name(cg, name)
             |
                nfv = expr::codegen_named_fn_value(cg, name)
-               nfv | _ | (llvm::LLVMConstInt(llvm::LLVMInt64Type!, 0, 0),
+               nfv | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0),
                   ast::ValueType(Unknown))
             |
                ut = types::is_user_type(cg, name)
@@ -3238,24 +3599,24 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
    is_niche_pn = niche.1
    niche_vt = niche.2
    is_unboxed = (!is_niche && types::is_unboxed_ram_ti(cg, eff_ti)) ||
-      (cv.0 != Addr(0) && llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(cv.0)) == 10)
+      (cv.0 != Addr(0) && LLVMGetTypeKind(LLVMTypeOf(cv.0)) == 10)
    cval = is_niche
       |
          is_niche_pn
             |
-               llvm::LLVMBuildICmp(cg.builder, 33, cv.0,
-                  llvm::LLVMConstNull(llvm::LLVMTypeOf(cv.0)), "niche.ne.null")
+               LLVMBuildICmp(cg.builder, 33, cv.0,
+                  LLVMConstNull(LLVMTypeOf(cv.0)), "niche.ne.null")
             |
-               llvm::LLVMBuildICmp(cg.builder, 32, cv.0,
-                  llvm::LLVMConstNull(llvm::LLVMTypeOf(cv.0)), "niche.eq.null")
+               LLVMBuildICmp(cg.builder, 32, cv.0,
+                  LLVMConstNull(LLVMTypeOf(cv.0)), "niche.eq.null")
       |
          is_unboxed
-            | llvm::LLVMBuildExtractValue(cg.builder, cv.0, 0, "ram.tag")
+            | LLVMBuildExtractValue(cg.builder, cv.0, 0, "ram.tag")
             | stmt::codegen_cond_value(cg, cv.0, cv.1)
    is_ram = types::is_ram_vt(cv.1)
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
    is_heap = (is_ram && cv.0 != Addr(0) &&
-      llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(cv.0)) == 12 && !is_niche &&
+      LLVMGetTypeKind(LLVMTypeOf(cv.0)) == 12 && !is_niche &&
       !is_unboxed) || is_niche
    pay_val = is_niche | cv.0 | (is_heap | union_pay_ptr(cg, cv.0) | Addr(0))
    pos_vt = is_niche
@@ -3266,14 +3627,14 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
       | (eff_ti [Ram s] s.1.payload_type | ast::ValueType(Unknown))
    nbranches == 1
       |
-         then_bb' = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.then")
-         exit_bb' = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
-         llvm::LLVMBuildCondBr(cg.builder, cval, then_bb', exit_bb')
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, then_bb')
+         then_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.then")
+         exit_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+         LLVMBuildCondBr(cg.builder, cval, then_bb', exit_bb')
+         LLVMPositionBuilderAtEnd(cg.builder, then_bb')
          saved_vars_1 = ?cg.vars
          pv_then1 = is_unboxed
             | convert_unboxed_pay(cg,
-               llvm::LLVMBuildExtractValue(cg.builder, cv.0, 1, "ram.pay"),
+               LLVMBuildExtractValue(cg.builder, cv.0, 1, "ram.pay"),
                pos_vt)
             |
                is_heap
@@ -3285,7 +3646,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
             |
                pos_pty1 = is_unboxed | types::llvm_type_of_vt(pos_vt) | i8p
                slot_then1 = types::hoisted_alloca(cg, pos_pty1, "var._")
-               llvm::LLVMBuildStore(cg.builder, pv_then1, slot_then1)
+               LLVMBuildStore(cg.builder, pv_then1, slot_then1)
                pos_ti1 = eff_ti [Ram s] s.0.payload_record |
                   ast::TypeInfo(Prim, pos_vt)
                pos_rm1 = runtime::record_meta_from_ti(cg, pos_ti1)
@@ -3299,7 +3660,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                      |
                         p0_ty' = types::llvm_type_of_vt(pos_vt)
                         slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + pname')
-                        llvm::LLVMBuildStore(cg.builder, pv_then1, slot_p0')
+                        LLVMBuildStore(cg.builder, pv_then1, slot_p0')
                         cg.vars += types::CgVar((pname', pos_vt,
                            types::is_ptrish_vt(pos_vt), "", pos_rm1.0, pos_rm1.1,
                            slot_p0', <+>, <->, pos_fvts1, pv_then1))
@@ -3314,7 +3675,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                p0' = lam0'.0(0) | _ | ""
                p0_ty' = types::llvm_type_of_vt(pos_vt)
                slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + p0')
-               llvm::LLVMBuildStore(cg.builder, pv_then1, slot_p0')
+               LLVMBuildStore(cg.builder, pv_then1, slot_p0')
                cg.vars += types::CgVar((p0', pos_vt, types::is_ptrish_vt(pos_vt), "",
                   Addr(0), ast::Names(), slot_p0', <+>, <->,
                   ast::VTypes(), pv_then1))
@@ -3322,7 +3683,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
             | main::codegen_typed_eval(cg, b0.body)
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_1)
          stmt::branch_to(cg, exit_bb')
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
+         LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
          (Addr(0), ast::ValueType(Unit))
       |
          b1 = branches(1)!!
@@ -3334,16 +3695,16 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                types::is_unboxed_ram_ti(cg, ti)
                   | unboxed_ram_struct_t(cg)
                   | types::llvm_type_of_vt(vt)
-         then_bb' = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.then")
-         else_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.else")
-         exit_bb' = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
-         llvm::LLVMBuildCondBr(cg.builder, cval, then_bb', else_bb)
+         then_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.then")
+         else_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.else")
+         exit_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+         LLVMBuildCondBr(cg.builder, cval, then_bb', else_bb)
 
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, then_bb')
+         LLVMPositionBuilderAtEnd(cg.builder, then_bb')
          saved_vars_then = ?cg.vars
          pv_then = is_unboxed
             | convert_unboxed_pay(cg,
-               llvm::LLVMBuildExtractValue(cg.builder, cv.0, 1, "ram.pay"),
+               LLVMBuildExtractValue(cg.builder, cv.0, 1, "ram.pay"),
                pos_vt)
             |
                is_heap
@@ -3355,7 +3716,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
             |
                pos_pty = is_unboxed | types::llvm_type_of_vt(pos_vt) | i8p
                slot_then = types::hoisted_alloca(cg, pos_pty, "var._")
-               llvm::LLVMBuildStore(cg.builder, pv_then, slot_then)
+               LLVMBuildStore(cg.builder, pv_then, slot_then)
                pos_ti = eff_ti [Ram s] s.0.payload_record |
                   ast::TypeInfo(Prim, pos_vt)
                pos_rm = runtime::record_meta_from_ti(cg, pos_ti)
@@ -3368,7 +3729,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                      |
                         p0_ty' = types::llvm_type_of_vt(pos_vt)
                         slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + pname')
-                        llvm::LLVMBuildStore(cg.builder, pv_then, slot_p0')
+                        LLVMBuildStore(cg.builder, pv_then, slot_p0')
                         cg.vars += types::CgVar((pname', pos_vt,
                            types::is_ptrish_vt(pos_vt), "", pos_rm.0, pos_rm.1,
                            slot_p0', <+>, <->, pos_fvts, pv_then))
@@ -3389,7 +3750,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                            p0' = lam0'.0(0) | _ | ""
                            p0_ty' = types::llvm_type_of_vt(pos_vt)
                            slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + p0')
-                           llvm::LLVMBuildStore(cg.builder, pv_then, slot_p0')
+                           LLVMBuildStore(cg.builder, pv_then, slot_p0')
                            pos_ti0 = eff_ti [Ram s] s.0.payload_record |
                               ast::TypeInfo(Prim, pos_vt)
                            pos_rm0 = runtime::record_meta_from_ti(cg, pos_ti0)
@@ -3402,19 +3763,19 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_then)
          tv_raw = is_void
             | Addr(0)
-            | (tv.0 != Addr(0) | tv.0 | llvm::LLVMConstNull(phi_ty))
+            | (tv.0 != Addr(0) | tv.0 | LLVMConstNull(phi_ty))
          tv_val = is_void
             | Addr(0)
             | expr::coerce_phi_incoming(cg, tv_raw, tv.1, phi_ty, vt)
          then_term = stmt::block_is_terminated(cg)
-         then_end = llvm::LLVMGetInsertBlock(cg.builder)
+         then_end = LLVMGetInsertBlock(cg.builder)
          stmt::branch_to(cg, exit_bb')
 
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, else_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, else_bb)
          saved_vars_else = ?cg.vars
          pv_else = is_unboxed
             | convert_unboxed_pay(cg,
-               llvm::LLVMBuildExtractValue(cg.builder, cv.0, 1, "ram.pay"),
+               LLVMBuildExtractValue(cg.builder, cv.0, 1, "ram.pay"),
                neg_vt)
             |
                is_heap
@@ -3426,7 +3787,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
             |
                neg_pty = is_unboxed | types::llvm_type_of_vt(neg_vt) | i8p
                slot_else = types::hoisted_alloca(cg, neg_pty, "var._")
-               llvm::LLVMBuildStore(cg.builder, pv_else, slot_else)
+               LLVMBuildStore(cg.builder, pv_else, slot_else)
                neg_ti = eff_ti [Ram s] s.1.payload_record |
                   ast::TypeInfo(Prim, neg_vt)
                neg_rm = runtime::record_meta_from_ti(cg, neg_ti)
@@ -3439,7 +3800,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                      |
                         p1_ty' = types::llvm_type_of_vt(neg_vt)
                         slot_p1' = types::hoisted_alloca(cg, p1_ty', "var." + pname_e)
-                        llvm::LLVMBuildStore(cg.builder, pv_else, slot_p1')
+                        LLVMBuildStore(cg.builder, pv_else, slot_p1')
                         cg.vars += types::CgVar((pname_e, neg_vt,
                            types::is_ptrish_vt(neg_vt), "", neg_rm.0, neg_rm.1,
                            slot_p1', <+>, <->, neg_fvts, pv_else))
@@ -3462,7 +3823,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                            p1 = lam1.0(0) | _ | ""
                            p1_ty' = types::llvm_type_of_vt(neg_vt)
                            slot_p1' = types::hoisted_alloca(cg, p1_ty', "var." + p1)
-                           llvm::LLVMBuildStore(cg.builder, pv_else, slot_p1')
+                           LLVMBuildStore(cg.builder, pv_else, slot_p1')
                            neg_ti0 = cond.ti [Ram s] s.1.payload_record |
                               ast::TypeInfo(Prim, neg_vt)
                            neg_rm0 = runtime::record_meta_from_ti(cg, neg_ti0)
@@ -3475,19 +3836,19 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_else)
          ev_raw = is_void
             | Addr(0)
-            | (ev.0 != Addr(0) | ev.0 | llvm::LLVMConstNull(phi_ty))
+            | (ev.0 != Addr(0) | ev.0 | LLVMConstNull(phi_ty))
          ev_val = is_void
             | Addr(0)
             | expr::coerce_phi_incoming(cg, ev_raw, ev.1, phi_ty, vt)
          else_term = stmt::block_is_terminated(cg)
-         else_end = llvm::LLVMGetInsertBlock(cg.builder)
+         else_end = LLVMGetInsertBlock(cg.builder)
          stmt::branch_to(cg, exit_bb')
 
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
+         LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
          is_void
             | (Addr(0), ast::ValueType(Unit))
             |
-               phi = llvm::LLVMBuildPhi(cg.builder, phi_ty, "choice.res")
+               phi = LLVMBuildPhi(cg.builder, phi_ty, "choice.res")
                !then_term | stmt::llvm_add_incoming1(cg, phi, tv_val, then_end)
                !else_term | stmt::llvm_add_incoming1(cg, phi, ev_val, else_end)
                (phi, vt)
@@ -3503,22 +3864,22 @@ codegen_typed_choice_case_match = cg, cond_val, cond_vt, cve =>
          args = types::Addrs()
          args += cond_val
          pr = expr::call_named(cg, rf, args)
-         stmt::coerce_int(cg, pr.0, llvm::LLVMInt1Type!)
+         stmt::coerce_int(cg, pr.0, LLVMInt1Type!)
       |
          cval = main::codegen_typed_eval(cg, cve)
          types::is_str_vt(cond_vt)
             | stmt::codegen_string_eq(cg, cond_val, cval.0)
             |
                types::is_flag_vt(cond_vt)
-                  | stmt::coerce_int(cg, cval.0, llvm::LLVMInt1Type!)
+                  | stmt::coerce_int(cg, cval.0, LLVMInt1Type!)
                   |
                      cond_ll = cond_val != Addr(0) | cond_val |
-                        llvm::LLVMConstNull(types::llvm_type_of_vt(cond_vt))
-                     tgt_ty = llvm::LLVMTypeOf(cond_ll)
+                        LLVMConstNull(types::llvm_type_of_vt(cond_vt))
+                     tgt_ty = LLVMTypeOf(cond_ll)
                      cint = stmt::coerce_int_ext(cg, cval.0, tgt_ty,
                         types::is_unsigned_vt(cval.1))
-                     cint_safe = cint != Addr(0) | cint | llvm::LLVMConstNull(tgt_ty)
-                     llvm::LLVMBuildICmp(cg.builder, 32, cond_ll,
+                     cint_safe = cint != Addr(0) | cint | LLVMConstNull(tgt_ty)
+                     LLVMBuildICmp(cg.builder, 32, cond_ll,
                         cint_safe, "val.match")
 
 codegen_typed_choice_case_match_step: types::Cg, Addr, ast::ValueType, tast::TypedExprs,
@@ -3528,13 +3889,13 @@ codegen_typed_choice_case_match_step = cg, cond_val, cond_vt, cvals, j, ncv, acc
       |
          acc_match != Addr(0)
             | acc_match
-            | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0)
+            | LLVMConstInt(LLVMInt1Type!, 0, 0)
       |
          cve = cvals(j)!!
          m = codegen_typed_choice_case_match(cg, cond_val, cond_vt, cve)
          new_match' = m
          acc_match != Addr(0)
-            | new_match' = llvm::LLVMBuildOr(cg.builder, acc_match, m, "case.or")
+            | new_match' = LLVMBuildOr(cg.builder, acc_match, m, "case.or")
          codegen_typed_choice_case_match_step(cg, cond_val, cond_vt, cvals,
             j + 1, ncv, new_match')
 
@@ -3555,15 +3916,15 @@ codegen_typed_eval_predicate = cg, pred_opt, cond_val, cond_vt =>
                         Addr(0), <+>, <->, ast::VTypes(), cond_val))
                pv = main::codegen_typed_eval(cg, lam.1)
                cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
-               stmt::coerce_int(cg, pv.0, llvm::LLVMInt1Type!)
-            | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0)
-      | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0)
+               stmt::coerce_int(cg, pv.0, LLVMInt1Type!)
+            | LLVMConstInt(LLVMInt1Type!, 0, 0)
+      | LLVMConstInt(LLVMInt1Type!, 0, 0)
 
 codegen_typed_eval_guarded_choice: types::Cg, tast::TypedExpr, tast::TypedBranches,
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
    cv = main::codegen_typed_eval(cg, cond)
-   exit_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
+   exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
    vt = types::vt_from_ti_cg(cg, ti)
    is_void = vt [Unit]
    phi_ty = is_void
@@ -3584,38 +3945,38 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
             b_term = stmt::block_is_terminated(cg)
             !is_void && !b_term
                |
-                  bv_raw' = bv'.0 != Addr(0) | bv'.0 | llvm::LLVMConstNull(phi_ty)
+                  bv_raw' = bv'.0 != Addr(0) | bv'.0 | LLVMConstNull(phi_ty)
                   bv_val' = expr::coerce_phi_incoming(cg, bv_raw', bv'.1, phi_ty, vt)
                   incoming_vals += bv_val'
                   incoming_vts += bv'.1
-                  incoming_bbs += llvm::LLVMGetInsertBlock(cg.builder)
+                  incoming_bbs += LLVMGetInsertBlock(cg.builder)
             stmt::branch_to(cg, exit_bb)
          |
-            case_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.case")
-            next_bb = llvm::LLVMAppendBasicBlock(cg.current_fn, "choice.next")
+            case_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.case")
+            next_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.next")
             is_pred = br.kind [Predicate]
             is_var = br.kind [Variant]
             is_unboxed_c = types::is_unboxed_ram_ti(cg, cond.ti) ||
-               (cv.0 != Addr(0) && llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(cv.0)) == 10)
+               (cv.0 != Addr(0) && LLVMGetTypeKind(LLVMTypeOf(cv.0)) == 10)
             match = is_pred
                | codegen_typed_eval_predicate(cg, br.pred_fn, cv.0, cv.1)
                |
                   is_var
                      |
                         cv.0 == Addr(0)
-                           | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0)
+                           | LLVMConstInt(LLVMInt1Type!, 0, 0)
                            |
                               tag = is_unboxed_c
                                  |
-                                    tag_i1 = llvm::LLVMBuildExtractValue(
+                                    tag_i1 = LLVMBuildExtractValue(
                                        cg.builder, cv.0, 0, "tag.id.i1")
-                                    llvm::LLVMBuildZExt(cg.builder, tag_i1,
-                                       llvm::LLVMInt64Type!, "tag.id")
+                                    LLVMBuildZExt(cg.builder, tag_i1,
+                                       LLVMInt64Type!, "tag.id")
                                  |
-                                    tgep = llvm::LLVMBuildStructGEP2(cg.builder,
+                                    tgep = LLVMBuildStructGEP2(cg.builder,
                                        cg.union_t, cv.0, 0, "tag.gep")
-                                    llvm::LLVMBuildLoad2(cg.builder,
-                                       llvm::LLVMInt64Type!, tgep, "tag.id")
+                                    LLVMBuildLoad2(cg.builder,
+                                       LLVMInt64Type!, tgep, "tag.id")
                               lbl0' = br.variant_names(0) | _ | ""
                               bare_lbl0' = types::decl_bare_name(lbl0', 0)
                               slots' = enum_slots_for_ti_or_label(cg,
@@ -3626,8 +3987,8 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                      |
                         codegen_typed_choice_case_match_step(cg, cv.0, cv.1,
                            br.case_values, 0, ?br.case_values, Addr(0))
-            llvm::LLVMBuildCondBr(cg.builder, match, case_bb, next_bb)
-            llvm::LLVMPositionBuilderAtEnd(cg.builder, case_bb)
+            LLVMBuildCondBr(cg.builder, match, case_bb, next_bb)
+            LLVMPositionBuilderAtEnd(cg.builder, case_bb)
             saved_nvars = ?cg.vars
             is_var && ?br.bind_vars > 0
                |
@@ -3638,23 +3999,23 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                   ptype = types::enum_slot_payload(slots', bare_lbl0')
                   pv = is_unboxed_c
                      |
-                        pay_raw = llvm::LLVMBuildExtractValue(cg.builder,
+                        pay_raw = LLVMBuildExtractValue(cg.builder,
                            cv.0, 1, "payload.raw")
                         convert_unboxed_pay(cg, pay_raw, ptype)
                      |
                         cv.0 == Addr(0)
-                           | llvm::LLVMConstNull(types::llvm_type_of_vt(ptype))
+                           | LLVMConstNull(types::llvm_type_of_vt(ptype))
                            |
-                              pgep = llvm::LLVMBuildStructGEP2(cg.builder,
+                              pgep = LLVMBuildStructGEP2(cg.builder,
                                  cg.union_t, cv.0, 1, "pay.gep")
-                              i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!,
+                              i8p = LLVMPointerType(LLVMInt8Type!,
                                  0)
-                              pay_ptr = llvm::LLVMBuildLoad2(cg.builder, i8p,
+                              pay_ptr = LLVMBuildLoad2(cg.builder, i8p,
                                  pgep, "payload.ptr")
                               eval_heap_pay_value(cg, pay_ptr, ptype)
                   pty = types::llvm_type_of_vt(ptype)
                   slot = types::create_slot(cg, pname, pty, <+>)
-                  llvm::LLVMBuildStore(cg.builder, pv, slot)
+                  LLVMBuildStore(cg.builder, pv, slot)
                   slot_ti = types::enum_slot_ti(slots', bare_lbl0')
                   rec_ti = types::resolve_record_ti(cg, slot_ti)
                   rec_info = rec_ti
@@ -3685,22 +4046,22 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
             c_term = stmt::block_is_terminated(cg)
             !is_void && !c_term
                |
-                  bv_raw' = bv'.0 != Addr(0) | bv'.0 | llvm::LLVMConstNull(phi_ty)
+                  bv_raw' = bv'.0 != Addr(0) | bv'.0 | LLVMConstNull(phi_ty)
                   bv_val' = expr::coerce_phi_incoming(cg, bv_raw', bv'.1, phi_ty, vt)
                   incoming_vals += bv_val'
                   incoming_vts += bv'.1
-                  incoming_bbs += llvm::LLVMGetInsertBlock(cg.builder)
+                  incoming_bbs += LLVMGetInsertBlock(cg.builder)
             stmt::branch_to(cg, exit_bb)
-            llvm::LLVMPositionBuilderAtEnd(cg.builder, next_bb)
+            LLVMPositionBuilderAtEnd(cg.builder, next_bb)
    !stmt::block_is_terminated(cg)
       |
          !is_void
             |
-               incoming_vals += llvm::LLVMConstNull(phi_ty)
+               incoming_vals += LLVMConstNull(phi_ty)
                incoming_vts += vt
-               incoming_bbs += llvm::LLVMGetInsertBlock(cg.builder)
+               incoming_bbs += LLVMGetInsertBlock(cg.builder)
          stmt::branch_to(cg, exit_bb)
-   llvm::LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    is_void
       | (Addr(0), ast::ValueType(Unit))
       |
@@ -3708,7 +4069,7 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
          ninc == 0
             | (Addr(0), vt)
             |
-               phi = llvm::LLVMBuildPhi(cg.builder, phi_ty, "choice.res")
+               phi = LLVMBuildPhi(cg.builder, phi_ty, "choice.res")
                ninc @ m =>
                   stmt::llvm_add_incoming1(cg, phi, incoming_vals(m)!!,
                      incoming_bbs(m)!!)
@@ -3742,52 +4103,52 @@ codegen_typed_build_union: types::Cg, Int, <tast::TypedExpr|>, String => Addr
 codegen_typed_build_union = cg, tid, pay_opt, alloc_name =>
    ut = cg.union_t
    up = expr::codegen_call_arena_alloc(cg,
-      llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0), alloc_name)
-   tgep = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 0, "tag.gep")
-   llvm::LLVMBuildStore(cg.builder,
-      llvm::LLVMConstInt(llvm::LLVMInt64Type!, tid, 0), tgep)
-   pgep = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+      LLVMConstInt(LLVMInt64Type!, 16, 0), alloc_name)
+   tgep = LLVMBuildStructGEP2(cg.builder, ut, up, 0, "tag.gep")
+   LLVMBuildStore(cg.builder,
+      LLVMConstInt(LLVMInt64Type!, tid, 0), tgep)
+   pgep = LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
    pay_opt
       | pay_te =>
          ev = main::codegen_typed_eval(cg, pay_te)
          ev.0 == Addr(0)
             |
-               llvm::LLVMBuildStore(cg.builder, llvm::LLVMConstNull(i8p), pgep)
+               LLVMBuildStore(cg.builder, LLVMConstNull(i8p), pgep)
             |
                is_ptrish = types::is_ptrish_vt(ev.1) ||
-                  (llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(ev.0)) == 12)
+                  (LLVMGetTypeKind(LLVMTypeOf(ev.0)) == 12)
                is_ptrish
                   |
-                     ptr_val = llvm::LLVMBuildPointerCast(cg.builder, ev.0,
+                     ptr_val = LLVMBuildPointerCast(cg.builder, ev.0,
                         i8p, "pay.ptr")
-                     llvm::LLVMBuildStore(cg.builder, ptr_val, pgep)
+                     LLVMBuildStore(cg.builder, ptr_val, pgep)
                   |
                      alloc_name == "enum.alloc"
                         |
                            box' = expr::codegen_call_arena_alloc(cg,
-                              llvm::LLVMConstInt(llvm::LLVMInt64Type!, 8, 0),
+                              LLVMConstInt(LLVMInt64Type!, 8, 0),
                               "enum.pay.alloc")
-                           llvm::LLVMBuildStore(cg.builder, ev.0, box')
-                           box_ptr' = llvm::LLVMBuildPointerCast(cg.builder,
+                           LLVMBuildStore(cg.builder, ev.0, box')
+                           box_ptr' = LLVMBuildPointerCast(cg.builder,
                               box', i8p, "pay.box.ptr")
-                           llvm::LLVMBuildStore(cg.builder, box_ptr', pgep)
+                           LLVMBuildStore(cg.builder, box_ptr', pgep)
                         |
                            box' = expr::codegen_call_arena_alloc(cg,
-                              llvm::LLVMConstInt(llvm::LLVMInt64Type!, 8, 0),
+                              LLVMConstInt(LLVMInt64Type!, 8, 0),
                               "pay.alloc")
-                           llvm::LLVMBuildStore(cg.builder, ev.0, box')
-                           box_ptr' = llvm::LLVMBuildPointerCast(cg.builder,
+                           LLVMBuildStore(cg.builder, ev.0, box')
+                           box_ptr' = LLVMBuildPointerCast(cg.builder,
                               box', i8p, "pay.box.ptr")
-                           llvm::LLVMBuildStore(cg.builder, box_ptr', pgep)
+                           LLVMBuildStore(cg.builder, box_ptr', pgep)
       |
-         llvm::LLVMBuildStore(cg.builder, llvm::LLVMConstNull(i8p), pgep)
+         LLVMBuildStore(cg.builder, LLVMConstNull(i8p), pgep)
    up
 
 codegen_niche_ram_construct: types::Cg, <>, <>,
    <tast::TypedExpr|> => (Addr, ast::ValueType)
 codegen_niche_ram_construct = cg, is_pos, is_pn, pay_opt =>
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
    is_same = is_pos | is_pn | !is_pn
    is_same
       |
@@ -3795,82 +4156,82 @@ codegen_niche_ram_construct = cg, is_pos, is_pn, pay_opt =>
             | pay_te =>
                pev = main::codegen_typed_eval(cg, pay_te)
                ptr_val = pev.0 == Addr(0)
-                  | llvm::LLVMConstNull(i8p)
-                  | llvm::LLVMBuildPointerCast(cg.builder, pev.0,
+                  | LLVMConstNull(i8p)
+                  | LLVMBuildPointerCast(cg.builder, pev.0,
                      i8p, "niche.ptr")
                (ptr_val, ast::ValueType(Ram))
-            | (llvm::LLVMConstNull(i8p), ast::ValueType(Ram))
-      | (llvm::LLVMConstNull(i8p), ast::ValueType(Ram))
+            | (LLVMConstNull(i8p), ast::ValueType(Ram))
+      | (LLVMConstNull(i8p), ast::ValueType(Ram))
 
 unboxed_ram_struct_t: types::Cg => Addr
 unboxed_ram_struct_t = cg =>
-   types::struct_type2(llvm::LLVMInt1Type!, llvm::LLVMInt64Type!)
+   types::struct_type2(LLVMInt1Type!, LLVMInt64Type!)
 
 convert_unboxed_pay: types::Cg, Addr, ast::ValueType => Addr
 convert_unboxed_pay = cg, pay_raw, vt =>
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
    types::is_int_vt(vt)
       | pay_raw
       |
          types::is_float_vt(vt)
-            | llvm::LLVMBuildBitCast(cg.builder, pay_raw,
-               llvm::LLVMDoubleType!, "pay.float")
+            | LLVMBuildBitCast(cg.builder, pay_raw,
+               LLVMDoubleType!, "pay.float")
             |
                types::is_ptrish_vt(vt)
-                  | llvm::LLVMBuildIntToPtr(cg.builder, pay_raw, i8p, "pay.ptr")
+                  | LLVMBuildIntToPtr(cg.builder, pay_raw, i8p, "pay.ptr")
                   |
                      types::is_flag_vt(vt)
-                        | llvm::LLVMBuildTrunc(cg.builder, pay_raw,
-                           llvm::LLVMInt1Type!, "pay.flag")
+                        | LLVMBuildTrunc(cg.builder, pay_raw,
+                           LLVMInt1Type!, "pay.flag")
                         |
                            (vt [I32, U32, Rune])
-                              | llvm::LLVMBuildTrunc(cg.builder, pay_raw,
-                                 llvm::LLVMInt32Type!, "pay.i32")
+                              | LLVMBuildTrunc(cg.builder, pay_raw,
+                                 LLVMInt32Type!, "pay.i32")
                               |
                                  (vt [I16, U16])
-                                    | llvm::LLVMBuildTrunc(cg.builder, pay_raw,
-                                       llvm::LLVMInt16Type!, "pay.i16")
+                                    | LLVMBuildTrunc(cg.builder, pay_raw,
+                                       LLVMInt16Type!, "pay.i16")
                                     |
                                        (vt [I8, U8])
-                                          | llvm::LLVMBuildTrunc(cg.builder,
-                                             pay_raw, llvm::LLVMInt8Type!,
+                                          | LLVMBuildTrunc(cg.builder,
+                                             pay_raw, LLVMInt8Type!,
                                              "pay.i8")
-                                          | llvm::LLVMBuildIntToPtr(cg.builder,
+                                          | LLVMBuildIntToPtr(cg.builder,
                                              pay_raw, i8p, "pay.ptr")
 
 coerce_pay_to_i64: types::Cg, Addr, ast::ValueType => Addr
 coerce_pay_to_i64 = cg, v, vt =>
-   i64t = llvm::LLVMInt64Type!
+   i64t = LLVMInt64Type!
    v == Addr(0)
-      | llvm::LLVMConstInt(i64t, 0, 0)
+      | LLVMConstInt(i64t, 0, 0)
       |
-         types::is_float_vt(vt) || (llvm::LLVMTypeOf(v) == llvm::LLVMDoubleType!)
-            | llvm::LLVMBuildBitCast(cg.builder, v, i64t, "f.to.i64")
+         types::is_float_vt(vt) || (LLVMTypeOf(v) == LLVMDoubleType!)
+            | LLVMBuildBitCast(cg.builder, v, i64t, "f.to.i64")
             |
-               (llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(v)) == 12)
-                  | llvm::LLVMBuildPtrToInt(cg.builder, v, i64t, "ptr.to.i64")
+               (LLVMGetTypeKind(LLVMTypeOf(v)) == 12)
+                  | LLVMBuildPtrToInt(cg.builder, v, i64t, "ptr.to.i64")
                   |
-                     (llvm::LLVMTypeOf(v) == i64t)
+                     (LLVMTypeOf(v) == i64t)
                         | v
                         |
-                           llvm::LLVMBuildZExt(cg.builder, v, i64t,
+                           LLVMBuildZExt(cg.builder, v, i64t,
                               "zext.to.i64")
 
 convert_heap_ram_to_unboxed: types::Cg, Addr, ast::TypeInfo => Addr
 convert_heap_ram_to_unboxed = cg, cv, ti =>
-   i64t = llvm::LLVMInt64Type!
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
-   tgep = llvm::LLVMBuildStructGEP2(cg.builder, cg.union_t, cv, 0,
+   i64t = LLVMInt64Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   tgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, cv, 0,
       "ret.ram.tag.p")
-   tval = llvm::LLVMBuildLoad2(cg.builder, i64t, tgep, "ret.ram.tag")
-   eq1 = llvm::LLVMBuildICmp(cg.builder, 32, tval,
-      llvm::LLVMConstInt(i64t, 1, 0), "tag.eq.one")
-   eq2 = llvm::LLVMBuildICmp(cg.builder, 32, tval,
-      llvm::LLVMConstInt(i64t, 2, 0), "tag.eq.two")
-   is_pos = llvm::LLVMBuildOr(cg.builder, eq1, eq2, "is.pos")
-   pgep = llvm::LLVMBuildStructGEP2(cg.builder, cg.union_t, cv, 1,
+   tval = LLVMBuildLoad2(cg.builder, i64t, tgep, "ret.ram.tag")
+   eq1 = LLVMBuildICmp(cg.builder, 32, tval,
+      LLVMConstInt(i64t, 1, 0), "tag.eq.one")
+   eq2 = LLVMBuildICmp(cg.builder, 32, tval,
+      LLVMConstInt(i64t, 2, 0), "tag.eq.two")
+   is_pos = LLVMBuildOr(cg.builder, eq1, eq2, "is.pos")
+   pgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, cv, 1,
       "ret.ram.pay.p")
-   pay_ptr = llvm::LLVMBuildLoad2(cg.builder, i8p, pgep, "ret.ram.pay.ptr")
+   pay_ptr = LLVMBuildLoad2(cg.builder, i8p, pgep, "ret.ram.pay.ptr")
    real_ti = ti [TypeVar tv] types::typedef_ti(cg, tv) | ti
    pos_vt = real_ti [Ram s] s.0.payload_type | ast::ValueType(Unit)
    neg_vt = real_ti [Ram s] s.1.payload_type | ast::ValueType(Unit)
@@ -3880,16 +4241,16 @@ convert_heap_ram_to_unboxed = cg, cv, ti =>
       |
          pos_raw' = eval_heap_pay_value(cg, pay_ptr, pos_vt)
          pos_val' = coerce_pay_to_i64(cg, pos_raw', pos_vt)
-         zero_val' = llvm::LLVMConstInt(i64t, 0, 0)
-         llvm::LLVMBuildSelect(cg.builder, is_pos, pos_val', zero_val',
+         zero_val' = LLVMConstInt(i64t, 0, 0)
+         LLVMBuildSelect(cg.builder, is_pos, pos_val', zero_val',
             "ret.ram.pay")
       |
          !has_pos && has_neg
             |
                neg_raw' = eval_heap_pay_value(cg, pay_ptr, neg_vt)
                neg_val' = coerce_pay_to_i64(cg, neg_raw', neg_vt)
-               zero_val' = llvm::LLVMConstInt(i64t, 0, 0)
-               llvm::LLVMBuildSelect(cg.builder, is_pos, zero_val',
+               zero_val' = LLVMConstInt(i64t, 0, 0)
+               LLVMBuildSelect(cg.builder, is_pos, zero_val',
                   neg_val', "ret.ram.pay")
             |
                has_pos && has_neg
@@ -3898,29 +4259,29 @@ convert_heap_ram_to_unboxed = cg, cv, ti =>
                      pos_val' = coerce_pay_to_i64(cg, pos_raw', pos_vt)
                      neg_raw' = eval_heap_pay_value(cg, pay_ptr, neg_vt)
                      neg_val' = coerce_pay_to_i64(cg, neg_raw', neg_vt)
-                     llvm::LLVMBuildSelect(cg.builder, is_pos, pos_val',
+                     LLVMBuildSelect(cg.builder, is_pos, pos_val',
                         neg_val', "ret.ram.pay")
-                  | llvm::LLVMConstInt(i64t, 0, 0)
+                  | LLVMConstInt(i64t, 0, 0)
    st = unboxed_ram_struct_t(cg)
-   u0 = llvm::LLVMConstNull(st)
-   u1 = llvm::LLVMBuildInsertValue(cg.builder, u0, is_pos, 0,
+   u0 = LLVMConstNull(st)
+   u1 = LLVMBuildInsertValue(cg.builder, u0, is_pos, 0,
       "ret.ram.tag.val")
-   llvm::LLVMBuildInsertValue(cg.builder, u1, pay_i64, 1,
+   LLVMBuildInsertValue(cg.builder, u1, pay_i64, 1,
       "ret.ram.pay.val")
 
 convert_unboxed_ram_to_heap: types::Cg, Addr, ast::TypeInfo => Addr
 convert_unboxed_ram_to_heap = cg, uval, ti =>
-   tag1 = llvm::LLVMBuildExtractValue(cg.builder, uval, 0, "ram.tag")
-   tag64 = llvm::LLVMBuildZExt(cg.builder, tag1, llvm::LLVMInt64Type!,
+   tag1 = LLVMBuildExtractValue(cg.builder, uval, 0, "ram.tag")
+   tag64 = LLVMBuildZExt(cg.builder, tag1, LLVMInt64Type!,
       "ram.tid")
-   val64 = llvm::LLVMBuildExtractValue(cg.builder, uval, 1, "ram.val")
+   val64 = LLVMBuildExtractValue(cg.builder, uval, 1, "ram.val")
    ut = cg.union_t
    up = expr::codegen_call_arena_alloc(cg,
-      llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0), "ram.alloc")
-   tgep = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 0, "tag.gep")
-   llvm::LLVMBuildStore(cg.builder, tag64, tgep)
-   pgep = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+      LLVMConstInt(LLVMInt64Type!, 16, 0), "ram.alloc")
+   tgep = LLVMBuildStructGEP2(cg.builder, ut, up, 0, "tag.gep")
+   LLVMBuildStore(cg.builder, tag64, tgep)
+   pgep = LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
    real_ti = ti [TypeVar tv] types::typedef_ti(cg, tv) | ti
    pos_vt = real_ti [Ram s] s.0.payload_type | ast::ValueType(Unit)
    neg_vt = real_ti [Ram s] s.1.payload_type | ast::ValueType(Unit)
@@ -3932,18 +4293,18 @@ convert_unboxed_ram_to_heap = cg, uval, ti =>
          pay_ptr' = is_scalar'
             |
                box' = expr::codegen_call_arena_alloc(cg,
-                  llvm::LLVMConstInt(llvm::LLVMInt64Type!, 8, 0), "pay.alloc")
-               llvm::LLVMBuildStore(cg.builder, val64, box')
-               box_ptr' = llvm::LLVMBuildPointerCast(cg.builder, box', i8p,
+                  LLVMConstInt(LLVMInt64Type!, 8, 0), "pay.alloc")
+               LLVMBuildStore(cg.builder, val64, box')
+               box_ptr' = LLVMBuildPointerCast(cg.builder, box', i8p,
                   "pay.box.ptr")
-               llvm::LLVMBuildSelect(cg.builder, tag1, box_ptr',
-                  llvm::LLVMConstNull(i8p), "pay.sel")
+               LLVMBuildSelect(cg.builder, tag1, box_ptr',
+                  LLVMConstNull(i8p), "pay.sel")
             |
-               raw_ptr' = llvm::LLVMBuildIntToPtr(cg.builder, val64, i8p,
+               raw_ptr' = LLVMBuildIntToPtr(cg.builder, val64, i8p,
                   "pay.ptr")
-               llvm::LLVMBuildSelect(cg.builder, tag1, raw_ptr',
-                  llvm::LLVMConstNull(i8p), "pay.sel")
-         llvm::LLVMBuildStore(cg.builder, pay_ptr', pgep)
+               LLVMBuildSelect(cg.builder, tag1, raw_ptr',
+                  LLVMConstNull(i8p), "pay.sel")
+         LLVMBuildStore(cg.builder, pay_ptr', pgep)
       |
          !has_pos && has_neg
             |
@@ -3951,19 +4312,19 @@ convert_unboxed_ram_to_heap = cg, uval, ti =>
                pay_ptr' = is_scalar'
                   |
                      box' = expr::codegen_call_arena_alloc(cg,
-                        llvm::LLVMConstInt(llvm::LLVMInt64Type!, 8, 0),
+                        LLVMConstInt(LLVMInt64Type!, 8, 0),
                         "pay.alloc")
-                     llvm::LLVMBuildStore(cg.builder, val64, box')
-                     box_ptr' = llvm::LLVMBuildPointerCast(cg.builder, box',
+                     LLVMBuildStore(cg.builder, val64, box')
+                     box_ptr' = LLVMBuildPointerCast(cg.builder, box',
                         i8p, "pay.box.ptr")
-                     llvm::LLVMBuildSelect(cg.builder, tag1,
-                        llvm::LLVMConstNull(i8p), box_ptr', "pay.sel")
+                     LLVMBuildSelect(cg.builder, tag1,
+                        LLVMConstNull(i8p), box_ptr', "pay.sel")
                   |
-                     raw_ptr' = llvm::LLVMBuildIntToPtr(cg.builder, val64, i8p,
+                     raw_ptr' = LLVMBuildIntToPtr(cg.builder, val64, i8p,
                         "pay.ptr")
-                     llvm::LLVMBuildSelect(cg.builder, tag1,
-                        llvm::LLVMConstNull(i8p), raw_ptr', "pay.sel")
-               llvm::LLVMBuildStore(cg.builder, pay_ptr', pgep)
+                     LLVMBuildSelect(cg.builder, tag1,
+                        LLVMConstNull(i8p), raw_ptr', "pay.sel")
+               LLVMBuildStore(cg.builder, pay_ptr', pgep)
             |
                has_pos && has_neg
                   |
@@ -3975,33 +4336,33 @@ convert_unboxed_ram_to_heap = cg, uval, ti =>
                            is_s0
                               |
                                  box' = expr::codegen_call_arena_alloc(cg,
-                                    llvm::LLVMConstInt(llvm::LLVMInt64Type!,
+                                    LLVMConstInt(LLVMInt64Type!,
                                        8, 0), "pay.alloc")
-                                 llvm::LLVMBuildStore(cg.builder, val64, box')
-                                 box_ptr' = llvm::LLVMBuildPointerCast(
+                                 LLVMBuildStore(cg.builder, val64, box')
+                                 box_ptr' = LLVMBuildPointerCast(
                                     cg.builder, box', i8p, "pay.box.ptr")
-                                 llvm::LLVMBuildStore(cg.builder, box_ptr', pgep)
+                                 LLVMBuildStore(cg.builder, box_ptr', pgep)
                               |
-                                 raw_ptr' = llvm::LLVMBuildIntToPtr(cg.builder,
+                                 raw_ptr' = LLVMBuildIntToPtr(cg.builder,
                                     val64, i8p, "pay.ptr")
-                                 llvm::LLVMBuildStore(cg.builder, raw_ptr', pgep)
+                                 LLVMBuildStore(cg.builder, raw_ptr', pgep)
                         |
                            box' = expr::codegen_call_arena_alloc(cg,
-                              llvm::LLVMConstInt(llvm::LLVMInt64Type!, 8, 0),
+                              LLVMConstInt(LLVMInt64Type!, 8, 0),
                               "pay.alloc")
-                           llvm::LLVMBuildStore(cg.builder, val64, box')
-                           box_ptr' = llvm::LLVMBuildPointerCast(cg.builder,
+                           LLVMBuildStore(cg.builder, val64, box')
+                           box_ptr' = LLVMBuildPointerCast(cg.builder,
                               box', i8p, "pay.box.ptr")
-                           raw_ptr' = llvm::LLVMBuildIntToPtr(cg.builder, val64,
+                           raw_ptr' = LLVMBuildIntToPtr(cg.builder, val64,
                               i8p, "pay.ptr")
                            pay_ptr' = is_s0
-                              | llvm::LLVMBuildSelect(cg.builder, tag1,
+                              | LLVMBuildSelect(cg.builder, tag1,
                                  box_ptr', raw_ptr', "pay.sel")
-                              | llvm::LLVMBuildSelect(cg.builder, tag1,
+                              | LLVMBuildSelect(cg.builder, tag1,
                                  raw_ptr', box_ptr', "pay.sel")
-                           llvm::LLVMBuildStore(cg.builder, pay_ptr', pgep)
+                           LLVMBuildStore(cg.builder, pay_ptr', pgep)
                   |
-                     llvm::LLVMBuildStore(cg.builder, llvm::LLVMConstNull(i8p),
+                     LLVMBuildStore(cg.builder, LLVMConstNull(i8p),
                         pgep)
    up
 
@@ -4023,13 +4384,13 @@ codegen_typed_coerce_ram = cg, aev, src_ti, tgt_ti =>
                is_unboxed_tgt = types::is_unboxed_ram_ti(cg, real_ti)
                is_unboxed_tgt
                   |
-                     val_tk' = llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(aev.0))
+                     val_tk' = LLVMGetTypeKind(LLVMTypeOf(aev.0))
                      val_tk' == 12
                         | (convert_heap_ram_to_unboxed(cg, aev.0, real_ti),
                            ast::ValueType(Ram))
                         | (aev.0, ast::ValueType(Ram))
                   |
-                     val_tk' = llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(aev.0))
+                     val_tk' = LLVMGetTypeKind(LLVMTypeOf(aev.0))
                      val_tk' == 10
                         | (convert_unboxed_ram_to_heap(cg, aev.0, real_ti),
                            ast::ValueType(Ram))
@@ -4042,7 +4403,7 @@ coerce_ram_repr = cg, val, target_ti =>
       |
          real_ti = target_ti [TypeVar tv] types::typedef_ti(cg, tv) | target_ti
          is_unboxed_tgt = types::is_unboxed_ram_ti(cg, real_ti)
-         val_tk = llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(val))
+         val_tk = LLVMGetTypeKind(LLVMTypeOf(val))
          is_unboxed_tgt
             |
                val_tk == 12
@@ -4056,31 +4417,31 @@ coerce_ram_repr = cg, val, target_ti =>
 codegen_unboxed_ram_construct: types::Cg, <>, <tast::TypedExpr|>,
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_unboxed_ram_construct = cg, is_pos, pay_opt, ti =>
-   i64t = llvm::LLVMInt64Type!
+   i64t = LLVMInt64Type!
    tag = is_pos
-      | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 1, 0)
-      | llvm::LLVMConstInt(llvm::LLVMInt1Type!, 0, 0)
+      | LLVMConstInt(LLVMInt1Type!, 1, 0)
+      | LLVMConstInt(LLVMInt1Type!, 0, 0)
    pay_val = pay_opt
       | pay_te =>
          pev = main::codegen_typed_eval(cg, pay_te)
          pev.0 == Addr(0)
-            | llvm::LLVMConstInt(i64t, 0, 0)
+            | LLVMConstInt(i64t, 0, 0)
             |
                types::is_float_vt(pev.1)
-                  | llvm::LLVMBuildBitCast(cg.builder, pev.0, i64t, "f.to.i64")
+                  | LLVMBuildBitCast(cg.builder, pev.0, i64t, "f.to.i64")
                   |
-                     (llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(pev.0)) == 12)
-                        | llvm::LLVMBuildPtrToInt(cg.builder, pev.0, i64t,
+                     (LLVMGetTypeKind(LLVMTypeOf(pev.0)) == 12)
+                        | LLVMBuildPtrToInt(cg.builder, pev.0, i64t,
                            "p.to.i64")
                         |
-                           (llvm::LLVMTypeOf(pev.0) == i64t)
+                           (LLVMTypeOf(pev.0) == i64t)
                               | pev.0
-                              | llvm::LLVMBuildZExt(cg.builder, pev.0, i64t,
+                              | LLVMBuildZExt(cg.builder, pev.0, i64t,
                                  "zext.to.i64")
-      | llvm::LLVMConstInt(i64t, 0, 0)
+      | LLVMConstInt(i64t, 0, 0)
    st = unboxed_ram_struct_t(cg)
-   u0 = llvm::LLVMConstNull(st)
-   u1 = llvm::LLVMBuildInsertValue(cg.builder, u0, tag, 0, "ram.tag")
-   u2 = llvm::LLVMBuildInsertValue(cg.builder, u1, pay_val, 1, "ram.pay")
+   u0 = LLVMConstNull(st)
+   u1 = LLVMBuildInsertValue(cg.builder, u0, tag, 0, "ram.tag")
+   u2 = LLVMBuildInsertValue(cg.builder, u1, pay_val, 1, "ram.pay")
    (u2, ast::ValueType(Ram))
 

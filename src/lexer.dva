@@ -14,13 +14,12 @@
 //   closers), cycle jumps by text ("-->", "--^", "--:"; a following Int
 //   token is the jump's cycle depth), and treats every other Op as an
 //   operator keyed by its text.
+// E1006 (unknown operator run) is gone — a meaningless run reaches the
+// parser and is rejected there; E1016 (backslash) is gone — '\' is just an
+// operator character now; "-->"/"--^"/">--" and the ram/variant token kinds
+// no longer exist as kinds.
 //
-// Consequences vs src/lexer.odin, all intentional: E1006 (unknown operator
-// run) is gone — a meaningless run reaches the parser and is rejected there;
-// E1016 (backslash) is gone — '\' is just an operator character now; "-->"
-// /"--^"/">--" and the ram/variant token kinds no longer exist as kinds.
-//
-// Everything else is at parity with src/lexer.odin: the layout engine
+// Layout engine (INDENT/DEDENT, style locking, dedent bursts via a queue),
 // (INDENT/DEDENT, style locking, dedent bursts via a queue), line/col
 // tracking, // and /* */ comments, strings with the full escape set, raw
 // strings "(= ... =)", runes (emitted as decimal text), radix integers with
@@ -187,7 +186,7 @@ is_ws = c =>
 // Uniform token constructor; reads/clears the leading-ws state and records
 // whether whitespace follows the token. has_trailing_ws is meaningful only
 // for the tokens the parser inspects it on — Op, Newline (always true), and
-// the [ ] ; delimiters — matching src/lexer.odin exactly.
+// the [ ] ; delimiters.
 mktok: Lx, TokKind, Int, Int, Int, Int, String => Tok
 mktok = lx, kind, start, len, line, col, text => 
    lead = lx.lead

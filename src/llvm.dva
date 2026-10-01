@@ -1,12 +1,9 @@
-// Self-hosted LLVM C API bindings (Phase 4.1).
+// LLVM C API bindings.
 //
-// Port of src/llvm.odin's `foreign import llvm "system:LLVM-18"` block: every
-// binding the self-hosted codegen needs to emit IR through the LLVM 18 C API.
-// Type mapping from the Odin decls: LLVM*Ref/rawptr/^T -> Addr, cstring ->
-// String, c.int/c.uint/c.ulonglong/c.char -> Int, c.double -> Float. The
-// compiler processes this module when building codegen_ffi.dva;
-// the emitted object's LLVM symbol references resolve against the harness
-// binary's libLLVM-18 link. Uses are module-qualified: llvm::LLVMBuildAdd(...).
+// LLVM 18 C API bindings needed to emit IR.
+// Type mapping: LLVM*Ref/rawptr/^T -> Addr, cstring ->
+// String, c.int/c.uint/c.ulonglong/c.char -> Int, c.double -> Float.
+// binary's libLLVM-18 link.
 
 #foreign "LLVM-18"
    LLVMModuleCreateWithName: (ModuleID: String) => Addr

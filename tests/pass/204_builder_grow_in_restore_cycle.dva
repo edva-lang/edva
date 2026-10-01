@@ -2,7 +2,7 @@
 // allocates (a string concat → per-iteration arena restore scope). The growth
 // buffers used to be reaped by the restore and overwritten, corrupting the
 // accumulation (prints "ab" instead of the accumulated content). Growth in a
-// restore scope now malloc's the new buffer (src/codegen.odin).
+// restore scope now malloc's the new buffer.
 f = bs =>
    out = {2}
    ?bs @ i =>

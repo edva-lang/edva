@@ -1,34 +1,22 @@
 // Nested cycle-escapes: "CYCLE >-- BRANCH" containing another
 // "CYCLE >-- BRANCH", including cycle-jump operators that target the
 // outer cycle from inside the inner one.
-//
-//   - "-->" (plain) breaks only the innermost cycle; the escape branch of
-//     the inner construct is triggered, but the outer cycle and its escape
-//     are unaffected.
-//   - "-->2" (level 2) breaks the outer cycle from inside the inner one,
-//     triggering the *outer* escape's branch.
-//   - "--^" (continue) never triggers any branch.
-//
-// Note on syntax: "i [2]" is the equality pattern (≡ "i [== 2]"), and
-// "5 @" is the range sugar (≡ "0..5 @"). The "| 0" inside the cycle bodies
-// is each body's own choice expression (conditional-jump idiom), unrelated
-// to the ">--" escape suffixes.
 
 print_int $ 1000
 
 // Plain "-->" breaks only the inner cycle. For each i, the inner cycle runs
 // j=0,1 then "-->" fires, returning the inner branch 7. i=0,1,2 each run to
-// completion; outer cycle finishes with no break, so outer escape returns 0.
+// completion; outer cycle finishes with no break, so outer escape returns <-->.
 r1 = 3 @ i =>
         print_int $ (i * 10)
         3 @ j =>
               print_int $ (i * 10 + j)
-              j [1] --> | 0
+              j [1] -->
         >--
             7
 >--
    0
-print_int $ r1
+print_int $ (r1 | _ | 0)
 
 print_int $ 2000
 
@@ -38,28 +26,28 @@ r2 = 3 @ i =>
         print_int $ (i * 10)
         3 @ j =>
               print_int $ (i * 10 + j)
-              j [1] -->2 | 0
+              j [1] -->2
         >--
             0
 >--
    99
-print_int $ r2
+print_int $ (r2 | _ | 0)
 
 print_int $ 3000
 
 // "--^2" (level 2 continue) continues the outer cycle from inside the inner
 // one: skips the rest of the outer body (nothing after the inner escape) and
-// advances the outer loop. No branch ever fires; result 0.
+// advances the outer loop. No branch ever fires; result <-->.
 r3 = 3 @ i =>
         print_int $ (i * 10)
         3 @ j =>
               print_int $ (i * 10 + j)
-              j [1] --^2 | 0
+              j [1] --^2
         >--
             0
 >--
    99
-print_int $ r3
+print_int $ (r3 | _ | 0)
 
 print_int $ 4000
 
@@ -71,13 +59,13 @@ r4 = 2 @ i =>
               print_int $ (i * 10)
               2 @ k =>
                     print_int $ (i * 100 + j * 10 + k)
-                    k [1] -->3 | 0
+                    k [1] -->3
               >--
                   0
         >--
             0
 >--
    999
-print_int $ r4
+print_int $ (r4 | _ | 0)
 
 print_int $ 5000

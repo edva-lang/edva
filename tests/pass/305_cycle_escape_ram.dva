@@ -1,0 +1,19 @@
+found = 5 @ i =>
+   i [3] -->
+>-- 99
+
+found
+   | v =>
+      print $ "found positive"
+      print_int $ v
+   | print $ "not found"
+
+not_found = 5 @ i =>
+   i [10] -->
+>-- 99
+
+not_found
+   | v =>
+      print $ "found positive"
+      print_int $ v
+   | print $ "not found"

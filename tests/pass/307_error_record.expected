@@ -1,0 +1,12 @@
+unit step ok
+caught error:
+operation failed
+42
+worker.dva
+15
+8
+101
+202
+str unit step ok
+caught str:
+string failure

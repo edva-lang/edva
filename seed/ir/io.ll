@@ -903,6 +903,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len80, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data83, ptr %str.build.data.gep, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load79, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load79, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load79, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   br label %choice.exit21
 }
 
@@ -1270,6 +1276,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len137, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data140, ptr %str.build.data.gep, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load136, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load136, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load136, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   br label %choice.exit135
 }
 
@@ -1423,8 +1435,8 @@ choice.else:                                      ; preds = %entry
   br i1 %ovf, label %str_overflow_abort, label %b.buf.len2
 
 choice.exit:                                      ; preds = %choice.exit205, %choice.then
-  %choice.res255 = phi ptr [ null, %choice.then ], [ %choice.res254, %choice.exit205 ]
-  ret ptr %choice.res255
+  %choice.res258 = phi ptr [ null, %choice.then ], [ %choice.res257, %choice.exit205 ]
+  ret ptr %choice.res258
 
 b.buf.len2:                                       ; preds = %str_overflow_abort, %choice.else
   %arena.cur3 = call ptr @dva_arena_current()
@@ -1828,7 +1840,7 @@ choice.else204:                                   ; preds = %loop.exit.2
   br i1 %cmptmp215, label %choice.then216, label %choice.else217
 
 choice.exit205:                                   ; preds = %choice.exit218, %b.freeze.done
-  %choice.res254 = phi ptr [ %builder.freeze, %b.freeze.done ], [ %choice.res253, %choice.exit218 ]
+  %choice.res257 = phi ptr [ %builder.freeze, %b.freeze.done ], [ %choice.res256, %choice.exit218 ]
   br label %choice.exit
 
 b.freeze.check:                                   ; preds = %choice.then203
@@ -1863,6 +1875,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len207, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data210, ptr %str.build.data.gep, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load206, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load206, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load206, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   br label %choice.exit205
 
 choice.then216:                                   ; preds = %choice.else204
@@ -1881,7 +1899,7 @@ choice.else217:                                   ; preds = %choice.else204
   br label %choice.exit218
 
 choice.exit218:                                   ; preds = %choice.else217, %b.freeze.done230
-  %choice.res253 = phi ptr [ %builder.freeze250, %b.freeze.done230 ], [ null, %choice.else217 ]
+  %choice.res256 = phi ptr [ %builder.freeze250, %b.freeze.done230 ], [ null, %choice.else217 ]
   br label %choice.exit205
 
 b.freeze.check228:                                ; preds = %choice.then216
@@ -1916,6 +1934,12 @@ b.freeze.done230:                                 ; preds = %b.freeze.copy229, %
   store i64 %b.freeze.len221, ptr %str.build.len.gep251, align 8
   %str.build.data.gep252 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze250, i32 0, i32 1
   store ptr %b.freeze.data248, ptr %str.build.data.gep252, align 8
+  %b.freeze.rst.len253 = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load219, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len253, align 8
+  %b.freeze.rst.data254 = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load219, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data254, align 8
+  %b.freeze.rst.cap255 = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load219, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap255, align 8
   br label %choice.exit218
 }
 

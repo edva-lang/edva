@@ -1,0 +1,7 @@
+x = 1
+s64 = 64
+s65 = 65
+print_int $ x .<. s64
+print_int $ x .<. s65
+print_int $ 8 .>. s64
+print_int $ 8 .>. s65

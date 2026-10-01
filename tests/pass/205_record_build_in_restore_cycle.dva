@@ -2,7 +2,7 @@
 // escaping growable array. The per-iteration arena restore used to reap the
 // record (only the array's growth buffer survived, 4e69f39), so reading the
 // element back gave garbage. ALL arena allocations inside a restore scope now
-// malloc (src/codegen.odin codegen_call_arena_alloc), so the value survives.
+// malloc, so the value survives.
 
 #use "str"
 

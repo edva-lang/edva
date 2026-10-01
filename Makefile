@@ -64,7 +64,7 @@ gen-tokens:
 	nu tools/gen_tokens.nu
 
 gen-operators:
-	@echo "Generating operator tables from process/spec/operators.yaml..."
+	@echo "Generating operator tables from operators.yaml..."
 	nu tools/opgen/main.nu
 
 # --- Fixed-Point Verification ------------------------------------------------

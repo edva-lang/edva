@@ -10,6 +10,7 @@ target triple = "x86_64-pc-linux-gnu"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
+@"var.ast::cell_var_names" = external global ptr
 @stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"show::#print", ptr null }
@@ -1081,8 +1082,25 @@ str_overflow_abort164:                            ; preds = %concat.sum.len158
 choice.case173:                                   ; preds = %choice.next70
   %pay.gep178 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %payload.ptr179 = load ptr, ptr %pay.gep178, align 8
-  %pay.load = load double, ptr %payload.ptr179, align 8
-  store double %pay.load, ptr %var.f, align 8
+  %pay.float.null = icmp eq ptr %payload.ptr179, null
+  br i1 %pay.float.null, label %pay.float.nullbb, label %pay.float.load
+
+choice.next174:                                   ; preds = %choice.next70
+  %tag.gep272 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
+  %tag.id273 = load i64, ptr %tag.gep272, align 8
+  %tag.match274 = icmp eq i64 %tag.id273, 2
+  br i1 %tag.match274, label %choice.case270, label %choice.next271
+
+pay.float.load:                                   ; preds = %choice.case173
+  %pay.float.val = load double, ptr %payload.ptr179, align 8
+  br label %pay.float.merge
+
+pay.float.nullbb:                                 ; preds = %choice.case173
+  br label %pay.float.merge
+
+pay.float.merge:                                  ; preds = %pay.float.nullbb, %pay.float.load
+  %pay.float.phi = phi double [ %pay.float.val, %pay.float.load ], [ 0.000000e+00, %pay.float.nullbb ]
+  store double %pay.float.phi, ptr %var.f, align 8
   %var.load180 = load double, ptr %var.f, align 8
   %call.res181 = call ptr @"str::from_float"(double %var.load180)
   %concat.lhs182 = load i64, ptr @str.3.struct, align 8
@@ -1091,20 +1109,14 @@ choice.case173:                                   ; preds = %choice.next70
   %str.immortal185 = icmp eq i64 %str.tag184, 0
   br i1 %str.immortal185, label %str_ok187, label %str_gen_check186
 
-choice.next174:                                   ; preds = %choice.next70
-  %tag.gep272 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
-  %tag.id273 = load i64, ptr %tag.gep272, align 8
-  %tag.match274 = icmp eq i64 %tag.id273, 2
-  br i1 %tag.match274, label %choice.case270, label %choice.next271
-
-str_gen_check186:                                 ; preds = %choice.case173
+str_gen_check186:                                 ; preds = %pay.float.merge
   %arena.gen189 = call ptr @dva_arena_current()
   %arena.gen190 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen189, i32 0, i32 4
   %arena.gen191 = load i64, ptr %arena.gen190, align 8
   %str.tag.match192 = icmp eq i64 %str.tag184, %arena.gen191
   br i1 %str.tag.match192, label %str_ok187, label %str_stale188
 
-str_ok187:                                        ; preds = %str_stale188, %str_gen_check186, %choice.case173
+str_ok187:                                        ; preds = %str_stale188, %str_gen_check186, %pay.float.merge
   %concat.lhs193 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.3.struct, i32 0, i32 1), align 8
   %concat.rhs194 = getelementptr inbounds { i64, ptr }, ptr %call.res181, i32 0, i32 0
   %concat.rhs195 = load i64, ptr %concat.rhs194, align 8
@@ -9464,6 +9476,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len197, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data200, ptr %str.build.data.gep, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load196, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load196, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load196, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -10151,6 +10169,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len164, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data167, ptr %str.build.data.gep, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load163, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load163, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load163, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -11762,6 +11786,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len329, ptr %str.build.len.gep334, align 8
   %str.build.data.gep335 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data332, ptr %str.build.data.gep335, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load328, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load328, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load328, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -12370,6 +12400,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len228, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data231, ptr %str.build.data.gep, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load227, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load227, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load227, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -13046,6 +13082,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len162, ptr %str.build.len.gep167, align 8
   %str.build.data.gep168 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data165, ptr %str.build.data.gep168, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load161, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load161, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load161, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -13569,6 +13611,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len166, ptr %str.build.len.gep171, align 8
   %str.build.data.gep172 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data169, ptr %str.build.data.gep172, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load165, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load165, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load165, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -15800,8 +15848,25 @@ str_overflow_abort1241:                           ; preds = %concat.sum.len1235
 choice.case1250:                                  ; preds = %choice.next1107
   %pay.gep1255 = getelementptr inbounds { i64, ptr }, ptr %var.load1, i32 0, i32 1
   %payload.ptr1256 = load ptr, ptr %pay.gep1255, align 8
-  %pay.load = load double, ptr %payload.ptr1256, align 8
-  store double %pay.load, ptr %var.f, align 8
+  %pay.float.null = icmp eq ptr %payload.ptr1256, null
+  br i1 %pay.float.null, label %pay.float.nullbb, label %pay.float.load
+
+choice.next1251:                                  ; preds = %choice.next1107
+  %tag.gep1396 = getelementptr inbounds { i64, ptr }, ptr %var.load1, i32 0, i32 0
+  %tag.id1397 = load i64, ptr %tag.gep1396, align 8
+  %tag.match1398 = icmp eq i64 %tag.id1397, 2
+  br i1 %tag.match1398, label %choice.case1394, label %choice.next1395
+
+pay.float.load:                                   ; preds = %choice.case1250
+  %pay.float.val = load double, ptr %payload.ptr1256, align 8
+  br label %pay.float.merge
+
+pay.float.nullbb:                                 ; preds = %choice.case1250
+  br label %pay.float.merge
+
+pay.float.merge:                                  ; preds = %pay.float.nullbb, %pay.float.load
+  %pay.float.phi = phi double [ %pay.float.val, %pay.float.load ], [ 0.000000e+00, %pay.float.nullbb ]
+  store double %pay.float.phi, ptr %var.f, align 8
   %var.load1257 = load ptr, ptr %var.pad, align 8
   %concat.lhs1258 = getelementptr inbounds { i64, ptr }, ptr %var.load1257, i32 0, i32 0
   %concat.lhs1259 = load i64, ptr %concat.lhs1258, align 8
@@ -15810,20 +15875,14 @@ choice.case1250:                                  ; preds = %choice.next1107
   %str.immortal1262 = icmp eq i64 %str.tag1261, 0
   br i1 %str.immortal1262, label %str_ok1264, label %str_gen_check1263
 
-choice.next1251:                                  ; preds = %choice.next1107
-  %tag.gep1396 = getelementptr inbounds { i64, ptr }, ptr %var.load1, i32 0, i32 0
-  %tag.id1397 = load i64, ptr %tag.gep1396, align 8
-  %tag.match1398 = icmp eq i64 %tag.id1397, 2
-  br i1 %tag.match1398, label %choice.case1394, label %choice.next1395
-
-str_gen_check1263:                                ; preds = %choice.case1250
+str_gen_check1263:                                ; preds = %pay.float.merge
   %arena.gen1266 = call ptr @dva_arena_current()
   %arena.gen1267 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1266, i32 0, i32 4
   %arena.gen1268 = load i64, ptr %arena.gen1267, align 8
   %str.tag.match1269 = icmp eq i64 %str.tag1261, %arena.gen1268
   br i1 %str.tag.match1269, label %str_ok1264, label %str_stale1265
 
-str_ok1264:                                       ; preds = %str_stale1265, %str_gen_check1263, %choice.case1250
+str_ok1264:                                       ; preds = %str_stale1265, %str_gen_check1263, %pay.float.merge
   %concat.lhs1270 = getelementptr inbounds { i64, ptr }, ptr %var.load1257, i32 0, i32 1
   %concat.lhs1271 = load ptr, ptr %concat.lhs1270, align 8
   %concat.rhs1272 = load i64, ptr @str.3.struct, align 8
@@ -18921,6 +18980,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len472, ptr %str.build.len.gep477, align 8
   %str.build.data.gep478 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data475, ptr %str.build.data.gep478, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load471, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load471, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load471, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -19344,8 +19409,25 @@ str_overflow_abort156:                            ; preds = %concat.sum.len150
 choice.case165:                                   ; preds = %choice.next
   %pay.gep170 = getelementptr inbounds { i64, ptr }, ptr %fld.load27, i32 0, i32 1
   %payload.ptr171 = load ptr, ptr %pay.gep170, align 8
-  %pay.load = load double, ptr %payload.ptr171, align 8
-  store double %pay.load, ptr %var.f, align 8
+  %pay.float.null = icmp eq ptr %payload.ptr171, null
+  br i1 %pay.float.null, label %pay.float.nullbb, label %pay.float.load
+
+choice.next166:                                   ; preds = %choice.next
+  %tag.gep311 = getelementptr inbounds { i64, ptr }, ptr %fld.load27, i32 0, i32 0
+  %tag.id312 = load i64, ptr %tag.gep311, align 8
+  %tag.match313 = icmp eq i64 %tag.id312, 2
+  br i1 %tag.match313, label %choice.case309, label %choice.next310
+
+pay.float.load:                                   ; preds = %choice.case165
+  %pay.float.val = load double, ptr %payload.ptr171, align 8
+  br label %pay.float.merge
+
+pay.float.nullbb:                                 ; preds = %choice.case165
+  br label %pay.float.merge
+
+pay.float.merge:                                  ; preds = %pay.float.nullbb, %pay.float.load
+  %pay.float.phi = phi double [ %pay.float.val, %pay.float.load ], [ 0.000000e+00, %pay.float.nullbb ]
+  store double %pay.float.phi, ptr %var.f, align 8
   %var.load172 = load double, ptr %var.f, align 8
   %call.res173 = call ptr @"str::from_float"(double %var.load172)
   %concat.lhs174 = load i64, ptr @str.115.struct, align 8
@@ -19354,20 +19436,14 @@ choice.case165:                                   ; preds = %choice.next
   %str.immortal177 = icmp eq i64 %str.tag176, 0
   br i1 %str.immortal177, label %str_ok179, label %str_gen_check178
 
-choice.next166:                                   ; preds = %choice.next
-  %tag.gep311 = getelementptr inbounds { i64, ptr }, ptr %fld.load27, i32 0, i32 0
-  %tag.id312 = load i64, ptr %tag.gep311, align 8
-  %tag.match313 = icmp eq i64 %tag.id312, 2
-  br i1 %tag.match313, label %choice.case309, label %choice.next310
-
-str_gen_check178:                                 ; preds = %choice.case165
+str_gen_check178:                                 ; preds = %pay.float.merge
   %arena.gen181 = call ptr @dva_arena_current()
   %arena.gen182 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen181, i32 0, i32 4
   %arena.gen183 = load i64, ptr %arena.gen182, align 8
   %str.tag.match184 = icmp eq i64 %str.tag176, %arena.gen183
   br i1 %str.tag.match184, label %str_ok179, label %str_stale180
 
-str_ok179:                                        ; preds = %str_stale180, %str_gen_check178, %choice.case165
+str_ok179:                                        ; preds = %str_stale180, %str_gen_check178, %pay.float.merge
   %concat.lhs185 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.115.struct, i32 0, i32 1), align 8
   %concat.rhs186 = getelementptr inbounds { i64, ptr }, ptr %call.res173, i32 0, i32 0
   %concat.rhs187 = load i64, ptr %concat.rhs186, align 8
@@ -28910,6 +28986,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len166, ptr %str.build.len.gep171, align 8
   %str.build.data.gep172 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data169, ptr %str.build.data.gep172, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load165, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load165, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load165, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -29698,6 +29780,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len322, ptr %str.build.len.gep327, align 8
   %str.build.data.gep328 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data325, ptr %str.build.data.gep328, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load321, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load321, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load321, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -30222,6 +30310,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len168, ptr %str.build.len.gep173, align 8
   %str.build.data.gep174 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data171, ptr %str.build.data.gep174, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load167, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load167, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load167, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 
@@ -33567,8 +33661,25 @@ str_overflow_abort1885:                           ; preds = %concat.sum.len1879
 choice.case1894:                                  ; preds = %choice.next1704
   %pay.gep1899 = getelementptr inbounds { i64, ptr }, ptr %fld.load168, i32 0, i32 1
   %payload.ptr1900 = load ptr, ptr %pay.gep1899, align 8
-  %pay.load = load double, ptr %payload.ptr1900, align 8
-  store double %pay.load, ptr %var.f, align 8
+  %pay.float.null = icmp eq ptr %payload.ptr1900, null
+  br i1 %pay.float.null, label %pay.float.nullbb, label %pay.float.load
+
+choice.next1895:                                  ; preds = %choice.next1704
+  %tag.gep2087 = getelementptr inbounds { i64, ptr }, ptr %fld.load168, i32 0, i32 0
+  %tag.id2088 = load i64, ptr %tag.gep2087, align 8
+  %tag.match2089 = icmp eq i64 %tag.id2088, 2
+  br i1 %tag.match2089, label %choice.case2085, label %choice.next2086
+
+pay.float.load:                                   ; preds = %choice.case1894
+  %pay.float.val = load double, ptr %payload.ptr1900, align 8
+  br label %pay.float.merge
+
+pay.float.nullbb:                                 ; preds = %choice.case1894
+  br label %pay.float.merge
+
+pay.float.merge:                                  ; preds = %pay.float.nullbb, %pay.float.load
+  %pay.float.phi = phi double [ %pay.float.val, %pay.float.load ], [ 0.000000e+00, %pay.float.nullbb ]
+  store double %pay.float.phi, ptr %var.f, align 8
   %var.load1901 = load ptr, ptr %var.pad, align 8
   %concat.lhs1902 = getelementptr inbounds { i64, ptr }, ptr %var.load1901, i32 0, i32 0
   %concat.lhs1903 = load i64, ptr %concat.lhs1902, align 8
@@ -33577,20 +33688,14 @@ choice.case1894:                                  ; preds = %choice.next1704
   %str.immortal1906 = icmp eq i64 %str.tag1905, 0
   br i1 %str.immortal1906, label %str_ok1908, label %str_gen_check1907
 
-choice.next1895:                                  ; preds = %choice.next1704
-  %tag.gep2087 = getelementptr inbounds { i64, ptr }, ptr %fld.load168, i32 0, i32 0
-  %tag.id2088 = load i64, ptr %tag.gep2087, align 8
-  %tag.match2089 = icmp eq i64 %tag.id2088, 2
-  br i1 %tag.match2089, label %choice.case2085, label %choice.next2086
-
-str_gen_check1907:                                ; preds = %choice.case1894
+str_gen_check1907:                                ; preds = %pay.float.merge
   %arena.gen1910 = call ptr @dva_arena_current()
   %arena.gen1911 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1910, i32 0, i32 4
   %arena.gen1912 = load i64, ptr %arena.gen1911, align 8
   %str.tag.match1913 = icmp eq i64 %str.tag1905, %arena.gen1912
   br i1 %str.tag.match1913, label %str_ok1908, label %str_stale1909
 
-str_ok1908:                                       ; preds = %str_stale1909, %str_gen_check1907, %choice.case1894
+str_ok1908:                                       ; preds = %str_stale1909, %str_gen_check1907, %pay.float.merge
   %concat.lhs1914 = getelementptr inbounds { i64, ptr }, ptr %var.load1901, i32 0, i32 1
   %concat.lhs1915 = load ptr, ptr %concat.lhs1914, align 8
   %concat.rhs1916 = load i64, ptr @str.115.struct, align 8
@@ -42641,6 +42746,12 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 %b.freeze.len529, ptr %str.build.len.gep534, align 8
   %str.build.data.gep535 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
   store ptr %b.freeze.data532, ptr %str.build.data.gep535, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load528, i32 0, i32 0
+  store i64 0, ptr %b.freeze.rst.len, align 8
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load528, i32 0, i32 1
+  store ptr null, ptr %b.freeze.rst.data, align 8
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load528, i32 0, i32 2
+  store i64 0, ptr %b.freeze.rst.cap, align 8
   ret ptr %builder.freeze
 }
 

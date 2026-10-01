@@ -62,11 +62,11 @@ print $ "done empty"
 
 // 5. Break and escape
 r = xs @ x =>
-   x == 20 | --> | 0
+   x == 20 | -->
 >--
    777
 
-print_int $ r
+print_int $ (r | _ | 0)
 
 // 6. Continue
 xs @ x, i =>

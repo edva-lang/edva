@@ -1,0 +1,661 @@
+# Dva operator table — single source of truth
+#
+# This file is the ONE place the operator precedence and semantics are
+# declared. It feeds, via `nu tools/opgen/main.nu` (run by build.sh; checked by
+# run_tests.sh --check):
+#   - the compiler       -> src/operators.dva (the operators module:
+#                           BinOpInfo + bin_info, used by src/parser.dva)
+#   - the docs           -> the §1.6 operators/precedence table in GRAMMAR.md
+#
+# Conventions:
+#   tiers[].assoc  : left | right   (a tier's operators share the tier's assoc)
+#   tiers[].lbp/rbp: binding powers (tier_number * 10). rbp < lbp on a
+#                    right-assoc tier.
+#   tiers[].result : what the Pratt loop stamps on the Binary node a tier
+#                    builds: int | comparison | like-lhs | feed | null
+#   operators[].kind     : the master BinaryOp enum label, or null if the
+#                          operator is not a Pratt-loop binary operator
+#                          (dedicated parse functions own it instead).
+#   operators[].kind_self: the selfhost ast::BinaryOp label, or null.
+#   same_line is a TIER property (the comparison tier only chains on one
+#   source line); all operators in that tier inherit it.
+#   Ram constants (<+> <-> <++> <--> <>), the payload closers (+> ->), the
+#   lambda arrow (=>), and the #-directives are NOT operators; see the
+#   `non_operators` block.
+
+tiers:
+  - number: 1
+    const: CYCLE
+    name: cycle
+    parse_fn: parser_parse_cycle
+    assoc: left
+    lbp: 10
+    rbp: 20
+    result: null
+    same_line: false
+  - number: 2
+    const: SEQUENCE
+    name: sequence
+    parse_fn: parser_parse_sequence
+    assoc: left
+    lbp: 20
+    rbp: 30
+    result: null
+    same_line: false
+  - number: 3
+    const: APPLY
+    name: apply
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: right
+    lbp: 30
+    rbp: 30
+    result: null
+    same_line: false
+  - number: 4
+    const: FEED
+    name: feed
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 40
+    rbp: 50
+    result: int
+    same_line: false
+  - number: 5
+    const: CHOICE
+    name: choice
+    parse_fn: parser_parse_choice
+    assoc: left
+    lbp: 50
+    rbp: 60
+    result: null
+    same_line: false
+  - number: 6
+    const: ASSIGN
+    name: assignment
+    parse_fn: parser_parse_primary_atom
+    assoc: right
+    lbp: 60
+    rbp: 50
+    result: null
+    same_line: false
+  - number: 7
+    const: RANGE
+    name: range
+    parse_fn: parser_parse_range
+    assoc: left
+    lbp: 70
+    rbp: 80
+    result: null
+    same_line: false
+  - number: 8
+    const: OR
+    name: logical or
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 80
+    rbp: 90
+    result: like-lhs
+    same_line: false
+  - number: 9
+    const: AND
+    name: logical and
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 90
+    rbp: 100
+    result: like-lhs
+    same_line: false
+  - number: 10
+    const: BITOR
+    name: bitwise or
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 100
+    rbp: 110
+    result: int
+    same_line: false
+  - number: 11
+    const: BITAND
+    name: bitwise and
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 110
+    rbp: 120
+    result: int
+    same_line: false
+  - number: 12
+    const: CMP
+    name: comparison
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 120
+    rbp: 130
+    result: comparison
+    same_line: true
+  - number: 13
+    const: SHIFT
+    name: shift
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 130
+    rbp: 140
+    result: int
+    same_line: false
+  - number: 14
+    const: ADD
+    name: addition
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 140
+    rbp: 150
+    result: int
+    same_line: false
+  - number: 15
+    const: MUL
+    name: multiplication
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 150
+    rbp: 160
+    result: int
+    same_line: false
+  - number: 16
+    const: UNARY
+    name: unary prefix
+    parse_fn: parser_parse_primary_atom
+    assoc: right
+    lbp: 160
+    rbp: 180
+    result: null
+    same_line: false
+  - number: 17
+    const: POSTFIX
+    name: postfix / apply
+    parse_fn: parser_parse_primary
+    assoc: left
+    lbp: 170
+    rbp: 180
+    result: null
+    same_line: false
+  - number: 18
+    const: PRIMARY
+    name: primary
+    parse_fn: parser_parse_primary_atom
+    assoc: left
+    lbp: 180
+    rbp: 180
+    result: null
+    same_line: false
+
+operators:
+  # ---- cycle (tier 1) -----------------------------------------------------
+  - symbol: "@"
+    tier: cycle
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "Iterable (range, Int, array, slice, String)"
+    result: "() statement, or < T | > with >-- escape"
+    desc: "cycle: iterate an iterable, binding each element to the body (an inline fn, a fn value, or an implicit _/_i block). --^ continues, --> breaks; an integer suffix targets an outer cycle."
+  - symbol: "@@"
+    tier: cycle
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "String"
+    result: "() statement, or < T | > with >-- escape"
+    desc: "codepoint cycle: iterate Unicode codepoints in a String, binding (rune) or (rune, byte_offset) to the body."
+  - symbol: ">--"
+    tier: cycle
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "cycle"
+    result: "< T | > (<+ branch value +> on break, <--> on completion)"
+    desc: "cycle escape: 'cycle >-- branch'. Turns a cycle into an expression returning < T | >: <+ branch value +> if a --> fires, or <--> on normal completion."
+  - symbol: "-->"
+    tier: cycle
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "cycle body"
+    result: "—"
+    desc: "cycle break: jump out of the innermost enclosing @ cycle; -->N breaks the Nth."
+  - symbol: "--^"
+    tier: cycle
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "cycle body"
+    result: "—"
+    desc: "cycle continue: jump to the next iteration of the innermost enclosing @ cycle; --^N continues the Nth."
+
+  # ---- sequence (tier 2) --------------------------------------------------
+  - symbol: ";"
+    tier: sequence
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "expr, expr"
+    result: "the last expression"
+    desc: "sequence: evaluate left then right; the value is the last expression."
+
+  # ---- choice (tier 3) ----------------------------------------------------
+  - symbol: "|"
+    tier: choice
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "ram, branch"
+    result: "matched slot's payload / catch-all value / .Unassignable"
+    desc: "choice branch (ram polarity test for the first branch; trailing catch-all otherwise). A choice is a scrutinee applied to a match-function of (guard, action) pairs."
+  - symbol: "[pattern]"
+    tier: choice
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "scrutinee, pattern"
+    result: "matched branch's value"
+    desc: "choice guard: a comma OR-list of values (compared by equality), a predicate fn (T => Flag), or an uppercase variant label (optionally binding the payload). Guarded branches chain adjacently."
+  - symbol: "!|"
+    tier: choice
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "ram, branch"
+    result: "the second branch's value"
+    desc: "skip-first choice sugar: X !| Y == X | (void) | Y; the void first slot matches and yields nothing, then Y parses as a plain '|' branch."
+
+  # ---- assignment (tier 4) ------------------------------------------------
+  - symbol: "="
+    tier: assignment
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "name, expr"
+    result: "—"
+    desc: "binding and assignment: binds a fresh local (immutable by default, rebindable with trailing prime 'x''); writes a field or index."
+  - symbol: ":="
+    tier: assignment
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "name, expr"
+    result: "—"
+    desc: "legacy walrus assignment: retired in user code in favor of = (and primed 'x'')."
+  - symbol: "+="
+    tier: assignment
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "Builder, byte/String (also record-element / global forms)"
+    result: "—"
+    desc: "compound in-place append: Builder += c mutates the buffer; a String RHS appends the whole string; a String-concat RHS is a peephole appending each operand directly."
+  - symbol: "::="
+    tier: assignment
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "global name, expr"
+    result: "—"
+    desc: "legacy global mutation: writes the module/global binding, bypassing any function-local shadow; the target must already exist (E3123). New code should prefer marked global declarations (::name)."
+
+  # ---- range (tier 5) -----------------------------------------------------
+  - symbol: ".."
+    tier: range
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "[expr]..[expr]"
+    result: "a Range for cycles / views / slices"
+    desc: "range (half-open, 0-based): a..b iterates a..b-1 in a cycle; s(a..b) is a String view (clamped, relative negative offsets); r(a..b) is a slice."
+
+  # ---- apply (tier 6) -----------------------------------------------------
+  - symbol: "$"
+    tier: apply
+    kind: Apply
+    kind_self: Apply
+    assoc: right
+    operands: "fn, arg"
+    result: "call result (f $ a == f(a))"
+    desc: "infix apply: f $ a == f(a). The loosest binary tier, right-assoc: f $ g $ x == f $ (g $ x). Its single argument is one expression."
+  - symbol: "$:"
+    tier: apply
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "fn/call, block"
+    result: "call result (f $: block == f(block_record))"
+    desc: "block-feed / trailing block attachment: attaches an indented block of expressions as a record argument to the preceding call/function (e.g. vbox(spacing: 12) $: child1 \\n child2), or passes a trailing callback directly."
+
+  # ---- logical or / and (tiers 7-8) ---------------------------------------
+  - symbol: "||"
+    tier: logical or
+    kind: LogicalOr
+    kind_self: Or
+    assoc: left
+    operands: "ram, ram | truthiness, truthiness"
+    result: "Ramification (winner-derived layout) or a bare Flag"
+    desc: "short-circuit logical OR. Heap rams only: stops when the first operand is positive and returns the winner intact; the positive result slot must match on both operands and the negative slot comes from the RHS (E3089 otherwise). Flags only combine with Flags. On non-ram truthiness: a bare Flag."
+  - symbol: "&&"
+    tier: logical and
+    kind: LogicalAnd
+    kind_self: And
+    assoc: left
+    operands: "ram, ram | truthiness, truthiness"
+    result: "Ramification (winner-derived layout) or a bare Flag"
+    desc: "short-circuit logical AND. Heap rams only: stops when the first operand is negative and returns the winner intact; the positive slot comes from the RHS and the negative result slot must match on both operands (E3089 otherwise). Flags only combine with Flags. On non-ram truthiness: a bare Flag."
+
+  # ---- bitwise or / and (tiers 9-10) --------------------------------------
+  - symbol: ".|."
+    tier: bitwise or
+    kind: BitOr
+    kind_self: BitOr
+    assoc: left
+    operands: "integerish, integerish"
+    result: "integerish"
+    desc: "bitwise OR. Integerish operands only (Int, Rune, i8..u64); floats/Strings/rams are E3057/E3058."
+  - symbol: ".&."
+    tier: bitwise and
+    kind: BitAnd
+    kind_self: BitAnd
+    assoc: left
+    operands: "integerish, integerish"
+    result: "integerish"
+    desc: "bitwise AND. Integerish operands only; floats/Strings/rams are rejected."
+
+  # ---- comparison (tier 11, same-line) ------------------------------------
+  - symbol: "<"
+    tier: comparison
+    kind: Less
+    kind_self: Lt
+    assoc: left
+    operands: "numeric, numeric"
+    result: "Ramification (bare Flag)"
+    desc: "less-than. Rams and enums have no ordering (E3127)."
+  - symbol: ">"
+    tier: comparison
+    kind: Greater
+    kind_self: Gt
+    assoc: left
+    operands: "numeric, numeric"
+    result: "Ramification (bare Flag)"
+    desc: "greater-than. Rams and enums have no ordering (E3127)."
+  - symbol: "=="
+    tier: comparison
+    kind: Equals
+    kind_self: Eq
+    assoc: left
+    operands: "numeric, numeric | String, String | Builder, Builder | enum, enum"
+    result: "Ramification (bare Flag)"
+    desc: "equality: numeric value equality; String content equality (length short-circuit then memcmp); Builder pointer identity; two ENUM values compare their variant TAG (payload ignored). Non-enum rams stay E3027."
+  - symbol: "!="
+    tier: comparison
+    kind: NotEqual
+    kind_self: NotEq
+    assoc: left
+    operands: "numeric, numeric | String, String | Builder, Builder | enum, enum"
+    result: "Ramification (bare Flag)"
+    desc: "inequality: the complement of == (unsigned operands use the unsigned NE predicate); on two enums, the complement of tag equality."
+  - symbol: "!<"
+    tier: comparison
+    kind: NotLess
+    kind_self: NotLt
+    assoc: left
+    operands: "numeric, numeric"
+    result: "Ramification (bare Flag)"
+    desc: "not-less-than (numeric)."
+  - symbol: "!>"
+    tier: comparison
+    kind: NotGreater
+    kind_self: NotGt
+    assoc: left
+    operands: "numeric, numeric"
+    result: "Ramification (bare Flag)"
+    desc: "not-greater-than (numeric)."
+
+  # ---- shift (tier 12) ----------------------------------------------------
+  - symbol: ".<."
+    tier: shift
+    kind: Shl
+    kind_self: Shl
+    assoc: left
+    operands: "integerish, integerish (count)"
+    result: "integerish"
+    desc: "zero-fill (logical) left shift. The count is masked to operand width - 1 (wrapping modulo width)."
+  - symbol: ".>."
+    tier: shift
+    kind: Shr
+    kind_self: Shr
+    assoc: left
+    operands: "integerish, integerish (count)"
+    result: "integerish"
+    desc: "zero-fill (logical) right shift. The count is masked to operand width - 1 (wrapping modulo width)."
+
+  # ---- addition / feed (tier 13) ------------------------------------------
+  - symbol: "+"
+    tier: addition
+    kind: Add
+    kind_self: Add
+    assoc: left
+    operands: "numeric, numeric | Rune, Int | String, String | String, byte | Builder, byte | Builder, String | Address, Int"
+    result: "numeric | String | Builder | Address"
+    desc: "addition: numeric add (wider float wins; Rune is i64-backed), String concat (new buffer), String+byte append (E4008 out of range), Builder+byte pure push (E4007), Builder+String pure append, Address+Int pointer offset. No arithmetic on Strings (E3065)."
+  - symbol: "-"
+    tier: addition
+    kind: Sub
+    kind_self: Sub
+    assoc: left
+    operands: "numeric, numeric | Address, Int"
+    result: "numeric | Address"
+    desc: "subtraction (numeric); Address-Int pointer offset. Unary -x desugars to 0 - x."
+  - symbol: "$>"
+    tier: feed
+    kind: Feed
+    kind_self: Feed
+    assoc: left
+    operands: "lhs, fn | lhs, TypeName"
+    result: "fn(lhs) / coercion result"
+    desc: "feed / reverse application: lhs $> fn == fn(lhs); $> TypeName == TypeName(lhs). Shares the addition tier (left-assoc): grabs a preceding +/- but only a multiplication-tier operand on its right."
+  - symbol: "$>>"
+    tier: feed
+    kind: Bind
+    kind_self: Bind
+    assoc: left
+    operands: "RamPP/RamPN, fn"
+    result: "Ramification (the continuation's monad)"
+    desc: "monadic bind over a ramification (RamPP/RamPN only; E3091 otherwise). A negative lhs propagates (its payload for RamPP, its unit for RamPN). The continuation receives the positive payload."
+
+  # ---- multiplication (tier 14) -------------------------------------------
+  - symbol: "*"
+    tier: multiplication
+    kind: Mul
+    kind_self: Mul
+    assoc: left
+    operands: "numeric, numeric"
+    result: "numeric"
+    desc: "multiplication (numeric)."
+  - symbol: "/"
+    tier: multiplication
+    kind: Div
+    kind_self: Div
+    assoc: left
+    operands: "numeric, numeric"
+    result: "numeric"
+    desc: "division (numeric)."
+  - symbol: "%"
+    tier: multiplication
+    kind: Mod
+    kind_self: Mod
+    assoc: left
+    operands: "numeric, numeric"
+    result: "numeric"
+    desc: "modulo (numeric)."
+
+  # ---- unary prefix (tier 15) ---------------------------------------------
+  - symbol: "!"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "Flag"
+    result: "Flag"
+    desc: "negates a Flag (<>). Other rams are rejected (E3008)."
+  - symbol: "+"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "Builder (no trailing space: +b)"
+    result: "String"
+    desc: "freezes a Builder into a String in-place. '+ 2' with a space stays the addition section."
+  - symbol: "&"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "Builder | String (no trailing space: &b, &s)"
+    result: "Addr"
+    desc: "the writable buffer address of a Builder (&b), and the String data pointer (&s); for FFI read targets."
+  - symbol: "++"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "String | Slice | Record | Array"
+    result: "deep copy (fresh buffer); scalars are a reference no-op"
+    desc: "deep copy of a String / Slice / Record / Array."
+  - symbol: ".!."
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "integerish"
+    result: "integerish"
+    desc: "bitwise NOT. Integerish operands only."
+  - symbol: "~~"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "Record field | Array element | Var"
+    result: "(get: () => T, set: T => ())"
+    desc: "two-way state binding: desugars ~~target into a 2-field record of closures (get = !=> ..., set = _v => ...) capturing the target container evaluated once."
+  - symbol: "?"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "String | Builder | Array | Map | Record | Slice | Rune"
+    result: "Int"
+    desc: "length/count: ?s/?b byte length, ?a/?m element/entry count, ?rec/?sl record/slice count, ?r UTF-8 encoded byte width (1 to 4). No mutation, no freeze."
+  - symbol: "??"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "String"
+    result: "Int"
+    desc: "string codepoint count: number of UTF-8 runes in a string."
+  - symbol: "-x"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "Int | Float"
+    result: "the negated value"
+    desc: "unary minus desugars to 0 - x."
+  - symbol: "#size"
+    tier: unary prefix
+    kind: null
+    kind_self: null
+    assoc: right
+    operands: "a type name"
+    result: "Int constant"
+    desc: "compile-time: the size of a type in bytes."
+
+  # ---- postfix (tier 16) --------------------------------------------------
+  - symbol: "call ()"
+    tier: postfix / apply
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "fn, args | TypeName, expr | collection, index/range"
+    result: "the callee's result / coercion / element"
+    desc: "call, type coercion (T(x)), and indexed/range access: f(a, b), a(i) (a ram-indexed read yielding < elem | Error >), s(a..b) (String view), r(a..b) (slice)."
+  - symbol: "."
+    tier: postfix / apply
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "record, field"
+    result: "field value"
+    desc: "field access: record.field. Strings/Builders have no member access."
+  - symbol: "::"
+    tier: postfix / apply
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "module, name | enum, label"
+    result: "module binding / enum variant"
+    desc: "module access (module::name), enum-label qualification (Enum::Label), marked global declarations (::name), and the legacy global-mutation operator (::=)."
+  - symbol: ": cast"
+    tier: postfix / apply
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "expr, TypeName"
+    result: "the coerced value"
+    desc: "postfix type cast."
+  - symbol: "{N}"
+    tier: postfix / apply
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "expr, Int literal"
+    result: "a record of N copies"
+    desc: "postfix repetition: expr {N} is a record of N copies of expr; a {N} group splices flat inside a record literal."
+  - symbol: "@[...]"
+    tier: postfix / apply
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "Address [, T]"
+    result: "bare pointer / typed volatile load / store"
+    desc: "@[addr] is a bare pointer; @[addr T] is a volatile typed load; @[addr] = v stores at v's own width."
+  - symbol: "!!"
+    tier: postfix / apply
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "RamPP <A | B> | RamPN <A | >"
+    result: "A (positive payload)"
+    desc: "postfix unwrap: yields positive payload and aborts on negative slot (poisonous Error panic). Sugar for 'x | _ | _'."
+  - symbol: "--!"
+    tier: postfix / apply
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "RamPP <A | B> | RamPN <A | > | RamNP < | B>"
+    result: "A (positive payload) or Unit ()"
+    desc: "postfix propagate: yields positive payload (or unit for RamNP) inline, or early-returns negative ramification from enclosing function."
+
+  # ---- primary (tier 17) --------------------------------------------------
+  - symbol: "primary"
+    tier: primary
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "—"
+    result: "a literal / identifier / group"
+    desc: "literals, identifiers, () groups, [] arrays, {expr} Builder literals, operator sections, cycle jumps."
+
+non_operators:
+  - symbol: "=>"
+    note: "the function arrow — a function, no other meaning; not an operator."
+  - symbol: "<+> <-> <++> <--> <>"
+    note: "ramification constants, not operators (§2.12)."
+  - symbol: "+> ->"
+    note: "ramification payload closers (never a bare >), distinct lexer tokens."
+  - symbol: "#use #type #foreign #private #export #spawn #join #pragma #!"
+    note: "directives triggered by a leading #, not bare reserved words."

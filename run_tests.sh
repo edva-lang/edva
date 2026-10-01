@@ -27,7 +27,7 @@ fi
 echo ""
 echo -e "${BOLD}Checking operator tables are in sync (operators.yaml)...${NC}"
 if ! nu tools/opgen/main.nu --check; then
-    echo -e "${RED}Operator tables are out of sync with process/spec/operators.yaml — run 'nu tools/opgen/main.nu'.${NC}"
+    echo -e "${RED}Operator tables are out of sync with operators.yaml — run 'nu tools/opgen/main.nu'.${NC}"
     exit 1
 fi
 
@@ -359,10 +359,7 @@ echo -e "${BOLD}=========================================${NC}"
 echo -e "${BOLD}    SELFHOST DIFFERENTIAL HARNESSES      ${NC}"
 echo -e "${BOLD}=========================================${NC}"
 
-# The differential harnesses (lexer / parser / analyze) verify the selfhost
-# dva components against the native Odin ones byte-for-byte. They run only by
-# hand otherwise; wiring them in hardens every CI run against the decay the
-# selfhost port is most exposed to (a native change the port didn't mirror).
+# The regression harnesses verify the compiler components.
 HARNESS_OK=1
 for spec in "driver_tests:./test_driver.sh"; do
     name="${spec%%:*}"

@@ -1,7 +1,7 @@
-// selfhost/parser.dva — the parser, ported from src/parser.odin.
+// src/parser.dva — the parser.
 //
-// Consumes lexer::Tok from selfhost/lexer.dva and builds ast::Expr /
-// ast::TypeInfo from selfhost/ast.dva. This is a faithful port of the Pratt
+// Consumes lexer::Tok from lexer.dva and builds ast::Expr /
+// ast::TypeInfo from ast.dva.
 // core: parser_parse_expr_bp (the table-driven binary loop) and the primary /
 // unary atom layer. Choice, assignment, lambda, record/map, call/member,
 // function/type declaration, and the sequence/range/cycle tiers port next.
@@ -304,8 +304,7 @@ parse_choice = p =>
 // following '[guard]'/'|'. The choice binds the WHOLE preceding expression
 // (looser than every binary operator), so "text [a] || text [b]" is
 // "((text [a]) || text) [b]" — operating on a choice requires grouping
-// ("(text [a]) || (text [b])"). Mirrors parser_choice_resume_after_*
-// continuation in src/parser.odin.
+// ("(text [a]) || (text [b])").
 choice_resume: Parser, ast::Expr => <ast::Expr|>
 choice_resume = p, lhs =>
    choice_cont(p, lhs)
@@ -638,8 +637,16 @@ dotted_to_expr = s =>
             field_str, <->, ast::Expr(Var, ""), 0, 0))
          ast::Expr(Member, me)
 
+mark_lvalue_cell: ast::Expr => ()
+mark_lvalue_cell = e =>
+   e
+      [Var v] ast::cell_var_add(v)
+      [Member m] mark_lvalue_cell(m.target)
+      | 0
+
 atom_binding_var: Parser, String => <ast::Expr|>
 atom_binding_var = p, name =>
+   ast::cell_var_add(name)
    get_fn = ast::Expr(Fn, (ast::Names(), ast::Names(), ast::Expr(Var, name)))
    val_var = ast::Expr(Var, "_v")
    is_mut = name_is_primed(name)
@@ -751,6 +758,7 @@ atom_binding_call = p, c =>
 
 atom_binding_target: Parser, ast::Expr => <ast::Expr|>
 atom_binding_target = p, target =>
+   mark_lvalue_cell(target)
    target
       [Member m]
          m.is_module_access
@@ -3917,7 +3925,6 @@ guard_peek_is_indent = lx, tok =>
 // Whether a guard's branch is EMPTY (no body follows): a binary operator, a
 // '|' / '[' branch separator, or a terminator (')', ',', ';', EOF, dedent).
 // On a newline, peeks ahead: if an INDENT follows, a branch body exists.
-// Mirrors parser_choice_guard_is_empty in src/parser.odin.
 choice_guard_is_empty: Parser => <>
 choice_guard_is_empty = p =>
    tok_is_nl(p.curr)

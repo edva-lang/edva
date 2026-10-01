@@ -10,6 +10,7 @@ target triple = "x86_64-pc-linux-gnu"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
+@"var.ast::cell_var_names" = external global ptr
 @str.0 = internal unnamed_addr constant [2 x i8] c"$\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.0 }
 @stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"

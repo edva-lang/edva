@@ -160,9 +160,7 @@
    // --- ordering ---
 
    // Bytewise lexicographic three-way: -1 (a < b), 0 (a == b), 1 (a > b).
-   // memcmp-style — matches the native lexer's sort key order, so the
-   // self-hosted compiler's deterministic-emission passes agree with the Odin
-   // one. The shared prefix is skipped, then the first differing byte decides;
+   // memcmp-style: the shared prefix is skipped, then the first differing byte decides;
    // otherwise the shorter string is the smaller.
    cmp: String, String => Int
    cmp = a, b =>

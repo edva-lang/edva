@@ -1,0 +1,10 @@
+#type Action <
+   Do((Int => Int))
+   Idle
+>
+
+inc: Int => Int
+inc = x => x + 1
+a = Action(Do, inc)
+b = Action(Idle)
+res = a == b

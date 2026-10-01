@@ -912,10 +912,11 @@ annotate_cycle = ctx, env, c, esc_opt =>
             | annotate_expr(ctx, env, c.body_fn)
    esc_opt
       | esc_te =>
-         ti = unify::type_info_from_utype(ctx, esc_te.ut)
-         lay = layout::compute_layout(ctx, esc_te.ut)
+         ram_ut = unify::ram_pn(esc_te.ut)
+         ti = unify::type_info_from_utype(ctx, ram_ut)
+         lay = layout::compute_layout(ctx, ram_ut)
          tast::mk_typed_cycle(iter_te, body_te, <+ esc_te ->, c.is_rune,
-            esc_te.ut, ti, lay, 0, 0)
+            ram_ut, ti, lay, 0, 0)
       |
          ut = unify::prim_unit()
          ti = unify::type_info_from_utype(ctx, ut)
@@ -1015,6 +1016,22 @@ member_field_ti = env, ti, name =>
                   res' = <+ ast::TypeInfo(Prim, b.backing_type) ->
                   -->
          res'
+      [Prim p]
+         is_err = p [Error]
+         is_err
+            |
+               name
+                  ["code", "line", "col"] <+ ast::TypeInfo(Prim, ast::ValueType(Int)) ->
+                  ["msg", "file"] <+ ast::TypeInfo(Prim, ast::ValueType(Str)) ->
+                  ["context"]
+                     flds = ast::FieldTypes()
+                     flds += ast::RecordFieldType(("", ast::ValueType(Int),
+                        ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
+                     flds += ast::RecordFieldType(("", ast::ValueType(Int),
+                        ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
+                     <+ ast::TypeInfo(Rec, (flds, <->, <->, ast::ValueType(Record), 2, <->)) ->
+                  | <-->
+            | <-->
       | <-->
 
 // --- Annotate Expressions --------------------------------------------------
@@ -1712,10 +1729,11 @@ annotate_expr = ctx, env, expr =>
             |
                esc_te = annotate_expr(ctx, env, ce.branch)
                cyc_te = annotate_expr(ctx, env, ce.cycle)
-               ti = unify::type_info_from_utype(ctx, esc_te.ut)
-               lay = layout::compute_layout(ctx, esc_te.ut)
+               ram_ut = unify::ram_pn(esc_te.ut)
+               ti = unify::type_info_from_utype(ctx, ram_ut)
+               lay = layout::compute_layout(ctx, ram_ut)
                tast::mk_typed_cycle(cyc_te, tast::mk_lit_unit(0, 0),
-                  <+ esc_te ->, <->, esc_te.ut, ti, lay, 0, 0)
+                  <+ esc_te ->, <->, ram_ut, ti, lay, 0, 0)
       [CycleJump cj]
          tast::mk_typed_cycle_jump(cj.is_break, cj.level, 0, 0)
       [Copy cp]
@@ -1996,31 +2014,23 @@ annotate_unary_op = ctx, env, op, t =>
                            c = unify::canon(ctx, t)
                            c
                               [Ram r]
-                                 !r.pos.has_payload
+                                 r_np = !r_ret.neg.has_payload
+                                 o_np = !r.neg.has_payload
+                                 compat_neg = (r_np && o_np) ||
+                                    (!r_np && !o_np &&
+                                       unify::unify(ctx,
+                                          r_ret.neg.ut, r.neg.ut))
+                                 !compat_neg
                                     |
-                                       unify::add_error(ctx, 3091,
-                                          "Operand of '--!' must have " +
-                                          "a positive payload")
+                                       unify::add_error(ctx, 3173,
+                                          "Cannot propagate " +
+                                          "ramification: incompatible " +
+                                          "ramification shape.")
                                        unify::prim_unknown()
-                                    |
-                                       r_np = !r_ret.neg.has_payload
-                                       o_np = !r.neg.has_payload
-                                       compat_neg = (r_np && o_np) ||
-                                          (!r_np && !o_np &&
-                                             unify::unify(ctx,
-                                                r_ret.neg.ut, r.neg.ut))
-                                       !compat_neg
-                                          |
-                                             unify::add_error(ctx, 3173,
-                                                "Cannot propagate " +
-                                                "ramification: incompatible " +
-                                                "ramification shape.")
-                                             unify::prim_unknown()
-                                          | r.pos.ut
+                                    | (r.pos.has_payload | r.pos.ut | unify::prim_unit!)
                               |
                                  unify::add_error(ctx, 3091,
-                                    "Operand of '--!' must be a " +
-                                    "RamPP or RamPN ramification")
+                                    "Operand of '--!' must be a ramification")
                                  unify::prim_unknown()
                         |
                            unify::add_error(ctx, 3173,
@@ -2032,15 +2042,10 @@ annotate_unary_op = ctx, env, op, t =>
                      c = unify::canon(ctx, t)
                      c
                         [Ram r]
-                           r.pos.has_payload
-                              | r.pos.ut
-                              |
-                                 unify::add_error(ctx, 3091,
-                                    "Operand of '--!' must have a positive payload")
-                                 unify::prim_unknown()
+                           r.pos.has_payload | r.pos.ut | unify::prim_unit!
                         |
                            unify::add_error(ctx, 3091,
-                              "Operand of '--!' must be a RamPP or RamPN ramification")
+                              "Operand of '--!' must be a ramification")
                            unify::prim_unknown()
 
 
@@ -2065,6 +2070,43 @@ is_str_record = ctx, u =>
          n > 0 | is_str_record_fields(ctx, flds, 0, n) | <->
       | <->
 
+rec_fields_has_fn: unify::Ctx, unify::UFields, Int, Int, ast::Names => <>
+rec_fields_has_fn = ctx, flds, i, n, visited =>
+   i == n
+      | <->
+      |
+         f = flds(i) | _ | unify::UField(("", unify::UType(None)))
+         ut_has_fn(ctx, f.ut, visited)
+            | <+>
+            | rec_fields_has_fn(ctx, flds, i + 1, n, visited)
+
+enum_variants_has_fn: unify::Ctx, unify::UEnumVariants, Int, Int, ast::Names => <>
+enum_variants_has_fn = ctx, vars, i, n, visited =>
+   i == n
+      | <->
+      |
+         v = vars(i) | _ | unify::UEnumVariant(("", <->, unify::UType(None)))
+         v.has_payload && ut_has_fn(ctx, v.payload_type, visited)
+            | <+>
+            | enum_variants_has_fn(ctx, vars, i + 1, n, visited)
+
+ut_has_fn: unify::Ctx, unify::UType, ast::Names => <>
+ut_has_fn = ctx, ut, visited =>
+   c = unify::canon(ctx, ut)
+   c
+      [Fn _] <+>
+      [Rec flds] rec_fields_has_fn(ctx, flds, 0, ?flds, visited)
+      [Array a] ut_has_fn(ctx, a.elem, visited)
+      [Slice s] ut_has_fn(ctx, s, visited)
+      [Enum e]
+         has_name_in(visited, e.name)
+            | <->
+            |
+               vis' = visited
+               e.name != "" | (vis' += e.name) | 0
+               enum_variants_has_fn(ctx, e.variants, 0, ?e.variants, vis')
+      | <->
+
 unify_cmp_op: unify::Ctx, ast::BinaryOp, unify::UType,
    unify::UType => unify::UType
 unify_cmp_op = ctx, op, t1, t2 =>
@@ -2074,7 +2116,15 @@ unify_cmp_op = ctx, op, t1, t2 =>
        (is_str_record(ctx, t1) && is_str_ut(ctx, t2)))
    is_str_tuple
       | unify::prim_flag()
-      | unify_cmp(ctx, t1, t2)
+      |
+         has_fn = is_eq_neq &&
+            (ut_has_fn(ctx, t1, ast::Names()) || ut_has_fn(ctx, t2, ast::Names()))
+         has_fn
+            |
+               unify::add_error(ctx, 3084,
+                  "Type containing function does not support equality")
+               unify::prim_flag()
+            | unify_cmp(ctx, t1, t2)
 
 annotate_bin_op: unify::Ctx, ast::BinaryOp, unify::UType,
    unify::UType => unify::UType

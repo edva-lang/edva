@@ -1,5 +1,5 @@
 // lib.dva — a dva module compiled with --no-main and linked into a host
-// program (C or Odin). The #export'd functions become bare C symbols; global
+// program (C). The #export'd functions become bare C symbols; global
 // state initializes via a llvm.global_ctors constructor.
 #use str
 

@@ -5,11 +5,12 @@
 b1' = {32}
 mem::set(&b1', 67, 4)
 ?b1' = 4
-print $ +b1'
 
 b2' = {32}
 mem::copy(&b2', &b1', 4)
 ?b2' = 4
+
+print $ +b1'
 print $ +b2'
 
 b3' = {32}

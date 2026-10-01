@@ -1,7 +1,4 @@
-# Token-kind ordinals: single source of truth for the Odin `TokenType` enum
-# (src/ast.odin) and the dva `TokKind` enum (selfhost/lexer.dva). The line
-# order IS the ordinal, so the two enums agree and the FFI shim maps by
-# identity. Format: <odin-name> <dva-name>
+# Token-kind ordinals: single source of truth for the dva `TokKind` enum (src/lexer.dva).
 Op            Op
 EOF           Eof
 Identifier    Id

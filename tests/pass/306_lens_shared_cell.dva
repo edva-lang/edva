@@ -1,0 +1,10 @@
+probe: () => Int
+probe = !=>
+   x' = 1
+   lens = ~~x'
+   lens.set(7)
+   print_int $ x'
+   lens.get!
+
+res = probe!
+print_int $ res

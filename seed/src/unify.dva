@@ -139,6 +139,20 @@ prim_type = !=> UType(Prim, UPrim(Type))
 prim_unknown: () => UType
 prim_unknown = !=> UType(Prim, UPrim(Unknown))
 
+error_ufields: () => UFields
+error_ufields = !=>
+   flds = UFields()
+   flds += UField(("code", prim_int!))
+   flds += UField(("msg", prim_str!))
+   flds += UField(("file", prim_str!))
+   flds += UField(("line", prim_int!))
+   flds += UField(("col", prim_int!))
+   ctx_flds = UFields()
+   ctx_flds += UField(("", prim_int!))
+   ctx_flds += UField(("", prim_int!))
+   flds += UField(("context", UType(Rec, ctx_flds)))
+   flds
+
 // Ramification constructors:
 // RamNN is <> (Flag, no payloads in either slot)
 ram_nn: () => UType
@@ -416,6 +430,12 @@ unify_concrete = ctx, c1, c2, v1, v2 =>
                   |
                      report_mismatch(ctx, c1, c2)
                      <->
+            [Rec r2]
+               p1 [Error]
+                  unify_rec_open(ctx, error_ufields!, r2, v1, v2)
+               |
+                  report_mismatch(ctx, c1, c2)
+                  <->
             |
                report_mismatch(ctx, c1, c2)
                <->
@@ -426,11 +446,18 @@ unify_concrete = ctx, c1, c2, v1, v2 =>
             report_mismatch(ctx, c1, c2)
             <->
       [Rec r1]
-         c2 [Rec r2]
-            unify_rec_open(ctx, r1, r2, v1, v2)
-         |
-            report_mismatch(ctx, c1, c2)
-            <->
+         c2
+            [Rec r2]
+               unify_rec_open(ctx, r1, r2, v1, v2)
+            [Prim p2]
+               p2 [Error]
+                  unify_rec_open(ctx, r1, error_ufields!, v1, v2)
+               |
+                  report_mismatch(ctx, c1, c2)
+                  <->
+            |
+               report_mismatch(ctx, c1, c2)
+               <->
       [Ram ram1]
          c2
             [Ram ram2]
@@ -738,6 +765,24 @@ solve_field = ctx, rec_type, name, fld_type =>
                      add_error(ctx, 3130, "Record has no field named '" + name +
                         "': " + show_utype(ctx, c))
                      <->
+      [Prim p]
+         is_err = p [Error]
+         is_err
+            |
+               eflds = error_ufields!
+               idx = find_field_idx(eflds, name)
+               idx !< 0
+                  |
+                     f = eflds(idx) | _ | UField(("", UType(None)))
+                     unify(ctx, f.ut, fld_type)
+                  |
+                     add_error(ctx, 3130, "Record has no field named '" + name +
+                        "': " + show_utype(ctx, c))
+                     <->
+            |
+               add_error(ctx, 3084, "Field access '" + name +
+                  "' on non-record type: " + show_utype(ctx, c))
+               <->
       |
          add_error(ctx, 3084, "Field access '" + name +
             "' on non-record type: " + show_utype(ctx, c))

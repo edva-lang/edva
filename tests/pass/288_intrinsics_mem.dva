@@ -23,6 +23,7 @@ print $ +b2'
 // 4. Return value of %memset / %memcpy is destination Addr
 b3' = {16}
 ret_p = %memset(&b3', 88, 4)
+is_same = ret_p == &b3' | 1 | 0
 ?b3' = 4
 print $ +b3'
-print_int $ (ret_p == &b3' | 1 | 0)
+print_int $ is_same

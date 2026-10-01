@@ -1,5 +1,5 @@
-// Enum equality: == / != on two enum values compares the variant TAG
-// (payload ignored), returning a bare Flag. A bare '==' is a valid statement
+// Enum equality: == / != on two enum values compares variant tag and payload,
+// returning a bare Flag. A bare '==' is a valid statement
 // or function-body return (no E2038).
 #type E < A, B >
 #type F < Some(Int), Noth >
@@ -11,12 +11,14 @@ print $ (x == y | "t" | "f")
 print $ (x == z | "t" | "f")
 print $ (x != z | "t" | "f")
 
-// Tag-only: the payload is ignored.
+// Payload comparison: Some(5) == Some(7) is false, Some(5) == Some(5) is true.
 a = F(Some, 5)
 b = F(Some, 7)
 c = F(Noth)
+d = F(Some, 5)
 print $ (a == b | "t" | "f")
 print $ (a == c | "t" | "f")
+print $ (a == d | "t" | "f")
 
 // A function body may be a bare '==' returning the flag.
 same: E, E => <>

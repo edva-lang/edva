@@ -393,23 +393,33 @@ resolve_module = base, mod_path =>
          dir_exists(local_dir)
             | ResolvedModule(Dir, local_dir)
             |
-               std_file = path_join(compiler_std_dir, mod_path + ".dva")
-               file_exists(std_file)
-                  | ResolvedModule(File, std_file)
+               parent_base = dirname(base)
+               parent_f = path_join(parent_base, mod_path + ".dva")
+               has_parent = parent_base != "" && parent_base != "."
+               has_parent && file_exists(parent_f)
+                  | ResolvedModule(File, parent_f)
                   |
-                     std_dir = path_join(compiler_std_dir, mod_path)
-                     dir_exists(std_dir)
-                        | ResolvedModule(Dir, std_dir)
+                     parent_d = path_join(parent_base, mod_path)
+                     has_parent && dir_exists(parent_d)
+                        | ResolvedModule(Dir, parent_d)
                         |
-                           cond1 = compiler_std_dir != "std"
-                           std_f = path_join("std", mod_path + ".dva")
-                           cond1 && file_exists(std_f)
-                              | ResolvedModule(File, std_f)
+                           std_file = path_join(compiler_std_dir, mod_path + ".dva")
+                           file_exists(std_file)
+                              | ResolvedModule(File, std_file)
                               |
-                                 std_d = path_join("std", mod_path)
-                                 cond1 && dir_exists(std_d)
-                                    | ResolvedModule(Dir, std_d)
-                                    | ResolvedModule(None)
+                                 std_dir = path_join(compiler_std_dir, mod_path)
+                                 dir_exists(std_dir)
+                                    | ResolvedModule(Dir, std_dir)
+                                    |
+                                       cond1 = compiler_std_dir != "std"
+                                       std_f = path_join("std", mod_path + ".dva")
+                                       cond1 && file_exists(std_f)
+                                          | ResolvedModule(File, std_f)
+                                          |
+                                             std_d = path_join("std", mod_path)
+                                             cond1 && dir_exists(std_d)
+                                                | ResolvedModule(Dir, std_d)
+                                                | ResolvedModule(None)
 
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, off, rem =>
@@ -876,7 +886,11 @@ load_single_file = path, prefix, ldr =>
                   | prog =>
                      prog
                         [Block b]
-                           !ldr.is_dep | append_names_to(ldr.exports, ppr.exports) | 0
+                           !ldr.is_dep
+                              |
+                                 ?ppr.exports @ ei =>
+                                    ldr.exports += (ppr.exports(ei) | _ | "")
+                              | 0
                            load_stmts(b.exprs, dirname(path), prefix,
                               ppr.publics, ppr.privates, ldr)
                         | <->
@@ -1358,7 +1372,8 @@ generate_c_header = prog, exports, header_path =>
                                  j > 0 | proto += ", "
                                  proto += p_type + " " + p_name'
                         proto += ");\n"
-                        hdr += +proto
+                        s_proto = +proto
+                        hdr += s_proto
                         emitted_symbols += c_name
                      |
                         print $ "E5020: Exported symbol '" + dva_name +
@@ -2330,6 +2345,7 @@ dump_program_ast = prog, as_tree =>
 run_driver: Int => ()
 run_driver = _ =>
    init_compiler_paths!
+   ast::cell_var_reset!
    opts = parse_args_step(1, init_opts(0))
    opts.help
       |

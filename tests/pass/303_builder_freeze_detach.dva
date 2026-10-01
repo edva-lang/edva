@@ -1,0 +1,8 @@
+b = {32}
+b += "abc"
+c = b
+s = +b
+?c = 0
+c += "XYZ"
+print $ s
+print $ +c

@@ -1,7 +1,6 @@
-// selfhost/ast.dva — the AST node types, ported from src/ast.odin.
+// src/ast.dva — the AST node types.
 //
-// Expr and TypeInfo are self-recursive enums (one variant per Odin
-// ExprKind / TypeInfoKind); the field-grouping structs are records; lists are
+// Expr and TypeInfo are self-recursive enums; the field-grouping structs are records; lists are
 // the named growable-array types below. Booleans are the built-in <> flag
 // (<+>/<->), never a declared RamNN. Forward references make declaration
 // order free: the records name Expr / TypeInfo before those enums are
@@ -27,9 +26,6 @@
 // The built-in ramification variant tags (Positive/Negative for the unit
 // flags, Some/Err for payload rams, Succ/Noth for the unit upper variants).
 #type Tag < Positive, Negative, Some, Err, Succ, Noth >
-
-// (The Odin StmtKind is a single-variant enum — always ExprStmt — so it is
-// dropped here; Stmt is just an Expr wrapper.)
 
 // --- named growable arrays -------------------------------------------------
 
@@ -240,3 +236,30 @@ mk_rfield_type = name, vt, ti =>
 mk_rfield_type_default: String, ValueType, TypeInfo, Expr => RecordFieldType
 mk_rfield_type_default = name, vt, ti, def_expr =>
    RecordFieldType((name, vt, ti, <+>, def_expr))
+
+cell_var_names = Names()
+
+has_cell_name_at: Names, String, Int, Int => <>
+has_cell_name_at = arr, s, i, n =>
+   i == n
+      | <->
+      |
+         v = arr(i) | _ | ""
+         v == s | <+> | has_cell_name_at(arr, s, i + 1, n)
+
+has_cell_name: Names, String => <>
+has_cell_name = arr, s => has_cell_name_at(arr, s, 0, ?arr)
+
+cell_var_add: String => ()
+cell_var_add = name =>
+   has_cell_name(cell_var_names, name)
+      | 0
+      | cell_var_names += ++name
+
+is_cell_var: String => <>
+is_cell_var = name =>
+   has_cell_name(cell_var_names, name)
+
+cell_var_reset: () => ()
+cell_var_reset = !=>
+   cell_var_names ::= Names()

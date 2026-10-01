@@ -1,6 +1,6 @@
 // codegen/types.dva — Type lowering, GEP helpers, struct/slice/union layouts.
 
-#use "../llvm"
+#use(import) llvm
 #use "../ast"
 #use "str"
 #use "../tast"
@@ -670,11 +670,11 @@ struct_type2 = e0, e1 =>
    sb = &tarr
    @[sb] = e0
    @[sb + 8] = e1
-   llvm::LLVMStructType(sb, 2, 0)
+   LLVMStructType(sb, 2, 0)
 
 // fn type ret() (zero params)
 fn_type0: Addr => Addr
-fn_type0 = ret => llvm::LLVMFunctionType(ret, Addr(0), 0, 0)
+fn_type0 = ret => LLVMFunctionType(ret, Addr(0), 0, 0)
 
 // fn type ret(p0)
 fn_type1: Addr, Addr => Addr
@@ -682,7 +682,7 @@ fn_type1 = ret, p0 =>
    parr = {16}
    sb = &parr
    @[sb] = p0
-   llvm::LLVMFunctionType(ret, sb, 1, 0)
+   LLVMFunctionType(ret, sb, 1, 0)
 
 // fn type ret(p0, p1, p2)
 fn_type3: Addr, Addr, Addr, Addr => Addr
@@ -692,14 +692,14 @@ fn_type3 = ret, p0, p1, p2 =>
    @[sb] = p0
    @[sb + 8] = p1
    @[sb + 16] = p2
-   llvm::LLVMFunctionType(ret, sb, 3, 0)
+   LLVMFunctionType(ret, sb, 3, 0)
 
 // GEP2 with a single index value.
 gep1: Cg, Addr, Addr, Addr, String => Addr
 gep1 = cg, elem_t, base, idx, name =>
    idxarr = {16}
    @[&idxarr] = idx
-   llvm::LLVMBuildGEP2(cg.builder, elem_t, base, &idxarr, 1, name)
+   LLVMBuildGEP2(cg.builder, elem_t, base, &idxarr, 1, name)
 
 // GEP2 with two index values (an array element through a struct field).
 gep2: Cg, Addr, Addr, Addr, Addr, String => Addr
@@ -708,19 +708,19 @@ gep2 = cg, elem_t, base, i0, i1, name =>
    sb = &idxarr
    @[sb] = i0
    @[sb + 8] = i1
-   llvm::LLVMBuildGEP2(cg.builder, elem_t, base, sb, 2, name)
+   LLVMBuildGEP2(cg.builder, elem_t, base, sb, 2, name)
 
 // BuildCall2 with zero arguments (confines C NULL argument array to this helper).
 call0: Cg, Addr, Addr, String => Addr
 call0 = cg, fty, fn, name =>
-   llvm::LLVMBuildCall2(cg.builder, fty, fn, Addr(0), 0, name)
+   LLVMBuildCall2(cg.builder, fty, fn, Addr(0), 0, name)
 
 // BuildCall2 with one argument.
 call1: Cg, Addr, Addr, Addr, String => Addr
 call1 = cg, fty, fn, arg, name =>
    args = {16}
    @[&args] = arg
-   llvm::LLVMBuildCall2(cg.builder, fty, fn, &args, 1, name)
+   LLVMBuildCall2(cg.builder, fty, fn, &args, 1, name)
 
 // BuildCall2 with three arguments.
 call3: Cg, Addr, Addr, Addr, Addr, Addr, String => Addr
@@ -730,7 +730,7 @@ call3 = cg, fty, fn, a0, a1, a2, name =>
    @[sb] = a0
    @[sb + 8] = a1
    @[sb + 16] = a2
-   llvm::LLVMBuildCall2(cg.builder, fty, fn, sb, 3, name)
+   LLVMBuildCall2(cg.builder, fty, fn, sb, 3, name)
 
 // An LLVM struct type from a list of field LLVM types (dynamic arity, via a
 // raw buffer — the C API's pointer-to-array arg).
@@ -740,7 +740,7 @@ struct_type_n = cg, types, n =>
    sb = &buf
    n @ i =>
       @[sb + i * 8] = types(i)!!
-   llvm::LLVMStructType(sb, n, 0)
+   LLVMStructType(sb, n, 0)
 
 struct_type_packed_n: Cg, Addrs, Int, <> => Addr
 struct_type_packed_n = cg, types, n, is_packed =>
@@ -749,27 +749,34 @@ struct_type_packed_n = cg, types, n, is_packed =>
    n @ i =>
       @[sb + i * 8] = types(i)!!
    p_flag = is_packed | 1 | 0
-   llvm::LLVMStructType(sb, n, p_flag)
+   LLVMStructType(sb, n, p_flag)
 
 // An alloca hoisted into the current function's entry block (so it dominates
 // every use), leaving the builder position untouched.
 hoisted_alloca: Cg, Addr, String => Addr
 hoisted_alloca = cg, ty, name =>
-   entry = llvm::LLVMGetEntryBasicBlock(cg.current_fn)
-   saved = llvm::LLVMGetInsertBlock(cg.builder)
-   first = llvm::LLVMGetFirstInstruction(entry)
+   entry = LLVMGetEntryBasicBlock(cg.current_fn)
+   saved = LLVMGetInsertBlock(cg.builder)
+   first = LLVMGetFirstInstruction(entry)
    first == Addr(0)
-      | llvm::LLVMPositionBuilderAtEnd(cg.builder, entry)
-      | llvm::LLVMPositionBuilderBefore(cg.builder, first)
-   a = llvm::LLVMBuildAlloca(cg.builder, ty, name)
-   saved == Addr(0) | 0 | llvm::LLVMPositionBuilderAtEnd(cg.builder, saved)
+      | LLVMPositionBuilderAtEnd(cg.builder, entry)
+      | LLVMPositionBuilderBefore(cg.builder, first)
+   a = LLVMBuildAlloca(cg.builder, ty, name)
+   saved == Addr(0) | 0 | LLVMPositionBuilderAtEnd(cg.builder, saved)
    a
 
 // A variable's storage slot: a function-local alloca, or a named global.
 create_slot: Cg, String, Addr, <> => Addr
 create_slot = cg, name, llvm_type, is_local =>
    is_local
-      | hoisted_alloca(cg, llvm_type, "var." + name)
+      |
+         ast::is_cell_var(name)
+            |
+               sz = LLVMSizeOf(llvm_type)
+               raw = expr::codegen_call_arena_alloc(cg, sz, "cell." + name)
+               LLVMBuildPointerCast(cg.builder, raw,
+                  LLVMPointerType(llvm_type, 0), "cell." + name + ".ptr")
+            | hoisted_alloca(cg, llvm_type, "var." + name)
       | codegen_get_global(cg, name, llvm_type)
 
 // The target data layout / triple (host x86-64), mirroring codegen_init.
@@ -780,82 +787,82 @@ codegen_init_targets = !=>
       | 0
       |
          g.targets_initialized = <+>
-         llvm::LLVMInitializeAArch64Target!
-         llvm::LLVMInitializeAArch64TargetInfo!
-         llvm::LLVMInitializeAArch64TargetMC!
-         llvm::LLVMInitializeAArch64AsmPrinter!
-         llvm::LLVMInitializeAMDGPUTarget!
-         llvm::LLVMInitializeAMDGPUTargetInfo!
-         llvm::LLVMInitializeAMDGPUTargetMC!
-         llvm::LLVMInitializeAMDGPUAsmPrinter!
-         llvm::LLVMInitializeARMTarget!
-         llvm::LLVMInitializeARMTargetInfo!
-         llvm::LLVMInitializeARMTargetMC!
-         llvm::LLVMInitializeARMAsmPrinter!
-         llvm::LLVMInitializeAVRTarget!
-         llvm::LLVMInitializeAVRTargetInfo!
-         llvm::LLVMInitializeAVRTargetMC!
-         llvm::LLVMInitializeAVRAsmPrinter!
-         llvm::LLVMInitializeBPFTarget!
-         llvm::LLVMInitializeBPFTargetInfo!
-         llvm::LLVMInitializeBPFTargetMC!
-         llvm::LLVMInitializeBPFAsmPrinter!
-         llvm::LLVMInitializeHexagonTarget!
-         llvm::LLVMInitializeHexagonTargetInfo!
-         llvm::LLVMInitializeHexagonTargetMC!
-         llvm::LLVMInitializeHexagonAsmPrinter!
-         llvm::LLVMInitializeLanaiTarget!
-         llvm::LLVMInitializeLanaiTargetInfo!
-         llvm::LLVMInitializeLanaiTargetMC!
-         llvm::LLVMInitializeLanaiAsmPrinter!
-         llvm::LLVMInitializeLoongArchTarget!
-         llvm::LLVMInitializeLoongArchTargetInfo!
-         llvm::LLVMInitializeLoongArchTargetMC!
-         llvm::LLVMInitializeLoongArchAsmPrinter!
-         llvm::LLVMInitializeMipsTarget!
-         llvm::LLVMInitializeMipsTargetInfo!
-         llvm::LLVMInitializeMipsTargetMC!
-         llvm::LLVMInitializeMipsAsmPrinter!
-         llvm::LLVMInitializeMSP430Target!
-         llvm::LLVMInitializeMSP430TargetInfo!
-         llvm::LLVMInitializeMSP430TargetMC!
-         llvm::LLVMInitializeMSP430AsmPrinter!
-         llvm::LLVMInitializeNVPTXTarget!
-         llvm::LLVMInitializeNVPTXTargetInfo!
-         llvm::LLVMInitializeNVPTXTargetMC!
-         llvm::LLVMInitializeNVPTXAsmPrinter!
-         llvm::LLVMInitializePowerPCTarget!
-         llvm::LLVMInitializePowerPCTargetInfo!
-         llvm::LLVMInitializePowerPCTargetMC!
-         llvm::LLVMInitializePowerPCAsmPrinter!
-         llvm::LLVMInitializeRISCVTarget!
-         llvm::LLVMInitializeRISCVTargetInfo!
-         llvm::LLVMInitializeRISCVTargetMC!
-         llvm::LLVMInitializeRISCVAsmPrinter!
-         llvm::LLVMInitializeSparcTarget!
-         llvm::LLVMInitializeSparcTargetInfo!
-         llvm::LLVMInitializeSparcTargetMC!
-         llvm::LLVMInitializeSparcAsmPrinter!
-         llvm::LLVMInitializeSystemZTarget!
-         llvm::LLVMInitializeSystemZTargetInfo!
-         llvm::LLVMInitializeSystemZTargetMC!
-         llvm::LLVMInitializeSystemZAsmPrinter!
-         llvm::LLVMInitializeVETarget!
-         llvm::LLVMInitializeVETargetInfo!
-         llvm::LLVMInitializeVETargetMC!
-         llvm::LLVMInitializeVEAsmPrinter!
-         llvm::LLVMInitializeWebAssemblyTarget!
-         llvm::LLVMInitializeWebAssemblyTargetInfo!
-         llvm::LLVMInitializeWebAssemblyTargetMC!
-         llvm::LLVMInitializeWebAssemblyAsmPrinter!
-         llvm::LLVMInitializeX86Target!
-         llvm::LLVMInitializeX86TargetInfo!
-         llvm::LLVMInitializeX86TargetMC!
-         llvm::LLVMInitializeX86AsmPrinter!
-         llvm::LLVMInitializeXCoreTarget!
-         llvm::LLVMInitializeXCoreTargetInfo!
-         llvm::LLVMInitializeXCoreTargetMC!
-         llvm::LLVMInitializeXCoreAsmPrinter!
+         LLVMInitializeAArch64Target!
+         LLVMInitializeAArch64TargetInfo!
+         LLVMInitializeAArch64TargetMC!
+         LLVMInitializeAArch64AsmPrinter!
+         LLVMInitializeAMDGPUTarget!
+         LLVMInitializeAMDGPUTargetInfo!
+         LLVMInitializeAMDGPUTargetMC!
+         LLVMInitializeAMDGPUAsmPrinter!
+         LLVMInitializeARMTarget!
+         LLVMInitializeARMTargetInfo!
+         LLVMInitializeARMTargetMC!
+         LLVMInitializeARMAsmPrinter!
+         LLVMInitializeAVRTarget!
+         LLVMInitializeAVRTargetInfo!
+         LLVMInitializeAVRTargetMC!
+         LLVMInitializeAVRAsmPrinter!
+         LLVMInitializeBPFTarget!
+         LLVMInitializeBPFTargetInfo!
+         LLVMInitializeBPFTargetMC!
+         LLVMInitializeBPFAsmPrinter!
+         LLVMInitializeHexagonTarget!
+         LLVMInitializeHexagonTargetInfo!
+         LLVMInitializeHexagonTargetMC!
+         LLVMInitializeHexagonAsmPrinter!
+         LLVMInitializeLanaiTarget!
+         LLVMInitializeLanaiTargetInfo!
+         LLVMInitializeLanaiTargetMC!
+         LLVMInitializeLanaiAsmPrinter!
+         LLVMInitializeLoongArchTarget!
+         LLVMInitializeLoongArchTargetInfo!
+         LLVMInitializeLoongArchTargetMC!
+         LLVMInitializeLoongArchAsmPrinter!
+         LLVMInitializeMipsTarget!
+         LLVMInitializeMipsTargetInfo!
+         LLVMInitializeMipsTargetMC!
+         LLVMInitializeMipsAsmPrinter!
+         LLVMInitializeMSP430Target!
+         LLVMInitializeMSP430TargetInfo!
+         LLVMInitializeMSP430TargetMC!
+         LLVMInitializeMSP430AsmPrinter!
+         LLVMInitializeNVPTXTarget!
+         LLVMInitializeNVPTXTargetInfo!
+         LLVMInitializeNVPTXTargetMC!
+         LLVMInitializeNVPTXAsmPrinter!
+         LLVMInitializePowerPCTarget!
+         LLVMInitializePowerPCTargetInfo!
+         LLVMInitializePowerPCTargetMC!
+         LLVMInitializePowerPCAsmPrinter!
+         LLVMInitializeRISCVTarget!
+         LLVMInitializeRISCVTargetInfo!
+         LLVMInitializeRISCVTargetMC!
+         LLVMInitializeRISCVAsmPrinter!
+         LLVMInitializeSparcTarget!
+         LLVMInitializeSparcTargetInfo!
+         LLVMInitializeSparcTargetMC!
+         LLVMInitializeSparcAsmPrinter!
+         LLVMInitializeSystemZTarget!
+         LLVMInitializeSystemZTargetInfo!
+         LLVMInitializeSystemZTargetMC!
+         LLVMInitializeSystemZAsmPrinter!
+         LLVMInitializeVETarget!
+         LLVMInitializeVETargetInfo!
+         LLVMInitializeVETargetMC!
+         LLVMInitializeVEAsmPrinter!
+         LLVMInitializeWebAssemblyTarget!
+         LLVMInitializeWebAssemblyTargetInfo!
+         LLVMInitializeWebAssemblyTargetMC!
+         LLVMInitializeWebAssemblyAsmPrinter!
+         LLVMInitializeX86Target!
+         LLVMInitializeX86TargetInfo!
+         LLVMInitializeX86TargetMC!
+         LLVMInitializeX86AsmPrinter!
+         LLVMInitializeXCoreTarget!
+         LLVMInitializeXCoreTargetInfo!
+         LLVMInitializeXCoreTargetMC!
+         LLVMInitializeXCoreAsmPrinter!
          0
 
 // Fallback layout (host x86-64).
@@ -867,45 +874,45 @@ codegen_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128
 codegen_init: CodegenOpts => Cg
 codegen_init = opts =>
    codegen_init_targets!
-   module = llvm::LLVMModuleCreateWithName("dva_module")
+   module = LLVMModuleCreateWithName("dva_module")
    target_triple = opts.target_triple
    triple = ?target_triple > 0
       | target_triple
       |
-         def_raw = llvm::LLVMGetDefaultTargetTriple!
+         def_raw = LLVMGetDefaultTargetTriple!
          def_s = c_str(def_raw)
-         llvm::LLVMDisposeMessage(def_raw)
+         LLVMDisposeMessage(def_raw)
          def_s
-   llvm::LLVMSetTarget(module, triple)
+   LLVMSetTarget(module, triple)
    ar = mem::arena(1024)
    target_buf = mem::alloc(ar, 8)
    err_buf = mem::alloc(ar, 8)
    @[err_buf] = Addr(0)
-   res = llvm::LLVMGetTargetFromTriple(triple, target_buf, err_buf)
+   res = LLVMGetTargetFromTriple(triple, target_buf, err_buf)
    layout = res == 0
       |
          target_ref = @[target_buf Addr]
-         tm = llvm::LLVMCreateTargetMachine(target_ref, triple, "", "", 2, 0, 0)
-         td = llvm::LLVMCreateTargetDataLayout(tm)
-         raw_l = llvm::LLVMCopyStringRepOfTargetData(td)
+         tm = LLVMCreateTargetMachine(target_ref, triple, "", "", 2, 0, 0)
+         td = LLVMCreateTargetDataLayout(tm)
+         raw_l = LLVMCopyStringRepOfTargetData(td)
          l_str = c_str(raw_l)
-         llvm::LLVMDisposeMessage(raw_l)
-         llvm::LLVMDisposeTargetData(td)
-         llvm::LLVMDisposeTargetMachine(tm)
+         LLVMDisposeMessage(raw_l)
+         LLVMDisposeTargetData(td)
+         LLVMDisposeTargetMachine(tm)
          l_str
       |
          err_ptr = @[err_buf Addr]
          err_s = err_ptr != Addr(0) | c_str(err_ptr) | ""
          print $ "E3069: No LLVM target registered for triple '" + triple + "'" +
             (?err_s > 0 | ": " + err_s | "")
-         err_ptr != Addr(0) | llvm::LLVMDisposeMessage(err_ptr) | 0
+         err_ptr != Addr(0) | LLVMDisposeMessage(err_ptr) | 0
          codegen_layout
    mem::destroy(ar)
-   llvm::LLVMSetDataLayout(module, layout)
-   builder = llvm::LLVMCreateBuilder!
-   i64t = llvm::LLVMInt64Type!
-   i32t = llvm::LLVMInt32Type!
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+   LLVMSetDataLayout(module, layout)
+   builder = LLVMCreateBuilder!
+   i64t = LLVMInt64Type!
+   i32t = LLVMInt32Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
    st = struct_type2(i64t, i8p)
    ut = struct_type2(i64t, i8p)
    st2 = struct_type2(i8p, i64t)
@@ -913,8 +920,8 @@ codegen_init = opts =>
    pp = {16}
    psb = &pp
    @[psb] = i8p
-   printf_fn = llvm::LLVMAddFunction(module, "printf",
-      llvm::LLVMFunctionType(llvm::LLVMInt32Type!, psb, 1, 1))
+   printf_fn = LLVMAddFunction(module, "printf",
+      LLVMFunctionType(LLVMInt32Type!, psb, 1, 1))
    Cg((module, builder, Addr(0), CgVars(), <->, st, ut, st2,
       Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0),
       0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", Addr(0),
@@ -933,43 +940,43 @@ codegen_build_main: Cg => Addr
 codegen_build_main = cg =>
    cg.opts.no_main
       |
-         fnty' = fn_type0(llvm::LLVMVoidType!)
+         fnty' = fn_type0(LLVMVoidType!)
          init_fn_name = cg.opts.is_module && cg.opts.module_name != ""
             | "__dva_global_init_" + cg.opts.module_name
             | "__dva_global_init"
-         fn' = llvm::LLVMAddFunction(cg.module, init_fn_name, fnty')
-         llvm::LLVMSetLinkage(fn', 8)
+         fn' = LLVMAddFunction(cg.module, init_fn_name, fnty')
+         LLVMSetLinkage(fn', 8)
          runtime::mark_nounwind(cg, fn')
-         entry' = llvm::LLVMAppendBasicBlock(fn', "entry")
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, entry')
+         entry' = LLVMAppendBasicBlock(fn', "entry")
+         LLVMPositionBuilderAtEnd(cg.builder, entry')
          cg.main_fn = fn'
          cg.current_fn = fn'
          !cg.opts.no_runtime && !cg.opts.is_module | emit_arena_init(cg) | 0
          fn'
       |
-         i32t = llvm::LLVMInt32Type!
-         i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+         i32t = LLVMInt32Type!
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
          ptypes = Addrs()
          ptypes += i32t
          ptypes += i8p
          fnty' = stmt::fn_type_n(cg, i32t, ptypes, 2)
-         fn' = llvm::LLVMAddFunction(cg.module, "main", fnty')
+         fn' = LLVMAddFunction(cg.module, "main", fnty')
          runtime::mark_nounwind(cg, fn')
-         entry' = llvm::LLVMAppendBasicBlock(fn', "entry")
-         llvm::LLVMPositionBuilderAtEnd(cg.builder, entry')
+         entry' = LLVMAppendBasicBlock(fn', "entry")
+         LLVMPositionBuilderAtEnd(cg.builder, entry')
          cg.main_fn = fn'
          cg.current_fn = fn'
          !cg.opts.no_runtime
             |
-               argc_p = llvm::LLVMGetParam(fn', 0)
-               argv_p = llvm::LLVMGetParam(fn', 1)
-               argc_g = llvm::LLVMAddGlobal(cg.module, llvm::LLVMInt64Type!, "sys_argc_global")
-               llvm::LLVMSetInitializer(argc_g, llvm::LLVMConstInt(llvm::LLVMInt64Type!, 0, 0))
-               argv_g = llvm::LLVMAddGlobal(cg.module, i8p, "sys_argv_global")
-               llvm::LLVMSetInitializer(argv_g, llvm::LLVMConstNull(i8p))
-               argc64 = llvm::LLVMBuildSExt(cg.builder, argc_p, llvm::LLVMInt64Type!, "argc.i64")
-               llvm::LLVMBuildStore(cg.builder, argc64, argc_g)
-               llvm::LLVMBuildStore(cg.builder, argv_p, argv_g)
+               argc_p = LLVMGetParam(fn', 0)
+               argv_p = LLVMGetParam(fn', 1)
+               argc_g = LLVMAddGlobal(cg.module, LLVMInt64Type!, "sys_argc_global")
+               LLVMSetInitializer(argc_g, LLVMConstInt(LLVMInt64Type!, 0, 0))
+               argv_g = LLVMAddGlobal(cg.module, i8p, "sys_argv_global")
+               LLVMSetInitializer(argv_g, LLVMConstNull(i8p))
+               argc64 = LLVMBuildSExt(cg.builder, argc_p, LLVMInt64Type!, "argc.i64")
+               LLVMBuildStore(cg.builder, argc64, argc_g)
+               LLVMBuildStore(cg.builder, argv_p, argv_g)
                emit_arena_init(cg)
             | 0
          fn'
@@ -978,16 +985,16 @@ codegen_build_main = cg =>
 emit_arena_init: Cg => Addr
 emit_arena_init = cg =>
    at = runtime::arena_type(cg)
-   atp = llvm::LLVMPointerType(at, 0)
-   i64t = llvm::LLVMInt64Type!
-   init_t = fn_type2(cg, llvm::LLVMVoidType!, atp, i64t)
-   init_fn = llvm::LLVMGetNamedFunction(cg.module, "dva_arena_init")
-   ga = llvm::LLVMGetNamedGlobal(cg.module, "global_arena")
+   atp = LLVMPointerType(at, 0)
+   i64t = LLVMInt64Type!
+   init_t = fn_type2(cg, LLVMVoidType!, atp, i64t)
+   init_fn = LLVMGetNamedFunction(cg.module, "dva_arena_init")
+   ga = LLVMGetNamedGlobal(cg.module, "global_arena")
    iargs = {16}
    sb = &iargs
    @[sb] = ga
-   @[sb + 8] = llvm::LLVMConstInt(i64t, 67108864, 0)
-   llvm::LLVMBuildCall2(cg.builder, init_t, init_fn, sb, 2, "")
+   @[sb + 8] = LLVMConstInt(i64t, 67108864, 0)
+   LLVMBuildCall2(cg.builder, init_t, init_fn, sb, 2, "")
 
 // fn type ret(p0, p1)
 fn_type2: Cg, Addr, Addr, Addr => Addr
@@ -996,7 +1003,7 @@ fn_type2 = cg, ret, p0, p1 =>
    sb = &parr
    @[sb] = p0
    @[sb + 8] = p1
-   llvm::LLVMFunctionType(ret, sb, 2, 0)
+   LLVMFunctionType(ret, sb, 2, 0)
 
 // --- type helpers ------------------------------------------------------------
 
@@ -1029,7 +1036,7 @@ is_rune_vt: ast::ValueType => <>
 is_rune_vt = vt => vt [Rune]
 
 is_record_vt: ast::ValueType => <>
-is_record_vt = vt => vt [Record]
+is_record_vt = vt => vt [Record, Error]
 
 is_array_vt: ast::ValueType => <>
 is_array_vt = vt => vt [Array]
@@ -1059,29 +1066,29 @@ is_ptr_vt = vt => vt [RawPtr]
 // returning <Addr|> so callers must explicitly match both states.
 llvm_find_function: Addr, String => <Addr|>
 llvm_find_function = module, name =>
-   f = llvm::LLVMGetNamedFunction(module, name)
+   f = LLVMGetNamedFunction(module, name)
    f != Addr(0) | <+ f -> | <-->
 
 llvm_find_global: Addr, String => <Addr|>
 llvm_find_global = module, name =>
-   gv = llvm::LLVMGetNamedGlobal(module, name)
+   gv = LLVMGetNamedGlobal(module, name)
    gv != Addr(0) | <+ gv -> | <-->
 
 float_llvm: ast::ValueType => Addr
-float_llvm = vt => vt [F32] llvm::LLVMFloatType! | llvm::LLVMDoubleType!
+float_llvm = vt => vt [F32] LLVMFloatType! | LLVMDoubleType!
 
 llvm_type_of_vt: ast::ValueType => Addr
 llvm_type_of_vt = vt =>
-   f32t = llvm::LLVMFloatType!
-   dbl = llvm::LLVMDoubleType!
-   i1t = llvm::LLVMInt1Type!
-   i8t = llvm::LLVMInt8Type!
-   i16t = llvm::LLVMInt16Type!
-   i32t = llvm::LLVMInt32Type!
-   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
-   i64t = llvm::LLVMInt64Type!
+   f32t = LLVMFloatType!
+   dbl = LLVMDoubleType!
+   i1t = LLVMInt1Type!
+   i8t = LLVMInt8Type!
+   i16t = LLVMInt16Type!
+   i32t = LLVMInt32Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   i64t = LLVMInt64Type!
    vt
-      [Unit] llvm::LLVMVoidType!
+      [Unit] LLVMVoidType!
       [Float] dbl
       [F32] f32t
       [Flag] i1t
@@ -1414,14 +1421,14 @@ dotted_var_val = cg, name =>
                         | rt =>
                            is_homo = expr::record_type_is_homogeneous(rt, fvts)
                            ft = is_homo
-                              | llvm::LLVMStructGetTypeAtIndex(rt, 0)
-                              | llvm::LLVMStructGetTypeAtIndex(rt, idx)
+                              | LLVMStructGetTypeAtIndex(rt, 0)
+                              | LLVMStructGetTypeAtIndex(rt, idx)
                            fgep = record_field_gep(cg, rt, fvts, base_val, idx)
                            is_rec = fvt [Record]
                            is_rec
                               | (fgep, fvt)
                               |
-                                 (llvm::LLVMBuildLoad2(cg.builder, ft, fgep,
+                                 (LLVMBuildLoad2(cg.builder, ft, fgep,
                                     "field.load"), fvt)
                         | (Addr(0), ast::ValueType(Unknown))
 
@@ -1506,13 +1513,13 @@ find_var_type = cg, name, i, fallback =>
 codegen_get_global: Cg, String, Addr => Addr
 codegen_get_global = cg, name, llvm_type =>
    gname = "var." + name
-   glob = llvm::LLVMGetNamedGlobal(cg.module, gname)
+   glob = LLVMGetNamedGlobal(cg.module, gname)
    glob == Addr(0)
       |
-         g2 = llvm::LLVMAddGlobal(cg.module, llvm_type, gname)
+         g2 = LLVMAddGlobal(cg.module, llvm_type, gname)
          is_ext = cg.opts.is_module && is_external_module_name(cg, name)
          !is_ext
-            | llvm::LLVMSetInitializer(g2, llvm::LLVMConstNull(llvm_type))
+            | LLVMSetInitializer(g2, LLVMConstNull(llvm_type))
             | 0
          g2
       | glob
@@ -1585,7 +1592,7 @@ dotted_var_rt = cg, name =>
             |
                var_rt(cg, base_name)
                   | rt =>
-                     elem_ty = llvm::LLVMStructGetTypeAtIndex(rt, idx)
+                     elem_ty = LLVMStructGetTypeAtIndex(rt, idx)
                      elem_ty != Addr(0) | <+ elem_ty -> | <-->
                   | <-->
 
@@ -1653,8 +1660,8 @@ member_static_index = cg, m, fnames =>
                ev.0 == Addr(0)
                   | (-1, <->)
                   |
-                     llvm::LLVMIsConstant(ev.0) != 0
-                        | (llvm::LLVMConstIntGetZExtValue(ev.0), <+>)
+                     LLVMIsConstant(ev.0) != 0
+                        | (LLVMConstIntGetZExtValue(ev.0), <+>)
                         | (-1, <->)
       | (member_index(fnames, m.field_name), <+>)
 
@@ -1702,7 +1709,7 @@ codegen_load = cg, name =>
          is_ptr = is_heap || is_record_vt(vt) || is_map_vt(vt) ||
             is_array_vt(vt) || is_slice_vt(vt)
          lt = is_ptr
-            | llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+            | LLVMPointerType(LLVMInt8Type!, 0)
             | llvm_type_of_vt(vt)
          slot_opt = var_slot(cg, name)
          uninit = !cg.in_fn && main::var_partial(cg, name) && !init_ok(cg.init, name)
@@ -1746,7 +1753,7 @@ codegen_undefined_name_error = cg, name =>
 codegen_load_known: Cg, Addr, Addr, String, ast::ValueType => (Addr, ast::ValueType)
 codegen_load_known = cg, slot, lt, name, vt =>
    lname = "load." + name
-   (llvm::LLVMBuildLoad2(cg.builder, lt, slot, lname), vt)
+   (LLVMBuildLoad2(cg.builder, lt, slot, lname), vt)
 
 // A variable's direct SSA value (a fn param, used without a backing alloca).
 var_direct: Cg, String => <Addr|>
@@ -1790,13 +1797,13 @@ ptr_var_value_plain = cg, name, lname =>
                slot = var_slot(cg, name)
                   | _
                   |
-                     i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+                     i8p = LLVMPointerType(LLVMInt8Type!, 0)
                      s_new = create_slot(cg, name, i8p, cg.in_fn)
-                     llvm::LLVMBuildStore(cg.builder,
-                        llvm::LLVMConstNull(i8p), s_new)
+                     LLVMBuildStore(cg.builder,
+                        LLVMConstNull(i8p), s_new)
                      s_new
-               llvm::LLVMBuildLoad2(cg.builder,
-                  llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), slot, lname)
+               LLVMBuildLoad2(cg.builder,
+                  LLVMPointerType(LLVMInt8Type!, 0), slot, lname)
 
 // A variable's storage slot (a global pointer or a function-local alloca). A
 // function-local (param or body local) shadows a same-named top-level global:
@@ -1966,14 +1973,14 @@ codegen_cond_value_with_ti = cg, v, vt, ti =>
       |
          niche.1
             |
-               llvm::LLVMBuildICmp(cg.builder, 33, v,
-                  llvm::LLVMConstNull(llvm::LLVMTypeOf(v)), "niche.ne.null")
+               LLVMBuildICmp(cg.builder, 33, v,
+                  LLVMConstNull(LLVMTypeOf(v)), "niche.ne.null")
             |
-               llvm::LLVMBuildICmp(cg.builder, 32, v,
-                  llvm::LLVMConstNull(llvm::LLVMTypeOf(v)), "niche.eq.null")
+               LLVMBuildICmp(cg.builder, 32, v,
+                  LLVMConstNull(LLVMTypeOf(v)), "niche.eq.null")
       |
          is_unboxed_ram_ti(cg, ti)
-            | llvm::LLVMBuildExtractValue(cg.builder, v, 0, "ram.tag")
+            | LLVMBuildExtractValue(cg.builder, v, 0, "ram.tag")
             | stmt::codegen_cond_value(cg, v, vt)
 
 ti_fn_ret_vt: Cg, ast::TypeInfo => ast::ValueType
@@ -2070,6 +2077,11 @@ record_field_ti_by_name = cg, ti, name =>
             |
                rf = flds(idx)!!
                rf.rec_type [TypeVar tv] typedef_ti(cg, tv) | rf.rec_type
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      [Prim p]
+         is_err = p [Error]
+         is_err
+            | error_field_ti_by_name(name)
             | ast::TypeInfo(Prim, ast::ValueType(Unknown))
       | ast::TypeInfo(Prim, ast::ValueType(Unknown))
 
@@ -2451,10 +2463,10 @@ resolve_type_record_index = cg, ti, index_expr =>
          idx_v = expr::codegen_eval(cg, index_expr)
          cg.discard_result = saved_discard
          is_const = idx_v.0 != Addr(0) &&
-            llvm::LLVMIsConstant(idx_v.0) != 0
+            LLVMIsConstant(idx_v.0) != 0
          is_const
             |
-               idx = llvm::LLVMConstIntGetZExtValue(idx_v.0)
+               idx = LLVMConstIntGetZExtValue(idx_v.0)
                idx !< 0 && idx < ?r.0
                   |
                      fld = r.0(idx)!!
@@ -3127,19 +3139,19 @@ codegen_copy_base_fields = cg, dst, base_ev, tgt_rt, flds, tfvts, fin, n =>
             is_rf_base = src_fvt [Record] || (tgt_fvt [Record])
             is_rf_base
                |
-                  ft_base = llvm::LLVMStructGetTypeAtIndex(tgt_rt, k)
-                  isz_base = llvm::LLVMSizeOf(ft_base)
-                  llvm::LLVMBuildMemCpy(cg.builder, dst_gep, 1,
+                  ft_base = LLVMStructGetTypeAtIndex(tgt_rt, k)
+                  isz_base = LLVMSizeOf(ft_base)
+                  LLVMBuildMemCpy(cg.builder, dst_gep, 1,
                      src_gep, 1, isz_base, 0)
                |
                   sty = src_fvt != ast::ValueType(Unknown)
                      | llvm_type_of_vt(src_fvt)
-                     | llvm::LLVMStructGetTypeAtIndex(cg.last_rt, src_idx)
-                  selem = llvm::LLVMBuildLoad2(cg.builder, sty, src_gep,
+                     | LLVMStructGetTypeAtIndex(cg.last_rt, src_idx)
+                  selem = LLVMBuildLoad2(cg.builder, sty, src_gep,
                      "base.elem")
-                  dft = llvm::LLVMStructGetTypeAtIndex(tgt_rt, k)
+                  dft = LLVMStructGetTypeAtIndex(tgt_rt, k)
                   cval_base = stmt::coerce_int(cg, selem, dft)
-                  llvm::LLVMBuildStore(cg.builder, cval_base, dst_gep)
+                  LLVMBuildStore(cg.builder, cval_base, dst_gep)
             fin(k) = <+> !| _
 
 codegen_eval_record_ctor: Cg, ast::TypeInfo,
@@ -3153,11 +3165,11 @@ codegen_eval_record_ctor = cg, ti, t =>
       (nargs == 0 && tgt_nf > 0)
    is_update
       |
-         sz' = rm.0 != Addr(0) | llvm::LLVMSizeOf(rm.0) |
-            llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0)
+         sz' = rm.0 != Addr(0) | LLVMSizeOf(rm.0) |
+            LLVMConstInt(LLVMInt64Type!, 16, 0)
          dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
-         dst' = llvm::LLVMBuildPointerCast(cg.builder, dst',
-            llvm::LLVMPointerType(rm.0, 0), "record.ptr")
+         dst' = LLVMBuildPointerCast(cg.builder, dst',
+            LLVMPointerType(rm.0, 0), "record.ptr")
          fields = ti [Rec r] r.0 | ast::FieldTypes()
          f_init = Flags()
          tgt_nf @ _ => f_init += <->
@@ -3173,7 +3185,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                            is_same = cg.last_rt == rm.0
                            is_same
                               |
-                                 llvm::LLVMBuildMemCpy(cg.builder, dst', 1,
+                                 LLVMBuildMemCpy(cg.builder, dst', 1,
                                     base_ev.0, 1, sz', 0)
                                  tgt_nf @ k =>
                                     f_init(k) = <+> !| _
@@ -3201,18 +3213,18 @@ codegen_eval_record_ctor = cg, ti, t =>
                                  (tgt_fvt_named [Record])
                               is_rf_named
                                  |
-                                    ft_named' = llvm::LLVMStructGetTypeAtIndex(
+                                    ft_named' = LLVMStructGetTypeAtIndex(
                                        rm.0, idx_named)
-                                    isz_named = llvm::LLVMSizeOf(ft_named')
-                                    llvm::LLVMBuildMemCpy(cg.builder,
+                                    isz_named = LLVMSizeOf(ft_named')
+                                    LLVMBuildMemCpy(cg.builder,
                                        dst_gep_named, 1, ev_named.0, 1,
                                        isz_named, 0)
                                  |
-                                    ft_named' = llvm::LLVMStructGetTypeAtIndex(
+                                    ft_named' = LLVMStructGetTypeAtIndex(
                                        rm.0, idx_named)
                                     cval_named = stmt::coerce_int(cg, ev_named.0,
                                        ft_named')
-                                    llvm::LLVMBuildStore(cg.builder,
+                                    LLVMBuildStore(cg.builder,
                                        cval_named, dst_gep_named)
                               f_init(idx_named) = <+> !| _
                      |
@@ -3226,18 +3238,18 @@ codegen_eval_record_ctor = cg, ti, t =>
                                  (tgt_fvt_pos [Record])
                               is_rf_pos
                                  |
-                                    ft_pos' = llvm::LLVMStructGetTypeAtIndex(
+                                    ft_pos' = LLVMStructGetTypeAtIndex(
                                        rm.0, i)
-                                    isz_pos = llvm::LLVMSizeOf(ft_pos')
-                                    llvm::LLVMBuildMemCpy(cg.builder,
+                                    isz_pos = LLVMSizeOf(ft_pos')
+                                    LLVMBuildMemCpy(cg.builder,
                                        dst_gep_pos, 1, ev_pos.0, 1,
                                        isz_pos, 0)
                                  |
-                                    ft_pos' = llvm::LLVMStructGetTypeAtIndex(
+                                    ft_pos' = LLVMStructGetTypeAtIndex(
                                        rm.0, i)
                                     cval_pos = stmt::coerce_int(cg, ev_pos.0,
                                        ft_pos')
-                                    llvm::LLVMBuildStore(cg.builder,
+                                    LLVMBuildStore(cg.builder,
                                        cval_pos, dst_gep_pos)
                               f_init(i) = <+> !| _
          tgt_nf @ i =>
@@ -3254,14 +3266,14 @@ codegen_eval_record_ctor = cg, ti, t =>
                         is_rf_def = def_ev.1 [Record] || (tgt_fvt_def [Record])
                         is_rf_def
                            |
-                              ft_def' = llvm::LLVMStructGetTypeAtIndex(rm.0, i)
-                              isz_def = llvm::LLVMSizeOf(ft_def')
-                              llvm::LLVMBuildMemCpy(cg.builder, dst_gep_def, 1,
+                              ft_def' = LLVMStructGetTypeAtIndex(rm.0, i)
+                              isz_def = LLVMSizeOf(ft_def')
+                              LLVMBuildMemCpy(cg.builder, dst_gep_def, 1,
                                  def_ev.0, 1, isz_def, 0)
                            |
-                              ft_def' = llvm::LLVMStructGetTypeAtIndex(rm.0, i)
+                              ft_def' = LLVMStructGetTypeAtIndex(rm.0, i)
                               cval_def = stmt::coerce_int(cg, def_ev.0, ft_def')
-                              llvm::LLVMBuildStore(cg.builder, cval_def,
+                              LLVMBuildStore(cg.builder, cval_def,
                                  dst_gep_def)
                      |
                         init_error(cg, "E3130", "Field '" + rf_def.name +
@@ -3284,22 +3296,22 @@ codegen_eval_record_ctor = cg, ti, t =>
                src_fvts = cg.last_fvts
                tgt_nf == 1
                   |
-                     sz' = rm.0 != Addr(0) | llvm::LLVMSizeOf(rm.0) |
-                        llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0)
+                     sz' = rm.0 != Addr(0) | LLVMSizeOf(rm.0) |
+                        LLVMConstInt(LLVMInt64Type!, 16, 0)
                      dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
-                     llvm::LLVMBuildPointerCast(cg.builder, dst',
-                        llvm::LLVMPointerType(rm.0, 0), "record.ptr")
+                     LLVMBuildPointerCast(cg.builder, dst',
+                        LLVMPointerType(rm.0, 0), "record.ptr")
                      dst_gep' = record_field_gep(cg, rm.0, tgt_fvts, dst', 0)
                      tgt_fvt0 = tgt_fvts(0) | _ | ast::ValueType(Unknown)
                      is_rec_0 = src_vt [Record] || (tgt_fvt0 [Record])
                      is_rec_0
                         |
-                           ft' = llvm::LLVMStructGetTypeAtIndex(rm.0, 0)
-                           inner_sz' = llvm::LLVMSizeOf(ft')
-                           llvm::LLVMBuildMemCpy(cg.builder, dst_gep', 1,
+                           ft' = LLVMStructGetTypeAtIndex(rm.0, 0)
+                           inner_sz' = LLVMSizeOf(ft')
+                           LLVMBuildMemCpy(cg.builder, dst_gep', 1,
                               src_val, 1, inner_sz', 0)
                         |
-                           llvm::LLVMBuildStore(cg.builder, src_val, dst_gep')
+                           LLVMBuildStore(cg.builder, src_val, dst_gep')
                      cg.last_rt = rm.0
                      cg.last_fnames = rm.1
                      cg.last_fvts = tgt_fvts
@@ -3309,12 +3321,12 @@ codegen_eval_record_ctor = cg, ti, t =>
                      is_rec = src_vt [Record]
                      is_rec && src_rt != Addr(0)
                         |
-                           sz' = rm.0 != Addr(0) | llvm::LLVMSizeOf(rm.0) |
-                              llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0)
+                           sz' = rm.0 != Addr(0) | LLVMSizeOf(rm.0) |
+                              LLVMConstInt(LLVMInt64Type!, 16, 0)
                            dst' = expr::codegen_call_arena_alloc(cg, sz',
                               "record.cast.alloc")
-                           llvm::LLVMBuildPointerCast(cg.builder, dst',
-                              llvm::LLVMPointerType(rm.0, 0), "record.cast.ptr")
+                           LLVMBuildPointerCast(cg.builder, dst',
+                              LLVMPointerType(rm.0, 0), "record.cast.ptr")
                            tgt_nf @ i =>
                               src_gep = record_field_gep(cg, src_rt, src_fvts,
                                  src_val, i)
@@ -3327,20 +3339,20 @@ codegen_eval_record_ctor = cg, ti, t =>
                               is_rec_f' = src_fvt [Record] || (tgt_fvt' [Record])
                               is_rec_f'
                                  |
-                                    ft' = llvm::LLVMStructGetTypeAtIndex(
+                                    ft' = LLVMStructGetTypeAtIndex(
                                        rm.0, i)
-                                    inner_sz' = llvm::LLVMSizeOf(ft')
-                                    llvm::LLVMBuildMemCpy(cg.builder,
+                                    inner_sz' = LLVMSizeOf(ft')
+                                    LLVMBuildMemCpy(cg.builder,
                                        dst_gep', 1, src_gep, 1, inner_sz', 0)
                                  |
                                     src_elem_ty =
                                        src_fvt != ast::ValueType(Unknown)
                                           | llvm_type_of_vt(src_fvt)
-                                          | llvm::LLVMStructGetTypeAtIndex(
+                                          | LLVMStructGetTypeAtIndex(
                                              src_rt, i)
-                                    src_elem = llvm::LLVMBuildLoad2(cg.builder,
+                                    src_elem = LLVMBuildLoad2(cg.builder,
                                        src_elem_ty, src_gep, "cast.src.elem")
-                                    llvm::LLVMBuildStore(cg.builder, src_elem,
+                                    LLVMBuildStore(cg.builder, src_elem,
                                        dst_gep')
                            cg.last_rt = rm.0
                            cg.last_fnames = rm.1
@@ -3348,10 +3360,10 @@ codegen_eval_record_ctor = cg, ti, t =>
                            t.fn_name != "" | cg.last_type = t.fn_name | 0
                            (dst', ast::ValueType(Record))
                         |
-                           i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+                           i8p = LLVMPointerType(LLVMInt8Type!, 0)
                            dst' = is_ptrish_vt(src_vt)
                               | src_val
-                              | llvm::LLVMBuildIntToPtr(cg.builder, src_val,
+                              | LLVMBuildIntToPtr(cg.builder, src_val,
                                  i8p, "cast.int2ptr")
                            cg.last_rt = rm.0
                            cg.last_fnames = rm.1
@@ -3359,11 +3371,11 @@ codegen_eval_record_ctor = cg, ti, t =>
                            t.fn_name != "" | cg.last_type = t.fn_name | 0
                            (dst', ast::ValueType(Record))
             |
-               sz' = rm.0 != Addr(0) | llvm::LLVMSizeOf(rm.0) |
-                  llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0)
+               sz' = rm.0 != Addr(0) | LLVMSizeOf(rm.0) |
+                  LLVMConstInt(LLVMInt64Type!, 16, 0)
                dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
-               llvm::LLVMBuildPointerCast(cg.builder, dst',
-                  llvm::LLVMPointerType(rm.0, 0), "record.ptr")
+               LLVMBuildPointerCast(cg.builder, dst',
+                  LLVMPointerType(rm.0, 0), "record.ptr")
                tgt_nf @ i =>
                   av = t.args(i)!!
                   ev = expr::codegen_eval(cg, av)
@@ -3372,12 +3384,12 @@ codegen_eval_record_ctor = cg, ti, t =>
                   is_rec_f' = ev.1 [Record] || (tgt_fvt' [Record])
                   is_rec_f'
                      |
-                        ft' = llvm::LLVMStructGetTypeAtIndex(rm.0, i)
-                        inner_sz' = llvm::LLVMSizeOf(ft')
-                        llvm::LLVMBuildMemCpy(cg.builder, dst_gep', 1, ev.0, 1,
+                        ft' = LLVMStructGetTypeAtIndex(rm.0, i)
+                        inner_sz' = LLVMSizeOf(ft')
+                        LLVMBuildMemCpy(cg.builder, dst_gep', 1, ev.0, 1,
                            inner_sz', 0)
                      |
-                        llvm::LLVMBuildStore(cg.builder, ev.0, dst_gep')
+                        LLVMBuildStore(cg.builder, ev.0, dst_gep')
                cg.last_rt = rm.0
                cg.last_fnames = rm.1
                cg.last_fvts = tgt_fvts
@@ -3710,7 +3722,7 @@ raw_addr_value = cg, value, vt, i8p =>
       | Addr(0)
       |
          raw_ptr = vt [RawPtr] value |
-            llvm::LLVMBuildIntToPtr(cg.builder, value, i8p, "raw.ptr")
+            LLVMBuildIntToPtr(cg.builder, value, i8p, "raw.ptr")
          expr::validate_and_strip_addr_tag(cg, raw_ptr, i8p)
 
 codegen_eval_raw_memory: Cg, ast::RawMemoryExpr => (Addr, ast::ValueType)
@@ -3719,14 +3731,14 @@ codegen_eval_raw_memory = cg, rm =>
       | codegen_raw_string_index_error(cg)
       |
          av = expr::codegen_eval(cg, rm.addr)
-         i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
          ptr_val = raw_addr_value(cg, av.0, av.1, i8p)
          rm.rec_name != ""
             |
                ti = typedef_ti(cg, rm.rec_name)
                meta = runtime::record_meta_from_ti(cg, ti)
-               typed_ptr = llvm::LLVMBuildPointerCast(cg.builder,
-                  ptr_val, llvm::LLVMPointerType(meta.0, 0), "view.ptr")
+               typed_ptr = LLVMBuildPointerCast(cg.builder,
+                  ptr_val, LLVMPointerType(meta.0, 0), "view.ptr")
                cg.last_rt = meta.0
                cg.last_fnames = meta.1
                cg.last_fvts = match::field_vts_from_ti(cg, ti)
@@ -3737,11 +3749,11 @@ codegen_eval_raw_memory = cg, rm =>
                   [Unknown] (ptr_val, ast::ValueType(RawPtr))
                   |
                      elem_ty = llvm_type_of_vt(rm.load_type)
-                     elem_ptr = llvm::LLVMBuildPointerCast(cg.builder, ptr_val,
-                        llvm::LLVMPointerType(elem_ty, 0), "raw.ptr.t")
-                     loaded = llvm::LLVMBuildLoad2(cg.builder, elem_ty,
+                     elem_ptr = LLVMBuildPointerCast(cg.builder, ptr_val,
+                        LLVMPointerType(elem_ty, 0), "raw.ptr.t")
+                     loaded = LLVMBuildLoad2(cg.builder, elem_ty,
                         elem_ptr, "raw.load")
-                     llvm::LLVMSetVolatile(loaded, 1)
+                     LLVMSetVolatile(loaded, 1)
                      (loaded, rm.load_type)
 
 raw_address_uses_string: Cg, ast::Expr => <>
@@ -3811,9 +3823,9 @@ codegen_build_union: Cg, Int, ast::Exprs, String => Addr
 codegen_build_union = cg, tid, args, alloc_name =>
    ut = cg.union_t
    up = expr::codegen_call_arena_alloc(cg,
-      llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0), alloc_name)
-   tgep = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 0, "tag.gep")
-   llvm::LLVMBuildStore(cg.builder, llvm::LLVMConstInt(llvm::LLVMInt64Type!, tid, 0), tgep)
+      LLVMConstInt(LLVMInt64Type!, 16, 0), alloc_name)
+   tgep = LLVMBuildStructGEP2(cg.builder, ut, up, 0, "tag.gep")
+   LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt64Type!, tid, 0), tgep)
    na = ?args
    na > 0
       |
@@ -3822,20 +3834,20 @@ codegen_build_union = cg, tid, args, alloc_name =>
          ev_dt = ev.1 [Str] "String" [Int] "Int" [Float] "Float" |
             (cg.last_type != "" | cg.last_type | "")
          ev_dt != "" | cg.last_type = ev_dt | 0
-         pgep' = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
+         pgep' = LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
          is_ptrish = is_ptrish_vt(ev.1)
          is_ptrish
-            | llvm::LLVMBuildStore(cg.builder, ev.0, pgep')
+            | LLVMBuildStore(cg.builder, ev.0, pgep')
             |
                box_name = alloc_name == "enum.alloc" | "enum.pay.alloc" | "pay.alloc"
                box = expr::codegen_call_arena_alloc(cg,
-                  llvm::LLVMConstInt(llvm::LLVMInt64Type!, 8, 0), box_name)
-               llvm::LLVMBuildStore(cg.builder, ev.0, box)
-               llvm::LLVMBuildStore(cg.builder, box, pgep')
+                  LLVMConstInt(LLVMInt64Type!, 8, 0), box_name)
+               LLVMBuildStore(cg.builder, ev.0, box)
+               LLVMBuildStore(cg.builder, box, pgep')
       |
-         pgep' = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
-         llvm::LLVMBuildStore(cg.builder,
-            llvm::LLVMConstNull(llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)), pgep')
+         pgep' = LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
+         LLVMBuildStore(cg.builder,
+            LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)), pgep')
    up
 
 // A variant literal: "<+>" / "<->" with no payload is a bare i1 flag; anything
@@ -3848,7 +3860,7 @@ codegen_eval_variant = cg, t =>
    is_flag
       |
          bit = t.tag_name [Positive] 1 | 0
-         (llvm::LLVMConstInt(llvm::LLVMInt1Type!, bit, 0), ast::ValueType(Flag))
+         (LLVMConstInt(LLVMInt1Type!, bit, 0), ast::ValueType(Flag))
       |
          u = codegen_build_union(cg, tag_id_of(t.tag_name), t.args,
             "variant.alloc")
@@ -3861,19 +3873,19 @@ record_field_gep = cg, rt, fvts, base, idx =>
    base == Addr(0) || rt == Addr(0)
       | Addr(0)
       |
-         base_ptr = llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(base)) == 8
-            | llvm::LLVMBuildIntToPtr(cg.builder, base,
-               llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), "rec.base.ptr")
+         base_ptr = LLVMGetTypeKind(LLVMTypeOf(base)) == 8
+            | LLVMBuildIntToPtr(cg.builder, base,
+               LLVMPointerType(LLVMInt8Type!, 0), "rec.base.ptr")
             | base
          is_homo = expr::record_type_is_homogeneous(rt, fvts)
          is_homo
             |
-               elem_t = llvm::LLVMStructGetTypeAtIndex(rt, 0)
-               typed = llvm::LLVMBuildPointerCast(cg.builder, base_ptr,
-                  llvm::LLVMPointerType(elem_t, 0), "rec.typed")
-               idx_v = llvm::LLVMConstInt(llvm::LLVMInt64Type!, idx, 0)
+               elem_t = LLVMStructGetTypeAtIndex(rt, 0)
+               typed = LLVMBuildPointerCast(cg.builder, base_ptr,
+                  LLVMPointerType(elem_t, 0), "rec.typed")
+               idx_v = LLVMConstInt(LLVMInt64Type!, idx, 0)
                gep1(cg, elem_t, typed, idx_v, "rec.elem.gep")
-            | llvm::LLVMBuildStructGEP2(cg.builder, rt, base_ptr, idx,
+            | LLVMBuildStructGEP2(cg.builder, rt, base_ptr, idx,
                "rec.field.gep")
 
 // A record literal: build the LLVM struct type from the field value shapes,
@@ -3891,7 +3903,7 @@ codegen_eval_record = cg, r =>
       ev = expr::codegen_eval(cg, f.val)
       fvals += ev.0
       is_rec_field = ev.1 [Record]
-      field_t = is_rec_field | cg.last_rt | llvm::LLVMTypeOf(ev.0)
+      field_t = is_rec_field | cg.last_rt | LLVMTypeOf(ev.0)
       ftypes += field_t
       fvts += ev.1
       f.has_name | fnames += f.name
@@ -3904,34 +3916,34 @@ codegen_eval_record = cg, r =>
    cg.last_rt = st
    cg.last_fnames = fnames
    cg.last_fvts = fvts
-   alloc_sz = llvm::LLVMSizeOf(st)
+   alloc_sz = LLVMSizeOf(st)
    rp = expr::codegen_call_arena_alloc(cg, alloc_sz, "record.alloc")
    is_homo = expr::record_type_is_homogeneous(st, fvts)
    elem_t = (is_homo && nf > 0)
-      | llvm::LLVMStructGetTypeAtIndex(st, 0)
+      | LLVMStructGetTypeAtIndex(st, 0)
       | Addr(0)
    typed = is_homo
       |
-         llvm::LLVMBuildPointerCast(cg.builder, rp,
-            llvm::LLVMPointerType(elem_t, 0), "rec.typed")
+         LLVMBuildPointerCast(cg.builder, rp,
+            LLVMPointerType(elem_t, 0), "rec.typed")
       | Addr(0)
    nf @ i =>
-      ft = llvm::LLVMStructGetTypeAtIndex(st, i)
+      ft = LLVMStructGetTypeAtIndex(st, i)
       fgep = is_homo
          |
-            idx_v = llvm::LLVMConstInt(llvm::LLVMInt64Type!, i, 0)
+            idx_v = LLVMConstInt(LLVMInt64Type!, i, 0)
             gep1(cg, elem_t, typed, idx_v, "rec.elem.gep")
-         | llvm::LLVMBuildStructGEP2(cg.builder, st, rp, i, "rec.field.gep")
+         | LLVMBuildStructGEP2(cg.builder, st, rp, i, "rec.field.gep")
       f_vt = (fvts(i) | _ | ast::ValueType(Unknown))
       is_rec_f = f_vt [Record]
       is_rec_f
          |
-            inner_sz = llvm::LLVMSizeOf(ft)
-            llvm::LLVMBuildMemCpy(cg.builder, fgep, 1,
+            inner_sz = LLVMSizeOf(ft)
+            LLVMBuildMemCpy(cg.builder, fgep, 1,
                (fvals(i) | _ | Addr(0)), 1, inner_sz, 0)
          |
             cval = stmt::coerce_int(cg, fvals(i)!!, ft)
-            llvm::LLVMBuildStore(cg.builder, cval, fgep)
+            LLVMBuildStore(cg.builder, cval, fgep)
    (rp, ast::ValueType(Record))
 
 // (rt, fnames) recorded for a record-typed eval result (from the last record
@@ -3998,6 +4010,11 @@ record_field_ti = cg, ti, idx =>
                   | rf.rec_type
             | ast::TypeInfo(Prim, ast::ValueType(Unknown))
       [TypeVar name] record_field_ti(cg, typedef_ti(cg, name), idx)
+      [Prim p]
+         is_err = p [Error]
+         is_err
+            | error_field_ti_by_idx(idx)
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
       | ast::TypeInfo(Prim, ast::ValueType(Unknown))
 
 record_field_dtype: Cg, ast::TypeInfo, Int => String
@@ -4024,5 +4041,63 @@ field_vts = cg, ti =>
    ti
       [Rec rr] runtime::field_vts_step(cg, rr.0, 0, ?rr.0, ast::VTypes())
       [TypeVar name] field_vts(cg, typedef_ti(cg, name))
+      [Prim p]
+         is_err = p [Error]
+         is_err
+            | error_field_vts!
+            | ast::VTypes()
       | ast::VTypes()
+
+error_context_ti: () => ast::TypeInfo
+error_context_ti = !=>
+   flds = ast::FieldTypes()
+   flds += ast::RecordFieldType(("", ast::ValueType(Int),
+      ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
+   flds += ast::RecordFieldType(("", ast::ValueType(Int),
+      ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
+   ast::TypeInfo(Rec, (flds, <->, <->, ast::ValueType(Record), 2, <->))
+
+error_field_ti_by_idx: Int => ast::TypeInfo
+error_field_ti_by_idx = idx =>
+   idx
+      [0] ast::TypeInfo(Prim, ast::ValueType(Int))
+      [1] ast::TypeInfo(Prim, ast::ValueType(Str))
+      [2] ast::TypeInfo(Prim, ast::ValueType(Str))
+      [3] ast::TypeInfo(Prim, ast::ValueType(Int))
+      [4] ast::TypeInfo(Prim, ast::ValueType(Int))
+      [5] error_context_ti!
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+error_field_ti_by_name: String => ast::TypeInfo
+error_field_ti_by_name = name =>
+   name
+      ["code"] ast::TypeInfo(Prim, ast::ValueType(Int))
+      ["msg"] ast::TypeInfo(Prim, ast::ValueType(Str))
+      ["file"] ast::TypeInfo(Prim, ast::ValueType(Str))
+      ["line"] ast::TypeInfo(Prim, ast::ValueType(Int))
+      ["col"] ast::TypeInfo(Prim, ast::ValueType(Int))
+      ["context"] error_context_ti!
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+error_field_vts: () => ast::VTypes
+error_field_vts = !=>
+   fv = ast::VTypes()
+   fv += ast::ValueType(Int)
+   fv += ast::ValueType(Str)
+   fv += ast::ValueType(Str)
+   fv += ast::ValueType(Int)
+   fv += ast::ValueType(Int)
+   fv += ast::ValueType(Record)
+   fv
+
+error_field_names: () => ast::Names
+error_field_names = !=>
+   fn = ast::Names()
+   fn += "code"
+   fn += "msg"
+   fn += "file"
+   fn += "line"
+   fn += "col"
+   fn += "context"
+   fn
 

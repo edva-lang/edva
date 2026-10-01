@@ -209,7 +209,8 @@ choice.next:                                      ; preds = %entry
   %var.load9 = load i64, ptr %var.cp, align 8
   %bandtmp10 = and i64 %var.load9, 7
   %shltmp = shl i64 %bandtmp10, 3
-  %shrtmp11 = lshr i64 %rec.elem.val8, %shltmp
+  %sh.amt.masked = and i64 %shltmp, 63
+  %shrtmp11 = lshr i64 %rec.elem.val8, %sh.amt.masked
   %bandtmp12 = and i64 %shrtmp11, 255
   br label %choice.exit
 }
