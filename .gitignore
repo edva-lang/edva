@@ -5,8 +5,8 @@ edva_stage2
 build/
 .gemini/
 .agents/
-process/
-benchmarks/
+process
+benchmarks
 *.ll
 !seed/ir/*.ll
 !seed/ir/**/*.ll
