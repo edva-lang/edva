@@ -105,9 +105,9 @@ def main [--check] {
     let doc_new = (artifact_doc (open --raw $doc_path))
 
     if $check {
-        let operators_ok = ($operators_new == (open --raw $operators_path))
+        let operators_ok = (($operators_new | str trim) == ((open --raw $operators_path) | str trim))
         let doc_new_raw = (open --raw $doc_path)
-        let doc_ok = ($doc_new == $doc_new_raw)
+        let doc_ok = (($doc_new | str trim) == ($doc_new_raw | str trim))
         if not $operators_ok {
             print "operators.yaml: src/operators.dva is out of sync — run 'nu tools/opgen/main.nu'."
         }

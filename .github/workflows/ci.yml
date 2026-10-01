@@ -23,7 +23,7 @@ jobs:
       - name: Install Nushell
         uses: hustcer/setup-nu@v3
         with:
-          version: '0.98.0'
+          version: '0.115.1'
 
       - name: Build compiler
         run: ./build.sh
