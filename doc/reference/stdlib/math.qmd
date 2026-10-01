@@ -1,0 +1,79 @@
+# `math` standard library
+
+**Audience:** Edva users<br>
+**Status:** current reference<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `std/math.dva`, `tests/pass/287_std_math_geom.dva`
+
+The `math` module exposes C99 `libm` mathematical functions for 64-bit IEEE 754
+`Float` values, along with standard mathematical constants. Importing `math`
+automatically links `-lm`.
+
+```dva
+#use math
+```
+
+## Constants
+
+| Constant | Type | Value | Description |
+|---|---|---|---|
+| `math::pi` | `Float` | `3.14159265358979323846` | Archimedes' constant $\pi$ |
+| `math::e` | `Float` | `2.71828182845904523536` | Euler's number $e$ |
+
+---
+
+## Function catalog
+
+### Roots and powers
+
+| Function | Signature | Description | Example |
+|---|---|---|---|
+| `math::sqrt(x)` | `Float => Float` | Square root $\sqrt{x}$ | `math::sqrt(16.0)` $\rightarrow$ `4.0` |
+| `math::cbrt(x)` | `Float => Float` | Cube root $\sqrt[3]{x}$ | `math::cbrt(27.0)` $\rightarrow$ `3.0` |
+| `math::hypot(x, y)` | `Float, Float => Float` | Hypotenuse $\sqrt{x^2 + y^2}$ | `math::hypot(3.0, 4.0)` $\rightarrow$ `5.0` |
+| `math::pow(x, y)` | `Float, Float => Float` | Power $x^y$ | `math::pow(2.0, 8.0)` $\rightarrow$ `256.0` |
+
+### Exponentials and logarithms
+
+| Function | Signature | Description |
+|---|---|---|
+| `math::exp(x)` | `Float => Float` | Natural exponential $e^x$ |
+| `math::exp2(x)` | `Float => Float` | Base-2 exponential $2^x$ |
+| `math::expm1(x)` | `Float => Float` | $e^x - 1$ (accurate for small $x$) |
+| `math::log(x)` | `Float => Float` | Natural logarithm $\ln(x)$ |
+| `math::log2(x)` | `Float => Float` | Binary logarithm $\log_2(x)$ |
+| `math::log10(x)` | `Float => Float` | Common logarithm $\log_{10}(x)$ |
+| `math::log1p(x)` | `Float => Float` | $\ln(1 + x)$ (accurate for small $x$) |
+
+### Trigonometry and hyperbolics
+
+| Function | Signature | Description |
+|---|---|---|
+| `math::sin(x)`, `math::cos(x)`, `math::tan(x)` | `Float => Float` | Sine, cosine, tangent (radians) |
+| `math::asin(x)`, `math::acos(x)`, `math::atan(x)` | `Float => Float` | Inverse circular functions |
+| `math::atan2(y, x)` | `Float, Float => Float` | Multi-quadrant inverse tangent |
+| `math::sinh(x)`, `math::cosh(x)`, `math::tanh(x)` | `Float => Float` | Hyperbolic sine, cosine, tangent |
+| `math::asinh(x)`, `math::acosh(x)`, `math::atanh(x)` | `Float => Float` | Inverse hyperbolic functions |
+
+### Rounding and floating-point manipulation
+
+| Function | Signature | Description |
+|---|---|---|
+| `math::floor(x)` | `Float => Float` | Largest integer not greater than $x$ |
+| `math::ceil(x)` | `Float => Float` | Smallest integer not less than $x$ |
+| `math::rint(x)` | `Float => Float` | Round to nearest integer using current rounding mode |
+| `math::fabs(x)` | `Float => Float` | Absolute value of $x$ |
+| `math::fmod(x, y)` | `Float, Float => Float` | Floating-point remainder of $x / y$ |
+| `math::fmin(x, y)` | `Float, Float => Float` | Minimum of $x$ and $y$ |
+| `math::fmax(x, y)` | `Float, Float => Float` | Maximum of $x$ and $y$ |
+| `math::ldexp(x, exp)` | `Float, i32 => Float` | $x \times 2^{\text{exp}}$ |
+
+*(Note: Truncation, round-to-nearest, and copysign are provided by built-in LLVM intrinsics: `%trunc(x)`, `%round(x)`, and `%copysign(x, y)`).*
+
+---
+
+## Submodules
+
+- **`math/geom`**: 2D and 3D geometry helpers (vectors, matrices, transforms). Import with `#use "math/geom"`.
+- **`math/complex`**: Complex number representations and arithmetic. Import with `#use "math/complex"`.
+

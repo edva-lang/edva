@@ -1,0 +1,63 @@
+// Tests postfix ramification propagate operator (--!)
+
+side_effect = 0
+
+step_a: Int => < Int | String >
+step_a = x =>
+   x < 0
+      | <- "err_a" ->
+      | <+ x * 2 +>
+
+step_b: Int => < Int | String >
+step_b = x =>
+   side_effect ::= side_effect + 1
+   x == 0
+      | <- "err_b" ->
+      | <+ 100 / x +>
+
+pipeline: Int, Int => < Int | String >
+pipeline = a, b =>
+   res = step_a(a)--! + step_b(b)--!
+   <+ res +>
+
+// Success case: step_a(5)=10, step_b(2)=50 => 60 (side_effect = 1)
+p1 = pipeline(5, 2)
+p1
+   | v => print_int $ v
+   | e => print $ e
+
+// Early abort at step_a: step_b must NOT run (side_effect stays 1)
+p2 = pipeline(-3, 2)
+p2
+   | v => print_int $ v
+   | e => print $ e
+print_int $ side_effect
+
+// Abort at step_b: step_a(4)=8, step_b(0)=err_b (side_effect = 2)
+p3 = pipeline(4, 0)
+p3
+   | v => print_int $ v
+   | e => print $ e
+print_int $ side_effect
+
+// RamPN test with propagate
+unit_step: Int => < Int | >
+unit_step = x =>
+   x < 0
+      | <-->
+      | <+ x + 10 ->
+
+unit_pipeline: Int => < Int | >
+unit_pipeline = x =>
+   v = unit_step(x)--!
+   <+ v * 2 ->
+
+u1 = unit_pipeline(5)
+u1
+   | v => print_int $ v
+   | print $ "none"
+
+u2 = unit_pipeline(-1)
+u2
+   | v => print_int $ v
+   | print $ "none"

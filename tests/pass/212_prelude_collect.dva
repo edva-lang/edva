@@ -1,0 +1,33 @@
+// The prelude's generic collection combinators (auto-loaded): compose, const,
+// map, and filter. map/filter build a NEW homogeneous record of the same type
+// (CTTR "out = T"); compose is curried; const is the direct 2-arg form.
+
+#use(import) fp
+
+#use "str"
+
+#type Ints (Int){}
+
+inc: Int => Int
+inc = n => n + 1
+dbl: Int => Int
+dbl = n => n * 2
+even: Int => <>
+even = n => n % 2 == 0
+
+print $ str::from_int(compose(dbl, inc)(10))
+print $ str::from_int(const(42)("ignored"))
+
+s = Ints()
+s += 1
+s += 2
+s += 3
+
+m = map(inc, s)
+print $ str::from_int(m(0) | _ | -1)
+print $ str::from_int(m(1) | _ | -1)
+print $ str::from_int(m(2) | _ | -1)
+
+f = filter(even, s)
+print $ "count=" + str::from_int(?f)
+print $ str::from_int(f(0) | _ | -1)

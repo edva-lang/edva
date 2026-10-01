@@ -1,0 +1,16 @@
+// A compound MEMBER write "r.m += v" appends to the field's Builder (String
+// or byte RHS) or growable array in place. The field must be initialized
+// first (field-init tracking).
+#type Ints (Int){}
+#type R (m: Builder, a: Ints)
+r: R
+r.m = {4}
+r.a = Ints()
+r.m += "hi"
+r.m += 10
+r.a += 7
+r.a += 8
+print $ +r.m
+print_int $ (r.a(0) | _ | _)
+print_int $ (r.a(1) | _ | _)
+print_int $ ?r.a

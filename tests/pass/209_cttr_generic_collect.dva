@@ -1,0 +1,66 @@
+// Compile-Time Type Reflection (CTTR), no new syntax: a bound "#! T: Type"
+// parameter used as a VALUE materializes a fresh value of its bound type
+// ("out = T" gives an empty array/map, or a scalar zero). Combined with the
+// existing `@` cycle and `xs(i)` reads, this makes generic collect / map /
+// filter over homogeneous records expressible in plain dva.
+
+#use "str"
+
+#type Ints (Int){}
+#type Strs (String){}
+
+map_f: #! T: Type, (Int => Int), T => T
+map_f = f, xs =>
+   out = T
+   ?xs @ i =>
+      out += f(xs(i) | _ | 0)
+   out
+
+filter_f: #! T: Type, (Int => <>), T => T
+filter_f = pred, xs =>
+   out = T
+   ?xs @ i =>
+      v = xs(i) | _ | 0
+      pred(v)
+         | out += v
+   out
+
+shout: #! T: Type, (String => String), T => T
+shout = f, xs =>
+   out = T
+   ?xs @ i =>
+      out += f(xs(i) | _ | "")
+   out
+
+inc: Int => Int
+inc = n => n + 10
+even: Int => <>
+even = n => n % 2 == 0
+up: String => String
+up = s => s + "!"
+
+s = Ints()
+s += 1
+s += 2
+s += 3
+m = map_f(inc, s)
+print $ str::from_int(m(0) | _ | -1)
+print $ str::from_int(m(1) | _ | -1)
+print $ str::from_int(m(2) | _ | -1)
+
+s2 = Ints()
+s2 += 1
+s2 += 2
+s2 += 3
+s2 += 4
+f = filter_f(even, s2)
+print $ "count=" + str::from_int(?f)
+print $ str::from_int(f(0) | _ | -1)
+print $ str::from_int(f(1) | _ | -1)
+
+t = Strs()
+t += "a"
+t += "b"
+u = shout(up, t)
+print $ u(0) | _ | "?"
+print $ u(1) | _ | "?"

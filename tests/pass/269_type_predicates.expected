@@ -1,0 +1,19 @@
+exact_primitive
+exact_primitive
+record
+enum
+ram
+array
+int
+float
+Pt is record
+Int is not record
+Color is enum
+Pt is not enum
+Int is int
+Float is not int
+Int is numeric
+Float is numeric
+Str is not numeric
+Empty is unit
+Pt is not unit

@@ -1,0 +1,20 @@
+// lib.dva — a dva module compiled with --no-main and linked into a host
+// program (C or Odin). The #export'd functions become bare C symbols; global
+// state initializes via a llvm.global_ctors constructor.
+#use str
+
+#export dva_add: Int, Int => Int
+#export dva_add = a, b => a + b
+
+#export dva_fact: Int => Int
+#export dva_fact = n =>
+   n [0, 1] 1
+   |
+   acc' = 1
+   n @ k => acc = acc * (k + 1)
+   acc'
+
+#export dva_greet: Int => Int
+#export dva_greet = n =>
+   msg = "hello from dva, n=" + str::from_int(n)
+   ?msg

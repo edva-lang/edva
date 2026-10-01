@@ -1,0 +1,2 @@
+MyInt :: Int
+x: MyInt = 10

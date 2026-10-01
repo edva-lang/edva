@@ -1,0 +1,63 @@
+// Standard Sorting Module (std/sort.dva)
+//
+// Deterministic ordering for the self-hosted compiler's map/name passes.
+// Sorters are pure: they return a NEW sorted homogeneous record (the input is
+// untouched). Insertion sort — O(n^2) worst case, but the codegen sorts small
+// name lists; stable and allocation-light.
+
+#use str
+
+#public
+   #type Strings (String){}
+   #type Ints (Int){}
+
+   // Shared untyped insertion-sort engine: operates on index positions with
+   // caller-provided comparator and swap closures.
+   raw_sort_slots: Int, (Int, Int => <>), (Int, Int => Int) => ()
+   raw_sort_slots = len, is_less, swap =>
+      len @ i => raw_bubble_slots(i, is_less, swap)
+
+   // Sorts a homogeneous String record ascending (str::cmp order).
+   strings: Strings => Strings
+   strings = list =>
+      out = Strings()
+      list @ s => out += s
+      sort_strings_pass(out)
+      out
+
+   // Sorts a homogeneous Int record ascending.
+   ints: Ints => Ints
+   ints = list =>
+      out = Ints()
+      list @ n => out += n
+      sort_ints_pass(out)
+      out
+
+raw_bubble_slots: Int, (Int, Int => <>), (Int, Int => Int) => ()
+raw_bubble_slots = j, is_less, swap =>
+   j > 0
+      |
+         is_less(j, j - 1)
+            |
+               swap(j, j - 1)
+               raw_bubble_slots(j - 1, is_less, swap)
+
+sort_strings_pass: Strings => ()
+sort_strings_pass = out =>
+   cmp_str = a, b => str::cmp(out(a)!!, out(b)!!) < 0
+   sw_str = a, b =>
+      tmp = out(a)!!
+      out(a) = out(b)!!
+      out(b) = tmp
+      0
+   raw_sort_slots(?out, cmp_str, sw_str)
+
+sort_ints_pass: Ints => ()
+sort_ints_pass = out =>
+   cmp_int = a, b => out(a)!! < out(b)!!
+   sw_int = a, b =>
+      tmp = out(a)!!
+      out(a) = out(b)!!
+      out(b) = tmp
+      0
+   raw_sort_slots(?out, cmp_int, sw_int)

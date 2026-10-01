@@ -1,0 +1,7 @@
+// Recursive Fibonacci Benchmark
+fib = n =>
+   n [< 2] n
+   | fib(n - 1) + fib(n - 2)
+
+res = fib $ 40
+print $ res

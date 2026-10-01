@@ -1,0 +1,60 @@
+# Bootstrap and fixed-point checks
+
+**Audience:** compiler contributors<br>
+**Status:** current workflow<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `Makefile`, `seed/edva.ll`, `build.sh`
+
+The compiler is built using a modular `Makefile` that supports incremental
+compilation, 2-stage fixed-point verification, and bootstrap recovery.
+
+## Incremental build
+
+To build or incrementally recompile `edva`:
+
+```sh
+make edva
+```
+
+`Makefile` compiles each standard library unit (`std/*.dva`) and compiler module
+(`selfhost/src/*.dva` and `selfhost/src/codegen/*.dva`) into an object file under
+`selfhost/obj/%.o` using `./edva <src> -c --module <mod> -o <obj> -O2`. It then links
+all objects with `clang` against `libLLVM-18`.
+
+If `./edva` is missing, the `bootstrap` target automatically links `seed/edva.ll`
+via `clang` to produce an initial compiler.
+
+## Fixed-point verification
+
+The fixed-point check compiles the entire compiler twice through a 2-stage bootstrap
+and verifies that the emitted LLVM IR is byte-identical:
+
+```sh
+make fixed-point
+```
+
+1. **Stage 1:** The current `./edva` compiler builds all modules to
+   `selfhost/obj/stage1/*.ll` and links them into `edva_stage1`.
+2. **Stage 2:** `edva_stage1` compiles all modules to `selfhost/obj/stage2/*.ll`.
+3. **Comparison:** `diff -u -r` verifies that all Stage 1 and Stage 2 IR files are
+   completely identical.
+
+Upon successful verification, `edva_stage1` is installed as `./edva`.
+
+## Rebuilding the seed
+
+Rebuilding the seed is a maintainer operation performed after major compiler or
+syntax milestones:
+
+```sh
+make rebuild-seed
+```
+
+This target:
+1. Runs `make fixed-point` to guarantee compiler stability.
+2. Synchronizes the active sources into `seed/selfhost/`, `seed/selfhost/codegen/`,
+   and `seed/std/`.
+3. Updates the frozen seed IR in `seed/`.
+
+Use `make clean` to remove temporary build objects and stage directories.
+

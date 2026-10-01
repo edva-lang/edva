@@ -1,0 +1,63 @@
+// Linux io_uring integration test
+#use libc
+#use uring
+
+r_res = uring::new(8)
+r_res
+   | ring =>
+      // 1. Submit NOP
+      uring::prep_nop(ring, 1001)
+      uring::submit(ring)
+      cqe1 = uring::wait_cqe(ring)
+      cqe1
+         | c1 =>
+            print_int $ c1.user_data
+            print_int $ c1.res
+         | err1 => print $ "err: " + err1
+
+      // 2. Submit pipe write and read
+      pbuf = libc::malloc(8)
+      libc::pipe(pbuf)
+      rfd = Int(@[pbuf + 0 i32])
+      wfd = Int(@[pbuf + 4 i32])
+      libc::free(pbuf)
+
+      msg = "io_uring ok\n"
+      uring::prep_write(ring, wfd, &msg, ?msg, 2001)
+
+      in_b = {32}
+      uring::prep_read(ring, rfd, &in_b, 32, 2002)
+
+      uring::submit_and_wait(ring, 2)
+
+      cqe2 = uring::wait_cqe(ring)
+      cqe2
+         | c =>
+            print_int $ c.user_data
+            print_int $ c.res
+         | _
+
+      cqe3 = uring::wait_cqe(ring)
+      cqe3
+         | c =>
+            print_int $ c.user_data
+            print_int $ c.res
+         | _
+
+      ?in_b = 12
+      print $ +in_b
+
+      // 3. Test reap
+      uring::prep_nop(ring, 3001)
+      uring::prep_nop(ring, 3002)
+      uring::submit_and_wait(ring, 2)
+      evs = uring::reap(ring)
+      evs @ e =>
+         print_int $ e.user_data
+         print_int $ e.res
+
+      libc::close(rfd)
+      libc::close(wfd)
+      uring::close(ring)
+   | err =>
+      print $ "setup error: " + err

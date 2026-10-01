@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Dva" version="1" kateversion="5.0" section="Sources" extensions="*.dva" mimetype="text/x-dva" author="baldgeorge" license="BSD-2-Clause">
+  <highlighting>
+    <list name="directives">
+      <item>#use</item>
+      <item>#type</item>
+      <item>#foreign</item>
+      <item>#pragma</item>
+      <item>#private</item>
+      <item>#export</item>
+      <item>#spawn</item>
+      <item>#join</item>
+      <item>#!</item>
+      <item>#size</item>
+    </list>
+    <list name="types">
+      <item>Int</item>
+      <item>Float</item>
+      <item>String</item>
+      <item>Address</item>
+      <item>Rune</item>
+      <item>Builder</item>
+      <item>Error</item>
+      <item>Type</item>
+      <item>i1</item>
+      <item>i8</item>
+      <item>i16</item>
+      <item>i32</item>
+      <item>i64</item>
+      <item>u8</item>
+      <item>u16</item>
+      <item>u32</item>
+      <item>u64</item>
+      <item>f32</item>
+      <item>f64</item>
+      <item>float</item>
+      <item>double</item>
+      <item>void</item>
+      <item>ptr</item>
+    </list>
+    <list name="constants">
+      <item>&lt;+&gt;</item>
+      <item>&lt;-&gt;</item>
+      <item>&lt;++&gt;</item>
+      <item>&lt;--&gt;</item>
+      <item>&lt;&gt;</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/" />
+        <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="BlockComment" />
+        <StringDetect attribute="String" context="RawString" String="(=" beginRegion="RawString" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <DetectChar attribute="Char" context="Char" char="'" />
+        <keyword attribute="Directive" context="#stay" String="directives" />
+        <keyword attribute="Constant" context="#stay" String="constants" />
+        <keyword attribute="Type" context="#stay" String="types" />
+        <StringDetect attribute="Special" context="#stay" String="&lt;+" />
+        <StringDetect attribute="Special" context="#stay" String="+&gt;" />
+        <StringDetect attribute="Special" context="#stay" String="&lt;-" />
+        <StringDetect attribute="Special" context="#stay" String="-&gt;" />
+        <RegExpr attribute="Control" context="#stay" String="--[&gt;^][0-9]*" />
+        <StringDetect attribute="Control" context="#stay" String="&gt;--" />
+        <StringDetect attribute="Control" context="#stay" String="--:" />
+        <DetectChar attribute="Control" context="#stay" char="@" />
+        <StringDetect attribute="Control" context="#stay" String="!|" />
+        <StringDetect attribute="Operator" context="#stay" String="!!" />
+        <StringDetect attribute="Operator" context="#stay" String="--!" />
+        <StringDetect attribute="Operator" context="#stay" String="=&gt;" />
+        <StringDetect attribute="Operator" context="#stay" String="::=" />
+        <StringDetect attribute="Operator" context="#stay" String=":=" />
+        <StringDetect attribute="Operator" context="#stay" String="+=" />
+        <StringDetect attribute="Operator" context="#stay" String="::" />
+        <StringDetect attribute="Operator" context="#stay" String=".." />
+        <StringDetect attribute="Operator" context="#stay" String="$&gt;&gt;" />
+        <StringDetect attribute="Operator" context="#stay" String="$&gt;" />
+        <StringDetect attribute="Operator" context="#stay" String="$:" />
+        <DetectChar attribute="Operator" context="#stay" char="$" />
+        <StringDetect attribute="Operator" context="#stay" String="&amp;&amp;" />
+        <StringDetect attribute="Operator" context="#stay" String="||" />
+        <StringDetect attribute="Operator" context="#stay" String="==" />
+        <StringDetect attribute="Operator" context="#stay" String="!=" />
+        <StringDetect attribute="Operator" context="#stay" String="!&lt;" />
+        <StringDetect attribute="Operator" context="#stay" String="!&gt;" />
+        <StringDetect attribute="Operator" context="#stay" String=".&lt;." />
+        <StringDetect attribute="Operator" context="#stay" String=".&gt;." />
+        <StringDetect attribute="Operator" context="#stay" String=".|." />
+        <StringDetect attribute="Operator" context="#stay" String=".&amp;." />
+        <StringDetect attribute="Operator" context="#stay" String=".!." />
+        <StringDetect attribute="Operator" context="#stay" String="++" />
+        <StringDetect attribute="Operator" context="#stay" String="~~" />
+        <StringDetect attribute="Operator" context="#stay" String="??" />
+        <DetectChar attribute="Operator" context="#stay" char="?" />
+        <DetectChar attribute="Operator" context="#stay" char="&amp;" />
+        <DetectChar attribute="Operator" context="#stay" char="+" />
+        <DetectChar attribute="Operator" context="#stay" char="-" />
+        <DetectChar attribute="Operator" context="#stay" char="*" />
+        <DetectChar attribute="Operator" context="#stay" char="/" />
+        <DetectChar attribute="Operator" context="#stay" char="%" />
+        <DetectChar attribute="Operator" context="#stay" char="=" />
+        <DetectChar attribute="Operator" context="#stay" char="!" />
+        <DetectChar attribute="Operator" context="#stay" char="&lt;" />
+        <DetectChar attribute="Operator" context="#stay" char="&gt;" />
+        <DetectChar attribute="Operator" context="#stay" char="|" />
+        <DetectChar attribute="Operator" context="#stay" char="^" />
+        <RegExpr attribute="Float" context="#stay" String="-?[0-9]+\.[0-9]+([eE][-+]?[0-9]+)?(f32|f|F)?" />
+        <RegExpr attribute="Hex" context="#stay" String="0x[0-9a-fA-F]+(i8|i16|i32|i64|u8|u16|u32|u64)?" />
+        <RegExpr attribute="Octal" context="#stay" String="0o[0-7]+(i8|i16|i32|i64|u8|u16|u32|u64)?" />
+        <RegExpr attribute="Binary" context="#stay" String="0b[01]+(i8|i16|i32|i64|u8|u16|u32|u64)?" />
+        <RegExpr attribute="Decimal" context="#stay" String="-?[0-9]+(i8|i16|i32|i64|u8|u16|u32|u64)?" />
+      </context>
+      <context name="LineComment" attribute="Comment" lineEndContext="#pop" />
+      <context name="BlockComment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment" />
+      </context>
+      <context name="RawString" attribute="String" lineEndContext="#stay">
+        <StringDetect attribute="String" context="#pop" String="=)" endRegion="RawString" />
+      </context>
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="Special" context="#stay" char="\" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context name="Char" attribute="Char" lineEndContext="#stay">
+        <DetectChar attribute="Special" context="#stay" char="\" />
+        <DetectChar attribute="Char" context="#pop" char="'" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Directive" defStyleNum="dsKeyword" />
+      <itemData name="Type" defStyleNum="dsDataType" />
+      <itemData name="Constant" defStyleNum="dsConstant" />
+      <itemData name="Control" defStyleNum="dsControlFlow" />
+      <itemData name="Operator" defStyleNum="dsOperator" />
+      <itemData name="Special" defStyleNum="dsSpecialChar" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="String" defStyleNum="dsString" />
+      <itemData name="Char" defStyleNum="dsChar" />
+      <itemData name="Decimal" defStyleNum="dsDecVal" />
+      <itemData name="Hex" defStyleNum="dsBaseN" />
+      <itemData name="Octal" defStyleNum="dsBaseN" />
+      <itemData name="Binary" defStyleNum="dsBaseN" />
+      <itemData name="Float" defStyleNum="dsFloat" />
+    </itemDatas>
+  </highlighting>
+</language>

@@ -1,0 +1,7 @@
+// Types must match at foreign calls: a write-target buffer is an Addr,
+// so handing a String to libc::recv's buffer param is a compile error (the
+// old String/RawPtr interchange was a type-system hole).
+#use libc
+
+s = "hello"
+r = libc::recv(0, s, 5, 0)

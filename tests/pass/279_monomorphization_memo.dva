@@ -1,0 +1,14 @@
+#type MyInt Int
+#type AlsoInt Int
+
+id: #! T: Type, T => T
+id = x => x
+
+a: MyInt
+a = 42
+b: AlsoInt
+b = 100
+
+res_a = id(a)
+res_b = id(b)
+print_int $ res_a + res_b

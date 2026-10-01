@@ -1,0 +1,34 @@
+#type Ints (Int){}
+
+grow = xs =>
+   xs += 99
+   ?xs
+
+xs: Ints
+xs += 1
+xs += 2
+xs += 3
+
+h = #spawn grow(xs)
+r = #join h
+print_int $ (r | _ | _)
+print_int $ ?xs
+
+sl = xs(0..3)
+get = s => s(1)
+h2 = #spawn get(sl)
+r2 = #join h2
+print_int $ (r2 | _ | _)
+
+// A growable array returned from the worker and unwrapped with '| _ | _'.
+mk: Int => Ints
+mk = n =>
+   ys: Ints
+   ys += n
+   ys
+
+h3 = #spawn mk(42)
+r3 = #join h3
+ys = r3 | _ | _
+print_int $ (ys(0) | _ | _)
+print_int $ ?ys

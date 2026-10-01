@@ -1,0 +1,27 @@
+// Standard Input Module (std/in.dva)
+// High-level safe abstractions for stdin using a singleton io::Reader.
+
+#use io
+
+#private
+   ::stdin_r = io::reader(io::STDIN)
+
+#public
+   // Reads up to `max` bytes from stdin, stopping at the first newline ('\n').
+   // Strips trailing '\r' if present. Returns <+ String +> or <--> on EOF.
+   read_line: Int => < String | >
+   read_line = max => io::read_line(stdin_r, max)
+
+   // Reads up to `max` available bytes from stdin.
+   // Returns <+ String +> or <--> on EOF.
+   read_bytes: Int => < String | >
+   read_bytes = max => io::read(stdin_r, max)
+
+   // Reads a single byte from stdin. Returns <+ Int +> or <--> on EOF.
+   read_byte: () => < Int | >
+   read_byte = !=> io::read_byte(stdin_r)
+
+   // Reads bytes from stdin until `delim` or `max` bytes.
+   // Consumes delimiter. Returns <+ String +> or <--> on EOF.
+   read_until: Int, Int => < String | >
+   read_until = delim, max => io::read_until(stdin_r, delim, max)

@@ -1,0 +1,30 @@
+s1 = "hello"
+print_int $ ??s1
+
+s2 = "hello 🤔 world"
+print_int $ ??s2
+
+r1 = 'a'
+r2 = 'д'
+r3 = '中'
+r4 = '🤔'
+print_int $ ?r1
+print_int $ ?r2
+print_int $ ?r3
+print_int $ ?r4
+
+s3 = "antigravity: " + r4
+print $ s3
+
+b = {32}
+b += r1
+b += r2
+b += r3
+b += r4
+print $ +b
+
+"a🤔b" @@ c =>
+   print $ "" + c
+
+'w'..'z' @ r =>
+   print $ "" + r

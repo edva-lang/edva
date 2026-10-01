@@ -1,0 +1,1 @@
+arena allocation under --no-runtime. The feature you used (a record, closure, String concat, Builder, or heap ram/enum) needs the runtime arena, which --no-runtime omits. Use only bare-metal features: Int arithmetic, String literals, '?s', 's(i)', and raw '@

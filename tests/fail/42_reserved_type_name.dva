@@ -1,0 +1,3 @@
+// Type names are reserved: defining a variable with a built-in or user type
+// name is a duplicate-definition error (E3050).
+Int = 5

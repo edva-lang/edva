@@ -1,0 +1,47 @@
+// std/str module: is_* predicates, to_* / from_* conversions.
+
+#use str
+
+// Predicates return ramifications: <+> / <-> (printed as Positive/Negative).
+print $ ( str::is_digit(Int('5')) | "Positive" | "Negative")
+print $ ( str::is_digit(Int('x')) | "Positive" | "Negative")
+print $ ( str::is_alpha(Int('a')) | "Positive" | "Negative")
+print $ ( str::is_alpha(Int('9')) | "Positive" | "Negative")
+print $ ( str::is_alnum(Int('z')) | "Positive" | "Negative")
+print $ ( str::is_alnum(Int('!')) | "Positive" | "Negative")
+print $ ( str::is_ws(Int(' ')) | "Positive" | "Negative")
+print $ ( str::is_hex(Int('f')) | "Positive" | "Negative")
+print $ ( str::is_hex(Int('g')) | "Positive" | "Negative")
+
+// from_byte: one byte as a 1-byte string.
+print $ str::from_byte(65)
+
+// from_int: proper fat String for 0, positive, negative.
+print $ str::from_int(0)
+print $ str::from_int(1234)
+print $ str::from_int(-7)
+
+// to_int / to_hex: RamPN Some((value, rest)) | None (no digits).
+r = str::to_int("123abc")
+print_int $ (r | (_.0) | -1)
+print $ (r | (_.1) | "none")
+rr = str::to_int("abc")
+print_int $ (rr | (_.0) | -1)
+h = str::to_hex("2fZ")
+print_int $ (h | (_.0) | -1)
+hx = str::to_hex("Zz")
+print_int $ (hx | (_.0) | -1)
+
+// "string @ ..." iterates through the bytes: 1 param = byte, 2 params =
+// (byte, index); the index persists after a break as the bytes consumed.
+sum' = 0
+"hi!" @ b => sum' = sum' + b
+print_int $ sum'
+s = "123abc"
+s @ b, i =>
+   str::is_digit(b) | 0 | -->
+print_int $ i
+s @ b => print_int $ b
+s @
+   print_int $ _
+   print_int $ _i

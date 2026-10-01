@@ -1,0 +1,6 @@
+// Loop Sum Benchmark
+sum := 0
+1..800000000 @ i =>
+   sum = sum + i
+
+print $ sum

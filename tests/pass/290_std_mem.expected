@@ -1,0 +1,27 @@
+CCCC
+CCCC
+cdefefgh
+1008
+p2 aligned
+p1 unaligned
+0
+777
+direct alloc tracked
+100
+ambient routing tracked
+0
+arena destroyed
+0
+3
+3
+pool exhausted
+freed slot 2
+2
+double free rejected
+invalid free rejected
+444
+3
+333
+444
+111
+pool destroyed

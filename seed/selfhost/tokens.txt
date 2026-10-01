@@ -1,0 +1,40 @@
+# Token-kind ordinals: single source of truth for the Odin `TokenType` enum
+# (src/ast.odin) and the dva `TokKind` enum (selfhost/lexer.dva). The line
+# order IS the ordinal, so the two enums agree and the FFI shim maps by
+# identity. Format: <odin-name> <dva-name>
+Op            Op
+EOF           Eof
+Identifier    Id
+Integer       Int
+Float         Float
+String        Str
+RawString     RawStr
+Rune          Rune
+LBracket      LBracket
+RBracket      RBracket
+LParen        LParen
+RParen        RParen
+LBrace        LBrace
+RBrace        RBrace
+Comma         Comma
+Semicolon     Semi
+Indent        Indent
+Dedent        Dedent
+Newline       Newline
+Import        UsePath
+Foreign       Foreign
+TypeKeyword   TypeKw
+Private       Private
+Export        Export
+Pragma        PragmaKw
+CompileTime   CT
+Spawn         SpawnKw
+Join          JoinKw
+Exit          ExitKw
+ErrorKw       ErrorKw
+WarnKw        WarnKw
+PragmaFP     PragmaFP
+Public       Public
+PackedKw     PackedKw
+UseDynamicPath UseDynamicPath
+PragmaSwizzle PragmaSwizzle

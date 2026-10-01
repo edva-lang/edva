@@ -1,0 +1,6 @@
+// A forward-annotated slice ("s: (Int[])") has no backing array — its size is
+// unknown at declaration, unlike an array. Element writes are therefore
+// rejected (E3049): build the slice from an array, or assign a whole slice
+// value first.
+s: (Int[])
+s(0) = 42

@@ -1,0 +1,23 @@
+// Bitwise operators: .&. .|. .!. .<. .>.
+// .>. is a zero-fill (logical) right shift; shift amounts are masked.
+a = 0b1100 .&. 0b1010
+print_int $ a      // 8
+b = 0b1100 .|. 0b1010
+print_int $ b      // 14
+c = .!. 5
+print_int $ c      // -6
+d = 1 .<. 4
+print_int $ d      // 16
+e = 0xF0 .>. 4
+print_int $ e      // 15
+// masked shift via runtime path
+x = 1
+s = 64
+print_int $ x .<. s     // 1 (64 & 63 = 0)
+// precedence: .&. tighter than .|. ; shifts tighter than comparison
+p = 2 .|. 2 .&. 4
+print_int $ p      // 2
+t = 8 .>. 2 > 1
+print $ (t | "Positive" | "Negative")      // (8 >> 2) > 1 = Positive
+u = 3 .&. 1 == 1
+print_int $ u      // 3 & (1==1) = 1

@@ -1,0 +1,4 @@
+BadFlags: #packed u16 (
+   a: 1,
+   b: 2,
+)

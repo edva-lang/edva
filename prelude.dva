@@ -1,0 +1,29 @@
+// Standard Dva Prelude (prelude.dva — a sibling of std/, auto-included)
+//
+// Auto-loaded into every program (the driver loads it with an empty prefix,
+// so its bindings are global — no "**prelude" import needed). Provides
+// basic output aliases bound to stdout (io::out).
+
+#use io
+
+// print: writes the bytes + a newline. A named function so calls are statically
+// type-checked; non-String output goes through print_int / print_float /
+// writeln_b (or io::out for anything generic).
+print: String => ()
+print = s => io::out(s)
+
+// Global stdout writer aliases.
+writeln: String => ()
+writeln = s => io::out(s)
+
+print_int: Int => ()
+print_int = n => io::out(n)
+
+print_float: Float => ()
+print_float = f => io::out(f)
+
+print_float32: f32 => ()
+print_float32 = f => io::out(f)
+
+writeln_b: Builder => ()
+writeln_b = b => io::out(b)

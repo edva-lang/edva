@@ -1,0 +1,44 @@
+#pragma swizzle all
+
+// 1. Float vectors with xyzw
+v = (1.0, 2.0)
+v.x == 1.0 && v.y == 2.0 | print $ "xyzw scalar ok"
+s = v.yx
+s.0 == 2.0 && s.1 == 1.0 | print $ "xyzw 2d ok"
+b = v.xx
+b.0 == 1.0 && b.1 == 1.0 | print $ "xyzw broadcast ok"
+
+// 2. 4D vectors with xyzw
+v4 = (10.0, 20.0, 30.0, 40.0)
+z = v4.zw
+z.0 == 30.0 && z.1 == 40.0 | print $ "zw ok"
+rev = v4.wzyx
+rev.0 == 40.0 && rev.1 == 30.0 && rev.2 == 20.0 && rev.3 == 10.0 | print $ "wzyx ok"
+
+// 3. Color swizzling with rgba
+col = (0.1, 0.2, 0.3, 1.0)
+col.r == 0.1 && col.g == 0.2 && col.b == 0.3 && col.a == 1.0 | print $ "rgba scalar ok"
+c3 = col.rgb
+c3.0 == 0.1 && c3.1 == 0.2 && c3.2 == 0.3 | print $ "rgb ok"
+bgr = col.bgr
+bgr.0 == 0.3 && bgr.1 == 0.2 && bgr.2 == 0.1 | print $ "bgr ok"
+
+// 4. Int vectors
+iv = (100, 200, 300)
+iv_s = iv.yx
+iv_s.0 == 200 && iv_s.1 == 100 | print $ "int vec swizzle ok"
+iv.z == 300 | print $ "int scalar swizzle ok"
+
+// 5. Named fields on homogeneous record
+#type Rect (x: Float, y: Float, w: Float, h: Float)
+rc = Rect((1.0, 2.0, 100.0, 200.0))
+wh = rc.wh
+wh.0 == 100.0 && wh.1 == 200.0 | print $ "named wh ok"
+xy = rc.xy
+xy.0 == 1.0 && xy.1 == 2.0 | print $ "named xy ok"
+
+// 6. Vector arithmetic on swizzles
+vsum = v.xy + v.yx
+vsum.0 == 3.0 && vsum.1 == 3.0 | print $ "vsum ok"
+
+print $ "PASS"

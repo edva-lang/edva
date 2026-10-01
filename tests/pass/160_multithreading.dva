@@ -1,0 +1,13 @@
+worker = x, y =>
+   x + y
+
+echo = s =>
+   s + "!"
+
+h = #spawn worker(10, 20)
+r = #join h
+print_int $ (r | _ | _)
+
+h2 = #spawn echo("hello")
+r2 = #join h2
+print $ (r2 | _ | _)

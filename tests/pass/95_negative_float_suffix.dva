@@ -1,0 +1,5 @@
+print_float32 $ -1.5f32
+print_float $ -2.75
+n = -3.5f32
+print_float32 $ n
+print_float32 $ -1.5f

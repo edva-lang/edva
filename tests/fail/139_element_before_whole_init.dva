@@ -1,0 +1,5 @@
+// Element access requires whole-value initialization: writing an element of a
+// forward-annotated homogeneous record before a whole-value assignment is an
+// error.
+arr: (Int * 3)
+arr(0) = 9

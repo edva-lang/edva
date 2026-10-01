@@ -1,0 +1,32 @@
+# `sort` standard library
+
+**Audience:** Edva users sorting small collections<br>
+**Status:** current reference<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `std/sort.dva`
+
+`sort` provides stable insertion-sort helpers. The typed helpers copy their
+input into a new growable array and leave the original unchanged.
+
+| Export | Signature | Behavior |
+|---|---|---|
+| `Strings` | `(String){}` | growable string-array type |
+| `Ints` | `(Int){}` | growable integer-array type |
+| `strings` | `Strings => Strings` | ascending `str::cmp` order |
+| `ints` | `Ints => Ints` | ascending numeric order |
+| `raw_sort_slots` | `Int, (Int, Int => <>), (Int, Int => Int) => ()` | callback-driven in-place slot engine |
+
+```dva
+#use sort
+
+numbers = sort::Ints()
+numbers += 9
+numbers += 2
+numbers += 5
+ordered = sort::ints(numbers)
+print_int(ordered(0)!!)
+```
+
+The implementation is quadratic in the worst case and is intended for small
+collections. `raw_sort_slots` accepts an index comparator and swap callback;
+the caller owns the storage that those callbacks access.

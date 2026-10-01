@@ -1,0 +1,1262 @@
+// The self-hosted dva lexer (Phase 1). Production grade except one
+// deliberate simplification in the operator dimension:
+//
+//   A SPECIAL character is any rune that is none of:
+//     - a delimiter:  ( ) [ ] { } , ;
+//     - whitespace, an identifier char (alpha / digit / '_'),
+//     - a quote ('"), or '#' (the directive marker).
+//
+//   Every unbroken run of special characters is lexed as ONE generic "Op"
+//   token whose text is the run. There is no operator table, no unknown-run
+//   error, and no split-back hack for compact ram types ("<Int|>" ends with
+//   Op("|>")). The PARSER filters: ram-literal forms by text ("<+", "<-",
+//   "<+>", "<->", "<++>", "<-->", "<>", and the "+>" / "->" payload
+//   closers), cycle jumps by text ("-->", "--^", "--:"; a following Int
+//   token is the jump's cycle depth), and treats every other Op as an
+//   operator keyed by its text.
+//
+// Consequences vs src/lexer.odin, all intentional: E1006 (unknown operator
+// run) is gone — a meaningless run reaches the parser and is rejected there;
+// E1016 (backslash) is gone — '\' is just an operator character now; "-->"
+// /"--^"/">--" and the ram/variant token kinds no longer exist as kinds.
+//
+// Everything else is at parity with src/lexer.odin: the layout engine
+// (INDENT/DEDENT, style locking, dedent bursts via a queue), line/col
+// tracking, // and /* */ comments, strings with the full escape set, raw
+// strings "(= ... =)", runes (emitted as decimal text), radix integers with
+// type suffixes and the "#pragma number" default, floats with the
+// padding-zero rule and scientific notation, the "#" directive family, and
+// fatal diagnostics E1001–E1015 (E1006/E1016 retired).
+//
+// Build & run:
+//   ./edva selfhost/lexer.dva
+//   ./lexer
+
+#use libc
+#use str
+#use unicode
+
+// --- token model ----------------------------------------------------------
+
+// Token kinds. Op is deliberately generic: its TEXT carries the operator
+// (or a ram-literal piece, or a cycle jump); the parser classifies.
+// BEGIN tokens.txt
+#type TokKind <
+   Op
+   Eof
+   Id
+   Int
+   Float
+   Str
+   RawStr
+   Rune
+   LBracket
+   RBracket
+   LParen
+   RParen
+   LBrace
+   RBrace
+   Comma
+   Semi
+   Indent
+   Dedent
+   Newline
+   UsePath
+   Foreign
+   TypeKw
+   Private
+   Export
+   PragmaKw
+   CT
+   SpawnKw
+   JoinKw
+   ExitKw
+   ErrorKw
+   WarnKw
+   PragmaFP
+   Public
+   PackedKw
+   UseDynamicPath
+   PragmaSwizzle
+>
+// END tokens.txt
+
+// A token: kind, source span [start, start+len), position, whitespace
+// flags, and final text. Most text is a view into the source; escaped
+// strings, rune values (decimal) and suffix-appended integers own bytes.
+#type Tok (
+   kind: TokKind,
+   start: Int,
+   len: Int,
+   line: Int,
+   col: Int,
+   lead: <>,
+   trail: <>,
+   text: String,
+)
+
+// Growable arrays used by the lexer state.
+#type IntArr (Int){}
+#type TokArr (Tok){}
+
+// --- lexer state ----------------------------------------------------------
+// Instance state: one Lx record per lexer. Records are heap objects, so a
+// function mutating a field through its Lx param mutates the caller's state
+// (multiple lexers can be live at once — the FFI needs this).
+
+#type Lx (
+   src: String,
+   pos: Int,
+   line: Int,
+   col: Int,
+   bol: Int,
+   style: Int,
+   stack: IntArr,
+   top: Int,
+   queue: TokArr,
+   qfront: Int,
+   lead: <>,
+   def: String,
+   has_esc: Int,
+   depth: Int,
+)
+
+lex_init: String => Lx
+lex_init = src => 
+   lx = Lx((src, 0, 1, 1, 1, 0, IntArr(), 1, TokArr(), 0, <->, "", 0, 0))
+   st = lx.stack
+   st += 0
+   lx
+
+// Deep-copy an Lx: a fresh lexer instance with the same source, position,
+// indent stack, and token queue (so the FFI can clone a handle for lookahead).
+clone_stack: IntArr, IntArr, Int, Int => ()
+clone_stack = src, dst, top, i =>
+   i < top
+      |
+         dst += (src(i) | _ | 0)
+         clone_stack(src, dst, top, i + 1)
+
+clone_queue: TokArr, TokArr, Int, Int => ()
+clone_queue = src, dst, count, i =>
+   i < count
+      |
+         dst += src(i)!!
+         clone_queue(src, dst, count, i + 1)
+
+// Deep-copy an Lx: a fresh lexer instance with the same source, position,
+// indent stack, and token queue (so the FFI can clone a handle for lookahead).
+clone_lx: Lx => Lx
+clone_lx = lx =>
+   c = Lx((lx.src, lx.pos, lx.line, lx.col, lx.bol, lx.style,
+      IntArr(), lx.top, TokArr(), lx.qfront, lx.lead, lx.def, lx.has_esc,
+      lx.depth))
+   clone_stack(lx.stack, c.stack, lx.top, 0)
+   clone_queue(lx.queue, c.queue, ?lx.queue, 0)
+   c
+
+// --- low-level ------------------------------------------------------------
+
+// Peek the rune 'off' bytes ahead (0 == next). 0 out of bounds.
+pk: Lx, Int => Rune
+pk = lx, off => 
+   i = lx.pos + off
+   i !> ?lx.src - 1
+      | unicode::decode_rune(lx.src, i)
+      | '\0'
+
+// Consume one rune, maintaining line/col.
+is_nl: Rune => <>
+is_nl = r =>
+   r ['\n']
+
+adv: Lx, Rune => Rune
+adv = lx, r => 
+   lx.pos = lx.pos + ?r
+   is_nl(r)
+      | lx.line = lx.line + 1; lx.col = 1
+      | lx.col = lx.col + 1
+   r
+
+is_ws: Rune => <>
+is_ws = c =>
+   c [' ', '\t', '\r', '\n']
+
+// Uniform token constructor; reads/clears the leading-ws state and records
+// whether whitespace follows the token. has_trailing_ws is meaningful only
+// for the tokens the parser inspects it on — Op, Newline (always true), and
+// the [ ] ; delimiters — matching src/lexer.odin exactly.
+mktok: Lx, TokKind, Int, Int, Int, Int, String => Tok
+mktok = lx, kind, start, len, line, col, text => 
+   lead = lx.lead
+   lx.lead = <->
+   ws = is_ws(pk(lx, 0))
+   trail = kind
+      [Newline] <+>
+      [Op, LBracket, Semi, RBracket] ws
+      | <->
+   Tok((kind, start, len, line, col, lead, trail, text))
+
+// --- errors ---------------------------------------------------------------
+// Lexer errors are fatal: diagnostic to stderr (fd 2), exit 1.
+
+fail: Int, Int, Int, String => Int
+fail = code, line, col, msg =>
+   b = {128}
+   b += ("E", str::from_int(code), " [", str::from_int(line), ":",
+      str::from_int(col), "]: ", msg, "\n")
+   out = +b
+   libc::write(2, out, ?out)
+   #exit 1
+   0
+
+// --- escapes --------------------------------------------------------------
+
+// One escaped character (the rune after a backslash) to its value. Unknown
+// escapes fall back to the raw rune — which also covers the identity escapes
+// ("\"", "\'", "\\"), whose value is the rune itself.
+esc_val: Rune => Rune
+esc_val = e =>
+   e
+      ['n'] '\n'
+      ['t'] '\t'
+      ['r'] '\r'
+      ['0'] '\0'
+      ['a'] '\a'
+      ['b'] '\b'
+      ['f'] '\f'
+      ['v'] '\v'
+      | e
+
+// Decode the C-style escapes of a scanned string body into real bytes.
+decode_escapes: String => String
+decode_escapes = raw =>
+   buf = { ?raw }
+   in_esc' = <->
+   raw @@ r =>
+      in_esc'
+         |
+            buf += esc_val(r)
+            in_esc' = <->
+         |
+            r == '\\'
+               | in_esc' = <+>
+               | buf += r
+   in_esc' | buf += '\\' | 0
+   +buf
+
+// Decode the single escape of a raw string body: "=\)" -> "=)".
+decode_raw_esc: String => String
+decode_raw_esc = raw =>
+   total = ?raw
+   buf = { total }
+   i' = 0
+   0.. @
+      i' !< total | -->
+      take3 = raw(i') == '=' && i' + 2 < total &&
+         raw(i' + 1) == '\\' && raw(i' + 2) == ')'
+      take3
+         |
+            buf += "=)"
+            i' = i' + 3
+         |
+            buf += raw(i')
+            i' = i' + 1
+   +buf
+
+// --- character classes ----------------------------------------------------
+
+is_delim: Rune => <>
+is_delim = c =>
+   c ['(', ')', '[', ']', '{', '}', ',', ';']
+
+is_id_start: Rune => <>
+is_id_start = r =>
+   r [unicode::is_alpha, '_']
+
+is_id_char: Rune => <>
+is_id_char = r =>
+   r [is_id_start, unicode::is_digit]
+
+// A SPECIAL character: munched into operator runs. Everything except
+// delimiters, whitespace, identifier chars, quotes, '#' and end-of-input.
+// A mixed commatized guard: value literals (match c) and predicate
+// references (apply to c), with the branches swapped so a non-special char
+// yields <-> and a special one <+>.
+is_special: Rune => <>
+is_special = c =>
+   c ['"', '\'', '#', '\0', is_delim, is_ws, is_id_char] <-> | <+>
+
+// < >-returning predicates yield genuine rams (<+>/<->): an Int-yielding
+// body under a <> signature is an E3093 mismatch, and an Int can never
+// drive a bare-pipe choice (E3085).
+
+// --- scanners -------------------------------------------------------------
+
+// Advances the cursor while `pred` holds, stopping at EOF or the first
+// non-matching rune; returns the position reached. The shared tail of the
+// fixed-byte scanners.
+scan_while: Lx, (Rune => <>) => Int
+scan_while = lx, pred =>
+   0.. @
+      lx.pos !< ?lx.src | -->
+      pred(pk(lx, 0))
+         | adv(lx, pk(lx, 0))
+         | -->
+   lx.pos
+
+skip_digits: Lx, Int => Int
+skip_digits = lx, q => scan_while(lx, (unicode::is_digit(_)))
+
+scan_id: Lx, Int => String
+scan_id = lx, start => 
+   total = ?lx.src
+   i' = lx.pos
+   ncol' = lx.col
+   0.. @
+      i' !< total | -->
+      r = unicode::decode_rune(lx.src, i')
+      is_id_char(r)
+         |
+            i' = i' + ?r
+            ncol' = ncol' + 1
+         | -->
+   0.. @
+      i' !< total | -->
+      r2 = unicode::decode_rune(lx.src, i')
+      r2 == '\''
+         |
+            i' = i' + 1
+            ncol' = ncol' + 1
+         | -->
+   lx.pos = i'
+   lx.col = ncol'
+   lx.src(start..i')
+
+// Consumes an int type suffix ("i8".."u64") if present.
+scan_int_suffix: Lx, Int => Int
+scan_int_suffix = lx, q => 
+   suffixes = ("i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64")
+   got' = 0
+   suffixes @ s =>
+      got' [1] 0
+      n = ?s
+      fits = lx.pos + n !> ?lx.src
+      matches = fits && lx.src(lx.pos..lx.pos + n) == s
+      matches
+         |
+            lx.pos = lx.pos + n
+            lx.col = lx.col + n
+            got' = 1
+   got'
+
+scan_float_suffix: Lx, Int => ()
+scan_float_suffix = lx, q => 
+   three = lx.pos + 3 !> ?lx.src && lx.src(lx.pos..lx.pos + 3) == "f32"
+   three
+      |
+         lx.pos = lx.pos + 3
+         lx.col = lx.col + 3
+   pk(lx, 0) ['f', 'F']
+      lx.pos = lx.pos + 1
+      lx.col = lx.col + 1
+
+radix_ok: Rune, Rune => <>
+radix_ok = c, kind =>
+   is_b = kind == 'b'
+   is_o = kind == 'o'
+   is_x = kind == 'x'
+   dec = c !< '0' && c !> '9'
+   bin = c ['0', '1']
+   oct = c !< '0' && c !> '7'
+   hex = dec || (c !< 'A' && c !> 'F') || (c !< 'a' && c !> 'f')
+   (is_b && bin) || (is_o && oct) || (is_x && hex)
+
+finish_int: Lx, Int, Int, Int => Tok
+finish_int = lx, start, line, col => 
+   had = scan_int_suffix(lx, 0)
+   suf = had [1] "" | lx.def
+   num = suf == "" | lx.src(start..lx.pos) | lx.src(start..lx.pos) + suf
+   mktok(lx, TokKind(Int), start, ?num, line, col, num)
+
+// Consumes the 0<b|o|x> prefix and digit run, then finishes the literal.
+scan_radix_rest: Lx, Rune, Int, Int, Int => Tok
+scan_radix_rest = lx, kind, start, line, col => 
+   adv(lx, pk(lx, 0))
+   adv(lx, pk(lx, 0))
+   0.. @
+      lx.pos !< ?lx.src | -->
+      radix_ok(pk(lx, 0), kind)
+         | adv(lx, pk(lx, 0))
+         | -->
+   finish_int(lx, start, line, col)
+
+finish_float: Lx, Int, Int, Int => Tok
+finish_float = lx, start, line, col => 
+   scan_float_suffix(lx, 0)
+   mktok(lx, TokKind(Float), start, lx.pos - start,
+      line, col, lx.src(start..lx.pos))
+
+// Optional fraction (.digits). Returns 1 when consumed.
+scan_frac_opt: Lx, Int, Int, Int, Int => <>
+scan_frac_opt = lx, q, start, line, col => 
+   d = pk_off(lx, 1)
+   dig = d !< '0' && d !> '9'
+   ok = pk(lx, 0) == '.' && pk_off(lx, 1) != '.' && dig
+   ok
+      |
+         adv(lx, pk(lx, 0))
+         skip_digits(lx, 0)
+   ok
+
+// Optional exponent (e[+-]digits). Returns 1 when consumed.
+scan_exp_opt: Lx, Int, Int, Int => <>
+scan_exp_opt = lx, q, line, col => 
+   is_e = pk(lx, 0) ['e', 'E']
+   is_e | adv(lx, pk(lx, 0))
+   has_sign = is_e && (pk(lx, 0) == '+' || pk(lx, 0) == '-')
+   has_sign | adv(lx, pk(lx, 0))
+   is_e | skip_digits(lx, line)
+   is_e
+
+scan_dec: Lx, Int, Int, Int => Tok
+scan_dec = lx, start, line, col => 
+   skip_digits(lx, 0)
+   f1 = scan_frac_opt(lx, 0, start, line, col)
+   bad_dot = !f1 && pk(lx, 0) == '.' && pk_off(lx, 1) != '.' &&
+      !is_special(pk_off(lx, 1)) && !(start > 0 && lx.src(start - 1) == '.')
+   bad_dot | fail(1012, line, col,
+      "Float literal requires a digit after the decimal point; " +
+      "padding zeros are mandatory (write '1.0', not '1.').")
+   f2 = scan_exp_opt(lx, 0, 0, line)
+   is_float = f1 || f2
+   is_float
+      | finish_float(lx, start, line, col)
+      | finish_int(lx, start, line, col)
+
+scan_num: Lx, Int, Int, Int => Tok
+scan_num = lx, start, line, col => 
+   k = pk(lx, 0)
+   is_r = pk_off(lx, 1) ['b', 'o', 'x']
+   k == '0' && is_r
+      | scan_radix_rest(lx, pk_off(lx, 1), start, line, col)
+      | scan_dec(lx, start, line, col)
+
+pk_off: Lx, Int => Rune
+pk_off = lx, n => pk(lx, n)
+
+// Operators: the maximal unbroken run of special characters, as ONE generic
+// Op token. Ram literals, cycle jumps and operators are the parser's job.
+scan_op: Lx, Int, Int, Int => Tok
+scan_op = lx, start, line, col => 
+   total = ?lx.src
+   i' = lx.pos
+   ncol' = lx.col
+   0.. @
+      i' !< total | -->
+      c = unicode::decode_rune(lx.src, i')
+      is_special(c)
+         |
+            i' = i' + ?c
+            ncol' = ncol' + 1
+         | -->
+   lx.pos = i'
+   lx.col = ncol'
+   // Range ".." followed by negative sign, '?', or other operator characters:
+   // split ".." into the range operator and the separate trailing operator.
+   is_dotdot_split = i' - start > 2 && lx.src(start) == '.' &&
+      lx.src(start + 1) == '.'
+   is_dotdot_split
+      |
+         lx.pos = start + 2
+         lx.col = col + 2
+         mktok(lx, TokKind(Op), start, 2, line, col, "..")
+      |
+         is_unwrap_split = i' - start > 2 && lx.src(start) == '!' &&
+            lx.src(start + 1) == '!'
+         is_unwrap_split
+            |
+               lx.pos = start + 2
+               lx.col = col + 2
+               mktok(lx, TokKind(Op), start, 2, line, col, "!!")
+            |
+               is_prop_split = i' - start > 3 && lx.src(start) == '-' &&
+                  lx.src(start + 1) == '-' && lx.src(start + 2) == '!'
+               is_prop_split
+                  |
+                     lx.pos = start + 3
+                     lx.col = col + 3
+                     mktok(lx, TokKind(Op), start, 3, line, col, "--!")
+                  |
+                     is_bind_split = i' - start > 2 && lx.src(start) == '~' &&
+                        lx.src(start + 1) == '~'
+                     is_bind_split
+                        |
+                           lx.pos = start + 2
+                           lx.col = col + 2
+                           mktok(lx, TokKind(Op), start, 2, line, col, "~~")
+                        |
+                           mktok(lx, TokKind(Op), start, i' - start, line, col,
+                              lx.src(start..i'))
+
+// --- strings / runes / raw strings ----------------------------------------
+
+// Consume an escaped character inside a string literal: the backslash
+// (already scanned as c) plus the escaped rune, if any remains.
+maybe_esc_adv: Lx, Rune => Rune
+maybe_esc_adv = lx, c => 
+   adv(lx, c)
+   lx.pos < ?lx.src | adv(lx, pk(lx, 0)) | 0
+
+// Handles a string-literal escape: marks escape present and advances past
+// the escaped rune.
+on_str_esc: Lx, Rune => Rune
+on_str_esc = lx, c => 
+   lx.has_esc = 1
+   maybe_esc_adv(lx, c)
+
+// String-body walker: an ITERATIVE scan (the recursive trio was O(len)
+// calls and O(len) stack — no tail-call optimization). Mutates lx in the
+// cycle, breaks on the closer, returns whether it closed.
+scan_string_body: Lx, Int, Int => Int
+scan_string_body = lx, line, col =>
+   closed' = 0
+   0.. @
+      lx.pos !< ?lx.src | -->
+      c = pk(lx, 0)
+      c
+         ['"']
+            adv(lx, pk(lx, 0))
+            closed' = 1
+            -->
+         ['\\'] on_str_esc(lx, c)
+         | adv(lx, c)
+   closed'
+
+// Raw string "(= ... =)"; content until "=)", "=\)" decodes to "=)".
+// Raw-string body walker: iterative (see scan_string_body).
+scan_raw_body: Lx, Int, Int => Int
+scan_raw_body = lx, line, col =>
+   closed' = 0
+   0.. @
+      lx.pos !< ?lx.src | -->
+      c = pk(lx, 0)
+      is_close = c == '=' && pk_off(lx, 1) == ')'
+      is_esc = c == '=' && pk_off(lx, 1) == '\\' && pk_off(lx, 2) == ')'
+      is_close
+         |
+            adv(lx, pk(lx, 0))
+            adv(lx, pk(lx, 0))
+            closed' = 1
+            -->
+         |
+            is_esc
+               |
+                  adv(lx, pk(lx, 0))
+                  adv(lx, pk(lx, 0))
+                  adv(lx, pk(lx, 0))
+                  lx.has_esc = 1
+               | adv(lx, c)
+   closed'
+
+skip_multiline_ws: String, Int, Int => Int
+skip_multiline_ws = src, i, n =>
+   pos' = i
+   0.. @
+      pos' !< n | -->
+      c = src(pos')
+      c == ' ' || c == '\t' | pos' = pos' + 1 | -->
+   pos'
+
+skip_eol_comment: String, Int, Int => Int
+skip_eol_comment = src, i, n =>
+   pos' = i + 2
+   0.. @
+      pos' !< n | -->
+      c = src(pos')
+      c == '\n' || c == '\r' | -->
+      pos' = pos' + 1
+   pos'
+
+// Checks if the line ended with the string literal and the next line begins
+// with another string literal. Returns the byte offset of the next literal,
+// or 0 if not a continuation.
+check_multiline_str: Lx => Int
+check_multiline_str = lx =>
+   n = ?lx.src
+   p1 = skip_multiline_ws(lx.src, lx.pos, n)
+   has_cm = p1 + 1 < n && lx.src(p1) == '/' && lx.src(p1 + 1) == '/'
+   p2 = has_cm | skip_eol_comment(lx.src, p1, n) | p1
+   p2 !< n
+      | 0
+      |
+         c1 = lx.src(p2)
+         has_cr = c1 == '\r'
+         p3 = has_cr | p2 + 1 | p2
+         p3 !< n
+            | 0
+            |
+               c2 = lx.src(p3)
+               c2 != '\n'
+                  | 0
+                  |
+                     p4 = skip_multiline_ws(lx.src, p3 + 1, n)
+                     p4 !< n
+                        | 0
+                        |
+                           next_indent = p4 - (p3 + 1)
+                           top = stack_top(lx)
+                           next_indent !> top
+                              | 0
+                              |
+                                 c3 = lx.src(p4)
+                                 is_quote = c3 == '"'
+                                 is_raw = c3 == '(' && p4 + 1 < n &&
+                                    lx.src(p4 + 1) == '='
+                                 is_quote || is_raw | p4 | 0
+
+adv_to: Lx, Int => ()
+adv_to = lx, target =>
+   0.. @
+      lx.pos < target | adv(lx, pk(lx, 0)) | -->
+
+scan_next_str_part: Lx => String
+scan_next_str_part = lx =>
+   is_raw = pk(lx, 0) == '(' && pk_off(lx, 1) == '='
+   is_raw
+      |
+         adv(lx, pk(lx, 0))
+         adv(lx, pk(lx, 0))
+         body_raw = lx.pos
+         closed_raw = scan_raw_body(lx, lx.line, lx.col)
+         closed_raw [0] fail(1014, lx.line, lx.col,
+            "Unterminated raw string literal -- missing closing '=)'")
+         endmark = lx.pos - 2
+         raw_s = lx.src(body_raw..endmark)
+         part_raw = lx.has_esc [1] decode_raw_esc(raw_s) | raw_s
+         lx.has_esc = 0
+         part_raw
+      |
+         adv(lx, pk(lx, 0))
+         body_str = lx.pos
+         closed_str = scan_string_body(lx, lx.line, lx.col)
+         closed_str [0] fail(1008, lx.line, lx.col,
+            "Unterminated string literal -- missing closing '\"'")
+         endq = lx.pos - 1
+         str_s = lx.src(body_str..endq)
+         part_str = lx.has_esc [1] decode_escapes(str_s) | str_s
+         lx.has_esc = 0
+         part_str
+
+concat_multiline_str: Lx, String => String
+concat_multiline_str = lx, text =>
+   res' = text
+   0.. @
+      target = check_multiline_str(lx)
+      target [0] -->
+      adv_to(lx, target)
+      res' = res' + scan_next_str_part(lx)
+   res'
+
+scan_string: Lx, Int, Int, Int => Tok
+scan_string = lx, start, line, col => 
+   adv(lx, pk(lx, 0))
+   body = lx.pos
+   closed = scan_string_body(lx, line, col)
+   closed [0] fail(1008, line, col,
+      "Unterminated string literal -- missing closing '\"'")
+   endq = lx.pos - 1
+   raw = lx.src(body..endq)
+   text' = lx.has_esc [1] decode_escapes(raw) | raw
+   lx.has_esc = 0
+   text' = concat_multiline_str(lx, text')
+   mktok(lx, TokKind(Str), start, lx.pos - start, line, col, text')
+
+// A rune literal: value emitted as decimal text (production parity).
+scan_rune: Lx, Int, Int, Int => Tok
+scan_rune = lx, start, line, col => 
+   adv(lx, pk(lx, 0))
+   bad_head = lx.pos !< ?lx.src || pk(lx, 0) == '\''
+   bad_head | fail(1009, line, col,
+      "Empty character literal '' -- expected a character between the quotes")
+   v = pk(lx, 0)
+   is_e = v == '\\'
+   val = is_e | esc_val(pk_off(lx, 1)) | adv(lx, v)
+   is_e | adv(lx, pk(lx, 0))
+   is_e | adv(lx, pk(lx, 0))
+   pk(lx, 0) == '\''
+      | adv(lx, pk(lx, 0))
+      | fail(1010, line, col,
+         "Unterminated character literal -- missing closing '''")
+   mktok(lx, TokKind(Rune), start, lx.pos - start,
+      line, col, str::from_int(val))
+
+scan_raw_string: Lx, Int, Int, Int => Tok
+scan_raw_string = lx, start, line, col => 
+   adv(lx, pk(lx, 0))
+   adv(lx, pk(lx, 0))
+   body = lx.pos
+   closed = scan_raw_body(lx, line, col)
+   closed [0] fail(1014, line, col,
+      "Unterminated raw string literal -- missing closing '=)'")
+   endmark = lx.pos - 2
+   raw = lx.src(body..endmark)
+   text' = lx.has_esc [1] decode_raw_esc(raw) | raw
+   lx.has_esc = 0
+   text' = concat_multiline_str(lx, text')
+   mktok(lx, TokKind(RawStr), start, lx.pos - start, line, col, text')
+
+// --- comments -------------------------------------------------------------
+
+// Returns the position reached (end of line / source), so the helper can
+// also serve as a value-producing choice branch.
+skip_line_comment: Lx, Int => Int
+skip_line_comment = lx, q => scan_while(lx, (!is_nl(_)))
+
+skip_block_comment: Lx, Int, Int => ()
+skip_block_comment = lx, line, col => 
+   adv(lx, pk(lx, 0))
+   adv(lx, pk(lx, 0))
+   done' = <->
+   0.. @
+      lx.pos !< ?lx.src | -->
+      pk(lx, 0) == '*' && pk_off(lx, 1) == '/'
+         | adv(lx, pk(lx, 0)); adv(lx, pk(lx, 0)); done' = <+>; -->
+         | adv(lx, pk(lx, 0))
+   !done' | fail(1007, line, col,
+      "Unterminated block comment -- missing closing '*/'")
+
+// --- directives (#…) ------------------------------------------------------
+
+// Gathers the word after '#'.
+scan_hash_word: Lx, Int => String
+scan_hash_word = lx, q => 
+   adv(lx, pk(lx, 0))
+   start = lx.pos
+   scan_while(lx, (is_id_char(_)))
+   lx.src(start..lx.pos)
+
+// Quoted-path body walker: iterative (see scan_string_body).
+scan_qp_body: Lx, Int => Int
+scan_qp_body = lx, line =>
+   closed' = 0
+   0.. @
+      lx.pos !< ?lx.src | -->
+      c = pk(lx, 0)
+      c
+         ['"']
+            adv(lx, pk(lx, 0))
+            closed' = 1
+            -->
+         ['\\']
+            adv(lx, pk(lx, 0))
+            adv(lx, pk(lx, 0))
+         | adv(lx, c)
+   closed'
+
+scan_quoted_path: Lx, Int, Int => String
+scan_quoted_path = lx, line, col => 
+   adv(lx, pk(lx, 0))
+   p = lx.pos
+   closed = scan_qp_body(lx, line)
+   closed [0] fail(1011, line, col,
+      "Unterminated import path -- missing closing '\"'")
+   endq = lx.pos - 1
+   path = lx.src(p..endq)
+   path
+
+// A path character for '#use module': identifier chars plus '/', '.', '-'.
+is_path_char: Rune => <>
+is_path_char = r => r [is_id_char, '/', '.', '-']
+
+scan_bare_path: Lx, Int => String
+scan_bare_path = lx, line => 
+   p = lx.pos
+   scan_while(lx, (is_path_char(_)))
+   lx.src(p..lx.pos)
+
+// "#use module" / "#use \"path\"" — the whole path is one UsePath token.
+scan_use_path: Lx, Int, Int, Int => Tok
+scan_use_path = lx, hstart, line, col => 
+   skip_ws(lx, 0)
+   path = pk(lx, 0) == '"'
+      | scan_quoted_path(lx, line, col)
+      | scan_bare_path(lx, line)
+   ?path == 0 | fail(1015, line, col,
+      "Expected a module name or quoted path after '#use'.")
+   mktok(lx, TokKind(UsePath), hstart, lx.pos - hstart, line, col, path)
+
+scan_use_dynamic_path: Lx, Int, Int, Int => Tok
+scan_use_dynamic_path = lx, hstart, line, col =>
+   skip_ws(lx, 0)
+   path = pk(lx, 0) == '"'
+      | scan_quoted_path(lx, line, col)
+      | scan_bare_path(lx, line)
+   ?path == 0 | fail(1015, line, col,
+      "Expected a module name or quoted path after '#use-dynamic'.")
+   mktok(lx, TokKind(UseDynamicPath), hstart, lx.pos - hstart, line, col, path)
+
+skip_ws: Lx, Int => Int
+skip_ws = lx, q => scan_while(lx, is_ws)
+
+// String-typed abort for the '#pragma number' suffix choice: 'fail' returns
+// Int (its statement-position branches merge with Int fallbacks), so this
+// wrapper supplies the matching String value for the value-position use.
+pragma_suffix_fail: String, Int, Int => String
+pragma_suffix_fail = word, line, col =>
+   fail(1013, line, col,
+      "Invalid '#pragma number' type '" + word +
+      "' — expected an integer type (i8/u8..i64/u64) or 'default'.")
+   ""
+
+scan_pragma: Lx, Int, Int, Int => Tok
+scan_pragma = lx, hstart, line, col =>
+   skip_ws(lx, 0)
+   six = lx.pos + 6 !> ?lx.src && lx.src(lx.pos..lx.pos + 6) == "number"
+   sfp = lx.pos + 6 !> ?lx.src && lx.src(lx.pos..lx.pos + 6) == "fpfast"
+   ssw = lx.pos + 7 !> ?lx.src && lx.src(lx.pos..lx.pos + 7) == "swizzle"
+   six || sfp || ssw
+      | scan_pragma_body(lx, hstart, line, col, six, sfp)
+      | pragma_miss_fail(lx, hstart, line, col)
+
+pragma_miss_fail: Lx, Int, Int, Int => Tok
+pragma_miss_fail = lx, hstart, line, col =>
+   fail(1013, line, col, "Expected 'number', 'fpfast', or 'swizzle' after '#pragma'.")
+   mktok(lx, TokKind(PragmaKw), hstart, 0, line, col, "#pragma")
+
+scan_pragma_body: Lx, Int, Int, Int, <>, <> => Tok
+scan_pragma_body = lx, hstart, line, col, is_number, is_fp =>
+   is_number
+      | scan_pragma_number(lx, hstart, line, col)
+      |
+         is_fp
+            | scan_pragma_fp(lx, hstart, line, col)
+            | scan_pragma_swizzle(lx, hstart, line, col)
+
+// "#pragma number <type>": parse the type word and switch the default integer
+// literal type from this point in the file onward.
+scan_pragma_number: Lx, Int, Int, Int => Tok
+scan_pragma_number = lx, hstart, line, col =>
+   0..6 @ t => adv(lx, pk(lx, 0))
+   skip_ws(lx, 0)
+   tstart = lx.pos
+   scan_while(lx, (!is_ws(_)))
+   word = lx.src(tstart..lx.pos)
+   suffix = word
+      ["default"] ""
+      ["i8"] "i8"
+      ["i16"] "i16"
+      ["i32"] "i32"
+      ["i64"] "i64"
+      ["u8"] "u8"
+      ["u16"] "u16"
+      ["u32"] "u32"
+      ["u64"] "u64"
+      | pragma_suffix_fail(word, line, col)
+   lx.def = suffix
+   scan_while(lx, (!is_nl(_)))
+   mktok(lx, TokKind(PragmaKw), hstart, lx.pos - hstart, line, col, "#pragma")
+
+// "#pragma fpfast all|none": a file-scoped switch for the aggressive FP
+// fast-math mask (nnan|ninf|nsz|arcp|contract|reassoc). The parser turns it
+// into a FastMathPragma node codegen applies from this point on.
+scan_pragma_fp: Lx, Int, Int, Int => Tok
+scan_pragma_fp = lx, hstart, line, col =>
+   0..6 @ t => adv(lx, pk(lx, 0))
+   skip_ws(lx, 0)
+   fstart = lx.pos
+   scan_while(lx, (!is_ws(_)))
+   farg = lx.src(fstart..lx.pos)
+   checked = farg ["all", "none"] farg | pragma_fp_fail(farg, line, col)
+   scan_while(lx, (!is_nl(_)))
+   mktok(lx, TokKind(PragmaFP), hstart, lx.pos - hstart, line, col, checked)
+
+pragma_fp_fail: String, Int, Int => String
+pragma_fp_fail = word, line, col =>
+   fail(1013, line, col,
+      "Invalid '#pragma fpfast' mode '" + word +
+      "' — expected 'all' or 'none'.")
+   ""
+
+// "#pragma swizzle all|xyzw|rgba|none": a file-scoped switch for vector swizzling.
+scan_pragma_swizzle: Lx, Int, Int, Int => Tok
+scan_pragma_swizzle = lx, hstart, line, col =>
+   0..7 @ t => adv(lx, pk(lx, 0))
+   skip_ws(lx, 0)
+   sstart = lx.pos
+   scan_while(lx, (!is_ws(_)))
+   sarg = lx.src(sstart..lx.pos)
+   checked = sarg ["all", "xyzw", "rgba", "none"] sarg |
+      pragma_swizzle_fail(sarg, line, col)
+   scan_while(lx, (!is_nl(_)))
+   mktok(lx, TokKind(PragmaSwizzle), hstart, lx.pos - hstart, line, col, checked)
+
+pragma_swizzle_fail: String, Int, Int => String
+pragma_swizzle_fail = word, line, col =>
+   fail(1013, line, col,
+      "Invalid '#pragma swizzle' mode '" + word +
+      "' — expected 'all', 'xyzw', 'rgba', or 'none'.")
+   "none"
+
+
+
+// Dispatch a '#' directive ('#' already consumed); 'word' follows '#',
+// 'hstart' is the '#' position. One multi-guard choice over the word: each
+// directive's token is its own branch value; the fallback is a bare
+// "#word" identifier.
+scan_directive: Lx, String, Int, Int, Int => Tok
+scan_directive = lx, word, hstart, line, col => 
+   word
+      ["foreign"] mktok(lx, TokKind(Foreign), hstart,
+         ?word + 1, line, col, "#foreign")
+      ["type"] mktok(lx, TokKind(TypeKw), hstart, ?word + 1, line, col,
+         "#type")
+      ["packed"] mktok(lx, TokKind(PackedKw), hstart, ?word + 1, line, col,
+         "#packed")
+      ["private"] mktok(lx, TokKind(Private), hstart, ?word + 1, line, col,
+         "#private")
+      ["public", "pub"] mktok(lx, TokKind(Public), hstart, ?word + 1, line,
+         col, "#" + word)
+      ["export"] mktok(lx, TokKind(Export), hstart, ?word + 1, line, col,
+         "#export")
+      ["spawn"] mktok(lx, TokKind(SpawnKw), hstart, ?word + 1, line, col,
+         "#spawn")
+      ["join"] mktok(lx, TokKind(JoinKw), hstart, ?word + 1, line, col,
+         "#join")
+      ["exit"] mktok(lx, TokKind(ExitKw), hstart, ?word + 1, line, col,
+         "#exit")
+      ["error"] mktok(lx, TokKind(ErrorKw), hstart, ?word + 1, line, col,
+         "#error")
+      ["warn"] mktok(lx, TokKind(WarnKw), hstart, ?word + 1, line, col,
+         "#warn")
+      ["pragma"] scan_pragma(lx, hstart, line, col)
+      ["use"]
+         is_dyn = lx.pos + 8 !> ?lx.src &&
+            lx.src(lx.pos..lx.pos + 8) == "-dynamic"
+         is_dyn
+            |
+               8 @ _ => adv(lx, pk(lx, 0))
+               scan_use_dynamic_path(lx, hstart, line, col)
+            | scan_use_path(lx, hstart, line, col)
+      | mktok(lx, TokKind(Id), hstart, ?word + 1, line, col, "#" + word)
+
+// "#!" compile-time prefix.
+scan_hash_ct: Lx, Int, Int => Tok
+scan_hash_ct = lx, line, col => 
+   adv(lx, pk(lx, 0))
+   adv(lx, pk(lx, 0))
+   mktok(lx, TokKind(CT), lx.pos - 2, 2, line, col, "#!")
+
+// '#' + name -> directive dispatch (or '#name' identifier).
+scan_hash_name: Lx, Int, Int => Tok
+scan_hash_name = lx, line, col => 
+   word = scan_hash_word(lx, 0)
+   scan_directive(lx, word, lx.pos - 1 - ?word, line, col)
+
+scan_hash: Lx, Int, Int => Tok
+scan_hash = lx, line, col => 
+   pk_off(lx, 1) == '!'
+      | scan_hash_ct(lx, line, col)
+      | scan_hash_name2(lx, line, col)
+
+scan_hash_name2: Lx, Int, Int => Tok
+scan_hash_name2 = lx, line, col => 
+   unicode::is_alpha(pk_off(lx, 1))
+      | scan_hash_name(lx, line, col)
+      | mktok(lx, TokKind(Op), lx.pos, 1, line, col, "#")
+
+// --- layout engine --------------------------------------------------------
+
+stack_top: Lx => Int
+stack_top = lx => 
+   lx.stack(lx.top - 1) | _ | 0
+
+stack_pop: Lx, Int => ()
+stack_pop = lx, q => 
+   lx.top = lx.top - 1
+
+// Push a depth onto the indent stack. The array is never shrunk by pop, so a
+// slot at lx.top may already hold a stale value from a previous deeper level;
+// overwrite it instead of appending (an append would leave the popped value
+// in place and skew stack_top by one).
+stack_append: Lx, Int => ()
+stack_append = lx, v =>
+   st = lx.stack
+   st += v
+
+stack_overwrite: Lx, Int => ()
+stack_overwrite = lx, v =>
+   lx.stack(lx.top) = v !| _
+
+stack_push: Lx, Int => ()
+stack_push = lx, v =>
+   lx.top == ?lx.stack | stack_append(lx, v)
+   lx.top < ?lx.stack | stack_overwrite(lx, v)
+   lx.top = lx.top + 1
+
+queue_dedent: Lx, Int, Int => ()
+queue_dedent = lx, q, col => 
+   qu = lx.queue
+   qu += Tok((TokKind(Dedent), 0, 0, lx.line, col, <->, <->, "DEDENT"))
+
+// The EOF token produced when the token queue runs dry (the file ended at
+// column depth without any queued DEDENTs to flush): carries the real end
+// position, matching the native lexer's final EOF token.
+take_queued: Lx, Int => Tok
+take_queued = lx, q => 
+   t = lx.queue(lx.qfront)
+      | _
+      | Tok((TokKind(Eof), lx.pos, 0, lx.line, lx.col, <->, <->, ""))
+   lx.qfront = lx.qfront + 1
+   lx.qfront == ?lx.queue
+      |
+         lx.queue = TokArr()
+         lx.qfront = 0
+      | 0
+   t
+
+// Counts leading spaces/tabs into lx.depth.
+count_indent: Lx, Int => ()
+count_indent = lx, q => 
+   sp' = 0
+   tabs' = 0
+   0.. @
+      is_sp = pk(lx, 0) == ' '
+      is_tab = pk(lx, 0) == '\t'
+      done = !(is_sp || is_tab)
+      done | -->
+      sp' = sp' + (is_sp | 1 | 0)
+      tabs' = tabs' + (is_tab | 1 | 0)
+      adv(lx, pk(lx, 0))
+   sp' > 0 && tabs' > 0 | fail(1001, lx.line, 1,
+      "Mixed spaces and tabs in indentation are strictly forbidden.")
+   sp' > 0 && lx.style == 0 | lx.style = 1
+   tabs' > 0 && lx.style == 0 | lx.style = 2
+   sp' > 0 && lx.style == 2 | fail(1002, lx.line, 1,
+      "Inconsistent indentation. Expected tabs, found spaces.")
+   tabs' > 0 && lx.style == 1 | fail(1003, lx.line, 1,
+      "Inconsistent indentation. Expected spaces, found tabs.")
+   depth = sp' > 0 | sp' | tabs'
+   lx.depth = depth
+
+// Pop indent levels down to lx.depth (queueing DEDENTs), then return the
+// first queued token. Mismatched levels are E1004.
+drain_to: Lx, Int, Int => Tok
+drain_to = lx, depth, line => 
+   0.. @
+      lx.top > 1 && stack_top(lx) > depth
+         |
+            stack_pop(lx, 0)
+            queue_dedent(lx, 0, 1)
+         | -->
+   stack_top(lx) != depth
+      | fail(1004, line, 1,
+         "Unindent level " + str::from_int(depth) +
+         " does not match any outer indentation level.")
+   take_queued(lx, 0)
+
+// Measure one line's indentation and hand off to layout_step (INDENT /
+// queued DEDENTs / fall-through). Blank and comment-only lines recurse;
+// EOF hands off to the dedent flush.
+// Guards are not early-returns: the blank-line handling lives in its own
+// helper so a non-blank line can dispatch to layout_step WITHOUT falling
+// through into the bol-reset + recursion tail.
+layout: Lx, Int => Tok
+layout = lx, q => 
+   count_indent(lx, 0)
+   lx.bol = 0
+   lx.pos !< ?lx.src | drain_to(lx, lx.depth, lx.line) | line_token(lx, q)
+
+// One bol step on a non-EOF line: blank/comment lines consume themselves and
+// recurse; anything else hands off to layout_step.
+line_token: Lx, Int => Tok
+line_token = lx, q => 
+   nl = pk(lx, 0) ['\n', '\r']
+   cm = pk(lx, 0) == '/' && pk_off(lx, 1) == '/'
+   nl || cm | skip_blank(lx, q) | layout_step(lx, lx.depth, lx.line)
+
+// Consume one blank or comment-only line at bol (comment first, then the
+// line's newline), then re-enter layout. Matches the native lexer, which
+// swallows blank/comment-only lines without emitting a Newline token.
+skip_blank: Lx, Int => Tok
+skip_blank = lx, q => 
+   cm = pk(lx, 0) == '/' && pk_off(lx, 1) == '/'
+   cm | skip_line_comment(lx, 0)
+   nl = pk(lx, 0) ['\n', '\r']
+   nl | adv(lx, pk(lx, 0))
+   lx.bol = 1
+   layout(lx, q)
+
+layout_step: Lx, Int, Int => Tok
+layout_step = lx, depth, line => 
+   top = stack_top(lx)
+   depth > top
+      |
+         stack_push(lx, depth)
+         mktok(lx, TokKind(Indent), 0, 0, line, 1, "INDENT")
+      |
+         depth < top
+            | drain_to(lx, depth, line)
+            | next_tok(lx, 0)
+
+// --- main dispatch --------------------------------------------------------
+
+skip_hws: Lx, Int => ()
+skip_hws = lx, q => 
+   0.. @
+      is_hws = pk(lx, 0) [' ', '\t', '\r']
+      is_hws | adv(lx, pk(lx, 0)); lx.lead = <+> | -->
+
+flush_indents: Lx, Int => Tok
+flush_indents = lx, line => 
+   0.. @
+      lx.top > 1
+         |
+            stack_pop(lx, 0)
+            queue_dedent(lx, 0, lx.col)
+         | -->
+   lx.qfront < ?lx.queue
+      | take_queued(lx, 0)
+      | Tok((TokKind(Eof), lx.pos, 0, line, lx.col, <->, <->, ""))
+
+nl_tok: Lx, Int, Int => Tok
+nl_tok = lx, line, col => 
+   adv(lx, pk(lx, 0))
+   lx.bol = 1
+   mktok(lx, TokKind(Newline), 0, 0, line, col, "\n")
+
+eof_tok: Lx, Int, Int => Tok
+eof_tok = lx, line, col => 
+   mktok(lx, TokKind(Eof), lx.pos, 0, line, col, "")
+
+// Single-character delimiter -> its own token kind.
+scan_delim: Lx, Rune, Int, Int => Tok
+scan_delim = lx, c, line, col => 
+   kind = c
+      ['('] TokKind(LParen)
+      [')'] TokKind(RParen)
+      ['['] TokKind(LBracket)
+      [']'] TokKind(RBracket)
+      ['{'] TokKind(LBrace)
+      ['}'] TokKind(RBrace)
+      [','] TokKind(Comma)
+      [';'] TokKind(Semi)
+      | TokKind(Op)
+   p = lx.pos
+   adv(lx, c)
+   mktok(lx, kind, p, 1, line, col, lx.src(p..p + 1))
+
+// Identifier, except the reserved bare name 'foreign' gets its own kind.
+scan_ident: Lx, Int, Int, Int => Tok
+scan_ident = lx, start, line, col => 
+   word = scan_id(lx, start)
+   word
+      ["foreign"] mktok(lx, TokKind(Foreign), start,
+         lx.pos - start, line, col, word)
+      | mktok(lx, TokKind(Id), start, lx.pos - start, line, col, word)
+
+scan_intrinsic: Lx, Int, Int, Int => Tok
+scan_intrinsic = lx, start, line, col =>
+   adv(lx, '%')
+   word = scan_id(lx, start + 1)
+   mktok(lx, TokKind(Id), start, lx.pos - start, line, col, "%" + word)
+
+// The next token: queued layout tokens first, then the scanners.
+// Skip a comment, then continue lexing.
+comment_block: Lx, Int, Int => Tok
+comment_block = lx, line, col => 
+   lx.lead = <->
+   skip_block_comment(lx, line, col)
+   next_tok(lx, 0)
+
+comment_line: Lx, Int => Tok
+comment_line = lx, q => 
+   lx.lead = <->
+   skip_line_comment(lx, 0)
+   next_tok(lx, 0)
+
+// One dispatch step per helper: guards do not return, so a matched scanner
+// must be the CHOICE VALUE of its own function — a trailing unconditional
+// eof_tok here would make every token an Eof (the original port bug).
+next_tok: Lx, Int => Tok
+next_tok = lx, q => 
+   lx.qfront < ?lx.queue | take_queued(lx, 0) | dispatch_bol(lx, q)
+
+dispatch_bol: Lx, Int => Tok
+dispatch_bol = lx, q => 
+   lx.bol [1] layout(lx, q) | dispatch_scan(lx)
+
+// The scanner dispatch: one choice over the current rune (after skip_hws).
+// Order matters — the two-char lookaheads (/*, //, (=) precede the generic
+// classes (delim, special). Every non-NUL rune is covered, so the eof_tok
+// fallback is unreachable for real input (the native lexer's safety net).
+dispatch_scan: Lx => Tok
+dispatch_scan = lx => 
+   skip_hws(lx, 0)
+   c = pk(lx, 0)
+   c
+      ['\0'] flush_indents(lx, lx.line)
+      [(_ == '/' && pk_off(lx, 1) == '*')] comment_block(lx, lx.line, lx.col)
+      [(_ == '/' && pk_off(lx, 1) == '/')] comment_line(lx, lx.line)
+      ['\n'] nl_tok(lx, lx.line, lx.col)
+      [(_ == '(' && pk_off(lx, 1) == '=')]
+         scan_raw_string(lx, lx.pos, lx.line, lx.col)
+      [(_ == '%' && is_id_start(pk_off(lx, 1)))]
+         scan_intrinsic(lx, lx.pos, lx.line, lx.col)
+      [is_delim] scan_delim(lx, c, lx.line, lx.col)
+      ['#'] scan_hash(lx, lx.line, lx.col)
+      [unicode::is_digit] scan_num(lx, lx.pos, lx.line, lx.col)
+      ['\''] scan_rune(lx, lx.pos, lx.line, lx.col)
+      [is_special] scan_op(lx, lx.pos, lx.line, lx.col)
+      [unicode::is_alpha, '_'] scan_ident(lx, lx.pos, lx.line, lx.col)
+      ['"'] scan_string(lx, lx.pos, lx.line, lx.col)
+      | eof_tok(lx, lx.line, lx.col)
+
+// --- public API -----------------------------------------------------------
+
+// Writes one "KIND text" line to stderr (unbuffered) and returns the byte
+// count, so show can also serve as a value-producing choice branch.
+show: Tok => Int
+show = t =>
+   line = kind_name(t.kind) + " " + t.text + "\n"
+   libc::write(2, line, ?line)
+
+kind_name: TokKind => String
+kind_name = k =>
+   k
+      [Id] "id"
+      [Int] "int"
+      [Float] "float"
+      [Str] "str"
+      [RawStr] "rawstr"
+      [Rune] "rune"
+      [Op] "op"
+      [LParen] "("
+      [RParen] ")"
+      [LBracket] "["
+      [RBracket] "]"
+      [LBrace] "{"
+      [RBrace] "}"
+      [Comma] ","
+      [Semi] ";"
+      [Newline] "newline"
+      [Indent] "INDENT"
+      [Dedent] "DEDENT"
+      [UsePath] "#use"
+      [UseDynamicPath] "#use-dynamic"
+      [Foreign] "#foreign"
+      [TypeKw] "#type"
+      [PackedKw] "#packed"
+      [Private] "#private"
+      [Public] "#public"
+      [Export] "#export"
+      [SpawnKw] "#spawn"
+      [JoinKw] "#join"
+      [ExitKw] "#exit"
+      [ErrorKw] "#error"
+      [WarnKw] "#warn"
+      [PragmaKw] "#pragma"
+      [PragmaSwizzle] "#pragma"
+      [CT] "#!"
+      [Eof] "eof"
+      | "?"

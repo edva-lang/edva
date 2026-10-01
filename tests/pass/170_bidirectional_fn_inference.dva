@@ -1,0 +1,22 @@
+// Full bidirectional unification: undeclared function parameter types flow
+// through pass-throughs, aliases, chains, and higher-order composition, so
+// these compile without declared signatures (full-unification Stage 4b).
+
+// Pass-through.
+pickfn = f => f
+greet = s => "hi " + s
+p = pickfn(greet)
+print $ p("bob")
+
+// Alias chain.
+id = x => x
+a = id
+b = a
+print_int $ b(99)
+
+// Higher-order composition.
+comp = f, g => x => f(g(x))
+inc = n => n + 1
+dbl = n => n * 2
+h = comp(inc, dbl)
+print_int $ h(5)

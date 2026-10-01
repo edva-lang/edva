@@ -1,0 +1,20 @@
+// A Builder that GROWS inside a cycle whose body allocates (a per-iteration
+// arena save/restore scope) used to end up frozen over a REAPED growth buffer:
+// the restore rolled the bump back below the new buffer, and the freeze's own
+// String struct (allocated at the restored mark) collided with it — a later
+// concat then silently corrupted the string. The freeze now detects the
+// reaped buffer at runtime (data at/above the arena bump in the current
+// chunk) and copies it to a fresh retained buffer before wrapping.
+
+f = bs =>
+   out = {2}
+   ?bs @ i =>
+      out += 'x'
+      g = "a" + "b"
+   +out
+
+m = (1, 2, 3)
+s = f(m)
+print $ "X" + s
+print $ s
+print $ "len " + s

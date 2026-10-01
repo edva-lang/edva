@@ -1,0 +1,21 @@
+f: String => ()
+f = s =>
+   print $ s
+
+g: Int, String, Int => ()
+g = a, s, b =>
+   print $ str::from_int(a)
+   print $ s
+   print $ str::from_int(b)
+
+test_choice_args = v =>
+   v > 0
+      |
+         f(v > 10 | "large" | "small")
+         g(1, v > 5 | "medium" | "low", 3)
+      |
+         f("negative")
+
+test_choice_args(15)
+test_choice_args(3)
+test_choice_args(-1)

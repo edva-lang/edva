@@ -1,0 +1,3 @@
+// Dynamic indexing on a heterogeneous record is forbidden (compile error).
+h = (name = "dva", age = 30)
+print $ h(0)

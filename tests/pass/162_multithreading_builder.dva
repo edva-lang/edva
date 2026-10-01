@@ -1,0 +1,9 @@
+build = b =>
+   b += 33
+   +b
+
+b = {8}
+b += 65
+h = #spawn build(b)
+r = #join h
+print $ (r | _ | _)

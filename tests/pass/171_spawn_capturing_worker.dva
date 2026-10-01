@@ -1,0 +1,20 @@
+// M3: #spawn accepts a capturing closure — its environment is deep-copied into
+// the child arena, so the worker reads its captures from child-owned memory.
+
+// An Int capture, returned from a factory.
+add_n = n =>
+   m => n + m
+adder = add_n(10)
+h = #spawn adder(5)
+r = #join h
+print_int $ (r | _ | _)
+
+// A String capture with a declared signature.
+mk_greet = name =>
+   greet: String => String
+   greet = s => "hi " + s + " from " + name
+   greet
+g = mk_greet("bob")
+h2 = #spawn g("eve")
+r2 = #join h2
+print $ (r2 | _ | _)

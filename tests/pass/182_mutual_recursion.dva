@@ -1,0 +1,20 @@
+// Mutual recursion: a type atom naming a not-yet-declared type is deferred and
+// resolved at codegen. Expr is a self-recursive enum whose Pick payload names
+// ChoiceExpr (declared below it); ChoiceExpr references Expr back.
+
+#type Expr <
+   Int(Int)
+   Add((Expr, Expr))
+   Pick(ChoiceExpr)
+>
+
+#type ChoiceExpr (cond: Expr, then_val: Int, else_val: Int)
+
+c: ChoiceExpr
+c.cond = Expr(Add, (Expr(Int, 1), Expr(Int, 2)))
+c.then_val = 10
+c.else_val = 20
+print_int $ c.else_val
+
+e = Expr(Pick, c)
+e [Pick p] print_int $ p.then_val | print_int $ 0

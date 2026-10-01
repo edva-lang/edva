@@ -1,0 +1,22 @@
+#type Ints (Int){}
+
+orig: Ints
+orig += 10
+orig += 20
+orig += 30
+
+copy = ++orig
+
+copy += 40
+copy(0) = 99 !| _
+
+print_int $ ?orig
+print_int $ (orig(0) | _ | _)
+print_int $ (orig(1) | _ | _)
+print_int $ (orig(2) | _ | _)
+
+print_int $ ?copy
+print_int $ (copy(0) | _ | _)
+print_int $ (copy(1) | _ | _)
+print_int $ (copy(2) | _ | _)
+print_int $ (copy(3) | _ | _)

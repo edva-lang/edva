@@ -1,0 +1,21 @@
+// Operator Section Assignments with infix application ($)
+double = * 2
+print_int $ double $ 15
+
+add_ten = + 10
+print_int $ add_ten $ 32
+
+sub_five = - 5
+print_int $ sub_five $ 50
+
+is_fever = > 37.5
+print $ ((is_fever $ 38.2) | "Positive" | "Negative")
+
+// Operator Sections in Choice Predicate Brackets
+temp = 38.2
+status = temp
+    [> 39.0] "Critical Fever"
+    [> 37.5] "Fever"
+    [< 35.0] "Hypothermia"
+    | "Normal"
+print $ status

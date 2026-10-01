@@ -1,0 +1,9 @@
+#use(import) views
+
+run = _ =>
+   s' = State((10, "Item"))
+   print $ render(s')
+   s' = step(s')
+   print $ render(s')
+
+run(0)

@@ -1,0 +1,4 @@
+// A recursive function without base case or return type annotation cannot
+// have its return type statically determined without RTTI (E3103).
+cycle = x => cycle(x)
+print_int $ cycle(10)

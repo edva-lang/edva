@@ -1,0 +1,79 @@
+# Errors and I/O
+
+**Audience:** Edva users<br>
+**Status:** current guide<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `std/io.dva`, `prelude.dva`, `process/spec/ramifications.md`,
+`tests/pass/220_stdio.dva`
+
+Edva represents recoverable failure with ramifications rather than a hidden
+exception mechanism. A fallible operation returns a ram whose slots describe
+success and failure. For example, container lookup returns `< Value | Error >`
+and the buffered input operations in `io` return `< String | >` at end of
+input.
+
+## Handle an expected absence
+
+Use a positional choice when both outcomes are meaningful. The first bare
+branch receives the first slot; the second receives the second slot.
+
+```dva
+#type Lookup < Int | >
+
+report: Lookup => ()
+report = result =>
+   result
+      | value => print_int(value)
+      | _ => print("missing")
+```
+
+`Error` is special: it can be constructed directly only as an error payload.
+Unwrapping an error aborts after printing its diagnostic information, so an
+`Error` payload is not recoverable application data. For a success value that
+must exist, use postfix `!!`; it extracts the first payload or aborts on the
+other slot.
+
+```dva
+value = table ^ "answer"
+print_int(value!!)
+```
+
+Do not use a fake `| 0` fallback merely to make a statement choice exhaustive.
+An assignment and a statement choice produce Unit, so they already fit a
+side-effect-only function with a `=> ()` signature.
+
+## Write to standard streams
+
+The prelude loads `io` automatically and exposes `print` and typed helpers.
+Import `io` directly when choosing an output descriptor or formatting values.
+
+```dva
+#use io
+
+io::out("ready")
+io::err("unable to continue")
+io::outf(("items", 3), "{}: {}")
+```
+
+`io::out` and `io::err` write a formatted value followed by a newline.
+`io::outf` and `io::errf` replace `{}` placeholders from one value or the
+fields of a record, in order. `io::STDIN`, `io::STDOUT`, and `io::STDERR` are
+the standard file descriptors.
+
+## Read until EOF
+
+Create an `io::Reader` for a descriptor. Each read operation returns a
+positive payload when data is available and a unit second slot at EOF, so EOF
+is normal control flow rather than an `Error` payload.
+
+```dva
+#use io
+
+reader = io::reader(io::STDIN)
+chunk = io::read(reader, 4096)
+chunk | text => print(text) | _ => print("end of input")
+```
+
+`io::read_all`, `io::read_byte`, `io::read_until`, and `io::read_line` follow
+the same ram-based EOF convention. See the [`io` reference](../reference/stdlib/io.qmd)
+for their result types and buffer-capacity options.

@@ -1,0 +1,4 @@
+// C7: unbounded value repetition "expr {N}" would attempt a multi-terabyte
+// allocation (each element materializes a full Expr copy); it must fail with
+// a clean diagnostic instead.
+r = 0 {1000001}

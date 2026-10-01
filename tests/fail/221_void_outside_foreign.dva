@@ -1,0 +1,3 @@
+// 'Void' is illegal syntax anywhere except #foreign blocks (E2106).
+f: Int => Void
+f = x => ()

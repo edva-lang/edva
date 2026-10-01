@@ -1,0 +1,5 @@
+// A function used as a first-class value needs a declared signature: without
+// one (and without a prior call to infer its params), its parameter types are
+// unknowable and must not default to Int.
+f = x => x + 1
+g = f

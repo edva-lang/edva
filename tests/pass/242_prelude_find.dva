@@ -1,0 +1,50 @@
+// Test prelude's generic find function with named functions and closures.
+#use(import) fp
+
+#use "str"
+
+#type Ints (Int){}
+#type Names (String){}
+
+is_gt_10: Int => <>
+is_gt_10 = n => n > 10
+
+nums = Ints()
+nums += 5
+nums += 12
+nums += 20
+
+// 1. find with a named function
+r1 = find(is_gt_10, nums)
+r1
+   | v => print $ "found gt 10: " + str::from_int(v)
+   | print $ "not found"
+
+// 2. find with an inline lambda (predicate not matched)
+r2 = find(n => n > 100, nums)
+r2
+   | v => print $ "found gt 100: " + str::from_int(v)
+   | print $ "not found"
+
+// 3. find with a capturing closure over strings
+check_has: Names, String => <>
+check_has = names, target =>
+   r = find(s => s == target, names)
+   ok' = <->
+   r | ok' = <+>
+   ok'
+
+nms = Names()
+nms += "alpha"
+nms += "beta"
+
+check_has(nms, "beta") | print $ "found beta"
+!check_has(nms, "omega") | print $ "did not find omega"
+
+// 4. any with named function and inline lambda
+any(is_gt_10, nums) | print $ "any gt 10: yes"
+!any(n => n > 100, nums) | print $ "any gt 100: no"
+
+// 5. any with capturing closure over strings
+any(s => s == "beta", nms) | print $ "any beta: yes"
+!any(s => s == "omega", nms) | print $ "any omega: no"

@@ -1,0 +1,36 @@
+// First-class function types: a function signature declares a function's full
+// type — flat, comma-separated param types, then "=>", then the return type —
+// and that type flows through values, variables, params, and returns. A
+// function used as a value must carry a declared signature (its params are
+// otherwise unknowable → E3128); this is the positive half.
+
+// Flat two-param signature; the value is stored and called.
+add: Int, Int => Int
+add = a, b => a + b
+g = add
+print_int $ g(20, 22)
+
+// A function-typed parameter (flat inside the parens) applied through the
+// parameter name.
+twice_int: (Int => Int), Int => Int
+twice_int = f, x => f $ f $ x
+inc: Int => Int
+inc = n => n + 1
+print_int $ twice_int(inc, 41)
+
+// A function-typed return: pick returns the inc value; (9) applies it.
+pick: Int => (Int => Int)
+pick = x => inc
+print_int $ pick(0)(9)
+
+// A String-typed function proves the signature (not an Int default) selects
+// the call ABI — the result must be a String, not a mis-typed pointer.
+greet: String => String
+greet = s => "hi " + s
+print $ greet("bob")
+
+// A non-Int function value flows through a higher-order combinator's
+// function-typed param (typed from the caller's function value).
+apply1: (String => String), String => String
+apply1 = f, x => f $ x
+print $ apply1(greet, "eve")

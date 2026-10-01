@@ -1,0 +1,9 @@
+#use(import) mod_a
+
+foo: Int => Int
+foo = x => x + 99
+
+run = _ =>
+   print $ str::from_int(foo(1))
+
+run(0)

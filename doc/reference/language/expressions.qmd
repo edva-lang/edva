@@ -1,0 +1,63 @@
+# Expressions
+
+**Audience:** Edva users<br>
+**Status:** current reference<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `process/spec/operators.yaml`, `process/spec/choices.md`,
+`process/spec/control-flow.md`, `process/spec/functions.md`
+
+Edva programs are composed from expressions. Calls, bindings, choices, cycles,
+and blocks all have expression forms. The generated
+[operator table](../../../GRAMMAR.md#16-operators--precedence) is the single
+precedence reference; this page describes how the principal forms fit together.
+
+## Calls and application
+
+Use `f(a, b)` for a direct call. `$` appends an argument to a call-shaped
+function expression, while `$>` feeds a value into the first argument position.
+Both are multi-argument operators, so pipelines can remain flat.
+
+```dva
+sum: Int, Int => Int
+sum = left, right => left + right
+
+first = sum(2) $ 3
+second = 2 $> sum(3)
+```
+
+`$` is right-associative and `$>` is left-associative. Their right-hand side
+absorbs a following choice, so parenthesize when a tighter interpretation is
+needed.
+
+## Choices, cycles, and assignments
+
+A choice has adjacent guarded branches and an optional trailing bare fallback:
+
+```dva
+value = 2
+label = value [1] "one" [2] "two" | "other"
+```
+
+One-branch choices are statements, not exhaustive values. A choice used as an
+assigned or returned value must have meaningful compatible branch values; do
+not add a dummy `| 0` fallback.
+
+`@` iterates an iterable or range. `-->` breaks and `--^` continues the
+current cycle; `>--` supplies an escape-expression branch. See the
+[choices guide](../../guide/choices-and-cycles.qmd) for examples.
+
+`=` creates or writes a binding according to its mutability. `+=` appends to a
+Builder in place. A Builder length assignment has the special form `?builder =
+n`. Every assignment evaluates to Unit. Expressions immediately after `=` and
+choice conditions are written without surrounding parentheses. A function
+returns its final expression's value, so a final assignment makes the function
+return Unit; write `()` only as that type in a declaration, never as a value.
+
+## Type-directed forms
+
+`!` is flag negation (flags only; emits `E3008` on other types); `+` (unary prefix) freezes a Builder
+into an immutable String in place; `&` (unary prefix) extracts a buffer address (`RawPtr`);
+`?` measures the byte or element count of its operand; `++` copies strings, records, and
+growable arrays. `!!` unwraps a positive ram payload or aborts on its negative slot.
+Explicit scalar conversion uses call syntax such as `Int(rune)`. `<>(ram)` observes a ram's
+polarity and returns a flag; it cannot convert one ram shape into another.

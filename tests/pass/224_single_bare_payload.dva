@@ -1,0 +1,12 @@
+// A single bare '|' branch over a payloaded ram binds the POSITIVE slot's
+// payload (a statement-position choice — the result is discarded). This is
+// the fix behind removing the "| 0" tails in examples/http_server.dva.
+#type Outcome < Int | String >
+
+f: Outcome => Int
+f = o =>
+   o | n => print_int $ n
+   -1
+
+print_int $ f(Outcome(<+ 42 ->))
+print_int $ f(Outcome(<- "err" ->))

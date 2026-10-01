@@ -1,0 +1,5 @@
+// A cycle-jump suffix that isn't a positive integer must be rejected, not
+// silently treated as level 1. (The lexer consumes the trailing digits into
+// the token; "-->0" is malformed because 0 is not >= 1.)
+5 @ i =>
+   i [0] -->0 | 0

@@ -1,0 +1,6 @@
+count=3
+a=1 z=-1 has-b=y
+del-b=y del-b2=n count=2
+b=-1 a=1 b2=99
+c:3 a:1 b:99 
+x count=2

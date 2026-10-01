@@ -1,0 +1,58 @@
+// User-declared ramification (variant) types. The declaration fixes the two
+// polarity slots; construction coerces an existing ram literal through the
+// type name, which verifies tag+payload against the declared slots.
+//
+//   <>          RamNN: both branches unit
+//   < A | >     RamPN: left (positive) payload A, right (negative) unit
+//   < | A >     RamNP: left unit, right (negative) payload A
+//   < A | B >   RamPP: both payload
+
+// RamNN: both branches are bare unit flags.
+#type Flag <>
+f = Flag(<+>)
+s = f | "positive" | "negative"
+print $ s
+g = Flag(<->)
+t = g | "positive" | "negative"
+print $ t
+
+// RamPN: Some(String) | None.
+#type Option < String | >
+some = Option(<+ "hello" ->)
+print $ (some | ("got " + _) | "none")
+none = Option(<-->)
+print $ (none | ("got " + _) | "none")
+
+// RamPP: Positive(String) | Negative((Int, String)) -- record payload.
+#type CompDiag < String | (Int, String) >
+ok = CompDiag(<+ "Success" +>)
+print $ (ok | ("ok: " + _) | "fallback")
+err = <- (404, "Type error") -> $> CompDiag
+code = err
+    | 0
+    | (_.0)
+print_int $ code
+msg = err
+    | "none"
+    | (_.1)
+print $ msg
+
+// RamNP: Ok (unit) | Err((Int, String)).
+#type Failure < | (Int, String) >
+e = Failure(<- (500, "boom") +>)
+ecode = e
+    | 0
+    | (_.0)
+print_int $ ecode
+emsg = e
+    | "none"
+    | (_.1)
+print $ emsg
+
+// Scalar payloads are unboxed on extraction: `_` is the Int, not a box.
+#type Num < Int | >
+n = Num(<+ 42 ->)
+v = n
+    | (_ + 1)
+    | 0
+print_int $ v

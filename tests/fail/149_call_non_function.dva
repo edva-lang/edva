@@ -1,0 +1,6 @@
+g: Int => Int
+g = n => n + 1
+
+f = g $ 2
+c = f(0)
+print $ c

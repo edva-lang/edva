@@ -1,0 +1,149 @@
+# Ramifications
+
+**Audience:** Edva users<br>
+**Status:** current reference and guide<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `process/spec/ramifications.md`, `process/spec/choices.md`,
+`tests/pass/97_ram_type_decls.dva`, `tests/pass/118_monadic_bind.dva`,
+`tests/pass/114_fallible_index_sugar.dva`
+
+A **ramification** (or **ram**) is Edva's fundamental two-slot algebraic value.
+Rams replace ad-hoc null pointers, booleans, optionals, and exceptions with a
+unified static model.
+
+Ramification matching is **strictly positional**: the first bare choice branch
+selects the positive (first) slot; the second bare branch selects the negative
+(second) slot. Ram slots have no source-level keywords or labels.
+
+---
+
+## The four canonical shapes
+
+All ramifications belong to one of four distinct, mutually incompatible static shapes:
+
+| Shape Name | Type Syntax | Positive (1st) Slot | Negative (2nd) Slot | Primary Use Case | LLVM Low-Level Representation |
+|---|---|---|---|---|---|
+| **RamNN** | `<>` | Unit (`()`) | Unit (`()`) | Built-in boolean flag (`<+>`, `<->`) | `i1` register |
+| **RamPN** | `< T | >` | Payload `T` | Unit (`()`) | Optional value (presence or absent) | `{ i1, i64 }*` union pointer |
+| **RamNP** | `< | E >` | Unit (`()`) | Payload `E` | Void write-or-fail operation | `{ i1, i64 }*` union pointer |
+| **RamPP** | `< T | E >` | Payload `T` | Payload `E` | Fallible computation or lookup | `{ i1, i64 }` unboxed aggregate |
+
+### Shape incompatibility rules
+
+1. **No implicit coercion:** A bare Flag `<+>` or `<->` **never** coerces to a heap ram unit `<++>` or `<-->`.
+2. **Distinct types:** The four shapes cannot be assigned to one another or passed where another shape is expected.
+3. **No runtime tags:** Types are fully erased at compile time.
+4. **Unboxed registers:** In typed compilation, `RamPP` values (such as array indexing `a(i)` and map lookup `m(k)`) are compiled as unboxed register aggregates `{ i1, i64 }`, requiring zero heap allocation.
+5. **Zero storage for Unit:** Unit slots have zero runtime footprint. Codegen never emits an `alloca`, load, or store for Unit slots.
+
+---
+
+## Constructors
+
+| Literal Syntax | Slot Target | Result Shape | Description |
+|---|---|---|---|
+| `<+>` | Positive (1st) | `RamNN` (`<>`) | Flag truth constant |
+| `<->` | Negative (2nd) | `RamNN` (`<>`) | Flag falsehood constant |
+| `<++>` | Positive (1st) | `RamNP` (`< | E >`) | Heap unit constant (void success slot) |
+| `<-->` | Negative (2nd) | `RamPN` (`< T | >`) | Heap unit constant (absence/none slot) |
+| `<+ expr +>` | Positive (1st) | `RamPP` | First slot of two-payload ram |
+| `<- expr ->` | Negative (2nd) | `RamPP` | Second slot of two-payload ram |
+| `<+ expr ->` | Positive (1st) | `RamPN` | Payload in positive slot, Unit in negative |
+| `<- expr +>` | Negative (2nd) | `RamNP` | Payload in negative slot, Unit in positive |
+
+Payload delimiters use `<+`/`+>` and `<-`/`->`. Because `<` and `>` are not
+overloaded as delimiters, comparisons inside constructors are completely
+unambiguous without parentheses: `<+ a > b +>`.
+
+```dva
+#type MaybeInt < Int | >
+#type ParseResult < Int | Error >
+
+// Constructing various shapes:
+flag_val: <> = <+>
+opt_val = MaybeInt(<+ 42 ->)
+none_val = MaybeInt(<-->)
+res_val = ParseResult(<+ 100 +>)
+```
+
+---
+
+## Ramification operations
+
+| Operator | Syntax | Description | Example |
+|---|---|---|---|
+| **Positional Match** | `r | val => ... | err => ...` | Match first slot then second slot | `res | v => print_int(v) | print("err")` |
+| **Unwrap or Abort** | `r!!` | Unwraps positive payload; aborts program on negative | `val = list(0)!!` |
+| **Write or Panic** | `write !| _` | Sugar for `| (void) | _`: ignores success, panics on error | `array(i) = v !| _` |
+| **Monadic Bind** | `r $>> fn` | Unpacks positive payload into `fn`; propagates negative | `lookup(k) $>> parse_int $>> validate` |
+| **Polarity Test** | `<>(r)` | Discards payload, extracts `<+>` (1st) or `<->` (2nd) | `is_ok = <>(res)` |
+
+### Monadic chaining with `$>>`
+
+`$>>` chains fallible computations. It requires the LHS to have a **positive payload slot** (`RamPP` or `RamPN`):
+- If LHS is positive, it unwraps the payload and calls the RHS continuation.
+- If LHS is negative, the negative payload (or unit) propagates immediately.
+
+```dva
+#type SafeInt < Int | Error >
+
+step1: Int => SafeInt
+step1 = x => SafeInt(<+ x + 10 +>)
+
+step2: Int => SafeInt
+step2 = x => SafeInt(<+ x * 2 +>)
+
+// Chains step1 then step2 cleanly:
+final_res = SafeInt(<+ 5 +>) $>> step1 $>> step2
+// Evaluates to SafeInt(<+ 30 +>)
+```
+
+---
+
+## Logical operators on rams (`&&` and `||`)
+
+On boolean flags and comparison results, `&&` and `||` evaluate to a bare `Flag` (`<>`).
+On two heap rams, `&&` and `||` evaluate short-circuit logic while preserving the winner:
+
+| Operator | Positive Slot Source | Negative Slot Source | Requirement |
+|---|---|---|---|
+| `a && b` | Operand `b` | Operand `a` OR operand `b` | Negative slots of `a` and `b` must have identical layouts |
+| `a || b` | Operand `a` OR operand `b` | Operand `b` | Positive slots of `a` and `b` must have identical layouts |
+
+Combining a bare Flag with a heap ram, or combining rams with incompatible candidate slot layouts, emits compile error `E3089`.
+
+---
+
+## The poisonous `Error` type
+
+`Error` is the standard library record:
+
+```dva
+(code: Int, msg: String, file: String, line: Int, col: Int, context: (Int, Int))
+```
+
+An `Error` value is **poisonous**:
+1. Constructing `Error(...)` is inert **only** when placed directly into a ram payload: `<- Error(...) ->`.
+2. Anywhere else—or the moment an `Error` payload is unwrapped from a ram—the program aborts with a formatted diagnostic stack trace:
+   ```text
+   Error <code>: <msg>
+     at <file>:<line>:<col>
+   ```
+
+Growable array indexing `a(i)` and map lookup `m(k)` return `< T | Error >`. If the
+index is out of range or uninitialized, the second slot carries an `Error`.
+Using `a(i)!!` unwraps the element or panics on failure.
+
+---
+
+## Diagnostics reference
+
+| Diagnostic | Cause | Correct Action |
+|---|---|---|
+| `E3008` | Unary `!` applied to a non-Flag value | Use `+b` to freeze Builder; use `!!` to unwrap rams |
+| `E3027` | Equality `==` used on non-enum ramification | Compare enum variants or test polarity with `<>(r)` |
+| `E3089` | Incompatible ram layouts in `&&` or `||` | Align positive/negative slot shapes across operands |
+| `E3091` | Monadic `$>>` applied to RamNP or non-ram | `$>>` requires a positive payload (`RamPP` or `RamPN`) |
+| `E3125` | Using named labels to match ramification slots | Match positionally with bare `|` branches |
+| `E3127` | Relational ordering (`<`, `>`, `<=`, `>=`) on rams | Rams cannot be ordered; compare payload fields explicitly |
+

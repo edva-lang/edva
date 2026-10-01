@@ -1,0 +1,151 @@
+// Functional Programming & Generic Combinators (std/fp.dva)
+//
+// Higher-order combinators and collection utilities adapted to Dva.
+// Use `#use(import) fp` to import all symbols into unqualified scope,
+// or `#use fp` for namespaced `fp::` access.
+
+#public
+   // --- function application ------------------------------------------------
+
+   // apply f to x — the function-value form of "f $ x".
+   apply: #! T: Type, #! U: Type, (T => U), T => U
+   apply = f, x => f $ x
+
+   // apply2/apply3: apply a multi-argument function.
+   apply2: #! T: Type, #! U: Type, #! V: Type, (T, U => V), T, U => V
+   apply2 = f, a, b => f(a, b)
+
+   apply3: #! T: Type, #! U: Type, #! V: Type, #! W: Type, (T, U, V => W), T, U, V => W
+   apply3 = f, a, b, c => f(a, b, c)
+
+   // twice/thrice: apply f 2/3 times to x ("f $ f $ x" is right-assoc, so it is
+   // f(f(x))).
+   twice: #! T: Type, (T => T), T => T
+   twice = f, x => f $ f $ x
+
+   thrice: #! T: Type, (T => T), T => T
+   thrice = f, x => f $ f $ f $ x
+
+   // flip: call f with the last two arguments swapped.
+   flip: #! T: Type, #! U: Type, #! V: Type, (T, U => V), U, T => V
+   flip = f, a, b => f(b, a)
+
+   // on: apply g to both a and b, then f to the results — the "f `on` g"
+   // combinator from Haskell (e.g. sortBy (compare `on` length)).
+   on: #! T: Type, #! V: Type, (T, T => V), (T => T), T, T => V
+   on = f, g, a, b => f(g(a), g(b))
+
+   // compose: f after g — "f $ g $ x" is f(g(x)). Curried: compose(f, g) is a
+   // function; the type params A/B/C are inferred from the two function args.
+   compose: #! A: Type, #! B: Type, #! C: Type, (B => C), (A => B) => (A => C)
+   compose = f, g => x => f $ g $ x
+
+   // const: return its first argument, ignoring the second. Curried — the second
+   // type param B is deferred to the returned lambda's own call site (deferred
+   // generic inference): "const(42)" binds A=Int, and applying the result to any
+   // value resolves B.
+   const: #! A: Type, #! B: Type, A => (B => A)
+   const = x => _ => x
+
+   // map / filter: apply a function / predicate to each element of a homogeneous
+   // record, building a NEW record of the same type. The container type T and
+   // element type E are inferred; "out = T" materializes the empty container
+   // (CTTR), and the existing '?xs @ i' cycle iterates.
+   map: #! E: Type, #! T: Type, (E => E), T => T
+   map = f, xs =>
+      out = T
+      ?xs @ i =>
+         out += f(xs(i) | v => v | E)
+      out
+
+   filter: #! E: Type, #! T: Type, (E => <>), T => T
+   filter = pred, xs =>
+      out = T
+      ?xs @ i =>
+         v = xs(i) | _ | E
+         pred(v)
+            | out += v
+      out
+
+   // find: search for the first element satisfying pred, returning < E | >.
+   find: #! E: Type, #! T: Type, (E => <>), T => < E | >
+   find = pred, xs =>
+      res' = <-->
+      ?xs @ i =>
+         v = xs(i) | _ | E
+         pred(v)
+            |
+               res' = <+ v ->
+               -->
+      res'
+
+   // any: check if any element in xs satisfies pred, returning <>.
+   any: #! E: Type, #! T: Type, (E => <>), T => <>
+   any = pred, xs =>
+      res' = <->
+      ?xs @ i =>
+         v = xs(i) | _ | E
+         pred(v)
+            |
+               res' = <+>
+               -->
+      res'
+
+   // --- boolean mask reductions (issue #38) ----------------------------------
+
+   // all_bit: returns <+> if every component of boolean mask is <+>, else <->.
+   all_bit: #! T: Type, T => <>
+   all_bit = mask =>
+      T
+         [i1] mask
+         |
+            acc' = <+>
+            0..?T @ i =>
+               acc' = acc' && mask.(i)
+            acc'
+
+   // any_bit: returns <+> if at least one component of mask is <+>, else <->.
+   any_bit: #! T: Type, T => <>
+   any_bit = mask =>
+      T
+         [i1] mask
+         |
+            acc' = <->
+            0..?T @ i =>
+               acc' = acc' || mask.(i)
+            acc'
+
+   // --- identity / tap -------------------------------------------------------
+
+   // ident: the identity function.
+   ident: #! T: Type, T => T
+   ident = x => x
+
+   // tap: run a side-effect function on v, then return v unchanged. The side
+   // effect must be a first-class function (io::out & co., not a builtin).
+   tap: #! T: Type, T, (T => ()) => T
+   tap = v, f =>
+      f $ v
+      v
+
+   // --- sorting --------------------------------------------------------------
+
+   // sort: in-place insertion sort of a slice view (a(0..) / a(i..j)); writes go
+   // through to the backing array/record. `lt` is a "less than" predicate; the
+   // element type T is inferred from the slice argument. A String order is
+   // str::lt (bytewise, via str::cmp).
+   sort: #! T: Type, (T[]), (T, T => <>) => ()
+   sort = xs, lt =>
+      n = ?xs
+      1..n @ i =>
+         j' = i
+         0.. @
+            j' == 0 | -->
+            lt(xs(j'), xs(j' - 1))
+               |
+                  t = xs(j')
+                  xs(j') = xs(j' - 1)
+                  xs(j' - 1) = t
+                  j' = j' - 1
+               |
+                  -->

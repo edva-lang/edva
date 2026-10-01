@@ -1,0 +1,12 @@
+hello
+hello world
+"quoted"
+{ "a": 1, "b": [2, 3] }
+a==b
+C:\path\to\file
+multi
+line
+a=)b
+x=)
+via call
+via dollar

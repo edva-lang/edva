@@ -1,0 +1,21 @@
+#use libc
+
+// Regression test for the FFI NUL-termination safety seam: Dva Strings are
+// NUL-reserved by construction (the byte data[len] == 0), but the reservation
+// is a runtime property of the *whole* string. A view s(a..b) (C10) shares the
+// parent's buffer, so its data[len] is whatever byte follows in the parent —
+// which is not necessarily NUL. Passing such a view to a C function expecting
+// NUL-terminated char* (atoi) without a copy would make the C callee read past
+// the view's end. codegen must detect data[len] != 0 at the call site and hand
+// C a temporary NUL-terminated copy instead.
+//
+// The canary: parent holds "123459\0", but the view covers only "12345", so
+// view.data[5] is the digit '9' (57), not NUL. atoi on the raw buffer would
+// consume "123459" and return 123459. Only the copy path (a clean "12345\0")
+// yields exactly 12345.
+
+parent = "123459"
+v = parent(0..5)
+
+n = libc::atoi $ v
+print_int $ n

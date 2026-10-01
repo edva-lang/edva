@@ -1,0 +1,23 @@
+2
+x
+y
+x,y
+x
+y
+3
+name,age,active
+name
+age
+active
+pt.0 is int
+pt.0 is not str
+per.0 is str
+Pt.0==Int
+Pt.1==Int
+Person.0==Str
+0,1
+x:int=10
+y:int=20
+name:str=Alice
+age:int=30
+active:other

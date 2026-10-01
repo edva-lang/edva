@@ -1,0 +1,8 @@
+val = 2
+sub_val = 1
+res = val
+    [1] "one"
+    [2]
+        sub_val [1] "two-sub1" | "two-sub-other"
+    | "other"
+print $ res

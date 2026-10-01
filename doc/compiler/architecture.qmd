@@ -1,0 +1,71 @@
+# Compiler architecture
+
+**Audience:** compiler contributors<br>
+**Status:** current overview<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `selfhost/src/edva.dva`, `selfhost/src/codegen/*.dva`, `Makefile`
+
+`edva` is self-hosted: its compiler is written in Edva source under
+`selfhost/src/`. It parses source and imported modules, elaborates types, emits
+LLVM IR through the LLVM 18 C API, then invokes `clang` for object emission and
+linking.
+
+```text
+source and #use modules
+        │
+        ▼
+lexer → parser → AST → dep_graph / type_env / unify / annotate → typed AST
+                                                                   │
+                                                                   ▼
+                                                            modular codegen
+                                                            (types/expr/stmt/match/runtime)
+                                                                   │
+                                                                   ▼
+                                                                LLVM IR
+                                                                   │
+                                                                   ▼
+                                                         clang (-c or link)
+```
+
+## Main components
+
+| Area | Source modules | Responsibility |
+|---|---|---|
+| driver & CLI | `edva.dva` | Source loading, CLI parsing, module orchestration, REPL |
+| lexical & tokens | `lexer.dva`, `operators.dva` | Tokenization, token enums, operator tables from YAML |
+| parser | `parser.dva` | Top-down Pratt/precedence parser producing untyped AST |
+| syntax trees | `ast.dva`, `tast.dva`, `show.dva` | Untyped AST, typed AST (TAST), diagnostic printers |
+| type inference | `dep_graph.dva`, `type_env.dva`, `unify.dva`, `annotate.dva` | Dependency ordering, bidirectional unification, type checking |
+| codegen facade | `codegen.dva` | Unified driver interface re-exporting codegen entry points |
+| codegen types & GEP | `codegen/types.dva` | Type lowering, LLVM types, struct/slice/union layouts, constant globals |
+| codegen runtime | `codegen/runtime.dva` | Arena allocator, string hashing, global constructors |
+| codegen expressions | `codegen/expr.dva` | Expression evaluation, operators, calls, feed/apply (`$`, `$>`, `$>>`) |
+| codegen choices | `codegen/match.dva` | Choices, pattern guards, match-functions, variant unpacking |
+| codegen statements | `codegen/stmt.dva` | Statement emitters, assignments, cycles (`@`, `-->`, `--^`), blocks |
+| codegen entry points | `codegen/main.dva` | Top-level typed program emission to LLVM module |
+| LLVM C bindings | `llvm.dva` | Foreign declarations for the LLVM 18 C API |
+
+## Compilation models
+
+`edva` supports two compilation models:
+
+1. **Whole-program linking (Default):**
+   `./edva app.dva` compiles the entry file and transitively loads and bundles all
+   imported modules and runtime support into a single LLVM module, then invokes
+   `clang` to link the final executable.
+
+2. **Modular incremental compilation (`-c`, `--module`, `--entry`):**
+   Introduced in `#80` and `#81`, modular mode compiles individual compilation units
+   independently to object files (`.o`) or LLVM IR (`.ll`):
+   - `--module <name>` mangles exported symbols with the module prefix (`<name>::`).
+   - `--entry` compiles the root module containing `main`.
+   - **Interface-only `#use` loading:** When compiling a module unit, dependencies
+     imported via `#use` are stripped of non-generic function bodies and private
+     declarations. Only public types, constants, function signatures, and generic
+     definitions are retained. This guarantees that dependency code is not duplicated
+     across translation units.
+
+The standard library modules (`std/str.dva`, `std/mem.dva`, `std/sys.dva`,
+`std/libc.dva`, `std/unicode.dva`, `std/io.dva`) and compiler units are compiled as
+independent modular objects in `selfhost/obj/` and linked together.
+

@@ -1,0 +1,85 @@
+# Edva
+
+> *edva — an implementation of dva*  
+> *A zero-keyword, expression-oriented systems language*
+
+Edva is a statically typed, expression-oriented systems language with significant
+indentation and zero reserved keywords. The self-hosted compiler (`edva`) lowers
+Edva source (`.dva`) to LLVM IR and invokes `clang` to produce high-performance
+native executables.
+
+---
+
+## Highlights
+
+- **Zero Keywords**: Identifiers like `if`, `fn`, `for`, `while`, `return` are ordinary names. All control flow is expressed through pure syntax and symbolic operators (e.g. `@` cycles, choices, cycle escapes `>--`).
+- **Fully Expression-Oriented**: Blocks, choices, bindings, loops, and assignments evaluate to values.
+- **Unboxed Algebraic Datatypes**: First-class ramifications and variants with zero runtime type descriptors (no RTTI, fully static unification).
+- **Self-Hosting Compiler**: The entire compiler is written in Dva and targets LLVM 18 with 2-stage fixed-point verification.
+
+---
+
+## Requirements
+
+- **Linux** (x86_64 or aarch64)
+- **libLLVM-18** installed system-wide
+- **Clang** on `PATH` (used for code generation and linking)
+- **Nushell** (`nu`) for code generation utilities
+
+---
+
+## Quickstart
+
+### Build the compiler
+
+```sh
+git clone https://github.com/edva-lang/edva.git
+cd edva
+./build.sh
+```
+
+### Run an example
+
+```sh
+./edva examples/hello.dva -r
+```
+
+### Emit LLVM IR
+
+```sh
+./edva examples/hello.dva -ir
+```
+
+---
+
+## Running the Test Suite
+
+```sh
+./run_tests.sh
+```
+
+---
+
+## Documentation
+
+Comprehensive documentation and language tutorials are available in [`doc/`](doc/):
+- **Language Guide & Grammar:** [`GRAMMAR.md`](GRAMMAR.md) and [`process/spec/`](process/spec/)
+- **Documentation Book:** [`doc/index.qmd`](doc/index.qmd)
+
+---
+
+## Repository Map
+
+- `src/` — Self-hosted compiler implementation
+- `std/` & `prelude.dva` — Standard library and language prelude
+- `tests/` — Compiler regression suite (pass, fail, driver)
+- `examples/` — Code examples and sample applications
+- `tools/` — Lexer token and operator table generators
+- `seed/` — Frozen bootstrap source and modular LLVM IR
+- `doc/` — Documentation source files
+
+---
+
+## License
+
+Edva is licensed under the [BSD 2-Clause License](LICENSE).

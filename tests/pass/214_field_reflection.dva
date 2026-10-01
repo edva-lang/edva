@@ -1,0 +1,57 @@
+// Field-by-field record reflection (CTTR, no new syntax):
+//  - "?T" on a bound record type is the compile-time FIELD COUNT.
+//  - A generic can access fields by index ("x.0", "x.1") and monomorphizes to
+//    any record with that shape (per-field type dispatch).
+//  - A generic serialize iterates a homogeneous-by-type record (element type E
+//    inferred from the per-element serializer), building a String.
+
+#use "str"
+
+#type Pt (x: Int, y: Int)
+#type Pair (a: Int, b: Int)
+#type Ints (Int){}
+#type Strs (String){}
+
+nfields: #! T: Type, T => Int
+nfields = _ => ?T
+
+show_pair: #! T: Type, T => String
+show_pair = x =>
+   "(" + str::from_int(x.0) + "," + str::from_int(x.1) + ")"
+
+serialize: #! E: Type, #! T: Type, (E => String), T => String
+serialize = ser, xs =>
+   out = {16}
+   out += "["
+   ?xs @ i =>
+      v = xs(i) | _ | E
+      out += ser(v)
+      i < ?xs - 1 | out += "," | 0
+   out += "]"
+   +out
+
+si: Int => String
+si = n => str::from_int(n)
+ss: String => String
+ss = s => s
+
+p: Pt
+p.x = 3
+p.y = 4
+q: Pair
+q.a = 5
+q.b = 6
+print $ str::from_int(nfields(p))
+print $ str::from_int(nfields(q))
+print $ show_pair(p)
+print $ show_pair(q)
+
+s = Ints()
+s += 1
+s += 2
+s += 3
+print $ serialize(si, s)
+t = Strs()
+t += "a"
+t += "b"
+print $ serialize(ss, t)

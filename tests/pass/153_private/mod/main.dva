@@ -1,0 +1,9 @@
+// A module with private (hidden) and public bindings.
+#private
+   secret = 40
+   secret_fn = x => x + secret
+#private hidden_val = 7
+
+#public
+   pub = 1
+   public_fn = x => secret_fn(x) + hidden_val

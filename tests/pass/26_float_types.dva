@@ -1,0 +1,30 @@
+// 64-bit Float (default)
+pi = 3.141593
+print_float $ pi
+
+// 32-bit Float (f32 suffix)
+half_pi = 1.570796f32
+print_float32 $ half_pi
+
+// Float arithmetic (+, -, *, /)
+sum = pi + 2.0
+print_float $ sum
+
+product = pi * 2.0
+print_float $ product
+
+// Mixed Int and Float coercion (Int + Float)
+coerced = 10 + 0.5
+print_float $ coerced
+
+// Direct Flag Choice on Float comparison (with leading pipe)
+temp = 38.2
+status1 = temp > 37.5 | "Fever" | "Normal"
+print $ status1
+
+// Value-centric Multi-Predicate Matching
+status2 = temp
+    [(_ > 39.0)] "Critical Fever"
+    [(_ > 37.5)] "Fever"
+    | "Normal"
+print $ status2

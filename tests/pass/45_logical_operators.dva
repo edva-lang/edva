@@ -1,0 +1,5 @@
+print $ (! <+> | "Positive" | "Negative")
+print $ (! (<->) | "Positive" | "Negative")
+print $ ( <+> && <+> | "Positive" | "Negative")
+print $ ( (<+>) && (<->) | "Positive" | "Negative")
+print $ ( (<->) || (<+>) | "Positive" | "Negative")

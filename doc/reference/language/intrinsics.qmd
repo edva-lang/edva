@@ -1,0 +1,128 @@
+# Intrinsics
+
+**Audience:** performance-sensitive Edva users<br>
+**Status:** current reference<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `process/spec/intrinsics.md`, `selfhost/src/annotate.dva`,
+`selfhost/src/codegen/expr.dva`
+
+Intrinsics are direct compiler operations prefixed by `%`. They compile directly
+to LLVM target instructions or LLVM intrinsics with zero function-call overhead.
+Intrinsics must be called directly with arguments; bare references (such as
+`f = %min`) are rejected at compile time (`E3100`).
+
+Intrinsics enforce strict static types: no implicit integer/float coercion occurs.
+Homogeneous records act as SIMD vectors; scalar operands passed alongside vector
+operands are automatically broadcast (splatted) across lanes.
+
+```dva
+// Scalar operations
+low = %min(10, 20)          // 10
+root = %sqrt(16.0)          // 4.0
+bits = %popcount(7)         // 3
+
+// Vector math and broadcasting
+vec = (10, 20, 30)
+clamped = %clamp(vec, 12, 25) // (12, 20, 25)
+```
+
+---
+
+## Numeric and vector operations
+
+Numeric intrinsics operate on `Int`, `Float`, or homogeneous records of those types:
+
+| Intrinsic | Arity | Argument Types | Return Type | LLVM Lowering |
+|---|---|---|---|---|
+| `%min(a, b)` | 2 | `Int`, `(Int * N)` or `Float`, `(Float * N)` | Same as args | `@llvm.smin` / `@llvm.minnum` |
+| `%max(a, b)` | 2 | `Int`, `(Int * N)` or `Float`, `(Float * N)` | Same as args | `@llvm.smax` / `@llvm.maxnum` |
+| `%clamp(x, lo, hi)` | 3 | `Int`, `(Int * N)` or `Float`, `(Float * N)` | Same as args | `@llvm.smin`/`smax` or `@llvm.minnum`/`maxnum` |
+| `%abs(x)` | 1 | `Int`, `(Int * N)` or `Float`, `(Float * N)` | Same as arg | `@llvm.abs` / `@llvm.fabs` |
+| `%shuffle(v, m)` | 2 | `v`: `(T * N)`, `m`: `(Int * M)` literal | `(T * M)` | `llvm.shufflevector` |
+| `%shuffle(a, b, m)` | 3 | `a, b`: `(T * N)`, `m`: `(Int * M)` literal | `(T * M)` | `llvm.shufflevector` |
+
+In multi-argument operations, mixing `Int` and `Float` arguments is rejected.
+For `%shuffle`, `T` may be `Int`, `Float`, or `<>` (flag), and the mask `m`
+must be a compile-time record literal of lane indices.
+
+---
+
+## Horizontal reductions
+
+Horizontal reductions consume a homogeneous vector record and reduce all lanes
+into a single scalar value:
+
+| Intrinsic | Arity | Argument Types | Return Type | LLVM Lowering |
+|---|---|---|---|---|
+| `%all(v)` | 1 | `(<> * N)` (flag vector) | `<>` (flag) | `@llvm.vector.reduce.and` |
+| `%any(v)` | 1 | `(<> * N)` (flag vector) | `<>` (flag) | `@llvm.vector.reduce.or` |
+| `%sum(v)` | 1 | `(Int * N)` or `(Float * N)` | `Int` or `Float` | `@llvm.vector.reduce.add` / `@llvm.vector.reduce.fadd` |
+| `%prod(v)` | 1 | `(Int * N)` or `(Float * N)` | `Int` or `Float` | `@llvm.vector.reduce.mul` / `@llvm.vector.reduce.fmul` |
+| `%dot(a, b)` | 2 | Matching `(Int * N)` or `(Float * N)` | `Int` or `Float` | Component mul + `@llvm.vector.reduce.add/fadd` |
+
+`%all` and `%any` strictly require a vector of bare `<>` flags. `%sum` and `%prod`
+require a vector of `Int` or `Float`. `%dot` requires two vectors of identical
+length and identical element type.
+
+---
+
+## Floating-point math
+
+Floating-point intrinsics strictly require `Float` operands or homogeneous records
+of `Float`:
+
+| Intrinsic | Arity | Argument Types | Return Type | LLVM Lowering |
+|---|---|---|---|---|
+| `%sqrt(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.sqrt` |
+| `%fma(a, b, c)` | 3 | `Float` or `(Float * N)` | Same as args | `@llvm.fma` |
+| `%fmuladd(a, b, c)` | 3 | `Float` or `(Float * N)` | Same as args | `@llvm.fmuladd` |
+| `%floor(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.floor` |
+| `%ceil(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.ceil` |
+| `%trunc(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.trunc` |
+| `%round(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.round` |
+| `%copysign(m, s)` | 2 | `Float` or `(Float * N)` | Same as args | `@llvm.copysign` |
+| `%sin(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.sin` |
+| `%cos(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.cos` |
+| `%exp2(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.exp2` |
+| `%log2(x)` | 1 | `Float` or `(Float * N)` | Same as arg | `@llvm.log2` |
+| `%pow(x, y)` | 2 | Base: `Float`/`(Float * N)`, Exp: `Float`/`(Float * N)` | Same as args | `@llvm.pow` |
+
+Passing integer arguments to floating-point intrinsics is a compile-time type error;
+explicit conversion via `Float(n)` is required.
+
+---
+
+## Bit manipulation and saturating arithmetic
+
+Bitwise and saturating intrinsics strictly require `Int` operands or homogeneous records of `Int`:
+
+| Intrinsic | Arity | Argument Types | Return Type | LLVM Lowering |
+|---|---|---|---|---|
+| `%popcount(x)` | 1 | `Int` or `(Int * N)` | Same as arg | `@llvm.ctpop` |
+| `%clz(x)` | 1 | `Int` or `(Int * N)` | Same as arg | `@llvm.ctlz` |
+| `%ctz(x)` | 1 | `Int` or `(Int * N)` | Same as arg | `@llvm.cttz` |
+| `%bswap(x)` | 1 | `Int` or `(Int * N)` | Same as arg | `@llvm.bswap` |
+| `%bitreverse(x)` | 1 | `Int` or `(Int * N)` | Same as arg | `@llvm.bitreverse` |
+| `%rotl(x, n)` | 2 | `x`: `Int`/`(Int * N)`, `n`: `Int`/`(Int * N)` | Same as `x` | `@llvm.fshl` |
+| `%rotr(x, n)` | 2 | `x`: `Int`/`(Int * N)`, `n`: `Int`/`(Int * N)` | Same as `x` | `@llvm.fshr` |
+| `%uadd_sat(a, b)` | 2 | `Int`, `(Int * N)` | Same as args | `@llvm.uadd.sat` |
+| `%usub_sat(a, b)` | 2 | `Int`, `(Int * N)` | Same as args | `@llvm.usub.sat` |
+
+`%uadd_sat` and `%usub_sat` treat operands as unsigned 64-bit integers. Underflow in `%usub_sat`
+saturates at `0`.
+
+---
+
+## Memory block primitives
+
+Memory intrinsics operate on raw `Addr` pointers and byte counts:
+
+| Intrinsic | Arity | Argument Types | Return Type | LLVM Lowering |
+|---|---|---|---|---|
+| `%memcpy(dst, src, n)` | 3 | `dst: Addr`, `src: Addr`, `n: Int` | `Addr` (`dst`) | `@llvm.memcpy` |
+| `%memmove(dst, src, n)` | 3 | `dst: Addr`, `src: Addr`, `n: Int` | `Addr` (`dst`) | `@llvm.memmove` |
+| `%memset(dst, val, n)` | 3 | `dst: Addr`, `val: Int`, `n: Int` | `Addr` (`dst`) | `@llvm.memset` |
+
+`dst` and `src` accept pointers (`Addr`, `&b`, or `&s`). `%memmove` supports overlapping
+memory regions; `%memcpy` requires disjoint regions. `val` in `%memset` is truncated to
+an 8-bit byte. All three memory operations return the `dst` address.

@@ -1,0 +1,26 @@
+// Cross-module composite types: a module's enum, recursive enum, growable
+// array, and map referenced from the importer. Exercises the deferred
+// ValueType propagation (enum/array/map resolve to their real ValueType, not
+// the parse-time .Record placeholder).
+
+#use "m"
+
+f: m::Color => Int
+f = c => c [Red] 1 | 2
+
+print_int $ f(m::Color(Red))
+print_int $ f(m::Color(Green))
+
+cs = m::Colors()
+cs += m::Color(Green)
+print_int $ ?cs
+
+e = m::Env()
+e ^ "a" = 10
+print_int $ (e ^ "a" | _ | _)
+
+count: m::Tree => Int
+count = t => t [Leaf n] n | 0
+
+t = m::Tree(Leaf, 5)
+print_int $ count(t)

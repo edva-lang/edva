@@ -1,0 +1,17 @@
+// P1.8: "()" is the unit/void type (real LLVM void), not an empty record.
+// A side-effect-only function declares "=> ()"; its body must not end with
+// a value-producing expression.
+
+// A void function's body ends with a statement, not a value.
+log: Int => ()
+log = x =>
+   print_int $ x
+log(1)
+log(2)
+
+// for_each: run a void function over a homogeneous record, return ().
+for_each: (Int * 3), (Int => ()) => ()
+for_each = a, f =>
+   a @ e => f $ e
+
+for_each((10, 20, 30), log)

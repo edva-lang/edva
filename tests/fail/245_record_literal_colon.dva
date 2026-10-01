@@ -1,0 +1,2 @@
+// Anonymous record literals must use '=' for field values, not ':'
+pt = (x: 10, y: 20)

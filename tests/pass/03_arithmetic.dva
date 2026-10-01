@@ -1,0 +1,2 @@
+res = 100 - 20 * 2 / 4 + 10
+print_int $ res

@@ -1,0 +1,9 @@
+#type Header (a: Int)
+#type Headers (Header){}
+
+f: Addr => Int
+f = p =>
+   xs = Headers()
+   v = @[p Header]
+   xs += v
+   0

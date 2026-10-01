@@ -1,0 +1,90 @@
+// Tests two-way state bindings / property lenses with prefix '~~' (issue #35)
+
+#type Settings (volume: Int, active: <>)
+#type Stats (health: Int)
+#type Player (stats: Stats)
+#type IntArr (Int){}
+#type FlagBinding (get: (() => <>), set: (<> => ()))
+#type IntBinding (get: (() => Int), set: (Int => ()))
+
+::g_theme = 42
+::player_evals = 0
+::idx_evals = 0
+
+checkbox: String, FlagBinding => ()
+checkbox = label, binding =>
+   cur = binding.get()
+   cur | print $ label + ": on" | print $ label + ": off"
+   binding.set(!cur)
+
+get_player: () => Player
+get_player = !=>
+   ::player_evals = ::player_evals + 1
+   st = Stats((100))
+   Player((st))
+
+calc_idx: () => Int
+calc_idx = !=>
+   ::idx_evals = ::idx_evals + 1
+   1
+
+// 1. Direct record field lens
+s = Settings((75, <+>))
+b_vol = ~~s.volume
+print_int $ b_vol.get()
+b_vol.set(90)
+print_int $ b_vol.get()
+print_int $ s.volume
+
+// 2. Widget consumption with record field
+checkbox("Sound", ~~s.active)
+checkbox("Sound", ~~s.active)
+checkbox("Sound", ~~s.active)
+
+// 3. Array element lens (once-evaluated)
+arr = IntArr()
+arr += 10
+arr += 20
+arr += 30
+b_elem = ~~arr(calc_idx())
+print_int $ ::idx_evals
+print_int $ b_elem.get()
+b_elem.set(99)
+print_int $ b_elem.get()
+print_int $ ::idx_evals
+print_int $ arr(1)!!
+
+// 4. Nested record path lens (once-evaluated)
+p_lens = ~~get_player().stats.health
+print_int $ ::player_evals
+print_int $ p_lens.get()
+p_lens.set(85)
+print_int $ p_lens.get()
+print_int $ ::player_evals
+
+// 5. Marked global binding
+b_glob = ~~::g_theme
+print_int $ b_glob.get()
+b_glob.set(999)
+print_int $ b_glob.get()
+print_int $ ::g_theme
+
+// 6. Bidirectional adapter: map_binding (Issue #35 §5)
+map_binding: IntBinding, (Int => Int), (Int => Int) => IntBinding
+map_binding = b, fwd, bwd => (
+   get = !=> fwd(b.get()),
+   set = _v => b.set(bwd(_v))
+)
+
+c_to_f: Int => Int
+c_to_f = c => c * 2 + 30
+
+f_to_c: Int => Int
+f_to_c = f => (f - 30) / 2
+
+c_temp = Settings((25, <+>))
+f_lens = map_binding(~~c_temp.volume, c_to_f, f_to_c)
+print_int $ f_lens.get()
+f_lens.set(100)
+print_int $ f_lens.get()
+print_int $ c_temp.volume

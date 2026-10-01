@@ -1,0 +1,38 @@
+// Custom operators (process/spec/custom-operators.md): operator symbols are
+// ordinary functions; #infix gives them both binding powers.
+// Prefix call form.
++++ : Int, Int => Int
++++ = a, b => a * b + a
+print_int $ +++(5, 6)        
+print_int $ +++(2, 3)        
+
+// Infix, left-associative (lbp 40, rbp 45 — rbp > lbp groups left).
+<~> : #infix 40 45, Int, Int => Int
+<~> = a, b => a * 2 + b
+print_int $ 1 <~> 2 <~> 3    // (1<~>2=4) then 4<~>3 = 11
+
+// Infix, right-associative (lbp 45, rbp 40).
+>>> : #infix 45 40, Int, Int => Int
+>>> = a, b => a * 2 + b
+print_int $ 1 >>> 2 >>> 3    // 1>>>(2>>>3=7) = 9
+
+// Explicit both weights + precedence vs built-ins.
+=== : #infix 95 90, Int, Int => Int    // looser than + (140)
+=== = a, b => a * 2 + b
+print_int $ 1 + 2 === 3
+print_int $ (1 + 2) === 3
+
+// Operator as a value.
+f = <~>
+print_int $ f(2, 3)          // 7
+print_int $ (<~>)(4, 5)      // 13
+
+// Generic payload (Float).
+<*~> : #infix 40 45, Float, Float => Float
+<*~> = a, b => a * b + 1
+print_float $ 2.5 <*~> 2.0     
+
+// Non-associative (equal weights); chains are a parse error (tests/fail).
+|<>| : #infix 55 55, Int, Int => Int
+|<>| = a, b => a + b
+print_int $ 1 |<>| (2 |<>| 3)   // 6

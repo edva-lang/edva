@@ -1,0 +1,73 @@
+# Operators
+
+**Audience:** Edva users<br>
+**Status:** current reference<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `process/spec/operators.yaml`, `GRAMMAR.md` §1.6 and §3.3,
+`selfhost/src/operators.dva`
+
+The complete precedence, associativity, operand, and result table is generated
+from [`process/spec/operators.yaml`](../../../process/spec/operators.yaml) into
+[`GRAMMAR.md`](../../../GRAMMAR.md#16-operators--precedence). Change the YAML,
+not a copied table. This page groups the operators by purpose.
+
+## Values and control flow
+
+- `=` binds an immutable name; a primed identifier is rebindable with `=`.
+- `+=` appends to a Builder in place.
+- `|` and `[guard]` form choices; `!|` selects a ram's negative branch.
+- `@` and `@@` iterate; `-->`, `--^`, and `>--` control cycle escape.
+- `..` forms ranges, including string and slice views.
+
+```dva
+score = 2
+label = score [1] "one" [2] "two" | "other"
+```
+
+## Calls and composition
+
+`f(a, b)` calls directly. `$` appends a call argument and is
+right-associative; `$>` prepends one and is left-associative. `$>>` chains a
+ram with a positive payload through a continuation returning the same ram
+shape. `$:` attaches a trailing block as an argument.
+
+```dva
+sum: Int, Int => Int
+sum = left, right => left + right
+
+print_int $ 2 $> sum(3)
+```
+
+## Numeric, logical, and bitwise operators
+
+Arithmetic uses `+ - * / %`; shifts use `.<.` and `.>.`; bitwise operations
+use `.|.`, `.&.`, and `.!.`. Bitwise operators accept integerish values only.
+Comparisons produce a flag. `&&` and `||` short-circuit; combining heap rams
+requires compatible winner layouts, while flags only combine with flags.
+
+`==` and `!=` compare enum tags but do not compare enum payloads. Rams do not
+support equality or ordering. Unary `-` is integer/float negation.
+
+## Type-directed and postfix operators
+
+| Form | Meaning |
+|---|---|
+| `!flag` | flag negation (flags only; emits E3008 on other types) |
+| `+builder` | freeze a Builder into an immutable String (in-place) |
+| `&buffer` / `&string` | adjacent unary buffer address for FFI |
+| `?value` | byte, element, entry, or field count (`?s`, `?b`, `?a`, `?m`) |
+| `??string` | Unicode codepoint count |
+| `++value` | copy String, record, slice, or growable array |
+| `result!!` | unwrap positive ram payload or abort |
+| `result--!` | unwrap or propagate a negative ram from its function |
+| `expr {N}` | record repetition |
+| `@[address T]` | volatile typed memory load or record view |
+| `#size(Type)` | compile-time type size |
+
+Arithmetic multiplication (`a * b`) and operator sections (`* 2`) use `*`.
+Unary prefix `+` (without trailing space) is Builder freeze; `+ 2` with a space
+is the addition section.
+
+Strings and Builders have no member access; use `?` (length), `&` (address),
+and `+` (freeze) as appropriate.
+

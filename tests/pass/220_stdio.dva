@@ -1,0 +1,43 @@
+// std/io — the single fd-parameterized stdio module. io::out / io::err are
+// console.log-style writers: a scalar or a record of values, formatted at
+// compile time, joined with a single space, + newline. io::outf / io::errf
+// take a '{}' format string. stdin reads stay in std/in.dva (the planned
+// read repertoire is in ISSUES.md); read_* from /dev/null yield "" here.
+
+#use(import) fp
+
+#use io
+#use in
+#use str
+
+io::out(("stdout", "line"))
+io::out(42)
+io::out(2.75)
+io::out(("hex:", str::hex_to_str(255)))
+io::out(("plain", "line"))
+
+b = {3}
+b += 65
+b += 66
+b += 67
+io::out(("builder:", b))
+io::err(("stderr", "line"))
+io::err(-7)
+
+// print stays as a String-only alias (the prelude's io::out).
+print $ "print alias"
+
+// First-class: tap runs the writer on v and returns v unchanged.
+tap_out = x => tap(x, print_int)
+tap_out(123)
+
+// Format-string variants: '{}' placeholders substituted in order.
+io::outf(("a", 42), "{}: {}")
+io::outf(("x", "y", 3), "{}-{}-{}")
+
+// in:: reads from an EOF stdin -> empty Strings.
+line_res = in::read_line(100)
+bytes_res = in::read_bytes(100)
+line = line_res | s => s | ""
+bytes = bytes_res | s => s | ""
+io::out(("in:", line, bytes))

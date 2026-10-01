@@ -1,0 +1,18 @@
+// The choice binds the WHOLE preceding expression as its scrutinee (looser
+// than every binary operator, tighter only than $/$>/assignment). Operating
+// on a choice value therefore requires grouping it.
+is_vowel = c => (c ["a"]) || (c ["e"]) || (c ["i"])
+r = is_vowel("a") | "yes" | "no"
+print $ r
+r2 = is_vowel("b") | "yes" | "no"
+print $ r2
+
+// The scrutinee is the whole expression: "a + b [7]" is "(a + b) [7]".
+sum7 = a, b => a + b [7] "sum7" | "not7"
+print $ sum7(3, 4)
+print $ sum7(3, 5)
+
+// To guard just one operand, group the choice: "a + (b [7] ...)".
+b7 = a, b => a + (b [7] 1 | 0)
+print_int $ b7(10, 7)
+print_int $ b7(10, 8)

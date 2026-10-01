@@ -1,0 +1,8 @@
+add = a, b => a + b
+x = add(10, 20)
+print_int $ x
+
+double = (_ * 2)
+print_int $ double $ 15
+
+print_int $ add(100, 200)

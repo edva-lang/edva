@@ -1,0 +1,5 @@
+// Mutually recursive functions without base cases or annotations cannot
+// ground their parameter types and are rejected (E3128).
+ping = x => pong(x)
+pong = y => ping(y)
+val = ping

@@ -1,0 +1,6 @@
+// A "#! T: Type" generic has no single runtime signature — reading it as a
+// value (before its type arguments are bound at a call site) must be a clean
+// error, not mis-compiled LLVM.
+id: #! T: Type, T => T
+id = x => x
+g = id

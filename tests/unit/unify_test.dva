@@ -1,0 +1,340 @@
+// selfhost/unify_test.dva — Test suite for type unification engine.
+//
+// Tests Robinson / Union-Find type unification, occurs-check,
+// structural record unification, and ramification shape invariance.
+
+#use "src/ast"
+#use "str"
+#use "src/unify"
+
+test_count: Int
+test_count = 0
+
+pass_count: Int
+pass_count = 0
+
+assert_ok: <> , String => ()
+assert_ok = cond, msg =>
+   test_count ::= test_count + 1
+   cond
+      |
+         pass_count ::= pass_count + 1
+      |
+         print $ "FAIL: " + msg
+
+assert_fail: <> , String => ()
+assert_fail = cond, msg =>
+   test_count ::= test_count + 1
+   !cond
+      |
+         pass_count ::= pass_count + 1
+      |
+         print $ "FAIL (expected failure): " + msg
+
+// --- 1. Primitive Unification ----------------------------------------------
+
+test_primitives: () => ()
+test_primitives = !=>
+   ctx = unify::new_ctx!
+   t_int = unify::prim_int!
+   t_int2 = unify::prim_int!
+   t_flt = unify::prim_float!
+   t_str = unify::prim_str!
+   t_flag = unify::prim_flag!
+
+   ok1 = unify::unify(ctx, t_int, t_int2)
+   assert_ok(ok1, "Int unifies with Int")
+
+   ok2 = unify::unify(ctx, t_int, t_flt)
+   assert_fail(ok2, "Int should not unify with Float")
+
+   ok3 = unify::unify(ctx, t_str, t_str)
+   assert_ok(ok3, "Str unifies with Str")
+
+   ok4 = unify::unify(ctx, t_flag, t_int)
+   assert_fail(ok4, "Flag should not unify with Int")
+
+// --- 2. Type Variable Unification & Transitivity ---------------------------
+
+test_type_vars: () => ()
+test_type_vars = !=>
+   ctx = unify::new_ctx!
+   a0 = unify::fresh_var(ctx)
+   a1 = unify::fresh_var(ctx)
+   t_int = unify::prim_int!
+   t_str = unify::prim_str!
+
+   // Unify a0 with Int
+   ok1 = unify::unify(ctx, a0, t_int)
+   assert_ok(ok1, "a0 unifies with Int")
+   c0 = unify::canon(ctx, a0)
+   assert_ok(unify::show_utype(ctx, c0) == "Int", "a0 is now Int")
+
+   // Aliasing: unify a1 with a0
+   ok2 = unify::unify(ctx, a1, a0)
+   assert_ok(ok2, "a1 unifies with a0")
+   c1 = unify::canon(ctx, a1)
+   assert_ok(unify::show_utype(ctx, c1) == "Int", "a1 resolved to Int")
+
+   // Conflict on grounded variable: a0 with Str
+   ok3 = unify::unify(ctx, a0, t_str)
+   assert_fail(ok3, "a0 (Int) should not unify with Str")
+
+   // Compress an unresolved alias, then resolve its target later.
+   a2 = unify::fresh_var(ctx)
+   a3 = unify::fresh_var(ctx)
+   assert_ok(unify::unify(ctx, a2, a3), "unbound variables alias")
+   before = unify::canon(ctx, a2)
+   assert_ok(before [Var _], "an unbound alias stays unresolved")
+   assert_ok(unify::unify(ctx, a3, t_str), "alias target binds to Str")
+   after = unify::canon(ctx, a2)
+   assert_ok(unify::show_utype(ctx, after) == "String",
+      "compressed alias follows its target binding")
+
+// --- 3. Occurs-Check (Cyclic Types) ----------------------------------------
+
+test_occurs_check: () => ()
+test_occurs_check = !=>
+   ctx = unify::new_ctx!
+   a0 = unify::fresh_var(ctx)
+   params = unify::UTypes()
+   params += a0
+   fn_cyclic = unify::mk_fn(params, unify::prim_int!)
+
+   // a0 = a0 -> Int must be rejected by occurs-check
+   ok1 = unify::unify(ctx, a0, fn_cyclic)
+   assert_fail(ok1, "Occurs check must reject a0 = (a0) => Int")
+   err = unify::first_error(ctx)
+   assert_ok(err.code == 3103, "Occurs check error code is 3103")
+
+   // Record occurs-check: a1 = (next: a1)
+   ctx2 = unify::new_ctx!
+   a1 = unify::fresh_var(ctx2)
+   flds = unify::UFields()
+   flds += unify::UField(("next", a1))
+   rec_cyclic = unify::mk_rec(flds)
+   ok2 = unify::unify(ctx2, a1, rec_cyclic)
+   assert_fail(ok2, "Occurs check must reject a1 = (next: a1)")
+
+// --- 4. Function Unification -----------------------------------------------
+
+test_functions: () => ()
+test_functions = !=>
+   ctx = unify::new_ctx!
+   a0 = unify::fresh_var(ctx)
+   a1 = unify::fresh_var(ctx)
+
+   p1 = unify::UTypes()
+   p1 += a0
+   p1 += unify::prim_float!
+   fn1 = unify::mk_fn(p1, a1) // (a0, Float) => a1
+
+   p2 = unify::UTypes()
+   p2 += unify::prim_int!
+   p2 += unify::fresh_var(ctx) // a2
+   fn2 = unify::mk_fn(p2, unify::prim_str!) // (Int, a2) => Str
+
+   ok = unify::unify(ctx, fn1, fn2)
+   assert_ok(ok, "Higher-order functions unify")
+   assert_ok(unify::show_utype(ctx, a0) == "Int", "a0 inferred as Int")
+   assert_ok(unify::show_utype(ctx, a1) == "String", "a1 inferred as Str")
+
+   // Arity mismatch
+   ctx2 = unify::new_ctx!
+   p3 = unify::UTypes()
+   p3 += unify::prim_int!
+   fn3 = unify::mk_fn(p3, unify::prim_int!)
+   ok_arity = unify::unify(ctx2, fn1, fn3)
+   assert_fail(ok_arity, "Function arity mismatch must fail")
+
+// --- 5. Structural Record Unification --------------------------------------
+
+test_records: () => ()
+test_records = !=>
+   ctx = unify::new_ctx!
+   a0 = unify::fresh_var(ctx)
+
+   f1 = unify::UFields()
+   f1 += unify::UField(("x", a0))
+   f1 += unify::UField(("y", unify::prim_float!))
+   r1 = unify::mk_rec(f1)
+
+   f2 = unify::UFields()
+   f2 += unify::UField(("x", unify::prim_int!))
+   f2 += unify::UField(("y", unify::prim_float!))
+   r2 = unify::mk_rec(f2)
+
+   ok1 = unify::unify(ctx, r1, r2)
+   assert_ok(ok1, "Records with same field names and matching types unify")
+   assert_ok(unify::show_utype(ctx, a0) == "Int", "r1.x inferred as Int")
+
+   // Field order/name mismatch
+   ctx2 = unify::new_ctx!
+   f3 = unify::UFields()
+   f3 += unify::UField(("y", unify::prim_float!))
+   f3 += unify::UField(("x", unify::prim_int!))
+   r3 = unify::mk_rec(f3)
+   ok2 = unify::unify(ctx2, r2, r3)
+   assert_fail(ok2, "Records with different field order must fail")
+
+   // Field name compatibility: records unify by layout
+   ctx3 = unify::new_ctx!
+   f4 = unify::UFields()
+   f4 += unify::UField(("a", unify::prim_int!))
+   f4 += unify::UField(("b", unify::prim_float!))
+   r4 = unify::mk_rec(f4)
+   ok3 = unify::unify(ctx3, r2, r4)
+   assert_ok(ok3, "Records with different field names unify by layout")
+
+   // Anonymous / positional record unifies with named record
+   ctx4 = unify::new_ctx!
+   f_anon = unify::UFields()
+   f_anon += unify::UField(("", unify::prim_int!))
+   f_anon += unify::UField(("", unify::prim_float!))
+   r_anon = unify::mk_rec(f_anon)
+   ok4 = unify::unify(ctx4, r2, r_anon)
+   assert_ok(ok4, "Anonymous positional record unifies with named record")
+
+// --- 6. Ramification Shape Invariance (HARD RULE) --------------------------
+
+test_ramifications: () => ()
+test_ramifications = !=>
+   ctx = unify::new_ctx!
+   ram_nn = unify::ram_nn!
+   ram_pn = unify::ram_pn(unify::prim_int!)
+   ram_np = unify::ram_np(unify::prim_int!)
+   ram_pp = unify::ram_pp(unify::prim_int!, unify::prim_str!)
+
+   // Same shapes unify
+   ok1 = unify::unify(ctx, ram_nn, unify::ram_nn!)
+   assert_ok(ok1, "RamNN unifies with RamNN")
+
+   ok2 = unify::unify(ctx, ram_pn, unify::ram_pn(unify::prim_int!))
+   assert_ok(ok2, "RamPN(Int) unifies with RamPN(Int)")
+
+   // Payload mismatch inside same shape fails
+   ok_mismatch = unify::unify(ctx, ram_pn,
+      unify::ram_pn(unify::prim_str!))
+   assert_fail(ok_mismatch, "RamPN(Int) != RamPN(Str)")
+
+   // Cross-shape unification MUST be rejected (E3089 HARD RULE)
+   ctx_shapes = unify::new_ctx!
+   ok_cross1 = unify::unify(ctx_shapes, ram_nn, ram_pn)
+   assert_fail(ok_cross1, "RamNN must NOT unify with RamPN")
+   err1 = unify::first_error(ctx_shapes)
+   assert_ok(err1.code == 3089, "Cross-shape emits E3089")
+
+   ctx_shapes2 = unify::new_ctx!
+   ok_cross2 = unify::unify(ctx_shapes2, ram_pn, ram_np)
+   assert_fail(ok_cross2, "RamPN must NOT unify with RamNP")
+
+   ctx_shapes3 = unify::new_ctx!
+   ok_cross3 = unify::unify(ctx_shapes3, ram_pn, ram_pp)
+   assert_fail(ok_cross3, "RamPN must NOT unify with RamPP")
+
+   ctx_shapes4 = unify::new_ctx!
+   ok_cross4 = unify::unify(ctx_shapes4, ram_np, ram_pp)
+   assert_fail(ok_cross4, "RamNP must NOT unify with RamPP")
+
+   // Unifying variables inside RamPP
+   ctx_pp = unify::new_ctx!
+   a0 = unify::fresh_var(ctx_pp)
+   a1 = unify::fresh_var(ctx_pp)
+   r_pp1 = unify::ram_pp(a0, unify::prim_str!)
+   r_pp2 = unify::ram_pp(unify::prim_int!, a1)
+   ok_pp = unify::unify(ctx_pp, r_pp1, r_pp2)
+   assert_ok(ok_pp, "RamPP(a0, Str) unifies with RamPP(Int, a1)")
+   assert_ok(unify::show_utype(ctx_pp, a0) == "Int", "a0 is Int")
+   assert_ok(unify::show_utype(ctx_pp, a1) == "String", "a1 is Str")
+
+// --- 7. Constraints & Solver -----------------------------------------------
+
+test_constraints: () => ()
+test_constraints = !=>
+   ctx = unify::new_ctx!
+   cs = unify::Constraints()
+
+   // Call constraint: f(5) returns string
+   fn_var = unify::fresh_var(ctx)
+   args = unify::UTypes()
+   args += unify::prim_int!
+   ret = unify::prim_str!
+   cs += unify::Constraint(Call, (fn_var, args, ret))
+
+   // Field constraint: r.age = Int
+   rec_var = unify::fresh_var(ctx)
+   cs += unify::Constraint(Field, (rec_var, "age", unify::prim_int!))
+
+   // ChoiceJoin constraint: cond | 10 | 20
+   res_var = unify::fresh_var(ctx)
+   branches = unify::UTypes()
+   branches += unify::prim_int!
+   branches += unify::prim_int!
+   cs += unify::Constraint(ChoiceJoin, (res_var, branches))
+
+   ok = unify::solve_constraints(ctx, cs)
+   assert_ok(ok, "Constraints solve successfully")
+
+   assert_ok(unify::show_utype(ctx, fn_var) == "(Int) => String",
+      "fn_var solved to (Int) => String")
+   assert_ok(unify::show_utype(ctx, rec_var) == "(age: Int)",
+      "rec_var solved to (age: Int)")
+   assert_ok(unify::show_utype(ctx, res_var) == "Int",
+      "res_var solved to Int")
+
+// --- 8. Groundness Check (No Defaulting to Int) ----------------------------
+
+test_groundness: () => ()
+test_groundness = !=>
+   ctx = unify::new_ctx!
+   t_int = unify::prim_int!
+   assert_ok(unify::is_ground(ctx, t_int), "Int is ground")
+
+   a0 = unify::fresh_var(ctx)
+   assert_fail(unify::is_ground(ctx, a0), "Unbound type var is not ground")
+
+   ok_ensure = unify::ensure_ground(ctx, a0, "x")
+   assert_fail(ok_ensure, "ensure_ground fails on unbound var")
+   err = unify::first_error(ctx)
+   assert_ok(err.code == 3103, "ensure_ground emits E3103")
+
+   // After unifying a0 with Float, it becomes ground
+   ok_unify = unify::unify(ctx, a0, unify::prim_float!)
+   assert_ok(ok_unify, "a0 bound to Float")
+   assert_ok(unify::is_ground(ctx, a0), "a0 is now ground")
+
+// --- 9. AST TypeInfo Conversion --------------------------------------------
+
+test_ast_conversion: () => ()
+test_ast_conversion = !=>
+   ctx = unify::new_ctx!
+   ti_int = ast::TypeInfo(Prim, ast::ValueType(Int))
+   u_int = unify::utype_from_type_info(ti_int)
+   assert_ok(unify::show_utype(ctx, u_int) == "Int", "TypeInfo Int converted")
+
+   ti_back = unify::type_info_from_utype(ctx, u_int)
+   ti_back
+      [Prim vt] assert_ok(vt == ast::ValueType(Int), "Converted back to Int")
+      | assert_fail(<+>, "Expected Prim Int")
+
+// --- Main Runner -----------------------------------------------------------
+
+main: () => ()
+main = !=>
+   test_primitives!
+   test_type_vars!
+   test_occurs_check!
+   test_functions!
+   test_records!
+   test_ramifications!
+   test_constraints!
+   test_groundness!
+   test_ast_conversion!
+
+   print $ "Total tests: " + str::from_int(test_count)
+   print $ "Passed:      " + str::from_int(pass_count)
+   test_count == pass_count
+      | print $ "ALL UNIFICATION TESTS PASSED!"
+      | print $ "SOME TESTS FAILED!"
+
+main!

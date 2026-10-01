@@ -1,0 +1,4 @@
+// "()" is strictly a type (unit / void), never a constructible value.
+// Passing "()" as an argument must fail at compile time (E2104).
+f = x => x
+f(())

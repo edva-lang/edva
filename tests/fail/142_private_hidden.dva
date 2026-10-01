@@ -1,0 +1,2 @@
+#use privmod
+print $ privmod::secret

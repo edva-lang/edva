@@ -1,0 +1,8 @@
+// Escape rejection: passing a partially-initialized composite to a function
+// is a compile error (the callee could read unwritten fields).
+#type T (a: Int, b: Int)
+id: T => Int
+id = r => r.a
+t: T
+t.a = 1
+print $ id(t)

@@ -1,0 +1,29 @@
+// '::=' — global mutation from inside a function. '=' and ':=' always bind a
+// fresh function-local (shadowing an inherited name); '::=' writes the
+// module/global binding, bypassing any local shadow.
+
+#type Ints (Int){}
+
+counter: Int
+vals: Ints
+
+bump: Int => Int
+bump = n =>
+   counter ::= counter + n
+   counter
+
+push: Int => Int
+push = v =>
+   vals += v
+   ?vals
+
+counter = 10
+print_int $ bump(5)
+print_int $ counter
+
+vals = Ints()
+push(7)
+push(8)
+print_int $ ?vals
+print_int $ (vals(0) | _ | _)
+print_int $ (vals(1) | _ | _)

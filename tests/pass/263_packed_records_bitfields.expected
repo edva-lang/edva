@@ -1,0 +1,16 @@
+header size: 4
+tcpflags size: 2
+packet size: 6
+flags.syn: 1
+flags.ack: 1
+flags.fin: 0
+pkt.src: 80
+pkt.dst: 443
+pkt.flags.syn: 1
+pkt.flags.fin: 0
+after reset:
+pkt.flags.syn: 0
+pkt.flags.fin: 1
+overlay a: 42
+overlay b: 4660
+overlay c: 99

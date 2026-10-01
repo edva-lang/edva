@@ -1,0 +1,192 @@
+// selfhost/dep_test.dva — Unit tests for dependency graph and Tarjan's SCC.
+
+#use "src/ast"
+#use "src/dep_graph"
+#use "str"
+#use "sys"
+
+assert_true: <>, String => ()
+assert_true = cond, msg =>
+   cond
+      | print $ "PASS: " + msg
+      |
+         print $ "FAIL: " + msg
+         sys::exit(1)
+
+assert_int_eq: Int, Int, String => ()
+assert_int_eq = actual, expected, msg =>
+   actual == expected
+      | print $ "PASS: " + msg
+      |
+         print $ "FAIL: " + msg + " (expected " + str::from_int(expected) +
+            ", got " + str::from_int(actual) + ")"
+         sys::exit(1)
+
+main: () => ()
+main = !=>
+   print $ "=== Running Dependency Graph & Tarjan SCC Tests ==="
+
+   // Test 1: has_name and copy_names
+   nms = ast::Names()
+   nms += "alpha"
+   nms += "beta"
+   assert_true(dep_graph::has_name(nms, "alpha"), "has_name finds alpha")
+   assert_true(dep_graph::has_name(nms, "beta"), "has_name finds beta")
+   assert_true(!dep_graph::has_name(nms, "gamma"), "has_name misses gamma")
+
+   nms_copy = dep_graph::copy_names(nms)
+   assert_int_eq(?nms_copy, 2, "copy_names copies length")
+
+   // Test 2: collect_expr_refs ignores local parameters
+   fn_params = ast::Names()
+   fn_params += "x"
+   fn_body = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "x"),
+      ast::Expr(Var, "global_val")))
+   fn_expr = ast::Expr(Fn, ast::FnExpr((fn_params, ast::Names(), fn_body)))
+   refs = ast::Names()
+   dep_graph::collect_expr_refs(fn_expr, ast::Names(), refs)
+   assert_int_eq(?refs, 1, "collect_expr_refs finds 1 free reference")
+   assert_true(dep_graph::has_name(refs, "global_val"), "finds global_val")
+   assert_true(!dep_graph::has_name(refs, "x"), "ignores local param x")
+
+   // Test 3: build_dep_graph on independent functions
+   stmts1 = ast::Exprs()
+   // f = x => x + 1
+   p1 = ast::Names()
+   p1 += "x"
+   b1 = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "x"),
+      ast::Expr(Int, 1)))
+   f1 = ast::Expr(Fn, ast::FnExpr((p1, ast::Names(), b1)))
+   stmts1 += ast::Expr(Assign, ("f", <->, <->, <->, <->, f1, ast::Expr(Int, 0),
+      "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+   // g = y => y * 2
+   p2 = ast::Names()
+   p2 += "y"
+   b2 = ast::Expr(Bin, (ast::BinaryOp(Mul), ast::Expr(Var, "y"),
+      ast::Expr(Int, 2)))
+   f2 = ast::Expr(Fn, ast::FnExpr((p2, ast::Names(), b2)))
+   stmts1 += ast::Expr(Assign, ("g", <->, <->, <->, <->, f2, ast::Expr(Int, 0),
+      "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+
+   g1 = dep_graph::build_dep_graph(stmts1)
+   assert_int_eq(?g1.nodes, 2, "build_dep_graph produces 2 nodes")
+   sccs1 = dep_graph::tarjan_scc(g1)
+   assert_int_eq(?sccs1, 2, "independent functions produce 2 SCCs")
+   s0 = sccs1(0) | _ | dep_graph::SCC((ast::Names(), <+>))
+   assert_true(!s0.is_recursive, "independent node is not recursive")
+
+   // Test 4: Directed Acyclic Graph A -> B -> C (Reverse Topological Order)
+   // c = () => 42
+   // b = () => c()
+   // a = () => b()
+   stmts_dag = ast::Exprs()
+   // C (depends on nothing)
+   fc = ast::Expr(Fn, ast::FnExpr((ast::Names(), ast::Names(),
+      ast::Expr(Int, 42))))
+   stmts_dag += ast::Expr(Assign, ("c", <->, <->, <->, <->, fc,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+   // B (depends on C)
+   fb = ast::Expr(Fn, ast::FnExpr((ast::Names(), ast::Names(),
+      ast::Expr(Call, ast::CallExpr(("c", ast::Expr(Int, 0), ast::Exprs(),
+         0, 0))))))
+   stmts_dag += ast::Expr(Assign, ("b", <->, <->, <->, <->, fb,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+   // A (depends on B)
+   fa = ast::Expr(Fn, ast::FnExpr((ast::Names(), ast::Names(),
+      ast::Expr(Call, ast::CallExpr(("b", ast::Expr(Int, 0), ast::Exprs(),
+         0, 0))))))
+   stmts_dag += ast::Expr(Assign, ("a", <->, <->, <->, <->, fa,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+
+   g_dag = dep_graph::build_dep_graph(stmts_dag)
+   sccs_dag = dep_graph::tarjan_scc(g_dag)
+   assert_int_eq(?sccs_dag, 3, "DAG produces 3 SCCs")
+   // C must be evaluated first (index 0)
+   dag0 = sccs_dag(0) | _ | dep_graph::SCC((ast::Names(), <+>))
+   assert_true(dep_graph::has_name(dag0.names, "c"), "leaf C is first in SCCs")
+   // B must be evaluated second (index 1)
+   dag1 = sccs_dag(1) | _ | dep_graph::SCC((ast::Names(), <+>))
+   assert_true(dep_graph::has_name(dag1.names, "b"), "B is second in SCCs")
+   // A must be evaluated third (index 2)
+   dag2 = sccs_dag(2) | _ | dep_graph::SCC((ast::Names(), <+>))
+   assert_true(dep_graph::has_name(dag2.names, "a"), "A is third in SCCs")
+
+   // Test 5: Self-recursive function (Direct recursion)
+   // fact = n => fact(n - 1)
+   p_fact = ast::Names()
+   p_fact += "n"
+   call_fact = ast::Expr(Call, ast::CallExpr(("fact", ast::Expr(Int, 0),
+      ast::Exprs(), 0, 0)))
+   fn_fact = ast::Expr(Fn, ast::FnExpr((p_fact, ast::Names(), call_fact)))
+   stmts_rec = ast::Exprs()
+   stmts_rec += ast::Expr(Assign, ("fact", <->, <->, <->, <->, fn_fact,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+   g_rec = dep_graph::build_dep_graph(stmts_rec)
+   sccs_rec = dep_graph::tarjan_scc(g_rec)
+   assert_int_eq(?sccs_rec, 1, "self-recursive function is 1 SCC")
+   rec0 = sccs_rec(0) | _ | dep_graph::SCC((ast::Names(), <->))
+   assert_true(rec0.is_recursive, "self-recursive SCC is marked recursive")
+   assert_true(dep_graph::has_name(rec0.names, "fact"), "contains fact")
+
+   // Test 6: Mutually recursive cycle (Size 2)
+   // is_even = n => is_odd(n - 1)
+   // is_odd = n => is_even(n - 1)
+   p_even = ast::Names()
+   p_even += "n"
+   call_odd = ast::Expr(Call, ast::CallExpr(("is_odd", ast::Expr(Int, 0),
+      ast::Exprs(), 0, 0)))
+   fn_even = ast::Expr(Fn, ast::FnExpr((p_even, ast::Names(), call_odd)))
+   p_odd = ast::Names()
+   p_odd += "n"
+   call_even = ast::Expr(Call, ast::CallExpr(("is_even", ast::Expr(Int, 0),
+      ast::Exprs(), 0, 0)))
+   fn_odd = ast::Expr(Fn, ast::FnExpr((p_odd, ast::Names(), call_even)))
+
+   stmts_mut = ast::Exprs()
+   stmts_mut += ast::Expr(Assign, ("is_even", <->, <->, <->, <->, fn_even,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+   stmts_mut += ast::Expr(Assign, ("is_odd", <->, <->, <->, <->, fn_odd,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+
+   g_mut = dep_graph::build_dep_graph(stmts_mut)
+   sccs_mut = dep_graph::tarjan_scc(g_mut)
+   assert_int_eq(?sccs_mut, 1, "mutually recursive functions form 1 SCC")
+   mut0 = sccs_mut(0) | _ | dep_graph::SCC((ast::Names(), <->))
+   assert_int_eq(?mut0.names, 2, "SCC has 2 mutually recursive functions")
+   assert_true(mut0.is_recursive, "mutually recursive SCC is marked recursive")
+   assert_true(dep_graph::has_name(mut0.names, "is_even"), "contains is_even")
+   assert_true(dep_graph::has_name(mut0.names, "is_odd"), "contains is_odd")
+
+   // Test 7: 3-cycle mutual recursion (A -> B -> C -> A)
+   stmts_tri = ast::Exprs()
+   call_b = ast::Expr(Call, ast::CallExpr(("b", ast::Expr(Int, 0),
+      ast::Exprs(), 0, 0)))
+   f_a = ast::Expr(Fn, ast::FnExpr((ast::Names(), ast::Names(), call_b)))
+   stmts_tri += ast::Expr(Assign, ("a", <->, <->, <->, <->, f_a,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+
+   call_c = ast::Expr(Call, ast::CallExpr(("c", ast::Expr(Int, 0),
+      ast::Exprs(), 0, 0)))
+   f_b = ast::Expr(Fn, ast::FnExpr((ast::Names(), ast::Names(), call_c)))
+   stmts_tri += ast::Expr(Assign, ("b", <->, <->, <->, <->, f_b,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+
+   call_a = ast::Expr(Call, ast::CallExpr(("a", ast::Expr(Int, 0),
+      ast::Exprs(), 0, 0)))
+   f_c = ast::Expr(Fn, ast::FnExpr((ast::Names(), ast::Names(), call_a)))
+   stmts_tri += ast::Expr(Assign, ("c", <->, <->, <->, <->, f_c,
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Int))))
+
+   g_tri = dep_graph::build_dep_graph(stmts_tri)
+   sccs_tri = dep_graph::tarjan_scc(g_tri)
+   assert_int_eq(?sccs_tri, 1, "3-cycle forms 1 SCC")
+   tri0 = sccs_tri(0) | _ | dep_graph::SCC((ast::Names(), <->))
+   assert_int_eq(?tri0.names, 3, "3-cycle SCC contains 3 functions")
+   assert_true(tri0.is_recursive, "3-cycle SCC is marked recursive")
+   assert_true(dep_graph::has_name(tri0.names, "a"), "contains a")
+   assert_true(dep_graph::has_name(tri0.names, "b"), "contains b")
+   assert_true(dep_graph::has_name(tri0.names, "c"), "contains c")
+
+   print $ "ALL DEPENDENCY GRAPH & TARJAN SCC TESTS PASSED!"
+
+main!

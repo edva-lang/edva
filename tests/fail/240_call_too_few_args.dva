@@ -1,0 +1,3 @@
+foo: Int, Int => Int
+foo = a, b => a + b
+x = foo(1)

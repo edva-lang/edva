@@ -1,0 +1,93 @@
+#use color
+
+approx_eq = a, b => %abs(a - b) < 0.002
+print_flag = f => print_int $ f | 1 | 0
+
+// 1. Hex packing & unpacking
+hex1 = 0xFF8040FF
+c1 = color::from_hex(hex1)
+print_flag $ approx_eq(c1(0), 1.0)
+print_flag $ approx_eq(c1(1), 0.50196)
+print_flag $ approx_eq(c1(2), 0.25098)
+print_flag $ approx_eq(c1(3), 1.0)
+
+pack1 = color::to_hex(c1)
+print_flag $ pack1 == hex1
+
+rgb_hex = 0x123456
+c_rgb = color::from_hex_rgb(rgb_hex)
+pack_rgb = color::to_hex_rgb(c_rgb)
+print_flag $ pack_rgb == rgb_hex
+
+// 2. sRGB <-> Linear sRGB roundtrip
+orig = color::rgba(0.2, 0.5, 0.8, 1.0)
+lin = color::srgb_to_linear(orig)
+back_srgb = color::linear_to_srgb(lin)
+print_flag $ approx_eq(back_srgb(0), orig(0))
+print_flag $ approx_eq(back_srgb(1), orig(1))
+print_flag $ approx_eq(back_srgb(2), orig(2))
+
+// 3. sRGB <-> Oklab roundtrip
+lab = color::rgba_to_oklab(orig)
+back_lab_srgb = color::oklab_to_rgba(lab)
+print_flag $ approx_eq(back_lab_srgb(0), orig(0))
+print_flag $ approx_eq(back_lab_srgb(1), orig(1))
+print_flag $ approx_eq(back_lab_srgb(2), orig(2))
+
+// 4. Oklab <-> Oklch roundtrip
+lch = color::oklab_to_oklch(lab)
+lab_from_lch = color::oklch_to_oklab(lch)
+print_flag $ approx_eq(lab_from_lch(0), lab(0))
+print_flag $ approx_eq(lab_from_lch(1), lab(1))
+print_flag $ approx_eq(lab_from_lch(2), lab(2))
+
+// 5. Direct sRGB <-> Oklch roundtrip
+lch_direct = color::rgba_to_oklch(orig)
+srgb_from_lch = color::oklch_to_rgba(lch_direct)
+print_flag $ approx_eq(srgb_from_lch(0), orig(0))
+print_flag $ approx_eq(srgb_from_lch(1), orig(1))
+print_flag $ approx_eq(srgb_from_lch(2), orig(2))
+
+// 6. sRGB <-> HSV roundtrip
+red = color::rgb(1.0, 0.0, 0.0)
+hsv_red = color::rgba_to_hsv(red)
+print_flag $ approx_eq(hsv_red(0), 0.0)
+print_flag $ approx_eq(hsv_red(1), 1.0)
+print_flag $ approx_eq(hsv_red(2), 1.0)
+
+green = color::rgb(0.0, 1.0, 0.0)
+hsv_green = color::rgba_to_hsv(green)
+print_flag $ approx_eq(hsv_green(0), 120.0)
+print_flag $ approx_eq(hsv_green(1), 1.0)
+print_flag $ approx_eq(hsv_green(2), 1.0)
+
+blue = color::rgb(0.0, 0.0, 1.0)
+hsv_blue = color::rgba_to_hsv(blue)
+print_flag $ approx_eq(hsv_blue(0), 240.0)
+print_flag $ approx_eq(hsv_blue(1), 1.0)
+print_flag $ approx_eq(hsv_blue(2), 1.0)
+
+red_back = color::hsv_to_rgba(hsv_red)
+print_flag $ approx_eq(red_back(0), 1.0)
+print_flag $ approx_eq(red_back(1), 0.0)
+print_flag $ approx_eq(red_back(2), 0.0)
+
+// 7. Alpha blending
+src = color::rgba(1.0, 0.0, 0.0, 0.5)
+dst = color::rgba(0.0, 0.0, 1.0, 1.0)
+blended = color::alpha_blend(src, dst)
+print_flag $ approx_eq(blended(0), 0.5)
+print_flag $ approx_eq(blended(2), 0.5)
+print_flag $ approx_eq(blended(3), 1.0)
+
+blended_lin = color::alpha_blend_linear(src, dst)
+print_flag $ blended_lin(3) == 1.0
+
+// 8. Perceptual operations
+mid_ok = color::lerp_oklab(red, blue, 0.5)
+print_flag $ mid_ok(3) == 1.0
+
+lighter = color::adjust_lightness(orig, 0.1)
+lab_orig = color::rgba_to_oklab(orig)
+lab_light = color::rgba_to_oklab(lighter)
+print_flag $ lab_light(0) > lab_orig(0)

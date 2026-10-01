@@ -1,0 +1,3 @@
+#public
+   square = (_ * _)
+   add = a, b => a + b

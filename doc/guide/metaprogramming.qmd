@@ -1,0 +1,48 @@
+# Metaprogramming
+
+**Audience:** experienced Edva users<br>
+**Status:** current guide<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `process/spec/metaprogramming.md`, `tests/pass/145_compile_time_eval.dva`,
+`tests/pass/148_generic_fn_params.dva`, `tests/pass/147_type_generators.dva`
+
+Edva compile-time execution uses `#!`. Compile-time values are erased: a value
+of `Type` cannot exist at runtime. There are no runtime type descriptors or
+reflection tables.
+
+## Evaluate a constant
+
+Prefix `#!` evaluates a supported pure expression during compilation:
+
+```dva
+answer = #! 2 * 3 + 1
+print_int $ answer
+```
+
+Use `#size(Type)` to obtain the byte size of a type at compile time.
+
+## Generic functions
+
+A `#! T: Type` parameter is a compile-time type parameter. It is inferred at
+the call site and does not become a runtime parameter.
+
+```dva
+identity: #! T: Type, T => T
+identity = value => value
+
+print_int $ identity(42)
+```
+
+Compile-time value parameters use the same form with an ordinary type, such as
+`#! N: Int`. Type generators return a type shape and are named with `#type`.
+
+```dva
+Pair: #! T: Type => (first: T, count: Int)
+#type IntPair Pair(Int)
+```
+
+Use type predicates and compile-time choices to specialize code by shape. Keep
+compile-time work pure and statically resolvable; the compiler reports an error
+when a compile-time value would escape to runtime. Consult the full
+[metaprogramming specification](../../process/spec/metaprogramming.md) for
+reflection, type generators, and supported CTFE forms.

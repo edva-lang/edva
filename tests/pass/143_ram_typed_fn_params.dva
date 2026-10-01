@@ -1,0 +1,11 @@
+// Ram-typed function parameters: a signature whose parameter types are
+// ramifications ("fun: <>, <Int|> => ()"). This works because a lowercase
+// binding name routes ":" to the forward-annotation/signature path, not to a
+// type declaration (types are declared with Uppercase names).
+
+fun: <>, <Int|> => ()
+fun = a, b =>
+   a | print("a is positive")
+   b | print("b has value")
+
+fun(<+>, <+ 42 ->)

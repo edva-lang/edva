@@ -1,0 +1,5 @@
+// A bare '_' branch must extract a payload — a Flag (a > b) has no payload
+// slot, so '_' on it must throw.
+a = 3
+b = 2
+x = a > b | "more" | _

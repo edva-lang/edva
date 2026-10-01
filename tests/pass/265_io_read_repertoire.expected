@@ -1,0 +1,13 @@
+read: n=5 buf=[alpha]
+read_all len=42
+read_all cap8=[alpha
+b]
+read_all empty=NEG_EOF
+read_byte: 97 108
+read_until: [beta] [gamma]
+line: [alpha]
+line: [beta,gamma|delta]
+line: []
+line: []
+line: [final EOF chunk]
+DONE

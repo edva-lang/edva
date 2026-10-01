@@ -1,0 +1,10 @@
+// Must-init: a field written in only some branches of a choice is not
+// definitely initialized after the join, so reading it is an error.
+#type T (a: Int, b: Int)
+t: T
+cond = 5 > 3
+cond |
+   t.a = 1
+|
+   t.b = 2
+print $ t.a

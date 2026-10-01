@@ -1,0 +1,23 @@
+// #spawn with a FUNCTION VALUE argument: the worker takes a closure and calls
+// it. The argument's { fn_ptr, env_ptr } is deep-copied into the child arena
+// (codegen_deep_copy_closure), so the captured env (base) is child-owned. The
+// worker-env-captures-a-function-value case still needs runtime function
+// metadata (no RTTI) and remains E3145.
+
+#use "str"
+
+base = 10
+g: Int => Int
+g = a => a + base
+
+w: (Int => Int) => Int
+w = f => f(5)
+w2: (Int => Int) => Int
+w2 = f => f(7)
+
+h = #spawn w(g)
+r = #join h
+print $ str::from_int(r | v => v | -1)
+h2 = #spawn w2(g)
+r2 = #join h2
+print $ str::from_int(r2 | v => v | -1)

@@ -1,0 +1,10 @@
+// Merging two differently-typed function values in a choice makes the result's
+// return type runtime-dependent (whichever branch won). It must be rejected at
+// the call site, not silently mis-typed (which used to segfault).
+inc: Int => Int
+inc = n => n + 1
+greet: String => String
+greet = s => "hi " + s
+flag = 1 > 0
+f = flag | inc | greet
+print $ f(10)

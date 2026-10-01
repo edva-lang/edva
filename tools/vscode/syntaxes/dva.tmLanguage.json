@@ -1,0 +1,215 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Dva",
+  "scopeName": "source.dva",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#characters"
+    },
+    {
+      "include": "#ramification_constants"
+    },
+    {
+      "include": "#ramification_delimiters"
+    },
+    {
+      "include": "#directives"
+    },
+    {
+      "include": "#types"
+    },
+    {
+      "include": "#control"
+    },
+    {
+      "include": "#numbers"
+    },
+    {
+      "include": "#operators"
+    },
+    {
+      "include": "#identifiers"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.dva",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.dva",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.raw.dva",
+          "begin": "\\(=",
+          "end": "=\\)"
+        },
+        {
+          "name": "string.quoted.double.dva",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.dva",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "characters": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.dva",
+          "match": "'(\\\\.|[^'\\\\])'"
+        }
+      ]
+    },
+    "ramification_constants": {
+      "patterns": [
+        {
+          "name": "constant.language.ramification.dva",
+          "match": "<\\+>|<->|<\\+\\+>|<-->|<>"
+        }
+      ]
+    },
+    "ramification_delimiters": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.ramification.dva",
+          "match": "<\\+|\\+>|<-|->"
+        }
+      ]
+    },
+    "directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.directive.dva",
+          "match": "#(use|type|foreign|pragma|private|export|spawn|join|!|size)\\b"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "name": "storage.type.primitive.dva",
+          "match": "\\b(Int|Float|String|Address|Rune|Builder|Error|Type|i1|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|float|double|void|ptr)\\b"
+        }
+      ]
+    },
+    "control": {
+      "patterns": [
+        {
+          "name": "keyword.control.repeat.dva",
+          "match": "(--[>^][0-9]*|@|@@)"
+        },
+        {
+          "name": "keyword.control.escape.dva",
+          "match": "(>--|--:)"
+        },
+        {
+          "name": "keyword.control.conditional.dva",
+          "match": "(!\\||\\|)"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.float.dva",
+          "match": "\\b[0-9]+\\.[0-9]+([eE][-+]?[0-9]+)?(f32|f|F)?\\b"
+        },
+        {
+          "name": "constant.numeric.hex.dva",
+          "match": "\\b0x[0-9a-fA-F]+(i8|i16|i32|i64|u8|u16|u32|u64)?\\b"
+        },
+        {
+          "name": "constant.numeric.octal.dva",
+          "match": "\\b0o[0-7]+(i8|i16|i32|i64|u8|u16|u32|u64)?\\b"
+        },
+        {
+          "name": "constant.numeric.binary.dva",
+          "match": "\\b0b[01]+(i8|i16|i32|i64|u8|u16|u32|u64)?\\b"
+        },
+        {
+          "name": "constant.numeric.integer.dva",
+          "match": "\\b[0-9]+(i8|i16|i32|i64|u8|u16|u32|u64)?\\b"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.function.dva",
+          "match": "(=>|!=>)"
+        },
+        {
+          "name": "keyword.operator.assignment.dva",
+          "match": "(::=|:=|\\+=|=)"
+        },
+        {
+          "name": "keyword.operator.apply.dva",
+          "match": "(\\$>>|\\$>|\\$:|\\$)"
+        },
+        {
+          "name": "keyword.operator.logical.dva",
+          "match": "(&&|\\|\\|)"
+        },
+        {
+          "name": "keyword.operator.comparison.dva",
+          "match": "(==|!=|!<|!>|<=|>=|<|>)"
+        },
+        {
+          "name": "keyword.operator.bitwise.dva",
+          "match": "(\\.<\\.|\\.>\\.|\\.\\|\\.|\\.&\\.|\\.!\\.)"
+        },
+        {
+          "name": "keyword.operator.arithmetic.dva",
+          "match": "(\\+|-|\\*|/|%)"
+        },
+        {
+          "name": "keyword.operator.unary.dva",
+          "match": "(\\+\\+|\\?\\?|\\?|~~|&|!)"
+        },
+        {
+          "name": "keyword.operator.postfix.dva",
+          "match": "(!!|--!)"
+        },
+        {
+          "name": "keyword.operator.range.dva",
+          "match": "(\\.\\.)"
+        },
+        {
+          "name": "keyword.operator.namespace.dva",
+          "match": "(::)"
+        }
+      ]
+    },
+    "identifiers": {
+      "patterns": [
+        {
+          "name": "entity.name.type.variant.dva",
+          "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
+        },
+        {
+          "name": "variable.other.dva",
+          "match": "\\b[a-z_][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    }
+  }
+}

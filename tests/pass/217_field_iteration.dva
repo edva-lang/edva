@@ -1,0 +1,67 @@
+// Heterogeneous-record auto-iteration (no new syntax, CTTR): a cycle over
+// "0..?T" whose body references "x.(i)" is UNROLLED at compile time, each copy
+// binding i to a constant so the member access resolves to that field — a
+// runtime loop cannot index a heterogeneous record. Uniform operations (==)
+// work across field types without per-field type dispatch.
+
+#use "str"
+
+#type Pt (x: Int, y: Int)
+#type Triple (a: Int, b: Int, c: Int)
+#type Mix (a: Int, b: String)
+
+sum_fields: #! T: Type, T => Int
+sum_fields = x =>
+   acc' = 0
+   0..?T @ i =>
+      acc' = acc' + x.(i)
+   acc'
+
+record_eq: #! T: Type, T, T => <>
+record_eq = a, b =>
+   all' = 1
+   0..?T @ i =>
+      a.(i) == b.(i)
+         |
+            0
+         |
+            all' = 0
+   out = all' == 1
+   out
+
+p: Pt
+p.x = 3
+p.y = 4
+print $ str::from_int(sum_fields(p))
+print $ str::from_int(p.(0))
+print $ str::from_int(p.(1))
+
+t: Triple
+t.a = 1
+t.b = 2
+t.c = 3
+print $ str::from_int(sum_fields(t))
+
+p1: Pt
+p1.x = 3
+p1.y = 4
+p2: Pt
+p2.x = 3
+p2.y = 4
+p3: Pt
+p3.x = 3
+p3.y = 9
+print $ str::from_int(record_eq(p1, p2))
+print $ str::from_int(record_eq(p1, p3))
+
+m1: Mix
+m1.a = 1
+m1.b = "hi"
+m2: Mix
+m2.a = 1
+m2.b = "hi"
+m3: Mix
+m3.a = 1
+m3.b = "no"
+print $ str::from_int(record_eq(m1, m2))
+print $ str::from_int(record_eq(m1, m3))

@@ -1,0 +1,2 @@
+// Function parameters are parentless: "(x, y) =>" is forbidden.
+add = (x, y) => x + y

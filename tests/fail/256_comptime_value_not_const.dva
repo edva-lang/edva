@@ -1,0 +1,5 @@
+repeat_str: #! N: Int, String => String
+repeat_str = s => s
+
+x = 5
+s = repeat_str(x, "abc")

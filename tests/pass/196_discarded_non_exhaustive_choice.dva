@@ -1,0 +1,20 @@
+// A choice in a discard context (a statement — its value is .Unassignable)
+// need not be exhaustive: a guard-only enum choice with no trailing fallback
+// is legal as a statement, and the matched branch still runs for its side
+// effect. Only a choice whose VALUE is consumed (e.g. a function's return)
+// must cover every enum variant.
+
+#type TokKind < Op, Id, RBracket >
+#type Tok (kind: TokKind, text: String)
+
+f: Tok => Int
+f = p =>
+   p.kind
+      [Id] print $ "id"
+   p.kind
+      [RBracket] print $ "rb"
+   0
+
+print_int $ f(Tok((TokKind(Id), "n")))
+print_int $ f(Tok((TokKind(RBracket), "x")))
+print_int $ f(Tok((TokKind(Op), "+")))

@@ -1,0 +1,67 @@
+// Tests <>(x) and x $> <> polarity cast to RamNN (Flag).
+
+show_flag: <> => ()
+show_flag = f =>
+   f | print $ "pos" | print $ "neg"
+
+// 1. RamNN (Flag)
+show_flag $ <>(<+>)
+show_flag $ <>(<->)
+show_flag $ <+> $> <>
+show_flag $ <-> $> <>
+
+// 2. RamPN (niche <String|>)
+find_str: Int => < String | >
+find_str = x =>
+   x > 0 | <+ "hello" -> | <-->
+
+s_pos = find_str(1)
+s_neg = find_str(-1)
+show_flag $ <>(s_pos)
+show_flag $ <>(s_neg)
+show_flag $ s_pos $> <>
+show_flag $ s_neg $> <>
+
+// 3. RamPN (unboxed <Int|>)
+find_int: Int => < Int | >
+find_int = x =>
+   x > 0 | <+ 42 -> | <-->
+
+i_pos = find_int(1)
+i_neg = find_int(-1)
+show_flag $ <>(i_pos)
+show_flag $ <>(i_neg)
+show_flag $ i_pos $> <>
+show_flag $ i_neg $> <>
+
+// 4. RamNP (<|String>)
+check_str: Int => < | String >
+check_str = x =>
+   x > 0 | <++> | <- "fail" +>
+
+np_pos = check_str(1)
+np_neg = check_str(-1)
+show_flag $ <>(np_pos)
+show_flag $ <>(np_neg)
+show_flag $ np_pos $> <>
+show_flag $ np_neg $> <>
+
+// 5. RamPP (<Int|String>)
+choose: Int => < Int | String >
+choose = x =>
+   x > 0 | <+ 100 +> | <- "err" ->
+
+pp_pos = choose(1)
+pp_neg = choose(-1)
+show_flag $ <>(pp_pos)
+show_flag $ <>(pp_neg)
+show_flag $ pp_pos $> <>
+show_flag $ pp_neg $> <>
+
+// 6. Dynamic / untyped ram
+d_pos = <+ 999 ->
+d_neg = <-->
+show_flag $ <>(d_pos)
+show_flag $ <>(d_neg)
+show_flag $ d_pos $> <>
+show_flag $ d_neg $> <>

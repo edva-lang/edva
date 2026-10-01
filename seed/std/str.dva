@@ -1,0 +1,239 @@
+// Standard String Module (std/str.dva)
+//
+// Byte-oriented string helpers for writing a lexer in dva: predicates
+// (is_*), single-byte/count conversions (from_*, to_*, from_int), and the
+// Digit-scan primitives. Strings are fat { len, data } byte sequences; bytes
+// are Int. Predicates return ramifications (<+> in / <-> out), never Int
+// flags. "to_int"/"to_hex" return the declared RamPN ram "Digits":
+// Some((value, rest-of-string view)) — the positive, payload-carrying branch —
+// or None (the negative unit) when there are no digits to consume.
+
+// --- is_* predicates (ASCII byte level) ---
+// Comparisons and && / || already yield ramifications, so a predicate is just
+// the boolean expression — no "| <+> | <->" identity scaffolding needed.
+
+#public
+   is_digit: Int => i1
+   is_digit = c => c !< '0' && c !> '9'
+
+   is_alpha: Int => i1
+   is_alpha = c => c !< 'a' && c !> 'z' || c !< 'A' && c !> 'Z'
+
+   is_alnum: Int => i1
+   is_alnum = c => str::is_digit(c) || str::is_alpha(c)
+
+   is_ws: Int => i1
+   is_ws    = c => c == ' ' || c == '\t' || c == '\n' || c == '\r'
+
+   is_hex: Int => i1
+   is_hex   = c => c !< '0' && c !> '9' || c !< 'a' && c !> 'f' ||
+      c !< 'A' && c !> 'F'
+
+   // --- conversion ---
+
+   // One byte as a 1-byte owned string.
+   from_byte: Int => String
+   from_byte = b =>
+      out = {1}
+      out += b
+      +out
+
+   // Int to ASCII decimal, as a proper fat String { len, data }. Digits are
+   // pushed LSD-first into a Builder, the sign (if any) appended last, then the
+   // reversed buffer is reversed into a fresh Builder — Strings and Builders
+   // only write forward (B8), so MSD-first output is a two-pass reverse.
+   from_int: Int => String
+   from_int = v =>
+      v [0] "0"
+      |
+         b = {32}
+         n' = v [< 0] 0 - v | v
+         32 @
+            n' [> 0]
+               b += ('0' + (n' % 10))
+               n' = n' / 10
+            | -->
+         v < 0 | b += '-'
+         s = +b
+         out = {32}
+         ?s @ i =>
+            out += s((?s) - 1 - i)
+         +out
+
+   // Float to decimal String, "%g"-style: 6 significant digits, fixed notation
+   // for exponent in [-4, 5], scientific ("d.ddddd" e ±exp) otherwise; the
+   // fractional part is trimmed of trailing zeros. Deterministic.
+   // (For an EXACT, side-comparable spelling — e.g. the AST differential dump — serialize the
+   // float's raw bits instead; this is the human-readable form.)
+   from_float: Float => String
+   from_float = v =>
+      neg = v < 0.0
+      a = neg | 0.0 - v | v
+      a == 0.0
+         | "0"
+         |
+            x' = a
+            e' = 0
+            0.. @
+               x' !< 10.0
+                  |
+                     x' = x' / 10.0
+                     e' = e' + 1
+                  | -->
+            0.. @
+               x' < 1.0
+                  |
+                     x' = x' * 10.0
+                     e' = e' - 1
+                  | -->
+            ip = Int(x')
+            f' = x' - Float(ip)
+            ds = {16}
+            ds += ('0' + ip)
+            0..6 @ i =>
+               f' = f' * 10.0
+               d = Int(f')
+               ds += ('0' + d)
+               f' = f' - Float(d)
+            s = +ds
+            m' = 0
+            0..6 @ i =>
+               m' = m' * 10 + (s(i) - '0')
+            s(6) !< 53
+               |
+                  m' = m' + 1
+            m' == 1000000
+               |
+                  m' = 100000
+                  e' = e' + 1
+            ms = str::from_int(m')
+            b = {32}
+            neg | b += '-'
+            e' < -4 || e' !< 6
+               |
+                  b += ms(0)
+                  b += '.'
+                  1..6 @ i =>
+                     b += ms(i)
+                  0
+               |
+                  e' !< 0
+                     |
+                        en = e' + 1
+                        0..en @ i =>
+                           b += ms(i)
+                        en < 6
+                           |
+                              b += '.'
+                              en..6 @ i =>
+                                 b += ms(i)
+                              0
+                           |
+                              0
+                        0
+                     |
+                        b += "0."
+                        (0 - e' - 1) @ i =>
+                           b += '0'
+                        0..6 @ i =>
+                           b += ms(i)
+                        0
+                  0
+            full = +b
+            len = ?full
+            end' = len
+            0.. @
+               end' > 0 && full(end' - 1) == '0'
+                  |
+                     end' = end' - 1
+                  |
+                     -->
+            end' > 0 && full(end' - 1) == '.'
+               |
+                  end' = end' - 1
+            mant = full(0..end')
+            es = e' < 0 | "-" + str::from_int(0 - e') | str::from_int(e')
+            e' < -4 || e' !< 6
+               | mant + "e" + es
+               | mant
+
+   // --- ordering ---
+
+   // Bytewise lexicographic three-way: -1 (a < b), 0 (a == b), 1 (a > b).
+   // memcmp-style — matches the native lexer's sort key order, so the
+   // self-hosted compiler's deterministic-emission passes agree with the Odin
+   // one. The shared prefix is skipped, then the first differing byte decides;
+   // otherwise the shorter string is the smaller.
+   cmp: String, String => Int
+   cmp = a, b =>
+      la = ?a
+      lb = ?b
+      n = la < lb | la | lb
+      r' = 0
+      0..n @ i =>
+         ca = a(i)
+         cb = b(i)
+         ca == cb
+            | 0
+            |
+               r' = ca < cb | -1 | 1
+               -->
+      r' != 0 | r' | (la == lb | 0 | (la < lb | -1 | 1))
+
+   // "a < b" as a bare Flag — the less-than predicate a sort comparator wants.
+   lt: String, String => <>
+   lt = a, b => str::cmp(a, b) < 0
+
+   // RamPN: Some((value, rest-of-string view)) | None (no digits).
+   #type Digits < (Int, String) | >
+
+   // Consume leading decimal digits; the payload is (value, unconsumed rest).
+   to_int: String => Digits
+   to_int = s =>
+      val' = 0
+      s @ b, i =>
+         str::is_digit(b) | 0 | -->
+         val' = val' * 10 + (b - '0')
+      i [0] Digits(<-->)
+      |
+         Digits(<+ (val', s(i..)) ->)
+
+   // Consume leading hex digits (0-9, a-f, A-F); the payload is (value, rest).
+   to_hex: String => Digits
+   to_hex = s =>
+      val' = 0
+      s @ b, i =>
+         str::is_hex(b) | 0 | -->
+         digit = str::is_digit(b)
+            | b - '0'
+            | b !< 'A' && b !> 'F'
+               | b - 'A' + 10
+               | b - 'a' + 10
+         val' = val' * 16 + digit
+      i [0] Digits(<-->)
+      |
+         Digits(<+ (val', s(i..)) ->)
+
+   // Int to base-16 hex ASCII string (uppercase, "0x" prefix). Digits are
+   // pushed LSD-first into a Builder, the "x"/"0" prefix appended last, then
+   // the reversed buffer is reversed into a fresh Builder.
+   hex_to_str: Int => String
+   hex_to_str = val =>
+      val [0] "0x0"
+      |
+         b = {32}
+         n' = val
+         32 @
+            n' [> 0]
+               digit = n' % 16
+               ch = digit [< 10] '0' + digit | 'A' + (digit - 10)
+               b += ch
+               n' = n' / 16
+            | -->
+         b += 'x'
+         b += '0'
+         s = +b
+         out = {32}
+         ?s @ i =>
+            out += s((?s) - 1 - i)
+         +out

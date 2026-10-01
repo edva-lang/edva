@@ -1,0 +1,30 @@
+// Cross-module type annotations: a type declared in an imported module can be
+// annotated directly ("h: http::Headers", "u: http::Url"). The importing file
+// is parsed before the import loads, so the parser defers the qualified name
+// and codegen resolves it against the fully-registered type table.
+
+#use net/http
+#use str
+
+// A growable-array type from http: append directly, then read back.
+h: http::Headers
+h += "Content-Type: text/plain"
+h += "Content-Length: 5"
+print_int $ ?h
+print $ (h(0) | _ | _)
+print $ (h(1) | _ | _)
+
+// A record type from http: member writes and reads.
+u: http::Url
+u.scheme = "https"
+u.host = "example.com"
+u.port = 443
+u.path = "/"
+u.query = ""
+print $ u.host
+print_int $ u.port
+
+// A cross-module type in a function signature.
+hostport: http::Url => String
+hostport = u => u.host + ":" + str::from_int(u.port)
+print $ hostport(u)

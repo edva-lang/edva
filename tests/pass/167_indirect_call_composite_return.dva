@@ -1,0 +1,72 @@
+// An indirect call (through a first-class function value) returning a
+// composite type must restore the value's TypeInfo, so the caller can
+// field-access / index / payload-extract / variant-match the result.
+
+// Record return.
+mk: Int => (name: String, age: Int)
+mk = n => (name = "k", age = n)
+
+f: (Int => (name: String, age: Int))
+f = mk
+
+r = f(30)
+print $ r.name
+print_int $ r.age
+
+// Heap-ram return.
+#type Option < Int | >
+
+mk_some: Int => Option
+mk_some = n => Option(<+ n + 1 ->)
+
+g: (Int => Option)
+g = mk_some
+
+o = g(41)
+print_int $ (o | _ | -1)
+
+// Growable-array return.
+#type Ints (Int){}
+
+mk_arr: Int => Ints
+mk_arr = n =>
+   ys: Ints
+   ys += n
+   ys
+
+h: (Int => Ints)
+h = mk_arr
+
+xs = h(42)
+print_int $ (xs(0) | _ | _)
+
+// Enum return.
+#type Maybe <Some(String), Noth>
+
+mk_maybe: String => Maybe
+mk_maybe = s => Maybe(Some, s + "!")
+
+tag: Maybe => String
+tag = m => m [Some x] "got " + x [Noth] "none"
+
+m: (String => Maybe)
+m = mk_maybe
+
+v = m("hi")
+print $ tag(v)
+
+// Slice return.
+src: Ints
+src += 5
+src += 6
+src += 7
+
+head2: Ints => (Int[])
+head2 = ys => ys(0..2)
+
+sl: (Ints => (Int[]))
+sl = head2
+
+view = sl(src)
+print_int $ view(0)
+print_int $ view(1)

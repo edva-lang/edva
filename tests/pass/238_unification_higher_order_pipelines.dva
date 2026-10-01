@@ -1,0 +1,21 @@
+// Higher-order pipelines: type flow across feed ($>) and infix apply ($).
+add = a, b => a + b
+res1 = 10 $> add $ 5
+print_int(res1)
+
+inc = x => x + 1
+res2 = 5 $> inc $> inc
+print_int(res2)
+
+wrap = x, a, b => a + ": " + x + " " + b
+res3 = "item" $> wrap("[test]") $ "ok"
+print(res3)
+
+run_op: (Int => Int), Int => Int
+run_op = fn, val => fn(val)
+
+double: Int => Int
+double = x => x * 2
+
+res4 = double $> run_op $ 21
+print_int(res4)

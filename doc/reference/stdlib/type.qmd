@@ -1,0 +1,42 @@
+# `type` standard library
+
+**Audience:** authors of compile-time generic code<br>
+**Status:** current reference<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `std/type.dva`, `process/spec/types.md`
+
+The `type` module exposes predicates over the compile-time `Type` value. They
+are evaluated while compiling and disappear with their `Type` arguments;
+`Type` values never exist at runtime.
+
+| Predicate | True for |
+|---|---|
+| `is_record` | record shapes |
+| `is_enum` | enums |
+| `is_ram` | ramifications |
+| `is_fn` | function types |
+| `is_unit` | Unit |
+| `is_homogeneous` | homogeneous records |
+| `is_indexable` | indexable shapes |
+| `is_iterable` | iterable shapes |
+| `is_array` | growable arrays |
+| `is_slice` | slices |
+| `is_map` | maps |
+| `is_scalar` | scalar types |
+| `is_int` | integer types |
+| `is_float` | floating-point types |
+| `is_numeric` | integer or floating-point types |
+| `is_pointer` | pointer-shaped types |
+
+Every predicate has the declaration `Type => <>` and returns a bare flag.
+Use it with a compile-time type parameter rather than a runtime value:
+
+```dva
+#use type
+
+numeric: #! T: Type, T => <>
+numeric = _ => type::is_numeric(T)
+```
+
+The function bodies in `std/type.dva` are placeholders recognized by the
+compiler. Their literal source return values do not define runtime behavior.

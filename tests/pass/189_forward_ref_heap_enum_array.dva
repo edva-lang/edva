@@ -1,0 +1,27 @@
+// A growable array declared BEFORE its element enum (a forward reference):
+// the array's element type must resolve to .Ramification, not the stale
+// .Record placeholder (E3110 regression, selfhost blocker #1 — the AST's
+// Exprs/TypeInfo arrays rely on exactly this).
+
+#type Exprs (Expr){}
+#type Expr < Int(Int), Str(String), Add((Expr, Expr)) >
+
+f: Int => Int
+f = n =>
+   es = Exprs()
+   es += Expr(Int, n)
+   es += Expr(Str, "ab")
+   es += Expr(Add, (Expr(Int, n), Expr(Int, n)))
+   ?es
+
+g: Int => Int
+g = n =>
+   es = Exprs()
+   es += Expr(Int, n)
+   es += Expr(Str, "ab")
+   v0 = es(0) | d => d | Expr(Int, 0)
+   v1 = es(1) | d => d | Expr(Str, "")
+   (v0 [Int x] x | 0) + (v1 [Str s] ?s | 0)
+
+print_int $ f(9)
+print_int $ g(9)

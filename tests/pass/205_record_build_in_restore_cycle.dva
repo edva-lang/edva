@@ -1,0 +1,29 @@
+// A FRESH heap record constructed inside a cycle body and appended to an
+// escaping growable array. The per-iteration arena restore used to reap the
+// record (only the array's growth buffer survived, 4e69f39), so reading the
+// element back gave garbage. ALL arena allocations inside a restore scope now
+// malloc (src/codegen.odin codegen_call_arena_alloc), so the value survives.
+
+#use "str"
+
+#type RF (has: <>, name: String, val: Int)
+#type Fs (RF){}
+
+fs = Fs()
+3 @ _ => fs += RF((<+>, "hi", 5))
+
+r0 = fs(0) | d => d | RF((<->, "", 0))
+out = {16}
+out += r0.name
+out += " "
+out += str::from_int(r0.val)
+print $ +out
+
+r2 = fs(2) | d => d | RF((<->, "", 0))
+out2 = {16}
+out2 += str::from_int(?fs)
+out2 += " "
+out2 += r2.name
+out2 += " "
+out2 += str::from_int(r2.val)
+print $ +out2

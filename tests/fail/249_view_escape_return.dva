@@ -1,0 +1,6 @@
+#type Header (a: Int)
+
+bad: Addr => Header
+bad = p =>
+   v = @[p Header]
+   v

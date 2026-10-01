@@ -1,0 +1,59 @@
+// H4 regression table — whitespace-sensitive operator dispatch. Several
+// operators change meaning based on the whitespace adjacent to them; this
+// table pins every form so a refactor of the dispatch can't silently flip
+// one (process/codebase_review.md H4). Sibling fail-tests cover the
+// whitespace violations (07/08/11/153/154/155 range + section spacing).
+
+// &b (NO trailing space) = unary buffer address -> RawPtr.
+b = {16}
+b += 65
+p = &b
+print_int $ ?b             
+
+// a * b (spaces) = multiplication.
+mul = 3 * 4
+print_int $ mul            
+
+// * 2 (trailing space) = multiplication section "_ => _ * 2".
+dbl = * 2
+print_int $ dbl(5)         // 10
+
+// -x (NO trailing space) = unary minus.
+neg = -5
+print_int $ neg            
+
+// a - b (spaces) = subtraction.
+sub = 10 - 3
+print_int $ sub            
+
+// - 1 (trailing space) = subtraction section "_ => _ - 1".
+dec = - 1
+print_int $ dec(10)        // 9
+
+// fun! (NO leading space) = zero-argument postfix call; "fun ! x" errors
+// (fail test 199_ws_postfix_bang_space).
+get5 = !=> 5
+print_int $ get5!          // 5
+
+// a..b (NO spaces) = range; a space on either side of '..' errors (E2025).
+0..3 @ i => print_int $ i  // 0 1 2
+
+// t.0 (NO space after dot) = member index.
+t = (7, 8)
+print_int $ t.0            
+
+// +b (NO space) = Builder freeze.
+b2 = {4}
+b2 += 66
+s2 = +b2
+print_int $ ?s2            
+
+// ?s (length, no space) and s(i) (byte read).
+print_int $ ?s2            
+print_int $ s2(0)          // 66
+
+// [1] body — whitespace AFTER ']' is required (E2023 on "[1]body"); a space
+// before '[' in first position is conventional.
+x = 5
+r = x [5] 42 | 0
+print_int $ r              // 42

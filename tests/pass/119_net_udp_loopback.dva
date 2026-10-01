@@ -1,0 +1,40 @@
+// std/net ram-ified API + UDP loopback. Exercises the Conn / Chunk result
+// rams, a connect to a closed port (error branch), and a full UDP round-trip
+// between two sockets in one process.
+
+#use net
+#use libc
+#use str
+
+// Send one datagram; the receiver socket below picks it up.
+send_one: Int => Int
+send_one = fd =>
+   net::udp_send(fd, "127.0.0.1", 29992, "ping")
+
+// Receive one datagram and print it (or "no data" on timeout/error).
+recv_one: Int => ()
+recv_one = fd =>
+   data = net::udp_recv(fd, 64)
+   print $ (data | d => "got: " + d | "no data")
+
+// Bind the receiver, fire one datagram at it from a second socket, read it.
+do_roundtrip: Int => Int
+do_roundtrip = r_fd =>
+   net::udp_bind(r_fd, 29992)
+   net::set_recv_timeout(r_fd, 3000)
+   s_sock = net::udp_socket(0)
+   s_sock
+      | s_fd =>
+         send_one(s_fd)
+         net::close_fd(s_fd)
+      | s_err => print $ "sender socket failed"
+   recv_one(r_fd)
+   net::close_fd(r_fd)
+
+// Connecting to a closed port yields the error branch of the Conn ram.
+c = net::tcp_connect("127.0.0.1", 1)
+print $ (c | c_fd => str::from_int(c_fd) | c_err => "connect error: " + c_err)
+
+// UDP round-trip on 127.0.0.1.
+r_sock = net::udp_socket(0)
+r_sock | r_fd => do_roundtrip(r_fd) | r_err => print $ "receiver socket failed"

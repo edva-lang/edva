@@ -1,0 +1,9 @@
+#type State (count: Int, title: String)
+
+render: State => String
+render = s => "V1 [" + s.title + "] count=" + str::from_int(s.count)
+
+step: State => State
+step = s =>
+   s.count = s.count + 1
+   s

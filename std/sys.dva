@@ -1,0 +1,49 @@
+// Standard System Module (std/sys.dva)
+// Exposes compiler and runtime parameters (argv, exit, STDIN/STDOUT/STDERR)
+
+#use libc
+
+#public
+   #foreign
+      argc = sys_argc_global: Int
+      argv_ptr = sys_argv_global: Addr
+
+   STDIN  = 0
+   STDOUT = 1
+   STDERR = 2
+
+   raw_argv: Int => Addr
+   raw_argv = n =>
+      n !< 0 && n < argc
+         | @[argv_ptr + n * 8 Addr]
+         | Addr(0)
+
+   argv_matches: Int, String => <>
+   argv_matches = n, s =>
+      raw = raw_argv(n)
+      raw != Addr(0) && (libc::strcmp(raw, s) == 0)
+
+   c_str: Addr => String
+   c_str = raw =>
+      raw == Addr(0)
+         | ""
+         |
+            len = libc::strlen(raw)
+            b = {len + 1}
+            %memcpy(&b, raw, len + 1)
+            ?b = len
+            +b
+
+   argv_string: Int => String
+   argv_string = n =>
+      c_str $ raw_argv(n)
+
+   argv: Int => <String | >
+   argv = n =>
+      raw = raw_argv(n)
+      raw != Addr(0)
+         | <+ c_str(raw) ->
+         | <-->
+
+   exit: Int => ()
+   exit = code => libc::exit $ code

@@ -1,0 +1,9 @@
+// M5: a #foreign param declared with an explicit integer type (e.g. i32)
+// must map to that exact ABI width — the old code only special-cased the
+// names fd/flags/code and defaulted everything else to i64. Declaring
+// param: i32 now produces an i32 (4-byte) ABI slot.
+#foreign "c"
+    dup2 : (oldfd: i32, newfd: i32) -> Int
+
+print_int $ dup2(1, 2)
+print_int $ 42

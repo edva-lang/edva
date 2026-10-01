@@ -1,0 +1,28 @@
+add = a, b => a + b
+print_int $ add(10, 20)
+
+double = (_ * 2)
+print_int $ double $ 15
+
+opt = <+ "hello payload" ->
+msg = opt
+    | ("Found: " + _)
+    | "Missing"
+print $ msg
+
+flag = 15 > 10
+status = flag | "greater" | "smaller"
+print $ status
+
+foo = 24
+res = foo
+    [(_ > 30)] "more than 30"
+    [(_ % 2 == 0)] "even"
+    | "else"
+print $ res
+
+res_val = <+ "data loaded" +>
+res_msg = res_val
+    | ("Loaded: " + _)
+    | ("Error: " + _)
+print $ res_msg

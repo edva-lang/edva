@@ -1,0 +1,33 @@
+// Compile-time unary operator "#size T": the byte size of a type in bytes.
+// Scalars use their LLVM ABI size; composite record types use the arena
+// size (min 16) the language allocates and strides by.
+
+// Scalars: Int/Rune/i64/u64/Float/f64/pointer-sized are 8 bytes.
+print_int $ #size(Int)
+print_int $ #size(Rune)
+print_int $ #size(Float)
+print_int $ #size(Addr)
+print_int $ #size(String)
+
+// Narrow scalars.
+print_int $ #size(i8)
+print_int $ #size(i16)
+print_int $ #size(i32)
+print_int $ #size(i1)
+
+// Bare form without parentheses.
+print_int $ #size Int
+
+// A value context: feeds a malloc of exactly one element.
+#use libc
+#type Pt (x: Int, y: Int)
+buf = libc::malloc $ #size(Pt)
+print $ ( buf !< 1 | "Positive" | "Negative")
+
+// Sizes are compile-time constants: they fold into arithmetic.
+total = #size(i8) + #size(i32) + #size(i64)
+print_int $ total
+
+// Composite records floor to the 16-byte arena chunk.
+print_int $ #size(Pt)
+print_int $ #size(Int * 2)

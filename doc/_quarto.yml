@@ -1,0 +1,61 @@
+project:
+  type: book
+  output-dir: _build
+
+book:
+  title: "Edva"
+  subtitle: "A zero-keyword, expression-oriented systems language"
+  author: "baldgeorge"
+  chapters:
+    - index.qmd
+    - start/install.qmd
+    - start/quickstart.qmd
+    - start/tour.qmd
+    - reference/language/index.qmd # Edva language reference
+    - reference/language/lexical.qmd
+    - reference/language/declarations.qmd
+    - reference/language/expressions.qmd
+    - reference/language/operators.qmd
+    - reference/language/intrinsics.qmd
+    - reference/language/types.qmd
+    - reference/language/runtime.qmd
+    - guide/bindings-and-modules.qmd
+    - guide/functions-and-closures.qmd
+    - guide/choices-and-cycles.qmd
+    - guide/ramifications.qmd
+    - guide/data-and-memory.qmd
+    - guide/errors-and-io.qmd
+    - guide/ffi-and-targets.qmd
+    - guide/metaprogramming.qmd
+    - reference/edva-cli.qmd
+    - reference/diagnostics.qmd
+    - reference/stdlib/index.qmd
+    - reference/stdlib/prelude.qmd
+    - reference/stdlib/io.qmd
+    - reference/stdlib/in.qmd
+    - reference/stdlib/str.qmd
+    - reference/stdlib/unicode.qmd
+    - reference/stdlib/fmt.qmd
+    - reference/stdlib/sort.qmd
+    - reference/stdlib/type.qmd
+    - reference/stdlib/json.qmd
+    - reference/stdlib/math.qmd
+    - compiler/architecture.qmd
+    - compiler/testing.qmd
+    - compiler/bootstrap.qmd
+    - compiler/targets.qmd
+    - contributing/documentation.qmd
+
+format:
+  html:
+    theme:
+      light: cosmo
+      dark: [cosmo, cosmo-dark.scss]
+    respect-user-color-scheme: true
+    css: style.css
+    toc: true
+    number-sections: true
+    code-copy: true
+    syntax-definitions:
+      - dva.xml
+

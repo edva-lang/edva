@@ -1,0 +1,44 @@
+#type Record
+   foo: Int
+   person:
+      name: String
+      age: Int
+   address: String
+
+r: Record
+r.foo = 42
+r.person.name = "Alice"
+r.person.age = 30
+r.address = "Main St"
+print_int $ r.foo
+print $ r.person.name
+print_int $ r.person.age
+print $ r.address
+
+// A type-decl whose first field is a slice (the same-line type path).
+#type Vec
+   items: (Int[])
+   n: Int
+
+v: Vec
+src = (10, 20)
+v.items = src(0..2)
+v.n = 2
+print_int $ ?v.items
+print_int $ v.n
+
+// Mixed: one nested inline record plus a plain repeated-type field.
+#type Outer
+   inner:
+      a: Int
+      b: Int
+   vec: (Float * 2)
+
+o: Outer
+o.inner.a = 1
+o.inner.b = 2
+o.vec = (1.5, 2.5)
+print_int $ o.inner.a
+print_int $ o.inner.b
+print_float $ o.vec(0)
+print_float $ o.vec(1)

@@ -1,0 +1,19 @@
+GET
+POST
+
+q=hello&page=2
+/search
+
+a b/c
+hello
+page=2
+missing
+example.com
+8080
+/a/b
+x=1
+https
+x.y
+no scheme
+GET
+/p?a=1

@@ -1,0 +1,27 @@
+// Regression test for a struct-layout bug found while deduplicating tuple
+// struct-type derivation (P2 cleanup): two adjacent i1 fields followed by
+// an Int field used to read the Int field from the wrong byte offset,
+// because the member-assignment codegen path bucketed i1/Outcome tuple
+// fields as i64 while the member-chain-resolution and member-read paths
+// correctly bucketed them as i1 -- disagreeing about field width shifts
+// where every subsequent field's LLVM struct offset lands (LLVM struct
+// layout depends on the declared type of every preceding field, since i1
+// vs i64 fields get different alignment padding). All three paths now
+// share one helper (codegen_tuple_llvm_struct_type), so this is exercised
+// end-to-end: write both bools, write the int, then read all three back.
+#type T (
+    a: i1,
+    b: i1,
+    c: Int,
+)
+
+t: T
+t.a = <+>
+t.b = <->
+t.c = 999
+
+ra = t.a | "true" | "false"
+rb = t.b | "true" | "false"
+print $ ra
+print $ rb
+print_int $ t.c

@@ -1,0 +1,29 @@
+lt: T F
+gt: F T
+eq: T F
+neq: F T
+nlt: F T
+ngt: T F
+bcast_r: T F
+bcast_l: F T
+and_res: T F
+or_res: T F
+all_bit m_true: TRUE
+all_bit m_mix: FALSE
+all_bit m_false: FALSE
+any_bit m_true: TRUE
+any_bit m_mix: TRUE
+any_bit m_false: FALSE
+3D all: TRUE
+3D mix all: FALSE
+3D mix any: TRUE
+4D none any: FALSE
+4D one any: TRUE
+scalar all: TRUE
+scalar any: FALSE
+hit_in: INSIDE
+hit_out: OUTSIDE
+oob_in: NO
+oob_out: YES
+rec_a == rec_b: EQUAL
+rec_a == rec_c: NOT_EQUAL

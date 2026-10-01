@@ -1,0 +1,3 @@
+// A map's key type must be a hashable scalar (String, Int, or Addr). A
+// Float key has no hash/equality, so the declaration is a parse error.
+#type Bad Float ^ Int

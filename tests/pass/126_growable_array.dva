@@ -1,0 +1,38 @@
+#type Ints (Int){}
+#type Names (String){3}
+
+xs: Ints
+xs += 42
+xs += 7
+xs += 100
+print_int $ ?xs
+print_int $ (xs(0) | _ | _)
+print_int $ (xs(2) | _ | _)
+xs(1) = 99 !| _
+print_int $ (xs(1) | _ | _)
+
+name: Names
+name += "dva"
+name += "lang"
+n = ?name
+view = name(0..n)
+print $ view(1)
+
+#type Rect (w: Int, h: Int)
+#type Grid (Rect){}
+grid: Grid
+grid += (w = 3, h = 4)
+grid += (w = 5, h = 6)
+print_int $ (grid(1) | g => g.w | _)
+print_int $ (grid(1) | g => g.h | _)
+
+grow: Ints => Int
+grow = a =>
+    a += 1
+    a += 2
+    ?a
+
+xs2 = Ints()
+grow(xs2)
+print_int $ (xs2(0) | _ | _)
+print_int $ (xs2(1) | _ | _)

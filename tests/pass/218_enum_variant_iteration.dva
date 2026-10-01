@@ -1,0 +1,51 @@
+// Compile-time iteration over enum variants (completes the reflection slice):
+// "?T" on a bound enum type is the VARIANT COUNT, and "T.(i)" is the i-th
+// variant's label as a compile-time String. A cycle over "0..?T" is unrolled,
+// so "join_labels"/"labels_arr" work for any enum type with no new syntax.
+
+#use "str"
+
+#type Color < Red, Green, Blue >
+#type Shape < Circle, Square, Triangle, Hexagon >
+#type Names (String){}
+
+nvariants: #! T: Type, T => Int
+nvariants = _ => ?T
+
+label0: #! T: Type, T => String
+label0 = _ => T.(0)
+
+label2: #! T: Type, T => String
+label2 = _ => T.(2)
+
+join_labels: #! T: Type, T => String
+join_labels = _ =>
+   out = {16}
+   0..?T @ i =>
+      i > 0 | out += "," | 0
+      out += T.(i)
+   +out
+
+labels_arr: #! T: Type, #! Out: Type, T, Out => Out
+labels_arr = _, out =>
+   0..?T @ i =>
+      out += T.(i)
+   out
+
+c: Color
+c = Red
+print $ str::from_int(nvariants(c))
+print $ label0(c)
+print $ label2(c)
+print $ join_labels(c)
+
+s: Shape
+s = Circle
+print $ str::from_int(nvariants(s))
+print $ join_labels(s)
+
+o0 = Names()
+n = labels_arr(c, o0)
+print $ str::from_int(?n)
+print $ n(0) | _ | "?"
+print $ n(2) | _ | "?"

@@ -1,0 +1,46 @@
+// Record unification: parentheses-based records replace arrays and tuples.
+
+// Homogeneous positional record (the old array): dynamic index, length, slice.
+r = (10, 20, 30)
+print_int $ r(0)
+print_int $ r(1)
+print_int $ r(2)
+print_int $ ?r
+
+// Static member access on a homogeneous record.
+print_int $ r.0
+print_int $ r.1
+print_int $ r.2
+
+// Named homogeneous record: dynamic indexing and iteration both work.
+n = (x = 1, y = 2)
+print_int $ n(0)
+print_int $ n(1)
+n @ e => print_int $ e
+
+// Heterogeneous record: static member access only.
+h = (name = "dva", age = 30)
+print $ h.name
+print_int $ h.age
+print $ h.0
+print_int $ h.1
+
+// One-element records: "(5,)" is a record, "(5)" is a grouped expression.
+one = (5,)
+print_int $ one(0)
+print_int $ ?one
+
+// Record length on a named record.
+print_int $ ?n
+
+// Records as function parameters: a homogeneous record is passed by value
+// (flat register), so indexing/length/iteration work on the parameter.
+len = x => ?x
+first = x => x(0)
+rsum = x =>
+    acc' = 0
+    x @ e => acc' = acc' + e
+    acc'
+print_int $ len $ r
+print_int $ first $ r
+print_int $ rsum $ r

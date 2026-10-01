@@ -1,0 +1,46 @@
+// Compile-time type dispatch using [] choice guard syntax:
+// T [Type1] action1 [Type2] action2 | fallback
+// is resolved at compile time and pruned to the taken branch.
+// Untaken branches are never codegen'd, allowing type-specific operations.
+
+describe = #! T, x =>
+   T
+      [Int] "int"
+      [String] "string"
+      [Float] "float"
+      [Rune] "rune"
+      [Builder] "builder"
+      | "other"
+
+print $ describe(42)
+print $ describe("hello")
+print $ describe(3.14)
+print $ describe('X')
+b = {8}
+b += 65
+print $ describe(b)
+print $ describe((1, 2))
+
+// Branch pruning verification:
+// String branch uses ?x (length), Int branch uses arithmetic + 10.
+test_pruning = #! T, x =>
+   T
+      [String] ?x
+      [Int] x + 10
+      | 0
+
+print_int $ test_pruning("testing")
+print_int $ test_pruning(90)
+
+#type Point (x: Int, y: Int)
+
+type_name_check = #! T, val =>
+   T
+      [u8] "u8"
+      [f32] "f32"
+      [Point] "point"
+      | "unknown"
+
+print $ type_name_check(1u8)
+print $ type_name_check(Point(1, 2))
+print $ type_name_check(10)

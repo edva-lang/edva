@@ -1,0 +1,4 @@
+native foreign signature ok
+has_errno
+malloc_ok
+free_ok

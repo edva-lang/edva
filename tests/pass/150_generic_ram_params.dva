@@ -1,0 +1,17 @@
+// A type variable in a ramification slot ("#! T: Type, <T|>, ...")
+// is substituted at monomorphization. Heap ram units remain explicit, so a
+// generic Option-typed function handles both the payload and the empty case.
+
+get_or: #! T: Type, <T|>, T => T
+get_or = opt, dflt => opt | v => v | dflt
+
+print_int $ get_or(<+ 42 ->, 0)
+print_int $ get_or(<-->, 0)
+print $ get_or(<+ "x" ->, "y")
+
+// The same over a Fallible (< | T >): the negative slot carries the payload.
+get_err: #! T: Type, < | T >, T => T
+get_err = e, dflt => e | dflt | msg => msg
+
+print_int $ get_err(<++>, 7)
+print $ get_err(<- "oops" +>, "ok")

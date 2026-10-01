@@ -1,0 +1,15 @@
+// P0.4 regression: a cycle body that ONLY calls a helper which allocates
+// must still get a per-iteration arena restore (transitive
+// expr_has_arena_alloc). Without the fix the helper's string concat leaks
+// past each iteration, so the data pointer advances every pass and the
+// offset grows; with the restore the same bump slot is reused and every
+// offset is 0.
+
+mk = _ => "aaaa" + "b"
+
+r0 = mk(0)
+base = addr(&r0)
+
+..3 @ i =>
+    r = mk(0)
+    print_int $ addr(&r) - base

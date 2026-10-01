@@ -1,0 +1,11 @@
+g: Int => Int
+g = q => q * 2
+h: Int => Int
+h = q => q + 1
+
+f: Int => Int
+f = q =>
+   g(q) h(q)
+   0
+
+print $ f(5)

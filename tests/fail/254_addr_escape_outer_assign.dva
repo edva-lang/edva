@@ -1,0 +1,7 @@
+outer: Addr
+outer = Addr(0)
+res =
+   b = {32}
+   b += "test"
+   outer = &b
+   0

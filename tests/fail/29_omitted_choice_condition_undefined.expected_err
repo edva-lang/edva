@@ -1,0 +1,1 @@
+Omitting a Choice/pattern branch's leading condition is only allowed when '_' is already defined

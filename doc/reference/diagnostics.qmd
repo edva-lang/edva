@@ -1,0 +1,46 @@
+# Diagnostics
+
+**Audience:** Edva users and contributors<br>
+**Status:** current reference<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `selfhost/src/lexer.dva`, `selfhost/src/parser.dva`,
+`selfhost/src/codegen/*.dva`, `selfhost/src/edva.dva`, `tests/fail/`
+
+Diagnostics use an `Exyyy` identifier. The first digit identifies the stage:
+
+| Prefix | Stage |
+|---|---|
+| `E1` | lexical analysis |
+| `E2` | parsing |
+| `E3` | type checking and code generation |
+| `E4` | generated-program runtime |
+| `E5` | driver and command line |
+| `E6` | REPL |
+
+A positioned diagnostic includes `[line:column]`. Test expectations match the
+message body rather than the full code, so diagnostic numbering can evolve
+without weakening the behavioral assertion.
+
+## Common fixes
+
+- A type cannot be inferred: add a signature, annotation, or literal suffix;
+  Edva never defaults it to `Int`.
+- A choice is used as a value but is not exhaustive: add meaningful compatible
+  branches, not a dummy `| 0` fallback.
+- A ramification is matched with a name: use positional bare branches; ram
+  slots have no source-level labels.
+- A composite field is read before initialization: write it on every control
+  path, or initialize the whole composite first.
+- A foreign call receives a string or Builder buffer: use its adjacent unary
+  address form, such as `&buffer` or `&string`.
+
+## Report a compiler failure
+
+Preserve the diagnostic text and a minimal source file. If compilation crashes
+or times out, inspect diagnostics before retrying: later LLVM failures often
+follow an earlier reported source error. Include the command, target triple,
+and whether `-ir` succeeds when filing an issue.
+
+The CLI diagnostics for invalid paths, missing modules, output errors, and
+target flags are exercised by `selfhost/test_driver.sh`. Source-language
+diagnostics live in `tests/fail/`, paired with `.expected_err` files.

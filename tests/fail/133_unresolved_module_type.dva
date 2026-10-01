@@ -1,0 +1,3 @@
+// A module-qualified type name that resolves to nothing is a codegen error
+// (the parser defers it; codegen reports the unresolved name).
+h: nosuch::Type

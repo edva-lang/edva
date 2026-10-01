@@ -1,0 +1,36 @@
+{
+  "name": "dva-lang",
+  "displayName": "Dva Language",
+  "description": "Syntax highlighting and language support for the Dva programming language",
+  "version": "0.1.0",
+  "publisher": "dva",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "dva",
+        "aliases": [
+          "Dva",
+          "dva",
+          "edva"
+        ],
+        "extensions": [
+          ".dva"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dva",
+        "scopeName": "source.dva",
+        "path": "./syntaxes/dva.tmLanguage.json"
+      }
+    ]
+  }
+}

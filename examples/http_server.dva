@@ -1,0 +1,58 @@
+// A minimal HTTP server in Dva.
+//
+// Routes:
+//   /             -> 200 "Hello from dva!"
+//   anything else -> 404 Not Found
+//
+// Build & run:
+//   ./edva examples/http_server.dva
+//   ./http_server
+//
+// Try it:
+//   curl http://localhost:8080/            -> 200, "Hello from dva!"
+//   curl http://localhost:8080/anything    -> 404, "Not Found"
+//
+// The server accepts connections forever until the process is killed.
+// Change PORT to bind a different port.
+
+#use io
+#use net
+#use libc
+#use "net/http"
+
+PORT = 8080
+
+// Answer one request: the root path gets 200, everything else 404.
+handle_req: Int, String => Int
+handle_req = c_fd, r =>
+   path = http::path_of(r)
+   path ["/"]
+      http::respond(c_fd, 200, "text/plain", "Hello from dva!")
+   ["/anna"]
+      http::respond(c_fd, 200, "text/plain", "Hello Anna!")
+   |
+      http::respond(c_fd, 404, "text/plain", "Not Found")
+
+// Serve one connection: read the request, answer, close.
+serve_client: Int => Int
+serve_client = c_fd =>
+   net::set_recv_timeout(c_fd, 5000)
+   req = net::recv(c_fd, 4096)
+   req | r => handle_req(c_fd, r)
+   net::close_fd(c_fd)
+
+// Accept connections forever, one request per connection.
+serve_loop: Int => ()
+serve_loop = srv =>
+   io::out(("listening on port", PORT))
+   0.. @
+      client = net::tcp_accept(srv)
+      client
+         | c_fd => serve_client(c_fd)
+
+server = net::tcp_listen(PORT, 16)
+server
+   | srv => serve_loop(srv)
+   | err =>
+      io::err(("failed to bind port", PORT))
+      #exit 1

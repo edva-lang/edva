@@ -1,0 +1,3 @@
+s = "hello"
+c = ++s
+print $ c

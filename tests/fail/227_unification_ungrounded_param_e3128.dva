@@ -1,0 +1,4 @@
+// Function used as a value without a declared signature or call site to
+// ground its parameter types is rejected at compile time (E3128).
+f = x => x + 1
+val = f

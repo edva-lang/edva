@@ -1,0 +1,21 @@
+// Raw string literals "(= ... =)": the content is literal bytes — quotes,
+// braces, backslashes, and newlines need no escaping — with a single escape
+// "=\)" producing a literal "=)". A raw string is a normal String value.
+
+print $ (=hello=)
+print $ (=hello world=)
+print $ (="quoted"=)
+print $ (={ "a": 1, "b": [2, 3] }=)
+print $ (=a==b=)
+print $ (=C:\path\to\file=)
+print $ (=multi
+line=)
+print $ (=a=\)b=)
+print $ (=x=\)=)
+
+// A raw string flows into a call (extra parens: "(=...=)" is the argument)
+// and through the '$' apply operator.
+f: String => String
+f = s => s
+print $ f((=via call=))
+print $ f $ (=via dollar=)

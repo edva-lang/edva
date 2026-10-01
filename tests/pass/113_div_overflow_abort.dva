@@ -1,0 +1,7 @@
+// C2: INT_MIN / -1 overflows i64 signed division and is a runtime abort
+// (E4013), not unchecked UB.
+
+a = -9223372036854775807 - 1
+b = -1
+c = a / b
+print_int $ c

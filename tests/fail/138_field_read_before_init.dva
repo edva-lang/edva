@@ -1,0 +1,6 @@
+// Field-init tracking: reading a field that was never written (and whose
+// record is not whole-initialized) is a compile error.
+#type T (a: Int, b: Int)
+t: T
+t.a = 1
+print $ t.b

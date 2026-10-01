@@ -1,0 +1,1151 @@
+// selfhost/unify.dva — Full type unification engine.
+//
+// Implements Robinson / Union-Find type unification with occurs-check,
+// structural record unification, and strict ramification shape invariance.
+// Part of Milestone 1 in process/unification-roadmap.md.
+
+#use "ast"
+#use "str"
+
+// --- Unification Types -----------------------------------------------------
+
+#type UTypes (UType){}
+
+#type UPrim <
+   Int I8 I16 I32 I64 U8 U16 U32 U64
+   Float F32 Str Rune Flag Unit RawPtr
+   Builder Error ThreadId Type Unknown
+>
+
+#type UField (name: String, ut: UType)
+#type UFields (UField){}
+
+#type URamShape < RamNN, RamPN, RamNP, RamPP >
+
+#type URamSlot (
+   has_payload: <>,
+   ut: UType
+)
+
+#type URam (
+   pos: URamSlot,
+   neg: URamSlot
+)
+
+#type UFn (
+   params: UTypes,
+   ret: UType
+)
+
+#type UArray (
+   elem: UType,
+   count: Int
+)
+
+#type UEnumVariant (
+   label: String,
+   has_payload: <>,
+   payload_type: UType
+)
+#type UEnumVariants (UEnumVariant){}
+
+#type UEnum (
+   name: String,
+   variants: UEnumVariants
+)
+
+#type UMap (
+   key: UType,
+   val: UType
+)
+
+#type UType <
+   Prim(UPrim)
+   Var(Int)
+   Fn(UFn)
+   Rec(UFields)
+   Ram(URam)
+   Enum(UEnum)
+   Array(UArray)
+   Slice(UType)
+   Map(UMap)
+   None
+>
+
+// --- Context & Bindings ----------------------------------------------------
+
+#type VarBinding (
+   is_bound: <>,
+   bound: UType
+)
+#type VarBindings (VarBinding){}
+
+#type TypeError (
+   code: Int,
+   msg: String
+)
+#type TypeErrors (TypeError){}
+
+#type OpenVars (Int){}
+
+#type Constraint <
+   Equality((UType, UType))
+   Call((UType, UTypes, UType))
+   Field((UType, String, UType))
+   ChoiceJoin((UType, UTypes))
+>
+#type Constraints (Constraint){}
+
+#type Ctx (
+   next_var: Int,
+   bindings: VarBindings,
+   errors: TypeErrors,
+   open_vars: OpenVars,
+   constraints: Constraints
+)
+
+// --- Type Constructors -----------------------------------------------------
+
+prim_int: () => UType
+prim_int = !=> UType(Prim, UPrim(Int))
+
+prim_float: () => UType
+prim_float = !=> UType(Prim, UPrim(Float))
+
+prim_str: () => UType
+prim_str = !=> UType(Prim, UPrim(Str))
+
+prim_rune: () => UType
+prim_rune = !=> UType(Prim, UPrim(Rune))
+
+prim_flag: () => UType
+prim_flag = !=> UType(Prim, UPrim(Flag))
+
+prim_unit: () => UType
+prim_unit = !=> UType(Prim, UPrim(Unit))
+
+prim_rawptr: () => UType
+prim_rawptr = !=> UType(Prim, UPrim(RawPtr))
+
+prim_builder: () => UType
+prim_builder = !=> UType(Prim, UPrim(Builder))
+
+prim_error: () => UType
+prim_error = !=> UType(Prim, UPrim(Error))
+
+prim_type: () => UType
+prim_type = !=> UType(Prim, UPrim(Type))
+
+prim_unknown: () => UType
+prim_unknown = !=> UType(Prim, UPrim(Unknown))
+
+// Ramification constructors:
+// RamNN is <> (Flag, no payloads in either slot)
+ram_nn: () => UType
+ram_nn = !=>
+   slot0 = URamSlot((<->, UType(None)))
+   slot1 = URamSlot((<->, UType(None)))
+   UType(Ram, URam((slot0, slot1)))
+
+// RamPN is <A|> (positive payload, negative unit)
+ram_pn: UType => UType
+ram_pn = pos =>
+   slot0 = URamSlot((<+>, pos))
+   slot1 = URamSlot((<->, UType(None)))
+   UType(Ram, URam((slot0, slot1)))
+
+// RamNP is <|B> (positive unit, negative payload)
+ram_np: UType => UType
+ram_np = neg =>
+   slot0 = URamSlot((<->, UType(None)))
+   slot1 = URamSlot((<+>, neg))
+   UType(Ram, URam((slot0, slot1)))
+
+// RamPP is <A|B> (positive payload, negative payload)
+ram_pp: UType, UType => UType
+ram_pp = pos, neg =>
+   slot0 = URamSlot((<+>, pos))
+   slot1 = URamSlot((<+>, neg))
+   UType(Ram, URam((slot0, slot1)))
+
+mk_ram: URamSlot, URamSlot => UType
+mk_ram = pos, neg => UType(Ram, URam((pos, neg)))
+
+mk_fn: UTypes, UType => UType
+mk_fn = params, ret => UType(Fn, UFn((params, ret)))
+
+mk_rec: UFields => UType
+mk_rec = flds => UType(Rec, flds)
+
+mk_array: UType, Int => UType
+mk_array = elem, count => UType(Array, UArray((elem, count)))
+
+mk_slice: UType => UType
+mk_slice = elem => UType(Slice, elem)
+
+mk_map: UType, UType => UType
+mk_map = k, v => UType(Map, UMap((k, v)))
+
+// --- Context Operations ----------------------------------------------------
+
+new_ctx: () => Ctx
+new_ctx = !=> Ctx((0, VarBindings(), TypeErrors(), OpenVars(), Constraints()))
+
+add_call_constraint: Ctx, UType, UTypes, UType => ()
+add_call_constraint = ctx, fn_ut, arg_uts, ret_ut =>
+   cs = ctx.constraints
+   cs += Constraint(Call, (fn_ut, arg_uts, ret_ut))
+   ctx.constraints = cs
+
+fresh_var: Ctx => UType
+fresh_var = ctx =>
+   id = ctx.next_var
+   ctx.next_var = id + 1
+   bs = ctx.bindings
+   bs += VarBinding((<->, UType(None)))
+   ctx.bindings = bs
+   UType(Var, id)
+
+add_error: Ctx, Int, String => ()
+add_error = ctx, code, msg =>
+   errs = ctx.errors
+   errs += TypeError((code, msg))
+   ctx.errors = errs
+
+has_errors: Ctx => <>
+has_errors = ctx => ?ctx.errors > 0
+
+error_count: Ctx => Int
+error_count = ctx => ?ctx.errors
+
+first_error: Ctx => TypeError
+first_error = ctx =>
+   ctx.errors(0) | _ | TypeError((0, ""))
+
+error_code: TypeError => Int
+error_code = e => e.code
+
+error_msg: TypeError => String
+error_msg = e => e.msg
+
+format_error: TypeError => String
+format_error = e =>
+   "E" + str::from_int(e.code) + ": " + e.msg
+
+is_integerish_uprim: UPrim => <>
+is_integerish_uprim = p =>
+   p [Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64]
+
+is_flag_uprim: UPrim => <>
+is_flag_uprim = p =>
+   p [Flag]
+
+// --- Ramification Shape ----------------------------------------------------
+
+ram_shape: URam => URamShape
+ram_shape = r =>
+   r.pos.has_payload
+      |
+         r.neg.has_payload | URamShape(RamPP) | URamShape(RamPN)
+      |
+         r.neg.has_payload | URamShape(RamNP) | URamShape(RamNN)
+
+// --- Canonicalization (Union-Find Find with Path Compression) -------------
+
+canon: Ctx, UType => UType
+canon = ctx, t =>
+   t
+      [Var id]
+         (id !< 0 && id < ?ctx.bindings)
+            |
+               b = ctx.bindings(id) | _ | VarBinding((<->, UType(None)))
+               b.is_bound
+                  |
+                     b.bound
+                        [Var _]
+                           root = canon(ctx, b.bound)
+                           ctx.bindings(id) = VarBinding((<+>, root)) !| _
+                           root
+                        | b.bound
+                  | t
+            | t
+      | t
+
+// --- Occurs-Check (Infinite Type Prevention) -------------------------------
+
+occurs: Ctx, Int, UType => <>
+occurs = ctx, v, t =>
+   c = canon(ctx, t)
+   c
+      [Var id] id == v
+      [Fn f] fn_occurs(ctx, v, f)
+      [Rec r] rec_occurs(ctx, v, r)
+      [Ram r] ram_occurs(ctx, v, r)
+      [Array a] occurs(ctx, v, a.elem)
+      [Slice s] occurs(ctx, v, s)
+      [Map m] occurs(ctx, v, m.key) || occurs(ctx, v, m.val)
+      [Enum e] enum_occurs(ctx, v, e)
+      | <->
+
+fn_occurs: Ctx, Int, UFn => <>
+fn_occurs = ctx, v, f =>
+   occurs(ctx, v, f.ret)
+      | <+>
+      |
+         found' = <->
+         ?f.params @ i =>
+            p = f.params(i) | _ | UType(None)
+            occurs(ctx, v, p) | (found' = <+>; -->)
+         found'
+
+rec_occurs: Ctx, Int, UFields => <>
+rec_occurs = ctx, v, r =>
+   found' = <->
+   ?r @ i =>
+      fld = r(i) | _ | UField(("", UType(None)))
+      occurs(ctx, v, fld.ut) | (found' = <+>; -->)
+   found'
+
+ram_occurs: Ctx, Int, URam => <>
+ram_occurs = ctx, v, r =>
+   pos_occ = r.pos.has_payload && occurs(ctx, v, r.pos.ut)
+   neg_occ = r.neg.has_payload && occurs(ctx, v, r.neg.ut)
+   pos_occ || neg_occ
+
+enum_occurs: Ctx, Int, UEnum => <>
+enum_occurs = ctx, v, e =>
+   e.name != ""
+      | <->
+      |
+         found' = <->
+         ?e.variants @ i =>
+            vr = e.variants(i) | _ | UEnumVariant(("", <->, UType(None)))
+            vr.has_payload && occurs(ctx, v, vr.payload_type)
+               | (found' = <+>; -->)
+         found'
+
+// --- Variable Binding ------------------------------------------------------
+
+do_bind: Ctx, Int, UType => <>
+do_bind = ctx, v, c =>
+   ctx.bindings(v) = VarBinding((<+>, c)) !| _
+   <+>
+
+bind_var: Ctx, Int, UType => <>
+bind_var = ctx, v, t =>
+   c = canon(ctx, t)
+   c [Var id]
+      id == v
+         | <+>
+         | do_bind(ctx, v, c)
+   |
+      occurs(ctx, v, c)
+         |
+            add_error(ctx, 3103, "Occurs check failed: cyclic type ?T" +
+               str::from_int(v) + " in " + show_utype(ctx, c))
+            <->
+         | do_bind(ctx, v, c)
+
+// --- Core Unification ------------------------------------------------------
+
+unify: Ctx, UType, UType => <>
+unify = ctx, t1, t2 =>
+   v1 = root_var_id(ctx, t1)
+   v2 = root_var_id(ctx, t2)
+   c1 = canon(ctx, t1)
+   c2 = canon(ctx, t2)
+   unify_canon(ctx, c1, c2, v1, v2)
+
+unify_canon: Ctx, UType, UType, Int, Int => <>
+unify_canon = ctx, c1, c2, v1, v2 =>
+   c1 [Var var1]
+      c2 [Var var2]
+         var1 == var2 | <+> | bind_var(ctx, var1, c2)
+      | bind_var(ctx, var1, c2)
+   |
+      c2 [Var var2]
+         bind_var(ctx, var2, c1)
+      | unify_concrete(ctx, c1, c2, v1, v2)
+
+is_open_unit_ram: Ctx, URam => <>
+is_open_unit_ram = ctx, r =>
+   s = ram_shape(r)
+   s == URamShape(RamPN)
+      | is_unbound_var(ctx, r.pos.ut)
+      |
+         s == URamShape(RamNP)
+            | is_unbound_var(ctx, r.neg.ut)
+            | s == URamShape(RamNN)
+
+bind_open_unit_ram_int: Ctx, URam => ()
+bind_open_unit_ram_int = ctx, r =>
+   s = ram_shape(r)
+   s == URamShape(RamPN)
+      |
+         c_pos = canon(ctx, r.pos.ut)
+         c_pos [Var vid] bind_var(ctx, vid, prim_int()) | 0
+      |
+         s == URamShape(RamNP)
+            |
+               c_neg = canon(ctx, r.neg.ut)
+               c_neg [Var vid] bind_var(ctx, vid, prim_int()) | 0
+            | 0
+
+unify_concrete: Ctx, UType, UType, Int, Int => <>
+unify_concrete = ctx, c1, c2, v1, v2 =>
+   c1
+      [Prim p1]
+         c2
+            [Prim p2]
+               p1 == p2
+                  | <+>
+                  |
+                     is_int1 = is_integerish_uprim(p1)
+                     is_int2 = is_integerish_uprim(p2)
+                     is_int1 && is_int2
+                        | <+>
+                        |
+                           report_mismatch(ctx, c1, c2)
+                           <->
+            [Ram r2]
+               is_int1_r = is_integerish_uprim(p1)
+               is_int1_r && is_open_unit_ram(ctx, r2)
+                  |
+                     bind_open_unit_ram_int(ctx, r2)
+                     <+>
+                  |
+                     report_mismatch(ctx, c1, c2)
+                     <->
+            |
+               report_mismatch(ctx, c1, c2)
+               <->
+      [Fn f1]
+         c2 [Fn f2]
+            unify_fn(ctx, f1, f2)
+         |
+            report_mismatch(ctx, c1, c2)
+            <->
+      [Rec r1]
+         c2 [Rec r2]
+            unify_rec_open(ctx, r1, r2, v1, v2)
+         |
+            report_mismatch(ctx, c1, c2)
+            <->
+      [Ram ram1]
+         c2
+            [Ram ram2]
+               unify_ram(ctx, ram1, ram2)
+            [Prim p2]
+               is_int2_p = is_integerish_uprim(p2)
+               is_int2_p && is_open_unit_ram(ctx, ram1)
+                  |
+                     bind_open_unit_ram_int(ctx, ram1)
+                     <+>
+                  |
+                     report_mismatch(ctx, c1, c2)
+                     <->
+            |
+               report_mismatch(ctx, c1, c2)
+               <->
+      [Array a1]
+         c2 [Array a2]
+            unify_array(ctx, a1, a2)
+         |
+            report_mismatch(ctx, c1, c2)
+            <->
+      [Slice s1]
+         c2 [Slice s2]
+            unify(ctx, s1, s2)
+         |
+            report_mismatch(ctx, c1, c2)
+            <->
+      [Map m1]
+         c2 [Map m2]
+            unify_map(ctx, m1, m2)
+         |
+            report_mismatch(ctx, c1, c2)
+            <->
+      [Enum e1]
+         c2 [Enum e2]
+            unify_enum(ctx, e1, e2)
+         |
+            report_mismatch(ctx, c1, c2)
+            <->
+      |
+         report_mismatch(ctx, c1, c2)
+         <->
+
+unify_fn: Ctx, UFn, UFn => <>
+unify_fn = ctx, f1, f2 =>
+   ?f1.params != ?f2.params
+      |
+         add_error(ctx, 3084, "Function arity mismatch: expected " +
+            str::from_int(?f1.params) + " params, got " +
+            str::from_int(?f2.params))
+         <->
+      |
+         all_ok' = <+>
+         ?f1.params @ i =>
+            p1 = f1.params(i) | _ | UType(None)
+            p2 = f2.params(i) | _ | UType(None)
+            ok = unify(ctx, p1, p2)
+            !ok | (all_ok' = <->; -->)
+         all_ok'
+            | unify(ctx, f1.ret, f2.ret)
+            | <->
+
+is_sub_record: Ctx, UFields, UFields => <>
+is_sub_record = ctx, sub_flds, full_flds =>
+   all_ok' = <+>
+   ?sub_flds @ i =>
+      f1 = sub_flds(i) | _ | UField(("", UType(None)))
+      idx = find_field_idx(full_flds, f1.name)
+      idx < 0
+         | (all_ok' = <->; -->)
+         |
+            f2 = full_flds(idx) | _ | UField(("", UType(None)))
+            ok = unify(ctx, f1.ut, f2.ut)
+            !ok | (all_ok' = <->; -->)
+   all_ok'
+
+unify_rec_open: Ctx, UFields, UFields, Int, Int => <>
+unify_rec_open = ctx, r1, r2, v1, v2 =>
+   open1 = v1 !< 0 && is_open_var(ctx, v1)
+   open1
+      |
+         sub_ok = is_sub_record(ctx, r1, r2)
+         sub_ok
+            |
+               bind_var(ctx, v1, UType(Rec, r2))
+               <+>
+            |
+               add_error(ctx, 3084,
+                  "Record does not satisfy open record fields")
+               <->
+      |
+         open2 = v2 !< 0 && is_open_var(ctx, v2)
+         open2
+            |
+               sub_ok2 = is_sub_record(ctx, r2, r1)
+               sub_ok2
+                  |
+                     bind_var(ctx, v2, UType(Rec, r1))
+                     <+>
+                  |
+                     add_error(ctx, 3084,
+                        "Record does not satisfy open record fields")
+                     <->
+            | unify_rec(ctx, r1, r2)
+
+unify_rec: Ctx, UFields, UFields => <>
+unify_rec = ctx, r1, r2 =>
+   ?r1 != ?r2
+      |
+         add_error(ctx, 3084, "Record field count mismatch: " +
+            str::from_int(?r1) + " vs " + str::from_int(?r2))
+         <->
+      |
+         all_ok' = <+>
+         ?r1 @ i =>
+            f1 = r1(i) | _ | UField(("", UType(None)))
+            f2 = r2(i) | _ | UField(("", UType(None)))
+            ok = unify(ctx, f1.ut, f2.ut)
+            !ok | (all_ok' = <->; -->)
+         all_ok'
+
+is_unbound_var: Ctx, UType => <>
+is_unbound_var = ctx, t =>
+   c = canon(ctx, t)
+   c [Var _]
+
+unify_ram: Ctx, URam, URam => <>
+unify_ram = ctx, r1, r2 =>
+   s1 = ram_shape(r1)
+   s2 = ram_shape(r2)
+   s1 != s2
+      |
+         add_error(ctx, 3089,
+            "Cannot assign ramification of shape " +
+            show_ram_shape(s1) + " to " +
+            show_ram_shape(s2))
+         <->
+      |
+         pos_ok = r1.pos.has_payload
+            | unify(ctx, r1.pos.ut, r2.pos.ut)
+            | <+>
+         pos_ok
+            |
+               r1.neg.has_payload
+                  | unify(ctx, r1.neg.ut, r2.neg.ut)
+                  | <+>
+            | <->
+
+unify_array: Ctx, UArray, UArray => <>
+unify_array = ctx, a1, a2 =>
+   a1.count != a2.count
+      |
+         add_error(ctx, 3084, "Array size mismatch: " +
+            str::from_int(a1.count) + " vs " + str::from_int(a2.count))
+         <->
+      | unify(ctx, a1.elem, a2.elem)
+
+unify_map: Ctx, UMap, UMap => <>
+unify_map = ctx, m1, m2 =>
+   k_ok = unify(ctx, m1.key, m2.key)
+   k_ok | unify(ctx, m1.val, m2.val) | <->
+
+unify_enum: Ctx, UEnum, UEnum => <>
+unify_enum = ctx, e1, e2 =>
+   (e1.name != "" && e2.name != "")
+      |
+         e1.name == e2.name
+            | <+>
+            |
+               add_error(ctx, 3084, "Enum name mismatch: " + e1.name +
+                  " vs " + e2.name)
+               <->
+      |
+         ?e1.variants != ?e2.variants
+            |
+               add_error(ctx, 3084, "Enum variant count mismatch")
+               <->
+            |
+               all_ok' = <+>
+               ?e1.variants @ i =>
+                  v1 = e1.variants(i) | _ |
+                     UEnumVariant(("", <->, UType(None)))
+                  v2 = e2.variants(i) | _ |
+                     UEnumVariant(("", <->, UType(None)))
+                  diff_payload = v1.has_payload && !v2.has_payload ||
+                     !v1.has_payload && v2.has_payload
+                  v1.label != v2.label || diff_payload
+                     |
+                        add_error(ctx, 3084, "Enum variant mismatch: " +
+                           v1.label + " vs " + v2.label)
+                        all_ok' = <->
+                        -->
+                     |
+                        v1.has_payload
+                           |
+                              !unify(ctx, v1.payload_type, v2.payload_type)
+                                 | (all_ok' = <->; -->)
+               all_ok'
+
+report_mismatch: Ctx, UType, UType => ()
+report_mismatch = ctx, t1, t2 =>
+   add_error(ctx, 3084, "Type mismatch: cannot unify " +
+      show_utype(ctx, t1) + " with " + show_utype(ctx, t2))
+
+// --- Constraint Solving ----------------------------------------------------
+
+solve_constraint: Ctx, Constraint => <>
+solve_constraint = ctx, c =>
+   c
+      [Equality eq]
+         unify(ctx, eq.0, eq.1)
+      [Call call]
+         c0 = canon(ctx, call.0)
+         c0
+            [Rec rec]
+               n_flds = ?rec
+               n_flds > 0
+                  |
+                     f0 = rec(0) | _ | UField(("", UType(None)))
+                     unify(ctx, call.2, f0.ut)
+                  |
+                     exp_r = mk_fn(call.1, call.2)
+                     unify(ctx, call.0, exp_r)
+            [Slice elem]
+               unify(ctx, call.2, elem)
+            [Array arr]
+               err_ut = prim_error()
+               elem_ut = ram_pp(arr.elem, err_ut)
+               unify(ctx, call.2, elem_ut)
+            [Prim p]
+               is_str = p [Str]
+               is_str
+                  | unify(ctx, call.2, prim_int())
+                  |
+                     exp_p = mk_fn(call.1, call.2)
+                     unify(ctx, call.0, exp_p)
+            |
+               exp_d = mk_fn(call.1, call.2)
+               unify(ctx, call.0, exp_d)
+      [Field fld]
+         solve_field(ctx, fld.0, fld.1, fld.2)
+      [ChoiceJoin cj]
+         solve_choice_join(ctx, cj.0, cj.1)
+      | <->
+
+solve_constraints: Ctx, Constraints => <>
+solve_constraints = ctx, cs =>
+   all_ok' = <+>
+   ?cs @ i =>
+      c = cs(i) | _ | Constraint(Equality, (UType(None), UType(None)))
+      ok = solve_constraint(ctx, c)
+      !ok | (all_ok' = <->; -->)
+   all_ok'
+
+is_open_var: Ctx, Int => <>
+is_open_var = ctx, v =>
+   found' = <->
+   ?ctx.open_vars @ i =>
+      ov = ctx.open_vars(i) | _ | -1
+      ov == v | (found' = <+>; -->)
+   found'
+
+root_var_id: Ctx, UType => Int
+root_var_id = ctx, t =>
+   t
+      [Var id]
+         id < 0 || id !< ?ctx.bindings
+            | id
+            |
+               b = ctx.bindings(id) | _ | VarBinding((<->, UType(None)))
+               b.is_bound
+                  |
+                     b.bound
+                        [Var next_id] root_var_id(ctx, b.bound)
+                        | id
+                  | id
+      | -1
+
+solve_field: Ctx, UType, String, UType => <>
+solve_field = ctx, rec_type, name, fld_type =>
+   c = canon(ctx, rec_type)
+   c
+      [Var v]
+         flds = UFields()
+         flds += UField((name, fld_type))
+         bind_var(ctx, v, UType(Rec, flds))
+         ctx.open_vars += v
+         <+>
+      [Rec r]
+         idx = find_field_idx(r, name)
+         idx !< 0
+            |
+               f = r(idx) | _ | UField(("", UType(None)))
+               unify(ctx, f.ut, fld_type)
+            |
+               root_v = root_var_id(ctx, rec_type)
+               is_open = root_v !< 0 && is_open_var(ctx, root_v)
+               is_open
+                  |
+                     r += UField((name, fld_type))
+                     bind_var(ctx, root_v, UType(Rec, r))
+                     <+>
+                  |
+                     add_error(ctx, 3130, "Record has no field named '" + name +
+                        "': " + show_utype(ctx, c))
+                     <->
+      |
+         add_error(ctx, 3084, "Field access '" + name +
+            "' on non-record type: " + show_utype(ctx, c))
+         <->
+
+parse_field_digits: String, Int, Int => Int
+parse_field_digits = s, i, acc =>
+   ?s == 0
+      | -1
+      |
+         i < ?s
+            |
+               c = s(i)
+               c !< '0' && c !> '9'
+                  | parse_field_digits(s, i + 1, acc * 10 + (c - '0'))
+                  | -1
+            | acc
+
+find_field_idx: UFields, String => Int
+find_field_idx = flds, name =>
+   name == ""
+      | -1
+      |
+         found' = -1
+         ?flds @ i =>
+            f = flds(i) | _ | UField(("", UType(None)))
+            f.name == name | (found' = i; -->)
+         found' !< 0
+            | found'
+            |
+               pos = parse_field_digits(name, 0, 0)
+               pos !< 0 && pos < ?flds | pos | -1
+
+solve_choice_join: Ctx, UType, UTypes => <>
+solve_choice_join = ctx, res_type, branches =>
+   all_ok' = <+>
+   ?branches @ i =>
+      bt = branches(i) | _ | UType(None)
+      ok = unify(ctx, res_type, bt)
+      !ok | (all_ok' = <->; -->)
+   all_ok'
+
+// --- Groundness Checking (E3103 / E3128 - No Defaulting to Int) ------------
+
+is_ground: Ctx, UType => <>
+is_ground = ctx, t =>
+   c = canon(ctx, t)
+   c
+      [Var _] <->
+      [Prim _] <+>
+      [Fn f]
+         ret_ok = is_ground(ctx, f.ret)
+         ret_ok
+            |
+               all_ok' = <+>
+               ?f.params @ i =>
+                  p = f.params(i) | _ | UType(None)
+                  !is_ground(ctx, p) | (all_ok' = <->; -->)
+               all_ok'
+            | <->
+      [Rec r]
+         all_ok' = <+>
+         ?r @ i =>
+            f = r(i) | _ | UField(("", UType(None)))
+            !is_ground(ctx, f.ut) | (all_ok' = <->; -->)
+         all_ok'
+      [Ram r]
+         p_ok = !r.pos.has_payload || is_ground(ctx, r.pos.ut)
+         n_ok = !r.neg.has_payload || is_ground(ctx, r.neg.ut)
+         p_ok && n_ok
+      [Array a]
+         is_ground(ctx, a.elem)
+      [Slice s]
+         is_ground(ctx, s)
+      [Map m]
+         is_ground(ctx, m.key) && is_ground(ctx, m.val)
+      [Enum e]
+         e.name != ""
+            | <+>
+            |
+               all_ok' = <+>
+               ?e.variants @ i =>
+                  v = e.variants(i) | _ | UEnumVariant(("", <->, UType(None)))
+                  v.has_payload && !is_ground(ctx, v.payload_type)
+                     | (all_ok' = <->; -->)
+               all_ok'
+      | <->
+
+ensure_ground: Ctx, UType, String => <>
+ensure_ground = ctx, t, name =>
+   is_ground(ctx, t)
+      | <+>
+      |
+         add_error(ctx, 3103, "Cannot infer type statically for '" + name +
+            "' (unresolved type variable: " + show_utype(ctx, t) + ")")
+         <->
+
+// --- Pretty-Printing -------------------------------------------------------
+
+show_utype: Ctx, UType => String
+show_utype = ctx, t =>
+   c = canon(ctx, t)
+   c
+      [Prim p] show_uprim(p)
+      [Var id] "?T" + str::from_int(id)
+      [Fn f]
+         "(" + show_utypes(ctx, f.params) + ") => " + show_utype(ctx, f.ret)
+      [Rec r]
+         "(" + show_ufields(ctx, r) + ")"
+      [Ram r]
+         s = ram_shape(r)
+         s
+            [RamNN] "<>"
+            [RamPN] "<" + show_utype(ctx, r.pos.ut) + "|>"
+            [RamNP] "<|" + show_utype(ctx, r.neg.ut) + ">"
+            [RamPP] "<" + show_utype(ctx, r.pos.ut) + "|" +
+               show_utype(ctx, r.neg.ut) + ">"
+            | "<ram>"
+      [Array a]
+         "[" + show_utype(ctx, a.elem) + "; " + str::from_int(a.count) + "]"
+      [Slice s]
+         "[]" + show_utype(ctx, s)
+      [Map m]
+         "Map(" + show_utype(ctx, m.key) + ", " + show_utype(ctx, m.val) + ")"
+      [Enum e]
+         (e.name != "" | e.name | "<enum>")
+      | "?"
+
+show_utypes: Ctx, UTypes => String
+show_utypes = ctx, ts =>
+   out = {32}
+   ?ts @ i =>
+      t = ts(i) | _ | UType(None)
+      out += (i > 0 | ", " | "") + show_utype(ctx, t)
+   +out
+
+show_ufields: Ctx, UFields => String
+show_ufields = ctx, flds =>
+   out = {32}
+   ?flds @ i =>
+      f = flds(i) | _ | UField(("", UType(None)))
+      out += (i > 0 | ", " | "") + f.name + ": " + show_utype(ctx, f.ut)
+   +out
+
+show_ram_shape: URamShape => String
+show_ram_shape = s =>
+   s
+      [RamNN] "RamNN(<>)"
+      [RamPN] "RamPN(<A|>)"
+      [RamNP] "RamNP(<|B>)"
+      [RamPP] "RamPP(<A|B>)"
+      | "Ram"
+
+show_uprim: UPrim => String
+show_uprim = p =>
+   p
+      [Int] "Int"
+      [I8] "i8"
+      [I16] "i16"
+      [I32] "i32"
+      [I64] "i64"
+      [U8] "u8"
+      [U16] "u16"
+      [U32] "u32"
+      [U64] "u64"
+      [Float] "Float"
+      [F32] "f32"
+      [Str] "String"
+      [Rune] "Rune"
+      [Flag] "Flag"
+      [Unit] "()"
+      [RawPtr] "Addr"
+      [Builder] "Builder"
+      [Error] "Error"
+      [ThreadId] "ThreadId"
+      | "Unknown"
+
+uprim_to_vt: UPrim => ast::ValueType
+uprim_to_vt = p =>
+   p
+      [Int] ast::ValueType(Int)
+      [I8] ast::ValueType(I8)
+      [I16] ast::ValueType(I16)
+      [I32] ast::ValueType(I32)
+      [I64] ast::ValueType(I64)
+      [U8] ast::ValueType(U8)
+      [U16] ast::ValueType(U16)
+      [U32] ast::ValueType(U32)
+      [U64] ast::ValueType(U64)
+      [Float] ast::ValueType(Float)
+      [F32] ast::ValueType(F32)
+      [Str] ast::ValueType(Str)
+      [Rune] ast::ValueType(Rune)
+      [Flag] ast::ValueType(Flag)
+      [Unit] ast::ValueType(Unit)
+      [RawPtr] ast::ValueType(RawPtr)
+      [Builder] ast::ValueType(Builder)
+      [Error] ast::ValueType(Error)
+      [ThreadId] ast::ValueType(ThreadId)
+      [Type] ast::ValueType(Type)
+      | ast::ValueType(Unknown)
+
+vt_to_uprim: ast::ValueType => UPrim
+vt_to_uprim = vt =>
+   vt
+      [Int] UPrim(Int)
+      [I8] UPrim(I8)
+      [I16] UPrim(I16)
+      [I32] UPrim(I32)
+      [I64] UPrim(I64)
+      [U8] UPrim(U8)
+      [U16] UPrim(U16)
+      [U32] UPrim(U32)
+      [U64] UPrim(U64)
+      [Float] UPrim(Float)
+      [F32] UPrim(F32)
+      [Str] UPrim(Str)
+      [Rune] UPrim(Rune)
+      [Flag] UPrim(Flag)
+      [Unit] UPrim(Unit)
+      [RawPtr] UPrim(RawPtr)
+      [Builder] UPrim(Builder)
+      [Error] UPrim(Error)
+      [ThreadId] UPrim(ThreadId)
+      [Type] UPrim(Type)
+      | UPrim(Unknown)
+
+// --- AST TypeInfo Conversion -----------------------------------------------
+
+utype_from_type_info: ast::TypeInfo => UType
+utype_from_type_info = ti =>
+   ti
+      [Prim vt] UType(Prim, vt_to_uprim(vt))
+      [Rec r]
+         r.1
+            |
+               fts_sl = r.0
+               n_fts = ?fts_sl
+               elem_ut = n_fts > 0
+                  |
+                     f0 = fts_sl(0) | _ | ast::RecordFieldType(("",
+                        ast::ValueType(Unknown),
+                        ast::TypeInfo(Prim, ast::ValueType(Unknown)),
+                        <->, ast::Expr(Int, 0)))
+                     utype_from_type_info(f0.rec_type)
+                  | UType(Prim, vt_to_uprim(r.3))
+               UType(Slice, elem_ut)
+            |
+               fts_rec = r.0
+               flds_rec = UFields()
+               ?fts_rec @ i =>
+                  ft = fts_rec(i) | _ | ast::RecordFieldType(("",
+                     ast::ValueType(Unknown),
+                     ast::TypeInfo(Prim, ast::ValueType(Unknown)),
+                     <->, ast::Expr(Int, 0)))
+                  flds_rec += UField((ft.name,
+                     utype_from_type_info(ft.rec_type)))
+               UType(Rec, flds_rec)
+      [Bitfield b]
+         flds_bf = UFields()
+         ?b.fields @ i =>
+            bf = b.fields(i) | _ | ast::BitfieldField(("", 0, 0))
+            flds_bf += UField((bf.name,
+               UType(Prim, vt_to_uprim(b.backing_type))))
+         UType(Rec, flds_bf)
+      [Ram r]
+         s0 = r.0
+         s1 = r.1
+         (!s0.has_payload && !s1.has_payload)
+            | UType(Prim, UPrim(Flag))
+            |
+               p_ut = s0.has_payload
+                  | utype_from_type_info(s0.payload_record)
+                  | UType(None)
+               n_ut = s1.has_payload
+                  | utype_from_type_info(s1.payload_record)
+                  | UType(None)
+               slot0 = URamSlot((s0.has_payload, p_ut))
+               slot1 = URamSlot((s1.has_payload, n_ut))
+               UType(Ram, URam((slot0, slot1)))
+      [Fn f]
+         vinfos = f.1
+         params = UTypes()
+         ?vinfos @ i =>
+            pi = vinfos(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+            params += utype_from_type_info(pi)
+         ret = utype_from_type_info(f.3)
+         UType(Fn, UFn((params, ret)))
+      [Array a]
+         UType(Array, UArray((utype_from_type_info(a.1), a.2)))
+      [Enum slots]
+         vars = UEnumVariants()
+         ?slots @ i =>
+            sl = slots(i) | _ | ast::EnumSlotInfo(("", <->,
+               ast::ValueType(Unknown),
+               ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+            p_ut_enum = sl.has_payload
+               | utype_from_type_info(sl.payload_record)
+               | UType(None)
+            vars += UEnumVariant((sl.label, sl.has_payload, p_ut_enum))
+         UType(Enum, UEnum(("", vars)))
+      [Map m]
+         k_ut = UType(Prim, vt_to_uprim(m.0))
+         v_raw = utype_from_type_info(m.2)
+         v_ut = v_raw [None] UType(Prim, vt_to_uprim(m.1)) | v_raw
+         UType(Map, UMap((k_ut, v_ut)))
+      | UType(None)
+
+vt_from_utype: Ctx, UType => ast::ValueType
+vt_from_utype = ctx, u =>
+   c = canon(ctx, u)
+   c
+      [Prim p] uprim_to_vt(p)
+      [Enum _] ast::ValueType(Enum)
+      [Ram r]
+         has_p = r.pos.has_payload || r.neg.has_payload
+         has_p | ast::ValueType(Ram) | ast::ValueType(Flag)
+      [Array _] ast::ValueType(Array)
+      [Slice _] ast::ValueType(Slice)
+      [Rec _] ast::ValueType(Record)
+      [Map _] ast::ValueType(Map)
+      [Fn _] ast::ValueType(Fn)
+      | ast::ValueType(Unknown)
+
+type_info_from_utype: Ctx, UType => ast::TypeInfo
+type_info_from_utype = ctx, u =>
+   c = canon(ctx, u)
+   c
+      [Prim p] ast::TypeInfo(Prim, uprim_to_vt(p))
+      [Enum e]
+         e.name != ""
+            | ast::TypeInfo(TypeVar, e.name)
+            |
+               slots = ast::EnumSlots()
+               ?e.variants @ i =>
+                  v = e.variants(i) | _ | UEnumVariant(("", <->, UType(None)))
+                  p_ti = v.has_payload
+                     | type_info_from_utype(ctx, v.payload_type)
+                     | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+                  p_vt = v.has_payload
+                     | vt_from_utype(ctx, v.payload_type)
+                     | ast::ValueType(Unknown)
+                  slots += ast::EnumSlotInfo((v.label, v.has_payload, p_vt,
+                     p_ti))
+               ast::TypeInfo(Enum, slots)
+      [Fn f]
+         vts = ast::VTypes()
+         vinfos = ast::VInfos()
+         ?f.params @ i =>
+            p = f.params(i) | _ | UType(None)
+            ti = type_info_from_utype(ctx, p)
+            vts += vt_from_utype(ctx, p)
+            vinfos += ti
+         ret_ti = type_info_from_utype(ctx, f.ret)
+         ret_vt = vt_from_utype(ctx, f.ret)
+         ast::TypeInfo(Fn, (vts, vinfos, ret_vt, ret_ti, ast::CParams()))
+      [Rec r]
+         fts = ast::FieldTypes()
+         ?r @ i =>
+            fld = r(i) | _ | UField(("", UType(None)))
+            fld_ti = type_info_from_utype(ctx, fld.ut)
+            fld_vt = vt_from_utype(ctx, fld.ut)
+            fts += ast::RecordFieldType((fld.name, fld_vt, fld_ti,
+               <->, ast::Expr(Int, 0)))
+         ast::TypeInfo(Rec, (fts, <->, <->, ast::ValueType(Record), ?r, <->))
+      [Ram r]
+         pos_ti = r.pos.has_payload
+            | type_info_from_utype(ctx, r.pos.ut)
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+         neg_ti = r.neg.has_payload
+            | type_info_from_utype(ctx, r.neg.ut)
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+         pos_vt = r.pos.has_payload
+            | vt_from_utype(ctx, r.pos.ut)
+            | ast::ValueType(Unknown)
+         neg_vt = r.neg.has_payload
+            | vt_from_utype(ctx, r.neg.ut)
+            | ast::ValueType(Unknown)
+         s0 = ast::RamSlotInfo((r.pos.has_payload, pos_vt, pos_ti))
+         s1 = ast::RamSlotInfo((r.neg.has_payload, neg_vt, neg_ti))
+         ast::TypeInfo(Ram, (s0, s1))
+      [Array a]
+         elem_ti_a = type_info_from_utype(ctx, a.elem)
+         elem_vt_a = vt_from_utype(ctx, a.elem)
+         ast::TypeInfo(Array, (elem_vt_a, elem_ti_a, a.count))
+      [Slice s]
+         elem_ti_s = type_info_from_utype(ctx, s)
+         elem_vt_s = vt_from_utype(ctx, s)
+         ast::TypeInfo(Rec, (ast::FieldTypes(), <+>, <->, elem_vt_s, 0, <->))
+      [Map m]
+         k_ti = type_info_from_utype(ctx, m.key)
+         k_vt = vt_from_utype(ctx, m.key)
+         v_ti = type_info_from_utype(ctx, m.val)
+         v_vt = vt_from_utype(ctx, m.val)
+         ast::TypeInfo(Map, (k_vt, v_vt, v_ti))
+      [Var id]
+         ast::TypeInfo(TypeVar, "?T" + str::from_int(id))
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+value_type_from_ti: ast::TypeInfo => ast::ValueType
+value_type_from_ti = ti =>
+   ti
+      [Prim vt] vt
+      [Rec r] (r.1 | ast::ValueType(Slice) | ast::ValueType(Record))
+      [Bitfield _] ast::ValueType(Record)
+      [Ram _] ast::ValueType(Ram)
+      [Fn _] ast::ValueType(Fn)
+      [Array _] ast::ValueType(Array)
+      [Enum _] ast::ValueType(Enum)
+      [Map _] ast::ValueType(Map)
+      | ast::ValueType(Unknown)

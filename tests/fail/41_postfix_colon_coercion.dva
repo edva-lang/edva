@@ -1,0 +1,3 @@
+// Postfix coercion "expr: Type" is removed; use "TypeName(expr)" or
+// "expr $> TypeName" instead.
+x = 2: i16

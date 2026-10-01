@@ -1,0 +1,28 @@
+// Function signatures: "fun: Int, String => < Int | >" declares the full type;
+// the definition "fun = x, s => body" is typed from it (params typed, return
+// validated). Inline param types ("fun = x: Int => ...") are removed.
+
+#use str
+
+// Declared param + return types.
+add: Int, Int => Int
+add = a, b => a + b
+print_int $ add(2, 3)
+
+// A ram return with declared slots.
+#type Num < Int | >
+half: Int => Num
+half = n =>
+   n !< 0
+      | Num(<+ n / 2 +>)
+      | Num(<-->)
+print $ (half(9) | v => str::from_int(v) | "none")
+
+// String params (the dynamic default would be Int, so the signature matters).
+greet: String => String
+greet = name => "hello " + name
+print $ greet("world")
+
+// A function without a signature stays dynamically typed.
+dyn = x => x + 1
+print_int $ dyn(5)

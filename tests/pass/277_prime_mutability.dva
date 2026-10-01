@@ -1,0 +1,45 @@
+#type Ints (Int){}
+#type Point (x: Int, y: Int)
+
+// 1. Scalar rebinding with prime
+x' = 10
+x' = x' + 1
+print_int $ x'
+
+// 2. Multiple primes
+y'' = 40
+y'' = y'' + 2
+print_int $ y''
+
+// 3. String rebinding (with ++)
+s' = ++"hello"
+s' = ++"world"
+print $ s'
+
+// 4. Interior mutability on unprimed composite binding
+pt = Point(1, 2)
+pt.x = 10
+print_int $ pt.x
+
+// 5. Whole-value reassignment on primed composite binding
+pt2' = Point(1, 2)
+pt2' = Point(3, 4)
+print_int $ pt2'.x
+
+// 6. Growable array mutation on unprimed binding
+arr: Ints
+arr += 100
+arr += 200
+print_int $ arr(0) | _ | 0
+print_int $ arr(1) | _ | 0
+
+// 7. Builder in-place append on unprimed binding
+b = {32}
+b += "foo"
+b += "bar"
+print $ +b
+
+// 8. Rebinding across cycle iterations
+acc' = 0
+0..5 @ i => acc' = acc' + i
+print_int $ acc'

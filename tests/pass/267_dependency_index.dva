@@ -1,0 +1,31 @@
+#use "../../src/ast"
+#use "../../src/dep_graph"
+
+binding: String, ast::Expr => ast::Expr
+binding = name, rhs =>
+   ast::Expr(Assign, (name, <->, <->, <->, <->, rhs,
+      ast::Expr(Var, name), "",
+      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+
+stmts = ast::Exprs()
+stmts += binding("leaf", ast::Expr(Int, 1))
+stmts += binding("a", ast::Expr(Var, "b"))
+stmts += binding("b", ast::Expr(Var, "a"))
+stmts += binding("mod::#secret", ast::Expr(Var, "leaf"))
+stmts += binding("mod::f", ast::Expr(Var, "secret"))
+stmts += binding("outside", ast::Expr(Var, "secret"))
+stmts += binding("leaf", ast::Expr(Int, 2))
+stmts += binding("forward", ast::Expr(Var, "<fwd>"))
+graph = dep_graph::build_dep_graph(stmts)
+print_int $ ?graph.nodes
+print_int $ dep_graph::find_node_idx(graph, "leaf")
+print_int $ dep_graph::find_node_idx(graph, "missing")
+print_int $ dep_graph::find_node_idx(graph, "forward")
+private_node = graph.nodes(4) | _ | _
+print $ (private_node.deps(0) | _ | _)
+external_node = graph.nodes(5) | _ | _
+print_int $ ?external_node.deps
+sccs = dep_graph::tarjan_scc(graph)
+recursive' = 0
+sccs @ scc => scc.is_recursive | recursive' = recursive' + 1
+print_int $ recursive'

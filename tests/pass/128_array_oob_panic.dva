@@ -1,0 +1,8 @@
+// The Error core type: an out-of-range growable-array read unwrapped with
+// `| _ | _` aborts the program with the Error's file/line/col. This is the
+// "throws on error" contract — the panic message is the runtime output.
+#type Ints (Int){}
+xs: Ints
+xs += 42
+print_int $ (xs(0) | _ | _)
+print_int $ (xs(5) | _ | _)

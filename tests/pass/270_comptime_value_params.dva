@@ -1,0 +1,39 @@
+#use "str"
+
+make_buffer: #! N: Int => Builder
+make_buffer = !=> {N}
+
+repeat_str: #! N: Int, String => String
+repeat_str = s =>
+   b = {N * ?s}
+   N @ _ => b += s
+   +b
+
+tag_msg: #! Prefix: String, String => String
+tag_msg = msg => Prefix + ": " + msg
+
+format_pair: #! S: String, #! N: Int, String => String
+format_pair = val => S + " (" + str::from_int(N) + "): " + val
+
+sum_to: #! N: Int => Int
+sum_to = !=>
+   total' = 0
+   N @ i => total' = total' + i
+   total'
+
+b1 = make_buffer(32)
+print $ str::from_int(?b1)
+
+b2 = make_buffer(128)
+print $ str::from_int(?b2)
+
+print $ repeat_str(3, "abc")
+print $ repeat_str(2 * 2, "hi")
+
+print $ tag_msg("[INFO]", "system ready")
+print $ tag_msg("[WARN]", "low memory")
+
+print $ format_pair("Item", 42, "widget")
+
+print $ str::from_int(sum_to(5))
+print $ str::from_int(sum_to(10))

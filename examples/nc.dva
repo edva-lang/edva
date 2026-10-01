@@ -1,0 +1,39 @@
+// Poor Man's Netcat (nc) in Dva
+// Connects to a server, sends a message, reads the response, and prints it.
+// Usage: ./nc [host] [port]   (defaults: 127.0.0.1:8080)
+//
+// Build & run:
+//   ./edva examples/nc.dva
+//   ./nc localhost 8080
+
+#use io
+#use sys
+#use net
+#use libc
+
+host = sys::argv(1) | s => s | "127.0.0.1"
+port_str = sys::argv(2) | s => s | "8080"
+port = libc::atoi(port_str)
+
+io::out(("Connecting to host", host))
+io::out(("Connecting to port", port))
+
+sock = net::tcp_connect(host, port)
+sock
+   | fd =>
+      io::out("Connected successfully!")
+
+      request = "GET / HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n"
+      bytes_sent = net::send_str(fd, request)
+      io::out(("Sent bytes:", bytes_sent))
+
+      buf = libc::malloc(4096)
+      bytes_recvd = net::recv_buf(fd, buf, 4096)
+      io::out(("Received bytes:", bytes_recvd))
+
+      libc::free(buf)
+      net::close_fd(fd)
+      io::out("Connection closed.")
+   | err =>
+      io::err(("Error: Failed to connect:", err))
+      #exit 1

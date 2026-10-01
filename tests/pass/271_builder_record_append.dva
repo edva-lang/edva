@@ -1,0 +1,31 @@
+#use "str"
+
+format_http: String, String => String
+format_http = status, body =>
+   b = {8}
+   b += ("HTTP/1.1 ", status, "\r\nContent-Length: ", str::from_int(?body),
+      "\r\n\r\n", body)
+   +b
+
+b1 = {32}
+b1 += ("foo", "bar", "baz")
+print $ +b1
+
+b2 = {64}
+status_str = "200"
+b2 += ("HTTP/1.1 ", status_str, " OK", 13, 10)
+print $ +b2
+
+b3 = {16}
+b3 += ("Item: ", 65, 66, " - done")
+print $ +b3
+
+b4 = {16}
+b4 = (72, 101, 108, 108, 111)
+print $ +b4
+
+b5 = {2}
+b5 += ("testing ", "growth ", "from ", "small ", "initial ", "capacity")
+print $ +b5
+
+print $ format_http("404 Not Found", "File not found.")

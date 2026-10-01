@@ -1,0 +1,34 @@
+// User-visible match-function values: a choice used as a first-class function
+// (the paren-desugar lambda "(_ [..] | default)"), bound, passed, and applied;
+// and the "$>" feed-dispatch — "x $> matchfn" applies x to the branch the
+// match-function selects (a function), while a match-function whose branches
+// are non-functions just yields matchfn(x). A curried function (body = a
+// lambda, not a choice) is not a match-function, so "x $> compose(dbl)" keeps
+// its plain f(x) meaning.
+
+#use(import) fp
+
+#use "str"
+
+dbl: Int => Int
+dbl = n => n * 2
+inc: Int => Int
+inc = n => n + 1
+
+dispatch = (_ [< 0] dbl | inc)
+print $ str::from_int(-3 $> dispatch)
+print $ str::from_int(5 $> dispatch)
+print $ str::from_int(-3 $> (_ [< 0] dbl | inc))
+print $ str::from_int(7 $> (_ [< 0] dbl | inc))
+
+h = (_ [1] "one" [2] "two" | "other")
+print $ h(1)
+print $ h(3)
+
+call_fn: (Int => String), Int => String
+call_fn = fn, x => fn(x)
+print $ call_fn(h, 2)
+
+c = compose(dbl, inc)
+print $ str::from_int(c(10))
+print $ str::from_int(10 $> c)

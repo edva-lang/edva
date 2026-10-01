@@ -1,0 +1,19 @@
+// Type generators: a compile-time function ("#! T: Type => <type>") yields a
+// type, and "IntPair: Pair(Int)" instantiates it into a declared type whose
+// fields are substituted with the bound type.
+
+Pair: #! T: Type => (a: T, b: Int)
+
+#type IntPair Pair(Int)
+p: IntPair
+p.a = 42
+p.b = 7
+print_int $ p.a
+print_int $ p.b
+
+#type StrPair Pair(String)
+q: StrPair
+q.a = "hi"
+q.b = 1
+print $ q.a
+print_int $ q.b

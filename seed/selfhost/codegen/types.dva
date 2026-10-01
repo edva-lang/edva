@@ -1,0 +1,4030 @@
+// codegen/types.dva — Type lowering, GEP helpers, struct/slice/union layouts.
+
+#use "../llvm"
+#use "../ast"
+#use "str"
+#use "../tast"
+#use "../unify"
+#use "mem"
+#use "runtime"
+#use "expr"
+#use "match"
+#use "stmt"
+#use "main"
+
+#foreign "c"
+   write: (fd: Int, buf: Addr, count: Int) => Int
+   dva_arena_current: () => Addr
+   rename: (oldpath: String, newpath: String) => Int
+   unlink: (path: String) => Int
+
+c_str: Addr => String
+c_str = raw =>
+   raw == Addr(0)
+      | ""
+      |
+         b = {256}
+         0.. @ i =>
+            c = @[raw + i i8]
+            c == 0i8 | -->
+            b += c
+         +b
+
+dbg: String => Int
+dbg = s =>
+   b = {?s}
+   b += s
+   write(2, &b, ?b)
+
+#private
+print: String => Int
+print = s =>
+   b = {?s + 1}
+   b += s
+   b += 10
+   write(1, &b, ?b)
+
+// --- Module Implementation -------------------------------------------------
+
+// A named variable's LLVM width, tracked by ValueType. is_heap marks a ram-
+// typed variable whose slot is a heap { tag, payload } union pointer (not a
+// bare i1 flag); dtype is the declared '#type' name (for payload resolution
+// in a choice); rt + fnames are a record variable's LLVM struct type and its
+// named field list ("" for positional fields).
+#type CgVar (name: String, vt: ast::ValueType, is_heap: <>, dtype: String,
+   rt: Addr, fnames: ast::Names, slot: Addr, is_local: <>,
+   is_partial: <>, fvts: ast::VTypes, direct: Addr)
+#type CgVars (CgVar){}
+
+// Binding mutability is separate from CgVar so type/layout metadata remains
+// stable. is_local selects the current function scope over same-named globals.
+#type BindingMut (name: String, mod_name: String, is_local: <>, mutable: <>)
+#type BindingMuts (BindingMut){}
+#type BindingState (found: <>, mutable: <>)
+
+// A record-typed function PARAMETER's schema, pre-passed from its first call
+// site (a record ctor/literal/var arg): the LLVM struct type, the named field
+// list, and the per-field ValueTypes. Used to type member reads on a param
+// ("id = r => r.a") that the body alone cannot infer.
+#type ParamRec (name: String, rt: Addr, fnames: ast::Names, fvts: ast::VTypes)
+#type ParamRecs (ParamRec){}
+#type FnRetRec (name: String, rt: Addr, fnames: ast::Names,
+   fvts: ast::VTypes, dtype: String)
+#type FnRetRecs (FnRetRec){}
+#type Addrs (Addr){}
+#type IntArr (Int){}
+
+// Definite-initialization state for forward-annotated composites: dotted
+// var/field paths that are whole-initialized ("" ancestors cover descendants)
+// or definitely written. Gated on a variable's is_partial flag.
+#type FieldInitState (whole: ast::Names, written: ast::Names)
+
+// One active choice's must-init tracking (the pre state each branch starts
+// from, the running intersection of branch-end states, and whether the choice
+// is exhaustive — no fall-through path).
+#type ChoiceInitFrame (pre: FieldInitState, merged: FieldInitState,
+   started: <>, exhaustive: <>)
+#type ChoiceInitFrames (ChoiceInitFrame){}
+
+// A user function definition and its compiled LLVM shape.
+#type FnDef (name: String, params: ast::Names, body: ast::Expr)
+#type FnDefs (FnDef){}
+#type FnNameIndex String ^ Int
+#type FnInfo (name: String, llvm_fn: Addr, llvm_type: Addr, nparams: Int,
+   param_types: ast::VTypes, ret_vt: ast::ValueType, declared: <>,
+   generic: <>, value_safe: <>, no_capture: <>)
+#type FnInfos (FnInfo){}
+
+// A declared '#type' name -> its TypeInfo (for payload resolution).
+#type TypeDef (name: String, ti: ast::TypeInfo, rt: Addr, fnames: ast::Names)
+#type TypeDefs (TypeDef){}
+#type TypeIndex String ^ Int
+
+#type LambdaEnvInfo (name: String, est: Addr, nc: Int, vts: ast::VTypes)
+#type LambdaEnvInfos (LambdaEnvInfo){}
+
+empty_fndef = FnDef(("", ast::Names(), ast::Expr(Var, "")))
+
+#type CtVals (CtVal){}
+#type CtVal <
+   None
+   Int(Int)
+   Float(Float)
+   Str(String)
+   Fn(String)
+   Rec((CtVals, ast::Names))
+   Map((CtVals, CtVals))
+>
+#type CtFrame (params: ast::Names, vals: CtVals)
+#type CtFrames (CtFrame){}
+
+// The codegen state: the LLVM module/builder handles, the main function, the
+// variables' types, whether the last evaluated branch ended in '#exit' (so a
+// phi merge can substitute a type-correct null instead of the dead block's
+// placeholder value), the String/union struct + libc fn types (cached), the
+// string-literal counter, the declared user type names, and the declared type
+#type CodegenOpts (
+   target_triple: String,
+   no_runtime: <>,
+   no_main: <>,
+   dynamic_modules: ast::Names,
+   dynamic_paths: ast::Names,
+   is_shared: <>,
+   compiler_exe: String,
+   is_module: <>,
+   module_name: String,
+)
+
+default_codegen_opts: () => CodegenOpts
+default_codegen_opts = !=> CodegenOpts(("", <->, <->, ast::Names(),
+   ast::Names(), <->, "", <->, ""))
+
+#type Cg (
+   module: Addr,
+   builder: Addr,
+   main_fn: Addr,
+   vars: CgVars,
+   exited: <>,
+   str_t: Addr,
+   union_t: Addr,
+   slice_t: Addr,
+   malloc_t: Addr,
+   malloc_fn: Addr,
+   write_t: Addr,
+   write_fn: Addr,
+   exit_t: Addr,
+   exit_fn: Addr,
+   memcmp_t: Addr,
+   memcmp_fn: Addr,
+   strn: Int,
+   strvals: ast::Names,
+   strglobals: Addrs,
+   typedefs: TypeDefs,
+   type_indices: TypeIndex,
+   last_type: String,
+   last_rt: Addr,
+   last_fnames: ast::Names,
+   last_fvts: ast::VTypes,
+   fns: FnDefs,
+   fn_names: FnNameIndex,
+   fninfos: FnInfos,
+   in_fn: <>,
+   in_restore_scope: Int,
+   current_module: String,
+   current_fn: Addr,
+cycle_breaks: Addrs,
+cycle_conts: Addrs,
+   fn_alias_names: ast::Names,
+   fn_alias_tgts: ast::Names,
+   last_closure_fn: String,
+   closure_vars: ast::Names,
+   closure_tgts: ast::Names,
+   param_clo_names: ast::Names,
+param_clo_tys: Addrs,
+   param_clo_rets: ast::VTypes,
+   param_recs: ParamRecs,
+   param_arr_names: ast::Names,
+   param_sl_names: ast::Names,
+   thread_rec_t: Addr,
+   pthread_create_fn: Addr,
+   pthread_join_fn: Addr,
+   pthread_exit_fn: Addr,
+   thread_tls_rec: Addr,
+   thread_n: Int,
+   builder_t: Addr,
+   closure_t: Addr,
+   init: FieldInitState,
+   choice_frames: ChoiceInitFrames,
+   bindings: BindingMuts,
+   error: <>,
+   escape_bb: Addr,
+   discard_result: <>,
+   noncap_names: ast::Names,
+   noncap_globs: Addrs,
+   source_file: String,
+   fn_var_start: Int,
+   fn_binding_start: Int,
+   opts: CodegenOpts,
+)
+
+#type Flags (<>){}
+#type FnValueMeta (found: <>, declared: <>, generic: <>, value_safe: <>)
+
+#type GlobalState (
+   tmpc: Int,
+   pstmts: ast::Exprs,
+   typed_program_stmts: tast::TypedStmts,
+   is_typed_pipeline: <>,
+   pexports: ast::Names,
+   alloc_rec_names: ast::Names,
+   view_var_names: ast::Names,
+   foreign_fn_names: ast::Names,
+   foreign_i32_params: ast::Names,
+   fn_ret_recs: FnRetRecs,
+   fn_ret_fn_names: ast::Names,
+   fn_ret_fn_tgts: ast::Names,
+   user_fn_seen: ast::Names,
+   expected_fn_ti: ast::TypeInfo,
+   last_compiling_fn: String,
+   ct_bind_names: ast::Names,
+   ct_bind_tis: ast::VInfos,
+   ct_val_names: ast::Names,
+   ct_val_vals: CtVals,
+   marked_globals: ast::Names,
+   restore_scope_var_starts: IntArr,
+   lambda_env_infos: LambdaEnvInfos,
+   targets_initialized: <>
+)
+
+::g = GlobalState(
+   0, ast::Exprs(), tast::TypedStmts(), <->, ast::Names(),
+   ast::Names(), ast::Names(), ast::Names(), ast::Names(),
+   types::FnRetRecs(), ast::Names(), ast::Names(), ast::Names(),
+   ast::TypeInfo(Prim, ast::ValueType(Unknown)), "",
+   ast::Names(), ast::VInfos(), ast::Names(), types::CtVals(),
+   ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->)
+
+inc_tmpc: () => Int
+inc_tmpc = !=>
+   c = g.tmpc
+   g.tmpc = c + 1
+   c
+
+
+// --- definite-init helpers ---------------------------------------------------
+
+// The dotted field path of a member target whose ROOT is a variable: "a" for
+// "x.a", "y.a" for "x.y.a". A helper (the member's target chain is walked).
+member_fpath: ast::MemberExpr => String
+member_fpath = m =>
+   m.target [Member inner] (member_fpath(inner) + "." + m.field_name) | m.field_name
+
+has_str: ast::Names, String => <>
+has_str = arr, s => has_str_at(arr, s, 0, ?arr)
+
+has_str_at: ast::Names, String, Int, Int => <>
+has_str_at = arr, s, i, n =>
+   i == n
+      | <->
+      |
+         v = arr(i) | _ | ""
+         v == s | <+> | has_str_at(arr, s, i + 1, n)
+
+has_dcolon_step: String, Int => <>
+has_dcolon_step = s, i =>
+   i + 1 < ?s
+      |
+         (s(i) == ':' && s(i + 1) == ':')
+            | <+>
+            | has_dcolon_step(s, i + 1)
+      | <->
+
+has_dcolon: String => <>
+has_dcolon = s => has_dcolon_step(s, 0)
+
+has_dcolon_hash: String, Int => <>
+has_dcolon_hash = s, i =>
+   i + 2 < ?s
+      |
+         (s(i) == ':' && s(i + 1) == ':' && s(i + 2) == '#')
+            | <+>
+            | has_dcolon_hash(s, i + 1)
+      | <->
+
+name_is_private: String => <>
+name_is_private = s =>
+   (?s > 0 && s(0) == '#') || has_dcolon_hash(s, 0)
+
+name_is_in_current_module: Cg, String => <>
+name_is_in_current_module = cg, name =>
+   cg.opts.is_module
+      |
+         cg.opts.module_name == ""
+            | !has_dcolon(name)
+            |
+               pfx = cg.opts.module_name + "::"
+               lp = ?pfx
+               ?name !< lp && name(..lp) == pfx
+      | <+>
+
+has_dollar_step: String, Int => <>
+has_dollar_step = s, i =>
+   i < ?s
+      | (s(i) == '$' | <+> | has_dollar_step(s, i + 1))
+      | <->
+
+has_dollar: String => <>
+has_dollar = s => has_dollar_step(s, 0)
+
+is_external_module_name: Cg, String => <>
+is_external_module_name = cg, name =>
+   !has_dollar(name) && has_dcolon(name) && cg.opts.is_module && !name_is_in_current_module(cg, name)
+
+
+fninfo_index_rev: Cg, String, Int => Int
+fninfo_index_rev = cg, name, i =>
+   i < 0
+      | -1
+      |
+         fi = cg.fninfos(i)!!
+         fi.name == name
+            | i
+            | fninfo_index_rev(cg, name, i - 1)
+
+fninfo_index: Cg, String => Int
+fninfo_index = cg, name =>
+   fninfo_index_rev(cg, name, ?cg.fninfos - 1)
+
+fninfo_find: Cg, String => (FnInfo, <>)
+fninfo_find = cg, name =>
+   fninfo_find_rev(cg, name, ?cg.fninfos - 1)
+
+fninfo_find_rev: Cg, String, Int => (FnInfo, <>)
+fninfo_find_rev = cg, name, i =>
+   i < 0
+      | (FnInfo(("", Addr(0), Addr(0), 0, ast::VTypes(),
+         ast::ValueType(Unknown), <->, <->, <->, <->)), <->)
+      |
+         fi = cg.fninfos(i)!!
+         fi.name == name
+            | (fi, <+>)
+            | fninfo_find_rev(cg, name, i - 1)
+
+// Marks `path` (a dotted var/field path, e.g. "x" or "x.a") whole-initialized.
+init_mark_whole: Cg, String => ()
+init_mark_whole = cg, path =>
+   has_str(cg.init.whole, path) | 0 | init_whole_add(cg, path)
+
+init_whole_add: Cg, String => ()
+init_whole_add = cg, path =>
+   cg.init.whole += ++path
+
+// Marks `path` definitely written.
+init_mark_written: Cg, String => ()
+init_mark_written = cg, path =>
+   has_str(cg.init.written, path) | 0 | init_written_add(cg, path)
+
+init_written_add: Cg, String => ()
+init_written_add = cg, path =>
+   cg.init.written += ++path
+
+// True if variable `name` has already had its record chunk allocated.
+alloc_rec_has: String => <>
+alloc_rec_has = name =>
+   has_str(g.alloc_rec_names, name)
+
+alloc_rec_add: String => ()
+alloc_rec_add = name =>
+   g.alloc_rec_names += ++name
+
+is_view_var: String => <>
+is_view_var = name =>
+   has_str(g.view_var_names, name)
+
+view_var_add: String => ()
+view_var_add = name =>
+   g.view_var_names += ++name
+
+choice_has_view: Cg, ast::Branches, Int => <>
+choice_has_view = cg, bs, i =>
+   i < ?bs && (is_view_expr(cg, (bs(i)!!).block) ||
+      choice_has_view(cg, bs, i + 1))
+
+is_view_expr: Cg, ast::Expr => <>
+is_view_expr = cg, e =>
+   e
+      [Var v] is_view_var(v)
+      [RawMemory rm] rm.rec_name != ""
+      [Block b] ?b.exprs > 0 && is_view_expr(cg, b.exprs(?b.exprs - 1)!!)
+      [Choice c] choice_has_view(cg, c.branches, 0)
+      | <->
+
+// A substring of a String's bytes [start, start+len).
+substr: String, Int, Int => String
+substr = s, start, n =>
+   b = {n}
+   n @ i =>
+      b += s(start + i)
+   +b
+
+// "a.b.c" -> "a.b"; "" if there is no dot.
+find_last_dot_at: String, Int, Int => Int
+find_last_dot_at = path, i, cut =>
+   i < 0
+      | cut
+      | path(i) == 46 | i | find_last_dot_at(path, i - 1, cut)
+
+drop_last_dot: String => String
+drop_last_dot = path =>
+   cut = find_last_dot_at(path, ?path - 1, -1)
+   (cut > 0) | substr(path, 0, cut) | ""
+
+// Whether a read of `path` is OK: the var or any ancestor is whole, or the
+// exact path was written.
+init_ok_walk: FieldInitState, String => <>
+init_ok_walk = s, p =>
+   p == ""
+      | <->
+      |
+         init_has_whole(s, p)
+            | <+>
+            | init_ok_walk(s, drop_last_dot(p))
+
+init_ok: FieldInitState, String => <>
+init_ok = s, path =>
+   init_ok_walk(s, path) || init_has_written(s, path)
+
+init_has_whole: FieldInitState, String => <>
+init_has_whole = s, path => init_has_whole_rec(s, 0, path)
+
+init_has_whole_rec: FieldInitState, Int, String => <>
+init_has_whole_rec = s, i, path =>
+   (i < ?s.whole)
+      |
+         s.whole(i)!! == path | <+> | init_has_whole_rec(s, i + 1, path)
+      | <->
+
+init_has_written: FieldInitState, String => <>
+init_has_written = s, path => init_has_written_rec(s, 0, path)
+
+init_has_written_rec: FieldInitState, Int, String => <>
+init_has_written_rec = s, i, path =>
+   (i < ?s.written)
+      |
+         s.written(i)!! == path | <+> | init_has_written_rec(s, i + 1, path)
+      | <->
+
+copy_names_at: ast::Names, Int, Int, ast::Names => ast::Names
+copy_names_at = src, i, n, acc =>
+   i == n
+      | acc
+      |
+         acc += (src(i) | _ | "")
+         copy_names_at(src, i + 1, n, acc)
+
+// A deep copy of an init state (for choice snapshot/restore).
+init_snapshot: FieldInitState => FieldInitState
+init_snapshot = s =>
+   ws = copy_names_at(s.whole, 0, ?s.whole, ast::Names())
+   ws2 = copy_names_at(s.written, 0, ?s.written, ast::Names())
+   FieldInitState((ws, ws2))
+
+init_merge_whole_at: ast::Names, FieldInitState, Int, Int, ast::Names => ast::Names
+init_merge_whole_at = whole, b, i, n, acc =>
+   i == n
+      | acc
+      |
+         k = (whole(i) | _ | "")
+         init_has_whole(b, k) | acc += k | 0
+         init_merge_whole_at(whole, b, i + 1, n, acc)
+
+init_merge_written_at: ast::Names, FieldInitState, Int, Int, ast::Names => ast::Names
+init_merge_written_at = written, b, i, n, acc =>
+   i == n
+      | acc
+      |
+         k = (written(i) | _ | "")
+         init_has_written(b, k) | acc += k | 0
+         init_merge_written_at(written, b, i + 1, n, acc)
+
+// Must-init merge: a path is definite only when in BOTH states.
+init_merge: FieldInitState, FieldInitState => FieldInitState
+init_merge = a, b =>
+   ws = init_merge_whole_at(a.whole, b, 0, ?a.whole, ast::Names())
+   ws2 = init_merge_written_at(a.written, b, 0, ?a.written, ast::Names())
+   FieldInitState((ws, ws2))
+
+// Reports a definite-init violation and marks the compile failed.
+init_error: Cg, String, String, Int, Int => ()
+init_error = cg, code, msg, line, col =>
+   dbg(code)
+   dbg(" [")
+   dbg(str::from_int(line))
+   dbg(":")
+   dbg(str::from_int(col))
+   dbg("]: ")
+   dbg(msg)
+   dbg("\n")
+   cg.error = <+>
+
+// Whether a partial composite is safe to pass by reference: whole-initialized,
+// or every named field is written. Recursive (a '@' cycle's arena restore
+// would reap the field-name array mid-scan).
+init_fully_ok: Cg, String => <>
+init_fully_ok = cg, vname =>
+   init_has_whole(cg.init, vname)
+      | <+>
+      | init_fully_rec(cg, vname, 0, var_fnames(cg, vname))
+
+init_fully_rec: Cg, String, Int, ast::Names => <>
+init_fully_rec = cg, vname, i, fns =>
+   (i < ?fns)
+      |
+         key = ++(vname + "." + fns(i)!!)
+         init_has_written(cg.init, key)
+            | init_fully_rec(cg, vname, i + 1, fns)
+            | <->
+      | <+>
+
+// Rejects passing a partially-initialized composite as an argument (E3132).
+init_check_escape: Cg, ast::Expr, Int, Int => ()
+init_check_escape = cg, arg, line, col =>
+   arg
+      [Var v] init_check_escape_var(cg, v, line, col)
+
+init_check_escape_var: Cg, String, Int, Int => ()
+init_check_escape_var = cg, v, line, col =>
+   main::var_partial(cg, v)
+      | init_check_escape_full(cg, v, line, col)
+
+init_check_escape_full: Cg, String, Int, Int => ()
+init_check_escape_full = cg, v, line, col =>
+   init_fully_ok(cg, v)
+      | 0
+      | init_error(cg, "E3132", "Passing a partially-initialized composite '" +
+         v + "' to a function.", line, col)
+
+// This ordered pre-pass runs before user function bodies compile. That matters
+// for `f(t)`: a bad member access in f's body must not hide the caller-side
+// E3132 for a partially initialized t.
+codegen_scan_partial_escapes: Cg, ast::Exprs => ()
+codegen_scan_partial_escapes = cg, stmts =>
+   codegen_scan_partial_escape_stmts(cg, stmts, 0)
+
+codegen_scan_partial_escape_stmts: Cg, ast::Exprs, Int => ()
+codegen_scan_partial_escape_stmts = cg, stmts, i =>
+   i < ?stmts
+      |
+         codegen_scan_partial_escape_expr(cg, stmts(i)!!)
+         codegen_scan_partial_escape_stmts(cg, stmts, i + 1)
+
+codegen_scan_partial_escape_exprs: Cg, ast::Exprs, Int => ()
+codegen_scan_partial_escape_exprs = cg, es, i =>
+   i < ?es
+      |
+         codegen_scan_partial_escape_expr(cg, es(i)!!)
+         codegen_scan_partial_escape_exprs(cg, es, i + 1)
+
+codegen_scan_partial_escape_expr: Cg, ast::Expr => ()
+codegen_scan_partial_escape_expr = cg, e =>
+   e
+      [Assign t] codegen_scan_partial_escape_assign(cg, t)
+      [Bin t]
+         codegen_scan_partial_escape_expr(cg, t.1)
+         codegen_scan_partial_escape_expr(cg, t.2)
+      [Call c]
+         ?c.args @ i => init_check_escape(cg, c.args(i)!!, c.line, c.col)
+         codegen_scan_partial_escape_exprs(cg, c.args, 0)
+      [Block b] codegen_scan_partial_escape_exprs(cg, b.exprs, 0)
+      [Member m]
+         codegen_scan_partial_escape_expr(cg, m.target)
+         codegen_scan_partial_escape_expr(cg, m.index_expr)
+
+codegen_scan_partial_escape_assign: Cg,
+   (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
+codegen_scan_partial_escape_assign = cg, t =>
+   t.6
+      [Member m] codegen_scan_partial_write(cg, m)
+   !runtime::rhs_is_fn(t) | codegen_scan_partial_escape_expr(cg, t.5)
+
+codegen_scan_partial_write: Cg, ast::MemberExpr => ()
+codegen_scan_partial_write = cg, m =>
+   m.target
+      [Var v]
+         main::var_partial(cg, v)
+            | init_mark_written(cg, v + "." + member_fpath(m))
+
+// --- choice must-init tracking -----------------------------------------------
+
+choice_enter: Cg, <> => ()
+choice_enter = cg, exhaustive =>
+   cg.choice_frames += ChoiceInitFrame((init_snapshot(cg.init),
+      FieldInitState((ast::Names(), ast::Names())), <->, exhaustive))
+
+choice_branch_reset: Cg => ()
+choice_branch_reset = cg =>
+   (?cg.choice_frames > 0)
+      |
+         fr = cg.choice_frames(?(cg.choice_frames) - 1)!!
+         cg.init = init_snapshot(fr.pre)
+
+choice_branch_capture: Cg => ()
+choice_branch_capture = cg =>
+   (?cg.choice_frames > 0)
+      |
+         i = ?cg.choice_frames - 1
+         fr = cg.choice_frames(i)!!
+         fr.started
+            | choice_frame_set(cg, i, ChoiceInitFrame((fr.pre,
+               init_merge(fr.merged, cg.init), fr.started, fr.exhaustive)))
+            | choice_frame_set(cg, i, ChoiceInitFrame((fr.pre,
+               init_snapshot(cg.init), <+>, fr.exhaustive)))
+
+choice_leave: Cg => ()
+choice_leave = cg =>
+   (?cg.choice_frames > 0)
+      |
+         i = ?cg.choice_frames - 1
+         fr = cg.choice_frames(i)!!
+         merged' = fr.merged
+         !fr.started | merged' = init_snapshot(fr.pre)
+         !fr.exhaustive | merged' = init_merge(merged', fr.pre)
+         cg.init = merged'
+         choice_frame_pop(cg, i)
+
+choice_frame_set_at: ChoiceInitFrames, Int, ChoiceInitFrame, Int, Int, ChoiceInitFrames => ChoiceInitFrames
+choice_frame_set_at = frames, at, fr, j, n, acc =>
+   j == n
+      | acc
+      |
+         j == at | acc += fr | acc += frames(j)!!
+         choice_frame_set_at(frames, at, fr, j + 1, n, acc)
+
+choice_frame_set: Cg, Int, ChoiceInitFrame => ()
+choice_frame_set = cg, i, fr =>
+   cg.choice_frames = choice_frame_set_at(cg.choice_frames, i, fr, 0,
+      ?cg.choice_frames, ChoiceInitFrames())
+
+choice_frame_pop_at: ChoiceInitFrames, Int, Int, Int, ChoiceInitFrames => ChoiceInitFrames
+choice_frame_pop_at = frames, at, j, n, acc =>
+   j == n
+      | acc
+      |
+         j == at | 0 | acc += frames(j)!!
+         choice_frame_pop_at(frames, at, j + 1, n, acc)
+
+choice_frame_pop: Cg, Int => ()
+choice_frame_pop = cg, i =>
+   cg.choice_frames = choice_frame_pop_at(cg.choice_frames, i, 0,
+      ?cg.choice_frames, ChoiceInitFrames())
+
+// --- LLVM pointer-to-array-arg helpers ----------------------------------------
+// The LLVM C API takes pointer-to-array args (`^LLVMTypeRef` etc.) where Dva
+// has no record-buffer-address primitive for yet; store the words through a
+// Builder's buffer and pass the buffer address.
+
+// struct { e0, e1 }
+struct_type2: Addr, Addr => Addr
+struct_type2 = e0, e1 =>
+   tarr = {16}
+   sb = &tarr
+   @[sb] = e0
+   @[sb + 8] = e1
+   llvm::LLVMStructType(sb, 2, 0)
+
+// fn type ret() (zero params)
+fn_type0: Addr => Addr
+fn_type0 = ret => llvm::LLVMFunctionType(ret, Addr(0), 0, 0)
+
+// fn type ret(p0)
+fn_type1: Addr, Addr => Addr
+fn_type1 = ret, p0 =>
+   parr = {16}
+   sb = &parr
+   @[sb] = p0
+   llvm::LLVMFunctionType(ret, sb, 1, 0)
+
+// fn type ret(p0, p1, p2)
+fn_type3: Addr, Addr, Addr, Addr => Addr
+fn_type3 = ret, p0, p1, p2 =>
+   parr = {24}
+   sb = &parr
+   @[sb] = p0
+   @[sb + 8] = p1
+   @[sb + 16] = p2
+   llvm::LLVMFunctionType(ret, sb, 3, 0)
+
+// GEP2 with a single index value.
+gep1: Cg, Addr, Addr, Addr, String => Addr
+gep1 = cg, elem_t, base, idx, name =>
+   idxarr = {16}
+   @[&idxarr] = idx
+   llvm::LLVMBuildGEP2(cg.builder, elem_t, base, &idxarr, 1, name)
+
+// GEP2 with two index values (an array element through a struct field).
+gep2: Cg, Addr, Addr, Addr, Addr, String => Addr
+gep2 = cg, elem_t, base, i0, i1, name =>
+   idxarr = {16}
+   sb = &idxarr
+   @[sb] = i0
+   @[sb + 8] = i1
+   llvm::LLVMBuildGEP2(cg.builder, elem_t, base, sb, 2, name)
+
+// BuildCall2 with zero arguments (confines C NULL argument array to this helper).
+call0: Cg, Addr, Addr, String => Addr
+call0 = cg, fty, fn, name =>
+   llvm::LLVMBuildCall2(cg.builder, fty, fn, Addr(0), 0, name)
+
+// BuildCall2 with one argument.
+call1: Cg, Addr, Addr, Addr, String => Addr
+call1 = cg, fty, fn, arg, name =>
+   args = {16}
+   @[&args] = arg
+   llvm::LLVMBuildCall2(cg.builder, fty, fn, &args, 1, name)
+
+// BuildCall2 with three arguments.
+call3: Cg, Addr, Addr, Addr, Addr, Addr, String => Addr
+call3 = cg, fty, fn, a0, a1, a2, name =>
+   args = {24}
+   sb = &args
+   @[sb] = a0
+   @[sb + 8] = a1
+   @[sb + 16] = a2
+   llvm::LLVMBuildCall2(cg.builder, fty, fn, sb, 3, name)
+
+// An LLVM struct type from a list of field LLVM types (dynamic arity, via a
+// raw buffer — the C API's pointer-to-array arg).
+struct_type_n: Cg, Addrs, Int => Addr
+struct_type_n = cg, types, n =>
+   buf = {n * 8}
+   sb = &buf
+   n @ i =>
+      @[sb + i * 8] = types(i)!!
+   llvm::LLVMStructType(sb, n, 0)
+
+struct_type_packed_n: Cg, Addrs, Int, <> => Addr
+struct_type_packed_n = cg, types, n, is_packed =>
+   buf = {n * 8}
+   sb = &buf
+   n @ i =>
+      @[sb + i * 8] = types(i)!!
+   p_flag = is_packed | 1 | 0
+   llvm::LLVMStructType(sb, n, p_flag)
+
+// An alloca hoisted into the current function's entry block (so it dominates
+// every use), leaving the builder position untouched.
+hoisted_alloca: Cg, Addr, String => Addr
+hoisted_alloca = cg, ty, name =>
+   entry = llvm::LLVMGetEntryBasicBlock(cg.current_fn)
+   saved = llvm::LLVMGetInsertBlock(cg.builder)
+   first = llvm::LLVMGetFirstInstruction(entry)
+   first == Addr(0)
+      | llvm::LLVMPositionBuilderAtEnd(cg.builder, entry)
+      | llvm::LLVMPositionBuilderBefore(cg.builder, first)
+   a = llvm::LLVMBuildAlloca(cg.builder, ty, name)
+   saved == Addr(0) | 0 | llvm::LLVMPositionBuilderAtEnd(cg.builder, saved)
+   a
+
+// A variable's storage slot: a function-local alloca, or a named global.
+create_slot: Cg, String, Addr, <> => Addr
+create_slot = cg, name, llvm_type, is_local =>
+   is_local
+      | hoisted_alloca(cg, llvm_type, "var." + name)
+      | codegen_get_global(cg, name, llvm_type)
+
+// The target data layout / triple (host x86-64), mirroring codegen_init.
+
+codegen_init_targets: () => ()
+codegen_init_targets = !=>
+   g.targets_initialized
+      | 0
+      |
+         g.targets_initialized = <+>
+         llvm::LLVMInitializeAArch64Target!
+         llvm::LLVMInitializeAArch64TargetInfo!
+         llvm::LLVMInitializeAArch64TargetMC!
+         llvm::LLVMInitializeAArch64AsmPrinter!
+         llvm::LLVMInitializeAMDGPUTarget!
+         llvm::LLVMInitializeAMDGPUTargetInfo!
+         llvm::LLVMInitializeAMDGPUTargetMC!
+         llvm::LLVMInitializeAMDGPUAsmPrinter!
+         llvm::LLVMInitializeARMTarget!
+         llvm::LLVMInitializeARMTargetInfo!
+         llvm::LLVMInitializeARMTargetMC!
+         llvm::LLVMInitializeARMAsmPrinter!
+         llvm::LLVMInitializeAVRTarget!
+         llvm::LLVMInitializeAVRTargetInfo!
+         llvm::LLVMInitializeAVRTargetMC!
+         llvm::LLVMInitializeAVRAsmPrinter!
+         llvm::LLVMInitializeBPFTarget!
+         llvm::LLVMInitializeBPFTargetInfo!
+         llvm::LLVMInitializeBPFTargetMC!
+         llvm::LLVMInitializeBPFAsmPrinter!
+         llvm::LLVMInitializeHexagonTarget!
+         llvm::LLVMInitializeHexagonTargetInfo!
+         llvm::LLVMInitializeHexagonTargetMC!
+         llvm::LLVMInitializeHexagonAsmPrinter!
+         llvm::LLVMInitializeLanaiTarget!
+         llvm::LLVMInitializeLanaiTargetInfo!
+         llvm::LLVMInitializeLanaiTargetMC!
+         llvm::LLVMInitializeLanaiAsmPrinter!
+         llvm::LLVMInitializeLoongArchTarget!
+         llvm::LLVMInitializeLoongArchTargetInfo!
+         llvm::LLVMInitializeLoongArchTargetMC!
+         llvm::LLVMInitializeLoongArchAsmPrinter!
+         llvm::LLVMInitializeMipsTarget!
+         llvm::LLVMInitializeMipsTargetInfo!
+         llvm::LLVMInitializeMipsTargetMC!
+         llvm::LLVMInitializeMipsAsmPrinter!
+         llvm::LLVMInitializeMSP430Target!
+         llvm::LLVMInitializeMSP430TargetInfo!
+         llvm::LLVMInitializeMSP430TargetMC!
+         llvm::LLVMInitializeMSP430AsmPrinter!
+         llvm::LLVMInitializeNVPTXTarget!
+         llvm::LLVMInitializeNVPTXTargetInfo!
+         llvm::LLVMInitializeNVPTXTargetMC!
+         llvm::LLVMInitializeNVPTXAsmPrinter!
+         llvm::LLVMInitializePowerPCTarget!
+         llvm::LLVMInitializePowerPCTargetInfo!
+         llvm::LLVMInitializePowerPCTargetMC!
+         llvm::LLVMInitializePowerPCAsmPrinter!
+         llvm::LLVMInitializeRISCVTarget!
+         llvm::LLVMInitializeRISCVTargetInfo!
+         llvm::LLVMInitializeRISCVTargetMC!
+         llvm::LLVMInitializeRISCVAsmPrinter!
+         llvm::LLVMInitializeSparcTarget!
+         llvm::LLVMInitializeSparcTargetInfo!
+         llvm::LLVMInitializeSparcTargetMC!
+         llvm::LLVMInitializeSparcAsmPrinter!
+         llvm::LLVMInitializeSystemZTarget!
+         llvm::LLVMInitializeSystemZTargetInfo!
+         llvm::LLVMInitializeSystemZTargetMC!
+         llvm::LLVMInitializeSystemZAsmPrinter!
+         llvm::LLVMInitializeVETarget!
+         llvm::LLVMInitializeVETargetInfo!
+         llvm::LLVMInitializeVETargetMC!
+         llvm::LLVMInitializeVEAsmPrinter!
+         llvm::LLVMInitializeWebAssemblyTarget!
+         llvm::LLVMInitializeWebAssemblyTargetInfo!
+         llvm::LLVMInitializeWebAssemblyTargetMC!
+         llvm::LLVMInitializeWebAssemblyAsmPrinter!
+         llvm::LLVMInitializeX86Target!
+         llvm::LLVMInitializeX86TargetInfo!
+         llvm::LLVMInitializeX86TargetMC!
+         llvm::LLVMInitializeX86AsmPrinter!
+         llvm::LLVMInitializeXCoreTarget!
+         llvm::LLVMInitializeXCoreTargetInfo!
+         llvm::LLVMInitializeXCoreTargetMC!
+         llvm::LLVMInitializeXCoreAsmPrinter!
+         0
+
+// Fallback layout (host x86-64).
+codegen_layout: String
+codegen_layout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+
+// Create the module + builder, pin the target triple/data layout, and declare
+// the String struct type + the malloc/memcmp libc functions.
+codegen_init: CodegenOpts => Cg
+codegen_init = opts =>
+   codegen_init_targets!
+   module = llvm::LLVMModuleCreateWithName("dva_module")
+   target_triple = opts.target_triple
+   triple = ?target_triple > 0
+      | target_triple
+      |
+         def_raw = llvm::LLVMGetDefaultTargetTriple!
+         def_s = c_str(def_raw)
+         llvm::LLVMDisposeMessage(def_raw)
+         def_s
+   llvm::LLVMSetTarget(module, triple)
+   ar = mem::arena(1024)
+   target_buf = mem::alloc(ar, 8)
+   err_buf = mem::alloc(ar, 8)
+   @[err_buf] = Addr(0)
+   res = llvm::LLVMGetTargetFromTriple(triple, target_buf, err_buf)
+   layout = res == 0
+      |
+         target_ref = @[target_buf Addr]
+         tm = llvm::LLVMCreateTargetMachine(target_ref, triple, "", "", 2, 0, 0)
+         td = llvm::LLVMCreateTargetDataLayout(tm)
+         raw_l = llvm::LLVMCopyStringRepOfTargetData(td)
+         l_str = c_str(raw_l)
+         llvm::LLVMDisposeMessage(raw_l)
+         llvm::LLVMDisposeTargetData(td)
+         llvm::LLVMDisposeTargetMachine(tm)
+         l_str
+      |
+         err_ptr = @[err_buf Addr]
+         err_s = err_ptr != Addr(0) | c_str(err_ptr) | ""
+         print $ "E3069: No LLVM target registered for triple '" + triple + "'" +
+            (?err_s > 0 | ": " + err_s | "")
+         err_ptr != Addr(0) | llvm::LLVMDisposeMessage(err_ptr) | 0
+         codegen_layout
+   mem::destroy(ar)
+   llvm::LLVMSetDataLayout(module, layout)
+   builder = llvm::LLVMCreateBuilder!
+   i64t = llvm::LLVMInt64Type!
+   i32t = llvm::LLVMInt32Type!
+   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+   st = struct_type2(i64t, i8p)
+   ut = struct_type2(i64t, i8p)
+   st2 = struct_type2(i8p, i64t)
+   malloc_t = fn_type1(i8p, i64t)
+   pp = {16}
+   psb = &pp
+   @[psb] = i8p
+   printf_fn = llvm::LLVMAddFunction(module, "printf",
+      llvm::LLVMFunctionType(llvm::LLVMInt32Type!, psb, 1, 1))
+   Cg((module, builder, Addr(0), CgVars(), <->, st, ut, st2,
+      Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0),
+      0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", Addr(0),
+      ast::Names(),
+      ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", Addr(0),
+      Addrs(), Addrs(), ast::Names(), ast::Names(), "", ast::Names(),
+      ast::Names(), ast::Names(), Addrs(), ast::VTypes(), ParamRecs(),
+      ast::Names(), ast::Names(), Addr(0), Addr(0), Addr(0), Addr(0),
+      Addr(0), 0, Addr(0), Addr(0),
+      FieldInitState((ast::Names(), ast::Names())),
+      ChoiceInitFrames(), BindingMuts(), <->, Addr(0), <->, ast::Names(),
+      Addrs(), "", 0, 0, opts))
+
+// Define "i32 @main(i32, ptr)" or void @__dva_global_init().
+codegen_build_main: Cg => Addr
+codegen_build_main = cg =>
+   cg.opts.no_main
+      |
+         fnty' = fn_type0(llvm::LLVMVoidType!)
+         init_fn_name = cg.opts.is_module && cg.opts.module_name != ""
+            | "__dva_global_init_" + cg.opts.module_name
+            | "__dva_global_init"
+         fn' = llvm::LLVMAddFunction(cg.module, init_fn_name, fnty')
+         llvm::LLVMSetLinkage(fn', 8)
+         runtime::mark_nounwind(cg, fn')
+         entry' = llvm::LLVMAppendBasicBlock(fn', "entry")
+         llvm::LLVMPositionBuilderAtEnd(cg.builder, entry')
+         cg.main_fn = fn'
+         cg.current_fn = fn'
+         !cg.opts.no_runtime && !cg.opts.is_module | emit_arena_init(cg) | 0
+         fn'
+      |
+         i32t = llvm::LLVMInt32Type!
+         i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+         ptypes = Addrs()
+         ptypes += i32t
+         ptypes += i8p
+         fnty' = stmt::fn_type_n(cg, i32t, ptypes, 2)
+         fn' = llvm::LLVMAddFunction(cg.module, "main", fnty')
+         runtime::mark_nounwind(cg, fn')
+         entry' = llvm::LLVMAppendBasicBlock(fn', "entry")
+         llvm::LLVMPositionBuilderAtEnd(cg.builder, entry')
+         cg.main_fn = fn'
+         cg.current_fn = fn'
+         !cg.opts.no_runtime
+            |
+               argc_p = llvm::LLVMGetParam(fn', 0)
+               argv_p = llvm::LLVMGetParam(fn', 1)
+               argc_g = llvm::LLVMAddGlobal(cg.module, llvm::LLVMInt64Type!, "sys_argc_global")
+               llvm::LLVMSetInitializer(argc_g, llvm::LLVMConstInt(llvm::LLVMInt64Type!, 0, 0))
+               argv_g = llvm::LLVMAddGlobal(cg.module, i8p, "sys_argv_global")
+               llvm::LLVMSetInitializer(argv_g, llvm::LLVMConstNull(i8p))
+               argc64 = llvm::LLVMBuildSExt(cg.builder, argc_p, llvm::LLVMInt64Type!, "argc.i64")
+               llvm::LLVMBuildStore(cg.builder, argc64, argc_g)
+               llvm::LLVMBuildStore(cg.builder, argv_p, argv_g)
+               emit_arena_init(cg)
+            | 0
+         fn'
+
+// call void @dva_arena_init(ptr @global_arena, i64 1048576) in main's entry.
+emit_arena_init: Cg => Addr
+emit_arena_init = cg =>
+   at = runtime::arena_type(cg)
+   atp = llvm::LLVMPointerType(at, 0)
+   i64t = llvm::LLVMInt64Type!
+   init_t = fn_type2(cg, llvm::LLVMVoidType!, atp, i64t)
+   init_fn = llvm::LLVMGetNamedFunction(cg.module, "dva_arena_init")
+   ga = llvm::LLVMGetNamedGlobal(cg.module, "global_arena")
+   iargs = {16}
+   sb = &iargs
+   @[sb] = ga
+   @[sb + 8] = llvm::LLVMConstInt(i64t, 67108864, 0)
+   llvm::LLVMBuildCall2(cg.builder, init_t, init_fn, sb, 2, "")
+
+// fn type ret(p0, p1)
+fn_type2: Cg, Addr, Addr, Addr => Addr
+fn_type2 = cg, ret, p0, p1 =>
+   parr = {16}
+   sb = &parr
+   @[sb] = p0
+   @[sb + 8] = p1
+   llvm::LLVMFunctionType(ret, sb, 2, 0)
+
+// --- type helpers ------------------------------------------------------------
+
+is_float_vt: ast::ValueType => <>
+is_float_vt = vt => vt [Float, F32]
+
+is_int_vt: ast::ValueType => <>
+is_int_vt = vt =>
+   vt [Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64]
+
+is_unsigned_vt: ast::ValueType => <>
+is_unsigned_vt = vt => vt [U8, U16, U32, U64]
+
+is_ram_vt: ast::ValueType => <>
+is_ram_vt = vt => vt [Ram]
+
+is_flag_vt: ast::ValueType => <>
+is_flag_vt = vt => vt [Flag]
+
+is_enum_vt: ast::ValueType => <>
+is_enum_vt = vt => vt [Enum]
+
+is_any_ram_vt: ast::ValueType => <>
+is_any_ram_vt = vt => vt [Flag, Ram, Enum]
+
+is_str_vt: ast::ValueType => <>
+is_str_vt = vt => vt [Str]
+
+is_rune_vt: ast::ValueType => <>
+is_rune_vt = vt => vt [Rune]
+
+is_record_vt: ast::ValueType => <>
+is_record_vt = vt => vt [Record]
+
+is_array_vt: ast::ValueType => <>
+is_array_vt = vt => vt [Array]
+
+is_builder_vt: ast::ValueType => <>
+is_builder_vt = vt => vt [Builder]
+
+is_slice_vt: ast::ValueType => <>
+is_slice_vt = vt => vt [Slice]
+
+is_scalar_vt: ast::ValueType => <>
+is_scalar_vt = vt =>
+   vt [Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64,
+      Float, F32, Str, Builder, Unit]
+
+is_map_vt: ast::ValueType => <>
+is_map_vt = vt => vt [Map]
+
+is_ptr_vt: ast::ValueType => <>
+is_ptr_vt = vt => vt [RawPtr]
+
+// The LLVM type backing a ValueType (i64 Int, double Float, i1 ram-flag,
+// ptr String). Slice-9 subset; composite types arrive with later slices.
+// The LLVM type globals are pre-bound (a zero-arg 'fun!' call directly before
+// ')' was an earlier parser gap).
+// LLVM-reference discovery: find a named function or global in a module,
+// returning <Addr|> so callers must explicitly match both states.
+llvm_find_function: Addr, String => <Addr|>
+llvm_find_function = module, name =>
+   f = llvm::LLVMGetNamedFunction(module, name)
+   f != Addr(0) | <+ f -> | <-->
+
+llvm_find_global: Addr, String => <Addr|>
+llvm_find_global = module, name =>
+   gv = llvm::LLVMGetNamedGlobal(module, name)
+   gv != Addr(0) | <+ gv -> | <-->
+
+float_llvm: ast::ValueType => Addr
+float_llvm = vt => vt [F32] llvm::LLVMFloatType! | llvm::LLVMDoubleType!
+
+llvm_type_of_vt: ast::ValueType => Addr
+llvm_type_of_vt = vt =>
+   f32t = llvm::LLVMFloatType!
+   dbl = llvm::LLVMDoubleType!
+   i1t = llvm::LLVMInt1Type!
+   i8t = llvm::LLVMInt8Type!
+   i16t = llvm::LLVMInt16Type!
+   i32t = llvm::LLVMInt32Type!
+   i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+   i64t = llvm::LLVMInt64Type!
+   vt
+      [Unit] llvm::LLVMVoidType!
+      [Float] dbl
+      [F32] f32t
+      [Flag] i1t
+      [I8, U8] i8t
+      [I16, U16] i16t
+      [I32, U32] i32t
+      [Ram] i8p
+      [Enum] i8p
+      [Str] i8p
+      [Map] i8p
+      [Builder] i8p
+      [Fn] i8p
+      [Array] i8p
+      [Slice] i8p
+      [Error] i8p
+      [RawPtr] i8p
+      [Record] i8p
+      | i64t
+
+// --- strings ----------------------------------------------------------------
+
+// The runtime's current arena. The main thread falls back to global_arena;
+// spawned threads install their own arena in dva_arena_tls.
+name_is_qualified: String, Int => <>
+name_is_qualified = name, i =>
+   i + 1 < ?name
+      |
+         (name(i) == ':') && (name(i + 1) == ':')
+            | <+>
+            | name_is_qualified(name, i + 1)
+      | <->
+
+// The first module component of "module::binding" (or "" for an unqualified
+// declaration). Module names are path-tail prefixes, never runtime values.
+decl_module: String, Int => String
+decl_module = name, i =>
+   i + 1 < ?name
+      |
+         (name(i) == ':') && (name(i + 1) == ':')
+            | name(0..i)
+            | decl_module(name, i + 1)
+      | ""
+
+// The bare name without module prefix ("is_alpha" from "unicode::is_alpha").
+decl_bare_name: String, Int => String
+decl_bare_name = name, i =>
+   i + 1 < ?name
+      |
+         (name(i) == ':') && (name(i + 1) == ':')
+            |
+               s = i + 2
+               name(s..?name)
+            | decl_bare_name(name, i + 1)
+      | name
+
+bare_name_start: String, Int, Int => Int
+bare_name_start = name, i, last =>
+   i + 1 < ?name
+      |
+         (name(i) == ':') && (name(i + 1) == ':')
+            | bare_name_start(name, i + 2, i + 2)
+            | bare_name_start(name, i + 1, last)
+      | last
+
+suffix_matches_step: String, Int, String, Int, Int => <>
+suffix_matches_step = name, offset, bare, j, n =>
+   j == n
+      | <+>
+      |
+         (name(offset + j) == bare(j)) &&
+            suffix_matches_step(name, offset, bare, j + 1, n)
+
+name_matches_module_public: String, String, String => <>
+name_matches_module_public = qual, mod, bare => qual == (mod, "::", bare)
+
+name_matches_module_private: String, String, String => <>
+name_matches_module_private = qual, mod, bare => qual == (mod, "::#", bare)
+
+name_bare_matches: String, String => <>
+name_bare_matches = qual, bare =>
+   start = bare_name_start(qual, 0, 0)
+   start > 0 && (?qual - start == ?bare) &&
+      suffix_matches_step(qual, start, bare, 0, ?bare)
+
+// Whether a signature name matches a function name (exact or bare-to-qualified).
+sig_name_matches: String, String => <>
+sig_name_matches = sig_name, fn_name =>
+   (sig_name == fn_name) ||
+      name_bare_matches(fn_name, sig_name) ||
+      name_bare_matches(sig_name, fn_name)
+
+// A local must shadow a same-named module global. Only after that check may a
+// bare name resolve to current_module::name (or its private #name spelling).
+has_local_var: Cg, String => <>
+has_local_var = cg, name =>
+   cg.in_fn && has_local_var_at(cg, name, ?cg.vars - 1, cg.fn_var_start)
+
+has_local_var_at: Cg, String, Int, Int => <>
+has_local_var_at = cg, name, i, start =>
+   i < start
+      | <->
+      |
+         v = cg.vars(i)!!
+         ((v.name == name) && v.is_local)
+            | <+>
+            | has_local_var_at(cg, name, i - 1, start)
+
+has_var_name: Cg, String => <>
+has_var_name = cg, name => has_var_name_at(cg, name, ?cg.vars - 1)
+
+has_var_name_at: Cg, String, Int => <>
+has_var_name_at = cg, name, i =>
+   i < 0
+      | <->
+      |
+         v = cg.vars(i)!!
+         (v.name == name) && (!v.is_local || (i !< cg.fn_var_start))
+            | <+>
+            | has_var_name_at(cg, name, i - 1)
+
+resolve_var_name_at: Cg, String, Int => String
+resolve_var_name_at = cg, name, i =>
+   i < 0
+      | name
+      |
+         v = cg.vars(i)!!
+         v.is_local
+            | resolve_var_name_at(cg, name, i - 1)
+            |
+               v.name == name
+                  | v.name
+                  |
+                     name_matches_module_public(v.name, cg.current_module, name)
+                        | v.name
+                        |
+                           name_matches_module_private(v.name,
+                              cg.current_module, name)
+                              | v.name
+                              | resolve_var_name_at(cg, name, i - 1)
+
+resolve_var_name: Cg, String => String
+resolve_var_name = cg, name =>
+   cg.current_module == ""
+      | name
+      |
+         name_is_qualified(name, 0)
+            | name
+            |
+               find_dot(name, 0) > 0
+                  | name
+                  |
+                     has_local_var(cg, name)
+                        | name
+                        | resolve_var_name_at(cg, name, cg.fn_var_start - 1)
+
+has_fn_name: Cg, String => <>
+has_fn_name = cg, name => cg.fn_names ^? name
+
+add_fn_def: Cg, FnDef => ()
+add_fn_def = cg, fd =>
+   names = cg.fn_names
+   known = names ^? (fd.name)
+   !known | names ^ (fd.name) = ?cg.fns
+   cg.fns += fd
+
+is_fn_name: Cg, String => <>
+is_fn_name = cg, name =>
+   fninfo_index(cg, name) !< 0
+
+is_prelude_fn: String => <>
+is_prelude_fn = name =>
+   name [ "print", "writeln", "print_int", "print_float", "print_float32",
+      "writeln_b", "apply", "apply2", "apply3", "twice", "thrice", "flip",
+      "on", "compose", "const", "map", "filter", "find", "any", "all_bit",
+      "any_bit", "ident", "tap", "sort" ]
+
+is_any_fn_name: Cg, String => <>
+is_any_fn_name = cg, name =>
+   rf = resolve_fn_name(cg, name)
+   is_mod_fn = rf != name && (has_fn_name(cg, rf) || is_fn_name(cg, rf))
+   is_root_fn = cg.current_module == "" &&
+      (has_fn_name(cg, name) || is_fn_name(cg, name))
+   is_qual_fn = name_is_qualified(name, 0) &&
+      (has_fn_name(cg, name) || is_fn_name(cg, name))
+   is_mod_fn || is_root_fn || is_qual_fn || is_prelude_fn(name) ||
+      has_str(g.foreign_fn_names, name)
+
+find_fn_module_name: Cg, String => String
+find_fn_module_name = cg, name =>
+   public = cg.current_module + "::" + name
+   private = cg.current_module + "::#" + name
+   indices = cg.fn_names
+   has_public = indices ^? public
+   has_private = indices ^? private
+   has_public && has_private
+      |
+         public_idx = indices ^ public | _ | -1
+         private_idx = indices ^ private | _ | -1
+         public_idx < private_idx | public | private
+      |
+         has_public
+            | public
+            | has_private
+               | private
+               | ""
+
+find_fi_module_name_at: Cg, String, Int, Int => String
+find_fi_module_name_at = cg, name, i, n =>
+   i == n
+      | ""
+      |
+         fi = cg.fninfos(i)!!
+         name_matches_module_public(fi.name, cg.current_module, name)
+            | fi.name
+            |
+               name_matches_module_private(fi.name, cg.current_module, name)
+                  | fi.name
+                  | find_fi_module_name_at(cg, name, i + 1, n)
+
+resolve_fn_name: Cg, String => String
+resolve_fn_name = cg, name =>
+   cg.current_module == ""
+      | name
+      |
+         name_is_qualified(name, 0)
+            | name
+            |
+               fd_name = find_fn_module_name(cg, name)
+               fd_name != ""
+                  | fd_name
+                  |
+                     fi_name = find_fi_module_name_at(cg, name, 0, ?cg.fninfos)
+                     fi_name != "" | fi_name | name
+
+has_type_name: Cg, String => <>
+has_type_name = cg, name => cg.type_indices ^? name
+
+find_type_bare_name_at: Cg, String, Int, Int => String
+find_type_bare_name_at = cg, name, i, n =>
+   i == n
+      | name
+      |
+         td = cg.typedefs(i)!!
+         td.name == name
+            | td.name
+            |
+               td.name(0) == 35
+                  | find_type_bare_name_at(cg, name, i + 1, n)
+                  |
+                     name_bare_matches(td.name, name)
+                        | td.name
+                        | find_type_bare_name_at(cg, name, i + 1, n)
+
+find_type_bare_name: Cg, String => String
+find_type_bare_name = cg, name =>
+   find_type_bare_name_at(cg, name, 0, ?cg.typedefs)
+
+find_type_module_name: Cg, String => String
+find_type_module_name = cg, name =>
+   public = cg.current_module + "::" + name
+   private = cg.current_module + "::#" + name
+   indices = cg.type_indices
+   has_public = indices ^? public
+   has_private = indices ^? private
+   has_public && has_private
+      |
+         public_idx = indices ^ public | _ | -1
+         private_idx = indices ^ private | _ | -1
+         public_idx < private_idx | public | private
+      |
+         has_public
+            | public
+            | has_private
+               | private
+               | ""
+
+resolve_type_name: Cg, String => String
+resolve_type_name = cg, name =>
+   name_is_qualified(name, 0)
+      | name
+      |
+         cg.current_module != ""
+            |
+               mod_name = find_type_module_name(cg, name)
+               mod_name != "" | mod_name | find_type_bare_name(cg, name)
+            | find_type_bare_name(cg, name)
+
+find_dot: String, Int => Int
+find_dot = s, i =>
+   (i < ?s)
+      | (s(i) == 46) | i | find_dot(s, i + 1)
+      | -1
+
+dotted_var_type: Cg, String => ast::ValueType
+dotted_var_type = cg, name =>
+   dot = find_dot(name, 0)
+   dot < 0
+      | ast::ValueType(Unknown)
+      |
+         base_name = name(0..dot)
+         field_name = name(dot + 1..?name)
+         fnames = var_fnames(cg, base_name)
+         idx = member_index(fnames, field_name)
+         idx < 0
+            | ast::ValueType(Unknown)
+            |
+               fvts = match::var_fvts(cg, base_name)
+               idx < ?fvts | (fvts(idx) | _ | ast::ValueType(Unknown)) |
+                  ast::ValueType(Unknown)
+
+dotted_var_val: Cg, String => (Addr, ast::ValueType)
+dotted_var_val = cg, name =>
+   dot = find_dot(name, 0)
+   dot < 0
+      | (Addr(0), ast::ValueType(Unknown))
+      |
+         base_name = name(0..dot)
+         field_name = name(dot + 1..?name)
+         fnames = var_fnames(cg, base_name)
+         idx = member_index(fnames, field_name)
+         idx < 0
+            | (Addr(0), ast::ValueType(Unknown))
+            |
+               fvts = match::var_fvts(cg, base_name)
+               fvt = idx < ?fvts | (fvts(idx) | _ | ast::ValueType(Unknown)) |
+                  ast::ValueType(Unknown)
+               base_val = ptr_var_value_plain(cg, base_name, "rec.ptr")
+               base_val == Addr(0)
+                  | (Addr(0), ast::ValueType(Unknown))
+                  |
+                     var_rt(cg, base_name)
+                        | rt =>
+                           is_homo = expr::record_type_is_homogeneous(rt, fvts)
+                           ft = is_homo
+                              | llvm::LLVMStructGetTypeAtIndex(rt, 0)
+                              | llvm::LLVMStructGetTypeAtIndex(rt, idx)
+                           fgep = record_field_gep(cg, rt, fvts, base_val, idx)
+                           is_rec = fvt [Record]
+                           is_rec
+                              | (fgep, fvt)
+                              |
+                                 (llvm::LLVMBuildLoad2(cg.builder, ft, fgep,
+                                    "field.load"), fvt)
+                        | (Addr(0), ast::ValueType(Unknown))
+
+dotted_var_dtype: Cg, String => String
+dotted_var_dtype = cg, name =>
+   dot = find_dot(name, 0)
+   dot < 0
+      | ""
+      |
+         base_name = name(0..dot)
+         field_name = name(dot + 1..?name)
+         fnames = var_fnames(cg, base_name)
+         idx = member_index(fnames, field_name)
+         idx < 0
+            | ""
+            |
+               base_dt0 = var_dtype(cg, base_name)
+               base_ti = base_dt0 != ""
+                  | typedef_ti(cg, base_dt0)
+                  |
+                     var_rt(cg, base_name)
+                        | rt => typedef_ti_of_rt(cg, rt)
+                        | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+               record_field_dtype(cg, base_ti, idx)
+
+dotted_fn_ret_vt: Cg, String => ast::ValueType
+dotted_fn_ret_vt = cg, name =>
+   dot = find_dot(name, 0)
+   dot < 0
+      | ast::ValueType(Unknown)
+      |
+         base_name = name(0..dot)
+         field_name = name(dot + 1..?name)
+         fnames = var_fnames(cg, base_name)
+         idx = member_index(fnames, field_name)
+         idx < 0
+            | ast::ValueType(Unknown)
+            |
+               base_dt0 = var_dtype(cg, base_name)
+               base_ti = base_dt0 != ""
+                  | typedef_ti(cg, base_dt0)
+                  |
+                     var_rt(cg, base_name)
+                        | rt => typedef_ti_of_rt(cg, rt)
+                        | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+               fti = record_field_ti(cg, base_ti, idx)
+               fti
+                  [Fn f]
+                     f.2 != ast::ValueType(Unknown)
+                        | f.2
+                        | ast::ValueType(Unknown)
+                  | ast::ValueType(Unknown)
+
+// The ValueType of a named variable (default Int). A function-local shadows a
+// same-named top-level global.
+var_type: Cg, String => ast::ValueType
+var_type = cg, name =>
+   find_dot(name, 0) > 0
+      | dotted_var_type(cg, name)
+      |
+         vt = find_var_type(cg, resolve_var_name(cg, name), ?cg.vars - 1,
+            ast::ValueType(Unknown))
+         vt != ast::ValueType(Unknown) | vt | dotted_var_type(cg, name)
+
+find_var_type: Cg, String, Int, ast::ValueType => ast::ValueType
+find_var_type = cg, name, i, fallback =>
+   i < 0
+      | fallback
+      |
+         v = cg.vars(i)!!
+         v.name == name
+            |
+               (i !< cg.fn_var_start) && v.is_local
+                  | v.vt
+                  |
+                     !v.is_local
+                        | v.vt
+                        | find_var_type(cg, name, i - 1, fallback)
+            | find_var_type(cg, name, i - 1, fallback)
+
+// A variable's global: create it (with the width) or fetch the existing one.
+codegen_get_global: Cg, String, Addr => Addr
+codegen_get_global = cg, name, llvm_type =>
+   gname = "var." + name
+   glob = llvm::LLVMGetNamedGlobal(cg.module, gname)
+   glob == Addr(0)
+      |
+         g2 = llvm::LLVMAddGlobal(cg.module, llvm_type, gname)
+         is_ext = cg.opts.is_module && is_external_module_name(cg, name)
+         !is_ext
+            | llvm::LLVMSetInitializer(g2, llvm::LLVMConstNull(llvm_type))
+            | 0
+         g2
+      | glob
+
+// Whether a named variable's ram slot is a heap union pointer (not a flag).
+var_is_heap: Cg, String => <>
+var_is_heap = cg, name =>
+   find_dot(name, 0) > 0
+      | <->
+      | var_is_heap_at(cg, resolve_var_name(cg, name), ?cg.vars - 1)
+
+var_is_heap_at: Cg, String, Int => <>
+var_is_heap_at = cg, name, i =>
+   i < 0
+      | <->
+      |
+         v = cg.vars(i)!!
+         v.name == name
+            |
+               (i !< cg.fn_var_start) && v.is_local
+                  | v.is_heap
+                  |
+                     !v.is_local
+                        | v.is_heap
+                        | var_is_heap_at(cg, name, i - 1)
+            | var_is_heap_at(cg, name, i - 1)
+
+// The declared '#type' name of a variable (for ram payload resolution).
+var_dtype: Cg, String => String
+var_dtype = cg, name =>
+   find_dot(name, 0) > 0
+      | dotted_var_dtype(cg, name)
+      | var_dtype_at(cg, resolve_var_name(cg, name), ?cg.vars - 1)
+
+var_dtype_at: Cg, String, Int => String
+var_dtype_at = cg, name, i =>
+   i < 0
+      | ""
+      |
+         v = cg.vars(i)!!
+         v.name == name
+            |
+               (i !< cg.fn_var_start) && v.is_local
+                  | v.dtype
+                  |
+                     !v.is_local
+                        | v.dtype
+                        | var_dtype_at(cg, name, i - 1)
+            | var_dtype_at(cg, name, i - 1)
+
+// A record variable's LLVM struct type.
+var_rt: Cg, String => <Addr|>
+var_rt = cg, name =>
+   find_dot(name, 0) > 0
+      | dotted_var_rt(cg, name)
+      | var_rt_at(cg, resolve_var_name(cg, name), ?cg.vars - 1)
+
+dotted_var_rt: Cg, String => <Addr|>
+dotted_var_rt = cg, name =>
+   dot = find_dot(name, 0)
+   dot < 0
+      | <-->
+      |
+         base_name = name(0..dot)
+         field_name = name(dot + 1..?name)
+         fnames = var_fnames(cg, base_name)
+         idx = member_index(fnames, field_name)
+         idx < 0
+            | <-->
+            |
+               var_rt(cg, base_name)
+                  | rt =>
+                     elem_ty = llvm::LLVMStructGetTypeAtIndex(rt, idx)
+                     elem_ty != Addr(0) | <+ elem_ty -> | <-->
+                  | <-->
+
+var_rt_at: Cg, String, Int => <Addr|>
+var_rt_at = cg, name, i =>
+   i < 0
+      | <-->
+      |
+         v = cg.vars(i)!!
+         v.name == name
+            |
+               (i !< cg.fn_var_start) && v.is_local
+                  | (v.rt != Addr(0) | <+ v.rt -> | <-->)
+                  |
+                     !v.is_local
+                        | (v.rt != Addr(0) | <+ v.rt -> | <-->)
+                        | var_rt_at(cg, name, i - 1)
+            | var_rt_at(cg, name, i - 1)
+
+// A record variable's named field list (empty for a positional record).
+var_fnames: Cg, String => ast::Names
+var_fnames = cg, name =>
+   find_dot(name, 0) > 0
+      | ast::Names()
+      | var_fnames_at(cg, resolve_var_name(cg, name), ?cg.vars - 1)
+
+var_fnames_at: Cg, String, Int => ast::Names
+var_fnames_at = cg, name, i =>
+   i < 0
+      | ast::Names()
+      |
+         v = cg.vars(i)!!
+         v.name == name
+            |
+               (i !< cg.fn_var_start) && v.is_local
+                  | v.fnames
+                  |
+                     !v.is_local
+                        | v.fnames
+                        | var_fnames_at(cg, name, i - 1)
+            | var_fnames_at(cg, name, i - 1)
+
+// Resolves a member field to its slot index: a numeric name is the index; a
+// named field is looked up in the record's field list.
+member_index: ast::Names, String => Int
+member_index = fnames, name =>
+   n = parse_digits(name, 0, 0)
+   n !< 0
+      | n
+      | find_field(fnames, name, 0)
+
+// A dotted parenthesized member index is valid only when it is a literal or a
+// compile-time constant. A dynamic index is diagnosed as E3170.
+member_static_index: Cg, ast::MemberExpr, ast::Names => (Int, <>)
+member_static_index = cg, m, fnames =>
+   m.field_name == ""
+      |
+         m.index_expr
+            [Int n] (n, <+>)
+            |
+               saved_discard = cg.discard_result
+               cg.discard_result = <->
+               ev = expr::codegen_eval(cg, m.index_expr)
+               cg.discard_result = saved_discard
+               ev.0 == Addr(0)
+                  | (-1, <->)
+                  |
+                     llvm::LLVMIsConstant(ev.0) != 0
+                        | (llvm::LLVMConstIntGetZExtValue(ev.0), <+>)
+                        | (-1, <->)
+      | (member_index(fnames, m.field_name), <+>)
+
+// A non-negative decimal parse ("" or a non-digit -> -1).
+parse_digits: String, Int, Int => Int
+parse_digits = s, i, acc =>
+   (i < ?s)
+      |
+         c = s(i)
+         (c !< '0') && (c !> '9')
+            | parse_digits(s, i + 1, acc * 10 + (c - '0'))
+            | -1
+      | acc
+
+find_field: ast::Names, String, Int => Int
+find_field = fnames, name, acc =>
+   (acc < ?fnames)
+      |
+         fnames(acc)!! == name | acc | find_field(fnames, name, acc + 1)
+      | -1
+
+// Loads a variable's global/local value, typed by its recorded ValueType (a
+// heap ram slot loads a pointer; a flag loads i1). The storage slot (a global
+// or a function-local alloca) comes from the variable record.
+codegen_load: Cg, String => (Addr, ast::ValueType)
+codegen_load = cg, name =>
+   find_dot(name, 0) > 0
+      |
+         dot_v = dotted_var_val(cg, name)
+         dot_v.0 != Addr(0) | dot_v | codegen_undefined_name_error(cg, name)
+      |
+         vt = var_type(cg, name)
+         is_heap = var_is_heap(cg, name)
+         var_rt(cg, name)
+            | rt => cg.last_rt = rt
+            | 0
+         fnames = var_fnames(cg, name)
+         ?fnames > 0 | cg.last_fnames = fnames | 0
+         fvts = match::var_fvts(cg, name)
+         ?fvts > 0 | cg.last_fvts = fvts | 0
+         dt = var_dtype(cg, name)
+         dt == "" | 0 | cg.last_type = dt
+         cfn = main::is_fn_vt(vt) | expr::closure_fn_of(cg, name) | ""
+         cfn != "" | cg.last_closure_fn = cfn | 0
+         is_ptr = is_heap || is_record_vt(vt) || is_map_vt(vt) ||
+            is_array_vt(vt) || is_slice_vt(vt)
+         lt = is_ptr
+            | llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+            | llvm_type_of_vt(vt)
+         slot_opt = var_slot(cg, name)
+         uninit = !cg.in_fn && main::var_partial(cg, name) && !init_ok(cg.init, name)
+         forward_scalar = uninit && !is_record_vt(vt) &&
+            !is_array_vt(vt) && !is_slice_vt(vt)
+         forward_scalar
+            | codegen_uninitialized_load_error(cg, name)
+            |
+               var_direct(cg, name)
+                  | dv => (dv, vt)
+                  | codegen_load_after_forward(cg, slot_opt, lt, name, vt)
+
+codegen_load_after_forward: Cg, <Addr|>, Addr, String, ast::ValueType => (Addr, ast::ValueType)
+codegen_load_after_forward = cg, slot_opt, lt, name, vt =>
+   slot_opt
+      | slot => codegen_load_known(cg, slot, lt, name, vt)
+      | codegen_missing_load(cg, name)
+
+codegen_uninitialized_load_error: Cg, String => (Addr, ast::ValueType)
+codegen_uninitialized_load_error = cg, name =>
+   init_error(cg, "E3045", "Use of uninitialized variable '" + name +
+      "' — a forward annotation ('name: Type') allocates no storage; assign " +
+      "a value before reading.", 0, 0)
+   (Addr(0), ast::ValueType(Unknown))
+
+codegen_missing_load: Cg, String => (Addr, ast::ValueType)
+codegen_missing_load = cg, name =>
+   name == "_"
+      | (Addr(0), ast::ValueType(Unknown))
+      |
+         dot_v = dotted_var_val(cg, name)
+         dot_v.0 != Addr(0)
+            | dot_v
+            | codegen_undefined_name_error(cg, name)
+
+codegen_undefined_name_error: Cg, String => (Addr, ast::ValueType)
+codegen_undefined_name_error = cg, name =>
+   init_error(cg, "E3004", "Undefined variable '" + name + "' in fn '" + g.last_compiling_fn + "'", 0, 0)
+   (Addr(0), ast::ValueType(Unknown))
+
+codegen_load_known: Cg, Addr, Addr, String, ast::ValueType => (Addr, ast::ValueType)
+codegen_load_known = cg, slot, lt, name, vt =>
+   lname = "load." + name
+   (llvm::LLVMBuildLoad2(cg.builder, lt, slot, lname), vt)
+
+// A variable's direct SSA value (a fn param, used without a backing alloca).
+var_direct: Cg, String => <Addr|>
+var_direct = cg, name =>
+   find_dot(name, 0) > 0
+      | <-->
+      | find_var_direct(cg, resolve_var_name(cg, name), ?cg.vars - 1)
+
+find_var_direct: Cg, String, Int => <Addr|>
+find_var_direct = cg, name, i =>
+   i < 0
+      | <-->
+      |
+         v = cg.vars(i)!!
+         v.name == name
+            |
+               (i !< cg.fn_var_start) && v.is_local
+                  | (v.direct != Addr(0) | <+ v.direct -> | <-->)
+                  |
+                     !v.is_local
+                        | (v.direct != Addr(0) | <+ v.direct -> | <-->)
+                        | find_var_direct(cg, name, i - 1)
+            | find_var_direct(cg, name, i - 1)
+
+// A pointer-typed variable's VALUE: a direct param's SSA value, or a load
+// from its slot (creating a null-initialized slot for a never-slotted name).
+ptr_var_value: Cg, String, String => Addr
+ptr_var_value = cg, name, lname =>
+   var_type(cg, name)
+      [Array] main::codegen_array_var_value(cg, name, lname)
+      | ptr_var_value_plain(cg, name, lname)
+
+ptr_var_value_plain: Cg, String, String => Addr
+ptr_var_value_plain = cg, name, lname =>
+   find_dot(name, 0) > 0
+      | (dotted_var_val(cg, name)).0
+      |
+         var_direct(cg, name)
+            | _
+            |
+               slot = var_slot(cg, name)
+                  | _
+                  |
+                     i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+                     s_new = create_slot(cg, name, i8p, cg.in_fn)
+                     llvm::LLVMBuildStore(cg.builder,
+                        llvm::LLVMConstNull(i8p), s_new)
+                     s_new
+               llvm::LLVMBuildLoad2(cg.builder,
+                  llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), slot, lname)
+
+// A variable's storage slot (a global pointer or a function-local alloca). A
+// function-local (param or body local) shadows a same-named top-level global:
+// prefer a local match, fall back to the first global.
+var_slot: Cg, String => <Addr|>
+var_slot = cg, name =>
+   find_dot(name, 0) > 0
+      | <-->
+      | find_var_slot(cg, resolve_var_name(cg, name), ?cg.vars - 1)
+
+find_var_slot: Cg, String, Int => <Addr|>
+find_var_slot = cg, name, i =>
+   i < 0
+      | <-->
+      |
+         v = cg.vars(i)!!
+         v.name == name
+            |
+               (i !< cg.fn_var_start) && v.is_local
+                  | (v.slot != Addr(0) | <+ v.slot -> | <-->)
+                  |
+                     !v.is_local
+                        | (v.slot != Addr(0) | <+ v.slot -> | <-->)
+                        | find_var_slot(cg, name, i - 1)
+            | find_var_slot(cg, name, i - 1)
+
+var_has_storage: Cg, String => <>
+var_has_storage = cg, name =>
+   var_slot(cg, name)
+      | _ => <+>
+      | <>(var_direct(cg, name))
+
+// --- block / branch plumbing -------------------------------------------------
+
+// True when the builder's current insertion block is terminated (or absent).
+type_name_to_vt: String => (ast::ValueType, <>)
+type_name_to_vt = name =>
+   name
+      ["Int"] (ast::ValueType(Int), <+>)
+      ["i64"] (ast::ValueType(Int), <+>)
+      ["i8"] (ast::ValueType(I8), <+>)
+      ["i16"] (ast::ValueType(I16), <+>)
+      ["i32"] (ast::ValueType(I32), <+>)
+      ["u8"] (ast::ValueType(U8), <+>)
+      ["u16"] (ast::ValueType(U16), <+>)
+      ["u32"] (ast::ValueType(U32), <+>)
+      ["u64"] (ast::ValueType(U64), <+>)
+      ["i1", "<>"] (ast::ValueType(Flag), <+>)
+      ["Rune"] (ast::ValueType(Rune), <+>)
+      ["Float"] (ast::ValueType(Float), <+>)
+      ["f64"] (ast::ValueType(Float), <+>)
+      ["f32"] (ast::ValueType(F32), <+>)
+      ["String"] (ast::ValueType(Str), <+>)
+      ["void"] (ast::ValueType(Unit), <+>)
+      ["Addr"] (ast::ValueType(RawPtr), <+>)
+      ["ptr"] (ast::ValueType(RawPtr), <+>)
+      ["Builder"] (ast::ValueType(Builder), <+>)
+      ["Error"] (ast::ValueType(Error), <+>)
+      ["Type"] (ast::ValueType(Type), <+>)
+      | (ast::ValueType(Unknown), <->)
+
+// Whether a name was declared by a '#type' statement (a pass-through
+// constructor-call target).
+is_user_type: Cg, String => <>
+is_user_type = cg, name =>
+   has_type_name(cg, resolve_type_name(cg, name))
+
+// The TypeInfo of a declared '#type' name (default: an Unknown primitive).
+typedef_ti: Cg, String => ast::TypeInfo
+typedef_ti = cg, name =>
+   resolved = resolve_type_name(cg, name)
+   indices = cg.type_indices
+   indices ^? resolved
+      |
+         idx = indices ^ resolved | _ | -1
+         td = cg.typedefs(idx)!!
+         td.ti
+            [TypeVar tv]
+               tv != name && is_user_type(cg, tv) | typedef_ti(cg, tv) | td.ti
+            | td.ti
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+vt_from_ti: ast::TypeInfo => ast::ValueType
+vt_from_ti = ti =>
+   ti
+      [Enum _] ast::ValueType(Enum)
+      [Ram s]
+         is_flag = !s.0.has_payload && !s.1.has_payload
+         is_flag | ast::ValueType(Flag) | ast::ValueType(Ram)
+      [Array _] ast::ValueType(Array)
+      [Map _] ast::ValueType(Map)
+      [Rec r]
+         r.1 | ast::ValueType(Slice) | ast::ValueType(Record)
+      [Bitfield b] b.backing_type
+      [Fn _] ast::ValueType(Fn)
+      [Prim vt] vt
+      | ast::ValueType(Unknown)
+
+vt_from_ti_cg: Cg, ast::TypeInfo => ast::ValueType
+vt_from_ti_cg = cg, ti =>
+   ti
+      [TypeVar tv]
+         pvt = type_name_to_vt(tv)
+         pvt.1
+            | pvt.0
+            |
+               td = typedef_ti(cg, tv)
+               vt_from_ti(td)
+      | vt_from_ti(ti)
+
+slot_payload_type: Cg, ast::RamSlotInfo => ast::ValueType
+slot_payload_type = cg, slot =>
+   slot.payload_record
+      [TypeVar tname]
+         ti = typedef_ti(cg, tname)
+         resolved_vt = vt_from_ti(ti)
+         resolved_vt != ast::ValueType(Unknown) | resolved_vt |
+            slot.payload_type
+      | slot.payload_type
+
+is_niche_payload_vt: ast::ValueType => <>
+is_niche_payload_vt = vt => vt [Str, Record]
+
+is_niche_ram_ti: Cg, ast::TypeInfo => (<>, <>, ast::ValueType)
+is_niche_ram_ti = cg, ti =>
+   ti
+      [Ram slots]
+         s0 = slots.0
+         s1 = slots.1
+         s0.has_payload && !s1.has_payload
+            |
+               pvt = slot_payload_type(cg, s0)
+               is_niche_payload_vt(pvt)
+                  | (<+>, <+>, pvt)
+                  | (<->, <->, ast::ValueType(Unknown))
+            |
+               !s0.has_payload && s1.has_payload
+                  |
+                     nvt = slot_payload_type(cg, s1)
+                     is_niche_payload_vt(nvt)
+                        | (<+>, <->, nvt)
+                        | (<->, <->, ast::ValueType(Unknown))
+                  | (<->, <->, ast::ValueType(Unknown))
+      [TypeVar name]
+         is_niche_ram_ti(cg, typedef_ti(cg, name))
+      | (<->, <->, ast::ValueType(Unknown))
+
+is_unboxed_ram_ti: Cg, ast::TypeInfo => <>
+is_unboxed_ram_ti = cg, ti =>
+   ti
+      [Ram slots]
+         s0 = slots.0
+         s1 = slots.1
+         s0.has_payload && s1.has_payload
+            |
+               niche = is_niche_ram_ti(cg, ti)
+               !niche.0
+            | <->
+      [TypeVar name]
+         is_unboxed_ram_ti(cg, typedef_ti(cg, name))
+      | <->
+
+codegen_cond_value_with_ti: Cg, Addr, ast::ValueType, ast::TypeInfo => Addr
+codegen_cond_value_with_ti = cg, v, vt, ti =>
+   niche = is_niche_ram_ti(cg, ti)
+   niche.0
+      |
+         niche.1
+            |
+               llvm::LLVMBuildICmp(cg.builder, 33, v,
+                  llvm::LLVMConstNull(llvm::LLVMTypeOf(v)), "niche.ne.null")
+            |
+               llvm::LLVMBuildICmp(cg.builder, 32, v,
+                  llvm::LLVMConstNull(llvm::LLVMTypeOf(v)), "niche.eq.null")
+      |
+         is_unboxed_ram_ti(cg, ti)
+            | llvm::LLVMBuildExtractValue(cg.builder, v, 0, "ram.tag")
+            | stmt::codegen_cond_value(cg, v, vt)
+
+ti_fn_ret_vt: Cg, ast::TypeInfo => ast::ValueType
+ti_fn_ret_vt = cg, ti =>
+   ti
+      [Fn f]
+         f.2 != ast::ValueType(Unknown) | f.2 | vt_from_ti(f.3)
+      [TypeVar name] ti_fn_ret_vt(cg, typedef_ti(cg, name))
+      | ast::ValueType(Unknown)
+
+fn_ret_sig_with_ti: Cg, ast::TypeInfo => String
+fn_ret_sig_with_ti = cg, ti =>
+   ti
+      [Fn f]
+         ret_vt = f.2 != ast::ValueType(Unknown) | f.2 | vt_from_ti(f.3)
+         ret_vt == ast::ValueType(Unknown)
+            | ""
+            |
+               sname = "#sig_" + value_type_name(ret_vt)
+               fret = expr::fn_ret_vt_of(cg, sname)
+               fret == ast::ValueType(Unknown)
+                  |
+                     cg.fninfos += FnInfo((sname, Addr(0), Addr(0), 0,
+                        ast::VTypes(), ret_vt, <->, <->, <+>, <->))
+                  | 0
+               ret_ti = f.3
+               is_rec = ret_vt [Record]
+               is_rec
+                  |
+                     rm = runtime::record_meta_from_ti(cg, ret_ti)
+                     rm.0 != Addr(0)
+                        |
+                           rfvts = match::field_vts_from_ti(cg, ret_ti)
+                           rdt = ret_ti [TypeVar tn] tn | ""
+                           stmt::fn_ret_rec_add(cg, sname, rm.0, rm.1, rfvts, rdt)
+                        | 0
+                  | 0
+               sname
+      [TypeVar name] fn_ret_sig_with_ti(cg, typedef_ti(cg, name))
+      | ""
+
+ti_get_bitfield: Cg, ast::TypeInfo => <ast::BitfieldInfo|>
+ti_get_bitfield = cg, ti =>
+   ti
+      [Bitfield b] <+ b ->
+      [TypeVar name]
+         is_user_type(cg, name)
+            | ti_get_bitfield(cg, typedef_ti(cg, name))
+            | <-->
+      | <-->
+
+ti_is_packed_or_bf: Cg, ast::TypeInfo => <>
+ti_is_packed_or_bf = cg, ti =>
+   ti
+      [Bitfield _] <+>
+      [Rec r] r.5
+      [TypeVar name]
+         is_user_type(cg, name)
+            | ti_is_packed_or_bf(cg, typedef_ti(cg, name))
+            | <->
+      | <->
+
+find_bitfield_field: ast::BitfieldFields, String => <ast::BitfieldField|>
+find_bitfield_field = fields, name =>
+   res' = <-->
+   ?fields @ i =>
+      f = fields(i) | _ | ast::BitfieldField(("", 0, 0))
+      f.name == name
+         |
+            res' = <+ f ->
+            -->
+   res'
+
+member_index_in_fields: ast::FieldTypes, String => Int
+member_index_in_fields = flds, name =>
+   res' = -1
+   ?flds @ i =>
+      f = flds(i) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
+         ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->, ast::Expr(Int, 0)))
+      f.name == name
+         |
+            res' = i
+            -->
+   res'
+
+record_field_ti_by_name: Cg, ast::TypeInfo, String => ast::TypeInfo
+record_field_ti_by_name = cg, ti, name =>
+   ti
+      [TypeVar tv] record_field_ti_by_name(cg, typedef_ti(cg, tv), name)
+      [Rec r]
+         flds = r.0
+         idx = member_index_in_fields(flds, name)
+         idx !< 0
+            |
+               rf = flds(idx)!!
+               rf.rec_type [TypeVar tv] typedef_ti(cg, tv) | rf.rec_type
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+member_target_ti: Cg, ast::Expr => ast::TypeInfo
+member_target_ti = cg, e =>
+   e
+      [Var v] expr::var_ti(cg, v)
+      [Member inner_m]
+         parent_ti = member_target_ti(cg, inner_m.target)
+         record_field_ti_by_name(cg, parent_ti, inner_m.field_name)
+      [RawMemory rm]
+         rm.rec_name != "" | typedef_ti(cg, rm.rec_name) |
+            ast::TypeInfo(Prim, rm.load_type)
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+typed_member_target_ti: Cg, tast::TypedExpr => ast::TypeInfo
+typed_member_target_ti = cg, te =>
+   te.kind
+      [Var v]
+         dt = var_dtype(cg, v.0)
+         dt_ti = dt != "" && has_type_name(cg, dt)
+            | typedef_ti(cg, dt)
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+         is_bf = dt_ti [Bitfield _]
+         is_bf
+            | dt_ti
+            |
+               is_unk = te.ti [Prim p] (p [Unknown, Unit]) | <->
+               !is_unk
+                  |
+                     te.ti [TypeVar tv]
+                        tv != "" && has_type_name(cg, tv)
+                           | typedef_ti(cg, tv)
+                           | te.ti
+                     | te.ti
+                  |
+                     dt_ti [Prim p2]
+                        p2 [Unknown] te.ti | dt_ti
+                     | dt_ti
+      [Member inner_m]
+         parent_ti = typed_member_target_ti(cg, inner_m.0)
+         rf_ti = record_field_ti_by_name(cg, parent_ti, inner_m.1)
+         rf_ti_res = rf_ti [TypeVar tv]
+            tv != "" && has_type_name(cg, tv) | typedef_ti(cg, tv) | rf_ti
+         | rf_ti
+         is_unk = rf_ti_res [Prim p] (p [Unknown]) | <->
+         is_unk
+            |
+               te.ti [TypeVar tv2]
+                  tv2 != "" && has_type_name(cg, tv2)
+                     | typedef_ti(cg, tv2)
+                     | te.ti
+               | te.ti
+            | rf_ti_res
+      [RawMemory rm]
+         rec_name = te.ti [TypeVar tv] tv | ""
+         rec_name != "" && has_type_name(cg, rec_name)
+            | typedef_ti(cg, rec_name)
+            | te.ti
+      |
+         te.ti [TypeVar tv]
+            tv != "" && has_type_name(cg, tv)
+               | typedef_ti(cg, tv)
+               | te.ti
+         | te.ti
+
+codegen_sizeof_bytes: Cg, ast::SizeOfExpr => Int
+codegen_sizeof_bytes = cg, so =>
+   so.val_type
+      [Record] codegen_record_size_bytes(cg, so.rec_type)
+      | codegen_type_size(cg, so.val_type, so.rec_type)
+
+codegen_type_size: Cg, ast::ValueType, ast::TypeInfo => Int
+codegen_type_size = cg, vt, ti =>
+   bf_opt = ti_get_bitfield(cg, ti)
+   bf_opt
+      | b => b.total_bits / 8
+      |
+         vt
+            [I8, U8, Flag] 1
+            [I16, U16] 2
+            [I32, U32, F32] 4
+            [Record] codegen_record_size_bytes(cg, ti)
+            | 8
+
+codegen_type_align: Cg, ast::ValueType, ast::TypeInfo => Int
+codegen_type_align = cg, vt, ti =>
+   bf_opt = ti_get_bitfield(cg, ti)
+   bf_opt
+      | b => 1
+      |
+         vt
+            [I8, U8, Flag] 1
+            [I16, U16] 2
+            [I32, U32, F32] 4
+            [Record] codegen_record_align(cg, ti)
+            | 8
+
+align_to: Int, Int => Int
+align_to = offset, align =>
+   align !> 1
+      | offset
+      |
+         rem = offset % align
+         rem == 0 | offset | offset + (align - rem)
+
+rec_elem_ti: ast::FieldTypes => ast::TypeInfo
+rec_elem_ti = fields =>
+   ?fields > 0
+      |
+         f = fields(0)!!
+         f.rec_type
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+codegen_record_size_bytes: Cg, ast::TypeInfo => Int
+codegen_record_size_bytes = cg, ti =>
+   raw_sz = codegen_record_llvm_size(cg, ti)
+   ti_is_packed_or_bf(cg, ti) | raw_sz | (raw_sz < 16 | 16 | raw_sz)
+
+codegen_record_llvm_size: Cg, ast::TypeInfo => Int
+codegen_record_llvm_size = cg, ti =>
+   ti
+      [TypeVar name] codegen_record_llvm_size(cg, typedef_ti(cg, name))
+      [Bitfield b] b.total_bits / 8
+      [Rec r]
+         r.1
+            | 16
+            |
+               r.2
+                  |
+                     elem_sz = codegen_type_size(cg, r.3, rec_elem_ti(r.0))
+                     r.4 * elem_sz
+                  |
+                     r.5
+                        | codegen_struct_size_packed(cg, r.0)
+                        | codegen_struct_size(cg, r.0)
+      | 16
+
+codegen_struct_size_packed: Cg, ast::FieldTypes => Int
+codegen_struct_size_packed = cg, fields =>
+   codegen_struct_size_packed_step(cg, fields, 0, ?fields, 0)
+
+codegen_struct_size_packed_step: Cg, ast::FieldTypes, Int, Int, Int => Int
+codegen_struct_size_packed_step = cg, fields, i, n, cur_off =>
+   i == n
+      | cur_off
+      |
+         f = fields(i)!!
+         fsz = codegen_type_size(cg, f.val_type, f.rec_type)
+         codegen_struct_size_packed_step(cg, fields, i + 1, n, cur_off + fsz)
+
+codegen_struct_size: Cg, ast::FieldTypes => Int
+codegen_struct_size = cg, fields =>
+   codegen_struct_size_step(cg, fields, 0, ?fields, 0, 1)
+
+codegen_struct_size_step: Cg, ast::FieldTypes, Int, Int, Int, Int => Int
+codegen_struct_size_step = cg, fields, i, n, cur_off, max_al =>
+   i == n
+      | align_to(cur_off, max_al)
+      |
+         f = fields(i)!!
+         fsz = codegen_type_size(cg, f.val_type, f.rec_type)
+         fal = codegen_type_align(cg, f.val_type, f.rec_type)
+         off = align_to(cur_off, fal)
+         nal = fal > max_al | fal | max_al
+         codegen_struct_size_step(cg, fields, i + 1, n, off + fsz, nal)
+
+codegen_record_align: Cg, ast::TypeInfo => Int
+codegen_record_align = cg, ti =>
+   ti
+      [TypeVar name] codegen_record_align(cg, typedef_ti(cg, name))
+      [Bitfield b] 1
+      [Rec r]
+         r.5
+            | 1
+            |
+               r.1
+                  | 8
+                  |
+                     r.2
+                        | codegen_type_align(cg, r.3, rec_elem_ti(r.0))
+                        | codegen_struct_align(cg, r.0)
+      | 8
+
+codegen_struct_align: Cg, ast::FieldTypes => Int
+codegen_struct_align = cg, fields =>
+   codegen_struct_align_step(cg, fields, 0, ?fields, 1)
+
+codegen_struct_align_step: Cg, ast::FieldTypes, Int, Int, Int => Int
+codegen_struct_align_step = cg, fields, i, n, max_al =>
+   i == n
+      | max_al
+      |
+         f = fields(i)!!
+         fal = codegen_type_align(cg, f.val_type, f.rec_type)
+         nal = fal > max_al | fal | max_al
+         codegen_struct_align_step(cg, fields, i + 1, n, nal)
+
+truncate_names: ast::Names, Int => ast::Names
+truncate_names = names, n =>
+   acc = ast::Names()
+   n @ i => acc += (names(i) | _ | "")
+   acc
+
+truncate_vinfos: ast::VInfos, Int => ast::VInfos
+truncate_vinfos = tis, n =>
+   acc = ast::VInfos()
+   n @ i => acc += (tis(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+   acc
+
+ct_bind_find_at: String, Int => (ast::TypeInfo, <>)
+ct_bind_find_at = name, i =>
+   i < 0
+      | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      |
+         n = g.ct_bind_names(i) | _ | ""
+         n == name
+            |
+               ti = g.ct_bind_tis(i) | _ |
+                  ast::TypeInfo(Prim, ast::ValueType(Unknown))
+               (ti, <+>)
+            | ct_bind_find_at(name, i - 1)
+
+ct_bind_find: String => (ast::TypeInfo, <>)
+ct_bind_find = name =>
+   ct_bind_find_at(name, ?g.ct_bind_names - 1)
+
+ct_bind_push: String, ast::TypeInfo => ()
+ct_bind_push = name, ti =>
+   g.ct_bind_names += name
+   g.ct_bind_tis += ti
+
+ct_bind_pop_to: Int => ()
+ct_bind_pop_to = n =>
+   names = truncate_names(g.ct_bind_names, n)
+   tis = truncate_vinfos(g.ct_bind_tis, n)
+   g.ct_bind_names = names
+   g.ct_bind_tis = tis
+
+ct_val_bind_find_at: String, Int => (CtVal, <>)
+ct_val_bind_find_at = name, i =>
+   i < 0
+      | (CtVal(None), <->)
+      |
+         n = g.ct_val_names(i) | _ | ""
+         n == name
+            |
+               v = g.ct_val_vals(i) | _ | CtVal(None)
+               (v, <+>)
+            | ct_val_bind_find_at(name, i - 1)
+
+ct_val_bind_find: String => (CtVal, <>)
+ct_val_bind_find = name =>
+   ct_val_bind_find_at(name, ?g.ct_val_names - 1)
+
+ct_val_bind_push: String, CtVal => ()
+ct_val_bind_push = name, val =>
+   g.ct_val_names += name
+   g.ct_val_vals += val
+
+truncate_ct_vals_at: CtVals, Int, Int, CtVals => CtVals
+truncate_ct_vals_at = vals, i, n, acc =>
+   i == n || i == ?vals
+      | acc
+      |
+         v = vals(i) | _ | CtVal(None)
+         next = acc
+         next += v
+         truncate_ct_vals_at(vals, i + 1, n, next)
+
+truncate_ct_vals: CtVals, Int => CtVals
+truncate_ct_vals = vals, n =>
+   truncate_ct_vals_at(vals, 0, n, CtVals())
+
+ct_val_bind_pop_to: Int => ()
+ct_val_bind_pop_to = n =>
+   names = truncate_names(g.ct_val_names, n)
+   vals = truncate_ct_vals(g.ct_val_vals, n)
+   g.ct_val_names = names
+   g.ct_val_vals = vals
+
+rec_fields_equal_at: ast::FieldTypes, ast::FieldTypes, Int, Int => <>
+rec_fields_equal_at = f1, f2, i, n =>
+   i == n
+      | <+>
+      |
+         f1i = f1(i) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)),
+            <->, ast::Expr(Int, 0)))
+         f2i = f2(i) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)),
+            <->, ast::Expr(Int, 0)))
+         match = f1i.name == f2i.name && f1i.val_type == f2i.val_type &&
+            type_info_equal(f1i.rec_type, f2i.rec_type)
+         match
+            | rec_fields_equal_at(f1, f2, i + 1, n)
+            | <->
+
+enum_slots_equal_at: ast::EnumSlots, ast::EnumSlots, Int, Int => <>
+enum_slots_equal_at = s1, s2, i, n =>
+   i == n
+      | <+>
+      |
+         s1i = s1(i) | _ | ast::EnumSlotInfo(("", <->, ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         s2i = s2(i) | _ | ast::EnumSlotInfo(("", <->, ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         same_p = s1i.has_payload | s2i.has_payload | !s2i.has_payload
+         match = s1i.label == s2i.label && same_p &&
+            (!s1i.has_payload || (s1i.payload_type == s2i.payload_type &&
+               type_info_equal(s1i.payload_record, s2i.payload_record)))
+         match
+            | enum_slots_equal_at(s1, s2, i + 1, n)
+            | <->
+
+type_info_equal: ast::TypeInfo, ast::TypeInfo => <>
+type_info_equal = a, b =>
+   a
+      [Prim p1]
+         b
+            [Prim p2] p1 == p2
+            [Ram s2]
+               is_flag_vt(p1) && !s2.0.has_payload && !s2.1.has_payload
+            | <->
+      [TypeVar v1]
+         b [TypeVar v2] v1 == v2 | <->
+      [Rec r1]
+         b
+            [Rec r2]
+               ?r1.0 == ?r2.0 && rec_fields_equal_at(r1.0, r2.0, 0, ?r1.0)
+            | <->
+      [Ram ram1]
+         b
+            [Prim p2]
+               is_flag_vt(p2) && !ram1.0.has_payload && !ram1.1.has_payload
+            [Ram ram2]
+               l_same_p = ram1.0.has_payload | ram2.0.has_payload |
+                  !ram2.0.has_payload
+               r_same_p = ram1.1.has_payload | ram2.1.has_payload |
+                  !ram2.1.has_payload
+               l_ok = !ram1.0.has_payload ||
+                  (ram1.0.payload_type == ram2.0.payload_type &&
+                     type_info_equal(ram1.0.payload_record,
+                        ram2.0.payload_record))
+               r_ok = !ram1.1.has_payload ||
+                  (ram1.1.payload_type == ram2.1.payload_type &&
+                     type_info_equal(ram1.1.payload_record,
+                        ram2.1.payload_record))
+               l_same_p && r_same_p && l_ok && r_ok
+            | <->
+      [Enum s1]
+         b
+            [Enum s2]
+               ?s1 == ?s2 && enum_slots_equal_at(s1, s2, 0, ?s1)
+            | <->
+      [Array a1]
+         b
+            [Array a2]
+               a1.0 == a2.0 && type_info_equal(a1.1, a2.1)
+            | <->
+      | <->
+
+field_type_info: ast::RecordFieldType => ast::TypeInfo
+field_type_info = fld =>
+   fld.rec_type
+      [Prim p]
+         p
+            [Unknown] ast::TypeInfo(Prim, fld.val_type)
+            | fld.rec_type
+      | fld.rec_type
+
+resolve_type_record_index: Cg, ast::TypeInfo, ast::Expr => (ast::TypeInfo, <>)
+resolve_type_record_index = cg, ti, index_expr =>
+   can_ti = ctfe_canonical_ti(cg, ti)
+   can_ti
+      [Rec r]
+         saved_discard = cg.discard_result
+         cg.discard_result = <->
+         idx_v = expr::codegen_eval(cg, index_expr)
+         cg.discard_result = saved_discard
+         is_const = idx_v.0 != Addr(0) &&
+            llvm::LLVMIsConstant(idx_v.0) != 0
+         is_const
+            |
+               idx = llvm::LLVMConstIntGetZExtValue(idx_v.0)
+               idx !< 0 && idx < ?r.0
+                  |
+                     fld = r.0(idx)!!
+                     (field_type_info(fld), <+>)
+                  | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+            | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
+resolve_type_val_member_type: Cg, ast::MemberExpr => (ast::TypeInfo, <>)
+resolve_type_val_member_type = cg, m =>
+   m.target
+      [Member im]
+         im.field_name == ""
+            |
+               vname = im.target [Var v] v | ""
+               dt = vname != "" | var_dtype(cg, vname) | ""
+               is_user_type(cg, dt)
+                  |
+                     resolve_type_record_index(cg, typedef_ti(cg, dt),
+                        im.index_expr)
+                  | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+            | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
+resolve_type_value_simple: ast::Expr => (ast::TypeInfo, <>)
+resolve_type_value_simple = expr =>
+   expr
+      [Var v]
+         ct = ct_bind_find(v)
+         ct.1
+            | (ct.0, <+>)
+            |
+               tn = type_name_to_vt(v)
+               tn.1
+                  | (ast::TypeInfo(Prim, tn.0), <+>)
+                  | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      [Member m]
+         m.field_name == ""
+            |
+               tgt = resolve_type_value_simple(m.target)
+               tgt.1
+                  |
+                     tgt.0
+                        [Rec r]
+                           m.index_expr
+                              [Int idx]
+                                 idx !< 0 && idx < ?r.0
+                                    |
+                                       fld = r.0(idx)!!
+                                       (field_type_info(fld), <+>)
+                                    |
+                                       (ast::TypeInfo(Prim,
+                                          ast::ValueType(Unknown)), <->)
+                              |
+                                 (ast::TypeInfo(Prim,
+                                    ast::ValueType(Unknown)), <->)
+                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                  | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+            |
+               m.field_name == "Type"
+                  | resolve_type_value_simple(m.target)
+                  | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
+resolve_type_value: Cg, ast::Expr => (ast::TypeInfo, <>)
+resolve_type_value = cg, expr =>
+   s = resolve_type_value_simple(expr)
+   s.1
+      | s
+      |
+         expr
+            [Var v]
+               is_user_type(cg, v)
+                  | (typedef_ti(cg, v), <+>)
+                  | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+            [Member m]
+               m.field_name == ""
+                  |
+                     tgt = resolve_type_value(cg, m.target)
+                     tgt.1
+                        | resolve_type_record_index(cg, tgt.0, m.index_expr)
+                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                  |
+                     m.field_name == "Type"
+                        |
+                           t_res = resolve_type_value(cg, m.target)
+                           t_res.1
+                              | t_res
+                              | resolve_type_val_member_type(cg, m)
+                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+            | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
+ctfe_eval_type_flag_simple: ast::Expr => (Int, <>)
+ctfe_eval_type_flag_simple = cond =>
+   cond
+      [Bin t]
+         op = t.0
+         is_eq = op [Eq]
+         is_neq = op [NotEq]
+         is_eq || is_neq
+            |
+               lt = resolve_type_value_simple(t.1)
+               rt = resolve_type_value_simple(t.2)
+               lt.1 && rt.1
+                  |
+                     eq = type_info_equal(lt.0, rt.0)
+                     flag = is_neq | !eq | eq
+                     (flag | 1 | 0, <+>)
+                  | (0, <->)
+            | (0, <->)
+      | (0, <->)
+
+ctfe_eval_type_flag: Cg, ast::Expr => (Int, <>)
+ctfe_eval_type_flag = cg, cond =>
+   cond
+      [Bin t]
+         op = t.0
+         is_eq = op [Eq]
+         is_neq = op [NotEq]
+         is_eq || is_neq
+            |
+               lt = resolve_type_value(cg, t.1)
+               rt = resolve_type_value(cg, t.2)
+               lt.1 && rt.1
+                  |
+                     eq = type_info_equal(lt.0, rt.0)
+                     flag = is_neq | !eq | eq
+                     (flag | 1 | 0, <+>)
+                  | (0, <->)
+            | (0, <->)
+      | (0, <->)
+
+ctfe_canonical_ti: Cg, ast::TypeInfo => ast::TypeInfo
+ctfe_canonical_ti = cg, ti =>
+   ti
+      [TypeVar n]
+         is_user_type(cg, n)
+            | typedef_ti(cg, n)
+            | ti
+      | ti
+
+is_rec_homo_fields: ast::FieldTypes, ast::TypeInfo, ast::ValueType, Int,
+   Int => <>
+is_rec_homo_fields = flds, f0_ti, f0_vt, i, n =>
+   i == n
+      | <+>
+      |
+         fi = flds(i) | _ | ast::RecordFieldType(("",
+            ast::ValueType(Unknown), ast::TypeInfo(Prim,
+            ast::ValueType(Unknown)), <->, ast::Expr(Int, 0)))
+         fi.val_type == f0_vt && type_info_equal(fi.rec_type, f0_ti)
+            | is_rec_homo_fields(flds, f0_ti, f0_vt, i + 1, n)
+            | <->
+
+is_rec_homo: ast::TypeInfo => <>
+is_rec_homo = ti =>
+   ti
+      [Rec r]
+         nf = ?r.0
+         nf == 0
+            | <->
+            |
+               f0 = r.0(0)!!
+               is_rec_homo_fields(r.0, f0.rec_type, f0.val_type, 1, nf)
+      | <->
+
+type_is_record: ast::TypeInfo => <>
+type_is_record = ti =>
+   ti
+      [Rec r] !r.1
+      [Prim p]
+         is_rec = p [Record, Unit]
+         is_rec
+      | <->
+
+type_is_enum: ast::TypeInfo => <>
+type_is_enum = ti =>
+   ti
+      [Enum _] <+>
+      [Prim p]
+         is_en = p [Enum]
+         is_en
+      | <->
+
+type_is_ram: ast::TypeInfo => <>
+type_is_ram = ti =>
+   ti
+      [Ram _] <+>
+      [Prim p]
+         is_rm = p [Ram, Flag]
+         is_rm
+      | <->
+
+type_is_fn: ast::TypeInfo => <>
+type_is_fn = ti =>
+   ti
+      [Fn _] <+>
+      [Prim p]
+         is_f = p [Fn]
+         is_f
+      | <->
+
+f0_is_unit: ast::FieldTypes => <>
+f0_is_unit = flds =>
+   ?flds == 1
+      |
+         f0 = flds(0)!!
+         f0.val_type [Unit]
+      | <->
+
+type_is_unit: ast::TypeInfo => <>
+type_is_unit = ti =>
+   ti
+      [Prim p]
+         is_u = p [Unit]
+         is_u
+      [Rec r]
+         !r.1 && (?r.0 == 0 || f0_is_unit(r.0))
+      | <->
+
+type_is_homogeneous: ast::TypeInfo => <>
+type_is_homogeneous = ti =>
+   ti
+      [Rec r] !r.1 && is_rec_homo(ti)
+      | <->
+
+type_is_array: ast::TypeInfo => <>
+type_is_array = ti =>
+   ti
+      [Array _] <+>
+      [Prim p]
+         is_arr = p [Array]
+         is_arr
+      | <->
+
+type_is_slice: ast::TypeInfo => <>
+type_is_slice = ti =>
+   ti
+      [Rec r] r.1
+      [Prim p]
+         is_sl = p [Slice]
+         is_sl
+      | <->
+
+type_is_map: ast::TypeInfo => <>
+type_is_map = ti =>
+   ti
+      [Map _] <+>
+      [Prim p]
+         is_mp = p [Map]
+         is_mp
+      | <->
+
+type_is_indexable: ast::TypeInfo => <>
+type_is_indexable = ti =>
+   ti
+      [Array, Map] <+>
+      [Rec r] r.1 || is_rec_homo(ti)
+      [Prim p]
+         is_idx = p [Array, Slice, Map, Str]
+         is_idx
+      | <->
+
+type_is_iterable: ast::TypeInfo => <>
+type_is_iterable = ti =>
+   ti
+      [Array, Map] <+>
+      [Rec r] r.1 || is_rec_homo(ti)
+      [Prim p]
+         is_it = p [Array, Slice, Map] || is_int_vt(p)
+         is_it
+      | <->
+
+type_is_scalar: ast::TypeInfo => <>
+type_is_scalar = ti =>
+   ti
+      [Prim p]
+         is_sc = p [RawPtr, Flag] || is_int_vt(p) || is_float_vt(p)
+         is_sc
+      | <->
+
+type_is_int: ast::TypeInfo => <>
+type_is_int = ti =>
+   ti
+      [Prim p] is_int_vt(p)
+      | <->
+
+type_is_float: ast::TypeInfo => <>
+type_is_float = ti =>
+   ti
+      [Prim p] is_float_vt(p)
+      | <->
+
+type_is_numeric: ast::TypeInfo => <>
+type_is_numeric = ti =>
+   ti
+      [Prim p]
+         is_num = is_int_vt(p) || is_float_vt(p)
+         is_num
+      | <->
+
+type_is_pointer: ast::TypeInfo => <>
+type_is_pointer = ti =>
+   ti
+      [Prim p]
+         is_ptr = p [RawPtr]
+         is_ptr
+      | <->
+
+type_pred_name_from_str: String => String
+type_pred_name_from_str = s =>
+   has_type_pfx = ?s > 6 && s(0..6) == "type::"
+   has_type_pfx
+      | s(6..(?s))
+      |
+         has_is_pfx = ?s > 3 && s(0..3) == "is_"
+         has_is_pfx
+            | s
+            | ""
+
+type_pred_name_from_expr: ast::Expr => String
+type_pred_name_from_expr = e =>
+   e
+      [Member m]
+         vname = m.target [Var v] v | ""
+         m.is_module_access || vname == "type"
+            | type_pred_name_from_str(m.field_name)
+            | ""
+      [Var v] type_pred_name_from_str(v)
+      | ""
+
+call_type_pred_name: ast::CallExpr => String
+call_type_pred_name = call =>
+   call.fn_name != ""
+      | type_pred_name_from_str(call.fn_name)
+      | type_pred_name_from_expr(call.fn_target)
+
+eval_type_predicate_simple: String, ast::TypeInfo => <>
+eval_type_predicate_simple = pred, ti =>
+   pred
+      ["is_record"] type_is_record(ti)
+      ["is_enum"] type_is_enum(ti)
+      ["is_ram"] type_is_ram(ti)
+      ["is_fn"] type_is_fn(ti)
+      ["is_unit"] type_is_unit(ti)
+      ["is_homogeneous"] type_is_homogeneous(ti)
+      ["is_array"] type_is_array(ti)
+      ["is_slice"] type_is_slice(ti)
+      ["is_map"] type_is_map(ti)
+      ["is_indexable"] type_is_indexable(ti)
+      ["is_iterable"] type_is_iterable(ti)
+      ["is_scalar"] type_is_scalar(ti)
+      ["is_int"] type_is_int(ti)
+      ["is_float"] type_is_float(ti)
+      ["is_numeric"] type_is_numeric(ti)
+      ["is_pointer"] type_is_pointer(ti)
+      | <->
+
+eval_type_predicate: Cg, String, ast::TypeInfo => <>
+eval_type_predicate = cg, pred, ti =>
+   eval_type_predicate_simple(pred, ctfe_canonical_ti(cg, ti))
+
+ctfe_variant_names_match: Cg, ast::Names, Int, Int, ast::TypeInfo => <>
+ctfe_variant_names_match = cg, vnames, i, n, target_ti =>
+   i == n
+      | <->
+      |
+         vname = vnames(i) | _ | ""
+         v_res = resolve_type_value(cg, ast::Expr(Var, vname))
+         v_res.1 && type_info_equal(ctfe_canonical_ti(cg, target_ti),
+            ctfe_canonical_ti(cg, v_res.0))
+            | <+>
+            | ctfe_variant_names_match(cg, vnames, i + 1, n, target_ti)
+
+ctfe_variant_names_match_simple: ast::Names, Int, Int, ast::TypeInfo => <>
+ctfe_variant_names_match_simple = vnames, i, n, target_ti =>
+   i == n
+      | <->
+      |
+         vname = vnames(i) | _ | ""
+         v_res = resolve_type_value_simple(ast::Expr(Var, vname))
+         v_res.1 && type_info_equal(target_ti, v_res.0)
+            | <+>
+            | ctfe_variant_names_match_simple(vnames, i + 1, n, target_ti)
+
+ctfe_case_values_match: Cg, ast::Exprs, Int, Int, ast::TypeInfo => <>
+ctfe_case_values_match = cg, cvals, i, n, target_ti =>
+   i == n
+      | <->
+      |
+         cval = cvals(i) | _ | ast::Expr(Int, 0)
+         pred = type_pred_name_from_expr(cval)
+         pred != ""
+            |
+               matched = eval_type_predicate(cg, pred, target_ti)
+               matched
+                  | <+>
+                  | ctfe_case_values_match(cg, cvals, i + 1, n, target_ti)
+            |
+               c_res = resolve_type_value(cg, cval)
+               c_res.1 && type_info_equal(ctfe_canonical_ti(cg, target_ti),
+                  ctfe_canonical_ti(cg, c_res.0))
+                  | <+>
+                  | ctfe_case_values_match(cg, cvals, i + 1, n, target_ti)
+
+ctfe_case_values_match_simple: ast::Exprs, Int, Int, ast::TypeInfo => <>
+ctfe_case_values_match_simple = cvals, i, n, target_ti =>
+   i == n
+      | <->
+      |
+         cval = cvals(i) | _ | ast::Expr(Int, 0)
+         pred = type_pred_name_from_expr(cval)
+         pred != ""
+            |
+               matched = eval_type_predicate_simple(pred, target_ti)
+               matched
+                  | <+>
+                  | ctfe_case_values_match_simple(cvals, i + 1, n, target_ti)
+            |
+               c_res = resolve_type_value_simple(cval)
+               c_res.1 && type_info_equal(target_ti, c_res.0)
+                  | <+>
+                  | ctfe_case_values_match_simple(cvals, i + 1, n, target_ti)
+
+ctfe_branch_matches_type: Cg, ast::ChoiceBranch, ast::TypeInfo => <>
+ctfe_branch_matches_type = cg, br, target_ti =>
+   is_bare = br.kind [Bare]
+   is_bare
+      | <+>
+      |
+         br.kind
+            [Variant]
+               ctfe_variant_names_match(cg, br.variant_names, 0,
+                  ?br.variant_names, target_ti)
+            [Case]
+               ctfe_case_values_match(cg, br.case_values, 0,
+                  ?br.case_values, target_ti)
+            [Predicate]
+               pred = type_pred_name_from_expr(br.pred_fn)
+               pred != ""
+                  | eval_type_predicate(cg, pred, target_ti)
+                  | <->
+            | <->
+
+ctfe_branch_matches_type_simple: ast::ChoiceBranch, ast::TypeInfo => <>
+ctfe_branch_matches_type_simple = br, target_ti =>
+   is_bare = br.kind [Bare]
+   is_bare
+      | <+>
+      |
+         br.kind
+            [Variant]
+               ctfe_variant_names_match_simple(br.variant_names, 0,
+                  ?br.variant_names, target_ti)
+            [Case]
+               ctfe_case_values_match_simple(br.case_values, 0,
+                  ?br.case_values, target_ti)
+            [Predicate]
+               pred = type_pred_name_from_expr(br.pred_fn)
+               pred != ""
+                  | eval_type_predicate_simple(pred, target_ti)
+                  | <->
+            | <->
+
+ctfe_find_matching_type_branch: Cg, ast::Branches, Int, Int,
+   ast::TypeInfo => Int
+ctfe_find_matching_type_branch = cg, branches, i, n, target_ti =>
+   i == n
+      | -1
+      |
+         br = branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
+            ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+            ast::Expr(Int, 0)))
+         ctfe_branch_matches_type(cg, br, target_ti)
+            | i
+            | ctfe_find_matching_type_branch(cg, branches, i + 1, n, target_ti)
+
+ctfe_find_matching_type_branch_simple: ast::Branches, Int, Int,
+   ast::TypeInfo => Int
+ctfe_find_matching_type_branch_simple = branches, i, n, target_ti =>
+   i == n
+      | -1
+      |
+         br = branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
+            ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+            ast::Expr(Int, 0)))
+         ctfe_branch_matches_type_simple(br, target_ti)
+            | i
+            | ctfe_find_matching_type_branch_simple(branches, i + 1, n,
+               target_ti)
+
+ctfe_eval_type_choice_simple: ast::ChoiceExpr => (Int, <>)
+ctfe_eval_type_choice_simple = c =>
+   ct = ctfe_eval_type_flag_simple(c.cond)
+   ct.1
+      |
+         idx' = ct.0 == 0 | 1 | 0
+         (idx', <+>)
+      |
+         cond_ti = resolve_type_value_simple(c.cond)
+         cond_ti.1
+            |
+               idx' = ctfe_find_matching_type_branch_simple(c.branches, 0,
+                  ?c.branches, cond_ti.0)
+               (idx', <+>)
+            | (-1, <->)
+
+ctfe_eval_type_choice: Cg, ast::ChoiceExpr => (Int, <>)
+ctfe_eval_type_choice = cg, c =>
+   ct = ctfe_eval_type_flag(cg, c.cond)
+   ct.1
+      |
+         idx' = ct.0 == 0 | 1 | 0
+         (idx', <+>)
+      |
+         cond_ti = resolve_type_value(cg, c.cond)
+         cond_ti.1
+            |
+               idx' = ctfe_find_matching_type_branch(cg, c.branches, 0,
+                  ?c.branches, cond_ti.0)
+               (idx', <+>)
+            | (-1, <->)
+
+// The positive slot's payload ValueType of a declared ram TypeInfo.
+ram_payload_type: ast::TypeInfo => ast::ValueType
+ram_payload_type = ti =>
+   ti
+      [Ram s] s.0.payload_type
+      | ast::ValueType(Unknown)
+
+// The slot index of a variant label in a declared enum's slots (-1 if absent).
+// The EnumSlots array is threaded through a param (an '['Enum s']'-bound local
+// lacks the array TypeInfo for direct indexing — an earlier bind gap).
+enum_slot_index: ast::EnumSlots, String => Int
+enum_slot_index = slots, label => enum_find_index(slots, label, 0)
+
+enum_find_index: ast::EnumSlots, String, Int => Int
+enum_find_index = s, label, acc =>
+   (acc < ?s)
+      |
+         sl = s(acc)!!
+         sl.label == label | acc | enum_find_index(s, label, acc + 1)
+      | -1
+
+// The payload ValueType of a variant slot (Unknown if it carries none).
+enum_slot_payload: ast::EnumSlots, String => ast::ValueType
+enum_slot_payload = slots, label => enum_find_payload(slots, label, ast::ValueType(Unknown))
+
+enum_find_payload: ast::EnumSlots, String, ast::ValueType => ast::ValueType
+enum_find_payload = s, label, fallback =>
+   idx = enum_find_index(s, label, 0)
+   (idx !< 0)
+      |
+         sl = s(idx)!!
+         sl.payload_type
+      | fallback
+
+enum_slot_ti: ast::EnumSlots, String => ast::TypeInfo
+enum_slot_ti = slots, label =>
+   enum_find_ti(slots, label, ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+
+enum_find_ti: ast::EnumSlots, String, ast::TypeInfo => ast::TypeInfo
+enum_find_ti = s, label, fallback =>
+   idx = enum_find_index(s, label, 0)
+   (idx !< 0)
+      |
+         sl = s(idx)!!
+         sl.payload_record
+      | fallback
+
+resolve_record_ti: Cg, ast::TypeInfo => ast::TypeInfo
+resolve_record_ti = cg, ti =>
+   ti
+      [TypeVar name]
+         is_user_type(cg, name)
+            | typedef_ti(cg, name)
+            | ti
+      | ti
+
+// A variant-only choice over an enum must name every variant unless it has a
+// trailing bare fallback. Coverage is static: erased runtime unions contain
+// no schema or descriptor.
+codegen_check_enum_choice_coverage: Cg, ast::EnumSlots, ast::Branches => ()
+codegen_check_enum_choice_coverage = cg, slots, branches =>
+   hb = enum_choice_has_bare(branches, 0)
+   !cg.discard_result && !hb
+      | codegen_check_enum_choice_without_bare(cg, slots, branches)
+
+codegen_check_enum_choice_without_bare: Cg, ast::EnumSlots, ast::Branches => ()
+codegen_check_enum_choice_without_bare = cg, slots, branches =>
+   missing = enum_choice_missing_labels(slots, branches, 0, "")
+   missing != ""
+      | init_error(cg, "E3102", "Choice over an enum does not cover " +
+         "variants: " + missing + " — add a branch for each or a trailing " +
+         "'|' fallback.", 0, 0)
+
+enum_choice_has_bare: ast::Branches, Int => <>
+enum_choice_has_bare = branches, at =>
+   at == ?branches
+      | <->
+      |
+         br = branches(at)!!
+         is_bare = br.kind [Bare]
+         is_bare | <+> | enum_choice_has_bare(branches, at + 1)
+
+enum_choice_missing_labels: ast::EnumSlots, ast::Branches, Int, String => String
+enum_choice_missing_labels = slots, branches, at, found =>
+   at == ?slots
+      | found
+      |
+         slot = slots(at)!!
+         has = enum_choice_has_label(branches, slot.label, 0)
+         next = enum_choice_missing_next(has, found, slot.label)
+         enum_choice_missing_labels(slots, branches, at + 1, next)
+
+enum_choice_missing_next: <>, String, String => String
+enum_choice_missing_next = has, found, label =>
+   has | found | enum_choice_missing_append(found, label)
+
+enum_choice_missing_append: String, String => String
+enum_choice_missing_append = found, label =>
+   found == "" | label | found + ", " + label
+
+enum_choice_has_label: ast::Branches, String, Int => <>
+enum_choice_has_label = branches, label, at =>
+   at == ?branches
+      | <->
+      |
+         br = branches(at)!!
+         is_var = br.kind [Variant]
+         is_var
+            |
+               has_str(br.variant_names, label)
+                  | <+>
+                  | enum_choice_has_label(branches, label, at + 1)
+            | enum_choice_has_label(branches, label, at + 1)
+
+call_arg_is_splat: ast::Expr => <>
+call_arg_is_splat = a =>
+   a
+      [Range r] !r.has_lhs && r.has_rhs
+      | <->
+
+call_arg_is_named: ast::Expr => <>
+call_arg_is_named = a => a [NamedArg _]
+
+call_has_splat_or_named: ast::Exprs, Int, Int => <>
+call_has_splat_or_named = args, i, n =>
+   i !< n
+      | <->
+      |
+         a = args(i) | _ | ast::Expr(Int, 0)
+         call_arg_is_splat(a) || call_arg_is_named(a)
+            | <+>
+            | call_has_splat_or_named(args, i + 1, n)
+
+codegen_copy_base_fields: Cg, Addr, Addr, Addr, ast::FieldTypes, ast::VTypes,
+   Flags, Int => ()
+codegen_copy_base_fields = cg, dst, base_ev, tgt_rt, flds, tfvts, fin, n =>
+   n @ k =>
+      rf_base = flds(k)!!
+      src_idx = member_index(cg.last_fnames, rf_base.name)
+      src_idx !< 0
+         |
+            src_gep = record_field_gep(cg, cg.last_rt, cg.last_fvts,
+               base_ev, src_idx)
+            dst_gep = record_field_gep(cg, tgt_rt, tfvts, dst, k)
+            src_fvt = cg.last_fvts(src_idx)!!
+            tgt_fvt = tfvts(k)!!
+            is_rf_base = src_fvt [Record] || (tgt_fvt [Record])
+            is_rf_base
+               |
+                  ft_base = llvm::LLVMStructGetTypeAtIndex(tgt_rt, k)
+                  isz_base = llvm::LLVMSizeOf(ft_base)
+                  llvm::LLVMBuildMemCpy(cg.builder, dst_gep, 1,
+                     src_gep, 1, isz_base, 0)
+               |
+                  sty = src_fvt != ast::ValueType(Unknown)
+                     | llvm_type_of_vt(src_fvt)
+                     | llvm::LLVMStructGetTypeAtIndex(cg.last_rt, src_idx)
+                  selem = llvm::LLVMBuildLoad2(cg.builder, sty, src_gep,
+                     "base.elem")
+                  dft = llvm::LLVMStructGetTypeAtIndex(tgt_rt, k)
+                  cval_base = stmt::coerce_int(cg, selem, dft)
+                  llvm::LLVMBuildStore(cg.builder, cval_base, dst_gep)
+            fin(k) = <+> !| _
+
+codegen_eval_record_ctor: Cg, ast::TypeInfo,
+   ast::CallExpr => (Addr, ast::ValueType)
+codegen_eval_record_ctor = cg, ti, t =>
+   rm = runtime::record_meta_from_ti(cg, ti)
+   tgt_fvts = field_vts(cg, ti)
+   tgt_nf = ?tgt_fvts
+   nargs = ?t.args
+   is_update = call_has_splat_or_named(t.args, 0, nargs) ||
+      (nargs == 0 && tgt_nf > 0)
+   is_update
+      |
+         sz' = rm.0 != Addr(0) | llvm::LLVMSizeOf(rm.0) |
+            llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0)
+         dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
+         dst' = llvm::LLVMBuildPointerCast(cg.builder, dst',
+            llvm::LLVMPointerType(rm.0, 0), "record.ptr")
+         fields = ti [Rec r] r.0 | ast::FieldTypes()
+         f_init = Flags()
+         tgt_nf @ _ => f_init += <->
+         nargs @ i =>
+            sarg = t.args(i) | _ | ast::Expr(Int, 0)
+            sarg [Range r]
+               !r.has_lhs && r.has_rhs
+                  |
+                     is_def = r.rhs [Var v] (v == "default") | <->
+                     !is_def
+                        |
+                           base_ev = expr::codegen_eval(cg, r.rhs)
+                           is_same = cg.last_rt == rm.0
+                           is_same
+                              |
+                                 llvm::LLVMBuildMemCpy(cg.builder, dst', 1,
+                                    base_ev.0, 1, sz', 0)
+                                 tgt_nf @ k =>
+                                    f_init(k) = <+> !| _
+                              |
+                                 codegen_copy_base_fields(cg, dst', base_ev.0,
+                                    rm.0, fields, tgt_fvts, f_init, tgt_nf)
+         nargs @ i =>
+            uarg = t.args(i) | _ | ast::Expr(Int, 0)
+            !call_arg_is_splat(uarg)
+               |
+                  uarg
+                     [NamedArg na]
+                        idx_named = member_index(rm.1, na.name)
+                        idx_named < 0
+                           |
+                              init_error(cg, "E3117", "Record '" + t.fn_name +
+                                 "' has no field '" + na.name + "'",
+                                 t.line, t.col)
+                           |
+                              ev_named = expr::codegen_eval(cg, na.val)
+                              dst_gep_named = record_field_gep(cg, rm.0,
+                                 tgt_fvts, dst', idx_named)
+                              tgt_fvt_named = tgt_fvts(idx_named)!!
+                              is_rf_named = ev_named.1 [Record] ||
+                                 (tgt_fvt_named [Record])
+                              is_rf_named
+                                 |
+                                    ft_named' = llvm::LLVMStructGetTypeAtIndex(
+                                       rm.0, idx_named)
+                                    isz_named = llvm::LLVMSizeOf(ft_named')
+                                    llvm::LLVMBuildMemCpy(cg.builder,
+                                       dst_gep_named, 1, ev_named.0, 1,
+                                       isz_named, 0)
+                                 |
+                                    ft_named' = llvm::LLVMStructGetTypeAtIndex(
+                                       rm.0, idx_named)
+                                    cval_named = stmt::coerce_int(cg, ev_named.0,
+                                       ft_named')
+                                    llvm::LLVMBuildStore(cg.builder,
+                                       cval_named, dst_gep_named)
+                              f_init(idx_named) = <+> !| _
+                     |
+                        i < tgt_nf
+                           |
+                              ev_pos = expr::codegen_eval(cg, uarg)
+                              dst_gep_pos = record_field_gep(cg, rm.0,
+                                 tgt_fvts, dst', i)
+                              tgt_fvt_pos = tgt_fvts(i)!!
+                              is_rf_pos = ev_pos.1 [Record] ||
+                                 (tgt_fvt_pos [Record])
+                              is_rf_pos
+                                 |
+                                    ft_pos' = llvm::LLVMStructGetTypeAtIndex(
+                                       rm.0, i)
+                                    isz_pos = llvm::LLVMSizeOf(ft_pos')
+                                    llvm::LLVMBuildMemCpy(cg.builder,
+                                       dst_gep_pos, 1, ev_pos.0, 1,
+                                       isz_pos, 0)
+                                 |
+                                    ft_pos' = llvm::LLVMStructGetTypeAtIndex(
+                                       rm.0, i)
+                                    cval_pos = stmt::coerce_int(cg, ev_pos.0,
+                                       ft_pos')
+                                    llvm::LLVMBuildStore(cg.builder,
+                                       cval_pos, dst_gep_pos)
+                              f_init(i) = <+> !| _
+         tgt_nf @ i =>
+            is_init = f_init(i)!!
+            !is_init
+               |
+                  rf_def = fields(i)!!
+                  rf_def.has_default
+                     |
+                        def_ev = expr::codegen_eval(cg, rf_def.default_expr)
+                        dst_gep_def = record_field_gep(cg, rm.0, tgt_fvts,
+                           dst', i)
+                        tgt_fvt_def = tgt_fvts(i)!!
+                        is_rf_def = def_ev.1 [Record] || (tgt_fvt_def [Record])
+                        is_rf_def
+                           |
+                              ft_def' = llvm::LLVMStructGetTypeAtIndex(rm.0, i)
+                              isz_def = llvm::LLVMSizeOf(ft_def')
+                              llvm::LLVMBuildMemCpy(cg.builder, dst_gep_def, 1,
+                                 def_ev.0, 1, isz_def, 0)
+                           |
+                              ft_def' = llvm::LLVMStructGetTypeAtIndex(rm.0, i)
+                              cval_def = stmt::coerce_int(cg, def_ev.0, ft_def')
+                              llvm::LLVMBuildStore(cg.builder, cval_def,
+                                 dst_gep_def)
+                     |
+                        init_error(cg, "E3130", "Field '" + rf_def.name +
+                           "' of '" + t.fn_name +
+                           "' has no default value and was not provided.",
+                           t.line, t.col)
+         cg.last_rt = rm.0
+         cg.last_fnames = rm.1
+         cg.last_fvts = tgt_fvts
+         t.fn_name != "" | cg.last_type = t.fn_name
+         (dst', ast::ValueType(Record))
+      |
+         nargs == 1
+            |
+               arg0 = t.args(0)!!
+               src_ev = expr::codegen_eval(cg, arg0)
+               src_val = src_ev.0
+               src_vt = src_ev.1
+               src_rt = cg.last_rt
+               src_fvts = cg.last_fvts
+               tgt_nf == 1
+                  |
+                     sz' = rm.0 != Addr(0) | llvm::LLVMSizeOf(rm.0) |
+                        llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0)
+                     dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
+                     llvm::LLVMBuildPointerCast(cg.builder, dst',
+                        llvm::LLVMPointerType(rm.0, 0), "record.ptr")
+                     dst_gep' = record_field_gep(cg, rm.0, tgt_fvts, dst', 0)
+                     tgt_fvt0 = tgt_fvts(0) | _ | ast::ValueType(Unknown)
+                     is_rec_0 = src_vt [Record] || (tgt_fvt0 [Record])
+                     is_rec_0
+                        |
+                           ft' = llvm::LLVMStructGetTypeAtIndex(rm.0, 0)
+                           inner_sz' = llvm::LLVMSizeOf(ft')
+                           llvm::LLVMBuildMemCpy(cg.builder, dst_gep', 1,
+                              src_val, 1, inner_sz', 0)
+                        |
+                           llvm::LLVMBuildStore(cg.builder, src_val, dst_gep')
+                     cg.last_rt = rm.0
+                     cg.last_fnames = rm.1
+                     cg.last_fvts = tgt_fvts
+                     t.fn_name != "" | cg.last_type = t.fn_name | 0
+                     (dst', ast::ValueType(Record))
+                  |
+                     is_rec = src_vt [Record]
+                     is_rec && src_rt != Addr(0)
+                        |
+                           sz' = rm.0 != Addr(0) | llvm::LLVMSizeOf(rm.0) |
+                              llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0)
+                           dst' = expr::codegen_call_arena_alloc(cg, sz',
+                              "record.cast.alloc")
+                           llvm::LLVMBuildPointerCast(cg.builder, dst',
+                              llvm::LLVMPointerType(rm.0, 0), "record.cast.ptr")
+                           tgt_nf @ i =>
+                              src_gep = record_field_gep(cg, src_rt, src_fvts,
+                                 src_val, i)
+                              dst_gep' = record_field_gep(cg, rm.0, tgt_fvts,
+                                 dst', i)
+                              src_fvt = src_fvts(i) | _ |
+                                 ast::ValueType(Unknown)
+                              tgt_fvt' = tgt_fvts(i) | _ |
+                                 ast::ValueType(Unknown)
+                              is_rec_f' = src_fvt [Record] || (tgt_fvt' [Record])
+                              is_rec_f'
+                                 |
+                                    ft' = llvm::LLVMStructGetTypeAtIndex(
+                                       rm.0, i)
+                                    inner_sz' = llvm::LLVMSizeOf(ft')
+                                    llvm::LLVMBuildMemCpy(cg.builder,
+                                       dst_gep', 1, src_gep, 1, inner_sz', 0)
+                                 |
+                                    src_elem_ty =
+                                       src_fvt != ast::ValueType(Unknown)
+                                          | llvm_type_of_vt(src_fvt)
+                                          | llvm::LLVMStructGetTypeAtIndex(
+                                             src_rt, i)
+                                    src_elem = llvm::LLVMBuildLoad2(cg.builder,
+                                       src_elem_ty, src_gep, "cast.src.elem")
+                                    llvm::LLVMBuildStore(cg.builder, src_elem,
+                                       dst_gep')
+                           cg.last_rt = rm.0
+                           cg.last_fnames = rm.1
+                           cg.last_fvts = tgt_fvts
+                           t.fn_name != "" | cg.last_type = t.fn_name | 0
+                           (dst', ast::ValueType(Record))
+                        |
+                           i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+                           dst' = is_ptrish_vt(src_vt)
+                              | src_val
+                              | llvm::LLVMBuildIntToPtr(cg.builder, src_val,
+                                 i8p, "cast.int2ptr")
+                           cg.last_rt = rm.0
+                           cg.last_fnames = rm.1
+                           cg.last_fvts = tgt_fvts
+                           t.fn_name != "" | cg.last_type = t.fn_name | 0
+                           (dst', ast::ValueType(Record))
+            |
+               sz' = rm.0 != Addr(0) | llvm::LLVMSizeOf(rm.0) |
+                  llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0)
+               dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
+               llvm::LLVMBuildPointerCast(cg.builder, dst',
+                  llvm::LLVMPointerType(rm.0, 0), "record.ptr")
+               tgt_nf @ i =>
+                  av = t.args(i)!!
+                  ev = expr::codegen_eval(cg, av)
+                  dst_gep' = record_field_gep(cg, rm.0, tgt_fvts, dst', i)
+                  tgt_fvt' = tgt_fvts(i) | _ | ast::ValueType(Unknown)
+                  is_rec_f' = ev.1 [Record] || (tgt_fvt' [Record])
+                  is_rec_f'
+                     |
+                        ft' = llvm::LLVMStructGetTypeAtIndex(rm.0, i)
+                        inner_sz' = llvm::LLVMSizeOf(ft')
+                        llvm::LLVMBuildMemCpy(cg.builder, dst_gep', 1, ev.0, 1,
+                           inner_sz', 0)
+                     |
+                        llvm::LLVMBuildStore(cg.builder, ev.0, dst_gep')
+               cg.last_rt = rm.0
+               cg.last_fnames = rm.1
+               cg.last_fvts = tgt_fvts
+               t.fn_name != "" | cg.last_type = t.fn_name | 0
+               (dst', ast::ValueType(Record))
+
+// A declared type constructor call: an ENUM builds a heap union (tag = the
+// variant label's slot index, payload from the optional second arg); a RAM's
+// single arg is passed through (it is already a heap union).
+codegen_eval_ctor: Cg, ast::TypeInfo, ast::CallExpr => (Addr, ast::ValueType)
+codegen_eval_ctor = cg, ti, t =>
+   ti
+      [Array ae]
+         u' = main::codegen_array_create(cg, "a.new")
+         (u', ast::ValueType(Array))
+      [Map mk]
+         u' = runtime::codegen_map_create(cg, "m.new")
+         (u', ast::ValueType(Map))
+      [Enum s]
+         slots = ti [Enum s2] s2 | ast::EnumSlots()
+         lbl = t.args(0)!!
+         lname = lbl [Var v] v | ""
+         is_pt = var_dtype(cg, lname) == t.fn_name
+         is_pt
+            |
+               lv = codegen_load(cg, lname)
+               cg.last_type = t.fn_name
+               lv
+            |
+               codegen_check_enum_ctor(cg, t.fn_name, slots, t)
+               idx = enum_slot_index(slots, lname)
+               na = ?t.args
+               na > 1
+                  |
+                     pv = t.args(1)!!
+                     payargs = ast::Exprs()
+                     payargs += pv
+                     u' = codegen_build_union(cg, idx, payargs, "enum.alloc")
+                     cg.last_type = t.fn_name
+                     (u', ast::ValueType(Enum))
+                  |
+                     u2 = codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
+                     cg.last_type = t.fn_name
+                     (u2, ast::ValueType(Enum))
+      [Rec rr]
+         codegen_eval_record_ctor(cg, ti, t)
+      [Ram slots]
+         codegen_eval_ram_ctor(cg, t.fn_name, slots, t)
+      |
+         arg2 = t.args(0)!!
+         expr::codegen_eval(cg, arg2)
+
+// Enum constructor calls are statically checked before their erased union is
+// materialized. The union retains only its tag and payload at runtime; label
+// and payload-schema information remains in the declared TypeInfo here.
+codegen_check_enum_ctor: Cg, String, ast::EnumSlots, ast::CallExpr => ()
+codegen_check_enum_ctor = cg, enum_name, slots, call =>
+   lbl = call.args(0)!!
+   label = lbl [Var v] v | ""
+   idx = enum_slot_index(slots, label)
+   idx < 0
+      | init_error(cg, "E3096", "Enum '" + enum_name +
+         "' has no variant labeled '" + label + "'.", call.line, call.col)
+   idx !< 0
+      |
+         payload = enum_slot_payload(slots, label)
+         has_payload = enum_slot_has_payload(slots, label)
+         nargs = ?call.args
+         !has_payload && nargs > 1
+            | init_error(cg, "E3098", "Enum '" + enum_name + "' variant '" +
+               label + "' is a bare unit and takes no payload argument.",
+               call.line, call.col)
+         has_payload && nargs > 1
+            |
+               actual = static_expr_vt(cg, call.args(1)!!)
+               actual != ast::ValueType(Unknown) && actual != payload
+                  | init_error(cg, "E3099", "Enum '" + enum_name +
+                     "' variant '" + label + "' expects payload of type " +
+                     value_type_name(payload) + ", got " +
+                     value_type_name(actual) + ".", call.line, call.col)
+
+enum_slot_has_payload: ast::EnumSlots, String => <>
+enum_slot_has_payload = slots, label =>
+   idx = enum_slot_index(slots, label)
+   idx !< 0
+      | slots(idx)!!.has_payload
+      | <->
+
+// This scanner deliberately leaves unknown values for later unification; it
+// never invents an Int default for an unresolved expression.
+static_expr_vt: Cg, ast::Expr => ast::ValueType
+static_expr_vt = cg, e =>
+   e
+      [Int _] ast::ValueType(Int)
+      [Rune _] ast::ValueType(Rune)
+      [Float _] ast::ValueType(Float)
+      [TypeCast t] t.target_type
+      [Str _] ast::ValueType(Str)
+      [Var v] var_type(cg, v)
+      [Unary u]
+         u.0
+            [Freeze] ast::ValueType(Str)
+            [AddrOf] ast::ValueType(RawPtr)
+            | ast::ValueType(Unknown)
+      [Bin bt]
+         bt.0
+            [Add]
+               is_str_vt(static_expr_vt(cg, bt.1)) ||
+                  is_str_vt(static_expr_vt(cg, bt.2))
+                  | ast::ValueType(Str)
+                  | ast::ValueType(Unknown)
+            | ast::ValueType(Unknown)
+      [Variant v]
+         is_flag = v.tag_name [Positive, Negative] && ?v.args == 0
+         is_flag | ast::ValueType(Flag) | ast::ValueType(Ram)
+      [Record _] ast::ValueType(Record)
+      [Fn _] ast::ValueType(Fn)
+      [Call c]
+         c.fn_name == "Builder" && ?c.args == 0
+            | ast::ValueType(Builder)
+            |
+               is_user_type(cg, c.fn_name)
+                  |
+                     ti = typedef_ti(cg, c.fn_name)
+                     ti
+                        [Enum _] ast::ValueType(Enum)
+                        [Ram _] ast::ValueType(Ram)
+                        [Rec _] ast::ValueType(Record)
+                        [Map _] ast::ValueType(Map)
+                        [Array _] ast::ValueType(Array)
+                        | ast::ValueType(Unknown)
+                  | ast::ValueType(Unknown)
+      | ast::ValueType(Unknown)
+
+value_type_name: ast::ValueType => String
+value_type_name = vt =>
+   vt
+      [Unknown] "Unknown"
+      [Int] "Int"
+      [I8] "I8"
+      [I16] "I16"
+      [I32] "I32"
+      [I64] "I64"
+      [U8] "U8"
+      [U16] "U16"
+      [U32] "U32"
+      [U64] "U64"
+      [Rune] "Rune"
+      [Float] "Float"
+      [F32] "F32"
+      [Str] "String"
+      [Flag] "Flag"
+      [Ram] "Ramification"
+      [Enum] "Enum"
+      [Record] "Record"
+      [Unit] "Void"
+      [RawPtr] "Addr"
+      [Fn] "Function"
+      [Type] "Type"
+      [Slice] "Slice"
+      [Builder] "Builder"
+      [Array] "Array"
+      [Map] "Map"
+      [Error] "Error"
+      [ThreadId] "ThreadId"
+      | "unknown"
+
+// Named ram construction checks the literal against the declared slot layout
+// while leaving the runtime value as the same erased union/flag representation.
+codegen_eval_ram_ctor: Cg, String, (ast::RamSlotInfo, ast::RamSlotInfo), ast::CallExpr => (Addr, ast::ValueType)
+codegen_eval_ram_ctor = cg, name, slots, call =>
+   arg = call.args(0)!!
+   codegen_check_ram_ctor(cg, name, slots, call, arg)
+   res = expr::codegen_eval(cg, arg)
+   cg.last_type = name
+   res
+
+codegen_check_ram_ctor: Cg, String, (ast::RamSlotInfo, ast::RamSlotInfo), ast::CallExpr, ast::Expr => ()
+codegen_check_ram_ctor = cg, name, slots, call, arg =>
+   arg
+      [Variant v] codegen_check_ram_variant(cg, name, slots, call, v)
+      |
+         actual = static_expr_vt(cg, arg)
+         actual != ast::ValueType(Ram)
+            | init_error(cg, "E3055", "Ramification '" + name +
+               "' expects a ramification value, got type " +
+               value_type_name(actual) + ".", call.line, call.col)
+
+codegen_check_ram_variant: Cg, String, (ast::RamSlotInfo, ast::RamSlotInfo), ast::CallExpr, ast::VariantExpr => ()
+codegen_check_ram_variant = cg, name, slots, call, variant =>
+   ram_slots_are_flag(slots) && ram_tag_is_heap_unit(variant.tag_name)
+      | init_error(cg, "E3090", "Ramification '" + name +
+         "' is a Flag (<>), whose unit branches are '<+>' (Positive) or " +
+         "'<->' (Negative), got '" + ram_tag_name(variant.tag_name) +
+         "'. '<++>'/'<-->' are heap-ram units and never coerce down.",
+         call.line, call.col)
+   !ram_slots_are_flag(slots) && !ram_tag_is_heap_unit(variant.tag_name) &&
+      (?variant.args == 0)
+      | init_error(cg, "E3083", "Ramification '" + name +
+         "' unit branch must use '<++>' (Succ) or '<-->' (Noth). '<+>' and " +
+         "'<->' are Flags and do not coerce into heap rams.", call.line, call.col)
+   slot = ram_tag_is_positive(variant.tag_name) | slots.0 | slots.1
+   has_payload = ?variant.args > 0
+   !slot.has_payload && has_payload
+      | init_error(cg, "E3053", "Ramification '" + name +
+         "' expects a unit slot here, but this value has a payload. Tag '" +
+         ram_tag_name(variant.tag_name) + "' (" +
+         str::from_int(tag_id_of(variant.tag_name)) + ").", call.line, call.col)
+   slot.has_payload && has_payload
+      |
+         slot_pt = slot_payload_type(cg, slot)
+         actual = static_expr_vt(cg, variant.args(0)!!)
+         actual != ast::ValueType(Unknown) && actual != slot_pt
+            | init_error(cg, "E3054", "Ramification '" + name + "' slot '" +
+               ram_slot_name(variant.tag_name) + "' expects payload of type " +
+               value_type_name(slot_pt) + ", got " +
+               value_type_name(actual) + ".", call.line, call.col)
+
+ram_slots_are_flag: (ast::RamSlotInfo, ast::RamSlotInfo) => <>
+ram_slots_are_flag = slots => !slots.0.has_payload && !slots.1.has_payload
+
+ram_tag_is_positive: ast::Tag => <>
+ram_tag_is_positive = tag =>
+   tag == ast::Tag(Positive) || tag == ast::Tag(Some) || tag == ast::Tag(Succ)
+
+ram_tag_is_heap_unit: ast::Tag => <>
+ram_tag_is_heap_unit = tag => tag == ast::Tag(Succ) || tag == ast::Tag(Noth)
+
+ram_tag_is_flag: ast::Tag => <>
+ram_tag_is_flag = tag => tag == ast::Tag(Positive) || tag == ast::Tag(Negative)
+
+ram_tag_name: ast::Tag => String
+ram_tag_name = tag =>
+   tag
+      [Positive] "Positive"
+      [Negative] "Negative"
+      [Some] "Some"
+      [Err] "Err"
+      [Succ] "Succ"
+      | "Noth"
+
+ram_slot_name: ast::Tag => String
+ram_slot_name = tag => ram_tag_is_positive(tag) | "Some" | "Err"
+
+// A bare label is valid only when a single enum declares it. Existing local
+// bindings win normally; this check is for an otherwise unresolved name.
+codegen_check_ambiguous_enum_label: Cg, String => ()
+codegen_check_ambiguous_enum_label = cg, label =>
+   has_slot = <>(var_slot(cg, label))
+   has_slot
+      | 0
+      |
+         owners = enum_label_owner_count(cg, label, 0)
+         owners > 1
+            | init_error(cg, "E3105", "Enum label '" + label +
+               "' is ambiguous — declared by multiple enums; qualify the " +
+               "variant as 'Enum::" + label + "'.", 0, 0)
+
+codegen_eval_enum_label_val: Cg, String, Int => (Addr, ast::ValueType)
+codegen_eval_enum_label_val = cg, label, owners =>
+   owners > 1
+      |
+         init_error(cg, "E3105", "Enum label '" + label +
+            "' is ambiguous — declared by multiple enums; qualify the " +
+            "variant as 'Enum::" + label + "'.", 0, 0)
+         (Addr(0), ast::ValueType(Unknown))
+      |
+         es = match::enum_slots_for_label(cg, label)
+         idx = enum_slot_index(es.1, label)
+         u = codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
+         cg.last_type = es.0
+         (u, ast::ValueType(Enum))
+
+enum_label_owner_count_at: Cg, String, Int, Int, Int => Int
+enum_label_owner_count_at = cg, label, i, n, seen =>
+   i == n
+      | seen
+      |
+         td = cg.typedefs(i)!!
+         has_lbl = td.ti [Enum slots] (enum_slot_index(slots, label) !< 0 | 1 | 0) | 0
+         enum_label_owner_count_at(cg, label, i + 1, n, seen + has_lbl)
+
+enum_label_owner_count: Cg, String, Int => Int
+enum_label_owner_count = cg, label, count =>
+   enum_label_owner_count_at(cg, label, 0, ?cg.typedefs, count)
+
+codegen_map_literal_insert_rest: Cg, Addr, ast::MapPairs, Int, Int, ast::ValueType => ()
+codegen_map_literal_insert_rest = cg, m, pairs, i, n, key_vt =>
+   i == n
+      | 0
+      |
+         p = pairs(i)!!
+         kv = expr::codegen_eval(cg, p.key)
+         vv = expr::codegen_eval(cg, p.value)
+         runtime::codegen_map_insert(cg, m, kv.0, vv.0, key_vt)
+         codegen_map_literal_insert_rest(cg, m, pairs, i + 1, n, key_vt)
+
+// Map literal keys and values are homogeneous. Check this before lowering so
+// a mismatched literal never becomes a partially-emitted map value.
+codegen_eval_map_literal: Cg, ast::MapLiteralExpr => (Addr, ast::ValueType)
+codegen_eval_map_literal = cg, lit =>
+   codegen_check_map_pairs(cg, lit.pairs, 0)
+   m = runtime::codegen_map_create(cg, "map.literal")
+   np = ?lit.pairs
+   np == 0
+      | (m, ast::ValueType(Map))
+      |
+         first = lit.pairs(0)!!
+         kv0 = expr::codegen_eval(cg, first.key)
+         vv0 = expr::codegen_eval(cg, first.value)
+         key_vt = kv0.1
+         val_vt = vv0.1
+         vdt = cg.last_type
+         val_rec = vdt != "" | typedef_ti(cg, vdt) |
+            ast::TypeInfo(Prim, val_vt)
+         tname = "#map_" + value_type_name(key_vt) + "_" +
+            value_type_name(val_vt)
+         ti = ast::TypeInfo(Map, (key_vt, val_vt, val_rec))
+         has_type_name(cg, tname) | 0 | runtime::add_type(cg, tname, ti)
+         cg.last_type = tname
+         runtime::codegen_map_insert(cg, m, kv0.0, vv0.0, key_vt)
+         np > 1
+            | codegen_map_literal_insert_rest(cg, m, lit.pairs, 1, np, key_vt)
+            | 0
+         (m, ast::ValueType(Map))
+
+raw_addr_value: Cg, Addr, ast::ValueType, Addr => Addr
+raw_addr_value = cg, value, vt, i8p =>
+   value == Addr(0)
+      | Addr(0)
+      |
+         raw_ptr = vt [RawPtr] value |
+            llvm::LLVMBuildIntToPtr(cg.builder, value, i8p, "raw.ptr")
+         expr::validate_and_strip_addr_tag(cg, raw_ptr, i8p)
+
+codegen_eval_raw_memory: Cg, ast::RawMemoryExpr => (Addr, ast::ValueType)
+codegen_eval_raw_memory = cg, rm =>
+   raw_address_uses_string(cg, rm.addr)
+      | codegen_raw_string_index_error(cg)
+      |
+         av = expr::codegen_eval(cg, rm.addr)
+         i8p = llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)
+         ptr_val = raw_addr_value(cg, av.0, av.1, i8p)
+         rm.rec_name != ""
+            |
+               ti = typedef_ti(cg, rm.rec_name)
+               meta = runtime::record_meta_from_ti(cg, ti)
+               typed_ptr = llvm::LLVMBuildPointerCast(cg.builder,
+                  ptr_val, llvm::LLVMPointerType(meta.0, 0), "view.ptr")
+               cg.last_rt = meta.0
+               cg.last_fnames = meta.1
+               cg.last_fvts = match::field_vts_from_ti(cg, ti)
+               cg.last_type = rm.rec_name
+               (typed_ptr, ast::ValueType(Record))
+            |
+               rm.load_type
+                  [Unknown] (ptr_val, ast::ValueType(RawPtr))
+                  |
+                     elem_ty = llvm_type_of_vt(rm.load_type)
+                     elem_ptr = llvm::LLVMBuildPointerCast(cg.builder, ptr_val,
+                        llvm::LLVMPointerType(elem_ty, 0), "raw.ptr.t")
+                     loaded = llvm::LLVMBuildLoad2(cg.builder, elem_ty,
+                        elem_ptr, "raw.load")
+                     llvm::LLVMSetVolatile(loaded, 1)
+                     (loaded, rm.load_type)
+
+raw_address_uses_string: Cg, ast::Expr => <>
+raw_address_uses_string = cg, e =>
+   e
+      [Str _] <+>
+      [Var v] main::is_str_var(cg, v)
+      [Bin t] raw_address_uses_string(cg, t.1) || raw_address_uses_string(cg, t.2)
+      | <->
+
+codegen_raw_string_index_error: Cg => (Addr, ast::ValueType)
+codegen_raw_string_index_error = cg =>
+   init_error(cg, "E3063", "'@[...]' does not index a String (the '@[s + i]' " +
+      "sugar was removed, B7). Read a byte with 's(i)' or write one to a " +
+      "Builder.", 0, 0)
+   (Addr(0), ast::ValueType(Unknown))
+
+codegen_check_map_pairs: Cg, ast::MapPairs, Int => ()
+codegen_check_map_pairs = cg, pairs, at =>
+   at < ?pairs
+      |
+         first = pairs(0)!!
+         pair = pairs(at)!!
+         first_key = static_expr_vt(cg, first.key)
+         first_val = static_expr_vt(cg, first.value)
+         key = static_expr_vt(cg, pair.key)
+         val = static_expr_vt(cg, pair.value)
+         at > 0 && key != ast::ValueType(Unknown) && key != first_key
+            | init_error(cg, "E3137", "Map literal key type mismatch: entry " +
+               str::from_int(at) + " has key type " + value_type_name(key) +
+               ", first entry " + value_type_name(first_key) + ".", 0, 0)
+         at > 0 && val != ast::ValueType(Unknown) && val != first_val
+            | init_error(cg, "E3138", "Map literal value type mismatch: entry " +
+               str::from_int(at) + " has value type " + value_type_name(val) +
+               ", first entry " + value_type_name(first_val) + ".", 0, 0)
+         codegen_check_map_pairs(cg, pairs, at + 1)
+
+
+// A bare declared type name used as an expression: emit E3129.
+codegen_eval_type_value: Cg, String => (Addr, ast::ValueType)
+codegen_eval_type_value = cg, name =>
+   init_error(cg, "E3129", "Type name '" + name +
+      "' cannot be used as an expression.", 0, 0)
+   (Addr(0), ast::ValueType(Unknown))
+
+// The built-in ram tag ids: 1 = positive-ish (Positive/Some), 2 = Succ,
+// 3 = Noth, 0 = negative-ish (Negative/Err).
+tag_id_of: ast::Tag => Int
+tag_id_of = tg =>
+   tg
+      [Positive] 1
+      [Some] 1
+      [Succ] 2
+      [Noth] 3
+      | 0
+
+// A pointer-shaped payload is stored in the union slot directly; a scalar is
+// boxed. The chain form (not a '||' merge) avoids flag-phi inference.
+is_ptrish_vt: ast::ValueType => <>
+is_ptrish_vt = vt =>
+   vt [Str, RawPtr, Builder, Ram, Record, Map, Error, Array, Slice, Enum, Fn]
+
+// A heap { tag, payload } union: malloc'd 16-byte struct, tag in slot 0, the
+// payload in slot 1 (a pointer-shaped value stored directly, a scalar boxed
+// into an 8-byte slot).
+codegen_build_union: Cg, Int, ast::Exprs, String => Addr
+codegen_build_union = cg, tid, args, alloc_name =>
+   ut = cg.union_t
+   up = expr::codegen_call_arena_alloc(cg,
+      llvm::LLVMConstInt(llvm::LLVMInt64Type!, 16, 0), alloc_name)
+   tgep = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 0, "tag.gep")
+   llvm::LLVMBuildStore(cg.builder, llvm::LLVMConstInt(llvm::LLVMInt64Type!, tid, 0), tgep)
+   na = ?args
+   na > 0
+      |
+         av = args(0)!!
+         ev = expr::codegen_eval(cg, av)
+         ev_dt = ev.1 [Str] "String" [Int] "Int" [Float] "Float" |
+            (cg.last_type != "" | cg.last_type | "")
+         ev_dt != "" | cg.last_type = ev_dt | 0
+         pgep' = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
+         is_ptrish = is_ptrish_vt(ev.1)
+         is_ptrish
+            | llvm::LLVMBuildStore(cg.builder, ev.0, pgep')
+            |
+               box_name = alloc_name == "enum.alloc" | "enum.pay.alloc" | "pay.alloc"
+               box = expr::codegen_call_arena_alloc(cg,
+                  llvm::LLVMConstInt(llvm::LLVMInt64Type!, 8, 0), box_name)
+               llvm::LLVMBuildStore(cg.builder, ev.0, box)
+               llvm::LLVMBuildStore(cg.builder, box, pgep')
+      |
+         pgep' = llvm::LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
+         llvm::LLVMBuildStore(cg.builder,
+            llvm::LLVMConstNull(llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0)), pgep')
+   up
+
+// A variant literal: "<+>" / "<->" with no payload is a bare i1 flag; anything
+// else (<++>, <-->, or a "<+ p ->"-style payload variant) is a heap union.
+codegen_eval_variant: Cg, ast::VariantExpr => (Addr, ast::ValueType)
+codegen_eval_variant = cg, t =>
+   na = ?t.args
+   is_pos_neg = t.tag_name [Positive, Negative]
+   is_flag = (na == 0) && is_pos_neg
+   is_flag
+      |
+         bit = t.tag_name [Positive] 1 | 0
+         (llvm::LLVMConstInt(llvm::LLVMInt1Type!, bit, 0), ast::ValueType(Flag))
+      |
+         u = codegen_build_union(cg, tag_id_of(t.tag_name), t.args,
+            "variant.alloc")
+         (u, ast::ValueType(Ram))
+
+// Compute the GEP for a record field: homogeneous records use rec.elem.gep,
+// heterogeneous records use rec.field.gep.
+record_field_gep: Cg, Addr, ast::VTypes, Addr, Int => Addr
+record_field_gep = cg, rt, fvts, base, idx =>
+   base == Addr(0) || rt == Addr(0)
+      | Addr(0)
+      |
+         base_ptr = llvm::LLVMGetTypeKind(llvm::LLVMTypeOf(base)) == 8
+            | llvm::LLVMBuildIntToPtr(cg.builder, base,
+               llvm::LLVMPointerType(llvm::LLVMInt8Type!, 0), "rec.base.ptr")
+            | base
+         is_homo = expr::record_type_is_homogeneous(rt, fvts)
+         is_homo
+            |
+               elem_t = llvm::LLVMStructGetTypeAtIndex(rt, 0)
+               typed = llvm::LLVMBuildPointerCast(cg.builder, base_ptr,
+                  llvm::LLVMPointerType(elem_t, 0), "rec.typed")
+               idx_v = llvm::LLVMConstInt(llvm::LLVMInt64Type!, idx, 0)
+               gep1(cg, elem_t, typed, idx_v, "rec.elem.gep")
+            | llvm::LLVMBuildStructGEP2(cg.builder, rt, base_ptr, idx,
+               "rec.field.gep")
+
+// A record literal: build the LLVM struct type from the field value shapes,
+// malloc it, and store each field at its GEP. The struct type + named field
+// list are recorded (cg.last_rt / last_fnames) for the member-access path.
+codegen_eval_record: Cg, ast::RecordExpr => (Addr, ast::ValueType)
+codegen_eval_record = cg, r =>
+   nf = ?r.fields
+   ftypes = Addrs()
+   fvals = Addrs()
+   fvts = ast::VTypes()
+   fnames = ast::Names()
+   ?r.fields @ i =>
+      f = r.fields(i)!!
+      ev = expr::codegen_eval(cg, f.val)
+      fvals += ev.0
+      is_rec_field = ev.1 [Record]
+      field_t = is_rec_field | cg.last_rt | llvm::LLVMTypeOf(ev.0)
+      ftypes += field_t
+      fvts += ev.1
+      f.has_name | fnames += f.name
+   st = struct_type_n(cg, ftypes, nf)
+   ?fnames > 0 && typedef_name_of_rt(cg, st) == ""
+      |
+         anon_name = "$rec." + str::from_int(?cg.typedefs)
+         runtime::push_typedef(cg, TypeDef((anon_name,
+            ast::TypeInfo(Prim, ast::ValueType(Record)), st, fnames)))
+   cg.last_rt = st
+   cg.last_fnames = fnames
+   cg.last_fvts = fvts
+   alloc_sz = llvm::LLVMSizeOf(st)
+   rp = expr::codegen_call_arena_alloc(cg, alloc_sz, "record.alloc")
+   is_homo = expr::record_type_is_homogeneous(st, fvts)
+   elem_t = (is_homo && nf > 0)
+      | llvm::LLVMStructGetTypeAtIndex(st, 0)
+      | Addr(0)
+   typed = is_homo
+      |
+         llvm::LLVMBuildPointerCast(cg.builder, rp,
+            llvm::LLVMPointerType(elem_t, 0), "rec.typed")
+      | Addr(0)
+   nf @ i =>
+      ft = llvm::LLVMStructGetTypeAtIndex(st, i)
+      fgep = is_homo
+         |
+            idx_v = llvm::LLVMConstInt(llvm::LLVMInt64Type!, i, 0)
+            gep1(cg, elem_t, typed, idx_v, "rec.elem.gep")
+         | llvm::LLVMBuildStructGEP2(cg.builder, st, rp, i, "rec.field.gep")
+      f_vt = (fvts(i) | _ | ast::ValueType(Unknown))
+      is_rec_f = f_vt [Record]
+      is_rec_f
+         |
+            inner_sz = llvm::LLVMSizeOf(ft)
+            llvm::LLVMBuildMemCpy(cg.builder, fgep, 1,
+               (fvals(i) | _ | Addr(0)), 1, inner_sz, 0)
+         |
+            cval = stmt::coerce_int(cg, fvals(i)!!, ft)
+            llvm::LLVMBuildStore(cg.builder, cval, fgep)
+   (rp, ast::ValueType(Record))
+
+// (rt, fnames) recorded for a record-typed eval result (from the last record
+// literal built). A plain function so the guarded choice parses cleanly.
+rec_meta: Cg, ast::ValueType => (Addr, ast::Names)
+rec_meta = cg, vt =>
+   vt [Record] (cg.last_rt, cg.last_fnames) | (Addr(0), ast::Names())
+
+td_record_meta: Cg, Int => (Addr, ast::Names)
+td_record_meta = cg, idx =>
+   td = cg.typedefs(idx)!!
+   td.rt != Addr(0)
+      | (td.rt == Addr(1) | Addr(0) | td.rt, td.fnames)
+      |
+         cg.typedefs(idx) = TypeDef((td.name, td.ti, Addr(1), td.fnames)) !| _
+         meta = runtime::record_meta_from_ti(cg, td.ti)
+         cached_rt = meta.0 == Addr(0) | Addr(1) | meta.0
+         cg.typedefs(idx) = TypeDef((td.name, td.ti, cached_rt, meta.1)) !| _
+         meta
+
+td_record_meta_by_name: Cg, String => (Addr, ast::Names)
+td_record_meta_by_name = cg, name =>
+   resolved = resolve_type_name(cg, name)
+   indices = cg.type_indices
+   indices ^? resolved
+      |
+         idx = indices ^ resolved | _ | -1
+         td_record_meta(cg, idx)
+      | (Addr(0), ast::Names())
+
+typedef_name_of_rt_at: Cg, Addr, Int, Int => String
+typedef_name_of_rt_at = cg, rt, i, n =>
+   i == n
+      | ""
+      |
+         meta = td_record_meta(cg, i)
+         meta.0 == rt
+            | cg.typedefs(i)!!.name
+            | typedef_name_of_rt_at(cg, rt, i + 1, n)
+
+typedef_name_of_rt: Cg, Addr => String
+typedef_name_of_rt = cg, rt =>
+   rt == Addr(0)
+      | ""
+      | typedef_name_of_rt_at(cg, rt, 0, ?cg.typedefs)
+
+typedef_ti_of_rt: Cg, Addr => ast::TypeInfo
+typedef_ti_of_rt = cg, rt =>
+   tname = typedef_name_of_rt(cg, rt)
+   tname != ""
+      | typedef_ti(cg, tname)
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+record_field_ti: Cg, ast::TypeInfo, Int => ast::TypeInfo
+record_field_ti = cg, ti, idx =>
+   ti
+      [Rec rr]
+         fields = rr.0
+         (idx < ?fields)
+            |
+               rf = fields(idx)!!
+               rf.rec_type
+                  [TypeVar name] typedef_ti(cg, name)
+                  | rf.rec_type
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      [TypeVar name] record_field_ti(cg, typedef_ti(cg, name), idx)
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+record_field_dtype: Cg, ast::TypeInfo, Int => String
+record_field_dtype = cg, ti, idx =>
+   ti
+      [Rec rr]
+         fields = rr.0
+         idx < ?fields
+            |
+               rf = fields(idx)!!
+               rf.rec_type
+                  [TypeVar name] resolve_type_name(cg, name)
+                  [Rec rr2]
+                     meta = runtime::build_rec_meta(cg, rr2.0, 0, ?rr2.0,
+                        Addrs(), ast::Names())
+                     typedef_name_of_rt(cg, meta.0)
+                  | ""
+            | ""
+      [TypeVar name] record_field_dtype(cg, typedef_ti(cg, name), idx)
+      | ""
+
+field_vts: Cg, ast::TypeInfo => ast::VTypes
+field_vts = cg, ti =>
+   ti
+      [Rec rr] runtime::field_vts_step(cg, rr.0, 0, ?rr.0, ast::VTypes())
+      [TypeVar name] field_vts(cg, typedef_ti(cg, name))
+      | ast::VTypes()
+

@@ -1,0 +1,14 @@
+xyzw scalar ok
+xyzw 2d ok
+xyzw broadcast ok
+zw ok
+wzyx ok
+rgba scalar ok
+rgb ok
+bgr ok
+int vec swizzle ok
+int scalar swizzle ok
+named wh ok
+named xy ok
+vsum ok
+PASS

@@ -1,0 +1,5 @@
+// A "#!" expression must be compile-time evaluable: a runtime variable (or a
+// call, cycle, Builder op, ...) is rejected, not silently left as a runtime
+// value.
+x = 5
+y = #! x

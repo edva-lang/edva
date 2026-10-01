@@ -1,0 +1,46 @@
+# Standard library
+
+**Audience:** Edva users and integrators<br>
+**Status:** public module inventory; per-module references are in progress<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `prelude.dva`, `std/`, `selfhost/src/edva.dva`
+
+The prelude is loaded automatically unless `-no-prelude` is passed. It imports
+`io` and provides global output helpers such as `print`, `print_int`, and
+`print_float`, plus generic helpers including `apply`, `map`, `filter`, and
+`find`. Import other modules explicitly with `#use`.
+
+| Module | Purpose |
+|---|---|
+| `color` | color values and formatting helpers |
+| `fmt` | formatting helpers |
+| `in` | input utilities |
+| `io` | readers, writers, and standard streams |
+| `json` | JSON parsing and rendering |
+| `libc` | C library bindings |
+| `math` | math bindings and helpers; includes `math/complex` and `math/geom` |
+| `mem` | memory utilities |
+| `net` | network primitives; includes `net/http` |
+| `os` | hosted operating-system operations |
+| `sort` | sorting helpers |
+| `str` | string conversion and manipulation |
+| `sys` | process and system facilities |
+| `type` | compile-time type predicates |
+| `unicode` | Unicode and UTF-8 helpers |
+| `uring` | io_uring bindings where supported |
+
+`phase5_probe` and target-support files are implementation probes, not public
+API. Platform requirements vary, especially for `libc`, `net`, `os`, and
+`uring`; consult each module's source until its dedicated reference page is
+published.
+
+Detailed pages are available for the [prelude](prelude.qmd), [I/O](io.qmd),
+[standard input](in.qmd), [strings](str.qmd), [Unicode](unicode.qmd),
+[formatting](fmt.qmd), [sorting](sort.qmd), [compile-time type predicates](type.qmd),
+[JSON](json.qmd), and [math](math.qmd).
+
+```dva
+#use str
+
+print $ str::from_int(42)
+```

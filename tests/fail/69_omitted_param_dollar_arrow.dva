@@ -1,0 +1,2 @@
+double = => _ * 2
+print $ double $ 5

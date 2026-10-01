@@ -1,0 +1,175 @@
+# A tour of Edva
+
+**Audience:** readers who have completed the quickstart<br>
+**Status:** current introductory tour<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `process/spec/choices.md`, `process/spec/functions.md`,
+`process/spec/types.md`, `process/spec/ramifications.md`, `tests/pass/`
+
+Edva is built on a simple foundation: **expressions replace keywords, and symbols
+replace statements**. Indentation defines block hierarchy, bindings are immutable
+by default, and functions have no runtime type overhead.
+
+## Keyword comparison table
+
+The following table contrasts conventional language keywords with their Edva equivalents:
+
+| Construct | Conventional Keyword | Edva Symbolic Equivalent | Example |
+|---|---|---|---|
+| Conditional branch | `if ... else` | Choice operator `|` | `x > 0 | "pos" | "non-pos"` |
+| Pattern matching | `switch`, `match` | Scrutinee choice with guards | `x [0] "zero" [> 0] "pos" | "neg"` |
+| Iteration | `for`, `while`, `loop` | `@` operator | `0..10 @ i => ...` |
+| Loop break | `break` | `-->` (symbolic break) | `found | -->` |
+| Multi-level break | `break 'label` | `-->N` (numbered break) | `done | -->2` (breaks outer cycle) |
+| Loop continue | `continue` | `--^` (symbolic continue) | `skip | --^` |
+| Loop result | `loop { break val; }` | `>--` (cycle-escape) | `items @ x => test(x) | --> >-- x` |
+| Function return | `return val;` | Tail expression | Last expression in block |
+| Function definition | `fn`, `def`, `func` | `=>` lambda/function arrow | `square = x => x * x` |
+| Error unwrapping | `.unwrap()`, `?` | `!!` unwrap-or-abort | `result!!` |
+| Error propagation | `?` (Rust) | `!| _` or `$>>` bind | `write(buf) !| _` |
+| Module import | `import`, `include`, `use` | `#use` directive | `#use str` |
+| Export symbol | `export`, `pub` | `#export`, `#public` | `#export add: Int => Int` |
+| Struct / Record | `struct`, `record` | Record literal / type | `(x: Int, y: Int)` |
+| Discriminated Union | `enum` | `< A, B(Payload) >` | `< Red, Green, Blue >` |
+
+## Pipeline and application operators
+
+Function calls in Edva can be chained into readable left-to-right pipelines using
+the multi-argument application operators:
+
+| Operator | Name | Associativity | Precedence | Meaning |
+|---|---|---|---|---|
+| `f(a, b)` | Direct call | Left | Highest | Direct function invocation |
+| `x $> f(y)` | Feed (reverse apply) | Left | Tier 4 | Prepend argument: lowers to `f(x, y)` |
+| `f(x) $ y` | Infix apply | Right | Tier 3 | Append argument: lowers to `f(x, y)` |
+| `m $>> cont` | Monadic bind | Left | Tier 4 | Unpack positive ram, propagate negative |
+| `f $: block` | Block feed | Right | Lowest | Attach indented block as final argument |
+
+```dva
+#use str
+
+add: Int, Int => Int
+add = a, b => a + b
+
+mul: Int, Int => Int
+mul = a, b => a * b
+
+// Pipeline chaining: (5 + 3) * 2
+result = 5 $> add(3) $> mul(2)
+print_int $ result // prints 16
+
+// Multi-argument append:
+print_int $ add(10) $ 20 // prints 30
+```
+
+## Data structures
+
+Edva provides six primary structural shapes:
+
+### Records and tuples
+
+Records group heterogeneously typed fields. Fields may be named or positional:
+
+```dva
+// Positional tuple
+point = (10, 20)
+print_int $ point.0 // prints 10
+
+// Named record
+#type User (id: Int, name: String, active: <>)
+user = User((id: 1, name: "Alice", active: <+>))
+print $ user.name
+```
+
+**Definite field initialization:** A record declared by type (`u: User`) is **not**
+zero-filled. Every field must be explicitly written before reading; partial
+initialization is rejected at compile time (`E3130`).
+
+### Growable arrays and slices
+
+Growable arrays are heap-allocated resizable buffers. Indexing is fallible and
+returns a ramification (`< T | Error >`):
+
+```dva
+#type Ints (Int){}
+
+list = Ints()
+list += 10
+list += 20
+list += 30
+
+// Read element length
+print_int $ ?list // prints 3
+
+// Fallible read with unwrap-or-abort
+first = list(0)!!
+print_int $ first // prints 10
+```
+
+### Key-value maps
+
+Maps associate keys (`String`, `Int`, or `Addr`) with values:
+
+```dva
+#type Config String ^ Int
+
+cfg = Config()
+cfg ^ "port" = 8080
+cfg ^ "timeout" = 30
+
+// Map lookup yields < Int | Error >
+port = cfg ^ "port"
+port | val => print_int(val) | print("port not found")
+```
+
+### Ramifications (Rams)
+
+Rams represent 2-slot algebraic sum values without runtime type overhead:
+- `<>`: Built-in boolean flag (`<+>` true, `<->` false)
+- `< T | >`: Optional value (`<+ val ->` or `<-->`)
+- `< | Error >`: Fallible result (`<++>` success or `<- err +>`)
+- `< T | Error >`: Two-payload result (`<+ val +>` or `<- err ->`)
+
+```dva
+#type SafeInt < Int | Error >
+
+divide: Int, Int => SafeInt
+divide = a, b =>
+   b == 0
+      | SafeInt(<- Error(1, "Division by zero", "", 0, 0, (0, 0)) ->)
+      | SafeInt(<+ a / b +>)
+
+res = divide(10, 2)
+res
+   | value => print_int(value)
+   | err => print("failed")
+```
+
+### Enums
+
+Enums define named variants, with optional typed payloads:
+
+```dva
+#type Shape <
+   Circle(radius: Float),
+   Rectangle(width: Float, height: Float),
+   Point
+>
+
+area: Shape => Float
+area = s =>
+   s [Circle(r)] 3.14159 * r * r
+   [Rectangle(w, h)] w * h
+   [Point] 0.0
+
+c = Shape(Circle(5.0))
+print_float $ area(c)
+```
+
+## Memory model and lifetimes
+
+- **No Garbage Collector:** Edva uses arena allocation, stack allocation, and explicit buffers.
+- **No RTTI:** Types are erased at compile time; function values are simply `{ fn_ptr, env_ptr }`.
+- **String Immobility:** Strings are immutable `{ len, data }` records; Builders `{ len, data, cap }` are mutable.
+- **Unary `&` and `+`:** `&b` yields the writable buffer address (`RawPtr`), and `+b` freezes the Builder into a String in place.
+

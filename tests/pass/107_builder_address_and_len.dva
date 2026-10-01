@@ -1,0 +1,27 @@
+// Unary '&' on a Builder yields its writable buffer address (for FFI reads);
+// '?b = n' sets the Builder's length (the report model after a read lands
+// bytes in the buffer); '?b' peeks the length without freezing.
+
+// Write bytes straight into the Builder's buffer via its address. A byte
+// store needs an i8 value; an i32/i64 would store that many bytes.
+b = {16}
+@[&b] = 65i8
+@[&b + 1] = 66i8
+?b = 2
+print_int $ ?b
+
+// The address is a RawPtr; pointer arithmetic works on it, and a typed
+// load reads one byte back.
+p = &b
+print_int $ @[p + 0 i8]
+print_int $ @[p + 1 i8]
+
+s = +b
+print $ s
+
+// Length can be extended; bytes beyond the written ones are zero-filled.
+c = {16}
+?c = 4
+print_int $ ?c
+t = +c
+print_int $ @[&t + 2 i8]

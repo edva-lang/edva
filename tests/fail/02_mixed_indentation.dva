@@ -1,0 +1,3 @@
+val = 10
+res = val > 5
+ 	| "mixed"

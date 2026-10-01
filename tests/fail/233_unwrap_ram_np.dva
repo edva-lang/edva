@@ -1,0 +1,4 @@
+#type FailRam <| Int >
+
+f: FailRam => Int
+f = r => r!!

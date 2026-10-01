@@ -1,0 +1,4 @@
+#use libc
+
+buf = libc::malloc $ 6
+s = String(buf)

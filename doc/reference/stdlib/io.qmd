@@ -1,0 +1,90 @@
+# `io` standard library
+
+**Audience:** Edva users<br>
+**Status:** current reference<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `std/io.dva`, `tests/pass/220_stdio.dva`
+
+The `io` module provides high-performance, buffered input and formatted output
+for file descriptors, standard streams, and sockets.
+
+```dva
+#use io
+```
+
+## Standard descriptors and output
+
+| Descriptor | Value | Purpose |
+|---|---|---|
+| `io::STDIN` | `0` | Standard input |
+| `io::STDOUT` | `1` | Standard output |
+| `io::STDERR` | `2` | Standard error |
+
+### Output functions
+
+| Function | Signature | Description | Example |
+|---|---|---|---|
+| `io::out(...)` | `#! T: Type, T => ()` | Prints value or space-separated record + newline to `STDOUT` | `io::out("Result:", 42)` |
+| `io::err(...)` | `#! T: Type, T => ()` | Prints value or space-separated record + newline to `STDERR` | `io::err("Error:", code)` |
+| `io::outf(fmt, ...)` | `#! T: Type, String, T => ()` | Formatted output to `STDOUT` replacing `{}` placeholders | `io::outf("Val: {}, Flag: {}", 10, <+>)` |
+| `io::errf(fmt, ...)` | `#! T: Type, String, T => ()` | Formatted output to `STDERR` replacing `{}` placeholders | `io::errf("Failed at line {}", line)` |
+| `io::write(fd, s)` | `Int, String => ()` | Raw length-aware write of String `s` to descriptor `fd` | `io::write(io::STDOUT, "raw\n")` |
+
+```dva
+#use io
+
+// Multi-argument printing (records print space-separated):
+io::out("Server starting on port", 8080)
+
+// Placeholder formatting:
+io::outf("Client connected from {}:{}", "127.0.0.1", 9000)
+```
+
+---
+
+## Buffered `Reader` API
+
+`io::reader(fd)` wraps a file descriptor in a buffered reader (default buffer 4096 bytes).
+All read methods return the optional ramification `< String | >` or `< Int | >`,
+distinguishing between available data and EOF:
+
+| Function | Signature | Return Type | Description |
+|---|---|---|---|
+| `io::reader(fd)` | `Int => Reader` | `Reader` | Creates Reader with default 4 KB buffer |
+| `io::reader_with_cap(fd, cap)` | `Int, Int => Reader` | `Reader` | Creates Reader with custom buffer size |
+| `io::read(r, max)` | `Reader, Int => < String | >` | `< String | >` | Reads available buffer chunk up to `max` bytes |
+| `io::read_all(r, max)` | `Reader, Int => < String | >` | `< String | >` | Drains stream completely up to `max` bytes |
+| `io::read_byte(r)` | `Reader => < Int | >` | `< Int | >` | Reads next byte code (`0..255`) or EOF |
+| `io::read_until(r, delim, max)`| `Reader, Int, Int => < String | >`| `< String | >` | Reads until delimiter byte is encountered |
+| `io::read_line(r, max)` | `Reader, Int => < String | >` | `< String | >` | Reads until newline (`\n` or `\r\n`) |
+
+---
+
+## Buffered input examples
+
+### Reading line by line
+
+```dva
+#use io
+
+r = io::reader(io::STDIN)
+
+0.. @ =>
+   line_res = io::read_line(r, 1024)
+   line_res
+      | line => io::outf("Echo: {}", line)
+      | --> // Break on EOF
+```
+
+### Reading with unwrap-or-abort (`!!`)
+
+When expecting a mandatory header or fixed payload where EOF represents an error:
+
+```dva
+#use io
+
+r = io::reader(fd)
+header = io::read_line(r, 256)!! // Aborts with stack trace if EOF reached
+io::out("Received header: " + header)
+```
+

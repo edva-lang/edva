@@ -1,0 +1,121 @@
+#use "math/geom"
+#use math
+
+approx_eq = a, b => %abs(a - b) < 0.002
+print_flag = f => print_int $ f | 1 | 0
+
+// 1. 2D Vector operations
+v1 = geom::vec2(3.0, 4.0)
+v2 = geom::vec2(1.0, 2.0)
+
+// dot product
+d2 = geom::dot(v1, v2)
+print_flag $ approx_eq(d2, 11.0)
+
+// length / magnitude
+l2 = geom::len(v1)
+print_flag $ approx_eq(l2, 5.0)
+print_flag $ approx_eq(geom::mag(v1), 5.0)
+
+// distance & squared distance
+p1 = geom::vec2(1.0, 1.0)
+p2 = geom::vec2(4.0, 5.0)
+print_flag $ approx_eq(geom::dist(p1, p2), 5.0)
+print_flag $ approx_eq(geom::dist_sq(p1, p2), 25.0)
+
+// normalization
+n1 = geom::norm(v1)
+print_flag $ approx_eq(n1(0), 0.6)
+print_flag $ approx_eq(n1(1), 0.8)
+print_flag $ approx_eq(geom::len(n1), 1.0)
+
+// zero-safe normalization
+n_zero = geom::norm(geom::vec2(0.0, 0.0))
+print_flag $ n_zero(0) == 0.0 && n_zero(1) == 0.0
+
+// linear interpolation
+mid = geom::lerp(geom::vec2(0.0, 10.0), geom::vec2(10.0, 20.0), 0.5)
+print_flag $ approx_eq(mid(0), 5.0)
+print_flag $ approx_eq(mid(1), 15.0)
+
+// rotation
+vx = geom::vec2(1.0, 0.0)
+vy = geom::rotate(vx, math::pi / 2.0)
+print_flag $ approx_eq(vy(0), 0.0)
+print_flag $ approx_eq(vy(1), 1.0)
+
+// 2. 3D Vector operations
+a3 = geom::vec3(1.0, 2.0, 3.0)
+b3 = geom::vec3(4.0, 5.0, 6.0)
+print_flag $ approx_eq(geom::dot3(a3, b3), 32.0)
+
+v3 = geom::vec3(2.0, 3.0, 6.0)
+print_flag $ approx_eq(geom::len3(v3), 7.0)
+
+n3 = geom::norm3(v3)
+print_flag $ approx_eq(geom::len3(n3), 1.0)
+
+// cross product: (1, 0, 0) x (0, 1, 0) = (0, 0, 1)
+x_axis = geom::vec3(1.0, 0.0, 0.0)
+y_axis = geom::vec3(0.0, 1.0, 0.0)
+z_axis = geom::cross3(x_axis, y_axis)
+print_flag $ approx_eq(z_axis(0), 0.0)
+print_flag $ approx_eq(z_axis(1), 0.0)
+print_flag $ approx_eq(z_axis(2), 1.0)
+
+// 3. 4D Vector operations
+a4 = geom::vec4(1.0, 2.0, 3.0, 4.0)
+b4 = geom::vec4(2.0, 0.5, 1.0, 2.0)
+print_flag $ approx_eq(geom::dot4(a4, b4), 14.0)
+
+v4 = geom::vec4(1.0, 1.0, 1.0, 1.0)
+print_flag $ approx_eq(geom::len4(v4), 2.0)
+
+// 4. Hit-testing & spatial primitives
+r1 = geom::rect(10.0, 20.0, 100.0, 50.0)
+hit_in = geom::vec2(50.0, 40.0)
+hit_out = geom::vec2(5.0, 40.0)
+print_flag $ geom::rect_contains(r1, hit_in)
+print_flag $ !geom::rect_contains(r1, hit_out)
+
+// circle hit-test
+center = geom::vec2(100.0, 100.0)
+c_in = geom::vec2(105.0, 105.0)
+c_out = geom::vec2(150.0, 150.0)
+print_flag $ geom::circle_contains(center, 10.0, c_in)
+print_flag $ !geom::circle_contains(center, 10.0, c_out)
+
+// rect union & intersection
+r_a = geom::rect(0.0, 0.0, 10.0, 10.0)
+r_b = geom::rect(5.0, 5.0, 10.0, 10.0)
+u = geom::rect_union(r_a, r_b)
+print_flag $ approx_eq(u(0), 0.0) && approx_eq(u(1), 0.0)
+print_flag $ approx_eq(u(2), 15.0) && approx_eq(u(3), 15.0)
+
+inter = geom::rect_intersect(r_a, r_b)
+print_flag $ approx_eq(inter(0), 5.0) && approx_eq(inter(1), 5.0)
+print_flag $ approx_eq(inter(2), 5.0) && approx_eq(inter(3), 5.0)
+
+// 5. Interpolation & UI Easing tests
+s_lerp = geom::lerp_scalar(10.0, 20.0, 0.5)
+print_flag $ approx_eq(s_lerp, 15.0)
+
+cl_v = geom::clamp_lerp(geom::vec2(0.0, 0.0), geom::vec2(10.0, 20.0), 1.5)
+print_flag $ approx_eq(cl_v(0), 10.0) && approx_eq(cl_v(1), 20.0)
+
+inv = geom::inverse_lerp(10.0, 20.0, 15.0)
+print_flag $ approx_eq(inv, 0.5)
+
+rem = geom::remap(0.0, 10.0, 100.0, 200.0, 5.0)
+print_flag $ approx_eq(rem, 150.0)
+
+// Easing tests at key milestones
+print_flag $ approx_eq(geom::ease_in_quad(0.5), 0.25)
+print_flag $ approx_eq(geom::ease_out_quad(0.5), 0.75)
+print_flag $ approx_eq(geom::ease_in_cubic(0.5), 0.125)
+print_flag $ approx_eq(geom::ease_in_sine(0.0), 0.0)
+print_flag $ approx_eq(geom::ease_out_sine(1.0), 1.0)
+print_flag $ approx_eq(geom::smoothstep(0.0, 1.0, 0.5), 0.5)
+print_flag $ approx_eq(geom::smootherstep(0.0, 1.0, 0.5), 0.5)
+print_flag $ approx_eq(geom::ease_out_bounce(1.0), 1.0)
+print_flag $ approx_eq(geom::ease_in_bounce(0.0), 0.0)

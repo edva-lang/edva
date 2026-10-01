@@ -1,0 +1,28 @@
+// Currying and multi-layer closures: static {fn_ptr, env_ptr} without RTTI.
+make_adder: Int => (Int => (Int => Int))
+make_adder = a => b => c => a + b + c
+
+a10 = make_adder(10)
+a30 = a10(20)
+print_int $ a30(12)
+
+make_tagger: String => (Int => (String => String))
+make_tagger = prefix => count => suffix =>
+   prefix + (count > 0 | "+ " | "- ") + suffix
+
+tag1 = make_tagger("val: ")
+tag2 = tag1(5)
+print $ tag2("active")
+
+make_counter: Int => (Int => Int)
+make_counter = start =>
+   n = start
+   step =>
+      n = n + step
+      n
+
+c1 = make_counter(100)
+c2 = make_counter(500)
+print_int $ c1(1)
+print_int $ c1(5)
+print_int $ c2(10)

@@ -1,0 +1,18 @@
+// str::from_float — decimal Float formatting, %g-style (6 significant digits,
+// fixed notation for mid-range magnitudes, scientific otherwise, trailing
+// zeros trimmed).
+
+#use str
+
+print $ str::from_float(0.0)
+print $ str::from_float(1.5)
+print $ str::from_float(-2.75)
+print $ str::from_float(3.0)
+print $ str::from_float(100.0)
+print $ str::from_float(0.5)
+print $ str::from_float(3.14159)
+print $ str::from_float(0.00123)
+print $ str::from_float(1000000.0)
+print $ str::from_float(0.00001)
+print $ str::from_float(1234567.0)
+print $ str::from_float(3.14159265)

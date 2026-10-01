@@ -1,0 +1,26 @@
+// Structural compile-time type equality over generated composite types: two
+// distinct instantiations of a generator compare equal by structure (not by
+// pointer identity), and a type variable bound to a ram argument dispatches on
+// the generated ramification type.
+
+Opt: #! T: Type => < T | >
+#type IntOpt Opt(Int)
+#type IntOpt2 Opt(Int)
+#type StrOpt Opt(String)
+
+print_int $ (IntOpt == IntOpt2 | 1 | 0)
+print_int $ (IntOpt == StrOpt | 1 | 0)
+
+classify = #! T, x =>
+   T == IntOpt | 1 | 0
+
+print_int $ classify(<+ 42 ->)
+print_int $ classify(<+ "x" ->)
+
+// Array types compare by element type.
+#type Ints (Int){}
+#type Ints2 (Int){}
+#type Strs (String){}
+
+print_int $ (Ints == Ints2 | 1 | 0)
+print_int $ (Ints == Strs | 1 | 0)

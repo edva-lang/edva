@@ -1,0 +1,15 @@
+// Choice branches unify bidirectionally: a function read as a value inside a
+// choice, with no declared signature and no direct call site, infers its
+// parameter type from a sibling branch and the choice's own call site.
+
+flag = 1 > 0
+
+greet = s => "hi " + s
+shout = s => s + "!"
+pick = flag | greet | shout
+print $ pick("bob")
+
+inc = n => n + 1
+dec = (_ - 1)
+choose = flag | inc | dec
+print_int $ choose(10)

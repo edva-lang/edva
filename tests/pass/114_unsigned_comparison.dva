@@ -1,0 +1,10 @@
+// Unsigned integer comparisons must use unsigned predicates: 0xFF is 255,
+// so 255 < 128 is false. A signed predicate would read the i8 bit pattern
+// 0xFF as -1 and wrongly answer true.
+a = 0xFFu8
+b = 0x80u8
+print $ ( a < b | "Positive" | "Negative")
+print $ ( a > b | "Positive" | "Negative")
+print $ ( b < a | "Positive" | "Negative")
+print $ ( 255u8 > 254u8 | "Positive" | "Negative")
+print $ ( 0xFFu8 !> 0xFEu8 | "Positive" | "Negative")

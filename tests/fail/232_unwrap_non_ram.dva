@@ -1,0 +1,2 @@
+// Operand of '!!' must be a RamPP or RamPN ramification
+x = 5!!

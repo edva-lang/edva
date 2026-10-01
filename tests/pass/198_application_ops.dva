@@ -1,0 +1,50 @@
+// application-ops.md: multi-argument `$` and `$>`, with the feed/apply tiers
+// BELOW choice so "a $> b | c | d" feeds a value into the function a choice
+// selects.
+//
+//   $   (append):  f(a) $ b  == f(a, b)       f(a,b) $ c == f(a,b,c)
+//   $>  (prepend): x $> f(a) == f(x, a)       (x $> f) $ a == f(x, a)
+//   $>  is below choice:  a $> b | c | d  ==  a $> (b | c | d)
+
+sum3: Int, Int, Int => Int
+sum3 = a, b, c => a + b + c
+add2: Int, Int => Int
+add2 = a, b => a + b
+double: Int => Int
+double = n => n * 2
+square: Int => Int
+square = n => n * n
+g: Int, Int => Int
+g = a, b => a + b
+f: Int => Int
+f = x => x * 100
+
+// $ appends into an existing call.
+print_int $ add2(1) $ 2            // add2(1, 2) = 3
+print_int $ sum3(1, 2) $ 3         // sum3(1, 2, 3) = 6
+
+// $> prepends into an existing call.
+print_int $ 10 $> add2(5)          // add2(10, 5) = 15
+
+// Pipeline chaining: (10 $> add2) $ 5 == add2(10, 5); and prepend+append.
+print_int $ 10 $> add2 $ 5         // add2(10, 5) = 15
+print_int $ 10 $> sum3(1) $ 2      // sum3(10, 1, 2) = 13
+print_int $ 4 $> sum3(1) $ 2       // sum3(4, 1, 2) = 7
+
+// Right-assoc $ across different functions: f $ g(a) $ b == f(g(a, b)).
+print_int $ f $ g(1) $ 2           // f(g(1, 2)) = f(3) = 300
+
+// $> is below choice: the choice is the feed's operand, selecting a function.
+print_int $ 5 $> "op" ["double"] double ["square"] square | double   // double(5) = 10
+print_int $ 5 $> "op" ["square"] square ["double"] double | double   // square(5) = 25
+
+// Same dispatch through a helper: feed x into the chosen function.
+apply_op: Int, String => Int
+apply_op = x, op =>
+   x $> op
+      ["double"] double
+      ["square"] square
+      | double
+print_int $ apply_op(4, "square")  
+print_int $ apply_op(4, "double")  
+print_int $ apply_op(4, "other")   

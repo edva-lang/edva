@@ -1,0 +1,47 @@
+// Standard OS Module (std/os.dva)
+// High-level safe abstractions for file handling and process execution
+
+#use libc
+#use mem
+
+#public
+   open: String, Int => Int
+   open  = path, flags => libc::open(path, flags)
+   close: Int => Int
+   close = fd => libc::close $ fd
+   write: Int, String, Int => Int
+   write = fd, buf, count => libc::write(fd, buf, count)
+   ioctl: Int, Int, Int => Int
+   ioctl = fd, req, arg => libc::ioctl(fd, req, arg)
+
+   // Low-level unbuffered read: reads up to `count` bytes from fd into a String.
+   read: Int, Int => String
+   read = fd, count =>
+      count !> 0
+         | ""
+         |
+            b = {count}
+            n = libc::read(fd, &b, count)
+            n > 0
+               |
+                  ?b = n
+                  +b
+               | ""
+
+   // Spawns a process. Acknowledges an argv array (Addr) and waits for exit
+   spawn: String, Addr => Int
+   spawn = path, argv =>
+      ar = mem::arena(64)
+      pid_ptr = mem::alloc(ar, 8)
+      status_ptr = mem::alloc(ar, 8)
+      spawn_res = libc::posix_spawn(pid_ptr, path, Addr(0), Addr(0),
+         argv, Addr(0))
+      failed = spawn_res < 0
+      result' = -1
+      !failed
+         |
+            pid = @[pid_ptr Int]
+            libc::waitpid(pid, status_ptr, 0)
+            result' = @[status_ptr Int]
+      mem::destroy(ar)
+      result'

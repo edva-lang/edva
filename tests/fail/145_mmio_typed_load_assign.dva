@@ -1,0 +1,3 @@
+// Form 2 is an error: "@[addr T] = v" is an assignment to a typed load.
+// Writes use "@[addr] = v" and the value's own type picks the width.
+@[0x1000 i32] = 5

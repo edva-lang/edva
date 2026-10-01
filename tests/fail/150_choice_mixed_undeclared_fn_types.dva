@@ -1,0 +1,10 @@
+// Merging two differently-typed *undeclared* function values in a choice is a
+// genuinely heterogeneous merge (the result's return type is runtime-dependent)
+// and must reject, never mis-type. The Int-returning and String-returning
+// branches are not unifiable, so the unconstrained branch is rejected at its
+// value read.
+flag = 1 > 0
+f = x => x + 1
+g = y => "hi " + y
+pick = flag | f | g
+print $ pick(5)

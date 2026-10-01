@@ -1,0 +1,51 @@
+// Standard Math Module (std/math.dva)
+// C99 libm bindings: each function maps 1:1 to its C counterpart, so
+// Float is a 64-bit double on both sides. Importing this module links -lm.
+
+#public #foreign "m"
+   sqrt      : (x: Float) => Float
+   cbrt      : (x: Float) => Float
+   hypot     : (x: Float, y: Float) => Float
+   pow       : (x: Float, y: Float) => Float
+   exp       : (x: Float) => Float
+   exp2      : (x: Float) => Float
+   expm1     : (x: Float) => Float
+   log       : (x: Float) => Float
+   log2      : (x: Float) => Float
+   log10     : (x: Float) => Float
+   log1p     : (x: Float) => Float
+   sin       : (x: Float) => Float
+   cos       : (x: Float) => Float
+   tan       : (x: Float) => Float
+   asin      : (x: Float) => Float
+   acos      : (x: Float) => Float
+   atan      : (x: Float) => Float
+   atan2     : (y: Float, x: Float) => Float
+   sinh      : (x: Float) => Float
+   cosh      : (x: Float) => Float
+   tanh      : (x: Float) => Float
+   asinh     : (x: Float) => Float
+   acosh     : (x: Float) => Float
+   atanh     : (x: Float) => Float
+   floor     : (x: Float) => Float
+   ceil      : (x: Float) => Float
+   // trunc     : (x: Float) => Float -- use intrinsic %trunc(x)
+   // round     : (x: Float) => Float -- use intrinsic %round(x)
+   rint      : (x: Float) => Float
+   nearbyint : (x: Float) => Float
+   fabs      : (x: Float) => Float
+   fmod      : (x: Float, y: Float) => Float
+   remainder : (x: Float, y: Float) => Float
+   // copysign  : (x: Float, y: Float) => Float -- use intrinsic %copysign(x, y)
+   fmin      : (x: Float, y: Float) => Float
+   fmax      : (x: Float, y: Float) => Float
+   fdim      : (x: Float, y: Float) => Float
+   // fma: (x: Float, y: Float, z: Float) => Float
+   //      -- use intrinsic %fma(x, y, z)
+   ldexp     : (x: Float, exp: i32) => Float
+   scalbn    : (x: Float, n: i32) => Float
+
+// Constants (not libm symbols — C exposes these as macros).
+#public
+   pi = 3.14159265358979323846
+   e  = 2.71828182845904523536

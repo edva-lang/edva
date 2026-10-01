@@ -1,0 +1,1 @@
+Enum label 'Y' is ambiguous — declared by multiple enums; qualify the variant as 'Enum::Y'.

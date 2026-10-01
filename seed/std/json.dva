@@ -1,0 +1,378 @@
+// std/json.dva — JSON parser and value model.
+//
+// Error convention: every entry point returns `<Value | Error>` where the
+// negative branch is the structural `Error` record (code, message, file,
+// line, col, context) — *fatal* by design: unwrapping it (binding it in a
+// choice) aborts the program and prints the diagnostic. Contrast with the
+// recoverable `<T | String>` message regime in std/net (see M8 in
+// process/codebase_review.md).
+//
+// A JSON document parses into a recursive `Value` enum: String(String),
+// Number(Float), Boolean(<>), Null, Array((Value[])) and
+// Object((pairs[])) where pairs are (key, value) records. Array/Object
+// hold slice views over the parse arenas (the module-level `vals`/
+// `pairs` growable arrays), which the parser fills element-by-element.
+// The parser is a stateful recursive descent over the module-level
+// `src`/`pos`; '::=' mutates those globals (a function's '=' would
+// shadow them with a fresh local). Errors are the core Error ram:
+// `parse` returns <Value | Error>, and unwrapping the Error branch
+// aborts with the diagnostic.
+
+#use str
+#use unicode
+
+#public
+   #type Value <
+       String(String)
+       Number(Float)
+       Boolean(<>)
+       Null
+       Array((Value[]))
+       Object(((key: String, value: Value)[]))
+   >
+
+   #type Values (Value){}
+   #type Pairs ((key: String, value: Value)){}
+   #type Result <Value | Error>
+
+src: String
+pos: Int
+vals: Values
+pairs: Pairs
+
+// --- scanning ------------------------------------------------
+
+// True when src[p] exists and is JSON whitespace.
+is_ws_at: Int => i1
+is_ws_at = p => p < ?src && str::is_ws(src(p))
+
+// The first index at or after p that is not whitespace.
+skip_ws: Int => Int
+skip_ws = p =>
+   is_ws_at(p) | skip_ws(p + 1) | p
+
+// The value of a hex digit, or -1 when not a hex digit.
+hexval: Int => Int
+hexval = h => h [< 'A'] h - '0' [< 'a'] h - 'A' + 10 | h - 'a' + 10
+
+// True when src[p] exists and is a hex digit.
+is_hex_at: Int => i1
+is_hex_at = p => p < ?src && hexval(src(p)) !< 0
+
+// Append the UTF-8 encoding of a rune to a Builder.
+append_utf8: Builder, Rune => ()
+append_utf8 = b, cp =>
+   cp [< 0x80] b += cp
+      [< 0x800]
+         b += 0xC0 + (cp .>. 6)
+         b += 0x80 + (cp .&. 0x3F)
+      |
+         b += 0xE0 + (cp .>. 12)
+         b += 0x80 + ((cp .>. 6) .&. 0x3F)
+         b += 0x80 + (cp .&. 0x3F)
+
+// The String spelling of a Flag boolean.
+bool_str: i1 => String
+bool_str = b => b | "true" | "false"
+
+// --- string scanning ------------------------------------------------
+
+// Scan the body of a string literal starting at index k (after the
+// opening quote), appending decoded bytes to b. Returns <Int | Error>:
+// the positive slot is the index of the closing quote.
+scan_string: Builder, Int => <Int | Error>
+scan_string = b, k =>
+   c = k [< ?src] src(k) | -1
+   c
+   ['"'] <+ k +>
+   ['\\'] parse_escape(b, k)
+   [< 0x20] <- Error(400, "json: control character in string",
+   "std/json.dva", 0, 0, (k, 0)) ->
+   |
+      b += c
+      scan_string(b, k + 1)
+
+// Handle a backslash escape at index k (k is the '\').
+parse_escape: Builder, Int => <Int | Error>
+parse_escape = b, k =>
+   e = k + 1 [< ?src] src(k + 1) | -1
+   e
+   ['"'] b += '"'; scan_string(b, k + 2)
+   ['\\'] b += '\\'; scan_string(b, k + 2)
+   ['/'] b += '/'; scan_string(b, k + 2)
+   ['b'] b += 8; scan_string(b, k + 2)
+   ['f'] b += 12; scan_string(b, k + 2)
+   ['n'] b += 10; scan_string(b, k + 2)
+   ['r'] b += 13; scan_string(b, k + 2)
+   ['t'] b += 9; scan_string(b, k + 2)
+   ['u'] parse_unicode(b, k)
+   | <- Error(400, "json: bad escape", "std/json.dva", 0, 0, (k, 0)) ->
+
+// A \uXXXX escape at index k (k is the '\', k+1 is 'u'). BMP code
+// points only; decoded and appended as UTF-8.
+parse_unicode: Builder, Int => <Int | Error>
+parse_unicode = b, k =>
+   h2 = is_hex_at(k + 2)
+   h3 = is_hex_at(k + 3)
+   h4 = is_hex_at(k + 4)
+   h5 = is_hex_at(k + 5)
+   ok = h2 && h3 && h4 && h5
+   ok |
+      d2 = hexval(src(k + 2))
+      d3 = hexval(src(k + 3))
+      d4 = hexval(src(k + 4))
+      d5 = hexval(src(k + 5))
+      cp = d2 * 0x1000 + d3 * 0x100 + d4 * 0x10 + d5
+      append_utf8(b, Rune(cp))
+      scan_string(b, k + 6)
+   | <- Error(400, "json: bad \\u escape",
+   "std/json.dva", 0, 0, (k, 0)) ->
+
+// --- number scanning ------------------------------------------------
+
+// True when src[p] exists and is a digit.
+is_digit_at: Int => i1
+is_digit_at = p => p < ?src && str::is_digit(src(p))
+
+// Consume [0-9] digits at p, accumulating into a Float; returns
+// (value, next index) where next is the first non-digit index.
+scan_digits: Float, Int => (Float, Int)
+scan_digits = f, p =>
+   is_digit_at(p) |
+      scan_digits(f * 10 + Float(src(p) - '0'), p + 1)
+   | (f, p)
+
+// Consume fractional digits at p, each scaled by an ever-smaller power
+// of 0.1; returns (value, next index).
+scan_fraction: Float, Float, Int => (Float, Int)
+scan_fraction = f, scale, p =>
+   is_digit_at(p) |
+      next = f + Float(src(p) - '0') * scale
+      scan_fraction(next, scale * 0.1, p + 1)
+   | (f, p)
+
+// Consume ':' at p, returning the index after it, or the Error branch.
+expect_colon: Int => <Int | Error>
+expect_colon = p =>
+   ok_col = p < ?src && src(p) == ':'
+   ok_col |
+      <+ (p + 1) +>
+   | <- Error(400, "json: expected ':' after object key",
+   "std/json.dva", 0, 0, (p, 0)) ->
+
+// The index after a comma at p (or p when there is none).
+skip_comma: Int => Int
+skip_comma = p =>
+   is_comma = p < ?src && src(p) == ','
+   is_comma | p + 1 | p
+
+// --- value parsing ------------------------------------------------
+
+parse_string: () => <Value | Error>
+parse_string = !=>
+   pos ::= pos + 1
+   b = {64}
+   r = scan_string(b, pos)
+   r | end =>
+         pos ::= end + 1
+         <+ Value(String, +b) +>
+   | err =>
+         <- err ->
+
+parse_array: () => <Value | Error>
+parse_array = !=>
+   pos ::= pos + 1
+   parse_array_elems!
+
+parse_array_elems: () => <Value | Error>
+parse_array_elems = !=>
+   p = skip_ws(pos)
+   pos ::= p
+   c = p [< ?src] src(p) | -1
+   c [']']
+      pos ::= pos + 1
+      n = ?vals
+      <+ Value(Array, vals(0..n)) +>
+   |
+      v = parse_value!
+      v | val =>
+            vals += val
+            pos ::= skip_comma(skip_ws(pos))
+            parse_array_elems!
+      | v
+
+parse_object: () => <Value | Error>
+parse_object = !=>
+   pos ::= pos + 1
+   parse_object_pairs!
+
+parse_object_pairs: () => <Value | Error>
+parse_object_pairs = !=>
+   p = skip_ws(pos)
+   pos ::= p
+   c = p [< ?src] src(p) | -1
+   c ['}']
+      pos ::= pos + 1
+      m = ?pairs
+      <+ Value(Object, pairs(0..m)) +>
+   |
+      r = parse_object_entry!
+      r | ok =>
+            parse_object_pairs!
+      | e4 =>
+            <- e4 ->
+
+// Parse one "key : value" pair, append it to the pairs arena, consume
+// the trailing comma, and return the parsed value's ram (or the error).
+// Split into per-step functions because a bare '|' choice may not
+// appear inside a lambda branch body ('| key => ...' raises fn_depth) —
+// each step's body either uses an indented block (fn_depth 0) or calls
+// the next function.
+parse_object_entry: () => <Value | Error>
+parse_object_entry = !=>
+   k = parse_string!
+   k | key =>
+         parse_object_key_body(key)
+   | e => <- e ->
+
+// The key is a parsed Value; pull the String out, expect ':', then
+// parse the value.
+parse_object_key_body: Value => <Value | Error>
+parse_object_key_body = key =>
+   key [String s]
+      c2 = expect_colon(skip_ws(pos))
+      parse_object_value(s, c2)
+   | <- Error(400, "json: object key is not a string",
+   "std/json.dva", 0, 0, (0, 0)) ->
+
+parse_object_value: String, <Int | Error> => <Value | Error>
+parse_object_value = key, c2 =>
+   c2 | cp =>
+         pos ::= cp
+         v = parse_value!
+         parse_object_append(key, v)
+   | e2 => <- e2 ->
+
+parse_object_append: String, <Value | Error> => <Value | Error>
+parse_object_append = key, v =>
+   v | val =>
+         pairs += (key, val)
+         pos ::= skip_comma(skip_ws(pos))
+         <+ Value(Null) +>
+   | e3 => <- e3 ->
+
+parse_lit: Int, Int => <Value | Error>
+parse_lit = tag, len =>
+   p = skip_ws(pos)
+   pos ::= p
+   word = tag == 1 | "true" | "false"
+   ok = p + len !> ?src && src(p..p + len) == word
+   ok |
+      pos ::= p + len
+      <+ Value(Boolean, tag == 1) +>
+   | <- Error(400, "json: bad literal", "std/json.dva", 0, 0, (p, 0)) ->
+
+parse_null: () => <Value | Error>
+parse_null = !=>
+   p = skip_ws(pos)
+   pos ::= p
+   ok = p + 4 !> ?src && src(p..p + 4) == "null"
+   ok |
+      pos ::= p + 4
+      <+ Value(Null) +>
+   | <- Error(400, "json: bad null literal",
+   "std/json.dva", 0, 0, (p, 0)) ->
+
+parse_number: () => <Value | Error>
+parse_number = !=>
+   p' = skip_ws(pos)
+   pos ::= p'
+   c0 = p' [< ?src] src(p') | -1
+   is_num_start = c0 !< '0' && c0 !> '9' || c0 == '-'
+   is_num_start |
+      neg' = 0
+      c0 ['-']
+         neg' = 1
+         p' = p' + 1
+      sd = scan_digits(Float(0), p')
+      ip = sd.0
+      p2' = sd.1
+      had_int = (p2' > p')
+      fv' = ip
+      has_dot = (p2' < ?src && src(p2') == '.')
+      had_frac' = <->
+      has_dot |
+         sd3 = scan_fraction(fv', 0.1, p2' + 1)
+         fv' = sd3.0
+         had_frac' = (sd3.1 > p2' + 1)
+         p2' = sd3.1
+      has_exp = (p2' < ?src && (src(p2') == 'e' || src(p2') == 'E'))
+      had_exp' = <->
+      has_exp |
+         p3' = p2' + 1
+         eneg' = 0
+         e0 = p3' [< ?src] src(p3') | -1
+         e0 ['-']
+            eneg' = 1
+            p3' = p3' + 1
+         plus = (e0 == '+')
+         plus |
+            p3' = p3' + 1
+         sd2 = scan_digits(Float(0), p3')
+         ev = sd2.0
+         p4 = sd2.1
+         had_exp' = (p4 > p3')
+         p2' = p4
+         // Clamp the exponent to [-400, 400] before the fptosi: a huge
+         // exponent ("1e999999…") would otherwise convert to an unbounded
+         // Int and hang the 10^exp loop (or overflow the Int64 conversion).
+         // Doubles overflow at ~10^308, so |exp| > 308 already yields
+         // inf/0.0; clamping to 400 keeps the loop bounded and the result
+         // identical for every representable value.
+         eclamp = (ev < -400.0 | -400.0 | (ev > 400.0 | 400.0 | ev))
+         p10' = 1.0
+         Int(eclamp) @
+            p10' = p10' * 10.0
+         fv' = (eneg' == 1 | fv' / p10' | fv' * p10')
+         0
+      // JSON number grammar: -?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)? — digits
+      // are required after '-', after '.', and after the exponent marker
+      // (a bare '-', "1.", or "1e" must be rejected, not parsed as 0 / 1.0).
+      valid = (had_int && (!has_dot || had_frac') && (!has_exp || had_exp'))
+      valid
+         |
+            f = (neg' == 1 | 0 - fv' | fv')
+            pos ::= p2'
+            <+ Value(Number, f) +>
+         |
+            <- Error(400, "json: malformed number",
+            "std/json.dva", 0, 0, (p', 0)) ->
+   | <- Error(400, "json: expected a number",
+   "std/json.dva", 0, 0, (p', 0)) ->
+
+// --- entry point ------------------------------------------------
+
+// Parse a JSON document into a Value. Errors (malformed input) land
+// in the Error branch of the returned <Value | Error> ram.
+#public
+   parse: String => <Value | Error>
+   parse = s =>
+      src ::= s
+      pos ::= 0
+      vals ::= Values()
+      pairs ::= Pairs()
+      parse_value!
+
+parse_value: () => <Value | Error>
+parse_value = !=>
+   p = skip_ws(pos)
+   pos ::= p
+   c = p [< ?src] src(p) | -1
+   c
+   ['"'] parse_string!
+   ['{'] parse_object!
+   ['['] parse_array!
+   ['t'] parse_lit(1, 4)
+   ['f'] parse_lit(0, 5)
+   ['n'] parse_null!
+   | parse_number!

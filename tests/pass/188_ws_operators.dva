@@ -1,0 +1,33 @@
+// Whitespace-sensitive operator dispatch (codebase_review H4): '*', '-', '!',
+// and '..' change meaning with adjacency. This is the positive side of the
+// table; the '..' whitespace errors (E2025) live in tests/fail/153-155.
+
+// binary '*' (either spacing) vs unary '*' (adjacent, address-of)
+print_int $ 6 * 7
+print_int $ 6*7
+print_int $ 2 *3
+
+// unary '-' (adjacent) vs binary '-' (subtraction)
+print_int $ -3
+print_int $ 5 - 3
+
+// operator sections: a leading op WITH trailing whitespace is a section
+f = * 2
+print_int $ f $ 3
+g = - 3
+print_int $ g $ 10
+
+// postfix '!' (adjacent) — zero-arg call; a spaced '!' would be prefix-freeze
+fun = !=> 42
+print_int $ fun!
+
+// range '..' — endpoints must be adjacent (spaced forms are tests/fail/153-155)
+sum' = 0
+0..3 @ i => sum' = sum' + i
+print_int $ sum'
+
+// '&' address-of (adjacent, no trailing space): Builder writable buffer
+b = {32}
+take: Addr => Int
+take = a => 1
+print_int $ take(&b)

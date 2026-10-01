@@ -1,0 +1,29 @@
+// std/http module: reason phrases, header lines, response building, and the
+// request-line path extractor. Header/response strings carry \r\n, so this
+// checks their lengths and CR-free substrings rather than printing the whole
+// byte sequence.
+
+#use "net/http"
+#use libc
+
+// Reason phrases for status codes ("" for unknown).
+print $ http::reason_of(200)
+print $ http::reason_of(404)
+print $ http::reason_of(999)
+
+// header("Content-Type", "text/plain") = "Content-Type: text/plain\r\n".
+h = http::header("Content-Type", "text/plain")
+print_int $ ?h
+print $ h(0..12)
+
+// response(200, "Content-Length: 5\r\n", "hello") =
+//   "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"  (43 bytes)
+r = http::response(200, http::header("Content-Length", "5"), "hello")
+print_int $ ?r
+print $ r(0..15)
+print $ r(38..43)
+
+// path_of reads the request path out of a request-line buffer.
+req = {64}
+req += "GET /path HTTP/1.1\r\n"
+print $ http::path_of(+req)

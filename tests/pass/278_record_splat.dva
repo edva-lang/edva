@@ -1,0 +1,18 @@
+b = (20, 30)
+r = (10, ..b, 40)
+print_int $ r.0
+print_int $ r.1
+print_int $ r.2
+print_int $ r.3
+
+named_b = (x = 100, y = 200)
+named_r = (a = 50, ..named_b, z = 300)
+print_int $ named_r.a
+print_int $ named_r.x
+print_int $ named_r.y
+print_int $ named_r.z
+
+r2 = (..(1, 2), 3)
+print_int $ r2.0
+print_int $ r2.1
+print_int $ r2.2

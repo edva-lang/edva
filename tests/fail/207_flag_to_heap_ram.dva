@@ -1,0 +1,5 @@
+// Flags and heap ram units use distinct representations. The heap unit must
+// be written explicitly as <--> for Option's negative branch.
+#type Option < Int | >
+value: Option
+value = <->

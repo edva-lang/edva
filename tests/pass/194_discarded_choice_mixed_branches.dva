@@ -1,0 +1,29 @@
+// A discarded choice — a statement, or the body of a cycle — never consumes
+// its value, so its branches need not unify: a mixed-type branch set (an
+// assignment yielding an Int here, a flag assignment there) is legal. The
+// mutations still run on the matched branch.
+
+x' = 0
+f' = <->
+s' = ++""
+
+"5a." @ c =>
+   c
+      ['5'] x' = 1
+      ['.'] f' = <+>
+      ['a'] s' = ++"see"; x' = 2
+      | -->
+
+print_int $ x'
+print $ ( f' | "Positive" | "Negative")
+print $ s'
+
+y' = 0
+q' = <->
+"7" @ ch =>
+   ch
+      ['7'] y' = 1
+      | q' = <+>
+
+print_int $ y'
+print $ ( q' | "Positive" | "Negative")

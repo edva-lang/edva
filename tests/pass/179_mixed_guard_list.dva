@@ -1,0 +1,29 @@
+// Mixed comma-OR guard: a value guard's entries may be values OR predicate
+// references (functions T => RamNN) — the value literals compare, the
+// functions are applied to the condition. Also exercises the empty-body
+// sugar ("c [a, b]" == "c [a, b] <+> | <->") and variant comma-lists.
+
+is_delim: Rune => <>
+is_delim = c =>
+   c ['(', ')', '[', ']']
+
+is_ws: Rune => <>
+is_ws = c =>
+   c [' ', '\t']
+
+// Value + predicate mixed list, swapped branches.
+special: Rune => <>
+special = c =>
+   c ['"', '\0', is_delim, is_ws] <-> | <+>
+
+print_int $ (special('(') | 1 | 0)   
+print_int $ (special('"') | 1 | 0)   // value   -> <-> -> 0
+print_int $ (special('!') | 1 | 0)   
+
+// Empty-body sugar as a predicate.
+is_digit: Rune => <>
+is_digit = c =>
+   c ['0', '1', '2']
+
+print_int $ (is_digit('5') | 1 | 0)  
+print_int $ (is_digit('2') | 1 | 0)  

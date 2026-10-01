@@ -1,0 +1,25 @@
+// str::cmp (bytewise lexicographic three-way), str::lt, and the prelude's
+// generic sort (insertion sort over a slice view). Sort is generic over the
+// element type via a `(T[])` slice param; the element type is inferred from
+// the slice argument. A String order is str::lt; Ints use a named "less than".
+
+#use(import) fp
+
+#use str
+
+print_int $ str::cmp("abc", "abc")
+print_int $ str::cmp("abc", "abd")
+print_int $ str::cmp("abd", "abc")
+print_int $ str::cmp("ab", "abc")
+print_int $ str::cmp("", "a")
+
+int_lt: Int, Int => <>
+int_lt = a, b => a < b
+
+names = ++("pear", "apple", "fig", "banana", "cherry")
+sort(names(0..5), str::lt)
+names @ n => print $ n
+
+nums = ++(5, 3, 8, 1, 4)
+sort(nums(0..5), int_lt)
+nums @ n => print_int $ n

@@ -1,0 +1,93 @@
+// Compile-time record field reflection:
+// 1. ?T on a Record type gives field count.
+// 2. T.(i) gives the i-th field's name as a compile-time String constant.
+// 3. T.(i) in type position resolves to the field's static TypeInfo.
+// 4. Concrete type Pt.(i) works directly.
+// 5. Unrolled loops 0..?T @ i allow generic record inspection/serialization.
+
+#use "str"
+
+#type Pt (x: Int, y: Int)
+#type Person (name: String, age: Int, active: <>)
+#type Pair (Int, String)
+
+// Field count reflection:
+nfields: #! T: Type, T => Int
+nfields = _ => ?T
+
+// Static field name access:
+field0_name: #! T: Type, T => String
+field0_name = _ => T.(0)
+
+field1_name: #! T: Type, T => String
+field1_name = _ => T.(1)
+
+// Join field names of any record:
+join_field_names: #! T: Type, T => String
+join_field_names = _ =>
+   out = {32}
+   0..?T @ i =>
+      i > 0 | out += ","
+      out += T.(i)
+   +out
+
+// Compile-time type check on fields:
+is_field0_int: #! T: Type, T => <>
+is_field0_int = _ => T.(0) == Int
+
+is_field0_str: #! T: Type, T => <>
+is_field0_str = _ => T.(0) == String
+
+// Generic inspect function using compile-time type dispatch:
+inspect: #! T: Type, T => ()
+inspect = val =>
+   0..?T @ i =>
+      name = T.(i)
+      T.(i)
+         [Int]
+            print $ name + ":int=" + str::from_int(val.(i))
+         [String]
+            print $ name + ":str=" + val.(i)
+         |
+            print $ name + ":other"
+
+p: Pt
+p.x = 10
+p.y = 20
+
+print $ str::from_int(nfields(p))
+print $ field0_name(p)
+print $ field1_name(p)
+print $ join_field_names(p)
+
+// Direct reflection on concrete type:
+print $ Pt.(0)
+print $ Pt.(1)
+
+per: Person
+per.name = "Alice"
+per.age = 30
+per.active = <+>
+
+print $ str::from_int(nfields(per))
+print $ join_field_names(per)
+print $ Person.(0)
+print $ Person.(1)
+print $ Person.(2)
+
+print $ is_field0_int(p) | "pt.0 is int" | "pt.0 is not int"
+print $ is_field0_str(p) | "pt.0 is str" | "pt.0 is not str"
+print $ is_field0_str(per) | "per.0 is str" | "per.0 is not str"
+
+// Type equality check:
+print $ Pt.(0) == Int | "Pt.0==Int" | "Pt.0!=Int"
+print $ Pt.(1) == Int | "Pt.1==Int" | "Pt.1!=Int"
+print $ Person.(0) == String | "Person.0==Str" | "Person.0!=Str"
+
+// Positional tuple field names:
+pair = Pair(42, "hello")
+print $ join_field_names(pair)
+
+// Full generic serializer/inspector:
+inspect(p)
+inspect(per)

@@ -1,0 +1,20 @@
+// First-class-function coverage for the two related post-Pratt fixes.
+//
+// 1. Top-level closure: a lambda referencing a variable bound at top level
+//    (in main's frame) works — main is still on the stack when the lambda
+//    runs, so reading its alloca is safe.
+// 2. Multi-param lambda direct call.
+// 3. Higher-order call: a function returning a non-capturing lambda. The
+//    returned function pointer travels as an i64 through the indirect-call
+//    path, which must emit inttoptr (not the invalid addrspacecast that
+//    clang rejected before the E5012 fix).
+
+k = 5
+f = x => x + k
+print_int $ f $ 2
+
+mul2 = a, b => a * b
+print_int $ mul2(3, 4)
+
+factory = x => (y => y + 1)
+print_int $ (factory $ 0)(10)   // apply 10 to the lambda factory(0) returns

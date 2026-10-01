@@ -1,0 +1,23 @@
+// A record field whose type is declared AFTER the record (a forward
+// reference, e.g. FnExpr.body before Expr) keeps its parse-time .Record
+// placeholder val_type. Reading such a field must LOAD the slot's pointer
+// (a heap enum) and type it .Ramification — previously the member read
+// returned the slot ADDRESS, so a guard on the field read garbage (the
+// selfhost parser's "Fn(?)" symptom).
+
+#type Names (String){}
+#type FnExpr (params: Names, ct_params: Names, body: Expr)
+#type Expr < Int(Int), Str(String), Fn(FnExpr) >
+
+read_int: Expr => Int
+read_int = x =>
+   x [Int n] n | -1
+
+read_body: Expr => Int
+read_body = e =>
+   e [Fn t] read_int(t.body) | -1
+
+body = Expr(Int, 7)
+fnx = Expr(Fn, (Names(), Names(), body))
+print_int $ read_body(fnx)
+print_int $ read_body(Expr(Fn, (Names(), Names(), Expr(Int, 42))))

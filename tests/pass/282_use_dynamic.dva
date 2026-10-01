@@ -1,0 +1,22 @@
+#use(dynamic) views
+
+s' = views::State((10, "Item"))
+
+// 1. Initial render using static implementation
+print $ views::render(s')
+
+// 2. Mutate state in host application loop
+s' = views::step(s')
+print $ views::render(s')
+
+// 3. Hot-reload source file directly via reload()
+ok = views::reload!
+print $ "Reloaded source: " + str::from_int(ok | 1 | 0)
+s' = views::step(s')
+print $ views::render(s')
+
+// 4. Hot-reload compiled shared library via reload_so
+ok2 = views::reload_so("/tmp/views_hot.so")
+print $ "Reloaded SO: " + str::from_int(ok2 | 1 | 0)
+s' = views::step(s')
+print $ views::render(s')

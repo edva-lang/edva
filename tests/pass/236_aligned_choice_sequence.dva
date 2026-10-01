@@ -1,0 +1,18 @@
+// Aligned '|' must pertain to the same choice: a branch containing an inline
+// ';' sequence must not absorb a subsequent aligned '|' into an inner choice.
+f = b =>
+   b
+      | x = 1; x + 1
+      | 42
+
+print_int $ f(<+>)
+print_int $ f(<->)
+
+g: <> => <Int|>
+g = b =>
+   b
+      | x = 10; <+ x ->
+      | <-->
+
+print_int $ (g(<+>) | v => v | 0)
+print_int $ (g(<->) | v => v | 0)

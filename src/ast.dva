@@ -1,0 +1,242 @@
+// selfhost/ast.dva — the AST node types, ported from src/ast.odin.
+//
+// Expr and TypeInfo are self-recursive enums (one variant per Odin
+// ExprKind / TypeInfoKind); the field-grouping structs are records; lists are
+// the named growable-array types below. Booleans are the built-in <> flag
+// (<+>/<->), never a declared RamNN. Forward references make declaration
+// order free: the records name Expr / TypeInfo before those enums are
+// declared, and the enums reference the records back.
+
+// --- leaf enums ------------------------------------------------------------
+
+#type ValueType <
+   Unknown Int I8 I16 I32 I64 U8 U16 U32 U64
+   Rune Float F32 Str Ram Record Unit RawPtr Fn Type
+   Slice Builder Array Map Error ThreadId Flag Enum
+>
+
+#type BinaryOp <
+   Add Sub Mul Div Mod
+   Gt Lt Eq NotGt NotLt NotEq
+   And Or Feed Apply Bind
+   BitAnd BitOr Shl Shr Seq
+>
+
+#type UnaryOp <Not, BitNot, Length, AddrOf, Freeze, Unwrap, Propagate, RuneCount>
+
+// The built-in ramification variant tags (Positive/Negative for the unit
+// flags, Some/Err for payload rams, Succ/Noth for the unit upper variants).
+#type Tag < Positive, Negative, Some, Err, Succ, Noth >
+
+// (The Odin StmtKind is a single-variant enum — always ExprStmt — so it is
+// dropped here; Stmt is just an Expr wrapper.)
+
+// --- named growable arrays -------------------------------------------------
+
+#type Exprs (Expr){}
+#type Names (String){}
+#type Fields (RecordField){}
+#type Branches (ChoiceBranch){}
+#type FieldTypes (RecordFieldType){}
+#type EnumSlots (EnumSlotInfo){}
+#type CParams (CompileTimeParam){}
+#type FParams (ForeignFnParam){}
+#type VTypes (ValueType){}
+#type VInfos (TypeInfo){}
+
+// --- TypeInfo --------------------------------------------------------------
+
+#type RecordFieldType (
+   name: String, val_type: ValueType, rec_type: TypeInfo,
+   has_default: <>, default_expr: Expr,
+)
+
+#type RamSlotInfo (
+   has_payload: <>, payload_type: ValueType,
+   payload_record: TypeInfo,
+)
+
+#type EnumSlotInfo (
+   label: String, has_payload: <>, payload_type: ValueType,
+   payload_record: TypeInfo,
+)
+
+#type CompileTimeParam (name: String, val_type: ValueType, type_info: TypeInfo)
+
+#type BitfieldField (name: String, bit_width: Int, bit_offset: Int)
+#type BitfieldFields (BitfieldField){}
+#type BitfieldInfo (
+   fields: BitfieldFields,
+   backing_type: ValueType,
+   total_bits: Int,
+)
+
+// One variant per TypeInfoKind. Record and Slice share the Rec variant (the
+// is_slice flag distinguishes); deferred_name/deferred_call (parser-internal
+// cross-module resolution) are not yet represented.
+#type TypeInfo <
+   Prim(ValueType)
+   TypeVar(String)
+   Rec((FieldTypes, <>, <>, ValueType, Int, <>))
+   Bitfield(BitfieldInfo)
+   Ram((RamSlotInfo, RamSlotInfo))
+   Enum(EnumSlots)
+   Array((ValueType, TypeInfo, Int))
+   Map((ValueType, ValueType, TypeInfo))
+   Fn((VTypes, VInfos, ValueType, TypeInfo, CParams))
+   ThreadId((ValueType, TypeInfo))
+>
+
+// --- Expr sub-records ------------------------------------------------------
+
+#type PatternKind < Wildcard, Bind, Lit, Variant, Record >
+
+#type PatternRecord (
+   kind: PatternKind,
+   field_name: String,
+   name: String,
+   lit_val: Expr,
+   subpatterns: Patterns,
+)
+
+#type Pattern <
+   Node(PatternRecord)
+   Empty
+>
+
+#type Patterns (Pattern){}
+
+#type GuardKind < Case, Predicate, Variant, Bare >
+
+#type ChoiceBranch (
+   kind: GuardKind,
+   case_values: Exprs,
+   pred_fn: Expr,
+   variant_names: Names,
+   bind_vars: Names,
+   is_identity_extractor: <>,
+   block: Expr,
+)
+
+#type ChoiceExpr (cond: Expr, is_exhaustive: <>, branches: Branches)
+
+#type BlockExpr (exprs: Exprs)
+
+#type CallExpr (
+   fn_name: String, fn_target: Expr, args: Exprs,
+   line: Int, col: Int,
+)
+
+#type FnExpr (params: Names, ct_params: Names, body: Expr)
+
+#type CycleExpr (iterable: Expr, body_fn: Expr, is_rune: <>)
+
+#type CycleJumpExpr (is_break: <>, level: Int)
+
+#type CycleEscapeExpr (cycle: Expr, branch: Expr)
+
+#type RangeExpr (has_lhs: <>, has_rhs: <>, lhs: Expr, rhs: Expr)
+
+#type NamedArgExpr (name: String, val: Expr)
+#type RecordField (has_name: <>, name: String, val: Expr)
+
+#type RecordExpr (fields: Fields, is_repeat: <>)
+
+#type MemberExpr (target: Expr, field_name: String, is_module_access: <>, index_expr: Expr, line: Int, col: Int)
+
+#type KeyAccessExpr (
+   target: Expr, key: Expr, is_membership: <>, is_delete: <>,
+   line: Int, col: Int,
+)
+
+#type VariantExpr (tag_name: Tag, args: Exprs)
+
+#type TypeDeclExpr (name: String, type_info: TypeInfo)
+
+#type CastExpr (target_type: ValueType, expr: Expr)
+
+#type ImportStmt (module_name: String, module_path: String, is_dynamic: <>, is_import: <>)
+
+#type ForeignFnParam (
+   name: String, param_type: ValueType,
+   record_info: TypeInfo,
+)
+
+#type ForeignFnDecl (
+   c_name: String, dva_name: String, abi: String,
+   params: FParams, return_type: ValueType, ret_record_info: TypeInfo,
+   is_variable: <>,
+)
+
+#type RawMemoryExpr (addr: Expr, load_type: ValueType, rec_name: String)
+
+#type SizeOfExpr (val_type: ValueType, rec_type: TypeInfo)
+
+#type CompileTimeExpr (expr: Expr)
+
+#type SpawnExpr (call: CallExpr)
+
+#type JoinExpr (handle: Expr)
+
+#type ExitExpr (code: Expr)
+#type UserDiagExpr (is_warn: <>, msg: Expr, line: Int, col: Int)
+
+#type MapPair (key: Expr, value: Expr)
+#type MapPairs (MapPair){}
+#type MapLiteralExpr (pairs: MapPairs)
+
+// --- Expr ------------------------------------------------------------------
+
+// One variant per ExprKind. Multi-field nodes use tuple payloads (a variant
+// payload is a single type); list children use the named array types above.
+#type Expr <
+   Int(Int)
+   Float(Float)
+   Str(String)
+   Var(String)
+   Rune(Int)
+   Bin((BinaryOp, Expr, Expr))
+   Assign((String, <>, <>, <>, <>, Expr, Expr, String, TypeInfo))
+   Choice(ChoiceExpr)
+   Block(BlockExpr)
+   Call(CallExpr)
+   CycleJump(CycleJumpExpr)
+   CycleEscape(CycleEscapeExpr)
+   Cycle(CycleExpr)
+   Range(RangeExpr)
+   Fn(FnExpr)
+   Record(RecordExpr)
+   Member(MemberExpr)
+   KeyAccess(KeyAccessExpr)
+   Variant(VariantExpr)
+   RawMemory(RawMemoryExpr)
+   Import(ImportStmt)
+   Foreign(ForeignFnDecl)
+   TypeCast(CastExpr)
+   TypeDecl(TypeDeclExpr)
+   Unary((UnaryOp, Expr))
+   Copy(Expr)
+   SizeOf(SizeOfExpr)
+   BuilderCreate(Expr)
+   MapLiteral(MapLiteralExpr)
+   CompileTime(CompileTimeExpr)
+   Spawn(SpawnExpr)
+   Join(JoinExpr)
+   Exit(ExitExpr)
+   FastMathPragma(String)
+   SwizzlePragma(String)
+   NamedArg(NamedArgExpr)
+   UserDiag(UserDiagExpr)
+>
+
+// --- Stmt ------------------------------------------------------------------
+
+#type Stmt (expr: Expr)
+
+mk_rfield_type: String, ValueType, TypeInfo => RecordFieldType
+mk_rfield_type = name, vt, ti =>
+   RecordFieldType((name, vt, ti, <->, Expr(Int, 0)))
+
+mk_rfield_type_default: String, ValueType, TypeInfo, Expr => RecordFieldType
+mk_rfield_type_default = name, vt, ti, def_expr =>
+   RecordFieldType((name, vt, ti, <+>, def_expr))

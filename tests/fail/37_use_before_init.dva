@@ -1,0 +1,5 @@
+// Reading a forward-annotated variable before its first write must error:
+// "counter: Int" binds the name + type but allocates no storage, so
+// "print $ counter" is a use-before-initialization error.
+counter: Int
+print $ counter

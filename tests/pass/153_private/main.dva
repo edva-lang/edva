@@ -1,0 +1,3 @@
+#use mod
+print_int $ mod::pub
+print_int $ mod::public_fn(2)

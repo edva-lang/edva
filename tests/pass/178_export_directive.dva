@@ -1,0 +1,15 @@
+// #export marks functions as linkable external symbols (external linkage +
+// bare, unprefixed name), so a dva-compiled object can be linked into another
+// program. Single-line and indented-block forms both work; the functions stay
+// callable normally.
+
+#export inc: Int => Int
+#export inc = x => x + 1
+
+#export
+   dbl = x => x * 2
+   dec = x => x - 1
+
+print_int $ inc(41)
+print_int $ dbl(21)
+print_int $ dec(1)

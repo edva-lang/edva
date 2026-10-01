@@ -1,0 +1,93 @@
+// Issue #38: Generalized binary operator lifting & reductions
+// (all_bit, any_bit)
+
+// 1. Vector comparisons producing boolean mask tuples
+#use(import) fp
+
+v1 = (1, 2)
+v2 = (2, 1)
+
+lt = v1 < v2
+print $ "lt: " + (lt.0 | "T" | "F") + " " + (lt.1 | "T" | "F")
+
+gt = v1 > v2
+print $ "gt: " + (gt.0 | "T" | "F") + " " + (gt.1 | "T" | "F")
+
+eq = v1 == (1, 3)
+print $ "eq: " + (eq.0 | "T" | "F") + " " + (eq.1 | "T" | "F")
+
+neq = v1 != (1, 3)
+print $ "neq: " + (neq.0 | "T" | "F") + " " + (neq.1 | "T" | "F")
+
+nlt = v1 !< (2, 2)
+print $ "nlt: " + (nlt.0 | "T" | "F") + " " + (nlt.1 | "T" | "F")
+
+ngt = v1 !> (1, 1)
+print $ "ngt: " + (ngt.0 | "T" | "F") + " " + (ngt.1 | "T" | "F")
+
+// 2. Scalar broadcasting (Vector x Scalar and Scalar x Vector)
+bcast_r = (10, 20) < 15
+print $ "bcast_r: " + (bcast_r.0 | "T" | "F") + " " + (bcast_r.1 | "T" | "F")
+
+bcast_l = 15 < (10, 20)
+print $ "bcast_l: " + (bcast_l.0 | "T" | "F") + " " + (bcast_l.1 | "T" | "F")
+
+// 3. Vector logical operators (&&, ||)
+m_true = (<+>, <+>)
+m_false = (<->, <->)
+m_mix = (<+>, <->)
+
+and_res = m_mix && m_true
+print $ "and_res: " + (and_res.0 | "T" | "F") + " " + (and_res.1 | "T" | "F")
+
+or_res = m_mix || m_false
+print $ "or_res: " + (or_res.0 | "T" | "F") + " " + (or_res.1 | "T" | "F")
+
+// 4. Boolean reductions (all_bit, any_bit)
+print $ "all_bit m_true: " + (all_bit(m_true) | "TRUE" | "FALSE")
+print $ "all_bit m_mix: " + (all_bit(m_mix) | "TRUE" | "FALSE")
+print $ "all_bit m_false: " + (all_bit(m_false) | "TRUE" | "FALSE")
+
+print $ "any_bit m_true: " + (any_bit(m_true) | "TRUE" | "FALSE")
+print $ "any_bit m_mix: " + (any_bit(m_mix) | "TRUE" | "FALSE")
+print $ "any_bit m_false: " + (any_bit(m_false) | "TRUE" | "FALSE")
+
+// 5. Higher-dimensional vectors (3D, 4D)
+m3 = (<+>, <+>, <+>)
+m3_one_false = (<+>, <->, <+>)
+print $ "3D all: " + (all_bit(m3) | "TRUE" | "FALSE")
+print $ "3D mix all: " + (all_bit(m3_one_false) | "TRUE" | "FALSE")
+print $ "3D mix any: " + (any_bit(m3_one_false) | "TRUE" | "FALSE")
+
+m4_none = (<->, <->, <->, <->)
+m4_one = (<->, <->, <+>, <->)
+print $ "4D none any: " + (any_bit(m4_none) | "TRUE" | "FALSE")
+print $ "4D one any: " + (any_bit(m4_one) | "TRUE" | "FALSE")
+
+// 6. Scalar Flag identity with reductions
+print $ "scalar all: " + (all_bit(<+>) | "TRUE" | "FALSE")
+print $ "scalar any: " + (any_bit(<->) | "TRUE" | "FALSE")
+
+// 7. UI Hit-testing (Bounding box point-in-rect)
+rect_min = (10, 20)
+rect_max = (100, 200)
+
+cursor_in = (50, 50)
+cursor_out = (5, 50)
+
+hit_in = all_bit(cursor_in !< rect_min && cursor_in !> rect_max)
+hit_out = all_bit(cursor_out !< rect_min && cursor_out !> rect_max)
+print $ "hit_in: " + (hit_in | "INSIDE" | "OUTSIDE")
+print $ "hit_out: " + (hit_out | "INSIDE" | "OUTSIDE")
+
+oob_in = any_bit(cursor_in < rect_min || cursor_in > rect_max)
+oob_out = any_bit(cursor_out < rect_min || cursor_out > rect_max)
+print $ "oob_in: " + (oob_in | "YES" | "NO")
+print $ "oob_out: " + (oob_out | "YES" | "NO")
+
+// 8. Whole-record equality via all_bit
+rec_a = (1, 2, 3)
+rec_b = (1, 2, 3)
+rec_c = (1, 2, 4)
+print $ "rec_a == rec_b: " + (all_bit(rec_a == rec_b) | "EQUAL" | "NOT_EQUAL")
+print $ "rec_a == rec_c: " + (all_bit(rec_a == rec_c) | "EQUAL" | "NOT_EQUAL")

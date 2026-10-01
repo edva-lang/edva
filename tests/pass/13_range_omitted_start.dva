@@ -1,0 +1,2 @@
+..3 @ i =>
+    print_int $ i

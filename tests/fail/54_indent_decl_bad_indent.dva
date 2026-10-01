@@ -1,0 +1,4 @@
+#type T
+   foo: Int
+      bar: String
+   baz: Int

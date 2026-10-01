@@ -1,0 +1,45 @@
+// Closures (P0.2): a lambda captures enclosing locals by value
+// (copy-at-capture), carried in a { fn_ptr, env_ptr } fat pointer. This is
+// the old E3044 case promoted to a working feature.
+
+// Basic capture of an enclosing parameter.
+mul2 = a => b => a * b
+print_int $ mul2(10)(2)
+
+// Capturing a String (typed param; read its length inside the closure).
+len_of: String => (Int => Int)
+len_of = s => n => ?s + n
+print_int $ len_of("hello")(2)
+
+// §3.3: a declared function-type return types the nested lambda's param, so a
+// captured String concatenates instead of mis-typing as Int.
+greet: String => (String => String)
+greet = p => s => p + s
+print $ greet("hi ")("bob")
+
+// Copy-at-capture: the value is fixed at closure construction.
+make_adder = x =>
+   v' = x
+   v' = v' + 100
+   (y => y + v')
+print_int $ make_adder(10)(1)
+
+// Each closure owns an independent, mutable copy of the local.
+make_counter = start =>
+   n' = start
+   step => (n' = n' + step; n')
+c1 = make_counter(100)
+c2 = make_counter(1000)
+print_int $ c1(1)
+print_int $ c1(1)
+print_int $ c2(5)
+
+// A closure over two variables (transitive capture).
+mk = x => (y => (z => x + y + z))
+print_int $ mk(1)(2)(3)
+
+// A nested NAMED function captures too (P0.2): inner is a closure value.
+outer = x =>
+   inner = y => x + y
+   inner(3)
+print_int $ outer(4)

@@ -1,0 +1,49 @@
+// Tests unboxed aggregate { i1 tag, i64 payload } representation for rams.
+
+find_int: Int => < Int | >
+find_int = x =>
+   x > 0
+      | <+ x * 10 ->
+      | <-->
+
+calc: < Int | >, Int => Int
+calc = r, default_val =>
+   r
+      | val => val + 1
+      | default_val
+
+choice_num: Int => < Int | Float >
+choice_num = x =>
+   x > 0
+      | <+ 42 +>
+      | <- 3.14 ->
+
+// Test RamPN <Int | >
+r1 = find_int(5)
+r1
+   | v => print_int $ v
+   | print $ "none"
+
+r2 = find_int(-3)
+r2
+   | v => print_int $ v
+   | print $ "none"
+
+// Test unwrap on unboxed RamPN <Int | >
+val1 = r1!!
+print_int $ val1
+
+// Test passing unboxed ram as parameter
+print_int $ calc(r1, 0)
+print_int $ calc(r2, 99)
+
+// Test RamPP <Int | Float>
+c1 = choice_num(1)
+c1
+   | iv => print_int $ iv
+   | fv => print_float $ fv
+
+c2 = choice_num(0)
+c2
+   | iv => print_int $ iv
+   | fv => print_float $ fv

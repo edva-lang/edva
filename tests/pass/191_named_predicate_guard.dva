@@ -1,0 +1,14 @@
+// A predicate guard with a NAMED lambda param (selfhost blocker #10): the
+// guard's first parameter must receive the scrutinee (not just the free "_"
+// convention), otherwise the body reads an unbound 'n' (E3004).
+
+f: Int => Int
+f = x =>
+   x
+      [n => n > 0] 1
+      [n => n < 0] 2
+      | 3
+
+print_int $ f(5)
+print_int $ f(-5)
+print_int $ f(0)

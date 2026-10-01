@@ -1,0 +1,8 @@
+// Verifies '!?' is disabled as a propagate operator
+step: Int => < Int | >
+step = x => <+ x +>
+
+f: Int => < Int | >
+f = x =>
+   v = step(x)!?
+   <+ v +>

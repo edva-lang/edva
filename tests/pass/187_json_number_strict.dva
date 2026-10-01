@@ -1,0 +1,16 @@
+// JSON number strictness (L10): a bare '-', "1.", "1e", "1e+", and ".5"
+// must be rejected as malformed, not silently parsed as -0.0 / 1.0 / 1.0.
+
+#use json
+
+check: String => String
+check = s => json::parse(s) | v => "ok" | e => "error"
+
+print $ check $ (=1.5=)
+print $ check $ (=-3=)
+print $ check $ (=2.5e-2=)
+print $ check $ (=-=)
+print $ check $ (=1.=)
+print $ check $ (=1e=)
+print $ check $ (=1e+=)
+print $ check $ (=.5=)

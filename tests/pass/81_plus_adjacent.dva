@@ -1,0 +1,11 @@
+// The "**" import marker freed "+" to be a pure operator: "a+b" (no spaces)
+// must now lex as a+b (Plus), not a + Import. Also exercises that adjacent
+// operator runs are only valid when the run is a known operator.
+a = 2
+b = 3
+c = a+b
+d = a + b
+e = 4 * -5
+print_int $ c
+print_int $ d
+print_int $ e

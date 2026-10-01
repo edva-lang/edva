@@ -1,0 +1,4 @@
+// M3: #spawn accepts a lambda / first-class function target.
+h = #spawn (m => m * 2)(21)
+r = #join h
+print_int $ (r | _ | _)

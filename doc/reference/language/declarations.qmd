@@ -1,0 +1,60 @@
+# Declarations and directives
+
+**Audience:** Edva users<br>
+**Status:** current reference<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `process/spec/mutability.md`, `process/spec/directives.md`,
+`process/spec/functions.md`, `selfhost/src/parser.dva`
+
+An ordinary `=` binding is immutable. A trailing prime makes the identifier
+rebindable; the former mutable-binding operator is not part of user code.
+Interior mutation—such as appending to a Builder or writing a map entry—does
+not require a primed binding.
+
+```dva
+total' = 0
+total' = total' + 1
+
+buffer = {32}
+buffer += "ok"
+```
+
+Function parameters are always immutable and cannot be primed. A signature is
+separate from its body and fixes parameter and result types:
+
+```dva
+add: Int, Int => Int
+add = left, right => left + right
+```
+
+## Types and module boundaries
+
+`#type` declares a named record, enum, ramification, growable array, or map
+shape. Type names are registered before their bodies parse, which permits
+recursive and mutually recursive declarations.
+
+```dva
+#type Point (x: Int, y: Int)
+#type MaybePoint < Point | >
+```
+
+`#use module` imports a sibling or standard-library module; `#use "path"`
+imports a path, whose final segment is its namespace. The resolver looks
+beside the importing source first, then in `std/`; it prefers `<name>.dva`
+over a same-named directory module.
+
+`#private` hides its following declaration or indented block from importers.
+The private name remains available unqualified inside its module, but an
+importer cannot resolve `module::name`.
+
+## Globals and foreign declarations
+
+`::name = value` and `::name: Type` declare marked globals. Within a function,
+`name ::= value` writes the marked global, even if a local binding has the
+same spelling. The target must already exist.
+
+Use `#foreign` to declare C ABI bindings and `#export` to expose an Edva
+binding to C. Foreign signatures use Edva types; buffer addresses use `Addr`
+and the unary `*builder` or `*string` forms. See the
+[directives specification](../../../process/spec/directives.md) for all
+directives and linkage rules.

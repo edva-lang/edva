@@ -1,0 +1,50 @@
+// Comma OR-list guards: `x [a, b, c] body` matches when x equals ANY of the
+// listed values (equivalent to a chain of [a] [b] [c] guards).
+
+// Statement form, no else: the guard's branch runs on a match, otherwise the
+// following statement runs.
+a = 2
+a [1, 2, 3] print $ "a in 1,2,3"
+a [7, 8] print $ "a in 7,8"
+
+print_int $ 1000
+
+// Value form with fallback: the matching branch value, else the fallback.
+b = 5
+r1 = b [1, 2, 5] 100 | 0
+print_int $ r1
+
+c = 9
+r2 = c [1, 2, 5] 100 | 0
+print_int $ r2
+
+print_int $ 2000
+
+// In a cycle: break when the counter hits any of the listed values.
+sum' = 0
+10 @ i =>
+   i [2, 4, 6] -->
+   sum' = sum' + i
+print_int $ sum'
+
+print_int $ 3000
+
+// Mixed with a predicate guard (conditional-chain path).
+v = 2
+v
+   [< 0] print $ "negative"
+   [2, 4] print $ "two or four"
+w = 9
+w
+   [< 0] print $ "negative"
+   [2, 4] print $ "two or four"
+print_int $ 4000
+
+// String value-guards compare CONTENT, not pointers — a dynamically-built
+// String matches a literal guard.
+sb = {8}
+sb += '/'
+sp = +sb
+sp ["/"] print $ "slash"
+sp ["x"] print $ "x-guard"
+print_int $ 5000

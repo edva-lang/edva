@@ -1,0 +1,22 @@
+// Generic function-typed parameters: a function type "(T => U)" is inferred
+// structurally from the argument function's signature, and the instantiation
+// substitutes both type variables into the nested function type.
+
+my_apply: #! T: Type, #! U: Type, (T => U), T => U
+my_apply = f, x => f $ x
+
+inc: Int => Int
+inc = n => n + 1
+print_int $ my_apply(inc, 41)
+
+len_of: String => Int
+len_of = s => ?s
+print_int $ my_apply(len_of, "hello")
+
+// A two-argument function-typed param (flat inside the parens).
+my_apply2: #! T: Type, #! U: Type, (T, T => U), T, T => U
+my_apply2 = f, a, b => f(a, b)
+
+add: Int, Int => Int
+add = a, b => a + b
+print_int $ my_apply2(add, 40, 2)

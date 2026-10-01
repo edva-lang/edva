@@ -1,0 +1,17 @@
+// The prelude auto-loads into every program, so `ident` is already global —
+// it is no longer an importable module (it lives beside std/, not in it).
+#use(import) fp
+
+#type Ints (Int){}
+
+// A named function reference as a bare ram branch applies to the payload —
+// the named counterpart of the "| d => d |" identity lambda.
+xs: Ints
+xs += 42
+xs += 7
+print_int $ (xs(0) | ident | 0)
+print_int $ (xs(1) | ident | 0)
+print_int $ (xs(5) | ident | 99)
+
+fresh: Ints
+print_int $ (fresh(0) | ident | -1)

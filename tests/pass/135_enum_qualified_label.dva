@@ -1,0 +1,30 @@
+// Enum::Label qualification (P1.5): a variant name scoped to its enum.
+// The same label can appear in two enums (bare 'Y' is E3105-ambiguous);
+// the qualified spelling disambiguates.
+
+#type A <X, Y>
+#type B <Y, Z>
+
+name_a: A => String
+name_a = a =>
+   a [X] "AX" [Y] "AY"
+
+name_b: B => String
+name_b = b =>
+   b [Y] "BY" [Z] "BZ"
+
+print $ name_a(A::X)
+print $ name_a(A::Y)
+print $ name_b(B::Y)
+print $ name_b(B::Z)
+
+// A qualified variant assigned through a variable and coerced.
+v = A::Y
+print $ name_a(A(v))
+
+// Qualified variants compared against a choice-produced value.
+which: Int => A
+which = n =>
+   n [1] A::X | A::Y
+print $ name_a(which(1))
+print $ name_a(which(2))

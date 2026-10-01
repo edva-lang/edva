@@ -1,0 +1,20 @@
+// Variants close with "+>" or "->" (never a bare ">"); the closer selects the
+// ramification. A "<" or ">" inside a payload is always a comparison, so the
+// payloads below hold the full choice "5 > 3 | big | small" unbracketed.
+//   <+ p +>  RamPP Positive    <+ p ->  RamPN Some
+//   <- p ->  RamPP Negative    <- p +>  RamNP Err
+a = <+ 5 > 3 | "A big" | "A small" +>
+r1 = a | ("p: " + _) | ("e: " + _)
+print $ r1
+
+b = <+ 3 < 5 | "B lt" | "B ge" ->
+r2 = b | ("s: " + _) | "none"
+print $ r2
+
+c = <- "C neg" ->
+r3 = c | "pos" | ("n: " + _)
+print $ r3
+
+d = <- 9 > 5 | "D gt" | "D le" +>
+r4 = d | "ok" | ("e: " + _)
+print $ r4

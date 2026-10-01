@@ -1,0 +1,28 @@
+// "{expr}" is the Builder literal: an arena Builder with capacity expr.
+// Replaces the old "!expr" (e.g. "!4096") Builder-create spelling. "!" now
+// only means negation/freeze/length -- never Builder creation.
+
+// Builder creation with a literal capacity.
+b = {16}
+b += 'H'
+b += 'i'
+s = +b             // freeze: consumes b, "Hi"
+print $ s
+
+// Builder creation from a variable capacity (a hint, clamped >= 0).
+cap = 32
+out = {cap}
+out += 'A'
+out += 'B'
+out += 'C'
+print $ +out
+
+// Capacity can be an arbitrary integerish expression.
+out2 = {1 + 1}
+out2 += '!'
+print $ +out2
+
+// {n} splices as a plain value; postfix "expr {N}" repetition is unchanged.
+zeros = 0 {3}      // record of 3 zeros, NOT a builder
+print_int $ zeros(0)
+print_int $ zeros(2)

@@ -1,0 +1,4 @@
+// A declared signature return type is validated against the body's value.
+bad: Int => String
+bad = x => x
+print $ bad(1)

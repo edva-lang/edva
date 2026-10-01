@@ -1,0 +1,169 @@
+/* ==========================================================================
+   Custom Scrollbars (Modern, Slim, Minimalist)
+   ========================================================================== */
+
+/* Light mode default */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #adb5bd transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #ced4da;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #adb5bd;
+}
+
+/* Midnight Indigo Dark mode scrollbars */
+body.quarto-dark,
+body.quarto-dark * {
+  scrollbar-width: thin;
+  scrollbar-color: #3c3c5c transparent;
+}
+
+body.quarto-dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+body.quarto-dark ::-webkit-scrollbar-thumb {
+  background-color: #3c3c5c;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+body.quarto-dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #2aa198; /* Solarized Cyan on hover */
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light),
+  body:not(.quarto-light) * {
+    scrollbar-width: thin;
+    scrollbar-color: #3c3c5c transparent;
+  }
+
+  body:not(.quarto-light) ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  body:not(.quarto-light) ::-webkit-scrollbar-thumb {
+    background-color: #3c3c5c;
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  body:not(.quarto-light) ::-webkit-scrollbar-thumb:hover {
+    background-color: #2aa198;
+  }
+}
+
+/* ==========================================================================
+   Midnight Indigo surface cut-out inline code badges for dark mode only
+   ========================================================================== */
+
+body.quarto-dark code:not(pre > code),
+body.quarto-dark kbd,
+body.quarto-dark samp,
+body.quarto-dark p code:not(.sourceCode),
+body.quarto-dark li code:not(.sourceCode),
+body.quarto-dark td code:not(.sourceCode),
+body.quarto-dark th code:not(.sourceCode),
+body.quarto-dark table.table td code,
+body.quarto-dark table.table th code,
+body.quarto-dark table td code,
+body.quarto-dark table th code,
+body.quarto-dark .table td code,
+body.quarto-dark .table th code {
+  background-color: #202036 !important;
+  color: #2aa198 !important;
+  border: 1px solid rgba(42, 161, 152, 0.25) !important;
+  padding: calc(0.15em + 2px) 0.38em 0.15em 0.38em !important;
+  border-radius: 0.25rem !important;
+  font-size: 0.88em !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light) code:not(pre > code),
+  body:not(.quarto-light) kbd,
+  body:not(.quarto-light) samp,
+  body:not(.quarto-light) p code:not(.sourceCode),
+  body:not(.quarto-light) li code:not(.sourceCode),
+  body:not(.quarto-light) td code:not(.sourceCode),
+  body:not(.quarto-light) th code:not(.sourceCode),
+  body:not(.quarto-light) table.table td code,
+  body:not(.quarto-light) table.table th code,
+  body:not(.quarto-light) table td code,
+  body:not(.quarto-light) table th code,
+  body:not(.quarto-light) .table td code,
+  body:not(.quarto-light) .table th code {
+    background-color: #202036 !important;
+    color: #2aa198 !important;
+    border: 1px solid rgba(42, 161, 152, 0.25) !important;
+    padding: calc(0.15em + 2px) 0.38em 0.15em 0.38em !important;
+    border-radius: 0.25rem !important;
+    font-size: 0.88em !important;
+  }
+}
+
+/* Subtle rounded code blocks in dark mode */
+body.quarto-dark div.code-copy-outer-scaffold,
+body.quarto-dark div.sourceCode,
+body.quarto-dark pre {
+  border-radius: 0.5rem !important;
+}
+
+body.quarto-dark div.sourceCode {
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 0.5rem !important;
+  overflow: hidden !important;
+}
+
+body.quarto-dark div.sourceCode pre {
+  border: none !important;
+  border-radius: 0.5rem !important;
+}
+
+body.quarto-dark pre:not(.sourceCode) {
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  border-radius: 0.5rem !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light) div.code-copy-outer-scaffold,
+  body:not(.quarto-light) div.sourceCode,
+  body:not(.quarto-light) pre {
+    border-radius: 0.5rem !important;
+  }
+
+  body:not(.quarto-light) div.sourceCode {
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 0.5rem !important;
+    overflow: hidden !important;
+  }
+
+  body:not(.quarto-light) div.sourceCode pre {
+    border: none !important;
+    border-radius: 0.5rem !important;
+  }
+
+  body:not(.quarto-light) pre:not(.sourceCode) {
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: 0.5rem !important;
+  }
+}

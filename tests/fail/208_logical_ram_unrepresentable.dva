@@ -1,0 +1,7 @@
+// && can return either negative branch here: L's unit or R's Float payload.
+// No four-layout ram type can represent that result slot.
+#type L < Int | >
+#type R < | Float >
+a = L(<+ 1 ->)
+b = R(<- 2.0 +>)
+x = a && b

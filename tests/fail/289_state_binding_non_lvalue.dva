@@ -1,0 +1,3 @@
+// State binding operator '~~' requires a variable, member access, or indexed element target (E2108)
+
+x = ~~5

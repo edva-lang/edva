@@ -1,0 +1,42 @@
+# Edva {.unnumbered}
+
+**Audience:** readers learning or using Edva<br>
+**Status:** current front door<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `selfhost/src/`, `tests/pass/`, `process/spec/`
+
+Edva is a statically typed, expression-oriented systems language. It uses
+significant indentation, symbolic control flow, and no reserved keywords. The
+`edva` compiler emits LLVM IR and uses `clang` to link native programs.
+
+## Choose a path
+
+- **Learn Edva:** start with [installation](start/install.qmd), then the
+  [quickstart](start/quickstart.qmd) and [tour](start/tour.qmd).
+- **Read the language reference:** use the
+  [Edva language reference](reference/language/index.qmd).
+- **Use the compiler:** see the [`edva` CLI reference](reference/edva-cli.qmd).
+- **Work on the compiler:** follow the [documentation policy](contributing/documentation.qmd)
+  and use the topic specifications in `process/spec/`.
+
+## Reference and guides
+
+- [Language reference](reference/language/index.qmd)
+- [Bindings and modules](guide/bindings-and-modules.qmd)
+- [Functions and closures](guide/functions-and-closures.qmd)
+- [Choices and cycles](guide/choices-and-cycles.qmd)
+- [Ramifications](guide/ramifications.qmd)
+- [Data and memory](guide/data-and-memory.qmd)
+- [Errors and I/O](guide/errors-and-io.qmd)
+- [FFI and targets](guide/ffi-and-targets.qmd)
+- [Metaprogramming](guide/metaprogramming.qmd)
+- [Standard library inventory](reference/stdlib/index.qmd)
+- [Diagnostics](reference/diagnostics.qmd)
+- [Compiler architecture](compiler/architecture.qmd)
+- [Compiler testing](compiler/testing.qmd)
+- [Bootstrap and fixed-point checks](compiler/bootstrap.qmd)
+
+This book is reader-facing documentation, not a source of normative behavior.
+For a full rule, consult the corresponding current topic specification; for a
+compact syntax supplement, use `GRAMMAR.md`. Every page names the commit and
+evidence used for its claims.

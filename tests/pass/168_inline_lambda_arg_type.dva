@@ -1,0 +1,19 @@
+// An inline lambda passed as an argument inherits the callee's declared
+// function type, so its unannotated parameters are typed from the signature
+// rather than defaulted to Int (full-unification Stage 3: arg→param flow).
+
+my_apply: (String => String), String => String
+my_apply = f, x => f $ x
+print $ my_apply(s => "hi " + s, "bob")
+
+my_twice: (Int => Int), Int => Int
+my_twice = f, x => f $ f $ x
+print_int $ my_twice(n => n * 2, 21)
+
+// A record-returning lambda arg: the param type flows and the body's record
+// is not mis-typed.
+pick: (Int => (name: String, age: Int)), Int => (name: String, age: Int)
+pick = f, n => f $ n
+r = pick(n => (name = "k", age = n), 30)
+print $ r.name
+print_int $ r.age

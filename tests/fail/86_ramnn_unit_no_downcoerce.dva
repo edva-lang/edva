@@ -1,0 +1,5 @@
+// The heap-ram units <++> / <--> never coerce DOWN to a RamNN Flag's bare
+// unit branches — only <+> / <-> are valid there.
+#type Flag <>
+f = Flag(<++>)
+print $ f

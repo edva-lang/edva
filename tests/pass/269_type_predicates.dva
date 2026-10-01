@@ -1,0 +1,64 @@
+// Compile-time type shape and capability predicates via type::is_*
+#use "type"
+#use "str"
+
+#type Pt (x: Int, y: Int)
+#type Color < Red, Green, Blue >
+#type Pair (Int, String)
+#type Ints (Int){}
+#type Empty ()
+
+classify: #! T: Type, T => String
+classify = _ =>
+   T
+      [Int, String] "exact_primitive"
+      [type::is_record] "record"
+      [type::is_enum] "enum"
+      [type::is_ram] "ram"
+      | "other"
+
+cap_check: #! T: Type, T => String
+cap_check = _ =>
+   T
+      [type::is_array] "array"
+      [type::is_map] "map"
+      [type::is_slice] "slice"
+      [type::is_homogeneous] "homogeneous"
+      | "other"
+
+num_check: #! T: Type, T => String
+num_check = _ =>
+   T
+      [type::is_int] "int"
+      [type::is_float] "float"
+      [type::is_pointer] "pointer"
+      | "other"
+
+p = Pt(1, 2)
+c: Color
+c = Red
+arr = Ints()
+
+print $ classify(42)
+print $ classify("hello")
+print $ classify(p)
+print $ classify(c)
+print $ classify(<+>)
+
+print $ cap_check(arr)
+
+print $ num_check(10)
+print $ num_check(3.14)
+
+// Direct compile-time call to predicates:
+print $ type::is_record(Pt) | "Pt is record" | "Pt is not record"
+print $ type::is_record(Int) | "Int is record" | "Int is not record"
+print $ type::is_enum(Color) | "Color is enum" | "Color is not enum"
+print $ type::is_enum(Pt) | "Pt is enum" | "Pt is not enum"
+print $ type::is_int(Int) | "Int is int" | "Int is not int"
+print $ type::is_int(Float) | "Float is int" | "Float is not int"
+print $ type::is_numeric(Int) | "Int is numeric" | "Int is not numeric"
+print $ type::is_numeric(Float) | "Float is numeric" | "Float is not numeric"
+print $ type::is_numeric(String) | "Str is numeric" | "Str is not numeric"
+print $ type::is_unit(Empty) | "Empty is unit" | "Empty is not unit"
+print $ type::is_unit(Pt) | "Pt is unit" | "Pt is not unit"

@@ -1,0 +1,23 @@
+// Nested named functions are collected by the signature pre-pass, so a local
+// function returned (or merged in a choice) before its first call infers its
+// parameter types from the eventual call site.
+
+mk = n =>
+   double = x => x * 2
+   double
+f = mk(0)
+print_int $ f(5)
+
+mkgreet = n =>
+   greet = s => "hi " + s
+   greet
+g = mkgreet(0)
+print $ g("bob")
+
+mkchoose = n =>
+   inc = x => x + 1
+   dec = x => x - 1
+   flag = 1 > 0
+   flag | inc | dec
+h = mkchoose(0)
+print_int $ h(10)

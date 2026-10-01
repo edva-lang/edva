@@ -1,0 +1,5 @@
+// A function parameter of one ram shape cannot accept a different shape.
+consume: < | Int > => Int
+consume = r => 0
+
+consume(<- 1 ->)

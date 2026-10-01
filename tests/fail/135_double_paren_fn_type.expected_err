@@ -1,0 +1,1 @@
+Function-parameter types are flat and separate: write '(A, B => C)', not '((A, B) => C)'

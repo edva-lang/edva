@@ -1,0 +1,37 @@
+# Install Edva
+
+**Audience:** new users<br>
+**Status:** current setup guide<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `build.sh`, `selfhost/src/edva.dva`
+
+Edva currently targets Linux hosts. Install `libLLVM-18` system-wide and make
+sure `clang` and Nushell (`nu`) are on `PATH`. LLVM 18 is a link-time
+requirement of the compiler; another installed LLVM version does not replace it.
+
+From a checkout of this repository, build the compiler:
+
+```sh
+./build.sh
+```
+
+The build regenerates the token and operator tables, builds `edva`, and runs
+the regression suite. To check a successful build manually:
+
+```sh
+./edva --help
+```
+
+If linking cannot find LLVM, confirm that the LLVM 18 development package is
+installed. The build script consults `llvm-config` when it is available. If
+the compiler can emit IR but cannot produce a binary, check that `clang` is on
+`PATH`.
+
+For a different target, pass a target triple and provide a compatible clang
+and linker:
+
+```sh
+./edva program.dva -target aarch64-linux-gnu
+```
+
+See the [CLI reference](../reference/edva-cli.qmd) for the complete options.

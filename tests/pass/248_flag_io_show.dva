@@ -1,0 +1,8 @@
+#use io
+
+io::out(<+>)
+io::out(<->)
+io::out((1, 2, 3) < (-10, 20, 30))
+io::out((<+>, <->, <+>))
+io::outf(<+>, "flag: {}")
+io::outf((<+>, <->), "first: {}, second: {}")

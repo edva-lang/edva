@@ -1,0 +1,33 @@
+// Enum labels are values: a bare variant name evaluates to its enum's tagged
+// value (structurally the tag Int), so a choice can produce variants with no
+// constructor call and no tag indices.
+
+#type Flag <>
+#type TokType <Id, Int, Str, Rune, Op, Other, Eof>
+
+// Labels in choice branches directly.
+classify: Int => TokType
+classify = c =>
+   <+>
+      [c == 34] Str
+      [c == 43] Int
+      [c == 63] Other
+      | Id
+
+name: TokType => String
+name = t =>
+   t [Id] "id" [Int] "int" [Str] "str" [Rune] "rune" [Op] "op" [Other] "other" [Eof] "eof"
+
+print $ name(classify(34))
+print $ name(classify(43))
+print $ name(classify(63))
+print $ name(classify(99))
+
+// Labels bind into an annotated variable, then pass through a coercion.
+token: TokType
+token = classify(34)
+print $ name(TokType(token))
+
+// Labels in any value context.
+direct = classify(43)
+print $ name(direct)

@@ -1,0 +1,49 @@
+#type Token <Id, Num, Str, Eof>
+
+t1 = Token(Id)
+t2 = Token(Num)
+
+classify: Token => String
+classify = t =>
+   t [Id] "id" [Num] "num" [Str] "str" [Eof] "eof"
+
+print $ classify(t1)
+print $ classify(t2)
+print $ classify(Token(Str))
+print $ classify(Token(Eof))
+
+#type Maybe <Some(String), Noth>
+
+show: Maybe => String
+show = m =>
+   m
+      [Some s]
+         "got " + s
+      [Noth]
+         "nothing"
+
+print $ show(Maybe(Some, "hello"))
+print $ show(Maybe(Noth))
+
+#type Color <
+   Red
+   Green
+   Blue
+>
+
+next: Color => Color
+next = c =>
+   c
+      [Red] Color(Green)
+      [Green] Color(Blue)
+      [Blue] Color(Red)
+
+name: Color => String
+name = c =>
+   c
+      [Red] "red"
+      [Green] "green"
+      [Blue] "blue"
+
+print $ name(next(Color(Red)))
+print $ name(next(next(Color(Green))))

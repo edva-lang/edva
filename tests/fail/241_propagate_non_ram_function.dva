@@ -1,0 +1,9 @@
+// Tests E3173: propagate operator outside of a function returning a ramification
+
+f: Int => < Int | >
+f = x => <+ x ->
+
+calc: Int => Int
+calc = x =>
+   v = f(x)--!
+   v + 1

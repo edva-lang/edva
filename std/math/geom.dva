@@ -1,0 +1,295 @@
+// Standard Geometry Module (std/math/geom.dva)
+//
+// 2D/3D/4D Euclidean geometry primitives, vector reductions, and spatial
+// operations for UI layout, gestures, hitboxes, and graphics.
+//
+// Operates on fixed homogeneous float tuples, leveraging compiler intrinsics
+// and SIMD vector instructions (%dot, %sqrt, %sin, %cos, %min, %max).
+
+#use math
+
+#public
+   #type Vec2   (Float, Float)
+   #type Vec3   (Float, Float, Float)
+   #type Vec4   (Float, Float, Float, Float)
+   #type Point2 (Float, Float)
+   #type Rect   (Float, Float, Float, Float)
+
+   // Constructors
+   vec2: Float, Float => Vec2
+   vec2 = x, y => (x, y)
+
+   vec3: Float, Float, Float => Vec3
+   vec3 = x, y, z => (x, y, z)
+
+   vec4: Float, Float, Float, Float => Vec4
+   vec4 = x, y, z, w => (x, y, z, w)
+
+   rect: Float, Float, Float, Float => Rect
+   rect = x, y, w, h => (x, y, w, h)
+
+   // --- 2D Vector Operations ---
+
+   dot: Vec2, Vec2 => Float
+   dot = a, b => %dot(a, b)
+
+   dot2: Vec2, Vec2 => Float
+   dot2 = a, b => %dot(a, b)
+
+   len: Vec2 => Float
+   len = v => %sqrt(%dot(v, v))
+
+   len2: Vec2 => Float
+   len2 = v => %sqrt(%dot(v, v))
+
+   mag: Vec2 => Float
+   mag = v => len(v)
+
+   mag2: Vec2 => Float
+   mag2 = v => len(v)
+
+   dist: Vec2, Vec2 => Float
+   dist = a, b => len(b - a)
+
+   dist2: Vec2, Vec2 => Float
+   dist2 = a, b => len(b - a)
+
+   dist_sq: Vec2, Vec2 => Float
+   dist_sq = a, b =>
+      d = b - a
+      %dot(d, d)
+
+   dist_sq2: Vec2, Vec2 => Float
+   dist_sq2 = a, b => dist_sq(a, b)
+
+   norm: Vec2 => Vec2
+   norm = v =>
+      l = len(v)
+      l < 1e-9 | (0.0, 0.0) | v / l
+
+   norm2: Vec2 => Vec2
+   norm2 = v => norm(v)
+
+   lerp: Vec2, Vec2, Float => Vec2
+   lerp = a, b, t => %fmuladd(b - a, t, a)
+
+   lerp2: Vec2, Vec2, Float => Vec2
+   lerp2 = a, b, t => %fmuladd(b - a, t, a)
+
+   angle: Vec2 => Float
+   angle = v => math::atan2(v(1), v(0))
+
+   angle_deg: Vec2 => Float
+   angle_deg = v =>
+      deg = angle(v) * 180.0 / math::pi
+      deg < 0.0 | deg + 360.0 | deg
+
+   rotate: Vec2, Float => Vec2
+   rotate = v, rad =>
+      c = %cos(rad)
+      s = %sin(rad)
+      (v(0) * c - v(1) * s, v(0) * s + v(1) * c)
+
+   // --- 3D Vector Operations ---
+
+   dot3: Vec3, Vec3 => Float
+   dot3 = a, b => %dot(a, b)
+
+   len3: Vec3 => Float
+   len3 = v => %sqrt(%dot(v, v))
+
+   mag3: Vec3 => Float
+   mag3 = v => len3(v)
+
+   dist3: Vec3, Vec3 => Float
+   dist3 = a, b => len3(b - a)
+
+   dist_sq3: Vec3, Vec3 => Float
+   dist_sq3 = a, b =>
+      d = b - a
+      %dot(d, d)
+
+   norm3: Vec3 => Vec3
+   norm3 = v =>
+      l = len3(v)
+      l < 1e-9 | (0.0, 0.0, 0.0) | v / l
+
+   lerp3: Vec3, Vec3, Float => Vec3
+   lerp3 = a, b, t => %fmuladd(b - a, t, a)
+
+   cross3: Vec3, Vec3 => Vec3
+   cross3 = a, b =>
+      (a(1) * b(2) - a(2) * b(1),
+         a(2) * b(0) - a(0) * b(2),
+         a(0) * b(1) - a(1) * b(0))
+
+   // --- 4D Vector Operations ---
+
+   dot4: Vec4, Vec4 => Float
+   dot4 = a, b => %dot(a, b)
+
+   len4: Vec4 => Float
+   len4 = v => %sqrt(%dot(v, v))
+
+   mag4: Vec4 => Float
+   mag4 = v => len4(v)
+
+   dist4: Vec4, Vec4 => Float
+   dist4 = a, b => len4(b - a)
+
+   dist_sq4: Vec4, Vec4 => Float
+   dist_sq4 = a, b =>
+      d = b - a
+      %dot(d, d)
+
+   norm4: Vec4 => Vec4
+   norm4 = v =>
+      l = len4(v)
+      l < 1e-9 | (0.0, 0.0, 0.0, 0.0) | v / l
+
+   lerp4: Vec4, Vec4, Float => Vec4
+   lerp4 = a, b, t => %fmuladd(b - a, t, a)
+
+   // --- Spatial & Hit-Testing Primitives ---
+
+   rect_contains: Rect, Point2 => <>
+   rect_contains = r, p =>
+      p(0) !< r(0) && p(0) !> r(0) + r(2) &&
+         p(1) !< r(1) && p(1) !> r(1) + r(3)
+
+   circle_contains: Point2, Float, Point2 => <>
+   circle_contains = center, radius, p =>
+      dist_sq(center, p) !> radius * radius
+
+   rect_union: Rect, Rect => Rect
+   rect_union = r1, r2 =>
+      min_x = %min(r1(0), r2(0))
+      min_y = %min(r1(1), r2(1))
+      max_x = %max(r1(0) + r1(2), r2(0) + r2(2))
+      max_y = %max(r1(1) + r1(3), r2(1) + r2(3))
+      (min_x, min_y, max_x - min_x, max_y - min_y)
+
+   rect_intersect: Rect, Rect => Rect
+   rect_intersect = r1, r2 =>
+      min_x = %max(r1(0), r2(0))
+      min_y = %max(r1(1), r2(1))
+      max_x = %min(r1(0) + r1(2), r2(0) + r2(2))
+      max_y = %min(r1(1) + r1(3), r2(1) + r2(3))
+      w = %max(0.0, max_x - min_x)
+      h = %max(0.0, max_y - min_y)
+      (min_x, min_y, w, h)
+
+   // --- Interpolation & UI Easing Functions ---
+
+   lerp_scalar: Float, Float, Float => Float
+   lerp_scalar = a, b, t => %fmuladd(b - a, t, a)
+
+   clamp_lerp: Vec2, Vec2, Float => Vec2
+   clamp_lerp = a, b, t =>
+      t_c = %clamp(t, 0.0, 1.0)
+      %fmuladd(b - a, t_c, a)
+
+   clamp_lerp3: Vec3, Vec3, Float => Vec3
+   clamp_lerp3 = a, b, t =>
+      t_c = %clamp(t, 0.0, 1.0)
+      %fmuladd(b - a, t_c, a)
+
+   clamp_lerp4: Vec4, Vec4, Float => Vec4
+   clamp_lerp4 = a, b, t =>
+      t_c = %clamp(t, 0.0, 1.0)
+      %fmuladd(b - a, t_c, a)
+
+   inverse_lerp: Float, Float, Float => Float
+   inverse_lerp = a, b, v => (v - a) / (b - a)
+
+   remap: Float, Float, Float, Float, Float => Float
+   remap = in_min, in_max, out_min, out_max, v =>
+      t = (v - in_min) / (in_max - in_min)
+      %fmuladd(out_max - out_min, t, out_min)
+
+   ease_linear: Float => Float
+   ease_linear = t => t
+
+   ease_in_quad: Float => Float
+   ease_in_quad = t => t * t
+
+   ease_out_quad: Float => Float
+   ease_out_quad = t => t * (2.0 - t)
+
+   ease_in_out_quad: Float => Float
+   ease_in_out_quad = t =>
+      t < 0.5
+         | 2.0 * t * t
+         | -1.0 + (4.0 - 2.0 * t) * t
+
+   ease_in_cubic: Float => Float
+   ease_in_cubic = t => t * t * t
+
+   ease_out_cubic: Float => Float
+   ease_out_cubic = t =>
+      t_ = t - 1.0
+      t_ * t_ * t_ + 1.0
+
+   ease_in_out_cubic: Float => Float
+   ease_in_out_cubic = t =>
+      t < 0.5
+         | 4.0 * t * t * t
+         |
+            t_ = t - 1.0
+            t_ * (2.0 * t - 2.0) * (2.0 * t - 2.0) + 1.0
+
+   ease_in_sine: Float => Float
+   ease_in_sine = t => 1.0 - %cos(t * math::pi * 0.5)
+
+   ease_out_sine: Float => Float
+   ease_out_sine = t => %sin(t * math::pi * 0.5)
+
+   ease_in_out_sine: Float => Float
+   ease_in_out_sine = t => 0.5 * (1.0 - %cos(math::pi * t))
+
+   ease_in_expo: Float => Float
+   ease_in_expo = t =>
+      t == 0.0 | 0.0 | %pow(2.0, 10.0 * (t - 1.0))
+
+   ease_out_expo: Float => Float
+   ease_out_expo = t =>
+      t == 1.0 | 1.0 | 1.0 - %pow(2.0, 0.0 - 10.0 * t)
+
+   smoothstep: Float, Float, Float => Float
+   smoothstep = edge0, edge1, x =>
+      t = %clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+      t * t * (3.0 - 2.0 * t)
+
+   smootherstep: Float, Float, Float => Float
+   smootherstep = edge0, edge1, x =>
+      t = %clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+      t * t * t * (t * (t * 6.0 - 15.0) + 10.0)
+
+   ease_out_bounce: Float => Float
+   ease_out_bounce = x =>
+      n1 = 7.5625
+      d1 = 2.75
+      x < 1.0 / d1
+         | n1 * x * x
+         |
+            x < 2.0 / d1
+               |
+                  x_ = x - 1.5 / d1
+                  n1 * x_ * x_ + 0.75
+               |
+                  x < 2.5 / d1
+                     |
+                        x_ = x - 2.25 / d1
+                        n1 * x_ * x_ + 0.9375
+                     |
+                        x_ = x - 2.625 / d1
+                        n1 * x_ * x_ + 0.984375
+
+   ease_in_bounce: Float => Float
+   ease_in_bounce = x => 1.0 - ease_out_bounce(1.0 - x)
+
+   ease_in_out_bounce: Float => Float
+   ease_in_out_bounce = x =>
+      x < 0.5
+         | (1.0 - ease_out_bounce(1.0 - 2.0 * x)) * 0.5
+         | (1.0 + ease_out_bounce(2.0 * x - 1.0)) * 0.5

@@ -1,0 +1,98 @@
+pf: <> => ()
+pf = f => print $ f | "T" | "F"
+
+// 1. Vector x Vector comparison
+a = (1, 5, 10, 20)
+b = (2, 5, 8, 25)
+lt = a < b
+pf $ lt(0)
+pf $ lt(1)
+pf $ lt(2)
+pf $ lt(3)
+
+eq = a == b
+pf $ eq(0)
+pf $ eq(1)
+
+ne = a != b
+pf $ ne(0)
+pf $ ne(1)
+
+// 2. Vector x Scalar comparison
+gt_scalar = a > 5
+pf $ gt_scalar(0)
+pf $ gt_scalar(1)
+pf $ gt_scalar(2)
+
+// 3. Scalar x Vector comparison
+scalar_lt = 5 < a
+pf $ scalar_lt(0)
+pf $ scalar_lt(1)
+pf $ scalar_lt(2)
+
+// 4. Float vector comparisons
+fa = (1.5, 2.5, 3.5)
+fb = (2.0, 2.5, 3.0)
+flt = fa < fb
+pf $ flt(0)
+pf $ flt(1)
+pf $ flt(2)
+
+// 5. Float Vector x Scalar comparison
+fgt = fa > 2.0
+pf $ fgt(0)
+pf $ fgt(1)
+
+// 6. Flag vector logical operations (Vector x Vector)
+m1 = (<+>, <->, <+>, <->)
+m2 = (<+>, <+>, <->, <->)
+mand = m1 && m2
+pf $ mand(0)
+pf $ mand(1)
+pf $ mand(2)
+pf $ mand(3)
+
+mor = m1 || m2
+pf $ mor(0)
+pf $ mor(1)
+pf $ mor(2)
+pf $ mor(3)
+
+// 7. Flag vector x Scalar logical
+m_and_s = m1 && <+>
+pf $ m_and_s(0)
+pf $ m_and_s(1)
+
+// 8. Bounding box / interval hit-testing (compound expressions)
+min_pt = (10, 10)
+max_pt = (20, 20)
+c1 = (15, 15)
+in_box1 = c1 !< min_pt && c1 !> max_pt
+pf $ in_box1(0)
+pf $ in_box1(1)
+
+c2 = (5, 25)
+in_box2 = c2 !< min_pt && c2 !> max_pt
+pf $ in_box2(0)
+pf $ in_box2(1)
+
+// 9. Loop fallback (> 128 bytes)
+big1 = (1 {35})
+big2 = (2 {35})
+big_lt = big1 < big2
+pf $ big_lt(0)
+pf $ big_lt(34)
+
+big_eq = big1 == big2
+pf $ big_eq(0)
+pf $ big_eq(34)
+
+// 10. Large Flag vector logical loop fallback
+bm1 = (<+> {130})
+bm2 = (<-> {130})
+bm_and = bm1 && bm2
+pf $ bm_and(0)
+pf $ bm_and(129)
+bm_or = bm1 || bm2
+pf $ bm_or(0)
+pf $ bm_or(129)

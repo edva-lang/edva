@@ -1,0 +1,27 @@
+// CTFE now calls pure user functions: a '#!' expression can invoke any
+// declared function whose body stays in the CTFE subset (no new syntax). The
+// tree-walking interpreter binds params and recurses; the JIT remains the
+// fallback for the non-interpretable tail.
+
+#use "str"
+
+double = n => n * 2
+square = n => n * n
+sum3 = a, b, c => a + b + c
+is_even = n => n % 2 == 0
+max2 = a, b => a > b | a | b
+describe = n => n > 0 | "pos" | "non"
+greet = name => "hi " + name
+
+print $ str::from_int(#! double(21))
+print $ str::from_int(#! square(9))
+print $ str::from_int(#! sum3(1, 2, 3))
+print $ str::from_int(#! double(square(3)))
+print $ str::from_int(#! is_even(8))
+print $ str::from_int(#! max2(3, 7))
+print $ str::from_int(#! max2(9, 2))
+print $ #! describe(5)
+print $ #! describe(-1)
+print $ #! greet("dva")
+print $ str::from_int(#! (3 > 7 | 100 | 0))
+print $ #! (2 < 3 | "yes" | "no")

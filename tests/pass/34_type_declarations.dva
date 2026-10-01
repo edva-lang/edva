@@ -1,0 +1,20 @@
+#use libc
+
+#type SockAddrIn (
+    sin_family: i16,
+    sin_port:   i16,
+    sin_addr:   i32,
+    sin_zero:   i64,
+)
+
+addr: SockAddrIn
+counter: Int
+
+addr.sin_family = i16(2)
+addr.sin_port = i16(libc::htons $ 8080)
+addr.sin_addr = i32(libc::inet_addr $ "127.0.0.1")
+counter = 7
+
+print_int $ addr.sin_family
+print_int $ counter
+print $ "TYPE_DECL_OK"

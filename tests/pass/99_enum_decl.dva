@@ -1,0 +1,9 @@
+#type Token <One, Two, Three>
+#type MultiLine <
+   Alpha, Beta,
+   Gamma,
+   Delta,
+>
+#type InlineWrapped < A, B,
+   C, D >
+print $ "enum decl ok"

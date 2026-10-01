@@ -1,0 +1,12 @@
+#use sys
+#use os
+
+path = "/usr/bin/env"
+
+// Construct argv array ["/usr/bin/env", "echo", "Success!", 0] in one go.
+// Strings carry {len,data} fat pointers now; pass .data for the C argv.
+argv_raw = Addr((&path, &"echo", &"Success!", Addr(0)))
+
+// Spawn process
+exit_code = os::spawn(path, argv_raw)
+print_int $ exit_code

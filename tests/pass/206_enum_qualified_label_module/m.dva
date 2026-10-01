@@ -1,0 +1,14 @@
+// The module for 206_enum_qualified_label_module: two enums with an
+// overlapping label (Y), and functions that use the enum's own "A::X" /
+// "B::Y" spelling inside the module body.
+
+#type A <X, Y>
+#type B <Y, Z>
+
+get: Int => A
+get = n =>
+   n [1] A::X | A::Y
+
+other: Int => B
+other = n =>
+   n [1] B::Y | B::Z

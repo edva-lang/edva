@@ -1,0 +1,16 @@
+// Typed integer literals, #pragma number, and postfix {N} repetition.
+a = 5i16
+print_int $ a
+b = 0xFFu8
+print_int $ b
+c = 0b101u16
+print_int $ c
+
+// Repetition: 0 {5} = five zeros; splices flat in a record.
+r = (0 {5})
+print_int $ r(0)
+print_int $ r(4)
+s = (1, 2 {3}, 9)
+print_int $ s(0)
+print_int $ s(3)
+print_int $ s(4)

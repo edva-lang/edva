@@ -1,0 +1,5 @@
+// C2: '*' requires integer operands — a String LHS must be rejected with a
+// clear diagnostic instead of reaching LLVMBuildMul with a pointer operand.
+s = "hello"
+c = s * 2
+print $ c

@@ -1,0 +1,119 @@
+// Standard Formatting Module (std/fmt.dva)
+//
+// tprintf-equivalent for the self-hosted compiler: printf-style format strings
+// with %s (String) and %d (Int) conversions, replaced in order. dva has no
+// variadic functions, so the arities are fixed — the codegen's fmt.tprintf IR
+// names use up to 3 String args ("%s%s%s") and 2 Int args ("case%d.%d"),
+// covered by tprintf_s1..s3 and tprintf_i1/i2. '%' always starts a conversion;
+// the conversion character is skipped.
+
+#use str
+
+#public
+   // "name" — 1 String conversion.
+   tprintf_s1: String, String => String
+   tprintf_s1 = fmt, a =>
+      b = {32}
+      i' = 0
+      0.. @
+         i' !< ?fmt | -->
+         c = fmt(i')
+         c == '%'
+            |
+               b += a
+               i' = i' + 2
+            |
+               b += c
+               i' = i' + 1
+      +b
+
+   // "a::b" — 2 String conversions.
+   tprintf_s2: String, String, String => String
+   tprintf_s2 = fmt, a, d =>
+      b = {32}
+      i' = 0
+      k' = 0
+      0.. @
+         i' !< ?fmt | -->
+         c = fmt(i')
+         c == '%'
+            |
+               k' == 0
+                  |
+                     b += a
+                     k' = 1; i' = i' + 2
+                  |
+                     b += d
+                     k' = 2; i' = i' + 2
+            |
+               b += c
+               i' = i' + 1
+      +b
+
+   // "a.b.c" — 3 String conversions.
+   tprintf_s3: String, String, String, String => String
+   tprintf_s3 = fmt, a, d, e =>
+      b = {32}
+      i' = 0
+      k' = 0
+      0.. @
+         i' !< ?fmt | -->
+         c = fmt(i')
+         c == '%'
+            |
+               k' == 0
+                  |
+                     b += a
+                     k' = 1; i' = i' + 2
+                  |
+                     k' == 1
+                        |
+                           b += d
+                           k' = 2; i' = i' + 2
+                        |
+                           b += e
+                           k' = 3; i' = i' + 2
+            |
+               b += c
+               i' = i' + 1
+      +b
+
+   // "%d" — 1 Int conversion.
+   tprintf_i1: String, Int => String
+   tprintf_i1 = fmt, n =>
+      b = {32}
+      i' = 0
+      0.. @
+         i' !< ?fmt | -->
+         c = fmt(i')
+         c == '%'
+            |
+               b += str::from_int(n)
+               i' = i' + 2
+            |
+               b += c
+               i' = i' + 1
+      +b
+
+   // "case%d.%d" — 2 Int conversions.
+   tprintf_i2: String, Int, Int => String
+   tprintf_i2 = fmt, n, m =>
+      b = {32}
+      i' = 0
+      k' = 0
+      0.. @
+         i' !< ?fmt | -->
+         c = fmt(i')
+         c == '%'
+            |
+               k' == 0
+                  |
+                     b += str::from_int(n)
+                     k' = 1; i' = i' + 2
+                  |
+                     b += str::from_int(m)
+                     k' = 2; i' = i' + 2
+            |
+               b += c
+               i' = i' + 1
+      +b

@@ -1,0 +1,11 @@
+#private
+   #type Hidden <Value(Int), Empty>
+
+#type Public (n: Int)
+
+make: Int => Int
+make = n =>
+   h = Hidden(Value, n)
+   p = Public(n)
+   h [Value x] print_int $ x
+   p.n + n

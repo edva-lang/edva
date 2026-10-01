@@ -1,0 +1,2 @@
+foo = <+ + 1 +>
+res = foo | _(2) | "error_string"

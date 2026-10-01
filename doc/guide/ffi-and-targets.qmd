@@ -1,0 +1,49 @@
+# FFI and targets
+
+**Audience:** Edva users and integrators<br>
+**Status:** current guide<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `process/spec/directives.md`, `selfhost/src/edva.dva`,
+`tests/pass/116_foreign_explicit_i32_param.dva`, `tests/pass/260_c_header_generation.dva`
+
+Use `#foreign` to bind a C symbol. A signature uses Edva type syntax and
+`Addr` for raw addresses. A string or Builder buffer is passed with its
+adjacent unary address form.
+
+```dva
+#foreign "c"
+   puts: String => Int
+
+puts("hello")
+```
+
+`#export` exposes an Edva function as a C ABI symbol. Pass `-H header.h` to
+generate a C header from export declarations.
+
+```dva
+#export add: Int, Int => Int
+#export add = left, right => left + right
+```
+
+## Buffers and ownership
+
+`&builder` and `&string` produce buffer addresses (RawPtr). They are unary
+operators: there must be no whitespace between `&` and its operand.
+`?builder = count` updates a Builder's visible length after an FFI read. Do not
+retain arena-backed addresses beyond the lifetime guaranteed by the call or
+arena scope.
+
+## Targets
+
+`edva` emits LLVM IR, then invokes `clang` to assemble and link it. Choose a
+target triple with `-target` and provide an appropriate cross clang/linker.
+
+```sh
+./edva app.dva -target aarch64-linux-gnu
+./edva app.dva -ir -target thumbv6m-none-eabi -no-runtime
+```
+
+`-no-runtime` is for environments that provide their own runtime facilities;
+avoid runtime-dependent features such as allocation and standard output unless
+your target supplies replacements. Run with `-ir` first when diagnosing a
+toolchain or linker issue.

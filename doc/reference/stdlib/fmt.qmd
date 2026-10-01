@@ -1,0 +1,36 @@
+# `fmt` standard library
+
+**Audience:** Edva users building formatted strings<br>
+**Status:** current formatting reference<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `std/fmt.dva`
+
+The `fmt` module provides lightweight, allocation-efficient printf-style string
+builders. Unlike `io::outf`, which writes formatted bytes to an I/O descriptor,
+`fmt` functions construct and return an immutable `String`.
+
+```dva
+#use fmt
+```
+
+## Function catalog
+
+Because Edva has no untyped variadic functions, formatting helpers have explicit,
+fixed arities optimized for code generation and compiler diagnostic output:
+
+| Function | Signature | Format Placeholders | Description | Example |
+|---|---|---|---|---|
+| `fmt::tprintf_s1` | `String, String => String` | `%s` | Inserts 1 `String` value | `fmt::tprintf_s1("lib%s.so", "dva")` |
+| `fmt::tprintf_s2` | `String, String, String => String` | `%s`, `%s` | Inserts 2 `String` values | `fmt::tprintf_s2("%s::%s", "std", "io")` |
+| `fmt::tprintf_s3` | `String, String, String, String => String` | `%s`, `%s`, `%s` | Inserts 3 `String` values | `fmt::tprintf_s3("%s.%s.%s", "a", "b", "c")` |
+| `fmt::tprintf_i1` | `String, Int => String` | `%d` | Inserts 1 `Int` value | `fmt::tprintf_i1("code: %d", 404)` |
+| `fmt::tprintf_i2` | `String, Int, Int => String` | `%d`, `%d` | Inserts 2 `Int` values | `fmt::tprintf_i2("case%d.%d", 4, 2)` |
+
+---
+
+## Behavior and design rules
+
+1. **Fixed conversions:** Each `%` character consumes itself and the immediately following format specifier (e.g. `s` or `d`), replacing it with the next supplied argument.
+2. **Buffer freeze:** Results are constructed in a local `Builder` and frozen in place (`+b`) into an immutable `String` without intermediary string materialization.
+3. **Stream output:** For terminal logging or file writing with `{}` placeholders, prefer `io::outf` and `io::errf`.
+

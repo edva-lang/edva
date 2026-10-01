@@ -1,0 +1,20 @@
+// Three-level nested record type declarations with deep member writes.
+#type C (z: Int, label: String)
+#type B (y: Int, c: C)
+#type A (x: Int, b: B)
+
+a: A
+a.x = 1
+a.b.y = 2
+a.b.c.z = 3
+a.b.c.label = "deep"
+print_int $ a.x
+print_int $ a.b.y
+print_int $ a.b.c.z
+print $ a.b.c.label
+
+// Deep whole-field writes at each level.
+a.b = (20, (30, "mid"))
+print_int $ a.b.y
+print_int $ a.b.c.z
+print $ a.b.c.label

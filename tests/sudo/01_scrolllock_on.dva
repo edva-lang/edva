@@ -1,0 +1,10 @@
+#use os
+
+// Open Linux Console Device /dev/console (O_RDWR = 2)
+fd = os::open("/dev/console", 2)
+
+// KDSETLED ioctl = 0x4B32 (19250), LED_SCR = 0x01 (Scroll Lock ON)
+res = os::ioctl(fd, 19250, 1)
+
+status = res [0] "Success" | "Failed"
+print $ status

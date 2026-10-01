@@ -1,0 +1,3 @@
+// C7: unbounded record-type repetition "(T * N)" expands to N field
+// declarations in the AST; an absurd N must fail with a clean diagnostic.
+#type T (Int * 2000000)

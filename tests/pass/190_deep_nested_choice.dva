@@ -1,0 +1,32 @@
+// Deeply nested choice with tuple-returning branches (selfhost blocker #6).
+// The choice lookahead cloned the lexer with a SHALLOW indent_stack copy, so
+// lexing the clone reallocated the shared backing array and left the
+// original's pointer dangling (heap-use-after-free). Regression for the
+// lexer_clone deep-copy fix.
+
+f: Int => (Int, Int)
+f = x =>
+   x == 1
+      |
+         (1, 1)
+      |
+         x == 2
+            |
+               (2, 2)
+            |
+               x == 3
+                  |
+                     (3, 3)
+                  |
+                     x == 4
+                        |
+                           (4, 4)
+                        |
+                           (0, 0)
+
+r1 = f(1)
+print_int $ r1.0 + r1.1
+r2 = f(4)
+print_int $ r2.0 + r2.1
+r3 = f(9)
+print_int $ r3.0 + r3.1

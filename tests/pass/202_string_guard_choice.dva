@@ -1,0 +1,20 @@
+// A String value-guard choice WITHOUT a trailing bare fallback is a
+// non-exhaustive statement choice: each guard is tested, the action runs when
+// it matches, and nothing runs on a miss (previously a hard E3011 — the
+// integer-switch lowering rejected non-integer case values; the codegen now
+// routes them to the conditional-comparison chain).
+classify = name =>
+   name ["small"]
+      print $ "tiny"
+   name ["medium"]
+      print $ "mid"
+classify("small")
+classify("medium")
+classify("huge")
+print $ "done"
+
+// Exhaustive (trailing bare fallback) value form still works with Strings.
+width = s => s ["x"] 1 | 2
+print_int $ width("x")
+print_int $ width("y")
+print_int $ width("z")

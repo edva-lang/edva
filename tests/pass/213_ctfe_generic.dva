@@ -1,0 +1,14 @@
+// CTFE calls a GENERIC function whose body stays in the scalar subset: the
+// runtime param is bound to the interpreted argument, and the compile-time
+// type param (T) is simply not referenced by a pure-scalar body. A
+// higher-order generic body (a function-value parameter) is not CTFE-callable
+// yet (E3130).
+
+#use "str"
+
+squared: #! T: Type, T => T
+squared = x => x * x
+
+print $ str::from_int(#! squared(5))
+print $ str::from_int(#! squared(12))
+print $ str::from_int(#! squared(3) + squared(4))

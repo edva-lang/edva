@@ -1,0 +1,15 @@
+// Curried const via deferred generic inference: "const(42)" binds A=Int, and
+// the second type param B (only in the returned "B => A" lambda's param) is
+// left unbound at the call site and resolved when the returned function is
+// applied. The prelude's const is this curried form.
+
+#use(import) fp
+
+#use "str"
+
+print $ str::from_int(const(42)("ignored"))
+print $ const("hi")(123)
+
+k = const(7)
+print $ str::from_int(k("a"))
+print $ str::from_int(k(3.5))

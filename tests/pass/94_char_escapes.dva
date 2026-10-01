@@ -1,0 +1,9 @@
+// Char and string literals share the full escape set: '\a' must equal the
+// bell byte exactly as "\a" does.
+bell = '\a'
+print_int $ bell
+
+tab = '\t'
+print_int $ tab
+
+print $ "str \a \t \v"

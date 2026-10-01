@@ -1,0 +1,5 @@
+val = 15
+res = val > 10
+    | "high value"
+    | "small"
+print $ res

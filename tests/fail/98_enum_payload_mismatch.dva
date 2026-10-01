@@ -1,0 +1,2 @@
+#type C <Some(Int), Noth>
+x = C(Some, "hi")

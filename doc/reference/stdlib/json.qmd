@@ -1,0 +1,49 @@
+# `json` standard library
+
+**Audience:** Edva users parsing JSON<br>
+**Status:** current parser reference<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `std/json.dva`, `process/spec/ramifications.md`
+
+`json::parse` parses a document into the recursive `json::Value` enum. Import
+the module explicitly:
+
+```dva
+#use json
+
+value = json::parse("[1, 2, 3]")!!
+value [Array items] print_int(?items) | print("not an array")
+```
+
+## Value model
+
+| Variant | Payload |
+|---|---|
+| `String` | `String` |
+| `Number` | `Float` |
+| `Boolean` | `<>` |
+| `Null` | unit |
+| `Array` | `Value[]` |
+| `Object` | `(key: String, value: Value)[]` |
+
+The module also exports the growable arena types `Values` and `Pairs`, plus
+`Result`, an alias for `< Value | Error >`.
+
+## Parsing and failure
+
+```dva
+parse: String => < Value | Error >
+```
+
+Malformed input produces the `Error` slot. Because core `Error` values are
+poisonous, unwrapping that slot aborts and prints the diagnostic; it is not a
+recoverable message value. Postfix `!!` is appropriate when invalid JSON is
+fatal to the program.
+
+Arrays and objects are slices backed by the parser's module-level value and
+pair arenas. The parser is stateful, so callers should consume or retain the
+returned value with that storage model in mind.
+
+The parser supports strings and escapes, numbers with fractional and exponent
+forms, booleans, null, arrays, and objects. Unicode `\uXXXX` decoding covers
+BMP code points.

@@ -1,0 +1,159 @@
+// Standard Memory Module (std/mem.dva)
+//
+// Unified memory management library:
+// - Low-level utilities (copy, move, zero, set, align_forward, is_aligned)
+// - Regional bump arenas (Arena, alloc, reset, destroy, stats, with)
+// - Fixed-capacity object pools (Pool, alloc, free, count, for_each, destroy)
+
+#use libc
+
+#foreign "c"
+   dva_arena_init: (Addr, Int) => ()
+   dva_arena_alloc: (Addr, Int) => Addr
+   dva_arena_restore: (Addr, Int) => ()
+   dva_arena_destroy: (Addr) => ()
+   dva_arena_current: () => Addr
+   dva_arena_set_current: (Addr) => Addr
+
+#public
+   #type Arena (raw: Addr, cap: Int)
+   #type ArenaStats (bytes_allocated: Int, num_chunks: Int, cap: Int)
+   #type Pool (buffer: Addr, free_stack: Addr, active: Addr, state: Addr,
+      elem_size: Int, capacity: Int)
+
+   // --- Low-Level Memory Utilities -------------------------------------------
+
+   copy: Addr, Addr, Int => ()
+   copy = dst, src, bytes => %memcpy(dst, src, bytes)
+
+   move: Addr, Addr, Int => ()
+   move = dst, src, bytes => %memmove(dst, src, bytes)
+
+   zero: Addr, Int => ()
+   zero = dst, bytes => %memset(dst, 0, bytes)
+
+   set: Addr, Int, Int => ()
+   set = dst, val, bytes => %memset(dst, val, bytes)
+
+   align_forward: Addr, Int => Addr
+   align_forward = addr, align =>
+      i = Int(addr)
+      a = align - 1
+      Addr((i + a) .&. .!. a)
+
+   is_aligned: Addr, Int => <>
+   is_aligned = addr, align =>
+      i = Int(addr)
+      a = align - 1
+      (i .&. a) == 0
+
+   // --- Regional Bump Arenas -------------------------------------------------
+
+   arena: Int => Arena
+   arena = chunk_size =>
+      sz = chunk_size !> 0 | 67108864 | chunk_size
+      raw = libc::malloc(131104)
+      dva_arena_init(raw, sz)
+      Arena((raw, sz))
+
+   arena_default: () => Arena
+   arena_default = !=> arena(67108864)
+
+   alloc: Arena, Int => Addr
+   alloc = a, size => dva_arena_alloc(a.raw, size)
+
+   reset: Arena => ()
+   reset = a => dva_arena_restore(a.raw, 0)
+
+   destroy: Arena => ()
+   destroy = a =>
+      dva_arena_destroy(a.raw)
+      libc::free(a.raw)
+
+   stats: Arena => ArenaStats
+   stats = a =>
+      num_chunks = @[a.raw + 8 Int]
+      off = @[a.raw + 16 Int]
+      allocated = num_chunks > 1 | (num_chunks - 1) * a.cap + off | off
+      ArenaStats((allocated, num_chunks, a.cap))
+
+   with: Arena, (() => ()) => ()
+   with = a, action =>
+      prev = dva_arena_set_current(a.raw)
+      action!
+      dva_arena_set_current(prev)
+
+   // --- Fixed-Capacity Object Pools ------------------------------------------
+
+   pool: Int, Int => Pool
+   pool = elem_size, capacity =>
+      es = elem_size !> 8 | 8 | (elem_size + 7) .&. .!. 7
+      cap = capacity !> 0 | 1 | capacity
+      buf_sz = cap * es
+      fs_sz = cap * 8
+      st_sz = 16
+      act_sz = cap
+      total = buf_sz + fs_sz + st_sz + act_sz
+      buf = libc::malloc(total)
+      fs = buf + buf_sz
+      st = fs + fs_sz
+      act = st + st_sz
+      %memset(act, 0, act_sz)
+      cap @ i =>
+         @[fs + i * 8] = i
+      _ = 0
+      @[st] = cap
+      @[st + 8] = 0
+      Pool((buf, fs, act, st, es, cap))
+
+   pool_count: Pool => Int
+   pool_count = p => @[p.state + 8 Int]
+
+   pool_capacity: Pool => Int
+   pool_capacity = p => p.capacity
+
+   pool_alloc: Pool => < Addr | >
+   pool_alloc = p =>
+      top = @[p.state Int]
+      top == 0
+         | <-->
+         |
+            top_next = top - 1
+            @[p.state] = top_next
+            idx = @[p.free_stack + top_next * 8 Int]
+            %memset(p.active + idx, 1, 1)
+            cnt = @[p.state + 8 Int]
+            @[p.state + 8] = cnt + 1
+            <+ p.buffer + idx * p.elem_size ->
+
+   pool_free: Pool, Addr => <>
+   pool_free = p, addr =>
+      off = Int(addr) - Int(p.buffer)
+      off < 0 || off !< (p.capacity * p.elem_size)
+         | <->
+         |
+            idx = off / p.elem_size
+            off % p.elem_size != 0
+               | <->
+               |
+                  is_act = @[p.active + idx u8]
+                  is_act == 0
+                     | <->
+                     |
+                        %memset(p.active + idx, 0, 1)
+                        top = @[p.state Int]
+                        @[p.free_stack + top * 8] = idx
+                        @[p.state] = top + 1
+                        cnt = @[p.state + 8 Int]
+                        @[p.state + 8] = cnt - 1
+                        <+>
+
+   pool_destroy: Pool => ()
+   pool_destroy = p =>
+      libc::free(p.buffer)
+
+   pool_for_each: Pool, (Addr => ()) => ()
+   pool_for_each = p, f =>
+      p.capacity @ i =>
+         is_act = @[p.active + i u8]
+         is_act != 0 | f $ (p.buffer + i * p.elem_size)

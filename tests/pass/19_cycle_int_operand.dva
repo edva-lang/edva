@@ -1,0 +1,5 @@
+5 @ i => print_int $ i
+
+count = 3
+count @ j =>
+    print_int $ j

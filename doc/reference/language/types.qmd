@@ -1,0 +1,151 @@
+# Types
+
+**Audience:** Edva users<br>
+**Status:** current reference<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `process/spec/types.md`, `process/spec/functions.md`,
+`process/spec/ramifications.md`, `tests/pass/`
+
+Edva is statically typed. It never defaults an unknown type to `Int`; a value
+must be typed by an annotation, a function signature, a literal suffix, or
+unification with surrounding expressions. Function values carry only a
+function pointer and environment pointer—there is no runtime type descriptor,
+RTTI, vtable, or dynamic function signature.
+
+## Recognized names
+
+The primitive names are `Int`, `Float`, `String`, `Rune`, `Builder`, `Addr`,
+and `Error`, plus LLVM-width scalar types. `Type` is a compile-time-only value
+representing a type; it cannot be lowered at runtime. Other type names must be
+declared with `#type`.
+
+```dva
+#type Point (x: Int, y: Int)       // named record with two Int fields
+#type Points (Point){}             // growable array whose elements are Point
+#type ByName String ^ Point         // map from String keys to Point values
+#type Colour < Red, Green, Blue >   // enum with three named unit variants
+
+// The four ram layouts:
+flag: <>                            // RamNN: the built-in flag, both slots unit
+#type MaybePoint < Point | >        // RamPN: Point payload or negative unit
+#type Failed < | Error >             // RamNP: positive unit or Error payload
+#type Result < Point | Error >       // RamPP: Point payload or Error payload
+```
+
+Records may have named or positional fields. `(T){}` is a growable array,
+`K ^ V` a map, `<...>` a ramification, and an enum uses named variants in its
+angle-bracket declaration. The `<>` flag is a built-in type, so it needs no
+`#type` declaration. Records and array-like values retain structural shape;
+all four ramification layouts are incompatible static types.
+
+## Unit
+
+`()` is the Unit **type**. It is valid only in a declaration—for example, as
+the result type in a function signature or as a component of a composite type.
+It is not a runtime literal to write as an expression.
+
+Unit is the result of an assignment and of a statement choice. It is also what
+a ram produces when the selected slot is a unit slot: both slots of `<>`, the
+second slot of `< T | >`, and the first slot of `< | E >`. A function returns
+the value of its last expression, so a function whose final expression is an
+assignment or an inexhaustive statement choice returns Unit.
+
+## Composite types
+
+Composite types describe values made from other values. They are structural:
+the shape of fields, elements, slots, or parameters matters to type checking.
+Use `#type` to give a composite shape a reusable name.
+
+### Records and homogeneous records
+
+A record has named fields or positional fields. A homogeneous record repeats a
+single element type and uses a fixed `* count` form.
+
+```dva
+#type Point (x: Int, y: Int)       // record with named fields
+#type Pair (Int, String)            // record with positional fields
+#type Bytes (i8 * 16)               // 16-element homogeneous record
+```
+
+Read named fields with `.name` and positional fields with `.0`, `.1`, and so
+on. A record declared only with a forward annotation is not zero-initialized:
+every field must be definitely initialized before a read. A homogeneous record
+must receive a whole-value initialization before any element read or write.
+
+### Growable arrays and slices
+
+A growable array type has the form `(T){}`. It owns resizable element storage;
+`?array` returns its element count and `++array` makes a copy. Indexing is
+fallible and returns a ramification, so `array(index)!!` is the concise
+unwrap-or-panic form.
+
+```dva
+#type Ints (Int){}                 // growable array of Int
+values = Ints()
+values += 42
+```
+
+Slices are non-owning views of homogeneous storage. Their element count is
+also measured with `?`; unlike growable arrays, their lifetime is bounded by
+the storage that they view.
+
+### Maps
+
+A map type is `Key ^ Value`. Its key type is `String`, `Int`, or `Addr`; its
+value type may be any storable shape. Empty maps use a named type, while a
+non-empty literal can infer its map type from key/value pairs.
+
+```dva
+#type Scores String ^ Int           // map from String to Int
+scores = Scores()
+scores ^ "Ada" = 5
+```
+
+Map lookup returns `< Value | Error >`, membership returns a flag, and
+`?map` reports its entry count. See [data and memory](../../guide/data-and-memory.qmd)
+for operations, initialization, and failure handling.
+
+### Rams and enums
+
+A ramification has exactly two positional slots. It models flag, optional, and
+fallible values; the four layouts are shown above. An enum has two or more
+named variants, each optionally carrying payload fields.
+
+```dva
+#type Token < Identifier(String), Number(Int), End >
+#type ParseResult < Token | Error >
+```
+
+Match an enum with adjacent `[Variant]` or `[Variant payload]` branches. Match
+a ram only with positional bare branches; ram slots have no names. The
+[ramifications guide](../../guide/ramifications.qmd) explains constructors and
+matching in detail.
+
+### Function and recursive types
+
+A function type lists its parameter types and return type. When a function
+type occurs inside another type or signature, wrap it in parentheses.
+
+```dva
+#type Handler (run: (Int => Int))   // record carrying a function value
+#type Tree < Leaf(Int), Branch((Tree[])) >
+```
+
+Type names are registered before their definitions finish parsing. That makes
+recursive and mutually recursive records, rams, and enums possible; a type
+name that is never declared remains an unknown-type diagnostic.
+
+## Initialization and conversion
+
+A forward-annotated record is not zero-filled. Each field must be written on
+every path before it is read, and a partially initialized composite cannot be
+passed to another function. Homogeneous records need whole-value
+initialization before element access.
+
+Conversions are explicit. Use `Int(value)`, `Rune(value)`, and the relevant
+width type where a conversion is supported. There is no implicit integer/float
+conversion, no flag/heap-ram conversion, and no conversion from one ram shape
+to another. The sole ram cast, `<>(ram)`, discards payload and returns a flag.
+
+Read [ramifications](../../guide/ramifications.qmd) for ram shapes and
+[data and memory](../../guide/data-and-memory.qmd) for container behavior.

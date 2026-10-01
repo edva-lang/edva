@@ -1,0 +1,9 @@
+#type Header (a: Int)
+
+::g: Header
+
+f: Addr => Int
+f = p =>
+   v = @[p Header]
+   ::g = v
+   0

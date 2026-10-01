@@ -1,0 +1,317 @@
+// Standard Input/Output Module (std/io.dva)
+// Single fd-parameterized stdio module. The write surface is console.log-
+// style: io::out(...), io::err(...), io::outf(...), io::errf(...) accept a
+// single value OR a record of values, each formatted at compile time
+// (the '#! T: Type' type dispatch), joined with a single space, and written
+// + newline to the named descriptor. Reads provide buffered Reader operations
+// (reader, reader_with_cap, read, read_all, read_byte, read_until, read_line).
+
+#use libc
+#use str
+
+#public
+   STDIN  = 0
+   STDOUT = 1
+   STDERR = 2
+
+   #type Reader (
+      fd: Int,
+      buf: Builder,
+      pos: Int
+   )
+
+   reader: Int => Reader
+   reader = fd => Reader((fd, {4096}, 0))
+
+   reader_with_cap: Int, Int => Reader
+   reader_with_cap = fd, cap =>
+      c = cap > 0 | cap | 4096
+      Reader((fd, {c}, 0))
+
+   // Raw length-aware write to fd.
+   write: Int, String => ()
+   write = fd, s =>
+      _ = libc::write(fd, s, ?s)
+
+// --- private machinery ------------------------------------------------------
+
+#private
+   // Generic value-to-text at compile time: the [] choice guard syntax
+   // is resolved and pruned per call site (no runtime dispatch). A scalar
+   // renders via str::*; a record renders its fields space-separated (the
+   // 0..?T cycle is unrolled, so each field's type is known).
+   show: #! T: Type, T => String
+   show = #! T, x =>
+      T
+         [String] x
+         [Rune] str::from_byte(Int(x))
+         [Int] str::from_int(x)
+         [Float] str::from_float(x)
+         [f32] str::from_float(Float(x))
+         [Builder] +x
+         [i1]
+            x | "<+>" | "<->"
+         | show_rec(x)
+
+   // A record rendered space-separated (the unrolled per-field cycle; each
+   // copy's field type is known, so show dispatches per field).
+   show_rec: #! T: Type, T => String
+   show_rec = x =>
+      b = {64}
+      0..?T @ i =>
+         i > 0 | b += ' '
+         b += show(x.(i))
+      +b
+
+   // console.log-style to fd: the value's show text + a newline.
+   log: #! T: Type, Int, T => ()
+   log = fd, x =>
+      s = show(x)
+      write(fd, s)
+      write(fd, "\n")
+
+   // Substitutes 'show(x)' for every '{}' in fmt (the scalar form of logf).
+   logf_scalar: #! T: Type, Builder, T, String => ()
+   logf_scalar = b, x, fmt =>
+      i' = 0
+      ?fmt @
+         i' < ?fmt
+            |
+               fmt(i') == '{' && fmt(i' + 1) == '}'
+                  |
+                     b += show(x)
+                     i' = i' + 2
+                  |
+                     b += fmt(i')
+         i' = i' + 1
+
+   // Formatted to fd: '{}' placeholders in fmt are replaced by each field
+   // (or the single value) in order, then written + newline.
+   logf: #! T: Type, Int, T, String => ()
+   logf = fd, x, fmt =>
+      b = {?fmt + 64}
+      T
+         [String] logf_scalar(b, x, fmt)
+         [Rune] logf_scalar(b, x, fmt)
+         [Int] logf_scalar(b, x, fmt)
+         [Float] logf_scalar(b, x, fmt)
+         [f32] logf_scalar(b, x, fmt)
+         [Builder] logf_scalar(b, x, fmt)
+         [i1] logf_scalar(b, x, fmt)
+         | logf_rec(fd, b, x, fmt)
+      s = +b
+      write(fd, s)
+      write(fd, "\n")
+
+   // A record formatted: each '{}' in fmt is replaced by the next field's
+   // show text, in order.
+   logf_rec: #! T: Type, Int, Builder, T, String => ()
+   logf_rec = fd, b, x, fmt =>
+      j' = 0
+      0..?T @ i =>
+         nxt' = -1
+         j'..?fmt @ k =>
+            fmt(k) == '{' && fmt(k + 1) == '}'
+               |
+                  nxt' = k
+                  -->
+         nxt' !< 0
+            |
+               b += fmt(j'..nxt')
+               b += show(x.(i))
+               j' = nxt' + 2
+      b += fmt(j'..?fmt)
+
+   // Refills the reader's buffer from its fd. Compacts unconsumed bytes
+   // to the front if necessary. Returns number of newly read bytes (<= 0 on EOF/error).
+   refill: Reader => Int
+   refill = r =>
+      buf = r.buf
+      r.pos > 0
+         |
+            rem = ?buf - r.pos
+            rem > 0 | %memmove(&buf, &buf + r.pos, rem)
+            ?buf = rem
+            r.pos = 0
+      cap = @[Addr(buf) + 16 Int]
+      read_cap = cap > 0 | cap | 4096
+      space = read_cap - ?buf
+      space !> 0
+         | 0
+         |
+            n' = 0
+            0.. @
+               cur = ?buf
+               n = libc::read(r.fd, &buf + cur, space)
+               n < 0
+                  |
+                     errno_val = @[libc::__errno_location! i32]
+                     errno_val == 4 | --^
+                     n' = n
+                     -->
+                  |
+                     n > 0 | ?buf = cur + n
+                     n' = n
+                     -->
+            n'
+
+// --- public ergonomic surface ----------------------------------------------
+
+#public
+   // console.log-style to stdout.
+   out: #! T: Type, T => ()
+   out = x => log(io::STDOUT, x)
+
+   // console.log-style to stderr.
+   err: #! T: Type, T => ()
+   err = x => log(io::STDERR, x)
+
+   // Formatted ('{}' placeholders) to stdout.
+   outf: #! T: Type, T, String => ()
+   outf = x, fmt => logf(io::STDOUT, x, fmt)
+
+   // Formatted ('{}' placeholders) to stderr.
+   errf: #! T: Type, T, String => ()
+   errf = x, fmt => logf(io::STDERR, x, fmt)
+
+   // --- Reader-based buffered reading ----------------------------------------
+
+   // Buffered read: reads up to 'max' available bytes from reader.
+   // Returns <+ String +> or <--> on EOF.
+   read: Reader, Int => < String | >
+   read = r, max =>
+      max !> 0
+         | <-->
+         |
+            r.pos !< ?r.buf
+               |
+                  _ = refill(r)
+            r.pos < ?r.buf
+               |
+                  avail = ?r.buf - r.pos
+                  take = avail < max | avail | max
+                  res = {take}
+                  take > 0 | %memcpy(&res, &r.buf + r.pos, take)
+                  ?res = take
+                  r.pos = r.pos + take
+                  <+ +res ->
+               | <-->
+
+   // Buffered drain: reads from reader until EOF, capped at 'max'.
+   // Drains any bytes currently buffered, then continues reading from fd.
+   // Returns <+ String +> or <--> if EOF before any bytes were read.
+   read_all: Reader, Int => < String | >
+   read_all = r, max =>
+      max !> 0
+         | <-->
+         |
+            res_b = {max}
+            avail = ?r.buf - r.pos
+            avail > 0
+               |
+                  take = avail < max | avail | max
+                  cur = ?res_b
+                  %memcpy(&res_b + cur, &r.buf + r.pos, take)
+                  ?res_b = cur + take
+                  r.pos = r.pos + take
+            chunk = 4096
+            0.. @
+               rem = max - ?res_b
+               rem !> 0 | -->
+               to_read = rem < chunk | rem | chunk
+               cur = ?res_b
+               n = libc::read(r.fd, &res_b + cur, to_read)
+               n < 0
+                  |
+                     errno_val = @[libc::__errno_location! i32]
+                     errno_val == 4 | --^
+                     -->
+                  |
+                     n == 0
+                        | -->
+                        | ?res_b = cur + n
+            ?res_b == 0
+               | <-->
+               | <+ +res_b ->
+
+   // Buffered read: reads a single byte from reader.
+   // Returns <+ byte +> or <--> on EOF.
+   read_byte: Reader => < Int | >
+   read_byte = r =>
+      r.pos !< ?r.buf
+         |
+            _ = refill(r)
+      r.pos < ?r.buf
+         |
+            b = Int(@[&r.buf + r.pos i8]) .&. 255
+            r.pos = r.pos + 1
+            <+ b ->
+         | <-->
+
+   // Buffered read: reads bytes from reader until 'delim' or 'max'.
+   // Consumes delimiter and returns preceding string. Returns <+ String +> or <--> on EOF.
+   read_until: Reader, Int, Int => < String | >
+   read_until = r, delim, max =>
+      max !> 0
+         | <-->
+         |
+            out = {max}
+            done' = <->
+            0.. @
+               r.pos !< ?r.buf
+                  |
+                     n = refill(r)
+                     n !> 0 | -->
+               rem_budget = max - ?out
+               rem_budget !> 0
+                  |
+                     done' = <+>
+                     -->
+               in_buf = ?r.buf - r.pos
+               scan_count = in_buf < rem_budget | in_buf | rem_budget
+               found_idx' = -1
+               scan_count @ i =>
+                  (Int(@[&r.buf + r.pos + i i8]) .&. 255) == delim
+                     |
+                        found_idx' = i
+                        -->
+               found_idx' !< 0
+                  |
+                     cur = ?out
+                     found_idx' > 0
+                        | %memcpy(&out + cur, &r.buf + r.pos, found_idx')
+                     ?out = cur + found_idx'
+                     r.pos = r.pos + found_idx' + 1
+                     done' = <+>
+                     -->
+                  |
+                     cur = ?out
+                     scan_count > 0
+                        | %memcpy(&out + cur, &r.buf + r.pos, scan_count)
+                     ?out = cur + scan_count
+                     r.pos = r.pos + scan_count
+                     ?out !< max
+                        |
+                           done' = <+>
+                           -->
+            done'
+               | <+ +out ->
+               |
+                  ?out > 0
+                     | <+ +out ->
+                     | <-->
+
+   // Buffered line read: reads until '\n', stripping a trailing '\r'
+   // if present. An empty line produces <+ "" +>; EOF produces <-->.
+   read_line: Reader, Int => < String | >
+   read_line = r, max =>
+      res = read_until(r, 10, max)
+      res
+         | line =>
+            n = ?line
+            n > 0 && line(n - 1) == 13
+               |
+                  end_idx = n - 1
+                  <+ line(0..end_idx) ->
+               | <+ line ->
+         | <-->

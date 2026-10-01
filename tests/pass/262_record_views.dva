@@ -1,0 +1,38 @@
+#type PacketHeader (
+   version: Int,
+   length: Int,
+   src_port: Int,
+   dst_port: Int,
+   checksum: Int,
+)
+
+is_https: Addr => <>
+is_https = b =>
+   h = @[b PacketHeader]
+   h.dst_port == 443
+
+test_views: Int => Int
+test_views = _ =>
+   buf = {64}
+   hdr = @[&buf PacketHeader]
+   hdr.version = 4
+   hdr.length = 64
+   hdr.src_port = 8080
+   hdr.dst_port = 443
+   hdr.checksum = 12345
+
+   print $ str::from_int(hdr.version)
+   print $ str::from_int(hdr.length)
+   print $ str::from_int(hdr.src_port)
+   print $ str::from_int(hdr.dst_port)
+   print $ str::from_int(hdr.checksum)
+
+   saved = ++hdr
+   hdr.checksum = 99999
+   print $ str::from_int(saved.checksum)
+   print $ str::from_int(hdr.checksum)
+
+   print $ is_https(&buf) | "https" | "other"
+   0
+
+test_views(0)

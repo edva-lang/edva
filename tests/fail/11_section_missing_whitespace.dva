@@ -1,0 +1,2 @@
+// Invalid: Missing trailing whitespace in operator section >39
+f = >39

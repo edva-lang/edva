@@ -1,0 +1,12 @@
+// Tests E3149: propagate operator into function with incompatible negative slot
+
+inner: Int => < Int | String >
+inner = x =>
+   x < 0
+      | <- "error" ->
+      | <+ x * 2 +>
+
+outer: Int => < Int | >
+outer = x =>
+   v = inner(x)--!
+   <+ v ->

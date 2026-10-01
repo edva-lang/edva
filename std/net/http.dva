@@ -1,0 +1,456 @@
+// std/http.dva — the HTTP protocol layer (messages + request/URL parsing),
+// built on std/net (transport). Keeps HTTP specifics out of the socket module.
+//
+// Header manipulation model: a header set is a String of "Name: Value\r\n"
+// lines (http::header builds one; a full message is the status line + these
+// lines + a blank line + the body). Content-Length is always explicit, so the
+// receiver knows exactly where the body ends. Future work when headers need
+// real structure (parsing, case-insensitive lookup, merging, values with
+// commas): introduce a Headers record { lines: slice } with append/lookup/
+// render — but for writing responses, the flat String form is sufficient and
+// zero-copy.
+
+#use net
+#use str
+
+#public
+   // The request path: the token after the first space of the request line
+   // ("GET /path HTTP/1.1"), up to the next space, CR, LF, or '?'. Returns ""
+   // for a malformed request line.
+   path_of: String => String
+   path_of = req =>
+      total = ?req
+      sp' = -1
+      total @ i =>
+         req(i) [32] sp' = i; -->
+      sp'
+         [< 0]
+            ""
+         |
+            p = {64}
+            (sp' + 1)..total @ i =>
+               c = req(i)
+               c [32, 13, 10, 63] -->
+               p += c
+            +p
+
+   // The reason phrase for a status code ("" for unknown codes).
+   reason_of: Int => String
+   reason_of = code =>
+      code
+         [200] "OK"
+         [301] "Moved Permanently"
+         [302] "Found"
+         [400] "Bad Request"
+         [404] "Not Found"
+         [500] "Internal Server Error"
+         |
+            ""
+
+   // One header line "Name: Value\r\n" (Name and Value must not contain CR/LF).
+   header: String, String => String
+   header = name, value =>
+      name + ": " + value + "\r\n"
+
+   // Build a complete response: status line, the pre-formatted header lines, a
+   // blank line, and the body. Content-Length framing is the caller's job (see
+   // the module comment); include it in `headers` so the receiver can size the
+   // body.
+   response: Int, String, String => String
+   response = status, headers, body =>
+      "HTTP/1.1 " + str::from_int(status) + " " +
+         http::reason_of(status) + "\r\n" + headers + "\r\n" + body
+
+   // Send a full HTTP response over fd: the given Content-Type, an explicit
+   // Content-Length, and Connection: close. Returns bytes sent.
+   respond: Int, Int, String, String => Int
+   respond = fd, status, ctype, body =>
+      h1 = http::header("Content-Type", ctype)
+      h2 = http::header("Content-Length", str::from_int(?body))
+      h3 = http::header("Connection", "close")
+      msg = http::response(status, h1 + h2 + h3, body)
+      net::send_str(fd, msg)
+
+   // --- URL / query utilities ------------------------------------------------
+
+   // An index search result: <+ position +> when the byte/substring is found,
+   // <--> when absent. Replaces a "-1 not found" sentinel.
+   #type Find < Int | >
+
+   // Index of the first occurrence of byte c in s at/after `from`. Returns a
+   // Find.
+   find_char: String, Int, Int => Find
+   find_char = s, from, c =>
+      total = ?s
+      hit' = Find(<-->)
+      from..total @ i =>
+         s(i) == c
+            |
+               hit' = Find(<+ i ->)
+               -->
+      hit'
+
+   // Index of the first occurrence of `needle` in s. Returns a Find.
+   find_str: String, String => Find
+   find_str = s, needle =>
+      total = ?s
+      nlen = ?needle
+      hit' = Find(<-->)
+      limit = total - nlen + 1
+      limit !> 0
+         | hit'
+         |
+            limit @ i =>
+               s(i..i + nlen) == needle
+                  |
+                     hit' = Find(<+ i ->)
+                     -->
+            hit'
+
+   // The HTTP method: the token before the first space of the request line.
+   method_of: String => String
+   method_of = line =>
+      total = ?line
+      out = {16}
+      total @ i =>
+         c = line(i)
+         c [32, 13, 10] -->
+         out += c
+      +out
+
+   // The query string after the first '?' in path, or "".
+   query_of: String => String
+   query_of = path =>
+      total = ?path
+      q = http::find_char(path, 0, 63)
+      q | path(_ + 1..total) | ""
+
+   // path without the query string.
+   strip_query: String => String
+   strip_query = path =>
+      q = http::find_char(path, 0, 63)
+      q | path(0.._) | path
+
+   // Parse leading decimal digits into an Int (ignores trailing non-digits).
+   to_int: String => Int
+   to_int = s =>
+      total = ?s
+      v' = 0
+      total @ i =>
+         c = s(i)
+         c !< 48 && c !> 57
+            |
+               v' = v' * 10 + (c - 48)
+            | -->
+      v'
+
+   // Hex value of an ASCII hex digit (0-9, A-F, a-f); 0 for anything else.
+   hex_val: Int => Int
+   hex_val = c =>
+      c !< 48 && c !> 57
+         | c - 48
+         | c !< 65 && c !> 70
+            | c - 55
+            | c - 87
+
+   // Percent-decode a URL-encoded string ("%XX" -> byte).
+   percent_decode: String => String
+   percent_decode = s =>
+      out = {?s}
+      total = ?s
+      i' = 0
+      0.. @
+         i' !< total | -->
+         c = s(i')
+         c [37]
+            out += http::hex_val(s(i' + 1)) * 16 + http::hex_val(s(i' + 2))
+            i' = i' + 3
+         |
+            out += c
+            i' = i' + 1
+      +out
+
+   // The first '/' or '?' in s (the host/path boundary). Returns a Find.
+   path_start: String => Find
+   path_start = s =>
+      total = ?s
+      hit' = Find(<-->)
+      total @ i =>
+         c = s(i)
+         c [47, 63] hit' = Find(<+ i ->); -->
+      hit'
+
+   #type Url (
+      scheme: String,
+      host: String,
+      port: Int,
+      path: String,
+      query: String,
+   )
+   #type UrlRes < Url | String >
+   // This module's own "< String | >" data ram (distinct from net's Chunk; it
+   // cannot reference net::Chunk in a signature because the parser resolves
+   // signature types against this file's own declarations).
+   #type Chunk < String | >
+
+   // --- Structured Headers ---------------------------------------------------
+
+   // A header set: a growable array of "Name: Value" lines (no CRLF). The
+   // structured form of the flat "K: V\r\n" wire string: add_header appends a
+   // line, render_headers flattens back to the wire form,
+   // and lookup_header reads
+   // a value case-insensitively.
+   #type Headers (String){}
+
+   // Case-insensitive ASCII byte equality: A-Z folds to a-z.
+   ci_eq: Int, Int => i1
+   ci_eq = a, b =>
+      (a !< 65 && a !> 90 | a + 32 | a) == (b !< 65 && b !> 90 | b + 32 | b)
+
+   // Append one "Name: Value" line to a header set (in place).
+   // Returns the count.
+   add_header: Headers, String, String => Int
+   add_header = h, name, value =>
+      h += name + ": " + value
+      ?h
+
+   // Render a header set to the flat "Name: Value\r\n..." wire form.
+   render_headers: Headers => String
+   render_headers = h =>
+      out = {64}
+      h @ hdr =>
+         out += hdr
+         out += 13
+         out += 10
+      +out
+
+   // Look up a header value by name, case-insensitively.
+   // Returns Chunk: the value
+   // (after "Name: ") or none.
+   lookup_header: Headers, String => Chunk
+   lookup_header = h, name =>
+      nlen = ?name
+      out = {0}
+      found' = Chunk(<-->)
+      h @ line =>
+         llen = ?line
+         llen !> nlen + 1 | --^
+         line(nlen) != 58 | --^
+         matched' = 1
+         nlen @ j =>
+            !http::ci_eq(line(j), name(j))
+               | (matched' = 0)
+         matched' [1]
+            out += line(nlen + 2..llen)
+            found' = Chunk(<+ +out ->)
+            -->
+      found'
+
+   // Build a response header block through the structured API (append, then a
+   // case-insensitive lookup, then render) — a pure round-trip that exercises
+   // Headers end-to-end and is testable without a socket.
+   headers_roundtrip: String => String
+   headers_roundtrip = body =>
+      h = Headers()
+      http::add_header(h, "Content-Type", "text/plain")
+      http::add_header(h, "Content-Length", str::from_int(?body))
+      cl = http::lookup_header(h, "content-length")
+      cl_val = cl | _ | "?"
+      cl_val + ";" + http::render_headers(h)
+
+   // Parse the part of a URL after "scheme://" (scheme excluded).
+   // Extracted as a
+   // helper so parse_url's branch lambda stays a single expression.
+   parse_after_scheme: String, Int, Int => UrlRes
+   parse_after_scheme = url, d, total =>
+      scheme = url(0..d)
+      rest = url(d + 3..total)
+      rl = ?rest
+      ps = http::path_start(rest)
+      hp = ps | rest(0.._) | rest
+      hp_len = ?hp
+      cpos = http::find_char(hp, 0, 58)
+      host = cpos | hp(0.._) | hp
+      port = cpos | http::to_int(hp(_ + 1..hp_len)) | 0
+      tail = ps | rest(_..rl) | ""
+      tl = ?tail
+      qpos = http::find_char(tail, 0, 63)
+      path = qpos | tail(0.._) | tail
+      query = qpos | tail(_ + 1..tl) | ""
+      UrlRes(<+ (scheme, host, port, path, query) +>)
+
+   // Parse "scheme://host[:port][/path][?query]" into a Url. Returns UrlRes:
+   // <+ url +> on success, <- error -> on a missing scheme.
+   parse_url: String => UrlRes
+   parse_url = url =>
+      total = ?url
+      d = http::find_str(url, "://")
+      d | http::parse_after_scheme(url, _, total) | UrlRes(<- "no scheme" ->)
+
+   // Look up "key=value" in a query string ("a=1&b=2"). Returns a Chunk: the
+   // value, or none when the key is absent.
+   query_param: String, String => Chunk
+   query_param = qs, key =>
+      total = ?qs
+      klen = ?key
+      out = {0}
+      i' = 0
+      0.. @
+         i' !< total | -->
+         amp = http::find_char(qs, i', 38)
+         seg_end = amp | _ | total
+         match = seg_end - i' > klen && qs(i' + klen) == 61
+         match
+            | out += qs(i' + klen + 1..seg_end); -->
+         i' = amp | _ + 1 | total
+      ?out > 0
+         | Chunk(<+ +out ->)
+         | Chunk(<-->)
+
+   // --- HTTP request reading ------------------------------------------------
+
+   #type Request (
+      method: String,
+      path: String,
+      body: String,
+   )
+   #type Req < Request | String >
+   #type Num < Int | >
+
+   // Read one line (up to \n; \r\n is stripped) from fd. Returns a Chunk.
+   read_line: Int, Int => Chunk
+   read_line = fd, max =>
+      b = {max}
+      peek_buf = {1024}
+      0.. @
+         rem = max - ?b
+         rem !> 0 | -->
+         peek_sz = rem < 1024 | rem | 1024
+         p = libc::recv(fd, &peek_buf, peek_sz, 2)
+         p [< 1] -->
+         found' = -1
+         0..p @ i =>
+            byte = @[&peek_buf + i i8]
+            byte [10]
+               found' = i
+               -->
+            | 0
+         to_consume = found' !< 0 | found' + 1 | p
+         r = libc::recv(fd, &peek_buf, to_consume, 0)
+         r [< 1] -->
+         limit = found' !< 0 | found' | r
+         0..limit @ j =>
+            c = @[&peek_buf + j i8]
+            c != 13 | (b += c)
+         found' !< 0 | -->
+      ?b > 0
+         | Chunk(<+ +b ->)
+         | Chunk(<-->)
+
+   // Append one header line to a Builder (in place); returns 1 for the blank
+   // line that terminates the header block, else 0. Extracted as a
+   // helper so the
+   // read_headers branch lambda stays a single expression.
+   append_header: Builder, String => Int
+   append_header = out, line =>
+      ?line [0] 1
+      |
+         out += line
+         out += 13
+         out += 10
+         0
+
+   // Read header lines until the blank line; returns the raw header block
+   // ("Name: Value\r\n..." without the trailing blank line).
+   read_headers: Int, Int => String
+   read_headers = fd, max =>
+      out = {max}
+      0.. @
+         line = http::read_line(fd, max)
+         done = line
+            | http::append_header(out, _)
+            | 1
+         done [1] -->
+      +out
+
+   // The Content-Length of a raw header block, or none when absent.
+   content_length: String => Num
+   content_length = headers =>
+      total = ?headers
+      found = http::find_str(headers, "Content-Length:")
+      found
+         |
+            rest = headers(_ + 16..total)
+            Num(<+ http::to_int(rest) ->)
+         | Num(<-->)
+
+   // Read exactly n bytes of body from fd. Returns a Chunk.
+   read_body: Int, Int => Chunk
+   read_body = fd, n =>
+      b = {n}
+      got' = 0
+      0.. @
+         got' !< n | -->
+         r = libc::recv(fd, &b + got', n - got', 0)
+         r [< 1] -->
+         got' = got' + r
+      ?b = got'
+      got' > 0
+         | Chunk(<+ +b ->)
+         | Chunk(<-->)
+
+   // Read the request body per a Content-Length (0/none -> "").
+   read_req_body: Int, Int => String
+   read_req_body = fd, cl =>
+      cl > 0
+         | (http::read_body(fd, cl) | _ | "")
+         | ""
+
+   // Build a Request from a request line whose first space is at `v`. Extracted
+   // as a helper so the line_req branch lambda stays a single expression.
+   line_req_method: String, Int => Req
+   line_req_method = line, v =>
+      method = line(0..v)
+      ln_len = ?line
+      rest = line(v + 1..ln_len)
+      rp = http::find_char(rest, 0, 32)
+      path = rp | rest(0.._) | rest
+      Req(<+ (method, path, "") +>)
+
+   // Parse a request line "METHOD /path HTTP/1.1" into a Request (empty body).
+   // Returns Req: <+ request +> on success, <- error -> on a malformed line.
+   line_req: String => Req
+   line_req = line =>
+      sp = http::find_char(line, 0, 32)
+      sp | http::line_req_method(line, _) | Req(<- "malformed request line" ->)
+
+   // Build a Request from a request line whose first space is at `v`, plus the
+   // read headers/body. Extracted as a helper so the request_from_line branch
+   // lambda stays a single expression.
+   request_method: Int, String, Int, Int => Req
+   request_method = fd, ln, v, max =>
+      method = ln(0..v)
+      ln_len = ?ln
+      rest = ln(v + 1..ln_len)
+      rp = http::find_char(rest, 0, 32)
+      path = rp | rest(0.._) | rest
+      headers = http::read_headers(fd, max)
+      cl = http::content_length(headers)
+      cl_val = cl | _ | 0
+      body = http::read_req_body(fd, cl_val)
+      Req(<+ (method, path, body) +>)
+
+   // Build a Request from a request line plus the read headers/body.
+   request_from_line: Int, String, Int => Req
+   request_from_line = fd, ln, max =>
+      sp = http::find_char(ln, 0, 32)
+      sp | http::request_method(fd, ln, _, max)
+         | Req(<- "malformed request line" ->)
+
+   // Read a full HTTP request from fd: the request line, the header block, and
+   // the body sized by Content-Length. Returns Req: <+ request +> on success,
+   // <- error -> on failure.
+   read_request: Int, Int => Req
+   read_request = fd, max =>
+      line = http::read_line(fd, max)
+      line | http::request_from_line(fd, _, max) | Req(<- _ ->)

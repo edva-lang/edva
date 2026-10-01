@@ -1,0 +1,156 @@
+# Choices and cycles
+
+**Audience:** Edva users<br>
+**Status:** current guide<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `process/spec/choices.md`, `process/spec/control-flow.md`,
+`process/choice-matchfn.md`, `tests/pass/04_choice_inline.dva`,
+`tests/pass/06_choice_value_int.dva`, `tests/pass/12_cycle_break.dva`
+
+Edva unifies conditional branching, switch statements, and pattern matching into
+a single construct: the **choice expression**. Iteration is driven entirely by
+the `@` cycle operator and symbolic escape controls.
+
+## Choices: The four guard kinds
+
+A choice expression matches a scrutinee value against an ordered series of guards.
+Each branch normalizes to exactly one of four guard kinds:
+
+| Guard Kind | Syntax Shape | Matching Rule | Example |
+|---|---|---|---|
+| **Case** | `[val1, val2, ...]` | Equality check: `scrutinee == val` for any element | `x [1, 2, 3] "small"` |
+| **Predicate** | `[op val]` or `[pred]` | Operator section or predicate fn: `pred(scrutinee)` | `x [< 0] "negative" [str::is_digit] "digit"` |
+| **Variant** | `[Variant]` or `[Variant(v)]` | Enum tag check, optionally binding payload to `v` | `s [Circle(r)] 3.14 * r * r [Point] 0.0` |
+| **Bare** | `|` or `| binding =>` | Position-based ram match or trailing catch-all fallback | `ram | ok => ok + 1 | print("fail")` |
+
+### Guard chaining and adjacency rules
+
+- **Guarded branches chain adjacently:** `x [1] "a" [2] "b" | "c"`. There must be **no `|`** between guarded branches; writing `| [2]` produces compile error `E2096`.
+- **Commas in case guards form an OR-list:** `x [1, 2, 3] body` matches when `x` equals 1, 2, or 3. Commas in predicate guards (`[< 0, 5]`) are a syntax error.
+- **Bare `|` position:** A bare `|` is only legal in the very first position (as condition separator) or the very last position (as fallback). Using `|` in any middle position is a parse error.
+
+```dva
+// Comprehensive guard demonstration:
+classify_number: Int => String
+classify_number = n =>
+   n [< 0] "negative"
+   [0] "zero"
+   [1, 2, 3] "one, two, or three"
+   [> 100] "huge"
+   | "moderate positive"
+```
+
+## Statement choices vs Expression choices
+
+| Property | Statement Choice | Expression Choice |
+|---|---|---|
+| Syntactic position | Standalone statement | RHS of assignment, return value, or arg |
+| Exhaustiveness | Never required | Strictly required across all paths |
+| Result type | Unit (`()`) | Unified type of branch bodies |
+| Single-branch form | `cond | action` (allowed and idiomatic) | Rejected (`E3087`: incomplete expression) |
+| Dummy fallback | **Never use `| 0`** (corrupts type to `Int`) | Provide meaningful fallback or unwrap |
+
+```dva
+// 1. Statement choice: side-effect only, no fallback needed
+count > 10 | print("Threshold exceeded!")
+
+// 2. Expression choice: assigned to variable, exhaustive with fallback
+status = count > 10 | "exceeded" | "within limits"
+```
+
+## Ramification matching
+
+Ramifications (rams) are matched **strictly by position** using bare `|` branches:
+
+- **First bare branch:** matches the positive (first) slot.
+- **Second bare branch:** matches the negative (second) slot.
+- **No slot names:** Ram slots have no source-level keywords or labels (`Positive` and `Negative` are internal compiler tags; writing named labels emits `E3125` / `E3004`).
+
+| Choice Form | Syntax | Behavior |
+|---|---|---|
+| Two-branch match | `r | val => action1 | err => action2` | First branch binds positive slot; second branch binds negative slot |
+| Value with fallback | `r | val => action | default_val` | Binds positive payload; falls back to default if negative slot |
+| Skip-first sugar | `write !| _` | Sugar for `| (void) | _`: skips positive slot, unwraps negative slot |
+
+```dva
+#type SafeInt < Int | Error >
+
+handle: SafeInt => ()
+handle = res =>
+   res
+      | val => print_int(val)   // First branch = positive slot
+      | err => print("failed")  // Second branch = negative slot
+```
+
+### Skip-first choice sugar
+
+`!|` is syntactic sugar for `| (void) |`: it skips the first branch and parses
+the next branch as if introduced by a plain `|`:
+
+```text
+X !| Y  ==  X | (void) | Y
+```
+
+This is primarily used for **write-or-panic** on fallible array element writes:
+
+```dva
+// Write to array; on error (second slot), panic:
+array(index) = value !| _
+```
+
+The void first slot matches successfully on success and yields nothing, while the
+`_` payload extractor on the second slot unwraps the poisonous `Error` payload,
+aborting with an error diagnostic if the write fails.
+
+---
+
+## Cycles (`@`)
+
+Cycles iterate over counts, ranges, or collections without keywords:
+
+| Cycle Form | Syntax | Iteration Behavior |
+|---|---|---|
+| Count cycle | `N @` | Repeat body exactly `N` times (no index bound) |
+| Indexed count | `N @ i =>` | Iterate `i` from `0` to `N - 1` |
+| Bounded range | `start..end @ i =>` | Iterate `i` from `start` up to (exclusive) `end` |
+| Infinite cycle | `0.. @` | Unbounded cycle (must break with `-->`) |
+| Collection cycle | `collection @ item =>` | Iterate elements of an array, string, or map |
+
+### Symbolic cycle controls
+
+- `-->`: Breaks the innermost cycle immediately.
+- `--^`: Continues to the next iteration of the innermost cycle.
+- `-->N`: Multi-level break—breaks the `N`th enclosing cycle (`-->2` breaks outer).
+- `--^N`: Multi-level continue—continues the `N`th enclosing cycle.
+
+```dva
+// Nested cycle with multi-level break:
+0..10 @ row =>
+   0..10 @ col =>
+      row * col > 50 | -->2  // Breaks both col and row cycles
+      print_int(row * col)
+```
+
+### Cycle-escape expressions (`>--`)
+
+Appending `>--` followed by a branch turns a cycle into an expression:
+- If a `-->` break fires, the cycle terminates and evaluates to the branch expression.
+- If the cycle completes naturally without breaking, it yields the **zero-value** of the branch type (`0`, `""`, `<->`, etc.).
+
+```dva
+// Find the first negative element in a list:
+find_negative: (Int){} => Int
+find_negative = list =>
+   ?list @ i =>
+      val = list(i)!!
+      val < 0 | -->
+      >-- val // Yields the negative val if break fires, or 0 if loop ends
+
+nums = (Int){}
+nums += 10
+nums += -4
+nums += 25
+
+print_int $ find_negative(nums) // prints -4
+```
+

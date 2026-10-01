@@ -1,0 +1,6 @@
+greeting = "hello " + "world"
+print $ greeting
+
+..4 @ i =>
+    s = "item_" + "ok"
+    print $ s

@@ -1,0 +1,7 @@
+#use in
+
+// Read from STDIN up to 100 bytes or until space (' ' = 32)
+res = in::read_until(32, 100)
+word = res | s => s | ""
+print $ "WORD:"
+print $ word

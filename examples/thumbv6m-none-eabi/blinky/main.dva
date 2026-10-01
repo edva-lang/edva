@@ -1,0 +1,40 @@
+// Blinky: RP2040 on-board LED (GPIO 25) toggle, a Dva port of
+// ~/Z/blink/blink.c using only --no-runtime primitives.
+//
+// Register bases (same as blink.c):
+//   SIO_BASE    = 0xd0000000
+//   RESETS_BASE = 0x4000c000
+//   IO_BANK0    = 0x40014000
+//   PADS_BANK0  = 0x4001c000
+//
+// The RP2040 ignores byte-lane peripheral writes, so every register access
+// is a WORD-width raw-memory access. "@[addr]" is a bare pointer (no memory
+// access); "@[addr i32]" loads a 32-bit word; "@[addr] = v" stores at v's
+// own width (an i32 literal stores 32 bits). All are volatile.
+
+// 1. Take IO_BANK0 (bit 5) and PADS_BANK0 (bit 8) out of reset via the
+//    RESETS_CLR alias (RESETS_BASE + 0x3000). Writing 1s clears those bits.
+@[0x4000f000] = 0x120i32
+
+// 2. Wait until both resets are done (RESETS_DONE at 0x4000c008).
+0.. @
+   r = @[0x4000c008 i32]
+   (r .&. 0x120) == 0x120 | -->
+
+// 3. GPIO 25 function -> SIO (fn 5). GPIO25_CTRL = 0x40014000 + 25*8 + 4
+//    = 0x400140cc.
+@[0x400140cc] = 5i32
+
+// 3b. Pad control: PADS_BANK0 GPIO25 = 0x4001c068, clear OD (bit 7) and
+//     set IE (bit 6) to enable output: value (1 << 6).
+@[0x4001c068] = 0x40i32
+
+// 4. Enable output on GPIO 25: SIO_GPIO_OE_SET = 0xd0000024, bit 25.
+@[0xd0000024] = 0x02000000i32
+
+// 5. Toggle loop. SIO_GPIO_OUT_XOR (0xd000001c) toggles bit 25 on write.
+//    Each volatile read is ~1 cycle; 2.5M iterations ~= 0.5s/phase.
+0.. @
+   @[0xd000001c] = 0x02000000i32
+   0..2500000 @ _ =>
+      @[0xd0000008 i32]

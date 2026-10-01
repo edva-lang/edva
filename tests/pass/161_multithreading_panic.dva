@@ -1,0 +1,10 @@
+#type Ints (Int){}
+xs: Ints
+xs += 42
+
+crash = i =>
+   xs(i) | _ | _
+
+h = #spawn crash(5)
+r = #join h
+print_int $ (r | _ | _)

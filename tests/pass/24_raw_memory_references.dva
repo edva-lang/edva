@@ -1,0 +1,14 @@
+// Raw-memory semantics: "@[addr]" is a bare pointer (no memory access);
+// "@[addr T]" is a volatile typed load; "@[addr] = v" stores at v's own
+// width (an Int literal stores 8 bytes).
+
+x = 42
+a = addr $ x
+
+// A typed load reads x's Int at its address.
+val1 = @[a Int]
+print_int $ val1
+
+// A store writes at the value's own (Int) width, overwriting x.
+@[a] = 99
+print_int $ x

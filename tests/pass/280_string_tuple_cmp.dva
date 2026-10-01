@@ -1,0 +1,34 @@
+// Test string vs string tuple comparison (== and !=)
+
+s = "hello::world"
+t1 = ("hello", "::", "world")
+t2 = ("hello", "::", "other")
+t3 = ("hel", "lo::", "world")
+t4 = ("hello", "::")
+
+print $ s == t1 | "T" | "F"
+print $ s != t1 | "T" | "F"
+
+print $ s == t2 | "T" | "F"
+print $ s != t2 | "T" | "F"
+
+print $ s == t3 | "T" | "F"
+print $ s == t4 | "T" | "F"
+
+// Reverse order: tuple == string
+print $ t1 == s | "T" | "F"
+print $ t2 == s | "T" | "F"
+
+// Substrings and variables
+mod = "foo"
+bare = "bar"
+qual = "foo::bar"
+print $ qual == (mod, "::", bare) | "T" | "F"
+print $ qual != (mod, "::", bare) | "T" | "F"
+print $ qual == (mod, "::#", bare) | "T" | "F"
+print $ (mod, "::", bare) == qual | "T" | "F"
+
+// Dynamic record variable
+rec = (mod, "::", bare)
+print $ qual == rec | "T" | "F"
+print $ rec == qual | "T" | "F"

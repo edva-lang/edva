@@ -1,0 +1,30 @@
+// Higher-order CTFE: a function VALUE is a CT value (CtKind.Fn), so a '#!'
+// expression can pass a declared function to a generic combinator and apply it
+// inside the body (a parameter bound to a CtFn is resolved as the callee).
+// No new syntax; bodies stay in the scalar subset.
+
+#use "str"
+
+dbl: Int => Int
+dbl = n => n * 2
+inc: Int => Int
+inc = n => n + 1
+
+twice_g: #! T: Type, (T => T), T => T
+twice_g = f, x => f(f(x))
+
+apply_f: #! T: Type, #! U: Type, (T => U), T => U
+apply_f = f, x => f(x)
+
+compose2: #! T: Type, (T => T), (T => T), T => T
+compose2 = f, g, x => f(g(x))
+
+pick: #! T: Type, (T => T), (T => T), T => T
+pick = f, g, x => x > 0 | f(x) | g(x)
+
+print $ str::from_int(#! twice_g(dbl, 10))
+print $ str::from_int(#! twice_g(inc, 10))
+print $ str::from_int(#! apply_f(dbl, 21))
+print $ str::from_int(#! compose2(dbl, inc, 10))
+print $ str::from_int(#! pick(dbl, inc, 5))
+print $ str::from_int(#! pick(dbl, inc, -5))

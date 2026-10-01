@@ -1,0 +1,75 @@
+// Regression test for Issue #34: Trailing block / block-feed syntax ($:)
+
+#use "str"
+
+vbox: #! T: Type, Int, T => String
+vbox = spacing, children =>
+   "vbox(spacing=" + str::from_int(spacing) + ", count=" +
+      str::from_int(?children) + ")"
+
+hbox: #! T: Type, Int, T => String
+hbox = spacing, children =>
+   "hbox(spacing=" + str::from_int(spacing) + ", count=" +
+      str::from_int(?children) + ")"
+
+container: #! T: Type, T => String
+container = children =>
+   "container(count=" + str::from_int(?children) + ")"
+
+button: String => String
+button = name => "[" + name + "]"
+
+on_click: String, (String => String) => String
+on_click = btn, cb => btn + " -> " + cb("click")
+
+run_task: (Int => Int) => Int
+run_task = f => f(42)
+
+#type Config (color: Int, width: Int)
+
+make_config: (color: Int, width: Int) => String
+make_config = cfg =>
+   "config(color=" + str::from_int(cfg.color) + ", width=" +
+      str::from_int(cfg.width) + ")"
+
+// 1. Basic container with multiple children in trailing block
+b1 = vbox(12) $:
+   "label:username"
+   "input:username"
+   "btn:submit"
+print $ b1
+
+// 2. Nested containers with trailing blocks
+b2 = vbox(16) $:
+   "header"
+   hbox(8) $:
+      "btn:cancel"
+      "btn:ok"
+   "footer"
+print $ b2
+
+// 3. Single child in trailing block
+b3 = vbox(5) $:
+   "only_child"
+print $ b3
+
+// 4. Container with no other arguments (bare identifier)
+b4 = container $:
+   "item_a"
+   "item_b"
+print $ b4
+
+// 6. Trailing event handler / callback
+b6 = button("Submit") $> on_click $: _ => "handled"
+print $ b6
+
+// 7. Trailing lambda callback
+b7 = run_task $: x =>
+   x + 100
+print $ str::from_int(b7)
+
+// 8. Named configuration record via trailing block
+b8 = make_config $:
+   color = 0xFF00
+   width = 320
+print $ b8

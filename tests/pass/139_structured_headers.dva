@@ -1,0 +1,13 @@
+// P1.10: structured Headers in std/net/http.dva — a growable array of
+// "Name: Value" lines with append / case-insensitive lookup / render,
+// replacing the flat "K: V\r\n" string for programs that need to read a
+// header back.
+
+#use net/http
+
+// The round-trip builds a set, reads one value back case-insensitively, and
+// renders the wire form.
+print $ http::headers_roundtrip("hi")
+
+// A longer body: Content-Length tracks the body's byte length.
+print $ http::headers_roundtrip("hello world")

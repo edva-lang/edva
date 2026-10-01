@@ -1,0 +1,39 @@
+// Recursive types: a ram/enum variant may carry a payload that references the
+// very type being declared (register-before-body). "Tree: <Leaf(Int),
+// Branch((Tree[]))>" is a JSON-shaped recursive enum over a slice of itself.
+
+#type Tree <Leaf(Int), Branch((Tree[]))>
+#type Trees (Tree){}
+
+count: Tree => Int
+count = t =>
+   t [Leaf n] 1
+     [Branch kids]
+        total' = 0
+        kids @ e =>
+           total' = total' + count(e)
+        total'
+
+leaves: Trees
+leaves += Tree(Leaf, 4)
+leaves += Tree(Leaf, 5)
+m = ?leaves
+view = leaves(0..m)
+root = Tree(Branch, view)
+print_int $ count(root)
+
+also: Trees
+also += Tree(Leaf, 1)
+also += Tree(Leaf, 2)
+also += Tree(Leaf, 3)
+k = ?also
+view2 = also(0..k)
+inner = Tree(Branch, view2)
+
+nested: Trees
+nested += inner
+nested += Tree(Leaf, 6)
+n = ?nested
+view3 = nested(0..n)
+outer = Tree(Branch, view3)
+print_int $ count(outer)

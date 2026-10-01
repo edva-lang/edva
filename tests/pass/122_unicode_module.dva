@@ -1,0 +1,25 @@
+// std/unicode module: decode_rune + utf8_width + classification.
+
+#use unicode
+
+// utf8_width: byte width of a rune's encoding (1/2/3/4).
+print_int $ unicode::utf8_width(Rune(65))
+print_int $ unicode::utf8_width(Rune(0x3B1))
+print_int $ unicode::utf8_width(Rune(0x4E2D))
+print_int $ unicode::utf8_width(Rune(0x1F600))
+
+// decode_rune: codepoint at a byte offset (ASCII, 2/3/4-byte sequences).
+print_int $ unicode::decode_rune("a", 0)
+print_int $ unicode::decode_rune("é", 0)
+print_int $ unicode::decode_rune("中", 0)
+print_int $ unicode::decode_rune("😀", 0)
+
+// Walk a mixed string decoding rune by rune, advancing by utf8_width — a
+// round-trip proving width and decode agree.
+s = "aé中😀"
+total = ?s
+i' = 0
+0.. @
+   i' !< total | -->
+   print_int $ unicode::decode_rune(s, i')
+   i' = i' + unicode::utf8_width(unicode::decode_rune(s, i'))

@@ -1,0 +1,51 @@
+// Standard library compile-time type reflection predicates.
+// Evaluated at compile time by the compiler; erased from runtime.
+
+
+is_record: Type => <>
+is_record = _ => <->
+
+is_enum: Type => <>
+is_enum = _ => <->
+
+is_ram: Type => <>
+is_ram = _ => <->
+
+is_fn: Type => <>
+is_fn = _ => <->
+
+is_unit: Type => <>
+is_unit = _ => <->
+
+is_homogeneous: Type => <>
+is_homogeneous = _ => <->
+
+is_indexable: Type => <>
+is_indexable = _ => <->
+
+is_iterable: Type => <>
+is_iterable = _ => <->
+
+is_array: Type => <>
+is_array = _ => <->
+
+is_slice: Type => <>
+is_slice = _ => <->
+
+is_map: Type => <>
+is_map = _ => <->
+
+is_scalar: Type => <>
+is_scalar = _ => <->
+
+is_int: Type => <>
+is_int = _ => <->
+
+is_float: Type => <>
+is_float = _ => <->
+
+is_numeric: Type => <>
+is_numeric = _ => <->
+
+is_pointer: Type => <>
+is_pointer = _ => <->

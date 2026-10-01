@@ -1,0 +1,22 @@
+// Zero-argument functions: "!=>" defines, "() =>" declares, "!" calls.
+
+fun = !=> 42
+print_int $ fun!
+
+greet: () => String
+greet = !=> "hi"
+print $ greet!
+
+add: () => Int
+add = !=> 1 + 2
+print_int $ add!
+
+// A zero-arg function passed to $> / $ (first-class value).
+dbl: () => Int
+dbl = !=> 21
+r = dbl! + dbl!
+print_int $ r
+
+b = {16}
+b += 65
+print $ +b

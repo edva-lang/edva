@@ -1,0 +1,12 @@
+// fmt: integer formatting helpers (int_to_str / hex_to_str). The module had
+// no test coverage (codebase_review L8).
+
+#use str
+
+print $ str::from_int(0)
+print $ str::from_int(-42)
+print $ str::from_int(255)
+print $ str::hex_to_str(0)
+print $ str::hex_to_str(255)
+print $ str::hex_to_str(16)
+print $ str::hex_to_str(3735928559)

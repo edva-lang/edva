@@ -1,0 +1,13 @@
+// Must-init intersection: a field written in EVERY branch of an exhaustive
+// choice is definitely initialized after the join and can be read.
+#type T (a: Int, b: Int)
+
+t: T
+t.b = 0
+cond = 5 > 3
+cond |
+   t.a = 1
+|
+   t.a = 2
+print_int $ t.a
+print_int $ t.b

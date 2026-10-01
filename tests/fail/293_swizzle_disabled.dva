@@ -1,0 +1,4 @@
+#pragma swizzle none
+
+v = (1.0, 2.0)
+s = v.xy

@@ -1,0 +1,30 @@
+// Type coercion functions: "TypeName(expr)" and "expr $> TypeName".
+// Coercions are just calls whose name happens to be a type name, resolved at
+// codegen. Both lowercase (i16) and capitalized (Float, Int, String, Addr)
+// type names work, including user-defined tuple types.
+
+a = i16(2)
+print_int $ a
+
+b = Float(2)
+print_float $ b
+
+c = 3.4 $> Int
+print_int $ c
+
+d = Int(3.9)
+print_int $ d
+
+// i16 truncation wraps: 70000 mod 65536 = 4464
+wrap = i16(70000)
+print_int $ wrap
+
+// User-defined type as coercion/constructor.
+#type T (a: Int, b: Int)
+t = T((10, 20))
+print_int $ t.a
+print_int $ t.b
+
+// Coercion via feed on a user type: identity pass-through.
+t2 = (10, 20) $> T
+print_int $ t2.a

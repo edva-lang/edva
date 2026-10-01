@@ -1,0 +1,321 @@
+// net module for Dva
+// POSIX socket helpers. **Linux/x86-64 only**: the sockaddr_in / addrinfo
+// struct layouts and the numeric constants below (AF_*, SO_*, SOL_SOCKET,
+// F_GETFL/SETFL, O_NONBLOCK, SHUT_WR) are the Linux-x86-64 values — on
+// macOS/BSD the structs misalign and several constants differ, so this module
+// is not portable as-is.
+//
+// Error convention: the socket helpers return `<T | String>` rams — positive
+// = the value, negative = a short human-readable message ("socket failed",
+// "connect failed") the caller may inspect and handle gracefully. This is the
+// *recoverable* regime; the poisonous structural `Error` (which aborts on
+// unwrap) is used by std/json.dva instead.
+// See M8 in process/codebase_review.md.
+
+#use libc
+#use str
+
+#public
+   // Addr family constants
+   AF_INET  = 2
+   AF_INET6 = 10
+
+   // Socket type constants
+   SOCK_STREAM = 1
+   SOCK_DGRAM  = 2
+
+   // Protocol
+   IPPROTO_TCP = 6
+   IPPROTO_UDP = 17
+
+   // SOL_SOCKET / SO_REUSEADDR / SO_*TIMEO
+   SOL_SOCKET   = 1
+   SO_REUSEADDR = 2
+   SO_RCVTIMEO  = 20
+   SO_SNDTIMEO  = 21
+
+   // fcntl command / flag (Linux)
+   F_GETFL     = 3
+   F_SETFL     = 4
+   O_NONBLOCK  = 2048
+
+   // shutdown "how"
+   SHUT_WR = 1
+
+   // sockaddr_in layout (16 bytes, matches struct sockaddr_in on Linux x86_64)
+   #type SockAddrIn (
+      sin_family: i16,
+      sin_port:   i16,
+      sin_addr:   i32,
+      sin_zero:   i64,
+   )
+
+   // struct timeval for SO_RCVTIMEO/SO_SNDTIMEO.
+   #type Timeval (
+      tv_sec:  i64,
+      tv_usec: i64,
+   )
+
+   // struct addrinfo (Linux x86_64): getaddrinfo result list node.
+   #type Addrinfo (
+      ai_flags:     i32,
+      ai_family:    i32,
+      ai_socktype:  i32,
+      ai_protocol:  i32,
+      ai_addrlen:   i32,
+      ai_pad:       i32,
+      ai_addr:      Addr,
+      ai_canonname: Addr,
+      ai_next:      Addr,
+   )
+
+   // Result rams. The socket/data-returning helpers use these instead of
+   // -1 / ""
+   // sentinels, so callers pattern-match with '|' branches:
+   //   Conn  < Int | String >      positive = fd, negative = error message
+   //   Host  < Addr | String >  positive = addrinfo list, negative = error
+   //   Chunk < String | >          positive = received data, negative = none
+   #type Conn  < Int | String >
+   #type Host < Addr | String >
+   #type Chunk < String | >
+
+   // Endian byte-swap helpers using LLVM intrinsics (%bswap).
+   htons: Int => Int
+   htons = x => %bswap(x) .>. 48
+
+   ntohs: Int => Int
+   ntohs = x => %bswap(x) .>. 48
+
+   htonl: Int => Int
+   htonl = x => %bswap(x) .>. 32
+
+   ntohl: Int => Int
+   ntohl = x => %bswap(x) .>. 32
+
+   // Open a TCP client socket connected to host:port. Host may be a numeric IP
+   // or a DNS name (resolved via getaddrinfo).
+   // Returns Conn: <+ fd +> on success,
+   // <- error -> on failure.
+   tcp_connect: String, Int => Conn
+   tcp_connect = host, port =>
+      ip = libc::inet_addr $ host
+      ip [< 0]
+         net::tcp_connect_name(host, port)
+      |
+         sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
+         sock [< 0] Conn(<- "socket failed" ->)
+         |
+            addr = SockAddrIn((i16(AF_INET),
+               i16(htons $ port), i32(ip), 0))
+            ret = libc::connect(sock, Addr(addr), 16)
+            ret [0] Conn(<+ sock +>) | Conn(<- "connect failed" ->)
+
+   // Connect to a host by DNS name (or numeric IP) via getaddrinfo. Walks the
+   // resolver's result list (IPv4/IPv6, and any duplicate addresses) and tries
+   // each until one connects.
+   tcp_connect_name: String, Int => Conn
+   tcp_connect_name = host, port =>
+      list = net::resolve(host, port)
+      list
+         | l => net::walk_connect(l)
+         | err => Conn(<- err ->)
+
+   // Walk an addrinfo list (from resolve) trying each entry until one connects.
+   // The list is freed before returning. Extracted as a top-level helper so the
+   // lambda branch of tcp_connect_name stays a single expression
+   // (a nested choice
+   // inside a lambda branch is not parseable).
+   walk_connect: Addr => Conn
+   walk_connect = l =>
+      cur' = l
+      res' = -1
+      0.. @
+         Int(cur') [0] -->
+         ai = Addrinfo(cur')
+         sock = libc::socket(ai.ai_family, ai.ai_socktype, ai.ai_protocol)
+         sock < 0
+            | --^
+         ret = libc::connect(sock, ai.ai_addr, ai.ai_addrlen)
+         ret [0] (res' = sock; -->)
+         net::close_fd(sock)
+         cur' = ai.ai_next
+      libc::freeaddrinfo(l)
+      res' [< 0] Conn(<- "connect failed" ->) | Conn(<+ res' +>)
+
+   // Resolve host:port into an addrinfo list (must be released with
+   // libc::freeaddrinfo). Returns Host: <+ list +> on success, <- error -> on
+   // failure.
+   resolve: String, Int => Host
+   resolve = host, port =>
+      port_str = str::from_int(port)
+      out = {8}
+      gai = libc::getaddrinfo(host, port_str, Addr(0), &out)
+      gai [0]
+         Host(<+ Addr(@[&out Int]) +>)
+      |
+         Host(<- "resolve failed" ->)
+
+   // Create a TCP server socket bound to port and listening.
+   // SO_REUSEADDR is set so a port can be re-bound immediately after a restart
+   // (otherwise lingering TIME_WAIT connections block the bind for a while).
+   // Returns Conn: <+ fd +> on success, <- error -> on failure.
+   tcp_listen: Int, Int => Conn
+   tcp_listen = port, backlog =>
+      sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
+      sock [< 0] Conn(<- "socket failed" ->)
+      |
+         one = {4}
+         @[&one] = 1i32
+         libc::setsockopt(sock, net::SOL_SOCKET, net::SO_REUSEADDR, &one, 4)
+         addr = SockAddrIn((i16(AF_INET),
+            i16(htons $ port), i32(0), 0))
+         ret_b = libc::bind(sock, Addr(addr), 16)
+         ret_l = ret_b [0] libc::listen(sock, backlog) | -1
+         ret_l [0] Conn(<+ sock +>) | Conn(<- "bind/listen failed" ->)
+
+   // Accept one incoming connection on server socket fd.
+   // Returns Conn: <+ client fd +> on success, <- error -> on failure.
+   tcp_accept: Int => Conn
+   tcp_accept = server_fd =>
+      s = libc::accept(server_fd, Addr(0), Addr(0))
+      s [< 0] Conn(<- "accept failed" ->) | Conn(<+ s +>)
+
+   // Send a string over a socket fd, looping until every byte is written:
+   // send() may deliver fewer bytes than requested (partial send), and a call
+   // that truncates would silently drop the tail of the message.
+   send_str: Int, String => Int
+   send_str = fd, msg =>
+      off' = 0
+      total = ?msg
+      0.. @
+         off' !< total | -->
+         v = msg(off'..total)
+         sent = libc::send(fd, v, ?v, 0)
+         sent [< 1] -->
+         off' = off' + sent
+      off'
+
+   // Receive up to n bytes into buf (a writable buffer) from fd. Returns bytes
+   // received. buf is an Addr, not a String — a String is immutable and would
+   // only ever hand a copy to the C write.
+   recv_buf: Int, Addr, Int => Int
+   recv_buf = fd, buf, n =>
+      libc::recv(fd, buf, n, 0)
+
+   // Receive up to max bytes from fd as a String (the read-side sibling of
+   // send_str). Returns Chunk: <+ data +> on data, <--> on none/error.
+   // One read;
+   // does not loop.
+   recv: Int, Int => Chunk
+   recv = fd, max =>
+      b = {max}
+      n = libc::recv(fd, &b, max, 0)
+      n [< 1] Chunk(<-->) |
+         ?b = n
+         Chunk(<+ +b ->)
+
+   // Set the receive timeout on fd (ms). 0 clears it (block forever).
+   set_recv_timeout: Int, Int => Int
+   set_recv_timeout = fd, ms =>
+      tv = Timeval((i64(ms / 1000),
+         i64((ms % 1000) * 1000)))
+      libc::setsockopt(fd, net::SOL_SOCKET, net::SO_RCVTIMEO, Addr(tv), 16)
+
+   // Set the send timeout on fd (ms). 0 clears it.
+   set_send_timeout: Int, Int => Int
+   set_send_timeout = fd, ms =>
+      tv = Timeval((i64(ms / 1000),
+         i64((ms % 1000) * 1000)))
+      libc::setsockopt(fd, net::SOL_SOCKET, net::SO_SNDTIMEO, Addr(tv), 16)
+
+   // Put fd in non-blocking mode (flag != 0) or back to blocking (flag == 0).
+   set_nonblocking: Int, Int => Int
+   set_nonblocking = fd, flag =>
+      flags = libc::fcntl(fd, net::F_GETFL, 0)
+      flags [< 0] -1 |
+         new_flags = flag [0] flags .&. .!. net::O_NONBLOCK
+            | flags .|. net::O_NONBLOCK
+         libc::fcntl(fd, net::F_SETFL, new_flags)
+
+   // Send FIN on fd without closing the read side.
+   shutdown_fd: Int => Int
+   shutdown_fd = fd =>
+      libc::shutdown(fd, net::SHUT_WR)
+
+   // Format a SockAddrIn as "a.b.c.d:port".
+   addr_str: SockAddrIn => String
+   addr_str = addr =>
+      ab = Addr(addr)
+      out = {32}
+      out += str::from_int(@[ab + 4 i8])
+      out += '.'
+      out += str::from_int(@[ab + 5 i8])
+      out += '.'
+      out += str::from_int(@[ab + 6 i8])
+      out += '.'
+      out += str::from_int(@[ab + 7 i8])
+      out += ':'
+      out += str::from_int(@[ab + 2 i8] * 256 + @[ab + 3 i8])
+      +out
+
+   // The remote peer's address as "ip:port", or "" on error.
+   peer_addr: Int => String
+   peer_addr = fd =>
+      a = (i16(0), i16(0), i32(0), i64(0))
+      len = {4}
+      @[&len] = 16i32
+      ret = libc::getpeername(fd, Addr(a), &len)
+      ret [< 0] "" | net::addr_str(a)
+
+   // This socket's own local address as "ip:port", or "" on error.
+   local_addr: Int => String
+   local_addr = fd =>
+      a = (i16(0), i16(0), i32(0), i64(0))
+      len = {4}
+      @[&len] = 16i32
+      ret = libc::getsockname(fd, Addr(a), &len)
+      ret [< 0] "" | net::addr_str(a)
+
+   // Close a file descriptor.
+   close_fd: Int => Int
+   close_fd = fd =>
+      libc::close $ fd
+
+   // Create a UDP socket. Returns Conn: <+ fd +> on success, <- error -> on
+   // failure. The unused arg keeps the signature callable (dva has no 0-arg
+   // calls); it is not named "_" because predicate guards rebind "_". The local
+   // is named "s" (not "fd") to dodge the flat-variable-map leak where a
+   // top-level binding shadows a function-local of the same name.
+   udp_socket: Int => Conn
+   udp_socket = unused =>
+      s = libc::socket(net::AF_INET, net::SOCK_DGRAM, net::IPPROTO_UDP)
+      s [< 0] Conn(<- "socket failed" ->) | Conn(<+ s +>)
+
+   // Bind a UDP socket to a port (0 = an ephemeral port chosen by the kernel).
+   // Returns 0 on success, -1 on failure.
+   udp_bind: Int, Int => Int
+   udp_bind = fd, port =>
+      addr = SockAddrIn((i16(AF_INET),
+         i16(htons $ port), i32(0), 0))
+      libc::bind(fd, Addr(addr), 16)
+
+   // Send one datagram to host:port (host must be a numeric IP). Returns the
+   // number of bytes sent, or -1 on error.
+   udp_send: Int, String, Int, String => Int
+   udp_send = fd, host, port, data =>
+      ip = libc::inet_addr $ host
+      ip [< 0] -1
+      |
+         addr = SockAddrIn((i16(AF_INET),
+            i16(htons $ port), i32(ip), 0))
+         libc::sendto(fd, data, ?data, 0, Addr(addr), 16)
+
+   // Receive one datagram. Returns Chunk: <+ data +> on data, <-->
+   // on none/error.
+   udp_recv: Int, Int => Chunk
+   udp_recv = fd, max =>
+      b = {max}
+      n = libc::recvfrom(fd, &b, max, 0, Addr(0), Addr(0))
+      n [< 1] Chunk(<-->) |
+         ?b = n
+         Chunk(<+ +b ->)

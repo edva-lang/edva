@@ -1,0 +1,34 @@
+// Logical && / || preserve their short-circuit winner. The result layout is
+// computed from the variants that can win: && takes its positive slot from
+// the RHS and || takes its negative slot from the RHS. A slot that can win
+// from both sides must have the same layout on both operands.
+//
+// Short-circuit: '||' stops when the first operand is Left (positive),
+// '&&' stops when the first operand is Right (negative).
+
+#type L < Int | >        // positive Int, negative unit
+#type R < Float | >      // positive Float, negative unit
+#type E < Int | String > // positive Int, negative String
+
+a_pos = L(<+ 10 ->)     // L: positive Int
+a_neg = L(<-->)          // L: negative unit (Noth)
+b = R(<+ 3.5 ->)        // R: positive Float
+e = E(<- "err" ->)      // E: negative String
+
+// && returns R: its positive winner comes from b, while both negative slots
+// are unit.
+m1 = a_pos && b
+print_float $ (m1 | (Float(_)) | 0.0)
+
+// A negative LHS short-circuits && and produces R's negative unit.
+m2 = a_neg && b
+print_int $ (m2 | 1 | 0)
+
+// || returns E: positive winners from both operands carry Int, and a
+// negative winner only comes from e.
+m3 = a_pos || e
+print_int $ (m3 | (Int(_)) | 0)
+
+// A negative LHS falls through to e, whose negative payload is retained.
+m4 = a_neg || e
+print $ (m4 | "none" | (String(_)))

@@ -1,0 +1,61 @@
+# `unicode` standard library
+
+**Audience:** Edva users working with Unicode text<br>
+**Status:** current reference<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `std/unicode.dva`, `tests/pass/122_unicode_module.dva`
+
+Strings in Edva are raw UTF-8 byte sequences. The `unicode` module provides
+codepoint classification, UTF-8 byte decoding, and rune boundary helpers.
+
+```dva
+#use unicode
+```
+
+## Function catalog
+
+| Category | Function | Signature | Return Type | Description |
+|---|---|---|---|---|
+| **Classification** | `unicode::is_alpha(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode alphabetic |
+| | `unicode::is_digit(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode decimal digit |
+| | `unicode::is_upper(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode uppercase letter |
+| | `unicode::is_lower(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode lowercase letter |
+| | `unicode::is_space(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode whitespace |
+| **Decoding** | `unicode::decode_rune(s, off)` | `String, Int => Rune` | `Rune` | Decodes the UTF-8 codepoint starting at byte offset `off` |
+| | `unicode::utf8_width(r)` | `Rune => Int` | `Int` | Returns the encoded UTF-8 byte width (`1` to `4` bytes) |
+
+---
+
+## Codepoint operations & operators
+
+| Operation | Syntax | Description | Example |
+|---|---|---|---|
+| **Codepoint count** | `??s` | Unary prefix `??` counts Unicode codepoints (not bytes) | `??("café")` $\rightarrow$ `4` |
+| **Byte count** | `?s` | Unary prefix `?` counts raw UTF-8 bytes | `?("café")` $\rightarrow$ `5` |
+| **Rune literal** | `'λ'` | 32-bit scalar Unicode character code | `r: Rune = 'λ'` |
+
+---
+
+## Iterating over Unicode codepoints
+
+Because strings are byte-indexed (`s(i)` returns a byte), decoding a multibyte
+UTF-8 string requires advancing by the rune's decoded byte width:
+
+```dva
+#use unicode
+#use io
+
+text = "Hello, 世界! 🌍"
+
+// Walk all codepoints in a UTF-8 string:
+byte_len = ?text
+0.. @
+   offset' = 0
+   offset' !< byte_len | -->
+   r = unicode::decode_rune(text, offset')
+   width = unicode::utf8_width(r)
+
+   io::outf("Rune U+{:X} (width {} bytes)", Int(r), width)
+   offset' = offset' + width
+```
+

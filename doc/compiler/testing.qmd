@@ -1,0 +1,58 @@
+# Testing the compiler
+
+**Audience:** compiler contributors<br>
+**Status:** current workflow<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `build.sh`, `run_tests.sh`, `selfhost/test_driver.sh`
+
+Build and run the full test suite with:
+
+```sh
+./build.sh
+```
+
+The build regenerates token and operator metadata, builds `edva` via `make edva`,
+and runs `run_tests.sh`. `run_tests.sh` checks generator freshness, driver
+behavior, examples, passing programs, and expected-failure programs.
+
+## Focused checks
+
+Always wrap ad-hoc test executions in explicit timeouts and 4 GB RAM limits (`ulimit -v 4194304`):
+
+Run a passing integration case directly:
+
+```sh
+bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/pass/04_choice_inline.dva -r'
+```
+
+For a failure case, verify that compilation exits nonzero with the expected diagnostic:
+
+```sh
+bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/fail/17_middle_bare_pipe_choice.dva'
+```
+
+Use the module directory itself for a multi-file test:
+
+```sh
+bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/pass/28_modules -r'
+```
+
+## Driver regression suite
+
+Run the driver suite alone when modifying CLI flags, module loading, or code generation modes:
+
+```sh
+bash -c 'ulimit -v 4194304; timeout 120s ./selfhost/test_driver.sh'
+```
+
+`selfhost/test_driver.sh` verifies real end-to-end driver behaviors across 9 regression gates:
+1. Parse failure propagation (fails with `E2064`, emits no outputs)
+2. Missing module failure propagation (fails with `E5006`, emits no outputs)
+3. Unwritable output path error handling (`E5012`, no segfault)
+4. Exact file byte reading & empty file handling
+5. Child signal termination reporting under `-r` (`E5014`)
+6. Typed AST elaboration & tree dump (`--typed-ast`, `-typed-ast-tree`)
+7. C header generation from `#export` (`-H` / `--header`)
+8. WebAssembly target compilation and Node.js execution (`-target wasm32-unknown-unknown`)
+9. Modular compilation (`-c`, `--module`, `--entry`) & interface-only `#use` dependency isolation
+

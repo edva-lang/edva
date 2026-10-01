@@ -1,0 +1,3 @@
+// A map literal's key type comes from the first entry; a later entry whose
+// key type differs is E3137.
+m = ("a" ^= 1, 2 ^= 3)

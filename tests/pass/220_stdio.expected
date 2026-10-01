@@ -1,0 +1,13 @@
+stdout line
+42
+2.75
+hex: 0xFF
+plain line
+builder: ABC
+stderr line
+-7
+print alias
+123
+a: 42
+x-y-3
+in:  

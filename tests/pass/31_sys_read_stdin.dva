@@ -1,0 +1,6 @@
+#use sys
+#use os
+
+data = os::read(sys::STDIN, 11)
+print $ "RESULT:"
+print $ data

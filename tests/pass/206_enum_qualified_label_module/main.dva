@@ -1,0 +1,27 @@
+// Enum::Label qualification for enums declared in a #use'd module (the P1.5
+// feature extended to modules). Two spellings:
+//   - from the IMPORTER: "m::A::X" (module-qualified enum + label)
+//   - inside the MODULE's own code: "A::X" / "B::Y" (a bare type name resolves
+//     to the module-local enum via codegen_prefixed_type_name)
+// Previously "m::A::X" gave "Undefined variable 'm'" and a module's own
+// "A::X" gave "Undefined variable 'A'". The constructor form "m::A(X)"
+// already worked.
+
+#use "m"
+
+name_a: m::A => String
+name_a = a =>
+   a [X] "AX" [Y] "AY"
+
+name_b: m::B => String
+name_b = b =>
+   b [Y] "BY" [Z] "BZ"
+
+print $ name_a(m::A::X)
+print $ name_a(m::A::Y)
+print $ name_b(m::B::Y)
+print $ name_b(m::B::Z)
+print $ name_a(m::get(1))
+print $ name_a(m::get(2))
+print $ name_b(m::other(1))
+print $ name_b(m::other(2))

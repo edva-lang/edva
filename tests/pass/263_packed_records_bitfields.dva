@@ -1,0 +1,61 @@
+Header: #packed (a: u8, b: u16, c: u8)
+
+TcpFlags: #packed u16 (
+   fin: 1,
+   syn: 1,
+   rst: 1,
+   psh: 1,
+   ack: 1,
+   urg: 1,
+   ece: 1,
+   cwr: 1,
+   ns: 1,
+   res: 7,
+)
+
+Packet: #packed (
+   src: u16,
+   dst: u16,
+   flags: TcpFlags,
+)
+
+print $ "header size: " + str::from_int(#size(Header))
+print $ "tcpflags size: " + str::from_int(#size(TcpFlags))
+print $ "packet size: " + str::from_int(#size(Packet))
+
+flags: TcpFlags
+flags.syn = 1
+flags.ack = 1
+print $ "flags.syn: " + str::from_int(flags.syn)
+print $ "flags.ack: " + str::from_int(flags.ack)
+print $ "flags.fin: " + str::from_int(flags.fin)
+
+pkt: Packet
+pkt.src = 80
+pkt.dst = 443
+pkt.flags.syn = 1
+print $ "pkt.src: " + str::from_int(pkt.src)
+print $ "pkt.dst: " + str::from_int(pkt.dst)
+print $ "pkt.flags.syn: " + str::from_int(pkt.flags.syn)
+print $ "pkt.flags.fin: " + str::from_int(pkt.flags.fin)
+
+pkt.flags.syn = 0
+pkt.flags.fin = 1
+print $ "after reset:"
+print $ "pkt.flags.syn: " + str::from_int(pkt.flags.syn)
+print $ "pkt.flags.fin: " + str::from_int(pkt.flags.fin)
+
+test_overlay: Int => ()
+test_overlay = _ =>
+   buf = {4}
+   buf += 42u8
+   buf += 0x34u8
+   buf += 0x12u8
+   buf += 99u8
+
+   h = @[&buf Header]
+   print $ "overlay a: " + str::from_int(h.a)
+   print $ "overlay b: " + str::from_int(h.b)
+   print $ "overlay c: " + str::from_int(h.c)
+
+test_overlay(0)

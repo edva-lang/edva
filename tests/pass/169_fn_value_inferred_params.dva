@@ -1,0 +1,15 @@
+// A function read as a value before its first call now infers its parameter
+// types from the call site across the whole program (full-unification
+// Stage 4a), instead of E3128.
+
+greet = s => "hi " + s
+g = greet
+print $ g("bob")
+
+add2 = a, b => a + b
+sum = add2
+print_int $ sum(20, 22)
+
+f = x => x * 3
+triple = f
+print_int $ triple(14)

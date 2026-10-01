@@ -1,0 +1,4 @@
+// A raw-memory write stores the value at its own width — integerish or
+// pointer-shaped only. A float has no raw slot, so it is rejected (E3142).
+b = {16}
+@[&b] = 3.5

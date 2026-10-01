@@ -1,0 +1,4 @@
+// A function-typed parameter must be flat inside its parens: "(A, B => C)".
+// The doubly-parenthesized "((A, B) => C)" parses the inner "(A, B)" as a
+// single record parameter and is rejected.
+g: ((Int, Int) => Int)

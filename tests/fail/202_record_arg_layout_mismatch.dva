@@ -1,0 +1,6 @@
+#type A (a: Int)
+#type B (b: Float)
+f: A => Int
+f = r =>
+   r.a
+x = f(B((2.5,)))

@@ -1,0 +1,11 @@
+p = (x = 10, y = 20)
+print_int $ p.x
+print_int $ p.y
+
+user = (name = "Kea", age = 30)
+print $ user.name
+print_int $ user.age
+
+t = (100, 200)
+print_int $ t.0
+print_int $ t.1

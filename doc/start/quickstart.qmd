@@ -1,0 +1,182 @@
+# Quickstart
+
+**Audience:** new Edva users<br>
+**Status:** current introductory path<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `tests/pass/04_choice_inline.dva`, `tests/pass/12_cycle_break.dva`,
+`tests/pass/121_fn_signatures.dva`, `tests/pass/104_builder_literal.dva`
+
+Edva is a statically typed, expression-oriented systems language with significant
+indentation and **no reserved keywords**. Control flow, error handling, function
+calls, and iteration are expressed through symbolic operators and expressions.
+
+## Hello, Edva
+
+Create a file named `hello.dva`:
+
+```dva
+message = 10 > 5 | "greater" | "smaller"
+print $ message
+```
+
+Compile and run it directly:
+
+```sh
+./edva hello.dva -r
+```
+
+It prints `greater`. In this snippet:
+- `=` declares an immutable local variable `message`.
+- `10 > 5 | "greater" | "smaller"` is a **choice expression**: when the condition is
+  true, it yields `"greater"`; otherwise it evaluates the fallback `"smaller"`.
+- `print $ message` uses the apply operator `$` to call `print(message)`.
+
+## Essential syntax cheat sheet
+
+| Concept | Edva Syntax | Equivalent in C / Rust / Python |
+|---|---|---|
+| Immutable binding | `x = 42` | `const x = 42;` / `let x = 42;` |
+| Rebinding sequence | `x' = x + 1` | `let x = x + 1;` (shadowing) |
+| Mutable global | `::count = 0` / `count = 1` | `static mut COUNT: i64 = 0;` |
+| Function definition | `add = a, b => a + b` | `fn add(a: i64, b: i64) -> i64 { a + b }` |
+| Function signature | `add: Int, Int => Int` | `fn add(i64, i64) -> i64;` |
+| Choice (ternary / if-else) | `cond | "yes" | "no"` | `if cond { "yes" } else { "no" }` |
+| Multi-branch choice | `x [1] "one" [2] "two" | "other"` | `match x { 1 => "one", 2 => "two", _ => "other" }` |
+| Cycle (loop / iteration) | `0..10 @ i => print_int(i)` | `for i in 0..10 { ... }` |
+| Cycle break | `i == 5 | -->` | `if i == 5 { break; }` |
+| Cycle continue | `i % 2 == 0 | --^` | `if i % 2 == 0 { continue; }` |
+| String builder | `b = {32}; b += "hi"; s = +b` | `let mut b = String::with_capacity(32); ...` |
+| Ramification (Result) | `<+ 42 +>` / `<- err ->` | `Ok(42)` / `Err(err)` |
+| Unwrap or abort | `res!!` | `res.unwrap()` |
+| Module import | `#use str` | `use str;` / `import str` |
+
+## Core concepts
+
+### Variables and rebinding
+
+All bindings created with `=` are strictly immutable. To represent step-by-step
+transformations without naming collisions, append prime symbols (`'`):
+
+```dva
+total = 10
+total' = total + 5
+total'' = total' * 2
+
+print_int $ total'' // prints 30
+```
+
+Edva does not allow uninitialized variables. Every binding must be initialized
+immediately upon declaration.
+
+### Separate function signatures
+
+In Edva, function parameter types are never written inline in the parameter list.
+Types are declared in an independent signature preceding the body:
+
+```dva
+// 1. Signature: positional parameter types, '=>', return type
+greet: String, Int => String
+
+// 2. Definition: parameter names, '=>', body expression
+greet = name, count =>
+   count > 0 | "Hello, " + name | "Nobody"
+
+print $ greet("Alice", 3)
+```
+
+If no signature is provided, the compiler infers parameter and return types via
+full static unification. Edva **never defaults unknown types to `Int`**—if a type
+cannot be deduced, a compilation error (`E3103` / `E3128`) is reported.
+
+### Choices (Decision making)
+
+Choices replace `if`, `else`, `switch`, and pattern matching. A choice begins
+with a condition or a scrutinee value, followed by ordered guarded branches, and
+an optional fallback branch introduced by `|`:
+
+```dva
+classify: Int => String
+classify = n =>
+   n [< 0] "negative"
+   [0] "zero"
+   [1, 2, 3] "small positive"
+   | "large positive"
+
+print $ classify(2)  // prints "small positive"
+```
+
+A choice used in expression position must be exhaustive (every possible path produces
+a compatible value). A single-branch choice (`cond | action`) is a statement and
+evaluates to Unit (`()`). Dummy `| 0` fallbacks are strictly forbidden.
+
+### Cycles and iteration
+
+The `@` operator iterates over counts, numeric ranges, or collections:
+
+```dva
+// Iterate 5 times (0 to 4)
+5 @ i =>
+   print_int(i)
+
+// Iterate with early break and continue
+0..10 @ i =>
+   i % 2 == 0 | --^   // skip even numbers
+   i > 7 | -->        // stop when greater than 7
+   print_int(i)
+```
+
+Cycles can produce values via the **cycle-escape operator** `>--`:
+
+```dva
+// Find the first multiple of 7 after 50
+first_mult = 50..100 @ n =>
+   n % 7 == 0 | -->
+   >-- n
+
+print_int $ first_mult // prints 56
+```
+
+### String building and memory
+
+Strings in Edva are immutable fat pointers `{ len, data }`. To construct strings
+efficiently without intermediate allocations, use a `Builder`:
+
+```dva
+build_greeting: String => String
+build_greeting = name =>
+   b = {64}             // Allocate buffer with capacity 64
+   b += "Welcome, "     // In-place append
+   b += name
+   b += "!"
+   +b                   // Freeze into an immutable String in-place
+
+print $ build_greeting("Edva Developer")
+```
+
+| Operator | Usage | Meaning |
+|---|---|---|
+| `{N}` | `b = {32}` | Create Builder with capacity `N` |
+| `+=` | `b += "text"` | In-place append string or byte |
+| `+` (unary) | `+b` | Freeze Builder into immutable String (buffer transfer) |
+| `?` | `?s`, `?b` | Measure byte length of String or Builder |
+| `&` (unary) | `&s`, `&b` | Buffer address pointer (`RawPtr`) for FFI calls |
+
+### Standard library and output
+
+Import standard library modules using `#use <name>`:
+
+```dva
+#use str
+#use io
+
+io::out("=== System Report ===")
+io::outf("Processed items: {}", str::from_int(128))
+```
+
+To compile and link into an executable without running:
+
+```sh
+./edva hello.dva -o hello
+./hello
+```
+

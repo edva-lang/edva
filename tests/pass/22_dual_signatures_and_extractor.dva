@@ -1,0 +1,31 @@
+// 1. Flag (NN)
+cond = 15 > 10
+r1 = cond | "true" | "false"
+print $ r1
+
+// 2. Option (PN)
+opt = <+ "hello payload" ->
+r2 = opt | _ | "fallback"
+print $ r2
+
+empty = <-->
+r3 = empty |_| "fallback"
+print $ r3
+
+// 3. Result / Either (PP)
+res = <+ "data loaded" +>
+r4 = res | ("Loaded: " + _) | ("Err: " + _)
+print $ r4
+
+bad = <- "file missing" ->
+r5 = bad | ("Loaded: " + _) | ("Err: " + _)
+print $ r5
+
+// 4. Fallible Void (NP)
+ok = <++>
+r6 = ok | "Success" | ("Fail: " + _)
+print $ r6
+
+fail = <- "unauthorized" +>
+r7 = fail | "Success" | ("Fail: " + _)
+print $ r7

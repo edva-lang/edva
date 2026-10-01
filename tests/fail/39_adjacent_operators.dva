@@ -1,0 +1,4 @@
+// Greedy-munch lexer: a run of operator characters is lexed as ONE token and
+// looked up. "*-" is not an operator, so "4*-5" (no whitespace between the
+// '*' and '-') is a lexer error. Write "4 * -5" instead.
+a = 4*-5

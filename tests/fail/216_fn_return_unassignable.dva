@@ -1,0 +1,5 @@
+// A function with a declared return type whose body produces Unassignable
+// (from an incomplete choice without a fallback) must fail to compile (E3093).
+f: Int => Int
+f = x =>
+   x [1] 10

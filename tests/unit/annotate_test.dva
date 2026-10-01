@@ -1,0 +1,492 @@
+// selfhost/annotate_test.dva — Stage 2 AST annotation and typing tests.
+//
+// Verifies typed AST node construction, static layout calculation,
+// lexical type environment scoping, constraint-based typing of expressions,
+// and groundness checking (no defaulting to Int).
+
+#use "src/ast"
+#use "src/unify"
+#use "src/tast"
+#use "src/type_env"
+#use "src/layout"
+#use "src/annotate"
+#use "str"
+
+test_count: Int
+test_count = 0
+
+pass_count: Int
+pass_count = 0
+
+assert_true: <>, String => ()
+assert_true = cond, desc =>
+   test_count ::= test_count + 1
+   cond
+      |
+         pass_count ::= pass_count + 1
+         print $ "PASS: " + desc
+      |
+         print $ "FAIL: " + desc
+
+assert_eq_int: Int, Int, String => ()
+assert_eq_int = actual, expected, desc =>
+   test_count ::= test_count + 1
+   actual == expected
+      |
+         pass_count ::= pass_count + 1
+         print $ "PASS: " + desc
+      |
+         print $ "FAIL: " + desc + " (expected " + str::from_int(expected) +
+            ", got " + str::from_int(actual) + ")"
+
+// --- Test Suite ------------------------------------------------------------
+
+main: () => ()
+main = !=>
+   print $ "=== Running Stage 2 (Typed AST & Annotation) Tests ==="
+
+   ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
+   // 1. Literal typing and layout
+   ctx = unify::new_ctx()
+   env = type_env::new_env()
+
+   e_int = ast::Expr(Int, 42)
+   te_int = annotate::annotate_expr(ctx, env, e_int)
+   assert_eq_int(te_int.layout.size, 8, "Int literal size is 8")
+   assert_eq_int(te_int.layout.align, 8, "Int literal align is 8")
+
+   e_flt = ast::Expr(Float, 3.14)
+   te_flt = annotate::annotate_expr(ctx, env, e_flt)
+   assert_eq_int(te_flt.layout.size, 8, "Float literal size is 8")
+   assert_eq_int(te_flt.layout.align, 8, "Float literal align is 8")
+
+   e_str = ast::Expr(Str, "hello")
+   te_str = annotate::annotate_expr(ctx, env, e_str)
+   assert_eq_int(te_str.layout.size, 16, "String literal size is 16")
+   assert_eq_int(te_str.layout.align, 8, "String literal align is 8")
+
+   // 2. Binary operator typing
+   bin_add = ast::Expr(Bin, (ast::BinaryOp(Add), e_int, ast::Expr(Int, 10)))
+   te_add = annotate::annotate_expr(ctx, env, bin_add)
+   assert_eq_int(te_add.layout.size, 8, "Int addition result size is 8")
+   c_add = unify::canon(ctx, te_add.ut)
+   is_int = c_add [Prim p] p == unify::UPrim(Int) | <->
+   assert_true(is_int, "Int addition produces Int type")
+
+   bin_cmp = ast::Expr(Bin, (ast::BinaryOp(Lt), e_int, ast::Expr(Int, 100)))
+   te_cmp = annotate::annotate_expr(ctx, env, bin_cmp)
+   assert_eq_int(te_cmp.layout.size, 1, "Comparison result size is 1 (Flag)")
+   c_cmp = unify::canon(ctx, te_cmp.ut)
+   is_flag = c_cmp [Prim p] p == unify::UPrim(Flag) | <->
+   assert_true(is_flag, "Comparison produces Flag type")
+
+   // 3. Environment Scoping and Variable Binding
+   type_env::bind_local(env, "x", unify::prim_int(), ti_unk, <->)
+   te_var_x = annotate::annotate_expr(ctx, env, ast::Expr(Var, "x"))
+   c_var_x = unify::canon(ctx, te_var_x.ut)
+   is_x_int = c_var_x [Prim p] p == unify::UPrim(Int) | <->
+   assert_true(is_x_int, "Variable 'x' resolves to Int")
+
+   type_env::enter_scope(env)
+   type_env::bind_local(env, "y", unify::prim_float(), ti_unk, <+>)
+   te_var_y = annotate::annotate_expr(ctx, env, ast::Expr(Var, "y"))
+   c_var_y = unify::canon(ctx, te_var_y.ut)
+   is_y_flt = c_var_y [Prim p] p == unify::UPrim(Float) | <->
+   assert_true(is_y_flt, "Inner scope variable 'y' resolves to Float")
+
+   // Masking test
+   type_env::bind_local(env, "x", unify::prim_str(), ti_unk, <->)
+   te_masked_x = annotate::annotate_expr(ctx, env, ast::Expr(Var, "x"))
+   c_masked_x = unify::canon(ctx, te_masked_x.ut)
+   is_masked_str = c_masked_x [Prim p] p == unify::UPrim(Str) | <->
+   assert_true(is_masked_str, "Inner scope masks 'x' with String")
+
+   type_env::leave_scope(env)
+   te_restored_x = annotate::annotate_expr(ctx, env, ast::Expr(Var, "x"))
+   c_restored_x = unify::canon(ctx, te_restored_x.ut)
+   is_restored_int = c_restored_x [Prim p] p == unify::UPrim(Int) | <->
+   assert_true(is_restored_int, "Outer scope restores 'x' to Int")
+
+   // 4. Undefined variable error detection
+   ctx_err = unify::new_ctx()
+   env_err = type_env::new_env()
+   annotate::annotate_expr(ctx_err, env_err, ast::Expr(Var, "nonexistent_var"))
+   assert_true(unify::has_errors(ctx_err), "Undefined variable produces error")
+
+   // 5. Type mismatch in arithmetic
+   ctx_mismatch = unify::new_ctx()
+   env_mismatch = type_env::new_env()
+   bad_bin = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Int, 5),
+      ast::Expr(Str, "bad")))
+   annotate::annotate_expr(ctx_mismatch, env_mismatch, bad_bin)
+   assert_true(unify::has_errors(ctx_mismatch),
+      "Int + String produces type mismatch error")
+
+   // 6. Function Call Annotation
+   ctx_fn = unify::new_ctx()
+   env_fn = type_env::new_env()
+   fn_params = unify::UTypes()
+   fn_params += unify::prim_int()
+   fn_params += unify::prim_int()
+   fn_sig = unify::mk_fn(fn_params, unify::prim_int())
+   type_env::bind_local(env_fn, "my_add", fn_sig, ti_unk, <->)
+
+   call_args = ast::Exprs()
+   call_args += ast::Expr(Int, 10)
+   call_args += ast::Expr(Int, 20)
+   call_expr = ast::CallExpr(("my_add", ast::Expr(Int, 0), call_args, 1, 1))
+   te_call = annotate::annotate_call(ctx_fn, env_fn, call_expr)
+   assert_true(!unify::has_errors(ctx_fn),
+      "Valid function call produces no errors")
+   c_call = unify::canon(ctx_fn, te_call.ut)
+   is_call_int = c_call [Prim p] p == unify::UPrim(Int) | <->
+   assert_true(is_call_int, "Function call return type inferred as Int")
+
+   // Call with bad argument type
+   ctx_bad_call = unify::new_ctx()
+   env_bad_call = type_env::new_env()
+   type_env::bind_local(env_bad_call, "my_add", fn_sig, ti_unk, <->)
+   bad_args = ast::Exprs()
+   bad_args += ast::Expr(Int, 10)
+   bad_args += ast::Expr(Str, "twenty")
+   bad_call_expr = ast::CallExpr(("my_add", ast::Expr(Int, 0), bad_args, 1, 1))
+   annotate::annotate_call(ctx_bad_call, env_bad_call, bad_call_expr)
+   assert_true(unify::has_errors(ctx_bad_call),
+      "Bad argument type produces error")
+
+   // 7. Lambda Expression Typing
+   ctx_lam = unify::new_ctx()
+   env_lam = type_env::new_env()
+   lam_params = ast::Names()
+   lam_params += "a"
+   lam_body = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "a"),
+      ast::Expr(Int, 1)))
+   lam_expr = ast::FnExpr((lam_params, ast::Names(), lam_body))
+   te_lam = annotate::annotate_fn(ctx_lam, env_lam, lam_expr, <->)
+   assert_true(!unify::has_errors(ctx_lam), "Lambda inferred without errors")
+   assert_eq_int(te_lam.layout.size, 16, "Closure layout size is 16")
+
+   // 8. Record Literal Annotation and Layout
+   ctx_rec = unify::new_ctx()
+   env_rec = type_env::new_env()
+   r_fields = ast::Fields()
+   r_fields += ast::RecordField((<+>, "id", ast::Expr(Int, 1)))
+   r_fields += ast::RecordField((<+>, "name", ast::Expr(Str, "item")))
+   r_fields += ast::RecordField((<+>, "active", ast::Expr(Rune, 65)))
+   te_rec = annotate::annotate_record(ctx_rec, env_rec,
+      ast::RecordExpr((r_fields, <->)))
+   assert_true(!unify::has_errors(ctx_rec), "Record literal creates cleanly")
+   assert_true(te_rec.layout.size !< 24,
+      "Record layout has expected composite size")
+
+   // 9. Groundness Check Enforcement (No Defaulting to Int)
+   ctx_ground = unify::new_ctx()
+   free_var = unify::fresh_var(ctx_ground)
+   is_ground = unify::is_ground(ctx_ground, free_var)
+   assert_true(!is_ground, "Free type variable fails groundness check")
+
+   // 10. Whole Program Elaboration Pass
+   prog_stmts = ast::Exprs()
+   prog_stmts += ast::Expr(Assign, ("val", <->, <->, <->, <->,
+      ast::Expr(Bin, (ast::BinaryOp(Mul), ast::Expr(Int, 6),
+         ast::Expr(Int, 7))),
+      ast::Expr(Int, 0), "", ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+   prog_stmts += ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "val"),
+      ast::Expr(Int, 8)))
+
+   elab_res = annotate::elaborate_program(prog_stmts)
+   has_prog = <->
+   elab_res
+      | has_prog = <+>
+   assert_true(has_prog, "Elaborate program succeeds on well-typed program")
+
+   // 11. Unary Operations
+   ctx_u = unify::new_ctx()
+   env_u = type_env::new_env()
+   u_not = ast::Expr(Unary, (ast::UnaryOp(Not),
+      ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
+         ast::Expr(Int, 1)))))
+   te_not = annotate::annotate_expr(ctx_u, env_u, u_not)
+   c_not = unify::canon(ctx_u, te_not.ut)
+   is_not_flag = c_not [Prim p] p == unify::UPrim(Flag) | <->
+   assert_true(is_not_flag, "Negation of flag produces Flag")
+
+   u_len = ast::Expr(Unary, (ast::UnaryOp(Length), ast::Expr(Str, "abc")))
+   te_len = annotate::annotate_expr(ctx_u, env_u, u_len)
+   c_len = unify::canon(ctx_u, te_len.ut)
+   is_len_int = c_len [Prim p] p == unify::UPrim(Int) | <->
+   assert_true(is_len_int, "Length of string produces Int")
+
+   u_bnot = ast::Expr(Unary, (ast::UnaryOp(BitNot), ast::Expr(Int, 42)))
+   te_bnot = annotate::annotate_expr(ctx_u, env_u, u_bnot)
+   c_bnot = unify::canon(ctx_u, te_bnot.ut)
+   is_bnot_int = c_bnot [Prim p] p == unify::UPrim(Int) | <->
+   assert_true(is_bnot_int, "Bitwise NOT of int produces Int")
+
+   // 12. Member Field Access
+   ctx_m = unify::new_ctx()
+   env_m = type_env::new_env()
+   type_env::bind_local(env_m, "rec", te_rec.ut, te_rec.ti, <->)
+   type_env::init_mark_whole(env_m, "rec")
+   m_expr = ast::Expr(Member, ast::MemberExpr((ast::Expr(Var, "rec"),
+      "name", <->, ast::Expr(Int, 0), 0, 0)))
+   te_m = annotate::annotate_expr(ctx_m, env_m, m_expr)
+   c_m = unify::canon(ctx_m, te_m.ut)
+   is_m_str = c_m [Prim p] p == unify::UPrim(Str) | <->
+   assert_true(is_m_str, "Member access 'name' resolves to Str")
+
+   // 13. Cycle and CycleEscape
+   ctx_cyc = unify::new_ctx()
+   env_cyc = type_env::new_env()
+   cyc_body = ast::Expr(Fn, (ast::Names(), ast::Names(), ast::Expr(Int, 0)))
+   cyc_expr = ast::Expr(Cycle,
+      ast::CycleExpr((ast::Expr(Int, 5), cyc_body, <->)))
+   te_cyc = annotate::annotate_expr(ctx_cyc, env_cyc, cyc_expr)
+   c_cyc = unify::canon(ctx_cyc, te_cyc.ut)
+   is_cyc_unit = c_cyc [Prim p] p == unify::UPrim(Unit) | <->
+   assert_true(is_cyc_unit, "Cycle expression yields Unit")
+
+   esc_expr = ast::Expr(CycleEscape, ast::CycleEscapeExpr((cyc_expr,
+      ast::Expr(Int, 99))))
+   te_esc = annotate::annotate_expr(ctx_cyc, env_cyc, esc_expr)
+   c_esc = unify::canon(ctx_cyc, te_esc.ut)
+   is_esc_int = c_esc [Prim p] p == unify::UPrim(Int) | <->
+   assert_true(is_esc_int, "CycleEscape expression yields branch type (Int)")
+
+   // 14. Ramification Logical Operations (&& and ||)
+   // Valid &&: <Int|> && <Float|> => <Float|>
+   ctx_log1 = unify::new_ctx!
+   ram_pn_int = unify::ram_pn(unify::prim_int!)
+   ram_pn_flt = unify::ram_pn(unify::prim_float!)
+   res_and = annotate::annotate_bin_op(ctx_log1, ast::BinaryOp(And),
+      ram_pn_int, ram_pn_flt)
+   assert_true(!unify::has_errors(ctx_log1),
+      "<Int|> && <Float|> produces no errors")
+   c_and = unify::canon(ctx_log1, res_and)
+   is_and_pn = c_and
+      [Ram r] unify::ram_shape(r) == unify::URamShape(RamPN)
+      | <->
+   assert_true(is_and_pn, "Result of <Int|> && <Float|> is RamPN")
+
+   // Invalid &&: <Int|> && <|Float> => negative slot conflict
+   ctx_log2 = unify::new_ctx!
+   ram_np_flt = unify::ram_np(unify::prim_float!)
+   annotate::annotate_bin_op(ctx_log2, ast::BinaryOp(And),
+      ram_pn_int, ram_np_flt)
+   assert_true(unify::has_errors(ctx_log2),
+      "<Int|> && <|Float> reports layout conflict")
+
+   // Valid ||: <Int|> || <Int|Str> => <Int|Str>
+   ctx_log3 = unify::new_ctx!
+   ram_pp_is = unify::ram_pp(unify::prim_int!, unify::prim_str!)
+   res_or = annotate::annotate_bin_op(ctx_log3, ast::BinaryOp(Or),
+      ram_pn_int, ram_pp_is)
+   assert_true(!unify::has_errors(ctx_log3),
+      "<Int|> || <Int|Str> produces no errors")
+   c_or = unify::canon(ctx_log3, res_or)
+   is_or_pp = c_or
+      [Ram r] unify::ram_shape(r) == unify::URamShape(RamPP)
+      | <->
+   assert_true(is_or_pp, "Result of <Int|> || <Int|Str> is RamPP")
+
+   // Invalid ||: <Int|> || <Float|> => positive slot conflict
+   ctx_log4 = unify::new_ctx!
+   annotate::annotate_bin_op(ctx_log4, ast::BinaryOp(Or),
+      ram_pn_int, ram_pn_flt)
+   assert_true(unify::has_errors(ctx_log4),
+      "<Int|> || <Float|> reports positive payload mismatch")
+
+   // Bare Flag and heap ram cannot be combined
+   ctx_log5 = unify::new_ctx!
+   annotate::annotate_bin_op(ctx_log5, ast::BinaryOp(And),
+      unify::prim_flag!, ram_pn_int)
+   assert_true(unify::has_errors(ctx_log5),
+      "Flag && <Int|> reports combination error")
+
+   // 15. Definite Field Initialization Tracking
+   // Unwritten field read triggers E3130
+   ctx_init1 = unify::new_ctx!
+   env_init1 = type_env::new_env!
+   type_env::bind_local(env_init1, "obj", te_rec.ut, te_rec.ti, <->)
+   type_env::init_mark_tracked(env_init1, "obj")
+   bad_read = ast::Expr(Member, ast::MemberExpr((ast::Expr(Var, "obj"),
+      "name", <->, ast::Expr(Int, 0), 0, 0)))
+   annotate::annotate_expr(ctx_init1, env_init1, bad_read)
+   assert_true(unify::has_errors(ctx_init1),
+      "Uninitialized field read produces E3130 error")
+
+   // Partially-initialized composite passed to function triggers E3132
+   ctx_init2 = unify::new_ctx!
+   env_init2 = type_env::new_env!
+   type_env::bind_local(env_init2, "obj2", te_rec.ut, te_rec.ti, <->)
+   type_env::init_mark_tracked(env_init2, "obj2")
+   type_env::init_mark_written(env_init2, "obj2.id")
+   call_f_args = ast::Exprs()
+   call_f_args += ast::Expr(Var, "obj2")
+   call_f_params = unify::UTypes()
+   call_f_params += te_rec.ut
+   call_f_sig = unify::mk_fn(call_f_params, unify::prim_unit!)
+   type_env::bind_local(env_init2, "consume_obj", call_f_sig, ti_unk, <->)
+   call_partial = ast::CallExpr(("consume_obj", ast::Expr(Int, 0),
+      call_f_args, 0, 0))
+   annotate::annotate_call(ctx_init2, env_init2, call_partial)
+   assert_true(unify::has_errors(ctx_init2),
+      "Passing partially-initialized composite produces E3132 error")
+
+   // Must-init across choice branches: field written in only 1 branch
+   ctx_init3 = unify::new_ctx!
+   env_init3 = type_env::new_env!
+   type_env::bind_local(env_init3, "obj3", te_rec.ut, te_rec.ti, <->)
+   br1_exprs = ast::Exprs()
+   br1_exprs += ast::Expr(Assign, ("obj3", <->, <->, <->, <->,
+      ast::Expr(Int, 1),
+      ast::Expr(Member, ast::MemberExpr((ast::Expr(Var, "obj3"),
+         "id", <->, ast::Expr(Int, 0), 0, 0))),
+      "", ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+   br1_block = ast::Expr(Block, ast::BlockExpr(br1_exprs))
+   br2_exprs = ast::Exprs()
+   br2_exprs += ast::Expr(Int, 0)
+   br2_block = ast::Expr(Block, ast::BlockExpr(br2_exprs))
+   choice_brs = ast::Branches()
+   choice_brs += ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, br1_block))
+   choice_brs += ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, br2_block))
+   choice_join = ast::ChoiceExpr((ast::Expr(Int, 1), <->, choice_brs))
+   annotate::annotate_choice(ctx_init3, env_init3, choice_join, <->)
+   post_read = ast::Expr(Member, ast::MemberExpr((ast::Expr(Var, "obj3"),
+      "id", <->, ast::Expr(Int, 0), 0, 0)))
+   annotate::annotate_expr(ctx_init3, env_init3, post_read)
+   assert_true(unify::has_errors(ctx_init3),
+      "Field written in only one branch is uninitialized after join (E3130)")
+
+   // 16. Phase 5: Dependency Graph, SCCs, and Mutual Recursion
+   // 16.1 Out-of-order forward references (caller defined before callee)
+   caller_params = ast::Names()
+   caller_params += "x"
+   callee_args = ast::Exprs()
+   callee_args += ast::Expr(Var, "x")
+   callee_call = ast::Expr(Call, ast::CallExpr(("callee", ast::Expr(Int, 0),
+      callee_args, 0, 0)))
+   caller_body = ast::Expr(Bin, (ast::BinaryOp(Add), callee_call,
+      ast::Expr(Int, 1)))
+   fe_caller = ast::FnExpr((caller_params, ast::Names(), caller_body))
+   assign_caller = ast::Expr(Assign, ("caller", <->, <->, <->, <->,
+      ast::Expr(Fn, fe_caller), ast::Expr(Int, 0), "",
+      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+
+   callee_params = ast::Names()
+   callee_params += "y"
+   callee_body = ast::Expr(Bin, (ast::BinaryOp(Mul), ast::Expr(Var, "y"),
+      ast::Expr(Int, 2)))
+   fe_callee = ast::FnExpr((callee_params, ast::Names(), callee_body))
+   assign_callee = ast::Expr(Assign, ("callee", <->, <->, <->, <->,
+      ast::Expr(Fn, fe_callee), ast::Expr(Int, 0), "",
+      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+
+   fwd_stmts = ast::Exprs()
+   fwd_stmts += assign_caller
+   fwd_stmts += assign_callee
+   fwd_res = annotate::elaborate_program(fwd_stmts)
+   fwd_ok = <->
+   fwd_res
+      | fwd_ok = <+>
+   assert_true(fwd_ok, "Out-of-order forward reference resolves")
+
+   // 16.2 Mutual recursion without annotations (is_even and is_odd)
+   even_params = ast::Names()
+   even_params += "n"
+   even_cond = ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Var, "n"),
+      ast::Expr(Int, 0)))
+   even_br1 = ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+      ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
+         ast::Expr(Int, 1)))))
+   odd_args = ast::Exprs()
+   odd_args += ast::Expr(Bin, (ast::BinaryOp(Sub), ast::Expr(Var, "n"),
+      ast::Expr(Int, 1)))
+   odd_call = ast::Expr(Call, ast::CallExpr(("is_odd", ast::Expr(Int, 0),
+      odd_args, 0, 0)))
+   even_br2 = ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, odd_call))
+   even_brs = ast::Branches()
+   even_brs += even_br1
+   even_brs += even_br2
+   even_choice = ast::Expr(Choice, ast::ChoiceExpr((even_cond, <->,
+      even_brs)))
+   fe_even = ast::FnExpr((even_params, ast::Names(), even_choice))
+   assign_even = ast::Expr(Assign, ("is_even", <->, <->, <->, <->,
+      ast::Expr(Fn, fe_even), ast::Expr(Int, 0), "",
+      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+
+   odd_params = ast::Names()
+   odd_params += "n"
+   odd_cond = ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Var, "n"),
+      ast::Expr(Int, 0)))
+   odd_br1 = ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+      ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
+         ast::Expr(Int, 0)))))
+   even_args = ast::Exprs()
+   even_args += ast::Expr(Bin, (ast::BinaryOp(Sub), ast::Expr(Var, "n"),
+      ast::Expr(Int, 1)))
+   even_call = ast::Expr(Call, ast::CallExpr(("is_even", ast::Expr(Int, 0),
+      even_args, 0, 0)))
+   odd_br2 = ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, even_call))
+   odd_brs = ast::Branches()
+   odd_brs += odd_br1
+   odd_brs += odd_br2
+   odd_choice = ast::Expr(Choice, ast::ChoiceExpr((odd_cond, <->,
+      odd_brs)))
+   fe_odd = ast::FnExpr((odd_params, ast::Names(), odd_choice))
+   assign_odd = ast::Expr(Assign, ("is_odd", <->, <->, <->, <->,
+      ast::Expr(Fn, fe_odd), ast::Expr(Int, 0), "",
+      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+
+   mut_stmts = ast::Exprs()
+   mut_stmts += assign_even
+   mut_stmts += assign_odd
+   mut_res = annotate::elaborate_program(mut_stmts)
+   mut_ok = <->
+   mut_res
+      | mut_ok = <+>
+   assert_true(mut_ok, "Mutually recursive functions infer types")
+
+   // 16.3 Ungrounded recursive function reports E3128/E3103
+   poly_params = ast::Names()
+   poly_params += "x"
+   poly_args = ast::Exprs()
+   poly_args += ast::Expr(Var, "x")
+   poly_call = ast::Expr(Call, ast::CallExpr(("poly_fn", ast::Expr(Int, 0),
+      poly_args, 0, 0)))
+   fe_poly = ast::FnExpr((poly_params, ast::Names(), poly_call))
+   assign_poly = ast::Expr(Assign, ("poly_fn", <->, <->, <->, <->,
+      ast::Expr(Fn, fe_poly), ast::Expr(Int, 0), "",
+      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+
+   poly_stmts = ast::Exprs()
+   poly_stmts += assign_poly
+   poly_res = annotate::elaborate_program(poly_stmts)
+   poly_failed = <->
+   poly_res
+      !| poly_failed = <+>
+   assert_true(poly_failed, "Ungrounded recursive function reports error")
+
+   // 17. RawMemory elaboration
+   rm_ctx = unify::new_ctx()
+   rm_env = type_env::new_env()
+   rm_expr = ast::Expr(RawMemory, ast::RawMemoryExpr((ast::Expr(Int, 1000),
+      ast::ValueType(I32), "")))
+   rm_te = annotate::annotate_expr(rm_ctx, rm_env, rm_expr)
+   assert_eq_int(rm_te.layout.size, 4, "RawMemory I32 size is 4")
+   assert_eq_int(rm_te.layout.align, 4, "RawMemory I32 align is 4")
+
+   print $ "=== Summary ==="
+   print $ "Total tests: " + str::from_int(test_count)
+   print $ "Passed:      " + str::from_int(pass_count)
+   test_count == pass_count
+      | print $ "ALL STAGE 2 TESTS PASSED!"
+      | print $ "SOME TESTS FAILED!"
+
+main!

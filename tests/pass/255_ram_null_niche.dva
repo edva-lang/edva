@@ -1,0 +1,64 @@
+// Tests null-pointer niche representation for single-payload ramifications
+// (RamPN <String|>, RamPN <(x: Int, y: Int)|>, RamNP <|String>)
+
+find_str: Int => < String | >
+find_str = x =>
+   x > 0
+      | <+ "hello niche" ->
+      | <-->
+
+find_pt: Int => < (x: Int, y: Int) | >
+find_pt = x =>
+   x > 0
+      | <+ (x = 10, y = 20) ->
+      | <-->
+
+validate: Int => < | String >
+validate = x =>
+   x !< 0
+      | <++>
+      | <- "invalid negative" +>
+
+// Test RamPN <String|>
+s1 = find_str(5)
+s1
+   | s => print $ s
+   | print $ "none"
+
+s2 = find_str(-1)
+s2
+   | s => print $ s
+   | print $ "none"
+
+// Test unwrap on niche RamPN <String|>
+print $ s1!!
+
+// Test RamPN <(x: Int, y: Int)|>
+p1 = find_pt(1)
+p1
+   | pt =>
+      print_int $ pt.x
+      print_int $ pt.y
+   | print $ "no point"
+
+p2 = find_pt(0)
+p2
+   | pt =>
+      print_int $ pt.x
+      print_int $ pt.y
+   | print $ "no point"
+
+// Test unwrap on niche RamPN <Record|>
+pt_val = p1!!
+print_int $ pt_val.x + pt_val.y
+
+// Test RamNP <|String>
+v1 = validate(10)
+v1
+   | print $ "ok"
+   | err => print $ err
+
+v2 = validate(-5)
+v2
+   | print $ "ok"
+   | err => print $ err

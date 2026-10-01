@@ -1,0 +1,490 @@
+// tools/gen_unicode.dva - Generates std/unicode.dva from UnicodeData.txt
+// Uses a unified 2-stage category page table.
+
+#use str
+
+#foreign "c"
+   memcmp: (s1: Addr, s2: Addr, n: Int) => Int
+   memcpy: (dest: Addr, src: Addr, n: Int) => Addr
+
+#type Ints (Int){}
+
+read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
+read_fd_bytes_loop = fd, b, offset, remaining =>
+   remaining !> 0
+      | <+ offset ->
+      |
+         chunk = remaining < 65536 | remaining | 65536
+         n = libc::read(fd, &b + offset, chunk)
+         n < 0
+            | <-->
+            | n == 0
+               | <+ offset ->
+               | read_fd_bytes_loop(fd, b, offset + n, remaining - n)
+
+read_file_text: String => < String | >
+read_file_text = path =>
+   fd = libc::open(path, 0)
+   fd < 0
+      | <-->
+      |
+         sz = libc::lseek(fd, 0, 2)
+         sz < 0
+            |
+               libc::close(fd)
+               <-->
+            |
+               sz == 0
+                  |
+                     libc::close(fd)
+                     <+ "" ->
+                  |
+                     libc::lseek(fd, 0, 0)
+                     b = {sz}
+                     read_res = read_fd_bytes_loop(fd, b, 0, sz)
+                     libc::close(fd)
+                     read_res
+                        | total =>
+                           ?b = total
+                           <+ +b ->
+                        | <-->
+
+write_bytes_loop: Int, String, Int, Int => <>
+write_bytes_loop = fd, content, offset, remaining =>
+   remaining !> 0
+      | <+>
+      |
+         w = libc::write_ptr(fd, &content + offset, remaining)
+         w < 0
+            | <->
+            | w == 0
+               | <->
+               | write_bytes_loop(fd, content, offset + w, remaining - w)
+
+write_file_text: String, String => <>
+write_file_text = path, content =>
+   fd = libc::creat(path, 420)
+   fd < 0
+      | <->
+      |
+         n = ?content
+         ok = n == 0 | <+> | write_bytes_loop(fd, content, 0, n)
+         libc::close(fd)
+         ok
+
+hex_val: Int => Int
+hex_val = c =>
+   c
+      [< '0'] 0
+      [< ':'] c - '0'
+      [< 'A'] 0
+      [< 'G'] c - 'A' + 10
+      [< 'a'] 0
+      [< 'g'] c - 'a' + 10
+      | 0
+
+parse_hex: String, Int, Int => Int
+parse_hex = src, start, len =>
+   val' = 0
+   0..len @ i =>
+      c = src(start + i)
+      val' = (val' .<. 4) + hex_val(c)
+   val'
+
+cat_id_from_chars: Int, Int => Int
+cat_id_from_chars = c0, c1 =>
+   c0
+      ['L']
+         c1 ['u'] 0 ['l'] 1 ['t'] 2 ['m'] 3 | 4
+      ['M']
+         c1 ['n'] 5 ['c'] 6 | 7
+      ['N']
+         c1 ['d'] 8 ['l'] 9 | 10
+      ['P']
+         c1 ['c'] 11 ['d'] 12 ['s'] 13 ['e'] 14 ['i'] 15 ['f'] 16 | 17
+      ['S']
+         c1 ['m'] 18 ['c'] 19 ['k'] 20 | 21
+      ['Z']
+         c1 ['s'] 22 ['l'] 23 | 24
+      ['C']
+         c1 ['c'] 25 ['f'] 26 ['s'] 27 ['o'] 28 | 29
+      | 29
+
+has_suffix: String, Int, Int, String => <>
+has_suffix = src, start, end_pos, suffix =>
+   slen = ?suffix
+   wlen = end_pos - start
+   wlen < slen
+      | <->
+      |
+         diff' = <->
+         0..slen @ i =>
+            src(end_pos - slen + i) == suffix(i) | 0 | (diff' = <+>; -->)
+         !diff'
+
+format_hex64: Int => String
+format_hex64 = v =>
+   v == 0
+      | "0"
+      |
+         digits = "0123456789abcdef"
+         b = {18}
+         b += "0x"
+         n' = v
+         rev = {16}
+         0.. @
+            n' == 0 | -->
+            d = n' .&. 15
+            rev += digits(d)
+            n' = n' .>. 4
+         srev = +rev
+         rlen = ?srev
+         rlen @ i =>
+            b += srev(rlen - 1 - i)
+         +b
+
+main: Int => Int
+main = _ =>
+   src_opt = read_file_text("tools/UnicodeData.txt")
+   src0 = src_opt | s => s | ""
+   src = ?src0 > 0 | src0 | (read_file_text("/tmp/UnicodeData.txt") | s => s | "")
+   ?src == 0
+      |
+         print $ "Cannot read tools/UnicodeData.txt or /tmp/UnicodeData.txt"
+         #exit 1
+         0
+      |
+         print $ "Parsing UnicodeData.txt in Dva..."
+         raw = libc::malloc(0x110000)
+         libc::memset(raw, 29, 0x110000)
+
+         len = ?src
+         pos' = 0
+         in_range' = <->
+         range_start' = 0
+         range_cat' = 29
+
+         0.. @
+            pos' !< len | -->
+            line_start = pos'
+            0.. @
+               pos' !< len || src(pos') == '\n' | -->
+               pos' = pos' + 1
+            line_end = pos'
+            pos' < len && src(pos') == '\n' | pos' = pos' + 1
+
+            s1' = -1
+            s2' = -1
+            s3' = -1
+            i' = line_start
+            0.. @
+               i' !< line_end | -->
+               src(i') == ';'
+                  |
+                     s1' < 0
+                        | s1' = i'
+                        | s2' < 0
+                           | s2' = i'
+                           | s3' < 0
+                              | s3' = i'
+               i' = i' + 1
+
+            s1' > 0 && s2' > 0 && s3' > 0
+               |
+                  cp = parse_hex(src, line_start, s1' - line_start)
+                  c0 = src(s2' + 1)
+                  c1 = src(s2' + 2)
+                  cat_id = cat_id_from_chars(c0, c1)
+
+                  is_first = has_suffix(src, s1' + 1, s2', ", First>")
+                  is_last = has_suffix(src, s1' + 1, s2', ", Last>")
+
+                  is_first
+                     |
+                        in_range' = <+>
+                        range_start' = cp
+                        range_cat' = cat_id
+                     | is_last
+                        |
+                           in_range' = <->
+                           count = cp - range_start' + 1
+                           count @ k =>
+                              curr = range_start' + k
+                              curr < 0x110000 | @[raw + curr] = i8(range_cat')
+                        |
+                           cp < 0x110000 | @[raw + cp] = i8(cat_id)
+
+         print $ "Building and deduplicating pages..."
+         stage1: Ints
+         unique_pages_mem = libc::malloc(300 * 256)
+         num_unique' = 0
+
+         4352 @ p =>
+            page_ptr = raw + p * 256
+            found' = -1
+            num_unique' @ u =>
+               u_ptr = unique_pages_mem + u * 256
+               memcmp(page_ptr, u_ptr, 256) == 0
+                  |
+                     found' = u
+                     -->
+                  | 0
+
+            found' !< 0
+               | stage1 += found'
+               |
+                  found' = num_unique'
+                  num_unique' = num_unique' + 1
+                  memcpy(unique_pages_mem + found' * 256, page_ptr, 256)
+                  stage1 += found'
+
+         libc::free(raw)
+         print $ "Unique pages: " + str::from_int(num_unique')
+
+         print $ "Emitting std/unicode.dva..."
+         out = {500000}
+         out += "// std/unicode.dva - Unicode: rune classification via unified 2-stage\n"
+         out += "// category page table, plus UTF-8 encode/decode helpers.\n"
+         out += "// Generated from UnicodeData.txt.\n\n"
+
+         out += "// Unicode general category classifications:\n"
+         out += "//   Letters:      Lu (Uppercase), Ll (Lowercase), Lt (Titlecase),\n"
+         out += "//                 Lm (Modifier), Lo (Other)\n"
+         out += "//   Marks:        Mn (Nonspacing), Mc (Spacing), Me (Enclosing)\n"
+         out += "//   Numbers:      Nd (Decimal), Nl (Letter), No (Other)\n"
+         out += "//   Punctuation:  Pc (Connector), Pd (Dash), Ps (Open), Pe (Close),\n"
+         out += "//                 Pi (Initial), Pf (Final), Po (Other)\n"
+         out += "//   Symbols:      Sm (Math), Sc (Currency), Sk (Modifier), So (Other)\n"
+         out += "//   Separators:   Zs (Space), Zl (Line), Zp (Paragraph)\n"
+         out += "//   Other:        Cc (Control), Cf (Format), Cs (Surrogate),\n"
+         out += "//                 Co (Private Use), Cn (Unassigned)\n\n"
+         out += "#public\n"
+         out += "#type Category < Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pc,\n"
+         out += "   Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp,\n"
+         out += "   Cc, Cf, Cs, Co, Cn >\n\n"
+
+         out += "#pragma number i16\n"
+         out += "#private cat_s1 = (\n   "
+
+         idx' = 0
+         col' = 3
+         first' = <+>
+         0.. @
+            idx' !< 4352 | -->
+            v = stage1(idx') | _ | 0
+            count' = 1
+            0.. @
+               idx' + count' !< 4352 | -->
+               nxt = stage1(idx' + count') | _ | -1
+               nxt == v | count' = count' + 1 | -->
+
+            tok = count' > 2
+               | str::from_int(v) + " {" + str::from_int(count') + "}"
+               | str::from_int(v)
+            idx' = count' > 2 | idx' + count' | idx' + 1
+
+            !first'
+               |
+                  col' + ?tok + 2 > 78
+                     |
+                        out += ",\n   "
+                        col' = 3
+                     |
+                        out += ", "
+                        col' = col' + 2
+               | 0
+            first' = <->
+            out += tok
+            col' = col' + ?tok
+
+         out += "\n)\n\n"
+
+         out += "#pragma number i64\n"
+         out += "#private cat_s2 = (\n   "
+
+         total_words = num_unique' * 32
+         widx' = 0
+         wcol' = 3
+         first_w' = <+>
+         0.. @
+            widx' !< total_words | -->
+            vw = @[unique_pages_mem + widx' * 8 i64]
+            wcount' = 1
+            0.. @
+               widx' + wcount' !< total_words | -->
+               nxtw = @[unique_pages_mem + (widx' + wcount') * 8 i64]
+               nxtw == vw | wcount' = wcount' + 1 | -->
+
+            wtok = wcount' > 2
+               | format_hex64(vw) + " {" + str::from_int(wcount') + "}"
+               | format_hex64(vw)
+            widx' = wcount' > 2 | widx' + wcount' | widx' + 1
+
+            !first_w'
+               |
+                  wcol' + ?wtok + 2 > 78
+                     |
+                        out += ",\n   "
+                        wcol' = 3
+                     |
+                        out += ", "
+                        wcol' = wcol' + 2
+               | 0
+            first_w' = <->
+            out += wtok
+            wcol' = wcol' + ?wtok
+
+         out += "\n)\n\n"
+         libc::free(unique_pages_mem)
+         out += "#pragma number default\n\n"
+
+         out += "#public\n"
+         out += "   category_id: Rune => Int\n"
+         out += "   category_id = cp =>\n"
+         out += "      cp [> 0x10FFFF] 29 |\n"
+         out += "         page = Int(cat_s1(cp .>. 8))\n"
+         out += "         (cat_s2(page * 32 + ((cp .&. 255) .>. 3))"
+         out += " .>. ((cp .&. 7) .<. 3)) .&. 255\n\n"
+
+         out += "   category: Rune => Category\n"
+         out += "   category = cp =>\n"
+         out += "      id = category_id(cp)\n"
+         out += "      id\n"
+         out += "         [0] Lu [1] Ll [2] Lt [3] Lm [4] Lo\n"
+         out += "         [5] Mn [6] Mc [7] Me\n"
+         out += "         [8] Nd [9] Nl [10] No\n"
+         out += "         [11] Pc [12] Pd [13] Ps [14] Pe [15] Pi [16] Pf [17] Po\n"
+         out += "         [18] Sm [19] Sc [20] Sk [21] So\n"
+         out += "         [22] Zs [23] Zl [24] Zp\n"
+         out += "         [25] Cc [26] Cf [27] Cs [28] Co\n"
+         out += "         | Cn\n\n"
+
+         out += "   // Human-readable description of a Unicode general category.\n"
+         out += "   category_description: Category => String\n"
+         out += "   category_description = c =>\n"
+         out += "      c\n"
+         out += "         [Lu] \"Uppercase Letter\"\n"
+         out += "         [Ll] \"Lowercase Letter\"\n"
+         out += "         [Lt] \"Titlecase Letter\"\n"
+         out += "         [Lm] \"Modifier Letter\"\n"
+         out += "         [Lo] \"Other Letter\"\n"
+         out += "         [Mn] \"Nonspacing Mark\"\n"
+         out += "         [Mc] \"Spacing Mark\"\n"
+         out += "         [Me] \"Enclosing Mark\"\n"
+         out += "         [Nd] \"Decimal Number\"\n"
+         out += "         [Nl] \"Letter Number\"\n"
+         out += "         [No] \"Other Number\"\n"
+         out += "         [Pc] \"Connector Punctuation\"\n"
+         out += "         [Pd] \"Dash Punctuation\"\n"
+         out += "         [Ps] \"Open Punctuation\"\n"
+         out += "         [Pe] \"Close Punctuation\"\n"
+         out += "         [Pi] \"Initial Punctuation\"\n"
+         out += "         [Pf] \"Final Punctuation\"\n"
+         out += "         [Po] \"Other Punctuation\"\n"
+         out += "         [Sm] \"Math Symbol\"\n"
+         out += "         [Sc] \"Currency Symbol\"\n"
+         out += "         [Sk] \"Modifier Symbol\"\n"
+         out += "         [So] \"Other Symbol\"\n"
+         out += "         [Zs] \"Space Separator\"\n"
+         out += "         [Zl] \"Line Separator\"\n"
+         out += "         [Zp] \"Paragraph Separator\"\n"
+         out += "         [Cc] \"Control\"\n"
+         out += "         [Cf] \"Format\"\n"
+         out += "         [Cs] \"Surrogate\"\n"
+         out += "         [Co] \"Private Use\"\n"
+         out += "         [Cn] \"Unassigned\"\n"
+         out += "         | \"Unknown\"\n\n"
+
+         out += "   // Alphabetic letters (Lu, Ll, Lt, Lm, Lo)\n"
+         out += "   is_alpha: Rune => <>\n"
+         out += "   is_alpha = cp =>\n"
+         out += "      cat = category_id(cp)\n"
+         out += "      cat !> 4\n\n"
+
+         out += "   // Decimal digits (Nd)\n"
+         out += "   is_digit: Rune => <>\n"
+         out += "   is_digit = cp =>\n"
+         out += "      category_id(cp) == 8\n\n"
+
+         out += "   // Uppercase letters (Lu)\n"
+         out += "   is_upper: Rune => <>\n"
+         out += "   is_upper = cp =>\n"
+         out += "      category_id(cp) == 0\n\n"
+
+         out += "   // Lowercase letters (Ll)\n"
+         out += "   is_lower: Rune => <>\n"
+         out += "   is_lower = cp =>\n"
+         out += "      category_id(cp) == 1\n\n"
+
+         out += "   // Titlecase letters (Lt)\n"
+         out += "   is_title: Rune => <>\n"
+         out += "   is_title = cp =>\n"
+         out += "      category_id(cp) == 2\n\n"
+
+         out += "   // Whitespace: space separators (Zs, Zl, Zp) plus ASCII whitespace\n"
+         out += "   // (\\t, \\n, \\v, \\f, \\r)\n"
+         out += "   is_space: Rune => <>\n"
+         out += "   is_space = cp =>\n"
+         out += "      cat = category_id(cp)\n"
+         out += "      (cat !< 22 && cat !> 24) || (cp == 0x20 || (cp !< 0x09 && cp !> 0x0D))\n\n"
+
+         out += "   // Punctuation (Pc, Pd, Ps, Pe, Pi, Pf, Po)\n"
+         out += "   is_punctuation: Rune => <>\n"
+         out += "   is_punctuation = cp =>\n"
+         out += "      cat = category_id(cp)\n"
+         out += "      cat !< 11 && cat !> 17\n\n"
+
+         out += "   // Symbols: math, currency, modifiers, others (Sm, Sc, Sk, So)\n"
+         out += "   is_symbol: Rune => <>\n"
+         out += "   is_symbol = cp =>\n"
+         out += "      cat = category_id(cp)\n"
+         out += "      cat !< 18 && cat !> 21\n\n"
+
+         out += "   // Combining marks: nonspacing, spacing, enclosing (Mn, Mc, Me)\n"
+         out += "   is_mark: Rune => <>\n"
+         out += "   is_mark = cp =>\n"
+         out += "      cat = category_id(cp)\n"
+         out += "      cat !< 5 && cat !> 7\n\n"
+
+         out += "   // Numbers: decimal digits, letter numbers, other numbers (Nd, Nl, No)\n"
+         out += "   is_number: Rune => <>\n"
+         out += "   is_number = cp =>\n"
+         out += "      cat = category_id(cp)\n"
+         out += "      cat !< 8 && cat !> 10\n\n"
+
+         out += "   // Control characters (Cc)\n"
+         out += "   is_control: Rune => <>\n"
+         out += "   is_control = cp =>\n"
+         out += "      category_id(cp) == 25\n\n"
+
+         out += "   // Graphic characters (letters, marks, numbers, punctuation, symbols)\n"
+         out += "   is_graphic: Rune => <>\n"
+         out += "   is_graphic = cp =>\n"
+         out += "      cat = category_id(cp)\n"
+         out += "      cat !> 22\n\n"
+
+         out += "   // Decode the UTF-8 rune at src[i] into its codepoint.\n"
+         out += "   decode_rune: String, Int => Rune\n"
+         out += "   decode_rune = src, i =>\n"
+         out += "      b0 = src(i)\n"
+         out += "      Rune(b0\n"
+         out += "         [< 0x80] b0\n"
+         out += "         [< 0xE0] (b0 - 0xC0) * 0x40 + (src(i + 1) - 0x80)\n"
+         out += "         [< 0xF0]\n"
+         out += "            (b0 - 0xE0) * 0x1000 + (src(i + 1) - 0x80) * 0x40 +\n"
+         out += "               (src(i + 2) - 0x80)\n"
+         out += "         |\n"
+         out += "            (b0 - 0xF0) * 0x40000 + (src(i + 1) - 0x80) * 0x1000 +\n"
+         out += "               (src(i + 2) - 0x80) * 0x40 + (src(i + 3) - 0x80)\n"
+         out += "      )\n\n"
+
+         out += "   // Byte width of a rune's UTF-8 encoding.\n"
+         out += "   utf8_width: Rune => Int\n"
+         out += "   utf8_width = r =>\n"
+         out += "      r [< 0x80] 1 [< 0x800] 2 [< 0x10000] 3 | 4\n"
+
+         write_file_text("std/unicode.dva", +out)
+         print $ "Successfully generated std/unicode.dva in Dva!"
+         0
+
+main(0)

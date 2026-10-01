@@ -1,0 +1,74 @@
+#type Ints (Int){}
+#type Names (String){}
+#type Rect (w: Int, h: Int)
+#type Grid (Rect){}
+
+// 1. Int growable array iteration
+xs: Ints
+xs += 10
+xs += 20
+xs += 30
+
+// 1-param iteration
+xs @ x =>
+   print_int $ x
+
+// 2-param iteration with index
+xs @ x, i =>
+   print_int $ i
+   print_int $ x
+
+// Block iteration with _ and _i
+xs @
+   print_int $ _
+   print_int $ _i
+
+// 2. String growable array iteration
+names: Names
+names += "hello"
+names += "world"
+
+names @ s =>
+   print $ s
+
+names @ s, i =>
+   print_int $ i
+   print $ s
+
+// 3. Record growable array iteration
+grid: Grid
+grid += (w = 3, h = 4)
+grid += (w = 5, h = 6)
+
+grid @ g =>
+   print_int $ g.w
+   print_int $ g.h
+
+grid @ g, i =>
+   print_int $ i
+   print_int $ g.w
+   print_int $ g.h
+
+// 4. Empty array (zero iterations)
+empty = Ints()
+empty @ x =>
+   print_int $ 999
+
+empty_fwd: Ints
+empty_fwd @ x =>
+   print_int $ 999
+
+print $ "done empty"
+
+// 5. Break and escape
+r = xs @ x =>
+   x == 20 | --> | 0
+>--
+   777
+
+print_int $ r
+
+// 6. Continue
+xs @ x, i =>
+   x == 20 | --^ | 0
+   print_int $ x

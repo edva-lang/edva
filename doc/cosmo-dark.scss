@@ -1,0 +1,194 @@
+/*-- scss:defaults --*/
+
+// Midnight Indigo Solarized Dark Variant
+// Pairs Solarized's signature text and accents with a rich, modern Midnight Indigo background:
+//   Background (base03 equivalent): #161626 (Midnight Indigo - no teal/green tint)
+//   Surface / Panel (base02 equivalent): #202036 (Deep Indigo Surface cut-out)
+//   Muted / Border (base01 equivalent): #3c3c5c (Indigo Slate)
+//   Body text (base1): #93a1a1 (Soft silver-sage)
+//   Headings / Titles (base2): #eee8d5 (Warm Solarized cream)
+//   Cyan: #2aa198 (Solarized Cyan)
+//   Yellow: #b58900 (Solarized Yellow)
+//   Blue: #268bd2 (Solarized Blue)
+//   Green: #859900 (Solarized Green)
+//   Red: #dc322f (Solarized Red)
+
+$primary:                 #2aa198 !default; // Solarized Cyan
+$secondary:               #3c3c5c !default; // Indigo Slate
+$success:                 #859900 !default; // Green
+$info:                    #268bd2 !default; // Blue
+$warning:                 #b58900 !default; // Yellow
+$danger:                  #dc322f !default; // Red
+$light:                   #202036 !default; // Surface
+$dark:                    #161626 !default; // Background
+
+// Backgrounds & foreground text
+$body-bg:                 #161626 !default; // Deep Midnight Indigo
+$body-color:              #93a1a1 !default; // Solarized base1
+$text-muted:              #7b7b9e !default; // Muted indigo-silver
+$headings-color:          #eee8d5 !default; // Solarized base2 cream
+
+// Cards & containers
+$card-bg:                 #202036 !default;
+$card-border-color:       #3c3c5c !default;
+$card-cap-bg:             #161626 !default;
+
+// Borders & rules
+$border-color:            #2a2a46 !default;
+$border-color-translucent: rgba(60, 60, 92, 0.4) !default;
+
+// Links
+$link-color:              #268bd2 !default; // Solarized Blue
+$link-hover-color:        #2aa198 !default; // Solarized Cyan
+$link-decoration:         none !default;
+
+// Navigation & Sidebar
+$sidebar-bg:              #161626 !default;
+$sidebar-color:           #93a1a1 !default;
+$sidebar-border-color:    #2a2a46 !default;
+$navbar-bg:               #161626 !default;
+$navbar-color:            #eee8d5 !default;
+$navbar-hl:               #2aa198 !default;
+
+// Dropdowns & Popovers
+$dropdown-bg:             #202036 !default;
+$dropdown-color:          #93a1a1 !default;
+$dropdown-border-color:   #3c3c5c !default;
+$dropdown-link-hover-bg:  #161626 !default;
+
+// Form inputs & Search
+$input-bg:                #202036 !default;
+$input-color:             #eee8d5 !default;
+$input-border-color:      #3c3c5c !default;
+$input-focus-bg:          #202036 !default;
+$input-focus-border-color: #2aa198 !default;
+$input-focus-color:       #eee8d5 !default;
+$input-placeholder-color: #7b7b9e !default;
+
+// Tables
+$table-bg:                transparent !default;
+$table-color:             #93a1a1 !default;
+$table-border-color:      #2a2a46 !default;
+$table-hover-bg:          rgba(32, 32, 54, 0.5) !default;
+
+// Code & preformatted text
+$code-bg:                 #202036 !default;
+$code-color:              #2aa198 !default;
+
+/*-- scss:rules --*/
+
+// Headings and Titles
+h1, h2, h3, h4, h5, h6,
+.title, .subtitle,
+.quarto-title .title,
+.quarto-title .subtitle,
+.book-title {
+  color: #eee8d5 !important; // Solarized base2 cream
+}
+
+// Section Numbers and Chapter Markers
+.header-section-number,
+.toc-section-number,
+.chapter-number {
+  color: #2aa198 !important; // Solarized Cyan
+  font-weight: 600;
+}
+
+// Ordered and unordered list markers
+ol > li::marker {
+  color: #2aa198 !important; // Solarized Cyan
+  font-weight: 600;
+}
+
+ul > li::marker {
+  color: #b58900 !important; // Solarized Yellow
+}
+
+// Inline code badge: intentional surface cut-out tied to the background
+code:not(pre > code),
+kbd, samp,
+p code:not(.sourceCode),
+li code:not(.sourceCode),
+td code:not(.sourceCode),
+th code:not(.sourceCode),
+table.table td code,
+table.table th code,
+table td code,
+table th code,
+.table td code,
+.table th code {
+  background-color: #202036 !important; // Deep Indigo surface
+  color: #2aa198 !important;            // Solarized Cyan
+  border: 1px solid rgba(42, 161, 152, 0.25) !important; // crisp edge
+  padding: calc(0.15em + 2px) 0.38em 0.15em 0.38em !important;
+  border-radius: 0.25rem !important;
+  font-size: 0.88em !important;
+}
+
+// Table cell overrides for inline code
+table.table td,
+table.table th,
+.table td,
+.table th {
+  code, kbd, samp {
+    background-color: #202036 !important;
+    color: #2aa198 !important;
+    border: 1px solid rgba(42, 161, 152, 0.25) !important;
+  }
+}
+
+// Preformatted and code blocks in dark mode
+div.code-copy-outer-scaffold,
+div.sourceCode,
+pre, pre code {
+  background-color: #202036 !important;
+  color: #eee8d5 !important;
+}
+
+div.code-copy-outer-scaffold,
+div.sourceCode,
+pre {
+  border-radius: 0.5rem !important;
+}
+
+div.sourceCode {
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  overflow: hidden !important;
+}
+
+div.sourceCode pre {
+  border: none !important;
+}
+
+pre:not(.sourceCode) {
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+}
+
+// Line numbers in code blocks
+.sourceCode .linenos,
+.sourceCode .ln {
+  color: #58587e !important;
+}
+
+// Sidebar active link styling
+.sidebar nav[role="doc-toc"] ul li a.active,
+.sidebar .sidebar-navigation .sidebar-item a.active {
+  color: #2aa198 !important; // Solarized Cyan
+  font-weight: 600;
+}
+
+.sidebar .sidebar-navigation .sidebar-item a:hover {
+  color: #eee8d5 !important;
+}
+
+// Blockquotes and Callouts
+blockquote {
+  border-left: 4px solid #2aa198 !important; // Solarized Cyan accent
+  color: #93a1a1;
+}
+
+// Search modal
+.quarto-search-results {
+  background-color: #202036;
+  color: #93a1a1;
+}

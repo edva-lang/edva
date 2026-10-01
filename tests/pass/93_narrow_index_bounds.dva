@@ -1,0 +1,9 @@
+// Dynamic indexing with a narrow (i16) index type exercises the
+// index-width normalization before the bounds check.
+arr = (10, 20, 30, 40)
+i = i16(1)
+print_int $ arr(i)
+i2 = i16(3)
+arr(i2) = 99
+print_int $ arr(i2)
+print_int $ arr(2)

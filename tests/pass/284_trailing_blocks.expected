@@ -1,0 +1,7 @@
+vbox(spacing=12, count=3)
+vbox(spacing=16, count=3)
+vbox(spacing=5, count=1)
+container(count=2)
+[Submit] -> handled
+142
+config(color=65280, width=320)

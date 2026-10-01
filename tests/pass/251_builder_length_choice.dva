@@ -1,0 +1,11 @@
+set_len: Builder, Int => ()
+set_len = buf, cond =>
+   cond > 0
+      | ?buf = 10
+      | ?buf = 20
+
+b = {32}
+set_len(b, 1)
+print $ str::from_int(?b)
+set_len(b, 0)
+print $ str::from_int(?b)

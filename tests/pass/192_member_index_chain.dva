@@ -1,0 +1,16 @@
+// Member chains with a numeric index then a field (selfhost blocker #5): an
+// integer immediately preceded by '.' is a member INDEX (t.0.op), not a float
+// start — so chained t.0.x must lex instead of E1012 ("0." looks like a
+// dangling-dot float). Regression for the bad_dot member-index exclusion.
+
+#type P (x: Int, y: Int)
+
+f: (P, Int) => Int
+f = t => t.0.x
+
+g: (P, Int) => Int
+g = t => t.0.y + t.1
+
+p = P((3, 4))
+print_int $ f((p, 0))
+print_int $ g((p, 10))

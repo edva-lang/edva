@@ -1,0 +1,4 @@
+// A declared signature types the params; passing a wrong-typed arg is an error.
+add: Int, Int => Int
+add = a, b => a + b
+print $ add("x", 1)

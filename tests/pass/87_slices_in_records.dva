@@ -1,0 +1,20 @@
+// Slices as record fields (by-reference) and record-of-slices.
+#type S (name: String, items: (Int[]))
+s: S
+src = (1, 2, 3)
+s.name = "dva"
+s.items = src(0..3)
+print $ s.name
+print_int $ ?s.items
+print_int $ s.items(1)
+
+// A record whose elements are slices: extraction keeps the slice's element type.
+a = (10, 20)
+b = (30, 40)
+both = (a(0..2), b(0..2))
+print_int $ ?both
+first = both(0)
+print_int $ ?first
+second = both(1)
+print_int $ second(0)
+print_int $ second(1)

@@ -1,0 +1,12 @@
+#pragma number i16
+a = 70000
+print_int $ a      
+#pragma number i64
+b = 70000
+print_int $ b      
+#pragma number default
+c = 70000
+print_int $ c      
+// explicit suffix overrides pragma
+d = 70000i32
+print_int $ d

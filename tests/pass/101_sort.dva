@@ -1,0 +1,18 @@
+#use sort
+xs = sort::Strings()
+xs += "pear"
+xs += "apple"
+xs += "orange"
+xs += "banana"
+ys = sort::strings(xs)
+?ys @ i => print $ ys(i) | _ | _
+nums = sort::Ints()
+nums += 42
+nums += 7
+nums += 100
+nums += 3
+sorted = sort::ints(nums)
+?sorted @ i => print_int $ sorted(i) | _ | _
+empty = sort::Strings()
+none = sort::strings(empty)
+print $ "done"

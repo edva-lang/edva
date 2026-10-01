@@ -1,0 +1,53 @@
+# Lexical structure
+
+**Audience:** Edva users<br>
+**Status:** current reference<br>
+**Audited:** `8b8cb19`<br>
+**Evidence:** `GRAMMAR.md` §1, `selfhost/src/lexer.dva`, `tests/pass/`
+
+Edva source is UTF-8. Identifiers follow UAX31: they begin with an alphabetic
+Unicode character or `_`, then may contain identifier characters and `_`.
+The language has no reserved words; control flow and declarations are formed
+with operators and `#` directives.
+
+## Lines and indentation
+
+Indentation starts and ends blocks. Use either spaces everywhere or tabs
+everywhere within a source file; mixing them is a syntax error. An indented
+block is equivalent to semicolon-separated statements, but a semicolon at the
+end of a source line is invalid. Keep lines to 100 characters or fewer.
+
+```dva
+check = value =>
+   value > 0
+      | "positive"
+      | "not positive"
+```
+
+Line comments begin with `//`; block comments use `/*` and `*/`.
+
+## Literals
+
+| Kind | Examples | Notes |
+|---|---|---|
+| integer | `42`, `0xFF`, `0b101`, `5i16` | explicit widths use a suffix |
+| float | `0.5`, `1.0`, `3.0e4` | digits are required on both sides of `.` |
+| rune | `'a'`, `'λ'`, `'\n'` | one Unicode scalar value |
+| string | `"text\n"` | escaped UTF-8 string |
+| raw string | `(= text =)` | literal bytes, with one raw-string escape |
+
+`.5`, `1.`, and `3.e4` are not float literals. Integer literals require a
+static type context or explicit suffix; the compiler never silently chooses
+`Int`. `#pragma number <type>` changes the literal type for the rest of its
+file; `#pragma number default` restores the normal inference mode.
+
+## Tokens and whitespace-sensitive forms
+
+The lexer consumes operators greedily. Keep operator operands separated by
+whitespace unless the syntax requires adjacency. In particular, `*builder` is
+the unary buffer-address operator, whereas `* value` begins a multiplication
+section. Ramification payloads close with `+>` or `->`; a bare `>` is a
+comparison operator, not a delimiter.
+
+See [the generated operator table](../../../GRAMMAR.md#16-operators--precedence)
+for the complete token inventory and precedence.

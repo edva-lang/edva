@@ -1,0 +1,36 @@
+// Non-exhaustive choice with a predicate branch ("v [< 0] ..." with no
+// fallback) is a statement: the branch runs only when the predicate holds,
+// and nothing happens otherwise. Regression: this used to compile to an
+// empty switch whose "default" ran the branch unconditionally.
+
+// Predicate single-branch statement, no fallback.
+fb = v =>
+   b = {16}
+   v [< 0] b += '-'
+   +b
+print $ fb(-5)
+print $ fb(5)
+
+// Bare-condition single-branch statement, no fallback.
+fg = v =>
+   b = {16}
+   v < 0 | b += '-'
+   +b
+print $ fg(-5)
+print $ fg(5)
+
+// Predicate with explicit fallback (exhaustive).
+fh = v =>
+   b = {16}
+   v [< 0] b += '-' | b
+   +b
+print $ fh(-5)
+print $ fh(5)
+
+// Value-pattern non-exhaustive choice.
+fv = v =>
+   x' = 0
+   v [2] x' = 7
+   x'
+print_int $ fv(2)
+print_int $ fv(9)

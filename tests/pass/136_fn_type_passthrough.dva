@@ -1,0 +1,26 @@
+// Function-type value pass-through (P1.6): an untyped identity combinator
+// "pickfn = f => f" threads the passed function's return type through to its
+// result, so the result can be applied directly. The inner function needs a
+// declared signature (an untyped inner fn is genuinely ambiguous → E3103).
+
+greet: String => String
+greet = s => "hi " + s
+
+pickfn = f => f
+p = pickfn(greet)
+print $ p("bob")
+print $ p("eve")
+
+// The same threading through a variable holding the combinator's result.
+q = pickfn(greet)
+print $ q("sal")
+
+// A function-returning function threaded through a chain.
+inc: Int => Int
+inc = n => n + 1
+one = x => inc
+g = one(0)
+print_int $ g(41)
+
+// Direct chained application on the pass-through result.
+print $ pickfn(greet)("zoe")

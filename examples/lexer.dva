@@ -1,0 +1,239 @@
+// A lexer for a small subset of the dva grammar, written in dva.
+//
+// Token types: identifier, integer, string, rune, operator, eof.
+// It skips whitespace (spaces, tabs, CRs, newlines) and "//" line comments; a
+// small-subset lexer need not track INDENT/DEDENT. Each token is
+// (type, start, len) — a span into the source, so no text is materialized.
+//
+// Identifiers are UAX31: a leading Unicode letter or '_', then letters,
+// digits, '_' — scanned as UTF-8 runes (classify with std/unicode), not raw
+// bytes. Integer and operator scanning stays ASCII.
+//
+// Build & run:
+//   ./edva examples/lexer.dva
+//   ./lexer
+//
+// It lexes the small dva program embedded at the bottom and prints one line
+// per token: "TYPE text".
+
+#use io
+#use unicode
+
+// --- character classes ---------------------------------------------------
+
+// Truth is a flag ram (RamNN, a bare i1): "<+>" in, "<->" not.
+#type Flag <>
+
+// The token kinds. Labels are lowercase-safe, so Id/Str/Op carry no
+// collision with the built-in type names (Int, String, ...). The tag is the
+// variant's slot index; construction is "TokType(Id)".
+#type TokType <Id, Int, Str, Rune, Op, Other, Eof>
+
+// UAX31 identifier characters: Unicode letters / digits / '_' (a subset of
+// XID_Start/XID_Continue — no combining marks, joiners, or Other_ID_*).
+is_id_start: Rune => Flag
+is_id_start = r =>
+   unicode::is_alpha(r) || r == '_'
+
+is_id_char: Rune => Flag
+is_id_char = r =>
+   is_id_start(r) || unicode::is_digit(r)
+
+// Every byte's token class in one 256-entry lookup table: class256[c] is the
+// TokType of byte c, so classifying a byte is one indexed load. The runs are
+// spelled with the '(v * n)' repetition idiom and derive from the ASCII
+// layout:
+//
+//   '!' op | '"' str | '$' '%' '&' op | '\'' rune | '('..'/' op
+//   '0'..'9' int | ':'..'?' op | '@' op | 'A'..'Z' id | '['..']' op
+//   '_' id | 'a'..'z' id | '{'..'}' op
+//
+//   everything else (control bytes, space, '#' '^' '`' '~') is Other; bytes
+//   128..255 are UTF-8 lead bytes whose real class (Unicode id start vs
+//   other) needs the rune, so tok_class falls back to a decode + unicode
+//   check for them instead of trusting the table's Other.
+class256: Int => TokType
+class256 = c =>
+   table = (
+      Other {33},
+      Op, Str, Other, Op {3}, Rune, Op {8}, Int {10}, Op {6}, Op,
+      Id {26}, Op {3}, Other, Id, Other, Id {26}, Op {3}, Other,
+      Other {129},
+   )
+   table(c)
+
+// A token: kind, and the span [start, start+len) of its text in the source.
+// Tokens reference the source instead of copying it.
+#type Tok (
+   type: TokType,
+   start: Int,
+   len: Int,
+)
+
+// --- scanners -------------------------------------------------------------
+
+scan_id: String, Int => Tok
+scan_id = src, start =>
+   total = ?src
+   i' = start
+   0.. @
+      i' !< total | -->
+      r = unicode::decode_rune(src, i')
+      is_id_char(r)
+         | i' = i' + unicode::utf8_width(r); 0
+         | -->
+   Tok((Id, start, i' - start))
+
+scan_int: String, Int => Tok
+scan_int = src, start =>
+   total = ?src
+   i' = start
+   0.. @
+      i' !< total | -->
+      k = class256(src(i'))
+      k [Int] i' = i' + 1; 0 | -->
+   Tok((Int, start, i' - start))
+
+scan_op: String, Int => Tok
+scan_op = src, start =>
+   total = ?src
+   i' = start
+   0.. @
+      i' !< total | -->
+      k = class256(src(i'))
+      k [Op] i' = i' + 1; 0 | -->
+   Tok((Op, start, i' - start))
+
+// Scan a "..." string literal starting at the opening quote; the token's span
+// covers the raw literal (quotes and backslash escapes included). A backslash
+// escapes the next character (two source bytes).
+scan_string: String, Int => Tok
+scan_string = src, start =>
+   total = ?src
+   i' = start + 1
+   done' = 0
+   0.. @
+      done' [1] -->
+      i' !< total | -->
+      c = src(i')
+      c ['"'] done' = 1; 0 ['\\'] i' = i' + 1; 0 | 0
+      i' = i' + 1
+   Tok((Str, start, i' - start))
+
+// Scan a 'x' rune literal starting at the opening quote. An escaped content
+// ('\n') makes the literal four source bytes; a plain one is three.
+scan_rune: String, Int => Tok
+scan_rune = src, start =>
+   c = src(start + 1)
+   c ['\\'] Tok((Rune, start, 4)) | Tok((Rune, start, 3))
+
+// --- whitespace / comments / token dispatch -------------------------------
+
+// Skip a "//" line comment: src[start] is the first '/'. Returns the index
+// just past the terminating newline (or past the end of the source).
+skip_comment: String, Int => Int
+skip_comment = src, start =>
+   total = ?src
+   i' = total
+   (start + 1)..total @ j =>
+      src(j) ['\n'] i' = j; -->
+   i' + 1
+
+// If src[i] starts a "//" comment, skip it; else return i unchanged.
+maybe_comment: String, Int => Int
+maybe_comment = src, i =>
+   total = ?src
+   i + 1 < total && src(i + 1) == '/'
+      | skip_comment(src, i)
+      | i
+
+// If src[i] is whitespace or the start of a "//" comment, return the index
+// just past it; else return i unchanged.
+ws_step: String, Int => Int
+ws_step = src, i =>
+   c = src(i)
+   c [' ', '\t', '\r', '\n'] i + 1 ['/'] maybe_comment(src, i) | i
+
+// Skip whitespace and comments from `start`; returns the index of the next
+// token.
+skip_ws: String, Int => Int
+skip_ws = src, start =>
+   total = ?src
+   i' = start
+   0.. @
+      i' !< total | -->
+      next = ws_step(src, i')
+      next == i'
+         | -->
+      i' = next
+   i'
+
+// Scan the next token starting at/after `start`. Extracted as a helper so
+// lex's loop stays simple; the dispatch is a nested choice over the first
+// character's class.
+token_at: String, Int => Tok
+token_at = src, start =>
+   total = ?src
+   i = skip_ws(src, start)
+   i < total
+      | classify(src, i)
+      | Tok((Eof, i, 0))
+
+// Token class of src[i]: ASCII bytes come straight from the class256 table;
+// bytes 128..255 are UTF-8 lead bytes, so their class is decided by decoding
+// the rune and asking std/unicode (a table can't know a lead byte's class).
+tok_class: String, Int => TokType
+tok_class = src, i =>
+   c = src(i)
+   c < 0x80
+      | class256(c)
+      | is_id_start(unicode::decode_rune(src, i)) | Id | Other
+
+classify: String, Int => Tok
+classify = src, i =>
+   k = tok_class(src, i)
+   r = unicode::decode_rune(src, i)
+   k
+      [Id] scan_id(src, i)
+      [Int] scan_int(src, i)
+      [Str] scan_string(src, i)
+      [Rune] scan_rune(src, i)
+      [Op] scan_op(src, i)
+      | Tok((Other, i, unicode::utf8_width(r)))
+
+// Display name for a token kind ("Id" -> "id", ...). The enum labels are the
+// canonical identity; the printable names are a separate concern.
+type_name: TokType => String
+type_name = t =>
+   t
+      [Id] "id"
+      [Int] "int"
+      [Str] "str"
+      [Rune] "rune"
+      [Op] "op"
+      [Other] "other"
+      [Eof] "eof"
+
+// Print one token line by slicing its span out of the source, then return
+// the token — a tap, so the caller can keep using it. The caller tests
+// t.type (itself a ram) for the Eof variant; no flag needs spelling. The
+// branch bodies are parenthesized so the '$' (below choice) does not absorb
+// the '|' as its operand — "print $ a | b" now feeds print the choice.
+step: String, Tok => Tok
+step = src, t =>
+   t.type [Eof] io::out("eof") | io::out((type_name(t.type), src(t.start..t.start + t.len)))
+   t
+
+// Lex the whole source, printing one "TYPE text" line per token, then "eof".
+lex: String => Int
+lex = src =>
+   total = ?src
+   i' = 0
+   0.. @
+      t = step(src, token_at(src, i'))
+      t.type [Eof] --> | i' = t.start + t.len
+   i'
+
+// The small dva program this lexer tokenizes.
+prog = "n = 40 + 2\nname' = \"dva\"\n// a comment\nprint $ name\n"
+lex(prog)

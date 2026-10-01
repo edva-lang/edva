@@ -1,0 +1,92 @@
+// selfhost/src/layout.dva — Static type layout and size computation.
+//
+// Computes byte size, alignment, and field offsets for Dva types without
+// relying on LLVM data layout calls. Part of Milestone 2 (Phase 2).
+
+#use "ast"
+#use "unify"
+#use "tast"
+
+align_up: Int, Int => Int
+align_up = offset, align =>
+   align !> 1
+      | offset
+      | (offset + align - 1) / align * align
+
+compute_prim_layout: unify::UPrim => tast::TypedLayout
+compute_prim_layout = p =>
+   p
+      [Int] tast::layout_scalar(8, 8)
+      [I8] tast::layout_scalar(1, 1)
+      [I16] tast::layout_scalar(2, 2)
+      [I32] tast::layout_scalar(4, 4)
+      [I64] tast::layout_scalar(8, 8)
+      [U8] tast::layout_scalar(1, 1)
+      [U16] tast::layout_scalar(2, 2)
+      [U32] tast::layout_scalar(4, 4)
+      [U64] tast::layout_scalar(8, 8)
+      [Float] tast::layout_scalar(8, 8)
+      [F32] tast::layout_scalar(4, 4)
+      [Str] tast::layout_scalar(16, 8)
+      [Rune] tast::layout_scalar(4, 4)
+      [Flag] tast::layout_scalar(1, 1)
+      [Unit] tast::layout_void()
+      [RawPtr] tast::layout_scalar(8, 8)
+      [Builder] tast::layout_scalar(24, 8)
+      [Error] tast::layout_aggregate(48, 8)
+      | tast::layout_scalar(8, 8)
+
+is_niche_utype: unify::Ctx, unify::UType => <>
+is_niche_utype = ctx, ut =>
+   c = unify::canon(ctx, ut)
+   c
+      [Prim p]
+         p [Str]
+      [Rec r]
+         ?r > 0
+      | <->
+
+compute_layout: unify::Ctx, unify::UType => tast::TypedLayout
+compute_layout = ctx, ut =>
+   c = unify::canon(ctx, ut)
+   c
+      [Prim p] compute_prim_layout(p)
+      [Fn _] tast::layout_closure()
+      [Rec r]
+         cur_off' = 0
+         max_align' = 1
+         ?r @ i =>
+            f = r(i) | _ | unify::UField(("", unify::UType(None)))
+            flay = compute_layout(ctx, f.ut)
+            f_align = flay.align < 1 | 1 | flay.align
+            max_align' = max_align' < f_align | f_align | max_align'
+            cur_off' = align_up(cur_off', f_align) + flay.size
+         total_size = align_up(cur_off', max_align')
+         tast::layout_aggregate(total_size, max_align')
+      [Ram r]
+         has_p = r.pos.has_payload
+         has_n = r.neg.has_payload
+         has_p && !has_n
+            |
+               is_niche_utype(ctx, r.pos.ut)
+                  | tast::layout_scalar(8, 8)
+                  | tast::layout_ram(16, 8)
+            |
+               !has_p && has_n
+                  |
+                     is_niche_utype(ctx, r.neg.ut)
+                        | tast::layout_scalar(8, 8)
+                        | tast::layout_ram(16, 8)
+                  |
+                     has_p || has_n
+                        | tast::layout_ram(16, 8)
+                        | tast::layout_scalar(1, 1)
+      [Enum _] tast::layout_aggregate(16, 8)
+      [Array a]
+         elay = compute_layout(ctx, a.elem)
+         e_align = elay.align < 1 | 1 | elay.align
+         tast::TypedLayout((
+            elay.size * a.count, e_align, tast::LayoutKind(Array)
+         ))
+      [Slice _] tast::TypedLayout((16, 8, tast::LayoutKind(Slice)))
+      | tast::layout_scalar(8, 8)

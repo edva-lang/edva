@@ -1,0 +1,86 @@
+# `str` standard library
+
+**Audience:** Edva users<br>
+**Status:** current reference<br>
+**Audited:** `df88a80`<br>
+**Evidence:** `std/str.dva`, `tests/pass/122_unicode_module.dva`
+
+The `str` module provides byte-oriented string predicates, scalar conversions,
+lexicographic comparisons, and digit parsing primitives.
+
+```dva
+#use str
+```
+
+## Function catalog
+
+| Category | Function | Signature | Return Type | Description |
+|---|---|---|---|---|
+| **Predicates** | `str::is_digit(c)` | `Int => i1` | Flag `<>` | True if byte `c` is `'0'..'9'` |
+| | `str::is_alpha(c)` | `Int => i1` | Flag `<>` | True if byte `c` is `'a'..'z'` or `'A'..'Z'` |
+| | `str::is_alnum(c)` | `Int => i1` | Flag `<>` | True if byte is alphanumeric |
+| | `str::is_ws(c)` | `Int => i1` | Flag `<>` | True if byte is space, tab, `\n`, or `\r` |
+| | `str::is_hex(c)` | `Int => i1` | Flag `<>` | True if byte is valid hex digit (`0..9`, `a..f`, `A..F`) |
+| **Conversions** | `str::from_byte(b)` | `Int => String` | `String` | Creates single-byte owned String from byte code |
+| | `str::from_int(v)` | `Int => String` | `String` | Formats integer to ASCII decimal |
+| | `str::from_float(f)` | `Float => String` | `String` | Formats float to `%g`-style decimal string |
+| | `str::hex_to_str(v)` | `Int => String` | `String` | Formats integer to `"0x..."` uppercase hex |
+| **Ordering** | `str::cmp(a, b)` | `String, String => Int` | `Int` | 3-way byte comparison: `-1` (`a < b`), `0` (`a == b`), `1` (`a > b`) |
+| | `str::lt(a, b)` | `String, String => <>` | Flag `<>` | Bare flag predicate (`<+>` if `a < b`, `<->` otherwise) |
+| **Parsing** | `str::to_int(s)` | `String => Digits` | `< (Int, String) | >` | Consumes leading decimal digits; returns value and suffix |
+| | `str::to_hex(s)` | `String => Digits` | `< (Int, String) | >` | Consumes leading hex digits; returns value and suffix |
+
+---
+
+## Usage examples
+
+### ASCII byte predicates
+
+Predicates return native `Flag` values, allowing direct use in choice conditions:
+
+```dva
+#use str
+
+classify_byte = c =>
+   str::is_digit(c) | "digit"
+   str::is_alpha(c) | "letter"
+   str::is_ws(c)    | "whitespace"
+   | "symbol"
+```
+
+### Number parsing with `to_int` and `to_hex`
+
+`str::to_int` parses leading digits and returns the `Digits` ramification (`< (Int, String) | >`).
+The positive payload contains a pair `(value, rest_of_string)`. If no digits are found,
+the negative unit slot (`<-->`) is selected:
+
+```dva
+#use str
+
+parse_dimension: String => Int
+parse_dimension = input =>
+   res = str::to_int(input)
+   res
+      | pair =>
+         print $ "Unit suffix: " + pair.1 // e.g. "px"
+         pair.0
+      | 0 // Fallback when string contains no leading digits
+
+width = parse_dimension("1920px")
+print_int $ width // prints 1920
+```
+
+### Lexicographical sorting
+
+Use `str::lt` as a comparator for sorting string records or arrays:
+
+```dva
+#use str
+#use sort
+
+names = ("Charlie", "Alice", "Bob")
+// sort with str::lt
+```
+
+For full Unicode codepoint and grapheme operations, import the `unicode` module.
+

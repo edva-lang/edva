@@ -1,0 +1,42 @@
+// Value guards on a bare Flag condition are predicates: the guard's i1
+// truthiness decides (the Flag cond is a syntactic anchor). This makes a
+// vertical if/elif ladder: '<+>' anchored, one predicate per line, no nesting.
+
+#type Flag <>
+
+// Elif ladder on the always-true anchor.
+f: Int => String
+f = c =>
+   <+>
+      [c == '"'] "str"
+      [c == '+'] "op"
+      [c == '?'] "q"
+      | "other"
+
+print $ f(34)
+print $ f(43)
+print $ f(63)
+print $ f(99)
+
+// The cond's polarity is ignored — the guards are the conditions.
+g: Int => String
+g = c =>
+   <->
+      [c == '"'] "str"
+      [c == '+'] "op"
+      | "other"
+
+print $ g(34)
+print $ g(43)
+print $ g(99)
+
+// Comma-OR list of predicates: match when ANY holds.
+h: Int => String
+h = c =>
+   <+>
+      [c == '"', c == '+'] "op"
+      | "other"
+
+print $ h(34)
+print $ h(43)
+print $ h(99)

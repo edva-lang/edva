@@ -1,0 +1,285 @@
+// Standard Color Module (std/color.dva)
+//
+// Color representations, color space transformations, alpha compositing,
+// and perceptually uniform transitions for UI styling and graphics.
+//
+// All color spaces use normalized 4-float records (Float, Float, Float, Float)
+// with alpha in the 4th component, benefiting from element-wise vector
+// operations (+, -, *).
+
+#use math
+
+#public
+   #type Color      (Float, Float, Float, Float)
+   #type Rgba       (Float, Float, Float, Float)
+   #type LinearRgba (Float, Float, Float, Float)
+   #type Oklab      (Float, Float, Float, Float)
+   #type Oklch      (Float, Float, Float, Float)
+   #type Hsv        (Float, Float, Float, Float)
+
+   // Constructors
+   rgba: Float, Float, Float, Float => Rgba
+   rgba = r, g, b, a => (r, g, b, a)
+
+   rgb: Float, Float, Float => Rgba
+   rgb = r, g, b => (r, g, b, 1.0)
+
+   oklab: Float, Float, Float, Float => Oklab
+   oklab = l, a, b, alpha => (l, a, b, alpha)
+
+   oklch: Float, Float, Float, Float => Oklch
+   oklch = l, c, h, alpha => (l, c, h, alpha)
+
+   hsv: Float, Float, Float, Float => Hsv
+   hsv = h, s, v, alpha => (h, s, v, alpha)
+
+   // Hex Packing & Unpacking
+   from_hex: Int => Rgba
+   from_hex = hex =>
+      r = Float((hex .>. 24) .&. 0xFF) / 255.0
+      g = Float((hex .>. 16) .&. 0xFF) / 255.0
+      b = Float((hex .>. 8) .&. 0xFF) / 255.0
+      a = Float(hex .&. 0xFF) / 255.0
+      (r, g, b, a)
+
+   from_hex_rgb: Int => Rgba
+   from_hex_rgb = hex =>
+      r = Float((hex .>. 16) .&. 0xFF) / 255.0
+      g = Float((hex .>. 8) .&. 0xFF) / 255.0
+      b = Float(hex .&. 0xFF) / 255.0
+      (r, g, b, 1.0)
+
+   to_hex: Rgba => Int
+   to_hex = c =>
+      r = Int(%round(%clamp(c(0), 0.0, 1.0) * 255.0))
+      g = Int(%round(%clamp(c(1), 0.0, 1.0) * 255.0))
+      b = Int(%round(%clamp(c(2), 0.0, 1.0) * 255.0))
+      a = Int(%round(%clamp(c(3), 0.0, 1.0) * 255.0))
+      (r .<. 24) .|. (g .<. 16) .|. (b .<. 8) .|. a
+
+   to_hex_rgb: Rgba => Int
+   to_hex_rgb = c =>
+      r = Int(%round(%clamp(c(0), 0.0, 1.0) * 255.0))
+      g = Int(%round(%clamp(c(1), 0.0, 1.0) * 255.0))
+      b = Int(%round(%clamp(c(2), 0.0, 1.0) * 255.0))
+      (r .<. 16) .|. (g .<. 8) .|. b
+
+   // sRGB <-> Linear sRGB Transfer Functions
+   srgb_to_linear_channel: Float => Float
+   srgb_to_linear_channel = c =>
+      c !> 0.04045
+         | c / 12.92
+         | %pow((c + 0.055) / 1.055, 2.4)
+
+   linear_to_srgb_channel: Float => Float
+   linear_to_srgb_channel = c =>
+      c !> 0.0031308
+         | c * 12.92
+         | 1.055 * %pow(c, 1.0 / 2.4) - 0.055
+
+   srgb_to_linear: Rgba => LinearRgba
+   srgb_to_linear = c =>
+      (srgb_to_linear_channel(c(0)),
+         srgb_to_linear_channel(c(1)),
+         srgb_to_linear_channel(c(2)),
+         c(3))
+
+   linear_to_srgb: LinearRgba => Rgba
+   linear_to_srgb = c =>
+      r = %clamp(linear_to_srgb_channel(c(0)), 0.0, 1.0)
+      g = %clamp(linear_to_srgb_channel(c(1)), 0.0, 1.0)
+      b = %clamp(linear_to_srgb_channel(c(2)), 0.0, 1.0)
+      (r, g, b, c(3))
+
+   // Linear sRGB <-> Oklab
+   linear_to_oklab: LinearRgba => Oklab
+   linear_to_oklab = c =>
+      r = c(0)
+      g = c(1)
+      b = c(2)
+      l = 0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b
+      m = 0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b
+      s = 0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b
+      l_ = math::cbrt(l)
+      m_ = math::cbrt(m)
+      s_ = math::cbrt(s)
+      L = 0.2104542553 * l_ + 0.7936177850 * m_ - 0.0040720468 * s_
+      lab_a = 1.9779984951 * l_ - 2.4285922050 * m_ + 0.4505937099 * s_
+      lab_b = 0.0259040371 * l_ + 0.7827717662 * m_ - 0.8086757660 * s_
+      (L, lab_a, lab_b, c(3))
+
+   oklab_to_linear: Oklab => LinearRgba
+   oklab_to_linear = c =>
+      L = c(0)
+      lab_a = c(1)
+      lab_b = c(2)
+      l_ = L + 0.3963377774 * lab_a + 0.2158037573 * lab_b
+      m_ = L - 0.1055613458 * lab_a - 0.0638541728 * lab_b
+      s_ = L - 0.0894841775 * lab_a - 1.2914855480 * lab_b
+      l = l_ * l_ * l_
+      m = m_ * m_ * m_
+      s = s_ * s_ * s_
+      r = 4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s
+      g = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s
+      b = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s
+      (r, g, b, c(3))
+
+   // sRGB <-> Oklab
+   rgba_to_oklab: Rgba => Oklab
+   rgba_to_oklab = c =>
+      linear_to_oklab(srgb_to_linear(c))
+
+   srgb_to_oklab: Rgba => Oklab
+   srgb_to_oklab = c =>
+      rgba_to_oklab(c)
+
+   oklab_to_rgba: Oklab => Rgba
+   oklab_to_rgba = c =>
+      linear_to_srgb(oklab_to_linear(c))
+
+   oklab_to_srgb: Oklab => Rgba
+   oklab_to_srgb = c =>
+      oklab_to_rgba(c)
+
+   // Oklab <-> Oklch
+   oklab_to_oklch: Oklab => Oklch
+   oklab_to_oklch = c =>
+      L = c(0)
+      lab_a = c(1)
+      lab_b = c(2)
+      C = %sqrt(lab_a * lab_a + lab_b * lab_b)
+      rad = math::atan2(lab_b, lab_a)
+      deg = rad * 180.0 / math::pi
+      deg_pos = deg < 0.0 | deg + 360.0 | deg
+      h = C < 1e-6 | 0.0 | deg_pos
+      (L, C, h, c(3))
+
+   oklch_to_oklab: Oklch => Oklab
+   oklch_to_oklab = c =>
+      L = c(0)
+      C = c(1)
+      h = c(2)
+      rad = h * math::pi / 180.0
+      lab_a = C * %cos(rad)
+      lab_b = C * %sin(rad)
+      (L, lab_a, lab_b, c(3))
+
+   // Direct sRGB <-> Oklch
+   rgba_to_oklch: Rgba => Oklch
+   rgba_to_oklch = c =>
+      oklab_to_oklch(rgba_to_oklab(c))
+
+   srgb_to_oklch: Rgba => Oklch
+   srgb_to_oklch = c =>
+      rgba_to_oklch(c)
+
+   oklch_to_rgba: Oklch => Rgba
+   oklch_to_rgba = c =>
+      oklab_to_rgba(oklch_to_oklab(c))
+
+   oklch_to_srgb: Oklch => Rgba
+   oklch_to_srgb = c =>
+      oklch_to_rgba(c)
+
+   // sRGB <-> HSV
+   rgba_to_hsv: Rgba => Hsv
+   rgba_to_hsv = c =>
+      r = c(0)
+      g = c(1)
+      b = c(2)
+      c_max = %max(r, %max(g, b))
+      c_min = %min(r, %min(g, b))
+      delta = c_max - c_min
+      v = c_max
+      s = c_max == 0.0 | 0.0 | delta / c_max
+      h_raw = delta < 1e-6
+         | 0.0
+         |
+            c_max == r
+               | (g - b) / delta
+               |
+                  c_max == g
+                     | (b - r) / delta + 2.0
+                     | (r - g) / delta + 4.0
+      h_deg = h_raw * 60.0
+      h = h_deg < 0.0 | h_deg + 360.0 | h_deg
+      (h, s, v, c(3))
+
+   srgb_to_hsv: Rgba => Hsv
+   srgb_to_hsv = c =>
+      rgba_to_hsv(c)
+
+   hsv_to_rgba: Hsv => Rgba
+   hsv_to_rgba = c =>
+      h = c(0)
+      s = c(1)
+      v = c(2)
+      c_val = v * s
+      h_mod = h / 60.0
+      h_int = Int(%floor(h_mod)) % 6
+      x_val = c_val * (1.0 - %abs((h_mod - 2.0 * %floor(h_mod / 2.0)) - 1.0))
+      m = v - c_val
+      rgb_base = h_int
+         [0] (c_val, x_val, 0.0)
+         [1] (x_val, c_val, 0.0)
+         [2] (0.0, c_val, x_val)
+         [3] (0.0, x_val, c_val)
+         [4] (x_val, 0.0, c_val)
+         | (c_val, 0.0, x_val)
+      r = %clamp(rgb_base(0) + m, 0.0, 1.0)
+      g = %clamp(rgb_base(1) + m, 0.0, 1.0)
+      b = %clamp(rgb_base(2) + m, 0.0, 1.0)
+      (r, g, b, c(3))
+
+   hsv_to_srgb: Hsv => Rgba
+   hsv_to_srgb = c =>
+      hsv_to_rgba(c)
+
+   // Alpha Blending
+   alpha_blend: Rgba, Rgba => Rgba
+   alpha_blend = src, dst =>
+      src_a = src(3)
+      dst_a = dst(3)
+      inv_src_a = 1.0 - src_a
+      out_a = src_a + dst_a * inv_src_a
+      out_a < 1e-6
+         | (0.0, 0.0, 0.0, 0.0)
+         |
+            r = (src(0) * src_a + dst(0) * dst_a * inv_src_a) / out_a
+            g = (src(1) * src_a + dst(1) * dst_a * inv_src_a) / out_a
+            b = (src(2) * src_a + dst(2) * dst_a * inv_src_a) / out_a
+            (r, g, b, out_a)
+
+   alpha_blend_linear: Rgba, Rgba => Rgba
+   alpha_blend_linear = src, dst =>
+      src_lin = srgb_to_linear(src)
+      dst_lin = srgb_to_linear(dst)
+      src_a = src_lin(3)
+      dst_a = dst_lin(3)
+      inv_src_a = 1.0 - src_a
+      out_a = src_a + dst_a * inv_src_a
+      out_a < 1e-6
+         | (0.0, 0.0, 0.0, 0.0)
+         |
+            r = (src_lin(0) * src_a + dst_lin(0) * dst_a * inv_src_a) / out_a
+            g = (src_lin(1) * src_a + dst_lin(1) * dst_a * inv_src_a) / out_a
+            b = (src_lin(2) * src_a + dst_lin(2) * dst_a * inv_src_a) / out_a
+            linear_to_srgb((r, g, b, out_a))
+
+   // Perceptual Operations
+   lerp: Color, Color, Float => Color
+   lerp = c1, c2, t =>
+      c1 + (c2 - c1) * t
+
+   lerp_oklab: Rgba, Rgba, Float => Rgba
+   lerp_oklab = c1, c2, t =>
+      lab1 = rgba_to_oklab(c1)
+      lab2 = rgba_to_oklab(c2)
+      lab_res = lab1 + (lab2 - lab1) * t
+      oklab_to_rgba(lab_res)
+
+   adjust_lightness: Rgba, Float => Rgba
+   adjust_lightness = c, delta =>
+      lab = rgba_to_oklab(c)
+      new_l = %clamp(lab(0) + delta, 0.0, 1.0)
+      oklab_to_rgba((new_l, lab(1), lab(2), lab(3)))

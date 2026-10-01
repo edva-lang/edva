@@ -1,0 +1,30 @@
+// io::out / io::err — the console.log-style writers from std/io.dva. A single
+// value or a record of values is formatted at compile time (the '#! T: Type'
+// type dispatch), joined with a single space, + newline. io::outf / io::errf
+// substitute '{}' placeholders in a format string. Mixed types in one call.
+
+#use io
+#use str
+
+io::out("plain string")
+io::out(42)
+io::out(2.75)
+io::out(("tag", "A"))
+io::out(("hello", 42))
+io::out(("sent:", 5, 2.5))
+io::out(("name", "dva", 1))
+io::out(('A',))
+io::out(("rune:", 'B'))
+io::out(("pair", 'x', 7))
+
+b = {3}
+b += 65
+b += 66
+b += 67
+io::out(("builder:", b))
+
+io::err(("error", -7))
+
+io::outf(("a", 42), "{}: {}")
+io::outf((1, "two", 3.5), "{}-{}-{}")
+io::outf("only", "value={}")

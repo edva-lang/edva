@@ -1,0 +1,7 @@
+// A bare '|' only introduces a bare (unguarded) branch; a guard starts a
+// branch on its own. "x [1] "one" | [2] "two"" — a '|' immediately before a
+// '[' guard — is a parse error: guarded branches chain adjacently
+// ("x [1] "one" [2] "two"").
+
+x = 5
+res = x [1] "one" | [2] "two"

@@ -1,0 +1,62 @@
+// Cycle-escape "CYCLE >-- BRANCH" regression tests.
+//
+// Semantics (CycleExpr ::= Iterable "@" FnExpr [ ">--" BranchBody ]):
+//   - "-->" (break) that resolves to the wrapped cycle diverts control to
+//     BRANCH, whose value becomes the result of the whole construct.
+//   - If the cycle completes without such a break, BRANCH is skipped and the
+//     result is a zero value of BRANCH's type.
+//   - "--^" (continue) never triggers BRANCH; it only skips to the next
+//     iteration.
+//
+// Note on syntax: "i [2]" is the equality pattern (≡ "i [== 2]"), and
+// "5 @" is the range sugar (≡ "0..5 @"). The "| 0" inside the cycle body is
+// the body's own choice expression (conditional-jump idiom), unrelated to
+// the ">--" escape suffix.
+
+print_int $ 1000
+
+// No break: cycle runs to completion, branch is skipped, result is 0
+// (zero of the branch's Int type). Body prints 0..4.
+r1 = 5 @ i =>
+        print_int $ i
+>--
+   99
+print_int $ r1
+
+print_int $ 2000
+
+// Break: "-->" at i==3 diverts to branch 99. Body prints 0,1,2,3.
+r2 = 5 @ i =>
+        print_int $ i
+        i [3] --> | 0
+>--
+   99
+print_int $ r2
+
+print_int $ 3000
+
+// Continue: "--^" at i==2 skips that iteration; cycle completes normally,
+// so the branch never fires and the result is 0. Body prints 0,1,3,4.
+r3 = 5 @ i =>
+        print_int $ i
+        i [2] --^ | 0
+>--
+   99
+print_int $ r3
+
+print_int $ 4000
+
+// Branch fires with a non-trivial value: escape returns 42 when i==2.
+r4 = 3 @ i =>
+        i [2] --> | 0
+>--
+   42
+print_int $ r4
+
+print_int $ 5000
+
+// Inline branch form (same line).
+r5 = 5 @ i => i [3] --> | 0 >-- 77
+print_int $ r5
+
+print_int $ 6000

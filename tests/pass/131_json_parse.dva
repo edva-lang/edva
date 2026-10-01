@@ -1,0 +1,40 @@
+#use json
+
+// The JSON module: parse documents of every JSON type into the recursive
+// Value enum (String/Number/Float/Boolean/Null/Array/Object), and surface
+// malformed input as the Error branch of the returned <Value | Error> ram.
+// Ram slots are positional — matched with bare '|' branches, never by name.
+//
+// JSON text is written as raw string literals "(= ... =)": quotes and braces
+// are literal bytes, so no escaping is needed (vs the quoted form, which
+// would backslash-escape every '"'). A raw string is applied with '$'
+// ("parse $ (=...=)"), since a raw string immediately after a call's '('
+// would make "(=" the raw-string opener instead of the call paren.
+
+n = json::parse $ (=42=)
+n | v => print $ "number"
+  | e => print $ "error"
+
+s = json::parse $ (="hi"=)
+s | v => print $ "string"
+  | e => print $ "error"
+
+t = json::parse $ (=true=)
+t | v => print $ "bool"
+  | e => print $ "error"
+
+u = json::parse $ (=null=)
+u | v => print $ "null"
+  | e => print $ "error"
+
+a = json::parse $ (=[1, 2.5, -3]=)
+a | v => print $ "array"
+  | e => print $ "error"
+
+o = json::parse $ (={"name": "dva", "n": 1}=)
+o | v => print $ "object"
+  | e => print $ "error"
+
+bad = json::parse $ (={oops=)
+bad | v => print $ "no error"
+    | e => print $ "caught"
