@@ -1,9 +1,12 @@
-# `edva` command-line reference
+---
+meta:
+  audience: "Edva users and integrators"
+  status: "current"
+  audited: "df88a80"
+  evidence: "`selfhost/src/edva.dva:1480-1518`, driver tests"
+---
 
-**Audience:** Edva users and integrators<br>
-**Status:** current<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `selfhost/src/edva.dva:1480-1518`, driver tests
+# `edva` command-line reference
 
 ```text
 edva <input.dva | module_dir> [options]
@@ -25,7 +28,6 @@ file module is preferred over a same-named directory module.
 | `-target <triple>` | Select a target triple (e.g. `x86_64-unknown-linux-gnu`, `wasm32-unknown-unknown`). |
 | `-O0`, `-O1`, `-O2`, `-O3` | Set code generation optimization level (default `-O2`). |
 | `-no-runtime` | Build without the runtime. |
-| `-no-prelude` | Do not automatically load `prelude.dva`. |
 | `-no-main` | Emit `main` with internal linkage. |
 | `-shared` | Build a shared library (`.so`). |
 | `-H`, `--header <h>` | Generate a C header from `#export` declarations. |
@@ -39,4 +41,5 @@ file module is preferred over a same-named directory module.
 
 `clang` must be available on `PATH` for modes that assemble or link. Use `-ir` when
 you only need the generated LLVM IR. In the REPL, `:q` exits the session.
+
 

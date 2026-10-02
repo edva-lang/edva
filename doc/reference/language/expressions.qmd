@@ -1,9 +1,12 @@
-# Expressions
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`operators.yaml`, `src/annotate.dva`, `src/codegen.dva`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `operators.yaml`, `src/annotate.dva`, `src/codegen.dva`
+# Expressions
 
 Edva programs are composed from expressions. Calls, bindings, choices, cycles,
 and blocks all have expression forms. The generated
@@ -60,3 +63,4 @@ into an immutable String in place; `&` (unary prefix) extracts a buffer address 
 growable arrays. `!!` unwraps a positive ram payload or aborts on its negative slot.
 Explicit scalar conversion uses call syntax such as `Int(rune)`. `<>(ram)` observes a ram's
 polarity and returns a flag; it cannot convert one ram shape into another.
+

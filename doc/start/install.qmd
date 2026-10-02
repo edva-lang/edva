@@ -1,9 +1,12 @@
-# Install and build Edva
+---
+meta:
+  audience: "new users and contributors"
+  status: "current setup guide"
+  audited: "8b8cb19"
+  evidence: "`Makefile`, `build.sh`, `src/edva.dva`"
+---
 
-**Audience:** new users and contributors<br>
-**Status:** current setup guide<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `Makefile`, `build.sh`, `src/edva.dva`
+# Install and build Edva
 
 Edva currently targets Linux hosts. Install `libLLVM-18` system-wide and make
 sure `clang` and Nushell (`nu`) are on `PATH`. LLVM 18 is a link-time
@@ -72,3 +75,4 @@ and linker:
 ```
 
 See the [CLI reference](../reference/edva-cli.qmd) for the complete options.
+

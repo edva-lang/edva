@@ -1,9 +1,12 @@
-# `str` standard library
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "df88a80"
+  evidence: "`std/str.dva`, `tests/pass/122_unicode_module.dva`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current reference<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `std/str.dva`, `tests/pass/122_unicode_module.dva`
+# `str` standard library
 
 The `str` module provides byte-oriented string predicates, scalar conversions,
 lexicographic comparisons, and digit parsing primitives.
@@ -83,4 +86,5 @@ names = ("Charlie", "Alice", "Bob")
 ```
 
 For full Unicode codepoint and grapheme operations, import the `unicode` module.
+
 

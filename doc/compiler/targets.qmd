@@ -1,9 +1,12 @@
-# Targets and toolchains
+---
+meta:
+  audience: "integrators and compiler contributors"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`selfhost/src/edva.dva`, `std/target/`, `examples/thumbv6m-none-eabi/`"
+---
 
-**Audience:** integrators and compiler contributors<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `selfhost/src/edva.dva`, `std/target/`, `examples/thumbv6m-none-eabi/`
+# Targets and toolchains
 
 The compiler emits LLVM IR and uses `clang` for assembly and linking. The host
 needs system `libLLVM-18`; the selected target also needs a suitable clang,
@@ -22,3 +25,4 @@ The repository contains target support and an example for
 `thumbv6m-none-eabi`. Treat it as a platform-specific integration example,
 including its linker script and register definitions, rather than a portable
 hosted-program template.
+

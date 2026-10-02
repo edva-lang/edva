@@ -1,9 +1,12 @@
-# Edva language reference
+---
+meta:
+  audience: "experienced Edva users"
+  status: "current reference landing page"
+  audited: "8b8cb19"
+  evidence: "`operators.yaml`, `src/`, `tests/pass/`"
+---
 
-**Audience:** experienced Edva users<br>
-**Status:** current reference landing page<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `operators.yaml`, `src/`, `tests/pass/`
+# Edva language reference
 
 Edva is expression-oriented: bindings, calls, choices, cycles, and blocks are
 formed from expressions. Indentation creates blocks, and the language has no
@@ -63,3 +66,4 @@ For comprehensive walkthroughs of specific topics, consult:
 - [Ramifications](../../guide/ramifications.qmd)
 - [Data and memory](../../guide/data-and-memory.qmd)
 - [FFI and targets](../../guide/ffi-and-targets.qmd)
+

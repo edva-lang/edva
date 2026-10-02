@@ -1,9 +1,12 @@
-# `json` standard library
+---
+meta:
+  audience: "Edva users parsing JSON"
+  status: "current parser reference"
+  audited: "8b8cb19"
+  evidence: "`std/json.dva`, `src/types.dva`"
+---
 
-**Audience:** Edva users parsing JSON<br>
-**Status:** current parser reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `std/json.dva`, `src/types.dva`
+# `json` standard library
 
 `json::parse` parses a document into the recursive `json::Value` enum. Import
 the module explicitly:
@@ -47,3 +50,4 @@ returned value with that storage model in mind.
 The parser supports strings and escapes, numbers with fractional and exponent
 forms, booleans, null, arrays, and objects. Unicode `\uXXXX` decoding covers
 BMP code points.
+

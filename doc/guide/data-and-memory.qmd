@@ -1,27 +1,28 @@
-# Data and memory
+---
+meta:
+  audience: "Edva users"
+  status: "current guide"
+  audited: "df88a80"
+  evidence: "`src/types.dva`, `src/codegen.dva`, `tests/pass/20_tuples_and_records.dva`, `tests/pass/177_map_type.dva`, `tests/pass/152_must_init_intersection.dva`, `tests/pass/104_builder_literal.dva`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current guide<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `src/types.dva`, `src/codegen.dva`,
-`tests/pass/20_tuples_and_records.dva`, `tests/pass/177_map_type.dva`,
-`tests/pass/152_must_init_intersection.dva`, `tests/pass/104_builder_literal.dva`
+# Data and memory
 
 Edva's data model provides explicit control over memory layout, allocation, and
 initialization without a tracing garbage collector or runtime type overhead.
 
 ## Composite data structures
 
-| Type Shape | Syntax | Storage & Layout | Element / Field Count | Mutation Model | Index / Lookup Failure |
-|---|---|---|---|---|---|
-| **Named Record** | `(x: Int, y: Int)` | Flat aggregate on stack/arena | Static field count | Immutable; rebind with `'` | Compile error on unknown field |
-| **Positional Record** | `(Int, String)` | Flat tuple aggregate | Static field count | Immutable; rebind with `'` | Compile error on bad index `.0` |
-| **Homogeneous Record** | `(i8 * 16)` | Fixed inline array | Fixed compile-time count | Elements mutable | Must-init before access |
-| **Growable Array** | `(T){}` | Resizable heap buffer | `?array` | Append with `+=`, index write | Yields `< T | Error >` |
-| **Slice View** | `(T)[]` | Non-owning pointer + len | `?slice` | Read-only view | Bounds check returns `< T | Error >` |
-| **Key-Value Map** | `Key ^ Value` | Open-addressing hash table | `?map` | Key write: `m ^ k = v` | Lookup yields `< Value | Error >` |
-| **Builder** | `Builder` | Mutable buffer `{ len, ptr, cap }` | `?builder` | In-place append `+=` | Write past cap reallocates |
-| **String** | `String` | Immutable fat pointer `{ len, ptr }` | `?string` | Immutable; freeze from Builder | Indexing returns `Rune` or byte |
+| Syntax and shape | Storage & Layout | Element / Field Count | Mutation Model | Index / Lookup Failure |
+|---|---|---|---|---|
+| `(x: Int, y: Int)`<br>**Named Record** | Flat aggregate on stack/arena | Static field count | Immutable; rebind with `'` | Compile error on unknown field |
+| `(Int, String)`<br>**Positional Record** | Flat tuple aggregate | Static field count | Immutable; rebind with `'` | Compile error on bad index `.0` |
+| `(i8 * 16)`<br>**Homogeneous Record** | Fixed inline array | Fixed compile-time count | Elements mutable | Must-init before access |
+| `(T){}`<br>**Growable Array** | Resizable heap buffer | `?array` | Append with `+=`, index write | Yields `< T | Error >` |
+| `(T)[]`<br>**Slice View** | Non-owning pointer + len | `?slice` | Read-only view | Bounds check returns `< T | Error >` |
+| `Key ^ Value`<br>**Key-Value Map** | Open-addressing hash table | `?map` | Key write: `m ^ k = v` | Lookup yields `< Value | Error >` |
+| `Builder`<br>**Builder** | Mutable buffer `{ len, ptr, cap }` | `?builder` | In-place append `+=` | Write past cap reallocates |
+| `String`<br>**String** | Immutable fat pointer `{ len, ptr }` | `?string` | Immutable; freeze from Builder | Indexing returns `Rune` or byte |
 
 ---
 
@@ -66,9 +67,12 @@ All inspection and manipulation is performed via symbolic prefix operators:
 | Buffer address | `&s` | `&b` | `RawPtr` address for FFI / syscalls |
 | Pure append | `s + "world"` | `b + "world"` | Returns a *new* value (O(N) copy) |
 | In-place append | N/A | `b += "world"` | Mutates existing buffer in place |
-| Freeze | N/A | `+b` | In-place transfer into immutable `String` |
+| Freeze | N/A | `+b` | In-place transfer into immutable `String` (resets builder to `{0, 0, 0}`) |
 | Set length | N/A | `?b = bytes_read` | Sets active length after FFI read |
-| CRLF / byte sequence | N/A | `b := (13, 10)` | Appends byte record directly (0..255 checked) |
+| CRLF / byte sequence | N/A | `b = (13, 10)` | Appends byte record directly (0..255 checked) |
+
+Freeze `+b` transfers the underlying buffer in-place into an immutable `String` and
+resets the `Builder` descriptor to `{0, 0, 0}`, preventing post-freeze aliased mutation.
 
 ```dva
 #use libc
@@ -81,6 +85,16 @@ read_socket_line = fd =>
    n [< 1] "" |
       ?b = n   // Set length to exact received count
       +b       // Freeze buffer into String without heap copy
+```
+
+### Non-allocating string segment comparison
+
+Comparing a `String` with a tuple of strings (`str == (p1, p2, ...)`) checks
+equality against concatenated segments without allocating an intermediate string:
+
+```dva
+path = "api/v1/users"
+is_users_api = path == ("api/", "v1/", "users")
 ```
 
 ---
@@ -133,4 +147,5 @@ For low-level systems programming, embedded targets, and driver development:
 UART0_BASE = 0x4000c000
 @[UART0_BASE i32] = 0x01
 ```
+
 

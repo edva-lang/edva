@@ -1,9 +1,12 @@
-# `type` standard library
+---
+meta:
+  audience: "authors of compile-time generic code"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`std/type.dva`, `src/types.dva`"
+---
 
-**Audience:** authors of compile-time generic code<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `std/type.dva`, `src/types.dva`
+# `type` standard library
 
 The `type` module exposes predicates over the compile-time `Type` value. They
 are evaluated while compiling and disappear with their `Type` arguments;
@@ -40,3 +43,4 @@ numeric = _ => type::is_numeric(T)
 
 The function bodies in `std/type.dva` are placeholders recognized by the
 compiler. Their literal source return values do not define runtime behavior.
+

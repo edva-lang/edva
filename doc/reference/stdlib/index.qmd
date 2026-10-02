@@ -1,19 +1,22 @@
+---
+meta:
+  audience: "Edva users and integrators"
+  status: "public module inventory; per-module references are in progress"
+  audited: "8b8cb19"
+  evidence: "`std/`, `selfhost/src/edva.dva`"
+---
+
 # Standard library
 
-**Audience:** Edva users and integrators<br>
-**Status:** public module inventory; per-module references are in progress<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `prelude.dva`, `std/`, `selfhost/src/edva.dva`
-
-The prelude is loaded automatically unless `-no-prelude` is passed. It imports
-`io` and provides global output helpers such as `print`, `print_int`, and
-`print_float`, plus generic helpers including `apply`, `map`, `filter`, and
-`find`. Import other modules explicitly with `#use`.
+Edva provides a modular standard library under `std/`. Standard library modules
+are imported explicitly with `#use <name>` (for example `#use io`, `#use str`).
+Standard stream writers and readers live in `std/io.dva`.
 
 | Module | Purpose |
 |---|---|
 | `color` | color values and formatting helpers |
 | `fmt` | formatting helpers |
+| `fp` | functional programming combinators |
 | `in` | input utilities |
 | `io` | readers, writers, and standard streams |
 | `json` | JSON parsing and rendering |
@@ -34,13 +37,15 @@ API. Platform requirements vary, especially for `libc`, `net`, `os`, and
 `uring`; consult each module's source until its dedicated reference page is
 published.
 
-Detailed pages are available for the [prelude](prelude.qmd), [I/O](io.qmd),
-[standard input](in.qmd), [strings](str.qmd), [Unicode](unicode.qmd),
-[formatting](fmt.qmd), [sorting](sort.qmd), [compile-time type predicates](type.qmd),
-[JSON](json.qmd), and [math](math.qmd).
+Detailed pages are available for [I/O](io.qmd), [standard input](in.qmd),
+[strings](str.qmd), [Unicode](unicode.qmd), [formatting](fmt.qmd),
+[sorting](sort.qmd), [compile-time type predicates](type.qmd), [JSON](json.qmd),
+and [math](math.qmd).
 
 ```dva
+#use io
 #use str
 
-print $ str::from_int(42)
+io::out $ str::from_int(42)
 ```
+

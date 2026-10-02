@@ -1,10 +1,12 @@
-# FFI and targets
+---
+meta:
+  audience: "Edva users and integrators"
+  status: "current guide"
+  audited: "df88a80"
+  evidence: "`src/annotate.dva`, `src/edva.dva`, `tests/pass/116_foreign_explicit_i32_param.dva`, `tests/pass/260_c_header_generation.dva`"
+---
 
-**Audience:** Edva users and integrators<br>
-**Status:** current guide<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `src/annotate.dva`, `src/edva.dva`,
-`tests/pass/116_foreign_explicit_i32_param.dva`, `tests/pass/260_c_header_generation.dva`
+# FFI and targets
 
 Use `#foreign` to bind a C symbol. A signature uses Edva type syntax and
 `Addr` for raw addresses. A string or Builder buffer is passed with its
@@ -47,3 +49,4 @@ target triple with `-target` and provide an appropriate cross clang/linker.
 avoid runtime-dependent features such as allocation and standard output unless
 your target supplies replacements. Run with `-ir` first when diagnosing a
 toolchain or linker issue.
+

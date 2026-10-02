@@ -1,9 +1,12 @@
-# Edva {.unnumbered}
+---
+meta:
+  audience: "readers learning or using Edva"
+  status: "current front door"
+  audited: "8b8cb19"
+  evidence: "`src/`, `tests/pass/`"
+---
 
-**Audience:** readers learning or using Edva<br>
-**Status:** current front door<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `src/`, `tests/pass/`
+# Edva {.unnumbered}
 
 Edva is a statically typed, expression-oriented systems language. It uses
 significant indentation, symbolic control flow, and no reserved keywords. The
@@ -40,3 +43,4 @@ This book is reader-facing documentation, not a source of normative behavior.
 For a full rule, consult the corresponding current topic specification; for a
 compact syntax supplement, use `GRAMMAR.md`. Every page names the commit and
 evidence used for its claims.
+

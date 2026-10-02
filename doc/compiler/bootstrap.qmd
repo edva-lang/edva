@@ -1,9 +1,12 @@
-# Bootstrap and fixed-point checks
+---
+meta:
+  audience: "compiler contributors"
+  status: "current workflow"
+  audited: "df88a80"
+  evidence: "`Makefile`, `seed/edva.ll`, `build.sh`"
+---
 
-**Audience:** compiler contributors<br>
-**Status:** current workflow<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `Makefile`, `seed/edva.ll`, `build.sh`
+# Bootstrap and fixed-point checks
 
 The compiler is built using a modular `Makefile` that supports incremental
 compilation, 2-stage fixed-point verification, and bootstrap recovery.
@@ -57,4 +60,5 @@ This target:
 3. Updates the frozen seed IR in `seed/ir/`.
 
 Use `make clean` to remove temporary build objects and stage directories.
+
 

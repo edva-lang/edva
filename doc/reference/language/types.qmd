@@ -1,9 +1,12 @@
-# Types
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`src/types.dva`, `src/annotate.dva`, `tests/pass/`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `src/types.dva`, `src/annotate.dva`, `tests/pass/`
+# Types
 
 Edva is statically typed. It never defaults an unknown type to `Int`; a value
 must be typed by an annotation, a function signature, a literal suffix, or
@@ -148,3 +151,4 @@ to another. The sole ram cast, `<>(ram)`, discards payload and returns a flag.
 
 Read [ramifications](../../guide/ramifications.qmd) for ram shapes and
 [data and memory](../../guide/data-and-memory.qmd) for container behavior.
+

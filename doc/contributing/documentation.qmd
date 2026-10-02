@@ -1,12 +1,15 @@
+---
+meta:
+  audience: "compiler contributors and maintainers"
+  status: "current policy"
+  audited: "8b8cb19"
+  evidence: "`src/`, `tests/`"
+---
+
 # Documentation policy
 
-**Audience:** compiler contributors and maintainers<br>
-**Status:** current policy<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `src/`, `tests/`
-
 Reader-facing pages describe the current Edva implementation. Establish claims
-from `src/`, `prelude.dva`, `std/`, driver/build scripts, and runnable
+from `src/`, `std/`, driver/build scripts, and runnable
 tests. The compiler implementation and test suite are the expected-behavior source.
 If those sources disagree, record the example and source locations, notify the
 maintainer, and mark the reader-facing claim unresolved rather than guessing.
@@ -24,5 +27,6 @@ Keep these roles distinct:
 
 When a source change alters user-visible behavior, update the affected page,
 test any new snippet, update its audit commit, and render the Quarto book
-before review. Do not restore the retired numbered design chapters: their
+before review. Do not restore deleted numbered design chapters: their
 syntax and implementation claims were superseded.
+

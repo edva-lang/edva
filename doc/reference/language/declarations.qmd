@@ -1,14 +1,16 @@
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`src/annotate.dva`, `src/parser.dva`"
+---
+
 # Declarations and directives
 
-**Audience:** Edva users<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `src/annotate.dva`, `src/parser.dva`
-
 An ordinary `=` binding is immutable. A trailing prime makes the identifier
-rebindable; the former mutable-binding operator is not part of user code.
-Interior mutation—such as appending to a Builder or writing a map entry—does
-not require a primed binding.
+rebindable. Interior mutation—such as appending to a Builder or writing a map
+entry—does not require a primed binding.
 
 ```dva
 total' = 0
@@ -49,11 +51,12 @@ importer cannot resolve `module::name`.
 ## Globals and foreign declarations
 
 `::name = value` and `::name: Type` declare marked globals. Within a function,
-`name ::= value` writes the marked global, even if a local binding has the
-same spelling. The target must already exist.
+`name = value` (or `::name = value`) writes the marked global without creating a
+local shadow. The target must already exist.
 
 Use `#foreign` to declare C ABI bindings and `#export` to expose an Edva
 binding to C. Foreign signatures use Edva types; buffer addresses use `Addr`
 and the unary `&builder` or `&string` forms. See the
 [FFI and targets guide](../../guide/ffi-and-targets.qmd) for all foreign
 directives and linkage rules.
+

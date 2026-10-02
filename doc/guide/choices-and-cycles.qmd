@@ -1,11 +1,12 @@
-# Choices and cycles
+---
+meta:
+  audience: "Edva users"
+  status: "current guide"
+  audited: "df88a80"
+  evidence: "`src/annotate.dva`, `src/codegen.dva`, `tests/pass/04_choice_inline.dva`, `tests/pass/06_choice_value_int.dva`, `tests/pass/12_cycle_break.dva`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current guide<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `src/annotate.dva`, `src/codegen.dva`,
-`tests/pass/04_choice_inline.dva`, `tests/pass/06_choice_value_int.dva`,
-`tests/pass/12_cycle_break.dva`
+# Choices and cycles
 
 Edva unifies conditional branching, switch statements, and pattern matching into
 a single construct: the **choice expression**. Iteration is driven entirely by
@@ -157,4 +158,5 @@ find_negative(nums)
    | val => print_int(val) // prints -4
    | print("not found")
 ```
+
 

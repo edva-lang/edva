@@ -1,9 +1,12 @@
-# `io` standard library
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "df88a80"
+  evidence: "`std/io.dva`, `tests/pass/220_stdio.dva`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current reference<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `std/io.dva`, `tests/pass/220_stdio.dva`
+# `io` standard library
 
 The `io` module provides high-performance, buffered input and formatted output
 for file descriptors, standard streams, and sockets.
@@ -87,4 +90,5 @@ r = io::reader(fd)
 header = io::read_line(r, 256)!! // Aborts with stack trace if EOF reached
 io::out("Received header: " + header)
 ```
+
 

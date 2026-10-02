@@ -30,7 +30,6 @@ book:
     - reference/edva-cli.qmd
     - reference/diagnostics.qmd
     - reference/stdlib/index.qmd
-    - reference/stdlib/prelude.qmd
     - reference/stdlib/io.qmd
     - reference/stdlib/in.qmd
     - reference/stdlib/str.qmd
@@ -56,6 +55,8 @@ format:
     toc: true
     number-sections: true
     code-copy: true
+    filters:
+      - page-meta.lua
     syntax-definitions:
       - dva.xml
 

@@ -1,11 +1,12 @@
-# Ramifications
+---
+meta:
+  audience: "Edva users"
+  status: "current reference and guide"
+  audited: "df88a80"
+  evidence: "`src/types.dva`, `src/annotate.dva`, `tests/pass/97_ram_type_decls.dva`, `tests/pass/118_monadic_bind.dva`, `tests/pass/114_fallible_index_sugar.dva`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current reference and guide<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `src/types.dva`, `src/annotate.dva`,
-`tests/pass/97_ram_type_decls.dva`, `tests/pass/118_monadic_bind.dva`,
-`tests/pass/114_fallible_index_sugar.dva`
+# Ramifications
 
 A **ramification** (or **ram**) is Edva's fundamental two-slot algebraic value.
 Rams replace ad-hoc null pointers, booleans, optionals, and exceptions with a
@@ -146,4 +147,5 @@ Using `a(i)!!` unwraps the element or panics on failure.
 | `E3091` | Monadic `$>>` applied to RamNP or non-ram | `$>>` requires a positive payload (`RamPP` or `RamPN`) |
 | `E3125` | Using named labels to match ramification slots | Match positionally with bare `|` branches |
 | `E3127` | Relational ordering (`<`, `>`, `<=`, `>=`) on rams | Rams cannot be ordered; compare payload fields explicitly |
+
 

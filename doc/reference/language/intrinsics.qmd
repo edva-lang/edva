@@ -1,9 +1,14 @@
+---
+meta:
+  audience: "performance-sensitive Edva users"
+  status: "current reference"
+  audited: "df88a80"
+  evidence: "`src/annotate.dva`, `src/codegen/expr.dva`"
+---
+
 # Intrinsics
 
-**Audience:** performance-sensitive Edva users<br>
-**Status:** current reference<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `src/annotate.dva`, `src/codegen/expr.dva`
+
 
 Intrinsics are direct compiler operations prefixed by `%`. They compile directly
 to LLVM target instructions or LLVM intrinsics with zero function-call overhead.
@@ -125,3 +130,4 @@ Memory intrinsics operate on raw `Addr` pointers and byte counts:
 `dst` and `src` accept pointers (`Addr`, `&b`, or `&s`). `%memmove` supports overlapping
 memory regions; `%memcpy` requires disjoint regions. `val` in `%memset` is truncated to
 an 8-bit byte. All three memory operations return the `dst` address.
+

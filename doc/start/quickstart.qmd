@@ -1,10 +1,12 @@
-# Quickstart
+---
+meta:
+  audience: "new Edva users"
+  status: "current introductory path"
+  audited: "df88a80"
+  evidence: "`tests/pass/04_choice_inline.dva`, `tests/pass/12_cycle_break.dva`, `tests/pass/121_fn_signatures.dva`, `tests/pass/104_builder_literal.dva`"
+---
 
-**Audience:** new Edva users<br>
-**Status:** current introductory path<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `tests/pass/04_choice_inline.dva`, `tests/pass/12_cycle_break.dva`,
-`tests/pass/121_fn_signatures.dva`, `tests/pass/104_builder_literal.dva`
+# Quickstart
 
 Edva is a statically typed, expression-oriented systems language with significant
 indentation and **no reserved keywords**. Control flow, error handling, function
@@ -182,4 +184,5 @@ To compile and link into an executable without running:
 ./edva hello.dva -o hello
 ./hello
 ```
+
 

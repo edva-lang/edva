@@ -1,10 +1,12 @@
-# Operators
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "df88a80"
+  evidence: "`operators.yaml`, `GRAMMAR.md` §1.6 and §3.3, `src/operators.dva`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current reference<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `operators.yaml`, `GRAMMAR.md` §1.6 and §3.3,
-`src/operators.dva`
+# Operators
 
 The complete precedence, associativity, operand, and result table is generated
 from [`operators.yaml`](https://github.com/edva-lang/edva/blob/master/operators.yaml) into
@@ -45,8 +47,13 @@ use `.|.`, `.&.`, and `.!.`. Bitwise operators accept integerish values only.
 Comparisons produce a flag. `&&` and `||` short-circuit; combining heap rams
 requires compatible winner layouts, while flags only combine with flags.
 
-`==` and `!=` compare enum tags but do not compare enum payloads. Rams do not
-support equality or ordering. Unary `-` is integer/float negation.
+`==` and `!=` between two enums perform deep structural equality, comparing
+both variant tag and payload value (yielding a bare flag). If a payload type
+does not support equality (e.g. function values), comparison is rejected at
+compile time (`E3084`). Non-enum ramifications do not support equality (`E3027`).
+Ordering (`<`, `>`, `!<`, `!>`) on any ram or enum is rejected (`E3127`).
+Comparing a String with a tuple of strings (`str == (p1, p2, ...)`) tests
+concatenated segment equality without allocating. Unary `-` is integer/float negation.
 
 ## Type-directed and postfix operators
 
@@ -60,6 +67,7 @@ support equality or ordering. Unary `-` is integer/float negation.
 | `++value` | copy String, record, slice, or growable array |
 | `result!!` | unwrap positive ram payload or abort |
 | `result--!` | unwrap or propagate a negative ram from its function |
+| `~~lvalue` | two-way state binding lens record `(get = !=> ..., set = v => ...)` |
 | `expr {N}` | record repetition |
 | `@[address T]` | volatile typed memory load or record view |
 | `#size(Type)` | compile-time type size |
@@ -70,4 +78,5 @@ is the addition section.
 
 Strings and Builders have no member access; use `?` (length), `&` (address),
 and `+` (freeze) as appropriate.
+
 

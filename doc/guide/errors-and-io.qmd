@@ -1,10 +1,12 @@
-# Errors and I/O
+---
+meta:
+  audience: "Edva users"
+  status: "current guide"
+  audited: "8b8cb19"
+  evidence: "`std/io.dva`, `src/types.dva`, `tests/pass/220_stdio.dva`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current guide<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `std/io.dva`, `prelude.dva`, `src/types.dva`,
-`tests/pass/220_stdio.dva`
+# Errors and I/O
 
 Edva represents recoverable failure with ramifications rather than a hidden
 exception mechanism. A fallible operation returns a ram whose slots describe
@@ -18,24 +20,49 @@ Use a positional choice when both outcomes are meaningful. The first bare
 branch receives the first slot; the second receives the second slot.
 
 ```dva
+#use io
+
 #type Lookup < Int | >
 
 report: Lookup => ()
 report = result =>
    result
-      | value => print_int(value)
-      | _ => print("missing")
+      | value => io::out(value)
+      | _ => io::out("missing")
 ```
 
-`Error` is special: it can be constructed directly only as an error payload.
-Unwrapping an error aborts after printing its diagnostic information, so an
-`Error` payload is not recoverable application data. For a success value that
-must exist, use postfix `!!`; it extracts the first payload or aborts on the
-other slot.
+## Propagate or unwrap errors
+
+`Error` is a core record type carrying diagnostic information:
+`(code: Int, msg: String, file: String, line: Int, col: Int, context: (Int, Int))`.
+Its fields can be inspected in pattern matches or choice branches.
+
+Edva provides two postfix operators for handling fallible ramifications:
+
+- `result!!` unwraps the positive payload or immediately aborts the program with diagnostic output:
+  ```dva
+  value = (table ^ "answer")!!
+  io::out(value)
+  ```
+- `result--!` propagates failure out of the enclosing function:
+  - On ramifications with a positive payload (`RamPP` `< T | Error >` or `RamPN` `< T | >`), it unwraps the positive value inline, or early-returns the negative ramification on failure.
+  - On unit-success ramifications (`RamNP` `< | Error >`, such as growable array writes `a(i) = v`), it evaluates to `()` on success and early-returns the negative `Error` on failure.
 
 ```dva
-value = table ^ "answer"
-print_int(value!!)
+#use io
+
+get_user_port: (String ^ Int), String => < Int | Error >
+get_user_port = table, key =>
+   port = (table ^ key)--!
+   <+ port +>
+```
+
+When an error should be handled locally rather than propagated or aborted, match it with a positional choice:
+
+```dva
+table ^ "port"
+   | port => io::outf(port, "Listening on port {}")
+   | err => io::errf(err.msg, "Configuration error: {}")
 ```
 
 Do not use a fake `| 0` fallback merely to make a statement choice exhaustive.
@@ -44,8 +71,8 @@ side-effect-only function with a `=> ()` signature.
 
 ## Write to standard streams
 
-The prelude loads `io` automatically and exposes `print` and typed helpers.
-Import `io` directly when choosing an output descriptor or formatting values.
+Standard stream operations are provided by `std/io.dva`. Import `io` with `#use io`
+to write to standard output or standard error:
 
 ```dva
 #use io
@@ -71,9 +98,10 @@ is normal control flow rather than an `Error` payload.
 
 reader = io::reader(io::STDIN)
 chunk = io::read(reader, 4096)
-chunk | text => print(text) | _ => print("end of input")
+chunk | text => io::out(text) | _ => io::out("end of input")
 ```
 
 `io::read_all`, `io::read_byte`, `io::read_until`, and `io::read_line` follow
 the same ram-based EOF convention. See the [`io` reference](../reference/stdlib/io.qmd)
 for their result types and buffer-capacity options.
+

@@ -1,9 +1,12 @@
-# `in` standard library
+---
+meta:
+  audience: "Edva command-line programs"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`std/in.dva`, `std/io.dva`"
+---
 
-**Audience:** Edva command-line programs<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `std/in.dva`, `std/io.dva`
+# `in` standard library
 
 `in` provides a shared buffered reader over standard input. Every operation
 returns an optional ram: the positive slot carries data, and the unit second
@@ -26,3 +29,4 @@ line | text => print(text) | _ => print("end of input")
 The reader is module-global, so calls share buffering and advance the same
 standard-input stream. Use `io::reader(fd)` directly when a program needs a
 separate reader or a descriptor other than standard input.
+

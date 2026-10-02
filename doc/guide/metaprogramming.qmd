@@ -1,10 +1,12 @@
-# Metaprogramming
+---
+meta:
+  audience: "experienced Edva users"
+  status: "current guide"
+  audited: "8b8cb19"
+  evidence: "`src/annotate.dva`, `src/eval.dva`, `tests/pass/145_compile_time_eval.dva`, `tests/pass/148_generic_fn_params.dva`, `tests/pass/147_type_generators.dva`"
+---
 
-**Audience:** experienced Edva users<br>
-**Status:** current guide<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `src/annotate.dva`, `src/eval.dva`, `tests/pass/145_compile_time_eval.dva`,
-`tests/pass/148_generic_fn_params.dva`, `tests/pass/147_type_generators.dva`
+# Metaprogramming
 
 Edva compile-time execution uses `#!`. Compile-time values are erased: a value
 of `Type` cannot exist at runtime. There are no runtime type descriptors or
@@ -46,3 +48,4 @@ compile-time work pure and statically resolvable; the compiler reports an error
 when a compile-time value would escape to runtime. See the
 [Types reference](../reference/language/types.qmd) for type representations,
 reflection, and supported compile-time forms.
+

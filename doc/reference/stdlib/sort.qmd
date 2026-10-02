@@ -1,9 +1,12 @@
-# `sort` standard library
+---
+meta:
+  audience: "Edva users sorting small collections"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`std/sort.dva`"
+---
 
-**Audience:** Edva users sorting small collections<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `std/sort.dva`
+# `sort` standard library
 
 `sort` provides stable insertion-sort helpers. The typed helpers copy their
 input into a new growable array and leave the original unchanged.
@@ -30,3 +33,4 @@ print_int(ordered(0)!!)
 The implementation is quadratic in the worst case and is intended for small
 collections. `raw_sort_slots` accepts an index comparator and swap callback;
 the caller owns the storage that those callbacks access.
+

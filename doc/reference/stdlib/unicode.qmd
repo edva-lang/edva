@@ -1,9 +1,12 @@
-# `unicode` standard library
+---
+meta:
+  audience: "Edva users working with Unicode text"
+  status: "current reference"
+  audited: "df88a80"
+  evidence: "`std/unicode.dva`, `tests/pass/122_unicode_module.dva`"
+---
 
-**Audience:** Edva users working with Unicode text<br>
-**Status:** current reference<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `std/unicode.dva`, `tests/pass/122_unicode_module.dva`
+# `unicode` standard library
 
 Strings in Edva are raw UTF-8 byte sequences. The `unicode` module provides
 codepoint classification, UTF-8 byte decoding, and rune boundary helpers.
@@ -58,4 +61,5 @@ byte_len = ?text
    io::outf("Rune U+{:X} (width {} bytes)", Int(r), width)
    offset' = offset' + width
 ```
+
 

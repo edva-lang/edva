@@ -1,9 +1,12 @@
-# Testing the compiler
+---
+meta:
+  audience: "compiler contributors"
+  status: "current workflow"
+  audited: "df88a80"
+  evidence: "`build.sh`, `run_tests.sh`, `selfhost/test_driver.sh`"
+---
 
-**Audience:** compiler contributors<br>
-**Status:** current workflow<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `build.sh`, `run_tests.sh`, `selfhost/test_driver.sh`
+# Testing the compiler
 
 Build and run the full test suite with:
 
@@ -55,4 +58,5 @@ bash -c 'ulimit -v 4194304; timeout 120s ./selfhost/test_driver.sh'
 7. C header generation from `#export` (`-H` / `--header`)
 8. WebAssembly target compilation and Node.js execution (`-target wasm32-unknown-unknown`)
 9. Modular compilation (`-c`, `--module`, `--entry`) & interface-only `#use` dependency isolation
+
 

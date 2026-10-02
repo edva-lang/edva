@@ -1,9 +1,12 @@
-# A tour of Edva
+---
+meta:
+  audience: "readers who have completed the quickstart"
+  status: "current introductory tour"
+  audited: "df88a80"
+  evidence: "`src/annotate.dva`, `src/codegen.dva`, `tests/pass/`"
+---
 
-**Audience:** readers who have completed the quickstart<br>
-**Status:** current introductory tour<br>
-**Audited:** `df88a80`<br>
-**Evidence:** `src/annotate.dva`, `src/codegen.dva`, `tests/pass/`
+# A tour of Edva
 
 Edva is built on a simple foundation: **expressions replace keywords, and symbols
 replace statements**. Indentation defines block hierarchy, bindings are immutable
@@ -171,4 +174,5 @@ print_float $ area(c)
 - **No RTTI:** Types are erased at compile time; function values are simply `{ fn_ptr, env_ptr }`.
 - **String Immobility:** Strings are immutable `{ len, data }` records; Builders `{ len, data, cap }` are mutable.
 - **Unary `&` and `+`:** `&b` yields the writable buffer address (`RawPtr`), and `+b` freezes the Builder into a String in place.
+
 

@@ -1,10 +1,12 @@
-# Runtime and memory
+---
+meta:
+  audience: "Edva users and FFI integrators"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`GRAMMAR.md` §3.5–§3.8, `src/types.dva`, `src/codegen.dva`"
+---
 
-**Audience:** Edva users and FFI integrators<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `GRAMMAR.md` §3.5–§3.8, `src/types.dva`,
-`src/codegen.dva`
+# Runtime and memory
 
 Edva lowers to LLVM IR and uses an arena-managed runtime for dynamic values.
 Types are checked statically and erased at runtime. A function value is exactly
@@ -34,3 +36,4 @@ have bounded lifetimes—do not retain them across an arena restore or store a
 non-escaping address in a longer-lived value. Consult the
 [FFI and targets guide](../../guide/ffi-and-targets.qmd) and the relevant
 standard-library bindings as the detailed reference.
+

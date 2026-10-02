@@ -245,7 +245,66 @@ body.quarto-dark code span.do {
 }
 
 /* ==========================================================================
-   Tables: Forbid line wrap of code elements in all tables
+   Adaptive Grid Layout (Columns never overlap, eat into margins when needed)
+   ========================================================================== */
+
+/* Main content container isolation: prevent wide children from blowing out grid */
+#quarto-content.page-columns > main.content,
+main.content,
+#quarto-document-content {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  position: relative;
+  z-index: 0;
+}
+
+/* Ensure sidebars are isolated and never collapse or push grid tracks */
+#quarto-sidebar {
+  z-index: 10;
+}
+
+#quarto-margin-sidebar {
+  z-index: 10;
+}
+
+/* Wide screen adaptive layout: expand central column into empty margins while preserving robust sidebar widths */
+@media (min-width: 992px) {
+  #quarto-sidebar {
+    min-width: 16rem !important;
+    max-width: 22rem !important;
+  }
+
+  #quarto-margin-sidebar {
+    min-width: 15rem !important;
+    max-width: 22rem !important;
+  }
+
+  body.floating .page-columns,
+  body:not(.floating):not(.docked) .page-columns,
+  body.docked .page-columns,
+  body .page-columns {
+    display: grid !important;
+    gap: 0 !important;
+    grid-template-columns:
+      [screen-start] 1.5rem
+      [screen-start-inset] minmax(0, 1fr)
+      [page-start] minmax(40px, 60px)
+      [page-start-inset] minmax(160px, 200px)
+      [body-start-outset] minmax(40px, 60px)
+      [body-start] 1.5rem
+      [body-content-start] minmax(min(100%, 550px), calc(1150px - 3rem))
+      [body-content-end] 1.5rem
+      [body-end] minmax(40px, 60px)
+      [body-end-outset] minmax(160px, 200px)
+      [page-end-inset] minmax(40px, 60px)
+      [page-end] minmax(0, 1fr)
+      [screen-end-inset] 1.5rem
+      [screen-end] !important;
+  }
+}
+
+/* ==========================================================================
+   Tables: Forbid line wrap of code elements & ensure responsive containment
    ========================================================================== */
 table td code,
 table th code,
@@ -257,5 +316,69 @@ table.table td pre,
 table.table th pre {
   white-space: nowrap !important;
 }
+
+/* Responsive table wrapper: prevent table overflow from overlapping columns */
+.table-wrapper {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.table-wrapper table {
+  display: table !important;
+  width: 100%;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Fallback for any unwrapped tables */
+main.content table:not(.table-wrapper table) {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Pre / code blocks containment */
+main.content pre,
+main.content .sourceCode {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* ==========================================================================
+   Margin Footer / Page Meta (Underneath TOC in 3rd column)
+   ========================================================================== */
+#quarto-margin-sidebar .page-meta,
+.quarto-margin-footer,
+.page-meta {
+  font-size: 0.82em;
+  line-height: 1.5;
+  color: #6c757d;
+  border-top: 1px solid rgba(128, 128, 128, 0.2);
+  padding-top: 0.85rem;
+  margin-top: 1.25rem;
+}
+
+body.quarto-dark #quarto-margin-sidebar .page-meta,
+body.quarto-dark .quarto-margin-footer,
+body.quarto-dark .page-meta {
+  color: #8c909e;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light) #quarto-margin-sidebar .page-meta,
+  body:not(.quarto-light) .quarto-margin-footer,
+  body:not(.quarto-light) .page-meta {
+    color: #8c909e;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+}
+
+
 
 

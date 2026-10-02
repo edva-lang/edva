@@ -1,9 +1,12 @@
-# Lexical structure
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "8b8cb19"
+  evidence: "`GRAMMAR.md` §1, `src/lexer.dva`, `tests/pass/`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current reference<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `GRAMMAR.md` §1, `src/lexer.dva`, `tests/pass/`
+# Lexical structure
 
 Edva source is UTF-8 text with the official `.dva` file extension.
 Identifiers follow UAX31: they begin with an alphabetic Unicode character or
@@ -52,3 +55,4 @@ comparison operator, not a delimiter.
 
 See [the generated operator table](../../../GRAMMAR.md#16-operators--precedence)
 for the complete token inventory and precedence.
+

@@ -1,22 +1,24 @@
-# Bindings and modules
+---
+meta:
+  audience: "Edva users"
+  status: "current guide"
+  audited: "8b8cb19"
+  evidence: "`src/annotate.dva`, `src/parser.dva`, `tests/pass/28_modules/`, `tests/pass/153_private.expected`"
+---
 
-**Audience:** Edva users<br>
-**Status:** current guide<br>
-**Audited:** `8b8cb19`<br>
-**Evidence:** `src/annotate.dva`, `src/parser.dva`,
-`tests/pass/28_modules/`, `tests/pass/153_private.expected`
+# Bindings and modules
 
 Use `=` to introduce and reassign bindings. An unprimed name is immutable;
 give a rebindable variable a trailing prime (`'`). Bindings are lexical: a
-function-local `name = value` creates a local name. The former mutable-binding
-operator is unsupported; use a primed identifier instead.
+function-local `name = value` creates a local name.
 
 ```dva
 count' = 0
 count' = count' + 1
 
+// Marked global variable: can be mutated inside functions without local shadowing
 ::requests = 0
-record_request = _ => requests ::= requests + 1
+record_request = _ => requests = requests + 1
 ```
 
 The prime controls whole-value rebinding, not mutation of a value's contents.
@@ -55,3 +57,4 @@ it through `module::name`. `#public` controls a module's exported surface.
 
 Use `#foreign` for C symbols and `#export` to expose a C ABI symbol. See
 [FFI and targets](ffi-and-targets.qmd) before crossing the foreign boundary.
+
