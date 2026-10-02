@@ -12,7 +12,7 @@ calls, and iteration are expressed through symbolic operators and expressions.
 
 ## Hello, Edva
 
-Create a file named `hello.dva`:
+Create a file named `hello.dva` (Edva source files use the official `.dva` file extension):
 
 ```dva
 message = 10 > 5 | "greater" | "smaller"

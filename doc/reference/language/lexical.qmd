@@ -3,12 +3,13 @@
 **Audience:** Edva users<br>
 **Status:** current reference<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `GRAMMAR.md` §1, `selfhost/src/lexer.dva`, `tests/pass/`
+**Evidence:** `GRAMMAR.md` §1, `src/lexer.dva`, `tests/pass/`
 
-Edva source is UTF-8. Identifiers follow UAX31: they begin with an alphabetic
-Unicode character or `_`, then may contain identifier characters and `_`.
-The language has no reserved words; control flow and declarations are formed
-with operators and `#` directives.
+Edva source is UTF-8 text with the official `.dva` file extension.
+Identifiers follow UAX31: they begin with an alphabetic Unicode character or
+`_`, then may contain identifier characters and `_`. The language has no
+reserved words; control flow and declarations are formed with operators and
+`#` directives.
 
 ## Lines and indentation
 
