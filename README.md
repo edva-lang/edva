@@ -1,5 +1,10 @@
 # Edva
 
+[![CI](https://github.com/edva-lang/edva/actions/workflows/ci.yml/badge.svg)](https://github.com/edva-lang/edva/actions/workflows/ci.yml)
+[![Documentation](https://github.com/edva-lang/edva/actions/workflows/docs.yml/badge.svg)](https://edva-lang.github.io/edva/)
+[![Website](https://img.shields.io/badge/website-edva--lang.github.io-blue)](https://edva-lang.github.io/)
+[![License](https://img.shields.io/badge/License-BSD_2--Clause-orange.svg)](LICENSE)
+
 > *edva — an implementation of dva*  
 > *A zero-keyword, expression-oriented systems language*
 
@@ -62,9 +67,10 @@ cd edva
 
 ## Documentation
 
-Comprehensive documentation and language tutorials are available in [`doc/`](doc/):
-- **Language Guide & Grammar:** [`GRAMMAR.md`](GRAMMAR.md) and [`process/spec/`](process/spec/)
-- **Documentation Book:** [`doc/index.qmd`](doc/index.qmd)
+- **Official Website:** [edva-lang.github.io](https://edva-lang.github.io/)
+- **Documentation Book:** [edva-lang.github.io/edva](https://edva-lang.github.io/edva/)
+- **Language Grammar Specification:** [`GRAMMAR.md`](GRAMMAR.md)
+- **Tree-sitter Syntax Highlighting:** [edva-lang/tree-sitter-edva](https://github.com/edva-lang/tree-sitter-edva)
 
 ---
 

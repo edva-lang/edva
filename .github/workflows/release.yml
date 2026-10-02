@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux-x86_64:
+    name: Build & Package (Linux x86_64)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install LLVM 18 and Clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-18 llvm-18-dev clang-18 libllvm18 lld-18
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+          sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-18 100
+          sudo update-alternatives --install /usr/bin/wasm-ld wasm-ld /usr/bin/wasm-ld-18 100
+
+      - name: Install Nushell
+        uses: hustcer/setup-nu@v3
+        with:
+          version: '0.115.1'
+
+      - name: Build compiler and run test suite
+        run: ./build.sh
+
+      - name: Verify 2-stage fixed point
+        run: make fixed-point
+
+      - name: Package Release Archive
+        id: package
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if [[ "${TAG}" != v* ]]; then
+            TAG="nightly"
+          fi
+          PKG_NAME="edva-${TAG}-linux-x86_64"
+          echo "Packaging ${PKG_NAME}..."
+          mkdir -p "${PKG_NAME}"
+          cp -f edva "${PKG_NAME}/"
+          cp -r std "${PKG_NAME}/"
+          cp -f README.md LICENSE "${PKG_NAME}/"
+          tar -czvf "${PKG_NAME}.tar.gz" "${PKG_NAME}"
+          sha256sum "${PKG_NAME}.tar.gz" > "${PKG_NAME}.tar.gz.sha256"
+          echo "pkg_name=${PKG_NAME}" >> $GITHUB_OUTPUT
+          echo "archive=${PKG_NAME}.tar.gz" >> $GITHUB_OUTPUT
+          echo "checksum=${PKG_NAME}.tar.gz.sha256" >> $GITHUB_OUTPUT
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.package.outputs.pkg_name }}
+          path: |
+            ${{ steps.package.outputs.archive }}
+            ${{ steps.package.outputs.checksum }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          files: |
+            ${{ steps.package.outputs.archive }}
+            ${{ steps.package.outputs.checksum }}
+          generate_release_notes: true
