@@ -244,3 +244,18 @@ body.quarto-dark code span.do {
   }
 }
 
+/* ==========================================================================
+   Tables: Forbid line wrap of code elements in all tables
+   ========================================================================== */
+table td code,
+table th code,
+table td pre,
+table th pre,
+table.table td code,
+table.table th code,
+table.table td pre,
+table.table th pre {
+  white-space: nowrap !important;
+}
+
+
