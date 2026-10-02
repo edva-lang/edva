@@ -3,7 +3,7 @@
 **Audience:** Edva users parsing JSON<br>
 **Status:** current parser reference<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `std/json.dva`, `process/spec/ramifications.md`
+**Evidence:** `std/json.dva`, `src/types.dva`
 
 `json::parse` parses a document into the recursive `json::Value` enum. Import
 the module explicitly:

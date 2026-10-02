@@ -3,7 +3,7 @@
 **Audience:** Edva users<br>
 **Status:** current guide<br>
 **Audited:** `df88a80`<br>
-**Evidence:** `process/spec/types.md`, `process/spec/maps.md`,
+**Evidence:** `src/types.dva`, `src/codegen.dva`,
 `tests/pass/20_tuples_and_records.dva`, `tests/pass/177_map_type.dva`,
 `tests/pass/152_must_init_intersection.dva`, `tests/pass/104_builder_literal.dva`
 

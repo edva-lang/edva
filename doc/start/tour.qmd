@@ -3,8 +3,7 @@
 **Audience:** readers who have completed the quickstart<br>
 **Status:** current introductory tour<br>
 **Audited:** `df88a80`<br>
-**Evidence:** `process/spec/choices.md`, `process/spec/functions.md`,
-`process/spec/types.md`, `process/spec/ramifications.md`, `tests/pass/`
+**Evidence:** `src/annotate.dva`, `src/codegen.dva`, `tests/pass/`
 
 Edva is built on a simple foundation: **expressions replace keywords, and symbols
 replace statements**. Indentation defines block hierarchy, bindings are immutable

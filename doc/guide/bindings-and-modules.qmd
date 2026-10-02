@@ -3,8 +3,7 @@
 **Audience:** Edva users<br>
 **Status:** current guide<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `process/spec/mutability.md`, `process/spec/directives.md`,
-`process/spec/functions.md`,
+**Evidence:** `src/annotate.dva`, `src/parser.dva`,
 `tests/pass/28_modules/`, `tests/pass/153_private.expected`
 
 Use `=` to introduce and reassign bindings. An unprimed name is immutable;
@@ -23,8 +22,8 @@ record_request = _ => requests ::= requests + 1
 The prime controls whole-value rebinding, not mutation of a value's contents.
 An unprimed record, growable array, Builder, or map can still receive field,
 element, append, or key writes. Function and cycle parameters cannot be
-primed. See the [mutability specification](../../process/spec/mutability.md)
-for the complete rule and diagnostics.
+primed. See [Declarations and directives](../reference/language/declarations.qmd)
+for the complete syntax rules and diagnostics.
 
 Give functions a separate signature when their parameter or return type must
 be known statically. Inline parameter annotations are not part of Edva syntax.
@@ -37,7 +36,7 @@ add = left, right => left + right
 ## Importing modules
 
 `#use name` imports a module and its public names are qualified by the module
-prefix. `#use "path"` imports a path, whose final segment becomes the prefix.
+prefix. `#use path/name` imports a subpath, whose final segment becomes the prefix.
 
 ```dva
 #use math_utils
@@ -54,6 +53,5 @@ The loader first looks beside the importing file, then in the compiler's
 available by its bare name inside its own module; an importer cannot resolve
 it through `module::name`. `#public` controls a module's exported surface.
 
-Use `#foreign` for C symbols and `#export` to expose a C ABI symbol. See the
-[directives specification](../../process/spec/directives.md) before crossing
-the foreign boundary.
+Use `#foreign` for C symbols and `#export` to expose a C ABI symbol. See
+[FFI and targets](ffi-and-targets.qmd) before crossing the foreign boundary.

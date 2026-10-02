@@ -3,11 +3,11 @@
 **Audience:** compiler contributors and maintainers<br>
 **Status:** current policy<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `process/spec/documentation-roadmap.md`
+**Evidence:** `src/`, `tests/`
 
 Reader-facing pages describe the current Edva implementation. Establish claims
-from `selfhost/src/`, `prelude.dva`, `std/`, driver/build scripts, and runnable
-tests. Topic documents in `process/spec/` are the expected-behavior source.
+from `src/`, `prelude.dva`, `std/`, driver/build scripts, and runnable
+tests. The compiler implementation and test suite are the expected-behavior source.
 If those sources disagree, record the example and source locations, notify the
 maintainer, and mark the reader-facing claim unresolved rather than guessing.
 
@@ -18,10 +18,9 @@ into public documentation.
 
 Keep these roles distinct:
 
-- `process/spec/`: current behavior specifications.
 - `doc/`: guides and reference pages for readers.
 - `GRAMMAR.md`: compact grammar and generated operator-table supplement.
-- `process/archive/`: historical material; never current evidence.
+- `tests/`: executable tests and behavioral verification.
 
 When a source change alters user-visible behavior, update the affected page,
 test any new snippet, update its audit commit, and render the Quarto book

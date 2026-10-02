@@ -3,7 +3,7 @@
 **Audience:** Edva users<br>
 **Status:** current guide<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `process/spec/functions.md`, `process/spec/closures.md`,
+**Evidence:** `src/annotate.dva`, `src/codegen.dva`,
 `tests/pass/121_fn_signatures.dva`, `tests/pass/138_closures.dva`
 
 Functions use `=>`; parameter types live in a separate signature, never in
@@ -57,5 +57,5 @@ apply_twice = f, value => f(f(value))
 
 `$` and `$>` support multi-argument application; see the
 [expressions reference](../reference/language/expressions.qmd) for precedence
-and pipeline rules. The full [closures specification](../../process/spec/closures.md)
-documents capture lifetime, escape behavior, and indirect calls.
+and pipeline rules. See [Runtime and memory](../reference/language/runtime.qmd)
+for capture lifetime, escape behavior, and indirect calls.

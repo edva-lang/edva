@@ -3,7 +3,7 @@
 **Audience:** authors of compile-time generic code<br>
 **Status:** current reference<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `std/type.dva`, `process/spec/types.md`
+**Evidence:** `std/type.dva`, `src/types.dva`
 
 The `type` module exposes predicates over the compile-time `Type` value. They
 are evaluated while compiling and disappear with their `Type` arguments;

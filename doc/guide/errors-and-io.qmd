@@ -3,7 +3,7 @@
 **Audience:** Edva users<br>
 **Status:** current guide<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `std/io.dva`, `prelude.dva`, `process/spec/ramifications.md`,
+**Evidence:** `std/io.dva`, `prelude.dva`, `src/types.dva`,
 `tests/pass/220_stdio.dva`
 
 Edva represents recoverable failure with ramifications rather than a hidden

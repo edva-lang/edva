@@ -125,15 +125,18 @@ The `@` operator iterates over counts, numeric ranges, or collections:
    print_int(i)
 ```
 
-Cycles can produce values via the **cycle-escape operator** `>--`:
+Cycles can produce values via the **cycle-escape operator** `>--`, which returns
+`RamPN` (`< T | >`):
 
 ```dva
-// Find the first multiple of 7 after 50
+// Find the first multiple of 7 after 50 (returns < Int | >)
 first_mult = 50..100 @ n =>
    n % 7 == 0 | -->
    >-- n
 
-print_int $ first_mult // prints 56
+first_mult
+   | n => print_int(n)       // prints 56
+   | print("not found")
 ```
 
 ### String building and memory

@@ -3,7 +3,7 @@
 **Audience:** experienced Edva users<br>
 **Status:** current reference landing page<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `process/spec/`, `process/spec/operators.yaml`, `tests/pass/`
+**Evidence:** `operators.yaml`, `src/`, `tests/pass/`
 
 Edva is expression-oriented: bindings, calls, choices, cycles, and blocks are
 formed from expressions. Indentation creates blocks, and the language has no
@@ -12,7 +12,7 @@ pages state the current rules and point to their implementation and test
 evidence.
 
 The operator table in `GRAMMAR.md` is generated from
-`process/spec/operators.yaml`. It is the sole precedence table; the pages below
+`operators.yaml`. It is the sole precedence table; the pages below
 explain use and constraints rather than maintaining a competing copy.
 
 ## At a glance
@@ -22,7 +22,7 @@ explain use and constraints rather than maintaining a competing copy.
 | source | UTF-8, indentation blocks, `//` and `/* ... */` comments |
 | bindings | `name = value`, `name' = replacement`, `::name = global` |
 | functions | `f: T => U`, `f = value => body`, `f(argument)` |
-| modules | `#use name`, `#use "path"`, `module::name`, `#private` |
+| modules | `#use name`, `#use path/module`, `module::name`, `#private` |
 | branching | `value [case] body | fallback` |
 | iteration | `iterable @ item => body`, `-->`, `--^`, `>--` |
 | composite values | records, growable arrays, maps, rams, enums |
@@ -54,13 +54,12 @@ explain use and constraints rather than maintaining a competing copy.
   strings, Builders, and initialization.
 - [Standard library](../stdlib/index.qmd): public module inventory.
 
-## Authoritative topic specifications
+## In-depth topic guides
 
-The current topic specifications provide the full rules for
-[types](../../../process/spec/types.md),
-[functions](../../../process/spec/functions.md),
-[choices](../../../process/spec/choices.md),
-[ramifications](../../../process/spec/ramifications.md),
-[control flow](../../../process/spec/control-flow.md), and
-[directives](../../../process/spec/directives.md). If a guide conflicts with a
-topic specification, treat the conflict as documentation drift and report it.
+For comprehensive walkthroughs of specific topics, consult:
+- [Bindings and modules](../../guide/bindings-and-modules.qmd)
+- [Functions and closures](../../guide/functions-and-closures.qmd)
+- [Choices and cycles](../../guide/choices-and-cycles.qmd)
+- [Ramifications](../../guide/ramifications.qmd)
+- [Data and memory](../../guide/data-and-memory.qmd)
+- [FFI and targets](../../guide/ffi-and-targets.qmd)

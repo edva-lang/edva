@@ -3,7 +3,7 @@
 **Audience:** readers learning or using Edva<br>
 **Status:** current front door<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `selfhost/src/`, `tests/pass/`, `process/spec/`
+**Evidence:** `src/`, `tests/pass/`
 
 Edva is a statically typed, expression-oriented systems language. It uses
 significant indentation, symbolic control flow, and no reserved keywords. The
@@ -17,7 +17,7 @@ significant indentation, symbolic control flow, and no reserved keywords. The
   [Edva language reference](reference/language/index.qmd).
 - **Use the compiler:** see the [`edva` CLI reference](reference/edva-cli.qmd).
 - **Work on the compiler:** follow the [documentation policy](contributing/documentation.qmd)
-  and use the topic specifications in `process/spec/`.
+  and explore the compiler architecture.
 
 ## Reference and guides
 

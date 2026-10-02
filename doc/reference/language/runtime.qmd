@@ -3,8 +3,8 @@
 **Audience:** Edva users and FFI integrators<br>
 **Status:** current reference<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `GRAMMAR.md` §3.5–§3.8, `process/spec/types.md`,
-`selfhost/src/codegen.dva`
+**Evidence:** `GRAMMAR.md` §3.5–§3.8, `src/types.dva`,
+`src/codegen.dva`
 
 Edva lowers to LLVM IR and uses an arena-managed runtime for dynamic values.
 Types are checked statically and erased at runtime. A function value is exactly
@@ -31,7 +31,6 @@ ram through a choice when its alternatives require different work.
 `Addr` is the raw address type for FFI. Pass a String or Builder buffer with
 the adjacent unary `&` form, such as `&buffer`. Arena-backed addresses and views
 have bounded lifetimes—do not retain them across an arena restore or store a
-non-escaping address in a longer-lived value. Until a dedicated FFI page is
-published, use
-`process/spec/directives.md` and the relevant standard-library binding as the
-detailed reference.
+non-escaping address in a longer-lived value. Consult the
+[FFI and targets guide](../../guide/ffi-and-targets.qmd) and the relevant
+standard-library bindings as the detailed reference.

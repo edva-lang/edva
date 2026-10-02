@@ -3,8 +3,7 @@
 **Audience:** Edva users<br>
 **Status:** current reference<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `process/spec/operators.yaml`, `process/spec/choices.md`,
-`process/spec/control-flow.md`, `process/spec/functions.md`
+**Evidence:** `operators.yaml`, `src/annotate.dva`, `src/codegen.dva`
 
 Edva programs are composed from expressions. Calls, bindings, choices, cycles,
 and blocks all have expression forms. The generated

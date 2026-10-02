@@ -3,8 +3,7 @@
 **Audience:** Edva users<br>
 **Status:** current reference<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `process/spec/types.md`, `process/spec/functions.md`,
-`process/spec/ramifications.md`, `tests/pass/`
+**Evidence:** `src/types.dva`, `src/annotate.dva`, `tests/pass/`
 
 Edva is statically typed. It never defaults an unknown type to `Int`; a value
 must be typed by an annotation, a function signature, a literal suffix, or

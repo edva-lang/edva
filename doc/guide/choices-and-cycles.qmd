@@ -3,9 +3,9 @@
 **Audience:** Edva users<br>
 **Status:** current guide<br>
 **Audited:** `df88a80`<br>
-**Evidence:** `process/spec/choices.md`, `process/spec/control-flow.md`,
-`process/choice-matchfn.md`, `tests/pass/04_choice_inline.dva`,
-`tests/pass/06_choice_value_int.dva`, `tests/pass/12_cycle_break.dva`
+**Evidence:** `src/annotate.dva`, `src/codegen.dva`,
+`tests/pass/04_choice_inline.dva`, `tests/pass/06_choice_value_int.dva`,
+`tests/pass/12_cycle_break.dva`
 
 Edva unifies conditional branching, switch statements, and pattern matching into
 a single construct: the **choice expression**. Iteration is driven entirely by
@@ -133,24 +133,28 @@ Cycles iterate over counts, ranges, or collections without keywords:
 
 ### Cycle-escape expressions (`>--`)
 
-Appending `>--` followed by a branch turns a cycle into an expression:
-- If a `-->` break fires, the cycle terminates and evaluates to the branch expression.
-- If the cycle completes naturally without breaking, it yields the **zero-value** of the branch type (`0`, `""`, `<->`, etc.).
+Appending `>--` followed by a branch turns a cycle into an expression returning `RamPN` (`< T | >`):
+- If a `-->` break fires, the cycle terminates and evaluates to the positive ramification `<+ branch_val +>`.
+- If the cycle completes naturally without breaking, it yields the negative unit `<-->` (absence).
 
 ```dva
-// Find the first negative element in a list:
-find_negative: (Int){} => Int
+// Find the first negative element in an array (returns < Int | >):
+find_negative: (Int){} => < Int | >
 find_negative = list =>
    ?list @ i =>
       val = list(i)!!
       val < 0 | -->
-      >-- val // Yields the negative val if break fires, or 0 if loop ends
+   >--
+      val
 
 nums = (Int){}
 nums += 10
 nums += -4
 nums += 25
 
-print_int $ find_negative(nums) // prints -4
+// Handle presence or absence with a choice:
+find_negative(nums)
+   | val => print_int(val) // prints -4
+   | print("not found")
 ```
 

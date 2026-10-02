@@ -3,12 +3,12 @@
 **Audience:** Edva users<br>
 **Status:** current reference<br>
 **Audited:** `df88a80`<br>
-**Evidence:** `process/spec/operators.yaml`, `GRAMMAR.md` §1.6 and §3.3,
-`selfhost/src/operators.dva`
+**Evidence:** `operators.yaml`, `GRAMMAR.md` §1.6 and §3.3,
+`src/operators.dva`
 
 The complete precedence, associativity, operand, and result table is generated
-from [`process/spec/operators.yaml`](../../../process/spec/operators.yaml) into
-[`GRAMMAR.md`](../../../GRAMMAR.md#16-operators--precedence). Change the YAML,
+from [`operators.yaml`](https://github.com/edva-lang/edva/blob/master/operators.yaml) into
+[`GRAMMAR.md`](https://github.com/edva-lang/edva/blob/master/GRAMMAR.md#16-operators--precedence). Change the YAML,
 not a copied table. This page groups the operators by purpose.
 
 ## Values and control flow

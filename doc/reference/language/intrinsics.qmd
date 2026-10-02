@@ -3,8 +3,7 @@
 **Audience:** performance-sensitive Edva users<br>
 **Status:** current reference<br>
 **Audited:** `df88a80`<br>
-**Evidence:** `process/spec/intrinsics.md`, `selfhost/src/annotate.dva`,
-`selfhost/src/codegen/expr.dva`
+**Evidence:** `src/annotate.dva`, `src/codegen/expr.dva`
 
 Intrinsics are direct compiler operations prefixed by `%`. They compile directly
 to LLVM target instructions or LLVM intrinsics with zero function-call overhead.

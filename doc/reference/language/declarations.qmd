@@ -3,8 +3,7 @@
 **Audience:** Edva users<br>
 **Status:** current reference<br>
 **Audited:** `8b8cb19`<br>
-**Evidence:** `process/spec/mutability.md`, `process/spec/directives.md`,
-`process/spec/functions.md`, `selfhost/src/parser.dva`
+**Evidence:** `src/annotate.dva`, `src/parser.dva`
 
 An ordinary `=` binding is immutable. A trailing prime makes the identifier
 rebindable; the former mutable-binding operator is not part of user code.
@@ -38,7 +37,7 @@ recursive and mutually recursive declarations.
 #type MaybePoint < Point | >
 ```
 
-`#use module` imports a sibling or standard-library module; `#use "path"`
+`#use module` imports a sibling or standard-library module; `#use path/module`
 imports a path, whose final segment is its namespace. The resolver looks
 beside the importing source first, then in `std/`; it prefers `<name>.dva`
 over a same-named directory module.
@@ -55,6 +54,6 @@ same spelling. The target must already exist.
 
 Use `#foreign` to declare C ABI bindings and `#export` to expose an Edva
 binding to C. Foreign signatures use Edva types; buffer addresses use `Addr`
-and the unary `*builder` or `*string` forms. See the
-[directives specification](../../../process/spec/directives.md) for all
+and the unary `&builder` or `&string` forms. See the
+[FFI and targets guide](../../guide/ffi-and-targets.qmd) for all foreign
 directives and linkage rules.

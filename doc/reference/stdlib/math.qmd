@@ -74,6 +74,6 @@ automatically links `-lm`.
 
 ## Submodules
 
-- **`math/geom`**: 2D and 3D geometry helpers (vectors, matrices, transforms). Import with `#use "math/geom"`.
-- **`math/complex`**: Complex number representations and arithmetic. Import with `#use "math/complex"`.
+- **`math/geom`**: 2D and 3D geometry helpers (vectors, matrices, transforms). Import with `#use math/geom`.
+- **`math/complex`**: Complex number representations and arithmetic. Import with `#use math/complex`.
 

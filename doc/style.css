@@ -1,4 +1,54 @@
 /* ==========================================================================
+   Notebook Grid Paper Background ("Тетрадь в клетку")
+   ========================================================================== */
+
+:root {
+  --notebook-grid-color: rgba(60, 90, 150, 0.055);
+  --notebook-grid-bg: #ffffff;
+  --notebook-grid-size: 20px;
+}
+
+body.quarto-dark {
+  --notebook-grid-color: rgba(180, 200, 240, 0.038);
+  --notebook-grid-bg: #161626;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light) {
+    --notebook-grid-color: rgba(180, 200, 240, 0.038);
+    --notebook-grid-bg: #161626;
+  }
+}
+
+html,
+body {
+  background-color: var(--notebook-grid-bg) !important;
+  background-image:
+    linear-gradient(to right, var(--notebook-grid-color) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--notebook-grid-color) 1px, transparent 1px) !important;
+  background-size: var(--notebook-grid-size) var(--notebook-grid-size) !important;
+  background-attachment: fixed !important;
+}
+
+#quarto-sidebar,
+#quarto-content,
+main.content,
+.page-columns,
+.sidebar-navigation {
+  background-color: transparent !important;
+}
+
+@media (max-width: 991.98px) {
+  #quarto-sidebar {
+    background-color: var(--notebook-grid-bg) !important;
+    background-image:
+      linear-gradient(to right, var(--notebook-grid-color) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--notebook-grid-color) 1px, transparent 1px) !important;
+    background-size: var(--notebook-grid-size) var(--notebook-grid-size) !important;
+  }
+}
+
+/* ==========================================================================
    Custom Scrollbars (Modern, Slim, Minimalist)
    ========================================================================== */
 
@@ -167,3 +217,30 @@ body.quarto-dark pre:not(.sourceCode) {
     border-radius: 0.5rem !important;
   }
 }
+
+/* ==========================================================================
+   Code Comments: No italics, dark subdued color
+   ========================================================================== */
+code span.co,
+code span.cv,
+code span.do {
+  font-style: normal !important;
+  color: #576574 !important;
+}
+
+body.quarto-dark code span.co,
+body.quarto-dark code span.cv,
+body.quarto-dark code span.do {
+  font-style: normal !important;
+  color: #606b82 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light) code span.co,
+  body:not(.quarto-light) code span.cv,
+  body:not(.quarto-light) code span.do {
+    font-style: normal !important;
+    color: #606b82 !important;
+  }
+}
+
