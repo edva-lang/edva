@@ -3256,9 +3256,9 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                   | cg.last_fnames
          v_rt = vname != "" | types::var_rt(cg, vname) | <-->
          rt_opt = <>(v_rt) | v_rt | cg.last_rt
-         rt = is_err
-            | main::error_struct_type(cg)
-            | (rt_opt | r => r | Addr(0))
+         rt_opt' = is_err
+            | <+ main::error_struct_type(cg) ->
+            | rt_opt
          fvts = is_err
             | types::error_field_vts!
             |
@@ -3271,7 +3271,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                vname != ""
                   | types::var_dtype(cg, vname)
                   | cg.last_type
-         parent_dtype = pdt0 != "" | pdt0 | types::typedef_name_of_rt(cg, rt)
+         parent_dtype = pdt0 != "" | pdt0 | (rt_opt' | rt => types::typedef_name_of_rt(cg, rt) | "")
          mi = types::member_static_index(cg, t, fnames)
          has_mi = <>(mi)
          !has_mi
@@ -3282,78 +3282,83 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                (Addr(0), ast::ValueType(Unknown))
             |
                idx = mi | i => i | 0
-               bad = rt == Addr(0) || bv.0 == Addr(0)
-               bad
+               bv.0 == Addr(0)
                   |
                      types::init_error(cg, "E3017", "Member access '" + t.field_name +
                         "' on a non-record value.", t.line, t.col)
                      (Addr(0), ast::ValueType(Unknown))
                   |
-                     fgep = types::record_field_gep(cg, rt, fvts, bv.0, idx)
-                     fgep == Addr(0)
-                        | (Addr(0), ast::ValueType(Unknown))
-                        |
-                           ft = LLVMStructGetTypeAtIndex(rt, idx)
-                           fvt = member_field_vt(cg, fvts, idx, ft)
-                           parent_ti = parent_dtype != ""
-                              | types::typedef_ti(cg, parent_dtype)
-                              | types::typedef_ti_of_rt(cg, rt)
-                           fdt = types::record_field_dtype(cg, parent_ti, idx)
-                           cg.last_type = fdt
-                           fti = types::record_field_ti(cg, parent_ti, idx)
-                           bf_inner = types::ti_get_bitfield(cg, fti)
-                           bf_inner
-                              | bfi =>
-                                 bty0 =
-                                    types::llvm_type_of_vt(bfi.backing_type)
-                                 cg.last_rt = <+ bty0 ->
-                                 bf_rm = runtime::record_meta_from_ti(cg, fti)
-                                 bf_fns = bf_rm | m => m.1 | ast::Names()
-                                 cg.last_fnames = bf_fns
-                                 cg.last_type = types::record_field_dtype(cg,
-                                    parent_ti, idx)
-                                 (fgep, fvt)
+                     rt_opt'
+                        | rt =>
+                           fgep = types::record_field_gep(cg, rt, fvts, bv.0, idx)
+                           fgep == Addr(0)
+                              | (Addr(0), ast::ValueType(Unknown))
                               |
-                                 is_rec = fvt [Record]
-                                 is_rec
-                                    |
-                                       fmeta = runtime::record_meta_from_ti(cg, fti)
-                                       fmeta_rt_opt = fmeta | m => <+ m.0 -> | <+ ft ->
-                                       cg.last_rt = fmeta_rt_opt
-                                       fmeta_1 = fmeta | m => m.1 | ast::Names()
-                                       cg.last_fnames = fmeta_1
-                                       cg.last_fvts = field_vts_from_ti(cg, fti)
-                                       ?fmeta_1 == 0
-                                          |
-                                             cg.last_fvts =
-                                                struct_sub_fvts(ft)
-                                          | 0
+                                 ft = LLVMStructGetTypeAtIndex(rt, idx)
+                                 fvt = member_field_vt(cg, fvts, idx, ft)
+                                 parent_ti = parent_dtype != ""
+                                    | types::typedef_ti(cg, parent_dtype)
+                                    | types::typedef_ti_of_rt(cg, rt)
+                                 fdt = types::record_field_dtype(cg, parent_ti, idx)
+                                 cg.last_type = fdt
+                                 fti = types::record_field_ti(cg, parent_ti, idx)
+                                 bf_inner = types::ti_get_bitfield(cg, fti)
+                                 bf_inner
+                                    | bfi =>
+                                       bty0 =
+                                          types::llvm_type_of_vt(bfi.backing_type)
+                                       cg.last_rt = <+ bty0 ->
+                                       bf_rm = runtime::record_meta_from_ti(cg, fti)
+                                       bf_fns = bf_rm | m => m.1 | ast::Names()
+                                       cg.last_fnames = bf_fns
+                                       cg.last_type = types::record_field_dtype(cg,
+                                          parent_ti, idx)
                                        (fgep, fvt)
                                     |
-                                       vname != ""
+                                       is_rec = fvt [Record]
+                                       is_rec
                                           |
-                                             codegen_check_member_read_init(cg,
-                                                t, vname, fnames, idx)
-                                          | 0
-                                       is_fn = fvt [Fn]
-                                       is_fn
-                                          |
-                                             sname =
-                                                types::fn_ret_sig_with_ti(cg, fti)
-                                             sname != ""
-                                                | cg.last_closure_fn = sname
-                                                | 0
-                                             ret_vt = types::ti_fn_ret_vt(cg, fti)
-                                             ret_vt != ast::ValueType(Unknown)
+                                             fmeta = runtime::record_meta_from_ti(cg, fti)
+                                             fmeta_rt_opt = fmeta | m => <+ m.0 -> | <+ ft ->
+                                             cg.last_rt = fmeta_rt_opt
+                                             fmeta_1 = fmeta | m => m.1 | ast::Names()
+                                             cg.last_fnames = fmeta_1
+                                             cg.last_fvts = field_vts_from_ti(cg, fti)
+                                             ?fmeta_1 == 0
                                                 |
-                                                   cg.last_type =
-                                                      types::value_type_name(ret_vt)
+                                                   cg.last_fvts =
+                                                      struct_sub_fvts(ft)
                                                 | 0
-                                          | 0
-                                       res =
-                                          LLVMBuildLoad2(cg.builder, ft,
-                                             fgep, "field.load")
-                                       (res, fvt)
+                                             (fgep, fvt)
+                                          |
+                                             vname != ""
+                                                |
+                                                   codegen_check_member_read_init(cg,
+                                                      t, vname, fnames, idx)
+                                                | 0
+                                             is_fn = fvt [Fn]
+                                             is_fn
+                                                |
+                                                   sname =
+                                                      types::fn_ret_sig_with_ti(cg, fti)
+                                                   sname != ""
+                                                      | cg.last_closure_fn = sname
+                                                      | 0
+                                                   ret_vt = types::ti_fn_ret_vt(cg, fti)
+                                                   ret_vt != ast::ValueType(Unknown)
+                                                      |
+                                                         cg.last_type =
+                                                            types::value_type_name(ret_vt)
+                                                      | 0
+                                                | 0
+                                             res =
+                                                LLVMBuildLoad2(cg.builder, ft,
+                                                   fgep, "field.load")
+                                             (res, fvt)
+                        |
+                           types::init_error(cg, "E3017", "Member access '" + t.field_name +
+                              "' on a non-record value.", t.line, t.col)
+                           (Addr(0), ast::ValueType(Unknown))
 
 ti_enum_slot_label: ast::TypeInfo, Int => String
 ti_enum_slot_label = ti, idx =>

@@ -3150,8 +3150,8 @@ choice.else:                                      ; preds = %or.3.exit
   br i1 %cmptmp9, label %choice.then10, label %choice.else11
 
 choice.exit:                                      ; preds = %nulmerge254, %choice.then
-  %choice.res321 = phi ptr [ null, %choice.then ], [ %call.res320, %nulmerge254 ]
-  ret ptr %choice.res321
+  %choice.res320 = phi ptr [ null, %choice.then ], [ %call.res319, %nulmerge254 ]
+  ret ptr %choice.res320
 
 choice.then10:                                    ; preds = %choice.else
   %var.load13 = load ptr, ptr %var.len_val, align 8
@@ -3594,33 +3594,33 @@ nulmerge254:                                      ; preds = %nulcopy.len258, %ar
   %addr.ffi.clean293 = inttoptr i64 %addr.ffi.masked292 to ptr
   call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean289, ptr %addr.ffi.clean293)
   %var.load294 = load ptr, ptr %var.cg, align 8
-  %call.res295 = call ptr @"runtime::emit_abort_msg"(ptr %var.load294, ptr @str.9.struct, ptr @str.10.struct)
-  %var.load296 = load ptr, ptr %var.cg, align 8
-  %fld.gep297 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load296, i32 0, i32 1
-  %fld.load298 = load ptr, ptr %fld.gep297, align 8
-  %addr.ffi.int299 = ptrtoint ptr %fld.load298 to i64
-  %addr.ffi.masked300 = and i64 %addr.ffi.int299, 281474976710655
-  %addr.ffi.clean301 = inttoptr i64 %addr.ffi.masked300 to ptr
-  %var.load302 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int303 = ptrtoint ptr %var.load302 to i64
-  %addr.ffi.masked304 = and i64 %addr.ffi.int303, 281474976710655
-  %addr.ffi.clean305 = inttoptr i64 %addr.ffi.masked304 to ptr
-  %call.res306 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean301, ptr %addr.ffi.clean305)
-  %var.load307 = load ptr, ptr %var.cg, align 8
-  %fld.gep308 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load307, i32 0, i32 1
-  %fld.load309 = load ptr, ptr %fld.gep308, align 8
-  %addr.ffi.int310 = ptrtoint ptr %fld.load309 to i64
-  %addr.ffi.masked311 = and i64 %addr.ffi.int310, 281474976710655
-  %addr.ffi.clean312 = inttoptr i64 %addr.ffi.masked311 to ptr
-  %var.load313 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int314 = ptrtoint ptr %var.load313 to i64
-  %addr.ffi.masked315 = and i64 %addr.ffi.int314, 281474976710655
-  %addr.ffi.clean316 = inttoptr i64 %addr.ffi.masked315 to ptr
-  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean312, ptr %addr.ffi.clean316)
-  %var.load317 = load ptr, ptr %var.cg, align 8
-  %var.load318 = load ptr, ptr %var.b, align 8
-  %var.load319 = load ptr, ptr %var.len_i64, align 8
-  %call.res320 = call ptr @"main::builder_set_len"(ptr %var.load317, ptr %var.load318, ptr %var.load319)
+  call void @"runtime::emit_abort_msg"(ptr %var.load294, ptr @str.9.struct, ptr @str.10.struct)
+  %var.load295 = load ptr, ptr %var.cg, align 8
+  %fld.gep296 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load295, i32 0, i32 1
+  %fld.load297 = load ptr, ptr %fld.gep296, align 8
+  %addr.ffi.int298 = ptrtoint ptr %fld.load297 to i64
+  %addr.ffi.masked299 = and i64 %addr.ffi.int298, 281474976710655
+  %addr.ffi.clean300 = inttoptr i64 %addr.ffi.masked299 to ptr
+  %var.load301 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int302 = ptrtoint ptr %var.load301 to i64
+  %addr.ffi.masked303 = and i64 %addr.ffi.int302, 281474976710655
+  %addr.ffi.clean304 = inttoptr i64 %addr.ffi.masked303 to ptr
+  %call.res305 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean300, ptr %addr.ffi.clean304)
+  %var.load306 = load ptr, ptr %var.cg, align 8
+  %fld.gep307 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load306, i32 0, i32 1
+  %fld.load308 = load ptr, ptr %fld.gep307, align 8
+  %addr.ffi.int309 = ptrtoint ptr %fld.load308 to i64
+  %addr.ffi.masked310 = and i64 %addr.ffi.int309, 281474976710655
+  %addr.ffi.clean311 = inttoptr i64 %addr.ffi.masked310 to ptr
+  %var.load312 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int313 = ptrtoint ptr %var.load312 to i64
+  %addr.ffi.masked314 = and i64 %addr.ffi.int313, 281474976710655
+  %addr.ffi.clean315 = inttoptr i64 %addr.ffi.masked314 to ptr
+  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean311, ptr %addr.ffi.clean315)
+  %var.load316 = load ptr, ptr %var.cg, align 8
+  %var.load317 = load ptr, ptr %var.b, align 8
+  %var.load318 = load ptr, ptr %var.len_i64, align 8
+  %call.res319 = call ptr @"main::builder_set_len"(ptr %var.load316, ptr %var.load317, ptr %var.load318)
   br label %choice.exit
 
 nulcopy.len258:                                   ; preds = %str_overflow_abort259, %nulcopy253
@@ -3637,7 +3637,7 @@ str_overflow_abort259:                            ; preds = %nulcopy253
   br label %nulcopy.len258
 }
 
-declare ptr @"runtime::emit_abort_msg"(ptr, ptr, ptr) #1
+declare void @"runtime::emit_abort_msg"(ptr, ptr, ptr) #1
 
 define ptr @"main::codegen_array_deep_copy"(ptr %0, ptr %1, ptr %2) #1 {
 entry:
@@ -9731,7 +9731,7 @@ choice.else:                                      ; preds = %entry
   %nottmp = xor i1 %var.load9, true
   br i1 %nottmp, label %choice.then10, label %choice.else11
 
-choice.exit:                                      ; preds = %nulmerge947, %choice.then
+choice.exit:                                      ; preds = %nulmerge946, %choice.then
   ret void
 
 choice.then10:                                    ; preds = %choice.else
@@ -10171,49 +10171,49 @@ nulmerge245:                                      ; preds = %nulcopy.len249, %ar
   %addr.ffi.clean284 = inttoptr i64 %addr.ffi.masked283 to ptr
   call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean280, ptr %addr.ffi.clean284)
   %var.load285 = load ptr, ptr %var.cg, align 8
-  %call.res286 = call ptr @"runtime::emit_abort_msg"(ptr %var.load285, ptr @str.76.struct, ptr @str.77.struct)
-  %var.load287 = load ptr, ptr %var.cg, align 8
-  %fld.gep288 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load287, i32 0, i32 1
-  %fld.load289 = load ptr, ptr %fld.gep288, align 8
-  %addr.ffi.int290 = ptrtoint ptr %fld.load289 to i64
-  %addr.ffi.masked291 = and i64 %addr.ffi.int290, 281474976710655
-  %addr.ffi.clean292 = inttoptr i64 %addr.ffi.masked291 to ptr
-  %var.load293 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int294 = ptrtoint ptr %var.load293 to i64
-  %addr.ffi.masked295 = and i64 %addr.ffi.int294, 281474976710655
-  %addr.ffi.clean296 = inttoptr i64 %addr.ffi.masked295 to ptr
-  %call.res297 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean292, ptr %addr.ffi.clean296)
-  %var.load298 = load ptr, ptr %var.cg, align 8
-  %fld.gep299 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load298, i32 0, i32 1
-  %fld.load300 = load ptr, ptr %fld.gep299, align 8
-  %addr.ffi.int301 = ptrtoint ptr %fld.load300 to i64
-  %addr.ffi.masked302 = and i64 %addr.ffi.int301, 281474976710655
-  %addr.ffi.clean303 = inttoptr i64 %addr.ffi.masked302 to ptr
-  %var.load304 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int305 = ptrtoint ptr %var.load304 to i64
-  %addr.ffi.masked306 = and i64 %addr.ffi.int305, 281474976710655
-  %addr.ffi.clean307 = inttoptr i64 %addr.ffi.masked306 to ptr
-  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean303, ptr %addr.ffi.clean307)
-  %var.load308 = load ptr, ptr %var.cg, align 8
-  %fld.gep309 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load308, i32 0, i32 1
-  %fld.load310 = load ptr, ptr %fld.gep309, align 8
-  %addr.ffi.int311 = ptrtoint ptr %fld.load310 to i64
-  %addr.ffi.masked312 = and i64 %addr.ffi.int311, 281474976710655
-  %addr.ffi.clean313 = inttoptr i64 %addr.ffi.masked312 to ptr
-  %var.load314 = load ptr, ptr %var.byte_i64, align 8
-  %addr.ffi.int315 = ptrtoint ptr %var.load314 to i64
-  %addr.ffi.masked316 = and i64 %addr.ffi.int315, 281474976710655
-  %addr.ffi.clean317 = inttoptr i64 %addr.ffi.masked316 to ptr
-  %call.res318 = call ptr @LLVMInt8Type()
-  %addr.ffi.int319 = ptrtoint ptr %call.res318 to i64
-  %addr.ffi.masked320 = and i64 %addr.ffi.int319, 281474976710655
-  %addr.ffi.clean321 = inttoptr i64 %addr.ffi.masked320 to ptr
-  %arg.str.ptr322 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.78.struct, i32 0, i32 1), align 8
-  %arg.str.ptr323 = load i64, ptr @str.78.struct, align 8
-  %arg.str.ptr324 = and i64 %arg.str.ptr323, 281474976710655
-  %str.tag325 = lshr i64 %arg.str.ptr323, 48
-  %str.immortal326 = icmp eq i64 %str.tag325, 0
-  br i1 %str.immortal326, label %str_ok328, label %str_gen_check327
+  call void @"runtime::emit_abort_msg"(ptr %var.load285, ptr @str.76.struct, ptr @str.77.struct)
+  %var.load286 = load ptr, ptr %var.cg, align 8
+  %fld.gep287 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load286, i32 0, i32 1
+  %fld.load288 = load ptr, ptr %fld.gep287, align 8
+  %addr.ffi.int289 = ptrtoint ptr %fld.load288 to i64
+  %addr.ffi.masked290 = and i64 %addr.ffi.int289, 281474976710655
+  %addr.ffi.clean291 = inttoptr i64 %addr.ffi.masked290 to ptr
+  %var.load292 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int293 = ptrtoint ptr %var.load292 to i64
+  %addr.ffi.masked294 = and i64 %addr.ffi.int293, 281474976710655
+  %addr.ffi.clean295 = inttoptr i64 %addr.ffi.masked294 to ptr
+  %call.res296 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean291, ptr %addr.ffi.clean295)
+  %var.load297 = load ptr, ptr %var.cg, align 8
+  %fld.gep298 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load297, i32 0, i32 1
+  %fld.load299 = load ptr, ptr %fld.gep298, align 8
+  %addr.ffi.int300 = ptrtoint ptr %fld.load299 to i64
+  %addr.ffi.masked301 = and i64 %addr.ffi.int300, 281474976710655
+  %addr.ffi.clean302 = inttoptr i64 %addr.ffi.masked301 to ptr
+  %var.load303 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int304 = ptrtoint ptr %var.load303 to i64
+  %addr.ffi.masked305 = and i64 %addr.ffi.int304, 281474976710655
+  %addr.ffi.clean306 = inttoptr i64 %addr.ffi.masked305 to ptr
+  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean302, ptr %addr.ffi.clean306)
+  %var.load307 = load ptr, ptr %var.cg, align 8
+  %fld.gep308 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load307, i32 0, i32 1
+  %fld.load309 = load ptr, ptr %fld.gep308, align 8
+  %addr.ffi.int310 = ptrtoint ptr %fld.load309 to i64
+  %addr.ffi.masked311 = and i64 %addr.ffi.int310, 281474976710655
+  %addr.ffi.clean312 = inttoptr i64 %addr.ffi.masked311 to ptr
+  %var.load313 = load ptr, ptr %var.byte_i64, align 8
+  %addr.ffi.int314 = ptrtoint ptr %var.load313 to i64
+  %addr.ffi.masked315 = and i64 %addr.ffi.int314, 281474976710655
+  %addr.ffi.clean316 = inttoptr i64 %addr.ffi.masked315 to ptr
+  %call.res317 = call ptr @LLVMInt8Type()
+  %addr.ffi.int318 = ptrtoint ptr %call.res317 to i64
+  %addr.ffi.masked319 = and i64 %addr.ffi.int318, 281474976710655
+  %addr.ffi.clean320 = inttoptr i64 %addr.ffi.masked319 to ptr
+  %arg.str.ptr321 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.78.struct, i32 0, i32 1), align 8
+  %arg.str.ptr322 = load i64, ptr @str.78.struct, align 8
+  %arg.str.ptr323 = and i64 %arg.str.ptr322, 281474976710655
+  %str.tag324 = lshr i64 %arg.str.ptr322, 48
+  %str.immortal325 = icmp eq i64 %str.tag324, 0
+  br i1 %str.immortal325, label %str_ok327, label %str_gen_check326
 
 nulcopy.len249:                                   ; preds = %str_overflow_abort250, %nulcopy244
   %arena.cur251 = call ptr @dva_arena_current()
@@ -10228,931 +10228,931 @@ str_overflow_abort250:                            ; preds = %nulcopy244
   call void @exit(i32 1)
   br label %nulcopy.len249
 
-str_gen_check327:                                 ; preds = %nulmerge245
-  %arena.gen330 = call ptr @dva_arena_current()
-  %arena.gen331 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen330, i32 0, i32 4
-  %arena.gen332 = load i64, ptr %arena.gen331, align 8
-  %str.tag.match333 = icmp eq i64 %str.tag325, %arena.gen332
-  br i1 %str.tag.match333, label %str_ok328, label %str_stale329
+str_gen_check326:                                 ; preds = %nulmerge245
+  %arena.gen329 = call ptr @dva_arena_current()
+  %arena.gen330 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen329, i32 0, i32 4
+  %arena.gen331 = load i64, ptr %arena.gen330, align 8
+  %str.tag.match332 = icmp eq i64 %str.tag324, %arena.gen331
+  br i1 %str.tag.match332, label %str_ok327, label %str_stale328
 
-str_ok328:                                        ; preds = %str_stale329, %str_gen_check327, %nulmerge245
-  %nulcheck.gep334 = getelementptr i8, ptr %arg.str.ptr322, i64 %arg.str.ptr324
-  %nulcheck.byte335 = load i8, ptr %nulcheck.gep334, align 1
-  %nulcheck336 = icmp eq i8 %nulcheck.byte335, 0
-  br i1 %nulcheck336, label %arg.str.ptr337, label %nulcopy338
+str_ok327:                                        ; preds = %str_stale328, %str_gen_check326, %nulmerge245
+  %nulcheck.gep333 = getelementptr i8, ptr %arg.str.ptr321, i64 %arg.str.ptr323
+  %nulcheck.byte334 = load i8, ptr %nulcheck.gep333, align 1
+  %nulcheck335 = icmp eq i8 %nulcheck.byte334, 0
+  br i1 %nulcheck335, label %arg.str.ptr336, label %nulcopy337
 
-str_stale329:                                     ; preds = %str_gen_check327
+str_stale328:                                     ; preds = %str_gen_check326
   %15 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok328
+  br label %str_ok327
 
-arg.str.ptr337:                                   ; preds = %str_ok328
-  br label %nulmerge339
+arg.str.ptr336:                                   ; preds = %str_ok327
+  br label %nulmerge338
 
-nulcopy338:                                       ; preds = %str_ok328
-  %nulcopy.len340 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr324, i64 1)
-  %sum341 = extractvalue { i64, i1 } %nulcopy.len340, 0
-  %ovf342 = extractvalue { i64, i1 } %nulcopy.len340, 1
-  br i1 %ovf342, label %str_overflow_abort344, label %nulcopy.len343
+nulcopy337:                                       ; preds = %str_ok327
+  %nulcopy.len339 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr323, i64 1)
+  %sum340 = extractvalue { i64, i1 } %nulcopy.len339, 0
+  %ovf341 = extractvalue { i64, i1 } %nulcopy.len339, 1
+  br i1 %ovf341, label %str_overflow_abort343, label %nulcopy.len342
 
-nulmerge339:                                      ; preds = %nulcopy.len343, %arg.str.ptr337
-  %arg.str.ptr348 = phi ptr [ %arg.str.ptr322, %arg.str.ptr337 ], [ %nulcopy.buf346, %nulcopy.len343 ]
-  %call.res349 = call ptr @LLVMBuildTrunc(ptr %addr.ffi.clean313, ptr %addr.ffi.clean317, ptr %addr.ffi.clean321, ptr %arg.str.ptr348)
-  store ptr %call.res349, ptr %var.byte_i8, align 8
-  %var.load350 = load ptr, ptr %var.i64t, align 8
-  %addr.ffi.int351 = ptrtoint ptr %var.load350 to i64
-  %addr.ffi.masked352 = and i64 %addr.ffi.int351, 281474976710655
-  %addr.ffi.clean353 = inttoptr i64 %addr.ffi.masked352 to ptr
-  %call.res354 = call ptr @LLVMConstInt(ptr %addr.ffi.clean353, i64 1, i64 0)
-  store ptr %call.res354, ptr %var.one, align 8
-  %var.load355 = load ptr, ptr %var.cg, align 8
-  %var.load356 = load ptr, ptr %var.b, align 8
-  %call.res357 = call ptr @"main::builder_len"(ptr %var.load355, ptr %var.load356, ptr @str.79.struct)
-  store ptr %call.res357, ptr %var.len, align 8
-  %var.load358 = load ptr, ptr %var.cg, align 8
-  %var.load359 = load ptr, ptr %var.b, align 8
-  %call.res360 = call ptr @"main::builder_cap"(ptr %var.load358, ptr %var.load359, ptr @str.3.struct)
-  store ptr %call.res360, ptr %var.cap, align 8
-  %var.load361 = load ptr, ptr %var.cg, align 8
-  %var.load362 = load ptr, ptr %var.b, align 8
-  %call.res363 = call ptr @"main::builder_data"(ptr %var.load361, ptr %var.load362, ptr @str.80.struct)
-  store ptr %call.res363, ptr %var.data, align 8
-  %var.load364 = load ptr, ptr %var.cg, align 8
-  %fld.gep365 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load364, i32 0, i32 1
-  %fld.load366 = load ptr, ptr %fld.gep365, align 8
-  %addr.ffi.int367 = ptrtoint ptr %fld.load366 to i64
-  %addr.ffi.masked368 = and i64 %addr.ffi.int367, 281474976710655
-  %addr.ffi.clean369 = inttoptr i64 %addr.ffi.masked368 to ptr
-  %var.load370 = load ptr, ptr %var.len, align 8
-  %addr.ffi.int371 = ptrtoint ptr %var.load370 to i64
-  %addr.ffi.masked372 = and i64 %addr.ffi.int371, 281474976710655
-  %addr.ffi.clean373 = inttoptr i64 %addr.ffi.masked372 to ptr
-  %var.load374 = load ptr, ptr %var.cap, align 8
-  %addr.ffi.int375 = ptrtoint ptr %var.load374 to i64
-  %addr.ffi.masked376 = and i64 %addr.ffi.int375, 281474976710655
-  %addr.ffi.clean377 = inttoptr i64 %addr.ffi.masked376 to ptr
-  %arg.str.ptr378 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.81.struct, i32 0, i32 1), align 8
-  %arg.str.ptr379 = load i64, ptr @str.81.struct, align 8
-  %arg.str.ptr380 = and i64 %arg.str.ptr379, 281474976710655
-  %str.tag381 = lshr i64 %arg.str.ptr379, 48
-  %str.immortal382 = icmp eq i64 %str.tag381, 0
-  br i1 %str.immortal382, label %str_ok384, label %str_gen_check383
+nulmerge338:                                      ; preds = %nulcopy.len342, %arg.str.ptr336
+  %arg.str.ptr347 = phi ptr [ %arg.str.ptr321, %arg.str.ptr336 ], [ %nulcopy.buf345, %nulcopy.len342 ]
+  %call.res348 = call ptr @LLVMBuildTrunc(ptr %addr.ffi.clean312, ptr %addr.ffi.clean316, ptr %addr.ffi.clean320, ptr %arg.str.ptr347)
+  store ptr %call.res348, ptr %var.byte_i8, align 8
+  %var.load349 = load ptr, ptr %var.i64t, align 8
+  %addr.ffi.int350 = ptrtoint ptr %var.load349 to i64
+  %addr.ffi.masked351 = and i64 %addr.ffi.int350, 281474976710655
+  %addr.ffi.clean352 = inttoptr i64 %addr.ffi.masked351 to ptr
+  %call.res353 = call ptr @LLVMConstInt(ptr %addr.ffi.clean352, i64 1, i64 0)
+  store ptr %call.res353, ptr %var.one, align 8
+  %var.load354 = load ptr, ptr %var.cg, align 8
+  %var.load355 = load ptr, ptr %var.b, align 8
+  %call.res356 = call ptr @"main::builder_len"(ptr %var.load354, ptr %var.load355, ptr @str.79.struct)
+  store ptr %call.res356, ptr %var.len, align 8
+  %var.load357 = load ptr, ptr %var.cg, align 8
+  %var.load358 = load ptr, ptr %var.b, align 8
+  %call.res359 = call ptr @"main::builder_cap"(ptr %var.load357, ptr %var.load358, ptr @str.3.struct)
+  store ptr %call.res359, ptr %var.cap, align 8
+  %var.load360 = load ptr, ptr %var.cg, align 8
+  %var.load361 = load ptr, ptr %var.b, align 8
+  %call.res362 = call ptr @"main::builder_data"(ptr %var.load360, ptr %var.load361, ptr @str.80.struct)
+  store ptr %call.res362, ptr %var.data, align 8
+  %var.load363 = load ptr, ptr %var.cg, align 8
+  %fld.gep364 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load363, i32 0, i32 1
+  %fld.load365 = load ptr, ptr %fld.gep364, align 8
+  %addr.ffi.int366 = ptrtoint ptr %fld.load365 to i64
+  %addr.ffi.masked367 = and i64 %addr.ffi.int366, 281474976710655
+  %addr.ffi.clean368 = inttoptr i64 %addr.ffi.masked367 to ptr
+  %var.load369 = load ptr, ptr %var.len, align 8
+  %addr.ffi.int370 = ptrtoint ptr %var.load369 to i64
+  %addr.ffi.masked371 = and i64 %addr.ffi.int370, 281474976710655
+  %addr.ffi.clean372 = inttoptr i64 %addr.ffi.masked371 to ptr
+  %var.load373 = load ptr, ptr %var.cap, align 8
+  %addr.ffi.int374 = ptrtoint ptr %var.load373 to i64
+  %addr.ffi.masked375 = and i64 %addr.ffi.int374, 281474976710655
+  %addr.ffi.clean376 = inttoptr i64 %addr.ffi.masked375 to ptr
+  %arg.str.ptr377 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.81.struct, i32 0, i32 1), align 8
+  %arg.str.ptr378 = load i64, ptr @str.81.struct, align 8
+  %arg.str.ptr379 = and i64 %arg.str.ptr378, 281474976710655
+  %str.tag380 = lshr i64 %arg.str.ptr378, 48
+  %str.immortal381 = icmp eq i64 %str.tag380, 0
+  br i1 %str.immortal381, label %str_ok383, label %str_gen_check382
 
-nulcopy.len343:                                   ; preds = %str_overflow_abort344, %nulcopy338
-  %arena.cur345 = call ptr @dva_arena_current()
-  %nulcopy.buf346 = call ptr @dva_arena_alloc(ptr %arena.cur345, i64 %sum341)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf346, ptr align 1 %arg.str.ptr322, i64 %arg.str.ptr324, i1 false)
-  %nulcopy.nul347 = getelementptr i8, ptr %nulcopy.buf346, i64 %arg.str.ptr324
-  store i8 0, ptr %nulcopy.nul347, align 1
-  br label %nulmerge339
+nulcopy.len342:                                   ; preds = %str_overflow_abort343, %nulcopy337
+  %arena.cur344 = call ptr @dva_arena_current()
+  %nulcopy.buf345 = call ptr @dva_arena_alloc(ptr %arena.cur344, i64 %sum340)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf345, ptr align 1 %arg.str.ptr321, i64 %arg.str.ptr323, i1 false)
+  %nulcopy.nul346 = getelementptr i8, ptr %nulcopy.buf345, i64 %arg.str.ptr323
+  store i8 0, ptr %nulcopy.nul346, align 1
+  br label %nulmerge338
 
-str_overflow_abort344:                            ; preds = %nulcopy338
+str_overflow_abort343:                            ; preds = %nulcopy337
   %16 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len343
+  br label %nulcopy.len342
 
-str_gen_check383:                                 ; preds = %nulmerge339
-  %arena.gen386 = call ptr @dva_arena_current()
-  %arena.gen387 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen386, i32 0, i32 4
-  %arena.gen388 = load i64, ptr %arena.gen387, align 8
-  %str.tag.match389 = icmp eq i64 %str.tag381, %arena.gen388
-  br i1 %str.tag.match389, label %str_ok384, label %str_stale385
+str_gen_check382:                                 ; preds = %nulmerge338
+  %arena.gen385 = call ptr @dva_arena_current()
+  %arena.gen386 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen385, i32 0, i32 4
+  %arena.gen387 = load i64, ptr %arena.gen386, align 8
+  %str.tag.match388 = icmp eq i64 %str.tag380, %arena.gen387
+  br i1 %str.tag.match388, label %str_ok383, label %str_stale384
 
-str_ok384:                                        ; preds = %str_stale385, %str_gen_check383, %nulmerge339
-  %nulcheck.gep390 = getelementptr i8, ptr %arg.str.ptr378, i64 %arg.str.ptr380
-  %nulcheck.byte391 = load i8, ptr %nulcheck.gep390, align 1
-  %nulcheck392 = icmp eq i8 %nulcheck.byte391, 0
-  br i1 %nulcheck392, label %arg.str.ptr393, label %nulcopy394
+str_ok383:                                        ; preds = %str_stale384, %str_gen_check382, %nulmerge338
+  %nulcheck.gep389 = getelementptr i8, ptr %arg.str.ptr377, i64 %arg.str.ptr379
+  %nulcheck.byte390 = load i8, ptr %nulcheck.gep389, align 1
+  %nulcheck391 = icmp eq i8 %nulcheck.byte390, 0
+  br i1 %nulcheck391, label %arg.str.ptr392, label %nulcopy393
 
-str_stale385:                                     ; preds = %str_gen_check383
+str_stale384:                                     ; preds = %str_gen_check382
   %17 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok384
+  br label %str_ok383
 
-arg.str.ptr393:                                   ; preds = %str_ok384
-  br label %nulmerge395
+arg.str.ptr392:                                   ; preds = %str_ok383
+  br label %nulmerge394
 
-nulcopy394:                                       ; preds = %str_ok384
-  %nulcopy.len396 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr380, i64 1)
-  %sum397 = extractvalue { i64, i1 } %nulcopy.len396, 0
-  %ovf398 = extractvalue { i64, i1 } %nulcopy.len396, 1
-  br i1 %ovf398, label %str_overflow_abort400, label %nulcopy.len399
+nulcopy393:                                       ; preds = %str_ok383
+  %nulcopy.len395 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr379, i64 1)
+  %sum396 = extractvalue { i64, i1 } %nulcopy.len395, 0
+  %ovf397 = extractvalue { i64, i1 } %nulcopy.len395, 1
+  br i1 %ovf397, label %str_overflow_abort399, label %nulcopy.len398
 
-nulmerge395:                                      ; preds = %nulcopy.len399, %arg.str.ptr393
-  %arg.str.ptr404 = phi ptr [ %arg.str.ptr378, %arg.str.ptr393 ], [ %nulcopy.buf402, %nulcopy.len399 ]
-  %call.res405 = call ptr @LLVMBuildICmp(ptr %addr.ffi.clean369, i64 32, ptr %addr.ffi.clean373, ptr %addr.ffi.clean377, ptr %arg.str.ptr404)
-  store ptr %call.res405, ptr %var.needs_grow, align 8
-  %var.load406 = load ptr, ptr %var.parent, align 8
-  %addr.ffi.int407 = ptrtoint ptr %var.load406 to i64
-  %addr.ffi.masked408 = and i64 %addr.ffi.int407, 281474976710655
-  %addr.ffi.clean409 = inttoptr i64 %addr.ffi.masked408 to ptr
-  %arg.str.ptr410 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.82.struct, i32 0, i32 1), align 8
-  %arg.str.ptr411 = load i64, ptr @str.82.struct, align 8
-  %arg.str.ptr412 = and i64 %arg.str.ptr411, 281474976710655
-  %str.tag413 = lshr i64 %arg.str.ptr411, 48
-  %str.immortal414 = icmp eq i64 %str.tag413, 0
-  br i1 %str.immortal414, label %str_ok416, label %str_gen_check415
+nulmerge394:                                      ; preds = %nulcopy.len398, %arg.str.ptr392
+  %arg.str.ptr403 = phi ptr [ %arg.str.ptr377, %arg.str.ptr392 ], [ %nulcopy.buf401, %nulcopy.len398 ]
+  %call.res404 = call ptr @LLVMBuildICmp(ptr %addr.ffi.clean368, i64 32, ptr %addr.ffi.clean372, ptr %addr.ffi.clean376, ptr %arg.str.ptr403)
+  store ptr %call.res404, ptr %var.needs_grow, align 8
+  %var.load405 = load ptr, ptr %var.parent, align 8
+  %addr.ffi.int406 = ptrtoint ptr %var.load405 to i64
+  %addr.ffi.masked407 = and i64 %addr.ffi.int406, 281474976710655
+  %addr.ffi.clean408 = inttoptr i64 %addr.ffi.masked407 to ptr
+  %arg.str.ptr409 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.82.struct, i32 0, i32 1), align 8
+  %arg.str.ptr410 = load i64, ptr @str.82.struct, align 8
+  %arg.str.ptr411 = and i64 %arg.str.ptr410, 281474976710655
+  %str.tag412 = lshr i64 %arg.str.ptr410, 48
+  %str.immortal413 = icmp eq i64 %str.tag412, 0
+  br i1 %str.immortal413, label %str_ok415, label %str_gen_check414
 
-nulcopy.len399:                                   ; preds = %str_overflow_abort400, %nulcopy394
-  %arena.cur401 = call ptr @dva_arena_current()
-  %nulcopy.buf402 = call ptr @dva_arena_alloc(ptr %arena.cur401, i64 %sum397)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf402, ptr align 1 %arg.str.ptr378, i64 %arg.str.ptr380, i1 false)
-  %nulcopy.nul403 = getelementptr i8, ptr %nulcopy.buf402, i64 %arg.str.ptr380
-  store i8 0, ptr %nulcopy.nul403, align 1
-  br label %nulmerge395
+nulcopy.len398:                                   ; preds = %str_overflow_abort399, %nulcopy393
+  %arena.cur400 = call ptr @dva_arena_current()
+  %nulcopy.buf401 = call ptr @dva_arena_alloc(ptr %arena.cur400, i64 %sum396)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf401, ptr align 1 %arg.str.ptr377, i64 %arg.str.ptr379, i1 false)
+  %nulcopy.nul402 = getelementptr i8, ptr %nulcopy.buf401, i64 %arg.str.ptr379
+  store i8 0, ptr %nulcopy.nul402, align 1
+  br label %nulmerge394
 
-str_overflow_abort400:                            ; preds = %nulcopy394
+str_overflow_abort399:                            ; preds = %nulcopy393
   %18 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len399
+  br label %nulcopy.len398
 
-str_gen_check415:                                 ; preds = %nulmerge395
-  %arena.gen418 = call ptr @dva_arena_current()
-  %arena.gen419 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen418, i32 0, i32 4
-  %arena.gen420 = load i64, ptr %arena.gen419, align 8
-  %str.tag.match421 = icmp eq i64 %str.tag413, %arena.gen420
-  br i1 %str.tag.match421, label %str_ok416, label %str_stale417
+str_gen_check414:                                 ; preds = %nulmerge394
+  %arena.gen417 = call ptr @dva_arena_current()
+  %arena.gen418 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen417, i32 0, i32 4
+  %arena.gen419 = load i64, ptr %arena.gen418, align 8
+  %str.tag.match420 = icmp eq i64 %str.tag412, %arena.gen419
+  br i1 %str.tag.match420, label %str_ok415, label %str_stale416
 
-str_ok416:                                        ; preds = %str_stale417, %str_gen_check415, %nulmerge395
-  %nulcheck.gep422 = getelementptr i8, ptr %arg.str.ptr410, i64 %arg.str.ptr412
-  %nulcheck.byte423 = load i8, ptr %nulcheck.gep422, align 1
-  %nulcheck424 = icmp eq i8 %nulcheck.byte423, 0
-  br i1 %nulcheck424, label %arg.str.ptr425, label %nulcopy426
+str_ok415:                                        ; preds = %str_stale416, %str_gen_check414, %nulmerge394
+  %nulcheck.gep421 = getelementptr i8, ptr %arg.str.ptr409, i64 %arg.str.ptr411
+  %nulcheck.byte422 = load i8, ptr %nulcheck.gep421, align 1
+  %nulcheck423 = icmp eq i8 %nulcheck.byte422, 0
+  br i1 %nulcheck423, label %arg.str.ptr424, label %nulcopy425
 
-str_stale417:                                     ; preds = %str_gen_check415
+str_stale416:                                     ; preds = %str_gen_check414
   %19 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok416
+  br label %str_ok415
 
-arg.str.ptr425:                                   ; preds = %str_ok416
-  br label %nulmerge427
+arg.str.ptr424:                                   ; preds = %str_ok415
+  br label %nulmerge426
 
-nulcopy426:                                       ; preds = %str_ok416
-  %nulcopy.len428 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr412, i64 1)
-  %sum429 = extractvalue { i64, i1 } %nulcopy.len428, 0
-  %ovf430 = extractvalue { i64, i1 } %nulcopy.len428, 1
-  br i1 %ovf430, label %str_overflow_abort432, label %nulcopy.len431
+nulcopy425:                                       ; preds = %str_ok415
+  %nulcopy.len427 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr411, i64 1)
+  %sum428 = extractvalue { i64, i1 } %nulcopy.len427, 0
+  %ovf429 = extractvalue { i64, i1 } %nulcopy.len427, 1
+  br i1 %ovf429, label %str_overflow_abort431, label %nulcopy.len430
 
-nulmerge427:                                      ; preds = %nulcopy.len431, %arg.str.ptr425
-  %arg.str.ptr436 = phi ptr [ %arg.str.ptr410, %arg.str.ptr425 ], [ %nulcopy.buf434, %nulcopy.len431 ]
-  %call.res437 = call ptr @LLVMAppendBasicBlock(ptr %addr.ffi.clean409, ptr %arg.str.ptr436)
-  store ptr %call.res437, ptr %var.grow_bb, align 8
-  %var.load438 = load ptr, ptr %var.parent, align 8
-  %addr.ffi.int439 = ptrtoint ptr %var.load438 to i64
-  %addr.ffi.masked440 = and i64 %addr.ffi.int439, 281474976710655
-  %addr.ffi.clean441 = inttoptr i64 %addr.ffi.masked440 to ptr
-  %arg.str.ptr442 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.83.struct, i32 0, i32 1), align 8
-  %arg.str.ptr443 = load i64, ptr @str.83.struct, align 8
-  %arg.str.ptr444 = and i64 %arg.str.ptr443, 281474976710655
-  %str.tag445 = lshr i64 %arg.str.ptr443, 48
-  %str.immortal446 = icmp eq i64 %str.tag445, 0
-  br i1 %str.immortal446, label %str_ok448, label %str_gen_check447
+nulmerge426:                                      ; preds = %nulcopy.len430, %arg.str.ptr424
+  %arg.str.ptr435 = phi ptr [ %arg.str.ptr409, %arg.str.ptr424 ], [ %nulcopy.buf433, %nulcopy.len430 ]
+  %call.res436 = call ptr @LLVMAppendBasicBlock(ptr %addr.ffi.clean408, ptr %arg.str.ptr435)
+  store ptr %call.res436, ptr %var.grow_bb, align 8
+  %var.load437 = load ptr, ptr %var.parent, align 8
+  %addr.ffi.int438 = ptrtoint ptr %var.load437 to i64
+  %addr.ffi.masked439 = and i64 %addr.ffi.int438, 281474976710655
+  %addr.ffi.clean440 = inttoptr i64 %addr.ffi.masked439 to ptr
+  %arg.str.ptr441 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.83.struct, i32 0, i32 1), align 8
+  %arg.str.ptr442 = load i64, ptr @str.83.struct, align 8
+  %arg.str.ptr443 = and i64 %arg.str.ptr442, 281474976710655
+  %str.tag444 = lshr i64 %arg.str.ptr442, 48
+  %str.immortal445 = icmp eq i64 %str.tag444, 0
+  br i1 %str.immortal445, label %str_ok447, label %str_gen_check446
 
-nulcopy.len431:                                   ; preds = %str_overflow_abort432, %nulcopy426
-  %arena.cur433 = call ptr @dva_arena_current()
-  %nulcopy.buf434 = call ptr @dva_arena_alloc(ptr %arena.cur433, i64 %sum429)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf434, ptr align 1 %arg.str.ptr410, i64 %arg.str.ptr412, i1 false)
-  %nulcopy.nul435 = getelementptr i8, ptr %nulcopy.buf434, i64 %arg.str.ptr412
-  store i8 0, ptr %nulcopy.nul435, align 1
-  br label %nulmerge427
+nulcopy.len430:                                   ; preds = %str_overflow_abort431, %nulcopy425
+  %arena.cur432 = call ptr @dva_arena_current()
+  %nulcopy.buf433 = call ptr @dva_arena_alloc(ptr %arena.cur432, i64 %sum428)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf433, ptr align 1 %arg.str.ptr409, i64 %arg.str.ptr411, i1 false)
+  %nulcopy.nul434 = getelementptr i8, ptr %nulcopy.buf433, i64 %arg.str.ptr411
+  store i8 0, ptr %nulcopy.nul434, align 1
+  br label %nulmerge426
 
-str_overflow_abort432:                            ; preds = %nulcopy426
+str_overflow_abort431:                            ; preds = %nulcopy425
   %20 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len431
+  br label %nulcopy.len430
 
-str_gen_check447:                                 ; preds = %nulmerge427
-  %arena.gen450 = call ptr @dva_arena_current()
-  %arena.gen451 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen450, i32 0, i32 4
-  %arena.gen452 = load i64, ptr %arena.gen451, align 8
-  %str.tag.match453 = icmp eq i64 %str.tag445, %arena.gen452
-  br i1 %str.tag.match453, label %str_ok448, label %str_stale449
+str_gen_check446:                                 ; preds = %nulmerge426
+  %arena.gen449 = call ptr @dva_arena_current()
+  %arena.gen450 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen449, i32 0, i32 4
+  %arena.gen451 = load i64, ptr %arena.gen450, align 8
+  %str.tag.match452 = icmp eq i64 %str.tag444, %arena.gen451
+  br i1 %str.tag.match452, label %str_ok447, label %str_stale448
 
-str_ok448:                                        ; preds = %str_stale449, %str_gen_check447, %nulmerge427
-  %nulcheck.gep454 = getelementptr i8, ptr %arg.str.ptr442, i64 %arg.str.ptr444
-  %nulcheck.byte455 = load i8, ptr %nulcheck.gep454, align 1
-  %nulcheck456 = icmp eq i8 %nulcheck.byte455, 0
-  br i1 %nulcheck456, label %arg.str.ptr457, label %nulcopy458
+str_ok447:                                        ; preds = %str_stale448, %str_gen_check446, %nulmerge426
+  %nulcheck.gep453 = getelementptr i8, ptr %arg.str.ptr441, i64 %arg.str.ptr443
+  %nulcheck.byte454 = load i8, ptr %nulcheck.gep453, align 1
+  %nulcheck455 = icmp eq i8 %nulcheck.byte454, 0
+  br i1 %nulcheck455, label %arg.str.ptr456, label %nulcopy457
 
-str_stale449:                                     ; preds = %str_gen_check447
+str_stale448:                                     ; preds = %str_gen_check446
   %21 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok448
+  br label %str_ok447
 
-arg.str.ptr457:                                   ; preds = %str_ok448
-  br label %nulmerge459
+arg.str.ptr456:                                   ; preds = %str_ok447
+  br label %nulmerge458
 
-nulcopy458:                                       ; preds = %str_ok448
-  %nulcopy.len460 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr444, i64 1)
-  %sum461 = extractvalue { i64, i1 } %nulcopy.len460, 0
-  %ovf462 = extractvalue { i64, i1 } %nulcopy.len460, 1
-  br i1 %ovf462, label %str_overflow_abort464, label %nulcopy.len463
+nulcopy457:                                       ; preds = %str_ok447
+  %nulcopy.len459 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr443, i64 1)
+  %sum460 = extractvalue { i64, i1 } %nulcopy.len459, 0
+  %ovf461 = extractvalue { i64, i1 } %nulcopy.len459, 1
+  br i1 %ovf461, label %str_overflow_abort463, label %nulcopy.len462
 
-nulmerge459:                                      ; preds = %nulcopy.len463, %arg.str.ptr457
-  %arg.str.ptr468 = phi ptr [ %arg.str.ptr442, %arg.str.ptr457 ], [ %nulcopy.buf466, %nulcopy.len463 ]
-  %call.res469 = call ptr @LLVMAppendBasicBlock(ptr %addr.ffi.clean441, ptr %arg.str.ptr468)
-  store ptr %call.res469, ptr %var.nogrow_bb, align 8
-  %var.load470 = load ptr, ptr %var.parent, align 8
-  %addr.ffi.int471 = ptrtoint ptr %var.load470 to i64
-  %addr.ffi.masked472 = and i64 %addr.ffi.int471, 281474976710655
-  %addr.ffi.clean473 = inttoptr i64 %addr.ffi.masked472 to ptr
-  %arg.str.ptr474 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.84.struct, i32 0, i32 1), align 8
-  %arg.str.ptr475 = load i64, ptr @str.84.struct, align 8
-  %arg.str.ptr476 = and i64 %arg.str.ptr475, 281474976710655
-  %str.tag477 = lshr i64 %arg.str.ptr475, 48
-  %str.immortal478 = icmp eq i64 %str.tag477, 0
-  br i1 %str.immortal478, label %str_ok480, label %str_gen_check479
+nulmerge458:                                      ; preds = %nulcopy.len462, %arg.str.ptr456
+  %arg.str.ptr467 = phi ptr [ %arg.str.ptr441, %arg.str.ptr456 ], [ %nulcopy.buf465, %nulcopy.len462 ]
+  %call.res468 = call ptr @LLVMAppendBasicBlock(ptr %addr.ffi.clean440, ptr %arg.str.ptr467)
+  store ptr %call.res468, ptr %var.nogrow_bb, align 8
+  %var.load469 = load ptr, ptr %var.parent, align 8
+  %addr.ffi.int470 = ptrtoint ptr %var.load469 to i64
+  %addr.ffi.masked471 = and i64 %addr.ffi.int470, 281474976710655
+  %addr.ffi.clean472 = inttoptr i64 %addr.ffi.masked471 to ptr
+  %arg.str.ptr473 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.84.struct, i32 0, i32 1), align 8
+  %arg.str.ptr474 = load i64, ptr @str.84.struct, align 8
+  %arg.str.ptr475 = and i64 %arg.str.ptr474, 281474976710655
+  %str.tag476 = lshr i64 %arg.str.ptr474, 48
+  %str.immortal477 = icmp eq i64 %str.tag476, 0
+  br i1 %str.immortal477, label %str_ok479, label %str_gen_check478
 
-nulcopy.len463:                                   ; preds = %str_overflow_abort464, %nulcopy458
-  %arena.cur465 = call ptr @dva_arena_current()
-  %nulcopy.buf466 = call ptr @dva_arena_alloc(ptr %arena.cur465, i64 %sum461)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf466, ptr align 1 %arg.str.ptr442, i64 %arg.str.ptr444, i1 false)
-  %nulcopy.nul467 = getelementptr i8, ptr %nulcopy.buf466, i64 %arg.str.ptr444
-  store i8 0, ptr %nulcopy.nul467, align 1
-  br label %nulmerge459
+nulcopy.len462:                                   ; preds = %str_overflow_abort463, %nulcopy457
+  %arena.cur464 = call ptr @dva_arena_current()
+  %nulcopy.buf465 = call ptr @dva_arena_alloc(ptr %arena.cur464, i64 %sum460)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf465, ptr align 1 %arg.str.ptr441, i64 %arg.str.ptr443, i1 false)
+  %nulcopy.nul466 = getelementptr i8, ptr %nulcopy.buf465, i64 %arg.str.ptr443
+  store i8 0, ptr %nulcopy.nul466, align 1
+  br label %nulmerge458
 
-str_overflow_abort464:                            ; preds = %nulcopy458
+str_overflow_abort463:                            ; preds = %nulcopy457
   %22 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len463
+  br label %nulcopy.len462
 
-str_gen_check479:                                 ; preds = %nulmerge459
-  %arena.gen482 = call ptr @dva_arena_current()
-  %arena.gen483 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen482, i32 0, i32 4
-  %arena.gen484 = load i64, ptr %arena.gen483, align 8
-  %str.tag.match485 = icmp eq i64 %str.tag477, %arena.gen484
-  br i1 %str.tag.match485, label %str_ok480, label %str_stale481
+str_gen_check478:                                 ; preds = %nulmerge458
+  %arena.gen481 = call ptr @dva_arena_current()
+  %arena.gen482 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen481, i32 0, i32 4
+  %arena.gen483 = load i64, ptr %arena.gen482, align 8
+  %str.tag.match484 = icmp eq i64 %str.tag476, %arena.gen483
+  br i1 %str.tag.match484, label %str_ok479, label %str_stale480
 
-str_ok480:                                        ; preds = %str_stale481, %str_gen_check479, %nulmerge459
-  %nulcheck.gep486 = getelementptr i8, ptr %arg.str.ptr474, i64 %arg.str.ptr476
-  %nulcheck.byte487 = load i8, ptr %nulcheck.gep486, align 1
-  %nulcheck488 = icmp eq i8 %nulcheck.byte487, 0
-  br i1 %nulcheck488, label %arg.str.ptr489, label %nulcopy490
+str_ok479:                                        ; preds = %str_stale480, %str_gen_check478, %nulmerge458
+  %nulcheck.gep485 = getelementptr i8, ptr %arg.str.ptr473, i64 %arg.str.ptr475
+  %nulcheck.byte486 = load i8, ptr %nulcheck.gep485, align 1
+  %nulcheck487 = icmp eq i8 %nulcheck.byte486, 0
+  br i1 %nulcheck487, label %arg.str.ptr488, label %nulcopy489
 
-str_stale481:                                     ; preds = %str_gen_check479
+str_stale480:                                     ; preds = %str_gen_check478
   %23 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok480
+  br label %str_ok479
 
-arg.str.ptr489:                                   ; preds = %str_ok480
-  br label %nulmerge491
+arg.str.ptr488:                                   ; preds = %str_ok479
+  br label %nulmerge490
 
-nulcopy490:                                       ; preds = %str_ok480
-  %nulcopy.len492 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr476, i64 1)
-  %sum493 = extractvalue { i64, i1 } %nulcopy.len492, 0
-  %ovf494 = extractvalue { i64, i1 } %nulcopy.len492, 1
-  br i1 %ovf494, label %str_overflow_abort496, label %nulcopy.len495
+nulcopy489:                                       ; preds = %str_ok479
+  %nulcopy.len491 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr475, i64 1)
+  %sum492 = extractvalue { i64, i1 } %nulcopy.len491, 0
+  %ovf493 = extractvalue { i64, i1 } %nulcopy.len491, 1
+  br i1 %ovf493, label %str_overflow_abort495, label %nulcopy.len494
 
-nulmerge491:                                      ; preds = %nulcopy.len495, %arg.str.ptr489
-  %arg.str.ptr500 = phi ptr [ %arg.str.ptr474, %arg.str.ptr489 ], [ %nulcopy.buf498, %nulcopy.len495 ]
-  %call.res501 = call ptr @LLVMAppendBasicBlock(ptr %addr.ffi.clean473, ptr %arg.str.ptr500)
-  store ptr %call.res501, ptr %var.done_bb, align 8
-  %var.load502 = load ptr, ptr %var.cg, align 8
-  %fld.gep503 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load502, i32 0, i32 1
-  %fld.load504 = load ptr, ptr %fld.gep503, align 8
-  %addr.ffi.int505 = ptrtoint ptr %fld.load504 to i64
-  %addr.ffi.masked506 = and i64 %addr.ffi.int505, 281474976710655
-  %addr.ffi.clean507 = inttoptr i64 %addr.ffi.masked506 to ptr
-  %var.load508 = load ptr, ptr %var.needs_grow, align 8
-  %addr.ffi.int509 = ptrtoint ptr %var.load508 to i64
-  %addr.ffi.masked510 = and i64 %addr.ffi.int509, 281474976710655
-  %addr.ffi.clean511 = inttoptr i64 %addr.ffi.masked510 to ptr
-  %var.load512 = load ptr, ptr %var.grow_bb, align 8
-  %addr.ffi.int513 = ptrtoint ptr %var.load512 to i64
-  %addr.ffi.masked514 = and i64 %addr.ffi.int513, 281474976710655
-  %addr.ffi.clean515 = inttoptr i64 %addr.ffi.masked514 to ptr
-  %var.load516 = load ptr, ptr %var.nogrow_bb, align 8
-  %addr.ffi.int517 = ptrtoint ptr %var.load516 to i64
-  %addr.ffi.masked518 = and i64 %addr.ffi.int517, 281474976710655
-  %addr.ffi.clean519 = inttoptr i64 %addr.ffi.masked518 to ptr
-  %call.res520 = call ptr @LLVMBuildCondBr(ptr %addr.ffi.clean507, ptr %addr.ffi.clean511, ptr %addr.ffi.clean515, ptr %addr.ffi.clean519)
-  %var.load521 = load ptr, ptr %var.cg, align 8
-  %fld.gep522 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load521, i32 0, i32 1
-  %fld.load523 = load ptr, ptr %fld.gep522, align 8
-  %addr.ffi.int524 = ptrtoint ptr %fld.load523 to i64
-  %addr.ffi.masked525 = and i64 %addr.ffi.int524, 281474976710655
-  %addr.ffi.clean526 = inttoptr i64 %addr.ffi.masked525 to ptr
-  %var.load527 = load ptr, ptr %var.grow_bb, align 8
-  %addr.ffi.int528 = ptrtoint ptr %var.load527 to i64
-  %addr.ffi.masked529 = and i64 %addr.ffi.int528, 281474976710655
-  %addr.ffi.clean530 = inttoptr i64 %addr.ffi.masked529 to ptr
-  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean526, ptr %addr.ffi.clean530)
-  %var.load531 = load ptr, ptr %var.cg, align 8
-  %fld.gep532 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load531, i32 0, i32 1
-  %fld.load533 = load ptr, ptr %fld.gep532, align 8
-  %addr.ffi.int534 = ptrtoint ptr %fld.load533 to i64
-  %addr.ffi.masked535 = and i64 %addr.ffi.int534, 281474976710655
-  %addr.ffi.clean536 = inttoptr i64 %addr.ffi.masked535 to ptr
-  %var.load537 = load ptr, ptr %var.cap, align 8
-  %addr.ffi.int538 = ptrtoint ptr %var.load537 to i64
-  %addr.ffi.masked539 = and i64 %addr.ffi.int538, 281474976710655
-  %addr.ffi.clean540 = inttoptr i64 %addr.ffi.masked539 to ptr
-  %var.load541 = load ptr, ptr %var.i64t, align 8
-  %addr.ffi.int542 = ptrtoint ptr %var.load541 to i64
-  %addr.ffi.masked543 = and i64 %addr.ffi.int542, 281474976710655
-  %addr.ffi.clean544 = inttoptr i64 %addr.ffi.masked543 to ptr
-  %call.res545 = call ptr @LLVMConstInt(ptr %addr.ffi.clean544, i64 2, i64 0)
-  %addr.ffi.int546 = ptrtoint ptr %call.res545 to i64
-  %addr.ffi.masked547 = and i64 %addr.ffi.int546, 281474976710655
-  %addr.ffi.clean548 = inttoptr i64 %addr.ffi.masked547 to ptr
-  %arg.str.ptr549 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.85.struct, i32 0, i32 1), align 8
-  %arg.str.ptr550 = load i64, ptr @str.85.struct, align 8
-  %arg.str.ptr551 = and i64 %arg.str.ptr550, 281474976710655
-  %str.tag552 = lshr i64 %arg.str.ptr550, 48
-  %str.immortal553 = icmp eq i64 %str.tag552, 0
-  br i1 %str.immortal553, label %str_ok555, label %str_gen_check554
+nulmerge490:                                      ; preds = %nulcopy.len494, %arg.str.ptr488
+  %arg.str.ptr499 = phi ptr [ %arg.str.ptr473, %arg.str.ptr488 ], [ %nulcopy.buf497, %nulcopy.len494 ]
+  %call.res500 = call ptr @LLVMAppendBasicBlock(ptr %addr.ffi.clean472, ptr %arg.str.ptr499)
+  store ptr %call.res500, ptr %var.done_bb, align 8
+  %var.load501 = load ptr, ptr %var.cg, align 8
+  %fld.gep502 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load501, i32 0, i32 1
+  %fld.load503 = load ptr, ptr %fld.gep502, align 8
+  %addr.ffi.int504 = ptrtoint ptr %fld.load503 to i64
+  %addr.ffi.masked505 = and i64 %addr.ffi.int504, 281474976710655
+  %addr.ffi.clean506 = inttoptr i64 %addr.ffi.masked505 to ptr
+  %var.load507 = load ptr, ptr %var.needs_grow, align 8
+  %addr.ffi.int508 = ptrtoint ptr %var.load507 to i64
+  %addr.ffi.masked509 = and i64 %addr.ffi.int508, 281474976710655
+  %addr.ffi.clean510 = inttoptr i64 %addr.ffi.masked509 to ptr
+  %var.load511 = load ptr, ptr %var.grow_bb, align 8
+  %addr.ffi.int512 = ptrtoint ptr %var.load511 to i64
+  %addr.ffi.masked513 = and i64 %addr.ffi.int512, 281474976710655
+  %addr.ffi.clean514 = inttoptr i64 %addr.ffi.masked513 to ptr
+  %var.load515 = load ptr, ptr %var.nogrow_bb, align 8
+  %addr.ffi.int516 = ptrtoint ptr %var.load515 to i64
+  %addr.ffi.masked517 = and i64 %addr.ffi.int516, 281474976710655
+  %addr.ffi.clean518 = inttoptr i64 %addr.ffi.masked517 to ptr
+  %call.res519 = call ptr @LLVMBuildCondBr(ptr %addr.ffi.clean506, ptr %addr.ffi.clean510, ptr %addr.ffi.clean514, ptr %addr.ffi.clean518)
+  %var.load520 = load ptr, ptr %var.cg, align 8
+  %fld.gep521 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load520, i32 0, i32 1
+  %fld.load522 = load ptr, ptr %fld.gep521, align 8
+  %addr.ffi.int523 = ptrtoint ptr %fld.load522 to i64
+  %addr.ffi.masked524 = and i64 %addr.ffi.int523, 281474976710655
+  %addr.ffi.clean525 = inttoptr i64 %addr.ffi.masked524 to ptr
+  %var.load526 = load ptr, ptr %var.grow_bb, align 8
+  %addr.ffi.int527 = ptrtoint ptr %var.load526 to i64
+  %addr.ffi.masked528 = and i64 %addr.ffi.int527, 281474976710655
+  %addr.ffi.clean529 = inttoptr i64 %addr.ffi.masked528 to ptr
+  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean525, ptr %addr.ffi.clean529)
+  %var.load530 = load ptr, ptr %var.cg, align 8
+  %fld.gep531 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load530, i32 0, i32 1
+  %fld.load532 = load ptr, ptr %fld.gep531, align 8
+  %addr.ffi.int533 = ptrtoint ptr %fld.load532 to i64
+  %addr.ffi.masked534 = and i64 %addr.ffi.int533, 281474976710655
+  %addr.ffi.clean535 = inttoptr i64 %addr.ffi.masked534 to ptr
+  %var.load536 = load ptr, ptr %var.cap, align 8
+  %addr.ffi.int537 = ptrtoint ptr %var.load536 to i64
+  %addr.ffi.masked538 = and i64 %addr.ffi.int537, 281474976710655
+  %addr.ffi.clean539 = inttoptr i64 %addr.ffi.masked538 to ptr
+  %var.load540 = load ptr, ptr %var.i64t, align 8
+  %addr.ffi.int541 = ptrtoint ptr %var.load540 to i64
+  %addr.ffi.masked542 = and i64 %addr.ffi.int541, 281474976710655
+  %addr.ffi.clean543 = inttoptr i64 %addr.ffi.masked542 to ptr
+  %call.res544 = call ptr @LLVMConstInt(ptr %addr.ffi.clean543, i64 2, i64 0)
+  %addr.ffi.int545 = ptrtoint ptr %call.res544 to i64
+  %addr.ffi.masked546 = and i64 %addr.ffi.int545, 281474976710655
+  %addr.ffi.clean547 = inttoptr i64 %addr.ffi.masked546 to ptr
+  %arg.str.ptr548 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.85.struct, i32 0, i32 1), align 8
+  %arg.str.ptr549 = load i64, ptr @str.85.struct, align 8
+  %arg.str.ptr550 = and i64 %arg.str.ptr549, 281474976710655
+  %str.tag551 = lshr i64 %arg.str.ptr549, 48
+  %str.immortal552 = icmp eq i64 %str.tag551, 0
+  br i1 %str.immortal552, label %str_ok554, label %str_gen_check553
 
-nulcopy.len495:                                   ; preds = %str_overflow_abort496, %nulcopy490
-  %arena.cur497 = call ptr @dva_arena_current()
-  %nulcopy.buf498 = call ptr @dva_arena_alloc(ptr %arena.cur497, i64 %sum493)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf498, ptr align 1 %arg.str.ptr474, i64 %arg.str.ptr476, i1 false)
-  %nulcopy.nul499 = getelementptr i8, ptr %nulcopy.buf498, i64 %arg.str.ptr476
-  store i8 0, ptr %nulcopy.nul499, align 1
-  br label %nulmerge491
+nulcopy.len494:                                   ; preds = %str_overflow_abort495, %nulcopy489
+  %arena.cur496 = call ptr @dva_arena_current()
+  %nulcopy.buf497 = call ptr @dva_arena_alloc(ptr %arena.cur496, i64 %sum492)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf497, ptr align 1 %arg.str.ptr473, i64 %arg.str.ptr475, i1 false)
+  %nulcopy.nul498 = getelementptr i8, ptr %nulcopy.buf497, i64 %arg.str.ptr475
+  store i8 0, ptr %nulcopy.nul498, align 1
+  br label %nulmerge490
 
-str_overflow_abort496:                            ; preds = %nulcopy490
+str_overflow_abort495:                            ; preds = %nulcopy489
   %24 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len495
+  br label %nulcopy.len494
 
-str_gen_check554:                                 ; preds = %nulmerge491
-  %arena.gen557 = call ptr @dva_arena_current()
-  %arena.gen558 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen557, i32 0, i32 4
-  %arena.gen559 = load i64, ptr %arena.gen558, align 8
-  %str.tag.match560 = icmp eq i64 %str.tag552, %arena.gen559
-  br i1 %str.tag.match560, label %str_ok555, label %str_stale556
+str_gen_check553:                                 ; preds = %nulmerge490
+  %arena.gen556 = call ptr @dva_arena_current()
+  %arena.gen557 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen556, i32 0, i32 4
+  %arena.gen558 = load i64, ptr %arena.gen557, align 8
+  %str.tag.match559 = icmp eq i64 %str.tag551, %arena.gen558
+  br i1 %str.tag.match559, label %str_ok554, label %str_stale555
 
-str_ok555:                                        ; preds = %str_stale556, %str_gen_check554, %nulmerge491
-  %nulcheck.gep561 = getelementptr i8, ptr %arg.str.ptr549, i64 %arg.str.ptr551
-  %nulcheck.byte562 = load i8, ptr %nulcheck.gep561, align 1
-  %nulcheck563 = icmp eq i8 %nulcheck.byte562, 0
-  br i1 %nulcheck563, label %arg.str.ptr564, label %nulcopy565
+str_ok554:                                        ; preds = %str_stale555, %str_gen_check553, %nulmerge490
+  %nulcheck.gep560 = getelementptr i8, ptr %arg.str.ptr548, i64 %arg.str.ptr550
+  %nulcheck.byte561 = load i8, ptr %nulcheck.gep560, align 1
+  %nulcheck562 = icmp eq i8 %nulcheck.byte561, 0
+  br i1 %nulcheck562, label %arg.str.ptr563, label %nulcopy564
 
-str_stale556:                                     ; preds = %str_gen_check554
+str_stale555:                                     ; preds = %str_gen_check553
   %25 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok555
+  br label %str_ok554
 
-arg.str.ptr564:                                   ; preds = %str_ok555
-  br label %nulmerge566
+arg.str.ptr563:                                   ; preds = %str_ok554
+  br label %nulmerge565
 
-nulcopy565:                                       ; preds = %str_ok555
-  %nulcopy.len567 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr551, i64 1)
-  %sum568 = extractvalue { i64, i1 } %nulcopy.len567, 0
-  %ovf569 = extractvalue { i64, i1 } %nulcopy.len567, 1
-  br i1 %ovf569, label %str_overflow_abort571, label %nulcopy.len570
+nulcopy564:                                       ; preds = %str_ok554
+  %nulcopy.len566 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr550, i64 1)
+  %sum567 = extractvalue { i64, i1 } %nulcopy.len566, 0
+  %ovf568 = extractvalue { i64, i1 } %nulcopy.len566, 1
+  br i1 %ovf568, label %str_overflow_abort570, label %nulcopy.len569
 
-nulmerge566:                                      ; preds = %nulcopy.len570, %arg.str.ptr564
-  %arg.str.ptr575 = phi ptr [ %arg.str.ptr549, %arg.str.ptr564 ], [ %nulcopy.buf573, %nulcopy.len570 ]
-  %call.res576 = call ptr @LLVMBuildMul(ptr %addr.ffi.clean536, ptr %addr.ffi.clean540, ptr %addr.ffi.clean548, ptr %arg.str.ptr575)
-  store ptr %call.res576, ptr %var.cap2, align 8
-  %var.load577 = load ptr, ptr %var.i64t, align 8
-  %addr.ffi.int578 = ptrtoint ptr %var.load577 to i64
-  %addr.ffi.masked579 = and i64 %addr.ffi.int578, 281474976710655
-  %addr.ffi.clean580 = inttoptr i64 %addr.ffi.masked579 to ptr
-  %call.res581 = call ptr @LLVMConstInt(ptr %addr.ffi.clean580, i64 16, i64 0)
-  store ptr %call.res581, ptr %var.mincap, align 8
-  %var.load582 = load ptr, ptr %var.cg, align 8
-  %fld.gep583 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load582, i32 0, i32 1
-  %fld.load584 = load ptr, ptr %fld.gep583, align 8
-  %addr.ffi.int585 = ptrtoint ptr %fld.load584 to i64
-  %addr.ffi.masked586 = and i64 %addr.ffi.int585, 281474976710655
-  %addr.ffi.clean587 = inttoptr i64 %addr.ffi.masked586 to ptr
-  %var.load588 = load ptr, ptr %var.cg, align 8
-  %fld.gep589 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load588, i32 0, i32 1
-  %fld.load590 = load ptr, ptr %fld.gep589, align 8
-  %addr.ffi.int591 = ptrtoint ptr %fld.load590 to i64
-  %addr.ffi.masked592 = and i64 %addr.ffi.int591, 281474976710655
-  %addr.ffi.clean593 = inttoptr i64 %addr.ffi.masked592 to ptr
-  %var.load594 = load ptr, ptr %var.cap2, align 8
-  %addr.ffi.int595 = ptrtoint ptr %var.load594 to i64
-  %addr.ffi.masked596 = and i64 %addr.ffi.int595, 281474976710655
-  %addr.ffi.clean597 = inttoptr i64 %addr.ffi.masked596 to ptr
-  %var.load598 = load ptr, ptr %var.mincap, align 8
-  %addr.ffi.int599 = ptrtoint ptr %var.load598 to i64
-  %addr.ffi.masked600 = and i64 %addr.ffi.int599, 281474976710655
-  %addr.ffi.clean601 = inttoptr i64 %addr.ffi.masked600 to ptr
-  %arg.str.ptr602 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.86.struct, i32 0, i32 1), align 8
-  %arg.str.ptr603 = load i64, ptr @str.86.struct, align 8
-  %arg.str.ptr604 = and i64 %arg.str.ptr603, 281474976710655
-  %str.tag605 = lshr i64 %arg.str.ptr603, 48
-  %str.immortal606 = icmp eq i64 %str.tag605, 0
-  br i1 %str.immortal606, label %str_ok608, label %str_gen_check607
+nulmerge565:                                      ; preds = %nulcopy.len569, %arg.str.ptr563
+  %arg.str.ptr574 = phi ptr [ %arg.str.ptr548, %arg.str.ptr563 ], [ %nulcopy.buf572, %nulcopy.len569 ]
+  %call.res575 = call ptr @LLVMBuildMul(ptr %addr.ffi.clean535, ptr %addr.ffi.clean539, ptr %addr.ffi.clean547, ptr %arg.str.ptr574)
+  store ptr %call.res575, ptr %var.cap2, align 8
+  %var.load576 = load ptr, ptr %var.i64t, align 8
+  %addr.ffi.int577 = ptrtoint ptr %var.load576 to i64
+  %addr.ffi.masked578 = and i64 %addr.ffi.int577, 281474976710655
+  %addr.ffi.clean579 = inttoptr i64 %addr.ffi.masked578 to ptr
+  %call.res580 = call ptr @LLVMConstInt(ptr %addr.ffi.clean579, i64 16, i64 0)
+  store ptr %call.res580, ptr %var.mincap, align 8
+  %var.load581 = load ptr, ptr %var.cg, align 8
+  %fld.gep582 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load581, i32 0, i32 1
+  %fld.load583 = load ptr, ptr %fld.gep582, align 8
+  %addr.ffi.int584 = ptrtoint ptr %fld.load583 to i64
+  %addr.ffi.masked585 = and i64 %addr.ffi.int584, 281474976710655
+  %addr.ffi.clean586 = inttoptr i64 %addr.ffi.masked585 to ptr
+  %var.load587 = load ptr, ptr %var.cg, align 8
+  %fld.gep588 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load587, i32 0, i32 1
+  %fld.load589 = load ptr, ptr %fld.gep588, align 8
+  %addr.ffi.int590 = ptrtoint ptr %fld.load589 to i64
+  %addr.ffi.masked591 = and i64 %addr.ffi.int590, 281474976710655
+  %addr.ffi.clean592 = inttoptr i64 %addr.ffi.masked591 to ptr
+  %var.load593 = load ptr, ptr %var.cap2, align 8
+  %addr.ffi.int594 = ptrtoint ptr %var.load593 to i64
+  %addr.ffi.masked595 = and i64 %addr.ffi.int594, 281474976710655
+  %addr.ffi.clean596 = inttoptr i64 %addr.ffi.masked595 to ptr
+  %var.load597 = load ptr, ptr %var.mincap, align 8
+  %addr.ffi.int598 = ptrtoint ptr %var.load597 to i64
+  %addr.ffi.masked599 = and i64 %addr.ffi.int598, 281474976710655
+  %addr.ffi.clean600 = inttoptr i64 %addr.ffi.masked599 to ptr
+  %arg.str.ptr601 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.86.struct, i32 0, i32 1), align 8
+  %arg.str.ptr602 = load i64, ptr @str.86.struct, align 8
+  %arg.str.ptr603 = and i64 %arg.str.ptr602, 281474976710655
+  %str.tag604 = lshr i64 %arg.str.ptr602, 48
+  %str.immortal605 = icmp eq i64 %str.tag604, 0
+  br i1 %str.immortal605, label %str_ok607, label %str_gen_check606
 
-nulcopy.len570:                                   ; preds = %str_overflow_abort571, %nulcopy565
-  %arena.cur572 = call ptr @dva_arena_current()
-  %nulcopy.buf573 = call ptr @dva_arena_alloc(ptr %arena.cur572, i64 %sum568)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf573, ptr align 1 %arg.str.ptr549, i64 %arg.str.ptr551, i1 false)
-  %nulcopy.nul574 = getelementptr i8, ptr %nulcopy.buf573, i64 %arg.str.ptr551
-  store i8 0, ptr %nulcopy.nul574, align 1
-  br label %nulmerge566
+nulcopy.len569:                                   ; preds = %str_overflow_abort570, %nulcopy564
+  %arena.cur571 = call ptr @dva_arena_current()
+  %nulcopy.buf572 = call ptr @dva_arena_alloc(ptr %arena.cur571, i64 %sum567)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf572, ptr align 1 %arg.str.ptr548, i64 %arg.str.ptr550, i1 false)
+  %nulcopy.nul573 = getelementptr i8, ptr %nulcopy.buf572, i64 %arg.str.ptr550
+  store i8 0, ptr %nulcopy.nul573, align 1
+  br label %nulmerge565
 
-str_overflow_abort571:                            ; preds = %nulcopy565
+str_overflow_abort570:                            ; preds = %nulcopy564
   %26 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len570
+  br label %nulcopy.len569
 
-str_gen_check607:                                 ; preds = %nulmerge566
-  %arena.gen610 = call ptr @dva_arena_current()
-  %arena.gen611 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen610, i32 0, i32 4
-  %arena.gen612 = load i64, ptr %arena.gen611, align 8
-  %str.tag.match613 = icmp eq i64 %str.tag605, %arena.gen612
-  br i1 %str.tag.match613, label %str_ok608, label %str_stale609
+str_gen_check606:                                 ; preds = %nulmerge565
+  %arena.gen609 = call ptr @dva_arena_current()
+  %arena.gen610 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen609, i32 0, i32 4
+  %arena.gen611 = load i64, ptr %arena.gen610, align 8
+  %str.tag.match612 = icmp eq i64 %str.tag604, %arena.gen611
+  br i1 %str.tag.match612, label %str_ok607, label %str_stale608
 
-str_ok608:                                        ; preds = %str_stale609, %str_gen_check607, %nulmerge566
-  %nulcheck.gep614 = getelementptr i8, ptr %arg.str.ptr602, i64 %arg.str.ptr604
-  %nulcheck.byte615 = load i8, ptr %nulcheck.gep614, align 1
-  %nulcheck616 = icmp eq i8 %nulcheck.byte615, 0
-  br i1 %nulcheck616, label %arg.str.ptr617, label %nulcopy618
+str_ok607:                                        ; preds = %str_stale608, %str_gen_check606, %nulmerge565
+  %nulcheck.gep613 = getelementptr i8, ptr %arg.str.ptr601, i64 %arg.str.ptr603
+  %nulcheck.byte614 = load i8, ptr %nulcheck.gep613, align 1
+  %nulcheck615 = icmp eq i8 %nulcheck.byte614, 0
+  br i1 %nulcheck615, label %arg.str.ptr616, label %nulcopy617
 
-str_stale609:                                     ; preds = %str_gen_check607
+str_stale608:                                     ; preds = %str_gen_check606
   %27 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok608
+  br label %str_ok607
 
-arg.str.ptr617:                                   ; preds = %str_ok608
-  br label %nulmerge619
+arg.str.ptr616:                                   ; preds = %str_ok607
+  br label %nulmerge618
 
-nulcopy618:                                       ; preds = %str_ok608
-  %nulcopy.len620 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr604, i64 1)
-  %sum621 = extractvalue { i64, i1 } %nulcopy.len620, 0
-  %ovf622 = extractvalue { i64, i1 } %nulcopy.len620, 1
-  br i1 %ovf622, label %str_overflow_abort624, label %nulcopy.len623
+nulcopy617:                                       ; preds = %str_ok607
+  %nulcopy.len619 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr603, i64 1)
+  %sum620 = extractvalue { i64, i1 } %nulcopy.len619, 0
+  %ovf621 = extractvalue { i64, i1 } %nulcopy.len619, 1
+  br i1 %ovf621, label %str_overflow_abort623, label %nulcopy.len622
 
-nulmerge619:                                      ; preds = %nulcopy.len623, %arg.str.ptr617
-  %arg.str.ptr628 = phi ptr [ %arg.str.ptr602, %arg.str.ptr617 ], [ %nulcopy.buf626, %nulcopy.len623 ]
-  %call.res629 = call ptr @LLVMBuildICmp(ptr %addr.ffi.clean593, i64 40, ptr %addr.ffi.clean597, ptr %addr.ffi.clean601, ptr %arg.str.ptr628)
-  %addr.ffi.int630 = ptrtoint ptr %call.res629 to i64
-  %addr.ffi.masked631 = and i64 %addr.ffi.int630, 281474976710655
-  %addr.ffi.clean632 = inttoptr i64 %addr.ffi.masked631 to ptr
-  %var.load633 = load ptr, ptr %var.mincap, align 8
-  %addr.ffi.int634 = ptrtoint ptr %var.load633 to i64
-  %addr.ffi.masked635 = and i64 %addr.ffi.int634, 281474976710655
-  %addr.ffi.clean636 = inttoptr i64 %addr.ffi.masked635 to ptr
-  %var.load637 = load ptr, ptr %var.cap2, align 8
-  %addr.ffi.int638 = ptrtoint ptr %var.load637 to i64
-  %addr.ffi.masked639 = and i64 %addr.ffi.int638, 281474976710655
-  %addr.ffi.clean640 = inttoptr i64 %addr.ffi.masked639 to ptr
-  %arg.str.ptr641 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.63.struct, i32 0, i32 1), align 8
-  %arg.str.ptr642 = load i64, ptr @str.63.struct, align 8
-  %arg.str.ptr643 = and i64 %arg.str.ptr642, 281474976710655
-  %str.tag644 = lshr i64 %arg.str.ptr642, 48
-  %str.immortal645 = icmp eq i64 %str.tag644, 0
-  br i1 %str.immortal645, label %str_ok647, label %str_gen_check646
+nulmerge618:                                      ; preds = %nulcopy.len622, %arg.str.ptr616
+  %arg.str.ptr627 = phi ptr [ %arg.str.ptr601, %arg.str.ptr616 ], [ %nulcopy.buf625, %nulcopy.len622 ]
+  %call.res628 = call ptr @LLVMBuildICmp(ptr %addr.ffi.clean592, i64 40, ptr %addr.ffi.clean596, ptr %addr.ffi.clean600, ptr %arg.str.ptr627)
+  %addr.ffi.int629 = ptrtoint ptr %call.res628 to i64
+  %addr.ffi.masked630 = and i64 %addr.ffi.int629, 281474976710655
+  %addr.ffi.clean631 = inttoptr i64 %addr.ffi.masked630 to ptr
+  %var.load632 = load ptr, ptr %var.mincap, align 8
+  %addr.ffi.int633 = ptrtoint ptr %var.load632 to i64
+  %addr.ffi.masked634 = and i64 %addr.ffi.int633, 281474976710655
+  %addr.ffi.clean635 = inttoptr i64 %addr.ffi.masked634 to ptr
+  %var.load636 = load ptr, ptr %var.cap2, align 8
+  %addr.ffi.int637 = ptrtoint ptr %var.load636 to i64
+  %addr.ffi.masked638 = and i64 %addr.ffi.int637, 281474976710655
+  %addr.ffi.clean639 = inttoptr i64 %addr.ffi.masked638 to ptr
+  %arg.str.ptr640 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.63.struct, i32 0, i32 1), align 8
+  %arg.str.ptr641 = load i64, ptr @str.63.struct, align 8
+  %arg.str.ptr642 = and i64 %arg.str.ptr641, 281474976710655
+  %str.tag643 = lshr i64 %arg.str.ptr641, 48
+  %str.immortal644 = icmp eq i64 %str.tag643, 0
+  br i1 %str.immortal644, label %str_ok646, label %str_gen_check645
 
-nulcopy.len623:                                   ; preds = %str_overflow_abort624, %nulcopy618
-  %arena.cur625 = call ptr @dva_arena_current()
-  %nulcopy.buf626 = call ptr @dva_arena_alloc(ptr %arena.cur625, i64 %sum621)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf626, ptr align 1 %arg.str.ptr602, i64 %arg.str.ptr604, i1 false)
-  %nulcopy.nul627 = getelementptr i8, ptr %nulcopy.buf626, i64 %arg.str.ptr604
-  store i8 0, ptr %nulcopy.nul627, align 1
-  br label %nulmerge619
+nulcopy.len622:                                   ; preds = %str_overflow_abort623, %nulcopy617
+  %arena.cur624 = call ptr @dva_arena_current()
+  %nulcopy.buf625 = call ptr @dva_arena_alloc(ptr %arena.cur624, i64 %sum620)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf625, ptr align 1 %arg.str.ptr601, i64 %arg.str.ptr603, i1 false)
+  %nulcopy.nul626 = getelementptr i8, ptr %nulcopy.buf625, i64 %arg.str.ptr603
+  store i8 0, ptr %nulcopy.nul626, align 1
+  br label %nulmerge618
 
-str_overflow_abort624:                            ; preds = %nulcopy618
+str_overflow_abort623:                            ; preds = %nulcopy617
   %28 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len623
+  br label %nulcopy.len622
 
-str_gen_check646:                                 ; preds = %nulmerge619
-  %arena.gen649 = call ptr @dva_arena_current()
-  %arena.gen650 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen649, i32 0, i32 4
-  %arena.gen651 = load i64, ptr %arena.gen650, align 8
-  %str.tag.match652 = icmp eq i64 %str.tag644, %arena.gen651
-  br i1 %str.tag.match652, label %str_ok647, label %str_stale648
+str_gen_check645:                                 ; preds = %nulmerge618
+  %arena.gen648 = call ptr @dva_arena_current()
+  %arena.gen649 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen648, i32 0, i32 4
+  %arena.gen650 = load i64, ptr %arena.gen649, align 8
+  %str.tag.match651 = icmp eq i64 %str.tag643, %arena.gen650
+  br i1 %str.tag.match651, label %str_ok646, label %str_stale647
 
-str_ok647:                                        ; preds = %str_stale648, %str_gen_check646, %nulmerge619
-  %nulcheck.gep653 = getelementptr i8, ptr %arg.str.ptr641, i64 %arg.str.ptr643
-  %nulcheck.byte654 = load i8, ptr %nulcheck.gep653, align 1
-  %nulcheck655 = icmp eq i8 %nulcheck.byte654, 0
-  br i1 %nulcheck655, label %arg.str.ptr656, label %nulcopy657
+str_ok646:                                        ; preds = %str_stale647, %str_gen_check645, %nulmerge618
+  %nulcheck.gep652 = getelementptr i8, ptr %arg.str.ptr640, i64 %arg.str.ptr642
+  %nulcheck.byte653 = load i8, ptr %nulcheck.gep652, align 1
+  %nulcheck654 = icmp eq i8 %nulcheck.byte653, 0
+  br i1 %nulcheck654, label %arg.str.ptr655, label %nulcopy656
 
-str_stale648:                                     ; preds = %str_gen_check646
+str_stale647:                                     ; preds = %str_gen_check645
   %29 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok647
+  br label %str_ok646
 
-arg.str.ptr656:                                   ; preds = %str_ok647
-  br label %nulmerge658
+arg.str.ptr655:                                   ; preds = %str_ok646
+  br label %nulmerge657
 
-nulcopy657:                                       ; preds = %str_ok647
-  %nulcopy.len659 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr643, i64 1)
-  %sum660 = extractvalue { i64, i1 } %nulcopy.len659, 0
-  %ovf661 = extractvalue { i64, i1 } %nulcopy.len659, 1
-  br i1 %ovf661, label %str_overflow_abort663, label %nulcopy.len662
+nulcopy656:                                       ; preds = %str_ok646
+  %nulcopy.len658 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr642, i64 1)
+  %sum659 = extractvalue { i64, i1 } %nulcopy.len658, 0
+  %ovf660 = extractvalue { i64, i1 } %nulcopy.len658, 1
+  br i1 %ovf660, label %str_overflow_abort662, label %nulcopy.len661
 
-nulmerge658:                                      ; preds = %nulcopy.len662, %arg.str.ptr656
-  %arg.str.ptr667 = phi ptr [ %arg.str.ptr641, %arg.str.ptr656 ], [ %nulcopy.buf665, %nulcopy.len662 ]
-  %call.res668 = call ptr @LLVMBuildSelect(ptr %addr.ffi.clean587, ptr %addr.ffi.clean632, ptr %addr.ffi.clean636, ptr %addr.ffi.clean640, ptr %arg.str.ptr667)
-  store ptr %call.res668, ptr %var.new_cap, align 8
-  %var.load669 = load ptr, ptr %var.cg, align 8
-  %var.load670 = load ptr, ptr %var.new_cap, align 8
-  %var.load671 = load ptr, ptr %var.one, align 8
-  %call.res672 = call ptr @"stmt::codegen_add_checked_u64"(ptr %var.load669, ptr %var.load670, ptr %var.load671, ptr @str.87.struct)
-  store ptr %call.res672, ptr %var.new_buf_len, align 8
-  %var.load673 = load ptr, ptr %var.cg, align 8
-  %fld.gep674 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load673, i32 0, i32 29
-  %fld.load675 = load i64, ptr %fld.gep674, align 8
-  %cmptmp676 = icmp sgt i64 %fld.load675, 0
-  br i1 %cmptmp676, label %choice.then677, label %choice.else678
+nulmerge657:                                      ; preds = %nulcopy.len661, %arg.str.ptr655
+  %arg.str.ptr666 = phi ptr [ %arg.str.ptr640, %arg.str.ptr655 ], [ %nulcopy.buf664, %nulcopy.len661 ]
+  %call.res667 = call ptr @LLVMBuildSelect(ptr %addr.ffi.clean586, ptr %addr.ffi.clean631, ptr %addr.ffi.clean635, ptr %addr.ffi.clean639, ptr %arg.str.ptr666)
+  store ptr %call.res667, ptr %var.new_cap, align 8
+  %var.load668 = load ptr, ptr %var.cg, align 8
+  %var.load669 = load ptr, ptr %var.new_cap, align 8
+  %var.load670 = load ptr, ptr %var.one, align 8
+  %call.res671 = call ptr @"stmt::codegen_add_checked_u64"(ptr %var.load668, ptr %var.load669, ptr %var.load670, ptr @str.87.struct)
+  store ptr %call.res671, ptr %var.new_buf_len, align 8
+  %var.load672 = load ptr, ptr %var.cg, align 8
+  %fld.gep673 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load672, i32 0, i32 29
+  %fld.load674 = load i64, ptr %fld.gep673, align 8
+  %cmptmp675 = icmp sgt i64 %fld.load674, 0
+  br i1 %cmptmp675, label %choice.then676, label %choice.else677
 
-nulcopy.len662:                                   ; preds = %str_overflow_abort663, %nulcopy657
-  %arena.cur664 = call ptr @dva_arena_current()
-  %nulcopy.buf665 = call ptr @dva_arena_alloc(ptr %arena.cur664, i64 %sum660)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf665, ptr align 1 %arg.str.ptr641, i64 %arg.str.ptr643, i1 false)
-  %nulcopy.nul666 = getelementptr i8, ptr %nulcopy.buf665, i64 %arg.str.ptr643
-  store i8 0, ptr %nulcopy.nul666, align 1
-  br label %nulmerge658
+nulcopy.len661:                                   ; preds = %str_overflow_abort662, %nulcopy656
+  %arena.cur663 = call ptr @dva_arena_current()
+  %nulcopy.buf664 = call ptr @dva_arena_alloc(ptr %arena.cur663, i64 %sum659)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf664, ptr align 1 %arg.str.ptr640, i64 %arg.str.ptr642, i1 false)
+  %nulcopy.nul665 = getelementptr i8, ptr %nulcopy.buf664, i64 %arg.str.ptr642
+  store i8 0, ptr %nulcopy.nul665, align 1
+  br label %nulmerge657
 
-str_overflow_abort663:                            ; preds = %nulcopy657
+str_overflow_abort662:                            ; preds = %nulcopy656
   %30 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len662
+  br label %nulcopy.len661
 
-choice.then677:                                   ; preds = %nulmerge658
+choice.then676:                                   ; preds = %nulmerge657
+  %var.load679 = load ptr, ptr %var.cg, align 8
   %var.load680 = load ptr, ptr %var.cg, align 8
-  %var.load681 = load ptr, ptr %var.cg, align 8
-  %fld.gep682 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load681, i32 0, i32 8
-  %fld.load683 = load ptr, ptr %fld.gep682, align 8
-  %var.load684 = load ptr, ptr %var.cg, align 8
-  %fld.gep685 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load684, i32 0, i32 9
-  %fld.load686 = load ptr, ptr %fld.gep685, align 8
-  %var.load687 = load ptr, ptr %var.new_buf_len, align 8
-  %call.res688 = call ptr @"types::call1"(ptr %var.load680, ptr %fld.load683, ptr %fld.load686, ptr %var.load687, ptr @str.64.struct)
-  br label %choice.exit679
+  %fld.gep681 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load680, i32 0, i32 8
+  %fld.load682 = load ptr, ptr %fld.gep681, align 8
+  %var.load683 = load ptr, ptr %var.cg, align 8
+  %fld.gep684 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load683, i32 0, i32 9
+  %fld.load685 = load ptr, ptr %fld.gep684, align 8
+  %var.load686 = load ptr, ptr %var.new_buf_len, align 8
+  %call.res687 = call ptr @"types::call1"(ptr %var.load679, ptr %fld.load682, ptr %fld.load685, ptr %var.load686, ptr @str.64.struct)
+  br label %choice.exit678
 
-choice.else678:                                   ; preds = %nulmerge658
-  %var.load689 = load ptr, ptr %var.cg, align 8
-  %var.load690 = load ptr, ptr %var.new_buf_len, align 8
-  %call.res691 = call ptr @"expr::codegen_call_arena_alloc"(ptr %var.load689, ptr %var.load690, ptr @str.64.struct)
-  br label %choice.exit679
+choice.else677:                                   ; preds = %nulmerge657
+  %var.load688 = load ptr, ptr %var.cg, align 8
+  %var.load689 = load ptr, ptr %var.new_buf_len, align 8
+  %call.res690 = call ptr @"expr::codegen_call_arena_alloc"(ptr %var.load688, ptr %var.load689, ptr @str.64.struct)
+  br label %choice.exit678
 
-choice.exit679:                                   ; preds = %choice.else678, %choice.then677
-  %choice.res692 = phi ptr [ %call.res688, %choice.then677 ], [ %call.res691, %choice.else678 ]
-  store ptr %choice.res692, ptr %var.new_buf, align 8
-  %var.load693 = load ptr, ptr %var.cg, align 8
-  %fld.gep694 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load693, i32 0, i32 1
-  %fld.load695 = load ptr, ptr %fld.gep694, align 8
-  %addr.ffi.int696 = ptrtoint ptr %fld.load695 to i64
-  %addr.ffi.masked697 = and i64 %addr.ffi.int696, 281474976710655
-  %addr.ffi.clean698 = inttoptr i64 %addr.ffi.masked697 to ptr
-  %var.load699 = load ptr, ptr %var.new_buf, align 8
-  %addr.ffi.int700 = ptrtoint ptr %var.load699 to i64
-  %addr.ffi.masked701 = and i64 %addr.ffi.int700, 281474976710655
-  %addr.ffi.clean702 = inttoptr i64 %addr.ffi.masked701 to ptr
-  %var.load703 = load ptr, ptr %var.data, align 8
-  %addr.ffi.int704 = ptrtoint ptr %var.load703 to i64
-  %addr.ffi.masked705 = and i64 %addr.ffi.int704, 281474976710655
-  %addr.ffi.clean706 = inttoptr i64 %addr.ffi.masked705 to ptr
-  %var.load707 = load ptr, ptr %var.len, align 8
-  %addr.ffi.int708 = ptrtoint ptr %var.load707 to i64
-  %addr.ffi.masked709 = and i64 %addr.ffi.int708, 281474976710655
-  %addr.ffi.clean710 = inttoptr i64 %addr.ffi.masked709 to ptr
-  %call.res711 = call ptr @LLVMBuildMemCpy(ptr %addr.ffi.clean698, ptr %addr.ffi.clean702, i64 1, ptr %addr.ffi.clean706, i64 1, ptr %addr.ffi.clean710, i64 0)
-  %var.load712 = load ptr, ptr %var.cg, align 8
-  %fld.gep713 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load712, i32 0, i32 1
-  %fld.load714 = load ptr, ptr %fld.gep713, align 8
-  %addr.ffi.int715 = ptrtoint ptr %fld.load714 to i64
-  %addr.ffi.masked716 = and i64 %addr.ffi.int715, 281474976710655
-  %addr.ffi.clean717 = inttoptr i64 %addr.ffi.masked716 to ptr
-  %call.res718 = call ptr @LLVMInt8Type()
-  %addr.ffi.int719 = ptrtoint ptr %call.res718 to i64
-  %addr.ffi.masked720 = and i64 %addr.ffi.int719, 281474976710655
-  %addr.ffi.clean721 = inttoptr i64 %addr.ffi.masked720 to ptr
-  %call.res722 = call ptr @LLVMConstInt(ptr %addr.ffi.clean721, i64 0, i64 0)
-  %addr.ffi.int723 = ptrtoint ptr %call.res722 to i64
-  %addr.ffi.masked724 = and i64 %addr.ffi.int723, 281474976710655
-  %addr.ffi.clean725 = inttoptr i64 %addr.ffi.masked724 to ptr
-  %var.load726 = load ptr, ptr %var.cg, align 8
-  %call.res727 = call ptr @LLVMInt8Type()
-  %var.load728 = load ptr, ptr %var.new_buf, align 8
-  %var.load729 = load ptr, ptr %var.len, align 8
-  %call.res730 = call ptr @"types::gep1"(ptr %var.load726, ptr %call.res727, ptr %var.load728, ptr %var.load729, ptr @str.88.struct)
-  %addr.ffi.int731 = ptrtoint ptr %call.res730 to i64
-  %addr.ffi.masked732 = and i64 %addr.ffi.int731, 281474976710655
-  %addr.ffi.clean733 = inttoptr i64 %addr.ffi.masked732 to ptr
-  %call.res734 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean717, ptr %addr.ffi.clean725, ptr %addr.ffi.clean733)
-  %var.load735 = load ptr, ptr %var.cg, align 8
-  %fld.gep736 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load735, i32 0, i32 1
-  %fld.load737 = load ptr, ptr %fld.gep736, align 8
-  %addr.ffi.int738 = ptrtoint ptr %fld.load737 to i64
-  %addr.ffi.masked739 = and i64 %addr.ffi.int738, 281474976710655
-  %addr.ffi.clean740 = inttoptr i64 %addr.ffi.masked739 to ptr
-  %var.load741 = load ptr, ptr %var.new_buf, align 8
-  %addr.ffi.int742 = ptrtoint ptr %var.load741 to i64
-  %addr.ffi.masked743 = and i64 %addr.ffi.int742, 281474976710655
-  %addr.ffi.clean744 = inttoptr i64 %addr.ffi.masked743 to ptr
-  %var.load745 = load ptr, ptr %var.cg, align 8
-  %fld.gep746 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load745, i32 0, i32 1
-  %fld.load747 = load ptr, ptr %fld.gep746, align 8
-  %addr.ffi.int748 = ptrtoint ptr %fld.load747 to i64
-  %addr.ffi.masked749 = and i64 %addr.ffi.int748, 281474976710655
-  %addr.ffi.clean750 = inttoptr i64 %addr.ffi.masked749 to ptr
-  %var.load751 = load ptr, ptr %var.cg, align 8
-  %call.res752 = call ptr @"main::builder_struct_type"(ptr %var.load751)
-  %addr.ffi.int753 = ptrtoint ptr %call.res752 to i64
-  %addr.ffi.masked754 = and i64 %addr.ffi.int753, 281474976710655
-  %addr.ffi.clean755 = inttoptr i64 %addr.ffi.masked754 to ptr
-  %var.load756 = load ptr, ptr %var.b, align 8
-  %addr.ffi.int757 = ptrtoint ptr %var.load756 to i64
-  %addr.ffi.masked758 = and i64 %addr.ffi.int757, 281474976710655
-  %addr.ffi.clean759 = inttoptr i64 %addr.ffi.masked758 to ptr
-  %arg.str.ptr760 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.89.struct, i32 0, i32 1), align 8
-  %arg.str.ptr761 = load i64, ptr @str.89.struct, align 8
-  %arg.str.ptr762 = and i64 %arg.str.ptr761, 281474976710655
-  %str.tag763 = lshr i64 %arg.str.ptr761, 48
-  %str.immortal764 = icmp eq i64 %str.tag763, 0
-  br i1 %str.immortal764, label %str_ok766, label %str_gen_check765
+choice.exit678:                                   ; preds = %choice.else677, %choice.then676
+  %choice.res691 = phi ptr [ %call.res687, %choice.then676 ], [ %call.res690, %choice.else677 ]
+  store ptr %choice.res691, ptr %var.new_buf, align 8
+  %var.load692 = load ptr, ptr %var.cg, align 8
+  %fld.gep693 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load692, i32 0, i32 1
+  %fld.load694 = load ptr, ptr %fld.gep693, align 8
+  %addr.ffi.int695 = ptrtoint ptr %fld.load694 to i64
+  %addr.ffi.masked696 = and i64 %addr.ffi.int695, 281474976710655
+  %addr.ffi.clean697 = inttoptr i64 %addr.ffi.masked696 to ptr
+  %var.load698 = load ptr, ptr %var.new_buf, align 8
+  %addr.ffi.int699 = ptrtoint ptr %var.load698 to i64
+  %addr.ffi.masked700 = and i64 %addr.ffi.int699, 281474976710655
+  %addr.ffi.clean701 = inttoptr i64 %addr.ffi.masked700 to ptr
+  %var.load702 = load ptr, ptr %var.data, align 8
+  %addr.ffi.int703 = ptrtoint ptr %var.load702 to i64
+  %addr.ffi.masked704 = and i64 %addr.ffi.int703, 281474976710655
+  %addr.ffi.clean705 = inttoptr i64 %addr.ffi.masked704 to ptr
+  %var.load706 = load ptr, ptr %var.len, align 8
+  %addr.ffi.int707 = ptrtoint ptr %var.load706 to i64
+  %addr.ffi.masked708 = and i64 %addr.ffi.int707, 281474976710655
+  %addr.ffi.clean709 = inttoptr i64 %addr.ffi.masked708 to ptr
+  %call.res710 = call ptr @LLVMBuildMemCpy(ptr %addr.ffi.clean697, ptr %addr.ffi.clean701, i64 1, ptr %addr.ffi.clean705, i64 1, ptr %addr.ffi.clean709, i64 0)
+  %var.load711 = load ptr, ptr %var.cg, align 8
+  %fld.gep712 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load711, i32 0, i32 1
+  %fld.load713 = load ptr, ptr %fld.gep712, align 8
+  %addr.ffi.int714 = ptrtoint ptr %fld.load713 to i64
+  %addr.ffi.masked715 = and i64 %addr.ffi.int714, 281474976710655
+  %addr.ffi.clean716 = inttoptr i64 %addr.ffi.masked715 to ptr
+  %call.res717 = call ptr @LLVMInt8Type()
+  %addr.ffi.int718 = ptrtoint ptr %call.res717 to i64
+  %addr.ffi.masked719 = and i64 %addr.ffi.int718, 281474976710655
+  %addr.ffi.clean720 = inttoptr i64 %addr.ffi.masked719 to ptr
+  %call.res721 = call ptr @LLVMConstInt(ptr %addr.ffi.clean720, i64 0, i64 0)
+  %addr.ffi.int722 = ptrtoint ptr %call.res721 to i64
+  %addr.ffi.masked723 = and i64 %addr.ffi.int722, 281474976710655
+  %addr.ffi.clean724 = inttoptr i64 %addr.ffi.masked723 to ptr
+  %var.load725 = load ptr, ptr %var.cg, align 8
+  %call.res726 = call ptr @LLVMInt8Type()
+  %var.load727 = load ptr, ptr %var.new_buf, align 8
+  %var.load728 = load ptr, ptr %var.len, align 8
+  %call.res729 = call ptr @"types::gep1"(ptr %var.load725, ptr %call.res726, ptr %var.load727, ptr %var.load728, ptr @str.88.struct)
+  %addr.ffi.int730 = ptrtoint ptr %call.res729 to i64
+  %addr.ffi.masked731 = and i64 %addr.ffi.int730, 281474976710655
+  %addr.ffi.clean732 = inttoptr i64 %addr.ffi.masked731 to ptr
+  %call.res733 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean716, ptr %addr.ffi.clean724, ptr %addr.ffi.clean732)
+  %var.load734 = load ptr, ptr %var.cg, align 8
+  %fld.gep735 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load734, i32 0, i32 1
+  %fld.load736 = load ptr, ptr %fld.gep735, align 8
+  %addr.ffi.int737 = ptrtoint ptr %fld.load736 to i64
+  %addr.ffi.masked738 = and i64 %addr.ffi.int737, 281474976710655
+  %addr.ffi.clean739 = inttoptr i64 %addr.ffi.masked738 to ptr
+  %var.load740 = load ptr, ptr %var.new_buf, align 8
+  %addr.ffi.int741 = ptrtoint ptr %var.load740 to i64
+  %addr.ffi.masked742 = and i64 %addr.ffi.int741, 281474976710655
+  %addr.ffi.clean743 = inttoptr i64 %addr.ffi.masked742 to ptr
+  %var.load744 = load ptr, ptr %var.cg, align 8
+  %fld.gep745 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load744, i32 0, i32 1
+  %fld.load746 = load ptr, ptr %fld.gep745, align 8
+  %addr.ffi.int747 = ptrtoint ptr %fld.load746 to i64
+  %addr.ffi.masked748 = and i64 %addr.ffi.int747, 281474976710655
+  %addr.ffi.clean749 = inttoptr i64 %addr.ffi.masked748 to ptr
+  %var.load750 = load ptr, ptr %var.cg, align 8
+  %call.res751 = call ptr @"main::builder_struct_type"(ptr %var.load750)
+  %addr.ffi.int752 = ptrtoint ptr %call.res751 to i64
+  %addr.ffi.masked753 = and i64 %addr.ffi.int752, 281474976710655
+  %addr.ffi.clean754 = inttoptr i64 %addr.ffi.masked753 to ptr
+  %var.load755 = load ptr, ptr %var.b, align 8
+  %addr.ffi.int756 = ptrtoint ptr %var.load755 to i64
+  %addr.ffi.masked757 = and i64 %addr.ffi.int756, 281474976710655
+  %addr.ffi.clean758 = inttoptr i64 %addr.ffi.masked757 to ptr
+  %arg.str.ptr759 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.89.struct, i32 0, i32 1), align 8
+  %arg.str.ptr760 = load i64, ptr @str.89.struct, align 8
+  %arg.str.ptr761 = and i64 %arg.str.ptr760, 281474976710655
+  %str.tag762 = lshr i64 %arg.str.ptr760, 48
+  %str.immortal763 = icmp eq i64 %str.tag762, 0
+  br i1 %str.immortal763, label %str_ok765, label %str_gen_check764
 
-str_gen_check765:                                 ; preds = %choice.exit679
-  %arena.gen768 = call ptr @dva_arena_current()
-  %arena.gen769 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen768, i32 0, i32 4
-  %arena.gen770 = load i64, ptr %arena.gen769, align 8
-  %str.tag.match771 = icmp eq i64 %str.tag763, %arena.gen770
-  br i1 %str.tag.match771, label %str_ok766, label %str_stale767
+str_gen_check764:                                 ; preds = %choice.exit678
+  %arena.gen767 = call ptr @dva_arena_current()
+  %arena.gen768 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen767, i32 0, i32 4
+  %arena.gen769 = load i64, ptr %arena.gen768, align 8
+  %str.tag.match770 = icmp eq i64 %str.tag762, %arena.gen769
+  br i1 %str.tag.match770, label %str_ok765, label %str_stale766
 
-str_ok766:                                        ; preds = %str_stale767, %str_gen_check765, %choice.exit679
-  %nulcheck.gep772 = getelementptr i8, ptr %arg.str.ptr760, i64 %arg.str.ptr762
-  %nulcheck.byte773 = load i8, ptr %nulcheck.gep772, align 1
-  %nulcheck774 = icmp eq i8 %nulcheck.byte773, 0
-  br i1 %nulcheck774, label %arg.str.ptr775, label %nulcopy776
+str_ok765:                                        ; preds = %str_stale766, %str_gen_check764, %choice.exit678
+  %nulcheck.gep771 = getelementptr i8, ptr %arg.str.ptr759, i64 %arg.str.ptr761
+  %nulcheck.byte772 = load i8, ptr %nulcheck.gep771, align 1
+  %nulcheck773 = icmp eq i8 %nulcheck.byte772, 0
+  br i1 %nulcheck773, label %arg.str.ptr774, label %nulcopy775
 
-str_stale767:                                     ; preds = %str_gen_check765
+str_stale766:                                     ; preds = %str_gen_check764
   %31 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok766
+  br label %str_ok765
 
-arg.str.ptr775:                                   ; preds = %str_ok766
-  br label %nulmerge777
+arg.str.ptr774:                                   ; preds = %str_ok765
+  br label %nulmerge776
 
-nulcopy776:                                       ; preds = %str_ok766
-  %nulcopy.len778 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr762, i64 1)
-  %sum779 = extractvalue { i64, i1 } %nulcopy.len778, 0
-  %ovf780 = extractvalue { i64, i1 } %nulcopy.len778, 1
-  br i1 %ovf780, label %str_overflow_abort782, label %nulcopy.len781
+nulcopy775:                                       ; preds = %str_ok765
+  %nulcopy.len777 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr761, i64 1)
+  %sum778 = extractvalue { i64, i1 } %nulcopy.len777, 0
+  %ovf779 = extractvalue { i64, i1 } %nulcopy.len777, 1
+  br i1 %ovf779, label %str_overflow_abort781, label %nulcopy.len780
 
-nulmerge777:                                      ; preds = %nulcopy.len781, %arg.str.ptr775
-  %arg.str.ptr786 = phi ptr [ %arg.str.ptr760, %arg.str.ptr775 ], [ %nulcopy.buf784, %nulcopy.len781 ]
-  %call.res787 = call ptr @LLVMBuildStructGEP2(ptr %addr.ffi.clean750, ptr %addr.ffi.clean755, ptr %addr.ffi.clean759, i64 1, ptr %arg.str.ptr786)
-  %addr.ffi.int788 = ptrtoint ptr %call.res787 to i64
-  %addr.ffi.masked789 = and i64 %addr.ffi.int788, 281474976710655
-  %addr.ffi.clean790 = inttoptr i64 %addr.ffi.masked789 to ptr
-  %call.res791 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean740, ptr %addr.ffi.clean744, ptr %addr.ffi.clean790)
-  %var.load792 = load ptr, ptr %var.cg, align 8
-  %fld.gep793 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load792, i32 0, i32 1
-  %fld.load794 = load ptr, ptr %fld.gep793, align 8
-  %addr.ffi.int795 = ptrtoint ptr %fld.load794 to i64
-  %addr.ffi.masked796 = and i64 %addr.ffi.int795, 281474976710655
-  %addr.ffi.clean797 = inttoptr i64 %addr.ffi.masked796 to ptr
-  %var.load798 = load ptr, ptr %var.new_cap, align 8
-  %addr.ffi.int799 = ptrtoint ptr %var.load798 to i64
-  %addr.ffi.masked800 = and i64 %addr.ffi.int799, 281474976710655
-  %addr.ffi.clean801 = inttoptr i64 %addr.ffi.masked800 to ptr
-  %var.load802 = load ptr, ptr %var.cg, align 8
-  %fld.gep803 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load802, i32 0, i32 1
-  %fld.load804 = load ptr, ptr %fld.gep803, align 8
-  %addr.ffi.int805 = ptrtoint ptr %fld.load804 to i64
-  %addr.ffi.masked806 = and i64 %addr.ffi.int805, 281474976710655
-  %addr.ffi.clean807 = inttoptr i64 %addr.ffi.masked806 to ptr
-  %var.load808 = load ptr, ptr %var.cg, align 8
-  %call.res809 = call ptr @"main::builder_struct_type"(ptr %var.load808)
-  %addr.ffi.int810 = ptrtoint ptr %call.res809 to i64
-  %addr.ffi.masked811 = and i64 %addr.ffi.int810, 281474976710655
-  %addr.ffi.clean812 = inttoptr i64 %addr.ffi.masked811 to ptr
-  %var.load813 = load ptr, ptr %var.b, align 8
-  %addr.ffi.int814 = ptrtoint ptr %var.load813 to i64
-  %addr.ffi.masked815 = and i64 %addr.ffi.int814, 281474976710655
-  %addr.ffi.clean816 = inttoptr i64 %addr.ffi.masked815 to ptr
-  %arg.str.ptr817 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.90.struct, i32 0, i32 1), align 8
-  %arg.str.ptr818 = load i64, ptr @str.90.struct, align 8
-  %arg.str.ptr819 = and i64 %arg.str.ptr818, 281474976710655
-  %str.tag820 = lshr i64 %arg.str.ptr818, 48
-  %str.immortal821 = icmp eq i64 %str.tag820, 0
-  br i1 %str.immortal821, label %str_ok823, label %str_gen_check822
+nulmerge776:                                      ; preds = %nulcopy.len780, %arg.str.ptr774
+  %arg.str.ptr785 = phi ptr [ %arg.str.ptr759, %arg.str.ptr774 ], [ %nulcopy.buf783, %nulcopy.len780 ]
+  %call.res786 = call ptr @LLVMBuildStructGEP2(ptr %addr.ffi.clean749, ptr %addr.ffi.clean754, ptr %addr.ffi.clean758, i64 1, ptr %arg.str.ptr785)
+  %addr.ffi.int787 = ptrtoint ptr %call.res786 to i64
+  %addr.ffi.masked788 = and i64 %addr.ffi.int787, 281474976710655
+  %addr.ffi.clean789 = inttoptr i64 %addr.ffi.masked788 to ptr
+  %call.res790 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean739, ptr %addr.ffi.clean743, ptr %addr.ffi.clean789)
+  %var.load791 = load ptr, ptr %var.cg, align 8
+  %fld.gep792 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load791, i32 0, i32 1
+  %fld.load793 = load ptr, ptr %fld.gep792, align 8
+  %addr.ffi.int794 = ptrtoint ptr %fld.load793 to i64
+  %addr.ffi.masked795 = and i64 %addr.ffi.int794, 281474976710655
+  %addr.ffi.clean796 = inttoptr i64 %addr.ffi.masked795 to ptr
+  %var.load797 = load ptr, ptr %var.new_cap, align 8
+  %addr.ffi.int798 = ptrtoint ptr %var.load797 to i64
+  %addr.ffi.masked799 = and i64 %addr.ffi.int798, 281474976710655
+  %addr.ffi.clean800 = inttoptr i64 %addr.ffi.masked799 to ptr
+  %var.load801 = load ptr, ptr %var.cg, align 8
+  %fld.gep802 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load801, i32 0, i32 1
+  %fld.load803 = load ptr, ptr %fld.gep802, align 8
+  %addr.ffi.int804 = ptrtoint ptr %fld.load803 to i64
+  %addr.ffi.masked805 = and i64 %addr.ffi.int804, 281474976710655
+  %addr.ffi.clean806 = inttoptr i64 %addr.ffi.masked805 to ptr
+  %var.load807 = load ptr, ptr %var.cg, align 8
+  %call.res808 = call ptr @"main::builder_struct_type"(ptr %var.load807)
+  %addr.ffi.int809 = ptrtoint ptr %call.res808 to i64
+  %addr.ffi.masked810 = and i64 %addr.ffi.int809, 281474976710655
+  %addr.ffi.clean811 = inttoptr i64 %addr.ffi.masked810 to ptr
+  %var.load812 = load ptr, ptr %var.b, align 8
+  %addr.ffi.int813 = ptrtoint ptr %var.load812 to i64
+  %addr.ffi.masked814 = and i64 %addr.ffi.int813, 281474976710655
+  %addr.ffi.clean815 = inttoptr i64 %addr.ffi.masked814 to ptr
+  %arg.str.ptr816 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.90.struct, i32 0, i32 1), align 8
+  %arg.str.ptr817 = load i64, ptr @str.90.struct, align 8
+  %arg.str.ptr818 = and i64 %arg.str.ptr817, 281474976710655
+  %str.tag819 = lshr i64 %arg.str.ptr817, 48
+  %str.immortal820 = icmp eq i64 %str.tag819, 0
+  br i1 %str.immortal820, label %str_ok822, label %str_gen_check821
 
-nulcopy.len781:                                   ; preds = %str_overflow_abort782, %nulcopy776
-  %arena.cur783 = call ptr @dva_arena_current()
-  %nulcopy.buf784 = call ptr @dva_arena_alloc(ptr %arena.cur783, i64 %sum779)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf784, ptr align 1 %arg.str.ptr760, i64 %arg.str.ptr762, i1 false)
-  %nulcopy.nul785 = getelementptr i8, ptr %nulcopy.buf784, i64 %arg.str.ptr762
-  store i8 0, ptr %nulcopy.nul785, align 1
-  br label %nulmerge777
+nulcopy.len780:                                   ; preds = %str_overflow_abort781, %nulcopy775
+  %arena.cur782 = call ptr @dva_arena_current()
+  %nulcopy.buf783 = call ptr @dva_arena_alloc(ptr %arena.cur782, i64 %sum778)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf783, ptr align 1 %arg.str.ptr759, i64 %arg.str.ptr761, i1 false)
+  %nulcopy.nul784 = getelementptr i8, ptr %nulcopy.buf783, i64 %arg.str.ptr761
+  store i8 0, ptr %nulcopy.nul784, align 1
+  br label %nulmerge776
 
-str_overflow_abort782:                            ; preds = %nulcopy776
+str_overflow_abort781:                            ; preds = %nulcopy775
   %32 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len781
+  br label %nulcopy.len780
 
-str_gen_check822:                                 ; preds = %nulmerge777
-  %arena.gen825 = call ptr @dva_arena_current()
-  %arena.gen826 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen825, i32 0, i32 4
-  %arena.gen827 = load i64, ptr %arena.gen826, align 8
-  %str.tag.match828 = icmp eq i64 %str.tag820, %arena.gen827
-  br i1 %str.tag.match828, label %str_ok823, label %str_stale824
+str_gen_check821:                                 ; preds = %nulmerge776
+  %arena.gen824 = call ptr @dva_arena_current()
+  %arena.gen825 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen824, i32 0, i32 4
+  %arena.gen826 = load i64, ptr %arena.gen825, align 8
+  %str.tag.match827 = icmp eq i64 %str.tag819, %arena.gen826
+  br i1 %str.tag.match827, label %str_ok822, label %str_stale823
 
-str_ok823:                                        ; preds = %str_stale824, %str_gen_check822, %nulmerge777
-  %nulcheck.gep829 = getelementptr i8, ptr %arg.str.ptr817, i64 %arg.str.ptr819
-  %nulcheck.byte830 = load i8, ptr %nulcheck.gep829, align 1
-  %nulcheck831 = icmp eq i8 %nulcheck.byte830, 0
-  br i1 %nulcheck831, label %arg.str.ptr832, label %nulcopy833
+str_ok822:                                        ; preds = %str_stale823, %str_gen_check821, %nulmerge776
+  %nulcheck.gep828 = getelementptr i8, ptr %arg.str.ptr816, i64 %arg.str.ptr818
+  %nulcheck.byte829 = load i8, ptr %nulcheck.gep828, align 1
+  %nulcheck830 = icmp eq i8 %nulcheck.byte829, 0
+  br i1 %nulcheck830, label %arg.str.ptr831, label %nulcopy832
 
-str_stale824:                                     ; preds = %str_gen_check822
+str_stale823:                                     ; preds = %str_gen_check821
   %33 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok823
+  br label %str_ok822
 
-arg.str.ptr832:                                   ; preds = %str_ok823
-  br label %nulmerge834
+arg.str.ptr831:                                   ; preds = %str_ok822
+  br label %nulmerge833
 
-nulcopy833:                                       ; preds = %str_ok823
-  %nulcopy.len835 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr819, i64 1)
-  %sum836 = extractvalue { i64, i1 } %nulcopy.len835, 0
-  %ovf837 = extractvalue { i64, i1 } %nulcopy.len835, 1
-  br i1 %ovf837, label %str_overflow_abort839, label %nulcopy.len838
+nulcopy832:                                       ; preds = %str_ok822
+  %nulcopy.len834 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr818, i64 1)
+  %sum835 = extractvalue { i64, i1 } %nulcopy.len834, 0
+  %ovf836 = extractvalue { i64, i1 } %nulcopy.len834, 1
+  br i1 %ovf836, label %str_overflow_abort838, label %nulcopy.len837
 
-nulmerge834:                                      ; preds = %nulcopy.len838, %arg.str.ptr832
-  %arg.str.ptr843 = phi ptr [ %arg.str.ptr817, %arg.str.ptr832 ], [ %nulcopy.buf841, %nulcopy.len838 ]
-  %call.res844 = call ptr @LLVMBuildStructGEP2(ptr %addr.ffi.clean807, ptr %addr.ffi.clean812, ptr %addr.ffi.clean816, i64 2, ptr %arg.str.ptr843)
-  %addr.ffi.int845 = ptrtoint ptr %call.res844 to i64
-  %addr.ffi.masked846 = and i64 %addr.ffi.int845, 281474976710655
-  %addr.ffi.clean847 = inttoptr i64 %addr.ffi.masked846 to ptr
-  %call.res848 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean797, ptr %addr.ffi.clean801, ptr %addr.ffi.clean847)
-  %var.load849 = load ptr, ptr %var.cg, align 8
-  %fld.gep850 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load849, i32 0, i32 1
-  %fld.load851 = load ptr, ptr %fld.gep850, align 8
-  %addr.ffi.int852 = ptrtoint ptr %fld.load851 to i64
-  %addr.ffi.masked853 = and i64 %addr.ffi.int852, 281474976710655
-  %addr.ffi.clean854 = inttoptr i64 %addr.ffi.masked853 to ptr
-  %var.load855 = load ptr, ptr %var.done_bb, align 8
-  %addr.ffi.int856 = ptrtoint ptr %var.load855 to i64
-  %addr.ffi.masked857 = and i64 %addr.ffi.int856, 281474976710655
-  %addr.ffi.clean858 = inttoptr i64 %addr.ffi.masked857 to ptr
-  %call.res859 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean854, ptr %addr.ffi.clean858)
-  %var.load860 = load ptr, ptr %var.cg, align 8
-  %fld.gep861 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load860, i32 0, i32 1
-  %fld.load862 = load ptr, ptr %fld.gep861, align 8
-  %addr.ffi.int863 = ptrtoint ptr %fld.load862 to i64
-  %addr.ffi.masked864 = and i64 %addr.ffi.int863, 281474976710655
-  %addr.ffi.clean865 = inttoptr i64 %addr.ffi.masked864 to ptr
-  %var.load866 = load ptr, ptr %var.nogrow_bb, align 8
-  %addr.ffi.int867 = ptrtoint ptr %var.load866 to i64
-  %addr.ffi.masked868 = and i64 %addr.ffi.int867, 281474976710655
-  %addr.ffi.clean869 = inttoptr i64 %addr.ffi.masked868 to ptr
-  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean865, ptr %addr.ffi.clean869)
-  %var.load870 = load ptr, ptr %var.cg, align 8
-  %fld.gep871 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load870, i32 0, i32 1
-  %fld.load872 = load ptr, ptr %fld.gep871, align 8
-  %addr.ffi.int873 = ptrtoint ptr %fld.load872 to i64
-  %addr.ffi.masked874 = and i64 %addr.ffi.int873, 281474976710655
-  %addr.ffi.clean875 = inttoptr i64 %addr.ffi.masked874 to ptr
-  %var.load876 = load ptr, ptr %var.done_bb, align 8
-  %addr.ffi.int877 = ptrtoint ptr %var.load876 to i64
-  %addr.ffi.masked878 = and i64 %addr.ffi.int877, 281474976710655
-  %addr.ffi.clean879 = inttoptr i64 %addr.ffi.masked878 to ptr
-  %call.res880 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean875, ptr %addr.ffi.clean879)
-  %var.load881 = load ptr, ptr %var.cg, align 8
-  %fld.gep882 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load881, i32 0, i32 1
-  %fld.load883 = load ptr, ptr %fld.gep882, align 8
-  %addr.ffi.int884 = ptrtoint ptr %fld.load883 to i64
-  %addr.ffi.masked885 = and i64 %addr.ffi.int884, 281474976710655
-  %addr.ffi.clean886 = inttoptr i64 %addr.ffi.masked885 to ptr
-  %var.load887 = load ptr, ptr %var.done_bb, align 8
-  %addr.ffi.int888 = ptrtoint ptr %var.load887 to i64
-  %addr.ffi.masked889 = and i64 %addr.ffi.int888, 281474976710655
-  %addr.ffi.clean890 = inttoptr i64 %addr.ffi.masked889 to ptr
-  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean886, ptr %addr.ffi.clean890)
-  %var.load891 = load ptr, ptr %var.cg, align 8
-  %var.load892 = load ptr, ptr %var.b, align 8
-  %call.res893 = call ptr @"main::builder_data"(ptr %var.load891, ptr %var.load892, ptr @str.91.struct)
-  store ptr %call.res893, ptr %var.cur_data, align 8
-  %var.load894 = load ptr, ptr %var.cg, align 8
-  %var.load895 = load ptr, ptr %var.b, align 8
-  %call.res896 = call ptr @"main::builder_len"(ptr %var.load894, ptr %var.load895, ptr @str.92.struct)
-  store ptr %call.res896, ptr %var.cur_len, align 8
-  %var.load897 = load ptr, ptr %var.cg, align 8
-  %fld.gep898 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load897, i32 0, i32 1
-  %fld.load899 = load ptr, ptr %fld.gep898, align 8
-  %addr.ffi.int900 = ptrtoint ptr %fld.load899 to i64
-  %addr.ffi.masked901 = and i64 %addr.ffi.int900, 281474976710655
-  %addr.ffi.clean902 = inttoptr i64 %addr.ffi.masked901 to ptr
-  %var.load903 = load ptr, ptr %var.byte_i8, align 8
-  %addr.ffi.int904 = ptrtoint ptr %var.load903 to i64
-  %addr.ffi.masked905 = and i64 %addr.ffi.int904, 281474976710655
-  %addr.ffi.clean906 = inttoptr i64 %addr.ffi.masked905 to ptr
-  %var.load907 = load ptr, ptr %var.cg, align 8
-  %call.res908 = call ptr @LLVMInt8Type()
-  %var.load909 = load ptr, ptr %var.cur_data, align 8
-  %var.load910 = load ptr, ptr %var.cur_len, align 8
-  %call.res911 = call ptr @"types::gep1"(ptr %var.load907, ptr %call.res908, ptr %var.load909, ptr %var.load910, ptr @str.93.struct)
-  %addr.ffi.int912 = ptrtoint ptr %call.res911 to i64
-  %addr.ffi.masked913 = and i64 %addr.ffi.int912, 281474976710655
-  %addr.ffi.clean914 = inttoptr i64 %addr.ffi.masked913 to ptr
-  %call.res915 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean902, ptr %addr.ffi.clean906, ptr %addr.ffi.clean914)
-  %var.load916 = load ptr, ptr %var.cg, align 8
-  %fld.gep917 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load916, i32 0, i32 1
-  %fld.load918 = load ptr, ptr %fld.gep917, align 8
-  %addr.ffi.int919 = ptrtoint ptr %fld.load918 to i64
-  %addr.ffi.masked920 = and i64 %addr.ffi.int919, 281474976710655
-  %addr.ffi.clean921 = inttoptr i64 %addr.ffi.masked920 to ptr
-  %var.load922 = load ptr, ptr %var.cur_len, align 8
-  %addr.ffi.int923 = ptrtoint ptr %var.load922 to i64
-  %addr.ffi.masked924 = and i64 %addr.ffi.int923, 281474976710655
-  %addr.ffi.clean925 = inttoptr i64 %addr.ffi.masked924 to ptr
-  %var.load926 = load ptr, ptr %var.one, align 8
-  %addr.ffi.int927 = ptrtoint ptr %var.load926 to i64
-  %addr.ffi.masked928 = and i64 %addr.ffi.int927, 281474976710655
-  %addr.ffi.clean929 = inttoptr i64 %addr.ffi.masked928 to ptr
-  %arg.str.ptr930 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.94.struct, i32 0, i32 1), align 8
-  %arg.str.ptr931 = load i64, ptr @str.94.struct, align 8
-  %arg.str.ptr932 = and i64 %arg.str.ptr931, 281474976710655
-  %str.tag933 = lshr i64 %arg.str.ptr931, 48
-  %str.immortal934 = icmp eq i64 %str.tag933, 0
-  br i1 %str.immortal934, label %str_ok936, label %str_gen_check935
+nulmerge833:                                      ; preds = %nulcopy.len837, %arg.str.ptr831
+  %arg.str.ptr842 = phi ptr [ %arg.str.ptr816, %arg.str.ptr831 ], [ %nulcopy.buf840, %nulcopy.len837 ]
+  %call.res843 = call ptr @LLVMBuildStructGEP2(ptr %addr.ffi.clean806, ptr %addr.ffi.clean811, ptr %addr.ffi.clean815, i64 2, ptr %arg.str.ptr842)
+  %addr.ffi.int844 = ptrtoint ptr %call.res843 to i64
+  %addr.ffi.masked845 = and i64 %addr.ffi.int844, 281474976710655
+  %addr.ffi.clean846 = inttoptr i64 %addr.ffi.masked845 to ptr
+  %call.res847 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean796, ptr %addr.ffi.clean800, ptr %addr.ffi.clean846)
+  %var.load848 = load ptr, ptr %var.cg, align 8
+  %fld.gep849 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load848, i32 0, i32 1
+  %fld.load850 = load ptr, ptr %fld.gep849, align 8
+  %addr.ffi.int851 = ptrtoint ptr %fld.load850 to i64
+  %addr.ffi.masked852 = and i64 %addr.ffi.int851, 281474976710655
+  %addr.ffi.clean853 = inttoptr i64 %addr.ffi.masked852 to ptr
+  %var.load854 = load ptr, ptr %var.done_bb, align 8
+  %addr.ffi.int855 = ptrtoint ptr %var.load854 to i64
+  %addr.ffi.masked856 = and i64 %addr.ffi.int855, 281474976710655
+  %addr.ffi.clean857 = inttoptr i64 %addr.ffi.masked856 to ptr
+  %call.res858 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean853, ptr %addr.ffi.clean857)
+  %var.load859 = load ptr, ptr %var.cg, align 8
+  %fld.gep860 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load859, i32 0, i32 1
+  %fld.load861 = load ptr, ptr %fld.gep860, align 8
+  %addr.ffi.int862 = ptrtoint ptr %fld.load861 to i64
+  %addr.ffi.masked863 = and i64 %addr.ffi.int862, 281474976710655
+  %addr.ffi.clean864 = inttoptr i64 %addr.ffi.masked863 to ptr
+  %var.load865 = load ptr, ptr %var.nogrow_bb, align 8
+  %addr.ffi.int866 = ptrtoint ptr %var.load865 to i64
+  %addr.ffi.masked867 = and i64 %addr.ffi.int866, 281474976710655
+  %addr.ffi.clean868 = inttoptr i64 %addr.ffi.masked867 to ptr
+  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean864, ptr %addr.ffi.clean868)
+  %var.load869 = load ptr, ptr %var.cg, align 8
+  %fld.gep870 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load869, i32 0, i32 1
+  %fld.load871 = load ptr, ptr %fld.gep870, align 8
+  %addr.ffi.int872 = ptrtoint ptr %fld.load871 to i64
+  %addr.ffi.masked873 = and i64 %addr.ffi.int872, 281474976710655
+  %addr.ffi.clean874 = inttoptr i64 %addr.ffi.masked873 to ptr
+  %var.load875 = load ptr, ptr %var.done_bb, align 8
+  %addr.ffi.int876 = ptrtoint ptr %var.load875 to i64
+  %addr.ffi.masked877 = and i64 %addr.ffi.int876, 281474976710655
+  %addr.ffi.clean878 = inttoptr i64 %addr.ffi.masked877 to ptr
+  %call.res879 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean874, ptr %addr.ffi.clean878)
+  %var.load880 = load ptr, ptr %var.cg, align 8
+  %fld.gep881 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load880, i32 0, i32 1
+  %fld.load882 = load ptr, ptr %fld.gep881, align 8
+  %addr.ffi.int883 = ptrtoint ptr %fld.load882 to i64
+  %addr.ffi.masked884 = and i64 %addr.ffi.int883, 281474976710655
+  %addr.ffi.clean885 = inttoptr i64 %addr.ffi.masked884 to ptr
+  %var.load886 = load ptr, ptr %var.done_bb, align 8
+  %addr.ffi.int887 = ptrtoint ptr %var.load886 to i64
+  %addr.ffi.masked888 = and i64 %addr.ffi.int887, 281474976710655
+  %addr.ffi.clean889 = inttoptr i64 %addr.ffi.masked888 to ptr
+  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean885, ptr %addr.ffi.clean889)
+  %var.load890 = load ptr, ptr %var.cg, align 8
+  %var.load891 = load ptr, ptr %var.b, align 8
+  %call.res892 = call ptr @"main::builder_data"(ptr %var.load890, ptr %var.load891, ptr @str.91.struct)
+  store ptr %call.res892, ptr %var.cur_data, align 8
+  %var.load893 = load ptr, ptr %var.cg, align 8
+  %var.load894 = load ptr, ptr %var.b, align 8
+  %call.res895 = call ptr @"main::builder_len"(ptr %var.load893, ptr %var.load894, ptr @str.92.struct)
+  store ptr %call.res895, ptr %var.cur_len, align 8
+  %var.load896 = load ptr, ptr %var.cg, align 8
+  %fld.gep897 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load896, i32 0, i32 1
+  %fld.load898 = load ptr, ptr %fld.gep897, align 8
+  %addr.ffi.int899 = ptrtoint ptr %fld.load898 to i64
+  %addr.ffi.masked900 = and i64 %addr.ffi.int899, 281474976710655
+  %addr.ffi.clean901 = inttoptr i64 %addr.ffi.masked900 to ptr
+  %var.load902 = load ptr, ptr %var.byte_i8, align 8
+  %addr.ffi.int903 = ptrtoint ptr %var.load902 to i64
+  %addr.ffi.masked904 = and i64 %addr.ffi.int903, 281474976710655
+  %addr.ffi.clean905 = inttoptr i64 %addr.ffi.masked904 to ptr
+  %var.load906 = load ptr, ptr %var.cg, align 8
+  %call.res907 = call ptr @LLVMInt8Type()
+  %var.load908 = load ptr, ptr %var.cur_data, align 8
+  %var.load909 = load ptr, ptr %var.cur_len, align 8
+  %call.res910 = call ptr @"types::gep1"(ptr %var.load906, ptr %call.res907, ptr %var.load908, ptr %var.load909, ptr @str.93.struct)
+  %addr.ffi.int911 = ptrtoint ptr %call.res910 to i64
+  %addr.ffi.masked912 = and i64 %addr.ffi.int911, 281474976710655
+  %addr.ffi.clean913 = inttoptr i64 %addr.ffi.masked912 to ptr
+  %call.res914 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean901, ptr %addr.ffi.clean905, ptr %addr.ffi.clean913)
+  %var.load915 = load ptr, ptr %var.cg, align 8
+  %fld.gep916 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load915, i32 0, i32 1
+  %fld.load917 = load ptr, ptr %fld.gep916, align 8
+  %addr.ffi.int918 = ptrtoint ptr %fld.load917 to i64
+  %addr.ffi.masked919 = and i64 %addr.ffi.int918, 281474976710655
+  %addr.ffi.clean920 = inttoptr i64 %addr.ffi.masked919 to ptr
+  %var.load921 = load ptr, ptr %var.cur_len, align 8
+  %addr.ffi.int922 = ptrtoint ptr %var.load921 to i64
+  %addr.ffi.masked923 = and i64 %addr.ffi.int922, 281474976710655
+  %addr.ffi.clean924 = inttoptr i64 %addr.ffi.masked923 to ptr
+  %var.load925 = load ptr, ptr %var.one, align 8
+  %addr.ffi.int926 = ptrtoint ptr %var.load925 to i64
+  %addr.ffi.masked927 = and i64 %addr.ffi.int926, 281474976710655
+  %addr.ffi.clean928 = inttoptr i64 %addr.ffi.masked927 to ptr
+  %arg.str.ptr929 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.94.struct, i32 0, i32 1), align 8
+  %arg.str.ptr930 = load i64, ptr @str.94.struct, align 8
+  %arg.str.ptr931 = and i64 %arg.str.ptr930, 281474976710655
+  %str.tag932 = lshr i64 %arg.str.ptr930, 48
+  %str.immortal933 = icmp eq i64 %str.tag932, 0
+  br i1 %str.immortal933, label %str_ok935, label %str_gen_check934
 
-nulcopy.len838:                                   ; preds = %str_overflow_abort839, %nulcopy833
-  %arena.cur840 = call ptr @dva_arena_current()
-  %nulcopy.buf841 = call ptr @dva_arena_alloc(ptr %arena.cur840, i64 %sum836)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf841, ptr align 1 %arg.str.ptr817, i64 %arg.str.ptr819, i1 false)
-  %nulcopy.nul842 = getelementptr i8, ptr %nulcopy.buf841, i64 %arg.str.ptr819
-  store i8 0, ptr %nulcopy.nul842, align 1
-  br label %nulmerge834
+nulcopy.len837:                                   ; preds = %str_overflow_abort838, %nulcopy832
+  %arena.cur839 = call ptr @dva_arena_current()
+  %nulcopy.buf840 = call ptr @dva_arena_alloc(ptr %arena.cur839, i64 %sum835)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf840, ptr align 1 %arg.str.ptr816, i64 %arg.str.ptr818, i1 false)
+  %nulcopy.nul841 = getelementptr i8, ptr %nulcopy.buf840, i64 %arg.str.ptr818
+  store i8 0, ptr %nulcopy.nul841, align 1
+  br label %nulmerge833
 
-str_overflow_abort839:                            ; preds = %nulcopy833
+str_overflow_abort838:                            ; preds = %nulcopy832
   %34 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len838
+  br label %nulcopy.len837
 
-str_gen_check935:                                 ; preds = %nulmerge834
-  %arena.gen938 = call ptr @dva_arena_current()
-  %arena.gen939 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen938, i32 0, i32 4
-  %arena.gen940 = load i64, ptr %arena.gen939, align 8
-  %str.tag.match941 = icmp eq i64 %str.tag933, %arena.gen940
-  br i1 %str.tag.match941, label %str_ok936, label %str_stale937
+str_gen_check934:                                 ; preds = %nulmerge833
+  %arena.gen937 = call ptr @dva_arena_current()
+  %arena.gen938 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen937, i32 0, i32 4
+  %arena.gen939 = load i64, ptr %arena.gen938, align 8
+  %str.tag.match940 = icmp eq i64 %str.tag932, %arena.gen939
+  br i1 %str.tag.match940, label %str_ok935, label %str_stale936
 
-str_ok936:                                        ; preds = %str_stale937, %str_gen_check935, %nulmerge834
-  %nulcheck.gep942 = getelementptr i8, ptr %arg.str.ptr930, i64 %arg.str.ptr932
-  %nulcheck.byte943 = load i8, ptr %nulcheck.gep942, align 1
-  %nulcheck944 = icmp eq i8 %nulcheck.byte943, 0
-  br i1 %nulcheck944, label %arg.str.ptr945, label %nulcopy946
+str_ok935:                                        ; preds = %str_stale936, %str_gen_check934, %nulmerge833
+  %nulcheck.gep941 = getelementptr i8, ptr %arg.str.ptr929, i64 %arg.str.ptr931
+  %nulcheck.byte942 = load i8, ptr %nulcheck.gep941, align 1
+  %nulcheck943 = icmp eq i8 %nulcheck.byte942, 0
+  br i1 %nulcheck943, label %arg.str.ptr944, label %nulcopy945
 
-str_stale937:                                     ; preds = %str_gen_check935
+str_stale936:                                     ; preds = %str_gen_check934
   %35 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok936
+  br label %str_ok935
 
-arg.str.ptr945:                                   ; preds = %str_ok936
-  br label %nulmerge947
+arg.str.ptr944:                                   ; preds = %str_ok935
+  br label %nulmerge946
 
-nulcopy946:                                       ; preds = %str_ok936
-  %nulcopy.len948 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr932, i64 1)
-  %sum949 = extractvalue { i64, i1 } %nulcopy.len948, 0
-  %ovf950 = extractvalue { i64, i1 } %nulcopy.len948, 1
-  br i1 %ovf950, label %str_overflow_abort952, label %nulcopy.len951
+nulcopy945:                                       ; preds = %str_ok935
+  %nulcopy.len947 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %arg.str.ptr931, i64 1)
+  %sum948 = extractvalue { i64, i1 } %nulcopy.len947, 0
+  %ovf949 = extractvalue { i64, i1 } %nulcopy.len947, 1
+  br i1 %ovf949, label %str_overflow_abort951, label %nulcopy.len950
 
-nulmerge947:                                      ; preds = %nulcopy.len951, %arg.str.ptr945
-  %arg.str.ptr956 = phi ptr [ %arg.str.ptr930, %arg.str.ptr945 ], [ %nulcopy.buf954, %nulcopy.len951 ]
-  %call.res957 = call ptr @LLVMBuildAdd(ptr %addr.ffi.clean921, ptr %addr.ffi.clean925, ptr %addr.ffi.clean929, ptr %arg.str.ptr956)
-  store ptr %call.res957, ptr %var.next_len, align 8
-  %var.load958 = load ptr, ptr %var.cg, align 8
-  %fld.gep959 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load958, i32 0, i32 1
-  %fld.load960 = load ptr, ptr %fld.gep959, align 8
-  %addr.ffi.int961 = ptrtoint ptr %fld.load960 to i64
-  %addr.ffi.masked962 = and i64 %addr.ffi.int961, 281474976710655
-  %addr.ffi.clean963 = inttoptr i64 %addr.ffi.masked962 to ptr
-  %call.res964 = call ptr @LLVMInt8Type()
-  %addr.ffi.int965 = ptrtoint ptr %call.res964 to i64
-  %addr.ffi.masked966 = and i64 %addr.ffi.int965, 281474976710655
-  %addr.ffi.clean967 = inttoptr i64 %addr.ffi.masked966 to ptr
-  %call.res968 = call ptr @LLVMConstInt(ptr %addr.ffi.clean967, i64 0, i64 0)
-  %addr.ffi.int969 = ptrtoint ptr %call.res968 to i64
-  %addr.ffi.masked970 = and i64 %addr.ffi.int969, 281474976710655
-  %addr.ffi.clean971 = inttoptr i64 %addr.ffi.masked970 to ptr
-  %var.load972 = load ptr, ptr %var.cg, align 8
-  %call.res973 = call ptr @LLVMInt8Type()
-  %var.load974 = load ptr, ptr %var.cur_data, align 8
-  %var.load975 = load ptr, ptr %var.next_len, align 8
-  %call.res976 = call ptr @"types::gep1"(ptr %var.load972, ptr %call.res973, ptr %var.load974, ptr %var.load975, ptr @str.95.struct)
-  %addr.ffi.int977 = ptrtoint ptr %call.res976 to i64
-  %addr.ffi.masked978 = and i64 %addr.ffi.int977, 281474976710655
-  %addr.ffi.clean979 = inttoptr i64 %addr.ffi.masked978 to ptr
-  %call.res980 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean963, ptr %addr.ffi.clean971, ptr %addr.ffi.clean979)
-  %var.load981 = load ptr, ptr %var.cg, align 8
-  %var.load982 = load ptr, ptr %var.b, align 8
-  %var.load983 = load ptr, ptr %var.next_len, align 8
-  %call.res984 = call ptr @"main::builder_set_len"(ptr %var.load981, ptr %var.load982, ptr %var.load983)
+nulmerge946:                                      ; preds = %nulcopy.len950, %arg.str.ptr944
+  %arg.str.ptr955 = phi ptr [ %arg.str.ptr929, %arg.str.ptr944 ], [ %nulcopy.buf953, %nulcopy.len950 ]
+  %call.res956 = call ptr @LLVMBuildAdd(ptr %addr.ffi.clean920, ptr %addr.ffi.clean924, ptr %addr.ffi.clean928, ptr %arg.str.ptr955)
+  store ptr %call.res956, ptr %var.next_len, align 8
+  %var.load957 = load ptr, ptr %var.cg, align 8
+  %fld.gep958 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load957, i32 0, i32 1
+  %fld.load959 = load ptr, ptr %fld.gep958, align 8
+  %addr.ffi.int960 = ptrtoint ptr %fld.load959 to i64
+  %addr.ffi.masked961 = and i64 %addr.ffi.int960, 281474976710655
+  %addr.ffi.clean962 = inttoptr i64 %addr.ffi.masked961 to ptr
+  %call.res963 = call ptr @LLVMInt8Type()
+  %addr.ffi.int964 = ptrtoint ptr %call.res963 to i64
+  %addr.ffi.masked965 = and i64 %addr.ffi.int964, 281474976710655
+  %addr.ffi.clean966 = inttoptr i64 %addr.ffi.masked965 to ptr
+  %call.res967 = call ptr @LLVMConstInt(ptr %addr.ffi.clean966, i64 0, i64 0)
+  %addr.ffi.int968 = ptrtoint ptr %call.res967 to i64
+  %addr.ffi.masked969 = and i64 %addr.ffi.int968, 281474976710655
+  %addr.ffi.clean970 = inttoptr i64 %addr.ffi.masked969 to ptr
+  %var.load971 = load ptr, ptr %var.cg, align 8
+  %call.res972 = call ptr @LLVMInt8Type()
+  %var.load973 = load ptr, ptr %var.cur_data, align 8
+  %var.load974 = load ptr, ptr %var.next_len, align 8
+  %call.res975 = call ptr @"types::gep1"(ptr %var.load971, ptr %call.res972, ptr %var.load973, ptr %var.load974, ptr @str.95.struct)
+  %addr.ffi.int976 = ptrtoint ptr %call.res975 to i64
+  %addr.ffi.masked977 = and i64 %addr.ffi.int976, 281474976710655
+  %addr.ffi.clean978 = inttoptr i64 %addr.ffi.masked977 to ptr
+  %call.res979 = call ptr @LLVMBuildStore(ptr %addr.ffi.clean962, ptr %addr.ffi.clean970, ptr %addr.ffi.clean978)
+  %var.load980 = load ptr, ptr %var.cg, align 8
+  %var.load981 = load ptr, ptr %var.b, align 8
+  %var.load982 = load ptr, ptr %var.next_len, align 8
+  %call.res983 = call ptr @"main::builder_set_len"(ptr %var.load980, ptr %var.load981, ptr %var.load982)
   br label %choice.exit
 
-nulcopy.len951:                                   ; preds = %str_overflow_abort952, %nulcopy946
-  %arena.cur953 = call ptr @dva_arena_current()
-  %nulcopy.buf954 = call ptr @dva_arena_alloc(ptr %arena.cur953, i64 %sum949)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf954, ptr align 1 %arg.str.ptr930, i64 %arg.str.ptr932, i1 false)
-  %nulcopy.nul955 = getelementptr i8, ptr %nulcopy.buf954, i64 %arg.str.ptr932
-  store i8 0, ptr %nulcopy.nul955, align 1
-  br label %nulmerge947
+nulcopy.len950:                                   ; preds = %str_overflow_abort951, %nulcopy945
+  %arena.cur952 = call ptr @dva_arena_current()
+  %nulcopy.buf953 = call ptr @dva_arena_alloc(ptr %arena.cur952, i64 %sum948)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf953, ptr align 1 %arg.str.ptr929, i64 %arg.str.ptr931, i1 false)
+  %nulcopy.nul954 = getelementptr i8, ptr %nulcopy.buf953, i64 %arg.str.ptr931
+  store i8 0, ptr %nulcopy.nul954, align 1
+  br label %nulmerge946
 
-str_overflow_abort952:                            ; preds = %nulcopy946
+str_overflow_abort951:                            ; preds = %nulcopy945
   %36 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %nulcopy.len951
+  br label %nulcopy.len950
 }
 
 define void @"main::codegen_builder_ensure_cap"(ptr %0, ptr %1, ptr %2) #1 {
@@ -23451,29 +23451,29 @@ nulmerge198:                                      ; preds = %nulcopy.len202, %ar
   call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean233, ptr %addr.ffi.clean237)
   %var.load238 = load ptr, ptr %var.cg, align 8
   %var.load239 = load ptr, ptr %var.gname, align 8
-  %call.res240 = call ptr @"runtime::emit_abort_msg"(ptr %var.load238, ptr @str.241.struct, ptr %var.load239)
-  %var.load241 = load ptr, ptr %var.cg, align 8
-  %fld.gep242 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load241, i32 0, i32 1
-  %fld.load243 = load ptr, ptr %fld.gep242, align 8
-  %addr.ffi.int244 = ptrtoint ptr %fld.load243 to i64
-  %addr.ffi.masked245 = and i64 %addr.ffi.int244, 281474976710655
-  %addr.ffi.clean246 = inttoptr i64 %addr.ffi.masked245 to ptr
-  %var.load247 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int248 = ptrtoint ptr %var.load247 to i64
-  %addr.ffi.masked249 = and i64 %addr.ffi.int248, 281474976710655
-  %addr.ffi.clean250 = inttoptr i64 %addr.ffi.masked249 to ptr
-  %call.res251 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean246, ptr %addr.ffi.clean250)
-  %var.load252 = load ptr, ptr %var.cg, align 8
-  %fld.gep253 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load252, i32 0, i32 1
-  %fld.load254 = load ptr, ptr %fld.gep253, align 8
-  %addr.ffi.int255 = ptrtoint ptr %fld.load254 to i64
-  %addr.ffi.masked256 = and i64 %addr.ffi.int255, 281474976710655
-  %addr.ffi.clean257 = inttoptr i64 %addr.ffi.masked256 to ptr
-  %var.load258 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int259 = ptrtoint ptr %var.load258 to i64
-  %addr.ffi.masked260 = and i64 %addr.ffi.int259, 281474976710655
-  %addr.ffi.clean261 = inttoptr i64 %addr.ffi.masked260 to ptr
-  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean257, ptr %addr.ffi.clean261)
+  call void @"runtime::emit_abort_msg"(ptr %var.load238, ptr @str.241.struct, ptr %var.load239)
+  %var.load240 = load ptr, ptr %var.cg, align 8
+  %fld.gep241 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load240, i32 0, i32 1
+  %fld.load242 = load ptr, ptr %fld.gep241, align 8
+  %addr.ffi.int243 = ptrtoint ptr %fld.load242 to i64
+  %addr.ffi.masked244 = and i64 %addr.ffi.int243, 281474976710655
+  %addr.ffi.clean245 = inttoptr i64 %addr.ffi.masked244 to ptr
+  %var.load246 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int247 = ptrtoint ptr %var.load246 to i64
+  %addr.ffi.masked248 = and i64 %addr.ffi.int247, 281474976710655
+  %addr.ffi.clean249 = inttoptr i64 %addr.ffi.masked248 to ptr
+  %call.res250 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean245, ptr %addr.ffi.clean249)
+  %var.load251 = load ptr, ptr %var.cg, align 8
+  %fld.gep252 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load251, i32 0, i32 1
+  %fld.load253 = load ptr, ptr %fld.gep252, align 8
+  %addr.ffi.int254 = ptrtoint ptr %fld.load253 to i64
+  %addr.ffi.masked255 = and i64 %addr.ffi.int254, 281474976710655
+  %addr.ffi.clean256 = inttoptr i64 %addr.ffi.masked255 to ptr
+  %var.load257 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int258 = ptrtoint ptr %var.load257 to i64
+  %addr.ffi.masked259 = and i64 %addr.ffi.int258, 281474976710655
+  %addr.ffi.clean260 = inttoptr i64 %addr.ffi.masked259 to ptr
+  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean256, ptr %addr.ffi.clean260)
   br label %choice.exit
 
 nulcopy.len202:                                   ; preds = %str_overflow_abort203, %nulcopy197
@@ -23900,29 +23900,29 @@ nulmerge201:                                      ; preds = %nulcopy.len205, %ar
   %addr.ffi.clean240 = inttoptr i64 %addr.ffi.masked239 to ptr
   call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean236, ptr %addr.ffi.clean240)
   %var.load241 = load ptr, ptr %var.cg, align 8
-  %call.res242 = call ptr @"runtime::emit_abort_msg"(ptr %var.load241, ptr @str.242.struct, ptr @str.243.struct)
-  %var.load243 = load ptr, ptr %var.cg, align 8
-  %fld.gep244 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load243, i32 0, i32 1
-  %fld.load245 = load ptr, ptr %fld.gep244, align 8
-  %addr.ffi.int246 = ptrtoint ptr %fld.load245 to i64
-  %addr.ffi.masked247 = and i64 %addr.ffi.int246, 281474976710655
-  %addr.ffi.clean248 = inttoptr i64 %addr.ffi.masked247 to ptr
-  %var.load249 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int250 = ptrtoint ptr %var.load249 to i64
-  %addr.ffi.masked251 = and i64 %addr.ffi.int250, 281474976710655
-  %addr.ffi.clean252 = inttoptr i64 %addr.ffi.masked251 to ptr
-  %call.res253 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean248, ptr %addr.ffi.clean252)
-  %var.load254 = load ptr, ptr %var.cg, align 8
-  %fld.gep255 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load254, i32 0, i32 1
-  %fld.load256 = load ptr, ptr %fld.gep255, align 8
-  %addr.ffi.int257 = ptrtoint ptr %fld.load256 to i64
-  %addr.ffi.masked258 = and i64 %addr.ffi.int257, 281474976710655
-  %addr.ffi.clean259 = inttoptr i64 %addr.ffi.masked258 to ptr
-  %var.load260 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int261 = ptrtoint ptr %var.load260 to i64
-  %addr.ffi.masked262 = and i64 %addr.ffi.int261, 281474976710655
-  %addr.ffi.clean263 = inttoptr i64 %addr.ffi.masked262 to ptr
-  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean259, ptr %addr.ffi.clean263)
+  call void @"runtime::emit_abort_msg"(ptr %var.load241, ptr @str.242.struct, ptr @str.243.struct)
+  %var.load242 = load ptr, ptr %var.cg, align 8
+  %fld.gep243 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load242, i32 0, i32 1
+  %fld.load244 = load ptr, ptr %fld.gep243, align 8
+  %addr.ffi.int245 = ptrtoint ptr %fld.load244 to i64
+  %addr.ffi.masked246 = and i64 %addr.ffi.int245, 281474976710655
+  %addr.ffi.clean247 = inttoptr i64 %addr.ffi.masked246 to ptr
+  %var.load248 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int249 = ptrtoint ptr %var.load248 to i64
+  %addr.ffi.masked250 = and i64 %addr.ffi.int249, 281474976710655
+  %addr.ffi.clean251 = inttoptr i64 %addr.ffi.masked250 to ptr
+  %call.res252 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean247, ptr %addr.ffi.clean251)
+  %var.load253 = load ptr, ptr %var.cg, align 8
+  %fld.gep254 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load253, i32 0, i32 1
+  %fld.load255 = load ptr, ptr %fld.gep254, align 8
+  %addr.ffi.int256 = ptrtoint ptr %fld.load255 to i64
+  %addr.ffi.masked257 = and i64 %addr.ffi.int256, 281474976710655
+  %addr.ffi.clean258 = inttoptr i64 %addr.ffi.masked257 to ptr
+  %var.load259 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int260 = ptrtoint ptr %var.load259 to i64
+  %addr.ffi.masked261 = and i64 %addr.ffi.int260, 281474976710655
+  %addr.ffi.clean262 = inttoptr i64 %addr.ffi.masked261 to ptr
+  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean258, ptr %addr.ffi.clean262)
   br label %choice.exit
 
 nulcopy.len205:                                   ; preds = %str_overflow_abort206, %nulcopy200

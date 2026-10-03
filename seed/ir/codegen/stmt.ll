@@ -47191,16 +47191,16 @@ a.store414:                                       ; preds = %a.grow413, %a.check
   ret ptr %var.load428
 }
 
-define ptr @"stmt::emit_str_overflow_abort"(ptr %0) #1 {
+define void @"stmt::emit_str_overflow_abort"(ptr %0) #1 {
 entry:
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
   %var.load = load ptr, ptr %var.cg, align 8
-  %call.res = call ptr @"runtime::emit_abort_msg"(ptr %var.load, ptr @str.43.struct, ptr @str.44.struct)
-  ret ptr %call.res
+  call void @"runtime::emit_abort_msg"(ptr %var.load, ptr @str.43.struct, ptr @str.44.struct)
+  ret void
 }
 
-declare ptr @"runtime::emit_abort_msg"(ptr, ptr, ptr) #1
+declare void @"runtime::emit_abort_msg"(ptr, ptr, ptr) #1
 
 define ptr @"stmt::codegen_add_checked_u64"(ptr %0, ptr %1, ptr %2, ptr %3) #1 {
 entry:
@@ -47783,31 +47783,31 @@ nulmerge277:                                      ; preds = %nulcopy.len281, %ar
   %addr.ffi.clean316 = inttoptr i64 %addr.ffi.masked315 to ptr
   call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean312, ptr %addr.ffi.clean316)
   %var.load317 = load ptr, ptr %var.cg, align 8
-  %call.res318 = call ptr @"stmt::emit_str_overflow_abort"(ptr %var.load317)
-  %var.load319 = load ptr, ptr %var.cg, align 8
-  %fld.gep320 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load319, i32 0, i32 1
-  %fld.load321 = load ptr, ptr %fld.gep320, align 8
-  %addr.ffi.int322 = ptrtoint ptr %fld.load321 to i64
-  %addr.ffi.masked323 = and i64 %addr.ffi.int322, 281474976710655
-  %addr.ffi.clean324 = inttoptr i64 %addr.ffi.masked323 to ptr
-  %var.load325 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int326 = ptrtoint ptr %var.load325 to i64
-  %addr.ffi.masked327 = and i64 %addr.ffi.int326, 281474976710655
-  %addr.ffi.clean328 = inttoptr i64 %addr.ffi.masked327 to ptr
-  %call.res329 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean324, ptr %addr.ffi.clean328)
-  %var.load330 = load ptr, ptr %var.cg, align 8
-  %fld.gep331 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load330, i32 0, i32 1
-  %fld.load332 = load ptr, ptr %fld.gep331, align 8
-  %addr.ffi.int333 = ptrtoint ptr %fld.load332 to i64
-  %addr.ffi.masked334 = and i64 %addr.ffi.int333, 281474976710655
-  %addr.ffi.clean335 = inttoptr i64 %addr.ffi.masked334 to ptr
-  %var.load336 = load ptr, ptr %var.ok_bb, align 8
-  %addr.ffi.int337 = ptrtoint ptr %var.load336 to i64
-  %addr.ffi.masked338 = and i64 %addr.ffi.int337, 281474976710655
-  %addr.ffi.clean339 = inttoptr i64 %addr.ffi.masked338 to ptr
-  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean335, ptr %addr.ffi.clean339)
-  %var.load340 = load ptr, ptr %var.sum, align 8
-  ret ptr %var.load340
+  call void @"stmt::emit_str_overflow_abort"(ptr %var.load317)
+  %var.load318 = load ptr, ptr %var.cg, align 8
+  %fld.gep319 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load318, i32 0, i32 1
+  %fld.load320 = load ptr, ptr %fld.gep319, align 8
+  %addr.ffi.int321 = ptrtoint ptr %fld.load320 to i64
+  %addr.ffi.masked322 = and i64 %addr.ffi.int321, 281474976710655
+  %addr.ffi.clean323 = inttoptr i64 %addr.ffi.masked322 to ptr
+  %var.load324 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int325 = ptrtoint ptr %var.load324 to i64
+  %addr.ffi.masked326 = and i64 %addr.ffi.int325, 281474976710655
+  %addr.ffi.clean327 = inttoptr i64 %addr.ffi.masked326 to ptr
+  %call.res328 = call ptr @LLVMBuildBr(ptr %addr.ffi.clean323, ptr %addr.ffi.clean327)
+  %var.load329 = load ptr, ptr %var.cg, align 8
+  %fld.gep330 = getelementptr inbounds { ptr, ptr, ptr, ptr, i1, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1, i64, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, ptr, ptr, { ptr, ptr }, ptr, ptr, i1, ptr, i1, ptr, ptr, ptr, i64, i64, { ptr, i1, i1, ptr, ptr, i1, ptr, i1, ptr } }, ptr %var.load329, i32 0, i32 1
+  %fld.load331 = load ptr, ptr %fld.gep330, align 8
+  %addr.ffi.int332 = ptrtoint ptr %fld.load331 to i64
+  %addr.ffi.masked333 = and i64 %addr.ffi.int332, 281474976710655
+  %addr.ffi.clean334 = inttoptr i64 %addr.ffi.masked333 to ptr
+  %var.load335 = load ptr, ptr %var.ok_bb, align 8
+  %addr.ffi.int336 = ptrtoint ptr %var.load335 to i64
+  %addr.ffi.masked337 = and i64 %addr.ffi.int336, 281474976710655
+  %addr.ffi.clean338 = inttoptr i64 %addr.ffi.masked337 to ptr
+  call void @LLVMPositionBuilderAtEnd(ptr %addr.ffi.clean334, ptr %addr.ffi.clean338)
+  %var.load339 = load ptr, ptr %var.sum, align 8
+  ret ptr %var.load339
 
 nulcopy.len281:                                   ; preds = %str_overflow_abort282, %nulcopy276
   %arena.cur283 = call ptr @dva_arena_current()
