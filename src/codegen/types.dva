@@ -68,7 +68,7 @@ print = s =>
 // ("id = r => r.a") that the body alone cannot infer.
 #type ParamRec (name: String, rt: Addr, fnames: ast::Names, fvts: ast::VTypes)
 #type ParamRecs (ParamRec){}
-#type FnRetRec (name: String, rt: Addr, fnames: ast::Names,
+#type FnRetRec (name: String, rt: <Addr|>, fnames: ast::Names,
    fvts: ast::VTypes, dtype: String)
 #type FnRetRecs (FnRetRec){}
 #type Addrs (Addr){}
@@ -2020,7 +2020,7 @@ fn_ret_sig_with_ti = cg, ti =>
                         | m =>
                            rfvts = match::field_vts_from_ti(cg, ret_ti)
                            rdt = ret_ti [TypeVar tn] tn | ""
-                           stmt::fn_ret_rec_add(cg, sname, m.0, m.1, rfvts, rdt)
+                           stmt::fn_ret_rec_add(cg, sname, <+ m.0 ->, m.1, rfvts, rdt)
                         | 0
                   | 0
                sname

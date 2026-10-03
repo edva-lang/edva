@@ -2342,7 +2342,7 @@ fn_var_is_fn = cg, v =>
          expr::fn_alias(cg, v) != ""
             | <+>
             |
-               param_clo_ty(cg, v) != Addr(0)
+               <>(param_clo_ty(cg, v))
                   | <+>
                   | types::var_type(cg, v) [Fn]
 
@@ -2938,26 +2938,26 @@ param_clo_add = cg, name, fty, ret =>
    cg.param_clo_tys += fty
    cg.param_clo_rets += ret
 
-// The recorded closure fn type of a parameter (Addr(0) if none).
-param_clo_ty: types::Cg, String => Addr
+// The recorded closure fn type of a parameter.
+param_clo_ty: types::Cg, String => <Addr|>
 param_clo_ty = cg, name =>
    scoped = types::g.last_compiling_fn != ""
       | param_clo_ty_at(cg, types::g.last_compiling_fn + "#" + name, 0, ?cg.param_clo_names)
-      | Addr(0)
-   scoped != Addr(0)
+      | <-->
+   <>(scoped)
       | scoped
       |
          types::g.last_compiling_fn != ""
-            | Addr(0)
+            | <-->
             | param_clo_ty_at(cg, name, 0, ?cg.param_clo_names)
 
-param_clo_ty_at: types::Cg, String, Int, Int => Addr
+param_clo_ty_at: types::Cg, String, Int, Int => <Addr|>
 param_clo_ty_at = cg, name, i, n =>
    i == n
-      | Addr(0)
+      | <-->
       |
          cg.param_clo_names(i)!! == name
-            | (cg.param_clo_tys(i) | _ | Addr(0))
+            | (cg.param_clo_tys(i) | ty => <+ ty -> | <-->)
             | param_clo_ty_at(cg, name, i + 1, n)
 
 param_clo_ret: types::Cg, String => ast::ValueType
@@ -2993,9 +2993,9 @@ codegen_fn_param_ll = cg, i8p, params, dtypes, ptis, ptypes, i, n, acc =>
          pdtype0 = (dtypes(i) | _ | "")
          pti0 = (ptis(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown)))
          fti0 = fn_type_from_ti(cg, pti0)
-         fti0.0 != Addr(0) && (param_clo_ty(cg, pname) == Addr(0))
+         is_clo = <>(param_clo_ty(cg, pname))
+         fti0.0 != Addr(0) && !is_clo
             | param_clo_add(cg, target_pname, fti0.0, fti0.1)
-         is_clo = param_clo_ty(cg, pname) != Addr(0)
          prec0 = codegen_fn_param_rec(cg, pname, pdtype0, pti0)
          is_arr0 = param_is_array(cg, pname, pdtype0, pti0)
          is_sl0 = param_is_slice(cg, pname, pdtype0, pti0)
@@ -3054,9 +3054,9 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
          pdtype' = (dtypes(i) | _ | "")
          pti = (ptis(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown)))
          fti = fn_type_from_ti(cg, pti)
-         fti.0 != Addr(0) && (param_clo_ty(cg, pname) == Addr(0))
+         is_clo = <>(param_clo_ty(cg, pname))
+         fti.0 != Addr(0) && !is_clo
             | param_clo_add(cg, target_pname, fti.0, fti.1)
-         is_clo = param_clo_ty(cg, pname) != Addr(0)
          prec = codegen_fn_param_rec(cg, pname, pdtype', pti)
          is_sl = param_is_slice(cg, pname, pdtype', pti)
          is_rec = !is_sl && (prec.0 != Addr(0))
@@ -3089,7 +3089,7 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
             |
                param_tname' = "#param_" + types::g.last_compiling_fn + "_" + pname
                types::has_type_name(cg, param_tname') | 0 |
-                  runtime::add_type_rec(cg, param_tname', pti, prec.0, prec.1)
+                  runtime::add_type_rec(cg, param_tname', pti, <+ prec.0 ->, prec.1)
                pdtype' = param_tname'
             | 0
          is_ram_ti = pti [Ram _]
@@ -3487,11 +3487,10 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
                      dt' = sig_ti [TypeVar tn] tn | dt'
                   | 0
             | 0
-         rt' = rt_opt' | r => r | Addr(0)
-         fn_ret_rec_add(cg, fd.name, rt', fnms', fvts', dt')
+         fn_ret_rec_add(cg, fd.name, rt_opt', fnms', fvts', dt')
       |
          cg.last_type != ""
-            | fn_ret_rec_add(cg, fd.name, Addr(0), ast::Names(), ast::VTypes(),
+            | fn_ret_rec_add(cg, fd.name, <--> , ast::Names(), ast::VTypes(),
                cg.last_type)
             | 0
    is_fn_ret = main::is_fn_vt(actual_ret) || main::is_fn_vt(ret_vt')
@@ -3751,7 +3750,7 @@ compile_fn_lazy_force = cg, name, call_types =>
          ret = fn_signature_return(cg, types::g.pstmts, fd.name, 0)
          ret_ti = fn_signature_return_ti(cg, types::g.pstmts, fd.name, 0)
          ret_rm = runtime::record_meta_from_ti(cg, ret_ti)
-         ret_rm_0 = ret_rm | m => m.0 | Addr(0)
+         rm_rt_opt = ret_rm | m => <+ m.0 -> | <-->
          ret_rm_1 = ret_rm | m => m.1 | ast::Names()
          ret_fvts = types::field_vts(cg, ret_ti)
          ret_dtype0 = ret_ti [TypeVar tname] tname | ""
@@ -3761,12 +3760,12 @@ compile_fn_lazy_force = cg, name, call_types =>
             |
                ret_tname = "#ret_" + fd.name
                types::has_type_name(cg, ret_tname) | 0 |
-                  runtime::add_type_rec(cg, ret_tname, ret_ti, ret_rm_0, ret_rm_1)
+                  runtime::add_type_rec(cg, ret_tname, ret_ti, rm_rt_opt, ret_rm_1)
                ret_tname
             | ret_dtype0
          has_ret_meta = <>(ret_rm) || ret_dtype != ""
          has_ret_meta
-            | fn_ret_rec_add(cg, fd.name, ret_rm_0, ret_rm_1,
+            | fn_ret_rec_add(cg, fd.name, rm_rt_opt, ret_rm_1,
                ret_fvts, ret_dtype)
             | 0
          codegen_check_declared_record_return(cg, types::g.pstmts, fd)
@@ -4693,7 +4692,7 @@ param_rec_add: types::Cg, String, Addr, ast::Names, ast::VTypes => ()
 param_rec_add = cg, name, rt, fnames, fvts =>
    cg.param_recs += types::ParamRec((name, rt, fnames, fvts))
 
-fn_ret_rec_add: types::Cg, String, Addr, ast::Names, ast::VTypes, String => ()
+fn_ret_rec_add: types::Cg, String, <Addr|>, ast::Names, ast::VTypes, String => ()
 fn_ret_rec_add = cg, name, rt, fnames, fvts, dtype =>
    types::g.fn_ret_recs += types::FnRetRec((name, rt, fnames, fvts, dtype))
 
@@ -4747,7 +4746,7 @@ apply_call_ret_meta = cg, fname =>
          rfn != "" | cg.last_closure_fn = rfn
          fn_ret_rec_of(cg, fname)
             | rrec =>
-               cg.last_rt = <+ rrec.rt ->
+               cg.last_rt = rrec.rt
                cg.last_fnames = rrec.fnames
                cg.last_fvts = rrec.fvts
                cg.last_type = rrec.dtype
@@ -4775,7 +4774,7 @@ apply_call_ret_meta = cg, fname =>
                            runtime::record_meta_from_ti(cg, sig_ti)
                               | m =>
                                  !types::has_type_name(cg, ret_tname')
-                                    | runtime::add_type_rec(cg, ret_tname', sig_ti, m.0, m.1)
+                                    | runtime::add_type_rec(cg, ret_tname', sig_ti, <+ m.0 ->, m.1)
                                  cg.last_rt = <+ m.0 ->
                                  cg.last_fnames = m.1
                                  cg.last_fvts = types::field_vts(cg, sig_ti)

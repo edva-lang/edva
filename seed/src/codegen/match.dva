@@ -2927,19 +2927,19 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
             | (Addr(0), ast::Names(), ast::VTypes())
          v_raw_dt' = slot_ti [TypeVar name] name | ""
          is_rec_ti = rec_ti [Rec _]
+         rec_info_0_opt = rec_info.0 != Addr(0) | <+ rec_info.0 -> | <-->
          is_anon_pay = v_raw_dt' == "" && is_rec_ti
          v_raw_dt' = is_anon_pay
             |
                lbl = br.variant_names(0) | _ | "anon"
                pay_tname = "#pay_" + lbl
                types::has_type_name(cg, pay_tname) | 0 |
-                  runtime::add_type_rec(cg, pay_tname, rec_ti, rec_info.0, rec_info.1)
+                  runtime::add_type_rec(cg, pay_tname, rec_ti, rec_info_0_opt, rec_info.1)
                pay_tname
             | v_raw_dt'
          v_dtype = v_raw_dt' != ""
             | types::resolve_type_name(cg, v_raw_dt')
             | types::typedef_name_of_rt(cg, rec_info.0)
-         rec_info_0_opt = rec_info.0 != Addr(0) | <+ rec_info.0 -> | <-->
          cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info_0_opt,
             rec_info.1, <+ slot ->, <+>, <->, rec_info.2, <-->))
          is_fn_pt' = ptype [Fn]
@@ -4040,19 +4040,19 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                      | (Addr(0), ast::Names(), ast::VTypes())
                   v_raw_dt' = slot_ti [TypeVar name] name | ""
                   is_rec_ti = rec_ti [Rec _]
+                  rec_info_0_opt = rec_info.0 != Addr(0) | <+ rec_info.0 -> | <-->
                   is_anon_pay = v_raw_dt' == "" && is_rec_ti
                   v_raw_dt' = is_anon_pay
                      |
                         lbl = br.variant_names(0) | _ | "anon"
                         pay_tname = "#pay_" + lbl
                         types::has_type_name(cg, pay_tname) | 0 |
-                           runtime::add_type_rec(cg, pay_tname, rec_ti, rec_info.0, rec_info.1)
+                           runtime::add_type_rec(cg, pay_tname, rec_ti, rec_info_0_opt, rec_info.1)
                         pay_tname
                      | v_raw_dt'
                   v_dtype = v_raw_dt' != ""
                      | types::resolve_type_name(cg, v_raw_dt')
                      | types::typedef_name_of_rt(cg, rec_info.0)
-                  rec_info_0_opt = rec_info.0 != Addr(0) | <+ rec_info.0 -> | <-->
                   cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info_0_opt,
                      rec_info.1, <+ slot ->, <+>, <->, rec_info.2, <-->))
             bv' = main::codegen_typed_eval(cg, br.body)

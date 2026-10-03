@@ -754,7 +754,7 @@ codegen_eval_call_non_addr = cg, t =>
             | main::codegen_eval_error_construct(cg, t)
             |
                is_local_fn = types::has_local_var(cg, t.fn_name) ||
-                  (stmt::param_clo_ty(cg, t.fn_name) != Addr(0))
+                  <>(stmt::param_clo_ty(cg, t.fn_name))
                rf = is_local_fn | t.fn_name | types::resolve_fn_name(cg, t.fn_name)
                call = t
                call.fn_name = rf
@@ -2811,9 +2811,9 @@ codegen_eval_fn_call = cg, t =>
 
 codegen_eval_fn_call_no_foreign: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_fn_call_no_foreign = cg, t =>
-   pty = stmt::param_clo_ty(cg, t.fn_name)
-   pty != Addr(0)
-      | codegen_eval_param_call(cg, t, pty)
+   pty_opt = stmt::param_clo_ty(cg, t.fn_name)
+   pty_opt
+      | pty => codegen_eval_param_call(cg, t, pty)
       |
          cfn = closure_fn_of(cg, t.fn_name)
          cfn == "<mixed>"
@@ -3882,7 +3882,7 @@ compile_mono_fn = cg, orig, mono, ct_names, b_vts, b_tis, b_dts, b_ct_vals =>
                            <-->, ast::Names(), <-->, <->, <->,
                            ast::VTypes(), <+ map_res.0 ->))
                ret_rm = runtime::record_meta_from_ti(cg, ret_ti')
-               ret_rm_0 = ret_rm | m => m.0 | Addr(0)
+               rm_rt_opt = ret_rm | m => <+ m.0 -> | <-->
                ret_rm_1 = ret_rm | m => m.1 | ast::Names()
                ret_fvts = types::field_vts(cg, ret_ti')
                ret_dtype0 = ret_ti' [TypeVar tname] tname | ""
@@ -3892,12 +3892,12 @@ compile_mono_fn = cg, orig, mono, ct_names, b_vts, b_tis, b_dts, b_ct_vals =>
                   |
                      ret_tname = "#ret_" + mono
                      types::has_type_name(cg, ret_tname) | 0 |
-                        runtime::add_type_rec(cg, ret_tname, ret_ti', ret_rm_0, ret_rm_1)
+                        runtime::add_type_rec(cg, ret_tname, ret_ti', rm_rt_opt, ret_rm_1)
                      ret_tname
                   | ret_dtype0
                has_ret_meta = <>(ret_rm) || ret_dtype != ""
                has_ret_meta
-                  | stmt::fn_ret_rec_add(cg, mono, ret_rm_0, ret_rm_1,
+                  | stmt::fn_ret_rec_add(cg, mono, rm_rt_opt, ret_rm_1,
                      ret_fvts, ret_dtype)
                stmt::codegen_compile_fn(cg, mono_fd, ptypes', dtypes', ptis',
                   ret', ret_ti', <+>, <->, <+>, types::g.pexports)
@@ -4091,7 +4091,7 @@ named_call_emit_pre = cg, fname, fn, fty, ret, args, arg_vts =>
       pty_opt = has_fn | <+ LLVMTypeOf(LLVMGetParam(fn, i)) ->
       is_int_p = pty_opt | p => LLVMGetTypeKind(p) == 8 | <->
       avt = (arg_vts(i) | _ | ast::ValueType(Unknown))
-      pty_raw = pty_opt | p => p | Addr(0)
+      pty_raw = pty_opt | _ | LLVMInt64Type!
       av = is_int_p | stmt::coerce_int_ext(cg, a, pty_raw, types::is_unsigned_vt(avt)) | a
       av_null = pty_opt | p => LLVMConstNull(p) | LLVMConstInt(LLVMInt64Type!, 0, 0)
       av_val = av != Addr(0) | av | av_null
@@ -4234,7 +4234,7 @@ codegen_call_mismatch_at = cg, call, fname, ptypes, at =>
                expected = (ptypes(at) | _ | ast::ValueType(Unknown))
                is_fn_arg = actual [Fn]
                pn = is_fn_arg | fi_param_name(cg, fname, at) | ""
-               has_pn = pn != "" | stmt::param_clo_ty(cg, pn) != Addr(0) | <->
+               has_pn = pn != "" | <>(stmt::param_clo_ty(cg, pn)) | <->
                clo_param = is_fn_arg | has_pn | <->
                clo_param
                   | codegen_call_mismatch_at(cg, call, fname, ptypes, at + 1)
@@ -4769,7 +4769,7 @@ codegen_str_tuple_cmp = cg, eq, s_val, rec_te, rec_val, rec_rt_opt, rec_fvts =>
          nparts @ s_j =>
             cur_seg_bb = seg_bbs(s_j) | _ | succ_bb
             LLVMPositionBuilderAtEnd(cg.builder, cur_seg_bb)
-            seg_p = parts'(s_j) | _ | Addr(0)
+            seg_p = parts'(s_j)!!
             seg_l = lens'(s_j) | _ | zero
             seg_off = offsets'(s_j) | _ | zero
             s_ptr = types::gep1(cg, i8t, s_data, seg_off, "stcmp.sptr")
@@ -5865,7 +5865,7 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                                              pred_name, args)
                         |
                            is_local_fn = types::has_local_var(cg, fname) ||
-                              (stmt::param_clo_ty(cg, fname) != Addr(0))
+                              <>(stmt::param_clo_ty(cg, fname))
                            rf = is_local_fn | fname |
                               types::resolve_fn_name(cg, fname)
                            has_real_fn = types::is_fn_name(cg, rf) ||
@@ -5885,7 +5885,7 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                                     main::is_fn_vt(types::var_type(cg, fname))
                                  is_var_fn
                                     |
-                                       slot = v_slot | _ | Addr(0)
+                                       slot = v_slot!!
                                        i8p = LLVMPointerType(
                                           LLVMInt8Type!, 0)
                                        clo_val = LLVMBuildLoad2(
