@@ -1426,7 +1426,7 @@ dotted_var_val = cg, name =>
                   |
                      var_rt(cg, base_name)
                         | rt =>
-                           is_homo = expr::record_type_is_homogeneous(rt, fvts)
+                           is_homo = expr::record_type_is_homogeneous(<+ rt ->, fvts)
                            ft = is_homo
                               | LLVMStructGetTypeAtIndex(rt, 0)
                               | LLVMStructGetTypeAtIndex(rt, idx)
@@ -3888,7 +3888,7 @@ record_field_gep = cg, rt, fvts, base, idx =>
             | LLVMBuildIntToPtr(cg.builder, base,
                LLVMPointerType(LLVMInt8Type!, 0), "rec.base.ptr")
             | base
-         is_homo = expr::record_type_is_homogeneous(rt, fvts)
+         is_homo = expr::record_type_is_homogeneous(<+ rt ->, fvts)
          is_homo
             |
                elem_t = LLVMStructGetTypeAtIndex(rt, 0)
@@ -3929,15 +3929,15 @@ codegen_eval_record = cg, r =>
    cg.last_fvts = fvts
    alloc_sz = LLVMSizeOf(st)
    rp = expr::codegen_call_arena_alloc(cg, alloc_sz, "record.alloc")
-   is_homo = expr::record_type_is_homogeneous(st, fvts)
+   is_homo = expr::record_type_is_homogeneous(<+ st ->, fvts)
    elem_t = (is_homo && nf > 0)
       | LLVMStructGetTypeAtIndex(st, 0)
-      | Addr(0)
+      | LLVMVoidType!
    typed = is_homo
       |
          LLVMBuildPointerCast(cg.builder, rp,
             LLVMPointerType(elem_t, 0), "rec.typed")
-      | Addr(0)
+      | rp
    nf @ i =>
       ft = LLVMStructGetTypeAtIndex(st, i)
       fgep = is_homo

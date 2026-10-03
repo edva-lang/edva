@@ -1281,10 +1281,7 @@ is_heterogeneous_record_var = cg, name =>
    is_rec = types::var_type(cg, name) [Record]
    fvs = match::var_fvts(cg, name)
    is_rec && (?fvs > 1)
-      |
-         types::var_rt(cg, name)
-            | rt => !expr::record_type_is_homogeneous(rt, fvs)
-            | <+>
+      | !expr::record_type_is_homogeneous(types::var_rt(cg, name), fvs)
       | <->
 
 codegen_dynamic_record_index_error: types::Cg => (Addr, ast::ValueType)

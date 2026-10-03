@@ -788,10 +788,7 @@ codegen_eval_call_var_dispatch = cg, call =>
       [Record]
          fvs = match::var_fvts(cg, call.fn_name)
          is_hetero = ?fvs > 1
-            |
-               types::var_rt(cg, call.fn_name)
-                  | rt => !record_type_is_homogeneous(rt, fvs)
-                  | <+>
+            | !record_type_is_homogeneous(types::var_rt(cg, call.fn_name), fvs)
             | <->
          is_hetero
             | stmt::codegen_dynamic_record_index_error(cg)
@@ -1265,16 +1262,19 @@ struct_fields_same_type_at = st, elem_t, i, n =>
       | (LLVMStructGetTypeAtIndex(st, i) == elem_t) &&
          struct_fields_same_type_at(st, elem_t, i + 1, n)
 
-record_type_is_homogeneous: Addr, ast::VTypes => <>
-record_type_is_homogeneous = rt, fvts =>
+record_type_is_homogeneous: <Addr|>, ast::VTypes => <>
+record_type_is_homogeneous = rt_opt, fvts =>
    n = ?fvts
-   (n == 0) || (rt == Addr(0))
+   n == 0
       | <->
       |
-         first = (fvts(0) | _ | ast::ValueType(Unknown))
-         elem_t = LLVMStructGetTypeAtIndex(rt, 0)
-         fixed_record_is_homogeneous(fvts, first, 0) &&
-            struct_fields_same_type_at(rt, elem_t, 1, n)
+         rt_opt
+            | rt =>
+               first = (fvts(0) | _ | ast::ValueType(Unknown))
+               elem_t = LLVMStructGetTypeAtIndex(rt, 0)
+               fixed_record_is_homogeneous(fvts, first, 0) &&
+                  struct_fields_same_type_at(rt, elem_t, 1, n)
+            | <->
 
 is_numeric_vt: ast::ValueType => <>
 is_numeric_vt = vt => types::is_int_vt(vt) || types::is_float_vt(vt)
@@ -1283,20 +1283,18 @@ is_numeric_fixed_record: (Addr, ast::ValueType), <Addr|>, ast::VTypes => <>
 is_numeric_fixed_record = val, rt_opt, fvts =>
    is_rec = val.1 [Record]
    n_ok = ?fvts > 0
-   rt_ok = <>(rt_opt)
    val_ok = val.0 != Addr(0)
-   val_ok && is_rec && n_ok && rt_ok &&
-      (rt_opt | rt => record_type_is_homogeneous(rt, fvts) | <->) &&
+   val_ok && is_rec && n_ok &&
+      record_type_is_homogeneous(rt_opt, fvts) &&
       is_numeric_vt((fvts(0) | _ | ast::ValueType(Unknown)))
 
 is_cmp_fixed_record: (Addr, ast::ValueType), <Addr|>, ast::VTypes => <>
 is_cmp_fixed_record = val, rt_opt, fvts =>
    is_rec = val.1 [Record]
    n_ok = ?fvts > 0
-   rt_ok = <>(rt_opt)
    val_ok = val.0 != Addr(0)
-   val_ok && is_rec && n_ok && rt_ok &&
-      (rt_opt | rt => record_type_is_homogeneous(rt, fvts) | <->) &&
+   val_ok && is_rec && n_ok &&
+      record_type_is_homogeneous(rt_opt, fvts) &&
       (is_numeric_vt((fvts(0) | _ | ast::ValueType(Unknown))) ||
          types::is_flag_vt((fvts(0) | _ | ast::ValueType(Unknown))))
 
@@ -1304,10 +1302,9 @@ is_flag_fixed_record: (Addr, ast::ValueType), <Addr|>, ast::VTypes => <>
 is_flag_fixed_record = val, rt_opt, fvts =>
    is_rec = val.1 [Record]
    n_ok = ?fvts > 0
-   rt_ok = <>(rt_opt)
    val_ok = val.0 != Addr(0)
-   val_ok && is_rec && n_ok && rt_ok &&
-      (rt_opt | rt => record_type_is_homogeneous(rt, fvts) | <->) &&
+   val_ok && is_rec && n_ok &&
+      record_type_is_homogeneous(rt_opt, fvts) &&
       types::is_flag_vt((fvts(0) | _ | ast::ValueType(Unknown)))
 
 elem_byte_size: ast::ValueType => Int
@@ -2421,13 +2418,13 @@ codegen_eval_unary = cg, t =>
          (main::codegen_builder_freeze(cg, ev.0, "builder.freeze"),
             ast::ValueType(Str))
       [AddrOf]
-         ptr_raw = ev.1
-            [Builder] main::builder_data(cg, ev.0, "b.ptr")
-            [Str] codegen_string_data(cg, ev.0, "s.ptr")
-            | Addr(0)
-         ptr_raw == Addr(0)
+         ptr_opt = ev.1
+            [Builder] <+ main::builder_data(cg, ev.0, "b.ptr") ->
+            [Str] <+ codegen_string_data(cg, ev.0, "s.ptr") ->
+            | <-->
+         ptr_opt
+            | p => (tag_addr_with_arena_gen(cg, p), ast::ValueType(RawPtr))
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
-            | (tag_addr_with_arena_gen(cg, ptr_raw), ast::ValueType(RawPtr))
       [Unwrap] codegen_eval_unary_unwrap(cg, ev.0, ev.1, t.1)
       [Propagate] codegen_eval_unary_propagate(cg, ev.0, ev.1, t.1)
       [RuneCount] stmt::codegen_eval_string_rune_count(cg, ev.0)
@@ -5000,14 +4997,14 @@ codegen_typed_eval_unary = cg, op, operand, ut, ti =>
                (main::codegen_builder_freeze(cg, ev.0, "builder.freeze"),
                   ast::ValueType(Str))
             [AddrOf]
-               ptr_raw = ev.1
-                  [Builder] main::builder_data(cg, ev.0, "b.ptr")
-                  [Str] codegen_string_data(cg, ev.0, "s.ptr")
-                  | Addr(0)
-               ptr_raw == Addr(0)
-                  | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
-                  | (tag_addr_with_arena_gen(cg, ptr_raw),
+               ptr_opt = ev.1
+                  [Builder] <+ main::builder_data(cg, ev.0, "b.ptr") ->
+                  [Str] <+ codegen_string_data(cg, ev.0, "s.ptr") ->
+                  | <-->
+               ptr_opt
+                  | p => (tag_addr_with_arena_gen(cg, p),
                      ast::ValueType(RawPtr))
+                  | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             [Unwrap]
                ret_vt' = types::vt_from_ti_cg(cg, ti)
                niche' = types::is_niche_ram_ti(cg, operand.ti)
@@ -6823,9 +6820,7 @@ codegen_typed_eval_index = cg, target, index, ti =>
                                  is_rec_elem = ret_vt [Record]
                                  is_rec_elem
                                     |
-                                       elem_rt_opt = elem_ll' != Addr(0) |
-                                          <+ elem_ll' -> | <-->
-                                       cg.last_rt = elem_rt_opt
+                                       cg.last_rt = <+ elem_ll' ->
                                        efn = rec_elem_fnames(cg, elem_ll')
                                        cg.last_fnames = efn
                                        cg.last_fvts = types::field_vts(cg, elem_ti)
