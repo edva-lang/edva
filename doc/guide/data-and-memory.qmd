@@ -68,7 +68,7 @@ All inspection and manipulation is performed via symbolic prefix operators:
 | Pure append | `s + "world"` | `b + "world"` | Returns a *new* value (O(N) copy) |
 | In-place append | N/A | `b += "world"` | Mutates existing buffer in place |
 | Freeze | N/A | `+b` | In-place transfer into immutable `String` (resets builder to `{0, 0, 0}`) |
-| Set length | N/A | `?b = bytes_read` | Sets active length after FFI read |
+| Set length | N/A | `?b = bytes_read` | Sets active length (asserts `0 <= n <= cap`, aborts E4008) |
 | CRLF / byte sequence | N/A | `b = (13, 10)` | Appends byte record directly (0..255 checked) |
 
 Freeze `+b` transfers the underlying buffer in-place into an immutable `String` and

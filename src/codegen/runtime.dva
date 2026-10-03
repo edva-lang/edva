@@ -167,6 +167,7 @@ codegen_emit_runtime_module = cg =>
    const_string_global(cg, "E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\n", "arena_toobig_msg")
    const_string_global(cg, "E4003: arena chunk limit reached (too many arena chunks)\n", "arena_chunklimit_msg")
    const_string_global(cg, "E4001: arena allocator exhausted (out of memory)\n", "arena_oom_msg")
+   const_string_global(cg, "E4008: Builder length assignment out of bounds\n", "builder_len_oob_msg")
 
    ovf_struct = types::struct_type2(i64t, LLVMInt1Type!)
    ovf_params = types::Addrs()
@@ -292,6 +293,7 @@ codegen_emit_runtime_full = cg =>
       "arena_toobig_msg")
    const_string_global(cg, "E4003: arena chunk limit reached (too many arena chunks)\n", "arena_chunklimit_msg")
    const_string_global(cg, "E4001: arena allocator exhausted (out of memory)\n", "arena_oom_msg")
+   const_string_global(cg, "E4008: Builder length assignment out of bounds\n", "builder_len_oob_msg")
 
    // llvm.uadd.with.overflow.i64 declaration
    ovf_struct = types::struct_type2(i64t, LLVMInt1Type!)
@@ -690,7 +692,7 @@ codegen_emit_length_set = cg, t =>
    bv = expr::codegen_eval(cg, t.5)
    cg.discard_result = saved_discard
    bval = types::ptr_var_value(cg, t.0, "b.load")
-   main::builder_set_len(cg, bval, bv.0)
+   main::builder_set_len_checked(cg, bval, bv.0, t.0)
 
 // "x ::= v" — global mutation: write the existing binding, bypassing any
 // function-local shadow (the top-level slot for a top-level binding).

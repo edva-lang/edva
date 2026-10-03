@@ -5695,7 +5695,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                len
                   |
                      b_val' = types::ptr_var_value(cg, name, "b.load")
-                     main::builder_set_len(cg, b_val', ev.0)
+                     main::builder_set_len_checked(cg, b_val', ev.0, name)
                      (b_val', ast::ValueType(Builder))
                   |
                      decl_vt = types::vt_from_ti_cg(cg, ti)

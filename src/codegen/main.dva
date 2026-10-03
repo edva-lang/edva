@@ -118,6 +118,34 @@ builder_cap = cg, b, name =>
             LLVMBuildStructGEP2(cg.builder, builder_struct_type(cg),
                b, 2, name), name)
 
+// Checked Builder length-set: asserts 0 <= len_val <= cap, aborting with E4008 on violation.
+builder_set_len_checked: types::Cg, Addr, Addr, String => Addr
+builder_set_len_checked = cg, b, len_val, gname =>
+   cg.error || b == Addr(0) || len_val == Addr(0)
+      | Addr(0)
+      |
+         i64t = LLVMInt64Type!
+         len_i64 = LLVMTypeOf(len_val) == i64t
+            | len_val
+            | LLVMBuildSExt(cg.builder, len_val, i64t, "b.len.sext")
+         zero = LLVMConstInt(i64t, 0, 0)
+         cap_val = builder_cap(cg, b, "b.cap")
+         is_neg = LLVMBuildICmp(cg.builder, 40, len_i64, zero, "b.len.neg")
+         cur = LLVMGetInsertBlock(cg.builder)
+         parent = LLVMGetBasicBlockParent(cur)
+         big_bb = LLVMAppendBasicBlock(parent, "b.len_big_check")
+         ok_bb = LLVMAppendBasicBlock(parent, "b.len_ok")
+         oob_bb = LLVMAppendBasicBlock(parent, "b.len_oob")
+         LLVMBuildCondBr(cg.builder, is_neg, oob_bb, big_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, big_bb)
+         is_big = LLVMBuildICmp(cg.builder, 38, len_i64, cap_val, "b.len.big")
+         LLVMBuildCondBr(cg.builder, is_big, oob_bb, ok_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, oob_bb)
+         runtime::emit_abort_msg(cg, "E4008: Builder length assignment out of bounds\n", "builder_len_oob_msg")
+         LLVMBuildBr(cg.builder, ok_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
+         builder_set_len(cg, b, len_i64)
+
 // Deep-copies a growable array into a fresh { len, data, cap } struct so a
 // spawned worker gets its own buffer (the worker's appends must not mutate the
 // caller's array).
