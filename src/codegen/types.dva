@@ -1598,9 +1598,7 @@ dotted_var_rt = cg, name =>
             | <-->
             |
                var_rt(cg, base_name)
-                  | rt =>
-                     elem_ty = LLVMStructGetTypeAtIndex(rt, idx)
-                     elem_ty != Addr(0) | <+ elem_ty -> | <-->
+                  | rt => <+ LLVMStructGetTypeAtIndex(rt, idx) ->
                   | <-->
 
 var_rt_at: Cg, String, Int => <Addr|>
@@ -3330,7 +3328,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                      is_rec = src_vt [Record]
                      is_rec && <>(src_rt)
                         |
-                           src_rt_val = src_rt | r => r | Addr(0)
+                           src_rt_val = src_rt | _ | rm_0
                            sz' = <>(rm) | LLVMSizeOf(rm_0) |
                               LLVMConstInt(LLVMInt64Type!, 16, 0)
                            dst' = expr::codegen_call_arena_alloc(cg, sz',
@@ -3953,7 +3951,7 @@ codegen_eval_record = cg, r =>
          |
             inner_sz = LLVMSizeOf(ft)
             LLVMBuildMemCpy(cg.builder, fgep, 1,
-               (fvals(i) | _ | Addr(0)), 1, inner_sz, 0)
+               fvals(i)!!, 1, inner_sz, 0)
          |
             cval = stmt::coerce_int(cg, fvals(i)!!, ft)
             LLVMBuildStore(cg.builder, cval, fgep)
@@ -4010,9 +4008,7 @@ typedef_name_of_rt_at = cg, rt, i, n =>
 
 typedef_name_of_rt: Cg, Addr => String
 typedef_name_of_rt = cg, rt =>
-   rt == Addr(0)
-      | ""
-      | typedef_name_of_rt_at(cg, rt, 0, ?cg.typedefs)
+   typedef_name_of_rt_at(cg, rt, 0, ?cg.typedefs)
 
 typedef_ti_of_rt: Cg, Addr => ast::TypeInfo
 typedef_ti_of_rt = cg, rt =>
