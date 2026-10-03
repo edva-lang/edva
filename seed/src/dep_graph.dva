@@ -8,25 +8,20 @@
 #use "ast"
 
 #type DepNode (name: String, deps: ast::Names, stmt_idx: Int)
-#type DepNodes (DepNode){}
 #type NameSet String ^ <>
 #type NodeIndices String ^ Int
-#type DepGraph (nodes: DepNodes, indices: NodeIndices)
+#type DepGraph (nodes: (DepNode){}, indices: NodeIndices)
 
 #type SCC (names: ast::Names, is_recursive: <>)
-#type SCCs (SCC){}
-
-#type Ints (Int){}
-#type Flags (<>){}
 
 #type TarjanState (
-   indices: Ints,
-   lowlinks: Ints,
-   on_stack: Flags,
-   stack: Ints,
-   stack_ptr: Ints,
-   counter: Ints,
-   sccs: SCCs
+   indices: (Int){},
+   lowlinks: (Int){},
+   on_stack: (<>){},
+   stack: (Int){},
+   stack_ptr: (Int){},
+   counter: (Int){},
+   sccs: (SCC){}
 )
 
 is_fwd_assign: (String, <>, <>, <>, <>, ast::Expr, ast::Expr,
@@ -202,7 +197,8 @@ is_generic_sig = a =>
 
 build_dep_graph: ast::Exprs => DepGraph
 build_dep_graph = stmts =>
-   graph = DepGraph((DepNodes(), NodeIndices()))
+   nodes: (DepNode){}
+   graph = DepGraph((nodes, NodeIndices()))
    gen_names = NameSet()
    ?stmts @ k =>
       stk = stmts(k) | _ | ast::Expr(Int, 0)
@@ -247,19 +243,20 @@ build_dep_graph = stmts =>
 
 init_tarjan_state: Int => TarjanState
 init_tarjan_state = n =>
-   indices = Ints()
-   lowlinks = Ints()
-   on_stack = Flags()
-   stack = Ints()
-   stack_ptr = Ints()
+   indices: (Int){}
+   lowlinks: (Int){}
+   on_stack: (<>){}
+   stack: (Int){}
+   stack_ptr: (Int){}
    stack_ptr += 0
-   counter = Ints()
+   counter: (Int){}
    counter += 0
+   sccs: (SCC){}
    n @ _ =>
       indices += -1
       lowlinks += 0
       on_stack += <->
-   TarjanState((indices, lowlinks, on_stack, stack, stack_ptr, counter, SCCs()))
+   TarjanState((indices, lowlinks, on_stack, stack, stack_ptr, counter, sccs))
 
 push_stack: TarjanState, Int => ()
 push_stack = state, u =>
@@ -334,7 +331,7 @@ tarjan_dfs = graph, state, u =>
          is_rec = ?scc_names > 1 || is_self_rec
          state.sccs += SCC((scc_names, is_rec))
 
-tarjan_scc: DepGraph => SCCs
+tarjan_scc: DepGraph => (SCC){}
 tarjan_scc = graph =>
    n = ?graph.nodes
    state = init_tarjan_state(n)

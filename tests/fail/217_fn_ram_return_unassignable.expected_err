@@ -1,1 +1,1 @@
-E3084: Type mismatch: cannot unify <Int|> with ()
+E3084: Type mismatch: cannot unify <Int|Error> with ()

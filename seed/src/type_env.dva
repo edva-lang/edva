@@ -16,17 +16,15 @@
    is_global: <>,
    depth: Int
 )
-#type TypeBindings (TypeBinding){}
 // Keep the most recent binding index for each name in this scope.
 // Avoid allocating a fallible array-read result for every name comparison.
 #type BindingIndices String ^ Int
 
 #type TypeScope (
-   bindings: TypeBindings,
+   bindings: (TypeBinding){},
    parent: Int,
    indices: BindingIndices
 )
-#type TypeScopes (TypeScope){}
 
 #type FieldInit (
    tracked: ast::Names,
@@ -38,24 +36,22 @@
    name: String,
    ti: ast::TypeInfo
 )
-#type GenericDecls (GenericDecl){}
 
 #type UserTypeDef (
    name: String,
    ti: ast::TypeInfo,
    ut: unify::UType
 )
-#type UserTypeDefs (UserTypeDef){}
 #type CachedBodies String ^ tast::TypedExpr
 
 #type TypeEnv (
-   scopes: TypeScopes,
+   scopes: (TypeScope){},
    cur_scope: Int,
    cur_depth: Int,
-   globals: TypeBindings,
+   globals: (TypeBinding){},
    init: FieldInit,
-   generics: GenericDecls,
-   user_types: UserTypeDefs,
+   generics: (GenericDecl){},
+   user_types: (UserTypeDef){},
    cached_bodies: CachedBodies,
    current_module: String,
    discard_result: <>,
@@ -67,16 +63,25 @@
    swizzle_mode: String
 )
 
+empty_scope: () => TypeScope
+empty_scope = !=>
+   b: (TypeBinding){}
+   TypeScope((b, -1, BindingIndices()))
+
 new_init: () => FieldInit
 new_init = !=> FieldInit((ast::Names(), ast::Names(), ast::Names()))
 
 new_env: () => TypeEnv
 new_env = !=>
-   root_scope = TypeScope((TypeBindings(), -1, BindingIndices()))
-   scopes = TypeScopes()
+   b: (TypeBinding){}
+   root_scope = TypeScope((b, -1, BindingIndices()))
+   scopes: (TypeScope){}
    scopes += root_scope
-   TypeEnv((scopes, 0, 0, TypeBindings(), new_init(), GenericDecls(),
-      UserTypeDefs(), CachedBodies(), "", <->, <->, <->,
+   globals: (TypeBinding){}
+   generics: (GenericDecl){}
+   user_types: (UserTypeDef){}
+   TypeEnv((scopes, 0, 0, globals, new_init(), generics,
+      user_types, CachedBodies(), "", <->, <->, <->,
       ast::Names(), ast::Names(), <-->, "none"))
 
 cache_fn_body: TypeEnv, String, tast::TypedExpr => ()
@@ -91,7 +96,6 @@ lookup_fn_body = env, name =>
       |
          body = bodies ^ name | _ | _
          <+ body ->
-      | <-->
 
 mark_generic_binding: TypeEnv, String => ()
 mark_generic_binding = env, name =>
@@ -123,7 +127,8 @@ is_marked_global = env, name =>
 enter_scope: TypeEnv => ()
 enter_scope = env =>
    parent_idx = env.cur_scope
-   new_scope = TypeScope((TypeBindings(), parent_idx, BindingIndices()))
+   bnds: (TypeBinding){}
+   new_scope = TypeScope((bnds, parent_idx, BindingIndices()))
    scs = env.scopes
    new_idx = ?scs
    scs += new_scope
@@ -137,8 +142,7 @@ leave_scope = env =>
    cur_idx !< 0
       |
          scs = env.scopes
-         cur_sc = scs(cur_idx) | _ |
-            TypeScope((TypeBindings(), -1, BindingIndices()))
+         cur_sc = scs(cur_idx) | _ | empty_scope()
          env.cur_scope = cur_sc.parent
          env.cur_depth > 0
             | env.cur_depth = env.cur_depth - 1
@@ -150,8 +154,7 @@ bind_local = env, name, ut, ti, is_mut =>
    cur_idx !< 0
       |
          scs = env.scopes
-         cur_sc = scs(cur_idx) | _ |
-            TypeScope((TypeBindings(), -1, BindingIndices()))
+         cur_sc = scs(cur_idx) | _ | empty_scope()
          bnds = cur_sc.bindings
          indices = cur_sc.indices
          indices ^ (name) = ?bnds
@@ -195,8 +198,7 @@ lookup_local_exact = env, name =>
       | <-->
       |
          scs = env.scopes
-         cur_sc = scs(cur_idx) | _ |
-            TypeScope((TypeBindings(), -1, BindingIndices()))
+         cur_sc = scs(cur_idx) | _ | empty_scope()
          lookup_scope(cur_sc, name)
 
 lookup_scope: TypeScope, String => < TypeBinding | >
@@ -207,8 +209,6 @@ lookup_scope = scope, name =>
          idx = indices ^ name | _ | _
          scope.bindings(idx)
             | binding => <+ binding ->
-            | <-->
-      | <-->
 
 lookup_local: TypeEnv, String => < TypeBinding | >
 lookup_local = env, name =>
@@ -222,7 +222,6 @@ lookup_local = env, name =>
                pub
                   | p => <+ p ->
                   | lookup_local_exact(env, env.current_module + "::#" + name)
-            | <-->
 
 lookup_binding_exact: TypeEnv, String => < TypeBinding | >
 lookup_binding_exact = env, name =>
@@ -234,8 +233,7 @@ lookup_binding_exact = env, name =>
       curr' < 0
          | -->
          |
-            sc = scs(curr') | _ |
-               TypeScope((TypeBindings(), -1, BindingIndices()))
+            sc = scs(curr') | _ | empty_scope()
             lookup_scope(sc, name)
                | binding =>
                   found' = <+ binding ->
@@ -270,24 +268,25 @@ lookup_binding = env, name =>
                pub
                   | p => <+ p ->
                   | lookup_binding_exact(env, env.current_module + "::#" + name)
-            | <-->
 
 // --- Field Initialization Tracking -----------------------------------------
 
-find_last_dot: String, Int => Int
+find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
    i < 0
-      | -1
-      | s(i) == 46 | i | find_last_dot(s, i - 1)
+      | <-->
+      | s(i) == 46 | <+ i -> | find_last_dot(s, i - 1)
 
 drop_last_dot: String => String
 drop_last_dot = s =>
-   cut = find_last_dot(s, ?s - 1)
-   cut > 0
-      |
-         b = {cut}
-         cut @ i => b += s(i)
-         +b
+   find_last_dot(s, ?s - 1)
+      | cut =>
+         cut > 0
+            |
+               b = {cut}
+               cut @ i => b += s(i)
+               +b
+            | ""
       | ""
 
 init_has_name: ast::Names, String => <>
@@ -471,7 +470,6 @@ lookup_generic = env, name =>
                   |
                      lookup_generic_exact(env,
                         env.current_module + "::#" + name)
-            | <-->
 
 bind_user_type: TypeEnv, String, ast::TypeInfo, unify::UType => ()
 bind_user_type = env, name, ti, ut =>
@@ -504,7 +502,6 @@ lookup_user_type = env, name =>
                   |
                      lookup_user_type_exact(env,
                         env.current_module + "::#" + name)
-            | <-->
 
 is_prelude_fn: String => <>
 is_prelude_fn = name =>

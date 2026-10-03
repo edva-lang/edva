@@ -721,29 +721,29 @@ codegen_emit_forward = cg, t =>
 // schema before the field-by-field writes compile. Built via a param-threaded
 // recursion (no '@' cycle — a nested cycle's arena restore would reap the
 // field-name array).
-record_meta_from_ti: types::Cg, ast::TypeInfo => (Addr, ast::Names)
+record_meta_from_ti: types::Cg, ast::TypeInfo => <(Addr, ast::Names)|>
 record_meta_from_ti = cg, ti =>
    stmt::ti_is_slice(ti)
-      | (Addr(0), ast::Names())
+      | <-->
       |
          ti
             [Rec rr]
                nf = ?rr.0
-               build_rec_meta_packed(cg, rr.0, 0, nf, types::Addrs(), ast::Names(),
-                  rr.5)
+               <+ build_rec_meta_packed(cg, rr.0, 0, nf, types::Addrs(), ast::Names(),
+                  rr.5) ->
             [Bitfield b]
                fnames = ast::Names()
                ?b.fields @ i =>
                   bf = b.fields(i) | _ | ast::BitfieldField(("", 0, 0))
                   fnames += ++bf.name
-               (types::llvm_type_of_vt(b.backing_type), fnames)
+               <+ (types::llvm_type_of_vt(b.backing_type), fnames) ->
             [TypeVar name] types::td_record_meta_by_name(cg, name)
             [Prim p]
                is_err = p [Error]
                is_err
-                  | (main::error_struct_type(cg), types::error_field_names!)
-                  | (Addr(0), ast::Names())
-            | (Addr(0), ast::Names())
+                  | <+ (main::error_struct_type(cg), types::error_field_names!) ->
+                  | <-->
+            | <-->
 
 
 rec_field_vt: types::Cg, ast::RecordFieldType => ast::ValueType
@@ -773,7 +773,7 @@ field_vts_step = cg, fields, i, n, acc =>
 rec_field_rec_llvm_type: types::Cg, ast::TypeInfo => Addr
 rec_field_rec_llvm_type = cg, ti =>
    m = record_meta_from_ti(cg, ti)
-   m.0 != Addr(0) | m.0 | LLVMPointerType(LLVMInt8Type!, 0)
+   m | m0 => m0.0 | LLVMPointerType(LLVMInt8Type!, 0)
 
 rec_field_llvm_type: types::Cg, ast::RecordFieldType => Addr
 rec_field_llvm_type = cg, rf =>
@@ -860,9 +860,10 @@ codegen_forward_registry = cg, t =>
    bf_opt_fwd = types::ti_get_bitfield(cg, ti)
    is_bf_fwd = <>(bf_opt_fwd)
    rec_m = record_meta_from_ti(cg, ti)
+   rec_fnames = rec_m | m => m.1 | ast::Names()
    vt_bf = bf_opt_fwd | b => b.backing_type | tv.0
    vt0 = is_bf_fwd | vt_bf | tv.0
-   rec_vt = !is_bf_fwd && ?rec_m.1 > 0 | ast::ValueType(Record) | vt0
+   rec_vt = !is_bf_fwd && ?rec_fnames > 0 | ast::ValueType(Record) | vt0
    ti_vt = types::vt_from_ti(ti)
    vt_rec = ti_vt != ast::ValueType(Unknown) | ti_vt | rec_vt
    vt' = is_bf_fwd | vt0 | vt_rec
@@ -888,8 +889,10 @@ codegen_forward_registry = cg, t =>
       | _
       | (!is_fn_sig | types::create_slot(cg, t.0, lt, cg.in_fn) | Addr(0))
    is_partial = !is_bf_fwd && is_partial_anno(cg, tv.0, t.7, t.8)
-   cg.vars += types::CgVar((t.0, vt', <->, t.7, rec_m.0, rec_m.1, slot,
-      cg.in_fn, is_partial, types::field_vts(cg, ti), Addr(0)))
+   rec_m0_opt = rec_m | m => <+ m.0 -> | <-->
+   slot_opt = slot != Addr(0) | <+ slot -> | <-->
+   cg.vars += types::CgVar((t.0, vt', <->, t.7, rec_m0_opt, rec_fnames, slot_opt,
+      cg.in_fn, is_partial, types::field_vts(cg, ti), <-->))
    bf_opt_fwd
       | bfi =>
          LLVMBuildStore(cg.builder, LLVMConstInt(lt, 0, 0), slot)
@@ -989,12 +992,10 @@ codegen_emit_member_compound = cg, t, m =>
    base = expr::codegen_eval(cg, m.target)
    vname = m.target [Var v] v | ""
    fnames = vname != "" | types::var_fnames(cg, vname) | cg.last_fnames
-   rt = vname != ""
-      |
-         types::var_rt(cg, vname)
-            | _
-            | cg.last_rt
+   rt_opt = vname != ""
+      | (types::var_rt(cg, vname) | cg.last_rt)
       | cg.last_rt
+   rt = rt_opt | r => r | Addr(0)
    fvts = vname != "" | match::var_fvts(cg, vname) | cg.last_fvts
    idx = types::member_index(fnames, m.field_name)
    fgep = types::record_field_gep(cg, rt, fvts, base.0, idx)
@@ -1181,7 +1182,15 @@ is_fwd_expr = cg, t =>
 // the assignment boundary before emitting a store.
 rhs_is_inexhaustive_choice: ast::Expr => <>
 rhs_is_inexhaustive_choice = e =>
-   e [Choice c] !c.is_exhaustive | <->
+   e [Choice c]
+      nb = ?c.branches
+      last_br = nb > 0 | c.branches(nb - 1)!! | ast::ChoiceBranch((
+         ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Int, 0), ast::Names(),
+         ast::Names(), <->, ast::Expr(Int, 0)))
+      is_bare = last_br.kind [Bare]
+      has_bare = nb > 0 && is_bare
+      !c.is_exhaustive && !has_bare
+   | <->
 
 codegen_emit_plain_assign_val: types::Cg, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 codegen_emit_plain_assign_val = cg, t =>
@@ -1251,20 +1260,22 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    // it); an unwrapped scalar does not — the last_type may name an unrelated
    // typedef (e.g. "#arrread") whose dtype would mis-type later choices.
    is_rec = types::is_record_vt(ev.1)
-   rt_name = is_rec && rm.0 != Addr(0) | types::typedef_name_of_rt(cg, rm.0) | ""
+   rt_name = is_rec | (rm | m => types::typedef_name_of_rt(cg, m.0) | "") | ""
    keep_dt = is_heap || is_rec || types::is_array_vt(ev.1) || types::is_map_vt(ev.1) ||
       types::is_slice_vt(ev.1) || (ev.1 [Fn])
    dtype0 = keep_dt | cg.last_type | ""
    dtype = rt_name != "" | rt_name | dtype0
-   need_fnames = !fresh_local | (is_rec | ?rm.1 == 0 | <->) | <->
+   rm_fnames = rm | m => m.1 | ast::Names()
+   need_fnames = !fresh_local | (is_rec | ?rm_fnames == 0 | <->) | <->
    prior_fnames = need_fnames | types::var_fnames(cg, t.0) | ast::Names()
    use_prior = need_fnames | ?prior_fnames > 0 | <->
    prior_rt = use_prior | types::var_rt(cg, t.0) | <-->
-   final_rm0 = prior_rt | _ | rm.0
-   final_rm1 = use_prior | prior_fnames | rm.1
+   rm_rt_opt = rm | m => <+ m.0 -> | <-->
+   final_rm0_opt = <>(prior_rt) | prior_rt | rm_rt_opt
+   final_rm1 = use_prior | prior_fnames | rm_fnames
    final_dt = use_prior | types::var_dtype(cg, t.0) | dtype
-   cg.vars += types::CgVar((t.0, ev.1, is_heap, final_dt, final_rm0, final_rm1,
-      slot, is_local, <->, cg.last_fvts, Addr(0)))
+   cg.vars += types::CgVar((t.0, ev.1, is_heap, final_dt, final_rm0_opt, final_rm1,
+      <+ slot ->, is_local, <->, cg.last_fvts, <-->))
    is_rec_expr = t.5 [Record _]
    is_part = !fresh_local | main::var_partial(cg, t.0) | <->
    is_whole = is_composite_vt(ev.1) | <+> | (is_rec_expr | <+> | is_part)
@@ -1558,9 +1569,10 @@ member_assign_record = cg, root_name, m, t =>
    main::var_partial(cg, root_name) | types::init_mark_written(cg, root_name + "." + types::member_fpath(m)) | 0
    target_ev = expr::codegen_eval(cg, m.target)
    is_var = m.target [Var _]
-   target_rt = is_var
-      | (types::var_rt(cg, root_name) | _ | cg.last_rt)
+   target_rt_opt = is_var
+      | (types::var_rt(cg, root_name) | cg.last_rt)
       | cg.last_rt
+   target_rt = target_rt_opt | r => r | Addr(0)
    target_fnames = is_var | types::var_fnames(cg, root_name) | cg.last_fnames
    target_fvts = is_var | match::var_fvts(cg, root_name) | cg.last_fvts
    idx = types::member_index(target_fnames, m.field_name)
@@ -1851,14 +1863,14 @@ update_type_ti = cg, name, ti =>
    idx !< 0
       |
          td = cg.typedefs(idx)!!
-         cg.typedefs(idx) = types::TypeDef((name, ti, td.rt, td.fnames)) !| _
+         cg.typedefs(idx) = types::TypeDef((name, ti, td.rt, td.in_progress, td.fnames)) !| _
 
 update_type_rec: types::Cg, String, ast::TypeInfo, Addr, ast::Names => ()
 update_type_rec = cg, name, ti, rt, fnames =>
    indices = cg.type_indices
    idx = indices ^ name | _ | -1
    idx !< 0
-      | cg.typedefs(idx) = types::TypeDef((name, ti, rt, fnames)) !| _
+      | cg.typedefs(idx) = types::TypeDef((name, ti, <+ rt ->, <->, fnames)) !| _
 
 push_typedef: types::Cg, types::TypeDef => ()
 push_typedef = cg, td =>
@@ -1870,13 +1882,13 @@ add_type: types::Cg, String, ast::TypeInfo => ()
 add_type = cg, name, ti =>
    types::has_type_name(cg, name)
       | update_type_ti(cg, name, ti)
-      | push_typedef(cg, types::TypeDef((name, ti, Addr(0), ast::Names())))
+      | push_typedef(cg, types::TypeDef((name, ti, <-->, <->, ast::Names())))
 
 add_type_rec: types::Cg, String, ast::TypeInfo, Addr, ast::Names => ()
 add_type_rec = cg, name, ti, rt, fnames =>
    types::has_type_name(cg, name)
       | update_type_rec(cg, name, ti, rt, fnames)
-      | push_typedef(cg, types::TypeDef((name, ti, rt, fnames)))
+      | push_typedef(cg, types::TypeDef((name, ti, <+ rt ->, <->, fnames)))
 
 codegen_emit_stmts: types::Cg, ast::Exprs => ()
 codegen_emit_stmts = cg, stmts =>

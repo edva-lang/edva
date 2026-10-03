@@ -1,0 +1,77 @@
+xs: (Int){}
+xs += 10
+xs += 20
+xs += 30
+print_int $ ?xs
+print_int $ (xs(0) | _ | _)
+print_int $ (xs(1) | _ | _)
+print_int $ (xs(2) | _ | _)
+
+sum: (Int){} => Int
+sum = a =>
+   tot' = 0
+   ?a @ i =>
+      tot' = tot' + (a(i) | v => v | 0)
+   tot'
+
+s = sum(xs)
+print_int $ s
+
+names: (String){3}
+names += "hello"
+names += "world"
+print_int $ ?names
+print $ (names(0) | _ | _)
+print $ (names(1) | _ | _)
+
+#type Container (
+   id: Int,
+   tags: (String){}
+)
+
+c: Container
+c.id = 7
+print_int $ c.id
+
+make_ints: Int => (Int){}
+make_ints = n =>
+   arr: (Int){}
+   n @ i => arr += (i + 1) * 10
+   arr
+
+res = make_ints(4)
+print_int $ ?res
+print_int $ (res(0) | _ | _)
+print_int $ (res(3) | _ | _)
+
+make_strs: String => (String){}
+make_strs = s =>
+   arr: (String){}
+   arr += s
+   arr
+
+c.tags = make_strs("first_tag")
+c.tags += "second_tag"
+print_int $ ?c.tags
+print $ (c.tags(0) | _ | _)
+print $ (c.tags(1) | _ | _)
+
+print $ "iter:"
+xs @ elem => print_int $ elem
+
+xs(1) = 99 !| _
+print_int $ (xs(1) | _ | _)
+
+c_arr = ++xs
+print_int $ ?c_arr
+print_int $ (c_arr(1) | _ | _)
+
+unparen_arr: Int{}
+unparen_arr += 500
+print_int $ (unparen_arr(0) | _ | _)
+
+flags: <>{}
+flags += <+>
+print_int $ (flags(0) | _ => 1 | 0)
+
+print $ "OK"

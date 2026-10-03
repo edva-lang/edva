@@ -1,5 +1,5 @@
 // Declared ram return must reject Unassignable body.
-#type Option < Int | >
+#type Option < Int | Error >
 f: Int => Option
 f = x =>
    x [1] Option(<+ 10 +>)

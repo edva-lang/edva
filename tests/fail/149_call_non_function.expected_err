@@ -1,1 +1,1 @@
-E3084: Type mismatch: cannot unify Int with (Int) => ?T283
+E3084: Type mismatch: cannot unify Int with (Int) => ?T

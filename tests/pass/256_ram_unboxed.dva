@@ -2,9 +2,7 @@
 
 find_int: Int => < Int | >
 find_int = x =>
-   x > 0
-      | <+ x * 10 ->
-      | <-->
+   x > 0 | <+ x * 10 ->
 
 calc: < Int | >, Int => Int
 calc = r, default_val =>

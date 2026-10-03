@@ -145,7 +145,6 @@ type_name_to_uprim = name =>
       ["Builder"] <+ unify::UPrim(Builder) ->
       ["Error"] <+ unify::UPrim(Error) ->
       ["Type"] <+ unify::UPrim(Type) ->
-      | <-->
 
 #type TypeVarMapEntry (name: String, ut: unify::UType)
 #type TypeVarMap (TypeVarMapEntry){}
@@ -994,7 +993,6 @@ member_field_ti = env, ti, name =>
          u_opt = type_env::lookup_user_type(env, tv)
          u_opt
             | udef => member_field_ti(env, udef.ti, name)
-            | <-->
       [Rec r]
          res' = <-->
          ?r.0 @ i =>
@@ -1030,9 +1028,6 @@ member_field_ti = env, ti, name =>
                      flds += ast::RecordFieldType(("", ast::ValueType(Int),
                         ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
                      <+ ast::TypeInfo(Rec, (flds, <->, <->, ast::ValueType(Record), 2, <->)) ->
-                  | <-->
-            | <-->
-      | <-->
 
 // --- Annotate Expressions --------------------------------------------------
 
@@ -1415,7 +1410,6 @@ annotate_expr = ctx, env, expr =>
                                        env.discard_result = is_ret_unit'
                                        cached = is_top
                                           | type_env::lookup_fn_body(env, name)
-                                          | <-->
                                        body_te = cached
                                           | _
                                           | annotate_expr(ctx, env, fe.body)
@@ -1712,7 +1706,6 @@ annotate_expr = ctx, env, expr =>
                         "constant (a per-field cycle index).")
                fld_ti_opt = fname' != "" && swz_status' != 1
                   | member_field_ti(env, target_te.ti, fname')
-                  | <-->
                ti = fld_ti_opt
                   | _
                   | unify::type_info_from_utype(ctx, fld_ut)
@@ -2587,24 +2580,26 @@ annotate_block = ctx, env, exprs, is_disc =>
 is_range_expr: ast::Expr => <>
 is_range_expr = e => e [Range _]
 
-find_last_dot: String, Int => Int
+find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
-   i < 0 | -1 |
-      (s(i) == 46) | i | find_last_dot(s, i - 1)
+   i < 0 | <--> |
+      (s(i) == 46) | <+ i -> | find_last_dot(s, i - 1)
 
 dotted_to_expr: String => ast::Expr
 dotted_to_expr = s =>
-   dot = find_last_dot(s, ?s - 1)
-   dot !> 0
+   find_last_dot(s, ?s - 1)
+      | dot =>
+         dot !> 0
+            | ast::Expr(Var, s)
+            |
+               target_str = s(0..dot)
+               dot_next = dot + 1
+               s_len = ?s
+               field_str = s(dot_next..s_len)
+               me = ast::MemberExpr((dotted_to_expr(target_str),
+                  field_str, <->, ast::Expr(Int, 0), 0, 0))
+               ast::Expr(Member, me)
       | ast::Expr(Var, s)
-      |
-         target_str = s(0..dot)
-         dot_next = dot + 1
-         s_len = ?s
-         field_str = s(dot_next..s_len)
-         me = ast::MemberExpr((dotted_to_expr(target_str),
-            field_str, <->, ast::Expr(Int, 0), 0, 0))
-         ast::Expr(Member, me)
 
 first_rec_field_ut: unify::UFields => unify::UType
 first_rec_field_ut = flds =>
@@ -2768,7 +2763,7 @@ annotate_call = ctx, env, ce =>
                            tgt = fn_alias_tgts(ai) | _ | ""
                            tgt != "" && !has_name_in(called_fns, tgt)
                               | (called_fns += tgt)
-         cast_opt = ce.fn_name != "" | type_name_to_uprim(ce.fn_name) | <-->
+         cast_opt = ce.fn_name != "" | type_name_to_uprim(ce.fn_name)
          cast_opt
             | uprim =>
                typed_args = tast::TypedExprs()
@@ -2884,7 +2879,7 @@ find_record_ctor_field_expr = args, fld, j, nf =>
                      splat_res'
                         | val => <+ val ->
                         |
-                           fld.has_default | <+ fld.default_expr -> | <-->
+                           fld.has_default | <+ fld.default_expr ->
 
 annotate_record_ctor_fields: unify::Ctx, type_env::TypeEnv, ast::CallExpr,
    type_env::UserTypeDef, unify::UFields, ast::FieldTypes,
@@ -2963,8 +2958,7 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
 annotate_call_normal: unify::Ctx, type_env::TypeEnv,
    ast::CallExpr => tast::TypedExpr
 annotate_call_normal = ctx, env, ce =>
-   udef_opt = ce.fn_name != "" | type_env::lookup_user_type(env, ce.fn_name) |
-      <-->
+   udef_opt = ce.fn_name != "" | type_env::lookup_user_type(env, ce.fn_name)
    udef_opt
       | udef =>
          c_udef = unify::canon(ctx, udef.ut)
@@ -3040,7 +3034,7 @@ annotate_call_normal = ctx, env, ce =>
          is_var_index' = <->
          index_ret_ut' = unify::UType(None)
          has_dot = ce.fn_name != "" &&
-            (find_last_dot(ce.fn_name, ?ce.fn_name - 1) > 0)
+            (find_last_dot(ce.fn_name, ?ce.fn_name - 1) | d => d > 0 | <->)
          !has_dot && ce.fn_name != ""
             |
                bnd = type_env::lookup_binding(env, ce.fn_name)
@@ -3268,6 +3262,43 @@ is_error_ut = ctx, ut =>
    c = unify::canon(ctx, ut)
    c [Prim p] (p [Error]) | <->
 
+is_ram_pn_ut: unify::Ctx, unify::UType => <unify::UType|>
+is_ram_pn_ut = ctx, ut =>
+   c = unify::canon(ctx, ut)
+   c
+      [Ram r]
+         (r.pos.has_payload && !r.neg.has_payload)
+            | <+ r.pos.ut ->
+
+choice_check_ram_pn: unify::Ctx, tast::TypedBranches => <unify::UType|>
+choice_check_ram_pn = ctx, tb_list =>
+   all_pn' = <+>
+   has_non_jump' = <->
+   cand_pos = unify::fresh_var(ctx)
+   ?tb_list @ i =>
+      tb = tb_list(i) | _ | tast::TypedBranch((ast::GuardKind(Bare),
+         tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
+         tast::mk_lit_unit(0, 0)))
+      is_jump = expr_is_jump(tb.body) || is_error_ut(ctx, tb.body.ut)
+      !is_jump
+         |
+            has_non_jump' = <+>
+            pn_opt = is_ram_pn_ut(ctx, tb.body.ut)
+            pn_opt
+               | pay_ut =>
+                  ok = unify::unify(ctx, cand_pos, pay_ut)
+                  !ok
+                     |
+                        unify::add_error(ctx, 3084,
+                           "Incompatible branch result types in choice")
+                        all_pn' = <->
+                        -->
+               |
+                  all_pn' = <->
+                  -->
+   has_non_jump' && all_pn'
+      | <+ cand_pos ->
+
 annotate_choice: unify::Ctx, type_env::TypeEnv,
    ast::ChoiceExpr, <> => tast::TypedExpr
 annotate_choice = ctx, env, ch, is_disc =>
@@ -3339,7 +3370,6 @@ annotate_choice = ctx, env, ch, is_disc =>
                         p0 = f_pred.params(0) | _ | unify::UType(None)
                         unify::unify(ctx, cond_te.ut, p0)
             <+ pred_te ->
-         | <-->
       type_env::enter_scope(env)
       pay_ti = unify::type_info_from_utype(ctx, payload_ut')
       type_env::bind_local(env, "_", payload_ut', pay_ti, <->)
@@ -3374,7 +3404,6 @@ annotate_choice = ctx, env, ch, is_disc =>
                   is_var_bare = br.kind [Bare] && vname != "" && vname != "_"
                   bnd_opt = is_var_bare
                      | type_env::lookup_binding(env, vname)
-                     | <-->
                   is_fn_bnd = bnd_opt
                      | b =>
                         cb = unify::canon(ctx, b.ut)
@@ -3382,7 +3411,6 @@ annotate_choice = ctx, env, ch, is_disc =>
                      | <->
                   gen_opt = is_var_bare
                      | type_env::lookup_generic(env, vname)
-                     | <-->
                   is_gen = <>(gen_opt)
                   is_var_fn = is_var_bare && (is_fn_bnd || is_gen)
                   is_var_fn
@@ -3424,6 +3452,36 @@ annotate_choice = ctx, env, ch, is_disc =>
    final_ut' = unify::prim_unit()
    ch.is_exhaustive && !is_disc && num_joins' > 0
       | (final_ut' = res_ut)
+      |
+         !ch.is_exhaustive && !is_disc && num_joins' > 0
+            |
+               pn_check = choice_check_ram_pn(ctx, tb_list)
+               pn_check
+                  | pos_ut =>
+                     ram_pn_ut = unify::ram_pn(pos_ut)
+                     nb_br = ?ch.branches
+                     last_br = nb_br > 0 | ch.branches(nb_br - 1)!! | ast::ChoiceBranch((
+                        ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Int, 0),
+                        ast::Names(), ast::Names(), <->, ast::Expr(Int, 0)))
+                     is_last_bare = last_br.kind [Bare]
+                     already_has_fb = nb_br > 1 && is_last_bare
+                     !already_has_fb
+                        |
+                           fb_ti = unify::type_info_from_utype(ctx, ram_pn_ut)
+                           fb_lay = layout::compute_layout(ctx, ram_pn_ut)
+                           fb_te = tast::mk_typed_ram_construct(
+                              unify::URamShape(RamPN), <->, <-->,
+                              ram_pn_ut, fb_ti, fb_lay, 0, 0)
+                           tbr_fb = tast::TypedBranch((ast::GuardKind(Bare),
+                              tast::TypedExprs(), <-->, ast::Names(),
+                              ast::Names(), fb_te))
+                           tb_list += tbr_fb
+                           ch.branches += ast::ChoiceBranch((
+                              ast::GuardKind(Bare), ast::Exprs(),
+                              ast::Expr(Int, 0), ast::Names(), ast::Names(),
+                              <->, ast::Expr(Variant, (ast::Tag(Noth),
+                                 ast::Exprs()))))
+                     final_ut' = ram_pn_ut
    ti = unify::type_info_from_utype(ctx, final_ut')
    lay = layout::compute_layout(ctx, final_ut')
    tast::mk_typed_expr(tast::TypedExprKind(Choice, (cond_te, tb_list)),
@@ -3433,8 +3491,7 @@ is_splat_expr: ast::Expr => <ast::Expr|>
 is_splat_expr = expr =>
    expr
       [Range r]
-         !r.has_lhs && r.has_rhs | <+ r.rhs -> | <-->
-      | <-->
+         !r.has_lhs && r.has_rhs | <+ r.rhs ->
 
 annotate_record: unify::Ctx, type_env::TypeEnv,
    ast::RecordExpr => tast::TypedExpr
@@ -3580,7 +3637,7 @@ annotate_index_write: unify::Ctx, type_env::TypeEnv,
    ast::CallExpr, ast::Expr => tast::TypedExpr
 annotate_index_write = ctx, env, cc, val_expr =>
    has_dot = cc.fn_name != "" &&
-      (find_last_dot(cc.fn_name, ?cc.fn_name - 1) > 0)
+      (find_last_dot(cc.fn_name, ?cc.fn_name - 1) | d => d > 0 | <->)
    tgt_expr = has_dot | dotted_to_expr(cc.fn_name) |
       (cc.fn_name != "" | ast::Expr(Var, cc.fn_name) | cc.fn_target)
    target_te = annotate_expr(ctx, env, tgt_expr)
@@ -4118,7 +4175,6 @@ refresh_target: unify::Ctx, <tast::TypedExpr|> => <tast::TypedExpr|>
 refresh_target = ctx, opt =>
    opt
       | tgt => <+ refresh_typed_expr(ctx, tgt) ->
-      | <-->
 
 refresh_expr_list: unify::Ctx, tast::TypedExprs => tast::TypedExprs
 refresh_expr_list = ctx, exprs =>

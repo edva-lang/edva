@@ -1,0 +1,44 @@
+#use str
+
+// 1. Guarded table returning RamPN without explicit fallback
+lookup: Int => < String | >
+lookup = k => k [1] <+ "one" -> [2] <+ "two" ->
+
+print $ (lookup(1) | s => s | "none")
+print $ (lookup(2) | s => s | "none")
+print $ (lookup(3) | s => s | "none")
+
+// 2. Single conditional choice returning RamPN
+pos_double: Int => < Int | >
+pos_double = x => x > 0 | <+ x * 2 ->
+
+print $ (pos_double(5) | n => str::from_int(n) | "non-pos")
+print $ (pos_double(-3) | n => str::from_int(n) | "non-pos")
+
+// 3. Direct variable assignment from inexhaustive RamPN choice
+val1 = 1
+r1 = val1 [1] <+ "first" ->
+print $ (r1 | s => s | "miss")
+
+val2 = 9
+r2 = val2 [1] <+ "first" ->
+print $ (r2 | s => s | "miss")
+
+// 4. Block whose final expression is an inexhaustive RamPN choice
+block_fn: Int => < String | >
+block_fn = x =>
+   x < 0 | print $ "neg-branch"
+   x [10] <+ "ten" -> [20] <+ "twenty" ->
+
+print $ (block_fn(10) | s => s | "other")
+print $ (block_fn(15) | s => s | "other")
+
+// 5. Inexhaustive choice in statement position remains Unit
+side_effect' = 0
+<+> | (side_effect' = 42)
+print $ str::from_int(side_effect')
+
+// 6. Inexhaustive RamPN choice containing cycle break
+4 @ i =>
+   r = i [1] <+ 100 -> [2] --> [3] <+ 300 ->
+   r | v => print $ str::from_int(v)

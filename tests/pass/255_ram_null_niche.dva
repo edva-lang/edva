@@ -3,15 +3,11 @@
 
 find_str: Int => < String | >
 find_str = x =>
-   x > 0
-      | <+ "hello niche" ->
-      | <-->
+   x > 0 | <+ "hello niche" ->
 
 find_pt: Int => < (x: Int, y: Int) | >
 find_pt = x =>
-   x > 0
-      | <+ (x = 10, y = 20) ->
-      | <-->
+   x > 0 | <+ (x = 10, y = 20) ->
 
 validate: Int => < | String >
 validate = x =>

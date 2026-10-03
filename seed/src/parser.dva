@@ -27,7 +27,6 @@ print = s =>
 // user_types maps a declared type name to its TypeInfo (a growable array —
 // map fields can't be read/written reliably, so the parser keeps a list).
 #type TypeEntry (name: String, ti: ast::TypeInfo)
-#type TypeList (TypeEntry){}
 
 // A recorded forward reference (mutual recursion): the name token (for the
 // typo diagnostic), the bare name, and the placeholder TypeInfo returned to
@@ -38,7 +37,6 @@ print = s =>
    name: String,
    placeholder: ast::TypeInfo,
 )
-#type ForwardRefs (ForwardRef){}
 
 // A user-defined binary operator (custom-operators.md): the two binding
 // powers registered by its "#infix <lbp> <rbp>" fixity clause. A list, like
@@ -48,7 +46,6 @@ print = s =>
    lbp: Int,
    rbp: Int,
 )
-#type UserOpList (UserOpEntry){}
 
 #type Parser (
    lx: lexer::Lx,
@@ -59,9 +56,9 @@ print = s =>
    expr_depth: Int,
    indent_level: Int,
    cont_depth: Int,
-   user_types: TypeList,
-   forward_refs: ForwardRefs,
-   user_ops: UserOpList,
+   user_types: (TypeEntry){},
+   forward_refs: (ForwardRef){},
+   user_ops: (UserOpEntry){},
    just_dedented: <>,
    in_rhs: <>,
    is_stmt: <>,
@@ -117,7 +114,7 @@ op_is_reserved = text =>
             "@", "^", "^?", "?", "!", "*", "&", "=>",
             "!=>", "|", "$:"]
 
-user_op_lookup: UserOpList, String => (found': <>, lbp': Int, rbp': Int)
+user_op_lookup: (UserOpEntry){}, String => (found': <>, lbp': Int, rbp': Int)
 user_op_lookup = lst, text =>
    found' = <->
    lbp' = 0
@@ -132,7 +129,7 @@ user_op_lookup = lst, text =>
             -->
    (found', lbp', rbp')
 
-user_op_add: UserOpList, String, Int, Int => UserOpList
+user_op_add: (UserOpEntry){}, String, Int, Int => (UserOpEntry){}
 user_op_add = lst, text, lbp, rbp =>
    lst += UserOpEntry((text, lbp, rbp))
    lst
@@ -151,8 +148,11 @@ is_continuation_op = t =>
 
 parser_init: lexer::Lx => Parser
 parser_init = lx =>
+   user_types: (TypeEntry){}
+   forward_refs: (ForwardRef){}
+   user_ops: (UserOpEntry){}
    p = Parser((lx, lexer::Tok((lexer::TokKind(Eof), 0, 0, 1, 1, <->, <->, "")),
-      0, 0, 0, 0, 0, 0, TypeList(), ForwardRefs(), UserOpList(),
+      0, 0, 0, 0, 0, 0, user_types, forward_refs, user_ops,
       <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
       <->))
    parser_advance(p)
@@ -463,7 +463,7 @@ parse_bp_depth_error = p =>
 parse_bp_depth_ok: Parser, Int => <ast::Expr|>
 parse_bp_depth_ok = p, min_bp =>
    lr = parse_unary(p)
-   r = lr | lre => bp_loop(p, lre, min_bp, -1) | <-->
+   r = lr | lre => bp_loop(p, lre, min_bp, -1)
    p.expr_depth = p.expr_depth - 1
    r
 
@@ -590,52 +590,54 @@ atom_neg: Parser => <ast::Expr|>
 atom_neg = p =>
    parser_advance(p)
    orr = parse_unary(p)
-   orr | oe => <+ ast::Expr(Unary, (ast::UnaryOp(Not), oe)) -> | <-->
+   orr | oe => <+ ast::Expr(Unary, (ast::UnaryOp(Not), oe)) ->
 
 // "+x" — Builder freeze into String (no trailing whitespace).
 atom_freeze: Parser => <ast::Expr|>
 atom_freeze = p =>
    parser_advance(p)
    fr = parse_unary(p)
-   fr | fe => <+ ast::Expr(Unary, (ast::UnaryOp(Freeze), fe)) -> | <-->
+   fr | fe => <+ ast::Expr(Unary, (ast::UnaryOp(Freeze), fe)) ->
 
 // "&x" — address of a Builder's writable buffer or String pointer (no trailing whitespace).
 atom_addrof: Parser => <ast::Expr|>
 atom_addrof = p =>
    parser_advance(p)
    ar = parse_unary(p)
-   ar | ae => <+ ast::Expr(Unary, (ast::UnaryOp(AddrOf), ae)) -> | <-->
+   ar | ae => <+ ast::Expr(Unary, (ast::UnaryOp(AddrOf), ae)) ->
 
 // ".!.x" — bitwise NOT (integerish).
 atom_bitnot: Parser => <ast::Expr|>
 atom_bitnot = p =>
    parser_advance(p)
    br = parse_unary(p)
-   br | be => <+ ast::Expr(Unary, (ast::UnaryOp(BitNot), be)) -> | <-->
+   br | be => <+ ast::Expr(Unary, (ast::UnaryOp(BitNot), be)) ->
 
 // "++x" — the copy operator.
 atom_copy: Parser => <ast::Expr|>
 atom_copy = p =>
    parser_advance(p)
    orr = parse_unary(p)
-   orr | oe => <+ ast::Expr(Copy, oe) -> | <-->
+   orr | oe => <+ ast::Expr(Copy, oe) ->
 
-find_last_dot: String, Int => Int
+find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
-   i < 0 | -1 |
-      (s(i) == 46) | i | find_last_dot(s, i - 1)
+   i < 0 | <--> |
+      (s(i) == 46) | <+ i -> | find_last_dot(s, i - 1)
 
 dotted_to_expr: String => ast::Expr
 dotted_to_expr = s =>
-   dot = find_last_dot(s, ?s - 1)
-   dot !> 0
+   find_last_dot(s, ?s - 1)
+      | dot =>
+         dot !> 0
+            | ast::Expr(Var, s)
+            |
+               target_str = s(0..dot)
+               field_str = s(dot + 1..?s)
+               me = ast::MemberExpr((dotted_to_expr(target_str),
+                  field_str, <->, ast::Expr(Var, ""), 0, 0))
+               ast::Expr(Member, me)
       | ast::Expr(Var, s)
-      |
-         target_str = s(0..dot)
-         field_str = s(dot + 1..?s)
-         me = ast::MemberExpr((dotted_to_expr(target_str),
-            field_str, <->, ast::Expr(Var, ""), 0, 0))
-         ast::Expr(Member, me)
 
 mark_lvalue_cell: ast::Expr => ()
 mark_lvalue_cell = e =>
@@ -1066,7 +1068,7 @@ atom_join: Parser => <ast::Expr|>
 atom_join = p =>
    parser_advance(p)
    h = parse_expr(p)
-   h | he => <+ ast::Expr(Join, (ast::JoinExpr((he)))) -> | <-->
+   h | he => <+ ast::Expr(Join, (ast::JoinExpr((he)))) ->
 
 // "#exit code" — terminate the process with the given status. The code is the
 // WHOLE following expression at the choice tier (the lowest precedence): a
@@ -1080,7 +1082,7 @@ atom_exit = p =>
    code = p.branch_body_depth > 0
       | parse_range(p)
       | parse_choice(p)
-   code | ce => <+ ast::Expr(Exit, (ast::ExitExpr((ce)))) -> | <-->
+   code | ce => <+ ast::Expr(Exit, (ast::ExitExpr((ce)))) ->
 
 // "#error <msg>" or "#warn <msg>" — compile-time user diagnostic assertions.
 atom_user_diag: Parser, <> => <ast::Expr|>
@@ -1126,7 +1128,7 @@ atom_foreign = p =>
    is_block = tok_is_indent(p.curr)
    is_block | parser_advance(p) | 0
    exprs = foreign_decls(p, abi, is_block, ast::Exprs())
-   exprs | es => <+ ast::Expr(Block, ast::BlockExpr(es)) -> | <-->
+   exprs | es => <+ ast::Expr(Block, ast::BlockExpr(es)) ->
 
 foreign_decls_done: Parser, <>, ast::Exprs => <ast::Exprs|>
 foreign_decls_done = p, is_block, exprs =>
@@ -2542,6 +2544,7 @@ parse_bitfield_fields = p, fields, cur_off, expected_bits, bvt =>
          mk_tp(ast::ValueType(Unknown),
             ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
+
 // The type atom: a primitive name, a user-declared type, a forward reference,
 // a parenthesized record/slice type, or a ramification '<>' / '<...>'.
 parse_type_atom: Parser => (ast::ValueType, ast::TypeInfo, <>)
@@ -2553,7 +2556,10 @@ parse_type_atom = p =>
       |
          p.curr.kind
             [PackedKw] parse_packed_type(p)
-            [LParen] parse_record_type(p)
+            [LParen]
+               decl_is_array(p)
+                  | parse_array_type(p)
+                  | parse_record_type(p)
             [Id] parse_named_type(p)
             |
                mk_tp(ast::ValueType(Unknown),
@@ -2573,6 +2579,23 @@ array_cap = p =>
 int_of_text: String => Int
 int_of_text = text =>
    str::to_int(text) | v => v.0 | 0
+
+parse_array_cap_and_close: Parser,
+   (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
+parse_array_cap_and_close = p, elem_t =>
+   parser_advance(p)
+   cap = array_cap(p)
+   p.curr.kind
+      [RBrace]
+         parser_advance(p)
+         ti = ast::TypeInfo(Array, (elem_t.0, elem_t.1, cap))
+         mk_tp(ast::ValueType(Array), ti, <+>)
+      |
+         parser_error(p, 2081,
+            "Expected '}' after the array capacity, got '" +
+            p.curr.text + "'")
+         mk_tp(ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 // The element type of a homogeneous record TypeInfo (its first field's type).
 rec_elem_type: ast::TypeInfo => ast::ValueType
@@ -3086,7 +3109,7 @@ parse_named_type_valid = p, tok, name =>
                            ast::TypeInfo(TypeVar, name), <+>)
 
 // The user-type table lookup: the map key access unwrapped.
-lookup_type: TypeList, String => <ast::TypeInfo|>
+lookup_type: (TypeEntry){}, String => <ast::TypeInfo|>
 lookup_type = lst, name =>
    found' = <->
    res' = ast::TypeInfo(Prim, ast::ValueType(Unknown))
@@ -3098,10 +3121,10 @@ lookup_type = lst, name =>
             found' = <+>
             res' = e.ti
             0
-   found' | <+ res' -> | <-->
+   found' | <+ res' ->
 
 // Appends a type entry to the list and returns the updated list.
-add_type: TypeList, String, ast::TypeInfo => TypeList
+add_type: (TypeEntry){}, String, ast::TypeInfo => (TypeEntry){}
 add_type = lst, name, ti =>
    lst += TypeEntry((name, ti))
    lst
@@ -3112,25 +3135,33 @@ add_type = lst, name, ti =>
 mk_tp: ast::ValueType, ast::TypeInfo, <> => (ast::ValueType, ast::TypeInfo, <>)
 mk_tp = vt, ti, ok => (vt, ti, ok)
 
-// The full type: the atom, then a '^' map continuation.
+// The full type: the atom, optional '{}' array suffix, then a '^' map continuation.
 parse_type: Parser => (ast::ValueType, ast::TypeInfo, <>)
 parse_type = p =>
    at = parse_type_atom(p)
    !at.2 | (at.0, at.1, <->) |
-      p.curr.text
-         ["^"]
-            parser_advance(p)
-            vt2 = parse_type(p)
-            !vt2.2 | (vt2.0, vt2.1, <->) |
-               map_key_ok(at.0)
-                  | mk_tp(ast::ValueType(Map),
-                     ast::TypeInfo(Map, (at.0, vt2.0, vt2.1)), <+>)
-                  |
-                     parser_error(p, 2090,
-                        "Map key type must be String, Int, or Addr")
-                     mk_tp(ast::ValueType(Unknown), at.1, <->)
-         |
-            mk_tp(at.0, at.1, <+>)
+      p.curr.kind
+         [LBrace]
+            arr = parse_array_cap_and_close(p, at)
+            parse_type_map(p, arr)
+         | parse_type_map(p, at)
+
+parse_type_map: Parser, (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
+parse_type_map = p, at =>
+   p.curr.text
+      ["^"]
+         parser_advance(p)
+         vt2 = parse_type(p)
+         !vt2.2 | (vt2.0, vt2.1, <->) |
+            map_key_ok(at.0)
+               | mk_tp(ast::ValueType(Map),
+                  ast::TypeInfo(Map, (at.0, vt2.0, vt2.1)), <+>)
+               |
+                  parser_error(p, 2090,
+                     "Map key type must be String, Int, or Addr")
+                  mk_tp(ast::ValueType(Unknown), at.1, <->)
+      |
+         mk_tp(at.0, at.1, <+>)
 
 map_key_ok: ast::ValueType => <>
 map_key_ok = vt =>
@@ -3335,13 +3366,14 @@ decl_is_array = p =>
    tok = peek_non_layout(c)
    tok.kind [LBrace]
 
-parse_array_type_decl: Parser, String => <ast::Expr|>
-parse_array_type_decl = p, name =>
+parse_array_type: Parser => (ast::ValueType, ast::TypeInfo, <>)
+parse_array_type = p =>
    parser_advance(p)
    skip_type_layout(p)
    elem_t = parse_type(p)
    !elem_t.2
-      | <-->
+      | mk_tp(ast::ValueType(Unknown),
+         ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
          skip_type_layout(p)
          p.curr.kind
@@ -3349,32 +3381,26 @@ parse_array_type_decl = p, name =>
                parser_advance(p)
                skip_type_layout(p)
                p.curr.kind
-                  [LBrace]
-                     parser_advance(p)
-                     cap = array_cap(p)
-                     p.curr.kind
-                        [RBrace]
-                           parser_advance(p)
-                           declare_type(p, name, ast::TypeInfo(Array,
-                              (elem_t.0, elem_t.1, cap)))
-                        |
-                           parser_error(p, 2081,
-                              "Expected '}' after the array capacity in " +
-                              "declaration '" + name + "', got '" +
-                              p.curr.text + "'")
-                           <-->
+                  [LBrace] parse_array_cap_and_close(p, elem_t)
                   |
                      parser_error(p, 2079,
-                        "Expected '{' after the array element type in " +
-                        "declaration '" + name + "', got '" +
+                        "Expected '{' after the array element type, got '" +
                         p.curr.text + "'")
-                     <-->
+                     mk_tp(ast::ValueType(Unknown),
+                        ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                parser_error(p, 2078,
-                  "Expected ')' closing the array element type in " +
-                  "declaration '" + name + "', got '" +
+                  "Expected ')' closing the array element type, got '" +
                   p.curr.text + "'")
-               <-->
+               mk_tp(ast::ValueType(Unknown),
+                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
+parse_array_type_decl: Parser, String => <ast::Expr|>
+parse_array_type_decl = p, name =>
+   at = parse_array_type(p)
+   !at.2
+      | <-->
+      | declare_type(p, name, at.1)
 
 decl_is_enum: Parser => <>
 decl_is_enum = p =>
@@ -4023,7 +4049,10 @@ choice_unwind = p, entry_indent =>
    is_deep: <>,
    branch: ast::ChoiceBranch,
 )
-#type ParsedBranches (ParsedBranch){}
+empty_pbrs: () => (ParsedBranch){}
+empty_pbrs = !=>
+   res: (ParsedBranch){}
+   res
 #type PatCondResult (
    stmts: ast::Exprs,
    cond: ast::Expr,
@@ -4450,7 +4479,7 @@ pat_match_cond = p, target, pat_in =>
                   has_cond' = <+>
          PatCondResult((stmts, acc_cond'))
 
-desugar_inner_pattern_group: Parser, ast::Expr, ParsedBranches,
+desugar_inner_pattern_group: Parser, ast::Expr, (ParsedBranch){},
    ast::Expr => ast::Expr
 desugar_inner_pattern_group = p, target, inner_pbrs, fallback_expr =>
    n = ?inner_pbrs
@@ -4478,7 +4507,7 @@ desugar_inner_pattern_group = p, target, inner_pbrs, fallback_expr =>
             cur_cont' = mk_block(res.stmts, ch)
    cur_cont'
 
-desugar_deep_choice: Parser, ast::Expr, ParsedBranches => ast::Expr
+desugar_deep_choice: Parser, ast::Expr, (ParsedBranch){} => ast::Expr
 desugar_deep_choice = p, lhs, pbrs =>
    n = ?pbrs
    is_var = lhs [Var _]
@@ -4537,14 +4566,14 @@ desugar_deep_choice = p, lhs, pbrs =>
          exprs += cur_cont'
          ast::Expr(Block, ast::BlockExpr(exprs))
 
-parsed_branches_has_deep: ParsedBranches => <>
+parsed_branches_has_deep: (ParsedBranch){} => <>
 parsed_branches_has_deep = brs =>
    has' = <->
    brs @ b =>
       b.is_deep | has' = <+>
    has'
 
-group_variant_run_deep: ParsedBranches, Int, Int => <>
+group_variant_run_deep: (ParsedBranch){}, Int, Int => <>
 group_variant_run_deep = pbrs, start_idx, end_idx =>
    k = end_idx - start_idx
    k > 1
@@ -4554,12 +4583,12 @@ group_variant_run_deep = pbrs, start_idx, end_idx =>
             mk_branch(ast::Expr(Var, ""))))
          pb.is_deep
 
-build_grouped_variant: Parser, ParsedBranches, Int, Int,
+build_grouped_variant: Parser, (ParsedBranch){}, Int, Int,
    String, ast::Expr => ParsedBranch
 build_grouped_variant = p, pbrs, start_idx, end_idx, tag, fallback_expr =>
    pay_name = fresh_dp_var(p)
    pay_expr = ast::Expr(Var, pay_name)
-   inner_pbrs = ParsedBranches()
+   inner_pbrs = empty_pbrs()
    k = end_idx - start_idx
    k @ i =>
       b = pbrs(start_idx + i) | _ | ParsedBranch((pat_wildcard(), <->,
@@ -4585,7 +4614,7 @@ build_grouped_variant = p, pbrs, start_idx, end_idx, tag, fallback_expr =>
       ast::Expr(Var, "?"), vnames, binds, <->, inner_body))
    ParsedBranch((pat_variant(tag, ast::Patterns()), <->, top_cb))
 
-find_variant_run_end: ParsedBranches, String, Int, Int => Int
+find_variant_run_end: (ParsedBranch){}, String, Int, Int => Int
 find_variant_run_end = pbrs, tag, j, limit =>
    j !< limit
       | limit
@@ -4598,8 +4627,8 @@ find_variant_run_end = pbrs, tag, j, limit =>
             | find_variant_run_end(pbrs, tag, j + 1, limit)
             | j
 
-group_variant_branches_loop: Parser, ParsedBranches, Int, Int,
-   ast::Expr, ParsedBranches => ParsedBranches
+group_variant_branches_loop: Parser, (ParsedBranch){}, Int, Int,
+   ast::Expr, (ParsedBranch){} => (ParsedBranch){}
 group_variant_branches_loop = p, pbrs, i, limit, fallback_expr, acc =>
    i !< limit
       | acc
@@ -4628,7 +4657,7 @@ group_variant_branches_loop = p, pbrs, i, limit, fallback_expr, acc =>
                group_variant_branches_loop(p, pbrs, i + 1, limit,
                   fallback_expr, acc)
 
-group_variant_branches: Parser, ParsedBranches => ParsedBranches
+group_variant_branches: Parser, (ParsedBranch){} => (ParsedBranch){}
 group_variant_branches = p, pbrs =>
    n = ?pbrs
    n == 0
@@ -4642,13 +4671,13 @@ group_variant_branches = p, pbrs =>
             | last_pb.branch.block
             | ast::Expr(Block, ast::BlockExpr(ast::Exprs()))
          limit = has_fallback | last_idx | n
-         acc = ParsedBranches()
+         acc = empty_pbrs()
          res = group_variant_branches_loop(p, pbrs, 0, limit,
             fallback_expr, acc)
          has_fallback | res += last_pb | 0
          res
 
-finish_parsed_choice: Parser, ast::Expr, ParsedBranches => <ast::Expr|>
+finish_parsed_choice: Parser, ast::Expr, (ParsedBranch){} => <ast::Expr|>
 finish_parsed_choice = p, lhs, pbrs =>
    ?pbrs == 0
       | <+ lhs ->
@@ -4685,7 +4714,7 @@ choice_cont: Parser, ast::Expr => <ast::Expr|>
 choice_cont = p, lhs =>
    p.choice_depth = p.choice_depth + 1
    entry_indent = p.indent_level
-   r = choice_cont_loop(p, ParsedBranches(), entry_indent, -1)
+   r = choice_cont_loop(p, empty_pbrs(), entry_indent, -1)
    p.choice_depth = p.choice_depth - 1
    choice_unwind(p, entry_indent)
    r
@@ -4723,7 +4752,7 @@ choice_scan_pipe = lx, tok, cur_indent, entry_indent =>
       [LBracket] <+ cur_indent ->
       |
          is_sep = token_is_pipe(tok)
-         is_sep | <+ cur_indent -> | <-->
+         is_sep | <+ cur_indent ->
 
 choice_can_skip: Parser, Int => <>
 choice_can_skip = p, entry_indent =>
@@ -4737,12 +4766,12 @@ choice_skip_layout = p, entry_indent =>
          parser_advance(p)
          choice_skip_layout(p, entry_indent)
 
-choice_cont_nest: Parser, ParsedBranches, Int, Int => <ParsedBranches|>
+choice_cont_nest: Parser, (ParsedBranch){}, Int, Int => <(ParsedBranch){}|>
 choice_cont_nest = p, brs, entry_indent, branch_indent =>
    last_idx = ?brs - 1
    last = brs(last_idx) | _ | ParsedBranch((pat_wildcard(), <->,
       mk_branch(ast::Expr(Var, ""))))
-   new_brs = ParsedBranches()
+   new_brs = empty_pbrs()
    brs @ b, i =>
       i < last_idx | new_brs += b
    nested = choice_cont(p, last.branch.block)
@@ -4752,7 +4781,7 @@ choice_cont_nest = p, brs, entry_indent, branch_indent =>
          choice_cont_loop(p, new_brs, entry_indent, branch_indent)
       | <-->
 
-choice_cont_next: Parser, ParsedBranches, Int, Int, <> => <ParsedBranches|>
+choice_cont_next: Parser, (ParsedBranch){}, Int, Int, <> => <(ParsedBranch){}|>
 choice_cont_next = p, brs, entry_indent, branch_indent, saw_peek =>
    need_bi = branch_indent < 0 && saw_peek
    cur_bi = need_bi | p.indent_level | branch_indent
@@ -4761,8 +4790,8 @@ choice_cont_next = p, brs, entry_indent, branch_indent, saw_peek =>
       | sbrs => choice_cont_loop(p, sbrs, entry_indent, cur_bi)
       | <+ brs ->
 
-choice_cont_step: Parser, ParsedBranches, Int, Int,
-   <Int|> => <ParsedBranches|>
+choice_cont_step: Parser, (ParsedBranch){}, Int, Int,
+   <Int|> => <(ParsedBranch){}|>
 choice_cont_step = p, brs, entry_indent, branch_indent, peek =>
    saw_peek = <>(peek)
    saw_peek | choice_skip_layout(p, entry_indent) | 0
@@ -4775,7 +4804,7 @@ choice_cont_step = p, brs, entry_indent, branch_indent, peek =>
       | choice_cont_nest(p, brs, entry_indent, branch_indent)
       | choice_cont_next(p, brs, entry_indent, branch_indent, saw_peek)
 
-choice_cont_loop: Parser, ParsedBranches, Int, Int => <ParsedBranches|>
+choice_cont_loop: Parser, (ParsedBranch){}, Int, Int => <(ParsedBranch){}|>
 choice_cont_loop = p, brs, entry_indent, branch_indent =>
    p.fn_depth > 0 && token_is_op(p.curr, "|")
       | <+ brs ->
@@ -4788,7 +4817,7 @@ choice_cont_loop = p, brs, entry_indent, branch_indent =>
             | <+ brs ->
             | choice_cont_step(p, brs, entry_indent, branch_indent, peek)
 
-check_redundant_flag_pb: Parser, ParsedBranches, ast::Expr => <>
+check_redundant_flag_pb: Parser, (ParsedBranch){}, ast::Expr => <>
 check_redundant_flag_pb = p, brs, bd =>
    expr_is_neg_flag(bd)
       |
@@ -4808,7 +4837,7 @@ check_redundant_flag_pb = p, brs, bd =>
             | <->
       | <->
 
-choice_step: Parser, ParsedBranches, <> => <ParsedBranches|>
+choice_step: Parser, (ParsedBranch){}, <> => <(ParsedBranch){}|>
 choice_step = p, brs, saw_sep =>
    p.curr.kind
       [LBracket]
@@ -5106,7 +5135,7 @@ choice_body_inner = p =>
    stop = kstop || tstop
    stop | <+ ast::Expr(Var, "<empty>") -> |
       r = parse_range(p)
-      r | e => seq_cont_loop(p, e) | <-->
+      r | e => seq_cont_loop(p, e)
 
 choice_same_line_stop: Parser => <>
 choice_same_line_stop = p =>
@@ -5114,7 +5143,7 @@ choice_same_line_stop = p =>
    tok_is_nl(p.curr) || tok_is_indent(p.curr) || tok_is_dedent(p.curr) ||
       is_eof
 
-choice_same_line_step: Parser, ParsedBranches => <ParsedBranches|>
+choice_same_line_step: Parser, (ParsedBranch){} => <(ParsedBranch){}|>
 choice_same_line_step = p, brs =>
    p.curr.kind
       [LBracket]
@@ -5184,7 +5213,7 @@ choice_same_line_step = p, brs =>
                         | <-->
             | <-->
 
-choice_same_line_loop: Parser, ParsedBranches => <ParsedBranches|>
+choice_same_line_loop: Parser, (ParsedBranch){} => <(ParsedBranch){}|>
 choice_same_line_loop = p, brs =>
    choice_same_line_stop(p)
       | <+ brs ->
@@ -5199,7 +5228,7 @@ choice_same_line = p =>
    lhs = choice_body_inner(p)
    lhs
       | le =>
-         r = choice_same_line_loop(p, ParsedBranches())
+         r = choice_same_line_loop(p, empty_pbrs())
          r
             | brs => finish_parsed_choice(p, le, brs)
             | <-->
@@ -5882,12 +5911,12 @@ lhs_name = e =>
 parse_cycle_with_lhs: Parser, ast::Expr => <ast::Expr|>
 parse_cycle_with_lhs = p, lhs =>
    c = parse_choice_with_lhs(p, lhs)
-   c | ce => cycle_cont(p, ce) | <-->
+   c | ce => cycle_cont(p, ce)
 
 parse_choice_with_lhs: Parser, ast::Expr => <ast::Expr|>
 parse_choice_with_lhs = p, lhs =>
    r = parse_range_with_lhs(p, lhs)
-   r | re => choice_cont(p, re) | <-->
+   r | re => choice_cont(p, re)
 
 // --- literal text -> value -------------------------------------------------
 
@@ -5939,7 +5968,7 @@ parse_int_text = text =>
             val' = val' * base + dv
          |
             okf' = <->
-   okf' | <+ val' -> | <-->
+   okf' | <+ val' ->
 
 
 // Strips a float suffix ("f32", "f", "F").

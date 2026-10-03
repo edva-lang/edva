@@ -98,8 +98,9 @@ expr_enum_dtype = cg, e =>
                      pti = pdt != "" | types::typedef_ti(cg, pdt) |
                         ast::TypeInfo(Prim, ast::ValueType(Unknown))
                      fnames = types::var_fnames(cg, tgt_name)
-                     mi = types::member_static_index(cg, m, fnames)
-                     mi.1 | types::record_field_dtype(cg, pti, mi.0) | ""
+                     types::member_static_index(cg, m, fnames)
+                        | idx => types::record_field_dtype(cg, pti, idx)
+                        | ""
                   | ""
       | ""
 
@@ -125,7 +126,6 @@ codegen_emit_cmp_eval = cg, op, t =>
                ti = types::typedef_ti(cg, types::resolve_type_name(cg, cg.last_type))
                is_e = ti [Enum _]
                !is_e | cg.last_type = ""
-      | 0
    l_un = lr.1 [Unit]
    r_un = rr.1 [Unit]
    is_bad = l_un || r_un
@@ -382,7 +382,8 @@ codegen_compare_payload = cg, l_val, r_val, pay_vt, pay_ti, depth =>
                                                    rec_ti = types::resolve_record_ti(cg, pay_ti)
                                                    rm = runtime::record_meta_from_ti(cg, rec_ti)
                                                    rec_fields = rec_ti [Rec rr] rr.0 | ast::FieldTypes()
-                                                   codegen_record_pay_eq(cg, l_val, r_val, rm.0, rec_fields, depth + 1)
+                                                   rm_0 = rm | m => m.0 | LLVMInt8Type!
+                                                   codegen_record_pay_eq(cg, l_val, r_val, rm_0, rec_fields, depth + 1)
                                                 |
                                                    i64t = LLVMInt64Type!
                                                    l_i = LLVMBuildPtrToInt(cg.builder, l_val, i64t, "pay.ptr.l")
@@ -1247,9 +1248,8 @@ ctfe_lower_record = cg, r =>
       |
          anon_name = "$ctfe.rec." + str::from_int(?cg.typedefs)
          runtime::push_typedef(cg, types::TypeDef((anon_name,
-            ast::TypeInfo(Prim, ast::ValueType(Record)), st, fnames)))
-      | 0
-   cg.last_rt = st
+            ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st ->, <->, fnames)))
+   cg.last_rt = <+ st ->
    cg.last_fnames = fnames
    cg.last_fvts = fvts
    buf = {nf * 8}
@@ -1752,14 +1752,12 @@ codegen_eval_predicate = cg, pred, cond_val, cond_type =>
          saved_nvars = ?cg.vars
          pname = f.params(0)!!
          ptype = cond_type
-         cg.vars += types::CgVar((pname, ptype, <->, "", Addr(0), ast::Names(),
-            Addr(0), <+>, <->, ast::VTypes(), cond_val))
+         cg.vars += types::CgVar((pname, ptype, <->, "", <-->, ast::Names(),
+            <-->, <+>, <->, ast::VTypes(), <+ cond_val ->))
          pname != "_"
             |
-               cg.vars += types::CgVar(("_", ptype, <->, "", Addr(0), ast::Names(),
-                  Addr(0), <+>, <->, ast::VTypes(), cond_val))
-               0
-            | 0
+               cg.vars += types::CgVar(("_", ptype, <->, "", <-->, ast::Names(),
+                  <-->, <+>, <->, ast::VTypes(), <+ cond_val ->))
          bv = expr::codegen_eval(cg, f.body)
          stmt::coerce_int(cg, bv.0, LLVMInt1Type!)
       | LLVMConstInt(LLVMInt1Type!, 0, 0)
@@ -2189,10 +2187,10 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
          pos_is_rec
             |
                pos_rm = runtime::record_meta_from_ti(cg, pos_rec')
-               pos_rm.0 != Addr(0)
-                  |
-                     cg.last_rt = pos_rm.0
-                     cg.last_fnames = pos_rm.1
+               pos_rm
+                  | m =>
+                     cg.last_rt = <+ m.0 ->
+                     cg.last_fnames = m.1
                      cg.last_fvts = types::field_vts(cg, pos_rec')
                      pdt = pos_rec' [TypeVar n] n | ""
                      cg.last_type = pdt
@@ -2321,10 +2319,10 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
    pos_is_rec
       |
          pos_rm = runtime::record_meta_from_ti(cg, pos_rec)
-         pos_rm.0 != Addr(0)
-            |
-               cg.last_rt = pos_rm.0
-               cg.last_fnames = pos_rm.1
+         pos_rm
+            | m =>
+               cg.last_rt = <+ m.0 ->
+               cg.last_fnames = m.1
                cg.last_fvts = types::field_vts(cg, pos_rec)
                pdt = pos_rec [TypeVar n] n | ""
                cg.last_type = pdt
@@ -2374,10 +2372,10 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
    neg_is_rec
       |
          neg_rm = runtime::record_meta_from_ti(cg, neg_rec)
-         neg_rm.0 != Addr(0)
-            |
-               cg.last_rt = neg_rm.0
-               cg.last_fnames = neg_rm.1
+         neg_rm
+            | m =>
+               cg.last_rt = <+ m.0 ->
+               cg.last_fnames = m.1
                cg.last_fvts = types::field_vts(cg, neg_rec)
                ndt = neg_rec [TypeVar n] n | ""
                cg.last_type = ndt
@@ -2393,7 +2391,7 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
                   | cg.last_type = types::value_type_name(n_ret_vt)
                   | 0
             |
-               cg.last_rt = Addr(0)
+               cg.last_rt = <-->
                cg.last_fnames = ast::Names()
                cg.last_fvts = ast::VTypes()
                ndt2 = neg_rec [TypeVar n] n | ""
@@ -2584,13 +2582,13 @@ eval_heap_branch = cg, body, ppay, pay_type =>
          slot = types::hoisted_alloca(cg, LLVMPointerType(LLVMInt8Type!, 0),
             "var." + pname)
          LLVMBuildStore(cg.builder, pv, slot)
-         rm0 = pay_type [Record] cg.last_rt | Addr(0)
+         rm0 = pay_type [Record] cg.last_rt | <-->
          fn0 = pay_type [Record] cg.last_fnames | ast::Names()
          fv0 = pay_type [Record] cg.last_fvts | ast::VTypes()
          pay_is_comp = types::is_record_vt(pay_type) || types::is_enum_vt(pay_type)
          pay_dt = pay_is_comp | cg.last_type | ""
          cg.vars += types::CgVar((pname, pay_type, <->, pay_dt, rm0, fn0,
-            slot, <+>, <->, fv0, Addr(0)))
+            <+ slot ->, <+>, <->, fv0, <-->))
          is_fn_pt = pay_type [Fn]
          is_fn_pt
             |
@@ -2626,13 +2624,13 @@ eval_heap_branch_with_under = cg, body, ppay, pay_type =>
       "var._")
    pv = eval_heap_pay_value(cg, ppay, pay_type)
    LLVMBuildStore(cg.builder, pv, slot)
-   rm0 = pay_type [Record] cg.last_rt | Addr(0)
+   rm0 = pay_type [Record] cg.last_rt | <-->
    fn0 = pay_type [Record] cg.last_fnames | ast::Names()
    fv0 = pay_type [Record] cg.last_fvts | ast::VTypes()
    pay_is_comp = types::is_record_vt(pay_type) || types::is_enum_vt(pay_type)
    pay_dt = pay_is_comp | cg.last_type | ""
    cg.vars += types::CgVar(("_", pay_type, <->, pay_dt, rm0, fn0,
-      slot, <+>, <->, fv0, Addr(0)))
+      <+ slot ->, <+>, <->, fv0, <-->))
    cg.last_type = ""
    expr::codegen_eval(cg, body)
 
@@ -2740,9 +2738,8 @@ enum_slots_for_label_at = cg, label, i, n =>
          td = cg.typedefs(i)!!
          td.ti
             [Enum slots]
-               idx = types::enum_slot_index(slots, label)
-               idx !< 0
-                  | (td.name, slots)
+               types::enum_slot_index(slots, label)
+                  | _ => (td.name, slots)
                   | enum_slots_for_label_at(cg, label, i + 1, n)
             | enum_slots_for_label_at(cg, label, i + 1, n)
 
@@ -2776,7 +2773,7 @@ codegen_variant_tag_match_at = cg, tag, slots, names, i, n, m =>
       | m == Addr(0) | LLVMConstInt(LLVMInt1Type!, 0, 0) | m
       |
          label = names(i) | _ | ""
-         idx = types::enum_slot_index(slots, types::decl_bare_name(label, 0))
+         idx = types::enum_slot_index(slots, types::decl_bare_name(label, 0)) | j => j | 0
          eq = LLVMBuildICmp(cg.builder, 32, tag,
             LLVMConstInt(LLVMInt64Type!, idx, 0), "tag.match")
          m2 = m == Addr(0) | eq |
@@ -2942,8 +2939,9 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
          v_dtype = v_raw_dt' != ""
             | types::resolve_type_name(cg, v_raw_dt')
             | types::typedef_name_of_rt(cg, rec_info.0)
-         cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info.0, rec_info.1,
-            slot, <+>, <->, rec_info.2, Addr(0)))
+         rec_info_0_opt = rec_info.0 != Addr(0) | <+ rec_info.0 -> | <-->
+         cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info_0_opt,
+            rec_info.1, <+ slot ->, <+>, <->, rec_info.2, <-->))
          is_fn_pt' = ptype [Fn]
          tgt_fn' = is_fn_pt' | types::fn_ret_sig_with_ti(cg, slot_ti) | ""
          is_fn_pt' && (tgt_fn' != "") | cg.last_closure_fn = tgt_fn' | 0
@@ -3066,8 +3064,9 @@ choice_fn_values_differ = cg, left, right =>
 
 fn_param_types: types::Cg, String => ast::VTypes
 fn_param_types = cg, name =>
-   idx = types::fninfo_index(cg, name)
-   idx < 0 | ast::VTypes() | cg.fninfos(idx)!!.param_types
+   types::fninfo_index(cg, name)
+      | idx => cg.fninfos(idx)!!.param_types
+      | ast::VTypes()
 
 // A choice is one expression, so every value-producing branch must agree on
 // a statically known result type. Keep unknown branches for later unification;
@@ -3255,14 +3254,11 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                vname != ""
                   | types::var_fnames(cg, vname)
                   | cg.last_fnames
+         v_rt = vname != "" | types::var_rt(cg, vname) | <-->
+         rt_opt = <>(v_rt) | v_rt | cg.last_rt
          rt = is_err
             | main::error_struct_type(cg)
-            |
-               vname != ""
-                  |
-                     v_rt = types::var_rt(cg, vname)
-                     v_rt | _ | cg.last_rt
-                  | cg.last_rt
+            | (rt_opt | r => r | Addr(0))
          fvts = is_err
             | types::error_field_vts!
             |
@@ -3277,15 +3273,16 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                   | cg.last_type
          parent_dtype = pdt0 != "" | pdt0 | types::typedef_name_of_rt(cg, rt)
          mi = types::member_static_index(cg, t, fnames)
-         !mi.1
+         has_mi = <>(mi)
+         !has_mi
             |
                types::init_error(cg, "E3170", "Member index 'x.(i)' must be a " +
                   "compile-time constant (a per-field cycle index).",
                   t.line, t.col)
                (Addr(0), ast::ValueType(Unknown))
             |
-               idx = mi.0
-               bad = rt == Addr(0) || idx < 0 || bv.0 == Addr(0)
+               idx = mi | i => i | 0
+               bad = rt == Addr(0) || bv.0 == Addr(0)
                bad
                   |
                      types::init_error(cg, "E3017", "Member access '" + t.field_name +
@@ -3309,9 +3306,10 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                               | bfi =>
                                  bty0 =
                                     types::llvm_type_of_vt(bfi.backing_type)
-                                 cg.last_rt = bty0
-                                 cg.last_fnames =
-                                    runtime::record_meta_from_ti(cg, fti).1
+                                 cg.last_rt = <+ bty0 ->
+                                 bf_rm = runtime::record_meta_from_ti(cg, fti)
+                                 bf_fns = bf_rm | m => m.1 | ast::Names()
+                                 cg.last_fnames = bf_fns
                                  cg.last_type = types::record_field_dtype(cg,
                                     parent_ti, idx)
                                  (fgep, fvt)
@@ -3320,11 +3318,12 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                                  is_rec
                                     |
                                        fmeta = runtime::record_meta_from_ti(cg, fti)
-                                       cg.last_rt = fmeta.0
-                                       fmeta.0 == Addr(0) | cg.last_rt = ft | 0
-                                       cg.last_fnames = fmeta.1
+                                       fmeta_rt_opt = fmeta | m => <+ m.0 -> | <+ ft ->
+                                       cg.last_rt = fmeta_rt_opt
+                                       fmeta_1 = fmeta | m => m.1 | ast::Names()
+                                       cg.last_fnames = fmeta_1
                                        cg.last_fvts = field_vts_from_ti(cg, fti)
-                                       ?fmeta.1 == 0
+                                       ?fmeta_1 == 0
                                           |
                                              cg.last_fvts =
                                                 struct_sub_fvts(ft)
@@ -3509,16 +3508,15 @@ codegen_unresolved_module_member = cg, t =>
       | ast::TypeInfo(Prim, ast::ValueType(Unknown))
    ti
       [Enum slots]
-         idx = types::enum_slot_index(slots, t.field_name)
-         idx < 0
+         types::enum_slot_index(slots, t.field_name)
+            | idx =>
+               u = types::codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
+               cg.last_type = rtname
+               (u, ast::ValueType(Enum))
             |
                types::init_error(cg, "E3117", "Enum '" + rtname +
                   "' has no variant '" + t.field_name + "'.", t.line, t.col)
                (Addr(0), ast::ValueType(Unknown))
-            |
-               u = types::codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
-               cg.last_type = rtname
-               (u, ast::ValueType(Enum))
       |
          name = tname + "::" + t.field_name
          types::has_fn_name(cg, name)
@@ -3650,10 +3648,12 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                pos_ti1 = eff_ti [Ram s] s.0.payload_record |
                   ast::TypeInfo(Prim, pos_vt)
                pos_rm1 = runtime::record_meta_from_ti(cg, pos_ti1)
+               pos_rm1_0_opt = pos_rm1 | m => <+ m.0 -> | <-->
+               pos_rm1_1 = pos_rm1 | m => m.1 | ast::Names()
                pos_fvts1 = types::field_vts(cg, pos_ti1)
                cg.vars += types::CgVar(("_", pos_vt, types::is_ptrish_vt(pos_vt), "",
-                  pos_rm1.0, pos_rm1.1, slot_then1, <+>, <->, pos_fvts1,
-                  pv_then1))
+                  pos_rm1_0_opt, pos_rm1_1, <+ slot_then1 ->, <+>, <->, pos_fvts1,
+                  <+ pv_then1 ->))
                ?b0.bind_vars @ bv_i =>
                   pname' = b0.bind_vars(bv_i) | _ | ""
                   pname' != "" && pname' != "_"
@@ -3662,8 +3662,8 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                         slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + pname')
                         LLVMBuildStore(cg.builder, pv_then1, slot_p0')
                         cg.vars += types::CgVar((pname', pos_vt,
-                           types::is_ptrish_vt(pos_vt), "", pos_rm1.0, pos_rm1.1,
-                           slot_p0', <+>, <->, pos_fvts1, pv_then1))
+                           types::is_ptrish_vt(pos_vt), "", pos_rm1_0_opt, pos_rm1_1,
+                           <+ slot_p0' ->, <+>, <->, pos_fvts1, <+ pv_then1 ->))
                      | 0
          b0_is_lam1 = b0.body.kind [Lambda _]
          cond_lam1 = can_pos1 && b0_is_lam1
@@ -3677,8 +3677,8 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + p0')
                LLVMBuildStore(cg.builder, pv_then1, slot_p0')
                cg.vars += types::CgVar((p0', pos_vt, types::is_ptrish_vt(pos_vt), "",
-                  Addr(0), ast::Names(), slot_p0', <+>, <->,
-                  ast::VTypes(), pv_then1))
+                  <-->, ast::Names(), <+ slot_p0' ->, <+>, <->,
+                  ast::VTypes(), <+ pv_then1 ->))
                main::codegen_typed_eval(cg, lam0'.1)
             | main::codegen_typed_eval(cg, b0.body)
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_1)
@@ -3720,9 +3720,11 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                pos_ti = eff_ti [Ram s] s.0.payload_record |
                   ast::TypeInfo(Prim, pos_vt)
                pos_rm = runtime::record_meta_from_ti(cg, pos_ti)
+               pos_rm_0_opt = pos_rm | m => <+ m.0 -> | <-->
+               pos_rm_1 = pos_rm | m => m.1 | ast::Names()
                pos_fvts = types::field_vts(cg, pos_ti)
                cg.vars += types::CgVar(("_", pos_vt, types::is_ptrish_vt(pos_vt), "",
-                  pos_rm.0, pos_rm.1, slot_then, <+>, <->, pos_fvts, pv_then))
+                  pos_rm_0_opt, pos_rm_1, <+ slot_then ->, <+>, <->, pos_fvts, <+ pv_then ->))
                ?b0.bind_vars @ bv_i =>
                   pname' = b0.bind_vars(bv_i) | _ | ""
                   pname' != "" && pname' != "_"
@@ -3731,8 +3733,8 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                         slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + pname')
                         LLVMBuildStore(cg.builder, pv_then, slot_p0')
                         cg.vars += types::CgVar((pname', pos_vt,
-                           types::is_ptrish_vt(pos_vt), "", pos_rm.0, pos_rm.1,
-                           slot_p0', <+>, <->, pos_fvts, pv_then))
+                           types::is_ptrish_vt(pos_vt), "", pos_rm_0_opt, pos_rm_1,
+                           <+ slot_p0' ->, <+>, <->, pos_fvts, <+ pv_then ->))
                      | 0
          b0_is_under = b0.body.kind [Var v] (v.0 == "_") | <->
          b0_is_lam = b0.body.kind [Lambda _]
@@ -3754,10 +3756,12 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                            pos_ti0 = eff_ti [Ram s] s.0.payload_record |
                               ast::TypeInfo(Prim, pos_vt)
                            pos_rm0 = runtime::record_meta_from_ti(cg, pos_ti0)
+                           pos_rm0_0_opt = pos_rm0 | m => <+ m.0 -> | <-->
+                           pos_rm0_1 = pos_rm0 | m => m.1 | ast::Names()
                            pos_fvts0 = types::field_vts(cg, pos_ti0)
                            cg.vars += types::CgVar((p0', pos_vt,
-                              types::is_ptrish_vt(pos_vt), "", pos_rm0.0, pos_rm0.1,
-                              slot_p0', <+>, <->, pos_fvts0, pv_then))
+                              types::is_ptrish_vt(pos_vt), "", pos_rm0_0_opt, pos_rm0_1,
+                              <+ slot_p0' ->, <+>, <->, pos_fvts0, <+ pv_then ->))
                            main::codegen_typed_eval(cg, lam0'.1)
                         | main::codegen_typed_eval(cg, b0.body)
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_then)
@@ -3791,9 +3795,11 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                neg_ti = eff_ti [Ram s] s.1.payload_record |
                   ast::TypeInfo(Prim, neg_vt)
                neg_rm = runtime::record_meta_from_ti(cg, neg_ti)
+               neg_rm_0_opt = neg_rm | m => <+ m.0 -> | <-->
+               neg_rm_1 = neg_rm | m => m.1 | ast::Names()
                neg_fvts = types::field_vts(cg, neg_ti)
                cg.vars += types::CgVar(("_", neg_vt, types::is_ptrish_vt(neg_vt), "",
-                  neg_rm.0, neg_rm.1, slot_else, <+>, <->, neg_fvts, pv_else))
+                  neg_rm_0_opt, neg_rm_1, <+ slot_else ->, <+>, <->, neg_fvts, <+ pv_else ->))
                ?b1.bind_vars @ bv_e =>
                   pname_e = b1.bind_vars(bv_e) | _ | ""
                   pname_e != "" && pname_e != "_"
@@ -3802,8 +3808,8 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                         slot_p1' = types::hoisted_alloca(cg, p1_ty', "var." + pname_e)
                         LLVMBuildStore(cg.builder, pv_else, slot_p1')
                         cg.vars += types::CgVar((pname_e, neg_vt,
-                           types::is_ptrish_vt(neg_vt), "", neg_rm.0, neg_rm.1,
-                           slot_p1', <+>, <->, neg_fvts, pv_else))
+                           types::is_ptrish_vt(neg_vt), "", neg_rm_0_opt, neg_rm_1,
+                           <+ slot_p1' ->, <+>, <->, neg_fvts, <+ pv_else ->))
                      | 0
          b1_is_under = b1.body.kind [Var v] (v.0 == "_") | <->
          b1_is_lam = b1.body.kind [Lambda _]
@@ -3827,10 +3833,12 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                            neg_ti0 = cond.ti [Ram s] s.1.payload_record |
                               ast::TypeInfo(Prim, neg_vt)
                            neg_rm0 = runtime::record_meta_from_ti(cg, neg_ti0)
+                           neg_rm0_0_opt = neg_rm0 | m => <+ m.0 -> | <-->
+                           neg_rm0_1 = neg_rm0 | m => m.1 | ast::Names()
                            neg_fvts0 = types::field_vts(cg, neg_ti0)
                            cg.vars += types::CgVar((p1, neg_vt,
-                              types::is_ptrish_vt(neg_vt), "", neg_rm0.0, neg_rm0.1,
-                              slot_p1', <+>, <->, neg_fvts0, pv_else))
+                              types::is_ptrish_vt(neg_vt), "", neg_rm0_0_opt, neg_rm0_1,
+                              <+ slot_p1' ->, <+>, <->, neg_fvts0, <+ pv_else ->))
                            main::codegen_typed_eval(cg, lam1.1)
                         | main::codegen_typed_eval(cg, b1.body)
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_else)
@@ -3908,12 +3916,12 @@ codegen_typed_eval_predicate = cg, pred_opt, cond_val, cond_vt =>
                pname = lam.0(0) | _ | "_"
                ptype = cond_vt
                saved_nvars = ?cg.vars
-               cg.vars += types::CgVar((pname, ptype, <->, "", Addr(0), ast::Names(),
-                  Addr(0), <+>, <->, ast::VTypes(), cond_val))
+               cg.vars += types::CgVar((pname, ptype, <->, "", <-->, ast::Names(),
+                  <-->, <+>, <->, ast::VTypes(), <+ cond_val ->))
                pname != "_"
                   |
-                     cg.vars += types::CgVar(("_", ptype, <->, "", Addr(0), ast::Names(),
-                        Addr(0), <+>, <->, ast::VTypes(), cond_val))
+                     cg.vars += types::CgVar(("_", ptype, <->, "", <-->, ast::Names(),
+                        <-->, <+>, <->, ast::VTypes(), <+ cond_val ->))
                pv = main::codegen_typed_eval(cg, lam.1)
                cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
                stmt::coerce_int(cg, pv.0, LLVMInt1Type!)
@@ -4039,8 +4047,9 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                   v_dtype = v_raw_dt' != ""
                      | types::resolve_type_name(cg, v_raw_dt')
                      | types::typedef_name_of_rt(cg, rec_info.0)
-                  cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info.0,
-                     rec_info.1, slot, <+>, <->, rec_info.2, Addr(0)))
+                  rec_info_0_opt = rec_info.0 != Addr(0) | <+ rec_info.0 -> | <-->
+                  cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info_0_opt,
+                     rec_info.1, <+ slot ->, <+>, <->, rec_info.2, <-->))
             bv' = main::codegen_typed_eval(cg, br.body)
             cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
             c_term = stmt::block_is_terminated(cg)
