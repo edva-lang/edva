@@ -68,15 +68,16 @@ print = s =>
 
 closure_struct_type: types::Cg => Addr
 closure_struct_type = cg =>
-   cg.closure_t == Addr(0)
+   cg.closure_t
+      | _
       |
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          tarr = types::Addrs()
          tarr += i8p
          tarr += i8p
-         cg.closure_t = types::struct_type_n(cg, tarr, 2)
-      | 0
-   cg.closure_t
+         st = types::struct_type_n(cg, tarr, 2)
+         cg.closure_t = <+ st ->
+         st
 
 // Allocates a { fn_ptr, env_ptr } closure and returns its pointer.
 codegen_build_closure: types::Cg, Addr, Addr, String => Addr

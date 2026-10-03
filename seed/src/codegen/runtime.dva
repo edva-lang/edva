@@ -1863,14 +1863,14 @@ update_type_ti = cg, name, ti =>
    idx !< 0
       |
          td = cg.typedefs(idx)!!
-         cg.typedefs(idx) = types::TypeDef((name, ti, td.rt, td.fnames)) !| _
+         cg.typedefs(idx) = types::TypeDef((name, ti, td.rt, td.in_progress, td.fnames)) !| _
 
 update_type_rec: types::Cg, String, ast::TypeInfo, Addr, ast::Names => ()
 update_type_rec = cg, name, ti, rt, fnames =>
    indices = cg.type_indices
    idx = indices ^ name | _ | -1
    idx !< 0
-      | cg.typedefs(idx) = types::TypeDef((name, ti, rt, fnames)) !| _
+      | cg.typedefs(idx) = types::TypeDef((name, ti, <+ rt ->, <->, fnames)) !| _
 
 push_typedef: types::Cg, types::TypeDef => ()
 push_typedef = cg, td =>
@@ -1882,13 +1882,13 @@ add_type: types::Cg, String, ast::TypeInfo => ()
 add_type = cg, name, ti =>
    types::has_type_name(cg, name)
       | update_type_ti(cg, name, ti)
-      | push_typedef(cg, types::TypeDef((name, ti, Addr(0), ast::Names())))
+      | push_typedef(cg, types::TypeDef((name, ti, <-->, <->, ast::Names())))
 
 add_type_rec: types::Cg, String, ast::TypeInfo, Addr, ast::Names => ()
 add_type_rec = cg, name, ti, rt, fnames =>
    types::has_type_name(cg, name)
       | update_type_rec(cg, name, ti, rt, fnames)
-      | push_typedef(cg, types::TypeDef((name, ti, rt, fnames)))
+      | push_typedef(cg, types::TypeDef((name, ti, <+ rt ->, <->, fnames)))
 
 codegen_emit_stmts: types::Cg, ast::Exprs => ()
 codegen_emit_stmts = cg, stmts =>

@@ -96,7 +96,7 @@ print = s =>
 #type FnInfos (FnInfo){}
 
 // A declared '#type' name -> its TypeInfo (for payload resolution).
-#type TypeDef (name: String, ti: ast::TypeInfo, rt: Addr, fnames: ast::Names)
+#type TypeDef (name: String, ti: ast::TypeInfo, rt: <Addr|>, in_progress: <>, fnames: ast::Names)
 #type TypeDefs (TypeDef){}
 #type TypeIndex String ^ Int
 
@@ -185,14 +185,14 @@ param_clo_tys: Addrs,
    param_recs: ParamRecs,
    param_arr_names: ast::Names,
    param_sl_names: ast::Names,
-   thread_rec_t: Addr,
+   thread_rec_t: <Addr|>,
    pthread_create_fn: Addr,
    pthread_join_fn: Addr,
    pthread_exit_fn: Addr,
-   thread_tls_rec: Addr,
+   thread_tls_rec: <Addr|>,
    thread_n: Int,
-   builder_t: Addr,
-   closure_t: Addr,
+   builder_t: <Addr|>,
+   closure_t: <Addr|>,
    init: FieldInitState,
    choice_frames: ChoiceInitFrames,
    bindings: BindingMuts,
@@ -936,8 +936,8 @@ codegen_init = opts =>
       ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", Addr(0),
       Addrs(), Addrs(), ast::Names(), ast::Names(), "", ast::Names(),
       ast::Names(), ast::Names(), Addrs(), ast::VTypes(), ParamRecs(),
-      ast::Names(), ast::Names(), Addr(0), Addr(0), Addr(0), Addr(0),
-      Addr(0), 0, Addr(0), Addr(0),
+      ast::Names(), ast::Names(), <-->, Addr(0), Addr(0), Addr(0),
+      <-->, 0, <-->, <-->,
       FieldInitState((ast::Names(), ast::Names())),
       ChoiceInitFrames(), BindingMuts(), <->, <-->, <->, ast::Names(),
       Addrs(), "", 0, 0, opts))
@@ -3925,7 +3925,7 @@ codegen_eval_record = cg, r =>
       |
          anon_name = "$rec." + str::from_int(?cg.typedefs)
          runtime::push_typedef(cg, TypeDef((anon_name,
-            ast::TypeInfo(Prim, ast::ValueType(Record)), st, fnames)))
+            ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st ->, <->, fnames)))
    cg.last_rt = <+ st ->
    cg.last_fnames = fnames
    cg.last_fvts = fvts
@@ -3972,18 +3972,18 @@ rec_meta = cg, vt =>
 td_record_meta: Cg, Int => <(Addr, ast::Names)|>
 td_record_meta = cg, idx =>
    td = cg.typedefs(idx)!!
-   td.rt != Addr(0)
+   td.in_progress
+      | <-->
       |
-         td.rt == Addr(1)
-            | <-->
-            | <+ (td.rt, td.fnames) ->
-      |
-         cg.typedefs(idx) = TypeDef((td.name, td.ti, Addr(1), td.fnames)) !| _
-         meta = runtime::record_meta_from_ti(cg, td.ti)
-         cached_rt = meta | m => m.0 | Addr(1)
-         cached_fn = meta | m => m.1 | ast::Names()
-         cg.typedefs(idx) = TypeDef((td.name, td.ti, cached_rt, cached_fn)) !| _
-         meta
+         td.rt
+            | rt => <+ (rt, td.fnames) ->
+            |
+               cg.typedefs(idx) = TypeDef((td.name, td.ti, <-->, <+>, td.fnames)) !| _
+               meta = runtime::record_meta_from_ti(cg, td.ti)
+               cached_rt = meta | m => <+ m.0 -> | <-->
+               cached_fn = meta | m => m.1 | ast::Names()
+               cg.typedefs(idx) = TypeDef((td.name, td.ti, cached_rt, <->, cached_fn)) !| _
+               meta
 
 td_record_meta_by_name: Cg, String => <(Addr, ast::Names)|>
 td_record_meta_by_name = cg, name =>

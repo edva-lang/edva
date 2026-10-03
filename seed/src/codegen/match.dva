@@ -1248,8 +1248,7 @@ ctfe_lower_record = cg, r =>
       |
          anon_name = "$ctfe.rec." + str::from_int(?cg.typedefs)
          runtime::push_typedef(cg, types::TypeDef((anon_name,
-            ast::TypeInfo(Prim, ast::ValueType(Record)), st, fnames)))
-      | 0
+            ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st ->, <->, fnames)))
    cg.last_rt = <+ st ->
    cg.last_fnames = fnames
    cg.last_fvts = fvts

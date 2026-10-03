@@ -68,7 +68,8 @@ print = s =>
 
 builder_struct_type: types::Cg => Addr
 builder_struct_type = cg =>
-   cg.builder_t == Addr(0)
+   cg.builder_t
+      | _
       |
          i64t = LLVMInt64Type!
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -76,9 +77,9 @@ builder_struct_type = cg =>
          tarr += i64t
          tarr += i8p
          tarr += i64t
-         cg.builder_t = types::struct_type_n(cg, tarr, 3)
-      | 0
-   cg.builder_t
+         st = types::struct_type_n(cg, tarr, 3)
+         cg.builder_t = <+ st ->
+         st
 
 builder_len: types::Cg, Addr, String => Addr
 builder_len = cg, b, name =>
@@ -1795,8 +1796,7 @@ codegen_emit_error_panic = cg, err_ptr =>
    // and exits the thread (pthread_exit) instead of killing the process; the
    // join side then reports it as the ram's negative slot. On the main thread
    // (dva_thread_rec is null) this falls through to the normal printf+exit.
-   cg.thread_tls_rec == Addr(0) | codegen_ensure_pthread(cg) | 0
-   trec = LLVMBuildLoad2(cg.builder, i8p, cg.thread_tls_rec,
+   trec = LLVMBuildLoad2(cg.builder, i8p, thread_tls_global(cg),
       "err.thread.rec")
    is_thread = LLVMBuildICmp(cg.builder, 33, trec,
       LLVMConstNull(i8p), "err.is.thread")
@@ -1806,13 +1806,14 @@ codegen_emit_error_panic = cg, err_ptr =>
    normal_bb = LLVMAppendBasicBlock(parent, "err.normal")
    LLVMBuildCondBr(cg.builder, is_thread, thread_bb, normal_bb)
    LLVMPositionBuilderAtEnd(cg.builder, thread_bb)
+   rec_t = codegen_ensure_pthread(cg)
    rec_ptr = LLVMBuildBitCast(cg.builder, trec,
-      LLVMPointerType(cg.thread_rec_t, 0), "err.rec")
+      LLVMPointerType(rec_t, 0), "err.rec")
    LLVMBuildStore(cg.builder, LLVMConstInt(i64t, 1, 0),
-      LLVMBuildStructGEP2(cg.builder, cg.thread_rec_t, rec_ptr, 6,
+      LLVMBuildStructGEP2(cg.builder, rec_t, rec_ptr, 6,
          "err.haserr.gep"))
    LLVMBuildStore(cg.builder, err_ptr,
-      LLVMBuildStructGEP2(cg.builder, cg.thread_rec_t, rec_ptr, 7,
+      LLVMBuildStructGEP2(cg.builder, rec_t, rec_ptr, 7,
          "err.err.gep"))
    pex = {8}
    peb = &pex
@@ -1830,9 +1831,10 @@ codegen_emit_error_panic = cg, err_ptr =>
    LLVMBuildCall2(cg.builder, cg.exit_t, cg.exit_fn, eb, 1, "")
    LLVMBuildUnreachable(cg.builder)
 
-codegen_ensure_pthread: types::Cg => ()
+codegen_ensure_pthread: types::Cg => Addr
 codegen_ensure_pthread = cg =>
-   cg.thread_rec_t == Addr(0)
+   cg.thread_rec_t
+      | _
       |
          i64t = LLVMInt64Type!
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -1845,7 +1847,8 @@ codegen_ensure_pthread = cg =>
          tarr += i8p
          tarr += i64t
          tarr += i8p
-         cg.thread_rec_t = types::struct_type_n(cg, tarr, 8)
+         st = types::struct_type_n(cg, tarr, 8)
+         cg.thread_rec_t = <+ st ->
          i64p = LLVMPointerType(i64t, 0)
          cg.pthread_create_fn = LLVMAddFunction(cg.module, "pthread_create",
             fn_type4(LLVMInt32Type!, i64p, i8p, i8p, i8p))
@@ -1853,11 +1856,22 @@ codegen_ensure_pthread = cg =>
             types::fn_type2(cg, LLVMInt32Type!, i64t, i8p))
          cg.pthread_exit_fn = LLVMAddFunction(cg.module, "pthread_exit",
             types::fn_type1(LLVMVoidType!, i8p))
-         cg.thread_tls_rec = LLVMAddGlobal(cg.module, i8p,
+         tls_rec = LLVMAddGlobal(cg.module, i8p,
             "dva_thread_rec")
-         !cg.opts.no_main | LLVMSetInitializer(cg.thread_tls_rec, LLVMConstNull(i8p)) | 0
-         LLVMSetThreadLocal(cg.thread_tls_rec, 1)
-      | 0
+         !cg.opts.no_main | LLVMSetInitializer(tls_rec, LLVMConstNull(i8p)) | 0
+         LLVMSetThreadLocal(tls_rec, 1)
+         cg.thread_tls_rec = <+ tls_rec ->
+         st
+
+thread_tls_global: types::Cg => Addr
+thread_tls_global = cg =>
+   cg.thread_tls_rec
+      | _
+      |
+         codegen_ensure_pthread(cg)
+         cg.thread_tls_rec
+            | _
+            | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
 
 // A synthetic typedef name for a thread's worker return type ("#thrInt",
 // "#thrStr" ...): a "< ret | Error >" ram so a joined result's payload
@@ -2032,16 +2046,16 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
    entry = LLVMAppendBasicBlock(wrapper, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
    cg.current_fn = wrapper
+   rec_t = codegen_ensure_pthread(cg)
    rec = LLVMBuildPointerCast(cg.builder, LLVMGetParam(wrapper, 0),
-      LLVMPointerType(cg.thread_rec_t, 0), "rec")
-   rec_t = cg.thread_rec_t
+      LLVMPointerType(rec_t, 0), "rec")
    arena_gep = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 1,
       "rec.arena.gep")
    arena_raw = LLVMBuildLoad2(cg.builder, i8p, arena_gep, "rec.arena")
    arena_tls = LLVMGetNamedGlobal(cg.module, "dva_arena_tls")
    LLVMBuildStore(cg.builder, arena_raw, arena_tls)
    LLVMBuildStore(cg.builder, LLVMGetParam(wrapper, 0),
-      cg.thread_tls_rec)
+      thread_tls_global(cg))
    fgep = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 2, "rec.fn.gep")
    fptr = LLVMBuildLoad2(cg.builder, i8p, fgep, "rec.fn")
    env_gep = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 3,
@@ -2093,7 +2107,7 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
       "rec.haserr.gep")
    LLVMBuildStore(cg.builder,
       LLVMConstInt(LLVMInt64Type!, 0, 0), hasgep)
-   LLVMBuildStore(cg.builder, LLVMConstNull(i8p), cg.thread_tls_rec)
+   LLVMBuildStore(cg.builder, LLVMConstNull(i8p), thread_tls_global(cg))
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
    cg.current_fn = saved_fn
@@ -2295,7 +2309,7 @@ codegen_eval_spawn = cg, se =>
                         lei.vts, arena_raw)
                   | LLVMConstNull(i8p)
             | LLVMConstNull(i8p)
-         rec_t = cg.thread_rec_t
+         rec_t = codegen_ensure_pthread(cg)
          rraw = types::call1(cg, cg.malloc_t, cg.malloc_fn,
             LLVMConstInt(i64t, 64, 0), "thread.rec.malloc")
          rec = LLVMBuildPointerCast(cg.builder, rraw,
@@ -2338,13 +2352,12 @@ codegen_eval_spawn = cg, se =>
 // the fallible "< ret | Error >" union.
 codegen_eval_join: types::Cg, ast::JoinExpr => (Addr, ast::ValueType)
 codegen_eval_join = cg, je =>
-   codegen_ensure_pthread(cg)
+   rec_t = codegen_ensure_pthread(cg)
    hd = je.handle [Var hv] hv | ""
    dt = hd != "" | types::var_dtype(cg, hd) | cg.last_type
    hv2 = expr::codegen_eval(cg, je.handle)
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   rec_t = cg.thread_rec_t
    rec = LLVMBuildPointerCast(cg.builder, hv2.0,
       LLVMPointerType(rec_t, 0), "join.rec")
    tid_p = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 0, "join.tid.gep")
@@ -2421,11 +2434,10 @@ codegen_eval_join = cg, je =>
 codegen_typed_eval_join: types::Cg, ast::JoinExpr,
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_join = cg, je, ti =>
-   codegen_ensure_pthread(cg)
+   rec_t = codegen_ensure_pthread(cg)
    hv2 = expr::codegen_eval(cg, je.handle)
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   rec_t = cg.thread_rec_t
    rec = LLVMBuildPointerCast(cg.builder, hv2.0,
       LLVMPointerType(rec_t, 0), "join.rec")
    tid_p = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 0,
