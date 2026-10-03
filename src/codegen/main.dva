@@ -68,7 +68,8 @@ print = s =>
 
 builder_struct_type: types::Cg => Addr
 builder_struct_type = cg =>
-   cg.builder_t == Addr(0)
+   cg.builder_t
+      | _
       |
          i64t = LLVMInt64Type!
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -76,9 +77,9 @@ builder_struct_type = cg =>
          tarr += i64t
          tarr += i8p
          tarr += i64t
-         cg.builder_t = types::struct_type_n(cg, tarr, 3)
-      | 0
-   cg.builder_t
+         st = types::struct_type_n(cg, tarr, 3)
+         cg.builder_t = <+ st ->
+         st
 
 builder_len: types::Cg, Addr, String => Addr
 builder_len = cg, b, name =>
