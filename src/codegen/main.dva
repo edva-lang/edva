@@ -660,7 +660,7 @@ builder_append_rec_emit = cg, vals, vts, lens, bdata, cur_off, j, n =>
    j == n
       | 0
       |
-         val = vals(j) | _ | Addr(0)
+         val = vals(j) | _ | LLVMConstNull(LLVMInt64Type!)
          vt = vts(j) | _ | ast::ValueType(Unknown)
          flen = lens(j) | _ | LLVMConstInt(LLVMInt64Type!, 1, 0)
          dst = types::gep1(cg, LLVMInt8Type!, bdata, cur_off, "b.rec.dst")
@@ -1230,12 +1230,7 @@ codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
          elem_vt' = ?fvs2' > 0
             | (fvs2'(0) | _ | ast::ValueType(Unknown))
             | ast::ValueType(Unknown)
-         elem_ll_raw' = rt != Addr(0)
-            | LLVMStructGetTypeAtIndex(rt, 0)
-            | types::llvm_type_of_vt(elem_vt')
-         elem_ll' = elem_ll_raw' == Addr(0)
-            | LLVMInt64Type!
-            | elem_ll_raw'
+         elem_ll' = LLVMStructGetTypeAtIndex(rt, 0)
          base_len = LLVMConstInt(i64t, ?fvs2', 0)
          end_val = rng.has_rhs
             | (expr::codegen_eval(cg, rng.rhs)).0
@@ -1268,12 +1263,7 @@ codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
          elem_vt' = ?fvs2' > 0
             | (fvs2'(0) | _ | ast::ValueType(Unknown))
             | ast::ValueType(Unknown)
-         elem_ll_raw' = rt != Addr(0)
-            | LLVMStructGetTypeAtIndex(rt, 0)
-            | types::llvm_type_of_vt(elem_vt')
-         elem_ll' = elem_ll_raw' == Addr(0)
-            | LLVMInt64Type!
-            | elem_ll_raw'
+         elem_ll' = LLVMStructGetTypeAtIndex(rt, 0)
          idx_ev = expr::codegen_eval(cg, arg)
          ?fvs2' > 0
             | codegen_emit_index_bounds_check(cg, idx_ev.0, idx_ev.1, ?fvs2')
@@ -2219,18 +2209,17 @@ codegen_eval_spawn = cg, se =>
                      fa = expr::fn_alias(cg, call.fn_name)
                      fa != "" | fa | call.fn_name
             | ""
-   clo_ev_val' = Addr(0)
-   !is_top_fn
+   clo_opt = !is_top_fn
       |
          call.fn_name != ""
             |
                cev' = expr::codegen_eval(cg, ast::Expr(Var, call.fn_name))
-               clo_ev_val' = cev'.0
+               <+ cev'.0 ->
             |
                cev' = expr::codegen_eval(cg, call.fn_target)
-               clo_ev_val' = cev'.0
                fname' == "" | fname' = cg.last_closure_fn | 0
-      | 0
+               <+ cev'.0 ->
+      | <-->
    types::has_fn_name(cg, fname') && !types::is_fn_name(cg, fname')
       |
          stmt::compile_typed_fn_lazy(cg, fname')
@@ -2248,11 +2237,11 @@ codegen_eval_spawn = cg, se =>
          np = fi.nparams
          is_cap = !fi.no_capture
          i64t = LLVMInt64Type!
-         fn_ptr = clo_ev_val' != Addr(0)
-            | stmt::closure_fn_ptr(cg, clo_ev_val', "spawn.clo.fn")
+         fn_ptr = clo_opt
+            | clo => stmt::closure_fn_ptr(cg, clo, "spawn.clo.fn")
             | LLVMBuildPointerCast(cg.builder, fn, i8p, "rec.fn.ptr")
-         env_ptr = clo_ev_val' != Addr(0)
-            | stmt::closure_env_ptr(cg, clo_ev_val', "spawn.clo.env")
+         env_ptr = clo_opt
+            | clo => stmt::closure_env_ptr(cg, clo, "spawn.clo.env")
             | LLVMConstNull(i8p)
          arena_raw = types::call1(cg, cg.malloc_t, cg.malloc_fn,
             LLVMConstInt(i64t, 8224, 0), "thread.arena.malloc")
@@ -2723,10 +2712,10 @@ codegen_typed_eval = cg, te =>
             |
                rm_tgt = runtime::record_meta_from_ti(cg, tgt_ti)
                rm' = <>(rm_tgt) | rm_tgt | runtime::record_meta_from_ti(cg, mw.0.ti)
-               st_from_var = direct_vname != ""
-                  | (types::var_rt(cg, direct_vname) | _ | Addr(0))
-                  | Addr(0)
-               st' = rm' | m => m.0 | st_from_var
+               st_opt = rm'
+                  | m => <+ m.0 ->
+                  | direct_vname != "" | types::var_rt(cg, direct_vname) | <-->
+               st' = st_opt | _ | LLVMVoidType!
                v_fnames = direct_vname != ""
                   | types::var_fnames(cg, direct_vname)
                   | ast::Names()
@@ -2739,7 +2728,7 @@ codegen_typed_eval = cg, te =>
                      n_idx = types::member_index(fnames_src, mw.1)
                      n_idx !< 0 | n_idx | mw.2
                   | mw.2
-               st_ok = st' != Addr(0) && LLVMGetTypeKind(st') == 10
+               st_ok = <>(st_opt) && LLVMGetTypeKind(st') == 10
                st_ok && tv.0 != Addr(0) && lookup_idx !< 0
                   |
                      fgep' = LLVMBuildStructGEP2(cg.builder, st', tv.0,
@@ -2820,7 +2809,7 @@ codegen_typed_eval = cg, te =>
          all_const' = <+>
          all_same_ty' = <+>
          any_rec' = <->
-         first_ty' = Addr(0)
+         first_ty' = LLVMVoidType!
          nf @ i =>
             tf = r(i) | _ | tast::TypedField(("", tast::mk_lit_unit(0, 0), 0,
                unify::prim_unit()))
@@ -2958,7 +2947,7 @@ codegen_typed_eval = cg, te =>
                      rt_from_v = <>(v_rt) | v_rt | cg.last_rt
                      rm_rt_opt = rm' | m => <+ m.0 -> | <-->
                      rec_t_opt = <>(rm_rt_opt) | rm_rt_opt | rt_from_v
-                     rec_t' = rec_t_opt | r => r | Addr(0)
+                     rec_t' = rec_t_opt | _ | LLVMInt64Type!
                      sz = LLVMSizeOf(rec_t')
                      new_p = expr::codegen_call_arena_alloc(cg, sz, "record.copy")
                      LLVMBuildMemCpy(cg.builder, new_p, 1, ev'.0, 1,
