@@ -102,7 +102,7 @@ mark_nounwind = cg, fn =>
    LLVMAddAttributeAtIndex(fn, -1, attr)
 
 // write(2, msg, len); exit(1) — a runtime abort with a fixed message.
-emit_abort_msg: types::Cg, String, String => Addr
+emit_abort_msg: types::Cg, String, String => ()
 emit_abort_msg = cg, msg, gname =>
    cg.opts.no_runtime
       |
@@ -111,7 +111,6 @@ emit_abort_msg = cg, msg, gname =>
          parent = LLVMGetBasicBlockParent(cur_bb)
          dead_bb = LLVMAppendBasicBlock(parent, "no_rt.abort")
          LLVMPositionBuilderAtEnd(cg.builder, dead_bb)
-         Addr(0)
       |
          gv = const_string_global(cg, msg, gname)
          mlen = ?msg
@@ -1688,12 +1687,9 @@ codegen_emit_record_assign = cg, t, call =>
    fvs = match::var_fvts(cg, vname)
    elem_vt = ?fvs > 0 | (fvs(0) | _ | ast::ValueType(Unknown)) |
       ast::ValueType(Unknown)
-   elem_ll_type_raw = types::var_rt(cg, vname)
+   elem_ll_type = types::var_rt(cg, vname)
       | rt => LLVMStructGetTypeAtIndex(rt, 0)
       | types::llvm_type_of_vt(elem_vt)
-   elem_ll_type = elem_ll_type_raw == Addr(0)
-      | LLVMInt64Type!
-      | elem_ll_type_raw
    av = call.args(0)!!
    idx_ev = expr::codegen_eval(cg, av)
    rhs_ev = expr::codegen_eval(cg, t.5)

@@ -533,7 +533,7 @@ codegen_string_literal_new = cg, s =>
 
 // Abort a checked String-size operation. The terminating call is followed by
 // a branch in the caller so the IR verifier has a successor for the dead path.
-emit_str_overflow_abort: types::Cg => Addr
+emit_str_overflow_abort: types::Cg => ()
 emit_str_overflow_abort = cg =>
    runtime::emit_abort_msg(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
 
