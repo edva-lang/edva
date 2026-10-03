@@ -48,7 +48,7 @@ Run the driver suite alone when modifying CLI flags, module loading, or code gen
 bash -c 'ulimit -v 4194304; timeout 120s ./selfhost/test_driver.sh'
 ```
 
-`selfhost/test_driver.sh` verifies real end-to-end driver behaviors across 9 regression gates:
+`test_driver.sh` verifies real end-to-end driver behaviors across 11 regression gates:
 1. Parse failure propagation (fails with `E2064`, emits no outputs)
 2. Missing module failure propagation (fails with `E5006`, emits no outputs)
 3. Unwritable output path error handling (`E5012`, no segfault)
@@ -58,5 +58,7 @@ bash -c 'ulimit -v 4194304; timeout 120s ./selfhost/test_driver.sh'
 7. C header generation from `#export` (`-H` / `--header`)
 8. WebAssembly target compilation and Node.js execution (`-target wasm32-unknown-unknown`)
 9. Modular compilation (`-c`, `--module`, `--entry`) & interface-only `#use` dependency isolation
+10. Project directory name derivation when compiling `src/` (or `.`)
+11. Output directory collision prevention (`E5022`)
 
 

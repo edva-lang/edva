@@ -2426,7 +2426,15 @@ run_driver = _ =>
             opts.target + "'"
          sys::exit(1)
 
-   base_name = derive_base_name(opts.target)
+   raw_base = derive_base_name(opts.target)
+   base_name = is_dir && (raw_base == "src" || raw_base == ".")
+      |
+         clean_tgt = strip_trailing_slash(opts.target)
+         cand_path = raw_base == "." | clean_tgt | path_join(clean_tgt, "..")
+         proj_name = basename(canonical_path(cand_path))
+         proj_name != "" && proj_name != "/" | proj_name | raw_base
+      | raw_base
+
    ?base_name > 0 && base_name(0) == '-'
       |
          print $ "E5018: Output name '" + base_name +
@@ -2438,6 +2446,11 @@ run_driver = _ =>
    is_wasm = is_wasm_triple(target_triple)
    bin_suffix = is_wasm | ".wasm" | (opts.is_shared | ".so" | (opts.is_module | ".o" | ""))
    output_bin = opts.outpath != "" | opts.outpath | base_name + bin_suffix
+   !opts.ir_only && dir_exists(output_bin)
+      |
+         print $ "E5022: Output name '" + output_bin +
+            "' collides with an existing directory; pass -o <name> to set output name."
+         sys::exit(1)
    ll_stem = opts.outpath != "" | (opts.is_module | base_name | opts.outpath) | base_name
    output_ll = ll_stem + ".ll"
    ir_only = opts.ir_only

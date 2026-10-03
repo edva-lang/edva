@@ -414,4 +414,52 @@ fi
 rm -f "main_mod.ll" "main_mod.o"
 echo "PASS"
 
+# --- Test 10: Compiling src/ derives project directory name ---
+echo -n "Testing project name derivation for src/ directory target... "
+mkdir -p "$TMPDIR/sample_proj/src"
+cat <<'EOF' > "$TMPDIR/sample_proj/src/main.dva"
+print $ "driver test sample_proj"
+EOF
+ORIG_DIR=$(pwd)
+cd "$TMPDIR/sample_proj"
+set +e
+timeout 30 "$ORIG_DIR/edva" src/ < /dev/null >"$TMPDIR/t10.out" 2>"$TMPDIR/t10.err"
+rc=$?
+set -e
+cd "$ORIG_DIR"
+if [ $rc -ne 0 ] || [ ! -x "$TMPDIR/sample_proj/sample_proj" ]; then
+    echo "FAILED: expected binary $TMPDIR/sample_proj/sample_proj to be created, exit code $rc"
+    cat "$TMPDIR/t10.out" "$TMPDIR/t10.err"
+    exit 1
+fi
+OUT=$("$TMPDIR/sample_proj/sample_proj")
+if [ "$OUT" != "driver test sample_proj" ]; then
+    echo "FAILED: unexpected binary output: $OUT"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 11: E5022 directory collision diagnostic ---
+echo -n "Testing E5022 directory collision handling... "
+mkdir -p "$TMPDIR/collision_proj/subpkg"
+cat <<'EOF' > "$TMPDIR/collision_proj/subpkg/main.dva"
+print $ "hello"
+EOF
+cd "$TMPDIR/collision_proj"
+set +e
+timeout 30 "$ORIG_DIR/edva" subpkg/ < /dev/null >"$TMPDIR/t11.out" 2>"$TMPDIR/t11.err"
+rc=$?
+set -e
+cd "$ORIG_DIR"
+if [ $rc -eq 0 ]; then
+    echo "FAILED: expected non-zero exit code on directory collision"
+    exit 1
+fi
+if ! grep -q "E5022" "$TMPDIR/t11.out" "$TMPDIR/t11.err"; then
+    echo "FAILED: expected E5022 in output"
+    cat "$TMPDIR/t11.out" "$TMPDIR/t11.err"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
