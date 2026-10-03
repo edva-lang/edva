@@ -885,18 +885,22 @@ codegen_forward_registry = cg, t =>
       | types::init_error(cg, "E3151", "Cannot assign Function to '" + t.0 +
          "' (bound as " + types::value_type_name(vt') + ").", 0, 0)
       | 0
-   slot = types::var_slot(cg, t.0)
-      | _
-      | (!is_fn_sig | types::create_slot(cg, t.0, lt, cg.in_fn) | Addr(0))
+   slot_opt = types::var_slot(cg, t.0)
+      | s => <+ s ->
+      | !is_fn_sig
+         | <+ types::create_slot(cg, t.0, lt, cg.in_fn) ->
+         | <-->
    is_partial = !is_bf_fwd && is_partial_anno(cg, tv.0, t.7, t.8)
    rec_m0_opt = rec_m | m => <+ m.0 -> | <-->
-   slot_opt = slot != Addr(0) | <+ slot -> | <-->
    cg.vars += types::CgVar((t.0, vt', <->, t.7, rec_m0_opt, rec_fnames, slot_opt,
       cg.in_fn, is_partial, types::field_vts(cg, ti), <-->))
    bf_opt_fwd
       | bfi =>
-         LLVMBuildStore(cg.builder, LLVMConstInt(lt, 0, 0), slot)
-         types::init_mark_whole(cg, t.0)
+         slot_opt
+            | sl =>
+               LLVMBuildStore(cg.builder, LLVMConstInt(lt, 0, 0), sl)
+               types::init_mark_whole(cg, t.0)
+            | 0
       | 0
    !is_fn_sig && !binding_state(cg, t.0).found
       | binding_add(cg, t.0, <+>)
@@ -995,21 +999,23 @@ codegen_emit_member_compound = cg, t, m =>
    rt_opt = vname != ""
       | (types::var_rt(cg, vname) | cg.last_rt)
       | cg.last_rt
-   rt = rt_opt | r => r | Addr(0)
-   fvts = vname != "" | match::var_fvts(cg, vname) | cg.last_fvts
-   idx = types::member_index(fnames, m.field_name)
-   fgep = types::record_field_gep(cg, rt, fvts, base.0, idx)
-   i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   val_ptr = LLVMBuildLoad2(cg.builder, i8p, fgep, "m.val.load")
-   fvt = idx < ?fvts
-      | fvts(idx) | _ | ast::ValueType(Unknown)
-      | ast::ValueType(Unknown)
-   is_arr = fvt [Array]
-   is_arr
-      |
-         ev = expr::codegen_eval(cg, t.5)
-         main::codegen_array_append(cg, val_ptr, ev.0)
-      | main::codegen_builder_append(cg, val_ptr, t.5)
+   rt_opt
+      | rt =>
+         fvts = vname != "" | match::var_fvts(cg, vname) | cg.last_fvts
+         idx = types::member_index(fnames, m.field_name)
+         fgep = types::record_field_gep(cg, rt, fvts, base.0, idx)
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         val_ptr = LLVMBuildLoad2(cg.builder, i8p, fgep, "m.val.load")
+         fvt = idx < ?fvts
+            | fvts(idx) | _ | ast::ValueType(Unknown)
+            | ast::ValueType(Unknown)
+         is_arr = fvt [Array]
+         is_arr
+            |
+               ev = expr::codegen_eval(cg, t.5)
+               main::codegen_array_append(cg, val_ptr, ev.0)
+            | main::codegen_builder_append(cg, val_ptr, t.5)
+      | 0
 
 // "x = <expr>" for a non-member LHS. A function definition ("f = x => body")
 // is compiled separately and stores nothing here. A heap ram (Ram-typed but a
@@ -1498,8 +1504,8 @@ member_assign_bitfield = cg, root_name, m, t, bfi =>
    bf_fld
       | bf =>
          vname = m.target [Var v] v | ""
-         bf_ptr = vname != ""
-            | (types::var_slot(cg, vname) | _ | Addr(0))
+         bf_ptr = (vname != "" | types::var_slot(cg, vname) | <-->)
+            | _
             | (expr::codegen_eval(cg, m.target)).0
          saved_discard = cg.discard_result
          cg.discard_result = <->
@@ -1572,56 +1578,58 @@ member_assign_record = cg, root_name, m, t =>
    target_rt_opt = is_var
       | (types::var_rt(cg, root_name) | cg.last_rt)
       | cg.last_rt
-   target_rt = target_rt_opt | r => r | Addr(0)
-   target_fnames = is_var | types::var_fnames(cg, root_name) | cg.last_fnames
-   target_fvts = is_var | match::var_fvts(cg, root_name) | cg.last_fvts
-   idx = types::member_index(target_fnames, m.field_name)
-   fgep = types::record_field_gep(cg, target_rt, target_fvts, target_ev.0, idx)
-   saved_discard = cg.discard_result
-   cg.discard_result = <->
-   ev = expr::codegen_eval(cg, t.5)
-   cg.discard_result = saved_discard
-   is_un = ev.1 [Unit]
-   is_un
-      |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to member '" +
-            m.field_name + "'.", 0, 0)
-      |
-         types::is_view_expr(cg, t.5)
-            | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
-            | 0
-         f_vt = idx < 0 | ast::ValueType(Unknown) |
-            (target_fvts(idx) | _ | ast::ValueType(Unknown))
-         rec_ok = f_vt == ast::ValueType(Record) &&
-            ev.1 == ast::ValueType(Record)
-         flag_int_ok = f_vt == ast::ValueType(Flag) && types::is_int_vt(ev.1)
-         field_bad = f_vt != ast::ValueType(Unknown) &&
-            ev.1 != ast::ValueType(Unknown) &&
-            !(types::is_int_vt(f_vt) && types::is_int_vt(ev.1)) &&
-            !(f_vt == ast::ValueType(Ram) && ev.1 == ast::ValueType(Ram)) &&
-            !rec_ok && !flag_int_ok && f_vt != ev.1
-         field_bad
+   target_rt_opt
+      | target_rt =>
+         target_fnames = is_var | types::var_fnames(cg, root_name) | cg.last_fnames
+         target_fvts = is_var | match::var_fvts(cg, root_name) | cg.last_fvts
+         idx = types::member_index(target_fnames, m.field_name)
+         fgep = types::record_field_gep(cg, target_rt, target_fvts, target_ev.0, idx)
+         saved_discard = cg.discard_result
+         cg.discard_result = <->
+         ev = expr::codegen_eval(cg, t.5)
+         cg.discard_result = saved_discard
+         is_un = ev.1 [Unit]
+         is_un
             |
-               types::init_error(cg, "E3152", "Cannot write member '" + m.field_name +
-                  "': the field holds " + types::value_type_name(f_vt) + ", got " +
-                  types::value_type_name(ev.1) + ".", 0, 0)
+               types::init_error(cg, "E3032", "Cannot assign Void expression to member '" +
+                  m.field_name + "'.", 0, 0)
             |
-               is_rec_ev = ev.1 [Record]
-               is_rec_ev
+               types::is_view_expr(cg, t.5)
+                  | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+                  | 0
+               f_vt = idx < 0 | ast::ValueType(Unknown) |
+                  (target_fvts(idx) | _ | ast::ValueType(Unknown))
+               rec_ok = f_vt == ast::ValueType(Record) &&
+                  ev.1 == ast::ValueType(Record)
+               flag_int_ok = f_vt == ast::ValueType(Flag) && types::is_int_vt(ev.1)
+               field_bad = f_vt != ast::ValueType(Unknown) &&
+                  ev.1 != ast::ValueType(Unknown) &&
+                  !(types::is_int_vt(f_vt) && types::is_int_vt(ev.1)) &&
+                  !(f_vt == ast::ValueType(Ram) && ev.1 == ast::ValueType(Ram)) &&
+                  !rec_ok && !flag_int_ok && f_vt != ev.1
+               field_bad
                   |
-                     target_ft = LLVMStructGetTypeAtIndex(target_rt, idx)
-                     inner_sz = LLVMSizeOf(target_ft)
-                     LLVMBuildMemCpy(cg.builder, fgep, 1, ev.0, 1,
-                        inner_sz, 0)
+                     types::init_error(cg, "E3152", "Cannot write member '" + m.field_name +
+                        "': the field holds " + types::value_type_name(f_vt) + ", got " +
+                        types::value_type_name(ev.1) + ".", 0, 0)
                   |
-                     flag_int_ok
+                     is_rec_ev = ev.1 [Record]
+                     is_rec_ev
                         |
-                           c_val = LLVMBuildICmp(cg.builder, 33, ev.0,
-                              LLVMConstInt(LLVMTypeOf(ev.0), 0, 0),
-                              "flag.cast")
-                           LLVMBuildStore(cg.builder, c_val, fgep)
+                           target_ft = LLVMStructGetTypeAtIndex(target_rt, idx)
+                           inner_sz = LLVMSizeOf(target_ft)
+                           LLVMBuildMemCpy(cg.builder, fgep, 1, ev.0, 1,
+                              inner_sz, 0)
                         |
-                           LLVMBuildStore(cg.builder, ev.0, fgep)
+                           flag_int_ok
+                              |
+                                 c_val = LLVMBuildICmp(cg.builder, 33, ev.0,
+                                    LLVMConstInt(LLVMTypeOf(ev.0), 0, 0),
+                                    "flag.cast")
+                                 LLVMBuildStore(cg.builder, c_val, fgep)
+                              |
+                                 LLVMBuildStore(cg.builder, ev.0, fgep)
+      | 0
 
 // "@[addr] = expr" — raw stores use the value's natural integer/pointer
 // width. Floats and ramifications have no raw-memory slot representation.
