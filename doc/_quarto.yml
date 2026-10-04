@@ -6,53 +6,67 @@ book:
   title: "Edva"
   subtitle: "A zero-keyword, expression-oriented systems language"
   author: "baldgeorge"
+  sidebar:
+    collapse-level: 1
   chapters:
     - index.qmd
-    - start/install.qmd
-    - start/quickstart.qmd
-    - start/tour.qmd
-    - reference/language/index.qmd # Edva language reference
-    - reference/language/lexical.qmd
-    - reference/language/declarations.qmd
-    - reference/language/expressions.qmd
-    - reference/language/operators.qmd
-    - reference/language/intrinsics.qmd
-    - reference/language/types.qmd
-    - reference/language/runtime.qmd
-    - guide/bindings-and-modules.qmd
-    - guide/functions-and-closures.qmd
-    - guide/choices-and-cycles.qmd
-    - guide/ramifications.qmd
-    - guide/data-and-memory.qmd
-    - guide/errors-and-io.qmd
-    - guide/ffi-and-targets.qmd
-    - guide/metaprogramming.qmd
-    - reference/edva-cli.qmd
-    - reference/diagnostics.qmd
-    - reference/stdlib/index.qmd
-    - reference/stdlib/ccl.qmd
-    - reference/stdlib/color.qmd
-    - reference/stdlib/fmt.qmd
-    - reference/stdlib/fp.qmd
-    - reference/stdlib/in.qmd
-    - reference/stdlib/io.qmd
-    - reference/stdlib/json.qmd
-    - reference/stdlib/libc.qmd
-    - reference/stdlib/math.qmd
-    - reference/stdlib/mem.qmd
-    - reference/stdlib/net.qmd
-    - reference/stdlib/os.qmd
-    - reference/stdlib/sort.qmd
-    - reference/stdlib/str.qmd
-    - reference/stdlib/sys.qmd
-    - reference/stdlib/type.qmd
-    - reference/stdlib/unicode.qmd
-    - reference/stdlib/uring.qmd
-    - compiler/architecture.qmd
-    - compiler/testing.qmd
-    - compiler/bootstrap.qmd
-    - compiler/targets.qmd
-    - contributing/documentation.qmd
+    - part: "Getting Started"
+      chapters:
+        - start/install.qmd
+        - start/quickstart.qmd
+        - start/tour.qmd
+    - part: reference/language/index.qmd
+      chapters:
+        - reference/language/lexical.qmd
+        - reference/language/declarations.qmd
+        - reference/language/expressions.qmd
+        - reference/language/operators.qmd
+        - reference/language/intrinsics.qmd
+        - reference/language/types.qmd
+        - reference/language/runtime.qmd
+    - part: "Guides"
+      chapters:
+        - guide/bindings-and-modules.qmd
+        - guide/functions-and-closures.qmd
+        - guide/choices-and-cycles.qmd
+        - guide/ramifications.qmd
+        - guide/data-and-memory.qmd
+        - guide/errors-and-io.qmd
+        - guide/ffi-and-targets.qmd
+        - guide/metaprogramming.qmd
+    - part: reference/stdlib/index.qmd
+      chapters:
+        - reference/stdlib/ccl.qmd
+        - reference/stdlib/color.qmd
+        - reference/stdlib/fmt.qmd
+        - reference/stdlib/fp.qmd
+        - reference/stdlib/in.qmd
+        - reference/stdlib/io.qmd
+        - reference/stdlib/json.qmd
+        - reference/stdlib/libc.qmd
+        - reference/stdlib/math.qmd
+        - reference/stdlib/mem.qmd
+        - reference/stdlib/net.qmd
+        - reference/stdlib/os.qmd
+        - reference/stdlib/sort.qmd
+        - reference/stdlib/str.qmd
+        - reference/stdlib/sys.qmd
+        - reference/stdlib/type.qmd
+        - reference/stdlib/unicode.qmd
+        - reference/stdlib/uring.qmd
+    - part: "Tooling & Diagnostics"
+      chapters:
+        - reference/edva-cli.qmd
+        - reference/diagnostics.qmd
+    - part: "Compiler Internals"
+      chapters:
+        - compiler/architecture.qmd
+        - compiler/testing.qmd
+        - compiler/bootstrap.qmd
+        - compiler/targets.qmd
+    - part: "Contributing"
+      chapters:
+        - contributing/documentation.qmd
 
 format:
   html:
