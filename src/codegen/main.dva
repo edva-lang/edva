@@ -1467,7 +1467,7 @@ get_or_emit_array_grow = cg =>
       | _
       |
          saved_fn = cg.current_fn
-         saved_bb = LLVMGetInsertBlock(cg.builder)
+         saved_bb_opt = types::llvm_val_opt(LLVMGetInsertBlock(cg.builder))
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          i64t = LLVMInt64Type!
          one = LLVMConstInt(i64t, 1, 0)
@@ -1510,8 +1510,7 @@ get_or_emit_array_grow = cg =>
                "a.new.cap.gep"))
          LLVMBuildRetVoid(cg.builder)
          cg.current_fn = saved_fn
-         saved_bb != Addr(0)
-            | LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
+         saved_bb_opt | saved_bb => LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
          fn
 
 // "a += v" — growable-array append of an i64 element (grows on demand).
@@ -2941,44 +2940,40 @@ codegen_typed_eval = cg, te =>
                               | (ev'.0, ev'.1)
       [RawMemory rm']
          av = codegen_typed_eval(cg, rm'.0)
-         av.0 == Addr(0)
-            | (Addr(0), ast::ValueType(Unknown))
-            |
-               i8p' = LLVMPointerType(LLVMInt8Type!, 0)
-               ptr_val = types::raw_addr_value(cg, av.0, av.1, i8p')
-               ptr_val == Addr(0)
-                  | (Addr(0), ast::ValueType(Unknown))
+         i8p' = LLVMPointerType(LLVMInt8Type!, 0)
+         types::raw_addr_value(cg, av.0, av.1, i8p')
+            | ptr_val =>
+               rec_name = te.ti [TypeVar tv] tv | ""
+               rec_name != ""
                   |
-                     rec_name = te.ti [TypeVar tv] tv | ""
-                     rec_name != ""
+                     ti = types::typedef_ti(cg, rec_name)
+                     meta = runtime::record_meta_from_ti(cg, ti)
+                     meta_rt = meta | m => m.0 | LLVMInt8Type!
+                     typed_ptr = LLVMBuildPointerCast(cg.builder,
+                        ptr_val, LLVMPointerType(meta_rt, 0),
+                        "view.ptr")
+                     meta_rt_opt = meta | m => <+ m.0 -> | <-->
+                     cg.last_rt = meta_rt_opt
+                     meta_fns = meta | m => m.1 | ast::Names()
+                     cg.last_fnames = meta_fns
+                     cg.last_fvts = match::field_vts_from_ti(cg, ti)
+                     cg.last_type = rec_name
+                     (typed_ptr, ast::ValueType(Record))
+                  |
+                     rm'.1
+                        [Unknown] (ptr_val, ast::ValueType(RawPtr))
+                        [Record] (ptr_val, ast::ValueType(Record))
                         |
-                           ti = types::typedef_ti(cg, rec_name)
-                           meta = runtime::record_meta_from_ti(cg, ti)
-                           meta_rt = meta | m => m.0 | LLVMInt8Type!
-                           typed_ptr = LLVMBuildPointerCast(cg.builder,
-                              ptr_val, LLVMPointerType(meta_rt, 0),
-                              "view.ptr")
-                           meta_rt_opt = meta | m => <+ m.0 -> | <-->
-                           cg.last_rt = meta_rt_opt
-                           meta_fns = meta | m => m.1 | ast::Names()
-                           cg.last_fnames = meta_fns
-                           cg.last_fvts = match::field_vts_from_ti(cg, ti)
-                           cg.last_type = rec_name
-                           (typed_ptr, ast::ValueType(Record))
-                        |
-                           rm'.1
-                              [Unknown] (ptr_val, ast::ValueType(RawPtr))
-                              [Record] (ptr_val, ast::ValueType(Record))
-                              |
-                                 elem_ty = types::llvm_type_of_vt(rm'.1)
-                                 elem_ptr = LLVMBuildPointerCast(
-                                    cg.builder, ptr_val,
-                                    LLVMPointerType(elem_ty, 0),
-                                    "raw.ptr.t")
-                                 loaded = LLVMBuildLoad2(cg.builder,
-                                    elem_ty, elem_ptr, "raw.load")
-                                 LLVMSetVolatile(loaded, 1)
-                                 (loaded, rm'.1)
+                           elem_ty = types::llvm_type_of_vt(rm'.1)
+                           elem_ptr = LLVMBuildPointerCast(
+                              cg.builder, ptr_val,
+                              LLVMPointerType(elem_ty, 0),
+                              "raw.ptr.t")
+                           loaded = LLVMBuildLoad2(cg.builder,
+                              elem_ty, elem_ptr, "raw.load")
+                           LLVMSetVolatile(loaded, 1)
+                           (loaded, rm'.1)
+            | (Addr(0), ast::ValueType(Unknown))
       [RawMemoryWrite rmw]
          expr::codegen_typed_eval_raw_write(cg, rmw.0, rmw.1)
       [MapLiteral ml]

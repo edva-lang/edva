@@ -797,11 +797,13 @@ codegen_eval_call_var_dispatch = cg, call =>
          is_dotted_fn = types::find_dot(call.fn_name, 0) > 0
          is_dotted_fn && main::is_fn_vt(vt)
             |
-               mv = types::dotted_var_val(cg, call.fn_name)
-               ret_vt = types::dotted_fn_ret_vt(cg, call.fn_name)
-               ret_vt == ast::ValueType(Unknown)
+               types::dotted_var_val(cg, call.fn_name)
+                  | mv =>
+                     ret_vt = types::dotted_fn_ret_vt(cg, call.fn_name)
+                     ret_vt == ast::ValueType(Unknown)
+                        | codegen_indirect_fn_return_unknown(cg, call)
+                        | codegen_closure_call_indirect_val(cg, call, mv.0, ret_vt)
                   | codegen_indirect_fn_return_unknown(cg, call)
-                  | codegen_closure_call_indirect_val(cg, call, mv.0, ret_vt)
             | codegen_eval_fn_call(cg, call)
 
 ct_ti_resolve: types::Cg, ast::TypeInfo => (ast::TypeInfo, String)
@@ -5625,7 +5627,8 @@ codegen_typed_eval_addr = cg, args =>
             | slot => (slot, ast::ValueType(RawPtr))
             |
                ev = main::codegen_typed_eval(cg, arg)
-               p_val = types::raw_addr_value(cg, ev.0, ev.1, i8p)
+               p_val_opt = types::raw_addr_value(cg, ev.0, ev.1, i8p)
+               p_val = p_val_opt | p => p | LLVMConstNull(i8p)
                (p_val, ast::ValueType(RawPtr))
 codegen_typed_eval_exit: types::Cg, tast::TypedExpr => (Addr, ast::ValueType)
 codegen_typed_eval_exit = cg, e =>
@@ -6909,7 +6912,8 @@ codegen_typed_eval_raw_write = cg, addr_e, val_e =>
    av = main::codegen_typed_eval(cg, addr_e)
    vv = main::codegen_typed_eval(cg, val_e)
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   raw_addr = types::raw_addr_value(cg, av.0, av.1, i8p)
+   raw_addr_opt = types::raw_addr_value(cg, av.0, av.1, i8p)
+   raw_addr = raw_addr_opt | p => p | LLVMConstNull(i8p)
    elem_ty = runtime::raw_store_elem_type(vv.1, i8p)
    ptr_val = LLVMBuildPointerCast(cg.builder, raw_addr,
       LLVMPointerType(elem_ty, 0), "raw.wr.ptr")

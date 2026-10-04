@@ -3304,10 +3304,11 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                   |
                      rt_opt'
                         | rt =>
-                           fgep = types::record_field_gep(cg, rt, fvts, bv.0, idx)
-                           fgep == Addr(0)
+                           fgep_opt = types::record_field_gep_opt(cg, rt, fvts, bv.0, idx)
+                           ! <>(fgep_opt)
                               | (Addr(0), ast::ValueType(Unknown))
                               |
+                                 fgep = fgep_opt!!
                                  ft = LLVMStructGetTypeAtIndex(rt, idx)
                                  fvt = member_field_vt(cg, fvts, idx, ft)
                                  parent_ti = parent_dtype != ""

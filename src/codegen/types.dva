@@ -18,17 +18,23 @@
    rename: (oldpath: String, newpath: String) => Int
    unlink: (path: String) => Int
 
-c_str: Addr => String
-c_str = raw =>
-   raw == Addr(0)
-      | ""
-      |
+llvm_val_opt: Addr => <Addr|>
+llvm_val_opt = a => a != Addr(0) | <+ a -> | <-->
+
+c_str_opt: <Addr|> => String
+c_str_opt = raw_opt =>
+   raw_opt
+      | raw =>
          b = {256}
          0.. @ i =>
             c = @[raw + i i8]
             c == 0i8 | -->
             b += c
          +b
+      | ""
+
+c_str: Addr => String
+c_str = raw => c_str_opt(llvm_val_opt(raw))
 
 dbg: String => Int
 dbg = s =>
@@ -762,13 +768,13 @@ struct_type_packed_n = cg, types, n, is_packed =>
 hoisted_alloca: Cg, Addr, String => Addr
 hoisted_alloca = cg, ty, name =>
    entry = LLVMGetEntryBasicBlock(cg.current_fn)
-   saved = LLVMGetInsertBlock(cg.builder)
-   first = LLVMGetFirstInstruction(entry)
-   first == Addr(0)
+   saved_opt = llvm_val_opt(LLVMGetInsertBlock(cg.builder))
+   first_opt = llvm_val_opt(LLVMGetFirstInstruction(entry))
+   first_opt
+      | first => LLVMPositionBuilderBefore(cg.builder, first)
       | LLVMPositionBuilderAtEnd(cg.builder, entry)
-      | LLVMPositionBuilderBefore(cg.builder, first)
    a = LLVMBuildAlloca(cg.builder, ty, name)
-   saved != Addr(0) | LLVMPositionBuilderAtEnd(cg.builder, saved)
+   saved_opt | saved => LLVMPositionBuilderAtEnd(cg.builder, saved)
    a
 
 // A variable's storage slot: a function-local alloca, or a named global.
@@ -906,11 +912,11 @@ codegen_init = opts =>
          LLVMDisposeTargetMachine(tm)
          l_str
       |
-         err_ptr = @[err_buf Addr]
-         err_s = err_ptr != Addr(0) | c_str(err_ptr) | ""
+         err_ptr_opt = llvm_val_opt(@[err_buf Addr])
+         err_s = c_str_opt(err_ptr_opt)
          print $ "E3069: No LLVM target registered for triple '" + triple + "'" +
             (?err_s > 0 | ": " + err_s | "")
-         err_ptr != Addr(0) | LLVMDisposeMessage(err_ptr)
+         err_ptr_opt | err_ptr => LLVMDisposeMessage(err_ptr)
          codegen_layout
    mem::destroy(ar)
    LLVMSetDataLayout(module, layout)
@@ -1070,13 +1076,11 @@ is_ptr_vt = vt => vt [RawPtr]
 // returning <Addr|> so callers must explicitly match both states.
 llvm_find_function: Addr, String => <Addr|>
 llvm_find_function = module, name =>
-   f = LLVMGetNamedFunction(module, name)
-   f != Addr(0) | <+ f -> | <-->
+   llvm_val_opt(LLVMGetNamedFunction(module, name))
 
 llvm_find_global: Addr, String => <Addr|>
 llvm_find_global = module, name =>
-   gv = LLVMGetNamedGlobal(module, name)
-   gv != Addr(0) | <+ gv -> | <-->
+   llvm_val_opt(LLVMGetNamedGlobal(module, name))
 
 float_llvm: ast::ValueType => Addr
 float_llvm = vt => vt [F32] LLVMFloatType! | LLVMDoubleType!
@@ -1401,26 +1405,25 @@ dotted_var_type = cg, name =>
                idx < ?fvts | (fvts(idx) | _ | ast::ValueType(Unknown)) |
                   ast::ValueType(Unknown)
 
-dotted_var_val: Cg, String => (Addr, ast::ValueType)
+dotted_var_val: Cg, String => <(Addr, ast::ValueType)|>
 dotted_var_val = cg, name =>
    dot = find_dot(name, 0)
    dot < 0
-      | (Addr(0), ast::ValueType(Unknown))
+      | <-->
       |
          base_name = name(0..dot)
          field_name = name(dot + 1..?name)
          fnames = var_fnames(cg, base_name)
          idx = member_index(fnames, field_name)
          idx < 0
-            | (Addr(0), ast::ValueType(Unknown))
+            | <-->
             |
                fvts = match::var_fvts(cg, base_name)
                fvt = idx < ?fvts | (fvts(idx) | _ | ast::ValueType(Unknown)) |
                   ast::ValueType(Unknown)
-               base_val = ptr_var_value_plain(cg, base_name, "rec.ptr")
-               base_val == Addr(0)
-                  | (Addr(0), ast::ValueType(Unknown))
-                  |
+               base_val_opt = llvm_val_opt(ptr_var_value_plain(cg, base_name, "rec.ptr"))
+               base_val_opt
+                  | base_val =>
                      var_rt(cg, base_name)
                         | rt =>
                            is_homo = expr::record_type_is_homogeneous(<+ rt ->, fvts)
@@ -1429,12 +1432,13 @@ dotted_var_val = cg, name =>
                               | LLVMStructGetTypeAtIndex(rt, idx)
                            fgep = record_field_gep(cg, rt, fvts, base_val, idx)
                            is_rec = fvt [Record]
-                           is_rec
-                              | (fgep, fvt)
-                              |
-                                 (LLVMBuildLoad2(cg.builder, ft, fgep,
-                                    "field.load"), fvt)
-                        | (Addr(0), ast::ValueType(Unknown))
+                           val = is_rec
+                              | fgep
+                              | LLVMBuildLoad2(cg.builder, ft, fgep,
+                                 "field.load")
+                           <+ (val, fvt) ->
+                        | <-->
+                  | <-->
 
 dotted_var_dtype: Cg, String => String
 dotted_var_dtype = cg, name =>
@@ -1517,15 +1521,14 @@ find_var_type = cg, name, i, fallback =>
 codegen_get_global: Cg, String, Addr => Addr
 codegen_get_global = cg, name, llvm_type =>
    gname = "var." + name
-   glob = LLVMGetNamedGlobal(cg.module, gname)
-   glob == Addr(0)
+   llvm_find_global(cg.module, gname)
+      | glob => glob
       |
          g2 = LLVMAddGlobal(cg.module, llvm_type, gname)
          is_ext = cg.opts.is_module && is_external_module_name(cg, name)
          !is_ext
             | LLVMSetInitializer(g2, LLVMConstNull(llvm_type))
          g2
-      | glob
 
 // Whether a named variable's ram slot is a heap union pointer (not a flag).
 var_is_heap: Cg, String => <>
@@ -1692,9 +1695,7 @@ find_field = fnames, name, acc =>
 codegen_load: Cg, String => (Addr, ast::ValueType)
 codegen_load = cg, name =>
    find_dot(name, 0) > 0
-      |
-         dot_v = dotted_var_val(cg, name)
-         dot_v.0 != Addr(0) | dot_v | codegen_undefined_name_error(cg, name)
+      | (dotted_var_val(cg, name) | dot_v => dot_v | codegen_undefined_name_error(cg, name))
       |
          vt = var_type(cg, name)
          is_heap = var_is_heap(cg, name)
@@ -1740,11 +1741,7 @@ codegen_missing_load: Cg, String => (Addr, ast::ValueType)
 codegen_missing_load = cg, name =>
    name == "_"
       | (Addr(0), ast::ValueType(Unknown))
-      |
-         dot_v = dotted_var_val(cg, name)
-         dot_v.0 != Addr(0)
-            | dot_v
-            | codegen_undefined_name_error(cg, name)
+      | (dotted_var_val(cg, name) | dot_v => dot_v | codegen_undefined_name_error(cg, name))
 
 codegen_undefined_name_error: Cg, String => (Addr, ast::ValueType)
 codegen_undefined_name_error = cg, name =>
@@ -1790,7 +1787,7 @@ ptr_var_value = cg, name, lname =>
 ptr_var_value_plain: Cg, String, String => Addr
 ptr_var_value_plain = cg, name, lname =>
    find_dot(name, 0) > 0
-      | (dotted_var_val(cg, name)).0
+      | (dotted_var_val(cg, name) | dot_v => dot_v.0 | Addr(0))
       |
          var_direct(cg, name)
             | _
@@ -3714,14 +3711,14 @@ codegen_eval_map_literal = cg, lit =>
             | codegen_map_literal_insert_rest(cg, m, lit.pairs, 1, np, key_vt)
          (m, ast::ValueType(Map))
 
-raw_addr_value: Cg, Addr, ast::ValueType, Addr => Addr
+raw_addr_value: Cg, Addr, ast::ValueType, Addr => <Addr|>
 raw_addr_value = cg, value, vt, i8p =>
-   value == Addr(0)
-      | Addr(0)
-      |
-         raw_ptr = vt [RawPtr] value |
-            LLVMBuildIntToPtr(cg.builder, value, i8p, "raw.ptr")
-         expr::validate_and_strip_addr_tag(cg, raw_ptr, i8p)
+   llvm_val_opt(value)
+      | v =>
+         raw_ptr = vt [RawPtr] v |
+            LLVMBuildIntToPtr(cg.builder, v, i8p, "raw.ptr")
+         <+ expr::validate_and_strip_addr_tag(cg, raw_ptr, i8p) ->
+      | <-->
 
 codegen_eval_raw_memory: Cg, ast::RawMemoryExpr => (Addr, ast::ValueType)
 codegen_eval_raw_memory = cg, rm =>
@@ -3730,7 +3727,8 @@ codegen_eval_raw_memory = cg, rm =>
       |
          av = expr::codegen_eval(cg, rm.addr)
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
-         ptr_val = raw_addr_value(cg, av.0, av.1, i8p)
+         ptr_val_opt = raw_addr_value(cg, av.0, av.1, i8p)
+         ptr_val = ptr_val_opt | p => p | LLVMConstNull(i8p)
          rm.rec_name != ""
             |
                ti = typedef_ti(cg, rm.rec_name)
@@ -3869,25 +3867,36 @@ codegen_eval_variant = cg, t =>
 
 // Compute the GEP for a record field: homogeneous records use rec.elem.gep,
 // heterogeneous records use rec.field.gep.
-record_field_gep: Cg, Addr, ast::VTypes, Addr, Int => Addr
-record_field_gep = cg, rt, fvts, base, idx =>
-   base == Addr(0) || rt == Addr(0)
-      | Addr(0)
+record_field_gep_opt: Cg, Addr, ast::VTypes, Addr, Int => <Addr|>
+record_field_gep_opt = cg, rt, fvts, base, idx =>
+   b_opt = llvm_val_opt(base)
+   rt_opt = llvm_val_opt(rt)
+   ! <>(b_opt) || ! <>(rt_opt)
+      | <-->
       |
-         base_ptr = LLVMGetTypeKind(LLVMTypeOf(base)) == 8
-            | LLVMBuildIntToPtr(cg.builder, base,
+         base_val = b_opt!!
+         rt_val = rt_opt!!
+         base_ptr = LLVMGetTypeKind(LLVMTypeOf(base_val)) == 8
+            | LLVMBuildIntToPtr(cg.builder, base_val,
                LLVMPointerType(LLVMInt8Type!, 0), "rec.base.ptr")
-            | base
-         is_homo = expr::record_type_is_homogeneous(<+ rt ->, fvts)
-         is_homo
+            | base_val
+         is_homo = expr::record_type_is_homogeneous(<+ rt_val ->, fvts)
+         res = is_homo
             |
-               elem_t = LLVMStructGetTypeAtIndex(rt, 0)
+               elem_t = LLVMStructGetTypeAtIndex(rt_val, 0)
                typed = LLVMBuildPointerCast(cg.builder, base_ptr,
                   LLVMPointerType(elem_t, 0), "rec.typed")
                idx_v = LLVMConstInt(LLVMInt64Type!, idx, 0)
                gep1(cg, elem_t, typed, idx_v, "rec.elem.gep")
-            | LLVMBuildStructGEP2(cg.builder, rt, base_ptr, idx,
+            | LLVMBuildStructGEP2(cg.builder, rt_val, base_ptr, idx,
                "rec.field.gep")
+         <+ res ->
+
+record_field_gep: Cg, Addr, ast::VTypes, Addr, Int => Addr
+record_field_gep = cg, rt, fvts, base, idx =>
+   record_field_gep_opt(cg, rt, fvts, base, idx)
+      | g => g
+      | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
 
 // A record literal: build the LLVM struct type from the field value shapes,
 // malloc it, and store each field at its GEP. The struct type + named field

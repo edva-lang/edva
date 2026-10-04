@@ -1238,7 +1238,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
          types::var_slot(cg, t.0)
             | _
             | types::create_slot(cg, t.0, llvm_type, cg.in_fn)
-   store_v = ev.0 != Addr(0) | ev.0 | LLVMConstNull(llvm_type)
+   store_v = types::llvm_val_opt(ev.0) | v => v | LLVMConstNull(llvm_type)
    LLVMBuildStore(cg.builder, store_v, slot)
    // A heap ram keeps the declared-type name (its payload type resolves from
    // it); an unwrapped scalar does not — the last_type may name an unrelated
@@ -1273,7 +1273,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
 codegen_check_flag_to_heap_assign: types::Cg,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo), Addr => ()
 codegen_check_flag_to_heap_assign = cg, t, value =>
-   value != Addr(0) | codegen_check_flag_to_heap_value(cg, t, value)
+   types::llvm_val_opt(value) | v => codegen_check_flag_to_heap_value(cg, t, v)
 
 codegen_check_flag_to_heap_value: types::Cg,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo), Addr => ()
@@ -1633,7 +1633,8 @@ codegen_emit_raw_assign_value: types::Cg,
 codegen_emit_raw_assign_value = cg, t, rm, ev =>
    av = expr::codegen_eval(cg, rm.addr)
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   raw_addr = types::raw_addr_value(cg, av.0, av.1, i8p)
+   raw_addr_opt = types::raw_addr_value(cg, av.0, av.1, i8p)
+   raw_addr = raw_addr_opt | p => p | LLVMConstNull(i8p)
    elem_ty = raw_store_elem_type(ev.1, i8p)
    elem_ptr = LLVMBuildPointerCast(cg.builder, raw_addr,
       LLVMPointerType(elem_ty, 0), "raw.ptr.w")
@@ -1913,9 +1914,9 @@ codegen_finish = cg, out_path =>
    v_res = LLVMVerifyModule(cg.module, 2, v_err_buf)
    v_res != 0
       |
-         v_msg = @[v_err_buf Addr]
-         v_msg != Addr(0)
-            |
+         v_msg_opt = types::llvm_val_opt(@[v_err_buf Addr])
+         v_msg_opt
+            | v_msg =>
                v_str = c_str(v_msg)
                print $ "E5011: LLVM module verification failed: " + v_str
                LLVMDisposeMessage(v_msg)
@@ -1925,9 +1926,9 @@ codegen_finish = cg, out_path =>
       |
          p_res != 0
             |
-               err_msg = @[err_buf Addr]
-               err_msg != Addr(0)
-                  |
+               err_msg_opt = types::llvm_val_opt(@[err_buf Addr])
+               err_msg_opt
+                  | err_msg =>
                      err_str = c_str(err_msg)
                      print $ "E5012: Failed to write LLVM IR to '" + out_path +
                         "': " + err_str
