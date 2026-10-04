@@ -5938,21 +5938,16 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
-   branch_bb = has_esc
-      | LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
-      | Addr(0)
-   merge_bb = has_esc
-      | LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
-      | Addr(0)
-   res_alloca = has_esc
-      | types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
-      | Addr(0)
-   has_esc
-      |
-         u_none = codegen_typed_cycle_escape_construct(cg, <->,
-            <-->, ti)
-         LLVMBuildStore(cg.builder, u_none, res_alloca)
-   break_target = has_esc | branch_bb | done
+   esc_blocks = esc_opt
+      | _ =>
+         b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
+         m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
+         r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
+         u_none = codegen_typed_cycle_escape_construct(cg, <->, <-->, ti)
+         LLVMBuildStore(cg.builder, u_none, r_al)
+         <+ (b_bb, m_bb, r_al) ->
+      | <-->
+   break_target = esc_blocks | eb => eb.0 | done
    cg.cycle_breaks += break_target
    cg.cycle_conts += latch
    branch_to(cg, header)
@@ -5969,19 +5964,19 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    nc = ?cg.cycle_conts
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nc - 1)
-   has_esc
-      |
-         branch_to(cg, merge_bb)
-         LLVMPositionBuilderAtEnd(cg.builder, branch_bb)
-         esc_e = esc_opt | _ | tast::mk_lit_unit(0, 0)
+   esc_blocks
+      | eb =>
+         branch_to(cg, eb.1)
+         LLVMPositionBuilderAtEnd(cg.builder, eb.0)
+         esc_e = esc_opt!!
          saved_esc_vars = ?cg.vars
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
             <+ esc_e ->, ti)
          cg.vars = truncate_vars(cg.vars, saved_esc_vars)
-         LLVMBuildStore(cg.builder, u_some, res_alloca)
-         branch_to(cg, merge_bb)
-         LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
-         res_val = LLVMBuildLoad2(cg.builder, res_lt, res_alloca,
+         LLVMBuildStore(cg.builder, u_some, eb.2)
+         branch_to(cg, eb.1)
+         LLVMPositionBuilderAtEnd(cg.builder, eb.1)
+         res_val = LLVMBuildLoad2(cg.builder, res_lt, eb.2,
             "escape.res")
          (res_val, b_vt)
       |
@@ -6132,21 +6127,16 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
-   branch_bb = has_esc
-      | LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
-      | Addr(0)
-   merge_bb = has_esc
-      | LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
-      | Addr(0)
-   res_alloca = has_esc
-      | types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
-      | Addr(0)
-   has_esc
-      |
-         u_none = codegen_typed_cycle_escape_construct(cg, <->,
-            <-->, ti)
-         LLVMBuildStore(cg.builder, u_none, res_alloca)
-   break_target = has_esc | branch_bb | done
+   esc_blocks = esc_opt
+      | _ =>
+         b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
+         m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
+         r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
+         u_none = codegen_typed_cycle_escape_construct(cg, <->, <-->, ti)
+         LLVMBuildStore(cg.builder, u_none, r_al)
+         <+ (b_bb, m_bb, r_al) ->
+      | <-->
+   break_target = esc_blocks | eb => eb.0 | done
    cg.cycle_breaks += break_target
    cg.cycle_conts += latch
    branch_to(cg, header)
@@ -6279,19 +6269,19 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nb - 1)
    LLVMPositionBuilderAtEnd(cg.builder, done)
-   has_esc
-      |
-         branch_to(cg, merge_bb)
-         LLVMPositionBuilderAtEnd(cg.builder, branch_bb)
-         esc_te = esc_opt | _ | tast::mk_lit_unit(0, 0)
+   esc_blocks
+      | eb =>
+         branch_to(cg, eb.1)
+         LLVMPositionBuilderAtEnd(cg.builder, eb.0)
+         esc_te = esc_opt!!
          saved_esc_vars = ?cg.vars
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
             <+ esc_te ->, ti)
          cg.vars = truncate_vars(cg.vars, saved_esc_vars)
-         LLVMBuildStore(cg.builder, u_some, res_alloca)
-         branch_to(cg, merge_bb)
-         LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
-         res_val = LLVMBuildLoad2(cg.builder, res_lt, res_alloca,
+         LLVMBuildStore(cg.builder, u_some, eb.2)
+         branch_to(cg, eb.1)
+         LLVMPositionBuilderAtEnd(cg.builder, eb.1)
+         res_val = LLVMBuildLoad2(cg.builder, res_lt, eb.2,
             "escape.res")
          (res_val, b_vt)
       | (Addr(0), ast::ValueType(Unit))
@@ -6364,21 +6354,16 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
-   branch_bb = has_esc
-      | LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
-      | Addr(0)
-   merge_bb = has_esc
-      | LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
-      | Addr(0)
-   res_alloca = has_esc
-      | types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
-      | Addr(0)
-   has_esc
-      |
-         u_none = codegen_typed_cycle_escape_construct(cg, <->,
-            <-->, ti)
-         LLVMBuildStore(cg.builder, u_none, res_alloca)
-   break_target = has_esc | branch_bb | done
+   esc_blocks = esc_opt
+      | _ =>
+         b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
+         m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
+         r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
+         u_none = codegen_typed_cycle_escape_construct(cg, <->, <-->, ti)
+         LLVMBuildStore(cg.builder, u_none, r_al)
+         <+ (b_bb, m_bb, r_al) ->
+      | <-->
+   break_target = esc_blocks | eb => eb.0 | done
    cg.cycle_breaks += break_target
    cg.cycle_conts += latch
 
@@ -6462,19 +6447,19 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nb - 1)
    LLVMPositionBuilderAtEnd(cg.builder, done)
-   has_esc
-      |
-         branch_to(cg, merge_bb)
-         LLVMPositionBuilderAtEnd(cg.builder, branch_bb)
-         esc_te = esc_opt | _ | tast::mk_lit_unit(0, 0)
+   esc_blocks
+      | eb =>
+         branch_to(cg, eb.1)
+         LLVMPositionBuilderAtEnd(cg.builder, eb.0)
+         esc_te = esc_opt!!
          saved_esc_vars = ?cg.vars
          u_some = codegen_typed_cycle_escape_construct(cg, <+>,
             <+ esc_te ->, ti)
          cg.vars = truncate_vars(cg.vars, saved_esc_vars)
-         LLVMBuildStore(cg.builder, u_some, res_alloca)
-         branch_to(cg, merge_bb)
-         LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
-         res_val = LLVMBuildLoad2(cg.builder, res_lt, res_alloca,
+         LLVMBuildStore(cg.builder, u_some, eb.2)
+         branch_to(cg, eb.1)
+         LLVMPositionBuilderAtEnd(cg.builder, eb.1)
+         res_val = LLVMBuildLoad2(cg.builder, res_lt, eb.2,
             "escape.res")
          (res_val, b_vt)
       | (Addr(0), ast::ValueType(Unit))
