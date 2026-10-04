@@ -314,7 +314,7 @@ lambda_load_caps_at = cg, caps, j, n, acc =>
                      acc += LLVMBuildPointerCast(cg.builder, s, i8p, "cell.slot.ptr")
             |
                cv2 = types::codegen_load(cg, cname)
-               acc += cv2.0
+               cv2 | c => acc += c.0
          lambda_load_caps_at(cg, caps, j + 1, n, acc)
 
 lambda_caps_vts_at: types::Cg, ast::Names, Int, Int, ast::VTypes => ast::VTypes

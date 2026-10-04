@@ -867,7 +867,7 @@ codegen_eval = cg, expr =>
       [Var v]
          rv = types::resolve_var_name(cg, v)
          is_v = (v == "_") || types::var_has_storage(cg, v)
-         is_v
+         v_opt = is_v
             | types::codegen_load(cg, rv)
             |
                el_owners = types::enum_label_owner_count(cg, v, 0)
@@ -878,17 +878,11 @@ codegen_eval = cg, expr =>
                      fn_is_val = types::is_fn_name(cg, rf) ||
                         (fn_alias(cg, rv) != "") || types::has_fn_name(cg, rf)
                      fn_is_val
-                        |
-                           nfv = codegen_named_fn_value(cg, rf)
-                           nfv | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0),
-                              ast::ValueType(Unknown))
+                        | codegen_named_fn_value(cg, rf)
                         |
                            ct = types::ct_bind_find(v)
                            ct.1
-                              |
-                                 mat = codegen_materialize_cttr(cg, ct.0)
-                                 mat | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0),
-                                    ast::ValueType(Unknown))
+                              | codegen_materialize_cttr(cg, ct.0)
                               |
                                  rt = types::resolve_type_name(cg, v)
                                  types::is_user_type(cg, rt)
@@ -898,6 +892,7 @@ codegen_eval = cg, expr =>
                                        tn.1
                                           | types::codegen_eval_type_value(cg, v)
                                           | types::codegen_load(cg, rv)
+         v_opt | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       [Assign t]
          runtime::codegen_emit_assign(cg, t)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))

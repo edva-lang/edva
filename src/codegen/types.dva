@@ -1696,10 +1696,10 @@ find_field = fnames, name, acc =>
 // Loads a variable's global/local value, typed by its recorded ValueType (a
 // heap ram slot loads a pointer; a flag loads i1). The storage slot (a global
 // or a function-local alloca) comes from the variable record.
-codegen_load: Cg, String => (Addr, ast::ValueType)
+codegen_load: Cg, String => <(Addr, ast::ValueType)|>
 codegen_load = cg, name =>
    find_dot(name, 0) > 0
-      | (dotted_var_val(cg, name) | _ | codegen_undefined_name_error(cg, name))
+      | (dotted_var_val(cg, name) | v => <+ v -> | codegen_undefined_name_error(cg, name))
       |
          vt = var_type(cg, name)
          is_heap = var_is_heap(cg, name)
@@ -1725,37 +1725,38 @@ codegen_load = cg, name =>
             | codegen_uninitialized_load_error(cg, name)
             |
                var_direct(cg, name)
-                  | dv => (dv, vt)
+                  | dv => <+ (dv, vt) ->
                   | codegen_load_after_forward(cg, slot_opt, lt, name, vt)
 
-codegen_load_after_forward: Cg, <Addr|>, Addr, String, ast::ValueType => (Addr, ast::ValueType)
+codegen_load_after_forward: Cg, <Addr|>, Addr, String, ast::ValueType => <(Addr, ast::ValueType)|>
 codegen_load_after_forward = cg, slot_opt, lt, name, vt =>
    slot_opt
       | slot => codegen_load_known(cg, slot, lt, name, vt)
       | codegen_missing_load(cg, name)
 
-codegen_uninitialized_load_error: Cg, String => (Addr, ast::ValueType)
+codegen_uninitialized_load_error: Cg, String => <(Addr, ast::ValueType)|>
 codegen_uninitialized_load_error = cg, name =>
    init_error(cg, "E3045", "Use of uninitialized variable '" + name +
       "' — a forward annotation ('name: Type') allocates no storage; assign " +
       "a value before reading.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   <-->
 
-codegen_missing_load: Cg, String => (Addr, ast::ValueType)
+codegen_missing_load: Cg, String => <(Addr, ast::ValueType)|>
 codegen_missing_load = cg, name =>
    name == "_"
-      | (Addr(0), ast::ValueType(Unknown))
-      | (dotted_var_val(cg, name) | _ | codegen_undefined_name_error(cg, name))
+      | <-->
+      | (dotted_var_val(cg, name) | v => <+ v -> | codegen_undefined_name_error(cg, name))
 
-codegen_undefined_name_error: Cg, String => (Addr, ast::ValueType)
+codegen_undefined_name_error: Cg, String => <(Addr, ast::ValueType)|>
 codegen_undefined_name_error = cg, name =>
-   init_error(cg, "E3004", "Undefined variable '" + name + "' in fn '" + g.last_compiling_fn + "'", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   init_error(cg, "E3004", "Undefined variable '" + name +
+      "' in fn '" + g.last_compiling_fn + "'", 0, 0)
+   <-->
 
-codegen_load_known: Cg, Addr, Addr, String, ast::ValueType => (Addr, ast::ValueType)
+codegen_load_known: Cg, Addr, Addr, String, ast::ValueType => <(Addr, ast::ValueType)|>
 codegen_load_known = cg, slot, lt, name, vt =>
    lname = "load." + name
-   (LLVMBuildLoad2(cg.builder, lt, slot, lname), vt)
+   <+ (LLVMBuildLoad2(cg.builder, lt, slot, lname), vt) ->
 
 // A variable's direct SSA value (a fn param, used without a backing alloca).
 var_direct: Cg, String => <Addr|>
@@ -3426,7 +3427,7 @@ codegen_eval_ctor = cg, ti, t =>
             |
                lv = codegen_load(cg, lname)
                cg.last_type = t.fn_name
-               lv
+               lv | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |
                codegen_check_enum_ctor(cg, t.fn_name, slots, t)
                idx = enum_slot_index(slots, lname) | _ | 0
@@ -3656,20 +3657,20 @@ codegen_check_ambiguous_enum_label = cg, label =>
                "' is ambiguous — declared by multiple enums; qualify the " +
                "variant as 'Enum::" + label + "'.", 0, 0)
 
-codegen_eval_enum_label_val: Cg, String, Int => (Addr, ast::ValueType)
+codegen_eval_enum_label_val: Cg, String, Int => <(Addr, ast::ValueType)|>
 codegen_eval_enum_label_val = cg, label, owners =>
    owners > 1
       |
          init_error(cg, "E3105", "Enum label '" + label +
             "' is ambiguous — declared by multiple enums; qualify the " +
             "variant as 'Enum::" + label + "'.", 0, 0)
-         (Addr(0), ast::ValueType(Unknown))
+         <-->
       |
          es = match::enum_slots_for_label(cg, label)
          idx = enum_slot_index(es.1, label) | _ | 0
          u = codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
          cg.last_type = es.0
-         (u, ast::ValueType(Enum))
+         <+ (u, ast::ValueType(Enum)) ->
 
 enum_label_owner_count_at: Cg, String, Int, Int, Int => Int
 enum_label_owner_count_at = cg, label, i, n, seen =>
@@ -3734,7 +3735,9 @@ raw_addr_value = cg, value, vt, i8p =>
 codegen_eval_raw_memory: Cg, ast::RawMemoryExpr => (Addr, ast::ValueType)
 codegen_eval_raw_memory = cg, rm =>
    raw_address_uses_string(cg, rm.addr)
-      | codegen_raw_string_index_error(cg)
+      |
+         codegen_raw_string_index_error(cg)
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          av = expr::codegen_eval(cg, rm.addr)
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -3774,12 +3777,12 @@ raw_address_uses_string = cg, e =>
       [Bin t] raw_address_uses_string(cg, t.1) || raw_address_uses_string(cg, t.2)
       | <->
 
-codegen_raw_string_index_error: Cg => (Addr, ast::ValueType)
+codegen_raw_string_index_error: Cg => <(Addr, ast::ValueType)|>
 codegen_raw_string_index_error = cg =>
    init_error(cg, "E3063", "'@[...]' does not index a String (the '@[s + i]' " +
       "sugar was removed, B7). Read a byte with 's(i)' or write one to a " +
       "Builder.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   <-->
 
 codegen_check_map_pairs: Cg, ast::MapPairs, Int => ()
 codegen_check_map_pairs = cg, pairs, at =>
@@ -3803,11 +3806,11 @@ codegen_check_map_pairs = cg, pairs, at =>
 
 
 // A bare declared type name used as an expression: emit E3129.
-codegen_eval_type_value: Cg, String => (Addr, ast::ValueType)
+codegen_eval_type_value: Cg, String => <(Addr, ast::ValueType)|>
 codegen_eval_type_value = cg, name =>
    init_error(cg, "E3129", "Type name '" + name +
       "' cannot be used as an expression.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   <-->
 
 // The built-in ram tag ids: 1 = positive-ish (Positive/Some), 2 = Succ,
 // 3 = Noth, 0 = negative-ish (Negative/Err).

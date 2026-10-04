@@ -2622,31 +2622,27 @@ codegen_typed_eval = cg, te =>
                            | (LLVMConstInt(LLVMInt64Type!, 0, 0), types::var_type(cg, rv))
                         |
                            el_owners = types::enum_label_owner_count(cg, bname, 0)
-                           el_owners > 0
-                              | types::codegen_eval_enum_label_val(cg, bname,
-                                 el_owners)
+                           v_opt = el_owners > 0
+                              | types::codegen_eval_enum_label_val(cg, bname, el_owners)
                               |
                                  rf = types::resolve_fn_name(cg, v.0)
                                  fn_is_val = types::is_fn_name(cg, rf) ||
                                     (expr::fn_alias(cg, rv) != "") || types::has_fn_name(cg, rf) ||
-                                    stmt::fn_has_signature(types::g.pstmts, rf, 0) || stmt::fn_has_signature(types::g.pstmts, v.0, 0)
+                                    stmt::fn_has_signature(types::g.pstmts, rf, 0) ||
+                                    stmt::fn_has_signature(types::g.pstmts, v.0, 0)
                                  fn_is_val
-                                    |
-                                       fn_val = expr::codegen_named_fn_value(cg, rf)
-                                       fn_val | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0),
-                                          ast::ValueType(Unknown))
+                                    | expr::codegen_named_fn_value(cg, rf)
                                     |
                                        ct = types::ct_bind_find(v.0)
                                        ct.1
-                                          |
-                                             ct_val = expr::codegen_materialize_cttr(cg, ct.0)
-                                             ct_val | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0),
-                                                ast::ValueType(Unknown))
+                                          | expr::codegen_materialize_cttr(cg, ct.0)
                                           |
                                              rt_name = types::resolve_type_name(cg, v.0)
                                              types::is_user_type(cg, rt_name)
                                                 | types::codegen_eval_type_value(cg, rt_name)
-                                                | (LLVMConstInt(LLVMInt64Type!, 0, 0), types::var_type(cg, rv))
+                                                | <-->
+                           v_opt | _ |
+                              (LLVMConstInt(LLVMInt64Type!, 0, 0), types::var_type(cg, rv))
       [Bin b]
          expr::codegen_typed_eval_bin(cg, b.0, b.1, b.2, te.ut, te.ti)
       [Unary u]

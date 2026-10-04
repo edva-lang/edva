@@ -3562,9 +3562,11 @@ codegen_unresolved_module_member = cg, t =>
                   ast::ValueType(Unknown))
             |
                ut = types::is_user_type(cg, name)
-               ut
+               val_opt = ut
                   | types::codegen_eval_type_value(cg, name)
                   | types::codegen_load(cg, name)
+               val_opt | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0),
+                  ast::ValueType(Unknown))
 
 
 codegen_check_member_read_init: types::Cg, ast::MemberExpr, String, ast::Names, Int => ()
