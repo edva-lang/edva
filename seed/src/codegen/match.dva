@@ -3323,10 +3323,8 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                      rt_opt'
                         | rt =>
                            fgep_opt = types::record_field_gep_opt(cg, rt, fvts, bvv, idx)
-                           ! <>(fgep_opt)
-                              | (Addr(0), ast::ValueType(Unknown))
-                              |
-                                 fgep = fgep_opt!!
+                           fgep_opt
+                              | fgep =>
                                  ft = LLVMStructGetTypeAtIndex(rt, idx)
                                  fvt = member_field_vt(cg, fvts, idx, ft)
                                  parent_ti = parent_dtype != ""
@@ -3383,6 +3381,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                                                 LLVMBuildLoad2(cg.builder, ft,
                                                    fgep, "field.load")
                                              (res, fvt)
+                              | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
                         |
                            types::init_error(cg, "E3017", "Member access '" + t.field_name +
                               "' on a non-record value.", t.line, t.col)
