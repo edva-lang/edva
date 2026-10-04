@@ -1201,14 +1201,14 @@ codegen_cycle_unroll_range = cg, cyc =>
                                        cg.discard_result = <->
                                        rv = expr::codegen_eval(cg, rng.rhs)
                                        cg.discard_result = saved_discard
-                                       rv.0 == Addr(0)
-                                          | (0, <->)
-                                          |
-                                             LLVMIsConstant(rv.0) != 0
+                                       types::llvm_val_opt(rv.0)
+                                          | r_val =>
+                                             LLVMIsConstant(r_val) != 0
                                                 |
-                                                   n = LLVMConstIntGetZExtValue(rv.0)
+                                                   n = LLVMConstIntGetZExtValue(r_val)
                                                    (n, <+>)
                                                 | (0, <->)
+                                          | (0, <->)
                                     | (0, <->)
                               | (0, <->)
                         | (0, <->)
@@ -3493,30 +3493,31 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    is_fn_ret = main::is_fn_vt(actual_ret) || main::is_fn_vt(ret_vt')
    is_fn_ret && (cg.last_closure_fn != "")
       | fn_ret_fn_add(fd.name, cg.last_closure_fn)
-   is_ptr_ret = (bv.0 != Addr(0)) &&
-      (LLVMGetTypeKind(LLVMTypeOf(bv.0)) == 12)
+   bv_opt = types::llvm_val_opt(bv.0)
+   is_ptr_ret = bv_opt
+      | bvv => LLVMGetTypeKind(LLVMTypeOf(bvv)) == 12
+      | <->
    is_ptr_ret_int = ret_ll == LLVMInt64Type! && is_ptr_ret
    is_void_ret
       |
          !cg.error | LLVMBuildRetVoid(cg.builder)
       |
-         ret_v = bv.0 == Addr(0)
-            | LLVMConstNull(ret_ll)
-            |
+         ret_v = bv_opt
+            | bvv =>
                use_unboxed_ret && is_ptr_ret
-                  | match::convert_heap_ram_to_unboxed(cg, bv.0, ret_ti)
+                  | match::convert_heap_ram_to_unboxed(cg, bvv, ret_ti)
                   |
                      use_niche_ret && is_ptr_ret
                         |
                            tgep = LLVMBuildStructGEP2(cg.builder,
-                              cg.union_t, bv.0, 0, "tag.gep")
+                              cg.union_t, bvv, 0, "tag.gep")
                            tag = LLVMBuildLoad2(cg.builder,
                               LLVMInt64Type!, tgep, "tag")
                            is_pos = LLVMBuildICmp(cg.builder, 33,
                               tag, LLVMConstInt(
                                  LLVMInt64Type!, 0, 0), "is_pos")
                            pgep = LLVMBuildStructGEP2(cg.builder,
-                              cg.union_t, bv.0, 1, "pay.gep")
+                              cg.union_t, bvv, 1, "pay.gep")
                            pay_ptr = LLVMBuildLoad2(cg.builder,
                               i8p, pgep, "pay.ptr")
                            cond_pos = niche.1 | is_pos |
@@ -3525,9 +3526,10 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
                               pay_ptr, LLVMConstNull(i8p), "ret.niche")
                         |
                            is_ptr_ret_int
-                              | LLVMBuildPtrToInt(cg.builder, bv.0,
+                              | LLVMBuildPtrToInt(cg.builder, bvv,
                                  LLVMInt64Type!, "ret.int")
-                              | coerce_int(cg, bv.0, ret_ll)
+                              | coerce_int(cg, bvv, ret_ll)
+            | LLVMConstNull(ret_ll)
          !cg.error | LLVMBuildRet(cg.builder, ret_v)
    ret_ti_res = resolve_ti(cg, ret_ti)
    ret_ti_res [Ram _]
@@ -5743,8 +5745,9 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                     "a.load")
                                  main::codegen_array_append(cg, a_val, ev.0)
                               |
-                                 store_val = ev.0 != Addr(0) | ev.0 |
-                                    LLVMConstNull(llvm_ty)
+                                 store_val = types::llvm_val_opt(ev.0)
+                                    | evv => evv
+                                    | LLVMConstNull(llvm_ty)
                                  LLVMBuildStore(cg.builder, store_val,
                                     slot')
                                  rec_fvs = ast::VTypes()
@@ -6725,8 +6728,9 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
                is_void
                   | LLVMBuildRetVoid(cg.builder)
                   |
-                     bv_val = bv.0 != Addr(0) | bv.0 |
-                        LLVMConstNull(ret_ll)
+                     bv_val = types::llvm_val_opt(bv.0)
+                        | bvv => bvv
+                        | LLVMConstNull(ret_ll)
                      real_ret_ti = ret_ti
                         [TypeVar tv] types::typedef_ti(cg, tv)
                         | ret_ti
