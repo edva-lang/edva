@@ -379,7 +379,7 @@ compile_lambda = cg, f =>
    ret_ll = ret_vt' [Fn] LLVMInt64Type! | types::llvm_type_of_vt(ret_vt')
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    cap_tys = lambda_caps_types_at(cg, caps, 0, nc, types::Addrs())
-   est = is_cap | types::struct_type_n(cg, cap_tys, nc) | Addr(0)
+   est_opt = is_cap | <+ types::struct_type_n(cg, cap_tys, nc) -> | <-->
    param_ll_base = types::Addrs()
    is_cap | param_ll_base += i8p
    param_ll = lambda_param_ll_at(f.params, ptypes, 0, ?f.params, param_ll_base)
@@ -403,8 +403,8 @@ compile_lambda = cg, f =>
    cg.fn_binding_start = saved_nbindings
    entry = LLVMAppendBasicBlock(fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
-   is_cap
-      |
+   est_opt
+      | est =>
          ep = LLVMBuildBitCast(cg.builder, LLVMGetParam(fn, 0),
             LLVMPointerType(est, 0), "cap.env")
          lambda_add_caps(cg, caps, cap_vts, est, ep, 0, nc)
@@ -440,8 +440,8 @@ compile_lambda = cg, f =>
    cg.current_fn = saved_fn
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
    envp' = LLVMConstNull(i8p)
-   is_cap
-      |
+   est_opt
+      | est =>
          ep2 = expr::codegen_call_arena_alloc(cg,
             LLVMConstInt(LLVMInt64Type!, nc * 8, 0), "env.alloc")
          lambda_store_caps_at(cg, caps, cap_vals, est, ep2, 0, nc)
@@ -600,8 +600,10 @@ codegen_string_eq = cg, l, r =>
 
 codegen_string_append_rune: types::Cg, Addr, Addr => Addr
 codegen_string_append_rune = cg, str_val, rune_val =>
-   cg.error || str_val == Addr(0) || rune_val == Addr(0)
-      | Addr(0)
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   valid = !cg.error && <>(types::llvm_val_opt(str_val)) && <>(types::llvm_val_opt(rune_val))
+   !valid
+      | LLVMConstNull(i8p)
       |
          i64t = LLVMInt64Type!
          i8t = LLVMInt8Type!
@@ -750,8 +752,10 @@ codegen_string_append_rune = cg, str_val, rune_val =>
 
 codegen_string_append_byte: types::Cg, Addr, Addr => Addr
 codegen_string_append_byte = cg, str_val, byte_val =>
-   cg.error || str_val == Addr(0) || byte_val == Addr(0)
-      | Addr(0)
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   valid = !cg.error && <>(types::llvm_val_opt(str_val)) && <>(types::llvm_val_opt(byte_val))
+   !valid
+      | LLVMConstNull(i8p)
       |
          i64t = LLVMInt64Type!
          i8t = LLVMInt8Type!
@@ -957,8 +961,9 @@ codegen_eval_string_rune_count = cg, str_val =>
 // use the local bare spelling.
 block_is_terminated: types::Cg => <>
 block_is_terminated = cg =>
-   cur = LLVMGetInsertBlock(cg.builder)
-   (cur == Addr(0)) || (LLVMGetBasicBlockTerminator(cur) != Addr(0))
+   types::llvm_val_opt(LLVMGetInsertBlock(cg.builder))
+      | cur => <>(types::llvm_val_opt(LLVMGetBasicBlockTerminator(cur)))
+      | <+>
 
 // Br to dest unless the current block is already terminated.
 branch_to: types::Cg, Addr => ()
@@ -971,9 +976,9 @@ branch_to = cg, dest =>
 // tag == 1 || tag == 2; an Int tests nonzero.
 codegen_cond_value: types::Cg, Addr, ast::ValueType => Addr
 codegen_cond_value = cg, v, vt =>
-   v == Addr(0)
+   types::llvm_val_opt(v)
+      | vv => codegen_cond_value_valid(cg, vv, vt)
       | LLVMConstInt(LLVMInt1Type!, 0, 0)
-      | codegen_cond_value_valid(cg, v, vt)
 
 codegen_cond_value_valid: types::Cg, Addr, ast::ValueType => Addr
 codegen_cond_value_valid = cg, v, vt =>
@@ -1030,37 +1035,40 @@ llvm_add_incoming1 = cg, phi, val, bb =>
 // Widen/narrow an integer value to a target integer type (same-type passes).
 coerce_int_ext: types::Cg, Addr, Addr, <> => Addr
 coerce_int_ext = cg, v, target, is_unsigned =>
-   v == Addr(0) || target == Addr(0)
+   types::llvm_val_opt(v)
+      | vv =>
+         types::llvm_val_opt(target)
+            | tt =>
+               same = (LLVMTypeOf(vv) == tt)
+               same
+                  | vv
+                  |
+                     is_int_v = (LLVMGetTypeKind(LLVMTypeOf(vv)) == 8)
+                     is_int_t = (LLVMGetTypeKind(tt) == 8)
+                     is_int_v && is_int_t
+                        |
+                           vwidth = LLVMGetIntTypeWidth(LLVMTypeOf(vv))
+                           twidth = LLVMGetIntTypeWidth(tt)
+                           vwidth > twidth
+                              |
+                                 LLVMBuildTrunc(cg.builder, vv, tt,
+                                    "coerce.trunc")
+                              |
+                                 vwidth == 1 || is_unsigned
+                                    |
+                                       LLVMBuildZExt(cg.builder, vv, tt,
+                                          "coerce.zext")
+                                    |
+                                       LLVMBuildSExt(cg.builder, vv, tt,
+                                          "coerce.sext")
+                        |
+                           !is_int_v && is_int_t
+                              |
+                                 LLVMBuildPtrToInt(cg.builder, vv, tt,
+                                    "coerce.ptr2int")
+                              | vv
+            | vv
       | v
-      |
-         same = (LLVMTypeOf(v) == target)
-         same
-            | v
-            |
-               is_int_v = (LLVMGetTypeKind(LLVMTypeOf(v)) == 8)
-               is_int_t = (LLVMGetTypeKind(target) == 8)
-               is_int_v && is_int_t
-                  |
-                     vwidth = LLVMGetIntTypeWidth(LLVMTypeOf(v))
-                     twidth = LLVMGetIntTypeWidth(target)
-                     vwidth > twidth
-                        |
-                           LLVMBuildTrunc(cg.builder, v, target,
-                              "coerce.trunc")
-                        |
-                           vwidth == 1 || is_unsigned
-                              |
-                                 LLVMBuildZExt(cg.builder, v, target,
-                                    "coerce.zext")
-                              |
-                                 LLVMBuildSExt(cg.builder, v, target,
-                                    "coerce.sext")
-                  |
-                     !is_int_v && is_int_t
-                        |
-                           LLVMBuildPtrToInt(cg.builder, v, target,
-                              "coerce.ptr2int")
-                        | v
 
 coerce_int: types::Cg, Addr, Addr => Addr
 coerce_int = cg, v, target => coerce_int_ext(cg, v, target, <->)
@@ -1074,42 +1082,42 @@ choice_coerce = cg, v, target =>
 
 choice_coerce_c: types::Cg, Addr, Addr => Addr
 choice_coerce_c = cg, v, target =>
-   target == Addr(0)
-      | v
-      |
-         v == Addr(0)
-            |
-               target == LLVMVoidType!
-                  | Addr(0)
-                  | LLVMConstNull(target)
-            |
-               vty = LLVMTypeOf(v)
-               vty == target
-                  | v
+   types::llvm_val_opt(target)
+      | tt =>
+         types::llvm_val_opt(v)
+            | vv =>
+               vty = LLVMTypeOf(vv)
+               vty == tt
+                  | vv
                   |
                      vkind = LLVMGetTypeKind(vty)
-                     tkind = LLVMGetTypeKind(target)
+                     tkind = LLVMGetTypeKind(tt)
                      tkind == 12 && vkind == 8
                         |
-                           is_zero_c = LLVMIsConstant(v) != 0 &&
-                              LLVMConstIntGetZExtValue(v) == 0
+                           is_zero_c = LLVMIsConstant(vv) != 0 &&
+                              LLVMConstIntGetZExtValue(vv) == 0
                            is_zero_c
-                              | LLVMConstNull(target)
+                              | LLVMConstNull(tt)
                               |
-                                 LLVMGetInsertBlock(cg.builder) == Addr(0)
-                                    | LLVMConstNull(target)
+                                 ! <>(types::llvm_val_opt(LLVMGetInsertBlock(cg.builder)))
+                                    | LLVMConstNull(tt)
                                     |
-                                       LLVMBuildIntToPtr(cg.builder, v,
-                                          target, "phi.cast")
+                                       LLVMBuildIntToPtr(cg.builder, vv,
+                                          tt, "phi.cast")
                         |
                            tkind == 8 && vkind == 12
                               |
-                                 LLVMGetInsertBlock(cg.builder) == Addr(0)
-                                    | LLVMConstInt(target, 0, 0)
+                                 ! <>(types::llvm_val_opt(LLVMGetInsertBlock(cg.builder)))
+                                    | LLVMConstInt(tt, 0, 0)
                                     |
-                                       LLVMBuildPtrToInt(cg.builder, v,
-                                          target, "phi.cast")
-                              | coerce_int(cg, v, target)
+                                       LLVMBuildPtrToInt(cg.builder, vv,
+                                          tt, "phi.cast")
+                              | coerce_int(cg, vv, tt)
+            |
+               tt == LLVMVoidType!
+                  | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
+                  | LLVMConstNull(tt)
+      | v
 
 // --- expressions -------------------------------------------------------------
 
