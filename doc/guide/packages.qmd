@@ -1,0 +1,152 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current guide"
+  audited: "18a19d4"
+  evidence: "`src/pkg.dva`, `src/edva.dva`, `std/ccl.dva`, `test_driver.sh`"
+---
+
+# Package Management and Targets
+
+The Edva package system manages project dependencies, reproducible source hashing, lockfiles, and target builds (`edva pkg`).
+
+A package is any directory containing an `edva.ccl` manifest.
+
+## Package layout
+
+A typical Edva package has the following layout:
+
+```text
+my_project/
+├── edva.ccl            # Manifest defining name, version, and dependencies
+├── edva.lock.ccl       # Resolved dependency graph and pinned tree hashes
+├── .edva/
+│   └── imports.ccl     # Generated import map linking @aliases to package roots
+├── src/
+│   ├── my_project.dva  # Root library module
+│   └── main.dva        # Optional application entry point
+└── tests/              # Optional test targets
+    ├── test_feature.dva
+    └── test_integration.dva
+```
+
+### Targets
+
+- **Executable target (`src/main.dva`)**: Built by `edva pkg build`. Compiled into a binary named after the package manifest (`./my_project`).
+- **Library target (`src/<name>.dva`)**: Used when other packages import `@my_project`. If `src/main.dva` is absent, `edva pkg build` reports a library package notice.
+- **Test targets (`tests/*.dva`)**: Discovered and executed by `edva pkg test`. Each test file is compiled and executed independently; a test passes if it exits with status code 0.
+
+## The package manifest (`edva.ccl`)
+
+The package manifest uses CCL (Configuration and Constraint Language) syntax:
+
+```ccl
+name = my_project
+version = 1.0.0
+edva = 0.1.0
+
+dependencies =
+  term =
+    git = https://github.com/edva-lang/term
+    rev = master
+  math_utils =
+    path = ../math_utils
+  archive_dep =
+    url = https://example.com/lib-1.0.0.tar.gz
+    hash = a435f6e3859f7732274601e6d31306733353e8168172f8c6832657e1f045a139
+
+native =
+  libs =
+    = m
+  pkg-config =
+    = libssl
+```
+
+### Dependency sources
+
+1. **Path dependencies (`path`)**: Points to a local directory containing an `edva.ccl`. Relative paths resolve from the directory containing the manifest.
+2. **Git dependencies (`git`, `rev`, `hash`)**: Clones a Git repository at a specific branch, tag, or commit. Moving refs (such as `master` or tags) are pinned to their exact commit and content tree hash in `edva.lock.ccl`.
+3. **Archive dependencies (`url`, `hash`)**: Fetches and extracts a `.tar.gz`, `.tgz`, or `.zip` archive verified against its SHA-256 digest.
+
+### Overrides
+
+The root package can force-override transitive dependencies using an `overrides` section in its manifest:
+
+```ccl
+overrides =
+  term =
+    path = ../local_fork_of_term
+```
+
+## Native dependencies
+
+Packages interfacing with C libraries via `#foreign "c"` can declare native link requirements:
+
+- **`native.libs`**: System library names passed as `-l<lib>` flags to the Clang linker.
+- **`native.pkg-config`**: Packages resolved via `pkg-config --libs <name>` at link time. If the host system lacks a declared pkg-config package, compilation aborts with diagnostic `E5039`.
+
+Declared native requirements are aggregated across the entire dependency graph in deterministic, sorted order.
+
+## Using packages in code
+
+Dependencies declared in `edva.ccl` are available via the `@` prefix in `#use` directives:
+
+```dva
+#use @term
+#use @math_utils
+
+term::print("Hello from packaged dependency!")
+val = math_utils::calculate(10)
+```
+
+Submodules inside a dependency are reachable with a slash:
+
+```dva
+#use @term/colors
+```
+
+## CLI workflows
+
+### Fetching and locking
+
+To resolve dependencies, download Git/archive sources into the local content store, and write the lockfile:
+
+```bash
+edva pkg fetch
+```
+
+To enforce CI reproducibility without altering `edva.lock.ccl`:
+
+```bash
+edva pkg fetch --locked
+```
+
+If `edva.ccl` was modified without updating the lockfile, `--locked` fails with `E7007`.
+
+To run entirely offline using cached store artifacts:
+
+```bash
+edva pkg fetch --offline
+```
+
+### Building targets
+
+```bash
+edva pkg build
+```
+
+Resolves and fetches dependencies if missing, then compiles `src/main.dva` into `./<name>`.
+
+### Running tests
+
+```bash
+edva pkg test
+```
+
+Discovers all `tests/*.dva` files, compiles each test target, runs it, and reports results:
+
+```text
+test test_feature.dva ... ok
+test test_integration.dva ... ok
+2 passed, 0 failed
+```

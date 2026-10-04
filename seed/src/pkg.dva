@@ -829,7 +829,8 @@
 
    usage: () => Int
    usage = !=>
-      out("usage: edva pkg fetch [dir] [--locked] [--offline] [--store <dir>] [--git <exe>]")
+      out("usage: edva pkg <build|fetch|test> [dir] [--locked] [--offline] [--store <dir>]" +
+         " [--git <exe>]")
       2
 
    default_store: () => String
@@ -882,6 +883,115 @@
             opts.root = root
             opts.store = canonical_path(opts.store)
             run_fetch(opts)
+
+   // `edva pkg build`: resolve the root's graph, then compile src/main.dva
+   // to binary <name> in the package root.
+   cmd_build: PkgOpts => Int
+   cmd_build = opts =>
+      root = find_root(opts.root)
+      root == ""
+         |
+            fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
+            1
+         |
+            opts.root = root
+            opts.store = canonical_path(opts.store)
+            fetch_rc = run_fetch(opts)
+            fetch_rc != 0
+               | fetch_rc
+               |
+                  main_src = path_join(path_join(opts.root, "src"), "main.dva")
+                  !file_exists(main_src)
+                     |
+                        out("no executable target src/main.dva (library package)")
+                        0
+                     |
+                        m_res = load_manifest(opts.root)
+                        m_res
+                           | m =>
+                              out_bin = path_join(opts.root, m.name)
+                              compiler = sys::argv_string(0)
+                              cmd = sq(compiler) + " " + sq(main_src) + " -o " + sq(out_bin)
+                              rc = sh(cmd)
+                              rc == 0 | 0 | 1
+                           | 1
+
+   dirent_name: Addr => String
+   dirent_name = entry =>
+      raw = entry + 19
+      b = {256}
+      0.. @ i =>
+         c = @[raw + i i8]
+         c == 0i8 | -->
+         b += Int(c)
+      +b
+
+   list_test_files: String => Strings
+   list_test_files = dir =>
+      files: Strings
+      sys::addr_opt(libc::opendir(dir))
+         | dp =>
+            0..1024 @ _ =>
+               ent = libc::readdir(dp)
+               ent == sys::addr_null | -->
+               d_type = @[ent + 18 i8]
+               d_type != 4i8
+                  |
+                     fname = dirent_name(ent)
+                     ?fname > 4 && fname(?fname - 4..) == ".dva" | files += fname
+            libc::closedir(dp)
+      ccl::sort_strings(files)
+
+   // `edva pkg test`: resolve the root's graph, then compile and run each
+   // test in tests/*.dva.
+   cmd_test: PkgOpts => Int
+   cmd_test = opts =>
+      root = find_root(opts.root)
+      root == ""
+         |
+            fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
+            1
+         |
+            opts.root = root
+            opts.store = canonical_path(opts.store)
+            fetch_rc = run_fetch(opts)
+            fetch_rc != 0
+               | fetch_rc
+               |
+                  tests_dir = path_join(opts.root, "tests")
+                  !dir_exists(tests_dir)
+                     |
+                        out("0 passed, 0 failed")
+                        0
+                     |
+                        test_files = list_test_files(tests_dir)
+                        ?test_files == 0
+                           |
+                              out("0 passed, 0 failed")
+                              0
+                           |
+                              passed' = 0
+                              failed' = 0
+                              compiler = sys::argv_string(0)
+                              test_files @ tf =>
+                                 tpath = path_join(tests_dir, tf)
+                                 tmp_bin = "/tmp/edva_test_" + str::from_int(getpid!) +
+                                    "_" + tf(..-4)
+                                 cmd = sq(compiler) + " " + sq(tpath) + " -o " +
+                                    sq(tmp_bin) + " -r >/dev/null 2>&1"
+                                 rc = sh(cmd)
+                                 libc::unlink(tmp_bin)
+                                 libc::unlink(tmp_bin + ".ll")
+                                 rc == 0
+                                    |
+                                       out("test " + tf + " ... ok")
+                                       passed' = passed' + 1
+                                    |
+                                       out("test " + tf + " ... FAIL")
+                                       failed' = failed' + 1
+                              out(str::from_int(passed') + " passed, " +
+                                 str::from_int(failed') + " failed")
+                              failed' == 0 | 0 | 1
 
    run_fetch: PkgOpts => Int
    run_fetch = opts =>
@@ -987,6 +1097,14 @@
                ["fetch"]
                   parse_opts(start + 1)
                      | opts => cmd_fetch(opts)
+                     | usage!
+               ["build"]
+                  parse_opts(start + 1)
+                     | opts => cmd_build(opts)
+                     | usage!
+               ["test"]
+                  parse_opts(start + 1)
+                     | opts => cmd_test(opts)
                      | usage!
                ["help", "-h", "--help"]
                   usage!

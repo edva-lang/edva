@@ -473,7 +473,7 @@ set +e
 timeout 30 ./edva pkg >"$TMPDIR/t12.out" 2>"$TMPDIR/t12.err"
 rc=$?
 set -e
-if [ $rc -ne 2 ] || ! grep -q "usage: edva pkg fetch" "$TMPDIR/t12.out"; then
+if [ $rc -ne 2 ] || ! grep -q "usage: edva pkg" "$TMPDIR/t12.out"; then
     echo "FAILED: expected rc=2 and usage message for 'edva pkg'"
     cat "$TMPDIR/t12.out" "$TMPDIR/t12.err"
     exit 1
@@ -482,7 +482,7 @@ set +e
 timeout 30 ./edva pkg --help >"$TMPDIR/t12_h.out" 2>"$TMPDIR/t12_h.err"
 rc=$?
 set -e
-if [ $rc -ne 0 ] || ! grep -q "usage: edva pkg fetch" "$TMPDIR/t12_h.out"; then
+if [ $rc -ne 0 ] || ! grep -q "usage: edva pkg" "$TMPDIR/t12_h.out"; then
     echo "FAILED: expected rc=0 and usage message for 'edva pkg --help'"
     exit 1
 fi
@@ -1049,6 +1049,278 @@ set -e
 if [ $rc -eq 0 ] || ! grep -q "package subdirectory selection ('subdir') is not supported in v1" "$TMPDIR/t26_subd.out"; then
     echo "FAILED: expected subdir error"
     cat "$TMPDIR/t26_subd.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 27: edva pkg build with src/main.dva and diamond dependencies ---
+echo -n "Testing edva pkg build with diamond dependency graph... "
+DIAMOND_DIR="$TMPDIR/diamond_test"
+mkdir -p "$DIAMOND_DIR/base/src" "$DIAMOND_DIR/mid1/src" "$DIAMOND_DIR/mid2/src" "$DIAMOND_DIR/app/src"
+cat <<'EOF' > "$DIAMOND_DIR/base/edva.ccl"
+name = base
+version = 1.0.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$DIAMOND_DIR/base/src/base.dva"
+#public
+   get_val: () => Int
+   get_val = !=> 42
+EOF
+
+cat <<'EOF' > "$DIAMOND_DIR/mid1/edva.ccl"
+name = mid1
+version = 1.0.0
+edva = 0.1.0
+
+dependencies =
+  base =
+    path = ../base
+EOF
+cat <<'EOF' > "$DIAMOND_DIR/mid1/src/mid1.dva"
+#use @base
+#public
+   mid1_val: () => Int
+   mid1_val = !=> base::get_val! + 1
+EOF
+
+cat <<'EOF' > "$DIAMOND_DIR/mid2/edva.ccl"
+name = mid2
+version = 1.0.0
+edva = 0.1.0
+
+dependencies =
+  base =
+    path = ../base
+EOF
+cat <<'EOF' > "$DIAMOND_DIR/mid2/src/mid2.dva"
+#use @base
+#public
+   mid2_val: () => Int
+   mid2_val = !=> base::get_val! * 2
+EOF
+
+cat <<'EOF' > "$DIAMOND_DIR/app/edva.ccl"
+name = d_app
+version = 1.0.0
+edva = 0.1.0
+
+dependencies =
+  m1 =
+    path = ../mid1
+  m2 =
+    path = ../mid2
+EOF
+cat <<'EOF' > "$DIAMOND_DIR/app/src/main.dva"
+#use @m1
+#use @m2
+#use "libc"
+
+val = m1::mid1_val! + m2::mid2_val!
+val == 127 | libc::exit(0) | libc::exit(1)
+EOF
+
+set +e
+timeout 30 ./edva pkg build "$DIAMOND_DIR/app" >"$TMPDIR/t27.out" 2>"$TMPDIR/t27.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || [ ! -x "$DIAMOND_DIR/app/d_app" ]; then
+    echo "FAILED: expected successful build of d_app, rc=$rc"
+    cat "$TMPDIR/t27.out" "$TMPDIR/t27.err"
+    exit 1
+fi
+set +e
+timeout 10 "$DIAMOND_DIR/app/d_app"
+app_rc=$?
+set -e
+if [ $app_rc -ne 0 ]; then
+    echo "FAILED: expected d_app to exit with 0, got $app_rc"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 28: edva pkg test with passing and failing test targets ---
+echo -n "Testing edva pkg test runner... "
+mkdir -p "$DIAMOND_DIR/app/tests"
+cat <<'EOF' > "$DIAMOND_DIR/app/tests/t1.dva"
+#use @m1
+#use "libc"
+m1::mid1_val! == 43 | libc::exit(0) | libc::exit(1)
+EOF
+
+cat <<'EOF' > "$DIAMOND_DIR/app/tests/t2.dva"
+#use @m2
+#use "libc"
+m2::mid2_val! == 84 | libc::exit(0) | libc::exit(1)
+EOF
+
+set +e
+timeout 30 ./edva pkg test "$DIAMOND_DIR/app" >"$TMPDIR/t28.out" 2>"$TMPDIR/t28.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "test t1.dva ... ok" "$TMPDIR/t28.out" || ! grep -q "test t2.dva ... ok" "$TMPDIR/t28.out" || ! grep -q "2 passed, 0 failed" "$TMPDIR/t28.out"; then
+    echo "FAILED: expected 2 passed tests"
+    cat "$TMPDIR/t28.out" "$TMPDIR/t28.err"
+    exit 1
+fi
+
+cat <<'EOF' > "$DIAMOND_DIR/app/tests/t3_fail.dva"
+#use "libc"
+libc::exit(1)
+EOF
+
+set +e
+timeout 30 ./edva pkg test "$DIAMOND_DIR/app" >"$TMPDIR/t28_fail.out" 2>"$TMPDIR/t28_fail.err"
+fail_rc=$?
+set -e
+rm -f "$DIAMOND_DIR/app/tests/t3_fail.dva"
+if [ $fail_rc -eq 0 ] || ! grep -q "test t3_fail.dva ... FAIL" "$TMPDIR/t28_fail.out" || ! grep -q "2 passed, 1 failed" "$TMPDIR/t28_fail.out"; then
+    echo "FAILED: expected 1 failed test with non-zero exit code"
+    cat "$TMPDIR/t28_fail.out" "$TMPDIR/t28_fail.err"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 29: Native dependencies FFI linkage (native.libs) ---
+echo -n "Testing native dependencies FFI linkage (native.libs)... "
+NAT_DIR="$TMPDIR/nat_pkg"
+mkdir -p "$NAT_DIR/src"
+cat <<'EOF' > "$NAT_DIR/edva.ccl"
+name = nat_pkg
+version = 1.0.0
+edva = 0.1.0
+
+native =
+  libs =
+    = m
+EOF
+
+cat <<'EOF' > "$NAT_DIR/src/main.dva"
+#use "libc"
+
+#foreign "c"
+   cos: (rad: Float) => Float
+
+c = cos(0.0)
+c == 1.0 | libc::exit(0) | libc::exit(1)
+EOF
+
+set +e
+timeout 30 ./edva pkg build "$NAT_DIR" >"$TMPDIR/t29.out" 2>"$TMPDIR/t29.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || [ ! -x "$NAT_DIR/nat_pkg" ]; then
+    echo "FAILED: expected nat_pkg to build with -lm"
+    cat "$TMPDIR/t29.out" "$TMPDIR/t29.err"
+    exit 1
+fi
+set +e
+timeout 10 "$NAT_DIR/nat_pkg"
+app_rc=$?
+set -e
+if [ $app_rc -ne 0 ]; then
+    echo "FAILED: expected nat_pkg to exit with 0, got $app_rc"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 30: Native pkg-config resolution and missing requirement error ---
+echo -n "Testing native pkg-config resolution and missing requirement error... "
+PKGCONF_DIR="$TMPDIR/pkgconf_pkg"
+mkdir -p "$PKGCONF_DIR/src"
+cat <<'EOF' > "$PKGCONF_DIR/edva.ccl"
+name = pkgconf_pkg
+version = 1.0.0
+edva = 0.1.0
+
+native =
+  pkg-config =
+    = nonexistent_native_package_xyz
+EOF
+
+cat <<'EOF' > "$PKGCONF_DIR/src/main.dva"
+x = 0
+EOF
+
+set +e
+timeout 30 ./edva pkg build "$PKGCONF_DIR" >"$TMPDIR/t30_miss.out" 2>"$TMPDIR/t30_miss.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "missing native requirement: pkg-config 'nonexistent_native_package_xyz' failed" "$TMPDIR/t30_miss.out" "$TMPDIR/t30_miss.err"; then
+    echo "FAILED: expected missing native requirement error"
+    cat "$TMPDIR/t30_miss.out" "$TMPDIR/t30_miss.err"
+    exit 1
+fi
+
+MOCK_BIN="$TMPDIR/mock_bin"
+mkdir -p "$MOCK_BIN"
+cat <<'EOF' > "$MOCK_BIN/pkg-config"
+#!/usr/bin/env bash
+if [ "$1" = "--libs" ] && [ "$2" = "mock_lib" ]; then
+    echo "-lm"
+    exit 0
+fi
+exit 1
+EOF
+chmod +x "$MOCK_BIN/pkg-config"
+
+cat <<'EOF' > "$PKGCONF_DIR/edva.ccl"
+name = pkgconf_pkg
+version = 1.0.0
+edva = 0.1.0
+
+native =
+  pkg-config =
+    = mock_lib
+EOF
+
+cat <<'EOF' > "$PKGCONF_DIR/src/main.dva"
+#use "libc"
+
+#foreign "c"
+   cos: (rad: Float) => Float
+
+c = cos(0.0)
+c == 1.0 | libc::exit(0) | libc::exit(1)
+EOF
+
+set +e
+PATH="$MOCK_BIN:$PATH" timeout 30 ./edva pkg build "$PKGCONF_DIR" >"$TMPDIR/t30_ok.out" 2>"$TMPDIR/t30_ok.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || [ ! -x "$PKGCONF_DIR/pkgconf_pkg" ]; then
+    echo "FAILED: expected pkgconf_pkg to build using mock pkg-config"
+    cat "$TMPDIR/t30_ok.out" "$TMPDIR/t30_ok.err"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 31: Library package build (no src/main.dva) ---
+echo -n "Testing library package build (no src/main.dva)... "
+LIB_PKG="$TMPDIR/lib_only_pkg"
+mkdir -p "$LIB_PKG/src"
+cat <<'EOF' > "$LIB_PKG/edva.ccl"
+name = lib_only
+version = 1.0.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$LIB_PKG/src/lib_only.dva"
+#public
+   val: () => Int
+   val = !=> 100
+EOF
+
+set +e
+timeout 30 ./edva pkg build "$LIB_PKG" >"$TMPDIR/t31.out" 2>"$TMPDIR/t31.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "library package" "$TMPDIR/t31.out"; then
+    echo "FAILED: expected library package build to succeed without error"
+    cat "$TMPDIR/t31.out" "$TMPDIR/t31.err"
+    exit 1
+fi
+if [ -f "$LIB_PKG/lib_only" ]; then
+    echo "FAILED: binary should not be created for library package"
     exit 1
 fi
 echo "PASS"

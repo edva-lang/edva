@@ -46,7 +46,7 @@
 
 #type ModuleLoad (exprs: ast::Exprs, loaded: ast::Names,
    exports: ast::Names, dynamic_mods: ast::Names, dynamic_paths: ast::Names,
-   ok: <>)
+   ok: <>, native_libs: ast::Names, native_pkg_config: ast::Names)
 #type SigResult (ti: ast::TypeInfo, ok: <>)
 #type ImportMap String ^ String
 
@@ -64,7 +64,9 @@
    map_path: String,
    root_dir: String,
    root_name: String,
-   instances: PkgInstances
+   instances: PkgInstances,
+   native_libs: ast::Names,
+   native_pkg_config: ast::Names
 )
 
 #type ResolvedFile (path: String, canonical_id: String, is_pkg: <>)
@@ -458,7 +460,9 @@ empty_pkg_instance = !=>
 empty_import_map_state: () => ImportMapState
 empty_import_map_state = !=>
    insts = PkgInstances()
-   ImportMapState((<->, "", "", "", insts))
+   nl = ast::Names()
+   np = ast::Names()
+   ImportMapState((<->, "", "", "", insts, nl, np))
 
 find_instance: PkgInstances, String => < PkgInstance | >
 find_instance = instances, id =>
@@ -618,7 +622,21 @@ find_and_load_import_map = target_path, explicit_map_path =>
                                                 [Str aval]
                                                    aliases_map ^ (ae.key) = aval
                                     inst_list += PkgInstance((inst_id, isrc, iname, aliases_map))
-                     <+ ImportMapState((<+>, map_path', eff_root, root_name', inst_list)) ->
+                     nat_libs' = ast::Names()
+                     nat_pkg' = ast::Names()
+                     nat_sec_opt = ccl::get_section(doc, "native")
+                     nat_sec_opt
+                        | nsec =>
+                           libs_list_opt = ccl::get_list(nsec, "libs")
+                           libs_list_opt
+                              | llist =>
+                                 llist @ s => nat_libs' += s
+                           pkg_list_opt = ccl::get_list(nsec, "pkg-config")
+                           pkg_list_opt
+                              | plist =>
+                                 plist @ s => nat_pkg' += s
+                     <+ ImportMapState((<+>, map_path', eff_root, root_name', inst_list,
+                        nat_libs', nat_pkg')) ->
             | _ =>
                print $ "E5030: Could not parse import map '" + map_path' + "'"
                <-->
@@ -1382,10 +1400,12 @@ load_all = target, target_prefix, is_modular, import_map_arg =>
             map, ast::Names()))
          tres = load_target(target, target_prefix, ldr)
          ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
-            ldr.dynamic_mods, ldr.dynamic_paths, tres))
+            ldr.dynamic_mods, ldr.dynamic_paths, tres,
+            map.native_libs, map.native_pkg_config))
       |
          ModuleLoad((ast::Exprs(), ast::Names(), ast::Names(),
-            ast::Names(), ast::Names(), <->))
+            ast::Names(), ast::Names(), <->,
+            ast::Names(), ast::Names()))
 
 strip_trailing_slash: String => String
 strip_trailing_slash = s =>
@@ -1815,11 +1835,56 @@ print_program_errors = errs =>
       err_res | err =>
          print $ unify::format_error(err)
 
+sq: String => String
+sq = s =>
+   b = {?s + 8}
+   b += 39
+   ?s @ i =>
+      c = s(i)
+      c == 39
+         | b += "'\\''"
+         | b += c
+   b += 39
+   +b
+
+append_pkg_config_words: String, ast::Names => ()
+append_pkg_config_words = text, args =>
+   w' = {64}
+   ?text @ i =>
+      c = text(i)
+      c == ' ' || c == '\t' || c == '\n' || c == '\r'
+         |
+            ?w' > 0
+               |
+                  args += +w'
+                  w' = {64}
+         | w' += c
+   ?w' > 0 | args += +w'
+
+resolve_pkg_config: String, ast::Names => <>
+resolve_pkg_config = name, clang_args =>
+   tmp_file = "/tmp/edva_pkg_config_" + str::from_int(getpid!) + "_" + name + ".tmp"
+   cmd = "pkg-config --libs " + sq(name) + " > " + sq(tmp_file) + " 2>/dev/null"
+   st = libc::system(cmd)
+   rc = st < 0 | -1 | (st .>. 8) .&. 255
+   rc != 0
+      |
+         unlink(tmp_file)
+         <->
+      |
+         content_opt = read_file_text(tmp_file)
+         unlink(tmp_file)
+         content_opt
+            | content =>
+               append_pkg_config_words(content, clang_args)
+               <+>
+            | <->
+
 // Shared compile pipeline: codegen AST -> LLVM IR -> clang binary.
 // Used by both the batch driver and the REPL.
 compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
-   String, ast::Names, ast::Names => < | Int >
-compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths =>
+   String, ast::Names, ast::Names, ast::Names, ast::Names => < | Int >
+compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nat_libs, nat_pkg =>
    output_ll = out_ll
    output_bin = out_bin
    dynamic_mods = dmods
@@ -1917,6 +1982,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths =>
                         |
                            clang_args += "-shared"
                            clang_args += "-fPIC"
+                     pkg_err' = <->
                      opts.is_module
                         |
                            clang_args += "-c"
@@ -1930,34 +1996,50 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths =>
                            ?link_libs @ i =>
                               lib = (link_libs(i) | _ | "")
                               clang_args += "-l" + lib
+                           ?nat_libs @ i =>
+                              lib = (nat_libs(i) | _ | "")
+                              clang_args += "-l" + lib
+                           ?nat_pkg @ i =>
+                              !pkg_err'
+                                 |
+                                    pname = (nat_pkg(i) | _ | "")
+                                    ok = resolve_pkg_config(pname, clang_args)
+                                    !ok
+                                       |
+                                          print $ "E5039: missing native requirement: pkg-config '" +
+                                             pname + "' failed"
+                                          pkg_err' = <+>
                            ?dynamic_mods > 0
                               |
                                  clang_args += "-Wl,--export-dynamic"
                                  clang_args += "-ldl"
                            clang_args += "-o"
                            clang_args += output_bin
-                     cres = run_cmd(clang_args)
-                     opts.is_module && !opts.ir_only
+                     pkg_err'
+                        | <- 1 +>
                         |
-                           rm_args = ast::Names()
-                           rm_args += "rm"
-                           rm_args += "-f"
-                           rm_args += output_ll
-                           run_cmd(rm_args)
-                     cres != 0
-                        |
-                           print $ "E" + str::from_int(clang_err) +
-                              ": Clang compilation failed with exit code " +
-                              str::from_int(cres)
-                           <- cres +>
-                        |
-                           !quiet
+                           cres = run_cmd(clang_args)
+                           opts.is_module && !opts.ir_only
                               |
-                                 mod_msg = "Successfully compiled module object: "
-                                 bin_msg = "Successfully compiled binary: "
-                                 msg = opts.is_module | mod_msg | bin_msg
-                                 print $ msg + output_bin
-                           <++>
+                                 rm_args = ast::Names()
+                                 rm_args += "rm"
+                                 rm_args += "-f"
+                                 rm_args += output_ll
+                                 run_cmd(rm_args)
+                           cres != 0
+                              |
+                                 print $ "E" + str::from_int(clang_err) +
+                                    ": Clang compilation failed with exit code " +
+                                    str::from_int(cres)
+                                 <- cres +>
+                              |
+                                 !quiet
+                                    |
+                                       mod_msg = "Successfully compiled module object: "
+                                       bin_msg = "Successfully compiled binary: "
+                                       msg = opts.is_module | mod_msg | bin_msg
+                                       print $ msg + output_bin
+                                 <++>
 
 // --- REPL -------------------------------------------------------------------
 
@@ -2439,7 +2521,8 @@ repl_step = opts, session_src, line, sess =>
                prog = ast::Expr(Block, ast::BlockExpr(load_res.exprs))
                comp = compile_ast_to_binary(prog, load_res.exports,
                   opts, sess.ll_path, sess.bin_path,
-                  load_res.dynamic_mods, load_res.dynamic_paths)
+                  load_res.dynamic_mods, load_res.dynamic_paths,
+                  load_res.native_libs, load_res.native_pkg_config)
                comp
                   |
                      run_args = ast::Names()
@@ -2877,7 +2960,8 @@ run_driver = _ =>
             |
                res = compile_ast_to_binary(program, load_result.exports, opts,
                   output_ll, output_bin, load_result.dynamic_mods,
-                  load_result.dynamic_paths)
+                  load_result.dynamic_paths, load_result.native_libs,
+                  load_result.native_pkg_config)
                res !| code => sys::exit(code)
 
    opts.run_exec

@@ -49,6 +49,7 @@ book:
         - guide/errors-and-io.qmd
         - guide/ffi-and-targets.qmd
         - guide/metaprogramming.qmd
+        - guide/packages.qmd
     - part: reference/stdlib/index.qmd
       chapters:
         - reference/stdlib/ccl.qmd

@@ -42,4 +42,30 @@ file module is preferred over a same-named directory module.
 `clang` must be available on `PATH` for modes that assemble or link. Use `-ir` when
 you only need the generated LLVM IR. In the REPL, `:q` exits the session.
 
+## Package management (`edva pkg`)
+
+```text
+edva pkg <command> [dir] [options]
+```
+
+`edva pkg` manages dependencies, lockfiles, targets, and test execution for packages containing an `edva.ccl` manifest.
+
+### Commands
+
+| Command | Description |
+|---|---|
+| `edva pkg fetch [dir]` | Resolve dependencies, fetch sources, verify content hashes, write `edva.lock.ccl`, and generate `.edva/imports.ccl`. |
+| `edva pkg build [dir]` | Fetch dependencies (if needed) and compile executable target `src/main.dva` into `./<name>`. |
+| `edva pkg test [dir]` | Fetch dependencies (if needed) and run every test target in `tests/*.dva`. |
+
+### Package options
+
+| Option | Meaning |
+|---|---|
+| `--locked` | Validate against `edva.lock.ccl` without updating or mutating it. |
+| `--offline` | Disallow network access; require all dependencies to be local or present in cache. |
+| `--store <dir>` | Path to content-addressed package store (default: `~/.cache/edva/store/`). |
+| `--git <exe>` | Path to git executable (default: `git`). |
+
+
 
