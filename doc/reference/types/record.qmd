@@ -1,0 +1,118 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/record.dva`, `GRAMMAR.md` §2.5"
+---
+
+# `Record`, tuples, and bitfields
+
+A `Record` in Edva is a product type grouping multiple values together. Records support named fields, positional fields (tuples), homogeneous repetitions, packed binary representations, and integer bitfields.
+
+## Declaration styles
+
+Records are declared with `#type` followed by the field specifications:
+
+### 1. Named records
+```dva
+#type Point (x: Int, y: Int)
+
+// Multiline indentation form
+#type User
+   id: Int
+   name: String
+   is_admin: <>
+```
+
+### 2. Positional records (tuples)
+Positional records omit field names and are accessed by index:
+
+```dva
+#type Pair (Int, String)
+#type Triple (Float, Float, Float)
+```
+
+### 3. Homogeneous repeated records
+Fixed-length arrays allocated inline as a single contiguous record:
+
+```dva
+#type Matrix3x3 (Float * 9)   // 9 consecutive Floats
+#type MacAddress (u8 * 6)     // 6 consecutive bytes
+```
+
+### 4. Packed records (`#packed`)
+Packed records disable interior and tail alignment padding, ensuring exact byte-level layout for binary network protocols and file headers:
+
+```dva
+#type EthernetHeader #packed (
+   dest_mac: u8 * 6,
+   src_mac:  u8 * 6,
+   ethertype: u16,
+)
+```
+
+### 5. Bitfields
+Bitfield records pack specific bit widths into a backing integer (`u8`, `u16`, `u32`, `u64`). The sum of all field widths must exactly equal the backing integer's width (`E3153`):
+
+```dva
+#type TcpFlags #packed u16 (
+   fin: 1, syn: 1, rst: 1, psh: 1,
+   ack: 1, urg: 1, ece: 1, cwr: 1,
+   ns:  1, res: 7,
+)
+```
+
+## Construction and initialization
+
+Records can be instantiated via type constructors or positional literals:
+
+```dva
+// Named record instantiation
+pt = Point(10, 20)
+
+// Positional tuple literal
+entry = (42, "Status OK")
+
+// Homogeneous record
+mac: MacAddress = (0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E)
+```
+
+### Strict field initialization
+When a record variable is declared with a forward annotation (`p: Point`), it is **not** zero-filled. Every field must be definitely written before any field is read:
+
+```dva
+p: Point
+p.x = 100
+// Reading p.y here would trigger compiler error E2050 (Uninitialized field)
+p.y = 200
+sum = p.x + p.y   // Valid: both fields definitely initialized
+```
+
+## Operations
+
+### Field access
+
+Fields are accessed using dot notation:
+
+```dva
+// Named access
+pt = Point(15, 30)
+x_coord = pt.x
+
+// Positional access
+pair = (10, "Alpha")
+num = pair.0
+str = pair.1
+
+// Bitfield access (automatically generates shift and mask operations)
+flags: TcpFlags
+flags.syn = 1
+is_ack = flags.ack
+```
+
+## Memory layout and ABI
+
+- **Standard records**: Follow the platform C ABI struct layout (fields aligned to natural boundaries, tail-padded to struct alignment). They map 1:1 to C `struct` types across `#foreign` functions.
+- **Packed records**: Have alignment 1, with zero padding between fields.
+- **Bitfields**: Occupy exactly the width of the backing integer type.

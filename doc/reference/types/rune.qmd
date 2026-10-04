@@ -1,0 +1,97 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/lexer.dva`, `GRAMMAR.md`"
+---
+
+# `Rune` and Unicode characters
+
+The `Rune` type represents a single Unicode scalar value (ranging from `U+0000` to `U+D7FF` and `U+E000` to `U+10FFFF`). Unlike languages that treat characters as 8-bit bytes (`char`), Edva distinguishes raw bytes (`u8` / `i8`) from full Unicode codepoints (`Rune`).
+
+## Declaration and annotations
+
+Variables can be bound to rune literals or annotated explicitly as `Rune`:
+
+```dva
+letter = 'A'
+greek: Rune = 'λ'
+emoji = '🦀'
+newline: Rune = '\n'
+```
+
+## Literals and escape sequences
+
+Rune literals are enclosed in single quotes `'...'` and represent exactly one Unicode scalar value:
+
+| Literal | Meaning | Hex Codepoint |
+|:---|:---|:---|
+| `'a'` | ASCII character | `U+0061` |
+| `'λ'` | Multi-byte UTF-8 character | `U+03BB` |
+| `'\n'` | Line feed | `U+000A` |
+| `'\r'` | Carriage return | `U+000D` |
+| `'\t'` | Horizontal tab | `U+0009` |
+| `'\0'` | NUL terminator | `U+0000` |
+| `'\\'` | Backslash | `U+005C` |
+| `'\''` | Single quote | `U+0027` |
+| `'\x1b'` | Hexadecimal 8-bit escape (ESC) | `U+001B` |
+| `'\u{1F600}'` | Unicode code point | `U+1F600` |
+
+## Interoperability with `Int`
+
+`Rune` values are backed by `i64` in LLVM code generation. Because of this identity representation, runes interoperate directly with integers in comparisons and offset arithmetic:
+
+```dva
+ch = 'a'
+
+// Direct integer comparison
+is_ascii_lower = (ch >= 'a') && (ch <= 'z')  // <+>
+
+// Direct arithmetic offset calculation
+next_ch = ch + 1                              // 'b' (98)
+offset = ch - 'a'                             // 0
+```
+
+## Operations
+
+### Codepoint counting (`??`)
+
+While the unary prefix operator `?` returns the raw byte count of a string or buffer, the `??` operator counts the total number of Unicode codepoints (runes):
+
+```dva
+str = "café"
+
+bytes = ?str    // 5 (UTF-8 encoding of 'é' is 2 bytes: 0xC3 0xA9)
+runes = ??str   // 4 (c, a, f, é)
+```
+
+### Classification with standard library
+
+The `#use @str` and `#use @unicode` modules provide classification and transformation routines for runes:
+
+```dva
+#use @str
+#use @unicode
+
+is_alpha = str::is_alpha(Int('Z'))   // <+>
+is_space = str::is_ws(Int('\t'))     // <+>
+```
+
+## Conversions and casting
+
+Conversions between `Int` and `Rune` are identity operations at runtime:
+
+```dva
+codepoint = 0x1F680       // Rocket emoji 🚀
+rocket: Rune = Rune(codepoint)
+
+// Cast back to integer codepoint value
+int_val = Int(rocket)     // 128640
+```
+
+## Memory layout and ABI
+
+- `Rune` is an 8-byte (64-bit) value, aligned to an 8-byte boundary.
+- When packed in records or arrays, it is stored as an `i64`.
+- When passed across C FFI boundaries, it passes in general-purpose 64-bit integer registers (`rdi`, `rsi`, `rdx`, etc.).

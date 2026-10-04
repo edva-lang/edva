@@ -46,6 +46,6 @@ Pair: #! T: Type => (first: T, count: Int)
 Use type predicates and compile-time choices to specialize code by shape. Keep
 compile-time work pure and statically resolvable; the compiler reports an error
 when a compile-time value would escape to runtime. See the
-[Types reference](../reference/language/types.qmd) for type representations,
+[Types reference](../reference/types/index.qmd) for type representations,
 reflection, and supported compile-time forms.
 

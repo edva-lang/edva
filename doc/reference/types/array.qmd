@@ -1,0 +1,129 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/array.dva`, `GRAMMAR.md` §2.5, §2.13"
+---
+
+# `Array` and `Slice`
+
+Edva provides two primary sequential container types:
+1. **Growable Arrays (`(T){}`)**: Owning, heap-allocated, dynamically resizable buffers.
+2. **Slices (`(T[])`)**: Non-owning, lightweight contiguous views into existing buffers or records.
+
+## Growable arrays (`(T){}`)
+
+A growable array is declared using `#type Name (Element){}`. An optional integer inside `{...}` sets the initial pre-allocated capacity (default is 16):
+
+```dva
+// Growable array of 64-bit integers
+#type Ints (Int){}
+
+// Array with pre-allocated capacity of 100 elements
+#type PreallocatedFloats (Float){100}
+```
+
+### Runtime representation
+
+A growable array is represented at runtime by a 24-byte struct:
+
+```dva
+{ len: i64, data: ptr, cap: i64 }
+```
+
+### Construction and appending
+
+Arrays are instantiated empty. Appending with `+=` automatically allocates and dynamically doubles the underlying buffer as needed:
+
+```dva
+xs = Ints()
+
+// Append elements
+xs += 10
+xs += 20
+xs += 30
+
+// Element count
+count = ?xs       // 3
+```
+
+### Indexing and bounds checking
+
+In Edva, array indexing is fallible and produces a ramification:
+- **Indexed read `xs(i)`**: Returns `< T | Error >` (RamPP). If `i` is in bounds, the positive slot contains the element; otherwise, the negative slot contains an `Error`.
+- **Indexed write `xs(i) = val`**: Returns `< | Error >` (RamNP).
+
+```dva
+xs = Ints()
+xs += 42
+
+// Unwrap or panic on out-of-bounds read
+val = xs(0)!!
+
+// Handling fallible access with choice matching
+element = xs(1) |
+   [v] v |
+   [err] -1
+
+// Write-or-panic on assignment
+xs(0) = 99 !| _
+```
+
+### Deep copying (`++`)
+
+The unary prefix `++` operator creates an independent deep copy of an array:
+
+```dva
+original = Ints()
+original += 1
+
+copied = ++original
+copied += 2
+
+// original still has length 1, copied has length 2
+```
+
+## Slices (`(T[])`)
+
+A slice is a non-owning window over contiguous memory. Slices are written as `(T[])` and consist of a 16-byte fat pointer:
+
+```dva
+{ len: i64, data: ptr }
+```
+
+### Creating slices
+
+Slices are created by sub-slicing an array or a homogeneous record:
+
+```dva
+xs = Ints()
+xs += 10
+xs += 20
+xs += 30
+xs += 40
+
+// Sub-slice from index 1 up to index 3
+view: (Int[]) = xs(1 .. 3)
+
+view_len = ?view       // 2
+first_elem = view(0)!!  // 20
+```
+
+### Function parameters
+
+When writing functions that only need to inspect sequential elements without modifying buffer capacity, prefer slice types `(T[])` over growable arrays to avoid unnecessary couplings to heap allocation strategies:
+
+```dva
+sum_slice: (Int[]) => Int
+sum_slice = \ slice
+   total' = 0
+   idx' = 0
+   len = ?slice
+   @loop:
+      idx' < len |
+         total' = total' + slice(idx')!!
+         idx' = idx' + 1
+         @loop |
+         total'
+```

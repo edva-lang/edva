@@ -1,0 +1,111 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §3.6"
+---
+
+# `String`
+
+The `String` type represents an immutable, length-prefixed, NUL-reserved sequence of UTF-8 encoded bytes. Strings in Edva are value types designed for high performance, memory safety, and seamless C interoperability without allocations.
+
+## Declaration and annotations
+
+Strings are bound with `=` or typed explicitly using `: String`:
+
+```dva
+greeting = "Hello, world!"
+path: String = "/etc/edva/config.ccl"
+```
+
+## Literals and syntax
+
+Edva supports two string literal formats:
+
+### Standard escaped strings
+Enclosed in double quotes `"..."`, supporting C-style escape sequences:
+
+```dva
+message = "First line\nSecond line\t(tabbed)\nPath: \"/usr/bin\""
+```
+
+Supported escapes include `\n`, `\t`, `\r`, `\0`, `\a`, `\b`, `\f`, `\v`, `\"`, `\'`, and `\\`.
+
+### Raw strings
+Enclosed in `(=` and `=)`. Raw strings contain literal bytes without escape processing (ideal for regex, embedded scripts, SQL queries, or Markdown):
+
+```dva
+raw_sql = (=
+SELECT id, username, email
+FROM users
+WHERE status = 'active'
+=)
+```
+
+The only escape sequence recognized in raw strings is `=\)`, which emits a literal `=)`.
+
+## The `{ len, data }` fat-pointer ABI
+
+At runtime, every `String` value is represented by a 16-byte fat pointer struct:
+
+```dva
+{ len: i64, data: ptr }
+```
+
+### The NUL-reserved contract
+When a whole `String` is allocated or created from a literal, Edva guarantees that the byte immediately following the string data (`data[len]`) is a `NUL` (`\0`) byte.
+This allows Edva strings to pass directly to C library APIs (like `libc::open`, `libc::printf`, or `os::stat`) using the address-of operator `&s` without copying or allocating temporary buffers.
+
+### Generation-tagged liveness
+The upper bits of the 64-bit `len` word store an arena generation tag. If an arena resets, accessing a string that belonged to an earlier generation immediately traps with runtime error `E4010` rather than causing undefined behavior or use-after-free corruption.
+
+## Operations
+
+### Reading string metadata
+
+Edva deliberately avoids dot-property member access (`.len` and `.data` are compile-time errors `E3065` and `E3066`). Instead, prefix operators query string metadata:
+
+```dva
+s = "Edva Language"
+
+// Byte length
+byte_len = ?s          // 13
+
+// Unicode codepoint count
+codepoints = ??s       // 13
+
+// Raw pointer to UTF-8 data bytes
+raw_ptr = &s           // Addr / ptr
+```
+
+### Concatenation (`+`)
+
+The binary `+` operator concatenates strings, or appends formatted scalar values:
+
+```dva
+prefix = "item_"
+id = 42
+
+key = prefix + "user"      // "item_user"
+tagged = prefix + id       // "item_42" (direct integer-to-string concatenation)
+```
+
+### Slicing and indexing
+
+Strings support sub-range slicing and indexed byte access:
+
+```dva
+text = "Antigravity"
+
+// Substring slicing: text(start .. end)
+sub = text(0 .. 4)        // "Anti"
+
+// Indexed access produces a fallible ram < String | Error >
+first_slot = text(0)      // In-bounds: <+ "A" +>
+oob_slot   = text(99)     // Out-of-bounds: <- Error(4001, "Out of bounds") ->
+```
+
+### Immutability guarantee
+
+Strings are strictly immutable. Any attempt to write into a string (`s(0) = 'B'`) or overwrite fields (`s.len = 5`) produces an immediate compile error. When mutable string accumulation is needed, use [`Builder`](builder.qmd).

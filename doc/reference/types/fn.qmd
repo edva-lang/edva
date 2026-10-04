@@ -1,0 +1,101 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/fn.dva`, `GRAMMAR.md` §2.8"
+---
+
+# `Fn` and closures
+
+In Edva, functions are first-class values. Any function or lambda expression can be assigned to variables, passed as arguments to higher-order routines, and returned from functions.
+
+## Type signatures
+
+A function type specifies parameter types and return type separated by `=>`:
+
+```dva
+// Single parameter returning Int
+Int => Int
+
+// Multiple parameters
+Int, Float => String
+
+// Zero parameters returning Unit
+() => ()
+```
+
+When a function type appears as a field in a record, inside an array, or in another function signature, wrap it in parentheses:
+
+```dva
+#type Transform (Int => Int)
+#type Callback (run: (String => ()))
+```
+
+## Runtime representation
+
+At runtime, a function value is represented by a 16-byte fat pointer:
+
+```dva
+{ fn_ptr: ptr, env_ptr: ptr }
+```
+
+- `fn_ptr`: Points to the generated machine code of the function body.
+- `env_ptr`: Points to the heap-allocated closure environment containing captured variables, or `null` (`Addr(0)`) if the function does not capture state.
+
+There are no dynamic vtables, method tables, or RTTI headers attached to function values.
+
+## Defining functions and lambdas
+
+Functions are defined using the backslash `\` lambda operator:
+
+```dva
+// Named top-level function definition
+add: Int, Int => Int
+add = \ a, b
+   a + b
+
+// Inline lambda binding
+square = \ x => x * x
+```
+
+### Capturing lexical scope (closures)
+
+A lambda captures variables from its enclosing lexical environment:
+
+```dva
+make_adder: Int => (Int => Int)
+make_adder = \ base
+   \ n => base + n
+
+add10 = make_adder(10)
+res = add10(5)    // 15
+```
+
+## Invocation styles
+
+Edva provides three ways to call a function:
+
+### 1. Standard call
+```dva
+res = add(10, 20)
+```
+
+### 2. Feed operator (`$>`)
+The left-associative feed operator passes the left-hand operand as the first argument to the right-hand function:
+
+```dva
+// Equivalent to io::out("Done\n")
+"Done\n" $> io::out
+
+// Pipeline chain
+val = 5 $> square $> add10   // add10(square(5)) -> 35
+```
+
+### 3. Apply operator (`$`)
+The right-associative apply operator binds everything on its right as the argument to the function on its left:
+
+```dva
+// Equivalent to print_int(10 + 20)
+print_int $ 10 + 20
+```

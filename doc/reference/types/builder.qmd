@@ -1,0 +1,99 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §3.7"
+---
+
+# `Builder`
+
+The `Builder` type is Edva's uniquely owned, growable mutable byte buffer. While `String` is strictly immutable, `Builder` provides the sole high-performance interface for dynamic text formatting, protocol packet generation, and serializing streams of bytes before freezing into an immutable `String`.
+
+## Declaration and construction
+
+A `Builder` is constructed empty or with a pre-allocated capacity:
+
+```dva
+// Default initial capacity (typically 16 bytes)
+b = Builder()
+
+// Explicit initial capacity (e.g. 1024 bytes) to eliminate reallocation
+buf = Builder(1024)
+```
+
+## Runtime representation
+
+At runtime, a `Builder` is a 24-byte struct containing length, data buffer pointer, and allocated capacity:
+
+```dva
+{ len: i64, data: ptr, cap: i64 }
+```
+
+The underlying memory is owned exclusively by the `Builder` instance. As data is appended, the buffer dynamically doubles in size when `len` approaches `cap`.
+
+## Operations
+
+### Appending (`+=`)
+
+The `+=` operator appends strings, runes, bytes, or integers to the buffer:
+
+```dva
+b = Builder()
+
+// Append string literals or String values
+b += "HTTP/1.1 200 OK\r\n"
+b += "Content-Type: text/plain\r\n"
+
+// Append runes
+b += 'X'
+
+// Append formatted integers directly
+status_code = 200
+b += status_code
+```
+
+### Inspecting metadata
+
+Prefix operators query buffer state:
+
+```dva
+b = Builder()
+b += "Payload data"
+
+// Current byte length
+cur_len = ?b       // 12
+
+// Pointer to the underlying memory
+data_ptr = &b      // Addr / ptr
+```
+
+### Freezing into a String (`+b`)
+
+The unary prefix `+` operator freezes a `Builder` into an immutable `String`:
+
+```dva
+b = Builder(64)
+b += "Hello, "
+b += "Edva!"
+
+// Freeze into immutable String (O(1) transfer)
+final_str: String = +b
+```
+
+#### Semantics of freezing:
+1. **Zero-copy handoff**: The underlying buffer pointer and current length are transferred directly into a `String` fat pointer `{ len, data }`.
+2. **NUL termination reservation**: The trailing byte `data[len]` is guaranteed to be set to `\0` upon freezing, satisfying the string ABI contract.
+3. **Linear ownership invalidation**: Once frozen, the source `Builder` cannot be mutated further, preventing any subsequent mutations from affecting the resulting immutable string.
+
+## Example: building structured output
+
+```dva
+build_query: String, (String * 3) => String
+build_query = \ table, cols
+   b = Builder(128)
+   b += "SELECT "
+   b += cols.0 + ", " + cols.1 + ", " + cols.2
+   b += " FROM " + table + ";"
+   +b
+```

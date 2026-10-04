@@ -1,0 +1,94 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/map.dva`, `GRAMMAR.md` §2.5"
+---
+
+# `Map` and associative tables
+
+The `Map` type represents an associative hash table mapping unique keys to values. Maps are written using the caret operator `Key ^ Value`.
+
+## Declaration and key types
+
+A map type is defined with `#type`:
+
+```dva
+#type ConfigMap String ^ String
+#type UserAges String ^ Int
+#type PointerIndex Addr ^ Int
+```
+
+### Supported key types
+To guarantee deterministic hashing and equivalence checks without dynamic reflection, Edva restricts map keys to primitive types:
+- `String`: UTF-8 byte strings (hashed via SipHash/FNV)
+- `Int`: 64-bit signed integers
+- `Addr`: Raw memory addresses / pointers
+
+Values can be any storable Edva type, including records, ramifications, arrays, or nested maps.
+
+## Construction and initialization
+
+An empty map is instantiated using the type constructor:
+
+```dva
+scores = UserAges()
+```
+
+## Operations
+
+### Insertion and updating (`^=`)
+
+Key-value associations are inserted or overwritten using the map operator `^`:
+
+```dva
+scores = UserAges()
+
+// Insert or update entries
+scores ^ "Alice" = 95
+scores ^ "Bob"   = 88
+scores ^ "Carol" = 92
+```
+
+### Key lookup (`^`)
+
+Looking up a key with `map ^ key` is fallible and returns a ramification of type `< Value | Error >` (RamPP):
+
+```dva
+// Fallible lookup
+result = scores ^ "Alice"
+
+alice_score = result |
+   [score] score |
+   [err] 0
+
+// Direct unwrap or panic
+guaranteed = (scores ^ "Alice")!!
+```
+
+### Membership testing (`?`)
+
+The binary `?` operator checks whether a key exists in the map, returning a boolean `Flag` (`<>`):
+
+```dva
+has_bob = scores ? "Bob"       // <+>
+has_dan = scores ? "Dan"       // <->
+```
+
+### Entry count (`?map`)
+
+The unary prefix `?` operator returns the number of active entries in the map:
+
+```dva
+total_users = ?scores          // 3
+```
+
+## Runtime representation and performance
+
+At runtime, a `Map` is represented by an opaque handle containing:
+- Hash table bucket metadata and entries.
+- Active item count and maximum capacity.
+- Load factor threshold triggering automatic resizing when occupancy exceeds 75%.
+
+Lookups, insertions, and membership tests operate in expected $O(1)$ time.

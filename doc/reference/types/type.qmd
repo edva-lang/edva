@@ -1,0 +1,66 @@
+---
+meta:
+  audience: "Edva metaprogramming and library authors"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/metaprog.dva`, `GRAMMAR.md` §2.14, §3.1"
+---
+
+# `Type` and compile-time reflection
+
+The `Type` primitive represents a compile-time value naming a type. It exists exclusively during parsing, type-checking, and constant folding; it is strictly **erased** before code generation and has zero runtime memory footprint.
+
+## Declaration and compile-time functions
+
+Functions that accept or return `Type` values must be marked with the compile-time execution directive `#!`:
+
+```dva
+// Compile-time function computing type size
+#!
+size_of: Type => Int
+size_of = \ T => #size(T)
+```
+
+## Type reflection intrinsics
+
+Edva provides built-in compile-time intrinsics for querying type properties:
+
+### `#size(T)`
+Returns the byte size of type `T` according to the target architecture's ABI:
+
+```dva
+int_size   = #size(Int)     // 8 bytes
+float_size = #size(Float)   // 8 bytes
+i32_size   = #size(i32)     // 4 bytes
+```
+
+### `#align(T)`
+Returns the byte alignment required for type `T`:
+
+```dva
+int_align = #align(Int)     // 8
+i8_align  = #align(i8)      // 1
+```
+
+## Type generators (generics)
+
+Type generators are compile-time functions that take `Type` arguments and return a new composite `Type`. When evaluated with `#type`, they instantiate concrete types:
+
+```dva
+#!
+Pair: Type => Type
+Pair = \ T =>
+   (first: T, second: T)
+
+// Instantiating concrete types at compile time
+#type IntPair Pair(Int)
+#type FloatPair Pair(Float)
+
+ip = IntPair(10, 20)
+fp = FloatPair(1.5, 2.5)
+```
+
+## Compilation guarantees
+
+1. **Zero runtime cost**: `Type` cannot be used as a runtime function parameter or stored inside a runtime variable. Attempting to lower a `Type` value to runtime produces compile error `E2018`.
+2. **Deterministic monomorphization**: Each distinct combination of arguments passed to a type generator produces a single concrete type entry in the compiler's type table.

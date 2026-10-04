@@ -22,8 +22,23 @@ book:
         - reference/language/expressions.qmd
         - reference/language/operators.qmd
         - reference/language/intrinsics.qmd
-        - reference/language/types.qmd
         - reference/language/runtime.qmd
+    - part: reference/types/index.qmd
+      chapters:
+        - reference/types/int.qmd
+        - reference/types/float.qmd
+        - reference/types/rune.qmd
+        - reference/types/string.qmd
+        - reference/types/builder.qmd
+        - reference/types/ram.qmd
+        - reference/types/record.qmd
+        - reference/types/array.qmd
+        - reference/types/map.qmd
+        - reference/types/addr.qmd
+        - reference/types/fn.qmd
+        - reference/types/error.qmd
+        - reference/types/type.qmd
+        - reference/types/unit.qmd
     - part: "Guides"
       chapters:
         - guide/bindings-and-modules.qmd

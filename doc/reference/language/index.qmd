@@ -44,7 +44,7 @@ explain use and constraints rather than maintaining a competing copy.
   table's source of truth.
 - [Intrinsics](intrinsics.qmd): direct LLVM-backed numeric, vector, bit, and
   memory operations.
-- [Types](types.qmd): primitive names, composite shapes, initialization, and
+- [Types](../types/index.qmd): primitive names, composite shapes, initialization, and
   conversions.
 - [Runtime and memory](runtime.qmd): values, arenas, errors, and FFI limits.
 - [Bindings and modules](../../guide/bindings-and-modules.qmd): names,

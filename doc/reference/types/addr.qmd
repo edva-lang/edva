@@ -1,0 +1,90 @@
+---
+meta:
+  audience: "Edva systems developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §3.1"
+---
+
+# `Addr` and raw pointers
+
+The `Addr` type (also recognized as `ptr`) represents an untyped, raw memory address. In 64-bit systems, `Addr` is an 8-byte value that maps directly to LLVM's unified `ptr` type.
+
+## Declaration and annotations
+
+Variables holding raw memory references are annotated with `Addr`:
+
+```dva
+p: Addr = Addr(0)      // Null pointer
+handle: Addr = Addr(0x7fff0000)
+```
+
+## Obtaining pointers (`&`)
+
+The unary prefix address-of operator `&` extracts the underlying memory pointer of a value:
+
+```dva
+str = "Static data"
+raw_str_ptr: Addr = &str
+
+b = Builder(64)
+b += "Bytes"
+raw_buf_ptr: Addr = &b
+```
+
+## Conversions and casting
+
+Conversions between `Addr` and `Int` are explicit and bidirectional:
+
+```dva
+// Integer to pointer
+base_addr: Addr = Addr(0x1000)
+
+// Pointer to integer
+numeric_val: Int = Int(base_addr)
+```
+
+## Operations
+
+### Pointer arithmetic
+
+Raw offsets can be added or subtracted directly:
+
+```dva
+start: Addr = Addr(0x2000)
+offset: Int = 16
+
+next_page = start + offset    // Addr(0x2010)
+```
+
+### Pointer comparison
+
+Pointers can be compared for equality and ordering:
+
+```dva
+p1 = Addr(0x100)
+p2 = Addr(0x200)
+
+is_null = p1 == Addr(0)       // <->
+is_less = p1 < p2             // <+>
+```
+
+## Interacting with C FFI and standard library
+
+`Addr` is commonly used when declaring external foreign functions (`#foreign`) and interacting with low-level runtime modules like `#use @libc` or `#use @mem`:
+
+```dva
+#use @libc
+#use @mem
+
+// Allocate raw bytes via standard allocator
+size = 256
+raw_mem: Addr = libc::malloc(size)
+
+// Free allocated memory
+libc::free(raw_mem)
+```
+
+## Safety considerations
+
+`Addr` bypasses Edva's compile-time memory safety checks. Dereferencing an arbitrary address or performing unchecked pointer arithmetic can lead to segmentation faults or memory corruption. In general application logic, prefer type-safe containers such as [`Record`](record.qmd), [`Array`](array.qmd), or [`Builder`](builder.qmd).

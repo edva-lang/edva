@@ -1,0 +1,65 @@
+---
+meta:
+  audience: "Edva developers"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §3.1"
+---
+
+# `Unit`
+
+The `Unit` type, written as `()`, represents a zero-sized type with a single conceptual value. It indicates an operation that yields no meaningful data and is evaluated exclusively for its side effects (such as memory writes, screen output, or hardware I/O).
+
+## Declaration and function signatures
+
+`()` is valid in type annotations and function return signatures:
+
+```dva
+// Function executing purely for side effects
+log_message: String => ()
+log_message = \ msg
+   msg $> io::out
+```
+
+## Where `Unit` occurs in Edva
+
+### 1. Assignment expressions
+Assignments in Edva are expressions that evaluate to `()`:
+
+```dva
+result: () = (x = 10)
+```
+
+### 2. Ramification unit slots
+`Unit` occupies the empty branch of ramifications:
+- Both branches of `Flag` (`<>`).
+- The negative branch of an `Option` (`< T | >`).
+- The positive branch of a `Fallible` (`< | Error >`).
+
+When an unpacked choice branch corresponds to a unit slot, it produces `()`:
+
+```dva
+opt: < Int | > = <->
+
+// The negative branch produces Unit
+opt |
+   [val] print_int(val) |
+   ()
+```
+
+### 3. Statement choice expressions
+A choice expression whose branches perform assignments or imperative calls returns `()`:
+
+```dva
+debug_mode = <+>
+
+debug_mode |
+   io::out("Debugging enabled\n") |
+   ()
+```
+
+## Runtime representation and compilation
+
+- At runtime, `Unit` values occupy **0 bytes** of memory.
+- In LLVM IR, functions returning `()` are lowered with the `void` return type.
+- Unit variables do not allocate stack space or require register moves.

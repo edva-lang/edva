@@ -1,0 +1,43 @@
+---
+meta:
+  audience: "Edva developers and language integrators"
+  status: "current reference landing page"
+  audited: "51081a6"
+  evidence: "`src/types.dva`, `src/ast.dva`, `GRAMMAR.md`"
+---
+
+# Type system overview
+
+Edva is a statically typed, expression-oriented systems programming language. It eliminates implicit conversions, defaults, and runtime reflection overhead:
+a value must be typed explicitly by an annotation, a function signature, a literal suffix, or bidirectional constraint unification with surrounding expressions.
+
+At runtime, Edva does not use dynamic type tags, RTTI, or virtual method tables. Function values carry only an unadorned function pointer and closure environment pointer (`{ fn_ptr, env_ptr }`). Data records and containers maintain predictable, C-compatible structural layouts.
+
+## Native type taxonomy
+
+Native type names in Edva are strictly uppercase (`Int`, `Float`, `String`, `Addr`, `Rune`, `Builder`, `Error`, `Type`), complemented by explicit bit-width LLVM scalar types (`i8`--`i64`, `u8`--`u64`, `f32`, `ptr`, `void`) and composite structural shapes.
+
+| Category | Native Type | LLVM / Runtime Representation | Description |
+|:---|:---|:---|:---|
+| **Integers** | [`Int`](int.qmd), `i8`..`i64`, `u8`..`u64` | `i64`, `i8`, `i16`, `i32` | Two's complement signed and unsigned fixed-width integers |
+| **Floating-Point** | [`Float`](float.qmd), `f32`, `f64` | `double`, `float` | IEEE 754 single and double precision floating-point numbers |
+| **Characters** | [`Rune`](rune.qmd) | `i64` | Unicode scalar value (U+0000 to U+10FFFF) |
+| **Byte Strings** | [`String`](string.qmd) | `{ i64 len, ptr data }` | Immutable, length-prefixed, NUL-reserved byte sequence |
+| **Buffers** | [`Builder`](builder.qmd) | `{ i64 len, ptr data, i64 cap }` | Uniquely owned, growable mutable byte buffer |
+| **Ramifications** | [`Flag` & Rams](ram.qmd) | `i1` or `{ i64 tag, ptr payload }` | Binary polarities, options, fallibles, and results |
+| **Records** | [`Record`](record.qmd) | `{ T1, T2, ... }` | Named, positional, homogeneous, and packed bitfield records |
+| **Arrays & Slices** | [`Array` & `Slice`](array.qmd) | `{ i64 len, ptr data, i64 cap }` | Growable dynamic arrays and non-owning contiguous slices |
+| **Hash Maps** | [`Map`](map.qmd) | `{ ptr table, i64 count, i64 cap }` | Associative key-value tables (`Key ^ Value`) |
+| **Addresses** | [`Addr`](addr.qmd) | `ptr` | Raw memory pointers, FFI handles, and system allocations |
+| **Functions** | [`Fn`](fn.qmd) | `{ ptr fn_ptr, ptr env_ptr }` | First-class closures, lambdas, and function signatures |
+| **Errors** | [`Error`](error.qmd) | `{ i64 code, String msg, String file, i64 line, i64 col }` | Structured error diagnostic records with unwrapping semantics |
+| **Metatypes** | [`Type`](type.qmd) | *Compile-time only (erased)* | Compile-time types, `#size`, `#align`, and type generators |
+| **Unit** | [`Unit`](unit.qmd) | `void` / empty | Zero-sized value `()` denoting expressions evaluated solely for side effects |
+
+## General type rules
+
+### No implicit coercion
+Edva strictly forbids implicit type widening, sign conversion, or integer-to-float promotion. For example, adding an `Int` to a `Float` or passing an `i32` where `Int` (`i64`) is expected produces a compile-time type mismatch error (`E3001`). All conversions must be explicit via constructor invocations (`Int(f)`, `Float(n)`, `i32(x)`).
+
+### Strict initialization
+Uninitialized variables cannot be read. While composite values declared with whole-value assignment (`=`) are initialized immediately, forward-annotated records (`r: Record`) are not zero-filled; definite-assignment analysis rejects any path that attempts to read an unwritten field.
