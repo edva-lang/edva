@@ -241,21 +241,22 @@ codegen_emit_enum_deep_cmp_depth: types::Cg, ast::BinaryOp, (Addr, ast::ValueTyp
 codegen_compare_payload: types::Cg, Addr, Addr, ast::ValueType,
    ast::TypeInfo, Int => Addr
 
-codegen_record_pay_eq: types::Cg, Addr, Addr, Addr,
+codegen_record_pay_eq: types::Cg, Addr, Addr, <Addr|>,
    ast::FieldTypes, Int => Addr
 
 codegen_error_pay_eq: types::Cg, Addr, Addr => Addr
 
-codegen_record_pay_eq = cg, l_rec, r_rec, rec_struct_t, fields, depth =>
+codegen_record_pay_eq = cg, l_rec, r_rec, rec_struct_opt, fields, depth =>
    i64t = LLVMInt64Type!
    i1t = LLVMInt1Type!
    l_i = LLVMBuildPtrToInt(cg.builder, l_rec, i64t, "rec.l.i")
    r_i = LLVMBuildPtrToInt(cg.builder, r_rec, i64t, "rec.r.i")
    ptr_eq = LLVMBuildICmp(cg.builder, 32, l_i, r_i, "rec.ptr.eq")
    nf = ?fields
-   nf == 0 || rec_struct_t == Addr(0)
+   nf == 0 || ! <>(rec_struct_opt)
       | ptr_eq
       |
+         rec_struct_t = rec_struct_opt!!
          entry_b = LLVMGetInsertBlock(cg.builder)
          ptr_neq_b = LLVMAppendBasicBlock(cg.current_fn, "rec.ptr.neq")
          cmp_fields_b = LLVMAppendBasicBlock(cg.current_fn, "rec.fields.cmp")
@@ -382,8 +383,8 @@ codegen_compare_payload = cg, l_val, r_val, pay_vt, pay_ti, depth =>
                                                    rec_ti = types::resolve_record_ti(cg, pay_ti)
                                                    rm = runtime::record_meta_from_ti(cg, rec_ti)
                                                    rec_fields = rec_ti [Rec rr] rr.0 | ast::FieldTypes()
-                                                   rm_0 = rm | m => m.0 | LLVMInt8Type!
-                                                   codegen_record_pay_eq(cg, l_val, r_val, rm_0, rec_fields, depth + 1)
+                                                   rm_rt_opt = rm | m => <+ m.0 -> | <-->
+                                                   codegen_record_pay_eq(cg, l_val, r_val, rm_rt_opt, rec_fields, depth + 1)
                                                 |
                                                    i64t = LLVMInt64Type!
                                                    l_i = LLVMBuildPtrToInt(cg.builder, l_val, i64t, "pay.ptr.l")
@@ -421,12 +422,12 @@ codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
          LLVMBuildCondBr(cg.builder, tags_eq, tag_match_bb, exit_bb)
 
          has_unit = enum_slots_have_unit(slots, 0, n_slots)
-         unit_bb = has_unit
-            | LLVMAppendBasicBlock(cg.current_fn, "enum.unit.match")
-            | Addr(0)
-         has_unit
-            |
-               LLVMPositionBuilderAtEnd(cg.builder, unit_bb)
+         unit_bb_opt = has_unit
+            | <+ LLVMAppendBasicBlock(cg.current_fn, "enum.unit.match") ->
+            | <-->
+         unit_bb_opt
+            | ubb =>
+               LLVMPositionBuilderAtEnd(cg.builder, ubb)
                stmt::branch_to(cg, exit_bb)
 
          unreachable_bb = LLVMAppendBasicBlock(cg.current_fn, "enum.unreachable")
@@ -444,7 +445,7 @@ codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
                ast::TypeInfo(Prim, ast::ValueType(Unknown))))
             case_tag = LLVMConstInt(i64t, si, 0)
             !sl.has_payload
-               | LLVMAddCase(sw, case_tag, unit_bb)
+               | (unit_bb_opt | ubb => LLVMAddCase(sw, case_tag, ubb))
             sl.has_payload
                |
                   case_bb = LLVMAppendBasicBlock(cg.current_fn,
@@ -471,11 +472,11 @@ codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
          LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
          phi = LLVMBuildPhi(cg.builder, i1t, "enum.eq.phi")
          stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 0, 0), entry_bb)
-         has_unit
-            | stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 1, 0), unit_bb)
+         unit_bb_opt
+            | ubb => stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 1, 0), ubb)
          ?pay_ends @ pi =>
-            p_end = pay_ends(pi) | _ | Addr(0)
-            p_val = pay_vals(pi) | _ | Addr(0)
+            p_end = pay_ends(pi)!!
+            p_val = pay_vals(pi)!!
             stmt::llvm_add_incoming1(cg, phi, p_val, p_end)
 
          res = op [NotEq] LLVMBuildNot(cg.builder, phi, "enum.ne") | phi
@@ -1481,7 +1482,7 @@ codegen_emit_fcmp = cg, op, l, r =>
       [NotEq] LLVMBuildFCmp(cg.builder, 14, l, r, "fcmptmp")
       [NotGt] LLVMBuildFCmp(cg.builder, 5, l, r, "fcmptmp")
       [NotLt] LLVMBuildFCmp(cg.builder, 3, l, r, "fcmptmp")
-      | Addr(0)
+      | LLVMConstInt(LLVMInt1Type!, 0, 0)
 
 // ICmp predicates: EQ=32 NE=33 SGT=38 SLE=41 SLT=40 SGE=39.
 // Unsigned: UGT=34 UGE=35 ULT=36 ULE=37.
@@ -1496,7 +1497,7 @@ codegen_emit_icmp = cg, op, l, r, is_unsigned =>
             [NotEq] LLVMBuildICmp(cg.builder, 33, l, r, "cmptmp")
             [NotGt] LLVMBuildICmp(cg.builder, 37, l, r, "cmptmp")
             [NotLt] LLVMBuildICmp(cg.builder, 35, l, r, "cmptmp")
-            | Addr(0)
+            | LLVMConstInt(LLVMInt1Type!, 0, 0)
       |
          op
             [Gt] LLVMBuildICmp(cg.builder, 38, l, r, "cmptmp")
@@ -1505,7 +1506,7 @@ codegen_emit_icmp = cg, op, l, r, is_unsigned =>
             [NotEq] LLVMBuildICmp(cg.builder, 33, l, r, "cmptmp")
             [NotGt] LLVMBuildICmp(cg.builder, 41, l, r, "cmptmp")
             [NotLt] LLVMBuildICmp(cg.builder, 39, l, r, "cmptmp")
-            | Addr(0)
+            | LLVMConstInt(LLVMInt1Type!, 0, 0)
 
 // --- bitwise -----------------------------------------------------------------
 
@@ -1730,17 +1731,19 @@ codegen_choice_match_entry = cg, cond_val, cond_type, ev =>
 // "cond == v1 || cond == v2 || ..." for a comma OR-list guard.
 codegen_choice_match: types::Cg, Addr, ast::ValueType, ast::Exprs => Addr
 codegen_choice_match = cg, cond_val, cond_type, values =>
-   codegen_choice_match_at(cg, cond_val, cond_type, values, 0, ?values, Addr(0))
+   codegen_choice_match_at(cg, cond_val, cond_type, values, 0, ?values, <-->)
 
-codegen_choice_match_at: types::Cg, Addr, ast::ValueType, ast::Exprs, Int, Int, Addr => Addr
-codegen_choice_match_at = cg, cond_val, cond_type, values, i, n, m =>
+codegen_choice_match_at: types::Cg, Addr, ast::ValueType, ast::Exprs, Int, Int, <Addr|> => Addr
+codegen_choice_match_at = cg, cond_val, cond_type, values, i, n, m_opt =>
    i == n
-      | (m == Addr(0) | LLVMConstInt(LLVMInt1Type!, 0, 0) | m)
+      | (m_opt | _ | LLVMConstInt(LLVMInt1Type!, 0, 0))
       |
          ev = values(i)!!
          eq = codegen_choice_match_entry(cg, cond_val, cond_type, ev)
-         m2 = m == Addr(0) | eq | LLVMBuildOr(cg.builder, m, eq, "val.or")
-         codegen_choice_match_at(cg, cond_val, cond_type, values, i + 1, n, m2)
+         m2 = m_opt
+            | prev => LLVMBuildOr(cg.builder, prev, eq, "val.or")
+            | eq
+         codegen_choice_match_at(cg, cond_val, cond_type, values, i + 1, n, <+ m2 ->)
 
 // A predicate guard test: "x [n => n > 0] body". The predicate is applied to
 // the scrutinee by binding it to the lambda's first param and evaluating the
@@ -1812,14 +1815,14 @@ choice_case_values_are_ints = vals, j, n =>
             [Rune _] choice_case_values_are_ints(vals, j + 1, n)
             | <->
 
-choice_first_live_val: types::Addrs, types::Flags, Int => Addr
+choice_first_live_val: types::Addrs, types::Flags, Int => <Addr|>
 choice_first_live_val = vals, exits, i =>
    i == ?exits
-      | Addr(0)
+      | <-->
       |
          e = exits(i)!!
          !e
-            | (vals(i) | _ | Addr(0))
+            | (vals(i) | v => <+ v -> | <-->)
             | choice_first_live_val(vals, exits, i + 1)
 
 choice_first_live_vt: ast::VTypes, types::Flags, Int => ast::ValueType
@@ -1989,13 +1992,13 @@ codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
    cg.discard_result
       | (Addr(0), ast::ValueType(Unit))
       |
-         res_val = choice_first_live_val(vals, exits, 0)
+         res_val_opt = choice_first_live_val(vals, exits, 0)
          res_vt0 = choice_first_live_vt(vts, exits, 0)
          has_un = choice_has_unassignable(vts, exits, 0) ||
             (!last_is_bare && !c.is_exhaustive)
          res_vt = has_un | ast::ValueType(Unit) | res_vt0
          n_live = choice_count_live(exits, 0, 0)
-         res_lt = res_val == Addr(0) | i64t | LLVMTypeOf(res_val)
+         res_lt = res_val_opt | v => LLVMTypeOf(v) | i64t
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
             | (Addr(0), res_vt)
@@ -2073,15 +2076,13 @@ codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
    cg.discard_result
       | (Addr(0), ast::ValueType(Unit))
       |
-         res_val = choice_first_live_val(vals, exits, 0)
+         res_val_opt = choice_first_live_val(vals, exits, 0)
          res_vt0 = choice_first_live_vt(vts, exits, 0)
          has_un = choice_has_unassignable(vts, exits, 0) ||
             (!last_is_bare && !c.is_exhaustive)
          res_vt = has_un | ast::ValueType(Unit) | res_vt0
          n_live = choice_count_live(exits, 0, 0)
-         res_lt = res_val == Addr(0)
-            | LLVMInt64Type!
-            | LLVMTypeOf(res_val)
+         res_lt = res_val_opt | v => LLVMTypeOf(v) | LLVMInt64Type!
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
             | (Addr(0), res_vt)
@@ -2883,15 +2884,13 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
    cg.discard_result
       | (Addr(0), ast::ValueType(Unit))
       |
-         res_val = choice_first_live_val(vals, exits, 0)
+         res_val_opt = choice_first_live_val(vals, exits, 0)
          res_vt0 = choice_first_live_vt(vts, exits, 0)
          has_un = choice_has_unassignable(vts, exits, 0) ||
             (!last_is_bare && !c.is_exhaustive)
          res_vt = has_un | ast::ValueType(Unit) | res_vt0
          n_live = choice_count_live(exits, 0, 0)
-         res_lt = res_val == Addr(0)
-            | LLVMInt64Type!
-            | LLVMTypeOf(res_val)
+         res_lt = res_val_opt | v => LLVMTypeOf(v) | LLVMInt64Type!
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
             | (Addr(0), res_vt)
