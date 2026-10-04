@@ -21,9 +21,7 @@ record_eq: #! T: Type, T, T => <>
 record_eq = a, b =>
    all' = 1
    0..?T @ i =>
-      a.(i) == b.(i)
-         |
-            0
+      a.(i) != b.(i)
          |
             all' = 0
    out = all' == 1

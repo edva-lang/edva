@@ -11,6 +11,7 @@
 #use "layout"
 #use "dep_graph"
 #use "str"
+#use "show"
 
 #foreign "c"
    write: (fd: Int, buf: Addr, count: Int) => Int
@@ -569,7 +570,6 @@ check_swizzle_pattern = ctx, mode, flds, fname =>
                            |
                               f_idx !< nf
                                  | (oob' = <+>; bad_ch' = ++ch_str)
-                                 | 0
                            |
                               is_xyzw = ch == 'x' || ch == 'y' || ch == 'z' || ch == 'w'
                               is_rgba = ch == 'r' || ch == 'g' || ch == 'b' || ch == 'a'
@@ -578,14 +578,13 @@ check_swizzle_pattern = ctx, mode, flds, fname =>
                               !allowed
                                  | (all_match' = <->; -->)
                                  |
-                                    is_xyzw | (has_xyzw' = <+>) | 0
-                                    is_rgba | (has_rgba' = <+>) | 0
+                                    is_xyzw | (has_xyzw' = <+>)
+                                    is_rgba | (has_rgba' = <+>)
                                     p_idx = ch == 'x' || ch == 'r' | 0 |
                                        (ch == 'y' || ch == 'g' | 1 |
                                        (ch == 'z' || ch == 'b' | 2 | 3))
                                     p_idx !< nf
                                        | (oob' = <+>; bad_ch' = ++ch_str)
-                                       | 0
                      !all_match'
                         | 0
                         |
@@ -2096,7 +2095,7 @@ ut_has_fn = ctx, ut, visited =>
             | <->
             |
                vis' = visited
-               e.name != "" | (vis' += e.name) | 0
+               e.name != "" | (vis' += e.name)
                enum_variants_has_fn(ctx, e.variants, 0, ?e.variants, vis')
       | <->
 
@@ -2828,10 +2827,8 @@ find_record_ctor_field_expr = args, fld, j, nf =>
          !is_tuple_arg && j < ?args
             |
                arg_j = args(j) | _ | ast::Expr(Int, 0)
-               arg_j
-                  [NamedArg _] 0
-                  [Range _] 0
-                  | (pos_res' = <+ arg_j ->)
+               !(arg_j [NamedArg, Range])
+                  | pos_res' = <+ arg_j ->
          pos_res'
             | val => <+ val ->
             |
@@ -2839,21 +2836,21 @@ find_record_ctor_field_expr = args, fld, j, nf =>
                ?args == 1
                   |
                      a0 = args(0) | _ | ast::Expr(Int, 0)
-                     a0
-                        [NamedArg _] 0
-                        [Range _] 0
-                        [Record rec_lit]
-                           j < ?rec_lit.fields
-                              |
-                                 rf = rec_lit.fields(j) | _ |
-                                    ast::RecordField((<->, "",
-                                       ast::Expr(Int, 0)))
-                                 tuple_res' = <+ rf.val ->
+                     !(a0 [NamedArg, Range])
                         |
-                           idx_e = ast::Expr(Member,
-                              (ast::MemberExpr((a0, "", <->,
-                                 ast::Expr(Int, j), 0, 0))))
-                           tuple_res' = <+ idx_e ->
+                           a0
+                              [Record rec_lit]
+                                 j < ?rec_lit.fields
+                                    |
+                                       rf = rec_lit.fields(j) | _ |
+                                          ast::RecordField((<->, "",
+                                             ast::Expr(Int, 0)))
+                                       tuple_res' = <+ rf.val ->
+                              |
+                                 idx_e = ast::Expr(Member,
+                                    (ast::MemberExpr((a0, "", <->,
+                                       ast::Expr(Int, j), 0, 0))))
+                                 tuple_res' = <+ idx_e ->
                tuple_res'
                   | val => <+ val ->
                   |
@@ -2903,8 +2900,9 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf =>
       fld = fields(j) | _ | ast::mk_rfield_type("",
          ast::ValueType(Unknown), ast::TypeInfo(Prim, ast::ValueType(Unknown)))
       val_expr_opt = find_record_ctor_field_expr(ce.args, fld, j, nf)
-      val_expr_opt
-         | _ => 0
+      has_val' = <->
+      val_expr_opt | _ => (has_val' = <+>)
+      !has_val'
          |
             unify::add_error(ctx, 3130, "Field '" + fld.name + "' of '" +
                ce.fn_name + "' has no default value and was not provided.")
@@ -3299,9 +3297,38 @@ choice_check_ram_pn = ctx, tb_list =>
    has_non_jump' && all_pn'
       | <+ cand_pos ->
 
+choice_branch_is_constant: ast::Expr => <>
+choice_branch_is_constant = e =>
+   e
+      [Int _] <+>
+      [Float _] <+>
+      [Str _] <+>
+      [Rune _] <+>
+      [Variant v] ?v.args == 0
+      [Block b]
+         ?b.exprs == 1
+            | choice_branch_is_constant(b.exprs(0)!!)
+            | <->
+      [Fn fe] choice_branch_is_constant(fe.body)
+      | <->
+
+choice_has_constant_branch: ast::ChoiceExpr => <>
+choice_has_constant_branch = c =>
+   has' = <->
+   ?c.branches @ i =>
+      br = c.branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
+         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+         ast::Expr(Int, 0)))
+      choice_branch_is_constant(br.block) | (has' = <+>; -->)
+   has'
+
 annotate_choice: unify::Ctx, type_env::TypeEnv,
    ast::ChoiceExpr, <> => tast::TypedExpr
 annotate_choice = ctx, env, ch, is_disc =>
+   is_disc && choice_has_constant_branch(ch)
+      |
+         unify::add_error(ctx, 3175,
+            "Choice has a constant expression in a branch and its value is discarded")
    ch.cond
       [Var v]
          bnd_opt = type_env::lookup_binding(env, "_")
@@ -3724,8 +3751,7 @@ annotate_key_write = ctx, env, ka, val_expr =>
 annotate_raw_write: unify::Ctx, type_env::TypeEnv,
    ast::RawMemoryExpr, ast::Expr => tast::TypedExpr
 annotate_raw_write = ctx, env, rm, val_expr =>
-   rm.load_type
-      [Unknown] 0
+   !(rm.load_type [Unknown])
       |
          unify::add_error(ctx, 2093,
             "Cannot assign to a typed load; write through the untyped '@[addr]' form instead.")

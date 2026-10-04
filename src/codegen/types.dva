@@ -482,7 +482,7 @@ init_merge_whole_at = whole, b, i, n, acc =>
       | acc
       |
          k = (whole(i) | _ | "")
-         init_has_whole(b, k) | acc += k | 0
+         init_has_whole(b, k) | acc += k
          init_merge_whole_at(whole, b, i + 1, n, acc)
 
 init_merge_written_at: ast::Names, FieldInitState, Int, Int, ast::Names => ast::Names
@@ -491,7 +491,7 @@ init_merge_written_at = written, b, i, n, acc =>
       | acc
       |
          k = (written(i) | _ | "")
-         init_has_written(b, k) | acc += k | 0
+         init_has_written(b, k) | acc += k
          init_merge_written_at(written, b, i + 1, n, acc)
 
 // Must-init merge: a path is definite only when in BOTH states.
@@ -546,8 +546,7 @@ init_check_escape_var = cg, v, line, col =>
 
 init_check_escape_full: Cg, String, Int, Int => ()
 init_check_escape_full = cg, v, line, col =>
-   init_fully_ok(cg, v)
-      | 0
+   !init_fully_ok(cg, v)
       | init_error(cg, "E3132", "Passing a partially-initialized composite '" +
          v + "' to a function.", line, col)
 
@@ -657,7 +656,7 @@ choice_frame_pop_at = frames, at, j, n, acc =>
    j == n
       | acc
       |
-         j == at | 0 | acc += frames(j)!!
+         j != at | acc += frames(j)!!
          choice_frame_pop_at(frames, at, j + 1, n, acc)
 
 choice_frame_pop: Cg, Int => ()
@@ -769,7 +768,7 @@ hoisted_alloca = cg, ty, name =>
       | LLVMPositionBuilderAtEnd(cg.builder, entry)
       | LLVMPositionBuilderBefore(cg.builder, first)
    a = LLVMBuildAlloca(cg.builder, ty, name)
-   saved == Addr(0) | 0 | LLVMPositionBuilderAtEnd(cg.builder, saved)
+   saved != Addr(0) | LLVMPositionBuilderAtEnd(cg.builder, saved)
    a
 
 // A variable's storage slot: a function-local alloca, or a named global.
@@ -790,8 +789,7 @@ create_slot = cg, name, llvm_type, is_local =>
 
 codegen_init_targets: () => ()
 codegen_init_targets = !=>
-   g.targets_initialized
-      | 0
+   !g.targets_initialized
       |
          g.targets_initialized = <+>
          LLVMInitializeAArch64Target!
@@ -912,7 +910,7 @@ codegen_init = opts =>
          err_s = err_ptr != Addr(0) | c_str(err_ptr) | ""
          print $ "E3069: No LLVM target registered for triple '" + triple + "'" +
             (?err_s > 0 | ": " + err_s | "")
-         err_ptr != Addr(0) | LLVMDisposeMessage(err_ptr) | 0
+         err_ptr != Addr(0) | LLVMDisposeMessage(err_ptr)
          codegen_layout
    mem::destroy(ar)
    LLVMSetDataLayout(module, layout)
@@ -958,7 +956,7 @@ codegen_build_main = cg =>
          LLVMPositionBuilderAtEnd(cg.builder, entry')
          cg.main_fn = fn'
          cg.current_fn = fn'
-         !cg.opts.no_runtime && !cg.opts.is_module | emit_arena_init(cg) | 0
+         !cg.opts.no_runtime && !cg.opts.is_module | emit_arena_init(cg)
          fn'
       |
          i32t = LLVMInt32Type!
@@ -985,7 +983,6 @@ codegen_build_main = cg =>
                LLVMBuildStore(cg.builder, argc64, argc_g)
                LLVMBuildStore(cg.builder, argv_p, argv_g)
                emit_arena_init(cg)
-            | 0
          fn'
 
 // call void @dva_arena_init(ptr @global_arena, i64 1048576) in main's entry.
@@ -1527,7 +1524,6 @@ codegen_get_global = cg, name, llvm_type =>
          is_ext = cg.opts.is_module && is_external_module_name(cg, name)
          !is_ext
             | LLVMSetInitializer(g2, LLVMConstNull(llvm_type))
-            | 0
          g2
       | glob
 
@@ -1704,13 +1700,13 @@ codegen_load = cg, name =>
          is_heap = var_is_heap(cg, name)
          cg.last_rt = var_rt(cg, name)
          fnames = var_fnames(cg, name)
-         ?fnames > 0 | cg.last_fnames = fnames | 0
+         ?fnames > 0 | cg.last_fnames = fnames
          fvts = match::var_fvts(cg, name)
-         ?fvts > 0 | cg.last_fvts = fvts | 0
+         ?fvts > 0 | cg.last_fvts = fvts
          dt = var_dtype(cg, name)
-         dt == "" | 0 | cg.last_type = dt
+         dt != "" | cg.last_type = dt
          cfn = main::is_fn_vt(vt) | expr::closure_fn_of(cg, name) | ""
-         cfn != "" | cg.last_closure_fn = cfn | 0
+         cfn != "" | cg.last_closure_fn = cfn
          is_ptr = is_heap || is_record_vt(vt) || is_map_vt(vt) ||
             is_array_vt(vt) || is_slice_vt(vt)
          lt = is_ptr
@@ -2010,7 +2006,6 @@ fn_ret_sig_with_ti = cg, ti =>
                   |
                      cg.fninfos += FnInfo((sname, Addr(0), Addr(0), 0,
                         ast::VTypes(), ret_vt, <->, <->, <+>, <->))
-                  | 0
                ret_ti = f.3
                is_rec = ret_vt [Record]
                is_rec
@@ -2021,8 +2016,6 @@ fn_ret_sig_with_ti = cg, ti =>
                            rfvts = match::field_vts_from_ti(cg, ret_ti)
                            rdt = ret_ti [TypeVar tn] tn | ""
                            stmt::fn_ret_rec_add(cg, sname, <+ m.0 ->, m.1, rfvts, rdt)
-                        | 0
-                  | 0
                sname
       [TypeVar name] fn_ret_sig_with_ti(cg, typedef_ti(cg, name))
       | ""
@@ -3322,7 +3315,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                      cg.last_rt = rm_rt_opt
                      cg.last_fnames = rm_1
                      cg.last_fvts = tgt_fvts
-                     t.fn_name != "" | cg.last_type = t.fn_name | 0
+                     t.fn_name != "" | cg.last_type = t.fn_name
                      (dst', ast::ValueType(Record))
                   |
                      is_rec = src_vt [Record]
@@ -3365,7 +3358,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                            cg.last_rt = rm_rt_opt
                            cg.last_fnames = rm_1
                            cg.last_fvts = tgt_fvts
-                           t.fn_name != "" | cg.last_type = t.fn_name | 0
+                           t.fn_name != "" | cg.last_type = t.fn_name
                            (dst', ast::ValueType(Record))
                         |
                            i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -3376,7 +3369,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                            cg.last_rt = rm_rt_opt
                            cg.last_fnames = rm_1
                            cg.last_fvts = tgt_fvts
-                           t.fn_name != "" | cg.last_type = t.fn_name | 0
+                           t.fn_name != "" | cg.last_type = t.fn_name
                            (dst', ast::ValueType(Record))
             |
                sz' = <>(rm) | LLVMSizeOf(rm_0) |
@@ -3401,7 +3394,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                cg.last_rt = rm_rt_opt
                cg.last_fnames = rm_1
                cg.last_fvts = tgt_fvts
-               t.fn_name != "" | cg.last_type = t.fn_name | 0
+               t.fn_name != "" | cg.last_type = t.fn_name
                (dst', ast::ValueType(Record))
 
 // A declared type constructor call: an ENUM builds a heap union (tag = the
@@ -3647,8 +3640,7 @@ ram_slot_name = tag => ram_tag_is_positive(tag) | "Some" | "Err"
 codegen_check_ambiguous_enum_label: Cg, String => ()
 codegen_check_ambiguous_enum_label = cg, label =>
    has_slot = <>(var_slot(cg, label))
-   has_slot
-      | 0
+   !has_slot
       |
          owners = enum_label_owner_count(cg, label, 0)
          owners > 1
@@ -3686,8 +3678,7 @@ enum_label_owner_count = cg, label, count =>
 
 codegen_map_literal_insert_rest: Cg, Addr, ast::MapPairs, Int, Int, ast::ValueType => ()
 codegen_map_literal_insert_rest = cg, m, pairs, i, n, key_vt =>
-   i == n
-      | 0
+   i != n
       |
          p = pairs(i)!!
          kv = expr::codegen_eval(cg, p.key)
@@ -3716,12 +3707,11 @@ codegen_eval_map_literal = cg, lit =>
          tname = "#map_" + value_type_name(key_vt) + "_" +
             value_type_name(val_vt)
          ti = ast::TypeInfo(Map, (key_vt, val_vt, val_rec))
-         has_type_name(cg, tname) | 0 | runtime::add_type(cg, tname, ti)
+         !has_type_name(cg, tname) | runtime::add_type(cg, tname, ti)
          cg.last_type = tname
          runtime::codegen_map_insert(cg, m, kv0.0, vv0.0, key_vt)
          np > 1
             | codegen_map_literal_insert_rest(cg, m, lit.pairs, 1, np, key_vt)
-            | 0
          (m, ast::ValueType(Map))
 
 raw_addr_value: Cg, Addr, ast::ValueType, Addr => Addr
@@ -3844,7 +3834,7 @@ codegen_build_union = cg, tid, args, alloc_name =>
          ev = expr::codegen_eval(cg, av)
          ev_dt = ev.1 [Str] "String" [Int] "Int" [Float] "Float" |
             (cg.last_type != "" | cg.last_type | "")
-         ev_dt != "" | cg.last_type = ev_dt | 0
+         ev_dt != "" | cg.last_type = ev_dt
          pgep' = LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
          is_ptrish = is_ptrish_vt(ev.1)
          is_ptrish
@@ -3962,9 +3952,10 @@ codegen_eval_record = cg, r =>
 rec_meta: Cg, ast::ValueType => <(Addr, ast::Names)|>
 rec_meta = cg, vt =>
    vt [Record]
-      cg.last_rt
-         | rt => <+ (rt, cg.last_fnames) ->
-         | <-->
+      |
+         cg.last_rt
+            | rt => <+ (rt, cg.last_fnames) ->
+            | <-->
       | <-->
 
 td_record_meta: Cg, Int => <(Addr, ast::Names)|>

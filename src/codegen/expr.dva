@@ -359,10 +359,7 @@ codegen_named_fn_value = cg, name =>
       | codegen_generic_fn_value_error(cg, target)
       |
          types::has_fn_name(cg, target) && !types::is_fn_name(cg, target)
-            |
-               stmt::compile_fn_lazy(cg, target, ast::VTypes())
-               0
-            | 0
+            | stmt::compile_fn_lazy(cg, target, ast::VTypes())
          meta = fn_value_meta(cg, target)
          meta.generic
             | codegen_generic_fn_value_error(cg, target)
@@ -838,11 +835,11 @@ codegen_materialize_ti = cg, ti, tname =>
    ti
       [Array ae]
          u' = main::codegen_array_create(cg, "cttr.array")
-         tname != "" | cg.last_type = tname | 0
+         tname != "" | cg.last_type = tname
          <+ (u', ast::ValueType(Array)) ->
       [Map mk]
          u' = runtime::codegen_map_create(cg, "cttr.map")
-         tname != "" | cg.last_type = tname | 0
+         tname != "" | cg.last_type = tname
          <+ (u', ast::ValueType(Map)) ->
       [Prim p]
          codegen_materialize_prim(cg, p)
@@ -1060,7 +1057,7 @@ codegen_emit_bind_valid = cg, t, dtype =>
    // `lhs | rhs(_) | <- _ ->` for RamPP.  Reusing the normal bare-choice
    // path preserves its payload binding, branch topology, and result phi.
    res = match::codegen_eval_choice(cg, bind_choice(cg, t, dtype))
-   dtype != "" | cg.last_type = dtype | 0
+   dtype != "" | cg.last_type = dtype
    <+ res ->
 
 bind_choice: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr), String => ast::ChoiceExpr
@@ -1187,9 +1184,9 @@ codegen_emit_apply_feed = cg, op, t =>
          sp.0
             |
                args' = ast::Exprs()
-               is_feed | args' += vside | 0
+               is_feed | args' += vside
                ?sp.3 @ i => args' += sp.3(i)!!
-               is_feed | 0 | args' += vside
+               !is_feed | args' += vside
                call' = ast::CallExpr((sp.1, sp.2, args', 0, 0))
                codegen_eval_call(cg, call')
             |
@@ -1210,10 +1207,7 @@ call_named = cg, name, args =>
    fname1 = fn_alias(cg, name)
    fname = fname0 != "" | fname0 | (fname1 != "" | fname1 | resolved)
    types::has_fn_name(cg, fname) && !types::is_fn_name(cg, fname)
-      |
-         stmt::compile_fn_lazy(cg, fname, ast::VTypes())
-         0
-      | 0
+      | stmt::compile_fn_lazy(cg, fname, ast::VTypes())
    idx = types::fninfo_index(cg, fname)
    use_idx0 = <>(idx) | idx | types::fninfo_index(cg, name)
    use_idx = <>(use_idx0)
@@ -2264,7 +2258,7 @@ codegen_emit_div_guard = cg, l_val, r_val, is_signed =>
 codegen_eval_int_arith: types::Cg, ast::BinaryOp, Addr, Addr, <> => Addr
 codegen_eval_int_arith = cg, op, l, r, is_u =>
    is_div = op [Div, Mod]
-   is_div | codegen_emit_div_guard(cg, l, r, !is_u) | 0
+   is_div | codegen_emit_div_guard(cg, l, r, !is_u)
    op
       [Add] LLVMBuildAdd(cg.builder, l, r, "addtmp")
       [Sub] LLVMBuildSub(cg.builder, l, r, "subtmp")
@@ -2529,20 +2523,18 @@ codegen_eval_unary_unwrap = cg, val, vt, target =>
                            cg.last_fvts = types::field_vts(cg, pos_rec)
                            pdt = pos_rec [TypeVar n] n | ""
                            cg.last_type = pdt
-                        | 0
                   |
                      pos_is_fn = pos_vt [Fn]
                      pos_is_fn
                         |
                            sname = types::fn_ret_sig_with_ti(cg, pos_rec)
-                           sname != "" | cg.last_closure_fn = sname | 0
+                           sname != "" | cg.last_closure_fn = sname
                            p_ret_vt = types::ti_fn_ret_vt(cg, pos_rec)
                            p_ret_vt != ast::ValueType(Unknown)
                               | cg.last_type = types::value_type_name(p_ret_vt)
-                              | 0
                         |
                            pdt2 = pos_rec [TypeVar n] n | ""
-                           pdt2 != "" | cg.last_type = pdt2 | 0
+                           pdt2 != "" | cg.last_type = pdt2
                (res_val, pos_vt)
 
 codegen_eval_unary_propagate: types::Cg, Addr, ast::ValueType,
@@ -2667,19 +2659,16 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
                                     |
                                        sname = types::fn_ret_sig_with_ti(cg,
                                           pos_rec)
-                                       sname != ""
-                                          | cg.last_closure_fn = sname
-                                          | 0
+                                       sname != "" | cg.last_closure_fn = sname
                                        p_ret_vt = types::ti_fn_ret_vt(cg,
                                           pos_rec)
                                        p_ret_vt != ast::ValueType(Unknown)
                                           |
                                              cg.last_type =
                                                 types::value_type_name(p_ret_vt)
-                                          | 0
                                     |
                                        pdt2 = pos_rec [TypeVar n] n | ""
-                                       pdt2 != "" | cg.last_type = pdt2 | 0
+                                       pdt2 != "" | cg.last_type = pdt2
                            (res_val, pos_vt)
 
 codegen_not_invalid: types::Cg, ast::ValueType => (Addr, ast::ValueType)
@@ -2910,7 +2899,7 @@ split_comma_names_step: String, Int, Int, ast::Names => ast::Names
 split_comma_names_step = s, start, i, acc =>
    i == ?s
       |
-         start < i | (acc += s(start..i)) | 0
+         start < i | acc += s(start..i)
          acc
       |
          s(i) == ','
@@ -3888,7 +3877,7 @@ compile_mono_fn = cg, orig, mono, ct_names, b_vts, b_tis, b_dts, b_ct_vals =>
                ret_dtype = is_anon_rec
                   |
                      ret_tname = "#ret_" + mono
-                     types::has_type_name(cg, ret_tname) | 0 |
+                     !types::has_type_name(cg, ret_tname) |
                         runtime::add_type_rec(cg, ret_tname, ret_ti', rm_rt_opt, ret_rm_1)
                      ret_tname
                   | ret_dtype0
@@ -3982,7 +3971,6 @@ codegen_eval_named_call = cg, t =>
          !has_kidx
             | compile_mono_fn(cg, fname', key, ct_names, b_vts, b_tis, b_dts,
                b_ct_vals)
-            | <+>
          types::fninfo_index(cg, key)
             | kidx2 =>
                kfi = cg.fninfos(kidx2)!!
@@ -4483,7 +4471,7 @@ codegen_closure_call_env = cg, t, fty, ret =>
    res_name = ret [Unit] "" | "clo.call"
    res = LLVMBuildCall2(cg.builder, fty, typed, sb, total, res_name)
    cfn = closure_fn_of(cg, t.fn_name)
-   cfn != "" | stmt::apply_call_ret_meta(cg, cfn) | 0
+   cfn != "" | stmt::apply_call_ret_meta(cg, cfn)
    (res, ret)
 
 fn_body_is_choice: ast::FnExpr => <>
@@ -4885,8 +4873,7 @@ codegen_typed_eval_bin_arith = cg, op, lhs, rhs, ut, ti =>
          tname0 = lhs.ti [TypeVar tv] tv | (lhs.ut [Enum ue] ue.name | "")
          tname1 = rhs.ti [TypeVar tv] tv | (rhs.ut [Enum ue] ue.name | "")
          tname = tname0 != "" | tname0 | tname1
-         tname != "" | cg.last_type = tname | 0
-      | 0
+         tname != "" | cg.last_type = tname
    codegen_typed_eval_bin_arith_evaled(cg, op, lv, rv, ut, ti)
 
 codegen_typed_eval_bin_arith_evaled: types::Cg, ast::BinaryOp, (Addr, ast::ValueType),
@@ -5314,8 +5301,7 @@ builder_typed_append_rec_lens = cg, fields, i, n, vals, vts, lens, total_add =>
 codegen_typed_builder_append_record: types::Cg, Addr, tast::TypedFields => ()
 codegen_typed_builder_append_record = cg, b_val, fields =>
    nf = ?fields
-   nf == 0
-      | 0
+   nf != 0
       |
          zero = LLVMConstInt(LLVMInt64Type!, 0, 0)
          res = builder_typed_append_rec_lens(cg, fields, 0, nf, types::Addrs(),
@@ -5367,13 +5353,12 @@ codegen_typed_builder_append = cg, b_val, val =>
                is_rec = ev.1 [Record]
                is_rec
                   |
-                     val.kind
-                        [Var v]
-                           types::var_rt(cg, v.0)
+                     v_name = val.kind [Var v] v.0 | ""
+                     v_name != ""
+                        |
+                           types::var_rt(cg, v_name)
                               | vrt => builder_append_rec_flds(cg, b_val,
                                  ev.0, vrt)
-                              | 0
-                        | 0
                   |
                      types::is_rune_vt(ev.1) || types::is_rune_vt(types::vt_from_ti_cg(cg, val.ti))
                         | main::codegen_builder_append_rune(cg, b_val, ev.0)
@@ -5463,7 +5448,6 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
          !has_kidx
             | compile_mono_fn(cg, rname, key, ct_names, b_vts, b_tis, b_dts,
                b_ct_vals)
-            | <+>
          types::fninfo_index(cg, key)
             | kidx2 =>
                kfi = cg.fninfos(kidx2)!!

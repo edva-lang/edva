@@ -334,7 +334,6 @@
             byte [10]
                found' = i
                -->
-            | 0
          to_consume = found' !< 0 | found' + 1 | p
          r = libc::recv(fd, &peek_buf, to_consume, 0)
          r [< 1] -->

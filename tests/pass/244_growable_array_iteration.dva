@@ -70,5 +70,5 @@ print_int $ (r | _ | 0)
 
 // 6. Continue
 xs @ x, i =>
-   x == 20 | --^ | 0
+   x == 20 | --^
    print_int $ x

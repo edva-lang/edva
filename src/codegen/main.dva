@@ -347,8 +347,7 @@ codegen_builder_grow = cg, b =>
 // native checked arena path when full, then retain a boundary NUL.
 codegen_builder_append_byte: types::Cg, Addr, Addr => ()
 codegen_builder_append_byte = cg, b, byte_val =>
-   byte_val == Addr(0)
-      | 0
+   byte_val != Addr(0)
       |
          i64t = LLVMInt64Type!
          byte_ty = LLVMTypeOf(byte_val)
@@ -483,8 +482,7 @@ codegen_builder_append_str = cg, b, str_ptr =>
 
 codegen_builder_append_rune: types::Cg, Addr, Addr => ()
 codegen_builder_append_rune = cg, b, rune_val =>
-   rune_val == Addr(0)
-      | 0
+   rune_val != Addr(0)
       |
          i64t = LLVMInt64Type!
          i8t = LLVMInt8Type!
@@ -657,8 +655,7 @@ builder_append_rec_lens = cg, fields, i, n, vals, vts, lens, total_add =>
 builder_append_rec_emit: types::Cg, types::Addrs, ast::VTypes, types::Addrs, Addr, Addr,
    Int, Int => ()
 builder_append_rec_emit = cg, vals, vts, lens, bdata, cur_off, j, n =>
-   j == n
-      | 0
+   j != n
       |
          val = vals(j) | _ | LLVMConstNull(LLVMInt64Type!)
          vt = vts(j) | _ | ast::ValueType(Unknown)
@@ -679,8 +676,7 @@ builder_append_rec_emit = cg, vals, vts, lens, bdata, cur_off, j, n =>
 codegen_builder_append_record: types::Cg, Addr, ast::Fields => ()
 codegen_builder_append_record = cg, b, fields =>
    nf = ?fields
-   nf == 0
-      | 0
+   nf > 0
       |
          zero = LLVMConstInt(LLVMInt64Type!, 0, 0)
          res = builder_append_rec_lens(cg, fields, 0, nf, types::Addrs(),
@@ -731,7 +727,6 @@ codegen_builder_append = cg, b, rhs =>
                         types::is_rune_vt(ev'.1)
                            | codegen_builder_append_rune(cg, b, ev'.0)
                            | codegen_builder_append_byte(cg, b, ev'.0)
-                  | 0
       |
          ev' = expr::codegen_eval(cg, rhs)
          ev'.0 != Addr(0)
@@ -760,7 +755,6 @@ codegen_builder_append = cg, b, rhs =>
                      types::is_rune_vt(ev'.1)
                         | codegen_builder_append_rune(cg, b, ev'.0)
                         | codegen_builder_append_byte(cg, b, ev'.0)
-            | 0
 
 // "+b" transfers the Builder buffer into a String. A buffer allocated after
 // an arena save mark would otherwise be reaped by restore, so preserve it by
@@ -957,8 +951,7 @@ codegen_widen_idx_to_i64 = cg, idx, idx_type, name =>
 // Emits a runtime abort if idx is not in [0, len) — bounds guard for s(i)/b(i).
 codegen_emit_runtime_bounds_check: types::Cg, Addr, ast::ValueType, Addr, String => ()
 codegen_emit_runtime_bounds_check = cg, idx, idx_type, len_val, gname =>
-   idx == Addr(0) || len_val == Addr(0)
-      | 0
+   idx != Addr(0) && len_val != Addr(0)
       |
          i64t = LLVMInt64Type!
          idx_i64 = codegen_widen_idx_to_i64(cg, idx, idx_type, "idx")
@@ -982,8 +975,7 @@ codegen_emit_runtime_bounds_check = cg, idx, idx_type, len_val, gname =>
 // Bounds check for homogeneous record element access (abort E4005).
 codegen_emit_index_bounds_check: types::Cg, Addr, ast::ValueType, Int => ()
 codegen_emit_index_bounds_check = cg, idx, idx_type, bound =>
-   idx == Addr(0)
-      | 0
+   idx != Addr(0)
       |
          i64t = LLVMInt64Type!
          idx_i64 = codegen_widen_idx_to_i64(cg, idx, idx_type, "idx")
@@ -1267,7 +1259,6 @@ codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
          idx_ev = expr::codegen_eval(cg, arg)
          ?fvs2' > 0
             | codegen_emit_index_bounds_check(cg, idx_ev.0, idx_ev.1, ?fvs2')
-            | 0
          idx_i64 = codegen_widen_idx_to_i64(cg, idx_ev.0, idx_ev.1, "idx")
          typed_arr' = LLVMBuildPointerCast(cg.builder, base_ptr,
             LLVMPointerType(elem_ll', 0), "rec.typed")
@@ -1323,7 +1314,6 @@ codegen_eval_evaluated_slice_access = cg, t, base_ptr =>
          slot = LLVMBuildAlloca(cg.builder, cg.slice_t, "sl.base.slot")
          LLVMBuildStore(cg.builder, sv', slot)
          sv' = slot
-      | 0
    arg_is_range = arg [Range _]
    arg_is_range
       |
@@ -1443,11 +1433,9 @@ array_read_typedef = cg, arr_name =>
       [Array a]
          qual_name = a.1 [TypeVar n] types::resolve_type_name(cg, n) | ""
          elem_rec' = qual_name != "" | ast::TypeInfo(TypeVar, qual_name) | a.1
-      | 0
    tname = arr_dt == "" | "#arrread" | ("#arrread_" + arr_dt)
    have = types::has_type_name(cg, tname)
-   have
-      | 0
+   !have
       |
          pos = ast::RamSlotInfo((<+>, elem_vt, elem_rec'))
          neg = ast::RamSlotInfo((<+>, ast::ValueType(Error),
@@ -1463,8 +1451,7 @@ map_read_typedef = cg, map_name =>
    val_ti = ti [Map m] m.2 | ast::TypeInfo(Prim, ast::ValueType(Unknown))
    tname = map_dt == "" | "#mapread" | ("#mapread_" + map_dt)
    have = types::has_type_name(cg, tname)
-   have
-      | 0
+   !have
       |
          pos = ast::RamSlotInfo((<+>, val_vt, val_ti))
          neg = ast::RamSlotInfo((<+>, ast::ValueType(Error),
@@ -1525,7 +1512,6 @@ get_or_emit_array_grow = cg =>
          cg.current_fn = saved_fn
          saved_bb != Addr(0)
             | LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
-            | 0
          fn
 
 // "a += v" — growable-array append of an i64 element (grows on demand).
@@ -1848,7 +1834,7 @@ codegen_ensure_pthread = cg =>
             types::fn_type1(LLVMVoidType!, i8p))
          tls_rec = LLVMAddGlobal(cg.module, i8p,
             "dva_thread_rec")
-         !cg.opts.no_main | LLVMSetInitializer(tls_rec, LLVMConstNull(i8p)) | 0
+         !cg.opts.no_main | LLVMSetInitializer(tls_rec, LLVMConstNull(i8p))
          LLVMSetThreadLocal(tls_rec, 1)
          cg.thread_tls_rec = <+ tls_rec ->
          st
@@ -1871,16 +1857,14 @@ thread_ret_typedef = cg, rt, ret_ti, fname =>
    tname' = ret_ti [TypeVar tn] tn | ""
    tname' == "" && (fname != "") && types::has_type_name(cg, "#ret_" + fname)
       | tname' = "#ret_" + fname
-      | 0
    is_ram = ret_ti [Ram _]
    is_rec = ret_ti [Rec _]
    is_ram_rec = is_ram || is_rec
    tname' == "" && (fname != "") && is_ram_rec
       |
-         types::has_type_name(cg, "#ret_" + fname) | 0 |
-            runtime::add_type(cg, "#ret_" + fname, ret_ti)
+         !types::has_type_name(cg, "#ret_" + fname)
+            | runtime::add_type(cg, "#ret_" + fname, ret_ti)
          tname' = "#ret_" + fname
-      | 0
    name = tname' != ""
       | "#thr_" + tname'
       |
@@ -2060,8 +2044,6 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
          is_cap
             |
                @[asb'] = env_val
-               0
-            | 0
          nargs > 0
             |
                agep = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 4,
@@ -2076,18 +2058,13 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
                         "rec.arg.gep"), "rec.arg")
                   off = is_cap | (i + 1) * 8 | i * 8
                   @[asb' + off] = av
-               0
-            | 0
-         0
-      | 0
    typed = LLVMBuildPointerCast(cg.builder, fptr,
       LLVMPointerType(wfty, 0), "rec.fn.typed")
    is_void = ret_vt [Unit]
    res_name = is_void | "" | "thread.res"
    res = LLVMBuildCall2(cg.builder, wfty, typed, asb', total_args,
       res_name)
-   is_void
-      | 0
+   !is_void
       |
          rgep = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 5,
             "rec.ret.gep")
@@ -2182,7 +2159,6 @@ codegen_eval_spawn = cg, se =>
       av = call.args(i)!!
       types::is_view_expr(cg, av)
          | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
-         | 0
       ev = expr::codegen_eval(cg, av)
       raw_args += ev.0
       raw_vts += ev.1
@@ -2194,9 +2170,7 @@ codegen_eval_spawn = cg, se =>
       |
          stmt::compile_typed_fn_lazy(cg, call.fn_name)
          !types::is_fn_name(cg, call.fn_name)
-            | stmt::compile_fn_lazy(cg, call.fn_name, raw_vts) | 0
-         0
-      | 0
+            | stmt::compile_fn_lazy(cg, call.fn_name, raw_vts)
    fname' = is_top_fn
       | call.fn_name
       |
@@ -2217,16 +2191,14 @@ codegen_eval_spawn = cg, se =>
                <+ cev'.0 ->
             |
                cev' = expr::codegen_eval(cg, call.fn_target)
-               fname' == "" | fname' = cg.last_closure_fn | 0
+               fname' == "" | fname' = cg.last_closure_fn
                <+ cev'.0 ->
       | <-->
    types::has_fn_name(cg, fname') && !types::is_fn_name(cg, fname')
       |
          stmt::compile_typed_fn_lazy(cg, fname')
          !types::is_fn_name(cg, fname')
-            | stmt::compile_fn_lazy(cg, fname', raw_vts) | 0
-         0
-      | 0
+            | stmt::compile_fn_lazy(cg, fname', raw_vts)
    fidx = types::fninfo_index(cg, fname')
    fidx
       | idx =>
@@ -2523,20 +2495,17 @@ is_prelude_wrapper = name =>
 
 codegen_compile_uncalled_signed_fns: types::Cg, ast::Exprs => ()
 codegen_compile_uncalled_signed_fns = cg, stmts =>
-   cg.opts.no_runtime
-      | 0
+   !cg.opts.no_runtime
       |
          ?cg.fns @ i =>
             fd = cg.fns(i)!!
-            types::is_fn_name(cg, fd.name) || is_prelude_wrapper(fd.name)
-               | 0
+            !(types::is_fn_name(cg, fd.name) || is_prelude_wrapper(fd.name))
                |
                   has_sig = stmt::fn_has_signature(stmts, fd.name, 0)
                   has_sig
                      |
                         generic = stmt::sig_ct0_name(stmts, fd.name, 0) != ""
-                        generic | 0 | stmt::compile_fn_lazy(cg, fd.name, ast::VTypes())
-                     | 0
+                        !generic | stmt::compile_fn_lazy(cg, fd.name, ast::VTypes())
 
 // Parse a program and emit it with options; returns 1 on success.
 codegen_program_opts: ast::Expr, String, ast::Names, String, types::CodegenOpts => Int
@@ -2550,8 +2519,8 @@ codegen_program = prog, out_path, exports, source_file =>
 
 codegen_destroy: types::Cg => ()
 codegen_destroy = cg =>
-   cg.builder != Addr(0) | LLVMDisposeBuilder(cg.builder) | 0
-   cg.module != Addr(0) | LLVMDisposeModule(cg.module) | 0
+   cg.builder != Addr(0) | LLVMDisposeBuilder(cg.builder)
+   cg.module != Addr(0) | LLVMDisposeModule(cg.module)
 
 is_fn_vt: ast::ValueType => <>
 is_fn_vt = vt => vt [Fn]
@@ -2584,11 +2553,11 @@ codegen_typed_eval = cg, te =>
          rv = types::resolve_var_name(cg, v.0)
          cg.last_rt = types::var_rt(cg, rv)
          fnames' = types::var_fnames(cg, rv)
-         ?fnames' > 0 | cg.last_fnames = fnames' | 0
+         ?fnames' > 0 | cg.last_fnames = fnames'
          fvts' = match::var_fvts(cg, rv)
-         ?fvts' > 0 | cg.last_fvts = fvts' | 0
+         ?fvts' > 0 | cg.last_fvts = fvts'
          dt = types::var_dtype(cg, rv)
-         dt == "" | 0 | cg.last_type = dt
+         dt != "" | cg.last_type = dt
          types::var_slot(cg, rv)
             | slot =>
                decl_vt = types::var_type(cg, rv)
@@ -2673,7 +2642,6 @@ codegen_typed_eval = cg, te =>
                alloc_p = expr::codegen_call_arena_alloc(cg, sz_c', "record.alloc")
                types::var_slot(cg, vname')
                   | slot => LLVMBuildStore(cg.builder, alloc_p, slot)
-                  | 0
                types::alloc_rec_add(vname')
          tv = codegen_typed_eval(cg, mw.0)
          ev' = codegen_typed_eval(cg, mw.3)
@@ -2883,7 +2851,6 @@ codegen_typed_eval = cg, te =>
                is_lam = a.5.kind [Lambda _]
                !is_lam && types::is_external_module_name(cg, a.0)
                   | stmt::declare_external_var(cg, a.0, a.5.ti)
-                  | <->
                (Addr(0), ast::ValueType(Unit))
             | stmt::codegen_typed_eval_assign(cg, a.0, a.1, a.2, a.3, a.4, a.5, te.ti)
       [Call c]
@@ -2959,10 +2926,8 @@ codegen_typed_eval = cg, te =>
                         |
                            vname' != ""
                               | cg.last_fnames = types::var_fnames(cg, vname')
-                              | 0
                      vname' != ""
                         | cg.last_fvts = match::var_fvts(cg, vname')
-                        | 0
                      (new_p, ast::ValueType(Record))
                   |
                      is_arr_e
@@ -3031,7 +2996,7 @@ codegen_typed_emit_stmts: types::Cg, tast::TypedStmts => ()
 codegen_typed_emit_stmts = cg, stmts =>
    ?stmts @ i =>
       st = stmts(i) | _ | tast::TypedStmt(Expr, tast::mk_lit_unit(0, 0))
-      cg.error | 0 | stmt::codegen_typed_emit_stmt(cg, st)
+      !cg.error | stmt::codegen_typed_emit_stmt(cg, st)
 
 codegen_typed_program_opts: tast::TypedProgram, ast::Expr, String,
    ast::Names, String, types::CodegenOpts => Int
@@ -3068,7 +3033,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
          [Assign amg]
             amg.3 && amg.0 != "" && !types::has_str(types::g.marked_globals, amg.0)
                | types::g.marked_globals += amg.0
-   !cg.opts.no_runtime | runtime::codegen_emit_runtime(cg) | 0
+   !cg.opts.no_runtime | runtime::codegen_emit_runtime(cg)
    types::codegen_build_main(cg)
    stmt::codegen_collect_fns(cg, raw_exprs)
    runtime::codegen_register_types(cg, raw_exprs)
@@ -3089,9 +3054,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
             fd_i = cg.fns(i_mod_fn) | _ | empty_fndef
             types::name_is_in_current_module(cg, fd_i.name)
                | stmt::compile_typed_fn_lazy(cg, fd_i.name)
-               | <->
-      | 0
-   cg.error | 0 | runtime::codegen_finish(cg, out_path)
+   !cg.error | runtime::codegen_finish(cg, out_path)
    res = cg.error | 0 | 1
    codegen_destroy(cg)
    res

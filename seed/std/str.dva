@@ -115,7 +115,6 @@
                   b += '.'
                   1..6 @ i =>
                      b += ms(i)
-                  0
                |
                   e' !< 0
                      |
@@ -127,18 +126,12 @@
                               b += '.'
                               en..6 @ i =>
                                  b += ms(i)
-                              0
-                           |
-                              0
-                        0
                      |
                         b += "0."
                         (0 - e' - 1) @ i =>
                            b += '0'
                         0..6 @ i =>
                            b += ms(i)
-                        0
-                  0
             full = +b
             len = ?full
             end' = len
@@ -171,8 +164,7 @@
       0..n @ i =>
          ca = a(i)
          cb = b(i)
-         ca == cb
-            | 0
+         ca != cb
             |
                r' = ca < cb | -1 | 1
                -->
@@ -190,7 +182,7 @@
    to_int = s =>
       val' = 0
       s @ b, i =>
-         str::is_digit(b) | 0 | -->
+         !str::is_digit(b) | -->
          val' = val' * 10 + (b - '0')
       i [0] Digits(<-->)
       |
@@ -201,7 +193,7 @@
    to_hex = s =>
       val' = 0
       s @ b, i =>
-         str::is_hex(b) | 0 | -->
+         !str::is_hex(b) | -->
          digit = str::is_digit(b)
             | b - '0'
             | b !< 'A' && b !> 'F'

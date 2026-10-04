@@ -22,7 +22,7 @@ join_labels: #! T: Type, T => String
 join_labels = _ =>
    out = {16}
    0..?T @ i =>
-      i > 0 | out += "," | 0
+      i > 0 | out += ","
       out += T.(i)
    +out
 

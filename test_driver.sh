@@ -143,9 +143,7 @@ read_file_text = path =>
 empty_res = read_file_text("FILE_EMPTY_PATH")
 empty_res
    | s =>
-      ?s == 0
-         | 0
-         | sys::exit(2)
+      ?s != 0 | sys::exit(2)
    | sys::exit(3)
 
 nonempty_res = read_file_text("FILE_NONEMPTY_PATH")

@@ -149,7 +149,7 @@ collect_expr_refs = e, locals, refs =>
          r.has_rhs |
             r.rhs
                [Var v]
-                  v == "default" && !r.has_lhs | 0 |
+                  !(v == "default" && !r.has_lhs) |
                      collect_expr_refs(r.rhs, locals, refs)
                | collect_expr_refs(r.rhs, locals, refs)
       [NamedArg na]

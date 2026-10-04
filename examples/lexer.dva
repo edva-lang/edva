@@ -116,7 +116,9 @@ scan_string = src, start =>
       done' [1] -->
       i' !< total | -->
       c = src(i')
-      c ['"'] done' = 1; 0 ['\\'] i' = i' + 1; 0 | 0
+      c
+         ['"'] done' = 1
+         ['\\'] i' = i' + 1
       i' = i' + 1
    Tok((Str, start, i' - start))
 

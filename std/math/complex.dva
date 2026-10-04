@@ -147,7 +147,6 @@
                      tmp = out(j)!!
                      out(j) = out(rev)!!
                      out(rev) = tmp
-                  | 0
             len' = 2
             k @ _ =>
                half = len' / 2
@@ -170,7 +169,6 @@
                   inv_n = 1.0 / Float(n)
                   n @ i =>
                      out(i) = scale(out(i)!!, inv_n)
-               | 0
             out
 
    // Forward Fast Fourier Transform (time domain -> frequency domain)

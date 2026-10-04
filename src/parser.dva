@@ -168,7 +168,7 @@ parser_advance = p =>
    ind = tok_is_indent(prev)
    ded = tok_is_dedent(prev)
    p.indent_level = p.indent_level + (ind | 1 | 0) - (ded | 1 | 0)
-   ded | p.cont_depth = p.cont_depth - (p.cont_depth > 0 | 1 | 0) | 0
+   ded | p.cont_depth = p.cont_depth - (p.cont_depth > 0 | 1 | 0)
    is_continuation_op(prev) | skip_cont(p)
    p.just_dedented = ded
 
@@ -644,7 +644,6 @@ mark_lvalue_cell = e =>
    e
       [Var v] ast::cell_var_add(v)
       [Member m] mark_lvalue_cell(m.target)
-      | 0
 
 atom_binding_var: Parser, String => <ast::Expr|>
 atom_binding_var = p, name =>
@@ -871,7 +870,7 @@ parse_atom: Parser => < ast::Expr | Error >
 parse_atom = p =>
    k = p.curr
    is_id = k.kind [Id]
-   is_id | 0 | p.is_stmt = <->
+   !is_id | p.is_stmt = <->
    k.kind
       [Op]
          p.curr.text
@@ -994,7 +993,7 @@ atom_export: Parser => <ast::Expr|>
 atom_export = p =>
    parser_advance(p)
    alias = p.curr.kind [Str] p.curr.text | ""
-   ?alias > 0 | parser_advance(p) | 0
+   ?alias > 0 | parser_advance(p)
    bk = parse_block(p)
    bk
       | bke => mark_export(p, bke, alias)
@@ -1007,12 +1006,11 @@ mark_public_item = p, e =>
          b.exprs @ child =>
             mark_public_item(p, child)
       [Assign t]
-         t.0 != "" | p.publics += t.0 | 0
+         t.0 != "" | p.publics += t.0
       [TypeDecl t]
-         t.name != "" | p.publics += t.name | 0
+         t.name != "" | p.publics += t.name
       [Foreign f]
-         f.dva_name != "" | p.publics += f.dva_name | 0
-      | 0
+         f.dva_name != "" | p.publics += f.dva_name
 
 // "#public" — marks the following declaration(s) visible across modules.
 atom_public: Parser => <ast::Expr|>
@@ -1032,12 +1030,11 @@ mark_private_item = p, e =>
          b.exprs @ child =>
             mark_private_item(p, child)
       [Assign t]
-         t.0 != "" | p.privates += t.0 | 0
+         t.0 != "" | p.privates += t.0
       [TypeDecl t]
-         t.name != "" | p.privates += t.name | 0
+         t.name != "" | p.privates += t.name
       [Foreign f]
-         f.dva_name != "" | p.privates += f.dva_name | 0
-      | 0
+         f.dva_name != "" | p.privates += f.dva_name
 
 // "#private" — hides the following declaration(s) from importers.
 atom_private: Parser => <ast::Expr|>
@@ -1124,9 +1121,9 @@ atom_foreign = p =>
          a
       | "c"
    is_nl = tok_is_nl(p.curr)
-   is_nl | parser_advance(p) | 0
+   is_nl | parser_advance(p)
    is_block = tok_is_indent(p.curr)
-   is_block | parser_advance(p) | 0
+   is_block | parser_advance(p)
    exprs = foreign_decls(p, abi, is_block, ast::Exprs())
    exprs | es => <+ ast::Expr(Block, ast::BlockExpr(es)) ->
 
@@ -1135,7 +1132,6 @@ foreign_decls_done = p, is_block, exprs =>
    is_ded = is_block && tok_is_dedent(p.curr)
    is_ded
       | parser_advance(p); p.just_dedented = <+>
-      | 0
    <+ exprs ->
 
 foreign_decls: Parser, String, <>, ast::Exprs => <ast::Exprs|>
@@ -1844,12 +1840,13 @@ has_free_underscore_branches = bs =>
       b = bs(i) | _ | ast::ChoiceBranch((
          ast::GuardKind(Case), ast::Exprs(), ast::Expr(Var, "?"),
          ast::Names(), ast::Names(), <->, ast::Expr(Var, "?")))
-      b.is_identity_extractor
-         | 0
-         | has_free_underscore_exprs(b.case_values)
-            | found' = <+>; -->
-            | has_free_underscore(b.block)
-               | found' = <+>; -->
+      !b.is_identity_extractor
+         |
+            has_free_underscore_exprs(b.case_values)
+               | (found' = <+>; -->)
+               |
+                  has_free_underscore(b.block)
+                     | (found' = <+>; -->)
    found'
 
 has_free_underscore_fields: ast::Fields => <>
@@ -2242,23 +2239,18 @@ string_has_double_colon = s, i =>
 
 parser_skip_to_sync_point: Parser, Int => ()
 parser_skip_to_sync_point = p, entry_level =>
-   p.curr.kind
-      [Eof] 0
+   is_sync = tok_is_eof(p.curr) || tok_is_nl(p.curr) ||
+      (tok_is_dedent(p.curr) && p.indent_level !> entry_level)
+   !is_sync
       |
-         tok_is_nl(p.curr)
-            | 0
-            |
-               tok_is_dedent(p.curr) && p.indent_level !> entry_level
-                  | 0
-                  |
-                     ind = tok_is_indent(p.curr)
-                     ded = tok_is_dedent(p.curr)
-                     d_ind = ind | 1 | 0
-                     d_ded = ded | 1 | 0
-                     p.indent_level = p.indent_level + d_ind - d_ded
-                     p.just_dedented = ded
-                     p.curr = lexer::next_tok(p.lx, 0)
-                     parser_skip_to_sync_point(p, entry_level)
+         ind = tok_is_indent(p.curr)
+         ded = tok_is_dedent(p.curr)
+         d_ind = ind | 1 | 0
+         d_ded = ded | 1 | 0
+         p.indent_level = p.indent_level + d_ind - d_ded
+         p.just_dedented = ded
+         p.curr = lexer::next_tok(p.lx, 0)
+         parser_skip_to_sync_point(p, entry_level)
 
 prog_loop: Parser, ast::Exprs => <ast::Exprs|>
 prog_loop = p, stmts =>
@@ -2811,8 +2803,7 @@ rfield_fn_type = p, all_fields, cur_vt, cur_rec =>
                infos += f.rec_type
             is_unit = cur_vt [Unit]
             is_zero_param = ?all_fields == 0 && is_unit
-            is_zero_param
-               | 0
+            !is_zero_param
                |
                   params += cur_vt
                   infos += cur_rec
@@ -3008,7 +2999,7 @@ parse_type_gen_args = p, vts, tis =>
                next_vts += arg_ty.0
                next_tis = tis
                next_tis += arg_ty.1
-               p.curr.kind [Comma] parser_advance(p) | 0
+               p.curr.kind [Comma] parser_advance(p)
                parse_type_gen_args(p, next_vts, next_tis)
 
 parse_type_gen_call: Parser, String,
@@ -3020,7 +3011,7 @@ parse_type_gen_call = p, name, ti =>
       | (ast::ValueType(Unknown),
          ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
-         p.curr.kind [RParen] parser_advance(p) | 0
+         p.curr.kind [RParen] parser_advance(p)
          ti
             [Fn fn_info]
                subst_ti = subst_type_gen(fn_info.3, fn_info.4, args.0,
@@ -3508,16 +3499,15 @@ enum_after_variant = p, is_block, es =>
 
 enum_after_variant_block: Parser, ast::EnumSlots => <ast::TypeInfo|>
 enum_after_variant_block = p, es =>
-   p.curr.kind [Comma] parser_advance(p) | 0
+   p.curr.kind [Comma] parser_advance(p)
    p.curr.kind
       [Newline]
          enum_skip_newlines(p)
-         p.curr.kind [Dedent] parser_advance(p) | 0
+         p.curr.kind [Dedent] parser_advance(p)
          enum_skip_newlines(p)
       [Dedent]
          parser_advance(p)
          enum_skip_newlines(p)
-      | 0
    p.curr.text
       [">"]
          parser_advance(p)
@@ -3601,7 +3591,7 @@ parse_import: Parser, <>, <> => <ast::Expr|>
 parse_import = p, is_dyn, is_imp =>
    path = p.curr.text
    parser_advance(p)
-   is_imp | p.has_use_import = <+> | 0
+   is_imp | p.has_use_import = <+>
    <+ ast::Expr(Import, (ast::ImportStmt((last_segment(path), path,
       is_dyn, is_imp)))) ->
 
@@ -4358,7 +4348,7 @@ pat_is_unconditional = pat_in =>
          all_unc' = <+>
          ?pat.subpatterns @ i =>
             sub = pat.subpatterns(i) | _ | pat_wildcard()
-            !pat_is_unconditional(sub) | all_unc' = <-> | 0
+            !pat_is_unconditional(sub) | all_unc' = <->
          all_unc'
       | <->
 
@@ -4371,7 +4361,7 @@ pat_has_binds = pat_in =>
          has' = <->
          ?pat.subpatterns @ i =>
             sub = pat.subpatterns(i) | _ | pat_wildcard()
-            pat_has_binds(sub) | has' = <+> | 0
+            pat_has_binds(sub) | has' = <+>
          has'
       | <->
 
@@ -4674,7 +4664,7 @@ group_variant_branches = p, pbrs =>
          acc = empty_pbrs()
          res = group_variant_branches_loop(p, pbrs, 0, limit,
             fallback_expr, acc)
-         has_fallback | res += last_pb | 0
+         has_fallback | res += last_pb
          res
 
 finish_parsed_choice: Parser, ast::Expr, (ParsedBranch){} => <ast::Expr|>
@@ -4794,7 +4784,7 @@ choice_cont_step: Parser, (ParsedBranch){}, Int, Int,
    <Int|> => <(ParsedBranch){}|>
 choice_cont_step = p, brs, entry_indent, branch_indent, peek =>
    saw_peek = <>(peek)
-   saw_peek | choice_skip_layout(p, entry_indent) | 0
+   saw_peek | choice_skip_layout(p, entry_indent)
    is_pipe = token_is_pipe(p.curr)
    is_brk = p.curr.kind [LBracket]
    is_sep = is_pipe || is_brk
@@ -5524,7 +5514,7 @@ fwd_fields_str = flds =>
    ?flds @ i =>
       f = flds(i) | _ | ast::RecordFieldType(("", ast::ValueType(Int),
          ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
-      i > 0 | m += "," | 0
+      i > 0 | m += ","
       m += f.name
    +m
 
@@ -6055,7 +6045,8 @@ parse_float_text = text =>
             in_exp' = <+>
          ['-']
             exp_neg' = <+>
-         ['+'] 0
+         ['+']
+            exp_neg' = <->
          | -->
    has' && (!in_exp' || exp_has')
       |

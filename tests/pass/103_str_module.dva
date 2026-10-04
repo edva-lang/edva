@@ -39,7 +39,7 @@ sum' = 0
 print_int $ sum'
 s = "123abc"
 s @ b, i =>
-   str::is_digit(b) | 0 | -->
+   !str::is_digit(b) | -->
 print_int $ i
 s @ b => print_int $ b
 s @
