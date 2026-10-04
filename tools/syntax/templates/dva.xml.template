@@ -7,6 +7,8 @@
       <item>#type</item>
       <item>#foreign</item>
       <item>#pragma</item>
+      <item>#public</item>
+      <item>#pub</item>
       <item>#private</item>
       <item>#export</item>
       <item>#spawn</item>
@@ -52,10 +54,20 @@
         <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="BlockComment" />
         <StringDetect attribute="String" context="RawString" String="(=" beginRegion="RawString" />
         <DetectChar attribute="String" context="String" char="&quot;" />
-        <DetectChar attribute="Char" context="Char" char="'" />
+        <!-- Mutables: foo', x', total'' (highlighted in reddish) -->
+        <RegExpr attribute="Mutable" context="#stay" String="\b[a-zA-Z_][a-zA-Z0-9_]*'+" />
+        <!-- Runes: 'a', '\n', '\'', '\x1b', 'λ' -->
+        <RegExpr attribute="Char" context="#stay" String="'(\\([xX][0-9a-fA-F]+|[uU][0-9a-fA-F]+|.)|[^'\\\n])'" />
+        <!-- Ramification constants -->
+        <StringDetect attribute="Constant" context="#stay" String="&lt;++&gt;" />
+        <StringDetect attribute="Constant" context="#stay" String="&lt;+&gt;" />
+        <StringDetect attribute="Constant" context="#stay" String="&lt;--&gt;" />
+        <StringDetect attribute="Constant" context="#stay" String="&lt;-&gt;" />
+        <StringDetect attribute="Constant" context="#stay" String="&lt;&gt;" />
         <keyword attribute="Directive" context="#stay" String="directives" />
         <keyword attribute="Constant" context="#stay" String="constants" />
         <keyword attribute="Type" context="#stay" String="types" />
+        <!-- Ramification payload delimiters -->
         <StringDetect attribute="Special" context="#stay" String="&lt;+" />
         <StringDetect attribute="Special" context="#stay" String="+&gt;" />
         <StringDetect attribute="Special" context="#stay" String="&lt;-" />
@@ -130,7 +142,8 @@
       <itemData name="Normal Text" defStyleNum="dsNormal" />
       <itemData name="Directive" defStyleNum="dsKeyword" />
       <itemData name="Type" defStyleNum="dsDataType" />
-      <itemData name="Constant" defStyleNum="dsConstant" />
+      <itemData name="Mutable" defStyleNum="dsVariable" color="#c93b2b" selColor="#ffffff" bold="0" italic="0" />
+      <itemData name="Constant" defStyleNum="dsConstant" color="#d97706" selColor="#ffffff" bold="1" italic="0" />
       <itemData name="Control" defStyleNum="dsControlFlow" />
       <itemData name="Operator" defStyleNum="dsOperator" />
       <itemData name="Special" defStyleNum="dsSpecialChar" />

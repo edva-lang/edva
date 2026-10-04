@@ -245,6 +245,42 @@ body.quarto-dark code span.do {
 }
 
 /* ==========================================================================
+   Syntax Highlighting: Mutable Bindings (foo', x') & Constants (<+>, <->)
+   ========================================================================== */
+
+/* Mutable primed identifiers: reddish */
+code span.va {
+  color: #c93b2b !important;
+  font-weight: 500;
+}
+
+body.quarto-dark code span.va {
+  color: #e06c75 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light) code span.va {
+    color: #e06c75 !important;
+  }
+}
+
+/* Ramification constants (<+>, <->, <++>, <-->) */
+code span.cn {
+  color: #b45309 !important;
+  font-weight: 600;
+}
+
+body.quarto-dark code span.cn {
+  color: #fbbf24 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light) code span.cn {
+    color: #fbbf24 !important;
+  }
+}
+
+/* ==========================================================================
    Adaptive Grid Layout (Columns never overlap, eat into margins when needed)
    ========================================================================== */
 

@@ -222,6 +222,10 @@ export def gen-vscode [] {
       "identifiers": {
         "patterns": [
           {
+            "name": "variable.other.mutable.dva",
+            "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*'+"
+          },
+          {
             "name": "entity.name.type.variant.dva",
             "match": "\\b[A-Z][a-zA-Z0-9_]*\\b"
           },
