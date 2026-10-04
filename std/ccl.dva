@@ -1,0 +1,912 @@
+// std/ccl.dva — Categorical Configuration Language (CCL) parser, model,
+// deterministic serializer, and package manifest/lockfile validator.
+//
+// Reference: https://github.com/chshersh/ccl
+// Specification: process/packages.md §2, §4, §6; Issue #97, #98
+
+#use str
+#use io
+#use libc
+
+#public
+
+// --- Core CCL Data Model ----------------------------------------------------
+
+#type Strings (String){}
+
+#type CclVal <
+   Str(String),
+   Block(CclDoc)
+>
+
+#type CclEntry (
+   key: String,
+   val: CclVal,
+   line: Int,
+   col: Int
+)
+
+#type CclEntries (CclEntry){}
+
+#type CclDoc (
+   entries: CclEntries
+)
+
+// --- Package Schema Data Model (#97, #98) -----------------------------------
+
+#type DepKind < Git, Path, Archive >
+
+#type PackageDep (
+   alias: String,
+   kind: DepKind,
+   git_url: String,
+   git_rev: String,
+   path: String,
+   archive_url: String,
+   archive_hash: String
+)
+
+#type PackageDeps (PackageDep){}
+
+#type PackageManifest (
+   name: String,
+   version: String,
+   edva: String,
+   deps: PackageDeps,
+   native_libs: Strings,
+   native_pkg_config: Strings,
+   overrides: PackageDeps
+)
+
+#type LockDep (
+   alias: String,
+   id: String
+)
+
+#type LockDeps (LockDep){}
+
+#type LockPackage (
+   id: String,
+   kind: DepKind,
+   git_url: String,
+   git_rev: String,
+   git_commit: String,
+   archive_url: String,
+   archive_hash: String,
+   path: String,
+   deps: LockDeps,
+   is_override: <>
+)
+
+#type LockPackages (LockPackage){}
+
+#type Lockfile (
+   lock_version: Int,
+   packages: LockPackages,
+   root_deps: LockDeps
+)
+
+// --- Constructors -----------------------------------------------------------
+
+doc_new: () => CclDoc
+doc_new = !=>
+   entries: CclEntries
+   CclDoc((entries))
+
+entry_new_str: String, String, Int, Int => CclEntry
+entry_new_str = k, s, line, col =>
+   CclEntry((k, CclVal(Str, s), line, col))
+
+entry_new_block: String, CclDoc, Int, Int => CclEntry
+entry_new_block = k, doc, line, col =>
+   CclEntry((k, CclVal(Block, doc), line, col))
+
+// --- String Utilities -------------------------------------------------------
+
+is_space: Int => <>
+is_space = c => c == ' ' || c == '\t'
+
+trim_left_idx: String, Int => Int
+trim_left_idx = s, i =>
+   i < ?s && is_space(s(i)) | trim_left_idx(s, i + 1) | i
+
+trim_right_idx: String, Int => Int
+trim_right_idx = s, i =>
+   i > 0 && (is_space(s(i - 1)) || s(i - 1) == '\r' || s(i - 1) == '\n')
+      | trim_right_idx(s, i - 1)
+      | i
+
+trim_str: String => String
+trim_str = s =>
+   len = ?s
+   len == 0 | "" |
+      start = trim_left_idx(s, 0)
+      start !< len | "" |
+         end = trim_right_idx(s, len)
+         end !> start | "" | s(start..end)
+
+find_char_idx: String, Int, Int => Int
+find_char_idx = s, ch, i =>
+   i < ?s
+      | s(i) == ch | i | find_char_idx(s, ch, i + 1)
+      | 0 - 1
+
+find_first_eq: String => Int
+find_first_eq = s => find_char_idx(s, '=', 0)
+
+// --- String Sorting (Pure Insertion Sort) -----------------------------------
+
+sort_strings: Strings => Strings
+sort_strings = arr =>
+   n = ?arr
+   n < 2 | arr |
+      out: Strings
+      arr @ s => out += s
+      1..n @ i =>
+         key = out(i) | _ | ""
+         j' = i
+         0.. @
+            j' !> 0 | -->
+            prev = out(j' - 1) | _ | ""
+            str::cmp(prev, key) > 0
+               |
+                  out(j') = prev !| _
+                  j' = j' - 1
+               | -->
+         out(j') = key !| _
+      out
+
+// --- Identifier & Version Validation ----------------------------------------
+
+is_valid_package_name: String => <>
+is_valid_package_name = name =>
+   n = ?name
+   n == 0 | <-> |
+      first = name(0)
+      (first < 'a' || first > 'z') | <-> |
+         ok' = <+>
+         1..n @ i =>
+            c = name(i)
+            is_valid_ch = (c !< 'a' && c !> 'z') || (c !< '0' && c !> '9') || c == '_'
+            !is_valid_ch | ok' = <->; -->
+         ok'
+
+is_valid_version: String => <>
+is_valid_version = ver =>
+   n = ?ver
+   n == 0 | <-> |
+      ok' = <+>
+      seg_len' = 0
+      dots' = 0
+      0..n @ i =>
+         c = ver(i)
+         c == '.'
+            |
+               seg_len' == 0 | ok' = <->; -->
+               seg_len' = 0
+               dots' = dots' + 1
+            |
+               (c < '0' || c > '9')
+                  | ok' = <->; -->
+                  | seg_len' = seg_len' + 1
+      ok' && dots' > 0 && seg_len' > 0
+
+// --- Error Constructor ------------------------------------------------------
+
+ccl_error: String, String, Int, Int => Error
+ccl_error = file, msg, line, col =>
+   Error(5050, msg, file, line, col, (0, 0))
+
+// --- Document Query Functions -----------------------------------------------
+
+has: CclDoc, String => <>
+has = doc, key =>
+   found' = <->
+   0..?doc.entries @ i =>
+      e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
+      e.key == key |
+         found' = <+>
+         -->
+   found'
+
+count: CclDoc, String => Int
+count = doc, key =>
+   c' = 0
+   doc.entries @ e =>
+      e.key == key | c' = c' + 1
+   c'
+
+get_entry: CclDoc, String => < CclEntry | >
+get_entry = doc, key =>
+   res' = <-->
+   0..?doc.entries @ i =>
+      e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
+      e.key == key |
+         res' = <+ e ->
+         -->
+   res'
+
+get: CclDoc, String => < String | >
+get = doc, key =>
+   res' = <-->
+   0..?doc.entries @ i =>
+      e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
+      e.key == key |
+         e.val [Str s]
+            res' = <+ s ->
+            -->
+   res'
+
+get_section: CclDoc, String => < CclDoc | >
+get_section = doc, key =>
+   res' = <-->
+   0..?doc.entries @ i =>
+      e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
+      e.key == key |
+         e.val [Block b]
+            res' = <+ b ->
+            -->
+   res'
+
+get_list: CclDoc, String => < Strings | >
+get_list = doc, key =>
+   opt_sec = get_section(doc, key)
+   opt_sec
+      | sec =>
+         res: Strings
+         sec.entries @ e =>
+            e.key == "" |
+               e.val [Str s] res += s
+         <+ res ->
+      | <-->
+
+entries_for: CclDoc, String => CclEntries
+entries_for = doc, key =>
+   res: CclEntries
+   doc.entries @ e =>
+      e.key == key | res += e
+   res
+
+// --- Parser -----------------------------------------------------------------
+
+#type ParsedLine (
+   line_no: Int,
+   indent: Int,
+   text: String
+)
+
+#type ParsedLines (ParsedLine){}
+
+split_raw_lines: String => ParsedLines
+split_raw_lines = src =>
+   lines: ParsedLines
+   len = ?src
+   len == 0 | lines |
+      cur_start' = 0
+      line_no' = 1
+      0..len @ i =>
+         c = src(i)
+         c == '\n'
+            |
+               line_end = i > cur_start' && src(i - 1) == '\r' | i - 1 | i
+               raw = src(cur_start'..line_end)
+               ind = trim_left_idx(raw, 0)
+               content = raw(ind..)
+               lines += ParsedLine((line_no', ind, content))
+               line_no' = line_no' + 1
+               cur_start' = i + 1
+      cur_start' < len
+         |
+            line_end = src(len - 1) == '\r' | len - 1 | len
+            raw = src(cur_start'..line_end)
+            ind = trim_left_idx(raw, 0)
+            content = raw(ind..)
+            lines += ParsedLine((line_no', ind, content))
+      lines
+
+parse_block_from: ParsedLines, Int, Int, String => < (CclDoc, Int) | Error >
+parse_block_from = lines, start_idx, min_indent, file =>
+   doc = doc_new!
+   idx' = start_idx
+   total = ?lines
+   has_err' = <->
+   err_val' = ccl_error(file, ++"", 0, 0)
+   base_indent' = 0 - 1
+
+   0.. @
+      has_err' | -->
+      idx' !< total | -->
+      pl = lines(idx') | _ | ParsedLine((0, 0, ""))
+      pl.text == ""
+         | idx' = idx' + 1
+         |
+            base_indent' < 0 | base_indent' = pl.indent
+            pl.indent < min_indent
+               | -->
+               |
+                  pl.indent < base_indent'
+                     | -->
+                     |
+                        // Check comment: starts with "/="
+                        is_comment = ?pl.text > 1 && pl.text(0..2) == "/="
+                        is_comment
+                           |
+                              c_val = trim_str(pl.text(2..))
+                              doc.entries += entry_new_str("/", c_val, pl.line_no, pl.indent + 1)
+                              idx' = idx' + 1
+                           |
+                              eq_idx = find_first_eq(pl.text)
+                              eq_idx < 0
+                                 |
+                                    has_err' = <+>
+                                    err_val' = ccl_error(file,
+                                       "syntax error: line missing '=': " + pl.text,
+                                       pl.line_no, pl.indent + 1)
+                                 |
+                                    k = trim_str(pl.text(0..eq_idx))
+                                    after = pl.text(eq_idx + 1..)
+                                    after_trim = trim_str(after)
+
+                                    after_trim != ""
+                                       |
+                                          doc.entries += entry_new_str(k, after_trim,
+                                             pl.line_no, pl.indent + 1)
+                                          idx' = idx' + 1
+                                       |
+                                          // Indented value on following lines
+                                          next_idx' = idx' + 1
+                                          child_ind' = 0 - 1
+                                          0.. @
+                                             next_idx' !< total | -->
+                                             cand = lines(next_idx') | _ | ParsedLine((0, 0, ""))
+                                             cand.text != ""
+                                                | child_ind' = cand.indent; -->
+                                                | next_idx' = next_idx' + 1
+
+                                          child_ind' > pl.indent
+                                             |
+                                                // Test if child contains '='
+                                                cand_line = lines(next_idx') | _ |
+                                                   ParsedLine((0, 0, ""))
+                                                has_eq = find_first_eq(cand_line.text) !< 0
+                                                has_eq
+                                                   |
+                                                      child_res = parse_block_from(lines,
+                                                         next_idx', child_ind', file)
+                                                      child_res
+                                                         | cres =>
+                                                            doc.entries += entry_new_block(k,
+                                                               cres.0, pl.line_no, pl.indent + 1)
+                                                            idx' = cres.1
+                                                         | e =>
+                                                            has_err' = <+>
+                                                            err_val' = e
+                                                   |
+                                                      // Multiline text block
+                                                      tb = {64}
+                                                      0.. @
+                                                         next_idx' !< total | -->
+                                                         cl = lines(next_idx') | _ |
+                                                            ParsedLine((0, 0, ""))
+                                                         cl.text == ""
+                                                            |
+                                                               tb += 10
+                                                               next_idx' = next_idx' + 1
+                                                            |
+                                                               cl.indent < child_ind'
+                                                                  | -->
+                                                                  |
+                                                                     ?tb > 0 | tb += 10
+                                                                     tb += cl.text
+                                                                     next_idx' = next_idx' + 1
+                                                      doc.entries += entry_new_str(k, +tb,
+                                                         pl.line_no, pl.indent + 1)
+                                                      idx' = next_idx'
+                                             |
+                                                // Empty value
+                                                doc.entries += entry_new_str(k, "",
+                                                   pl.line_no, pl.indent + 1)
+                                                idx' = idx' + 1
+
+   has_err'
+      | <- err_val' ->
+      | <+ (doc, idx') +>
+
+parse: String, String => < CclDoc | Error >
+parse = src, file =>
+   lines = split_raw_lines(src)
+   res = parse_block_from(lines, 0, 0, file)
+   res
+      | pair => <+ pair.0 +>
+      | e => <- e ->
+
+parse_file: String => < CclDoc | Error >
+parse_file = path =>
+   fd = libc::open(path, 0)
+   fd < 0
+      | <- ccl_error(path, "cannot open file: " + path, 1, 1) ->
+      |
+         r = io::reader(fd)
+         txt = io::read_all(r, 1048576)
+         libc::close(fd)
+         txt
+            | content => parse(content, path)
+            | <- ccl_error(path, "cannot read file: " + path, 1, 1) ->
+
+// --- Deterministic Serialization --------------------------------------------
+
+serialize_doc_indent: CclDoc, Int, Builder => ()
+serialize_doc_indent = doc, indent, b =>
+   doc.entries @ e =>
+      indent @ _ => b += ' '
+      e.key == "/"
+         |
+            b += "/= "
+            e.val
+               [Str s] b += s; b += 10
+               [Block _] b += 10
+         |
+            e.key == ""
+               |
+                  b += "= "
+                  e.val
+                     [Str s] b += s; b += 10
+                     [Block sub]
+                        b += 10
+                        serialize_doc_indent(sub, indent + 2, b)
+               |
+                  b += e.key
+                  b += " = "
+                  e.val
+                     [Str s]
+                        b += s
+                        b += 10
+                     [Block sub]
+                        b += 10
+                        serialize_doc_indent(sub, indent + 2, b)
+
+to_ccl: CclDoc => String
+to_ccl = doc =>
+   b = {512}
+   serialize_doc_indent(doc, 0, b)
+   +b
+
+// --- Package Schema Validation ----------------------------------------------
+
+sort_deps: PackageDeps => PackageDeps
+sort_deps = deps =>
+   n = ?deps
+   n < 2 | deps |
+      out: PackageDeps
+      deps @ d => out += d
+      1..n @ i =>
+         key = out(i) | _ | PackageDep(("", DepKind(Path), "", "", "", "", ""))
+         j' = i
+         0.. @
+            j' !> 0 | -->
+            prev = out(j' - 1) | _ | PackageDep(("", DepKind(Path), "", "", "", "", ""))
+            str::cmp(prev.alias, key.alias) > 0
+               |
+                  out(j') = prev !| _
+                  j' = j' - 1
+               | -->
+         out(j') = key !| _
+      out
+
+validate_dep: CclEntry, String => < PackageDep | Error >
+validate_dep = e, file =>
+   alias = e.key
+   !is_valid_package_name(alias)
+      | <- ccl_error(file, "edva.ccl: invalid dependency alias '" + alias + "'", e.line, e.col) ->
+      |
+         e.val
+            [Block ddoc]
+               has_git = has(ddoc, "git")
+               has_path = has(ddoc, "path")
+               has_url = has(ddoc, "url")
+               count' = 0
+               has_git | count' = count' + 1
+               has_path | count' = count' + 1
+               has_url | count' = count' + 1
+
+               count' != 1
+                  |
+                     <- ccl_error(file,
+                        "edva.ccl: dependency '" + alias +
+                        "' must specify exactly one of: git, path, url",
+                        e.line, e.col) ->
+                  |
+                     has_git
+                        |
+                           g_url = get(ddoc, "git") | _ | ""
+                           opt_rev = get(ddoc, "rev")
+                           opt_rev
+                              | rev =>
+                                 <+ PackageDep((alias, DepKind(Git), g_url, rev, "", "", "")) +>
+                              |
+                                 <- ccl_error(file,
+                                    "edva.ccl: dependency '" + alias + "' needs 'rev'",
+                                    e.line, e.col) ->
+                        |
+                           has_path
+                              |
+                                 p = get(ddoc, "path") | _ | ""
+                                 <+ PackageDep((alias, DepKind(Path), "", "", p, "", "")) +>
+                              |
+                                 u = get(ddoc, "url") | _ | ""
+                                 opt_hash = get(ddoc, "hash")
+                                 opt_hash
+                                    | h =>
+                                       <+ PackageDep((alias, DepKind(Archive),
+                                          "", "", "", u, h)) +>
+                                    |
+                                       <- ccl_error(file,
+                                          "edva.ccl: dependency '" + alias + "' needs 'hash'",
+                                          e.line, e.col) ->
+            [Str _]
+               <- ccl_error(file,
+                  "edva.ccl: dependency '" + alias + "' must be a section", e.line, e.col) ->
+
+validate_manifest: CclDoc, String => < PackageManifest | Error >
+validate_manifest = doc, file =>
+   has_err' = <->
+   err_val' = ccl_error(file, ++"", 0, 0)
+
+   // 1. Check unknown top-level keys
+   doc.entries @ e =>
+      k = e.key
+      is_known = k == "name" || k == "version" || k == "edva" ||
+         k == "dependencies" || k == "native" || k == "overrides" || k == "/"
+      !is_known && !has_err'
+         |
+            has_err' = <+>
+            err_val' = ccl_error(file, "edva.ccl: unknown key '" + k + "'", e.line, e.col)
+
+   // 2. Check duplicates for singleton fields
+   !has_err' && count(doc, "name") > 1
+      |
+         has_err' = <+>
+         err_val' = ccl_error(file, "edva.ccl: duplicate key 'name'", 1, 1)
+   !has_err' && count(doc, "version") > 1
+      |
+         has_err' = <+>
+         err_val' = ccl_error(file, "edva.ccl: duplicate key 'version'", 1, 1)
+   !has_err' && count(doc, "edva") > 1
+      |
+         has_err' = <+>
+         err_val' = ccl_error(file, "edva.ccl: duplicate key 'edva'", 1, 1)
+
+   // 3. Required name and version
+   pkg_name' = ++""
+   pkg_ver' = ++""
+   edva_ver' = ++""
+
+   !has_err'
+      |
+         opt_name = get(doc, "name")
+         opt_name
+            | n =>
+               !is_valid_package_name(n)
+                  |
+                     has_err' = <+>
+                     err_val' = ccl_error(file,
+                        "edva.ccl: package name '" + n +
+                        "' must be a lowercase snake_case identifier", 1, 1)
+                  | pkg_name' = n
+            |
+               has_err' = <+>
+               err_val' = ccl_error(file, "edva.ccl: missing required key 'name'", 1, 1)
+
+   !has_err'
+      |
+         opt_ver = get(doc, "version")
+         opt_ver
+            | v =>
+               !is_valid_version(v)
+                  |
+                     has_err' = <+>
+                     err_val' = ccl_error(file,
+                        "edva.ccl: invalid version format: '" + v + "'", 1, 1)
+                  | pkg_ver' = v
+            |
+               has_err' = <+>
+               err_val' = ccl_error(file, "edva.ccl: missing required key 'version'", 1, 1)
+
+   !has_err'
+      |
+         opt_edva = get(doc, "edva")
+         opt_edva
+            | ev => edva_ver' = ev
+            | edva_ver' = ++""
+
+   // 4. Dependencies
+   deps: PackageDeps
+   !has_err'
+      |
+         opt_deps = get_section(doc, "dependencies")
+         opt_deps
+            | ddoc =>
+               ddoc.entries @ de =>
+                  de.key != "/" && !has_err'
+                     |
+                        dep_res = validate_dep(de, file)
+                        dep_res
+                           | pdep => deps += pdep
+                           | e =>
+                              has_err' = <+>
+                              err_val' = e
+
+   // 5. Native libs and pkg-config
+   native_libs: Strings
+   native_pkg_config: Strings
+   !has_err'
+      |
+         opt_native = get_section(doc, "native")
+         opt_native
+            | ndoc =>
+               ndoc.entries @ ne =>
+                  k = ne.key
+                  is_k = k == "libs" || k == "pkg-config" || k == "/"
+                  !is_k && !has_err'
+                     |
+                        has_err' = <+>
+                        err_val' = ccl_error(file, "edva.ccl: unknown key 'native." + k + "'",
+                           ne.line, ne.col)
+
+               !has_err'
+                  |
+                     nl = get_list(ndoc, "libs")
+                     nl | l => native_libs = l
+                     np = get_list(ndoc, "pkg-config")
+                     np | p => native_pkg_config = p
+
+   // 6. Overrides
+   overrides: PackageDeps
+   !has_err'
+      |
+         opt_ovr = get_section(doc, "overrides")
+         opt_ovr
+            | odoc =>
+               odoc.entries @ oe =>
+                  oe.key != "/" && !has_err'
+                     |
+                        oe.val
+                           [Block oblock]
+                              path_opt = get(oblock, "path")
+                              path_opt
+                                 | p =>
+                                    overrides += PackageDep((oe.key, DepKind(Path),
+                                       "", "", p, "", ""))
+                                 |
+                                    has_err' = <+>
+                                    err_val' = ccl_error(file,
+                                       "edva.ccl: override '" + oe.key + "' needs 'path'",
+                                       oe.line, oe.col)
+                           [Str _]
+                              has_err' = <+>
+                              err_val' = ccl_error(file,
+                                 "edva.ccl: override '" + oe.key + "' must be a section",
+                                 oe.line, oe.col)
+
+   has_err'
+      | <- err_val' ->
+      |
+         <+ PackageManifest((
+            pkg_name',
+            pkg_ver',
+            edva_ver',
+            sort_deps(deps),
+            sort_strings(native_libs),
+            sort_strings(native_pkg_config),
+            sort_deps(overrides)
+         )) +>
+
+// --- Deterministic Manifest Serialization -----------------------------------
+
+manifest_to_ccl: PackageManifest => String
+manifest_to_ccl = m =>
+   b = {512}
+   b += "name = " + m.name + "\n"
+   b += "version = " + m.version + "\n"
+   m.edva != "" | b += "edva = " + m.edva + "\n"
+
+   ?m.deps > 0
+      |
+         b += "\ndependencies =\n"
+         sorted_deps = sort_deps(m.deps)
+         sorted_deps @ d =>
+            b += "  " + d.alias + " =\n"
+            d.kind
+               [Git]
+                  b += "    git = " + d.git_url + "\n"
+                  b += "    rev = " + d.git_rev + "\n"
+               [Path]
+                  b += "    path = " + d.path + "\n"
+               [Archive]
+                  b += "    url = " + d.archive_url + "\n"
+                  b += "    hash = " + d.archive_hash + "\n"
+
+   has_native = ?m.native_libs > 0 || ?m.native_pkg_config > 0
+   has_native
+      |
+         b += "\nnative =\n"
+         ?m.native_libs > 0
+            |
+               b += "  libs =\n"
+               sorted_libs = sort_strings(m.native_libs)
+               sorted_libs @ lib =>
+                  b += "    = " + lib + "\n"
+         ?m.native_pkg_config > 0
+            |
+               b += "  pkg-config =\n"
+               sorted_pkg = sort_strings(m.native_pkg_config)
+               sorted_pkg @ pkg =>
+                  b += "    = " + pkg + "\n"
+
+   ?m.overrides > 0
+      |
+         b += "\noverrides =\n"
+         sorted_ovr = sort_deps(m.overrides)
+         sorted_ovr @ o =>
+            b += "  " + o.alias + " =\n"
+            b += "    path = " + o.path + "\n"
+
+   +b
+
+// --- Lockfile Validation & Serialization ------------------------------------
+
+sort_lock_packages: LockPackages => LockPackages
+sort_lock_packages = pkgs =>
+   n = ?pkgs
+   n < 2 | pkgs |
+      out: LockPackages
+      pkgs @ p => out += p
+      empty_deps: LockDeps
+      1..n @ i =>
+         key = out(i) | _ |
+            LockPackage(("", DepKind(Path), "", "", "", "", "", "", empty_deps, <->))
+         j' = i
+         0.. @
+            j' !> 0 | -->
+            prev = out(j' - 1) | _ |
+               LockPackage(("", DepKind(Path), "", "", "", "", "", "", empty_deps, <->))
+            str::cmp(prev.id, key.id) > 0
+               |
+                  out(j') = prev !| _
+                  j' = j' - 1
+               | -->
+         out(j') = key !| _
+      out
+
+sort_lock_deps: LockDeps => LockDeps
+sort_lock_deps = deps =>
+   n = ?deps
+   n < 2 | deps |
+      out: LockDeps
+      deps @ d => out += d
+      1..n @ i =>
+         key = out(i) | _ | LockDep(("", ""))
+         j' = i
+         0.. @
+            j' !> 0 | -->
+            prev = out(j' - 1) | _ | LockDep(("", ""))
+            str::cmp(prev.alias, key.alias) > 0
+               |
+                  out(j') = prev !| _
+                  j' = j' - 1
+               | -->
+         out(j') = key !| _
+      out
+
+validate_lockfile: CclDoc, String => < Lockfile | Error >
+validate_lockfile = doc, file =>
+   has_err' = <->
+   err_val' = ccl_error(file, ++"", 0, 0)
+
+   opt_ver_str = get(doc, "lock")
+   ver' = 0
+   opt_ver_str
+      | vs =>
+         d = str::to_int(vs)
+         d
+            | pair => ver' = pair.0
+            |
+               has_err' = <+>
+               err_val' = ccl_error(file, "edva.lock.ccl: invalid lock version '" + vs + "'", 1, 1)
+      |
+         has_err' = <+>
+         err_val' = ccl_error(file, "edva.lock.ccl: missing required key 'lock'", 1, 1)
+
+   pkgs: LockPackages
+   !has_err'
+      |
+         opt_pkgs_sec = get_section(doc, "packages")
+         opt_pkgs_sec
+            | psec =>
+               psec.entries @ pe =>
+                  pe.key != "/" && !has_err'
+                     |
+                        id = pe.key
+                        pe.val
+                           [Block pd]
+                              has_git = has(pd, "git")
+                              has_path = has(pd, "path")
+                              has_url = has(pd, "url")
+                              g_url = get(pd, "git") | _ | ""
+                              g_rev = get(pd, "rev") | _ | ""
+                              g_commit = get(pd, "commit") | _ | ""
+                              p_path = get(pd, "path") | _ | ""
+                              a_url = get(pd, "url") | _ | ""
+                              a_hash = get(pd, "hash") | _ | ""
+                              is_ovr = has(pd, "override")
+
+                              p_deps: LockDeps
+                              opt_deps_sec = get_section(pd, "deps")
+                              opt_deps_sec
+                                 | ds =>
+                                    ds.entries @ dse =>
+                                       dse.val [Str sid] p_deps += LockDep((dse.key, sid))
+
+                              k' = DepKind(Archive)
+                              has_path | k' = DepKind(Path)
+                              has_git | k' = DepKind(Git)
+                              pkgs += LockPackage((
+                                 id, k', g_url, g_rev, g_commit,
+                                 a_url, a_hash, p_path, sort_lock_deps(p_deps), is_ovr
+                              ))
+                           [Str _]
+                              has_err' = <+>
+                              err_val' = ccl_error(file,
+                                 "edva.lock.ccl: package '" + id + "' must be a section",
+                                 pe.line, pe.col)
+
+   root_deps: LockDeps
+   !has_err'
+      |
+         opt_root_sec = get_section(doc, "root")
+         opt_root_sec
+            | rsec =>
+               rsec.entries @ re =>
+                  re.key != "/"
+                     |
+                        re.val [Str sid] root_deps += LockDep((re.key, sid))
+
+   has_err'
+      | <- err_val' ->
+      | <+ Lockfile((ver', sort_lock_packages(pkgs), sort_lock_deps(root_deps))) +>
+
+lockfile_to_ccl: Lockfile => String
+lockfile_to_ccl = lock =>
+   b = {1024}
+   b += "lock = " + str::from_int(lock.lock_version) + "\n\n"
+
+   b += "packages =\n"
+   sorted_pkgs = sort_lock_packages(lock.packages)
+   sorted_pkgs @ p =>
+      b += "  " + p.id + " =\n"
+      p.kind
+         [Git]
+            b += "    git = " + p.git_url + "\n"
+            p.git_rev != "" | b += "    rev = " + p.git_rev + "\n"
+            p.git_commit != "" | b += "    commit = " + p.git_commit + "\n"
+            p.archive_hash != "" | b += "    hash = " + p.archive_hash + "\n"
+         [Path]
+            b += "    path = " + p.path + "\n"
+            p.is_override | b += "    override = true\n"
+         [Archive]
+            b += "    url = " + p.archive_url + "\n"
+            b += "    hash = " + p.archive_hash + "\n"
+
+      ?p.deps > 0
+         |
+            b += "    deps =\n"
+            sorted_deps = sort_lock_deps(p.deps)
+            sorted_deps @ d =>
+               b += "      " + d.alias + " = " + d.id + "\n"
+
+   b += "\nroot =\n"
+   sorted_root = sort_lock_deps(lock.root_deps)
+   sorted_root @ r =>
+      b += "  " + r.alias + " = " + r.id + "\n"
+
+   +b

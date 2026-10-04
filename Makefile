@@ -44,7 +44,7 @@ else
 endif
 
 # --- Modules and Objects -----------------------------------------------------
-STD_MODULES      := str mem sys libc unicode io
+STD_MODULES      := str mem sys libc unicode io ccl
 COMPILER_MODULES := ast llvm operators dep_graph layout tast lexer unify type_env show parser annotate \
                     codegen/types codegen/runtime codegen/expr codegen/match codegen/stmt codegen/main codegen
 ENTRY_MODULE     := edva

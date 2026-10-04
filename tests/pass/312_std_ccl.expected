@@ -1,0 +1,51 @@
+--- test 1: parsing ---
+<+>
+<->
+1
+hello
+world = 123
+2
+banana
+apple
+127.0.0.1
+8080
+line one
+line two
+--- test 2: manifest validation ---
+my_app
+1.2.3
+0.3.0
+2
+alpha
+zeta
+2
+crypto
+ssl
+1
+libuv
+1
+vendor/zeta
+<+>
+--- test 3: manifest errors ---
+edva.ccl: missing required key 'name'
+edva.ccl: missing required key 'version'
+edva.ccl: duplicate key 'name'
+edva.ccl: package name 'FooBar' must be a lowercase snake_case identifier
+edva.ccl: invalid version format: '1-beta'
+edva.ccl: dependency 'bar' must specify exactly one of: git, path, url
+edva.ccl: dependency 'bar' needs 'rev'
+edva.ccl: unknown key 'foo'
+edva.ccl: override 'bar' needs 'path'
+--- test 4: lockfile validation ---
+1
+2
+alpha_pkg
+zeta_pkg
+2
+alpha
+zeta
+<+>
+--- test 5: lockfile errors ---
+edva.lock.ccl: missing required key 'lock'
+edva.lock.ccl: invalid lock version 'one'
+--- done ---
