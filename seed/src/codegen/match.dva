@@ -184,7 +184,7 @@ codegen_emit_cmp_enum_order_error = cg, op =>
       "' cannot be applied to ramifications — " +
       "ramifications have no ordering; test their slots with '|' " +
       "branches instead.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstNull(LLVMInt1Type!), ast::ValueType(Flag))
 
 find_enum_slots_search: types::Cg, Int, Int => ast::EnumSlots
 find_enum_slots_search = cg, i, n => ast::EnumSlots()
@@ -538,19 +538,19 @@ codegen_emit_cmp_nonmixed = cg, op, lr, rr =>
                                           | r' = stmt::coerce_int_ext(cg, r', i64t, u_r)
                                        (codegen_emit_icmp(cg, op, l', r', is_u),
                                           ast::ValueType(Flag))
-            | (Addr(0), ast::ValueType(Unknown))
-      | (Addr(0), ast::ValueType(Unknown))
+            | (LLVMConstNull(LLVMInt1Type!), ast::ValueType(Flag))
+      | (LLVMConstNull(LLVMInt1Type!), ast::ValueType(Flag))
 
 codegen_emit_mixed_float_cmp_error: types::Cg => (Addr, ast::ValueType)
 codegen_emit_mixed_float_cmp_error = cg =>
    types::init_error(cg, "E3084", "Cannot compare Int with Float — Int and Float are " +
       "distinct numeric types; coerce with 'Float(x)' or 'Int(x)' first.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstNull(LLVMInt1Type!), ast::ValueType(Flag))
 
 codegen_emit_compile_time_error: types::Cg => (Addr, ast::ValueType)
 codegen_emit_compile_time_error = cg =>
    types::init_error(cg, "E3130", "'#!' expression is not compile-time evaluable", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 
 ctfe_truthy: types::CtVal => <>
@@ -1394,7 +1394,7 @@ ctfe_lower: types::Cg, types::CtVal, ast::ValueType => (Addr, ast::ValueType)
 ctfe_lower = cg, cv, vt =>
    is_unit = vt [Unit]
    is_unit
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
          cv
             [Int n]
@@ -1454,10 +1454,10 @@ codegen_eval_user_diag = cg, ud =>
          dbg("]: ")
          dbg(msg_str)
          dbg("\n")
-         (Addr(0), ast::ValueType(Unit))
+         (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
          types::init_error(cg, "E3174", msg_str, ud.line, ud.col)
-         (Addr(0), ast::ValueType(Unknown))
+         (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 codegen_emit_cmp_flag_ram_error: types::Cg, ast::BinaryOp => (Addr, ast::ValueType)
 codegen_emit_cmp_flag_ram_error = cg, op =>
@@ -1473,7 +1473,7 @@ codegen_emit_cmp_flag_ram_error = cg, op =>
             "' cannot be applied to ramifications — " +
             "ramifications have no ordering; test their slots with '|' " +
             "branches instead.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstNull(LLVMInt1Type!), ast::ValueType(Flag))
 
 // FCmp predicates: OGT=2 OLT=4 OEQ=1 UNE=14 OLE=5 OGE=3.
 codegen_emit_fcmp: types::Cg, ast::BinaryOp, Addr, Addr => Addr
@@ -1941,7 +1941,7 @@ codegen_eval_choice_switch: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType => 
 codegen_eval_choice_switch = cg, c, cond_val, cond_type =>
    types::llvm_val_opt(cond_val)
       | cv => codegen_eval_choice_switch_valid(cg, c, cv, cond_type)
-      | (Addr(0), ast::ValueType(Unknown))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 codegen_eval_choice_switch_valid: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType => (Addr, ast::ValueType)
 codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
@@ -1991,7 +1991,7 @@ codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
          stmt::branch_to(cg, exit_bb)
    LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    cg.discard_result
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstNull(i64t), ast::ValueType(Unit))
       |
          res_val_opt = choice_first_live_val(vals, exits, 0)
          res_vt0 = choice_first_live_vt(vts, exits, 0)
@@ -2002,7 +2002,7 @@ codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
          res_lt = res_val_opt | v => LLVMTypeOf(v) | i64t
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
-            | (Addr(0), res_vt)
+            | (LLVMConstNull(res_lt), res_vt)
             |
                phi = LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
                codegen_add_phi_incomings_at(cg, phi, res_lt, vals, bbs, exits,
@@ -2075,7 +2075,7 @@ codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
          stmt::branch_to(cg, exit_bb)
    LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    cg.discard_result
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
          res_val_opt = choice_first_live_val(vals, exits, 0)
          res_vt0 = choice_first_live_vt(vts, exits, 0)
@@ -2086,7 +2086,7 @@ codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
          res_lt = res_val_opt | v => LLVMTypeOf(v) | LLVMInt64Type!
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
-            | (Addr(0), res_vt)
+            | (LLVMConstNull(res_lt), res_vt)
             |
                phi = LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
                codegen_add_phi_incomings_chain_at(cg, phi, res_lt, vals, bbs,
@@ -2101,7 +2101,7 @@ codegen_eval_choice_case = cg, c, cond_val, cond_type =>
          choice_is_value_switch(c)
             | codegen_eval_choice_switch(cg, c, cv, cond_type)
             | codegen_eval_choice_case_chain(cg, c, cv, cond_type)
-      | (Addr(0), ast::ValueType(Unknown))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 // The ValueType for a branch result's LLVM shape (double -> Float, i1 -> Ram,
 // i8* -> String, else Int).
@@ -2200,8 +2200,8 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
          stmt::branch_to(cg, exit_bb)
 
          LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
-         (Addr(0), ast::ValueType(Unit))
-      | (Addr(0), ast::ValueType(Unknown))
+         (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 codegen_eval_choice_bare: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType, String => (Addr, ast::ValueType)
 codegen_eval_choice_bare = cg, c, cond_val, cond_type, dtype =>
@@ -2219,7 +2219,7 @@ codegen_eval_choice_bare = cg, c, cond_val, cond_type, dtype =>
                !is_heap && has_extractor
                   | codegen_payload_extractor_error(cg)
                   | codegen_eval_choice_bare_valid(cg, c, cv, cond_type, dtype)
-      | (Addr(0), ast::ValueType(Unknown))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 choice_branch_is_payload_extractor: ast::ChoiceBranch => <>
 choice_branch_is_payload_extractor = br =>
@@ -2246,7 +2246,7 @@ bare_branch_pay = cg, cond_val, is_niche, niche_side, is_heap, is_unboxed, pay_t
 codegen_payload_extractor_error: types::Cg => (Addr, ast::ValueType)
 codegen_payload_extractor_error = cg =>
    types::init_error(cg, "E3018", "Cannot use payload extractor '_' without payload context.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 codegen_eval_choice_bare_valid: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType, String => (Addr, ast::ValueType)
 codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
@@ -2404,10 +2404,10 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
    ex = t_term && e_term
    cg.exited = ex
    cg.discard_result
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
          t_term && e_term
-            | (Addr(0), ast::ValueType(Unit))
+            | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
             |
                t_un = tv.1 [Unit]
                e_un = ev.1 [Unit]
@@ -2416,7 +2416,7 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
                   (t_term | ev.1 | tv.1)
                is_void = res_vt [Unit, Unknown]
                is_void
-                  | (Addr(0), res_vt)
+                  | (LLVMConstNull(types::llvm_type_of_vt(res_vt)), res_vt)
                   |
                      t_term
                         | (ev.0, ev.1)
@@ -2730,7 +2730,7 @@ codegen_error_or_yield = cg, pay_val, pay_type =>
          cg.exited = <+>
          dead = LLVMAppendBasicBlock(cg.current_fn, "err.abort")
          LLVMPositionBuilderAtEnd(cg.builder, dead)
-         (Addr(0), ast::ValueType(Unknown))
+         (LLVMConstNull(LLVMTypeOf(pay_val)), pay_type)
       | (pay_val, pay_type)
 
 enum_slots_for_label_at: types::Cg, String, Int, Int => (String, ast::EnumSlots)
@@ -2831,7 +2831,7 @@ codegen_eval_choice_variant: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType,
 codegen_eval_choice_variant = cg, c, cond_val, cond_type, dtype =>
    types::llvm_val_opt(cond_val)
       | cv => codegen_eval_choice_variant_valid(cg, c, cv, cond_type, dtype)
-      | (Addr(0), ast::ValueType(Unknown))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 codegen_eval_choice_variant_valid: types::Cg, ast::ChoiceExpr, Addr, ast::ValueType,
    String => (Addr, ast::ValueType)
@@ -2885,7 +2885,7 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
          stmt::branch_to(cg, exit_bb)
    LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
    cg.discard_result
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
          res_val_opt = choice_first_live_val(vals, exits, 0)
          res_vt0 = choice_first_live_vt(vts, exits, 0)
@@ -2896,7 +2896,7 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
          res_lt = res_val_opt | v => LLVMTypeOf(v) | LLVMInt64Type!
          is_void = res_vt [Unit, Unknown]
          n_live == 0 || is_void
-            | (Addr(0), res_vt)
+            | (LLVMConstNull(res_lt), res_vt)
             |
                phi = LLVMBuildPhi(cg.builder, res_lt, "choice.phi")
                codegen_add_phi_incomings_chain_at(cg, phi, res_lt, vals, bbs,
@@ -3017,7 +3017,7 @@ codegen_eval_choice_body = cg, c =>
             |
                types::init_error(cg, "E3136", "Compile-time type choice has no " +
                   "branch for this type.", 0, 0)
-               (Addr(0), ast::ValueType(Unknown))
+               (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
       |
          untyped_fn = choice_untyped_fn_value(cg, c, ?c.branches - 1)
          untyped_fn != ""
@@ -3172,7 +3172,7 @@ codegen_choice_branch_type_error = cg, c =>
          types::init_error(cg, "E3020", "Type mismatch in choice " + where +
             ": Expected " + types::value_type_name(left.0) + ", but got " +
             types::value_type_name(right.0) + ".", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 codegen_eval_choice_after_shape: types::Cg, ast::ChoiceExpr => (Addr, ast::ValueType)
 codegen_eval_choice_after_shape = cg, c =>
@@ -3191,7 +3191,7 @@ codegen_malformed_bare_pipe_error: types::Cg => (Addr, ast::ValueType)
 codegen_malformed_bare_pipe_error = cg =>
    types::init_error(cg, "E2024", "Bare '|' is only allowed as the first branch " +
       "(Left Value) or final branch (catch-all) in a choice expression.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 choice_omits_undefined_condition: types::Cg, ast::ChoiceExpr => <>
 choice_omits_undefined_condition = cg, choice =>
@@ -3210,7 +3210,7 @@ codegen_omitted_choice_condition_error = cg =>
       "condition is only allowed when '_' is already defined in the enclosing " +
       "scope (e.g. inside a '=> '-omitted-param lambda, or a cycle body). '_' " +
       "is not defined here.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 codegen_eval_choice_valid: types::Cg, ast::ChoiceExpr => (Addr, ast::ValueType)
 codegen_eval_choice_valid = cg, c =>
@@ -3225,7 +3225,7 @@ codegen_eval_choice_valid = cg, c =>
             |
                types::init_error(cg, "E3136", "Compile-time type choice has no " +
                   "branch for this type.", 0, 0)
-               (Addr(0), ast::ValueType(Unknown))
+               (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
       |
          saved_discard = cg.discard_result
          cg.discard_result = <->
@@ -3281,7 +3281,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
             |
                types::init_error(cg, "E3017", "Unknown bitfield member '" +
                   t.field_name + "'.", t.line, t.col)
-               (Addr(0), ast::ValueType(Unknown))
+               (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
       |
          is_err = (bv.1 [Error]) || (vname != "" && types::var_dtype(cg, vname) == "Error")
          fnames = is_err
@@ -3315,7 +3315,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                types::init_error(cg, "E3170", "Member index 'x.(i)' must be a " +
                   "compile-time constant (a per-field cycle index).",
                   t.line, t.col)
-               (Addr(0), ast::ValueType(Unknown))
+               (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
             |
                idx = mi | _ | 0
                types::llvm_val_opt(bv.0)
@@ -3385,11 +3385,11 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                         |
                            types::init_error(cg, "E3017", "Member access '" + t.field_name +
                               "' on a non-record value.", t.line, t.col)
-                           (Addr(0), ast::ValueType(Unknown))
+                           (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
                   |
                      types::init_error(cg, "E3017", "Member access '" + t.field_name +
                         "' on a non-record value.", t.line, t.col)
-                     (Addr(0), ast::ValueType(Unknown))
+                     (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 ti_enum_slot_label: ast::TypeInfo, Int => String
 ti_enum_slot_label = ti, idx =>
@@ -3552,7 +3552,7 @@ codegen_unresolved_module_member = cg, t =>
             |
                types::init_error(cg, "E3117", "Enum '" + rtname +
                   "' has no variant '" + t.field_name + "'.", t.line, t.col)
-               (Addr(0), ast::ValueType(Unknown))
+               (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
       |
          name = tname + "::" + t.field_name
          types::has_fn_name(cg, name)
@@ -3734,7 +3734,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_1)
          stmt::branch_to(cg, exit_bb')
          LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
-         (Addr(0), ast::ValueType(Unit))
+         (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
          b1 = branches(1)!!
          vt = types::vt_from_ti_cg(cg, ti)
@@ -3893,7 +3893,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                !then_term | stmt::llvm_add_incoming1(cg, phi, tv_val_opt!!, then_end)
                !else_term | stmt::llvm_add_incoming1(cg, phi, ev_val_opt!!, else_end)
                (phi, vt)
-            | (Addr(0), ast::ValueType(Unit))
+            | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
 
 codegen_typed_choice_case_match: types::Cg, Addr, ast::ValueType, tast::TypedExpr => Addr
 codegen_typed_choice_case_match = cg, cond_val, cond_vt, cve =>
@@ -4121,14 +4121,14 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                   stmt::llvm_add_incoming1(cg, phi, incoming_vals(m)!!,
                      incoming_bbs(m)!!)
                (phi, vt)
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
 
 codegen_typed_eval_choice: types::Cg, tast::TypedExpr, tast::TypedBranches,
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_choice = cg, cond, branches, ti =>
    nbranches = ?branches
    nbranches == 0
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
          b0 = branches(0)!!
          is_b0_bare = b0.kind [Bare]
