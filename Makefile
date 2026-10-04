@@ -2,6 +2,48 @@
 
 SHELL := /usr/bin/env bash
 
+# --- Installation Directories (GNU conventions) ------------------------------
+PREFIX      ?= /usr/local
+EXEC_PREFIX ?= $(PREFIX)
+BINDIR      ?= $(EXEC_PREFIX)/bin
+LIBDIR      ?= $(EXEC_PREFIX)/lib
+INCDIR      ?= $(PREFIX)/include
+DATADIR     ?= $(PREFIX)/share
+DESTDIR     ?=
+
+# --- Tools and Overrides -----------------------------------------------------
+ifeq ($(origin CC),default)
+  CC := clang
+endif
+CC              ?= clang
+CLANG           ?= $(CC)
+EDVA            ?= ./edva
+EDVA_FLAGS      ?= -O2
+NU              ?= nu
+INSTALL         ?= install
+INSTALL_PROGRAM ?= $(INSTALL) -m 755
+INSTALL_DATA    ?= $(INSTALL) -m 644
+INSTALL_DIR     ?= $(INSTALL) -d
+
+# --- Compiler & Linker Flags -------------------------------------------------
+CFLAGS       ?= -O2
+LDFLAGS      ?=
+LLVM_CONFIG  ?= llvm-config
+LLVM_LIBDIR  := $(shell $(LLVM_CONFIG) --libdir 2>/dev/null)
+LLVM_LDFLAGS := $(if $(LLVM_LIBDIR),-L$(LLVM_LIBDIR),)
+LIBS         ?= -lLLVM-18 -lm -ldl
+
+ALL_LDFLAGS  := -Qunused-arguments -Wno-unused-command-line-argument $(CFLAGS) \
+                -Wl,--export-dynamic $(LLVM_LDFLAGS) $(LDFLAGS)
+
+# --- Verbosity Control -------------------------------------------------------
+ifeq ($(V),1)
+  Q :=
+else
+  Q := @
+endif
+
+# --- Modules and Objects -----------------------------------------------------
 STD_MODULES      := str mem sys libc unicode io
 COMPILER_MODULES := ast llvm operators dep_graph layout tast lexer unify type_env show parser annotate \
                     codegen/types codegen/runtime codegen/expr codegen/match codegen/stmt codegen/main codegen
@@ -12,13 +54,12 @@ COMPILER_OBJS := $(patsubst %, build/obj/%.o, $(COMPILER_MODULES))
 ENTRY_OBJ     := build/obj/$(ENTRY_MODULE).o
 ALL_OBJS      := $(STD_OBJS) $(COMPILER_OBJS) $(ENTRY_OBJ)
 
-CLANG ?= clang
-LLVM_LIBDIR  := $(shell llvm-config --libdir 2>/dev/null)
-LLVM_LDFLAGS := $(if $(LLVM_LIBDIR),-L$(LLVM_LIBDIR),)
-LINK_FLAGS   := -Qunused-arguments -Wno-unused-command-line-argument -O2 \
-                -Wl,--export-dynamic $(LLVM_LDFLAGS) -lLLVM-18 -lm -ldl
+# Sources of the compiled objects, and every .dva the dependency scan may reach
+ALL_SRCS      := $(STD_MODULES:%=std/%.dva) $(COMPILER_MODULES:%=src/%.dva) src/$(ENTRY_MODULE).dva
+SCAN_SRCS     := $(shell find src std -name '*.dva')
+DEPS_MK       := build/deps.mk
 
-.PHONY: all edva build clean test check fixed-point rebuild-seed bootstrap gen-tokens gen-operators
+.PHONY: all build clean test check driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators install uninstall
 
 # Default target: incremental modular build
 all: edva
@@ -27,7 +68,7 @@ all: edva
 
 edva: $(ALL_OBJS)
 	@echo "Linking edva..."
-	$(CLANG) $(LINK_FLAGS) $(ALL_OBJS) -o $@
+	$(Q)$(CC) $(ALL_LDFLAGS) $(ALL_OBJS) $(LIBS) -o $@
 	@echo "Built edva successfully."
 
 # Ensure bootstrap compiler exists before compiling any object
@@ -36,36 +77,69 @@ $(ALL_OBJS): | bootstrap build/obj
 # Pattern rules for compilation units
 build/obj/%.o: std/%.dva
 	@echo "Compiling std/$*..."
-	@mkdir -p $(dir $@)
-	./edva $< -c --module $* -o $@ -O2
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(EDVA) $< -c --module $* -o $@ $(EDVA_FLAGS)
 
 build/obj/%.o: src/%.dva
 	@echo "Compiling src/$*..."
-	@mkdir -p $(dir $@)
-	./edva $< -c --module $(notdir $*) -o $@ -O2
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(EDVA) $< -c --module $(notdir $*) -o $@ $(EDVA_FLAGS)
 
 build/obj/edva.o: src/edva.dva
 	@echo "Compiling edva entry..."
-	@mkdir -p $(dir $@)
-	./edva $< -c --entry -o $@ -O2
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(EDVA) $< -c --entry -o $@ $(EDVA_FLAGS)
 
 build/obj:
-	@mkdir -p $@
+	$(Q)mkdir -p $@
 
 # Bootstrap from seed if ./edva binary is missing
 bootstrap:
-	@if [ ! -x ./edva ]; then \
+	$(Q)if [ ! -x ./edva ]; then \
 		echo "edva not found; bootstrapping from seed/ir/..."; \
-		$(CLANG) $(LINK_FLAGS) $$(find seed/ir -name "*.ll") -o edva; \
+		$(CC) $(ALL_LDFLAGS) $$(find seed/ir -name "*.ll") $(LIBS) -o edva; \
 	fi
 
-gen-tokens:
-	@echo "Generating token enums from tools/tokens.txt..."
-	nu tools/gen_tokens.nu
+# --- Automatic Code Generation -----------------------------------------------
 
-gen-operators:
+src/lexer.dva: tools/tokens.txt
+	@echo "Generating token enums from tools/tokens.txt..."
+	$(Q)$(NU) tools/gen_tokens.nu
+
+src/operators.dva: operators.yaml
 	@echo "Generating operator tables from operators.yaml..."
-	nu tools/opgen/main.nu
+	$(Q)$(NU) tools/opgen/main.nu
+
+gen-tokens: src/lexer.dva
+gen-operators: src/operators.dva
+
+# --- Module Dependencies (Prerequisites for incremental & parallel builds) ----
+# build/deps.mk lists, for every object, all .dva files reachable through
+# `#use` (transitively). Regenerated whenever any .dva source changes; GNU make
+# then restarts with the fresh rules.
+
+$(DEPS_MK): $(SCAN_SRCS) tools/gendeps.nu
+	@echo "Generating module dependencies..."
+	$(Q)$(NU) tools/gendeps.nu $@ $(ALL_SRCS)
+
+NODEPS_GOALS := clean uninstall
+ifeq ($(MAKECMDGOALS),)
+  -include $(DEPS_MK)
+else ifneq ($(filter-out $(NODEPS_GOALS),$(MAKECMDGOALS)),)
+  -include $(DEPS_MK)
+endif
+
+# --- Installation ------------------------------------------------------------
+
+install: edva
+	$(INSTALL_DIR) $(DESTDIR)$(BINDIR)
+	$(INSTALL_PROGRAM) edva $(DESTDIR)$(BINDIR)/edva
+	$(INSTALL_DIR) $(DESTDIR)$(LIBDIR)/edva/std
+	cp -R std/* $(DESTDIR)$(LIBDIR)/edva/std/
+
+uninstall:
+	rm -f $(DESTDIR)$(BINDIR)/edva
+	rm -rf $(DESTDIR)$(LIBDIR)/edva
 
 # --- Fixed-Point Verification ------------------------------------------------
 # Stage 1: ./edva compiles all modules to build/stage1/*.ll
@@ -74,60 +148,60 @@ gen-operators:
 
 fixed-point: bootstrap
 	@echo "=== Running 2-stage fixed-point verification ==="
-	@rm -rf build/stage1 build/stage2 edva_stage1 edva_stage2
-	@mkdir -p build/stage1/codegen build/stage2/codegen
+	$(Q)rm -rf build/stage1 build/stage2 edva_stage1 edva_stage2
+	$(Q)mkdir -p build/stage1/codegen build/stage2/codegen
 	@echo "Running Stage 1 compilation..."
-	@for m in $(STD_MODULES); do \
+	$(Q)for m in $(STD_MODULES); do \
 		./edva std/$$m.dva -c --module $$m -o build/stage1/$$m.o -ir || exit 1; \
 		mv -f $$m.ll build/stage1/$$m.ll; \
 	done
-	@for m in $(COMPILER_MODULES); do \
+	$(Q)for m in $(COMPILER_MODULES); do \
 		./edva src/$$m.dva -c --module $$(basename $$m) -o build/stage1/$$m.o -ir || exit 1; \
 		mv -f $$(basename $$m).ll build/stage1/$$m.ll; \
 	done
-	@./edva src/edva.dva -c --entry -o build/stage1/edva.o -ir || exit 1
-	@mv -f edva.ll build/stage1/edva.ll
-	@$(CLANG) $(LINK_FLAGS) $$(find build/stage1 -name "*.ll") -o edva_stage1
+	$(Q)./edva src/edva.dva -c --entry -o build/stage1/edva.o -ir || exit 1
+	$(Q)mv -f edva.ll build/stage1/edva.ll
+	$(Q)$(CC) $(ALL_LDFLAGS) $$(find build/stage1 -name "*.ll") $(LIBS) -o edva_stage1
 	@echo "Running Stage 2 compilation..."
-	@for m in $(STD_MODULES); do \
+	$(Q)for m in $(STD_MODULES); do \
 		./edva_stage1 std/$$m.dva -c --module $$m -o build/stage2/$$m.o -ir || exit 1; \
 		mv -f $$m.ll build/stage2/$$m.ll; \
 	done
-	@for m in $(COMPILER_MODULES); do \
+	$(Q)for m in $(COMPILER_MODULES); do \
 		./edva_stage1 src/$$m.dva -c --module $$(basename $$m) -o build/stage2/$$m.o -ir || exit 1; \
 		mv -f $$(basename $$m).ll build/stage2/$$m.ll; \
 	done
-	@./edva_stage1 src/edva.dva -c --entry -o build/stage2/edva.o -ir || exit 1
-	@mv -f edva.ll build/stage2/edva.ll
+	$(Q)./edva_stage1 src/edva.dva -c --entry -o build/stage2/edva.o -ir || exit 1
+	$(Q)mv -f edva.ll build/stage2/edva.ll
 	@echo "Comparing Stage 1 and Stage 2 IR files..."
-	@diff -u -r -x "*.o" build/stage1/ build/stage2/
+	$(Q)diff -u -r -x "*.o" build/stage1/ build/stage2/
 	@echo "Fixed point verified! (All module IR outputs are byte-identical)"
-	@mv -f edva_stage1 edva
-	@rm -rf build/stage1 build/stage2 edva_stage2
+	$(Q)mv -f edva_stage1 edva
+	$(Q)rm -rf build/stage1 build/stage2 edva_stage2
 
 # --- Rebuild Seed -------------------------------------------------------------
 
 rebuild-seed: fixed-point
 	@echo "Syncing frozen sources to seed/..."
-	@rm -rf seed/src seed/std seed/ir
-	@mkdir -p seed/src/codegen seed/std seed/ir/codegen
-	@cp -f src/*.dva seed/src/
-	@cp -f src/codegen/*.dva seed/src/codegen/
-	@cp -f tools/tokens.txt seed/src/
-	@cp -f prelude.dva seed/prelude.dva
-	@cp -r std/* seed/std/
+	$(Q)rm -rf seed/src seed/std seed/ir
+	$(Q)mkdir -p seed/src/codegen seed/std seed/ir/codegen
+	$(Q)cp -f src/*.dva seed/src/
+	$(Q)cp -f src/codegen/*.dva seed/src/codegen/
+	$(Q)cp -f tools/tokens.txt seed/src/
+	$(Q)cp -f prelude.dva seed/prelude.dva
+	$(Q)cp -r std/* seed/std/
 	@echo "Updating seed modular IR..."
-	@for m in $(STD_MODULES); do \
+	$(Q)for m in $(STD_MODULES); do \
 		./edva seed/std/$$m.dva -c --module $$m -o seed/ir/$$m.o -ir || exit 1; \
 		mv -f $$m.ll seed/ir/$$m.ll; \
 	done
-	@for m in $(COMPILER_MODULES); do \
+	$(Q)for m in $(COMPILER_MODULES); do \
 		./edva seed/src/$$m.dva -c --module $$(basename $$m) -o seed/ir/$$m.o -ir || exit 1; \
 		mv -f $$(basename $$m).ll seed/ir/$$m.ll; \
 	done
-	@./edva seed/src/edva.dva -c --entry -o seed/ir/edva.o -ir || exit 1
-	@mv -f edva.ll seed/ir/edva.ll
-	@rm -f seed/ir/*.o seed/ir/codegen/*.o
+	$(Q)./edva seed/src/edva.dva -c --entry -o seed/ir/edva.o -ir || exit 1
+	$(Q)mv -f edva.ll seed/ir/edva.ll
+	$(Q)rm -f seed/ir/*.o seed/ir/codegen/*.o
 	@echo "Seed successfully rebuilt and verified."
 
 # --- Clean & Test Gates -------------------------------------------------------
@@ -143,6 +217,6 @@ driver-test: edva
 check: build driver-test test
 
 clean:
-	@rm -rf build edva_stage1 edva_stage2 edva_stage1.ll edva_stage2.ll
-	@rm -f *.ll *.o
+	$(Q)rm -rf build edva_stage1 edva_stage2 edva_stage1.ll edva_stage2.ll
+	$(Q)rm -f *.ll *.o
 	@echo "Cleaned build artifacts."
