@@ -3,6 +3,7 @@ edva
 edva_stage1
 edva_stage2
 build/
+AGENTS.md
 .gemini/
 .agents/
 process
