@@ -16,6 +16,7 @@
 #use "unify"
 #use "mem"
 #use "ccl"
+#use "pkg"
 
 #public
 
@@ -2718,6 +2719,7 @@ parse_pos_arg = i, arg, opts =>
 print_usage: Int => ()
 print_usage = _ =>
    print $ "Usage: edva <input.dva | module_dir> [options]"
+   print $ "       edva pkg fetch [dir] [options]"
    print $ "Options:"
    print $ "  -ast, --ast      Print AST of target program"
    print $ "  -ast-tree        Print AST as an indented tree"
@@ -2762,6 +2764,10 @@ dump_program_ast = prog, as_tree =>
 
 run_driver: Int => ()
 run_driver = _ =>
+   sys::argc > 1 && sys::argv_string(1) == "pkg"
+      |
+         rc = pkg::main(2)
+         sys::exit(rc)
    init_compiler_paths!
    ast::cell_var_reset!
    opts = parse_args_step(1, init_opts(0))

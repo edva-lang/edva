@@ -1,0 +1,885 @@
+// src/pkg.dva — the `edva pkg` package tool: dependency-graph resolution,
+// edva.lock.ccl writing, and the .edva/imports.ccl map the compiler consumes.
+//
+// Contract: process/packages.md §2, §4–§7, §13 (issues #97, #101). The
+// compiler never fetches; this tool is the only component that touches git,
+// archives, or the network. Sources are kept in a minimal content store
+// (git mirrors, extracted trees); verification hardening is #102.
+
+#use ccl
+#use libc
+#use str
+#use sys
+
+#foreign "c"
+   getpid: () => Int
+   getenv: (name: String) => Addr
+   mkdir: (path: String, mode: Int) => Int
+
+#type Strings (String){}
+#type SMap String ^ String
+
+#type PkgOpts (
+   root: String,
+   locked: <>,
+   offline: <>,
+   store: String,
+   git: String
+)
+
+// One resolved package instance (a lockfile entry plus the data the import
+// map needs: the package name and the on-disk source directory).
+#type Inst (pkg: ccl::LockPackage, name: String, src: String, key: String)
+#type Insts (Inst){}
+
+// A dependency after applying root overrides: where its tree lives and how it
+// is identified.
+#type Fetched (
+   name: String,
+   dir: String,
+   id: String,
+   key: String,
+   pkg: ccl::LockPackage,
+   manifest: ccl::PackageManifest
+)
+
+#type Resolver (
+   opts: PkgOpts,
+   insts: Insts,
+   done: SMap,
+   stack: Strings,
+   memo: SMap,
+   fetched: SMap,
+   overrides: SMap,
+   libs: Strings,
+   pkg_config: Strings,
+   tmp_n: Int
+)
+
+// The language version this compiler implements (`edva = X.Y` minimum, §9).
+#public
+   lang_version = "0.1.0"
+
+// --- small utilities ---------------------------------------------------------
+
+#private
+   out: String => ()
+   out = s =>
+      libc::write(1, s + "\n", ?s + 1)
+
+   fail: Int, String => <>
+   fail = code, msg =>
+      out("E" + str::from_int(code) + ": " + msg)
+      <->
+
+   getenv_opt: String => < String | >
+   getenv_opt = name =>
+      sys::addr_opt(getenv(name))
+         | p => <+ sys::c_str(p) ->
+         | <-->
+
+   env_or: String, String => String
+   env_or = name, dflt =>
+      v = getenv_opt(name) | s => s | ""
+      v == "" | dflt | v
+
+   path_mode: String => Int
+   path_mode = path =>
+      buf = {144}
+      rc = libc::stat(path, &buf)
+      rc == 0 | Int(@[(&buf + 24) i32]) | -1
+
+   file_exists: String => <>
+   file_exists = path =>
+      m = path_mode(path)
+      m !< 0 && (m .&. 0xf000) != 0x4000
+
+   dir_exists: String => <>
+   dir_exists = path =>
+      m = path_mode(path)
+      m !< 0 && (m .&. 0xf000) == 0x4000
+
+   path_join: String, String => String
+   path_join = a, b => ?a == 0 | b | a + "/" + b
+
+   dirname: String => String
+   dirname = path =>
+      last' = -1
+      ?path @ i => path(i) == '/' | last' = i
+      last' < 0
+         | ""
+         | last' == 0 | "/" | path(..last')
+
+   canonical_path: String => String
+   canonical_path = path =>
+      sys::addr_opt(libc::realpath(path, sys::addr_null))
+         | raw =>
+            res = sys::c_str(raw)
+            libc::free(raw)
+            res
+         | path
+
+   mkdir_p: String => <>
+   mkdir_p = path =>
+      dir_exists(path) | <+> |
+         parent = dirname(path)
+         parent != "" && parent != path | mkdir_p(parent)
+         mkdir(path, 493)
+         dir_exists(path)
+
+   read_text: String => < String | >
+   read_text = path =>
+      fd = libc::open(path, 0)
+      fd < 0 | <--> |
+         r = io::reader(fd)
+         txt = io::read_all(r, 16777216)
+         libc::close(fd)
+         txt
+            | t => <+ t ->
+            | <-->
+
+   // Write via a sibling temp file + rename so readers never see a torn file.
+   write_text: String, String => <>
+   write_text = path, text =>
+      tmp = path + ".tmp" + str::from_int(getpid!)
+      fd = libc::creat(tmp, 420)
+      fd < 0 | <-> |
+         n = libc::write(fd, text, ?text)
+         libc::close(fd)
+         n != ?text
+            |
+               libc::unlink(tmp)
+               <->
+            | libc::rename(tmp, path) == 0
+
+   trim: String => String
+   trim = s =>
+      start' = 0
+      end' = ?s
+      0.. @
+         start' !< end' | -->
+         c = s(start')
+         c == ' ' || c == '\t' || c == '\n' || c == '\r' | start' = start' + 1 | -->
+      0.. @
+         end' !> start' | -->
+         c = s(end' - 1)
+         c == ' ' || c == '\t' || c == '\n' || c == '\r' | end' = end' - 1 | -->
+      s(start'..end')
+
+   starts_with: String, String => <>
+   starts_with = s, p => ?s !< ?p && s(..?p) == p
+
+   split_char: String, Int => Strings
+   split_char = s, ch =>
+      out: Strings
+      cur = {32}
+      ?s @ i =>
+         c = s(i)
+         c == ch
+            | out += +cur
+            | cur += c
+      out += +cur
+      out
+
+   // Single-quote a string for /bin/sh.
+   sq: String => String
+   sq = s =>
+      b = {?s + 8}
+      b += 39
+      ?s @ i =>
+         c = s(i)
+         c == 39
+            | b += "'\\''"
+            | b += c
+      b += 39
+      +b
+
+   sh: String => Int
+   sh = cmd =>
+      st = libc::system(cmd)
+      st < 0 | -1 | (st .>. 8) .&. 255
+
+   // The path of `to` relative to directory `from` (both absolute).
+   relpath: String, String => String
+   relpath = from, to =>
+      fa = split_char(from, '/')
+      ta = split_char(to, '/')
+      common' = 0
+      0.. @
+         common' !< ?fa || common' !< ?ta | -->
+         (fa(common') | _ | "") != (ta(common') | _ | "") | -->
+         common' = common' + 1
+      b = {64}
+      common'..?fa @ i =>
+         (fa(i) | _ | "") != "" |
+            ?b > 0 | b += "/"
+            b += ".."
+      common'..?ta @ i =>
+         seg = ta(i) | _ | ""
+         seg != "" |
+            ?b > 0 | b += "/"
+            b += seg
+      ?b == 0 | "." | +b
+
+   // FNV-1a-style hash of the bytes as 16 hex digits: stable store names.
+   // (No XOR operator: a ^ b == (a | b) & !(a & b).)
+   fnv_hex: String => String
+   fnv_hex = s =>
+      h' = 0x4bf29ce484222325
+      ?s @ i =>
+         c = Int(s(i))
+         both = h' .&. c
+         h' = (h' .|. c) .&. .!.both
+         h' = h' * 1099511628211
+      digits = "0123456789abcdef"
+      b = {16}
+      16 @ i =>
+         nib = (h' .>. (60 - i * 4)) .&. 15
+         b += digits(nib)
+      +b
+
+   names_has: Strings, String => <>
+   names_has = xs, x =>
+      found' = <->
+      xs @ y => y == x | found' = <+>; -->
+      found'
+
+   add_unique: Strings, String => Strings
+   add_unique = xs, x =>
+      out = ++xs
+      !names_has(xs, x) | out += x
+      out
+
+   // Dotted-integer version comparison: a < b.
+   version_lt: String, String => <>
+   version_lt = a, b =>
+      pa = split_char(a, '.')
+      pb = split_char(b, '.')
+      n = ?pa > ?pb | ?pa | ?pb
+      res' = <->
+      n @ i =>
+         sa = pa(i) | _ | "0"
+         sb = pb(i) | _ | "0"
+         va = str::to_int(sa) | p => p.0 | 0 - 1
+         vb = str::to_int(sb) | p => p.0 | 0 - 1
+         va != vb
+            |
+               res' = va < vb
+               -->
+      res'
+
+// --- resolver state ----------------------------------------------------------
+
+#private
+   empty_lock_pkg: () => ccl::LockPackage
+   empty_lock_pkg = !=>
+      deps: ccl::LockDeps
+      ccl::LockPackage(("", ccl::DepKind(Path), "", "", "", "", "", "", deps, <->))
+
+   tmp_path: Resolver => String
+   tmp_path = r =>
+      r.tmp_n = r.tmp_n + 1
+      dir = path_join(r.opts.store, "tmp")
+      mkdir_p(dir)
+      path_join(dir, str::from_int(getpid!) + "-" + str::from_int(r.tmp_n))
+
+   capture: Resolver, String => < String | >
+   capture = r, cmd =>
+      out = tmp_path(r)
+      rc = sh(cmd + " > " + sq(out) + " 2>/dev/null")
+      txt = read_text(out)
+      libc::unlink(out)
+      rc != 0
+         | <-->
+         | txt
+            | t => <+ trim(t) ->
+            | <-->
+
+   git_cmd: Resolver, String => String
+   git_cmd = r, mirror =>
+      "GIT_TERMINAL_PROMPT=0 " + sq(r.opts.git) + " -C " + sq(mirror) + " "
+
+   mirror_dir: Resolver, String => String
+   mirror_dir = r, url => path_join(path_join(r.opts.store, "git"), fnv_hex(url))
+
+   load_manifest: String => < ccl::PackageManifest | >
+   load_manifest = dir =>
+      file = path_join(dir, "edva.ccl")
+      ccl::parse_file(file)
+         | doc =>
+            ccl::validate_manifest(doc, file)
+               | m => <+ m ->
+               | e =>
+                  fail(7001, e.msg + "\n  at " + e.file + ":" + str::from_int(e.line))
+                  <-->
+         | e =>
+            fail(7001, e.msg)
+            <-->
+
+// --- git source --------------------------------------------------------------
+
+#private
+   ensure_mirror: Resolver, String, String => <>
+   ensure_mirror = r, alias, url =>
+      m = mirror_dir(r, url)
+      dir_exists(m) | <+> |
+         r.opts.offline
+            | fail(7003, "offline: '" + alias + "' (" + url + ") is not in the store")
+            |
+               mkdir_p(dirname(m))
+               tmp = tmp_path(r)
+               rc = sh("GIT_TERMINAL_PROMPT=0 " + sq(r.opts.git) +
+                  " clone --bare --quiet " + sq(url) + " " + sq(tmp) + " 2>/dev/null")
+               rc != 0
+                  |
+                     sh("rm -rf " + sq(tmp))
+                     fail(7011, "dependency '" + alias + "': cannot fetch " + url)
+                  |
+                     r.fetched ^ (url) = "1"
+                     libc::rename(tmp, m) == 0 || dir_exists(m)
+
+   // Refresh branches and (possibly moved) tags once per run.
+   fetch_mirror: Resolver, String => ()
+   fetch_mirror = r, url =>
+      !r.opts.offline && !(r.fetched ^? url)
+         |
+            r.fetched ^ (url) = "1"
+            sh(git_cmd(r, mirror_dir(r, url)) + "fetch --quiet --force " + sq(url) +
+               " '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*' 2>/dev/null")
+
+   has_commit: Resolver, String, String => <>
+   has_commit = r, url, commit =>
+      sh(git_cmd(r, mirror_dir(r, url)) + "cat-file -e " + sq(commit + "^{commit}") +
+         " 2>/dev/null") == 0
+
+   rev_parse: Resolver, String, String => < String | >
+   rev_parse = r, url, rev =>
+      capture(r, git_cmd(r, mirror_dir(r, url)) + "rev-parse --verify --quiet " +
+         sq(rev + "^{commit}"))
+
+   // The locked commit for (url, rev) if the lock has one, else resolve the
+   // moving reference against a freshly fetched mirror.
+   resolve_commit: Resolver, String, String, String => < String | >
+   resolve_commit = r, alias, url, rev =>
+      key = url + "#" + rev
+      !ensure_mirror(r, alias, url) | <--> |
+         r.memo ^? key
+            |
+               c = r.memo ^ key | _ | ""
+               !has_commit(r, url, c) | fetch_mirror(r, url)
+               has_commit(r, url, c)
+                  | <+ c ->
+                  |
+                     r.opts.offline
+                        | fail(7003, "offline: '" + alias + "' (" + url + ") is not in the store")
+                        | fail(7004, "dependency '" + alias + "': revision '" + c +
+                           "' not found in " + url)
+                     <-->
+            |
+               r.opts.locked
+                  |
+                     fail(7007, "--locked: edva.lock.ccl is out of date (" + alias + " changed)")
+                     <-->
+                  |
+                     fetch_mirror(r, url)
+                     rev_parse(r, url, rev)
+                        | c =>
+                           r.memo ^ (key) = c
+                           <+ c ->
+                        |
+                           fail(7004, "dependency '" + alias + "': revision '" + rev +
+                              "' not found in " + url)
+                           <-->
+
+   checkout_git: Resolver, String, String => < String | >
+   checkout_git = r, url, commit =>
+      dir = path_join(path_join(r.opts.store, "src"), "git-" + commit)
+      dir_exists(dir) | <+ dir -> |
+         tmp = tmp_path(r)
+         mkdir_p(tmp)
+         rc = sh(git_cmd(r, mirror_dir(r, url)) + "archive --format=tar " + sq(commit) +
+            " | tar -x -C " + sq(tmp) + " 2>/dev/null")
+         mkdir_p(dirname(dir))
+         rc == 0 && (libc::rename(tmp, dir) == 0 || dir_exists(dir))
+            | <+ dir ->
+            |
+               sh("rm -rf " + sq(tmp))
+               fail(7011, "cannot check out " + url + " at " + commit)
+               <-->
+
+// --- archive source ----------------------------------------------------------
+
+#private
+   // An extracted archive's package root: the tree itself, or its single
+   // top-level directory.
+   archive_root: Resolver, String => String
+   archive_root = r, dir =>
+      file_exists(path_join(dir, "edva.ccl")) | dir |
+         capture(r, "ls -A " + sq(dir))
+            | listing =>
+               entries = split_char(listing, '\n')
+               only = entries(0) | _ | ""
+               ?entries == 1 && dir_exists(path_join(dir, only))
+                  | path_join(dir, only)
+                  | dir
+            | dir
+
+   fetch_archive: Resolver, String, String, String => < String | >
+   fetch_archive = r, alias, url, hash =>
+      !starts_with(hash, "sha256-")
+         |
+            fail(7005, "dependency '" + alias + "': unsupported hash '" + hash +
+               "' (expected sha256-<hex>)")
+            <-->
+         |
+            hex = hash(7..)
+            dir = path_join(path_join(r.opts.store, "archive"), hex)
+            dir_exists(dir) | <+ dir -> |
+               r.opts.offline
+                  |
+                     fail(7003, "offline: '" + alias + "' (" + url + ") is not in the store")
+                     <-->
+                  | download_archive(r, alias, url, hex, dir)
+
+   download_archive: Resolver, String, String, String, String => < String | >
+   download_archive = r, alias, url, hex, dir =>
+      file = tmp_path(r)
+      is_local = !starts_with(url, "http://") && !starts_with(url, "https://") &&
+         !starts_with(url, "file://")
+      rc = is_local
+         | sh("cp " + sq(url) + " " + sq(file) + " 2>/dev/null")
+         | sh("curl -fsSL -o " + sq(file) + " " + sq(url) + " 2>/dev/null")
+      rc != 0
+         |
+            libc::unlink(file)
+            fail(7011, "dependency '" + alias + "': cannot fetch " + url)
+            <-->
+         |
+            got = capture(r, "sha256sum " + sq(file) + " | cut -c1-64") | g => g | ""
+            got != hex
+               |
+                  libc::unlink(file)
+                  fail(7005, "dependency '" + alias + "': hash mismatch (expected sha256-" +
+                     hex + ", got sha256-" + got + ")")
+                  <-->
+               |
+                  tmp = tmp_path(r)
+                  mkdir_p(tmp)
+                  xrc = sh("tar -xf " + sq(file) + " -C " + sq(tmp) + " 2>/dev/null")
+                  libc::unlink(file)
+                  root = archive_root(r, tmp)
+                  mkdir_p(dirname(dir))
+                  xrc == 0 && (libc::rename(root, dir) == 0 || dir_exists(dir))
+                     |
+                        sh("rm -rf " + sq(tmp))
+                        <+ dir ->
+                     |
+                        sh("rm -rf " + sq(tmp))
+                        fail(7011, "dependency '" + alias + "': cannot extract " + url)
+                        <-->
+
+// --- graph resolution ----------------------------------------------------------
+
+#private
+   // The override key of a dependency's source, independent of revision:
+   // an override replaces every instance of that source (§7).
+   source_base: ccl::PackageDep, String => String
+   source_base = d, base_dir =>
+      d.kind
+         [Git] "git " + d.git_url
+         [Archive] "url " + d.archive_url
+         [Path] "path " + canonical_path(path_join(base_dir, d.path))
+
+   // Locate a dependency's tree on disk and read its manifest.
+   fetch_dep: Resolver, ccl::PackageDep, String, <> => < Fetched | >
+   fetch_dep = r, d, base_dir, parent_is_path =>
+      base = source_base(d, base_dir)
+      r.overrides ^? base
+         |
+            ovr = r.overrides ^ base | _ | ""
+            fetch_path(r, d.alias, ovr, <+>)
+         |
+            d.kind
+               [Path]
+                  !parent_is_path
+                     |
+                        fail(7014, "dependency '" + d.alias +
+                           "': path sources are only allowed in path packages and the root")
+                        <-->
+                     | fetch_path(r, d.alias, canonical_path(path_join(base_dir, d.path)), <->)
+               [Git]
+                  resolve_commit(r, d.alias, d.git_url, d.git_rev)
+                     | c =>
+                        checkout_git(r, d.git_url, c)
+                           | dir =>
+                              load_manifest(dir)
+                                 | m =>
+                                    pkg = empty_lock_pkg!
+                                    pkg.kind = ccl::DepKind(Git)
+                                    pkg.git_url = d.git_url
+                                    pkg.git_rev = d.git_rev
+                                    pkg.git_commit = c
+                                    id = m.name + "@" + c(..7)
+                                    pkg.id = id
+                                    <+ Fetched((m.name, dir, id, "git " + d.git_url + " " + c,
+                                       pkg, m)) ->
+                                 | <-->
+                           | <-->
+                     | <-->
+               [Archive]
+                  fetch_archive(r, d.alias, d.archive_url, d.archive_hash)
+                     | dir =>
+                        load_manifest(dir)
+                           | m =>
+                              pkg = empty_lock_pkg!
+                              pkg.kind = ccl::DepKind(Archive)
+                              pkg.archive_url = d.archive_url
+                              pkg.archive_hash = d.archive_hash
+                              id = m.name + "@" + d.archive_hash(7..15)
+                              pkg.id = id
+                              <+ Fetched((m.name, dir, id, "url " + d.archive_url + " " +
+                                 d.archive_hash, pkg, m)) ->
+                           | <-->
+                     | <-->
+
+   fetch_path: Resolver, String, String, <> => < Fetched | >
+   fetch_path = r, alias, abs, is_override =>
+      !dir_exists(abs)
+         |
+            fail(7012, "dependency '" + alias + "': path '" + abs + "' not found")
+            <-->
+         | !file_exists(path_join(abs, "edva.ccl"))
+            |
+               fail(7012, "dependency '" + alias + "': no edva.ccl in '" + abs + "'")
+               <-->
+            |
+               load_manifest(abs)
+                  | m =>
+                     pkg = empty_lock_pkg!
+                     pkg.path = relpath(r.opts.root, abs)
+                     pkg.is_override = is_override
+                     id = m.name + "@path"
+                     pkg.id = id
+                     <+ Fetched((m.name, abs, id, "path " + abs, pkg, m)) ->
+                  | <-->
+
+   check_manifest: Resolver, ccl::PackageManifest, <> => <>
+   check_manifest = r, m, is_root =>
+      !is_root && ?m.overrides > 0
+         | out("warning: ignoring 'overrides' in dependency '" + m.name + "'")
+      m.native_libs @ l => r.libs = add_unique(r.libs, l)
+      m.native_pkg_config @ p => r.pkg_config = add_unique(r.pkg_config, p)
+      m.edva != "" && version_lt(lang_version, m.edva)
+         | fail(7009, "package '" + m.name + "' requires edva >= " + m.edva +
+            " (this is " + lang_version + ")")
+         | <+>
+
+   cycle_chain: Strings, String => String
+   cycle_chain = stack, id =>
+      b = {64}
+      on' = <->
+      stack @ s =>
+         s == id | on' = <+>
+         on' |
+            b += s
+            b += " -> "
+      b += id
+      +b
+
+   // Resolve one dependency edge to its instance id (dependency-first).
+   resolve_dep: Resolver, ccl::PackageDep, String, <> => < String | >
+   resolve_dep = r, d, base_dir, parent_is_path =>
+      fetch_dep(r, d, base_dir, parent_is_path)
+         | f =>
+            names_has(r.stack, f.id)
+               |
+                  fail(7002, "dependency cycle: " + cycle_chain(r.stack, f.id))
+                  <-->
+               | r.done ^? (f.id)
+                  |
+                     prev_key = r.done ^ (f.id) | _ | ""
+                     prev_key == f.key
+                        | <+ f.id ->
+                        |
+                           fail(7013, "conflicting sources for package instance '" + f.id +
+                              "': " + prev_key + " and " + f.key)
+                           <-->
+                  | resolve_node(r, f)
+         | <-->
+
+   resolve_node: Resolver, Fetched => < String | >
+   resolve_node = r, f =>
+      !check_manifest(r, f.manifest, <->) | <--> |
+         r.stack += f.id
+         deps: ccl::LockDeps
+         ok' = <+>
+         is_path = f.pkg.kind [Path]
+         f.manifest.deps @ d =>
+            resolve_dep(r, d, f.dir, is_path)
+               | id => deps += ccl::LockDep((d.alias, id))
+               |
+                  ok' = <->
+                  -->
+         pop = Strings()
+         0..?r.stack - 1 @ i => pop += (r.stack(i) | _ | "")
+         r.stack = pop
+         !ok' | <--> |
+            f.pkg.deps = deps
+            r.done ^ (f.id) = f.key
+            r.insts += Inst((f.pkg, f.name, path_join(f.dir, "src"), f.key))
+            <+ f.id ->
+
+// --- lock / import map ---------------------------------------------------------
+
+#private
+   lock_dep_id: ccl::LockDeps, String => String
+   lock_dep_id = deps, alias =>
+      res' = ++ ""
+      deps @ d => d.alias == alias | res' = d.id; -->
+      res'
+
+   lock_has_pkg: ccl::LockPackages, String => <>
+   lock_has_pkg = pkgs, id =>
+      found' = <->
+      pkgs @ p => p.id == id | found' = <+>; -->
+      found'
+
+   // Name what changed between two lockfiles, for the --locked diagnostic.
+   lock_change: ccl::Lockfile, ccl::Lockfile => String
+   lock_change = old, new =>
+      what' = ++ ""
+      new.root_deps @ d =>
+         what' == "" && lock_dep_id(old.root_deps, d.alias) != d.id | what' = d.alias
+      old.root_deps @ d =>
+         what' == "" && lock_dep_id(new.root_deps, d.alias) == "" | what' = d.alias
+      new.packages @ p =>
+         what' == "" && !lock_has_pkg(old.packages, p.id) | what' = p.id
+      old.packages @ p =>
+         what' == "" && !lock_has_pkg(new.packages, p.id) | what' = p.id
+      what' == "" | "lock" | what'
+
+   inst_section: String, String, String, ccl::LockDeps => String
+   inst_section = id, src, name, deps =>
+      b = {256}
+      b += "  " + id + " =\n"
+      b += "    src = " + src + "\n"
+      name != "" | b += "    name = " + name + "\n"
+      ?deps > 0
+         |
+            b += "    aliases =\n"
+            ccl::sort_lock_deps(deps) @ d => b += "      " + d.alias + " = " + d.id + "\n"
+      +b
+
+   import_map_text: Resolver, String, ccl::LockDeps => String
+   import_map_text = r, root_name, root_deps =>
+      b = {1024}
+      b += "imports = 1\n"
+      b += "root = " + r.opts.root + "\n"
+      b += "instances =\n"
+      b += inst_section("root", path_join(r.opts.root, "src"), root_name, root_deps)
+      sorted = ccl::sort_lock_packages(lock_pkgs(r))
+      sorted @ p =>
+         r.insts @ inst =>
+            inst.pkg.id == p.id | b += inst_section(p.id, inst.src, inst.name, p.deps)
+      has_native = ?r.libs > 0 || ?r.pkg_config > 0
+      has_native
+         |
+            b += "native =\n"
+            ?r.libs > 0
+               |
+                  b += "  libs =\n"
+                  ccl::sort_strings(r.libs) @ l => b += "    = " + l + "\n"
+            ?r.pkg_config > 0
+               |
+                  b += "  pkg-config =\n"
+                  ccl::sort_strings(r.pkg_config) @ l => b += "    = " + l + "\n"
+      +b
+
+   lock_pkgs: Resolver => ccl::LockPackages
+   lock_pkgs = r =>
+      out: ccl::LockPackages
+      r.insts @ i => out += i.pkg
+      out
+
+   read_lock: String => < ccl::Lockfile | Error >
+   read_lock = file =>
+      ccl::parse_file(file)
+         | doc => ccl::validate_lockfile(doc, file)
+         | e => <- e ->
+
+// --- entry point ---------------------------------------------------------------
+
+#private
+   find_root: String => String
+   find_root = start =>
+      dir' = canonical_path(start)
+      found' = ++ ""
+      0..128 @ _ =>
+         file_exists(path_join(dir', "edva.ccl")) | found' = dir'; -->
+         parent = dirname(dir')
+         parent == "" || parent == dir' | -->
+         dir' = parent
+      found'
+
+   usage: () => Int
+   usage = !=>
+      out("usage: edva pkg fetch [dir] [--locked] [--offline] [--store <dir>] [--git <exe>]")
+      2
+
+   default_store: () => String
+   default_store = !=>
+      xdg = env_or("XDG_CACHE_HOME", path_join(env_or("HOME", "/tmp"), ".cache"))
+      env_or("EDVA_STORE", path_join(xdg, "edva/store"))
+
+   parse_opts: Int => < PkgOpts | >
+   parse_opts = start =>
+      opts = PkgOpts((".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
+         env_or("EDVA_GIT", "git")))
+      ok' = <+>
+      i' = start
+      0.. @
+         i' !< sys::argc | -->
+         a = sys::argv_string(i')
+         has_val = i' + 1 < sys::argc
+         a
+            ["--locked"] opts.locked = <+>
+            ["--offline"] opts.offline = <+>
+            ["--store"]
+               has_val
+                  |
+                     opts.store = sys::argv_string(i' + 1)
+                     i' = i' + 1
+                  | ok' = <->
+            ["--git"]
+               has_val
+                  |
+                     opts.git = sys::argv_string(i' + 1)
+                     i' = i' + 1
+                  | ok' = <->
+            |
+               ?a > 0 && a(0) == '-'
+                  | ok' = <->
+                  | opts.root = a
+         i' = i' + 1
+      ok' | <+ opts -> | <-->
+
+   // `edva pkg fetch`: resolve the root's graph, write edva.lock.ccl when it
+   // changed, and (re)write .edva/imports.ccl.
+   cmd_fetch: PkgOpts => Int
+   cmd_fetch = opts =>
+      root = find_root(opts.root)
+      root == ""
+         |
+            fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
+            1
+         |
+            opts.root = root
+            opts.store = canonical_path(opts.store)
+            run_fetch(opts)
+
+   run_fetch: PkgOpts => Int
+   run_fetch = opts =>
+      lock_file = path_join(opts.root, "edva.lock.ccl")
+      has_lock = file_exists(lock_file)
+      opts.locked && !has_lock
+         |
+            fail(7006, "--locked: edva.lock.ccl not found")
+            1
+         |
+            prior_res = has_lock
+               | read_lock(lock_file)
+               | <+ ccl::Lockfile((1, ccl::LockPackages(), ccl::LockDeps())) +>
+            prior_res
+               | prior => resolve_root(opts, prior, has_lock)
+               | e =>
+                  fail(7018, e.msg)
+                  1
+
+   resolve_root: PkgOpts, ccl::Lockfile, <> => Int
+   resolve_root = opts, prior, has_lock =>
+      r = Resolver((opts, Insts(), SMap(), Strings(), SMap(), SMap(), SMap(), Strings(), Strings(), 0))
+      prior.packages @ p =>
+         p.kind [Git] r.memo ^ (p.git_url + "#" + p.git_rev) = p.git_commit
+      load_manifest(opts.root)
+         | m => resolve_with_root(r, m, prior, has_lock)
+         | 1
+
+   install_overrides: Resolver, ccl::PackageManifest => <>
+   install_overrides = r, m =>
+      ok' = <+>
+      m.overrides @ o =>
+         ok' |
+            r.opts.locked
+               |
+                  fail(7008, "--locked: override for '" + o.alias + "' is not allowed")
+                  ok' = <->
+               |
+                  base' = ++ ""
+                  m.deps @ d => d.alias == o.alias | base' = source_base(d, r.opts.root)
+                  base' == ""
+                     |
+                        fail(7016, "edva.ccl: override '" + o.alias +
+                           "' does not name a dependency")
+                        ok' = <->
+                     | r.overrides ^ (base') = canonical_path(path_join(r.opts.root, o.path))
+      ok'
+
+   resolve_with_root: Resolver, ccl::PackageManifest, ccl::Lockfile, <> => Int
+   resolve_with_root = r, m, prior, has_lock =>
+      !install_overrides(r, m) || !check_manifest(r, m, <+>) | 1 |
+         r.stack += m.name + "@path"
+         root_deps: ccl::LockDeps
+         ok' = <+>
+         m.deps @ d =>
+            ok' |
+               resolve_dep(r, d, r.opts.root, <+>)
+                  | id => root_deps += ccl::LockDep((d.alias, id))
+                  | ok' = <->
+         !ok' | 1 | write_outputs(r, m, prior, has_lock, root_deps)
+
+   write_outputs: Resolver, ccl::PackageManifest, ccl::Lockfile, <>, ccl::LockDeps => Int
+   write_outputs = r, m, prior, has_lock, root_deps =>
+      lock = ccl::Lockfile((1, lock_pkgs(r), root_deps))
+      text = ccl::lockfile_to_ccl(lock)
+      lock_file = path_join(r.opts.root, "edva.lock.ccl")
+      old_text = read_text(lock_file) | t => t | ""
+      changed = old_text != text
+      r.opts.locked && changed
+         |
+            fail(7007, "--locked: edva.lock.ccl is out of date (" + lock_change(prior, lock) +
+               " changed)")
+            1
+         |
+            lock_ok = !changed || write_text(lock_file, text)
+            edva_dir = path_join(r.opts.root, ".edva")
+            map_ok = lock_ok && mkdir_p(edva_dir) &&
+               write_text(path_join(edva_dir, "imports.ccl"),
+                  import_map_text(r, m.name, root_deps))
+            !map_ok
+               |
+                  fail(7017, "cannot write " + lock_file + " or .edva/imports.ccl")
+                  1
+               |
+                  n = ?r.insts
+                  out("locked " + str::from_int(n) + (n == 1 | " package" | " packages"))
+                  0
+
+#public
+   // `edva pkg <cmd> ...` — argv index `start` points at <cmd>.
+   main: Int => Int
+   main = start =>
+      start !< sys::argc
+         | usage!
+         |
+            cmd = sys::argv_string(start)
+            cmd
+               ["fetch"]
+                  parse_opts(start + 1)
+                     | opts => cmd_fetch(opts)
+                     | usage!
+               ["help", "-h", "--help"]
+                  usage!
+                  0
+               |
+                  fail(7015, "unknown pkg command '" + cmd + "'")
+                  usage!

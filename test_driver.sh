@@ -467,4 +467,223 @@ if ! grep -q "E5022" "$TMPDIR/t11.out" "$TMPDIR/t11.err"; then
 fi
 echo "PASS"
 
+# --- Test 12: edva pkg CLI usage and dispatch ---
+echo -n "Testing edva pkg CLI dispatch and usage... "
+set +e
+timeout 30 ./edva pkg >"$TMPDIR/t12.out" 2>"$TMPDIR/t12.err"
+rc=$?
+set -e
+if [ $rc -ne 2 ] || ! grep -q "usage: edva pkg fetch" "$TMPDIR/t12.out"; then
+    echo "FAILED: expected rc=2 and usage message for 'edva pkg'"
+    cat "$TMPDIR/t12.out" "$TMPDIR/t12.err"
+    exit 1
+fi
+set +e
+timeout 30 ./edva pkg --help >"$TMPDIR/t12_h.out" 2>"$TMPDIR/t12_h.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "usage: edva pkg fetch" "$TMPDIR/t12_h.out"; then
+    echo "FAILED: expected rc=0 and usage message for 'edva pkg --help'"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 13: edva pkg fetch generates lock and import map ---
+echo -n "Testing edva pkg fetch resolution, lockfile and imports.ccl generation... "
+PKGDIR="$TMPDIR/pkg_app"
+mkdir -p "$PKGDIR/src" "$PKGDIR/packages/lib_a/src"
+cat <<'EOF' > "$PKGDIR/edva.ccl"
+name = app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  a =
+    path = ./packages/lib_a
+EOF
+cat <<'EOF' > "$PKGDIR/packages/lib_a/edva.ccl"
+name = lib_a
+version = 1.0.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$PKGDIR/packages/lib_a/src/lib_a.dva"
+#public
+   forty_two = 42
+EOF
+cat <<'EOF' > "$PKGDIR/src/main.dva"
+#use @a
+#use io
+io::out $ str::from_int(a::forty_two)
+EOF
+
+set +e
+timeout 30 ./edva pkg fetch "$PKGDIR" >"$TMPDIR/t13.out" 2>"$PKGDIR/t13.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || [ ! -f "$PKGDIR/edva.lock.ccl" ] || [ ! -f "$PKGDIR/.edva/imports.ccl" ]; then
+    echo "FAILED: edva pkg fetch failed to generate lockfile or imports map, rc=$rc"
+    cat "$TMPDIR/t13.out" "$PKGDIR/t13.err"
+    exit 1
+fi
+if ! grep -q "lib_a@path" "$PKGDIR/edva.lock.ccl"; then
+    echo "FAILED: edva.lock.ccl missing lib_a@path"
+    exit 1
+fi
+if ! grep -q "aliases =" "$PKGDIR/.edva/imports.ccl"; then
+    echo "FAILED: imports.ccl missing aliases section"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 14: edva pkg fetch --locked enforcement ---
+echo -n "Testing edva pkg fetch --locked validation... "
+set +e
+timeout 30 ./edva pkg fetch "$PKGDIR" --locked >"$TMPDIR/t14.out" 2>"$TMPDIR/t14.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ]; then
+    echo "FAILED: expected --locked to succeed on matching lockfile, got rc=$rc"
+    exit 1
+fi
+# Mutate manifest to trigger out of date error
+printf '  extra =\n    path = ./packages/lib_a\n' >> "$PKGDIR/edva.ccl"
+set +e
+timeout 30 ./edva pkg fetch "$PKGDIR" --locked >"$TMPDIR/t14_stale.out" 2>"$TMPDIR/t14_stale.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7007" "$TMPDIR/t14_stale.out"; then
+    echo "FAILED: expected E7007 on out of date lockfile under --locked"
+    cat "$TMPDIR/t14_stale.out"
+    exit 1
+fi
+rm -f "$PKGDIR/edva.lock.ccl"
+set +e
+timeout 30 ./edva pkg fetch "$PKGDIR" --locked >"$TMPDIR/t14_missing.out" 2>"$TMPDIR/t14_missing.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7006" "$TMPDIR/t14_missing.out"; then
+    echo "FAILED: expected E7006 on missing lockfile under --locked"
+    cat "$TMPDIR/t14_missing.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 15: edva pkg fetch cycle detection ---
+echo -n "Testing edva pkg fetch dependency cycle detection... "
+CYCDIR="$TMPDIR/pkg_cycle"
+mkdir -p "$CYCDIR/packages/c1/src" "$CYCDIR/packages/c2/src"
+cat <<'EOF' > "$CYCDIR/edva.ccl"
+name = cyc_root
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  c1 =
+    path = ./packages/c1
+EOF
+cat <<'EOF' > "$CYCDIR/packages/c1/edva.ccl"
+name = c1
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  c2 =
+    path = ../c2
+EOF
+cat <<'EOF' > "$CYCDIR/packages/c2/edva.ccl"
+name = c2
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  c1 =
+    path = ../c1
+EOF
+set +e
+timeout 30 ./edva pkg fetch "$CYCDIR" >"$TMPDIR/t15.out" 2>"$TMPDIR/t15.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7002: dependency cycle: c1@path -> c2@path -> c1@path" "$TMPDIR/t15.out"; then
+    echo "FAILED: expected E7002 dependency cycle error"
+    cat "$TMPDIR/t15.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 16: edva pkg fetch root overrides and --locked rejection ---
+echo -n "Testing edva pkg fetch overrides and --locked rejection... "
+OVRDIR="$TMPDIR/pkg_ovr"
+mkdir -p "$OVRDIR/packages/orig/src" "$OVRDIR/packages/rep/src"
+cat <<'EOF' > "$OVRDIR/packages/orig/edva.ccl"
+name = orig
+version = 1.0.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$OVRDIR/packages/rep/edva.ccl"
+name = rep
+version = 2.0.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$OVRDIR/edva.ccl"
+name = ovrapp
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  dep =
+    path = ./packages/orig
+
+overrides =
+  dep =
+    path = ./packages/rep
+EOF
+set +e
+timeout 30 ./edva pkg fetch "$OVRDIR" >"$TMPDIR/t16.out" 2>"$TMPDIR/t16.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "rep@path" "$OVRDIR/edva.lock.ccl"; then
+    echo "FAILED: expected override to select rep@path"
+    cat "$TMPDIR/t16.out"
+    exit 1
+fi
+if ! grep -q "override = true" "$OVRDIR/edva.lock.ccl"; then
+    echo "FAILED: expected override = true in edva.lock.ccl"
+    exit 1
+fi
+set +e
+timeout 30 ./edva pkg fetch "$OVRDIR" --locked >"$TMPDIR/t16_lock.out" 2>"$TMPDIR/t16_lock.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7008" "$TMPDIR/t16_lock.out"; then
+    echo "FAILED: expected E7008 when --locked runs with overrides"
+    cat "$TMPDIR/t16_lock.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 17: edva pkg fetch --offline enforcement ---
+echo -n "Testing edva pkg fetch --offline rejection... "
+OFFDIR="$TMPDIR/pkg_off"
+mkdir -p "$OFFDIR"
+cat <<'EOF' > "$OFFDIR/edva.ccl"
+name = offapp
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  net_dep =
+    git = https://example.com/doesnotexist.git
+    rev = main
+EOF
+set +e
+timeout 30 ./edva pkg fetch "$OFFDIR" --offline --store "$TMPDIR/store" >"$TMPDIR/t17.out" 2>"$TMPDIR/t17.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7003: offline:" "$TMPDIR/t17.out"; then
+    echo "FAILED: expected E7003 offline error"
+    cat "$TMPDIR/t17.out"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
