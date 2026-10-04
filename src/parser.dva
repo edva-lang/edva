@@ -4132,8 +4132,7 @@ parse_lit_pattern = p =>
       [Float]
          txt = p.curr.text
          parser_advance(p)
-         // Anonymous Float ram requires named lambda (eval_heap_under skips unbox)
-         fval = parse_float_text(txt) | v => v | 0.0
+         fval = parse_float_text(txt) | _ | 0.0
          <+ pat_lit(ast::Expr(Float, fval)) ->
       [Str]
          txt = p.curr.text
@@ -4157,8 +4156,7 @@ parse_lit_pattern = p =>
                   [Float]
                      txt = p.curr.text
                      parser_advance(p)
-                     // Anonymous Float ram requires named lambda (eval_heap_under skips unbox)
-                     fval = parse_float_text(txt) | v => v | 0.0
+                     fval = parse_float_text(txt) | _ | 0.0
                      <+ pat_lit(ast::Expr(Float, 0.0 - fval)) ->
                   | <-->
             | <-->

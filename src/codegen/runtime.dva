@@ -1238,7 +1238,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
          types::var_slot(cg, t.0)
             | _
             | types::create_slot(cg, t.0, llvm_type, cg.in_fn)
-   store_v = types::llvm_val_opt(ev.0) | v => v | LLVMConstNull(llvm_type)
+   store_v = types::llvm_val_opt(ev.0) | _ | LLVMConstNull(llvm_type)
    LLVMBuildStore(cg.builder, store_v, slot)
    // A heap ram keeps the declared-type name (its payload type resolves from
    // it); an unwrapped scalar does not — the last_type may name an unrelated
@@ -1634,7 +1634,7 @@ codegen_emit_raw_assign_value = cg, t, rm, ev =>
    av = expr::codegen_eval(cg, rm.addr)
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    raw_addr_opt = types::raw_addr_value(cg, av.0, av.1, i8p)
-   raw_addr = raw_addr_opt | p => p | LLVMConstNull(i8p)
+   raw_addr = raw_addr_opt | _ | LLVMConstNull(i8p)
    elem_ty = raw_store_elem_type(ev.1, i8p)
    elem_ptr = LLVMBuildPointerCast(cg.builder, raw_addr,
       LLVMPointerType(elem_ty, 0), "raw.ptr.w")

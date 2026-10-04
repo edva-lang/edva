@@ -1346,7 +1346,7 @@ codegen_eval_evaluated_slice_access = cg, t, base_ptr =>
          elem_vt = ?cg.last_fvts > 0
             | (cg.last_fvts(0) | _ | ast::ValueType(Int))
             | ast::ValueType(Int)
-         elem_ll = cg.last_rt | rt => rt | i64t
+         elem_ll = cg.last_rt | _ | i64t
          typed_data = LLVMBuildPointerCast(cg.builder, data,
             LLVMPointerType(elem_ll, 0), "slice.typed")
          slot2 = types::gep1(cg, elem_ll, typed_data, idx_i64, "slice.elem.gep")
@@ -1793,8 +1793,9 @@ codegen_emit_error_panic = cg, err_ptr =>
    pex = {8}
    peb = &pex
    @[peb] = LLVMConstNull(i8p)
+   pfn = cg.pthread_exit_fn | _ | LLVMConstNull(i8p)
    LLVMBuildCall2(cg.builder,
-      types::fn_type1(LLVMVoidType!, i8p), cg.pthread_exit_fn, peb, 1, "")
+      types::fn_type1(LLVMVoidType!, i8p), pfn, peb, 1, "")
    LLVMBuildUnreachable(cg.builder)
    LLVMPositionBuilderAtEnd(cg.builder, normal_bb)
    LLVMBuildCall2(cg.builder,
@@ -1825,12 +1826,12 @@ codegen_ensure_pthread = cg =>
          st = types::struct_type_n(cg, tarr, 8)
          cg.thread_rec_t = <+ st ->
          i64p = LLVMPointerType(i64t, 0)
-         cg.pthread_create_fn = LLVMAddFunction(cg.module, "pthread_create",
-            fn_type4(LLVMInt32Type!, i64p, i8p, i8p, i8p))
-         cg.pthread_join_fn = LLVMAddFunction(cg.module, "pthread_join",
-            types::fn_type2(cg, LLVMInt32Type!, i64t, i8p))
-         cg.pthread_exit_fn = LLVMAddFunction(cg.module, "pthread_exit",
-            types::fn_type1(LLVMVoidType!, i8p))
+         cg.pthread_create_fn = <+ LLVMAddFunction(cg.module, "pthread_create",
+            fn_type4(LLVMInt32Type!, i64p, i8p, i8p, i8p)) ->
+         cg.pthread_join_fn = <+ LLVMAddFunction(cg.module, "pthread_join",
+            types::fn_type2(cg, LLVMInt32Type!, i64t, i8p)) ->
+         cg.pthread_exit_fn = <+ LLVMAddFunction(cg.module, "pthread_exit",
+            types::fn_type1(LLVMVoidType!, i8p)) ->
          tls_rec = LLVMAddGlobal(cg.module, i8p,
             "dva_thread_rec")
          !cg.opts.no_main | LLVMSetInitializer(tls_rec, LLVMConstNull(i8p))
@@ -2299,9 +2300,10 @@ codegen_eval_spawn = cg, se =>
          @[cb + 8] = LLVMConstNull(i8p)
          @[cb + 16] = wrapper
          @[cb + 24] = rraw
+         pfn = cg.pthread_create_fn | _ | LLVMConstNull(i8p)
          LLVMBuildCall2(cg.builder,
             fn_type4(LLVMInt32Type!, LLVMPointerType(i64t, 0), i8p, i8p, i8p),
-            cg.pthread_create_fn, cb, 4, "thread.create")
+            pfn, cb, 4, "thread.create")
          sig_ti = stmt::fn_signature_return_ti(cg, types::g.pstmts, call.fn_name, 0)
          cg.last_type = thread_ret_typedef(cg, ret, sig_ti, call.fn_name)
          (rec, ast::ValueType(Ram))
@@ -2326,8 +2328,9 @@ codegen_eval_join = cg, je =>
    jb = &jargs
    @[jb] = tid
    @[jb + 8] = LLVMConstNull(i8p)
+   jpfn = cg.pthread_join_fn | _ | LLVMConstNull(i8p)
    LLVMBuildCall2(cg.builder, types::fn_type2(cg, LLVMInt32Type!, i64t, i8p),
-      cg.pthread_join_fn, jb, 2, "join.wait")
+      jpfn, jb, 2, "join.wait")
    raw = expr::codegen_call_arena_alloc(cg,
       LLVMConstInt(i64t, 16, 0), "join.alloc")
    union_ptr = LLVMBuildPointerCast(cg.builder, raw,
@@ -2407,8 +2410,9 @@ codegen_typed_eval_join = cg, je, ti =>
    jb = &jargs
    @[jb] = tid
    @[jb + 8] = LLVMConstNull(i8p)
+   jpfn = cg.pthread_join_fn | _ | LLVMConstNull(i8p)
    LLVMBuildCall2(cg.builder, types::fn_type2(cg, LLVMInt32Type!,
-      i64t, i8p), cg.pthread_join_fn, jb, 2, "join.wait")
+      i64t, i8p), jpfn, jb, 2, "join.wait")
    has_gep = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 6,
       "join.haserr.gep")
    has = LLVMBuildLoad2(cg.builder, i64t, has_gep, "join.haserr")
@@ -2591,7 +2595,7 @@ codegen_typed_eval = cg, te =>
                      is_enum_q
                         |
                            mti [Enum slots]
-                              s_idx = types::enum_slot_index(slots, bname) | i => i | 0
+                              s_idx = types::enum_slot_index(slots, bname) | _ | 0
                               u_val' = match::codegen_typed_build_union(cg, s_idx,
                                  <-->, "enum.alloc")
                               cg.last_type = tname
@@ -2894,7 +2898,7 @@ codegen_typed_eval = cg, te =>
          slots = td_ti [Enum s] s | lbl_info.1
          tname = mod_name != "" | mod_name | (te.ti [TypeVar tv] tv | lbl_info.0)
          tname != "" | cg.last_type = tname
-         ec_idx = types::enum_slot_index(slots, bare_lbl) | i => i | 0
+         ec_idx = types::enum_slot_index(slots, bare_lbl) | _ | 0
          u_val' = match::codegen_typed_build_union(cg, ec_idx, pay_opt, "enum.alloc")
          (u_val', ast::ValueType(Enum))
       [Copy cp]

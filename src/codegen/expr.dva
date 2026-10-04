@@ -4160,7 +4160,7 @@ eval_named_args_step = cg, t, fname, fn, is_for, ptypes, i, args =>
                   | <+ LLVMTypeOf(LLVMGetParam(fn, i)) ->
                is_int_p = pty_opt | p => LLVMGetTypeKind(p) == 8 | <->
                a2 = is_int_p
-                  | stmt::coerce_int_ext(cg, a1, pty_opt | p => p | a1,
+                  | stmt::coerce_int_ext(cg, a1, pty_opt | _ | a1,
                      types::is_unsigned_vt(ev.1))
                   | a1
                args += a2
@@ -5628,7 +5628,7 @@ codegen_typed_eval_addr = cg, args =>
             |
                ev = main::codegen_typed_eval(cg, arg)
                p_val_opt = types::raw_addr_value(cg, ev.0, ev.1, i8p)
-               p_val = p_val_opt | p => p | LLVMConstNull(i8p)
+               p_val = p_val_opt | _ | LLVMConstNull(i8p)
                (p_val, ast::ValueType(RawPtr))
 codegen_typed_eval_exit: types::Cg, tast::TypedExpr => (Addr, ast::ValueType)
 codegen_typed_eval_exit = cg, e =>
@@ -6622,7 +6622,7 @@ codegen_typed_eval_index = cg, target, index, ti =>
          has_end' = !(b2_val'.1 [Unit])
          e_val_opt = has_end'
             | <+ main::codegen_widen_idx_to_i64(cg, b2_val'.0, b2_val'.1, "view.end") ->
-         e_val_explicit = e_val_opt | ev => ev | LLVMConstInt(i64t', 0, 0)
+         e_val_explicit = e_val_opt | _ | LLVMConstInt(i64t', 0, 0)
          is_sl
             |
                base_len' = main::slice_len(cg, tv.0, "slice.len")
@@ -6913,7 +6913,7 @@ codegen_typed_eval_raw_write = cg, addr_e, val_e =>
    vv = main::codegen_typed_eval(cg, val_e)
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    raw_addr_opt = types::raw_addr_value(cg, av.0, av.1, i8p)
-   raw_addr = raw_addr_opt | p => p | LLVMConstNull(i8p)
+   raw_addr = raw_addr_opt | _ | LLVMConstNull(i8p)
    elem_ty = runtime::raw_store_elem_type(vv.1, i8p)
    ptr_val = LLVMBuildPointerCast(cg.builder, raw_addr,
       LLVMPointerType(elem_ty, 0), "raw.wr.ptr")

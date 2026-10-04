@@ -3288,7 +3288,7 @@ codegen_emit_reload_body = cg, name, fn =>
    i1t = LLVMInt1Type!
    system_fty = types::fn_type1(i32t, i8p)
    system_fn = types::llvm_find_function(cg.module, "system")
-      | f => f
+      | _
       | LLVMAddFunction(cg.module, "system", system_fty)
    mod_path = find_dynamic_mod_path(cg, mod_name)
    so_path = "/tmp/" + mod_name + "_hot.so"
@@ -3311,31 +3311,32 @@ codegen_emit_reload_body = cg, name, fn =>
    LLVMPositionBuilderAtEnd(cg.builder, call_bb)
    rso_fname = mod_name + "::reload_so"
    fi_res = types::fninfo_find(cg, rso_fname)
-   rso_fn' = fi_res.1 | fi_res.0.llvm_fn | Addr(0)
-   rso_fn' == Addr(0)
-      |
-         rso_bare = types::decl_bare_name(rso_fname, 0)
-         fi_bare = types::fninfo_find(cg, rso_bare)
-         rso_fn' = fi_bare.1 | fi_bare.0.llvm_fn | Addr(0)
-   rso_fn' == Addr(0)
-      |
-         rso_opt = types::llvm_find_function(cg.module, rso_fname)
-         rso_fn' = rso_opt | f => f | Addr(0)
-   rso_fn' == Addr(0)
-      |
-         rso_bare2 = types::decl_bare_name(rso_fname, 0)
-         rso_opt2 = types::llvm_find_function(cg.module, rso_bare2)
-         rso_fn' = rso_opt2 | f => f | Addr(0)
-   rso_fn' != Addr(0)
-      |
+   rso_fn_opt = fi_res.1
+      | types::llvm_val_opt(fi_res.0.llvm_fn)
+      | types::llvm_find_function(cg.module, rso_fname)
+   rso_bare = types::decl_bare_name(rso_fname, 0)
+   fi_bare = types::fninfo_find(cg, rso_bare)
+   rso_fn_opt2 = fi_bare.1
+      | types::llvm_val_opt(fi_bare.0.llvm_fn)
+      | types::llvm_find_function(cg.module, rso_bare)
+   rso_fn_opt
+      | rso_fn =>
          rso_fty = types::fn_type1(i1t, i8p)
          so_dva = codegen_string_literal(cg, so_path)
          @[scbuf] = so_dva
-         rso_res = LLVMBuildCall2(cg.builder, rso_fty, rso_fn',
+         rso_res = LLVMBuildCall2(cg.builder, rso_fty, rso_fn,
             scbuf, 1, "rso.res")
          LLVMBuildRet(cg.builder, rso_res)
       |
-         LLVMBuildRet(cg.builder, LLVMConstInt(i1t, 0, 0))
+         rso_fn_opt2
+            | rso_fn2 =>
+               rso_fty = types::fn_type1(i1t, i8p)
+               so_dva = codegen_string_literal(cg, so_path)
+               @[scbuf] = so_dva
+               rso_res = LLVMBuildCall2(cg.builder, rso_fty, rso_fn2,
+                  scbuf, 1, "rso.res")
+               LLVMBuildRet(cg.builder, rso_res)
+            | LLVMBuildRet(cg.builder, LLVMConstInt(i1t, 0, 0))
 
 // Emits an LLVM function definition from an AST FnDef. The function's
 // body is evaluated with the builder inside it, and the fn gets internal
@@ -4597,7 +4598,7 @@ record_schema_fields = cg, r, i, nf, ftypes, fvts, fnames =>
                            rm | m => m.0 | types::llvm_type_of_vt(fv)
                         | types::llvm_type_of_vt(fv)
                   [Var vf]
-                     types::var_rt(cg, vf) | rt => rt | types::llvm_type_of_vt(fv)
+                     types::var_rt(cg, vf) | _ | types::llvm_type_of_vt(fv)
                   | types::llvm_type_of_vt(fv)
             | types::llvm_type_of_vt(fv)
          ftypes += f_ll

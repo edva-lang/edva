@@ -2678,18 +2678,27 @@ eval_heap_under = cg, ppay, pay_type =>
                v2 = union_int_chain(cg, ppay)
                (v2, pay_type)
             |
-               is_flag_pay_vt(cg, pay_type)
+               types::is_float_vt(pay_type)
                   |
                      slot' = types::hoisted_alloca(cg,
                         LLVMPointerType(LLVMInt8Type!, 0), "var._")
-                     vf = load_flag_pay(cg, ppay)
-                     LLVMBuildStore(cg.builder, vf, slot')
-                     (vf, pay_type)
+                     v1 = union_float_chain(cg, ppay)
+                     LLVMBuildStore(cg.builder, v1, slot')
+                     v2 = union_float_chain(cg, ppay)
+                     (v2, pay_type)
                   |
-                     slot' = types::hoisted_alloca(cg,
-                        LLVMPointerType(LLVMInt8Type!, 0), "var._")
-                     LLVMBuildStore(cg.builder, ppay, slot')
-                     (ppay, pay_type)
+                     is_flag_pay_vt(cg, pay_type)
+                        |
+                           slot' = types::hoisted_alloca(cg,
+                              LLVMPointerType(LLVMInt8Type!, 0), "var._")
+                           vf = load_flag_pay(cg, ppay)
+                           LLVMBuildStore(cg.builder, vf, slot')
+                           (vf, pay_type)
+                        |
+                           slot' = types::hoisted_alloca(cg,
+                              LLVMPointerType(LLVMInt8Type!, 0), "var._")
+                           LLVMBuildStore(cg.builder, ppay, slot')
+                           (ppay, pay_type)
 
 // '| _': yields the payload for a plain value, or aborts with the Error dump
 // for a core Error payload (a helper because a nested choice cannot parse
@@ -2755,7 +2764,7 @@ codegen_variant_tag_match_at = cg, tag, slots, names, i, n, m =>
       | m == Addr(0) | LLVMConstInt(LLVMInt1Type!, 0, 0) | m
       |
          label = names(i) | _ | ""
-         idx = types::enum_slot_index(slots, types::decl_bare_name(label, 0)) | j => j | 0
+         idx = types::enum_slot_index(slots, types::decl_bare_name(label, 0)) | _ | 0
          eq = LLVMBuildICmp(cg.builder, 32, tag,
             LLVMConstInt(LLVMInt64Type!, idx, 0), "tag.match")
          m2 = m == Addr(0) | eq |
@@ -3295,7 +3304,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                   t.line, t.col)
                (Addr(0), ast::ValueType(Unknown))
             |
-               idx = mi | i => i | 0
+               idx = mi | _ | 0
                bv.0 == Addr(0)
                   |
                      types::init_error(cg, "E3017", "Member access '" + t.field_name +

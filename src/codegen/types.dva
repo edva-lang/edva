@@ -192,9 +192,9 @@ param_clo_tys: Addrs,
    param_arr_names: ast::Names,
    param_sl_names: ast::Names,
    thread_rec_t: <Addr|>,
-   pthread_create_fn: Addr,
-   pthread_join_fn: Addr,
-   pthread_exit_fn: Addr,
+   pthread_create_fn: <Addr|>,
+   pthread_join_fn: <Addr|>,
+   pthread_exit_fn: <Addr|>,
    thread_tls_rec: <Addr|>,
    thread_n: Int,
    builder_t: <Addr|>,
@@ -940,7 +940,7 @@ codegen_init = opts =>
       ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", Addr(0),
       Addrs(), Addrs(), ast::Names(), ast::Names(), "", ast::Names(),
       ast::Names(), ast::Names(), Addrs(), ast::VTypes(), ParamRecs(),
-      ast::Names(), ast::Names(), <-->, Addr(0), Addr(0), Addr(0),
+      ast::Names(), ast::Names(), <-->, <-->, <-->, <-->,
       <-->, 0, <-->, <-->,
       FieldInitState((ast::Names(), ast::Names())),
       ChoiceInitFrames(), BindingMuts(), <->, <-->, <->, ast::Names(),
@@ -1646,7 +1646,7 @@ member_index = fnames, name =>
    n = parse_digits(name, 0, 0)
    n !< 0
       | n
-      | find_field(fnames, name, 0) | i => i | -1
+      | find_field(fnames, name, 0) | _ | -1
 
 // A dotted parenthesized member index is valid only when it is a literal or a
 // compile-time constant. A dynamic index is diagnosed as E3170.
@@ -1695,7 +1695,7 @@ find_field = fnames, name, acc =>
 codegen_load: Cg, String => (Addr, ast::ValueType)
 codegen_load = cg, name =>
    find_dot(name, 0) > 0
-      | (dotted_var_val(cg, name) | dot_v => dot_v | codegen_undefined_name_error(cg, name))
+      | (dotted_var_val(cg, name) | _ | codegen_undefined_name_error(cg, name))
       |
          vt = var_type(cg, name)
          is_heap = var_is_heap(cg, name)
@@ -1741,7 +1741,7 @@ codegen_missing_load: Cg, String => (Addr, ast::ValueType)
 codegen_missing_load = cg, name =>
    name == "_"
       | (Addr(0), ast::ValueType(Unknown))
-      | (dotted_var_val(cg, name) | dot_v => dot_v | codegen_undefined_name_error(cg, name))
+      | (dotted_var_val(cg, name) | _ | codegen_undefined_name_error(cg, name))
 
 codegen_undefined_name_error: Cg, String => (Addr, ast::ValueType)
 codegen_undefined_name_error = cg, name =>
@@ -3418,7 +3418,7 @@ codegen_eval_ctor = cg, ti, t =>
                lv
             |
                codegen_check_enum_ctor(cg, t.fn_name, slots, t)
-               idx = enum_slot_index(slots, lname) | i => i | 0
+               idx = enum_slot_index(slots, lname) | _ | 0
                na = ?t.args
                na > 1
                   |
@@ -3655,7 +3655,7 @@ codegen_eval_enum_label_val = cg, label, owners =>
          (Addr(0), ast::ValueType(Unknown))
       |
          es = match::enum_slots_for_label(cg, label)
-         idx = enum_slot_index(es.1, label) | i => i | 0
+         idx = enum_slot_index(es.1, label) | _ | 0
          u = codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
          cg.last_type = es.0
          (u, ast::ValueType(Enum))
@@ -3728,7 +3728,7 @@ codegen_eval_raw_memory = cg, rm =>
          av = expr::codegen_eval(cg, rm.addr)
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          ptr_val_opt = raw_addr_value(cg, av.0, av.1, i8p)
-         ptr_val = ptr_val_opt | p => p | LLVMConstNull(i8p)
+         ptr_val = ptr_val_opt | _ | LLVMConstNull(i8p)
          rm.rec_name != ""
             |
                ti = typedef_ti(cg, rm.rec_name)
