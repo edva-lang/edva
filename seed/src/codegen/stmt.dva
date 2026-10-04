@@ -426,8 +426,8 @@ compile_lambda = cg, f =>
          ret_v = (ret_vt' [Fn] LLVMBuildPtrToInt(cg.builder, bv.0,
             LLVMInt64Type!, "ret.int") | coerce_int(cg, bv.0, ret_ll))
          LLVMBuildRet(cg.builder, ret_v)
-   cg.fninfos += types::FnInfo((fnname, fn, fty, np, ptypes, ret_vt', <->, <->, <+>,
-      !is_cap))
+   cg.fninfos += types::FnInfo((fnname, <+ fn ->, <+ fty ->, np, ptypes, ret_vt', <->, <->,
+      <+>, !is_cap))
    is_fn_ret = main::is_fn_vt(bv.1) || main::is_fn_vt(ret_vt')
    is_fn_ret && (cg.last_closure_fn != "")
       | fn_ret_fn_add(fnname, cg.last_closure_fn)
@@ -586,7 +586,7 @@ codegen_string_eq = cg, l, r =>
    LLVMPositionBuilderAtEnd(cg.builder, eq_bb)
    ldata = expr::codegen_string_data(cg, l, "eq.lhs.data")
    rdata = expr::codegen_string_data(cg, r, "eq.rhs.data")
-   cmp_res = types::call3(cg, cg.memcmp_t, cg.memcmp_fn, ldata, rdata, ll, "eq.memcmp")
+   cmp_res = types::call3(cg, cg.memcmp_t!!, cg.memcmp_fn!!, ldata, rdata, ll, "eq.memcmp")
    cmp_zero = LLVMBuildICmp(cg.builder, 32, cmp_res,
       LLVMConstInt(LLVMInt32Type!, 0, 0), "eq.cmp.zero")
    branch_to(cg, merge_bb)
@@ -3349,12 +3349,12 @@ codegen_emit_reload_body = cg, name, fn =>
    rso_fname = mod_name + "::reload_so"
    fi_res = types::fninfo_find(cg, rso_fname)
    rso_fn_opt = fi_res
-      | fi => types::llvm_val_opt(fi.llvm_fn)
+      | fi => fi.llvm_fn
       | types::llvm_find_function(cg.module, rso_fname)
    rso_bare = types::decl_bare_name(rso_fname, 0)
    fi_bare = types::fninfo_find(cg, rso_bare)
    rso_fn_opt2 = fi_bare
-      | fi => types::llvm_val_opt(fi.llvm_fn)
+      | fi => fi.llvm_fn
       | types::llvm_find_function(cg.module, rso_bare)
    rso_fn_opt
       | rso_fn =>
@@ -3456,7 +3456,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    LLVMPositionBuilderAtEnd(cg.builder, entry)
    cur_fn_idx = ?cg.fninfos
    codegen_fn_add_params(cg, fn, fd.params, dtypes, ptis, ptypes, 0, ?fd.params)
-   cg.fninfos += types::FnInfo((fd.name, fn, fty, ?fd.params, ptypes, ret_vt',
+   cg.fninfos += types::FnInfo((fd.name, <+ fn ->, <+ fty ->, ?fd.params, ptypes, ret_vt',
       decl, gen, vs, <+>))
    saved_discard = cg.discard_result
    is_disc = ret_vt' [Unit]
@@ -3553,7 +3553,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
       | codegen_declared_return_error(cg, fd.name, ret_vt', actual_ret)
    !declared && (actual_ret != ret_vt')
       |
-         cg.fninfos(cur_fn_idx) = types::FnInfo((fd.name, fn, fty, ?fd.params,
+         cg.fninfos(cur_fn_idx) = types::FnInfo((fd.name, <+ fn ->, <+ fty ->, ?fd.params,
             ptypes, actual_ret, declared, generic, value_safe, <+>)) !| _
    cg.in_fn = saved_in_fn
    // Drop the function's params + body locals from the var table (they live
@@ -3677,7 +3677,7 @@ collect_if_foreign_fn = cg, f =>
          llvm_fn = types::llvm_find_function(cg.module, f.c_name)
             | fn => fn
             | LLVMAddFunction(cg.module, f.c_name, fn_type)
-         cg.fninfos += types::FnInfo((f.dva_name, llvm_fn, fn_type, ?f.params,
+         cg.fninfos += types::FnInfo((f.dva_name, <+ llvm_fn ->, <+ fn_type ->, ?f.params,
             param_vts, f.return_type, <+>, <->, <+>, <+>))
 
 // Collects top-level function definitions ("f = x => body") and foreign fns.
@@ -4913,7 +4913,7 @@ fninfo_of_at = cg, name, i, n =>
       |
          fi = cg.fninfos(i)!!
          (fi.name == name) || types::sig_name_matches(fi.name, name)
-            | <+ (<+ fi.llvm_fn ->, fi.llvm_type, fi.ret_vt) ->
+            | <+ (fi.llvm_fn, fi.llvm_type!!, fi.ret_vt) ->
             | fninfo_of_at(cg, name, i + 1, n)
 
 fninfo_from_fns_at: types::Cg, String, Int, Int => <(<Addr|>, Addr, ast::ValueType)|>
@@ -5676,7 +5676,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                lr = fidx
                   | idx =>
                      fi = cg.fninfos(idx)!!
-                     (expr::noncap_closure(cg, name, fi.llvm_fn), name)
+                     (expr::noncap_closure(cg, name, fi.llvm_fn!!), name)
                   |
                      lam = val.kind [Lambda l] l |
                         (ast::Names(), tast::mk_lit_unit(0, 0),
@@ -5882,7 +5882,7 @@ declare_external_fn = cg, name =>
                      p_vt = name == "print_int" | ast::ValueType(Int) |
                         ast::ValueType(Str)
                      pts += p_vt
-                     cg.fninfos += types::FnInfo((name, ext_fn, fty, 1, pts,
+                     cg.fninfos += types::FnInfo((name, <+ ext_fn ->, <+ fty ->, 1, pts,
                         ast::ValueType(Unit), <+>, <->, <+>, <+>))
                      <+>
                   | <->
@@ -5913,8 +5913,8 @@ declare_external_fn = cg, name =>
                      LLVMSetLinkage(fn_new, 0)
                      runtime::mark_nounwind(cg, fn_new)
                      fn_new
-               cg.fninfos += types::FnInfo((name, ext_fn, fty, nparams, sig_param_types, sig_ret_vt,
-                  <+>, <->, <+>, <+>))
+               cg.fninfos += types::FnInfo((name, <+ ext_fn ->, <+ fty ->, nparams,
+                  sig_param_types, sig_ret_vt, <+>, <->, <+>, <+>))
                <+>
 
 compile_typed_fn_lazy: types::Cg, String => <>
@@ -6692,7 +6692,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
    cg.in_fn = <+>
    entry = LLVMAppendBasicBlock(fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
-   cg.fninfos += types::FnInfo((name, fn, fty, nparams, param_types, ret_vt,
+   cg.fninfos += types::FnInfo((name, <+ fn ->, <+ fty ->, nparams, param_types, ret_vt,
       <+>, <->, <+>, !is_cap))
 
    est_opt

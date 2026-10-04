@@ -124,11 +124,11 @@ emit_abort_msg = cg, msg, gname =>
          @[sb] = LLVMConstInt(i32t, 2, 0)
          @[sb + 8] = msg_ptr
          @[sb + 16] = LLVMConstInt(LLVMInt64Type!, mlen, 0)
-         LLVMBuildCall2(cg.builder, cg.write_t, cg.write_fn, sb, 3, "")
+         LLVMBuildCall2(cg.builder, cg.write_t!!, cg.write_fn!!, sb, 3, "")
          eargs = {16}
          esb = &eargs
          @[esb] = LLVMConstInt(i32t, 1, 0)
-         LLVMBuildCall2(cg.builder, cg.exit_t, cg.exit_fn, esb, 1, "")
+         LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, esb, 1, "")
 
 // Emits the full runtime: the arena globals + helper functions, the message
 // globals, the FNV hash, and the string-overflow intrinsic declaration.
@@ -153,14 +153,17 @@ codegen_emit_runtime_module = cg =>
    set_cur_t = stmt::fn_type_n(cg, atp, set_cur_params, 1)
    LLVMAddFunction(cg.module, "dva_arena_set_current", set_cur_t)
 
-   cg.malloc_t = types::fn_type1(i8p, i64t)
-   cg.malloc_fn = LLVMAddFunction(cg.module, "malloc", cg.malloc_t)
+   m_ty = types::fn_type1(i8p, i64t)
+   cg.malloc_t = <+ m_ty ->
+   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty) ->
    free_t = types::fn_type1(LLVMVoidType!, i8p)
    LLVMAddFunction(cg.module, "free", free_t)
-   cg.write_t = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
-   cg.write_fn = LLVMAddFunction(cg.module, "write", cg.write_t)
-   cg.exit_t = types::fn_type1(LLVMVoidType!, i32t)
-   cg.exit_fn = LLVMAddFunction(cg.module, "exit", cg.exit_t)
+   w_ty = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
+   cg.write_t = <+ w_ty ->
+   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty) ->
+   e_ty = types::fn_type1(LLVMVoidType!, i32t)
+   cg.exit_t = <+ e_ty ->
+   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty) ->
 
    const_string_global(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
    const_string_global(cg, "E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\n", "arena_toobig_msg")
@@ -209,8 +212,9 @@ codegen_emit_runtime_module = cg =>
 
    strlen_t = types::fn_type1(i64t, i8p)
    LLVMAddFunction(cg.module, "strlen", strlen_t)
-   cg.memcmp_t = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
-   cg.memcmp_fn = LLVMAddFunction(cg.module, "memcmp", cg.memcmp_t)
+   mc_ty = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
+   cg.memcmp_t = <+ mc_ty ->
+   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty) ->
 
    hash_params = types::Addrs()
    hash_params += i8p
@@ -276,14 +280,17 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, sc_new, arena_tls)
    LLVMBuildRet(cg.builder, sc_prev)
 
-   cg.malloc_t = types::fn_type1(i8p, i64t)
-   cg.malloc_fn = LLVMAddFunction(cg.module, "malloc", cg.malloc_t)
+   m_ty2 = types::fn_type1(i8p, i64t)
+   cg.malloc_t = <+ m_ty2 ->
+   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty2) ->
    free_t = types::fn_type1(LLVMVoidType!, i8p)
    free_fn = LLVMAddFunction(cg.module, "free", free_t)
-   cg.write_t = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
-   cg.write_fn = LLVMAddFunction(cg.module, "write", cg.write_t)
-   cg.exit_t = types::fn_type1(LLVMVoidType!, i32t)
-   cg.exit_fn = LLVMAddFunction(cg.module, "exit", cg.exit_t)
+   w_ty2 = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
+   cg.write_t = <+ w_ty2 ->
+   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty2) ->
+   e_ty2 = types::fn_type1(LLVMVoidType!, i32t)
+   cg.exit_t = <+ e_ty2 ->
+   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty2) ->
 
    // message globals
    const_string_global(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
@@ -369,7 +376,7 @@ codegen_emit_runtime_full = cg =>
    eargs = {16}
    eb = &eargs
    @[eb] = LLVMConstInt(i32t, 1, 0)
-   LLVMBuildCall2(cg.builder, cg.exit_t, cg.exit_fn, eb, 1, "")
+   LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, eb, 1, "")
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, al_c)
    no_c = LLVMBuildICmp(cg.builder, 32, nc_vl, zero, "no_chunks")
@@ -393,7 +400,7 @@ codegen_emit_runtime_full = cg =>
    emit_abort_msg(cg, "E4003: arena chunk limit reached (too many arena chunks)\n", "arena_chunklimit_msg")
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, al_m)
-   chunk_v = types::call1(cg, cg.malloc_t, cg.malloc_fn, cap_phi, "chunk")
+   chunk_v = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, cap_phi, "chunk")
    chunk_n = LLVMBuildICmp(cg.builder, 32, chunk_v, LLVMConstNull(i8p), "malloc_null")
    LLVMBuildCondBr(cg.builder, chunk_n, al_o, al_s)
    LLVMPositionBuilderAtEnd(cg.builder, al_o)
@@ -598,8 +605,9 @@ codegen_emit_runtime_full = cg =>
 
    strlen_t = types::fn_type1(i64t, i8p)
    strlen_fn = LLVMAddFunction(cg.module, "strlen", strlen_t)
-   cg.memcmp_t = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
-   cg.memcmp_fn = LLVMAddFunction(cg.module, "memcmp", cg.memcmp_t)
+   mc_ty3 = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
+   cg.memcmp_t = <+ mc_ty3 ->
+   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty3) ->
 
    // dva_hash_string(ptr, i64) -> i64
    hash_params = types::Addrs()
@@ -1802,7 +1810,7 @@ codegen_emit_exit = cg, e =>
                eargs = {16}
                esb = &eargs
                @[esb] = tr
-               LLVMBuildCall2(cg.builder, cg.exit_t, cg.exit_fn, esb, 1,
+               LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, esb, 1,
                   "")
                LLVMBuildUnreachable(cg.builder)
                cg.exited = <+>
@@ -2063,7 +2071,7 @@ codegen_map_string_key_equal = cg, slot, key_val =>
    new_data = expr::codegen_string_data(cg, key_val, "mk.ndata")
    lengths_equal = LLVMBuildICmp(cg.builder, 32, stored_len, new_len,
       "mk.lenseq")
-   compared = types::call3(cg, cg.memcmp_t, cg.memcmp_fn, stored_data, new_data,
+   compared = types::call3(cg, cg.memcmp_t!!, cg.memcmp_fn!!, stored_data, new_data,
       new_len, "mk.memcmp")
    equal = LLVMBuildICmp(cg.builder, 32, compared,
       LLVMConstInt(LLVMInt32Type!, 0, 0), "mk.cmpeq")

@@ -96,7 +96,7 @@ print = s =>
 #type FnDef (name: String, params: ast::Names, body: ast::Expr)
 #type FnDefs (FnDef){}
 #type FnNameIndex String ^ Int
-#type FnInfo (name: String, llvm_fn: Addr, llvm_type: Addr, nparams: Int,
+#type FnInfo (name: String, llvm_fn: <Addr|>, llvm_type: <Addr|>, nparams: Int,
    param_types: ast::VTypes, ret_vt: ast::ValueType, declared: <>,
    generic: <>, value_safe: <>, no_capture: <>)
 #type FnInfos (FnInfo){}
@@ -154,14 +154,14 @@ default_codegen_opts = !=> CodegenOpts(("", <->, <->, ast::Names(),
    str_t: Addr,
    union_t: Addr,
    slice_t: Addr,
-   malloc_t: Addr,
-   malloc_fn: Addr,
-   write_t: Addr,
-   write_fn: Addr,
-   exit_t: Addr,
-   exit_fn: Addr,
-   memcmp_t: Addr,
-   memcmp_fn: Addr,
+   malloc_t: <Addr|>,
+   malloc_fn: <Addr|>,
+   write_t: <Addr|>,
+   write_fn: <Addr|>,
+   exit_t: <Addr|>,
+   exit_fn: <Addr|>,
+   memcmp_t: <Addr|>,
+   memcmp_fn: <Addr|>,
    strn: Int,
    strvals: ast::Names,
    strglobals: Addrs,
@@ -933,7 +933,7 @@ codegen_init = opts =>
    printf_fn = LLVMAddFunction(module, "printf",
       LLVMFunctionType(LLVMInt32Type!, psb, 1, 1))
    Cg((module, builder, <-->, CgVars(), <->, st, ut, st2,
-      Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0),
+      <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
       0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
       ast::Names(),
       ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", Addr(0),
@@ -2006,7 +2006,7 @@ fn_ret_sig_with_ti = cg, ti =>
                fret = expr::fn_ret_vt_of(cg, sname)
                fret == ast::ValueType(Unknown)
                   |
-                     cg.fninfos += FnInfo((sname, Addr(0), Addr(0), 0,
+                     cg.fninfos += FnInfo((sname, <-->, <-->, 0,
                         ast::VTypes(), ret_vt, <->, <->, <+>, <->))
                ret_ti = f.3
                is_rec = ret_vt [Record]

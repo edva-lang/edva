@@ -87,7 +87,7 @@ codegen_call_arena_alloc = cg, size, name =>
          LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
       |
          cg.in_restore_scope > 0
-            | types::call1(cg, cg.malloc_t, cg.malloc_fn, size, name)
+            | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, size, name)
             | codegen_call_arena_alloc_live(cg, size, name)
 
 codegen_call_arena_alloc_live: types::Cg, Addr, String => Addr
@@ -1114,9 +1114,9 @@ call_lambda = cg, cl, args =>
             @[sb + i * 8] = arg_vals(i)!!
          fptr = stmt::closure_fn_ptr(cg, cl.0, "clo.fn")
          typed = LLVMBuildBitCast(cg.builder, fptr,
-            LLVMPointerType(fi.llvm_type, 0), "clo.typed")
+            LLVMPointerType(fi.llvm_type!!, 0), "clo.typed")
          res_name = fi.ret_vt [Unit] "" | "clo.call"
-         res = LLVMBuildCall2(cg.builder, fi.llvm_type, typed,
+         res = LLVMBuildCall2(cg.builder, fi.llvm_type!!, typed,
             sb, n, res_name)
          (res, fi.ret_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
@@ -1233,8 +1233,8 @@ call_named = cg, name, args =>
          n @ i =>
             @[sb + i * 8] = args(i)!!
          res_name = fi.ret_vt [Unit] "" | "call.res"
-         res = LLVMBuildCall2(cg.builder, fi.llvm_type,
-            fi.llvm_fn, sb, n, res_name)
+         res = LLVMBuildCall2(cg.builder, fi.llvm_type!!,
+            fi.llvm_fn!!, sb, n, res_name)
          fn_to_call = <>(idx) | fname | name
          stmt::apply_call_ret_meta(cg, fn_to_call)
          (res, fi.ret_vt)
@@ -3985,7 +3985,7 @@ codegen_eval_named_call = cg, t =>
          types::fninfo_index(cg, key)
             | kidx2 =>
                kfi = cg.fninfos(kidx2)!!
-               <+ named_call_emit_pre(cg, key, kfi.llvm_fn, kfi.llvm_type,
+               <+ named_call_emit_pre(cg, key, kfi.llvm_fn!!, kfi.llvm_type!!,
                   kfi.ret_vt, cargs', cavts') ->
             | <-->
       |
@@ -3998,8 +3998,8 @@ codegen_eval_named_call = cg, t =>
          fidx
             | idx =>
                fi = cg.fninfos(idx)!!
-               codegen_eval_named_call_checked(cg, t, fname', fi.llvm_fn,
-                  fi.llvm_type, fi.ret_vt, fi.param_types)
+               codegen_eval_named_call_checked(cg, t, fname', fi.llvm_fn!!,
+                  fi.llvm_type!!, fi.ret_vt, fi.param_types)
             |
                types::has_fn_name(cg, fname')
                   |
@@ -4044,8 +4044,8 @@ codegen_eval_named_call_lazy = cg, t, fname, cargs, cavts =>
                      mismatch = codegen_call_mismatch_at(cg, t, fname,
                         lfi.param_types, 0)
                      mismatch < 0
-                        | <+ named_call_emit_pre(cg, fname, lfi.llvm_fn,
-                           lfi.llvm_type, lfi.ret_vt, cargs, cavts) ->
+                        | <+ named_call_emit_pre(cg, fname, lfi.llvm_fn!!,
+                           lfi.llvm_type!!, lfi.ret_vt, cargs, cavts) ->
                         | codegen_named_call_arg_error(cg, t, fname,
                            lfi.param_types, mismatch)
             | <-->
@@ -4289,7 +4289,7 @@ codegen_eval_closure_call = cg, t, cfn =>
       | idx =>
          fi = cg.fninfos(idx)!!
          fi.no_capture
-            | codegen_closure_call_plain(cg, t, fi.llvm_type, fi.ret_vt, cfn)
+            | codegen_closure_call_plain(cg, t, fi.llvm_type!!, fi.ret_vt, cfn)
             | codegen_closure_call_indirect(cg, t, fi.ret_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
@@ -4771,7 +4771,7 @@ codegen_str_tuple_cmp = cg, eq, s_val, rec_te, rec_val, rec_rt_opt, rec_fvts =>
             seg_off = offsets'(s_j) | _ | zero
             s_ptr = types::gep1(cg, i8t, s_data, seg_off, "stcmp.sptr")
             p_data = codegen_string_data(cg, seg_p, "stcmp.pdata")
-            cmp_res = types::call3(cg, cg.memcmp_t, cg.memcmp_fn, s_ptr, p_data,
+            cmp_res = types::call3(cg, cg.memcmp_t!!, cg.memcmp_fn!!, s_ptr, p_data,
                seg_l, "stcmp.mc")
             is_match = LLVMBuildICmp(cg.builder, 32, cmp_res,
                LLVMConstInt(LLVMInt32Type!, 0, 0), "stcmp.match")
@@ -5464,7 +5464,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
          types::fninfo_index(cg, key)
             | kidx2 =>
                kfi = cg.fninfos(kidx2)!!
-               named_call_emit_pre(cg, key, kfi.llvm_fn, kfi.llvm_type,
+               named_call_emit_pre(cg, key, kfi.llvm_fn!!, kfi.llvm_type!!,
                   kfi.ret_vt, cargs', cavts')
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
@@ -5507,7 +5507,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
          fn_target_opt = fidx3
             | idx =>
                fi = cg.fninfos(idx)!!
-               <+ (fi.llvm_fn, <+ fi.llvm_type ->) ->
+               <+ (fi.llvm_fn!!, fi.llvm_type) ->
             |
                types::llvm_find_function(cg.module, rname)
                   | f => <+ (f, <-->) ->
@@ -5663,7 +5663,7 @@ codegen_typed_eval_exit = cg, e =>
                eargs = {16}
                esb = &eargs
                @[esb] = tr
-               LLVMBuildCall2(cg.builder, cg.exit_t, cg.exit_fn, esb, 1,
+               LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, esb, 1,
                   "")
                LLVMBuildUnreachable(cg.builder)
                cg.exited = <+>

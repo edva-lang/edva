@@ -171,12 +171,12 @@ codegen_array_deep_copy = cg, a, name =>
    len_v = builder_len(cg, a, name + ".len")
    cap_v = builder_cap(cg, a, name + ".cap")
    data_v = builder_data(cg, a, name + ".data")
-   raw = types::call1(cg, cg.malloc_t, cg.malloc_fn,
+   raw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
       LLVMConstInt(i64t, 24, 0), name + ".alloc")
    np = LLVMBuildBitCast(cg.builder, raw, LLVMPointerType(bt, 0), name + ".ptr")
    buf_len = LLVMBuildAdd(cg.builder, cap_v, LLVMConstInt(i64t, 1, 0), name + ".buflen")
    buf_size = LLVMBuildMul(cg.builder, buf_len, LLVMConstInt(i64t, 8, 0), name + ".bufsize")
-   buf = types::call1(cg, cg.malloc_t, cg.malloc_fn, buf_size, name + ".buf")
+   buf = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, buf_size, name + ".buf")
    copy_len = LLVMBuildMul(cg.builder, len_v, LLVMConstInt(i64t, 8, 0), name + ".copylen")
    LLVMBuildMemCpy(cg.builder, buf, 1, data_v, 1, copy_len, 0)
    LLVMBuildStore(cg.builder, len_v,
@@ -347,7 +347,7 @@ codegen_builder_grow = cg, b =>
       LLVMBuildStructGEP2(cg.builder, builder_struct_type(cg), b, 2, "b.cap.gep"), "b.old.cap")
    new_cap' = LLVMBuildMul(cg.builder, old_cap, LLVMConstInt(i64t, 2, 0), "b.new.cap")
    new_cap' == LLVMConstInt(i64t, 0, 0) | new_cap' = LLVMConstInt(i64t, 8, 0)
-   new_data = types::call1(cg, cg.malloc_t, cg.malloc_fn,
+   new_data = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
       LLVMBuildAdd(cg.builder, new_cap', LLVMConstInt(i64t, 1, 0), "b.new.buf"), "b.new.data")
    old_len = builder_len(cg, b, "b.copy.len")
    LLVMBuildMemCpy(cg.builder, new_data, 1, old_data, 1, old_len, 0)
@@ -411,7 +411,7 @@ codegen_builder_append_byte = cg, b, byte_val =>
          new_buf_len = stmt::codegen_add_checked_u64(cg, new_cap, one,
             "b.new.buf.len")
          new_buf = cg.in_restore_scope > 0
-            | types::call1(cg, cg.malloc_t, cg.malloc_fn, new_buf_len, "b.new.buf")
+            | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, new_buf_len, "b.new.buf")
             | expr::codegen_call_arena_alloc(cg, new_buf_len, "b.new.buf")
          LLVMBuildMemCpy(cg.builder, new_buf, 1, data, 1, len, 0)
          LLVMBuildStore(cg.builder,
@@ -464,7 +464,7 @@ codegen_builder_ensure_cap = cg, b, needed =>
    data = builder_data(cg, b, "b.cur.data2")
    buf_len = stmt::codegen_add_checked_u64(cg, new_cap, one, "b.new.buf.len2")
    buf = cg.in_restore_scope > 0
-      | types::call1(cg, cg.malloc_t, cg.malloc_fn, buf_len, "b.new.buf2")
+      | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, buf_len, "b.new.buf2")
       | expr::codegen_call_arena_alloc(cg, buf_len, "b.new.buf2")
    LLVMBuildMemCpy(cg.builder, buf, 1, data, 1, len, 0)
    LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt8Type!, 0, 0),
@@ -1509,7 +1509,7 @@ get_or_emit_array_grow = cg =>
          new_bytes = stmt::codegen_add_checked_u64(cg, grow_bytes, one,
             "a.grow.bytes1")
          new_buf = cg.in_restore_scope > 0
-            | types::call1(cg, cg.malloc_t, cg.malloc_fn, new_bytes, "a.new.buf")
+            | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, new_bytes, "a.new.buf")
             | expr::codegen_call_arena_alloc(cg, new_bytes, "a.new.buf")
          copy_bytes = LLVMBuildMul(cg.builder, cur_len, esize,
             "a.copy.bytes")
@@ -1821,7 +1821,7 @@ codegen_emit_error_panic = cg, err_ptr =>
    eargs = {16}
    eb = &eargs
    @[eb] = LLVMConstInt(i32t, 1, 0)
-   LLVMBuildCall2(cg.builder, cg.exit_t, cg.exit_fn, eb, 1, "")
+   LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, eb, 1, "")
    LLVMBuildUnreachable(cg.builder)
 
 codegen_ensure_pthread: types::Cg => Addr
@@ -2220,8 +2220,8 @@ codegen_eval_spawn = cg, se =>
    fidx
       | idx =>
          fi = cg.fninfos(idx)!!
-         fn = fi.llvm_fn
-         fty = fi.llvm_type
+         fn = fi.llvm_fn!!
+         fty = fi.llvm_type!!
          ret = fi.ret_vt
          np = fi.nparams
          is_cap = !fi.no_capture
@@ -2232,7 +2232,7 @@ codegen_eval_spawn = cg, se =>
          env_ptr = clo_opt
             | clo => stmt::closure_env_ptr(cg, clo, "spawn.clo.env")
             | LLVMConstNull(i8p)
-         arena_raw = types::call1(cg, cg.malloc_t, cg.malloc_fn,
+         arena_raw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
             LLVMConstInt(i64t, 8224, 0), "thread.arena.malloc")
          at = runtime::arena_type(cg)
          atp = LLVMPointerType(at, 0)
@@ -2268,7 +2268,7 @@ codegen_eval_spawn = cg, se =>
             |
                args_ty = types::struct_type_n(cg, arg_ts, n)
                asz = n * 8
-               araw' = types::call1(cg, cg.malloc_t, cg.malloc_fn,
+               araw' = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
                   LLVMConstInt(i64t, asz, 0), "thread.args.malloc")
                at_ptr = LLVMBuildPointerCast(cg.builder, araw',
                   LLVMPointerType(args_ty, 0), "thread.args")
@@ -2288,7 +2288,7 @@ codegen_eval_spawn = cg, se =>
                   | LLVMConstNull(i8p)
             | LLVMConstNull(i8p)
          rec_t = codegen_ensure_pthread(cg)
-         rraw = types::call1(cg, cg.malloc_t, cg.malloc_fn,
+         rraw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
             LLVMConstInt(i64t, 64, 0), "thread.rec.malloc")
          rec = LLVMBuildPointerCast(cg.builder, rraw,
             LLVMPointerType(rec_t, 0), "thread.rec")
