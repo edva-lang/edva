@@ -38,11 +38,13 @@
    argv_string = n =>
       c_str $ raw_argv(n)
 
+   addr_opt: Addr => <Addr | >
+   addr_opt = a => a != Addr(0) | <+ a -> | <-->
+
    argv: Int => <String | >
    argv = n =>
-      raw = raw_argv(n)
-      raw != Addr(0)
-         | <+ c_str(raw) ->
+      sys::addr_opt(raw_argv(n))
+         | raw => <+ c_str(raw) ->
          | <-->
 
    exit: Int => ()

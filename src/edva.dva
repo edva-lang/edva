@@ -74,13 +74,12 @@ path_join = a, b =>
 
 canonical_path: String => String
 canonical_path = path =>
-   raw = libc::realpath(path, Addr(0))
-   raw == Addr(0)
-      | path
-      |
+   sys::addr_opt(libc::realpath(path, Addr(0)))
+      | raw =>
          res = sys::c_str(raw)
          libc::free(raw)
          res
+      | path
 
 compiler_std_dir: String
 compiler_std_dir = "std"
@@ -90,9 +89,8 @@ compiler_exe_path = ""
 
 getenv_opt: String => <String|>
 getenv_opt = name =>
-   p = getenv(name)
-   p != Addr(0)
-      | <+ sys::c_str(p) ->
+   sys::addr_opt(getenv(name))
+      | p => <+ sys::c_str(p) ->
       | <-->
 
 init_compiler_paths: () => ()
@@ -143,16 +141,15 @@ is_dva_file = name =>
 
 read_dir_entries: Addr, ast::Names => ast::Names
 read_dir_entries = dp, names =>
-   ent = libc::readdir(dp)
-   ent == Addr(0)
-      | names
-      |
+   sys::addr_opt(libc::readdir(dp))
+      | ent =>
          d_type = @[ent + 18 i8]
          d_type != 4i8
             |
                fname = dirent_name(ent)
                is_dva_file(fname) | names += fname
          read_dir_entries(dp, names)
+      | names
 
 sort_names: ast::Names => ()
 sort_names = names =>
@@ -168,14 +165,13 @@ sort_names = names =>
 
 dir_dva_files: String => ast::Names
 dir_dva_files = dir_path =>
-   dp = libc::opendir(dir_path)
-   dp == Addr(0)
-      | ast::Names()
-      |
+   sys::addr_opt(libc::opendir(dir_path))
+      | dp =>
          names = read_dir_entries(dp, ast::Names())
          libc::closedir(dp)
          sort_names(names)
          names
+      | ast::Names()
 
 loaded_has_step: ast::Names, String, Int => <>
 loaded_has_step = names, name, i =>
@@ -1066,17 +1062,16 @@ run_cmd = args =>
 
 get_default_target_triple: Int => String
 get_default_target_triple = _ =>
-   t = llvm_get_default_triple!
-   t == Addr(0)
+   sys::addr_opt(llvm_get_default_triple!)
+      | t =>
+         s = sys::c_str(t)
+         llvm_dispose_message(t)
+         s
       |
          print $ "E5016: LLVM could not determine" +
             " a default target triple; pass one with -target"
          sys::exit(1)
          ""
-      |
-         s = sys::c_str(t)
-         llvm_dispose_message(t)
-         s
 
 has_name_step: ast::Names, String, Int => <>
 has_name_step = names, name, i =>

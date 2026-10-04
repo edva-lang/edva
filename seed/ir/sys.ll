@@ -28,9 +28,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.sys::c_str" = global ptr null
 @clo.const.3 = internal constant { ptr, ptr } { ptr @"sys::argv_string", ptr null }
 @"var.sys::argv_string" = global ptr null
-@clo.const.4 = internal constant { ptr, ptr } { ptr @"sys::argv", ptr null }
+@clo.const.4 = internal constant { ptr, ptr } { ptr @"sys::addr_opt", ptr null }
+@"var.sys::addr_opt" = global ptr null
+@clo.const.5 = internal constant { ptr, ptr } { ptr @"sys::argv", ptr null }
 @"var.sys::argv" = global ptr null
-@clo.const.5 = internal constant { ptr, ptr } { ptr @"sys::exit", ptr null }
+@clo.const.6 = internal constant { ptr, ptr } { ptr @"sys::exit", ptr null }
 @"var.sys::exit" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_sys, ptr null }]
 
@@ -78,8 +80,9 @@ entry:
   store ptr @clo.const.1, ptr @"var.sys::argv_matches", align 8
   store ptr @clo.const.2, ptr @"var.sys::c_str", align 8
   store ptr @clo.const.3, ptr @"var.sys::argv_string", align 8
-  store ptr @clo.const.4, ptr @"var.sys::argv", align 8
-  store ptr @clo.const.5, ptr @"var.sys::exit", align 8
+  store ptr @clo.const.4, ptr @"var.sys::addr_opt", align 8
+  store ptr @clo.const.5, ptr @"var.sys::argv", align 8
+  store ptr @clo.const.6, ptr @"var.sys::exit", align 8
   ret void
 }
 
@@ -529,20 +532,60 @@ entry:
   ret ptr %call.res1
 }
 
-define ptr @"sys::argv"(i64 %0) #1 {
+define ptr @"sys::addr_opt"(ptr %0) #1 {
 entry:
-  %var.raw = alloca ptr, align 8
-  %var.n = alloca i64, align 8
-  store i64 %0, ptr %var.n, align 8
-  %var.load = load i64, ptr %var.n, align 8
-  %call.res = call ptr @"sys::raw_argv"(i64 %var.load)
-  store ptr %call.res, ptr %var.raw, align 8
-  %var.load1 = load ptr, ptr %var.raw, align 8
-  %ptr.int.l = ptrtoint ptr %var.load1 to i64
+  %var.a = alloca ptr, align 8
+  store ptr %0, ptr %var.a, align 8
+  %var.load = load ptr, ptr %var.a, align 8
+  %ptr.int.l = ptrtoint ptr %var.load to i64
   %cmptmp = icmp ne i64 %ptr.int.l, 0
   br i1 %cmptmp, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %entry
+  %arena.cur = call ptr @dva_arena_current()
+  %ram.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
+  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 0
+  store i64 1, ptr %tag.gep, align 8
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 1
+  %var.load1 = load ptr, ptr %var.a, align 8
+  store ptr %var.load1, ptr %pay.gep, align 8
+  br label %choice.exit
+
+choice.else:                                      ; preds = %entry
+  %arena.cur2 = call ptr @dva_arena_current()
+  %ram.alloc3 = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 16)
+  %tag.gep4 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc3, i32 0, i32 0
+  store i64 0, ptr %tag.gep4, align 8
+  %pay.gep5 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc3, i32 0, i32 1
+  store ptr null, ptr %pay.gep5, align 8
+  br label %choice.exit
+
+choice.exit:                                      ; preds = %choice.else, %choice.then
+  %choice.res = phi ptr [ %ram.alloc, %choice.then ], [ %ram.alloc3, %choice.else ]
+  ret ptr %choice.res
+}
+
+define ptr @"sys::argv"(i64 %0) #1 {
+entry:
+  %var.raw = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
+  %var.n = alloca i64, align 8
+  store i64 %0, ptr %var.n, align 8
+  %var.load = load i64, ptr %var.n, align 8
+  %call.res = call ptr @"sys::raw_argv"(i64 %var.load)
+  %call.res1 = call ptr @"sys::addr_opt"(ptr %call.res)
+  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %call.res1, i32 0, i32 0
+  %tag.id = load i64, ptr %tag.gep, align 8
+  %tag.eq.one = icmp eq i64 %tag.id, 1
+  %tag.eq.two = icmp eq i64 %tag.id, 2
+  %is.pos = or i1 %tag.eq.one, %tag.eq.two
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %call.res1, i32 0, i32 1
+  %payload.ptr = load ptr, ptr %pay.gep, align 8
+  br i1 %is.pos, label %choice.then, label %choice.else
+
+choice.then:                                      ; preds = %entry
+  store ptr %payload.ptr, ptr %var._, align 8
+  store ptr %payload.ptr, ptr %var.raw, align 8
   %var.load2 = load ptr, ptr %var.raw, align 8
   %call.res3 = call ptr @"sys::c_str"(ptr %var.load2)
   br label %choice.exit
