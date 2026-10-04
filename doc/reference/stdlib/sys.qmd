@@ -27,7 +27,7 @@ standard stream descriptor constants, null-pointer safety helpers, and process t
 | Function | Signature | Description |
 |---|---|---|
 | `sys::argc` | `Int` | Total count of command-line arguments passed to process |
-| `sys::argv` | `Int => < String \| >` | Safely retrieves argument by 0-based index as `RamPN` |
+| `sys::argv` | `Int => < String | >` | Safely retrieves argument by 0-based index as `RamPN` |
 | `sys::argv_string` | `Int => String` | Retrieves argument string, returning `""` on invalid index |
 | `sys::argv_matches` | `Int, String => <>` | Tests whether `argv[n]` equals specified string |
 | `sys::raw_argv` | `Int => Addr` | Returns raw C-string pointer `Addr` for FFI use |

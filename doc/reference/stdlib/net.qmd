@@ -35,15 +35,15 @@ sock
 
 | Function | Signature | Description |
 |---|---|---|
-| `net::socket` | `Int, Int, Int => < Int \| String >` | Creates socket file descriptor |
-| `net::bind` | `Int, String, Int => < () \| String >` | Binds socket to IPv4 address and port |
-| `net::listen` | `Int, Int => < () \| String >` | Sets listening backlog capacity |
-| `net::accept` | `Int => < (Int, String, Int) \| String >` | Accepts client connection: `(client_fd, client_ip, client_port)` |
-| `net::connect` | `Int, String, Int => < () \| String >` | Connects to remote IPv4 host and port |
-| `net::send` | `Int, String => < Int \| String >` | Sends string bytes over socket |
-| `net::recv` | `Int, Int => < String \| String >` | Reads up to `count` bytes into string |
+| `net::socket` | `Int, Int, Int => < Int | String >` | Creates socket file descriptor |
+| `net::bind` | `Int, String, Int => < () | String >` | Binds socket to IPv4 address and port |
+| `net::listen` | `Int, Int => < () | String >` | Sets listening backlog capacity |
+| `net::accept` | `Int => < (Int, String, Int) | String >` | Accepts client connection: `(client_fd, client_ip, client_port)` |
+| `net::connect` | `Int, String, Int => < () | String >` | Connects to remote IPv4 host and port |
+| `net::send` | `Int, String => < Int | String >` | Sends string bytes over socket |
+| `net::recv` | `Int, Int => < String | String >` | Reads up to `count` bytes into string |
 | `net::close` | `Int => ()` | Closes socket descriptor |
-| `net::set_nonblocking` | `Int => < () \| String >` | Toggles non-blocking socket flag (`O_NONBLOCK`) |
+| `net::set_nonblocking` | `Int => < () | String >` | Toggles non-blocking socket flag (`O_NONBLOCK`) |
 
 ## HTTP protocol support (`net/http`)
 

@@ -49,4 +49,4 @@ The collection combinators operate on homogeneous records and growable array typ
 | `fp::all(p, xs)` | Checks if all elements satisfy predicate `p` |
 | `fp::sum(xs)` | Calculates the numeric sum of elements |
 | `fp::product(xs)` | Calculates the numeric product of elements |
-| `fp::find(p, xs)` | Finds the first element satisfying predicate `p`, returning `RamPN` `< E \| >` |
+| `fp::find(p, xs)` | Finds the first element satisfying predicate `p`, returning `RamPN` `< E | >` |

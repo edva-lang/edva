@@ -1047,7 +1047,7 @@ the truth values `<+>` (positive) and `<->` (negative).
 | `+=` | `Builder, c` (integerish, `c` ∈ 0..255) | `Builder` — **in-place push**: mutates b's buffer (amortized O(1)); `E4007` if out of range |
 | `+=` | `Builder, s` (String) | `Builder` — **in-place append** of s's bytes (grows as needed) |
 | `$>` | `lhs, fn` | `fn(lhs)` — feed / reverse application; **multi-arg** (`x $> f(a)` == `f(x, a)` prepend); below the choice tier, left-assoc, RHS absorbs a choice |
-| `$>>` | `RamPP/RamPN, fn` | `Ramification` — monadic bind: `lhs \| rhs(_) \| <- _ ->` (RamPP, negative payload propagates) or `lhs \| rhs(_) \| <-->` (RamPN, negative unit propagates); `rhs` receives the positive payload and must return the same monad. Any other lhs layout (RamNP/RamNN/non-ram) is `E3091`. |
+| `$>>` | `RamPP/RamPN, fn` | `Ramification` — monadic bind: `lhs | rhs(_) | <- _ ->` (RamPP, negative payload propagates) or `lhs | rhs(_) | <-->` (RamPN, negative unit propagates); `rhs` receives the positive payload and must return the same monad. Any other lhs layout (RamNP/RamNN/non-ram) is `E3091`. |
 | `+` | `Addr/RawPtr, Int` (or mirrored) | `Addr` — pointer offset (unsafe) |
 | `-` | numeric, numeric | numeric |
 | `*` `/` `%` | numeric, numeric | numeric |
@@ -1058,8 +1058,8 @@ the truth values `<+>` (positive) and `<->` (negative).
 | `!=` | `String, String` | `Ramification` — **content inequality**, the complement of `==` (length short-circuit then `memcmp`) |
 | `==` | `Builder, Builder` | `Ramification` — **pointer identity** only (meaningless for uniqueness-checked builders; freeze and compare the Strings) |
 | `!=` | `Builder, Builder` | `Ramification` — **pointer identity inequality** |
-| `&&` `\|\|` | `heap Ram, heap Ram` or `Flag, Flag` | `Ramification` — short-circuit; the result is the winner with its payload intact. For `&&`, the RHS supplies the positive slot and both negative slots must match; for `\|\|`, both positive slots must match and the RHS supplies the negative slot. A shared slot cannot mix unit and payload or unequal payloads (`E3089`). Flags never coerce into heap rams; write `<++>`/`<-->` explicitly. Comparison flags / `!ram` / predicates stay bare Flags. Non-ram operands (Int truthiness) give a Flag. |
-| `.\|.` `.&.` | integerish, integerish | integerish (bitwise OR / AND) |
+| `&&` `||` | `heap Ram, heap Ram` or `Flag, Flag` | `Ramification` — short-circuit; the result is the winner with its payload intact. For `&&`, the RHS supplies the positive slot and both negative slots must match; for `||`, both positive slots must match and the RHS supplies the negative slot. A shared slot cannot mix unit and payload or unequal payloads (`E3089`). Flags never coerce into heap rams; write `<++>`/`<-->` explicitly. Comparison flags / `!ram` / predicates stay bare Flags. Non-ram operands (Int truthiness) give a Flag. |
+| `.|.` `.&.` | integerish, integerish | integerish (bitwise OR / AND) |
 | `.!.` (prefix) | integerish | integerish (bitwise NOT) |
 | `.<.` `.>.` | integerish, integerish (count) | integerish — zero-fill (logical) shifts; count masked to operand width, shift ≥ width is a no-op |
 | `++` (prefix) | `String` / `Slice` / Record / Array | deep copy of the operand (fresh buffer); scalars are a reference no-op |

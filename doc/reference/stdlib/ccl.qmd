@@ -46,13 +46,13 @@ The core document model represents nested, indentation-delimited key-value entri
 
 | Function | Signature | Description |
 |---|---|---|
-| `ccl::parse` | `String, String => < CclDoc \| Error >` | Parse CCL text with an associated source path for diagnostics |
-| `ccl::parse_file` | `String => < CclDoc \| Error >` | Read and parse a CCL configuration file from disk |
+| `ccl::parse` | `String, String => < CclDoc | Error >` | Parse CCL text with an associated source path for diagnostics |
+| `ccl::parse_file` | `String => < CclDoc | Error >` | Read and parse a CCL configuration file from disk |
 | `ccl::to_ccl` | `CclDoc => String` | Serialize a `CclDoc` into a canonical, deterministic CCL string |
 | `ccl::has` | `CclDoc, String => <>` | Check if a top-level key exists in the document |
-| `ccl::get` | `CclDoc, String => < String \| >` | Retrieve the string value of a top-level key |
-| `ccl::get_section` | `CclDoc, String => < CclDoc \| >` | Retrieve a nested block section as a sub-document |
-| `ccl::get_list` | `CclDoc, String => < Strings \| >` | Retrieve entries sharing the specified key as a list of strings |
+| `ccl::get` | `CclDoc, String => < String | >` | Retrieve the string value of a top-level key |
+| `ccl::get_section` | `CclDoc, String => < CclDoc | >` | Retrieve a nested block section as a sub-document |
+| `ccl::get_list` | `CclDoc, String => < Strings | >` | Retrieve entries sharing the specified key as a list of strings |
 
 ```dva
 doc = ccl::parse("name = demo\nversion = 0.1.0", "edva.ccl")!!

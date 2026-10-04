@@ -20,12 +20,12 @@ Right Binding Power (RBP), associativity, and semantic groupings.
 | **2. sequence** | 20 | 30 | `;` | left | Statement sequencing within a single line |
 | **3. apply** | 30 | 30 | `$` `$:` | right | Infix argument application, trailing block attachment |
 | **4. feed** | 40 | 50 | `$>` `$>>` | left | Reverse application (prepend argument), monadic ram bind |
-| **5. choice** | 50 | 60 | `\|` `[guard]` `!\|` | left | Branching, pattern matching, write-or-panic |
+| **5. choice** | 50 | 60 | `|` `[guard]` `!|` | left | Branching, pattern matching, write-or-panic |
 | **6. assignment** | 60 | 50 | `=` `:=` `+=` `::=` | right | Binding initialization, builder append, global mutation |
 | **7. range** | 70 | 80 | `..` | left | Range construction, string and slice views |
-| **8. logical or** | 80 | 90 | `\|\|` | left | Short-circuit logical OR |
+| **8. logical or** | 80 | 90 | `||` | left | Short-circuit logical OR |
 | **9. logical and** | 90 | 100 | `&&` | left | Short-circuit logical AND |
-| **10. bitwise or** | 100 | 110 | `.\vert.` | left | Bitwise OR (integer types only) |
+| **10. bitwise or** | 100 | 110 | `.|.` | left | Bitwise OR (integer types only) |
 | **11. bitwise and** | 110 | 120 | `.&.` | left | Bitwise AND (integer types only) |
 | **12. comparison** | 120 | 130 | `<` `>` `==` `!=` `!<` `!>` | left (same-line) | Equality and relational comparisons |
 | **13. shift** | 130 | 140 | `.<.` `.>.` | left | Bitwise logical left and right shifts |
