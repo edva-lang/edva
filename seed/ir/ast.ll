@@ -470,12 +470,10 @@ a.after:                                          ; preds = %a.create, %entry
   %a.load2 = load ptr, ptr @"var.ast::cell_var_names", align 8
   %var.load3 = load ptr, ptr %var.name, align 8
   %call.res = call i1 @"ast::has_cell_name"(ptr %a.load2, ptr %var.load3)
-  br i1 %call.res, label %choice.then, label %choice.else
+  %nottmp = xor i1 %call.res, true
+  br i1 %nottmp, label %choice.then, label %choice.exit
 
 choice.then:                                      ; preds = %a.after
-  br label %choice.exit
-
-choice.else:                                      ; preds = %a.after
   %var.load4 = load ptr, ptr %var.name, align 8
   %copy.len = getelementptr inbounds { i64, ptr }, ptr %var.load4, i32 0, i32 0
   %copy.len5 = load i64, ptr %copy.len, align 8
@@ -484,17 +482,17 @@ choice.else:                                      ; preds = %a.after
   %str.immortal = icmp eq i64 %str.tag, 0
   br i1 %str.immortal, label %str_ok, label %str_gen_check
 
-choice.exit:                                      ; preds = %a.store, %choice.then
+choice.exit:                                      ; preds = %a.store, %a.after
   ret void
 
-str_gen_check:                                    ; preds = %choice.else
+str_gen_check:                                    ; preds = %choice.then
   %arena.gen = call ptr @dva_arena_current()
   %arena.gen7 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen, i32 0, i32 4
   %arena.gen8 = load i64, ptr %arena.gen7, align 8
   %str.tag.match = icmp eq i64 %str.tag, %arena.gen8
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
-str_ok:                                           ; preds = %str_stale, %str_gen_check, %choice.else
+str_ok:                                           ; preds = %str_stale, %str_gen_check, %choice.then
   %copy.len9 = getelementptr inbounds { i64, ptr }, ptr %var.load4, i32 0, i32 1
   %copy.len10 = load ptr, ptr %copy.len9, align 8
   %arena.cur11 = call ptr @dva_arena_current()

@@ -5008,12 +5008,10 @@ and.14.else:                                      ; preds = %str.eq.merge1643
 
 and.14.exit:                                      ; preds = %and.14.else, %and.14.then
   %and.14.phi = phi i1 [ %nottmp1653, %and.14.then ], [ %str.eq.result1649, %and.14.else ]
-  br i1 %and.14.phi, label %choice.then1654, label %choice.else1655
+  %nottmp1654 = xor i1 %and.14.phi, true
+  br i1 %nottmp1654, label %choice.then1655, label %choice.exit1656
 
-choice.then1654:                                  ; preds = %and.14.exit
-  br label %choice.exit1656
-
-choice.else1655:                                  ; preds = %and.14.exit
+choice.then1655:                                  ; preds = %and.14.exit
   %var.load1657 = load ptr, ptr %var.r, align 8
   %fld.gep1658 = getelementptr inbounds { i1, i1, ptr, ptr }, ptr %var.load1657, i32 0, i32 3
   %fld.load1659 = load ptr, ptr %fld.gep1658, align 8
@@ -5022,10 +5020,10 @@ choice.else1655:                                  ; preds = %and.14.exit
   %a.null1662 = icmp eq ptr %a.load1661, null
   br i1 %a.null1662, label %a.create1663, label %a.after1664
 
-choice.exit1656:                                  ; preds = %a.after1677, %choice.then1654
+choice.exit1656:                                  ; preds = %a.after1677, %and.14.exit
   br label %choice.exit1607
 
-a.create1663:                                     ; preds = %choice.else1655
+a.create1663:                                     ; preds = %choice.then1655
   %arena.cur1665 = call ptr @dva_arena_current()
   %a.create1666 = call ptr @dva_arena_alloc(ptr %arena.cur1665, i64 24)
   %arena.cur1667 = call ptr @dva_arena_current()
@@ -5039,7 +5037,7 @@ a.create1663:                                     ; preds = %choice.else1655
   store ptr %a.create1666, ptr %var.locals, align 8
   br label %a.after1664
 
-a.after1664:                                      ; preds = %a.create1663, %choice.else1655
+a.after1664:                                      ; preds = %a.create1663, %choice.then1655
   %a.load21672 = load ptr, ptr %var.locals, align 8
   %var.load1673 = load ptr, ptr %var.refs, align 8
   %a.load1674 = load ptr, ptr %var.refs, align 8

@@ -27,6 +27,7 @@
    unlink: (path: String) => Int
    rmdir: (path: String) => Int
    getpid: () => Int
+   getenv: (name: String) => Addr
    __errno_location: () => Addr
 
 #private
@@ -94,9 +95,26 @@ init_compiler_paths = !=>
       | compiler_exe_path ::= exe
       | compiler_exe_path ::= canonical_path(sys::argv_string(0))
    exe_dir = dirname(compiler_exe_path)
-   cand = path_join(exe_dir, "std")
-   dir_exists(cand)
-      | compiler_std_dir ::= cand
+   prefix_dir = dirname(exe_dir)
+   cand_in_tree = path_join(exe_dir, "std")
+   cand_lib = path_join(prefix_dir, "lib/edva/std")
+   cand_share = path_join(prefix_dir, "share/edva/std")
+   env_p = getenv("EDVA_PATH")
+   env_std = env_p == Addr(0) | getenv("EDVA_STDLIB") | env_p
+   env_std != Addr(0) && dir_exists(sys::c_str(env_std))
+      |
+         compiler_std_dir ::= sys::c_str(env_std)
+      |
+         dir_exists(cand_in_tree)
+            |
+               compiler_std_dir ::= cand_in_tree
+            |
+               dir_exists(cand_lib)
+                  |
+                     compiler_std_dir ::= cand_lib
+                  |
+                     dir_exists(cand_share)
+                        | compiler_std_dir ::= cand_share
 
 dirent_name: Addr => String
 dirent_name = entry =>
@@ -299,7 +317,6 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                            new_td = prefix + "::" + clean
                            acc += ast::Expr(TypeDecl, (ast::TypeDeclExpr((new_td,
                               t.type_info))))
-                        | 0
                   [Foreign f]
                      clean = decl_clean_name(f.dva_name)
                      is_pub = is_public_name(publics, privates, clean)
@@ -309,7 +326,6 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                            acc += ast::Expr(Foreign, (ast::ForeignFnDecl((f.c_name,
                               new_f, f.abi, f.params,
                               f.return_type, f.ret_record_info, f.is_variable))))
-                        | 0
                   [Assign t]
                      t.0 != ""
                         |
@@ -327,14 +343,11 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                                              acc += ast::Expr(Assign, (
                                                 new_asgn, t.1, t.2,
                                                 t.3, t.4, t.5, t.6, t.7, t.8))
-                                          | 0
                                     |
                                        new_asgn = prefix + "::" + clean
                                        acc += ast::Expr(Assign, (
                                           new_asgn, t.1, t.2,
                                           t.3, t.4, t.5, t.6, t.7, t.8))
-                        | 0
-                  | 0
             |
                e
                   [Assign t]
@@ -890,7 +903,6 @@ load_single_file = path, prefix, ldr =>
                               |
                                  ?ppr.exports @ ei =>
                                     ldr.exports += (ppr.exports(ei) | _ | "")
-                              | 0
                            load_stmts(b.exprs, dirname(path), prefix,
                               ppr.publics, ppr.privates, ldr)
                         | <->
@@ -909,7 +921,6 @@ load_file = path, prefix, ldr =>
                loaded = ldr.loaded
                loaded += prefix
                ldr.loaded = loaded
-            | 0
          load_single_file(path, prefix, ldr)
 
 load_dir_files: ast::Names, String, String, Loader => <>
@@ -954,7 +965,6 @@ load_all = target, no_prelude, prelude_path, target_prefix, is_modular =>
       |
          pres = load_file(prelude_path, "", ldr)
          !pres | ok' = <->
-      | 0
    !ok'
       | ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
          ldr.dynamic_mods, ldr.dynamic_paths, <->))
@@ -1510,7 +1520,6 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths =>
                         |
                            clang_args += "-shared"
                            clang_args += "-fPIC"
-                        | 0
                      opts.is_module
                         |
                            clang_args += "-c"
@@ -1528,7 +1537,6 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths =>
                               |
                                  clang_args += "-Wl,--export-dynamic"
                                  clang_args += "-ldl"
-                              | 0
                            clang_args += "-o"
                            clang_args += output_bin
                      cres = run_cmd(clang_args)
@@ -1539,7 +1547,6 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths =>
                            rm_args += "-f"
                            rm_args += output_ll
                            run_cmd(rm_args)
-                        | 0
                      cres != 0
                         |
                            print $ "E" + str::from_int(clang_err) +
@@ -1884,7 +1891,7 @@ read_line_raw = sess =>
                                     b2 == 51
                                        |
                                           check_stdin_ready(pfd_buf) |
-                                             libc::read(0, seq_buf, 1) | 0
+                                             libc::read(0, seq_buf, 1)
                                           pos' < ?line'
                                              |
                                                 line' = line'(0..pos') +
@@ -1893,13 +1900,13 @@ read_line_raw = sess =>
                                     b2 == 49 || b2 == 55
                                        |
                                           check_stdin_ready(pfd_buf) |
-                                             libc::read(0, seq_buf, 1) | 0
+                                             libc::read(0, seq_buf, 1)
                                           pos' = 0
                                           refresh_line(line', pos')
                                     b2 == 52 || b2 == 56
                                        |
                                           check_stdin_ready(pfd_buf) |
-                                             libc::read(0, seq_buf, 1) | 0
+                                             libc::read(0, seq_buf, 1)
                                           pos' = ?line'
                                           refresh_line(line', pos')
                         b1 == 79
@@ -1998,11 +2005,11 @@ make_scratch_dir = !=>
 repl_cleanup: ReplSession => ()
 repl_cleanup = sess =>
    disable_raw_mode!
-   ?sess.src_path > 0 | unlink(sess.src_path) | 0
-   ?sess.ll_path > 0 | unlink(sess.ll_path) | 0
-   ?sess.bin_path > 0 | unlink(sess.bin_path) | 0
-   ?sess.dir > 0 | rmdir(sess.dir) | 0
-   orig_termios != Addr(0) | libc::free(orig_termios) | 0
+   ?sess.src_path > 0 | unlink(sess.src_path)
+   ?sess.ll_path > 0 | unlink(sess.ll_path)
+   ?sess.bin_path > 0 | unlink(sess.bin_path)
+   ?sess.dir > 0 | rmdir(sess.dir)
+   orig_termios != Addr(0) | libc::free(orig_termios)
    orig_termios = Addr(0)
    active_repl_src ::= ""
    active_repl_ll ::= ""
@@ -2056,8 +2063,7 @@ repl_loop = opts, session_src, sess =>
          ?line == 0
             | repl_loop(opts, session_src, sess)
             |
-               line == ":q" || line == ":quit" || line == "exit"
-                  | 0
+               !(line == ":q" || line == ":quit" || line == "exit")
                   |
                      repl_history_append(sess, line)
                      next_src = repl_step(opts, session_src, line, sess)
@@ -2069,10 +2075,10 @@ repl_loop = opts, session_src, sess =>
 on_sigint: Int => Int
 on_sigint = _ =>
    disable_raw_mode!
-   ?active_repl_src > 0 | unlink(active_repl_src) | 0
-   ?active_repl_ll > 0 | unlink(active_repl_ll) | 0
-   ?active_repl_bin > 0 | unlink(active_repl_bin) | 0
-   ?active_repl_dir > 0 | rmdir(active_repl_dir) | 0
+   ?active_repl_src > 0 | unlink(active_repl_src)
+   ?active_repl_ll > 0 | unlink(active_repl_ll)
+   ?active_repl_bin > 0 | unlink(active_repl_bin)
+   ?active_repl_dir > 0 | rmdir(active_repl_dir)
    libc::write(1, "\nGoodbye!\n", 10)
    libc::exit(0)
    0
@@ -2422,7 +2428,7 @@ run_driver = _ =>
          print $ "E5018: Output name '" + base_name +
             "' begins with '-'; rename the input."
          sys::exit(1)
-   opts.is_module && opts.no_main && opts.module_name == "" | opts.module_name = base_name | 0
+   opts.is_module && opts.no_main && opts.module_name == "" | opts.module_name = base_name
    target_triple = opts.triple != "" | opts.triple |
       get_default_target_triple(0)
    is_wasm = is_wasm_triple(target_triple)
@@ -2440,7 +2446,7 @@ run_driver = _ =>
       opts.triple(..14) == "wasm32-unknown")
    is_freestanding && !opts.no_runtime | opts.no_runtime = <+>
    is_freestanding && !opts.no_prelude | opts.no_prelude = <+>
-   opts.is_module | opts.no_prelude = <+> | 0
+   opts.is_module | opts.no_prelude = <+>
    no_prelude = opts.no_prelude
 
    exe_dir = dirname(sys::argv_string(0))

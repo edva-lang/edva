@@ -243,7 +243,7 @@ decode_escapes = raw =>
             r == '\\'
                | in_esc' = <+>
                | buf += r
-   in_esc' | buf += '\\' | 0
+   in_esc' | buf += '\\'
    +buf
 
 // Decode the single escape of a raw string body: "=\)" -> "=)".
@@ -340,7 +340,7 @@ scan_int_suffix = lx, q =>
    suffixes = ("i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64")
    got' = 0
    suffixes @ s =>
-      got' [1] 0
+      got' [1] -->
       n = ?s
       fits = lx.pos + n !> ?lx.src
       matches = fits && lx.src(lx.pos..lx.pos + n) == s
@@ -504,14 +504,14 @@ scan_op = lx, start, line, col =>
 
 // Consume an escaped character inside a string literal: the backslash
 // (already scanned as c) plus the escaped rune, if any remains.
-maybe_esc_adv: Lx, Rune => Rune
+maybe_esc_adv: Lx, Rune => ()
 maybe_esc_adv = lx, c => 
    adv(lx, c)
-   lx.pos < ?lx.src | adv(lx, pk(lx, 0)) | 0
+   lx.pos < ?lx.src | adv(lx, pk(lx, 0))
 
 // Handles a string-literal escape: marks escape present and advances past
 // the escaped rune.
-on_str_esc: Lx, Rune => Rune
+on_str_esc: Lx, Rune => ()
 on_str_esc = lx, c => 
    lx.has_esc = 1
    maybe_esc_adv(lx, c)
@@ -816,13 +816,12 @@ scan_use_directive = lx, hstart, line, col =>
                            "Invalid #use option '" + word +
                            "' — expected 'dynamic' or 'import'.")
                   skip_ws(lx, 0)
-                  pk(lx, 0) == ',' | adv(lx, pk(lx, 0)) | 0
+                  pk(lx, 0) == ',' | adv(lx, pk(lx, 0))
                   skip_ws(lx, 0)
                   pk(lx, 0) == ')'
                      |
                         adv(lx, pk(lx, 0))
                         -->
-            | 0
    skip_ws(lx, 0)
    path = pk(lx, 0) == '"'
       | scan_quoted_path(lx, line, col)
@@ -1047,7 +1046,6 @@ take_queued = lx, q =>
       |
          lx.queue = TokArr()
          lx.qfront = 0
-      | 0
    t
 
 // Counts leading spaces/tabs into lx.depth.

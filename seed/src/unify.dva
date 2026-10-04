@@ -397,13 +397,12 @@ bind_open_unit_ram_int = ctx, r =>
    s == URamShape(RamPN)
       |
          c_pos = canon(ctx, r.pos.ut)
-         c_pos [Var vid] bind_var(ctx, vid, prim_int()) | 0
+         c_pos [Var vid] bind_var(ctx, vid, prim_int())
       |
          s == URamShape(RamNP)
             |
                c_neg = canon(ctx, r.neg.ut)
-               c_neg [Var vid] bind_var(ctx, vid, prim_int()) | 0
-            | 0
+               c_neg [Var vid] bind_var(ctx, vid, prim_int())
 
 unify_concrete: Ctx, UType, UType, Int, Int => <>
 unify_concrete = ctx, c1, c2, v1, v2 =>

@@ -712,8 +712,6 @@ codegen_emit_forward = cg, t =>
             | slot =>
                i8p = LLVMPointerType(LLVMInt8Type!, 0)
                LLVMBuildStore(cg.builder, LLVMConstNull(i8p), slot)
-            | 0
-      | 0
 
 // The LLVM struct type + field names of a record TypeInfo (an empty names for
 // non-records). A helper so a forward-annotated record ("t: T") resolves its
@@ -827,14 +825,12 @@ codegen_register_types = cg, stmts =>
 
 codegen_register_types_step: types::Cg, ast::Exprs, Int => ()
 codegen_register_types_step = cg, stmts, i =>
-   i !< ?stmts
-      | 0
+   i < ?stmts
       |
          e = stmts(i)!!
          e
             [TypeDecl t] add_type(cg, t.name, t.type_info)
             [Block b] codegen_register_types(cg, b.exprs)
-            | 0
          codegen_register_types_step(cg, stmts, i + 1)
 
 string_has_double_colon: String, Int => <>
@@ -878,12 +874,10 @@ codegen_forward_registry = cg, t =>
    is_fn_sig = is_fn_ti || is_ct_sig || is_sig
    !is_fn_sig && string_has_double_colon(t.7, 0) && !types::has_type_name(cg, t.7)
       | types::init_error(cg, "E3120", "Unresolved type name '" + t.7 + "'", 0, 0)
-      | 0
    vt' = is_fn_sig | ast::ValueType(Fn) | vt'
    !is_fn_sig && (types::has_fn_name(cg, t.0) || types::is_fn_name(cg, t.0))
       | types::init_error(cg, "E3151", "Cannot assign Function to '" + t.0 +
          "' (bound as " + types::value_type_name(vt') + ").", 0, 0)
-      | 0
    slot_opt = types::var_slot(cg, t.0)
       | s => <+ s ->
       | !is_fn_sig
@@ -899,8 +893,6 @@ codegen_forward_registry = cg, t =>
             | sl =>
                LLVMBuildStore(cg.builder, LLVMConstInt(lt, 0, 0), sl)
                types::init_mark_whole(cg, t.0)
-            | 0
-      | 0
    !is_fn_sig && !binding_state(cg, t.0).found
       | binding_add(cg, t.0, <+>)
 
@@ -921,17 +913,13 @@ codegen_register_forwards = cg, stmts =>
 
 codegen_register_forwards_step: types::Cg, ast::Exprs, Int => ()
 codegen_register_forwards_step = cg, stmts, i =>
-   i !< ?stmts
-      | 0
+   i < ?stmts
       |
          e = stmts(i)!!
          e
             [Assign t]
-               is_fwd_expr(cg, t)
-                  | codegen_forward_registry(cg, t)
-                  | 0
+               is_fwd_expr(cg, t) | codegen_forward_registry(cg, t)
             [Block b] codegen_register_forwards(cg, b.exprs)
-            | 0
          codegen_register_forwards_step(cg, stmts, i + 1)
 
 // "b += rhs" — in-place Builder append (also "arr += v" for growable arrays).
@@ -949,14 +937,12 @@ codegen_emit_compound_assign = cg, t =>
                main::codegen_builder_append(cg, bval, t.5)
                types::var_slot(cg, t.0)
                   | slot => LLVMBuildStore(cg.builder, bval, slot)
-                  | 0
 
 // "a += v" for an array variable.
 codegen_emit_array_append: types::Cg, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 codegen_emit_array_append = cg, t =>
    types::is_view_expr(cg, t.5)
       | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
-      | 0
    want = array_elem_type(cg, t.0)
    got = types::static_expr_vt(cg, t.5)
    mismatch = want.1 && (got != ast::ValueType(Unknown)) && (got != want.0) &&
@@ -1014,7 +1000,7 @@ codegen_emit_member_compound = cg, t, m =>
                ev = expr::codegen_eval(cg, t.5)
                main::codegen_array_append(cg, val_ptr, ev.0)
             | main::codegen_builder_append(cg, val_ptr, t.5)
-      | 0
+
 
 // "x = <expr>" for a non-member LHS. A function definition ("f = x => body")
 // is compiled separately and stores nothing here. A heap ram (Ram-typed but a
@@ -1069,7 +1055,7 @@ only_globals_step = cg, bs, n, i, acc =>
       | acc
       |
          b = bs(i)!!
-         !b.is_local && (b.mod_name == cg.current_module) | acc += b | 0
+         !b.is_local && (b.mod_name == cg.current_module) | acc += b
          only_globals_step(cg, bs, n, i + 1, acc)
 
 only_globals: types::Cg, types::BindingMuts => types::BindingMuts
@@ -1116,7 +1102,6 @@ codegen_check_binding_valid = cg, t =>
                               "Cannot re-assign immutable binding '" + t.0 +
                               "'. Use a prime suffix ('" + t.0 +
                               "\'') for rebindable variables.", 0, 0)
-                        | 0
                   |
                      is_mut = t.1 || name_is_primed(t.0)
                      binding_add(cg, t.0, is_mut)
@@ -1164,9 +1149,6 @@ codegen_emit_plain_assign = cg, t =>
                types::add_fn_def(cg, types::FnDef((t.0, f.params, f.body)))
                types::is_fn_name(cg, t.0)
                   | stmt::compile_fn_lazy_force(cg, t.0, ast::VTypes())
-                  | <->
-               0
-            | 0
       |
          is_fwd_expr(cg, t)
             | codegen_emit_forward(cg, t)
@@ -1203,7 +1185,6 @@ codegen_emit_plain_assign_val = cg, t =>
       |
          cg.closure_vars += t.0
          cg.closure_tgts += "<mixed>"
-      | 0
    saved_discard = cg.discard_result
    cg.discard_result = <->
    cg.last_closure_fn = ""
@@ -1232,18 +1213,16 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    is_view = types::is_view_expr(cg, t.5)
    is_view && (!cg.in_fn || is_glob)
       | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
-      | 0
-   is_view | types::view_var_add(t.0) | 0
+   is_view | types::view_var_add(t.0)
    fresh_local = !is_glob | (cg.in_fn | !types::has_local_var(cg, t.0) | <->) | <->
-   !fresh_local | codegen_check_flag_to_heap_assign(cg, t, ev.0) | 0
-   !fresh_local | codegen_check_rebind_type(cg, t.0, ev.1, t.3, t.5) | 0
-   !fresh_local | codegen_check_annotated_record_rebind(cg, t, ev.1) | 0
+   !fresh_local | codegen_check_flag_to_heap_assign(cg, t, ev.0)
+   !fresh_local | codegen_check_rebind_type(cg, t.0, ev.1, t.3, t.5)
+   !fresh_local | codegen_check_annotated_record_rebind(cg, t, ev.1)
    is_clo = main::is_fn_vt(ev.1) || (expr::is_fnv_t(t.5))
    is_clo && !match::choice_mixed_declared_fns(cg, t.5)
       |
          cg.closure_vars += t.0
          cg.closure_tgts += cg.last_closure_fn
-      | 0
    i1t = LLVMInt1Type!
    is_heap = types::is_ram_vt(ev.1) && LLVMTypeOf(ev.0) != i1t ||
       (ev.1 [Enum])
@@ -1259,7 +1238,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
          types::var_slot(cg, t.0)
             | _
             | types::create_slot(cg, t.0, llvm_type, cg.in_fn)
-   store_v = ev.0 != Addr(0) | ev.0 | LLVMConstNull(llvm_type)
+   store_v = types::llvm_val_opt(ev.0) | _ | LLVMConstNull(llvm_type)
    LLVMBuildStore(cg.builder, store_v, slot)
    // A heap ram keeps the declared-type name (its payload type resolves from
    // it); an unwrapped scalar does not — the last_type may name an unrelated
@@ -1284,8 +1263,8 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    is_rec_expr = t.5 [Record _]
    is_part = !fresh_local | main::var_partial(cg, t.0) | <->
    is_whole = is_composite_vt(ev.1) | <+> | (is_rec_expr | <+> | is_part)
-   is_whole | types::init_mark_whole(cg, t.0) | 0
-   is_whole | types::alloc_rec_add(t.0) | 0
+   is_whole | types::init_mark_whole(cg, t.0)
+   is_whole | types::alloc_rec_add(t.0)
    cg.last_type = ""
 
 // A forward annotation can name a heap ram before its first assignment. Do
@@ -1294,7 +1273,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
 codegen_check_flag_to_heap_assign: types::Cg,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo), Addr => ()
 codegen_check_flag_to_heap_assign = cg, t, value =>
-   value != Addr(0) | codegen_check_flag_to_heap_value(cg, t, value)
+   types::llvm_val_opt(value) | v => codegen_check_flag_to_heap_value(cg, t, v)
 
 codegen_check_flag_to_heap_value: types::Cg,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo), Addr => ()
@@ -1381,8 +1360,7 @@ find_global_var_type = cg, name, i =>
 
 codegen_check_rebind_type: types::Cg, String, ast::ValueType, <>, ast::Expr => ()
 codegen_check_rebind_type = cg, name, rhs_vt, is_gmut, rhs_expr =>
-   cg.in_fn && !is_gmut && !types::has_local_var(cg, name)
-      | 0
+   !(cg.in_fn && !is_gmut && !types::has_local_var(cg, name))
       |
          target_ti = expr::var_ti(cg, name)
          target_ti [Ram _]
@@ -1397,22 +1375,17 @@ codegen_check_rebind_type = cg, name, rhs_vt, is_gmut, rhs_expr =>
                               expr::ram_shape_str(cg, rhs_ram_ti) + " to '" + name +
                               "' (declared as " + expr::ram_shape_str(cg, target_ti) +
                               ").", 0, 0)
-                        | 0
-                  | 0
-            | 0
          prev_vt = is_gmut
             | find_global_var_type(cg, name, ?cg.vars - 1)
             | types::var_type(cg, name)
-         prev_vt == ast::ValueType(Unknown) || rhs_vt == ast::ValueType(Unknown)
-            | 0
+         prev_vt != ast::ValueType(Unknown) && rhs_vt != ast::ValueType(Unknown)
             |
                intish_ok = types::is_int_vt(prev_vt) &&
                   (types::is_int_vt(rhs_vt) || (rhs_vt [RawPtr]))
                ram_ok = prev_vt [Ram] &&
                   (types::is_int_vt(rhs_vt) || (rhs_vt [Ram]) || types::is_record_vt(rhs_vt))
                same = prev_vt == rhs_vt || intish_ok || ram_ok
-               same
-                  | 0
+               !same
                   |
                      types::init_error(cg, "E3151", "Cannot assign " +
                         types::value_type_name(rhs_vt) + " to '" + name +
@@ -1453,10 +1426,10 @@ codegen_emit_member_assign = cg, t =>
    root_name = member_root_name(m.target)
    root_vt = types::var_type(cg, root_name)
    root_vt [Str] types::init_error(cg, "E3066", "Cannot write member '" + m.field_name +
-      "' of String '" + root_name + "' — Strings are immutable (A1) and have no members. Length is '?s', byte reads are 's(i)', and building goes through a Builder.", 0, 0) | 0
+      "' of String '" + root_name + "' — Strings are immutable (A1) and have no members. Length is '?s', byte reads are 's(i)', and building goes through a Builder.", 0, 0)
    root_vt [Builder] types::init_error(cg, "E3066", "Cannot write member '" + m.field_name +
-      "' of Builder '" + root_name + "' — a Builder's length is '?b' and its buffer is '&b'.", 0, 0) | 0
-   cg.error | 0 | member_assign_emit(cg, root_name, m, t)
+      "' of Builder '" + root_name + "' — a Builder's length is '?b' and its buffer is '&b'.", 0, 0)
+   !cg.error | member_assign_emit(cg, root_name, m, t)
 
 member_assign_emit: types::Cg, String, ast::MemberExpr, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 member_assign_emit = cg, root_name, m, t =>
@@ -1496,9 +1469,7 @@ member_assign_bitfield = cg, root_name, m, t, bfi =>
          alloc_p = expr::codegen_call_arena_alloc(cg, sz_c, "record.alloc")
          types::var_slot(cg, root_name)
             | slot => LLVMBuildStore(cg.builder, alloc_p, slot)
-            | 0
          types::alloc_rec_add(root_name)
-      | 0
    bf_fld = types::find_bitfield_field(bfi.fields, m.field_name)
    bf_fld
       | bf =>
@@ -1540,8 +1511,6 @@ member_assign_bitfield = cg, root_name, m, t, bfi =>
                      im_name != ""
                         |
                            types::init_mark_written(cg, root_name + "." + im_name)
-                        | 0
-                  | 0
       |
          types::init_error(cg, "E3017", "Unknown bitfield member '" +
             m.field_name + "'.", m.line, m.col)
@@ -1568,10 +1537,8 @@ member_assign_record = cg, root_name, m, t =>
          alloc_p = expr::codegen_call_arena_alloc(cg, sz_c, "record.alloc")
          types::var_slot(cg, root_name)
             | slot => LLVMBuildStore(cg.builder, alloc_p, slot)
-            | 0
          types::alloc_rec_add(root_name)
-      | 0
-   main::var_partial(cg, root_name) | types::init_mark_written(cg, root_name + "." + types::member_fpath(m)) | 0
+   main::var_partial(cg, root_name) | types::init_mark_written(cg, root_name + "." + types::member_fpath(m))
    target_ev = expr::codegen_eval(cg, m.target)
    is_var = m.target [Var _]
    target_rt_opt = is_var
@@ -1595,7 +1562,6 @@ member_assign_record = cg, root_name, m, t =>
             |
                types::is_view_expr(cg, t.5)
                   | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
-                  | 0
                f_vt = idx < 0 | ast::ValueType(Unknown) |
                   (target_fvts(idx) | _ | ast::ValueType(Unknown))
                rec_ok = f_vt == ast::ValueType(Record) &&
@@ -1628,7 +1594,6 @@ member_assign_record = cg, root_name, m, t =>
                                  LLVMBuildStore(cg.builder, c_val, fgep)
                               |
                                  LLVMBuildStore(cg.builder, ev.0, fgep)
-      | 0
 
 // "@[addr] = expr" — raw stores use the value's natural integer/pointer
 // width. Floats and ramifications have no raw-memory slot representation.
@@ -1668,7 +1633,8 @@ codegen_emit_raw_assign_value: types::Cg,
 codegen_emit_raw_assign_value = cg, t, rm, ev =>
    av = expr::codegen_eval(cg, rm.addr)
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   raw_addr = types::raw_addr_value(cg, av.0, av.1, i8p)
+   raw_addr_opt = types::raw_addr_value(cg, av.0, av.1, i8p)
+   raw_addr = raw_addr_opt | _ | LLVMConstNull(i8p)
    elem_ty = raw_store_elem_type(ev.1, i8p)
    elem_ptr = LLVMBuildPointerCast(cg.builder, raw_addr,
       LLVMPointerType(elem_ty, 0), "raw.ptr.w")
@@ -1811,7 +1777,6 @@ codegen_emit_call_assign = cg, t, call =>
                                           |
                                              codegen_emit_array_assign(cg,
                                                 t, call)
-                                          | 0
 
 // "#exit code" — truncate to i32, destroy the global arena, call exit(code),
 // park the builder at a fresh dead block so subsequent emission (including
@@ -1902,8 +1867,7 @@ codegen_emit_stmts = cg, stmts =>
       e
          [Assign t] cg.current_module = types::decl_module(t.0, 0)
          [TypeDecl t] cg.current_module = types::decl_module(t.name, 0)
-         | 0
-      cg.error | 0 | codegen_emit_stmt(cg, e)
+      !cg.error | codegen_emit_stmt(cg, e)
       cg.current_module = saved_module
 
 codegen_register_global_ctor: types::Cg, Addr => ()
@@ -1933,11 +1897,12 @@ codegen_register_global_ctor = cg, fn =>
 // Finish: ret i32 0 or ret void in __dva_global_init, verify and print module.
 codegen_finish: types::Cg, String => ()
 codegen_finish = cg, out_path =>
-   !cg.opts.no_runtime && !cg.opts.no_main | emit_arena_destroy(cg) | 0
+   !cg.opts.no_runtime && !cg.opts.no_main | emit_arena_destroy(cg)
    cg.opts.no_main
       |
          LLVMBuildRetVoid(cg.builder)
-         codegen_register_global_ctor(cg, cg.main_fn)
+         mfn = cg.main_fn | _ | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
+         codegen_register_global_ctor(cg, mfn)
       |
          LLVMBuildRet(cg.builder, LLVMConstInt(LLVMInt32Type!, 0, 0))
    ar = mem::arena(1024)
@@ -1950,9 +1915,9 @@ codegen_finish = cg, out_path =>
    v_res = LLVMVerifyModule(cg.module, 2, v_err_buf)
    v_res != 0
       |
-         v_msg = @[v_err_buf Addr]
-         v_msg != Addr(0)
-            |
+         v_msg_opt = types::llvm_val_opt(@[v_err_buf Addr])
+         v_msg_opt
+            | v_msg =>
                v_str = c_str(v_msg)
                print $ "E5011: LLVM module verification failed: " + v_str
                LLVMDisposeMessage(v_msg)
@@ -1962,9 +1927,9 @@ codegen_finish = cg, out_path =>
       |
          p_res != 0
             |
-               err_msg = @[err_buf Addr]
-               err_msg != Addr(0)
-                  |
+               err_msg_opt = types::llvm_val_opt(@[err_buf Addr])
+               err_msg_opt
+                  | err_msg =>
                      err_str = c_str(err_msg)
                      print $ "E5012: Failed to write LLVM IR to '" + out_path +
                         "': " + err_str
@@ -1979,7 +1944,6 @@ codegen_finish = cg, out_path =>
                      print $ "E5012: Failed to publish LLVM IR to '" + out_path + "'"
                      unlink(tmp_out)
                      cg.error = <+>
-                  | 0
    mem::destroy(ar)
 
 // call void @dva_arena_destroy(ptr @global_arena) before a function returns.
@@ -2534,7 +2498,7 @@ codegen_eval_key_access = cg, t =>
             | (codegen_map_membership(cg, bv.0, kv.0, key_vt),
                ast::ValueType(Flag))
             |
-               map_name != "" | cg.last_type = main::map_read_typedef(cg, map_name) | 0
+               map_name != "" | cg.last_type = main::map_read_typedef(cg, map_name)
                ret_u = codegen_map_lookup(cg, bv.0, kv.0, key_vt, val_vt,
                   t.line, t.col)
                (ret_u, ast::ValueType(Ram))

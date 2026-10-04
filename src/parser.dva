@@ -463,7 +463,7 @@ parse_bp_depth_error = p =>
 parse_bp_depth_ok: Parser, Int => <ast::Expr|>
 parse_bp_depth_ok = p, min_bp =>
    lr = parse_unary(p)
-   r = lr | lre => bp_loop(p, lre, min_bp, -1)
+   r = lr | lre => bp_loop(p, lre, min_bp, -1) | <-->
    p.expr_depth = p.expr_depth - 1
    r
 
@@ -4405,6 +4405,7 @@ pat_extract_bindings = p, target, pat_in =>
             sub_binds = pat_extract_bindings(p, fld_access, sub_raw)
             ?sub_binds @ i => res += sub_binds(i)!!
          res
+      | res
 
 pat_match_cond: Parser, ast::Expr, ast::Pattern => PatCondResult
 pat_match_cond = p, target, pat_in =>
@@ -4466,6 +4467,7 @@ pat_match_cond = p, target, pat_in =>
                      | cond_ref
                   has_cond' = <+>
          PatCondResult((stmts, acc_cond'))
+      | PatCondResult((ast::Exprs(), ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs()))))
 
 desugar_inner_pattern_group: Parser, ast::Expr, (ParsedBranch){},
    ast::Expr => ast::Expr

@@ -146,6 +146,7 @@ type_name_to_uprim = name =>
       ["Builder"] <+ unify::UPrim(Builder) ->
       ["Error"] <+ unify::UPrim(Error) ->
       ["Type"] <+ unify::UPrim(Type) ->
+      | <-->
 
 #type TypeVarMapEntry (name: String, ut: unify::UType)
 #type TypeVarMap (TypeVarMapEntry){}
@@ -992,6 +993,7 @@ member_field_ti = env, ti, name =>
          u_opt = type_env::lookup_user_type(env, tv)
          u_opt
             | udef => member_field_ti(env, udef.ti, name)
+            | <-->
       [Rec r]
          res' = <-->
          ?r.0 @ i =>
@@ -1027,6 +1029,9 @@ member_field_ti = env, ti, name =>
                      flds += ast::RecordFieldType(("", ast::ValueType(Int),
                         ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
                      <+ ast::TypeInfo(Rec, (flds, <->, <->, ast::ValueType(Record), 2, <->)) ->
+                  | <-->
+            | <-->
+      | <-->
 
 // --- Annotate Expressions --------------------------------------------------
 
@@ -1409,6 +1414,7 @@ annotate_expr = ctx, env, expr =>
                                        env.discard_result = is_ret_unit'
                                        cached = is_top
                                           | type_env::lookup_fn_body(env, name)
+                                          | <-->
                                        body_te = cached
                                           | _
                                           | annotate_expr(ctx, env, fe.body)
@@ -1705,6 +1711,7 @@ annotate_expr = ctx, env, expr =>
                         "constant (a per-field cycle index).")
                fld_ti_opt = fname' != "" && swz_status' != 1
                   | member_field_ti(env, target_te.ti, fname')
+                  | <-->
                ti = fld_ti_opt
                   | _
                   | unify::type_info_from_utype(ctx, fld_ut)
@@ -2039,6 +2046,7 @@ annotate_unary_op = ctx, env, op, t =>
                            unify::add_error(ctx, 3091,
                               "Operand of '--!' must be a ramification")
                            unify::prim_unknown()
+      | unify::prim_unknown()
 
 
 is_str_record_fields: unify::Ctx, unify::UFields, Int, Int => <>
@@ -2762,7 +2770,7 @@ annotate_call = ctx, env, ce =>
                            tgt = fn_alias_tgts(ai) | _ | ""
                            tgt != "" && !has_name_in(called_fns, tgt)
                               | (called_fns += tgt)
-         cast_opt = ce.fn_name != "" | type_name_to_uprim(ce.fn_name)
+         cast_opt = ce.fn_name != "" | type_name_to_uprim(ce.fn_name) | <-->
          cast_opt
             | uprim =>
                typed_args = tast::TypedExprs()
@@ -2956,7 +2964,7 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
 annotate_call_normal: unify::Ctx, type_env::TypeEnv,
    ast::CallExpr => tast::TypedExpr
 annotate_call_normal = ctx, env, ce =>
-   udef_opt = ce.fn_name != "" | type_env::lookup_user_type(env, ce.fn_name)
+   udef_opt = ce.fn_name != "" | type_env::lookup_user_type(env, ce.fn_name) | <-->
    udef_opt
       | udef =>
          c_udef = unify::canon(ctx, udef.ut)
@@ -3267,6 +3275,8 @@ is_ram_pn_ut = ctx, ut =>
       [Ram r]
          (r.pos.has_payload && !r.neg.has_payload)
             | <+ r.pos.ut ->
+            | <-->
+      | <-->
 
 choice_check_ram_pn: unify::Ctx, tast::TypedBranches => <unify::UType|>
 choice_check_ram_pn = ctx, tb_list =>
@@ -3397,6 +3407,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                         p0 = f_pred.params(0) | _ | unify::UType(None)
                         unify::unify(ctx, cond_te.ut, p0)
             <+ pred_te ->
+         | <-->
       type_env::enter_scope(env)
       pay_ti = unify::type_info_from_utype(ctx, payload_ut')
       type_env::bind_local(env, "_", payload_ut', pay_ti, <->)
@@ -3431,6 +3442,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                   is_var_bare = br.kind [Bare] && vname != "" && vname != "_"
                   bnd_opt = is_var_bare
                      | type_env::lookup_binding(env, vname)
+                     | <-->
                   is_fn_bnd = bnd_opt
                      | b =>
                         cb = unify::canon(ctx, b.ut)
@@ -3438,6 +3450,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                      | <->
                   gen_opt = is_var_bare
                      | type_env::lookup_generic(env, vname)
+                     | <-->
                   is_gen = <>(gen_opt)
                   is_var_fn = is_var_bare && (is_fn_bnd || is_gen)
                   is_var_fn
@@ -3518,7 +3531,8 @@ is_splat_expr: ast::Expr => <ast::Expr|>
 is_splat_expr = expr =>
    expr
       [Range r]
-         !r.has_lhs && r.has_rhs | <+ r.rhs ->
+         !r.has_lhs && r.has_rhs | <+ r.rhs -> | <-->
+      | <-->
 
 annotate_record: unify::Ctx, type_env::TypeEnv,
    ast::RecordExpr => tast::TypedExpr

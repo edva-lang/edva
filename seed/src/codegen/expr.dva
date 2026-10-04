@@ -203,15 +203,14 @@ tag_addr_with_arena_gen = cg, raw_p =>
 
 validate_and_strip_addr_tag: types::Cg, Addr, Addr => Addr
 validate_and_strip_addr_tag = cg, value, i8p =>
-   value == Addr(0)
-      | LLVMConstNull(i8p)
-      |
+   types::llvm_val_opt(value)
+      | v =>
          i64t = LLVMInt64Type!
-         ty = LLVMTypeOf(value)
+         ty = LLVMTypeOf(v)
          is_ptr = LLVMGetTypeKind(ty) == 12
          p_int = is_ptr
-            | LLVMBuildPtrToInt(cg.builder, value, i64t, "raw.int")
-            | stmt::coerce_int(cg, value, i64t)
+            | LLVMBuildPtrToInt(cg.builder, v, i64t, "raw.int")
+            | stmt::coerce_int(cg, v, i64t)
          mask = LLVMConstInt(i64t, 281474976710655, 0)
          clean_int = LLVMBuildAnd(cg.builder, p_int, mask,
             "raw.clean.int")
@@ -243,25 +242,26 @@ validate_and_strip_addr_tag = cg, value, i8p =>
                LLVMBuildBr(cg.builder, ok_bb)
                LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
                clean_p
+      | LLVMConstNull(i8p)
 
 clean_untagged_addr: types::Cg, Addr => Addr
 clean_untagged_addr = cg, ptr_val =>
-   ptr_val == Addr(0)
-      | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
-      |
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   types::llvm_val_opt(ptr_val)
+      | pv =>
          i64t = LLVMInt64Type!
-         i8p = LLVMPointerType(LLVMInt8Type!, 0)
-         ty = LLVMTypeOf(ptr_val)
+         ty = LLVMTypeOf(pv)
          is_ptr = LLVMGetTypeKind(ty) == 12
          p_int = is_ptr
-            | LLVMBuildPtrToInt(cg.builder, ptr_val, i64t, "addr.ffi.int")
-            | stmt::coerce_int(cg, ptr_val, i64t)
+            | LLVMBuildPtrToInt(cg.builder, pv, i64t, "addr.ffi.int")
+            | stmt::coerce_int(cg, pv, i64t)
          mask = LLVMConstInt(i64t, 281474976710655, 0)
          masked = LLVMBuildAnd(cg.builder, p_int, mask,
             "addr.ffi.masked")
          is_ptr
             | LLVMBuildIntToPtr(cg.builder, masked, i8p, "addr.ffi.clean")
             | masked
+      | LLVMConstNull(i8p)
 
 
 codegen_string_data: types::Cg, Addr, String => Addr
@@ -359,10 +359,7 @@ codegen_named_fn_value = cg, name =>
       | codegen_generic_fn_value_error(cg, target)
       |
          types::has_fn_name(cg, target) && !types::is_fn_name(cg, target)
-            |
-               stmt::compile_fn_lazy(cg, target, ast::VTypes())
-               0
-            | 0
+            | stmt::compile_fn_lazy(cg, target, ast::VTypes())
          meta = fn_value_meta(cg, target)
          meta.generic
             | codegen_generic_fn_value_error(cg, target)
@@ -688,7 +685,7 @@ codegen_eval_call_addr = cg, call =>
       |
          arg = call.args(0) | _ | ast::Expr(Var, "")
          var_name = arg [Var v] v | ""
-         v_slot = var_name != "" | types::var_slot(cg, var_name)
+         v_slot = var_name != "" | types::var_slot(cg, var_name) | <-->
          i64t = LLVMInt64Type!
          v_slot
             | slot =>
@@ -800,11 +797,13 @@ codegen_eval_call_var_dispatch = cg, call =>
          is_dotted_fn = types::find_dot(call.fn_name, 0) > 0
          is_dotted_fn && main::is_fn_vt(vt)
             |
-               mv = types::dotted_var_val(cg, call.fn_name)
-               ret_vt = types::dotted_fn_ret_vt(cg, call.fn_name)
-               ret_vt == ast::ValueType(Unknown)
+               types::dotted_var_val(cg, call.fn_name)
+                  | mv =>
+                     ret_vt = types::dotted_fn_ret_vt(cg, call.fn_name)
+                     ret_vt == ast::ValueType(Unknown)
+                        | codegen_indirect_fn_return_unknown(cg, call)
+                        | codegen_closure_call_indirect_val(cg, call, mv.0, ret_vt)
                   | codegen_indirect_fn_return_unknown(cg, call)
-                  | codegen_closure_call_indirect_val(cg, call, mv.0, ret_vt)
             | codegen_eval_fn_call(cg, call)
 
 ct_ti_resolve: types::Cg, ast::TypeInfo => (ast::TypeInfo, String)
@@ -838,11 +837,11 @@ codegen_materialize_ti = cg, ti, tname =>
    ti
       [Array ae]
          u' = main::codegen_array_create(cg, "cttr.array")
-         tname != "" | cg.last_type = tname | 0
+         tname != "" | cg.last_type = tname
          <+ (u', ast::ValueType(Array)) ->
       [Map mk]
          u' = runtime::codegen_map_create(cg, "cttr.map")
-         tname != "" | cg.last_type = tname | 0
+         tname != "" | cg.last_type = tname
          <+ (u', ast::ValueType(Map)) ->
       [Prim p]
          codegen_materialize_prim(cg, p)
@@ -1060,7 +1059,7 @@ codegen_emit_bind_valid = cg, t, dtype =>
    // `lhs | rhs(_) | <- _ ->` for RamPP.  Reusing the normal bare-choice
    // path preserves its payload binding, branch topology, and result phi.
    res = match::codegen_eval_choice(cg, bind_choice(cg, t, dtype))
-   dtype != "" | cg.last_type = dtype | 0
+   dtype != "" | cg.last_type = dtype
    <+ res ->
 
 bind_choice: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr), String => ast::ChoiceExpr
@@ -1187,9 +1186,9 @@ codegen_emit_apply_feed = cg, op, t =>
          sp.0
             |
                args' = ast::Exprs()
-               is_feed | args' += vside | 0
+               is_feed | args' += vside
                ?sp.3 @ i => args' += sp.3(i)!!
-               is_feed | 0 | args' += vside
+               !is_feed | args' += vside
                call' = ast::CallExpr((sp.1, sp.2, args', 0, 0))
                codegen_eval_call(cg, call')
             |
@@ -1210,10 +1209,7 @@ call_named = cg, name, args =>
    fname1 = fn_alias(cg, name)
    fname = fname0 != "" | fname0 | (fname1 != "" | fname1 | resolved)
    types::has_fn_name(cg, fname) && !types::is_fn_name(cg, fname)
-      |
-         stmt::compile_fn_lazy(cg, fname, ast::VTypes())
-         0
-      | 0
+      | stmt::compile_fn_lazy(cg, fname, ast::VTypes())
    idx = types::fninfo_index(cg, fname)
    use_idx0 = <>(idx) | idx | types::fninfo_index(cg, name)
    use_idx = <>(use_idx0)
@@ -1283,7 +1279,7 @@ is_numeric_fixed_record: (Addr, ast::ValueType), <Addr|>, ast::VTypes => <>
 is_numeric_fixed_record = val, rt_opt, fvts =>
    is_rec = val.1 [Record]
    n_ok = ?fvts > 0
-   val_ok = val.0 != Addr(0)
+   val_ok = <>(types::llvm_val_opt(val.0))
    val_ok && is_rec && n_ok &&
       record_type_is_homogeneous(rt_opt, fvts) &&
       is_numeric_vt((fvts(0) | _ | ast::ValueType(Unknown)))
@@ -1292,7 +1288,7 @@ is_cmp_fixed_record: (Addr, ast::ValueType), <Addr|>, ast::VTypes => <>
 is_cmp_fixed_record = val, rt_opt, fvts =>
    is_rec = val.1 [Record]
    n_ok = ?fvts > 0
-   val_ok = val.0 != Addr(0)
+   val_ok = <>(types::llvm_val_opt(val.0))
    val_ok && is_rec && n_ok &&
       record_type_is_homogeneous(rt_opt, fvts) &&
       (is_numeric_vt((fvts(0) | _ | ast::ValueType(Unknown))) ||
@@ -1302,7 +1298,7 @@ is_flag_fixed_record: (Addr, ast::ValueType), <Addr|>, ast::VTypes => <>
 is_flag_fixed_record = val, rt_opt, fvts =>
    is_rec = val.1 [Record]
    n_ok = ?fvts > 0
-   val_ok = val.0 != Addr(0)
+   val_ok = <>(types::llvm_val_opt(val.0))
    val_ok && is_rec && n_ok &&
       record_type_is_homogeneous(rt_opt, fvts) &&
       types::is_flag_vt((fvts(0) | _ | ast::ValueType(Unknown)))
@@ -1623,12 +1619,12 @@ codegen_emit_array_arith = cg, op, linfo, rinfo =>
                                  (LLVMConstInt(LLVMInt64Type!, 0, 0),
                                     ast::ValueType(Unknown))
                               |
-                                 elem_ll_type_raw = arr_rt
-                                    | rt => LLVMStructGetTypeAtIndex(rt, 0)
-                                    | types::llvm_type_of_vt(elem_vt)
-                                 elem_llvm = elem_ll_type_raw == Addr(0)
+                                 elem_ll_opt = arr_rt
+                                    | rt => types::llvm_val_opt(LLVMStructGetTypeAtIndex(rt, 0))
+                                    | <+ types::llvm_type_of_vt(elem_vt) ->
+                                 elem_llvm = elem_ll_opt
+                                    | _
                                     | LLVMInt64Type!
-                                    | elem_ll_type_raw
                                  elem_bytes = elem_byte_size(elem_vt)
                                  total_bytes = elem_bytes * count
                                  l_op = lhs_arr | lr.0 |
@@ -1883,14 +1879,14 @@ codegen_emit_array_cmp = cg, op, linfo, rinfo =>
                                        (LLVMConstInt(LLVMInt64Type!, 0, 0),
                                           ast::ValueType(Unknown))
                                     |
-                                        raw_elem = arr_rt
+                                        raw_elem_opt = arr_rt
                                            | rt =>
-                                              LLVMStructGetTypeAtIndex(
-                                                 rt, 0)
-                                           | types::llvm_type_of_vt(elem_vt)
-                                        elem_llvm = raw_elem == Addr(0)
+                                              types::llvm_val_opt(LLVMStructGetTypeAtIndex(
+                                                 rt, 0))
+                                           | <+ types::llvm_type_of_vt(elem_vt) ->
+                                        elem_llvm = raw_elem_opt
+                                           | _
                                            | LLVMInt64Type!
-                                           | raw_elem
                                         elem_bytes = is_flag | 1 |
                                            elem_byte_size(elem_vt)
                                         total_bytes = elem_bytes * count
@@ -2131,7 +2127,7 @@ codegen_emit_integer_arith_error = cg =>
 codegen_emit_arith_valid: types::Cg, ast::BinaryOp, (Addr, ast::ValueType),
    (Addr, ast::ValueType) => (Addr, ast::ValueType)
 codegen_emit_arith_valid = cg, op, lr, rr =>
-   lr.0 == Addr(0) || rr.0 == Addr(0)
+   ! <>(types::llvm_val_opt(lr.0)) || ! <>(types::llvm_val_opt(rr.0))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          op
@@ -2264,7 +2260,7 @@ codegen_emit_div_guard = cg, l_val, r_val, is_signed =>
 codegen_eval_int_arith: types::Cg, ast::BinaryOp, Addr, Addr, <> => Addr
 codegen_eval_int_arith = cg, op, l, r, is_u =>
    is_div = op [Div, Mod]
-   is_div | codegen_emit_div_guard(cg, l, r, !is_u) | 0
+   is_div | codegen_emit_div_guard(cg, l, r, !is_u)
    op
       [Add] LLVMBuildAdd(cg.builder, l, r, "addtmp")
       [Sub] LLVMBuildSub(cg.builder, l, r, "subtmp")
@@ -2448,8 +2444,10 @@ codegen_eval_unary_unwrap: types::Cg, Addr, ast::ValueType,
    ast::Expr => (Addr, ast::ValueType)
 codegen_eval_unary_unwrap = cg, val, vt, target =>
    i1t = LLVMInt1Type!
-   is_heap = val != Addr(0) && LLVMTypeOf(val) != i1t &&
-      LLVMGetTypeKind(LLVMTypeOf(val)) == 12
+   val_opt = types::llvm_val_opt(val)
+   is_heap = val_opt
+      | v => LLVMTypeOf(v) != i1t && LLVMGetTypeKind(LLVMTypeOf(v)) == 12
+      | <->
    vt != ast::ValueType(Ram) || !is_heap
       |
          types::init_error(cg, "E3091", "Operand of '!!' must be a RamPP or " +
@@ -2529,20 +2527,18 @@ codegen_eval_unary_unwrap = cg, val, vt, target =>
                            cg.last_fvts = types::field_vts(cg, pos_rec)
                            pdt = pos_rec [TypeVar n] n | ""
                            cg.last_type = pdt
-                        | 0
                   |
                      pos_is_fn = pos_vt [Fn]
                      pos_is_fn
                         |
                            sname = types::fn_ret_sig_with_ti(cg, pos_rec)
-                           sname != "" | cg.last_closure_fn = sname | 0
+                           sname != "" | cg.last_closure_fn = sname
                            p_ret_vt = types::ti_fn_ret_vt(cg, pos_rec)
                            p_ret_vt != ast::ValueType(Unknown)
                               | cg.last_type = types::value_type_name(p_ret_vt)
-                              | 0
                         |
                            pdt2 = pos_rec [TypeVar n] n | ""
-                           pdt2 != "" | cg.last_type = pdt2 | 0
+                           pdt2 != "" | cg.last_type = pdt2
                (res_val, pos_vt)
 
 codegen_eval_unary_propagate: types::Cg, Addr, ast::ValueType,
@@ -2564,8 +2560,10 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |
                i1t = LLVMInt1Type!
-               is_heap = val != Addr(0) && LLVMTypeOf(val) != i1t &&
-                  LLVMGetTypeKind(LLVMTypeOf(val)) == 12
+               val_opt = types::llvm_val_opt(val)
+               is_heap = val_opt
+                  | v => LLVMTypeOf(v) != i1t && LLVMGetTypeKind(LLVMTypeOf(v)) == 12
+                  | <->
                vt != ast::ValueType(Ram) || !is_heap
                   |
                      types::init_error(cg, "E3091", "Operand of '--!' must be a " +
@@ -2667,19 +2665,16 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
                                     |
                                        sname = types::fn_ret_sig_with_ti(cg,
                                           pos_rec)
-                                       sname != ""
-                                          | cg.last_closure_fn = sname
-                                          | 0
+                                       sname != "" | cg.last_closure_fn = sname
                                        p_ret_vt = types::ti_fn_ret_vt(cg,
                                           pos_rec)
                                        p_ret_vt != ast::ValueType(Unknown)
                                           |
                                              cg.last_type =
                                                 types::value_type_name(p_ret_vt)
-                                          | 0
                                     |
                                        pdt2 = pos_rec [TypeVar n] n | ""
-                                       pdt2 != "" | cg.last_type = pdt2 | 0
+                                       pdt2 != "" | cg.last_type = pdt2
                            (res_val, pos_vt)
 
 codegen_not_invalid: types::Cg, ast::ValueType => (Addr, ast::ValueType)
@@ -2910,7 +2905,7 @@ split_comma_names_step: String, Int, Int, ast::Names => ast::Names
 split_comma_names_step = s, start, i, acc =>
    i == ?s
       |
-         start < i | (acc += s(start..i)) | 0
+         start < i | acc += s(start..i)
          acc
       |
          s(i) == ','
@@ -3888,7 +3883,7 @@ compile_mono_fn = cg, orig, mono, ct_names, b_vts, b_tis, b_dts, b_ct_vals =>
                ret_dtype = is_anon_rec
                   |
                      ret_tname = "#ret_" + mono
-                     types::has_type_name(cg, ret_tname) | 0 |
+                     !types::has_type_name(cg, ret_tname) |
                         runtime::add_type_rec(cg, ret_tname, ret_ti', rm_rt_opt, ret_rm_1)
                      ret_tname
                   | ret_dtype0
@@ -3982,7 +3977,6 @@ codegen_eval_named_call = cg, t =>
          !has_kidx
             | compile_mono_fn(cg, fname', key, ct_names, b_vts, b_tis, b_dts,
                b_ct_vals)
-            | <+>
          types::fninfo_index(cg, key)
             | kidx2 =>
                kfi = cg.fninfos(kidx2)!!
@@ -4053,8 +4047,8 @@ codegen_eval_named_call_lazy = cg, t, fname, cargs, cavts =>
 
 coerce_arg_ptr_int: types::Cg, Addr, Addr, <> => Addr
 coerce_arg_ptr_int = cg, av_val, pty, has_fn =>
-   pty_k = pty != Addr(0) | LLVMGetTypeKind(pty) | 0
-   av_k = av_val != Addr(0) | LLVMGetTypeKind(LLVMTypeOf(av_val)) | 0
+   pty_k = types::llvm_val_opt(pty) | p => LLVMGetTypeKind(p) | 0
+   av_k = types::llvm_val_opt(av_val) | av => LLVMGetTypeKind(LLVMTypeOf(av)) | 0
    has_fn && (pty_k == 12) && (av_k == 8)
       | LLVMBuildIntToPtr(cg.builder, av_val, pty, "arg.i2p")
       |
@@ -4084,14 +4078,14 @@ named_call_emit_pre = cg, fname, fn, fty, ret, args, arg_vts =>
    sb = &buf
    n @ i =>
       a = args(i)!!
-      has_fn = fn != Addr(0) && i < LLVMCountParams(fn)
-      pty_opt = has_fn | <+ LLVMTypeOf(LLVMGetParam(fn, i)) ->
+      has_fn = (types::llvm_val_opt(fn) | f => i < LLVMCountParams(f) | <->)
+      pty_opt = has_fn | <+ LLVMTypeOf(LLVMGetParam(fn, i)) -> | <-->
       is_int_p = pty_opt | p => LLVMGetTypeKind(p) == 8 | <->
       avt = (arg_vts(i) | _ | ast::ValueType(Unknown))
       pty_raw = pty_opt | _ | LLVMInt64Type!
       av = is_int_p | stmt::coerce_int_ext(cg, a, pty_raw, types::is_unsigned_vt(avt)) | a
       av_null = pty_opt | p => LLVMConstNull(p) | LLVMConstInt(LLVMInt64Type!, 0, 0)
-      av_val = av != Addr(0) | av | av_null
+      av_val = types::llvm_val_opt(av) | _ | av_null
       a_fin = coerce_arg_ptr_int(cg, av_val, pty_raw, has_fn)
       @[sb + i * 8] = a_fin
    res_name = ret [Unit] "" | "call.res"
@@ -4165,12 +4159,13 @@ eval_named_args_step = cg, t, fname, fn, is_for, ptypes, i, args =>
                a1 = is_str
                   | codegen_ensure_nul_terminated(cg, ev.0, "arg.str.ptr")
                   | (is_ptr | clean_untagged_addr(cg, ev.0) | ev.0)
-               has_fn = fn != Addr(0) && i < LLVMCountParams(fn)
+               has_fn = (types::llvm_val_opt(fn) | f => i < LLVMCountParams(f) | <->)
                pty_opt = has_fn
                   | <+ LLVMTypeOf(LLVMGetParam(fn, i)) ->
+                  | <-->
                is_int_p = pty_opt | p => LLVMGetTypeKind(p) == 8 | <->
                a2 = is_int_p
-                  | stmt::coerce_int_ext(cg, a1, pty_opt | p => p | a1,
+                  | stmt::coerce_int_ext(cg, a1, pty_opt | _ | a1,
                      types::is_unsigned_vt(ev.1))
                   | a1
                args += a2
@@ -4483,7 +4478,7 @@ codegen_closure_call_env = cg, t, fty, ret =>
    res_name = ret [Unit] "" | "clo.call"
    res = LLVMBuildCall2(cg.builder, fty, typed, sb, total, res_name)
    cfn = closure_fn_of(cg, t.fn_name)
-   cfn != "" | stmt::apply_call_ret_meta(cg, cfn) | 0
+   cfn != "" | stmt::apply_call_ret_meta(cg, cfn)
    (res, ret)
 
 fn_body_is_choice: ast::FnExpr => <>
@@ -4629,7 +4624,7 @@ fn_alias_at = cg, name, i =>
 codegen_typed_eval_logical_evaled: types::Cg, <>, (Addr, ast::ValueType),
    ast::TypeInfo, tast::TypedExpr, ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_logical_evaled = cg, is_and, lv, lhs_ti, rhs, ti =>
-   lv.0 == Addr(0)
+   ! <>(types::llvm_val_opt(lv.0))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          t0 = types::g.tmpc
@@ -4642,7 +4637,7 @@ codegen_typed_eval_logical_evaled = cg, is_and, lv, lhs_ti, rhs, ti =>
          res_lt0 = types::is_unboxed_ram_ti(cg, eff_ti)
             | match::unboxed_ram_struct_t(cg)
             | types::llvm_type_of_vt(res_vt)
-         res_lt = res_lt0 != Addr(0) | res_lt0 | LLVMInt1Type!
+         res_lt = types::llvm_val_opt(res_lt0) | _ | LLVMInt1Type!
          then_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".then")
          else_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".else")
          exit_bb = LLVMAppendBasicBlock(cg.current_fn, pre + ".exit")
@@ -4885,14 +4880,13 @@ codegen_typed_eval_bin_arith = cg, op, lhs, rhs, ut, ti =>
          tname0 = lhs.ti [TypeVar tv] tv | (lhs.ut [Enum ue] ue.name | "")
          tname1 = rhs.ti [TypeVar tv] tv | (rhs.ut [Enum ue] ue.name | "")
          tname = tname0 != "" | tname0 | tname1
-         tname != "" | cg.last_type = tname | 0
-      | 0
+         tname != "" | cg.last_type = tname
    codegen_typed_eval_bin_arith_evaled(cg, op, lv, rv, ut, ti)
 
 codegen_typed_eval_bin_arith_evaled: types::Cg, ast::BinaryOp, (Addr, ast::ValueType),
    (Addr, ast::ValueType), unify::UType, ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_bin_arith_evaled = cg, op, lv, rv, ut, ti =>
-   lv.0 == Addr(0) || rv.0 == Addr(0)
+   ! <>(types::llvm_val_opt(lv.0)) || ! <>(types::llvm_val_opt(rv.0))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          op
@@ -4948,10 +4942,10 @@ codegen_typed_eval_bin_arith_default = cg, op, lv, rv, ti =>
          ext_r' = stmt::coerce_int_ext(cg, rv.0, i64t, types::is_unsigned_vt(rv.1))
          codegen_emit_bitwise_valid(cg, op, ext_l', ext_r')
       |
-         l_is_ptr = types::is_ptr_vt(lv.1) || (lv.0 != Addr(0) &&
-            LLVMGetTypeKind(LLVMTypeOf(lv.0)) == 12)
-         r_is_ptr = types::is_ptr_vt(rv.1) || (rv.0 != Addr(0) &&
-            LLVMGetTypeKind(LLVMTypeOf(rv.0)) == 12)
+         l_is_ptr = types::is_ptr_vt(lv.1) ||
+            (types::llvm_val_opt(lv.0) | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 12 | <->)
+         r_is_ptr = types::is_ptr_vt(rv.1) ||
+            (types::llvm_val_opt(rv.0) | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 12 | <->)
          l_is_ptr || r_is_ptr
             |
                codegen_eval_ptr_arith(cg, op, lv.0, rv.0, l_is_ptr, r_is_ptr)
@@ -4962,7 +4956,7 @@ codegen_typed_eval_bin_arith_default = cg, op, lv, rv, ti =>
                ret_vt = types::vt_from_ti(ti)
                tgt_vt = ret_vt [Unknown, Unit] res_ty | ret_vt
                tgt_ty0 = types::llvm_type_of_vt(tgt_vt)
-               tgt_ty = tgt_ty0 != Addr(0) | tgt_ty0 | LLVMInt64Type!
+               tgt_ty = types::llvm_val_opt(tgt_ty0) | _ | LLVMInt64Type!
                ext_l' = stmt::coerce_int_ext(cg, lv.0, tgt_ty, types::is_unsigned_vt(lv.1))
                ext_r' = stmt::coerce_int_ext(cg, rv.0, tgt_ty, types::is_unsigned_vt(rv.1))
                res_val = codegen_eval_int_arith(cg, op, ext_l', ext_r', is_u)
@@ -4972,7 +4966,7 @@ codegen_typed_eval_unary: types::Cg, ast::UnaryOp, tast::TypedExpr, unify::UType
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_unary = cg, op, operand, ut, ti =>
    ev = main::codegen_typed_eval(cg, operand)
-   ev.0 == Addr(0)
+   ! <>(types::llvm_val_opt(ev.0))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          op
@@ -5186,7 +5180,7 @@ codegen_typed_eval_member_normal = cg, target, fname, idx, ti =>
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          tv = main::codegen_typed_eval(cg, target)
-         tv.0 == Addr(0)
+         ! <>(types::llvm_val_opt(tv.0))
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |
                tgt_ti = types::typed_member_target_ti(cg, target)
@@ -5314,8 +5308,7 @@ builder_typed_append_rec_lens = cg, fields, i, n, vals, vts, lens, total_add =>
 codegen_typed_builder_append_record: types::Cg, Addr, tast::TypedFields => ()
 codegen_typed_builder_append_record = cg, b_val, fields =>
    nf = ?fields
-   nf == 0
-      | 0
+   nf != 0
       |
          zero = LLVMConstInt(LLVMInt64Type!, 0, 0)
          res = builder_typed_append_rec_lens(cg, fields, 0, nf, types::Addrs(),
@@ -5367,13 +5360,12 @@ codegen_typed_builder_append = cg, b_val, val =>
                is_rec = ev.1 [Record]
                is_rec
                   |
-                     val.kind
-                        [Var v]
-                           types::var_rt(cg, v.0)
+                     v_name = val.kind [Var v] v.0 | ""
+                     v_name != ""
+                        |
+                           types::var_rt(cg, v_name)
                               | vrt => builder_append_rec_flds(cg, b_val,
                                  ev.0, vrt)
-                              | 0
-                        | 0
                   |
                      types::is_rune_vt(ev.1) || types::is_rune_vt(types::vt_from_ti_cg(cg, val.ti))
                         | main::codegen_builder_append_rune(cg, b_val, ev.0)
@@ -5410,8 +5402,9 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
             a0' = is_str'
                | codegen_ensure_nul_terminated(cg, aev'.0, "arg.str.ptr")
                | (is_ptr' | clean_untagged_addr(cg, aev'.0) | aev'.0)
-            a1' = a0' != Addr(0) | a0' | LLVMConstNull(
-               types::llvm_type_of_vt(aev'.1))
+            a1' = types::llvm_val_opt(a0')
+               | _
+               | LLVMConstNull(types::llvm_type_of_vt(aev'.1))
             cargs' += a1'
             cavts' += aev'.1
             catis' += arg_e'.ti
@@ -5463,7 +5456,6 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
          !has_kidx
             | compile_mono_fn(cg, rname, key, ct_names, b_vts, b_tis, b_dts,
                b_ct_vals)
-            | <+>
          types::fninfo_index(cg, key)
             | kidx2 =>
                kfi = cg.fninfos(kidx2)!!
@@ -5484,8 +5476,9 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
             a0' = is_str'
                | codegen_ensure_nul_terminated(cg, aev'.0, "arg.str.ptr")
                | (is_ptr' | clean_untagged_addr(cg, aev'.0) | aev'.0)
-            a1' = a0' != Addr(0) | a0' | LLVMConstNull(
-               types::llvm_type_of_vt(aev'.1))
+            a1' = types::llvm_val_opt(a0')
+               | _
+               | LLVMConstNull(types::llvm_type_of_vt(aev'.1))
             cargs' += a1'
             cavts' += aev'.1
             catis' += arg_e'.ti
@@ -5635,13 +5628,14 @@ codegen_typed_eval_addr = cg, args =>
       |
          arg = args(0) | _ | tast::mk_lit_unit(0, 0)
          vname = arg.kind [Var v] v.0 | ""
-         v_slot = vname != "" | types::var_slot(cg, vname)
+         v_slot = vname != "" | types::var_slot(cg, vname) | <-->
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          v_slot
             | slot => (slot, ast::ValueType(RawPtr))
             |
                ev = main::codegen_typed_eval(cg, arg)
-               p_val = types::raw_addr_value(cg, ev.0, ev.1, i8p)
+               p_val_opt = types::raw_addr_value(cg, ev.0, ev.1, i8p)
+               p_val = p_val_opt | _ | LLVMConstNull(i8p)
                (p_val, ast::ValueType(RawPtr))
 codegen_typed_eval_exit: types::Cg, tast::TypedExpr => (Addr, ast::ValueType)
 codegen_typed_eval_exit = cg, e =>
@@ -5717,17 +5711,20 @@ codegen_typed_eval_error_construct = cg, args =>
    ctx_t = types::struct_type2(i64t, i64t)
    a5 = nargs > 5 | (args(5) | _ | tast::mk_lit_unit(0, 0)) |
       tast::mk_lit_unit(0, 0)
-   ctx_ev = nargs > 5 | main::codegen_typed_eval(cg, a5) |
-      (Addr(0), ast::ValueType(Unknown))
-   ctx0 = ctx_ev.0 != Addr(0)
+   ctx_opt = nargs > 5
       |
-         g0 = LLVMBuildStructGEP2(cg.builder, ctx_t, ctx_ev.0, 0,
+         ctx_ev = main::codegen_typed_eval(cg, a5)
+         types::llvm_val_opt(ctx_ev.0)
+      | <-->
+   ctx0 = ctx_opt
+      | cev =>
+         g0 = LLVMBuildStructGEP2(cg.builder, ctx_t, cev, 0,
             "ctx.0.gep")
          LLVMBuildLoad2(cg.builder, i64t, g0, "ctx.0")
       | LLVMConstInt(i64t, 0, 0)
-   ctx1 = ctx_ev.0 != Addr(0)
-      |
-         g1 = LLVMBuildStructGEP2(cg.builder, ctx_t, ctx_ev.0, 1,
+   ctx1 = ctx_opt
+      | cev =>
+         g1 = LLVMBuildStructGEP2(cg.builder, ctx_t, cev, 1,
             "ctx.1.gep")
          LLVMBuildLoad2(cg.builder, i64t, g1, "ctx.1")
       | LLVMConstInt(i64t, 0, 0)
@@ -5785,7 +5782,7 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                            bare_name = types::decl_bare_name(arg0_name, 0)
                            types::enum_slot_index(slots, bare_name)
                               | idx =>
-                                 pay_opt = ?args > 1 | <+ args(1)!! ->
+                                 pay_opt = ?args > 1 | <+ args(1)!! -> | <-->
                                  u = match::codegen_typed_build_union(cg, idx,
                                     pay_opt, "enum.alloc")
                                  cg.last_type = fname
@@ -6031,7 +6028,7 @@ codegen_eval_swizzle: types::Cg, tast::TypedExpr, String,
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_eval_swizzle = cg, target, fname, ti =>
    tv = main::codegen_typed_eval(cg, target)
-   tv.0 == Addr(0)
+   ! <>(types::llvm_val_opt(tv.0))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          tgt_ti = types::typed_member_target_ti(cg, target)
@@ -6411,28 +6408,28 @@ codegen_eval_math_intrinsic = cg, fname, args, ti, ev0, ev1, ev2 =>
 
 intrin_ptr_val: types::Cg, (Addr, ast::ValueType) => Addr
 intrin_ptr_val = cg, ev =>
-   ev.0 == Addr(0)
-      | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
-      |
-         i8p = LLVMPointerType(LLVMInt8Type!, 0)
-         vty = LLVMTypeOf(ev.0)
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   types::llvm_val_opt(ev.0)
+      | ev0 =>
+         vty = LLVMTypeOf(ev0)
          is_p = LLVMGetTypeKind(vty) == 12
          raw_p = is_p
-            | ev.0
-            | LLVMBuildIntToPtr(cg.builder, ev.0, i8p, "raw.ptr")
+            | ev0
+            | LLVMBuildIntToPtr(cg.builder, ev0, i8p, "raw.ptr")
          validate_and_strip_addr_tag(cg, raw_p, i8p)
+      | LLVMConstNull(i8p)
 
 intrin_size_val: types::Cg, (Addr, ast::ValueType) => Addr
 intrin_size_val = cg, ev =>
-   ev.0 == Addr(0)
+   types::llvm_val_opt(ev.0)
+      | ev0 => stmt::coerce_int(cg, ev0, LLVMInt64Type!)
       | LLVMConstInt(LLVMInt64Type!, 0, 0)
-      | stmt::coerce_int(cg, ev.0, LLVMInt64Type!)
 
 intrin_val8: types::Cg, (Addr, ast::ValueType) => Addr
 intrin_val8 = cg, ev =>
-   ev.0 == Addr(0)
+   types::llvm_val_opt(ev.0)
+      | ev0 => stmt::coerce_int(cg, ev0, LLVMInt8Type!)
       | LLVMConstInt(LLVMInt8Type!, 0, 0)
-      | stmt::coerce_int(cg, ev.0, LLVMInt8Type!)
 
 codegen_typed_eval_intrinsic: types::Cg, String, tast::TypedExprs,
    ast::TypeInfo => (Addr, ast::ValueType)
@@ -6635,7 +6632,8 @@ codegen_typed_eval_index = cg, target, index, ti =>
          has_end' = !(b2_val'.1 [Unit])
          e_val_opt = has_end'
             | <+ main::codegen_widen_idx_to_i64(cg, b2_val'.0, b2_val'.1, "view.end") ->
-         e_val_explicit = e_val_opt | ev => ev | LLVMConstInt(i64t', 0, 0)
+            | <-->
+         e_val_explicit = e_val_opt | _ | LLVMConstInt(i64t', 0, 0)
          is_sl
             |
                base_len' = main::slice_len(cg, tv.0, "slice.len")
@@ -6925,7 +6923,8 @@ codegen_typed_eval_raw_write = cg, addr_e, val_e =>
    av = main::codegen_typed_eval(cg, addr_e)
    vv = main::codegen_typed_eval(cg, val_e)
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   raw_addr = types::raw_addr_value(cg, av.0, av.1, i8p)
+   raw_addr_opt = types::raw_addr_value(cg, av.0, av.1, i8p)
+   raw_addr = raw_addr_opt | _ | LLVMConstNull(i8p)
    elem_ty = runtime::raw_store_elem_type(vv.1, i8p)
    ptr_val = LLVMBuildPointerCast(cg.builder, raw_addr,
       LLVMPointerType(elem_ty, 0), "raw.wr.ptr")
@@ -7135,10 +7134,11 @@ codegen_typed_eval_cast_other = cg, target_vt, aev =>
                      is_ptr_tgt
                         |
                            i8p = LLVMPointerType(LLVMInt8Type!, 0)
-                           is_int_arg = types::is_int_vt(aev.1) ||
-                              (aev.0 != Addr(0) &&
-                                 LLVMGetTypeKind(
-                                    LLVMTypeOf(aev.0)) == 8)
+                           aev_val_opt = types::llvm_val_opt(aev.0)
+                           aev_is_int = aev_val_opt
+                              | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 8
+                              | <->
+                           is_int_arg = types::is_int_vt(aev.1) || aev_is_int
                            is_int_arg
                               | (LLVMBuildIntToPtr(cg.builder, aev.0,
                                    i8p, "cast.int2ptr"),

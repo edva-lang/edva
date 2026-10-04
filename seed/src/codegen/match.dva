@@ -681,7 +681,7 @@ str_count_runes = s =>
    c' = 0
    ?s @ i =>
       b = s(i)
-      (b .&. 0xC0) != 0x80 | (c' = c' + 1) | 0
+      (b .&. 0xC0) != 0x80 | (c' = c' + 1)
    c'
 
 ctfe_eval_bin_vals: ast::BinaryOp, types::CtVal, types::CtVal => (types::CtVal, ast::ValueType)
@@ -1093,7 +1093,7 @@ ctfe_eval_map_literal = cg, lit, frames, depth =>
          |
             existing_idx = ctfe_map_find_key(keys, k_res.0, 0)
             existing_idx !< 0
-               | (vals(existing_idx) = v_res.0 !| 0)
+               | (vals(existing_idx) = v_res.0 !| _)
                |
                   keys += k_res.0
                   vals += v_res.0
@@ -1226,7 +1226,7 @@ ctfe_next_cap: Int => Int
 ctfe_next_cap = n =>
    cap' = 8
    64 @ _ =>
-      cap' !< n | --> | 0
+      cap' !< n | -->
       cap' = cap' * 2
    cap'
 
@@ -1269,7 +1269,7 @@ ctfe_lower_map: types::Cg, (types::CtVals, types::CtVals) => (Addr, ast::ValueTy
 ctfe_lower_map = cg, m =>
    n = ?m.0
    cap' = ctfe_next_cap(n * 2)
-   cap' < 8 | cap' = 8 | 0
+   cap' < 8 | cap' = 8
    keys_slot = types::CtVals()
    vals_slot = types::CtVals()
    states = types::IntArr()
@@ -1286,15 +1286,15 @@ ctfe_lower_map = cg, m =>
          st0 = states(idx')!!
          st0 == 0
             |
-               (states(idx') = 1 !| 0)
-               (keys_slot(idx') = k !| 0)
-               (vals_slot(idx') = v !| 0)
+               (states(idx') = 1 !| _)
+               (keys_slot(idx') = k !| _)
+               (vals_slot(idx') = v !| _)
                -->
             |
                existing_k = keys_slot(idx')!!
                ctfe_eq(existing_k, k)
                   |
-                     (vals_slot(idx') = v !| 0)
+                     (vals_slot(idx') = v !| _)
                      -->
                   |
                      idx' = (idx' + 1) .&. (cap' - 1)
@@ -1382,9 +1382,8 @@ ctfe_lower_map = cg, m =>
          tname = "#map_" + types::value_type_name(key_vt) + "_" +
             types::value_type_name(val_vt)
          ti = ast::TypeInfo(Map, (key_vt, val_vt, val_rec))
-         types::has_type_name(cg, tname) | 0 | runtime::add_type(cg, tname, ti)
+         !types::has_type_name(cg, tname) | runtime::add_type(cg, tname, ti)
          cg.last_type = tname
-      | 0
    (mg, ast::ValueType(Map))
 
 ctfe_lower: types::Cg, types::CtVal, ast::ValueType => (Addr, ast::ValueType)
@@ -1574,7 +1573,7 @@ codegen_emit_logical_scalar = cg, is_and, lr, t =>
    e_term
       | stmt::llvm_add_incoming1(cg, phi, LLVMConstNull(res_lt), e_end)
       | stmt::llvm_add_incoming1(cg, phi, stmt::coerce_int(cg, ev0, res_lt), e_end)
-   rname != "" | cg.last_type = rname | 0
+   rname != "" | cg.last_type = rname
    (phi, res_vt)
 
 // `&&` and `||` derive a result layout from variants that can actually win.
@@ -1858,22 +1857,19 @@ choice_count_live = exits, i, acc =>
 
 codegen_add_phi_incomings_at: types::Cg, Addr, Addr, types::Addrs, types::Addrs, types::Flags, Int, Int => ()
 codegen_add_phi_incomings_at = cg, phi, res_lt, vals, bbs, exits, i, n =>
-   i == n
-      | 0
+   i < n
       |
          e = exits(i)!!
          !e
             | stmt::llvm_add_incoming1(cg, phi,
                stmt::choice_coerce(cg, vals(i)!!, res_lt),
                bbs(i)!!)
-            | 0
          codegen_add_phi_incomings_at(cg, phi, res_lt, vals, bbs, exits,
             i + 1, n)
 
 codegen_add_phi_incomings_chain_at: types::Cg, Addr, Addr, types::Addrs, types::Addrs, types::Flags, Int, Int => ()
 codegen_add_phi_incomings_chain_at = cg, phi, res_lt, vals, bbs, exits, i, n =>
-   i == n
-      | 0
+   i < n
       |
          e = exits(i)!!
          e
@@ -1887,8 +1883,7 @@ codegen_add_phi_incomings_chain_at = cg, phi, res_lt, vals, bbs, exits, i, n =>
 
 codegen_eval_choice_switch_case_values_at: Addr, Addr, ast::Exprs, Int, Int, Addr => ()
 codegen_eval_choice_switch_case_values_at = sw_inst, i64t, cvals, j, ncv, case_bb =>
-   j == ncv
-      | 0
+   j < ncv
       |
          cv = cvals(j)!!
          cv
@@ -1907,8 +1902,7 @@ codegen_eval_choice_switch_case_values_at = sw_inst, i64t, cvals, j, ncv, case_b
 
 codegen_eval_choice_switch_cases_at: types::Cg, ast::ChoiceExpr, Addr, Addr, Int, Int, types::Addrs, ast::VTypes, types::Addrs, types::Flags, Addr => ()
 codegen_eval_choice_switch_cases_at = cg, c, sw_inst, i64t, i, nb, vals, vts, bbs, exits, exit_bb =>
-   i == nb
-      | 0
+   i < nb
       |
          br = c.branches(i)!!
          br.kind
@@ -2161,7 +2155,6 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
                pos_pay_type' = ti [Ram s] types::slot_payload_type(cg, s.0) |
                   ast::ValueType(Unknown)
                pos_rec' = ram_pos_rec(ti)
-            | 0
          then_b = c.branches(0)!!
          t0 = types::g.tmpc
          types::g.tmpc = types::g.tmpc + 1
@@ -2182,7 +2175,6 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
                      dtype == "Float"
                         | pos_pay_type' = ast::ValueType(Float)
                         | pos_pay_type' = ast::ValueType(Str)
-            | 0
          pay_val = is_heap | union_pay_ptr(cg, cond_val) | Addr(0)
          pos_is_rec = pos_pay_type' [Record]
          pos_is_rec
@@ -2195,8 +2187,6 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
                      cg.last_fvts = types::field_vts(cg, pos_rec')
                      pdt = pos_rec' [TypeVar n] n | ""
                      cg.last_type = pdt
-                  | 0
-            | 0
          types::choice_branch_reset(cg)
          codegen_eval_branch_body(cg, then_b.block, pay_val, pos_pay_type',
             use_pay, t_is_under)
@@ -2253,7 +2243,6 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
             ast::ValueType(Unknown)
          neg_pay_type' = ti [Ram s] types::slot_payload_type(cg, s.1) |
             ast::ValueType(Unknown)
-      | 0
    is_heap && pos_pay_type' == ast::ValueType(Unknown)
       |
          dtype == "Int"
@@ -2262,7 +2251,6 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
                dtype == "Float"
                   | pos_pay_type' = ast::ValueType(Float)
                   | pos_pay_type' = ast::ValueType(Str)
-      | 0
    is_heap && neg_pay_type' == ast::ValueType(Unknown)
       |
          dtype == "Int"
@@ -2271,7 +2259,6 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
                dtype == "Float"
                   | neg_pay_type' = ast::ValueType(Float)
                   | neg_pay_type' = ast::ValueType(Str)
-      | 0
    pos_rec = use_pay | ram_pos_rec(ti) |
       ast::TypeInfo(Prim, ast::ValueType(Unknown))
    neg_rec = use_pay | ram_neg_rec(ti) |
@@ -2327,20 +2314,18 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
                cg.last_fvts = types::field_vts(cg, pos_rec)
                pdt = pos_rec [TypeVar n] n | ""
                cg.last_type = pdt
-            | 0
       |
          pos_is_fn = pos_pay_type' [Fn]
          pos_is_fn
             |
                sname = types::fn_ret_sig_with_ti(cg, pos_rec)
-               sname != "" | cg.last_closure_fn = sname | 0
+               sname != "" | cg.last_closure_fn = sname
                p_ret_vt = types::ti_fn_ret_vt(cg, pos_rec)
                p_ret_vt != ast::ValueType(Unknown)
                   | cg.last_type = types::value_type_name(p_ret_vt)
-                  | 0
             |
                pdt2 = pos_rec [TypeVar n] n | ""
-               pdt2 != "" | cg.last_type = pdt2 | 0
+               pdt2 != "" | cg.last_type = pdt2
    types::choice_branch_reset(cg)
    tv = codegen_eval_branch_body(cg, then_b.block, pay_val, pos_pay_type',
       use_pay, t_is_under)
@@ -2380,17 +2365,15 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
                cg.last_fvts = types::field_vts(cg, neg_rec)
                ndt = neg_rec [TypeVar n] n | ""
                cg.last_type = ndt
-            | 0
       |
          neg_is_fn = neg_pay_type' [Fn]
          neg_is_fn
             |
                nsname = types::fn_ret_sig_with_ti(cg, neg_rec)
-               nsname != "" | cg.last_closure_fn = nsname | 0
+               nsname != "" | cg.last_closure_fn = nsname
                n_ret_vt = types::ti_fn_ret_vt(cg, neg_rec)
                n_ret_vt != ast::ValueType(Unknown)
                   | cg.last_type = types::value_type_name(n_ret_vt)
-                  | 0
             |
                cg.last_rt = <-->
                cg.last_fnames = ast::Names()
@@ -2413,7 +2396,6 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
          cg.last_fvts = tv_fvts
          cg.last_type = tv_dt
          cg.last_closure_fn = tv_cfn
-      | 0
    ex = t_term && e_term
    cg.exited = ex
    cg.discard_result
@@ -2595,7 +2577,6 @@ eval_heap_branch = cg, body, ppay, pay_type =>
             |
                cg.closure_vars += pname
                cg.closure_tgts += cg.last_closure_fn
-            | 0
          cg.last_type = ""
          expr::codegen_eval(cg, f.body)
       [Var v]
@@ -2697,18 +2678,27 @@ eval_heap_under = cg, ppay, pay_type =>
                v2 = union_int_chain(cg, ppay)
                (v2, pay_type)
             |
-               is_flag_pay_vt(cg, pay_type)
+               types::is_float_vt(pay_type)
                   |
                      slot' = types::hoisted_alloca(cg,
                         LLVMPointerType(LLVMInt8Type!, 0), "var._")
-                     vf = load_flag_pay(cg, ppay)
-                     LLVMBuildStore(cg.builder, vf, slot')
-                     (vf, pay_type)
+                     v1 = union_float_chain(cg, ppay)
+                     LLVMBuildStore(cg.builder, v1, slot')
+                     v2 = union_float_chain(cg, ppay)
+                     (v2, pay_type)
                   |
-                     slot' = types::hoisted_alloca(cg,
-                        LLVMPointerType(LLVMInt8Type!, 0), "var._")
-                     LLVMBuildStore(cg.builder, ppay, slot')
-                     (ppay, pay_type)
+                     is_flag_pay_vt(cg, pay_type)
+                        |
+                           slot' = types::hoisted_alloca(cg,
+                              LLVMPointerType(LLVMInt8Type!, 0), "var._")
+                           vf = load_flag_pay(cg, ppay)
+                           LLVMBuildStore(cg.builder, vf, slot')
+                           (vf, pay_type)
+                        |
+                           slot' = types::hoisted_alloca(cg,
+                              LLVMPointerType(LLVMInt8Type!, 0), "var._")
+                           LLVMBuildStore(cg.builder, ppay, slot')
+                           (ppay, pay_type)
 
 // '| _': yields the payload for a plain value, or aborts with the Error dump
 // for a core Error payload (a helper because a nested choice cannot parse
@@ -2774,7 +2764,7 @@ codegen_variant_tag_match_at = cg, tag, slots, names, i, n, m =>
       | m == Addr(0) | LLVMConstInt(LLVMInt1Type!, 0, 0) | m
       |
          label = names(i) | _ | ""
-         idx = types::enum_slot_index(slots, types::decl_bare_name(label, 0)) | j => j | 0
+         idx = types::enum_slot_index(slots, types::decl_bare_name(label, 0)) | _ | 0
          eq = LLVMBuildICmp(cg.builder, 32, tag,
             LLVMConstInt(LLVMInt64Type!, idx, 0), "tag.match")
          m2 = m == Addr(0) | eq |
@@ -2851,7 +2841,7 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
       | ("", ast::EnumSlots())
    slots = ?slots0 > 0 | slots0 | inferred.1
    eff_dt = dtype != "" | dtype | inferred.0
-   eff_dt != "" | cg.last_type = eff_dt | 0
+   eff_dt != "" | cg.last_type = eff_dt
    types::codegen_check_enum_choice_coverage(cg, slots, c.branches)
    final_check_bb = codegen_eval_choice_variant_at(cg, c, cond_val, slots,
       curr_check_bb, 0, nvars, vals, vts, bbs, exits, exit_bb)
@@ -2932,7 +2922,7 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
             |
                lbl = br.variant_names(0) | _ | "anon"
                pay_tname = "#pay_" + lbl
-               types::has_type_name(cg, pay_tname) | 0 |
+               !types::has_type_name(cg, pay_tname) |
                   runtime::add_type_rec(cg, pay_tname, rec_ti, rec_info_0_opt, rec_info.1)
                pay_tname
             | v_raw_dt'
@@ -2943,7 +2933,7 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
             rec_info.1, <+ slot ->, <+>, <->, rec_info.2, <-->))
          is_fn_pt' = ptype [Fn]
          tgt_fn' = is_fn_pt' | types::fn_ret_sig_with_ti(cg, slot_ti) | ""
-         is_fn_pt' && (tgt_fn' != "") | cg.last_closure_fn = tgt_fn' | 0
+         is_fn_pt' && (tgt_fn' != "") | cg.last_closure_fn = tgt_fn'
          cg.closure_vars += pname
          cg.closure_tgts += tgt_fn'
          expr::codegen_eval(cg, br.block)
@@ -2957,17 +2947,52 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
                         |
                            ret_vt = types::ti_fn_ret_vt(cg, slot_ti)
                            tgt_fn' = types::fn_ret_sig_with_ti(cg, slot_ti)
-                           tgt_fn' != "" | cg.last_closure_fn = tgt_fn' | 0
+                           tgt_fn' != "" | cg.last_closure_fn = tgt_fn'
                            ret_vt != ast::ValueType(Unknown)
                               | cg.last_type = types::value_type_name(ret_vt)
-                              | 0
-                        | 0
                      (eval_heap_pay_value(cg, pay_ptr, ptype), ptype)
                   | expr::codegen_eval(cg, br.block)
             | expr::codegen_eval(cg, br.block)
 
+choice_branch_is_constant: ast::Expr => <>
+choice_branch_is_constant = e =>
+   e
+      [Int _] <+>
+      [Float _] <+>
+      [Str _] <+>
+      [Rune _] <+>
+      [Variant v] ?v.args == 0
+      [Block b]
+         ?b.exprs == 1
+            | choice_branch_is_constant(b.exprs(0)!!)
+            | <->
+      [Fn fe] choice_branch_is_constant(fe.body)
+      | <->
+
+choice_has_constant_branch: ast::ChoiceExpr => <>
+choice_has_constant_branch = c =>
+   has' = <->
+   ?c.branches @ i =>
+      br = c.branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
+         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+         ast::Expr(Int, 0)))
+      choice_branch_is_constant(br.block) | (has' = <+>; -->)
+   has'
+
+codegen_discarded_choice_constant_error: types::Cg => (Addr, ast::ValueType)
+codegen_discarded_choice_constant_error = cg =>
+   types::init_error(cg, "E3175",
+      "Choice has a constant expression in a branch and its value is discarded", 0, 0)
+   (LLVMConstNull(LLVMInt32Type!), ast::ValueType(Unknown))
+
 codegen_eval_choice: types::Cg, ast::ChoiceExpr => (Addr, ast::ValueType)
 codegen_eval_choice = cg, c =>
+   cg.discard_result && choice_has_constant_branch(c)
+      | codegen_discarded_choice_constant_error(cg)
+      | codegen_eval_choice_body(cg, c)
+
+codegen_eval_choice_body: types::Cg, ast::ChoiceExpr => (Addr, ast::ValueType)
+codegen_eval_choice_body = cg, c =>
    ct = types::ctfe_eval_type_choice(cg, c)
    ct.1
       |
@@ -3024,7 +3049,6 @@ choice_untyped_fn_value = cg, c, at =>
             |
                types::has_fn_name(cg, name) && !types::is_fn_name(cg, name)
                   | stmt::compile_fn_lazy(cg, name, ast::VTypes())
-                  | <->
                meta = expr::fn_value_meta(cg, name)
                meta.found && !meta.generic && !meta.value_safe
                   | name
@@ -3280,7 +3304,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                   t.line, t.col)
                (Addr(0), ast::ValueType(Unknown))
             |
-               idx = mi | i => i | 0
+               idx = mi | _ | 0
                bv.0 == Addr(0)
                   |
                      types::init_error(cg, "E3017", "Member access '" + t.field_name +
@@ -3289,10 +3313,11 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                   |
                      rt_opt'
                         | rt =>
-                           fgep = types::record_field_gep(cg, rt, fvts, bv.0, idx)
-                           fgep == Addr(0)
+                           fgep_opt = types::record_field_gep_opt(cg, rt, fvts, bv.0, idx)
+                           ! <>(fgep_opt)
                               | (Addr(0), ast::ValueType(Unknown))
                               |
+                                 fgep = fgep_opt!!
                                  ft = LLVMStructGetTypeAtIndex(rt, idx)
                                  fvt = member_field_vt(cg, fvts, idx, ft)
                                  parent_ti = parent_dtype != ""
@@ -3327,14 +3352,12 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                                                 |
                                                    cg.last_fvts =
                                                       struct_sub_fvts(ft)
-                                                | 0
                                              (fgep, fvt)
                                           |
                                              vname != ""
                                                 |
                                                    codegen_check_member_read_init(cg,
                                                       t, vname, fnames, idx)
-                                                | 0
                                              is_fn = fvt [Fn]
                                              is_fn
                                                 |
@@ -3342,14 +3365,11 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                                                       types::fn_ret_sig_with_ti(cg, fti)
                                                    sname != ""
                                                       | cg.last_closure_fn = sname
-                                                      | 0
                                                    ret_vt = types::ti_fn_ret_vt(cg, fti)
                                                    ret_vt != ast::ValueType(Unknown)
                                                       |
                                                          cg.last_type =
                                                             types::value_type_name(ret_vt)
-                                                      | 0
-                                                | 0
                                              res =
                                                 LLVMBuildLoad2(cg.builder, ft,
                                                    fgep, "field.load")
@@ -3668,7 +3688,6 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                         cg.vars += types::CgVar((pname', pos_vt,
                            types::is_ptrish_vt(pos_vt), "", pos_rm1_0_opt, pos_rm1_1,
                            <+ slot_p0' ->, <+>, <->, pos_fvts1, <+ pv_then1 ->))
-                     | 0
          b0_is_lam1 = b0.body.kind [Lambda _]
          cond_lam1 = can_pos1 && b0_is_lam1
          cond_lam1
@@ -3739,7 +3758,6 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                         cg.vars += types::CgVar((pname', pos_vt,
                            types::is_ptrish_vt(pos_vt), "", pos_rm_0_opt, pos_rm_1,
                            <+ slot_p0' ->, <+>, <->, pos_fvts, <+ pv_then ->))
-                     | 0
          b0_is_under = b0.body.kind [Var v] (v.0 == "_") | <->
          b0_is_lam = b0.body.kind [Lambda _]
          tv = b0_is_under && is_unboxed
@@ -3814,7 +3832,6 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                         cg.vars += types::CgVar((pname_e, neg_vt,
                            types::is_ptrish_vt(neg_vt), "", neg_rm_0_opt, neg_rm_1,
                            <+ slot_p1' ->, <+>, <->, neg_fvts, <+ pv_else ->))
-                     | 0
          b1_is_under = b1.body.kind [Var v] (v.0 == "_") | <->
          b1_is_lam = b1.body.kind [Lambda _]
          ev = b1_is_under && is_unboxed
@@ -4045,7 +4062,7 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                      |
                         lbl = br.variant_names(0) | _ | "anon"
                         pay_tname = "#pay_" + lbl
-                        types::has_type_name(cg, pay_tname) | 0 |
+                        !types::has_type_name(cg, pay_tname) |
                            runtime::add_type_rec(cg, pay_tname, rec_ti, rec_info_0_opt, rec_info.1)
                         pay_tname
                      | v_raw_dt'

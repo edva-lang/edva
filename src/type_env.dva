@@ -96,6 +96,7 @@ lookup_fn_body = env, name =>
       |
          body = bodies ^ name | _ | _
          <+ body ->
+      | <-->
 
 mark_generic_binding: TypeEnv, String => ()
 mark_generic_binding = env, name =>
@@ -209,6 +210,8 @@ lookup_scope = scope, name =>
          idx = indices ^ name | _ | _
          scope.bindings(idx)
             | binding => <+ binding ->
+            | <-->
+      | <-->
 
 lookup_local: TypeEnv, String => < TypeBinding | >
 lookup_local = env, name =>
@@ -222,6 +225,7 @@ lookup_local = env, name =>
                pub
                   | p => <+ p ->
                   | lookup_local_exact(env, env.current_module + "::#" + name)
+            | <-->
 
 lookup_binding_exact: TypeEnv, String => < TypeBinding | >
 lookup_binding_exact = env, name =>
@@ -268,6 +272,7 @@ lookup_binding = env, name =>
                pub
                   | p => <+ p ->
                   | lookup_binding_exact(env, env.current_module + "::#" + name)
+            | <-->
 
 // --- Field Initialization Tracking -----------------------------------------
 
@@ -470,6 +475,7 @@ lookup_generic = env, name =>
                   |
                      lookup_generic_exact(env,
                         env.current_module + "::#" + name)
+            | <-->
 
 bind_user_type: TypeEnv, String, ast::TypeInfo, unify::UType => ()
 bind_user_type = env, name, ti, ut =>
@@ -502,6 +508,7 @@ lookup_user_type = env, name =>
                   |
                      lookup_user_type_exact(env,
                         env.current_module + "::#" + name)
+            | <-->
 
 is_prelude_fn: String => <>
 is_prelude_fn = name =>

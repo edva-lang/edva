@@ -685,7 +685,7 @@ codegen_eval_call_addr = cg, call =>
       |
          arg = call.args(0) | _ | ast::Expr(Var, "")
          var_name = arg [Var v] v | ""
-         v_slot = var_name != "" | types::var_slot(cg, var_name)
+         v_slot = var_name != "" | types::var_slot(cg, var_name) | <-->
          i64t = LLVMInt64Type!
          v_slot
             | slot =>
@@ -4079,7 +4079,7 @@ named_call_emit_pre = cg, fname, fn, fty, ret, args, arg_vts =>
    n @ i =>
       a = args(i)!!
       has_fn = (types::llvm_val_opt(fn) | f => i < LLVMCountParams(f) | <->)
-      pty_opt = has_fn | <+ LLVMTypeOf(LLVMGetParam(fn, i)) ->
+      pty_opt = has_fn | <+ LLVMTypeOf(LLVMGetParam(fn, i)) -> | <-->
       is_int_p = pty_opt | p => LLVMGetTypeKind(p) == 8 | <->
       avt = (arg_vts(i) | _ | ast::ValueType(Unknown))
       pty_raw = pty_opt | _ | LLVMInt64Type!
@@ -4162,6 +4162,7 @@ eval_named_args_step = cg, t, fname, fn, is_for, ptypes, i, args =>
                has_fn = (types::llvm_val_opt(fn) | f => i < LLVMCountParams(f) | <->)
                pty_opt = has_fn
                   | <+ LLVMTypeOf(LLVMGetParam(fn, i)) ->
+                  | <-->
                is_int_p = pty_opt | p => LLVMGetTypeKind(p) == 8 | <->
                a2 = is_int_p
                   | stmt::coerce_int_ext(cg, a1, pty_opt | _ | a1,
@@ -5627,7 +5628,7 @@ codegen_typed_eval_addr = cg, args =>
       |
          arg = args(0) | _ | tast::mk_lit_unit(0, 0)
          vname = arg.kind [Var v] v.0 | ""
-         v_slot = vname != "" | types::var_slot(cg, vname)
+         v_slot = vname != "" | types::var_slot(cg, vname) | <-->
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          v_slot
             | slot => (slot, ast::ValueType(RawPtr))
@@ -5781,7 +5782,7 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                            bare_name = types::decl_bare_name(arg0_name, 0)
                            types::enum_slot_index(slots, bare_name)
                               | idx =>
-                                 pay_opt = ?args > 1 | <+ args(1)!! ->
+                                 pay_opt = ?args > 1 | <+ args(1)!! -> | <-->
                                  u = match::codegen_typed_build_union(cg, idx,
                                     pay_opt, "enum.alloc")
                                  cg.last_type = fname
@@ -6631,6 +6632,7 @@ codegen_typed_eval_index = cg, target, index, ti =>
          has_end' = !(b2_val'.1 [Unit])
          e_val_opt = has_end'
             | <+ main::codegen_widen_idx_to_i64(cg, b2_val'.0, b2_val'.1, "view.end") ->
+            | <-->
          e_val_explicit = e_val_opt | _ | LLVMConstInt(i64t', 0, 0)
          is_sl
             |

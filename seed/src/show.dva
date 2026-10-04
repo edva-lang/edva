@@ -130,6 +130,7 @@ show_branch = b =>
       [Predicate] "pred"
       [Case] show_val(b)
       [Bare] "[]"
+      | "[]"
    g + ":" + show_expr(b.block)
 
 show_var: ast::ChoiceBranch => String
@@ -258,6 +259,7 @@ show_tree_branches = bs, ind =>
          [Predicate] "pred"
          [Case] show_val(b)
          [Bare] "[]"
+         | "[]"
       out += (i > 0 | "\n" | "")
       out += (pad + "[" + g + "]\n", show_tree(b.block, ind + 1))
    +out
@@ -399,6 +401,7 @@ show_typed_tree_branches = ctx, bs, ind =>
          [Predicate] "pred"
          [Case] (0 < ?b.case_values | show_typed_exprs(ctx, b.case_values) | "")
          [Bare] "[]"
+         | "[]"
       out += (i > 0 | "\n" | "")
       out += (pad + "[" + g + "]\n", show_typed_tree(ctx, b.body, ind + 1))
    +out
@@ -496,6 +499,7 @@ show_typed_stmt = ctx, stmt =>
          b.0 + " ::= " + show_typed_expr(ctx, b.2)
       [TypeDecl t]
          "type " + t.0
+      | ""
 
 show_typed_tree_stmt: unify::Ctx, tast::TypedStmt, Int => String
 show_typed_tree_stmt = ctx, stmt, ind =>
@@ -509,6 +513,7 @@ show_typed_tree_stmt = ctx, stmt, ind =>
             show_typed_tree(ctx, b.2, ind + 1)
       [TypeDecl t]
          pad + "TypeDecl(" + t.0 + ")"
+      | ""
 
 dump_typed_program: unify::Ctx, tast::TypedProgram, <> => ()
 dump_typed_program = ctx, prog, as_tree =>

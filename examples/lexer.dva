@@ -214,7 +214,7 @@ type_name = t =>
       [Rune] "rune"
       [Op] "op"
       [Other] "other"
-      [Eof] "eof"
+      | "eof"
 
 // Print one token line by slicing its span out of the source, then return
 // the token — a tap, so the caller can keep using it. The caller tests
