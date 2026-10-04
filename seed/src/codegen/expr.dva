@@ -370,7 +370,8 @@ codegen_named_fn_value = cg, name =>
 codegen_named_fn_value_valid: types::Cg, String => < (Addr, ast::ValueType) | >
 codegen_named_fn_value_valid = cg, target =>
    fi = stmt::fninfo_of(cg, target)
-   gv = noncap_closure(cg, target, fi.0)
+   fn_val = fi | f => f.0 | Addr(0)
+   gv = noncap_closure(cg, target, fn_val)
    cg.last_closure_fn = target
    <+ (gv, ast::ValueType(Fn)) ->
 
@@ -380,8 +381,8 @@ codegen_named_fn_value_valid = cg, target =>
 noncap_closure: types::Cg, String, Addr => Addr
 noncap_closure = cg, name, fn =>
    at = noncap_at(cg, name, 0)
-   at !< 0
-      | cg.noncap_globs(at)!!
+   at
+      | idx => cg.noncap_globs(idx)!!
       |
          clo_t = stmt::closure_struct_type(cg)
          gv = LLVMAddGlobal(cg.module, clo_t, "clo.const")
@@ -397,13 +398,13 @@ noncap_closure = cg, name, fn =>
          cg.noncap_globs += gv
          gv
 
-noncap_at: types::Cg, String, Int => Int
+noncap_at: types::Cg, String, Int => <Int|>
 noncap_at = cg, name, i =>
    i == ?cg.noncap_names
-      | -1
+      | <-->
       |
          (cg.noncap_names(i)!! == name)
-            | i
+            | <+ i ->
             | noncap_at(cg, name, i + 1)
 
 

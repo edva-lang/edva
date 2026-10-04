@@ -2052,11 +2052,11 @@ infer_ret_block = es, params, ptypes =>
       | infer_ret(es(n - 1)!!, params, ptypes)
 
 
-param_rec_effective: types::Cg, String => (Addr, ast::Names, ast::VTypes)
+param_rec_effective: types::Cg, String => <(Addr, ast::Names, ast::VTypes)|>
 param_rec_effective = cg, v =>
    pr = param_rec_of(cg, types::g.last_compiling_fn + "#" + v)
-   pr.0 != Addr(0)
-      | pr
+   pr
+      | p => <+ p ->
       | param_rec_of(cg, v)
 
 call_target_fn_name: ast::CallExpr => String
@@ -2068,7 +2068,7 @@ call_target_fn_name = c =>
             [Var tv] tv
             | ""
 
-fn_ret_record_field_rt: types::Cg, ast::TypeInfo, String => Addr
+fn_ret_record_field_rt: types::Cg, ast::TypeInfo, String => <Addr|>
 fn_ret_record_field_rt = cg, ti, field_name =>
    rm = runtime::record_meta_from_ti(cg, ti)
    fnames = rm | m => m.1 | ast::Names()
@@ -2077,50 +2077,65 @@ fn_ret_record_field_rt = cg, ti, field_name =>
       |
          fti = types::record_field_ti(cg, ti, idx)
          frm = runtime::record_meta_from_ti(cg, fti)
-         frm | m => m.0 | Addr(0)
-      | Addr(0)
+         frm | m => <+ m.0 -> | <-->
+      | <-->
 
-fn_ret_member_rt: types::Cg, ast::MemberExpr => Addr
+fn_ret_member_rt: types::Cg, ast::MemberExpr => <Addr|>
 fn_ret_member_rt = cg, m =>
    m.target
       [Var v]
          pr = param_rec_effective(cg, v)
-         idx = types::member_index(pr.1, m.field_name)
-         idx !< 0 && pr.0 != Addr(0)
-            | LLVMStructGetTypeAtIndex(pr.0, idx)
+         pr
+            | p =>
+               idx = types::member_index(p.1, m.field_name)
+               idx !< 0
+                  | <+ LLVMStructGetTypeAtIndex(p.0, idx) ->
+                  |
+                     vdt = types::var_dtype(cg, v)
+                     vdt != ""
+                        |
+                           ti' = types::typedef_ti(cg, vdt)
+                           fn_ret_record_field_rt(cg, ti', m.field_name)
+                        |
+                           ti2 = types::typedef_ti_of_rt(cg, p.0)
+                           fn_ret_record_field_rt(cg, ti2, m.field_name)
             |
                vdt = types::var_dtype(cg, v)
                vdt != ""
                   |
                      ti' = types::typedef_ti(cg, vdt)
                      fn_ret_record_field_rt(cg, ti', m.field_name)
-                  |
-                     ti2 = types::typedef_ti_of_rt(cg, pr.0)
-                     fn_ret_record_field_rt(cg, ti2, m.field_name)
+                  | <-->
       [Member inner_m]
          inner_rt = fn_ret_member_rt(cg, inner_m)
-         inner_rt != Addr(0)
-            |
-               tname = types::typedef_name_of_rt(cg, inner_rt)
+         inner_rt
+            | rt =>
+               tname = types::typedef_name_of_rt(cg, rt)
                ti' = types::typedef_ti(cg, tname)
                fn_ret_record_field_rt(cg, ti', m.field_name)
-            | Addr(0)
-      | Addr(0)
+            | <-->
+      | <-->
 
-param_rec_field_vt: (Addr, ast::Names, ast::VTypes), String => ast::ValueType
-param_rec_field_vt = pr, field_name =>
-   idx = types::member_index(pr.1, field_name)
-   idx !< 0
-      |
-         fvts = pr.2
-         fvts(idx) | _ | ast::ValueType(Unknown)
+param_rec_field_vt: <(Addr, ast::Names, ast::VTypes)|>, String => ast::ValueType
+param_rec_field_vt = pr_opt, field_name =>
+   pr_opt
+      | pr =>
+         idx = types::member_index(pr.1, field_name)
+         idx !< 0
+            |
+               fvts = pr.2
+               fvts(idx) | _ | ast::ValueType(Unknown)
+            | ast::ValueType(Unknown)
       | ast::ValueType(Unknown)
 
-param_rec_first_vt: (Addr, ast::Names, ast::VTypes) => ast::ValueType
-param_rec_first_vt = pr =>
-   fvts = pr.2
-   ?fvts > 0
-      | (fvts(0) | _ | ast::ValueType(Unknown))
+param_rec_first_vt: <(Addr, ast::Names, ast::VTypes)|> => ast::ValueType
+param_rec_first_vt = pr_opt =>
+   pr_opt
+      | pr =>
+         fvts = pr.2
+         ?fvts > 0
+            | (fvts(0) | _ | ast::ValueType(Unknown))
+            | ast::ValueType(Unknown)
       | ast::ValueType(Unknown)
 
 fn_ret_record_field_vt: types::Cg, ast::TypeInfo, String => ast::ValueType
@@ -2148,13 +2163,16 @@ fn_ret_member_vt = cg, m =>
                      ti' = types::typedef_ti(cg, vdt)
                      fn_ret_record_field_vt(cg, ti', m.field_name)
                   |
-                     ti2 = types::typedef_ti_of_rt(cg, pr.0)
-                     fn_ret_record_field_vt(cg, ti2, m.field_name)
+                     pr
+                        | p =>
+                           ti2 = types::typedef_ti_of_rt(cg, p.0)
+                           fn_ret_record_field_vt(cg, ti2, m.field_name)
+                        | ast::ValueType(Unknown)
       [Member inner_m]
          inner_rt = fn_ret_member_rt(cg, inner_m)
-         inner_rt != Addr(0)
-            |
-               tname = types::typedef_name_of_rt(cg, inner_rt)
+         inner_rt
+            | rt =>
+               tname = types::typedef_name_of_rt(cg, rt)
                ti' = types::typedef_ti(cg, tname)
                fn_ret_record_field_vt(cg, ti', m.field_name)
             | ast::ValueType(Unknown)
@@ -2826,9 +2844,9 @@ param_is_heap_ram = cg, dtype =>
             | <->
       | <->
 
-param_ll_type: types::Cg, Addr, String, ast::ValueType, Addr, <>, <>, <> => Addr
-param_ll_type = cg, i8p, pdtype, pvt, prec0, is_arr, is_sl, is_clo =>
-   is_clo || (prec0 != Addr(0)) || is_arr || is_sl ||
+param_ll_type: types::Cg, Addr, String, ast::ValueType, <>, <>, <>, <> => Addr
+param_ll_type = cg, i8p, pdtype, pvt, has_rec, is_arr, is_sl, is_clo =>
+   is_clo || has_rec || is_arr || is_sl ||
       param_is_heap_ram(cg, pdtype)
       | i8p
       | types::llvm_type_of_vt(pvt)
@@ -2851,35 +2869,33 @@ ti_is_unknown = ti =>
       | <->
 
 codegen_fn_param_rec: types::Cg, String, String,
-   ast::TypeInfo => (Addr, ast::Names, ast::VTypes)
+   ast::TypeInfo => <(Addr, ast::Names, ast::VTypes)|>
 codegen_fn_param_rec = cg, pname, pdtype, pti =>
    ti_is_slice(pti)
-      | (Addr(0), ast::Names(), ast::VTypes())
+      | <-->
       |
          rm0 = runtime::record_meta_from_ti(cg, pti)
          rm0
-            | m => (m.0, m.1, types::field_vts(cg, pti))
+            | m => <+ (m.0, m.1, types::field_vts(cg, pti)) ->
             |
                pdtype != ""
                   |
                      ti = types::typedef_ti(cg, pdtype)
                      rm = runtime::record_meta_from_ti(cg, ti)
                      rm
-                        | m2 => (m2.0, m2.1, types::field_vts(cg, ti))
-                        | (Addr(0), ast::Names(), ast::VTypes())
+                        | m2 => <+ (m2.0, m2.1, types::field_vts(cg, ti)) ->
+                        | <-->
                   |
                      ti_is_unknown(pti)
                         |
                            prec0 = param_rec_of(cg,
                               types::g.last_compiling_fn + "#" + pname)
-                           prec = prec0.0 != Addr(0) | prec0 |
-                              (types::g.last_compiling_fn == ""
+                           prec0
+                              | p => <+ p ->
+                              | (types::g.last_compiling_fn == ""
                                  | param_rec_of(cg, pname)
-                                 | (Addr(0), ast::Names(), ast::VTypes()))
-                           prec.0 != Addr(0)
-                              | prec
-                              | (Addr(0), ast::Names(), ast::VTypes())
-                        | (Addr(0), ast::Names(), ast::VTypes())
+                                 | <-->)
+                        | <-->
 
 param_is_array: types::Cg, String, String, ast::TypeInfo => <>
 param_is_array = cg, name, pdtype, pti =>
@@ -2995,7 +3011,7 @@ codegen_fn_param_ll = cg, i8p, params, dtypes, ptis, ptypes, i, n, acc =>
          use_unboxed = types::g.is_typed_pipeline && types::is_unboxed_ram_ti(cg, pti0)
          param_ty = use_unboxed
             | match::unboxed_ram_struct_t(cg)
-            | param_ll_type(cg, i8p, pdtype0, pvt0, prec0.0, is_arr0,
+            | param_ll_type(cg, i8p, pdtype0, pvt0, <>(prec0), is_arr0,
                is_sl0, is_clo)
          acc += param_ty
          codegen_fn_param_ll(cg, i8p, params, dtypes, ptis, ptypes, i + 1, n,
@@ -3048,7 +3064,7 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
             | param_clo_add(cg, target_pname, fti.0, fti.1)
          prec = codegen_fn_param_rec(cg, pname, pdtype', pti)
          is_sl = param_is_slice(cg, pname, pdtype', pti)
-         is_rec = !is_sl && (prec.0 != Addr(0))
+         is_rec = !is_sl && <>(prec)
          is_arr = param_is_array(cg, pname, pdtype', pti)
          pvt_base = ptypes(i) | _ | ast::ValueType(Unknown)
          pvt = is_clo
@@ -3071,14 +3087,17 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
          sl_elem_vt = pti_slice_elem_vt(pti)
          sl_fvts = ast::VTypes()
          sl_elem_vt != ast::ValueType(Unknown) | sl_fvts += sl_elem_vt
-         pr2 = is_sl | sl_fvts | (prec.0 != Addr(0) | prec.2 | empty_fvts)
+         pr2 = is_sl | sl_fvts | (prec | p => p.2 | empty_fvts)
          is_rec_ti = pti [Rec _]
          is_anon_param = pdtype' == "" && is_rec && is_rec_ti
          is_anon_param
             |
                param_tname' = "#param_" + types::g.last_compiling_fn + "_" + pname
                !types::has_type_name(cg, param_tname')
-                  | runtime::add_type_rec(cg, param_tname', pti, <+ prec.0 ->, prec.1)
+                  |
+                     prec_rt = prec | p => <+ p.0 -> | <-->
+                     prec_fnames = prec | p => p.1 | ast::Names()
+                     runtime::add_type_rec(cg, param_tname', pti, prec_rt, prec_fnames)
                pdtype' = param_tname'
          is_ram_ti = pti [Ram _]
          is_unboxed = types::g.is_typed_pipeline && types::is_unboxed_ram_ti(cg, pti)
@@ -3101,9 +3120,10 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
                !types::has_type_name(cg, param_tname')
                   | runtime::add_type(cg, param_tname', pti)
                pdtype' = param_tname'
-         prec_rt_opt = !is_sl && prec.0 != Addr(0) | <+ prec.0 -> | <-->
+         prec_rt_opt = !is_sl | (prec | p => <+ p.0 -> | <-->) | <-->
+         prec_fnames = prec | p => p.1 | ast::Names()
          cg.vars += types::CgVar((pname, pvt, is_heap_ram, pdtype',
-            prec_rt_opt, prec.1, <--> , <+>, <->, pr2, <+ pv ->))
+            prec_rt_opt, prec_fnames, <--> , <+>, <->, pr2, <+ pv ->))
          codegen_fn_add_params(cg, fn, params, dtypes, ptis, ptypes, i + 1, n)
 
 // Compiles one user function: params are direct SSA values (no allocas), the
@@ -4159,13 +4179,13 @@ codegen_scan_closure_args = cg, stmts =>
                                        fi.0, fi.1)
                               [Var v]
                                  vfi = fninfo_of(cg, v)
-                                 vfi.1 != Addr(0)
-                                    |
+                                 vfi
+                                    | fi =>
                                        pn' = expr::fi_param_name(cg, c.fn_name, j)
                                        pn' != "" |
                                           param_clo_add(cg,
                                              c.fn_name + "#" + pn',
-                                             vfi.1, vfi.2)
+                                             fi.1, fi.2)
 
 // Whether any top-level statement (recursively) uses #spawn/#join, so the
 // pthread machinery is declared before function bodies (their panic sites) and
@@ -4476,9 +4496,12 @@ check_sig_record_arg = cg, stmts, call, arg, i =>
                   |
                      want = runtime::record_meta_from_ti(cg, types::typedef_ti(cg, expected))
                      got = runtime::record_meta_from_ti(cg, types::typedef_ti(cg, actual))
-                     want_rt = want | w => w.0 | Addr(0)
-                     got_rt = got | g => g.0 | Addr(0)
-                     mismatch = want_rt != Addr(0) && got_rt != Addr(0) && want_rt != got_rt
+                     mismatch = want
+                        | w =>
+                           got
+                              | g => w.0 != g.0
+                              | <->
+                        | <->
                      mismatch
                         |
                            types::init_error(cg, "E3148", "Argument " +
@@ -4848,44 +4871,44 @@ param_sl_of_at = cg, name, i, n =>
             | param_sl_of_at(cg, name, i + 1, n)
 
 
-// The recorded schema of a param (Addr(0) rt if none).
-param_rec_of: types::Cg, String => (Addr, ast::Names, ast::VTypes)
+// The recorded schema of a param.
+param_rec_of: types::Cg, String => <(Addr, ast::Names, ast::VTypes)|>
 param_rec_of = cg, name => param_rec_of_at(cg, name, 0, ?cg.param_recs)
 
-param_rec_of_at: types::Cg, String, Int, Int => (Addr, ast::Names, ast::VTypes)
+param_rec_of_at: types::Cg, String, Int, Int => <(Addr, ast::Names, ast::VTypes)|>
 param_rec_of_at = cg, name, i, n =>
    i == n
-      | (Addr(0), ast::Names(), ast::VTypes())
+      | <-->
       |
          pr = cg.param_recs(i)!!
          pr.name == name
-            | (pr.rt, pr.fnames, pr.fvts)
+            | <+ (pr.rt, pr.fnames, pr.fvts) ->
             | param_rec_of_at(cg, name, i + 1, n)
 
-// The (fn, llvm_type, ret_vt) of a named function, or (0,0,Unknown) if none.
+// The (fn, llvm_type, ret_vt) of a named function, or <--> if none.
 // Falls back to inferring the type from its FnDef (the scan runs before the
 // fns compile, so fninfos may be empty).
-fninfo_of: types::Cg, String => (Addr, Addr, ast::ValueType)
+fninfo_of: types::Cg, String => <(Addr, Addr, ast::ValueType)|>
 fninfo_of = cg, name =>
    fi = fninfo_of_at(cg, name, 0, ?cg.fninfos)
-   fi.1 != Addr(0)
-      | fi
+   fi
+      | f => <+ f ->
       | fninfo_from_fns_at(cg, name, 0, ?cg.fns)
 
-fninfo_of_at: types::Cg, String, Int, Int => (Addr, Addr, ast::ValueType)
+fninfo_of_at: types::Cg, String, Int, Int => <(Addr, Addr, ast::ValueType)|>
 fninfo_of_at = cg, name, i, n =>
    i == n
-      | (Addr(0), Addr(0), ast::ValueType(Unknown))
+      | <-->
       |
          fi = cg.fninfos(i)!!
          (fi.name == name) || types::sig_name_matches(fi.name, name)
-            | (fi.llvm_fn, fi.llvm_type, fi.ret_vt)
+            | <+ (fi.llvm_fn, fi.llvm_type, fi.ret_vt) ->
             | fninfo_of_at(cg, name, i + 1, n)
 
-fninfo_from_fns_at: types::Cg, String, Int, Int => (Addr, Addr, ast::ValueType)
+fninfo_from_fns_at: types::Cg, String, Int, Int => <(Addr, Addr, ast::ValueType)|>
 fninfo_from_fns_at = cg, name, i, n =>
    i == n
-      | (Addr(0), Addr(0), ast::ValueType(Unknown))
+      | <-->
       |
          fd = cg.fns(i)!!
          fd.name == name
@@ -4897,7 +4920,7 @@ fninfo_from_fns_at = cg, name, i, n =>
                   ?fd.params, types::Addrs())
                fty = fn_type_n(cg, types::llvm_type_of_vt(ret_vt'), param_ll,
                   ?fd.params)
-               (Addr(0), fty, ret_vt')
+               <+ (Addr(0), fty, ret_vt') ->
             | fninfo_from_fns_at(cg, name, i + 1, n)
 
 fninfo_param_ll: types::Cg, ast::Names, ast::VTypes, Int, Int, types::Addrs => types::Addrs
@@ -6689,11 +6712,10 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
       LLVMBuildStore(cg.builder, pv, pslot)
       prec = codegen_fn_param_rec(cg, pname, "", pti)
       rm_pti = runtime::record_meta_from_ti(cg, pti)
-      prm_0 = prec.0 != Addr(0) | prec.0 | (rm_pti | m => m.0 | Addr(0))
-      prm_1 = prec.0 != Addr(0) | prec.1 | (rm_pti | m => m.1 | ast::Names())
-      pfvts = prec.0 != Addr(0) | prec.2 | types::field_vts(cg, pti)
+      prm_0_opt = prec | p => <+ p.0 -> | (rm_pti | m => <+ m.0 -> | <-->)
+      prm_1 = prec | p => p.1 | (rm_pti | m => m.1 | ast::Names())
+      pfvts = prec | p => p.2 | types::field_vts(cg, pti)
       pdt = pti [TypeVar tv] tv | ""
-      prm_0_opt = prm_0 != Addr(0) | <+ prm_0 -> | <-->
       cg.vars += types::CgVar((pname, pvt_j, types::is_ptrish_vt(pvt_j), pdt,
          prm_0_opt, prm_1, <+ pslot ->, <+>, <->, pfvts, <-->))
 
