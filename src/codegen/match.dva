@@ -3407,7 +3407,7 @@ ti_enum_slots_len = ti =>
       | -1
 
 codegen_eval_member_rec_reflect: types::Cg, ast::MemberExpr,
-   ast::TypeInfo => (Addr, ast::ValueType, <>)
+   ast::TypeInfo => <(Addr, ast::ValueType)|>
 codegen_eval_member_rec_reflect = cg, t, ti =>
    ti
       [Rec r]
@@ -3426,7 +3426,7 @@ codegen_eval_member_rec_reflect = cg, t, ti =>
                               "'T.(i)' must be a compile-time constant " +
                               "(a per-field cycle index).",
                               t.line, t.col)
-                           (Addr(0), ast::ValueType(Unknown), <+>)
+                           <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) ->
                         |
                            idx = LLVMConstIntGetZExtValue(iv)
                            idx < 0 || idx !< nfields
@@ -3437,23 +3437,23 @@ codegen_eval_member_rec_reflect = cg, t, ti =>
                                     " out of range (0.." +
                                     str::from_int(nfields - 1) + ").",
                                     t.line, t.col)
-                                 (Addr(0), ast::ValueType(Unknown), <+>)
+                                 <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) ->
                               |
                                  f = r.0(idx)!!
                                  lbl = f.name != "" | f.name |
                                     str::from_int(idx)
-                                 (stmt::codegen_string_literal(cg, lbl),
-                                    ast::ValueType(Str), <+>)
+                                 <+ (stmt::codegen_string_literal(cg, lbl),
+                                    ast::ValueType(Str)) ->
                   |
                      types::init_error(cg, "E3170", "Record field index 'T.(i)' " +
                         "must be a compile-time constant (a per-field " +
                         "cycle index).", t.line, t.col)
-                     (Addr(0), ast::ValueType(Unknown), <+>)
-            | (Addr(0), ast::ValueType(Unknown), <->)
-      | (Addr(0), ast::ValueType(Unknown), <->)
+                     <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) ->
+            | <-->
+      | <-->
 
 codegen_eval_member_type_reflect_ti: types::Cg, ast::MemberExpr,
-   ast::TypeInfo => (Addr, ast::ValueType, <>)
+   ast::TypeInfo => <(Addr, ast::ValueType)|>
 codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
    nslots = ti_enum_slots_len(ct_ti)
    nslots !< 0
@@ -3472,7 +3472,7 @@ codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
                               "'T.(i)' must be a compile-time constant " +
                               "(a per-variant cycle index).",
                               t.line, t.col)
-                           (Addr(0), ast::ValueType(Unknown), <+>)
+                           <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) ->
                         |
                            idx = LLVMConstIntGetZExtValue(iv)
                            idx < 0 || idx !< nslots
@@ -3483,21 +3483,21 @@ codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
                                     " out of range (0.." +
                                     str::from_int(nslots - 1) + ").",
                                     t.line, t.col)
-                                 (Addr(0), ast::ValueType(Unknown), <+>)
+                                 <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) ->
                               |
                                  lbl = ti_enum_slot_label(ct_ti, idx)
-                                 (stmt::codegen_string_literal(cg, lbl),
-                                    ast::ValueType(Str), <+>)
+                                 <+ (stmt::codegen_string_literal(cg, lbl),
+                                    ast::ValueType(Str)) ->
                   |
                      types::init_error(cg, "E3170", "Enum variant index 'T.(i)' " +
                         "must be a compile-time constant (a per-variant " +
                         "cycle index).", t.line, t.col)
-                     (Addr(0), ast::ValueType(Unknown), <+>)
-            | (Addr(0), ast::ValueType(Unknown), <->)
+                     <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) ->
+            | <-->
       | codegen_eval_member_rec_reflect(cg, t, ct_ti)
 
 codegen_eval_member_enum_reflect: types::Cg, ast::MemberExpr,
-   String => (Addr, ast::ValueType, <>)
+   String => <(Addr, ast::ValueType)|>
 codegen_eval_member_enum_reflect = cg, t, v =>
    ct = types::ct_bind_find(v)
    ct.1
@@ -3509,18 +3509,18 @@ codegen_eval_member_enum_reflect = cg, t, v =>
       |
          types::is_user_type(cg, v)
             | codegen_eval_member_type_reflect_ti(cg, t, types::typedef_ti(cg, v))
-            | (Addr(0), ast::ValueType(Unknown), <->)
+            | <-->
 
 codegen_eval_member: types::Cg, ast::MemberExpr => (Addr, ast::ValueType)
 codegen_eval_member = cg, t =>
    !t.is_module_access
       |
          vname = t.target [Var v] v | ""
-         er = vname != ""
+         er_opt = vname != ""
             | codegen_eval_member_enum_reflect(cg, t, vname)
-            | (Addr(0), ast::ValueType(Unknown), <->)
-         er.2
-            | (er.0, er.1)
+            | <-->
+         er_opt
+            | res => res
             |
                bv = expr::codegen_eval(cg, t.target)
                codeg_eval_member_valid(cg, t, vname, bv)
