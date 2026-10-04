@@ -49,6 +49,7 @@
    done: SMap,
    stack: Strings,
    memo: SMap,
+   hashes: SMap,
    fetched: SMap,
    overrides: SMap,
    libs: Strings,
@@ -58,7 +59,7 @@
 
 // The language version this compiler implements (`edva = X.Y` minimum, §9).
 #public
-   lang_version = "0.1.0"
+   lang_version = "0.4.0"
 
 // --- small utilities ---------------------------------------------------------
 
@@ -391,21 +392,91 @@
                               "' not found in " + url)
                            <-->
 
-   checkout_git: Resolver, String, String => < String | >
-   checkout_git = r, url, commit =>
-      dir = path_join(path_join(r.opts.store, "src"), "git-" + commit)
-      dir_exists(dir) | <+ dir -> |
-         tmp = tmp_path(r)
-         mkdir_p(tmp)
-         rc = sh(git_cmd(r, mirror_dir(r, url)) + "archive --format=tar " + sq(commit) +
-            " | tar -x -C " + sq(tmp) + " 2>/dev/null")
-         mkdir_p(dirname(dir))
-         rc == 0 && (libc::rename(tmp, dir) == 0 || dir_exists(dir))
-            | <+ dir ->
-            |
-               sh("rm -rf " + sq(tmp))
-               fail(7011, "cannot check out " + url + " at " + commit)
-               <-->
+   check_tree_security: Resolver, String => <>
+   check_tree_security = r, dir =>
+      cmd = "(cd " + sq(dir) + " && root=\"$(pwd -P)\" && find . -mindepth 1 -type l | while IFS= read -r p; do " +
+         "tgt=\"$(readlink \"$p\")\"; " +
+         "case \"$tgt\" in /*) exit 2 ;; esac; " +
+         "pdir=\"$(dirname \"$p\")\"; " +
+         "tdir=\"$(cd \"$pdir\" && cd \"$(dirname \"$tgt\")\" 2>/dev/null && pwd -P)\"; " +
+         "case \"$tdir\" in \"$root\"|\"$root\"/*) ;; *) exit 2 ;; esac; " +
+         "done)"
+      sh(cmd) == 0
+
+   compute_tree_hash: Resolver, String => < String | >
+   compute_tree_hash = r, dir =>
+      cmd = "cd " + sq(dir) + " && find . -mindepth 1 \\( -name .git -o -name .edva -o -name .hg -o -name .svn \\) -prune -o \\( -type f -o -type l \\) -print | LC_ALL=C sort | while IFS= read -r p; do " +
+         "rel=\"${p#./}\"; " +
+         "if [ -L \"$p\" ]; then " +
+         "echo \"symlink $(readlink \"$p\") $rel\"; " +
+         "else " +
+         "if [ -x \"$p\" ]; then mode=\"100755\"; else mode=\"100644\"; fi; " +
+         "echo \"$(sha256sum \"$p\" | cut -c1-64) $mode $rel\"; " +
+         "fi; " +
+         "done | sha256sum | cut -c1-64"
+      capture(r, cmd)
+         | h => <+ "sha256-" + h ->
+         | <-->
+
+   checkout_git: Resolver, String, String, String, String => < (String, String) | >
+   checkout_git = r, alias, url, commit, expected_hash =>
+      store_dir = expected_hash != "" | path_join(r.opts.store, expected_hash) | ""
+      store_dir != "" && dir_exists(store_dir)
+         | <+ (store_dir, expected_hash) ->
+         |
+            r.opts.offline
+               |
+                  fail(7003, "offline: '" + alias + "' (" + url + ") is not in the store")
+                  <-->
+               |
+                  tmp = tmp_path(r)
+                  mkdir_p(tmp)
+                  rc = sh(git_cmd(r, mirror_dir(r, url)) + "archive --format=tar " + sq(commit) +
+                     " | tar -x -C " + sq(tmp) + " 2>/dev/null")
+                  rc != 0
+                     |
+                        sh("rm -rf " + sq(tmp))
+                        fail(7011, "dependency '" + alias + "': cannot check out " + url +
+                           " at " + commit)
+                        <-->
+                     |
+                        !check_tree_security(r, tmp)
+                           |
+                              sh("rm -rf " + sq(tmp))
+                              fail(7019, "dependency '" + alias +
+                                 "': repository contains illegal path or escaping symlink")
+                              <-->
+                           |
+                              compute_tree_hash(r, tmp)
+                                 | tree_hash =>
+                                    expected_hash != "" && tree_hash != expected_hash
+                                       |
+                                          sh("rm -rf " + sq(tmp))
+                                          fail(7005, "dependency '" + alias +
+                                             "': hash mismatch (expected " + expected_hash +
+                                             ", got " + tree_hash + ")")
+                                          <-->
+                                       |
+                                          target = path_join(r.opts.store, tree_hash)
+                                          mkdir_p(r.opts.store)
+                                          dir_exists(target)
+                                             |
+                                                sh("rm -rf " + sq(tmp))
+                                                <+ (target, tree_hash) ->
+                                             |
+                                                ren_rc = libc::rename(tmp, target)
+                                                ren_rc == 0 || dir_exists(target)
+                                                   | <+ (target, tree_hash) ->
+                                                   |
+                                                      sh("rm -rf " + sq(tmp))
+                                                      fail(7011, "dependency '" + alias +
+                                                         "': cannot publish tree to store")
+                                                      <-->
+                                 |
+                                    sh("rm -rf " + sq(tmp))
+                                    fail(7011, "dependency '" + alias +
+                                       "': cannot hash tree for " + url)
+                                    <-->
 
 // --- archive source ----------------------------------------------------------
 
@@ -432,18 +503,17 @@
                "' (expected sha256-<hex>)")
             <-->
          |
-            hex = hash(7..)
-            dir = path_join(path_join(r.opts.store, "archive"), hex)
-            dir_exists(dir) | <+ dir -> |
+            store_dir = path_join(r.opts.store, hash)
+            dir_exists(store_dir) | <+ store_dir -> |
                r.opts.offline
                   |
                      fail(7003, "offline: '" + alias + "' (" + url + ") is not in the store")
                      <-->
-                  | download_archive(r, alias, url, hex, dir)
+                  | download_archive(r, alias, url, hash, store_dir)
 
    download_archive: Resolver, String, String, String, String => < String | >
-   download_archive = r, alias, url, hex, dir =>
-      file = tmp_path(r)
+   download_archive = r, alias, url, hash, store_dir =>
+      file = tmp_path(r) + ".tar.gz"
       is_local = !starts_with(url, "http://") && !starts_with(url, "https://") &&
          !starts_with(url, "file://")
       rc = is_local
@@ -455,28 +525,60 @@
             fail(7011, "dependency '" + alias + "': cannot fetch " + url)
             <-->
          |
-            got = capture(r, "sha256sum " + sq(file) + " | cut -c1-64") | g => g | ""
-            got != hex
+            got = "sha256-" + (capture(r, "sha256sum " + sq(file) + " | cut -c1-64") | g => g | "")
+            got != hash
                |
                   libc::unlink(file)
-                  fail(7005, "dependency '" + alias + "': hash mismatch (expected sha256-" +
-                     hex + ", got sha256-" + got + ")")
+                  fail(7005, "dependency '" + alias + "': hash mismatch (expected " +
+                     hash + ", got " + got + ")")
                   <-->
                |
-                  tmp = tmp_path(r)
-                  mkdir_p(tmp)
-                  xrc = sh("tar -xf " + sq(file) + " -C " + sq(tmp) + " 2>/dev/null")
-                  libc::unlink(file)
-                  root = archive_root(r, tmp)
-                  mkdir_p(dirname(dir))
-                  xrc == 0 && (libc::rename(root, dir) == 0 || dir_exists(dir))
+                  has_traversal = sh("tar -tf " + sq(file) +
+                     " 2>&1 | grep -E '(^/|/\\.\\./|\\.\\./|^\\.\\.$)' >/dev/null") == 0
+                  has_traversal
                      |
-                        sh("rm -rf " + sq(tmp))
-                        <+ dir ->
-                     |
-                        sh("rm -rf " + sq(tmp))
-                        fail(7011, "dependency '" + alias + "': cannot extract " + url)
+                        libc::unlink(file)
+                        fail(7019, "dependency '" + alias +
+                           "': archive contains illegal path or path traversal")
                         <-->
+                     |
+                        tmp = tmp_path(r)
+                        mkdir_p(tmp)
+                        xrc = sh("tar -xf " + sq(file) + " -C " + sq(tmp) + " 2>/dev/null")
+                        libc::unlink(file)
+                        xrc != 0
+                           |
+                              sh("rm -rf " + sq(tmp))
+                              fail(7011, "dependency '" + alias + "': cannot extract " + url)
+                              <-->
+                           |
+                              root = archive_root(r, tmp)
+                              !check_tree_security(r, root)
+                                 |
+                                    sh("rm -rf " + sq(tmp))
+                                    fail(7019, "dependency '" + alias +
+                                       "': archive contains illegal path or escaping symlink")
+                                    <-->
+                                 |
+                                    mkdir_p(r.opts.store)
+                                    dir_exists(store_dir)
+                                       |
+                                          sh("rm -rf " + sq(tmp))
+                                          <+ store_dir ->
+                                       |
+                                          ren_rc = root == tmp
+                                             | libc::rename(tmp, store_dir)
+                                             |
+                                                mrc = libc::rename(root, store_dir)
+                                                sh("rm -rf " + sq(tmp))
+                                                mrc
+                                          ren_rc == 0 || dir_exists(store_dir)
+                                             | <+ store_dir ->
+                                             |
+                                                sh("rm -rf " + sq(tmp))
+                                                fail(7011, "dependency '" + alias +
+                                                   "': cannot publish archive to store")
+                                                <-->
 
 // --- graph resolution ----------------------------------------------------------
 
@@ -510,8 +612,11 @@
                [Git]
                   resolve_commit(r, d.alias, d.git_url, d.git_rev)
                      | c =>
-                        checkout_git(r, d.git_url, c)
-                           | dir =>
+                        expected_hash = r.hashes ^ (d.git_url + "#" + d.git_rev) | _ | ""
+                        checkout_git(r, d.alias, d.git_url, c, expected_hash)
+                           | pair =>
+                              dir = pair(0)
+                              tree_hash = pair(1)
                               load_manifest(dir)
                                  | m =>
                                     pkg = empty_lock_pkg!
@@ -519,6 +624,7 @@
                                     pkg.git_url = d.git_url
                                     pkg.git_rev = d.git_rev
                                     pkg.git_commit = c
+                                    pkg.archive_hash = tree_hash
                                     id = m.name + "@" + c(..7)
                                     pkg.id = id
                                     <+ Fetched((m.name, dir, id, "git " + d.git_url + " " + c,
@@ -797,9 +903,14 @@
 
    resolve_root: PkgOpts, ccl::Lockfile, <> => Int
    resolve_root = opts, prior, has_lock =>
-      r = Resolver((opts, Insts(), SMap(), Strings(), SMap(), SMap(), SMap(), Strings(), Strings(), 0))
+      r = Resolver((opts, Insts(), SMap(), Strings(), SMap(), SMap(), SMap(), SMap(), Strings(), Strings(), 0))
       prior.packages @ p =>
-         p.kind [Git] r.memo ^ (p.git_url + "#" + p.git_rev) = p.git_commit
+         p.kind
+            [Git]
+               r.memo ^ (p.git_url + "#" + p.git_rev) = p.git_commit
+               p.archive_hash != "" | r.hashes ^ (p.git_url + "#" + p.git_rev) = p.archive_hash
+            [Archive]
+               p.archive_hash != "" | r.hashes ^ (p.archive_url) = p.archive_hash
       load_manifest(opts.root)
          | m => resolve_with_root(r, m, prior, has_lock)
          | 1

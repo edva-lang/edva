@@ -686,4 +686,371 @@ if [ $rc -eq 0 ] || ! grep -q "E7003: offline:" "$TMPDIR/t17.out"; then
 fi
 echo "PASS"
 
+# --- Test 18: local Git fixture fetch, tree hashing, store layout, and imports map ---
+echo -n "Testing edva pkg fetch git fixture, tree hashing and store layout... "
+GIT_REPO="$TMPDIR/fixture_git"
+mkdir -p "$GIT_REPO/src"
+cat <<'EOF' > "$GIT_REPO/edva.ccl"
+name = git_pkg
+version = 1.0.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$GIT_REPO/src/git_pkg.dva"
+#public
+   git_val = 100
+EOF
+git -C "$GIT_REPO" init --quiet -b main
+git -C "$GIT_REPO" config user.email "test@example.com"
+git -C "$GIT_REPO" config user.name "Test"
+git -C "$GIT_REPO" add .
+git -C "$GIT_REPO" commit --quiet -m "init git_pkg"
+git -C "$GIT_REPO" tag v1.0.0
+FIRST_COMMIT=$(git -C "$GIT_REPO" rev-parse HEAD)
+
+GIT_APP="$TMPDIR/git_app"
+STORE_DIR="$TMPDIR/edva_store"
+mkdir -p "$GIT_APP/src"
+cat <<EOF > "$GIT_APP/edva.ccl"
+name = git_consumer
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  dep =
+    git = file://$GIT_REPO
+    rev = v1.0.0
+EOF
+
+set +e
+timeout 30 ./edva pkg fetch "$GIT_APP" --store "$STORE_DIR" >"$TMPDIR/t18.out" 2>"$TMPDIR/t18.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ]; then
+    echo "FAILED: edva pkg fetch failed for git fixture, rc=$rc"
+    cat "$TMPDIR/t18.out" "$TMPDIR/t18.err"
+    exit 1
+fi
+if ! grep -q "commit = $FIRST_COMMIT" "$GIT_APP/edva.lock.ccl"; then
+    echo "FAILED: edva.lock.ccl missing resolved commit $FIRST_COMMIT"
+    cat "$GIT_APP/edva.lock.ccl"
+    exit 1
+fi
+if ! grep -E -q "hash = sha256-[0-9a-f]{64}" "$GIT_APP/edva.lock.ccl"; then
+    echo "FAILED: edva.lock.ccl missing tree hash"
+    cat "$GIT_APP/edva.lock.ccl"
+    exit 1
+fi
+TREE_HASH=$(grep -E "hash = sha256-" "$GIT_APP/edva.lock.ccl" | awk '{print $3}')
+if [ ! -d "$STORE_DIR/$TREE_HASH/src" ] || [ ! -f "$STORE_DIR/$TREE_HASH/src/git_pkg.dva" ]; then
+    echo "FAILED: content store missing $STORE_DIR/$TREE_HASH/src/git_pkg.dva"
+    ls -la "$STORE_DIR"
+    exit 1
+fi
+if ! grep -q "$STORE_DIR/$TREE_HASH/src" "$GIT_APP/.edva/imports.ccl"; then
+    echo "FAILED: imports.ccl does not point to $STORE_DIR/$TREE_HASH/src"
+    cat "$GIT_APP/.edva/imports.ccl"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 19: moving tag pinning in locked fetch ---
+echo -n "Testing edva pkg fetch moving tag pinning... "
+echo "new_val = 200" >> "$GIT_REPO/src/git_pkg.dva"
+git -C "$GIT_REPO" commit --quiet -am "update git_pkg"
+git -C "$GIT_REPO" tag -f v1.0.0 >/dev/null
+NEW_COMMIT=$(git -C "$GIT_REPO" rev-parse HEAD)
+if [ "$FIRST_COMMIT" = "$NEW_COMMIT" ]; then
+    echo "FAILED: tag did not move to new commit"
+    exit 1
+fi
+
+set +e
+timeout 30 ./edva pkg fetch "$GIT_APP" --store "$STORE_DIR" >"$TMPDIR/t19.out" 2>"$TMPDIR/t19.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ]; then
+    echo "FAILED: fetch failed on moving tag, rc=$rc"
+    cat "$TMPDIR/t19.out"
+    exit 1
+fi
+if ! grep -q "commit = $FIRST_COMMIT" "$GIT_APP/edva.lock.ccl"; then
+    echo "FAILED: moving tag was not pinned to $FIRST_COMMIT in lockfile"
+    cat "$GIT_APP/edva.lock.ccl"
+    exit 1
+fi
+# Also verify under --locked
+set +e
+timeout 30 ./edva pkg fetch "$GIT_APP" --store "$STORE_DIR" --locked >"$TMPDIR/t19_locked.out" 2>"$TMPDIR/t19_locked.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ]; then
+    echo "FAILED: --locked failed on pinned moving tag"
+    cat "$TMPDIR/t19_locked.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 20: Git tree hash mismatch detection (E7005) ---
+echo -n "Testing edva pkg fetch tree hash mismatch (E7005)... "
+BAD_HASH_APP="$TMPDIR/bad_hash_app"
+mkdir -p "$BAD_HASH_APP/src"
+cat <<EOF > "$BAD_HASH_APP/edva.ccl"
+name = bad_hash_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  dep =
+    git = file://$GIT_REPO
+    rev = v1.0.0
+EOF
+# Copy lockfile but tamper with hash
+sed "s/hash = sha256-.*/hash = sha256-0000000000000000000000000000000000000000000000000000000000000000/" "$GIT_APP/edva.lock.ccl" > "$BAD_HASH_APP/edva.lock.ccl"
+
+set +e
+timeout 30 ./edva pkg fetch "$BAD_HASH_APP" --store "$STORE_DIR" >"$TMPDIR/t20.out" 2>"$TMPDIR/t20.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7005: dependency 'dep': hash mismatch" "$TMPDIR/t20.out"; then
+    echo "FAILED: expected E7005 tree hash mismatch error"
+    cat "$TMPDIR/t20.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 21: archive fetching, checksum verification, store caching ---
+echo -n "Testing edva pkg fetch archive source and store caching... "
+ARCH_SRC="$TMPDIR/arch_src"
+mkdir -p "$ARCH_SRC/src"
+cat <<'EOF' > "$ARCH_SRC/edva.ccl"
+name = myarch
+version = 1.2.3
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$ARCH_SRC/src/myarch.dva"
+#public
+   arch_val = 456
+EOF
+ARCH_FILE="$TMPDIR/myarch-1.2.3.tar.gz"
+tar -czf "$ARCH_FILE" -C "$TMPDIR" arch_src
+ARCH_HEX=$(sha256sum "$ARCH_FILE" | cut -c1-64)
+ARCH_HASH="sha256-$ARCH_HEX"
+
+ARCH_APP="$TMPDIR/arch_app"
+mkdir -p "$ARCH_APP/src"
+cat <<EOF > "$ARCH_APP/edva.ccl"
+name = arch_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  myarch =
+    url = file://$ARCH_FILE
+    hash = $ARCH_HASH
+EOF
+
+set +e
+timeout 30 ./edva pkg fetch "$ARCH_APP" --store "$STORE_DIR" >"$TMPDIR/t21.out" 2>"$TMPDIR/t21.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ]; then
+    echo "FAILED: archive fetch failed, rc=$rc"
+    cat "$TMPDIR/t21.out" "$TMPDIR/t21.err"
+    exit 1
+fi
+if [ ! -d "$STORE_DIR/$ARCH_HASH/src" ] || [ ! -f "$STORE_DIR/$ARCH_HASH/src/myarch.dva" ]; then
+    echo "FAILED: store missing archive tree at $STORE_DIR/$ARCH_HASH/src"
+    ls -la "$STORE_DIR"
+    exit 1
+fi
+if ! grep -q "$STORE_DIR/$ARCH_HASH/src" "$ARCH_APP/.edva/imports.ccl"; then
+    echo "FAILED: imports.ccl does not point to $STORE_DIR/$ARCH_HASH/src"
+    cat "$ARCH_APP/.edva/imports.ccl"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 22: archive checksum mismatch (E7005) & corrupt downloads ---
+echo -n "Testing edva pkg fetch archive checksum mismatch (E7005)... "
+BAD_ARCH_APP="$TMPDIR/bad_arch_app"
+mkdir -p "$BAD_ARCH_APP/src"
+cat <<EOF > "$BAD_ARCH_APP/edva.ccl"
+name = bad_arch_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  myarch =
+    url = file://$ARCH_FILE
+    hash = sha256-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+EOF
+
+set +e
+timeout 30 ./edva pkg fetch "$BAD_ARCH_APP" --store "$STORE_DIR" >"$TMPDIR/t22.out" 2>"$TMPDIR/t22.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7005: dependency 'myarch': hash mismatch" "$TMPDIR/t22.out"; then
+    echo "FAILED: expected E7005 archive hash mismatch"
+    cat "$TMPDIR/t22.out"
+    exit 1
+fi
+if [ -d "$STORE_DIR/sha256-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" ]; then
+    echo "FAILED: store must never contain failed entries"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 23: zip-slip / path traversal archive rejection (E7019) ---
+echo -n "Testing edva pkg fetch zip-slip / traversal rejection (E7019)... "
+EVIL_TAR="$TMPDIR/evil.tar.gz"
+python3 -c "
+import tarfile, io
+with tarfile.open('$EVIL_TAR', 'w:gz') as tar:
+    ti = tarfile.TarInfo('../escape.txt')
+    ti.size = 4
+    tar.addfile(ti, io.BytesIO(b'evil'))
+"
+EVIL_HEX=$(sha256sum "$EVIL_TAR" | cut -c1-64)
+EVIL_APP="$TMPDIR/evil_app"
+mkdir -p "$EVIL_APP/src"
+cat <<EOF > "$EVIL_APP/edva.ccl"
+name = evil_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  evil =
+    url = file://$EVIL_TAR
+    hash = sha256-$EVIL_HEX
+EOF
+
+set +e
+timeout 30 ./edva pkg fetch "$EVIL_APP" --store "$STORE_DIR" >"$TMPDIR/t23.out" 2>"$TMPDIR/t23.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7019: dependency 'evil': archive contains illegal path or path traversal" "$TMPDIR/t23.out"; then
+    echo "FAILED: expected E7019 traversal rejection"
+    cat "$TMPDIR/t23.out"
+    exit 1
+fi
+if [ -f "$TMPDIR/escape.txt" ]; then
+    echo "FAILED: zip-slip exploit succeeded, escape.txt was created!"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 24: escaping symlink rejection (E7019) ---
+echo -n "Testing edva pkg fetch escaping symlink rejection (E7019)... "
+SYM_SRC="$TMPDIR/sym_src"
+mkdir -p "$SYM_SRC/src"
+cat <<'EOF' > "$SYM_SRC/edva.ccl"
+name = sym_pkg
+version = 1.0.0
+edva = 0.1.0
+EOF
+touch "$SYM_SRC/src/main.dva"
+ln -s ../../../etc/passwd "$SYM_SRC/src/badlink"
+SYM_TAR="$TMPDIR/sym_pkg.tar.gz"
+tar -czf "$SYM_TAR" -C "$TMPDIR" sym_src
+SYM_HEX=$(sha256sum "$SYM_TAR" | cut -c1-64)
+
+SYM_APP="$TMPDIR/sym_app"
+mkdir -p "$SYM_APP/src"
+cat <<EOF > "$SYM_APP/edva.ccl"
+name = sym_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  sym_dep =
+    url = file://$SYM_TAR
+    hash = sha256-$SYM_HEX
+EOF
+
+set +e
+timeout 30 ./edva pkg fetch "$SYM_APP" --store "$STORE_DIR" >"$TMPDIR/t24.out" 2>"$TMPDIR/t24.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7019: dependency 'sym_dep': archive contains illegal path or escaping symlink" "$TMPDIR/t24.out"; then
+    echo "FAILED: expected E7019 escaping symlink rejection"
+    cat "$TMPDIR/t24.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 25: offline cache hit vs miss ---
+echo -n "Testing edva pkg fetch offline cache hit and miss... "
+# Hit: ARCH_APP has ARCH_HASH already in STORE_DIR
+set +e
+timeout 30 ./edva pkg fetch "$ARCH_APP" --store "$STORE_DIR" --offline >"$TMPDIR/t25_hit.out" 2>"$TMPDIR/t25_hit.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ]; then
+    echo "FAILED: expected offline cache hit to succeed, rc=$rc"
+    cat "$TMPDIR/t25_hit.out"
+    exit 1
+fi
+# Miss: point to non-cached archive under --offline
+EMPTY_STORE="$TMPDIR/empty_store"
+mkdir -p "$EMPTY_STORE"
+set +e
+timeout 30 ./edva pkg fetch "$ARCH_APP" --store "$EMPTY_STORE" --offline >"$TMPDIR/t25_miss.out" 2>"$TMPDIR/t25_miss.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7003: offline:" "$TMPDIR/t25_miss.out"; then
+    echo "FAILED: expected E7003 offline cache miss"
+    cat "$TMPDIR/t25_miss.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 26: submodule and subdir actionable diagnostics ---
+echo -n "Testing edva pkg fetch submodule and subdir actionable errors... "
+SUBM_APP="$TMPDIR/subm_app"
+mkdir -p "$SUBM_APP"
+cat <<'EOF' > "$SUBM_APP/edva.ccl"
+name = subm_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  bad =
+    git = https://example.com/repo.git
+    rev = main
+    submodules = true
+EOF
+set +e
+timeout 30 ./edva pkg fetch "$SUBM_APP" >"$TMPDIR/t26_subm.out" 2>"$TMPDIR/t26_subm.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "git submodules are not supported" "$TMPDIR/t26_subm.out"; then
+    echo "FAILED: expected submodules error"
+    cat "$TMPDIR/t26_subm.out"
+    exit 1
+fi
+
+SUBD_APP="$TMPDIR/subd_app"
+mkdir -p "$SUBD_APP"
+cat <<'EOF' > "$SUBD_APP/edva.ccl"
+name = subd_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  bad =
+    git = https://example.com/repo.git
+    rev = main
+    subdir = packages/sub
+EOF
+set +e
+timeout 30 ./edva pkg fetch "$SUBD_APP" >"$TMPDIR/t26_subd.out" 2>"$TMPDIR/t26_subd.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "package subdirectory selection ('subdir') is not supported in v1" "$TMPDIR/t26_subd.out"; then
+    echo "FAILED: expected subdir error"
+    cat "$TMPDIR/t26_subd.out"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="

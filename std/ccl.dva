@@ -501,48 +501,76 @@ validate_dep = e, file =>
       |
          e.val
             [Block ddoc]
-               has_git = has(ddoc, "git")
-               has_path = has(ddoc, "path")
-               has_url = has(ddoc, "url")
-               count' = 0
-               has_git | count' = count' + 1
-               has_path | count' = count' + 1
-               has_url | count' = count' + 1
+               has_err' = <->
+               err_val' = ccl_error(file, ++"", 0, 0)
+               ddoc.entries @ dde =>
+                  !has_err' |
+                     k = dde.key
+                     is_known = k == "git" || k == "rev" || k == "path" || k == "url" || k == "hash"
+                     !is_known |
+                        has_err' = <+>
+                        k == "submodule" || k == "submodules"
+                           |
+                              err_val' = ccl_error(file,
+                                 "edva.ccl: dependency '" + alias +
+                                 "': git submodules are not supported",
+                                 dde.line, dde.col)
+                           |
+                              k == "subdir"
+                                 |
+                                    err_val' = ccl_error(file,
+                                       "edva.ccl: dependency '" + alias +
+                                       "': package subdirectory selection ('subdir') is not supported in v1",
+                                       dde.line, dde.col)
+                                 |
+                                    err_val' = ccl_error(file,
+                                       "edva.ccl: unknown key 'dependencies." + alias + "." + k + "'",
+                                       dde.line, dde.col)
+               has_err'
+                  | <- err_val' ->
+                  |
+                     has_git = has(ddoc, "git")
+                     has_path = has(ddoc, "path")
+                     has_url = has(ddoc, "url")
+                     count' = 0
+                     has_git | count' = count' + 1
+                     has_path | count' = count' + 1
+                     has_url | count' = count' + 1
 
-               count' != 1
-                  |
-                     <- ccl_error(file,
-                        "edva.ccl: dependency '" + alias +
-                        "' must specify exactly one of: git, path, url",
-                        e.line, e.col) ->
-                  |
-                     has_git
+                     count' != 1
                         |
-                           g_url = get(ddoc, "git") | _ | ""
-                           opt_rev = get(ddoc, "rev")
-                           opt_rev
-                              | rev =>
-                                 <+ PackageDep((alias, DepKind(Git), g_url, rev, "", "", "")) +>
-                              |
-                                 <- ccl_error(file,
-                                    "edva.ccl: dependency '" + alias + "' needs 'rev'",
-                                    e.line, e.col) ->
+                           <- ccl_error(file,
+                              "edva.ccl: dependency '" + alias +
+                              "' must specify exactly one of: git, path, url",
+                              e.line, e.col) ->
                         |
-                           has_path
+                           has_git
                               |
-                                 p = get(ddoc, "path") | _ | ""
-                                 <+ PackageDep((alias, DepKind(Path), "", "", p, "", "")) +>
-                              |
-                                 u = get(ddoc, "url") | _ | ""
-                                 opt_hash = get(ddoc, "hash")
-                                 opt_hash
-                                    | h =>
-                                       <+ PackageDep((alias, DepKind(Archive),
-                                          "", "", "", u, h)) +>
+                                 g_url = get(ddoc, "git") | _ | ""
+                                 opt_rev = get(ddoc, "rev")
+                                 opt_rev
+                                    | rev =>
+                                       <+ PackageDep((alias, DepKind(Git), g_url, rev, "", "", "")) +>
                                     |
                                        <- ccl_error(file,
-                                          "edva.ccl: dependency '" + alias + "' needs 'hash'",
+                                          "edva.ccl: dependency '" + alias + "' needs 'rev'",
                                           e.line, e.col) ->
+                              |
+                                 has_path
+                                    |
+                                       p = get(ddoc, "path") | _ | ""
+                                       <+ PackageDep((alias, DepKind(Path), "", "", p, "", "")) +>
+                                    |
+                                       u = get(ddoc, "url") | _ | ""
+                                       opt_hash = get(ddoc, "hash")
+                                       opt_hash
+                                          | h =>
+                                             <+ PackageDep((alias, DepKind(Archive),
+                                                "", "", "", u, h)) +>
+                                          |
+                                             <- ccl_error(file,
+                                                "edva.ccl: dependency '" + alias + "' needs 'hash'",
+                                                e.line, e.col) ->
             [Str _]
                <- ccl_error(file,
                   "edva.ccl: dependency '" + alias + "' must be a section", e.line, e.col) ->

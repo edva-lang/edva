@@ -102,144 +102,158 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.13.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.13 }
 @str.14 = internal unnamed_addr constant [4 x i8] c"git\00"
 @str.14.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.14 }
-@str.15 = internal unnamed_addr constant [5 x i8] c"path\00"
-@str.15.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.15 }
-@str.16 = internal unnamed_addr constant [4 x i8] c"url\00"
-@str.16.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.16 }
-@str.17 = internal unnamed_addr constant [23 x i8] c"edva.ccl: dependency '\00"
-@str.17.struct = internal unnamed_addr constant { i64, ptr } { i64 22, ptr @str.17 }
-@str.18 = internal unnamed_addr constant [46 x i8] c"' must specify exactly one of: git, path, url\00"
-@str.18.struct = internal unnamed_addr constant { i64, ptr } { i64 45, ptr @str.18 }
-@str.19 = internal unnamed_addr constant [4 x i8] c"rev\00"
-@str.19.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.19 }
-@str.20 = internal unnamed_addr constant [14 x i8] c"' needs 'rev'\00"
-@str.20.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.20 }
-@str.21 = internal unnamed_addr constant [5 x i8] c"hash\00"
-@str.21.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.21 }
-@str.22 = internal unnamed_addr constant [15 x i8] c"' needs 'hash'\00"
-@str.22.struct = internal unnamed_addr constant { i64, ptr } { i64 14, ptr @str.22 }
-@str.23 = internal unnamed_addr constant [20 x i8] c"' must be a section\00"
-@str.23.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.23 }
+@str.15 = internal unnamed_addr constant [4 x i8] c"rev\00"
+@str.15.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.15 }
+@str.16 = internal unnamed_addr constant [5 x i8] c"path\00"
+@str.16.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.16 }
+@str.17 = internal unnamed_addr constant [4 x i8] c"url\00"
+@str.17.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.17 }
+@str.18 = internal unnamed_addr constant [5 x i8] c"hash\00"
+@str.18.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.18 }
+@str.19 = internal unnamed_addr constant [10 x i8] c"submodule\00"
+@str.19.struct = internal unnamed_addr constant { i64, ptr } { i64 9, ptr @str.19 }
+@str.20 = internal unnamed_addr constant [11 x i8] c"submodules\00"
+@str.20.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.20 }
+@str.21 = internal unnamed_addr constant [23 x i8] c"edva.ccl: dependency '\00"
+@str.21.struct = internal unnamed_addr constant { i64, ptr } { i64 22, ptr @str.21 }
+@str.22 = internal unnamed_addr constant [36 x i8] c"': git submodules are not supported\00"
+@str.22.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.22 }
+@str.23 = internal unnamed_addr constant [7 x i8] c"subdir\00"
+@str.23.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.23 }
+@str.24 = internal unnamed_addr constant [68 x i8] c"': package subdirectory selection ('subdir') is not supported in v1\00"
+@str.24.struct = internal unnamed_addr constant { i64, ptr } { i64 67, ptr @str.24 }
+@str.25 = internal unnamed_addr constant [37 x i8] c"edva.ccl: unknown key 'dependencies.\00"
+@str.25.struct = internal unnamed_addr constant { i64, ptr } { i64 36, ptr @str.25 }
+@str.26 = internal unnamed_addr constant [2 x i8] c".\00"
+@str.26.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.26 }
+@str.27 = internal unnamed_addr constant [46 x i8] c"' must specify exactly one of: git, path, url\00"
+@str.27.struct = internal unnamed_addr constant { i64, ptr } { i64 45, ptr @str.27 }
+@str.28 = internal unnamed_addr constant [14 x i8] c"' needs 'rev'\00"
+@str.28.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.28 }
+@str.29 = internal unnamed_addr constant [15 x i8] c"' needs 'hash'\00"
+@str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 14, ptr @str.29 }
+@str.30 = internal unnamed_addr constant [20 x i8] c"' must be a section\00"
+@str.30.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.30 }
 @clo.const.27 = internal constant { ptr, ptr } { ptr @"ccl::validate_dep", ptr null }
 @"var.ccl::validate_dep" = global ptr null
-@str.24 = internal unnamed_addr constant [5 x i8] c"name\00"
-@str.24.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.24 }
-@str.25 = internal unnamed_addr constant [8 x i8] c"version\00"
-@str.25.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.25 }
-@str.26 = internal unnamed_addr constant [5 x i8] c"edva\00"
-@str.26.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.26 }
-@str.27 = internal unnamed_addr constant [13 x i8] c"dependencies\00"
-@str.27.struct = internal unnamed_addr constant { i64, ptr } { i64 12, ptr @str.27 }
-@str.28 = internal unnamed_addr constant [7 x i8] c"native\00"
-@str.28.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.28 }
-@str.29 = internal unnamed_addr constant [10 x i8] c"overrides\00"
-@str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 9, ptr @str.29 }
-@str.30 = internal unnamed_addr constant [24 x i8] c"edva.ccl: unknown key '\00"
-@str.30.struct = internal unnamed_addr constant { i64, ptr } { i64 23, ptr @str.30 }
-@str.31 = internal unnamed_addr constant [31 x i8] c"edva.ccl: duplicate key 'name'\00"
-@str.31.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.31 }
-@str.32 = internal unnamed_addr constant [34 x i8] c"edva.ccl: duplicate key 'version'\00"
-@str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 33, ptr @str.32 }
-@str.33 = internal unnamed_addr constant [31 x i8] c"edva.ccl: duplicate key 'edva'\00"
-@str.33.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.33 }
-@str.34 = internal unnamed_addr constant [25 x i8] c"edva.ccl: package name '\00"
-@str.34.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.34 }
-@str.35 = internal unnamed_addr constant [44 x i8] c"' must be a lowercase snake_case identifier\00"
-@str.35.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.35 }
-@str.36 = internal unnamed_addr constant [38 x i8] c"edva.ccl: missing required key 'name'\00"
-@str.36.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.36 }
-@str.37 = internal unnamed_addr constant [36 x i8] c"edva.ccl: invalid version format: '\00"
-@str.37.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.37 }
-@str.38 = internal unnamed_addr constant [41 x i8] c"edva.ccl: missing required key 'version'\00"
-@str.38.struct = internal unnamed_addr constant { i64, ptr } { i64 40, ptr @str.38 }
-@str.39 = internal unnamed_addr constant [5 x i8] c"libs\00"
-@str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.39 }
-@str.40 = internal unnamed_addr constant [11 x i8] c"pkg-config\00"
-@str.40.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.40 }
-@str.41 = internal unnamed_addr constant [31 x i8] c"edva.ccl: unknown key 'native.\00"
-@str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.41 }
-@str.42 = internal unnamed_addr constant [21 x i8] c"edva.ccl: override '\00"
-@str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.42 }
-@str.43 = internal unnamed_addr constant [15 x i8] c"' needs 'path'\00"
-@str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 14, ptr @str.43 }
+@str.31 = internal unnamed_addr constant [5 x i8] c"name\00"
+@str.31.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.31 }
+@str.32 = internal unnamed_addr constant [8 x i8] c"version\00"
+@str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.32 }
+@str.33 = internal unnamed_addr constant [5 x i8] c"edva\00"
+@str.33.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.33 }
+@str.34 = internal unnamed_addr constant [13 x i8] c"dependencies\00"
+@str.34.struct = internal unnamed_addr constant { i64, ptr } { i64 12, ptr @str.34 }
+@str.35 = internal unnamed_addr constant [7 x i8] c"native\00"
+@str.35.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.35 }
+@str.36 = internal unnamed_addr constant [10 x i8] c"overrides\00"
+@str.36.struct = internal unnamed_addr constant { i64, ptr } { i64 9, ptr @str.36 }
+@str.37 = internal unnamed_addr constant [24 x i8] c"edva.ccl: unknown key '\00"
+@str.37.struct = internal unnamed_addr constant { i64, ptr } { i64 23, ptr @str.37 }
+@str.38 = internal unnamed_addr constant [31 x i8] c"edva.ccl: duplicate key 'name'\00"
+@str.38.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.38 }
+@str.39 = internal unnamed_addr constant [34 x i8] c"edva.ccl: duplicate key 'version'\00"
+@str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 33, ptr @str.39 }
+@str.40 = internal unnamed_addr constant [31 x i8] c"edva.ccl: duplicate key 'edva'\00"
+@str.40.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.40 }
+@str.41 = internal unnamed_addr constant [25 x i8] c"edva.ccl: package name '\00"
+@str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.41 }
+@str.42 = internal unnamed_addr constant [44 x i8] c"' must be a lowercase snake_case identifier\00"
+@str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.42 }
+@str.43 = internal unnamed_addr constant [38 x i8] c"edva.ccl: missing required key 'name'\00"
+@str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.43 }
+@str.44 = internal unnamed_addr constant [36 x i8] c"edva.ccl: invalid version format: '\00"
+@str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.44 }
+@str.45 = internal unnamed_addr constant [41 x i8] c"edva.ccl: missing required key 'version'\00"
+@str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 40, ptr @str.45 }
+@str.46 = internal unnamed_addr constant [5 x i8] c"libs\00"
+@str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.46 }
+@str.47 = internal unnamed_addr constant [11 x i8] c"pkg-config\00"
+@str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.47 }
+@str.48 = internal unnamed_addr constant [31 x i8] c"edva.ccl: unknown key 'native.\00"
+@str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.48 }
+@str.49 = internal unnamed_addr constant [21 x i8] c"edva.ccl: override '\00"
+@str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.49 }
+@str.50 = internal unnamed_addr constant [15 x i8] c"' needs 'path'\00"
+@str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 14, ptr @str.50 }
 @clo.const.28 = internal constant { ptr, ptr } { ptr @"ccl::validate_manifest", ptr null }
 @"var.ccl::validate_manifest" = global ptr null
-@str.44 = internal unnamed_addr constant [8 x i8] c"name = \00"
-@str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.44 }
-@str.45 = internal unnamed_addr constant [2 x i8] c"\0A\00"
-@str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.45 }
-@str.46 = internal unnamed_addr constant [11 x i8] c"version = \00"
-@str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.46 }
-@str.47 = internal unnamed_addr constant [8 x i8] c"edva = \00"
-@str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.47 }
-@str.48 = internal unnamed_addr constant [17 x i8] c"\0Adependencies =\0A\00"
-@str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 16, ptr @str.48 }
-@str.49 = internal unnamed_addr constant [3 x i8] c"  \00"
-@str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.49 }
-@str.50 = internal unnamed_addr constant [4 x i8] c" =\0A\00"
-@str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.50 }
-@str.51 = internal unnamed_addr constant [11 x i8] c"    git = \00"
-@str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.51 }
-@str.52 = internal unnamed_addr constant [11 x i8] c"    rev = \00"
-@str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.52 }
-@str.53 = internal unnamed_addr constant [12 x i8] c"    path = \00"
-@str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.53 }
-@str.54 = internal unnamed_addr constant [11 x i8] c"    url = \00"
-@str.54.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.54 }
-@str.55 = internal unnamed_addr constant [12 x i8] c"    hash = \00"
-@str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.55 }
-@str.56 = internal unnamed_addr constant [11 x i8] c"\0Anative =\0A\00"
-@str.56.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.56 }
-@str.57 = internal unnamed_addr constant [10 x i8] c"  libs =\0A\00"
-@str.57.struct = internal unnamed_addr constant { i64, ptr } { i64 9, ptr @str.57 }
-@str.58 = internal unnamed_addr constant [7 x i8] c"    = \00"
-@str.58.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.58 }
-@str.59 = internal unnamed_addr constant [16 x i8] c"  pkg-config =\0A\00"
-@str.59.struct = internal unnamed_addr constant { i64, ptr } { i64 15, ptr @str.59 }
-@str.60 = internal unnamed_addr constant [14 x i8] c"\0Aoverrides =\0A\00"
-@str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.60 }
+@str.51 = internal unnamed_addr constant [8 x i8] c"name = \00"
+@str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.51 }
+@str.52 = internal unnamed_addr constant [2 x i8] c"\0A\00"
+@str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.52 }
+@str.53 = internal unnamed_addr constant [11 x i8] c"version = \00"
+@str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.53 }
+@str.54 = internal unnamed_addr constant [8 x i8] c"edva = \00"
+@str.54.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.54 }
+@str.55 = internal unnamed_addr constant [17 x i8] c"\0Adependencies =\0A\00"
+@str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 16, ptr @str.55 }
+@str.56 = internal unnamed_addr constant [3 x i8] c"  \00"
+@str.56.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.56 }
+@str.57 = internal unnamed_addr constant [4 x i8] c" =\0A\00"
+@str.57.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.57 }
+@str.58 = internal unnamed_addr constant [11 x i8] c"    git = \00"
+@str.58.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.58 }
+@str.59 = internal unnamed_addr constant [11 x i8] c"    rev = \00"
+@str.59.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.59 }
+@str.60 = internal unnamed_addr constant [12 x i8] c"    path = \00"
+@str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.60 }
+@str.61 = internal unnamed_addr constant [11 x i8] c"    url = \00"
+@str.61.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.61 }
+@str.62 = internal unnamed_addr constant [12 x i8] c"    hash = \00"
+@str.62.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.62 }
+@str.63 = internal unnamed_addr constant [11 x i8] c"\0Anative =\0A\00"
+@str.63.struct = internal unnamed_addr constant { i64, ptr } { i64 10, ptr @str.63 }
+@str.64 = internal unnamed_addr constant [10 x i8] c"  libs =\0A\00"
+@str.64.struct = internal unnamed_addr constant { i64, ptr } { i64 9, ptr @str.64 }
+@str.65 = internal unnamed_addr constant [7 x i8] c"    = \00"
+@str.65.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.65 }
+@str.66 = internal unnamed_addr constant [16 x i8] c"  pkg-config =\0A\00"
+@str.66.struct = internal unnamed_addr constant { i64, ptr } { i64 15, ptr @str.66 }
+@str.67 = internal unnamed_addr constant [14 x i8] c"\0Aoverrides =\0A\00"
+@str.67.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.67 }
 @clo.const.29 = internal constant { ptr, ptr } { ptr @"ccl::manifest_to_ccl", ptr null }
 @"var.ccl::manifest_to_ccl" = global ptr null
 @clo.const.30 = internal constant { ptr, ptr } { ptr @"ccl::sort_lock_packages", ptr null }
 @"var.ccl::sort_lock_packages" = global ptr null
 @clo.const.31 = internal constant { ptr, ptr } { ptr @"ccl::sort_lock_deps", ptr null }
 @"var.ccl::sort_lock_deps" = global ptr null
-@str.61 = internal unnamed_addr constant [5 x i8] c"lock\00"
-@str.61.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.61 }
-@str.62 = internal unnamed_addr constant [38 x i8] c"edva.lock.ccl: invalid lock version '\00"
-@str.62.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.62 }
-@str.63 = internal unnamed_addr constant [43 x i8] c"edva.lock.ccl: missing required key 'lock'\00"
-@str.63.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.63 }
-@str.64 = internal unnamed_addr constant [9 x i8] c"packages\00"
-@str.64.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.64 }
-@str.65 = internal unnamed_addr constant [7 x i8] c"commit\00"
-@str.65.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.65 }
-@str.66 = internal unnamed_addr constant [9 x i8] c"override\00"
-@str.66.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.66 }
-@str.67 = internal unnamed_addr constant [5 x i8] c"deps\00"
-@str.67.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.67 }
-@str.68 = internal unnamed_addr constant [25 x i8] c"edva.lock.ccl: package '\00"
-@str.68.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.68 }
-@str.69 = internal unnamed_addr constant [5 x i8] c"root\00"
-@str.69.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.69 }
+@str.68 = internal unnamed_addr constant [5 x i8] c"lock\00"
+@str.68.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.68 }
+@str.69 = internal unnamed_addr constant [38 x i8] c"edva.lock.ccl: invalid lock version '\00"
+@str.69.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.69 }
+@str.70 = internal unnamed_addr constant [43 x i8] c"edva.lock.ccl: missing required key 'lock'\00"
+@str.70.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.70 }
+@str.71 = internal unnamed_addr constant [9 x i8] c"packages\00"
+@str.71.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.71 }
+@str.72 = internal unnamed_addr constant [7 x i8] c"commit\00"
+@str.72.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.72 }
+@str.73 = internal unnamed_addr constant [9 x i8] c"override\00"
+@str.73.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.73 }
+@str.74 = internal unnamed_addr constant [5 x i8] c"deps\00"
+@str.74.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.74 }
+@str.75 = internal unnamed_addr constant [25 x i8] c"edva.lock.ccl: package '\00"
+@str.75.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.75 }
+@str.76 = internal unnamed_addr constant [5 x i8] c"root\00"
+@str.76.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.76 }
 @clo.const.32 = internal constant { ptr, ptr } { ptr @"ccl::validate_lockfile", ptr null }
 @"var.ccl::validate_lockfile" = global ptr null
-@str.70 = internal unnamed_addr constant [8 x i8] c"lock = \00"
-@str.70.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.70 }
-@str.71 = internal unnamed_addr constant [3 x i8] c"\0A\0A\00"
-@str.71.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.71 }
-@str.72 = internal unnamed_addr constant [12 x i8] c"packages =\0A\00"
-@str.72.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.72 }
-@str.73 = internal unnamed_addr constant [14 x i8] c"    commit = \00"
-@str.73.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.73 }
-@str.74 = internal unnamed_addr constant [21 x i8] c"    override = true\0A\00"
-@str.74.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.74 }
-@str.75 = internal unnamed_addr constant [12 x i8] c"    deps =\0A\00"
-@str.75.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.75 }
-@str.76 = internal unnamed_addr constant [7 x i8] c"      \00"
-@str.76.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.76 }
-@str.77 = internal unnamed_addr constant [9 x i8] c"\0Aroot =\0A\00"
-@str.77.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.77 }
+@str.77 = internal unnamed_addr constant [8 x i8] c"lock = \00"
+@str.77.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.77 }
+@str.78 = internal unnamed_addr constant [3 x i8] c"\0A\0A\00"
+@str.78.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.78 }
+@str.79 = internal unnamed_addr constant [12 x i8] c"packages =\0A\00"
+@str.79.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.79 }
+@str.80 = internal unnamed_addr constant [14 x i8] c"    commit = \00"
+@str.80.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.80 }
+@str.81 = internal unnamed_addr constant [21 x i8] c"    override = true\0A\00"
+@str.81.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.81 }
+@str.82 = internal unnamed_addr constant [12 x i8] c"    deps =\0A\00"
+@str.82.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.82 }
+@str.83 = internal unnamed_addr constant [7 x i8] c"      \00"
+@str.83.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.83 }
+@str.84 = internal unnamed_addr constant [9 x i8] c"\0Aroot =\0A\00"
+@str.84.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.84 }
 @clo.const.33 = internal constant { ptr, ptr } { ptr @"ccl::lockfile_to_ccl", ptr null }
 @"var.ccl::lockfile_to_ccl" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_ccl, ptr null }]
@@ -9107,26 +9121,35 @@ a.after339:                                       ; preds = %a.create338, %loop.
 
 define { i1, i64 } @"ccl::validate_dep"(ptr %0, ptr %1) #1 {
 entry:
-  %var._513 = alloca ptr, align 8
+  %var._1202 = alloca ptr, align 8
   %var.h = alloca ptr, align 8
-  %var._384 = alloca ptr, align 8
+  %var._1072 = alloca ptr, align 8
   %var.opt_hash = alloca ptr, align 8
   %var.u = alloca ptr, align 8
-  %var._375 = alloca ptr, align 8
-  %var._374 = alloca ptr, align 8
+  %var._1063 = alloca ptr, align 8
+  %var._1062 = alloca ptr, align 8
   %var.p = alloca ptr, align 8
-  %var._349 = alloca ptr, align 8
-  %var._348 = alloca ptr, align 8
+  %var._1037 = alloca ptr, align 8
+  %var._1036 = alloca ptr, align 8
   %var.rev = alloca ptr, align 8
-  %var._222 = alloca ptr, align 8
+  %var._910 = alloca ptr, align 8
   %var.opt_rev = alloca ptr, align 8
   %var.g_url = alloca ptr, align 8
-  %var._214 = alloca ptr, align 8
-  %var._ = alloca ptr, align 8
+  %var._902 = alloca ptr, align 8
+  %var._901 = alloca ptr, align 8
   %"var.count'" = alloca i64, align 8
   %var.has_url = alloca i1, align 1
   %var.has_path = alloca i1, align 1
   %var.has_git = alloca i1, align 1
+  %var.is_known = alloca i1, align 1
+  %var.k = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
+  %var._i = alloca i64, align 8
+  %var.dde = alloca ptr, align 8
+  %loop.step.37 = alloca i64, align 8
+  %loop.idx.37 = alloca i64, align 8
+  %"var.err_val'" = alloca ptr, align 8
+  %"var.has_err'" = alloca i1, align 1
   %var.ddoc = alloca ptr, align 8
   %var.alias = alloca ptr, align 8
   %var.file = alloca ptr, align 8
@@ -9161,8 +9184,8 @@ choice.else:                                      ; preds = %entry
   br i1 %tag.match, label %choice.case, label %choice.next
 
 choice.exit:                                      ; preds = %choice.exit81, %concat.tot.len61
-  %choice.res614 = phi { i1, i64 } [ %ram.pay, %concat.tot.len61 ], [ %choice.res613, %choice.exit81 ]
-  ret { i1, i64 } %choice.res614
+  %choice.res1303 = phi { i1, i64 } [ %ram.pay, %concat.tot.len61 ], [ %choice.res1302, %choice.exit81 ]
+  ret { i1, i64 } %choice.res1303
 
 str_gen_check:                                    ; preds = %choice.then
   %arena.gen = call ptr @dva_arena_current()
@@ -9323,926 +9346,2196 @@ str_overflow_abort62:                             ; preds = %concat.sum.len56
   call void @exit(i32 1)
   br label %concat.tot.len61
 
-choice.exit81:                                    ; preds = %choice.next507, %concat.tot.len594, %choice.exit105
-  %choice.res613 = phi { i1, i64 } [ %choice.res505, %choice.exit105 ], [ %ram.pay612, %concat.tot.len594 ], [ zeroinitializer, %choice.next507 ]
+choice.exit81:                                    ; preds = %choice.next1196, %concat.tot.len1283, %choice.exit765
+  %choice.res1302 = phi { i1, i64 } [ %choice.res1194, %choice.exit765 ], [ %ram.pay1301, %concat.tot.len1283 ], [ zeroinitializer, %choice.next1196 ]
   br label %choice.exit
 
 choice.case:                                      ; preds = %choice.else
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %fld.load80, i32 0, i32 1
   %payload.ptr = load ptr, ptr %pay.gep, align 8
   store ptr %payload.ptr, ptr %var.ddoc, align 8
-  %var.load82 = load ptr, ptr %var.ddoc, align 8
-  %call.res83 = call i1 @"ccl::has"(ptr %var.load82, ptr @str.14.struct)
-  store i1 %call.res83, ptr %var.has_git, align 1
-  %var.load84 = load ptr, ptr %var.ddoc, align 8
-  %call.res85 = call i1 @"ccl::has"(ptr %var.load84, ptr @str.15.struct)
-  store i1 %call.res85, ptr %var.has_path, align 1
-  %var.load86 = load ptr, ptr %var.ddoc, align 8
-  %call.res87 = call i1 @"ccl::has"(ptr %var.load86, ptr @str.16.struct)
-  store i1 %call.res87, ptr %var.has_url, align 1
-  store i64 0, ptr %"var.count'", align 8
-  %var.load88 = load i1, ptr %var.has_git, align 1
-  br i1 %var.load88, label %choice.then89, label %choice.exit90
+  store i1 false, ptr %"var.has_err'", align 1
+  %var.load82 = load ptr, ptr %var.file, align 8
+  %copy.len = load i64, ptr @str.0.struct, align 8
+  %copy.len83 = and i64 %copy.len, 281474976710655
+  %str.tag84 = lshr i64 %copy.len, 48
+  %str.immortal85 = icmp eq i64 %str.tag84, 0
+  br i1 %str.immortal85, label %str_ok87, label %str_gen_check86
 
 choice.next:                                      ; preds = %choice.else
-  %tag.gep508 = getelementptr inbounds { i64, ptr }, ptr %fld.load80, i32 0, i32 0
-  %tag.id509 = load i64, ptr %tag.gep508, align 8
-  %tag.match510 = icmp eq i64 %tag.id509, 0
-  br i1 %tag.match510, label %choice.case506, label %choice.next507
+  %tag.gep1197 = getelementptr inbounds { i64, ptr }, ptr %fld.load80, i32 0, i32 0
+  %tag.id1198 = load i64, ptr %tag.gep1197, align 8
+  %tag.match1199 = icmp eq i64 %tag.id1198, 0
+  br i1 %tag.match1199, label %choice.case1195, label %choice.next1196
 
-choice.then89:                                    ; preds = %choice.case
-  %var.load91 = load i64, ptr %"var.count'", align 8
-  %addtmp = add i64 %var.load91, 1
-  store i64 %addtmp, ptr %"var.count'", align 8
-  br label %choice.exit90
+str_gen_check86:                                  ; preds = %choice.case
+  %arena.gen89 = call ptr @dva_arena_current()
+  %arena.gen90 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen89, i32 0, i32 4
+  %arena.gen91 = load i64, ptr %arena.gen90, align 8
+  %str.tag.match92 = icmp eq i64 %str.tag84, %arena.gen91
+  br i1 %str.tag.match92, label %str_ok87, label %str_stale88
 
-choice.exit90:                                    ; preds = %choice.then89, %choice.case
-  %var.load92 = load i1, ptr %var.has_path, align 1
-  br i1 %var.load92, label %choice.then93, label %choice.exit94
+str_ok87:                                         ; preds = %str_stale88, %str_gen_check86, %choice.case
+  %copy.len93 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.0.struct, i32 0, i32 1), align 8
+  %arena.cur94 = call ptr @dva_arena_current()
+  %copy.buf = call ptr @dva_arena_alloc(ptr %arena.cur94, i64 %copy.len83)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %copy.buf, ptr align 1 %copy.len93, i64 %copy.len83, i1 false)
+  %arena.cur95 = call ptr @dva_arena_current()
+  %copy.str = call ptr @dva_arena_alloc(ptr %arena.cur95, i64 16)
+  %str.copy.len.gep = getelementptr inbounds { i64, ptr }, ptr %copy.str, i32 0, i32 0
+  store i64 %copy.len83, ptr %str.copy.len.gep, align 8
+  %str.copy.data.gep = getelementptr inbounds { i64, ptr }, ptr %copy.str, i32 0, i32 1
+  store ptr %copy.buf, ptr %str.copy.data.gep, align 8
+  %call.res96 = call ptr @"ccl::ccl_error"(ptr %var.load82, ptr %copy.str, i64 0, i64 0)
+  store ptr %call.res96, ptr %"var.err_val'", align 8
+  %var.load97 = load ptr, ptr %var.ddoc, align 8
+  %fld.gep98 = getelementptr inbounds { ptr }, ptr %var.load97, i32 0, i32 0
+  %fld.load99 = load ptr, ptr %fld.gep98, align 8
+  %arr.cycle.len = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load99, i32 0, i32 0
+  %arr.cycle.len100 = load i64, ptr %arr.cycle.len, align 8
+  %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load99, i32 0, i32 1
+  %arr.cycle.data101 = load ptr, ptr %arr.cycle.data, align 8
+  store i64 0, ptr %loop.idx.37, align 8
+  br label %loop.header.37
 
-choice.then93:                                    ; preds = %choice.exit90
-  %var.load95 = load i64, ptr %"var.count'", align 8
-  %addtmp96 = add i64 %var.load95, 1
-  store i64 %addtmp96, ptr %"var.count'", align 8
-  br label %choice.exit94
-
-choice.exit94:                                    ; preds = %choice.then93, %choice.exit90
-  %var.load97 = load i1, ptr %var.has_url, align 1
-  br i1 %var.load97, label %choice.then98, label %choice.exit99
-
-choice.then98:                                    ; preds = %choice.exit94
-  %var.load100 = load i64, ptr %"var.count'", align 8
-  %addtmp101 = add i64 %var.load100, 1
-  store i64 %addtmp101, ptr %"var.count'", align 8
-  br label %choice.exit99
-
-choice.exit99:                                    ; preds = %choice.then98, %choice.exit94
-  %var.load102 = load i64, ptr %"var.count'", align 8
-  %cmptmp = icmp ne i64 %var.load102, 1
-  br i1 %cmptmp, label %choice.then103, label %choice.else104
-
-choice.then103:                                   ; preds = %choice.exit99
-  %var.load106 = load ptr, ptr %var.file, align 8
-  %var.load107 = load ptr, ptr %var.alias, align 8
-  %concat.lhs108 = load i64, ptr @str.17.struct, align 8
-  %concat.lhs109 = and i64 %concat.lhs108, 281474976710655
-  %str.tag110 = lshr i64 %concat.lhs108, 48
-  %str.immortal111 = icmp eq i64 %str.tag110, 0
-  br i1 %str.immortal111, label %str_ok113, label %str_gen_check112
-
-choice.else104:                                   ; preds = %choice.exit99
-  %var.load205 = load i1, ptr %var.has_git, align 1
-  br i1 %var.load205, label %choice.then206, label %choice.else207
-
-choice.exit105:                                   ; preds = %choice.exit208, %concat.tot.len186
-  %choice.res505 = phi { i1, i64 } [ %ram.pay204, %concat.tot.len186 ], [ %choice.res504, %choice.exit208 ]
-  br label %choice.exit81
-
-str_gen_check112:                                 ; preds = %choice.then103
-  %arena.gen115 = call ptr @dva_arena_current()
-  %arena.gen116 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen115, i32 0, i32 4
-  %arena.gen117 = load i64, ptr %arena.gen116, align 8
-  %str.tag.match118 = icmp eq i64 %str.tag110, %arena.gen117
-  br i1 %str.tag.match118, label %str_ok113, label %str_stale114
-
-str_ok113:                                        ; preds = %str_stale114, %str_gen_check112, %choice.then103
-  %concat.lhs119 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.17.struct, i32 0, i32 1), align 8
-  %concat.rhs120 = getelementptr inbounds { i64, ptr }, ptr %var.load107, i32 0, i32 0
-  %concat.rhs121 = load i64, ptr %concat.rhs120, align 8
-  %concat.rhs122 = and i64 %concat.rhs121, 281474976710655
-  %str.tag123 = lshr i64 %concat.rhs121, 48
-  %str.immortal124 = icmp eq i64 %str.tag123, 0
-  br i1 %str.immortal124, label %str_ok126, label %str_gen_check125
-
-str_stale114:                                     ; preds = %str_gen_check112
+str_stale88:                                      ; preds = %str_gen_check86
   %10 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok113
+  br label %str_ok87
 
-str_gen_check125:                                 ; preds = %str_ok113
-  %arena.gen128 = call ptr @dva_arena_current()
-  %arena.gen129 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen128, i32 0, i32 4
-  %arena.gen130 = load i64, ptr %arena.gen129, align 8
-  %str.tag.match131 = icmp eq i64 %str.tag123, %arena.gen130
-  br i1 %str.tag.match131, label %str_ok126, label %str_stale127
+loop.header.37:                                   ; preds = %loop.latch.37, %str_ok87
+  %counter.load = load i64, ptr %loop.idx.37, align 8
+  %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len100
+  br i1 %loop.cond, label %loop.body.37, label %loop.exit.nat.37
 
-str_ok126:                                        ; preds = %str_stale127, %str_gen_check125, %str_ok113
-  %concat.rhs132 = getelementptr inbounds { i64, ptr }, ptr %var.load107, i32 0, i32 1
-  %concat.rhs133 = load ptr, ptr %concat.rhs132, align 8
-  %concat.sum.len134 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs109, i64 %concat.rhs122)
-  %sum135 = extractvalue { i64, i1 } %concat.sum.len134, 0
-  %ovf136 = extractvalue { i64, i1 } %concat.sum.len134, 1
-  br i1 %ovf136, label %str_overflow_abort138, label %concat.sum.len137
+loop.body.37:                                     ; preds = %loop.header.37
+  %loop.rel.i = sub i64 %counter.load, 0
+  store i64 1, ptr %loop.step.37, align 8
+  %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data101, i64 %counter.load
+  %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
+  %arr.elem.ptr = inttoptr i64 %arr.elem.raw to ptr
+  store i64 %loop.rel.i, ptr %var._i, align 8
+  store ptr %arr.elem.ptr, ptr %var._, align 8
+  store ptr %arr.elem.ptr, ptr %var.dde, align 8
+  %var.load102 = load i1, ptr %"var.has_err'", align 1
+  %nottmp103 = xor i1 %var.load102, true
+  br i1 %nottmp103, label %choice.then104, label %choice.exit105
 
-str_stale127:                                     ; preds = %str_gen_check125
+loop.exit.nat.37:                                 ; preds = %loop.header.37
+  br label %loop.exit.37
+
+loop.latch.37:                                    ; preds = %choice.exit105
+  %step.val = load i64, ptr %loop.step.37, align 8
+  %loop.next = add i64 %counter.load, %step.val
+  store i64 %loop.next, ptr %loop.idx.37, align 8
+  br label %loop.header.37
+
+loop.exit.37:                                     ; preds = %loop.exit.nat.37
+  %var.load762 = load i1, ptr %"var.has_err'", align 1
+  br i1 %var.load762, label %choice.then763, label %choice.else764
+
+choice.then104:                                   ; preds = %loop.body.37
+  %var.load106 = load ptr, ptr %var.dde, align 8
+  %fld.gep107 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load106, i32 0, i32 0
+  %fld.load108 = load ptr, ptr %fld.gep107, align 8
+  store ptr %fld.load108, ptr %var.k, align 8
+  %var.load109 = load ptr, ptr %var.k, align 8
+  %eq.lhs.len = getelementptr inbounds { i64, ptr }, ptr %var.load109, i32 0, i32 0
+  %eq.lhs.len110 = load i64, ptr %eq.lhs.len, align 8
+  %eq.lhs.len111 = and i64 %eq.lhs.len110, 281474976710655
+  %str.tag112 = lshr i64 %eq.lhs.len110, 48
+  %str.immortal113 = icmp eq i64 %str.tag112, 0
+  br i1 %str.immortal113, label %str_ok115, label %str_gen_check114
+
+choice.exit105:                                   ; preds = %choice.exit271, %loop.body.37
+  br label %loop.latch.37
+
+str_gen_check114:                                 ; preds = %choice.then104
+  %arena.gen117 = call ptr @dva_arena_current()
+  %arena.gen118 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen117, i32 0, i32 4
+  %arena.gen119 = load i64, ptr %arena.gen118, align 8
+  %str.tag.match120 = icmp eq i64 %str.tag112, %arena.gen119
+  br i1 %str.tag.match120, label %str_ok115, label %str_stale116
+
+str_ok115:                                        ; preds = %str_stale116, %str_gen_check114, %choice.then104
+  %eq.rhs.len = load i64, ptr @str.14.struct, align 8
+  %eq.rhs.len121 = and i64 %eq.rhs.len, 281474976710655
+  %str.tag122 = lshr i64 %eq.rhs.len, 48
+  %str.immortal123 = icmp eq i64 %str.tag122, 0
+  br i1 %str.immortal123, label %str_ok125, label %str_gen_check124
+
+str_stale116:                                     ; preds = %str_gen_check114
   %11 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok126
+  br label %str_ok115
 
-concat.sum.len137:                                ; preds = %str_overflow_abort138, %str_ok126
-  %concat.tot.len139 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum135, i64 1)
-  %sum140 = extractvalue { i64, i1 } %concat.tot.len139, 0
-  %ovf141 = extractvalue { i64, i1 } %concat.tot.len139, 1
-  br i1 %ovf141, label %str_overflow_abort143, label %concat.tot.len142
+str_gen_check124:                                 ; preds = %str_ok115
+  %arena.gen127 = call ptr @dva_arena_current()
+  %arena.gen128 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen127, i32 0, i32 4
+  %arena.gen129 = load i64, ptr %arena.gen128, align 8
+  %str.tag.match130 = icmp eq i64 %str.tag122, %arena.gen129
+  br i1 %str.tag.match130, label %str_ok125, label %str_stale126
 
-str_overflow_abort138:                            ; preds = %str_ok126
-  %12 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_ok125:                                        ; preds = %str_stale126, %str_gen_check124, %str_ok115
+  %eq.len = icmp eq i64 %eq.lhs.len111, %eq.rhs.len121
+  br i1 %eq.len, label %str.eq.then, label %str.eq.else
+
+str_stale126:                                     ; preds = %str_gen_check124
+  %12 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.sum.len137
+  br label %str_ok125
 
-concat.tot.len142:                                ; preds = %str_overflow_abort143, %concat.sum.len137
-  %arena.cur144 = call ptr @dva_arena_current()
-  %concat.buf145 = call ptr @dva_arena_alloc(ptr %arena.cur144, i64 %sum140)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf145, ptr align 1 %concat.lhs119, i64 %concat.lhs109, i1 false)
-  %concat.mid146 = getelementptr i8, ptr %concat.buf145, i64 %concat.lhs109
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid146, ptr align 1 %concat.rhs133, i64 %concat.rhs122, i1 false)
-  %concat.nul147 = getelementptr i8, ptr %concat.buf145, i64 %sum135
-  store i8 0, ptr %concat.nul147, align 1
-  %arena.cur148 = call ptr @dva_arena_current()
-  %concat.str149 = call ptr @dva_arena_alloc(ptr %arena.cur148, i64 16)
-  %str.build.len.gep150 = getelementptr inbounds { i64, ptr }, ptr %concat.str149, i32 0, i32 0
-  store i64 %sum135, ptr %str.build.len.gep150, align 8
-  %str.build.data.gep151 = getelementptr inbounds { i64, ptr }, ptr %concat.str149, i32 0, i32 1
-  store ptr %concat.buf145, ptr %str.build.data.gep151, align 8
-  %concat.lhs152 = getelementptr inbounds { i64, ptr }, ptr %concat.str149, i32 0, i32 0
-  %concat.lhs153 = load i64, ptr %concat.lhs152, align 8
-  %concat.lhs154 = and i64 %concat.lhs153, 281474976710655
-  %str.tag155 = lshr i64 %concat.lhs153, 48
-  %str.immortal156 = icmp eq i64 %str.tag155, 0
-  br i1 %str.immortal156, label %str_ok158, label %str_gen_check157
+str.eq.then:                                      ; preds = %str_ok125
+  %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %var.load109, i32 0, i32 1
+  %eq.lhs.data131 = load ptr, ptr %eq.lhs.data, align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.14.struct, i32 0, i32 1), align 8
+  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data131, ptr %eq.rhs.data, i64 %eq.lhs.len111)
+  %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
+  br label %str.eq.merge
 
-str_overflow_abort143:                            ; preds = %concat.sum.len137
-  %13 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str.eq.else:                                      ; preds = %str_ok125
+  br label %str.eq.merge
+
+str.eq.merge:                                     ; preds = %str.eq.else, %str.eq.then
+  %str.eq.result = phi i1 [ %eq.cmp.zero, %str.eq.then ], [ false, %str.eq.else ]
+  br i1 %str.eq.result, label %or.38.then, label %or.38.else
+
+or.38.then:                                       ; preds = %str.eq.merge
+  br label %or.38.exit
+
+or.38.else:                                       ; preds = %str.eq.merge
+  %var.load132 = load ptr, ptr %var.k, align 8
+  %eq.lhs.len133 = getelementptr inbounds { i64, ptr }, ptr %var.load132, i32 0, i32 0
+  %eq.lhs.len134 = load i64, ptr %eq.lhs.len133, align 8
+  %eq.lhs.len135 = and i64 %eq.lhs.len134, 281474976710655
+  %str.tag136 = lshr i64 %eq.lhs.len134, 48
+  %str.immortal137 = icmp eq i64 %str.tag136, 0
+  br i1 %str.immortal137, label %str_ok139, label %str_gen_check138
+
+or.38.exit:                                       ; preds = %str.eq.merge159, %or.38.then
+  %or.38.phi = phi i1 [ %str.eq.result, %or.38.then ], [ %str.eq.result165, %str.eq.merge159 ]
+  br i1 %or.38.phi, label %or.39.then, label %or.39.else
+
+str_gen_check138:                                 ; preds = %or.38.else
+  %arena.gen141 = call ptr @dva_arena_current()
+  %arena.gen142 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen141, i32 0, i32 4
+  %arena.gen143 = load i64, ptr %arena.gen142, align 8
+  %str.tag.match144 = icmp eq i64 %str.tag136, %arena.gen143
+  br i1 %str.tag.match144, label %str_ok139, label %str_stale140
+
+str_ok139:                                        ; preds = %str_stale140, %str_gen_check138, %or.38.else
+  %eq.rhs.len145 = load i64, ptr @str.15.struct, align 8
+  %eq.rhs.len146 = and i64 %eq.rhs.len145, 281474976710655
+  %str.tag147 = lshr i64 %eq.rhs.len145, 48
+  %str.immortal148 = icmp eq i64 %str.tag147, 0
+  br i1 %str.immortal148, label %str_ok150, label %str_gen_check149
+
+str_stale140:                                     ; preds = %str_gen_check138
+  %13 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.tot.len142
+  br label %str_ok139
 
-str_gen_check157:                                 ; preds = %concat.tot.len142
-  %arena.gen160 = call ptr @dva_arena_current()
-  %arena.gen161 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen160, i32 0, i32 4
-  %arena.gen162 = load i64, ptr %arena.gen161, align 8
-  %str.tag.match163 = icmp eq i64 %str.tag155, %arena.gen162
-  br i1 %str.tag.match163, label %str_ok158, label %str_stale159
+str_gen_check149:                                 ; preds = %str_ok139
+  %arena.gen152 = call ptr @dva_arena_current()
+  %arena.gen153 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen152, i32 0, i32 4
+  %arena.gen154 = load i64, ptr %arena.gen153, align 8
+  %str.tag.match155 = icmp eq i64 %str.tag147, %arena.gen154
+  br i1 %str.tag.match155, label %str_ok150, label %str_stale151
 
-str_ok158:                                        ; preds = %str_stale159, %str_gen_check157, %concat.tot.len142
-  %concat.lhs164 = getelementptr inbounds { i64, ptr }, ptr %concat.str149, i32 0, i32 1
-  %concat.lhs165 = load ptr, ptr %concat.lhs164, align 8
-  %concat.rhs166 = load i64, ptr @str.18.struct, align 8
-  %concat.rhs167 = and i64 %concat.rhs166, 281474976710655
-  %str.tag168 = lshr i64 %concat.rhs166, 48
-  %str.immortal169 = icmp eq i64 %str.tag168, 0
-  br i1 %str.immortal169, label %str_ok171, label %str_gen_check170
+str_ok150:                                        ; preds = %str_stale151, %str_gen_check149, %str_ok139
+  %eq.len156 = icmp eq i64 %eq.lhs.len135, %eq.rhs.len146
+  br i1 %eq.len156, label %str.eq.then157, label %str.eq.else158
 
-str_stale159:                                     ; preds = %str_gen_check157
+str_stale151:                                     ; preds = %str_gen_check149
   %14 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok158
+  br label %str_ok150
 
-str_gen_check170:                                 ; preds = %str_ok158
-  %arena.gen173 = call ptr @dva_arena_current()
-  %arena.gen174 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen173, i32 0, i32 4
-  %arena.gen175 = load i64, ptr %arena.gen174, align 8
-  %str.tag.match176 = icmp eq i64 %str.tag168, %arena.gen175
-  br i1 %str.tag.match176, label %str_ok171, label %str_stale172
+str.eq.then157:                                   ; preds = %str_ok150
+  %eq.lhs.data160 = getelementptr inbounds { i64, ptr }, ptr %var.load132, i32 0, i32 1
+  %eq.lhs.data161 = load ptr, ptr %eq.lhs.data160, align 8
+  %eq.rhs.data162 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.15.struct, i32 0, i32 1), align 8
+  %eq.memcmp163 = call i32 @memcmp(ptr %eq.lhs.data161, ptr %eq.rhs.data162, i64 %eq.lhs.len135)
+  %eq.cmp.zero164 = icmp eq i32 %eq.memcmp163, 0
+  br label %str.eq.merge159
 
-str_ok171:                                        ; preds = %str_stale172, %str_gen_check170, %str_ok158
-  %concat.rhs177 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.18.struct, i32 0, i32 1), align 8
-  %concat.sum.len178 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs154, i64 %concat.rhs167)
-  %sum179 = extractvalue { i64, i1 } %concat.sum.len178, 0
-  %ovf180 = extractvalue { i64, i1 } %concat.sum.len178, 1
-  br i1 %ovf180, label %str_overflow_abort182, label %concat.sum.len181
+str.eq.else158:                                   ; preds = %str_ok150
+  br label %str.eq.merge159
 
-str_stale172:                                     ; preds = %str_gen_check170
+str.eq.merge159:                                  ; preds = %str.eq.else158, %str.eq.then157
+  %str.eq.result165 = phi i1 [ %eq.cmp.zero164, %str.eq.then157 ], [ false, %str.eq.else158 ]
+  br label %or.38.exit
+
+or.39.then:                                       ; preds = %or.38.exit
+  br label %or.39.exit
+
+or.39.else:                                       ; preds = %or.38.exit
+  %var.load166 = load ptr, ptr %var.k, align 8
+  %eq.lhs.len167 = getelementptr inbounds { i64, ptr }, ptr %var.load166, i32 0, i32 0
+  %eq.lhs.len168 = load i64, ptr %eq.lhs.len167, align 8
+  %eq.lhs.len169 = and i64 %eq.lhs.len168, 281474976710655
+  %str.tag170 = lshr i64 %eq.lhs.len168, 48
+  %str.immortal171 = icmp eq i64 %str.tag170, 0
+  br i1 %str.immortal171, label %str_ok173, label %str_gen_check172
+
+or.39.exit:                                       ; preds = %str.eq.merge193, %or.39.then
+  %or.39.phi = phi i1 [ %or.38.phi, %or.39.then ], [ %str.eq.result199, %str.eq.merge193 ]
+  br i1 %or.39.phi, label %or.40.then, label %or.40.else
+
+str_gen_check172:                                 ; preds = %or.39.else
+  %arena.gen175 = call ptr @dva_arena_current()
+  %arena.gen176 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen175, i32 0, i32 4
+  %arena.gen177 = load i64, ptr %arena.gen176, align 8
+  %str.tag.match178 = icmp eq i64 %str.tag170, %arena.gen177
+  br i1 %str.tag.match178, label %str_ok173, label %str_stale174
+
+str_ok173:                                        ; preds = %str_stale174, %str_gen_check172, %or.39.else
+  %eq.rhs.len179 = load i64, ptr @str.16.struct, align 8
+  %eq.rhs.len180 = and i64 %eq.rhs.len179, 281474976710655
+  %str.tag181 = lshr i64 %eq.rhs.len179, 48
+  %str.immortal182 = icmp eq i64 %str.tag181, 0
+  br i1 %str.immortal182, label %str_ok184, label %str_gen_check183
+
+str_stale174:                                     ; preds = %str_gen_check172
   %15 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok171
+  br label %str_ok173
 
-concat.sum.len181:                                ; preds = %str_overflow_abort182, %str_ok171
-  %concat.tot.len183 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum179, i64 1)
-  %sum184 = extractvalue { i64, i1 } %concat.tot.len183, 0
-  %ovf185 = extractvalue { i64, i1 } %concat.tot.len183, 1
-  br i1 %ovf185, label %str_overflow_abort187, label %concat.tot.len186
+str_gen_check183:                                 ; preds = %str_ok173
+  %arena.gen186 = call ptr @dva_arena_current()
+  %arena.gen187 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen186, i32 0, i32 4
+  %arena.gen188 = load i64, ptr %arena.gen187, align 8
+  %str.tag.match189 = icmp eq i64 %str.tag181, %arena.gen188
+  br i1 %str.tag.match189, label %str_ok184, label %str_stale185
 
-str_overflow_abort182:                            ; preds = %str_ok171
-  %16 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_ok184:                                        ; preds = %str_stale185, %str_gen_check183, %str_ok173
+  %eq.len190 = icmp eq i64 %eq.lhs.len169, %eq.rhs.len180
+  br i1 %eq.len190, label %str.eq.then191, label %str.eq.else192
+
+str_stale185:                                     ; preds = %str_gen_check183
+  %16 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.sum.len181
+  br label %str_ok184
 
-concat.tot.len186:                                ; preds = %str_overflow_abort187, %concat.sum.len181
-  %arena.cur188 = call ptr @dva_arena_current()
-  %concat.buf189 = call ptr @dva_arena_alloc(ptr %arena.cur188, i64 %sum184)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf189, ptr align 1 %concat.lhs165, i64 %concat.lhs154, i1 false)
-  %concat.mid190 = getelementptr i8, ptr %concat.buf189, i64 %concat.lhs154
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid190, ptr align 1 %concat.rhs177, i64 %concat.rhs167, i1 false)
-  %concat.nul191 = getelementptr i8, ptr %concat.buf189, i64 %sum179
-  store i8 0, ptr %concat.nul191, align 1
-  %arena.cur192 = call ptr @dva_arena_current()
-  %concat.str193 = call ptr @dva_arena_alloc(ptr %arena.cur192, i64 16)
-  %str.build.len.gep194 = getelementptr inbounds { i64, ptr }, ptr %concat.str193, i32 0, i32 0
-  store i64 %sum179, ptr %str.build.len.gep194, align 8
-  %str.build.data.gep195 = getelementptr inbounds { i64, ptr }, ptr %concat.str193, i32 0, i32 1
-  store ptr %concat.buf189, ptr %str.build.data.gep195, align 8
-  %var.load196 = load ptr, ptr %var.e, align 8
-  %fld.gep197 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load196, i32 0, i32 2
-  %fld.load198 = load i64, ptr %fld.gep197, align 8
-  %var.load199 = load ptr, ptr %var.e, align 8
-  %fld.gep200 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load199, i32 0, i32 3
-  %fld.load201 = load i64, ptr %fld.gep200, align 8
-  %call.res202 = call ptr @"ccl::ccl_error"(ptr %var.load106, ptr %concat.str193, i64 %fld.load198, i64 %fld.load201)
-  %p.to.i64203 = ptrtoint ptr %call.res202 to i64
-  %ram.pay204 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64203, 1
-  br label %choice.exit105
+str.eq.then191:                                   ; preds = %str_ok184
+  %eq.lhs.data194 = getelementptr inbounds { i64, ptr }, ptr %var.load166, i32 0, i32 1
+  %eq.lhs.data195 = load ptr, ptr %eq.lhs.data194, align 8
+  %eq.rhs.data196 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.16.struct, i32 0, i32 1), align 8
+  %eq.memcmp197 = call i32 @memcmp(ptr %eq.lhs.data195, ptr %eq.rhs.data196, i64 %eq.lhs.len169)
+  %eq.cmp.zero198 = icmp eq i32 %eq.memcmp197, 0
+  br label %str.eq.merge193
 
-str_overflow_abort187:                            ; preds = %concat.sum.len181
-  %17 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str.eq.else192:                                   ; preds = %str_ok184
+  br label %str.eq.merge193
+
+str.eq.merge193:                                  ; preds = %str.eq.else192, %str.eq.then191
+  %str.eq.result199 = phi i1 [ %eq.cmp.zero198, %str.eq.then191 ], [ false, %str.eq.else192 ]
+  br label %or.39.exit
+
+or.40.then:                                       ; preds = %or.39.exit
+  br label %or.40.exit
+
+or.40.else:                                       ; preds = %or.39.exit
+  %var.load200 = load ptr, ptr %var.k, align 8
+  %eq.lhs.len201 = getelementptr inbounds { i64, ptr }, ptr %var.load200, i32 0, i32 0
+  %eq.lhs.len202 = load i64, ptr %eq.lhs.len201, align 8
+  %eq.lhs.len203 = and i64 %eq.lhs.len202, 281474976710655
+  %str.tag204 = lshr i64 %eq.lhs.len202, 48
+  %str.immortal205 = icmp eq i64 %str.tag204, 0
+  br i1 %str.immortal205, label %str_ok207, label %str_gen_check206
+
+or.40.exit:                                       ; preds = %str.eq.merge227, %or.40.then
+  %or.40.phi = phi i1 [ %or.39.phi, %or.40.then ], [ %str.eq.result233, %str.eq.merge227 ]
+  br i1 %or.40.phi, label %or.41.then, label %or.41.else
+
+str_gen_check206:                                 ; preds = %or.40.else
+  %arena.gen209 = call ptr @dva_arena_current()
+  %arena.gen210 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen209, i32 0, i32 4
+  %arena.gen211 = load i64, ptr %arena.gen210, align 8
+  %str.tag.match212 = icmp eq i64 %str.tag204, %arena.gen211
+  br i1 %str.tag.match212, label %str_ok207, label %str_stale208
+
+str_ok207:                                        ; preds = %str_stale208, %str_gen_check206, %or.40.else
+  %eq.rhs.len213 = load i64, ptr @str.17.struct, align 8
+  %eq.rhs.len214 = and i64 %eq.rhs.len213, 281474976710655
+  %str.tag215 = lshr i64 %eq.rhs.len213, 48
+  %str.immortal216 = icmp eq i64 %str.tag215, 0
+  br i1 %str.immortal216, label %str_ok218, label %str_gen_check217
+
+str_stale208:                                     ; preds = %str_gen_check206
+  %17 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.tot.len186
+  br label %str_ok207
 
-choice.then206:                                   ; preds = %choice.else104
-  %var.load209 = load ptr, ptr %var.ddoc, align 8
-  %call.res210 = call ptr @"ccl::get"(ptr %var.load209, ptr @str.14.struct)
-  %niche.ne.null = icmp ne ptr %call.res210, null
-  br i1 %niche.ne.null, label %choice.then211, label %choice.else212
+str_gen_check217:                                 ; preds = %str_ok207
+  %arena.gen220 = call ptr @dva_arena_current()
+  %arena.gen221 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen220, i32 0, i32 4
+  %arena.gen222 = load i64, ptr %arena.gen221, align 8
+  %str.tag.match223 = icmp eq i64 %str.tag215, %arena.gen222
+  br i1 %str.tag.match223, label %str_ok218, label %str_stale219
 
-choice.else207:                                   ; preds = %choice.else104
-  %var.load338 = load i1, ptr %var.has_path, align 1
-  br i1 %var.load338, label %choice.then339, label %choice.else340
+str_ok218:                                        ; preds = %str_stale219, %str_gen_check217, %str_ok207
+  %eq.len224 = icmp eq i64 %eq.lhs.len203, %eq.rhs.len214
+  br i1 %eq.len224, label %str.eq.then225, label %str.eq.else226
 
-choice.exit208:                                   ; preds = %choice.exit341, %choice.exit221
-  %choice.res504 = phi { i1, i64 } [ %choice.res337, %choice.exit221 ], [ %choice.res503, %choice.exit341 ]
-  br label %choice.exit105
-
-choice.then211:                                   ; preds = %choice.then206
-  store ptr %call.res210, ptr %var._, align 8
-  store ptr %call.res210, ptr %var._214, align 8
-  br label %choice.exit213
-
-choice.else212:                                   ; preds = %choice.then206
-  br label %choice.exit213
-
-choice.exit213:                                   ; preds = %choice.else212, %choice.then211
-  %choice.res = phi ptr [ %call.res210, %choice.then211 ], [ @str.0.struct, %choice.else212 ]
-  store ptr %choice.res, ptr %var.g_url, align 8
-  %var.load215 = load ptr, ptr %var.ddoc, align 8
-  %call.res216 = call ptr @"ccl::get"(ptr %var.load215, ptr @str.19.struct)
-  store ptr %call.res216, ptr %var.opt_rev, align 8
-  %var.load217 = load ptr, ptr %var.opt_rev, align 8
-  %niche.ne.null218 = icmp ne ptr %var.load217, null
-  br i1 %niche.ne.null218, label %choice.then219, label %choice.else220
-
-choice.then219:                                   ; preds = %choice.exit213
-  store ptr %var.load217, ptr %var._222, align 8
-  store ptr %var.load217, ptr %var.rev, align 8
-  %var.load223 = load ptr, ptr %var.alias, align 8
-  %arena.cur224 = call ptr @dva_arena_current()
-  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur224, i64 16)
-  %tag.gep225 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
-  store i64 0, ptr %tag.gep225, align 8
-  %pay.gep226 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  store ptr null, ptr %pay.gep226, align 8
-  %var.load227 = load ptr, ptr %var.g_url, align 8
-  %var.load228 = load ptr, ptr %var.rev, align 8
-  %arena.cur229 = call ptr @dva_arena_current()
-  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur229, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr null, i32 1) to i64))
-  %rec.fld = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %var.load223, ptr %rec.fld, align 8
-  %rec.fld230 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 1
-  store ptr %enum.alloc, ptr %rec.fld230, align 8
-  %rec.fld231 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 2
-  store ptr %var.load227, ptr %rec.fld231, align 8
-  %rec.fld232 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 3
-  store ptr %var.load228, ptr %rec.fld232, align 8
-  %rec.fld233 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 4
-  store ptr @str.0.struct, ptr %rec.fld233, align 8
-  %rec.fld234 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 5
-  store ptr @str.0.struct, ptr %rec.fld234, align 8
-  %rec.fld235 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 6
-  store ptr @str.0.struct, ptr %rec.fld235, align 8
-  %p.to.i64236 = ptrtoint ptr %rec.alloc to i64
-  %ram.pay237 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64236, 1
-  br label %choice.exit221
-
-choice.else220:                                   ; preds = %choice.exit213
-  %var.load238 = load ptr, ptr %var.file, align 8
-  %var.load239 = load ptr, ptr %var.alias, align 8
-  %concat.lhs240 = load i64, ptr @str.17.struct, align 8
-  %concat.lhs241 = and i64 %concat.lhs240, 281474976710655
-  %str.tag242 = lshr i64 %concat.lhs240, 48
-  %str.immortal243 = icmp eq i64 %str.tag242, 0
-  br i1 %str.immortal243, label %str_ok245, label %str_gen_check244
-
-choice.exit221:                                   ; preds = %concat.tot.len318, %choice.then219
-  %choice.res337 = phi { i1, i64 } [ %ram.pay237, %choice.then219 ], [ %ram.pay336, %concat.tot.len318 ]
-  br label %choice.exit208
-
-str_gen_check244:                                 ; preds = %choice.else220
-  %arena.gen247 = call ptr @dva_arena_current()
-  %arena.gen248 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen247, i32 0, i32 4
-  %arena.gen249 = load i64, ptr %arena.gen248, align 8
-  %str.tag.match250 = icmp eq i64 %str.tag242, %arena.gen249
-  br i1 %str.tag.match250, label %str_ok245, label %str_stale246
-
-str_ok245:                                        ; preds = %str_stale246, %str_gen_check244, %choice.else220
-  %concat.lhs251 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.17.struct, i32 0, i32 1), align 8
-  %concat.rhs252 = getelementptr inbounds { i64, ptr }, ptr %var.load239, i32 0, i32 0
-  %concat.rhs253 = load i64, ptr %concat.rhs252, align 8
-  %concat.rhs254 = and i64 %concat.rhs253, 281474976710655
-  %str.tag255 = lshr i64 %concat.rhs253, 48
-  %str.immortal256 = icmp eq i64 %str.tag255, 0
-  br i1 %str.immortal256, label %str_ok258, label %str_gen_check257
-
-str_stale246:                                     ; preds = %str_gen_check244
+str_stale219:                                     ; preds = %str_gen_check217
   %18 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok245
+  br label %str_ok218
 
-str_gen_check257:                                 ; preds = %str_ok245
-  %arena.gen260 = call ptr @dva_arena_current()
-  %arena.gen261 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen260, i32 0, i32 4
-  %arena.gen262 = load i64, ptr %arena.gen261, align 8
-  %str.tag.match263 = icmp eq i64 %str.tag255, %arena.gen262
-  br i1 %str.tag.match263, label %str_ok258, label %str_stale259
+str.eq.then225:                                   ; preds = %str_ok218
+  %eq.lhs.data228 = getelementptr inbounds { i64, ptr }, ptr %var.load200, i32 0, i32 1
+  %eq.lhs.data229 = load ptr, ptr %eq.lhs.data228, align 8
+  %eq.rhs.data230 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.17.struct, i32 0, i32 1), align 8
+  %eq.memcmp231 = call i32 @memcmp(ptr %eq.lhs.data229, ptr %eq.rhs.data230, i64 %eq.lhs.len203)
+  %eq.cmp.zero232 = icmp eq i32 %eq.memcmp231, 0
+  br label %str.eq.merge227
 
-str_ok258:                                        ; preds = %str_stale259, %str_gen_check257, %str_ok245
-  %concat.rhs264 = getelementptr inbounds { i64, ptr }, ptr %var.load239, i32 0, i32 1
-  %concat.rhs265 = load ptr, ptr %concat.rhs264, align 8
-  %concat.sum.len266 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs241, i64 %concat.rhs254)
-  %sum267 = extractvalue { i64, i1 } %concat.sum.len266, 0
-  %ovf268 = extractvalue { i64, i1 } %concat.sum.len266, 1
-  br i1 %ovf268, label %str_overflow_abort270, label %concat.sum.len269
+str.eq.else226:                                   ; preds = %str_ok218
+  br label %str.eq.merge227
 
-str_stale259:                                     ; preds = %str_gen_check257
+str.eq.merge227:                                  ; preds = %str.eq.else226, %str.eq.then225
+  %str.eq.result233 = phi i1 [ %eq.cmp.zero232, %str.eq.then225 ], [ false, %str.eq.else226 ]
+  br label %or.40.exit
+
+or.41.then:                                       ; preds = %or.40.exit
+  br label %or.41.exit
+
+or.41.else:                                       ; preds = %or.40.exit
+  %var.load234 = load ptr, ptr %var.k, align 8
+  %eq.lhs.len235 = getelementptr inbounds { i64, ptr }, ptr %var.load234, i32 0, i32 0
+  %eq.lhs.len236 = load i64, ptr %eq.lhs.len235, align 8
+  %eq.lhs.len237 = and i64 %eq.lhs.len236, 281474976710655
+  %str.tag238 = lshr i64 %eq.lhs.len236, 48
+  %str.immortal239 = icmp eq i64 %str.tag238, 0
+  br i1 %str.immortal239, label %str_ok241, label %str_gen_check240
+
+or.41.exit:                                       ; preds = %str.eq.merge261, %or.41.then
+  %or.41.phi = phi i1 [ %or.40.phi, %or.41.then ], [ %str.eq.result267, %str.eq.merge261 ]
+  store i1 %or.41.phi, ptr %var.is_known, align 1
+  %var.load268 = load i1, ptr %var.is_known, align 1
+  %nottmp269 = xor i1 %var.load268, true
+  br i1 %nottmp269, label %choice.then270, label %choice.exit271
+
+str_gen_check240:                                 ; preds = %or.41.else
+  %arena.gen243 = call ptr @dva_arena_current()
+  %arena.gen244 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen243, i32 0, i32 4
+  %arena.gen245 = load i64, ptr %arena.gen244, align 8
+  %str.tag.match246 = icmp eq i64 %str.tag238, %arena.gen245
+  br i1 %str.tag.match246, label %str_ok241, label %str_stale242
+
+str_ok241:                                        ; preds = %str_stale242, %str_gen_check240, %or.41.else
+  %eq.rhs.len247 = load i64, ptr @str.18.struct, align 8
+  %eq.rhs.len248 = and i64 %eq.rhs.len247, 281474976710655
+  %str.tag249 = lshr i64 %eq.rhs.len247, 48
+  %str.immortal250 = icmp eq i64 %str.tag249, 0
+  br i1 %str.immortal250, label %str_ok252, label %str_gen_check251
+
+str_stale242:                                     ; preds = %str_gen_check240
   %19 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok258
+  br label %str_ok241
 
-concat.sum.len269:                                ; preds = %str_overflow_abort270, %str_ok258
-  %concat.tot.len271 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum267, i64 1)
-  %sum272 = extractvalue { i64, i1 } %concat.tot.len271, 0
-  %ovf273 = extractvalue { i64, i1 } %concat.tot.len271, 1
-  br i1 %ovf273, label %str_overflow_abort275, label %concat.tot.len274
+str_gen_check251:                                 ; preds = %str_ok241
+  %arena.gen254 = call ptr @dva_arena_current()
+  %arena.gen255 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen254, i32 0, i32 4
+  %arena.gen256 = load i64, ptr %arena.gen255, align 8
+  %str.tag.match257 = icmp eq i64 %str.tag249, %arena.gen256
+  br i1 %str.tag.match257, label %str_ok252, label %str_stale253
 
-str_overflow_abort270:                            ; preds = %str_ok258
-  %20 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_ok252:                                        ; preds = %str_stale253, %str_gen_check251, %str_ok241
+  %eq.len258 = icmp eq i64 %eq.lhs.len237, %eq.rhs.len248
+  br i1 %eq.len258, label %str.eq.then259, label %str.eq.else260
+
+str_stale253:                                     ; preds = %str_gen_check251
+  %20 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.sum.len269
+  br label %str_ok252
 
-concat.tot.len274:                                ; preds = %str_overflow_abort275, %concat.sum.len269
-  %arena.cur276 = call ptr @dva_arena_current()
-  %concat.buf277 = call ptr @dva_arena_alloc(ptr %arena.cur276, i64 %sum272)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf277, ptr align 1 %concat.lhs251, i64 %concat.lhs241, i1 false)
-  %concat.mid278 = getelementptr i8, ptr %concat.buf277, i64 %concat.lhs241
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid278, ptr align 1 %concat.rhs265, i64 %concat.rhs254, i1 false)
-  %concat.nul279 = getelementptr i8, ptr %concat.buf277, i64 %sum267
-  store i8 0, ptr %concat.nul279, align 1
-  %arena.cur280 = call ptr @dva_arena_current()
-  %concat.str281 = call ptr @dva_arena_alloc(ptr %arena.cur280, i64 16)
-  %str.build.len.gep282 = getelementptr inbounds { i64, ptr }, ptr %concat.str281, i32 0, i32 0
-  store i64 %sum267, ptr %str.build.len.gep282, align 8
-  %str.build.data.gep283 = getelementptr inbounds { i64, ptr }, ptr %concat.str281, i32 0, i32 1
-  store ptr %concat.buf277, ptr %str.build.data.gep283, align 8
-  %concat.lhs284 = getelementptr inbounds { i64, ptr }, ptr %concat.str281, i32 0, i32 0
-  %concat.lhs285 = load i64, ptr %concat.lhs284, align 8
-  %concat.lhs286 = and i64 %concat.lhs285, 281474976710655
-  %str.tag287 = lshr i64 %concat.lhs285, 48
+str.eq.then259:                                   ; preds = %str_ok252
+  %eq.lhs.data262 = getelementptr inbounds { i64, ptr }, ptr %var.load234, i32 0, i32 1
+  %eq.lhs.data263 = load ptr, ptr %eq.lhs.data262, align 8
+  %eq.rhs.data264 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.18.struct, i32 0, i32 1), align 8
+  %eq.memcmp265 = call i32 @memcmp(ptr %eq.lhs.data263, ptr %eq.rhs.data264, i64 %eq.lhs.len237)
+  %eq.cmp.zero266 = icmp eq i32 %eq.memcmp265, 0
+  br label %str.eq.merge261
+
+str.eq.else260:                                   ; preds = %str_ok252
+  br label %str.eq.merge261
+
+str.eq.merge261:                                  ; preds = %str.eq.else260, %str.eq.then259
+  %str.eq.result267 = phi i1 [ %eq.cmp.zero266, %str.eq.then259 ], [ false, %str.eq.else260 ]
+  br label %or.41.exit
+
+choice.then270:                                   ; preds = %or.41.exit
+  store i1 true, ptr %"var.has_err'", align 1
+  %var.load272 = load ptr, ptr %var.k, align 8
+  %eq.lhs.len273 = getelementptr inbounds { i64, ptr }, ptr %var.load272, i32 0, i32 0
+  %eq.lhs.len274 = load i64, ptr %eq.lhs.len273, align 8
+  %eq.lhs.len275 = and i64 %eq.lhs.len274, 281474976710655
+  %str.tag276 = lshr i64 %eq.lhs.len274, 48
+  %str.immortal277 = icmp eq i64 %str.tag276, 0
+  br i1 %str.immortal277, label %str_ok279, label %str_gen_check278
+
+choice.exit271:                                   ; preds = %choice.exit342, %or.41.exit
+  br label %choice.exit105
+
+str_gen_check278:                                 ; preds = %choice.then270
+  %arena.gen281 = call ptr @dva_arena_current()
+  %arena.gen282 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen281, i32 0, i32 4
+  %arena.gen283 = load i64, ptr %arena.gen282, align 8
+  %str.tag.match284 = icmp eq i64 %str.tag276, %arena.gen283
+  br i1 %str.tag.match284, label %str_ok279, label %str_stale280
+
+str_ok279:                                        ; preds = %str_stale280, %str_gen_check278, %choice.then270
+  %eq.rhs.len285 = load i64, ptr @str.19.struct, align 8
+  %eq.rhs.len286 = and i64 %eq.rhs.len285, 281474976710655
+  %str.tag287 = lshr i64 %eq.rhs.len285, 48
   %str.immortal288 = icmp eq i64 %str.tag287, 0
   br i1 %str.immortal288, label %str_ok290, label %str_gen_check289
 
-str_overflow_abort275:                            ; preds = %concat.sum.len269
-  %21 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_stale280:                                     ; preds = %str_gen_check278
+  %21 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.tot.len274
+  br label %str_ok279
 
-str_gen_check289:                                 ; preds = %concat.tot.len274
+str_gen_check289:                                 ; preds = %str_ok279
   %arena.gen292 = call ptr @dva_arena_current()
   %arena.gen293 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen292, i32 0, i32 4
   %arena.gen294 = load i64, ptr %arena.gen293, align 8
   %str.tag.match295 = icmp eq i64 %str.tag287, %arena.gen294
   br i1 %str.tag.match295, label %str_ok290, label %str_stale291
 
-str_ok290:                                        ; preds = %str_stale291, %str_gen_check289, %concat.tot.len274
-  %concat.lhs296 = getelementptr inbounds { i64, ptr }, ptr %concat.str281, i32 0, i32 1
-  %concat.lhs297 = load ptr, ptr %concat.lhs296, align 8
-  %concat.rhs298 = load i64, ptr @str.20.struct, align 8
-  %concat.rhs299 = and i64 %concat.rhs298, 281474976710655
-  %str.tag300 = lshr i64 %concat.rhs298, 48
-  %str.immortal301 = icmp eq i64 %str.tag300, 0
-  br i1 %str.immortal301, label %str_ok303, label %str_gen_check302
+str_ok290:                                        ; preds = %str_stale291, %str_gen_check289, %str_ok279
+  %eq.len296 = icmp eq i64 %eq.lhs.len275, %eq.rhs.len286
+  br i1 %eq.len296, label %str.eq.then297, label %str.eq.else298
 
 str_stale291:                                     ; preds = %str_gen_check289
   %22 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
   br label %str_ok290
 
-str_gen_check302:                                 ; preds = %str_ok290
-  %arena.gen305 = call ptr @dva_arena_current()
-  %arena.gen306 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen305, i32 0, i32 4
-  %arena.gen307 = load i64, ptr %arena.gen306, align 8
-  %str.tag.match308 = icmp eq i64 %str.tag300, %arena.gen307
-  br i1 %str.tag.match308, label %str_ok303, label %str_stale304
+str.eq.then297:                                   ; preds = %str_ok290
+  %eq.lhs.data300 = getelementptr inbounds { i64, ptr }, ptr %var.load272, i32 0, i32 1
+  %eq.lhs.data301 = load ptr, ptr %eq.lhs.data300, align 8
+  %eq.rhs.data302 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.19.struct, i32 0, i32 1), align 8
+  %eq.memcmp303 = call i32 @memcmp(ptr %eq.lhs.data301, ptr %eq.rhs.data302, i64 %eq.lhs.len275)
+  %eq.cmp.zero304 = icmp eq i32 %eq.memcmp303, 0
+  br label %str.eq.merge299
 
-str_ok303:                                        ; preds = %str_stale304, %str_gen_check302, %str_ok290
-  %concat.rhs309 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.20.struct, i32 0, i32 1), align 8
-  %concat.sum.len310 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs286, i64 %concat.rhs299)
-  %sum311 = extractvalue { i64, i1 } %concat.sum.len310, 0
-  %ovf312 = extractvalue { i64, i1 } %concat.sum.len310, 1
-  br i1 %ovf312, label %str_overflow_abort314, label %concat.sum.len313
+str.eq.else298:                                   ; preds = %str_ok290
+  br label %str.eq.merge299
 
-str_stale304:                                     ; preds = %str_gen_check302
+str.eq.merge299:                                  ; preds = %str.eq.else298, %str.eq.then297
+  %str.eq.result305 = phi i1 [ %eq.cmp.zero304, %str.eq.then297 ], [ false, %str.eq.else298 ]
+  br i1 %str.eq.result305, label %or.42.then, label %or.42.else
+
+or.42.then:                                       ; preds = %str.eq.merge299
+  br label %or.42.exit
+
+or.42.else:                                       ; preds = %str.eq.merge299
+  %var.load306 = load ptr, ptr %var.k, align 8
+  %eq.lhs.len307 = getelementptr inbounds { i64, ptr }, ptr %var.load306, i32 0, i32 0
+  %eq.lhs.len308 = load i64, ptr %eq.lhs.len307, align 8
+  %eq.lhs.len309 = and i64 %eq.lhs.len308, 281474976710655
+  %str.tag310 = lshr i64 %eq.lhs.len308, 48
+  %str.immortal311 = icmp eq i64 %str.tag310, 0
+  br i1 %str.immortal311, label %str_ok313, label %str_gen_check312
+
+or.42.exit:                                       ; preds = %str.eq.merge333, %or.42.then
+  %or.42.phi = phi i1 [ %str.eq.result305, %or.42.then ], [ %str.eq.result339, %str.eq.merge333 ]
+  br i1 %or.42.phi, label %choice.then340, label %choice.else341
+
+str_gen_check312:                                 ; preds = %or.42.else
+  %arena.gen315 = call ptr @dva_arena_current()
+  %arena.gen316 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen315, i32 0, i32 4
+  %arena.gen317 = load i64, ptr %arena.gen316, align 8
+  %str.tag.match318 = icmp eq i64 %str.tag310, %arena.gen317
+  br i1 %str.tag.match318, label %str_ok313, label %str_stale314
+
+str_ok313:                                        ; preds = %str_stale314, %str_gen_check312, %or.42.else
+  %eq.rhs.len319 = load i64, ptr @str.20.struct, align 8
+  %eq.rhs.len320 = and i64 %eq.rhs.len319, 281474976710655
+  %str.tag321 = lshr i64 %eq.rhs.len319, 48
+  %str.immortal322 = icmp eq i64 %str.tag321, 0
+  br i1 %str.immortal322, label %str_ok324, label %str_gen_check323
+
+str_stale314:                                     ; preds = %str_gen_check312
   %23 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok303
+  br label %str_ok313
 
-concat.sum.len313:                                ; preds = %str_overflow_abort314, %str_ok303
-  %concat.tot.len315 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum311, i64 1)
-  %sum316 = extractvalue { i64, i1 } %concat.tot.len315, 0
-  %ovf317 = extractvalue { i64, i1 } %concat.tot.len315, 1
-  br i1 %ovf317, label %str_overflow_abort319, label %concat.tot.len318
+str_gen_check323:                                 ; preds = %str_ok313
+  %arena.gen326 = call ptr @dva_arena_current()
+  %arena.gen327 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen326, i32 0, i32 4
+  %arena.gen328 = load i64, ptr %arena.gen327, align 8
+  %str.tag.match329 = icmp eq i64 %str.tag321, %arena.gen328
+  br i1 %str.tag.match329, label %str_ok324, label %str_stale325
 
-str_overflow_abort314:                            ; preds = %str_ok303
-  %24 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_ok324:                                        ; preds = %str_stale325, %str_gen_check323, %str_ok313
+  %eq.len330 = icmp eq i64 %eq.lhs.len309, %eq.rhs.len320
+  br i1 %eq.len330, label %str.eq.then331, label %str.eq.else332
+
+str_stale325:                                     ; preds = %str_gen_check323
+  %24 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.sum.len313
+  br label %str_ok324
 
-concat.tot.len318:                                ; preds = %str_overflow_abort319, %concat.sum.len313
-  %arena.cur320 = call ptr @dva_arena_current()
-  %concat.buf321 = call ptr @dva_arena_alloc(ptr %arena.cur320, i64 %sum316)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf321, ptr align 1 %concat.lhs297, i64 %concat.lhs286, i1 false)
-  %concat.mid322 = getelementptr i8, ptr %concat.buf321, i64 %concat.lhs286
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid322, ptr align 1 %concat.rhs309, i64 %concat.rhs299, i1 false)
-  %concat.nul323 = getelementptr i8, ptr %concat.buf321, i64 %sum311
-  store i8 0, ptr %concat.nul323, align 1
-  %arena.cur324 = call ptr @dva_arena_current()
-  %concat.str325 = call ptr @dva_arena_alloc(ptr %arena.cur324, i64 16)
-  %str.build.len.gep326 = getelementptr inbounds { i64, ptr }, ptr %concat.str325, i32 0, i32 0
-  store i64 %sum311, ptr %str.build.len.gep326, align 8
-  %str.build.data.gep327 = getelementptr inbounds { i64, ptr }, ptr %concat.str325, i32 0, i32 1
-  store ptr %concat.buf321, ptr %str.build.data.gep327, align 8
-  %var.load328 = load ptr, ptr %var.e, align 8
-  %fld.gep329 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load328, i32 0, i32 2
-  %fld.load330 = load i64, ptr %fld.gep329, align 8
-  %var.load331 = load ptr, ptr %var.e, align 8
-  %fld.gep332 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load331, i32 0, i32 3
-  %fld.load333 = load i64, ptr %fld.gep332, align 8
-  %call.res334 = call ptr @"ccl::ccl_error"(ptr %var.load238, ptr %concat.str325, i64 %fld.load330, i64 %fld.load333)
-  %p.to.i64335 = ptrtoint ptr %call.res334 to i64
-  %ram.pay336 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64335, 1
-  br label %choice.exit221
+str.eq.then331:                                   ; preds = %str_ok324
+  %eq.lhs.data334 = getelementptr inbounds { i64, ptr }, ptr %var.load306, i32 0, i32 1
+  %eq.lhs.data335 = load ptr, ptr %eq.lhs.data334, align 8
+  %eq.rhs.data336 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.20.struct, i32 0, i32 1), align 8
+  %eq.memcmp337 = call i32 @memcmp(ptr %eq.lhs.data335, ptr %eq.rhs.data336, i64 %eq.lhs.len309)
+  %eq.cmp.zero338 = icmp eq i32 %eq.memcmp337, 0
+  br label %str.eq.merge333
 
-str_overflow_abort319:                            ; preds = %concat.sum.len313
-  %25 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str.eq.else332:                                   ; preds = %str_ok324
+  br label %str.eq.merge333
+
+str.eq.merge333:                                  ; preds = %str.eq.else332, %str.eq.then331
+  %str.eq.result339 = phi i1 [ %eq.cmp.zero338, %str.eq.then331 ], [ false, %str.eq.else332 ]
+  br label %or.42.exit
+
+choice.then340:                                   ; preds = %or.42.exit
+  %var.load343 = load ptr, ptr %var.file, align 8
+  %var.load344 = load ptr, ptr %var.alias, align 8
+  %concat.lhs345 = load i64, ptr @str.21.struct, align 8
+  %concat.lhs346 = and i64 %concat.lhs345, 281474976710655
+  %str.tag347 = lshr i64 %concat.lhs345, 48
+  %str.immortal348 = icmp eq i64 %str.tag347, 0
+  br i1 %str.immortal348, label %str_ok350, label %str_gen_check349
+
+choice.else341:                                   ; preds = %or.42.exit
+  %var.load440 = load ptr, ptr %var.k, align 8
+  %eq.lhs.len441 = getelementptr inbounds { i64, ptr }, ptr %var.load440, i32 0, i32 0
+  %eq.lhs.len442 = load i64, ptr %eq.lhs.len441, align 8
+  %eq.lhs.len443 = and i64 %eq.lhs.len442, 281474976710655
+  %str.tag444 = lshr i64 %eq.lhs.len442, 48
+  %str.immortal445 = icmp eq i64 %str.tag444, 0
+  br i1 %str.immortal445, label %str_ok447, label %str_gen_check446
+
+choice.exit342:                                   ; preds = %choice.exit476, %concat.tot.len423
+  br label %choice.exit271
+
+str_gen_check349:                                 ; preds = %choice.then340
+  %arena.gen352 = call ptr @dva_arena_current()
+  %arena.gen353 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen352, i32 0, i32 4
+  %arena.gen354 = load i64, ptr %arena.gen353, align 8
+  %str.tag.match355 = icmp eq i64 %str.tag347, %arena.gen354
+  br i1 %str.tag.match355, label %str_ok350, label %str_stale351
+
+str_ok350:                                        ; preds = %str_stale351, %str_gen_check349, %choice.then340
+  %concat.lhs356 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.21.struct, i32 0, i32 1), align 8
+  %concat.rhs357 = getelementptr inbounds { i64, ptr }, ptr %var.load344, i32 0, i32 0
+  %concat.rhs358 = load i64, ptr %concat.rhs357, align 8
+  %concat.rhs359 = and i64 %concat.rhs358, 281474976710655
+  %str.tag360 = lshr i64 %concat.rhs358, 48
+  %str.immortal361 = icmp eq i64 %str.tag360, 0
+  br i1 %str.immortal361, label %str_ok363, label %str_gen_check362
+
+str_stale351:                                     ; preds = %str_gen_check349
+  %25 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.tot.len318
+  br label %str_ok350
 
-choice.then339:                                   ; preds = %choice.else207
-  %var.load342 = load ptr, ptr %var.ddoc, align 8
-  %call.res343 = call ptr @"ccl::get"(ptr %var.load342, ptr @str.15.struct)
-  %niche.ne.null344 = icmp ne ptr %call.res343, null
-  br i1 %niche.ne.null344, label %choice.then345, label %choice.else346
+str_gen_check362:                                 ; preds = %str_ok350
+  %arena.gen365 = call ptr @dva_arena_current()
+  %arena.gen366 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen365, i32 0, i32 4
+  %arena.gen367 = load i64, ptr %arena.gen366, align 8
+  %str.tag.match368 = icmp eq i64 %str.tag360, %arena.gen367
+  br i1 %str.tag.match368, label %str_ok363, label %str_stale364
 
-choice.else340:                                   ; preds = %choice.else207
-  %var.load368 = load ptr, ptr %var.ddoc, align 8
-  %call.res369 = call ptr @"ccl::get"(ptr %var.load368, ptr @str.16.struct)
-  %niche.ne.null370 = icmp ne ptr %call.res369, null
-  br i1 %niche.ne.null370, label %choice.then371, label %choice.else372
+str_ok363:                                        ; preds = %str_stale364, %str_gen_check362, %str_ok350
+  %concat.rhs369 = getelementptr inbounds { i64, ptr }, ptr %var.load344, i32 0, i32 1
+  %concat.rhs370 = load ptr, ptr %concat.rhs369, align 8
+  %concat.sum.len371 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs346, i64 %concat.rhs359)
+  %sum372 = extractvalue { i64, i1 } %concat.sum.len371, 0
+  %ovf373 = extractvalue { i64, i1 } %concat.sum.len371, 1
+  br i1 %ovf373, label %str_overflow_abort375, label %concat.sum.len374
 
-choice.exit341:                                   ; preds = %choice.exit383, %choice.exit347
-  %choice.res503 = phi { i1, i64 } [ %ram.pay367, %choice.exit347 ], [ %choice.res502, %choice.exit383 ]
-  br label %choice.exit208
-
-choice.then345:                                   ; preds = %choice.then339
-  store ptr %call.res343, ptr %var._348, align 8
-  store ptr %call.res343, ptr %var._349, align 8
-  br label %choice.exit347
-
-choice.else346:                                   ; preds = %choice.then339
-  br label %choice.exit347
-
-choice.exit347:                                   ; preds = %choice.else346, %choice.then345
-  %choice.res350 = phi ptr [ %call.res343, %choice.then345 ], [ @str.0.struct, %choice.else346 ]
-  store ptr %choice.res350, ptr %var.p, align 8
-  %var.load351 = load ptr, ptr %var.alias, align 8
-  %arena.cur352 = call ptr @dva_arena_current()
-  %enum.alloc353 = call ptr @dva_arena_alloc(ptr %arena.cur352, i64 16)
-  %tag.gep354 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc353, i32 0, i32 0
-  store i64 1, ptr %tag.gep354, align 8
-  %pay.gep355 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc353, i32 0, i32 1
-  store ptr null, ptr %pay.gep355, align 8
-  %var.load356 = load ptr, ptr %var.p, align 8
-  %arena.cur357 = call ptr @dva_arena_current()
-  %rec.alloc358 = call ptr @dva_arena_alloc(ptr %arena.cur357, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr null, i32 1) to i64))
-  %rec.fld359 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc358, i32 0, i32 0
-  store ptr %var.load351, ptr %rec.fld359, align 8
-  %rec.fld360 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc358, i32 0, i32 1
-  store ptr %enum.alloc353, ptr %rec.fld360, align 8
-  %rec.fld361 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc358, i32 0, i32 2
-  store ptr @str.0.struct, ptr %rec.fld361, align 8
-  %rec.fld362 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc358, i32 0, i32 3
-  store ptr @str.0.struct, ptr %rec.fld362, align 8
-  %rec.fld363 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc358, i32 0, i32 4
-  store ptr %var.load356, ptr %rec.fld363, align 8
-  %rec.fld364 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc358, i32 0, i32 5
-  store ptr @str.0.struct, ptr %rec.fld364, align 8
-  %rec.fld365 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc358, i32 0, i32 6
-  store ptr @str.0.struct, ptr %rec.fld365, align 8
-  %p.to.i64366 = ptrtoint ptr %rec.alloc358 to i64
-  %ram.pay367 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64366, 1
-  br label %choice.exit341
-
-choice.then371:                                   ; preds = %choice.else340
-  store ptr %call.res369, ptr %var._374, align 8
-  store ptr %call.res369, ptr %var._375, align 8
-  br label %choice.exit373
-
-choice.else372:                                   ; preds = %choice.else340
-  br label %choice.exit373
-
-choice.exit373:                                   ; preds = %choice.else372, %choice.then371
-  %choice.res376 = phi ptr [ %call.res369, %choice.then371 ], [ @str.0.struct, %choice.else372 ]
-  store ptr %choice.res376, ptr %var.u, align 8
-  %var.load377 = load ptr, ptr %var.ddoc, align 8
-  %call.res378 = call ptr @"ccl::get"(ptr %var.load377, ptr @str.21.struct)
-  store ptr %call.res378, ptr %var.opt_hash, align 8
-  %var.load379 = load ptr, ptr %var.opt_hash, align 8
-  %niche.ne.null380 = icmp ne ptr %var.load379, null
-  br i1 %niche.ne.null380, label %choice.then381, label %choice.else382
-
-choice.then381:                                   ; preds = %choice.exit373
-  store ptr %var.load379, ptr %var._384, align 8
-  store ptr %var.load379, ptr %var.h, align 8
-  %var.load385 = load ptr, ptr %var.alias, align 8
-  %arena.cur386 = call ptr @dva_arena_current()
-  %enum.alloc387 = call ptr @dva_arena_alloc(ptr %arena.cur386, i64 16)
-  %tag.gep388 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc387, i32 0, i32 0
-  store i64 2, ptr %tag.gep388, align 8
-  %pay.gep389 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc387, i32 0, i32 1
-  store ptr null, ptr %pay.gep389, align 8
-  %var.load390 = load ptr, ptr %var.u, align 8
-  %var.load391 = load ptr, ptr %var.h, align 8
-  %arena.cur392 = call ptr @dva_arena_current()
-  %rec.alloc393 = call ptr @dva_arena_alloc(ptr %arena.cur392, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr null, i32 1) to i64))
-  %rec.fld394 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc393, i32 0, i32 0
-  store ptr %var.load385, ptr %rec.fld394, align 8
-  %rec.fld395 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc393, i32 0, i32 1
-  store ptr %enum.alloc387, ptr %rec.fld395, align 8
-  %rec.fld396 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc393, i32 0, i32 2
-  store ptr @str.0.struct, ptr %rec.fld396, align 8
-  %rec.fld397 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc393, i32 0, i32 3
-  store ptr @str.0.struct, ptr %rec.fld397, align 8
-  %rec.fld398 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc393, i32 0, i32 4
-  store ptr @str.0.struct, ptr %rec.fld398, align 8
-  %rec.fld399 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc393, i32 0, i32 5
-  store ptr %var.load390, ptr %rec.fld399, align 8
-  %rec.fld400 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc393, i32 0, i32 6
-  store ptr %var.load391, ptr %rec.fld400, align 8
-  %p.to.i64401 = ptrtoint ptr %rec.alloc393 to i64
-  %ram.pay402 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64401, 1
-  br label %choice.exit383
-
-choice.else382:                                   ; preds = %choice.exit373
-  %var.load403 = load ptr, ptr %var.file, align 8
-  %var.load404 = load ptr, ptr %var.alias, align 8
-  %concat.lhs405 = load i64, ptr @str.17.struct, align 8
-  %concat.lhs406 = and i64 %concat.lhs405, 281474976710655
-  %str.tag407 = lshr i64 %concat.lhs405, 48
-  %str.immortal408 = icmp eq i64 %str.tag407, 0
-  br i1 %str.immortal408, label %str_ok410, label %str_gen_check409
-
-choice.exit383:                                   ; preds = %concat.tot.len483, %choice.then381
-  %choice.res502 = phi { i1, i64 } [ %ram.pay402, %choice.then381 ], [ %ram.pay501, %concat.tot.len483 ]
-  br label %choice.exit341
-
-str_gen_check409:                                 ; preds = %choice.else382
-  %arena.gen412 = call ptr @dva_arena_current()
-  %arena.gen413 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen412, i32 0, i32 4
-  %arena.gen414 = load i64, ptr %arena.gen413, align 8
-  %str.tag.match415 = icmp eq i64 %str.tag407, %arena.gen414
-  br i1 %str.tag.match415, label %str_ok410, label %str_stale411
-
-str_ok410:                                        ; preds = %str_stale411, %str_gen_check409, %choice.else382
-  %concat.lhs416 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.17.struct, i32 0, i32 1), align 8
-  %concat.rhs417 = getelementptr inbounds { i64, ptr }, ptr %var.load404, i32 0, i32 0
-  %concat.rhs418 = load i64, ptr %concat.rhs417, align 8
-  %concat.rhs419 = and i64 %concat.rhs418, 281474976710655
-  %str.tag420 = lshr i64 %concat.rhs418, 48
-  %str.immortal421 = icmp eq i64 %str.tag420, 0
-  br i1 %str.immortal421, label %str_ok423, label %str_gen_check422
-
-str_stale411:                                     ; preds = %str_gen_check409
+str_stale364:                                     ; preds = %str_gen_check362
   %26 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok410
+  br label %str_ok363
 
-str_gen_check422:                                 ; preds = %str_ok410
-  %arena.gen425 = call ptr @dva_arena_current()
-  %arena.gen426 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen425, i32 0, i32 4
-  %arena.gen427 = load i64, ptr %arena.gen426, align 8
-  %str.tag.match428 = icmp eq i64 %str.tag420, %arena.gen427
-  br i1 %str.tag.match428, label %str_ok423, label %str_stale424
+concat.sum.len374:                                ; preds = %str_overflow_abort375, %str_ok363
+  %concat.tot.len376 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum372, i64 1)
+  %sum377 = extractvalue { i64, i1 } %concat.tot.len376, 0
+  %ovf378 = extractvalue { i64, i1 } %concat.tot.len376, 1
+  br i1 %ovf378, label %str_overflow_abort380, label %concat.tot.len379
 
-str_ok423:                                        ; preds = %str_stale424, %str_gen_check422, %str_ok410
-  %concat.rhs429 = getelementptr inbounds { i64, ptr }, ptr %var.load404, i32 0, i32 1
-  %concat.rhs430 = load ptr, ptr %concat.rhs429, align 8
-  %concat.sum.len431 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs406, i64 %concat.rhs419)
-  %sum432 = extractvalue { i64, i1 } %concat.sum.len431, 0
-  %ovf433 = extractvalue { i64, i1 } %concat.sum.len431, 1
-  br i1 %ovf433, label %str_overflow_abort435, label %concat.sum.len434
-
-str_stale424:                                     ; preds = %str_gen_check422
-  %27 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+str_overflow_abort375:                            ; preds = %str_ok363
+  %27 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %str_ok423
+  br label %concat.sum.len374
 
-concat.sum.len434:                                ; preds = %str_overflow_abort435, %str_ok423
-  %concat.tot.len436 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum432, i64 1)
-  %sum437 = extractvalue { i64, i1 } %concat.tot.len436, 0
-  %ovf438 = extractvalue { i64, i1 } %concat.tot.len436, 1
-  br i1 %ovf438, label %str_overflow_abort440, label %concat.tot.len439
+concat.tot.len379:                                ; preds = %str_overflow_abort380, %concat.sum.len374
+  %arena.cur381 = call ptr @dva_arena_current()
+  %concat.buf382 = call ptr @dva_arena_alloc(ptr %arena.cur381, i64 %sum377)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf382, ptr align 1 %concat.lhs356, i64 %concat.lhs346, i1 false)
+  %concat.mid383 = getelementptr i8, ptr %concat.buf382, i64 %concat.lhs346
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid383, ptr align 1 %concat.rhs370, i64 %concat.rhs359, i1 false)
+  %concat.nul384 = getelementptr i8, ptr %concat.buf382, i64 %sum372
+  store i8 0, ptr %concat.nul384, align 1
+  %arena.cur385 = call ptr @dva_arena_current()
+  %concat.str386 = call ptr @dva_arena_alloc(ptr %arena.cur385, i64 16)
+  %str.build.len.gep387 = getelementptr inbounds { i64, ptr }, ptr %concat.str386, i32 0, i32 0
+  store i64 %sum372, ptr %str.build.len.gep387, align 8
+  %str.build.data.gep388 = getelementptr inbounds { i64, ptr }, ptr %concat.str386, i32 0, i32 1
+  store ptr %concat.buf382, ptr %str.build.data.gep388, align 8
+  %concat.lhs389 = getelementptr inbounds { i64, ptr }, ptr %concat.str386, i32 0, i32 0
+  %concat.lhs390 = load i64, ptr %concat.lhs389, align 8
+  %concat.lhs391 = and i64 %concat.lhs390, 281474976710655
+  %str.tag392 = lshr i64 %concat.lhs390, 48
+  %str.immortal393 = icmp eq i64 %str.tag392, 0
+  br i1 %str.immortal393, label %str_ok395, label %str_gen_check394
 
-str_overflow_abort435:                            ; preds = %str_ok423
+str_overflow_abort380:                            ; preds = %concat.sum.len374
   %28 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %concat.sum.len434
+  br label %concat.tot.len379
 
-concat.tot.len439:                                ; preds = %str_overflow_abort440, %concat.sum.len434
-  %arena.cur441 = call ptr @dva_arena_current()
-  %concat.buf442 = call ptr @dva_arena_alloc(ptr %arena.cur441, i64 %sum437)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf442, ptr align 1 %concat.lhs416, i64 %concat.lhs406, i1 false)
-  %concat.mid443 = getelementptr i8, ptr %concat.buf442, i64 %concat.lhs406
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid443, ptr align 1 %concat.rhs430, i64 %concat.rhs419, i1 false)
-  %concat.nul444 = getelementptr i8, ptr %concat.buf442, i64 %sum432
-  store i8 0, ptr %concat.nul444, align 1
-  %arena.cur445 = call ptr @dva_arena_current()
-  %concat.str446 = call ptr @dva_arena_alloc(ptr %arena.cur445, i64 16)
-  %str.build.len.gep447 = getelementptr inbounds { i64, ptr }, ptr %concat.str446, i32 0, i32 0
-  store i64 %sum432, ptr %str.build.len.gep447, align 8
-  %str.build.data.gep448 = getelementptr inbounds { i64, ptr }, ptr %concat.str446, i32 0, i32 1
-  store ptr %concat.buf442, ptr %str.build.data.gep448, align 8
-  %concat.lhs449 = getelementptr inbounds { i64, ptr }, ptr %concat.str446, i32 0, i32 0
-  %concat.lhs450 = load i64, ptr %concat.lhs449, align 8
-  %concat.lhs451 = and i64 %concat.lhs450, 281474976710655
-  %str.tag452 = lshr i64 %concat.lhs450, 48
-  %str.immortal453 = icmp eq i64 %str.tag452, 0
-  br i1 %str.immortal453, label %str_ok455, label %str_gen_check454
+str_gen_check394:                                 ; preds = %concat.tot.len379
+  %arena.gen397 = call ptr @dva_arena_current()
+  %arena.gen398 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen397, i32 0, i32 4
+  %arena.gen399 = load i64, ptr %arena.gen398, align 8
+  %str.tag.match400 = icmp eq i64 %str.tag392, %arena.gen399
+  br i1 %str.tag.match400, label %str_ok395, label %str_stale396
 
-str_overflow_abort440:                            ; preds = %concat.sum.len434
-  %29 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_ok395:                                        ; preds = %str_stale396, %str_gen_check394, %concat.tot.len379
+  %concat.lhs401 = getelementptr inbounds { i64, ptr }, ptr %concat.str386, i32 0, i32 1
+  %concat.lhs402 = load ptr, ptr %concat.lhs401, align 8
+  %concat.rhs403 = load i64, ptr @str.22.struct, align 8
+  %concat.rhs404 = and i64 %concat.rhs403, 281474976710655
+  %str.tag405 = lshr i64 %concat.rhs403, 48
+  %str.immortal406 = icmp eq i64 %str.tag405, 0
+  br i1 %str.immortal406, label %str_ok408, label %str_gen_check407
+
+str_stale396:                                     ; preds = %str_gen_check394
+  %29 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.tot.len439
+  br label %str_ok395
 
-str_gen_check454:                                 ; preds = %concat.tot.len439
-  %arena.gen457 = call ptr @dva_arena_current()
-  %arena.gen458 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen457, i32 0, i32 4
-  %arena.gen459 = load i64, ptr %arena.gen458, align 8
-  %str.tag.match460 = icmp eq i64 %str.tag452, %arena.gen459
-  br i1 %str.tag.match460, label %str_ok455, label %str_stale456
+str_gen_check407:                                 ; preds = %str_ok395
+  %arena.gen410 = call ptr @dva_arena_current()
+  %arena.gen411 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen410, i32 0, i32 4
+  %arena.gen412 = load i64, ptr %arena.gen411, align 8
+  %str.tag.match413 = icmp eq i64 %str.tag405, %arena.gen412
+  br i1 %str.tag.match413, label %str_ok408, label %str_stale409
 
-str_ok455:                                        ; preds = %str_stale456, %str_gen_check454, %concat.tot.len439
-  %concat.lhs461 = getelementptr inbounds { i64, ptr }, ptr %concat.str446, i32 0, i32 1
-  %concat.lhs462 = load ptr, ptr %concat.lhs461, align 8
-  %concat.rhs463 = load i64, ptr @str.22.struct, align 8
-  %concat.rhs464 = and i64 %concat.rhs463, 281474976710655
-  %str.tag465 = lshr i64 %concat.rhs463, 48
-  %str.immortal466 = icmp eq i64 %str.tag465, 0
-  br i1 %str.immortal466, label %str_ok468, label %str_gen_check467
+str_ok408:                                        ; preds = %str_stale409, %str_gen_check407, %str_ok395
+  %concat.rhs414 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.22.struct, i32 0, i32 1), align 8
+  %concat.sum.len415 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs391, i64 %concat.rhs404)
+  %sum416 = extractvalue { i64, i1 } %concat.sum.len415, 0
+  %ovf417 = extractvalue { i64, i1 } %concat.sum.len415, 1
+  br i1 %ovf417, label %str_overflow_abort419, label %concat.sum.len418
 
-str_stale456:                                     ; preds = %str_gen_check454
+str_stale409:                                     ; preds = %str_gen_check407
   %30 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok455
+  br label %str_ok408
 
-str_gen_check467:                                 ; preds = %str_ok455
-  %arena.gen470 = call ptr @dva_arena_current()
-  %arena.gen471 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen470, i32 0, i32 4
-  %arena.gen472 = load i64, ptr %arena.gen471, align 8
-  %str.tag.match473 = icmp eq i64 %str.tag465, %arena.gen472
-  br i1 %str.tag.match473, label %str_ok468, label %str_stale469
+concat.sum.len418:                                ; preds = %str_overflow_abort419, %str_ok408
+  %concat.tot.len420 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum416, i64 1)
+  %sum421 = extractvalue { i64, i1 } %concat.tot.len420, 0
+  %ovf422 = extractvalue { i64, i1 } %concat.tot.len420, 1
+  br i1 %ovf422, label %str_overflow_abort424, label %concat.tot.len423
 
-str_ok468:                                        ; preds = %str_stale469, %str_gen_check467, %str_ok455
-  %concat.rhs474 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.22.struct, i32 0, i32 1), align 8
-  %concat.sum.len475 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs451, i64 %concat.rhs464)
-  %sum476 = extractvalue { i64, i1 } %concat.sum.len475, 0
-  %ovf477 = extractvalue { i64, i1 } %concat.sum.len475, 1
-  br i1 %ovf477, label %str_overflow_abort479, label %concat.sum.len478
-
-str_stale469:                                     ; preds = %str_gen_check467
-  %31 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+str_overflow_abort419:                            ; preds = %str_ok408
+  %31 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %str_ok468
+  br label %concat.sum.len418
 
-concat.sum.len478:                                ; preds = %str_overflow_abort479, %str_ok468
-  %concat.tot.len480 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum476, i64 1)
-  %sum481 = extractvalue { i64, i1 } %concat.tot.len480, 0
-  %ovf482 = extractvalue { i64, i1 } %concat.tot.len480, 1
-  br i1 %ovf482, label %str_overflow_abort484, label %concat.tot.len483
+concat.tot.len423:                                ; preds = %str_overflow_abort424, %concat.sum.len418
+  %arena.cur425 = call ptr @dva_arena_current()
+  %concat.buf426 = call ptr @dva_arena_alloc(ptr %arena.cur425, i64 %sum421)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf426, ptr align 1 %concat.lhs402, i64 %concat.lhs391, i1 false)
+  %concat.mid427 = getelementptr i8, ptr %concat.buf426, i64 %concat.lhs391
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid427, ptr align 1 %concat.rhs414, i64 %concat.rhs404, i1 false)
+  %concat.nul428 = getelementptr i8, ptr %concat.buf426, i64 %sum416
+  store i8 0, ptr %concat.nul428, align 1
+  %arena.cur429 = call ptr @dva_arena_current()
+  %concat.str430 = call ptr @dva_arena_alloc(ptr %arena.cur429, i64 16)
+  %str.build.len.gep431 = getelementptr inbounds { i64, ptr }, ptr %concat.str430, i32 0, i32 0
+  store i64 %sum416, ptr %str.build.len.gep431, align 8
+  %str.build.data.gep432 = getelementptr inbounds { i64, ptr }, ptr %concat.str430, i32 0, i32 1
+  store ptr %concat.buf426, ptr %str.build.data.gep432, align 8
+  %var.load433 = load ptr, ptr %var.dde, align 8
+  %fld.gep434 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load433, i32 0, i32 2
+  %fld.load435 = load i64, ptr %fld.gep434, align 8
+  %var.load436 = load ptr, ptr %var.dde, align 8
+  %fld.gep437 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load436, i32 0, i32 3
+  %fld.load438 = load i64, ptr %fld.gep437, align 8
+  %call.res439 = call ptr @"ccl::ccl_error"(ptr %var.load343, ptr %concat.str430, i64 %fld.load435, i64 %fld.load438)
+  store ptr %call.res439, ptr %"var.err_val'", align 8
+  br label %choice.exit342
 
-str_overflow_abort479:                            ; preds = %str_ok468
+str_overflow_abort424:                            ; preds = %concat.sum.len418
   %32 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %concat.sum.len478
+  br label %concat.tot.len423
 
-concat.tot.len483:                                ; preds = %str_overflow_abort484, %concat.sum.len478
-  %arena.cur485 = call ptr @dva_arena_current()
-  %concat.buf486 = call ptr @dva_arena_alloc(ptr %arena.cur485, i64 %sum481)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf486, ptr align 1 %concat.lhs462, i64 %concat.lhs451, i1 false)
-  %concat.mid487 = getelementptr i8, ptr %concat.buf486, i64 %concat.lhs451
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid487, ptr align 1 %concat.rhs474, i64 %concat.rhs464, i1 false)
-  %concat.nul488 = getelementptr i8, ptr %concat.buf486, i64 %sum476
-  store i8 0, ptr %concat.nul488, align 1
-  %arena.cur489 = call ptr @dva_arena_current()
-  %concat.str490 = call ptr @dva_arena_alloc(ptr %arena.cur489, i64 16)
-  %str.build.len.gep491 = getelementptr inbounds { i64, ptr }, ptr %concat.str490, i32 0, i32 0
-  store i64 %sum476, ptr %str.build.len.gep491, align 8
-  %str.build.data.gep492 = getelementptr inbounds { i64, ptr }, ptr %concat.str490, i32 0, i32 1
-  store ptr %concat.buf486, ptr %str.build.data.gep492, align 8
-  %var.load493 = load ptr, ptr %var.e, align 8
-  %fld.gep494 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load493, i32 0, i32 2
-  %fld.load495 = load i64, ptr %fld.gep494, align 8
-  %var.load496 = load ptr, ptr %var.e, align 8
-  %fld.gep497 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load496, i32 0, i32 3
-  %fld.load498 = load i64, ptr %fld.gep497, align 8
-  %call.res499 = call ptr @"ccl::ccl_error"(ptr %var.load403, ptr %concat.str490, i64 %fld.load495, i64 %fld.load498)
-  %p.to.i64500 = ptrtoint ptr %call.res499 to i64
-  %ram.pay501 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64500, 1
-  br label %choice.exit383
+str_gen_check446:                                 ; preds = %choice.else341
+  %arena.gen449 = call ptr @dva_arena_current()
+  %arena.gen450 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen449, i32 0, i32 4
+  %arena.gen451 = load i64, ptr %arena.gen450, align 8
+  %str.tag.match452 = icmp eq i64 %str.tag444, %arena.gen451
+  br i1 %str.tag.match452, label %str_ok447, label %str_stale448
 
-str_overflow_abort484:                            ; preds = %concat.sum.len478
-  %33 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_ok447:                                        ; preds = %str_stale448, %str_gen_check446, %choice.else341
+  %eq.rhs.len453 = load i64, ptr @str.23.struct, align 8
+  %eq.rhs.len454 = and i64 %eq.rhs.len453, 281474976710655
+  %str.tag455 = lshr i64 %eq.rhs.len453, 48
+  %str.immortal456 = icmp eq i64 %str.tag455, 0
+  br i1 %str.immortal456, label %str_ok458, label %str_gen_check457
+
+str_stale448:                                     ; preds = %str_gen_check446
+  %33 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.tot.len483
+  br label %str_ok447
 
-choice.case506:                                   ; preds = %choice.next
-  %pay.gep511 = getelementptr inbounds { i64, ptr }, ptr %fld.load80, i32 0, i32 1
-  %payload.ptr512 = load ptr, ptr %pay.gep511, align 8
-  store ptr %payload.ptr512, ptr %var._513, align 8
-  %var.load514 = load ptr, ptr %var.file, align 8
-  %var.load515 = load ptr, ptr %var.alias, align 8
-  %concat.lhs516 = load i64, ptr @str.17.struct, align 8
-  %concat.lhs517 = and i64 %concat.lhs516, 281474976710655
-  %str.tag518 = lshr i64 %concat.lhs516, 48
-  %str.immortal519 = icmp eq i64 %str.tag518, 0
-  br i1 %str.immortal519, label %str_ok521, label %str_gen_check520
+str_gen_check457:                                 ; preds = %str_ok447
+  %arena.gen460 = call ptr @dva_arena_current()
+  %arena.gen461 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen460, i32 0, i32 4
+  %arena.gen462 = load i64, ptr %arena.gen461, align 8
+  %str.tag.match463 = icmp eq i64 %str.tag455, %arena.gen462
+  br i1 %str.tag.match463, label %str_ok458, label %str_stale459
 
-choice.next507:                                   ; preds = %choice.next
-  br label %choice.exit81
+str_ok458:                                        ; preds = %str_stale459, %str_gen_check457, %str_ok447
+  %eq.len464 = icmp eq i64 %eq.lhs.len443, %eq.rhs.len454
+  br i1 %eq.len464, label %str.eq.then465, label %str.eq.else466
 
-str_gen_check520:                                 ; preds = %choice.case506
-  %arena.gen523 = call ptr @dva_arena_current()
-  %arena.gen524 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen523, i32 0, i32 4
-  %arena.gen525 = load i64, ptr %arena.gen524, align 8
-  %str.tag.match526 = icmp eq i64 %str.tag518, %arena.gen525
-  br i1 %str.tag.match526, label %str_ok521, label %str_stale522
-
-str_ok521:                                        ; preds = %str_stale522, %str_gen_check520, %choice.case506
-  %concat.lhs527 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.17.struct, i32 0, i32 1), align 8
-  %concat.rhs528 = getelementptr inbounds { i64, ptr }, ptr %var.load515, i32 0, i32 0
-  %concat.rhs529 = load i64, ptr %concat.rhs528, align 8
-  %concat.rhs530 = and i64 %concat.rhs529, 281474976710655
-  %str.tag531 = lshr i64 %concat.rhs529, 48
-  %str.immortal532 = icmp eq i64 %str.tag531, 0
-  br i1 %str.immortal532, label %str_ok534, label %str_gen_check533
-
-str_stale522:                                     ; preds = %str_gen_check520
+str_stale459:                                     ; preds = %str_gen_check457
   %34 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok521
+  br label %str_ok458
 
-str_gen_check533:                                 ; preds = %str_ok521
-  %arena.gen536 = call ptr @dva_arena_current()
-  %arena.gen537 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen536, i32 0, i32 4
-  %arena.gen538 = load i64, ptr %arena.gen537, align 8
-  %str.tag.match539 = icmp eq i64 %str.tag531, %arena.gen538
-  br i1 %str.tag.match539, label %str_ok534, label %str_stale535
+str.eq.then465:                                   ; preds = %str_ok458
+  %eq.lhs.data468 = getelementptr inbounds { i64, ptr }, ptr %var.load440, i32 0, i32 1
+  %eq.lhs.data469 = load ptr, ptr %eq.lhs.data468, align 8
+  %eq.rhs.data470 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.23.struct, i32 0, i32 1), align 8
+  %eq.memcmp471 = call i32 @memcmp(ptr %eq.lhs.data469, ptr %eq.rhs.data470, i64 %eq.lhs.len443)
+  %eq.cmp.zero472 = icmp eq i32 %eq.memcmp471, 0
+  br label %str.eq.merge467
 
-str_ok534:                                        ; preds = %str_stale535, %str_gen_check533, %str_ok521
-  %concat.rhs540 = getelementptr inbounds { i64, ptr }, ptr %var.load515, i32 0, i32 1
-  %concat.rhs541 = load ptr, ptr %concat.rhs540, align 8
-  %concat.sum.len542 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs517, i64 %concat.rhs530)
-  %sum543 = extractvalue { i64, i1 } %concat.sum.len542, 0
-  %ovf544 = extractvalue { i64, i1 } %concat.sum.len542, 1
-  br i1 %ovf544, label %str_overflow_abort546, label %concat.sum.len545
+str.eq.else466:                                   ; preds = %str_ok458
+  br label %str.eq.merge467
 
-str_stale535:                                     ; preds = %str_gen_check533
+str.eq.merge467:                                  ; preds = %str.eq.else466, %str.eq.then465
+  %str.eq.result473 = phi i1 [ %eq.cmp.zero472, %str.eq.then465 ], [ false, %str.eq.else466 ]
+  br i1 %str.eq.result473, label %choice.then474, label %choice.else475
+
+choice.then474:                                   ; preds = %str.eq.merge467
+  %var.load477 = load ptr, ptr %var.file, align 8
+  %var.load478 = load ptr, ptr %var.alias, align 8
+  %concat.lhs479 = load i64, ptr @str.21.struct, align 8
+  %concat.lhs480 = and i64 %concat.lhs479, 281474976710655
+  %str.tag481 = lshr i64 %concat.lhs479, 48
+  %str.immortal482 = icmp eq i64 %str.tag481, 0
+  br i1 %str.immortal482, label %str_ok484, label %str_gen_check483
+
+choice.else475:                                   ; preds = %str.eq.merge467
+  %var.load574 = load ptr, ptr %var.file, align 8
+  %var.load575 = load ptr, ptr %var.alias, align 8
+  %concat.lhs576 = load i64, ptr @str.25.struct, align 8
+  %concat.lhs577 = and i64 %concat.lhs576, 281474976710655
+  %str.tag578 = lshr i64 %concat.lhs576, 48
+  %str.immortal579 = icmp eq i64 %str.tag578, 0
+  br i1 %str.immortal579, label %str_ok581, label %str_gen_check580
+
+choice.exit476:                                   ; preds = %concat.tot.len745, %concat.tot.len557
+  br label %choice.exit342
+
+str_gen_check483:                                 ; preds = %choice.then474
+  %arena.gen486 = call ptr @dva_arena_current()
+  %arena.gen487 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen486, i32 0, i32 4
+  %arena.gen488 = load i64, ptr %arena.gen487, align 8
+  %str.tag.match489 = icmp eq i64 %str.tag481, %arena.gen488
+  br i1 %str.tag.match489, label %str_ok484, label %str_stale485
+
+str_ok484:                                        ; preds = %str_stale485, %str_gen_check483, %choice.then474
+  %concat.lhs490 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.21.struct, i32 0, i32 1), align 8
+  %concat.rhs491 = getelementptr inbounds { i64, ptr }, ptr %var.load478, i32 0, i32 0
+  %concat.rhs492 = load i64, ptr %concat.rhs491, align 8
+  %concat.rhs493 = and i64 %concat.rhs492, 281474976710655
+  %str.tag494 = lshr i64 %concat.rhs492, 48
+  %str.immortal495 = icmp eq i64 %str.tag494, 0
+  br i1 %str.immortal495, label %str_ok497, label %str_gen_check496
+
+str_stale485:                                     ; preds = %str_gen_check483
   %35 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok534
+  br label %str_ok484
 
-concat.sum.len545:                                ; preds = %str_overflow_abort546, %str_ok534
-  %concat.tot.len547 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum543, i64 1)
-  %sum548 = extractvalue { i64, i1 } %concat.tot.len547, 0
-  %ovf549 = extractvalue { i64, i1 } %concat.tot.len547, 1
-  br i1 %ovf549, label %str_overflow_abort551, label %concat.tot.len550
+str_gen_check496:                                 ; preds = %str_ok484
+  %arena.gen499 = call ptr @dva_arena_current()
+  %arena.gen500 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen499, i32 0, i32 4
+  %arena.gen501 = load i64, ptr %arena.gen500, align 8
+  %str.tag.match502 = icmp eq i64 %str.tag494, %arena.gen501
+  br i1 %str.tag.match502, label %str_ok497, label %str_stale498
 
-str_overflow_abort546:                            ; preds = %str_ok534
-  %36 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_ok497:                                        ; preds = %str_stale498, %str_gen_check496, %str_ok484
+  %concat.rhs503 = getelementptr inbounds { i64, ptr }, ptr %var.load478, i32 0, i32 1
+  %concat.rhs504 = load ptr, ptr %concat.rhs503, align 8
+  %concat.sum.len505 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs480, i64 %concat.rhs493)
+  %sum506 = extractvalue { i64, i1 } %concat.sum.len505, 0
+  %ovf507 = extractvalue { i64, i1 } %concat.sum.len505, 1
+  br i1 %ovf507, label %str_overflow_abort509, label %concat.sum.len508
+
+str_stale498:                                     ; preds = %str_gen_check496
+  %36 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.sum.len545
+  br label %str_ok497
 
-concat.tot.len550:                                ; preds = %str_overflow_abort551, %concat.sum.len545
-  %arena.cur552 = call ptr @dva_arena_current()
-  %concat.buf553 = call ptr @dva_arena_alloc(ptr %arena.cur552, i64 %sum548)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf553, ptr align 1 %concat.lhs527, i64 %concat.lhs517, i1 false)
-  %concat.mid554 = getelementptr i8, ptr %concat.buf553, i64 %concat.lhs517
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid554, ptr align 1 %concat.rhs541, i64 %concat.rhs530, i1 false)
-  %concat.nul555 = getelementptr i8, ptr %concat.buf553, i64 %sum543
-  store i8 0, ptr %concat.nul555, align 1
-  %arena.cur556 = call ptr @dva_arena_current()
-  %concat.str557 = call ptr @dva_arena_alloc(ptr %arena.cur556, i64 16)
-  %str.build.len.gep558 = getelementptr inbounds { i64, ptr }, ptr %concat.str557, i32 0, i32 0
-  store i64 %sum543, ptr %str.build.len.gep558, align 8
-  %str.build.data.gep559 = getelementptr inbounds { i64, ptr }, ptr %concat.str557, i32 0, i32 1
-  store ptr %concat.buf553, ptr %str.build.data.gep559, align 8
-  %concat.lhs560 = getelementptr inbounds { i64, ptr }, ptr %concat.str557, i32 0, i32 0
-  %concat.lhs561 = load i64, ptr %concat.lhs560, align 8
-  %concat.lhs562 = and i64 %concat.lhs561, 281474976710655
-  %str.tag563 = lshr i64 %concat.lhs561, 48
-  %str.immortal564 = icmp eq i64 %str.tag563, 0
-  br i1 %str.immortal564, label %str_ok566, label %str_gen_check565
+concat.sum.len508:                                ; preds = %str_overflow_abort509, %str_ok497
+  %concat.tot.len510 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum506, i64 1)
+  %sum511 = extractvalue { i64, i1 } %concat.tot.len510, 0
+  %ovf512 = extractvalue { i64, i1 } %concat.tot.len510, 1
+  br i1 %ovf512, label %str_overflow_abort514, label %concat.tot.len513
 
-str_overflow_abort551:                            ; preds = %concat.sum.len545
+str_overflow_abort509:                            ; preds = %str_ok497
   %37 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %concat.tot.len550
+  br label %concat.sum.len508
 
-str_gen_check565:                                 ; preds = %concat.tot.len550
-  %arena.gen568 = call ptr @dva_arena_current()
-  %arena.gen569 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen568, i32 0, i32 4
-  %arena.gen570 = load i64, ptr %arena.gen569, align 8
-  %str.tag.match571 = icmp eq i64 %str.tag563, %arena.gen570
-  br i1 %str.tag.match571, label %str_ok566, label %str_stale567
+concat.tot.len513:                                ; preds = %str_overflow_abort514, %concat.sum.len508
+  %arena.cur515 = call ptr @dva_arena_current()
+  %concat.buf516 = call ptr @dva_arena_alloc(ptr %arena.cur515, i64 %sum511)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf516, ptr align 1 %concat.lhs490, i64 %concat.lhs480, i1 false)
+  %concat.mid517 = getelementptr i8, ptr %concat.buf516, i64 %concat.lhs480
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid517, ptr align 1 %concat.rhs504, i64 %concat.rhs493, i1 false)
+  %concat.nul518 = getelementptr i8, ptr %concat.buf516, i64 %sum506
+  store i8 0, ptr %concat.nul518, align 1
+  %arena.cur519 = call ptr @dva_arena_current()
+  %concat.str520 = call ptr @dva_arena_alloc(ptr %arena.cur519, i64 16)
+  %str.build.len.gep521 = getelementptr inbounds { i64, ptr }, ptr %concat.str520, i32 0, i32 0
+  store i64 %sum506, ptr %str.build.len.gep521, align 8
+  %str.build.data.gep522 = getelementptr inbounds { i64, ptr }, ptr %concat.str520, i32 0, i32 1
+  store ptr %concat.buf516, ptr %str.build.data.gep522, align 8
+  %concat.lhs523 = getelementptr inbounds { i64, ptr }, ptr %concat.str520, i32 0, i32 0
+  %concat.lhs524 = load i64, ptr %concat.lhs523, align 8
+  %concat.lhs525 = and i64 %concat.lhs524, 281474976710655
+  %str.tag526 = lshr i64 %concat.lhs524, 48
+  %str.immortal527 = icmp eq i64 %str.tag526, 0
+  br i1 %str.immortal527, label %str_ok529, label %str_gen_check528
 
-str_ok566:                                        ; preds = %str_stale567, %str_gen_check565, %concat.tot.len550
-  %concat.lhs572 = getelementptr inbounds { i64, ptr }, ptr %concat.str557, i32 0, i32 1
-  %concat.lhs573 = load ptr, ptr %concat.lhs572, align 8
-  %concat.rhs574 = load i64, ptr @str.23.struct, align 8
-  %concat.rhs575 = and i64 %concat.rhs574, 281474976710655
-  %str.tag576 = lshr i64 %concat.rhs574, 48
-  %str.immortal577 = icmp eq i64 %str.tag576, 0
-  br i1 %str.immortal577, label %str_ok579, label %str_gen_check578
-
-str_stale567:                                     ; preds = %str_gen_check565
-  %38 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+str_overflow_abort514:                            ; preds = %concat.sum.len508
+  %38 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %str_ok566
+  br label %concat.tot.len513
 
-str_gen_check578:                                 ; preds = %str_ok566
-  %arena.gen581 = call ptr @dva_arena_current()
-  %arena.gen582 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen581, i32 0, i32 4
-  %arena.gen583 = load i64, ptr %arena.gen582, align 8
-  %str.tag.match584 = icmp eq i64 %str.tag576, %arena.gen583
-  br i1 %str.tag.match584, label %str_ok579, label %str_stale580
+str_gen_check528:                                 ; preds = %concat.tot.len513
+  %arena.gen531 = call ptr @dva_arena_current()
+  %arena.gen532 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen531, i32 0, i32 4
+  %arena.gen533 = load i64, ptr %arena.gen532, align 8
+  %str.tag.match534 = icmp eq i64 %str.tag526, %arena.gen533
+  br i1 %str.tag.match534, label %str_ok529, label %str_stale530
 
-str_ok579:                                        ; preds = %str_stale580, %str_gen_check578, %str_ok566
-  %concat.rhs585 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.23.struct, i32 0, i32 1), align 8
-  %concat.sum.len586 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs562, i64 %concat.rhs575)
-  %sum587 = extractvalue { i64, i1 } %concat.sum.len586, 0
-  %ovf588 = extractvalue { i64, i1 } %concat.sum.len586, 1
-  br i1 %ovf588, label %str_overflow_abort590, label %concat.sum.len589
+str_ok529:                                        ; preds = %str_stale530, %str_gen_check528, %concat.tot.len513
+  %concat.lhs535 = getelementptr inbounds { i64, ptr }, ptr %concat.str520, i32 0, i32 1
+  %concat.lhs536 = load ptr, ptr %concat.lhs535, align 8
+  %concat.rhs537 = load i64, ptr @str.24.struct, align 8
+  %concat.rhs538 = and i64 %concat.rhs537, 281474976710655
+  %str.tag539 = lshr i64 %concat.rhs537, 48
+  %str.immortal540 = icmp eq i64 %str.tag539, 0
+  br i1 %str.immortal540, label %str_ok542, label %str_gen_check541
 
-str_stale580:                                     ; preds = %str_gen_check578
+str_stale530:                                     ; preds = %str_gen_check528
   %39 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %str_ok579
+  br label %str_ok529
 
-concat.sum.len589:                                ; preds = %str_overflow_abort590, %str_ok579
-  %concat.tot.len591 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum587, i64 1)
-  %sum592 = extractvalue { i64, i1 } %concat.tot.len591, 0
-  %ovf593 = extractvalue { i64, i1 } %concat.tot.len591, 1
-  br i1 %ovf593, label %str_overflow_abort595, label %concat.tot.len594
+str_gen_check541:                                 ; preds = %str_ok529
+  %arena.gen544 = call ptr @dva_arena_current()
+  %arena.gen545 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen544, i32 0, i32 4
+  %arena.gen546 = load i64, ptr %arena.gen545, align 8
+  %str.tag.match547 = icmp eq i64 %str.tag539, %arena.gen546
+  br i1 %str.tag.match547, label %str_ok542, label %str_stale543
 
-str_overflow_abort590:                            ; preds = %str_ok579
-  %40 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+str_ok542:                                        ; preds = %str_stale543, %str_gen_check541, %str_ok529
+  %concat.rhs548 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.24.struct, i32 0, i32 1), align 8
+  %concat.sum.len549 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs525, i64 %concat.rhs538)
+  %sum550 = extractvalue { i64, i1 } %concat.sum.len549, 0
+  %ovf551 = extractvalue { i64, i1 } %concat.sum.len549, 1
+  br i1 %ovf551, label %str_overflow_abort553, label %concat.sum.len552
+
+str_stale543:                                     ; preds = %str_gen_check541
+  %40 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
-  br label %concat.sum.len589
+  br label %str_ok542
 
-concat.tot.len594:                                ; preds = %str_overflow_abort595, %concat.sum.len589
-  %arena.cur596 = call ptr @dva_arena_current()
-  %concat.buf597 = call ptr @dva_arena_alloc(ptr %arena.cur596, i64 %sum592)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf597, ptr align 1 %concat.lhs573, i64 %concat.lhs562, i1 false)
-  %concat.mid598 = getelementptr i8, ptr %concat.buf597, i64 %concat.lhs562
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid598, ptr align 1 %concat.rhs585, i64 %concat.rhs575, i1 false)
-  %concat.nul599 = getelementptr i8, ptr %concat.buf597, i64 %sum587
-  store i8 0, ptr %concat.nul599, align 1
-  %arena.cur600 = call ptr @dva_arena_current()
-  %concat.str601 = call ptr @dva_arena_alloc(ptr %arena.cur600, i64 16)
-  %str.build.len.gep602 = getelementptr inbounds { i64, ptr }, ptr %concat.str601, i32 0, i32 0
-  store i64 %sum587, ptr %str.build.len.gep602, align 8
-  %str.build.data.gep603 = getelementptr inbounds { i64, ptr }, ptr %concat.str601, i32 0, i32 1
-  store ptr %concat.buf597, ptr %str.build.data.gep603, align 8
-  %var.load604 = load ptr, ptr %var.e, align 8
-  %fld.gep605 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load604, i32 0, i32 2
-  %fld.load606 = load i64, ptr %fld.gep605, align 8
-  %var.load607 = load ptr, ptr %var.e, align 8
-  %fld.gep608 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load607, i32 0, i32 3
-  %fld.load609 = load i64, ptr %fld.gep608, align 8
-  %call.res610 = call ptr @"ccl::ccl_error"(ptr %var.load514, ptr %concat.str601, i64 %fld.load606, i64 %fld.load609)
-  %p.to.i64611 = ptrtoint ptr %call.res610 to i64
-  %ram.pay612 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64611, 1
-  br label %choice.exit81
+concat.sum.len552:                                ; preds = %str_overflow_abort553, %str_ok542
+  %concat.tot.len554 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum550, i64 1)
+  %sum555 = extractvalue { i64, i1 } %concat.tot.len554, 0
+  %ovf556 = extractvalue { i64, i1 } %concat.tot.len554, 1
+  br i1 %ovf556, label %str_overflow_abort558, label %concat.tot.len557
 
-str_overflow_abort595:                            ; preds = %concat.sum.len589
+str_overflow_abort553:                            ; preds = %str_ok542
   %41 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
   call void @exit(i32 1)
-  br label %concat.tot.len594
+  br label %concat.sum.len552
+
+concat.tot.len557:                                ; preds = %str_overflow_abort558, %concat.sum.len552
+  %arena.cur559 = call ptr @dva_arena_current()
+  %concat.buf560 = call ptr @dva_arena_alloc(ptr %arena.cur559, i64 %sum555)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf560, ptr align 1 %concat.lhs536, i64 %concat.lhs525, i1 false)
+  %concat.mid561 = getelementptr i8, ptr %concat.buf560, i64 %concat.lhs525
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid561, ptr align 1 %concat.rhs548, i64 %concat.rhs538, i1 false)
+  %concat.nul562 = getelementptr i8, ptr %concat.buf560, i64 %sum550
+  store i8 0, ptr %concat.nul562, align 1
+  %arena.cur563 = call ptr @dva_arena_current()
+  %concat.str564 = call ptr @dva_arena_alloc(ptr %arena.cur563, i64 16)
+  %str.build.len.gep565 = getelementptr inbounds { i64, ptr }, ptr %concat.str564, i32 0, i32 0
+  store i64 %sum550, ptr %str.build.len.gep565, align 8
+  %str.build.data.gep566 = getelementptr inbounds { i64, ptr }, ptr %concat.str564, i32 0, i32 1
+  store ptr %concat.buf560, ptr %str.build.data.gep566, align 8
+  %var.load567 = load ptr, ptr %var.dde, align 8
+  %fld.gep568 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load567, i32 0, i32 2
+  %fld.load569 = load i64, ptr %fld.gep568, align 8
+  %var.load570 = load ptr, ptr %var.dde, align 8
+  %fld.gep571 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load570, i32 0, i32 3
+  %fld.load572 = load i64, ptr %fld.gep571, align 8
+  %call.res573 = call ptr @"ccl::ccl_error"(ptr %var.load477, ptr %concat.str564, i64 %fld.load569, i64 %fld.load572)
+  store ptr %call.res573, ptr %"var.err_val'", align 8
+  br label %choice.exit476
+
+str_overflow_abort558:                            ; preds = %concat.sum.len552
+  %42 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len557
+
+str_gen_check580:                                 ; preds = %choice.else475
+  %arena.gen583 = call ptr @dva_arena_current()
+  %arena.gen584 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen583, i32 0, i32 4
+  %arena.gen585 = load i64, ptr %arena.gen584, align 8
+  %str.tag.match586 = icmp eq i64 %str.tag578, %arena.gen585
+  br i1 %str.tag.match586, label %str_ok581, label %str_stale582
+
+str_ok581:                                        ; preds = %str_stale582, %str_gen_check580, %choice.else475
+  %concat.lhs587 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.25.struct, i32 0, i32 1), align 8
+  %concat.rhs588 = getelementptr inbounds { i64, ptr }, ptr %var.load575, i32 0, i32 0
+  %concat.rhs589 = load i64, ptr %concat.rhs588, align 8
+  %concat.rhs590 = and i64 %concat.rhs589, 281474976710655
+  %str.tag591 = lshr i64 %concat.rhs589, 48
+  %str.immortal592 = icmp eq i64 %str.tag591, 0
+  br i1 %str.immortal592, label %str_ok594, label %str_gen_check593
+
+str_stale582:                                     ; preds = %str_gen_check580
+  %43 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok581
+
+str_gen_check593:                                 ; preds = %str_ok581
+  %arena.gen596 = call ptr @dva_arena_current()
+  %arena.gen597 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen596, i32 0, i32 4
+  %arena.gen598 = load i64, ptr %arena.gen597, align 8
+  %str.tag.match599 = icmp eq i64 %str.tag591, %arena.gen598
+  br i1 %str.tag.match599, label %str_ok594, label %str_stale595
+
+str_ok594:                                        ; preds = %str_stale595, %str_gen_check593, %str_ok581
+  %concat.rhs600 = getelementptr inbounds { i64, ptr }, ptr %var.load575, i32 0, i32 1
+  %concat.rhs601 = load ptr, ptr %concat.rhs600, align 8
+  %concat.sum.len602 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs577, i64 %concat.rhs590)
+  %sum603 = extractvalue { i64, i1 } %concat.sum.len602, 0
+  %ovf604 = extractvalue { i64, i1 } %concat.sum.len602, 1
+  br i1 %ovf604, label %str_overflow_abort606, label %concat.sum.len605
+
+str_stale595:                                     ; preds = %str_gen_check593
+  %44 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok594
+
+concat.sum.len605:                                ; preds = %str_overflow_abort606, %str_ok594
+  %concat.tot.len607 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum603, i64 1)
+  %sum608 = extractvalue { i64, i1 } %concat.tot.len607, 0
+  %ovf609 = extractvalue { i64, i1 } %concat.tot.len607, 1
+  br i1 %ovf609, label %str_overflow_abort611, label %concat.tot.len610
+
+str_overflow_abort606:                            ; preds = %str_ok594
+  %45 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len605
+
+concat.tot.len610:                                ; preds = %str_overflow_abort611, %concat.sum.len605
+  %arena.cur612 = call ptr @dva_arena_current()
+  %concat.buf613 = call ptr @dva_arena_alloc(ptr %arena.cur612, i64 %sum608)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf613, ptr align 1 %concat.lhs587, i64 %concat.lhs577, i1 false)
+  %concat.mid614 = getelementptr i8, ptr %concat.buf613, i64 %concat.lhs577
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid614, ptr align 1 %concat.rhs601, i64 %concat.rhs590, i1 false)
+  %concat.nul615 = getelementptr i8, ptr %concat.buf613, i64 %sum603
+  store i8 0, ptr %concat.nul615, align 1
+  %arena.cur616 = call ptr @dva_arena_current()
+  %concat.str617 = call ptr @dva_arena_alloc(ptr %arena.cur616, i64 16)
+  %str.build.len.gep618 = getelementptr inbounds { i64, ptr }, ptr %concat.str617, i32 0, i32 0
+  store i64 %sum603, ptr %str.build.len.gep618, align 8
+  %str.build.data.gep619 = getelementptr inbounds { i64, ptr }, ptr %concat.str617, i32 0, i32 1
+  store ptr %concat.buf613, ptr %str.build.data.gep619, align 8
+  %concat.lhs620 = getelementptr inbounds { i64, ptr }, ptr %concat.str617, i32 0, i32 0
+  %concat.lhs621 = load i64, ptr %concat.lhs620, align 8
+  %concat.lhs622 = and i64 %concat.lhs621, 281474976710655
+  %str.tag623 = lshr i64 %concat.lhs621, 48
+  %str.immortal624 = icmp eq i64 %str.tag623, 0
+  br i1 %str.immortal624, label %str_ok626, label %str_gen_check625
+
+str_overflow_abort611:                            ; preds = %concat.sum.len605
+  %46 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len610
+
+str_gen_check625:                                 ; preds = %concat.tot.len610
+  %arena.gen628 = call ptr @dva_arena_current()
+  %arena.gen629 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen628, i32 0, i32 4
+  %arena.gen630 = load i64, ptr %arena.gen629, align 8
+  %str.tag.match631 = icmp eq i64 %str.tag623, %arena.gen630
+  br i1 %str.tag.match631, label %str_ok626, label %str_stale627
+
+str_ok626:                                        ; preds = %str_stale627, %str_gen_check625, %concat.tot.len610
+  %concat.lhs632 = getelementptr inbounds { i64, ptr }, ptr %concat.str617, i32 0, i32 1
+  %concat.lhs633 = load ptr, ptr %concat.lhs632, align 8
+  %concat.rhs634 = load i64, ptr @str.26.struct, align 8
+  %concat.rhs635 = and i64 %concat.rhs634, 281474976710655
+  %str.tag636 = lshr i64 %concat.rhs634, 48
+  %str.immortal637 = icmp eq i64 %str.tag636, 0
+  br i1 %str.immortal637, label %str_ok639, label %str_gen_check638
+
+str_stale627:                                     ; preds = %str_gen_check625
+  %47 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok626
+
+str_gen_check638:                                 ; preds = %str_ok626
+  %arena.gen641 = call ptr @dva_arena_current()
+  %arena.gen642 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen641, i32 0, i32 4
+  %arena.gen643 = load i64, ptr %arena.gen642, align 8
+  %str.tag.match644 = icmp eq i64 %str.tag636, %arena.gen643
+  br i1 %str.tag.match644, label %str_ok639, label %str_stale640
+
+str_ok639:                                        ; preds = %str_stale640, %str_gen_check638, %str_ok626
+  %concat.rhs645 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.26.struct, i32 0, i32 1), align 8
+  %concat.sum.len646 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs622, i64 %concat.rhs635)
+  %sum647 = extractvalue { i64, i1 } %concat.sum.len646, 0
+  %ovf648 = extractvalue { i64, i1 } %concat.sum.len646, 1
+  br i1 %ovf648, label %str_overflow_abort650, label %concat.sum.len649
+
+str_stale640:                                     ; preds = %str_gen_check638
+  %48 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok639
+
+concat.sum.len649:                                ; preds = %str_overflow_abort650, %str_ok639
+  %concat.tot.len651 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum647, i64 1)
+  %sum652 = extractvalue { i64, i1 } %concat.tot.len651, 0
+  %ovf653 = extractvalue { i64, i1 } %concat.tot.len651, 1
+  br i1 %ovf653, label %str_overflow_abort655, label %concat.tot.len654
+
+str_overflow_abort650:                            ; preds = %str_ok639
+  %49 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len649
+
+concat.tot.len654:                                ; preds = %str_overflow_abort655, %concat.sum.len649
+  %arena.cur656 = call ptr @dva_arena_current()
+  %concat.buf657 = call ptr @dva_arena_alloc(ptr %arena.cur656, i64 %sum652)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf657, ptr align 1 %concat.lhs633, i64 %concat.lhs622, i1 false)
+  %concat.mid658 = getelementptr i8, ptr %concat.buf657, i64 %concat.lhs622
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid658, ptr align 1 %concat.rhs645, i64 %concat.rhs635, i1 false)
+  %concat.nul659 = getelementptr i8, ptr %concat.buf657, i64 %sum647
+  store i8 0, ptr %concat.nul659, align 1
+  %arena.cur660 = call ptr @dva_arena_current()
+  %concat.str661 = call ptr @dva_arena_alloc(ptr %arena.cur660, i64 16)
+  %str.build.len.gep662 = getelementptr inbounds { i64, ptr }, ptr %concat.str661, i32 0, i32 0
+  store i64 %sum647, ptr %str.build.len.gep662, align 8
+  %str.build.data.gep663 = getelementptr inbounds { i64, ptr }, ptr %concat.str661, i32 0, i32 1
+  store ptr %concat.buf657, ptr %str.build.data.gep663, align 8
+  %var.load664 = load ptr, ptr %var.k, align 8
+  %concat.lhs665 = getelementptr inbounds { i64, ptr }, ptr %concat.str661, i32 0, i32 0
+  %concat.lhs666 = load i64, ptr %concat.lhs665, align 8
+  %concat.lhs667 = and i64 %concat.lhs666, 281474976710655
+  %str.tag668 = lshr i64 %concat.lhs666, 48
+  %str.immortal669 = icmp eq i64 %str.tag668, 0
+  br i1 %str.immortal669, label %str_ok671, label %str_gen_check670
+
+str_overflow_abort655:                            ; preds = %concat.sum.len649
+  %50 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len654
+
+str_gen_check670:                                 ; preds = %concat.tot.len654
+  %arena.gen673 = call ptr @dva_arena_current()
+  %arena.gen674 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen673, i32 0, i32 4
+  %arena.gen675 = load i64, ptr %arena.gen674, align 8
+  %str.tag.match676 = icmp eq i64 %str.tag668, %arena.gen675
+  br i1 %str.tag.match676, label %str_ok671, label %str_stale672
+
+str_ok671:                                        ; preds = %str_stale672, %str_gen_check670, %concat.tot.len654
+  %concat.lhs677 = getelementptr inbounds { i64, ptr }, ptr %concat.str661, i32 0, i32 1
+  %concat.lhs678 = load ptr, ptr %concat.lhs677, align 8
+  %concat.rhs679 = getelementptr inbounds { i64, ptr }, ptr %var.load664, i32 0, i32 0
+  %concat.rhs680 = load i64, ptr %concat.rhs679, align 8
+  %concat.rhs681 = and i64 %concat.rhs680, 281474976710655
+  %str.tag682 = lshr i64 %concat.rhs680, 48
+  %str.immortal683 = icmp eq i64 %str.tag682, 0
+  br i1 %str.immortal683, label %str_ok685, label %str_gen_check684
+
+str_stale672:                                     ; preds = %str_gen_check670
+  %51 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok671
+
+str_gen_check684:                                 ; preds = %str_ok671
+  %arena.gen687 = call ptr @dva_arena_current()
+  %arena.gen688 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen687, i32 0, i32 4
+  %arena.gen689 = load i64, ptr %arena.gen688, align 8
+  %str.tag.match690 = icmp eq i64 %str.tag682, %arena.gen689
+  br i1 %str.tag.match690, label %str_ok685, label %str_stale686
+
+str_ok685:                                        ; preds = %str_stale686, %str_gen_check684, %str_ok671
+  %concat.rhs691 = getelementptr inbounds { i64, ptr }, ptr %var.load664, i32 0, i32 1
+  %concat.rhs692 = load ptr, ptr %concat.rhs691, align 8
+  %concat.sum.len693 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs667, i64 %concat.rhs681)
+  %sum694 = extractvalue { i64, i1 } %concat.sum.len693, 0
+  %ovf695 = extractvalue { i64, i1 } %concat.sum.len693, 1
+  br i1 %ovf695, label %str_overflow_abort697, label %concat.sum.len696
+
+str_stale686:                                     ; preds = %str_gen_check684
+  %52 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok685
+
+concat.sum.len696:                                ; preds = %str_overflow_abort697, %str_ok685
+  %concat.tot.len698 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum694, i64 1)
+  %sum699 = extractvalue { i64, i1 } %concat.tot.len698, 0
+  %ovf700 = extractvalue { i64, i1 } %concat.tot.len698, 1
+  br i1 %ovf700, label %str_overflow_abort702, label %concat.tot.len701
+
+str_overflow_abort697:                            ; preds = %str_ok685
+  %53 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len696
+
+concat.tot.len701:                                ; preds = %str_overflow_abort702, %concat.sum.len696
+  %arena.cur703 = call ptr @dva_arena_current()
+  %concat.buf704 = call ptr @dva_arena_alloc(ptr %arena.cur703, i64 %sum699)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf704, ptr align 1 %concat.lhs678, i64 %concat.lhs667, i1 false)
+  %concat.mid705 = getelementptr i8, ptr %concat.buf704, i64 %concat.lhs667
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid705, ptr align 1 %concat.rhs692, i64 %concat.rhs681, i1 false)
+  %concat.nul706 = getelementptr i8, ptr %concat.buf704, i64 %sum694
+  store i8 0, ptr %concat.nul706, align 1
+  %arena.cur707 = call ptr @dva_arena_current()
+  %concat.str708 = call ptr @dva_arena_alloc(ptr %arena.cur707, i64 16)
+  %str.build.len.gep709 = getelementptr inbounds { i64, ptr }, ptr %concat.str708, i32 0, i32 0
+  store i64 %sum694, ptr %str.build.len.gep709, align 8
+  %str.build.data.gep710 = getelementptr inbounds { i64, ptr }, ptr %concat.str708, i32 0, i32 1
+  store ptr %concat.buf704, ptr %str.build.data.gep710, align 8
+  %concat.lhs711 = getelementptr inbounds { i64, ptr }, ptr %concat.str708, i32 0, i32 0
+  %concat.lhs712 = load i64, ptr %concat.lhs711, align 8
+  %concat.lhs713 = and i64 %concat.lhs712, 281474976710655
+  %str.tag714 = lshr i64 %concat.lhs712, 48
+  %str.immortal715 = icmp eq i64 %str.tag714, 0
+  br i1 %str.immortal715, label %str_ok717, label %str_gen_check716
+
+str_overflow_abort702:                            ; preds = %concat.sum.len696
+  %54 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len701
+
+str_gen_check716:                                 ; preds = %concat.tot.len701
+  %arena.gen719 = call ptr @dva_arena_current()
+  %arena.gen720 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen719, i32 0, i32 4
+  %arena.gen721 = load i64, ptr %arena.gen720, align 8
+  %str.tag.match722 = icmp eq i64 %str.tag714, %arena.gen721
+  br i1 %str.tag.match722, label %str_ok717, label %str_stale718
+
+str_ok717:                                        ; preds = %str_stale718, %str_gen_check716, %concat.tot.len701
+  %concat.lhs723 = getelementptr inbounds { i64, ptr }, ptr %concat.str708, i32 0, i32 1
+  %concat.lhs724 = load ptr, ptr %concat.lhs723, align 8
+  %concat.rhs725 = load i64, ptr @str.13.struct, align 8
+  %concat.rhs726 = and i64 %concat.rhs725, 281474976710655
+  %str.tag727 = lshr i64 %concat.rhs725, 48
+  %str.immortal728 = icmp eq i64 %str.tag727, 0
+  br i1 %str.immortal728, label %str_ok730, label %str_gen_check729
+
+str_stale718:                                     ; preds = %str_gen_check716
+  %55 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok717
+
+str_gen_check729:                                 ; preds = %str_ok717
+  %arena.gen732 = call ptr @dva_arena_current()
+  %arena.gen733 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen732, i32 0, i32 4
+  %arena.gen734 = load i64, ptr %arena.gen733, align 8
+  %str.tag.match735 = icmp eq i64 %str.tag727, %arena.gen734
+  br i1 %str.tag.match735, label %str_ok730, label %str_stale731
+
+str_ok730:                                        ; preds = %str_stale731, %str_gen_check729, %str_ok717
+  %concat.rhs736 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.13.struct, i32 0, i32 1), align 8
+  %concat.sum.len737 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs713, i64 %concat.rhs726)
+  %sum738 = extractvalue { i64, i1 } %concat.sum.len737, 0
+  %ovf739 = extractvalue { i64, i1 } %concat.sum.len737, 1
+  br i1 %ovf739, label %str_overflow_abort741, label %concat.sum.len740
+
+str_stale731:                                     ; preds = %str_gen_check729
+  %56 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok730
+
+concat.sum.len740:                                ; preds = %str_overflow_abort741, %str_ok730
+  %concat.tot.len742 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum738, i64 1)
+  %sum743 = extractvalue { i64, i1 } %concat.tot.len742, 0
+  %ovf744 = extractvalue { i64, i1 } %concat.tot.len742, 1
+  br i1 %ovf744, label %str_overflow_abort746, label %concat.tot.len745
+
+str_overflow_abort741:                            ; preds = %str_ok730
+  %57 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len740
+
+concat.tot.len745:                                ; preds = %str_overflow_abort746, %concat.sum.len740
+  %arena.cur747 = call ptr @dva_arena_current()
+  %concat.buf748 = call ptr @dva_arena_alloc(ptr %arena.cur747, i64 %sum743)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf748, ptr align 1 %concat.lhs724, i64 %concat.lhs713, i1 false)
+  %concat.mid749 = getelementptr i8, ptr %concat.buf748, i64 %concat.lhs713
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid749, ptr align 1 %concat.rhs736, i64 %concat.rhs726, i1 false)
+  %concat.nul750 = getelementptr i8, ptr %concat.buf748, i64 %sum738
+  store i8 0, ptr %concat.nul750, align 1
+  %arena.cur751 = call ptr @dva_arena_current()
+  %concat.str752 = call ptr @dva_arena_alloc(ptr %arena.cur751, i64 16)
+  %str.build.len.gep753 = getelementptr inbounds { i64, ptr }, ptr %concat.str752, i32 0, i32 0
+  store i64 %sum738, ptr %str.build.len.gep753, align 8
+  %str.build.data.gep754 = getelementptr inbounds { i64, ptr }, ptr %concat.str752, i32 0, i32 1
+  store ptr %concat.buf748, ptr %str.build.data.gep754, align 8
+  %var.load755 = load ptr, ptr %var.dde, align 8
+  %fld.gep756 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load755, i32 0, i32 2
+  %fld.load757 = load i64, ptr %fld.gep756, align 8
+  %var.load758 = load ptr, ptr %var.dde, align 8
+  %fld.gep759 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load758, i32 0, i32 3
+  %fld.load760 = load i64, ptr %fld.gep759, align 8
+  %call.res761 = call ptr @"ccl::ccl_error"(ptr %var.load574, ptr %concat.str752, i64 %fld.load757, i64 %fld.load760)
+  store ptr %call.res761, ptr %"var.err_val'", align 8
+  br label %choice.exit476
+
+str_overflow_abort746:                            ; preds = %concat.sum.len740
+  %58 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len745
+
+choice.then763:                                   ; preds = %loop.exit.37
+  %var.load766 = load ptr, ptr %"var.err_val'", align 8
+  %p.to.i64767 = ptrtoint ptr %var.load766 to i64
+  %ram.pay768 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64767, 1
+  br label %choice.exit765
+
+choice.else764:                                   ; preds = %loop.exit.37
+  %var.load769 = load ptr, ptr %var.ddoc, align 8
+  %call.res770 = call i1 @"ccl::has"(ptr %var.load769, ptr @str.14.struct)
+  store i1 %call.res770, ptr %var.has_git, align 1
+  %var.load771 = load ptr, ptr %var.ddoc, align 8
+  %call.res772 = call i1 @"ccl::has"(ptr %var.load771, ptr @str.16.struct)
+  store i1 %call.res772, ptr %var.has_path, align 1
+  %var.load773 = load ptr, ptr %var.ddoc, align 8
+  %call.res774 = call i1 @"ccl::has"(ptr %var.load773, ptr @str.17.struct)
+  store i1 %call.res774, ptr %var.has_url, align 1
+  store i64 0, ptr %"var.count'", align 8
+  %var.load775 = load i1, ptr %var.has_git, align 1
+  br i1 %var.load775, label %choice.then776, label %choice.exit777
+
+choice.exit765:                                   ; preds = %choice.exit792, %choice.then763
+  %choice.res1194 = phi { i1, i64 } [ %ram.pay768, %choice.then763 ], [ %choice.res1193, %choice.exit792 ]
+  br label %choice.exit81
+
+choice.then776:                                   ; preds = %choice.else764
+  %var.load778 = load i64, ptr %"var.count'", align 8
+  %addtmp = add i64 %var.load778, 1
+  store i64 %addtmp, ptr %"var.count'", align 8
+  br label %choice.exit777
+
+choice.exit777:                                   ; preds = %choice.then776, %choice.else764
+  %var.load779 = load i1, ptr %var.has_path, align 1
+  br i1 %var.load779, label %choice.then780, label %choice.exit781
+
+choice.then780:                                   ; preds = %choice.exit777
+  %var.load782 = load i64, ptr %"var.count'", align 8
+  %addtmp783 = add i64 %var.load782, 1
+  store i64 %addtmp783, ptr %"var.count'", align 8
+  br label %choice.exit781
+
+choice.exit781:                                   ; preds = %choice.then780, %choice.exit777
+  %var.load784 = load i1, ptr %var.has_url, align 1
+  br i1 %var.load784, label %choice.then785, label %choice.exit786
+
+choice.then785:                                   ; preds = %choice.exit781
+  %var.load787 = load i64, ptr %"var.count'", align 8
+  %addtmp788 = add i64 %var.load787, 1
+  store i64 %addtmp788, ptr %"var.count'", align 8
+  br label %choice.exit786
+
+choice.exit786:                                   ; preds = %choice.then785, %choice.exit781
+  %var.load789 = load i64, ptr %"var.count'", align 8
+  %cmptmp = icmp ne i64 %var.load789, 1
+  br i1 %cmptmp, label %choice.then790, label %choice.else791
+
+choice.then790:                                   ; preds = %choice.exit786
+  %var.load793 = load ptr, ptr %var.file, align 8
+  %var.load794 = load ptr, ptr %var.alias, align 8
+  %concat.lhs795 = load i64, ptr @str.21.struct, align 8
+  %concat.lhs796 = and i64 %concat.lhs795, 281474976710655
+  %str.tag797 = lshr i64 %concat.lhs795, 48
+  %str.immortal798 = icmp eq i64 %str.tag797, 0
+  br i1 %str.immortal798, label %str_ok800, label %str_gen_check799
+
+choice.else791:                                   ; preds = %choice.exit786
+  %var.load892 = load i1, ptr %var.has_git, align 1
+  br i1 %var.load892, label %choice.then893, label %choice.else894
+
+choice.exit792:                                   ; preds = %choice.exit895, %concat.tot.len873
+  %choice.res1193 = phi { i1, i64 } [ %ram.pay891, %concat.tot.len873 ], [ %choice.res1192, %choice.exit895 ]
+  br label %choice.exit765
+
+str_gen_check799:                                 ; preds = %choice.then790
+  %arena.gen802 = call ptr @dva_arena_current()
+  %arena.gen803 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen802, i32 0, i32 4
+  %arena.gen804 = load i64, ptr %arena.gen803, align 8
+  %str.tag.match805 = icmp eq i64 %str.tag797, %arena.gen804
+  br i1 %str.tag.match805, label %str_ok800, label %str_stale801
+
+str_ok800:                                        ; preds = %str_stale801, %str_gen_check799, %choice.then790
+  %concat.lhs806 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.21.struct, i32 0, i32 1), align 8
+  %concat.rhs807 = getelementptr inbounds { i64, ptr }, ptr %var.load794, i32 0, i32 0
+  %concat.rhs808 = load i64, ptr %concat.rhs807, align 8
+  %concat.rhs809 = and i64 %concat.rhs808, 281474976710655
+  %str.tag810 = lshr i64 %concat.rhs808, 48
+  %str.immortal811 = icmp eq i64 %str.tag810, 0
+  br i1 %str.immortal811, label %str_ok813, label %str_gen_check812
+
+str_stale801:                                     ; preds = %str_gen_check799
+  %59 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok800
+
+str_gen_check812:                                 ; preds = %str_ok800
+  %arena.gen815 = call ptr @dva_arena_current()
+  %arena.gen816 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen815, i32 0, i32 4
+  %arena.gen817 = load i64, ptr %arena.gen816, align 8
+  %str.tag.match818 = icmp eq i64 %str.tag810, %arena.gen817
+  br i1 %str.tag.match818, label %str_ok813, label %str_stale814
+
+str_ok813:                                        ; preds = %str_stale814, %str_gen_check812, %str_ok800
+  %concat.rhs819 = getelementptr inbounds { i64, ptr }, ptr %var.load794, i32 0, i32 1
+  %concat.rhs820 = load ptr, ptr %concat.rhs819, align 8
+  %concat.sum.len821 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs796, i64 %concat.rhs809)
+  %sum822 = extractvalue { i64, i1 } %concat.sum.len821, 0
+  %ovf823 = extractvalue { i64, i1 } %concat.sum.len821, 1
+  br i1 %ovf823, label %str_overflow_abort825, label %concat.sum.len824
+
+str_stale814:                                     ; preds = %str_gen_check812
+  %60 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok813
+
+concat.sum.len824:                                ; preds = %str_overflow_abort825, %str_ok813
+  %concat.tot.len826 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum822, i64 1)
+  %sum827 = extractvalue { i64, i1 } %concat.tot.len826, 0
+  %ovf828 = extractvalue { i64, i1 } %concat.tot.len826, 1
+  br i1 %ovf828, label %str_overflow_abort830, label %concat.tot.len829
+
+str_overflow_abort825:                            ; preds = %str_ok813
+  %61 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len824
+
+concat.tot.len829:                                ; preds = %str_overflow_abort830, %concat.sum.len824
+  %arena.cur831 = call ptr @dva_arena_current()
+  %concat.buf832 = call ptr @dva_arena_alloc(ptr %arena.cur831, i64 %sum827)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf832, ptr align 1 %concat.lhs806, i64 %concat.lhs796, i1 false)
+  %concat.mid833 = getelementptr i8, ptr %concat.buf832, i64 %concat.lhs796
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid833, ptr align 1 %concat.rhs820, i64 %concat.rhs809, i1 false)
+  %concat.nul834 = getelementptr i8, ptr %concat.buf832, i64 %sum822
+  store i8 0, ptr %concat.nul834, align 1
+  %arena.cur835 = call ptr @dva_arena_current()
+  %concat.str836 = call ptr @dva_arena_alloc(ptr %arena.cur835, i64 16)
+  %str.build.len.gep837 = getelementptr inbounds { i64, ptr }, ptr %concat.str836, i32 0, i32 0
+  store i64 %sum822, ptr %str.build.len.gep837, align 8
+  %str.build.data.gep838 = getelementptr inbounds { i64, ptr }, ptr %concat.str836, i32 0, i32 1
+  store ptr %concat.buf832, ptr %str.build.data.gep838, align 8
+  %concat.lhs839 = getelementptr inbounds { i64, ptr }, ptr %concat.str836, i32 0, i32 0
+  %concat.lhs840 = load i64, ptr %concat.lhs839, align 8
+  %concat.lhs841 = and i64 %concat.lhs840, 281474976710655
+  %str.tag842 = lshr i64 %concat.lhs840, 48
+  %str.immortal843 = icmp eq i64 %str.tag842, 0
+  br i1 %str.immortal843, label %str_ok845, label %str_gen_check844
+
+str_overflow_abort830:                            ; preds = %concat.sum.len824
+  %62 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len829
+
+str_gen_check844:                                 ; preds = %concat.tot.len829
+  %arena.gen847 = call ptr @dva_arena_current()
+  %arena.gen848 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen847, i32 0, i32 4
+  %arena.gen849 = load i64, ptr %arena.gen848, align 8
+  %str.tag.match850 = icmp eq i64 %str.tag842, %arena.gen849
+  br i1 %str.tag.match850, label %str_ok845, label %str_stale846
+
+str_ok845:                                        ; preds = %str_stale846, %str_gen_check844, %concat.tot.len829
+  %concat.lhs851 = getelementptr inbounds { i64, ptr }, ptr %concat.str836, i32 0, i32 1
+  %concat.lhs852 = load ptr, ptr %concat.lhs851, align 8
+  %concat.rhs853 = load i64, ptr @str.27.struct, align 8
+  %concat.rhs854 = and i64 %concat.rhs853, 281474976710655
+  %str.tag855 = lshr i64 %concat.rhs853, 48
+  %str.immortal856 = icmp eq i64 %str.tag855, 0
+  br i1 %str.immortal856, label %str_ok858, label %str_gen_check857
+
+str_stale846:                                     ; preds = %str_gen_check844
+  %63 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok845
+
+str_gen_check857:                                 ; preds = %str_ok845
+  %arena.gen860 = call ptr @dva_arena_current()
+  %arena.gen861 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen860, i32 0, i32 4
+  %arena.gen862 = load i64, ptr %arena.gen861, align 8
+  %str.tag.match863 = icmp eq i64 %str.tag855, %arena.gen862
+  br i1 %str.tag.match863, label %str_ok858, label %str_stale859
+
+str_ok858:                                        ; preds = %str_stale859, %str_gen_check857, %str_ok845
+  %concat.rhs864 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
+  %concat.sum.len865 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs841, i64 %concat.rhs854)
+  %sum866 = extractvalue { i64, i1 } %concat.sum.len865, 0
+  %ovf867 = extractvalue { i64, i1 } %concat.sum.len865, 1
+  br i1 %ovf867, label %str_overflow_abort869, label %concat.sum.len868
+
+str_stale859:                                     ; preds = %str_gen_check857
+  %64 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok858
+
+concat.sum.len868:                                ; preds = %str_overflow_abort869, %str_ok858
+  %concat.tot.len870 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum866, i64 1)
+  %sum871 = extractvalue { i64, i1 } %concat.tot.len870, 0
+  %ovf872 = extractvalue { i64, i1 } %concat.tot.len870, 1
+  br i1 %ovf872, label %str_overflow_abort874, label %concat.tot.len873
+
+str_overflow_abort869:                            ; preds = %str_ok858
+  %65 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len868
+
+concat.tot.len873:                                ; preds = %str_overflow_abort874, %concat.sum.len868
+  %arena.cur875 = call ptr @dva_arena_current()
+  %concat.buf876 = call ptr @dva_arena_alloc(ptr %arena.cur875, i64 %sum871)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf876, ptr align 1 %concat.lhs852, i64 %concat.lhs841, i1 false)
+  %concat.mid877 = getelementptr i8, ptr %concat.buf876, i64 %concat.lhs841
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid877, ptr align 1 %concat.rhs864, i64 %concat.rhs854, i1 false)
+  %concat.nul878 = getelementptr i8, ptr %concat.buf876, i64 %sum866
+  store i8 0, ptr %concat.nul878, align 1
+  %arena.cur879 = call ptr @dva_arena_current()
+  %concat.str880 = call ptr @dva_arena_alloc(ptr %arena.cur879, i64 16)
+  %str.build.len.gep881 = getelementptr inbounds { i64, ptr }, ptr %concat.str880, i32 0, i32 0
+  store i64 %sum866, ptr %str.build.len.gep881, align 8
+  %str.build.data.gep882 = getelementptr inbounds { i64, ptr }, ptr %concat.str880, i32 0, i32 1
+  store ptr %concat.buf876, ptr %str.build.data.gep882, align 8
+  %var.load883 = load ptr, ptr %var.e, align 8
+  %fld.gep884 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load883, i32 0, i32 2
+  %fld.load885 = load i64, ptr %fld.gep884, align 8
+  %var.load886 = load ptr, ptr %var.e, align 8
+  %fld.gep887 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load886, i32 0, i32 3
+  %fld.load888 = load i64, ptr %fld.gep887, align 8
+  %call.res889 = call ptr @"ccl::ccl_error"(ptr %var.load793, ptr %concat.str880, i64 %fld.load885, i64 %fld.load888)
+  %p.to.i64890 = ptrtoint ptr %call.res889 to i64
+  %ram.pay891 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i64890, 1
+  br label %choice.exit792
+
+str_overflow_abort874:                            ; preds = %concat.sum.len868
+  %66 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len873
+
+choice.then893:                                   ; preds = %choice.else791
+  %var.load896 = load ptr, ptr %var.ddoc, align 8
+  %call.res897 = call ptr @"ccl::get"(ptr %var.load896, ptr @str.14.struct)
+  %niche.ne.null = icmp ne ptr %call.res897, null
+  br i1 %niche.ne.null, label %choice.then898, label %choice.else899
+
+choice.else894:                                   ; preds = %choice.else791
+  %var.load1026 = load i1, ptr %var.has_path, align 1
+  br i1 %var.load1026, label %choice.then1027, label %choice.else1028
+
+choice.exit895:                                   ; preds = %choice.exit1029, %choice.exit909
+  %choice.res1192 = phi { i1, i64 } [ %choice.res1025, %choice.exit909 ], [ %choice.res1191, %choice.exit1029 ]
+  br label %choice.exit792
+
+choice.then898:                                   ; preds = %choice.then893
+  store ptr %call.res897, ptr %var._901, align 8
+  store ptr %call.res897, ptr %var._902, align 8
+  br label %choice.exit900
+
+choice.else899:                                   ; preds = %choice.then893
+  br label %choice.exit900
+
+choice.exit900:                                   ; preds = %choice.else899, %choice.then898
+  %choice.res = phi ptr [ %call.res897, %choice.then898 ], [ @str.0.struct, %choice.else899 ]
+  store ptr %choice.res, ptr %var.g_url, align 8
+  %var.load903 = load ptr, ptr %var.ddoc, align 8
+  %call.res904 = call ptr @"ccl::get"(ptr %var.load903, ptr @str.15.struct)
+  store ptr %call.res904, ptr %var.opt_rev, align 8
+  %var.load905 = load ptr, ptr %var.opt_rev, align 8
+  %niche.ne.null906 = icmp ne ptr %var.load905, null
+  br i1 %niche.ne.null906, label %choice.then907, label %choice.else908
+
+choice.then907:                                   ; preds = %choice.exit900
+  store ptr %var.load905, ptr %var._910, align 8
+  store ptr %var.load905, ptr %var.rev, align 8
+  %var.load911 = load ptr, ptr %var.alias, align 8
+  %arena.cur912 = call ptr @dva_arena_current()
+  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur912, i64 16)
+  %tag.gep913 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
+  store i64 0, ptr %tag.gep913, align 8
+  %pay.gep914 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
+  store ptr null, ptr %pay.gep914, align 8
+  %var.load915 = load ptr, ptr %var.g_url, align 8
+  %var.load916 = load ptr, ptr %var.rev, align 8
+  %arena.cur917 = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur917, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 0
+  store ptr %var.load911, ptr %rec.fld, align 8
+  %rec.fld918 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 1
+  store ptr %enum.alloc, ptr %rec.fld918, align 8
+  %rec.fld919 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 2
+  store ptr %var.load915, ptr %rec.fld919, align 8
+  %rec.fld920 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 3
+  store ptr %var.load916, ptr %rec.fld920, align 8
+  %rec.fld921 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 4
+  store ptr @str.0.struct, ptr %rec.fld921, align 8
+  %rec.fld922 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 5
+  store ptr @str.0.struct, ptr %rec.fld922, align 8
+  %rec.fld923 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 6
+  store ptr @str.0.struct, ptr %rec.fld923, align 8
+  %p.to.i64924 = ptrtoint ptr %rec.alloc to i64
+  %ram.pay925 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64924, 1
+  br label %choice.exit909
+
+choice.else908:                                   ; preds = %choice.exit900
+  %var.load926 = load ptr, ptr %var.file, align 8
+  %var.load927 = load ptr, ptr %var.alias, align 8
+  %concat.lhs928 = load i64, ptr @str.21.struct, align 8
+  %concat.lhs929 = and i64 %concat.lhs928, 281474976710655
+  %str.tag930 = lshr i64 %concat.lhs928, 48
+  %str.immortal931 = icmp eq i64 %str.tag930, 0
+  br i1 %str.immortal931, label %str_ok933, label %str_gen_check932
+
+choice.exit909:                                   ; preds = %concat.tot.len1006, %choice.then907
+  %choice.res1025 = phi { i1, i64 } [ %ram.pay925, %choice.then907 ], [ %ram.pay1024, %concat.tot.len1006 ]
+  br label %choice.exit895
+
+str_gen_check932:                                 ; preds = %choice.else908
+  %arena.gen935 = call ptr @dva_arena_current()
+  %arena.gen936 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen935, i32 0, i32 4
+  %arena.gen937 = load i64, ptr %arena.gen936, align 8
+  %str.tag.match938 = icmp eq i64 %str.tag930, %arena.gen937
+  br i1 %str.tag.match938, label %str_ok933, label %str_stale934
+
+str_ok933:                                        ; preds = %str_stale934, %str_gen_check932, %choice.else908
+  %concat.lhs939 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.21.struct, i32 0, i32 1), align 8
+  %concat.rhs940 = getelementptr inbounds { i64, ptr }, ptr %var.load927, i32 0, i32 0
+  %concat.rhs941 = load i64, ptr %concat.rhs940, align 8
+  %concat.rhs942 = and i64 %concat.rhs941, 281474976710655
+  %str.tag943 = lshr i64 %concat.rhs941, 48
+  %str.immortal944 = icmp eq i64 %str.tag943, 0
+  br i1 %str.immortal944, label %str_ok946, label %str_gen_check945
+
+str_stale934:                                     ; preds = %str_gen_check932
+  %67 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok933
+
+str_gen_check945:                                 ; preds = %str_ok933
+  %arena.gen948 = call ptr @dva_arena_current()
+  %arena.gen949 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen948, i32 0, i32 4
+  %arena.gen950 = load i64, ptr %arena.gen949, align 8
+  %str.tag.match951 = icmp eq i64 %str.tag943, %arena.gen950
+  br i1 %str.tag.match951, label %str_ok946, label %str_stale947
+
+str_ok946:                                        ; preds = %str_stale947, %str_gen_check945, %str_ok933
+  %concat.rhs952 = getelementptr inbounds { i64, ptr }, ptr %var.load927, i32 0, i32 1
+  %concat.rhs953 = load ptr, ptr %concat.rhs952, align 8
+  %concat.sum.len954 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs929, i64 %concat.rhs942)
+  %sum955 = extractvalue { i64, i1 } %concat.sum.len954, 0
+  %ovf956 = extractvalue { i64, i1 } %concat.sum.len954, 1
+  br i1 %ovf956, label %str_overflow_abort958, label %concat.sum.len957
+
+str_stale947:                                     ; preds = %str_gen_check945
+  %68 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok946
+
+concat.sum.len957:                                ; preds = %str_overflow_abort958, %str_ok946
+  %concat.tot.len959 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum955, i64 1)
+  %sum960 = extractvalue { i64, i1 } %concat.tot.len959, 0
+  %ovf961 = extractvalue { i64, i1 } %concat.tot.len959, 1
+  br i1 %ovf961, label %str_overflow_abort963, label %concat.tot.len962
+
+str_overflow_abort958:                            ; preds = %str_ok946
+  %69 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len957
+
+concat.tot.len962:                                ; preds = %str_overflow_abort963, %concat.sum.len957
+  %arena.cur964 = call ptr @dva_arena_current()
+  %concat.buf965 = call ptr @dva_arena_alloc(ptr %arena.cur964, i64 %sum960)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf965, ptr align 1 %concat.lhs939, i64 %concat.lhs929, i1 false)
+  %concat.mid966 = getelementptr i8, ptr %concat.buf965, i64 %concat.lhs929
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid966, ptr align 1 %concat.rhs953, i64 %concat.rhs942, i1 false)
+  %concat.nul967 = getelementptr i8, ptr %concat.buf965, i64 %sum955
+  store i8 0, ptr %concat.nul967, align 1
+  %arena.cur968 = call ptr @dva_arena_current()
+  %concat.str969 = call ptr @dva_arena_alloc(ptr %arena.cur968, i64 16)
+  %str.build.len.gep970 = getelementptr inbounds { i64, ptr }, ptr %concat.str969, i32 0, i32 0
+  store i64 %sum955, ptr %str.build.len.gep970, align 8
+  %str.build.data.gep971 = getelementptr inbounds { i64, ptr }, ptr %concat.str969, i32 0, i32 1
+  store ptr %concat.buf965, ptr %str.build.data.gep971, align 8
+  %concat.lhs972 = getelementptr inbounds { i64, ptr }, ptr %concat.str969, i32 0, i32 0
+  %concat.lhs973 = load i64, ptr %concat.lhs972, align 8
+  %concat.lhs974 = and i64 %concat.lhs973, 281474976710655
+  %str.tag975 = lshr i64 %concat.lhs973, 48
+  %str.immortal976 = icmp eq i64 %str.tag975, 0
+  br i1 %str.immortal976, label %str_ok978, label %str_gen_check977
+
+str_overflow_abort963:                            ; preds = %concat.sum.len957
+  %70 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len962
+
+str_gen_check977:                                 ; preds = %concat.tot.len962
+  %arena.gen980 = call ptr @dva_arena_current()
+  %arena.gen981 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen980, i32 0, i32 4
+  %arena.gen982 = load i64, ptr %arena.gen981, align 8
+  %str.tag.match983 = icmp eq i64 %str.tag975, %arena.gen982
+  br i1 %str.tag.match983, label %str_ok978, label %str_stale979
+
+str_ok978:                                        ; preds = %str_stale979, %str_gen_check977, %concat.tot.len962
+  %concat.lhs984 = getelementptr inbounds { i64, ptr }, ptr %concat.str969, i32 0, i32 1
+  %concat.lhs985 = load ptr, ptr %concat.lhs984, align 8
+  %concat.rhs986 = load i64, ptr @str.28.struct, align 8
+  %concat.rhs987 = and i64 %concat.rhs986, 281474976710655
+  %str.tag988 = lshr i64 %concat.rhs986, 48
+  %str.immortal989 = icmp eq i64 %str.tag988, 0
+  br i1 %str.immortal989, label %str_ok991, label %str_gen_check990
+
+str_stale979:                                     ; preds = %str_gen_check977
+  %71 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok978
+
+str_gen_check990:                                 ; preds = %str_ok978
+  %arena.gen993 = call ptr @dva_arena_current()
+  %arena.gen994 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen993, i32 0, i32 4
+  %arena.gen995 = load i64, ptr %arena.gen994, align 8
+  %str.tag.match996 = icmp eq i64 %str.tag988, %arena.gen995
+  br i1 %str.tag.match996, label %str_ok991, label %str_stale992
+
+str_ok991:                                        ; preds = %str_stale992, %str_gen_check990, %str_ok978
+  %concat.rhs997 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.28.struct, i32 0, i32 1), align 8
+  %concat.sum.len998 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs974, i64 %concat.rhs987)
+  %sum999 = extractvalue { i64, i1 } %concat.sum.len998, 0
+  %ovf1000 = extractvalue { i64, i1 } %concat.sum.len998, 1
+  br i1 %ovf1000, label %str_overflow_abort1002, label %concat.sum.len1001
+
+str_stale992:                                     ; preds = %str_gen_check990
+  %72 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok991
+
+concat.sum.len1001:                               ; preds = %str_overflow_abort1002, %str_ok991
+  %concat.tot.len1003 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum999, i64 1)
+  %sum1004 = extractvalue { i64, i1 } %concat.tot.len1003, 0
+  %ovf1005 = extractvalue { i64, i1 } %concat.tot.len1003, 1
+  br i1 %ovf1005, label %str_overflow_abort1007, label %concat.tot.len1006
+
+str_overflow_abort1002:                           ; preds = %str_ok991
+  %73 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len1001
+
+concat.tot.len1006:                               ; preds = %str_overflow_abort1007, %concat.sum.len1001
+  %arena.cur1008 = call ptr @dva_arena_current()
+  %concat.buf1009 = call ptr @dva_arena_alloc(ptr %arena.cur1008, i64 %sum1004)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1009, ptr align 1 %concat.lhs985, i64 %concat.lhs974, i1 false)
+  %concat.mid1010 = getelementptr i8, ptr %concat.buf1009, i64 %concat.lhs974
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid1010, ptr align 1 %concat.rhs997, i64 %concat.rhs987, i1 false)
+  %concat.nul1011 = getelementptr i8, ptr %concat.buf1009, i64 %sum999
+  store i8 0, ptr %concat.nul1011, align 1
+  %arena.cur1012 = call ptr @dva_arena_current()
+  %concat.str1013 = call ptr @dva_arena_alloc(ptr %arena.cur1012, i64 16)
+  %str.build.len.gep1014 = getelementptr inbounds { i64, ptr }, ptr %concat.str1013, i32 0, i32 0
+  store i64 %sum999, ptr %str.build.len.gep1014, align 8
+  %str.build.data.gep1015 = getelementptr inbounds { i64, ptr }, ptr %concat.str1013, i32 0, i32 1
+  store ptr %concat.buf1009, ptr %str.build.data.gep1015, align 8
+  %var.load1016 = load ptr, ptr %var.e, align 8
+  %fld.gep1017 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1016, i32 0, i32 2
+  %fld.load1018 = load i64, ptr %fld.gep1017, align 8
+  %var.load1019 = load ptr, ptr %var.e, align 8
+  %fld.gep1020 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1019, i32 0, i32 3
+  %fld.load1021 = load i64, ptr %fld.gep1020, align 8
+  %call.res1022 = call ptr @"ccl::ccl_error"(ptr %var.load926, ptr %concat.str1013, i64 %fld.load1018, i64 %fld.load1021)
+  %p.to.i641023 = ptrtoint ptr %call.res1022 to i64
+  %ram.pay1024 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i641023, 1
+  br label %choice.exit909
+
+str_overflow_abort1007:                           ; preds = %concat.sum.len1001
+  %74 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len1006
+
+choice.then1027:                                  ; preds = %choice.else894
+  %var.load1030 = load ptr, ptr %var.ddoc, align 8
+  %call.res1031 = call ptr @"ccl::get"(ptr %var.load1030, ptr @str.16.struct)
+  %niche.ne.null1032 = icmp ne ptr %call.res1031, null
+  br i1 %niche.ne.null1032, label %choice.then1033, label %choice.else1034
+
+choice.else1028:                                  ; preds = %choice.else894
+  %var.load1056 = load ptr, ptr %var.ddoc, align 8
+  %call.res1057 = call ptr @"ccl::get"(ptr %var.load1056, ptr @str.17.struct)
+  %niche.ne.null1058 = icmp ne ptr %call.res1057, null
+  br i1 %niche.ne.null1058, label %choice.then1059, label %choice.else1060
+
+choice.exit1029:                                  ; preds = %choice.exit1071, %choice.exit1035
+  %choice.res1191 = phi { i1, i64 } [ %ram.pay1055, %choice.exit1035 ], [ %choice.res1190, %choice.exit1071 ]
+  br label %choice.exit895
+
+choice.then1033:                                  ; preds = %choice.then1027
+  store ptr %call.res1031, ptr %var._1036, align 8
+  store ptr %call.res1031, ptr %var._1037, align 8
+  br label %choice.exit1035
+
+choice.else1034:                                  ; preds = %choice.then1027
+  br label %choice.exit1035
+
+choice.exit1035:                                  ; preds = %choice.else1034, %choice.then1033
+  %choice.res1038 = phi ptr [ %call.res1031, %choice.then1033 ], [ @str.0.struct, %choice.else1034 ]
+  store ptr %choice.res1038, ptr %var.p, align 8
+  %var.load1039 = load ptr, ptr %var.alias, align 8
+  %arena.cur1040 = call ptr @dva_arena_current()
+  %enum.alloc1041 = call ptr @dva_arena_alloc(ptr %arena.cur1040, i64 16)
+  %tag.gep1042 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc1041, i32 0, i32 0
+  store i64 1, ptr %tag.gep1042, align 8
+  %pay.gep1043 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc1041, i32 0, i32 1
+  store ptr null, ptr %pay.gep1043, align 8
+  %var.load1044 = load ptr, ptr %var.p, align 8
+  %arena.cur1045 = call ptr @dva_arena_current()
+  %rec.alloc1046 = call ptr @dva_arena_alloc(ptr %arena.cur1045, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr null, i32 1) to i64))
+  %rec.fld1047 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1046, i32 0, i32 0
+  store ptr %var.load1039, ptr %rec.fld1047, align 8
+  %rec.fld1048 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1046, i32 0, i32 1
+  store ptr %enum.alloc1041, ptr %rec.fld1048, align 8
+  %rec.fld1049 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1046, i32 0, i32 2
+  store ptr @str.0.struct, ptr %rec.fld1049, align 8
+  %rec.fld1050 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1046, i32 0, i32 3
+  store ptr @str.0.struct, ptr %rec.fld1050, align 8
+  %rec.fld1051 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1046, i32 0, i32 4
+  store ptr %var.load1044, ptr %rec.fld1051, align 8
+  %rec.fld1052 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1046, i32 0, i32 5
+  store ptr @str.0.struct, ptr %rec.fld1052, align 8
+  %rec.fld1053 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1046, i32 0, i32 6
+  store ptr @str.0.struct, ptr %rec.fld1053, align 8
+  %p.to.i641054 = ptrtoint ptr %rec.alloc1046 to i64
+  %ram.pay1055 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641054, 1
+  br label %choice.exit1029
+
+choice.then1059:                                  ; preds = %choice.else1028
+  store ptr %call.res1057, ptr %var._1062, align 8
+  store ptr %call.res1057, ptr %var._1063, align 8
+  br label %choice.exit1061
+
+choice.else1060:                                  ; preds = %choice.else1028
+  br label %choice.exit1061
+
+choice.exit1061:                                  ; preds = %choice.else1060, %choice.then1059
+  %choice.res1064 = phi ptr [ %call.res1057, %choice.then1059 ], [ @str.0.struct, %choice.else1060 ]
+  store ptr %choice.res1064, ptr %var.u, align 8
+  %var.load1065 = load ptr, ptr %var.ddoc, align 8
+  %call.res1066 = call ptr @"ccl::get"(ptr %var.load1065, ptr @str.18.struct)
+  store ptr %call.res1066, ptr %var.opt_hash, align 8
+  %var.load1067 = load ptr, ptr %var.opt_hash, align 8
+  %niche.ne.null1068 = icmp ne ptr %var.load1067, null
+  br i1 %niche.ne.null1068, label %choice.then1069, label %choice.else1070
+
+choice.then1069:                                  ; preds = %choice.exit1061
+  store ptr %var.load1067, ptr %var._1072, align 8
+  store ptr %var.load1067, ptr %var.h, align 8
+  %var.load1073 = load ptr, ptr %var.alias, align 8
+  %arena.cur1074 = call ptr @dva_arena_current()
+  %enum.alloc1075 = call ptr @dva_arena_alloc(ptr %arena.cur1074, i64 16)
+  %tag.gep1076 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc1075, i32 0, i32 0
+  store i64 2, ptr %tag.gep1076, align 8
+  %pay.gep1077 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc1075, i32 0, i32 1
+  store ptr null, ptr %pay.gep1077, align 8
+  %var.load1078 = load ptr, ptr %var.u, align 8
+  %var.load1079 = load ptr, ptr %var.h, align 8
+  %arena.cur1080 = call ptr @dva_arena_current()
+  %rec.alloc1081 = call ptr @dva_arena_alloc(ptr %arena.cur1080, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr null, i32 1) to i64))
+  %rec.fld1082 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1081, i32 0, i32 0
+  store ptr %var.load1073, ptr %rec.fld1082, align 8
+  %rec.fld1083 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1081, i32 0, i32 1
+  store ptr %enum.alloc1075, ptr %rec.fld1083, align 8
+  %rec.fld1084 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1081, i32 0, i32 2
+  store ptr @str.0.struct, ptr %rec.fld1084, align 8
+  %rec.fld1085 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1081, i32 0, i32 3
+  store ptr @str.0.struct, ptr %rec.fld1085, align 8
+  %rec.fld1086 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1081, i32 0, i32 4
+  store ptr @str.0.struct, ptr %rec.fld1086, align 8
+  %rec.fld1087 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1081, i32 0, i32 5
+  store ptr %var.load1078, ptr %rec.fld1087, align 8
+  %rec.fld1088 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %rec.alloc1081, i32 0, i32 6
+  store ptr %var.load1079, ptr %rec.fld1088, align 8
+  %p.to.i641089 = ptrtoint ptr %rec.alloc1081 to i64
+  %ram.pay1090 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i641089, 1
+  br label %choice.exit1071
+
+choice.else1070:                                  ; preds = %choice.exit1061
+  %var.load1091 = load ptr, ptr %var.file, align 8
+  %var.load1092 = load ptr, ptr %var.alias, align 8
+  %concat.lhs1093 = load i64, ptr @str.21.struct, align 8
+  %concat.lhs1094 = and i64 %concat.lhs1093, 281474976710655
+  %str.tag1095 = lshr i64 %concat.lhs1093, 48
+  %str.immortal1096 = icmp eq i64 %str.tag1095, 0
+  br i1 %str.immortal1096, label %str_ok1098, label %str_gen_check1097
+
+choice.exit1071:                                  ; preds = %concat.tot.len1171, %choice.then1069
+  %choice.res1190 = phi { i1, i64 } [ %ram.pay1090, %choice.then1069 ], [ %ram.pay1189, %concat.tot.len1171 ]
+  br label %choice.exit1029
+
+str_gen_check1097:                                ; preds = %choice.else1070
+  %arena.gen1100 = call ptr @dva_arena_current()
+  %arena.gen1101 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1100, i32 0, i32 4
+  %arena.gen1102 = load i64, ptr %arena.gen1101, align 8
+  %str.tag.match1103 = icmp eq i64 %str.tag1095, %arena.gen1102
+  br i1 %str.tag.match1103, label %str_ok1098, label %str_stale1099
+
+str_ok1098:                                       ; preds = %str_stale1099, %str_gen_check1097, %choice.else1070
+  %concat.lhs1104 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.21.struct, i32 0, i32 1), align 8
+  %concat.rhs1105 = getelementptr inbounds { i64, ptr }, ptr %var.load1092, i32 0, i32 0
+  %concat.rhs1106 = load i64, ptr %concat.rhs1105, align 8
+  %concat.rhs1107 = and i64 %concat.rhs1106, 281474976710655
+  %str.tag1108 = lshr i64 %concat.rhs1106, 48
+  %str.immortal1109 = icmp eq i64 %str.tag1108, 0
+  br i1 %str.immortal1109, label %str_ok1111, label %str_gen_check1110
+
+str_stale1099:                                    ; preds = %str_gen_check1097
+  %75 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok1098
+
+str_gen_check1110:                                ; preds = %str_ok1098
+  %arena.gen1113 = call ptr @dva_arena_current()
+  %arena.gen1114 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1113, i32 0, i32 4
+  %arena.gen1115 = load i64, ptr %arena.gen1114, align 8
+  %str.tag.match1116 = icmp eq i64 %str.tag1108, %arena.gen1115
+  br i1 %str.tag.match1116, label %str_ok1111, label %str_stale1112
+
+str_ok1111:                                       ; preds = %str_stale1112, %str_gen_check1110, %str_ok1098
+  %concat.rhs1117 = getelementptr inbounds { i64, ptr }, ptr %var.load1092, i32 0, i32 1
+  %concat.rhs1118 = load ptr, ptr %concat.rhs1117, align 8
+  %concat.sum.len1119 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1094, i64 %concat.rhs1107)
+  %sum1120 = extractvalue { i64, i1 } %concat.sum.len1119, 0
+  %ovf1121 = extractvalue { i64, i1 } %concat.sum.len1119, 1
+  br i1 %ovf1121, label %str_overflow_abort1123, label %concat.sum.len1122
+
+str_stale1112:                                    ; preds = %str_gen_check1110
+  %76 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok1111
+
+concat.sum.len1122:                               ; preds = %str_overflow_abort1123, %str_ok1111
+  %concat.tot.len1124 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum1120, i64 1)
+  %sum1125 = extractvalue { i64, i1 } %concat.tot.len1124, 0
+  %ovf1126 = extractvalue { i64, i1 } %concat.tot.len1124, 1
+  br i1 %ovf1126, label %str_overflow_abort1128, label %concat.tot.len1127
+
+str_overflow_abort1123:                           ; preds = %str_ok1111
+  %77 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len1122
+
+concat.tot.len1127:                               ; preds = %str_overflow_abort1128, %concat.sum.len1122
+  %arena.cur1129 = call ptr @dva_arena_current()
+  %concat.buf1130 = call ptr @dva_arena_alloc(ptr %arena.cur1129, i64 %sum1125)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1130, ptr align 1 %concat.lhs1104, i64 %concat.lhs1094, i1 false)
+  %concat.mid1131 = getelementptr i8, ptr %concat.buf1130, i64 %concat.lhs1094
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid1131, ptr align 1 %concat.rhs1118, i64 %concat.rhs1107, i1 false)
+  %concat.nul1132 = getelementptr i8, ptr %concat.buf1130, i64 %sum1120
+  store i8 0, ptr %concat.nul1132, align 1
+  %arena.cur1133 = call ptr @dva_arena_current()
+  %concat.str1134 = call ptr @dva_arena_alloc(ptr %arena.cur1133, i64 16)
+  %str.build.len.gep1135 = getelementptr inbounds { i64, ptr }, ptr %concat.str1134, i32 0, i32 0
+  store i64 %sum1120, ptr %str.build.len.gep1135, align 8
+  %str.build.data.gep1136 = getelementptr inbounds { i64, ptr }, ptr %concat.str1134, i32 0, i32 1
+  store ptr %concat.buf1130, ptr %str.build.data.gep1136, align 8
+  %concat.lhs1137 = getelementptr inbounds { i64, ptr }, ptr %concat.str1134, i32 0, i32 0
+  %concat.lhs1138 = load i64, ptr %concat.lhs1137, align 8
+  %concat.lhs1139 = and i64 %concat.lhs1138, 281474976710655
+  %str.tag1140 = lshr i64 %concat.lhs1138, 48
+  %str.immortal1141 = icmp eq i64 %str.tag1140, 0
+  br i1 %str.immortal1141, label %str_ok1143, label %str_gen_check1142
+
+str_overflow_abort1128:                           ; preds = %concat.sum.len1122
+  %78 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len1127
+
+str_gen_check1142:                                ; preds = %concat.tot.len1127
+  %arena.gen1145 = call ptr @dva_arena_current()
+  %arena.gen1146 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1145, i32 0, i32 4
+  %arena.gen1147 = load i64, ptr %arena.gen1146, align 8
+  %str.tag.match1148 = icmp eq i64 %str.tag1140, %arena.gen1147
+  br i1 %str.tag.match1148, label %str_ok1143, label %str_stale1144
+
+str_ok1143:                                       ; preds = %str_stale1144, %str_gen_check1142, %concat.tot.len1127
+  %concat.lhs1149 = getelementptr inbounds { i64, ptr }, ptr %concat.str1134, i32 0, i32 1
+  %concat.lhs1150 = load ptr, ptr %concat.lhs1149, align 8
+  %concat.rhs1151 = load i64, ptr @str.29.struct, align 8
+  %concat.rhs1152 = and i64 %concat.rhs1151, 281474976710655
+  %str.tag1153 = lshr i64 %concat.rhs1151, 48
+  %str.immortal1154 = icmp eq i64 %str.tag1153, 0
+  br i1 %str.immortal1154, label %str_ok1156, label %str_gen_check1155
+
+str_stale1144:                                    ; preds = %str_gen_check1142
+  %79 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok1143
+
+str_gen_check1155:                                ; preds = %str_ok1143
+  %arena.gen1158 = call ptr @dva_arena_current()
+  %arena.gen1159 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1158, i32 0, i32 4
+  %arena.gen1160 = load i64, ptr %arena.gen1159, align 8
+  %str.tag.match1161 = icmp eq i64 %str.tag1153, %arena.gen1160
+  br i1 %str.tag.match1161, label %str_ok1156, label %str_stale1157
+
+str_ok1156:                                       ; preds = %str_stale1157, %str_gen_check1155, %str_ok1143
+  %concat.rhs1162 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.29.struct, i32 0, i32 1), align 8
+  %concat.sum.len1163 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1139, i64 %concat.rhs1152)
+  %sum1164 = extractvalue { i64, i1 } %concat.sum.len1163, 0
+  %ovf1165 = extractvalue { i64, i1 } %concat.sum.len1163, 1
+  br i1 %ovf1165, label %str_overflow_abort1167, label %concat.sum.len1166
+
+str_stale1157:                                    ; preds = %str_gen_check1155
+  %80 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok1156
+
+concat.sum.len1166:                               ; preds = %str_overflow_abort1167, %str_ok1156
+  %concat.tot.len1168 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum1164, i64 1)
+  %sum1169 = extractvalue { i64, i1 } %concat.tot.len1168, 0
+  %ovf1170 = extractvalue { i64, i1 } %concat.tot.len1168, 1
+  br i1 %ovf1170, label %str_overflow_abort1172, label %concat.tot.len1171
+
+str_overflow_abort1167:                           ; preds = %str_ok1156
+  %81 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len1166
+
+concat.tot.len1171:                               ; preds = %str_overflow_abort1172, %concat.sum.len1166
+  %arena.cur1173 = call ptr @dva_arena_current()
+  %concat.buf1174 = call ptr @dva_arena_alloc(ptr %arena.cur1173, i64 %sum1169)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1174, ptr align 1 %concat.lhs1150, i64 %concat.lhs1139, i1 false)
+  %concat.mid1175 = getelementptr i8, ptr %concat.buf1174, i64 %concat.lhs1139
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid1175, ptr align 1 %concat.rhs1162, i64 %concat.rhs1152, i1 false)
+  %concat.nul1176 = getelementptr i8, ptr %concat.buf1174, i64 %sum1164
+  store i8 0, ptr %concat.nul1176, align 1
+  %arena.cur1177 = call ptr @dva_arena_current()
+  %concat.str1178 = call ptr @dva_arena_alloc(ptr %arena.cur1177, i64 16)
+  %str.build.len.gep1179 = getelementptr inbounds { i64, ptr }, ptr %concat.str1178, i32 0, i32 0
+  store i64 %sum1164, ptr %str.build.len.gep1179, align 8
+  %str.build.data.gep1180 = getelementptr inbounds { i64, ptr }, ptr %concat.str1178, i32 0, i32 1
+  store ptr %concat.buf1174, ptr %str.build.data.gep1180, align 8
+  %var.load1181 = load ptr, ptr %var.e, align 8
+  %fld.gep1182 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1181, i32 0, i32 2
+  %fld.load1183 = load i64, ptr %fld.gep1182, align 8
+  %var.load1184 = load ptr, ptr %var.e, align 8
+  %fld.gep1185 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1184, i32 0, i32 3
+  %fld.load1186 = load i64, ptr %fld.gep1185, align 8
+  %call.res1187 = call ptr @"ccl::ccl_error"(ptr %var.load1091, ptr %concat.str1178, i64 %fld.load1183, i64 %fld.load1186)
+  %p.to.i641188 = ptrtoint ptr %call.res1187 to i64
+  %ram.pay1189 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i641188, 1
+  br label %choice.exit1071
+
+str_overflow_abort1172:                           ; preds = %concat.sum.len1166
+  %82 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len1171
+
+choice.case1195:                                  ; preds = %choice.next
+  %pay.gep1200 = getelementptr inbounds { i64, ptr }, ptr %fld.load80, i32 0, i32 1
+  %payload.ptr1201 = load ptr, ptr %pay.gep1200, align 8
+  store ptr %payload.ptr1201, ptr %var._1202, align 8
+  %var.load1203 = load ptr, ptr %var.file, align 8
+  %var.load1204 = load ptr, ptr %var.alias, align 8
+  %concat.lhs1205 = load i64, ptr @str.21.struct, align 8
+  %concat.lhs1206 = and i64 %concat.lhs1205, 281474976710655
+  %str.tag1207 = lshr i64 %concat.lhs1205, 48
+  %str.immortal1208 = icmp eq i64 %str.tag1207, 0
+  br i1 %str.immortal1208, label %str_ok1210, label %str_gen_check1209
+
+choice.next1196:                                  ; preds = %choice.next
+  br label %choice.exit81
+
+str_gen_check1209:                                ; preds = %choice.case1195
+  %arena.gen1212 = call ptr @dva_arena_current()
+  %arena.gen1213 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1212, i32 0, i32 4
+  %arena.gen1214 = load i64, ptr %arena.gen1213, align 8
+  %str.tag.match1215 = icmp eq i64 %str.tag1207, %arena.gen1214
+  br i1 %str.tag.match1215, label %str_ok1210, label %str_stale1211
+
+str_ok1210:                                       ; preds = %str_stale1211, %str_gen_check1209, %choice.case1195
+  %concat.lhs1216 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.21.struct, i32 0, i32 1), align 8
+  %concat.rhs1217 = getelementptr inbounds { i64, ptr }, ptr %var.load1204, i32 0, i32 0
+  %concat.rhs1218 = load i64, ptr %concat.rhs1217, align 8
+  %concat.rhs1219 = and i64 %concat.rhs1218, 281474976710655
+  %str.tag1220 = lshr i64 %concat.rhs1218, 48
+  %str.immortal1221 = icmp eq i64 %str.tag1220, 0
+  br i1 %str.immortal1221, label %str_ok1223, label %str_gen_check1222
+
+str_stale1211:                                    ; preds = %str_gen_check1209
+  %83 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok1210
+
+str_gen_check1222:                                ; preds = %str_ok1210
+  %arena.gen1225 = call ptr @dva_arena_current()
+  %arena.gen1226 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1225, i32 0, i32 4
+  %arena.gen1227 = load i64, ptr %arena.gen1226, align 8
+  %str.tag.match1228 = icmp eq i64 %str.tag1220, %arena.gen1227
+  br i1 %str.tag.match1228, label %str_ok1223, label %str_stale1224
+
+str_ok1223:                                       ; preds = %str_stale1224, %str_gen_check1222, %str_ok1210
+  %concat.rhs1229 = getelementptr inbounds { i64, ptr }, ptr %var.load1204, i32 0, i32 1
+  %concat.rhs1230 = load ptr, ptr %concat.rhs1229, align 8
+  %concat.sum.len1231 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1206, i64 %concat.rhs1219)
+  %sum1232 = extractvalue { i64, i1 } %concat.sum.len1231, 0
+  %ovf1233 = extractvalue { i64, i1 } %concat.sum.len1231, 1
+  br i1 %ovf1233, label %str_overflow_abort1235, label %concat.sum.len1234
+
+str_stale1224:                                    ; preds = %str_gen_check1222
+  %84 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok1223
+
+concat.sum.len1234:                               ; preds = %str_overflow_abort1235, %str_ok1223
+  %concat.tot.len1236 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum1232, i64 1)
+  %sum1237 = extractvalue { i64, i1 } %concat.tot.len1236, 0
+  %ovf1238 = extractvalue { i64, i1 } %concat.tot.len1236, 1
+  br i1 %ovf1238, label %str_overflow_abort1240, label %concat.tot.len1239
+
+str_overflow_abort1235:                           ; preds = %str_ok1223
+  %85 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len1234
+
+concat.tot.len1239:                               ; preds = %str_overflow_abort1240, %concat.sum.len1234
+  %arena.cur1241 = call ptr @dva_arena_current()
+  %concat.buf1242 = call ptr @dva_arena_alloc(ptr %arena.cur1241, i64 %sum1237)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1242, ptr align 1 %concat.lhs1216, i64 %concat.lhs1206, i1 false)
+  %concat.mid1243 = getelementptr i8, ptr %concat.buf1242, i64 %concat.lhs1206
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid1243, ptr align 1 %concat.rhs1230, i64 %concat.rhs1219, i1 false)
+  %concat.nul1244 = getelementptr i8, ptr %concat.buf1242, i64 %sum1232
+  store i8 0, ptr %concat.nul1244, align 1
+  %arena.cur1245 = call ptr @dva_arena_current()
+  %concat.str1246 = call ptr @dva_arena_alloc(ptr %arena.cur1245, i64 16)
+  %str.build.len.gep1247 = getelementptr inbounds { i64, ptr }, ptr %concat.str1246, i32 0, i32 0
+  store i64 %sum1232, ptr %str.build.len.gep1247, align 8
+  %str.build.data.gep1248 = getelementptr inbounds { i64, ptr }, ptr %concat.str1246, i32 0, i32 1
+  store ptr %concat.buf1242, ptr %str.build.data.gep1248, align 8
+  %concat.lhs1249 = getelementptr inbounds { i64, ptr }, ptr %concat.str1246, i32 0, i32 0
+  %concat.lhs1250 = load i64, ptr %concat.lhs1249, align 8
+  %concat.lhs1251 = and i64 %concat.lhs1250, 281474976710655
+  %str.tag1252 = lshr i64 %concat.lhs1250, 48
+  %str.immortal1253 = icmp eq i64 %str.tag1252, 0
+  br i1 %str.immortal1253, label %str_ok1255, label %str_gen_check1254
+
+str_overflow_abort1240:                           ; preds = %concat.sum.len1234
+  %86 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len1239
+
+str_gen_check1254:                                ; preds = %concat.tot.len1239
+  %arena.gen1257 = call ptr @dva_arena_current()
+  %arena.gen1258 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1257, i32 0, i32 4
+  %arena.gen1259 = load i64, ptr %arena.gen1258, align 8
+  %str.tag.match1260 = icmp eq i64 %str.tag1252, %arena.gen1259
+  br i1 %str.tag.match1260, label %str_ok1255, label %str_stale1256
+
+str_ok1255:                                       ; preds = %str_stale1256, %str_gen_check1254, %concat.tot.len1239
+  %concat.lhs1261 = getelementptr inbounds { i64, ptr }, ptr %concat.str1246, i32 0, i32 1
+  %concat.lhs1262 = load ptr, ptr %concat.lhs1261, align 8
+  %concat.rhs1263 = load i64, ptr @str.30.struct, align 8
+  %concat.rhs1264 = and i64 %concat.rhs1263, 281474976710655
+  %str.tag1265 = lshr i64 %concat.rhs1263, 48
+  %str.immortal1266 = icmp eq i64 %str.tag1265, 0
+  br i1 %str.immortal1266, label %str_ok1268, label %str_gen_check1267
+
+str_stale1256:                                    ; preds = %str_gen_check1254
+  %87 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok1255
+
+str_gen_check1267:                                ; preds = %str_ok1255
+  %arena.gen1270 = call ptr @dva_arena_current()
+  %arena.gen1271 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1270, i32 0, i32 4
+  %arena.gen1272 = load i64, ptr %arena.gen1271, align 8
+  %str.tag.match1273 = icmp eq i64 %str.tag1265, %arena.gen1272
+  br i1 %str.tag.match1273, label %str_ok1268, label %str_stale1269
+
+str_ok1268:                                       ; preds = %str_stale1269, %str_gen_check1267, %str_ok1255
+  %concat.rhs1274 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.30.struct, i32 0, i32 1), align 8
+  %concat.sum.len1275 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1251, i64 %concat.rhs1264)
+  %sum1276 = extractvalue { i64, i1 } %concat.sum.len1275, 0
+  %ovf1277 = extractvalue { i64, i1 } %concat.sum.len1275, 1
+  br i1 %ovf1277, label %str_overflow_abort1279, label %concat.sum.len1278
+
+str_stale1269:                                    ; preds = %str_gen_check1267
+  %88 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok1268
+
+concat.sum.len1278:                               ; preds = %str_overflow_abort1279, %str_ok1268
+  %concat.tot.len1280 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum1276, i64 1)
+  %sum1281 = extractvalue { i64, i1 } %concat.tot.len1280, 0
+  %ovf1282 = extractvalue { i64, i1 } %concat.tot.len1280, 1
+  br i1 %ovf1282, label %str_overflow_abort1284, label %concat.tot.len1283
+
+str_overflow_abort1279:                           ; preds = %str_ok1268
+  %89 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len1278
+
+concat.tot.len1283:                               ; preds = %str_overflow_abort1284, %concat.sum.len1278
+  %arena.cur1285 = call ptr @dva_arena_current()
+  %concat.buf1286 = call ptr @dva_arena_alloc(ptr %arena.cur1285, i64 %sum1281)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf1286, ptr align 1 %concat.lhs1262, i64 %concat.lhs1251, i1 false)
+  %concat.mid1287 = getelementptr i8, ptr %concat.buf1286, i64 %concat.lhs1251
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid1287, ptr align 1 %concat.rhs1274, i64 %concat.rhs1264, i1 false)
+  %concat.nul1288 = getelementptr i8, ptr %concat.buf1286, i64 %sum1276
+  store i8 0, ptr %concat.nul1288, align 1
+  %arena.cur1289 = call ptr @dva_arena_current()
+  %concat.str1290 = call ptr @dva_arena_alloc(ptr %arena.cur1289, i64 16)
+  %str.build.len.gep1291 = getelementptr inbounds { i64, ptr }, ptr %concat.str1290, i32 0, i32 0
+  store i64 %sum1276, ptr %str.build.len.gep1291, align 8
+  %str.build.data.gep1292 = getelementptr inbounds { i64, ptr }, ptr %concat.str1290, i32 0, i32 1
+  store ptr %concat.buf1286, ptr %str.build.data.gep1292, align 8
+  %var.load1293 = load ptr, ptr %var.e, align 8
+  %fld.gep1294 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1293, i32 0, i32 2
+  %fld.load1295 = load i64, ptr %fld.gep1294, align 8
+  %var.load1296 = load ptr, ptr %var.e, align 8
+  %fld.gep1297 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1296, i32 0, i32 3
+  %fld.load1298 = load i64, ptr %fld.gep1297, align 8
+  %call.res1299 = call ptr @"ccl::ccl_error"(ptr %var.load1203, ptr %concat.str1290, i64 %fld.load1295, i64 %fld.load1298)
+  %p.to.i641300 = ptrtoint ptr %call.res1299 to i64
+  %ram.pay1301 = insertvalue { i1, i64 } zeroinitializer, i64 %p.to.i641300, 1
+  br label %choice.exit81
+
+str_overflow_abort1284:                           ; preds = %concat.sum.len1278
+  %90 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len1283
 }
 
 define { i1, i64 } @"ccl::validate_manifest"(ptr %0, ptr %1) #1 {
@@ -10254,8 +11547,8 @@ entry:
   %var.oblock = alloca ptr, align 8
   %var._i1032 = alloca i64, align 8
   %var.oe = alloca ptr, align 8
-  %loop.step.54 = alloca i64, align 8
-  %loop.idx.54 = alloca i64, align 8
+  %loop.step.60 = alloca i64, align 8
+  %loop.idx.60 = alloca i64, align 8
   %var.odoc = alloca ptr, align 8
   %var._1018 = alloca ptr, align 8
   %var.opt_ovr = alloca ptr, align 8
@@ -10270,8 +11563,8 @@ entry:
   %var.k775 = alloca ptr, align 8
   %var._i771 = alloca i64, align 8
   %var.ne = alloca ptr, align 8
-  %loop.step.50 = alloca i64, align 8
-  %loop.idx.50 = alloca i64, align 8
+  %loop.step.56 = alloca i64, align 8
+  %loop.idx.56 = alloca i64, align 8
   %var.ndoc = alloca ptr, align 8
   %var._757 = alloca ptr, align 8
   %var.opt_native = alloca ptr, align 8
@@ -10284,8 +11577,8 @@ entry:
   %var.dep_res = alloca { i1, i64 }, align 8
   %var._i683 = alloca i64, align 8
   %var.de = alloca ptr, align 8
-  %loop.step.48 = alloca i64, align 8
-  %loop.idx.48 = alloca i64, align 8
+  %loop.step.54 = alloca i64, align 8
+  %loop.idx.54 = alloca i64, align 8
   %var.ddoc = alloca ptr, align 8
   %var._669 = alloca ptr, align 8
   %var.opt_deps = alloca ptr, align 8
@@ -10307,8 +11600,8 @@ entry:
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.e = alloca ptr, align 8
-  %loop.step.37 = alloca i64, align 8
-  %loop.idx.37 = alloca i64, align 8
+  %loop.step.43 = alloca i64, align 8
+  %loop.idx.43 = alloca i64, align 8
   %"var.err_val'" = alloca ptr, align 8
   %"var.has_err'" = alloca i1, align 1
   %var.file = alloca ptr, align 8
@@ -10350,22 +11643,22 @@ str_ok:                                           ; preds = %str_stale, %str_gen
   %arr.cycle.len7 = load i64, ptr %arr.cycle.len, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load, i32 0, i32 1
   %arr.cycle.data8 = load ptr, ptr %arr.cycle.data, align 8
-  store i64 0, ptr %loop.idx.37, align 8
-  br label %loop.header.37
+  store i64 0, ptr %loop.idx.43, align 8
+  br label %loop.header.43
 
 str_stale:                                        ; preds = %str_gen_check
   %2 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
   br label %str_ok
 
-loop.header.37:                                   ; preds = %loop.latch.37, %str_ok
-  %counter.load = load i64, ptr %loop.idx.37, align 8
+loop.header.43:                                   ; preds = %loop.latch.43, %str_ok
+  %counter.load = load i64, ptr %loop.idx.43, align 8
   %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len7
-  br i1 %loop.cond, label %loop.body.37, label %loop.exit.nat.37
+  br i1 %loop.cond, label %loop.body.43, label %loop.exit.nat.43
 
-loop.body.37:                                     ; preds = %loop.header.37
+loop.body.43:                                     ; preds = %loop.header.43
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.37, align 8
+  store i64 1, ptr %loop.step.43, align 8
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data8, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %arr.elem.ptr = inttoptr i64 %arr.elem.raw to ptr
@@ -10384,29 +11677,29 @@ loop.body.37:                                     ; preds = %loop.header.37
   %str.immortal16 = icmp eq i64 %str.tag15, 0
   br i1 %str.immortal16, label %str_ok18, label %str_gen_check17
 
-loop.exit.nat.37:                                 ; preds = %loop.header.37
-  br label %loop.exit.37
+loop.exit.nat.43:                                 ; preds = %loop.header.43
+  br label %loop.exit.43
 
-loop.latch.37:                                    ; preds = %choice.exit
-  %step.val = load i64, ptr %loop.step.37, align 8
+loop.latch.43:                                    ; preds = %choice.exit
+  %step.val = load i64, ptr %loop.step.43, align 8
   %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.37, align 8
-  br label %loop.header.37
+  store i64 %loop.next, ptr %loop.idx.43, align 8
+  br label %loop.header.43
 
-loop.exit.37:                                     ; preds = %loop.exit.nat.37
+loop.exit.43:                                     ; preds = %loop.exit.nat.43
   %var.load326 = load i1, ptr %"var.has_err'", align 1
   %nottmp327 = xor i1 %var.load326, true
-  br i1 %nottmp327, label %and.45.then, label %and.45.else
+  br i1 %nottmp327, label %and.51.then, label %and.51.else
 
-str_gen_check17:                                  ; preds = %loop.body.37
+str_gen_check17:                                  ; preds = %loop.body.43
   %arena.gen20 = call ptr @dva_arena_current()
   %arena.gen21 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen20, i32 0, i32 4
   %arena.gen22 = load i64, ptr %arena.gen21, align 8
   %str.tag.match23 = icmp eq i64 %str.tag15, %arena.gen22
   br i1 %str.tag.match23, label %str_ok18, label %str_stale19
 
-str_ok18:                                         ; preds = %str_stale19, %str_gen_check17, %loop.body.37
-  %eq.rhs.len = load i64, ptr @str.24.struct, align 8
+str_ok18:                                         ; preds = %str_stale19, %str_gen_check17, %loop.body.43
+  %eq.rhs.len = load i64, ptr @str.31.struct, align 8
   %eq.rhs.len24 = and i64 %eq.rhs.len, 281474976710655
   %str.tag25 = lshr i64 %eq.rhs.len, 48
   %str.immortal26 = icmp eq i64 %str.tag25, 0
@@ -10436,7 +11729,7 @@ str_stale29:                                      ; preds = %str_gen_check27
 str.eq.then:                                      ; preds = %str_ok28
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %var.load12, i32 0, i32 1
   %eq.lhs.data34 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.24.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.31.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data34, ptr %eq.rhs.data, i64 %eq.lhs.len14)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -10446,12 +11739,12 @@ str.eq.else:                                      ; preds = %str_ok28
 
 str.eq.merge:                                     ; preds = %str.eq.else, %str.eq.then
   %str.eq.result = phi i1 [ %eq.cmp.zero, %str.eq.then ], [ false, %str.eq.else ]
-  br i1 %str.eq.result, label %or.38.then, label %or.38.else
+  br i1 %str.eq.result, label %or.44.then, label %or.44.else
 
-or.38.then:                                       ; preds = %str.eq.merge
-  br label %or.38.exit
+or.44.then:                                       ; preds = %str.eq.merge
+  br label %or.44.exit
 
-or.38.else:                                       ; preds = %str.eq.merge
+or.44.else:                                       ; preds = %str.eq.merge
   %var.load35 = load ptr, ptr %var.k, align 8
   %eq.lhs.len36 = getelementptr inbounds { i64, ptr }, ptr %var.load35, i32 0, i32 0
   %eq.lhs.len37 = load i64, ptr %eq.lhs.len36, align 8
@@ -10460,19 +11753,19 @@ or.38.else:                                       ; preds = %str.eq.merge
   %str.immortal40 = icmp eq i64 %str.tag39, 0
   br i1 %str.immortal40, label %str_ok42, label %str_gen_check41
 
-or.38.exit:                                       ; preds = %str.eq.merge62, %or.38.then
-  %or.38.phi = phi i1 [ %str.eq.result, %or.38.then ], [ %str.eq.result68, %str.eq.merge62 ]
-  br i1 %or.38.phi, label %or.39.then, label %or.39.else
+or.44.exit:                                       ; preds = %str.eq.merge62, %or.44.then
+  %or.44.phi = phi i1 [ %str.eq.result, %or.44.then ], [ %str.eq.result68, %str.eq.merge62 ]
+  br i1 %or.44.phi, label %or.45.then, label %or.45.else
 
-str_gen_check41:                                  ; preds = %or.38.else
+str_gen_check41:                                  ; preds = %or.44.else
   %arena.gen44 = call ptr @dva_arena_current()
   %arena.gen45 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen44, i32 0, i32 4
   %arena.gen46 = load i64, ptr %arena.gen45, align 8
   %str.tag.match47 = icmp eq i64 %str.tag39, %arena.gen46
   br i1 %str.tag.match47, label %str_ok42, label %str_stale43
 
-str_ok42:                                         ; preds = %str_stale43, %str_gen_check41, %or.38.else
-  %eq.rhs.len48 = load i64, ptr @str.25.struct, align 8
+str_ok42:                                         ; preds = %str_stale43, %str_gen_check41, %or.44.else
+  %eq.rhs.len48 = load i64, ptr @str.32.struct, align 8
   %eq.rhs.len49 = and i64 %eq.rhs.len48, 281474976710655
   %str.tag50 = lshr i64 %eq.rhs.len48, 48
   %str.immortal51 = icmp eq i64 %str.tag50, 0
@@ -10502,7 +11795,7 @@ str_stale54:                                      ; preds = %str_gen_check52
 str.eq.then60:                                    ; preds = %str_ok53
   %eq.lhs.data63 = getelementptr inbounds { i64, ptr }, ptr %var.load35, i32 0, i32 1
   %eq.lhs.data64 = load ptr, ptr %eq.lhs.data63, align 8
-  %eq.rhs.data65 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.25.struct, i32 0, i32 1), align 8
+  %eq.rhs.data65 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.32.struct, i32 0, i32 1), align 8
   %eq.memcmp66 = call i32 @memcmp(ptr %eq.lhs.data64, ptr %eq.rhs.data65, i64 %eq.lhs.len38)
   %eq.cmp.zero67 = icmp eq i32 %eq.memcmp66, 0
   br label %str.eq.merge62
@@ -10512,12 +11805,12 @@ str.eq.else61:                                    ; preds = %str_ok53
 
 str.eq.merge62:                                   ; preds = %str.eq.else61, %str.eq.then60
   %str.eq.result68 = phi i1 [ %eq.cmp.zero67, %str.eq.then60 ], [ false, %str.eq.else61 ]
-  br label %or.38.exit
+  br label %or.44.exit
 
-or.39.then:                                       ; preds = %or.38.exit
-  br label %or.39.exit
+or.45.then:                                       ; preds = %or.44.exit
+  br label %or.45.exit
 
-or.39.else:                                       ; preds = %or.38.exit
+or.45.else:                                       ; preds = %or.44.exit
   %var.load69 = load ptr, ptr %var.k, align 8
   %eq.lhs.len70 = getelementptr inbounds { i64, ptr }, ptr %var.load69, i32 0, i32 0
   %eq.lhs.len71 = load i64, ptr %eq.lhs.len70, align 8
@@ -10526,19 +11819,19 @@ or.39.else:                                       ; preds = %or.38.exit
   %str.immortal74 = icmp eq i64 %str.tag73, 0
   br i1 %str.immortal74, label %str_ok76, label %str_gen_check75
 
-or.39.exit:                                       ; preds = %str.eq.merge96, %or.39.then
-  %or.39.phi = phi i1 [ %or.38.phi, %or.39.then ], [ %str.eq.result102, %str.eq.merge96 ]
-  br i1 %or.39.phi, label %or.40.then, label %or.40.else
+or.45.exit:                                       ; preds = %str.eq.merge96, %or.45.then
+  %or.45.phi = phi i1 [ %or.44.phi, %or.45.then ], [ %str.eq.result102, %str.eq.merge96 ]
+  br i1 %or.45.phi, label %or.46.then, label %or.46.else
 
-str_gen_check75:                                  ; preds = %or.39.else
+str_gen_check75:                                  ; preds = %or.45.else
   %arena.gen78 = call ptr @dva_arena_current()
   %arena.gen79 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen78, i32 0, i32 4
   %arena.gen80 = load i64, ptr %arena.gen79, align 8
   %str.tag.match81 = icmp eq i64 %str.tag73, %arena.gen80
   br i1 %str.tag.match81, label %str_ok76, label %str_stale77
 
-str_ok76:                                         ; preds = %str_stale77, %str_gen_check75, %or.39.else
-  %eq.rhs.len82 = load i64, ptr @str.26.struct, align 8
+str_ok76:                                         ; preds = %str_stale77, %str_gen_check75, %or.45.else
+  %eq.rhs.len82 = load i64, ptr @str.33.struct, align 8
   %eq.rhs.len83 = and i64 %eq.rhs.len82, 281474976710655
   %str.tag84 = lshr i64 %eq.rhs.len82, 48
   %str.immortal85 = icmp eq i64 %str.tag84, 0
@@ -10568,7 +11861,7 @@ str_stale88:                                      ; preds = %str_gen_check86
 str.eq.then94:                                    ; preds = %str_ok87
   %eq.lhs.data97 = getelementptr inbounds { i64, ptr }, ptr %var.load69, i32 0, i32 1
   %eq.lhs.data98 = load ptr, ptr %eq.lhs.data97, align 8
-  %eq.rhs.data99 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.26.struct, i32 0, i32 1), align 8
+  %eq.rhs.data99 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.33.struct, i32 0, i32 1), align 8
   %eq.memcmp100 = call i32 @memcmp(ptr %eq.lhs.data98, ptr %eq.rhs.data99, i64 %eq.lhs.len72)
   %eq.cmp.zero101 = icmp eq i32 %eq.memcmp100, 0
   br label %str.eq.merge96
@@ -10578,12 +11871,12 @@ str.eq.else95:                                    ; preds = %str_ok87
 
 str.eq.merge96:                                   ; preds = %str.eq.else95, %str.eq.then94
   %str.eq.result102 = phi i1 [ %eq.cmp.zero101, %str.eq.then94 ], [ false, %str.eq.else95 ]
-  br label %or.39.exit
+  br label %or.45.exit
 
-or.40.then:                                       ; preds = %or.39.exit
-  br label %or.40.exit
+or.46.then:                                       ; preds = %or.45.exit
+  br label %or.46.exit
 
-or.40.else:                                       ; preds = %or.39.exit
+or.46.else:                                       ; preds = %or.45.exit
   %var.load103 = load ptr, ptr %var.k, align 8
   %eq.lhs.len104 = getelementptr inbounds { i64, ptr }, ptr %var.load103, i32 0, i32 0
   %eq.lhs.len105 = load i64, ptr %eq.lhs.len104, align 8
@@ -10592,19 +11885,19 @@ or.40.else:                                       ; preds = %or.39.exit
   %str.immortal108 = icmp eq i64 %str.tag107, 0
   br i1 %str.immortal108, label %str_ok110, label %str_gen_check109
 
-or.40.exit:                                       ; preds = %str.eq.merge130, %or.40.then
-  %or.40.phi = phi i1 [ %or.39.phi, %or.40.then ], [ %str.eq.result136, %str.eq.merge130 ]
-  br i1 %or.40.phi, label %or.41.then, label %or.41.else
+or.46.exit:                                       ; preds = %str.eq.merge130, %or.46.then
+  %or.46.phi = phi i1 [ %or.45.phi, %or.46.then ], [ %str.eq.result136, %str.eq.merge130 ]
+  br i1 %or.46.phi, label %or.47.then, label %or.47.else
 
-str_gen_check109:                                 ; preds = %or.40.else
+str_gen_check109:                                 ; preds = %or.46.else
   %arena.gen112 = call ptr @dva_arena_current()
   %arena.gen113 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen112, i32 0, i32 4
   %arena.gen114 = load i64, ptr %arena.gen113, align 8
   %str.tag.match115 = icmp eq i64 %str.tag107, %arena.gen114
   br i1 %str.tag.match115, label %str_ok110, label %str_stale111
 
-str_ok110:                                        ; preds = %str_stale111, %str_gen_check109, %or.40.else
-  %eq.rhs.len116 = load i64, ptr @str.27.struct, align 8
+str_ok110:                                        ; preds = %str_stale111, %str_gen_check109, %or.46.else
+  %eq.rhs.len116 = load i64, ptr @str.34.struct, align 8
   %eq.rhs.len117 = and i64 %eq.rhs.len116, 281474976710655
   %str.tag118 = lshr i64 %eq.rhs.len116, 48
   %str.immortal119 = icmp eq i64 %str.tag118, 0
@@ -10634,7 +11927,7 @@ str_stale122:                                     ; preds = %str_gen_check120
 str.eq.then128:                                   ; preds = %str_ok121
   %eq.lhs.data131 = getelementptr inbounds { i64, ptr }, ptr %var.load103, i32 0, i32 1
   %eq.lhs.data132 = load ptr, ptr %eq.lhs.data131, align 8
-  %eq.rhs.data133 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
+  %eq.rhs.data133 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.34.struct, i32 0, i32 1), align 8
   %eq.memcmp134 = call i32 @memcmp(ptr %eq.lhs.data132, ptr %eq.rhs.data133, i64 %eq.lhs.len106)
   %eq.cmp.zero135 = icmp eq i32 %eq.memcmp134, 0
   br label %str.eq.merge130
@@ -10644,12 +11937,12 @@ str.eq.else129:                                   ; preds = %str_ok121
 
 str.eq.merge130:                                  ; preds = %str.eq.else129, %str.eq.then128
   %str.eq.result136 = phi i1 [ %eq.cmp.zero135, %str.eq.then128 ], [ false, %str.eq.else129 ]
-  br label %or.40.exit
+  br label %or.46.exit
 
-or.41.then:                                       ; preds = %or.40.exit
-  br label %or.41.exit
+or.47.then:                                       ; preds = %or.46.exit
+  br label %or.47.exit
 
-or.41.else:                                       ; preds = %or.40.exit
+or.47.else:                                       ; preds = %or.46.exit
   %var.load137 = load ptr, ptr %var.k, align 8
   %eq.lhs.len138 = getelementptr inbounds { i64, ptr }, ptr %var.load137, i32 0, i32 0
   %eq.lhs.len139 = load i64, ptr %eq.lhs.len138, align 8
@@ -10658,19 +11951,19 @@ or.41.else:                                       ; preds = %or.40.exit
   %str.immortal142 = icmp eq i64 %str.tag141, 0
   br i1 %str.immortal142, label %str_ok144, label %str_gen_check143
 
-or.41.exit:                                       ; preds = %str.eq.merge164, %or.41.then
-  %or.41.phi = phi i1 [ %or.40.phi, %or.41.then ], [ %str.eq.result170, %str.eq.merge164 ]
-  br i1 %or.41.phi, label %or.42.then, label %or.42.else
+or.47.exit:                                       ; preds = %str.eq.merge164, %or.47.then
+  %or.47.phi = phi i1 [ %or.46.phi, %or.47.then ], [ %str.eq.result170, %str.eq.merge164 ]
+  br i1 %or.47.phi, label %or.48.then, label %or.48.else
 
-str_gen_check143:                                 ; preds = %or.41.else
+str_gen_check143:                                 ; preds = %or.47.else
   %arena.gen146 = call ptr @dva_arena_current()
   %arena.gen147 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen146, i32 0, i32 4
   %arena.gen148 = load i64, ptr %arena.gen147, align 8
   %str.tag.match149 = icmp eq i64 %str.tag141, %arena.gen148
   br i1 %str.tag.match149, label %str_ok144, label %str_stale145
 
-str_ok144:                                        ; preds = %str_stale145, %str_gen_check143, %or.41.else
-  %eq.rhs.len150 = load i64, ptr @str.28.struct, align 8
+str_ok144:                                        ; preds = %str_stale145, %str_gen_check143, %or.47.else
+  %eq.rhs.len150 = load i64, ptr @str.35.struct, align 8
   %eq.rhs.len151 = and i64 %eq.rhs.len150, 281474976710655
   %str.tag152 = lshr i64 %eq.rhs.len150, 48
   %str.immortal153 = icmp eq i64 %str.tag152, 0
@@ -10700,7 +11993,7 @@ str_stale156:                                     ; preds = %str_gen_check154
 str.eq.then162:                                   ; preds = %str_ok155
   %eq.lhs.data165 = getelementptr inbounds { i64, ptr }, ptr %var.load137, i32 0, i32 1
   %eq.lhs.data166 = load ptr, ptr %eq.lhs.data165, align 8
-  %eq.rhs.data167 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.28.struct, i32 0, i32 1), align 8
+  %eq.rhs.data167 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.35.struct, i32 0, i32 1), align 8
   %eq.memcmp168 = call i32 @memcmp(ptr %eq.lhs.data166, ptr %eq.rhs.data167, i64 %eq.lhs.len140)
   %eq.cmp.zero169 = icmp eq i32 %eq.memcmp168, 0
   br label %str.eq.merge164
@@ -10710,12 +12003,12 @@ str.eq.else163:                                   ; preds = %str_ok155
 
 str.eq.merge164:                                  ; preds = %str.eq.else163, %str.eq.then162
   %str.eq.result170 = phi i1 [ %eq.cmp.zero169, %str.eq.then162 ], [ false, %str.eq.else163 ]
-  br label %or.41.exit
+  br label %or.47.exit
 
-or.42.then:                                       ; preds = %or.41.exit
-  br label %or.42.exit
+or.48.then:                                       ; preds = %or.47.exit
+  br label %or.48.exit
 
-or.42.else:                                       ; preds = %or.41.exit
+or.48.else:                                       ; preds = %or.47.exit
   %var.load171 = load ptr, ptr %var.k, align 8
   %eq.lhs.len172 = getelementptr inbounds { i64, ptr }, ptr %var.load171, i32 0, i32 0
   %eq.lhs.len173 = load i64, ptr %eq.lhs.len172, align 8
@@ -10724,19 +12017,19 @@ or.42.else:                                       ; preds = %or.41.exit
   %str.immortal176 = icmp eq i64 %str.tag175, 0
   br i1 %str.immortal176, label %str_ok178, label %str_gen_check177
 
-or.42.exit:                                       ; preds = %str.eq.merge198, %or.42.then
-  %or.42.phi = phi i1 [ %or.41.phi, %or.42.then ], [ %str.eq.result204, %str.eq.merge198 ]
-  br i1 %or.42.phi, label %or.43.then, label %or.43.else
+or.48.exit:                                       ; preds = %str.eq.merge198, %or.48.then
+  %or.48.phi = phi i1 [ %or.47.phi, %or.48.then ], [ %str.eq.result204, %str.eq.merge198 ]
+  br i1 %or.48.phi, label %or.49.then, label %or.49.else
 
-str_gen_check177:                                 ; preds = %or.42.else
+str_gen_check177:                                 ; preds = %or.48.else
   %arena.gen180 = call ptr @dva_arena_current()
   %arena.gen181 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen180, i32 0, i32 4
   %arena.gen182 = load i64, ptr %arena.gen181, align 8
   %str.tag.match183 = icmp eq i64 %str.tag175, %arena.gen182
   br i1 %str.tag.match183, label %str_ok178, label %str_stale179
 
-str_ok178:                                        ; preds = %str_stale179, %str_gen_check177, %or.42.else
-  %eq.rhs.len184 = load i64, ptr @str.29.struct, align 8
+str_ok178:                                        ; preds = %str_stale179, %str_gen_check177, %or.48.else
+  %eq.rhs.len184 = load i64, ptr @str.36.struct, align 8
   %eq.rhs.len185 = and i64 %eq.rhs.len184, 281474976710655
   %str.tag186 = lshr i64 %eq.rhs.len184, 48
   %str.immortal187 = icmp eq i64 %str.tag186, 0
@@ -10766,7 +12059,7 @@ str_stale190:                                     ; preds = %str_gen_check188
 str.eq.then196:                                   ; preds = %str_ok189
   %eq.lhs.data199 = getelementptr inbounds { i64, ptr }, ptr %var.load171, i32 0, i32 1
   %eq.lhs.data200 = load ptr, ptr %eq.lhs.data199, align 8
-  %eq.rhs.data201 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.29.struct, i32 0, i32 1), align 8
+  %eq.rhs.data201 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.36.struct, i32 0, i32 1), align 8
   %eq.memcmp202 = call i32 @memcmp(ptr %eq.lhs.data200, ptr %eq.rhs.data201, i64 %eq.lhs.len174)
   %eq.cmp.zero203 = icmp eq i32 %eq.memcmp202, 0
   br label %str.eq.merge198
@@ -10776,12 +12069,12 @@ str.eq.else197:                                   ; preds = %str_ok189
 
 str.eq.merge198:                                  ; preds = %str.eq.else197, %str.eq.then196
   %str.eq.result204 = phi i1 [ %eq.cmp.zero203, %str.eq.then196 ], [ false, %str.eq.else197 ]
-  br label %or.42.exit
+  br label %or.48.exit
 
-or.43.then:                                       ; preds = %or.42.exit
-  br label %or.43.exit
+or.49.then:                                       ; preds = %or.48.exit
+  br label %or.49.exit
 
-or.43.else:                                       ; preds = %or.42.exit
+or.49.else:                                       ; preds = %or.48.exit
   %var.load205 = load ptr, ptr %var.k, align 8
   %eq.lhs.len206 = getelementptr inbounds { i64, ptr }, ptr %var.load205, i32 0, i32 0
   %eq.lhs.len207 = load i64, ptr %eq.lhs.len206, align 8
@@ -10790,21 +12083,21 @@ or.43.else:                                       ; preds = %or.42.exit
   %str.immortal210 = icmp eq i64 %str.tag209, 0
   br i1 %str.immortal210, label %str_ok212, label %str_gen_check211
 
-or.43.exit:                                       ; preds = %str.eq.merge232, %or.43.then
-  %or.43.phi = phi i1 [ %or.42.phi, %or.43.then ], [ %str.eq.result238, %str.eq.merge232 ]
-  store i1 %or.43.phi, ptr %var.is_known, align 1
+or.49.exit:                                       ; preds = %str.eq.merge232, %or.49.then
+  %or.49.phi = phi i1 [ %or.48.phi, %or.49.then ], [ %str.eq.result238, %str.eq.merge232 ]
+  store i1 %or.49.phi, ptr %var.is_known, align 1
   %var.load239 = load i1, ptr %var.is_known, align 1
   %nottmp = xor i1 %var.load239, true
-  br i1 %nottmp, label %and.44.then, label %and.44.else
+  br i1 %nottmp, label %and.50.then, label %and.50.else
 
-str_gen_check211:                                 ; preds = %or.43.else
+str_gen_check211:                                 ; preds = %or.49.else
   %arena.gen214 = call ptr @dva_arena_current()
   %arena.gen215 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen214, i32 0, i32 4
   %arena.gen216 = load i64, ptr %arena.gen215, align 8
   %str.tag.match217 = icmp eq i64 %str.tag209, %arena.gen216
   br i1 %str.tag.match217, label %str_ok212, label %str_stale213
 
-str_ok212:                                        ; preds = %str_stale213, %str_gen_check211, %or.43.else
+str_ok212:                                        ; preds = %str_stale213, %str_gen_check211, %or.49.else
   %eq.rhs.len218 = load i64, ptr @str.5.struct, align 8
   %eq.rhs.len219 = and i64 %eq.rhs.len218, 281474976710655
   %str.tag220 = lshr i64 %eq.rhs.len218, 48
@@ -10845,32 +12138,32 @@ str.eq.else231:                                   ; preds = %str_ok223
 
 str.eq.merge232:                                  ; preds = %str.eq.else231, %str.eq.then230
   %str.eq.result238 = phi i1 [ %eq.cmp.zero237, %str.eq.then230 ], [ false, %str.eq.else231 ]
-  br label %or.43.exit
+  br label %or.49.exit
 
-and.44.then:                                      ; preds = %or.43.exit
+and.50.then:                                      ; preds = %or.49.exit
   %var.load240 = load i1, ptr %"var.has_err'", align 1
   %nottmp241 = xor i1 %var.load240, true
-  br label %and.44.exit
+  br label %and.50.exit
 
-and.44.else:                                      ; preds = %or.43.exit
-  br label %and.44.exit
+and.50.else:                                      ; preds = %or.49.exit
+  br label %and.50.exit
 
-and.44.exit:                                      ; preds = %and.44.else, %and.44.then
-  %and.44.phi = phi i1 [ %nottmp241, %and.44.then ], [ %nottmp, %and.44.else ]
-  br i1 %and.44.phi, label %choice.then, label %choice.exit
+and.50.exit:                                      ; preds = %and.50.else, %and.50.then
+  %and.50.phi = phi i1 [ %nottmp241, %and.50.then ], [ %nottmp, %and.50.else ]
+  br i1 %and.50.phi, label %choice.then, label %choice.exit
 
-choice.then:                                      ; preds = %and.44.exit
+choice.then:                                      ; preds = %and.50.exit
   store i1 true, ptr %"var.has_err'", align 1
   %var.load242 = load ptr, ptr %var.file, align 8
   %var.load243 = load ptr, ptr %var.k, align 8
-  %concat.lhs = load i64, ptr @str.30.struct, align 8
+  %concat.lhs = load i64, ptr @str.37.struct, align 8
   %concat.lhs244 = and i64 %concat.lhs, 281474976710655
   %str.tag245 = lshr i64 %concat.lhs, 48
   %str.immortal246 = icmp eq i64 %str.tag245, 0
   br i1 %str.immortal246, label %str_ok248, label %str_gen_check247
 
-choice.exit:                                      ; preds = %concat.tot.len309, %and.44.exit
-  br label %loop.latch.37
+choice.exit:                                      ; preds = %concat.tot.len309, %and.50.exit
+  br label %loop.latch.43
 
 str_gen_check247:                                 ; preds = %choice.then
   %arena.gen250 = call ptr @dva_arena_current()
@@ -10880,7 +12173,7 @@ str_gen_check247:                                 ; preds = %choice.then
   br i1 %str.tag.match253, label %str_ok248, label %str_stale249
 
 str_ok248:                                        ; preds = %str_stale249, %str_gen_check247, %choice.then
-  %concat.lhs254 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.30.struct, i32 0, i32 1), align 8
+  %concat.lhs254 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.37.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load243, i32 0, i32 0
   %concat.rhs255 = load i64, ptr %concat.rhs, align 8
   %concat.rhs256 = and i64 %concat.rhs255, 281474976710655
@@ -11030,77 +12323,77 @@ str_overflow_abort310:                            ; preds = %concat.sum.len304
   call void @exit(i32 1)
   br label %concat.tot.len309
 
-and.45.then:                                      ; preds = %loop.exit.37
+and.51.then:                                      ; preds = %loop.exit.43
   %var.load328 = load ptr, ptr %var.doc, align 8
-  %call.res329 = call i64 @"ccl::count"(ptr %var.load328, ptr @str.24.struct)
+  %call.res329 = call i64 @"ccl::count"(ptr %var.load328, ptr @str.31.struct)
   %cmptmp = icmp sgt i64 %call.res329, 1
-  br label %and.45.exit
+  br label %and.51.exit
 
-and.45.else:                                      ; preds = %loop.exit.37
-  br label %and.45.exit
+and.51.else:                                      ; preds = %loop.exit.43
+  br label %and.51.exit
 
-and.45.exit:                                      ; preds = %and.45.else, %and.45.then
-  %and.45.phi = phi i1 [ %cmptmp, %and.45.then ], [ %nottmp327, %and.45.else ]
-  br i1 %and.45.phi, label %choice.then330, label %choice.exit331
+and.51.exit:                                      ; preds = %and.51.else, %and.51.then
+  %and.51.phi = phi i1 [ %cmptmp, %and.51.then ], [ %nottmp327, %and.51.else ]
+  br i1 %and.51.phi, label %choice.then330, label %choice.exit331
 
-choice.then330:                                   ; preds = %and.45.exit
+choice.then330:                                   ; preds = %and.51.exit
   store i1 true, ptr %"var.has_err'", align 1
   %var.load332 = load ptr, ptr %var.file, align 8
-  %call.res333 = call ptr @"ccl::ccl_error"(ptr %var.load332, ptr @str.31.struct, i64 1, i64 1)
+  %call.res333 = call ptr @"ccl::ccl_error"(ptr %var.load332, ptr @str.38.struct, i64 1, i64 1)
   store ptr %call.res333, ptr %"var.err_val'", align 8
   br label %choice.exit331
 
-choice.exit331:                                   ; preds = %choice.then330, %and.45.exit
+choice.exit331:                                   ; preds = %choice.then330, %and.51.exit
   %var.load334 = load i1, ptr %"var.has_err'", align 1
   %nottmp335 = xor i1 %var.load334, true
-  br i1 %nottmp335, label %and.46.then, label %and.46.else
+  br i1 %nottmp335, label %and.52.then, label %and.52.else
 
-and.46.then:                                      ; preds = %choice.exit331
+and.52.then:                                      ; preds = %choice.exit331
   %var.load336 = load ptr, ptr %var.doc, align 8
-  %call.res337 = call i64 @"ccl::count"(ptr %var.load336, ptr @str.25.struct)
+  %call.res337 = call i64 @"ccl::count"(ptr %var.load336, ptr @str.32.struct)
   %cmptmp338 = icmp sgt i64 %call.res337, 1
-  br label %and.46.exit
+  br label %and.52.exit
 
-and.46.else:                                      ; preds = %choice.exit331
-  br label %and.46.exit
+and.52.else:                                      ; preds = %choice.exit331
+  br label %and.52.exit
 
-and.46.exit:                                      ; preds = %and.46.else, %and.46.then
-  %and.46.phi = phi i1 [ %cmptmp338, %and.46.then ], [ %nottmp335, %and.46.else ]
-  br i1 %and.46.phi, label %choice.then339, label %choice.exit340
+and.52.exit:                                      ; preds = %and.52.else, %and.52.then
+  %and.52.phi = phi i1 [ %cmptmp338, %and.52.then ], [ %nottmp335, %and.52.else ]
+  br i1 %and.52.phi, label %choice.then339, label %choice.exit340
 
-choice.then339:                                   ; preds = %and.46.exit
+choice.then339:                                   ; preds = %and.52.exit
   store i1 true, ptr %"var.has_err'", align 1
   %var.load341 = load ptr, ptr %var.file, align 8
-  %call.res342 = call ptr @"ccl::ccl_error"(ptr %var.load341, ptr @str.32.struct, i64 1, i64 1)
+  %call.res342 = call ptr @"ccl::ccl_error"(ptr %var.load341, ptr @str.39.struct, i64 1, i64 1)
   store ptr %call.res342, ptr %"var.err_val'", align 8
   br label %choice.exit340
 
-choice.exit340:                                   ; preds = %choice.then339, %and.46.exit
+choice.exit340:                                   ; preds = %choice.then339, %and.52.exit
   %var.load343 = load i1, ptr %"var.has_err'", align 1
   %nottmp344 = xor i1 %var.load343, true
-  br i1 %nottmp344, label %and.47.then, label %and.47.else
+  br i1 %nottmp344, label %and.53.then, label %and.53.else
 
-and.47.then:                                      ; preds = %choice.exit340
+and.53.then:                                      ; preds = %choice.exit340
   %var.load345 = load ptr, ptr %var.doc, align 8
-  %call.res346 = call i64 @"ccl::count"(ptr %var.load345, ptr @str.26.struct)
+  %call.res346 = call i64 @"ccl::count"(ptr %var.load345, ptr @str.33.struct)
   %cmptmp347 = icmp sgt i64 %call.res346, 1
-  br label %and.47.exit
+  br label %and.53.exit
 
-and.47.else:                                      ; preds = %choice.exit340
-  br label %and.47.exit
+and.53.else:                                      ; preds = %choice.exit340
+  br label %and.53.exit
 
-and.47.exit:                                      ; preds = %and.47.else, %and.47.then
-  %and.47.phi = phi i1 [ %cmptmp347, %and.47.then ], [ %nottmp344, %and.47.else ]
-  br i1 %and.47.phi, label %choice.then348, label %choice.exit349
+and.53.exit:                                      ; preds = %and.53.else, %and.53.then
+  %and.53.phi = phi i1 [ %cmptmp347, %and.53.then ], [ %nottmp344, %and.53.else ]
+  br i1 %and.53.phi, label %choice.then348, label %choice.exit349
 
-choice.then348:                                   ; preds = %and.47.exit
+choice.then348:                                   ; preds = %and.53.exit
   store i1 true, ptr %"var.has_err'", align 1
   %var.load350 = load ptr, ptr %var.file, align 8
-  %call.res351 = call ptr @"ccl::ccl_error"(ptr %var.load350, ptr @str.33.struct, i64 1, i64 1)
+  %call.res351 = call ptr @"ccl::ccl_error"(ptr %var.load350, ptr @str.40.struct, i64 1, i64 1)
   store ptr %call.res351, ptr %"var.err_val'", align 8
   br label %choice.exit349
 
-choice.exit349:                                   ; preds = %choice.then348, %and.47.exit
+choice.exit349:                                   ; preds = %choice.then348, %and.53.exit
   %copy.len352 = load i64, ptr @str.0.struct, align 8
   %copy.len353 = and i64 %copy.len352, 281474976710655
   %str.tag354 = lshr i64 %copy.len352, 48
@@ -11197,7 +12490,7 @@ str_stale394:                                     ; preds = %str_gen_check392
 
 choice.then408:                                   ; preds = %str_ok393
   %var.load410 = load ptr, ptr %var.doc, align 8
-  %call.res411 = call ptr @"ccl::get"(ptr %var.load410, ptr @str.24.struct)
+  %call.res411 = call ptr @"ccl::get"(ptr %var.load410, ptr @str.31.struct)
   store ptr %call.res411, ptr %var.opt_name, align 8
   %var.load412 = load ptr, ptr %var.opt_name, align 8
   %niche.ne.null = icmp ne ptr %var.load412, null
@@ -11219,7 +12512,7 @@ choice.then413:                                   ; preds = %choice.then408
 choice.else:                                      ; preds = %choice.then408
   store i1 true, ptr %"var.has_err'", align 1
   %var.load514 = load ptr, ptr %var.file, align 8
-  %call.res515 = call ptr @"ccl::ccl_error"(ptr %var.load514, ptr @str.36.struct, i64 1, i64 1)
+  %call.res515 = call ptr @"ccl::ccl_error"(ptr %var.load514, ptr @str.43.struct, i64 1, i64 1)
   store ptr %call.res515, ptr %"var.err_val'", align 8
   br label %choice.exit414
 
@@ -11230,7 +12523,7 @@ choice.then419:                                   ; preds = %choice.then413
   store i1 true, ptr %"var.has_err'", align 1
   %var.load422 = load ptr, ptr %var.file, align 8
   %var.load423 = load ptr, ptr %var.n, align 8
-  %concat.lhs424 = load i64, ptr @str.34.struct, align 8
+  %concat.lhs424 = load i64, ptr @str.41.struct, align 8
   %concat.lhs425 = and i64 %concat.lhs424, 281474976710655
   %str.tag426 = lshr i64 %concat.lhs424, 48
   %str.immortal427 = icmp eq i64 %str.tag426, 0
@@ -11252,7 +12545,7 @@ str_gen_check428:                                 ; preds = %choice.then419
   br i1 %str.tag.match434, label %str_ok429, label %str_stale430
 
 str_ok429:                                        ; preds = %str_stale430, %str_gen_check428, %choice.then419
-  %concat.lhs435 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.34.struct, i32 0, i32 1), align 8
+  %concat.lhs435 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.41.struct, i32 0, i32 1), align 8
   %concat.rhs436 = getelementptr inbounds { i64, ptr }, ptr %var.load423, i32 0, i32 0
   %concat.rhs437 = load i64, ptr %concat.rhs436, align 8
   %concat.rhs438 = and i64 %concat.rhs437, 281474976710655
@@ -11332,7 +12625,7 @@ str_gen_check473:                                 ; preds = %concat.tot.len458
 str_ok474:                                        ; preds = %str_stale475, %str_gen_check473, %concat.tot.len458
   %concat.lhs480 = getelementptr inbounds { i64, ptr }, ptr %concat.str465, i32 0, i32 1
   %concat.lhs481 = load ptr, ptr %concat.lhs480, align 8
-  %concat.rhs482 = load i64, ptr @str.35.struct, align 8
+  %concat.rhs482 = load i64, ptr @str.42.struct, align 8
   %concat.rhs483 = and i64 %concat.rhs482, 281474976710655
   %str.tag484 = lshr i64 %concat.rhs482, 48
   %str.immortal485 = icmp eq i64 %str.tag484, 0
@@ -11351,7 +12644,7 @@ str_gen_check486:                                 ; preds = %str_ok474
   br i1 %str.tag.match492, label %str_ok487, label %str_stale488
 
 str_ok487:                                        ; preds = %str_stale488, %str_gen_check486, %str_ok474
-  %concat.rhs493 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.35.struct, i32 0, i32 1), align 8
+  %concat.rhs493 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.42.struct, i32 0, i32 1), align 8
   %concat.sum.len494 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs470, i64 %concat.rhs483)
   %sum495 = extractvalue { i64, i1 } %concat.sum.len494, 0
   %ovf496 = extractvalue { i64, i1 } %concat.sum.len494, 1
@@ -11398,7 +12691,7 @@ str_overflow_abort503:                            ; preds = %concat.sum.len497
 
 choice.then518:                                   ; preds = %choice.exit409
   %var.load520 = load ptr, ptr %var.doc, align 8
-  %call.res521 = call ptr @"ccl::get"(ptr %var.load520, ptr @str.25.struct)
+  %call.res521 = call ptr @"ccl::get"(ptr %var.load520, ptr @str.32.struct)
   store ptr %call.res521, ptr %var.opt_ver, align 8
   %var.load522 = load ptr, ptr %var.opt_ver, align 8
   %niche.ne.null523 = icmp ne ptr %var.load522, null
@@ -11420,7 +12713,7 @@ choice.then524:                                   ; preds = %choice.then518
 choice.else525:                                   ; preds = %choice.then518
   store i1 true, ptr %"var.has_err'", align 1
   %var.load626 = load ptr, ptr %var.file, align 8
-  %call.res627 = call ptr @"ccl::ccl_error"(ptr %var.load626, ptr @str.38.struct, i64 1, i64 1)
+  %call.res627 = call ptr @"ccl::ccl_error"(ptr %var.load626, ptr @str.45.struct, i64 1, i64 1)
   store ptr %call.res627, ptr %"var.err_val'", align 8
   br label %choice.exit526
 
@@ -11431,7 +12724,7 @@ choice.then531:                                   ; preds = %choice.then524
   store i1 true, ptr %"var.has_err'", align 1
   %var.load534 = load ptr, ptr %var.file, align 8
   %var.load535 = load ptr, ptr %var.v, align 8
-  %concat.lhs536 = load i64, ptr @str.37.struct, align 8
+  %concat.lhs536 = load i64, ptr @str.44.struct, align 8
   %concat.lhs537 = and i64 %concat.lhs536, 281474976710655
   %str.tag538 = lshr i64 %concat.lhs536, 48
   %str.immortal539 = icmp eq i64 %str.tag538, 0
@@ -11453,7 +12746,7 @@ str_gen_check540:                                 ; preds = %choice.then531
   br i1 %str.tag.match546, label %str_ok541, label %str_stale542
 
 str_ok541:                                        ; preds = %str_stale542, %str_gen_check540, %choice.then531
-  %concat.lhs547 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.37.struct, i32 0, i32 1), align 8
+  %concat.lhs547 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.44.struct, i32 0, i32 1), align 8
   %concat.rhs548 = getelementptr inbounds { i64, ptr }, ptr %var.load535, i32 0, i32 0
   %concat.rhs549 = load i64, ptr %concat.rhs548, align 8
   %concat.rhs550 = and i64 %concat.rhs549, 281474976710655
@@ -11599,7 +12892,7 @@ str_overflow_abort615:                            ; preds = %concat.sum.len609
 
 choice.then630:                                   ; preds = %choice.exit519
   %var.load632 = load ptr, ptr %var.doc, align 8
-  %call.res633 = call ptr @"ccl::get"(ptr %var.load632, ptr @str.26.struct)
+  %call.res633 = call ptr @"ccl::get"(ptr %var.load632, ptr @str.33.struct)
   store ptr %call.res633, ptr %var.opt_edva, align 8
   %var.load634 = load ptr, ptr %var.opt_edva, align 8
   %niche.ne.null635 = icmp ne ptr %var.load634, null
@@ -11656,7 +12949,7 @@ str_stale647:                                     ; preds = %str_gen_check645
 
 choice.then661:                                   ; preds = %choice.exit631
   %var.load663 = load ptr, ptr %var.doc, align 8
-  %call.res664 = call ptr @"ccl::get_section"(ptr %var.load663, ptr @str.27.struct)
+  %call.res664 = call ptr @"ccl::get_section"(ptr %var.load663, ptr @str.34.struct)
   store ptr %call.res664, ptr %var.opt_deps, align 8
   %var.load665 = load ptr, ptr %var.opt_deps, align 8
   %niche.ne.null666 = icmp ne ptr %var.load665, null
@@ -11679,20 +12972,20 @@ choice.then667:                                   ; preds = %choice.then661
   %arr.cycle.len674 = load i64, ptr %arr.cycle.len673, align 8
   %arr.cycle.data675 = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load672, i32 0, i32 1
   %arr.cycle.data676 = load ptr, ptr %arr.cycle.data675, align 8
-  store i64 0, ptr %loop.idx.48, align 8
-  br label %loop.header.48
+  store i64 0, ptr %loop.idx.54, align 8
+  br label %loop.header.54
 
-choice.exit668:                                   ; preds = %loop.exit.48, %choice.then661
+choice.exit668:                                   ; preds = %loop.exit.54, %choice.then661
   br label %choice.exit662
 
-loop.header.48:                                   ; preds = %loop.latch.48, %choice.then667
-  %counter.load677 = load i64, ptr %loop.idx.48, align 8
+loop.header.54:                                   ; preds = %loop.latch.54, %choice.then667
+  %counter.load677 = load i64, ptr %loop.idx.54, align 8
   %loop.cond678 = icmp slt i64 %counter.load677, %arr.cycle.len674
-  br i1 %loop.cond678, label %loop.body.48, label %loop.exit.nat.48
+  br i1 %loop.cond678, label %loop.body.54, label %loop.exit.nat.54
 
-loop.body.48:                                     ; preds = %loop.header.48
+loop.body.54:                                     ; preds = %loop.header.54
   %loop.rel.i679 = sub i64 %counter.load677, 0
-  store i64 1, ptr %loop.step.48, align 8
+  store i64 1, ptr %loop.step.54, align 8
   %arr.elem.gep680 = getelementptr i64, ptr %arr.cycle.data676, i64 %counter.load677
   %arr.elem.raw681 = load i64, ptr %arr.elem.gep680, align 8
   %arr.elem.ptr682 = inttoptr i64 %arr.elem.raw681 to ptr
@@ -11709,26 +13002,26 @@ loop.body.48:                                     ; preds = %loop.header.48
   %str.immortal691 = icmp eq i64 %str.tag690, 0
   br i1 %str.immortal691, label %str_ok693, label %str_gen_check692
 
-loop.exit.nat.48:                                 ; preds = %loop.header.48
-  br label %loop.exit.48
+loop.exit.nat.54:                                 ; preds = %loop.header.54
+  br label %loop.exit.54
 
-loop.latch.48:                                    ; preds = %choice.exit723
-  %step.val745 = load i64, ptr %loop.step.48, align 8
+loop.latch.54:                                    ; preds = %choice.exit723
+  %step.val745 = load i64, ptr %loop.step.54, align 8
   %loop.next746 = add i64 %counter.load677, %step.val745
-  store i64 %loop.next746, ptr %loop.idx.48, align 8
-  br label %loop.header.48
+  store i64 %loop.next746, ptr %loop.idx.54, align 8
+  br label %loop.header.54
 
-loop.exit.48:                                     ; preds = %loop.exit.nat.48
+loop.exit.54:                                     ; preds = %loop.exit.nat.54
   br label %choice.exit668
 
-str_gen_check692:                                 ; preds = %loop.body.48
+str_gen_check692:                                 ; preds = %loop.body.54
   %arena.gen695 = call ptr @dva_arena_current()
   %arena.gen696 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen695, i32 0, i32 4
   %arena.gen697 = load i64, ptr %arena.gen696, align 8
   %str.tag.match698 = icmp eq i64 %str.tag690, %arena.gen697
   br i1 %str.tag.match698, label %str_ok693, label %str_stale694
 
-str_ok693:                                        ; preds = %str_stale694, %str_gen_check692, %loop.body.48
+str_ok693:                                        ; preds = %str_stale694, %str_gen_check692, %loop.body.54
   %eq.rhs.len699 = load i64, ptr @str.5.struct, align 8
   %eq.rhs.len700 = and i64 %eq.rhs.len699, 281474976710655
   %str.tag701 = lshr i64 %eq.rhs.len699, 48
@@ -11770,21 +13063,21 @@ str.eq.else712:                                   ; preds = %str_ok704
 str.eq.merge713:                                  ; preds = %str.eq.else712, %str.eq.then711
   %str.eq.result719 = phi i1 [ %eq.cmp.zero718, %str.eq.then711 ], [ false, %str.eq.else712 ]
   %str.neq = xor i1 %str.eq.result719, true
-  br i1 %str.neq, label %and.49.then, label %and.49.else
+  br i1 %str.neq, label %and.55.then, label %and.55.else
 
-and.49.then:                                      ; preds = %str.eq.merge713
+and.55.then:                                      ; preds = %str.eq.merge713
   %var.load720 = load i1, ptr %"var.has_err'", align 1
   %nottmp721 = xor i1 %var.load720, true
-  br label %and.49.exit
+  br label %and.55.exit
 
-and.49.else:                                      ; preds = %str.eq.merge713
-  br label %and.49.exit
+and.55.else:                                      ; preds = %str.eq.merge713
+  br label %and.55.exit
 
-and.49.exit:                                      ; preds = %and.49.else, %and.49.then
-  %and.49.phi = phi i1 [ %nottmp721, %and.49.then ], [ %str.neq, %and.49.else ]
-  br i1 %and.49.phi, label %choice.then722, label %choice.exit723
+and.55.exit:                                      ; preds = %and.55.else, %and.55.then
+  %and.55.phi = phi i1 [ %nottmp721, %and.55.then ], [ %str.neq, %and.55.else ]
+  br i1 %and.55.phi, label %choice.then722, label %choice.exit723
 
-choice.then722:                                   ; preds = %and.49.exit
+choice.then722:                                   ; preds = %and.55.exit
   %var.load724 = load ptr, ptr %var.de, align 8
   %var.load725 = load ptr, ptr %var.file, align 8
   %call.res726 = call { i1, i64 } @"ccl::validate_dep"(ptr %var.load724, ptr %var.load725)
@@ -11793,8 +13086,8 @@ choice.then722:                                   ; preds = %and.49.exit
   %ram.tag = extractvalue { i1, i64 } %var.load727, 0
   br i1 %ram.tag, label %choice.then728, label %choice.else729
 
-choice.exit723:                                   ; preds = %choice.exit730, %and.49.exit
-  br label %loop.latch.48
+choice.exit723:                                   ; preds = %choice.exit730, %and.55.exit
+  br label %loop.latch.54
 
 choice.then728:                                   ; preds = %choice.then722
   %ram.pay = extractvalue { i1, i64 } %var.load727, 1
@@ -11864,7 +13157,7 @@ a.store:                                          ; preds = %a.grow, %a.check
 
 choice.then749:                                   ; preds = %choice.exit662
   %var.load751 = load ptr, ptr %var.doc, align 8
-  %call.res752 = call ptr @"ccl::get_section"(ptr %var.load751, ptr @str.28.struct)
+  %call.res752 = call ptr @"ccl::get_section"(ptr %var.load751, ptr @str.35.struct)
   store ptr %call.res752, ptr %var.opt_native, align 8
   %var.load753 = load ptr, ptr %var.opt_native, align 8
   %niche.ne.null754 = icmp ne ptr %var.load753, null
@@ -11886,20 +13179,20 @@ choice.then755:                                   ; preds = %choice.then749
   %arr.cycle.len762 = load i64, ptr %arr.cycle.len761, align 8
   %arr.cycle.data763 = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load760, i32 0, i32 1
   %arr.cycle.data764 = load ptr, ptr %arr.cycle.data763, align 8
-  store i64 0, ptr %loop.idx.50, align 8
-  br label %loop.header.50
+  store i64 0, ptr %loop.idx.56, align 8
+  br label %loop.header.56
 
 choice.exit756:                                   ; preds = %choice.exit986, %choice.then749
   br label %choice.exit750
 
-loop.header.50:                                   ; preds = %loop.latch.50, %choice.then755
-  %counter.load765 = load i64, ptr %loop.idx.50, align 8
+loop.header.56:                                   ; preds = %loop.latch.56, %choice.then755
+  %counter.load765 = load i64, ptr %loop.idx.56, align 8
   %loop.cond766 = icmp slt i64 %counter.load765, %arr.cycle.len762
-  br i1 %loop.cond766, label %loop.body.50, label %loop.exit.nat.50
+  br i1 %loop.cond766, label %loop.body.56, label %loop.exit.nat.56
 
-loop.body.50:                                     ; preds = %loop.header.50
+loop.body.56:                                     ; preds = %loop.header.56
   %loop.rel.i767 = sub i64 %counter.load765, 0
-  store i64 1, ptr %loop.step.50, align 8
+  store i64 1, ptr %loop.step.56, align 8
   %arr.elem.gep768 = getelementptr i64, ptr %arr.cycle.data764, i64 %counter.load765
   %arr.elem.raw769 = load i64, ptr %arr.elem.gep768, align 8
   %arr.elem.ptr770 = inttoptr i64 %arr.elem.raw769 to ptr
@@ -11918,29 +13211,29 @@ loop.body.50:                                     ; preds = %loop.header.50
   %str.immortal781 = icmp eq i64 %str.tag780, 0
   br i1 %str.immortal781, label %str_ok783, label %str_gen_check782
 
-loop.exit.nat.50:                                 ; preds = %loop.header.50
-  br label %loop.exit.50
+loop.exit.nat.56:                                 ; preds = %loop.header.56
+  br label %loop.exit.56
 
-loop.latch.50:                                    ; preds = %choice.exit883
-  %step.val981 = load i64, ptr %loop.step.50, align 8
+loop.latch.56:                                    ; preds = %choice.exit883
+  %step.val981 = load i64, ptr %loop.step.56, align 8
   %loop.next982 = add i64 %counter.load765, %step.val981
-  store i64 %loop.next982, ptr %loop.idx.50, align 8
-  br label %loop.header.50
+  store i64 %loop.next982, ptr %loop.idx.56, align 8
+  br label %loop.header.56
 
-loop.exit.50:                                     ; preds = %loop.exit.nat.50
+loop.exit.56:                                     ; preds = %loop.exit.nat.56
   %var.load983 = load i1, ptr %"var.has_err'", align 1
   %nottmp984 = xor i1 %var.load983, true
   br i1 %nottmp984, label %choice.then985, label %choice.exit986
 
-str_gen_check782:                                 ; preds = %loop.body.50
+str_gen_check782:                                 ; preds = %loop.body.56
   %arena.gen785 = call ptr @dva_arena_current()
   %arena.gen786 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen785, i32 0, i32 4
   %arena.gen787 = load i64, ptr %arena.gen786, align 8
   %str.tag.match788 = icmp eq i64 %str.tag780, %arena.gen787
   br i1 %str.tag.match788, label %str_ok783, label %str_stale784
 
-str_ok783:                                        ; preds = %str_stale784, %str_gen_check782, %loop.body.50
-  %eq.rhs.len789 = load i64, ptr @str.39.struct, align 8
+str_ok783:                                        ; preds = %str_stale784, %str_gen_check782, %loop.body.56
+  %eq.rhs.len789 = load i64, ptr @str.46.struct, align 8
   %eq.rhs.len790 = and i64 %eq.rhs.len789, 281474976710655
   %str.tag791 = lshr i64 %eq.rhs.len789, 48
   %str.immortal792 = icmp eq i64 %str.tag791, 0
@@ -11970,7 +13263,7 @@ str_stale795:                                     ; preds = %str_gen_check793
 str.eq.then801:                                   ; preds = %str_ok794
   %eq.lhs.data804 = getelementptr inbounds { i64, ptr }, ptr %var.load776, i32 0, i32 1
   %eq.lhs.data805 = load ptr, ptr %eq.lhs.data804, align 8
-  %eq.rhs.data806 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.39.struct, i32 0, i32 1), align 8
+  %eq.rhs.data806 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.46.struct, i32 0, i32 1), align 8
   %eq.memcmp807 = call i32 @memcmp(ptr %eq.lhs.data805, ptr %eq.rhs.data806, i64 %eq.lhs.len779)
   %eq.cmp.zero808 = icmp eq i32 %eq.memcmp807, 0
   br label %str.eq.merge803
@@ -11980,12 +13273,12 @@ str.eq.else802:                                   ; preds = %str_ok794
 
 str.eq.merge803:                                  ; preds = %str.eq.else802, %str.eq.then801
   %str.eq.result809 = phi i1 [ %eq.cmp.zero808, %str.eq.then801 ], [ false, %str.eq.else802 ]
-  br i1 %str.eq.result809, label %or.51.then, label %or.51.else
+  br i1 %str.eq.result809, label %or.57.then, label %or.57.else
 
-or.51.then:                                       ; preds = %str.eq.merge803
-  br label %or.51.exit
+or.57.then:                                       ; preds = %str.eq.merge803
+  br label %or.57.exit
 
-or.51.else:                                       ; preds = %str.eq.merge803
+or.57.else:                                       ; preds = %str.eq.merge803
   %var.load810 = load ptr, ptr %var.k775, align 8
   %eq.lhs.len811 = getelementptr inbounds { i64, ptr }, ptr %var.load810, i32 0, i32 0
   %eq.lhs.len812 = load i64, ptr %eq.lhs.len811, align 8
@@ -11994,19 +13287,19 @@ or.51.else:                                       ; preds = %str.eq.merge803
   %str.immortal815 = icmp eq i64 %str.tag814, 0
   br i1 %str.immortal815, label %str_ok817, label %str_gen_check816
 
-or.51.exit:                                       ; preds = %str.eq.merge837, %or.51.then
-  %or.51.phi = phi i1 [ %str.eq.result809, %or.51.then ], [ %str.eq.result843, %str.eq.merge837 ]
-  br i1 %or.51.phi, label %or.52.then, label %or.52.else
+or.57.exit:                                       ; preds = %str.eq.merge837, %or.57.then
+  %or.57.phi = phi i1 [ %str.eq.result809, %or.57.then ], [ %str.eq.result843, %str.eq.merge837 ]
+  br i1 %or.57.phi, label %or.58.then, label %or.58.else
 
-str_gen_check816:                                 ; preds = %or.51.else
+str_gen_check816:                                 ; preds = %or.57.else
   %arena.gen819 = call ptr @dva_arena_current()
   %arena.gen820 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen819, i32 0, i32 4
   %arena.gen821 = load i64, ptr %arena.gen820, align 8
   %str.tag.match822 = icmp eq i64 %str.tag814, %arena.gen821
   br i1 %str.tag.match822, label %str_ok817, label %str_stale818
 
-str_ok817:                                        ; preds = %str_stale818, %str_gen_check816, %or.51.else
-  %eq.rhs.len823 = load i64, ptr @str.40.struct, align 8
+str_ok817:                                        ; preds = %str_stale818, %str_gen_check816, %or.57.else
+  %eq.rhs.len823 = load i64, ptr @str.47.struct, align 8
   %eq.rhs.len824 = and i64 %eq.rhs.len823, 281474976710655
   %str.tag825 = lshr i64 %eq.rhs.len823, 48
   %str.immortal826 = icmp eq i64 %str.tag825, 0
@@ -12036,7 +13329,7 @@ str_stale829:                                     ; preds = %str_gen_check827
 str.eq.then835:                                   ; preds = %str_ok828
   %eq.lhs.data838 = getelementptr inbounds { i64, ptr }, ptr %var.load810, i32 0, i32 1
   %eq.lhs.data839 = load ptr, ptr %eq.lhs.data838, align 8
-  %eq.rhs.data840 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.40.struct, i32 0, i32 1), align 8
+  %eq.rhs.data840 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.47.struct, i32 0, i32 1), align 8
   %eq.memcmp841 = call i32 @memcmp(ptr %eq.lhs.data839, ptr %eq.rhs.data840, i64 %eq.lhs.len813)
   %eq.cmp.zero842 = icmp eq i32 %eq.memcmp841, 0
   br label %str.eq.merge837
@@ -12046,12 +13339,12 @@ str.eq.else836:                                   ; preds = %str_ok828
 
 str.eq.merge837:                                  ; preds = %str.eq.else836, %str.eq.then835
   %str.eq.result843 = phi i1 [ %eq.cmp.zero842, %str.eq.then835 ], [ false, %str.eq.else836 ]
-  br label %or.51.exit
+  br label %or.57.exit
 
-or.52.then:                                       ; preds = %or.51.exit
-  br label %or.52.exit
+or.58.then:                                       ; preds = %or.57.exit
+  br label %or.58.exit
 
-or.52.else:                                       ; preds = %or.51.exit
+or.58.else:                                       ; preds = %or.57.exit
   %var.load844 = load ptr, ptr %var.k775, align 8
   %eq.lhs.len845 = getelementptr inbounds { i64, ptr }, ptr %var.load844, i32 0, i32 0
   %eq.lhs.len846 = load i64, ptr %eq.lhs.len845, align 8
@@ -12060,21 +13353,21 @@ or.52.else:                                       ; preds = %or.51.exit
   %str.immortal849 = icmp eq i64 %str.tag848, 0
   br i1 %str.immortal849, label %str_ok851, label %str_gen_check850
 
-or.52.exit:                                       ; preds = %str.eq.merge871, %or.52.then
-  %or.52.phi = phi i1 [ %or.51.phi, %or.52.then ], [ %str.eq.result877, %str.eq.merge871 ]
-  store i1 %or.52.phi, ptr %var.is_k, align 1
+or.58.exit:                                       ; preds = %str.eq.merge871, %or.58.then
+  %or.58.phi = phi i1 [ %or.57.phi, %or.58.then ], [ %str.eq.result877, %str.eq.merge871 ]
+  store i1 %or.58.phi, ptr %var.is_k, align 1
   %var.load878 = load i1, ptr %var.is_k, align 1
   %nottmp879 = xor i1 %var.load878, true
-  br i1 %nottmp879, label %and.53.then, label %and.53.else
+  br i1 %nottmp879, label %and.59.then, label %and.59.else
 
-str_gen_check850:                                 ; preds = %or.52.else
+str_gen_check850:                                 ; preds = %or.58.else
   %arena.gen853 = call ptr @dva_arena_current()
   %arena.gen854 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen853, i32 0, i32 4
   %arena.gen855 = load i64, ptr %arena.gen854, align 8
   %str.tag.match856 = icmp eq i64 %str.tag848, %arena.gen855
   br i1 %str.tag.match856, label %str_ok851, label %str_stale852
 
-str_ok851:                                        ; preds = %str_stale852, %str_gen_check850, %or.52.else
+str_ok851:                                        ; preds = %str_stale852, %str_gen_check850, %or.58.else
   %eq.rhs.len857 = load i64, ptr @str.5.struct, align 8
   %eq.rhs.len858 = and i64 %eq.rhs.len857, 281474976710655
   %str.tag859 = lshr i64 %eq.rhs.len857, 48
@@ -12115,32 +13408,32 @@ str.eq.else870:                                   ; preds = %str_ok862
 
 str.eq.merge871:                                  ; preds = %str.eq.else870, %str.eq.then869
   %str.eq.result877 = phi i1 [ %eq.cmp.zero876, %str.eq.then869 ], [ false, %str.eq.else870 ]
-  br label %or.52.exit
+  br label %or.58.exit
 
-and.53.then:                                      ; preds = %or.52.exit
+and.59.then:                                      ; preds = %or.58.exit
   %var.load880 = load i1, ptr %"var.has_err'", align 1
   %nottmp881 = xor i1 %var.load880, true
-  br label %and.53.exit
+  br label %and.59.exit
 
-and.53.else:                                      ; preds = %or.52.exit
-  br label %and.53.exit
+and.59.else:                                      ; preds = %or.58.exit
+  br label %and.59.exit
 
-and.53.exit:                                      ; preds = %and.53.else, %and.53.then
-  %and.53.phi = phi i1 [ %nottmp881, %and.53.then ], [ %nottmp879, %and.53.else ]
-  br i1 %and.53.phi, label %choice.then882, label %choice.exit883
+and.59.exit:                                      ; preds = %and.59.else, %and.59.then
+  %and.59.phi = phi i1 [ %nottmp881, %and.59.then ], [ %nottmp879, %and.59.else ]
+  br i1 %and.59.phi, label %choice.then882, label %choice.exit883
 
-choice.then882:                                   ; preds = %and.53.exit
+choice.then882:                                   ; preds = %and.59.exit
   store i1 true, ptr %"var.has_err'", align 1
   %var.load884 = load ptr, ptr %var.file, align 8
   %var.load885 = load ptr, ptr %var.k775, align 8
-  %concat.lhs886 = load i64, ptr @str.41.struct, align 8
+  %concat.lhs886 = load i64, ptr @str.48.struct, align 8
   %concat.lhs887 = and i64 %concat.lhs886, 281474976710655
   %str.tag888 = lshr i64 %concat.lhs886, 48
   %str.immortal889 = icmp eq i64 %str.tag888, 0
   br i1 %str.immortal889, label %str_ok891, label %str_gen_check890
 
-choice.exit883:                                   ; preds = %concat.tot.len964, %and.53.exit
-  br label %loop.latch.50
+choice.exit883:                                   ; preds = %concat.tot.len964, %and.59.exit
+  br label %loop.latch.56
 
 str_gen_check890:                                 ; preds = %choice.then882
   %arena.gen893 = call ptr @dva_arena_current()
@@ -12150,7 +13443,7 @@ str_gen_check890:                                 ; preds = %choice.then882
   br i1 %str.tag.match896, label %str_ok891, label %str_stale892
 
 str_ok891:                                        ; preds = %str_stale892, %str_gen_check890, %choice.then882
-  %concat.lhs897 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.41.struct, i32 0, i32 1), align 8
+  %concat.lhs897 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.48.struct, i32 0, i32 1), align 8
   %concat.rhs898 = getelementptr inbounds { i64, ptr }, ptr %var.load885, i32 0, i32 0
   %concat.rhs899 = load i64, ptr %concat.rhs898, align 8
   %concat.rhs900 = and i64 %concat.rhs899, 281474976710655
@@ -12300,9 +13593,9 @@ str_overflow_abort965:                            ; preds = %concat.sum.len959
   call void @exit(i32 1)
   br label %concat.tot.len964
 
-choice.then985:                                   ; preds = %loop.exit.50
+choice.then985:                                   ; preds = %loop.exit.56
   %var.load987 = load ptr, ptr %var.ndoc, align 8
-  %call.res988 = call ptr @"ccl::get_list"(ptr %var.load987, ptr @str.39.struct)
+  %call.res988 = call ptr @"ccl::get_list"(ptr %var.load987, ptr @str.46.struct)
   store ptr %call.res988, ptr %var.nl, align 8
   %var.load989 = load ptr, ptr %var.nl, align 8
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %var.load989, i32 0, i32 0
@@ -12314,7 +13607,7 @@ choice.then985:                                   ; preds = %loop.exit.50
   %payload.ptr = load ptr, ptr %pay.gep, align 8
   br i1 %is.pos, label %choice.then990, label %choice.exit991
 
-choice.exit986:                                   ; preds = %choice.exit1005, %loop.exit.50
+choice.exit986:                                   ; preds = %choice.exit1005, %loop.exit.56
   br label %choice.exit756
 
 choice.then990:                                   ; preds = %choice.then985
@@ -12326,7 +13619,7 @@ choice.then990:                                   ; preds = %choice.then985
 
 choice.exit991:                                   ; preds = %choice.then990, %choice.then985
   %var.load994 = load ptr, ptr %var.ndoc, align 8
-  %call.res995 = call ptr @"ccl::get_list"(ptr %var.load994, ptr @str.40.struct)
+  %call.res995 = call ptr @"ccl::get_list"(ptr %var.load994, ptr @str.47.struct)
   store ptr %call.res995, ptr %var.np, align 8
   %var.load996 = load ptr, ptr %var.np, align 8
   %tag.gep997 = getelementptr inbounds { i64, ptr }, ptr %var.load996, i32 0, i32 0
@@ -12350,7 +13643,7 @@ choice.exit1005:                                  ; preds = %choice.then1004, %c
 
 choice.then1010:                                  ; preds = %choice.exit750
   %var.load1012 = load ptr, ptr %var.doc, align 8
-  %call.res1013 = call ptr @"ccl::get_section"(ptr %var.load1012, ptr @str.29.struct)
+  %call.res1013 = call ptr @"ccl::get_section"(ptr %var.load1012, ptr @str.36.struct)
   store ptr %call.res1013, ptr %var.opt_ovr, align 8
   %var.load1014 = load ptr, ptr %var.opt_ovr, align 8
   %niche.ne.null1015 = icmp ne ptr %var.load1014, null
@@ -12370,20 +13663,20 @@ choice.then1016:                                  ; preds = %choice.then1010
   %arr.cycle.len1023 = load i64, ptr %arr.cycle.len1022, align 8
   %arr.cycle.data1024 = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load1021, i32 0, i32 1
   %arr.cycle.data1025 = load ptr, ptr %arr.cycle.data1024, align 8
-  store i64 0, ptr %loop.idx.54, align 8
-  br label %loop.header.54
+  store i64 0, ptr %loop.idx.60, align 8
+  br label %loop.header.60
 
-choice.exit1017:                                  ; preds = %loop.exit.54, %choice.then1010
+choice.exit1017:                                  ; preds = %loop.exit.60, %choice.then1010
   br label %choice.exit1011
 
-loop.header.54:                                   ; preds = %loop.latch.54, %choice.then1016
-  %counter.load1026 = load i64, ptr %loop.idx.54, align 8
+loop.header.60:                                   ; preds = %loop.latch.60, %choice.then1016
+  %counter.load1026 = load i64, ptr %loop.idx.60, align 8
   %loop.cond1027 = icmp slt i64 %counter.load1026, %arr.cycle.len1023
-  br i1 %loop.cond1027, label %loop.body.54, label %loop.exit.nat.54
+  br i1 %loop.cond1027, label %loop.body.60, label %loop.exit.nat.60
 
-loop.body.54:                                     ; preds = %loop.header.54
+loop.body.60:                                     ; preds = %loop.header.60
   %loop.rel.i1028 = sub i64 %counter.load1026, 0
-  store i64 1, ptr %loop.step.54, align 8
+  store i64 1, ptr %loop.step.60, align 8
   %arr.elem.gep1029 = getelementptr i64, ptr %arr.cycle.data1025, i64 %counter.load1026
   %arr.elem.raw1030 = load i64, ptr %arr.elem.gep1029, align 8
   %arr.elem.ptr1031 = inttoptr i64 %arr.elem.raw1030 to ptr
@@ -12400,26 +13693,26 @@ loop.body.54:                                     ; preds = %loop.header.54
   %str.immortal1040 = icmp eq i64 %str.tag1039, 0
   br i1 %str.immortal1040, label %str_ok1042, label %str_gen_check1041
 
-loop.exit.nat.54:                                 ; preds = %loop.header.54
-  br label %loop.exit.54
+loop.exit.nat.60:                                 ; preds = %loop.header.60
+  br label %loop.exit.60
 
-loop.latch.54:                                    ; preds = %choice.exit1073
-  %step.val1339 = load i64, ptr %loop.step.54, align 8
+loop.latch.60:                                    ; preds = %choice.exit1073
+  %step.val1339 = load i64, ptr %loop.step.60, align 8
   %loop.next1340 = add i64 %counter.load1026, %step.val1339
-  store i64 %loop.next1340, ptr %loop.idx.54, align 8
-  br label %loop.header.54
+  store i64 %loop.next1340, ptr %loop.idx.60, align 8
+  br label %loop.header.60
 
-loop.exit.54:                                     ; preds = %loop.exit.nat.54
+loop.exit.60:                                     ; preds = %loop.exit.nat.60
   br label %choice.exit1017
 
-str_gen_check1041:                                ; preds = %loop.body.54
+str_gen_check1041:                                ; preds = %loop.body.60
   %arena.gen1044 = call ptr @dva_arena_current()
   %arena.gen1045 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen1044, i32 0, i32 4
   %arena.gen1046 = load i64, ptr %arena.gen1045, align 8
   %str.tag.match1047 = icmp eq i64 %str.tag1039, %arena.gen1046
   br i1 %str.tag.match1047, label %str_ok1042, label %str_stale1043
 
-str_ok1042:                                       ; preds = %str_stale1043, %str_gen_check1041, %loop.body.54
+str_ok1042:                                       ; preds = %str_stale1043, %str_gen_check1041, %loop.body.60
   %eq.rhs.len1048 = load i64, ptr @str.5.struct, align 8
   %eq.rhs.len1049 = and i64 %eq.rhs.len1048, 281474976710655
   %str.tag1050 = lshr i64 %eq.rhs.len1048, 48
@@ -12461,21 +13754,21 @@ str.eq.else1061:                                  ; preds = %str_ok1053
 str.eq.merge1062:                                 ; preds = %str.eq.else1061, %str.eq.then1060
   %str.eq.result1068 = phi i1 [ %eq.cmp.zero1067, %str.eq.then1060 ], [ false, %str.eq.else1061 ]
   %str.neq1069 = xor i1 %str.eq.result1068, true
-  br i1 %str.neq1069, label %and.55.then, label %and.55.else
+  br i1 %str.neq1069, label %and.61.then, label %and.61.else
 
-and.55.then:                                      ; preds = %str.eq.merge1062
+and.61.then:                                      ; preds = %str.eq.merge1062
   %var.load1070 = load i1, ptr %"var.has_err'", align 1
   %nottmp1071 = xor i1 %var.load1070, true
-  br label %and.55.exit
+  br label %and.61.exit
 
-and.55.else:                                      ; preds = %str.eq.merge1062
-  br label %and.55.exit
+and.61.else:                                      ; preds = %str.eq.merge1062
+  br label %and.61.exit
 
-and.55.exit:                                      ; preds = %and.55.else, %and.55.then
-  %and.55.phi = phi i1 [ %nottmp1071, %and.55.then ], [ %str.neq1069, %and.55.else ]
-  br i1 %and.55.phi, label %choice.then1072, label %choice.exit1073
+and.61.exit:                                      ; preds = %and.61.else, %and.61.then
+  %and.61.phi = phi i1 [ %nottmp1071, %and.61.then ], [ %str.neq1069, %and.61.else ]
+  br i1 %and.61.phi, label %choice.then1072, label %choice.exit1073
 
-choice.then1072:                                  ; preds = %and.55.exit
+choice.then1072:                                  ; preds = %and.61.exit
   %var.load1074 = load ptr, ptr %var.oe, align 8
   %fld.gep1075 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1074, i32 0, i32 1
   %fld.load1076 = load ptr, ptr %fld.gep1075, align 8
@@ -12484,8 +13777,8 @@ choice.then1072:                                  ; preds = %and.55.exit
   %tag.match = icmp eq i64 %tag.id1079, 1
   br i1 %tag.match, label %choice.case, label %choice.next
 
-choice.exit1073:                                  ; preds = %choice.exit1077, %and.55.exit
-  br label %loop.latch.54
+choice.exit1073:                                  ; preds = %choice.exit1077, %and.61.exit
+  br label %loop.latch.60
 
 choice.exit1077:                                  ; preds = %choice.next1233, %concat.tot.len1322, %choice.exit1088
   br label %choice.exit1073
@@ -12495,7 +13788,7 @@ choice.case:                                      ; preds = %choice.then1072
   %payload.ptr1081 = load ptr, ptr %pay.gep1080, align 8
   store ptr %payload.ptr1081, ptr %var.oblock, align 8
   %var.load1082 = load ptr, ptr %var.oblock, align 8
-  %call.res1083 = call ptr @"ccl::get"(ptr %var.load1082, ptr @str.15.struct)
+  %call.res1083 = call ptr @"ccl::get"(ptr %var.load1082, ptr @str.16.struct)
   store ptr %call.res1083, ptr %var.path_opt, align 8
   %var.load1084 = load ptr, ptr %var.path_opt, align 8
   %niche.ne.null1085 = icmp ne ptr %var.load1084, null
@@ -12546,7 +13839,7 @@ choice.else1087:                                  ; preds = %choice.case
   %var.load1134 = load ptr, ptr %var.oe, align 8
   %fld.gep1135 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1134, i32 0, i32 0
   %fld.load1136 = load ptr, ptr %fld.gep1135, align 8
-  %concat.lhs1137 = load i64, ptr @str.42.struct, align 8
+  %concat.lhs1137 = load i64, ptr @str.49.struct, align 8
   %concat.lhs1138 = and i64 %concat.lhs1137, 281474976710655
   %str.tag1139 = lshr i64 %concat.lhs1137, 48
   %str.immortal1140 = icmp eq i64 %str.tag1139, 0
@@ -12606,7 +13899,7 @@ str_gen_check1141:                                ; preds = %choice.else1087
   br i1 %str.tag.match1147, label %str_ok1142, label %str_stale1143
 
 str_ok1142:                                       ; preds = %str_stale1143, %str_gen_check1141, %choice.else1087
-  %concat.lhs1148 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.42.struct, i32 0, i32 1), align 8
+  %concat.lhs1148 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
   %concat.rhs1149 = getelementptr inbounds { i64, ptr }, ptr %fld.load1136, i32 0, i32 0
   %concat.rhs1150 = load i64, ptr %concat.rhs1149, align 8
   %concat.rhs1151 = and i64 %concat.rhs1150, 281474976710655
@@ -12686,7 +13979,7 @@ str_gen_check1186:                                ; preds = %concat.tot.len1171
 str_ok1187:                                       ; preds = %str_stale1188, %str_gen_check1186, %concat.tot.len1171
   %concat.lhs1193 = getelementptr inbounds { i64, ptr }, ptr %concat.str1178, i32 0, i32 1
   %concat.lhs1194 = load ptr, ptr %concat.lhs1193, align 8
-  %concat.rhs1195 = load i64, ptr @str.43.struct, align 8
+  %concat.rhs1195 = load i64, ptr @str.50.struct, align 8
   %concat.rhs1196 = and i64 %concat.rhs1195, 281474976710655
   %str.tag1197 = lshr i64 %concat.rhs1195, 48
   %str.immortal1198 = icmp eq i64 %str.tag1197, 0
@@ -12705,7 +13998,7 @@ str_gen_check1199:                                ; preds = %str_ok1187
   br i1 %str.tag.match1205, label %str_ok1200, label %str_stale1201
 
 str_ok1200:                                       ; preds = %str_stale1201, %str_gen_check1199, %str_ok1187
-  %concat.rhs1206 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.43.struct, i32 0, i32 1), align 8
+  %concat.rhs1206 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
   %concat.sum.len1207 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1183, i64 %concat.rhs1196)
   %sum1208 = extractvalue { i64, i1 } %concat.sum.len1207, 0
   %ovf1209 = extractvalue { i64, i1 } %concat.sum.len1207, 1
@@ -12765,7 +14058,7 @@ choice.case1232:                                  ; preds = %choice.next
   %var.load1241 = load ptr, ptr %var.oe, align 8
   %fld.gep1242 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load1241, i32 0, i32 0
   %fld.load1243 = load ptr, ptr %fld.gep1242, align 8
-  %concat.lhs1244 = load i64, ptr @str.42.struct, align 8
+  %concat.lhs1244 = load i64, ptr @str.49.struct, align 8
   %concat.lhs1245 = and i64 %concat.lhs1244, 281474976710655
   %str.tag1246 = lshr i64 %concat.lhs1244, 48
   %str.immortal1247 = icmp eq i64 %str.tag1246, 0
@@ -12782,7 +14075,7 @@ str_gen_check1248:                                ; preds = %choice.case1232
   br i1 %str.tag.match1254, label %str_ok1249, label %str_stale1250
 
 str_ok1249:                                       ; preds = %str_stale1250, %str_gen_check1248, %choice.case1232
-  %concat.lhs1255 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.42.struct, i32 0, i32 1), align 8
+  %concat.lhs1255 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
   %concat.rhs1256 = getelementptr inbounds { i64, ptr }, ptr %fld.load1243, i32 0, i32 0
   %concat.rhs1257 = load i64, ptr %concat.rhs1256, align 8
   %concat.rhs1258 = and i64 %concat.rhs1257, 281474976710655
@@ -12862,7 +14155,7 @@ str_gen_check1293:                                ; preds = %concat.tot.len1278
 str_ok1294:                                       ; preds = %str_stale1295, %str_gen_check1293, %concat.tot.len1278
   %concat.lhs1300 = getelementptr inbounds { i64, ptr }, ptr %concat.str1285, i32 0, i32 1
   %concat.lhs1301 = load ptr, ptr %concat.lhs1300, align 8
-  %concat.rhs1302 = load i64, ptr @str.23.struct, align 8
+  %concat.rhs1302 = load i64, ptr @str.30.struct, align 8
   %concat.rhs1303 = and i64 %concat.rhs1302, 281474976710655
   %str.tag1304 = lshr i64 %concat.rhs1302, 48
   %str.immortal1305 = icmp eq i64 %str.tag1304, 0
@@ -12881,7 +14174,7 @@ str_gen_check1306:                                ; preds = %str_ok1294
   br i1 %str.tag.match1312, label %str_ok1307, label %str_stale1308
 
 str_ok1307:                                       ; preds = %str_stale1308, %str_gen_check1306, %str_ok1294
-  %concat.rhs1313 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.23.struct, i32 0, i32 1), align 8
+  %concat.rhs1313 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.30.struct, i32 0, i32 1), align 8
   %concat.sum.len1314 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1290, i64 %concat.rhs1303)
   %sum1315 = extractvalue { i64, i1 } %concat.sum.len1314, 0
   %ovf1316 = extractvalue { i64, i1 } %concat.sum.len1314, 1
@@ -13060,27 +14353,27 @@ entry:
   %var._3069 = alloca ptr, align 8
   %var._i3068 = alloca i64, align 8
   %var.o = alloca ptr, align 8
-  %loop.step.60 = alloca i64, align 8
-  %loop.idx.60 = alloca i64, align 8
+  %loop.step.66 = alloca i64, align 8
+  %loop.idx.66 = alloca i64, align 8
   %var.sorted_ovr = alloca ptr, align 8
   %var._2739 = alloca ptr, align 8
   %var._i2738 = alloca i64, align 8
   %var.pkg = alloca ptr, align 8
-  %loop.step.59 = alloca i64, align 8
-  %loop.idx.59 = alloca i64, align 8
+  %loop.step.65 = alloca i64, align 8
+  %loop.idx.65 = alloca i64, align 8
   %var.sorted_pkg = alloca ptr, align 8
   %var._2410 = alloca ptr, align 8
   %var._i2409 = alloca i64, align 8
   %var.lib = alloca ptr, align 8
-  %loop.step.58 = alloca i64, align 8
-  %loop.idx.58 = alloca i64, align 8
+  %loop.step.64 = alloca i64, align 8
+  %loop.idx.64 = alloca i64, align 8
   %var.sorted_libs = alloca ptr, align 8
   %var.has_native = alloca i1, align 1
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.d = alloca ptr, align 8
-  %loop.step.56 = alloca i64, align 8
-  %loop.idx.56 = alloca i64, align 8
+  %loop.step.62 = alloca i64, align 8
+  %loop.idx.62 = alloca i64, align 8
   %var.sorted_deps = alloca ptr, align 8
   %var.b = alloca ptr, align 8
   %var.m = alloca ptr, align 8
@@ -13107,7 +14400,7 @@ b.buf.len1:                                       ; preds = %str_overflow_abort,
   %var.load = load ptr, ptr %var.m, align 8
   %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load, i32 0, i32 0
   %fld.load = load ptr, ptr %fld.gep, align 8
-  %concat.lhs = load i64, ptr @str.44.struct, align 8
+  %concat.lhs = load i64, ptr @str.51.struct, align 8
   %concat.lhs3 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -13126,7 +14419,7 @@ str_gen_check:                                    ; preds = %b.buf.len1
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %b.buf.len1
-  %concat.lhs6 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.44.struct, i32 0, i32 1), align 8
+  %concat.lhs6 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.51.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %fld.load, i32 0, i32 0
   %concat.rhs7 = load i64, ptr %concat.rhs, align 8
   %concat.rhs8 = and i64 %concat.rhs7, 281474976710655
@@ -13206,7 +14499,7 @@ str_gen_check35:                                  ; preds = %concat.tot.len26
 str_ok36:                                         ; preds = %str_stale37, %str_gen_check35, %concat.tot.len26
   %concat.lhs42 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs43 = load ptr, ptr %concat.lhs42, align 8
-  %concat.rhs44 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs44 = load i64, ptr @str.52.struct, align 8
   %concat.rhs45 = and i64 %concat.rhs44, 281474976710655
   %str.tag46 = lshr i64 %concat.rhs44, 48
   %str.immortal47 = icmp eq i64 %str.tag46, 0
@@ -13225,7 +14518,7 @@ str_gen_check48:                                  ; preds = %str_ok36
   br i1 %str.tag.match54, label %str_ok49, label %str_stale50
 
 str_ok49:                                         ; preds = %str_stale50, %str_gen_check48, %str_ok36
-  %concat.rhs55 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs55 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len56 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs32, i64 %concat.rhs45)
   %sum57 = extractvalue { i64, i1 } %concat.sum.len56, 0
   %ovf58 = extractvalue { i64, i1 } %concat.sum.len56, 1
@@ -13262,7 +14555,7 @@ concat.tot.len64:                                 ; preds = %str_overflow_abort6
   %str.build.data.gep73 = getelementptr inbounds { i64, ptr }, ptr %concat.str71, i32 0, i32 1
   store ptr %concat.buf67, ptr %str.build.data.gep73, align 8
   %b.load = load ptr, ptr %var.b, align 8
-  %app.str.len = load i64, ptr @str.44.struct, align 8
+  %app.str.len = load i64, ptr @str.51.struct, align 8
   %app.str.len74 = and i64 %app.str.len, 281474976710655
   %str.tag75 = lshr i64 %app.str.len, 48
   %str.immortal76 = icmp eq i64 %str.tag75, 0
@@ -13323,7 +14616,7 @@ b.nogrow2:                                        ; preds = %b.app.new.len87
   br label %b.grow_done
 
 b.grow_done:                                      ; preds = %b.nogrow2, %b.new.buf.len294
-  %app.str.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.44.struct, i32 0, i32 1), align 8
+  %app.str.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.51.struct, i32 0, i32 1), align 8
   %b.app.data = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 1
   %b.app.data97 = load ptr, ptr %b.app.data, align 8
   %b.app.dst = getelementptr i8, ptr %b.app.data97, i64 %b.app.cur.len84
@@ -13419,7 +14712,7 @@ b.grow_done126:                                   ; preds = %b.nogrow2125, %b.ne
   store i8 0, ptr %b.app.nul151, align 1
   %b.len.gep152 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 0
   store i64 %sum117, ptr %b.len.gep152, align 8
-  %app.str.len153 = load i64, ptr @str.45.struct, align 8
+  %app.str.len153 = load i64, ptr @str.52.struct, align 8
   %app.str.len154 = and i64 %app.str.len153, 281474976710655
   %str.tag155 = lshr i64 %app.str.len153, 48
   %str.immortal156 = icmp eq i64 %str.tag155, 0
@@ -13492,7 +14785,7 @@ b.nogrow2175:                                     ; preds = %b.app.new.len169
   br label %b.grow_done176
 
 b.grow_done176:                                   ; preds = %b.nogrow2175, %b.new.buf.len2189
-  %app.str.data196 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data196 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data197 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 1
   %b.app.data198 = load ptr, ptr %b.app.data197, align 8
   %b.app.dst199 = getelementptr i8, ptr %b.app.data198, i64 %b.app.cur.len165
@@ -13504,7 +14797,7 @@ b.grow_done176:                                   ; preds = %b.nogrow2175, %b.ne
   %var.load202 = load ptr, ptr %var.m, align 8
   %fld.gep203 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load202, i32 0, i32 1
   %fld.load204 = load ptr, ptr %fld.gep203, align 8
-  %concat.lhs205 = load i64, ptr @str.46.struct, align 8
+  %concat.lhs205 = load i64, ptr @str.53.struct, align 8
   %concat.lhs206 = and i64 %concat.lhs205, 281474976710655
   %str.tag207 = lshr i64 %concat.lhs205, 48
   %str.immortal208 = icmp eq i64 %str.tag207, 0
@@ -13535,7 +14828,7 @@ str_gen_check209:                                 ; preds = %b.grow_done176
   br i1 %str.tag.match215, label %str_ok210, label %str_stale211
 
 str_ok210:                                        ; preds = %str_stale211, %str_gen_check209, %b.grow_done176
-  %concat.lhs216 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.46.struct, i32 0, i32 1), align 8
+  %concat.lhs216 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
   %concat.rhs217 = getelementptr inbounds { i64, ptr }, ptr %fld.load204, i32 0, i32 0
   %concat.rhs218 = load i64, ptr %concat.rhs217, align 8
   %concat.rhs219 = and i64 %concat.rhs218, 281474976710655
@@ -13615,7 +14908,7 @@ str_gen_check254:                                 ; preds = %concat.tot.len239
 str_ok255:                                        ; preds = %str_stale256, %str_gen_check254, %concat.tot.len239
   %concat.lhs261 = getelementptr inbounds { i64, ptr }, ptr %concat.str246, i32 0, i32 1
   %concat.lhs262 = load ptr, ptr %concat.lhs261, align 8
-  %concat.rhs263 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs263 = load i64, ptr @str.52.struct, align 8
   %concat.rhs264 = and i64 %concat.rhs263, 281474976710655
   %str.tag265 = lshr i64 %concat.rhs263, 48
   %str.immortal266 = icmp eq i64 %str.tag265, 0
@@ -13634,7 +14927,7 @@ str_gen_check267:                                 ; preds = %str_ok255
   br i1 %str.tag.match273, label %str_ok268, label %str_stale269
 
 str_ok268:                                        ; preds = %str_stale269, %str_gen_check267, %str_ok255
-  %concat.rhs274 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs274 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len275 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs251, i64 %concat.rhs264)
   %sum276 = extractvalue { i64, i1 } %concat.sum.len275, 0
   %ovf277 = extractvalue { i64, i1 } %concat.sum.len275, 1
@@ -13671,7 +14964,7 @@ concat.tot.len283:                                ; preds = %str_overflow_abort2
   %str.build.data.gep292 = getelementptr inbounds { i64, ptr }, ptr %concat.str290, i32 0, i32 1
   store ptr %concat.buf286, ptr %str.build.data.gep292, align 8
   %b.load293 = load ptr, ptr %var.b, align 8
-  %app.str.len294 = load i64, ptr @str.46.struct, align 8
+  %app.str.len294 = load i64, ptr @str.53.struct, align 8
   %app.str.len295 = and i64 %app.str.len294, 281474976710655
   %str.tag296 = lshr i64 %app.str.len294, 48
   %str.immortal297 = icmp eq i64 %str.tag296, 0
@@ -13732,7 +15025,7 @@ b.nogrow2316:                                     ; preds = %b.app.new.len310
   br label %b.grow_done317
 
 b.grow_done317:                                   ; preds = %b.nogrow2316, %b.new.buf.len2330
-  %app.str.data337 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.46.struct, i32 0, i32 1), align 8
+  %app.str.data337 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
   %b.app.data338 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load293, i32 0, i32 1
   %b.app.data339 = load ptr, ptr %b.app.data338, align 8
   %b.app.dst340 = getelementptr i8, ptr %b.app.data339, i64 %b.app.cur.len306
@@ -13828,7 +15121,7 @@ b.grow_done370:                                   ; preds = %b.nogrow2369, %b.ne
   store i8 0, ptr %b.app.nul395, align 1
   %b.len.gep396 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load293, i32 0, i32 0
   store i64 %sum361, ptr %b.len.gep396, align 8
-  %app.str.len397 = load i64, ptr @str.45.struct, align 8
+  %app.str.len397 = load i64, ptr @str.52.struct, align 8
   %app.str.len398 = and i64 %app.str.len397, 281474976710655
   %str.tag399 = lshr i64 %app.str.len397, 48
   %str.immortal400 = icmp eq i64 %str.tag399, 0
@@ -13901,7 +15194,7 @@ b.nogrow2419:                                     ; preds = %b.app.new.len413
   br label %b.grow_done420
 
 b.grow_done420:                                   ; preds = %b.nogrow2419, %b.new.buf.len2433
-  %app.str.data440 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data440 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data441 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load293, i32 0, i32 1
   %b.app.data442 = load ptr, ptr %b.app.data441, align 8
   %b.app.dst443 = getelementptr i8, ptr %b.app.data442, i64 %b.app.cur.len409
@@ -13992,7 +15285,7 @@ choice.then:                                      ; preds = %str.eq.merge
   %var.load471 = load ptr, ptr %var.m, align 8
   %fld.gep472 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load471, i32 0, i32 2
   %fld.load473 = load ptr, ptr %fld.gep472, align 8
-  %concat.lhs474 = load i64, ptr @str.47.struct, align 8
+  %concat.lhs474 = load i64, ptr @str.54.struct, align 8
   %concat.lhs475 = and i64 %concat.lhs474, 281474976710655
   %str.tag476 = lshr i64 %concat.lhs474, 48
   %str.immortal477 = icmp eq i64 %str.tag476, 0
@@ -14015,7 +15308,7 @@ str_gen_check478:                                 ; preds = %choice.then
   br i1 %str.tag.match484, label %str_ok479, label %str_stale480
 
 str_ok479:                                        ; preds = %str_stale480, %str_gen_check478, %choice.then
-  %concat.lhs485 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.47.struct, i32 0, i32 1), align 8
+  %concat.lhs485 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
   %concat.rhs486 = getelementptr inbounds { i64, ptr }, ptr %fld.load473, i32 0, i32 0
   %concat.rhs487 = load i64, ptr %concat.rhs486, align 8
   %concat.rhs488 = and i64 %concat.rhs487, 281474976710655
@@ -14095,7 +15388,7 @@ str_gen_check523:                                 ; preds = %concat.tot.len508
 str_ok524:                                        ; preds = %str_stale525, %str_gen_check523, %concat.tot.len508
   %concat.lhs530 = getelementptr inbounds { i64, ptr }, ptr %concat.str515, i32 0, i32 1
   %concat.lhs531 = load ptr, ptr %concat.lhs530, align 8
-  %concat.rhs532 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs532 = load i64, ptr @str.52.struct, align 8
   %concat.rhs533 = and i64 %concat.rhs532, 281474976710655
   %str.tag534 = lshr i64 %concat.rhs532, 48
   %str.immortal535 = icmp eq i64 %str.tag534, 0
@@ -14114,7 +15407,7 @@ str_gen_check536:                                 ; preds = %str_ok524
   br i1 %str.tag.match542, label %str_ok537, label %str_stale538
 
 str_ok537:                                        ; preds = %str_stale538, %str_gen_check536, %str_ok524
-  %concat.rhs543 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs543 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len544 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs520, i64 %concat.rhs533)
   %sum545 = extractvalue { i64, i1 } %concat.sum.len544, 0
   %ovf546 = extractvalue { i64, i1 } %concat.sum.len544, 1
@@ -14151,7 +15444,7 @@ concat.tot.len552:                                ; preds = %str_overflow_abort5
   %str.build.data.gep561 = getelementptr inbounds { i64, ptr }, ptr %concat.str559, i32 0, i32 1
   store ptr %concat.buf555, ptr %str.build.data.gep561, align 8
   %b.load562 = load ptr, ptr %var.b, align 8
-  %app.str.len563 = load i64, ptr @str.47.struct, align 8
+  %app.str.len563 = load i64, ptr @str.54.struct, align 8
   %app.str.len564 = and i64 %app.str.len563, 281474976710655
   %str.tag565 = lshr i64 %app.str.len563, 48
   %str.immortal566 = icmp eq i64 %str.tag565, 0
@@ -14212,7 +15505,7 @@ b.nogrow2585:                                     ; preds = %b.app.new.len579
   br label %b.grow_done586
 
 b.grow_done586:                                   ; preds = %b.nogrow2585, %b.new.buf.len2599
-  %app.str.data606 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.47.struct, i32 0, i32 1), align 8
+  %app.str.data606 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
   %b.app.data607 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load562, i32 0, i32 1
   %b.app.data608 = load ptr, ptr %b.app.data607, align 8
   %b.app.dst609 = getelementptr i8, ptr %b.app.data608, i64 %b.app.cur.len575
@@ -14308,7 +15601,7 @@ b.grow_done639:                                   ; preds = %b.nogrow2638, %b.ne
   store i8 0, ptr %b.app.nul664, align 1
   %b.len.gep665 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load562, i32 0, i32 0
   store i64 %sum630, ptr %b.len.gep665, align 8
-  %app.str.len666 = load i64, ptr @str.45.struct, align 8
+  %app.str.len666 = load i64, ptr @str.52.struct, align 8
   %app.str.len667 = and i64 %app.str.len666, 281474976710655
   %str.tag668 = lshr i64 %app.str.len666, 48
   %str.immortal669 = icmp eq i64 %str.tag668, 0
@@ -14381,7 +15674,7 @@ b.nogrow2688:                                     ; preds = %b.app.new.len682
   br label %b.grow_done689
 
 b.grow_done689:                                   ; preds = %b.nogrow2688, %b.new.buf.len2702
-  %app.str.data709 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data709 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data710 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load562, i32 0, i32 1
   %b.app.data711 = load ptr, ptr %b.app.data710, align 8
   %b.app.dst712 = getelementptr i8, ptr %b.app.data711, i64 %b.app.cur.len678
@@ -14411,20 +15704,20 @@ str_overflow_abort703:                            ; preds = %b.grow2687
 
 choice.then719:                                   ; preds = %choice.exit
   %b.load721 = load ptr, ptr %var.b, align 8
-  %app.str.len722 = load i64, ptr @str.48.struct, align 8
+  %app.str.len722 = load i64, ptr @str.55.struct, align 8
   %app.str.len723 = and i64 %app.str.len722, 281474976710655
   %str.tag724 = lshr i64 %app.str.len722, 48
   %str.immortal725 = icmp eq i64 %str.tag724, 0
   br i1 %str.immortal725, label %str_ok727, label %str_gen_check726
 
-choice.exit720:                                   ; preds = %loop.exit.56, %choice.exit
+choice.exit720:                                   ; preds = %loop.exit.62, %choice.exit
   %var.load2259 = load ptr, ptr %var.m, align 8
   %fld.gep2260 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load2259, i32 0, i32 4
   %fld.load2261 = load ptr, ptr %fld.gep2260, align 8
   %a.len.query2262 = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load2261, i32 0, i32 0
   %a.len.query2263 = load i64, ptr %a.len.query2262, align 8
   %cmptmp2264 = icmp sgt i64 %a.len.query2263, 0
-  br i1 %cmptmp2264, label %or.57.then, label %or.57.else
+  br i1 %cmptmp2264, label %or.63.then, label %or.63.else
 
 str_gen_check726:                                 ; preds = %choice.then719
   %arena.gen729 = call ptr @dva_arena_current()
@@ -14476,7 +15769,7 @@ b.nogrow2744:                                     ; preds = %b.app.new.len738
   br label %b.grow_done745
 
 b.grow_done745:                                   ; preds = %b.nogrow2744, %b.new.buf.len2758
-  %app.str.data765 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.48.struct, i32 0, i32 1), align 8
+  %app.str.data765 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
   %b.app.data766 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load721, i32 0, i32 1
   %b.app.data767 = load ptr, ptr %b.app.data766, align 8
   %b.app.dst768 = getelementptr i8, ptr %b.app.data767, i64 %b.app.cur.len734
@@ -14532,17 +15825,17 @@ a.after:                                          ; preds = %a.create, %b.grow_d
   %arr.cycle.len778 = load i64, ptr %arr.cycle.len, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2, i32 0, i32 1
   %arr.cycle.data779 = load ptr, ptr %arr.cycle.data, align 8
-  store i64 0, ptr %loop.idx.56, align 8
-  br label %loop.header.56
+  store i64 0, ptr %loop.idx.62, align 8
+  br label %loop.header.62
 
-loop.header.56:                                   ; preds = %loop.latch.56, %a.after
-  %counter.load = load i64, ptr %loop.idx.56, align 8
+loop.header.62:                                   ; preds = %loop.latch.62, %a.after
+  %counter.load = load i64, ptr %loop.idx.62, align 8
   %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len778
-  br i1 %loop.cond, label %loop.body.56, label %loop.exit.nat.56
+  br i1 %loop.cond, label %loop.body.62, label %loop.exit.nat.62
 
-loop.body.56:                                     ; preds = %loop.header.56
+loop.body.62:                                     ; preds = %loop.header.62
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.56, align 8
+  store i64 1, ptr %loop.step.62, align 8
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data779, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %arr.elem.ptr = inttoptr i64 %arr.elem.raw to ptr
@@ -14552,33 +15845,33 @@ loop.body.56:                                     ; preds = %loop.header.56
   %var.load780 = load ptr, ptr %var.d, align 8
   %fld.gep781 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load780, i32 0, i32 0
   %fld.load782 = load ptr, ptr %fld.gep781, align 8
-  %concat.lhs783 = load i64, ptr @str.49.struct, align 8
+  %concat.lhs783 = load i64, ptr @str.56.struct, align 8
   %concat.lhs784 = and i64 %concat.lhs783, 281474976710655
   %str.tag785 = lshr i64 %concat.lhs783, 48
   %str.immortal786 = icmp eq i64 %str.tag785, 0
   br i1 %str.immortal786, label %str_ok788, label %str_gen_check787
 
-loop.exit.nat.56:                                 ; preds = %loop.header.56
-  br label %loop.exit.56
+loop.exit.nat.62:                                 ; preds = %loop.header.62
+  br label %loop.exit.62
 
-loop.latch.56:                                    ; preds = %choice.exit1027
-  %step.val = load i64, ptr %loop.step.56, align 8
+loop.latch.62:                                    ; preds = %choice.exit1027
+  %step.val = load i64, ptr %loop.step.62, align 8
   %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.56, align 8
-  br label %loop.header.56
+  store i64 %loop.next, ptr %loop.idx.62, align 8
+  br label %loop.header.62
 
-loop.exit.56:                                     ; preds = %loop.exit.nat.56
+loop.exit.62:                                     ; preds = %loop.exit.nat.62
   br label %choice.exit720
 
-str_gen_check787:                                 ; preds = %loop.body.56
+str_gen_check787:                                 ; preds = %loop.body.62
   %arena.gen790 = call ptr @dva_arena_current()
   %arena.gen791 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen790, i32 0, i32 4
   %arena.gen792 = load i64, ptr %arena.gen791, align 8
   %str.tag.match793 = icmp eq i64 %str.tag785, %arena.gen792
   br i1 %str.tag.match793, label %str_ok788, label %str_stale789
 
-str_ok788:                                        ; preds = %str_stale789, %str_gen_check787, %loop.body.56
-  %concat.lhs794 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+str_ok788:                                        ; preds = %str_stale789, %str_gen_check787, %loop.body.62
+  %concat.lhs794 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %concat.rhs795 = getelementptr inbounds { i64, ptr }, ptr %fld.load782, i32 0, i32 0
   %concat.rhs796 = load i64, ptr %concat.rhs795, align 8
   %concat.rhs797 = and i64 %concat.rhs796, 281474976710655
@@ -14658,7 +15951,7 @@ str_gen_check832:                                 ; preds = %concat.tot.len817
 str_ok833:                                        ; preds = %str_stale834, %str_gen_check832, %concat.tot.len817
   %concat.lhs839 = getelementptr inbounds { i64, ptr }, ptr %concat.str824, i32 0, i32 1
   %concat.lhs840 = load ptr, ptr %concat.lhs839, align 8
-  %concat.rhs841 = load i64, ptr @str.50.struct, align 8
+  %concat.rhs841 = load i64, ptr @str.57.struct, align 8
   %concat.rhs842 = and i64 %concat.rhs841, 281474976710655
   %str.tag843 = lshr i64 %concat.rhs841, 48
   %str.immortal844 = icmp eq i64 %str.tag843, 0
@@ -14677,7 +15970,7 @@ str_gen_check845:                                 ; preds = %str_ok833
   br i1 %str.tag.match851, label %str_ok846, label %str_stale847
 
 str_ok846:                                        ; preds = %str_stale847, %str_gen_check845, %str_ok833
-  %concat.rhs852 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
+  %concat.rhs852 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
   %concat.sum.len853 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs829, i64 %concat.rhs842)
   %sum854 = extractvalue { i64, i1 } %concat.sum.len853, 0
   %ovf855 = extractvalue { i64, i1 } %concat.sum.len853, 1
@@ -14714,7 +16007,7 @@ concat.tot.len861:                                ; preds = %str_overflow_abort8
   %str.build.data.gep870 = getelementptr inbounds { i64, ptr }, ptr %concat.str868, i32 0, i32 1
   store ptr %concat.buf864, ptr %str.build.data.gep870, align 8
   %b.load871 = load ptr, ptr %var.b, align 8
-  %app.str.len872 = load i64, ptr @str.49.struct, align 8
+  %app.str.len872 = load i64, ptr @str.56.struct, align 8
   %app.str.len873 = and i64 %app.str.len872, 281474976710655
   %str.tag874 = lshr i64 %app.str.len872, 48
   %str.immortal875 = icmp eq i64 %str.tag874, 0
@@ -14775,7 +16068,7 @@ b.nogrow2894:                                     ; preds = %b.app.new.len888
   br label %b.grow_done895
 
 b.grow_done895:                                   ; preds = %b.nogrow2894, %b.new.buf.len2908
-  %app.str.data915 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+  %app.str.data915 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %b.app.data916 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load871, i32 0, i32 1
   %b.app.data917 = load ptr, ptr %b.app.data916, align 8
   %b.app.dst918 = getelementptr i8, ptr %b.app.data917, i64 %b.app.cur.len884
@@ -14871,7 +16164,7 @@ b.grow_done948:                                   ; preds = %b.nogrow2947, %b.ne
   store i8 0, ptr %b.app.nul973, align 1
   %b.len.gep974 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load871, i32 0, i32 0
   store i64 %sum939, ptr %b.len.gep974, align 8
-  %app.str.len975 = load i64, ptr @str.50.struct, align 8
+  %app.str.len975 = load i64, ptr @str.57.struct, align 8
   %app.str.len976 = and i64 %app.str.len975, 281474976710655
   %str.tag977 = lshr i64 %app.str.len975, 48
   %str.immortal978 = icmp eq i64 %str.tag977, 0
@@ -14944,7 +16237,7 @@ b.nogrow2997:                                     ; preds = %b.app.new.len991
   br label %b.grow_done998
 
 b.grow_done998:                                   ; preds = %b.nogrow2997, %b.new.buf.len21011
-  %app.str.data1018 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
+  %app.str.data1018 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
   %b.app.data1019 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load871, i32 0, i32 1
   %b.app.data1020 = load ptr, ptr %b.app.data1019, align 8
   %b.app.dst1021 = getelementptr i8, ptr %b.app.data1020, i64 %b.app.cur.len987
@@ -14979,13 +16272,13 @@ str_overflow_abort1012:                           ; preds = %b.grow2996
   br label %b.new.buf.len21011
 
 choice.exit1027:                                  ; preds = %choice.next1766, %b.grow_done2233, %b.grow_done1739, %b.grow_done1490
-  br label %loop.latch.56
+  br label %loop.latch.62
 
 choice.case:                                      ; preds = %b.grow_done998
   %var.load1028 = load ptr, ptr %var.d, align 8
   %fld.gep1029 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load1028, i32 0, i32 2
   %fld.load1030 = load ptr, ptr %fld.gep1029, align 8
-  %concat.lhs1031 = load i64, ptr @str.51.struct, align 8
+  %concat.lhs1031 = load i64, ptr @str.58.struct, align 8
   %concat.lhs1032 = and i64 %concat.lhs1031, 281474976710655
   %str.tag1033 = lshr i64 %concat.lhs1031, 48
   %str.immortal1034 = icmp eq i64 %str.tag1033, 0
@@ -15005,7 +16298,7 @@ str_gen_check1035:                                ; preds = %choice.case
   br i1 %str.tag.match1041, label %str_ok1036, label %str_stale1037
 
 str_ok1036:                                       ; preds = %str_stale1037, %str_gen_check1035, %choice.case
-  %concat.lhs1042 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.51.struct, i32 0, i32 1), align 8
+  %concat.lhs1042 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
   %concat.rhs1043 = getelementptr inbounds { i64, ptr }, ptr %fld.load1030, i32 0, i32 0
   %concat.rhs1044 = load i64, ptr %concat.rhs1043, align 8
   %concat.rhs1045 = and i64 %concat.rhs1044, 281474976710655
@@ -15085,7 +16378,7 @@ str_gen_check1080:                                ; preds = %concat.tot.len1065
 str_ok1081:                                       ; preds = %str_stale1082, %str_gen_check1080, %concat.tot.len1065
   %concat.lhs1087 = getelementptr inbounds { i64, ptr }, ptr %concat.str1072, i32 0, i32 1
   %concat.lhs1088 = load ptr, ptr %concat.lhs1087, align 8
-  %concat.rhs1089 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs1089 = load i64, ptr @str.52.struct, align 8
   %concat.rhs1090 = and i64 %concat.rhs1089, 281474976710655
   %str.tag1091 = lshr i64 %concat.rhs1089, 48
   %str.immortal1092 = icmp eq i64 %str.tag1091, 0
@@ -15104,7 +16397,7 @@ str_gen_check1093:                                ; preds = %str_ok1081
   br i1 %str.tag.match1099, label %str_ok1094, label %str_stale1095
 
 str_ok1094:                                       ; preds = %str_stale1095, %str_gen_check1093, %str_ok1081
-  %concat.rhs1100 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs1100 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len1101 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1077, i64 %concat.rhs1090)
   %sum1102 = extractvalue { i64, i1 } %concat.sum.len1101, 0
   %ovf1103 = extractvalue { i64, i1 } %concat.sum.len1101, 1
@@ -15141,7 +16434,7 @@ concat.tot.len1109:                               ; preds = %str_overflow_abort1
   %str.build.data.gep1118 = getelementptr inbounds { i64, ptr }, ptr %concat.str1116, i32 0, i32 1
   store ptr %concat.buf1112, ptr %str.build.data.gep1118, align 8
   %b.load1119 = load ptr, ptr %var.b, align 8
-  %app.str.len1120 = load i64, ptr @str.51.struct, align 8
+  %app.str.len1120 = load i64, ptr @str.58.struct, align 8
   %app.str.len1121 = and i64 %app.str.len1120, 281474976710655
   %str.tag1122 = lshr i64 %app.str.len1120, 48
   %str.immortal1123 = icmp eq i64 %str.tag1122, 0
@@ -15202,7 +16495,7 @@ b.nogrow21142:                                    ; preds = %b.app.new.len1136
   br label %b.grow_done1143
 
 b.grow_done1143:                                  ; preds = %b.nogrow21142, %b.new.buf.len21156
-  %app.str.data1163 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.51.struct, i32 0, i32 1), align 8
+  %app.str.data1163 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
   %b.app.data1164 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1119, i32 0, i32 1
   %b.app.data1165 = load ptr, ptr %b.app.data1164, align 8
   %b.app.dst1166 = getelementptr i8, ptr %b.app.data1165, i64 %b.app.cur.len1132
@@ -15298,7 +16591,7 @@ b.grow_done1196:                                  ; preds = %b.nogrow21195, %b.n
   store i8 0, ptr %b.app.nul1221, align 1
   %b.len.gep1222 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1119, i32 0, i32 0
   store i64 %sum1187, ptr %b.len.gep1222, align 8
-  %app.str.len1223 = load i64, ptr @str.45.struct, align 8
+  %app.str.len1223 = load i64, ptr @str.52.struct, align 8
   %app.str.len1224 = and i64 %app.str.len1223, 281474976710655
   %str.tag1225 = lshr i64 %app.str.len1223, 48
   %str.immortal1226 = icmp eq i64 %str.tag1225, 0
@@ -15371,7 +16664,7 @@ b.nogrow21245:                                    ; preds = %b.app.new.len1239
   br label %b.grow_done1246
 
 b.grow_done1246:                                  ; preds = %b.nogrow21245, %b.new.buf.len21259
-  %app.str.data1266 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data1266 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data1267 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1119, i32 0, i32 1
   %b.app.data1268 = load ptr, ptr %b.app.data1267, align 8
   %b.app.dst1269 = getelementptr i8, ptr %b.app.data1268, i64 %b.app.cur.len1235
@@ -15383,7 +16676,7 @@ b.grow_done1246:                                  ; preds = %b.nogrow21245, %b.n
   %var.load1272 = load ptr, ptr %var.d, align 8
   %fld.gep1273 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load1272, i32 0, i32 3
   %fld.load1274 = load ptr, ptr %fld.gep1273, align 8
-  %concat.lhs1275 = load i64, ptr @str.52.struct, align 8
+  %concat.lhs1275 = load i64, ptr @str.59.struct, align 8
   %concat.lhs1276 = and i64 %concat.lhs1275, 281474976710655
   %str.tag1277 = lshr i64 %concat.lhs1275, 48
   %str.immortal1278 = icmp eq i64 %str.tag1277, 0
@@ -15414,7 +16707,7 @@ str_gen_check1279:                                ; preds = %b.grow_done1246
   br i1 %str.tag.match1285, label %str_ok1280, label %str_stale1281
 
 str_ok1280:                                       ; preds = %str_stale1281, %str_gen_check1279, %b.grow_done1246
-  %concat.lhs1286 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
+  %concat.lhs1286 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.59.struct, i32 0, i32 1), align 8
   %concat.rhs1287 = getelementptr inbounds { i64, ptr }, ptr %fld.load1274, i32 0, i32 0
   %concat.rhs1288 = load i64, ptr %concat.rhs1287, align 8
   %concat.rhs1289 = and i64 %concat.rhs1288, 281474976710655
@@ -15494,7 +16787,7 @@ str_gen_check1324:                                ; preds = %concat.tot.len1309
 str_ok1325:                                       ; preds = %str_stale1326, %str_gen_check1324, %concat.tot.len1309
   %concat.lhs1331 = getelementptr inbounds { i64, ptr }, ptr %concat.str1316, i32 0, i32 1
   %concat.lhs1332 = load ptr, ptr %concat.lhs1331, align 8
-  %concat.rhs1333 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs1333 = load i64, ptr @str.52.struct, align 8
   %concat.rhs1334 = and i64 %concat.rhs1333, 281474976710655
   %str.tag1335 = lshr i64 %concat.rhs1333, 48
   %str.immortal1336 = icmp eq i64 %str.tag1335, 0
@@ -15513,7 +16806,7 @@ str_gen_check1337:                                ; preds = %str_ok1325
   br i1 %str.tag.match1343, label %str_ok1338, label %str_stale1339
 
 str_ok1338:                                       ; preds = %str_stale1339, %str_gen_check1337, %str_ok1325
-  %concat.rhs1344 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs1344 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len1345 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1321, i64 %concat.rhs1334)
   %sum1346 = extractvalue { i64, i1 } %concat.sum.len1345, 0
   %ovf1347 = extractvalue { i64, i1 } %concat.sum.len1345, 1
@@ -15550,7 +16843,7 @@ concat.tot.len1353:                               ; preds = %str_overflow_abort1
   %str.build.data.gep1362 = getelementptr inbounds { i64, ptr }, ptr %concat.str1360, i32 0, i32 1
   store ptr %concat.buf1356, ptr %str.build.data.gep1362, align 8
   %b.load1363 = load ptr, ptr %var.b, align 8
-  %app.str.len1364 = load i64, ptr @str.52.struct, align 8
+  %app.str.len1364 = load i64, ptr @str.59.struct, align 8
   %app.str.len1365 = and i64 %app.str.len1364, 281474976710655
   %str.tag1366 = lshr i64 %app.str.len1364, 48
   %str.immortal1367 = icmp eq i64 %str.tag1366, 0
@@ -15611,7 +16904,7 @@ b.nogrow21386:                                    ; preds = %b.app.new.len1380
   br label %b.grow_done1387
 
 b.grow_done1387:                                  ; preds = %b.nogrow21386, %b.new.buf.len21400
-  %app.str.data1407 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
+  %app.str.data1407 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.59.struct, i32 0, i32 1), align 8
   %b.app.data1408 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1363, i32 0, i32 1
   %b.app.data1409 = load ptr, ptr %b.app.data1408, align 8
   %b.app.dst1410 = getelementptr i8, ptr %b.app.data1409, i64 %b.app.cur.len1376
@@ -15707,7 +17000,7 @@ b.grow_done1440:                                  ; preds = %b.nogrow21439, %b.n
   store i8 0, ptr %b.app.nul1465, align 1
   %b.len.gep1466 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1363, i32 0, i32 0
   store i64 %sum1431, ptr %b.len.gep1466, align 8
-  %app.str.len1467 = load i64, ptr @str.45.struct, align 8
+  %app.str.len1467 = load i64, ptr @str.52.struct, align 8
   %app.str.len1468 = and i64 %app.str.len1467, 281474976710655
   %str.tag1469 = lshr i64 %app.str.len1467, 48
   %str.immortal1470 = icmp eq i64 %str.tag1469, 0
@@ -15780,7 +17073,7 @@ b.nogrow21489:                                    ; preds = %b.app.new.len1483
   br label %b.grow_done1490
 
 b.grow_done1490:                                  ; preds = %b.nogrow21489, %b.new.buf.len21503
-  %app.str.data1510 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data1510 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data1511 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1363, i32 0, i32 1
   %b.app.data1512 = load ptr, ptr %b.app.data1511, align 8
   %b.app.dst1513 = getelementptr i8, ptr %b.app.data1512, i64 %b.app.cur.len1479
@@ -15812,7 +17105,7 @@ choice.case1516:                                  ; preds = %choice.next
   %var.load1521 = load ptr, ptr %var.d, align 8
   %fld.gep1522 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load1521, i32 0, i32 4
   %fld.load1523 = load ptr, ptr %fld.gep1522, align 8
-  %concat.lhs1524 = load i64, ptr @str.53.struct, align 8
+  %concat.lhs1524 = load i64, ptr @str.60.struct, align 8
   %concat.lhs1525 = and i64 %concat.lhs1524, 281474976710655
   %str.tag1526 = lshr i64 %concat.lhs1524, 48
   %str.immortal1527 = icmp eq i64 %str.tag1526, 0
@@ -15832,7 +17125,7 @@ str_gen_check1528:                                ; preds = %choice.case1516
   br i1 %str.tag.match1534, label %str_ok1529, label %str_stale1530
 
 str_ok1529:                                       ; preds = %str_stale1530, %str_gen_check1528, %choice.case1516
-  %concat.lhs1535 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
+  %concat.lhs1535 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
   %concat.rhs1536 = getelementptr inbounds { i64, ptr }, ptr %fld.load1523, i32 0, i32 0
   %concat.rhs1537 = load i64, ptr %concat.rhs1536, align 8
   %concat.rhs1538 = and i64 %concat.rhs1537, 281474976710655
@@ -15912,7 +17205,7 @@ str_gen_check1573:                                ; preds = %concat.tot.len1558
 str_ok1574:                                       ; preds = %str_stale1575, %str_gen_check1573, %concat.tot.len1558
   %concat.lhs1580 = getelementptr inbounds { i64, ptr }, ptr %concat.str1565, i32 0, i32 1
   %concat.lhs1581 = load ptr, ptr %concat.lhs1580, align 8
-  %concat.rhs1582 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs1582 = load i64, ptr @str.52.struct, align 8
   %concat.rhs1583 = and i64 %concat.rhs1582, 281474976710655
   %str.tag1584 = lshr i64 %concat.rhs1582, 48
   %str.immortal1585 = icmp eq i64 %str.tag1584, 0
@@ -15931,7 +17224,7 @@ str_gen_check1586:                                ; preds = %str_ok1574
   br i1 %str.tag.match1592, label %str_ok1587, label %str_stale1588
 
 str_ok1587:                                       ; preds = %str_stale1588, %str_gen_check1586, %str_ok1574
-  %concat.rhs1593 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs1593 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len1594 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1570, i64 %concat.rhs1583)
   %sum1595 = extractvalue { i64, i1 } %concat.sum.len1594, 0
   %ovf1596 = extractvalue { i64, i1 } %concat.sum.len1594, 1
@@ -15968,7 +17261,7 @@ concat.tot.len1602:                               ; preds = %str_overflow_abort1
   %str.build.data.gep1611 = getelementptr inbounds { i64, ptr }, ptr %concat.str1609, i32 0, i32 1
   store ptr %concat.buf1605, ptr %str.build.data.gep1611, align 8
   %b.load1612 = load ptr, ptr %var.b, align 8
-  %app.str.len1613 = load i64, ptr @str.53.struct, align 8
+  %app.str.len1613 = load i64, ptr @str.60.struct, align 8
   %app.str.len1614 = and i64 %app.str.len1613, 281474976710655
   %str.tag1615 = lshr i64 %app.str.len1613, 48
   %str.immortal1616 = icmp eq i64 %str.tag1615, 0
@@ -16029,7 +17322,7 @@ b.nogrow21635:                                    ; preds = %b.app.new.len1629
   br label %b.grow_done1636
 
 b.grow_done1636:                                  ; preds = %b.nogrow21635, %b.new.buf.len21649
-  %app.str.data1656 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
+  %app.str.data1656 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
   %b.app.data1657 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1612, i32 0, i32 1
   %b.app.data1658 = load ptr, ptr %b.app.data1657, align 8
   %b.app.dst1659 = getelementptr i8, ptr %b.app.data1658, i64 %b.app.cur.len1625
@@ -16125,7 +17418,7 @@ b.grow_done1689:                                  ; preds = %b.nogrow21688, %b.n
   store i8 0, ptr %b.app.nul1714, align 1
   %b.len.gep1715 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1612, i32 0, i32 0
   store i64 %sum1680, ptr %b.len.gep1715, align 8
-  %app.str.len1716 = load i64, ptr @str.45.struct, align 8
+  %app.str.len1716 = load i64, ptr @str.52.struct, align 8
   %app.str.len1717 = and i64 %app.str.len1716, 281474976710655
   %str.tag1718 = lshr i64 %app.str.len1716, 48
   %str.immortal1719 = icmp eq i64 %str.tag1718, 0
@@ -16198,7 +17491,7 @@ b.nogrow21738:                                    ; preds = %b.app.new.len1732
   br label %b.grow_done1739
 
 b.grow_done1739:                                  ; preds = %b.nogrow21738, %b.new.buf.len21752
-  %app.str.data1759 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data1759 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data1760 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1612, i32 0, i32 1
   %b.app.data1761 = load ptr, ptr %b.app.data1760, align 8
   %b.app.dst1762 = getelementptr i8, ptr %b.app.data1761, i64 %b.app.cur.len1728
@@ -16230,7 +17523,7 @@ choice.case1765:                                  ; preds = %choice.next1517
   %var.load1770 = load ptr, ptr %var.d, align 8
   %fld.gep1771 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load1770, i32 0, i32 5
   %fld.load1772 = load ptr, ptr %fld.gep1771, align 8
-  %concat.lhs1773 = load i64, ptr @str.54.struct, align 8
+  %concat.lhs1773 = load i64, ptr @str.61.struct, align 8
   %concat.lhs1774 = and i64 %concat.lhs1773, 281474976710655
   %str.tag1775 = lshr i64 %concat.lhs1773, 48
   %str.immortal1776 = icmp eq i64 %str.tag1775, 0
@@ -16247,7 +17540,7 @@ str_gen_check1777:                                ; preds = %choice.case1765
   br i1 %str.tag.match1783, label %str_ok1778, label %str_stale1779
 
 str_ok1778:                                       ; preds = %str_stale1779, %str_gen_check1777, %choice.case1765
-  %concat.lhs1784 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
+  %concat.lhs1784 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.61.struct, i32 0, i32 1), align 8
   %concat.rhs1785 = getelementptr inbounds { i64, ptr }, ptr %fld.load1772, i32 0, i32 0
   %concat.rhs1786 = load i64, ptr %concat.rhs1785, align 8
   %concat.rhs1787 = and i64 %concat.rhs1786, 281474976710655
@@ -16327,7 +17620,7 @@ str_gen_check1822:                                ; preds = %concat.tot.len1807
 str_ok1823:                                       ; preds = %str_stale1824, %str_gen_check1822, %concat.tot.len1807
   %concat.lhs1829 = getelementptr inbounds { i64, ptr }, ptr %concat.str1814, i32 0, i32 1
   %concat.lhs1830 = load ptr, ptr %concat.lhs1829, align 8
-  %concat.rhs1831 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs1831 = load i64, ptr @str.52.struct, align 8
   %concat.rhs1832 = and i64 %concat.rhs1831, 281474976710655
   %str.tag1833 = lshr i64 %concat.rhs1831, 48
   %str.immortal1834 = icmp eq i64 %str.tag1833, 0
@@ -16346,7 +17639,7 @@ str_gen_check1835:                                ; preds = %str_ok1823
   br i1 %str.tag.match1841, label %str_ok1836, label %str_stale1837
 
 str_ok1836:                                       ; preds = %str_stale1837, %str_gen_check1835, %str_ok1823
-  %concat.rhs1842 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs1842 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len1843 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1819, i64 %concat.rhs1832)
   %sum1844 = extractvalue { i64, i1 } %concat.sum.len1843, 0
   %ovf1845 = extractvalue { i64, i1 } %concat.sum.len1843, 1
@@ -16383,7 +17676,7 @@ concat.tot.len1851:                               ; preds = %str_overflow_abort1
   %str.build.data.gep1860 = getelementptr inbounds { i64, ptr }, ptr %concat.str1858, i32 0, i32 1
   store ptr %concat.buf1854, ptr %str.build.data.gep1860, align 8
   %b.load1861 = load ptr, ptr %var.b, align 8
-  %app.str.len1862 = load i64, ptr @str.54.struct, align 8
+  %app.str.len1862 = load i64, ptr @str.61.struct, align 8
   %app.str.len1863 = and i64 %app.str.len1862, 281474976710655
   %str.tag1864 = lshr i64 %app.str.len1862, 48
   %str.immortal1865 = icmp eq i64 %str.tag1864, 0
@@ -16444,7 +17737,7 @@ b.nogrow21884:                                    ; preds = %b.app.new.len1878
   br label %b.grow_done1885
 
 b.grow_done1885:                                  ; preds = %b.nogrow21884, %b.new.buf.len21898
-  %app.str.data1905 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
+  %app.str.data1905 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.61.struct, i32 0, i32 1), align 8
   %b.app.data1906 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1861, i32 0, i32 1
   %b.app.data1907 = load ptr, ptr %b.app.data1906, align 8
   %b.app.dst1908 = getelementptr i8, ptr %b.app.data1907, i64 %b.app.cur.len1874
@@ -16540,7 +17833,7 @@ b.grow_done1938:                                  ; preds = %b.nogrow21937, %b.n
   store i8 0, ptr %b.app.nul1963, align 1
   %b.len.gep1964 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1861, i32 0, i32 0
   store i64 %sum1929, ptr %b.len.gep1964, align 8
-  %app.str.len1965 = load i64, ptr @str.45.struct, align 8
+  %app.str.len1965 = load i64, ptr @str.52.struct, align 8
   %app.str.len1966 = and i64 %app.str.len1965, 281474976710655
   %str.tag1967 = lshr i64 %app.str.len1965, 48
   %str.immortal1968 = icmp eq i64 %str.tag1967, 0
@@ -16613,7 +17906,7 @@ b.nogrow21987:                                    ; preds = %b.app.new.len1981
   br label %b.grow_done1988
 
 b.grow_done1988:                                  ; preds = %b.nogrow21987, %b.new.buf.len22001
-  %app.str.data2008 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data2008 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data2009 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1861, i32 0, i32 1
   %b.app.data2010 = load ptr, ptr %b.app.data2009, align 8
   %b.app.dst2011 = getelementptr i8, ptr %b.app.data2010, i64 %b.app.cur.len1977
@@ -16625,7 +17918,7 @@ b.grow_done1988:                                  ; preds = %b.nogrow21987, %b.n
   %var.load2014 = load ptr, ptr %var.d, align 8
   %fld.gep2015 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load2014, i32 0, i32 6
   %fld.load2016 = load ptr, ptr %fld.gep2015, align 8
-  %concat.lhs2017 = load i64, ptr @str.55.struct, align 8
+  %concat.lhs2017 = load i64, ptr @str.62.struct, align 8
   %concat.lhs2018 = and i64 %concat.lhs2017, 281474976710655
   %str.tag2019 = lshr i64 %concat.lhs2017, 48
   %str.immortal2020 = icmp eq i64 %str.tag2019, 0
@@ -16656,7 +17949,7 @@ str_gen_check2021:                                ; preds = %b.grow_done1988
   br i1 %str.tag.match2027, label %str_ok2022, label %str_stale2023
 
 str_ok2022:                                       ; preds = %str_stale2023, %str_gen_check2021, %b.grow_done1988
-  %concat.lhs2028 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
+  %concat.lhs2028 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
   %concat.rhs2029 = getelementptr inbounds { i64, ptr }, ptr %fld.load2016, i32 0, i32 0
   %concat.rhs2030 = load i64, ptr %concat.rhs2029, align 8
   %concat.rhs2031 = and i64 %concat.rhs2030, 281474976710655
@@ -16736,7 +18029,7 @@ str_gen_check2066:                                ; preds = %concat.tot.len2051
 str_ok2067:                                       ; preds = %str_stale2068, %str_gen_check2066, %concat.tot.len2051
   %concat.lhs2073 = getelementptr inbounds { i64, ptr }, ptr %concat.str2058, i32 0, i32 1
   %concat.lhs2074 = load ptr, ptr %concat.lhs2073, align 8
-  %concat.rhs2075 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs2075 = load i64, ptr @str.52.struct, align 8
   %concat.rhs2076 = and i64 %concat.rhs2075, 281474976710655
   %str.tag2077 = lshr i64 %concat.rhs2075, 48
   %str.immortal2078 = icmp eq i64 %str.tag2077, 0
@@ -16755,7 +18048,7 @@ str_gen_check2079:                                ; preds = %str_ok2067
   br i1 %str.tag.match2085, label %str_ok2080, label %str_stale2081
 
 str_ok2080:                                       ; preds = %str_stale2081, %str_gen_check2079, %str_ok2067
-  %concat.rhs2086 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs2086 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len2087 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs2063, i64 %concat.rhs2076)
   %sum2088 = extractvalue { i64, i1 } %concat.sum.len2087, 0
   %ovf2089 = extractvalue { i64, i1 } %concat.sum.len2087, 1
@@ -16792,7 +18085,7 @@ concat.tot.len2095:                               ; preds = %str_overflow_abort2
   %str.build.data.gep2104 = getelementptr inbounds { i64, ptr }, ptr %concat.str2102, i32 0, i32 1
   store ptr %concat.buf2098, ptr %str.build.data.gep2104, align 8
   %b.load2105 = load ptr, ptr %var.b, align 8
-  %app.str.len2106 = load i64, ptr @str.55.struct, align 8
+  %app.str.len2106 = load i64, ptr @str.62.struct, align 8
   %app.str.len2107 = and i64 %app.str.len2106, 281474976710655
   %str.tag2108 = lshr i64 %app.str.len2106, 48
   %str.immortal2109 = icmp eq i64 %str.tag2108, 0
@@ -16853,7 +18146,7 @@ b.nogrow22128:                                    ; preds = %b.app.new.len2122
   br label %b.grow_done2129
 
 b.grow_done2129:                                  ; preds = %b.nogrow22128, %b.new.buf.len22142
-  %app.str.data2149 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
+  %app.str.data2149 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
   %b.app.data2150 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2105, i32 0, i32 1
   %b.app.data2151 = load ptr, ptr %b.app.data2150, align 8
   %b.app.dst2152 = getelementptr i8, ptr %b.app.data2151, i64 %b.app.cur.len2118
@@ -16949,7 +18242,7 @@ b.grow_done2183:                                  ; preds = %b.nogrow22182, %b.n
   store i8 0, ptr %b.app.nul2208, align 1
   %b.len.gep2209 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2105, i32 0, i32 0
   store i64 %sum2173, ptr %b.len.gep2209, align 8
-  %app.str.len2210 = load i64, ptr @str.45.struct, align 8
+  %app.str.len2210 = load i64, ptr @str.52.struct, align 8
   %app.str.len2211 = and i64 %app.str.len2210, 281474976710655
   %str.tag2212 = lshr i64 %app.str.len2210, 48
   %str.immortal2213 = icmp eq i64 %str.tag2212, 0
@@ -17022,7 +18315,7 @@ b.nogrow22232:                                    ; preds = %b.app.new.len2226
   br label %b.grow_done2233
 
 b.grow_done2233:                                  ; preds = %b.nogrow22232, %b.new.buf.len22246
-  %app.str.data2253 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data2253 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data2254 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2105, i32 0, i32 1
   %b.app.data2255 = load ptr, ptr %b.app.data2254, align 8
   %b.app.dst2256 = getelementptr i8, ptr %b.app.data2255, i64 %b.app.cur.len2222
@@ -17050,33 +18343,33 @@ str_overflow_abort2247:                           ; preds = %b.grow22231
   call void @exit(i32 1)
   br label %b.new.buf.len22246
 
-or.57.then:                                       ; preds = %choice.exit720
-  br label %or.57.exit
+or.63.then:                                       ; preds = %choice.exit720
+  br label %or.63.exit
 
-or.57.else:                                       ; preds = %choice.exit720
+or.63.else:                                       ; preds = %choice.exit720
   %var.load2265 = load ptr, ptr %var.m, align 8
   %fld.gep2266 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load2265, i32 0, i32 5
   %fld.load2267 = load ptr, ptr %fld.gep2266, align 8
   %a.len.query2268 = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load2267, i32 0, i32 0
   %a.len.query2269 = load i64, ptr %a.len.query2268, align 8
   %cmptmp2270 = icmp sgt i64 %a.len.query2269, 0
-  br label %or.57.exit
+  br label %or.63.exit
 
-or.57.exit:                                       ; preds = %or.57.else, %or.57.then
-  %or.57.phi = phi i1 [ %cmptmp2264, %or.57.then ], [ %cmptmp2270, %or.57.else ]
-  store i1 %or.57.phi, ptr %var.has_native, align 1
+or.63.exit:                                       ; preds = %or.63.else, %or.63.then
+  %or.63.phi = phi i1 [ %cmptmp2264, %or.63.then ], [ %cmptmp2270, %or.63.else ]
+  store i1 %or.63.phi, ptr %var.has_native, align 1
   %var.load2271 = load i1, ptr %var.has_native, align 1
   br i1 %var.load2271, label %choice.then2272, label %choice.exit2273
 
-choice.then2272:                                  ; preds = %or.57.exit
+choice.then2272:                                  ; preds = %or.63.exit
   %b.load2274 = load ptr, ptr %var.b, align 8
-  %app.str.len2275 = load i64, ptr @str.56.struct, align 8
+  %app.str.len2275 = load i64, ptr @str.63.struct, align 8
   %app.str.len2276 = and i64 %app.str.len2275, 281474976710655
   %str.tag2277 = lshr i64 %app.str.len2275, 48
   %str.immortal2278 = icmp eq i64 %str.tag2277, 0
   br i1 %str.immortal2278, label %str_ok2280, label %str_gen_check2279
 
-choice.exit2273:                                  ; preds = %choice.exit2660, %or.57.exit
+choice.exit2273:                                  ; preds = %choice.exit2660, %or.63.exit
   %var.load2983 = load ptr, ptr %var.m, align 8
   %fld.gep2984 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load2983, i32 0, i32 6
   %fld.load2985 = load ptr, ptr %fld.gep2984, align 8
@@ -17135,7 +18428,7 @@ b.nogrow22297:                                    ; preds = %b.app.new.len2291
   br label %b.grow_done2298
 
 b.grow_done2298:                                  ; preds = %b.nogrow22297, %b.new.buf.len22311
-  %app.str.data2318 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
+  %app.str.data2318 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.63.struct, i32 0, i32 1), align 8
   %b.app.data2319 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2274, i32 0, i32 1
   %b.app.data2320 = load ptr, ptr %b.app.data2319, align 8
   %b.app.dst2321 = getelementptr i8, ptr %b.app.data2320, i64 %b.app.cur.len2287
@@ -17171,13 +18464,13 @@ str_overflow_abort2312:                           ; preds = %b.grow22296
 
 choice.then2330:                                  ; preds = %b.grow_done2298
   %b.load2332 = load ptr, ptr %var.b, align 8
-  %app.str.len2333 = load i64, ptr @str.57.struct, align 8
+  %app.str.len2333 = load i64, ptr @str.64.struct, align 8
   %app.str.len2334 = and i64 %app.str.len2333, 281474976710655
   %str.tag2335 = lshr i64 %app.str.len2333, 48
   %str.immortal2336 = icmp eq i64 %str.tag2335, 0
   br i1 %str.immortal2336, label %str_ok2338, label %str_gen_check2337
 
-choice.exit2331:                                  ; preds = %loop.exit.58, %b.grow_done2298
+choice.exit2331:                                  ; preds = %loop.exit.64, %b.grow_done2298
   %var.load2653 = load ptr, ptr %var.m, align 8
   %fld.gep2654 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load2653, i32 0, i32 5
   %fld.load2655 = load ptr, ptr %fld.gep2654, align 8
@@ -17236,7 +18529,7 @@ b.nogrow22355:                                    ; preds = %b.app.new.len2349
   br label %b.grow_done2356
 
 b.grow_done2356:                                  ; preds = %b.nogrow22355, %b.new.buf.len22369
-  %app.str.data2376 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
+  %app.str.data2376 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.64.struct, i32 0, i32 1), align 8
   %b.app.data2377 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2332, i32 0, i32 1
   %b.app.data2378 = load ptr, ptr %b.app.data2377, align 8
   %b.app.dst2379 = getelementptr i8, ptr %b.app.data2378, i64 %b.app.cur.len2345
@@ -17292,17 +18585,17 @@ a.after2390:                                      ; preds = %a.create2389, %b.gr
   %arr.cycle.len2400 = load i64, ptr %arr.cycle.len2399, align 8
   %arr.cycle.data2401 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22398, i32 0, i32 1
   %arr.cycle.data2402 = load ptr, ptr %arr.cycle.data2401, align 8
-  store i64 0, ptr %loop.idx.58, align 8
-  br label %loop.header.58
+  store i64 0, ptr %loop.idx.64, align 8
+  br label %loop.header.64
 
-loop.header.58:                                   ; preds = %loop.latch.58, %a.after2390
-  %counter.load2403 = load i64, ptr %loop.idx.58, align 8
+loop.header.64:                                   ; preds = %loop.latch.64, %a.after2390
+  %counter.load2403 = load i64, ptr %loop.idx.64, align 8
   %loop.cond2404 = icmp slt i64 %counter.load2403, %arr.cycle.len2400
-  br i1 %loop.cond2404, label %loop.body.58, label %loop.exit.nat.58
+  br i1 %loop.cond2404, label %loop.body.64, label %loop.exit.nat.64
 
-loop.body.58:                                     ; preds = %loop.header.58
+loop.body.64:                                     ; preds = %loop.header.64
   %loop.rel.i2405 = sub i64 %counter.load2403, 0
-  store i64 1, ptr %loop.step.58, align 8
+  store i64 1, ptr %loop.step.64, align 8
   %arr.elem.gep2406 = getelementptr i64, ptr %arr.cycle.data2402, i64 %counter.load2403
   %arr.elem.raw2407 = load i64, ptr %arr.elem.gep2406, align 8
   %arr.elem.ptr2408 = inttoptr i64 %arr.elem.raw2407 to ptr
@@ -17310,33 +18603,33 @@ loop.body.58:                                     ; preds = %loop.header.58
   store ptr %arr.elem.ptr2408, ptr %var._2410, align 8
   store ptr %arr.elem.ptr2408, ptr %var.lib, align 8
   %var.load2411 = load ptr, ptr %var.lib, align 8
-  %concat.lhs2412 = load i64, ptr @str.58.struct, align 8
+  %concat.lhs2412 = load i64, ptr @str.65.struct, align 8
   %concat.lhs2413 = and i64 %concat.lhs2412, 281474976710655
   %str.tag2414 = lshr i64 %concat.lhs2412, 48
   %str.immortal2415 = icmp eq i64 %str.tag2414, 0
   br i1 %str.immortal2415, label %str_ok2417, label %str_gen_check2416
 
-loop.exit.nat.58:                                 ; preds = %loop.header.58
-  br label %loop.exit.58
+loop.exit.nat.64:                                 ; preds = %loop.header.64
+  br label %loop.exit.64
 
-loop.latch.58:                                    ; preds = %b.grow_done2625
-  %step.val2651 = load i64, ptr %loop.step.58, align 8
+loop.latch.64:                                    ; preds = %b.grow_done2625
+  %step.val2651 = load i64, ptr %loop.step.64, align 8
   %loop.next2652 = add i64 %counter.load2403, %step.val2651
-  store i64 %loop.next2652, ptr %loop.idx.58, align 8
-  br label %loop.header.58
+  store i64 %loop.next2652, ptr %loop.idx.64, align 8
+  br label %loop.header.64
 
-loop.exit.58:                                     ; preds = %loop.exit.nat.58
+loop.exit.64:                                     ; preds = %loop.exit.nat.64
   br label %choice.exit2331
 
-str_gen_check2416:                                ; preds = %loop.body.58
+str_gen_check2416:                                ; preds = %loop.body.64
   %arena.gen2419 = call ptr @dva_arena_current()
   %arena.gen2420 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen2419, i32 0, i32 4
   %arena.gen2421 = load i64, ptr %arena.gen2420, align 8
   %str.tag.match2422 = icmp eq i64 %str.tag2414, %arena.gen2421
   br i1 %str.tag.match2422, label %str_ok2417, label %str_stale2418
 
-str_ok2417:                                       ; preds = %str_stale2418, %str_gen_check2416, %loop.body.58
-  %concat.lhs2423 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
+str_ok2417:                                       ; preds = %str_stale2418, %str_gen_check2416, %loop.body.64
+  %concat.lhs2423 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.65.struct, i32 0, i32 1), align 8
   %concat.rhs2424 = getelementptr inbounds { i64, ptr }, ptr %var.load2411, i32 0, i32 0
   %concat.rhs2425 = load i64, ptr %concat.rhs2424, align 8
   %concat.rhs2426 = and i64 %concat.rhs2425, 281474976710655
@@ -17416,7 +18709,7 @@ str_gen_check2461:                                ; preds = %concat.tot.len2446
 str_ok2462:                                       ; preds = %str_stale2463, %str_gen_check2461, %concat.tot.len2446
   %concat.lhs2468 = getelementptr inbounds { i64, ptr }, ptr %concat.str2453, i32 0, i32 1
   %concat.lhs2469 = load ptr, ptr %concat.lhs2468, align 8
-  %concat.rhs2470 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs2470 = load i64, ptr @str.52.struct, align 8
   %concat.rhs2471 = and i64 %concat.rhs2470, 281474976710655
   %str.tag2472 = lshr i64 %concat.rhs2470, 48
   %str.immortal2473 = icmp eq i64 %str.tag2472, 0
@@ -17435,7 +18728,7 @@ str_gen_check2474:                                ; preds = %str_ok2462
   br i1 %str.tag.match2480, label %str_ok2475, label %str_stale2476
 
 str_ok2475:                                       ; preds = %str_stale2476, %str_gen_check2474, %str_ok2462
-  %concat.rhs2481 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs2481 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len2482 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs2458, i64 %concat.rhs2471)
   %sum2483 = extractvalue { i64, i1 } %concat.sum.len2482, 0
   %ovf2484 = extractvalue { i64, i1 } %concat.sum.len2482, 1
@@ -17472,7 +18765,7 @@ concat.tot.len2490:                               ; preds = %str_overflow_abort2
   %str.build.data.gep2499 = getelementptr inbounds { i64, ptr }, ptr %concat.str2497, i32 0, i32 1
   store ptr %concat.buf2493, ptr %str.build.data.gep2499, align 8
   %b.load2500 = load ptr, ptr %var.b, align 8
-  %app.str.len2501 = load i64, ptr @str.58.struct, align 8
+  %app.str.len2501 = load i64, ptr @str.65.struct, align 8
   %app.str.len2502 = and i64 %app.str.len2501, 281474976710655
   %str.tag2503 = lshr i64 %app.str.len2501, 48
   %str.immortal2504 = icmp eq i64 %str.tag2503, 0
@@ -17533,7 +18826,7 @@ b.nogrow22523:                                    ; preds = %b.app.new.len2517
   br label %b.grow_done2524
 
 b.grow_done2524:                                  ; preds = %b.nogrow22523, %b.new.buf.len22537
-  %app.str.data2544 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
+  %app.str.data2544 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.65.struct, i32 0, i32 1), align 8
   %b.app.data2545 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2500, i32 0, i32 1
   %b.app.data2546 = load ptr, ptr %b.app.data2545, align 8
   %b.app.dst2547 = getelementptr i8, ptr %b.app.data2546, i64 %b.app.cur.len2513
@@ -17627,7 +18920,7 @@ b.grow_done2575:                                  ; preds = %b.nogrow22574, %b.n
   store i8 0, ptr %b.app.nul2600, align 1
   %b.len.gep2601 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2500, i32 0, i32 0
   store i64 %sum2566, ptr %b.len.gep2601, align 8
-  %app.str.len2602 = load i64, ptr @str.45.struct, align 8
+  %app.str.len2602 = load i64, ptr @str.52.struct, align 8
   %app.str.len2603 = and i64 %app.str.len2602, 281474976710655
   %str.tag2604 = lshr i64 %app.str.len2602, 48
   %str.immortal2605 = icmp eq i64 %str.tag2604, 0
@@ -17700,7 +18993,7 @@ b.nogrow22624:                                    ; preds = %b.app.new.len2618
   br label %b.grow_done2625
 
 b.grow_done2625:                                  ; preds = %b.nogrow22624, %b.new.buf.len22638
-  %app.str.data2645 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data2645 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data2646 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2500, i32 0, i32 1
   %b.app.data2647 = load ptr, ptr %b.app.data2646, align 8
   %b.app.dst2648 = getelementptr i8, ptr %b.app.data2647, i64 %b.app.cur.len2614
@@ -17709,7 +19002,7 @@ b.grow_done2625:                                  ; preds = %b.nogrow22624, %b.n
   store i8 0, ptr %b.app.nul2649, align 1
   %b.len.gep2650 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2500, i32 0, i32 0
   store i64 %sum2616, ptr %b.len.gep2650, align 8
-  br label %loop.latch.58
+  br label %loop.latch.64
 
 b.new.buf.len22638:                               ; preds = %str_overflow_abort2639, %b.grow22623
   %arena.cur2640 = call ptr @dva_arena_current()
@@ -17730,13 +19023,13 @@ str_overflow_abort2639:                           ; preds = %b.grow22623
 
 choice.then2659:                                  ; preds = %choice.exit2331
   %b.load2661 = load ptr, ptr %var.b, align 8
-  %app.str.len2662 = load i64, ptr @str.59.struct, align 8
+  %app.str.len2662 = load i64, ptr @str.66.struct, align 8
   %app.str.len2663 = and i64 %app.str.len2662, 281474976710655
   %str.tag2664 = lshr i64 %app.str.len2662, 48
   %str.immortal2665 = icmp eq i64 %str.tag2664, 0
   br i1 %str.immortal2665, label %str_ok2667, label %str_gen_check2666
 
-choice.exit2660:                                  ; preds = %loop.exit.59, %choice.exit2331
+choice.exit2660:                                  ; preds = %loop.exit.65, %choice.exit2331
   br label %choice.exit2273
 
 str_gen_check2666:                                ; preds = %choice.then2659
@@ -17789,7 +19082,7 @@ b.nogrow22684:                                    ; preds = %b.app.new.len2678
   br label %b.grow_done2685
 
 b.grow_done2685:                                  ; preds = %b.nogrow22684, %b.new.buf.len22698
-  %app.str.data2705 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.59.struct, i32 0, i32 1), align 8
+  %app.str.data2705 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.66.struct, i32 0, i32 1), align 8
   %b.app.data2706 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2661, i32 0, i32 1
   %b.app.data2707 = load ptr, ptr %b.app.data2706, align 8
   %b.app.dst2708 = getelementptr i8, ptr %b.app.data2707, i64 %b.app.cur.len2674
@@ -17845,17 +19138,17 @@ a.after2719:                                      ; preds = %a.create2718, %b.gr
   %arr.cycle.len2729 = load i64, ptr %arr.cycle.len2728, align 8
   %arr.cycle.data2730 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22727, i32 0, i32 1
   %arr.cycle.data2731 = load ptr, ptr %arr.cycle.data2730, align 8
-  store i64 0, ptr %loop.idx.59, align 8
-  br label %loop.header.59
+  store i64 0, ptr %loop.idx.65, align 8
+  br label %loop.header.65
 
-loop.header.59:                                   ; preds = %loop.latch.59, %a.after2719
-  %counter.load2732 = load i64, ptr %loop.idx.59, align 8
+loop.header.65:                                   ; preds = %loop.latch.65, %a.after2719
+  %counter.load2732 = load i64, ptr %loop.idx.65, align 8
   %loop.cond2733 = icmp slt i64 %counter.load2732, %arr.cycle.len2729
-  br i1 %loop.cond2733, label %loop.body.59, label %loop.exit.nat.59
+  br i1 %loop.cond2733, label %loop.body.65, label %loop.exit.nat.65
 
-loop.body.59:                                     ; preds = %loop.header.59
+loop.body.65:                                     ; preds = %loop.header.65
   %loop.rel.i2734 = sub i64 %counter.load2732, 0
-  store i64 1, ptr %loop.step.59, align 8
+  store i64 1, ptr %loop.step.65, align 8
   %arr.elem.gep2735 = getelementptr i64, ptr %arr.cycle.data2731, i64 %counter.load2732
   %arr.elem.raw2736 = load i64, ptr %arr.elem.gep2735, align 8
   %arr.elem.ptr2737 = inttoptr i64 %arr.elem.raw2736 to ptr
@@ -17863,33 +19156,33 @@ loop.body.59:                                     ; preds = %loop.header.59
   store ptr %arr.elem.ptr2737, ptr %var._2739, align 8
   store ptr %arr.elem.ptr2737, ptr %var.pkg, align 8
   %var.load2740 = load ptr, ptr %var.pkg, align 8
-  %concat.lhs2741 = load i64, ptr @str.58.struct, align 8
+  %concat.lhs2741 = load i64, ptr @str.65.struct, align 8
   %concat.lhs2742 = and i64 %concat.lhs2741, 281474976710655
   %str.tag2743 = lshr i64 %concat.lhs2741, 48
   %str.immortal2744 = icmp eq i64 %str.tag2743, 0
   br i1 %str.immortal2744, label %str_ok2746, label %str_gen_check2745
 
-loop.exit.nat.59:                                 ; preds = %loop.header.59
-  br label %loop.exit.59
+loop.exit.nat.65:                                 ; preds = %loop.header.65
+  br label %loop.exit.65
 
-loop.latch.59:                                    ; preds = %b.grow_done2955
-  %step.val2981 = load i64, ptr %loop.step.59, align 8
+loop.latch.65:                                    ; preds = %b.grow_done2955
+  %step.val2981 = load i64, ptr %loop.step.65, align 8
   %loop.next2982 = add i64 %counter.load2732, %step.val2981
-  store i64 %loop.next2982, ptr %loop.idx.59, align 8
-  br label %loop.header.59
+  store i64 %loop.next2982, ptr %loop.idx.65, align 8
+  br label %loop.header.65
 
-loop.exit.59:                                     ; preds = %loop.exit.nat.59
+loop.exit.65:                                     ; preds = %loop.exit.nat.65
   br label %choice.exit2660
 
-str_gen_check2745:                                ; preds = %loop.body.59
+str_gen_check2745:                                ; preds = %loop.body.65
   %arena.gen2748 = call ptr @dva_arena_current()
   %arena.gen2749 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen2748, i32 0, i32 4
   %arena.gen2750 = load i64, ptr %arena.gen2749, align 8
   %str.tag.match2751 = icmp eq i64 %str.tag2743, %arena.gen2750
   br i1 %str.tag.match2751, label %str_ok2746, label %str_stale2747
 
-str_ok2746:                                       ; preds = %str_stale2747, %str_gen_check2745, %loop.body.59
-  %concat.lhs2752 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
+str_ok2746:                                       ; preds = %str_stale2747, %str_gen_check2745, %loop.body.65
+  %concat.lhs2752 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.65.struct, i32 0, i32 1), align 8
   %concat.rhs2753 = getelementptr inbounds { i64, ptr }, ptr %var.load2740, i32 0, i32 0
   %concat.rhs2754 = load i64, ptr %concat.rhs2753, align 8
   %concat.rhs2755 = and i64 %concat.rhs2754, 281474976710655
@@ -17969,7 +19262,7 @@ str_gen_check2790:                                ; preds = %concat.tot.len2775
 str_ok2791:                                       ; preds = %str_stale2792, %str_gen_check2790, %concat.tot.len2775
   %concat.lhs2797 = getelementptr inbounds { i64, ptr }, ptr %concat.str2782, i32 0, i32 1
   %concat.lhs2798 = load ptr, ptr %concat.lhs2797, align 8
-  %concat.rhs2799 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs2799 = load i64, ptr @str.52.struct, align 8
   %concat.rhs2800 = and i64 %concat.rhs2799, 281474976710655
   %str.tag2801 = lshr i64 %concat.rhs2799, 48
   %str.immortal2802 = icmp eq i64 %str.tag2801, 0
@@ -17988,7 +19281,7 @@ str_gen_check2803:                                ; preds = %str_ok2791
   br i1 %str.tag.match2809, label %str_ok2804, label %str_stale2805
 
 str_ok2804:                                       ; preds = %str_stale2805, %str_gen_check2803, %str_ok2791
-  %concat.rhs2810 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs2810 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len2811 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs2787, i64 %concat.rhs2800)
   %sum2812 = extractvalue { i64, i1 } %concat.sum.len2811, 0
   %ovf2813 = extractvalue { i64, i1 } %concat.sum.len2811, 1
@@ -18025,7 +19318,7 @@ concat.tot.len2819:                               ; preds = %str_overflow_abort2
   %str.build.data.gep2828 = getelementptr inbounds { i64, ptr }, ptr %concat.str2826, i32 0, i32 1
   store ptr %concat.buf2822, ptr %str.build.data.gep2828, align 8
   %b.load2829 = load ptr, ptr %var.b, align 8
-  %app.str.len2830 = load i64, ptr @str.58.struct, align 8
+  %app.str.len2830 = load i64, ptr @str.65.struct, align 8
   %app.str.len2831 = and i64 %app.str.len2830, 281474976710655
   %str.tag2832 = lshr i64 %app.str.len2830, 48
   %str.immortal2833 = icmp eq i64 %str.tag2832, 0
@@ -18086,7 +19379,7 @@ b.nogrow22852:                                    ; preds = %b.app.new.len2846
   br label %b.grow_done2853
 
 b.grow_done2853:                                  ; preds = %b.nogrow22852, %b.new.buf.len22866
-  %app.str.data2873 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
+  %app.str.data2873 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.65.struct, i32 0, i32 1), align 8
   %b.app.data2874 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2829, i32 0, i32 1
   %b.app.data2875 = load ptr, ptr %b.app.data2874, align 8
   %b.app.dst2876 = getelementptr i8, ptr %b.app.data2875, i64 %b.app.cur.len2842
@@ -18180,7 +19473,7 @@ b.grow_done2904:                                  ; preds = %b.nogrow22903, %b.n
   store i8 0, ptr %b.app.nul2929, align 1
   %b.len.gep2930 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2829, i32 0, i32 0
   store i64 %sum2895, ptr %b.len.gep2930, align 8
-  %app.str.len2931 = load i64, ptr @str.45.struct, align 8
+  %app.str.len2931 = load i64, ptr @str.52.struct, align 8
   %app.str.len2932 = and i64 %app.str.len2931, 281474976710655
   %str.tag2933 = lshr i64 %app.str.len2931, 48
   %str.immortal2934 = icmp eq i64 %str.tag2933, 0
@@ -18253,7 +19546,7 @@ b.nogrow22954:                                    ; preds = %b.app.new.len2947
   br label %b.grow_done2955
 
 b.grow_done2955:                                  ; preds = %b.nogrow22954, %b.new.buf.len22968
-  %app.str.data2975 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data2975 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data2976 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2829, i32 0, i32 1
   %b.app.data2977 = load ptr, ptr %b.app.data2976, align 8
   %b.app.dst2978 = getelementptr i8, ptr %b.app.data2977, i64 %b.app.cur.len2943
@@ -18262,7 +19555,7 @@ b.grow_done2955:                                  ; preds = %b.nogrow22954, %b.n
   store i8 0, ptr %b.app.nul2979, align 1
   %b.len.gep2980 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2829, i32 0, i32 0
   store i64 %sum2945, ptr %b.len.gep2980, align 8
-  br label %loop.latch.59
+  br label %loop.latch.65
 
 b.new.buf.len22968:                               ; preds = %str_overflow_abort2969, %b.grow22953
   %arena.cur2970 = call ptr @dva_arena_current()
@@ -18283,13 +19576,13 @@ str_overflow_abort2969:                           ; preds = %b.grow22953
 
 choice.then2989:                                  ; preds = %choice.exit2273
   %b.load2991 = load ptr, ptr %var.b, align 8
-  %app.str.len2992 = load i64, ptr @str.60.struct, align 8
+  %app.str.len2992 = load i64, ptr @str.67.struct, align 8
   %app.str.len2993 = and i64 %app.str.len2992, 281474976710655
   %str.tag2994 = lshr i64 %app.str.len2992, 48
   %str.immortal2995 = icmp eq i64 %str.tag2994, 0
   br i1 %str.immortal2995, label %str_ok2997, label %str_gen_check2996
 
-choice.exit2990:                                  ; preds = %loop.exit.60, %choice.exit2273
+choice.exit2990:                                  ; preds = %loop.exit.66, %choice.exit2273
   %var.load3560 = load ptr, ptr %var.b, align 8
   %b.freeze.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load3560, i32 0, i32 0
   %b.freeze.len3561 = load i64, ptr %b.freeze.len, align 8
@@ -18351,7 +19644,7 @@ b.nogrow23014:                                    ; preds = %b.app.new.len3008
   br label %b.grow_done3015
 
 b.grow_done3015:                                  ; preds = %b.nogrow23014, %b.new.buf.len23028
-  %app.str.data3035 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
+  %app.str.data3035 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.67.struct, i32 0, i32 1), align 8
   %b.app.data3036 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2991, i32 0, i32 1
   %b.app.data3037 = load ptr, ptr %b.app.data3036, align 8
   %b.app.dst3038 = getelementptr i8, ptr %b.app.data3037, i64 %b.app.cur.len3004
@@ -18407,17 +19700,17 @@ a.after3049:                                      ; preds = %a.create3048, %b.gr
   %arr.cycle.len3059 = load i64, ptr %arr.cycle.len3058, align 8
   %arr.cycle.data3060 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23057, i32 0, i32 1
   %arr.cycle.data3061 = load ptr, ptr %arr.cycle.data3060, align 8
-  store i64 0, ptr %loop.idx.60, align 8
-  br label %loop.header.60
+  store i64 0, ptr %loop.idx.66, align 8
+  br label %loop.header.66
 
-loop.header.60:                                   ; preds = %loop.latch.60, %a.after3049
-  %counter.load3062 = load i64, ptr %loop.idx.60, align 8
+loop.header.66:                                   ; preds = %loop.latch.66, %a.after3049
+  %counter.load3062 = load i64, ptr %loop.idx.66, align 8
   %loop.cond3063 = icmp slt i64 %counter.load3062, %arr.cycle.len3059
-  br i1 %loop.cond3063, label %loop.body.60, label %loop.exit.nat.60
+  br i1 %loop.cond3063, label %loop.body.66, label %loop.exit.nat.66
 
-loop.body.60:                                     ; preds = %loop.header.60
+loop.body.66:                                     ; preds = %loop.header.66
   %loop.rel.i3064 = sub i64 %counter.load3062, 0
-  store i64 1, ptr %loop.step.60, align 8
+  store i64 1, ptr %loop.step.66, align 8
   %arr.elem.gep3065 = getelementptr i64, ptr %arr.cycle.data3061, i64 %counter.load3062
   %arr.elem.raw3066 = load i64, ptr %arr.elem.gep3065, align 8
   %arr.elem.ptr3067 = inttoptr i64 %arr.elem.raw3066 to ptr
@@ -18427,33 +19720,33 @@ loop.body.60:                                     ; preds = %loop.header.60
   %var.load3070 = load ptr, ptr %var.o, align 8
   %fld.gep3071 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load3070, i32 0, i32 0
   %fld.load3072 = load ptr, ptr %fld.gep3071, align 8
-  %concat.lhs3073 = load i64, ptr @str.49.struct, align 8
+  %concat.lhs3073 = load i64, ptr @str.56.struct, align 8
   %concat.lhs3074 = and i64 %concat.lhs3073, 281474976710655
   %str.tag3075 = lshr i64 %concat.lhs3073, 48
   %str.immortal3076 = icmp eq i64 %str.tag3075, 0
   br i1 %str.immortal3076, label %str_ok3078, label %str_gen_check3077
 
-loop.exit.nat.60:                                 ; preds = %loop.header.60
-  br label %loop.exit.60
+loop.exit.nat.66:                                 ; preds = %loop.header.66
+  br label %loop.exit.66
 
-loop.latch.60:                                    ; preds = %b.grow_done3532
-  %step.val3558 = load i64, ptr %loop.step.60, align 8
+loop.latch.66:                                    ; preds = %b.grow_done3532
+  %step.val3558 = load i64, ptr %loop.step.66, align 8
   %loop.next3559 = add i64 %counter.load3062, %step.val3558
-  store i64 %loop.next3559, ptr %loop.idx.60, align 8
-  br label %loop.header.60
+  store i64 %loop.next3559, ptr %loop.idx.66, align 8
+  br label %loop.header.66
 
-loop.exit.60:                                     ; preds = %loop.exit.nat.60
+loop.exit.66:                                     ; preds = %loop.exit.nat.66
   br label %choice.exit2990
 
-str_gen_check3077:                                ; preds = %loop.body.60
+str_gen_check3077:                                ; preds = %loop.body.66
   %arena.gen3080 = call ptr @dva_arena_current()
   %arena.gen3081 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen3080, i32 0, i32 4
   %arena.gen3082 = load i64, ptr %arena.gen3081, align 8
   %str.tag.match3083 = icmp eq i64 %str.tag3075, %arena.gen3082
   br i1 %str.tag.match3083, label %str_ok3078, label %str_stale3079
 
-str_ok3078:                                       ; preds = %str_stale3079, %str_gen_check3077, %loop.body.60
-  %concat.lhs3084 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+str_ok3078:                                       ; preds = %str_stale3079, %str_gen_check3077, %loop.body.66
+  %concat.lhs3084 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %concat.rhs3085 = getelementptr inbounds { i64, ptr }, ptr %fld.load3072, i32 0, i32 0
   %concat.rhs3086 = load i64, ptr %concat.rhs3085, align 8
   %concat.rhs3087 = and i64 %concat.rhs3086, 281474976710655
@@ -18533,7 +19826,7 @@ str_gen_check3122:                                ; preds = %concat.tot.len3107
 str_ok3123:                                       ; preds = %str_stale3124, %str_gen_check3122, %concat.tot.len3107
   %concat.lhs3129 = getelementptr inbounds { i64, ptr }, ptr %concat.str3114, i32 0, i32 1
   %concat.lhs3130 = load ptr, ptr %concat.lhs3129, align 8
-  %concat.rhs3131 = load i64, ptr @str.50.struct, align 8
+  %concat.rhs3131 = load i64, ptr @str.57.struct, align 8
   %concat.rhs3132 = and i64 %concat.rhs3131, 281474976710655
   %str.tag3133 = lshr i64 %concat.rhs3131, 48
   %str.immortal3134 = icmp eq i64 %str.tag3133, 0
@@ -18552,7 +19845,7 @@ str_gen_check3135:                                ; preds = %str_ok3123
   br i1 %str.tag.match3141, label %str_ok3136, label %str_stale3137
 
 str_ok3136:                                       ; preds = %str_stale3137, %str_gen_check3135, %str_ok3123
-  %concat.rhs3142 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
+  %concat.rhs3142 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
   %concat.sum.len3143 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs3119, i64 %concat.rhs3132)
   %sum3144 = extractvalue { i64, i1 } %concat.sum.len3143, 0
   %ovf3145 = extractvalue { i64, i1 } %concat.sum.len3143, 1
@@ -18589,7 +19882,7 @@ concat.tot.len3151:                               ; preds = %str_overflow_abort3
   %str.build.data.gep3160 = getelementptr inbounds { i64, ptr }, ptr %concat.str3158, i32 0, i32 1
   store ptr %concat.buf3154, ptr %str.build.data.gep3160, align 8
   %b.load3161 = load ptr, ptr %var.b, align 8
-  %app.str.len3162 = load i64, ptr @str.49.struct, align 8
+  %app.str.len3162 = load i64, ptr @str.56.struct, align 8
   %app.str.len3163 = and i64 %app.str.len3162, 281474976710655
   %str.tag3164 = lshr i64 %app.str.len3162, 48
   %str.immortal3165 = icmp eq i64 %str.tag3164, 0
@@ -18650,7 +19943,7 @@ b.nogrow23184:                                    ; preds = %b.app.new.len3178
   br label %b.grow_done3185
 
 b.grow_done3185:                                  ; preds = %b.nogrow23184, %b.new.buf.len23198
-  %app.str.data3205 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+  %app.str.data3205 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %b.app.data3206 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3161, i32 0, i32 1
   %b.app.data3207 = load ptr, ptr %b.app.data3206, align 8
   %b.app.dst3208 = getelementptr i8, ptr %b.app.data3207, i64 %b.app.cur.len3174
@@ -18746,7 +20039,7 @@ b.grow_done3238:                                  ; preds = %b.nogrow23237, %b.n
   store i8 0, ptr %b.app.nul3263, align 1
   %b.len.gep3264 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3161, i32 0, i32 0
   store i64 %sum3229, ptr %b.len.gep3264, align 8
-  %app.str.len3265 = load i64, ptr @str.50.struct, align 8
+  %app.str.len3265 = load i64, ptr @str.57.struct, align 8
   %app.str.len3266 = and i64 %app.str.len3265, 281474976710655
   %str.tag3267 = lshr i64 %app.str.len3265, 48
   %str.immortal3268 = icmp eq i64 %str.tag3267, 0
@@ -18819,7 +20112,7 @@ b.nogrow23287:                                    ; preds = %b.app.new.len3281
   br label %b.grow_done3288
 
 b.grow_done3288:                                  ; preds = %b.nogrow23287, %b.new.buf.len23301
-  %app.str.data3308 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
+  %app.str.data3308 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
   %b.app.data3309 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3161, i32 0, i32 1
   %b.app.data3310 = load ptr, ptr %b.app.data3309, align 8
   %b.app.dst3311 = getelementptr i8, ptr %b.app.data3310, i64 %b.app.cur.len3277
@@ -18831,7 +20124,7 @@ b.grow_done3288:                                  ; preds = %b.nogrow23287, %b.n
   %var.load3314 = load ptr, ptr %var.o, align 8
   %fld.gep3315 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr }, ptr %var.load3314, i32 0, i32 4
   %fld.load3316 = load ptr, ptr %fld.gep3315, align 8
-  %concat.lhs3317 = load i64, ptr @str.53.struct, align 8
+  %concat.lhs3317 = load i64, ptr @str.60.struct, align 8
   %concat.lhs3318 = and i64 %concat.lhs3317, 281474976710655
   %str.tag3319 = lshr i64 %concat.lhs3317, 48
   %str.immortal3320 = icmp eq i64 %str.tag3319, 0
@@ -18862,7 +20155,7 @@ str_gen_check3321:                                ; preds = %b.grow_done3288
   br i1 %str.tag.match3327, label %str_ok3322, label %str_stale3323
 
 str_ok3322:                                       ; preds = %str_stale3323, %str_gen_check3321, %b.grow_done3288
-  %concat.lhs3328 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
+  %concat.lhs3328 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
   %concat.rhs3329 = getelementptr inbounds { i64, ptr }, ptr %fld.load3316, i32 0, i32 0
   %concat.rhs3330 = load i64, ptr %concat.rhs3329, align 8
   %concat.rhs3331 = and i64 %concat.rhs3330, 281474976710655
@@ -18942,7 +20235,7 @@ str_gen_check3366:                                ; preds = %concat.tot.len3351
 str_ok3367:                                       ; preds = %str_stale3368, %str_gen_check3366, %concat.tot.len3351
   %concat.lhs3373 = getelementptr inbounds { i64, ptr }, ptr %concat.str3358, i32 0, i32 1
   %concat.lhs3374 = load ptr, ptr %concat.lhs3373, align 8
-  %concat.rhs3375 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs3375 = load i64, ptr @str.52.struct, align 8
   %concat.rhs3376 = and i64 %concat.rhs3375, 281474976710655
   %str.tag3377 = lshr i64 %concat.rhs3375, 48
   %str.immortal3378 = icmp eq i64 %str.tag3377, 0
@@ -18961,7 +20254,7 @@ str_gen_check3379:                                ; preds = %str_ok3367
   br i1 %str.tag.match3385, label %str_ok3380, label %str_stale3381
 
 str_ok3380:                                       ; preds = %str_stale3381, %str_gen_check3379, %str_ok3367
-  %concat.rhs3386 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs3386 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len3387 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs3363, i64 %concat.rhs3376)
   %sum3388 = extractvalue { i64, i1 } %concat.sum.len3387, 0
   %ovf3389 = extractvalue { i64, i1 } %concat.sum.len3387, 1
@@ -18998,7 +20291,7 @@ concat.tot.len3395:                               ; preds = %str_overflow_abort3
   %str.build.data.gep3404 = getelementptr inbounds { i64, ptr }, ptr %concat.str3402, i32 0, i32 1
   store ptr %concat.buf3398, ptr %str.build.data.gep3404, align 8
   %b.load3405 = load ptr, ptr %var.b, align 8
-  %app.str.len3406 = load i64, ptr @str.53.struct, align 8
+  %app.str.len3406 = load i64, ptr @str.60.struct, align 8
   %app.str.len3407 = and i64 %app.str.len3406, 281474976710655
   %str.tag3408 = lshr i64 %app.str.len3406, 48
   %str.immortal3409 = icmp eq i64 %str.tag3408, 0
@@ -19059,7 +20352,7 @@ b.nogrow23428:                                    ; preds = %b.app.new.len3422
   br label %b.grow_done3429
 
 b.grow_done3429:                                  ; preds = %b.nogrow23428, %b.new.buf.len23442
-  %app.str.data3449 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
+  %app.str.data3449 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
   %b.app.data3450 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3405, i32 0, i32 1
   %b.app.data3451 = load ptr, ptr %b.app.data3450, align 8
   %b.app.dst3452 = getelementptr i8, ptr %b.app.data3451, i64 %b.app.cur.len3418
@@ -19155,7 +20448,7 @@ b.grow_done3482:                                  ; preds = %b.nogrow23481, %b.n
   store i8 0, ptr %b.app.nul3507, align 1
   %b.len.gep3508 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3405, i32 0, i32 0
   store i64 %sum3473, ptr %b.len.gep3508, align 8
-  %app.str.len3509 = load i64, ptr @str.45.struct, align 8
+  %app.str.len3509 = load i64, ptr @str.52.struct, align 8
   %app.str.len3510 = and i64 %app.str.len3509, 281474976710655
   %str.tag3511 = lshr i64 %app.str.len3509, 48
   %str.immortal3512 = icmp eq i64 %str.tag3511, 0
@@ -19228,7 +20521,7 @@ b.nogrow23531:                                    ; preds = %b.app.new.len3525
   br label %b.grow_done3532
 
 b.grow_done3532:                                  ; preds = %b.nogrow23531, %b.new.buf.len23545
-  %app.str.data3552 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data3552 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data3553 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3405, i32 0, i32 1
   %b.app.data3554 = load ptr, ptr %b.app.data3553, align 8
   %b.app.dst3555 = getelementptr i8, ptr %b.app.data3554, i64 %b.app.cur.len3521
@@ -19237,7 +20530,7 @@ b.grow_done3532:                                  ; preds = %b.nogrow23531, %b.n
   store i8 0, ptr %b.app.nul3556, align 1
   %b.len.gep3557 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3405, i32 0, i32 0
   store i64 %sum3523, ptr %b.len.gep3557, align 8
-  br label %loop.latch.60
+  br label %loop.latch.66
 
 b.new.buf.len23545:                               ; preds = %str_overflow_abort3546, %b.grow23530
   %arena.cur3547 = call ptr @dva_arena_current()
@@ -19308,8 +20601,8 @@ entry:
   %var.prev = alloca ptr, align 8
   %var._188 = alloca ptr, align 8
   %var._185 = alloca ptr, align 8
-  %loop.step.63 = alloca i64, align 8
-  %loop.idx.63 = alloca i64, align 8
+  %loop.step.69 = alloca i64, align 8
+  %loop.idx.69 = alloca i64, align 8
   %"var.j'" = alloca i64, align 8
   %var.key = alloca ptr, align 8
   %var._92 = alloca ptr, align 8
@@ -19317,14 +20610,14 @@ entry:
   %var._55 = alloca i64, align 8
   %var._i54 = alloca i64, align 8
   %var.i = alloca i64, align 8
-  %loop.step.62 = alloca i64, align 8
-  %loop.idx.62 = alloca i64, align 8
+  %loop.step.68 = alloca i64, align 8
+  %loop.idx.68 = alloca i64, align 8
   %var.empty_deps = alloca ptr, align 8
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.p = alloca ptr, align 8
-  %loop.step.61 = alloca i64, align 8
-  %loop.idx.61 = alloca i64, align 8
+  %loop.step.67 = alloca i64, align 8
+  %loop.idx.67 = alloca i64, align 8
   %var.out = alloca ptr, align 8
   %var.n = alloca i64, align 8
   %var.pkgs = alloca ptr, align 8
@@ -19412,17 +20705,17 @@ a.after22:                                        ; preds = %a.create21, %choice
   %arr.cycle.len31 = load i64, ptr %arr.cycle.len, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load230, i32 0, i32 1
   %arr.cycle.data32 = load ptr, ptr %arr.cycle.data, align 8
-  store i64 0, ptr %loop.idx.61, align 8
-  br label %loop.header.61
+  store i64 0, ptr %loop.idx.67, align 8
+  br label %loop.header.67
 
-loop.header.61:                                   ; preds = %loop.latch.61, %a.after22
-  %counter.load = load i64, ptr %loop.idx.61, align 8
+loop.header.67:                                   ; preds = %loop.latch.67, %a.after22
+  %counter.load = load i64, ptr %loop.idx.67, align 8
   %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len31
-  br i1 %loop.cond, label %loop.body.61, label %loop.exit.nat.61
+  br i1 %loop.cond, label %loop.body.67, label %loop.exit.nat.67
 
-loop.body.61:                                     ; preds = %loop.header.61
+loop.body.67:                                     ; preds = %loop.header.67
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.61, align 8
+  store i64 1, ptr %loop.step.67, align 8
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data32, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %arr.elem.ptr = inttoptr i64 %arr.elem.raw to ptr
@@ -19434,22 +20727,22 @@ loop.body.61:                                     ; preds = %loop.header.61
   %a.null35 = icmp eq ptr %a.load34, null
   br i1 %a.null35, label %a.create36, label %a.after37
 
-loop.exit.nat.61:                                 ; preds = %loop.header.61
-  br label %loop.exit.61
+loop.exit.nat.67:                                 ; preds = %loop.header.67
+  br label %loop.exit.67
 
-loop.latch.61:                                    ; preds = %a.store
-  %step.val = load i64, ptr %loop.step.61, align 8
+loop.latch.67:                                    ; preds = %a.store
+  %step.val = load i64, ptr %loop.step.67, align 8
   %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.61, align 8
-  br label %loop.header.61
+  store i64 %loop.next, ptr %loop.idx.67, align 8
+  br label %loop.header.67
 
-loop.exit.61:                                     ; preds = %loop.exit.nat.61
+loop.exit.67:                                     ; preds = %loop.exit.nat.67
   store ptr null, ptr %var.empty_deps, align 8
   %var.load50 = load i64, ptr %var.n, align 8
-  store i64 1, ptr %loop.idx.62, align 8
-  br label %loop.header.62
+  store i64 1, ptr %loop.idx.68, align 8
+  br label %loop.header.68
 
-a.create36:                                       ; preds = %loop.body.61
+a.create36:                                       ; preds = %loop.body.67
   %arena.cur38 = call ptr @dva_arena_current()
   %a.create39 = call ptr @dva_arena_alloc(ptr %arena.cur38, i64 24)
   %arena.cur40 = call ptr @dva_arena_current()
@@ -19463,7 +20756,7 @@ a.create36:                                       ; preds = %loop.body.61
   store ptr %a.create39, ptr %var.out, align 8
   br label %a.after37
 
-a.after37:                                        ; preds = %a.create36, %loop.body.61
+a.after37:                                        ; preds = %a.create36, %loop.body.67
   %a.load245 = load ptr, ptr %var.out, align 8
   br label %a.check
 
@@ -19490,16 +20783,16 @@ a.store:                                          ; preds = %a.grow, %a.check
   %a.next.len = add i64 %a.cur.len49, 1
   %b.len.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load245, i32 0, i32 0
   store i64 %a.next.len, ptr %b.len.gep, align 8
-  br label %loop.latch.61
+  br label %loop.latch.67
 
-loop.header.62:                                   ; preds = %loop.latch.62, %loop.exit.61
-  %counter.load51 = load i64, ptr %loop.idx.62, align 8
+loop.header.68:                                   ; preds = %loop.latch.68, %loop.exit.67
+  %counter.load51 = load i64, ptr %loop.idx.68, align 8
   %loop.cond52 = icmp slt i64 %counter.load51, %var.load50
-  br i1 %loop.cond52, label %loop.body.62, label %loop.exit.nat.62
+  br i1 %loop.cond52, label %loop.body.68, label %loop.exit.nat.68
 
-loop.body.62:                                     ; preds = %loop.header.62
+loop.body.68:                                     ; preds = %loop.header.68
   %loop.rel.i53 = sub i64 %counter.load51, 1
-  store i64 1, ptr %loop.step.62, align 8
+  store i64 1, ptr %loop.step.68, align 8
   store i64 %loop.rel.i53, ptr %var._i54, align 8
   store i64 %counter.load51, ptr %var._55, align 8
   store i64 %counter.load51, ptr %var.i, align 8
@@ -19508,22 +20801,22 @@ loop.body.62:                                     ; preds = %loop.header.62
   %a.null58 = icmp eq ptr %a.load57, null
   br i1 %a.null58, label %a.create59, label %a.after60
 
-loop.exit.nat.62:                                 ; preds = %loop.header.62
-  br label %loop.exit.62
+loop.exit.nat.68:                                 ; preds = %loop.header.68
+  br label %loop.exit.68
 
-loop.latch.62:                                    ; preds = %choice.exit313
-  %step.val365 = load i64, ptr %loop.step.62, align 8
+loop.latch.68:                                    ; preds = %choice.exit313
+  %step.val365 = load i64, ptr %loop.step.68, align 8
   %loop.next366 = add i64 %counter.load51, %step.val365
-  store i64 %loop.next366, ptr %loop.idx.62, align 8
-  br label %loop.header.62
+  store i64 %loop.next366, ptr %loop.idx.68, align 8
+  br label %loop.header.68
 
-loop.exit.62:                                     ; preds = %loop.exit.nat.62
+loop.exit.68:                                     ; preds = %loop.exit.nat.68
   %var.load367 = load ptr, ptr %var.out, align 8
   %a.load368 = load ptr, ptr %var.out, align 8
   %a.null369 = icmp eq ptr %a.load368, null
   br i1 %a.null369, label %a.create370, label %a.after371
 
-a.create59:                                       ; preds = %loop.body.62
+a.create59:                                       ; preds = %loop.body.68
   %arena.cur61 = call ptr @dva_arena_current()
   %a.create62 = call ptr @dva_arena_alloc(ptr %arena.cur61, i64 24)
   %arena.cur63 = call ptr @dva_arena_current()
@@ -19537,7 +20830,7 @@ a.create59:                                       ; preds = %loop.body.62
   store ptr %a.create62, ptr %var.out, align 8
   br label %a.after60
 
-a.after60:                                        ; preds = %a.create59, %loop.body.62
+a.after60:                                        ; preds = %a.create59, %loop.body.68
   %a.load268 = load ptr, ptr %var.out, align 8
   %var.load69 = load i64, ptr %var.i, align 8
   %a.rd.nonnull = icmp ne ptr %a.load268, null
@@ -19568,7 +20861,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 766, ptr %err.line.gep, align 8
+  store i64 794, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 23, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -19589,7 +20882,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 766, ptr %err.line.gep78, align 8
+  store i64 794, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 23, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -19634,8 +20927,8 @@ choice.exit87:                                    ; preds = %a.after98, %choice.
   store ptr %choice.res, ptr %var.key, align 8
   %var.load117 = load i64, ptr %var.i, align 8
   store i64 %var.load117, ptr %"var.j'", align 8
-  store i64 0, ptr %loop.idx.63, align 8
-  br label %loop.header.63
+  store i64 0, ptr %loop.idx.69, align 8
+  br label %loop.header.69
 
 a.create97:                                       ; preds = %choice.else86
   %arena.cur99 = call ptr @dva_arena_current()
@@ -19677,38 +20970,38 @@ a.after98:                                        ; preds = %a.create97, %choice
   store i1 false, ptr %rec.fld116, align 1
   br label %choice.exit87
 
-loop.header.63:                                   ; preds = %loop.latch.63, %choice.exit87
-  %counter.load118 = load i64, ptr %loop.idx.63, align 8
-  br label %loop.body.63
+loop.header.69:                                   ; preds = %loop.latch.69, %choice.exit87
+  %counter.load118 = load i64, ptr %loop.idx.69, align 8
+  br label %loop.body.69
 
-loop.body.63:                                     ; preds = %loop.header.63
+loop.body.69:                                     ; preds = %loop.header.69
   %loop.rel.i119 = sub i64 %counter.load118, 0
-  store i64 1, ptr %loop.step.63, align 8
+  store i64 1, ptr %loop.step.69, align 8
   store i64 %loop.rel.i119, ptr %var._i54, align 8
   store i64 %counter.load118, ptr %var._55, align 8
   %var.load120 = load i64, ptr %"var.j'", align 8
   %cmptmp121 = icmp sle i64 %var.load120, 0
   br i1 %cmptmp121, label %choice.then122, label %choice.exit123
 
-loop.exit.nat.63:                                 ; No predecessors!
-  br label %loop.exit.63
+loop.exit.nat.69:                                 ; No predecessors!
+  br label %loop.exit.69
 
-loop.latch.63:                                    ; preds = %choice.exit226
-  %step.val279 = load i64, ptr %loop.step.63, align 8
+loop.latch.69:                                    ; preds = %choice.exit226
+  %step.val279 = load i64, ptr %loop.step.69, align 8
   %loop.next280 = add i64 %counter.load118, %step.val279
-  store i64 %loop.next280, ptr %loop.idx.63, align 8
-  br label %loop.header.63
+  store i64 %loop.next280, ptr %loop.idx.69, align 8
+  br label %loop.header.69
 
-loop.exit.63:                                     ; preds = %choice.else225, %choice.then122, %loop.exit.nat.63
+loop.exit.69:                                     ; preds = %choice.else225, %choice.then122, %loop.exit.nat.69
   %var.load281 = load ptr, ptr %var.out, align 8
   %a.load282 = load ptr, ptr %var.out, align 8
   %a.null283 = icmp eq ptr %a.load282, null
   br i1 %a.null283, label %a.create284, label %a.after285
 
-choice.then122:                                   ; preds = %loop.body.63
-  br label %loop.exit.63
+choice.then122:                                   ; preds = %loop.body.69
+  br label %loop.exit.69
 
-choice.exit123:                                   ; preds = %loop.body.63
+choice.exit123:                                   ; preds = %loop.body.69
   %var.load124 = load ptr, ptr %var.out, align 8
   %a.load125 = load ptr, ptr %var.out, align 8
   %a.null126 = icmp eq ptr %a.load125, null
@@ -19760,7 +21053,7 @@ a.rd.err.null141:                                 ; preds = %a.after128
   %err.file.gep157 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc154, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep157, align 8
   %err.line.gep158 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc154, i32 0, i32 3
-  store i64 771, ptr %err.line.gep158, align 8
+  store i64 799, ptr %err.line.gep158, align 8
   %err.col.gep159 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc154, i32 0, i32 4
   store i64 32, ptr %err.col.gep159, align 8
   %err.ctx.gep160 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc154, i32 0, i32 5
@@ -19781,7 +21074,7 @@ a.rd.err.oob142:                                  ; preds = %a.rd.check139
   %err.file.gep168 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc165, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep168, align 8
   %err.line.gep169 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc165, i32 0, i32 3
-  store i64 771, ptr %err.line.gep169, align 8
+  store i64 799, ptr %err.line.gep169, align 8
   %err.col.gep170 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc165, i32 0, i32 4
   store i64 32, ptr %err.col.gep170, align 8
   %err.ctx.gep171 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc165, i32 0, i32 5
@@ -19881,10 +21174,10 @@ choice.then224:                                   ; preds = %choice.exit182
   br i1 %a.null229, label %a.create230, label %a.after231
 
 choice.else225:                                   ; preds = %choice.exit182
-  br label %loop.exit.63
+  br label %loop.exit.69
 
 choice.exit226:                                   ; preds = %choice.exit251
-  br label %loop.latch.63
+  br label %loop.latch.69
 
 a.create230:                                      ; preds = %choice.then224
   %arena.cur232 = call ptr @dva_arena_current()
@@ -20013,7 +21306,7 @@ err.normal:                                       ; preds = %str_ok270
 err.abort:                                        ; No predecessors!
   br label %choice.exit251
 
-a.create284:                                      ; preds = %loop.exit.63
+a.create284:                                      ; preds = %loop.exit.69
   %arena.cur286 = call ptr @dva_arena_current()
   %a.create287 = call ptr @dva_arena_alloc(ptr %arena.cur286, i64 24)
   %arena.cur288 = call ptr @dva_arena_current()
@@ -20027,7 +21320,7 @@ a.create284:                                      ; preds = %loop.exit.63
   store ptr %a.create287, ptr %var.out, align 8
   br label %a.after285
 
-a.after285:                                       ; preds = %a.create284, %loop.exit.63
+a.after285:                                       ; preds = %a.create284, %loop.exit.69
   %a.load2293 = load ptr, ptr %var.out, align 8
   %var.load294 = load i64, ptr %"var.j'", align 8
   %var.load295 = load ptr, ptr %var.key, align 8
@@ -20076,7 +21369,7 @@ choice.else312:                                   ; preds = %a.after285
   br i1 %str.immortal331, label %str_ok333, label %str_gen_check332
 
 choice.exit313:                                   ; preds = %err.abort364, %choice.then311
-  br label %loop.latch.62
+  br label %loop.latch.68
 
 str_gen_check332:                                 ; preds = %choice.else312
   %arena.gen335 = call ptr @dva_arena_current()
@@ -20137,7 +21430,7 @@ err.normal360:                                    ; preds = %str_ok348
 err.abort364:                                     ; No predecessors!
   br label %choice.exit313
 
-a.create370:                                      ; preds = %loop.exit.62
+a.create370:                                      ; preds = %loop.exit.68
   %arena.cur372 = call ptr @dva_arena_current()
   %a.create373 = call ptr @dva_arena_alloc(ptr %arena.cur372, i64 24)
   %arena.cur374 = call ptr @dva_arena_current()
@@ -20151,7 +21444,7 @@ a.create370:                                      ; preds = %loop.exit.62
   store ptr %a.create373, ptr %var.out, align 8
   br label %a.after371
 
-a.after371:                                       ; preds = %a.create370, %loop.exit.62
+a.after371:                                       ; preds = %a.create370, %loop.exit.68
   %a.load2379 = load ptr, ptr %var.out, align 8
   br label %choice.exit
 }
@@ -20167,8 +21460,8 @@ entry:
   %var.prev = alloca ptr, align 8
   %var._166 = alloca ptr, align 8
   %var._163 = alloca ptr, align 8
-  %loop.step.66 = alloca i64, align 8
-  %loop.idx.66 = alloca i64, align 8
+  %loop.step.72 = alloca i64, align 8
+  %loop.idx.72 = alloca i64, align 8
   %"var.j'" = alloca i64, align 8
   %var.key = alloca ptr, align 8
   %var._92 = alloca ptr, align 8
@@ -20176,13 +21469,13 @@ entry:
   %var._55 = alloca i64, align 8
   %var._i54 = alloca i64, align 8
   %var.i = alloca i64, align 8
-  %loop.step.65 = alloca i64, align 8
-  %loop.idx.65 = alloca i64, align 8
+  %loop.step.71 = alloca i64, align 8
+  %loop.idx.71 = alloca i64, align 8
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.d = alloca ptr, align 8
-  %loop.step.64 = alloca i64, align 8
-  %loop.idx.64 = alloca i64, align 8
+  %loop.step.70 = alloca i64, align 8
+  %loop.idx.70 = alloca i64, align 8
   %var.out = alloca ptr, align 8
   %var.n = alloca i64, align 8
   %var.deps = alloca ptr, align 8
@@ -20270,17 +21563,17 @@ a.after22:                                        ; preds = %a.create21, %choice
   %arr.cycle.len31 = load i64, ptr %arr.cycle.len, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load230, i32 0, i32 1
   %arr.cycle.data32 = load ptr, ptr %arr.cycle.data, align 8
-  store i64 0, ptr %loop.idx.64, align 8
-  br label %loop.header.64
+  store i64 0, ptr %loop.idx.70, align 8
+  br label %loop.header.70
 
-loop.header.64:                                   ; preds = %loop.latch.64, %a.after22
-  %counter.load = load i64, ptr %loop.idx.64, align 8
+loop.header.70:                                   ; preds = %loop.latch.70, %a.after22
+  %counter.load = load i64, ptr %loop.idx.70, align 8
   %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len31
-  br i1 %loop.cond, label %loop.body.64, label %loop.exit.nat.64
+  br i1 %loop.cond, label %loop.body.70, label %loop.exit.nat.70
 
-loop.body.64:                                     ; preds = %loop.header.64
+loop.body.70:                                     ; preds = %loop.header.70
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.64, align 8
+  store i64 1, ptr %loop.step.70, align 8
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data32, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %arr.elem.ptr = inttoptr i64 %arr.elem.raw to ptr
@@ -20292,21 +21585,21 @@ loop.body.64:                                     ; preds = %loop.header.64
   %a.null35 = icmp eq ptr %a.load34, null
   br i1 %a.null35, label %a.create36, label %a.after37
 
-loop.exit.nat.64:                                 ; preds = %loop.header.64
-  br label %loop.exit.64
+loop.exit.nat.70:                                 ; preds = %loop.header.70
+  br label %loop.exit.70
 
-loop.latch.64:                                    ; preds = %a.store
-  %step.val = load i64, ptr %loop.step.64, align 8
+loop.latch.70:                                    ; preds = %a.store
+  %step.val = load i64, ptr %loop.step.70, align 8
   %loop.next = add i64 %counter.load, %step.val
-  store i64 %loop.next, ptr %loop.idx.64, align 8
-  br label %loop.header.64
+  store i64 %loop.next, ptr %loop.idx.70, align 8
+  br label %loop.header.70
 
-loop.exit.64:                                     ; preds = %loop.exit.nat.64
+loop.exit.70:                                     ; preds = %loop.exit.nat.70
   %var.load50 = load i64, ptr %var.n, align 8
-  store i64 1, ptr %loop.idx.65, align 8
-  br label %loop.header.65
+  store i64 1, ptr %loop.idx.71, align 8
+  br label %loop.header.71
 
-a.create36:                                       ; preds = %loop.body.64
+a.create36:                                       ; preds = %loop.body.70
   %arena.cur38 = call ptr @dva_arena_current()
   %a.create39 = call ptr @dva_arena_alloc(ptr %arena.cur38, i64 24)
   %arena.cur40 = call ptr @dva_arena_current()
@@ -20320,7 +21613,7 @@ a.create36:                                       ; preds = %loop.body.64
   store ptr %a.create39, ptr %var.out, align 8
   br label %a.after37
 
-a.after37:                                        ; preds = %a.create36, %loop.body.64
+a.after37:                                        ; preds = %a.create36, %loop.body.70
   %a.load245 = load ptr, ptr %var.out, align 8
   br label %a.check
 
@@ -20347,16 +21640,16 @@ a.store:                                          ; preds = %a.grow, %a.check
   %a.next.len = add i64 %a.cur.len49, 1
   %b.len.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load245, i32 0, i32 0
   store i64 %a.next.len, ptr %b.len.gep, align 8
-  br label %loop.latch.64
+  br label %loop.latch.70
 
-loop.header.65:                                   ; preds = %loop.latch.65, %loop.exit.64
-  %counter.load51 = load i64, ptr %loop.idx.65, align 8
+loop.header.71:                                   ; preds = %loop.latch.71, %loop.exit.70
+  %counter.load51 = load i64, ptr %loop.idx.71, align 8
   %loop.cond52 = icmp slt i64 %counter.load51, %var.load50
-  br i1 %loop.cond52, label %loop.body.65, label %loop.exit.nat.65
+  br i1 %loop.cond52, label %loop.body.71, label %loop.exit.nat.71
 
-loop.body.65:                                     ; preds = %loop.header.65
+loop.body.71:                                     ; preds = %loop.header.71
   %loop.rel.i53 = sub i64 %counter.load51, 1
-  store i64 1, ptr %loop.step.65, align 8
+  store i64 1, ptr %loop.step.71, align 8
   store i64 %loop.rel.i53, ptr %var._i54, align 8
   store i64 %counter.load51, ptr %var._55, align 8
   store i64 %counter.load51, ptr %var.i, align 8
@@ -20365,22 +21658,22 @@ loop.body.65:                                     ; preds = %loop.header.65
   %a.null58 = icmp eq ptr %a.load57, null
   br i1 %a.null58, label %a.create59, label %a.after60
 
-loop.exit.nat.65:                                 ; preds = %loop.header.65
-  br label %loop.exit.65
+loop.exit.nat.71:                                 ; preds = %loop.header.71
+  br label %loop.exit.71
 
-loop.latch.65:                                    ; preds = %choice.exit264
-  %step.val316 = load i64, ptr %loop.step.65, align 8
+loop.latch.71:                                    ; preds = %choice.exit264
+  %step.val316 = load i64, ptr %loop.step.71, align 8
   %loop.next317 = add i64 %counter.load51, %step.val316
-  store i64 %loop.next317, ptr %loop.idx.65, align 8
-  br label %loop.header.65
+  store i64 %loop.next317, ptr %loop.idx.71, align 8
+  br label %loop.header.71
 
-loop.exit.65:                                     ; preds = %loop.exit.nat.65
+loop.exit.71:                                     ; preds = %loop.exit.nat.71
   %var.load318 = load ptr, ptr %var.out, align 8
   %a.load319 = load ptr, ptr %var.out, align 8
   %a.null320 = icmp eq ptr %a.load319, null
   br i1 %a.null320, label %a.create321, label %a.after322
 
-a.create59:                                       ; preds = %loop.body.65
+a.create59:                                       ; preds = %loop.body.71
   %arena.cur61 = call ptr @dva_arena_current()
   %a.create62 = call ptr @dva_arena_alloc(ptr %arena.cur61, i64 24)
   %arena.cur63 = call ptr @dva_arena_current()
@@ -20394,7 +21687,7 @@ a.create59:                                       ; preds = %loop.body.65
   store ptr %a.create62, ptr %var.out, align 8
   br label %a.after60
 
-a.after60:                                        ; preds = %a.create59, %loop.body.65
+a.after60:                                        ; preds = %a.create59, %loop.body.71
   %a.load268 = load ptr, ptr %var.out, align 8
   %var.load69 = load i64, ptr %var.i, align 8
   %a.rd.nonnull = icmp ne ptr %a.load268, null
@@ -20425,7 +21718,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 788, ptr %err.line.gep, align 8
+  store i64 816, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 23, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -20446,7 +21739,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 788, ptr %err.line.gep78, align 8
+  store i64 816, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 23, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -20488,41 +21781,41 @@ choice.exit87:                                    ; preds = %choice.else86, %cho
   store ptr %choice.res, ptr %var.key, align 8
   %var.load95 = load i64, ptr %var.i, align 8
   store i64 %var.load95, ptr %"var.j'", align 8
-  store i64 0, ptr %loop.idx.66, align 8
-  br label %loop.header.66
+  store i64 0, ptr %loop.idx.72, align 8
+  br label %loop.header.72
 
-loop.header.66:                                   ; preds = %loop.latch.66, %choice.exit87
-  %counter.load96 = load i64, ptr %loop.idx.66, align 8
-  br label %loop.body.66
+loop.header.72:                                   ; preds = %loop.latch.72, %choice.exit87
+  %counter.load96 = load i64, ptr %loop.idx.72, align 8
+  br label %loop.body.72
 
-loop.body.66:                                     ; preds = %loop.header.66
+loop.body.72:                                     ; preds = %loop.header.72
   %loop.rel.i97 = sub i64 %counter.load96, 0
-  store i64 1, ptr %loop.step.66, align 8
+  store i64 1, ptr %loop.step.72, align 8
   store i64 %loop.rel.i97, ptr %var._i54, align 8
   store i64 %counter.load96, ptr %var._55, align 8
   %var.load98 = load i64, ptr %"var.j'", align 8
   %cmptmp99 = icmp sle i64 %var.load98, 0
   br i1 %cmptmp99, label %choice.then100, label %choice.exit101
 
-loop.exit.nat.66:                                 ; No predecessors!
-  br label %loop.exit.66
+loop.exit.nat.72:                                 ; No predecessors!
+  br label %loop.exit.72
 
-loop.latch.66:                                    ; preds = %choice.exit179
-  %step.val230 = load i64, ptr %loop.step.66, align 8
+loop.latch.72:                                    ; preds = %choice.exit179
+  %step.val230 = load i64, ptr %loop.step.72, align 8
   %loop.next231 = add i64 %counter.load96, %step.val230
-  store i64 %loop.next231, ptr %loop.idx.66, align 8
-  br label %loop.header.66
+  store i64 %loop.next231, ptr %loop.idx.72, align 8
+  br label %loop.header.72
 
-loop.exit.66:                                     ; preds = %choice.else178, %choice.then100, %loop.exit.nat.66
+loop.exit.72:                                     ; preds = %choice.else178, %choice.then100, %loop.exit.nat.72
   %var.load232 = load ptr, ptr %var.out, align 8
   %a.load233 = load ptr, ptr %var.out, align 8
   %a.null234 = icmp eq ptr %a.load233, null
   br i1 %a.null234, label %a.create235, label %a.after236
 
-choice.then100:                                   ; preds = %loop.body.66
-  br label %loop.exit.66
+choice.then100:                                   ; preds = %loop.body.72
+  br label %loop.exit.72
 
-choice.exit101:                                   ; preds = %loop.body.66
+choice.exit101:                                   ; preds = %loop.body.72
   %var.load102 = load ptr, ptr %var.out, align 8
   %a.load103 = load ptr, ptr %var.out, align 8
   %a.null104 = icmp eq ptr %a.load103, null
@@ -20574,7 +21867,7 @@ a.rd.err.null119:                                 ; preds = %a.after106
   %err.file.gep135 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc132, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep135, align 8
   %err.line.gep136 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc132, i32 0, i32 3
-  store i64 792, ptr %err.line.gep136, align 8
+  store i64 820, ptr %err.line.gep136, align 8
   %err.col.gep137 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc132, i32 0, i32 4
   store i64 32, ptr %err.col.gep137, align 8
   %err.ctx.gep138 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc132, i32 0, i32 5
@@ -20595,7 +21888,7 @@ a.rd.err.oob120:                                  ; preds = %a.rd.check117
   %err.file.gep146 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc143, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep146, align 8
   %err.line.gep147 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc143, i32 0, i32 3
-  store i64 792, ptr %err.line.gep147, align 8
+  store i64 820, ptr %err.line.gep147, align 8
   %err.col.gep148 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc143, i32 0, i32 4
   store i64 32, ptr %err.col.gep148, align 8
   %err.ctx.gep149 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc143, i32 0, i32 5
@@ -20652,10 +21945,10 @@ choice.then177:                                   ; preds = %choice.exit160
   br i1 %a.null182, label %a.create183, label %a.after184
 
 choice.else178:                                   ; preds = %choice.exit160
-  br label %loop.exit.66
+  br label %loop.exit.72
 
 choice.exit179:                                   ; preds = %choice.exit202
-  br label %loop.latch.66
+  br label %loop.latch.72
 
 a.create183:                                      ; preds = %choice.then177
   %arena.cur185 = call ptr @dva_arena_current()
@@ -20784,7 +22077,7 @@ err.normal:                                       ; preds = %str_ok221
 err.abort:                                        ; No predecessors!
   br label %choice.exit202
 
-a.create235:                                      ; preds = %loop.exit.66
+a.create235:                                      ; preds = %loop.exit.72
   %arena.cur237 = call ptr @dva_arena_current()
   %a.create238 = call ptr @dva_arena_alloc(ptr %arena.cur237, i64 24)
   %arena.cur239 = call ptr @dva_arena_current()
@@ -20798,7 +22091,7 @@ a.create235:                                      ; preds = %loop.exit.66
   store ptr %a.create238, ptr %var.out, align 8
   br label %a.after236
 
-a.after236:                                       ; preds = %a.create235, %loop.exit.66
+a.after236:                                       ; preds = %a.create235, %loop.exit.72
   %a.load2244 = load ptr, ptr %var.out, align 8
   %var.load245 = load i64, ptr %"var.j'", align 8
   %var.load246 = load ptr, ptr %var.key, align 8
@@ -20847,7 +22140,7 @@ choice.else263:                                   ; preds = %a.after236
   br i1 %str.immortal282, label %str_ok284, label %str_gen_check283
 
 choice.exit264:                                   ; preds = %err.abort315, %choice.then262
-  br label %loop.latch.65
+  br label %loop.latch.71
 
 str_gen_check283:                                 ; preds = %choice.else263
   %arena.gen286 = call ptr @dva_arena_current()
@@ -20908,7 +22201,7 @@ err.normal311:                                    ; preds = %str_ok299
 err.abort315:                                     ; No predecessors!
   br label %choice.exit264
 
-a.create321:                                      ; preds = %loop.exit.65
+a.create321:                                      ; preds = %loop.exit.71
   %arena.cur323 = call ptr @dva_arena_current()
   %a.create324 = call ptr @dva_arena_alloc(ptr %arena.cur323, i64 24)
   %arena.cur325 = call ptr @dva_arena_current()
@@ -20922,7 +22215,7 @@ a.create321:                                      ; preds = %loop.exit.65
   store ptr %a.create324, ptr %var.out, align 8
   br label %a.after322
 
-a.after322:                                       ; preds = %a.create321, %loop.exit.65
+a.after322:                                       ; preds = %a.create321, %loop.exit.71
   %a.load2330 = load ptr, ptr %var.out, align 8
   br label %choice.exit
 }
@@ -20932,8 +22225,8 @@ entry:
   %var.sid516 = alloca ptr, align 8
   %var._i465 = alloca i64, align 8
   %var.re = alloca ptr, align 8
-  %loop.step.70 = alloca i64, align 8
-  %loop.idx.70 = alloca i64, align 8
+  %loop.step.76 = alloca i64, align 8
+  %loop.idx.76 = alloca i64, align 8
   %var.rsec = alloca ptr, align 8
   %var._451 = alloca ptr, align 8
   %var.opt_root_sec = alloca ptr, align 8
@@ -20942,8 +22235,8 @@ entry:
   %"var.k'" = alloca ptr, align 8
   %var.sid = alloca ptr, align 8
   %var.dse = alloca ptr, align 8
-  %loop.step.69 = alloca i64, align 8
-  %loop.idx.69 = alloca i64, align 8
+  %loop.step.75 = alloca i64, align 8
+  %loop.idx.75 = alloca i64, align 8
   %var.ds = alloca ptr, align 8
   %var._216 = alloca ptr, align 8
   %var.opt_deps_sec = alloca ptr, align 8
@@ -20974,8 +22267,8 @@ entry:
   %var.id = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.pe = alloca ptr, align 8
-  %loop.step.67 = alloca i64, align 8
-  %loop.idx.67 = alloca i64, align 8
+  %loop.step.73 = alloca i64, align 8
+  %loop.idx.73 = alloca i64, align 8
   %var.psec = alloca ptr, align 8
   %var._107 = alloca ptr, align 8
   %var.opt_pkgs_sec = alloca ptr, align 8
@@ -21022,7 +22315,7 @@ str_ok:                                           ; preds = %str_stale, %str_gen
   %call.res = call ptr @"ccl::ccl_error"(ptr %var.load, ptr %copy.str, i64 0, i64 0)
   store ptr %call.res, ptr %"var.err_val'", align 8
   %var.load6 = load ptr, ptr %var.doc, align 8
-  %call.res7 = call ptr @"ccl::get"(ptr %var.load6, ptr @str.61.struct)
+  %call.res7 = call ptr @"ccl::get"(ptr %var.load6, ptr @str.68.struct)
   store ptr %call.res7, ptr %var.opt_ver_str, align 8
   store i64 0, ptr %"var.ver'", align 8
   %var.load8 = load ptr, ptr %var.opt_ver_str, align 8
@@ -21047,7 +22340,7 @@ choice.then:                                      ; preds = %str_ok
 choice.else:                                      ; preds = %str_ok
   store i1 true, ptr %"var.has_err'", align 1
   %var.load96 = load ptr, ptr %var.file, align 8
-  %call.res97 = call ptr @"ccl::ccl_error"(ptr %var.load96, ptr @str.63.struct, i64 1, i64 1)
+  %call.res97 = call ptr @"ccl::ccl_error"(ptr %var.load96, ptr @str.70.struct, i64 1, i64 1)
   store ptr %call.res97, ptr %"var.err_val'", align 8
   br label %choice.exit
 
@@ -21070,7 +22363,7 @@ choice.else14:                                    ; preds = %choice.then
   store i1 true, ptr %"var.has_err'", align 1
   %var.load18 = load ptr, ptr %var.file, align 8
   %var.load19 = load ptr, ptr %var.vs, align 8
-  %concat.lhs = load i64, ptr @str.62.struct, align 8
+  %concat.lhs = load i64, ptr @str.69.struct, align 8
   %concat.lhs20 = and i64 %concat.lhs, 281474976710655
   %str.tag21 = lshr i64 %concat.lhs, 48
   %str.immortal22 = icmp eq i64 %str.tag21, 0
@@ -21087,7 +22380,7 @@ str_gen_check23:                                  ; preds = %choice.else14
   br i1 %str.tag.match29, label %str_ok24, label %str_stale25
 
 str_ok24:                                         ; preds = %str_stale25, %str_gen_check23, %choice.else14
-  %concat.lhs30 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
+  %concat.lhs30 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.69.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 0
   %concat.rhs31 = load i64, ptr %concat.rhs, align 8
   %concat.rhs32 = and i64 %concat.rhs31, 281474976710655
@@ -21233,7 +22526,7 @@ str_overflow_abort86:                             ; preds = %concat.sum.len80
 
 choice.then99:                                    ; preds = %choice.exit
   %var.load101 = load ptr, ptr %var.doc, align 8
-  %call.res102 = call ptr @"ccl::get_section"(ptr %var.load101, ptr @str.64.struct)
+  %call.res102 = call ptr @"ccl::get_section"(ptr %var.load101, ptr @str.71.struct)
   store ptr %call.res102, ptr %var.opt_pkgs_sec, align 8
   %var.load103 = load ptr, ptr %var.opt_pkgs_sec, align 8
   %niche.ne.null104 = icmp ne ptr %var.load103, null
@@ -21255,20 +22548,20 @@ choice.then105:                                   ; preds = %choice.then99
   %arr.cycle.len111 = load i64, ptr %arr.cycle.len, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load110, i32 0, i32 1
   %arr.cycle.data112 = load ptr, ptr %arr.cycle.data, align 8
-  store i64 0, ptr %loop.idx.67, align 8
-  br label %loop.header.67
+  store i64 0, ptr %loop.idx.73, align 8
+  br label %loop.header.73
 
-choice.exit106:                                   ; preds = %loop.exit.67, %choice.then99
+choice.exit106:                                   ; preds = %loop.exit.73, %choice.then99
   br label %choice.exit100
 
-loop.header.67:                                   ; preds = %loop.latch.67, %choice.then105
-  %counter.load = load i64, ptr %loop.idx.67, align 8
+loop.header.73:                                   ; preds = %loop.latch.73, %choice.then105
+  %counter.load = load i64, ptr %loop.idx.73, align 8
   %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len111
-  br i1 %loop.cond, label %loop.body.67, label %loop.exit.nat.67
+  br i1 %loop.cond, label %loop.body.73, label %loop.exit.nat.73
 
-loop.body.67:                                     ; preds = %loop.header.67
+loop.body.73:                                     ; preds = %loop.header.73
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.67, align 8
+  store i64 1, ptr %loop.step.73, align 8
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data112, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %arr.elem.ptr = inttoptr i64 %arr.elem.raw to ptr
@@ -21285,26 +22578,26 @@ loop.body.67:                                     ; preds = %loop.header.67
   %str.immortal119 = icmp eq i64 %str.tag118, 0
   br i1 %str.immortal119, label %str_ok121, label %str_gen_check120
 
-loop.exit.nat.67:                                 ; preds = %loop.header.67
-  br label %loop.exit.67
+loop.exit.nat.73:                                 ; preds = %loop.header.73
+  br label %loop.exit.73
 
-loop.latch.67:                                    ; preds = %choice.exit141
-  %step.val439 = load i64, ptr %loop.step.67, align 8
+loop.latch.73:                                    ; preds = %choice.exit141
+  %step.val439 = load i64, ptr %loop.step.73, align 8
   %loop.next440 = add i64 %counter.load, %step.val439
-  store i64 %loop.next440, ptr %loop.idx.67, align 8
-  br label %loop.header.67
+  store i64 %loop.next440, ptr %loop.idx.73, align 8
+  br label %loop.header.73
 
-loop.exit.67:                                     ; preds = %loop.exit.nat.67
+loop.exit.73:                                     ; preds = %loop.exit.nat.73
   br label %choice.exit106
 
-str_gen_check120:                                 ; preds = %loop.body.67
+str_gen_check120:                                 ; preds = %loop.body.73
   %arena.gen123 = call ptr @dva_arena_current()
   %arena.gen124 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen123, i32 0, i32 4
   %arena.gen125 = load i64, ptr %arena.gen124, align 8
   %str.tag.match126 = icmp eq i64 %str.tag118, %arena.gen125
   br i1 %str.tag.match126, label %str_ok121, label %str_stale122
 
-str_ok121:                                        ; preds = %str_stale122, %str_gen_check120, %loop.body.67
+str_ok121:                                        ; preds = %str_stale122, %str_gen_check120, %loop.body.73
   %eq.rhs.len = load i64, ptr @str.5.struct, align 8
   %eq.rhs.len127 = and i64 %eq.rhs.len, 281474976710655
   %str.tag128 = lshr i64 %eq.rhs.len, 48
@@ -21346,21 +22639,21 @@ str.eq.else:                                      ; preds = %str_ok131
 str.eq.merge:                                     ; preds = %str.eq.else, %str.eq.then
   %str.eq.result = phi i1 [ %eq.cmp.zero, %str.eq.then ], [ false, %str.eq.else ]
   %str.neq = xor i1 %str.eq.result, true
-  br i1 %str.neq, label %and.68.then, label %and.68.else
+  br i1 %str.neq, label %and.74.then, label %and.74.else
 
-and.68.then:                                      ; preds = %str.eq.merge
+and.74.then:                                      ; preds = %str.eq.merge
   %var.load138 = load i1, ptr %"var.has_err'", align 1
   %nottmp139 = xor i1 %var.load138, true
-  br label %and.68.exit
+  br label %and.74.exit
 
-and.68.else:                                      ; preds = %str.eq.merge
-  br label %and.68.exit
+and.74.else:                                      ; preds = %str.eq.merge
+  br label %and.74.exit
 
-and.68.exit:                                      ; preds = %and.68.else, %and.68.then
-  %and.68.phi = phi i1 [ %nottmp139, %and.68.then ], [ %str.neq, %and.68.else ]
-  br i1 %and.68.phi, label %choice.then140, label %choice.exit141
+and.74.exit:                                      ; preds = %and.74.else, %and.74.then
+  %and.74.phi = phi i1 [ %nottmp139, %and.74.then ], [ %str.neq, %and.74.else ]
+  br i1 %and.74.phi, label %choice.then140, label %choice.exit141
 
-choice.then140:                                   ; preds = %and.68.exit
+choice.then140:                                   ; preds = %and.74.exit
   %var.load142 = load ptr, ptr %var.pe, align 8
   %fld.gep143 = getelementptr inbounds { ptr, ptr, i64, i64 }, ptr %var.load142, i32 0, i32 0
   %fld.load144 = load ptr, ptr %fld.gep143, align 8
@@ -21373,8 +22666,8 @@ choice.then140:                                   ; preds = %and.68.exit
   %tag.match = icmp eq i64 %tag.id, 1
   br i1 %tag.match, label %choice.case, label %choice.next
 
-choice.exit141:                                   ; preds = %choice.exit148, %and.68.exit
-  br label %loop.latch.67
+choice.exit141:                                   ; preds = %choice.exit148, %and.74.exit
+  br label %loop.latch.73
 
 choice.exit148:                                   ; preds = %choice.next335, %concat.tot.len422, %a.store320
   br label %choice.exit141
@@ -21387,10 +22680,10 @@ choice.case:                                      ; preds = %choice.then140
   %call.res150 = call i1 @"ccl::has"(ptr %var.load149, ptr @str.14.struct)
   store i1 %call.res150, ptr %var.has_git, align 1
   %var.load151 = load ptr, ptr %var.pd, align 8
-  %call.res152 = call i1 @"ccl::has"(ptr %var.load151, ptr @str.15.struct)
+  %call.res152 = call i1 @"ccl::has"(ptr %var.load151, ptr @str.16.struct)
   store i1 %call.res152, ptr %var.has_path, align 1
   %var.load153 = load ptr, ptr %var.pd, align 8
-  %call.res154 = call i1 @"ccl::has"(ptr %var.load153, ptr @str.16.struct)
+  %call.res154 = call i1 @"ccl::has"(ptr %var.load153, ptr @str.17.struct)
   store i1 %call.res154, ptr %var.has_url, align 1
   %var.load155 = load ptr, ptr %var.pd, align 8
   %call.res156 = call ptr @"ccl::get"(ptr %var.load155, ptr @str.14.struct)
@@ -21415,7 +22708,7 @@ choice.exit160:                                   ; preds = %choice.else159, %ch
   %choice.res = phi ptr [ %call.res156, %choice.then158 ], [ @str.0.struct, %choice.else159 ]
   store ptr %choice.res, ptr %var.g_url, align 8
   %var.load163 = load ptr, ptr %var.pd, align 8
-  %call.res164 = call ptr @"ccl::get"(ptr %var.load163, ptr @str.19.struct)
+  %call.res164 = call ptr @"ccl::get"(ptr %var.load163, ptr @str.15.struct)
   %niche.ne.null165 = icmp ne ptr %call.res164, null
   br i1 %niche.ne.null165, label %choice.then166, label %choice.else167
 
@@ -21431,7 +22724,7 @@ choice.exit168:                                   ; preds = %choice.else167, %ch
   %choice.res171 = phi ptr [ %call.res164, %choice.then166 ], [ @str.0.struct, %choice.else167 ]
   store ptr %choice.res171, ptr %var.g_rev, align 8
   %var.load172 = load ptr, ptr %var.pd, align 8
-  %call.res173 = call ptr @"ccl::get"(ptr %var.load172, ptr @str.65.struct)
+  %call.res173 = call ptr @"ccl::get"(ptr %var.load172, ptr @str.72.struct)
   %niche.ne.null174 = icmp ne ptr %call.res173, null
   br i1 %niche.ne.null174, label %choice.then175, label %choice.else176
 
@@ -21447,7 +22740,7 @@ choice.exit177:                                   ; preds = %choice.else176, %ch
   %choice.res180 = phi ptr [ %call.res173, %choice.then175 ], [ @str.0.struct, %choice.else176 ]
   store ptr %choice.res180, ptr %var.g_commit, align 8
   %var.load181 = load ptr, ptr %var.pd, align 8
-  %call.res182 = call ptr @"ccl::get"(ptr %var.load181, ptr @str.15.struct)
+  %call.res182 = call ptr @"ccl::get"(ptr %var.load181, ptr @str.16.struct)
   %niche.ne.null183 = icmp ne ptr %call.res182, null
   br i1 %niche.ne.null183, label %choice.then184, label %choice.else185
 
@@ -21463,7 +22756,7 @@ choice.exit186:                                   ; preds = %choice.else185, %ch
   %choice.res189 = phi ptr [ %call.res182, %choice.then184 ], [ @str.0.struct, %choice.else185 ]
   store ptr %choice.res189, ptr %var.p_path, align 8
   %var.load190 = load ptr, ptr %var.pd, align 8
-  %call.res191 = call ptr @"ccl::get"(ptr %var.load190, ptr @str.16.struct)
+  %call.res191 = call ptr @"ccl::get"(ptr %var.load190, ptr @str.17.struct)
   %niche.ne.null192 = icmp ne ptr %call.res191, null
   br i1 %niche.ne.null192, label %choice.then193, label %choice.else194
 
@@ -21479,7 +22772,7 @@ choice.exit195:                                   ; preds = %choice.else194, %ch
   %choice.res198 = phi ptr [ %call.res191, %choice.then193 ], [ @str.0.struct, %choice.else194 ]
   store ptr %choice.res198, ptr %var.a_url, align 8
   %var.load199 = load ptr, ptr %var.pd, align 8
-  %call.res200 = call ptr @"ccl::get"(ptr %var.load199, ptr @str.21.struct)
+  %call.res200 = call ptr @"ccl::get"(ptr %var.load199, ptr @str.18.struct)
   %niche.ne.null201 = icmp ne ptr %call.res200, null
   br i1 %niche.ne.null201, label %choice.then202, label %choice.else203
 
@@ -21495,11 +22788,11 @@ choice.exit204:                                   ; preds = %choice.else203, %ch
   %choice.res207 = phi ptr [ %call.res200, %choice.then202 ], [ @str.0.struct, %choice.else203 ]
   store ptr %choice.res207, ptr %var.a_hash, align 8
   %var.load208 = load ptr, ptr %var.pd, align 8
-  %call.res209 = call i1 @"ccl::has"(ptr %var.load208, ptr @str.66.struct)
+  %call.res209 = call i1 @"ccl::has"(ptr %var.load208, ptr @str.73.struct)
   store i1 %call.res209, ptr %var.is_ovr, align 1
   store ptr null, ptr %var.p_deps, align 8
   %var.load210 = load ptr, ptr %var.pd, align 8
-  %call.res211 = call ptr @"ccl::get_section"(ptr %var.load210, ptr @str.67.struct)
+  %call.res211 = call ptr @"ccl::get_section"(ptr %var.load210, ptr @str.74.struct)
   store ptr %call.res211, ptr %var.opt_deps_sec, align 8
   %var.load212 = load ptr, ptr %var.opt_deps_sec, align 8
   %niche.ne.null213 = icmp ne ptr %var.load212, null
@@ -21515,10 +22808,10 @@ choice.then214:                                   ; preds = %choice.exit204
   %arr.cycle.len221 = load i64, ptr %arr.cycle.len220, align 8
   %arr.cycle.data222 = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load219, i32 0, i32 1
   %arr.cycle.data223 = load ptr, ptr %arr.cycle.data222, align 8
-  store i64 0, ptr %loop.idx.69, align 8
-  br label %loop.header.69
+  store i64 0, ptr %loop.idx.75, align 8
+  br label %loop.header.75
 
-choice.exit215:                                   ; preds = %loop.exit.69, %choice.exit204
+choice.exit215:                                   ; preds = %loop.exit.75, %choice.exit204
   %arena.cur254 = call ptr @dva_arena_current()
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur254, i64 16)
   %tag.gep255 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
@@ -21529,14 +22822,14 @@ choice.exit215:                                   ; preds = %loop.exit.69, %choi
   %var.load257 = load i1, ptr %var.has_path, align 1
   br i1 %var.load257, label %choice.then258, label %choice.exit259
 
-loop.header.69:                                   ; preds = %loop.latch.69, %choice.then214
-  %counter.load224 = load i64, ptr %loop.idx.69, align 8
+loop.header.75:                                   ; preds = %loop.latch.75, %choice.then214
+  %counter.load224 = load i64, ptr %loop.idx.75, align 8
   %loop.cond225 = icmp slt i64 %counter.load224, %arr.cycle.len221
-  br i1 %loop.cond225, label %loop.body.69, label %loop.exit.nat.69
+  br i1 %loop.cond225, label %loop.body.75, label %loop.exit.nat.75
 
-loop.body.69:                                     ; preds = %loop.header.69
+loop.body.75:                                     ; preds = %loop.header.75
   %loop.rel.i226 = sub i64 %counter.load224, 0
-  store i64 1, ptr %loop.step.69, align 8
+  store i64 1, ptr %loop.step.75, align 8
   %arr.elem.gep227 = getelementptr i64, ptr %arr.cycle.data223, i64 %counter.load224
   %arr.elem.raw228 = load i64, ptr %arr.elem.gep227, align 8
   %arr.elem.ptr229 = inttoptr i64 %arr.elem.raw228 to ptr
@@ -21551,22 +22844,22 @@ loop.body.69:                                     ; preds = %loop.header.69
   %tag.match238 = icmp eq i64 %tag.id237, 0
   br i1 %tag.match238, label %choice.case234, label %choice.next235
 
-loop.exit.nat.69:                                 ; preds = %loop.header.69
-  br label %loop.exit.69
+loop.exit.nat.75:                                 ; preds = %loop.header.75
+  br label %loop.exit.75
 
-loop.latch.69:                                    ; preds = %choice.exit233
-  %step.val = load i64, ptr %loop.step.69, align 8
+loop.latch.75:                                    ; preds = %choice.exit233
+  %step.val = load i64, ptr %loop.step.75, align 8
   %loop.next = add i64 %counter.load224, %step.val
-  store i64 %loop.next, ptr %loop.idx.69, align 8
-  br label %loop.header.69
+  store i64 %loop.next, ptr %loop.idx.75, align 8
+  br label %loop.header.75
 
-loop.exit.69:                                     ; preds = %loop.exit.nat.69
+loop.exit.75:                                     ; preds = %loop.exit.nat.75
   br label %choice.exit215
 
 choice.exit233:                                   ; preds = %choice.next235, %a.store
-  br label %loop.latch.69
+  br label %loop.latch.75
 
-choice.case234:                                   ; preds = %loop.body.69
+choice.case234:                                   ; preds = %loop.body.75
   %pay.gep239 = getelementptr inbounds { i64, ptr }, ptr %fld.load232, i32 0, i32 1
   %payload.ptr240 = load ptr, ptr %pay.gep239, align 8
   store ptr %payload.ptr240, ptr %var.sid, align 8
@@ -21584,7 +22877,7 @@ choice.case234:                                   ; preds = %loop.body.69
   %a.null = icmp eq ptr %a.load, null
   br i1 %a.null, label %a.create, label %a.after
 
-choice.next235:                                   ; preds = %loop.body.69
+choice.next235:                                   ; preds = %loop.body.75
   br label %choice.exit233
 
 a.create:                                         ; preds = %choice.case234
@@ -21762,7 +23055,7 @@ choice.case334:                                   ; preds = %choice.next
   store i1 true, ptr %"var.has_err'", align 1
   %var.load342 = load ptr, ptr %var.file, align 8
   %var.load343 = load ptr, ptr %var.id, align 8
-  %concat.lhs344 = load i64, ptr @str.68.struct, align 8
+  %concat.lhs344 = load i64, ptr @str.75.struct, align 8
   %concat.lhs345 = and i64 %concat.lhs344, 281474976710655
   %str.tag346 = lshr i64 %concat.lhs344, 48
   %str.immortal347 = icmp eq i64 %str.tag346, 0
@@ -21779,7 +23072,7 @@ str_gen_check348:                                 ; preds = %choice.case334
   br i1 %str.tag.match354, label %str_ok349, label %str_stale350
 
 str_ok349:                                        ; preds = %str_stale350, %str_gen_check348, %choice.case334
-  %concat.lhs355 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.68.struct, i32 0, i32 1), align 8
+  %concat.lhs355 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.75.struct, i32 0, i32 1), align 8
   %concat.rhs356 = getelementptr inbounds { i64, ptr }, ptr %var.load343, i32 0, i32 0
   %concat.rhs357 = load i64, ptr %concat.rhs356, align 8
   %concat.rhs358 = and i64 %concat.rhs357, 281474976710655
@@ -21859,7 +23152,7 @@ str_gen_check393:                                 ; preds = %concat.tot.len378
 str_ok394:                                        ; preds = %str_stale395, %str_gen_check393, %concat.tot.len378
   %concat.lhs400 = getelementptr inbounds { i64, ptr }, ptr %concat.str385, i32 0, i32 1
   %concat.lhs401 = load ptr, ptr %concat.lhs400, align 8
-  %concat.rhs402 = load i64, ptr @str.23.struct, align 8
+  %concat.rhs402 = load i64, ptr @str.30.struct, align 8
   %concat.rhs403 = and i64 %concat.rhs402, 281474976710655
   %str.tag404 = lshr i64 %concat.rhs402, 48
   %str.immortal405 = icmp eq i64 %str.tag404, 0
@@ -21878,7 +23171,7 @@ str_gen_check406:                                 ; preds = %str_ok394
   br i1 %str.tag.match412, label %str_ok407, label %str_stale408
 
 str_ok407:                                        ; preds = %str_stale408, %str_gen_check406, %str_ok394
-  %concat.rhs413 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.23.struct, i32 0, i32 1), align 8
+  %concat.rhs413 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.30.struct, i32 0, i32 1), align 8
   %concat.sum.len414 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs390, i64 %concat.rhs403)
   %sum415 = extractvalue { i64, i1 } %concat.sum.len414, 0
   %ovf416 = extractvalue { i64, i1 } %concat.sum.len414, 1
@@ -21931,7 +23224,7 @@ str_overflow_abort423:                            ; preds = %concat.sum.len417
 
 choice.then443:                                   ; preds = %choice.exit100
   %var.load445 = load ptr, ptr %var.doc, align 8
-  %call.res446 = call ptr @"ccl::get_section"(ptr %var.load445, ptr @str.69.struct)
+  %call.res446 = call ptr @"ccl::get_section"(ptr %var.load445, ptr @str.76.struct)
   store ptr %call.res446, ptr %var.opt_root_sec, align 8
   %var.load447 = load ptr, ptr %var.opt_root_sec, align 8
   %niche.ne.null448 = icmp ne ptr %var.load447, null
@@ -21951,20 +23244,20 @@ choice.then449:                                   ; preds = %choice.then443
   %arr.cycle.len456 = load i64, ptr %arr.cycle.len455, align 8
   %arr.cycle.data457 = getelementptr inbounds { i64, ptr, i64 }, ptr %fld.load454, i32 0, i32 1
   %arr.cycle.data458 = load ptr, ptr %arr.cycle.data457, align 8
-  store i64 0, ptr %loop.idx.70, align 8
-  br label %loop.header.70
+  store i64 0, ptr %loop.idx.76, align 8
+  br label %loop.header.76
 
-choice.exit450:                                   ; preds = %loop.exit.70, %choice.then443
+choice.exit450:                                   ; preds = %loop.exit.76, %choice.then443
   br label %choice.exit444
 
-loop.header.70:                                   ; preds = %loop.latch.70, %choice.then449
-  %counter.load459 = load i64, ptr %loop.idx.70, align 8
+loop.header.76:                                   ; preds = %loop.latch.76, %choice.then449
+  %counter.load459 = load i64, ptr %loop.idx.76, align 8
   %loop.cond460 = icmp slt i64 %counter.load459, %arr.cycle.len456
-  br i1 %loop.cond460, label %loop.body.70, label %loop.exit.nat.70
+  br i1 %loop.cond460, label %loop.body.76, label %loop.exit.nat.76
 
-loop.body.70:                                     ; preds = %loop.header.70
+loop.body.76:                                     ; preds = %loop.header.76
   %loop.rel.i461 = sub i64 %counter.load459, 0
-  store i64 1, ptr %loop.step.70, align 8
+  store i64 1, ptr %loop.step.76, align 8
   %arr.elem.gep462 = getelementptr i64, ptr %arr.cycle.data458, i64 %counter.load459
   %arr.elem.raw463 = load i64, ptr %arr.elem.gep462, align 8
   %arr.elem.ptr464 = inttoptr i64 %arr.elem.raw463 to ptr
@@ -21981,26 +23274,26 @@ loop.body.70:                                     ; preds = %loop.header.70
   %str.immortal473 = icmp eq i64 %str.tag472, 0
   br i1 %str.immortal473, label %str_ok475, label %str_gen_check474
 
-loop.exit.nat.70:                                 ; preds = %loop.header.70
-  br label %loop.exit.70
+loop.exit.nat.76:                                 ; preds = %loop.header.76
+  br label %loop.exit.76
 
-loop.latch.70:                                    ; preds = %choice.exit504
-  %step.val553 = load i64, ptr %loop.step.70, align 8
+loop.latch.76:                                    ; preds = %choice.exit504
+  %step.val553 = load i64, ptr %loop.step.76, align 8
   %loop.next554 = add i64 %counter.load459, %step.val553
-  store i64 %loop.next554, ptr %loop.idx.70, align 8
-  br label %loop.header.70
+  store i64 %loop.next554, ptr %loop.idx.76, align 8
+  br label %loop.header.76
 
-loop.exit.70:                                     ; preds = %loop.exit.nat.70
+loop.exit.76:                                     ; preds = %loop.exit.nat.76
   br label %choice.exit450
 
-str_gen_check474:                                 ; preds = %loop.body.70
+str_gen_check474:                                 ; preds = %loop.body.76
   %arena.gen477 = call ptr @dva_arena_current()
   %arena.gen478 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen477, i32 0, i32 4
   %arena.gen479 = load i64, ptr %arena.gen478, align 8
   %str.tag.match480 = icmp eq i64 %str.tag472, %arena.gen479
   br i1 %str.tag.match480, label %str_ok475, label %str_stale476
 
-str_ok475:                                        ; preds = %str_stale476, %str_gen_check474, %loop.body.70
+str_ok475:                                        ; preds = %str_stale476, %str_gen_check474, %loop.body.76
   %eq.rhs.len481 = load i64, ptr @str.5.struct, align 8
   %eq.rhs.len482 = and i64 %eq.rhs.len481, 281474976710655
   %str.tag483 = lshr i64 %eq.rhs.len481, 48
@@ -22054,7 +23347,7 @@ choice.then503:                                   ; preds = %str.eq.merge495
   br i1 %tag.match513, label %choice.case509, label %choice.next510
 
 choice.exit504:                                   ; preds = %choice.exit508, %str.eq.merge495
-  br label %loop.latch.70
+  br label %loop.latch.76
 
 choice.exit508:                                   ; preds = %choice.next510, %a.store539
   br label %choice.exit504
@@ -22199,18 +23492,18 @@ entry:
   %var._2990 = alloca ptr, align 8
   %var._i2989 = alloca i64, align 8
   %var.r = alloca ptr, align 8
-  %loop.step.73 = alloca i64, align 8
-  %loop.idx.73 = alloca i64, align 8
+  %loop.step.79 = alloca i64, align 8
+  %loop.idx.79 = alloca i64, align 8
   %var.sorted_root = alloca ptr, align 8
   %var.d = alloca ptr, align 8
-  %loop.step.72 = alloca i64, align 8
-  %loop.idx.72 = alloca i64, align 8
+  %loop.step.78 = alloca i64, align 8
+  %loop.idx.78 = alloca i64, align 8
   %var.sorted_deps = alloca ptr, align 8
   %var._ = alloca ptr, align 8
   %var._i = alloca i64, align 8
   %var.p = alloca ptr, align 8
-  %loop.step.71 = alloca i64, align 8
-  %loop.idx.71 = alloca i64, align 8
+  %loop.step.77 = alloca i64, align 8
+  %loop.idx.77 = alloca i64, align 8
   %var.sorted_pkgs = alloca ptr, align 8
   %var.b = alloca ptr, align 8
   %var.lock = alloca ptr, align 8
@@ -22238,7 +23531,7 @@ b.buf.len1:                                       ; preds = %str_overflow_abort,
   %fld.gep = getelementptr inbounds { i64, ptr, ptr }, ptr %var.load, i32 0, i32 0
   %fld.load = load i64, ptr %fld.gep, align 8
   %call.res = call ptr @"str::from_int"(i64 %fld.load)
-  %concat.lhs = load i64, ptr @str.70.struct, align 8
+  %concat.lhs = load i64, ptr @str.77.struct, align 8
   %concat.lhs3 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -22257,7 +23550,7 @@ str_gen_check:                                    ; preds = %b.buf.len1
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %b.buf.len1
-  %concat.lhs6 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.70.struct, i32 0, i32 1), align 8
+  %concat.lhs6 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.77.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %call.res, i32 0, i32 0
   %concat.rhs7 = load i64, ptr %concat.rhs, align 8
   %concat.rhs8 = and i64 %concat.rhs7, 281474976710655
@@ -22337,7 +23630,7 @@ str_gen_check35:                                  ; preds = %concat.tot.len26
 str_ok36:                                         ; preds = %str_stale37, %str_gen_check35, %concat.tot.len26
   %concat.lhs42 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs43 = load ptr, ptr %concat.lhs42, align 8
-  %concat.rhs44 = load i64, ptr @str.71.struct, align 8
+  %concat.rhs44 = load i64, ptr @str.78.struct, align 8
   %concat.rhs45 = and i64 %concat.rhs44, 281474976710655
   %str.tag46 = lshr i64 %concat.rhs44, 48
   %str.immortal47 = icmp eq i64 %str.tag46, 0
@@ -22356,7 +23649,7 @@ str_gen_check48:                                  ; preds = %str_ok36
   br i1 %str.tag.match54, label %str_ok49, label %str_stale50
 
 str_ok49:                                         ; preds = %str_stale50, %str_gen_check48, %str_ok36
-  %concat.rhs55 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.71.struct, i32 0, i32 1), align 8
+  %concat.rhs55 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.78.struct, i32 0, i32 1), align 8
   %concat.sum.len56 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs32, i64 %concat.rhs45)
   %sum57 = extractvalue { i64, i1 } %concat.sum.len56, 0
   %ovf58 = extractvalue { i64, i1 } %concat.sum.len56, 1
@@ -22393,7 +23686,7 @@ concat.tot.len64:                                 ; preds = %str_overflow_abort6
   %str.build.data.gep73 = getelementptr inbounds { i64, ptr }, ptr %concat.str71, i32 0, i32 1
   store ptr %concat.buf67, ptr %str.build.data.gep73, align 8
   %b.load = load ptr, ptr %var.b, align 8
-  %app.str.len = load i64, ptr @str.70.struct, align 8
+  %app.str.len = load i64, ptr @str.77.struct, align 8
   %app.str.len74 = and i64 %app.str.len, 281474976710655
   %str.tag75 = lshr i64 %app.str.len, 48
   %str.immortal76 = icmp eq i64 %str.tag75, 0
@@ -22454,7 +23747,7 @@ b.nogrow2:                                        ; preds = %b.app.new.len87
   br label %b.grow_done
 
 b.grow_done:                                      ; preds = %b.nogrow2, %b.new.buf.len294
-  %app.str.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.70.struct, i32 0, i32 1), align 8
+  %app.str.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.77.struct, i32 0, i32 1), align 8
   %b.app.data = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 1
   %b.app.data97 = load ptr, ptr %b.app.data, align 8
   %b.app.dst = getelementptr i8, ptr %b.app.data97, i64 %b.app.cur.len84
@@ -22551,7 +23844,7 @@ b.grow_done127:                                   ; preds = %b.nogrow2126, %b.ne
   store i8 0, ptr %b.app.nul152, align 1
   %b.len.gep153 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 0
   store i64 %sum118, ptr %b.len.gep153, align 8
-  %app.str.len154 = load i64, ptr @str.71.struct, align 8
+  %app.str.len154 = load i64, ptr @str.78.struct, align 8
   %app.str.len155 = and i64 %app.str.len154, 281474976710655
   %str.tag156 = lshr i64 %app.str.len154, 48
   %str.immortal157 = icmp eq i64 %str.tag156, 0
@@ -22624,7 +23917,7 @@ b.nogrow2176:                                     ; preds = %b.app.new.len170
   br label %b.grow_done177
 
 b.grow_done177:                                   ; preds = %b.nogrow2176, %b.new.buf.len2190
-  %app.str.data197 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.71.struct, i32 0, i32 1), align 8
+  %app.str.data197 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.78.struct, i32 0, i32 1), align 8
   %b.app.data198 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 1
   %b.app.data199 = load ptr, ptr %b.app.data198, align 8
   %b.app.dst200 = getelementptr i8, ptr %b.app.data199, i64 %b.app.cur.len166
@@ -22634,7 +23927,7 @@ b.grow_done177:                                   ; preds = %b.nogrow2176, %b.ne
   %b.len.gep202 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 0
   store i64 %sum168, ptr %b.len.gep202, align 8
   %b.load203 = load ptr, ptr %var.b, align 8
-  %app.str.len204 = load i64, ptr @str.72.struct, align 8
+  %app.str.len204 = load i64, ptr @str.79.struct, align 8
   %app.str.len205 = and i64 %app.str.len204, 281474976710655
   %str.tag206 = lshr i64 %app.str.len204, 48
   %str.immortal207 = icmp eq i64 %str.tag206, 0
@@ -22707,7 +24000,7 @@ b.nogrow2226:                                     ; preds = %b.app.new.len220
   br label %b.grow_done227
 
 b.grow_done227:                                   ; preds = %b.nogrow2226, %b.new.buf.len2240
-  %app.str.data247 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.72.struct, i32 0, i32 1), align 8
+  %app.str.data247 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.79.struct, i32 0, i32 1), align 8
   %b.app.data248 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load203, i32 0, i32 1
   %b.app.data249 = load ptr, ptr %b.app.data248, align 8
   %b.app.dst250 = getelementptr i8, ptr %b.app.data249, i64 %b.app.cur.len216
@@ -22763,17 +24056,17 @@ a.after:                                          ; preds = %a.create, %b.grow_d
   %arr.cycle.len261 = load i64, ptr %arr.cycle.len, align 8
   %arr.cycle.data = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2, i32 0, i32 1
   %arr.cycle.data262 = load ptr, ptr %arr.cycle.data, align 8
-  store i64 0, ptr %loop.idx.71, align 8
-  br label %loop.header.71
+  store i64 0, ptr %loop.idx.77, align 8
+  br label %loop.header.77
 
-loop.header.71:                                   ; preds = %loop.latch.71, %a.after
-  %counter.load = load i64, ptr %loop.idx.71, align 8
+loop.header.77:                                   ; preds = %loop.latch.77, %a.after
+  %counter.load = load i64, ptr %loop.idx.77, align 8
   %loop.cond = icmp slt i64 %counter.load, %arr.cycle.len261
-  br i1 %loop.cond, label %loop.body.71, label %loop.exit.nat.71
+  br i1 %loop.cond, label %loop.body.77, label %loop.exit.nat.77
 
-loop.body.71:                                     ; preds = %loop.header.71
+loop.body.77:                                     ; preds = %loop.header.77
   %loop.rel.i = sub i64 %counter.load, 0
-  store i64 1, ptr %loop.step.71, align 8
+  store i64 1, ptr %loop.step.77, align 8
   %arr.elem.gep = getelementptr i64, ptr %arr.cycle.data262, i64 %counter.load
   %arr.elem.raw = load i64, ptr %arr.elem.gep, align 8
   %arr.elem.ptr = inttoptr i64 %arr.elem.raw to ptr
@@ -22783,38 +24076,38 @@ loop.body.71:                                     ; preds = %loop.header.71
   %var.load263 = load ptr, ptr %var.p, align 8
   %fld.gep264 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load263, i32 0, i32 0
   %fld.load265 = load ptr, ptr %fld.gep264, align 8
-  %concat.lhs266 = load i64, ptr @str.49.struct, align 8
+  %concat.lhs266 = load i64, ptr @str.56.struct, align 8
   %concat.lhs267 = and i64 %concat.lhs266, 281474976710655
   %str.tag268 = lshr i64 %concat.lhs266, 48
   %str.immortal269 = icmp eq i64 %str.tag268, 0
   br i1 %str.immortal269, label %str_ok271, label %str_gen_check270
 
-loop.exit.nat.71:                                 ; preds = %loop.header.71
-  br label %loop.exit.71
+loop.exit.nat.77:                                 ; preds = %loop.header.77
+  br label %loop.exit.77
 
-loop.latch.71:                                    ; preds = %choice.exit2392
-  %step.val2910 = load i64, ptr %loop.step.71, align 8
+loop.latch.77:                                    ; preds = %choice.exit2392
+  %step.val2910 = load i64, ptr %loop.step.77, align 8
   %loop.next2911 = add i64 %counter.load, %step.val2910
-  store i64 %loop.next2911, ptr %loop.idx.71, align 8
-  br label %loop.header.71
+  store i64 %loop.next2911, ptr %loop.idx.77, align 8
+  br label %loop.header.77
 
-loop.exit.71:                                     ; preds = %loop.exit.nat.71
+loop.exit.77:                                     ; preds = %loop.exit.nat.77
   %b.load2912 = load ptr, ptr %var.b, align 8
-  %app.str.len2913 = load i64, ptr @str.77.struct, align 8
+  %app.str.len2913 = load i64, ptr @str.84.struct, align 8
   %app.str.len2914 = and i64 %app.str.len2913, 281474976710655
   %str.tag2915 = lshr i64 %app.str.len2913, 48
   %str.immortal2916 = icmp eq i64 %str.tag2915, 0
   br i1 %str.immortal2916, label %str_ok2918, label %str_gen_check2917
 
-str_gen_check270:                                 ; preds = %loop.body.71
+str_gen_check270:                                 ; preds = %loop.body.77
   %arena.gen273 = call ptr @dva_arena_current()
   %arena.gen274 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen273, i32 0, i32 4
   %arena.gen275 = load i64, ptr %arena.gen274, align 8
   %str.tag.match276 = icmp eq i64 %str.tag268, %arena.gen275
   br i1 %str.tag.match276, label %str_ok271, label %str_stale272
 
-str_ok271:                                        ; preds = %str_stale272, %str_gen_check270, %loop.body.71
-  %concat.lhs277 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+str_ok271:                                        ; preds = %str_stale272, %str_gen_check270, %loop.body.77
+  %concat.lhs277 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %concat.rhs278 = getelementptr inbounds { i64, ptr }, ptr %fld.load265, i32 0, i32 0
   %concat.rhs279 = load i64, ptr %concat.rhs278, align 8
   %concat.rhs280 = and i64 %concat.rhs279, 281474976710655
@@ -22894,7 +24187,7 @@ str_gen_check315:                                 ; preds = %concat.tot.len300
 str_ok316:                                        ; preds = %str_stale317, %str_gen_check315, %concat.tot.len300
   %concat.lhs322 = getelementptr inbounds { i64, ptr }, ptr %concat.str307, i32 0, i32 1
   %concat.lhs323 = load ptr, ptr %concat.lhs322, align 8
-  %concat.rhs324 = load i64, ptr @str.50.struct, align 8
+  %concat.rhs324 = load i64, ptr @str.57.struct, align 8
   %concat.rhs325 = and i64 %concat.rhs324, 281474976710655
   %str.tag326 = lshr i64 %concat.rhs324, 48
   %str.immortal327 = icmp eq i64 %str.tag326, 0
@@ -22913,7 +24206,7 @@ str_gen_check328:                                 ; preds = %str_ok316
   br i1 %str.tag.match334, label %str_ok329, label %str_stale330
 
 str_ok329:                                        ; preds = %str_stale330, %str_gen_check328, %str_ok316
-  %concat.rhs335 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
+  %concat.rhs335 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
   %concat.sum.len336 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs312, i64 %concat.rhs325)
   %sum337 = extractvalue { i64, i1 } %concat.sum.len336, 0
   %ovf338 = extractvalue { i64, i1 } %concat.sum.len336, 1
@@ -22950,7 +24243,7 @@ concat.tot.len344:                                ; preds = %str_overflow_abort3
   %str.build.data.gep353 = getelementptr inbounds { i64, ptr }, ptr %concat.str351, i32 0, i32 1
   store ptr %concat.buf347, ptr %str.build.data.gep353, align 8
   %b.load354 = load ptr, ptr %var.b, align 8
-  %app.str.len355 = load i64, ptr @str.49.struct, align 8
+  %app.str.len355 = load i64, ptr @str.56.struct, align 8
   %app.str.len356 = and i64 %app.str.len355, 281474976710655
   %str.tag357 = lshr i64 %app.str.len355, 48
   %str.immortal358 = icmp eq i64 %str.tag357, 0
@@ -23011,7 +24304,7 @@ b.nogrow2377:                                     ; preds = %b.app.new.len371
   br label %b.grow_done378
 
 b.grow_done378:                                   ; preds = %b.nogrow2377, %b.new.buf.len2391
-  %app.str.data398 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+  %app.str.data398 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %b.app.data399 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load354, i32 0, i32 1
   %b.app.data400 = load ptr, ptr %b.app.data399, align 8
   %b.app.dst401 = getelementptr i8, ptr %b.app.data400, i64 %b.app.cur.len367
@@ -23107,7 +24400,7 @@ b.grow_done431:                                   ; preds = %b.nogrow2430, %b.ne
   store i8 0, ptr %b.app.nul456, align 1
   %b.len.gep457 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load354, i32 0, i32 0
   store i64 %sum422, ptr %b.len.gep457, align 8
-  %app.str.len458 = load i64, ptr @str.50.struct, align 8
+  %app.str.len458 = load i64, ptr @str.57.struct, align 8
   %app.str.len459 = and i64 %app.str.len458, 281474976710655
   %str.tag460 = lshr i64 %app.str.len458, 48
   %str.immortal461 = icmp eq i64 %str.tag460, 0
@@ -23180,7 +24473,7 @@ b.nogrow2480:                                     ; preds = %b.app.new.len474
   br label %b.grow_done481
 
 b.grow_done481:                                   ; preds = %b.nogrow2480, %b.new.buf.len2494
-  %app.str.data501 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
+  %app.str.data501 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
   %b.app.data502 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load354, i32 0, i32 1
   %b.app.data503 = load ptr, ptr %b.app.data502, align 8
   %b.app.dst504 = getelementptr i8, ptr %b.app.data503, i64 %b.app.cur.len470
@@ -23227,7 +24520,7 @@ choice.case:                                      ; preds = %b.grow_done481
   %var.load510 = load ptr, ptr %var.p, align 8
   %fld.gep511 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load510, i32 0, i32 2
   %fld.load512 = load ptr, ptr %fld.gep511, align 8
-  %concat.lhs513 = load i64, ptr @str.51.struct, align 8
+  %concat.lhs513 = load i64, ptr @str.58.struct, align 8
   %concat.lhs514 = and i64 %concat.lhs513, 281474976710655
   %str.tag515 = lshr i64 %concat.lhs513, 48
   %str.immortal516 = icmp eq i64 %str.tag515, 0
@@ -23247,7 +24540,7 @@ str_gen_check517:                                 ; preds = %choice.case
   br i1 %str.tag.match523, label %str_ok518, label %str_stale519
 
 str_ok518:                                        ; preds = %str_stale519, %str_gen_check517, %choice.case
-  %concat.lhs524 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.51.struct, i32 0, i32 1), align 8
+  %concat.lhs524 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
   %concat.rhs525 = getelementptr inbounds { i64, ptr }, ptr %fld.load512, i32 0, i32 0
   %concat.rhs526 = load i64, ptr %concat.rhs525, align 8
   %concat.rhs527 = and i64 %concat.rhs526, 281474976710655
@@ -23327,7 +24620,7 @@ str_gen_check562:                                 ; preds = %concat.tot.len547
 str_ok563:                                        ; preds = %str_stale564, %str_gen_check562, %concat.tot.len547
   %concat.lhs569 = getelementptr inbounds { i64, ptr }, ptr %concat.str554, i32 0, i32 1
   %concat.lhs570 = load ptr, ptr %concat.lhs569, align 8
-  %concat.rhs571 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs571 = load i64, ptr @str.52.struct, align 8
   %concat.rhs572 = and i64 %concat.rhs571, 281474976710655
   %str.tag573 = lshr i64 %concat.rhs571, 48
   %str.immortal574 = icmp eq i64 %str.tag573, 0
@@ -23346,7 +24639,7 @@ str_gen_check575:                                 ; preds = %str_ok563
   br i1 %str.tag.match581, label %str_ok576, label %str_stale577
 
 str_ok576:                                        ; preds = %str_stale577, %str_gen_check575, %str_ok563
-  %concat.rhs582 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs582 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len583 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs559, i64 %concat.rhs572)
   %sum584 = extractvalue { i64, i1 } %concat.sum.len583, 0
   %ovf585 = extractvalue { i64, i1 } %concat.sum.len583, 1
@@ -23383,7 +24676,7 @@ concat.tot.len591:                                ; preds = %str_overflow_abort5
   %str.build.data.gep600 = getelementptr inbounds { i64, ptr }, ptr %concat.str598, i32 0, i32 1
   store ptr %concat.buf594, ptr %str.build.data.gep600, align 8
   %b.load601 = load ptr, ptr %var.b, align 8
-  %app.str.len602 = load i64, ptr @str.51.struct, align 8
+  %app.str.len602 = load i64, ptr @str.58.struct, align 8
   %app.str.len603 = and i64 %app.str.len602, 281474976710655
   %str.tag604 = lshr i64 %app.str.len602, 48
   %str.immortal605 = icmp eq i64 %str.tag604, 0
@@ -23444,7 +24737,7 @@ b.nogrow2624:                                     ; preds = %b.app.new.len618
   br label %b.grow_done625
 
 b.grow_done625:                                   ; preds = %b.nogrow2624, %b.new.buf.len2638
-  %app.str.data645 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.51.struct, i32 0, i32 1), align 8
+  %app.str.data645 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
   %b.app.data646 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load601, i32 0, i32 1
   %b.app.data647 = load ptr, ptr %b.app.data646, align 8
   %b.app.dst648 = getelementptr i8, ptr %b.app.data647, i64 %b.app.cur.len614
@@ -23540,7 +24833,7 @@ b.grow_done678:                                   ; preds = %b.nogrow2677, %b.ne
   store i8 0, ptr %b.app.nul703, align 1
   %b.len.gep704 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load601, i32 0, i32 0
   store i64 %sum669, ptr %b.len.gep704, align 8
-  %app.str.len705 = load i64, ptr @str.45.struct, align 8
+  %app.str.len705 = load i64, ptr @str.52.struct, align 8
   %app.str.len706 = and i64 %app.str.len705, 281474976710655
   %str.tag707 = lshr i64 %app.str.len705, 48
   %str.immortal708 = icmp eq i64 %str.tag707, 0
@@ -23613,7 +24906,7 @@ b.nogrow2727:                                     ; preds = %b.app.new.len721
   br label %b.grow_done728
 
 b.grow_done728:                                   ; preds = %b.nogrow2727, %b.new.buf.len2741
-  %app.str.data748 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data748 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data749 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load601, i32 0, i32 1
   %b.app.data750 = load ptr, ptr %b.app.data749, align 8
   %b.app.dst751 = getelementptr i8, ptr %b.app.data750, i64 %b.app.cur.len717
@@ -23704,7 +24997,7 @@ choice.then:                                      ; preds = %str.eq.merge
   %var.load780 = load ptr, ptr %var.p, align 8
   %fld.gep781 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load780, i32 0, i32 3
   %fld.load782 = load ptr, ptr %fld.gep781, align 8
-  %concat.lhs783 = load i64, ptr @str.52.struct, align 8
+  %concat.lhs783 = load i64, ptr @str.59.struct, align 8
   %concat.lhs784 = and i64 %concat.lhs783, 281474976710655
   %str.tag785 = lshr i64 %concat.lhs783, 48
   %str.immortal786 = icmp eq i64 %str.tag785, 0
@@ -23729,7 +25022,7 @@ str_gen_check787:                                 ; preds = %choice.then
   br i1 %str.tag.match793, label %str_ok788, label %str_stale789
 
 str_ok788:                                        ; preds = %str_stale789, %str_gen_check787, %choice.then
-  %concat.lhs794 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
+  %concat.lhs794 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.59.struct, i32 0, i32 1), align 8
   %concat.rhs795 = getelementptr inbounds { i64, ptr }, ptr %fld.load782, i32 0, i32 0
   %concat.rhs796 = load i64, ptr %concat.rhs795, align 8
   %concat.rhs797 = and i64 %concat.rhs796, 281474976710655
@@ -23809,7 +25102,7 @@ str_gen_check832:                                 ; preds = %concat.tot.len817
 str_ok833:                                        ; preds = %str_stale834, %str_gen_check832, %concat.tot.len817
   %concat.lhs839 = getelementptr inbounds { i64, ptr }, ptr %concat.str824, i32 0, i32 1
   %concat.lhs840 = load ptr, ptr %concat.lhs839, align 8
-  %concat.rhs841 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs841 = load i64, ptr @str.52.struct, align 8
   %concat.rhs842 = and i64 %concat.rhs841, 281474976710655
   %str.tag843 = lshr i64 %concat.rhs841, 48
   %str.immortal844 = icmp eq i64 %str.tag843, 0
@@ -23828,7 +25121,7 @@ str_gen_check845:                                 ; preds = %str_ok833
   br i1 %str.tag.match851, label %str_ok846, label %str_stale847
 
 str_ok846:                                        ; preds = %str_stale847, %str_gen_check845, %str_ok833
-  %concat.rhs852 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs852 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len853 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs829, i64 %concat.rhs842)
   %sum854 = extractvalue { i64, i1 } %concat.sum.len853, 0
   %ovf855 = extractvalue { i64, i1 } %concat.sum.len853, 1
@@ -23865,7 +25158,7 @@ concat.tot.len861:                                ; preds = %str_overflow_abort8
   %str.build.data.gep870 = getelementptr inbounds { i64, ptr }, ptr %concat.str868, i32 0, i32 1
   store ptr %concat.buf864, ptr %str.build.data.gep870, align 8
   %b.load871 = load ptr, ptr %var.b, align 8
-  %app.str.len872 = load i64, ptr @str.52.struct, align 8
+  %app.str.len872 = load i64, ptr @str.59.struct, align 8
   %app.str.len873 = and i64 %app.str.len872, 281474976710655
   %str.tag874 = lshr i64 %app.str.len872, 48
   %str.immortal875 = icmp eq i64 %str.tag874, 0
@@ -23926,7 +25219,7 @@ b.nogrow2894:                                     ; preds = %b.app.new.len888
   br label %b.grow_done895
 
 b.grow_done895:                                   ; preds = %b.nogrow2894, %b.new.buf.len2908
-  %app.str.data915 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
+  %app.str.data915 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.59.struct, i32 0, i32 1), align 8
   %b.app.data916 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load871, i32 0, i32 1
   %b.app.data917 = load ptr, ptr %b.app.data916, align 8
   %b.app.dst918 = getelementptr i8, ptr %b.app.data917, i64 %b.app.cur.len884
@@ -24022,7 +25315,7 @@ b.grow_done948:                                   ; preds = %b.nogrow2947, %b.ne
   store i8 0, ptr %b.app.nul973, align 1
   %b.len.gep974 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load871, i32 0, i32 0
   store i64 %sum939, ptr %b.len.gep974, align 8
-  %app.str.len975 = load i64, ptr @str.45.struct, align 8
+  %app.str.len975 = load i64, ptr @str.52.struct, align 8
   %app.str.len976 = and i64 %app.str.len975, 281474976710655
   %str.tag977 = lshr i64 %app.str.len975, 48
   %str.immortal978 = icmp eq i64 %str.tag977, 0
@@ -24095,7 +25388,7 @@ b.nogrow2997:                                     ; preds = %b.app.new.len991
   br label %b.grow_done998
 
 b.grow_done998:                                   ; preds = %b.nogrow2997, %b.new.buf.len21011
-  %app.str.data1018 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data1018 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data1019 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load871, i32 0, i32 1
   %b.app.data1020 = load ptr, ptr %b.app.data1019, align 8
   %b.app.dst1021 = getelementptr i8, ptr %b.app.data1020, i64 %b.app.cur.len987
@@ -24178,7 +25471,7 @@ choice.then1061:                                  ; preds = %str.eq.merge1053
   %var.load1063 = load ptr, ptr %var.p, align 8
   %fld.gep1064 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load1063, i32 0, i32 4
   %fld.load1065 = load ptr, ptr %fld.gep1064, align 8
-  %concat.lhs1066 = load i64, ptr @str.73.struct, align 8
+  %concat.lhs1066 = load i64, ptr @str.80.struct, align 8
   %concat.lhs1067 = and i64 %concat.lhs1066, 281474976710655
   %str.tag1068 = lshr i64 %concat.lhs1066, 48
   %str.immortal1069 = icmp eq i64 %str.tag1068, 0
@@ -24203,7 +25496,7 @@ str_gen_check1070:                                ; preds = %choice.then1061
   br i1 %str.tag.match1076, label %str_ok1071, label %str_stale1072
 
 str_ok1071:                                       ; preds = %str_stale1072, %str_gen_check1070, %choice.then1061
-  %concat.lhs1077 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.73.struct, i32 0, i32 1), align 8
+  %concat.lhs1077 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.80.struct, i32 0, i32 1), align 8
   %concat.rhs1078 = getelementptr inbounds { i64, ptr }, ptr %fld.load1065, i32 0, i32 0
   %concat.rhs1079 = load i64, ptr %concat.rhs1078, align 8
   %concat.rhs1080 = and i64 %concat.rhs1079, 281474976710655
@@ -24283,7 +25576,7 @@ str_gen_check1115:                                ; preds = %concat.tot.len1100
 str_ok1116:                                       ; preds = %str_stale1117, %str_gen_check1115, %concat.tot.len1100
   %concat.lhs1122 = getelementptr inbounds { i64, ptr }, ptr %concat.str1107, i32 0, i32 1
   %concat.lhs1123 = load ptr, ptr %concat.lhs1122, align 8
-  %concat.rhs1124 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs1124 = load i64, ptr @str.52.struct, align 8
   %concat.rhs1125 = and i64 %concat.rhs1124, 281474976710655
   %str.tag1126 = lshr i64 %concat.rhs1124, 48
   %str.immortal1127 = icmp eq i64 %str.tag1126, 0
@@ -24302,7 +25595,7 @@ str_gen_check1128:                                ; preds = %str_ok1116
   br i1 %str.tag.match1134, label %str_ok1129, label %str_stale1130
 
 str_ok1129:                                       ; preds = %str_stale1130, %str_gen_check1128, %str_ok1116
-  %concat.rhs1135 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs1135 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len1136 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1112, i64 %concat.rhs1125)
   %sum1137 = extractvalue { i64, i1 } %concat.sum.len1136, 0
   %ovf1138 = extractvalue { i64, i1 } %concat.sum.len1136, 1
@@ -24339,7 +25632,7 @@ concat.tot.len1144:                               ; preds = %str_overflow_abort1
   %str.build.data.gep1153 = getelementptr inbounds { i64, ptr }, ptr %concat.str1151, i32 0, i32 1
   store ptr %concat.buf1147, ptr %str.build.data.gep1153, align 8
   %b.load1154 = load ptr, ptr %var.b, align 8
-  %app.str.len1155 = load i64, ptr @str.73.struct, align 8
+  %app.str.len1155 = load i64, ptr @str.80.struct, align 8
   %app.str.len1156 = and i64 %app.str.len1155, 281474976710655
   %str.tag1157 = lshr i64 %app.str.len1155, 48
   %str.immortal1158 = icmp eq i64 %str.tag1157, 0
@@ -24400,7 +25693,7 @@ b.nogrow21177:                                    ; preds = %b.app.new.len1171
   br label %b.grow_done1178
 
 b.grow_done1178:                                  ; preds = %b.nogrow21177, %b.new.buf.len21191
-  %app.str.data1198 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.73.struct, i32 0, i32 1), align 8
+  %app.str.data1198 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.80.struct, i32 0, i32 1), align 8
   %b.app.data1199 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1154, i32 0, i32 1
   %b.app.data1200 = load ptr, ptr %b.app.data1199, align 8
   %b.app.dst1201 = getelementptr i8, ptr %b.app.data1200, i64 %b.app.cur.len1167
@@ -24496,7 +25789,7 @@ b.grow_done1231:                                  ; preds = %b.nogrow21230, %b.n
   store i8 0, ptr %b.app.nul1256, align 1
   %b.len.gep1257 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1154, i32 0, i32 0
   store i64 %sum1222, ptr %b.len.gep1257, align 8
-  %app.str.len1258 = load i64, ptr @str.45.struct, align 8
+  %app.str.len1258 = load i64, ptr @str.52.struct, align 8
   %app.str.len1259 = and i64 %app.str.len1258, 281474976710655
   %str.tag1260 = lshr i64 %app.str.len1258, 48
   %str.immortal1261 = icmp eq i64 %str.tag1260, 0
@@ -24569,7 +25862,7 @@ b.nogrow21280:                                    ; preds = %b.app.new.len1274
   br label %b.grow_done1281
 
 b.grow_done1281:                                  ; preds = %b.nogrow21280, %b.new.buf.len21294
-  %app.str.data1301 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data1301 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data1302 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1154, i32 0, i32 1
   %b.app.data1303 = load ptr, ptr %b.app.data1302, align 8
   %b.app.dst1304 = getelementptr i8, ptr %b.app.data1303, i64 %b.app.cur.len1270
@@ -24652,7 +25945,7 @@ choice.then1344:                                  ; preds = %str.eq.merge1336
   %var.load1346 = load ptr, ptr %var.p, align 8
   %fld.gep1347 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load1346, i32 0, i32 6
   %fld.load1348 = load ptr, ptr %fld.gep1347, align 8
-  %concat.lhs1349 = load i64, ptr @str.55.struct, align 8
+  %concat.lhs1349 = load i64, ptr @str.62.struct, align 8
   %concat.lhs1350 = and i64 %concat.lhs1349, 281474976710655
   %str.tag1351 = lshr i64 %concat.lhs1349, 48
   %str.immortal1352 = icmp eq i64 %str.tag1351, 0
@@ -24669,7 +25962,7 @@ str_gen_check1353:                                ; preds = %choice.then1344
   br i1 %str.tag.match1359, label %str_ok1354, label %str_stale1355
 
 str_ok1354:                                       ; preds = %str_stale1355, %str_gen_check1353, %choice.then1344
-  %concat.lhs1360 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
+  %concat.lhs1360 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
   %concat.rhs1361 = getelementptr inbounds { i64, ptr }, ptr %fld.load1348, i32 0, i32 0
   %concat.rhs1362 = load i64, ptr %concat.rhs1361, align 8
   %concat.rhs1363 = and i64 %concat.rhs1362, 281474976710655
@@ -24749,7 +26042,7 @@ str_gen_check1398:                                ; preds = %concat.tot.len1383
 str_ok1399:                                       ; preds = %str_stale1400, %str_gen_check1398, %concat.tot.len1383
   %concat.lhs1405 = getelementptr inbounds { i64, ptr }, ptr %concat.str1390, i32 0, i32 1
   %concat.lhs1406 = load ptr, ptr %concat.lhs1405, align 8
-  %concat.rhs1407 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs1407 = load i64, ptr @str.52.struct, align 8
   %concat.rhs1408 = and i64 %concat.rhs1407, 281474976710655
   %str.tag1409 = lshr i64 %concat.rhs1407, 48
   %str.immortal1410 = icmp eq i64 %str.tag1409, 0
@@ -24768,7 +26061,7 @@ str_gen_check1411:                                ; preds = %str_ok1399
   br i1 %str.tag.match1417, label %str_ok1412, label %str_stale1413
 
 str_ok1412:                                       ; preds = %str_stale1413, %str_gen_check1411, %str_ok1399
-  %concat.rhs1418 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs1418 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len1419 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1395, i64 %concat.rhs1408)
   %sum1420 = extractvalue { i64, i1 } %concat.sum.len1419, 0
   %ovf1421 = extractvalue { i64, i1 } %concat.sum.len1419, 1
@@ -24805,7 +26098,7 @@ concat.tot.len1427:                               ; preds = %str_overflow_abort1
   %str.build.data.gep1436 = getelementptr inbounds { i64, ptr }, ptr %concat.str1434, i32 0, i32 1
   store ptr %concat.buf1430, ptr %str.build.data.gep1436, align 8
   %b.load1437 = load ptr, ptr %var.b, align 8
-  %app.str.len1438 = load i64, ptr @str.55.struct, align 8
+  %app.str.len1438 = load i64, ptr @str.62.struct, align 8
   %app.str.len1439 = and i64 %app.str.len1438, 281474976710655
   %str.tag1440 = lshr i64 %app.str.len1438, 48
   %str.immortal1441 = icmp eq i64 %str.tag1440, 0
@@ -24866,7 +26159,7 @@ b.nogrow21460:                                    ; preds = %b.app.new.len1454
   br label %b.grow_done1461
 
 b.grow_done1461:                                  ; preds = %b.nogrow21460, %b.new.buf.len21474
-  %app.str.data1481 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
+  %app.str.data1481 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
   %b.app.data1482 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1437, i32 0, i32 1
   %b.app.data1483 = load ptr, ptr %b.app.data1482, align 8
   %b.app.dst1484 = getelementptr i8, ptr %b.app.data1483, i64 %b.app.cur.len1450
@@ -24962,7 +26255,7 @@ b.grow_done1514:                                  ; preds = %b.nogrow21513, %b.n
   store i8 0, ptr %b.app.nul1539, align 1
   %b.len.gep1540 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1437, i32 0, i32 0
   store i64 %sum1505, ptr %b.len.gep1540, align 8
-  %app.str.len1541 = load i64, ptr @str.45.struct, align 8
+  %app.str.len1541 = load i64, ptr @str.52.struct, align 8
   %app.str.len1542 = and i64 %app.str.len1541, 281474976710655
   %str.tag1543 = lshr i64 %app.str.len1541, 48
   %str.immortal1544 = icmp eq i64 %str.tag1543, 0
@@ -25035,7 +26328,7 @@ b.nogrow21563:                                    ; preds = %b.app.new.len1557
   br label %b.grow_done1564
 
 b.grow_done1564:                                  ; preds = %b.nogrow21563, %b.new.buf.len21577
-  %app.str.data1584 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data1584 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data1585 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1437, i32 0, i32 1
   %b.app.data1586 = load ptr, ptr %b.app.data1585, align 8
   %b.app.dst1587 = getelementptr i8, ptr %b.app.data1586, i64 %b.app.cur.len1553
@@ -25067,7 +26360,7 @@ choice.case1590:                                  ; preds = %choice.next
   %var.load1595 = load ptr, ptr %var.p, align 8
   %fld.gep1596 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load1595, i32 0, i32 7
   %fld.load1597 = load ptr, ptr %fld.gep1596, align 8
-  %concat.lhs1598 = load i64, ptr @str.53.struct, align 8
+  %concat.lhs1598 = load i64, ptr @str.60.struct, align 8
   %concat.lhs1599 = and i64 %concat.lhs1598, 281474976710655
   %str.tag1600 = lshr i64 %concat.lhs1598, 48
   %str.immortal1601 = icmp eq i64 %str.tag1600, 0
@@ -25087,7 +26380,7 @@ str_gen_check1602:                                ; preds = %choice.case1590
   br i1 %str.tag.match1608, label %str_ok1603, label %str_stale1604
 
 str_ok1603:                                       ; preds = %str_stale1604, %str_gen_check1602, %choice.case1590
-  %concat.lhs1609 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
+  %concat.lhs1609 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
   %concat.rhs1610 = getelementptr inbounds { i64, ptr }, ptr %fld.load1597, i32 0, i32 0
   %concat.rhs1611 = load i64, ptr %concat.rhs1610, align 8
   %concat.rhs1612 = and i64 %concat.rhs1611, 281474976710655
@@ -25167,7 +26460,7 @@ str_gen_check1647:                                ; preds = %concat.tot.len1632
 str_ok1648:                                       ; preds = %str_stale1649, %str_gen_check1647, %concat.tot.len1632
   %concat.lhs1654 = getelementptr inbounds { i64, ptr }, ptr %concat.str1639, i32 0, i32 1
   %concat.lhs1655 = load ptr, ptr %concat.lhs1654, align 8
-  %concat.rhs1656 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs1656 = load i64, ptr @str.52.struct, align 8
   %concat.rhs1657 = and i64 %concat.rhs1656, 281474976710655
   %str.tag1658 = lshr i64 %concat.rhs1656, 48
   %str.immortal1659 = icmp eq i64 %str.tag1658, 0
@@ -25186,7 +26479,7 @@ str_gen_check1660:                                ; preds = %str_ok1648
   br i1 %str.tag.match1666, label %str_ok1661, label %str_stale1662
 
 str_ok1661:                                       ; preds = %str_stale1662, %str_gen_check1660, %str_ok1648
-  %concat.rhs1667 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs1667 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len1668 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1644, i64 %concat.rhs1657)
   %sum1669 = extractvalue { i64, i1 } %concat.sum.len1668, 0
   %ovf1670 = extractvalue { i64, i1 } %concat.sum.len1668, 1
@@ -25223,7 +26516,7 @@ concat.tot.len1676:                               ; preds = %str_overflow_abort1
   %str.build.data.gep1685 = getelementptr inbounds { i64, ptr }, ptr %concat.str1683, i32 0, i32 1
   store ptr %concat.buf1679, ptr %str.build.data.gep1685, align 8
   %b.load1686 = load ptr, ptr %var.b, align 8
-  %app.str.len1687 = load i64, ptr @str.53.struct, align 8
+  %app.str.len1687 = load i64, ptr @str.60.struct, align 8
   %app.str.len1688 = and i64 %app.str.len1687, 281474976710655
   %str.tag1689 = lshr i64 %app.str.len1687, 48
   %str.immortal1690 = icmp eq i64 %str.tag1689, 0
@@ -25284,7 +26577,7 @@ b.nogrow21709:                                    ; preds = %b.app.new.len1703
   br label %b.grow_done1710
 
 b.grow_done1710:                                  ; preds = %b.nogrow21709, %b.new.buf.len21723
-  %app.str.data1730 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
+  %app.str.data1730 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
   %b.app.data1731 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1686, i32 0, i32 1
   %b.app.data1732 = load ptr, ptr %b.app.data1731, align 8
   %b.app.dst1733 = getelementptr i8, ptr %b.app.data1732, i64 %b.app.cur.len1699
@@ -25380,7 +26673,7 @@ b.grow_done1763:                                  ; preds = %b.nogrow21762, %b.n
   store i8 0, ptr %b.app.nul1788, align 1
   %b.len.gep1789 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1686, i32 0, i32 0
   store i64 %sum1754, ptr %b.len.gep1789, align 8
-  %app.str.len1790 = load i64, ptr @str.45.struct, align 8
+  %app.str.len1790 = load i64, ptr @str.52.struct, align 8
   %app.str.len1791 = and i64 %app.str.len1790, 281474976710655
   %str.tag1792 = lshr i64 %app.str.len1790, 48
   %str.immortal1793 = icmp eq i64 %str.tag1792, 0
@@ -25453,7 +26746,7 @@ b.nogrow21812:                                    ; preds = %b.app.new.len1806
   br label %b.grow_done1813
 
 b.grow_done1813:                                  ; preds = %b.nogrow21812, %b.new.buf.len21826
-  %app.str.data1833 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data1833 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data1834 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1686, i32 0, i32 1
   %b.app.data1835 = load ptr, ptr %b.app.data1834, align 8
   %b.app.dst1836 = getelementptr i8, ptr %b.app.data1835, i64 %b.app.cur.len1802
@@ -25486,7 +26779,7 @@ str_overflow_abort1827:                           ; preds = %b.grow21811
 
 choice.then1842:                                  ; preds = %b.grow_done1813
   %b.load1844 = load ptr, ptr %var.b, align 8
-  %app.str.len1845 = load i64, ptr @str.74.struct, align 8
+  %app.str.len1845 = load i64, ptr @str.81.struct, align 8
   %app.str.len1846 = and i64 %app.str.len1845, 281474976710655
   %str.tag1847 = lshr i64 %app.str.len1845, 48
   %str.immortal1848 = icmp eq i64 %str.tag1847, 0
@@ -25545,7 +26838,7 @@ b.nogrow21867:                                    ; preds = %b.app.new.len1861
   br label %b.grow_done1868
 
 b.grow_done1868:                                  ; preds = %b.nogrow21867, %b.new.buf.len21881
-  %app.str.data1888 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.74.struct, i32 0, i32 1), align 8
+  %app.str.data1888 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.81.struct, i32 0, i32 1), align 8
   %b.app.data1889 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1844, i32 0, i32 1
   %b.app.data1890 = load ptr, ptr %b.app.data1889, align 8
   %b.app.dst1891 = getelementptr i8, ptr %b.app.data1890, i64 %b.app.cur.len1857
@@ -25577,7 +26870,7 @@ choice.case1894:                                  ; preds = %choice.next1591
   %var.load1899 = load ptr, ptr %var.p, align 8
   %fld.gep1900 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load1899, i32 0, i32 5
   %fld.load1901 = load ptr, ptr %fld.gep1900, align 8
-  %concat.lhs1902 = load i64, ptr @str.54.struct, align 8
+  %concat.lhs1902 = load i64, ptr @str.61.struct, align 8
   %concat.lhs1903 = and i64 %concat.lhs1902, 281474976710655
   %str.tag1904 = lshr i64 %concat.lhs1902, 48
   %str.immortal1905 = icmp eq i64 %str.tag1904, 0
@@ -25594,7 +26887,7 @@ str_gen_check1906:                                ; preds = %choice.case1894
   br i1 %str.tag.match1912, label %str_ok1907, label %str_stale1908
 
 str_ok1907:                                       ; preds = %str_stale1908, %str_gen_check1906, %choice.case1894
-  %concat.lhs1913 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
+  %concat.lhs1913 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.61.struct, i32 0, i32 1), align 8
   %concat.rhs1914 = getelementptr inbounds { i64, ptr }, ptr %fld.load1901, i32 0, i32 0
   %concat.rhs1915 = load i64, ptr %concat.rhs1914, align 8
   %concat.rhs1916 = and i64 %concat.rhs1915, 281474976710655
@@ -25674,7 +26967,7 @@ str_gen_check1951:                                ; preds = %concat.tot.len1936
 str_ok1952:                                       ; preds = %str_stale1953, %str_gen_check1951, %concat.tot.len1936
   %concat.lhs1958 = getelementptr inbounds { i64, ptr }, ptr %concat.str1943, i32 0, i32 1
   %concat.lhs1959 = load ptr, ptr %concat.lhs1958, align 8
-  %concat.rhs1960 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs1960 = load i64, ptr @str.52.struct, align 8
   %concat.rhs1961 = and i64 %concat.rhs1960, 281474976710655
   %str.tag1962 = lshr i64 %concat.rhs1960, 48
   %str.immortal1963 = icmp eq i64 %str.tag1962, 0
@@ -25693,7 +26986,7 @@ str_gen_check1964:                                ; preds = %str_ok1952
   br i1 %str.tag.match1970, label %str_ok1965, label %str_stale1966
 
 str_ok1965:                                       ; preds = %str_stale1966, %str_gen_check1964, %str_ok1952
-  %concat.rhs1971 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs1971 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len1972 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1948, i64 %concat.rhs1961)
   %sum1973 = extractvalue { i64, i1 } %concat.sum.len1972, 0
   %ovf1974 = extractvalue { i64, i1 } %concat.sum.len1972, 1
@@ -25730,7 +27023,7 @@ concat.tot.len1980:                               ; preds = %str_overflow_abort1
   %str.build.data.gep1989 = getelementptr inbounds { i64, ptr }, ptr %concat.str1987, i32 0, i32 1
   store ptr %concat.buf1983, ptr %str.build.data.gep1989, align 8
   %b.load1990 = load ptr, ptr %var.b, align 8
-  %app.str.len1991 = load i64, ptr @str.54.struct, align 8
+  %app.str.len1991 = load i64, ptr @str.61.struct, align 8
   %app.str.len1992 = and i64 %app.str.len1991, 281474976710655
   %str.tag1993 = lshr i64 %app.str.len1991, 48
   %str.immortal1994 = icmp eq i64 %str.tag1993, 0
@@ -25791,7 +27084,7 @@ b.nogrow22013:                                    ; preds = %b.app.new.len2007
   br label %b.grow_done2014
 
 b.grow_done2014:                                  ; preds = %b.nogrow22013, %b.new.buf.len22027
-  %app.str.data2034 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
+  %app.str.data2034 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.61.struct, i32 0, i32 1), align 8
   %b.app.data2035 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1990, i32 0, i32 1
   %b.app.data2036 = load ptr, ptr %b.app.data2035, align 8
   %b.app.dst2037 = getelementptr i8, ptr %b.app.data2036, i64 %b.app.cur.len2003
@@ -25887,7 +27180,7 @@ b.grow_done2067:                                  ; preds = %b.nogrow22066, %b.n
   store i8 0, ptr %b.app.nul2092, align 1
   %b.len.gep2093 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1990, i32 0, i32 0
   store i64 %sum2058, ptr %b.len.gep2093, align 8
-  %app.str.len2094 = load i64, ptr @str.45.struct, align 8
+  %app.str.len2094 = load i64, ptr @str.52.struct, align 8
   %app.str.len2095 = and i64 %app.str.len2094, 281474976710655
   %str.tag2096 = lshr i64 %app.str.len2094, 48
   %str.immortal2097 = icmp eq i64 %str.tag2096, 0
@@ -25960,7 +27253,7 @@ b.nogrow22116:                                    ; preds = %b.app.new.len2110
   br label %b.grow_done2117
 
 b.grow_done2117:                                  ; preds = %b.nogrow22116, %b.new.buf.len22130
-  %app.str.data2137 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data2137 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data2138 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load1990, i32 0, i32 1
   %b.app.data2139 = load ptr, ptr %b.app.data2138, align 8
   %b.app.dst2140 = getelementptr i8, ptr %b.app.data2139, i64 %b.app.cur.len2106
@@ -25972,7 +27265,7 @@ b.grow_done2117:                                  ; preds = %b.nogrow22116, %b.n
   %var.load2143 = load ptr, ptr %var.p, align 8
   %fld.gep2144 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load2143, i32 0, i32 6
   %fld.load2145 = load ptr, ptr %fld.gep2144, align 8
-  %concat.lhs2146 = load i64, ptr @str.55.struct, align 8
+  %concat.lhs2146 = load i64, ptr @str.62.struct, align 8
   %concat.lhs2147 = and i64 %concat.lhs2146, 281474976710655
   %str.tag2148 = lshr i64 %concat.lhs2146, 48
   %str.immortal2149 = icmp eq i64 %str.tag2148, 0
@@ -26003,7 +27296,7 @@ str_gen_check2150:                                ; preds = %b.grow_done2117
   br i1 %str.tag.match2156, label %str_ok2151, label %str_stale2152
 
 str_ok2151:                                       ; preds = %str_stale2152, %str_gen_check2150, %b.grow_done2117
-  %concat.lhs2157 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
+  %concat.lhs2157 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
   %concat.rhs2158 = getelementptr inbounds { i64, ptr }, ptr %fld.load2145, i32 0, i32 0
   %concat.rhs2159 = load i64, ptr %concat.rhs2158, align 8
   %concat.rhs2160 = and i64 %concat.rhs2159, 281474976710655
@@ -26083,7 +27376,7 @@ str_gen_check2195:                                ; preds = %concat.tot.len2180
 str_ok2196:                                       ; preds = %str_stale2197, %str_gen_check2195, %concat.tot.len2180
   %concat.lhs2202 = getelementptr inbounds { i64, ptr }, ptr %concat.str2187, i32 0, i32 1
   %concat.lhs2203 = load ptr, ptr %concat.lhs2202, align 8
-  %concat.rhs2204 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs2204 = load i64, ptr @str.52.struct, align 8
   %concat.rhs2205 = and i64 %concat.rhs2204, 281474976710655
   %str.tag2206 = lshr i64 %concat.rhs2204, 48
   %str.immortal2207 = icmp eq i64 %str.tag2206, 0
@@ -26102,7 +27395,7 @@ str_gen_check2208:                                ; preds = %str_ok2196
   br i1 %str.tag.match2214, label %str_ok2209, label %str_stale2210
 
 str_ok2209:                                       ; preds = %str_stale2210, %str_gen_check2208, %str_ok2196
-  %concat.rhs2215 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs2215 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len2216 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs2192, i64 %concat.rhs2205)
   %sum2217 = extractvalue { i64, i1 } %concat.sum.len2216, 0
   %ovf2218 = extractvalue { i64, i1 } %concat.sum.len2216, 1
@@ -26139,7 +27432,7 @@ concat.tot.len2224:                               ; preds = %str_overflow_abort2
   %str.build.data.gep2233 = getelementptr inbounds { i64, ptr }, ptr %concat.str2231, i32 0, i32 1
   store ptr %concat.buf2227, ptr %str.build.data.gep2233, align 8
   %b.load2234 = load ptr, ptr %var.b, align 8
-  %app.str.len2235 = load i64, ptr @str.55.struct, align 8
+  %app.str.len2235 = load i64, ptr @str.62.struct, align 8
   %app.str.len2236 = and i64 %app.str.len2235, 281474976710655
   %str.tag2237 = lshr i64 %app.str.len2235, 48
   %str.immortal2238 = icmp eq i64 %str.tag2237, 0
@@ -26200,7 +27493,7 @@ b.nogrow22257:                                    ; preds = %b.app.new.len2251
   br label %b.grow_done2258
 
 b.grow_done2258:                                  ; preds = %b.nogrow22257, %b.new.buf.len22271
-  %app.str.data2278 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
+  %app.str.data2278 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
   %b.app.data2279 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2234, i32 0, i32 1
   %b.app.data2280 = load ptr, ptr %b.app.data2279, align 8
   %b.app.dst2281 = getelementptr i8, ptr %b.app.data2280, i64 %b.app.cur.len2247
@@ -26296,7 +27589,7 @@ b.grow_done2311:                                  ; preds = %b.nogrow22310, %b.n
   store i8 0, ptr %b.app.nul2336, align 1
   %b.len.gep2337 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2234, i32 0, i32 0
   store i64 %sum2302, ptr %b.len.gep2337, align 8
-  %app.str.len2338 = load i64, ptr @str.45.struct, align 8
+  %app.str.len2338 = load i64, ptr @str.52.struct, align 8
   %app.str.len2339 = and i64 %app.str.len2338, 281474976710655
   %str.tag2340 = lshr i64 %app.str.len2338, 48
   %str.immortal2341 = icmp eq i64 %str.tag2340, 0
@@ -26369,7 +27662,7 @@ b.nogrow22360:                                    ; preds = %b.app.new.len2354
   br label %b.grow_done2361
 
 b.grow_done2361:                                  ; preds = %b.nogrow22360, %b.new.buf.len22374
-  %app.str.data2381 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data2381 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data2382 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2234, i32 0, i32 1
   %b.app.data2383 = load ptr, ptr %b.app.data2382, align 8
   %b.app.dst2384 = getelementptr i8, ptr %b.app.data2383, i64 %b.app.cur.len2350
@@ -26399,14 +27692,14 @@ str_overflow_abort2375:                           ; preds = %b.grow22359
 
 choice.then2391:                                  ; preds = %choice.exit
   %b.load2393 = load ptr, ptr %var.b, align 8
-  %app.str.len2394 = load i64, ptr @str.75.struct, align 8
+  %app.str.len2394 = load i64, ptr @str.82.struct, align 8
   %app.str.len2395 = and i64 %app.str.len2394, 281474976710655
   %str.tag2396 = lshr i64 %app.str.len2394, 48
   %str.immortal2397 = icmp eq i64 %str.tag2396, 0
   br i1 %str.immortal2397, label %str_ok2399, label %str_gen_check2398
 
-choice.exit2392:                                  ; preds = %loop.exit.72, %choice.exit
-  br label %loop.latch.71
+choice.exit2392:                                  ; preds = %loop.exit.78, %choice.exit
+  br label %loop.latch.77
 
 str_gen_check2398:                                ; preds = %choice.then2391
   %arena.gen2401 = call ptr @dva_arena_current()
@@ -26458,7 +27751,7 @@ b.nogrow22416:                                    ; preds = %b.app.new.len2410
   br label %b.grow_done2417
 
 b.grow_done2417:                                  ; preds = %b.nogrow22416, %b.new.buf.len22430
-  %app.str.data2437 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.75.struct, i32 0, i32 1), align 8
+  %app.str.data2437 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.82.struct, i32 0, i32 1), align 8
   %b.app.data2438 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2393, i32 0, i32 1
   %b.app.data2439 = load ptr, ptr %b.app.data2438, align 8
   %b.app.dst2440 = getelementptr i8, ptr %b.app.data2439, i64 %b.app.cur.len2406
@@ -26514,17 +27807,17 @@ a.after2451:                                      ; preds = %a.create2450, %b.gr
   %arr.cycle.len2461 = load i64, ptr %arr.cycle.len2460, align 8
   %arr.cycle.data2462 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22459, i32 0, i32 1
   %arr.cycle.data2463 = load ptr, ptr %arr.cycle.data2462, align 8
-  store i64 0, ptr %loop.idx.72, align 8
-  br label %loop.header.72
+  store i64 0, ptr %loop.idx.78, align 8
+  br label %loop.header.78
 
-loop.header.72:                                   ; preds = %loop.latch.72, %a.after2451
-  %counter.load2464 = load i64, ptr %loop.idx.72, align 8
+loop.header.78:                                   ; preds = %loop.latch.78, %a.after2451
+  %counter.load2464 = load i64, ptr %loop.idx.78, align 8
   %loop.cond2465 = icmp slt i64 %counter.load2464, %arr.cycle.len2461
-  br i1 %loop.cond2465, label %loop.body.72, label %loop.exit.nat.72
+  br i1 %loop.cond2465, label %loop.body.78, label %loop.exit.nat.78
 
-loop.body.72:                                     ; preds = %loop.header.72
+loop.body.78:                                     ; preds = %loop.header.78
   %loop.rel.i2466 = sub i64 %counter.load2464, 0
-  store i64 1, ptr %loop.step.72, align 8
+  store i64 1, ptr %loop.step.78, align 8
   %arr.elem.gep2467 = getelementptr i64, ptr %arr.cycle.data2463, i64 %counter.load2464
   %arr.elem.raw2468 = load i64, ptr %arr.elem.gep2467, align 8
   %arr.elem.ptr2469 = inttoptr i64 %arr.elem.raw2468 to ptr
@@ -26534,33 +27827,33 @@ loop.body.72:                                     ; preds = %loop.header.72
   %var.load2470 = load ptr, ptr %var.d, align 8
   %fld.gep2471 = getelementptr inbounds { ptr, ptr }, ptr %var.load2470, i32 0, i32 0
   %fld.load2472 = load ptr, ptr %fld.gep2471, align 8
-  %concat.lhs2473 = load i64, ptr @str.76.struct, align 8
+  %concat.lhs2473 = load i64, ptr @str.83.struct, align 8
   %concat.lhs2474 = and i64 %concat.lhs2473, 281474976710655
   %str.tag2475 = lshr i64 %concat.lhs2473, 48
   %str.immortal2476 = icmp eq i64 %str.tag2475, 0
   br i1 %str.immortal2476, label %str_ok2478, label %str_gen_check2477
 
-loop.exit.nat.72:                                 ; preds = %loop.header.72
-  br label %loop.exit.72
+loop.exit.nat.78:                                 ; preds = %loop.header.78
+  br label %loop.exit.78
 
-loop.latch.72:                                    ; preds = %b.grow_done2884
-  %step.val = load i64, ptr %loop.step.72, align 8
+loop.latch.78:                                    ; preds = %b.grow_done2884
+  %step.val = load i64, ptr %loop.step.78, align 8
   %loop.next = add i64 %counter.load2464, %step.val
-  store i64 %loop.next, ptr %loop.idx.72, align 8
-  br label %loop.header.72
+  store i64 %loop.next, ptr %loop.idx.78, align 8
+  br label %loop.header.78
 
-loop.exit.72:                                     ; preds = %loop.exit.nat.72
+loop.exit.78:                                     ; preds = %loop.exit.nat.78
   br label %choice.exit2392
 
-str_gen_check2477:                                ; preds = %loop.body.72
+str_gen_check2477:                                ; preds = %loop.body.78
   %arena.gen2480 = call ptr @dva_arena_current()
   %arena.gen2481 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen2480, i32 0, i32 4
   %arena.gen2482 = load i64, ptr %arena.gen2481, align 8
   %str.tag.match2483 = icmp eq i64 %str.tag2475, %arena.gen2482
   br i1 %str.tag.match2483, label %str_ok2478, label %str_stale2479
 
-str_ok2478:                                       ; preds = %str_stale2479, %str_gen_check2477, %loop.body.72
-  %concat.lhs2484 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.76.struct, i32 0, i32 1), align 8
+str_ok2478:                                       ; preds = %str_stale2479, %str_gen_check2477, %loop.body.78
+  %concat.lhs2484 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.83.struct, i32 0, i32 1), align 8
   %concat.rhs2485 = getelementptr inbounds { i64, ptr }, ptr %fld.load2472, i32 0, i32 0
   %concat.rhs2486 = load i64, ptr %concat.rhs2485, align 8
   %concat.rhs2487 = and i64 %concat.rhs2486, 281474976710655
@@ -26799,7 +28092,7 @@ str_gen_check2615:                                ; preds = %concat.tot.len2600
 str_ok2616:                                       ; preds = %str_stale2617, %str_gen_check2615, %concat.tot.len2600
   %concat.lhs2622 = getelementptr inbounds { i64, ptr }, ptr %concat.str2607, i32 0, i32 1
   %concat.lhs2623 = load ptr, ptr %concat.lhs2622, align 8
-  %concat.rhs2624 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs2624 = load i64, ptr @str.52.struct, align 8
   %concat.rhs2625 = and i64 %concat.rhs2624, 281474976710655
   %str.tag2626 = lshr i64 %concat.rhs2624, 48
   %str.immortal2627 = icmp eq i64 %str.tag2626, 0
@@ -26818,7 +28111,7 @@ str_gen_check2628:                                ; preds = %str_ok2616
   br i1 %str.tag.match2634, label %str_ok2629, label %str_stale2630
 
 str_ok2629:                                       ; preds = %str_stale2630, %str_gen_check2628, %str_ok2616
-  %concat.rhs2635 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs2635 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len2636 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs2612, i64 %concat.rhs2625)
   %sum2637 = extractvalue { i64, i1 } %concat.sum.len2636, 0
   %ovf2638 = extractvalue { i64, i1 } %concat.sum.len2636, 1
@@ -26855,7 +28148,7 @@ concat.tot.len2644:                               ; preds = %str_overflow_abort2
   %str.build.data.gep2653 = getelementptr inbounds { i64, ptr }, ptr %concat.str2651, i32 0, i32 1
   store ptr %concat.buf2647, ptr %str.build.data.gep2653, align 8
   %b.load2654 = load ptr, ptr %var.b, align 8
-  %app.str.len2655 = load i64, ptr @str.76.struct, align 8
+  %app.str.len2655 = load i64, ptr @str.83.struct, align 8
   %app.str.len2656 = and i64 %app.str.len2655, 281474976710655
   %str.tag2657 = lshr i64 %app.str.len2655, 48
   %str.immortal2658 = icmp eq i64 %str.tag2657, 0
@@ -26916,7 +28209,7 @@ b.nogrow22677:                                    ; preds = %b.app.new.len2671
   br label %b.grow_done2678
 
 b.grow_done2678:                                  ; preds = %b.nogrow22677, %b.new.buf.len22691
-  %app.str.data2698 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.76.struct, i32 0, i32 1), align 8
+  %app.str.data2698 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.83.struct, i32 0, i32 1), align 8
   %b.app.data2699 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2654, i32 0, i32 1
   %b.app.data2700 = load ptr, ptr %b.app.data2699, align 8
   %b.app.dst2701 = getelementptr i8, ptr %b.app.data2700, i64 %b.app.cur.len2667
@@ -27181,7 +28474,7 @@ b.grow_done2834:                                  ; preds = %b.nogrow22833, %b.n
   store i8 0, ptr %b.app.nul2859, align 1
   %b.len.gep2860 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2654, i32 0, i32 0
   store i64 %sum2825, ptr %b.len.gep2860, align 8
-  %app.str.len2861 = load i64, ptr @str.45.struct, align 8
+  %app.str.len2861 = load i64, ptr @str.52.struct, align 8
   %app.str.len2862 = and i64 %app.str.len2861, 281474976710655
   %str.tag2863 = lshr i64 %app.str.len2861, 48
   %str.immortal2864 = icmp eq i64 %str.tag2863, 0
@@ -27254,7 +28547,7 @@ b.nogrow22883:                                    ; preds = %b.app.new.len2877
   br label %b.grow_done2884
 
 b.grow_done2884:                                  ; preds = %b.nogrow22883, %b.new.buf.len22897
-  %app.str.data2904 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data2904 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data2905 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2654, i32 0, i32 1
   %b.app.data2906 = load ptr, ptr %b.app.data2905, align 8
   %b.app.dst2907 = getelementptr i8, ptr %b.app.data2906, i64 %b.app.cur.len2873
@@ -27263,7 +28556,7 @@ b.grow_done2884:                                  ; preds = %b.nogrow22883, %b.n
   store i8 0, ptr %b.app.nul2908, align 1
   %b.len.gep2909 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2654, i32 0, i32 0
   store i64 %sum2875, ptr %b.len.gep2909, align 8
-  br label %loop.latch.72
+  br label %loop.latch.78
 
 b.new.buf.len22897:                               ; preds = %str_overflow_abort2898, %b.grow22882
   %arena.cur2899 = call ptr @dva_arena_current()
@@ -27282,14 +28575,14 @@ str_overflow_abort2898:                           ; preds = %b.grow22882
   call void @exit(i32 1)
   br label %b.new.buf.len22897
 
-str_gen_check2917:                                ; preds = %loop.exit.71
+str_gen_check2917:                                ; preds = %loop.exit.77
   %arena.gen2920 = call ptr @dva_arena_current()
   %arena.gen2921 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen2920, i32 0, i32 4
   %arena.gen2922 = load i64, ptr %arena.gen2921, align 8
   %str.tag.match2923 = icmp eq i64 %str.tag2915, %arena.gen2922
   br i1 %str.tag.match2923, label %str_ok2918, label %str_stale2919
 
-str_ok2918:                                       ; preds = %str_stale2919, %str_gen_check2917, %loop.exit.71
+str_ok2918:                                       ; preds = %str_stale2919, %str_gen_check2917, %loop.exit.77
   %b.app.cur.len2924 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2912, i32 0, i32 0
   %b.app.cur.len2925 = load i64, ptr %b.app.cur.len2924, align 8
   %b.app.new.len2926 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %b.app.cur.len2925, i64 %app.str.len2914)
@@ -27332,7 +28625,7 @@ b.nogrow22935:                                    ; preds = %b.app.new.len2929
   br label %b.grow_done2936
 
 b.grow_done2936:                                  ; preds = %b.nogrow22935, %b.new.buf.len22949
-  %app.str.data2956 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.77.struct, i32 0, i32 1), align 8
+  %app.str.data2956 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.84.struct, i32 0, i32 1), align 8
   %b.app.data2957 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load2912, i32 0, i32 1
   %b.app.data2958 = load ptr, ptr %b.app.data2957, align 8
   %b.app.dst2959 = getelementptr i8, ptr %b.app.data2958, i64 %b.app.cur.len2925
@@ -27388,17 +28681,17 @@ a.after2970:                                      ; preds = %a.create2969, %b.gr
   %arr.cycle.len2980 = load i64, ptr %arr.cycle.len2979, align 8
   %arr.cycle.data2981 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22978, i32 0, i32 1
   %arr.cycle.data2982 = load ptr, ptr %arr.cycle.data2981, align 8
-  store i64 0, ptr %loop.idx.73, align 8
-  br label %loop.header.73
+  store i64 0, ptr %loop.idx.79, align 8
+  br label %loop.header.79
 
-loop.header.73:                                   ; preds = %loop.latch.73, %a.after2970
-  %counter.load2983 = load i64, ptr %loop.idx.73, align 8
+loop.header.79:                                   ; preds = %loop.latch.79, %a.after2970
+  %counter.load2983 = load i64, ptr %loop.idx.79, align 8
   %loop.cond2984 = icmp slt i64 %counter.load2983, %arr.cycle.len2980
-  br i1 %loop.cond2984, label %loop.body.73, label %loop.exit.nat.73
+  br i1 %loop.cond2984, label %loop.body.79, label %loop.exit.nat.79
 
-loop.body.73:                                     ; preds = %loop.header.73
+loop.body.79:                                     ; preds = %loop.header.79
   %loop.rel.i2985 = sub i64 %counter.load2983, 0
-  store i64 1, ptr %loop.step.73, align 8
+  store i64 1, ptr %loop.step.79, align 8
   %arr.elem.gep2986 = getelementptr i64, ptr %arr.cycle.data2982, i64 %counter.load2983
   %arr.elem.raw2987 = load i64, ptr %arr.elem.gep2986, align 8
   %arr.elem.ptr2988 = inttoptr i64 %arr.elem.raw2987 to ptr
@@ -27408,22 +28701,22 @@ loop.body.73:                                     ; preds = %loop.header.73
   %var.load2991 = load ptr, ptr %var.r, align 8
   %fld.gep2992 = getelementptr inbounds { ptr, ptr }, ptr %var.load2991, i32 0, i32 0
   %fld.load2993 = load ptr, ptr %fld.gep2992, align 8
-  %concat.lhs2994 = load i64, ptr @str.49.struct, align 8
+  %concat.lhs2994 = load i64, ptr @str.56.struct, align 8
   %concat.lhs2995 = and i64 %concat.lhs2994, 281474976710655
   %str.tag2996 = lshr i64 %concat.lhs2994, 48
   %str.immortal2997 = icmp eq i64 %str.tag2996, 0
   br i1 %str.immortal2997, label %str_ok2999, label %str_gen_check2998
 
-loop.exit.nat.73:                                 ; preds = %loop.header.73
-  br label %loop.exit.73
+loop.exit.nat.79:                                 ; preds = %loop.header.79
+  br label %loop.exit.79
 
-loop.latch.73:                                    ; preds = %b.grow_done3405
-  %step.val3431 = load i64, ptr %loop.step.73, align 8
+loop.latch.79:                                    ; preds = %b.grow_done3405
+  %step.val3431 = load i64, ptr %loop.step.79, align 8
   %loop.next3432 = add i64 %counter.load2983, %step.val3431
-  store i64 %loop.next3432, ptr %loop.idx.73, align 8
-  br label %loop.header.73
+  store i64 %loop.next3432, ptr %loop.idx.79, align 8
+  br label %loop.header.79
 
-loop.exit.73:                                     ; preds = %loop.exit.nat.73
+loop.exit.79:                                     ; preds = %loop.exit.nat.79
   %var.load3433 = load ptr, ptr %var.b, align 8
   %b.freeze.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load3433, i32 0, i32 0
   %b.freeze.len3434 = load i64, ptr %b.freeze.len, align 8
@@ -27435,15 +28728,15 @@ loop.exit.73:                                     ; preds = %loop.exit.nat.73
   %b.freeze.has.chunk = icmp sgt i64 %b.freeze.nc, 0
   br i1 %b.freeze.has.chunk, label %b.freeze.check, label %b.freeze.done
 
-str_gen_check2998:                                ; preds = %loop.body.73
+str_gen_check2998:                                ; preds = %loop.body.79
   %arena.gen3001 = call ptr @dva_arena_current()
   %arena.gen3002 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen3001, i32 0, i32 4
   %arena.gen3003 = load i64, ptr %arena.gen3002, align 8
   %str.tag.match3004 = icmp eq i64 %str.tag2996, %arena.gen3003
   br i1 %str.tag.match3004, label %str_ok2999, label %str_stale3000
 
-str_ok2999:                                       ; preds = %str_stale3000, %str_gen_check2998, %loop.body.73
-  %concat.lhs3005 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+str_ok2999:                                       ; preds = %str_stale3000, %str_gen_check2998, %loop.body.79
+  %concat.lhs3005 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %concat.rhs3006 = getelementptr inbounds { i64, ptr }, ptr %fld.load2993, i32 0, i32 0
   %concat.rhs3007 = load i64, ptr %concat.rhs3006, align 8
   %concat.rhs3008 = and i64 %concat.rhs3007, 281474976710655
@@ -27682,7 +28975,7 @@ str_gen_check3136:                                ; preds = %concat.tot.len3121
 str_ok3137:                                       ; preds = %str_stale3138, %str_gen_check3136, %concat.tot.len3121
   %concat.lhs3143 = getelementptr inbounds { i64, ptr }, ptr %concat.str3128, i32 0, i32 1
   %concat.lhs3144 = load ptr, ptr %concat.lhs3143, align 8
-  %concat.rhs3145 = load i64, ptr @str.45.struct, align 8
+  %concat.rhs3145 = load i64, ptr @str.52.struct, align 8
   %concat.rhs3146 = and i64 %concat.rhs3145, 281474976710655
   %str.tag3147 = lshr i64 %concat.rhs3145, 48
   %str.immortal3148 = icmp eq i64 %str.tag3147, 0
@@ -27701,7 +28994,7 @@ str_gen_check3149:                                ; preds = %str_ok3137
   br i1 %str.tag.match3155, label %str_ok3150, label %str_stale3151
 
 str_ok3150:                                       ; preds = %str_stale3151, %str_gen_check3149, %str_ok3137
-  %concat.rhs3156 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %concat.rhs3156 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %concat.sum.len3157 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs3133, i64 %concat.rhs3146)
   %sum3158 = extractvalue { i64, i1 } %concat.sum.len3157, 0
   %ovf3159 = extractvalue { i64, i1 } %concat.sum.len3157, 1
@@ -27738,7 +29031,7 @@ concat.tot.len3165:                               ; preds = %str_overflow_abort3
   %str.build.data.gep3174 = getelementptr inbounds { i64, ptr }, ptr %concat.str3172, i32 0, i32 1
   store ptr %concat.buf3168, ptr %str.build.data.gep3174, align 8
   %b.load3175 = load ptr, ptr %var.b, align 8
-  %app.str.len3176 = load i64, ptr @str.49.struct, align 8
+  %app.str.len3176 = load i64, ptr @str.56.struct, align 8
   %app.str.len3177 = and i64 %app.str.len3176, 281474976710655
   %str.tag3178 = lshr i64 %app.str.len3176, 48
   %str.immortal3179 = icmp eq i64 %str.tag3178, 0
@@ -27799,7 +29092,7 @@ b.nogrow23198:                                    ; preds = %b.app.new.len3192
   br label %b.grow_done3199
 
 b.grow_done3199:                                  ; preds = %b.nogrow23198, %b.new.buf.len23212
-  %app.str.data3219 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+  %app.str.data3219 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %b.app.data3220 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3175, i32 0, i32 1
   %b.app.data3221 = load ptr, ptr %b.app.data3220, align 8
   %b.app.dst3222 = getelementptr i8, ptr %b.app.data3221, i64 %b.app.cur.len3188
@@ -28064,7 +29357,7 @@ b.grow_done3355:                                  ; preds = %b.nogrow23354, %b.n
   store i8 0, ptr %b.app.nul3380, align 1
   %b.len.gep3381 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3175, i32 0, i32 0
   store i64 %sum3346, ptr %b.len.gep3381, align 8
-  %app.str.len3382 = load i64, ptr @str.45.struct, align 8
+  %app.str.len3382 = load i64, ptr @str.52.struct, align 8
   %app.str.len3383 = and i64 %app.str.len3382, 281474976710655
   %str.tag3384 = lshr i64 %app.str.len3382, 48
   %str.immortal3385 = icmp eq i64 %str.tag3384, 0
@@ -28137,7 +29430,7 @@ b.nogrow23404:                                    ; preds = %b.app.new.len3398
   br label %b.grow_done3405
 
 b.grow_done3405:                                  ; preds = %b.nogrow23404, %b.new.buf.len23418
-  %app.str.data3425 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %app.str.data3425 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
   %b.app.data3426 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3175, i32 0, i32 1
   %b.app.data3427 = load ptr, ptr %b.app.data3426, align 8
   %b.app.dst3428 = getelementptr i8, ptr %b.app.data3427, i64 %b.app.cur.len3394
@@ -28146,7 +29439,7 @@ b.grow_done3405:                                  ; preds = %b.nogrow23404, %b.n
   store i8 0, ptr %b.app.nul3429, align 1
   %b.len.gep3430 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load3175, i32 0, i32 0
   store i64 %sum3396, ptr %b.len.gep3430, align 8
-  br label %loop.latch.73
+  br label %loop.latch.79
 
 b.new.buf.len23418:                               ; preds = %str_overflow_abort3419, %b.grow23403
   %arena.cur3420 = call ptr @dva_arena_current()
@@ -28165,7 +29458,7 @@ str_overflow_abort3419:                           ; preds = %b.grow23403
   call void @exit(i32 1)
   br label %b.new.buf.len23418
 
-b.freeze.check:                                   ; preds = %loop.exit.73
+b.freeze.check:                                   ; preds = %loop.exit.79
   %b.freeze.last.idx = sub i64 %b.freeze.nc, 1
   %b.freeze.chunks.gep = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %b.freeze.arena, i32 0, i32 3
   %b.freeze.chunk.slot = getelementptr [4096 x ptr], ptr %b.freeze.chunks.gep, i64 0, i64 %b.freeze.last.idx
@@ -28189,8 +29482,8 @@ b.freeze.copy:                                    ; preds = %b.freeze.check
   call void @llvm.memmove.p0.p0.i64(ptr align 1 %b.freeze.fresh, ptr align 1 %b.freeze.data3435, i64 %b.freeze.len3434, i1 false)
   br label %b.freeze.done
 
-b.freeze.done:                                    ; preds = %b.freeze.copy, %b.freeze.check, %loop.exit.73
-  %b.freeze.data3437 = phi ptr [ %b.freeze.data3435, %loop.exit.73 ], [ %b.freeze.data3435, %b.freeze.check ], [ %b.freeze.fresh, %b.freeze.copy ]
+b.freeze.done:                                    ; preds = %b.freeze.copy, %b.freeze.check, %loop.exit.79
+  %b.freeze.data3437 = phi ptr [ %b.freeze.data3435, %loop.exit.79 ], [ %b.freeze.data3435, %b.freeze.check ], [ %b.freeze.fresh, %b.freeze.copy ]
   %arena.cur3438 = call ptr @dva_arena_current()
   %builder.freeze = call ptr @dva_arena_alloc(ptr %arena.cur3438, i64 16)
   %str.build.len.gep3439 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 0
