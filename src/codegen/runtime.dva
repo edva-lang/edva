@@ -6,6 +6,7 @@
 #use "../tast"
 #use "../unify"
 #use "mem"
+#use "sys"
 #use "types"
 #use "expr"
 #use "match"
@@ -1915,11 +1916,11 @@ codegen_finish = cg, out_path =>
          LLVMBuildRet(cg.builder, LLVMConstInt(LLVMInt32Type!, 0, 0))
    ar = mem::arena(1024)
    err_buf = mem::alloc(ar, 8)
-   @[err_buf] = Addr(0)
+   @[err_buf] = sys::addr_null
    tmp_out = out_path + ".tmp"
    p_res = LLVMPrintModuleToFile(cg.module, tmp_out, err_buf)
    v_err_buf = mem::alloc(ar, 8)
-   @[v_err_buf] = Addr(0)
+   @[v_err_buf] = sys::addr_null
    v_res = LLVMVerifyModule(cg.module, 2, v_err_buf)
    v_res != 0
       |

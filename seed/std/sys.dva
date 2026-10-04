@@ -12,20 +12,25 @@
    STDOUT = 1
    STDERR = 2
 
+   addr_null = Addr(0)
+
+   addr_is_null: Addr => <>
+   addr_is_null = a => a == addr_null
+
    raw_argv: Int => Addr
    raw_argv = n =>
       n !< 0 && n < argc
          | @[argv_ptr + n * 8 Addr]
-         | Addr(0)
+         | addr_null
 
    argv_matches: Int, String => <>
    argv_matches = n, s =>
       raw = raw_argv(n)
-      raw != Addr(0) && (libc::strcmp(raw, s) == 0)
+      raw != addr_null && (libc::strcmp(raw, s) == 0)
 
    c_str: Addr => String
    c_str = raw =>
-      raw == Addr(0)
+      raw == addr_null
          | ""
          |
             len = libc::strlen(raw)
@@ -39,7 +44,7 @@
       c_str $ raw_argv(n)
 
    addr_opt: Addr => <Addr | >
-   addr_opt = a => a != Addr(0) | <+ a -> | <-->
+   addr_opt = a => a != addr_null | <+ a -> | <-->
 
    argv: Int => <String | >
    argv = n =>

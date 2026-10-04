@@ -6,6 +6,7 @@
 #use "../tast"
 #use "../unify"
 #use "mem"
+#use "sys"
 #use "runtime"
 #use "expr"
 #use "match"
@@ -19,7 +20,7 @@
    unlink: (path: String) => Int
 
 llvm_val_opt: Addr => <Addr|>
-llvm_val_opt = a => a != Addr(0) | <+ a -> | <-->
+llvm_val_opt = a => a != sys::addr_null | <+ a -> | <-->
 
 c_str_opt: <Addr|> => String
 c_str_opt = raw_opt =>
@@ -902,7 +903,7 @@ codegen_init = opts =>
    ar = mem::arena(1024)
    target_buf = mem::alloc(ar, 8)
    err_buf = mem::alloc(ar, 8)
-   @[err_buf] = Addr(0)
+   @[err_buf] = sys::addr_null
    res = LLVMGetTargetFromTriple(triple, target_buf, err_buf)
    layout = res == 0
       |
@@ -941,7 +942,7 @@ codegen_init = opts =>
       <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
       0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
       ast::Names(),
-      ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", Addr(0),
+      ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", sys::addr_null,
       Addrs(), Addrs(), ast::Names(), ast::Names(), "", ast::Names(),
       ast::Names(), ast::Names(), Addrs(), ast::VTypes(), ParamRecs(),
       ast::Names(), ast::Names(), <-->, <-->, <-->, <-->,

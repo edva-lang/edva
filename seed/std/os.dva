@@ -3,6 +3,7 @@
 
 #use libc
 #use mem
+#use sys
 
 #public
    open: String, Int => Int
@@ -34,8 +35,8 @@
       ar = mem::arena(64)
       pid_ptr = mem::alloc(ar, 8)
       status_ptr = mem::alloc(ar, 8)
-      spawn_res = libc::posix_spawn(pid_ptr, path, Addr(0), Addr(0),
-         argv, Addr(0))
+      spawn_res = libc::posix_spawn(pid_ptr, path, sys::addr_null, sys::addr_null,
+         argv, sys::addr_null)
       failed = spawn_res < 0
       result' = -1
       !failed

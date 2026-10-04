@@ -14,6 +14,7 @@
 
 #use libc
 #use str
+#use sys
 
 #public
    // Addr family constants
@@ -149,7 +150,7 @@
    resolve = host, port =>
       port_str = str::from_int(port)
       out = {8}
-      gai = libc::getaddrinfo(host, port_str, Addr(0), &out)
+      gai = libc::getaddrinfo(host, port_str, sys::addr_null, &out)
       gai [0]
          Host(<+ Addr(@[&out Int]) +>)
       |
@@ -177,7 +178,7 @@
    // Returns Conn: <+ client fd +> on success, <- error -> on failure.
    tcp_accept: Int => Conn
    tcp_accept = server_fd =>
-      s = libc::accept(server_fd, Addr(0), Addr(0))
+      s = libc::accept(server_fd, sys::addr_null, sys::addr_null)
       s [< 0] Conn(<- "accept failed" ->) | Conn(<+ s +>)
 
    // Send a string over a socket fd, looping until every byte is written:
@@ -315,7 +316,7 @@
    udp_recv: Int, Int => Chunk
    udp_recv = fd, max =>
       b = {max}
-      n = libc::recvfrom(fd, &b, max, 0, Addr(0), Addr(0))
+      n = libc::recvfrom(fd, &b, max, 0, sys::addr_null, sys::addr_null)
       n [< 1] Chunk(<-->) |
          ?b = n
          Chunk(<+ +b ->)

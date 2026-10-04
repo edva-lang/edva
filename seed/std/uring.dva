@@ -2,6 +2,7 @@
 // Provides low-level Linux io_uring kernel submission & completion rings.
 
 #use libc
+#use sys
 
 #public
    SYS_IO_URING_SETUP    = 425
@@ -87,7 +88,7 @@
       pbuf = libc::malloc(128)
       %memset(pbuf, 0, 128)
       fd = libc::syscall(SYS_IO_URING_SETUP, Addr(entries), pbuf,
-         Addr(0), Addr(0), Addr(0), Addr(0))
+         sys::addr_null, sys::addr_null, sys::addr_null, sys::addr_null)
       fd < 0
          |
             libc::free(pbuf)
@@ -106,13 +107,13 @@
             libc::free(pbuf)
 
             sq_sz = sq_array + sq_entries * 4
-            sq_ptr = libc::mmap(Addr(0), sq_sz, PROT_READ .|. PROT_WRITE,
+            sq_ptr = libc::mmap(sys::addr_null, sq_sz, PROT_READ .|. PROT_WRITE,
                MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_SQ_RING)
             sqes_sz = sq_entries * 64
-            sqes_ptr = libc::mmap(Addr(0), sqes_sz, PROT_READ .|. PROT_WRITE,
+            sqes_ptr = libc::mmap(sys::addr_null, sqes_sz, PROT_READ .|. PROT_WRITE,
                MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_SQES)
             cq_sz = cq_cqes + cq_entries * 16
-            cq_ptr = libc::mmap(Addr(0), cq_sz, PROT_READ .|. PROT_WRITE,
+            cq_ptr = libc::mmap(sys::addr_null, cq_sz, PROT_READ .|. PROT_WRITE,
                MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_CQ_RING)
 
             <+ Ring((
@@ -155,7 +156,7 @@
 
    prep_nop: Ring, Int => <>
    prep_nop = ring, user_data =>
-      prep_sqe(ring, OP_NOP, 0, 0, Addr(0), 0, user_data)
+      prep_sqe(ring, OP_NOP, 0, 0, sys::addr_null, 0, user_data)
 
    prep_read: Ring, Int, Addr, Int, Int => <>
    prep_read = ring, fd, buf, len, user_data =>
@@ -175,7 +176,7 @@
 
    prep_close: Ring, Int, Int => <>
    prep_close = ring, fd, user_data =>
-      prep_sqe(ring, OP_CLOSE, fd, 0, Addr(0), 0, user_data)
+      prep_sqe(ring, OP_CLOSE, fd, 0, sys::addr_null, 0, user_data)
 
    submit_and_wait: Ring, Int => Int
    submit_and_wait = ring, wait_nr =>
@@ -184,7 +185,7 @@
       to_submit = tail - head
       flags = wait_nr > 0 | IORING_ENTER_GETEVENTS | 0
       libc::syscall(SYS_IO_URING_ENTER, Addr(ring.fd), Addr(to_submit),
-         Addr(wait_nr), Addr(flags), Addr(0), Addr(0))
+         Addr(wait_nr), Addr(flags), sys::addr_null, sys::addr_null)
 
    submit: Ring => Int
    submit = ring => submit_and_wait(ring, 0)

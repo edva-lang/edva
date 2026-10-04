@@ -74,7 +74,7 @@ path_join = a, b =>
 
 canonical_path: String => String
 canonical_path = path =>
-   sys::addr_opt(libc::realpath(path, Addr(0)))
+   sys::addr_opt(libc::realpath(path, sys::addr_null))
       | raw =>
          res = sys::c_str(raw)
          libc::free(raw)
@@ -1031,10 +1031,10 @@ run_cmd = args =>
          cmd_a = mem::arena(4096)
          argv_buf = mem::alloc(cmd_a, (n + 1) * 8)
          build_argv(cmd_a, args, 0, n, argv_buf)
-         @[argv_buf + n * 8] = Addr(0)
+         @[argv_buf + n * 8] = sys::addr_null
          pid_buf = mem::alloc(cmd_a, 8)
          file = args(0) | _ | ""
-         ret = libc::posix_spawnp(pid_buf, file, Addr(0), Addr(0),
+         ret = libc::posix_spawnp(pid_buf, file, sys::addr_null, sys::addr_null,
             argv_buf, environ)
          ret != 0
             |
