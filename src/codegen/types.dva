@@ -148,7 +148,7 @@ default_codegen_opts = !=> CodegenOpts(("", <->, <->, ast::Names(),
 #type Cg (
    module: Addr,
    builder: Addr,
-   main_fn: Addr,
+   main_fn: <Addr|>,
    vars: CgVars,
    exited: <>,
    str_t: Addr,
@@ -341,19 +341,18 @@ fninfo_index: Cg, String => <Int|>
 fninfo_index = cg, name =>
    fninfo_index_rev(cg, name, ?cg.fninfos - 1)
 
-fninfo_find: Cg, String => (FnInfo, <>)
+fninfo_find: Cg, String => <FnInfo|>
 fninfo_find = cg, name =>
    fninfo_find_rev(cg, name, ?cg.fninfos - 1)
 
-fninfo_find_rev: Cg, String, Int => (FnInfo, <>)
+fninfo_find_rev: Cg, String, Int => <FnInfo|>
 fninfo_find_rev = cg, name, i =>
    i < 0
-      | (FnInfo(("", Addr(0), Addr(0), 0, ast::VTypes(),
-         ast::ValueType(Unknown), <->, <->, <->, <->)), <->)
+      | <-->
       |
          fi = cg.fninfos(i)!!
          fi.name == name
-            | (fi, <+>)
+            | <+ fi ->
             | fninfo_find_rev(cg, name, i - 1)
 
 // Marks `path` (a dotted var/field path, e.g. "x" or "x.a") whole-initialized.
@@ -933,7 +932,7 @@ codegen_init = opts =>
    @[psb] = i8p
    printf_fn = LLVMAddFunction(module, "printf",
       LLVMFunctionType(LLVMInt32Type!, psb, 1, 1))
-   Cg((module, builder, Addr(0), CgVars(), <->, st, ut, st2,
+   Cg((module, builder, <-->, CgVars(), <->, st, ut, st2,
       Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0), Addr(0),
       0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
       ast::Names(),
@@ -960,7 +959,7 @@ codegen_build_main = cg =>
          runtime::mark_nounwind(cg, fn')
          entry' = LLVMAppendBasicBlock(fn', "entry")
          LLVMPositionBuilderAtEnd(cg.builder, entry')
-         cg.main_fn = fn'
+         cg.main_fn = <+ fn' ->
          cg.current_fn = fn'
          !cg.opts.no_runtime && !cg.opts.is_module | emit_arena_init(cg)
          fn'
@@ -975,7 +974,7 @@ codegen_build_main = cg =>
          runtime::mark_nounwind(cg, fn')
          entry' = LLVMAppendBasicBlock(fn', "entry")
          LLVMPositionBuilderAtEnd(cg.builder, entry')
-         cg.main_fn = fn'
+         cg.main_fn = <+ fn' ->
          cg.current_fn = fn'
          !cg.opts.no_runtime
             |
@@ -1421,7 +1420,7 @@ dotted_var_val = cg, name =>
                fvts = match::var_fvts(cg, base_name)
                fvt = idx < ?fvts | (fvts(idx) | _ | ast::ValueType(Unknown)) |
                   ast::ValueType(Unknown)
-               base_val_opt = llvm_val_opt(ptr_var_value_plain(cg, base_name, "rec.ptr"))
+               base_val_opt = ptr_var_value_plain_opt(cg, base_name, "rec.ptr")
                base_val_opt
                   | base_val =>
                      var_rt(cg, base_name)
@@ -1661,12 +1660,12 @@ member_static_index = cg, m, fnames =>
                cg.discard_result = <->
                ev = expr::codegen_eval(cg, m.index_expr)
                cg.discard_result = saved_discard
-               ev.0 == Addr(0)
-                  | <-->
-                  |
-                     LLVMIsConstant(ev.0) != 0
-                        | <+ LLVMConstIntGetZExtValue(ev.0) ->
+               llvm_val_opt(ev.0)
+                  | ev0 =>
+                     LLVMIsConstant(ev0) != 0
+                        | <+ LLVMConstIntGetZExtValue(ev0) ->
                         | <-->
+                  | <-->
       |
          idx = member_index(fnames, m.field_name)
          idx !< 0 | <+ idx -> | <-->
@@ -1784,13 +1783,13 @@ ptr_var_value = cg, name, lname =>
       [Array] main::codegen_array_var_value(cg, name, lname)
       | ptr_var_value_plain(cg, name, lname)
 
-ptr_var_value_plain: Cg, String, String => Addr
-ptr_var_value_plain = cg, name, lname =>
+ptr_var_value_plain_opt: Cg, String, String => <Addr|>
+ptr_var_value_plain_opt = cg, name, lname =>
    find_dot(name, 0) > 0
-      | (dotted_var_val(cg, name) | dot_v => dot_v.0 | Addr(0))
+      | (dotted_var_val(cg, name) | dot_v => <+ dot_v.0 -> | <-->)
       |
          var_direct(cg, name)
-            | _
+            | d => <+ d ->
             |
                slot = var_slot(cg, name)
                   | _
@@ -1800,8 +1799,14 @@ ptr_var_value_plain = cg, name, lname =>
                      LLVMBuildStore(cg.builder,
                         LLVMConstNull(i8p), s_new)
                      s_new
-               LLVMBuildLoad2(cg.builder,
-                  LLVMPointerType(LLVMInt8Type!, 0), slot, lname)
+               <+ LLVMBuildLoad2(cg.builder,
+                  LLVMPointerType(LLVMInt8Type!, 0), slot, lname) ->
+
+ptr_var_value_plain: Cg, String, String => Addr
+ptr_var_value_plain = cg, name, lname =>
+   ptr_var_value_plain_opt(cg, name, lname)
+      | _
+      | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
 
 // A variable's storage slot (a global pointer or a function-local alloca). A
 // function-local (param or body local) shadows a same-named top-level global:
@@ -2457,15 +2462,16 @@ resolve_type_record_index = cg, ti, index_expr =>
          cg.discard_result = <->
          idx_v = expr::codegen_eval(cg, index_expr)
          cg.discard_result = saved_discard
-         is_const = idx_v.0 != Addr(0) &&
-            LLVMIsConstant(idx_v.0) != 0
-         is_const
-            |
-               idx = LLVMConstIntGetZExtValue(idx_v.0)
-               idx !< 0 && idx < ?r.0
+         llvm_val_opt(idx_v.0)
+            | iv =>
+               LLVMIsConstant(iv) != 0
                   |
-                     fld = r.0(idx)!!
-                     (field_type_info(fld), <+>)
+                     idx = LLVMConstIntGetZExtValue(iv)
+                     idx !< 0 && idx < ?r.0
+                        |
+                           fld = r.0(idx)!!
+                           (field_type_info(fld), <+>)
+                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                   | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)

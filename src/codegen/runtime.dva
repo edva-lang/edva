@@ -1901,7 +1901,8 @@ codegen_finish = cg, out_path =>
    cg.opts.no_main
       |
          LLVMBuildRetVoid(cg.builder)
-         codegen_register_global_ctor(cg, cg.main_fn)
+         mfn = cg.main_fn | _ | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
+         codegen_register_global_ctor(cg, mfn)
       |
          LLVMBuildRet(cg.builder, LLVMConstInt(LLVMInt32Type!, 0, 0))
    ar = mem::arena(1024)

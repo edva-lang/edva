@@ -3042,7 +3042,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    stmt::codegen_scan_record_args(cg, raw_exprs)
    stmt::codegen_scan_array_args(cg, raw_exprs)
    stmt::codegen_scan_enum_variant_indices(cg, raw_exprs)
-   cg.current_fn = cg.main_fn
+   cg.current_fn = (cg.main_fn | _ | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)))
    cg.in_fn = <->
    main_entry = LLVMGetEntryBasicBlock(cg.current_fn)
    LLVMPositionBuilderAtEnd(cg.builder, main_entry)

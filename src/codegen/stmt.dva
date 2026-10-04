@@ -3311,13 +3311,13 @@ codegen_emit_reload_body = cg, name, fn =>
    LLVMPositionBuilderAtEnd(cg.builder, call_bb)
    rso_fname = mod_name + "::reload_so"
    fi_res = types::fninfo_find(cg, rso_fname)
-   rso_fn_opt = fi_res.1
-      | types::llvm_val_opt(fi_res.0.llvm_fn)
+   rso_fn_opt = fi_res
+      | fi => types::llvm_val_opt(fi.llvm_fn)
       | types::llvm_find_function(cg.module, rso_fname)
    rso_bare = types::decl_bare_name(rso_fname, 0)
    fi_bare = types::fninfo_find(cg, rso_bare)
-   rso_fn_opt2 = fi_bare.1
-      | types::llvm_val_opt(fi_bare.0.llvm_fn)
+   rso_fn_opt2 = fi_bare
+      | fi => types::llvm_val_opt(fi.llvm_fn)
       | types::llvm_find_function(cg.module, rso_bare)
    rso_fn_opt
       | rso_fn =>
