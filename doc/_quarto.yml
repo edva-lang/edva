@@ -30,15 +30,24 @@ book:
     - reference/edva-cli.qmd
     - reference/diagnostics.qmd
     - reference/stdlib/index.qmd
-    - reference/stdlib/io.qmd
-    - reference/stdlib/in.qmd
-    - reference/stdlib/str.qmd
-    - reference/stdlib/unicode.qmd
+    - reference/stdlib/ccl.qmd
+    - reference/stdlib/color.qmd
     - reference/stdlib/fmt.qmd
-    - reference/stdlib/sort.qmd
-    - reference/stdlib/type.qmd
+    - reference/stdlib/fp.qmd
+    - reference/stdlib/in.qmd
+    - reference/stdlib/io.qmd
     - reference/stdlib/json.qmd
+    - reference/stdlib/libc.qmd
     - reference/stdlib/math.qmd
+    - reference/stdlib/mem.qmd
+    - reference/stdlib/net.qmd
+    - reference/stdlib/os.qmd
+    - reference/stdlib/sort.qmd
+    - reference/stdlib/str.qmd
+    - reference/stdlib/sys.qmd
+    - reference/stdlib/type.qmd
+    - reference/stdlib/unicode.qmd
+    - reference/stdlib/uring.qmd
     - compiler/architecture.qmd
     - compiler/testing.qmd
     - compiler/bootstrap.qmd

@@ -1,0 +1,60 @@
+---
+meta:
+  audience: "Edva developers implementing high-performance asynchronous I/O on Linux"
+  status: "current reference"
+  audited: "c17e2aa"
+  evidence: "`std/uring.dva`, `tests/pass/281_uring.dva`"
+---
+
+# `uring` standard library
+
+The `uring` module provides low-level Linux `io_uring` kernel submission and completion rings
+for zero-copy, non-blocking asynchronous system calls.
+
+```dva
+#use uring
+```
+
+## Platform requirements
+
+The `uring` module depends directly on the Linux kernel `io_uring` interface (kernel 5.1+).
+It is available exclusively on Linux targets.
+
+## Core structures
+
+```dva
+#type CQE (
+   user_data: Int,
+   res:       Int,
+   flags:     Int
+)
+
+#type Ring (
+   ring_fd:  Int,
+   sqes:     Addr,
+   sq_head:  Addr,
+   sq_tail:  Addr,
+   sq_mask:  Int,
+   sq_array: Addr,
+   cqes:     Addr,
+   cq_head:  Addr,
+   cq_tail:  Addr,
+   cq_mask:  Int,
+   sq_len:   Int,
+   cq_len:   Int
+)
+```
+
+## Function catalog
+
+| Function | Signature | Description |
+|---|---|---|
+| `uring::init` | `Int => < Ring \| Error >` | Initializes an `io_uring` ring with specified submission queue entries |
+| `uring::prep_read` | `Ring, Int, Addr, Int, Int, Int => ()` | Prepares an asynchronous read operation |
+| `uring::prep_write` | `Ring, Int, Addr, Int, Int, Int => ()` | Prepares an asynchronous write operation |
+| `uring::prep_nop` | `Ring, Int => ()` | Prepares a no-operation submission |
+| `uring::submit` | `Ring => Int` | Enters kernel and submits pending SQEs |
+| `uring::submit_and_wait` | `Ring, Int => Int` | Submits pending SQEs and blocks until at least `wait_nr` CQEs complete |
+| `uring::peek_cqe` | `Ring => < CQE \| >` | Checks if a completion queue entry is ready without blocking |
+| `uring::cqe_seen` | `Ring => ()` | Advances completion queue head pointer |
+| `uring::close` | `Ring => ()` | Unmaps submission/completion buffers and closes ring descriptor |

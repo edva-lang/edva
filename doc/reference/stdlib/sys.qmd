@@ -1,0 +1,49 @@
+---
+meta:
+  audience: "Edva developers interacting with command-line arguments and process environment"
+  status: "current reference"
+  audited: "c17e2aa"
+  evidence: "`std/sys.dva`, `tests/pass/68_sys_argv_bounds_check.dva`"
+---
+
+# `sys` standard library
+
+The `sys` module exposes process-level primitives: command-line argument access (`argv`),
+standard stream descriptor constants, null-pointer safety helpers, and process termination.
+
+```dva
+#use sys
+```
+
+## Constants
+
+- `sys::STDIN`: Standard input descriptor (`0`).
+- `sys::STDOUT`: Standard output descriptor (`1`).
+- `sys::STDERR`: Standard error descriptor (`2`).
+- `sys::addr_null`: Canonical null address constant (`Addr(0)`).
+
+## Command-line arguments
+
+| Function | Signature | Description |
+|---|---|---|
+| `sys::argc` | `Int` | Total count of command-line arguments passed to process |
+| `sys::argv` | `Int => < String \| >` | Safely retrieves argument by 0-based index as `RamPN` |
+| `sys::argv_string` | `Int => String` | Retrieves argument string, returning `""` on invalid index |
+| `sys::argv_matches` | `Int, String => <>` | Tests whether `argv[n]` equals specified string |
+| `sys::raw_argv` | `Int => Addr` | Returns raw C-string pointer `Addr` for FFI use |
+
+```dva
+sys::argv(1)
+   | file => io::out("Target file: " + file)
+   | io::err("Usage: program <file>")
+```
+
+## Address and pointer helpers
+
+- `sys::addr_is_null(a: Addr) => <>`: Returns `<+>` if address equals `sys::addr_null`.
+- `sys::addr_opt(a: Addr) => < Addr | >`: Wraps an address in a `RamPN` option, returning `<-->` if null.
+- `sys::c_str(raw: Addr) => String`: Copies a null-terminated C string into a newly allocated, immutable Edva `String`.
+
+## Process termination
+
+- `sys::exit(code: Int) => ()`: Terminates the host process immediately with status code `code`.

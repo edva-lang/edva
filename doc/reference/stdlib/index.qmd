@@ -12,35 +12,29 @@ Edva provides a modular standard library under `std/`. Standard library modules
 are imported explicitly with `#use <name>` (for example `#use io`, `#use str`).
 Standard stream writers and readers live in `std/io.dva`.
 
-| Module | Purpose |
-|---|---|
-| `color` | color values and formatting helpers |
-| `fmt` | formatting helpers |
-| `fp` | functional programming combinators |
-| `in` | input utilities |
-| `io` | readers, writers, and standard streams |
-| `json` | JSON parsing and rendering |
-| `libc` | C library bindings |
-| `math` | math bindings and helpers; includes `math/complex` and `math/geom` |
-| `mem` | memory utilities |
-| `net` | network primitives; includes `net/http` |
-| `os` | hosted operating-system operations |
-| `sort` | sorting helpers |
-| `str` | string conversion and manipulation |
-| `sys` | process and system facilities |
-| `type` | compile-time type predicates |
-| `unicode` | Unicode and UTF-8 helpers |
-| `uring` | io_uring bindings where supported |
+| Module | Purpose | Reference |
+|---|---|---|
+| `ccl` | CCL parser, manifest, and lockfile validation | [ccl](ccl.qmd) |
+| `color` | color spaces, alpha compositing, and hex packing | [color](color.qmd) |
+| `fmt` | allocation-efficient string formatting | [fmt](fmt.qmd) |
+| `fp` | functional programming combinators | [fp](fp.qmd) |
+| `in` | input readers and line scanning | [in](in.qmd) |
+| `io` | readers, writers, and standard streams | [io](io.qmd) |
+| `json` | JSON parsing, value tree, and serialization | [json](json.qmd) |
+| `libc` | POSIX and C library bindings | [libc](libc.qmd) |
+| `math` | math bindings, vectors; includes `complex` and `geom` | [math](math.qmd) |
+| `mem` | arenas, fixed object pools, and low-level memory | [mem](mem.qmd) |
+| `net` | network primitives; includes `net/http` | [net](net.qmd) |
+| `os` | hosted operating-system operations and spawn | [os](os.qmd) |
+| `sort` | sorting helpers and comparator cycles | [sort](sort.qmd) |
+| `str` | string conversion and manipulation | [str](str.qmd) |
+| `sys` | process parameters, arguments, and exit | [sys](sys.qmd) |
+| `type` | compile-time type predicates | [type](type.qmd) |
+| `unicode` | Unicode and UTF-8 helpers | [unicode](unicode.qmd) |
+| `uring` | Linux io_uring asynchronous I/O | [uring](uring.qmd) |
 
 `phase5_probe` and target-support files are implementation probes, not public
-API. Platform requirements vary, especially for `libc`, `net`, `os`, and
-`uring`; consult each module's source until its dedicated reference page is
-published.
-
-Detailed pages are available for [I/O](io.qmd), [standard input](in.qmd),
-[strings](str.qmd), [Unicode](unicode.qmd), [formatting](fmt.qmd),
-[sorting](sort.qmd), [compile-time type predicates](type.qmd), [JSON](json.qmd),
-and [math](math.qmd).
+API. Dedicated reference pages are provided for all 18 standard library modules.
 
 ```dva
 #use io

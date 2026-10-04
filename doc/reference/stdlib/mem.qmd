@@ -1,0 +1,64 @@
+---
+meta:
+  audience: "Edva developers managing explicit memory, arenas, and pools"
+  status: "current reference"
+  audited: "c17e2aa"
+  evidence: "`std/mem.dva`, `tests/pass/290_std_mem.dva`"
+---
+
+# `mem` standard library
+
+The `mem` module provides unified, explicit memory management:
+low-level byte operations, regional bump arenas, and fixed-capacity object pools.
+
+```dva
+#use mem
+```
+
+## Low-level memory utilities
+
+| Function | Signature | Description |
+|---|---|---|
+| `mem::copy` | `Addr, Addr, Int => ()` | Copies `bytes` count from source to destination (non-overlapping) |
+| `mem::move` | `Addr, Addr, Int => ()` | Copies `bytes` count with support for overlapping ranges |
+| `mem::zero` | `Addr, Int => ()` | Fills memory range with zeros |
+| `mem::set` | `Addr, Int, Int => ()` | Fills memory range with specified byte value |
+| `mem::align_forward` | `Addr, Int => Addr` | Advances address to meet alignment requirement |
+| `mem::is_aligned` | `Addr, Int => <>` | Checks whether address satisfies alignment |
+
+## Regional bump arenas
+
+Arenas provide allocation without per-object free overhead. All allocations
+allocated within an arena are freed simultaneously when the arena is reset or destroyed.
+
+```dva
+#type Arena (raw: Addr, cap: Int)
+#type ArenaStats (bytes_allocated: Int, num_chunks: Int, cap: Int)
+```
+
+| Function | Signature | Description |
+|---|---|---|
+| `mem::arena` | `Int => Arena` | Creates an arena with initial chunk capacity (bytes) |
+| `mem::arena_default` | `() => Arena` | Creates an arena with default 64 MB chunk capacity |
+| `mem::alloc` | `Arena, Int => Addr` | Allocates uninitialized memory of given byte size |
+| `mem::alloc_aligned` | `Arena, Int, Int => Addr` | Allocates memory aligned to specified power-of-two |
+| `mem::reset` | `Arena => ()` | Rewinds arena offset to zero, retaining allocated chunks |
+| `mem::destroy` | `Arena => ()` | Frees all backing chunks and the arena descriptor |
+| `mem::stats` | `Arena => ArenaStats` | Retrieves allocation metrics and chunk counts |
+
+```dva
+ar = mem::arena(1024)
+buf = mem::alloc(ar, 256)
+// ... use buf ...
+mem::destroy(ar)
+```
+
+## Fixed-capacity object pools
+
+Pools manage uniform, fixed-size element allocations with $O(1)$ allocation and deallocation:
+
+- `mem::pool(capacity: Int, elem_size: Int) => Pool`
+- `mem::pool_alloc(pool: Pool) => Addr`
+- `mem::pool_free(pool: Pool, ptr: Addr) => ()`
+- `mem::pool_count(pool: Pool) => Int`
+- `mem::pool_destroy(pool: Pool) => ()`

@@ -1,0 +1,55 @@
+---
+meta:
+  audience: "Edva developers working with graphics, UI, or terminal styling"
+  status: "current reference"
+  audited: "c17e2aa"
+  evidence: "`std/color.dva`, `tests/pass/286_std_color.dva`"
+---
+
+# `color` standard library
+
+The `color` module provides color representations, conversions between common color spaces
+(sRGB, Linear sRGB, Oklab, Oklch, HSV), alpha compositing, and hex packing/unpacking.
+
+```dva
+#use color
+```
+
+## Color spaces and data types
+
+All color spaces in `color` are represented by normalized 4-float records `(Float, Float, Float, Float)`
+where the fourth component represents alpha ($0.0 \dots 1.0$). This layout leverages element-wise
+vector operations (`+`, `-`, `*`).
+
+| Type | Components | Description |
+|---|---|---|
+| `color::Rgba` | `(r, g, b, a)` | Standard non-linear sRGB with alpha |
+| `color::LinearRgba` | `(r, g, b, a)` | Radiometrically linear sRGB |
+| `color::Oklab` | `(l, a, b, alpha)` | Perceptually uniform Oklab color space |
+| `color::Oklch` | `(l, c, h, alpha)` | Cylindrical Oklch (Lightness, Chroma, Hue in radians) |
+| `color::Hsv` | `(h, s, v, alpha)` | Hue, Saturation, Value |
+
+## Constructors and hex conversions
+
+```dva
+c1 = color::rgba(0.2, 0.4, 0.8, 1.0)
+c2 = color::rgb(1.0, 0.5, 0.0)             // Defaults alpha to 1.0
+hex_color = color::from_hex(0xFF00AAFF)     // Unpack 0xRRGGBBAA
+val = color::to_hex(c1)                    // Pack to 0xRRGGBBAA
+```
+
+## Transformations and blending
+
+| Function | Signature | Description |
+|---|---|---|
+| `color::srgb_to_linear` | `Rgba => LinearRgba` | Converts sRGB gamma to linear space |
+| `color::linear_to_srgb` | `LinearRgba => Rgba` | Encodes linear sRGB to gamma-corrected sRGB |
+| `color::rgb_to_oklab` | `Rgba => Oklab` | Converts sRGB to perceptually uniform Oklab |
+| `color::oklab_to_rgb` | `Oklab => Rgba` | Converts Oklab back to sRGB |
+| `color::oklab_to_oklch` | `Oklab => Oklch` | Converts Cartesian Oklab to polar Oklch |
+| `color::oklch_to_oklab` | `Oklch => Oklab` | Converts polar Oklch to Cartesian Oklab |
+| `color::rgb_to_hsv` | `Rgba => Hsv` | Converts sRGB to HSV |
+| `color::hsv_to_rgb` | `Hsv => Rgba` | Converts HSV to sRGB |
+| `color::over` | `Rgba, Rgba => Rgba` | Porter-Duff source-over alpha compositing |
+| `color::mix` | `Rgba, Rgba, Float => Rgba` | Linear interpolation in sRGB space |
+| `color::mix_oklab` | `Rgba, Rgba, Float => Rgba` | Perceptually uniform color interpolation |

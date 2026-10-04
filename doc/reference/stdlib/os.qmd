@@ -1,0 +1,35 @@
+---
+meta:
+  audience: "Edva developers performing file and process operations"
+  status: "current reference"
+  audited: "c17e2aa"
+  evidence: "`std/os.dva`, `tests/pass/41_posix_spawn.dva`"
+---
+
+# `os` standard library
+
+The `os` module provides safe, high-level abstractions over POSIX file operations,
+device controls, and process execution.
+
+```dva
+#use os
+```
+
+## Function catalog
+
+| Function | Signature | Description |
+|---|---|---|
+| `os::open` | `String, Int => Int` | Opens file path with flags, returning file descriptor |
+| `os::close` | `Int => Int` | Closes file descriptor |
+| `os::write` | `Int, String, Int => Int` | Writes string byte buffer to descriptor |
+| `os::read` | `Int, Int => String` | Unbuffered read of up to `count` bytes into an immutable `String` |
+| `os::ioctl` | `Int, Int, Int => Int` | Performs control device request |
+| `os::spawn` | `String, Addr => Int` | Spawns external executable with `argv` pointer and waits for completion |
+
+```dva
+fd = os::open("output.txt", 577) // O_WRONLY | O_CREAT | O_TRUNC
+fd !< 0
+   |
+      os::write(fd, "hello\n", 6)
+      os::close(fd)
+```

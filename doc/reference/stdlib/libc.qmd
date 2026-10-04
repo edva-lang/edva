@@ -1,0 +1,51 @@
+---
+meta:
+  audience: "Edva developers interfacing with system C APIs"
+  status: "current reference"
+  audited: "c17e2aa"
+  evidence: "`std/libc.dva`, `tests/pass/30_foreign_libc.dva`"
+---
+
+# `libc` standard library
+
+The `libc` module exposes standard POSIX and C runtime system bindings via `#foreign "c"` declarations.
+It serves as the foundation for hosted I/O, process management, memory allocation, and networking.
+
+```dva
+#use libc
+```
+
+## System call catalog
+
+### File I/O and descriptors
+- `libc::open(path: String, flags: Int) => Int`
+- `libc::close(fd: Int) => Int`
+- `libc::read(fd: Int, buf: Addr, count: Int) => Int`
+- `libc::write(fd: Int, buf: String, count: Int) => Int`
+- `libc::lseek(fd: Int, offset: Int, whence: Int) => Int`
+- `libc::ioctl(fd: Int, request: Int, arg: Int) => Int`
+- `libc::pipe(pipefd: Addr) => Int`
+
+### Process execution and control
+- `libc::posix_spawn(pid: Addr, path: String, acts: Addr, attr: Addr, argv: Addr, envp: Addr) => Int`
+- `libc::waitpid(pid: Int, status_ptr: Addr, options: Int) => Int`
+- `libc::exit(code: Int) => ()`
+
+### Memory management
+- `libc::malloc(size: Int) => Addr`
+- `libc::free(ptr: Addr) => ()`
+- `libc::memset(ptr: Addr, val: Int, size: Int) => Addr`
+- `libc::memcpy(dest: Addr, src: Addr, n: Int) => Addr`
+- `libc::memmove(dest: Addr, src: Addr, n: Int) => Addr`
+- `libc::mmap(addr: Addr, len: Int, prot: Int, flags: Int, fd: Int, offset: Int) => Addr`
+- `libc::munmap(addr: Addr, len: Int) => Int`
+
+### Sockets and networking
+- `libc::socket(domain: Int, type: Int, protocol: Int) => Int`
+- `libc::bind(sockfd: Int, addr: Addr, addrlen: Int) => Int`
+- `libc::listen(sockfd: Int, backlog: Int) => Int`
+- `libc::accept(sockfd: Int, addr: Addr, addrlen_ptr: Addr) => Int`
+- `libc::connect(sockfd: Int, addr: Addr, addrlen: Int) => Int`
+- `libc::send(sockfd: Int, buf: String, len: Int, flags: Int) => Int`
+- `libc::recv(sockfd: Int, buf: Addr, len: Int, flags: Int) => Int`
+- `libc::setsockopt`, `libc::getsockopt`, `libc::getaddrinfo`, `libc::freeaddrinfo`

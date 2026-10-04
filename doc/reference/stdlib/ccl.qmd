@@ -1,0 +1,69 @@
+---
+meta:
+  audience: "Edva developers and package authors"
+  status: "current reference"
+  audited: "c17e2aa"
+  evidence: "`std/ccl.dva`, `tests/pass/312_std_ccl.dva`"
+---
+
+# `ccl` standard library
+
+The `ccl` module implements the [Categorical Configuration Language (CCL)](https://github.com/chshersh/ccl)
+parser, data model, deterministic serializer, and package manifest/lockfile validator
+used by Edva's package manager.
+
+```dva
+#use ccl
+```
+
+## Data model
+
+The core document model represents nested, indentation-delimited key-value entries:
+
+```dva
+#type Strings (String){}
+
+#type CclVal <
+   Str(String),
+   Block(CclDoc)
+>
+
+#type CclEntry (
+   key: String,
+   val: CclVal,
+   line: Int,
+   col: Int
+)
+
+#type CclEntries (CclEntry){}
+
+#type CclDoc (
+   entries: CclEntries
+)
+```
+
+## Parsing and serialization
+
+| Function | Signature | Description |
+|---|---|---|
+| `ccl::parse` | `String, String => < CclDoc \| Error >` | Parse CCL text with an associated source path for diagnostics |
+| `ccl::parse_file` | `String => < CclDoc \| Error >` | Read and parse a CCL configuration file from disk |
+| `ccl::to_ccl` | `CclDoc => String` | Serialize a `CclDoc` into a canonical, deterministic CCL string |
+| `ccl::has` | `CclDoc, String => <>` | Check if a top-level key exists in the document |
+| `ccl::get` | `CclDoc, String => < String \| >` | Retrieve the string value of a top-level key |
+| `ccl::get_section` | `CclDoc, String => < CclDoc \| >` | Retrieve a nested block section as a sub-document |
+| `ccl::get_list` | `CclDoc, String => < Strings \| >` | Retrieve entries sharing the specified key as a list of strings |
+
+```dva
+doc = ccl::parse("name = demo\nversion = 0.1.0", "edva.ccl")!!
+name = ccl::get(doc, "name") | n => n | "unknown"
+```
+
+## Package manifest and lockfile validation
+
+The module provides schema models and validators for `edva.ccl` manifests and `edva.lock.ccl` lockfiles:
+
+- `ccl::validate_manifest`: validates a `CclDoc` against Edva package manifest requirements (`name`, `version`, `edva`, `dependencies`, `native-libs`).
+- `ccl::manifest_to_ccl`: serializes a `PackageManifest` record back into deterministic CCL.
+- `ccl::validate_lockfile`: validates resolved package lockfile data.
+- `ccl::lockfile_to_ccl`: renders a resolved `Lockfile` structure into deterministic lockfile format.

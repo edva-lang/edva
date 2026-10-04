@@ -8,10 +8,40 @@ meta:
 
 # Operators
 
-The complete precedence, associativity, operand, and result table is generated
-from [`operators.yaml`](https://github.com/edva-lang/edva/blob/master/operators.yaml) into
-[`GRAMMAR.md`](https://github.com/edva-lang/edva/blob/master/GRAMMAR.md#16-operators--precedence). Change the YAML,
-not a copied table. This page groups the operators by purpose.
+Edva uses Pratt parsing to resolve operator precedence and associativity.
+The table below specifies all operator tiers, their Left Binding Power (LBP),
+Right Binding Power (RBP), associativity, and semantic groupings.
+
+## Precedence and binding power table
+
+| Tier | LBP | RBP | Operators | Associativity | Description |
+|---|---|---|---|---|---|
+| **1. cycle** | 10 | 20 | `@` `@@` `>--` `-->` `--^` | left | Iteration, cycle escape, break, and continue |
+| **2. sequence** | 20 | 30 | `;` | left | Statement sequencing within a single line |
+| **3. apply** | 30 | 30 | `$` `$:` | right | Infix argument application, trailing block attachment |
+| **4. feed** | 40 | 50 | `$>` `$>>` | left | Reverse application (prepend argument), monadic ram bind |
+| **5. choice** | 50 | 60 | `\|` `[guard]` `!\|` | left | Branching, pattern matching, write-or-panic |
+| **6. assignment** | 60 | 50 | `=` `:=` `+=` `::=` | right | Binding initialization, builder append, global mutation |
+| **7. range** | 70 | 80 | `..` | left | Range construction, string and slice views |
+| **8. logical or** | 80 | 90 | `\|\|` | left | Short-circuit logical OR |
+| **9. logical and** | 90 | 100 | `&&` | left | Short-circuit logical AND |
+| **10. bitwise or** | 100 | 110 | `.\vert.` | left | Bitwise OR (integer types only) |
+| **11. bitwise and** | 110 | 120 | `.&.` | left | Bitwise AND (integer types only) |
+| **12. comparison** | 120 | 130 | `<` `>` `==` `!=` `!<` `!>` | left (same-line) | Equality and relational comparisons |
+| **13. shift** | 130 | 140 | `.<.` `.>.` | left | Bitwise logical left and right shifts |
+| **14. addition** | 140 | 150 | `+` `-` | left | Arithmetic addition and subtraction |
+| **15. multiplication** | 150 | 160 | `*` `/` `%` | left | Arithmetic multiplication, division, and modulo |
+| **16. unary prefix** | 160 | 180 | `!` `+` `&` `++` `.!.` `~~` `?` `??` `-x` `#size` | right | Flag negation, freeze, address, copy, length |
+| **17. postfix / call** | 170 | 180 | `()` `.` `::` `: cast` `{N}` `@[...]` `!!` `--!` | left | Function call, member access, unwrap, propagate |
+| **18. primary** | 180 | 180 | literals, identifiers, `(...)` | left | Atomic primary expressions |
+
+Notable precedence characteristics:
+
+- **Feed vs Apply:** `$>` (left-associative) prepends an argument (`x $> f` $\equiv$ `f(x)`), while `$` (right-associative) appends an argument (`f $ x` $\equiv$ `f(x)`).
+- **Choice Absorption:** Both `$` and `$>` sit below the choice tier (tier 5), so an unparenthesized choice expression on the RHS is absorbed as the operand (`a $> b | c | d` $\equiv$ `a $> (b | c | d)`).
+- **Binding Powers:** On right-associative tiers such as assignment (LBP 60, RBP 50) and apply (LBP 30, RBP 30), RBP $\le$ LBP allows operators to extend rightward. On left-associative tiers, RBP $>$ LBP forces left binding.
+
+---
 
 ## Values and control flow
 
@@ -34,10 +64,12 @@ ram with a positive payload through a continuation returning the same ram
 shape. `$:` attaches a trailing block as an argument.
 
 ```dva
+#use io
+
 sum: Int, Int => Int
 sum = left, right => left + right
 
-print_int $ 2 $> sum(3)
+io::out $ 2 $> sum(3)
 ```
 
 ## Numeric, logical, and bitwise operators

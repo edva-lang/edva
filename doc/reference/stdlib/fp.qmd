@@ -1,0 +1,52 @@
+---
+meta:
+  audience: "Edva developers using functional patterns"
+  status: "current reference"
+  audited: "c17e2aa"
+  evidence: "`std/fp.dva`, `tests/pass/302_user_fp_names.dva`"
+---
+
+# `fp` standard library
+
+The `fp` module provides generic higher-order combinators, function composition utilities,
+and functional collection helpers.
+
+```dva
+#use fp
+// or import directly into unqualified scope:
+#use(import) fp
+```
+
+## Function combinators
+
+| Function | Signature | Description |
+|---|---|---|
+| `fp::apply` | `(T => U), T => U` | Applies function `f` to argument `x` (`f $ x`) |
+| `fp::apply2` | `(T, U => V), T, U => V` | Applies binary function `f(a, b)` |
+| `fp::twice` | `(T => T), T => T` | Applies `f` twice: `f(f(x))` |
+| `fp::thrice` | `(T => T), T => T` | Applies `f` three times: `f(f(f(x)))` |
+| `fp::flip` | `(T, U => V), U, T => V` | Swaps the arguments of a binary function |
+| `fp::compose` | `(B => C), (A => B) => (A => C)` | Curried function composition: `f(g(x))` |
+| `fp::const` | `A => (B => A)` | Constant combinator: ignores second argument |
+| `fp::on` | `(T, T => V), (T => T), T, T => V` | Applies unary transform to both arguments before binary combination |
+
+```dva
+add_ten = fp::compose(x => x + 5, x => x + 5)
+result = add_ten(10) // 20
+```
+
+## Collection combinators
+
+The collection combinators operate on homogeneous records and growable array types:
+
+| Function | Description |
+|---|---|
+| `fp::map(f, xs)` | Maps unary function `f` over each element of `xs` |
+| `fp::filter(p, xs)` | Returns elements satisfying predicate `p` |
+| `fp::foldl(f, init, xs)` | Left associative fold over elements |
+| `fp::foldr(f, init, xs)` | Right associative fold over elements |
+| `fp::any(p, xs)` | Checks if at least one element satisfies predicate `p` |
+| `fp::all(p, xs)` | Checks if all elements satisfy predicate `p` |
+| `fp::sum(xs)` | Calculates the numeric sum of elements |
+| `fp::product(xs)` | Calculates the numeric product of elements |
+| `fp::find(p, xs)` | Finds the first element satisfying predicate `p`, returning `RamPN` `< E \| >` |
