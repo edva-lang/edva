@@ -1668,9 +1668,9 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv =>
    arr_elem_ll = arr_is_ptr
       | LLVMPointerType(LLVMInt8Type!, 0)
       | types::llvm_type_of_vt(arr_vt)
-   arr_val = is_arr
-      | (vname != "" | types::ptr_var_value(cg, vname, "arr.cycle.ptr") | iv.0)
-      | Addr(0)
+   arr_val_opt = is_arr
+      | <+ (vname != "" | types::ptr_var_value(cg, vname, "arr.cycle.ptr") | iv.0) ->
+      | <-->
    end_val = is_rng
       | cycle_range_end(cg, rng)
       |
@@ -1684,7 +1684,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv =>
                         | main::slice_len(cg, iv.0, "slice.cycle.len")
                         |
                            is_arr
-                              | main::builder_len(cg, arr_val, "arr.cycle.len")
+                              | main::builder_len(cg, arr_val_opt!!, "arr.cycle.len")
                               | iv.0
    counter_alloca = types::hoisted_alloca(cg, i64t, "loop.idx." + sc)
    LLVMBuildStore(cg.builder, start_val, counter_alloca)
@@ -1709,34 +1709,14 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv =>
             "loop.cond")
          LLVMBuildCondBr(cg.builder, cond, body, done)
    LLVMPositionBuilderAtEnd(cg.builder, body)
-   rec_elem_val = is_rec
-      |
-         typed_arr = LLVMBuildPointerCast(cg.builder, iv.0,
-            LLVMPointerType(rec_info.2, 0), "rec.typed")
-         elem_gep = types::gep1(cg, rec_info.2, typed_arr, curr_i, "rec.elem.gep")
-         elem_is_rec = rec_info.1 [Record]
-         elem_is_rec
-            | elem_gep
-            | LLVMBuildLoad2(cg.builder, rec_info.2, elem_gep, "rec.elem")
-      | Addr(0)
-   sl_elem_val = is_sl
-      |
-         data_ptr = main::slice_data(cg, iv.0, "slice.data")
-         typed_data = LLVMBuildPointerCast(cg.builder, data_ptr,
-            LLVMPointerType(sl_elem_ll, 0), "slice.data.typed")
-         elem_gep2 = types::gep1(cg, sl_elem_ll, typed_data, curr_i, "slice.elem.gep")
-         LLVMBuildLoad2(cg.builder, sl_elem_ll, elem_gep2, "slice.elem")
-      | Addr(0)
-   arr_elem_val = is_arr
-      | cycle_array_elem_val(cg, arr_val, curr_i, arr_is_ptr, arr_vt,
-         arr_elem_ll)
-      | Addr(0)
    str_rune = is_str && c.is_rune
-   r_dec = str_rune
-      | codegen_decode_rune_at(cg, expr::codegen_string_data(cg, iv.0,
-         "s.cycle.data"), curr_i)
-      | (Addr(0), Addr(0))
-   step_val = str_rune | r_dec.1 | LLVMConstInt(i64t, 1, 0)
+   r_dec_opt = str_rune
+      | <+ codegen_decode_rune_at(cg, expr::codegen_string_data(cg, iv.0,
+         "s.cycle.data"), curr_i) ->
+      | <-->
+   step_val = r_dec_opt
+      | rd => rd.1
+      | LLVMConstInt(i64t, 1, 0)
    LLVMBuildStore(cg.builder, step_val, step_alloca)
    has_elem = is_str || is_rec || is_sl || is_arr
    elem_vt = is_arr
@@ -1755,19 +1735,44 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv =>
    elem_rt_opt = is_arr
       | arr_elem_rt_opt
       | (is_rec | <+ rec_info.2 -> | <-->)
-   elem_val_rec = is_arr
-      | arr_elem_val
+   elem_val_rec_opt = is_arr
+      | <+ cycle_array_elem_val(cg, arr_val_opt!!, curr_i, arr_is_ptr, arr_vt,
+         arr_elem_ll) ->
       |
          is_sl
-            | sl_elem_val
+            |
+               data_ptr = main::slice_data(cg, iv.0, "slice.data")
+               typed_data = LLVMBuildPointerCast(cg.builder, data_ptr,
+                  LLVMPointerType(sl_elem_ll, 0), "slice.data.typed")
+               elem_gep2 = types::gep1(cg, sl_elem_ll, typed_data, curr_i,
+                  "slice.elem.gep")
+               <+ LLVMBuildLoad2(cg.builder, sl_elem_ll, elem_gep2, "slice.elem") ->
             |
                str_rune
-                  | r_dec.0
-                  | (is_str | cycle_str_elem(cg, iv.0, curr_i) | rec_elem_val)
+                  | <+ r_dec_opt!! .0 ->
+                  |
+                     is_str
+                        | <+ cycle_str_elem(cg, iv.0, curr_i) ->
+                        |
+                           is_rec
+                              |
+                                 typed_arr = LLVMBuildPointerCast(cg.builder, iv.0,
+                                    LLVMPointerType(rec_info.2, 0), "rec.typed")
+                                 elem_gep = types::gep1(cg, rec_info.2, typed_arr,
+                                    curr_i, "rec.elem.gep")
+                                 elem_is_rec = rec_info.1 [Record]
+                                 rec_val = elem_is_rec
+                                    | elem_gep
+                                    | LLVMBuildLoad2(cg.builder, rec_info.2, elem_gep,
+                                       "rec.elem")
+                                 <+ rec_val ->
+                              | <-->
    pos_i = is_rng
       | LLVMBuildSub(cg.builder, curr_i, start_val, "idx.pos")
       | curr_i
-   elem_val = has_elem | elem_val_rec | pos_i
+   elem_val = elem_val_rec_opt
+      | ev => ev
+      | pos_i
    cycle_bind_params(cg, c.body_fn, has_elem, elem_val, elem_vt, elem_dt,
       curr_i, counter_alloca, elem_rt_opt)
    saved_discard = cg.discard_result
@@ -4888,24 +4893,24 @@ param_rec_of_at = cg, name, i, n =>
 // The (fn, llvm_type, ret_vt) of a named function, or <--> if none.
 // Falls back to inferring the type from its FnDef (the scan runs before the
 // fns compile, so fninfos may be empty).
-fninfo_of: types::Cg, String => <(Addr, Addr, ast::ValueType)|>
+fninfo_of: types::Cg, String => <(<Addr|>, Addr, ast::ValueType)|>
 fninfo_of = cg, name =>
    fi = fninfo_of_at(cg, name, 0, ?cg.fninfos)
    fi
       | f => <+ f ->
       | fninfo_from_fns_at(cg, name, 0, ?cg.fns)
 
-fninfo_of_at: types::Cg, String, Int, Int => <(Addr, Addr, ast::ValueType)|>
+fninfo_of_at: types::Cg, String, Int, Int => <(<Addr|>, Addr, ast::ValueType)|>
 fninfo_of_at = cg, name, i, n =>
    i == n
       | <-->
       |
          fi = cg.fninfos(i)!!
          (fi.name == name) || types::sig_name_matches(fi.name, name)
-            | <+ (fi.llvm_fn, fi.llvm_type, fi.ret_vt) ->
+            | <+ (<+ fi.llvm_fn ->, fi.llvm_type, fi.ret_vt) ->
             | fninfo_of_at(cg, name, i + 1, n)
 
-fninfo_from_fns_at: types::Cg, String, Int, Int => <(Addr, Addr, ast::ValueType)|>
+fninfo_from_fns_at: types::Cg, String, Int, Int => <(<Addr|>, Addr, ast::ValueType)|>
 fninfo_from_fns_at = cg, name, i, n =>
    i == n
       | <-->
@@ -4920,7 +4925,7 @@ fninfo_from_fns_at = cg, name, i, n =>
                   ?fd.params, types::Addrs())
                fty = fn_type_n(cg, types::llvm_type_of_vt(ret_vt'), param_ll,
                   ?fd.params)
-               <+ (Addr(0), fty, ret_vt') ->
+               <+ (<-->, fty, ret_vt') ->
             | fninfo_from_fns_at(cg, name, i + 1, n)
 
 fninfo_param_ll: types::Cg, ast::Names, ast::VTypes, Int, Int, types::Addrs => types::Addrs
@@ -6011,17 +6016,21 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
          is_seq
             |
                sv = main::codegen_typed_eval(cg, b.1)
-               ev' = main::codegen_typed_eval(cg, b.2)
                sv64 = coerce_int(cg, sv.0, i64t)
-               ev64 = coerce_int(cg, ev'.0, i64t)
+               is_unb = b.2.kind [LitUnit]
+               ev_opt = is_unb
+                  | <-->
+                  |
+                     ev' = main::codegen_typed_eval(cg, b.2)
+                     <+ coerce_int(cg, ev'.0, i64t) ->
                is_r = types::is_rune_vt(sv.1) ||
                   types::is_rune_vt(types::vt_from_ti_cg(cg, iterable.ti))
                rng_vt = is_r | ast::ValueType(Rune) | ast::ValueType(Int)
-               (sv64, ev64, Addr(0), 0, rng_vt)
+               (sv64, ev_opt, <--> , 0, rng_vt)
             |
                iv' = expr::codegen_typed_eval_bin(cg, b.0, b.1, b.2, iterable.ut,
                   iterable.ti)
-               (LLVMConstInt(i64t, 0, 0), iv'.0, Addr(0), 0,
+               (LLVMConstInt(i64t, 0, 0), <+ iv'.0 ->, <--> , 0,
                   ast::ValueType(Int))
       |
          iv' = main::codegen_typed_eval(cg, iterable)
@@ -6035,7 +6044,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                sdata = expr::codegen_string_data(cg, iv'.0, "s.read.data")
                iter_m = is_rune | 5 | 1
                str_vt = is_rune | ast::ValueType(Rune) | ast::ValueType(Int)
-               (LLVMConstInt(i64t, 0, 0), slen, sdata, iter_m, str_vt)
+               (LLVMConstInt(i64t, 0, 0), <+ slen ->, <+ sdata ->, iter_m, str_vt)
             |
                is_arr
                   |
@@ -6043,7 +6052,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                      adata = main::builder_data(cg, iv'.0, "arr.cycle.data")
                      a_elem_vt = iterable.ti [Array a] a.0 |
                         ast::ValueType(Int)
-                     (LLVMConstInt(i64t, 0, 0), alen, adata, 2,
+                     (LLVMConstInt(i64t, 0, 0), <+ alen ->, <+ adata ->, 2,
                         a_elem_vt)
                   |
                      is_sl
@@ -6052,7 +6061,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                            sl_data = main::slice_data(cg, iv'.0, "sl.data")
                            sl_elem_vt = iterable.ti [Rec r] r.3 |
                               ast::ValueType(Int)
-                           (LLVMConstInt(i64t, 0, 0), sl_len, sl_data, 3,
+                           (LLVMConstInt(i64t, 0, 0), <+ sl_len ->, <+ sl_data ->, 3,
                               sl_elem_vt)
                         |
                            is_rec
@@ -6069,14 +6078,14 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                                  r_elem_vt = ?r_flds0 > 0
                                     | types::vt_from_ti(r_flds0(0)!!.rec_type)
                                     | fvs0
-                                 (LLVMConstInt(i64t, 0, 0), rc, iv'.0, 4,
+                                 (LLVMConstInt(i64t, 0, 0), <+ rc ->, <+ iv'.0 ->, 4,
                                     r_elem_vt)
                               |
-                                 (LLVMConstInt(i64t, 0, 0), iv'.0,
-                                    Addr(0), 0, ast::ValueType(Int))
+                                 (LLVMConstInt(i64t, 0, 0), <+ iv'.0 ->,
+                                    <-->, 0, ast::ValueType(Int))
    start_val = iter_info.0
-   end_val = iter_info.1
-   s_data = iter_info.2
+   end_val_opt = iter_info.1
+   s_data_opt = iter_info.2
    iter_mode = iter_info.3
    elem_vt = iter_info.4
    elem_ty = types::llvm_type_of_vt(elem_vt)
@@ -6143,13 +6152,12 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    LLVMPositionBuilderAtEnd(cg.builder, header)
    curr_i = LLVMBuildLoad2(cg.builder, i64t, counter_alloca,
       "counter.load")
-   is_unbounded = end_val == Addr(0)
-   is_unbounded
-      | branch_to(cg, body)
-      |
+   end_val_opt
+      | end_val =>
          cond = LLVMBuildICmp(cg.builder, 40, curr_i, end_val,
             "loop.cond")
          LLVMBuildCondBr(cg.builder, cond, body, exit_nat)
+      | branch_to(cg, body)
    LLVMPositionBuilderAtEnd(cg.builder, exit_nat)
    p1 != "" && p1 != "_"
       |
@@ -6161,19 +6169,19 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    branch_to(cg, done)
    LLVMPositionBuilderAtEnd(cg.builder, body)
    rel_i = LLVMBuildSub(cg.builder, curr_i, start_val, "loop.rel.i")
-   r_dec = iter_mode == 5
-      | codegen_decode_rune_at(cg, s_data, curr_i)
-      | (Addr(0), Addr(0))
-   init_step_val = iter_mode == 5
-      | r_dec.1
+   r_dec_opt = iter_mode == 5
+      | <+ codegen_decode_rune_at(cg, s_data_opt!!, curr_i) ->
+      | <-->
+   init_step_val = r_dec_opt
+      | rd => rd.1
       | LLVMConstInt(i64t, 1, 0)
    LLVMBuildStore(cg.builder, init_step_val, step_alloca)
-   elem_val = iter_mode == 5
-      | r_dec.0
+   elem_val = r_dec_opt
+      | rd => rd.0
       |
          iter_mode == 1
             |
-               byte_ptr = types::gep1(cg, LLVMInt8Type!, s_data, curr_i,
+               byte_ptr = types::gep1(cg, LLVMInt8Type!, s_data_opt!!, curr_i,
                   "s.byte.gep")
                byte_val = LLVMBuildLoad2(cg.builder,
                   LLVMInt8Type!, byte_ptr, "s.byte")
@@ -6181,7 +6189,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
             |
                iter_mode == 2
                   |
-                     arr_slot = types::gep1(cg, i64t, s_data, curr_i, "arr.elem.gep")
+                     arr_slot = types::gep1(cg, i64t, s_data_opt!!, curr_i, "arr.elem.gep")
                      arr_raw = LLVMBuildLoad2(cg.builder, i64t,
                         arr_slot, "arr.elem.raw")
                      types::is_ptrish_vt(elem_vt)
@@ -6196,7 +6204,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                      iter_mode == 3
                         |
                            typed_data = LLVMBuildPointerCast(cg.builder,
-                              s_data, LLVMPointerType(elem_ty, 0),
+                              s_data_opt!!, LLVMPointerType(elem_ty, 0),
                               "sl.data.typed")
                            elem_slot = types::gep1(cg, elem_ty, typed_data, curr_i,
                               "sl.elem.gep")
@@ -6213,7 +6221,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                                  rm = runtime::record_meta_from_ti(cg, elem_ti)
                                  rec_elem_ll = rm | m => m.0 | elem_ty
                                  typed_rec = LLVMBuildPointerCast(
-                                    cg.builder, s_data,
+                                    cg.builder, s_data_opt!!,
                                     LLVMPointerType(rec_elem_ll, 0),
                                     "rec.typed")
                                  rec_slot = types::gep1(cg, rec_elem_ll, typed_rec,
