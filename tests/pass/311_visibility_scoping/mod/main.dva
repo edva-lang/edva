@@ -1,0 +1,22 @@
+#public
+
+pub_one = 10
+
+add_ten: Int => Int
+add_ten = x => x + pub_one
+
+#private
+   secret_helper: Int => Int
+   secret_helper = x => x * 2
+
+pub_two = 20
+
+#private
+
+priv_one = 30
+
+#public
+   pub_three: Int => Int
+   pub_three = x => x + 5
+
+priv_two = 40

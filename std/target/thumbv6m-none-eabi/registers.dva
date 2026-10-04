@@ -2,6 +2,8 @@
 // Referenced as `registers::reset_base` etc. after `#use "target/thumbv6m-none-eabi/registers"`.
 // Note: each binding is a mutable global (one .bss slot), so a footprint-critical
 // program may prefer inline literals (as examples/thumbv6m-none-eabi/blinky does).
+#public
+
 sio_base    = 0xd0000000  // Single-cycle I/O (GPIO_OUT, GPIO_OE, ...)
 reset_base  = 0x4000c000  // RESETS
 io_base     = 0x40014000  // IO_BANK0

@@ -7,6 +7,8 @@
 #use "unify"
 #use "tast"
 
+#public
+
 align_up: Int, Int => Int
 align_up = offset, align =>
    align !> 1

@@ -5,6 +5,8 @@
 // String, c.int/c.uint/c.ulonglong/c.char -> Int, c.double -> Float.
 // binary's libLLVM-18 link.
 
+#public
+
 #foreign "LLVM-18"
    LLVMModuleCreateWithName: (ModuleID: String) => Addr
    LLVMDisposeModule: (M: Addr) => ()

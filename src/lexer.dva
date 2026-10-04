@@ -39,6 +39,8 @@
 
 // Token kinds. Op is deliberately generic: its TEXT carries the operator
 // (or a ram-literal piece, or a cycle jump); the parser classifies.
+#public
+
 // BEGIN tokens.txt
 #type TokKind <
    Op

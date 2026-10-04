@@ -13,6 +13,8 @@
 #use "stmt"
 #use "main"
 
+#public
+
 #foreign "c"
    write: (fd: Int, buf: Addr, count: Int) => Int
    dva_arena_current: () => Addr
@@ -44,12 +46,14 @@ dbg = s =>
    write(2, &b, ?b)
 
 #private
-print: String => Int
-print = s =>
-   b = {?s + 1}
-   b += s
-   b += 10
-   write(1, &b, ?b)
+   print: String => Int
+   print = s =>
+      b = {?s + 1}
+      b += s
+      b += 10
+      write(1, &b, ?b)
+
+#public
 
 // --- Module Implementation -------------------------------------------------
 

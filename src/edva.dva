@@ -16,6 +16,8 @@
 #use "unify"
 #use "mem"
 
+#public
+
 #foreign "LLVM-18"
    llvm_get_default_triple = LLVMGetDefaultTargetTriple: () => Addr
    llvm_dispose_message = LLVMDisposeMessage: (msg: Addr) => ()
@@ -31,12 +33,14 @@
    __errno_location: () => Addr
 
 #private
-print: String => Int
-print = s =>
-   b = {?s + 1}
-   b += s
-   b += 10
-   write(1, &b, ?b)
+   print: String => Int
+   print = s =>
+      b = {?s + 1}
+      b += s
+      b += 10
+      write(1, &b, ?b)
+
+#public
 
 #type ModuleLoad (exprs: ast::Exprs, loaded: ast::Names,
    exports: ast::Names, dynamic_mods: ast::Names, dynamic_paths: ast::Names,
@@ -268,9 +272,7 @@ prefix_lhs_expr = lhs, prefix =>
 
 is_public_name: ast::Names, ast::Names, String => <>
 is_public_name = publics, privates, name =>
-   ?publics > 0
-      | loaded_has(publics, name) && !loaded_has(privates, name)
-      | !loaded_has(privates, name)
+   loaded_has(publics, name) && !loaded_has(privates, name)
 
 decl_clean_name: String => String
 decl_clean_name = s =>
@@ -828,7 +830,8 @@ load_stmts = stmts, base, prefix, publics, privates, ldr =>
                         dpaths = ldr.dynamic_paths
                         dpaths += canonical_path(dpath)
                         ldr.dynamic_paths = dpaths
-                        decl_code = "reload_so: String => <>\n" +
+                        decl_code = "#public\n" +
+                           "reload_so: String => <>\n" +
                            "reload_so = p => <+>\n" +
                            "reload: () => <>\n" +
                            "reload = !=> <+>\n"
@@ -838,7 +841,7 @@ load_stmts = stmts, base, prefix, publics, privates, ldr =>
                            dp [Block db]
                               db.exprs @ de =>
                                  prefix_stmt_to_acc(de, imp.module_name,
-                                    ast::Names(), ast::Names(),
+                                    dppr.publics, dppr.privates,
                                     ldr.out_exprs, <->)
             !loaded_has(ldr.loaded, imp.module_name)
                |

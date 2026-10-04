@@ -17,12 +17,14 @@
    write: (fd: Int, buf: Addr, count: Int) => Int
 
 #private
-print: String => Int
-print = s =>
-   b = {?s + 1}
-   b += s
-   b += 10
-   write(1, &b, ?b)
+   print: String => Int
+   print = s =>
+      b = {?s + 1}
+      b += s
+      b += 10
+      write(1, &b, ?b)
+
+#public
 
 name_is_primed: String => <>
 name_is_primed = name => ?name > 0 && name(-1..) == "'"

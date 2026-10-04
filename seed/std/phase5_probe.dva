@@ -1,2 +1,4 @@
 // Minimal stdlib fixture for the self-host Phase 5 driver harness.
+#public
+
 answer = 41

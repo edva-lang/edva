@@ -37,6 +37,8 @@ def gen_operators_file [] {
         "",
         "#use \"ast\"",
         "",
+        "#public",
+        "",
         "#type BinOpInfo (lbp: Int, rbp: Int, op: ast::BinaryOp, same_line: <>)",
         "",
         "// Returns the binary operator for a token's text, or none. Binding",

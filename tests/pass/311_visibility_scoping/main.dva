@@ -1,0 +1,7 @@
+#use mod
+#use io
+
+io::out $ mod::pub_one
+io::out $ mod::add_ten(5)
+io::out $ mod::pub_two
+io::out $ mod::pub_three(10)

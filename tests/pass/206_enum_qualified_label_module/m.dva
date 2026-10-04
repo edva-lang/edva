@@ -2,6 +2,8 @@
 // overlapping label (Y), and functions that use the enum's own "A::X" /
 // "B::Y" spelling inside the module body.
 
+#public
+
 #type A <X, Y>
 #type B <Y, Z>
 

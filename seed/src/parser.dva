@@ -15,12 +15,14 @@
    write: (fd: Int, buf: Addr, count: Int) => Int
 
 #private
-print: String => Int
-print = s =>
-   b = {?s + 1}
-   b += s
-   b += 10
-   write(1, &b, ?b)
+   print: String => Int
+   print = s =>
+      b = {?s + 1}
+      b += s
+      b += 10
+      write(1, &b, ?b)
+
+#public
 
 // --- parser state ----------------------------------------------------------
 
@@ -70,6 +72,8 @@ print = s =>
    recovered_errors: Int,
    dp_var_count: Int,
    has_use_import: <>,
+   is_public: <>,
+   module_level: <>
 )
 
 // A binary operator's binding powers + node op, from the precedence tower.
@@ -154,7 +158,7 @@ parser_init = lx =>
    p = Parser((lx, lexer::Tok((lexer::TokKind(Eof), 0, 0, 1, 1, <->, <->, "")),
       0, 0, 0, 0, 0, 0, user_types, forward_refs, user_ops,
       <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
-      <->))
+      <->, <->, <+>))
    parser_advance(p)
    p
 
@@ -970,14 +974,14 @@ mark_export = p, e, alias =>
             [Fn _]
                entry = alias != "" | (t.0 + "=" + alias) | t.0
                p.exports += entry
-               p.publics += t.0
+               add_public_name(p, t.0)
                <+ e ->
             |
                t.8
                   [Fn _]
                      entry = alias != "" | (t.0 + "=" + alias) | t.0
                      p.exports += entry
-                     p.publics += t.0
+                     add_public_name(p, t.0)
                      <+ e ->
                   |
                      parser_error(p, 2091, "#export requires a function " +
@@ -999,53 +1003,120 @@ atom_export = p =>
       | bke => mark_export(p, bke, alias)
       | <-->
 
-mark_public_item: Parser, ast::Expr => ()
-mark_public_item = p, e =>
-   e
-      [Block b]
-         b.exprs @ child =>
-            mark_public_item(p, child)
-      [Assign t]
-         t.0 != "" | p.publics += t.0
-      [TypeDecl t]
-         t.name != "" | p.publics += t.name
-      [Foreign f]
-         f.dva_name != "" | p.publics += f.dva_name
+clean_decl_name: String => String
+clean_decl_name = s =>
+   (?s > 0 && s(0) == '#') | s(1..) | s
 
-// "#public" — marks the following declaration(s) visible across modules.
+names_has_at: ast::Names, String, Int => <>
+names_has_at = names, name, i =>
+   i < ?names
+      |
+         (names(i) | _ | "") == name
+            | <+>
+            | names_has_at(names, name, i + 1)
+      | <->
+
+names_has: ast::Names, String => <>
+names_has = names, name => names_has_at(names, name, 0)
+
+add_public_name: Parser, String => ()
+add_public_name = p, name =>
+   clean = clean_decl_name(name)
+   clean != "" && !names_has(p.publics, clean)
+      | p.publics += clean
+
+add_private_name: Parser, String => ()
+add_private_name = p, name =>
+   clean = clean_decl_name(name)
+   clean != "" && !names_has(p.privates, clean)
+      | p.privates += clean
+
+mark_decl_item: Parser, ast::Expr => ()
+mark_decl_item = p, e =>
+   e
+      [Assign t]
+         p.is_public | add_public_name(p, t.0) | add_private_name(p, t.0)
+      [TypeDecl t]
+         p.is_public | add_public_name(p, t.name) | add_private_name(p, t.name)
+      [Foreign f]
+         p.is_public | add_public_name(p, f.dva_name) | add_private_name(p, f.dva_name)
+
+parser_skip_newlines: Parser => ()
+parser_skip_newlines = p =>
+   tok_is_nl(p.curr)
+      |
+         parser_advance(p)
+         parser_skip_newlines(p)
+
+peek_scan_indent: lexer::Lx, lexer::Tok => <>
+peek_scan_indent = lx, tok =>
+   tok.kind
+      [Newline] peek_scan_indent(lx, lexer::next_tok(lx, 0))
+      [Indent]
+
+parser_peek_is_indent: Parser => <>
+parser_peek_is_indent = p =>
+   c = lexer::clone_lx(p.lx)
+   tok = lexer::next_tok(c, 0)
+   tok_is_nl(tok)
+      | peek_scan_indent(c, tok)
+      | tok.kind [Indent]
+
+// "#public" — marks subsequent declarations public; scoped if introducing an indented block.
 atom_public: Parser => <ast::Expr|>
 atom_public = p =>
+   has_ind = parser_peek_is_indent(p)
    parser_advance(p)
-   bk = parse_block(p)
-   bk
-      | bke =>
-         mark_public_item(p, bke)
-         <+ bke ->
-      | <-->
+   is_same_line = !tok_is_nl(p.curr) && !tok_is_eof(p.curr)
+   is_same_line
+      |
+         p.is_public = <+>
+         parse_expr(p)
+      |
+         has_ind
+            |
+               parser_skip_newlines(p)
+               parser_advance(p)
+               saved_fd = p.fn_depth
+               p.fn_depth = 0
+               old_vis = p.is_public
+               p.is_public = <+>
+               res = block_stmts(p, ast::Exprs())
+               p.fn_depth = saved_fd
+               p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
+               p.is_public = old_vis
+               res
+            |
+               p.is_public = <+>
+               <+ ast::Expr(Block, ast::BlockExpr(ast::Exprs())) ->
 
-mark_private_item: Parser, ast::Expr => ()
-mark_private_item = p, e =>
-   e
-      [Block b]
-         b.exprs @ child =>
-            mark_private_item(p, child)
-      [Assign t]
-         t.0 != "" | p.privates += t.0
-      [TypeDecl t]
-         t.name != "" | p.privates += t.name
-      [Foreign f]
-         f.dva_name != "" | p.privates += f.dva_name
-
-// "#private" — hides the following declaration(s) from importers.
+// "#private" — hides subsequent declarations; scoped if introducing an indented block.
 atom_private: Parser => <ast::Expr|>
 atom_private = p =>
+   has_ind = parser_peek_is_indent(p)
    parser_advance(p)
-   bk = parse_block(p)
-   bk
-      | bke =>
-         mark_private_item(p, bke)
-         <+ bke ->
-      | <-->
+   is_same_line = !tok_is_nl(p.curr) && !tok_is_eof(p.curr)
+   is_same_line
+      |
+         p.is_public = <->
+         parse_expr(p)
+      |
+         has_ind
+            |
+               parser_skip_newlines(p)
+               parser_advance(p)
+               saved_fd = p.fn_depth
+               p.fn_depth = 0
+               old_vis = p.is_public
+               p.is_public = <->
+               res = block_stmts(p, ast::Exprs())
+               p.fn_depth = saved_fd
+               p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
+               p.is_public = old_vis
+               res
+            |
+               p.is_public = <->
+               <+ ast::Expr(Block, ast::BlockExpr(ast::Exprs())) ->
 
 
 // "#spawn call" — run the call's closure in a new thread (a ThreadId).
@@ -1125,7 +1196,14 @@ atom_foreign = p =>
    is_block = tok_is_indent(p.curr)
    is_block | parser_advance(p)
    exprs = foreign_decls(p, abi, is_block, ast::Exprs())
-   exprs | es => <+ ast::Expr(Block, ast::BlockExpr(es)) ->
+   exprs
+      | es =>
+         es @ fe =>
+            fe [Foreign f]
+               p.is_public | add_public_name(p, f.dva_name) |
+                  add_private_name(p, f.dva_name)
+         <+ ast::Expr(Block, ast::BlockExpr(es)) ->
+      | <-->
 
 foreign_decls_done: Parser, <>, ast::Exprs => <ast::Exprs|>
 foreign_decls_done = p, is_block, exprs =>
@@ -2119,7 +2197,10 @@ fn_arrow = p, params, ct_params =>
          parser_advance(p)
          saved_rhs = p.in_rhs
          p.in_rhs = <->
+         saved_ml = p.module_level
+         p.module_level = <->
          body = parse_block(p)
+         p.module_level = saved_ml
          p.in_rhs = saved_rhs
          body
             | b => <+ ast::Expr(Fn, (ast::FnExpr((params, ct_params, b)))) ->
@@ -2171,6 +2252,7 @@ block_stmts = p, stmts =>
                p.is_stmt = <->
                st
                   | s =>
+                     p.module_level | mark_decl_item(p, s)
                      stmts += s
                      stmt_end_ok(p)
                         |
@@ -2275,6 +2357,7 @@ prog_loop = p, stmts =>
                      p.is_stmt = <->
                      st
                         | s =>
+                           p.module_level | mark_decl_item(p, s)
                            stmts += s
                            stmt_end_ok(p)
                               |

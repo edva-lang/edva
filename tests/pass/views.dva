@@ -1,5 +1,7 @@
 #use str
 
+#public
+
 #type State (count: Int, title: String)
 
 render: State => String

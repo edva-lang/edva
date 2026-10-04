@@ -347,6 +347,8 @@ echo "PASS"
 # --- Test 9: Modular compilation & interface-only #use loading (#80, #81) ---
 echo -n "Testing modular compilation & interface-only #use loading... "
 cat <<'EOF' > "$TMPDIR/lib_mod.dva"
+#public
+
 #type Point (x: Int, y: Int)
 
 add_pts: Point, Point => Point

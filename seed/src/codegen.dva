@@ -3,6 +3,8 @@
 #use "codegen/types"
 #use "codegen/main"
 
+#public
+
 #type CodegenOpts types::CodegenOpts
 
 default_codegen_opts: () => types::CodegenOpts

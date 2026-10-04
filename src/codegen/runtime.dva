@@ -13,6 +13,8 @@
 #use "stmt"
 #use "main"
 
+#public
+
 #foreign "c"
    write: (fd: Int, buf: Addr, count: Int) => Int
    dva_arena_current: () => Addr
@@ -58,12 +60,14 @@ empty_fndef: FnDef
 empty_fndef = FnDef(("", ast::Names(), ast::Expr(Var, "")))
 
 #private
-print: String => Int
-print = s =>
-   b = {?s + 1}
-   b += s
-   b += 10
-   write(1, &b, ?b)
+   print: String => Int
+   print = s =>
+      b = {?s + 1}
+      b += s
+      b += 10
+      write(1, &b, ?b)
+
+#public
 
 // --- Module Implementation -------------------------------------------------
 

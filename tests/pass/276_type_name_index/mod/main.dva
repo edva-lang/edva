@@ -3,6 +3,8 @@
 #private
    #type Hidden <Value(Int), Empty>
 
+#public
+
 #type Public (n: Int)
 
 make: Int => Int

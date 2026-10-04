@@ -7,6 +7,8 @@
 
 #use "ast"
 
+#public
+
 #type DepNode (name: String, deps: ast::Names, stmt_idx: Int)
 #type NameSet String ^ <>
 #type NodeIndices String ^ Int

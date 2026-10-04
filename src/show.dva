@@ -11,12 +11,14 @@
    write: (fd: Int, buf: Addr, count: Int) => Int
 
 #private
-print: String => Int
-print = s =>
-   b = {?s + 1}
-   b += s
-   b += 10
-   write(1, &b, ?b)
+   print: String => Int
+   print = s =>
+      b = {?s + 1}
+      b += s
+      b += 10
+      write(1, &b, ?b)
+
+#public
 
 show_expr: ast::Expr => String
 show_expr = e =>

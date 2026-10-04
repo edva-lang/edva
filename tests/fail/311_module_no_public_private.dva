@@ -1,0 +1,4 @@
+#use nopubmod
+#use io
+
+io::out $ nopubmod::val

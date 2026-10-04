@@ -184,7 +184,7 @@ Program    ::= { Statement } EOF
 Statement  ::= ImportStmt
              | ForeignDeclStmt
              | PragmaStmt
-             | PrivateStmt
+             | VisibilityStmt
              | TypeDeclStmt
              | AssignmentStmt
              | ExprStmt
@@ -215,18 +215,26 @@ modules emit `E3033`. Function-local declarations shadow imported symbols.
 dynamic function pointer indirection.
 
 ```
-PrivateStmt ::= "#private" Newline INDENT { Statement } DEDENT
-              | "#private" Statement
+VisibilityStmt ::= PublicStmt | PrivateStmt
+
+PublicStmt     ::= ( "#public" | "#pub" ) [ Newline INDENT { Statement } DEDENT | Statement | Newline ]
+PrivateStmt    ::= "#private" [ Newline INDENT { Statement } DEDENT | Statement | Newline ]
 ```
 
-`#private` hides the following declaration(s) from importers. The single-line
-form (`#private fun = x => x + 1`) marks one declaration; the indented-block
-form marks every declaration inside. A private binding is reachable only by a
-*bare* name inside its own module — the qualified `module::name` never resolves
-it (an importer sees it as undefined). Variables, functions, and types can all
-be private.
+Modules are **private by default**: any module without `#public` exports nothing; all its
+declarations remain private to the module. To export declarations, a module must explicitly
+mark them with `#public` (or synonym `#pub`).
 
-The prelude `prelude.dva` (a sibling of the std/ libraries) is loaded automatically before every program.
+- **Standing directive**: `#public` or `#private` on its own line (with no indented block following)
+  switches the module's visibility state for all subsequent declarations.
+- **Scoped block**: `#public` or `#private` introducing an indented block applies only to the
+  declarations inside that block, reverting to the enclosing visibility state upon dedent.
+- **Inline statement**: `#public stmt` or `#private stmt` applies visibility only to the immediate
+  following statement on the same line.
+
+Private declarations are reachable only by a *bare* name inside their own module; external
+qualified access `module::name` receives `E3004`. Variables, functions, and types can all be
+public or private.
 
 ### 2.3 Pragma
 

@@ -1,3 +1,5 @@
+#public
+
 #type Color <Red, Green>
 
 #type Tree <Leaf(Int), Branch((Tree[]))>

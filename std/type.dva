@@ -2,6 +2,8 @@
 // Evaluated at compile time by the compiler; erased from runtime.
 
 
+#public
+
 is_record: Type => <>
 is_record = _ => <->
 

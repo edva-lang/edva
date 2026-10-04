@@ -8,6 +8,8 @@
 #use "unify"
 #use "str"
 
+#public
+
 // --- Layout Metadata -------------------------------------------------------
 
 #type LayoutKind <

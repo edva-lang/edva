@@ -8,6 +8,8 @@
 #use "tast"
 #use "str"
 
+#public
+
 #type TypeBinding (
    name: String,
    ut: unify::UType,
