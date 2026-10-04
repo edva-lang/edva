@@ -29,8 +29,8 @@ The following table contrasts conventional language keywords with their Edva equ
 | Function definition | `fn`, `def`, `func` | `=>` lambda/function arrow | `square = x => x * x` |
 | Error unwrapping | `.unwrap()`, `?` | `!!` unwrap-or-abort | `result!!` |
 | Error propagation | `?` (Rust) | `!| _` or `$>>` bind | `write(buf) !| _` |
-| Module import | `import`, `include`, `use` | `#use` directive | `#use str` |
-| Export symbol | `export`, `pub` | `#export`, `#public` | `#export add: Int => Int` |
+| Module export | `pub`, `export` | `#public`, `#pub` | `#public add: Int => Int` |
+| C ABI export | `extern "C"` | `#export` | `#export add: Int => Int` |
 | Struct / Record | `struct`, `record` | Record literal / type | `(x: Int, y: Int)` |
 | Discriminated Union | `enum` | `< A, B(Payload) >` | `< Red, Green, Blue >` |
 

@@ -42,8 +42,9 @@ prefix. `#use path/name` imports a subpath, whose final segment becomes the pref
 
 ```dva
 #use math_utils
+#use io
 
-print_int $ math_utils::square(5)
+io::out $ math_utils::square(5)
 ```
 
 The loader first looks beside the importing file, then in the compiler's
@@ -51,10 +52,46 @@ The loader first looks beside the importing file, then in the compiler's
 `main.dva` is the multi-file fallback. This permits `net.dva` and
 `net/http.dva` to coexist.
 
-`#private` hides a declaration from importers. A private binding remains
-available by its bare name inside its own module; an importer cannot resolve
-it through `module::name`. `#public` controls a module's exported surface.
+## Module visibility
+
+Modules are **private by default**. Any module without `#public` exports nothing.
+To expose declarations to importers, use `#public` (or its exact synonym `#pub`):
+
+- **Standing directive**: `#public` on its own line (with no indented block following)
+  makes all subsequent declarations in the module public. Indentation is not required.
+- **Scoped block**: `#public` followed by an indented block exports only the declarations
+  inside that block, reverting to the enclosing visibility mode upon dedent.
+- **Inline**: `#public fn = ...` exports a single declaration on the same line.
+
+Use `#private` to hide declarations from importers:
+
+- **Standing directive**: `#private` on its own line switches the module's standing
+  visibility to private for all subsequent declarations.
+- **Scoped block**: `#private` followed by an indented block hides auxiliary helpers
+  inside a public section, reverting to public upon dedent.
+- **Inline**: `#private helper = ...` hides a single declaration on the same line.
+
+```dva
+#public
+
+// Exported public functions
+add: Int, Int => Int
+add = a, b => a + b
+
+#private
+   // Scoped private helper: hidden from importers
+   internal_factor = 2
+
+// Reverts to public on dedent
+double_add: Int, Int => Int
+double_add = a, b => internal_factor * add(a, b)
+```
+
+A private binding remains available by its bare identifier inside its own module;
+an importer attempting qualified access (`module::name`) cannot resolve it and
+receives compile error `E3004`.
 
 Use `#foreign` for C symbols and `#export` to expose a C ABI symbol. See
 [FFI and targets](ffi-and-targets.qmd) before crossing the foreign boundary.
+
 

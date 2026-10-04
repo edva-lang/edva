@@ -44,9 +44,26 @@ imports a path, whose final segment is its namespace. The resolver looks
 beside the importing source first, then in `std/`; it prefers `<name>.dva`
 over a same-named directory module.
 
-`#private` hides its following declaration or indented block from importers.
-The private name remains available unqualified inside its module, but an
-importer cannot resolve `module::name`.
+## Module visibility
+
+Modules are **private by default**: any module without `#public` exports nothing; all its
+declarations remain private to the module. To export declarations, use `#public` (or `#pub`).
+
+- `#public` (or `#pub`):
+  - **Standing directive**: `#public` on its own line (with no indented block) makes all subsequent
+    declarations in the module public. Indentation is not required.
+  - **Scoped block**: `#public` followed by an indented block exports only the declarations inside
+    that block, reverting to the enclosing visibility upon dedent.
+  - **Inline**: `#public decl` exports a single declaration on the same line.
+- `#private`:
+  - **Standing directive**: `#private` on its own line makes all subsequent declarations in the
+    module private.
+  - **Scoped block**: `#private` followed by an indented block hides declarations inside that
+    block, reverting to the enclosing visibility upon dedent.
+  - **Inline**: `#private decl` hides a single declaration on the same line.
+
+The private name remains available unqualified inside its module, but an importer attempting
+qualified access (`module::name`) receives compile error `E3004`.
 
 ## Globals and foreign declarations
 

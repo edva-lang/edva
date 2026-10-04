@@ -25,12 +25,12 @@ explain use and constraints rather than maintaining a competing copy.
 | source | UTF-8, indentation blocks, `//` and `/* ... */` comments |
 | bindings | `name = value`, `name' = replacement`, `::name = global` |
 | functions | `f: T => U`, `f = value => body`, `f(argument)` |
-| modules | `#use name`, `#use path/module`, `module::name`, `#private` |
+| modules | `#use name`, `#use path/module`, `module::name`, `#public`, `#private` |
 | branching | `value [case] body | fallback` |
 | iteration | `iterable @ item => body`, `-->`, `--^`, `>--` |
 | composite values | records, growable arrays, maps, rams, enums |
 | compile time | `#!`, `#! T: Type`, `#size(Type)` |
-| interop | `#foreign`, `#export`, `Addr`, `*builder` |
+| interop | `#foreign`, `#export`, `Addr`, `&builder`, `&string` |
 
 ## Core concepts
 
