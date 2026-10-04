@@ -1,11 +1,13 @@
+#use io
+
 p = (x = 10, y = 20)
-print_int $ p.x
-print_int $ p.y
+io::out $ p.x
+io::out $ p.y
 
 user = (name = "Kea", age = 30)
-print $ user.name
-print_int $ user.age
+io::out $ user.name
+io::out $ user.age
 
 t = (100, 200)
-print_int $ t.0
-print_int $ t.1
+io::out $ t.0
+io::out $ t.1

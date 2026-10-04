@@ -1,3 +1,5 @@
+#use io
+
 #type PacketHeader (
    version: Int,
    length: Int,
@@ -21,18 +23,18 @@ test_views = _ =>
    hdr.dst_port = 443
    hdr.checksum = 12345
 
-   print $ str::from_int(hdr.version)
-   print $ str::from_int(hdr.length)
-   print $ str::from_int(hdr.src_port)
-   print $ str::from_int(hdr.dst_port)
-   print $ str::from_int(hdr.checksum)
+   io::out $ str::from_int(hdr.version)
+   io::out $ str::from_int(hdr.length)
+   io::out $ str::from_int(hdr.src_port)
+   io::out $ str::from_int(hdr.dst_port)
+   io::out $ str::from_int(hdr.checksum)
 
    saved = ++hdr
    hdr.checksum = 99999
-   print $ str::from_int(saved.checksum)
-   print $ str::from_int(hdr.checksum)
+   io::out $ str::from_int(saved.checksum)
+   io::out $ str::from_int(hdr.checksum)
 
-   print $ is_https(&buf) | "https" | "other"
+   io::out $ is_https(&buf) | "https" | "other"
    0
 
 test_views(0)

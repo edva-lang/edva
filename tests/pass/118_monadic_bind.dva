@@ -6,17 +6,19 @@
 // propagates its payload (RamPP) or its unit (RamPN).
 
 // RamPP: payload on both branches.
+#use io
+
 #type Either < Int | String >
 ok_val = Either(<+ 42 +>)
 err_val = Either(<- "boom" ->)
 double = n => Either(<+ n * 2 +>)
 
 r1 = ok_val $>> double
-print_int $ (r1 | _ | -1)          
+io::out $ (r1 | _ | -1)          
 r2 = err_val $>> double
-print $ (r2 | "none" | _)      // negative -> "boom" propagated
+io::out $ (r2 | "none" | _)      // negative -> "boom" propagated
 r3 = ok_val $>> (n => Either(<+ n + 1 +>))   // inline lambda continuation
-print_int $ (r3 | _ | -1)          
+io::out $ (r3 | _ | -1)          
 
 // RamPN: payload only on the left (negative is the unit None).
 #type Option < Int | >
@@ -25,8 +27,8 @@ none = Option(<-->)
 inc = n => Option(<+ n + 1 ->)
 
 s1 = some $>> inc
-print_int $ (s1 | _ | -1)          
+io::out $ (s1 | _ | -1)          
 n1 = none $>> inc
-print_int $ (n1 | 7 | -1)            
+io::out $ (n1 | 7 | -1)            
 s2 = some $>> inc $>> inc        // left-assoc chain: 7 -> 8 -> 9
-print_int $ (s2 | _ | -1)          
+io::out $ (s2 | _ | -1)          

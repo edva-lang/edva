@@ -1,2 +1,4 @@
+#use io
+
 double = => _ * 2
-print $ double $ 5
+io::out $ double $ 5

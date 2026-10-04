@@ -1,2 +1,3 @@
 #use privmod
-print $ privmod::secret
+#use io
+io::out $ privmod::secret

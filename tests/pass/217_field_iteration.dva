@@ -5,6 +5,7 @@
 // work across field types without per-field type dispatch.
 
 #use "str"
+#use io
 
 #type Pt (x: Int, y: Int)
 #type Triple (a: Int, b: Int, c: Int)
@@ -30,15 +31,15 @@ record_eq = a, b =>
 p: Pt
 p.x = 3
 p.y = 4
-print $ str::from_int(sum_fields(p))
-print $ str::from_int(p.(0))
-print $ str::from_int(p.(1))
+io::out $ str::from_int(sum_fields(p))
+io::out $ str::from_int(p.(0))
+io::out $ str::from_int(p.(1))
 
 t: Triple
 t.a = 1
 t.b = 2
 t.c = 3
-print $ str::from_int(sum_fields(t))
+io::out $ str::from_int(sum_fields(t))
 
 p1: Pt
 p1.x = 3
@@ -49,8 +50,8 @@ p2.y = 4
 p3: Pt
 p3.x = 3
 p3.y = 9
-print $ str::from_int(record_eq(p1, p2))
-print $ str::from_int(record_eq(p1, p3))
+io::out $ str::from_int(record_eq(p1, p2))
+io::out $ str::from_int(record_eq(p1, p3))
 
 m1: Mix
 m1.a = 1
@@ -61,5 +62,5 @@ m2.b = "hi"
 m3: Mix
 m3.a = 1
 m3.b = "no"
-print $ str::from_int(record_eq(m1, m2))
-print $ str::from_int(record_eq(m1, m3))
+io::out $ str::from_int(record_eq(m1, m2))
+io::out $ str::from_int(record_eq(m1, m3))

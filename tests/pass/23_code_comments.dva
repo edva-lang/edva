@@ -1,5 +1,7 @@
 // This is a line comment with double slash
 
+#use io
+
 /* This is a single-line block comment */
 x = 42 // end of line comment
 
@@ -8,7 +10,7 @@ This is a multiline
 block comment
 spanning several lines
 */
-print_int $ x
+io::out $ x
 
 y = /* inline comment */ 100
-print_int $ y
+io::out $ y

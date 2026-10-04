@@ -2,6 +2,8 @@
 // Verifies Error is an ordinary inspectable record with non-poisonous choices
 // and that unit-success ramifications (< | E >) support --! propagation.
 
+#use io
+
 fail_err: () => < | Error >
 fail_err = !=>
    <- Error(42, "operation failed", "worker.dva", 15, 8, (101, 202)) +>
@@ -14,10 +16,10 @@ step_unit: () => < | Error >
 step_unit = !=>
    res1 = ok_unit!
    res1--!
-   print("unit step ok")
+   io::out("unit step ok")
    res2 = fail_err!
    res2--!
-   print("should not reach here")
+   io::out("should not reach here")
    <++>
 
 fail_str: () => < | String >
@@ -32,32 +34,32 @@ step_str_unit: () => < | String >
 step_str_unit = !=>
    s1 = ok_str_unit!
    s1--!
-   print("str unit step ok")
+   io::out("str unit step ok")
    s2 = fail_str!
    s2--!
-   print("should not reach here")
+   io::out("should not reach here")
    <++>
 
 main: () => ()
 main = !=>
    r = step_unit!
    r
-      | print("unexpected ok")
+      | io::out("unexpected ok")
       | e =>
-         print("caught error:")
-         print(e.msg)
-         print_int(e.code)
-         print(e.file)
-         print_int(e.line)
-         print_int(e.col)
-         print_int(e.context.0)
-         print_int(e.context.1)
+         io::out("caught error:")
+         io::out(e.msg)
+         io::out(e.code)
+         io::out(e.file)
+         io::out(e.line)
+         io::out(e.col)
+         io::out(e.context.0)
+         io::out(e.context.1)
 
    rs = step_str_unit!
    rs
-      | print("unexpected str ok")
+      | io::out("unexpected str ok")
       | s =>
-         print("caught str:")
-         print(s)
+         io::out("caught str:")
+         io::out(s)
 
 main!

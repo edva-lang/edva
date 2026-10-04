@@ -71,7 +71,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::is_special" = global ptr null
 @clo.const.17 = internal constant { ptr, ptr } { ptr @"lexer::scan_while", ptr null }
 @"var.lexer::scan_while" = global ptr null
-@clo.const.18 = internal constant { ptr, ptr } { ptr @"$anon_fn.87", ptr null }
+@clo.const.18 = internal constant { ptr, ptr } { ptr @"$anon_fn.88", ptr null }
 @clo.const.19 = internal constant { ptr, ptr } { ptr @"lexer::skip_digits", ptr null }
 @"var.lexer::skip_digits" = global ptr null
 @clo.const.20 = internal constant { ptr, ptr } { ptr @"lexer::scan_id", ptr null }
@@ -165,14 +165,14 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::scan_rune" = global ptr null
 @clo.const.46 = internal constant { ptr, ptr } { ptr @"lexer::scan_raw_string", ptr null }
 @"var.lexer::scan_raw_string" = global ptr null
-@clo.const.47 = internal constant { ptr, ptr } { ptr @"$anon_fn.116", ptr null }
+@clo.const.47 = internal constant { ptr, ptr } { ptr @"$anon_fn.117", ptr null }
 @clo.const.48 = internal constant { ptr, ptr } { ptr @"lexer::skip_line_comment", ptr null }
 @"var.lexer::skip_line_comment" = global ptr null
 @str.29 = internal unnamed_addr constant [51 x i8] c"Unterminated block comment -- missing closing '*/'\00"
 @str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.29 }
 @clo.const.49 = internal constant { ptr, ptr } { ptr @"lexer::skip_block_comment", ptr null }
 @"var.lexer::skip_block_comment" = global ptr null
-@clo.const.50 = internal constant { ptr, ptr } { ptr @"$anon_fn.119", ptr null }
+@clo.const.50 = internal constant { ptr, ptr } { ptr @"$anon_fn.120", ptr null }
 @clo.const.51 = internal constant { ptr, ptr } { ptr @"lexer::scan_hash_word", ptr null }
 @"var.lexer::scan_hash_word" = global ptr null
 @clo.const.52 = internal constant { ptr, ptr } { ptr @"lexer::scan_qp_body", ptr null }
@@ -190,7 +190,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @clo.const.56 = internal constant { ptr, ptr } { ptr @"lexer::skip_ws", ptr null }
 @str.32 = internal unnamed_addr constant [51 x i8] c"Unterminated '#use(...)' \E2\80\94 expected closing ')'.\00"
 @str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.32 }
-@clo.const.57 = internal constant { ptr, ptr } { ptr @"$anon_fn.126", ptr null }
+@clo.const.57 = internal constant { ptr, ptr } { ptr @"$anon_fn.127", ptr null }
 @str.33 = internal unnamed_addr constant [8 x i8] c"dynamic\00"
 @str.33.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.33 }
 @str.34 = internal unnamed_addr constant [7 x i8] c"import\00"
@@ -216,14 +216,14 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.41 }
 @str.42 = internal unnamed_addr constant [8 x i8] c"swizzle\00"
 @str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.42 }
-@clo.const.60 = internal constant { ptr, ptr } { ptr @"$anon_fn.131", ptr null }
+@clo.const.60 = internal constant { ptr, ptr } { ptr @"$anon_fn.132", ptr null }
 @str.43 = internal unnamed_addr constant [8 x i8] c"default\00"
 @str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.43 }
-@clo.const.61 = internal constant { ptr, ptr } { ptr @"$anon_fn.132", ptr null }
+@clo.const.61 = internal constant { ptr, ptr } { ptr @"$anon_fn.133", ptr null }
 @str.44 = internal unnamed_addr constant [8 x i8] c"#pragma\00"
 @str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.44 }
 @clo.const.62 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_number", ptr null }
-@clo.const.63 = internal constant { ptr, ptr } { ptr @"$anon_fn.134", ptr null }
+@clo.const.63 = internal constant { ptr, ptr } { ptr @"$anon_fn.135", ptr null }
 @str.45 = internal unnamed_addr constant [4 x i8] c"all\00"
 @str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.45 }
 @str.46 = internal unnamed_addr constant [5 x i8] c"none\00"
@@ -233,9 +233,9 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.48 = internal unnamed_addr constant [32 x i8] c"' \E2\80\94 expected 'all' or 'none'.\00"
 @str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.48 }
 @clo.const.64 = internal constant { ptr, ptr } { ptr @"lexer::pragma_fp_fail", ptr null }
-@clo.const.65 = internal constant { ptr, ptr } { ptr @"$anon_fn.136", ptr null }
+@clo.const.65 = internal constant { ptr, ptr } { ptr @"$anon_fn.137", ptr null }
 @clo.const.66 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_fp", ptr null }
-@clo.const.67 = internal constant { ptr, ptr } { ptr @"$anon_fn.138", ptr null }
+@clo.const.67 = internal constant { ptr, ptr } { ptr @"$anon_fn.139", ptr null }
 @str.49 = internal unnamed_addr constant [5 x i8] c"xyzw\00"
 @str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.49 }
 @str.50 = internal unnamed_addr constant [5 x i8] c"rgba\00"
@@ -245,7 +245,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.52 = internal unnamed_addr constant [49 x i8] c"' \E2\80\94 expected 'all', 'xyzw', 'rgba', or 'none'.\00"
 @str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.52 }
 @clo.const.68 = internal constant { ptr, ptr } { ptr @"lexer::pragma_swizzle_fail", ptr null }
-@clo.const.69 = internal constant { ptr, ptr } { ptr @"$anon_fn.140", ptr null }
+@clo.const.69 = internal constant { ptr, ptr } { ptr @"$anon_fn.141", ptr null }
 @clo.const.70 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_swizzle", ptr null }
 @clo.const.71 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_body", ptr null }
 @str.53 = internal unnamed_addr constant [59 x i8] c"Expected 'number', 'fpfast', or 'swizzle' after '#pragma'.\00"
@@ -589,6 +589,8 @@ declare i64 @waitpid(i64, ptr, i64)
 declare i64 @read(i32, ptr, i64)
 
 declare i64 @lseek(i32, i64, i64)
+
+declare i64 @writev(i32, ptr, i64)
 
 declare i32 @ioctl(i32, i64, i64, ...)
 
@@ -3690,7 +3692,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.87"(i64 %0) #1 {
+define internal i1 @"$anon_fn.88"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -8566,7 +8568,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.116"(i64 %0) #1 {
+define internal i1 @"$anon_fn.117"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -8780,7 +8782,7 @@ str_stale:                                        ; preds = %str_gen_check
   br label %str_ok
 }
 
-define internal i1 @"$anon_fn.119"(i64 %0) #1 {
+define internal i1 @"$anon_fn.120"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -10016,7 +10018,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.126"(i64 %0) #1 {
+define internal i1 @"$anon_fn.127"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -11455,7 +11457,7 @@ str.eq.merge316:                                  ; preds = %str.eq.else315, %st
   br i1 %str.eq.result322, label %choice.case288, label %choice.next289
 }
 
-define internal i1 @"$anon_fn.131"(i64 %0) #1 {
+define internal i1 @"$anon_fn.132"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -11465,7 +11467,7 @@ entry:
   ret i1 %nottmp
 }
 
-define internal i1 @"$anon_fn.132"(i64 %0) #1 {
+define internal i1 @"$anon_fn.133"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -11735,7 +11737,7 @@ str.eq.merge69:                                   ; preds = %str.eq.else68, %str
   br i1 %case.or, label %choice.case, label %choice.next
 }
 
-define internal i1 @"$anon_fn.134"(i64 %0) #1 {
+define internal i1 @"$anon_fn.135"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -11914,7 +11916,7 @@ str_overflow_abort61:                             ; preds = %concat.sum.len55
   br label %concat.tot.len60
 }
 
-define internal i1 @"$anon_fn.136"(i64 %0) #1 {
+define internal i1 @"$anon_fn.137"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -12296,7 +12298,7 @@ str.eq.merge136:                                  ; preds = %str.eq.else135, %st
   br i1 %case.or143, label %choice.case, label %choice.next
 }
 
-define internal i1 @"$anon_fn.138"(i64 %0) #1 {
+define internal i1 @"$anon_fn.139"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -12475,7 +12477,7 @@ str_overflow_abort61:                             ; preds = %concat.sum.len55
   br label %concat.tot.len60
 }
 
-define internal i1 @"$anon_fn.140"(i64 %0) #1 {
+define internal i1 @"$anon_fn.141"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8

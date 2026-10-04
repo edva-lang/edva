@@ -2,6 +2,8 @@
 // very type being declared (register-before-body). "Tree: <Leaf(Int),
 // Branch((Tree[]))>" is a JSON-shaped recursive enum over a slice of itself.
 
+#use io
+
 #type Tree <Leaf(Int), Branch((Tree[]))>
 #type Trees (Tree){}
 
@@ -20,7 +22,7 @@ leaves += Tree(Leaf, 5)
 m = ?leaves
 view = leaves(0..m)
 root = Tree(Branch, view)
-print_int $ count(root)
+io::out $ count(root)
 
 also: Trees
 also += Tree(Leaf, 1)
@@ -36,4 +38,4 @@ nested += Tree(Leaf, 6)
 n = ?nested
 view3 = nested(0..n)
 outer = Tree(Branch, view3)
-print_int $ count(outer)
+io::out $ count(outer)

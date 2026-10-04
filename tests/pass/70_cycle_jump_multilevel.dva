@@ -3,24 +3,26 @@
 // targeting via trailing "'" characters ("-->2" breaks past the second
 // enclosing cycle, "--^3" continues past the third enclosing cycle, etc).
 
-print_int $ 1000
+#use io
+
+io::out $ 1000
 
 // Plain "--^" (continue), level 1 (innermost, no apostrophes): skip
 // printing when i == 2, but the loop must still advance (not hang).
 0..5 @ i =>
    i [== 2] --^
-   print_int $ i
+   io::out $ i
 
-print_int $ 2000
+io::out $ 2000
 
 // "-->2" (break), level 2: from the inner loop, break the outer loop
 // entirely the first time j == 1. Only i=0,j=0 should ever print.
 0..3 @ i =>
    0..3 @ j =>
       j [== 1] -->2
-      print_int $ (i * 10 + j)
+      io::out $ (i * 10 + j)
 
-print_int $ 3000
+io::out $ 3000
 
 // "--^2" (continue), level 2: from the inner loop, skip straight to the
 // *outer* loop's next iteration once j == 1 -- so the outer body's
@@ -29,10 +31,10 @@ print_int $ 3000
 0..3 @ i =>
    0..3 @ j =>
       j [== 1] --^2
-      print_int $ (i * 10 + j)
-   print_int $ 999
+      io::out $ (i * 10 + j)
+   io::out $ 999
 
-print_int $ 4000
+io::out $ 4000
 
 // "-->3" (break), level 3: from the innermost of three nested loops,
 // break all the way out past the outermost. Only the very first
@@ -41,6 +43,6 @@ print_int $ 4000
    0..2 @ j =>
       0..2 @ k =>
          k [== 1] -->3
-         print_int $ (i * 100 + j * 10 + k)
+         io::out $ (i * 100 + j * 10 + k)
 
-print_int $ 5000
+io::out $ 5000

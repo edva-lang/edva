@@ -1,4 +1,5 @@
 #use "str"
+#use io
 
 make_buffer: #! N: Int => Builder
 make_buffer = !=> {N}
@@ -22,18 +23,18 @@ sum_to = !=>
    total'
 
 b1 = make_buffer(32)
-print $ str::from_int(?b1)
+io::out $ str::from_int(?b1)
 
 b2 = make_buffer(128)
-print $ str::from_int(?b2)
+io::out $ str::from_int(?b2)
 
-print $ repeat_str(3, "abc")
-print $ repeat_str(2 * 2, "hi")
+io::out $ repeat_str(3, "abc")
+io::out $ repeat_str(2 * 2, "hi")
 
-print $ tag_msg("[INFO]", "system ready")
-print $ tag_msg("[WARN]", "low memory")
+io::out $ tag_msg("[INFO]", "system ready")
+io::out $ tag_msg("[WARN]", "low memory")
 
-print $ format_pair("Item", 42, "widget")
+io::out $ format_pair("Item", 42, "widget")
 
-print $ str::from_int(sum_to(5))
-print $ str::from_int(sum_to(10))
+io::out $ str::from_int(sum_to(5))
+io::out $ str::from_int(sum_to(10))

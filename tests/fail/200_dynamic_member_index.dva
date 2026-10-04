@@ -2,9 +2,11 @@
 // per-field cycle index); a runtime value has no meaning for a heterogeneous
 // record.
 
+#use io
+
 #type Pt (x: Int, y: Int)
 p: Pt
 p.x = 3
 p.y = 4
 k = 0
-print $ p.(k)
+io::out $ p.(k)

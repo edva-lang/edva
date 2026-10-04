@@ -4,6 +4,7 @@
 // so "join_labels"/"labels_arr" work for any enum type with no new syntax.
 
 #use "str"
+#use io
 
 #type Color < Red, Green, Blue >
 #type Shape < Circle, Square, Triangle, Hexagon >
@@ -34,18 +35,18 @@ labels_arr = _, out =>
 
 c: Color
 c = Red
-print $ str::from_int(nvariants(c))
-print $ label0(c)
-print $ label2(c)
-print $ join_labels(c)
+io::out $ str::from_int(nvariants(c))
+io::out $ label0(c)
+io::out $ label2(c)
+io::out $ join_labels(c)
 
 s: Shape
 s = Circle
-print $ str::from_int(nvariants(s))
-print $ join_labels(s)
+io::out $ str::from_int(nvariants(s))
+io::out $ join_labels(s)
 
 o0 = Names()
 n = labels_arr(c, o0)
-print $ str::from_int(?n)
-print $ n(0) | _ | "?"
-print $ n(2) | _ | "?"
+io::out $ str::from_int(?n)
+io::out $ n(0) | _ | "?"
+io::out $ n(2) | _ | "?"

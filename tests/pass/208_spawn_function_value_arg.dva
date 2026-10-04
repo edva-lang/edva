@@ -5,6 +5,7 @@
 // metadata (no RTTI) and remains E3145.
 
 #use "str"
+#use io
 
 base = 10
 g: Int => Int
@@ -17,7 +18,7 @@ w2 = f => f(7)
 
 h = #spawn w(g)
 r = #join h
-print $ str::from_int(r | v => v | -1)
+io::out $ str::from_int(r | v => v | -1)
 h2 = #spawn w2(g)
 r2 = #join h2
-print $ str::from_int(r2 | v => v | -1)
+io::out $ str::from_int(r2 | v => v | -1)

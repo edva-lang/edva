@@ -1,5 +1,7 @@
 // Must-init intersection: a field written in EVERY branch of an exhaustive
 // choice is definitely initialized after the join and can be read.
+#use io
+
 #type T (a: Int, b: Int)
 
 t: T
@@ -9,5 +11,5 @@ cond |
    t.a = 1
 |
    t.a = 2
-print_int $ t.a
-print_int $ t.b
+io::out $ t.a
+io::out $ t.b

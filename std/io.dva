@@ -31,7 +31,7 @@
    // Raw length-aware write to fd.
    write: Int, String => ()
    write = fd, s =>
-      _ = libc::write(fd, s, ?s)
+      libc::write(fd, s, ?s)
 
 // --- private machinery ------------------------------------------------------
 
@@ -40,12 +40,43 @@
    // is resolved and pruned per call site (no runtime dispatch). A scalar
    // renders via str::*; a record renders its fields space-separated (the
    // 0..?T cycle is unrolled, so each field's type is known).
+   show_rune: Rune => String
+   show_rune = r =>
+      r
+         [< 0x80] str::from_byte(Int(r))
+         [< 0x800]
+            b = {2}
+            b += 0xC0 + Int(r .>. 6)
+            b += 0x80 + Int(r .&. 0x3F)
+            +b
+         [< 0x10000]
+            b = {3}
+            b += 0xE0 + Int(r .>. 12)
+            b += 0x80 + Int((r .>. 6) .&. 0x3F)
+            b += 0x80 + Int(r .&. 0x3F)
+            +b
+         |
+            b = {4}
+            b += 0xF0 + Int(r .>. 18)
+            b += 0x80 + Int((r .>. 12) .&. 0x3F)
+            b += 0x80 + Int((r .>. 6) .&. 0x3F)
+            b += 0x80 + Int(r .&. 0x3F)
+            +b
+
    show: #! T: Type, T => String
    show = #! T, x =>
       T
          [String] x
-         [Rune] str::from_byte(Int(x))
+         [Rune] show_rune(x)
          [Int] str::from_int(x)
+         [i8] str::from_int(Int(x))
+         [i16] str::from_int(Int(x))
+         [i32] str::from_int(Int(x))
+         [i64] str::from_int(Int(x))
+         [u8] str::from_int(Int(x))
+         [u16] str::from_int(Int(x))
+         [u32] str::from_int(Int(x))
+         [u64] str::from_int(Int(x))
          [Float] str::from_float(x)
          [f32] str::from_float(Float(x))
          [Builder] +x
@@ -63,12 +94,16 @@
          b += show(x.(i))
       +b
 
-   // console.log-style to fd: the value's show text + a newline.
+   clean_addr: Addr => Addr
+   clean_addr = a => Addr(Int(a) .&. 281474976710655)
+
+   // console.log-style to fd: the value's show text + a newline in a single atomic writev syscall.
    log: #! T: Type, Int, T => ()
    log = fd, x =>
       s = show(x)
-      write(fd, s)
-      write(fd, "\n")
+      nl = "\n"
+      iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
+      libc::writev(fd, Addr(iov), 2)
 
    // Substitutes 'show(x)' for every '{}' in fmt (the scalar form of logf).
    logf_scalar: #! T: Type, Builder, T, String => ()
@@ -94,14 +129,21 @@
          [String] logf_scalar(b, x, fmt)
          [Rune] logf_scalar(b, x, fmt)
          [Int] logf_scalar(b, x, fmt)
+         [i8] logf_scalar(b, x, fmt)
+         [i16] logf_scalar(b, x, fmt)
+         [i32] logf_scalar(b, x, fmt)
+         [i64] logf_scalar(b, x, fmt)
+         [u8] logf_scalar(b, x, fmt)
+         [u16] logf_scalar(b, x, fmt)
+         [u32] logf_scalar(b, x, fmt)
+         [u64] logf_scalar(b, x, fmt)
          [Float] logf_scalar(b, x, fmt)
          [f32] logf_scalar(b, x, fmt)
          [Builder] logf_scalar(b, x, fmt)
          [i1] logf_scalar(b, x, fmt)
          | logf_rec(fd, b, x, fmt)
-      s = +b
-      write(fd, s)
-      write(fd, "\n")
+      b += "\n"
+      write(fd, +b)
 
    // A record formatted: each '{}' in fmt is replaced by the next field's
    // show text, in order.
@@ -162,9 +204,23 @@
    out: #! T: Type, T => ()
    out = x => log(io::STDOUT, x)
 
+   // Monomorphic string output with trailing newline to stdout.
+   outs: String => ()
+   outs = s =>
+      nl = "\n"
+      iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
+      libc::writev(io::STDOUT, Addr(iov), 2)
+
    // console.log-style to stderr.
    err: #! T: Type, T => ()
    err = x => log(io::STDERR, x)
+
+   // Monomorphic string output with trailing newline to stderr.
+   errs: String => ()
+   errs = s =>
+      nl = "\n"
+      iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
+      libc::writev(io::STDERR, Addr(iov), 2)
 
    // Formatted ('{}' placeholders) to stdout.
    outf: #! T: Type, T, String => ()

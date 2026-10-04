@@ -1661,6 +1661,8 @@ declare i64 @read(i32, ptr, i64)
 
 declare i64 @lseek(i32, i64, i64)
 
+declare i64 @writev(i32, ptr, i64)
+
 declare i32 @ioctl(i32, i64, i64, ...)
 
 declare i64 @htons(i64)

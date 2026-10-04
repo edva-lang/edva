@@ -5,6 +5,7 @@
 #use(import) fp
 
 #use "str"
+#use io
 
 #type Ints (Int){}
 
@@ -15,8 +16,8 @@ dbl = n => n * 2
 even: Int => <>
 even = n => n % 2 == 0
 
-print $ str::from_int(compose(dbl, inc)(10))
-print $ str::from_int(const(42)("ignored"))
+io::out $ str::from_int(compose(dbl, inc)(10))
+io::out $ str::from_int(const(42)("ignored"))
 
 s = Ints()
 s += 1
@@ -24,10 +25,10 @@ s += 2
 s += 3
 
 m = map(inc, s)
-print $ str::from_int(m(0) | _ | -1)
-print $ str::from_int(m(1) | _ | -1)
-print $ str::from_int(m(2) | _ | -1)
+io::out $ str::from_int(m(0) | _ | -1)
+io::out $ str::from_int(m(1) | _ | -1)
+io::out $ str::from_int(m(2) | _ | -1)
 
 f = filter(even, s)
-print $ "count=" + str::from_int(?f)
-print $ str::from_int(f(0) | _ | -1)
+io::out $ "count=" + str::from_int(?f)
+io::out $ str::from_int(f(0) | _ | -1)

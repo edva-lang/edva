@@ -3,41 +3,43 @@
 // whole following expression, so a trailing "+ 4" is part of the operand
 // ("2 + 3 $> sum + 4" == "(2 + 3) $> (sum + 4)"). Parenthesize to bind the
 // feed tighter. A feed inside a choice branch stays inside that branch.
+#use io
+
 sum = x => x + 1
 double = y => y * 2
 
 // Feed the whole "2 + 3", then add 4: ((2 + 3) $> sum) + 4 == sum(5) + 4 == 10
 a = ((2 + 3) $> sum) + 4
-print_int $ a
+io::out $ a
 
 // Left-associative chaining: (2 $> double) $> sum == sum(double(2)) == 5
 c = 2 $> double $> sum
-print_int $ c
+io::out $ c
 
 // Section on the right: (2 + 3) $> (+1) == 6
 sect = 2 + 3 $> + 1
-print_int $ sect
+io::out $ sect
 
 // Parenthesized lambda on the right: ((2 + 3) $> (n => n * 2)) + 1 == 11
 par = ((2 + 3) $> (n => n * 2)) + 1
-print_int $ par
+io::out $ par
 
 // Parenthesized-lambda on the right: (2 + 3) $> (_ + 1) == 6
 back = 2 + 3 $> (_ + 1)
-print_int $ back
+io::out $ back
 
 // A feed inside a choice branch stays inside that branch. With a false
 // condition the catch-all branch runs: (x == 5) is false, so sum(base)==4.
 base = 3
 x = 0
 res = x == 5 | 0 | base $> sum
-print_int $ res
+io::out $ res
 
 // Chained addition on a variable lhs (was E2003 before the fix).
 v = 5
 b = v + 2 + 3
-print_int $ b
+io::out $ b
 
 // Mul binds tighter than add even with a variable operand (was 2 * (v + 3)).
 m = 2 * v + 3
-print_int $ m
+io::out $ m

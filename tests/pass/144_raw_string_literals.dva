@@ -2,20 +2,22 @@
 // braces, backslashes, and newlines need no escaping — with a single escape
 // "=\)" producing a literal "=)". A raw string is a normal String value.
 
-print $ (=hello=)
-print $ (=hello world=)
-print $ (="quoted"=)
-print $ (={ "a": 1, "b": [2, 3] }=)
-print $ (=a==b=)
-print $ (=C:\path\to\file=)
-print $ (=multi
+#use io
+
+io::out $ (=hello=)
+io::out $ (=hello world=)
+io::out $ (="quoted"=)
+io::out $ (={ "a": 1, "b": [2, 3] }=)
+io::out $ (=a==b=)
+io::out $ (=C:\path\to\file=)
+io::out $ (=multi
 line=)
-print $ (=a=\)b=)
-print $ (=x=\)=)
+io::out $ (=a=\)b=)
+io::out $ (=x=\)=)
 
 // A raw string flows into a call (extra parens: "(=...=)" is the argument)
 // and through the '$' apply operator.
 f: String => String
 f = s => s
-print $ f((=via call=))
-print $ f $ (=via dollar=)
+io::out $ f((=via call=))
+io::out $ f $ (=via dollar=)

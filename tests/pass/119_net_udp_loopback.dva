@@ -5,6 +5,7 @@
 #use net
 #use libc
 #use str
+#use io
 
 // Send one datagram; the receiver socket below picks it up.
 send_one: Int => Int
@@ -15,7 +16,7 @@ send_one = fd =>
 recv_one: Int => ()
 recv_one = fd =>
    data = net::udp_recv(fd, 64)
-   print $ (data | d => "got: " + d | "no data")
+   io::out $ (data | d => "got: " + d | "no data")
 
 // Bind the receiver, fire one datagram at it from a second socket, read it.
 do_roundtrip: Int => Int
@@ -27,14 +28,14 @@ do_roundtrip = r_fd =>
       | s_fd =>
          send_one(s_fd)
          net::close_fd(s_fd)
-      | s_err => print $ "sender socket failed"
+      | s_err => io::out $ "sender socket failed"
    recv_one(r_fd)
    net::close_fd(r_fd)
 
 // Connecting to a closed port yields the error branch of the Conn ram.
 c = net::tcp_connect("127.0.0.1", 1)
-print $ (c | c_fd => str::from_int(c_fd) | c_err => "connect error: " + c_err)
+io::out $ (c | c_fd => str::from_int(c_fd) | c_err => "connect error: " + c_err)
 
 // UDP round-trip on 127.0.0.1.
 r_sock = net::udp_socket(0)
-r_sock | r_fd => do_roundtrip(r_fd) | r_err => print $ "receiver socket failed"
+r_sock | r_fd => do_roundtrip(r_fd) | r_err => io::out $ "receiver socket failed"

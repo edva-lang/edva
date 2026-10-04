@@ -1,24 +1,26 @@
+#use io
+
 arr = (10, 20, 30, 40, 50)
 
 sl1 = arr(1..4)
-print_int $ ?sl1
-print_int $ sl1(0)
-print_int $ sl1(1)
-print_int $ sl1(2)
+io::out $ ?sl1
+io::out $ sl1(0)
+io::out $ sl1(1)
+io::out $ sl1(2)
 
 sl2 = arr(2..)
-print_int $ ?sl2
-print_int $ sl2(0)
-print_int $ sl2(1)
-print_int $ sl2(2)
+io::out $ ?sl2
+io::out $ sl2(0)
+io::out $ sl2(1)
+io::out $ sl2(2)
 
 sl3 = arr(..3)
-print_int $ ?sl3
-print_int $ sl3(0)
-print_int $ sl3(1)
-print_int $ sl3(2)
+io::out $ ?sl3
+io::out $ sl3(0)
+io::out $ sl3(1)
+io::out $ sl3(2)
 
 sl4 = sl1(1..3)
-print_int $ ?sl4
-print_int $ sl4(0)
-print_int $ sl4(1)
+io::out $ ?sl4
+io::out $ sl4(0)
+io::out $ sl4(1)

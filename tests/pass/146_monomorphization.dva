@@ -4,15 +4,17 @@
 // compiles a distinct LLVM function, so the body is type-correct: String '+'
 // concatenates, Int '+' adds, Float '+' adds.
 
+#use io
+
 id: #! T: Type, T => T
 id = x => x
 
-print_int $ id(42) + 10
-print $ id("hi ") + "there"
-print_float $ id(1.5) + 1.0
+io::out $ id(42) + 10
+io::out $ id("hi ") + "there"
+io::out $ id(1.5) + 1.0
 
 add: #! T: Type, T, T => T
 add = a, b => a + b
-print_int $ add(3, 4)
-print $ add("a", "b")
-print_float $ add(1.5, 2.5)
+io::out $ add(3, 4)
+io::out $ add("a", "b")
+io::out $ add(1.5, 2.5)

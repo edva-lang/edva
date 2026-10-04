@@ -2,6 +2,8 @@
 // value guard — a ram never coerces to another type. `done | 111 | 222`
 // picks 111 when `done` is positive and 222 otherwise.
 
+#use io
+
 pk: Int, Int => Int
 pk = base, off =>
    i = base + off
@@ -15,5 +17,5 @@ probe = n =>
    done = !is_sp
    done | 111 | 222
 
-print_int $ probe(0)
-print_int $ probe(7)
+io::out $ probe(0)
+io::out $ probe(7)

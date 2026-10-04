@@ -2,6 +2,8 @@
 // fresh function-local (shadowing an inherited name); '::=' writes the
 // module/global binding, bypassing any local shadow.
 
+#use io
+
 #type Ints (Int){}
 
 counter: Int
@@ -18,12 +20,12 @@ push = v =>
    ?vals
 
 counter = 10
-print_int $ bump(5)
-print_int $ counter
+io::out $ bump(5)
+io::out $ counter
 
 vals = Ints()
 push(7)
 push(8)
-print_int $ ?vals
-print_int $ (vals(0) | _ | _)
-print_int $ (vals(1) | _ | _)
+io::out $ ?vals
+io::out $ (vals(0) | _ | _)
+io::out $ (vals(1) | _ | _)

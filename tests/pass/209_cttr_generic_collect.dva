@@ -5,6 +5,7 @@
 // filter over homogeneous records expressible in plain dva.
 
 #use "str"
+#use io
 
 #type Ints (Int){}
 #type Strs (String){}
@@ -44,9 +45,9 @@ s += 1
 s += 2
 s += 3
 m = map_f(inc, s)
-print $ str::from_int(m(0) | _ | -1)
-print $ str::from_int(m(1) | _ | -1)
-print $ str::from_int(m(2) | _ | -1)
+io::out $ str::from_int(m(0) | _ | -1)
+io::out $ str::from_int(m(1) | _ | -1)
+io::out $ str::from_int(m(2) | _ | -1)
 
 s2 = Ints()
 s2 += 1
@@ -54,13 +55,13 @@ s2 += 2
 s2 += 3
 s2 += 4
 f = filter_f(even, s2)
-print $ "count=" + str::from_int(?f)
-print $ str::from_int(f(0) | _ | -1)
-print $ str::from_int(f(1) | _ | -1)
+io::out $ "count=" + str::from_int(?f)
+io::out $ str::from_int(f(0) | _ | -1)
+io::out $ str::from_int(f(1) | _ | -1)
 
 t = Strs()
 t += "a"
 t += "b"
 u = shout(up, t)
-print $ u(0) | _ | "?"
-print $ u(1) | _ | "?"
+io::out $ u(0) | _ | "?"
+io::out $ u(1) | _ | "?"

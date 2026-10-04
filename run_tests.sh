@@ -105,7 +105,6 @@ run_pos_test() {
     local test_tmp="$TMP_DIR/pos_${test_name}"
     mkdir -p "$test_tmp"
     ln -s "$REPO_ROOT/std" "$test_tmp/std" 2>/dev/null || true
-    ln -s "$REPO_ROOT/prelude.dva" "$test_tmp/prelude.dva" 2>/dev/null || true
 
     # Compile with timeout (default 30s, can be overridden via TEST_COMPILE_TIMEOUT)
     local compile_timeout="${TEST_COMPILE_TIMEOUT:-30}"

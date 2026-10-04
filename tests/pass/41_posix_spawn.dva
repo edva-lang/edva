@@ -1,5 +1,6 @@
 #use sys
 #use os
+#use io
 
 path = "/usr/bin/env"
 
@@ -9,4 +10,4 @@ argv_raw = Addr((&path, &"echo", &"Success!", Addr(0)))
 
 // Spawn process
 exit_code = os::spawn(path, argv_raw)
-print_int $ exit_code
+io::out $ exit_code

@@ -1,5 +1,7 @@
 // A fully-mixed nested record declaration: primitive, homogeneous record,
 // nested record, and slice fields, with member element-writes.
+#use io
+
 #type Inner (a: Int, b: Int)
 #type Mixed (name: String, vec: (Int * 3), inner: Inner, items: (Int[]))
 
@@ -10,10 +12,10 @@ m.inner.a = 10
 m.inner.b = 20
 src = (1, 2)
 m.items = src(0..2)
-print $ m.name
-print_int $ m.vec(0)
-print_int $ m.vec(2)
-print_int $ m.inner.a
-print_int $ m.inner.b
-print_int $ ?m.items
-print_int $ m.items(1)
+io::out $ m.name
+io::out $ m.vec(0)
+io::out $ m.vec(2)
+io::out $ m.inner.a
+io::out $ m.inner.b
+io::out $ ?m.items
+io::out $ m.items(1)

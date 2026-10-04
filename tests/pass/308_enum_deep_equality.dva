@@ -1,4 +1,6 @@
 // Deep enum equality test
+#use io
+
 #type Point (x: Int, y: Int)
 
 #type Nested < Single(Int), Pair((Int, Int)) >
@@ -16,30 +18,30 @@
 v1 = Value(Num, 42)
 v2 = Value(Num, 42)
 v3 = Value(Num, 99)
-print $ (v1 == v2 | "t" | "f")
-print $ (v1 == v3 | "t" | "f")
-print $ (v1 != v3 | "t" | "f")
+io::out $ (v1 == v2 | "t" | "f")
+io::out $ (v1 == v3 | "t" | "f")
+io::out $ (v1 != v3 | "t" | "f")
 
 // 2. Float payloads
 f1 = Value(Dec, 3.14)
 f2 = Value(Dec, 3.14)
 f3 = Value(Dec, 2.71)
-print $ (f1 == f2 | "t" | "f")
-print $ (f1 == f3 | "t" | "f")
+io::out $ (f1 == f2 | "t" | "f")
+io::out $ (f1 == f3 | "t" | "f")
 
 // 3. String payloads
 s1 = Value(Text, "hello")
 s2 = Value(Text, "hello")
 s3 = Value(Text, "world")
-print $ (s1 == s2 | "t" | "f")
-print $ (s1 == s3 | "t" | "f")
+io::out $ (s1 == s2 | "t" | "f")
+io::out $ (s1 == s3 | "t" | "f")
 
 // 4. Record payloads
 p1 = Value(Pos, Point(10, 20))
 p2 = Value(Pos, Point(10, 20))
 p3 = Value(Pos, Point(10, 30))
-print $ (p1 == p2 | "t" | "f")
-print $ (p1 == p3 | "t" | "f")
+io::out $ (p1 == p2 | "t" | "f")
+io::out $ (p1 == p3 | "t" | "f")
 
 // 5. Nested enum payloads
 n1 = Value(Sub, Nested(Single, 7))
@@ -48,15 +50,15 @@ n3 = Value(Sub, Nested(Single, 8))
 n4 = Value(Sub, Nested(Pair, (1, 2)))
 n5 = Value(Sub, Nested(Pair, (1, 2)))
 n6 = Value(Sub, Nested(Pair, (1, 3)))
-print $ (n1 == n2 | "t" | "f")
-print $ (n1 == n3 | "t" | "f")
-print $ (n1 == n4 | "t" | "f")
-print $ (n4 == n5 | "t" | "f")
-print $ (n4 == n6 | "t" | "f")
+io::out $ (n1 == n2 | "t" | "f")
+io::out $ (n1 == n3 | "t" | "f")
+io::out $ (n1 == n4 | "t" | "f")
+io::out $ (n4 == n5 | "t" | "f")
+io::out $ (n4 == n6 | "t" | "f")
 
 // 6. Unit variants and cross-tag checks
 e1 = Value(Empty)
 e2 = Value(Empty)
-print $ (e1 == e2 | "t" | "f")
-print $ (e1 == v1 | "t" | "f")
-print $ (v1 == e1 | "t" | "f")
+io::out $ (e1 == e2 | "t" | "f")
+io::out $ (e1 == v1 | "t" | "f")
+io::out $ (v1 == e1 | "t" | "f")

@@ -2,11 +2,12 @@
 // no test coverage (codebase_review L8).
 
 #use str
+#use io
 
-print $ str::from_int(0)
-print $ str::from_int(-42)
-print $ str::from_int(255)
-print $ str::hex_to_str(0)
-print $ str::hex_to_str(255)
-print $ str::hex_to_str(16)
-print $ str::hex_to_str(3735928559)
+io::out $ str::from_int(0)
+io::out $ str::from_int(-42)
+io::out $ str::from_int(255)
+io::out $ str::hex_to_str(0)
+io::out $ str::hex_to_str(255)
+io::out $ str::hex_to_str(16)
+io::out $ str::hex_to_str(3735928559)

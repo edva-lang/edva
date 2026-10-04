@@ -1,4 +1,6 @@
+#use io
+
 #warn "Testing compile-time user warning"
 
 x = #! (1 == 2 | #error "should not be reached" | 42)
-print_int $ x
+io::out $ x

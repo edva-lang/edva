@@ -3,6 +3,8 @@
 // empty-phi bounds panic (Index 0 out of range 0..<0) at the choice exit.
 // The choice now correctly reports "no value" and codegen continues.
 
+#use io
+
 5 @ i =>
     i
     [0]
@@ -13,4 +15,4 @@
         -->
     |
         -->
-print_int $ 200
+io::out $ 200

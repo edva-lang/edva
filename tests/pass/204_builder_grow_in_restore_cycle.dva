@@ -3,12 +3,14 @@
 // buffers used to be reaped by the restore and overwritten, corrupting the
 // accumulation (prints "ab" instead of the accumulated content). Growth in a
 // restore scope now malloc's the new buffer.
+#use io
+
 f = bs =>
    out = {2}
    ?bs @ i =>
       out += 'x'
       g = "a" + "b"
-   print $ +out
+   io::out $ +out
    0
 m = (1, 2, 3, 4, 5)
 f(m)
@@ -19,6 +21,6 @@ g2 = bs =>
    ?bs @ i =>
       a += i
       h = "c" + "d"
-   print_int $ ?a
+   io::out $ ?a
    0
 g2((1, 2, 3, 4, 5, 6, 7, 8))

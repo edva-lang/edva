@@ -5,11 +5,12 @@
 // operator") but this was masked because nothing in the test suite ever
 // called sys::argv, only defined it.
 #use sys
+#use io
 
 in_range   = sys::argv(0) | "yes" | "no"
 out_of_range = sys::argv(999) | "yes" | "no"
 negative   = sys::argv(-1) | "yes" | "no"
 
-print $ in_range
-print $ out_of_range
-print $ negative
+io::out $ in_range
+io::out $ out_of_range
+io::out $ negative

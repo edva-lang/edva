@@ -1,5 +1,6 @@
 #use "../../src/ast"
 #use "../../src/dep_graph"
+#use io
 
 binding: String, ast::Expr => ast::Expr
 binding = name, rhs =>
@@ -17,15 +18,15 @@ stmts += binding("outside", ast::Expr(Var, "secret"))
 stmts += binding("leaf", ast::Expr(Int, 2))
 stmts += binding("forward", ast::Expr(Var, "<fwd>"))
 graph = dep_graph::build_dep_graph(stmts)
-print_int $ ?graph.nodes
-print_int $ dep_graph::find_node_idx(graph, "leaf")
-print_int $ dep_graph::find_node_idx(graph, "missing")
-print_int $ dep_graph::find_node_idx(graph, "forward")
+io::out $ ?graph.nodes
+io::out $ dep_graph::find_node_idx(graph, "leaf")
+io::out $ dep_graph::find_node_idx(graph, "missing")
+io::out $ dep_graph::find_node_idx(graph, "forward")
 private_node = graph.nodes(4) | _ | _
-print $ (private_node.deps(0) | _ | _)
+io::out $ (private_node.deps(0) | _ | _)
 external_node = graph.nodes(5) | _ | _
-print_int $ ?external_node.deps
+io::out $ ?external_node.deps
 sccs = dep_graph::tarjan_scc(graph)
 recursive' = 0
 sccs @ scc => scc.is_recursive | recursive' = recursive' + 1
-print_int $ recursive'
+io::out $ recursive'

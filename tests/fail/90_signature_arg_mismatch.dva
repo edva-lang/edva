@@ -1,4 +1,6 @@
 // A declared signature types the params; passing a wrong-typed arg is an error.
+#use io
+
 add: Int, Int => Int
 add = a, b => a + b
-print $ add("x", 1)
+io::out $ add("x", 1)

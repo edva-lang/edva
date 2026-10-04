@@ -1,2 +1,4 @@
+#use io
+
 1 ..10 @ i =>
-    print i
+    io::out i

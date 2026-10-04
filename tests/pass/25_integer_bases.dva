@@ -1,15 +1,17 @@
 // Decimal
+#use io
+
 dec = 42
-print_int $ dec
+io::out $ dec
 
 // Binary (0b)
 bin = 0b101010
-print_int $ bin
+io::out $ bin
 
 // Octal (0o)
 oct = 0o52
-print_int $ oct
+io::out $ oct
 
 // Hexadecimal (0x)
 hex = 0x2A
-print_int $ hex
+io::out $ hex

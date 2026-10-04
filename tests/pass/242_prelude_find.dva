@@ -2,6 +2,7 @@
 #use(import) fp
 
 #use "str"
+#use io
 
 #type Ints (Int){}
 #type Names (String){}
@@ -17,14 +18,14 @@ nums += 20
 // 1. find with a named function
 r1 = find(is_gt_10, nums)
 r1
-   | v => print $ "found gt 10: " + str::from_int(v)
-   | print $ "not found"
+   | v => io::out $ "found gt 10: " + str::from_int(v)
+   | io::out $ "not found"
 
 // 2. find with an inline lambda (predicate not matched)
 r2 = find(n => n > 100, nums)
 r2
-   | v => print $ "found gt 100: " + str::from_int(v)
-   | print $ "not found"
+   | v => io::out $ "found gt 100: " + str::from_int(v)
+   | io::out $ "not found"
 
 // 3. find with a capturing closure over strings
 check_has: Names, String => <>
@@ -38,13 +39,13 @@ nms = Names()
 nms += "alpha"
 nms += "beta"
 
-check_has(nms, "beta") | print $ "found beta"
-!check_has(nms, "omega") | print $ "did not find omega"
+check_has(nms, "beta") | io::out $ "found beta"
+!check_has(nms, "omega") | io::out $ "did not find omega"
 
 // 4. any with named function and inline lambda
-any(is_gt_10, nums) | print $ "any gt 10: yes"
-!any(n => n > 100, nums) | print $ "any gt 100: no"
+any(is_gt_10, nums) | io::out $ "any gt 10: yes"
+!any(n => n > 100, nums) | io::out $ "any gt 100: no"
 
 // 5. any with capturing closure over strings
-any(s => s == "beta", nms) | print $ "any beta: yes"
-!any(s => s == "omega", nms) | print $ "any omega: no"
+any(s => s == "beta", nms) | io::out $ "any beta: yes"
+!any(s => s == "omega", nms) | io::out $ "any omega: no"

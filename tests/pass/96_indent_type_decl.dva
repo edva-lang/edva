@@ -1,3 +1,5 @@
+#use io
+
 #type Record
    foo: Int
    person:
@@ -10,10 +12,10 @@ r.foo = 42
 r.person.name = "Alice"
 r.person.age = 30
 r.address = "Main St"
-print_int $ r.foo
-print $ r.person.name
-print_int $ r.person.age
-print $ r.address
+io::out $ r.foo
+io::out $ r.person.name
+io::out $ r.person.age
+io::out $ r.address
 
 // A type-decl whose first field is a slice (the same-line type path).
 #type Vec
@@ -24,8 +26,8 @@ v: Vec
 src = (10, 20)
 v.items = src(0..2)
 v.n = 2
-print_int $ ?v.items
-print_int $ v.n
+io::out $ ?v.items
+io::out $ v.n
 
 // Mixed: one nested inline record plus a plain repeated-type field.
 #type Outer
@@ -38,7 +40,7 @@ o: Outer
 o.inner.a = 1
 o.inner.b = 2
 o.vec = (1.5, 2.5)
-print_int $ o.inner.a
-print_int $ o.inner.b
-print_float $ o.vec(0)
-print_float $ o.vec(1)
+io::out $ o.inner.a
+io::out $ o.inner.b
+io::out $ o.vec(0)
+io::out $ o.vec(1)

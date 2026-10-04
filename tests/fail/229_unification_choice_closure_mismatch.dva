@@ -1,3 +1,5 @@
+#use io
+
 // Merging incompatible function values in a choice produces an ambiguous
 // indirect call return type, which is rejected without RTTI (E3103).
 calc: Int => Int
@@ -8,4 +10,4 @@ label = s => "val: " + s
 
 flag = 1 > 0
 chosen = flag | calc | label
-print_int $ chosen(5)
+io::out $ chosen(5)

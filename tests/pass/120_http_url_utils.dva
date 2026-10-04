@@ -3,40 +3,41 @@
 
 #use "net/http"
 #use str
+#use io
 
 // method_of reads the method out of a request line.
-print $ http::method_of("GET /path HTTP/1.1")
-print $ http::method_of("POST /x HTTP/1.1")
-print $ http::method_of("")
+io::out $ http::method_of("GET /path HTTP/1.1")
+io::out $ http::method_of("POST /x HTTP/1.1")
+io::out $ http::method_of("")
 
 // query_of / strip_query split the query string off a path.
-print $ http::query_of("/search?q=hello&page=2")
-print $ http::strip_query("/search?q=hello&page=2")
-print $ http::query_of("/plain")
+io::out $ http::query_of("/search?q=hello&page=2")
+io::out $ http::strip_query("/search?q=hello&page=2")
+io::out $ http::query_of("/plain")
 
 // percent_decode turns %XX escapes back into bytes.
-print $ http::percent_decode("a%20b%2Fc")
-print $ http::percent_decode("hello")
+io::out $ http::percent_decode("a%20b%2Fc")
+io::out $ http::percent_decode("hello")
 
 // query_param looks a key up in a query string.
 p = http::query_param("q=hello&page=2", "page")
-print $ (p | v => "page=" + v | "no page")
+io::out $ (p | v => "page=" + v | "no page")
 p2 = http::query_param("q=hello&page=2", "missing")
-print $ (p2 | v => v | "missing")
+io::out $ (p2 | v => v | "missing")
 
 // parse_url splits scheme://host[:port][/path][?query].
 u = http::parse_url("http://example.com:8080/a/b?x=1")
-print $ (u | url => url.host | err => err)
-print $ (u | url => str::from_int(url.port) | err => err)
-print $ (u | url => url.path | err => err)
-print $ (u | url => url.query | err => err)
+io::out $ (u | url => url.host | err => err)
+io::out $ (u | url => str::from_int(url.port) | err => err)
+io::out $ (u | url => url.path | err => err)
+io::out $ (u | url => url.query | err => err)
 u2 = http::parse_url("https://x.y/z")
-print $ (u2 | url => url.scheme | err => err)
-print $ (u2 | url => url.host | err => err)
+io::out $ (u2 | url => url.scheme | err => err)
+io::out $ (u2 | url => url.host | err => err)
 u3 = http::parse_url("nope")
-print $ (u3 | url => "ok" | err => err)
+io::out $ (u3 | url => "ok" | err => err)
 
 // line_req parses a request line into a Request record.
 r = http::line_req("GET /p?a=1 HTTP/1.1")
-print $ (r | req => req.method | err => err)
-print $ (r | req => req.path | err => err)
+io::out $ (r | req => req.method | err => err)
+io::out $ (r | req => req.path | err => err)

@@ -1,5 +1,7 @@
 // Tests deep pattern destructuring in match choices (Issue #45)
 
+#use io
+
 #type Expr < Lit(Int), Add((Expr, Expr)), Neg(Expr), Mul((Expr, Expr)) >
 
 eval: Expr => Int
@@ -29,35 +31,35 @@ classify = pt =>
 
 // 1. Basic variant and nested evaluation
 e1 = Expr(Add, (Expr(Lit, 10), Expr(Lit, 20)))
-print_int $ eval(e1)
+io::out $ eval(e1)
 
 e2 = Expr(Neg, Expr(Lit, 42))
-print_int $ eval(e2)
+io::out $ eval(e2)
 
 // 2. Wildcards in subpatterns
 e3 = Expr(Mul, (Expr(Lit, 999), Expr(Lit, 0)))
-print_int $ eval(e3)
+io::out $ eval(e3)
 
 e4 = Expr(Mul, (Expr(Lit, 0), Expr(Lit, 888)))
-print_int $ eval(e4)
+io::out $ eval(e4)
 
 // 3. Multi-level nested patterns
 e5 = Expr(Mul, (Expr(Add, (Expr(Lit, 2), Expr(Lit, 3))), Expr(Lit, 4)))
-print_int $ eval(e5)
+io::out $ eval(e5)
 
 // 4. Fallback in variant choices
 e6 = Expr(Mul, (Expr(Lit, 6), Expr(Lit, 7)))
-print_int $ eval(e6)
+io::out $ eval(e6)
 
 // 5. Record pattern destructuring with field names and wildcards
 pt1 = Point(0, 0)
-print_int $ classify(pt1)
+io::out $ classify(pt1)
 
 pt2 = Point(0, 50)
-print_int $ classify(pt2)
+io::out $ classify(pt2)
 
 pt3 = Point(70, 0)
-print_int $ classify(pt3)
+io::out $ classify(pt3)
 
 pt4 = Point(3, 4)
-print_int $ classify(pt4)
+io::out $ classify(pt4)

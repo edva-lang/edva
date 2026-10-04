@@ -1,8 +1,10 @@
 // A "T.(i)" enum variant index must be in range (0..?T-1).
 
+#use io
+
 #type Color < Red, Green, Blue >
 bad: #! T: Type, T => String
 bad = _ => T.(9)
 c: Color
 c = Red
-print $ bad(c)
+io::out $ bad(c)

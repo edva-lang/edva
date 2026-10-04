@@ -4,17 +4,19 @@
 // effect. Only a choice whose VALUE is consumed (e.g. a function's return)
 // must cover every enum variant.
 
+#use io
+
 #type TokKind < Op, Id, RBracket >
 #type Tok (kind: TokKind, text: String)
 
 f: Tok => Int
 f = p =>
    p.kind
-      [Id] print $ "id"
+      [Id] io::out $ "id"
    p.kind
-      [RBracket] print $ "rb"
+      [RBracket] io::out $ "rb"
    0
 
-print_int $ f(Tok((TokKind(Id), "n")))
-print_int $ f(Tok((TokKind(RBracket), "x")))
-print_int $ f(Tok((TokKind(Op), "+")))
+io::out $ f(Tok((TokKind(Id), "n")))
+io::out $ f(Tok((TokKind(RBracket), "x")))
+io::out $ f(Tok((TokKind(Op), "+")))

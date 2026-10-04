@@ -1,12 +1,14 @@
+#use io
+
 #pragma number i16
 a = 70000
-print_int $ a      
+io::out $ a      
 #pragma number i64
 b = 70000
-print_int $ b      
+io::out $ b      
 #pragma number default
 c = 70000
-print_int $ c      
+io::out $ c      
 // explicit suffix overrides pragma
 d = 70000i32
-print_int $ d
+io::out $ d

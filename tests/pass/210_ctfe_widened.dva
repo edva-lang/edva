@@ -3,16 +3,17 @@
 // same codegen pipeline and embedded as constants.
 
 #use "str"
+#use io
 
-print $ str::from_int(#!(2 < 3))
-print $ str::from_int(#!!(5 > 3))
-print $ str::from_int(#!(2 < 3 && 5 > 4))
-print $ str::from_int(#!(2 > 3 || 5 > 4))
-print $ str::from_int(#! (2 < 3 | 100 | 0))
-print $ str::from_int(#! (2 > 3 | 100 | 0))
-print $ #! (2 < 3 | "yes" | "no")
-print $ #! (2 > 3 | "yes" | "no")
-print $ str::from_int(#!(6 % 4))
-print $ str::from_int(#!(5 .&. 3))
-print $ str::from_int(#!(?("hello")))
-print $ str::from_int(#!(2 + 3 * 4))
+io::out $ str::from_int(#!(2 < 3))
+io::out $ str::from_int(#!!(5 > 3))
+io::out $ str::from_int(#!(2 < 3 && 5 > 4))
+io::out $ str::from_int(#!(2 > 3 || 5 > 4))
+io::out $ str::from_int(#! (2 < 3 | 100 | 0))
+io::out $ str::from_int(#! (2 > 3 | 100 | 0))
+io::out $ #! (2 < 3 | "yes" | "no")
+io::out $ #! (2 > 3 | "yes" | "no")
+io::out $ str::from_int(#!(6 % 4))
+io::out $ str::from_int(#!(5 .&. 3))
+io::out $ str::from_int(#!(?("hello")))
+io::out $ str::from_int(#!(2 + 3 * 4))

@@ -7,27 +7,29 @@
 // { len, data, cap } pointer, so the callee's '+=' mutates it in place.
 
 // 1. Peephole: b += s + t (+ u) flattens to direct appends.
+#use io
+
 b1 = {16}
 s1 = "abc"
 s2 = "def"
 b1 += s1 + s2 + "ghi"
-print $ +b1
+io::out $ +b1
 
 // A mixed String + byte RHS appends the String then the byte.
 b2 = {16}
 b2 += "xy" + 90
-print $ +b2
+io::out $ +b2
 
 // 2. Record-of-bytes: literal and variable forms.
 b3 = {16}
 b3 = (13, 10)
 b3 += 66
-print $ +b3
+io::out $ +b3
 
 bytes = (72, 105, 33)
 b4 = {16}
 b4 = bytes
-print $ +b4
+io::out $ +b4
 
 // 3. Builder as a type name.
 out: Builder
@@ -38,5 +40,5 @@ fill = b, n =>
       b += 65 + _
    +b
 res = fill(out, 3)
-print $ res
-print_int $ ?res
+io::out $ res
+io::out $ ?res

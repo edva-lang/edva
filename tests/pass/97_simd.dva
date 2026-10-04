@@ -1,26 +1,28 @@
 // Element-wise fixed-array arithmetic (process/simd.md): a 4-element i64
 // array (32 bytes < 129) lowers to an LLVM vector; a 40-element i64 array
 // (320 bytes) to a counted loop. Scalar operands broadcast.
+#use io
+
 a = (1, 2, 3, 4)
 b = (5, 6, 7, 8)
 c = a + b
-print_int $ c(0)
-print_int $ c(3)
+io::out $ c(0)
+io::out $ c(3)
 d = a * 2
-print_int $ d(0)
-print_int $ d(3)
+io::out $ d(0)
+io::out $ d(3)
 f = a - b
-print_int $ f(1)
+io::out $ f(1)
 g = (1.5, 2.5)
 h = (0.5, 1.5)
 i = g + h
-print_float $ i(0)
+io::out $ i(0)
 big = (1 {40})
 big2 = (2 {40})
 sum = big + big2
-print_int $ sum(0)
-print_int $ sum(39)
+io::out $ sum(0)
+io::out $ sum(39)
 diff = (3 {40}) - big2
-print_int $ diff(5)
+io::out $ diff(5)
 div = a / b
-print_int $ div(0)
+io::out $ div(0)

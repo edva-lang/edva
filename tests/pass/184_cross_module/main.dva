@@ -4,23 +4,24 @@
 // the parse-time .Record placeholder).
 
 #use "m"
+#use io
 
 f: m::Color => Int
 f = c => c [Red] 1 | 2
 
-print_int $ f(m::Color(Red))
-print_int $ f(m::Color(Green))
+io::out $ f(m::Color(Red))
+io::out $ f(m::Color(Green))
 
 cs = m::Colors()
 cs += m::Color(Green)
-print_int $ ?cs
+io::out $ ?cs
 
 e = m::Env()
 e ^ "a" = 10
-print_int $ (e ^ "a" | _ | _)
+io::out $ (e ^ "a" | _ | _)
 
 count: m::Tree => Int
 count = t => t [Leaf n] n | 0
 
 t = m::Tree(Leaf, 5)
-print_int $ count(t)
+io::out $ count(t)

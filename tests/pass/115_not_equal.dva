@@ -9,32 +9,34 @@
 //   ramification  — compile error (E3027/E3127), covered in tests/fail
 
 // integerish
-print $ ( 1 != 2 | "Positive" | "Negative")
-print $ ( 2 != 2 | "Positive" | "Negative")
-print $ ( -1 != 1 | "Positive" | "Negative")
+#use io
+
+io::out $ ( 1 != 2 | "Positive" | "Negative")
+io::out $ ( 2 != 2 | "Positive" | "Negative")
+io::out $ ( -1 != 1 | "Positive" | "Negative")
 // unsigned comparison: 0xFF u8 != 0xFE u8 is true at the value level
-print $ ( 0xFFu8 != 0xFEu8 | "Positive" | "Negative")
-print $ ( 0xFFu8 != 0xFFu8 | "Positive" | "Negative")
+io::out $ ( 0xFFu8 != 0xFEu8 | "Positive" | "Negative")
+io::out $ ( 0xFFu8 != 0xFFu8 | "Positive" | "Negative")
 // mixed width
-print $ ( 70000i16 != 69999 | "Positive" | "Negative")
-print $ ( 5 != 5i8 | "Positive" | "Negative")
+io::out $ ( 70000i16 != 69999 | "Positive" | "Negative")
+io::out $ ( 5 != 5i8 | "Positive" | "Negative")
 
 // floats (exact values; no NaN in the arithmetic below)
-print $ ( 1.5 != 2.5 | "Positive" | "Negative")
-print $ ( 1.5 != 1.5 | "Positive" | "Negative")
+io::out $ ( 1.5 != 2.5 | "Positive" | "Negative")
+io::out $ ( 1.5 != 1.5 | "Positive" | "Negative")
 
 // strings — content inequality, not pointer inequality
-print $ ( "abc" != "abd" | "Positive" | "Negative")
-print $ ( "abc" != "abc" | "Positive" | "Negative")
+io::out $ ( "abc" != "abd" | "Positive" | "Negative")
+io::out $ ( "abc" != "abc" | "Positive" | "Negative")
 
 // pointer identity: two separately-created builders are different buffers
 b1 = {8}
 b2 = {8}
-print $ ( b1 != b2 | "Positive" | "Negative")
+io::out $ ( b1 != b2 | "Positive" | "Negative")
 
 // as a value-guard in a choice (works like any comparison flag)
 x = 42
 y = x [1] "one" [2] "two" | "other"
-print $ y
+io::out $ y
 z = x != 1 | "not one" | "is one"
-print $ z
+io::out $ z

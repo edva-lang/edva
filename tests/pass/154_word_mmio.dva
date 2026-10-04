@@ -2,29 +2,31 @@
 // access); "@[addr T]" is a volatile typed load; "@[addr] = v" stores at
 // v's own width. Addr - Addr yields an Int byte offset.
 
+#use io
+
 x = 0
 a = addr $ x
 
 // Typed loads/stores: write an i32 word, read it back as i32.
 @[a] = 0x12345678i32
 y = @[a i32]
-print_int $ y          // 305419896
+io::out $ y          // 305419896
 
 // i16 half-word.
 z = 0
 b = addr $ z
 @[b] = 0x1234i16
 w = @[b i16]
-print_int $ w          // 4660
+io::out $ w          // 4660
 
 // i8 byte (signed; 0xAB wraps to -85).
 q = 0
 c = addr $ q
 @[c] = 0xABi8
 r = @[c i8]
-print_int $ r          // -85
+io::out $ r          // -85
 
 // A bare "@[addr]" is a pointer: Addr - Addr = byte offset.
 p = @[a]
 q2 = @[a + 4]
-print_int $ q2 - p      
+io::out $ q2 - p      

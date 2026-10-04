@@ -1,6 +1,8 @@
+#use io
+
 greeting = "hello " + "world"
-print $ greeting
+io::out $ greeting
 
 ..4 @ i =>
     s = "item_" + "ok"
-    print $ s
+    io::out $ s

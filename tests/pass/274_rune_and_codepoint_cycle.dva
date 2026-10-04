@@ -1,30 +1,32 @@
+#use io
+
 s1 = "hello"
-print_int $ ??s1
+io::out $ ??s1
 
 s2 = "hello 🤔 world"
-print_int $ ??s2
+io::out $ ??s2
 
 r1 = 'a'
 r2 = 'д'
 r3 = '中'
 r4 = '🤔'
-print_int $ ?r1
-print_int $ ?r2
-print_int $ ?r3
-print_int $ ?r4
+io::out $ ?r1
+io::out $ ?r2
+io::out $ ?r3
+io::out $ ?r4
 
 s3 = "antigravity: " + r4
-print $ s3
+io::out $ s3
 
 b = {32}
 b += r1
 b += r2
 b += r3
 b += r4
-print $ +b
+io::out $ +b
 
 "a🤔b" @@ c =>
-   print $ "" + c
+   io::out $ "" + c
 
 'w'..'z' @ r =>
-   print $ "" + r
+   io::out $ "" + r

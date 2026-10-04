@@ -188,7 +188,6 @@ rebuild-seed: fixed-point
 	$(Q)cp -f src/*.dva seed/src/
 	$(Q)cp -f src/codegen/*.dva seed/src/codegen/
 	$(Q)cp -f tools/tokens.txt seed/src/
-	$(Q)cp -f prelude.dva seed/prelude.dva
 	$(Q)cp -r std/* seed/std/
 	@echo "Updating seed modular IR..."
 	$(Q)for m in $(STD_MODULES); do \

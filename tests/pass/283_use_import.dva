@@ -1,9 +1,10 @@
 #use(import) views
+#use io
 
 run = _ =>
    s' = State((10, "Item"))
-   print $ render(s')
+   io::out $ render(s')
    s' = step(s')
-   print $ render(s')
+   io::out $ render(s')
 
 run(0)

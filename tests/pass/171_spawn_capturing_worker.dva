@@ -2,12 +2,14 @@
 // the child arena, so the worker reads its captures from child-owned memory.
 
 // An Int capture, returned from a factory.
+#use io
+
 add_n = n =>
    m => n + m
 adder = add_n(10)
 h = #spawn adder(5)
 r = #join h
-print_int $ (r | _ | _)
+io::out $ (r | _ | _)
 
 // A String capture with a declared signature.
 mk_greet = name =>
@@ -17,4 +19,4 @@ mk_greet = name =>
 g = mk_greet("bob")
 h2 = #spawn g("eve")
 r2 = #join h2
-print $ (r2 | _ | _)
+io::out $ (r2 | _ | _)

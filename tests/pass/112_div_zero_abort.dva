@@ -1,7 +1,9 @@
 // C2: integer division by zero is a runtime abort (E4012), not an unchecked
 // LLVM sdiv that is UB/SIGFPE in the generated binary.
 
+#use io
+
 a = 10
 b = 0
 c = a / b
-print_int $ c
+io::out $ c

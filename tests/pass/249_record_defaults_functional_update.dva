@@ -1,3 +1,5 @@
+#use io
+
 #type Style (color: Int = 16777215, pad: Int = 8, radius: Int = 4)
 
 #type Config
@@ -6,28 +8,28 @@
    radius: Int = 2
 
 s0 = Style()
-print $ str::from_int(s0.color) + " " + str::from_int(s0.pad) + " " +
+io::out $ str::from_int(s0.color) + " " + str::from_int(s0.pad) + " " +
    str::from_int(s0.radius)
 
 s1 = Style(..default, color: 255)
-print $ str::from_int(s1.color) + " " + str::from_int(s1.pad) + " " +
+io::out $ str::from_int(s1.color) + " " + str::from_int(s1.pad) + " " +
    str::from_int(s1.radius)
 
 s2 = Style(..s1, radius: 10)
-print $ str::from_int(s2.color) + " " + str::from_int(s2.pad) + " " +
+io::out $ str::from_int(s2.color) + " " + str::from_int(s2.pad) + " " +
    str::from_int(s2.radius)
 
 s3 = Style(radius: 12, pad: 20, color: 100)
-print $ str::from_int(s3.color) + " " + str::from_int(s3.pad) + " " +
+io::out $ str::from_int(s3.color) + " " + str::from_int(s3.pad) + " " +
    str::from_int(s3.radius)
 
 c0 = Config()
-print $ str::from_int(c0.color) + " " + str::from_int(c0.pad) + " " +
+io::out $ str::from_int(c0.color) + " " + str::from_int(c0.pad) + " " +
    str::from_int(c0.radius)
 
 c1 = Config(..c0, pad: 32)
-print $ str::from_int(c1.color) + " " + str::from_int(c1.pad) + " " +
+io::out $ str::from_int(c1.color) + " " + str::from_int(c1.pad) + " " +
    str::from_int(c1.radius)
 
 pt = (x = 10, y = 20)
-print $ str::from_int(pt.x) + " " + str::from_int(pt.y)
+io::out $ str::from_int(pt.x) + " " + str::from_int(pt.y)

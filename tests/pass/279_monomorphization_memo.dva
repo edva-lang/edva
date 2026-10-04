@@ -1,3 +1,5 @@
+#use io
+
 #type MyInt Int
 #type AlsoInt Int
 
@@ -11,4 +13,4 @@ b = 100
 
 res_a = id(a)
 res_b = id(b)
-print_int $ res_a + res_b
+io::out $ res_a + res_b

@@ -1,1 +1,3 @@
-print $ "Hello, Edva!"
+#use io
+
+io::out $ "Hello, Edva!"

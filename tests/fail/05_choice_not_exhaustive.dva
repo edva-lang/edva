@@ -1,3 +1,5 @@
+#use io
+
 val = 1
 res = val [1] "one" [2] "two"
-print $ res
+io::out $ res

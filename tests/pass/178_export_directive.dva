@@ -3,6 +3,8 @@
 // program. Single-line and indented-block forms both work; the functions stay
 // callable normally.
 
+#use io
+
 #export inc: Int => Int
 #export inc = x => x + 1
 
@@ -10,6 +12,6 @@
    dbl = x => x * 2
    dec = x => x - 1
 
-print_int $ inc(41)
-print_int $ dbl(21)
-print_int $ dec(1)
+io::out $ inc(41)
+io::out $ dbl(21)
+io::out $ dec(1)

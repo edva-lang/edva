@@ -1,6 +1,7 @@
 // Compile-time type shape and capability predicates via type::is_*
 #use "type"
 #use "str"
+#use io
 
 #type Pt (x: Int, y: Int)
 #type Color < Red, Green, Blue >
@@ -39,26 +40,26 @@ c: Color
 c = Red
 arr = Ints()
 
-print $ classify(42)
-print $ classify("hello")
-print $ classify(p)
-print $ classify(c)
-print $ classify(<+>)
+io::out $ classify(42)
+io::out $ classify("hello")
+io::out $ classify(p)
+io::out $ classify(c)
+io::out $ classify(<+>)
 
-print $ cap_check(arr)
+io::out $ cap_check(arr)
 
-print $ num_check(10)
-print $ num_check(3.14)
+io::out $ num_check(10)
+io::out $ num_check(3.14)
 
 // Direct compile-time call to predicates:
-print $ type::is_record(Pt) | "Pt is record" | "Pt is not record"
-print $ type::is_record(Int) | "Int is record" | "Int is not record"
-print $ type::is_enum(Color) | "Color is enum" | "Color is not enum"
-print $ type::is_enum(Pt) | "Pt is enum" | "Pt is not enum"
-print $ type::is_int(Int) | "Int is int" | "Int is not int"
-print $ type::is_int(Float) | "Float is int" | "Float is not int"
-print $ type::is_numeric(Int) | "Int is numeric" | "Int is not numeric"
-print $ type::is_numeric(Float) | "Float is numeric" | "Float is not numeric"
-print $ type::is_numeric(String) | "Str is numeric" | "Str is not numeric"
-print $ type::is_unit(Empty) | "Empty is unit" | "Empty is not unit"
-print $ type::is_unit(Pt) | "Pt is unit" | "Pt is not unit"
+io::out $ type::is_record(Pt) | "Pt is record" | "Pt is not record"
+io::out $ type::is_record(Int) | "Int is record" | "Int is not record"
+io::out $ type::is_enum(Color) | "Color is enum" | "Color is not enum"
+io::out $ type::is_enum(Pt) | "Pt is enum" | "Pt is not enum"
+io::out $ type::is_int(Int) | "Int is int" | "Int is not int"
+io::out $ type::is_int(Float) | "Float is int" | "Float is not int"
+io::out $ type::is_numeric(Int) | "Int is numeric" | "Int is not numeric"
+io::out $ type::is_numeric(Float) | "Float is numeric" | "Float is not numeric"
+io::out $ type::is_numeric(String) | "Str is numeric" | "Str is not numeric"
+io::out $ type::is_unit(Empty) | "Empty is unit" | "Empty is not unit"
+io::out $ type::is_unit(Pt) | "Pt is unit" | "Pt is not unit"

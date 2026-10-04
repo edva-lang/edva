@@ -1,6 +1,8 @@
 
+#use io
+
 b = 2
 
-print $ b == 2.0
+io::out $ b == 2.0
 
 // this must throw

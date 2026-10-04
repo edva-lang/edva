@@ -5,6 +5,8 @@
 // the full signature (params + return) then threads through variables, params,
 // and chains statically.
 
+#use io
+
 add: Int, Int => Int
 add = a, b => a + b
 
@@ -13,29 +15,29 @@ inc = a => a + 1
 
 // Function values: store and call.
 g = add
-print_int $ g(3, 4)
+io::out $ g(3, 4)
 
 // A function taking a function parameter, applied via the param. The
 // function-typed param is written flat inside the parens: "(Int, Int => Int)".
 call3: (Int, Int => Int), Int, Int => Int
 call3 = f, x, y => f(x, y)
-print_int $ call3(add, 10, 20)
+io::out $ call3(add, 10, 20)
 
 // Chained application: pick(1) returns the function value inc; (7) applies it.
 pick: Int => (Int => Int)
 pick = x => inc
-print_int $ pick(1)(7)
+io::out $ pick(1)(7)
 
 // Three-level chain: one(x) returns pick; (1) returns inc; (7) applies.
 one: Int => (Int => (Int => Int))
 one = x => pick
-print_int $ one(0)(1)(7)
+io::out $ one(0)(1)(7)
 
 // A function value produced by a choice, then applied.
 res = 1 > 0 | pick(2) | pick(3)
-print_int $ res(10)
+io::out $ res(10)
 
 // The postfix equivalent of applying a value to a returned function (the
 // infix-apply now APPENDS an argument to the call itself: "pick(1) $ 5" would
 // be pick(1, 5), so use the postfix form for the returned function).
-print_int $ pick(1)(5)
+io::out $ pick(1)(5)

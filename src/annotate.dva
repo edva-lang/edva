@@ -802,22 +802,6 @@ annotate_cycle = ctx, env, c, esc_opt =>
       [Fn fe]
          p0 = fe.params(0) | _ | ""
          p1 = fe.params(1) | _ | ""
-         p0_coll = p0 != "" && p0 != "_" &&
-            type_env::is_prelude_active(env, p0)
-         p0_coll
-            |
-               unify::add_error(ctx, 3033,
-                  "Cannot re-assign immutable binding '" + p0 +
-                  "'. Use a prime suffix ('" + p0 +
-                  "\'') for rebindable variables.")
-         p1_coll = p1 != "" && p1 != "_" &&
-            type_env::is_prelude_active(env, p1)
-         p1_coll
-            |
-               unify::add_error(ctx, 3033,
-                  "Cannot re-assign immutable binding '" + p1 +
-                  "'. Use a prime suffix ('" + p1 +
-                  "\'') for rebindable variables.")
          np = ?fe.params
          np > 2
             | unify::add_error(ctx, 3133,
@@ -1283,14 +1267,6 @@ annotate_expr = ctx, env, expr =>
             |
                unify::add_error(ctx, 3050, "Cannot define '" + name +
                   "' — it is a built-in type name and is reserved for type coercion.")
-         is_pre_redef = name != "" && env.in_fn &&
-            type_env::is_prelude_active(env, name)
-         is_pre_redef
-            |
-               unify::add_error(ctx, 3033,
-                  "Cannot re-assign immutable binding '" + name +
-                  "'. Use a prime suffix ('" + name +
-                  "\'') for rebindable variables.")
          is_mut = a.1 || name_is_primed(name)
          is_compound = a.2
          is_global = a.3 || type_env::is_marked_global(env, name)
@@ -1309,14 +1285,6 @@ annotate_expr = ctx, env, expr =>
          declared_ti = a.8
          is_fwd
             |
-               is_fwd_coll = name != "" && env.in_fn &&
-                  type_env::is_prelude_active(env, name)
-               is_fwd_coll
-                  |
-                     unify::add_error(ctx, 3033,
-                        "Cannot re-assign immutable binding '" + name +
-                        "'. Use a prime suffix ('" + name +
-                        "\'') for rebindable variables.")
                decl_ut = utype_from_ti_env(env, declared_ti)
                is_global
                   | type_env::bind_global(env, name, decl_ut, declared_ti)
@@ -1381,20 +1349,6 @@ annotate_expr = ctx, env, expr =>
                                        param_uts = unify::UTypes()
                                        ?fe.params @ p_i =>
                                           pname = fe.params(p_i) | _ | ""
-                                          is_coll = pname != "" &&
-                                             pname != "_" &&
-                                             type_env::is_prelude_active(
-                                                env, pname)
-                                          is_coll
-                                             |
-                                                msg_c = "Cannot re-assign " +
-                                                   "immutable binding '" +
-                                                   pname + "'. Use a " +
-                                                   "prime suffix ('" +
-                                                   pname + "\'') for " +
-                                                   "rebindable variables."
-                                                unify::add_error(ctx,
-                                                   3033, msg_c)
                                           put = f.params(p_i) | _ |
                                              unify::fresh_var(ctx)
                                           param_uts += put
@@ -1750,6 +1704,7 @@ annotate_expr = ctx, env, expr =>
          annotate_expr(ctx, env, na.val)
       [RawMemory rm]
          addr_te = annotate_expr(ctx, env, rm.addr)
+         unify::unify(ctx, addr_te.ut, unify::prim_rawptr())
          is_unk = rm.load_type [Unknown]
          is_rec = rm.rec_name != ""
          is_rec
@@ -2376,22 +2331,36 @@ unify_cmp = ctx, t1, t2 =>
                      cnt2 = rec_count(ctx, t2)
                      make_rec_of(cnt2, unify::prim_flag())
                   |
-                     num1 = is_numeric_ut(ctx, t1)
-                     num2 = is_numeric_ut(ctx, t2)
-                     num1 && num2
-                        | unify::prim_flag()
+                     fl1 = is_float_ut(ctx, t1)
+                     fl2 = is_float_ut(ctx, t2)
+                     is_int_fl = (is_integerish_ut(ctx, t1) && fl2) || (fl1 && is_integerish_ut(ctx, t2))
+                     is_int_fl
                         |
-                           ip1 = is_int_or_ptr_ut(ctx, t1)
-                           ip2 = is_int_or_ptr_ut(ctx, t2)
-                           ip1 && ip2
+                           unify::add_error(ctx, 3084,
+                              "Type mismatch: cannot compare " +
+                              unify::show_utype(ctx, t1) + " with " +
+                              unify::show_utype(ctx, t2))
+                           unify::prim_flag()
+                        |
+                           fl1 && fl2
                               | unify::prim_flag()
                               |
-                                 ok = unify::unify(ctx, t1, t2)
-                                 !ok
+                                 int1 = is_integerish_ut(ctx, t1)
+                                 int2 = is_integerish_ut(ctx, t2)
+                                 int1 && int2
+                                    | unify::prim_flag()
                                     |
-                                       unify::add_error(ctx, 3084,
-                                          "Comparison type mismatch")
-                                 unify::prim_flag()
+                                       ip1 = is_int_or_ptr_ut(ctx, t1)
+                                       ip2 = is_int_or_ptr_ut(ctx, t2)
+                                       ip1 && ip2
+                                          | unify::prim_flag()
+                                          |
+                                             ok = unify::unify(ctx, t1, t2)
+                                             !ok
+                                                |
+                                                   unify::add_error(ctx, 3084,
+                                                      "Comparison type mismatch")
+                                             unify::prim_flag()
 
 unify_apply: unify::Ctx, unify::UType, unify::UType => unify::UType
 unify_apply = ctx, fn_ut, arg_ut =>
@@ -2990,6 +2959,11 @@ annotate_call_normal = ctx, env, ce =>
                                  r_arg.neg.has_payload
                                     | unify::unify(ctx, r.neg.ut, r_arg.neg.ut)
                               | unify::unify(ctx, udef.ut, a0.ut)
+                  [Prim p]
+                     n_args == 1
+                        |
+                           a0 = typed_args(0) | _ | tast::mk_lit_int(0, 0, 0)
+                           unify::unify(ctx, udef.ut, a0.ut)
                c_udef
                   [Enum uenum]
                      n_args = ?ce.args
@@ -3226,14 +3200,6 @@ annotate_fn = ctx, env, fe, is_disc =>
    param_uts = unify::UTypes()
    ?fe.params @ i =>
       pname = fe.params(i) | _ | ""
-      is_coll = pname != "" && pname != "_" &&
-         type_env::is_prelude_active(env, pname)
-      is_coll
-         |
-            unify::add_error(ctx, 3033,
-               "Cannot re-assign immutable binding '" + pname +
-               "'. Use a prime suffix ('" + pname +
-               "\'') for rebindable variables.")
       p_var = unify::fresh_var(ctx)
       param_uts += p_var
       ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
@@ -3770,6 +3736,7 @@ annotate_raw_write = ctx, env, rm, val_expr =>
          unify::add_error(ctx, 2093,
             "Cannot assign to a typed load; write through the untyped '@[addr]' form instead.")
    addr_te = annotate_expr(ctx, env, rm.addr)
+   unify::unify(ctx, addr_te.ut, unify::prim_rawptr())
    rhs = annotate_expr(ctx, env, val_expr)
    c_rhs = unify::canon(ctx, rhs.ut)
    ok_w = <->
@@ -3868,20 +3835,6 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                        env.init = type_env::new_init()
                                        ?fe.params @ p_i =>
                                           pname = fe.params(p_i) | _ | ""
-                                          is_coll = pname != "" &&
-                                             pname != "_" &&
-                                             type_env::is_prelude_active(
-                                                env, pname)
-                                          is_coll
-                                             |
-                                                msg1 = "Cannot re-assign " +
-                                                   "immutable binding '" +
-                                                   pname + "'. Use a " +
-                                                   "prime suffix ('" +
-                                                   pname + "\'') for " +
-                                                   "rebindable variables."
-                                                unify::add_error(ctx,
-                                                   3033, msg1)
                                           put = f.params(p_i) | _ |
                                              unify::UType(None)
                                           pname != ""
@@ -4485,7 +4438,9 @@ elaborate_program_with_ctx = exprs =>
                                     unify::add_error(ctx, 3033, msg_rf)
                                  |
                                     a.0 != "" | (user_fns += a.0)
-                                    ?fe.ct_params > 0
+                                    already_gen = type_env::lookup_generic(env, a.0)
+                                    has_already_gen = <>(already_gen)
+                                    ?fe.ct_params > 0 && !has_already_gen
                                        |
                                           p_vinfos = ast::VInfos()
                                           ?fe.params @ p_k =>

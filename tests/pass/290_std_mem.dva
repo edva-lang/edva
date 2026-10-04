@@ -1,4 +1,5 @@
 #use mem
+#use io
 
 // --- 1. Low-Level Memory Utilities ---
 
@@ -10,67 +11,67 @@ b2' = {32}
 mem::copy(&b2', &b1', 4)
 ?b2' = 4
 
-print $ +b1'
-print $ +b2'
+io::out $ +b1'
+io::out $ +b2'
 
 b3' = {32}
 b3' += "abcdefgh"
 mem::move(&b3', &b3' + 2, 4)
-print $ +b3'
+io::out $ +b3'
 
 p1 = Addr(1001)
 p2 = mem::align_forward(p1, 8)
-print_int $ Int(p2)
-mem::is_aligned(p2, 8) | print $ "p2 aligned" | print $ "fail"
-mem::is_aligned(p1, 8) | print $ "fail" | print $ "p1 unaligned"
+io::out $ Int(p2)
+mem::is_aligned(p2, 8) | io::out $ "p2 aligned" | io::out $ "fail"
+mem::is_aligned(p1, 8) | io::out $ "fail" | io::out $ "p1 unaligned"
 
 // --- 2. Regional Bump Arenas ---
 
 a = mem::arena(2048)
 s0 = mem::stats(a)
-print_int $ s0.bytes_allocated
+io::out $ s0.bytes_allocated
 
 p_direct = mem::alloc(a, 64)
 @[p_direct] = 777
-print_int $ @[p_direct Int]
+io::out $ @[p_direct Int]
 
 s_after_direct = mem::stats(a)
-s_after_direct.bytes_allocated !< 64 | print $ "direct alloc tracked" | print $ "fail"
+s_after_direct.bytes_allocated !< 64 | io::out $ "direct alloc tracked" | io::out $ "fail"
 
 mem::with(a, !=>
    rec = (10, 20, 30, 40)
    sum = rec.0 + rec.1 + rec.2 + rec.3
-   print_int $ sum
+   io::out $ sum
 )
 
 s_after_with = mem::stats(a)
 s_after_with.bytes_allocated !< (s_after_direct.bytes_allocated + 32)
-   | print $ "ambient routing tracked"
-   | print $ "fail"
+   | io::out $ "ambient routing tracked"
+   | io::out $ "fail"
 
 mem::reset(a)
 s_reset = mem::stats(a)
-print_int $ s_reset.bytes_allocated
+io::out $ s_reset.bytes_allocated
 
 mem::destroy(a)
-print $ "arena destroyed"
+io::out $ "arena destroyed"
 
 // --- 3. Fixed-Capacity Object Pools ---
 
 p = mem::pool(16, 3)
-print_int $ mem::pool_count(p)
-print_int $ mem::pool_capacity(p)
+io::out $ mem::pool_count(p)
+io::out $ mem::pool_capacity(p)
 
 // Allocate all 3 slots
 s1 = mem::pool_alloc(p)
 s2 = mem::pool_alloc(p)
 s3 = mem::pool_alloc(p)
 
-print_int $ mem::pool_count(p)
+io::out $ mem::pool_count(p)
 
 // 4th allocation fails (exhaustion)
 s4 = mem::pool_alloc(p)
-s4 | print $ "fail" | print $ "pool exhausted"
+s4 | io::out $ "fail" | io::out $ "pool exhausted"
 
 // Populate slots
 s1 | addr => @[addr] = 111
@@ -80,34 +81,34 @@ s3 | addr => @[addr] = 333
 // Free middle slot (out-of-order)
 s2 | addr =>
    freed = mem::pool_free(p, addr)
-   freed | print $ "freed slot 2" | print $ "fail"
+   freed | io::out $ "freed slot 2" | io::out $ "fail"
 
-print_int $ mem::pool_count(p)
+io::out $ mem::pool_count(p)
 
 // Double-free is rejected
 s2 | addr =>
    double_freed = mem::pool_free(p, addr)
-   double_freed | print $ "fail" | print $ "double free rejected"
+   double_freed | io::out $ "fail" | io::out $ "double free rejected"
 
 // Out-of-bounds free is rejected
 invalid_addr = Addr(12345)
 bad_free = mem::pool_free(p, invalid_addr)
-bad_free | print $ "fail" | print $ "invalid free rejected"
+bad_free | io::out $ "fail" | io::out $ "invalid free rejected"
 
 // Slot reuse: next allocation reclaims slot 2
 s_reused = mem::pool_alloc(p)
 s_reused | addr =>
    @[addr] = 444
-   print_int $ @[addr Int]
+   io::out $ @[addr Int]
 
-print_int $ mem::pool_count(p)
+io::out $ mem::pool_count(p)
 
 // pool_for_each visits all active slots
 print_item: Addr => ()
 print_item = item =>
-   print_int $ @[item Int]
+   io::out $ @[item Int]
 
 mem::pool_for_each(p, print_item)
 
 mem::pool_destroy(p)
-print $ "pool destroyed"
+io::out $ "pool destroyed"

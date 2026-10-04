@@ -4,17 +4,21 @@
 // that would be illegal for the other type. The compile-time parameter is
 // declared inline in the lambda ("#! T, x =>").
 
+#use io
+
+describe: #! T: Type, T => String
 describe = #! T, x =>
    T == Int | "is an int"
             | "is not an int"
 
-print $ describe(42)
-print $ describe("hello")
+io::out $ describe(42)
+io::out $ describe("hello")
 
 // Pruning proof: "?x" is only valid when T is a String; the Int instantiation
 // compiles only the "x" branch.
+length_or_id: #! T: Type, T => Int
 length_or_id = #! T, x =>
    T == String | ?x | x
 
-print_int $ length_or_id("abc")
-print_int $ length_or_id(42)
+io::out $ length_or_id("abc")
+io::out $ length_or_id(42)

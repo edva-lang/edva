@@ -3,36 +3,38 @@
 // binding ("t = rec(i); t(j)"). Nested records are inline-embedded, so a
 // chained subscript GEPs into the flat allocation in place.
 
+#use io
+
 arr: ((Int * 3) * 2)
 arr = ((1, 2, 3), (4, 5, 6))
 
 // Two-level chain.
-print_int $ arr(1)(2)
-print_int $ arr(0)(0)
-print_int $ arr(1)(1)
+io::out $ arr(1)(2)
+io::out $ arr(0)(0)
+io::out $ arr(1)(1)
 
 // Length of an inner record via the unary '?' length operator.
-print_int $ ?arr(0)
-print_int $ ?arr(1)
+io::out $ ?arr(0)
+io::out $ ?arr(1)
 
 // Statement-level assignment of a chained-subscript result.
 x = arr(0)(2)
-print_int $ x
+io::out $ x
 
 // Member access continuing a chained subscript.
-print_int $ arr(1).2
+io::out $ arr(1).2
 
 // Range view of an inner record, then an index into the slice.
-print_int $ arr(1)(0..2)(1)
+io::out $ arr(1)(0..2)(1)
 
 // Three-level chain: (((Int * 2) * 2) * 2).
 grid: (((Int * 2) * 2) * 2)
 grid = (((1, 2), (3, 4)), ((5, 6), (7, 8)))
-print_int $ grid(1)(0)(1)
-print_int $ grid(0)(1)(0)
-print_int $ ?grid(1)(1)
+io::out $ grid(1)(0)(1)
+io::out $ grid(0)(1)(0)
+io::out $ ?grid(1)(1)
 
 // A chain result is a full record value: read two fields.
 sub = grid(1)(1)
-print_int $ sub.0
-print_int $ sub.1
+io::out $ sub.0
+io::out $ sub.1

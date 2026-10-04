@@ -1,6 +1,8 @@
+#use io
+
 a = 42
 b = "hello world"
 c = <+>
-print_int $ a
-print $ b
-print $ ( c | "Positive" | "Negative")
+io::out $ a
+io::out $ b
+io::out $ ( c | "Positive" | "Negative")

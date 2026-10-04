@@ -1,6 +1,8 @@
 // Tests null-pointer niche representation for single-payload ramifications
 // (RamPN <String|>, RamPN <(x: Int, y: Int)|>, RamNP <|String>)
 
+#use io
+
 find_str: Int => < String | >
 find_str = x =>
    x > 0 | <+ "hello niche" ->
@@ -18,43 +20,43 @@ validate = x =>
 // Test RamPN <String|>
 s1 = find_str(5)
 s1
-   | s => print $ s
-   | print $ "none"
+   | s => io::out $ s
+   | io::out $ "none"
 
 s2 = find_str(-1)
 s2
-   | s => print $ s
-   | print $ "none"
+   | s => io::out $ s
+   | io::out $ "none"
 
 // Test unwrap on niche RamPN <String|>
-print $ s1!!
+io::out $ s1!!
 
 // Test RamPN <(x: Int, y: Int)|>
 p1 = find_pt(1)
 p1
    | pt =>
-      print_int $ pt.x
-      print_int $ pt.y
-   | print $ "no point"
+      io::out $ pt.x
+      io::out $ pt.y
+   | io::out $ "no point"
 
 p2 = find_pt(0)
 p2
    | pt =>
-      print_int $ pt.x
-      print_int $ pt.y
-   | print $ "no point"
+      io::out $ pt.x
+      io::out $ pt.y
+   | io::out $ "no point"
 
 // Test unwrap on niche RamPN <Record|>
 pt_val = p1!!
-print_int $ pt_val.x + pt_val.y
+io::out $ pt_val.x + pt_val.y
 
 // Test RamNP <|String>
 v1 = validate(10)
 v1
-   | print $ "ok"
-   | err => print $ err
+   | io::out $ "ok"
+   | err => io::out $ err
 
 v2 = validate(-5)
 v2
-   | print $ "ok"
-   | err => print $ err
+   | io::out $ "ok"
+   | err => io::out $ err

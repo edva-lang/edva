@@ -2510,18 +2510,13 @@ codegen_typed_eval_join = cg, je, ti =>
    u2 = LLVMBuildInsertValue(cg.builder, u1, pay_phi, 1, "ram.pay")
    (u2, ast::ValueType(Ram))
 
-is_prelude_wrapper: String => <>
-is_prelude_wrapper = name =>
-   name [ "print", "writeln", "print_int", "print_float",
-      "print_float32", "writeln_b" ]
-
 codegen_compile_uncalled_signed_fns: types::Cg, ast::Exprs => ()
 codegen_compile_uncalled_signed_fns = cg, stmts =>
    !cg.opts.no_runtime
       |
          ?cg.fns @ i =>
             fd = cg.fns(i)!!
-            !(types::is_fn_name(cg, fd.name) || is_prelude_wrapper(fd.name))
+            !types::is_fn_name(cg, fd.name)
                |
                   has_sig = stmt::fn_has_signature(stmts, fd.name, 0)
                   has_sig

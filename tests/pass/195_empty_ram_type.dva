@@ -2,11 +2,13 @@
 // atom. A bare `<>` in a type position must parse as the empty ram, not fall
 // through to the unknown-type error.
 
+#use io
+
 #type Flag <>
 
 f: Flag => Int
 f = x =>
    x | 1 | 2
 
-print_int $ f(<+>)
-print_int $ f(<->)
+io::out $ f(<+>)
+io::out $ f(<->)

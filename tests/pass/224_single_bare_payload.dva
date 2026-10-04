@@ -1,12 +1,14 @@
 // A single bare '|' branch over a payloaded ram binds the POSITIVE slot's
 // payload (a statement-position choice — the result is discarded). This is
 // the fix behind removing the "| 0" tails in examples/http_server.dva.
+#use io
+
 #type Outcome < Int | String >
 
 f: Outcome => Int
 f = o =>
-   o | n => print_int $ n
+   o | n => io::out $ n
    -1
 
-print_int $ f(Outcome(<+ 42 ->))
-print_int $ f(Outcome(<- "err" ->))
+io::out $ f(Outcome(<+ 42 ->))
+io::out $ f(Outcome(<- "err" ->))

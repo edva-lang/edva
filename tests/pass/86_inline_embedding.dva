@@ -1,4 +1,6 @@
 // Inline embedding: nested records live inside one flat allocation.
+#use io
+
 #type Inner (a: Int, b: Int)
 #type Outer (x: Int, y: Inner)
 
@@ -7,27 +9,27 @@ o: Outer
 o.x = 5
 o.y.a = 7
 o.y.b = 9
-print_int $ o.x
-print_int $ o.y.a
-print_int $ o.y.b
+io::out $ o.x
+io::out $ o.y.a
+io::out $ o.y.b
 
 // Nested record literal construction + field assignment (memcpy).
 o2 = (x = 1, y = (a = 2, b = 3))
 o2.y = (10, 20)
-print_int $ o2.y.a
-print_int $ o2.y.b
+io::out $ o2.y.a
+io::out $ o2.y.b
 
 // Field extraction aliases the parent's inline field.
 t = o2.y
 t.a = 99
-print_int $ o2.y.a
+io::out $ o2.y.a
 
 // "++" deep-copies the whole flat record (independent copy).
 c = ++o2
 c.y.a = 55
-print_int $ o2.y.a
-print_int $ c.y.a
+io::out $ o2.y.a
+io::out $ c.y.a
 
 // Records passed to functions carry their nested layout.
 get_inner = r => r.y.b
-print_int $ get_inner $ o2
+io::out $ get_inner $ o2

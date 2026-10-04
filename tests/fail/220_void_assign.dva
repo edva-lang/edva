@@ -1,1 +1,3 @@
-chars = print $ "hello"
+#use io
+
+chars = io::out $ "hello"

@@ -1,12 +1,13 @@
 #use libc
+#use io
 
 val = 8080
 val_16 = i16(val)
 val_32 = i32(val)
-print_int $ val_16
-print_int $ val_32
+io::out $ val_16
+io::out $ val_32
 
 port_16 = i16(libc::htons $ 8080)
 ip_32 = i32(libc::inet_addr $ "127.0.0.1")
 addr = (i16(2), port_16, ip_32, i64(0))
-print $ "TUPLE_OK"
+io::out $ "TUPLE_OK"

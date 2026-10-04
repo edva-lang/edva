@@ -65,7 +65,8 @@ echo "PASS"
 # --- Test 3: F2 - Unwritable output path must report error without segfault ---
 echo -n "Testing F2 (unwritable output path error without SIGSEGV)... "
 cat <<'EOF' > "$TMPDIR/good.dva"
-print $ "hello"
+#use io
+io::out $ "hello"
 EOF
 set +e
 timeout 30 ./edva "$TMPDIR/good.dva" "$TMPDIR/nonexistent_dir/output" -ir < /dev/null >"$TMPDIR/t3.out" 2>"$TMPDIR/t3.err"
@@ -95,6 +96,7 @@ Line 2
 Line 3
 EOF
 cat <<'EOF' > "$TMPDIR/test_f5.dva"
+#use io
 #use "str"
 #use "libc"
 #use "sys"
@@ -150,7 +152,7 @@ nonempty_res = read_file_text("FILE_NONEMPTY_PATH")
 nonempty_res
    | s =>
       ?s == 21
-         | print $ "F5_OK"
+         | io::out $ "F5_OK"
          | sys::exit(4)
    | sys::exit(5)
 EOF
@@ -198,9 +200,10 @@ echo "PASS"
 # --- Test 6: Pipeline verification flag (--typed-ast) ---
 echo -n "Testing --typed-ast (typed AST elaboration & error handling)... "
 cat <<'EOF' > "$TMPDIR/test_typed_pass.dva"
+#use io
 f: Int => Int
 f = x => x + 1
-print_int(f(41))
+io::out(f(41))
 EOF
 set +e
 timeout 30 ./edva "$TMPDIR/test_typed_pass.dva" --typed-ast < /dev/null \
@@ -366,7 +369,7 @@ exit(pt3.x + pt3.y)
 EOF
 
 set +e
-timeout 30 ./edva -no-prelude -c --module lib_mod "$TMPDIR/lib_mod.dva" -o "$TMPDIR/lib_mod.o" < /dev/null >"$TMPDIR/t9_lib.out" 2>"$TMPDIR/t9_lib.err"
+timeout 30 ./edva -c --module lib_mod "$TMPDIR/lib_mod.dva" -o "$TMPDIR/lib_mod.o" < /dev/null >"$TMPDIR/t9_lib.out" 2>"$TMPDIR/t9_lib.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || [ ! -f "$TMPDIR/lib_mod.o" ]; then
@@ -376,7 +379,7 @@ if [ $rc -ne 0 ] || [ ! -f "$TMPDIR/lib_mod.o" ]; then
 fi
 
 set +e
-timeout 30 ./edva -no-prelude -c --entry "$TMPDIR/main_mod.dva" -o "$TMPDIR/main_mod.o" -ir < /dev/null >"$TMPDIR/t9_main.out" 2>"$TMPDIR/t9_main.err"
+timeout 30 ./edva -c --entry "$TMPDIR/main_mod.dva" -o "$TMPDIR/main_mod.o" -ir < /dev/null >"$TMPDIR/t9_main.out" 2>"$TMPDIR/t9_main.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || [ ! -f "main_mod.ll" ]; then
@@ -416,7 +419,8 @@ echo "PASS"
 echo -n "Testing project name derivation for src/ directory target... "
 mkdir -p "$TMPDIR/sample_proj/src"
 cat <<'EOF' > "$TMPDIR/sample_proj/src/main.dva"
-print $ "driver test sample_proj"
+#use io
+io::out $ "driver test sample_proj"
 EOF
 ORIG_DIR=$(pwd)
 cd "$TMPDIR/sample_proj"
@@ -441,7 +445,8 @@ echo "PASS"
 echo -n "Testing E5022 directory collision handling... "
 mkdir -p "$TMPDIR/collision_proj/subpkg"
 cat <<'EOF' > "$TMPDIR/collision_proj/subpkg/main.dva"
-print $ "hello"
+#use io
+io::out $ "hello"
 EOF
 cd "$TMPDIR/collision_proj"
 set +e

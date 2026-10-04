@@ -2,6 +2,7 @@
 // Creates a TCP socket, exercises SockAddrIn layout, htons, inet_addr
 
 #use libc
+#use io
 
 #type SockAddrIn (
     sin_family: i16,
@@ -15,13 +16,13 @@ SOCK_STREAM = 1
 
 // Create socket — fd should be > 0 (not -1)
 sock = libc::socket(AF_INET, SOCK_STREAM, 0)
-print $ "SOCKET_OK"
+io::out $ "SOCKET_OK"
 
 // Verify htons is byte-swapping: htons(256) should be 1 on little-endian x86
 // Truncate to i16 to avoid undefined upper bits from ABI
 port16 = i16(libc::htons $ 256)
-port16 [1] print $ "BYTESWAP_OK"
-        |  print $ "BYTESWAP_FAIL"
+port16 [1] io::out $ "BYTESWAP_OK"
+        |  io::out $ "BYTESWAP_FAIL"
 
 // Build a sockaddr_in struct and verify field access
 addr: SockAddrIn
@@ -30,9 +31,9 @@ addr.sin_port = i16(libc::htons $ 9090)
 addr.sin_addr = i32(libc::inet_addr $ "127.0.0.1")
 
 fam = addr.sin_family
-fam [2] print $ "AF_INET_OK"
-    |   print $ "AF_INET_FAIL"
+fam [2] io::out $ "AF_INET_OK"
+    |   io::out $ "AF_INET_FAIL"
 
 // Close socket
 libc::close $ sock
-print $ "SOCKET_DONE"
+io::out $ "SOCKET_DONE"

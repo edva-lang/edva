@@ -4,36 +4,37 @@
 // in hash order (not insertion order) and skips tombstones after a delete.
 
 #use "str"
+#use io
 
 // Literal with inferred String keys / Int values.
 m = ("a" ^= 1, "b" ^= 2, "c" ^= 3)
-print $ "count=" + str::from_int(?m)
+io::out $ "count=" + str::from_int(?m)
 
 // Lookup, membership, missing-key fallback.
 a = m ^ "a" | _ | -1
 z = m ^ "z" | _ | -1
 h = m ^? "b"
-print $ "a=" + str::from_int(a) + " z=" + str::from_int(z) + " has-b=" + (h | "y" | "n")
+io::out $ "a=" + str::from_int(a) + " z=" + str::from_int(z) + " has-b=" + (h | "y" | "n")
 
 // Delete returns a bare Flag; re-delete is false.
 d = m ^- "b"
 d2 = m ^- "b"
-print $ "del-b=" + (d | "y" | "n") + " del-b2=" + (d2 | "y" | "n") + " count=" + str::from_int(?m)
+io::out $ "del-b=" + (d | "y" | "n") + " del-b2=" + (d2 | "y" | "n") + " count=" + str::from_int(?m)
 
 // The deleted entry is gone, the rest are intact; re-insert revives.
 b = m ^ "b" | _ | -1
 a2 = m ^ "a" | _ | -1
 m ^ "b" = 99
 b2 = m ^ "b" | _ | -1
-print $ "b=" + str::from_int(b) + " a=" + str::from_int(a2) + " b2=" + str::from_int(b2)
+io::out $ "b=" + str::from_int(b) + " a=" + str::from_int(a2) + " b2=" + str::from_int(b2)
 
 // Iteration: value first, key second; tombstones skipped.
 out = {16}
 m @ v, k =>
    out += k + ":" + str::from_int(v) + " "
-print $ +out
+io::out $ +out
 
 // Int-keyed literal.
 n = (1 ^= "x", 2 ^= "y")
 x = n ^ 1 | _ | "?"
-print $ x + " count=" + str::from_int(?n)
+io::out $ x + " count=" + str::from_int(?n)

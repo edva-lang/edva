@@ -5,55 +5,57 @@
 // whitespace violations (07/08/11/153/154/155 range + section spacing).
 
 // &b (NO trailing space) = unary buffer address -> RawPtr.
+#use io
+
 b = {16}
 b += 65
 p = &b
-print_int $ ?b             
+io::out $ ?b             
 
 // a * b (spaces) = multiplication.
 mul = 3 * 4
-print_int $ mul            
+io::out $ mul            
 
 // * 2 (trailing space) = multiplication section "_ => _ * 2".
 dbl = * 2
-print_int $ dbl(5)         // 10
+io::out $ dbl(5)         // 10
 
 // -x (NO trailing space) = unary minus.
 neg = -5
-print_int $ neg            
+io::out $ neg            
 
 // a - b (spaces) = subtraction.
 sub = 10 - 3
-print_int $ sub            
+io::out $ sub            
 
 // - 1 (trailing space) = subtraction section "_ => _ - 1".
 dec = - 1
-print_int $ dec(10)        // 9
+io::out $ dec(10)        // 9
 
 // fun! (NO leading space) = zero-argument postfix call; "fun ! x" errors
 // (fail test 199_ws_postfix_bang_space).
 get5 = !=> 5
-print_int $ get5!          // 5
+io::out $ get5!          // 5
 
 // a..b (NO spaces) = range; a space on either side of '..' errors (E2025).
-0..3 @ i => print_int $ i  // 0 1 2
+0..3 @ i => io::out $ i  // 0 1 2
 
 // t.0 (NO space after dot) = member index.
 t = (7, 8)
-print_int $ t.0            
+io::out $ t.0            
 
 // +b (NO space) = Builder freeze.
 b2 = {4}
 b2 += 66
 s2 = +b2
-print_int $ ?s2            
+io::out $ ?s2            
 
 // ?s (length, no space) and s(i) (byte read).
-print_int $ ?s2            
-print_int $ s2(0)          // 66
+io::out $ ?s2            
+io::out $ s2(0)          // 66
 
 // [1] body — whitespace AFTER ']' is required (E2023 on "[1]body"); a space
 // before '[' in first position is conventional.
 x = 5
 r = x [5] 42 | 0
-print_int $ r              // 42
+io::out $ r              // 42

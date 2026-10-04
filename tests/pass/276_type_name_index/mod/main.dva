@@ -1,3 +1,5 @@
+#use io
+
 #private
    #type Hidden <Value(Int), Empty>
 
@@ -7,5 +9,5 @@ make: Int => Int
 make = n =>
    h = Hidden(Value, n)
    p = Public(n)
-   h [Value x] print_int $ x
+   h [Value x] io::out $ x
    p.n + n

@@ -22,7 +22,7 @@ fd1 = libc::open(path, 0)
 r1 = io::reader(fd1)
 res1 = io::read(r1, 5)
 s1 = res1 | s => s | ""
-print $ "read: n=" + str::from_int(?s1) + " buf=[" + s1 + "]"
+io::out $ "read: n=" + str::from_int(?s1) + " buf=[" + s1 + "]"
 libc::close(fd1)
 
 // 2. io::read_all draining full file or capped
@@ -31,7 +31,7 @@ r2 = io::reader(fd2)
 all_res = io::read_all(r2, 1000)
 libc::close(fd2)
 all_str = all_res | s => s | "FAIL"
-print $ "read_all len=" + str::from_int(?all_str)
+io::out $ "read_all len=" + str::from_int(?all_str)
 
 // read_all with cap
 fd2_cap = libc::open(path, 0)
@@ -39,7 +39,7 @@ r2_cap = io::reader(fd2_cap)
 cap_res = io::read_all(r2_cap, 8)
 libc::close(fd2_cap)
 cap_str = cap_res | s => s | "FAIL"
-print $ "read_all cap8=[" + cap_str + "]"
+io::out $ "read_all cap8=[" + cap_str + "]"
 
 // read_all on empty file returns <-->
 empty_path = "/tmp/test_io_empty.txt"
@@ -51,7 +51,7 @@ empty_res = io::read_all(r_empty, 100)
 libc::close(fd_empty)
 libc::unlink(empty_path)
 empty_tag = empty_res | s => "POS" | "NEG_EOF"
-print $ "read_all empty=" + empty_tag
+io::out $ "read_all empty=" + empty_tag
 
 // 3. io::read_byte (buffered)
 fd3 = libc::open(path, 0)
@@ -61,7 +61,7 @@ byte2 = io::read_byte(r3)
 libc::close(fd3)
 b1_str = byte1 | b => str::from_int(b) | "EOF"
 b2_str = byte2 | b => str::from_int(b) | "EOF"
-print $ "read_byte: " + b1_str + " " + b2_str
+io::out $ "read_byte: " + b1_str + " " + b2_str
 
 // 4. io::read_until with custom delimiter ',' then '|'
 fd4 = libc::open(path, 0)
@@ -73,7 +73,7 @@ p1_str = part1 | s => s | "EOF"
 part2 = io::read_until(r4, 124, 100) // 124 is '|'
 p2_str = part2 | s => s | "EOF"
 libc::close(fd4)
-print $ "read_until: [" + p1_str + "] [" + p2_str + "]"
+io::out $ "read_until: [" + p1_str + "] [" + p2_str + "]"
 
 // 5. io::read_line over all lines until EOF
 fd5 = libc::open(path, 0)
@@ -81,10 +81,10 @@ r5 = io::reader(fd5)
 0.. @
    line_res = io::read_line(r5, 100)
    line_res
-      | l => print $ "line: [" + l + "]"
+      | l => io::out $ "line: [" + l + "]"
       | -->
 libc::close(fd5)
 
 // Clean up
 libc::unlink(path)
-print $ "DONE"
+io::out $ "DONE"

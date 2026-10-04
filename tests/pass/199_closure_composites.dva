@@ -3,25 +3,27 @@
 // first-class .Function type through reads, so it can be assigned and called
 // (or called directly through a member) instead of E3103.
 
+#use io
+
 #type H (fn: (Int => Int), n: Int)
 
 // Record field: read into a variable, then call.
 h = H((x => x * 6, 1))
 f2 = h.fn
-print_int $ f2(7)          // 42
+io::out $ f2(7)          // 42
 
 // Record field: direct member call (the member is evaluated and called
 // through fn_target).
-print_int $ h.fn(7)        // 42
-print_int $ h.fn $ 7       // 42 ($-apply on a member)
-print_int $ (h.fn)(7)      // 42 (grouped member call)
+io::out $ h.fn(7)        // 42
+io::out $ h.fn $ 7       // 42 ($-apply on a member)
+io::out $ (h.fn)(7)      // 42 (grouped member call)
 
 // A function returning a record that wraps a CAPTURING closure: the escape
 // analysis keeps the env alive, and the member call types the indirect call.
 mk = base => H((x => x * base, 1))
-print_int $ mk(6).fn(7)    
+io::out $ mk(6).fn(7)    
 h2 = mk(6)
-print_int $ h2.fn(5)       // 30
+io::out $ h2.fn(5)       // 30
 
 // Growable array of closures: a(i) is a < elem | Error > ram; unwrap with
 // bare '|' branches (first = positive element), then call.
@@ -31,8 +33,8 @@ fs += (x => x + 1)
 fs += (x => x * 10)
 f = fs(0) | _ | _
 g = fs(1) | _ | _
-print_int $ f(5)           // 6
-print_int $ g(5)           // 50
+io::out $ f(5)           // 6
+io::out $ g(5)           // 50
 
 // Map of closures: m ^ k is a < value | Error > ram; unwrap, then call.
 #type FnMap String ^ (Int => Int)
@@ -41,18 +43,18 @@ m ^ "inc" = (x => x + 1)
 m ^ "ten" = (x => x * 10)
 fi = m ^ "inc" | _ | _
 te = m ^ "ten" | _ | _
-print_int $ fi(5)          // 6
-print_int $ te(5)          // 50
+io::out $ fi(5)          // 6
+io::out $ te(5)          // 50
 
 // A named function read as a value still works through a record field too.
 dbl: Int => Int
 dbl = n => n * 2
 hd = H((dbl, 3))
-print_int $ hd.fn(9)       // 18
+io::out $ hd.fn(9)       // 18
 
 // A closure in an enum payload, bound by a variant guard and called.
 #type Wrapped < C((Int => Int)), V(Int) >
 mkw = base => Wrapped(C, (x => x * base))
 w = mkw(6)
-w [C g] print_int $ g(7)   // 42
-   [V n] print_int $ n     // (unreached — V branch)
+w [C g] io::out $ g(7)   // 42
+   [V n] io::out $ n     // (unreached — V branch)

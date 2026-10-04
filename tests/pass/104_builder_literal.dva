@@ -3,11 +3,13 @@
 // only means negation/freeze/length -- never Builder creation.
 
 // Builder creation with a literal capacity.
+#use io
+
 b = {16}
 b += 'H'
 b += 'i'
 s = +b             // freeze: consumes b, "Hi"
-print $ s
+io::out $ s
 
 // Builder creation from a variable capacity (a hint, clamped >= 0).
 cap = 32
@@ -15,14 +17,14 @@ out = {cap}
 out += 'A'
 out += 'B'
 out += 'C'
-print $ +out
+io::out $ +out
 
 // Capacity can be an arbitrary integerish expression.
 out2 = {1 + 1}
 out2 += '!'
-print $ +out2
+io::out $ +out2
 
 // {n} splices as a plain value; postfix "expr {N}" repetition is unchanged.
 zeros = 0 {3}      // record of 3 zeros, NOT a builder
-print_int $ zeros(0)
-print_int $ zeros(2)
+io::out $ zeros(0)
+io::out $ zeros(2)

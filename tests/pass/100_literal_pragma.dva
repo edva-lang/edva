@@ -1,16 +1,18 @@
 // Typed integer literals, #pragma number, and postfix {N} repetition.
+#use io
+
 a = 5i16
-print_int $ a
+io::out $ a
 b = 0xFFu8
-print_int $ b
+io::out $ b
 c = 0b101u16
-print_int $ c
+io::out $ c
 
 // Repetition: 0 {5} = five zeros; splices flat in a record.
 r = (0 {5})
-print_int $ r(0)
-print_int $ r(4)
+io::out $ r(0)
+io::out $ r(4)
 s = (1, 2 {3}, 9)
-print_int $ s(0)
-print_int $ s(3)
-print_int $ s(4)
+io::out $ s(0)
+io::out $ s(3)
+io::out $ s(4)

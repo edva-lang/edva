@@ -1,26 +1,29 @@
 // Tests multiline string literal concatenation (issue #20)
 
+#use io
+
 s1 = "hello "
    "world"
-print $ s1
+io::out $ s1
 
 s2 = "one "
    "two "
    "three"
-print $ s2
+io::out $ s2
 
 s3 = "with " // trailing comment on line 1
    "comment"
-print $ s3
+io::out $ s3
 
 s4 = (=raw =)// comment
    (=string=)
-print $ s4
+io::out $ s4
 
 s5 = "mix "
    (=raw=)
-print $ s5
+io::out $ s5
 
-f = s => print $ s
+f: String => ()
+f = s => io::out $ s
 f("call "
    "arg")

@@ -1,6 +1,7 @@
 // Linux io_uring integration test
 #use libc
 #use uring
+#use io
 
 r_res = uring::new(8)
 r_res
@@ -11,9 +12,9 @@ r_res
       cqe1 = uring::wait_cqe(ring)
       cqe1
          | c1 =>
-            print_int $ c1.user_data
-            print_int $ c1.res
-         | err1 => print $ "err: " + err1
+            io::out $ c1.user_data
+            io::out $ c1.res
+         | err1 => io::out $ "err: " + err1
 
       // 2. Submit pipe write and read
       pbuf = libc::malloc(8)
@@ -33,19 +34,19 @@ r_res
       cqe2 = uring::wait_cqe(ring)
       cqe2
          | c =>
-            print_int $ c.user_data
-            print_int $ c.res
+            io::out $ c.user_data
+            io::out $ c.res
          | _
 
       cqe3 = uring::wait_cqe(ring)
       cqe3
          | c =>
-            print_int $ c.user_data
-            print_int $ c.res
+            io::out $ c.user_data
+            io::out $ c.res
          | _
 
       ?in_b = 12
-      print $ +in_b
+      io::out $ +in_b
 
       // 3. Test reap
       uring::prep_nop(ring, 3001)
@@ -53,11 +54,11 @@ r_res
       uring::submit_and_wait(ring, 2)
       evs = uring::reap(ring)
       evs @ e =>
-         print_int $ e.user_data
-         print_int $ e.res
+         io::out $ e.user_data
+         io::out $ e.res
 
       libc::close(rfd)
       libc::close(wfd)
       uring::close(ring)
    | err =>
-      print $ "setup error: " + err
+      io::out $ "setup error: " + err

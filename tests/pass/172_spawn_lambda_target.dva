@@ -1,4 +1,6 @@
 // M3: #spawn accepts a lambda / first-class function target.
+#use io
+
 h = #spawn (m => m * 2)(21)
 r = #join h
-print_int $ (r | _ | _)
+io::out $ (r | _ | _)

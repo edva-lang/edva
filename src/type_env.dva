@@ -509,12 +509,3 @@ lookup_user_type = env, name =>
                      lookup_user_type_exact(env,
                         env.current_module + "::#" + name)
             | <-->
-
-is_prelude_fn: String => <>
-is_prelude_fn = name =>
-   name [ "print", "writeln", "print_int", "print_float", "print_float32",
-      "writeln_b" ]
-
-is_prelude_active: TypeEnv, String => <>
-is_prelude_active = env, name =>
-   is_prelude_fn(name) && <>(lookup_binding(env, "print"))

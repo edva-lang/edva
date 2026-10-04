@@ -3,21 +3,23 @@
 // produced invalid IR that clang rejected), and pick unsigned vs signed
 // division by the operand types.
 
+#use io
+
 a = 5i16
 c = a / 2
-print_int $ c
+io::out $ c
 
 d = a * 2
-print_int $ d
+io::out $ d
 
 e = 7i16 % 2
-print_int $ e
+io::out $ e
 
 f = 2 * a
-print_int $ f
+io::out $ f
 
 // Unsigned semantics: 0xFF is 255, so 255 / 2 = 127 (a signed i8 -1 / 2
 // would wrongly give 0).
 u = 0xFFu8
-print_int $ u / 2
-print_int $ u % 16
+io::out $ u / 2
+io::out $ u % 16

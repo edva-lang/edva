@@ -4,10 +4,11 @@
 // header back.
 
 #use net/http
+#use io
 
 // The round-trip builds a set, reads one value back case-insensitively, and
 // renders the wire form.
-print $ http::headers_roundtrip("hi")
+io::out $ http::headers_roundtrip("hi")
 
 // A longer body: Content-Length tracks the body's byte length.
-print $ http::headers_roundtrip("hello world")
+io::out $ http::headers_roundtrip("hello world")

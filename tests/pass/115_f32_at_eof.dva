@@ -1,6 +1,8 @@
 // lexer_scan_float_suffix previously used "pos + 2 < len", so an "f32"
 // suffix at the very end of the file (pos + 3 == len) failed to match and
 // was read as the lone 'f'. It must lex as a float32.
+#use io
+
 a = 1.25f32
-print_float32 $ a
+io::out $ a
 b = 2.5f32

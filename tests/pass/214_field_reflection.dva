@@ -6,6 +6,7 @@
 //    inferred from the per-element serializer), building a String.
 
 #use "str"
+#use io
 
 #type Pt (x: Int, y: Int)
 #type Pair (a: Int, b: Int)
@@ -41,17 +42,17 @@ p.y = 4
 q: Pair
 q.a = 5
 q.b = 6
-print $ str::from_int(nfields(p))
-print $ str::from_int(nfields(q))
-print $ show_pair(p)
-print $ show_pair(q)
+io::out $ str::from_int(nfields(p))
+io::out $ str::from_int(nfields(q))
+io::out $ show_pair(p)
+io::out $ show_pair(q)
 
 s = Ints()
 s += 1
 s += 2
 s += 3
-print $ serialize(si, s)
+io::out $ serialize(si, s)
 t = Strs()
 t += "a"
 t += "b"
-print $ serialize(ss, t)
+io::out $ serialize(ss, t)

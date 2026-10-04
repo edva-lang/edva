@@ -3,24 +3,26 @@
 // result, so the result can be applied directly. The inner function needs a
 // declared signature (an untyped inner fn is genuinely ambiguous → E3103).
 
+#use io
+
 greet: String => String
 greet = s => "hi " + s
 
 pickfn = f => f
 p = pickfn(greet)
-print $ p("bob")
-print $ p("eve")
+io::out $ p("bob")
+io::out $ p("eve")
 
 // The same threading through a variable holding the combinator's result.
 q = pickfn(greet)
-print $ q("sal")
+io::out $ q("sal")
 
 // A function-returning function threaded through a chain.
 inc: Int => Int
 inc = n => n + 1
 one = x => inc
 g = one(0)
-print_int $ g(41)
+io::out $ g(41)
 
 // Direct chained application on the pass-through result.
-print $ pickfn(greet)("zoe")
+io::out $ pickfn(greet)("zoe")

@@ -1,3 +1,5 @@
+#use io
+
 ::g_counter = 0
 ::g_val = 10
 ::g_ann: Int
@@ -15,20 +17,20 @@ set_val = v =>
 test_shadow: () => ()
 test_shadow = !=>
    regular_var = 999
-   print_int $ regular_var
+   io::out $ regular_var
 
 inc_counter!
 inc_counter!
 inc_counter!
-print_int $ g_counter
-print_int $ ::g_counter
+io::out $ g_counter
+io::out $ ::g_counter
 
 set_val(55)
-print_int $ g_val
-print_int $ ::g_val
+io::out $ g_val
+io::out $ ::g_val
 
-print_int $ g_ann
-print_int $ ::g_ann
+io::out $ g_ann
+io::out $ ::g_ann
 
 test_shadow!
-print_int $ regular_var
+io::out $ regular_var

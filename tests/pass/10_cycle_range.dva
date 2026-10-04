@@ -1,2 +1,4 @@
+#use io
+
 0..3 @ i =>
-    print_int $ i
+    io::out $ i

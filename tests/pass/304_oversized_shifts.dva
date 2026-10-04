@@ -1,7 +1,9 @@
+#use io
+
 x = 1
 s64 = 64
 s65 = 65
-print_int $ x .<. s64
-print_int $ x .<. s65
-print_int $ 8 .>. s64
-print_int $ 8 .>. s65
+io::out $ x .<. s64
+io::out $ x .<. s65
+io::out $ 8 .>. s64
+io::out $ 8 .>. s65

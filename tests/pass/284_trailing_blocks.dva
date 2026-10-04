@@ -1,6 +1,7 @@
 // Regression test for Issue #34: Trailing block / block-feed syntax ($:)
 
 #use "str"
+#use io
 
 vbox: #! T: Type, Int, T => String
 vbox = spacing, children =>
@@ -37,7 +38,7 @@ b1 = vbox(12) $:
    "label:username"
    "input:username"
    "btn:submit"
-print $ b1
+io::out $ b1
 
 // 2. Nested containers with trailing blocks
 b2 = vbox(16) $:
@@ -46,30 +47,30 @@ b2 = vbox(16) $:
       "btn:cancel"
       "btn:ok"
    "footer"
-print $ b2
+io::out $ b2
 
 // 3. Single child in trailing block
 b3 = vbox(5) $:
    "only_child"
-print $ b3
+io::out $ b3
 
 // 4. Container with no other arguments (bare identifier)
 b4 = container $:
    "item_a"
    "item_b"
-print $ b4
+io::out $ b4
 
 // 6. Trailing event handler / callback
 b6 = button("Submit") $> on_click $: _ => "handled"
-print $ b6
+io::out $ b6
 
 // 7. Trailing lambda callback
 b7 = run_task $: x =>
    x + 100
-print $ str::from_int(b7)
+io::out $ str::from_int(b7)
 
 // 8. Named configuration record via trailing block
 b8 = make_config $:
    color = 0xFF00
    width = 320
-print $ b8
+io::out $ b8

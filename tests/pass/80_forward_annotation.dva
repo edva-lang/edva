@@ -6,41 +6,43 @@
 // field is a compile error. A homogeneous record (array) requires a
 // whole-value assignment before its elements can be read or written.
 
+#use io
+
 #type T (a: Int, b: Int)
 
 // Record forward annotation: each field is written before it is read.
 t: T
 t.a = 42
 t.b = 0
-print_int $ t.a
-print_int $ t.b
+io::out $ t.a
+io::out $ t.b
 
 // Scalar forward annotation: "counter = 7" allocates the slot on first write.
 counter: Int
 counter = 7
-print_int $ counter
+io::out $ counter
 
 // Array forward annotation: a whole-value assignment initializes the elements.
 arr: (Int * 3)
 arr = (9, 0, 0)
-print_int $ arr(0)
-print_int $ arr(1)
-print_int $ arr(2)
+io::out $ arr(0)
+io::out $ arr(1)
+io::out $ arr(2)
 
 // Whole-value assignment to a forward-annotated scalar.
 flag: Int
 flag = 5
 flag = flag + 1
-print_int $ flag
+io::out $ flag
 
 // Whole-value assignment then element mutation.
 w: (Int * 2)
 w = (5, 7)
 w(1) = 8
-print_int $ w(0)
-print_int $ w(1)
+io::out $ w(0)
+io::out $ w(1)
 
 // Scalar write after a record's writes (separate variables are unaffected).
 v: Int
 v = 1
-print_int $ v
+io::out $ v

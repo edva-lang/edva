@@ -1,3 +1,5 @@
 // Dynamic indexing on a heterogeneous record is forbidden (compile error).
+#use io
+
 h = (name = "dva", age = 30)
-print $ h(0)
+io::out $ h(0)

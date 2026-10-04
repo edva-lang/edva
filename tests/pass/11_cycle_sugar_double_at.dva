@@ -1,4 +1,6 @@
+#use io
+
 count' = 0
 count' < 3 @
-    print_int $ count'
+    io::out $ count'
     count' = count' + 1

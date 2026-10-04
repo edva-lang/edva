@@ -1,3 +1,5 @@
+#use io
+
 #type Ints (Int){}
 
 orig: Ints
@@ -10,13 +12,13 @@ copy = ++orig
 copy += 40
 copy(0) = 99 !| _
 
-print_int $ ?orig
-print_int $ (orig(0) | _ | _)
-print_int $ (orig(1) | _ | _)
-print_int $ (orig(2) | _ | _)
+io::out $ ?orig
+io::out $ (orig(0) | _ | _)
+io::out $ (orig(1) | _ | _)
+io::out $ (orig(2) | _ | _)
 
-print_int $ ?copy
-print_int $ (copy(0) | _ | _)
-print_int $ (copy(1) | _ | _)
-print_int $ (copy(2) | _ | _)
-print_int $ (copy(3) | _ | _)
+io::out $ ?copy
+io::out $ (copy(0) | _ | _)
+io::out $ (copy(1) | _ | _)
+io::out $ (copy(2) | _ | _)
+io::out $ (copy(3) | _ | _)

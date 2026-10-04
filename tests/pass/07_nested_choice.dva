@@ -1,3 +1,5 @@
+#use io
+
 val = 2
 sub_val = 1
 res = val
@@ -5,4 +7,4 @@ res = val
     [2]
         sub_val [1] "two-sub1" | "two-sub-other"
     | "other"
-print $ res
+io::out $ res

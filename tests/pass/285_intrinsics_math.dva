@@ -1,59 +1,61 @@
 // Test scalar math intrinsics
+#use io
+
 s0 = %sin(0.0)
-print_float $ s0
+io::out $ s0
 
 c0 = %cos(0.0)
-print_float $ c0
+io::out $ c0
 
 e0 = %exp2(3.0)
-print_float $ e0
+io::out $ e0
 
 l0 = %log2(8.0)
-print_float $ l0
+io::out $ l0
 
 p0 = %pow(2.0, 3.0)
-print_float $ p0
+io::out $ p0
 
 p1 = %pow(4.0, 0.5)
-print_float $ p1
+io::out $ p1
 
 uadd0 = %uadd_sat(10, 20)
-print_int $ uadd0
+io::out $ uadd0
 
 usub0 = %usub_sat(20, 10)
-print_int $ usub0
+io::out $ usub0
 
 // Saturate at 0 for usub
 usub1 = %usub_sat(5, 15)
-print_int $ usub1
+io::out $ usub1
 
 // Test vector intrinsics
 v_exp = %exp2((1.0, 2.0, 3.0))
-print_float $ v_exp(0)
-print_float $ v_exp(1)
-print_float $ v_exp(2)
+io::out $ v_exp(0)
+io::out $ v_exp(1)
+io::out $ v_exp(2)
 
 v_pow = %pow((2.0, 3.0), (3.0, 2.0))
-print_float $ v_pow(0)
-print_float $ v_pow(1)
+io::out $ v_pow(0)
+io::out $ v_pow(1)
 
 // Vector pow with scalar broadcast exponent
 v_splat = %pow((2.0, 4.0), 2.0)
-print_float $ v_splat(0)
-print_float $ v_splat(1)
+io::out $ v_splat(0)
+io::out $ v_splat(1)
 
 v_sat = %usub_sat((10, 5), (5, 20))
-print_int $ v_sat(0)
-print_int $ v_sat(1)
+io::out $ v_sat(0)
+io::out $ v_sat(1)
 
 // Test %fmuladd
 fma0 = %fmuladd(2.0, 3.0, 4.0)
-print_float $ fma0
+io::out $ fma0
 
 v_fma = %fmuladd((2.0, 3.0), (4.0, 5.0), (1.0, 2.0))
-print_float $ v_fma(0)
-print_float $ v_fma(1)
+io::out $ v_fma(0)
+io::out $ v_fma(1)
 
 v_fma_splat = %fmuladd((2.0, 3.0), 4.0, 1.0)
-print_float $ v_fma_splat(0)
-print_float $ v_fma_splat(1)
+io::out $ v_fma_splat(0)
+io::out $ v_fma_splat(1)

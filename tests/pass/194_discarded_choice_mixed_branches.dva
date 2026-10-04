@@ -3,6 +3,8 @@
 // assignment yielding an Int here, a flag assignment there) is legal. The
 // mutations still run on the matched branch.
 
+#use io
+
 x' = 0
 f' = <->
 s' = ++""
@@ -14,9 +16,9 @@ s' = ++""
       ['a'] s' = ++"see"; x' = 2
       | -->
 
-print_int $ x'
-print $ ( f' | "Positive" | "Negative")
-print $ s'
+io::out $ x'
+io::out $ ( f' | "Positive" | "Negative")
+io::out $ s'
 
 y' = 0
 q' = <->
@@ -25,5 +27,5 @@ q' = <->
       ['7'] y' = 1
       | q' = <+>
 
-print_int $ y'
-print $ ( q' | "Positive" | "Negative")
+io::out $ y'
+io::out $ ( q' | "Positive" | "Negative")

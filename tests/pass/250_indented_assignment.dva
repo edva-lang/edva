@@ -1,28 +1,30 @@
+#use io
+
 x =
    10
-print $ str::from_int(x)
+io::out $ str::from_int(x)
 
 y =
    20
-print $ str::from_int(y)
+io::out $ str::from_int(y)
 
 z =
    a = 5
    b = 15
    a + b
-print $ str::from_int(z)
+io::out $ str::from_int(z)
 
 c =
    1 < 2
       | "yes"
       | "no"
-print $ c
+io::out $ c
 
 f =
    n => n * 3
-print $ str::from_int(f(7))
+io::out $ str::from_int(f(7))
 
 r = (a = 1, b = 2)
 r.a =
    99
-print $ str::from_int(r.a)
+io::out $ str::from_int(r.a)

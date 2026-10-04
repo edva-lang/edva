@@ -2,6 +2,8 @@
 // resolved at codegen. Expr is a self-recursive enum whose Pick payload names
 // ChoiceExpr (declared below it); ChoiceExpr references Expr back.
 
+#use io
+
 #type Expr <
    Int(Int)
    Add((Expr, Expr))
@@ -14,7 +16,7 @@ c: ChoiceExpr
 c.cond = Expr(Add, (Expr(Int, 1), Expr(Int, 2)))
 c.then_val = 10
 c.else_val = 20
-print_int $ c.else_val
+io::out $ c.else_val
 
 e = Expr(Pick, c)
-e [Pick p] print_int $ p.then_val | print_int $ 0
+e [Pick p] io::out $ p.then_val | io::out $ 0

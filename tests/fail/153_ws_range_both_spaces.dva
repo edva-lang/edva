@@ -1,1 +1,3 @@
-print $ 0 .. 3
+#use io
+
+io::out $ 0 .. 3

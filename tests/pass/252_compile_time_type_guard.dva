@@ -3,6 +3,9 @@
 // is resolved at compile time and pruned to the taken branch.
 // Untaken branches are never codegen'd, allowing type-specific operations.
 
+#use io
+
+describe: #! T: Type, T => String
 describe = #! T, x =>
    T
       [Int] "int"
@@ -12,28 +15,30 @@ describe = #! T, x =>
       [Builder] "builder"
       | "other"
 
-print $ describe(42)
-print $ describe("hello")
-print $ describe(3.14)
-print $ describe('X')
+io::out $ describe(42)
+io::out $ describe("hello")
+io::out $ describe(3.14)
+io::out $ describe('X')
 b = {8}
 b += 65
-print $ describe(b)
-print $ describe((1, 2))
+io::out $ describe(b)
+io::out $ describe((1, 2))
 
 // Branch pruning verification:
 // String branch uses ?x (length), Int branch uses arithmetic + 10.
+test_pruning: #! T: Type, T => Int
 test_pruning = #! T, x =>
    T
       [String] ?x
       [Int] x + 10
       | 0
 
-print_int $ test_pruning("testing")
-print_int $ test_pruning(90)
+io::out $ test_pruning("testing")
+io::out $ test_pruning(90)
 
 #type Point (x: Int, y: Int)
 
+type_name_check: #! T: Type, T => String
 type_name_check = #! T, val =>
    T
       [u8] "u8"
@@ -41,6 +46,6 @@ type_name_check = #! T, val =>
       [Point] "point"
       | "unknown"
 
-print $ type_name_check(1u8)
-print $ type_name_check(Point(1, 2))
-print $ type_name_check(10)
+io::out $ type_name_check(1u8)
+io::out $ type_name_check(Point(1, 2))
+io::out $ type_name_check(10)

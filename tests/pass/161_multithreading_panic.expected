@@ -1,2 +1,2 @@
 Error 4011: array index out of bounds
-  at 161_multithreading_panic.dva:6:10
+  at 161_multithreading_panic.dva:8:10

@@ -1,8 +1,10 @@
 // `||` can return either positive branch. Int and Float cannot occupy one
 // result slot, so this ram layout is unrepresentable.
+#use io
+
 #type L < Int | >
 #type R2 < Float | >
 a = L(<+ 1 ->)
 b = R2(<+ 2.5 ->)
 x = a || b
-print $ x
+io::out $ x

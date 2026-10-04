@@ -1,5 +1,7 @@
 // #exit inside an untaken choice branch: the program runs past it and
 // returns 0 through the normal main path.
+#use io
+
 x = 5
 x [3] #exit 42 | io::out("miss")
 io::out("done")

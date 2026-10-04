@@ -2,6 +2,8 @@
 // TypeInfo through the return → variable channel, so the caller can index
 // (`out(0)`) or view (`sl(0..2)`) the result without a forward annotation.
 
+#use io
+
 #type Ints (Int){}
 
 mk: Int => Ints
@@ -12,9 +14,9 @@ mk = n =>
    ys
 
 out = mk(10)
-print_int $ (out(0) | _ | _)
-print_int $ (out(1) | _ | _)
-print_int $ ?out
+io::out $ (out(0) | _ | _)
+io::out $ (out(1) | _ | _)
+io::out $ ?out
 
 // A slice returned from a function, then indexed.
 src: Ints
@@ -27,5 +29,5 @@ head2 = xs =>
    xs(0..2)
 
 sl = head2(src)
-print_int $ sl(0)
-print_int $ sl(1)
+io::out $ sl(0)
+io::out $ sl(1)

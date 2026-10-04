@@ -1,3 +1,5 @@
 // Cycle iteration over a heterogeneous record is forbidden (compile error).
+#use io
+
 h = (name = "dva", age = 30)
-h @ e => print $ e
+h @ e => io::out $ e

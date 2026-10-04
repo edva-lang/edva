@@ -1,4 +1,6 @@
+#use io
+
 #type C <A, B>
 f: C => Int
 f = c => c [A] 1
-print $ f(C(A))
+io::out $ f(C(A))

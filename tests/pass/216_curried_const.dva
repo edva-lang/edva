@@ -6,10 +6,11 @@
 #use(import) fp
 
 #use "str"
+#use io
 
-print $ str::from_int(const(42)("ignored"))
-print $ const("hi")(123)
+io::out $ str::from_int(const(42)("ignored"))
+io::out $ const("hi")(123)
 
 k = const(7)
-print $ str::from_int(k("a"))
-print $ str::from_int(k(3.5))
+io::out $ str::from_int(k("a"))
+io::out $ str::from_int(k(3.5))

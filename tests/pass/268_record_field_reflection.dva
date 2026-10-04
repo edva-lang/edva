@@ -6,6 +6,7 @@
 // 5. Unrolled loops 0..?T @ i allow generic record inspection/serialization.
 
 #use "str"
+#use io
 
 #type Pt (x: Int, y: Int)
 #type Person (name: String, age: Int, active: <>)
@@ -45,48 +46,48 @@ inspect = val =>
       name = T.(i)
       T.(i)
          [Int]
-            print $ name + ":int=" + str::from_int(val.(i))
+            io::out $ name + ":int=" + str::from_int(val.(i))
          [String]
-            print $ name + ":str=" + val.(i)
+            io::out $ name + ":str=" + val.(i)
          |
-            print $ name + ":other"
+            io::out $ name + ":other"
 
 p: Pt
 p.x = 10
 p.y = 20
 
-print $ str::from_int(nfields(p))
-print $ field0_name(p)
-print $ field1_name(p)
-print $ join_field_names(p)
+io::out $ str::from_int(nfields(p))
+io::out $ field0_name(p)
+io::out $ field1_name(p)
+io::out $ join_field_names(p)
 
 // Direct reflection on concrete type:
-print $ Pt.(0)
-print $ Pt.(1)
+io::outs $ Pt.(0)
+io::outs $ Pt.(1)
 
 per: Person
 per.name = "Alice"
 per.age = 30
 per.active = <+>
 
-print $ str::from_int(nfields(per))
-print $ join_field_names(per)
-print $ Person.(0)
-print $ Person.(1)
-print $ Person.(2)
+io::out $ str::from_int(nfields(per))
+io::out $ join_field_names(per)
+io::outs $ Person.(0)
+io::outs $ Person.(1)
+io::outs $ Person.(2)
 
-print $ is_field0_int(p) | "pt.0 is int" | "pt.0 is not int"
-print $ is_field0_str(p) | "pt.0 is str" | "pt.0 is not str"
-print $ is_field0_str(per) | "per.0 is str" | "per.0 is not str"
+io::out $ is_field0_int(p) | "pt.0 is int" | "pt.0 is not int"
+io::out $ is_field0_str(p) | "pt.0 is str" | "pt.0 is not str"
+io::out $ is_field0_str(per) | "per.0 is str" | "per.0 is not str"
 
 // Type equality check:
-print $ Pt.(0) == Int | "Pt.0==Int" | "Pt.0!=Int"
-print $ Pt.(1) == Int | "Pt.1==Int" | "Pt.1!=Int"
-print $ Person.(0) == String | "Person.0==Str" | "Person.0!=Str"
+io::out $ Pt.(0) == Int | "Pt.0==Int" | "Pt.0!=Int"
+io::out $ Pt.(1) == Int | "Pt.1==Int" | "Pt.1!=Int"
+io::out $ Person.(0) == String | "Person.0==Str" | "Person.0!=Str"
 
 // Positional tuple field names:
 pair = Pair(42, "hello")
-print $ join_field_names(pair)
+io::out $ join_field_names(pair)
 
 // Full generic serializer/inspector:
 inspect(p)

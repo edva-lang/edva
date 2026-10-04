@@ -1,4 +1,5 @@
 #use libc
+#use io
 
 // Regression test for the FFI NUL-termination safety seam: Dva Strings are
 // NUL-reserved by construction (the byte data[len] == 0), but the reservation
@@ -18,4 +19,4 @@ parent = "123459"
 v = parent(0..5)
 
 n = libc::atoi $ v
-print_int $ n
+io::out $ n

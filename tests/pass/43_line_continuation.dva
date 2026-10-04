@@ -1,5 +1,7 @@
+#use io
+
 a = 1 +
     2 +
     3
 
-print_int $ a
+io::out $ a

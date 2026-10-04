@@ -1,6 +1,7 @@
 #use sys
 #use os
+#use io
 
 data = os::read(sys::STDIN, 11)
-print $ "RESULT:"
-print $ data
+io::out $ "RESULT:"
+io::out $ data

@@ -1,5 +1,7 @@
+#use io
+
 d1 = 40
-print $ (d1 [> 30] "more" | "less")
+io::out $ (d1 [> 30] "more" | "less")
 
 d2 = 20
-print $ (d2 > 30 | "more" | "less")
+io::out $ (d2 > 30 | "more" | "less")

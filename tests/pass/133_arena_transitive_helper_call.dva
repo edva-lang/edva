@@ -5,6 +5,8 @@
 // offset grows; with the restore the same bump slot is reused and every
 // offset is 0.
 
+#use io
+
 mk = _ => "aaaa" + "b"
 
 r0 = mk(0)
@@ -12,4 +14,4 @@ base = addr(&r0)
 
 ..3 @ i =>
     r = mk(0)
-    print_int $ addr(&r) - base
+    io::out $ addr(&r) - base

@@ -1,3 +1,5 @@
+#use io
+
 f: Int => Int
 f = x => x + 1
 
@@ -7,8 +9,8 @@ outer = x =>
    double = n => n * 2
    double(x)
 
-print_int $ f(3)
-print_int $ outer(3)
+io::out $ f(3)
+io::out $ outer(3)
 
 identity = x => x
-print $ identity("resolved")
+io::out $ identity("resolved")

@@ -1,18 +1,20 @@
 // An indented block as a cycle body is the implicit form: the block runs with
 // "_" bound to the current value and "_i" to its 0-based index.
+#use io
+
 5 @
-	print_int $ _
+	io::out $ _
 
 arr = (10, 20, 30)
 arr @
-	print_int $ _i
-	print_int $ _
+	io::out $ _i
+	io::out $ _
 
 2..6 @
-	print_int $ _
-	print_int $ _i
+	io::out $ _
+	io::out $ _i
 
 total' = 0
 4 @
 	total' = total' + _i
-print_int $ total'
+io::out $ total'

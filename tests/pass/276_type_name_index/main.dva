@@ -1,2 +1,3 @@
 #use mod
-print_int $ mod::make(3)
+#use io
+io::out $ mod::make(3)

@@ -233,14 +233,12 @@ lambda_add_params = cg, fn, params, ptypes, is_cap, i, np =>
          pname = (params(i) | _ | "")
          pname != "" && pname != "_"
             |
-               !types::is_prelude_fn(types::g.last_compiling_fn)
+               types::is_any_fn_name(cg, pname) || runtime::binding_state(cg, pname).found
                   |
-                     types::is_any_fn_name(cg, pname) || runtime::binding_state(cg, pname).found
-                        |
-                           types::init_error(cg, "E3033",
-                              "Cannot re-assign immutable binding '" + pname +
-                              "'. Use a prime suffix ('" + pname +
-                              "\'') for rebindable variables.", 0, 0)
+                     types::init_error(cg, "E3033",
+                        "Cannot re-assign immutable binding '" + pname +
+                        "'. Use a prime suffix ('" + pname +
+                        "\'') for rebindable variables.", 0, 0)
                runtime::binding_add(cg, pname, <->)
          pv = LLVMGetParam(fn, (is_cap | i + 1 | i))
          pvt = (ptypes(i) | _ | ast::ValueType(Unknown))
@@ -2488,11 +2486,7 @@ fn_ret_call_override = cg, body, c, cur =>
                                              clo_ret = fn_clo_ret(cg, fname)
                                              clo_ret != ast::ValueType(Unknown)
                                                 | clo_ret
-                                                |
-                                                   fname == "print" ||
-                                                      fname == "print_int"
-                                                      | ast::ValueType(Unit)
-                                                      | expr::fn_ret_vt_of(cg, fname)
+                                                | expr::fn_ret_vt_of(cg, fname)
 
 fn_ret_bin_override: types::Cg, ast::Expr,
    (ast::BinaryOp, ast::Expr, ast::Expr), ast::ValueType => ast::ValueType
@@ -2514,10 +2508,7 @@ fn_ret_bin_override = cg, last, t, cur =>
                            clo_ret = fn_clo_ret(cg, callee)
                            clo_ret != ast::ValueType(Unknown)
                               | clo_ret
-                              |
-                                 callee == "print" || callee == "print_int"
-                                    | ast::ValueType(Unit)
-                                    | expr::fn_ret_vt_of(cg, callee)
+                              | expr::fn_ret_vt_of(cg, callee)
             | cur
       |
          t.0
@@ -5861,31 +5852,7 @@ declare_external_fn = cg, name =>
       |
          declared = fn_has_signature(types::g.pstmts, name, 0)
          !declared
-            |
-               is_pw = main::is_prelude_wrapper(name)
-               is_pw
-                  |
-                     i8p = LLVMPointerType(LLVMInt8Type!, 0)
-                     i64t = LLVMInt64Type!
-                     param_t = name == "print_int" | i64t | i8p
-                     param_ll = types::Addrs()
-                     param_ll += param_t
-                     fty = fn_type_n(cg, LLVMVoidType!, param_ll, 1)
-                     ext_fn = types::llvm_find_function(cg.module, name)
-                        | f => f
-                        |
-                           fn_new = LLVMAddFunction(cg.module, name, fty)
-                           LLVMSetLinkage(fn_new, 0)
-                           runtime::mark_nounwind(cg, fn_new)
-                           fn_new
-                     pts = ast::VTypes()
-                     p_vt = name == "print_int" | ast::ValueType(Int) |
-                        ast::ValueType(Str)
-                     pts += p_vt
-                     cg.fninfos += types::FnInfo((name, <+ ext_fn ->, <+ fty ->, 1, pts,
-                        ast::ValueType(Unit), <+>, <->, <+>, <+>))
-                     <+>
-                  | <->
+            | <->
             |
                sig_param_types0 = fn_signature_param_types(cg, types::g.pstmts, name, 0)
                sig_param_tis = fn_signature_param_tis(types::g.pstmts, name)

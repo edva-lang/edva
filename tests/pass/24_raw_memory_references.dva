@@ -2,13 +2,15 @@
 // "@[addr T]" is a volatile typed load; "@[addr] = v" stores at v's own
 // width (an Int literal stores 8 bytes).
 
+#use io
+
 x = 42
 a = addr $ x
 
 // A typed load reads x's Int at its address.
 val1 = @[a Int]
-print_int $ val1
+io::out $ val1
 
 // A store writes at the value's own (Int) width, overwriting x.
 @[a] = 99
-print_int $ x
+io::out $ x

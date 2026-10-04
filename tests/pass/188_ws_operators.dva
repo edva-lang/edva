@@ -3,31 +3,33 @@
 // table; the '..' whitespace errors (E2025) live in tests/fail/153-155.
 
 // binary '*' (either spacing) vs unary '*' (adjacent, address-of)
-print_int $ 6 * 7
-print_int $ 6*7
-print_int $ 2 *3
+#use io
+
+io::out $ 6 * 7
+io::out $ 6*7
+io::out $ 2 *3
 
 // unary '-' (adjacent) vs binary '-' (subtraction)
-print_int $ -3
-print_int $ 5 - 3
+io::out $ -3
+io::out $ 5 - 3
 
 // operator sections: a leading op WITH trailing whitespace is a section
 f = * 2
-print_int $ f $ 3
+io::out $ f $ 3
 g = - 3
-print_int $ g $ 10
+io::out $ g $ 10
 
 // postfix '!' (adjacent) — zero-arg call; a spaced '!' would be prefix-freeze
 fun = !=> 42
-print_int $ fun!
+io::out $ fun!
 
 // range '..' — endpoints must be adjacent (spaced forms are tests/fail/153-155)
 sum' = 0
 0..3 @ i => sum' = sum' + i
-print_int $ sum'
+io::out $ sum'
 
 // '&' address-of (adjacent, no trailing space): Builder writable buffer
 b = {32}
 take: Addr => Int
 take = a => 1
-print_int $ take(&b)
+io::out $ take(&b)

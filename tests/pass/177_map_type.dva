@@ -6,28 +6,29 @@ e = Env()
 e ^ "a" = 1
 e ^ "b" = 2
 e ^ "a" = 10
-print_int $ (e ^ "a" | _ | _)
-print_int $ (e ^ "b" | _ | _)
-print_int $ ?e
-print $ ((e ^? "a") | "Positive" | "Negative")
-print $ ((e ^? "zz") | "Positive" | "Negative")
+io::out $ (e ^ "a" | _ | _)
+io::out $ (e ^ "b" | _ | _)
+io::out $ ?e
+io::out $ ((e ^? "a") | "Positive" | "Negative")
+io::out $ ((e ^? "zz") | "Positive" | "Negative")
 
 #type I2S Int ^ String
 m = I2S()
 m ^ 42 = "answer"
-print $ (m ^ 42 | _ | _)
-print_int $ ?m
+io::out $ (m ^ 42 | _ | _)
+io::out $ ?m
 
 #type Pair (a: Int, b: Int)
 #type Tbl String ^ Pair
 t = Tbl()
 t ^ "x" = (a = 3, b = 4)
 r = t ^ "x" | _ | _
-print_int $ r.a + r.b
+io::out $ r.a + r.b
 
 #use str
+#use io
 big = Env()
 0..20 @ i =>
    big ^ (str::from_int(i)) = i * 10
-print_int $ ?big
-print_int $ (big ^ "19" | _ | _)
+io::out $ ?big
+io::out $ (big ^ "19" | _ | _)

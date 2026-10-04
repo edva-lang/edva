@@ -1,2 +1,4 @@
+#use io
+
 val = 2
-val [1] print $ "first" [2] print $ "second"
+val [1] io::out $ "first" [2] io::out $ "second"

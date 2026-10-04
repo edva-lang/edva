@@ -1,2 +1,4 @@
+#use io
+
 s = "hello"
-print $ @[s + 1]
+io::out $ @[s + 1]

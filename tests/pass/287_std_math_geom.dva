@@ -1,8 +1,9 @@
 #use "math/geom"
 #use math
+#use io
 
 approx_eq = a, b => %abs(a - b) < 0.002
-print_flag = f => print_int $ f | 1 | 0
+print_flag = f => io::out $ f | 1 | 0
 
 // 1. 2D Vector operations
 v1 = geom::vec2(3.0, 4.0)

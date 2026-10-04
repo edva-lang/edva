@@ -1,5 +1,7 @@
-5 @ i => print_int $ i
+#use io
+
+5 @ i => io::out $ i
 
 count = 3
 count @ j =>
-    print_int $ j
+    io::out $ j

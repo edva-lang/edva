@@ -1,5 +1,7 @@
+#use io
+
 pf: <> => ()
-pf = f => print $ f | "T" | "F"
+pf = f => io::out $ f | "T" | "F"
 
 // 1. Vector x Vector comparison
 a = (1, 5, 10, 20)

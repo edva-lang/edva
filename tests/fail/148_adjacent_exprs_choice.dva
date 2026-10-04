@@ -1,3 +1,5 @@
+#use io
+
 g: Int => Int
 g = q => q * 2
 h: Int => Int
@@ -8,4 +10,4 @@ f = q =>
    g(q) h(q)
    0
 
-print $ f(5)
+io::out $ f(5)

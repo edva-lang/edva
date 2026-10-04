@@ -2728,7 +2728,9 @@ coerce_val = cg, v, v_vt, target =>
             |
                (LLVMBuildFPToSI(cg.builder, v, LLVMInt64Type!,
                   "cast.fptosi"), ast::ValueType(Int))
-            | (stmt::coerce_int(cg, v, LLVMInt64Type!), ast::ValueType(Int))
+            |
+               (stmt::coerce_int_ext(cg, v, LLVMInt64Type!,
+                  types::is_unsigned_vt(v_vt)), ast::ValueType(Int))
       [RawPtr]
          types::is_int_vt(v_vt)
             |
@@ -2749,7 +2751,7 @@ coerce_val = cg, v, v_vt, target =>
          types::is_int_vt(target)
             |
                t_ll = types::llvm_type_of_vt(target)
-               (stmt::coerce_int(cg, v, t_ll), target)
+               (stmt::coerce_int_ext(cg, v, t_ll, types::is_unsigned_vt(v_vt)), target)
             | (v, target)
 
 // Coerces an argument expression to a target ValueType ("Float(x)", "Int(x)"
@@ -3485,9 +3487,12 @@ extract_ct_binding = cg, param_ti, arg_ti, ct_name =>
                raw_ti = arg_ti
                tv_name = raw_ti [TypeVar tv] tv | ""
                is_ut = tv_name != "" && types::is_user_type(cg, tv_name)
-               real_ti = is_ut | types::typedef_ti(cg, tv_name) | raw_ti
-               real_vt = types::vt_from_ti(real_ti)
-               real_dt = tv_name != "" | tv_name | ""
+               pvt = tv_name != "" | types::type_name_to_vt(tv_name) |
+                  (ast::ValueType(Unknown), <->)
+               real_ti = is_ut | types::typedef_ti(cg, tv_name) |
+                  (pvt.1 | ast::TypeInfo(Prim, pvt.0) | raw_ti)
+               real_vt = pvt.1 | pvt.0 | types::vt_from_ti(real_ti)
+               real_dt = is_ut | tv_name | ""
                <+ (real_vt, real_ti, real_dt) ->
       [Array p_arr] extract_ct_from_arr(cg, p_arr.1, arg_ti, ct_name)
       [Fn _] extract_ct_from_fn(cg, param_ti, arg_ti, ct_name)
@@ -3582,6 +3587,14 @@ vt_to_type_key = cg, vt, dtype =>
       |
          vt
             [Int] "Int"
+            [I8] "i8"
+            [I16] "i16"
+            [I32] "i32"
+            [I64] "i64"
+            [U8] "u8"
+            [U16] "u16"
+            [U32] "u32"
+            [U64] "u64"
             [Rune] "Rune"
             [Float] "Float"
             [F32] "f32"

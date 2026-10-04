@@ -1,10 +1,12 @@
 // Unsigned integer comparisons must use unsigned predicates: 0xFF is 255,
 // so 255 < 128 is false. A signed predicate would read the i8 bit pattern
 // 0xFF as -1 and wrongly answer true.
+#use io
+
 a = 0xFFu8
 b = 0x80u8
-print $ ( a < b | "Positive" | "Negative")
-print $ ( a > b | "Positive" | "Negative")
-print $ ( b < a | "Positive" | "Negative")
-print $ ( 255u8 > 254u8 | "Positive" | "Negative")
-print $ ( 0xFFu8 !> 0xFEu8 | "Positive" | "Negative")
+io::out $ ( a < b | "Positive" | "Negative")
+io::out $ ( a > b | "Positive" | "Negative")
+io::out $ ( b < a | "Positive" | "Negative")
+io::out $ ( 255u8 > 254u8 | "Positive" | "Negative")
+io::out $ ( 0xFFu8 !> 0xFEu8 | "Positive" | "Negative")

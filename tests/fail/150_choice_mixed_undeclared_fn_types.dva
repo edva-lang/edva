@@ -3,8 +3,10 @@
 // and must reject, never mis-type. The Int-returning and String-returning
 // branches are not unifiable, so the unconstrained branch is rejected at its
 // value read.
+#use io
+
 flag = 1 > 0
 f = x => x + 1
 g = y => "hi " + y
 pick = flag | f | g
-print $ pick(5)
+io::out $ pick(5)

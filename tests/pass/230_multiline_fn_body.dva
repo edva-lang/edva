@@ -1,5 +1,7 @@
 // A function body may live on the next line as an indented block (the
 // program loop skips the trailing DEDENT).
+#use io
+
 inc: Int => Int
 inc = x =>
    x + 1
@@ -7,5 +9,5 @@ inc = x =>
 dbl = y =>
    y * 2
 
-print_int $ inc(41)
-print_int $ dbl(4)
+io::out $ inc(41)
+io::out $ dbl(4)

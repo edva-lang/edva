@@ -1,11 +1,13 @@
 // Implicit single parameter via a parenthesized expression with '_'
 // (desugars to "_ =>"), and the explicit "_ =>" form. Bare "=>" (omitted
 // parameters) is a parse error.
+#use io
+
 double = (_ * 2)
 add_ten = _ => _ + 10
 
-print_int $ double $ 21
-print_int $ add_ten $ 32
+io::out $ double $ 21
+io::out $ add_ten $ 32
 
 triple = (_ * 3)
-print_int $ triple $ 5
+io::out $ triple $ 5

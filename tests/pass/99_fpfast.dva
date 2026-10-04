@@ -3,17 +3,19 @@
 // Division keeps no guardrail: a zero denominator is UB per the contract.
 // Exact values (powers of two, small decimals) are unchanged, so the results
 // still verify the plumbing and the emitted IR carries the fast flags.
+#use io
+
 #pragma fpfast all
 a = 1.5 + 2.0
-print_float $ a
+io::out $ a
 b = 3.25 * 2.0
-print_float $ b
+io::out $ b
 c = 10.0 / 4.0
-print_float $ c
+io::out $ c
 d = (1.5, 2.5)
 e = (0.5, 1.5)
 f = d + e
-print_float $ f(0)
-print_float $ f(1)
+io::out $ f(0)
+io::out $ f(1)
 g = 1.0 - 0.25
-print_float $ g
+io::out $ g

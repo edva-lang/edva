@@ -6,6 +6,8 @@
 // record whose sole field is a nested RECORD, constructed from that record
 // value ("Payload(Inner(42))" wraps it inline rather than coercing its
 // scalar field into the nested-record slot).
+#use io
+
 #type Inner (x: Int)
 #type Payload (e: Inner)
 #type Holder (e: Expr)
@@ -15,14 +17,14 @@
 >
 
 r = Inner(9)
-print_int $ r.x
+io::out $ r.x
 
 p = Payload(Inner(42))
-print_int $ p.e.x
+io::out $ p.e.x
 
 e = Expr(Holds, Holder(Expr(Num, 5)))
 e
-   [Num n] print_int $ n
+   [Num n] io::out $ n
    [Holds h]
-      h.e [Num m] print_int $ m | print_int $ -1
-   | print_int $ -2
+      h.e [Num m] io::out $ m | io::out $ -1
+   | io::out $ -2

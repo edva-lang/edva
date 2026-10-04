@@ -1,4 +1,6 @@
 // Choice joins between closure values: unifying closure types across branches.
+#use io
+
 make_op = flag, a, b =>
    flag > 0
       | (x => x + a)
@@ -6,8 +8,8 @@ make_op = flag, a, b =>
 
 f1 = make_op(1, 10, 20)
 f2 = make_op(0, 10, 20)
-print_int $ f1(5)
-print_int $ f2(5)
+io::out $ f1(5)
+io::out $ f2(5)
 
 select_calc = mode, base =>
    mode
@@ -18,9 +20,9 @@ select_calc = mode, base =>
 c1 = select_calc(1, 100)
 c2 = select_calc(2, 50)
 c3 = select_calc(3, 4)
-print_int $ c1(20)
-print_int $ c2(70)
-print_int $ c3(25)
+io::out $ c1(20)
+io::out $ c2(70)
+io::out $ c3(25)
 
 choose_formatter: Int, String => (String => String)
 choose_formatter = flag, prefix =>
@@ -30,5 +32,5 @@ choose_formatter = flag, prefix =>
 
 fmt1 = choose_formatter(1, "INFO")
 fmt2 = choose_formatter(0, "WARN")
-print $ fmt1("starting")
-print $ fmt2("low disk")
+io::out $ fmt1("starting")
+io::out $ fmt2("low disk")

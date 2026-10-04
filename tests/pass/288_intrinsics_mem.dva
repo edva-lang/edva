@@ -1,10 +1,12 @@
 // %memcpy, %memmove, %memset compiler intrinsics
 
 // 1. %memset
+#use io
+
 b1' = {32}
 %memset(&b1', 65, 5)
 ?b1' = 5
-print $ +b1'
+io::out $ +b1'
 
 // 2. %memcpy
 src' = {32}
@@ -12,18 +14,18 @@ src' += "Hello, World!"
 dst' = {32}
 %memcpy(&dst', &src', 5)
 ?dst' = 5
-print $ +dst'
+io::out $ +dst'
 
 // 3. %memmove (overlapping copy)
 b2' = {32}
 b2' += "0123456789"
 %memmove(&b2', &b2' + 2, 4)
-print $ +b2'
+io::out $ +b2'
 
 // 4. Return value of %memset / %memcpy is destination Addr
 b3' = {16}
 ret_p = %memset(&b3', 88, 4)
 is_same = ret_p == &b3' | 1 | 0
 ?b3' = 4
-print $ +b3'
-print_int $ is_same
+io::out $ +b3'
+io::out $ is_same

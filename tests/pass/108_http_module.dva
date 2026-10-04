@@ -5,25 +5,26 @@
 
 #use "net/http"
 #use libc
+#use io
 
 // Reason phrases for status codes ("" for unknown).
-print $ http::reason_of(200)
-print $ http::reason_of(404)
-print $ http::reason_of(999)
+io::out $ http::reason_of(200)
+io::out $ http::reason_of(404)
+io::out $ http::reason_of(999)
 
 // header("Content-Type", "text/plain") = "Content-Type: text/plain\r\n".
 h = http::header("Content-Type", "text/plain")
-print_int $ ?h
-print $ h(0..12)
+io::out $ ?h
+io::out $ h(0..12)
 
 // response(200, "Content-Length: 5\r\n", "hello") =
 //   "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\nhello"  (43 bytes)
 r = http::response(200, http::header("Content-Length", "5"), "hello")
-print_int $ ?r
-print $ r(0..15)
-print $ r(38..43)
+io::out $ ?r
+io::out $ r(0..15)
+io::out $ r(38..43)
 
 // path_of reads the request path out of a request-line buffer.
 req = {64}
 req += "GET /path HTTP/1.1\r\n"
-print $ http::path_of(+req)
+io::out $ http::path_of(+req)

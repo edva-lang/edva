@@ -9,12 +9,14 @@
 //    path, which must emit inttoptr (not the invalid addrspacecast that
 //    clang rejected before the E5012 fix).
 
+#use io
+
 k = 5
 f = x => x + k
-print_int $ f $ 2
+io::out $ f $ 2
 
 mul2 = a, b => a * b
-print_int $ mul2(3, 4)
+io::out $ mul2(3, 4)
 
 factory = x => (y => y + 1)
-print_int $ (factory $ 0)(10)   // apply 10 to the lambda factory(0) returns
+io::out $ (factory $ 0)(10)   // apply 10 to the lambda factory(0) returns

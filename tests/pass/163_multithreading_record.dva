@@ -1,3 +1,5 @@
+#use io
+
 user = (name = "Kea", age = 30)
 
 greet = u =>
@@ -6,5 +8,5 @@ greet = u =>
 h = #spawn greet(user)
 r = #join h
 p = r | v => v | _ => (name = "?", age = 0)
-print $ p.name
-print_int $ p.age
+io::out $ p.name
+io::out $ p.age

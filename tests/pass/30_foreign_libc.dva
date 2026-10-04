@@ -1,6 +1,7 @@
 #use libc
+#use io
 
 fd = libc::open("/dev/null", 2)
 status = fd [> 0] "Valid FD" | "Invalid FD"
-print $ status
+io::out $ status
 libc::close $ fd

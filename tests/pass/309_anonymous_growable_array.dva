@@ -1,11 +1,13 @@
+#use io
+
 xs: (Int){}
 xs += 10
 xs += 20
 xs += 30
-print_int $ ?xs
-print_int $ (xs(0) | _ | _)
-print_int $ (xs(1) | _ | _)
-print_int $ (xs(2) | _ | _)
+io::out $ ?xs
+io::out $ (xs(0) | _ | _)
+io::out $ (xs(1) | _ | _)
+io::out $ (xs(2) | _ | _)
 
 sum: (Int){} => Int
 sum = a =>
@@ -15,14 +17,14 @@ sum = a =>
    tot'
 
 s = sum(xs)
-print_int $ s
+io::out $ s
 
 names: (String){3}
 names += "hello"
 names += "world"
-print_int $ ?names
-print $ (names(0) | _ | _)
-print $ (names(1) | _ | _)
+io::out $ ?names
+io::out $ (names(0) | _ | _)
+io::out $ (names(1) | _ | _)
 
 #type Container (
    id: Int,
@@ -31,7 +33,7 @@ print $ (names(1) | _ | _)
 
 c: Container
 c.id = 7
-print_int $ c.id
+io::out $ c.id
 
 make_ints: Int => (Int){}
 make_ints = n =>
@@ -40,9 +42,9 @@ make_ints = n =>
    arr
 
 res = make_ints(4)
-print_int $ ?res
-print_int $ (res(0) | _ | _)
-print_int $ (res(3) | _ | _)
+io::out $ ?res
+io::out $ (res(0) | _ | _)
+io::out $ (res(3) | _ | _)
 
 make_strs: String => (String){}
 make_strs = s =>
@@ -52,26 +54,26 @@ make_strs = s =>
 
 c.tags = make_strs("first_tag")
 c.tags += "second_tag"
-print_int $ ?c.tags
-print $ (c.tags(0) | _ | _)
-print $ (c.tags(1) | _ | _)
+io::out $ ?c.tags
+io::out $ (c.tags(0) | _ | _)
+io::out $ (c.tags(1) | _ | _)
 
-print $ "iter:"
-xs @ elem => print_int $ elem
+io::out $ "iter:"
+xs @ elem => io::out $ elem
 
 xs(1) = 99 !| _
-print_int $ (xs(1) | _ | _)
+io::out $ (xs(1) | _ | _)
 
 c_arr = ++xs
-print_int $ ?c_arr
-print_int $ (c_arr(1) | _ | _)
+io::out $ ?c_arr
+io::out $ (c_arr(1) | _ | _)
 
 unparen_arr: Int{}
 unparen_arr += 500
-print_int $ (unparen_arr(0) | _ | _)
+io::out $ (unparen_arr(0) | _ | _)
 
 flags: <>{}
 flags += <+>
-print_int $ (flags(0) | _ => 1 | 0)
+io::out $ (flags(0) | _ => 1 | 0)
 
-print $ "OK"
+io::out $ "OK"

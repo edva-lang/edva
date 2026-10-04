@@ -1,4 +1,5 @@
 #use json
+#use io
 
 // The JSON module: parse documents of every JSON type into the recursive
 // Value enum (String/Number/Float/Boolean/Null/Array/Object), and surface
@@ -12,29 +13,29 @@
 // would make "(=" the raw-string opener instead of the call paren.
 
 n = json::parse $ (=42=)
-n | v => print $ "number"
-  | e => print $ "error"
+n | v => io::out $ "number"
+  | e => io::out $ "error"
 
 s = json::parse $ (="hi"=)
-s | v => print $ "string"
-  | e => print $ "error"
+s | v => io::out $ "string"
+  | e => io::out $ "error"
 
 t = json::parse $ (=true=)
-t | v => print $ "bool"
-  | e => print $ "error"
+t | v => io::out $ "bool"
+  | e => io::out $ "error"
 
 u = json::parse $ (=null=)
-u | v => print $ "null"
-  | e => print $ "error"
+u | v => io::out $ "null"
+  | e => io::out $ "error"
 
 a = json::parse $ (=[1, 2.5, -3]=)
-a | v => print $ "array"
-  | e => print $ "error"
+a | v => io::out $ "array"
+  | e => io::out $ "error"
 
 o = json::parse $ (={"name": "dva", "n": 1}=)
-o | v => print $ "object"
-  | e => print $ "error"
+o | v => io::out $ "object"
+  | e => io::out $ "error"
 
 bad = json::parse $ (={oops=)
-bad | v => print $ "no error"
-    | e => print $ "caught"
+bad | v => io::out $ "no error"
+    | e => io::out $ "caught"

@@ -1,7 +1,9 @@
+#use io
+
 abs = (_ [< 0] -_ | _)
-print_int $ abs $ -42
-print_int $ abs $ 42
+io::out $ abs $ -42
+io::out $ abs $ 42
 
 eval = (_ [> 0] "pos" | "non-pos")
-print $ eval $ 10
-print $ eval $ -5
+io::out $ eval $ 10
+io::out $ eval $ -5

@@ -1,12 +1,14 @@
+#use io
+
 f: String => ()
 f = s =>
-   print $ s
+   io::out $ s
 
 g: Int, String, Int => ()
 g = a, s, b =>
-   print $ str::from_int(a)
-   print $ s
-   print $ str::from_int(b)
+   io::out $ str::from_int(a)
+   io::out $ s
+   io::out $ str::from_int(b)
 
 test_choice_args = v =>
    v > 0

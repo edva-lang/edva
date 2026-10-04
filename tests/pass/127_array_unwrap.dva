@@ -1,12 +1,14 @@
+#use io
+
 #type Ints (Int){}
 
 xs: Ints
 xs += 42
 xs += 7
-print_int $ (xs(0) | _ | _)
-print_int $ (xs(1) | _ | _)
+io::out $ (xs(0) | _ | _)
+io::out $ (xs(1) | _ | _)
 xs(0) = 100 !| _
-print_int $ (xs(0) | _ | _)
+io::out $ (xs(0) | _ | _)
 
 fresh: Ints
-print_int $ (fresh(0) | _ | 99)
+io::out $ (fresh(0) | _ | 99)

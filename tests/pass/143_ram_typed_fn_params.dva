@@ -3,9 +3,11 @@
 // binding name routes ":" to the forward-annotation/signature path, not to a
 // type declaration (types are declared with Uppercase names).
 
+#use io
+
 fun: <>, <Int|> => ()
 fun = a, b =>
-   a | print("a is positive")
-   b | print("b has value")
+   a | io::out("a is positive")
+   b | io::out("b has value")
 
 fun(<+>, <+ 42 ->)

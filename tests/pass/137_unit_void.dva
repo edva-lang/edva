@@ -3,9 +3,11 @@
 // a value-producing expression.
 
 // A void function's body ends with a statement, not a value.
+#use io
+
 log: Int => ()
 log = x =>
-   print_int $ x
+   io::out $ x
 log(1)
 log(2)
 

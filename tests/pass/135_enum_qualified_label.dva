@@ -2,6 +2,8 @@
 // The same label can appear in two enums (bare 'Y' is E3105-ambiguous);
 // the qualified spelling disambiguates.
 
+#use io
+
 #type A <X, Y>
 #type B <Y, Z>
 
@@ -13,18 +15,18 @@ name_b: B => String
 name_b = b =>
    b [Y] "BY" [Z] "BZ"
 
-print $ name_a(A::X)
-print $ name_a(A::Y)
-print $ name_b(B::Y)
-print $ name_b(B::Z)
+io::out $ name_a(A::X)
+io::out $ name_a(A::Y)
+io::out $ name_b(B::Y)
+io::out $ name_b(B::Z)
 
 // A qualified variant assigned through a variable and coerced.
 v = A::Y
-print $ name_a(A(v))
+io::out $ name_a(A(v))
 
 // Qualified variants compared against a choice-produced value.
 which: Int => A
 which = n =>
    n [1] A::X | A::Y
-print $ name_a(which(1))
-print $ name_a(which(2))
+io::out $ name_a(which(1))
+io::out $ name_a(which(2))

@@ -1271,11 +1271,6 @@ is_fn_name: Cg, String => <>
 is_fn_name = cg, name =>
    <>(fninfo_index(cg, name))
 
-is_prelude_fn: String => <>
-is_prelude_fn = name =>
-   name [ "print", "writeln", "print_int", "print_float", "print_float32",
-      "writeln_b" ]
-
 is_any_fn_name: Cg, String => <>
 is_any_fn_name = cg, name =>
    rf = resolve_fn_name(cg, name)
@@ -1284,7 +1279,7 @@ is_any_fn_name = cg, name =>
       (has_fn_name(cg, name) || is_fn_name(cg, name))
    is_qual_fn = name_is_qualified(name, 0) &&
       (has_fn_name(cg, name) || is_fn_name(cg, name))
-   is_mod_fn || is_root_fn || is_qual_fn || is_prelude_fn(name) ||
+   is_mod_fn || is_root_fn || is_qual_fn ||
       has_str(g.foreign_fn_names, name)
 
 find_fn_module_name: Cg, String => String
@@ -1853,7 +1848,7 @@ type_name_to_vt: String => (ast::ValueType, <>)
 type_name_to_vt = name =>
    name
       ["Int"] (ast::ValueType(Int), <+>)
-      ["i64"] (ast::ValueType(Int), <+>)
+      ["i64"] (ast::ValueType(I64), <+>)
       ["i8"] (ast::ValueType(I8), <+>)
       ["i16"] (ast::ValueType(I16), <+>)
       ["i32"] (ast::ValueType(I32), <+>)
@@ -2613,7 +2608,9 @@ ctfe_canonical_ti = cg, ti =>
       [TypeVar n]
          is_user_type(cg, n)
             | typedef_ti(cg, n)
-            | ti
+            |
+               tn = type_name_to_vt(n)
+               tn.1 | ast::TypeInfo(Prim, tn.0) | ti
       | ti
 
 is_rec_homo_fields: ast::FieldTypes, ast::TypeInfo, ast::ValueType, Int,

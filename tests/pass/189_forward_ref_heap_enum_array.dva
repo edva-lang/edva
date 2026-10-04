@@ -3,6 +3,8 @@
 // .Record placeholder (E3110 regression, selfhost blocker #1 — the AST's
 // Exprs/TypeInfo arrays rely on exactly this).
 
+#use io
+
 #type Exprs (Expr){}
 #type Expr < Int(Int), Str(String), Add((Expr, Expr)) >
 
@@ -23,5 +25,5 @@ g = n =>
    v1 = es(1) | d => d | Expr(Str, "")
    (v0 [Int x] x | 0) + (v1 [Str s] ?s | 0)
 
-print_int $ f(9)
-print_int $ g(9)
+io::out $ f(9)
+io::out $ g(9)

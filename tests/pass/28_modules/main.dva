@@ -1,7 +1,8 @@
 #use math_utils
+#use io
 
-print_int $ math_utils::square $ 5
-print_int $ math_utils::add(10, 20)
-print_float $ math_utils::pi
-print_float $ math_utils::tau
-print_int $ math_utils::version
+io::out $ math_utils::square $ 5
+io::out $ math_utils::add(10, 20)
+io::out $ math_utils::pi
+io::out $ math_utils::tau
+io::out $ math_utils::version

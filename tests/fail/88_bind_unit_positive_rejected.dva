@@ -1,6 +1,8 @@
 // '$>>' is restricted to rams with a positive payload slot. A RamNP (Fallible)
 // lhs has a unit positive, so there is no payload to hand to the continuation.
+#use io
+
 #type Fail < | String >
 bad = Fail(<- "x" +>)
 y = bad $>> (_ => Fail(<++>))
-print $ y
+io::out $ y

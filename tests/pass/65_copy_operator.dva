@@ -1,3 +1,5 @@
+#use io
+
 s = "hello"
 c = ++s
-print $ c
+io::out $ c

@@ -11,6 +11,7 @@
     lseek     : (fd: Int, offset: Int, whence: Int) => Int
     write     : (fd: Int, buf: String, count: Int) => Int
     write_ptr = write: (fd: Int, buf: Addr, count: Int) => Int
+    writev    : (fd: Int, iov: Addr, iovcnt: Int) => Int
     ioctl     : (fd: Int, request: Int, arg: Int) => Int
     malloc    : (size: Int) => Addr
     free      : (Addr: Addr) => ()

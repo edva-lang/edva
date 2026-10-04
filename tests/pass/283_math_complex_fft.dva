@@ -1,47 +1,48 @@
 // Tests for std/math/complex module (Issue #48)
 #use "math/complex"
+#use io
 
 // 1. Basic Complex Arithmetic
 z1 = complex::make(1.0, 2.0)
 z2 = complex::make(3.0, 4.0)
 
-print_float $ complex::real(z1)
-print_float $ complex::imag(z1)
+io::out $ complex::real(z1)
+io::out $ complex::imag(z1)
 
 za = complex::add(z1, z2)
-print_float $ complex::real(za)
-print_float $ complex::imag(za)
+io::out $ complex::real(za)
+io::out $ complex::imag(za)
 
 zs = complex::sub(z2, z1)
-print_float $ complex::real(zs)
-print_float $ complex::imag(zs)
+io::out $ complex::real(zs)
+io::out $ complex::imag(zs)
 
 zm = complex::mul(z1, z2)
-print_float $ complex::real(zm)
-print_float $ complex::imag(zm)
+io::out $ complex::real(zm)
+io::out $ complex::imag(zm)
 
 zsc = complex::scale(z1, 2.0)
-print_float $ complex::real(zsc)
-print_float $ complex::imag(zsc)
+io::out $ complex::real(zsc)
+io::out $ complex::imag(zsc)
 
 zc = complex::conj(z1)
-print_float $ complex::real(zc)
-print_float $ complex::imag(zc)
+io::out $ complex::real(zc)
+io::out $ complex::imag(zc)
 
-print_float $ complex::norm_sq(z2)
-print_float $ complex::abs(z2)
+io::out $ complex::norm_sq(z2)
+io::out $ complex::abs(z2)
 
 z_inv = complex::inv(complex::one!)
-print_float $ complex::real(z_inv)
-print_float $ complex::imag(z_inv)
+io::out $ complex::real(z_inv)
+io::out $ complex::imag(z_inv)
 
 zd = complex::div(complex::make(4.0, 2.0), complex::make(2.0, 0.0))
-print_float $ complex::real(zd)
-print_float $ complex::imag(zd)
+io::out $ complex::real(zd)
+io::out $ complex::imag(zd)
 
 zp = complex::polar(2.0, 0.0)
-print_float $ complex::real(zp)
-print_float $ complex::imag(zp)
+io::out $ complex::real(zp)
+io::out $ complex::imag(zp)
 
 // 2. Cooley-Tukey Radix-2 Fast Fourier Transform
 sig = complex::ComplexArray()
@@ -51,28 +52,28 @@ sig += complex::from_real(3.0)
 sig += complex::from_real(4.0)
 
 spectrum = complex::fft(sig)
-print_float $ complex::real(spectrum(0)!!)
-print_float $ complex::imag(spectrum(0)!!)
+io::out $ complex::real(spectrum(0)!!)
+io::out $ complex::imag(spectrum(0)!!)
 
-print_float $ complex::real(spectrum(1)!!)
-print_float $ complex::imag(spectrum(1)!!)
+io::out $ complex::real(spectrum(1)!!)
+io::out $ complex::imag(spectrum(1)!!)
 
-print_float $ complex::real(spectrum(2)!!)
-print_float $ complex::imag(spectrum(2)!!)
+io::out $ complex::real(spectrum(2)!!)
+io::out $ complex::imag(spectrum(2)!!)
 
-print_float $ complex::real(spectrum(3)!!)
-print_float $ complex::imag(spectrum(3)!!)
+io::out $ complex::real(spectrum(3)!!)
+io::out $ complex::imag(spectrum(3)!!)
 
 // Power spectrum: |X[k]|^2
 ps = complex::power_spectrum(spectrum)
-print_float $ ps(0)!!
-print_float $ ps(1)!!
-print_float $ ps(2)!!
-print_float $ ps(3)!!
+io::out $ ps(0)!!
+io::out $ ps(1)!!
+io::out $ ps(2)!!
+io::out $ ps(3)!!
 
 // Inverse FFT roundtrip recovery
 rec = complex::ifft(spectrum)
-print_float $ complex::real(rec(0)!!)
-print_float $ complex::real(rec(1)!!)
-print_float $ complex::real(rec(2)!!)
-print_float $ complex::real(rec(3)!!)
+io::out $ complex::real(rec(0)!!)
+io::out $ complex::real(rec(1)!!)
+io::out $ complex::real(rec(2)!!)
+io::out $ complex::real(rec(3)!!)

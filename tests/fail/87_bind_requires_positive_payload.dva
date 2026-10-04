@@ -1,6 +1,8 @@
 // '$>>' is restricted to rams with a positive payload slot. A RamNN (Bool)
 // lhs has no payload to hand to the continuation.
+#use io
+
 #type Flag <>
 f = Flag(<+>)
 x = f $>> (_ => Flag(<+>))
-print $ x
+io::out $ x

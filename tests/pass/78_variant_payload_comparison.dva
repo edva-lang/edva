@@ -3,18 +3,20 @@
 // payloads below hold the full choice "5 > 3 | big | small" unbracketed.
 //   <+ p +>  RamPP Positive    <+ p ->  RamPN Some
 //   <- p ->  RamPP Negative    <- p +>  RamNP Err
+#use io
+
 a = <+ 5 > 3 | "A big" | "A small" +>
 r1 = a | ("p: " + _) | ("e: " + _)
-print $ r1
+io::out $ r1
 
 b = <+ 3 < 5 | "B lt" | "B ge" ->
 r2 = b | ("s: " + _) | "none"
-print $ r2
+io::out $ r2
 
 c = <- "C neg" ->
 r3 = c | "pos" | ("n: " + _)
-print $ r3
+io::out $ r3
 
 d = <- 9 > 5 | "D gt" | "D le" +>
 r4 = d | "ok" | ("e: " + _)
-print $ r4
+io::out $ r4

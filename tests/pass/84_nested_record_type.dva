@@ -1,11 +1,13 @@
 // Nested record type annotations: a record whose elements are themselves
 // records, with inline embedding (one flat allocation).
+#use io
+
 arr: ((Int * 3) * 2)
 arr = ((1, 2, 3), (4, 5, 6))
-print_int $ ?arr
+io::out $ ?arr
 t = arr(1)
-print_int $ t.0
-print_int $ t.1
-print_int $ t.2
+io::out $ t.0
+io::out $ t.1
+io::out $ t.2
 t2 = arr(0)
-print_int $ t2.2
+io::out $ t2.2

@@ -1,7 +1,8 @@
 #use color
+#use io
 
 approx_eq = a, b => %abs(a - b) < 0.002
-print_flag = f => print_int $ f | 1 | 0
+print_flag = f => io::out $ f | 1 | 0
 
 // 1. Hex packing & unpacking
 hex1 = 0xFF8040FF

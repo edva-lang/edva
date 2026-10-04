@@ -6,6 +6,8 @@
 // Short-circuit: '||' stops when the first operand is Left (positive),
 // '&&' stops when the first operand is Right (negative).
 
+#use io
+
 #type L < Int | >        // positive Int, negative unit
 #type R < Float | >      // positive Float, negative unit
 #type E < Int | String > // positive Int, negative String
@@ -18,17 +20,17 @@ e = E(<- "err" ->)      // E: negative String
 // && returns R: its positive winner comes from b, while both negative slots
 // are unit.
 m1 = a_pos && b
-print_float $ (m1 | (Float(_)) | 0.0)
+io::out $ (m1 | (Float(_)) | 0.0)
 
 // A negative LHS short-circuits && and produces R's negative unit.
 m2 = a_neg && b
-print_int $ (m2 | 1 | 0)
+io::out $ (m2 | 1 | 0)
 
 // || returns E: positive winners from both operands carry Int, and a
 // negative winner only comes from e.
 m3 = a_pos || e
-print_int $ (m3 | (Int(_)) | 0)
+io::out $ (m3 | (Int(_)) | 0)
 
 // A negative LHS falls through to e, whose negative payload is retained.
 m4 = a_neg || e
-print $ (m4 | "none" | (String(_)))
+io::out $ (m4 | "none" | (String(_)))

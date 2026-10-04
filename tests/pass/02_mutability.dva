@@ -1,5 +1,7 @@
+#use io
+
 a = 10
 count' = 5
 count' = count' + 10
-print_int $ a
-print_int $ count'
+io::out $ a
+io::out $ count'

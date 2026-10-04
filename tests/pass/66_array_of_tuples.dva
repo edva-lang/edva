@@ -1,7 +1,9 @@
+#use io
+
 arr = ((x = 1, y = 2), (x = 3, y = 4))
 t = arr(0)
-print_int $ t.x
-print_int $ t.y
+io::out $ t.x
+io::out $ t.y
 t2 = arr(1)
-print_int $ t2.x
-print_int $ t2.y
+io::out $ t2.x
+io::out $ t2.y

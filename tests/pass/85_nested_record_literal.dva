@@ -1,6 +1,8 @@
 // Nested record literals: a record of records, iterated and indexed.
+#use io
+
 arr = ((1, 2, 3), (4, 5, 6))
-print_int $ ?arr
-arr @ e => print_int $ e.2
+io::out $ ?arr
+arr @ e => io::out $ e.2
 t = arr(1)
-print_int $ t.1
+io::out $ t.1

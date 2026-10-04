@@ -1,9 +1,11 @@
+#use io
+
 arr = (10, 20, 30)
-print_int $ arr(0)
-print_int $ arr(1)
-print_int $ arr(2)
+io::out $ arr(0)
+io::out $ arr(1)
+io::out $ arr(2)
 
 arr(1) = 99
-print_int $ arr(1)
+io::out $ arr(1)
 
-print_int $ ?arr
+io::out $ ?arr

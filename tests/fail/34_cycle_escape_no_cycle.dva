@@ -1,4 +1,6 @@
+#use io
+
 r = 5
 >--
    99
-print $ r
+io::out $ r

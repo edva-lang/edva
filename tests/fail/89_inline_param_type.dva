@@ -1,3 +1,5 @@
 // Inline parameter types in definitions are removed; declare a signature.
+#use io
+
 f = x: Int => x + 1
-print $ f(1)
+io::out $ f(1)

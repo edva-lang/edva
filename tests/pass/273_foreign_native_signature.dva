@@ -1,4 +1,5 @@
 #use "str"
+#use io
 
 #foreign "c"
    write: (fd: Int, buf: String, count: Int) => Int
@@ -9,9 +10,9 @@
 msg = "native foreign signature ok\n"
 write(1, msg, ?msg)
 err_ptr = __errno_location()
-print $ err_ptr != Addr(0) | "has_errno" | "no_errno"
+io::out $ err_ptr != Addr(0) | "has_errno" | "no_errno"
 
 p = malloc(64)
-print $ p != Addr(0) | "malloc_ok" | "malloc_fail"
+io::out $ p != Addr(0) | "malloc_ok" | "malloc_fail"
 my_free(p)
-print $ "free_ok"
+io::out $ "free_ok"

@@ -5,6 +5,8 @@
 // returned the slot ADDRESS, so a guard on the field read garbage (the
 // selfhost parser's "Fn(?)" symptom).
 
+#use io
+
 #type Names (String){}
 #type FnExpr (params: Names, ct_params: Names, body: Expr)
 #type Expr < Int(Int), Str(String), Fn(FnExpr) >
@@ -19,5 +21,5 @@ read_body = e =>
 
 body = Expr(Int, 7)
 fnx = Expr(Fn, (Names(), Names(), body))
-print_int $ read_body(fnx)
-print_int $ read_body(Expr(Fn, (Names(), Names(), Expr(Int, 42))))
+io::out $ read_body(fnx)
+io::out $ read_body(Expr(Fn, (Names(), Names(), Expr(Int, 42))))

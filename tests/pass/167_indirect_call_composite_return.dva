@@ -3,6 +3,8 @@
 // field-access / index / payload-extract / variant-match the result.
 
 // Record return.
+#use io
+
 mk: Int => (name: String, age: Int)
 mk = n => (name = "k", age = n)
 
@@ -10,8 +12,8 @@ f: (Int => (name: String, age: Int))
 f = mk
 
 r = f(30)
-print $ r.name
-print_int $ r.age
+io::out $ r.name
+io::out $ r.age
 
 // Heap-ram return.
 #type Option < Int | >
@@ -23,7 +25,7 @@ g: (Int => Option)
 g = mk_some
 
 o = g(41)
-print_int $ (o | _ | -1)
+io::out $ (o | _ | -1)
 
 // Growable-array return.
 #type Ints (Int){}
@@ -38,7 +40,7 @@ h: (Int => Ints)
 h = mk_arr
 
 xs = h(42)
-print_int $ (xs(0) | _ | _)
+io::out $ (xs(0) | _ | _)
 
 // Enum return.
 #type Maybe <Some(String), Noth>
@@ -53,7 +55,7 @@ m: (String => Maybe)
 m = mk_maybe
 
 v = m("hi")
-print $ tag(v)
+io::out $ tag(v)
 
 // Slice return.
 src: Ints
@@ -68,5 +70,5 @@ sl: (Ints => (Int[]))
 sl = head2
 
 view = sl(src)
-print_int $ view(0)
-print_int $ view(1)
+io::out $ view(0)
+io::out $ view(1)

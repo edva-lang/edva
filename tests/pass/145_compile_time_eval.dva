@@ -2,13 +2,15 @@
 // to a constant at codegen. The subset is literals, + - * / % arithmetic,
 // string '+', and the '?s' length query.
 
-print_int $ #! 2 + 2
-print_int $ #! 3 * 5
-print_int $ #! 10 - 7
-print_int $ #! 20 / 4
-print_int $ #! 17 % 5
-print_float $ #! 1.5 + 2.5
-print $ #! "a" + "b"
-print_int $ #! ?"hello"
+#use io
+
+io::out $ #! 2 + 2
+io::out $ #! 3 * 5
+io::out $ #! 10 - 7
+io::out $ #! 20 / 4
+io::out $ #! 17 % 5
+io::out $ #! 1.5 + 2.5
+io::out $ #! "a" + "b"
+io::out $ #! ?"hello"
 x = #! 2 * 3 + 1
-print_int $ x
+io::out $ x

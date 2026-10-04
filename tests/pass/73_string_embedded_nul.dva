@@ -1,14 +1,16 @@
 // Embedded-NUL string literals: escapes decode to real NUL bytes, and the
 // fat String keeps the full length (no C-string truncation). Equality is
 // content-based over the full length.
+#use io
+
 s = "a\0b"
-print_int $ ?s
+io::out $ ?s
 
 c = s == "a\0b"
-print $ (c | "Positive" | "Negative")
+io::out $ (c | "Positive" | "Negative")
 
 d = s == "axb"
-print $ (d | "Positive" | "Negative")
+io::out $ (d | "Positive" | "Negative")
 
 e = ?s == 2
-print $ (e | "Positive" | "Negative")
+io::out $ (e | "Positive" | "Negative")

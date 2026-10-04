@@ -1,4 +1,6 @@
 // A declared signature return type is validated against the body's value.
+#use io
+
 bad: Int => String
 bad = x => x
-print $ bad(1)
+io::out $ bad(1)

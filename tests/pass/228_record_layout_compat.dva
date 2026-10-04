@@ -2,13 +2,15 @@
 // accepted wherever a declared record is expected, even with different field
 // names; pointer-shaped fields (a growable-array list where a heap enum is
 // declared, a String where a Builder...) are ABI-identical pointer slots.
+#use io
+
 #type A (a: Int)
 #type B (b: Int)
 f: A => Int
 f = r =>
    r.a
-print_int(f((5,)))
-print_int(f(B((7,))))
+io::out(f((5,)))
+io::out(f(B((7,))))
 
 // A bare unit flag field takes an integerish truthiness; a heap enum field
 // takes an enum value.
@@ -17,4 +19,4 @@ print_int(f(B((7,))))
 x: R
 x.flag = 1
 x.kind = K(N)
-print $ "ok"
+io::out $ "ok"

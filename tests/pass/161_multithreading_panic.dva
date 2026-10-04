@@ -1,3 +1,5 @@
+#use io
+
 #type Ints (Int){}
 xs: Ints
 xs += 42
@@ -7,4 +9,4 @@ crash = i =>
 
 h = #spawn crash(5)
 r = #join h
-print_int $ (r | _ | _)
+io::out $ (r | _ | _)

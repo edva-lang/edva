@@ -1,12 +1,14 @@
 // Aligned '|' must pertain to the same choice: a branch containing an inline
 // ';' sequence must not absorb a subsequent aligned '|' into an inner choice.
+#use io
+
 f = b =>
    b
       | x = 1; x + 1
       | 42
 
-print_int $ f(<+>)
-print_int $ f(<->)
+io::out $ f(<+>)
+io::out $ f(<->)
 
 g: <> => <Int|>
 g = b =>
@@ -14,5 +16,5 @@ g = b =>
       | x = 10; <+ x ->
       | <-->
 
-print_int $ (g(<+>) | v => v | 0)
-print_int $ (g(<->) | v => v | 0)
+io::out $ (g(<+>) | v => v | 0)
+io::out $ (g(<->) | v => v | 0)

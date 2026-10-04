@@ -1,5 +1,7 @@
+#use io
+
 apply_local = f2, x => f2(x)
 r = apply_local(f, 4)
 f = x => x + 1
-print_int $ r
-print_int $ f(9)
+io::out $ Int(r)
+io::out $ f(9)

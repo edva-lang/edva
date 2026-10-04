@@ -1,3 +1,5 @@
+#use io
+
 1.. @ i =>
     i > 3 | -->
-    print_int $ i
+    io::out $ i

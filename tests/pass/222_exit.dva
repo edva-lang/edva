@@ -1,3 +1,5 @@
+#use io
+
 io::out("before")
 #exit 3
 io::out("after")

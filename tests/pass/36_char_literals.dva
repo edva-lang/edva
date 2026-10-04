@@ -1,13 +1,15 @@
 // Test single-quoted character literals ('a', '0', '-', '\n', '\0')
 
+#use io
+
 a = '0'
-print_int $ a
+io::out $ Int(a)
 
 b = '-'
-print_int $ b
+io::out $ Int(b)
 
 c = '\n'
-print $ ( c == 10 | "Positive" | "Negative")
+io::out $ ( c == 10 | "Positive" | "Negative")
 
 d = '\0'
-print $ ( d == 0 | "Positive" | "Negative")
+io::out $ ( d == 0 | "Positive" | "Negative")

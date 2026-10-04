@@ -1,3 +1,0 @@
-f = x =>
-   writeln = 123
-   writeln + x

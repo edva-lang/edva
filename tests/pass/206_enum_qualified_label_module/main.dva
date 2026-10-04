@@ -8,6 +8,7 @@
 // already worked.
 
 #use "m"
+#use io
 
 name_a: m::A => String
 name_a = a =>
@@ -17,11 +18,11 @@ name_b: m::B => String
 name_b = b =>
    b [Y] "BY" [Z] "BZ"
 
-print $ name_a(m::A::X)
-print $ name_a(m::A::Y)
-print $ name_b(m::B::Y)
-print $ name_b(m::B::Z)
-print $ name_a(m::get(1))
-print $ name_a(m::get(2))
-print $ name_b(m::other(1))
-print $ name_b(m::other(2))
+io::out $ name_a(m::A::X)
+io::out $ name_a(m::A::Y)
+io::out $ name_b(m::B::Y)
+io::out $ name_b(m::B::Z)
+io::out $ name_a(m::get(1))
+io::out $ name_a(m::get(2))
+io::out $ name_b(m::other(1))
+io::out $ name_b(m::other(2))

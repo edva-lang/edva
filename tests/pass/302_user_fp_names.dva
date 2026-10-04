@@ -2,19 +2,21 @@
 // can be freely used as local variables and parameters now that they are
 // no longer in the prelude.
 
+#use io
+
 apply = 100
-print_int $ apply
+io::out $ apply
 
 f = map => map * 2
-print_int $ f(5)
+io::out $ f(5)
 
 g = x =>
    filter = x + 10
    filter
-print_int $ g(20)
+io::out $ g(20)
 
 5 @ find =>
-   find == 3 | print_int $ find
+   find == 3 | io::out $ find
 
 sort = 42
-print_int $ sort
+io::out $ sort

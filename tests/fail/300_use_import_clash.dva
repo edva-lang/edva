@@ -1,7 +1,8 @@
 #use(import) mod_a
 #use(import) mod_b
+#use io
 
 run = _ =>
-   print $ str::from_int(foo(1))
+   io::out $ str::from_int(foo(1))
 
 run(0)

@@ -9,6 +9,8 @@
 // vs i64 fields get different alignment padding). All three paths now
 // share one helper (codegen_tuple_llvm_struct_type), so this is exercised
 // end-to-end: write both bools, write the int, then read all three back.
+#use io
+
 #type T (
     a: i1,
     b: i1,
@@ -22,6 +24,6 @@ t.c = 999
 
 ra = t.a | "true" | "false"
 rb = t.b | "true" | "false"
-print $ ra
-print $ rb
-print_int $ t.c
+io::out $ ra
+io::out $ rb
+io::out $ t.c

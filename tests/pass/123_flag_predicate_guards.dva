@@ -2,6 +2,8 @@
 // truthiness decides (the Flag cond is a syntactic anchor). This makes a
 // vertical if/elif ladder: '<+>' anchored, one predicate per line, no nesting.
 
+#use io
+
 #type Flag <>
 
 // Elif ladder on the always-true anchor.
@@ -13,10 +15,10 @@ f = c =>
       [c == '?'] "q"
       | "other"
 
-print $ f(34)
-print $ f(43)
-print $ f(63)
-print $ f(99)
+io::out $ f(34)
+io::out $ f(43)
+io::out $ f(63)
+io::out $ f(99)
 
 // The cond's polarity is ignored — the guards are the conditions.
 g: Int => String
@@ -26,9 +28,9 @@ g = c =>
       [c == '+'] "op"
       | "other"
 
-print $ g(34)
-print $ g(43)
-print $ g(99)
+io::out $ g(34)
+io::out $ g(43)
+io::out $ g(99)
 
 // Comma-OR list of predicates: match when ANY holds.
 h: Int => String
@@ -37,6 +39,6 @@ h = c =>
       [c == '"', c == '+'] "op"
       | "other"
 
-print $ h(34)
-print $ h(43)
-print $ h(99)
+io::out $ h(34)
+io::out $ h(43)
+io::out $ h(99)

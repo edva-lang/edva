@@ -1,5 +1,7 @@
 // Tests postfix unwrap syntax '!!' (issue #14)
 
+#use io
+
 #type User (name: String, age: Int)
 
 add_ten = x => x + 10
@@ -16,16 +18,16 @@ a += 30
 x = a(0)!!
 y = a(1)!!
 z = a(2)!!
-print $ str::from_int(x)
-print $ str::from_int(y)
-print $ str::from_int(z)
+io::out $ str::from_int(x)
+io::out $ str::from_int(y)
+io::out $ str::from_int(z)
 
 // 2. Member chaining: users(i)!!.name
 users = UserArr()
 users += User(("Alice", 30))
 users += User(("Bob", 25))
-print $ users(0)!!.name
-print $ str::from_int(users(1)!!.age)
+io::out $ users(0)!!.name
+io::out $ str::from_int(users(1)!!.age)
 
 // 3. Nested unwrap
 row0 = IntArr()
@@ -39,17 +41,17 @@ m += row0
 m += row1
 v1 = m(0)!!(1)!!
 v2 = m(1)!!(0)!!
-print $ str::from_int(v1)
-print $ str::from_int(v2)
+io::out $ str::from_int(v1)
+io::out $ str::from_int(v2)
 
 // 4. Pipeline flow
 res = a(0)!! $> add_ten
-print $ str::from_int(res)
+io::out $ str::from_int(res)
 
 // 5. RamPN unwrap
 r_pn = <+ 42 +>
-print $ str::from_int(r_pn!!)
+io::out $ str::from_int(r_pn!!)
 
 // 6. RamPP unwrap
 r_pp = <+ "unwrapped string" +>
-print $ r_pp!!
+io::out $ r_pp!!

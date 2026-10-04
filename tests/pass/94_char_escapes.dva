@@ -1,9 +1,11 @@
 // Char and string literals share the full escape set: '\a' must equal the
 // bell byte exactly as "\a" does.
+#use io
+
 bell = '\a'
-print_int $ bell
+io::out $ Int(bell)
 
 tab = '\t'
-print_int $ tab
+io::out $ Int(tab)
 
-print $ "str \a \t \v"
+io::out $ "str \a \t \v"

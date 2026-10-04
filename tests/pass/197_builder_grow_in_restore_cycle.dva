@@ -6,6 +6,8 @@
 // reaped buffer at runtime (data at/above the arena bump in the current
 // chunk) and copies it to a fresh retained buffer before wrapping.
 
+#use io
+
 f = bs =>
    out = {2}
    ?bs @ i =>
@@ -15,6 +17,6 @@ f = bs =>
 
 m = (1, 2, 3)
 s = f(m)
-print $ "X" + s
-print $ s
-print $ "len " + s
+io::out $ "X" + s
+io::out $ s
+io::out $ "len " + s

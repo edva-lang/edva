@@ -1,8 +1,10 @@
+#use io
+
 add = a, b => a + b
 x = add(10, 20)
-print_int $ x
+io::out $ x
 
 double = (_ * 2)
-print_int $ double $ 15
+io::out $ double $ 15
 
-print_int $ add(100, 200)
+io::out $ add(100, 200)

@@ -2,6 +2,8 @@
 // whole following expression — a comparison and choice chain need no parens
 // ("#exit s == \"hello\" | 7 | 9"). Inside a choice branch body the trailing
 // '|' instead stays with the enclosing choice (see 223_exit_branch).
+#use io
+
 io::out("before")
 s = "he" + "llo"
 #exit s == "hello" | 7 | 9

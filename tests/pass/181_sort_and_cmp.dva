@@ -6,20 +6,21 @@
 #use(import) fp
 
 #use str
+#use io
 
-print_int $ str::cmp("abc", "abc")
-print_int $ str::cmp("abc", "abd")
-print_int $ str::cmp("abd", "abc")
-print_int $ str::cmp("ab", "abc")
-print_int $ str::cmp("", "a")
+io::out $ str::cmp("abc", "abc")
+io::out $ str::cmp("abc", "abd")
+io::out $ str::cmp("abd", "abc")
+io::out $ str::cmp("ab", "abc")
+io::out $ str::cmp("", "a")
 
 int_lt: Int, Int => <>
 int_lt = a, b => a < b
 
 names = ++("pear", "apple", "fig", "banana", "cherry")
 sort(names(0..5), str::lt)
-names @ n => print $ n
+names @ n => io::out $ n
 
 nums = ++(5, 3, 8, 1, 4)
 sort(nums(0..5), int_lt)
-nums @ n => print_int $ n
+nums @ n => io::out $ n

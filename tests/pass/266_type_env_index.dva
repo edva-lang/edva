@@ -2,6 +2,7 @@
 #use "../../src/type_env"
 #use "../../src/unify"
 #use "str"
+#use io
 
 ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
 
@@ -16,26 +17,26 @@ ctx = unify::new_ctx!
 type_env::bind_local(env, "x", unify::prim_int!, ti_unk, <->)
 1000 @ i => type_env::bind_local(env, str::from_int(i),
    unify::prim_int!, ti_unk, <->)
-print $ show_binding(env, ctx, "x")
-print $ show_binding(env, ctx, "999")
+io::out $ show_binding(env, ctx, "x")
+io::out $ show_binding(env, ctx, "999")
 type_env::bind_local(env, "x", unify::prim_float!, ti_unk, <+>)
-print $ show_binding(env, ctx, "x")
+io::out $ show_binding(env, ctx, "x")
 binding = type_env::lookup_local(env, "x")
 mutable = binding | b => b.is_mut | <->
-print_int $ (mutable | 1 | 0)
+io::out $ (mutable | 1 | 0)
 type_env::enter_scope(env)
 local = type_env::lookup_local(env, "x")
-print $ (local | b => b.name | "local missing")
-print $ show_binding(env, ctx, "x")
+io::out $ (local | b => b.name | "local missing")
+io::out $ show_binding(env, ctx, "x")
 type_env::bind_local(env, "x", unify::prim_str!, ti_unk, <->)
-print $ show_binding(env, ctx, "x")
+io::out $ show_binding(env, ctx, "x")
 type_env::leave_scope(env)
-print $ show_binding(env, ctx, "x")
-print $ show_binding(env, ctx, "absent")
+io::out $ show_binding(env, ctx, "x")
+io::out $ show_binding(env, ctx, "absent")
 type_env::bind_local(env, "mod::public", unify::prim_int!, ti_unk, <->)
 type_env::bind_local(env, "mod::#secret", unify::prim_str!, ti_unk, <->)
 type_env::set_current_module(env, "mod")
-print $ show_binding(env, ctx, "public")
-print $ show_binding(env, ctx, "secret")
+io::out $ show_binding(env, ctx, "public")
+io::out $ show_binding(env, ctx, "secret")
 type_env::set_current_module(env, "elsewhere")
-print $ show_binding(env, ctx, "secret")
+io::out $ show_binding(env, ctx, "secret")

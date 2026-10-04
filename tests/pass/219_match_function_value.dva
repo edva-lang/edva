@@ -9,6 +9,7 @@
 #use(import) fp
 
 #use "str"
+#use io
 
 dbl: Int => Int
 dbl = n => n * 2
@@ -16,19 +17,19 @@ inc: Int => Int
 inc = n => n + 1
 
 dispatch = (_ [< 0] dbl | inc)
-print $ str::from_int(-3 $> dispatch)
-print $ str::from_int(5 $> dispatch)
-print $ str::from_int(-3 $> (_ [< 0] dbl | inc))
-print $ str::from_int(7 $> (_ [< 0] dbl | inc))
+io::out $ str::from_int(-3 $> dispatch)
+io::out $ str::from_int(5 $> dispatch)
+io::out $ str::from_int(-3 $> (_ [< 0] dbl | inc))
+io::out $ str::from_int(7 $> (_ [< 0] dbl | inc))
 
 h = (_ [1] "one" [2] "two" | "other")
-print $ h(1)
-print $ h(3)
+io::out $ h(1)
+io::out $ h(3)
 
 call_fn: (Int => String), Int => String
 call_fn = fn, x => fn(x)
-print $ call_fn(h, 2)
+io::out $ call_fn(h, 2)
 
 c = compose(dbl, inc)
-print $ str::from_int(c(10))
-print $ str::from_int(10 $> c)
+io::out $ str::from_int(c(10))
+io::out $ str::from_int(10 $> c)

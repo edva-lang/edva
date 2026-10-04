@@ -1,13 +1,15 @@
 // A function VALUE as a cycle body: "iterable @ fn" calls fn with each element.
+#use io
+
 show: Int => ()
-show = x => print_int $ x
+show = x => io::out $ x
 arr = (10, 20, 30)
 arr @ show
 
 double: Int => Int
 double = x => x * 2
 (1, 2, 3) @ double
-print $ "done"
+io::out $ "done"
 
 // A grouped lambda is used directly as the body.
-(4, 5) @ (x => print_int $ x + 1)
+(4, 5) @ (x => io::out $ x + 1)

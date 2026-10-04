@@ -1,6 +1,8 @@
+#use io
+
 v1 = 2
 res1 = v1 [1] "one" [2] "two" [3] "three" | "other"
-print $ res1
+io::out $ res1
 
 v2 = 3
 res2 = v2
@@ -16,4 +18,4 @@ res2 = v2
     |
         msg_def = "other option"
         msg_def
-print $ res2
+io::out $ res2

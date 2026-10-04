@@ -1,3 +1,5 @@
+#use io
+
 #type Ints (Int){}
 #type Names (String){}
 #type Rect (w: Int, h: Int)
@@ -11,17 +13,17 @@ xs += 30
 
 // 1-param iteration
 xs @ x =>
-   print_int $ x
+   io::out $ x
 
 // 2-param iteration with index
 xs @ x, i =>
-   print_int $ i
-   print_int $ x
+   io::out $ i
+   io::out $ x
 
 // Block iteration with _ and _i
 xs @
-   print_int $ _
-   print_int $ _i
+   io::out $ _
+   io::out $ _i
 
 // 2. String growable array iteration
 names: Names
@@ -29,11 +31,11 @@ names += "hello"
 names += "world"
 
 names @ s =>
-   print $ s
+   io::out $ s
 
 names @ s, i =>
-   print_int $ i
-   print $ s
+   io::out $ i
+   io::out $ s
 
 // 3. Record growable array iteration
 grid: Grid
@@ -41,24 +43,24 @@ grid += (w = 3, h = 4)
 grid += (w = 5, h = 6)
 
 grid @ g =>
-   print_int $ g.w
-   print_int $ g.h
+   io::out $ g.w
+   io::out $ g.h
 
 grid @ g, i =>
-   print_int $ i
-   print_int $ g.w
-   print_int $ g.h
+   io::out $ i
+   io::out $ g.w
+   io::out $ g.h
 
 // 4. Empty array (zero iterations)
 empty = Ints()
 empty @ x =>
-   print_int $ 999
+   io::out $ 999
 
 empty_fwd: Ints
 empty_fwd @ x =>
-   print_int $ 999
+   io::out $ 999
 
-print $ "done empty"
+io::out $ "done empty"
 
 // 5. Break and escape
 r = xs @ x =>
@@ -66,9 +68,9 @@ r = xs @ x =>
 >--
    777
 
-print_int $ (r | _ | 0)
+io::out $ (r | _ | 0)
 
 // 6. Continue
 xs @ x, i =>
    x == 20 | --^
-   print_int $ x
+   io::out $ x

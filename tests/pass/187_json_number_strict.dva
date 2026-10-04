@@ -2,15 +2,16 @@
 // must be rejected as malformed, not silently parsed as -0.0 / 1.0 / 1.0.
 
 #use json
+#use io
 
 check: String => String
 check = s => json::parse(s) | v => "ok" | e => "error"
 
-print $ check $ (=1.5=)
-print $ check $ (=-3=)
-print $ check $ (=2.5e-2=)
-print $ check $ (=-=)
-print $ check $ (=1.=)
-print $ check $ (=1e=)
-print $ check $ (=1e+=)
-print $ check $ (=.5=)
+io::out $ check $ (=1.5=)
+io::out $ check $ (=-3=)
+io::out $ check $ (=2.5e-2=)
+io::out $ check $ (=-=)
+io::out $ check $ (=1.=)
+io::out $ check $ (=1e=)
+io::out $ check $ (=1e+=)
+io::out $ check $ (=.5=)

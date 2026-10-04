@@ -1,3 +1,5 @@
+#use io
+
 #type Token <Id, Num, Str, Eof>
 
 t1 = Token(Id)
@@ -7,10 +9,10 @@ classify: Token => String
 classify = t =>
    t [Id] "id" [Num] "num" [Str] "str" [Eof] "eof"
 
-print $ classify(t1)
-print $ classify(t2)
-print $ classify(Token(Str))
-print $ classify(Token(Eof))
+io::out $ classify(t1)
+io::out $ classify(t2)
+io::out $ classify(Token(Str))
+io::out $ classify(Token(Eof))
 
 #type Maybe <Some(String), Noth>
 
@@ -22,8 +24,8 @@ show = m =>
       [Noth]
          "nothing"
 
-print $ show(Maybe(Some, "hello"))
-print $ show(Maybe(Noth))
+io::out $ show(Maybe(Some, "hello"))
+io::out $ show(Maybe(Noth))
 
 #type Color <
    Red
@@ -45,5 +47,5 @@ name = c =>
       [Green] "green"
       [Blue] "blue"
 
-print $ name(next(Color(Red)))
-print $ name(next(next(Color(Green))))
+io::out $ name(next(Color(Red)))
+io::out $ name(next(next(Color(Green))))

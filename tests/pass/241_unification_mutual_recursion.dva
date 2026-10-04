@@ -1,4 +1,6 @@
 // Unannotated mutually recursive functions: Tarjan SCCs and type unification.
+#use io
+
 my_even = n =>
    n == 0
       | 1
@@ -9,10 +11,10 @@ my_odd = n =>
       | 0
       | my_even(n - 1)
 
-print_int $ my_even(10)
-print_int $ my_odd(10)
-print_int $ my_even(7)
-print_int $ my_odd(7)
+io::out $ my_even(10)
+io::out $ my_odd(10)
+io::out $ my_even(7)
+io::out $ my_odd(7)
 
 step_a = n =>
    n !> 0
@@ -29,9 +31,9 @@ step_c = n =>
       | 0
       | step_a(n - 1) + 3
 
-print_int $ step_a(6)
-print_int $ step_b(6)
-print_int $ step_c(6)
+io::out $ step_a(6)
+io::out $ step_b(6)
+io::out $ step_c(6)
 
 tree_left = depth, val =>
    depth !> 0
@@ -43,5 +45,5 @@ tree_right = depth, val =>
       | val
       | tree_left(depth - 1, val + 3) + 2
 
-print_int $ tree_left(3, 5)
-print_int $ tree_right(3, 5)
+io::out $ tree_left(3, 5)
+io::out $ tree_right(3, 5)

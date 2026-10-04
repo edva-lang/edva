@@ -1,15 +1,17 @@
 // Operator Section Assignments with infix application ($)
+#use io
+
 double = * 2
-print_int $ double $ 15
+io::out $ double $ 15
 
 add_ten = + 10
-print_int $ add_ten $ 32
+io::out $ add_ten $ 32
 
 sub_five = - 5
-print_int $ sub_five $ 50
+io::out $ sub_five $ 50
 
 is_fever = > 37.5
-print $ ((is_fever $ 38.2) | "Positive" | "Negative")
+io::out $ ((is_fever $ 38.2) | "Positive" | "Negative")
 
 // Operator Sections in Choice Predicate Brackets
 temp = 38.2
@@ -18,4 +20,4 @@ status = temp
     [> 37.5] "Fever"
     [< 35.0] "Hypothermia"
     | "Normal"
-print $ status
+io::out $ status

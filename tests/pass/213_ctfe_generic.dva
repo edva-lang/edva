@@ -5,10 +5,11 @@
 // yet (E3130).
 
 #use "str"
+#use io
 
 squared: #! T: Type, T => T
 squared = x => x * x
 
-print $ str::from_int(#! squared(5))
-print $ str::from_int(#! squared(12))
-print $ str::from_int(#! squared(3) + squared(4))
+io::out $ str::from_int(#! squared(5))
+io::out $ str::from_int(#! squared(12))
+io::out $ str::from_int(#! squared(3) + squared(4))

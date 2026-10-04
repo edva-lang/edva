@@ -1,5 +1,7 @@
-print $ (! <+> | "Positive" | "Negative")
-print $ (! (<->) | "Positive" | "Negative")
-print $ ( <+> && <+> | "Positive" | "Negative")
-print $ ( (<+>) && (<->) | "Positive" | "Negative")
-print $ ( (<->) || (<+>) | "Positive" | "Negative")
+#use io
+
+io::out $ (! <+> | "Positive" | "Negative")
+io::out $ (! (<->) | "Positive" | "Negative")
+io::out $ ( <+> && <+> | "Positive" | "Negative")
+io::out $ ( (<+>) && (<->) | "Positive" | "Negative")
+io::out $ ( (<->) || (<+>) | "Positive" | "Negative")

@@ -1,5 +1,7 @@
 // Tests two-way state bindings / property lenses with prefix '~~' (issue #35)
 
+#use io
+
 #type Settings (volume: Int, active: <>)
 #type Stats (health: Int)
 #type Player (stats: Stats)
@@ -14,7 +16,7 @@
 checkbox: String, FlagBinding => ()
 checkbox = label, binding =>
    cur = binding.get()
-   cur | print $ label + ": on" | print $ label + ": off"
+   cur | io::out $ label + ": on" | io::out $ label + ": off"
    binding.set(!cur)
 
 get_player: () => Player
@@ -31,10 +33,10 @@ calc_idx = !=>
 // 1. Direct record field lens
 s = Settings((75, <+>))
 b_vol = ~~s.volume
-print_int $ b_vol.get()
+io::out $ b_vol.get()
 b_vol.set(90)
-print_int $ b_vol.get()
-print_int $ s.volume
+io::out $ b_vol.get()
+io::out $ s.volume
 
 // 2. Widget consumption with record field
 checkbox("Sound", ~~s.active)
@@ -47,27 +49,27 @@ arr += 10
 arr += 20
 arr += 30
 b_elem = ~~arr(calc_idx())
-print_int $ ::idx_evals
-print_int $ b_elem.get()
+io::out $ ::idx_evals
+io::out $ b_elem.get()
 b_elem.set(99)
-print_int $ b_elem.get()
-print_int $ ::idx_evals
-print_int $ arr(1)!!
+io::out $ b_elem.get()
+io::out $ ::idx_evals
+io::out $ arr(1)!!
 
 // 4. Nested record path lens (once-evaluated)
 p_lens = ~~get_player().stats.health
-print_int $ ::player_evals
-print_int $ p_lens.get()
+io::out $ ::player_evals
+io::out $ p_lens.get()
 p_lens.set(85)
-print_int $ p_lens.get()
-print_int $ ::player_evals
+io::out $ p_lens.get()
+io::out $ ::player_evals
 
 // 5. Marked global binding
 b_glob = ~~::g_theme
-print_int $ b_glob.get()
+io::out $ b_glob.get()
 b_glob.set(999)
-print_int $ b_glob.get()
-print_int $ ::g_theme
+io::out $ b_glob.get()
+io::out $ ::g_theme
 
 // 6. Bidirectional adapter: map_binding (Issue #35 §5)
 map_binding: IntBinding, (Int => Int), (Int => Int) => IntBinding
@@ -84,7 +86,7 @@ f_to_c = f => (f - 30) / 2
 
 c_temp = Settings((25, <+>))
 f_lens = map_binding(~~c_temp.volume, c_to_f, f_to_c)
-print_int $ f_lens.get()
+io::out $ f_lens.get()
 f_lens.set(100)
-print_int $ f_lens.get()
-print_int $ c_temp.volume
+io::out $ f_lens.get()
+io::out $ c_temp.volume

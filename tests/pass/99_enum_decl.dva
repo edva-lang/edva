@@ -1,3 +1,5 @@
+#use io
+
 #type Token <One, Two, Three>
 #type MultiLine <
    Alpha, Beta,
@@ -6,4 +8,4 @@
 >
 #type InlineWrapped < A, B,
    C, D >
-print $ "enum decl ok"
+io::out $ "enum decl ok"

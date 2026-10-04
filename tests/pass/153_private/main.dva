@@ -1,3 +1,4 @@
 #use mod
-print_int $ mod::pub
-print_int $ mod::public_fn(2)
+#use io
+io::out $ mod::pub
+io::out $ mod::public_fn(2)

@@ -2,7 +2,7 @@
 //
 // It loads a target file and file-backed local #use modules, prefixes module
 // declarations, then sends one flattened program to the selfhost codegen.
-// Directory modules, stdlib fallback, prelude loading, and CLI flags follow.
+// Directory modules, stdlib fallback, and CLI flags follow.
 
 #use "annotate"
 #use "ast"
@@ -51,7 +51,6 @@ print = s =>
    src_path: String,
    ll_path: String,
    bin_path: String,
-   prelude_path: String,
    history: ast::Names
 )
 
@@ -963,22 +962,13 @@ load_target = path, prefix, ldr =>
                load_dir_files(files, path, prefix, ldr)
       | load_file(path, prefix, ldr)
 
-load_all: String, <>, String, String, <> => ModuleLoad
-load_all = target, no_prelude, prelude_path, target_prefix, is_modular =>
+load_all: String, String, <> => ModuleLoad
+load_all = target, target_prefix, is_modular =>
    ldr = Loader((ast::Exprs(), ast::Names(), ast::Names(),
       ast::Names(), ast::Names(), is_modular, <->))
-   ok' = <+>
-   prelude_path != "" && !no_prelude
-      |
-         pres = load_file(prelude_path, "", ldr)
-         !pres | ok' = <->
-   !ok'
-      | ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
-         ldr.dynamic_mods, ldr.dynamic_paths, <->))
-      |
-         tres = load_target(target, target_prefix, ldr)
-         ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
-            ldr.dynamic_mods, ldr.dynamic_paths, tres))
+   tres = load_target(target, target_prefix, ldr)
+   ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
+      ldr.dynamic_mods, ldr.dynamic_paths, tres))
 
 strip_trailing_slash: String => String
 strip_trailing_slash = s =>
@@ -1119,7 +1109,6 @@ collect_link_libs = stmts =>
    ir_only: <>,
    no_runtime: <>,
    no_main: <>,
-   no_prelude: <>,
    repl_mode: <>,
    opt: String,
    triple: String,
@@ -1137,7 +1126,7 @@ collect_link_libs = stmts =>
 
 init_opts: Int => CliOpts
 init_opts = _ =>
-   CliOpts(("", "", <->, <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
+   CliOpts(("", "", <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
       <->, <+>, "", <->, <->, ""))
 
 
@@ -2031,7 +2020,7 @@ repl_step: CliOpts, String, String, ReplSession => String
 repl_step = opts, session_src, line, sess =>
    disable_raw_mode!
    is_decl = line_has_decl(line)
-   candidate = is_decl || is_writer_line(line) || opts.no_prelude | line |
+   candidate = is_decl || is_writer_line(line) | line |
       "io::out(" + line + ")"
    full_src = session_src == "" | candidate |
       session_src + "\n" + candidate
@@ -2041,7 +2030,7 @@ repl_step = opts, session_src, line, sess =>
          print $ "E6001: Could not write scratch source file"
          session_src
       |
-         load_res = load_all(temp_src, opts.no_prelude, sess.prelude_path, "", <->)
+         load_res = load_all(temp_src, "", <->)
          !load_res.ok || ?load_res.exprs == 0
             | session_src
             |
@@ -2115,12 +2104,8 @@ repl_run = opts =>
          active_repl_bin ::= session_bin
          active_repl_dir ::= scratch_dir
          signal(2, @[Addr(on_sigint) Addr])
-         exe_dir = dirname(sys::argv_string(0))
-         cand = path_join(exe_dir, "prelude.dva")
-         pre_cwd = file_exists("prelude.dva") | "prelude.dva" | ""
-         prelude_path = file_exists(cand) | cand | pre_cwd
          sess = ReplSession((scratch_dir, session_src, session_ll,
-            session_bin, prelude_path, ast::Names()))
+            session_bin, ast::Names()))
          repl_opts = opts
          repl_opts.repl_mode = <+>
          repl_loop(repl_opts, "", sess)
@@ -2151,9 +2136,6 @@ parse_args_step = i, opts =>
             ["-shared", "--shared"]
                opts.is_shared = <+>
                opts.no_main = <+>
-               parse_args_step(i + 1, opts)
-            ["-no-prelude", "--no-prelude"]
-               opts.no_prelude = <+>
                parse_args_step(i + 1, opts)
             ["-repl", "--repl"]
                opts.repl_mode = <+>
@@ -2328,7 +2310,6 @@ print_usage = _ =>
    print $ "  -target <triple> Target triple (e.g. x86_64-unknown-linux-gnu)"
    print $ "  -no-main         Emit main with internal linkage"
    print $ "  -shared          Build a shared library (.so)"
-   print $ "  -no-prelude      Skip the prelude auto-load"
    print $ "  -repl, --repl    Interactive REPL (reads from stdin)"
    print $ "  -H, --header <h> Generate C header from #export declarations"
    print $ "  -h, --help       Show this help message"
@@ -2456,18 +2437,8 @@ run_driver = _ =>
    is_freestanding = (?opts.triple !< 14 &&
       opts.triple(..14) == "wasm32-unknown")
    is_freestanding && !opts.no_runtime | opts.no_runtime = <+>
-   is_freestanding && !opts.no_prelude | opts.no_prelude = <+>
-   opts.is_module | opts.no_prelude = <+>
-   no_prelude = opts.no_prelude
-
-   exe_dir = dirname(sys::argv_string(0))
-   cand = path_join(exe_dir, "prelude.dva")
-   pre_cwd = file_exists("prelude.dva") | "prelude.dva" | ""
-   prelude_path = file_exists(cand) | cand | pre_cwd
-
    target_prefix = opts.is_module && opts.no_main | opts.module_name | ""
-   load_result = load_all(opts.target, no_prelude, prelude_path, target_prefix,
-      opts.is_module)
+   load_result = load_all(opts.target, target_prefix, opts.is_module)
    !load_result.ok
       | sys::exit(1)
       |

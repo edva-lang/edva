@@ -1,8 +1,10 @@
 // Tests <>(x) and x $> <> polarity cast to RamNN (Flag).
 
+#use io
+
 show_flag: <> => ()
 show_flag = f =>
-   f | print $ "pos" | print $ "neg"
+   f | io::out $ "pos" | io::out $ "neg"
 
 // 1. RamNN (Flag)
 show_flag $ <>(<+>)

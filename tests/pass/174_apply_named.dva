@@ -1,8 +1,10 @@
 // "$" is plain application: "g $ 2" == g(2). The result is an Int, and
 // calling an Int variable afterwards must be a compile-time error (E3147),
 // not a blind closure dereference.
+#use io
+
 g: Int => Int
 g = n => n + 1
 
 v = g $ 2
-print_int $ v
+io::out $ v

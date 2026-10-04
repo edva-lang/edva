@@ -24,11 +24,14 @@ io::out(("builder:", b))
 io::err(("stderr", "line"))
 io::err(-7)
 
-// print stays as a String-only alias (the prelude's io::out).
-print $ "print alias"
+// print alias
+io::out $ "print alias"
+
+out_int: Int => ()
+out_int = n => io::out(n)
 
 // First-class: tap runs the writer on v and returns v unchanged.
-tap_out = x => tap(x, print_int)
+tap_out = x => tap(x, out_int)
 tap_out(123)
 
 // Format-string variants: '{}' placeholders substituted in order.
