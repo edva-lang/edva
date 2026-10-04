@@ -95,7 +95,7 @@ These rules takes precedence over anything you can infer from the code or other 
 - Ramification payload constructors close with `+>` or `->` (never a bare `>`): `<+ p +>` / `<+ p ->` put p in the first slot, `<- p ->` / `<- p +>` put p in the second slot. Because `<`/`>` are never delimiters, comparisons inside payloads are unambiguous and unbracketed: `<+ a > b +>`. `+>` and `->` are distinct lexer tokens (`.PlusGreater`, `.Arrow`).
 - .<. and .>. are the bit shifts (zero-fill / logical; the shift count is masked to operand width - 1 in codegen to avoid LLVM UB, wrapping modulo the width). `.>.` is shift right, `.<.` shift left.
 - .|. bitwise OR and .&. bitwise AND; .!. is bitwise NOT (unary). All bitwise ops accept integerish types only (Int, Rune, i8..u64); floats/Strings/rams are rejected.
-- Bitwise precedence (C-style, loosest to tightest): || < && < .|. < .&. < comparison < .<. .>. < + - < * / %. See src/precedence.dva.
+- Bitwise precedence (C-style, loosest to tightest): || < && < .|. < .&. < comparison < .<. .>. < + - < * / %. See operators.yaml.
 - `&&` and `||` are short-circuit logical operators. On non-ram operands (Int truthiness, comparison results, bare flags) the result is a Flag (`<+>`/`<->`-style i1). A Flag and a heap ram are distinct static types and representations: `<+>`/`<->` never coerce to `<++>`/`<-->`; write the heap unit explicitly. On two heap rams, the result keeps the short-circuit winner and derives its layout only from variants that can be returned:
   - `a && b`: the positive slot is `b`'s positive slot; the negative slot may come from either operand and therefore must have exactly the same layout on both.
   - `a || b`: the positive slot may come from either operand and therefore must have exactly the same layout on both; the negative slot is `b`'s negative slot.
@@ -155,7 +155,7 @@ style suggestion: multiples of 3 spaces for each intentation level
 
 The operators table MUST always be maintained current. It must list associativity, precedence, operand types and result types. There are several operators with differing semantics depending of the types.
 
-**The single source of truth for the operator table is `operators.yaml`** (every operator's symbol, tier, binding powers, associativity, operand/result types, description). It is consumed by `tools/opgen/main.nu` (run by `build.sh`, checked by `run_tests.sh --check`) to generate `src/operators_gen.dva` and the GRAMMAR.md §1.6 table. Edit the YAML, not the generated files or the hand-maintained `src/precedence.dva` (types + checks only).
+**The single source of truth for the operator table is `operators.yaml`** (every operator's symbol, tier, binding powers, associativity, operand/result types, description). It is consumed by `tools/opgen/main.nu` to generate the whole of `src/operators.dva` (the `bin_info` table) and the GRAMMAR.md §1.6 table (between `<!-- BEGIN/END operators.yaml -->` markers). `make` reruns it automatically when `operators.yaml` is newer than `src/operators.dva` (or explicitly: `make gen-operators`); `run_tests.sh` verifies sync with `--check`. Edit the YAML, never the generated files. Likewise `tools/tokens.txt` is the source of the `TokKind` enum, which `tools/gen_tokens.nu` writes into `src/lexer.dva` between `// BEGIN/END tokens.txt` markers (`make gen-tokens`).
 
 ## Code terseness
 
@@ -179,10 +179,11 @@ For tools, favor scripting in nushell.
 # Project
 
 `edva`: the native self-hosted compiler for the `dva` language, implemented
-in Dva (`selfhost/src/`). Generates LLVM IR via the LLVM 18 C API, then shells
-out to `clang` to assemble/link a binary. No README exists — `GRAMMAR.md` is a
-supplementary doc (see "Docs" below before trusting it); the HARD RULES above
-and the code are the real source of truth.
+in Dva (compiler in `src/`, standard library in `std/`). Generates LLVM IR via
+the LLVM 18 C API, then shells out to `clang` to assemble/link a binary.
+`README.md` is a user-facing quickstart and `GRAMMAR.md` a supplementary doc
+(see "Docs" below before trusting either); the HARD RULES above and the code
+are the real source of truth.
 
 **Dva has no bare keywords at all** `if`, `else`, `for`, `while`, `fn`, `return`, `continue`, `import`, `break` are all ordinary identifiers with no special meaning — don't assume conventional control-flow keywords exist when reading or writing `.dva` code. `#use module_name` / `#use "path"` is the import directive (lexes to a distinct `.Import` token because of the leading `#`, not because the word "import" is special). Cycle control flow uses symbolic operators instead of a `break` keyword: `-->` breaks the innermost enclosing `@` cycle, `--^` continues it; an optional integer suffix targets an outer cycle (`-->2` breaks the second enclosing cycle, `--^3` continues the third, etc.). A cycle can be turned into a cycle-escape expression by appending `>--` followed by a branch body: `Iterable @ FnExpr [ ">--" BranchBody ]`. It explicitly returns `< T | >`: example `5 @ i => i [3] --> >-- 99` runs the cycle, and if the `-->` fires the branch value produces `<+ 99 +>`; if the cycle completes without breaking, the result is `<-->` (negative unit / absence). `>--` is its own token, so it is unambiguous (never `|` or `[..]`). Branch body may be a block (dedent to a valid outer level, e.g. col 0 for a top-level cycle) or inline on the same line.
 
@@ -190,18 +191,35 @@ and the code are the real source of truth.
 
 - Requires **`libLLVM-18` installed system-wide** — a hard link-time dependency,
   independent of any other LLVM/clang version also present.
-- **`edva` must be linked with `-Wl,--export-dynamic`**
-  (`-extra-linker-flags:"-Wl,--export-dynamic"`): compile-time evaluation
-  (`#!`) JIT-compiles expressions and resolves symbols via process symbols.
+- **`edva` must be linked with `-Wl,--export-dynamic`** (the Makefile's
+  `ALL_LDFLAGS` does this): compile-time evaluation (`#!`) JIT-compiles
+  expressions and resolves symbols via process symbols.
 - Requires **`clang` on `PATH` at runtime** — `edva` shells out to it to turn
   generated IR into a binary. Cross-compilation =
   `./edva foo.dva -target aarch64-linux-gnu` (plus cross-clang/linker on PATH).
+- Requires **`nu` (Nushell)** at build time: it runs the generators
+  (`tools/opgen/main.nu`, `tools/gen_tokens.nu`, `tools/gendeps.nu`).
 
 ## Build & test
 
-- `./build.sh` — builds `edva` then runs the test suite.
-- `./run_tests.sh` — builds `edva`, runs regression and differential suites.
-- `./selfhost/test_driver.sh` — driver regression suite alone. Fast.
+- `make` (or `make -j8`) — incremental, parallel-safe modular build of `edva`:
+  each module compiles to `build/obj/<module>.o`, then they are linked. If
+  `./edva` is missing it is first bootstrapped from `seed/ir/*.ll`.
+  Dependencies come from `build/deps.mk`, generated by `tools/gendeps.nu` from
+  the transitive `#use` graph and regenerated automatically when any `.dva`
+  changes — never edit it, and don't hand-write module deps in the Makefile.
+  `make V=1` shows the full commands; `CC`, `CFLAGS`, `LDFLAGS`, `LIBS`,
+  `EDVA_FLAGS` are overridable.
+- `make check` — regenerate tables, build, run `test_driver.sh` and
+  `run_tests.sh`. `make test` / `make driver-test` run one suite each.
+- `make fixed-point` — 2-stage self-compilation, asserts byte-identical IR.
+  `make rebuild-seed` — fixed-point, then refresh `seed/`.
+- `make install` / `make uninstall` — `PREFIX` (default `/usr/local`) and
+  `DESTDIR` supported; installs `bin/edva` and `lib/edva/std/`.
+- `./build.sh` — legacy wrapper: generators, `make edva`, `run_tests.sh`.
+- `./run_tests.sh` — builds `edva`, checks generated tables are in sync, runs
+  regression and differential suites.
+- `./test_driver.sh` — driver regression suite alone. Fast.
 - **Wrap all test runs and audits in explicit timeouts and 4G RAM ulimit**:
   When running ad-hoc test scripts, batches, or compiler audits, always set
   timeouts and wrap executions in a 4 GB RAM limit (e.g.
@@ -212,7 +230,7 @@ and the code are the real source of truth.
 - The 2 `tests/sudo/*` tests need real `sudo`; in sandboxes they fail with
   "command not found" — expected, not a regression.
 - `./edva -repl` (or `--repl`) starts an interactive REPL
-  (`selfhost/src/edva.dva`). It recompiles the whole session on every accepted
+  (`src/edva.dva`). It recompiles the whole session on every accepted
   line into scratch files under `/tmp/edva_repl.*` (not cwd) and runs it;
   verify manually with e.g. `printf 'x = 5\nprint $ x\n:q\n' | ./edva -repl`.
 
@@ -230,8 +248,12 @@ from the repo root:
   gitignored — **delete any stray output binaries you create** (`rm -f <name>`)
   before committing; other names are not auto-ignored.
 - Module resolution (`#use module` / `#use "a/b"`) tries, in order:
-  (1) relative to the importing `.dva` file's own directory,
-  (2) `<dir-containing-edva-binary>/std/`. The loader is **file-first**:
+  (1) the importing `.dva` file's own directory, (2) that directory's parent,
+  (3) the stdlib directory, (4) `./std` in the current directory. The stdlib
+  directory is chosen once at startup: `$EDVA_PATH` (or `$EDVA_STDLIB`) if it
+  names a directory, else `<edva-binary-dir>/std` (in-tree), else
+  `<edva-binary-dir>/../lib/edva/std` (installed), else
+  `<edva-binary-dir>/../share/edva/std`. The loader is **file-first**:
   a module is `<dir>/<name>.dva`; a same-named `<dir>/<name>/` directory is
   only a fallback (a multi-file module). This lets `std/net.dva` and
   `std/net/http.dva` coexist. The module prefix is the last path segment
@@ -240,8 +262,10 @@ from the repo root:
 - `tests/pass/<name>/` (a directory containing `main.dva`, e.g. `28_modules/`)
   is a multi-file module test — pass the directory itself to `edva`, not a file
   inside it.
-- `./edva` with no args prints full usage (flags: `-r`, `-ir`/`--ir-only`,
-  `-O0`..`-O3`/`-Os`/`-Oz`/`-O`, `-target <triple>`, `-h`).
+- `./edva` with no args prints usage (`-r`, `-ir`/`--ir-only`, `-o`, `-target
+  <triple>`, `-h`, …). Accepted but **not** listed there: `-O0`..`-O3`/`-Os`/
+  `-Oz`/`-O`, `-c`/`--compile-only`, `--module <name>`, `--entry` (see
+  `parse_args_step` in `src/edva.dva`).
 
 ### Diagnosing and recovering from compiler coredumps (SIGSEGV)
 
@@ -253,15 +277,15 @@ When `edva` crashes with a core dump (SIGSEGV, exit code 139 or 245) or times ou
    segfault inside LLVM C API calls. The printed errors are almost always the
    root cause of the crash.
 2. **Never rerun a crashing command without changes**: Do not loop or retry
-   blindly. Inspect the git diff of your changes (`git diff selfhost/src/`) and
+   blindly. Inspect the git diff of your changes (`git diff src/ std/`) and
    the diagnostics.
-3. **Isolate the failing module**: When `selfhost/src/edva.dva` fails to compile,
-   test each imported module independently to pinpoint which file has the bug:
+3. **Isolate the failing module**: `make V=1` shows which module's compile
+   step fails. To rerun one module by hand, use the same command as the
+   Makefile:
    ```bash
-   ./edva selfhost/src/parser.dva /tmp/t_p
-   ./edva selfhost/src/annotate.dva /tmp/t_a
-   ./edva selfhost/src/codegen.dva /tmp/t_c
-   rm -f /tmp/t_p* /tmp/t_a* /tmp/t_c*
+   ./edva src/parser.dva -c --module parser -o /tmp/t_p.o
+   ./edva src/codegen/expr.dva -c --module expr -o /tmp/t_e.o
+   rm -f /tmp/t_p.o /tmp/t_e.o parser.ll expr.ll
    ```
 4. **Inspect stack trace with gdb**: If `edva` crashes without diagnostic output:
    ```bash
@@ -269,10 +293,11 @@ When `edva` crashes with a core dump (SIGSEGV, exit code 139 or 245) or times ou
    ```
 5. **Recovering a corrupted `edva` binary from seed**: If the `edva` executable
    is deleted or corrupted by a faulty stage build, regenerate it from the
-   bootstrap seed:
+   bootstrap seed. Also drop the objects the bad compiler produced (`make
+   clean` keeps `./edva`), or they would just be relinked:
    ```bash
-   rm -f edva
-   make edva   # links seed/edva.ll into edva automatically
+   rm -f edva && make clean
+   make        # links seed/ir/*.ll into edva, then rebuilds all modules
    ```
 
 ## Docs — trust code over prose
@@ -289,9 +314,9 @@ not read by default unless explicitly asked**; see
 
 ## Compiler internals worth knowing before editing
 
-- `src/parser.dva` (~2.5k lines) and `src/codegen.dva` (~3.5k lines) are exercised by the test suite. When changing parsing or codegen behavior, add a case under `tests/pass/`/`tests/fail/` (with matching `.expected`/`.expected_err`) rather than relying on manual/ad-hoc verification.
-- **Error messages are class-coded `Exyyy: ...`** — `x` is the class digit, `yyy` a per-message number. Classes: `1` lexer, `2` parser, `3` codegen, `4` runtime (generated code), `5` driver/CLI (`src/main.dva`), `6` REPL. Codes are assigned in order of first appearance per file; identical messages share one code. Positioned messages keep `[line:col]` as `E2yyy [l:c]: msg`. When adding a diagnostic, pick the next free `yyy` in the file's class; parser errors go through `parser_error(p, code, fmt, ..)`. `tests/fail/*.expected_err` substrings should match the **message body only** (no `Exyyy:` prefix) so renumbering doesn't break them.
-- The HARD RULES' bare-`|`-in-middle-position error (`a | b | c | d` must fail because `c` is neither first nor last) is enforced in `parser_parse_choice_continuation` in `src/parser.dva` — don't reintroduce a bypass; see `tests/fail/17_middle_bare_pipe_choice.dva`.
+- `src/parser.dva` (~6k lines) and codegen (`src/codegen.dva` is a thin facade over `src/codegen/{types,runtime,expr,match,stmt,main}.dva`, ~28k lines total) are exercised by the test suite. When changing parsing or codegen behavior, add a case under `tests/pass/`/`tests/fail/` (with matching `.expected`/`.expected_err`) rather than relying on manual/ad-hoc verification.
+- **Error messages are class-coded `Exyyy: ...`** — `x` is the class digit, `yyy` a per-message number. Classes: `1` lexer, `2` parser, `3` codegen, `4` runtime (generated code), `5` driver/CLI (`src/edva.dva`), `6` REPL. Codes are assigned in order of first appearance per file; identical messages share one code. Positioned messages keep `[line:col]` as `E2yyy [l:c]: msg`. When adding a diagnostic, pick the next free `yyy` in the file's class; parser errors go through `parser_error(p, code, fmt, ..)`. `tests/fail/*.expected_err` substrings should match the **message body only** (no `Exyyy:` prefix) so renumbering doesn't break them.
+- The HARD RULES' bare-`|`-in-middle-position error (`a | b | c | d` must fail because `c` is neither first nor last) is enforced in `finish_parsed_choice` in `src/parser.dva` — don't reintroduce a bypass; see `tests/fail/17_middle_bare_pipe_choice.dva`.
 
 ## Gitea & Remote Tracking
 
