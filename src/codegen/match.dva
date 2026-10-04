@@ -4159,15 +4159,13 @@ codegen_typed_build_union = cg, tid, pay_opt, alloc_name =>
    pay_opt
       | pay_te =>
          ev = main::codegen_typed_eval(cg, pay_te)
-         ev.0 == Addr(0)
-            |
-               LLVMBuildStore(cg.builder, LLVMConstNull(i8p), pgep)
-            |
+         types::llvm_val_opt(ev.0)
+            | ev_val =>
                is_ptrish = types::is_ptrish_vt(ev.1) ||
-                  (LLVMGetTypeKind(LLVMTypeOf(ev.0)) == 12)
+                  (LLVMGetTypeKind(LLVMTypeOf(ev_val)) == 12)
                is_ptrish
                   |
-                     ptr_val = LLVMBuildPointerCast(cg.builder, ev.0,
+                     ptr_val = LLVMBuildPointerCast(cg.builder, ev_val,
                         i8p, "pay.ptr")
                      LLVMBuildStore(cg.builder, ptr_val, pgep)
                   |
@@ -4176,7 +4174,7 @@ codegen_typed_build_union = cg, tid, pay_opt, alloc_name =>
                            box' = expr::codegen_call_arena_alloc(cg,
                               LLVMConstInt(LLVMInt64Type!, 8, 0),
                               "enum.pay.alloc")
-                           LLVMBuildStore(cg.builder, ev.0, box')
+                           LLVMBuildStore(cg.builder, ev_val, box')
                            box_ptr' = LLVMBuildPointerCast(cg.builder,
                               box', i8p, "pay.box.ptr")
                            LLVMBuildStore(cg.builder, box_ptr', pgep)
@@ -4184,10 +4182,12 @@ codegen_typed_build_union = cg, tid, pay_opt, alloc_name =>
                            box' = expr::codegen_call_arena_alloc(cg,
                               LLVMConstInt(LLVMInt64Type!, 8, 0),
                               "pay.alloc")
-                           LLVMBuildStore(cg.builder, ev.0, box')
+                           LLVMBuildStore(cg.builder, ev_val, box')
                            box_ptr' = LLVMBuildPointerCast(cg.builder,
                               box', i8p, "pay.box.ptr")
                            LLVMBuildStore(cg.builder, box_ptr', pgep)
+            |
+               LLVMBuildStore(cg.builder, LLVMConstNull(i8p), pgep)
       |
          LLVMBuildStore(cg.builder, LLVMConstNull(i8p), pgep)
    up
