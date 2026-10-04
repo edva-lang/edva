@@ -2926,7 +2926,7 @@ param_is_slice = cg, name, pdtype, pti =>
                   | <->
 
 // A parameter closure's LLVM fn type and return type from its TypeInfo.
-fn_type_from_ti: types::Cg, ast::TypeInfo => (Addr, ast::ValueType)
+fn_type_from_ti: types::Cg, ast::TypeInfo => <(Addr, ast::ValueType)|>
 fn_type_from_ti = cg, ti =>
    ti
       [Fn f]
@@ -2937,8 +2937,8 @@ fn_type_from_ti = cg, ti =>
          n @ i =>
             pv = f.0(i) | _ | ast::ValueType(Unknown)
             param_ll += types::llvm_type_of_vt(pv)
-         (fn_type_n(cg, ret_ll, param_ll, n), ret_vt)
-      | (Addr(0), ast::ValueType(Unknown))
+         <+ (fn_type_n(cg, ret_ll, param_ll, n), ret_vt) ->
+      | <-->
 
 param_clo_add: types::Cg, String, Addr, ast::ValueType => ()
 param_clo_add = cg, name, fty, ret =>
@@ -3002,8 +3002,8 @@ codegen_fn_param_ll = cg, i8p, params, dtypes, ptis, ptypes, i, n, acc =>
          pti0 = (ptis(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown)))
          fti0 = fn_type_from_ti(cg, pti0)
          is_clo = <>(param_clo_ty(cg, pname))
-         fti0.0 != Addr(0) && !is_clo
-            | param_clo_add(cg, target_pname, fti0.0, fti0.1)
+         !is_clo
+            | fti0 | ft => param_clo_add(cg, target_pname, ft.0, ft.1)
          prec0 = codegen_fn_param_rec(cg, pname, pdtype0, pti0)
          is_arr0 = param_is_array(cg, pname, pdtype0, pti0)
          is_sl0 = param_is_slice(cg, pname, pdtype0, pti0)
@@ -3060,8 +3060,8 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
          pti = (ptis(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown)))
          fti = fn_type_from_ti(cg, pti)
          is_clo = <>(param_clo_ty(cg, pname))
-         fti.0 != Addr(0) && !is_clo
-            | param_clo_add(cg, target_pname, fti.0, fti.1)
+         !is_clo
+            | fti | ft => param_clo_add(cg, target_pname, ft.0, ft.1)
          prec = codegen_fn_param_rec(cg, pname, pdtype', pti)
          is_sl = param_is_slice(cg, pname, pdtype', pti)
          is_rec = !is_sl && <>(prec)
@@ -6659,7 +6659,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
 
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    cap_tys = is_cap | lambda_caps_types_at(cg, caps, 0, nc, types::Addrs()) | types::Addrs()
-   est = is_cap | types::struct_type_n(cg, cap_tys, nc) | Addr(0)
+   est_opt = is_cap | <+ types::struct_type_n(cg, cap_tys, nc) -> | <-->
 
    nparams = ?params
    param_ll = types::Addrs()
@@ -6695,8 +6695,8 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
    cg.fninfos += types::FnInfo((name, fn, fty, nparams, param_types, ret_vt,
       <+>, <->, <+>, !is_cap))
 
-   is_cap
-      |
+   est_opt
+      | est =>
          ep = LLVMBuildBitCast(cg.builder, LLVMGetParam(fn, 0),
             LLVMPointerType(est, 0), "cap.env")
          lambda_add_caps(cg, caps, cap_vts, est, ep, 0, nc)
@@ -6771,8 +6771,8 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
    types::g.expected_fn_ti = saved_expected_ti
 
    envp' = LLVMConstNull(i8p)
-   is_cap
-      |
+   est_opt
+      | est =>
          ep2 = expr::codegen_call_arena_alloc(cg,
             LLVMConstInt(LLVMInt64Type!, nc * 8, 0), "env.alloc")
          lambda_store_caps_at(cg, caps, cap_vals, est, ep2, 0, nc)
