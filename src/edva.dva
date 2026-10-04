@@ -88,6 +88,13 @@ compiler_std_dir = "std"
 compiler_exe_path: String
 compiler_exe_path = ""
 
+getenv_opt: String => <String|>
+getenv_opt = name =>
+   p = getenv(name)
+   p != Addr(0)
+      | <+ sys::c_str(p) ->
+      | <-->
+
 init_compiler_paths: () => ()
 init_compiler_paths = !=>
    exe = canonical_path("/proc/self/exe")
@@ -99,19 +106,23 @@ init_compiler_paths = !=>
    cand_in_tree = path_join(exe_dir, "std")
    cand_lib = path_join(prefix_dir, "lib/edva/std")
    cand_share = path_join(prefix_dir, "share/edva/std")
-   env_p = getenv("EDVA_PATH")
-   env_std = env_p == Addr(0) | getenv("EDVA_STDLIB") | env_p
-   env_std != Addr(0) && dir_exists(sys::c_str(env_std))
-      |
-         compiler_std_dir ::= sys::c_str(env_std)
+   env_std_opt = getenv_opt("EDVA_PATH")
+      | s => <+ s ->
+      | getenv_opt("EDVA_STDLIB")
+   env_valid = env_std_opt
+      | dir =>
+         dir_exists(dir)
+            | <+ dir ->
+            | <-->
+      | <-->
+   env_valid
+      | dir => compiler_std_dir ::= dir
       |
          dir_exists(cand_in_tree)
-            |
-               compiler_std_dir ::= cand_in_tree
+            | compiler_std_dir ::= cand_in_tree
             |
                dir_exists(cand_lib)
-                  |
-                     compiler_std_dir ::= cand_lib
+                  | compiler_std_dir ::= cand_lib
                   |
                      dir_exists(cand_share)
                         | compiler_std_dir ::= cand_share
@@ -1662,8 +1673,8 @@ active_repl_bin: String
 active_repl_bin = ""
 active_repl_dir: String
 active_repl_dir = ""
-::orig_termios: Addr
-::orig_termios = Addr(0)
+::orig_termios: <Addr|>
+::orig_termios = <-->
 ::raw_mode_active: <>
 ::raw_mode_active = <->
 
@@ -1672,12 +1683,17 @@ enable_raw_mode = !=>
    libc::isatty(0) == 0
       | <->
       |
-         orig_termios == Addr(0) | orig_termios = libc::malloc(128)
-         libc::tcgetattr(0, orig_termios) != 0
+         buf = orig_termios
+            | p => p
+            |
+               p = libc::malloc(128)
+               orig_termios = <+ p ->
+               p
+         libc::tcgetattr(0, buf) != 0
             | <->
             |
                raw = libc::malloc(128)
-               libc::memcpy(raw, orig_termios, 128)
+               libc::memcpy(raw, buf, 128)
                libc::cfmakeraw(raw)
                res = libc::tcsetattr(0, 0, raw)
                libc::free(raw)
@@ -1689,9 +1705,9 @@ enable_raw_mode = !=>
 
 disable_raw_mode: () => ()
 disable_raw_mode = !=>
-   raw_mode_active && orig_termios != Addr(0)
+   raw_mode_active
       |
-         libc::tcsetattr(0, 0, orig_termios)
+         orig_termios | p => libc::tcsetattr(0, 0, p)
          raw_mode_active = <->
 
 write_esc: String => ()
@@ -2009,8 +2025,8 @@ repl_cleanup = sess =>
    ?sess.ll_path > 0 | unlink(sess.ll_path)
    ?sess.bin_path > 0 | unlink(sess.bin_path)
    ?sess.dir > 0 | rmdir(sess.dir)
-   orig_termios != Addr(0) | libc::free(orig_termios)
-   orig_termios = Addr(0)
+   orig_termios | p => libc::free(p)
+   orig_termios = <-->
    active_repl_src ::= ""
    active_repl_ll ::= ""
    active_repl_bin ::= ""

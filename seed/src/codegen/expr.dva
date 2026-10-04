@@ -369,11 +369,12 @@ codegen_named_fn_value = cg, name =>
 
 codegen_named_fn_value_valid: types::Cg, String => < (Addr, ast::ValueType) | >
 codegen_named_fn_value_valid = cg, target =>
-   fi = stmt::fninfo_of(cg, target)
-   fn_val = fi | f => f.0 | Addr(0)
-   gv = noncap_closure(cg, target, fn_val)
-   cg.last_closure_fn = target
-   <+ (gv, ast::ValueType(Fn)) ->
+   stmt::fninfo_of(cg, target)
+      | f =>
+         gv = noncap_closure(cg, target, f.0)
+         cg.last_closure_fn = target
+         <+ (gv, ast::ValueType(Fn)) ->
+      | <-->
 
 // A non-capturing named fn's closure value: the CONSTANT { fn_ptr, null }
 // global (cached per fn — one clo.const<N> per function, matching the
