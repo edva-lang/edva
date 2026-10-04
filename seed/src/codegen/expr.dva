@@ -2643,7 +2643,7 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
                               pos_bb)
                            is_unit = pos_vt [Unit]
                            res_val = is_unit
-                              | Addr(0)
+                              | LLVMConstInt(LLVMInt64Type!, 0, 0)
                               |
                                  pay_val = match::union_pay_ptr(cg, val)
                                  unwrap_pay_value(cg, pay_val, pos_vt)
@@ -5120,7 +5120,7 @@ codegen_typed_eval_unary = cg, op, operand, ut, ti =>
                LLVMPositionBuilderAtEnd(cg.builder, pos_bb')
                is_unit' = ret_vt' [Unit]
                res_val' = is_unit'
-                  | Addr(0)
+                  | LLVMConstInt(LLVMInt64Type!, 0, 0)
                   |
                      is_niche'
                         | ev.0

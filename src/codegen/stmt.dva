@@ -1223,8 +1223,8 @@ codegen_eval_cycle_unrolled = cg, c, n =>
       [Fn f]
          idx_name = ?f.params > 0 | (f.params(0) | _ | "") | ""
          codegen_eval_cycle_unrolled_step(cg, f.body, idx_name, 0, n,
-            (Addr(0), ast::ValueType(Unit)))
-      | (Addr(0), ast::ValueType(Unit))
+            (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit)))
+      | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 codegen_eval_cycle_unrolled_step: types::Cg, ast::Expr, String, Int, Int,
    (Addr, ast::ValueType) => (Addr, ast::ValueType)
@@ -1247,7 +1247,7 @@ codegen_eval_cycle_unrolled_step = cg, body, idx_name, k, n, last_val =>
          cg.vars = truncate_vars(cg.vars, saved_nvars)
          cg.bindings = runtime::binding_truncate(cg.bindings, saved_nbindings)
          cg.error
-            | (Addr(0), ast::ValueType(Unknown))
+            | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             | codegen_eval_cycle_unrolled_step(cg, body, idx_name, k + 1, n, v)
 
 // "N @ i => body" (and iterable cycles): a header/body/latch/exit loop. The
@@ -1284,13 +1284,13 @@ codegen_dynamic_record_index_error: types::Cg => (Addr, ast::ValueType)
 codegen_dynamic_record_index_error = cg =>
    types::init_error(cg, "E3051", "Dynamic indexing is only allowed on homogeneous " +
       "records.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_cycle_record_iter_error: types::Cg => (Addr, ast::ValueType)
 codegen_cycle_record_iter_error = cg =>
    types::init_error(cg, "E3051", "Cycle iteration is only allowed on homogeneous " +
       "records.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 cycle_range_start: types::Cg, ast::RangeExpr => Addr
 cycle_range_start = cg, rng =>
@@ -1551,7 +1551,7 @@ codegen_eval_map_cycle = cg, c, m =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nb - 1)
    LLVMPositionBuilderAtEnd(cg.builder, done)
-   (Addr(0), ast::ValueType(Unit))
+   (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 codegen_eval_cycle_body_cond: types::Cg, ast::Expr => (Addr, ast::ValueType)
 codegen_eval_cycle_body_cond = cg, bfn =>
@@ -1613,7 +1613,7 @@ codegen_eval_condition_cycle = cg, c =>
    LLVMPositionBuilderAtEnd(cg.builder, done)
    is_void = bv.1 [Unit, Unknown]
    is_void
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
       | (LLVMConstNull(types::llvm_type_of_vt(bv.1)), bv.1)
 
 codegen_eval_indexed_cycle: types::Cg, ast::CycleExpr, <>,
@@ -1796,7 +1796,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
    LLVMPositionBuilderAtEnd(cg.builder, done)
    is_void = bv.1 [Unit, Unknown]
    is_void
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
       | (LLVMConstNull(types::llvm_type_of_vt(bv.1)), bv.1)
 
 codegen_eval_cycle_valid: types::Cg, ast::CycleExpr => (Addr, ast::ValueType)
@@ -1841,7 +1841,7 @@ codegen_cycle_jump_outside = cg, j =>
    op = j.is_break | "-->" | "--^"
    types::init_error(cg, "E3006", "'" + op +
       "' cannot be used outside of a cycle context (@).", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_cycle_jump_too_deep: types::Cg, ast::CycleJumpExpr, Int => (Addr, ast::ValueType)
 codegen_cycle_jump_too_deep = cg, j, depth =>
@@ -1849,7 +1849,7 @@ codegen_cycle_jump_too_deep = cg, j, depth =>
    types::init_error(cg, "E3007", "'" + op + "' targets cycle-nesting level " +
       str::from_int(j.level) + ", but only " + str::from_int(depth) +
       " enclosing cycle(s) exist at this point.", 0, 0)
-   (Addr(0), ast::ValueType(Unknown))
+   (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_eval_cycle_jump_valid: types::Cg, ast::CycleJumpExpr, Int => (Addr, ast::ValueType)
 codegen_eval_cycle_jump_valid = cg, j, nb =>
@@ -1857,7 +1857,7 @@ codegen_eval_cycle_jump_valid = cg, j, nb =>
       | cg.cycle_breaks(nb - j.level)!!
       | cg.cycle_conts(nb - j.level)!!
    branch_to(cg, target)
-   (Addr(0), ast::ValueType(Unit))
+   (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 // "cycle >-- branch" — a cycle-escape expression: if the cycle's "-->" fires,
 // the branch value becomes the positive payload of < T | >; otherwise <--> (Noth).
@@ -5455,7 +5455,7 @@ infer_expr_type = cg, e =>
 codegen_typed_eval_block_step: types::Cg, tast::TypedExprs, Int, Int => (Addr, ast::ValueType)
 codegen_typed_eval_block_step = cg, exprs, i, n =>
    i == n
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
       |
          te = exprs(i) | _ | tast::mk_lit_unit(0, 0)
          v = main::codegen_typed_eval(cg, te)
@@ -5550,7 +5550,7 @@ codegen_typed_eval_block = cg, exprs =>
       |
          types::init_error(cg, "E3133", "Cannot return Addr from an arena-restore " +
             "scope. Copy data explicitly with '++' before boundary.", 0, 0)
-         (Addr(0), ast::ValueType(Unknown))
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       | last
 
 codegen_typed_eval_fwd: types::Cg, String, ast::TypeInfo => (Addr, ast::ValueType)
@@ -5600,7 +5600,7 @@ codegen_typed_eval_fwd = cg, name, ti =>
    rec_m1 = rec_m | m => m.1 | ast::Names()
    cg.vars += types::CgVar((name, vt, types::is_ptrish_vt(vt), dt', rec_m0_opt,
       rec_m1, <+ slot ->, is_loc_fwd, <+>, types::field_vts(cg, ti), <-->))
-   (Addr(0), vt)
+   (LLVMConstInt(LLVMInt64Type!, 0, 0), vt)
 
 tast_is_addr_arg_scoped: types::Cg, tast::TypedExpr, Int => <>
 tast_is_addr_arg_scoped = cg, arg, threshold =>
@@ -5993,7 +5993,7 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
          (res_val, b_vt)
       |
          LLVMPositionBuilderAtEnd(cg.builder, done)
-         (Addr(0), ast::ValueType(Unit))
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 codegen_typed_eval_cycle: types::Cg, tast::TypedExpr, tast::TypedExpr,
    <tast::TypedExpr|>, <>, ast::TypeInfo => (Addr, ast::ValueType)
@@ -6299,7 +6299,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
          res_val = LLVMBuildLoad2(cg.builder, res_lt, eb.2,
             "escape.res")
          (res_val, b_vt)
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 codegen_typed_eval_map_cycle: types::Cg, tast::TypedExpr, tast::TypedExpr,
    <tast::TypedExpr|>, ast::TypeInfo => (Addr, ast::ValueType)
@@ -6477,7 +6477,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
          res_val = LLVMBuildLoad2(cg.builder, res_lt, eb.2,
             "escape.res")
          (res_val, b_vt)
-      | (Addr(0), ast::ValueType(Unit))
+      | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 codegen_typed_eval_cycle_jump: types::Cg, <>, Int => (Addr, ast::ValueType)
 codegen_typed_eval_cycle_jump = cg, is_break, level =>
@@ -6486,7 +6486,7 @@ codegen_typed_eval_cycle_jump = cg, is_break, level =>
       |
          types::init_error(cg, "E3006",
             "cycle jump cannot be used outside of a cycle context (@).", 0, 0)
-         (Addr(0), ast::ValueType(Unknown))
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          level > nb
             |
@@ -6495,13 +6495,13 @@ codegen_typed_eval_cycle_jump = cg, is_break, level =>
                   str::from_int(level) + ", but only " + str::from_int(nb) +
                   " enclosing cycle(s) exist at this point."
                types::init_error(cg, "E3007", msg, 0, 0)
-               (Addr(0), ast::ValueType(Unknown))
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |
                target = is_break
                   | cg.cycle_breaks(nb - level)!!
                   | cg.cycle_conts(nb - level)!!
                branch_to(cg, target)
-               (Addr(0), ast::ValueType(Unit))
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 
 typed_refs_name_opt: <tast::TypedExpr|>, String => <>

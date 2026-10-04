@@ -2570,7 +2570,7 @@ codegen_typed_eval = cg, te =>
          (LLVMConstInt(LLVMInt1Type!, b | 1 | 0, 0),
             ast::ValueType(Flag))
       [LitUnit]
-         (Addr(0), ast::ValueType(Unit))
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
       [Var v]
          rv = types::resolve_var_name(cg, v.0)
          cg.last_rt = types::var_rt(cg, rv)
@@ -2870,7 +2870,7 @@ codegen_typed_eval = cg, te =>
                is_lam = a.5.kind [Lambda _]
                !is_lam && types::is_external_module_name(cg, a.0)
                   | stmt::declare_external_var(cg, a.0, a.5.ti)
-               (Addr(0), ast::ValueType(Unit))
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
             | stmt::codegen_typed_eval_assign(cg, a.0, a.1, a.2, a.3, a.4, a.5, te.ti)
       [Call c]
          expr::codegen_typed_eval_call(cg, c.0, c.1, c.2, te.ti)
