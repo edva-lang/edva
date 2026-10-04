@@ -685,7 +685,10 @@ struct_type2 = e0, e1 =>
 
 // fn type ret() (zero params)
 fn_type0: Addr => Addr
-fn_type0 = ret => LLVMFunctionType(ret, Addr(0), 0, 0)
+fn_type0 = ret =>
+   parr = {8}
+   sb = &parr
+   LLVMFunctionType(ret, sb, 0, 0)
 
 // fn type ret(p0)
 fn_type1: Addr, Addr => Addr
@@ -721,10 +724,12 @@ gep2 = cg, elem_t, base, i0, i1, name =>
    @[sb + 8] = i1
    LLVMBuildGEP2(cg.builder, elem_t, base, sb, 2, name)
 
-// BuildCall2 with zero arguments (confines C NULL argument array to this helper).
+// BuildCall2 with zero arguments.
 call0: Cg, Addr, Addr, String => Addr
 call0 = cg, fty, fn, name =>
-   LLVMBuildCall2(cg.builder, fty, fn, Addr(0), 0, name)
+   args = {8}
+   sb = &args
+   LLVMBuildCall2(cg.builder, fty, fn, sb, 0, name)
 
 // BuildCall2 with one argument.
 call1: Cg, Addr, Addr, Addr, String => Addr

@@ -2053,14 +2053,16 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
       "rec.env.gep")
    env_val = LLVMBuildLoad2(cg.builder, i8p, env_gep, "rec.env")
    total_args = is_cap | nargs + 1 | nargs
-   asb' = Addr(0)
+   cap = total_args > 0
+      | total_args * 8
+      | 8
+   abuf = {cap}
+   asb = &abuf
    total_args > 0
       |
-         abuf = {total_args * 8}
-         asb' = &abuf
          is_cap
             |
-               @[asb'] = env_val
+               @[asb] = env_val
          nargs > 0
             |
                agep = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 4,
@@ -2074,12 +2076,12 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
                      LLVMBuildStructGEP2(cg.builder, at, atp, i,
                         "rec.arg.gep"), "rec.arg")
                   off = is_cap | (i + 1) * 8 | i * 8
-                  @[asb' + off] = av
+                  @[asb + off] = av
    typed = LLVMBuildPointerCast(cg.builder, fptr,
       LLVMPointerType(wfty, 0), "rec.fn.typed")
    is_void = ret_vt [Unit]
    res_name = is_void | "" | "thread.res"
-   res = LLVMBuildCall2(cg.builder, wfty, typed, asb', total_args,
+   res = LLVMBuildCall2(cg.builder, wfty, typed, asb, total_args,
       res_name)
    !is_void
       |
