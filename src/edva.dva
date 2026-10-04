@@ -27,6 +27,7 @@
    unlink: (path: String) => Int
    rmdir: (path: String) => Int
    getpid: () => Int
+   getenv: (name: String) => Addr
    __errno_location: () => Addr
 
 #private
@@ -94,9 +95,26 @@ init_compiler_paths = !=>
       | compiler_exe_path ::= exe
       | compiler_exe_path ::= canonical_path(sys::argv_string(0))
    exe_dir = dirname(compiler_exe_path)
-   cand = path_join(exe_dir, "std")
-   dir_exists(cand)
-      | compiler_std_dir ::= cand
+   prefix_dir = dirname(exe_dir)
+   cand_in_tree = path_join(exe_dir, "std")
+   cand_lib = path_join(prefix_dir, "lib/edva/std")
+   cand_share = path_join(prefix_dir, "share/edva/std")
+   env_p = getenv("EDVA_PATH")
+   env_std = env_p == Addr(0) | getenv("EDVA_STDLIB") | env_p
+   env_std != Addr(0) && dir_exists(sys::c_str(env_std))
+      |
+         compiler_std_dir ::= sys::c_str(env_std)
+      |
+         dir_exists(cand_in_tree)
+            |
+               compiler_std_dir ::= cand_in_tree
+            |
+               dir_exists(cand_lib)
+                  |
+                     compiler_std_dir ::= cand_lib
+                  |
+                     dir_exists(cand_share)
+                        | compiler_std_dir ::= cand_share
 
 dirent_name: Addr => String
 dirent_name = entry =>
