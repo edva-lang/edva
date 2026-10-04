@@ -258,19 +258,18 @@ lambda_env_add: String, Addr, Int, ast::VTypes => ()
 lambda_env_add = name, est, nc, vts =>
    types::g.lambda_env_infos += types::LambdaEnvInfo((name, est, nc, vts))
 
-lambda_env_find: String => (types::LambdaEnvInfo, <>)
+lambda_env_find: String => <types::LambdaEnvInfo|>
 lambda_env_find = name =>
    lambda_env_find_at(name, 0, ?types::g.lambda_env_infos)
 
-lambda_env_find_at: String, Int, Int => (types::LambdaEnvInfo, <>)
+lambda_env_find_at: String, Int, Int => <types::LambdaEnvInfo|>
 lambda_env_find_at = name, i, n =>
    i == n
-      | (types::LambdaEnvInfo(("", Addr(0), 0, ast::VTypes())), <->)
+      | <-->
       |
-         lei = types::g.lambda_env_infos(i) | _ |
-            types::LambdaEnvInfo(("", Addr(0), 0, ast::VTypes()))
+         lei = types::g.lambda_env_infos(i)!!
          lei.name == name
-            | (lei, <+>)
+            | <+ lei ->
             | lambda_env_find_at(name, i + 1, n)
 
 lambda_env_index: String => Int
@@ -315,9 +314,10 @@ lambda_load_caps_at = cg, caps, j, n, acc =>
          ast::is_cell_var(cname)
             |
                s_opt = types::var_slot(cg, cname)
-               s = s_opt | s_val => s_val | Addr(0)
-               i8p = LLVMPointerType(LLVMInt8Type!, 0)
-               acc += LLVMBuildPointerCast(cg.builder, s, i8p, "cell.slot.ptr")
+               s_opt
+                  | s =>
+                     i8p = LLVMPointerType(LLVMInt8Type!, 0)
+                     acc += LLVMBuildPointerCast(cg.builder, s, i8p, "cell.slot.ptr")
             |
                cv2 = types::codegen_load(cg, cname)
                acc += cv2.0
@@ -336,7 +336,7 @@ lambda_store_caps_at = cg, caps, cap_vals, est, ep2, j, n =>
    j == n
       | 0
       |
-         LLVMBuildStore(cg.builder, (cap_vals(j) | _ | Addr(0)),
+         LLVMBuildStore(cg.builder, cap_vals(j)!!,
             LLVMBuildStructGEP2(cg.builder, est, ep2, j, "env.store.gep"))
          lambda_store_caps_at(cg, caps, cap_vals, est, ep2, j + 1, n)
 
@@ -430,10 +430,12 @@ compile_lambda = cg, f =>
       | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
       | 0
    is_void = ret_vt' [Unit]
-   ret_v = is_void | Addr(0) |
-      (ret_vt' [Fn] LLVMBuildPtrToInt(cg.builder, bv.0,
-      LLVMInt64Type!, "ret.int") | coerce_int(cg, bv.0, ret_ll))
-   LLVMBuildRet(cg.builder, ret_v)
+   is_void
+      | LLVMBuildRetVoid(cg.builder)
+      |
+         ret_v = (ret_vt' [Fn] LLVMBuildPtrToInt(cg.builder, bv.0,
+            LLVMInt64Type!, "ret.int") | coerce_int(cg, bv.0, ret_ll))
+         LLVMBuildRet(cg.builder, ret_v)
    cg.fninfos += types::FnInfo((fnname, fn, fty, np, ptypes, ret_vt', <->, <->, <+>,
       !is_cap))
    is_fn_ret = main::is_fn_vt(bv.1) || main::is_fn_vt(ret_vt')
@@ -548,10 +550,8 @@ codegen_add_checked_u64 = cg, a, b, name =>
    sb = &args
    @[sb] = a
    @[sb + 8] = b
-   fn = LLVMGetNamedFunction(cg.module, "llvm.uadd.with.overflow.i64")
-   uadd_fn = fn != Addr(0)
-      | fn
-      | LLVMAddFunction(cg.module, "llvm.uadd.with.overflow.i64", fty)
+   fn_opt = types::llvm_find_function(cg.module, "llvm.uadd.with.overflow.i64")
+   uadd_fn = fn_opt | _ | LLVMAddFunction(cg.module, "llvm.uadd.with.overflow.i64", fty)
    res = LLVMBuildCall2(cg.builder, fty, uadd_fn, sb, 2, name)
    sum = LLVMBuildExtractValue(cg.builder, res, 0, "sum")
    ovf = LLVMBuildExtractValue(cg.builder, res, 1, "ovf")
@@ -1328,10 +1328,9 @@ cycle_record_info = cg, e =>
          n' = ?fvs
          elem_vt' = n' > 0 | (fvs(0) | _ | ast::ValueType(Unknown)) |
             ast::ValueType(Unknown)
-         elem_ll_raw = types::var_rt(cg, vname)
+         elem_ll' = types::var_rt(cg, vname)
             | rt => LLVMStructGetTypeAtIndex(rt, 0)
             | types::llvm_type_of_vt(elem_vt')
-         elem_ll' = elem_ll_raw == Addr(0) | LLVMInt64Type! | elem_ll_raw
          (n', elem_vt', elem_ll')
       [Record r]
          n' = ?r.fields
@@ -1385,8 +1384,8 @@ cycle_array_elem_val = cg, arr, cur_i, is_ptr, vt, elem_ll =>
    flt_or_raw = types::is_float_vt(vt) | raw_flt | arr_raw
    is_ptr | raw_ptr | flt_or_raw
 
-cycle_bind_params: types::Cg, ast::Expr, <>, Addr, ast::ValueType, String, Addr, Addr, Addr => ()
-cycle_bind_params = cg, bfn, has_e, eval, evt, elem_dt, cur_i, ca, ert =>
+cycle_bind_params: types::Cg, ast::Expr, <>, Addr, ast::ValueType, String, Addr, Addr, <Addr|> => ()
+cycle_bind_params = cg, bfn, has_e, eval, evt, elem_dt, cur_i, ca, ert_opt =>
    i64vt = ast::ValueType(Int)
    i64t = LLVMInt64Type!
    empty_names = ast::Names()
@@ -1400,11 +1399,10 @@ cycle_bind_params = cg, bfn, has_e, eval, evt, elem_dt, cur_i, ca, ert =>
       | types::td_record_meta_by_name(cg, elem_dt)
       | <-->
    names = rmeta | m => m.1 | empty_names
-   rmeta_rt = rmeta | m => m.0 | Addr(0)
-   e_rt = e_is_rec | (ert != Addr(0) | ert | rmeta_rt) | Addr(0)
-   e_rt_opt = e_rt != Addr(0) | <+ e_rt -> | <-->
+   rmeta_rt_opt = rmeta | m => <+ m.0 -> | <-->
+   e_rt_opt = e_is_rec | (<>(ert_opt) | ert_opt | rmeta_rt_opt) | <-->
    e_vts = e_is_rec
-      | (e_rt != Addr(0) | match::struct_sub_fvts(e_rt) | vts)
+      | (e_rt_opt | rt => match::struct_sub_fvts(rt) | vts)
       | vts
    has_e
       |
@@ -1671,7 +1669,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv =>
    rec_m = is_arr && arr_elem_dt != ""
       | types::td_record_meta_by_name(cg, arr_elem_dt)
       | <-->
-   arr_elem_rt = rec_m | m => m.0 | Addr(0)
+   arr_elem_rt_opt = rec_m | m => <+ m.0 -> | <-->
    arr_is_ptr = types::is_ptrish_vt(arr_vt)
    arr_elem_ll = arr_is_ptr
       | LLVMPointerType(LLVMInt8Type!, 0)
@@ -1760,7 +1758,9 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv =>
                         | ast::ValueType(Int)
                         | (rng_is_rune | ast::ValueType(Rune) | rec_info.1)
    elem_dt = is_arr | arr_elem_dt | (is_sl | sl_dt | "")
-   elem_rt = is_arr | arr_elem_rt | (is_rec | rec_info.2 | Addr(0))
+   elem_rt_opt = is_arr
+      | arr_elem_rt_opt
+      | (is_rec | <+ rec_info.2 -> | <-->)
    elem_val_rec = is_arr
       | arr_elem_val
       |
@@ -1775,7 +1775,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv =>
       | curr_i
    elem_val = has_elem | elem_val_rec | pos_i
    cycle_bind_params(cg, c.body_fn, has_elem, elem_val, elem_vt, elem_dt,
-      curr_i, counter_alloca, elem_rt)
+      curr_i, counter_alloca, elem_rt_opt)
    saved_discard = cg.discard_result
    cg.discard_result = <+>
    bv = codegen_eval_cycle_body(cg, c.body_fn)
@@ -2429,6 +2429,7 @@ fn_tap_arg_vt = cg, body, arg =>
                               | ast::ValueType(Unknown)
             | ast::ValueType(Unknown)
 
+// FIXME: staircase
 fn_ret_call_override: types::Cg, ast::Expr, ast::CallExpr,
    ast::ValueType => ast::ValueType
 fn_ret_call_override = cg, body, c, cur =>
@@ -3182,21 +3183,19 @@ is_module_dynamic = cg, name =>
                         -->
                found'
 
-get_or_create_dyn_fn_ptr: types::Cg, String, Addr => Addr
-get_or_create_dyn_fn_ptr = cg, name, fn =>
+get_or_create_dyn_fn_ptr: types::Cg, String, <Addr|> => Addr
+get_or_create_dyn_fn_ptr = cg, name, fn_opt =>
    gname = "dva_dynptr." + name
-   existing = LLVMGetNamedGlobal(cg.module, gname)
-   existing != Addr(0)
-      |
-         fn != Addr(0)
-            | LLVMSetInitializer(existing, fn)
-            | 0
+   existing_opt = types::llvm_find_global(cg.module, gname)
+   existing_opt
+      | existing =>
+         fn_opt | fn => LLVMSetInitializer(existing, fn)
          existing
       |
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          gv = LLVMAddGlobal(cg.module, i8p, gname)
-         fn != Addr(0)
-            | LLVMSetInitializer(gv, fn)
+         fn_opt
+            | fn => LLVMSetInitializer(gv, fn)
             | LLVMSetInitializer(gv, LLVMConstNull(i8p))
          LLVMSetLinkage(gv, 0)
          gv
@@ -3273,7 +3272,7 @@ codegen_emit_reload_so_body = cg, name, fn =>
          fname != (pfx + "reload_so") && fname != (pfx + "reload")
       is_mod_fn
          |
-            gptr = get_or_create_dyn_fn_ptr(cg, fname, Addr(0))
+            gptr = get_or_create_dyn_fn_ptr(cg, fname, <-->)
             clean_sname = codegen_c_str(cg, fname)
             sbuf = {16}
             ssbuf = &sbuf
@@ -3439,8 +3438,9 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
       types::name_is_in_current_module(cg, fd.name)
    LLVMSetLinkage(fn, (is_exp || is_dyn_m || is_pub_mod) | 0 | 8)
    is_module_dynamic(cg, fd.name)
-      | get_or_create_dyn_fn_ptr(cg, fd.name, fn)
-      | Addr(0)
+      |
+         _ = get_or_create_dyn_fn_ptr(cg, fd.name, <+ fn ->)
+      | 0
    runtime::mark_nounwind(cg, fn)
    cg.current_fn = fn
    cg.in_fn = <+>
@@ -6758,8 +6758,9 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
       types::name_is_in_current_module(cg, name)
    LLVMSetLinkage(fn, (is_exp || is_dyn_m || is_pub_mod) | 0 | 8)
    is_module_dynamic(cg, name)
-      | get_or_create_dyn_fn_ptr(cg, name, fn)
-      | Addr(0)
+      |
+         _ = get_or_create_dyn_fn_ptr(cg, name, <+ fn ->)
+      | 0
    runtime::mark_nounwind(cg, fn)
    cg.current_fn = fn
    cg.in_fn = <+>

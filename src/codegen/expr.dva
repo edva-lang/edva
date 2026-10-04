@@ -4097,7 +4097,7 @@ named_call_emit_pre = cg, fname, fn, fty, ret, args, arg_vts =>
    res_name = ret [Unit] "" | "call.res"
    call_target = stmt::is_module_dynamic(cg, fname)
       |
-         gptr = stmt::get_or_create_dyn_fn_ptr(cg, fname, fn)
+         gptr = stmt::get_or_create_dyn_fn_ptr(cg, fname, <+ fn ->)
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
          LLVMBuildLoad2(cg.builder, i8p, gptr, "dyn_fn_load")
       | fn
