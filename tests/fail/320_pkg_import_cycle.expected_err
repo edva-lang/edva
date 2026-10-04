@@ -1,0 +1,1 @@
+module import cycle across packages: cyca@1::cyca -> cycb@1::cycb -> cyca@1::cyca

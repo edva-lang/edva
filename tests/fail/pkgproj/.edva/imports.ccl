@@ -1,0 +1,26 @@
+/= Shared import map for tests/fail/*_pkg_*.dva (root = tests/fail).
+root = ..
+instances =
+  root =
+    src = .
+    name = app
+    aliases =
+      x = x@1
+      noroot = noroot@1
+      cyca = cyca@1
+  x@1 =
+    src = pkgproj/packages/x/src
+    name = x
+  noroot@1 =
+    src = pkgproj/packages/noroot/src
+    name = noroot
+  cyca@1 =
+    src = pkgproj/packages/cyca/src
+    name = cyca
+    aliases =
+      cycb = cycb@1
+  cycb@1 =
+    src = pkgproj/packages/cycb/src
+    name = cycb
+    aliases =
+      cyca = cyca@1

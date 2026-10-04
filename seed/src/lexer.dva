@@ -824,12 +824,25 @@ scan_use_directive = lx, hstart, line, col =>
                      |
                         adv(lx, pk(lx, 0))
                         -->
-   skip_ws(lx, 0)
-   path = pk(lx, 0) == '"'
+   skip_hws(lx, 0)
+   first_seg = pk(lx, 0) == '"'
       | scan_quoted_path(lx, line, col)
       | scan_bare_path(lx, line)
-   ?path == 0 | fail(1015, line, col,
+   ?first_seg == 0 | fail(1015, line, col,
       "Expected a module name or quoted path after '#use'.")
+   skip_hws(lx, 0)
+   has_alias = pk(lx, 0) == '=' && pk_off(lx, 1) != '=' && pk_off(lx, 1) != '>'
+   path = has_alias
+      |
+         adv(lx, pk(lx, 0))
+         skip_hws(lx, 0)
+         rhs = pk(lx, 0) == '"'
+            | scan_quoted_path(lx, line, col)
+            | scan_bare_path(lx, line)
+         ?rhs == 0 | fail(1015, line, col,
+            "Expected a module name or quoted path after '='.")
+         first_seg + " = " + rhs
+      | first_seg
    kind = is_dyn' && is_imp'
       | TokKind(UseDynamicImportPath)
       | is_dyn'

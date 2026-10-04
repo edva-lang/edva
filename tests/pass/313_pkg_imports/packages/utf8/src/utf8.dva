@@ -1,0 +1,3 @@
+#public
+encode: String => String
+encode = s => "utf8(" + s + ")"

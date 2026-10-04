@@ -1,0 +1,4 @@
+#use @noroot
+#use io
+
+io::out("x")

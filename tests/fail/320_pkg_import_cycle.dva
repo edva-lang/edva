@@ -1,0 +1,4 @@
+#use @cyca
+#use io
+
+io::out("x")

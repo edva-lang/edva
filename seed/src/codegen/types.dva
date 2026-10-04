@@ -1140,26 +1140,25 @@ name_is_qualified = name, i =>
 
 // The first module component of "module::binding" (or "" for an unqualified
 // declaration). Module names are path-tail prefixes, never runtime values.
-decl_module: String, Int => String
-decl_module = name, i =>
+decl_module_find: String, Int, Int => Int
+decl_module_find = name, i, last =>
    i + 1 < ?name
       |
          (name(i) == ':') && (name(i + 1) == ':')
-            | name(0..i)
-            | decl_module(name, i + 1)
-      | ""
+            | decl_module_find(name, i + 2, i)
+            | decl_module_find(name, i + 1, last)
+      | last
+
+decl_module: String, Int => String
+decl_module = name, _ =>
+   last = decl_module_find(name, 0, -1)
+   last < 0 | "" | name(0..last)
 
 // The bare name without module prefix ("is_alpha" from "unicode::is_alpha").
 decl_bare_name: String, Int => String
-decl_bare_name = name, i =>
-   i + 1 < ?name
-      |
-         (name(i) == ':') && (name(i + 1) == ':')
-            |
-               s = i + 2
-               name(s..?name)
-            | decl_bare_name(name, i + 1)
-      | name
+decl_bare_name = name, _ =>
+   s = bare_name_start(name, 0, 0)
+   name(s..?name)
 
 bare_name_start: String, Int, Int => Int
 bare_name_start = name, i, last =>

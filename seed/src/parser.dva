@@ -3668,14 +3668,53 @@ declare_type = p, name, ti =>
 
 // --- imports (#use) ---------------------------------------------------------
 
-// "#use module" / "#use "path"" — the whole path is one UsePath token; the
-// module name is its last path segment.
+find_use_eq: String, Int => Int
+find_use_eq = s, i =>
+   i < ?s
+      | s(i) == '=' | i | find_use_eq(s, i + 1)
+      | -1
+
+find_use_slash: String, Int => Int
+find_use_slash = s, i =>
+   i < ?s
+      | s(i) == '/' | i | find_use_slash(s, i + 1)
+      | -1
+
+trim_use_str: String => String
+trim_use_str = s =>
+   n = ?s
+   n == 0 | "" |
+      start' = 0
+      0..n @ i =>
+         c = s(i)
+         (c == ' ' || c == '\t') | (start' = i + 1) | -->
+      end' = n
+      0..n @ j =>
+         idx = n - 1 - j
+         idx < start' | -->
+         c = s(idx)
+         (c == ' ' || c == '\t') | (end' = idx) | -->
+      start' < end' | s(start'..end') | ""
+
+// "#use module" / "#use "path"" / "#use alias = path" —
+// module name is the alias, or last segment / package alias.
 parse_import: Parser, <>, <> => <ast::Expr|>
 parse_import = p, is_dyn, is_imp =>
-   path = p.curr.text
+   raw_path = p.curr.text
    parser_advance(p)
    is_imp | p.has_use_import = <+>
-   <+ ast::Expr(Import, (ast::ImportStmt((last_segment(path), path,
+   eq_idx = find_use_eq(raw_path, 0)
+   parsed = eq_idx !< 0
+      |
+         name = trim_use_str(raw_path(0..eq_idx))
+         path = trim_use_str(raw_path(eq_idx + 1..))
+         (name, path)
+      |
+         has_at = ?raw_path > 0 && raw_path(0) == '@'
+         has_slash = find_use_slash(raw_path, 0) !< 0
+         name = has_at && !has_slash | raw_path(1..) | last_segment(raw_path)
+         (name, raw_path)
+   <+ ast::Expr(Import, (ast::ImportStmt((parsed.0, parsed.1,
       is_dyn, is_imp)))) ->
 
 last_segment_find: String, Int, Int => Int

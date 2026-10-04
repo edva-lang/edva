@@ -1,0 +1,16 @@
+#use @json
+#use @json_old
+#use @math
+#use my_calc = @math/calc
+#use "str"
+#use "io"
+
+main: Int => Int
+main = _ =>
+   io::out(json::version(0))
+   io::out(json_old::version(0))
+   io::out(str::from_int(math::add(10, 20)))
+   io::out(str::from_int(my_calc::mul(6, 7)))
+   0
+
+main(0)

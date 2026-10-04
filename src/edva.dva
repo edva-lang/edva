@@ -15,6 +15,7 @@
 #use "tast"
 #use "unify"
 #use "mem"
+#use "ccl"
 
 #public
 
@@ -46,10 +47,43 @@
    exports: ast::Names, dynamic_mods: ast::Names, dynamic_paths: ast::Names,
    ok: <>)
 #type SigResult (ti: ast::TypeInfo, ok: <>)
-#type ResolvedModule <File(String), Dir(String), None>
-#type Loader (out_exprs: ast::Exprs, loaded: ast::Names, exports: ast::Names,
-   dynamic_mods: ast::Names, dynamic_paths: ast::Names,
-   is_modular: <>, is_dep: <>)
+#type ImportMap String ^ String
+
+#type PkgInstance (
+   id: String,
+   src: String,
+   name: String,
+   aliases: ImportMap
+)
+
+#type PkgInstances (PkgInstance){}
+
+#type ImportMapState (
+   has_map: <>,
+   map_path: String,
+   root_dir: String,
+   root_name: String,
+   instances: PkgInstances
+)
+
+#type ResolvedFile (path: String, canonical_id: String, is_pkg: <>)
+#type ResolvedDir (path: String, canonical_id: String, is_pkg: <>)
+#type ResolvedModule <File(ResolvedFile), Dir(ResolvedDir), None>
+
+#type Loader (
+   out_exprs: ast::Exprs,
+   loaded: ast::Names,
+   exports: ast::Names,
+   dynamic_mods: ast::Names,
+   dynamic_paths: ast::Names,
+   is_modular: <>,
+   is_dep: <>,
+   import_map: ImportMapState,
+   loading_stack: ast::Names
+)
+
+#type ImportEntry (bound_name: String, canonical_id: String, is_import: <>)
+#type ImportEntries (ImportEntry){}
 #type ReplSession (
    dir: String,
    src_path: String,
@@ -404,43 +438,355 @@ dir_exists = path =>
    m = path_mode(path)
    m !< 0 && (m .&. 0xf000) == 0x4000
 
-resolve_module: String, String => ResolvedModule
-resolve_module = base, mod_path =>
-   local_file = path_join(base, mod_path + ".dva")
-   file_exists(local_file)
-      | ResolvedModule(File, local_file)
+path_mtime: String => Int
+path_mtime = path =>
+   buf = {144}
+   rc = libc::stat(path, &buf)
+   rc == 0
       |
-         local_dir = path_join(base, mod_path)
-         dir_exists(local_dir)
-            | ResolvedModule(Dir, local_dir)
+         sec = Int(@[(&buf + 88) i64])
+         nsec = Int(@[(&buf + 96) i64])
+         sec * 1000000000 + nsec
+      | -1
+
+empty_pkg_instance: () => PkgInstance
+empty_pkg_instance = !=>
+   m = ImportMap()
+   PkgInstance(("", "", "", m))
+
+empty_import_map_state: () => ImportMapState
+empty_import_map_state = !=>
+   insts = PkgInstances()
+   ImportMapState((<->, "", "", "", insts))
+
+find_instance: PkgInstances, String => < PkgInstance | >
+find_instance = instances, id =>
+   res' = <-->
+   instances @ inst =>
+      inst.id == id | (res' = <+ inst ->; -->)
+   res'
+
+find_char_idx: String, Int, Int => Int
+find_char_idx = s, ch, i =>
+   i < ?s
+      | s(i) == ch | i | find_char_idx(s, ch, i + 1)
+      | -1
+
+starts_with: String, String => <>
+starts_with = s, prefix =>
+   lp = ?prefix
+   ?s !< lp && s(0..lp) == prefix
+
+ends_with: String, String => <>
+ends_with = s, suffix =>
+   ls = ?suffix
+   ln = ?s
+   ln !< ls && s(ln - ls..ln) == suffix
+
+has_substr_step: String, String, Int => <>
+has_substr_step = s, sub, i =>
+   i + ?sub !> ?s
+      |
+         match' = <+>
+         ?sub @ j =>
+            s(i + j) != sub(j)
+               |
+                  match' = <->
+                  -->
+         match' | <+> | has_substr_step(s, sub, i + 1)
+      | <->
+
+has_substr: String, String => <>
+has_substr = s, sub => has_substr_step(s, sub, 0)
+
+string_contains: String, String => <>
+string_contains = s, sub => has_substr(s, sub)
+
+starts_with_path: String, String => <>
+starts_with_path = path, prefix =>
+   lp = ?prefix
+   ?path > lp && path(0..lp) == prefix && path(lp) == '/'
+
+get_dir_instance: ImportMapState, String => PkgInstance
+get_dir_instance = map, dir =>
+   canon_dir = canonical_path(dir)
+   found' = empty_pkg_instance()
+   is_found' = <->
+   map.instances @ inst =>
+      !is_found' && inst.id != "root" && inst.src != ""
+         |
+            canon_src = canonical_path(inst.src)
+            match = canon_dir == canon_src || starts_with_path(canon_dir, canon_src)
+            match | (found' = inst; is_found' = <+>)
+   !is_found' && map.root_dir != ""
+      |
+         canon_root = canonical_path(map.root_dir)
+         match_root = canon_dir == canon_root || starts_with_path(canon_dir, canon_root)
+         match_root
             |
-               parent_base = dirname(base)
-               parent_f = path_join(parent_base, mod_path + ".dva")
-               has_parent = parent_base != "" && parent_base != "."
-               has_parent && file_exists(parent_f)
-                  | ResolvedModule(File, parent_f)
+               map.instances @ inst =>
+                  inst.id == "root" | (found' = inst; is_found' = <+>)
+   found'
+
+compute_eff_root: String, String => String
+compute_eff_root = map_root, map_dir =>
+   map_root == "" || map_root == "."
+      | map_dir
+      |
+         map_root(0) == '/'
+            | map_root
+            | path_join(map_dir, map_root)
+
+find_and_load_import_map: String, String => < ImportMapState | >
+find_and_load_import_map = target_path, explicit_map_path =>
+   map_path' = explicit_map_path
+   root_dir' = ++ ""
+   has_map_file' = <->
+   explicit_map_path != ""
+      |
+         map_path' = explicit_map_path
+         has_map_file' = file_exists(explicit_map_path)
+      |
+         target_full = canonical_path(target_path)
+         start_dir = dir_exists(target_full) | target_full | dirname(target_full)
+         curr_dir' = start_dir
+         0..128 @ _ =>
+            curr_dir' == "" || curr_dir' == "/" | -->
+            cand_ccl = path_join(curr_dir', "edva.ccl")
+            file_exists(cand_ccl)
+               |
+                  root_dir' = curr_dir'
+                  cand_map = path_join(curr_dir', ".edva/imports.ccl")
+                  file_exists(cand_map)
+                     |
+                        map_path' = cand_map
+                        has_map_file' = <+>
+                  -->
+            next_d = dirname(curr_dir')
+            next_d == curr_dir' | -->
+            curr_dir' = next_d
+   !has_map_file'
+      |
+         empty_state = empty_import_map_state()
+         empty_state.root_dir = root_dir'
+         <+ empty_state ->
+      |
+         mtime_map = path_mtime(map_path')
+         doc_res = ccl::parse_file(map_path')
+         doc_res
+            | doc =>
+               map_root = ccl::get(doc, "root") | _ | ""
+               map_dir = root_dir' != "" | root_dir' | dirname(dirname(map_path'))
+               eff_root = compute_eff_root(map_root, map_dir)
+               ccl_file = path_join(eff_root, "edva.ccl")
+               ccl_stale = file_exists(ccl_file) && mtime_map < path_mtime(ccl_file)
+               lock_file = path_join(eff_root, "edva.lock.ccl")
+               lock_stale = file_exists(lock_file) && mtime_map < path_mtime(lock_file)
+               ccl_stale || lock_stale
                   |
-                     parent_d = path_join(parent_base, mod_path)
-                     has_parent && dir_exists(parent_d)
-                        | ResolvedModule(Dir, parent_d)
+                     print $ "E5031: import map is older than edva.ccl — run 'edva pkg fetch'"
+                     <-->
+                  |
+                     inst_list = PkgInstances()
+                     root_name' = ++ ""
+                     file_exists(ccl_file)
                         |
-                           std_file = path_join(compiler_std_dir, mod_path + ".dva")
-                           file_exists(std_file)
-                              | ResolvedModule(File, std_file)
-                              |
-                                 std_dir = path_join(compiler_std_dir, mod_path)
-                                 dir_exists(std_dir)
-                                    | ResolvedModule(Dir, std_dir)
-                                    |
-                                       cond1 = compiler_std_dir != "std"
-                                       std_f = path_join("std", mod_path + ".dva")
-                                       cond1 && file_exists(std_f)
-                                          | ResolvedModule(File, std_f)
-                                          |
-                                             std_d = path_join("std", mod_path)
-                                             cond1 && dir_exists(std_d)
-                                                | ResolvedModule(Dir, std_d)
-                                                | ResolvedModule(None)
+                           ccl_doc_res = ccl::parse_file(ccl_file)
+                           ccl_doc_res
+                              | cdoc =>
+                                 root_name' = ccl::get(cdoc, "name") | _ | ""
+                     inst_sec_opt = ccl::get_section(doc, "instances")
+                     inst_sec_opt
+                        | sec =>
+                           sec.entries @ entry =>
+                              inst_id = entry.key
+                              entry.val
+                                 [Block b]
+                                    isrc_raw = ccl::get(b, "src") | _ | ""
+                                    is_rel = isrc_raw != "" && isrc_raw(0) != '/'
+                                    isrc = is_rel | path_join(eff_root, isrc_raw) | isrc_raw
+                                    iname_raw = ccl::get(b, "name") | _ | ""
+                                    use_root_name = inst_id == "root" && iname_raw == ""
+                                    iname = use_root_name | root_name' | iname_raw
+                                    aliases_map = ImportMap()
+                                    asec_opt = ccl::get_section(b, "aliases")
+                                    asec_opt
+                                       | asec =>
+                                          asec.entries @ ae =>
+                                             ae.val
+                                                [Str aval]
+                                                   aliases_map ^ (ae.key) = aval
+                                    inst_list += PkgInstance((inst_id, isrc, iname, aliases_map))
+                     <+ ImportMapState((<+>, map_path', eff_root, root_name', inst_list)) ->
+            | _ =>
+               print $ "E5030: Could not parse import map '" + map_path' + "'"
+               <-->
+
+compute_local_cid: PkgInstance, String => String
+compute_local_cid = curr_inst, mod_path =>
+   seg = parser::last_segment(mod_path)
+   curr_inst.id != "" && curr_inst.id != "root"
+      | curr_inst.id + "::" + seg
+      | seg
+
+get_resolved_cid: ResolvedModule => String
+get_resolved_cid = r =>
+   r
+      [File f] f.canonical_id
+      [Dir d] d.canonical_id
+      | ""
+
+get_resolved_is_pkg: ResolvedModule => <>
+get_resolved_is_pkg = r =>
+   r
+      [File f] f.is_pkg
+      [Dir d] d.is_pkg
+      | <->
+
+find_name_idx: ast::Names, String => Int
+find_name_idx = names, name =>
+   idx' = -1
+   0..?names @ i =>
+      n = names(i) | _ | ""
+      n == name | (idx' = i; -->)
+   idx'
+
+format_cycle_chain: ast::Names, Int, String => String
+format_cycle_chain = stack, start_idx, target =>
+   b = {128}
+   start_idx..?stack @ i =>
+      n = stack(i) | _ | ""
+      i > start_idx | b += " -> "
+      b += n
+   b += " -> "
+   b += target
+   +b
+
+pop_loading_stack: Loader => ()
+pop_loading_stack = ldr =>
+   n = ?ldr.loading_stack
+   n > 0
+      |
+         stk = ast::Names()
+         0..n - 1 @ i =>
+            stk += (ldr.loading_stack(i) | _ | "")
+         ldr.loading_stack = stk
+
+// "<dir>/<mod_path>.dva" as a file module, else "<dir>/<mod_path>/" as a
+// directory module, else None.
+resolve_in_dir: String, String, String, <> => ResolvedModule
+resolve_in_dir = dir, mod_path, cid, is_pkg =>
+   f = path_join(dir, mod_path + ".dva")
+   d = path_join(dir, mod_path)
+   file_exists(f)
+      | ResolvedModule(File, ((f, cid, is_pkg)))
+      | dir_exists(d)
+         | ResolvedModule(Dir, ((d, cid, is_pkg)))
+         | ResolvedModule(None)
+
+is_resolved: ResolvedModule => <>
+is_resolved = r =>
+   r
+      [None] <->
+      | <+>
+
+is_internal_path: String => <>
+is_internal_path = p =>
+   p == "internal" || starts_with(p, "internal/") ||
+      string_contains(p, "/internal/") || ends_with(p, "/internal")
+
+// "@alias" -> the root module src/<name>.dva of the aliased package instance.
+resolve_pkg_root: String, String, PkgInstance => ResolvedModule
+resolve_pkg_root = alias, inst_id, inst =>
+   root_f = path_join(inst.src, inst.name + ".dva")
+   file_exists(root_f)
+      | ResolvedModule(File, ((root_f, inst_id + "::" + inst.name, <+>)))
+      |
+         print $ "E5033: #use @" + alias + ": package '" + inst.name +
+            "' has no root module src/" + inst.name + ".dva"
+         ResolvedModule(None)
+
+// "@alias/submod" -> a public (non-internal) module of the package instance.
+resolve_pkg_sub: String, String, String, PkgInstance => ResolvedModule
+resolve_pkg_sub = alias, submod, inst_id, inst =>
+   use_path = "#use @" + alias + "/" + submod
+   is_internal_path(submod)
+      |
+         print $ "E5035: " + use_path + ": module is internal to package '" +
+            inst.name + "'"
+         ResolvedModule(None)
+      |
+         r = resolve_in_dir(inst.src, submod, inst_id + "::" + submod, <+>)
+         !is_resolved(r)
+            | print $ "E5034: " + use_path + ": package '" + inst.name +
+               "' has no module '" + submod + "'"
+         r
+
+// "@alias[/submod]": only a direct dependency of the importing package.
+resolve_pkg_module: String, String, Loader => ResolvedModule
+resolve_pkg_module = base, mod_path, ldr =>
+   curr_inst = get_dir_instance(ldr.import_map, base)
+   slash_idx = find_char_idx(mod_path, '/', 0)
+   alias = slash_idx < 0 | mod_path(1..) | mod_path(1..slash_idx)
+   submod = slash_idx < 0 | "" | mod_path(slash_idx + 1..)
+   alias == curr_inst.name
+      |
+         print $ "E5037: #use @" + alias +
+            ": a package cannot import itself; use a local #use"
+         ResolvedModule(None)
+      | !(curr_inst.aliases ^? alias)
+         |
+            print $ "E5032: #use @" + alias + ": '" + alias +
+               "' is not a dependency of package '" + curr_inst.name + "'"
+            ResolvedModule(None)
+         |
+            inst_id = curr_inst.aliases ^ alias | _ | ""
+            find_instance(ldr.import_map.instances, inst_id)
+               | inst =>
+                  submod == ""
+                     | resolve_pkg_root(alias, inst_id, inst)
+                     | resolve_pkg_sub(alias, submod, inst_id, inst)
+               | ResolvedModule(None)
+
+// A local "#use name": next to the importer, then its parent directory, then
+// the stdlib. Local modules are scoped to the importer's package instance.
+resolve_local_module: String, String, Loader => ResolvedModule
+resolve_local_module = base, mod_path, ldr =>
+   curr_inst = ldr.import_map.has_map
+      | get_dir_instance(ldr.import_map, base)
+      | empty_pkg_instance()
+   cid = compute_local_cid(curr_inst, mod_path)
+   local = resolve_in_dir(base, mod_path, cid, <->)
+   parent_base = dirname(base)
+   has_parent = parent_base != "" && parent_base != "."
+   is_resolved(local)
+      | local
+      |
+         parent = has_parent
+            | resolve_in_dir(parent_base, mod_path, cid, <->)
+            | ResolvedModule(None)
+         is_resolved(parent)
+            | parent
+            | resolve_std_module(mod_path)
+
+resolve_std_module: String => ResolvedModule
+resolve_std_module = mod_path =>
+   seg = parser::last_segment(mod_path)
+   std = resolve_in_dir(compiler_std_dir, mod_path, seg, <->)
+   is_resolved(std) || compiler_std_dir == "std"
+      | std
+      | resolve_in_dir("std", mod_path, seg, <->)
+
+resolve_module: String, String, Loader => ResolvedModule
+resolve_module = base, mod_path, ldr =>
+   is_pkg_import = ?mod_path > 0 && mod_path(0) == '@'
+   !is_pkg_import
+      | resolve_local_module(base, mod_path, ldr)
+      | !ldr.import_map.has_map
+         |
+            print $ "E5030: #use " + mod_path + ": no import map — run 'edva pkg fetch'"
+            ResolvedModule(None)
+         | resolve_pkg_module(base, mod_path, ldr)
 
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, off, rem =>
@@ -487,15 +833,14 @@ read_file_text = path =>
                            <+ +b ->
                         | <-->
 
-#type ImportMap String ^ String
-
-collect_module_exports: ast::Exprs, String, ImportMap, ImportMap => <>
-collect_module_exports = exprs, mod_name, table, sources =>
+collect_module_exports: ast::Exprs, String, String, <>, ImportMap, ImportMap => <>
+collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sources =>
    ok' = <+>
-   pfx = mod_name + "::"
-   pfx_priv = mod_name + "::#"
+   pfx = canonical_id + "::"
+   pfx_priv = canonical_id + "::#"
    lpfx = ?pfx
    lpfx_priv = ?pfx_priv
+   alias_pfx = bound_name + "::"
    exprs @ e =>
       !ok' | -->
       e
@@ -507,63 +852,72 @@ collect_module_exports = exprs, mod_name, table, sources =>
                   is_match && !is_priv
                      |
                         bare = a.0(lpfx..)
-                        has_prev = table ^? bare
-                        has_prev
+                        table ^ (alias_pfx + bare) = a.0
+                        is_import
                            |
-                              existing = table ^ bare | _ | ""
-                              existing != a.0
+                              has_prev = table ^? bare
+                              has_prev
                                  |
-                                    src = sources ^ bare | _ | ""
-                                    print $ "E3033: Name clash: symbol '" +
-                                       bare + "' imported from '" + mod_name +
-                                       "' conflicts with symbol already imported from '" +
-                                       src + "'"
-                                    ok' = <->
-                           |
-                              table ^ (bare) = a.0
-                              sources ^ (bare) = mod_name
+                                    existing = table ^ bare | _ | ""
+                                    existing != a.0
+                                       |
+                                          src = sources ^ bare | _ | ""
+                                          print $ "E3033: Name clash: symbol '" +
+                                             bare + "' imported from '" + bound_name +
+                                             "' conflicts with symbol already imported from '" +
+                                             src + "'"
+                                          ok' = <->
+                                 |
+                                    table ^ (bare) = a.0
+                                    sources ^ (bare) = bound_name
          [TypeDecl td]
             is_match = ?td.name > lpfx && td.name(0..lpfx) == pfx
             is_priv = ?td.name > lpfx_priv && td.name(0..lpfx_priv) == pfx_priv
             is_match && !is_priv
                |
                   bare = td.name(lpfx..)
-                  has_prev = table ^? bare
-                  has_prev
+                  table ^ (alias_pfx + bare) = td.name
+                  is_import
                      |
-                        existing = table ^ bare | _ | ""
-                        existing != td.name
+                        has_prev = table ^? bare
+                        has_prev
                            |
-                              src = sources ^ bare | _ | ""
-                              print $ "E3033: Name clash: type '" +
-                                 bare + "' imported from '" + mod_name +
-                                 "' conflicts with type already imported from '" +
-                                 src + "'"
-                              ok' = <->
-                     |
-                        table ^ (bare) = td.name
-                        sources ^ (bare) = mod_name
+                              existing = table ^ bare | _ | ""
+                              existing != td.name
+                                 |
+                                    src = sources ^ bare | _ | ""
+                                    print $ "E3033: Name clash: type '" +
+                                       bare + "' imported from '" + bound_name +
+                                       "' conflicts with type already imported from '" +
+                                       src + "'"
+                                    ok' = <->
+                           |
+                              table ^ (bare) = td.name
+                              sources ^ (bare) = bound_name
          [Foreign f]
             is_match = ?f.dva_name > lpfx && f.dva_name(0..lpfx) == pfx
             is_priv = ?f.dva_name > lpfx_priv && f.dva_name(0..lpfx_priv) == pfx_priv
             is_match && !is_priv
                |
                   bare = f.dva_name(lpfx..)
-                  has_prev = table ^? bare
-                  has_prev
+                  table ^ (alias_pfx + bare) = f.dva_name
+                  is_import
                      |
-                        existing = table ^ bare | _ | ""
-                        existing != f.dva_name
+                        has_prev = table ^? bare
+                        has_prev
                            |
-                              src = sources ^ bare | _ | ""
-                              print $ "E3033: Name clash: foreign function '" +
-                                 bare + "' imported from '" + mod_name +
-                                 "' conflicts with symbol already imported from '" +
-                                 src + "'"
-                              ok' = <->
-                     |
-                        table ^ (bare) = f.dva_name
-                        sources ^ (bare) = mod_name
+                              existing = table ^ bare | _ | ""
+                              existing != f.dva_name
+                                 |
+                                    src = sources ^ bare | _ | ""
+                                    print $ "E3033: Name clash: foreign function '" +
+                                       bare + "' imported from '" + bound_name +
+                                       "' conflicts with symbol already imported from '" +
+                                       src + "'"
+                                    ok' = <->
+                           |
+                              table ^ (bare) = f.dva_name
+                              sources ^ (bare) = bound_name
    ok'
 
 check_file_clash: ast::Exprs, ImportMap, ImportMap => <>
@@ -672,6 +1026,15 @@ rewrite_import_type_info = ti, table =>
          ast::TypeInfo(ThreadId, (t.0, new_t_ti))
       | ti
 
+member_chain_name: ast::Expr => String
+member_chain_name = e =>
+   e
+      [Var v] v
+      [Member t]
+         b = member_chain_name(t.target)
+         b == "" | "" | b + (t.is_module_access | "::" | ".") + t.field_name
+      | ""
+
 rewrite_import_expr: ast::Expr, ImportMap, ast::Names => ast::Expr
 rewrite_import_expr = e, table, locals =>
    e
@@ -731,7 +1094,11 @@ rewrite_import_expr = e, table, locals =>
             f.abi, new_params, f.return_type, new_ret_ti, f.is_variable))))
       [Member m]
          m.is_module_access
-            | e
+            |
+               qn = member_chain_name(e)
+               table ^? qn
+                  | ast::Expr(Var, (table ^ qn | _ | qn))
+                  | e
             |
                new_target = rewrite_import_expr(m.target, table, locals)
                new_idx = rewrite_import_expr(m.index_expr, table, locals)
@@ -808,71 +1175,70 @@ rewrite_import_expr = e, table, locals =>
 load_stmts: ast::Exprs, String, String, ast::Names, ast::Names, Loader => <>
 load_stmts = stmts, base, prefix, publics, privates, ldr =>
    ok' = <+>
-   import_mods = ast::Names()
+   import_entries = ImportEntries()
+   has_imp_mods' = <->
    stmts @ st =>
       !ok' | -->
       st
          [Import imp]
-            imp.is_import | import_mods += imp.module_name
-            imp.is_dynamic
-               |
-                  has_dyn = loaded_has(ldr.dynamic_mods, imp.module_name)
-                  !has_dyn
+            has_imp_mods' = <+>
+            resolved = resolve_module(base, imp.module_path, ldr)
+            resolved
+               [None]
+                  !starts_with(imp.module_path, "@")
                      |
-                        dmods = ldr.dynamic_mods
-                        dmods += imp.module_name
-                        ldr.dynamic_mods = dmods
-                        resolved_cand = resolve_module(base, imp.module_path)
-                        dpath = resolved_cand
-                           [File f] f
-                           [Dir d] d
-                           | imp.module_path
-                        dpaths = ldr.dynamic_paths
-                        dpaths += canonical_path(dpath)
-                        ldr.dynamic_paths = dpaths
-                        decl_code = "#public\n" +
-                           "reload_so: String => <>\n" +
-                           "reload_so = p => <+>\n" +
-                           "reload: () => <>\n" +
-                           "reload = !=> <+>\n"
-                        dppr = parser::parse_init(decl_code)
-                        dprog = parser::parse_program(dppr)
-                        dprog | dp =>
-                           dp [Block db]
-                              db.exprs @ de =>
-                                 prefix_stmt_to_acc(de, imp.module_name,
-                                    dppr.publics, dppr.privates,
-                                    ldr.out_exprs, <->)
-            !loaded_has(ldr.loaded, imp.module_name)
-               |
-                  resolved = resolve_module(base, imp.module_path)
-                  resolved
-                     [None]
                         print $ "E5006: Imported module '" + imp.module_name +
                            "' not found at '" + imp.module_path +
                            "' or in stdlib"
-                        ok' = <->
+                  ok' = <->
+               |
+                  cid = get_resolved_cid(resolved)
+                  import_entries += ImportEntry((imp.module_name, cid, imp.is_import))
+                  imp.is_dynamic
                      |
-                        saved_dep = ldr.is_dep
-                        ldr.is_dep = <+>
-                        res = load_resolved(resolved, imp.module_name, ldr)
-                        ldr.is_dep = saved_dep
-                        !res | ok' = <->
+                        has_dyn = loaded_has(ldr.dynamic_mods, imp.module_name)
+                        !has_dyn
+                           |
+                              dmods = ldr.dynamic_mods
+                              dmods += imp.module_name
+                              ldr.dynamic_mods = dmods
+                              dpath = resolved [File f] f.path [Dir d] d.path | imp.module_path
+                              dpaths = ldr.dynamic_paths
+                              dpaths += canonical_path(dpath)
+                              ldr.dynamic_paths = dpaths
+                              decl_code = "#public\n" +
+                                 "reload_so: String => <>\n" +
+                                 "reload_so = p => <+>\n" +
+                                 "reload: () => <>\n" +
+                                 "reload = !=> <+>\n"
+                              dppr = parser::parse_init(decl_code)
+                              dprog = parser::parse_program(dppr)
+                              dprog | dp =>
+                                 dp [Block db]
+                                    db.exprs @ de =>
+                                       prefix_stmt_to_acc(de, cid,
+                                          dppr.publics, dppr.privates,
+                                          ldr.out_exprs, <->)
+                  saved_dep = ldr.is_dep
+                  ldr.is_dep = <+>
+                  res = load_resolved(resolved, imp.module_path, ldr)
+                  ldr.is_dep = saved_dep
+                  !res | ok' = <->
    !ok'
       | <->
       |
          import_table = ImportMap()
          import_source = ImportMap()
-         ?import_mods @ mi =>
+         ?import_entries @ mi =>
             !ok' | -->
-            mname = import_mods(mi) | _ | ""
-            cres = collect_module_exports(ldr.out_exprs, mname, import_table,
-               import_source)
+            ientry = import_entries(mi) | _ | ImportEntry(("", "", <->))
+            cres = collect_module_exports(ldr.out_exprs, ientry.bound_name,
+               ientry.canonical_id, ientry.is_import, import_table, import_source)
             !cres | ok' = <->
          !ok'
             | <->
             |
-               ?import_mods > 0
+               has_imp_mods'
                   |
                      fcres = check_file_clash(stmts, import_table, import_source)
                      !fcres | ok' = <->
@@ -880,12 +1246,11 @@ load_stmts = stmts, base, prefix, publics, privates, ldr =>
                   | <->
                   |
                      is_iface = ldr.is_modular && ldr.is_dep
-                     has_imp_mods = ?import_mods > 0
                      stmts @ st2 =>
                         is_imp = st2 [Import _]
                         !is_imp
                            |
-                              cur_st = has_imp_mods
+                              cur_st = has_imp_mods'
                                  | rewrite_import_expr(st2, import_table,
                                     ast::Names())
                                  | st2
@@ -893,8 +1258,8 @@ load_stmts = stmts, base, prefix, publics, privates, ldr =>
                                  privates, ldr.out_exprs, is_iface)
                      ok'
 
-load_single_file: String, String, Loader => <>
-load_single_file = path, prefix, ldr =>
+load_single_file: String, String, <>, String, Loader => <>
+load_single_file = path, prefix, is_pkg, imp_path, ldr =>
    src_res = read_file_text(path)
    src_res
       | src =>
@@ -906,22 +1271,28 @@ load_single_file = path, prefix, ldr =>
                prog_res = parser::parse_program(ppr)
                prog_res
                   | prog =>
-                     prog
-                        [Block b]
-                           !ldr.is_dep
-                              |
-                                 ?ppr.exports @ ei =>
-                                    ldr.exports += (ppr.exports(ei) | _ | "")
-                           load_stmts(b.exprs, dirname(path), prefix,
-                              ppr.publics, ppr.privates, ldr)
-                        | <->
+                     is_pkg && ?ppr.publics == 0
+                        |
+                           print $ "E5036: #use " + imp_path +
+                              ": module exports nothing (no #public)"
+                           <->
+                        |
+                           prog
+                              [Block b]
+                                 !ldr.is_dep
+                                    |
+                                       ?ppr.exports @ ei =>
+                                          ldr.exports += (ppr.exports(ei) | _ | "")
+                                 load_stmts(b.exprs, dirname(path), prefix,
+                                    ppr.publics, ppr.privates, ldr)
+                              | <->
                   | <->
       |
          print $ "E5005: Could not read source file '" + path + "'"
          <->
 
-load_file: String, String, Loader => <>
-load_file = path, prefix, ldr =>
+load_file: String, String, <>, String, Loader => <>
+load_file = path, prefix, is_pkg, imp_path, ldr =>
    prefix != "" && loaded_has(ldr.loaded, prefix)
       | <+>
       |
@@ -930,27 +1301,62 @@ load_file = path, prefix, ldr =>
                loaded = ldr.loaded
                loaded += prefix
                ldr.loaded = loaded
-         load_single_file(path, prefix, ldr)
+         load_single_file(path, prefix, is_pkg, imp_path, ldr)
 
-load_dir_files: ast::Names, String, String, Loader => <>
-load_dir_files = files, dir_path, prefix, ldr =>
+load_dir_files: ast::Names, String, String, <>, String, Loader => <>
+load_dir_files = files, dir_path, prefix, is_pkg, imp_path, ldr =>
    ok' = <+>
    ?files @ i =>
       !ok' | -->
       fname = (files(i) | _ | "")
       child_path = path_join(dir_path, fname)
-      res = load_single_file(child_path, prefix, ldr)
+      res = load_single_file(child_path, prefix, is_pkg, imp_path, ldr)
       !res | ok' = <->
    ok'
 
 load_resolved: ResolvedModule, String, Loader => <>
-load_resolved = resolved, prefix, ldr =>
+load_resolved = resolved, imp_path, ldr =>
    resolved
-      [File f] load_file(f, prefix, ldr)
+      [File f]
+         stk_idx = f.is_pkg | find_name_idx(ldr.loading_stack, f.canonical_id) | 0 - 1
+         stk_idx !< 0
+            |
+               chain = format_cycle_chain(ldr.loading_stack, stk_idx, f.canonical_id)
+               print $ "E5038: module import cycle across packages: " + chain
+               <->
+            |
+               loaded_has(ldr.loaded, f.canonical_id)
+                  | <+>
+                  |
+                     f.is_pkg
+                        |
+                           stk = ldr.loading_stack
+                           stk += f.canonical_id
+                           ldr.loading_stack = stk
+                     res = load_file(f.path, f.canonical_id, f.is_pkg, imp_path, ldr)
+                     f.is_pkg | pop_loading_stack(ldr)
+                     res
       [Dir d]
-         ldr.loaded += prefix
-         files = dir_dva_files(d)
-         load_dir_files(files, d, prefix, ldr)
+         stk_idx = d.is_pkg | find_name_idx(ldr.loading_stack, d.canonical_id) | 0 - 1
+         stk_idx !< 0
+            |
+               chain = format_cycle_chain(ldr.loading_stack, stk_idx, d.canonical_id)
+               print $ "E5038: module import cycle across packages: " + chain
+               <->
+            |
+               loaded_has(ldr.loaded, d.canonical_id)
+                  | <+>
+                  |
+                     d.is_pkg
+                        |
+                           stk = ldr.loading_stack
+                           stk += d.canonical_id
+                           ldr.loading_stack = stk
+                     ldr.loaded += d.canonical_id
+                     files = dir_dva_files(d.path)
+                     res = load_dir_files(files, d.path, d.canonical_id, d.is_pkg, imp_path, ldr)
+                     d.is_pkg | pop_loading_stack(ldr)
+                     res
       | <->
 
 load_target: String, String, Loader => <>
@@ -959,19 +1365,26 @@ load_target = path, prefix, ldr =>
       |
          main_cand = path_join(path, "main.dva")
          file_exists(main_cand)
-            | load_file(main_cand, prefix, ldr)
+            | load_file(main_cand, prefix, <->, "", ldr)
             |
                files = dir_dva_files(path)
-               load_dir_files(files, path, prefix, ldr)
-      | load_file(path, prefix, ldr)
+               load_dir_files(files, path, prefix, <->, "", ldr)
+      | load_file(path, prefix, <->, "", ldr)
 
-load_all: String, String, <> => ModuleLoad
-load_all = target, target_prefix, is_modular =>
-   ldr = Loader((ast::Exprs(), ast::Names(), ast::Names(),
-      ast::Names(), ast::Names(), is_modular, <->))
-   tres = load_target(target, target_prefix, ldr)
-   ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
-      ldr.dynamic_mods, ldr.dynamic_paths, tres))
+load_all: String, String, <>, String => ModuleLoad
+load_all = target, target_prefix, is_modular, import_map_arg =>
+   map_res = find_and_load_import_map(target, import_map_arg)
+   map_res
+      | map =>
+         ldr = Loader((ast::Exprs(), ast::Names(), ast::Names(),
+            ast::Names(), ast::Names(), is_modular, <->,
+            map, ast::Names()))
+         tres = load_target(target, target_prefix, ldr)
+         ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
+            ldr.dynamic_mods, ldr.dynamic_paths, tres))
+      |
+         ModuleLoad((ast::Exprs(), ast::Names(), ast::Names(),
+            ast::Names(), ast::Names(), <->))
 
 strip_trailing_slash: String => String
 strip_trailing_slash = s =>
@@ -1125,29 +1538,14 @@ collect_link_libs = stmts =>
    is_shared: <>,
    is_module: <>,
    module_name: String,
+   import_map: String
 )
 
 init_opts: Int => CliOpts
 init_opts = _ =>
    CliOpts(("", "", <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
-      <->, <+>, "", <->, <->, ""))
+      <->, <+>, "", <->, <->, "", ""))
 
-
-has_substr_step: String, String, Int => <>
-has_substr_step = s, sub, i =>
-   i + ?sub !> ?s
-      |
-         match' = <+>
-         ?sub @ j =>
-            s(i + j) != sub(j)
-               |
-                  match' = <->
-                  -->
-         match' | <+> | has_substr_step(s, sub, i + 1)
-      | <->
-
-has_substr: String, String => <>
-has_substr = s, sub => has_substr_step(s, sub, 0)
 
 find_char_at: String, Int, Int => Int
 find_char_at = s, i, ch =>
@@ -2033,7 +2431,7 @@ repl_step = opts, session_src, line, sess =>
          print $ "E6001: Could not write scratch source file"
          session_src
       |
-         load_res = load_all(temp_src, "", <->)
+         load_res = load_all(temp_src, "", <->, opts.import_map)
          !load_res.ok || ?load_res.exprs == 0
             | session_src
             |
@@ -2185,6 +2583,8 @@ parse_args_step = i, opts =>
                parse_args_step(i + 1, opts)
             ["--module"]
                parse_module_arg(i, opts)
+            ["--import-map"]
+               parse_import_map_arg(i, opts)
             ["-H", "--header"]
                parse_header_arg(i, opts)
             ["-o", "--output"]
@@ -2272,6 +2672,23 @@ parse_output_arg = i, opts =>
                   ov + "'"
                sys::exit(1)
          opts.outpath = ov
+         parse_args_step(i + 2, opts)
+
+parse_import_map_arg: Int, CliOpts => CliOpts
+parse_import_map_arg = i, opts =>
+   i + 1 !< sys::argc
+      |
+         print $ "E5030: '--import-map' requires a file path argument"
+         sys::exit(1)
+         opts
+      |
+         mv = sys::argv_string(i + 1)
+         ?mv > 0 && mv(0) == '-'
+            |
+               print $ "E5030: Import map path must not begin with '-'; got '" +
+                  mv + "'"
+               sys::exit(1)
+         opts.import_map = mv
          parse_args_step(i + 2, opts)
 
 parse_pos_arg: Int, String, CliOpts => CliOpts
@@ -2380,14 +2797,13 @@ run_driver = _ =>
                print $ "E5007: No input .dva file specified."
                print_usage(0)
                sys::exit(1)
-         ldr = Loader((ast::Exprs(), ast::Names(), ast::Names(),
-            ast::Names(), ast::Names(), opts.is_module, <->))
          target_prefix_dump = opts.is_module | opts.module_name | ""
-         ok = load_target(opts.target, target_prefix_dump, ldr)
-         !ok
+         dump_load = load_all(opts.target, target_prefix_dump, opts.is_module,
+            opts.import_map)
+         !dump_load.ok
             | sys::exit(1)
             |
-               dump_prog = ast::Expr(Block, ast::BlockExpr(ldr.out_exprs))
+               dump_prog = ast::Expr(Block, ast::BlockExpr(dump_load.exprs))
                dump_program_ast(dump_prog, opts.ast_tree)
                sys::exit(0)
 
@@ -2441,7 +2857,7 @@ run_driver = _ =>
       opts.triple(..14) == "wasm32-unknown")
    is_freestanding && !opts.no_runtime | opts.no_runtime = <+>
    target_prefix = opts.is_module && opts.no_main | opts.module_name | ""
-   load_result = load_all(opts.target, target_prefix, opts.is_module)
+   load_result = load_all(opts.target, target_prefix, opts.is_module, opts.import_map)
    !load_result.ok
       | sys::exit(1)
       |

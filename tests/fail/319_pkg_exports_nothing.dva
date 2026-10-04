@@ -1,0 +1,4 @@
+#use @x/empty
+#use io
+
+io::out("x")

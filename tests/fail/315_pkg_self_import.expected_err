@@ -1,0 +1,1 @@
+#use @app: a package cannot import itself; use a local #use

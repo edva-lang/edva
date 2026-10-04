@@ -181,14 +181,19 @@ name_is_qualified = name, i =>
             | name_is_qualified(name, i + 1)
       | <->
 
-decl_module: String, Int => String
-decl_module = name, i =>
+decl_module_find: String, Int, Int => Int
+decl_module_find = name, i, last =>
    i + 1 < ?name
       |
          (name(i) == ':') && (name(i + 1) == ':')
-            | name(0..i)
-            | decl_module(name, i + 1)
-      | ""
+            | decl_module_find(name, i + 2, i)
+            | decl_module_find(name, i + 1, last)
+      | last
+
+decl_module: String, Int => String
+decl_module = name, _ =>
+   last = decl_module_find(name, 0, -1)
+   last < 0 | "" | name(0..last)
 
 set_current_module: TypeEnv, String => ()
 set_current_module = env, mod_name =>

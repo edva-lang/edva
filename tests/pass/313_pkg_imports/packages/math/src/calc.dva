@@ -1,0 +1,3 @@
+#public
+mul: Int, Int => Int
+mul = a, b => a * b
