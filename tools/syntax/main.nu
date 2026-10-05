@@ -195,7 +195,7 @@ export def gen-vscode [] {
           },
           {
             "name": "keyword.operator.bitwise.dva",
-            "match": "(\\.<\\.|\\.>\\.|\\.\\|\\.|\\.&\\.|\\.!\\.)"
+            "match": "(\\.<\\.|\\.>\\.|\\.\\|\\.|\\.\\^\\.|\\.&\\.|\\.!\\.)"
           },
           {
             "name": "keyword.operator.arithmetic.dva",

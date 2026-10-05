@@ -1,0 +1,2 @@
+f: Float => Int
+f = x => x .^. 1

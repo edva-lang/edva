@@ -17,7 +17,8 @@ bin_info = text =>
       ["$"]  <+ BinOpInfo((30, 30, ast::BinaryOp(Apply), <->)) ->
       ["||"]  <+ BinOpInfo((80, 90, ast::BinaryOp(Or), <->)) ->
       ["&&"]  <+ BinOpInfo((90, 100, ast::BinaryOp(And), <->)) ->
-      [".|."]  <+ BinOpInfo((100, 110, ast::BinaryOp(BitOr), <->)) ->
+      [".|."]  <+ BinOpInfo((100, 105, ast::BinaryOp(BitOr), <->)) ->
+      [".^."]  <+ BinOpInfo((105, 110, ast::BinaryOp(BitXor), <->)) ->
       [".&."]  <+ BinOpInfo((110, 120, ast::BinaryOp(BitAnd), <->)) ->
       ["<"]  <+ BinOpInfo((120, 130, ast::BinaryOp(Lt), <+>)) ->
       [">"]  <+ BinOpInfo((120, 130, ast::BinaryOp(Gt), <+>)) ->

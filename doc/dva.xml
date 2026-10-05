@@ -99,6 +99,7 @@
         <StringDetect attribute="Operator" context="#stay" String=".&lt;." />
         <StringDetect attribute="Operator" context="#stay" String=".&gt;." />
         <StringDetect attribute="Operator" context="#stay" String=".|." />
+        <StringDetect attribute="Operator" context="#stay" String=".^." />
         <StringDetect attribute="Operator" context="#stay" String=".&amp;." />
         <StringDetect attribute="Operator" context="#stay" String=".!." />
         <StringDetect attribute="Operator" context="#stay" String="++" />

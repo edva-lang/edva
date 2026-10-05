@@ -211,6 +211,7 @@ show_op = o =>
       [Apply] "$"
       [BitAnd] ".&."
       [BitOr] ".|."
+      [BitXor] ".^."
       [Shl] ".<."
       [Shr] ".>."
       [Seq] ";"

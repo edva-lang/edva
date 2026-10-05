@@ -136,7 +136,8 @@ truth; the unified operator table with operand and result types is in §3.3):
 | range | 70 | 80 | `..` | left |
 | logical or | 80 | 90 | `||` | left |
 | logical and | 90 | 100 | `&&` | left |
-| bitwise or | 100 | 110 | `.|.` | left |
+| bitwise or | 100 | 105 | `.|.` | left |
+| bitwise xor | 105 | 110 | `.^.` | left |
 | bitwise and | 110 | 120 | `.&.` | left |
 | comparison | 120 | 130 | `<` `>` `==` `!=` `!<` `!>` | left, same-line |
 | shift | 130 | 140 | `.<.` `.>.` | left |

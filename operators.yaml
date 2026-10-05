@@ -111,10 +111,19 @@ tiers:
     parse_fn: parser_parse_expr_bp (Pratt core)
     assoc: left
     lbp: 100
-    rbp: 110
+    rbp: 105
     result: int
     same_line: false
   - number: 11
+    const: BITXOR
+    name: bitwise xor
+    parse_fn: parser_parse_expr_bp (Pratt core)
+    assoc: left
+    lbp: 105
+    rbp: 110
+    result: int
+    same_line: false
+  - number: 12
     const: BITAND
     name: bitwise and
     parse_fn: parser_parse_expr_bp (Pratt core)
@@ -123,7 +132,7 @@ tiers:
     rbp: 120
     result: int
     same_line: false
-  - number: 12
+  - number: 13
     const: CMP
     name: comparison
     parse_fn: parser_parse_expr_bp (Pratt core)
@@ -132,7 +141,7 @@ tiers:
     rbp: 130
     result: comparison
     same_line: true
-  - number: 13
+  - number: 14
     const: SHIFT
     name: shift
     parse_fn: parser_parse_expr_bp (Pratt core)
@@ -141,7 +150,7 @@ tiers:
     rbp: 140
     result: int
     same_line: false
-  - number: 14
+  - number: 15
     const: ADD
     name: addition
     parse_fn: parser_parse_expr_bp (Pratt core)
@@ -150,7 +159,7 @@ tiers:
     rbp: 150
     result: int
     same_line: false
-  - number: 15
+  - number: 16
     const: MUL
     name: multiplication
     parse_fn: parser_parse_expr_bp (Pratt core)
@@ -159,7 +168,7 @@ tiers:
     rbp: 160
     result: int
     same_line: false
-  - number: 16
+  - number: 17
     const: UNARY
     name: unary prefix
     parse_fn: parser_parse_primary_atom
@@ -168,7 +177,7 @@ tiers:
     rbp: 180
     result: null
     same_line: false
-  - number: 17
+  - number: 18
     const: POSTFIX
     name: postfix / apply
     parse_fn: parser_parse_primary
@@ -177,7 +186,7 @@ tiers:
     rbp: 180
     result: null
     same_line: false
-  - number: 18
+  - number: 19
     const: PRIMARY
     name: primary
     parse_fn: parser_parse_primary_atom
@@ -346,7 +355,7 @@ operators:
     result: "Ramification (winner-derived layout) or a bare Flag"
     desc: "short-circuit logical AND. Heap rams only: stops when the first operand is negative and returns the winner intact; the positive slot comes from the RHS and the negative result slot must match on both operands (E3089 otherwise). Flags only combine with Flags. On non-ram truthiness: a bare Flag."
 
-  # ---- bitwise or / and (tiers 9-10) --------------------------------------
+  # ---- bitwise or / xor / and (tiers 10-12) ---------------------------------
   - symbol: ".|."
     tier: bitwise or
     kind: BitOr
@@ -355,6 +364,14 @@ operators:
     operands: "integerish, integerish"
     result: "integerish"
     desc: "bitwise OR. Integerish operands only (Int, Rune, i8..u64); floats/Strings/rams are E3057/E3058."
+  - symbol: ".^."
+    tier: bitwise xor
+    kind: BitXor
+    kind_self: BitXor
+    assoc: left
+    operands: "integerish, integerish"
+    result: "integerish"
+    desc: "bitwise XOR. Integerish operands only; floats/Strings/rams are rejected."
   - symbol: ".&."
     tier: bitwise and
     kind: BitAnd

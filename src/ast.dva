@@ -20,7 +20,7 @@
    Add Sub Mul Div Mod
    Gt Lt Eq NotGt NotLt NotEq
    And Or Feed Apply Bind
-   BitAnd BitOr Shl Shr Seq
+   BitAnd BitOr BitXor Shl Shr Seq
 >
 
 #type UnaryOp <Not, BitNot, Length, AddrOf, Freeze, Unwrap, Propagate, RuneCount>

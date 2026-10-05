@@ -1972,7 +1972,7 @@ e_is_int = e, params, ptypes =>
       [Unary u]
          u.0 [Length]
       [Bin t]
-         is_arith = t.0 [Add, Sub, Mul, Div, Mod, BitAnd, BitOr, Shl, Shr]
+         is_arith = t.0 [Add, Sub, Mul, Div, Mod, BitAnd, BitOr, BitXor, Shl, Shr]
          is_arith && (e_is_int(t.1, params, ptypes) ||
             e_is_int(t.2, params, ptypes))
       | <->
@@ -2034,7 +2034,7 @@ infer_ret = e, params, ptypes =>
             [Seq] infer_ret(t.2, params, ptypes)
             [Gt, Lt, Eq, NotGt, NotLt, NotEq] ast::ValueType(Flag)
             [And, Or] ast::ValueType(Flag)
-            [Mod, BitAnd, BitOr, Shl, Shr] ast::ValueType(Int)
+            [Mod, BitAnd, BitOr, BitXor, Shl, Shr] ast::ValueType(Int)
             |
                e_is_str(t.1, params, ptypes) || e_is_str(t.2, params, ptypes)
                   | ast::ValueType(Str)
@@ -2526,7 +2526,7 @@ fn_ret_bin_override = cg, last, t, cur =>
       |
          t.0
             [Add, Sub, Mul, Div, Mod] ast::ValueType(Int)
-            [BitAnd, BitOr, Shl, Shr] ast::ValueType(Int)
+            [BitAnd, BitOr, BitXor, Shl, Shr] ast::ValueType(Int)
             [Gt, Lt, Eq, NotGt, NotLt, NotEq, And, Or]
                ast::ValueType(Flag)
             [Seq] fn_ret_var_override(cg, t.2, cur)
@@ -2764,7 +2764,7 @@ int_used_bin = t, name, env_p, env_t =>
    int1 = e_is_int(t.1, env_p, env_t)
    int2 = e_is_int(t.2, env_p, env_t)
    op = t.0
-   is_int_op = op [Mod, BitAnd, BitOr, Shl, Shr]
+   is_int_op = op [Mod, BitAnd, BitOr, BitXor, Shl, Shr]
    int_used(t.1, name, env_p, env_t) || int_used(t.2, name, env_p, env_t) ||
       (int1 && refs(t.2, name)) || (int2 && refs(t.1, name)) ||
       (is_int_op && (refs(t.1, name) || refs(t.2, name)))

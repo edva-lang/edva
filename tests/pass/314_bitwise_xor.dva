@@ -1,0 +1,67 @@
+#use io
+
+// 1. Zero and self identities
+x = 42
+io::out $ x .^. 0
+io::out $ x .^. x
+io::out $ 0 .^. x
+
+// 2. Binary bit patterns
+a = 0b1100 .^. 0b1010
+io::out $ a
+b = 0xFF .^. 0x0F
+io::out $ b
+
+// 3. Negative signed integers
+n1 = -1 .^. 0
+io::out $ n1
+n2 = -1 .^. -1
+io::out $ n2
+n3 = -5 .^. 3
+io::out $ n3
+
+// 4. Rune and character bitwise XOR (case conversion: 'A' ^ 32 == 'a')
+r1 = 'A' .^. 32
+io::out $ Int(r1)
+r2 = 'a' .^. 32
+io::out $ Int(r2)
+
+// 5. Precedence: .|. < .^. < .&.
+// 1 .|. (6 .^. (7 .&. 2)) == 1 .|. (6 .^. 2) == 1 .|. 4 == 5
+p = 1 .|. 6 .^. 7 .&. 2
+io::out $ p
+
+// Associativity: left-to-right (10 .^. 6) .^. 3 == 12 .^. 3 == 15
+assoc = 10 .^. 6 .^. 3
+io::out $ assoc
+
+// 6. Vector / element-wise array operations
+v1 = (1, 2, 3, 4)
+v2 = (4, 3, 2, 1)
+v_xor = v1 .^. v2
+io::out $ v_xor(0)
+io::out $ v_xor(1)
+io::out $ v_xor(2)
+io::out $ v_xor(3)
+
+// Vector x Scalar
+v_scalar = (1, 2, 3, 4) .^. 1
+io::out $ v_scalar(0)
+io::out $ v_scalar(1)
+io::out $ v_scalar(2)
+io::out $ v_scalar(3)
+
+// 7. Operator section
+xor255 = (.^. 255)
+io::out $ xor255(15)
+
+// 8. Compile-time evaluation (CTFE) in branch
+ctfe_res = (0x1234 .^. 0x4321) == 0x5115 | "ctfe_ok" | "ctfe_fail"
+io::out $ ctfe_res
+
+// 9. Primed variable update (reassignment)
+acc' = 0
+acc' = acc' .^. 100
+acc' = acc' .^. 100
+acc' = acc' .^. 77
+io::out $ acc'

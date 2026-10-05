@@ -223,14 +223,12 @@
       ?b == 0 | "." | +b
 
    // FNV-1a-style hash of the bytes as 16 hex digits: stable store names.
-   // (No XOR operator: a ^ b == (a | b) & !(a & b).)
    fnv_hex: String => String
    fnv_hex = s =>
       h' = 0x4bf29ce484222325
       ?s @ i =>
          c = Int(s(i))
-         both = h' .&. c
-         h' = (h' .|. c) .&. .!.both
+         h' = h' .^. c
          h' = h' * 1099511628211
       digits = "0123456789abcdef"
       b = {16}

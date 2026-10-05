@@ -2175,6 +2175,7 @@ annotate_bin_op = ctx, op, t1, t2 =>
       [Or] unify_logical(ctx, <->, t1, t2)
       [BitAnd] unify_bitwise(ctx, t1, t2)
       [BitOr] unify_bitwise(ctx, t1, t2)
+      [BitXor] unify_bitwise(ctx, t1, t2)
       [Shl] unify_bitwise(ctx, t1, t2)
       [Shr] unify_bitwise(ctx, t1, t2)
       [Apply] unify_apply(ctx, t1, t2)
@@ -2592,20 +2593,49 @@ unify_logical = ctx, is_and, t1, t2 =>
 
 unify_bitwise: unify::Ctx, unify::UType, unify::UType => unify::UType
 unify_bitwise = ctx, t1, t2 =>
-   int1 = is_integerish_ut(ctx, t1) || is_flag_ut(ctx, t1)
-   int2 = is_integerish_ut(ctx, t2) || is_flag_ut(ctx, t2)
-   int1 && int2
+   r1 = is_numeric_rec(ctx, t1)
+   r2 = is_numeric_rec(ctx, t2)
+   r1 && r2
       |
-         c1 = unify::canon(ctx, t1)
-         c2 = unify::canon(ctx, t2)
-         (is_flag_ut(ctx, t1) && is_flag_ut(ctx, t2))
-            | unify::prim_flag()
-            | int_bin_res(c1, c2)
+         cnt1 = rec_count(ctx, t1)
+         cnt2 = rec_count(ctx, t2)
+         cnt1 != cnt2
+            |
+               unify::add_error(ctx, 3084,
+                  "Record size mismatch in bitwise op")
+               t1
+            |
+               e1 = rec_elem(ctx, t1)
+               e2 = rec_elem(ctx, t2)
+               unify_bitwise(ctx, e1, e2)
+               t1
       |
-         ok = unify::unify(ctx, t1, t2)
-         !ok
-            | unify::add_error(ctx, 3084, "Bitwise operand mismatch")
-         unify::prim_int()
+         r1
+            |
+               e1 = rec_elem(ctx, t1)
+               unify_bitwise(ctx, e1, t2)
+               t1
+            |
+               r2
+                  |
+                     e2 = rec_elem(ctx, t2)
+                     unify_bitwise(ctx, t1, e2)
+                     t2
+                  |
+                     int1 = is_integerish_ut(ctx, t1) || is_flag_ut(ctx, t1)
+                     int2 = is_integerish_ut(ctx, t2) || is_flag_ut(ctx, t2)
+                     int1 && int2
+                        |
+                           c1 = unify::canon(ctx, t1)
+                           c2 = unify::canon(ctx, t2)
+                           (is_flag_ut(ctx, t1) && is_flag_ut(ctx, t2))
+                              | unify::prim_flag()
+                              | int_bin_res(c1, c2)
+                        |
+                           ok = unify::unify(ctx, t1, t2)
+                           !ok
+                              | unify::add_error(ctx, 3084, "Bitwise operand mismatch")
+                           unify::prim_int()
 
 annotate_block: unify::Ctx, type_env::TypeEnv, ast::Exprs, <> => tast::TypedExpr
 annotate_block = ctx, env, exprs, is_disc =>

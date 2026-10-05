@@ -82,6 +82,7 @@
    LLVMBuildICmp: (Builder: Addr, Op: Int, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildAnd: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildOr: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
+   LLVMBuildXor: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildShl: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildLShr: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildFCmp: (Builder: Addr, Op: Int, LHS: Addr, RHS: Addr, Name: String) => Addr

@@ -647,6 +647,7 @@ ctfe_eval_int_bin = op, a, b =>
       [NotGt] ctfe_int_bool(a !> b)
       [BitAnd] (types::CtVal(Int, a .&. b), ast::ValueType(Int))
       [BitOr] (types::CtVal(Int, a .|. b), ast::ValueType(Int))
+      [BitXor] (types::CtVal(Int, a .^. b), ast::ValueType(Int))
       | (types::CtVal(None), ast::ValueType(Unknown))
 
 ctfe_eval_flt_bin: ast::BinaryOp, Float, Float => (types::CtVal, ast::ValueType)

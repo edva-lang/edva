@@ -1024,7 +1024,7 @@ codegen_eval_bin_op = cg, op, t =>
          match::codegen_emit_logical(cg, <+>, t)
       [Or]
          match::codegen_emit_logical(cg, <->, t)
-      [Add, Sub, Mul, Div, Mod, BitAnd, BitOr, Shl, Shr]
+      [Add, Sub, Mul, Div, Mod, BitAnd, BitOr, BitXor, Shl, Shr]
          codegen_emit_arith(cg, op, t)
       [Gt, Lt, Eq, NotEq, NotGt, NotLt]
          match::codegen_emit_cmp(cg, op, t)
@@ -1386,6 +1386,7 @@ codegen_array_vec_apply = cg, op, l, r, elem_llvm, elem_vt, count =>
                   | LLVMBuildSRem(cg.builder, l, r_safe, "arr.vec.srem")
             [BitAnd] LLVMBuildAnd(cg.builder, l, r_safe, "arr.vec.and")
             [BitOr] LLVMBuildOr(cg.builder, l, r_safe, "arr.vec.or")
+            [BitXor] LLVMBuildXor(cg.builder, l, r_safe, "arr.vec.xor")
             [Shl] LLVMBuildShl(cg.builder, l, r_safe, "arr.vec.shl")
             [Shr] LLVMBuildLShr(cg.builder, l, r_safe, "arr.vec.shr")
             | LLVMConstNull(vec_ty)
@@ -1434,6 +1435,7 @@ codegen_array_scalar_apply = cg, op, l, r, elem_llvm, elem_vt =>
                   | LLVMBuildSRem(cg.builder, l, r_safe', "arr.elem.srem")
             [BitAnd] LLVMBuildAnd(cg.builder, l, r_safe', "arr.elem.and")
             [BitOr] LLVMBuildOr(cg.builder, l, r_safe', "arr.elem.or")
+            [BitXor] LLVMBuildXor(cg.builder, l, r_safe', "arr.elem.xor")
             [Shl] LLVMBuildShl(cg.builder, l, r_safe', "arr.elem.shl")
             [Shr] LLVMBuildLShr(cg.builder, l, r_safe', "arr.elem.shr")
             | LLVMConstNull(elem_llvm)
@@ -1580,7 +1582,7 @@ codegen_emit_array_arith = cg, op, linfo, rinfo =>
    count = lhs_arr | ?l_fvts | ?r_fvts
    elem_vt = ?arr_fvts > 0 | (arr_fvts(0) | _ | ast::ValueType(Unknown)) |
       ast::ValueType(Unknown)
-   is_bit = op [BitAnd, BitOr, Shl, Shr]
+   is_bit = op [BitAnd, BitOr, BitXor, Shl, Shr]
    is_bit && types::is_float_vt(elem_vt)
       | codegen_emit_bitwise_error(cg)
       |
@@ -2104,7 +2106,7 @@ codegen_emit_arith_operands = cg, op, lr, l_rt, l_fvts, rr, r_rt, r_fvts =>
          (lr.0, lr.1, l_rt, l_fvts, lhs_arr),
          (rr.0, rr.1, r_rt, r_fvts, rhs_arr))
       |
-         is_bit = op [BitAnd, BitOr, Shl, Shr]
+         is_bit = op [BitAnd, BitOr, BitXor, Shl, Shr]
          is_bit
             |
                ok_l = types::is_int_vt(lr.1) || types::is_flag_vt(lr.1)
@@ -2316,6 +2318,7 @@ codegen_emit_bitwise_valid = cg, op, lv, rv =>
    op
       [BitAnd] (LLVMBuildAnd(cg.builder, lv, rv, "bandtmp"), ast::ValueType(Int))
       [BitOr] (LLVMBuildOr(cg.builder, lv, rv, "bortmp"), ast::ValueType(Int))
+      [BitXor] (LLVMBuildXor(cg.builder, lv, rv, "bxortmp"), ast::ValueType(Int))
       [Shl] (LLVMBuildShl(cg.builder, lv, rv_safe, "shltmp"), ast::ValueType(Int))
       [Shr] (LLVMBuildLShr(cg.builder, lv, rv_safe, "shrtmp"), ast::ValueType(Int))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
@@ -4953,7 +4956,7 @@ codegen_typed_eval_bin_arith_default: types::Cg, ast::BinaryOp,
    (Addr, ast::ValueType), (Addr, ast::ValueType),
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_bin_arith_default = cg, op, lv, rv, ti =>
-   is_bit = op [BitAnd, BitOr, Shl, Shr]
+   is_bit = op [BitAnd, BitOr, BitXor, Shl, Shr]
    is_bit
       |
          i64t = LLVMInt64Type!
