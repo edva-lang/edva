@@ -89,52 +89,51 @@
       %memset(pbuf, 0, 128)
       fd = libc::syscall(SYS_IO_URING_SETUP, Addr(entries), pbuf,
          sys::addr_null, sys::addr_null, sys::addr_null, sys::addr_null)
-      fd < 0
-         |
-            libc::free(pbuf)
-            <- "io_uring_setup failed" ->
-         |
-            sq_entries = Int(@[pbuf + 0 u32])
-            cq_entries = Int(@[pbuf + 4 u32])
-            sq_head = Int(@[pbuf + 40 u32])
-            sq_tail = Int(@[pbuf + 44 u32])
-            sq_mask = Int(@[pbuf + 48 u32])
-            sq_array = Int(@[pbuf + 64 u32])
-            cq_head = Int(@[pbuf + 80 u32])
-            cq_tail = Int(@[pbuf + 84 u32])
-            cq_mask = Int(@[pbuf + 88 u32])
-            cq_cqes = Int(@[pbuf + 100 u32])
-            libc::free(pbuf)
+      fd < 0 |
+         libc::free(pbuf)
+         --| <- "io_uring_setup failed" ->
 
-            sq_sz = sq_array + sq_entries * 4
-            sq_ptr = libc::mmap(sys::addr_null, sq_sz, PROT_READ .|. PROT_WRITE,
-               MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_SQ_RING)
-            sqes_sz = sq_entries * 64
-            sqes_ptr = libc::mmap(sys::addr_null, sqes_sz, PROT_READ .|. PROT_WRITE,
-               MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_SQES)
-            cq_sz = cq_cqes + cq_entries * 16
-            cq_ptr = libc::mmap(sys::addr_null, cq_sz, PROT_READ .|. PROT_WRITE,
-               MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_CQ_RING)
+      sq_entries = Int(@[pbuf + 0 u32])
+      cq_entries = Int(@[pbuf + 4 u32])
+      sq_head = Int(@[pbuf + 40 u32])
+      sq_tail = Int(@[pbuf + 44 u32])
+      sq_mask = Int(@[pbuf + 48 u32])
+      sq_array = Int(@[pbuf + 64 u32])
+      cq_head = Int(@[pbuf + 80 u32])
+      cq_tail = Int(@[pbuf + 84 u32])
+      cq_mask = Int(@[pbuf + 88 u32])
+      cq_cqes = Int(@[pbuf + 100 u32])
+      libc::free(pbuf)
 
-            <+ Ring((
-               fd = fd,
-               sq_ptr = sq_ptr,
-               sq_sz = sq_sz,
-               sqes_ptr = sqes_ptr,
-               sqes_sz = sqes_sz,
-               cq_ptr = cq_ptr,
-               cq_sz = cq_sz,
-               sq_head_off = sq_head,
-               sq_tail_off = sq_tail,
-               sq_mask_off = sq_mask,
-               sq_arr_off = sq_array,
-               cq_head_off = cq_head,
-               cq_tail_off = cq_tail,
-               cq_mask_off = cq_mask,
-               cq_cqes_off = cq_cqes,
-               sq_entries = sq_entries,
-               cq_entries = cq_entries
-            )) +>
+      sq_sz = sq_array + sq_entries * 4
+      sq_ptr = libc::mmap(sys::addr_null, sq_sz, PROT_READ .|. PROT_WRITE,
+         MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_SQ_RING)
+      sqes_sz = sq_entries * 64
+      sqes_ptr = libc::mmap(sys::addr_null, sqes_sz, PROT_READ .|. PROT_WRITE,
+         MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_SQES)
+      cq_sz = cq_cqes + cq_entries * 16
+      cq_ptr = libc::mmap(sys::addr_null, cq_sz, PROT_READ .|. PROT_WRITE,
+         MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_CQ_RING)
+
+      <+ Ring((
+         fd = fd,
+         sq_ptr = sq_ptr,
+         sq_sz = sq_sz,
+         sqes_ptr = sqes_ptr,
+         sqes_sz = sqes_sz,
+         cq_ptr = cq_ptr,
+         cq_sz = cq_sz,
+         sq_head_off = sq_head,
+         sq_tail_off = sq_tail,
+         sq_mask_off = sq_mask,
+         sq_arr_off = sq_array,
+         cq_head_off = cq_head,
+         cq_tail_off = cq_tail,
+         cq_mask_off = cq_mask,
+         cq_cqes_off = cq_cqes,
+         sq_entries = sq_entries,
+         cq_entries = cq_entries
+      )) +>
 
    prep_sqe: Ring, Int, Int, Int, Addr, Int, Int => <>
    prep_sqe = ring, op, fd, off, addr, len, user_data =>

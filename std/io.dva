@@ -236,73 +236,62 @@
    // Returns <+ String +> or <--> on EOF.
    read: Reader, Int => < String | >
    read = r, max =>
-      max !> 0
-         | <-->
-         |
-            r.pos !< ?r.buf
-               |
-                  _ = refill(r)
-            r.pos < ?r.buf
-               |
-                  avail = ?r.buf - r.pos
-                  take = avail < max | avail | max
-                  res = {take}
-                  take > 0 | %memcpy(&res, &r.buf + r.pos, take)
-                  ?res = take
-                  r.pos = r.pos + take
-                  <+ +res ->
-               | <-->
+      max !> 0 | --| <-->
+      r.pos !< ?r.buf |
+         _ = refill(r)
+      r.pos !< ?r.buf | --| <-->
+      avail = ?r.buf - r.pos
+      take = avail < max | avail | max
+      res = {take}
+      take > 0 | %memcpy(&res, &r.buf + r.pos, take)
+      ?res = take
+      r.pos = r.pos + take
+      <+ +res ->
 
    // Buffered drain: reads from reader until EOF, capped at 'max'.
    // Drains any bytes currently buffered, then continues reading from fd.
    // Returns <+ String +> or <--> if EOF before any bytes were read.
    read_all: Reader, Int => < String | >
    read_all = r, max =>
-      max !> 0
-         | <-->
+      max !> 0 | --| <-->
+      res_b = {max}
+      avail = ?r.buf - r.pos
+      avail > 0
          |
-            res_b = {max}
-            avail = ?r.buf - r.pos
-            avail > 0
-               |
-                  take = avail < max | avail | max
-                  cur = ?res_b
-                  %memcpy(&res_b + cur, &r.buf + r.pos, take)
-                  ?res_b = cur + take
-                  r.pos = r.pos + take
-            chunk = 4096
-            0.. @
-               rem = max - ?res_b
-               rem !> 0 | -->
-               to_read = rem < chunk | rem | chunk
-               cur = ?res_b
-               n = libc::read(r.fd, &res_b + cur, to_read)
-               n < 0
-                  |
-                     errno_val = @[libc::__errno_location! i32]
-                     errno_val == 4 | --^
-                     -->
-                  |
-                     n == 0
-                        | -->
-                        | ?res_b = cur + n
-            ?res_b == 0
-               | <-->
-               | <+ +res_b ->
+            take = avail < max | avail | max
+            cur = ?res_b
+            %memcpy(&res_b + cur, &r.buf + r.pos, take)
+            ?res_b = cur + take
+            r.pos = r.pos + take
+      chunk = 4096
+      0.. @
+         rem = max - ?res_b
+         rem !> 0 | -->
+         to_read = rem < chunk | rem | chunk
+         cur = ?res_b
+         n = libc::read(r.fd, &res_b + cur, to_read)
+         n < 0
+            |
+               errno_val = @[libc::__errno_location! i32]
+               errno_val == 4 | --^
+               -->
+            |
+               n == 0
+                  | -->
+                  | ?res_b = cur + n
+      ?res_b == 0 | --| <-->
+      <+ +res_b ->
 
    // Buffered read: reads a single byte from reader.
    // Returns <+ byte +> or <--> on EOF.
    read_byte: Reader => < Int | >
    read_byte = r =>
-      r.pos !< ?r.buf
-         |
-            _ = refill(r)
-      r.pos < ?r.buf
-         |
-            b = Int(@[&r.buf + r.pos i8]) .&. 255
-            r.pos = r.pos + 1
-            <+ b ->
-         | <-->
+      r.pos !< ?r.buf |
+         _ = refill(r)
+      r.pos !< ?r.buf | --| <-->
+      b = Int(@[&r.buf + r.pos i8]) .&. 255
+      r.pos = r.pos + 1
+      <+ b ->
 
    // Buffered read: reads bytes from reader until 'delim' or 'max'.
    // Consumes delimiter and returns preceding string. Returns <+ String +> or <--> on EOF.

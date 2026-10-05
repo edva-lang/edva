@@ -83,44 +83,34 @@ resolve_module_access: unify::Ctx, type_env::TypeEnv,
 resolve_module_access = ctx, env, qn, line, col =>
    bnd = type_env::lookup_binding(env, qn)
    bnd
-      |
-         b = _
+      | b =>
          ti = unify::type_info_from_utype(ctx, b.ut)
          lay = layout::compute_layout(ctx, b.ut)
-         tast::mk_typed_var(qn, b.depth,
+         --| tast::mk_typed_var(qn, b.depth,
             b.is_mut, b.ut, ti, lay, line, col)
-      |
-         gen = type_env::lookup_generic(env, qn)
-         gen
-            | gen_ti =>
-               gut = instantiate_generic_ti(
-                  ctx, gen_ti)
-               gti = unify::type_info_from_utype(
-                  ctx, gut)
-               glay = layout::compute_layout(
-                  ctx, gut)
-               tast::mk_typed_var(qn, 0, <->,
-                  gut, gti, glay, line, col)
-            |
-               ut_opt = type_env::lookup_user_type(
-                  env, qn)
-               ut_opt
-                  | udef =>
-                     ulay = layout::compute_layout(
-                        ctx, udef.ut)
-                     tast::mk_typed_var(qn, 0, <->,
-                        udef.ut, udef.ti, ulay,
-                        line, col)
-                  |
-                     emsg = "Undefined identifier: " + qn
-                     unify::add_error(ctx, 3004, emsg)
-                     e_ut = unify::fresh_var(ctx)
-                     e_ti = ast::TypeInfo(Prim,
-                        ast::ValueType(Unknown))
-                     e_lay = tast::layout_scalar(8, 8)
-                     tast::mk_typed_var(qn, 0, <->,
-                        e_ut, e_ti, e_lay,
-                        line, col)
+
+   gen = type_env::lookup_generic(env, qn)
+   gen
+      | gen_ti =>
+         gut = instantiate_generic_ti(ctx, gen_ti)
+         gti = unify::type_info_from_utype(ctx, gut)
+         glay = layout::compute_layout(ctx, gut)
+         --| tast::mk_typed_var(qn, 0, <->,
+            gut, gti, glay, line, col)
+
+   ut_opt = type_env::lookup_user_type(env, qn)
+   ut_opt
+      | udef =>
+         ulay = layout::compute_layout(ctx, udef.ut)
+         --| tast::mk_typed_var(qn, 0, <->,
+            udef.ut, udef.ti, ulay, line, col)
+
+   emsg = "Undefined identifier: " + qn
+   unify::add_error(ctx, 3004, emsg)
+   e_ut = unify::fresh_var(ctx)
+   e_ti = ast::TypeInfo(Prim, ast::ValueType(Unknown))
+   e_lay = tast::layout_scalar(8, 8)
+   tast::mk_typed_var(qn, 0, <->, e_ut, e_ti, e_lay, line, col)
 
 is_fwd_assign: (String, <>, <>, <>, <>, ast::Expr, ast::Expr,
    String, ast::TypeInfo) => <>
@@ -2663,24 +2653,20 @@ is_range_expr = e => e [Range _]
 
 find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
-   i < 0 | <--> |
-      (s(i) == 46) | <+ i -> | find_last_dot(s, i - 1)
+   i < 0 | --| <-->
+   (s(i) == 46) | <+ i -> | find_last_dot(s, i - 1)
 
 dotted_to_expr: String => ast::Expr
 dotted_to_expr = s =>
-   find_last_dot(s, ?s - 1)
-      | dot =>
-         dot !> 0
-            | ast::Expr(Var, s)
-            |
-               target_str = s(0..dot)
-               dot_next = dot + 1
-               s_len = ?s
-               field_str = s(dot_next..s_len)
-               me = ast::MemberExpr((dotted_to_expr(target_str),
-                  field_str, <->, ast::Expr(Int, 0), 0, 0))
-               ast::Expr(Member, me)
-      | ast::Expr(Var, s)
+   dot = find_last_dot(s, ?s - 1) | _ | --| ast::Expr(Var, s)
+   dot !> 0 | --| ast::Expr(Var, s)
+   target_str = s(0..dot)
+   dot_next = dot + 1
+   s_len = ?s
+   field_str = s(dot_next..s_len)
+   me = ast::MemberExpr((dotted_to_expr(target_str),
+      field_str, <->, ast::Expr(Int, 0), 0, 0))
+   ast::Expr(Member, me)
 
 first_rec_field_ut: unify::UFields => unify::UType
 first_rec_field_ut = flds =>

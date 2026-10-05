@@ -250,15 +250,12 @@ get_section = doc, key =>
 
 get_list: CclDoc, String => < Strings | >
 get_list = doc, key =>
-   opt_sec = get_section(doc, key)
-   opt_sec
-      | sec =>
-         res: Strings
-         sec.entries @ e =>
-            e.key == "" |
-               e.val [Str s] res += s
-         <+ res ->
-      | <-->
+   sec = get_section(doc, key) | _ | --| <-->
+   res: Strings
+   sec.entries @ e =>
+      e.key == "" |
+         e.val [Str s] res += s
+   <+ res ->
 
 entries_for: CclDoc, String => CclEntries
 entries_for = doc, key =>

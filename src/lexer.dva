@@ -479,54 +479,47 @@ scan_op = lx, start, line, col =>
    // split ".." into the range operator and the separate trailing operator.
    is_dotdot_split = i' - start > 2 && lx.src(start) == '.' &&
       lx.src(start + 1) == '.'
-   is_dotdot_split
-      |
-         lx.pos = start + 2
-         lx.col = col + 2
-         mktok(lx, TokKind(Op), start, 2, line, col, "..")
-      |
-         is_unwrap_split = i' - start > 2 && lx.src(start) == '!' &&
-            lx.src(start + 1) == '!'
-         is_unwrap_split
-            |
-               lx.pos = start + 2
-               lx.col = col + 2
-               mktok(lx, TokKind(Op), start, 2, line, col, "!!")
-            |
-               is_prop_split = i' - start > 3 && lx.src(start) == '-' &&
-                  lx.src(start + 1) == '-' && lx.src(start + 2) == '!'
-               is_prop_split
-                  |
-                     lx.pos = start + 3
-                     lx.col = col + 3
-                     mktok(lx, TokKind(Op), start, 3, line, col, "--!")
-                  |
-                     is_ret_split = i' - start > 3 && lx.src(start) == '-' &&
-                        lx.src(start + 1) == '-' && lx.src(start + 2) == '|'
-                     is_ret_split
-                        |
-                           lx.pos = start + 3
-                           lx.col = col + 3
-                           mktok(lx, TokKind(Op), start, 3, line, col, "--|")
-                        |
-                           is_bind_split = i' - start > 2 && lx.src(start) == '~' &&
-                              lx.src(start + 1) == '~'
-                           is_bind_split
-                              |
-                                 lx.pos = start + 2
-                                 lx.col = col + 2
-                                 mktok(lx, TokKind(Op), start, 2, line, col, "~~")
-                              |
-                                 is_xor_split = i' - start > 3 && lx.src(start) == '.' &&
-                                    lx.src(start + 1) == '^' && lx.src(start + 2) == '.'
-                                 is_xor_split
-                                    |
-                                       lx.pos = start + 3
-                                       lx.col = col + 3
-                                       mktok(lx, TokKind(Op), start, 3, line, col, ".^.")
-                                    |
-                                       mktok(lx, TokKind(Op), start, i' - start, line, col,
-                                          lx.src(start..i'))
+   is_dotdot_split |
+      lx.pos = start + 2
+      lx.col = col + 2
+      --| mktok(lx, TokKind(Op), start, 2, line, col, "..")
+
+   is_unwrap_split = i' - start > 2 && lx.src(start) == '!' &&
+      lx.src(start + 1) == '!'
+   is_unwrap_split |
+      lx.pos = start + 2
+      lx.col = col + 2
+      --| mktok(lx, TokKind(Op), start, 2, line, col, "!!")
+
+   is_prop_split = i' - start > 3 && lx.src(start) == '-' &&
+      lx.src(start + 1) == '-' && lx.src(start + 2) == '!'
+   is_prop_split |
+      lx.pos = start + 3
+      lx.col = col + 3
+      --| mktok(lx, TokKind(Op), start, 3, line, col, "--!")
+
+   is_ret_split = i' - start > 3 && lx.src(start) == '-' &&
+      lx.src(start + 1) == '-' && lx.src(start + 2) == '|'
+   is_ret_split |
+      lx.pos = start + 3
+      lx.col = col + 3
+      --| mktok(lx, TokKind(Op), start, 3, line, col, "--|")
+
+   is_bind_split = i' - start > 2 && lx.src(start) == '~' &&
+      lx.src(start + 1) == '~'
+   is_bind_split |
+      lx.pos = start + 2
+      lx.col = col + 2
+      --| mktok(lx, TokKind(Op), start, 2, line, col, "~~")
+
+   is_xor_split = i' - start > 3 && lx.src(start) == '.' &&
+      lx.src(start + 1) == '^' && lx.src(start + 2) == '.'
+   is_xor_split |
+      lx.pos = start + 3
+      lx.col = col + 3
+      --| mktok(lx, TokKind(Op), start, 3, line, col, ".^.")
+
+   mktok(lx, TokKind(Op), start, i' - start, line, col, lx.src(start..i'))
 
 // --- strings / runes / raw strings ----------------------------------------
 
@@ -908,12 +901,9 @@ pragma_miss_fail = lx, hstart, line, col =>
 
 scan_pragma_body: Lx, Int, Int, Int, <>, <> => Tok
 scan_pragma_body = lx, hstart, line, col, is_number, is_fp =>
-   is_number
-      | scan_pragma_number(lx, hstart, line, col)
-      |
-         is_fp
-            | scan_pragma_fp(lx, hstart, line, col)
-            | scan_pragma_swizzle(lx, hstart, line, col)
+   is_number | --| scan_pragma_number(lx, hstart, line, col)
+   is_fp | --| scan_pragma_fp(lx, hstart, line, col)
+   scan_pragma_swizzle(lx, hstart, line, col)
 
 // "#pragma number <type>": parse the type word and switch the default integer
 // literal type from this point in the file onward.

@@ -147,27 +147,27 @@
    read_text: String => < String | >
    read_text = path =>
       fd = libc::open(path, 0)
-      fd < 0 | <--> |
-         r = io::reader(fd)
-         txt = io::read_all(r, 16777216)
-         libc::close(fd)
-         txt
-            | t => <+ t ->
-            | <-->
+      fd < 0 | --| <-->
+      r = io::reader(fd)
+      txt = io::read_all(r, 16777216)
+      libc::close(fd)
+      txt
+         | t => <+ t ->
+         | <-->
 
    // Write via a sibling temp file + rename so readers never see a torn file.
    write_text: String, String => <>
    write_text = path, text =>
       tmp = path + ".tmp" + str::from_int(getpid!)
       fd = libc::creat(tmp, 420)
-      fd < 0 | <-> |
-         n = libc::write(fd, text, ?text)
-         libc::close(fd)
-         n != ?text
-            |
-               libc::unlink(tmp)
-               <->
-            | libc::rename(tmp, path) == 0
+      fd < 0 | --| <->
+      n = libc::write(fd, text, ?text)
+      libc::close(fd)
+      n != ?text
+         |
+            libc::unlink(tmp)
+            --| <->
+      libc::rename(tmp, path) == 0
 
    trim: String => String
    trim = s =>
@@ -214,7 +214,8 @@
    sh: String => Int
    sh = cmd =>
       st = libc::system(cmd)
-      st < 0 | -1 | (st .>. 8) .&. 255
+      st < 0 | --| -1
+      (st .>. 8) .&. 255
 
    // The path of `to` relative to directory `from` (both absolute).
    relpath: String, String => String
@@ -236,7 +237,8 @@
          seg != "" |
             ?b > 0 | b += "/"
             b += seg
-      ?b == 0 | "." | +b
+      ?b == 0 | --| "."
+      +b
 
    // FNV-1a-style hash of the bytes as 16 hex digits: stable store names.
    fnv_hex: String => String
@@ -908,59 +910,45 @@
 
    cache_lookup: String, String => < String | >
    cache_lookup = cache_dir, key =>
-      key == "" || cache_dir == ""
-         | <-->
-         |
-            entry_dir = path_join(path_join(cache_dir, "entries"), key)
-            meta_file = path_join(entry_dir, "meta.ccl")
-            ll_file = path_join(entry_dir, "output.ll")
-            !file_exists(meta_file) || !file_exists(ll_file)
+      key == "" || cache_dir == "" | --| <-->
+      entry_dir = path_join(path_join(cache_dir, "entries"), key)
+      meta_file = path_join(entry_dir, "meta.ccl")
+      ll_file = path_join(entry_dir, "output.ll")
+      !file_exists(meta_file) || !file_exists(ll_file) | --| <-->
+      doc_res = ccl::parse_file(meta_file)
+      doc_res
+         | doc =>
+            ll_text = read_text(ll_file)
+            ll_text
+               | txt =>
+                  ?txt > 0 | <+ ll_file -> | <-->
                | <-->
-               |
-                  doc_res = ccl::parse_file(meta_file)
-                  doc_res
-                     | doc =>
-                        ll_text = read_text(ll_file)
-                        ll_text
-                           | txt =>
-                              ?txt > 0 | <+ ll_file -> | <-->
-                           | <-->
-                     | err =>
-                        sh("rm -rf " + sq(entry_dir))
-                        <-->
+         | err =>
+            sh("rm -rf " + sq(entry_dir))
+            <-->
 
    cache_store: String, String, String, String => <>
    cache_store = cache_dir, key, meta_text, output_ll =>
-      key == "" || cache_dir == ""
-         | <->
+      key == "" || cache_dir == "" | --| <->
+      entries_dir = path_join(cache_dir, "entries")
+      tmp_parent = path_join(cache_dir, "tmp")
+      !mkdir_p(entries_dir) || !mkdir_p(tmp_parent) | --| <->
+      tmp_dir = path_join(tmp_parent, "e_" + str::from_int(getpid!) + "_" +
+         str::from_int(tmp_seq))
+      tmp_seq ::= tmp_seq + 1
+      !mkdir_p(tmp_dir) | --| <->
+      ll_dest = path_join(tmp_dir, "output.ll")
+      meta_dest = path_join(tmp_dir, "meta.ccl")
+      ll_content = read_text(output_ll) | t => t | ""
+      ok = write_text(ll_dest, ll_content) && write_text(meta_dest, meta_text)
+      !ok
          |
-            entries_dir = path_join(cache_dir, "entries")
-            tmp_parent = path_join(cache_dir, "tmp")
-            !mkdir_p(entries_dir) || !mkdir_p(tmp_parent)
-               | <->
-               |
-                  tmp_dir = path_join(tmp_parent, "e_" + str::from_int(getpid!) + "_" +
-                     str::from_int(tmp_seq))
-                  tmp_seq ::= tmp_seq + 1
-                  !mkdir_p(tmp_dir)
-                     | <->
-                     |
-                        ll_dest = path_join(tmp_dir, "output.ll")
-                        meta_dest = path_join(tmp_dir, "meta.ccl")
-                        ll_content = read_text(output_ll) | t => t | ""
-                        ok = write_text(ll_dest, ll_content) && write_text(meta_dest, meta_text)
-                        !ok
-                           |
-                              sh("rm -rf " + sq(tmp_dir))
-                              <->
-                           |
-                              target_dir = path_join(entries_dir, key)
-                              ren_rc = libc::rename(tmp_dir, target_dir)
-                              ren_rc != 0
-                                 |
-                                    sh("rm -rf " + sq(tmp_dir))
-                                    <+>
-                                 | <+>
+            sh("rm -rf " + sq(tmp_dir))
+            --| <->
+      target_dir = path_join(entries_dir, key)
+      ren_rc = libc::rename(tmp_dir, target_dir)
+      ren_rc != 0 | sh("rm -rf " + sq(tmp_dir))
+      <+>
 
 // --- entry point ---------------------------------------------------------------
 

@@ -65,7 +65,8 @@
    norm: Vec2 => Vec2
    norm = v =>
       l = len(v)
-      l < 1e-9 | (0.0, 0.0) | v / l
+      l < 1e-9 | --| (0.0, 0.0)
+      v / l
 
    norm2: Vec2 => Vec2
    norm2 = v => norm(v)
@@ -112,7 +113,8 @@
    norm3: Vec3 => Vec3
    norm3 = v =>
       l = len3(v)
-      l < 1e-9 | (0.0, 0.0, 0.0) | v / l
+      l < 1e-9 | --| (0.0, 0.0, 0.0)
+      v / l
 
    lerp3: Vec3, Vec3, Float => Vec3
    lerp3 = a, b, t => %fmuladd(b - a, t, a)
@@ -145,7 +147,8 @@
    norm4: Vec4 => Vec4
    norm4 = v =>
       l = len4(v)
-      l < 1e-9 | (0.0, 0.0, 0.0, 0.0) | v / l
+      l < 1e-9 | --| (0.0, 0.0, 0.0, 0.0)
+      v / l
 
    lerp4: Vec4, Vec4, Float => Vec4
    lerp4 = a, b, t => %fmuladd(b - a, t, a)

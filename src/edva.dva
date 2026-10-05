@@ -221,12 +221,9 @@ dir_dva_files = dir_path =>
 
 loaded_has_step: ast::Names, String, Int => <>
 loaded_has_step = names, name, i =>
-   i < ?names
-      |
-         (names(i) | _ | "") == name
-            | <+>
-            | loaded_has_step(names, name, i + 1)
-      | <->
+   i !< ?names | --| <->
+   (names(i) | _ | "") == name | --| <+>
+   loaded_has_step(names, name, i + 1)
 
 loaded_has: ast::Names, String => <>
 loaded_has = names, name => loaded_has_step(names, name, 0)
@@ -270,12 +267,9 @@ unmark_private_exprs = exprs =>
 
 has_dcolon_step: String, Int => <>
 has_dcolon_step = s, i =>
-   i + 1 < ?s
-      |
-         s(i) == ':' && s(i + 1) == ':'
-            | <+>
-            | has_dcolon_step(s, i + 1)
-      | <->
+   i + 1 !< ?s | --| <->
+   s(i) == ':' && s(i + 1) == ':' | --| <+>
+   has_dcolon_step(s, i + 1)
 
 has_dcolon: String => <>
 has_dcolon = s => has_dcolon_step(s, 0)
@@ -815,48 +809,32 @@ resolve_module = base, mod_path, ldr =>
 
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, off, rem =>
-   rem == 0
-      | <+ off ->
+   rem == 0 | --| <+ off ->
+   chunk = rem < 65536 | rem | 65536
+   n = libc::read(fd, &b + off, chunk)
+   n < 0
       |
-         chunk = rem < 65536 | rem | 65536
-         n = libc::read(fd, &b + off, chunk)
-         n < 0
-            |
-               err = @[__errno_location! i32]
-               err == 4
-                  | read_fd_bytes_loop(fd, b, off, rem)
-                  | <-->
-            |
-               n == 0
-                  | <+ off ->
-                  | read_fd_bytes_loop(fd, b, off + n, rem - n)
+         err = @[__errno_location! i32]
+         err == 4 | read_fd_bytes_loop(fd, b, off, rem) | <-->
+      |
+         n == 0 | <+ off -> | read_fd_bytes_loop(fd, b, off + n, rem - n)
 
 read_file_text: String => < String | >
 read_file_text = path =>
    fd = libc::open(path, 0)
-   fd < 0
+   fd < 0 | --| <-->
+   sz = libc::lseek(fd, 0, 2)
+   sz < 0 | libc::close(fd); --| <-->
+   sz == 0 | libc::close(fd); --| <+ "" ->
+   libc::lseek(fd, 0, 0)
+   b = {sz}
+   read_res = read_fd_bytes_loop(fd, b, 0, sz)
+   libc::close(fd)
+   read_res
+      | total =>
+         ?b = total
+         <+ +b ->
       | <-->
-      |
-         sz = libc::lseek(fd, 0, 2)
-         sz < 0
-            |
-               libc::close(fd)
-               <-->
-            |
-               sz == 0
-                  |
-                     libc::close(fd)
-                     <+ "" ->
-                  |
-                     libc::lseek(fd, 0, 0)
-                     b = {sz}
-                     read_res = read_fd_bytes_loop(fd, b, 0, sz)
-                     libc::close(fd)
-                     read_res
-                        | total =>
-                           ?b = total
-                           <+ +b ->
-                        | <-->
 
 collect_module_exports: ast::Exprs, String, String, <>, ImportMap, ImportMap => <>
 collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sources =>

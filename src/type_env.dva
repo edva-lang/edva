@@ -285,29 +285,23 @@ lookup_binding = env, name =>
 
 find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
-   i < 0
-      | <-->
-      | s(i) == 46 | <+ i -> | find_last_dot(s, i - 1)
+   i < 0 | --| <-->
+   s(i) == 46 | <+ i -> | find_last_dot(s, i - 1)
 
 drop_last_dot: String => String
 drop_last_dot = s =>
-   find_last_dot(s, ?s - 1)
-      | cut =>
-         cut > 0
-            |
-               b = {cut}
-               cut @ i => b += s(i)
-               +b
-            | ""
-      | ""
+   cut = find_last_dot(s, ?s - 1) | _ | --| ""
+   cut !> 0 | --| ""
+   b = {cut}
+   cut @ i => b += s(i)
+   +b
 
 init_has_name: ast::Names, String => <>
 init_has_name = names, s =>
-   found' = <->
    ?names @ i =>
       n = names(i) | _ | ""
-      n == s | (found' = <+>; -->)
-   found'
+      n == s | --| <+>
+   <->
 
 init_mark_tracked: TypeEnv, String => ()
 init_mark_tracked = env, name =>

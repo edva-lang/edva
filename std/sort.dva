@@ -35,12 +35,10 @@
 
 raw_bubble_slots: Int, (Int, Int => <>), (Int, Int => Int) => ()
 raw_bubble_slots = j, is_less, swap =>
-   j > 0
-      |
-         is_less(j, j - 1)
-            |
-               swap(j, j - 1)
-               raw_bubble_slots(j - 1, is_less, swap)
+   j !> 0 | --|
+   !is_less(j, j - 1) | --|
+   swap(j, j - 1)
+   raw_bubble_slots(j - 1, is_less, swap)
 
 sort_strings_pass: Strings => ()
 sort_strings_pass = out =>
