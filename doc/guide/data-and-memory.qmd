@@ -24,8 +24,6 @@ initialization without a tracing garbage collector or runtime type overhead.
 | `Builder`<br>**Builder** | Mutable buffer `{ len, ptr, cap }` | `?builder` | In-place append `+=` | Write past cap reallocates |
 | `String`<br>**String** | Immutable fat pointer `{ len, ptr }` | `?string` | Immutable; freeze from Builder | Indexing returns `Rune` or byte |
 
----
-
 ## Definite field initialization tracking
 
 Edva does **not** zero-fill uninitialized composite records. When declaring a composite
@@ -52,8 +50,6 @@ setup_point = flag =>
 | Read before write | `E3130` | Reading `p.y` before writing it is rejected at compile time. |
 | Homogeneous must-init | `E3131` | Homogeneous records (`(T * N)`) require a whole-value initialization before any element read/write. |
 | Partial escape | `E3132` | Passing a partially initialized composite to a function or returning it is rejected. |
-
----
 
 ## Strings vs Builders
 
@@ -97,8 +93,6 @@ path = "api/v1/users"
 is_users_api = path == ("api/", "v1/", "users")
 ```
 
----
-
 ## Key-Value Maps (`Key ^ Value`)
 
 Maps are open-addressing keyed containers. A map type uses `Key ^ Value`, with
@@ -107,7 +101,7 @@ Maps are open-addressing keyed containers. A map type uses `Key ^ Value`, with
 | Operation | Syntax Form | Result Type | Description |
 |---|---|---|---|
 | Insert or rebind | `map ^ key = value` | Unit (`()`) | Infallible write (in-place) |
-| Fallible lookup | `map ^ key` | `< Value | Error >` | Out-of-bounds yields poisonous `Error` |
+| Fallible lookup | `map ^ key` | `< Value | Error >` | Out-of-bounds yields `Error` |
 | Key membership | `map ^? key` | Flag `<>` | Fast `<+>` (present) or `<->` (absent) |
 | Delete entry | `map ^- key` | Flag `<>` | Leaves tombstone; returns `<+>` if key existed |
 | Entry count | `?map` | `Int` | Active live entry count |
@@ -128,8 +122,6 @@ print_int $ alice_score // prints 95
 has_bob = scores ^? "Bob"
 has_bob | print("Bob is enrolled")
 ```
-
----
 
 ## Raw memory and volatile operations
 

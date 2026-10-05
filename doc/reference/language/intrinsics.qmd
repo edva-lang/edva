@@ -30,8 +30,6 @@ vec = (10, 20, 30)
 clamped = %clamp(vec, 12, 25) // (12, 20, 25)
 ```
 
----
-
 ## Numeric and vector operations
 
 Numeric intrinsics operate on `Int`, `Float`, or homogeneous records of those types:
@@ -49,8 +47,6 @@ In multi-argument operations, mixing `Int` and `Float` arguments is rejected.
 For `%shuffle`, `T` may be `Int`, `Float`, or `<>` (flag), and the mask `m`
 must be a compile-time record literal of lane indices.
 
----
-
 ## Horizontal reductions
 
 Horizontal reductions consume a homogeneous vector record and reduce all lanes
@@ -67,8 +63,6 @@ into a single scalar value:
 `%all` and `%any` strictly require a vector of bare `<>` flags. `%sum` and `%prod`
 require a vector of `Int` or `Float`. `%dot` requires two vectors of identical
 length and identical element type.
-
----
 
 ## Floating-point math
 
@@ -94,8 +88,6 @@ of `Float`:
 Passing integer arguments to floating-point intrinsics is a compile-time type error;
 explicit conversion via `Float(n)` is required.
 
----
-
 ## Bit manipulation and saturating arithmetic
 
 Bitwise and saturating intrinsics strictly require `Int` operands or homogeneous records of `Int`:
@@ -114,8 +106,6 @@ Bitwise and saturating intrinsics strictly require `Int` operands or homogeneous
 
 `%uadd_sat` and `%usub_sat` treat operands as unsigned 64-bit integers. Underflow in `%usub_sat`
 saturates at `0`.
-
----
 
 ## Memory block primitives
 

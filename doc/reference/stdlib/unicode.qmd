@@ -27,8 +27,6 @@ codepoint classification, UTF-8 byte decoding, and rune boundary helpers.
 | **Decoding** | `unicode::decode_rune(s, off)` | `String, Int => Rune` | `Rune` | Decodes the UTF-8 codepoint starting at byte offset `off` |
 | | `unicode::utf8_width(r)` | `Rune => Int` | `Int` | Returns the encoded UTF-8 byte width (`1` to `4` bytes) |
 
----
-
 ## Codepoint operations & operators
 
 | Operation | Syntax | Description | Example |
@@ -36,8 +34,6 @@ codepoint classification, UTF-8 byte decoding, and rune boundary helpers.
 | **Codepoint count** | `??s` | Unary prefix `??` counts Unicode codepoints (not bytes) | `??("café")` $\rightarrow$ `4` |
 | **Byte count** | `?s` | Unary prefix `?` counts raw UTF-8 bytes | `?("café")` $\rightarrow$ `5` |
 | **Rune literal** | `'λ'` | 32-bit scalar Unicode character code | `r: Rune = 'λ'` |
-
----
 
 ## Iterating over Unicode codepoints
 

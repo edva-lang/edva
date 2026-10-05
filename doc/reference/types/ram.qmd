@@ -12,13 +12,13 @@ Edva replaces booleans, optionals, and exceptions with a single unified construc
 
 ## The four ramification layouts
 
-The four static layouts of ramifications are distinguished by whether each slot holds a payload type or a zero-sized unit:
+The four static layouts of ramifications are distinguished by whether each slot holds a payload type or an empty polarity constant:
 
-| Layout | Syntax | Positive Slot | Negative Slot | LLVM Representation | Common Role |
+| Layout | Syntax | Positive (1st) Slot | Negative (2nd) Slot | LLVM Representation | Common Role |
 |:---|:---|:---|:---|:---|:---|
-| **RamNN** | `<>` | Unit (`()`) | Unit (`()`) | `i1` (scalar boolean) | `Flag`: truthiness, conditions |
-| **RamPN** | `< T \| >` | Payload `T` | Unit (`()`) | `{ i64 tag, ptr payload }` | `Option`: nullable / optional value |
-| **RamNP** | `< \| E >` | Unit (`()`) | Payload `E` | `{ i64 tag, ptr payload }` | `Fallible`: void-or-error status |
+| **RamNN** | `<>` | Bare positive `<+>` | Bare negative `<->` | `i1` (scalar boolean) | `Flag`: truthiness, conditions |
+| **RamPN** | `< T \| >` | Payload `T` | Absence unit `<-->` | `{ i64 tag, ptr payload }` | `Option`: nullable / optional value |
+| **RamNP** | `< \| E >` | Success unit `<++>` | Payload `E` | `{ i64 tag, ptr payload }` | `Fallible`: void-or-error status |
 | **RamPP** | `< T \| E >` | Payload `T` | Payload `E` | `{ i64 tag, ptr payload }` | `Result`: value-or-error return |
 
 The `Flag` (`<>`) is a native built-in type and does not require a `#type` declaration. The payload forms are defined via `#type`:
@@ -47,8 +47,8 @@ falsy  = <->    // Negative (false, 0)
 When an API requires a heap-allocated ram with unit branches (rather than a bare `i1`), use double-bracketed unit constants:
 
 ```dva
-heap_true  = <++>   // Heap positive unit
-heap_false = <-->>  // Heap negative unit
+heap_true  = <++>   // Heap positive unit (void success slot)
+heap_false = <-->   // Heap negative unit (absence slot)
 ```
 
 > [!NOTE]
@@ -59,8 +59,8 @@ Payload branches are constructed using `<+ ... +>` for the positive slot, and `<
 
 ```dva
 // Constructing an Option (RamPN)
-opt_val = <+ 42 +> $> MaybeInt
-none_val = <-> $> MaybeInt
+opt_val = <+ 42 -> $> MaybeInt
+none_val = <--> $> MaybeInt
 
 // Constructing a Result (RamPP)
 success: FileResult = <+ 3 +>
@@ -94,32 +94,32 @@ status = res |
    [err] "Failed to open file: " + err.msg
 ```
 
-For unit slots, omission of payload bindings matches the empty branch:
+For non-payload slots, omission of payload bindings matches the branch:
 
 ```dva
-opt: MaybeInt = <->
+opt: MaybeInt = <-->
 
 val = opt |
    [x] x |
-   -1          // Unit branch fallback
+   -1          // Absence branch fallback
 ```
 
 ### Unwrapping (`!!`) and fallible discard (`!|`)
 
 - **Postfix unwrap `r!!`**: Unwraps the positive payload. If the ram holds the negative slot, execution halts with a panic displaying the negative payload.
-- **Fallible write / discard `!|`**: Discards the positive unit slot of a `RamNP` and branches if an error occurred.
+- **Fallible discard `!|`**: Fallible discard executes the fallback branch on failure, skipping the void success branch.
 
 ```dva
 // Unwrap or panic
 fd = res!!
 
-// Write-or-panic on array assignment
+// Fallible discard on assignment
 arr(0) = 42 !| _
 ```
 
 ### Flag extraction (`<>(r)`)
 
-The unary constructor `<>(r)` discards any payload and extracts a pure boolean `Flag`:
+The constructor `<>(r)` discards any payload and extracts a pure boolean `Flag`:
 
 ```dva
 res: FileResult = <+ 10 +>
@@ -129,4 +129,4 @@ is_ok = <>(res)    // <+>
 ## Memory layout and ABI
 
 - **`Flag` (`<>`)**: Compiles to an unboxed `i1` in LLVM IR (1 byte on the stack, passed in standard integer registers).
-- **Payload Rams**: Stored on the heap as an unboxed or boxed `{ i64 tag, ptr payload }` struct, where `tag == 1` indicates positive polarity and `tag == 0` indicates negative polarity.
+- **Payload Rams**: Stored as an unboxed or boxed `{ i64 tag, ptr payload }` struct, where `tag == 1` indicates positive polarity and `tag == 0` indicates negative polarity.

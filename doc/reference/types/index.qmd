@@ -29,7 +29,7 @@ Native type names in Edva are strictly uppercase (`Int`, `Float`, `String`, `Add
 | **Arrays & Slices** | [`Array` & `Slice`](array.qmd) | `{ i64 len, ptr data, i64 cap }` | Growable dynamic arrays and non-owning contiguous slices |
 | **Hash Maps** | [`Map`](map.qmd) | `{ ptr table, i64 count, i64 cap }` | Associative key-value tables (`Key ^ Value`) |
 | **Addresses** | [`Addr`](addr.qmd) | `ptr` | Raw memory pointers, FFI handles, and system allocations |
-| **Functions** | [`Fn`](fn.qmd) | `{ ptr fn_ptr, ptr env_ptr }` | First-class closures, lambdas, and function signatures |
+| **Functions** | [Functions and closures](functions.qmd) | `{ ptr fn_ptr, ptr env_ptr }` | First-class closures and arrow signatures |
 | **Errors** | [`Error`](error.qmd) | `{ i64 code, String msg, String file, i64 line, i64 col }` | Structured error diagnostic records with unwrapping semantics |
 | **Metatypes** | [`Type`](type.qmd) | *Compile-time only (erased)* | Compile-time types, `#size`, `#align`, and type generators |
 | **Unit** | [`Unit`](unit.qmd) | `void` / empty | Zero-sized value `()` denoting expressions evaluated solely for side effects |

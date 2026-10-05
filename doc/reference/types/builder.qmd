@@ -90,7 +90,7 @@ final_str: String = +b
 
 ```dva
 build_query: String, (String * 3) => String
-build_query = \ table, cols
+build_query = table, cols =>
    b = Builder(128)
    b += "SELECT "
    b += cols.0 + ", " + cols.1 + ", " + cols.2

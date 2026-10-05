@@ -43,8 +43,6 @@ io::out("Server starting on port", 8080)
 io::outf("Client connected from {}:{}", "127.0.0.1", 9000)
 ```
 
----
-
 ## Buffered `Reader` API
 
 `io::reader(fd)` wraps a file descriptor in a buffered reader (default buffer 4096 bytes).
@@ -60,8 +58,6 @@ distinguishing between available data and EOF:
 | `io::read_byte(r)` | `Reader => < Int | >` | `< Int | >` | Reads next byte code (`0..255`) or EOF |
 | `io::read_until(r, delim, max)`| `Reader, Int, Int => < String | >`| `< String | >` | Reads until delimiter byte is encountered |
 | `io::read_line(r, max)` | `Reader, Int => < String | >` | `< String | >` | Reads until newline (`\n` or `\r\n`) |
-
----
 
 ## Buffered input examples
 

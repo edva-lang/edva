@@ -100,10 +100,8 @@ array(index) = value !| _
 ```
 
 The void first slot matches successfully on success and yields nothing, while the
-`_` payload extractor on the second slot unwraps the poisonous `Error` payload,
+`_` payload extractor on the second slot unwraps the `Error` payload,
 aborting with an error diagnostic if the write fails.
-
----
 
 ## Cycles (`@`)
 

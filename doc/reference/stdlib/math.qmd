@@ -23,8 +23,6 @@ automatically links `-lm`.
 | `math::pi` | `Float` | `3.14159265358979323846` | Archimedes' constant $\pi$ |
 | `math::e` | `Float` | `2.71828182845904523536` | Euler's number $e$ |
 
----
-
 ## Function catalog
 
 ### Roots and powers
@@ -72,8 +70,6 @@ automatically links `-lm`.
 | `math::ldexp(x, exp)` | `Float, i32 => Float` | $x \times 2^{\text{exp}}$ |
 
 *(Note: Truncation, round-to-nearest, and copysign are provided by built-in LLVM intrinsics: `%trunc(x)`, `%round(x)`, and `%copysign(x, y)`).*
-
----
 
 ## Submodules
 

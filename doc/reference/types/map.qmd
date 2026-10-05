@@ -67,21 +67,29 @@ alice_score = result |
 guaranteed = (scores ^ "Alice")!!
 ```
 
-### Membership testing (`?`)
+### Membership testing (`^?`)
 
-The binary `?` operator checks whether a key exists in the map, returning a boolean `Flag` (`<>`):
+The binary `^?` operator checks whether a key exists in the map, returning a boolean `Flag` (`<>`):
 
 ```dva
-has_bob = scores ? "Bob"       // <+>
-has_dan = scores ? "Dan"       // <->
+has_bob = scores ^? "Bob"       // <+> (present)
+has_dan = scores ^? "Dan"       // <-> (absent)
+```
+
+### Deleting entries (`^-`)
+
+The binary `^-` operator removes a key from the map, returning `<+>` if the key was present:
+
+```dva
+deleted = scores ^- "Bob"       // <+>
 ```
 
 ### Entry count (`?map`)
 
-The unary prefix `?` operator returns the number of active entries in the map:
+The unary prefix `?` operator returns the number of active live entries in the map:
 
 ```dva
-total_users = ?scores          // 3
+total_users = ?scores          // 2
 ```
 
 ## Runtime representation and performance
@@ -91,4 +99,4 @@ At runtime, a `Map` is represented by an opaque handle containing:
 - Active item count and maximum capacity.
 - Load factor threshold triggering automatic resizing when occupancy exceeds 75%.
 
-Lookups, insertions, and membership tests operate in expected $O(1)$ time.
+Lookups, insertions, deletions, and membership tests operate in expected $O(1)$ time.

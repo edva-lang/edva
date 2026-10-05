@@ -6,9 +6,9 @@ meta:
   evidence: "`src/types.dva`, `src/codegen/fn.dva`, `GRAMMAR.md` §2.8"
 ---
 
-# `Fn` and closures
+# Functions and closures
 
-In Edva, functions are first-class values. Any function or lambda expression can be assigned to variables, passed as arguments to higher-order routines, and returned from functions.
+In Edva, functions are first-class values. Any function or closure expression can be assigned to variables, passed as arguments to higher-order routines, and returned from functions.
 
 ## Type signatures
 
@@ -45,28 +45,40 @@ At runtime, a function value is represented by a 16-byte fat pointer:
 
 There are no dynamic vtables, method tables, or RTTI headers attached to function values.
 
-## Defining functions and lambdas
+## Defining functions
 
-Functions are defined using the backslash `\` lambda operator:
+Functions are defined with bare parameter lists followed by `=>` and an expression or indented block:
 
 ```dva
-// Named top-level function definition
+// Named top-level function definition with signature
 add: Int, Int => Int
-add = \ a, b
+add = a, b =>
    a + b
 
-// Inline lambda binding
-square = \ x => x * x
+// Inline function binding
+square = x => x * x
+```
+
+> [!NOTE]
+> Parameter lists are never parenthesized in Edva definitions (`a, b => ...`, not `(a, b) => ...`).
+
+### Implicit-parameter lambdas
+
+A parenthesized expression containing the placeholder `_` desugars into a single-parameter lambda:
+
+```dva
+double = (_ * 2)       // Desugars to: _ => _ * 2
+invert = (100 - _)     // Desugars to: _ => 100 - _
 ```
 
 ### Capturing lexical scope (closures)
 
-A lambda captures variables from its enclosing lexical environment:
+A function captures variables from its enclosing lexical environment:
 
 ```dva
 make_adder: Int => (Int => Int)
-make_adder = \ base
-   \ n => base + n
+make_adder = base =>
+   n => base + n
 
 add10 = make_adder(10)
 res = add10(5)    // 15

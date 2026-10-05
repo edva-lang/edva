@@ -29,8 +29,6 @@ fixed arities optimized for code generation and compiler diagnostic output:
 | `fmt::tprintf_i1` | `String, Int => String` | `%d` | Inserts 1 `Int` value | `fmt::tprintf_i1("code: %d", 404)` |
 | `fmt::tprintf_i2` | `String, Int, Int => String` | `%d`, `%d` | Inserts 2 `Int` values | `fmt::tprintf_i2("case%d.%d", 4, 2)` |
 
----
-
 ## Behavior and design rules
 
 1. **Fixed conversions:** Each `%` character consumes itself and the immediately following format specifier (e.g. `s` or `d`), replacing it with the next supplied argument.

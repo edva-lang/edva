@@ -35,7 +35,7 @@ book:
         - reference/types/array.qmd
         - reference/types/map.qmd
         - reference/types/addr.qmd
-        - reference/types/fn.qmd
+        - reference/types/functions.qmd
         - reference/types/error.qmd
         - reference/types/type.qmd
         - reference/types/unit.qmd

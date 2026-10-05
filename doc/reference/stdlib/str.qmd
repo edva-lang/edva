@@ -33,8 +33,6 @@ lexicographic comparisons, and digit parsing primitives.
 | **Parsing** | `str::to_int(s)` | `String => Digits` | `< (Int, String) | >` | Consumes leading decimal digits; returns value and suffix |
 | | `str::to_hex(s)` | `String => Digits` | `< (Int, String) | >` | Consumes leading hex digits; returns value and suffix |
 
----
-
 ## Usage examples
 
 ### ASCII byte predicates

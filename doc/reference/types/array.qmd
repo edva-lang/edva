@@ -116,7 +116,7 @@ When writing functions that only need to inspect sequential elements without mod
 
 ```dva
 sum_slice: (Int[]) => Int
-sum_slice = \ slice
+sum_slice = slice =>
    total' = 0
    idx' = 0
    len = ?slice

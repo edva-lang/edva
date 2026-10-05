@@ -3,63 +3,70 @@ meta:
   audience: "Edva developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §3.1"
+  evidence: "`src/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §2.8, §3.1"
 ---
 
 # `Unit`
 
-The `Unit` type, written as `()`, represents a zero-sized type with a single conceptual value. It indicates an operation that yields no meaningful data and is evaluated exclusively for its side effects (such as memory writes, screen output, or hardware I/O).
+The `Unit` type, written as `()`, represents the zero-sized type (lowered to LLVM `void`). It indicates an operation that yields no meaningful data and is evaluated exclusively for side effects (such as memory writes, screen output, or hardware I/O).
 
-## Declaration and function signatures
+> [!IMPORTANT]
+> `()` is strictly a type and can **only appear in type declaration contexts** (such as function return signatures). Attempting to use `()` as a runtime expression, argument, or variable value (e.g. `x = ()` or `f(())`) is a compile-time error (`E2104`).
 
-`()` is valid in type annotations and function return signatures:
+## Valid declaration contexts
+
+`()` is valid exclusively in type annotations and function signatures:
 
 ```dva
-// Function executing purely for side effects
+// Function executing purely for side effects, returning Unit
 log_message: String => ()
-log_message = \ msg
+log_message = msg =>
    msg $> io::out
+
+// Higher-order function taking a side-effecting callback
+for_each: (Int * 3), (Int => ()) => ()
 ```
 
-## Where `Unit` occurs in Edva
+## Where unit results occur implicitly
+
+At runtime, several expressions produce Unit results implicitly without using any literal:
 
 ### 1. Assignment expressions
-Assignments in Edva are expressions that evaluate to `()`:
+Assignments in Edva evaluate to Unit:
 
 ```dva
-result: () = (x = 10)
+// The assignment expression evaluates to Unit
+x = 10
 ```
 
-### 2. Ramification unit slots
-`Unit` occupies the empty branch of ramifications:
+### 2. Ramification empty slots
+The empty branch of a ramification produces Unit when evaluated:
 - Both branches of `Flag` (`<>`).
 - The negative branch of an `Option` (`< T | >`).
 - The positive branch of a `Fallible` (`< | Error >`).
 
-When an unpacked choice branch corresponds to a unit slot, it produces `()`:
+When matching an empty slot, the branch simply performs a side effect or statement:
 
 ```dva
-opt: < Int | > = <->
+opt: < Int | > = <-->
 
-// The negative branch produces Unit
 opt |
    [val] print_int(val) |
-   ()
+   io::out("Value absent\n")
 ```
 
 ### 3. Statement choice expressions
-A choice expression whose branches perform assignments or imperative calls returns `()`:
+A choice expression whose branches perform imperative statements or assignments evaluates to Unit:
 
 ```dva
 debug_mode = <+>
 
 debug_mode |
-   io::out("Debugging enabled\n") |
-   ()
+   io::out("Debugging enabled\n")
 ```
 
-## Runtime representation and compilation
+## Runtime representation
 
 - At runtime, `Unit` values occupy **0 bytes** of memory.
-- In LLVM IR, functions returning `()` are lowered with the `void` return type.
-- Unit variables do not allocate stack space or require register moves.
+- In LLVM IR, functions returning `()` are emitted with the `void` return type.
+- Unit values never allocate stack space, registers, or heap memory.

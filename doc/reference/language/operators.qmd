@@ -41,8 +41,6 @@ Notable precedence characteristics:
 - **Choice Absorption:** Both `$` and `$>` sit below the choice tier (tier 5), so an unparenthesized choice expression on the RHS is absorbed as the operand (`a $> b | c | d` $\equiv$ `a $> (b | c | d)`).
 - **Binding Powers:** On right-associative tiers such as assignment (LBP 60, RBP 50) and apply (LBP 30, RBP 30), RBP $\le$ LBP allows operators to extend rightward. On left-associative tiers, RBP $>$ LBP forces left binding.
 
----
-
 ## Values and control flow
 
 - `=` binds an immutable name; a primed identifier is rebindable with `=`.

@@ -47,7 +47,7 @@ In idiomatic Edva, operations that can fail return a `Result` (`RamPP`) or `Fall
 #type Result < String | Error >
 
 read_config: String => Result
-read_config = \ path
+read_config = path =>
    path == "" |
       <- Error(1, "Path cannot be empty") -> |
       <+ "config_data" +>
