@@ -47,7 +47,8 @@
 #type ModuleLoad (exprs: ast::Exprs, loaded: ast::Names,
    exports: ast::Names, dynamic_mods: ast::Names, dynamic_paths: ast::Names,
    ok: <>, native_libs: ast::Names, native_pkg_config: ast::Names,
-   out_files: ast::Names, out_lines: ast::Ints, out_cols: ast::Ints)
+   out_files: ast::Names, out_lines: ast::Ints, out_cols: ast::Ints,
+   loaded_files: ast::Names)
 #type SigResult (ti: ast::TypeInfo, ok: <>)
 #type ImportMap String ^ String
 
@@ -86,7 +87,8 @@
    loading_stack: ast::Names,
    out_files: ast::Names,
    out_lines: ast::Ints,
-   out_cols: ast::Ints
+   out_cols: ast::Ints,
+   loaded_files: ast::Names
 )
 
 #type ImportEntry (bound_name: String, canonical_id: String, is_import: <>)
@@ -1301,6 +1303,7 @@ load_single_file = path, prefix, is_pkg, imp_path, ldr =>
    src_res = read_file_text(path)
    src_res
       | src =>
+         ldr.loaded_files += path
          ?src == 0
             | <+>
             |
@@ -1419,17 +1422,20 @@ load_all = target, target_prefix, is_modular, import_map_arg =>
       | map =>
          ldr = Loader((ast::Exprs(), ast::Names(), ast::Names(),
             ast::Names(), ast::Names(), is_modular, <->,
-            map, ast::Names(), ast::Names(), ast::Ints(), ast::Ints()))
+            map, ast::Names(), ast::Names(), ast::Ints(), ast::Ints(),
+            ast::Names()))
          tres = load_target(target, target_prefix, ldr)
          ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
             ldr.dynamic_mods, ldr.dynamic_paths, tres,
             map.native_libs, map.native_pkg_config,
-            ldr.out_files, ldr.out_lines, ldr.out_cols))
+            ldr.out_files, ldr.out_lines, ldr.out_cols,
+            ldr.loaded_files))
       |
          ModuleLoad((ast::Exprs(), ast::Names(), ast::Names(),
             ast::Names(), ast::Names(), <->,
             ast::Names(), ast::Names(),
-            ast::Names(), ast::Ints(), ast::Ints()))
+            ast::Names(), ast::Ints(), ast::Ints(),
+            ast::Names()))
 
 strip_trailing_slash: String => String
 strip_trailing_slash = s =>
@@ -1583,13 +1589,15 @@ collect_link_libs = stmts =>
    is_shared: <>,
    is_module: <>,
    module_name: String,
-   import_map: String
+   import_map: String,
+   cache_dir: String,
+   no_cache: <>
 )
 
 init_opts: Int => CliOpts
 init_opts = _ =>
    CliOpts(("", "", <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
-      <->, <+>, "", <->, <->, "", ""))
+      <->, <+>, "", <->, <->, "", "", "", <->))
 
 
 find_char_at: String, Int, Int => Int
@@ -1904,11 +1912,25 @@ resolve_pkg_config = name, clang_args =>
                <+>
             | <->
 
+env_or: String, String => String
+env_or = name, fallback =>
+   getenv_opt(name)
+      | v => v
+      | fallback
+
+copy_file: String, String => <>
+copy_file = src, dst =>
+   read_file_text(src)
+      | txt => write_file(dst, txt)
+      | <->
+
 // Shared compile pipeline: codegen AST -> LLVM IR -> clang binary.
 // Used by both the batch driver and the REPL.
 compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
-   String, ast::Names, ast::Names, ast::Names, ast::Names => < | Int >
-compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nat_libs, nat_pkg =>
+   String, ast::Names, ast::Names, ast::Names, ast::Names, ast::Names => < | Int >
+compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs, npkg, lfiles =>
+   nat_libs = nlibs
+   nat_pkg = npkg
    output_ll = out_ll
    output_bin = out_bin
    dynamic_mods = dmods
@@ -1921,20 +1943,47 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nat
       opts.is_module, opts.module_name))
    annotate::set_source_file(opts.target)
    el_res = annotate::annotate_program(prog)
-   cg_ok = el_res
+   cg_ok' = 0
+   is_cached' = <->
+   el_res
       | succ =>
-         codegen::codegen_typed_program_opts(succ.prog, prog,
-            output_ll, exports, opts.target, cg_opts)
+         use_cache = !opts.no_cache && env_or("EDVA_NO_CACHE", "") != "1"
+         eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
+         cache_flags = pkg::CacheCodegenFlags((opts.is_module, opts.is_shared,
+            opts.no_runtime, opts.no_main))
+         ast_summary = show::show_expr(prog)
+         opt_str = opts.opt != "" | opts.opt | "-O2"
+         target_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
+         bkr = pkg::compute_ir_cache_key(opts.target, lfiles, nat_libs, nat_pkg,
+            target_triple, opt_str, cache_flags, ast_summary)
+         cached_hit = use_cache | pkg::cache_lookup(eff_cache_dir, bkr.key) | <-->
+         cached_hit
+            | cached_ll =>
+               copy_file(cached_ll, output_ll)
+                  |
+                     cg_ok' = 1
+                     is_cached' = <+>
+                     !quiet | print $ "cached LLVM IR: " + output_ll
+                  |
+                     cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
+                        output_ll, exports, opts.target, cg_opts)
+                     cg_ok' != 0 && use_cache
+                        | pkg::cache_store(eff_cache_dir, bkr.key, bkr.meta_text, output_ll)
+            |
+               cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
+                  output_ll, exports, opts.target, cg_opts)
+               cg_ok' != 0 && use_cache
+                  | pkg::cache_store(eff_cache_dir, bkr.key, bkr.meta_text, output_ll)
       | errs =>
          print_program_errors(errs)
-         0
-   cg_ok == 0
+         cg_ok' = 0
+   cg_ok' == 0
       |
          print $ "E" + str::from_int(cg_err) +
             ": Compilation aborted due to code generation errors."
          <- 1 +>
       |
-         !quiet
+         !quiet && !is_cached'
             |
                print $ "Successfully generated LLVM IR via LLVM C API: " +
                   output_ll
@@ -2547,7 +2596,8 @@ repl_step = opts, session_src, line, sess =>
                comp = compile_ast_to_binary(prog, load_res.exports,
                   opts, sess.ll_path, sess.bin_path,
                   load_res.dynamic_mods, load_res.dynamic_paths,
-                  load_res.native_libs, load_res.native_pkg_config)
+                  load_res.native_libs, load_res.native_pkg_config,
+                  load_res.loaded_files)
                comp
                   |
                      run_args = ast::Names()
@@ -2696,10 +2746,26 @@ parse_args_step = i, opts =>
                parse_import_map_arg(i, opts)
             ["-H", "--header"]
                parse_header_arg(i, opts)
+            ["--cache"]
+               parse_cache_arg(i, opts)
+            ["--no-cache"]
+               opts.no_cache = <+>
+               parse_args_step(i + 1, opts)
             ["-o", "--output"]
                parse_output_arg(i, opts)
             |
                parse_pos_arg(i, arg, opts)
+
+parse_cache_arg: Int, CliOpts => CliOpts
+parse_cache_arg = i, opts =>
+   i + 1 !< sys::argc
+      |
+         print $ "E5016: '--cache' requires a directory path"
+         sys::exit(1)
+         opts
+      |
+         opts.cache_dir = sys::argv_string(i + 1)
+         parse_args_step(i + 2, opts)
 
 parse_module_arg: Int, CliOpts => CliOpts
 parse_module_arg = i, opts =>
@@ -2993,7 +3059,7 @@ run_driver = _ =>
                res = compile_ast_to_binary(program, load_result.exports, opts,
                   output_ll, output_bin, load_result.dynamic_mods,
                   load_result.dynamic_paths, load_result.native_libs,
-                  load_result.native_pkg_config)
+                  load_result.native_pkg_config, load_result.loaded_files)
                res !| code => sys::exit(code)
 
    opts.run_exec

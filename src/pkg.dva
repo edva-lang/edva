@@ -16,15 +16,31 @@
    getenv: (name: String) => Addr
    mkdir: (path: String, mode: Int) => Int
 
+#public
+
 #type Strings (String){}
 #type SMap String ^ String
+
+#type BuildKeyResult (
+   key: String,
+   meta_text: String
+)
+
+#type CacheCodegenFlags (
+   is_module: <>,
+   is_shared: <>,
+   no_runtime: <>,
+   no_main: <>
+)
 
 #type PkgOpts (
    root: String,
    locked: <>,
    offline: <>,
    store: String,
-   git: String
+   git: String,
+   cache: String,
+   no_cache: <>
 )
 
 // One resolved package instance (a lockfile entry plus the data the import
@@ -811,6 +827,141 @@
          | doc => ccl::validate_lockfile(doc, file)
          | e => <- e ->
 
+// --- IR caching (Issue #104) --------------------------------------------------
+
+#private
+   tmp_seq: Int
+   tmp_seq = 0
+
+#public
+   default_cache: () => String
+   default_cache = !=>
+      xdg = env_or("XDG_CACHE_HOME", path_join(env_or("HOME", "/tmp"), ".cache"))
+      env_or("EDVA_CACHE", path_join(xdg, "edva/ir"))
+
+   hash_file: String => String
+   hash_file = path =>
+      tmp = "/tmp/edva_hf_" + str::from_int(getpid!) + "_" + str::from_int(tmp_seq) + ".tmp"
+      tmp_seq ::= tmp_seq + 1
+      cmd = "sha256sum " + sq(path) + " | cut -c1-64 > " + sq(tmp) + " 2>/dev/null"
+      rc = sh(cmd)
+      txt = read_text(tmp)
+      libc::unlink(tmp)
+      rc == 0 | (txt | t => trim(t) | "") | ""
+
+   hash_string: String => String
+   hash_string = s =>
+      tmp = "/tmp/edva_hs_" + str::from_int(getpid!) + "_" + str::from_int(tmp_seq) + ".tmp"
+      tmp_seq ::= tmp_seq + 1
+      write_text(tmp, s)
+      cmd = "sha256sum " + sq(tmp) + " | cut -c1-64 > " + sq(tmp) + ".out 2>/dev/null"
+      rc = sh(cmd)
+      libc::unlink(tmp)
+      txt = read_text(tmp + ".out")
+      libc::unlink(tmp + ".out")
+      rc == 0 | (txt | t => trim(t) | "") | ""
+
+   compute_ir_cache_key: String, Strings, Strings, Strings, String, String,
+      CacheCodegenFlags, String => BuildKeyResult
+   compute_ir_cache_key = target, loaded_files, nat_libs, nat_pkg, triple, opt, flags, ast_summary =>
+      b = {4096}
+      b += "key_version = 1\n"
+      b += "target = " + target + "\n"
+      b += "triple = " + triple + "\n"
+      b += "opt = " + opt + "\n"
+      b += "compiler = 0.1.0\n"
+      b += "compiler_id = " + env_or("EDVA_COMPILER_ID", "default") + "\n"
+      b += "llvm = 18\n"
+      b += "flags =\n"
+      b += "  is_module = " + (flags.is_module | "true" | "false") + "\n"
+      b += "  is_shared = " + (flags.is_shared | "true" | "false") + "\n"
+      b += "  no_runtime = " + (flags.no_runtime | "true" | "false") + "\n"
+      b += "  no_main = " + (flags.no_main | "true" | "false") + "\n"
+      b += "sources =\n"
+      seen = SMap()
+      src_lines = Strings()
+      ?loaded_files @ i =>
+         f = loaded_files(i) | s => s | ""
+         ?f > 0 && !(seen ^? f) && file_exists(f)
+            |
+               seen ^ (f) = "1"
+               h = hash_file(f)
+               src_lines += f + ": " + h
+      ccl::sort_strings(src_lines) @ line =>
+         b += "  = " + line + "\n"
+      has_nat = ?nat_libs > 0 || ?nat_pkg > 0
+      has_nat
+         |
+            b += "native =\n"
+            ?nat_libs > 0
+               |
+                  b += "  libs =\n"
+                  ccl::sort_strings(nat_libs) @ l => b += "    = " + l + "\n"
+            ?nat_pkg > 0
+               |
+                  b += "  pkg-config =\n"
+                  ccl::sort_strings(nat_pkg) @ p => b += "    = " + p + "\n"
+      b += "ast_hash = " + hash_string(ast_summary) + "\n"
+      meta = +b
+      k = hash_string(meta)
+      BuildKeyResult((k, meta))
+
+   cache_lookup: String, String => < String | >
+   cache_lookup = cache_dir, key =>
+      key == "" || cache_dir == ""
+         | <-->
+         |
+            entry_dir = path_join(path_join(cache_dir, "entries"), key)
+            meta_file = path_join(entry_dir, "meta.ccl")
+            ll_file = path_join(entry_dir, "output.ll")
+            !file_exists(meta_file) || !file_exists(ll_file)
+               | <-->
+               |
+                  doc_res = ccl::parse_file(meta_file)
+                  doc_res
+                     | doc =>
+                        ll_text = read_text(ll_file)
+                        ll_text
+                           | txt =>
+                              ?txt > 0 | <+ ll_file -> | <-->
+                           | <-->
+                     | err =>
+                        sh("rm -rf " + sq(entry_dir))
+                        <-->
+
+   cache_store: String, String, String, String => <>
+   cache_store = cache_dir, key, meta_text, output_ll =>
+      key == "" || cache_dir == ""
+         | <->
+         |
+            entries_dir = path_join(cache_dir, "entries")
+            tmp_parent = path_join(cache_dir, "tmp")
+            !mkdir_p(entries_dir) || !mkdir_p(tmp_parent)
+               | <->
+               |
+                  tmp_dir = path_join(tmp_parent, "e_" + str::from_int(getpid!) + "_" +
+                     str::from_int(tmp_seq))
+                  tmp_seq ::= tmp_seq + 1
+                  !mkdir_p(tmp_dir)
+                     | <->
+                     |
+                        ll_dest = path_join(tmp_dir, "output.ll")
+                        meta_dest = path_join(tmp_dir, "meta.ccl")
+                        ll_content = read_text(output_ll) | t => t | ""
+                        ok = write_text(ll_dest, ll_content) && write_text(meta_dest, meta_text)
+                        !ok
+                           |
+                              sh("rm -rf " + sq(tmp_dir))
+                              <->
+                           |
+                              target_dir = path_join(entries_dir, key)
+                              ren_rc = libc::rename(tmp_dir, target_dir)
+                              ren_rc != 0
+                                 |
+                                    sh("rm -rf " + sq(tmp_dir))
+                                    <+>
+                                 | <+>
+
 // --- entry point ---------------------------------------------------------------
 
 #private
@@ -827,8 +978,8 @@
 
    usage: () => Int
    usage = !=>
-      out("usage: edva pkg <build|fetch|test> [dir] [--locked] [--offline] [--store <dir>]" +
-         " [--git <exe>]")
+      out("usage: edva pkg <build|cache|fetch|test> [dir] [--locked] [--offline] [--store <dir>]" +
+         " [--cache <dir>] [--no-cache] [--git <exe>]")
       2
 
    default_store: () => String
@@ -839,7 +990,7 @@
    parse_opts: Int => < PkgOpts | >
    parse_opts = start =>
       opts = PkgOpts((".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
-         env_or("EDVA_GIT", "git")))
+         env_or("EDVA_GIT", "git"), default_cache!, env_or("EDVA_NO_CACHE", "") == "1"))
       ok' = <+>
       i' = start
       0.. @
@@ -849,6 +1000,13 @@
          a
             ["--locked"] opts.locked = <+>
             ["--offline"] opts.offline = <+>
+            ["--cache"]
+               has_val
+                  |
+                     opts.cache = sys::argv_string(i' + 1)
+                     i' = i' + 1
+                  | ok' = <->
+            ["--no-cache"] opts.no_cache = <+>
             ["--store"]
                has_val
                   |
@@ -909,8 +1067,10 @@
                            | m =>
                               out_bin = path_join(opts.root, m.name)
                               compiler = sys::argv_string(0)
-                              cmd = sq(compiler) + " " + sq(main_src) + " -o " + sq(out_bin)
-                              rc = sh(cmd)
+                              cmd' = sq(compiler) + " " + sq(main_src) + " -o " + sq(out_bin)
+                              opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
+                              opts.no_cache | cmd' = cmd' + " --no-cache"
+                              rc = sh(cmd')
                               rc == 0 | 0 | 1
                            | 1
 
@@ -975,9 +1135,11 @@
                                  tpath = path_join(tests_dir, tf)
                                  tmp_bin = "/tmp/edva_test_" + str::from_int(getpid!) +
                                     "_" + tf(..-4)
-                                 cmd = sq(compiler) + " " + sq(tpath) + " -o " +
+                                 cmd' = sq(compiler) + " " + sq(tpath) + " -o " +
                                     sq(tmp_bin) + " -r >/dev/null 2>&1"
-                                 rc = sh(cmd)
+                                 opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
+                                 opts.no_cache | cmd' = cmd' + " --no-cache"
+                                 rc = sh(cmd')
                                  libc::unlink(tmp_bin)
                                  libc::unlink(tmp_bin + ".ll")
                                  rc == 0
@@ -1083,6 +1245,59 @@
                   out("locked " + str::from_int(n) + (n == 1 | " package" | " packages"))
                   0
 
+   cmd_cache: PkgOpts => Int
+   cmd_cache = opts =>
+      subcmd = opts.root == "." | "dir" | opts.root
+      eff_cache = opts.cache != "" | opts.cache | default_cache!
+      subcmd
+         ["clean"]
+            entries_dir = path_join(eff_cache, "entries")
+            tmp_dir = path_join(eff_cache, "tmp")
+            sh("rm -rf " + sq(entries_dir) + " " + sq(tmp_dir))
+            out("cache cleaned (" + eff_cache + ")")
+            0
+         ["dir"]
+            out(eff_cache)
+            0
+         ["ls", "list"]
+            entries_dir = path_join(eff_cache, "entries")
+            !dir_exists(entries_dir)
+               |
+                  out("0 cached entries")
+                  0
+               |
+                  count' = 0
+                  sys::addr_opt(libc::opendir(entries_dir))
+                     | dp =>
+                        0..10000 @ _ =>
+                           ent = libc::readdir(dp)
+                           ent == sys::addr_null | -->
+                           d_type = @[ent + 18 i8]
+                           d_type == 4i8
+                              |
+                                 kname = dirent_name(ent)
+                                 kname != "." && kname != ".."
+                                    |
+                                       meta_f = path_join(path_join(entries_dir, kname),
+                                          "meta.ccl")
+                                       tgt' = ++ ""
+                                       file_exists(meta_f)
+                                          |
+                                             tgt' = ccl::parse_file(meta_f)
+                                                | d =>
+                                                   ccl::get(d, "target")
+                                                      | s => s
+                                                      | ""
+                                                | _ => ""
+                                       out(kname + " (" + (tgt' != "" | tgt' | "unknown") + ")")
+                                       count' = count' + 1
+                        libc::closedir(dp)
+                  out(str::from_int(count') + (count' == 1 | " entry" | " entries"))
+                  0
+         |
+            out("usage: edva pkg cache <clean|dir|ls>")
+            2
+
 #public
    // `edva pkg <cmd> ...` — argv index `start` points at <cmd>.
    main: Int => Int
@@ -1103,6 +1318,10 @@
                ["test"]
                   parse_opts(start + 1)
                      | opts => cmd_test(opts)
+                     | usage!
+               ["cache"]
+                  parse_opts(start + 1)
+                     | opts => cmd_cache(opts)
                      | usage!
                ["help", "-h", "--help"]
                   usage!

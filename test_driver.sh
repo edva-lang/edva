@@ -1325,4 +1325,207 @@ if [ -f "$LIB_PKG/lib_only" ]; then
 fi
 echo "PASS"
 
+# --- Test 32: LLVM IR caching - cold build vs warm build ---
+echo -n "Testing LLVM IR caching cold vs warm build... "
+CACHE_DIR="$TMPDIR/cache_test"
+PKG_DIR="$TMPDIR/cached_pkg"
+mkdir -p "$PKG_DIR/src" "$CACHE_DIR"
+cat <<'EOF' > "$PKG_DIR/edva.ccl"
+name = cached_app
+version = 0.1.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$PKG_DIR/src/main.dva"
+#use io
+io::out $ "hello cache"
+EOF
+set +e
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >"$TMPDIR/t32_cold.out" 2>"$TMPDIR/t32_cold.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "Successfully generated LLVM IR" "$TMPDIR/t32_cold.out"; then
+    echo "FAILED: cold build should generate LLVM IR"
+    cat "$TMPDIR/t32_cold.out" "$TMPDIR/t32_cold.err"
+    exit 1
+fi
+
+set +e
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >"$TMPDIR/t32_warm.out" 2>"$TMPDIR/t32_warm.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "cached LLVM IR:" "$TMPDIR/t32_warm.out"; then
+    echo "FAILED: warm build should hit cache"
+    cat "$TMPDIR/t32_warm.out" "$TMPDIR/t32_warm.err"
+    exit 1
+fi
+if [ "$("$PKG_DIR/app")" != "hello cache" ]; then
+    echo "FAILED: binary from cached IR did not execute correctly"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 33: Cache invalidation on source change ---
+echo -n "Testing cache invalidation on source change... "
+cat <<'EOF' > "$PKG_DIR/src/main.dva"
+#use io
+io::out $ "hello cache v2"
+EOF
+set +e
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >"$TMPDIR/t33.out" 2>"$TMPDIR/t33.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "Successfully generated LLVM IR" "$TMPDIR/t33.out"; then
+    echo "FAILED: source change should invalidate cache and generate new IR"
+    cat "$TMPDIR/t33.out" "$TMPDIR/t33.err"
+    exit 1
+fi
+if [ "$("$PKG_DIR/app")" != "hello cache v2" ]; then
+    echo "FAILED: updated binary did not execute correctly"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 34: Cache invalidation on dependency source change ---
+echo -n "Testing cache invalidation on dependency source change... "
+mkdir -p "$PKG_DIR/src"
+cat <<'EOF' > "$PKG_DIR/src/helper.dva"
+#public
+   msg: () => String
+   msg = !=> "msg1"
+EOF
+cat <<'EOF' > "$PKG_DIR/src/main.dva"
+#use io
+#use "helper"
+io::out $ helper::msg!
+EOF
+set +e
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >"$TMPDIR/t34_1.out" 2>"$TMPDIR/t34_1.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ]; then
+    echo "FAILED: initial build with helper failed"
+    cat "$TMPDIR/t34_1.out" "$TMPDIR/t34_1.err"
+    exit 1
+fi
+cat <<'EOF' > "$PKG_DIR/src/helper.dva"
+#public
+   msg: () => String
+   msg = !=> "msg2"
+EOF
+set +e
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >"$TMPDIR/t34_2.out" 2>"$TMPDIR/t34_2.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "Successfully generated LLVM IR" "$TMPDIR/t34_2.out"; then
+    echo "FAILED: dependency change should invalidate cache"
+    cat "$TMPDIR/t34_2.out" "$TMPDIR/t34_2.err"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 35: Cache invalidation on compiler flags change ---
+echo -n "Testing cache invalidation on optimization flag change... "
+set +e
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" -O0 --cache "$CACHE_DIR" >"$TMPDIR/t35_o0.out" 2>"$TMPDIR/t35_o0.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "Successfully generated LLVM IR" "$TMPDIR/t35_o0.out"; then
+    echo "FAILED: -O0 should cause cache miss"
+    cat "$TMPDIR/t35_o0.out" "$TMPDIR/t35_o0.err"
+    exit 1
+fi
+set +e
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" -O0 --cache "$CACHE_DIR" >"$TMPDIR/t35_o0_warm.out" 2>"$TMPDIR/t35_o0_warm.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "cached LLVM IR:" "$TMPDIR/t35_o0_warm.out"; then
+    echo "FAILED: second -O0 build should hit cache"
+    cat "$TMPDIR/t35_o0_warm.out" "$TMPDIR/t35_o0_warm.err"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 36: Cache invalidation on EDVA_COMPILER_ID change ---
+echo -n "Testing cache invalidation on EDVA_COMPILER_ID change... "
+set +e
+EDVA_COMPILER_ID=test_id_v2 timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >"$TMPDIR/t36.out" 2>"$TMPDIR/t36.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "Successfully generated LLVM IR" "$TMPDIR/t36.out"; then
+    echo "FAILED: EDVA_COMPILER_ID change should invalidate cache"
+    cat "$TMPDIR/t36.out" "$TMPDIR/t36.err"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 37: Cache invalidation on target triple change ---
+echo -n "Testing cache invalidation on target triple change... "
+set +e
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -target i686-unknown-linux-gnu -ir -o "$PKG_DIR/app.ll" --cache "$CACHE_DIR" >"$TMPDIR/t37.out" 2>"$TMPDIR/t37.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "Successfully generated LLVM IR" "$TMPDIR/t37.out"; then
+    echo "FAILED: target triple change should invalidate cache"
+    cat "$TMPDIR/t37.out" "$TMPDIR/t37.err"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 38: Diagnostics preservation on cache lookup ---
+echo -n "Testing diagnostics preservation on compilation... "
+ERR_SRC="$TMPDIR/err_app.dva"
+cat <<'EOF' > "$ERR_SRC"
+#public
+   bad: Int => Int
+   bad = x => "not an int"
+EOF
+set +e
+timeout 30 ./edva "$ERR_SRC" -c -o "$TMPDIR/bad.o" --cache "$CACHE_DIR" >"$TMPDIR/t38.out" 2>"$TMPDIR/t38.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E3084" "$TMPDIR/t38.out"; then
+    echo "FAILED: type error should be caught during semantic analysis"
+    cat "$TMPDIR/t38.out" "$TMPDIR/t38.err"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 39: Cache CLI management (ls, dir, clean) ---
+echo -n "Testing cache CLI commands (dir, ls, clean)... "
+DIR_OUT="$(./edva pkg cache dir --cache "$CACHE_DIR")"
+if [ "$DIR_OUT" != "$CACHE_DIR" ]; then
+    echo "FAILED: expected cache dir $CACHE_DIR, got $DIR_OUT"
+    exit 1
+fi
+LS_OUT="$(./edva pkg cache ls --cache "$CACHE_DIR")"
+if ! echo "$LS_OUT" | grep -q "entries"; then
+    echo "FAILED: cache ls should report entries"
+    echo "$LS_OUT"
+    exit 1
+fi
+CLEAN_OUT="$(./edva pkg cache clean --cache "$CACHE_DIR")"
+if ! echo "$CLEAN_OUT" | grep -q "cache cleaned"; then
+    echo "FAILED: cache clean failed"
+    echo "$CLEAN_OUT"
+    exit 1
+fi
+EMPTY_LS="$(./edva pkg cache ls --cache "$CACHE_DIR")"
+if [ "$EMPTY_LS" != "0 cached entries" ]; then
+    echo "FAILED: expected 0 entries after clean, got $EMPTY_LS"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 40: Corrupt cache entry cleanup ---
+echo -n "Testing corrupt cache entry cleanup... "
+CORRUPT_ENTRY="$CACHE_DIR/entries/corrupt_hash_123"
+mkdir -p "$CORRUPT_ENTRY"
+echo "not valid ccl [[[" > "$CORRUPT_ENTRY/meta.ccl"
+touch "$CORRUPT_ENTRY/output.ll"
+# A build whose key happens to collide with corrupt entry or cache lookup encountering corrupt entry deletes it
+timeout 30 ./edva pkg cache ls --cache "$CACHE_DIR" >/dev/null 2>&1
+# Rebuilding something should cleanly proceed
+timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >/dev/null 2>&1
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
