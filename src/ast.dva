@@ -33,6 +33,7 @@
 
 #type Exprs (Expr){}
 #type Names (String){}
+#type Ints (Int){}
 #type Fields (RecordField){}
 #type Branches (ChoiceBranch){}
 #type FieldTypes (RecordFieldType){}

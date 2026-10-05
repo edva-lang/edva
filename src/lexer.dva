@@ -201,13 +201,23 @@ mktok = lx, kind, start, len, line, col, text =>
    Tok((kind, start, len, line, col, lead, trail, text))
 
 // --- errors ---------------------------------------------------------------
-// Lexer errors are fatal: diagnostic to stderr (fd 2), exit 1.
+cur_lex_file = ""
+
+#public
+
+lex_set_file: String => ()
+lex_set_file = file =>
+   cur_lex_file ::= file
+
+lex_get_file: () => String
+lex_get_file = !=> cur_lex_file
 
 fail: Int, Int, Int, String => Int
 fail = code, line, col, msg =>
    b = {128}
-   b += ("E", str::from_int(code), " [", str::from_int(line), ":",
-      str::from_int(col), "]: ", msg, "\n")
+   fn = cur_lex_file != "" | cur_lex_file + ":" | ""
+   b += (fn, str::from_int(line), ":", str::from_int(col), ": E",
+      str::from_int(code), ": ", msg, "\n")
    out = +b
    libc::write(2, out, ?out)
    #exit 1

@@ -46,7 +46,8 @@
 
 #type ModuleLoad (exprs: ast::Exprs, loaded: ast::Names,
    exports: ast::Names, dynamic_mods: ast::Names, dynamic_paths: ast::Names,
-   ok: <>, native_libs: ast::Names, native_pkg_config: ast::Names)
+   ok: <>, native_libs: ast::Names, native_pkg_config: ast::Names,
+   out_files: ast::Names, out_lines: ast::Ints, out_cols: ast::Ints)
 #type SigResult (ti: ast::TypeInfo, ok: <>)
 #type ImportMap String ^ String
 
@@ -82,7 +83,10 @@
    is_modular: <>,
    is_dep: <>,
    import_map: ImportMapState,
-   loading_stack: ast::Names
+   loading_stack: ast::Names,
+   out_files: ast::Names,
+   out_lines: ast::Ints,
+   out_cols: ast::Ints
 )
 
 #type ImportEntry (bound_name: String, canonical_id: String, is_import: <>)
@@ -1191,8 +1195,8 @@ rewrite_import_expr = e, table, locals =>
          ast::Expr(BuilderCreate, (rewrite_import_expr(bc, table, locals)))
       | e
 
-load_stmts: ast::Exprs, String, String, ast::Names, ast::Names, Loader => <>
-load_stmts = stmts, base, prefix, publics, privates, ldr =>
+load_stmts: ast::Exprs, String, String, ast::Names, ast::Names, Loader, String, ast::Ints, ast::Ints => <>
+load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
    ok' = <+>
    import_entries = ImportEntries()
    has_imp_mods' = <->
@@ -1265,6 +1269,7 @@ load_stmts = stmts, base, prefix, publics, privates, ldr =>
                   | <->
                   |
                      is_iface = ldr.is_modular && ldr.is_dep
+                     st_idx' = 0
                      stmts @ st2 =>
                         is_imp = st2 [Import _]
                         !is_imp
@@ -1275,6 +1280,20 @@ load_stmts = stmts, base, prefix, publics, privates, ldr =>
                                  | st2
                               prefix_stmt_to_acc(cur_st, prefix, publics,
                                  privates, ldr.out_exprs, is_iface)
+                              !is_iface
+                                 |
+                                    f_line = lines(st_idx') | _ | 1
+                                    f_col = cols(st_idx') | _ | 1
+                                    ldr_f = ldr.out_files
+                                    ldr_f += path
+                                    ldr.out_files = ldr_f
+                                    ldr_l = ldr.out_lines
+                                    ldr_l += f_line
+                                    ldr.out_lines = ldr_l
+                                    ldr_c = ldr.out_cols
+                                    ldr_c += f_col
+                                    ldr.out_cols = ldr_c
+                        st_idx' = st_idx' + 1
                      ok'
 
 load_single_file: String, String, <>, String, Loader => <>
@@ -1286,6 +1305,8 @@ load_single_file = path, prefix, is_pkg, imp_path, ldr =>
             | <+>
             |
                ppr = parser::parse_init(src)
+               parser::parser_set_file(ppr, path)
+               lexer::lex_set_file(path)
                ppr.allow_module_refs = <+>
                prog_res = parser::parse_program(ppr)
                prog_res
@@ -1303,7 +1324,8 @@ load_single_file = path, prefix, is_pkg, imp_path, ldr =>
                                        ?ppr.exports @ ei =>
                                           ldr.exports += (ppr.exports(ei) | _ | "")
                                  load_stmts(b.exprs, dirname(path), prefix,
-                                    ppr.publics, ppr.privates, ldr)
+                                    ppr.publics, ppr.privates, ldr, path,
+                                    ppr.top_lines, ppr.top_cols)
                               | <->
                   | <->
       |
@@ -1397,15 +1419,17 @@ load_all = target, target_prefix, is_modular, import_map_arg =>
       | map =>
          ldr = Loader((ast::Exprs(), ast::Names(), ast::Names(),
             ast::Names(), ast::Names(), is_modular, <->,
-            map, ast::Names()))
+            map, ast::Names(), ast::Names(), ast::Ints(), ast::Ints()))
          tres = load_target(target, target_prefix, ldr)
          ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
             ldr.dynamic_mods, ldr.dynamic_paths, tres,
-            map.native_libs, map.native_pkg_config))
+            map.native_libs, map.native_pkg_config,
+            ldr.out_files, ldr.out_lines, ldr.out_cols))
       |
          ModuleLoad((ast::Exprs(), ast::Names(), ast::Names(),
             ast::Names(), ast::Names(), <->,
-            ast::Names(), ast::Names()))
+            ast::Names(), ast::Names(),
+            ast::Names(), ast::Ints(), ast::Ints()))
 
 strip_trailing_slash: String => String
 strip_trailing_slash = s =>
@@ -1895,6 +1919,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nat
    cg_opts = codegen::CodegenOpts((opts.triple, opts.no_runtime, opts.no_main,
       dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
       opts.is_module, opts.module_name))
+   annotate::set_source_file(opts.target)
    el_res = annotate::annotate_program(prog)
    cg_ok = el_res
       | succ =>
@@ -2867,7 +2892,11 @@ run_driver = _ =>
    opts.eval_src != ""
       |
          src = opts.eval_src + "\n"
-         prog_res = parser::parse_program(parser::parse_init(src))
+         ppr = parser::parse_init(src)
+         parser::parser_set_file(ppr, "<eval>")
+         lexer::lex_set_file("<eval>")
+         annotate::set_source_file("<eval>")
+         prog_res = parser::parse_program(ppr)
          prog_res | prog =>
             opts.typed_ast
                |
@@ -2950,6 +2979,9 @@ run_driver = _ =>
    !load_result.ok
       | sys::exit(1)
       |
+         annotate::set_source_file(opts.target)
+         annotate::set_program_locs(load_result.out_files,
+            load_result.out_lines, load_result.out_cols)
          program = ast::Expr(Block, ast::BlockExpr(load_result.exprs))
          should_verify_only = opts.typed_ast &&
             !opts.run_exec && !opts.ir_only && (opts.outpath == "")

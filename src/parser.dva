@@ -73,7 +73,10 @@
    dp_var_count: Int,
    has_use_import: <>,
    is_public: <>,
-   module_level: <>
+   module_level: <>,
+   source_file: String,
+   top_lines: ast::Ints,
+   top_cols: ast::Ints
 )
 
 // A binary operator's binding powers + node op, from the precedence tower.
@@ -155,12 +158,18 @@ parser_init = lx =>
    user_types: (TypeEntry){}
    forward_refs: (ForwardRef){}
    user_ops: (UserOpEntry){}
+   tl = ast::Ints()
+   tc = ast::Ints()
    p = Parser((lx, lexer::Tok((lexer::TokKind(Eof), 0, 0, 1, 1, <->, <->, "")),
       0, 0, 0, 0, 0, 0, user_types, forward_refs, user_ops,
       <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
-      <->, <->, <+>))
+      <->, <->, <+>, lexer::lex_get_file(), tl, tc))
    parser_advance(p)
    p
+
+parser_set_file: Parser, String => ()
+parser_set_file = p, file =>
+   p.source_file = file
 
 // Consume the current token: read the next token, adjust the indent level for
 // Indent/Dedent, transparently skip continuation layout after a trailing
@@ -196,8 +205,9 @@ parser_skip_layout = p =>
 
 parser_error: Parser, Int, String => ()
 parser_error = p, code, msg =>
-   print $ "E" + str::from_int(code) + " [" + str::from_int(p.curr.line) +
-      ":" + str::from_int(p.curr.col) + "]: " + msg
+   fn = p.source_file != "" | p.source_file + ":" | ""
+   print $ fn + str::from_int(p.curr.line) + ":" + str::from_int(p.curr.col) +
+      ": E" + str::from_int(code) + ": " + msg
 
 // --- precedence (binary operators) ----------------------------------------
 
@@ -2292,16 +2302,17 @@ resolve_refs = p =>
          "", ast::TypeInfo(TypeVar, "")))
       has_lt = <>(lookup_type(p.user_types, fr.name))
       has_mod = string_has_double_colon(fr.name, 0)
+      fn = p.source_file != "" | p.source_file + ":" | ""
       !has_lt && !(has_mod && p.allow_module_refs) && !p.has_use_import
          |
             has_mod
             |
-               print $ "E3120 [" + str::from_int(fr.tok.line) + ":" +
-                  str::from_int(fr.tok.col) + "]: Unresolved type name '" +
+               print $ fn + str::from_int(fr.tok.line) + ":" +
+                  str::from_int(fr.tok.col) + ": E3120: Unresolved type name '" +
                   fr.name + "'"
             |
-               print $ "E2014 [" + str::from_int(fr.tok.line) + ":" +
-                  str::from_int(fr.tok.col) + "]: Unknown type name '" +
+               print $ fn + str::from_int(fr.tok.line) + ":" +
+                  str::from_int(fr.tok.col) + ": E2014: Unknown type name '" +
                   fr.name + "'"
             ok' = <->
    ok'
@@ -2353,10 +2364,14 @@ prog_loop = p, stmts =>
                      prog_loop(p, stmts)
                   |
                      p.is_stmt = <+>
+                     s_line = p.curr.line
+                     s_col = p.curr.col
                      st = parse_expr(p)
                      p.is_stmt = <->
                      st
                         | s =>
+                           p.top_lines += s_line
+                           p.top_cols += s_col
                            p.module_level | mark_decl_item(p, s)
                            stmts += s
                            stmt_end_ok(p)

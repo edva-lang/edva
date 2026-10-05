@@ -26,6 +26,21 @@
 
 #public
 
+cur_source_file = ""
+cur_stmt_files = ast::Names()
+cur_stmt_lines = ast::Ints()
+cur_stmt_cols = ast::Ints()
+
+set_source_file: String => ()
+set_source_file = f =>
+   cur_source_file ::= f
+
+set_program_locs: ast::Names, ast::Ints, ast::Ints => ()
+set_program_locs = files, lines, cols =>
+   cur_stmt_files ::= files
+   cur_stmt_lines ::= lines
+   cur_stmt_cols ::= cols
+
 name_is_primed: String => <>
 name_is_primed = name => ?name > 0 && name(-1..) == "'"
 
@@ -1589,6 +1604,7 @@ annotate_expr = ctx, env, expr =>
          lay = layout::compute_layout(ctx, res_ut)
          tast::mk_typed_unary(op, inner_te, res_ut, ti, lay, 0, 0)
       [Member m]
+         m.line > 0 | unify::set_pos(ctx, m.line, m.col)
          m.is_module_access
             |
                qn = module_qualified_name(
@@ -1772,6 +1788,7 @@ annotate_expr = ctx, env, expr =>
                      tast::mk_typed_ram_construct(rshape, <->,
                         <+ pay_te ->, n_ut, n_ti, n_lay, 0, 0)
       [KeyAccess ka]
+         ka.line > 0 | unify::set_pos(ctx, ka.line, ka.col)
          target_te = annotate_expr(ctx, env, ka.target)
          key_te = annotate_expr(ctx, env, ka.key)
          ka.is_membership || ka.is_delete
@@ -1868,6 +1885,7 @@ annotate_expr = ctx, env, expr =>
          tast::mk_typed_expr(tast::TypedExprKind(Exit, ex_te), ut, ti, lay,
             ex_te.line, ex_te.col)
       [UserDiag diag]
+         diag.line > 0 | unify::set_pos(ctx, diag.line, diag.col)
          annotate_expr(ctx, env, diag.msg)
          ut = diag.is_warn | unify::prim_unit() | unify::fresh_var(ctx)
          vt = diag.is_warn | ast::ValueType(Unit) | ast::ValueType(Unknown)
@@ -2725,6 +2743,7 @@ annotate_intrinsic_call = ctx, env, ce =>
 
 annotate_call: unify::Ctx, type_env::TypeEnv, ast::CallExpr => tast::TypedExpr
 annotate_call = ctx, env, ce =>
+   ce.line > 0 | unify::set_pos(ctx, ce.line, ce.col)
    is_intrinsic = is_intrinsic_name(ce.fn_name)
    is_intrinsic
       | annotate_intrinsic_call(ctx, env, ce)
@@ -3811,6 +3830,14 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
    idx = find_assign_idx(exprs, name)
    idx !< 0
       |
+         idx < ?cur_stmt_files
+            |
+               s_f = cur_stmt_files(idx) | _ | cur_source_file
+               s_l = cur_stmt_lines(idx) | _ | 0
+               s_c = cur_stmt_cols(idx) | _ | 0
+               unify::set_location(ctx, s_f, s_l, s_c)
+            |
+               unify::set_file(ctx, cur_source_file)
          env.swizzle_mode = active_swizzle_mode_at(exprs, idx)
          e = exprs(idx) | _ | ast::Expr(Int, 0)
          e
@@ -4324,6 +4351,7 @@ refresh_program_stmts = ctx, stmts =>
 elaborate_program_with_ctx: ast::Exprs => < ElabProgCtx | unify::TypeErrors >
 elaborate_program_with_ctx = exprs =>
    ctx = unify::new_ctx()
+   unify::set_file(ctx, cur_source_file)
    env = type_env::new_env()
    view_vars ::= ast::Names()
    declared_fns ::= ast::Names()
@@ -4507,6 +4535,14 @@ elaborate_program_with_ctx = exprs =>
    env.swizzle_mode = active_swizzle_mode_at(exprs, 0)
    typed_stmts = tast::TypedStmts()
    ?exprs @ i_stmt =>
+      i_stmt < ?cur_stmt_files
+         |
+            s_f = cur_stmt_files(i_stmt) | _ | cur_source_file
+            s_l = cur_stmt_lines(i_stmt) | _ | 0
+            s_c = cur_stmt_cols(i_stmt) | _ | 0
+            unify::set_location(ctx, s_f, s_l, s_c)
+         |
+            unify::set_file(ctx, cur_source_file)
       e_stmt = exprs(i_stmt) | _ | ast::Expr(Int, 0)
       is_skip' = <->
       e_stmt

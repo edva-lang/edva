@@ -84,7 +84,10 @@
 
 #type TypeError (
    code: Int,
-   msg: String
+   msg: String,
+   file: String,
+   line: Int,
+   col: Int
 )
 #type TypeErrors (TypeError){}
 
@@ -103,7 +106,10 @@
    bindings: VarBindings,
    errors: TypeErrors,
    open_vars: OpenVars,
-   constraints: Constraints
+   constraints: Constraints,
+   cur_file: String,
+   cur_line: Int,
+   cur_col: Int
 )
 
 // --- Type Constructors -----------------------------------------------------
@@ -205,7 +211,22 @@ mk_map = k, v => UType(Map, UMap((k, v)))
 // --- Context Operations ----------------------------------------------------
 
 new_ctx: () => Ctx
-new_ctx = !=> Ctx((0, VarBindings(), TypeErrors(), OpenVars(), Constraints()))
+new_ctx = !=> Ctx((0, VarBindings(), TypeErrors(), OpenVars(), Constraints(), "", 0, 0))
+
+set_location: Ctx, String, Int, Int => ()
+set_location = ctx, file, line, col =>
+   file != "" | ctx.cur_file = file
+   line > 0 | ctx.cur_line = line
+   col > 0 | ctx.cur_col = col
+
+set_pos: Ctx, Int, Int => ()
+set_pos = ctx, line, col =>
+   line > 0 | ctx.cur_line = line
+   col > 0 | ctx.cur_col = col
+
+set_file: Ctx, String => ()
+set_file = ctx, file =>
+   ctx.cur_file = file
 
 add_call_constraint: Ctx, UType, UTypes, UType => ()
 add_call_constraint = ctx, fn_ut, arg_uts, ret_ut =>
@@ -225,7 +246,15 @@ fresh_var = ctx =>
 add_error: Ctx, Int, String => ()
 add_error = ctx, code, msg =>
    errs = ctx.errors
-   errs += TypeError((code, msg))
+   errs += TypeError((code, msg, ctx.cur_file, ctx.cur_line, ctx.cur_col))
+   ctx.errors = errs
+
+add_error_at: Ctx, Int, String, Int, Int => ()
+add_error_at = ctx, code, msg, line, col =>
+   errs = ctx.errors
+   l = line > 0 | line | ctx.cur_line
+   c = col > 0 | col | ctx.cur_col
+   errs += TypeError((code, msg, ctx.cur_file, l, c))
    ctx.errors = errs
 
 has_errors: Ctx => <>
@@ -236,7 +265,7 @@ error_count = ctx => ?ctx.errors
 
 first_error: Ctx => TypeError
 first_error = ctx =>
-   ctx.errors(0) | _ | TypeError((0, ""))
+   ctx.errors(0) | _ | TypeError((0, "", "", 0, 0))
 
 error_code: TypeError => Int
 error_code = e => e.code
@@ -246,7 +275,9 @@ error_msg = e => e.msg
 
 format_error: TypeError => String
 format_error = e =>
-   "E" + str::from_int(e.code) + ": " + e.msg
+   fn = e.file != "" | e.file + ":" | ""
+   pos = e.line > 0 | str::from_int(e.line) + ":" + str::from_int(e.col) + ": " | ""
+   fn + pos + "E" + str::from_int(e.code) + ": " + e.msg
 
 is_integerish_uprim: UPrim => <>
 is_integerish_uprim = p =>

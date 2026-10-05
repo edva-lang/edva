@@ -514,12 +514,12 @@ init_merge = a, b =>
 // Reports a definite-init violation and marks the compile failed.
 init_error: Cg, String, String, Int, Int => ()
 init_error = cg, code, msg, line, col =>
+   fn = ?cg.source_file > 0 | cg.source_file + ":" | ""
+   pos = line > 0 | str::from_int(line) + ":" + str::from_int(col) + ": " | ""
+   dbg(fn)
+   dbg(pos)
    dbg(code)
-   dbg(" [")
-   dbg(str::from_int(line))
-   dbg(":")
-   dbg(str::from_int(col))
-   dbg("]: ")
+   dbg(": ")
    dbg(msg)
    dbg("\n")
    cg.error = <+>
