@@ -50,7 +50,8 @@ echo -e "${BOLD}=========================================${NC}"
 echo -e "${BOLD}          EDVA COMPILER TEST SUITE       ${NC}"
 echo -e "${BOLD}=========================================${NC}"
 
-NPROC=$(nproc 2>/dev/null || echo 4)
+NPROC="${TEST_JOBS:-${NPROC:-2}}"
+TEST_MEM_LIMIT="${TEST_MEM_LIMIT:-2097152}"
 TMP_DIR=$(mktemp -d -t dva_tests_XXXXXX)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
@@ -68,7 +69,7 @@ for example in examples/*.dva; do
     [ -e "$example" ] || continue
     ex_name=$(basename "$example" .dva)
     set +e
-    if ! timeout 60 bash -c "ulimit -v 4194304; '$DVA_COMPILER' \"$example\" < /dev/null" > /dev/null 2>&1; then
+    if ! timeout 60 bash -c "ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$example\" < /dev/null" > /dev/null 2>&1; then
         echo -e "  - ${ex_name}: ${RED}FAIL (does not compile)${NC}"
         EXAMPLES_FAILED=1
     else
@@ -81,7 +82,7 @@ for example_dir in examples/*/; do
     [ -f "$example_dir/main.dva" ] || continue
     ex_name=$(basename "$example_dir")
     set +e
-    if ! timeout 60 bash -c "ulimit -v 4194304; '$DVA_COMPILER' \"$example_dir/main.dva\" < /dev/null" > /dev/null 2>&1; then
+    if ! timeout 60 bash -c "ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$example_dir/main.dva\" < /dev/null" > /dev/null 2>&1; then
         echo -e "  - ${ex_name}: ${RED}FAIL (does not compile)${NC}"
         EXAMPLES_FAILED=1
     else
@@ -109,7 +110,7 @@ run_pos_test() {
     # Compile with timeout (default 30s, can be overridden via TEST_COMPILE_TIMEOUT)
     local compile_timeout="${TEST_COMPILE_TIMEOUT:-30}"
     set +e
-    timeout "$compile_timeout" bash -c "ulimit -v 4194304; cd '$test_tmp' && '$DVA_COMPILER' '$REPO_ROOT/$test_entry' < /dev/null > /dev/null 2>&1"
+    timeout "$compile_timeout" bash -c "ulimit -v $TEST_MEM_LIMIT; cd '$test_tmp' && '$DVA_COMPILER' '$REPO_ROOT/$test_entry' < /dev/null > /dev/null 2>&1"
     local comp_code=$?
     set -e
 
@@ -189,7 +190,7 @@ run_neg_test() {
     # Compile with timeout (default 30s, can be overridden via TEST_COMPILE_TIMEOUT)
     local compile_timeout="${TEST_COMPILE_TIMEOUT:-30}"
     set +e
-    compiler_output=$(timeout "$compile_timeout" bash -c "ulimit -v 4194304; '$DVA_COMPILER' \"$test_file\" $test_flags < /dev/null" 2>&1)
+    compiler_output=$(timeout "$compile_timeout" bash -c "ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$test_file\" $test_flags < /dev/null" 2>&1)
     exit_code=$?
     set -e
 
@@ -213,7 +214,7 @@ run_neg_test() {
 }
 
 export -f run_pos_test run_neg_test
-export TMP_DIR RED GREEN NC BOLD REPO_ROOT="$PWD"
+export TMP_DIR RED GREEN NC BOLD REPO_ROOT="$PWD" TEST_MEM_LIMIT
 
 # Execute positive tests in parallel
 for test_entry in $(ls -d tests/pass/* 2>/dev/null | sort); do
@@ -226,8 +227,8 @@ for test_entry in $(ls -d tests/pass/* 2>/dev/null | sort); do
     [ -f "$test_check_file" ] || continue
     test_name=$(basename "$test_entry" .dva)
     run_pos_test "$test_entry" "$test_name" &
-    while [ $(jobs -r | wc -l) -ge "$NPROC" ]; do
-        sleep 0.01
+    while [ $(jobs -p | wc -l) -ge "$NPROC" ]; do
+        wait -n 2>/dev/null || true
     done
 done
 wait
@@ -238,8 +239,8 @@ for test_file in $(ls tests/fail/*.dva 2>/dev/null | sort); do
     test_name=$(basename "$test_file" .dva)
     [[ "$test_name" == mod_* ]] && continue
     run_neg_test "$test_file" "$test_name" &
-    while [ $(jobs -r | wc -l) -ge "$NPROC" ]; do
-        sleep 0.01
+    while [ $(jobs -p | wc -l) -ge "$NPROC" ]; do
+        wait -n 2>/dev/null || true
     done
 done
 wait
@@ -309,7 +310,7 @@ for test_file in tests/sudo/*.dva; do
 
     compile_timeout="${TEST_COMPILE_TIMEOUT:-30}"
     set +e
-    timeout "$compile_timeout" bash -c "ulimit -v 4194304; '$DVA_COMPILER' \"$test_file\" < /dev/null" > /dev/null 2>&1
+    timeout "$compile_timeout" bash -c "ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$test_file\" < /dev/null" > /dev/null 2>&1
     comp_code=$?
     set -e
     if [ $comp_code -eq 124 ]; then
