@@ -1951,7 +1951,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
          eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
          cache_flags = pkg::CacheCodegenFlags((opts.is_module, opts.is_shared,
             opts.no_runtime, opts.no_main))
-         ast_summary = show::show_expr(prog)
+         ast_summary = ""
          opt_str = opts.opt != "" | opts.opt | "-O2"
          target_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
          bkr = pkg::compute_ir_cache_key(opts.target, lfiles, nat_libs, nat_pkg,
