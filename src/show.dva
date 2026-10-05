@@ -35,6 +35,7 @@ show_expr = e =>
          (0 < ?t.args | " " | "") + show_exprs(t.args) + ")"
       [CycleJump t] "CycleJump(" + (t.is_break | "break" | "cont") + " " +
          str::from_int(t.level) + ")"
+      [Return r] "Return(" + (r.has_val | show_expr(r.val) | "") + ")"
       [Fn t] "Fn(" + show_expr(t.body) + ")"
       [Copy e] "Copy(" + show_expr(e) + ")"
       [BuilderCreate e] "Builder(" + show_expr(e) + ")"
@@ -373,6 +374,7 @@ show_typed_expr = ctx, te =>
          show_typed_expr(ctx, t.1) + ")" + ty_str
       [CycleJump t] "CycleJump(" + (t.0 | "break" | "cont") + " " +
          str::from_int(t.1) + ")" + ty_str
+      [Return r] "Return(" + (r.0 | show_typed_expr(ctx, r.1) | "") + ")" + ty_str
       [RamConstruct t] "Ram(" + unify::show_ram_shape(t.0) + ")" + ty_str
       [EnumConstruct t] "Enum(" + t.0 + ")" + ty_str
       [BuilderNew e] "BuilderNew(" + show_typed_expr(ctx, e) + ")" + ty_str
@@ -480,6 +482,8 @@ show_typed_tree = ctx, te, ind =>
       [CycleJump t]
          pad + "CycleJump(" + (t.0 | "break" | "cont") + " " +
             str::from_int(t.1) + ")" + info
+      [Return r]
+         pad + "Return(" + (r.0 | show_typed_expr(ctx, r.1) | "") + ")" + info
       [Copy e]
          pad + "Copy" + info + "\n" +
             show_typed_tree(ctx, e, ind + 1)

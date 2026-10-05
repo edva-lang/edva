@@ -1,0 +1,4 @@
+// tests/fail/322_return_void_with_value.dva
+f: () => ()
+f = !=>
+   --| 42

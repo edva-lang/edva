@@ -178,6 +178,7 @@
 #type JoinExpr (handle: Expr)
 
 #type ExitExpr (code: Expr)
+#type ReturnExpr (has_val: <>, val: Expr, line: Int, col: Int)
 #type UserDiagExpr (is_warn: <>, msg: Expr, line: Int, col: Int)
 
 #type MapPair (key: Expr, value: Expr)
@@ -225,6 +226,7 @@
    FastMathPragma(String)
    SwizzlePragma(String)
    NamedArg(NamedArgExpr)
+   Return(ReturnExpr)
    UserDiag(UserDiagExpr)
 >
 

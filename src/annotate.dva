@@ -1396,15 +1396,16 @@ annotate_expr = ctx, env, expr =>
                                        env.in_fn = saved_in_fn
                                        env.cur_fn_ret = saved_fn_ret
                                        type_env::leave_scope(env)
-                                       ok_ret = is_ret_unit' ||
+                                       ok_ret = is_ret_unit' || expr_is_jump(body_te) ||
                                           unify::unify(ctx, f.ret, body_te.ut)
                                        !ok_ret
                                           |
                                              unify::add_error(ctx, 3084,
                                                 "Return type mismatch in " +
                                                 "function: " + name)
+                                       ret_res_ut = expr_is_jump(body_te) | f.ret | body_te.ut
                                        fn_ut = unify::mk_fn(param_uts,
-                                          body_te.ut)
+                                          ret_res_ut)
                                        ti = unify::type_info_from_utype(
                                           ctx, fn_ut)
                                        rhs' = mk_lambda_te(fe.params, body_te,
@@ -1884,6 +1885,60 @@ annotate_expr = ctx, env, expr =>
          lay = tast::layout_void()
          tast::mk_typed_expr(tast::TypedExprKind(Exit, ex_te), ut, ti, lay,
             ex_te.line, ex_te.col)
+      [Return r]
+         r.line > 0 | unify::set_pos(ctx, r.line, r.col)
+         !env.in_fn
+            |
+               unify::add_error(ctx, 3173,
+                  "Return '--|' can only be used inside a function.")
+               val_te = r.has_val | annotate_expr(ctx, env, r.val) | tast::mk_lit_unit(r.line, r.col)
+               tast::mk_typed_return(r.has_val, val_te, unify::prim_unit(),
+                  ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+            |
+               env.cur_fn_ret
+                  | ret_ut =>
+                     c_ret = unify::canon(ctx, ret_ut)
+                     is_ret_unit' = c_ret [Prim p] (p [Unit]) | <->
+                     is_ret_unit'
+                        |
+                           r.has_val
+                              |
+                                 unify::add_error(ctx, 3173,
+                                    "Cannot return a value from a void function.")
+                                 val_te = annotate_expr(ctx, env, r.val)
+                                 tast::mk_typed_return(r.has_val, val_te, unify::prim_unit(),
+                                    ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                              |
+                                 tast::mk_typed_return(<->, tast::mk_lit_unit(r.line, r.col), unify::prim_unit(),
+                                    ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                        |
+                           !r.has_val
+                              |
+                                 unify::add_error(ctx, 3173,
+                                    "Missing return value in function returning a value.")
+                                 tast::mk_typed_return(<->, tast::mk_lit_unit(r.line, r.col), unify::prim_unit(),
+                                    ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                              |
+                                 val_te = annotate_expr(ctx, env, r.val)
+                                 ok = unify::unify(ctx, ret_ut, val_te.ut)
+                                 !ok
+                                    |
+                                       unify::add_error(ctx, 3084,
+                                          "Return expression type mismatch")
+                                 tast::mk_typed_return(<+>, val_te, unify::prim_unit(),
+                                    ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                  |
+                     r.has_val
+                        |
+                           val_te = annotate_expr(ctx, env, r.val)
+                           ret_v = unify::fresh_var(ctx)
+                           env.cur_fn_ret = <+ ret_v ->
+                           unify::unify(ctx, ret_v, val_te.ut)
+                           tast::mk_typed_return(<+>, val_te, unify::prim_unit(),
+                              ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                        |
+                           tast::mk_typed_return(<->, tast::mk_lit_unit(r.line, r.col), unify::prim_unit(),
+                              ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
       [UserDiag diag]
          diag.line > 0 | unify::set_pos(ctx, diag.line, diag.col)
          annotate_expr(ctx, env, diag.msg)
@@ -3216,7 +3271,8 @@ annotate_fn = ctx, env, fe, is_disc =>
    saved_fn_ret = env.cur_fn_ret
    saved_init = type_env::init_snapshot(env)
    env.in_fn = <+>
-   env.cur_fn_ret = <-->
+   ret_var = is_disc | unify::prim_unit() | unify::fresh_var(ctx)
+   env.cur_fn_ret = <+ ret_var ->
    env.init = type_env::new_init()
    param_uts = unify::UTypes()
    ?fe.params @ i =>
@@ -3232,7 +3288,9 @@ annotate_fn = ctx, env, fe, is_disc =>
    env.in_fn = saved_in_fn
    env.cur_fn_ret = saved_fn_ret
    type_env::leave_scope(env)
-   ret_ut = is_disc | unify::prim_unit() | body_te.ut
+   !is_disc && !expr_is_jump(body_te)
+      | unify::unify(ctx, ret_var, body_te.ut)
+   ret_ut = is_disc | unify::prim_unit() | ret_var
    fn_ut = unify::mk_fn(param_uts, ret_ut)
    ti = unify::type_info_from_utype(ctx, fn_ut)
    mk_lambda_te(fe.params, body_te, fn_ut, ti)
@@ -3241,6 +3299,8 @@ expr_is_jump: tast::TypedExpr => <>
 expr_is_jump = te =>
    te.kind
       [CycleJump] <+>
+      [Return] <+>
+      [Exit] <+>
       [Block b]
          n = ?b
          n > 0
@@ -3456,14 +3516,14 @@ annotate_choice = ctx, env, ch, is_disc =>
             env.discard_result = is_disc
             annotate_expr(ctx, env, br.block)
       type_env::leave_scope(env)
-      has_merged'
-         | init_merged' = type_env::init_merge_two(init_merged', env.init)
-         |
-            init_merged' = type_env::init_snapshot(env)
-            has_merged' = <+>
       is_jump = expr_is_jump(body_te) || is_error_ut(ctx, body_te.ut)
       !is_jump
          |
+            has_merged'
+               | init_merged' = type_env::init_merge_two(init_merged', env.init)
+               |
+                  init_merged' = type_env::init_snapshot(env)
+                  has_merged' = <+>
             num_joins' = num_joins' + 1
             ch.is_exhaustive && !is_disc
                |
@@ -3892,7 +3952,7 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                        env.in_fn = saved_in_fn
                                        env.cur_fn_ret = saved_fn_ret
                                        type_env::leave_scope(env)
-                                       ok_ret = is_ret_unit' ||
+                                       ok_ret = is_ret_unit' || expr_is_jump(body_te) ||
                                           unify::unify(ctx, f.ret, body_te.ut)
                                        !ok_ret
                                           |
@@ -4144,6 +4204,8 @@ count_expr_nodes = te =>
                count_expr_nodes(pr.val)
       [Exit e]
          count' = count' + count_expr_nodes(e)
+      [Return r]
+         count' = count' + (r.0 | count_expr_nodes(r.1) | 0)
    count'
 
 count_program_nodes: tast::TypedProgram => Int
@@ -4326,6 +4388,8 @@ refresh_typed_expr = ctx, te =>
          tast::TypedExprKind(EnumConstruct, (ec.0, ec_tgt))
       [Exit e]
          tast::TypedExprKind(Exit, refresh_typed_expr(ctx, e))
+      [Return r]
+         tast::TypedExprKind(Return, (r.0, refresh_typed_expr(ctx, r.1)))
       | te.kind
    tast::TypedExpr((new_kind, c_ut, new_ti, new_lay, te.line, te.col))
 

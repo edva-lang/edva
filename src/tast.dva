@@ -98,6 +98,7 @@
    Spawn(ast::SpawnExpr)
    Join(ast::JoinExpr)
    Exit(TypedExpr)
+   Return((<>, TypedExpr))
    UserDiag(ast::UserDiagExpr)
    CompileTime(ast::CompileTimeExpr)
 >
@@ -268,3 +269,7 @@ mk_typed_enum_construct: String, <TypedExpr|>, unify::UType, ast::TypeInfo,
 mk_typed_enum_construct = name, target_opt, ut, ti, lay, line, col =>
    mk_typed_expr(TypedExprKind(EnumConstruct, (name, target_opt)),
       ut, ti, lay, line, col)
+
+mk_typed_return: <>, TypedExpr, unify::UType, ast::TypeInfo, TypedLayout, Int, Int => TypedExpr
+mk_typed_return = has_val, val, ut, ti, lay, line, col =>
+   mk_typed_expr(TypedExprKind(Return, (has_val, val)), ut, ti, lay, line, col)

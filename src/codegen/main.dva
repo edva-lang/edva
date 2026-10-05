@@ -3000,6 +3000,7 @@ codegen_typed_eval = cg, te =>
       [Spawn s] codegen_eval_spawn(cg, s)
       [Join j] codegen_typed_eval_join(cg, j, te.ti)
       [Exit e] expr::codegen_typed_eval_exit(cg, e)
+      [Return r] expr::codegen_typed_eval_return(cg, r.0, r.1)
       [UserDiag ud] match::codegen_eval_user_diag(cg, ud)
       [CompileTime ct]
          ct_res = match::ctfe_eval(cg, ct.expr, types::CtFrames(), 0)

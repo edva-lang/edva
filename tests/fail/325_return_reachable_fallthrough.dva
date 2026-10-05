@@ -1,0 +1,5 @@
+// tests/fail/325_return_reachable_fallthrough.dva
+f: Int => Int
+f = x =>
+   x > 0 | --| 42
+   "fallthrough string"

@@ -659,3 +659,5 @@ non_operators:
     note: "ramification payload closers (never a bare >), distinct lexer tokens."
   - symbol: "#use #type #foreign #private #export #spawn #join #pragma #!"
     note: "directives triggered by a leading #, not bare reserved words."
+  - symbol: "--|"
+    note: "early return from functions; not an operator."

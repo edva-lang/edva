@@ -1,0 +1,5 @@
+// tests/fail/324_return_type_mismatch.dva
+f: () => Int
+f = !=>
+   --| "hello"
+   10

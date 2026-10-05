@@ -117,7 +117,7 @@ op_is_reserved = text =>
       |
          text
             ["<+", "<-", "<+>", "<->", "<++>", "<-->", "<>", "+>", "->",
-            "-->", "--^", ">--", "@", "[@",
+            "-->", "--^", "--|", ">--", "@", "[@",
             "@", "^", "^?", "?", "!", "*", "&", "=>",
             "!=>", "|", "$:"]
 
@@ -1430,6 +1430,7 @@ atom_op = p =>
       ["<-"]   atom_variant_payload(p, <->)
       ["-->"]  atom_cycle_jump(p, <+>)
       ["--^"]  atom_cycle_jump(p, <->)
+      ["--|"]  atom_early_return(p)
       ["~~"]   atom_binding(p)
       ["?"]    atom_length(p)
       ["??"]   atom_rune_count(p)
@@ -2009,6 +2010,28 @@ atom_cycle_jump = p, is_break =>
                   "integer depth (e.g. '-->2'), got '" + p.curr.text + "'")
                <-->
       | <+ ast::Expr(CycleJump, (is_break, level')) ->
+
+// "--|" — early return from the enclosing function, with an optional return
+// value. Bare "--|" is used for void functions (=> ()).
+atom_early_return: Parser => <ast::Expr|>
+atom_early_return = p =>
+   line = p.curr.line
+   col = p.curr.col
+   parser_advance(p)
+   is_term = p.curr.kind [Newline, Dedent, Semi, Eof, RParen, RBracket, RBrace]
+   is_op = p.curr.kind [Op]
+   txt = p.curr.text
+   is_br = txt == "]" || txt == "|" || txt == "!|" || txt == ")" || txt == "}"
+   is_end = is_term || (is_op && is_br)
+   is_end
+      | <+ ast::Expr(Return, (ast::ReturnExpr((<->, ast::Expr(Int, 0), line, col)))) ->
+      |
+         val = p.branch_body_depth > 0
+            | parse_range(p)
+            | parse_choice(p)
+         val
+            | v => <+ ast::Expr(Return, (ast::ReturnExpr((<+>, v, line, col)))) ->
+            | <-->
 
 // "{expr}" — Builder literal: a fresh Builder with capacity = expr.
 atom_builder: Parser => <ast::Expr|>

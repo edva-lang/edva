@@ -75,6 +75,7 @@
         <RegExpr attribute="Control" context="#stay" String="--[&gt;^][0-9]*" />
         <StringDetect attribute="Control" context="#stay" String="&gt;--" />
         <StringDetect attribute="Control" context="#stay" String="--:" />
+        <StringDetect attribute="Control" context="#stay" String="--|" />
         <DetectChar attribute="Control" context="#stay" char="@" />
         <StringDetect attribute="Control" context="#stay" String="!|" />
         <StringDetect attribute="Operator" context="#stay" String="!!" />

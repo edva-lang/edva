@@ -1,0 +1,143 @@
+#use io
+
+#type Ints (Int){}
+
+// 1. Guard returns
+clamp: Int, Int, Int => Int
+clamp = x, lo, hi =>
+   x < lo | --| lo
+   x > hi | --| hi
+   x
+
+// 2. Bare void return
+log_positive: Int => ()
+log_positive = x =>
+   x !> 0 | --|
+   io::out $ "positive: " + str::from_int(x)
+
+// 3. Side effects evaluated once & skipped subsequent statements
+side_effect_fn: Ints => Int
+side_effect_fn = log =>
+   log += 1
+   10
+
+eval_once_test: Ints => Int
+eval_once_test = log =>
+   --| side_effect_fn(log)
+   log += 999
+   0
+
+// 4. Successful ramification returns
+#type Res <Int | String>
+
+validate_even: Int => Res
+validate_even = n =>
+   (n % 2 != 0) | --| Res(<- "odd" ->)
+   Res(<+ n ->)
+
+// 5. Returning composite / record / closure values
+#type Point (x: Int, y: Int)
+
+make_origin: () => Point
+make_origin = !=>
+   --| Point(0, 0)
+
+get_multiplier: Int => (Int => Int)
+get_multiplier = factor =>
+   factor == 0 | --| (x => 0)
+   (x => x * factor)
+
+// 6. Nested cycle early return
+
+find_index: Ints, Int => Int
+find_index = arr, target =>
+   ?arr @ i =>
+      val = arr(i) | _ | 0
+      val == target | --| i
+   -1
+
+// 7. Genuine nested function returns from itself only
+outer_with_inner: Int => Int
+outer_with_inner = x =>
+   inner = y =>
+      y > 10 | --| y * 2
+      y + 1
+   res = inner(x)
+   res + 5
+
+// 8. Definite initialization after returning branches
+init_test: Int => Int
+init_test = x =>
+   x < 0 | --| 0
+   y = 42
+   y
+
+// 9. Interaction with --! propagate
+step: Int => Res
+step = n =>
+   n == 0 | Res(<- "zero" ->) | Res(<+ n * 10 ->)
+
+pipeline: Int => Res
+pipeline = n =>
+   n < 0 | --| Res(<- "negative" ->)
+   v = step(n)--!
+   Res(<+ v + 1 ->)
+
+// Driver
+io::out $ str::from_int(clamp(5, 10, 20))
+io::out $ str::from_int(clamp(25, 10, 20))
+io::out $ str::from_int(clamp(15, 10, 20))
+
+log_positive(-3)
+log_positive(7)
+
+log_arr = Ints()
+io::out $ str::from_int(eval_once_test(log_arr))
+io::out $ str::from_int(?log_arr)
+
+r1 = validate_even(3)
+r1
+   | v => io::out $ "even: " + str::from_int(v)
+   | e => io::out $ "error: " + e
+
+r2 = validate_even(8)
+r2
+   | v => io::out $ "even: " + str::from_int(v)
+   | e => io::out $ "error: " + e
+
+pt = make_origin!
+io::out $ str::from_int(pt.x) + "," + str::from_int(pt.y)
+
+m0 = get_multiplier(0)
+io::out $ str::from_int(m0(10))
+
+m3 = get_multiplier(3)
+io::out $ str::from_int(m3(10))
+
+list = Ints()
+list += 100
+list += 200
+list += 300
+io::out $ str::from_int(find_index(list, 200))
+io::out $ str::from_int(find_index(list, 999))
+
+io::out $ str::from_int(outer_with_inner(15))
+io::out $ str::from_int(outer_with_inner(4))
+
+io::out $ str::from_int(init_test(-1))
+io::out $ str::from_int(init_test(5))
+
+p1 = pipeline(-2)
+p1
+   | v => io::out $ "pipe: " + str::from_int(v)
+   | e => io::out $ "pipe-err: " + e
+
+p2 = pipeline(0)
+p2
+   | v => io::out $ "pipe: " + str::from_int(v)
+   | e => io::out $ "pipe-err: " + e
+
+p3 = pipeline(3)
+p3
+   | v => io::out $ "pipe: " + str::from_int(v)
+   | e => io::out $ "pipe-err: " + e

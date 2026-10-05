@@ -956,6 +956,8 @@ codegen_eval = cg, expr =>
       [Exit t]
          runtime::codegen_emit_exit(cg, t)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+      [Return r]
+         codegen_eval_return(cg, r)
       [Block b]
          has_alloc = (block_has_arena_alloc(cg, b) && !cg.in_fn &&
             !block_is_binding(b))
@@ -5686,6 +5688,123 @@ codegen_typed_eval_exit = cg, e =>
          types::init_error(cg, "E3172", "'#exit' expects an integerish status code",
             0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+
+codegen_typed_eval_return: types::Cg, <>, tast::TypedExpr => (Addr, ast::ValueType)
+codegen_typed_eval_return = cg, has_val, val_te =>
+   !cg.in_fn
+      |
+         types::init_error(cg, "E3173", "Return '--|' can only be used inside a function.", 0, 0)
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
+      |
+         !has_val
+            |
+               !stmt::block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
+               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               LLVMPositionBuilderAtEnd(cg.builder, dead)
+               cg.exited = <+>
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+            |
+               ev = main::codegen_typed_eval(cg, val_te)
+               bvv = ev.0
+               i8p = LLVMPointerType(LLVMInt8Type!, 0)
+               ret_ti = types::g.expected_fn_ti
+               ret_ll = types::g.fn_ret_ll | _ | LLVMTypeOf(bvv)
+               is_typed_mode = types::g.is_typed_pipeline
+               use_unboxed_ret = is_typed_mode | types::is_unboxed_ram_ti(cg, ret_ti) | <->
+               niche = is_typed_mode | types::is_niche_ram_ti(cg, ret_ti) |
+                  (<->, <->, ast::ValueType(Unknown))
+               use_niche_ret = niche.0
+               is_ptr_ret = LLVMGetTypeKind(LLVMTypeOf(bvv)) == 12
+               is_ptr_ret_int = ret_ll == LLVMInt64Type! && is_ptr_ret
+               ret_v = use_unboxed_ret && is_ptr_ret
+                  | match::convert_heap_ram_to_unboxed(cg, bvv, ret_ti)
+                  |
+                     use_niche_ret && is_ptr_ret
+                        |
+                           tgep = LLVMBuildStructGEP2(cg.builder,
+                              cg.union_t, bvv, 0, "tag.gep")
+                           tag = LLVMBuildLoad2(cg.builder,
+                              LLVMInt64Type!, tgep, "tag")
+                           is_pos = LLVMBuildICmp(cg.builder, 33,
+                              tag, LLVMConstInt(
+                                 LLVMInt64Type!, 0, 0), "is_pos")
+                           pgep = LLVMBuildStructGEP2(cg.builder,
+                              cg.union_t, bvv, 1, "pay.gep")
+                           pay_ptr = LLVMBuildLoad2(cg.builder,
+                              i8p, pgep, "pay.ptr")
+                           cond_pos = niche.1 | is_pos |
+                              LLVMBuildNot(cg.builder, is_pos, "is_neg")
+                           LLVMBuildSelect(cg.builder, cond_pos,
+                              pay_ptr, LLVMConstNull(i8p), "ret.niche")
+                        |
+                           is_ptr_ret_int
+                              | LLVMBuildPtrToInt(cg.builder, bvv,
+                                 LLVMInt64Type!, "ret.int")
+                              | stmt::coerce_int(cg, bvv, ret_ll)
+               !stmt::block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
+               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               LLVMPositionBuilderAtEnd(cg.builder, dead)
+               cg.exited = <+>
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+
+codegen_eval_return: types::Cg, ast::ReturnExpr => (Addr, ast::ValueType)
+codegen_eval_return = cg, r =>
+   !cg.in_fn
+      |
+         types::init_error(cg, "E3173", "Return '--|' can only be used inside a function.", 0, 0)
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
+      |
+         !r.has_val
+            |
+               !stmt::block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
+               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               LLVMPositionBuilderAtEnd(cg.builder, dead)
+               cg.exited = <+>
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+            |
+               ev = codegen_eval(cg, r.val)
+               bvv = ev.0
+               i8p = LLVMPointerType(LLVMInt8Type!, 0)
+               ret_ti = types::g.expected_fn_ti
+               ret_ll = types::g.fn_ret_ll | _ | LLVMTypeOf(bvv)
+               is_typed_mode = types::g.is_typed_pipeline
+               use_unboxed_ret = is_typed_mode | types::is_unboxed_ram_ti(cg, ret_ti) | <->
+               niche = is_typed_mode | types::is_niche_ram_ti(cg, ret_ti) |
+                  (<->, <->, ast::ValueType(Unknown))
+               use_niche_ret = niche.0
+               is_ptr_ret = LLVMGetTypeKind(LLVMTypeOf(bvv)) == 12
+               is_ptr_ret_int = ret_ll == LLVMInt64Type! && is_ptr_ret
+               ret_v = use_unboxed_ret && is_ptr_ret
+                  | match::convert_heap_ram_to_unboxed(cg, bvv, ret_ti)
+                  |
+                     use_niche_ret && is_ptr_ret
+                        |
+                           tgep = LLVMBuildStructGEP2(cg.builder,
+                              cg.union_t, bvv, 0, "tag.gep")
+                           tag = LLVMBuildLoad2(cg.builder,
+                              LLVMInt64Type!, tgep, "tag")
+                           is_pos = LLVMBuildICmp(cg.builder, 33,
+                              tag, LLVMConstInt(
+                                 LLVMInt64Type!, 0, 0), "is_pos")
+                           pgep = LLVMBuildStructGEP2(cg.builder,
+                              cg.union_t, bvv, 1, "pay.gep")
+                           pay_ptr = LLVMBuildLoad2(cg.builder,
+                              i8p, pgep, "pay.ptr")
+                           cond_pos = niche.1 | is_pos |
+                              LLVMBuildNot(cg.builder, is_pos, "is_neg")
+                           LLVMBuildSelect(cg.builder, cond_pos,
+                              pay_ptr, LLVMConstNull(i8p), "ret.niche")
+                        |
+                           is_ptr_ret_int
+                              | LLVMBuildPtrToInt(cg.builder, bvv,
+                                 LLVMInt64Type!, "ret.int")
+                              | stmt::coerce_int(cg, bvv, ret_ll)
+               !stmt::block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
+               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               LLVMPositionBuilderAtEnd(cg.builder, dead)
+               cg.exited = <+>
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+
 codegen_typed_eval_error_construct: types::Cg, tast::TypedExprs => (Addr, ast::ValueType)
 codegen_typed_eval_error_construct = cg, args =>
    i64t = LLVMInt64Type!

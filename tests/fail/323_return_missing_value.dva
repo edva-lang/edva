@@ -1,0 +1,5 @@
+// tests/fail/323_return_missing_value.dva
+f: () => Int
+f = !=>
+   --|
+   10

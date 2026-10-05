@@ -501,16 +501,24 @@ scan_op = lx, start, line, col =>
                      lx.col = col + 3
                      mktok(lx, TokKind(Op), start, 3, line, col, "--!")
                   |
-                     is_bind_split = i' - start > 2 && lx.src(start) == '~' &&
-                        lx.src(start + 1) == '~'
-                     is_bind_split
+                     is_ret_split = i' - start > 3 && lx.src(start) == '-' &&
+                        lx.src(start + 1) == '-' && lx.src(start + 2) == '|'
+                     is_ret_split
                         |
-                           lx.pos = start + 2
-                           lx.col = col + 2
-                           mktok(lx, TokKind(Op), start, 2, line, col, "~~")
+                           lx.pos = start + 3
+                           lx.col = col + 3
+                           mktok(lx, TokKind(Op), start, 3, line, col, "--|")
                         |
-                           mktok(lx, TokKind(Op), start, i' - start, line, col,
-                              lx.src(start..i'))
+                           is_bind_split = i' - start > 2 && lx.src(start) == '~' &&
+                              lx.src(start + 1) == '~'
+                           is_bind_split
+                              |
+                                 lx.pos = start + 2
+                                 lx.col = col + 2
+                                 mktok(lx, TokKind(Op), start, 2, line, col, "~~")
+                              |
+                                 mktok(lx, TokKind(Op), start, i' - start, line, col,
+                                    lx.src(start..i'))
 
 // --- strings / runes / raw strings ----------------------------------------
 

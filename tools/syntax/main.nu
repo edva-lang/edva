@@ -8,7 +8,7 @@
 #   5. Helix synchronization & grammar compilation
 
 def root [] {
-  $env.FILE_PWD | path dirname | path dirname
+  $env.FILE_PWD? | default $env.PWD | path expand
 }
 
 # -----------------------------------------------------------------------------
@@ -139,7 +139,7 @@ export def gen-vscode [] {
           },
           {
             "name": "keyword.control.escape.dva",
-            "match": "(>--|--:)"
+            "match": "(>--|--:|--\\|)"
           },
           {
             "name": "keyword.control.conditional.dva",

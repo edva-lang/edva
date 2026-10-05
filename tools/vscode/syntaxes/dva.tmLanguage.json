@@ -119,7 +119,7 @@
         },
         {
           "name": "keyword.control.escape.dva",
-          "match": "(>--|--:)"
+          "match": "(>--|--:|--\\|)"
         },
         {
           "name": "keyword.control.conditional.dva",

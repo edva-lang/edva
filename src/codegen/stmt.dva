@@ -415,19 +415,24 @@ compile_lambda = cg, f =>
    is_disc = ret_vt' [Unit]
    cg.discard_result = is_disc
    saved_exp = types::g.expected_fn_ti
+   saved_ret_ll = types::g.fn_ret_ll
    types::g.expected_fn_ti = exp_ret_ti
+   types::g.fn_ret_ll = <+ ret_ll ->
    bv = expr::codegen_eval(cg, f.body)
    types::g.expected_fn_ti = saved_exp
+   types::g.fn_ret_ll = saved_ret_ll
    cg.discard_result = saved_discard
    types::is_view_expr(cg, f.body)
       | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
    is_void = ret_vt' [Unit]
    is_void
-      | LLVMBuildRetVoid(cg.builder)
+      | !block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
       |
-         ret_v = (ret_vt' [Fn] LLVMBuildPtrToInt(cg.builder, bv.0,
-            LLVMInt64Type!, "ret.int") | coerce_int(cg, bv.0, ret_ll))
-         LLVMBuildRet(cg.builder, ret_v)
+         !block_is_terminated(cg)
+            |
+               ret_v = (ret_vt' [Fn] LLVMBuildPtrToInt(cg.builder, bv.0,
+                  LLVMInt64Type!, "ret.int") | coerce_int(cg, bv.0, ret_ll))
+               LLVMBuildRet(cg.builder, ret_v)
    cg.fninfos += types::FnInfo((fnname, <+ fn ->, <+ fty ->, np, ptypes, ret_vt', <->, <->,
       <+>, !is_cap))
    is_fn_ret = main::is_fn_vt(bv.1) || main::is_fn_vt(ret_vt')
@@ -2052,6 +2057,8 @@ infer_ret = e, params, ptypes =>
             [RuneCount] ast::ValueType(Int)
             | infer_ret(u.1, params, ptypes)
       [Block b] infer_ret_block(b.exprs, params, ptypes)
+      [Return r]
+         r.has_val | infer_ret(r.val, params, ptypes) | ast::ValueType(Unit)
       | ast::ValueType(Unknown)
 
 // The return type of a block body: the last statement's (0 statements = Unit).
@@ -2265,6 +2272,8 @@ fn_ret_override = cg, body, cur =>
       | cur
       |
          body
+            [Return r]
+               r.has_val | fn_ret_override(cg, r.val, cur) | cur
             [Call c]
                uvt = typedef_vt(cg, c.fn_name, ast::ValueType(Unknown))
                uvt != ast::ValueType(Unknown)
@@ -3458,9 +3467,12 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    cg.discard_result = is_disc
    cg.exited = <->
    saved_expected_ti = types::g.expected_fn_ti
+   saved_fn_ret_ll = types::g.fn_ret_ll
    types::g.expected_fn_ti = ret_ti
+   types::g.fn_ret_ll = <+ ret_ll ->
    bv = expr::codegen_eval(cg, fd.body)
    types::g.expected_fn_ti = saved_expected_ti
+   types::g.fn_ret_ll = saved_fn_ret_ll
    cg.discard_result = saved_discard
    types::is_view_expr(cg, fd.body)
       | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
@@ -3499,7 +3511,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    is_ptr_ret_int = ret_ll == LLVMInt64Type! && is_ptr_ret
    is_void_ret
       |
-         !cg.error | LLVMBuildRetVoid(cg.builder)
+         !cg.error && !block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
       |
          ret_v = bv_opt
             | bvv =>
@@ -3529,7 +3541,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
                                  LLVMInt64Type!, "ret.int")
                               | coerce_int(cg, bvv, ret_ll)
             | LLVMConstNull(ret_ll)
-         !cg.error | LLVMBuildRet(cg.builder, ret_v)
+         !cg.error && !block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
    ret_ti_res = resolve_ti(cg, ret_ti)
    ret_ti_res [Ram _]
       |
@@ -6609,6 +6621,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
    saved_last_fn = types::g.last_compiling_fn
    types::g.last_compiling_fn = name
    saved_expected_ti = types::g.expected_fn_ti
+   saved_fn_ret_ll = types::g.fn_ret_ll
 
    cap_vals = is_cap | lambda_load_caps_at(cg, caps, 0, nc, types::Addrs()) | types::Addrs()
    cap_vts = is_cap | lambda_caps_vts_at(cg, caps, 0, nc, ast::VTypes()) |
@@ -6646,6 +6659,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
       |
          ret_vt [Unit] LLVMVoidType!
          | types::llvm_type_of_vt(ret_vt)
+   types::g.fn_ret_ll = <+ ret_ll ->
    fty = fn_type_n(cg, ret_ll, param_ll, (is_cap | nparams + 1 | nparams))
    exp_sym = find_export_symbol(types::g.pexports, name)
    fn_ll_name = exp_sym | _ | name
@@ -6701,7 +6715,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
                bv = main::codegen_typed_eval(cg, body)
                is_void = ret_vt [Unit]
                is_void
-                  | LLVMBuildRetVoid(cg.builder)
+                  | !block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
                   |
                      bv_val = types::llvm_val_opt(bv.0)
                         | bvv => bvv
@@ -6724,8 +6738,10 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
                                        bv_val, real_ret_ti)
                                     | bv_val
                         | bv_val
-                     LLVMBuildRet(cg.builder,
-                        expr::coerce_ret_ptr_int(cg, ret_coerced, ret_ll, bv.1))
+                     !block_is_terminated(cg)
+                        |
+                           LLVMBuildRet(cg.builder,
+                              expr::coerce_ret_ptr_int(cg, ret_coerced, ret_ll, bv.1))
                is_fn_ret = main::is_fn_vt(bv.1) || main::is_fn_vt(ret_vt)
                is_fn_ret && (cg.last_closure_fn != "")
                   | fn_ret_fn_add(name, cg.last_closure_fn)
@@ -6741,6 +6757,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
    types::g.last_compiling_fn = saved_last_fn
    types::g.alloc_rec_names = types::truncate_names(types::g.alloc_rec_names, saved_nalloc_rec)
    types::g.expected_fn_ti = saved_expected_ti
+   types::g.fn_ret_ll = saved_fn_ret_ll
 
    envp' = LLVMConstNull(i8p)
    est_opt

@@ -1178,6 +1178,9 @@ ctfe_eval_block_at = cg, exprs, i, frames, depth =>
                   | ctfe_eval(cg, cur_e, frames, depth + 1)
             |
                cur_e
+                  [Return r]
+                     r.has_val | ctfe_eval(cg, r.val, frames, depth + 1) |
+                        (types::CtVal(None), ast::ValueType(Unit))
                   [Assign a]
                      rhs' = ctfe_eval(cg, a.5, frames, depth + 1)
                      rhs'.0
@@ -1215,6 +1218,9 @@ ctfe_eval = cg, expr, frames, depth =>
             [Member m] ctfe_eval_member(cg, m, frames, depth)
             [KeyAccess ka] ctfe_eval_key_access(cg, ka, frames, depth)
             [CompileTime ct] ctfe_eval(cg, ct.expr, frames, depth + 1)
+            [Return r]
+               r.has_val | ctfe_eval(cg, r.val, frames, depth + 1) |
+                  (types::CtVal(None), ast::ValueType(Unit))
             | (types::CtVal(None), ast::ValueType(Unknown))
 
 ctfe_hash_val: types::CtVal => Int
