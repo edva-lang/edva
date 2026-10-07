@@ -7,13 +7,13 @@
 get_or: #! T: Type, <T|>, T => T
 get_or = opt, dflt => opt | v => v | dflt
 
-io::out $ get_or(<+ 42 ->, 0)
+io::out $ get_or(<+ 42 +>, 0)
 io::out $ get_or(<-->, 0)
-io::out $ get_or(<+ "x" ->, "y")
+io::out $ get_or(<+ "x" +>, "y")
 
 // The same over a Fallible (< | T >): the negative slot carries the payload.
 get_err: #! T: Type, < | T >, T => T
 get_err = e, dflt => e | dflt | msg => msg
 
 io::out $ get_err(<++>, 7)
-io::out $ get_err(<- "oops" +>, "ok")
+io::out $ get_err(<- "oops" ->, "ok")

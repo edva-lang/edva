@@ -1,2 +1,2 @@
 #type R < Int | >
-x = R(<+ "hi" ->)
+x = R(<+ "hi" +>)

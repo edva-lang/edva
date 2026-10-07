@@ -86,7 +86,7 @@
       from..total @ i =>
          s(i) == c
             |
-               hit' = Find(<+ i ->)
+               hit' = Find(<+ i +>)
                -->
       hit'
 
@@ -103,7 +103,7 @@
             limit @ i =>
                s(i..i + nlen) == needle
                   |
-                     hit' = Find(<+ i ->)
+                     hit' = Find(<+ i +>)
                      -->
             hit'
 
@@ -177,7 +177,7 @@
       hit' = Find(<-->)
       total @ i =>
          c = s(i)
-         c [47, 63] hit' = Find(<+ i ->); -->
+         c [47, 63] hit' = Find(<+ i +>); -->
       hit'
 
    #type Url (
@@ -242,7 +242,7 @@
                | (matched' = 0)
          matched' [1]
             out += line(nlen + 2..llen)
-            found' = Chunk(<+ +out ->)
+            found' = Chunk(<+ +out +>)
             -->
       found'
 
@@ -277,7 +277,7 @@
       qpos = http::find_char(tail, 0, 63)
       path = qpos | tail(0.._) | tail
       query = qpos | tail(_ + 1..tl) | ""
-      UrlRes(<+ (scheme, host, port, path, query) +>)
+      UrlRes(<+ (scheme, host, port, path, query) ->)
 
    // Parse "scheme://host[:port][/path][?query]" into a Url. Returns UrlRes:
    // <+ url +> on success, <- error -> on a missing scheme.
@@ -285,7 +285,7 @@
    parse_url = url =>
       total = ?url
       d = http::find_str(url, "://")
-      d | http::parse_after_scheme(url, _, total) | UrlRes(<- "no scheme" ->)
+      d | http::parse_after_scheme(url, _, total) | UrlRes(<- "no scheme" +>)
 
    // Look up "key=value" in a query string ("a=1&b=2"). Returns a Chunk: the
    // value, or none when the key is absent.
@@ -304,7 +304,7 @@
             | out += qs(i' + klen + 1..seg_end); -->
          i' = amp | _ + 1 | total
       ?out > 0
-         | Chunk(<+ +out ->)
+         | Chunk(<+ +out +>)
          | Chunk(<-->)
 
    // --- HTTP request reading ------------------------------------------------
@@ -343,7 +343,7 @@
             c != 13 | (b += c)
          found' !< 0 | -->
       ?b > 0
-         | Chunk(<+ +b ->)
+         | Chunk(<+ +b +>)
          | Chunk(<-->)
 
    // Append one header line to a Builder (in place); returns 1 for the blank
@@ -380,7 +380,7 @@
       found
          |
             rest = headers(_ + 16..total)
-            Num(<+ http::to_int(rest) ->)
+            Num(<+ http::to_int(rest) +>)
          | Num(<-->)
 
    // Read exactly n bytes of body from fd. Returns a Chunk.
@@ -395,7 +395,7 @@
          got' = got' + r
       ?b = got'
       got' > 0
-         | Chunk(<+ +b ->)
+         | Chunk(<+ +b +>)
          | Chunk(<-->)
 
    // Read the request body per a Content-Length (0/none -> "").
@@ -414,14 +414,14 @@
       rest = line(v + 1..ln_len)
       rp = http::find_char(rest, 0, 32)
       path = rp | rest(0.._) | rest
-      Req(<+ (method, path, "") +>)
+      Req(<+ (method, path, "") ->)
 
    // Parse a request line "METHOD /path HTTP/1.1" into a Request (empty body).
    // Returns Req: <+ request +> on success, <- error -> on a malformed line.
    line_req: String => Req
    line_req = line =>
       sp = http::find_char(line, 0, 32)
-      sp | http::line_req_method(line, _) | Req(<- "malformed request line" ->)
+      sp | http::line_req_method(line, _) | Req(<- "malformed request line" +>)
 
    // Build a Request from a request line whose first space is at `v`, plus the
    // read headers/body. Extracted as a helper so the request_from_line branch
@@ -437,14 +437,14 @@
       cl = http::content_length(headers)
       cl_val = cl | _ | 0
       body = http::read_req_body(fd, cl_val)
-      Req(<+ (method, path, body) +>)
+      Req(<+ (method, path, body) ->)
 
    // Build a Request from a request line plus the read headers/body.
    request_from_line: Int, String, Int => Req
    request_from_line = fd, ln, max =>
       sp = http::find_char(ln, 0, 32)
       sp | http::request_method(fd, ln, _, max)
-         | Req(<- "malformed request line" ->)
+         | Req(<- "malformed request line" +>)
 
    // Read a full HTTP request from fd: the request line, the header block, and
    // the body sized by Content-Length. Returns Req: <+ request +> on success,
@@ -452,4 +452,4 @@
    read_request: Int, Int => Req
    read_request = fd, max =>
       line = http::read_line(fd, max)
-      line | http::request_from_line(fd, _, max) | Req(<- _ ->)
+      line | http::request_from_line(fd, _, max) | Req(<- _ +>)

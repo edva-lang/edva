@@ -122,7 +122,7 @@
       %memset(p.active + idx, 1, 1)
       cnt = @[p.state + 8 Int]
       @[p.state + 8] = cnt + 1
-      <+ p.buffer + idx * p.elem_size ->
+      <+ p.buffer + idx * p.elem_size +>
 
    pool_free: Pool, Addr => <>
    pool_free = p, addr =>

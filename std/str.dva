@@ -182,7 +182,7 @@
          !str::is_digit(b) | -->
          val' = val' * 10 + (b - '0')
       i [0] --| Digits(<-->)
-      Digits(<+ (val', s(i..)) ->)
+      Digits(<+ (val', s(i..)) +>)
 
    // Consume leading hex digits (0-9, a-f, A-F); the payload is (value, rest).
    to_hex: String => Digits
@@ -197,7 +197,7 @@
                | b - 'a' + 10
          val' = val' * 16 + digit
       i [0] --| Digits(<-->)
-      Digits(<+ (val', s(i..)) ->)
+      Digits(<+ (val', s(i..)) +>)
 
    // Int to base-16 hex ASCII string (uppercase, "0x" prefix). Digits are
    // pushed LSD-first into a Builder, the "x"/"0" prefix appended last, then

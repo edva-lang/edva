@@ -49,9 +49,9 @@ res = a(0)!! $> add_ten
 io::out $ str::from_int(res)
 
 // 5. RamPN unwrap
-r_pn = <+ 42 +>
+r_pn = <+ 42 ->
 io::out $ str::from_int(r_pn!!)
 
 // 6. RamPP unwrap
-r_pp = <+ "unwrapped string" +>
+r_pp = <+ "unwrapped string" ->
 io::out $ r_pp!!

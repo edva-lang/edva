@@ -14,24 +14,25 @@
 bin_info: String => < BinOpInfo | >
 bin_info = text =>
    text
-      ["$"]  <+ BinOpInfo((30, 30, ast::BinaryOp(Apply), <->)) ->
-      ["||"]  <+ BinOpInfo((80, 90, ast::BinaryOp(Or), <->)) ->
-      ["&&"]  <+ BinOpInfo((90, 100, ast::BinaryOp(And), <->)) ->
-      [".|."]  <+ BinOpInfo((100, 110, ast::BinaryOp(BitOr), <->)) ->
-      [".&."]  <+ BinOpInfo((110, 120, ast::BinaryOp(BitAnd), <->)) ->
-      ["<"]  <+ BinOpInfo((120, 130, ast::BinaryOp(Lt), <+>)) ->
-      [">"]  <+ BinOpInfo((120, 130, ast::BinaryOp(Gt), <+>)) ->
-      ["=="]  <+ BinOpInfo((120, 130, ast::BinaryOp(Eq), <+>)) ->
-      ["!="]  <+ BinOpInfo((120, 130, ast::BinaryOp(NotEq), <+>)) ->
-      ["!<"]  <+ BinOpInfo((120, 130, ast::BinaryOp(NotLt), <+>)) ->
-      ["!>"]  <+ BinOpInfo((120, 130, ast::BinaryOp(NotGt), <+>)) ->
-      [".<."]  <+ BinOpInfo((130, 140, ast::BinaryOp(Shl), <->)) ->
-      [".>."]  <+ BinOpInfo((130, 140, ast::BinaryOp(Shr), <->)) ->
-      ["+"]  <+ BinOpInfo((140, 150, ast::BinaryOp(Add), <->)) ->
-      ["-"]  <+ BinOpInfo((140, 150, ast::BinaryOp(Sub), <->)) ->
-      ["$>"]  <+ BinOpInfo((40, 50, ast::BinaryOp(Feed), <->)) ->
-      ["$>>"]  <+ BinOpInfo((40, 50, ast::BinaryOp(Bind), <->)) ->
-      ["*"]  <+ BinOpInfo((150, 160, ast::BinaryOp(Mul), <->)) ->
-      ["/"]  <+ BinOpInfo((150, 160, ast::BinaryOp(Div), <->)) ->
-      ["%"]  <+ BinOpInfo((150, 160, ast::BinaryOp(Mod), <->)) ->
+      ["$"]  <+ BinOpInfo((30, 30, ast::BinaryOp(Apply), <->)) +>
+      ["||"]  <+ BinOpInfo((80, 90, ast::BinaryOp(Or), <->)) +>
+      ["&&"]  <+ BinOpInfo((90, 100, ast::BinaryOp(And), <->)) +>
+      [".|."]  <+ BinOpInfo((100, 105, ast::BinaryOp(BitOr), <->)) +>
+      [".^."]  <+ BinOpInfo((105, 110, ast::BinaryOp(BitXor), <->)) +>
+      [".&."]  <+ BinOpInfo((110, 120, ast::BinaryOp(BitAnd), <->)) +>
+      ["<"]  <+ BinOpInfo((120, 130, ast::BinaryOp(Lt), <+>)) +>
+      [">"]  <+ BinOpInfo((120, 130, ast::BinaryOp(Gt), <+>)) +>
+      ["=="]  <+ BinOpInfo((120, 130, ast::BinaryOp(Eq), <+>)) +>
+      ["!="]  <+ BinOpInfo((120, 130, ast::BinaryOp(NotEq), <+>)) +>
+      ["!<"]  <+ BinOpInfo((120, 130, ast::BinaryOp(NotLt), <+>)) +>
+      ["!>"]  <+ BinOpInfo((120, 130, ast::BinaryOp(NotGt), <+>)) +>
+      [".<."]  <+ BinOpInfo((130, 140, ast::BinaryOp(Shl), <->)) +>
+      [".>."]  <+ BinOpInfo((130, 140, ast::BinaryOp(Shr), <->)) +>
+      ["+"]  <+ BinOpInfo((140, 150, ast::BinaryOp(Add), <->)) +>
+      ["-"]  <+ BinOpInfo((140, 150, ast::BinaryOp(Sub), <->)) +>
+      ["$>"]  <+ BinOpInfo((40, 50, ast::BinaryOp(Feed), <->)) +>
+      ["$>>"]  <+ BinOpInfo((40, 50, ast::BinaryOp(Bind), <->)) +>
+      ["*"]  <+ BinOpInfo((150, 160, ast::BinaryOp(Mul), <->)) +>
+      ["/"]  <+ BinOpInfo((150, 160, ast::BinaryOp(Div), <->)) +>
+      ["%"]  <+ BinOpInfo((150, 160, ast::BinaryOp(Mod), <->)) +>
       | <-->

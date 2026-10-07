@@ -222,7 +222,7 @@ get_entry = doc, key =>
    0..?doc.entries @ i =>
       e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
       e.key == key |
-         res' = <+ e ->
+         res' = <+ e +>
          -->
    res'
 
@@ -233,7 +233,7 @@ get = doc, key =>
       e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
       e.key == key |
          e.val [Str s]
-            res' = <+ s ->
+            res' = <+ s +>
             -->
    res'
 
@@ -244,21 +244,18 @@ get_section = doc, key =>
       e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
       e.key == key |
          e.val [Block b]
-            res' = <+ b ->
+            res' = <+ b +>
             -->
    res'
 
 get_list: CclDoc, String => < Strings | >
 get_list = doc, key =>
-   opt_sec = get_section(doc, key)
-   opt_sec
-      | sec =>
-         res: Strings
-         sec.entries @ e =>
-            e.key == "" |
-               e.val [Str s] res += s
-         <+ res ->
-      | <-->
+   sec = get_section(doc, key) | _ | --| <-->
+   res: Strings
+   sec.entries @ e =>
+      e.key == "" |
+         e.val [Str s] res += s
+   <+ res +>
 
 entries_for: CclDoc, String => CclEntries
 entries_for = doc, key =>
@@ -409,29 +406,29 @@ parse_block_from = lines, start_idx, min_indent, file =>
                                                 idx' = idx' + 1
 
    has_err'
-      | <- err_val' ->
-      | <+ (doc, idx') +>
+      | <- err_val' +>
+      | <+ (doc, idx') ->
 
 parse: String, String => < CclDoc | Error >
 parse = src, file =>
    lines = split_raw_lines(src)
    res = parse_block_from(lines, 0, 0, file)
    res
-      | pair => <+ pair.0 +>
-      | e => <- e ->
+      | pair => <+ pair.0 ->
+      | e => <- e +>
 
 parse_file: String => < CclDoc | Error >
 parse_file = path =>
    fd = libc::open(path, 0)
    fd < 0
-      | <- ccl_error(path, "cannot open file: " + path, 1, 1) ->
+      | <- ccl_error(path, "cannot open file: " + path, 1, 1) +>
       |
          r = io::reader(fd)
          txt = io::read_all(r, 1048576)
          libc::close(fd)
          txt
             | content => parse(content, path)
-            | <- ccl_error(path, "cannot read file: " + path, 1, 1) ->
+            | <- ccl_error(path, "cannot read file: " + path, 1, 1) +>
 
 // --- Deterministic Serialization --------------------------------------------
 
@@ -497,7 +494,7 @@ validate_dep: CclEntry, String => < PackageDep | Error >
 validate_dep = e, file =>
    alias = e.key
    !is_valid_package_name(alias)
-      | <- ccl_error(file, "edva.ccl: invalid dependency alias '" + alias + "'", e.line, e.col) ->
+      | <- ccl_error(file, "edva.ccl: invalid dependency alias '" + alias + "'", e.line, e.col) +>
       |
          e.val
             [Block ddoc]
@@ -527,7 +524,7 @@ validate_dep = e, file =>
                                        "edva.ccl: unknown key 'dependencies." + alias + "." + k + "'",
                                        dde.line, dde.col)
                has_err'
-                  | <- err_val' ->
+                  | <- err_val' +>
                   |
                      has_git = has(ddoc, "git")
                      has_path = has(ddoc, "path")
@@ -542,7 +539,7 @@ validate_dep = e, file =>
                            <- ccl_error(file,
                               "edva.ccl: dependency '" + alias +
                               "' must specify exactly one of: git, path, url",
-                              e.line, e.col) ->
+                              e.line, e.col) +>
                         |
                            has_git
                               |
@@ -550,30 +547,30 @@ validate_dep = e, file =>
                                  opt_rev = get(ddoc, "rev")
                                  opt_rev
                                     | rev =>
-                                       <+ PackageDep((alias, DepKind(Git), g_url, rev, "", "", "")) +>
+                                       <+ PackageDep((alias, DepKind(Git), g_url, rev, "", "", "")) ->
                                     |
                                        <- ccl_error(file,
                                           "edva.ccl: dependency '" + alias + "' needs 'rev'",
-                                          e.line, e.col) ->
+                                          e.line, e.col) +>
                               |
                                  has_path
                                     |
                                        p = get(ddoc, "path") | _ | ""
-                                       <+ PackageDep((alias, DepKind(Path), "", "", p, "", "")) +>
+                                       <+ PackageDep((alias, DepKind(Path), "", "", p, "", "")) ->
                                     |
                                        u = get(ddoc, "url") | _ | ""
                                        opt_hash = get(ddoc, "hash")
                                        opt_hash
                                           | h =>
                                              <+ PackageDep((alias, DepKind(Archive),
-                                                "", "", "", u, h)) +>
+                                                "", "", "", u, h)) ->
                                           |
                                              <- ccl_error(file,
                                                 "edva.ccl: dependency '" + alias + "' needs 'hash'",
-                                                e.line, e.col) ->
+                                                e.line, e.col) +>
             [Str _]
                <- ccl_error(file,
-                  "edva.ccl: dependency '" + alias + "' must be a section", e.line, e.col) ->
+                  "edva.ccl: dependency '" + alias + "' must be a section", e.line, e.col) +>
 
 validate_manifest: CclDoc, String => < PackageManifest | Error >
 validate_manifest = doc, file =>
@@ -717,7 +714,7 @@ validate_manifest = doc, file =>
                                  oe.line, oe.col)
 
    has_err'
-      | <- err_val' ->
+      | <- err_val' +>
       |
          <+ PackageManifest((
             pkg_name',
@@ -727,7 +724,7 @@ validate_manifest = doc, file =>
             sort_strings(native_libs),
             sort_strings(native_pkg_config),
             sort_deps(overrides)
-         )) +>
+         )) ->
 
 // --- Deterministic Manifest Serialization -----------------------------------
 
@@ -900,8 +897,8 @@ validate_lockfile = doc, file =>
                         re.val [Str sid] root_deps += LockDep((re.key, sid))
 
    has_err'
-      | <- err_val' ->
-      | <+ Lockfile((ver', sort_lock_packages(pkgs), sort_lock_deps(root_deps))) +>
+      | <- err_val' +>
+      | <+ Lockfile((ver', sort_lock_packages(pkgs), sort_lock_deps(root_deps))) ->
 
 lockfile_to_ccl: Lockfile => String
 lockfile_to_ccl = lock =>

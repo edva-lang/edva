@@ -44,21 +44,20 @@
    // only write forward (B8), so MSD-first output is a two-pass reverse.
    from_int: Int => String
    from_int = v =>
-      v [0] "0"
-      |
-         b = {32}
-         n' = v [< 0] 0 - v | v
-         32 @
-            n' [> 0]
-               b += ('0' + (n' % 10))
-               n' = n' / 10
-            | -->
-         v < 0 | b += '-'
-         s = +b
-         out = {32}
-         ?s @ i =>
-            out += s((?s) - 1 - i)
-         +out
+      v [0] --| "0"
+      b = {32}
+      n' = v [< 0] 0 - v | v
+      32 @
+         n' [> 0]
+            b += ('0' + (n' % 10))
+            n' = n' / 10
+         | -->
+      v < 0 | b += '-'
+      s = +b
+      out = {32}
+      ?s @ i =>
+         out += s((?s) - 1 - i)
+      +out
 
    // Float to decimal String, "%g"-style: 6 significant digits, fixed notation
    // for exponent in [-4, 5], scientific ("d.ddddd" e ±exp) otherwise; the
@@ -69,86 +68,84 @@
    from_float = v =>
       neg = v < 0.0
       a = neg | 0.0 - v | v
-      a == 0.0
-         | "0"
+      a == 0.0 | --| "0"
+      x' = a
+      e' = 0
+      0.. @
+         x' !< 10.0
+            |
+               x' = x' / 10.0
+               e' = e' + 1
+            | -->
+      0.. @
+         x' < 1.0
+            |
+               x' = x' * 10.0
+               e' = e' - 1
+            | -->
+      ip = Int(x')
+      f' = x' - Float(ip)
+      ds = {16}
+      ds += ('0' + ip)
+      0..6 @ i =>
+         f' = f' * 10.0
+         d = Int(f')
+         ds += ('0' + d)
+         f' = f' - Float(d)
+      s = +ds
+      m' = 0
+      0..6 @ i =>
+         m' = m' * 10 + (s(i) - '0')
+      s(6) !< 53
          |
-            x' = a
-            e' = 0
-            0.. @
-               x' !< 10.0
-                  |
-                     x' = x' / 10.0
-                     e' = e' + 1
-                  | -->
-            0.. @
-               x' < 1.0
-                  |
-                     x' = x' * 10.0
-                     e' = e' - 1
-                  | -->
-            ip = Int(x')
-            f' = x' - Float(ip)
-            ds = {16}
-            ds += ('0' + ip)
-            0..6 @ i =>
-               f' = f' * 10.0
-               d = Int(f')
-               ds += ('0' + d)
-               f' = f' - Float(d)
-            s = +ds
-            m' = 0
-            0..6 @ i =>
-               m' = m' * 10 + (s(i) - '0')
-            s(6) !< 53
+            m' = m' + 1
+      m' == 1000000
+         |
+            m' = 100000
+            e' = e' + 1
+      ms = str::from_int(m')
+      b = {32}
+      neg | b += '-'
+      e' < -4 || e' !< 6
+         |
+            b += ms(0)
+            b += '.'
+            1..6 @ i =>
+               b += ms(i)
+         |
+            e' !< 0
                |
-                  m' = m' + 1
-            m' == 1000000
-               |
-                  m' = 100000
-                  e' = e' + 1
-            ms = str::from_int(m')
-            b = {32}
-            neg | b += '-'
-            e' < -4 || e' !< 6
-               |
-                  b += ms(0)
-                  b += '.'
-                  1..6 @ i =>
+                  en = e' + 1
+                  0..en @ i =>
                      b += ms(i)
-               |
-                  e' !< 0
+                  en < 6
                      |
-                        en = e' + 1
-                        0..en @ i =>
+                        b += '.'
+                        en..6 @ i =>
                            b += ms(i)
-                        en < 6
-                           |
-                              b += '.'
-                              en..6 @ i =>
-                                 b += ms(i)
-                     |
-                        b += "0."
-                        (0 - e' - 1) @ i =>
-                           b += '0'
-                        0..6 @ i =>
-                           b += ms(i)
-            full = +b
-            len = ?full
-            end' = len
-            0.. @
-               end' > 0 && full(end' - 1) == '0'
-                  |
-                     end' = end' - 1
-                  |
-                     -->
-            end' > 0 && full(end' - 1) == '.'
                |
-                  end' = end' - 1
-            mant = full(0..end')
-            es = e' < 0 | "-" + str::from_int(0 - e') | str::from_int(e')
-            e' < -4 || e' !< 6
-               | mant + "e" + es
-               | mant
+                  b += "0."
+                  (0 - e' - 1) @ i =>
+                     b += '0'
+                  0..6 @ i =>
+                     b += ms(i)
+      full = +b
+      len = ?full
+      end' = len
+      0.. @
+         end' > 0 && full(end' - 1) == '0'
+            |
+               end' = end' - 1
+            |
+               -->
+      end' > 0 && full(end' - 1) == '.'
+         |
+            end' = end' - 1
+      mant = full(0..end')
+      es = e' < 0 | "-" + str::from_int(0 - e') | str::from_int(e')
+      e' < -4 || e' !< 6
+         | mant + "e" + es
+         | mant
 
    // --- ordering ---
 
@@ -184,9 +181,8 @@
       s @ b, i =>
          !str::is_digit(b) | -->
          val' = val' * 10 + (b - '0')
-      i [0] Digits(<-->)
-      |
-         Digits(<+ (val', s(i..)) ->)
+      i [0] --| Digits(<-->)
+      Digits(<+ (val', s(i..)) +>)
 
    // Consume leading hex digits (0-9, a-f, A-F); the payload is (value, rest).
    to_hex: String => Digits
@@ -200,30 +196,28 @@
                | b - 'A' + 10
                | b - 'a' + 10
          val' = val' * 16 + digit
-      i [0] Digits(<-->)
-      |
-         Digits(<+ (val', s(i..)) ->)
+      i [0] --| Digits(<-->)
+      Digits(<+ (val', s(i..)) +>)
 
    // Int to base-16 hex ASCII string (uppercase, "0x" prefix). Digits are
    // pushed LSD-first into a Builder, the "x"/"0" prefix appended last, then
    // the reversed buffer is reversed into a fresh Builder.
    hex_to_str: Int => String
    hex_to_str = val =>
-      val [0] "0x0"
-      |
-         b = {32}
-         n' = val
-         32 @
-            n' [> 0]
-               digit = n' % 16
-               ch = digit [< 10] '0' + digit | 'A' + (digit - 10)
-               b += ch
-               n' = n' / 16
-            | -->
-         b += 'x'
-         b += '0'
-         s = +b
-         out = {32}
-         ?s @ i =>
-            out += s((?s) - 1 - i)
-         +out
+      val [0] --| "0x0"
+      b = {32}
+      n' = val
+      32 @
+         n' [> 0]
+            digit = n' % 16
+            ch = digit [< 10] '0' + digit | 'A' + (digit - 10)
+            b += ch
+            n' = n' / 16
+         | -->
+      b += 'x'
+      b += '0'
+      s = +b
+      out = {32}
+      ?s @ i =>
+         out += s((?s) - 1 - i)
+      +out

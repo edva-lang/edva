@@ -136,7 +136,7 @@ compiler_exe_path = ""
 getenv_opt: String => <String|>
 getenv_opt = name =>
    sys::addr_opt(getenv(name))
-      | p => <+ sys::c_str(p) ->
+      | p => <+ sys::c_str(p) +>
       | <-->
 
 init_compiler_paths: () => ()
@@ -151,12 +151,12 @@ init_compiler_paths = !=>
    cand_lib = path_join(prefix_dir, "lib/edva/std")
    cand_share = path_join(prefix_dir, "share/edva/std")
    env_std_opt = getenv_opt("EDVA_PATH")
-      | s => <+ s ->
+      | s => <+ s +>
       | getenv_opt("EDVA_STDLIB")
    env_valid = env_std_opt
       | dir =>
          dir_exists(dir)
-            | <+ dir ->
+            | <+ dir +>
             | <-->
       | <-->
    env_valid
@@ -468,7 +468,7 @@ find_instance: PkgInstances, String => < PkgInstance | >
 find_instance = instances, id =>
    res' = <-->
    instances @ inst =>
-      inst.id == id | (res' = <+ inst ->; -->)
+      inst.id == id | (res' = <+ inst +>; -->)
    res'
 
 find_char_idx: String, Int, Int => Int
@@ -574,7 +574,7 @@ find_and_load_import_map = target_path, explicit_map_path =>
       |
          empty_state = empty_import_map_state()
          empty_state.root_dir = root_dir'
-         <+ empty_state ->
+         <+ empty_state +>
       |
          mtime_map = path_mtime(map_path')
          doc_res = ccl::parse_file(map_path')
@@ -636,7 +636,7 @@ find_and_load_import_map = target_path, explicit_map_path =>
                               | plist =>
                                  plist @ s => nat_pkg' += s
                      <+ ImportMapState((<+>, map_path', eff_root, root_name', inst_list,
-                        nat_libs', nat_pkg')) ->
+                        nat_libs', nat_pkg')) +>
             | _ =>
                print $ "E5030: Could not parse import map '" + map_path' + "'"
                <-->
@@ -809,7 +809,7 @@ resolve_module = base, mod_path, ldr =>
 
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, off, rem =>
-   rem == 0 | --| <+ off ->
+   rem == 0 | --| <+ off +>
    chunk = rem < 65536 | rem | 65536
    n = libc::read(fd, &b + off, chunk)
    n < 0
@@ -817,7 +817,7 @@ read_fd_bytes_loop = fd, b, off, rem =>
          err = @[__errno_location! i32]
          err == 4 | read_fd_bytes_loop(fd, b, off, rem) | <-->
       |
-         n == 0 | <+ off -> | read_fd_bytes_loop(fd, b, off + n, rem - n)
+         n == 0 | <+ off +> | read_fd_bytes_loop(fd, b, off + n, rem - n)
 
 read_file_text: String => < String | >
 read_file_text = path =>
@@ -825,7 +825,7 @@ read_file_text = path =>
    fd < 0 | --| <-->
    sz = libc::lseek(fd, 0, 2)
    sz < 0 | libc::close(fd); --| <-->
-   sz == 0 | libc::close(fd); --| <+ "" ->
+   sz == 0 | libc::close(fd); --| <+ "" +>
    libc::lseek(fd, 0, 0)
    b = {sz}
    read_res = read_fd_bytes_loop(fd, b, 0, sz)
@@ -833,7 +833,7 @@ read_file_text = path =>
    read_res
       | total =>
          ?b = total
-         <+ +b ->
+         <+ +b +>
       | <-->
 
 collect_module_exports: ast::Exprs, String, String, <>, ImportMap, ImportMap => <>
@@ -1959,7 +1959,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
       |
          print $ "E" + str::from_int(cg_err) +
             ": Compilation aborted due to code generation errors."
-         <- 1 +>
+         <- 1 ->
       |
          !quiet && !is_cached'
             |
@@ -1968,7 +1968,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
          opts.header_path != ""
             |
                hdr_ok = generate_c_header(prog, exports, opts.header_path)
-               !hdr_ok | <- 1 +>
+               !hdr_ok | <- 1 ->
          opts.ir_only
             | <++>
             |
@@ -1995,7 +1995,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                            print $ "E" + str::from_int(clang_err) +
                               ": Clang compilation failed with exit code " +
                               str::from_int(cres)
-                           <- cres +>
+                           <- cres ->
                         |
                            ld_args = ast::Names()
                            ld_args += "wasm-ld"
@@ -2015,7 +2015,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                                  print $ "E" + str::from_int(clang_err) +
                                     ": wasm-ld linking failed with exit code " +
                                     str::from_int(lres)
-                                 <- lres +>
+                                 <- lres ->
                               |
                                  !quiet
                                     |
@@ -2068,7 +2068,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                            clang_args += "-o"
                            clang_args += output_bin
                      pkg_err'
-                        | <- 1 +>
+                        | <- 1 ->
                         |
                            cres = run_cmd(clang_args)
                            opts.is_module && !opts.ir_only
@@ -2083,7 +2083,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                                  print $ "E" + str::from_int(clang_err) +
                                     ": Clang compilation failed with exit code " +
                                     str::from_int(cres)
-                                 <- cres +>
+                                 <- cres ->
                               |
                                  !quiet
                                     |
@@ -2121,7 +2121,7 @@ read_stdin_line = max =>
          len @ j =>
             out += @[buf + j i8]
          mem::destroy(ar)
-         <+ +out ->
+         <+ +out +>
 
 write_bytes_loop: Int, String, Int, Int => <>
 write_bytes_loop = fd, content, offset, remaining =>
@@ -2207,7 +2207,7 @@ enable_raw_mode = !=>
             | p => p
             |
                p = libc::malloc(128)
-               orig_termios = <+ p ->
+               orig_termios = <+ p +>
                p
          libc::tcgetattr(0, buf) != 0
             | <->
@@ -2506,7 +2506,7 @@ read_line_raw = sess =>
    libc::free(seq_buf)
    libc::free(pfd_buf)
    disable_raw_mode!
-   eof' | <--> | <+ line' ->
+   eof' | <--> | <+ line' +>
 
 readline_interactive: ReplSession => < String | >
 readline_interactive = sess =>

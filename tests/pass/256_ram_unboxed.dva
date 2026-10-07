@@ -4,7 +4,7 @@
 
 find_int: Int => < Int | >
 find_int = x =>
-   x > 0 | <+ x * 10 ->
+   x > 0 | <+ x * 10 +>
 
 calc: < Int | >, Int => Int
 calc = r, default_val =>
@@ -15,8 +15,8 @@ calc = r, default_val =>
 choice_num: Int => < Int | Float >
 choice_num = x =>
    x > 0
-      | <+ 42 +>
-      | <- 3.14 ->
+      | <+ 42 ->
+      | <- 3.14 +>
 
 // Test RamPN <Int | >
 r1 = find_int(5)

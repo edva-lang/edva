@@ -1,4 +1,4 @@
 // A function declaring return type < Int | > (RamPN) cannot return < | Int >.
 f: <> => < Int | >
-f = _ => <- 42 +>
+f = _ => <- 42 ->
 f(<+>)

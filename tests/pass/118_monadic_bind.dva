@@ -9,22 +9,22 @@
 #use io
 
 #type Either < Int | String >
-ok_val = Either(<+ 42 +>)
-err_val = Either(<- "boom" ->)
-double = n => Either(<+ n * 2 +>)
+ok_val = Either(<+ 42 ->)
+err_val = Either(<- "boom" +>)
+double = n => Either(<+ n * 2 ->)
 
 r1 = ok_val $>> double
 io::out $ (r1 | _ | -1)          
 r2 = err_val $>> double
 io::out $ (r2 | "none" | _)      // negative -> "boom" propagated
-r3 = ok_val $>> (n => Either(<+ n + 1 +>))   // inline lambda continuation
+r3 = ok_val $>> (n => Either(<+ n + 1 ->))   // inline lambda continuation
 io::out $ (r3 | _ | -1)          
 
 // RamPN: payload only on the left (negative is the unit None).
 #type Option < Int | >
-some = Option(<+ 7 ->)
+some = Option(<+ 7 +>)
 none = Option(<-->)
-inc = n => Option(<+ n + 1 ->)
+inc = n => Option(<+ n + 1 +>)
 
 s1 = some $>> inc
 io::out $ (s1 | _ | -1)          

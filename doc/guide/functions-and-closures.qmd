@@ -40,7 +40,7 @@ clamp = x, lo, hi =>
 find_positive: Int => <Int|>
 find_positive = x =>
    x !> 0 |-->
-   <+ x ->
+   <+ x +>
 ```
 
 ## Closures

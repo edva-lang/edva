@@ -109,7 +109,7 @@
    getenv_opt: String => < String | >
    getenv_opt = name =>
       sys::addr_opt(getenv(name))
-         | p => <+ sys::c_str(p) ->
+         | p => <+ sys::c_str(p) +>
          | <-->
 
    env_or: String, String => String
@@ -169,7 +169,7 @@
       txt = io::read_all(r, 16777216)
       libc::close(fd)
       txt
-         | t => <+ t ->
+         | t => <+ t +>
          | <-->
 
    // Write via a sibling temp file + rename so readers never see a torn file.
@@ -386,7 +386,7 @@
       rc != 0
          | <-->
          | txt
-            | t => <+ trim(t) ->
+            | t => <+ trim(t) +>
             | <-->
 
    git_cmd: Resolver, String => String
@@ -402,7 +402,7 @@
       ccl::parse_file(file)
          | doc =>
             ccl::validate_manifest(doc, file)
-               | m => <+ m ->
+               | m => <+ m +>
                | e =>
                   fail(7001, e.msg + "\n  at " + e.file + ":" + str::from_int(e.line))
                   <-->
@@ -467,7 +467,7 @@
          v_dir' = r.vendor_git ^ (url + "#" + rev) | _ | ""
          c_vend' = rev
       v_dir' != "" && dir_exists(v_dir')
-         | <+ c_vend' ->
+         | <+ c_vend' +>
          |
             !ensure_mirror(r, alias, url) | <--> |
                r.memo ^? key
@@ -475,7 +475,7 @@
                      c = r.memo ^ key | _ | ""
                      !has_commit(r, url, c) | fetch_mirror(r, url)
                      has_commit(r, url, c)
-                        | <+ c ->
+                        | <+ c +>
                         |
                            r.opts.offline
                               | fail(7003, "offline: '" + alias + "' (" + url + ") is not in the store")
@@ -492,7 +492,7 @@
                            rev_parse(r, url, rev)
                               | c =>
                                  r.memo ^ (key) = c
-                                 <+ c ->
+                                 <+ c +>
                               |
                                  fail(7004, "dependency '" + alias + "': revision '" + rev +
                                     "' not found in " + url)
@@ -521,7 +521,7 @@
          "fi; " +
          "done | sha256sum | cut -c1-64"
       capture(r, cmd)
-         | h => <+ "sha256-" + h ->
+         | h => <+ "sha256-" + h +>
          | <-->
 
    checkout_git: Resolver, String, String, String, String => < (String, String) | >
@@ -542,12 +542,12 @@
                               fail(7005, "tampered vendor content: tree hash mismatch for '" + alias +
                                  "' (expected " + expected_hash + ", got " + tree_hash + ")")
                               <-->
-                           | <+ (v_dir, (expected_hash != "" | expected_hash | tree_hash)) ->
+                           | <+ (v_dir, (expected_hash != "" | expected_hash | tree_hash)) +>
                      | <-->
          |
             store_dir = expected_hash != "" | path_join(r.opts.store, expected_hash) | ""
             store_dir != "" && dir_exists(store_dir)
-               | <+ (store_dir, expected_hash) ->
+               | <+ (store_dir, expected_hash) +>
                |
                   r.opts.offline
                      |
@@ -587,11 +587,11 @@
                                                 dir_exists(target)
                                                    |
                                                       sh("rm -rf " + sq(tmp))
-                                                      <+ (target, tree_hash) ->
+                                                      <+ (target, tree_hash) +>
                                                    |
                                                       ren_rc = libc::rename(tmp, target)
                                                       ren_rc == 0 || dir_exists(target)
-                                                         | <+ (target, tree_hash) ->
+                                                         | <+ (target, tree_hash) +>
                                                          |
                                                             sh("rm -rf " + sq(tmp))
                                                             fail(7011, "dependency '" + alias +
@@ -639,8 +639,8 @@
                               fail(7005, "tampered vendor content: tree hash mismatch for '" + alias +
                                  "' (expected " + expected_hash + ", got " + tree_hash + ")")
                               <-->
-                           | <+ v_dir ->
-                     | <+ v_dir ->
+                           | <+ v_dir +>
+                     | <+ v_dir +>
          |
             !starts_with(hash, "sha256-")
                |
@@ -649,7 +649,7 @@
                   <-->
                |
                   store_dir = path_join(r.opts.store, hash)
-                  dir_exists(store_dir) | <+ store_dir -> |
+                  dir_exists(store_dir) | <+ store_dir +> |
                      r.opts.offline
                         |
                            fail(7003, "offline: '" + alias + "' (" + url + ") is not in the store")
@@ -709,7 +709,7 @@
                                     dir_exists(store_dir)
                                        |
                                           sh("rm -rf " + sq(tmp))
-                                          <+ store_dir ->
+                                          <+ store_dir +>
                                        |
                                           ren_rc = root == tmp
                                              | libc::rename(tmp, store_dir)
@@ -718,7 +718,7 @@
                                                 sh("rm -rf " + sq(tmp))
                                                 mrc
                                           ren_rc == 0 || dir_exists(store_dir)
-                                             | <+ store_dir ->
+                                             | <+ store_dir +>
                                              |
                                                 sh("rm -rf " + sq(tmp))
                                                 fail(7011, "dependency '" + alias +
@@ -780,7 +780,7 @@
                                     id = m.name + "@" + c(..7)
                                     pkg.id = id
                                     <+ Fetched((m.name, dir, id, "git " + d.git_url + " " + c,
-                                       pkg, m)) ->
+                                       pkg, m)) +>
                                  | <-->
                            | <-->
                      | <-->
@@ -796,7 +796,7 @@
                               id = m.name + "@" + d.archive_hash(7..15)
                               pkg.id = id
                               <+ Fetched((m.name, dir, id, "url " + d.archive_url + " " +
-                                 d.archive_hash, pkg, m)) ->
+                                 d.archive_hash, pkg, m)) +>
                            | <-->
                      | <-->
 
@@ -838,7 +838,7 @@
                                           | pkg.path = relpath(r.opts.root, abs)
                                        pkg.is_override = is_override
                                        pkg.id = id
-                                       <+ Fetched((m.name, abs, id, "path " + abs, pkg, m)) ->
+                                       <+ Fetched((m.name, abs, id, "path " + abs, pkg, m)) +>
                               | <-->
                         | <-->
 
@@ -878,7 +878,7 @@
                   |
                      prev_key = r.done ^ (f.id) | _ | ""
                      prev_key == f.key
-                        | <+ f.id ->
+                        | <+ f.id +>
                         |
                            fail(7013, "conflicting sources for package instance '" + f.id +
                               "': " + prev_key + " and " + f.key)
@@ -906,7 +906,7 @@
             f.pkg.deps = deps
             r.done ^ (f.id) = f.key
             r.insts += Inst((f.pkg, f.name, path_join(f.dir, "src"), f.key, f.dir))
-            <+ f.id ->
+            <+ f.id +>
 
 // --- lock / import map ---------------------------------------------------------
 
@@ -984,7 +984,7 @@
    read_lock = file =>
       ccl::parse_file(file)
          | doc => ccl::validate_lockfile(doc, file)
-         | e => <- e ->
+         | e => <- e +>
 
 // --- IR caching (Issue #104) --------------------------------------------------
 
@@ -1078,7 +1078,7 @@
             ll_text = read_text(ll_file)
             ll_text
                | txt =>
-                  ?txt > 0 | <+ ll_file -> | <-->
+                  ?txt > 0 | <+ ll_file +> | <-->
                | <-->
          | err =>
             sh("rm -rf " + sq(entry_dir))
@@ -1170,7 +1170,7 @@
                   | ok' = <->
                   | opts.root = a
          i' = i' + 1
-      ok' | <+ opts -> | <-->
+      ok' | <+ opts +> | <-->
 
    parse_init_opts: Int => < (String, String) | >
    parse_init_opts = start =>
@@ -1193,7 +1193,7 @@
                   | ok' = <->
                   | dir' = a
          i' = i' + 1
-      ok' | <+ (dir', name') -> | <-->
+      ok' | <+ (dir', name') +> | <-->
 
    cmd_init: String, String => Int
    cmd_init = dir_arg, name_arg =>
@@ -1343,7 +1343,7 @@
          i' = i' + 1
       git_url' != "" && git_rev' == "" | git_rev' = ++ "master"
       ok' && alias' != "" && has_kind'
-         | <+ AddOpts((alias', kind', git_url', git_rev', path', archive_url', archive_hash', opts)) ->
+         | <+ AddOpts((alias', kind', git_url', git_rev', path', archive_url', archive_hash', opts)) +>
          | <-->
 
    cmd_add: AddOpts => Int
@@ -1570,7 +1570,7 @@
          |
             prior_res = has_lock
                | read_lock(lock_file)
-               | <+ ccl::Lockfile((1, ccl::LockPackages(), ccl::LockDeps())) +>
+               | <+ ccl::Lockfile((1, ccl::LockPackages(), ccl::LockDeps())) ->
             prior_res
                | prior => resolve_root(opts, prior, has_lock)
                | e =>
@@ -1849,7 +1849,7 @@
                               | alias' = a
                               | opts.root = a
          i' = i' + 1
-      ok' | <+ (opts, alias') -> | <-->
+      ok' | <+ (opts, alias') +> | <-->
 
    cmd_update: PkgOpts, String => Int
    cmd_update = opts, target_alias =>
@@ -1885,7 +1885,7 @@
       pkgs @ p =>
          p.id == id
             |
-               found' = <+ p ->
+               found' = <+ p +>
                -->
       found'
 

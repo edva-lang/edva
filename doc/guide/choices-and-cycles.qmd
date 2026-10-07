@@ -119,7 +119,7 @@ When early returning a unit ramification from an enclosing function, Edva provid
 validate_positive: Int => <Int|>
 validate_positive = n =>
    n !> 0 |-->
-   <+ n ->
+   <+ n +>
 
 is_valid: Int => <>
 is_valid = n =>
@@ -157,7 +157,7 @@ Cycles iterate over counts, ranges, or collections without keywords:
 ### Cycle-escape expressions (`>--`)
 
 Appending `>--` followed by a branch turns a cycle into an expression returning `RamPN` (`< T | >`):
-- If a `-->` break fires, the cycle terminates and evaluates to the positive ramification `<+ branch_val +>`.
+- If a `-->` break fires, the cycle terminates and evaluates to the positive ramification `<+ branch_val ->`.
 - If the cycle completes naturally without breaking, it yields the negative unit `<-->` (absence).
 
 ```dva

@@ -10,7 +10,7 @@
 
 make_some: Int => Option
 make_some = n =>
-   Option(<+ n + 1 +>)
+   Option(<+ n + 1 ->)
 
 h = #spawn make_some(41)
 r = #join h
@@ -22,7 +22,7 @@ val: Option => Int
 val = o =>
    o | _ | -1
 
-h2 = #spawn val(Option(<+ 7 ->))
+h2 = #spawn val(Option(<+ 7 +>))
 r2 = #join h2
 io::out $ (r2 | _ | _)
 
@@ -84,6 +84,6 @@ describe: Either => String
 describe = e =>
    e | "pos" | _
 
-h8 = #spawn describe(Either(<- "negative!" ->))
+h8 = #spawn describe(Either(<- "negative!" +>))
 r8 = #join h8
 io::out $ (r8 | _ | _)

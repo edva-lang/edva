@@ -5,18 +5,18 @@
 //   <- p ->  RamPP Negative    <- p +>  RamNP Err
 #use io
 
-a = <+ 5 > 3 | "A big" | "A small" +>
+a = <+ 5 > 3 | "A big" | "A small" ->
 r1 = a | ("p: " + _) | ("e: " + _)
 io::out $ r1
 
-b = <+ 3 < 5 | "B lt" | "B ge" ->
+b = <+ 3 < 5 | "B lt" | "B ge" +>
 r2 = b | ("s: " + _) | "none"
 io::out $ r2
 
-c = <- "C neg" ->
+c = <- "C neg" +>
 r3 = c | "pos" | ("n: " + _)
 io::out $ r3
 
-d = <- 9 > 5 | "D gt" | "D le" +>
+d = <- 9 > 5 | "D gt" | "D le" ->
 r4 = d | "ok" | ("e: " + _)
 io::out $ r4

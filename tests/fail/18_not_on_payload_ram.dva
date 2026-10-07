@@ -1,2 +1,2 @@
-v = <+ "hello" +>
+v = <+ "hello" ->
 res = ! v

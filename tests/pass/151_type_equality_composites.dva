@@ -17,8 +17,8 @@ classify: #! T: Type, T => Int
 classify = #! T, x =>
    T == IntOpt | 1 | 0
 
-io::out $ classify(<+ 42 ->)
-io::out $ classify(<+ "x" ->)
+io::out $ classify(<+ 42 +>)
+io::out $ classify(<+ "x" +>)
 
 // Array types compare by element type.
 #type Ints (Int){}

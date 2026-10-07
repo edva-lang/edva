@@ -40,6 +40,11 @@
    compose: #! A: Type, #! B: Type, #! C: Type, (B => C), (A => B) => (A => C)
    compose = f, g => x => f $ g $ x
 
+   // pipe: g after f — left-to-right function composition ("g(f(x))"). Curried:
+   // pipe(f, g) is a function.
+   pipe: #! A: Type, #! B: Type, #! C: Type, (A => B), (B => C) => (A => C)
+   pipe = f, g => x => g $ f $ x
+
    // const: return its first argument, ignoring the second. Curried — the second
    // type param B is deferred to the returned lambda's own call site (deferred
    // generic inference): "const(42)" binds A=Int, and applying the result to any
@@ -47,15 +52,14 @@
    const: #! A: Type, #! B: Type, A => (B => A)
    const = x => _ => x
 
-   // map / filter: apply a function / predicate to each element of a homogeneous
-   // record, building a NEW record of the same type. The container type T and
-   // element type E are inferred; "out = T" materializes the empty container
-   // (CTTR), and the existing '?xs @ i' cycle iterates.
-   map: #! E: Type, #! T: Type, (E => E), T => T
+   // map: apply a transformation function f to each element of a collection
+   // (growable array, slice view, or record), building a new growable array of
+   // element type B. Supports arbitrary element type transitions (A => B).
+   map: #! A: Type, #! B: Type, #! T: Type, (A => B), T => (B){}
    map = f, xs =>
-      out = T
-      ?xs @ i =>
-         out += f(xs(i) | v => v | E)
+      out = B{}
+      xs @ x =>
+         out += f(x)
       out
 
    filter: #! E: Type, #! T: Type, (E => <>), T => T
@@ -67,29 +71,89 @@
             | out += v
       out
 
+   // reject: inverse of filter — remove elements satisfying pred.
+   reject: #! E: Type, #! T: Type, (E => <>), T => T
+   reject = pred, xs =>
+      out = T
+      xs @ x =>
+         !pred(x)
+            | out += x
+      out
+
+   // reduce / fold: fold collection from left with an initial accumulator value.
+   // Safe on empty collections (returns init).
+   reduce: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => Acc
+   reduce = f, init, xs =>
+      acc' = init
+      xs @ x =>
+         acc' = f(acc', x)
+      acc'
+
+   fold: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => Acc
+   fold = f, init, xs =>
+      acc' = init
+      xs @ x =>
+         acc' = f(acc', x)
+      acc'
+
+   // scan: running accumulation from left, emitting initial and each
+   // intermediate accumulator state into a growable array.
+   scan: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => (Acc){}
+   scan = f, init, xs =>
+      out = Acc{}
+      acc' = init
+      out += acc'
+      xs @ x =>
+         acc' = f(acc', x)
+         out += acc'
+      out
+
+   // reverse: return a new container with elements in reversed order.
+   reverse: #! E: Type, #! T: Type, T => T
+   reverse = xs =>
+      out = T
+      n = ?xs
+      0..n @ i =>
+         idx = n - 1 - i
+         out += (xs(idx) | _ | E)
+      out
+
+   // flatten: concatenate an array of arrays into a single-level array.
+   flatten: #! E: Type, ((E){}){} => (E){}
+   flatten = xss =>
+      out = E{}
+      xss @ sub =>
+         sub @ x =>
+            out += x
+      out
+
    // find: search for the first element satisfying pred, returning < E | >.
    find: #! E: Type, #! T: Type, (E => <>), T => < E | >
    find = pred, xs =>
-      res' = <-->
-      ?xs @ i =>
-         v = xs(i) | _ | E
-         pred(v)
-            |
-               res' = <+ v ->
-               -->
-      res'
+      xs @ x =>
+         pred(x) | --| <+ x +>
+      <-->
 
    // any: check if any element in xs satisfies pred, returning <>.
    any: #! E: Type, #! T: Type, (E => <>), T => <>
    any = pred, xs =>
-      res' = <->
-      ?xs @ i =>
-         v = xs(i) | _ | E
-         pred(v)
-            |
-               res' = <+>
-               -->
-      res'
+      xs @ x =>
+         pred(x) |+>
+      <->
+
+   // --- predicate combinators ------------------------------------------------
+
+   // complement: return the logical NOT of a predicate function.
+   complement: #! T: Type, (T => <>) => (T => <>)
+   complement = pred => x => !pred(x)
+
+   // both: return a predicate that is true only if both p1 and p2 hold.
+   both: #! T: Type, (T => <>), (T => <>) => (T => <>)
+   both = p1, p2 => x => p1(x) && p2(x)
+
+   // either_pred: return a predicate that is true if either p1 or p2 holds.
+   either_pred: #! T: Type, (T => <>), (T => <>) => (T => <>)
+   either_pred = p1, p2 => x => p1(x) || p2(x)
 
    // --- boolean mask reductions (issue #38) ----------------------------------
 
@@ -149,3 +213,85 @@
                   j' = j' - 1
                |
                   -->
+
+   // --- slicing & sequence views ----------------------------------------------
+
+   // take: return a zero-copy slice view of the first n elements (clamped to
+   // 0..?xs). Callers copy explicitly with "++take(...)" when owned data is needed.
+   take: #! T: Type, Int, (T[]) => (T[])
+   take = n, xs =>
+      len = ?xs
+      k = n < 0 | 0 | (n > len | len | n)
+      xs(0..k)
+
+   // drop: return a zero-copy slice view omitting the first n elements (clamped
+   // to 0..?xs).
+   drop: #! T: Type, Int, (T[]) => (T[])
+   drop = n, xs =>
+      len = ?xs
+      k = n < 0 | 0 | (n > len | len | n)
+      xs(k..len)
+
+   // take_while: return a zero-copy slice view of leading elements where pred
+   // holds true.
+   take_while: #! T: Type, (T => <>), (T[]) => (T[])
+   take_while = pred, xs =>
+      len = ?xs
+      count' = len
+      0..len @ i =>
+         !pred(xs(i))
+            |
+               count' = i
+               -->
+      xs(0..count')
+
+   // drop_while: return a zero-copy slice view starting from the first element
+   // where pred is false.
+   drop_while: #! T: Type, (T => <>), (T[]) => (T[])
+   drop_while = pred, xs =>
+      len = ?xs
+      start' = len
+      0..len @ i =>
+         !pred(xs(i))
+            |
+               start' = i
+               -->
+      xs(start'..len)
+
+   // partition: split a collection into two growable arrays (passed, rejected)
+   // according to predicate.
+   partition: #! T: Type, (T => <>), (T[]) => (passed: (T){}, rejected: (T){})
+   partition = pred, xs =>
+      p = T{}
+      r = T{}
+      xs @ x =>
+         pred(x)
+            | p += x
+            | r += x
+      (passed = p, rejected = r)
+
+   // --- pairing & multi-collection -----------------------------------------
+
+   // zip: pair elements of two slices into an array of 2-tuples until the
+   // shorter collection ends.
+   zip: #! A: Type, #! B: Type, (A[]), (B[]) => ((A, B)){}
+   zip = xs, ys =>
+      na = ?xs
+      nb = ?ys
+      limit = na < nb | na | nb
+      out = (A, B){}
+      0..limit @ i =>
+         out += (xs(i), ys(i))
+      out
+
+   // zip_with: combine elements of two slices pairwise using a combining
+   // function f until the shorter collection ends.
+   zip_with: #! A: Type, #! B: Type, #! C: Type, (A, B => C), (A[]), (B[]) => (C){}
+   zip_with = f, xs, ys =>
+      na = ?xs
+      nb = ?ys
+      limit = na < nb | na | nb
+      out = C{}
+      0..limit @ i =>
+         out += f(xs(i), ys(i))
+      out

@@ -160,16 +160,16 @@ codegen_emit_runtime_module = cg =>
    LLVMAddFunction(cg.module, "dva_arena_set_current", set_cur_t)
 
    m_ty = types::fn_type1(i8p, i64t)
-   cg.malloc_t = <+ m_ty ->
-   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty) ->
+   cg.malloc_t = <+ m_ty +>
+   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty) +>
    free_t = types::fn_type1(LLVMVoidType!, i8p)
    LLVMAddFunction(cg.module, "free", free_t)
    w_ty = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
-   cg.write_t = <+ w_ty ->
-   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty) ->
+   cg.write_t = <+ w_ty +>
+   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty) +>
    e_ty = types::fn_type1(LLVMVoidType!, i32t)
-   cg.exit_t = <+ e_ty ->
-   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty) ->
+   cg.exit_t = <+ e_ty +>
+   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty) +>
 
    const_string_global(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
    const_string_global(cg, "E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\n", "arena_toobig_msg")
@@ -219,8 +219,8 @@ codegen_emit_runtime_module = cg =>
    strlen_t = types::fn_type1(i64t, i8p)
    LLVMAddFunction(cg.module, "strlen", strlen_t)
    mc_ty = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
-   cg.memcmp_t = <+ mc_ty ->
-   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty) ->
+   cg.memcmp_t = <+ mc_ty +>
+   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty) +>
 
    hash_params = types::Addrs()
    hash_params += i8p
@@ -287,16 +287,16 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildRet(cg.builder, sc_prev)
 
    m_ty2 = types::fn_type1(i8p, i64t)
-   cg.malloc_t = <+ m_ty2 ->
-   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty2) ->
+   cg.malloc_t = <+ m_ty2 +>
+   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty2) +>
    free_t = types::fn_type1(LLVMVoidType!, i8p)
    free_fn = LLVMAddFunction(cg.module, "free", free_t)
    w_ty2 = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
-   cg.write_t = <+ w_ty2 ->
-   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty2) ->
+   cg.write_t = <+ w_ty2 +>
+   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty2) +>
    e_ty2 = types::fn_type1(LLVMVoidType!, i32t)
-   cg.exit_t = <+ e_ty2 ->
-   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty2) ->
+   cg.exit_t = <+ e_ty2 +>
+   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty2) +>
 
    // message globals
    const_string_global(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
@@ -612,8 +612,8 @@ codegen_emit_runtime_full = cg =>
    strlen_t = types::fn_type1(i64t, i8p)
    strlen_fn = LLVMAddFunction(cg.module, "strlen", strlen_t)
    mc_ty3 = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
-   cg.memcmp_t = <+ mc_ty3 ->
-   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty3) ->
+   cg.memcmp_t = <+ mc_ty3 +>
+   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty3) +>
 
    // dva_hash_string(ptr, i64) -> i64
    hash_params = types::Addrs()
@@ -741,18 +741,18 @@ record_meta_from_ti = cg, ti =>
             [Rec rr]
                nf = ?rr.0
                <+ build_rec_meta_packed(cg, rr.0, 0, nf, types::Addrs(), ast::Names(),
-                  rr.5) ->
+                  rr.5) +>
             [Bitfield b]
                fnames = ast::Names()
                ?b.fields @ i =>
                   bf = b.fields(i) | _ | ast::BitfieldField(("", 0, 0))
                   fnames += ++bf.name
-               <+ (types::llvm_type_of_vt(b.backing_type), fnames) ->
+               <+ (types::llvm_type_of_vt(b.backing_type), fnames) +>
             [TypeVar name] types::td_record_meta_by_name(cg, name)
             [Prim p]
                is_err = p [Error]
                is_err
-                  | <+ (main::error_struct_type(cg), types::error_field_names!) ->
+                  | <+ (main::error_struct_type(cg), types::error_field_names!) +>
                   | <-->
             | <-->
 
@@ -893,12 +893,12 @@ codegen_forward_registry = cg, t =>
       | types::init_error(cg, "E3151", "Cannot assign Function to '" + t.0 +
          "' (bound as " + types::value_type_name(vt') + ").", 0, 0)
    slot_opt = types::var_slot(cg, t.0)
-      | s => <+ s ->
+      | s => <+ s +>
       | !is_fn_sig
-         | <+ types::create_slot(cg, t.0, lt, cg.in_fn) ->
+         | <+ types::create_slot(cg, t.0, lt, cg.in_fn) +>
          | <-->
    is_partial = !is_bf_fwd && is_partial_anno(cg, tv.0, t.7, t.8)
-   rec_m0_opt = rec_m | m => <+ m.0 -> | <-->
+   rec_m0_opt = rec_m | m => <+ m.0 +> | <-->
    cg.vars += types::CgVar((t.0, vt', <->, t.7, rec_m0_opt, rec_fnames, slot_opt,
       cg.in_fn, is_partial, types::field_vts(cg, ti), <-->))
    bf_opt_fwd
@@ -1263,12 +1263,12 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    prior_fnames = need_fnames | types::var_fnames(cg, t.0) | ast::Names()
    use_prior = need_fnames | ?prior_fnames > 0 | <->
    prior_rt = use_prior | types::var_rt(cg, t.0) | <-->
-   rm_rt_opt = rm | m => <+ m.0 -> | <-->
+   rm_rt_opt = rm | m => <+ m.0 +> | <-->
    final_rm0_opt = <>(prior_rt) | prior_rt | rm_rt_opt
    final_rm1 = use_prior | prior_fnames | rm_fnames
    final_dt = use_prior | types::var_dtype(cg, t.0) | dtype
    cg.vars += types::CgVar((t.0, ev.1, is_heap, final_dt, final_rm0_opt, final_rm1,
-      <+ slot ->, is_local, <->, cg.last_fvts, <-->))
+      <+ slot +>, is_local, <->, cg.last_fvts, <-->))
    is_rec_expr = t.5 [Record _]
    is_part = !fresh_local | main::var_partial(cg, t.0) | <->
    is_whole = is_composite_vt(ev.1) | <+> | (is_rec_expr | <+> | is_part)

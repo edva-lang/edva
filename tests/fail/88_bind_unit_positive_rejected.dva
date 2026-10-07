@@ -3,6 +3,6 @@
 #use io
 
 #type Fail < | String >
-bad = Fail(<- "x" +>)
+bad = Fail(<- "x" ->)
 y = bad $>> (_ => Fail(<++>))
 io::out $ y

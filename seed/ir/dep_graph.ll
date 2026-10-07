@@ -4889,7 +4889,7 @@ choice.case1558:                                  ; preds = %choice.next1494
 choice.next1559:                                  ; preds = %choice.next1494
   %tag.gep1717 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %tag.id1718 = load i64, ptr %tag.gep1717, align 8
-  %tag.match1719 = icmp eq i64 %tag.id1718, 35
+  %tag.match1719 = icmp eq i64 %tag.id1718, 36
   br i1 %tag.match1719, label %choice.case1715, label %choice.next1716
 
 choice.then1568:                                  ; preds = %choice.case1558
@@ -5508,7 +5508,7 @@ choice.case1929:                                  ; preds = %choice.next1896
 choice.next1930:                                  ; preds = %choice.next1896
   %tag.gep1967 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %tag.id1968 = load i64, ptr %tag.gep1967, align 8
-  %tag.match1969 = icmp eq i64 %tag.id1968, 29
+  %tag.match1969 = icmp eq i64 %tag.id1968, 30
   br i1 %tag.match1969, label %choice.case1965, label %choice.next1966
 
 a.create1942:                                     ; preds = %choice.case1929
@@ -5566,7 +5566,7 @@ choice.case1965:                                  ; preds = %choice.next1930
 choice.next1966:                                  ; preds = %choice.next1930
   %tag.gep2003 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %tag.id2004 = load i64, ptr %tag.gep2003, align 8
-  %tag.match2005 = icmp eq i64 %tag.id2004, 30
+  %tag.match2005 = icmp eq i64 %tag.id2004, 31
   br i1 %tag.match2005, label %choice.case2001, label %choice.next2002
 
 a.create1978:                                     ; preds = %choice.case1965
@@ -5629,7 +5629,7 @@ choice.case2001:                                  ; preds = %choice.next1966
 choice.next2002:                                  ; preds = %choice.next1966
   %tag.gep2042 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %tag.id2043 = load i64, ptr %tag.gep2042, align 8
-  %tag.match2044 = icmp eq i64 %tag.id2043, 31
+  %tag.match2044 = icmp eq i64 %tag.id2043, 32
   br i1 %tag.match2044, label %choice.case2040, label %choice.next2041
 
 a.create2017:                                     ; preds = %choice.case2001
@@ -5687,7 +5687,7 @@ choice.case2040:                                  ; preds = %choice.next2002
 choice.next2041:                                  ; preds = %choice.next2002
   %tag.gep2078 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %tag.id2079 = load i64, ptr %tag.gep2078, align 8
-  %tag.match2080 = icmp eq i64 %tag.id2079, 32
+  %tag.match2080 = icmp eq i64 %tag.id2079, 33
   br i1 %tag.match2080, label %choice.case2076, label %choice.next2077
 
 a.create2053:                                     ; preds = %choice.case2040
@@ -5745,7 +5745,7 @@ choice.case2076:                                  ; preds = %choice.next2041
 choice.next2077:                                  ; preds = %choice.next2041
   %tag.gep2114 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %tag.id2115 = load i64, ptr %tag.gep2114, align 8
-  %tag.match2116 = icmp eq i64 %tag.id2115, 36
+  %tag.match2116 = icmp eq i64 %tag.id2115, 38
   br i1 %tag.match2116, label %choice.case2112, label %choice.next2113
 
 a.create2089:                                     ; preds = %choice.case2076

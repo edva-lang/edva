@@ -55,16 +55,16 @@ heap_false = <-->   // Heap negative unit (absence slot)
 > A bare Flag `<+>` or `<->` **never implicitly coerces** to a heap ram unit `<++>` or `<-->`.
 
 ### Payload constructors
-Payload branches are constructed using `<+ ... +>` for the positive slot, and `<- ... ->` for the negative slot:
+Payload branches are constructed using `<+ ... ->` for the positive slot, and `<- ... +>` for the negative slot:
 
 ```dva
 // Constructing an Option (RamPN)
-opt_val = <+ 42 -> $> MaybeInt
+opt_val = <+ 42 +> $> MaybeInt
 none_val = <--> $> MaybeInt
 
 // Constructing a Result (RamPP)
-success: FileResult = <+ 3 +>
-failure: FileResult = <- Error(404, "File not found") ->
+success: FileResult = <+ 3 ->
+failure: FileResult = <- Error(404, "File not found") +>
 ```
 
 ## Operations
@@ -87,7 +87,7 @@ e = !a         // <-> (Logical NOT)
 Ramifications are inspected and unpacked using vertical bar `|` choice expressions:
 
 ```dva
-res: FileResult = <+ 100 +>
+res: FileResult = <+ 100 ->
 
 status = res |
    [fd] "File opened successfully on descriptor " + fd |
@@ -122,7 +122,7 @@ arr(0) = 42 !| _
 The constructor `<>(r)` discards any payload and extracts a pure boolean `Flag`. The spaceless negation `!<>(r)` negates the resulting flag directly:
 
 ```dva
-res: FileResult = <+ 10 +>
+res: FileResult = <+ 10 ->
 is_ok = <>(res)     // <+>
 is_err = !<>(res)   // <->
 ```
@@ -135,7 +135,7 @@ The `--!` operator unwraps the positive payload inline, or early-returns the neg
 read_data: String => <String | Error>
 read_data = path =>
    fd = open_file(path)--!    // Returns early if open_file fails
-   <+ read_all(fd) +>
+   <+ read_all(fd) ->
 ```
 
 ### Early return ram sugar

@@ -48,7 +48,7 @@ It prints `greater`. In this snippet:
 | Cycle break | `i == 5 | -->` | `if i == 5 { break; }` |
 | Cycle continue | `i % 2 == 0 | --^` | `if i % 2 == 0 { continue; }` |
 | String builder | `b = {32}; b += "hi"; s = +b` | `let mut b = String::with_capacity(32); ...` |
-| Ramification (Result) | `<+ 42 +>` / `<- err ->` | `Ok(42)` / `Err(err)` |
+| Ramification (Result) | `<+ 42 ->` / `<- err +>` | `Ok(42)` / `Err(err)` |
 | Unwrap or abort | `res!!` | `res.unwrap()` |
 | Module import | `#use str` | `use str;` / `import str` |
 

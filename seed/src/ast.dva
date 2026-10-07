@@ -20,7 +20,7 @@
    Add Sub Mul Div Mod
    Gt Lt Eq NotGt NotLt NotEq
    And Or Feed Apply Bind
-   BitAnd BitOr Shl Shr Seq
+   BitAnd BitOr BitXor Shl Shr Seq
 >
 
 #type UnaryOp <Not, BitNot, Length, AddrOf, Freeze, Unwrap, Propagate, RuneCount>
@@ -33,6 +33,7 @@
 
 #type Exprs (Expr){}
 #type Names (String){}
+#type Ints (Int){}
 #type Fields (RecordField){}
 #type Branches (ChoiceBranch){}
 #type FieldTypes (RecordFieldType){}
@@ -177,11 +178,13 @@
 #type JoinExpr (handle: Expr)
 
 #type ExitExpr (code: Expr)
+#type ReturnExpr (has_val: <>, val: Expr, line: Int, col: Int)
 #type UserDiagExpr (is_warn: <>, msg: Expr, line: Int, col: Int)
 
 #type MapPair (key: Expr, value: Expr)
 #type MapPairs (MapPair){}
 #type MapLiteralExpr (pairs: MapPairs)
+#type ArrayCreateExpr (elem_type: TypeInfo, cap: Int)
 
 // --- Expr ------------------------------------------------------------------
 
@@ -216,6 +219,7 @@
    Copy(Expr)
    SizeOf(SizeOfExpr)
    BuilderCreate(Expr)
+   ArrayCreate(ArrayCreateExpr)
    MapLiteral(MapLiteralExpr)
    CompileTime(CompileTimeExpr)
    Spawn(SpawnExpr)
@@ -224,6 +228,7 @@
    FastMathPragma(String)
    SwizzlePragma(String)
    NamedArg(NamedArgExpr)
+   Return(ReturnExpr)
    UserDiag(UserDiagExpr)
 >
 

@@ -32,8 +32,8 @@ eval_once_test = log =>
 
 validate_even: Int => Res
 validate_even = n =>
-   (n % 2 != 0) | --| Res(<- "odd" ->)
-   Res(<+ n ->)
+   (n % 2 != 0) | --| Res(<- "odd" +>)
+   Res(<+ n +>)
 
 // 5. Returning composite / record / closure values
 #type Point (x: Int, y: Int)
@@ -75,13 +75,13 @@ init_test = x =>
 // 9. Interaction with --! propagate
 step: Int => Res
 step = n =>
-   n == 0 | Res(<- "zero" ->) | Res(<+ n * 10 ->)
+   n == 0 | Res(<- "zero" +>) | Res(<+ n * 10 +>)
 
 pipeline: Int => Res
 pipeline = n =>
-   n < 0 | --| Res(<- "negative" ->)
+   n < 0 | --| Res(<- "negative" +>)
    v = step(n)--!
-   Res(<+ v + 1 ->)
+   Res(<+ v + 1 +>)
 
 // Driver
 io::out $ str::from_int(clamp(5, 10, 20))

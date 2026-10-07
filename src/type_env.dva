@@ -97,7 +97,7 @@ lookup_fn_body = env, name =>
    bodies ^? name
       |
          body = bodies ^ name | _ | _
-         <+ body ->
+         <+ body +>
       | <-->
 
 mark_generic_binding: TypeEnv, String => ()
@@ -216,7 +216,7 @@ lookup_scope = scope, name =>
       |
          idx = indices ^ name | _ | _
          scope.bindings(idx)
-            | binding => <+ binding ->
+            | binding => <+ binding +>
             | <-->
       | <-->
 
@@ -224,13 +224,13 @@ lookup_local: TypeEnv, String => < TypeBinding | >
 lookup_local = env, name =>
    exact = lookup_local_exact(env, name)
    exact
-      | b => <+ b ->
+      | b => <+ b +>
       |
          env.current_module != "" && !name_is_qualified(name, 0)
             |
                pub = lookup_local_exact(env, env.current_module + "::" + name)
                pub
-                  | p => <+ p ->
+                  | p => <+ p +>
                   | lookup_local_exact(env, env.current_module + "::#" + name)
             | <-->
 
@@ -247,7 +247,7 @@ lookup_binding_exact = env, name =>
             sc = scs(curr') | _ | empty_scope()
             lookup_scope(sc, name)
                | binding =>
-                  found' = <+ binding ->
+                  found' = <+ binding +>
                   curr' = -1
             curr' !< 0
                | curr' = sc.parent
@@ -263,21 +263,21 @@ lookup_binding_exact = env, name =>
                   ast::TypeInfo(Prim, ast::ValueType(Unknown)),
                   <->, <->, 0))
             b.name == name
-               | (g_found' = <+ b ->; -->)
+               | (g_found' = <+ b +>; -->)
          g_found'
 
 lookup_binding: TypeEnv, String => < TypeBinding | >
 lookup_binding = env, name =>
    exact = lookup_binding_exact(env, name)
    exact
-      | b => <+ b ->
+      | b => <+ b +>
       |
          env.current_module != ""
             |
                qname = env.current_module + "::" + name
                pub = lookup_binding_exact(env, qname)
                pub
-                  | p => <+ p ->
+                  | p => <+ p +>
                   | lookup_binding_exact(env, env.current_module + "::#" + name)
             | <-->
 
@@ -286,7 +286,7 @@ lookup_binding = env, name =>
 find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
    i < 0 | --| <-->
-   s(i) == 46 | <+ i -> | find_last_dot(s, i - 1)
+   s(i) == 46 | <+ i +> | find_last_dot(s, i - 1)
 
 drop_last_dot: String => String
 drop_last_dot = s =>
@@ -458,21 +458,21 @@ lookup_generic_exact = env, name =>
       i = (?env.generics) - 1 - k
       g = env.generics(i) | _ | GenericDecl(("", ast::TypeInfo(Prim,
          ast::ValueType(Unknown))))
-      g.name == name | (res' = <+ g.ti ->; -->)
+      g.name == name | (res' = <+ g.ti +>; -->)
    res'
 
 lookup_generic: TypeEnv, String => < ast::TypeInfo | >
 lookup_generic = env, name =>
    exact = lookup_generic_exact(env, name)
    exact
-      | ti => <+ ti ->
+      | ti => <+ ti +>
       |
          env.current_module != "" && !name_is_qualified(name, 0)
             |
                pub = lookup_generic_exact(env,
                   env.current_module + "::" + name)
                pub
-                  | p => <+ p ->
+                  | p => <+ p +>
                   |
                      lookup_generic_exact(env,
                         env.current_module + "::#" + name)
@@ -491,21 +491,21 @@ lookup_user_type_exact = env, name =>
       i = (?env.user_types) - 1 - k
       u = env.user_types(i) | _ | UserTypeDef(("", ast::TypeInfo(Prim,
          ast::ValueType(Unknown)), unify::UType(None)))
-      u.name == name | (res' = <+ u ->; -->)
+      u.name == name | (res' = <+ u +>; -->)
    res'
 
 lookup_user_type: TypeEnv, String => < UserTypeDef | >
 lookup_user_type = env, name =>
    exact = lookup_user_type_exact(env, name)
    exact
-      | u => <+ u ->
+      | u => <+ u +>
       |
          env.current_module != "" && !name_is_qualified(name, 0)
             |
                pub = lookup_user_type_exact(env,
                   env.current_module + "::" + name)
                pub
-                  | p => <+ p ->
+                  | p => <+ p +>
                   |
                      lookup_user_type_exact(env,
                         env.current_module + "::#" + name)

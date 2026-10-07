@@ -35,9 +35,11 @@ show_expr = e =>
          (0 < ?t.args | " " | "") + show_exprs(t.args) + ")"
       [CycleJump t] "CycleJump(" + (t.is_break | "break" | "cont") + " " +
          str::from_int(t.level) + ")"
+      [Return r] "Return(" + (r.has_val | show_expr(r.val) | "") + ")"
       [Fn t] "Fn(" + show_expr(t.body) + ")"
       [Copy e] "Copy(" + show_expr(e) + ")"
       [BuilderCreate e] "Builder(" + show_expr(e) + ")"
+      [ArrayCreate a] "ArrayCreate(" + str::from_int(a.cap) + ")"
       [Assign t] "Assign(" + t.0 + " " + (t.2 | "+= " | (t.1 | ":= " | "= ")) +
          show_fwd_rhs(t.5) + ")"
       [Choice t] "Choice(" + show_expr(t.cond) + " " +
@@ -210,6 +212,7 @@ show_op = o =>
       [Apply] "$"
       [BitAnd] ".&."
       [BitOr] ".|."
+      [BitXor] ".^."
       [Shl] ".<."
       [Shr] ".>."
       [Seq] ";"
@@ -373,9 +376,11 @@ show_typed_expr = ctx, te =>
          show_typed_expr(ctx, t.1) + ")" + ty_str
       [CycleJump t] "CycleJump(" + (t.0 | "break" | "cont") + " " +
          str::from_int(t.1) + ")" + ty_str
+      [Return r] "Return(" + (r.0 | show_typed_expr(ctx, r.1) | "") + ")" + ty_str
       [RamConstruct t] "Ram(" + unify::show_ram_shape(t.0) + ")" + ty_str
       [EnumConstruct t] "Enum(" + t.0 + ")" + ty_str
       [BuilderNew e] "BuilderNew(" + show_typed_expr(ctx, e) + ")" + ty_str
+      [ArrayNew a] "ArrayNew(" + str::from_int(a.cap) + ")" + ty_str
       [Copy e] "Copy(" + show_typed_expr(ctx, e) + ")" + ty_str
       [RawMemory t] "Raw(" + show_typed_expr(ctx, t.0) + ")" + ty_str
       [PoisonError t] "PoisonError(" + str::from_int(t.0) + ", \"" +
@@ -480,12 +485,16 @@ show_typed_tree = ctx, te, ind =>
       [CycleJump t]
          pad + "CycleJump(" + (t.0 | "break" | "cont") + " " +
             str::from_int(t.1) + ")" + info
+      [Return r]
+         pad + "Return(" + (r.0 | show_typed_expr(ctx, r.1) | "") + ")" + info
       [Copy e]
          pad + "Copy" + info + "\n" +
             show_typed_tree(ctx, e, ind + 1)
       [BuilderNew e]
          pad + "BuilderNew" + info + "\n" +
             show_typed_tree(ctx, e, ind + 1)
+      [ArrayNew a]
+         pad + "ArrayNew(" + str::from_int(a.cap) + ")" + info
       [RawMemory t]
          pad + "RawMemory" + info + "\n" +
             show_typed_tree(ctx, t.0, ind + 1)

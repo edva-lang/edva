@@ -10,4 +10,4 @@ fun = a, b =>
    a | io::out("a is positive")
    b | io::out("b has value")
 
-fun(<+>, <+ 42 ->)
+fun(<+>, <+ 42 +>)

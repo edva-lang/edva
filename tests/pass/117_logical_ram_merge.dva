@@ -12,10 +12,10 @@
 #type R < Float | >      // positive Float, negative unit
 #type E < Int | String > // positive Int, negative String
 
-a_pos = L(<+ 10 ->)     // L: positive Int
+a_pos = L(<+ 10 +>)     // L: positive Int
 a_neg = L(<-->)          // L: negative unit (Noth)
-b = R(<+ 3.5 ->)        // R: positive Float
-e = E(<- "err" ->)      // E: negative String
+b = R(<+ 3.5 +>)        // R: positive Float
+e = E(<- "err" +>)      // E: negative String
 
 // && returns R: its positive winner comes from b, while both negative slots
 // are unit.

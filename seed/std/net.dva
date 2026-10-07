@@ -100,16 +100,13 @@
    tcp_connect: String, Int => Conn
    tcp_connect = host, port =>
       ip = libc::inet_addr $ host
-      ip [< 0]
-         net::tcp_connect_name(host, port)
-      |
-         sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
-         sock [< 0] Conn(<- "socket failed" ->)
-         |
-            addr = SockAddrIn((i16(AF_INET),
-               i16(htons $ port), i32(ip), 0))
-            ret = libc::connect(sock, Addr(addr), 16)
-            ret [0] Conn(<+ sock +>) | Conn(<- "connect failed" ->)
+      ip [< 0] --| net::tcp_connect_name(host, port)
+      sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
+      sock [< 0] --| Conn(<- "socket failed" +>)
+      addr = SockAddrIn((i16(AF_INET),
+         i16(htons $ port), i32(ip), 0))
+      ret = libc::connect(sock, Addr(addr), 16)
+      ret [0] Conn(<+ sock ->) | Conn(<- "connect failed" +>)
 
    // Connect to a host by DNS name (or numeric IP) via getaddrinfo. Walks the
    // resolver's result list (IPv4/IPv6, and any duplicate addresses) and tries
@@ -119,7 +116,7 @@
       list = net::resolve(host, port)
       list
          | l => net::walk_connect(l)
-         | err => Conn(<- err ->)
+         | err => Conn(<- err +>)
 
    // Walk an addrinfo list (from resolve) trying each entry until one connects.
    // The list is freed before returning. Extracted as a top-level helper so the
@@ -141,7 +138,7 @@
          net::close_fd(sock)
          cur' = ai.ai_next
       libc::freeaddrinfo(l)
-      res' [< 0] Conn(<- "connect failed" ->) | Conn(<+ res' +>)
+      res' [< 0] Conn(<- "connect failed" +>) | Conn(<+ res' ->)
 
    // Resolve host:port into an addrinfo list (must be released with
    // libc::freeaddrinfo). Returns Host: <+ list +> on success, <- error -> on
@@ -152,9 +149,9 @@
       out = {8}
       gai = libc::getaddrinfo(host, port_str, sys::addr_null, &out)
       gai [0]
-         Host(<+ Addr(@[&out Int]) +>)
+         Host(<+ Addr(@[&out Int]) ->)
       |
-         Host(<- "resolve failed" ->)
+         Host(<- "resolve failed" +>)
 
    // Create a TCP server socket bound to port and listening.
    // SO_REUSEADDR is set so a port can be re-bound immediately after a restart
@@ -163,23 +160,22 @@
    tcp_listen: Int, Int => Conn
    tcp_listen = port, backlog =>
       sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
-      sock [< 0] Conn(<- "socket failed" ->)
-      |
-         one = {4}
-         @[&one] = 1i32
-         libc::setsockopt(sock, net::SOL_SOCKET, net::SO_REUSEADDR, &one, 4)
-         addr = SockAddrIn((i16(AF_INET),
-            i16(htons $ port), i32(0), 0))
-         ret_b = libc::bind(sock, Addr(addr), 16)
-         ret_l = ret_b [0] libc::listen(sock, backlog) | -1
-         ret_l [0] Conn(<+ sock +>) | Conn(<- "bind/listen failed" ->)
+      sock [< 0] --| Conn(<- "socket failed" +>)
+      one = {4}
+      @[&one] = 1i32
+      libc::setsockopt(sock, net::SOL_SOCKET, net::SO_REUSEADDR, &one, 4)
+      addr = SockAddrIn((i16(AF_INET),
+         i16(htons $ port), i32(0), 0))
+      ret_b = libc::bind(sock, Addr(addr), 16)
+      ret_l = ret_b [0] libc::listen(sock, backlog) | -1
+      ret_l [0] Conn(<+ sock ->) | Conn(<- "bind/listen failed" +>)
 
    // Accept one incoming connection on server socket fd.
    // Returns Conn: <+ client fd +> on success, <- error -> on failure.
    tcp_accept: Int => Conn
    tcp_accept = server_fd =>
       s = libc::accept(server_fd, sys::addr_null, sys::addr_null)
-      s [< 0] Conn(<- "accept failed" ->) | Conn(<+ s +>)
+      s [< 0] Conn(<- "accept failed" +>) | Conn(<+ s ->)
 
    // Send a string over a socket fd, looping until every byte is written:
    // send() may deliver fewer bytes than requested (partial send), and a call
@@ -213,7 +209,7 @@
       n = libc::recv(fd, &b, max, 0)
       n [< 1] Chunk(<-->) |
          ?b = n
-         Chunk(<+ +b ->)
+         Chunk(<+ +b +>)
 
    // Set the receive timeout on fd (ms). 0 clears it (block forever).
    set_recv_timeout: Int, Int => Int
@@ -290,7 +286,7 @@
    udp_socket: Int => Conn
    udp_socket = unused =>
       s = libc::socket(net::AF_INET, net::SOCK_DGRAM, net::IPPROTO_UDP)
-      s [< 0] Conn(<- "socket failed" ->) | Conn(<+ s +>)
+      s [< 0] Conn(<- "socket failed" +>) | Conn(<+ s ->)
 
    // Bind a UDP socket to a port (0 = an ephemeral port chosen by the kernel).
    // Returns 0 on success, -1 on failure.
@@ -319,4 +315,4 @@
       n = libc::recvfrom(fd, &b, max, 0, sys::addr_null, sys::addr_null)
       n [< 1] Chunk(<-->) |
          ?b = n
-         Chunk(<+ +b ->)
+         Chunk(<+ +b +>)

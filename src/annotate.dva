@@ -136,24 +136,24 @@ mk_lambda_te = params, body_te, fn_ut, ti =>
 type_name_to_uprim: String => < unify::UPrim | >
 type_name_to_uprim = name =>
    name
-      ["Int", "i64"] <+ unify::UPrim(Int) ->
-      ["i8"] <+ unify::UPrim(I8) ->
-      ["i16"] <+ unify::UPrim(I16) ->
-      ["i32"] <+ unify::UPrim(I32) ->
-      ["u8"] <+ unify::UPrim(U8) ->
-      ["u16"] <+ unify::UPrim(U16) ->
-      ["u32"] <+ unify::UPrim(U32) ->
-      ["u64"] <+ unify::UPrim(U64) ->
-      ["i1", "<>"] <+ unify::UPrim(Flag) ->
-      ["Rune"] <+ unify::UPrim(Rune) ->
-      ["Float", "f64"] <+ unify::UPrim(Float) ->
-      ["f32"] <+ unify::UPrim(F32) ->
-      ["String"] <+ unify::UPrim(Str) ->
-      ["void"] <+ unify::UPrim(Unit) ->
-      ["Addr", "ptr"] <+ unify::UPrim(RawPtr) ->
-      ["Builder"] <+ unify::UPrim(Builder) ->
-      ["Error"] <+ unify::UPrim(Error) ->
-      ["Type"] <+ unify::UPrim(Type) ->
+      ["Int", "i64"] <+ unify::UPrim(Int) +>
+      ["i8"] <+ unify::UPrim(I8) +>
+      ["i16"] <+ unify::UPrim(I16) +>
+      ["i32"] <+ unify::UPrim(I32) +>
+      ["u8"] <+ unify::UPrim(U8) +>
+      ["u16"] <+ unify::UPrim(U16) +>
+      ["u32"] <+ unify::UPrim(U32) +>
+      ["u64"] <+ unify::UPrim(U64) +>
+      ["i1", "<>"] <+ unify::UPrim(Flag) +>
+      ["Rune"] <+ unify::UPrim(Rune) +>
+      ["Float", "f64"] <+ unify::UPrim(Float) +>
+      ["f32"] <+ unify::UPrim(F32) +>
+      ["String"] <+ unify::UPrim(Str) +>
+      ["void"] <+ unify::UPrim(Unit) +>
+      ["Addr", "ptr"] <+ unify::UPrim(RawPtr) +>
+      ["Builder"] <+ unify::UPrim(Builder) +>
+      ["Error"] <+ unify::UPrim(Error) +>
+      ["Type"] <+ unify::UPrim(Type) +>
       | <-->
 
 #type TypeVarMapEntry (name: String, ut: unify::UType)
@@ -164,7 +164,7 @@ tv_lookup = tvm, name =>
    res' = <-->
    ?tvm @ i =>
       e = tvm(i) | _ | TypeVarMapEntry(("", unify::UType(None)))
-      e.name == name | (res' = <+ e.ut ->; -->)
+      e.name == name | (res' = <+ e.ut +>; -->)
    res'
 
 tv_get_or_create: unify::Ctx, TypeVarMap, String => (TypeVarMap, unify::UType)
@@ -299,7 +299,7 @@ vim_lookup = vim, id =>
    res' = <-->
    ?vim @ i =>
       e = vim(i) | _ | VarInstMapEntry((-1, unify::UType(None)))
-      e.old_id == id | (res' = <+ e.new_ut ->; -->)
+      e.old_id == id | (res' = <+ e.new_ut +>; -->)
    res'
 
 instantiate_unbound_step: unify::Ctx, VarInstMap, unify::UType => VarInstRes
@@ -905,7 +905,7 @@ annotate_cycle = ctx, env, c, esc_opt =>
          ram_ut = unify::ram_pn(esc_te.ut)
          ti = unify::type_info_from_utype(ctx, ram_ut)
          lay = layout::compute_layout(ctx, ram_ut)
-         tast::mk_typed_cycle(iter_te, body_te, <+ esc_te ->, c.is_rune,
+         tast::mk_typed_cycle(iter_te, body_te, <+ esc_te +>, c.is_rune,
             ram_ut, ti, lay, 0, 0)
       |
          ut = unify::prim_unit()
@@ -994,7 +994,7 @@ member_field_ti = env, ti, name =>
                <->, ast::Expr(Int, 0)))
             f.name == name
                |
-                  res' = <+ f.rec_type ->
+                  res' = <+ f.rec_type +>
                   -->
          res'
       [Bitfield b]
@@ -1003,7 +1003,7 @@ member_field_ti = env, ti, name =>
             bf = b.fields(i) | _ | ast::BitfieldField(("", 0, 0))
             bf.name == name
                |
-                  res' = <+ ast::TypeInfo(Prim, b.backing_type) ->
+                  res' = <+ ast::TypeInfo(Prim, b.backing_type) +>
                   -->
          res'
       [Prim p]
@@ -1011,15 +1011,15 @@ member_field_ti = env, ti, name =>
          is_err
             |
                name
-                  ["code", "line", "col"] <+ ast::TypeInfo(Prim, ast::ValueType(Int)) ->
-                  ["msg", "file"] <+ ast::TypeInfo(Prim, ast::ValueType(Str)) ->
+                  ["code", "line", "col"] <+ ast::TypeInfo(Prim, ast::ValueType(Int)) +>
+                  ["msg", "file"] <+ ast::TypeInfo(Prim, ast::ValueType(Str)) +>
                   ["context"]
                      flds = ast::FieldTypes()
                      flds += ast::RecordFieldType(("", ast::ValueType(Int),
                         ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
                      flds += ast::RecordFieldType(("", ast::ValueType(Int),
                         ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
-                     <+ ast::TypeInfo(Rec, (flds, <->, <->, ast::ValueType(Record), 2, <->)) ->
+                     <+ ast::TypeInfo(Rec, (flds, <->, <->, ast::ValueType(Record), 2, <->)) +>
                   | <-->
             | <-->
       | <-->
@@ -1242,7 +1242,7 @@ annotate_expr = ctx, env, expr =>
                                                 layout::compute_layout(ctx,
                                                    f_res.ret)
                                              tast::mk_typed_call("",
-                                                 <+ call_te ->, cargs,
+                                                 <+ call_te +>, cargs,
                                                  f_res.ret, ret_ti, ret_lay,
                                                  0, 0)
                                           | call_te
@@ -1351,7 +1351,7 @@ annotate_expr = ctx, env, expr =>
                                        saved_init = type_env::init_snapshot(
                                           env)
                                        env.in_fn = <+>
-                                       env.cur_fn_ret = <+ f.ret ->
+                                       env.cur_fn_ret = <+ f.ret +>
                                        env.init = type_env::new_init()
                                        param_uts = unify::UTypes()
                                        ?fe.params @ p_i =>
@@ -1681,7 +1681,7 @@ annotate_expr = ctx, env, expr =>
          ce.cycle
             [Cycle c2]
                esc_te = annotate_expr(ctx, env, ce.branch)
-               annotate_cycle(ctx, env, c2, <+ esc_te ->)
+               annotate_cycle(ctx, env, c2, <+ esc_te +>)
             |
                esc_te = annotate_expr(ctx, env, ce.branch)
                cyc_te = annotate_expr(ctx, env, ce.cycle)
@@ -1689,7 +1689,7 @@ annotate_expr = ctx, env, expr =>
                ti = unify::type_info_from_utype(ctx, ram_ut)
                lay = layout::compute_layout(ctx, ram_ut)
                tast::mk_typed_cycle(cyc_te, tast::mk_lit_unit(0, 0),
-                  <+ esc_te ->, <->, ram_ut, ti, lay, 0, 0)
+                  <+ esc_te +>, <->, ram_ut, ti, lay, 0, 0)
       [CycleJump cj]
          tast::mk_typed_cycle_jump(cj.is_break, cj.level, 0, 0)
       [Copy cp]
@@ -1771,7 +1771,7 @@ annotate_expr = ctx, env, expr =>
                      rshape = is_some | unify::URamShape(RamPN) |
                         unify::URamShape(RamPP)
                      tast::mk_typed_ram_construct(rshape, <+>,
-                        <+ pay_te ->, p_ut, p_ti, p_lay, 0, 0)
+                        <+ pay_te +>, p_ut, p_ti, p_lay, 0, 0)
                   |
                      n_ut = is_err | unify::ram_np(pay_te.ut) |
                         unify::ram_pp(unify::fresh_var(ctx), pay_te.ut)
@@ -1780,7 +1780,7 @@ annotate_expr = ctx, env, expr =>
                      rshape = is_err | unify::URamShape(RamNP) |
                         unify::URamShape(RamPP)
                      tast::mk_typed_ram_construct(rshape, <->,
-                        <+ pay_te ->, n_ut, n_ti, n_lay, 0, 0)
+                        <+ pay_te +>, n_ut, n_ti, n_lay, 0, 0)
       [KeyAccess ka]
          ka.line > 0 | unify::set_pos(ctx, ka.line, ka.col)
          target_te = annotate_expr(ctx, env, ka.target)
@@ -1924,7 +1924,7 @@ annotate_expr = ctx, env, expr =>
                         |
                            val_te = annotate_expr(ctx, env, r.val)
                            ret_v = unify::fresh_var(ctx)
-                           env.cur_fn_ret = <+ ret_v ->
+                           env.cur_fn_ret = <+ ret_v +>
                            unify::unify(ctx, ret_v, val_te.ut)
                            tast::mk_typed_return(<+>, val_te, unify::prim_unit(),
                               ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
@@ -2648,7 +2648,7 @@ is_range_expr = e => e [Range _]
 find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
    i < 0 | --| <-->
-   (s(i) == 46) | <+ i -> | find_last_dot(s, i - 1)
+   (s(i) == 46) | <+ i +> | find_last_dot(s, i - 1)
 
 dotted_to_expr: String => ast::Expr
 dotted_to_expr = s =>
@@ -2873,9 +2873,9 @@ find_record_ctor_field_expr = args, fld, j, nf =>
    ?args @ i =>
       arg_i = args(i) | _ | ast::Expr(Int, 0)
       arg_i [NamedArg na]
-         na.name == fld.name | (named_res' = <+ na.val ->; -->)
+         na.name == fld.name | (named_res' = <+ na.val +>; -->)
    named_res'
-      | val => <+ val ->
+      | val => <+ val +>
       |
          a0_first = ?args > 0
             | (args(0) | _ | ast::Expr(Int, 0))
@@ -2889,9 +2889,9 @@ find_record_ctor_field_expr = args, fld, j, nf =>
             |
                arg_j = args(j) | _ | ast::Expr(Int, 0)
                !(arg_j [NamedArg, Range])
-                  | pos_res' = <+ arg_j ->
+                  | pos_res' = <+ arg_j +>
          pos_res'
-            | val => <+ val ->
+            | val => <+ val +>
             |
                tuple_res' = <-->
                ?args == 1
@@ -2906,14 +2906,14 @@ find_record_ctor_field_expr = args, fld, j, nf =>
                                        rf = rec_lit.fields(j) | _ |
                                           ast::RecordField((<->, "",
                                              ast::Expr(Int, 0)))
-                                       tuple_res' = <+ rf.val ->
+                                       tuple_res' = <+ rf.val +>
                               |
                                  idx_e = ast::Expr(Member,
                                     (ast::MemberExpr((a0, "", <->,
                                        ast::Expr(Int, j), 0, 0))))
-                                 tuple_res' = <+ idx_e ->
+                                 tuple_res' = <+ idx_e +>
                tuple_res'
-                  | val => <+ val ->
+                  | val => <+ val +>
                   |
                      splat_res' = <-->
                      ?args @ k =>
@@ -2926,18 +2926,18 @@ find_record_ctor_field_expr = args, fld, j, nf =>
                                     |
                                        fld.has_default
                                           |
-                                             splat_res' = <+ fld.default_expr ->
+                                             splat_res' = <+ fld.default_expr +>
                                              -->
                                     |
                                        fld_access = ast::Expr(Member,
                                           (ast::MemberExpr((r.rhs, fld.name,
                                              <->, ast::Expr(Var, ""), 0, 0))))
-                                       splat_res' = <+ fld_access ->
+                                       splat_res' = <+ fld_access +>
                                        -->
                      splat_res'
-                        | val => <+ val ->
+                        | val => <+ val +>
                         |
-                           fld.has_default | <+ fld.default_expr ->
+                           fld.has_default | <+ fld.default_expr +>
 
 annotate_record_ctor_fields: unify::Ctx, type_env::TypeEnv, ast::CallExpr,
    type_env::UserTypeDef, unify::UFields, ast::FieldTypes,
@@ -3163,7 +3163,7 @@ annotate_call_normal = ctx, env, ce =>
                            b_lay = layout::compute_layout(ctx, b.ut)
                            target_val' = <+ tast::mk_typed_var(ce.fn_name,
                               b.depth, b.is_mut, b.ut, b_ti, b_lay,
-                              ce.line, ce.col) ->
+                              ce.line, ce.col) +>
                   |
                      gen_opt = type_env::lookup_generic(env, ce.fn_name)
                      gen_opt
@@ -3176,7 +3176,7 @@ annotate_call_normal = ctx, env, ce =>
             |
                tgt_expr = has_dot | dotted_to_expr(ce.fn_name) | ce.fn_target
                target_te = annotate_expr(ctx, env, tgt_expr)
-               target_val' = <+ target_te ->
+               target_val' = <+ target_te +>
                c_tgt = unify::canon(ctx, target_te.ut)
                c_tgt
                   [Prim p2]
@@ -3280,7 +3280,7 @@ annotate_fn = ctx, env, fe, is_disc =>
    saved_init = type_env::init_snapshot(env)
    env.in_fn = <+>
    ret_var = is_disc | unify::prim_unit() | unify::fresh_var(ctx)
-   env.cur_fn_ret = <+ ret_var ->
+   env.cur_fn_ret = <+ ret_var +>
    env.init = type_env::new_init()
    param_uts = unify::UTypes()
    ?fe.params @ i =>
@@ -3329,7 +3329,7 @@ is_ram_pn_ut = ctx, ut =>
    c
       [Ram r]
          (r.pos.has_payload && !r.neg.has_payload)
-            | <+ r.pos.ut ->
+            | <+ r.pos.ut +>
             | <-->
       | <-->
 
@@ -3360,7 +3360,7 @@ choice_check_ram_pn = ctx, tb_list =>
                   all_pn' = <->
                   -->
    has_non_jump' && all_pn'
-      | <+ cand_pos ->
+      | <+ cand_pos +>
 
 choice_branch_is_constant: ast::Expr => <>
 choice_branch_is_constant = e =>
@@ -3459,7 +3459,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                      |
                         p0 = f_pred.params(0) | _ | unify::UType(None)
                         unify::unify(ctx, cond_te.ut, p0)
-            <+ pred_te ->
+            <+ pred_te +>
          | <-->
       type_env::enter_scope(env)
       pay_ti = unify::type_info_from_utype(ctx, payload_ut')
@@ -3584,7 +3584,7 @@ is_splat_expr: ast::Expr => <ast::Expr|>
 is_splat_expr = expr =>
    expr
       [Range r]
-         !r.has_lhs && r.has_rhs | <+ r.rhs -> | <-->
+         !r.has_lhs && r.has_rhs | <+ r.rhs +> | <-->
       | <-->
 
 annotate_record: unify::Ctx, type_env::TypeEnv,
@@ -3923,7 +3923,7 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                        saved_init = type_env::init_snapshot(
                                           env)
                                        env.in_fn = <+>
-                                       env.cur_fn_ret = <+ f.ret ->
+                                       env.cur_fn_ret = <+ f.ret +>
                                        env.init = type_env::new_init()
                                        ?fe.params @ p_i =>
                                           pname = fe.params(p_i) | _ | ""
@@ -4259,7 +4259,7 @@ refresh_typed_expr: unify::Ctx, tast::TypedExpr => tast::TypedExpr
 refresh_target: unify::Ctx, <tast::TypedExpr|> => <tast::TypedExpr|>
 refresh_target = ctx, opt =>
    opt
-      | tgt => <+ refresh_typed_expr(ctx, tgt) ->
+      | tgt => <+ refresh_typed_expr(ctx, tgt) +>
 
 refresh_expr_list: unify::Ctx, tast::TypedExprs => tast::TypedExprs
 refresh_expr_list = ctx, exprs =>
@@ -4663,15 +4663,15 @@ elaborate_program_with_ctx = exprs =>
    final_stmts = refresh_program_stmts(ctx, typed_stmts)
 
    unify::has_errors(ctx)
-      | <- ctx.errors ->
-      | <+ ElabProgCtx((tast::TypedProgram(final_stmts), ctx)) +>
+      | <- ctx.errors +>
+      | <+ ElabProgCtx((tast::TypedProgram(final_stmts), ctx)) ->
 
 elaborate_program: ast::Exprs => < tast::TypedProgram | unify::TypeErrors >
 elaborate_program = exprs =>
    res = elaborate_program_with_ctx(exprs)
    res
-      | pair => <+ pair.prog +>
-      | errs => <- errs ->
+      | pair => <+ pair.prog ->
+      | errs => <- errs +>
 
 annotate_exprs: ast::Exprs => ElabProgResult
 annotate_exprs = exprs =>
@@ -4683,9 +4683,9 @@ annotate_exprs = exprs =>
          nodes = count_program_nodes(tp)
          sz = program_layout_size(tp)
          stats = ElabStats((?tp.stmts, nodes, ctx.next_var, sz))
-         <+ ElabSuccess((tp, stats, ctx)) +>
+         <+ ElabSuccess((tp, stats, ctx)) ->
       | errs =>
-         <- errs ->
+         <- errs +>
 
 annotate_program: ast::Expr => ElabProgResult
 annotate_program = prog =>

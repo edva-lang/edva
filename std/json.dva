@@ -84,10 +84,10 @@ scan_string: Builder, Int => <Int | Error>
 scan_string = b, k =>
    c = k [< ?src] src(k) | -1
    c
-   ['"'] <+ k +>
+   ['"'] <+ k ->
    ['\\'] parse_escape(b, k)
    [< 0x20] <- Error(400, "json: control character in string",
-   "std/json.dva", 0, 0, (k, 0)) ->
+   "std/json.dva", 0, 0, (k, 0)) +>
    |
       b += c
       scan_string(b, k + 1)
@@ -106,7 +106,7 @@ parse_escape = b, k =>
    ['r'] b += 13; scan_string(b, k + 2)
    ['t'] b += 9; scan_string(b, k + 2)
    ['u'] parse_unicode(b, k)
-   | <- Error(400, "json: bad escape", "std/json.dva", 0, 0, (k, 0)) ->
+   | <- Error(400, "json: bad escape", "std/json.dva", 0, 0, (k, 0)) +>
 
 // A \uXXXX escape at index k (k is the '\', k+1 is 'u'). BMP code
 // points only; decoded and appended as UTF-8.
@@ -126,7 +126,7 @@ parse_unicode = b, k =>
       append_utf8(b, Rune(cp))
       scan_string(b, k + 6)
    | <- Error(400, "json: bad \\u escape",
-   "std/json.dva", 0, 0, (k, 0)) ->
+   "std/json.dva", 0, 0, (k, 0)) +>
 
 // --- number scanning ------------------------------------------------
 
@@ -156,9 +156,9 @@ expect_colon: Int => <Int | Error>
 expect_colon = p =>
    ok_col = p < ?src && src(p) == ':'
    ok_col |
-      <+ (p + 1) +>
+      <+ (p + 1) ->
    | <- Error(400, "json: expected ':' after object key",
-   "std/json.dva", 0, 0, (p, 0)) ->
+   "std/json.dva", 0, 0, (p, 0)) +>
 
 // The index after a comma at p (or p when there is none).
 skip_comma: Int => Int
@@ -175,9 +175,9 @@ parse_string = !=>
    r = scan_string(b, pos)
    r | end =>
          pos ::= end + 1
-         <+ Value(String, +b) +>
+         <+ Value(String, +b) ->
    | err =>
-         <- err ->
+         <- err +>
 
 parse_array: () => <Value | Error>
 parse_array = !=>
@@ -192,7 +192,7 @@ parse_array_elems = !=>
    c [']']
       pos ::= pos + 1
       n = ?vals
-      <+ Value(Array, vals(0..n)) +>
+      <+ Value(Array, vals(0..n)) ->
    |
       v = parse_value!
       v | val =>
@@ -214,13 +214,13 @@ parse_object_pairs = !=>
    c ['}']
       pos ::= pos + 1
       m = ?pairs
-      <+ Value(Object, pairs(0..m)) +>
+      <+ Value(Object, pairs(0..m)) ->
    |
       r = parse_object_entry!
       r | ok =>
             parse_object_pairs!
       | e4 =>
-            <- e4 ->
+            <- e4 +>
 
 // Parse one "key : value" pair, append it to the pairs arena, consume
 // the trailing comma, and return the parsed value's ram (or the error).
@@ -233,7 +233,7 @@ parse_object_entry = !=>
    k = parse_string!
    k | key =>
          parse_object_key_body(key)
-   | e => <- e ->
+   | e => <- e +>
 
 // The key is a parsed Value; pull the String out, expect ':', then
 // parse the value.
@@ -243,7 +243,7 @@ parse_object_key_body = key =>
       c2 = expect_colon(skip_ws(pos))
       parse_object_value(s, c2)
    | <- Error(400, "json: object key is not a string",
-   "std/json.dva", 0, 0, (0, 0)) ->
+   "std/json.dva", 0, 0, (0, 0)) +>
 
 parse_object_value: String, <Int | Error> => <Value | Error>
 parse_object_value = key, c2 =>
@@ -251,15 +251,15 @@ parse_object_value = key, c2 =>
          pos ::= cp
          v = parse_value!
          parse_object_append(key, v)
-   | e2 => <- e2 ->
+   | e2 => <- e2 +>
 
 parse_object_append: String, <Value | Error> => <Value | Error>
 parse_object_append = key, v =>
    v | val =>
          pairs += (key, val)
          pos ::= skip_comma(skip_ws(pos))
-         <+ Value(Null) +>
-   | e3 => <- e3 ->
+         <+ Value(Null) ->
+   | e3 => <- e3 +>
 
 parse_lit: Int, Int => <Value | Error>
 parse_lit = tag, len =>
@@ -269,8 +269,8 @@ parse_lit = tag, len =>
    ok = p + len !> ?src && src(p..p + len) == word
    ok |
       pos ::= p + len
-      <+ Value(Boolean, tag == 1) +>
-   | <- Error(400, "json: bad literal", "std/json.dva", 0, 0, (p, 0)) ->
+      <+ Value(Boolean, tag == 1) ->
+   | <- Error(400, "json: bad literal", "std/json.dva", 0, 0, (p, 0)) +>
 
 parse_null: () => <Value | Error>
 parse_null = !=>
@@ -279,9 +279,9 @@ parse_null = !=>
    ok = p + 4 !> ?src && src(p..p + 4) == "null"
    ok |
       pos ::= p + 4
-      <+ Value(Null) +>
+      <+ Value(Null) ->
    | <- Error(400, "json: bad null literal",
-   "std/json.dva", 0, 0, (p, 0)) ->
+   "std/json.dva", 0, 0, (p, 0)) +>
 
 parse_number: () => <Value | Error>
 parse_number = !=>
@@ -343,12 +343,12 @@ parse_number = !=>
          |
             f = (neg' == 1 | 0 - fv' | fv')
             pos ::= p2'
-            <+ Value(Number, f) +>
+            <+ Value(Number, f) ->
          |
             <- Error(400, "json: malformed number",
-            "std/json.dva", 0, 0, (p', 0)) ->
+            "std/json.dva", 0, 0, (p', 0)) +>
    | <- Error(400, "json: expected a number",
-   "std/json.dva", 0, 0, (p', 0)) ->
+   "std/json.dva", 0, 0, (p', 0)) +>
 
 // --- entry point ------------------------------------------------
 

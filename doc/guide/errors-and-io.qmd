@@ -54,7 +54,7 @@ Edva provides two postfix operators for handling fallible ramifications:
 get_user_port: (String ^ Int), String => < Int | Error >
 get_user_port = table, key =>
    port = (table ^ key)--!
-   <+ port +>
+   <+ port ->
 ```
 
 When an error should be handled locally rather than propagated or aborted, match it with a positional choice:

@@ -1020,7 +1020,7 @@ addr_ok:                                          ; preds = %addr_stale, %addr_g
   store i64 %raw.load, ptr %var.top, align 8
   %var.load3 = load i64, ptr %var.top, align 8
   %cmptmp = icmp eq i64 %var.load3, 0
-  br i1 %cmptmp, label %choice.then, label %choice.else
+  br i1 %cmptmp, label %choice.then, label %choice.exit
 
 addr_stale:                                       ; preds = %addr_gen_check
   %1 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
@@ -1034,9 +1034,9 @@ choice.then:                                      ; preds = %addr_ok
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  br label %choice.exit
+  ret ptr %ram.alloc
 
-choice.else:                                      ; preds = %addr_ok
+choice.exit:                                      ; preds = %ret.dead, %addr_ok
   %var.load4 = load i64, ptr %var.top, align 8
   %subtmp = sub i64 %var.load4, 1
   store i64 %subtmp, ptr %var.top_next, align 8
@@ -1051,18 +1051,17 @@ choice.else:                                      ; preds = %addr_ok
   %addr.immortal13 = icmp eq i64 %addr.tag12, 0
   br i1 %addr.immortal13, label %addr_ok15, label %addr_gen_check14
 
-choice.exit:                                      ; preds = %addr_ok90, %choice.then
-  %choice.res = phi ptr [ %ram.alloc, %choice.then ], [ %ram.alloc97, %addr_ok90 ]
-  ret ptr %choice.res
+ret.dead:                                         ; No predecessors!
+  br label %choice.exit
 
-addr_gen_check14:                                 ; preds = %choice.else
+addr_gen_check14:                                 ; preds = %choice.exit
   %arena.gen17 = call ptr @dva_arena_current()
   %arena.gen18 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen17, i32 0, i32 4
   %arena.gen19 = load i64, ptr %arena.gen18, align 8
   %addr.tag.match20 = icmp eq i64 %addr.tag12, %arena.gen19
   br i1 %addr.tag.match20, label %addr_ok15, label %addr_stale16
 
-addr_ok15:                                        ; preds = %addr_stale16, %addr_gen_check14, %choice.else
+addr_ok15:                                        ; preds = %addr_stale16, %addr_gen_check14, %choice.exit
   store i64 %var.load8, ptr %raw.clean.ptr11, align 8
   %var.load21 = load ptr, ptr %var.p, align 8
   %fld.gep22 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load21, i32 0, i32 1
@@ -1196,7 +1195,7 @@ addr_ok90:                                        ; preds = %addr_stale91, %addr
   %addtmp109 = add i64 %ptr.int.l108, %multmp107
   %ptr.res110 = inttoptr i64 %addtmp109 to ptr
   store ptr %ptr.res110, ptr %pay.gep99, align 8
-  br label %choice.exit
+  ret ptr %ram.alloc97
 
 addr_stale91:                                     ; preds = %addr_gen_check89
   %6 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
@@ -1244,12 +1243,12 @@ or.1.else:                                        ; preds = %entry
 
 or.1.exit:                                        ; preds = %or.1.else, %or.1.then
   %or.1.phi = phi i1 [ %cmptmp, %or.1.then ], [ %cmptmp11, %or.1.else ]
-  br i1 %or.1.phi, label %choice.then, label %choice.else
+  br i1 %or.1.phi, label %choice.then, label %choice.exit
 
 choice.then:                                      ; preds = %or.1.exit
-  br label %choice.exit
+  ret i1 false
 
-choice.else:                                      ; preds = %or.1.exit
+choice.exit:                                      ; preds = %ret.dead, %or.1.exit
   %var.load12 = load i64, ptr %var.off, align 8
   %var.load13 = load ptr, ptr %var.p, align 8
   %fld.gep14 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load13, i32 0, i32 4
@@ -1257,17 +1256,16 @@ choice.else:                                      ; preds = %or.1.exit
   %div.is.zero = icmp eq i64 %fld.load15, 0
   br i1 %div.is.zero, label %div.zero_abort, label %div.not_zero
 
-choice.exit:                                      ; preds = %choice.exit31, %choice.then
-  %choice.res156 = phi i1 [ false, %choice.then ], [ %choice.res155, %choice.exit31 ]
-  ret i1 %choice.res156
+ret.dead:                                         ; No predecessors!
+  br label %choice.exit
 
-div.not_zero:                                     ; preds = %div.zero_abort, %choice.else
+div.not_zero:                                     ; preds = %div.zero_abort, %choice.exit
   %div.is.min = icmp eq i64 %var.load12, -9223372036854775808
   %div.is.negone = icmp eq i64 %fld.load15, -1
   %div.is.ovf = and i1 %div.is.min, %div.is.negone
   br i1 %div.is.ovf, label %div.ovf_abort, label %div.ok
 
-div.zero_abort:                                   ; preds = %choice.else
+div.zero_abort:                                   ; preds = %choice.exit
   %2 = call i64 @write(i32 2, ptr @div_zero_msg, i64 32)
   call void @exit(i32 1)
   br label %div.not_zero
@@ -1301,7 +1299,7 @@ div.zero_abort22:                                 ; preds = %div.ok
 div.ok26:                                         ; preds = %div.ovf_abort27, %div.not_zero21
   %modtmp = srem i64 %var.load16, %fld.load19
   %cmptmp28 = icmp ne i64 %modtmp, 0
-  br i1 %cmptmp28, label %choice.then29, label %choice.else30
+  br i1 %cmptmp28, label %choice.then29, label %choice.exit30
 
 div.ovf_abort27:                                  ; preds = %div.not_zero21
   %5 = call i64 @write(i32 2, ptr @div_ovf_msg, i64 55)
@@ -1309,9 +1307,9 @@ div.ovf_abort27:                                  ; preds = %div.not_zero21
   br label %div.ok26
 
 choice.then29:                                    ; preds = %div.ok26
-  br label %choice.exit31
+  ret i1 false
 
-choice.else30:                                    ; preds = %div.ok26
+choice.exit30:                                    ; preds = %ret.dead31, %div.ok26
   %var.load32 = load ptr, ptr %var.p, align 8
   %fld.gep33 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load32, i32 0, i32 2
   %fld.load34 = load ptr, ptr %fld.gep33, align 8
@@ -1326,24 +1324,23 @@ choice.else30:                                    ; preds = %div.ok26
   %addr.immortal = icmp eq i64 %addr.tag, 0
   br i1 %addr.immortal, label %addr_ok, label %addr_gen_check
 
-choice.exit31:                                    ; preds = %choice.exit42, %choice.then29
-  %choice.res155 = phi i1 [ false, %choice.then29 ], [ %choice.res, %choice.exit42 ]
-  br label %choice.exit
+ret.dead31:                                       ; No predecessors!
+  br label %choice.exit30
 
-addr_gen_check:                                   ; preds = %choice.else30
+addr_gen_check:                                   ; preds = %choice.exit30
   %arena.gen = call ptr @dva_arena_current()
   %arena.gen36 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen, i32 0, i32 4
   %arena.gen37 = load i64, ptr %arena.gen36, align 8
   %addr.tag.match = icmp eq i64 %addr.tag, %arena.gen37
   br i1 %addr.tag.match, label %addr_ok, label %addr_stale
 
-addr_ok:                                          ; preds = %addr_stale, %addr_gen_check, %choice.else30
+addr_ok:                                          ; preds = %addr_stale, %addr_gen_check, %choice.exit30
   %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
   store i8 %raw.load, ptr %var.is_act, align 1
   %var.load38 = load i8, ptr %var.is_act, align 1
   %coerce.zext = zext i8 %var.load38 to i64
   %cmptmp39 = icmp eq i64 %coerce.zext, 0
-  br i1 %cmptmp39, label %choice.then40, label %choice.else41
+  br i1 %cmptmp39, label %choice.then40, label %choice.exit41
 
 addr_stale:                                       ; preds = %addr_gen_check
   %6 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
@@ -1351,9 +1348,9 @@ addr_stale:                                       ; preds = %addr_gen_check
   br label %addr_ok
 
 choice.then40:                                    ; preds = %addr_ok
-  br label %choice.exit42
+  ret i1 false
 
-choice.else41:                                    ; preds = %addr_ok
+choice.exit41:                                    ; preds = %ret.dead42, %addr_ok
   %var.load43 = load ptr, ptr %var.p, align 8
   %fld.gep44 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load43, i32 0, i32 2
   %fld.load45 = load ptr, ptr %fld.gep44, align 8
@@ -1368,18 +1365,17 @@ choice.else41:                                    ; preds = %addr_ok
   %addr.immortal54 = icmp eq i64 %addr.tag53, 0
   br i1 %addr.immortal54, label %addr_ok56, label %addr_gen_check55
 
-choice.exit42:                                    ; preds = %addr_ok149, %choice.then40
-  %choice.res = phi i1 [ false, %choice.then40 ], [ true, %addr_ok149 ]
-  br label %choice.exit31
+ret.dead42:                                       ; No predecessors!
+  br label %choice.exit41
 
-addr_gen_check55:                                 ; preds = %choice.else41
+addr_gen_check55:                                 ; preds = %choice.exit41
   %arena.gen58 = call ptr @dva_arena_current()
   %arena.gen59 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen58, i32 0, i32 4
   %arena.gen60 = load i64, ptr %arena.gen59, align 8
   %addr.tag.match61 = icmp eq i64 %addr.tag53, %arena.gen60
   br i1 %addr.tag.match61, label %addr_ok56, label %addr_stale57
 
-addr_ok56:                                        ; preds = %addr_stale57, %addr_gen_check55, %choice.else41
+addr_ok56:                                        ; preds = %addr_stale57, %addr_gen_check55, %choice.exit41
   call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr52, i8 0, i64 1, i1 false)
   %var.load62 = load ptr, ptr %var.p, align 8
   %fld.gep63 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load62, i32 0, i32 3
@@ -1519,7 +1515,7 @@ addr_gen_check148:                                ; preds = %addr_ok128
 
 addr_ok149:                                       ; preds = %addr_stale150, %addr_gen_check148, %addr_ok128
   store i64 %subtmp142, ptr %raw.clean.ptr145, align 8
-  br label %choice.exit42
+  ret i1 true
 
 addr_stale150:                                    ; preds = %addr_gen_check148
   %12 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)

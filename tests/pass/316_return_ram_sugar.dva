@@ -16,13 +16,13 @@ check_pos = x =>
 find_positive: Int => <Int|>
 find_positive = x =>
    x !> 0 |-->
-   <+ x ->
+   <+ x +>
 
 // 4. |++> returning <++> (RamNP)
 ensure_success: Int => <|Int>
 ensure_success = x =>
    x == 0 |++>
-   <- x +>
+   <- x ->
 
 // 5. Multiline branch
 multiline_test: Int => <>

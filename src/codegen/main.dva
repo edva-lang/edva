@@ -83,7 +83,7 @@ builder_struct_type = cg =>
          tarr += i8p
          tarr += i64t
          st = types::struct_type_n(cg, tarr, 3)
-         cg.builder_t = <+ st ->
+         cg.builder_t = <+ st +>
          st
 
 builder_len: types::Cg, Addr, String => Addr
@@ -1269,7 +1269,7 @@ codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
          LLVMBuildStore(cg.builder, view_len,
             LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice, 1,
                "rec.view.len.gep"))
-         cg.last_rt = <+ elem_ll' ->
+         cg.last_rt = <+ elem_ll' +>
          elem_fvts = ast::VTypes()
          elem_fvts += elem_vt'
          cg.last_fvts = elem_fvts
@@ -1291,7 +1291,7 @@ codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
          elem_is_rec = elem_vt' [Record]
          elem_is_rec
             |
-               cg.last_rt = <+ elem_ll' ->
+               cg.last_rt = <+ elem_ll' +>
                td_rm = types::td_record_meta_by_name(cg,
                   types::typedef_name_of_rt(cg, elem_ll'))
                td_fns = td_rm | m => m.1 | ast::Names()
@@ -1378,7 +1378,7 @@ codegen_eval_evaluated_slice_access = cg, t, base_ptr =>
          elem_is_rec = elem_vt [Record]
          elem_is_rec
             |
-               cg.last_rt = <+ elem_ll ->
+               cg.last_rt = <+ elem_ll +>
                cg.last_fnames = ast::Names()
                cg.last_fvts = match::struct_sub_fvts(elem_ll)
                (slot2, ast::ValueType(Record))
@@ -1852,19 +1852,19 @@ codegen_ensure_pthread = cg =>
          tarr += i64t
          tarr += i8p
          st = types::struct_type_n(cg, tarr, 8)
-         cg.thread_rec_t = <+ st ->
+         cg.thread_rec_t = <+ st +>
          i64p = LLVMPointerType(i64t, 0)
          cg.pthread_create_fn = <+ LLVMAddFunction(cg.module, "pthread_create",
-            fn_type4(LLVMInt32Type!, i64p, i8p, i8p, i8p)) ->
+            fn_type4(LLVMInt32Type!, i64p, i8p, i8p, i8p)) +>
          cg.pthread_join_fn = <+ LLVMAddFunction(cg.module, "pthread_join",
-            types::fn_type2(cg, LLVMInt32Type!, i64t, i8p)) ->
+            types::fn_type2(cg, LLVMInt32Type!, i64t, i8p)) +>
          cg.pthread_exit_fn = <+ LLVMAddFunction(cg.module, "pthread_exit",
-            types::fn_type1(LLVMVoidType!, i8p)) ->
+            types::fn_type1(LLVMVoidType!, i8p)) +>
          tls_rec = LLVMAddGlobal(cg.module, i8p,
             "dva_thread_rec")
          !cg.opts.no_main | LLVMSetInitializer(tls_rec, LLVMConstNull(i8p))
          LLVMSetThreadLocal(tls_rec, 1)
-         cg.thread_tls_rec = <+ tls_rec ->
+         cg.thread_tls_rec = <+ tls_rec +>
          st
 
 thread_tls_global: types::Cg => Addr
@@ -2218,11 +2218,11 @@ codegen_eval_spawn = cg, se =>
          call.fn_name != ""
             |
                cev' = expr::codegen_eval(cg, ast::Expr(Var, call.fn_name))
-               <+ cev'.0 ->
+               <+ cev'.0 +>
             |
                cev' = expr::codegen_eval(cg, call.fn_target)
                fname' == "" | fname' = cg.last_closure_fn
-               <+ cev'.0 ->
+               <+ cev'.0 +>
       | <-->
    types::has_fn_name(cg, fname') && !types::is_fn_name(cg, fname')
       |
@@ -2705,7 +2705,7 @@ codegen_typed_eval = cg, te =>
                rm_tgt = runtime::record_meta_from_ti(cg, tgt_ti)
                rm' = <>(rm_tgt) | rm_tgt | runtime::record_meta_from_ti(cg, mw.0.ti)
                st_opt = rm'
-                  | m => <+ m.0 ->
+                  | m => <+ m.0 +>
                   | direct_vname != "" | types::var_rt(cg, direct_vname) | <-->
                st' = st_opt | _ | LLVMVoidType!
                v_fnames = direct_vname != ""
@@ -2828,7 +2828,7 @@ codegen_typed_eval = cg, te =>
             fnames' += tf.name
             fvts' += fev.1
          st' = types::struct_type_n(cg, ftypes, nf)
-         cg.last_rt = <+ st' ->
+         cg.last_rt = <+ st' +>
          cg.last_fnames = fnames'
          cg.last_fvts = fvts'
          all_const' && all_same_ty' && !any_rec' && (nf !< 64)
@@ -2940,7 +2940,7 @@ codegen_typed_eval = cg, te =>
                      rm' = runtime::record_meta_from_ti(cg, cp.ti)
                      v_rt = vname' != "" | types::var_rt(cg, vname') | <-->
                      rt_from_v = <>(v_rt) | v_rt | cg.last_rt
-                     rm_rt_opt = rm' | m => <+ m.0 -> | <-->
+                     rm_rt_opt = rm' | m => <+ m.0 +> | <-->
                      rec_t_opt = <>(rm_rt_opt) | rm_rt_opt | rt_from_v
                      rec_t' = rec_t_opt | _ | LLVMInt64Type!
                      sz = LLVMSizeOf(rec_t')
@@ -2981,7 +2981,7 @@ codegen_typed_eval = cg, te =>
                      typed_ptr = LLVMBuildPointerCast(cg.builder,
                         ptr_val, LLVMPointerType(meta_rt, 0),
                         "view.ptr")
-                     meta_rt_opt = meta | m => <+ m.0 -> | <-->
+                     meta_rt_opt = meta | m => <+ m.0 +> | <-->
                      cg.last_rt = meta_rt_opt
                      meta_fns = meta | m => m.1 | ast::Names()
                      cg.last_fnames = meta_fns

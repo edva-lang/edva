@@ -23,7 +23,7 @@
    unlink: (path: String) => Int
 
 llvm_val_opt: Addr => <Addr|>
-llvm_val_opt = a => a != sys::addr_null | <+ a -> | <-->
+llvm_val_opt = a => a != sys::addr_null | <+ a +> | <-->
 
 c_str_opt: <Addr|> => String
 c_str_opt = raw_opt =>
@@ -341,7 +341,7 @@ fninfo_index_rev = cg, name, i =>
       |
          fi = cg.fninfos(i)!!
          fi.name == name
-            | <+ i ->
+            | <+ i +>
             | fninfo_index_rev(cg, name, i - 1)
 
 fninfo_index: Cg, String => <Int|>
@@ -359,7 +359,7 @@ fninfo_find_rev = cg, name, i =>
       |
          fi = cg.fninfos(i)!!
          fi.name == name
-            | <+ fi ->
+            | <+ fi +>
             | fninfo_find_rev(cg, name, i - 1)
 
 // Marks `path` (a dotted var/field path, e.g. "x" or "x.a") whole-initialized.
@@ -426,7 +426,7 @@ find_last_dot_at = path, i =>
       | <-->
       |
          path(i) == 46
-            | <+ i ->
+            | <+ i +>
             | find_last_dot_at(path, i - 1)
 
 drop_last_dot: String => String
@@ -970,7 +970,7 @@ codegen_build_main = cg =>
          runtime::mark_nounwind(cg, fn')
          entry' = LLVMAppendBasicBlock(fn', "entry")
          LLVMPositionBuilderAtEnd(cg.builder, entry')
-         cg.main_fn = <+ fn' ->
+         cg.main_fn = <+ fn' +>
          cg.current_fn = fn'
          !cg.opts.no_runtime && !cg.opts.is_module | emit_arena_init(cg)
          fn'
@@ -985,7 +985,7 @@ codegen_build_main = cg =>
          runtime::mark_nounwind(cg, fn')
          entry' = LLVMAppendBasicBlock(fn', "entry")
          LLVMPositionBuilderAtEnd(cg.builder, entry')
-         cg.main_fn = <+ fn' ->
+         cg.main_fn = <+ fn' +>
          cg.current_fn = fn'
          !cg.opts.no_runtime
             |
@@ -1430,7 +1430,7 @@ dotted_var_val = cg, name =>
                   | base_val =>
                      var_rt(cg, base_name)
                         | rt =>
-                           is_homo = expr::record_type_is_homogeneous(<+ rt ->, fvts)
+                           is_homo = expr::record_type_is_homogeneous(<+ rt +>, fvts)
                            ft = is_homo
                               | LLVMStructGetTypeAtIndex(rt, 0)
                               | LLVMStructGetTypeAtIndex(rt, idx)
@@ -1440,7 +1440,7 @@ dotted_var_val = cg, name =>
                               | fgep
                               | LLVMBuildLoad2(cg.builder, ft, fgep,
                                  "field.load")
-                           <+ (val, fvt) ->
+                           <+ (val, fvt) +>
                         | <-->
                   | <-->
 
@@ -1601,7 +1601,7 @@ dotted_var_rt = cg, name =>
             | <-->
             |
                var_rt(cg, base_name)
-                  | rt => <+ LLVMStructGetTypeAtIndex(rt, idx) ->
+                  | rt => <+ LLVMStructGetTypeAtIndex(rt, idx) +>
                   | <-->
 
 var_rt_at: Cg, String, Int => <Addr|>
@@ -1659,7 +1659,7 @@ member_static_index = cg, m, fnames =>
    m.field_name == ""
       |
          m.index_expr
-            [Int n] <+ n ->
+            [Int n] <+ n +>
             |
                saved_discard = cg.discard_result
                cg.discard_result = <->
@@ -1668,12 +1668,12 @@ member_static_index = cg, m, fnames =>
                llvm_val_opt(ev.0)
                   | ev0 =>
                      LLVMIsConstant(ev0) != 0
-                        | <+ LLVMConstIntGetZExtValue(ev0) ->
+                        | <+ LLVMConstIntGetZExtValue(ev0) +>
                         | <-->
                   | <-->
       |
          idx = member_index(fnames, m.field_name)
-         idx !< 0 | <+ idx -> | <-->
+         idx !< 0 | <+ idx +> | <-->
 
 // A non-negative decimal parse ("" or a non-digit -> -1).
 parse_digits: String, Int, Int => Int
@@ -1690,7 +1690,7 @@ find_field: ast::Names, String, Int => <Int|>
 find_field = fnames, name, acc =>
    acc < ?fnames
       |
-         fnames(acc)!! == name | <+ acc -> | find_field(fnames, name, acc + 1)
+         fnames(acc)!! == name | <+ acc +> | find_field(fnames, name, acc + 1)
       | <-->
 
 // Loads a variable's global/local value, typed by its recorded ValueType (a
@@ -1699,7 +1699,7 @@ find_field = fnames, name, acc =>
 codegen_load: Cg, String => <(Addr, ast::ValueType)|>
 codegen_load = cg, name =>
    find_dot(name, 0) > 0
-      | (dotted_var_val(cg, name) | v => <+ v -> | codegen_undefined_name_error(cg, name))
+      | (dotted_var_val(cg, name) | v => <+ v +> | codegen_undefined_name_error(cg, name))
       |
          vt = var_type(cg, name)
          is_heap = var_is_heap(cg, name)
@@ -1725,7 +1725,7 @@ codegen_load = cg, name =>
             | codegen_uninitialized_load_error(cg, name)
             |
                var_direct(cg, name)
-                  | dv => <+ (dv, vt) ->
+                  | dv => <+ (dv, vt) +>
                   | codegen_load_after_forward(cg, slot_opt, lt, name, vt)
 
 codegen_load_after_forward: Cg, <Addr|>, Addr, String, ast::ValueType => <(Addr, ast::ValueType)|>
@@ -1745,7 +1745,7 @@ codegen_missing_load: Cg, String => <(Addr, ast::ValueType)|>
 codegen_missing_load = cg, name =>
    name == "_"
       | <-->
-      | (dotted_var_val(cg, name) | v => <+ v -> | codegen_undefined_name_error(cg, name))
+      | (dotted_var_val(cg, name) | v => <+ v +> | codegen_undefined_name_error(cg, name))
 
 codegen_undefined_name_error: Cg, String => <(Addr, ast::ValueType)|>
 codegen_undefined_name_error = cg, name =>
@@ -1756,7 +1756,7 @@ codegen_undefined_name_error = cg, name =>
 codegen_load_known: Cg, Addr, Addr, String, ast::ValueType => <(Addr, ast::ValueType)|>
 codegen_load_known = cg, slot, lt, name, vt =>
    lname = "load." + name
-   <+ (LLVMBuildLoad2(cg.builder, lt, slot, lname), vt) ->
+   <+ (LLVMBuildLoad2(cg.builder, lt, slot, lname), vt) +>
 
 // A variable's direct SSA value (a fn param, used without a backing alloca).
 var_direct: Cg, String => <Addr|>
@@ -1792,10 +1792,10 @@ ptr_var_value = cg, name, lname =>
 ptr_var_value_plain_opt: Cg, String, String => <Addr|>
 ptr_var_value_plain_opt = cg, name, lname =>
    find_dot(name, 0) > 0
-      | (dotted_var_val(cg, name) | dot_v => <+ dot_v.0 -> | <-->)
+      | (dotted_var_val(cg, name) | dot_v => <+ dot_v.0 +> | <-->)
       |
          var_direct(cg, name)
-            | d => <+ d ->
+            | d => <+ d +>
             |
                slot = var_slot(cg, name)
                   | _
@@ -1806,7 +1806,7 @@ ptr_var_value_plain_opt = cg, name, lname =>
                         LLVMConstNull(i8p), s_new)
                      s_new
                <+ LLVMBuildLoad2(cg.builder,
-                  LLVMPointerType(LLVMInt8Type!, 0), slot, lname) ->
+                  LLVMPointerType(LLVMInt8Type!, 0), slot, lname) +>
 
 ptr_var_value_plain: Cg, String, String => Addr
 ptr_var_value_plain = cg, name, lname =>
@@ -2023,7 +2023,7 @@ fn_ret_sig_with_ti = cg, ti =>
                         | m =>
                            rfvts = match::field_vts_from_ti(cg, ret_ti)
                            rdt = ret_ti [TypeVar tn] tn | ""
-                           stmt::fn_ret_rec_add(cg, sname, <+ m.0 ->, m.1, rfvts, rdt)
+                           stmt::fn_ret_rec_add(cg, sname, <+ m.0 +>, m.1, rfvts, rdt)
                sname
       [TypeVar name] fn_ret_sig_with_ti(cg, typedef_ti(cg, name))
       | ""
@@ -2031,7 +2031,7 @@ fn_ret_sig_with_ti = cg, ti =>
 ti_get_bitfield: Cg, ast::TypeInfo => <ast::BitfieldInfo|>
 ti_get_bitfield = cg, ti =>
    ti
-      [Bitfield b] <+ b ->
+      [Bitfield b] <+ b +>
       [TypeVar name]
          is_user_type(cg, name)
             | ti_get_bitfield(cg, typedef_ti(cg, name))
@@ -2056,7 +2056,7 @@ find_bitfield_field = fields, name =>
       f = fields(i) | _ | ast::BitfieldField(("", 0, 0))
       f.name == name
          |
-            res' = <+ f ->
+            res' = <+ f +>
             -->
    res'
 
@@ -3017,7 +3017,7 @@ enum_find_index = s, label, acc =>
    acc < ?s
       |
          sl = s(acc)!!
-         sl.label == label | <+ acc -> | enum_find_index(s, label, acc + 1)
+         sl.label == label | <+ acc +> | enum_find_index(s, label, acc + 1)
       | <-->
 
 // The payload ValueType of a variant slot (Unknown if it carries none).
@@ -3168,7 +3168,7 @@ codegen_eval_record_ctor = cg, ti, t =>
    rm = runtime::record_meta_from_ti(cg, ti)
    rm_0 = rm | m => m.0 | LLVMInt8Type!
    rm_1 = rm | m => m.1 | ast::Names()
-   rm_rt_opt = rm | m => <+ m.0 -> | <-->
+   rm_rt_opt = rm | m => <+ m.0 +> | <-->
    tgt_fvts = field_vts(cg, ti)
    tgt_nf = ?tgt_fvts
    nargs = ?t.args
@@ -3669,7 +3669,7 @@ codegen_eval_enum_label_val = cg, label, owners =>
          idx = enum_slot_index(es.1, label) | _ | 0
          u = codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
          cg.last_type = es.0
-         <+ (u, ast::ValueType(Enum)) ->
+         <+ (u, ast::ValueType(Enum)) +>
 
 enum_label_owner_count_at: Cg, String, Int, Int, Int => Int
 enum_label_owner_count_at = cg, label, i, n, seen =>
@@ -3728,7 +3728,7 @@ raw_addr_value = cg, value, vt, i8p =>
       | v =>
          raw_ptr = vt [RawPtr] v |
             LLVMBuildIntToPtr(cg.builder, v, i8p, "raw.ptr")
-         <+ expr::validate_and_strip_addr_tag(cg, raw_ptr, i8p) ->
+         <+ expr::validate_and_strip_addr_tag(cg, raw_ptr, i8p) +>
       | <-->
 
 codegen_eval_raw_memory: Cg, ast::RawMemoryExpr => (Addr, ast::ValueType)
@@ -3749,7 +3749,7 @@ codegen_eval_raw_memory = cg, rm =>
                meta_rt = meta | m => m.0 | LLVMInt8Type!
                typed_ptr = LLVMBuildPointerCast(cg.builder,
                   ptr_val, LLVMPointerType(meta_rt, 0), "view.ptr")
-               meta_rt_opt = meta | m => <+ m.0 -> | <-->
+               meta_rt_opt = meta | m => <+ m.0 +> | <-->
                cg.last_rt = meta_rt_opt
                meta_fns = meta | m => m.1 | ast::Names()
                cg.last_fnames = meta_fns
@@ -3893,7 +3893,7 @@ record_field_gep_opt = cg, rt, fvts, base, idx =>
             | LLVMBuildIntToPtr(cg.builder, base_val,
                LLVMPointerType(LLVMInt8Type!, 0), "rec.base.ptr")
             | base_val
-         is_homo = expr::record_type_is_homogeneous(<+ rt_val ->, fvts)
+         is_homo = expr::record_type_is_homogeneous(<+ rt_val +>, fvts)
          res = is_homo
             |
                elem_t = LLVMStructGetTypeAtIndex(rt_val, 0)
@@ -3903,7 +3903,7 @@ record_field_gep_opt = cg, rt, fvts, base, idx =>
                gep1(cg, elem_t, typed, idx_v, "rec.elem.gep")
             | LLVMBuildStructGEP2(cg.builder, rt_val, base_ptr, idx,
                "rec.field.gep")
-         <+ res ->
+         <+ res +>
 
 record_field_gep: Cg, Addr, ast::VTypes, Addr, Int => Addr
 record_field_gep = cg, rt, fvts, base, idx =>
@@ -3935,13 +3935,13 @@ codegen_eval_record = cg, r =>
       |
          anon_name = "$rec." + str::from_int(?cg.typedefs)
          runtime::push_typedef(cg, TypeDef((anon_name,
-            ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st ->, <->, fnames)))
-   cg.last_rt = <+ st ->
+            ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st +>, <->, fnames)))
+   cg.last_rt = <+ st +>
    cg.last_fnames = fnames
    cg.last_fvts = fvts
    alloc_sz = LLVMSizeOf(st)
    rp = expr::codegen_call_arena_alloc(cg, alloc_sz, "record.alloc")
-   is_homo = expr::record_type_is_homogeneous(<+ st ->, fvts)
+   is_homo = expr::record_type_is_homogeneous(<+ st +>, fvts)
    elem_t = (is_homo && nf > 0)
       | LLVMStructGetTypeAtIndex(st, 0)
       | LLVMVoidType!
@@ -3976,7 +3976,7 @@ rec_meta = cg, vt =>
    vt [Record]
       |
          cg.last_rt
-            | rt => <+ (rt, cg.last_fnames) ->
+            | rt => <+ (rt, cg.last_fnames) +>
             | <-->
       | <-->
 
@@ -3987,11 +3987,11 @@ td_record_meta = cg, idx =>
       | <-->
       |
          td.rt
-            | rt => <+ (rt, td.fnames) ->
+            | rt => <+ (rt, td.fnames) +>
             |
                cg.typedefs(idx) = TypeDef((td.name, td.ti, <-->, <+>, td.fnames)) !| _
                meta = runtime::record_meta_from_ti(cg, td.ti)
-               cached_rt = meta | m => <+ m.0 -> | <-->
+               cached_rt = meta | m => <+ m.0 +> | <-->
                cached_fn = meta | m => m.1 | ast::Names()
                cg.typedefs(idx) = TypeDef((td.name, td.ti, cached_rt, <->, cached_fn)) !| _
                meta

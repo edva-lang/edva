@@ -19,7 +19,7 @@ io::out $ r.age
 #type Option < Int | >
 
 mk_some: Int => Option
-mk_some = n => Option(<+ n + 1 ->)
+mk_some = n => Option(<+ n + 1 +>)
 
 g: (Int => Option)
 g = mk_some

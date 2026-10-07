@@ -2,6 +2,7 @@
 
 #use(import) llvm
 #use "../ast"
+#use "../diag"
 #use "str"
 #use "../tast"
 #use "../unify"
@@ -159,16 +160,16 @@ codegen_emit_runtime_module = cg =>
    LLVMAddFunction(cg.module, "dva_arena_set_current", set_cur_t)
 
    m_ty = types::fn_type1(i8p, i64t)
-   cg.malloc_t = <+ m_ty ->
-   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty) ->
+   cg.malloc_t = <+ m_ty +>
+   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty) +>
    free_t = types::fn_type1(LLVMVoidType!, i8p)
    LLVMAddFunction(cg.module, "free", free_t)
    w_ty = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
-   cg.write_t = <+ w_ty ->
-   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty) ->
+   cg.write_t = <+ w_ty +>
+   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty) +>
    e_ty = types::fn_type1(LLVMVoidType!, i32t)
-   cg.exit_t = <+ e_ty ->
-   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty) ->
+   cg.exit_t = <+ e_ty +>
+   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty) +>
 
    const_string_global(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
    const_string_global(cg, "E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\n", "arena_toobig_msg")
@@ -218,8 +219,8 @@ codegen_emit_runtime_module = cg =>
    strlen_t = types::fn_type1(i64t, i8p)
    LLVMAddFunction(cg.module, "strlen", strlen_t)
    mc_ty = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
-   cg.memcmp_t = <+ mc_ty ->
-   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty) ->
+   cg.memcmp_t = <+ mc_ty +>
+   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty) +>
 
    hash_params = types::Addrs()
    hash_params += i8p
@@ -286,16 +287,16 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildRet(cg.builder, sc_prev)
 
    m_ty2 = types::fn_type1(i8p, i64t)
-   cg.malloc_t = <+ m_ty2 ->
-   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty2) ->
+   cg.malloc_t = <+ m_ty2 +>
+   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty2) +>
    free_t = types::fn_type1(LLVMVoidType!, i8p)
    free_fn = LLVMAddFunction(cg.module, "free", free_t)
    w_ty2 = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
-   cg.write_t = <+ w_ty2 ->
-   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty2) ->
+   cg.write_t = <+ w_ty2 +>
+   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty2) +>
    e_ty2 = types::fn_type1(LLVMVoidType!, i32t)
-   cg.exit_t = <+ e_ty2 ->
-   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty2) ->
+   cg.exit_t = <+ e_ty2 +>
+   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty2) +>
 
    // message globals
    const_string_global(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
@@ -611,8 +612,8 @@ codegen_emit_runtime_full = cg =>
    strlen_t = types::fn_type1(i64t, i8p)
    strlen_fn = LLVMAddFunction(cg.module, "strlen", strlen_t)
    mc_ty3 = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
-   cg.memcmp_t = <+ mc_ty3 ->
-   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty3) ->
+   cg.memcmp_t = <+ mc_ty3 +>
+   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty3) +>
 
    // dva_hash_string(ptr, i64) -> i64
    hash_params = types::Addrs()
@@ -740,18 +741,18 @@ record_meta_from_ti = cg, ti =>
             [Rec rr]
                nf = ?rr.0
                <+ build_rec_meta_packed(cg, rr.0, 0, nf, types::Addrs(), ast::Names(),
-                  rr.5) ->
+                  rr.5) +>
             [Bitfield b]
                fnames = ast::Names()
                ?b.fields @ i =>
                   bf = b.fields(i) | _ | ast::BitfieldField(("", 0, 0))
                   fnames += ++bf.name
-               <+ (types::llvm_type_of_vt(b.backing_type), fnames) ->
+               <+ (types::llvm_type_of_vt(b.backing_type), fnames) +>
             [TypeVar name] types::td_record_meta_by_name(cg, name)
             [Prim p]
                is_err = p [Error]
                is_err
-                  | <+ (main::error_struct_type(cg), types::error_field_names!) ->
+                  | <+ (main::error_struct_type(cg), types::error_field_names!) +>
                   | <-->
             | <-->
 
@@ -892,12 +893,12 @@ codegen_forward_registry = cg, t =>
       | types::init_error(cg, "E3151", "Cannot assign Function to '" + t.0 +
          "' (bound as " + types::value_type_name(vt') + ").", 0, 0)
    slot_opt = types::var_slot(cg, t.0)
-      | s => <+ s ->
+      | s => <+ s +>
       | !is_fn_sig
-         | <+ types::create_slot(cg, t.0, lt, cg.in_fn) ->
+         | <+ types::create_slot(cg, t.0, lt, cg.in_fn) +>
          | <-->
    is_partial = !is_bf_fwd && is_partial_anno(cg, tv.0, t.7, t.8)
-   rec_m0_opt = rec_m | m => <+ m.0 -> | <-->
+   rec_m0_opt = rec_m | m => <+ m.0 +> | <-->
    cg.vars += types::CgVar((t.0, vt', <->, t.7, rec_m0_opt, rec_fnames, slot_opt,
       cg.in_fn, is_partial, types::field_vts(cg, ti), <-->))
    bf_opt_fwd
@@ -955,7 +956,7 @@ codegen_emit_compound_assign = cg, t =>
 codegen_emit_array_append: types::Cg, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 codegen_emit_array_append = cg, t =>
    types::is_view_expr(cg, t.5)
-      | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+      | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
    want = array_elem_type(cg, t.0)
    got = types::static_expr_vt(cg, t.5)
    mismatch = want.1 && (got != ast::ValueType(Unknown)) && (got != want.0) &&
@@ -1102,9 +1103,7 @@ codegen_check_binding_valid = cg, t =>
          types::is_any_fn_name(cg, t.0)
             |
                types::init_error(cg, "E3033",
-                  "Cannot re-assign immutable binding '" + t.0 +
-                  "'. Use a prime suffix ('" + t.0 +
-                  "\'') for rebindable variables.", 0, 0)
+                  diag::reassign_immutable(t.0), 0, 0)
             |
                prior = binding_state(cg, t.0)
                prior.found
@@ -1112,9 +1111,7 @@ codegen_check_binding_valid = cg, t =>
                      !prior.mutable
                         |
                            types::init_error(cg, "E3033",
-                              "Cannot re-assign immutable binding '" + t.0 +
-                              "'. Use a prime suffix ('" + t.0 +
-                              "\'') for rebindable variables.", 0, 0)
+                              diag::reassign_immutable(t.0), 0, 0)
                   |
                      is_mut = t.1 || name_is_primed(t.0)
                      binding_add(cg, t.0, is_mut)
@@ -1206,8 +1203,7 @@ codegen_emit_plain_assign_val = cg, t =>
    is_un = ev.1 [Unit]
    is_un
       |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to variable '" +
-            t.0 + "'.", 0, 0)
+         types::init_error(cg, "E3032", diag::assign_void_variable(t.0), 0, 0)
       |
          codegen_emit_plain_assign_val_store(cg, t, ev)
          t.5 [CompileTime ct]
@@ -1225,7 +1221,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    is_glob = t.3 || types::has_str(types::g.marked_globals, t.0)
    is_view = types::is_view_expr(cg, t.5)
    is_view && (!cg.in_fn || is_glob)
-      | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+      | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
    is_view | types::view_var_add(t.0)
    fresh_local = !is_glob | (cg.in_fn | !types::has_local_var(cg, t.0) | <->) | <->
    !fresh_local | codegen_check_flag_to_heap_assign(cg, t, ev.0)
@@ -1267,12 +1263,12 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    prior_fnames = need_fnames | types::var_fnames(cg, t.0) | ast::Names()
    use_prior = need_fnames | ?prior_fnames > 0 | <->
    prior_rt = use_prior | types::var_rt(cg, t.0) | <-->
-   rm_rt_opt = rm | m => <+ m.0 -> | <-->
+   rm_rt_opt = rm | m => <+ m.0 +> | <-->
    final_rm0_opt = <>(prior_rt) | prior_rt | rm_rt_opt
    final_rm1 = use_prior | prior_fnames | rm_fnames
    final_dt = use_prior | types::var_dtype(cg, t.0) | dtype
    cg.vars += types::CgVar((t.0, ev.1, is_heap, final_dt, final_rm0_opt, final_rm1,
-      <+ slot ->, is_local, <->, cg.last_fvts, <-->))
+      <+ slot +>, is_local, <->, cg.last_fvts, <-->))
    is_rec_expr = t.5 [Record _]
    is_part = !fresh_local | main::var_partial(cg, t.0) | <->
    is_whole = is_composite_vt(ev.1) | <+> | (is_rec_expr | <+> | is_part)
@@ -1574,7 +1570,7 @@ member_assign_record = cg, root_name, m, t =>
                   m.field_name + "'.", 0, 0)
             |
                types::is_view_expr(cg, t.5)
-                  | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+                  | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
                f_vt = idx < 0 | ast::ValueType(Unknown) |
                   (target_fvts(idx) | _ | ast::ValueType(Unknown))
                rec_ok = f_vt == ast::ValueType(Record) &&
@@ -1675,8 +1671,7 @@ codegen_emit_record_assign = cg, t, call =>
    is_un = rhs_ev.1 [Unit]
    is_un
       |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to element of '" +
-            call.fn_name + "'.", 0, 0)
+         types::init_error(cg, "E3032", diag::assign_void_element(call.fn_name), 0, 0)
       |
          main::codegen_emit_index_bounds_check(cg, idx_ev.0, idx_ev.1, ?fvs)
          idx_i64 = main::codegen_widen_idx_to_i64(cg, idx_ev.0, idx_ev.1, "idx")
@@ -1703,8 +1698,7 @@ codegen_emit_slice_assign = cg, t, call =>
    is_un = rhs_ev.1 [Unit]
    is_un
       |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to element of '" +
-            call.fn_name + "'.", 0, 0)
+         types::init_error(cg, "E3032", diag::assign_void_element(call.fn_name), 0, 0)
       |
          sv = types::ptr_var_value_plain(cg, call.fn_name, "rec.ptr")
          data = main::slice_data(cg, sv, "slice.data")
@@ -1730,8 +1724,7 @@ codegen_emit_array_assign = cg, t, call =>
    is_un = rhs_ev.1 [Unit]
    is_un
       |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to element of '" +
-            call.fn_name + "'.", 0, 0)
+         types::init_error(cg, "E3032", diag::assign_void_element(call.fn_name), 0, 0)
       |
          aval = types::ptr_var_value_plain(cg, call.fn_name, "rec.ptr")
          elem_vt = main::array_elem_vt(cg, call.fn_name)
@@ -1773,9 +1766,7 @@ codegen_emit_call_assign = cg, t, call =>
                      "' before whole-value initialization.", 0, 0)
                   |
                      is_rec && (not_init || main::var_partial(cg, call.fn_name))
-                        | types::init_error(cg, "E3131", "Homogeneous record '" +
-                           call.fn_name + "' requires whole-value " +
-                           "initialization before element access.", 0, 0)
+                        | types::init_error(cg, "E3131", diag::whole_value_init(call.fn_name), 0, 0)
                         |
                            ?call.args != 1
                               | types::init_error(cg, "E3029", "Record/Slice index " +

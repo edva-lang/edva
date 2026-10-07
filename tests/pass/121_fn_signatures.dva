@@ -15,7 +15,7 @@ io::out $ add(2, 3)
 half: Int => Num
 half = n =>
    n !< 0
-      | Num(<+ n / 2 +>)
+      | Num(<+ n / 2 ->)
       | Num(<-->)
 io::out $ (half(9) | v => str::from_int(v) | "none")
 

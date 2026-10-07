@@ -104,7 +104,7 @@ cat <<'EOF' > "$TMPDIR/test_f5.dva"
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, off, rem =>
    rem == 0
-      | <+ off ->
+      | <+ off +>
       |
          chunk = rem < 65536 | rem | 65536
          n = libc::read(fd, &b + off, chunk)
@@ -112,7 +112,7 @@ read_fd_bytes_loop = fd, b, off, rem =>
             | <-->
             |
                n == 0
-                  | <+ off ->
+                  | <+ off +>
                   | read_fd_bytes_loop(fd, b, off + n, rem - n)
 
 read_file_text: String => < String | >
@@ -130,7 +130,7 @@ read_file_text = path =>
                sz == 0
                   |
                      libc::close(fd)
-                     <+ "" ->
+                     <+ "" +>
                   |
                      libc::lseek(fd, 0, 0)
                      b = {sz}
@@ -139,7 +139,7 @@ read_file_text = path =>
                      read_res
                         | total =>
                            ?b = total
-                           <+ +b ->
+                           <+ +b +>
                         | <-->
 
 empty_res = read_file_text("FILE_EMPTY_PATH")

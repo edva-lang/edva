@@ -128,9 +128,9 @@ port | val => print_int(val) | print("port not found")
 
 Rams represent 2-slot algebraic sum values without runtime type overhead:
 - `<>`: Built-in boolean flag (`<+>` true, `<->` false)
-- `< T | >`: Optional value (`<+ val ->` or `<-->`)
-- `< | Error >`: Fallible result (`<++>` success or `<- err +>`)
-- `< T | Error >`: Two-payload result (`<+ val +>` or `<- err ->`)
+- `< T | >`: Optional value (`<+ val +>` or `<-->`)
+- `< | Error >`: Fallible result (`<++>` success or `<- err ->`)
+- `< T | Error >`: Two-payload result (`<+ val ->` or `<- err +>`)
 
 ```dva
 #type SafeInt < Int | Error >
@@ -138,8 +138,8 @@ Rams represent 2-slot algebraic sum values without runtime type overhead:
 divide: Int, Int => SafeInt
 divide = a, b =>
    b == 0
-      | SafeInt(<- Error(1, "Division by zero", "", 0, 0, (0, 0)) ->)
-      | SafeInt(<+ a / b +>)
+      | SafeInt(<- Error(1, "Division by zero", "", 0, 0, (0, 0)) +>)
+      | SafeInt(<+ a / b ->)
 
 res = divide(10, 2)
 res

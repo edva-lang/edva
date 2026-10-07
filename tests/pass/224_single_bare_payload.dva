@@ -10,5 +10,5 @@ f = o =>
    o | n => io::out $ n
    -1
 
-io::out $ f(Outcome(<+ 42 ->))
-io::out $ f(Outcome(<- "err" ->))
+io::out $ f(Outcome(<+ 42 +>))
+io::out $ f(Outcome(<- "err" +>))

@@ -201,6 +201,8 @@ declare ptr @LLVMBuildAnd(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildOr(ptr, ptr, ptr, ptr)
 
+declare ptr @LLVMBuildXor(ptr, ptr, ptr, ptr)
+
 declare ptr @LLVMBuildShl(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildLShr(ptr, ptr, ptr, ptr)

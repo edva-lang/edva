@@ -246,7 +246,7 @@
       take > 0 | %memcpy(&res, &r.buf + r.pos, take)
       ?res = take
       r.pos = r.pos + take
-      <+ +res ->
+      <+ +res +>
 
    // Buffered drain: reads from reader until EOF, capped at 'max'.
    // Drains any bytes currently buffered, then continues reading from fd.
@@ -280,7 +280,7 @@
                   | -->
                   | ?res_b = cur + n
       ?res_b == 0 | --| <-->
-      <+ +res_b ->
+      <+ +res_b +>
 
    // Buffered read: reads a single byte from reader.
    // Returns <+ byte +> or <--> on EOF.
@@ -291,7 +291,7 @@
       r.pos !< ?r.buf | --| <-->
       b = Int(@[&r.buf + r.pos i8]) .&. 255
       r.pos = r.pos + 1
-      <+ b ->
+      <+ b +>
 
    // Buffered read: reads bytes from reader until 'delim' or 'max'.
    // Consumes delimiter and returns preceding string. Returns <+ String +> or <--> on EOF.
@@ -340,10 +340,10 @@
                            done' = <+>
                            -->
             done'
-               | <+ +out ->
+               | <+ +out +>
                |
                   ?out > 0
-                     | <+ +out ->
+                     | <+ +out +>
                      | <-->
 
    // Buffered line read: reads until '\n', stripping a trailing '\r'
@@ -357,6 +357,6 @@
             n > 0 && line(n - 1) == 13
                |
                   end_idx = n - 1
-                  <+ line(0..end_idx) ->
-               | <+ line ->
+                  <+ line(0..end_idx) +>
+               | <+ line +>
          | <-->

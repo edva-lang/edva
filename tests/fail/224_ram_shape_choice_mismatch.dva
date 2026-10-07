@@ -1,3 +1,3 @@
 // A choice cannot mix branches with different ramification shapes.
 cond = <+>
-x = cond | <+ 1 -> | <- 2 +>
+x = cond | <+ 1 +> | <- 2 ->

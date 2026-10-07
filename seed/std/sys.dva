@@ -44,12 +44,12 @@
       c_str $ raw_argv(n)
 
    addr_opt: Addr => <Addr | >
-   addr_opt = a => a != addr_null | <+ a -> | <-->
+   addr_opt = a => a != addr_null | <+ a +> | <-->
 
    argv: Int => <String | >
    argv = n =>
       sys::addr_opt(raw_argv(n))
-         | raw => <+ c_str(raw) ->
+         | raw => <+ c_str(raw) +>
          | <-->
 
    exit: Int => ()

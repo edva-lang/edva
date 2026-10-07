@@ -97,7 +97,7 @@ find_first_negative: (Int){} => <Int|>
 find_first_negative = arr =>
    ?arr @ i =>
       v = arr(i) | _ | 0
-      v < 0 | --| <+ v ->
+      v < 0 | --| <+ v +>
    <-->
 
 check_limit: Int => <>

@@ -4,7 +4,7 @@
 
 #type L < Int | >
 #type R2 < Float | >
-a = L(<+ 1 ->)
-b = R2(<+ 2.5 ->)
+a = L(<+ 1 +>)
+b = R2(<+ 2.5 +>)
 x = a || b
 io::out $ x

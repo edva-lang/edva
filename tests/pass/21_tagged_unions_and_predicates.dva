@@ -6,7 +6,7 @@ io::out $ add(10, 20)
 double = (_ * 2)
 io::out $ double $ 15
 
-opt = <+ "hello payload" ->
+opt = <+ "hello payload" +>
 msg = opt
     | ("Found: " + _)
     | "Missing"
@@ -23,7 +23,7 @@ res = foo
     | "else"
 io::out $ res
 
-res_val = <+ "data loaded" +>
+res_val = <+ "data loaded" ->
 res_msg = res_val
     | ("Loaded: " + _)
     | ("Error: " + _)

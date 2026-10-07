@@ -134,42 +134,40 @@
    fft_kernel = input, invert =>
       n = ?input
       is_pow2 = n > 0 && (%popcount(n) == 1)
-      !is_pow2
-         | input
+      !is_pow2 | --| input
+      out = ComplexArray()
+      n @ i => out += (input(i)!!)
+      k = 63 - %clz(n)
+      n @ j =>
+         rev = (%bitreverse(j) .>. (64 - k)) .&. (n - 1)
+         j < rev
+            |
+               tmp = out(j)!!
+               out(j) = out(rev)!!
+               out(rev) = tmp
+      len' = 2
+      k @ _ =>
+         half = len' / 2
+         sign = invert | 2.0 | (0.0 - 2.0)
+         theta = (sign * math::pi) / Float(len')
+         w_step = polar(1.0, theta)
+         n_chunks = n / len'
+         n_chunks @ c_i =>
+            start = c_i * len'
+            w' = one!
+            half @ j =>
+               u = out(start + j)!!
+               v = mul(out(start + j + half)!!, w')
+               out(start + j) = add(u, v)
+               out(start + j + half) = sub(u, v)
+               w' = mul(w', w_step)
+         len' = len' * 2
+      invert
          |
-            out = ComplexArray()
-            n @ i => out += (input(i)!!)
-            k = 63 - %clz(n)
-            n @ j =>
-               rev = (%bitreverse(j) .>. (64 - k)) .&. (n - 1)
-               j < rev
-                  |
-                     tmp = out(j)!!
-                     out(j) = out(rev)!!
-                     out(rev) = tmp
-            len' = 2
-            k @ _ =>
-               half = len' / 2
-               sign = invert | 2.0 | (0.0 - 2.0)
-               theta = (sign * math::pi) / Float(len')
-               w_step = polar(1.0, theta)
-               n_chunks = n / len'
-               n_chunks @ c_i =>
-                  start = c_i * len'
-                  w' = one!
-                  half @ j =>
-                     u = out(start + j)!!
-                     v = mul(out(start + j + half)!!, w')
-                     out(start + j) = add(u, v)
-                     out(start + j + half) = sub(u, v)
-                     w' = mul(w', w_step)
-               len' = len' * 2
-            invert
-               |
-                  inv_n = 1.0 / Float(n)
-                  n @ i =>
-                     out(i) = scale(out(i)!!, inv_n)
-            out
+            inv_n = 1.0 / Float(n)
+            n @ i =>
+               out(i) = scale(out(i)!!, inv_n)
+      out
 
    // Forward Fast Fourier Transform (time domain -> frequency domain)
    fft: ComplexArray => ComplexArray

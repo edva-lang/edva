@@ -7,20 +7,20 @@ side_effect = 0
 step_a: Int => < Int | String >
 step_a = x =>
    x < 0
-      | <- "err_a" ->
-      | <+ x * 2 +>
+      | <- "err_a" +>
+      | <+ x * 2 ->
 
 step_b: Int => < Int | String >
 step_b = x =>
    side_effect ::= side_effect + 1
    x == 0
-      | <- "err_b" ->
-      | <+ 100 / x +>
+      | <- "err_b" +>
+      | <+ 100 / x ->
 
 pipeline: Int, Int => < Int | String >
 pipeline = a, b =>
    res = step_a(a)--! + step_b(b)--!
-   <+ res +>
+   <+ res ->
 
 // Success case: step_a(5)=10, step_b(2)=50 => 60 (side_effect = 1)
 p1 = pipeline(5, 2)
@@ -47,12 +47,12 @@ unit_step: Int => < Int | >
 unit_step = x =>
    x < 0
       | <-->
-      | <+ x + 10 ->
+      | <+ x + 10 +>
 
 unit_pipeline: Int => < Int | >
 unit_pipeline = x =>
    v = unit_step(x)--!
-   <+ v * 2 ->
+   <+ v * 2 +>
 
 u1 = unit_pipeline(5)
 u1

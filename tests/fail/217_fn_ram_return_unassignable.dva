@@ -2,4 +2,4 @@
 #type Option < Int | Error >
 f: Int => Option
 f = x =>
-   x [1] Option(<+ 10 +>)
+   x [1] Option(<+ 10 ->)

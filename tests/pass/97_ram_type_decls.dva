@@ -20,16 +20,16 @@ io::out $ t
 
 // RamPN: Some(String) | None.
 #type Option < String | >
-some = Option(<+ "hello" ->)
+some = Option(<+ "hello" +>)
 io::out $ (some | ("got " + _) | "none")
 none = Option(<-->)
 io::out $ (none | ("got " + _) | "none")
 
 // RamPP: Positive(String) | Negative((Int, String)) -- record payload.
 #type CompDiag < String | (Int, String) >
-ok = CompDiag(<+ "Success" +>)
+ok = CompDiag(<+ "Success" ->)
 io::out $ (ok | ("ok: " + _) | "fallback")
-err = <- (404, "Type error") -> $> CompDiag
+err = <- (404, "Type error") +> $> CompDiag
 code = err
     | 0
     | (_.0)
@@ -41,7 +41,7 @@ io::out $ msg
 
 // RamNP: Ok (unit) | Err((Int, String)).
 #type Failure < | (Int, String) >
-e = Failure(<- (500, "boom") +>)
+e = Failure(<- (500, "boom") ->)
 ecode = e
     | 0
     | (_.0)
@@ -53,7 +53,7 @@ io::out $ emsg
 
 // Scalar payloads are unboxed on extraction: `_` is the Int, not a box.
 #type Num < Int | >
-n = Num(<+ 42 ->)
+n = Num(<+ 42 +>)
 v = n
     | (_ + 1)
     | 0

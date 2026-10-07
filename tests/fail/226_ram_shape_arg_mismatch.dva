@@ -2,4 +2,4 @@
 consume: < | Int > => Int
 consume = r => 0
 
-consume(<- 1 ->)
+consume(<- 1 +>)

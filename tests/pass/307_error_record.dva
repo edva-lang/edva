@@ -6,7 +6,7 @@
 
 fail_err: () => < | Error >
 fail_err = !=>
-   <- Error(42, "operation failed", "worker.dva", 15, 8, (101, 202)) +>
+   <- Error(42, "operation failed", "worker.dva", 15, 8, (101, 202)) ->
 
 ok_unit: () => < | Error >
 ok_unit = !=>
@@ -24,7 +24,7 @@ step_unit = !=>
 
 fail_str: () => < | String >
 fail_str = !=>
-   <- "string failure" +>
+   <- "string failure" ->
 
 ok_str_unit: () => < | String >
 ok_str_unit = !=>

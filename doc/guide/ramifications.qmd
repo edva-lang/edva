@@ -43,14 +43,14 @@ All ramifications belong to one of four distinct, mutually incompatible static s
 | `<->` | Negative (2nd) | `RamNN` (`<>`) | Flag falsehood constant |
 | `<++>` | Positive (1st) | `RamNP` (`< \| E >`) | Heap unit constant (void success slot) |
 | `<-->` | Negative (2nd) | `RamPN` (`< T \| >`) | Heap unit constant (absence/none slot) |
-| `<+ expr +>` | Positive (1st) | `RamPP` | First slot of two-payload ram |
-| `<- expr ->` | Negative (2nd) | `RamPP` | Second slot of two-payload ram |
-| `<+ expr ->` | Positive (1st) | `RamPN` | Payload in positive slot, `<-->` in negative |
-| `<- expr +>` | Negative (2nd) | `RamNP` | Payload in negative slot, `<++>` in positive |
+| `<+ expr ->` | Positive (1st) | `RamPP` | First slot of two-payload ram |
+| `<- expr +>` | Negative (2nd) | `RamPP` | Second slot of two-payload ram |
+| `<+ expr +>` | Positive (1st) | `RamPN` | Payload in positive slot, `<-->` in negative |
+| `<- expr ->` | Negative (2nd) | `RamNP` | Payload in negative slot, `<++>` in positive |
 
 Payload delimiters use `<+`/`+>` and `<-`/`->`. Because `<` and `>` are not
 overloaded as delimiters, comparisons inside constructors are completely
-unambiguous without parentheses: `<+ a > b +>`.
+unambiguous without parentheses: `<+ a > b ->`.
 
 ```dva
 #type MaybeInt < Int | >
@@ -58,9 +58,9 @@ unambiguous without parentheses: `<+ a > b +>`.
 
 // Constructing various shapes:
 flag_val: <> = <+>
-opt_val = MaybeInt(<+ 42 ->)
+opt_val = MaybeInt(<+ 42 +>)
 none_val = MaybeInt(<-->)
-res_val = ParseResult(<+ 100 +>)
+res_val = ParseResult(<+ 100 ->)
 ```
 
 ## Ramification operations
@@ -100,13 +100,13 @@ When guarding an early exit with a unit ramification, Edva provides compact bran
 #type SafeInt < Int | Error >
 
 step1: Int => SafeInt
-step1 = x => SafeInt(<+ x + 10 +>)
+step1 = x => SafeInt(<+ x + 10 ->)
 
 step2: Int => SafeInt
-step2 = x => SafeInt(<+ x * 2 +>)
+step2 = x => SafeInt(<+ x * 2 ->)
 
 // Chains step1 then step2 cleanly:
-final_res = SafeInt(<+ 5 +>) $>> step1 $>> step2
+final_res = SafeInt(<+ 5 ->) $>> step1 $>> step2
 // Evaluates to SafeInt(<+ 30 +>)
 ```
 

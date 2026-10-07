@@ -372,8 +372,8 @@ name, verifying the tag and payload against the declared slots:
 
 ```
 #type CompilerDiagnostic < String | (Int, String) >
-d = CompilerDiagnostic(<+ "Success" +>)   // first slot, payload String
-e = <- (404, "Type error") -> $> CompilerDiagnostic  // second slot, payload (Int, String)
+d = CompilerDiagnostic(<+ "Success" ->)   // first slot, payload String in RamPP
+e = <- (404, "Type error") +> $> CompilerDiagnostic  // second slot, payload (Int, String) in RamPP
 ```
 
 **Recursive and forward-referenced types.** A ram/enum declaration registers
@@ -828,19 +828,19 @@ In the implicit block form (`xs @ ...`), `_` binds the unwrapped element and
 
 ```
 Ramification ::= "<+>" | "<->" | "<++>" | "<-->"
-               | "<+" Expr "+>"        (* first slot, with payload; second slot is a payload slot *)
-               | "<+" Expr "->"        (* first slot, with payload; second slot is unit *)
-               | "<-" Expr "->"        (* second slot, with payload; first slot is a payload slot *)
-               | "<-" Expr "+>"        (* second slot, with payload; first slot is unit *)
+               | "<+" Expr "+>"        (* first slot, with payload; second slot is unit (RamPN) *)
+               | "<+" Expr "->"        (* first slot, with payload; second slot is a payload slot (RamPP) *)
+               | "<-" Expr "->"        (* second slot, with payload; first slot is unit (RamNP) *)
+               | "<-" Expr "+>"        (* second slot, with payload; first slot is a payload slot (RamPP) *)
 ```
 
 A ramification is a two-slot tagged value; the slots are positional (first /
 second), never named. The unit forms carry no payload; the payload forms wrap
 one expression in the slot selected by the prefix (`<+` = first slot, `<-` =
 second slot). The closer decides whether the *other* slot also carries a
-payload: a closer whose sign matches the prefix (`<+ … +>`, `<- … ->`) keeps
-both slots as payloads (RamPP), while an opposite-sign closer (`<+ … ->`,
-`<- … +>`) makes the other slot a bare unit (RamPN / RamNP respectively).
+payload: a closer whose sign matches the prefix (`<+ … +>`, `<- … ->`) pairs
+with a unit second slot (RamPN / RamNP respectively), while an opposite-sign closer
+(`<+ … ->`, `<- … +>`) makes the other slot a payload slot as well (RamPP).
 Because the closer is a two-character token, `<` and `>` are never delimiters:
 comparisons inside a payload are written unbracketed, e.g. `<+ a > b +>`.
 
@@ -1048,7 +1048,7 @@ the truth values `<+>` (positive) and `<->` (negative).
 | `+=` | `Builder, c` (integerish, `c` ∈ 0..255) | `Builder` — **in-place push**: mutates b's buffer (amortized O(1)); `E4007` if out of range |
 | `+=` | `Builder, s` (String) | `Builder` — **in-place append** of s's bytes (grows as needed) |
 | `$>` | `lhs, fn` | `fn(lhs)` — feed / reverse application; **multi-arg** (`x $> f(a)` == `f(x, a)` prepend); below the choice tier, left-assoc, RHS absorbs a choice |
-| `$>>` | `RamPP/RamPN, fn` | `Ramification` — monadic bind: `lhs | rhs(_) | <- _ ->` (RamPP, negative payload propagates) or `lhs | rhs(_) | <-->` (RamPN, negative unit propagates); `rhs` receives the positive payload and must return the same monad. Any other lhs layout (RamNP/RamNN/non-ram) is `E3091`. |
+| `$>>` | `RamPP/RamPN, fn` | `Ramification` — monadic bind: `lhs | rhs(_) | <- _ +>` (RamPP, negative payload propagates) or `lhs | rhs(_) | <-->` (RamPN, negative unit propagates); `rhs` receives the positive payload and must return the same monad. Any other lhs layout (RamNP/RamNN/non-ram) is `E3091`. |
 | `+` | `Addr/RawPtr, Int` (or mirrored) | `Addr` — pointer offset (unsafe) |
 | `-` | numeric, numeric | numeric |
 | `*` `/` `%` | numeric, numeric | numeric |
