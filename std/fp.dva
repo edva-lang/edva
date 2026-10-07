@@ -130,26 +130,16 @@
    // find: search for the first element satisfying pred, returning < E | >.
    find: #! E: Type, #! T: Type, (E => <>), T => < E | >
    find = pred, xs =>
-      res' = <-->
-      ?xs @ i =>
-         v = xs(i) | _ | E
-         pred(v)
-            |
-               res' = <+ v ->
-               -->
-      res'
+      xs @ x =>
+         pred(x) | --| <+ x +>
+      <-->
 
    // any: check if any element in xs satisfies pred, returning <>.
    any: #! E: Type, #! T: Type, (E => <>), T => <>
    any = pred, xs =>
-      res' = <->
-      ?xs @ i =>
-         v = xs(i) | _ | E
-         pred(v)
-            |
-               res' = <+>
-               -->
-      res'
+      xs @ x =>
+         pred(x) |+>
+      <->
 
    // --- predicate combinators ------------------------------------------------
 
