@@ -52,15 +52,14 @@
    const: #! A: Type, #! B: Type, A => (B => A)
    const = x => _ => x
 
-   // map / filter: apply a function / predicate to each element of a homogeneous
-   // record, building a NEW record of the same type. The container type T and
-   // element type E are inferred; "out = T" materializes the empty container
-   // (CTTR), and the existing '?xs @ i' cycle iterates.
-   map: #! E: Type, #! T: Type, (E => E), T => T
+   // map: apply a transformation function f to each element of a collection
+   // (growable array, slice view, or record), building a new growable array of
+   // element type B. Supports arbitrary element type transitions (A => B).
+   map: #! A: Type, #! B: Type, #! T: Type, (A => B), T => (B){}
    map = f, xs =>
-      out = T
-      ?xs @ i =>
-         out += f(xs(i) | v => v | E)
+      out = B{}
+      xs @ x =>
+         out += f(x)
       out
 
    filter: #! E: Type, #! T: Type, (E => <>), T => T

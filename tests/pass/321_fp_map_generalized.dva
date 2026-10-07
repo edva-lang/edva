@@ -1,0 +1,59 @@
+// Comprehensive test for generalized std/fp map (Issue #120)
+#use(import) fp
+#use io
+#use str
+
+to_label: Int => String
+to_label = n => "#" + str::from_int(n)
+
+str_len: String => Int
+str_len = s => ?s
+
+dbl: Int => Int
+dbl = n => n * 2
+
+nums = Int{}
+nums += 10
+nums += 20
+nums += 30
+
+// 1. Map Int => String from array
+labels = map(to_label, nums)
+io::out $ "labels_len=" + str::from_int(?labels)
+labels @ l =>
+   io::out $ "label=" + l
+
+// 2. Map Int => String from slice view
+sl = nums(..)
+labels_sl = map(to_label, sl)
+io::out $ "labels_sl_len=" + str::from_int(?labels_sl)
+labels_sl @ l =>
+   io::out $ "label_sl=" + l
+
+// 3. Map Int => String from record
+labels_rec = map(to_label, (1, 2, 3))
+io::out $ "labels_rec_len=" + str::from_int(?labels_rec)
+labels_rec @ l =>
+   io::out $ "label_rec=" + l
+
+// 4. Map String => Int from array
+words = String{}
+words += "hi"
+words += "edva"
+words += "functional"
+
+lengths = map(str_len, words)
+io::out $ "lengths_len=" + str::from_int(?lengths)
+lengths @ len =>
+   io::out $ "len=" + str::from_int(len)
+
+// 5. Map Int => Int (same type)
+doubled = map(dbl, nums)
+io::out $ "doubled_len=" + str::from_int(?doubled)
+doubled @ d =>
+   io::out $ "doubled=" + str::from_int(d)
+
+// 6. Map on empty array
+empty_nums = Int{}
+empty_labels = map(to_label, empty_nums)
+io::out $ "empty_len=" + str::from_int(?empty_labels)
