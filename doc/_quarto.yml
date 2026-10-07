@@ -1,6 +1,9 @@
 project:
   type: book
   output-dir: _build
+  resources:
+    - "llms.txt"
+    - "llms-full.txt"
 
 book:
   title: "Edva"

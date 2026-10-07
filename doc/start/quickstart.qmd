@@ -47,6 +47,8 @@ It prints `greater`. In this snippet:
 | Cycle (loop / iteration) | `0..10 @ i => print_int(i)` | `for i in 0..10 { ... }` |
 | Cycle break | `i == 5 | -->` | `if i == 5 { break; }` |
 | Cycle continue | `i % 2 == 0 | --^` | `if i % 2 == 0 { continue; }` |
+| Early return | `--| expr` / bare `--|` | `return expr;` / `return;` |
+| Ram branch return | `\|->` / `\|+>` / `\|-->` / `\|++>` | `if cond { return false/None; }` |
 | String builder | `b = {32}; b += "hi"; s = +b` | `let mut b = String::with_capacity(32); ...` |
 | Ramification (Result) | `<+ 42 ->` / `<- err +>` | `Ok(42)` / `Err(err)` |
 | Unwrap or abort | `res!!` | `res.unwrap()` |

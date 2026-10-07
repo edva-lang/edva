@@ -26,6 +26,8 @@ The following table contrasts conventional language keywords with their Edva equ
 | Loop continue | `continue` | `--^` (symbolic continue) | `skip | --^` |
 | Loop result | `loop { break val; }` | `>--` (cycle-escape) | `items @ x => test(x) | --> >-- x` |
 | Function return | `return val;` | Tail expression | Last expression in block |
+| Early return | `return val;` / `return;` | `--| expr` (bare `--|` for void) | `x < 0 \| --\| 0` |
+| Ram branch return | `return false;` / `return err;` | `\|->` / `\|+>` / `\|-->` / `\|++>` | `x < 0 \|-->` (returns `<-->`) |
 | Function definition | `fn`, `def`, `func` | `=>` lambda/function arrow | `square = x => x * x` |
 | Error unwrapping | `.unwrap()`, `?` | `!!` unwrap-or-abort | `result!!` |
 | Error propagation | `?` (Rust) | `!| _` or `$>>` bind | `write(buf) !| _` |

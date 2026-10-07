@@ -51,9 +51,31 @@ current cycle; `>--` supplies an escape-expression branch. See the
 `=` creates or writes a binding according to its mutability. `+=` appends to a
 Builder in place. A Builder length assignment has the special form `?builder =
 n`. Every assignment evaluates to Unit. Expressions immediately after `=` and
-choice conditions are written without surrounding parentheses. A function
-returns its final expression's value, so a final assignment makes the function
+choice conditions are written without surrounding parentheses. A function returns its final expression's value, so a final assignment makes the function
 return Unit; write `()` only as that type in a declaration, never as a value.
+
+## Early return and branch return sugars
+
+Functions can exit early before their trailing expression:
+
+- `--| expr`: returns `expr` immediately from the enclosing function. The type of `expr` must match the declared return type.
+- Bare `--|`: returns early from a void function (`() => ()`).
+
+When returning a unit ramification from a choice branch, Edva provides compact syntactic shortcuts:
+
+| Sugar | Desugars to | Target Return Type |
+|---|---|---|
+| `cond \|->` | `cond \| --\| <->` | `RamNN` (`<>`) negative flag |
+| `cond \|+>` | `cond \| --\| <+>` | `RamNN` (`<>`) positive flag |
+| `cond \|-->` | `cond \| --\| <-->` | `RamPN` (`< T \| >`) absence unit |
+| `cond \|++>` | `cond \| --\| <++>` | `RamNP` (`< \| E >`) success unit |
+
+```dva
+find_positive: Int => < Int | >
+find_positive = n =>
+   n !> 0 |-->
+   <+ n +>
+```
 
 ## Type-directed forms
 
