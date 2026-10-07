@@ -2871,7 +2871,7 @@ parse_pos_arg = i, arg, opts =>
 print_usage: Int => ()
 print_usage = _ =>
    print $ "Usage: edva <input.dva | module_dir> [options]"
-   print $ "       edva <init|add|fetch|build|test|update|graph> [dir] [options]"
+   print $ "       edva <init|add|fetch|build|test|update|graph|vendor> [dir] [options]"
    print $ "       edva pkg <command> [dir] [options]"
    print $ "Options:"
    print $ "  -ast, --ast      Print AST of target program"
@@ -2917,7 +2917,7 @@ dump_program_ast = prog, as_tree =>
 
 is_pkg_subcmd: String => <>
 is_pkg_subcmd = cmd =>
-   cmd ["init", "add", "fetch", "build", "test", "update", "graph", "tree"]
+   cmd ["init", "add", "fetch", "build", "test", "update", "graph", "tree", "vendor"]
 
 run_driver: Int => ()
 run_driver = _ =>

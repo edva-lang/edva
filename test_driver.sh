@@ -1737,5 +1737,206 @@ if [ $rc -ne 0 ]; then
 fi
 echo "PASS"
 
+# --- Test 46: edva vendor complete offline workflow, relocation, tamper detection ---
+echo -n "Testing edva vendor offline workflow, relocation & tamper checks... "
+VEND_FIXTURE="$TMPDIR/vend_fixture"
+mkdir -p "$VEND_FIXTURE/ext_lib/src" "$VEND_FIXTURE/git_dep/src" "$VEND_FIXTURE/root_app/src"
+
+# 1. External path library with a LICENSE file and a duplicate module name 'utils'
+cat <<'EOF' > "$VEND_FIXTURE/ext_lib/edva.ccl"
+name = ext_lib
+version = 1.0.0
+edva = 0.1.0
+EOF
+echo "MIT License (c) 2026 External Lib Author" > "$VEND_FIXTURE/ext_lib/LICENSE"
+cat <<'EOF' > "$VEND_FIXTURE/ext_lib/src/ext_lib.dva"
+#use utils
+
+#public
+   ext_calc: Int => Int
+   ext_calc = x => x + 10
+EOF
+cat <<'EOF' > "$VEND_FIXTURE/ext_lib/src/utils.dva"
+#public
+   mod_tag: () => String
+   mod_tag = !=> "ext_utils"
+EOF
+
+# 2. Git library with LICENSE.txt, duplicate module name 'utils', and multiple commits/revisions
+cat <<'EOF' > "$VEND_FIXTURE/git_dep/edva.ccl"
+name = git_dep
+version = 1.0.0
+edva = 0.1.0
+EOF
+echo "BSD-3-Clause License (c) 2026 Git Dep Author" > "$VEND_FIXTURE/git_dep/LICENSE.txt"
+cat <<'EOF' > "$VEND_FIXTURE/git_dep/src/git_dep.dva"
+#use utils
+
+#public
+   git_calc: Int => Int
+   git_calc = x => x * 2
+EOF
+cat <<'EOF' > "$VEND_FIXTURE/git_dep/src/utils.dva"
+#public
+   mod_tag: () => String
+   mod_tag = !=> "git_utils"
+EOF
+git -C "$VEND_FIXTURE/git_dep" init --quiet -b main
+git -C "$VEND_FIXTURE/git_dep" config user.email "test@example.com"
+git -C "$VEND_FIXTURE/git_dep" config user.name "Test"
+git -C "$VEND_FIXTURE/git_dep" add .
+git -C "$VEND_FIXTURE/git_dep" commit --quiet -m "init git_dep v1"
+git -C "$VEND_FIXTURE/git_dep" tag v1.0.0
+
+# Add a v2 commit to test selective update later
+cat <<'EOF' > "$VEND_FIXTURE/git_dep/src/git_dep.dva"
+#use utils
+
+#public
+   git_calc: Int => Int
+   git_calc = x => x * 3
+EOF
+git -C "$VEND_FIXTURE/git_dep" add .
+git -C "$VEND_FIXTURE/git_dep" commit --quiet -m "git_dep v2"
+git -C "$VEND_FIXTURE/git_dep" tag v2.0.0
+
+# 3. Root app consuming git_dep at v1.0.0 and external path dependency
+cat <<EOF > "$VEND_FIXTURE/root_app/edva.ccl"
+name = root_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  git_lib =
+    git = file://$VEND_FIXTURE/git_dep
+    rev = v1.0.0
+  ext_lib =
+    path = ../ext_lib
+EOF
+cat <<'EOF' > "$VEND_FIXTURE/root_app/src/utils.dva"
+#public
+   mod_tag: () => String
+   mod_tag = !=> "root_utils"
+EOF
+cat <<'EOF' > "$VEND_FIXTURE/root_app/src/main.dva"
+#use @git_lib
+#use @ext_lib
+#use utils
+#use "libc"
+
+g = git_lib::git_calc(5)
+e = ext_lib::ext_calc(g)
+e == 20 | libc::exit(0) | libc::exit(1)
+EOF
+
+# 4. Run `edva vendor` to materialize vendor directory and vendor.ccl
+timeout 30 ./edva vendor "$VEND_FIXTURE/root_app" >"$TMPDIR/t46_vendor.out" 2>"$TMPDIR/t46_vendor.err"
+rc=$?
+if [ $rc -ne 0 ] || ! grep -q "vendored 2 packages in vendor/" "$TMPDIR/t46_vendor.out"; then
+    echo "FAILED: edva vendor failed to materialize packages"
+    cat "$TMPDIR/t46_vendor.out" "$TMPDIR/t46_vendor.err"
+    exit 1
+fi
+if [ ! -f "$VEND_FIXTURE/root_app/vendor/vendor.ccl" ]; then
+    echo "FAILED: vendor/vendor.ccl was not generated"
+    exit 1
+fi
+# Verify metadata and stripped .git
+if [ -d "$VEND_FIXTURE/root_app/vendor/git_dep"*/.git ]; then
+    echo "FAILED: .git repository metadata was not stripped from vendored git package"
+    exit 1
+fi
+if [ ! -f "$VEND_FIXTURE/root_app/vendor/ext_lib@path/LICENSE" ]; then
+    echo "FAILED: LICENSE was not retained in vendored path package"
+    exit 1
+fi
+
+# 5. Relocate project to a completely new path and clear caches/stores
+RELOC_APP="$TMPDIR/relocated_app"
+cp -R "$VEND_FIXTURE/root_app" "$RELOC_APP"
+EMPTY_STORE="$TMPDIR/empty_store"
+EMPTY_CACHE="$TMPDIR/empty_cache"
+mkdir -p "$EMPTY_STORE" "$EMPTY_CACHE"
+
+# Remove the original source locations so any leak to external path will fail!
+rm -rf "$VEND_FIXTURE/ext_lib"
+
+# 6. Cold build --locked --offline in relocated directory with empty store/cache
+timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$RELOC_APP" --locked --offline >"$TMPDIR/t46_cold.out" 2>"$TMPDIR/t46_cold.err"
+rc=$?
+if [ $rc -ne 0 ]; then
+    echo "FAILED: cold build --locked --offline in relocated directory failed"
+    cat "$TMPDIR/t46_cold.out" "$TMPDIR/t46_cold.err"
+    exit 1
+fi
+# Run executable and verify exit code 0 (20 == 20)
+"$RELOC_APP/root_app"
+rc=$?
+if [ $rc -ne 0 ]; then
+    echo "FAILED: unexpected binary execution exit code from vendored app: $rc"
+    exit 1
+fi
+
+# 7. Warm build --locked --offline
+timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$RELOC_APP" --locked --offline >"$TMPDIR/t46_warm.out" 2>"$TMPDIR/t46_warm.err"
+rc=$?
+if [ $rc -ne 0 ]; then
+    echo "FAILED: warm build --locked --offline failed"
+    cat "$TMPDIR/t46_warm.out" "$TMPDIR/t46_warm.err"
+    exit 1
+fi
+
+# 8. Tamper detection on vendored content (E7005)
+TAMPER_FILE="$(find "$RELOC_APP/vendor" -name "ext_lib.dva" | head -n 1)"
+echo "// tampered content" >> "$TAMPER_FILE"
+set +e
+timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$RELOC_APP" --locked --offline >"$TMPDIR/t46_tamper.out" 2>"$TMPDIR/t46_tamper.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7005: tampered vendor content: tree hash mismatch" "$TMPDIR/t46_tamper.out"; then
+    echo "FAILED: expected E7005 tamper detection on modified vendored content"
+    cat "$TMPDIR/t46_tamper.out"
+    exit 1
+fi
+
+# 9. Missing vendored package detection (E7014)
+MISSING_APP="$TMPDIR/missing_vend_app"
+cp -R "$VEND_FIXTURE/root_app" "$MISSING_APP"
+rm -rf "$MISSING_APP/vendor/ext_lib@path"
+set +e
+timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$MISSING_APP" --locked --offline >"$TMPDIR/t46_missing.out" 2>"$TMPDIR/t46_missing.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7014: vendored package 'ext_lib@path' not found" "$TMPDIR/t46_missing.out"; then
+    echo "FAILED: expected E7014 when a vendored package is missing"
+    cat "$TMPDIR/t46_missing.out"
+    exit 1
+fi
+
+# 10. Stale lock detection under --locked (E7007)
+STALE_APP="$TMPDIR/stale_vend_app"
+cp -R "$VEND_FIXTURE/root_app" "$STALE_APP"
+mkdir -p "$TMPDIR/new_dep"
+cat <<'EOF' > "$TMPDIR/new_dep/edva.ccl"
+name = new_dep
+version = 0.1.0
+edva = 0.1.0
+EOF
+cat <<'EOF' >> "$STALE_APP/edva.ccl"
+  new_unused_dep =
+    path = ../new_dep
+EOF
+set +e
+timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$STALE_APP" --locked >"$TMPDIR/t46_stale.out" 2>"$TMPDIR/t46_stale.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7007: --locked: edva.lock.ccl is out of date" "$TMPDIR/t46_stale.out"; then
+    echo "FAILED: expected E7007 when lockfile is out of date under --locked"
+    cat "$TMPDIR/t46_stale.out"
+    exit 1
+fi
+
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 
