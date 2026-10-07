@@ -1528,4 +1528,214 @@ timeout 30 ./edva pkg cache ls --cache "$CACHE_DIR" >/dev/null 2>&1
 timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >/dev/null 2>&1
 echo "PASS"
 
+# --- Test 41: edva init workflow & duplicate prevention (E7020) ---
+echo -n "Testing edva init and duplicate prevention (E7020)... "
+INIT_APP="$TMPDIR/init_app"
+INIT_LIB="$TMPDIR/init_lib"
+timeout 30 ./edva init "$INIT_APP" >"$TMPDIR/t41_init.out" 2>"$TMPDIR/t41_init.err"
+rc=$?
+if [ $rc -ne 0 ] || [ ! -f "$INIT_APP/edva.ccl" ] || [ ! -f "$INIT_APP/src/init_app.dva" ] || [ ! -f "$INIT_APP/src/main.dva" ]; then
+    echo "FAILED: edva init did not create expected skeleton files"
+    cat "$TMPDIR/t41_init.out" "$TMPDIR/t41_init.err"
+    exit 1
+fi
+timeout 30 ./edva pkg init "$INIT_LIB" --name my_custom_lib >/dev/null 2>&1
+if [ ! -f "$INIT_LIB/edva.ccl" ] || [ ! -f "$INIT_LIB/src/my_custom_lib.dva" ]; then
+    echo "FAILED: edva pkg init --name did not create expected named skeleton"
+    exit 1
+fi
+set +e
+timeout 30 ./edva init "$INIT_APP" >"$TMPDIR/t41_dup.out" 2>"$TMPDIR/t41_dup.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7020: edva.ccl already exists" "$TMPDIR/t41_dup.err" "$TMPDIR/t41_dup.out"; then
+    echo "FAILED: re-running edva init should fail with E7020"
+    cat "$TMPDIR/t41_dup.out" "$TMPDIR/t41_dup.err"
+    exit 1
+fi
+timeout 30 ./edva build "$INIT_APP" >"$TMPDIR/t41_bld.out" 2>"$TMPDIR/t41_bld.err"
+rc=$?
+if [ $rc -ne 0 ] || [ ! -x "$INIT_APP/init_app" ]; then
+    echo "FAILED: initialized app should build cleanly"
+    cat "$TMPDIR/t41_bld.out" "$TMPDIR/t41_bld.err"
+    exit 1
+fi
+APP_RUN_OUT="$("$INIT_APP/init_app")"
+if [ "$APP_RUN_OUT" != "Hello from init_app!" ]; then
+    echo "FAILED: unexpected output from initialized app binary: $APP_RUN_OUT"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 42: edva add transactional rollback on failure (E7021) & successful add ---
+echo -n "Testing edva add and transactional rollback (E7021)... "
+timeout 30 ./edva add my_lib --path "$INIT_LIB" "$INIT_APP" >"$TMPDIR/t42_add.out" 2>"$TMPDIR/t42_add.err"
+rc=$?
+if [ $rc -ne 0 ] || ! grep -q "my_lib" "$INIT_APP/edva.ccl" || ! grep -q "my_custom_lib@path" "$INIT_APP/edva.lock.ccl"; then
+    echo "FAILED: edva add failed to add dependency to manifest and lock"
+    cat "$TMPDIR/t42_add.out" "$TMPDIR/t42_add.err"
+    exit 1
+fi
+MANIFEST_BEFORE="$(cat "$INIT_APP/edva.ccl")"
+set +e
+timeout 30 ./edva add bad_dep --path "$TMPDIR/nonexistent_xyz_dir" "$INIT_APP" >"$TMPDIR/t42_fail.out" 2>"$TMPDIR/t42_fail.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7021: rolled back edva.ccl changes after resolution failure" "$TMPDIR/t42_fail.err" "$TMPDIR/t42_fail.out"; then
+    echo "FAILED: edva add with invalid source should rollback with E7021"
+    cat "$TMPDIR/t42_fail.out" "$TMPDIR/t42_fail.err"
+    exit 1
+fi
+MANIFEST_AFTER="$(cat "$INIT_APP/edva.ccl")"
+if [ "$MANIFEST_BEFORE" != "$MANIFEST_AFTER" ]; then
+    echo "FAILED: edva.ccl was not rolled back to original content"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 43: edva update selective pin refresh & --locked rejection ---
+echo -n "Testing edva update selective pin refresh & --locked rejection... "
+# Test --locked rejection
+set +e
+timeout 30 ./edva update "$INIT_APP" --locked >"$TMPDIR/t43_lock.out" 2>"$TMPDIR/t43_lock.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7008: --locked: update cannot be run with --locked" "$TMPDIR/t43_lock.err" "$TMPDIR/t43_lock.out"; then
+    echo "FAILED: edva update --locked should fail with E7008"
+    cat "$TMPDIR/t43_lock.out" "$TMPDIR/t43_lock.err"
+    exit 1
+fi
+# Test non-existent dependency alias
+set +e
+timeout 30 ./edva update "$INIT_APP" nonexistent_dep_alias >"$TMPDIR/t43_noalias.out" 2>"$TMPDIR/t43_noalias.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7004: dependency 'nonexistent_dep_alias' not found" "$TMPDIR/t43_noalias.err" "$TMPDIR/t43_noalias.out"; then
+    echo "FAILED: edva update non-existent alias should fail with E7004"
+    cat "$TMPDIR/t43_noalias.out" "$TMPDIR/t43_noalias.err"
+    exit 1
+fi
+# Setup git repo for update test
+UPD_GIT="$TMPDIR/upd_git_pkg"
+UPD_APP="$TMPDIR/upd_app"
+mkdir -p "$UPD_GIT/src" "$UPD_APP/src"
+git -C "$UPD_GIT" init --quiet -b master
+git -C "$UPD_GIT" config user.email "test@example.com"
+git -C "$UPD_GIT" config user.name "Test"
+cat <<'EOF' > "$UPD_GIT/edva.ccl"
+name = upd_git_pkg
+version = 1.0.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$UPD_GIT/src/upd_git_pkg.dva"
+#public
+   v = 1
+EOF
+git -C "$UPD_GIT" add edva.ccl src/upd_git_pkg.dva
+git -C "$UPD_GIT" commit --quiet -m "commit 1"
+COMMIT1="$(git -C "$UPD_GIT" rev-parse HEAD)"
+
+cat <<'EOF' > "$UPD_APP/edva.ccl"
+name = upd_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  g =
+    git = FILE_GIT_URL
+    rev = master
+EOF
+sed -i "s|FILE_GIT_URL|file://$UPD_GIT|g" "$UPD_APP/edva.ccl"
+touch "$UPD_APP/src/main.dva"
+timeout 30 ./edva fetch "$UPD_APP" --store "$STORE_DIR" >/dev/null 2>&1
+if ! grep -q "$COMMIT1" "$UPD_APP/edva.lock.ccl"; then
+    echo "FAILED: initial fetch did not lock commit1"
+    exit 1
+fi
+# Add a new commit to git repo
+echo "   v2 = 2" >> "$UPD_GIT/src/upd_git_pkg.dva"
+git -C "$UPD_GIT" commit --quiet -am "commit 2"
+COMMIT2="$(git -C "$UPD_GIT" rev-parse HEAD)"
+
+# Regular fetch without update should preserve pinned commit1
+timeout 30 ./edva fetch "$UPD_APP" --store "$STORE_DIR" >/dev/null 2>&1
+if ! grep -q "$COMMIT1" "$UPD_APP/edva.lock.ccl"; then
+    echo "FAILED: fetch should keep pinned commit"
+    exit 1
+fi
+# edva update should refresh the pin to commit2
+timeout 30 ./edva update "$UPD_APP" g --store "$STORE_DIR" >"$TMPDIR/t43_upd.out" 2>"$TMPDIR/t43_upd.err"
+rc=$?
+if [ $rc -ne 0 ] || ! grep -q "$COMMIT2" "$UPD_APP/edva.lock.ccl"; then
+    echo "FAILED: edva update did not advance lockfile to commit2"
+    cat "$TMPDIR/t43_upd.out" "$TMPDIR/t43_upd.err"
+    exit 1
+fi
+if ! grep -q "updated 'upd_git_pkg'" "$TMPDIR/t43_upd.out"; then
+    echo "FAILED: edva update output should report updated package"
+    cat "$TMPDIR/t43_upd.out" "$TMPDIR/t43_upd.err"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 44: edva graph & tree with duplicate versions detection ---
+echo -n "Testing edva graph & tree with duplicate versions detection... "
+GRAPH_OUT="$(./edva graph "$INIT_APP")"
+TREE_OUT="$(./edva tree "$INIT_APP")"
+if [ "$GRAPH_OUT" != "$TREE_OUT" ] || ! echo "$GRAPH_OUT" | grep -q "my_lib -> my_custom_lib@path"; then
+    echo "FAILED: edva graph and tree should produce matching dependency trees"
+    exit 1
+fi
+# Test duplicate versions detection
+DUP_PROJ="$TMPDIR/dup_proj"
+mkdir -p "$DUP_PROJ/src"
+cat <<'EOF' > "$DUP_PROJ/edva.ccl"
+name = dup_proj
+version = 0.1.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$DUP_PROJ/edva.lock.ccl"
+lock = 1
+
+packages =
+  common@11111111 =
+    git = https://example.com/common.git
+    rev = v1
+    commit = 1111111111111111111111111111111111111111
+  common@22222222 =
+    git = https://example.com/common.git
+    rev = v2
+    commit = 2222222222222222222222222222222222222222
+
+root =
+  c1 = common@11111111
+  c2 = common@22222222
+EOF
+DUP_OUT="$(./edva graph "$DUP_PROJ")"
+if ! echo "$DUP_OUT" | grep -q "\[duplicate version\]" || ! echo "$DUP_OUT" | grep -q "Duplicate versions detected:"; then
+    echo "FAILED: edva graph should detect and display duplicate versions"
+    echo "$DUP_OUT"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 45: Top-level subcommands dispatch ---
+echo -n "Testing top-level subcommands dispatch (edva <subcmd>)... "
+timeout 30 ./edva test "$INIT_APP" >"$TMPDIR/t45_test.out" 2>"$TMPDIR/t45_test.err"
+rc=$?
+if [ $rc -ne 0 ] || ! grep -q "0 passed, 0 failed" "$TMPDIR/t45_test.out"; then
+    echo "FAILED: edva test top-level command dispatch failed"
+    cat "$TMPDIR/t45_test.out" "$TMPDIR/t45_test.err"
+    exit 1
+fi
+timeout 30 ./edva fetch "$INIT_APP" >"$TMPDIR/t45_fetch.out" 2>"$TMPDIR/t45_fetch.err"
+rc=$?
+if [ $rc -ne 0 ]; then
+    echo "FAILED: edva fetch top-level command dispatch failed"
+    cat "$TMPDIR/t45_fetch.out" "$TMPDIR/t45_fetch.err"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
+

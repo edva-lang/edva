@@ -202,8 +202,8 @@ sort_names = names =>
    n = ?names
    n @ i =>
       (n - 1) @ j =>
-         a = (names(j) | _ | "")
-         b = (names(j + 1) | _ | "")
+         a = names(j) | _ | ""
+         b = names(j + 1) | _ | ""
          str::cmp(a, b) > 0
             |
                names(j) = b !| _
@@ -2871,7 +2871,8 @@ parse_pos_arg = i, arg, opts =>
 print_usage: Int => ()
 print_usage = _ =>
    print $ "Usage: edva <input.dva | module_dir> [options]"
-   print $ "       edva pkg fetch [dir] [options]"
+   print $ "       edva <init|add|fetch|build|test|update|graph> [dir] [options]"
+   print $ "       edva pkg <command> [dir] [options]"
    print $ "Options:"
    print $ "  -ast, --ast      Print AST of target program"
    print $ "  -ast-tree        Print AST as an indented tree"
@@ -2914,11 +2915,19 @@ dump_program_ast = prog, as_tree =>
             | print $ show::show_tree(prog, 0)
             | print $ show::show_expr(prog)
 
+is_pkg_subcmd: String => <>
+is_pkg_subcmd = cmd =>
+   cmd ["init", "add", "fetch", "build", "test", "update", "graph", "tree"]
+
 run_driver: Int => ()
 run_driver = _ =>
    sys::argc > 1 && sys::argv_string(1) == "pkg"
       |
          rc = pkg::main(2)
+         sys::exit(rc)
+   sys::argc > 1 && is_pkg_subcmd(sys::argv_string(1))
+      |
+         rc = pkg::main(1)
          sys::exit(rc)
    init_compiler_paths!
    ast::cell_var_reset!
