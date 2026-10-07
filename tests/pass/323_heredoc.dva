@@ -1,0 +1,81 @@
+// tests/pass/323_heredoc.dva — comprehensive tests for here-doc ("""...""")
+
+#use io
+
+// 1. Single line here-doc
+s1 = """hello world"""
+s1 == "hello world" | io::out $ "PASS 1" | io::out $ "FAIL 1"
+
+// 2. Multiline static here-doc with margin stripping
+s2 = """
+   line 1
+      line 2 indented
+   line 3
+   """
+expected2 = "line 1\n   line 2 indented\nline 3\n"
+s2 == expected2 | io::out $ "PASS 2" | io::out $ "FAIL 2"
+
+// 3. Multiline with blank lines
+s3 = """
+   line 1
+
+   line 2
+   """
+expected3 = "line 1\n\nline 2\n"
+s3 == expected3 | io::out $ "PASS 3" | io::out $ "FAIL 3"
+
+// 4. Line continuation with trailing backslash
+s4 = """
+   This is a single \
+   unbroken line.
+   """
+expected4 = "This is a single unbroken line.\n"
+s4 == expected4 | io::out $ "PASS 4" | io::out $ "FAIL 4"
+
+// 5. Escaped triple quotes, dollar, and quotes
+s5 = """
+   Escaped: \""" and \$not_interp and "quote" and ""double""
+   """
+expected5 = "Escaped: \"\"\" and $not_interp and \"quote\" and \"\"double\"\"\n"
+s5 == expected5 | io::out $ "PASS 5" | io::out $ "FAIL 5"
+
+// 6. Inline start
+s6 = """inline start
+   line 2
+   """
+expected6 = "inline start\nline 2\n"
+s6 == expected6 | io::out $ "PASS 6" | io::out $ "FAIL 6"
+
+// 7. Inline end
+s7 = """
+line 1
+inline end"""
+expected7 = "line 1\ninline end"
+s7 == expected7 | io::out $ "PASS 7" | io::out $ "FAIL 7"
+
+// 8. Dynamic interpolation with String
+name = "world"
+s8 = """
+   hello ${name}!
+   """
+expected8 = "hello world!\n"
+s8 == expected8 | io::out $ "PASS 8" | io::out $ "FAIL 8"
+
+// 9. Dynamic interpolation with expression
+part1 = "foo"
+part2 = "bar"
+s9 = """
+   combined: ${part1 + "_" + part2}
+   """
+expected9 = "combined: foo_bar\n"
+s9 == expected9 | io::out $ "PASS 9" | io::out $ "FAIL 9"
+
+// 10. Direct builder append
+b = {128}
+b += """
+   // Header for ${name}
+   end
+   """
+s10 = +b
+expected10 = "// Header for world\nend\n"
+s10 == expected10 | io::out $ "PASS 10" | io::out $ "FAIL 10"

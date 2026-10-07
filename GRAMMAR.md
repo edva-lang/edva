@@ -34,6 +34,15 @@ inline statements. A `;` at the end of a line is an error.
 | Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
 | String | `"..."` | C-style escapes `\n \t \r \0 \a \b \f \v \" \' \\` |
 | String | `(= ... =)` | raw/long string: literal bytes, no C-style escaping; one escape `=\)` → a literal `=)` (see below) |
+| Here-Doc | `"""..."""` | multiline with baseline margin stripping, `${expr}` interpolation, and line continuation `\` |
+
+**Here-Doc (`"""..."""`)** — Multiline formatted text blocks with baseline margin stripping and expression interpolation:
+- **Delimiter**: Triple double quotes `"""..."""`. Unescaped `"` and `""` are literal; `\"""` escapes to literal `"""`.
+- **Indentation & Margin Stripping**: When the closing `"""` is on its own line, its column defines the baseline margin. That indentation prefix is stripped from the beginning of every content line. Any non-empty line indented less than the baseline raises compile error `E1017`. Blank lines are preserved without error.
+- **Newline Trimming**: An opening newline immediately following `"""` is discarded. When the closing `"""` is on its own line, the preceding content line's newline is preserved.
+- **Interpolation**: `${expr}` evaluates `expr` and splices it into the text. Escaped as `\$` or `\${`.
+- **Line Continuation**: A trailing `\` at the end of a line suppresses the newline while maintaining indentation stripping on subsequent lines.
+- **Lowering**: Standalone here-docs evaluate to `String`. In a compound append to a Builder (`b += """..."""`), segments and interpolated expressions are appended directly in place without intermediate string allocations.
 
 **Multiline string concatenation** — If a line ends with a string literal
 (regular `"..."` or raw `(= ... =)`), and the next line begins with another

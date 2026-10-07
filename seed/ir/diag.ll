@@ -11,236 +11,244 @@ target triple = "x86_64-unknown-linux-gnu"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@str.0 = internal unnamed_addr constant [58 x i8] c"':=' is retired \E2\80\94 use '=' with a prime suffix ('foo'') \00"
-@str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 57, ptr @str.0 }
-@str.1 = internal unnamed_addr constant [23 x i8] c"for mutable variables.\00"
-@str.1.struct = internal unnamed_addr constant { i64, ptr } { i64 22, ptr @str.1 }
+@str.0 = internal unnamed_addr constant [54 x i8] c"Line indented less than closing delimiter in here-doc\00"
+@str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 53, ptr @str.0 }
+@clo.const = internal constant { ptr, ptr } { ptr @"diag::E1017_heredoc_under_indented", ptr null }
+@"var.diag::E1017_heredoc_under_indented" = global ptr null
+@str.1 = internal unnamed_addr constant [55 x i8] c"Unterminated here-doc literal -- missing closing '\22\22\22'\00"
+@str.1.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.1 }
+@clo.const.1 = internal constant { ptr, ptr } { ptr @"diag::E1018_heredoc_unterminated", ptr null }
+@"var.diag::E1018_heredoc_unterminated" = global ptr null
+@str.2 = internal unnamed_addr constant [58 x i8] c"':=' is retired \E2\80\94 use '=' with a prime suffix ('foo'') \00"
+@str.2.struct = internal unnamed_addr constant { i64, ptr } { i64 57, ptr @str.2 }
+@str.3 = internal unnamed_addr constant [23 x i8] c"for mutable variables.\00"
+@str.3.struct = internal unnamed_addr constant { i64, ptr } { i64 22, ptr @str.3 }
 @stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
-@clo.const = internal constant { ptr, ptr } { ptr @"diag::E2010_colon_equals_retired", ptr null }
+@clo.const.2 = internal constant { ptr, ptr } { ptr @"diag::E2010_colon_equals_retired", ptr null }
 @"var.diag::E2010_colon_equals_retired" = global ptr null
-@str.2 = internal unnamed_addr constant [68 x i8] c"Bare '|' is only allowed as the first branch (Left Value) or final \00"
-@str.2.struct = internal unnamed_addr constant { i64, ptr } { i64 67, ptr @str.2 }
-@str.3 = internal unnamed_addr constant [43 x i8] c"branch (catch-all) in a choice expression.\00"
-@str.3.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.3 }
-@clo.const.1 = internal constant { ptr, ptr } { ptr @"diag::E2024_bare_bar_position", ptr null }
+@str.4 = internal unnamed_addr constant [68 x i8] c"Bare '|' is only allowed as the first branch (Left Value) or final \00"
+@str.4.struct = internal unnamed_addr constant { i64, ptr } { i64 67, ptr @str.4 }
+@str.5 = internal unnamed_addr constant [43 x i8] c"branch (catch-all) in a choice expression.\00"
+@str.5.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.5 }
+@clo.const.3 = internal constant { ptr, ptr } { ptr @"diag::E2024_bare_bar_position", ptr null }
 @"var.diag::E2024_bare_bar_position" = global ptr null
-@str.4 = internal unnamed_addr constant [57 x i8] c"Whitespace between range endpoint and '..' is forbidden.\00"
-@str.4.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.4 }
-@clo.const.2 = internal constant { ptr, ptr } { ptr @"diag::E2025_range_endpoint_whitespace", ptr null }
+@str.6 = internal unnamed_addr constant [57 x i8] c"Whitespace between range endpoint and '..' is forbidden.\00"
+@str.6.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.6 }
+@clo.const.4 = internal constant { ptr, ptr } { ptr @"diag::E2025_range_endpoint_whitespace", ptr null }
 @"var.diag::E2025_range_endpoint_whitespace" = global ptr null
-@str.5 = internal unnamed_addr constant [49 x i8] c"Whitespace before call parenthesis is forbidden.\00"
-@str.5.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.5 }
-@clo.const.3 = internal constant { ptr, ptr } { ptr @"diag::E2032_call_paren_whitespace", ptr null }
+@str.7 = internal unnamed_addr constant [49 x i8] c"Whitespace before call parenthesis is forbidden.\00"
+@str.7.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.7 }
+@clo.const.5 = internal constant { ptr, ptr } { ptr @"diag::E2032_call_paren_whitespace", ptr null }
 @"var.diag::E2032_call_paren_whitespace" = global ptr null
-@str.6 = internal unnamed_addr constant [83 x i8] c"Function parameters may not be parenthesized; write 'x, y =>' with no parentheses.\00"
-@str.6.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.6 }
-@clo.const.4 = internal constant { ptr, ptr } { ptr @"diag::E2037_params_parenthesized", ptr null }
+@str.8 = internal unnamed_addr constant [83 x i8] c"Function parameters may not be parenthesized; write 'x, y =>' with no parentheses.\00"
+@str.8.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.8 }
+@clo.const.6 = internal constant { ptr, ptr } { ptr @"diag::E2037_params_parenthesized", ptr null }
 @"var.diag::E2037_params_parenthesized" = global ptr null
-@str.7 = internal unnamed_addr constant [29 x i8] c"Expression nested too deeply\00"
-@str.7.struct = internal unnamed_addr constant { i64, ptr } { i64 28, ptr @str.7 }
-@clo.const.5 = internal constant { ptr, ptr } { ptr @"diag::E2039_expr_too_deep", ptr null }
+@str.9 = internal unnamed_addr constant [29 x i8] c"Expression nested too deeply\00"
+@str.9.struct = internal unnamed_addr constant { i64, ptr } { i64 28, ptr @str.9 }
+@clo.const.7 = internal constant { ptr, ptr } { ptr @"diag::E2039_expr_too_deep", ptr null }
 @"var.diag::E2039_expr_too_deep" = global ptr null
-@str.8 = internal unnamed_addr constant [69 x i8] c"Function parameters cannot be mutable \E2\80\94 remove prime suffix from '\00"
-@str.8.struct = internal unnamed_addr constant { i64, ptr } { i64 68, ptr @str.8 }
-@clo.const.6 = internal constant { ptr, ptr } { ptr @"diag::E2039_param_mutable_prefix", ptr null }
+@str.10 = internal unnamed_addr constant [69 x i8] c"Function parameters cannot be mutable \E2\80\94 remove prime suffix from '\00"
+@str.10.struct = internal unnamed_addr constant { i64, ptr } { i64 68, ptr @str.10 }
+@clo.const.8 = internal constant { ptr, ptr } { ptr @"diag::E2039_param_mutable_prefix", ptr null }
 @"var.diag::E2039_param_mutable_prefix" = global ptr null
-@str.9 = internal unnamed_addr constant [81 x i8] c"Cannot assign to a typed load; write through the untyped '@[addr]' form instead.\00"
-@str.9.struct = internal unnamed_addr constant { i64, ptr } { i64 80, ptr @str.9 }
-@clo.const.7 = internal constant { ptr, ptr } { ptr @"diag::E2093_assign_typed_load", ptr null }
+@str.11 = internal unnamed_addr constant [81 x i8] c"Cannot assign to a typed load; write through the untyped '@[addr]' form instead.\00"
+@str.11.struct = internal unnamed_addr constant { i64, ptr } { i64 80, ptr @str.11 }
+@clo.const.9 = internal constant { ptr, ptr } { ptr @"diag::E2093_assign_typed_load", ptr null }
 @"var.diag::E2093_assign_typed_load" = global ptr null
-@str.10 = internal unnamed_addr constant [75 x i8] c"A '|' before a '[' guard is invalid \E2\80\94 chain guarded branches adjacently.\00"
-@str.10.struct = internal unnamed_addr constant { i64, ptr } { i64 74, ptr @str.10 }
-@clo.const.8 = internal constant { ptr, ptr } { ptr @"diag::E2096_bar_before_guard", ptr null }
+@str.12 = internal unnamed_addr constant [75 x i8] c"A '|' before a '[' guard is invalid \E2\80\94 chain guarded branches adjacently.\00"
+@str.12.struct = internal unnamed_addr constant { i64, ptr } { i64 74, ptr @str.12 }
+@clo.const.10 = internal constant { ptr, ptr } { ptr @"diag::E2096_bar_before_guard", ptr null }
 @"var.diag::E2096_bar_before_guard" = global ptr null
-@str.11 = internal unnamed_addr constant [49 x i8] c"Redundant choice tail '<+> | <->' is forbidden. \00"
-@str.11.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.11 }
-@str.12 = internal unnamed_addr constant [57 x i8] c"Empty guard body '[guard]' already produces a bare flag.\00"
-@str.12.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.12 }
-@clo.const.9 = internal constant { ptr, ptr } { ptr @"diag::E2105_redundant_choice_tail", ptr null }
+@str.13 = internal unnamed_addr constant [49 x i8] c"Redundant choice tail '<+> | <->' is forbidden. \00"
+@str.13.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.13 }
+@str.14 = internal unnamed_addr constant [57 x i8] c"Empty guard body '[guard]' already produces a bare flag.\00"
+@str.14.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.14 }
+@clo.const.11 = internal constant { ptr, ptr } { ptr @"diag::E2105_redundant_choice_tail", ptr null }
 @"var.diag::E2105_redundant_choice_tail" = global ptr null
-@str.13 = internal unnamed_addr constant [91 x i8] c"State binding operator '~~' requires a variable, member access, or indexed element target.\00"
-@str.13.struct = internal unnamed_addr constant { i64, ptr } { i64 90, ptr @str.13 }
-@clo.const.10 = internal constant { ptr, ptr } { ptr @"diag::E2108_state_binding_target", ptr null }
+@str.15 = internal unnamed_addr constant [91 x i8] c"State binding operator '~~' requires a variable, member access, or indexed element target.\00"
+@str.15.struct = internal unnamed_addr constant { i64, ptr } { i64 90, ptr @str.15 }
+@clo.const.12 = internal constant { ptr, ptr } { ptr @"diag::E2108_state_binding_target", ptr null }
 @"var.diag::E2108_state_binding_target" = global ptr null
-@str.14 = internal unnamed_addr constant [75 x i8] c"Omitting a Choice/pattern branch's leading condition is only allowed when \00"
-@str.14.struct = internal unnamed_addr constant { i64, ptr } { i64 74, ptr @str.14 }
-@str.15 = internal unnamed_addr constant [82 x i8] c"'_' is already defined in the enclosing scope (e.g. inside a '=> '-omitted-param \00"
-@str.15.struct = internal unnamed_addr constant { i64, ptr } { i64 81, ptr @str.15 }
-@str.16 = internal unnamed_addr constant [51 x i8] c"lambda, or a cycle body). '_' is not defined here.\00"
-@str.16.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.16 }
-@clo.const.11 = internal constant { ptr, ptr } { ptr @"diag::E3003_choice_underscore_undefined", ptr null }
+@str.16 = internal unnamed_addr constant [75 x i8] c"Omitting a Choice/pattern branch's leading condition is only allowed when \00"
+@str.16.struct = internal unnamed_addr constant { i64, ptr } { i64 74, ptr @str.16 }
+@str.17 = internal unnamed_addr constant [82 x i8] c"'_' is already defined in the enclosing scope (e.g. inside a '=> '-omitted-param \00"
+@str.17.struct = internal unnamed_addr constant { i64, ptr } { i64 81, ptr @str.17 }
+@str.18 = internal unnamed_addr constant [51 x i8] c"lambda, or a cycle body). '_' is not defined here.\00"
+@str.18.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.18 }
+@clo.const.13 = internal constant { ptr, ptr } { ptr @"diag::E3003_choice_underscore_undefined", ptr null }
 @"var.diag::E3003_choice_underscore_undefined" = global ptr null
-@str.17 = internal unnamed_addr constant [94 x i8] c"Unary '!' cannot be applied to this type. Use Flag for logical NOT or '+' for Builder freeze.\00"
-@str.17.struct = internal unnamed_addr constant { i64, ptr } { i64 93, ptr @str.17 }
-@clo.const.12 = internal constant { ptr, ptr } { ptr @"diag::E3008_not_invalid_type", ptr null }
+@str.19 = internal unnamed_addr constant [94 x i8] c"Unary '!' cannot be applied to this type. Use Flag for logical NOT or '+' for Builder freeze.\00"
+@str.19.struct = internal unnamed_addr constant { i64, ptr } { i64 93, ptr @str.19 }
+@clo.const.14 = internal constant { ptr, ptr } { ptr @"diag::E3008_not_invalid_type", ptr null }
 @"var.diag::E3008_not_invalid_type" = global ptr null
-@str.18 = internal unnamed_addr constant [44 x i8] c"Unary '!' cannot be applied to an integer. \00"
-@str.18.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.18 }
-@str.19 = internal unnamed_addr constant [66 x i8] c"To create a Builder with capacity n, use the brace literal '{n}'.\00"
-@str.19.struct = internal unnamed_addr constant { i64, ptr } { i64 65, ptr @str.19 }
-@clo.const.13 = internal constant { ptr, ptr } { ptr @"diag::E3008_not_integer", ptr null }
-@"var.diag::E3008_not_integer" = global ptr null
-@str.20 = internal unnamed_addr constant [44 x i8] c"Cannot assign Void expression to variable '\00"
+@str.20 = internal unnamed_addr constant [44 x i8] c"Unary '!' cannot be applied to an integer. \00"
 @str.20.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.20 }
-@clo.const.14 = internal constant { ptr, ptr } { ptr @"diag::E3032_assign_void_var_prefix", ptr null }
+@str.21 = internal unnamed_addr constant [66 x i8] c"To create a Builder with capacity n, use the brace literal '{n}'.\00"
+@str.21.struct = internal unnamed_addr constant { i64, ptr } { i64 65, ptr @str.21 }
+@clo.const.15 = internal constant { ptr, ptr } { ptr @"diag::E3008_not_integer", ptr null }
+@"var.diag::E3008_not_integer" = global ptr null
+@str.22 = internal unnamed_addr constant [44 x i8] c"Cannot assign Void expression to variable '\00"
+@str.22.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.22 }
+@clo.const.16 = internal constant { ptr, ptr } { ptr @"diag::E3032_assign_void_var_prefix", ptr null }
 @"var.diag::E3032_assign_void_var_prefix" = global ptr null
-@str.21 = internal unnamed_addr constant [46 x i8] c"Cannot assign Void expression to element of '\00"
-@str.21.struct = internal unnamed_addr constant { i64, ptr } { i64 45, ptr @str.21 }
-@clo.const.15 = internal constant { ptr, ptr } { ptr @"diag::E3032_assign_void_elem_prefix", ptr null }
+@str.23 = internal unnamed_addr constant [46 x i8] c"Cannot assign Void expression to element of '\00"
+@str.23.struct = internal unnamed_addr constant { i64, ptr } { i64 45, ptr @str.23 }
+@clo.const.17 = internal constant { ptr, ptr } { ptr @"diag::E3032_assign_void_elem_prefix", ptr null }
 @"var.diag::E3032_assign_void_elem_prefix" = global ptr null
-@str.22 = internal unnamed_addr constant [37 x i8] c"Cannot re-assign immutable binding '\00"
-@str.22.struct = internal unnamed_addr constant { i64, ptr } { i64 36, ptr @str.22 }
-@clo.const.16 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_prefix", ptr null }
+@str.24 = internal unnamed_addr constant [37 x i8] c"Cannot re-assign immutable binding '\00"
+@str.24.struct = internal unnamed_addr constant { i64, ptr } { i64 36, ptr @str.24 }
+@clo.const.18 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_prefix", ptr null }
 @"var.diag::E3033_reassign_immutable_prefix" = global ptr null
-@str.23 = internal unnamed_addr constant [25 x i8] c"'. Use a prime suffix ('\00"
-@str.23.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.23 }
-@clo.const.17 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_suffix", ptr null }
+@str.25 = internal unnamed_addr constant [25 x i8] c"'. Use a prime suffix ('\00"
+@str.25.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.25 }
+@clo.const.19 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_suffix", ptr null }
 @"var.diag::E3033_reassign_immutable_suffix" = global ptr null
-@str.24 = internal unnamed_addr constant [30 x i8] c"'') for rebindable variables.\00"
-@str.24.struct = internal unnamed_addr constant { i64, ptr } { i64 29, ptr @str.24 }
-@clo.const.18 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_tail", ptr null }
+@str.26 = internal unnamed_addr constant [30 x i8] c"'') for rebindable variables.\00"
+@str.26.struct = internal unnamed_addr constant { i64, ptr } { i64 29, ptr @str.26 }
+@clo.const.20 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_tail", ptr null }
 @"var.diag::E3033_reassign_immutable_tail" = global ptr null
-@clo.const.19 = internal constant { ptr, ptr } { ptr @"diag::reassign_immutable", ptr null }
+@clo.const.21 = internal constant { ptr, ptr } { ptr @"diag::reassign_immutable", ptr null }
 @"var.diag::reassign_immutable" = global ptr null
-@str.25 = internal unnamed_addr constant [3 x i8] c"'.\00"
-@str.25.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.25 }
-@clo.const.20 = internal constant { ptr, ptr } { ptr @"diag::assign_void_variable", ptr null }
+@str.27 = internal unnamed_addr constant [3 x i8] c"'.\00"
+@str.27.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.27 }
+@clo.const.22 = internal constant { ptr, ptr } { ptr @"diag::assign_void_variable", ptr null }
 @"var.diag::assign_void_variable" = global ptr null
-@clo.const.21 = internal constant { ptr, ptr } { ptr @"diag::assign_void_element", ptr null }
+@clo.const.23 = internal constant { ptr, ptr } { ptr @"diag::assign_void_element", ptr null }
 @"var.diag::assign_void_element" = global ptr null
-@str.26 = internal unnamed_addr constant [21 x i8] c"Homogeneous record '\00"
-@str.26.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.26 }
-@clo.const.22 = internal constant { ptr, ptr } { ptr @"diag::E3131_whole_val_init_prefix", ptr null }
-@str.27 = internal unnamed_addr constant [61 x i8] c"' requires whole-value initialization before element access.\00"
-@str.27.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.27 }
-@clo.const.23 = internal constant { ptr, ptr } { ptr @"diag::E3131_whole_val_init_suffix", ptr null }
-@clo.const.24 = internal constant { ptr, ptr } { ptr @"diag::whole_value_init", ptr null }
+@str.28 = internal unnamed_addr constant [21 x i8] c"Homogeneous record '\00"
+@str.28.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.28 }
+@clo.const.24 = internal constant { ptr, ptr } { ptr @"diag::E3131_whole_val_init_prefix", ptr null }
+@str.29 = internal unnamed_addr constant [61 x i8] c"' requires whole-value initialization before element access.\00"
+@str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.29 }
+@clo.const.25 = internal constant { ptr, ptr } { ptr @"diag::E3131_whole_val_init_suffix", ptr null }
+@clo.const.26 = internal constant { ptr, ptr } { ptr @"diag::whole_value_init", ptr null }
 @"var.diag::whole_value_init" = global ptr null
-@str.28 = internal unnamed_addr constant [8 x i8] c"Field '\00"
-@str.28.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.28 }
-@str.29 = internal unnamed_addr constant [7 x i8] c"' of '\00"
-@str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.29 }
-@str.30 = internal unnamed_addr constant [45 x i8] c"' has no default value and was not provided.\00"
-@str.30.struct = internal unnamed_addr constant { i64, ptr } { i64 44, ptr @str.30 }
-@clo.const.25 = internal constant { ptr, ptr } { ptr @"diag::record_default_missing", ptr null }
-@"var.diag::record_default_missing" = global ptr null
-@str.31 = internal unnamed_addr constant [7 x i8] c"Enum '\00"
+@str.30 = internal unnamed_addr constant [8 x i8] c"Field '\00"
+@str.30.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.30 }
+@str.31 = internal unnamed_addr constant [7 x i8] c"' of '\00"
 @str.31.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.31 }
-@str.32 = internal unnamed_addr constant [27 x i8] c"' has no variant labeled '\00"
-@str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 26, ptr @str.32 }
-@clo.const.26 = internal constant { ptr, ptr } { ptr @"diag::enum_no_variant", ptr null }
+@str.32 = internal unnamed_addr constant [45 x i8] c"' has no default value and was not provided.\00"
+@str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 44, ptr @str.32 }
+@clo.const.27 = internal constant { ptr, ptr } { ptr @"diag::record_default_missing", ptr null }
+@"var.diag::record_default_missing" = global ptr null
+@str.33 = internal unnamed_addr constant [7 x i8] c"Enum '\00"
+@str.33.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.33 }
+@str.34 = internal unnamed_addr constant [27 x i8] c"' has no variant labeled '\00"
+@str.34.struct = internal unnamed_addr constant { i64, ptr } { i64 26, ptr @str.34 }
+@clo.const.28 = internal constant { ptr, ptr } { ptr @"diag::enum_no_variant", ptr null }
 @"var.diag::enum_no_variant" = global ptr null
-@str.33 = internal unnamed_addr constant [12 x i8] c"' variant '\00"
-@str.33.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.33 }
-@str.34 = internal unnamed_addr constant [48 x i8] c"' is a bare unit and takes no payload argument.\00"
-@str.34.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.34 }
-@clo.const.27 = internal constant { ptr, ptr } { ptr @"diag::enum_unit_payload", ptr null }
+@str.35 = internal unnamed_addr constant [12 x i8] c"' variant '\00"
+@str.35.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.35 }
+@str.36 = internal unnamed_addr constant [48 x i8] c"' is a bare unit and takes no payload argument.\00"
+@str.36.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.36 }
+@clo.const.29 = internal constant { ptr, ptr } { ptr @"diag::enum_unit_payload", ptr null }
 @"var.diag::enum_unit_payload" = global ptr null
-@str.35 = internal unnamed_addr constant [27 x i8] c"' expects payload of type \00"
-@str.35.struct = internal unnamed_addr constant { i64, ptr } { i64 26, ptr @str.35 }
-@str.36 = internal unnamed_addr constant [7 x i8] c", got \00"
-@str.36.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.36 }
-@str.37 = internal unnamed_addr constant [2 x i8] c".\00"
-@str.37.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.37 }
-@clo.const.28 = internal constant { ptr, ptr } { ptr @"diag::enum_payload_type", ptr null }
+@str.37 = internal unnamed_addr constant [27 x i8] c"' expects payload of type \00"
+@str.37.struct = internal unnamed_addr constant { i64, ptr } { i64 26, ptr @str.37 }
+@str.38 = internal unnamed_addr constant [7 x i8] c", got \00"
+@str.38.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.38 }
+@str.39 = internal unnamed_addr constant [2 x i8] c".\00"
+@str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.39 }
+@clo.const.30 = internal constant { ptr, ptr } { ptr @"diag::enum_payload_type", ptr null }
 @"var.diag::enum_payload_type" = global ptr null
-@str.38 = internal unnamed_addr constant [44 x i8] c"Passing a partially-initialized composite '\00"
-@str.38.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.38 }
-@str.39 = internal unnamed_addr constant [31 x i8] c"' to a function is disallowed.\00"
-@str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.39 }
-@clo.const.29 = internal constant { ptr, ptr } { ptr @"diag::partial_composite_argument", ptr null }
+@str.40 = internal unnamed_addr constant [44 x i8] c"Passing a partially-initialized composite '\00"
+@str.40.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.40 }
+@str.41 = internal unnamed_addr constant [31 x i8] c"' to a function is disallowed.\00"
+@str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.41 }
+@clo.const.31 = internal constant { ptr, ptr } { ptr @"diag::partial_composite_argument", ptr null }
 @"var.diag::partial_composite_argument" = global ptr null
-@str.40 = internal unnamed_addr constant [57 x i8] c"Dynamic indexing is only allowed on homogeneous records.\00"
-@str.40.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.40 }
-@clo.const.30 = internal constant { ptr, ptr } { ptr @"diag::E3051_dynamic_index_hetero", ptr null }
+@str.42 = internal unnamed_addr constant [57 x i8] c"Dynamic indexing is only allowed on homogeneous records.\00"
+@str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.42 }
+@clo.const.32 = internal constant { ptr, ptr } { ptr @"diag::E3051_dynamic_index_hetero", ptr null }
 @"var.diag::E3051_dynamic_index_hetero" = global ptr null
-@str.41 = internal unnamed_addr constant [56 x i8] c"Cycle iteration is only allowed on homogeneous records.\00"
-@str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 55, ptr @str.41 }
-@clo.const.31 = internal constant { ptr, ptr } { ptr @"diag::E3051_cycle_iter_hetero", ptr null }
+@str.43 = internal unnamed_addr constant [56 x i8] c"Cycle iteration is only allowed on homogeneous records.\00"
+@str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 55, ptr @str.43 }
+@clo.const.33 = internal constant { ptr, ptr } { ptr @"diag::E3051_cycle_iter_hetero", ptr null }
 @"var.diag::E3051_cycle_iter_hetero" = global ptr null
-@str.42 = internal unnamed_addr constant [72 x i8] c"Cannot construct a String from a RawPtr \E2\80\94 'String(ptr)' is rejected. \00"
-@str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 71, ptr @str.42 }
-@str.43 = internal unnamed_addr constant [55 x i8] c"Build with literals, '+', '++', 's + n', or a Builder.\00"
-@str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.43 }
-@clo.const.32 = internal constant { ptr, ptr } { ptr @"diag::E3065_rawptr_to_string", ptr null }
+@str.44 = internal unnamed_addr constant [72 x i8] c"Cannot construct a String from a RawPtr \E2\80\94 'String(ptr)' is rejected. \00"
+@str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 71, ptr @str.44 }
+@str.45 = internal unnamed_addr constant [55 x i8] c"Build with literals, '+', '++', 's + n', or a Builder.\00"
+@str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.45 }
+@clo.const.34 = internal constant { ptr, ptr } { ptr @"diag::E3065_rawptr_to_string", ptr null }
 @"var.diag::E3065_rawptr_to_string" = global ptr null
-@str.44 = internal unnamed_addr constant [59 x i8] c"Address operator '&' requires a Builder or String operand.\00"
-@str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 58, ptr @str.44 }
-@clo.const.33 = internal constant { ptr, ptr } { ptr @"diag::E3078_addr_builder_or_string", ptr null }
+@str.46 = internal unnamed_addr constant [59 x i8] c"Address operator '&' requires a Builder or String operand.\00"
+@str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 58, ptr @str.46 }
+@clo.const.35 = internal constant { ptr, ptr } { ptr @"diag::E3078_addr_builder_or_string", ptr null }
 @"var.diag::E3078_addr_builder_or_string" = global ptr null
-@str.45 = internal unnamed_addr constant [35 x i8] c"Record size mismatch in arithmetic\00"
-@str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 34, ptr @str.45 }
-@clo.const.34 = internal constant { ptr, ptr } { ptr @"diag::E3084_record_size_mismatch", ptr null }
+@str.47 = internal unnamed_addr constant [35 x i8] c"Record size mismatch in arithmetic\00"
+@str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 34, ptr @str.47 }
+@clo.const.36 = internal constant { ptr, ptr } { ptr @"diag::E3084_record_size_mismatch", ptr null }
 @"var.diag::E3084_record_size_mismatch" = global ptr null
-@str.46 = internal unnamed_addr constant [25 x i8] c"Arithmetic type mismatch\00"
-@str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.46 }
-@clo.const.35 = internal constant { ptr, ptr } { ptr @"diag::E3084_arithmetic_type_mismatch", ptr null }
+@str.48 = internal unnamed_addr constant [25 x i8] c"Arithmetic type mismatch\00"
+@str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.48 }
+@clo.const.37 = internal constant { ptr, ptr } { ptr @"diag::E3084_arithmetic_type_mismatch", ptr null }
 @"var.diag::E3084_arithmetic_type_mismatch" = global ptr null
-@str.47 = internal unnamed_addr constant [39 x i8] c"Builder append requires byte or String\00"
-@str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 38, ptr @str.47 }
-@clo.const.36 = internal constant { ptr, ptr } { ptr @"diag::E3084_builder_append_type", ptr null }
+@str.49 = internal unnamed_addr constant [39 x i8] c"Builder append requires byte or String\00"
+@str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 38, ptr @str.49 }
+@clo.const.38 = internal constant { ptr, ptr } { ptr @"diag::E3084_builder_append_type", ptr null }
 @"var.diag::E3084_builder_append_type" = global ptr null
-@str.48 = internal unnamed_addr constant [43 x i8] c"Incompatible branch result types in choice\00"
-@str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.48 }
-@clo.const.37 = internal constant { ptr, ptr } { ptr @"diag::E3084_choice_branch_mismatch", ptr null }
+@str.50 = internal unnamed_addr constant [43 x i8] c"Incompatible branch result types in choice\00"
+@str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.50 }
+@clo.const.39 = internal constant { ptr, ptr } { ptr @"diag::E3084_choice_branch_mismatch", ptr null }
 @"var.diag::E3084_choice_branch_mismatch" = global ptr null
-@str.49 = internal unnamed_addr constant [40 x i8] c"Operand of '--!' must be a ramification\00"
-@str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 39, ptr @str.49 }
-@clo.const.38 = internal constant { ptr, ptr } { ptr @"diag::E3091_propagate_ram_operand", ptr null }
+@str.51 = internal unnamed_addr constant [40 x i8] c"Operand of '--!' must be a ramification\00"
+@str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 39, ptr @str.51 }
+@clo.const.40 = internal constant { ptr, ptr } { ptr @"diag::E3091_propagate_ram_operand", ptr null }
 @"var.diag::E3091_propagate_ram_operand" = global ptr null
-@str.50 = internal unnamed_addr constant [55 x i8] c"Cannot infer concrete type for expression without RTTI\00"
-@str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.50 }
-@clo.const.39 = internal constant { ptr, ptr } { ptr @"diag::E3103_cannot_infer_type", ptr null }
+@str.52 = internal unnamed_addr constant [55 x i8] c"Cannot infer concrete type for expression without RTTI\00"
+@str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.52 }
+@clo.const.41 = internal constant { ptr, ptr } { ptr @"diag::E3103_cannot_infer_type", ptr null }
 @"var.diag::E3103_cannot_infer_type" = global ptr null
 @"var.diag::E3131_whole_val_init_prefix" = global ptr null
 @"var.diag::E3131_whole_val_init_suffix" = global ptr null
-@str.51 = internal unnamed_addr constant [49 x i8] c"Cannot return Addr from an arena-restore scope. \00"
-@str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.51 }
-@str.52 = internal unnamed_addr constant [48 x i8] c"Copy data explicitly with '++' before boundary.\00"
-@str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.52 }
-@clo.const.40 = internal constant { ptr, ptr } { ptr @"diag::E3133_addr_escape_restore", ptr null }
+@str.53 = internal unnamed_addr constant [49 x i8] c"Cannot return Addr from an arena-restore scope. \00"
+@str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.53 }
+@str.54 = internal unnamed_addr constant [48 x i8] c"Copy data explicitly with '++' before boundary.\00"
+@str.54.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.54 }
+@clo.const.42 = internal constant { ptr, ptr } { ptr @"diag::E3133_addr_escape_restore", ptr null }
 @"var.diag::E3133_addr_escape_restore" = global ptr null
-@str.53 = internal unnamed_addr constant [80 x i8] c"Assignment of block-scoped Addr to outer-scope binding escapes arena lifecycle.\00"
-@str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 79, ptr @str.53 }
-@clo.const.41 = internal constant { ptr, ptr } { ptr @"diag::E3134_addr_escape_lifecycle", ptr null }
+@str.55 = internal unnamed_addr constant [80 x i8] c"Assignment of block-scoped Addr to outer-scope binding escapes arena lifecycle.\00"
+@str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 79, ptr @str.55 }
+@clo.const.43 = internal constant { ptr, ptr } { ptr @"diag::E3134_addr_escape_lifecycle", ptr null }
 @"var.diag::E3134_addr_escape_lifecycle" = global ptr null
-@str.54 = internal unnamed_addr constant [54 x i8] c"Compile-time type choice has no branch for this type.\00"
-@str.54.struct = internal unnamed_addr constant { i64, ptr } { i64 53, ptr @str.54 }
-@clo.const.42 = internal constant { ptr, ptr } { ptr @"diag::E3136_type_choice_no_branch", ptr null }
+@str.56 = internal unnamed_addr constant [54 x i8] c"Compile-time type choice has no branch for this type.\00"
+@str.56.struct = internal unnamed_addr constant { i64, ptr } { i64 53, ptr @str.56 }
+@clo.const.44 = internal constant { ptr, ptr } { ptr @"diag::E3136_type_choice_no_branch", ptr null }
 @"var.diag::E3136_type_choice_no_branch" = global ptr null
-@str.55 = internal unnamed_addr constant [79 x i8] c"arena allocation under --no-runtime. The feature you used (a record, closure, \00"
-@str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 78, ptr @str.55 }
-@str.56 = internal unnamed_addr constant [68 x i8] c"String concat, Builder, or heap ram/enum) needs the runtime arena, \00"
-@str.56.struct = internal unnamed_addr constant { i64, ptr } { i64 67, ptr @str.56 }
-@str.57 = internal unnamed_addr constant [73 x i8] c"which --no-runtime omits. Use only bare-metal features: Int arithmetic, \00"
-@str.57.struct = internal unnamed_addr constant { i64, ptr } { i64 72, ptr @str.57 }
-@str.58 = internal unnamed_addr constant [62 x i8] c"String literals, '?s', 's(i)', and raw '@[Addr(...)]' memory.\00"
-@str.58.struct = internal unnamed_addr constant { i64, ptr } { i64 61, ptr @str.58 }
-@clo.const.43 = internal constant { ptr, ptr } { ptr @"diag::E3140_no_runtime_arena", ptr null }
+@str.57 = internal unnamed_addr constant [79 x i8] c"arena allocation under --no-runtime. The feature you used (a record, closure, \00"
+@str.57.struct = internal unnamed_addr constant { i64, ptr } { i64 78, ptr @str.57 }
+@str.58 = internal unnamed_addr constant [68 x i8] c"String concat, Builder, or heap ram/enum) needs the runtime arena, \00"
+@str.58.struct = internal unnamed_addr constant { i64, ptr } { i64 67, ptr @str.58 }
+@str.59 = internal unnamed_addr constant [73 x i8] c"which --no-runtime omits. Use only bare-metal features: Int arithmetic, \00"
+@str.59.struct = internal unnamed_addr constant { i64, ptr } { i64 72, ptr @str.59 }
+@str.60 = internal unnamed_addr constant [62 x i8] c"String literals, '?s', 's(i)', and raw '@[Addr(...)]' memory.\00"
+@str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 61, ptr @str.60 }
+@clo.const.45 = internal constant { ptr, ptr } { ptr @"diag::E3140_no_runtime_arena", ptr null }
 @"var.diag::E3140_no_runtime_arena" = global ptr null
-@str.59 = internal unnamed_addr constant [85 x i8] c"Raw memory write '@[addr] = expr' requires an integerish or pointer value, got Float\00"
-@str.59.struct = internal unnamed_addr constant { i64, ptr } { i64 84, ptr @str.59 }
-@clo.const.44 = internal constant { ptr, ptr } { ptr @"diag::E3142_raw_write_type", ptr null }
+@str.61 = internal unnamed_addr constant [85 x i8] c"Raw memory write '@[addr] = expr' requires an integerish or pointer value, got Float\00"
+@str.61.struct = internal unnamed_addr constant { i64, ptr } { i64 84, ptr @str.61 }
+@clo.const.46 = internal constant { ptr, ptr } { ptr @"diag::E3142_raw_write_type", ptr null }
 @"var.diag::E3142_raw_write_type" = global ptr null
-@str.60 = internal unnamed_addr constant [34 x i8] c"View cannot escape function frame\00"
-@str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 33, ptr @str.60 }
-@clo.const.45 = internal constant { ptr, ptr } { ptr @"diag::E3150_view_escape_frame", ptr null }
+@str.62 = internal unnamed_addr constant [34 x i8] c"View cannot escape function frame\00"
+@str.62.struct = internal unnamed_addr constant { i64, ptr } { i64 33, ptr @str.62 }
+@clo.const.47 = internal constant { ptr, ptr } { ptr @"diag::E3150_view_escape_frame", ptr null }
 @"var.diag::E3150_view_escape_frame" = global ptr null
-@str.61 = internal unnamed_addr constant [42 x i8] c"'#exit' expects an integerish status code\00"
-@str.61.struct = internal unnamed_addr constant { i64, ptr } { i64 41, ptr @str.61 }
-@clo.const.46 = internal constant { ptr, ptr } { ptr @"diag::E3172_exit_status_integerish", ptr null }
+@str.63 = internal unnamed_addr constant [42 x i8] c"'#exit' expects an integerish status code\00"
+@str.63.struct = internal unnamed_addr constant { i64, ptr } { i64 41, ptr @str.63 }
+@clo.const.48 = internal constant { ptr, ptr } { ptr @"diag::E3172_exit_status_integerish", ptr null }
 @"var.diag::E3172_exit_status_integerish" = global ptr null
-@str.62 = internal unnamed_addr constant [49 x i8] c"Return '--|' can only be used inside a function.\00"
-@str.62.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.62 }
-@clo.const.47 = internal constant { ptr, ptr } { ptr @"diag::E3173_return_outside_fn", ptr null }
+@str.64 = internal unnamed_addr constant [49 x i8] c"Return '--|' can only be used inside a function.\00"
+@str.64.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.64 }
+@clo.const.49 = internal constant { ptr, ptr } { ptr @"diag::E3173_return_outside_fn", ptr null }
 @"var.diag::E3173_return_outside_fn" = global ptr null
-@str.63 = internal unnamed_addr constant [61 x i8] c"Propagate operator '--!' can only be used inside a function.\00"
-@str.63.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.63 }
-@clo.const.48 = internal constant { ptr, ptr } { ptr @"diag::E3173_propagate_outside_fn", ptr null }
+@str.65 = internal unnamed_addr constant [61 x i8] c"Propagate operator '--!' can only be used inside a function.\00"
+@str.65.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.65 }
+@clo.const.50 = internal constant { ptr, ptr } { ptr @"diag::E3173_propagate_outside_fn", ptr null }
 @"var.diag::E3173_propagate_outside_fn" = global ptr null
-@str.64 = internal unnamed_addr constant [72 x i8] c"Choice has a constant expression in a branch and its value is discarded\00"
-@str.64.struct = internal unnamed_addr constant { i64, ptr } { i64 71, ptr @str.64 }
-@clo.const.49 = internal constant { ptr, ptr } { ptr @"diag::E3175_choice_const_discarded", ptr null }
+@str.66 = internal unnamed_addr constant [72 x i8] c"Choice has a constant expression in a branch and its value is discarded\00"
+@str.66.struct = internal unnamed_addr constant { i64, ptr } { i64 71, ptr @str.66 }
+@clo.const.51 = internal constant { ptr, ptr } { ptr @"diag::E3175_choice_const_discarded", ptr null }
 @"var.diag::E3175_choice_const_discarded" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_diag, ptr null }]
 
@@ -281,143 +289,72 @@ declare i64 @dva_hash_string(ptr, i64)
 
 define internal void @__dva_global_init_diag() #1 {
 entry:
-  store ptr @clo.const, ptr @"var.diag::E2010_colon_equals_retired", align 8
-  store ptr @clo.const.1, ptr @"var.diag::E2024_bare_bar_position", align 8
-  store ptr @clo.const.2, ptr @"var.diag::E2025_range_endpoint_whitespace", align 8
-  store ptr @clo.const.3, ptr @"var.diag::E2032_call_paren_whitespace", align 8
-  store ptr @clo.const.4, ptr @"var.diag::E2037_params_parenthesized", align 8
-  store ptr @clo.const.5, ptr @"var.diag::E2039_expr_too_deep", align 8
-  store ptr @clo.const.6, ptr @"var.diag::E2039_param_mutable_prefix", align 8
-  store ptr @clo.const.7, ptr @"var.diag::E2093_assign_typed_load", align 8
-  store ptr @clo.const.8, ptr @"var.diag::E2096_bar_before_guard", align 8
-  store ptr @clo.const.9, ptr @"var.diag::E2105_redundant_choice_tail", align 8
-  store ptr @clo.const.10, ptr @"var.diag::E2108_state_binding_target", align 8
-  store ptr @clo.const.11, ptr @"var.diag::E3003_choice_underscore_undefined", align 8
-  store ptr @clo.const.12, ptr @"var.diag::E3008_not_invalid_type", align 8
-  store ptr @clo.const.13, ptr @"var.diag::E3008_not_integer", align 8
-  store ptr @clo.const.14, ptr @"var.diag::E3032_assign_void_var_prefix", align 8
-  store ptr @clo.const.15, ptr @"var.diag::E3032_assign_void_elem_prefix", align 8
-  store ptr @clo.const.16, ptr @"var.diag::E3033_reassign_immutable_prefix", align 8
-  store ptr @clo.const.17, ptr @"var.diag::E3033_reassign_immutable_suffix", align 8
-  store ptr @clo.const.18, ptr @"var.diag::E3033_reassign_immutable_tail", align 8
-  store ptr @clo.const.19, ptr @"var.diag::reassign_immutable", align 8
-  store ptr @clo.const.20, ptr @"var.diag::assign_void_variable", align 8
-  store ptr @clo.const.21, ptr @"var.diag::assign_void_element", align 8
-  store ptr @clo.const.24, ptr @"var.diag::whole_value_init", align 8
-  store ptr @clo.const.25, ptr @"var.diag::record_default_missing", align 8
-  store ptr @clo.const.26, ptr @"var.diag::enum_no_variant", align 8
-  store ptr @clo.const.27, ptr @"var.diag::enum_unit_payload", align 8
-  store ptr @clo.const.28, ptr @"var.diag::enum_payload_type", align 8
-  store ptr @clo.const.29, ptr @"var.diag::partial_composite_argument", align 8
-  store ptr @clo.const.30, ptr @"var.diag::E3051_dynamic_index_hetero", align 8
-  store ptr @clo.const.31, ptr @"var.diag::E3051_cycle_iter_hetero", align 8
-  store ptr @clo.const.32, ptr @"var.diag::E3065_rawptr_to_string", align 8
-  store ptr @clo.const.33, ptr @"var.diag::E3078_addr_builder_or_string", align 8
-  store ptr @clo.const.34, ptr @"var.diag::E3084_record_size_mismatch", align 8
-  store ptr @clo.const.35, ptr @"var.diag::E3084_arithmetic_type_mismatch", align 8
-  store ptr @clo.const.36, ptr @"var.diag::E3084_builder_append_type", align 8
-  store ptr @clo.const.37, ptr @"var.diag::E3084_choice_branch_mismatch", align 8
-  store ptr @clo.const.38, ptr @"var.diag::E3091_propagate_ram_operand", align 8
-  store ptr @clo.const.39, ptr @"var.diag::E3103_cannot_infer_type", align 8
-  store ptr @clo.const.22, ptr @"var.diag::E3131_whole_val_init_prefix", align 8
-  store ptr @clo.const.23, ptr @"var.diag::E3131_whole_val_init_suffix", align 8
-  store ptr @clo.const.40, ptr @"var.diag::E3133_addr_escape_restore", align 8
-  store ptr @clo.const.41, ptr @"var.diag::E3134_addr_escape_lifecycle", align 8
-  store ptr @clo.const.42, ptr @"var.diag::E3136_type_choice_no_branch", align 8
-  store ptr @clo.const.43, ptr @"var.diag::E3140_no_runtime_arena", align 8
-  store ptr @clo.const.44, ptr @"var.diag::E3142_raw_write_type", align 8
-  store ptr @clo.const.45, ptr @"var.diag::E3150_view_escape_frame", align 8
-  store ptr @clo.const.46, ptr @"var.diag::E3172_exit_status_integerish", align 8
-  store ptr @clo.const.47, ptr @"var.diag::E3173_return_outside_fn", align 8
-  store ptr @clo.const.48, ptr @"var.diag::E3173_propagate_outside_fn", align 8
-  store ptr @clo.const.49, ptr @"var.diag::E3175_choice_const_discarded", align 8
+  store ptr @clo.const, ptr @"var.diag::E1017_heredoc_under_indented", align 8
+  store ptr @clo.const.1, ptr @"var.diag::E1018_heredoc_unterminated", align 8
+  store ptr @clo.const.2, ptr @"var.diag::E2010_colon_equals_retired", align 8
+  store ptr @clo.const.3, ptr @"var.diag::E2024_bare_bar_position", align 8
+  store ptr @clo.const.4, ptr @"var.diag::E2025_range_endpoint_whitespace", align 8
+  store ptr @clo.const.5, ptr @"var.diag::E2032_call_paren_whitespace", align 8
+  store ptr @clo.const.6, ptr @"var.diag::E2037_params_parenthesized", align 8
+  store ptr @clo.const.7, ptr @"var.diag::E2039_expr_too_deep", align 8
+  store ptr @clo.const.8, ptr @"var.diag::E2039_param_mutable_prefix", align 8
+  store ptr @clo.const.9, ptr @"var.diag::E2093_assign_typed_load", align 8
+  store ptr @clo.const.10, ptr @"var.diag::E2096_bar_before_guard", align 8
+  store ptr @clo.const.11, ptr @"var.diag::E2105_redundant_choice_tail", align 8
+  store ptr @clo.const.12, ptr @"var.diag::E2108_state_binding_target", align 8
+  store ptr @clo.const.13, ptr @"var.diag::E3003_choice_underscore_undefined", align 8
+  store ptr @clo.const.14, ptr @"var.diag::E3008_not_invalid_type", align 8
+  store ptr @clo.const.15, ptr @"var.diag::E3008_not_integer", align 8
+  store ptr @clo.const.16, ptr @"var.diag::E3032_assign_void_var_prefix", align 8
+  store ptr @clo.const.17, ptr @"var.diag::E3032_assign_void_elem_prefix", align 8
+  store ptr @clo.const.18, ptr @"var.diag::E3033_reassign_immutable_prefix", align 8
+  store ptr @clo.const.19, ptr @"var.diag::E3033_reassign_immutable_suffix", align 8
+  store ptr @clo.const.20, ptr @"var.diag::E3033_reassign_immutable_tail", align 8
+  store ptr @clo.const.21, ptr @"var.diag::reassign_immutable", align 8
+  store ptr @clo.const.22, ptr @"var.diag::assign_void_variable", align 8
+  store ptr @clo.const.23, ptr @"var.diag::assign_void_element", align 8
+  store ptr @clo.const.26, ptr @"var.diag::whole_value_init", align 8
+  store ptr @clo.const.27, ptr @"var.diag::record_default_missing", align 8
+  store ptr @clo.const.28, ptr @"var.diag::enum_no_variant", align 8
+  store ptr @clo.const.29, ptr @"var.diag::enum_unit_payload", align 8
+  store ptr @clo.const.30, ptr @"var.diag::enum_payload_type", align 8
+  store ptr @clo.const.31, ptr @"var.diag::partial_composite_argument", align 8
+  store ptr @clo.const.32, ptr @"var.diag::E3051_dynamic_index_hetero", align 8
+  store ptr @clo.const.33, ptr @"var.diag::E3051_cycle_iter_hetero", align 8
+  store ptr @clo.const.34, ptr @"var.diag::E3065_rawptr_to_string", align 8
+  store ptr @clo.const.35, ptr @"var.diag::E3078_addr_builder_or_string", align 8
+  store ptr @clo.const.36, ptr @"var.diag::E3084_record_size_mismatch", align 8
+  store ptr @clo.const.37, ptr @"var.diag::E3084_arithmetic_type_mismatch", align 8
+  store ptr @clo.const.38, ptr @"var.diag::E3084_builder_append_type", align 8
+  store ptr @clo.const.39, ptr @"var.diag::E3084_choice_branch_mismatch", align 8
+  store ptr @clo.const.40, ptr @"var.diag::E3091_propagate_ram_operand", align 8
+  store ptr @clo.const.41, ptr @"var.diag::E3103_cannot_infer_type", align 8
+  store ptr @clo.const.24, ptr @"var.diag::E3131_whole_val_init_prefix", align 8
+  store ptr @clo.const.25, ptr @"var.diag::E3131_whole_val_init_suffix", align 8
+  store ptr @clo.const.42, ptr @"var.diag::E3133_addr_escape_restore", align 8
+  store ptr @clo.const.43, ptr @"var.diag::E3134_addr_escape_lifecycle", align 8
+  store ptr @clo.const.44, ptr @"var.diag::E3136_type_choice_no_branch", align 8
+  store ptr @clo.const.45, ptr @"var.diag::E3140_no_runtime_arena", align 8
+  store ptr @clo.const.46, ptr @"var.diag::E3142_raw_write_type", align 8
+  store ptr @clo.const.47, ptr @"var.diag::E3150_view_escape_frame", align 8
+  store ptr @clo.const.48, ptr @"var.diag::E3172_exit_status_integerish", align 8
+  store ptr @clo.const.49, ptr @"var.diag::E3173_return_outside_fn", align 8
+  store ptr @clo.const.50, ptr @"var.diag::E3173_propagate_outside_fn", align 8
+  store ptr @clo.const.51, ptr @"var.diag::E3175_choice_const_discarded", align 8
   ret void
 }
 
-define ptr @"diag::E2010_colon_equals_retired"() #1 {
+define ptr @"diag::E1017_heredoc_under_indented"() #1 {
 entry:
-  %concat.lhs = load i64, ptr @str.0.struct, align 8
-  %concat.lhs1 = and i64 %concat.lhs, 281474976710655
-  %str.tag = lshr i64 %concat.lhs, 48
-  %str.immortal = icmp eq i64 %str.tag, 0
-  br i1 %str.immortal, label %str_ok, label %str_gen_check
-
-str_gen_check:                                    ; preds = %entry
-  %arena.gen = call ptr @dva_arena_current()
-  %arena.gen2 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen, i32 0, i32 4
-  %arena.gen3 = load i64, ptr %arena.gen2, align 8
-  %str.tag.match = icmp eq i64 %str.tag, %arena.gen3
-  br i1 %str.tag.match, label %str_ok, label %str_stale
-
-str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.0.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.1.struct, align 8
-  %concat.rhs5 = and i64 %concat.rhs, 281474976710655
-  %str.tag6 = lshr i64 %concat.rhs, 48
-  %str.immortal7 = icmp eq i64 %str.tag6, 0
-  br i1 %str.immortal7, label %str_ok9, label %str_gen_check8
-
-str_stale:                                        ; preds = %str_gen_check
-  %0 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
-  call void @exit(i32 1)
-  br label %str_ok
-
-str_gen_check8:                                   ; preds = %str_ok
-  %arena.gen11 = call ptr @dva_arena_current()
-  %arena.gen12 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen11, i32 0, i32 4
-  %arena.gen13 = load i64, ptr %arena.gen12, align 8
-  %str.tag.match14 = icmp eq i64 %str.tag6, %arena.gen13
-  br i1 %str.tag.match14, label %str_ok9, label %str_stale10
-
-str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
-  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.1.struct, i32 0, i32 1), align 8
-  %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs5)
-  %sum = extractvalue { i64, i1 } %concat.sum.len, 0
-  %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
-  br i1 %ovf, label %str_overflow_abort, label %concat.sum.len16
-
-str_stale10:                                      ; preds = %str_gen_check8
-  %1 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
-  call void @exit(i32 1)
-  br label %str_ok9
-
-concat.sum.len16:                                 ; preds = %str_overflow_abort, %str_ok9
-  %concat.tot.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum, i64 1)
-  %sum17 = extractvalue { i64, i1 } %concat.tot.len, 0
-  %ovf18 = extractvalue { i64, i1 } %concat.tot.len, 1
-  br i1 %ovf18, label %str_overflow_abort20, label %concat.tot.len19
-
-str_overflow_abort:                               ; preds = %str_ok9
-  %2 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
-  call void @exit(i32 1)
-  br label %concat.sum.len16
-
-concat.tot.len19:                                 ; preds = %str_overflow_abort20, %concat.sum.len16
-  %arena.cur = call ptr @dva_arena_current()
-  %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum17)
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %concat.lhs4, i64 %concat.lhs1, i1 false)
-  %concat.mid = getelementptr i8, ptr %concat.buf, i64 %concat.lhs1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 %concat.rhs15, i64 %concat.rhs5, i1 false)
-  %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum
-  store i8 0, ptr %concat.nul, align 1
-  %arena.cur21 = call ptr @dva_arena_current()
-  %concat.str = call ptr @dva_arena_alloc(ptr %arena.cur21, i64 16)
-  %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 0
-  store i64 %sum, ptr %str.build.len.gep, align 8
-  %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
-  store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  ret ptr %concat.str
-
-str_overflow_abort20:                             ; preds = %concat.sum.len16
-  %3 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
-  call void @exit(i32 1)
-  br label %concat.tot.len19
+  ret ptr @str.0.struct
 }
 
-; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
+define ptr @"diag::E1018_heredoc_unterminated"() #1 {
+entry:
+  ret ptr @str.1.struct
+}
 
-define ptr @"diag::E2024_bare_bar_position"() #1 {
+define ptr @"diag::E2010_colon_equals_retired"() #1 {
 entry:
   %concat.lhs = load i64, ptr @str.2.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
@@ -497,44 +434,12 @@ str_overflow_abort20:                             ; preds = %concat.sum.len16
   br label %concat.tot.len19
 }
 
-define ptr @"diag::E2025_range_endpoint_whitespace"() #1 {
-entry:
-  ret ptr @str.4.struct
-}
+; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
 
-define ptr @"diag::E2032_call_paren_whitespace"() #1 {
+define ptr @"diag::E2024_bare_bar_position"() #1 {
 entry:
-  ret ptr @str.5.struct
-}
-
-define ptr @"diag::E2037_params_parenthesized"() #1 {
-entry:
-  ret ptr @str.6.struct
-}
-
-define ptr @"diag::E2039_expr_too_deep"() #1 {
-entry:
-  ret ptr @str.7.struct
-}
-
-define ptr @"diag::E2039_param_mutable_prefix"() #1 {
-entry:
-  ret ptr @str.8.struct
-}
-
-define ptr @"diag::E2093_assign_typed_load"() #1 {
-entry:
-  ret ptr @str.9.struct
-}
-
-define ptr @"diag::E2096_bar_before_guard"() #1 {
-entry:
-  ret ptr @str.10.struct
-}
-
-define ptr @"diag::E2105_redundant_choice_tail"() #1 {
-entry:
-  %concat.lhs = load i64, ptr @str.11.struct, align 8
+  %concat.lhs = load i64, ptr @str.4.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -548,8 +453,8 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.11.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.12.struct, align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.4.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.5.struct, align 8
   %concat.rhs5 = and i64 %concat.rhs, 281474976710655
   %str.tag6 = lshr i64 %concat.rhs, 48
   %str.immortal7 = icmp eq i64 %str.tag6, 0
@@ -568,7 +473,122 @@ str_gen_check8:                                   ; preds = %str_ok
   br i1 %str.tag.match14, label %str_ok9, label %str_stale10
 
 str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
-  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.12.struct, i32 0, i32 1), align 8
+  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.5.struct, i32 0, i32 1), align 8
+  %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs5)
+  %sum = extractvalue { i64, i1 } %concat.sum.len, 0
+  %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
+  br i1 %ovf, label %str_overflow_abort, label %concat.sum.len16
+
+str_stale10:                                      ; preds = %str_gen_check8
+  %1 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok9
+
+concat.sum.len16:                                 ; preds = %str_overflow_abort, %str_ok9
+  %concat.tot.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum, i64 1)
+  %sum17 = extractvalue { i64, i1 } %concat.tot.len, 0
+  %ovf18 = extractvalue { i64, i1 } %concat.tot.len, 1
+  br i1 %ovf18, label %str_overflow_abort20, label %concat.tot.len19
+
+str_overflow_abort:                               ; preds = %str_ok9
+  %2 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len16
+
+concat.tot.len19:                                 ; preds = %str_overflow_abort20, %concat.sum.len16
+  %arena.cur = call ptr @dva_arena_current()
+  %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum17)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %concat.lhs4, i64 %concat.lhs1, i1 false)
+  %concat.mid = getelementptr i8, ptr %concat.buf, i64 %concat.lhs1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 %concat.rhs15, i64 %concat.rhs5, i1 false)
+  %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum
+  store i8 0, ptr %concat.nul, align 1
+  %arena.cur21 = call ptr @dva_arena_current()
+  %concat.str = call ptr @dva_arena_alloc(ptr %arena.cur21, i64 16)
+  %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 0
+  store i64 %sum, ptr %str.build.len.gep, align 8
+  %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
+  store ptr %concat.buf, ptr %str.build.data.gep, align 8
+  ret ptr %concat.str
+
+str_overflow_abort20:                             ; preds = %concat.sum.len16
+  %3 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len19
+}
+
+define ptr @"diag::E2025_range_endpoint_whitespace"() #1 {
+entry:
+  ret ptr @str.6.struct
+}
+
+define ptr @"diag::E2032_call_paren_whitespace"() #1 {
+entry:
+  ret ptr @str.7.struct
+}
+
+define ptr @"diag::E2037_params_parenthesized"() #1 {
+entry:
+  ret ptr @str.8.struct
+}
+
+define ptr @"diag::E2039_expr_too_deep"() #1 {
+entry:
+  ret ptr @str.9.struct
+}
+
+define ptr @"diag::E2039_param_mutable_prefix"() #1 {
+entry:
+  ret ptr @str.10.struct
+}
+
+define ptr @"diag::E2093_assign_typed_load"() #1 {
+entry:
+  ret ptr @str.11.struct
+}
+
+define ptr @"diag::E2096_bar_before_guard"() #1 {
+entry:
+  ret ptr @str.12.struct
+}
+
+define ptr @"diag::E2105_redundant_choice_tail"() #1 {
+entry:
+  %concat.lhs = load i64, ptr @str.13.struct, align 8
+  %concat.lhs1 = and i64 %concat.lhs, 281474976710655
+  %str.tag = lshr i64 %concat.lhs, 48
+  %str.immortal = icmp eq i64 %str.tag, 0
+  br i1 %str.immortal, label %str_ok, label %str_gen_check
+
+str_gen_check:                                    ; preds = %entry
+  %arena.gen = call ptr @dva_arena_current()
+  %arena.gen2 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen, i32 0, i32 4
+  %arena.gen3 = load i64, ptr %arena.gen2, align 8
+  %str.tag.match = icmp eq i64 %str.tag, %arena.gen3
+  br i1 %str.tag.match, label %str_ok, label %str_stale
+
+str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.13.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.14.struct, align 8
+  %concat.rhs5 = and i64 %concat.rhs, 281474976710655
+  %str.tag6 = lshr i64 %concat.rhs, 48
+  %str.immortal7 = icmp eq i64 %str.tag6, 0
+  br i1 %str.immortal7, label %str_ok9, label %str_gen_check8
+
+str_stale:                                        ; preds = %str_gen_check
+  %0 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok
+
+str_gen_check8:                                   ; preds = %str_ok
+  %arena.gen11 = call ptr @dva_arena_current()
+  %arena.gen12 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen11, i32 0, i32 4
+  %arena.gen13 = load i64, ptr %arena.gen12, align 8
+  %str.tag.match14 = icmp eq i64 %str.tag6, %arena.gen13
+  br i1 %str.tag.match14, label %str_ok9, label %str_stale10
+
+str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
+  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.14.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs5)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -614,12 +634,12 @@ str_overflow_abort20:                             ; preds = %concat.sum.len16
 
 define ptr @"diag::E2108_state_binding_target"() #1 {
 entry:
-  ret ptr @str.13.struct
+  ret ptr @str.15.struct
 }
 
 define ptr @"diag::E3003_choice_underscore_undefined"() #1 {
 entry:
-  %concat.lhs = load i64, ptr @str.14.struct, align 8
+  %concat.lhs = load i64, ptr @str.16.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -633,8 +653,8 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.14.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.15.struct, align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.16.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.17.struct, align 8
   %concat.rhs5 = and i64 %concat.rhs, 281474976710655
   %str.tag6 = lshr i64 %concat.rhs, 48
   %str.immortal7 = icmp eq i64 %str.tag6, 0
@@ -653,7 +673,7 @@ str_gen_check8:                                   ; preds = %str_ok
   br i1 %str.tag.match14, label %str_ok9, label %str_stale10
 
 str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
-  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.15.struct, i32 0, i32 1), align 8
+  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.17.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs5)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -711,7 +731,7 @@ str_gen_check27:                                  ; preds = %concat.tot.len19
 str_ok28:                                         ; preds = %str_stale29, %str_gen_check27, %concat.tot.len19
   %concat.lhs34 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs35 = load ptr, ptr %concat.lhs34, align 8
-  %concat.rhs36 = load i64, ptr @str.16.struct, align 8
+  %concat.rhs36 = load i64, ptr @str.18.struct, align 8
   %concat.rhs37 = and i64 %concat.rhs36, 281474976710655
   %str.tag38 = lshr i64 %concat.rhs36, 48
   %str.immortal39 = icmp eq i64 %str.tag38, 0
@@ -730,7 +750,7 @@ str_gen_check40:                                  ; preds = %str_ok28
   br i1 %str.tag.match46, label %str_ok41, label %str_stale42
 
 str_ok41:                                         ; preds = %str_stale42, %str_gen_check40, %str_ok28
-  %concat.rhs47 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.16.struct, i32 0, i32 1), align 8
+  %concat.rhs47 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.18.struct, i32 0, i32 1), align 8
   %concat.sum.len48 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs24, i64 %concat.rhs37)
   %sum49 = extractvalue { i64, i1 } %concat.sum.len48, 0
   %ovf50 = extractvalue { i64, i1 } %concat.sum.len48, 1
@@ -776,12 +796,12 @@ str_overflow_abort57:                             ; preds = %concat.sum.len51
 
 define ptr @"diag::E3008_not_invalid_type"() #1 {
 entry:
-  ret ptr @str.17.struct
+  ret ptr @str.19.struct
 }
 
 define ptr @"diag::E3008_not_integer"() #1 {
 entry:
-  %concat.lhs = load i64, ptr @str.18.struct, align 8
+  %concat.lhs = load i64, ptr @str.20.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -795,8 +815,8 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.18.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.19.struct, align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.20.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.21.struct, align 8
   %concat.rhs5 = and i64 %concat.rhs, 281474976710655
   %str.tag6 = lshr i64 %concat.rhs, 48
   %str.immortal7 = icmp eq i64 %str.tag6, 0
@@ -815,7 +835,7 @@ str_gen_check8:                                   ; preds = %str_ok
   br i1 %str.tag.match14, label %str_ok9, label %str_stale10
 
 str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
-  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.19.struct, i32 0, i32 1), align 8
+  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.21.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs5)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -861,27 +881,27 @@ str_overflow_abort20:                             ; preds = %concat.sum.len16
 
 define ptr @"diag::E3032_assign_void_var_prefix"() #1 {
 entry:
-  ret ptr @str.20.struct
+  ret ptr @str.22.struct
 }
 
 define ptr @"diag::E3032_assign_void_elem_prefix"() #1 {
 entry:
-  ret ptr @str.21.struct
+  ret ptr @str.23.struct
 }
 
 define ptr @"diag::E3033_reassign_immutable_prefix"() #1 {
 entry:
-  ret ptr @str.22.struct
+  ret ptr @str.24.struct
 }
 
 define ptr @"diag::E3033_reassign_immutable_suffix"() #1 {
 entry:
-  ret ptr @str.23.struct
+  ret ptr @str.25.struct
 }
 
 define ptr @"diag::E3033_reassign_immutable_tail"() #1 {
 entry:
-  ret ptr @str.24.struct
+  ret ptr @str.26.struct
 }
 
 define ptr @"diag::reassign_immutable"(ptr %0) #1 {
@@ -1314,7 +1334,7 @@ str_gen_check31:                                  ; preds = %concat.tot.len23
 str_ok32:                                         ; preds = %str_stale33, %str_gen_check31, %concat.tot.len23
   %concat.lhs38 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs39 = load ptr, ptr %concat.lhs38, align 8
-  %concat.rhs40 = load i64, ptr @str.25.struct, align 8
+  %concat.rhs40 = load i64, ptr @str.27.struct, align 8
   %concat.rhs41 = and i64 %concat.rhs40, 281474976710655
   %str.tag42 = lshr i64 %concat.rhs40, 48
   %str.immortal43 = icmp eq i64 %str.tag42, 0
@@ -1333,7 +1353,7 @@ str_gen_check44:                                  ; preds = %str_ok32
   br i1 %str.tag.match50, label %str_ok45, label %str_stale46
 
 str_ok45:                                         ; preds = %str_stale46, %str_gen_check44, %str_ok32
-  %concat.rhs51 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.25.struct, i32 0, i32 1), align 8
+  %concat.rhs51 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
   %concat.sum.len52 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs28, i64 %concat.rhs41)
   %sum53 = extractvalue { i64, i1 } %concat.sum.len52, 0
   %ovf54 = extractvalue { i64, i1 } %concat.sum.len52, 1
@@ -1479,7 +1499,7 @@ str_gen_check31:                                  ; preds = %concat.tot.len23
 str_ok32:                                         ; preds = %str_stale33, %str_gen_check31, %concat.tot.len23
   %concat.lhs38 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs39 = load ptr, ptr %concat.lhs38, align 8
-  %concat.rhs40 = load i64, ptr @str.25.struct, align 8
+  %concat.rhs40 = load i64, ptr @str.27.struct, align 8
   %concat.rhs41 = and i64 %concat.rhs40, 281474976710655
   %str.tag42 = lshr i64 %concat.rhs40, 48
   %str.immortal43 = icmp eq i64 %str.tag42, 0
@@ -1498,7 +1518,7 @@ str_gen_check44:                                  ; preds = %str_ok32
   br i1 %str.tag.match50, label %str_ok45, label %str_stale46
 
 str_ok45:                                         ; preds = %str_stale46, %str_gen_check44, %str_ok32
-  %concat.rhs51 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.25.struct, i32 0, i32 1), align 8
+  %concat.rhs51 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
   %concat.sum.len52 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs28, i64 %concat.rhs41)
   %sum53 = extractvalue { i64, i1 } %concat.sum.len52, 0
   %ovf54 = extractvalue { i64, i1 } %concat.sum.len52, 1
@@ -1712,12 +1732,12 @@ str_overflow_abort64:                             ; preds = %concat.sum.len58
 
 define ptr @"diag::E3131_whole_val_init_prefix"() #1 {
 entry:
-  ret ptr @str.26.struct
+  ret ptr @str.28.struct
 }
 
 define ptr @"diag::E3131_whole_val_init_suffix"() #1 {
 entry:
-  ret ptr @str.27.struct
+  ret ptr @str.29.struct
 }
 
 define ptr @"diag::record_default_missing"(ptr %0, ptr %1) #1 {
@@ -1727,7 +1747,7 @@ entry:
   store ptr %0, ptr %var.field, align 8
   store ptr %1, ptr %var.record, align 8
   %var.load = load ptr, ptr %var.field, align 8
-  %concat.lhs = load i64, ptr @str.28.struct, align 8
+  %concat.lhs = load i64, ptr @str.30.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -1741,7 +1761,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.28.struct, i32 0, i32 1), align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.30.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %concat.rhs5 = load i64, ptr %concat.rhs, align 8
   %concat.rhs6 = and i64 %concat.rhs5, 281474976710655
@@ -1821,7 +1841,7 @@ str_gen_check29:                                  ; preds = %concat.tot.len21
 str_ok30:                                         ; preds = %str_stale31, %str_gen_check29, %concat.tot.len21
   %concat.lhs36 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs37 = load ptr, ptr %concat.lhs36, align 8
-  %concat.rhs38 = load i64, ptr @str.29.struct, align 8
+  %concat.rhs38 = load i64, ptr @str.31.struct, align 8
   %concat.rhs39 = and i64 %concat.rhs38, 281474976710655
   %str.tag40 = lshr i64 %concat.rhs38, 48
   %str.immortal41 = icmp eq i64 %str.tag40, 0
@@ -1840,7 +1860,7 @@ str_gen_check42:                                  ; preds = %str_ok30
   br i1 %str.tag.match48, label %str_ok43, label %str_stale44
 
 str_ok43:                                         ; preds = %str_stale44, %str_gen_check42, %str_ok30
-  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.29.struct, i32 0, i32 1), align 8
+  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.31.struct, i32 0, i32 1), align 8
   %concat.sum.len50 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs26, i64 %concat.rhs39)
   %sum51 = extractvalue { i64, i1 } %concat.sum.len50, 0
   %ovf52 = extractvalue { i64, i1 } %concat.sum.len50, 1
@@ -1978,7 +1998,7 @@ str_gen_check120:                                 ; preds = %concat.tot.len105
 str_ok121:                                        ; preds = %str_stale122, %str_gen_check120, %concat.tot.len105
   %concat.lhs127 = getelementptr inbounds { i64, ptr }, ptr %concat.str112, i32 0, i32 1
   %concat.lhs128 = load ptr, ptr %concat.lhs127, align 8
-  %concat.rhs129 = load i64, ptr @str.30.struct, align 8
+  %concat.rhs129 = load i64, ptr @str.32.struct, align 8
   %concat.rhs130 = and i64 %concat.rhs129, 281474976710655
   %str.tag131 = lshr i64 %concat.rhs129, 48
   %str.immortal132 = icmp eq i64 %str.tag131, 0
@@ -1997,7 +2017,7 @@ str_gen_check133:                                 ; preds = %str_ok121
   br i1 %str.tag.match139, label %str_ok134, label %str_stale135
 
 str_ok134:                                        ; preds = %str_stale135, %str_gen_check133, %str_ok121
-  %concat.rhs140 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.30.struct, i32 0, i32 1), align 8
+  %concat.rhs140 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.32.struct, i32 0, i32 1), align 8
   %concat.sum.len141 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs117, i64 %concat.rhs130)
   %sum142 = extractvalue { i64, i1 } %concat.sum.len141, 0
   %ovf143 = extractvalue { i64, i1 } %concat.sum.len141, 1
@@ -2048,7 +2068,7 @@ entry:
   store ptr %0, ptr %var.name, align 8
   store ptr %1, ptr %var.label, align 8
   %var.load = load ptr, ptr %var.name, align 8
-  %concat.lhs = load i64, ptr @str.31.struct, align 8
+  %concat.lhs = load i64, ptr @str.33.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -2062,7 +2082,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.31.struct, i32 0, i32 1), align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.33.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %concat.rhs5 = load i64, ptr %concat.rhs, align 8
   %concat.rhs6 = and i64 %concat.rhs5, 281474976710655
@@ -2142,7 +2162,7 @@ str_gen_check29:                                  ; preds = %concat.tot.len21
 str_ok30:                                         ; preds = %str_stale31, %str_gen_check29, %concat.tot.len21
   %concat.lhs36 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs37 = load ptr, ptr %concat.lhs36, align 8
-  %concat.rhs38 = load i64, ptr @str.32.struct, align 8
+  %concat.rhs38 = load i64, ptr @str.34.struct, align 8
   %concat.rhs39 = and i64 %concat.rhs38, 281474976710655
   %str.tag40 = lshr i64 %concat.rhs38, 48
   %str.immortal41 = icmp eq i64 %str.tag40, 0
@@ -2161,7 +2181,7 @@ str_gen_check42:                                  ; preds = %str_ok30
   br i1 %str.tag.match48, label %str_ok43, label %str_stale44
 
 str_ok43:                                         ; preds = %str_stale44, %str_gen_check42, %str_ok30
-  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.32.struct, i32 0, i32 1), align 8
+  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.34.struct, i32 0, i32 1), align 8
   %concat.sum.len50 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs26, i64 %concat.rhs39)
   %sum51 = extractvalue { i64, i1 } %concat.sum.len50, 0
   %ovf52 = extractvalue { i64, i1 } %concat.sum.len50, 1
@@ -2299,7 +2319,7 @@ str_gen_check120:                                 ; preds = %concat.tot.len105
 str_ok121:                                        ; preds = %str_stale122, %str_gen_check120, %concat.tot.len105
   %concat.lhs127 = getelementptr inbounds { i64, ptr }, ptr %concat.str112, i32 0, i32 1
   %concat.lhs128 = load ptr, ptr %concat.lhs127, align 8
-  %concat.rhs129 = load i64, ptr @str.25.struct, align 8
+  %concat.rhs129 = load i64, ptr @str.27.struct, align 8
   %concat.rhs130 = and i64 %concat.rhs129, 281474976710655
   %str.tag131 = lshr i64 %concat.rhs129, 48
   %str.immortal132 = icmp eq i64 %str.tag131, 0
@@ -2318,7 +2338,7 @@ str_gen_check133:                                 ; preds = %str_ok121
   br i1 %str.tag.match139, label %str_ok134, label %str_stale135
 
 str_ok134:                                        ; preds = %str_stale135, %str_gen_check133, %str_ok121
-  %concat.rhs140 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.25.struct, i32 0, i32 1), align 8
+  %concat.rhs140 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
   %concat.sum.len141 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs117, i64 %concat.rhs130)
   %sum142 = extractvalue { i64, i1 } %concat.sum.len141, 0
   %ovf143 = extractvalue { i64, i1 } %concat.sum.len141, 1
@@ -2369,7 +2389,7 @@ entry:
   store ptr %0, ptr %var.name, align 8
   store ptr %1, ptr %var.label, align 8
   %var.load = load ptr, ptr %var.name, align 8
-  %concat.lhs = load i64, ptr @str.31.struct, align 8
+  %concat.lhs = load i64, ptr @str.33.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -2383,7 +2403,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.31.struct, i32 0, i32 1), align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.33.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %concat.rhs5 = load i64, ptr %concat.rhs, align 8
   %concat.rhs6 = and i64 %concat.rhs5, 281474976710655
@@ -2463,7 +2483,7 @@ str_gen_check29:                                  ; preds = %concat.tot.len21
 str_ok30:                                         ; preds = %str_stale31, %str_gen_check29, %concat.tot.len21
   %concat.lhs36 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs37 = load ptr, ptr %concat.lhs36, align 8
-  %concat.rhs38 = load i64, ptr @str.33.struct, align 8
+  %concat.rhs38 = load i64, ptr @str.35.struct, align 8
   %concat.rhs39 = and i64 %concat.rhs38, 281474976710655
   %str.tag40 = lshr i64 %concat.rhs38, 48
   %str.immortal41 = icmp eq i64 %str.tag40, 0
@@ -2482,7 +2502,7 @@ str_gen_check42:                                  ; preds = %str_ok30
   br i1 %str.tag.match48, label %str_ok43, label %str_stale44
 
 str_ok43:                                         ; preds = %str_stale44, %str_gen_check42, %str_ok30
-  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.33.struct, i32 0, i32 1), align 8
+  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.35.struct, i32 0, i32 1), align 8
   %concat.sum.len50 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs26, i64 %concat.rhs39)
   %sum51 = extractvalue { i64, i1 } %concat.sum.len50, 0
   %ovf52 = extractvalue { i64, i1 } %concat.sum.len50, 1
@@ -2620,7 +2640,7 @@ str_gen_check120:                                 ; preds = %concat.tot.len105
 str_ok121:                                        ; preds = %str_stale122, %str_gen_check120, %concat.tot.len105
   %concat.lhs127 = getelementptr inbounds { i64, ptr }, ptr %concat.str112, i32 0, i32 1
   %concat.lhs128 = load ptr, ptr %concat.lhs127, align 8
-  %concat.rhs129 = load i64, ptr @str.34.struct, align 8
+  %concat.rhs129 = load i64, ptr @str.36.struct, align 8
   %concat.rhs130 = and i64 %concat.rhs129, 281474976710655
   %str.tag131 = lshr i64 %concat.rhs129, 48
   %str.immortal132 = icmp eq i64 %str.tag131, 0
@@ -2639,7 +2659,7 @@ str_gen_check133:                                 ; preds = %str_ok121
   br i1 %str.tag.match139, label %str_ok134, label %str_stale135
 
 str_ok134:                                        ; preds = %str_stale135, %str_gen_check133, %str_ok121
-  %concat.rhs140 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.34.struct, i32 0, i32 1), align 8
+  %concat.rhs140 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.36.struct, i32 0, i32 1), align 8
   %concat.sum.len141 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs117, i64 %concat.rhs130)
   %sum142 = extractvalue { i64, i1 } %concat.sum.len141, 0
   %ovf143 = extractvalue { i64, i1 } %concat.sum.len141, 1
@@ -2694,7 +2714,7 @@ entry:
   store ptr %2, ptr %var.expected, align 8
   store ptr %3, ptr %var.got, align 8
   %var.load = load ptr, ptr %var.name, align 8
-  %concat.lhs = load i64, ptr @str.31.struct, align 8
+  %concat.lhs = load i64, ptr @str.33.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -2708,7 +2728,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.31.struct, i32 0, i32 1), align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.33.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %concat.rhs5 = load i64, ptr %concat.rhs, align 8
   %concat.rhs6 = and i64 %concat.rhs5, 281474976710655
@@ -2788,7 +2808,7 @@ str_gen_check29:                                  ; preds = %concat.tot.len21
 str_ok30:                                         ; preds = %str_stale31, %str_gen_check29, %concat.tot.len21
   %concat.lhs36 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs37 = load ptr, ptr %concat.lhs36, align 8
-  %concat.rhs38 = load i64, ptr @str.33.struct, align 8
+  %concat.rhs38 = load i64, ptr @str.35.struct, align 8
   %concat.rhs39 = and i64 %concat.rhs38, 281474976710655
   %str.tag40 = lshr i64 %concat.rhs38, 48
   %str.immortal41 = icmp eq i64 %str.tag40, 0
@@ -2807,7 +2827,7 @@ str_gen_check42:                                  ; preds = %str_ok30
   br i1 %str.tag.match48, label %str_ok43, label %str_stale44
 
 str_ok43:                                         ; preds = %str_stale44, %str_gen_check42, %str_ok30
-  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.33.struct, i32 0, i32 1), align 8
+  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.35.struct, i32 0, i32 1), align 8
   %concat.sum.len50 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs26, i64 %concat.rhs39)
   %sum51 = extractvalue { i64, i1 } %concat.sum.len50, 0
   %ovf52 = extractvalue { i64, i1 } %concat.sum.len50, 1
@@ -2945,7 +2965,7 @@ str_gen_check120:                                 ; preds = %concat.tot.len105
 str_ok121:                                        ; preds = %str_stale122, %str_gen_check120, %concat.tot.len105
   %concat.lhs127 = getelementptr inbounds { i64, ptr }, ptr %concat.str112, i32 0, i32 1
   %concat.lhs128 = load ptr, ptr %concat.lhs127, align 8
-  %concat.rhs129 = load i64, ptr @str.35.struct, align 8
+  %concat.rhs129 = load i64, ptr @str.37.struct, align 8
   %concat.rhs130 = and i64 %concat.rhs129, 281474976710655
   %str.tag131 = lshr i64 %concat.rhs129, 48
   %str.immortal132 = icmp eq i64 %str.tag131, 0
@@ -2964,7 +2984,7 @@ str_gen_check133:                                 ; preds = %str_ok121
   br i1 %str.tag.match139, label %str_ok134, label %str_stale135
 
 str_ok134:                                        ; preds = %str_stale135, %str_gen_check133, %str_ok121
-  %concat.rhs140 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.35.struct, i32 0, i32 1), align 8
+  %concat.rhs140 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.37.struct, i32 0, i32 1), align 8
   %concat.sum.len141 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs117, i64 %concat.rhs130)
   %sum142 = extractvalue { i64, i1 } %concat.sum.len141, 0
   %ovf143 = extractvalue { i64, i1 } %concat.sum.len141, 1
@@ -3102,7 +3122,7 @@ str_gen_check211:                                 ; preds = %concat.tot.len196
 str_ok212:                                        ; preds = %str_stale213, %str_gen_check211, %concat.tot.len196
   %concat.lhs218 = getelementptr inbounds { i64, ptr }, ptr %concat.str203, i32 0, i32 1
   %concat.lhs219 = load ptr, ptr %concat.lhs218, align 8
-  %concat.rhs220 = load i64, ptr @str.36.struct, align 8
+  %concat.rhs220 = load i64, ptr @str.38.struct, align 8
   %concat.rhs221 = and i64 %concat.rhs220, 281474976710655
   %str.tag222 = lshr i64 %concat.rhs220, 48
   %str.immortal223 = icmp eq i64 %str.tag222, 0
@@ -3121,7 +3141,7 @@ str_gen_check224:                                 ; preds = %str_ok212
   br i1 %str.tag.match230, label %str_ok225, label %str_stale226
 
 str_ok225:                                        ; preds = %str_stale226, %str_gen_check224, %str_ok212
-  %concat.rhs231 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.36.struct, i32 0, i32 1), align 8
+  %concat.rhs231 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.38.struct, i32 0, i32 1), align 8
   %concat.sum.len232 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs208, i64 %concat.rhs221)
   %sum233 = extractvalue { i64, i1 } %concat.sum.len232, 0
   %ovf234 = extractvalue { i64, i1 } %concat.sum.len232, 1
@@ -3259,7 +3279,7 @@ str_gen_check302:                                 ; preds = %concat.tot.len287
 str_ok303:                                        ; preds = %str_stale304, %str_gen_check302, %concat.tot.len287
   %concat.lhs309 = getelementptr inbounds { i64, ptr }, ptr %concat.str294, i32 0, i32 1
   %concat.lhs310 = load ptr, ptr %concat.lhs309, align 8
-  %concat.rhs311 = load i64, ptr @str.37.struct, align 8
+  %concat.rhs311 = load i64, ptr @str.39.struct, align 8
   %concat.rhs312 = and i64 %concat.rhs311, 281474976710655
   %str.tag313 = lshr i64 %concat.rhs311, 48
   %str.immortal314 = icmp eq i64 %str.tag313, 0
@@ -3278,7 +3298,7 @@ str_gen_check315:                                 ; preds = %str_ok303
   br i1 %str.tag.match321, label %str_ok316, label %str_stale317
 
 str_ok316:                                        ; preds = %str_stale317, %str_gen_check315, %str_ok303
-  %concat.rhs322 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.37.struct, i32 0, i32 1), align 8
+  %concat.rhs322 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.39.struct, i32 0, i32 1), align 8
   %concat.sum.len323 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs299, i64 %concat.rhs312)
   %sum324 = extractvalue { i64, i1 } %concat.sum.len323, 0
   %ovf325 = extractvalue { i64, i1 } %concat.sum.len323, 1
@@ -3327,7 +3347,7 @@ entry:
   %var.name = alloca ptr, align 8
   store ptr %0, ptr %var.name, align 8
   %var.load = load ptr, ptr %var.name, align 8
-  %concat.lhs = load i64, ptr @str.38.struct, align 8
+  %concat.lhs = load i64, ptr @str.40.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -3341,7 +3361,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.38.struct, i32 0, i32 1), align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.40.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %concat.rhs5 = load i64, ptr %concat.rhs, align 8
   %concat.rhs6 = and i64 %concat.rhs5, 281474976710655
@@ -3421,7 +3441,7 @@ str_gen_check29:                                  ; preds = %concat.tot.len21
 str_ok30:                                         ; preds = %str_stale31, %str_gen_check29, %concat.tot.len21
   %concat.lhs36 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs37 = load ptr, ptr %concat.lhs36, align 8
-  %concat.rhs38 = load i64, ptr @str.39.struct, align 8
+  %concat.rhs38 = load i64, ptr @str.41.struct, align 8
   %concat.rhs39 = and i64 %concat.rhs38, 281474976710655
   %str.tag40 = lshr i64 %concat.rhs38, 48
   %str.immortal41 = icmp eq i64 %str.tag40, 0
@@ -3440,7 +3460,7 @@ str_gen_check42:                                  ; preds = %str_ok30
   br i1 %str.tag.match48, label %str_ok43, label %str_stale44
 
 str_ok43:                                         ; preds = %str_stale44, %str_gen_check42, %str_ok30
-  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.39.struct, i32 0, i32 1), align 8
+  %concat.rhs49 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.41.struct, i32 0, i32 1), align 8
   %concat.sum.len50 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs26, i64 %concat.rhs39)
   %sum51 = extractvalue { i64, i1 } %concat.sum.len50, 0
   %ovf52 = extractvalue { i64, i1 } %concat.sum.len50, 1
@@ -3486,17 +3506,17 @@ str_overflow_abort59:                             ; preds = %concat.sum.len53
 
 define ptr @"diag::E3051_dynamic_index_hetero"() #1 {
 entry:
-  ret ptr @str.40.struct
+  ret ptr @str.42.struct
 }
 
 define ptr @"diag::E3051_cycle_iter_hetero"() #1 {
 entry:
-  ret ptr @str.41.struct
+  ret ptr @str.43.struct
 }
 
 define ptr @"diag::E3065_rawptr_to_string"() #1 {
 entry:
-  %concat.lhs = load i64, ptr @str.42.struct, align 8
+  %concat.lhs = load i64, ptr @str.44.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -3510,8 +3530,8 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.42.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.43.struct, align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.44.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.45.struct, align 8
   %concat.rhs5 = and i64 %concat.rhs, 281474976710655
   %str.tag6 = lshr i64 %concat.rhs, 48
   %str.immortal7 = icmp eq i64 %str.tag6, 0
@@ -3530,7 +3550,7 @@ str_gen_check8:                                   ; preds = %str_ok
   br i1 %str.tag.match14, label %str_ok9, label %str_stale10
 
 str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
-  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.43.struct, i32 0, i32 1), align 8
+  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs5)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -3576,42 +3596,42 @@ str_overflow_abort20:                             ; preds = %concat.sum.len16
 
 define ptr @"diag::E3078_addr_builder_or_string"() #1 {
 entry:
-  ret ptr @str.44.struct
+  ret ptr @str.46.struct
 }
 
 define ptr @"diag::E3084_record_size_mismatch"() #1 {
 entry:
-  ret ptr @str.45.struct
+  ret ptr @str.47.struct
 }
 
 define ptr @"diag::E3084_arithmetic_type_mismatch"() #1 {
 entry:
-  ret ptr @str.46.struct
+  ret ptr @str.48.struct
 }
 
 define ptr @"diag::E3084_builder_append_type"() #1 {
 entry:
-  ret ptr @str.47.struct
+  ret ptr @str.49.struct
 }
 
 define ptr @"diag::E3084_choice_branch_mismatch"() #1 {
 entry:
-  ret ptr @str.48.struct
+  ret ptr @str.50.struct
 }
 
 define ptr @"diag::E3091_propagate_ram_operand"() #1 {
 entry:
-  ret ptr @str.49.struct
+  ret ptr @str.51.struct
 }
 
 define ptr @"diag::E3103_cannot_infer_type"() #1 {
 entry:
-  ret ptr @str.50.struct
+  ret ptr @str.52.struct
 }
 
 define ptr @"diag::E3133_addr_escape_restore"() #1 {
 entry:
-  %concat.lhs = load i64, ptr @str.51.struct, align 8
+  %concat.lhs = load i64, ptr @str.53.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -3625,8 +3645,8 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.51.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.52.struct, align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.54.struct, align 8
   %concat.rhs5 = and i64 %concat.rhs, 281474976710655
   %str.tag6 = lshr i64 %concat.rhs, 48
   %str.immortal7 = icmp eq i64 %str.tag6, 0
@@ -3645,7 +3665,7 @@ str_gen_check8:                                   ; preds = %str_ok
   br i1 %str.tag.match14, label %str_ok9, label %str_stale10
 
 str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
-  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.52.struct, i32 0, i32 1), align 8
+  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs5)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -3691,17 +3711,17 @@ str_overflow_abort20:                             ; preds = %concat.sum.len16
 
 define ptr @"diag::E3134_addr_escape_lifecycle"() #1 {
 entry:
-  ret ptr @str.53.struct
+  ret ptr @str.55.struct
 }
 
 define ptr @"diag::E3136_type_choice_no_branch"() #1 {
 entry:
-  ret ptr @str.54.struct
+  ret ptr @str.56.struct
 }
 
 define ptr @"diag::E3140_no_runtime_arena"() #1 {
 entry:
-  %concat.lhs = load i64, ptr @str.55.struct, align 8
+  %concat.lhs = load i64, ptr @str.57.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -3715,8 +3735,8 @@ str_gen_check:                                    ; preds = %entry
   br i1 %str.tag.match, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.56.struct, align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.58.struct, align 8
   %concat.rhs5 = and i64 %concat.rhs, 281474976710655
   %str.tag6 = lshr i64 %concat.rhs, 48
   %str.immortal7 = icmp eq i64 %str.tag6, 0
@@ -3735,7 +3755,7 @@ str_gen_check8:                                   ; preds = %str_ok
   br i1 %str.tag.match14, label %str_ok9, label %str_stale10
 
 str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
-  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
+  %concat.rhs15 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs5)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -3793,7 +3813,7 @@ str_gen_check27:                                  ; preds = %concat.tot.len19
 str_ok28:                                         ; preds = %str_stale29, %str_gen_check27, %concat.tot.len19
   %concat.lhs34 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs35 = load ptr, ptr %concat.lhs34, align 8
-  %concat.rhs36 = load i64, ptr @str.57.struct, align 8
+  %concat.rhs36 = load i64, ptr @str.59.struct, align 8
   %concat.rhs37 = and i64 %concat.rhs36, 281474976710655
   %str.tag38 = lshr i64 %concat.rhs36, 48
   %str.immortal39 = icmp eq i64 %str.tag38, 0
@@ -3812,7 +3832,7 @@ str_gen_check40:                                  ; preds = %str_ok28
   br i1 %str.tag.match46, label %str_ok41, label %str_stale42
 
 str_ok41:                                         ; preds = %str_stale42, %str_gen_check40, %str_ok28
-  %concat.rhs47 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
+  %concat.rhs47 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.59.struct, i32 0, i32 1), align 8
   %concat.sum.len48 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs24, i64 %concat.rhs37)
   %sum49 = extractvalue { i64, i1 } %concat.sum.len48, 0
   %ovf50 = extractvalue { i64, i1 } %concat.sum.len48, 1
@@ -3870,7 +3890,7 @@ str_gen_check71:                                  ; preds = %concat.tot.len56
 str_ok72:                                         ; preds = %str_stale73, %str_gen_check71, %concat.tot.len56
   %concat.lhs78 = getelementptr inbounds { i64, ptr }, ptr %concat.str63, i32 0, i32 1
   %concat.lhs79 = load ptr, ptr %concat.lhs78, align 8
-  %concat.rhs80 = load i64, ptr @str.58.struct, align 8
+  %concat.rhs80 = load i64, ptr @str.60.struct, align 8
   %concat.rhs81 = and i64 %concat.rhs80, 281474976710655
   %str.tag82 = lshr i64 %concat.rhs80, 48
   %str.immortal83 = icmp eq i64 %str.tag82, 0
@@ -3889,7 +3909,7 @@ str_gen_check84:                                  ; preds = %str_ok72
   br i1 %str.tag.match90, label %str_ok85, label %str_stale86
 
 str_ok85:                                         ; preds = %str_stale86, %str_gen_check84, %str_ok72
-  %concat.rhs91 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
+  %concat.rhs91 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
   %concat.sum.len92 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs68, i64 %concat.rhs81)
   %sum93 = extractvalue { i64, i1 } %concat.sum.len92, 0
   %ovf94 = extractvalue { i64, i1 } %concat.sum.len92, 1
@@ -3935,32 +3955,32 @@ str_overflow_abort101:                            ; preds = %concat.sum.len95
 
 define ptr @"diag::E3142_raw_write_type"() #1 {
 entry:
-  ret ptr @str.59.struct
+  ret ptr @str.61.struct
 }
 
 define ptr @"diag::E3150_view_escape_frame"() #1 {
 entry:
-  ret ptr @str.60.struct
+  ret ptr @str.62.struct
 }
 
 define ptr @"diag::E3172_exit_status_integerish"() #1 {
 entry:
-  ret ptr @str.61.struct
+  ret ptr @str.63.struct
 }
 
 define ptr @"diag::E3173_return_outside_fn"() #1 {
 entry:
-  ret ptr @str.62.struct
+  ret ptr @str.64.struct
 }
 
 define ptr @"diag::E3173_propagate_outside_fn"() #1 {
 entry:
-  ret ptr @str.63.struct
+  ret ptr @str.65.struct
 }
 
 define ptr @"diag::E3175_choice_const_discarded"() #1 {
 entry:
-  ret ptr @str.64.struct
+  ret ptr @str.66.struct
 }
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

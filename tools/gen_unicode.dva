@@ -1,6 +1,8 @@
 // tools/gen_unicode.dva - Generates std/unicode.dva from UnicodeData.txt
 // Uses a unified 2-stage category page table.
 
+#use libc
+#use io
 #use str
 
 #foreign "c"
@@ -12,14 +14,14 @@
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, offset, remaining =>
    remaining !> 0
-      | <+ offset ->
+      | <+ offset +>
       |
          chunk = remaining < 65536 | remaining | 65536
          n = libc::read(fd, &b + offset, chunk)
          n < 0
             | <-->
             | n == 0
-               | <+ offset ->
+               | <+ offset +>
                | read_fd_bytes_loop(fd, b, offset + n, remaining - n)
 
 read_file_text: String => < String | >
@@ -37,7 +39,7 @@ read_file_text = path =>
                sz == 0
                   |
                      libc::close(fd)
-                     <+ "" ->
+                     <+ "" +>
                   |
                      libc::lseek(fd, 0, 0)
                      b = {sz}
@@ -46,7 +48,7 @@ read_file_text = path =>
                      read_res
                         | total =>
                            ?b = total
-                           <+ +b ->
+                           <+ +b +>
                         | <-->
 
 write_bytes_loop: Int, String, Int, Int => <>
@@ -119,7 +121,7 @@ has_suffix = src, start, end_pos, suffix =>
       |
          diff' = <->
          0..slen @ i =>
-            src(end_pos - slen + i) == suffix(i) | 0 | (diff' = <+>; -->)
+            src(end_pos - slen + i) != suffix(i) | (diff' = <+>; -->)
          !diff'
 
 format_hex64: Int => String
@@ -150,11 +152,11 @@ main = _ =>
    src = ?src0 > 0 | src0 | (read_file_text("/tmp/UnicodeData.txt") | s => s | "")
    ?src == 0
       |
-         print $ "Cannot read tools/UnicodeData.txt or /tmp/UnicodeData.txt"
+         io::out $ "Cannot read tools/UnicodeData.txt or /tmp/UnicodeData.txt"
          #exit 1
          0
       |
-         print $ "Parsing UnicodeData.txt in Dva..."
+         io::out $ "Parsing UnicodeData.txt in Dva..."
          raw = libc::malloc(0x110000)
          libc::memset(raw, 29, 0x110000)
 
@@ -210,12 +212,12 @@ main = _ =>
                            count = cp - range_start' + 1
                            count @ k =>
                               curr = range_start' + k
-                              curr < 0x110000 | @[raw + curr] = i8(range_cat')
+                              curr < 0x110000 | @[raw + curr] = u8(range_cat')
                         |
-                           cp < 0x110000 | @[raw + cp] = i8(cat_id)
+                           cp < 0x110000 | @[raw + cp] = u8(cat_id)
 
-         print $ "Building and deduplicating pages..."
-         stage1: Ints
+         io::out $ "Building and deduplicating pages..."
+         stage1 = Ints()
          unique_pages_mem = libc::malloc(300 * 256)
          num_unique' = 0
 
@@ -228,7 +230,6 @@ main = _ =>
                   |
                      found' = u
                      -->
-                  | 0
 
             found' !< 0
                | stage1 += found'
@@ -239,32 +240,35 @@ main = _ =>
                   stage1 += found'
 
          libc::free(raw)
-         print $ "Unique pages: " + str::from_int(num_unique')
-
-         print $ "Emitting std/unicode.dva..."
+         io::out $ "Unique pages: " + str::from_int(num_unique')
+         io::out $ "Emitting std/unicode.dva..."
          out = {500000}
-         out += "// std/unicode.dva - Unicode: rune classification via unified 2-stage\n"
-         out += "// category page table, plus UTF-8 encode/decode helpers.\n"
-         out += "// Generated from UnicodeData.txt.\n\n"
+         out += """
+            // std/unicode.dva - Unicode: rune classification via unified 2-stage
+            // category page table, plus UTF-8 encode/decode helpers.
+            // Generated from UnicodeData.txt.
 
-         out += "// Unicode general category classifications:\n"
-         out += "//   Letters:      Lu (Uppercase), Ll (Lowercase), Lt (Titlecase),\n"
-         out += "//                 Lm (Modifier), Lo (Other)\n"
-         out += "//   Marks:        Mn (Nonspacing), Mc (Spacing), Me (Enclosing)\n"
-         out += "//   Numbers:      Nd (Decimal), Nl (Letter), No (Other)\n"
-         out += "//   Punctuation:  Pc (Connector), Pd (Dash), Ps (Open), Pe (Close),\n"
-         out += "//                 Pi (Initial), Pf (Final), Po (Other)\n"
-         out += "//   Symbols:      Sm (Math), Sc (Currency), Sk (Modifier), So (Other)\n"
-         out += "//   Separators:   Zs (Space), Zl (Line), Zp (Paragraph)\n"
-         out += "//   Other:        Cc (Control), Cf (Format), Cs (Surrogate),\n"
-         out += "//                 Co (Private Use), Cn (Unassigned)\n\n"
-         out += "#public\n"
-         out += "#type Category < Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pc,\n"
-         out += "   Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp,\n"
-         out += "   Cc, Cf, Cs, Co, Cn >\n\n"
+            // Unicode general category classifications:
+            //   Letters:      Lu (Uppercase), Ll (Lowercase), Lt (Titlecase),
+            //                 Lm (Modifier), Lo (Other)
+            //   Marks:        Mn (Nonspacing), Mc (Spacing), Me (Enclosing)
+            //   Numbers:      Nd (Decimal), Nl (Letter), No (Other)
+            //   Punctuation:  Pc (Connector), Pd (Dash), Ps (Open), Pe (Close),
+            //                 Pi (Initial), Pf (Final), Po (Other)
+            //   Symbols:      Sm (Math), Sc (Currency), Sk (Modifier), So (Other)
+            //   Separators:   Zs (Space), Zl (Line), Zp (Paragraph)
+            //   Other:        Cc (Control), Cf (Format), Cs (Surrogate),
+            //                 Co (Private Use), Cn (Unassigned)
 
-         out += "#pragma number i16\n"
-         out += "#private cat_s1 = (\n   "
+            #public
+            #type Category < Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pc,
+               Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp,
+               Cc, Cf, Cs, Co, Cn >
+
+            #pragma number i16
+            #private cat_s1 = (
+            """
+         out += "   "
 
          idx' = 0
          col' = 3
@@ -292,7 +296,6 @@ main = _ =>
                      |
                         out += ", "
                         col' = col' + 2
-               | 0
             first' = <->
             out += tok
             col' = col' + ?tok
@@ -329,7 +332,6 @@ main = _ =>
                      |
                         out += ", "
                         wcol' = wcol' + 2
-               | 0
             first_w' = <->
             out += wtok
             wcol' = wcol' + ?wtok
@@ -338,218 +340,219 @@ main = _ =>
          libc::free(unique_pages_mem)
          out += "#pragma number default\n\n"
 
-         out += "#public\n"
-         out += "   category_id: Rune => Int\n"
-         out += "   category_id = cp =>\n"
-         out += "      cp [> 0x10FFFF] 29 |\n"
-         out += "         page = Int(cat_s1(cp .>. 8))\n"
-         out += "         (cat_s2(page * 32 + ((cp .&. 255) .>. 3))"
-         out += " .>. ((cp .&. 7) .<. 3)) .&. 255\n\n"
+         out += """
+            #public
+               category_id: Rune => Int
+               category_id = cp =>
+                  cp [> 0x10FFFF] 29 |
+                     page = Int(cat_s1(cp .>. 8))
+                     (cat_s2(page * 32 + ((cp .&. 255) .>. 3)) .>. ((cp .&. 7) .<. 3)) .&. 255
 
-         out += "   category: Rune => Category\n"
-         out += "   category = cp =>\n"
-         out += "      id = category_id(cp)\n"
-         out += "      id\n"
-         out += "         [0] Lu [1] Ll [2] Lt [3] Lm [4] Lo\n"
-         out += "         [5] Mn [6] Mc [7] Me\n"
-         out += "         [8] Nd [9] Nl [10] No\n"
-         out += "         [11] Pc [12] Pd [13] Ps [14] Pe [15] Pi [16] Pf [17] Po\n"
-         out += "         [18] Sm [19] Sc [20] Sk [21] So\n"
-         out += "         [22] Zs [23] Zl [24] Zp\n"
-         out += "         [25] Cc [26] Cf [27] Cs [28] Co\n"
-         out += "         | Cn\n\n"
+               category: Rune => Category
+               category = cp =>
+                  id = category_id(cp)
+                  id
+                     [0] Lu [1] Ll [2] Lt [3] Lm [4] Lo
+                     [5] Mn [6] Mc [7] Me
+                     [8] Nd [9] Nl [10] No
+                     [11] Pc [12] Pd [13] Ps [14] Pe [15] Pi [16] Pf [17] Po
+                     [18] Sm [19] Sc [20] Sk [21] So
+                     [22] Zs [23] Zl [24] Zp
+                     [25] Cc [26] Cf [27] Cs [28] Co
+                     | Cn
 
-         out += "   // Human-readable description of a Unicode general category.\n"
-         out += "   category_description: Category => String\n"
-         out += "   category_description = c =>\n"
-         out += "      c\n"
-         out += "         [Lu] \"Uppercase Letter\"\n"
-         out += "         [Ll] \"Lowercase Letter\"\n"
-         out += "         [Lt] \"Titlecase Letter\"\n"
-         out += "         [Lm] \"Modifier Letter\"\n"
-         out += "         [Lo] \"Other Letter\"\n"
-         out += "         [Mn] \"Nonspacing Mark\"\n"
-         out += "         [Mc] \"Spacing Mark\"\n"
-         out += "         [Me] \"Enclosing Mark\"\n"
-         out += "         [Nd] \"Decimal Number\"\n"
-         out += "         [Nl] \"Letter Number\"\n"
-         out += "         [No] \"Other Number\"\n"
-         out += "         [Pc] \"Connector Punctuation\"\n"
-         out += "         [Pd] \"Dash Punctuation\"\n"
-         out += "         [Ps] \"Open Punctuation\"\n"
-         out += "         [Pe] \"Close Punctuation\"\n"
-         out += "         [Pi] \"Initial Punctuation\"\n"
-         out += "         [Pf] \"Final Punctuation\"\n"
-         out += "         [Po] \"Other Punctuation\"\n"
-         out += "         [Sm] \"Math Symbol\"\n"
-         out += "         [Sc] \"Currency Symbol\"\n"
-         out += "         [Sk] \"Modifier Symbol\"\n"
-         out += "         [So] \"Other Symbol\"\n"
-         out += "         [Zs] \"Space Separator\"\n"
-         out += "         [Zl] \"Line Separator\"\n"
-         out += "         [Zp] \"Paragraph Separator\"\n"
-         out += "         [Cc] \"Control\"\n"
-         out += "         [Cf] \"Format\"\n"
-         out += "         [Cs] \"Surrogate\"\n"
-         out += "         [Co] \"Private Use\"\n"
-         out += "         [Cn] \"Unassigned\"\n"
-         out += "         | \"Unknown\"\n\n"
+               // Human-readable description of a Unicode general category.
+               category_description: Category => String
+               category_description = c =>
+                  c
+                     [Lu] "Uppercase Letter"
+                     [Ll] "Lowercase Letter"
+                     [Lt] "Titlecase Letter"
+                     [Lm] "Modifier Letter"
+                     [Lo] "Other Letter"
+                     [Mn] "Nonspacing Mark"
+                     [Mc] "Spacing Mark"
+                     [Me] "Enclosing Mark"
+                     [Nd] "Decimal Number"
+                     [Nl] "Letter Number"
+                     [No] "Other Number"
+                     [Pc] "Connector Punctuation"
+                     [Pd] "Dash Punctuation"
+                     [Ps] "Open Punctuation"
+                     [Pe] "Close Punctuation"
+                     [Pi] "Initial Punctuation"
+                     [Pf] "Final Punctuation"
+                     [Po] "Other Punctuation"
+                     [Sm] "Math Symbol"
+                     [Sc] "Currency Symbol"
+                     [Sk] "Modifier Symbol"
+                     [So] "Other Symbol"
+                     [Zs] "Space Separator"
+                     [Zl] "Line Separator"
+                     [Zp] "Paragraph Separator"
+                     [Cc] "Control"
+                     [Cf] "Format"
+                     [Cs] "Surrogate"
+                     [Co] "Private Use"
+                     [Cn] "Unassigned"
+                     | "Unknown"
 
-         out += "   // Alphabetic letters (Lu, Ll, Lt, Lm, Lo)\n"
-         out += "   is_alpha: Rune => <>\n"
-         out += "   is_alpha = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      cat !> 4\n\n"
+               // Alphabetic letters (Lu, Ll, Lt, Lm, Lo)
+               is_alpha: Rune => <>
+               is_alpha = cp =>
+                  cat = category_id(cp)
+                  cat !> 4
 
-         out += "   // Decimal digits (Nd)\n"
-         out += "   is_digit: Rune => <>\n"
-         out += "   is_digit = cp =>\n"
-         out += "      category_id(cp) == 8\n\n"
+               // Decimal digits (Nd)
+               is_digit: Rune => <>
+               is_digit = cp =>
+                  category_id(cp) == 8
 
-         out += "   // Uppercase letters (Lu)\n"
-         out += "   is_upper: Rune => <>\n"
-         out += "   is_upper = cp =>\n"
-         out += "      category_id(cp) == 0\n\n"
+               // Uppercase letters (Lu)
+               is_upper: Rune => <>
+               is_upper = cp =>
+                  category_id(cp) == 0
 
-         out += "   // Lowercase letters (Ll)\n"
-         out += "   is_lower: Rune => <>\n"
-         out += "   is_lower = cp =>\n"
-         out += "      category_id(cp) == 1\n\n"
+               // Lowercase letters (Ll)
+               is_lower: Rune => <>
+               is_lower = cp =>
+                  category_id(cp) == 1
 
-         out += "   // Titlecase letters (Lt)\n"
-         out += "   is_title: Rune => <>\n"
-         out += "   is_title = cp =>\n"
-         out += "      category_id(cp) == 2\n\n"
+               // Titlecase letters (Lt)
+               is_title: Rune => <>
+               is_title = cp =>
+                  category_id(cp) == 2
 
-         out += "   // Whitespace: space separators (Zs, Zl, Zp) plus ASCII whitespace\n"
-         out += "   // (\\t, \\n, \\v, \\f, \\r)\n"
-         out += "   is_space: Rune => <>\n"
-         out += "   is_space = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      (cat !< 22 && cat !> 24) || (cp == 0x20 || (cp !< 0x09 && cp !> 0x0D))\n\n"
+               // Whitespace: space separators (Zs, Zl, Zp) plus ASCII whitespace
+               // (\\t, \\n, \\v, \\f, \\r)
+               is_space: Rune => <>
+               is_space = cp =>
+                  cat = category_id(cp)
+                  (cat !< 22 && cat !> 24) || (cp == 0x20 || (cp !< 0x09 && cp !> 0x0D))
 
-         out += "   // Punctuation (Pc, Pd, Ps, Pe, Pi, Pf, Po)\n"
-         out += "   is_punctuation: Rune => <>\n"
-         out += "   is_punctuation = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      cat !< 11 && cat !> 17\n\n"
+               // Punctuation (Pc, Pd, Ps, Pe, Pi, Pf, Po)
+               is_punctuation: Rune => <>
+               is_punctuation = cp =>
+                  cat = category_id(cp)
+                  cat !< 11 && cat !> 17
 
-         out += "   // Symbols: math, currency, modifiers, others (Sm, Sc, Sk, So)\n"
-         out += "   is_symbol: Rune => <>\n"
-         out += "   is_symbol = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      cat !< 18 && cat !> 21\n\n"
+               // Symbols: math, currency, modifiers, others (Sm, Sc, Sk, So)
+               is_symbol: Rune => <>
+               is_symbol = cp =>
+                  cat = category_id(cp)
+                  cat !< 18 && cat !> 21
 
-         out += "   // Combining marks: nonspacing, spacing, enclosing (Mn, Mc, Me)\n"
-         out += "   is_mark: Rune => <>\n"
-         out += "   is_mark = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      cat !< 5 && cat !> 7\n\n"
+               // Combining marks: nonspacing, spacing, enclosing (Mn, Mc, Me)
+               is_mark: Rune => <>
+               is_mark = cp =>
+                  cat = category_id(cp)
+                  cat !< 5 && cat !> 7
 
-         out += "   // Numbers: decimal digits, letter numbers, other numbers (Nd, Nl, No)\n"
-         out += "   is_number: Rune => <>\n"
-         out += "   is_number = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      cat !< 8 && cat !> 10\n\n"
+               // Numbers: decimal digits, letter numbers, other numbers (Nd, Nl, No)
+               is_number: Rune => <>
+               is_number = cp =>
+                  cat = category_id(cp)
+                  cat !< 8 && cat !> 10
 
-         out += "   // Control characters (Cc)\n"
-         out += "   is_control: Rune => <>\n"
-         out += "   is_control = cp =>\n"
-         out += "      category_id(cp) == 25\n\n"
+               // Control characters (Cc)
+               is_control: Rune => <>
+               is_control = cp =>
+                  category_id(cp) == 25
 
-         out += "   // Graphic characters (letters, marks, numbers, punctuation, symbols)\n"
-         out += "   is_graphic: Rune => <>\n"
-         out += "   is_graphic = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      cat !> 22\n\n"
+               // Graphic characters (letters, marks, numbers, punctuation, symbols)
+               is_graphic: Rune => <>
+               is_graphic = cp =>
+                  cat = category_id(cp)
+                  cat !> 22
 
-         out += "   // Decode the UTF-8 rune at src[i] into its codepoint.\n"
-         out += "   decode_rune: String, Int => Rune\n"
-         out += "   decode_rune = src, i =>\n"
-         out += "      b0 = src(i)\n"
-         out += "      Rune(b0\n"
-         out += "         [< 0x80] b0\n"
-         out += "         [< 0xE0] (b0 - 0xC0) * 0x40 + (src(i + 1) - 0x80)\n"
-         out += "         [< 0xF0]\n"
-         out += "            (b0 - 0xE0) * 0x1000 + (src(i + 1) - 0x80) * 0x40 +\n"
-         out += "               (src(i + 2) - 0x80)\n"
-         out += "         |\n"
-         out += "            (b0 - 0xF0) * 0x40000 + (src(i + 1) - 0x80) * 0x1000 +\n"
-         out += "               (src(i + 2) - 0x80) * 0x40 + (src(i + 3) - 0x80)\n"
-         out += "      )\n\n"
+               // Decode the UTF-8 rune at src[i] into its codepoint.
+               decode_rune: String, Int => Rune
+               decode_rune = src, i =>
+                  b0 = src(i)
+                  Rune(b0
+                     [< 0x80] b0
+                     [< 0xE0] (b0 - 0xC0) * 0x40 + (src(i + 1) - 0x80)
+                     [< 0xF0]
+                        (b0 - 0xE0) * 0x1000 + (src(i + 1) - 0x80) * 0x40 +
+                           (src(i + 2) - 0x80)
+                     |
+                        (b0 - 0xF0) * 0x40000 + (src(i + 1) - 0x80) * 0x1000 +
+                           (src(i + 2) - 0x80) * 0x40 + (src(i + 3) - 0x80)
+                  )
 
-         out += "   // Byte width of a rune's UTF-8 encoding.\n"
-         out += "   utf8_width: Rune => Int\n"
-         out += "   utf8_width = r =>\n"
-         out += "      r [< 0x80] 1 [< 0x800] 2 [< 0x10000] 3 | 4\n\n"
+               // Byte width of a rune's UTF-8 encoding.
+               utf8_width: Rune => Int
+               utf8_width = r =>
+                  r [< 0x80] 1 [< 0x800] 2 [< 0x10000] 3 | 4
 
-         out += "   // UAX #31: XID_Start characters (Lu, Ll, Lt, Lm, Lo, Nl)\n"
-         out += "   is_xid_start: Rune => <>\n"
-         out += "   is_xid_start = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      cat !> 4 || cat == 9\n\n"
+               // UAX #31: XID_Start characters (Lu, Ll, Lt, Lm, Lo, Nl)
+               is_xid_start: Rune => <>
+               is_xid_start = cp =>
+                  cat = category_id(cp)
+                  cat !> 4 || cat == 9
 
-         out += "   // UAX #31: XID_Continue characters (Lu..Lo, Mn, Mc, Nd, Nl, Pc)\n"
-         out += "   is_xid_continue: Rune => <>\n"
-         out += "   is_xid_continue = cp =>\n"
-         out += "      cat = category_id(cp)\n"
-         out += "      cat !> 6 || cat == 8 || cat == 9 || cat == 11\n\n"
+               // UAX #31: XID_Continue characters (Lu..Lo, Mn, Mc, Nd, Nl, Pc)
+               is_xid_continue: Rune => <>
+               is_xid_continue = cp =>
+                  cat = category_id(cp)
+                  cat !> 6 || cat == 8 || cat == 9 || cat == 11
 
-         out += "   // Identifier start: XID_Start or '_'\n"
-         out += "   is_id_start: Rune => <>\n"
-         out += "   is_id_start = cp =>\n"
-         out += "      cp == '_' || is_xid_start(cp)\n\n"
+               // Identifier start: XID_Start or '_'
+               is_id_start: Rune => <>
+               is_id_start = cp =>
+                  cp == '_' || is_xid_start(cp)
 
-         out += "   // Identifier continuation: XID_Continue\n"
-         out += "   is_id_continue: Rune => <>\n"
-         out += "   is_id_continue = cp =>\n"
-         out += "      is_xid_continue(cp)\n\n"
+               // Identifier continuation: XID_Continue
+               is_id_continue: Rune => <>
+               is_id_continue = cp =>
+                  is_xid_continue(cp)
 
-         out += "   // Decode the UTF-8 rune at Addr + i into its codepoint.\n"
-         out += "   decode_rune_addr: Addr, Int => Rune\n"
-         out += "   decode_rune_addr = p, i =>\n"
-         out += "      b0 = Int(@[p + i u8])\n"
-         out += "      Rune(b0\n"
-         out += "         [< 0x80] b0\n"
-         out += "         [< 0xE0] (b0 - 0xC0) * 0x40 + (Int(@[p + i + 1 u8]) - 0x80)\n"
-         out += "         [< 0xF0]\n"
-         out += "            (b0 - 0xE0) * 0x1000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x40 +\n"
-         out += "               (Int(@[p + i + 2 u8]) - 0x80)\n"
-         out += "         |\n"
-         out += "            (b0 - 0xF0) * 0x40000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x1000 +\n"
-         out += "               (Int(@[p + i + 2 u8]) - 0x80) * 0x40 + (Int(@[p + i + 3 u8]) - 0x80)\n"
-         out += "      )\n\n"
+               // Decode the UTF-8 rune at Addr + i into its codepoint.
+               decode_rune_addr: Addr, Int => Rune
+               decode_rune_addr = p, i =>
+                  b0 = Int(@[p + i u8])
+                  Rune(b0
+                     [< 0x80] b0
+                     [< 0xE0] (b0 - 0xC0) * 0x40 + (Int(@[p + i + 1 u8]) - 0x80)
+                     [< 0xF0]
+                        (b0 - 0xE0) * 0x1000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x40 +
+                           (Int(@[p + i + 2 u8]) - 0x80)
+                     |
+                        (b0 - 0xF0) * 0x40000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x1000 +
+                           (Int(@[p + i + 2 u8]) - 0x80) * 0x40 + (Int(@[p + i + 3 u8]) - 0x80)
+                  )
 
-         out += "   // Decode the UTF-8 rune at Builder buffer + i into its codepoint.\n"
-         out += "   decode_rune_builder: Builder, Int => Rune\n"
-         out += "   decode_rune_builder = b, i =>\n"
-         out += "      decode_rune_addr(&b, i)\n\n"
+               // Decode the UTF-8 rune at Builder buffer + i into its codepoint.
+               decode_rune_builder: Builder, Int => Rune
+               decode_rune_builder = b, i =>
+                  decode_rune_addr(&b, i)
 
-         out += "   // Polymorphic UAX #31 identifier check for String, Builder, etc.\n"
-         out += "   is_uax31: #! T: Type, T => <>\n"
-         out += "   is_uax31 = #! T, target =>\n"
-         out += "      n = ?target\n"
-         out += "      n == 0 |->\n"
-         out += "      p = &target\n"
-         out += "      r0 = unicode::decode_rune_addr(p, 0)\n"
-         out += "      !unicode::is_id_start(r0) |->\n"
-         out += "      i' = ?r0\n"
-         out += "      0.. @\n"
-         out += "         i' !< n | -->\n"
-         out += "         r = unicode::decode_rune_addr(p, i')\n"
-         out += "         !unicode::is_id_continue(r) |->\n"
-         out += "         i' = i' + ?r\n"
-         out += "      <+>\n\n"
+               // Polymorphic UAX #31 identifier check for String, Builder, etc.
+               is_uax31: #! T: Type, T => <>
+               is_uax31 = #! T, target =>
+                  n = ?target
+                  n == 0 |->
+                  p = &target
+                  r0 = unicode::decode_rune_addr(p, 0)
+                  !unicode::is_id_start(r0) |->
+                  i' = ?r0
+                  0.. @
+                     i' !< n | -->
+                     r = unicode::decode_rune_addr(p, i')
+                     !unicode::is_id_continue(r) |->
+                     i' = i' + ?r
+                  <+>
 
-         out += "   // Concrete monomorphic aliases\n"
-         out += "   is_uax31_str: String => <>\n"
-         out += "   is_uax31_str = s => unicode::is_uax31(s)\n\n"
+               // Concrete monomorphic aliases
+               is_uax31_str: String => <>
+               is_uax31_str = s => unicode::is_uax31(s)
 
-         out += "   is_uax31_builder: Builder => <>\n"
-         out += "   is_uax31_builder = b => unicode::is_uax31(b)\n\n"
+               is_uax31_builder: Builder => <>
+               is_uax31_builder = b => unicode::is_uax31(b)
+            """
 
          write_file_text("std/unicode.dva", +out)
-         print $ "Successfully generated std/unicode.dva in Dva!"
+         io::out $ "Successfully generated std/unicode.dva in Dva!"
          0
 
 main(0)

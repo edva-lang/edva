@@ -102,6 +102,20 @@
 #type IntArr (Int){}
 #type TokArr (Tok){}
 
+#type HeredocPart <
+   Text(String),
+   Expr(TokArr)
+>
+#type HeredocParts (HeredocPart){}
+
+#type HeredocLine (
+   parts: HeredocParts,
+   is_blank: <>,
+   line_num: Int,
+   continued: <>,
+)
+#type HeredocLines (HeredocLine){}
+
 // --- lexer state ----------------------------------------------------------
 // Instance state: one Lx record per lexer. Records are heap objects, so a
 // function mutating a field through its Lx param mutates the caller's state
@@ -668,7 +682,9 @@ check_multiline_str = lx =>
                               | 0
                               |
                                  c3 = lx.src(p4)
-                                 is_quote = c3 == '"'
+                                 is_heredoc = c3 == '"' && p4 + 2 < n &&
+                                    lx.src(p4 + 1) == '"' && lx.src(p4 + 2) == '"'
+                                 is_quote = c3 == '"' && !is_heredoc
                                  is_raw = c3 == '(' && p4 + 1 < n &&
                                     lx.src(p4 + 1) == '='
                                  is_quote || is_raw | p4 | 0
@@ -1282,6 +1298,266 @@ next_tok: Lx, Int => Tok
 next_tok = lx, q => 
    lx.qfront < ?lx.queue | take_queued(lx, 0) | dispatch_bol(lx, q)
 
+count_leading_indent: String => Int
+count_leading_indent = s =>
+   sp' = 0
+   0.. @
+      sp' !< ?s | -->
+      c = s(sp')
+      c == ' ' || c == '\t' | sp' = sp' + 1 | -->
+   sp'
+
+scan_heredoc_expr: Lx => TokArr
+scan_heredoc_expr = lx =>
+   sub_lx = lex_init(lx.src)
+   sub_lx.pos = lx.pos
+   sub_lx.line = lx.line
+   sub_lx.col = lx.col
+   sub_lx.bol = 0
+   etoks = TokArr()
+   nesting' = 0
+   0.. @
+      t = next_tok(sub_lx, 0)
+      t.kind
+         [Eof]
+            fail(1018, lx.line, lx.col,
+               "Unterminated here-doc literal -- missing closing '}' in interpolation")
+            -->
+         [LBrace]
+            nesting' = nesting' + 1
+            etoks += t
+         [RBrace]
+            nesting' == 0
+               | -->
+               |
+                  nesting' = nesting' - 1
+                  etoks += t
+         [Newline, Indent, Dedent] --^
+         | etoks += t
+   lx.pos = sub_lx.pos
+   lx.line = sub_lx.line
+   lx.col = sub_lx.col
+   etoks
+
+scan_heredoc: Lx, Int, Int, Int => Tok
+scan_heredoc = lx, start, start_line, start_col =>
+   adv(lx, pk(lx, 0))
+   adv(lx, pk(lx, 0))
+   adv(lx, pk(lx, 0))
+
+   lines = HeredocLines()
+   cur_parts' = HeredocParts()
+   cur_text' = {256}
+   cur_line_num' = lx.line
+   cur_is_blank' = <+>
+   closing_col' = 1
+
+   0.. @
+      lx.pos !< ?lx.src
+         |
+            fail(1018, start_line, start_col,
+               "Unterminated here-doc literal -- missing closing '\"\"\"'")
+            -->
+      c = pk(lx, 0)
+      is_closing = c == '"' && pk_off(lx, 1) == '"' && pk_off(lx, 2) == '"'
+      is_closing
+         |
+            closing_col' = lx.col
+            ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
+            lines += HeredocLine((cur_parts', cur_is_blank', cur_line_num', <->))
+            adv(lx, pk(lx, 0))
+            adv(lx, pk(lx, 0))
+            adv(lx, pk(lx, 0))
+            -->
+         |
+            is_esc_triple = c == '\\' && pk_off(lx, 1) == '"' &&
+               pk_off(lx, 2) == '"' && pk_off(lx, 3) == '"'
+            is_esc_triple
+               |
+                  adv(lx, pk(lx, 0))
+                  adv(lx, pk(lx, 0))
+                  adv(lx, pk(lx, 0))
+                  adv(lx, pk(lx, 0))
+                  cur_text' += "\"\"\""
+                  cur_is_blank' = <->
+               |
+                  is_continuation = c == '\\' &&
+                     (pk_off(lx, 1) == '\n' ||
+                        (pk_off(lx, 1) == '\r' && pk_off(lx, 2) == '\n'))
+                  is_continuation
+                     |
+                        adv(lx, pk(lx, 0))
+                        pk(lx, 0) == '\r' | adv(lx, pk(lx, 0))
+                        adv(lx, pk(lx, 0))
+                        ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
+                        lines += HeredocLine((cur_parts', cur_is_blank',
+                           cur_line_num', <+>))
+                        cur_parts' = HeredocParts()
+                        cur_text' = {256}
+                        cur_line_num' = lx.line
+                        cur_is_blank' = <+>
+                     |
+                        is_interp = c == '$' && pk_off(lx, 1) == '{'
+                        is_interp
+                           |
+                              adv(lx, pk(lx, 0))
+                              adv(lx, pk(lx, 0))
+                              ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
+                              cur_text' = {256}
+                              cur_is_blank' = <->
+                              etoks = scan_heredoc_expr(lx)
+                              cur_parts' += HeredocPart(Expr, etoks)
+                              cur_line_num' = lx.line
+                           |
+                              is_esc_dollar = c == '\\' && pk_off(lx, 1) == '$'
+                              is_esc_dollar
+                                 |
+                                    adv(lx, pk(lx, 0))
+                                    adv(lx, pk(lx, 0))
+                                    cur_text' += '$'
+                                    cur_is_blank' = <->
+                                 |
+                                    is_newline = c == '\n' ||
+                                       (c == '\r' && pk_off(lx, 1) == '\n')
+                                    is_newline
+                                       |
+                                          c == '\r' | adv(lx, pk(lx, 0))
+                                          adv(lx, pk(lx, 0))
+                                          ?cur_text' > 0 | cur_parts' +=
+                                             HeredocPart(Text, +cur_text')
+                                          lines += HeredocLine((cur_parts',
+                                             cur_is_blank', cur_line_num', <->))
+                                          cur_parts' = HeredocParts()
+                                          cur_text' = {256}
+                                          cur_line_num' = lx.line
+                                          cur_is_blank' = <+>
+                                       |
+                                          is_esc = c == '\\'
+                                          is_esc
+                                             |
+                                                adv(lx, pk(lx, 0))
+                                                esc_c = pk(lx, 0)
+                                                adv(lx, esc_c)
+                                                cur_text' += esc_val(esc_c)
+                                                esc_c != ' ' && esc_c != '\t' |
+                                                   cur_is_blank' = <->
+                                             |
+                                                adv(lx, c)
+                                                cur_text' += c
+                                                c != ' ' && c != '\t' |
+                                                   cur_is_blank' = <->
+
+   nlines = ?lines
+   start_idx' = 0
+   end_idx' = nlines
+
+   nlines > 1
+      |
+         l0 = lines(0)!!
+         l0.is_blank | start_idx' = 1
+         last_l = lines(nlines - 1)!!
+         last_l.is_blank | end_idx' = nlines - 1
+
+   l0_blank = nlines > 1 && lines(0)!!.is_blank
+   last_l_blank = nlines > 1 && lines(nlines - 1)!!.is_blank
+   margin = last_l_blank | closing_col' - 1 | 0
+   assembled = HeredocParts()
+   start_idx'..end_idx' @ i =>
+      line = lines(i)!!
+      is_last = i == end_idx' - 1
+      add_nl = !line.continued && (!is_last || end_idx' < nlines)
+      strip_this_line = i > 0 || l0_blank
+
+      line.is_blank
+         |
+            add_nl | assembled += HeredocPart(Text, "\n")
+         |
+            nparts = ?line.parts
+            nparts > 0
+               |
+                  p0 = line.parts(0)!!
+                  strip_this_line
+                     |
+                        p0
+                           [Text s]
+                              sp = count_leading_indent(s)
+                              sp < margin | fail(1017, line.line_num, sp + 1,
+                                 "Line indented less than closing delimiter in here-doc")
+                              new_s = s(margin..(?s))
+                              assembled += HeredocPart(Text, new_s)
+                           [Expr _]
+                              margin > 0 | fail(1017, line.line_num, 1,
+                                 "Line indented less than closing delimiter in here-doc")
+                              assembled += p0
+                     |
+                        assembled += p0
+                  1..nparts @ j =>
+                     assembled += line.parts(j)!!
+                  add_nl | assembled += HeredocPart(Text, "\n")
+               |
+                  add_nl | assembled += HeredocPart(Text, "\n")
+
+   expr_count' = 0
+   0..?assembled @ k =>
+      assembled(k)!!
+         [Expr _] expr_count' = expr_count' + 1
+
+   expr_count' == 0
+      |
+         buf = {512}
+         0..?assembled @ k =>
+            assembled(k)!!
+               [Text s] buf += s
+         final_s = +buf
+         mktok(lx, TokKind(Str), start, lx.pos - start, start_line, start_col, final_s)
+      |
+         merged = HeredocParts()
+         text_buf = {256}
+         has_text' = <->
+         0..?assembled @ k =>
+            part = assembled(k)!!
+            part
+               [Text s]
+                  text_buf += s
+                  has_text' = <+>
+               [Expr _]
+                  has_text'
+                     |
+                        merged += HeredocPart(Text, +text_buf)
+                        text_buf = {256}
+                        has_text' = <->
+                  merged += part
+         has_text' | merged += HeredocPart(Text, +text_buf)
+
+         active = HeredocParts()
+         0..?merged @ k =>
+            part = merged(k)!!
+            part
+               [Text s]
+                  (?s > 0 || ?merged == 1) | active += part
+               [Expr _]
+                  active += part
+
+         qu = lx.queue
+         qu += Tok((TokKind(LParen), start, 1, start_line, start_col, <->, <->, "("))
+         0..?active @ k =>
+            k > 0 | qu += Tok((TokKind(Op), start, 1, start_line, start_col,
+               <->, <->, "+"))
+            part = active(k)!!
+            part
+               [Text s]
+                  qu += Tok((TokKind(Str), start, ?s, start_line, start_col,
+                     <->, <->, s))
+               [Expr toks]
+                  qu += Tok((TokKind(LParen), start, 1, start_line, start_col,
+                     <->, <->, "("))
+                  0..?toks @ j =>
+                     qu += toks(j)!!
+                  qu += Tok((TokKind(RParen), start, 1, start_line, start_col,
+                     <->, <->, ")"))
+         qu += Tok((TokKind(RParen), start, 1, start_line, start_col, <->, <->, ")"))
+         take_queued(lx, 0)
+
 dispatch_bol: Lx, Int => Tok
 dispatch_bol = lx, q => 
    lx.bol [1] layout(lx, q) | dispatch_scan(lx)
@@ -1309,7 +1585,10 @@ dispatch_scan = lx =>
       ['\''] scan_rune(lx, lx.pos, lx.line, lx.col)
       [is_special] scan_op(lx, lx.pos, lx.line, lx.col)
       [is_id_start] scan_ident(lx, lx.pos, lx.line, lx.col)
-      ['"'] scan_string(lx, lx.pos, lx.line, lx.col)
+      ['"']
+         pk_off(lx, 1) == '"' && pk_off(lx, 2) == '"'
+            | scan_heredoc(lx, lx.pos, lx.line, lx.col)
+            | scan_string(lx, lx.pos, lx.line, lx.col)
       | eof_tok(lx, lx.line, lx.col)
 
 // --- public API -----------------------------------------------------------

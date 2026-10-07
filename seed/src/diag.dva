@@ -2,6 +2,12 @@
 
 #public
 
+E1017_heredoc_under_indented: () => String
+E1017_heredoc_under_indented = !=> "Line indented less than closing delimiter in here-doc"
+
+E1018_heredoc_unterminated: () => String
+E1018_heredoc_unterminated = !=> "Unterminated here-doc literal -- missing closing '\"\"\"'"
+
 E2010_colon_equals_retired: () => String
 E2010_colon_equals_retired = !=> "':=' is retired — use '=' with a prime suffix ('foo'') " +
    "for mutable variables."
