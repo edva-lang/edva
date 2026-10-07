@@ -69,3 +69,7 @@
     cfmakeraw : (termios_p: Addr) => ()
     poll      : (fds: Addr, nfds: Int, timeout: Int) => Int
     time      : (tloc: Addr) => Int
+    signal    : (sig: Int, handler: Addr) => Addr
+    raise     : (sig: Int) => Int
+    getrlimit : (resource: Int, rlim: Addr) => Int
+    setrlimit : (resource: Int, rlim: Addr) => Int
