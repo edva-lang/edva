@@ -861,34 +861,26 @@
    decode_rune_builder = b, i =>
       decode_rune_addr(&b, i)
 
-   // Checks if a String conforms to UAX #31 identifier syntax.
-   is_uax31: String => <>
-   is_uax31 = s =>
-      n = ?s
+   // Polymorphic UAX #31 identifier check for String, Builder, etc.
+   is_uax31: #! T: Type, T => <>
+   is_uax31 = #! T, target =>
+      n = ?target
       n == 0 |->
-      r0 = decode_rune(s, 0)
-      !is_id_start(r0) |->
+      p = &target
+      r0 = unicode::decode_rune_addr(p, 0)
+      !unicode::is_id_start(r0) |->
       i' = ?r0
       0.. @
          i' !< n | -->
-         r = decode_rune(s, i')
-         !is_id_continue(r) |->
+         r = unicode::decode_rune_addr(p, i')
+         !unicode::is_id_continue(r) |->
          i' = i' + ?r
       <+>
 
-   // Checks if a Builder buffer conforms to UAX #31 identifier syntax.
+   // Concrete monomorphic aliases
+   is_uax31_str: String => <>
+   is_uax31_str = s => unicode::is_uax31(s)
+
    is_uax31_builder: Builder => <>
-   is_uax31_builder = b =>
-      n = ?b
-      n == 0 |->
-      p = &b
-      r0 = decode_rune_addr(p, 0)
-      !is_id_start(r0) |->
-      i' = ?r0
-      0.. @
-         i' !< n | -->
-         r = decode_rune_addr(p, i')
-         !is_id_continue(r) |->
-         i' = i' + ?r
-      <+>
+   is_uax31_builder = b => unicode::is_uax31(b)
 
