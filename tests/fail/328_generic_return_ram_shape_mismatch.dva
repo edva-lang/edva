@@ -1,0 +1,12 @@
+// tests/fail/328_generic_return_ram_shape_mismatch.dva
+// Tests E3149: generic function early return produces an incompatible ramification shape
+
+my_find: #! E: Type, #! T: Type, (E => <>), T => < E | >
+my_find = pred, xs =>
+   xs @ x =>
+      pred(x) | --| <+ x +>
+   <-->
+
+arr = (Int){}
+arr += 10
+res = my_find(x => x > 5, arr)

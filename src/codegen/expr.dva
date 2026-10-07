@@ -3108,6 +3108,14 @@ codegen_ram_type_of_expr = cg, expr =>
          sig_ti = stmt::fn_signature_return_ti(cg, types::g.pstmts, eff_name, 0)
          stmt::resolve_ti(cg, sig_ti)
       [Variant v] synth_variant_ram_ti(cg, v)
+      [Choice c]
+         ?c.branches > 0
+            | codegen_ram_type_of_expr(cg, c.branches(0)!!.block)
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      [Return r]
+         r.has_val
+            | codegen_ram_type_of_expr(cg, r.val)
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
       [Block b]
          nb = ?b.exprs
          nb > 0
@@ -5755,10 +5763,25 @@ codegen_eval_return = cg, r =>
                cg.exited = <+>
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
             |
+               ret_ti = types::g.expected_fn_ti
+               ret_ti_res = stmt::resolve_ti(cg, ret_ti)
+               ret_ti_res [Ram _]
+                  |
+                     val_ram_ti = codegen_ram_type_of_expr(cg, r.val)
+                     val_ram_ti [Ram _]
+                        |
+                           !ram_shape_compatible(cg, ret_ti_res, val_ram_ti)
+                              |
+                                 fn_name = types::g.last_compiling_fn
+                                 exp_str = ram_shape_str(cg, ret_ti_res)
+                                 act_str = ram_shape_str(cg, val_ram_ti)
+                                 types::init_error(cg, "E3149", "Function '" + fn_name +
+                                    "' declares return type " + exp_str +
+                                    ", but return statement produces a ramification " +
+                                    "with shape " + act_str + ".", r.line, r.col)
                ev = codegen_eval(cg, r.val)
                bvv = ev.0
                i8p = LLVMPointerType(LLVMInt8Type!, 0)
-               ret_ti = types::g.expected_fn_ti
                ret_ll = types::g.fn_ret_ll | _ | LLVMTypeOf(bvv)
                is_typed_mode = types::g.is_typed_pipeline
                use_unboxed_ret = is_typed_mode | types::is_unboxed_ram_ti(cg, ret_ti) | <->
