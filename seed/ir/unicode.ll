@@ -113,6 +113,23 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.unicode::decode_rune" = global ptr null
 @clo.const.16 = internal constant { ptr, ptr } { ptr @"unicode::utf8_width", ptr null }
 @"var.unicode::utf8_width" = global ptr null
+@clo.const.17 = internal constant { ptr, ptr } { ptr @"unicode::is_xid_start", ptr null }
+@"var.unicode::is_xid_start" = global ptr null
+@clo.const.18 = internal constant { ptr, ptr } { ptr @"unicode::is_xid_continue", ptr null }
+@"var.unicode::is_xid_continue" = global ptr null
+@clo.const.19 = internal constant { ptr, ptr } { ptr @"unicode::is_id_start", ptr null }
+@"var.unicode::is_id_start" = global ptr null
+@clo.const.20 = internal constant { ptr, ptr } { ptr @"unicode::is_id_continue", ptr null }
+@"var.unicode::is_id_continue" = global ptr null
+@stale_addr_msg = internal unnamed_addr constant [51 x i8] c"E4011: stale Addr dereference after arena restore\0A\00"
+@clo.const.21 = internal constant { ptr, ptr } { ptr @"unicode::decode_rune_addr", ptr null }
+@"var.unicode::decode_rune_addr" = global ptr null
+@clo.const.22 = internal constant { ptr, ptr } { ptr @"unicode::decode_rune_builder", ptr null }
+@"var.unicode::decode_rune_builder" = global ptr null
+@clo.const.23 = internal constant { ptr, ptr } { ptr @"unicode::is_uax31", ptr null }
+@"var.unicode::is_uax31" = global ptr null
+@clo.const.24 = internal constant { ptr, ptr } { ptr @"unicode::is_uax31_builder", ptr null }
+@"var.unicode::is_uax31_builder" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_unicode, ptr null }]
 
 declare i32 @printf(ptr, ...)
@@ -171,6 +188,14 @@ entry:
   store ptr @clo.const.14, ptr @"var.unicode::is_graphic", align 8
   store ptr @clo.const.15, ptr @"var.unicode::decode_rune", align 8
   store ptr @clo.const.16, ptr @"var.unicode::utf8_width", align 8
+  store ptr @clo.const.17, ptr @"var.unicode::is_xid_start", align 8
+  store ptr @clo.const.18, ptr @"var.unicode::is_xid_continue", align 8
+  store ptr @clo.const.19, ptr @"var.unicode::is_id_start", align 8
+  store ptr @clo.const.20, ptr @"var.unicode::is_id_continue", align 8
+  store ptr @clo.const.21, ptr @"var.unicode::decode_rune_addr", align 8
+  store ptr @clo.const.22, ptr @"var.unicode::decode_rune_builder", align 8
+  store ptr @clo.const.23, ptr @"var.unicode::is_uax31", align 8
+  store ptr @clo.const.24, ptr @"var.unicode::is_uax31_builder", align 8
   ret void
 }
 
@@ -1513,6 +1538,646 @@ choice.case4:                                     ; preds = %choice.next2
 
 choice.next5:                                     ; preds = %choice.next2
   br label %choice.exit
+}
+
+define i1 @"unicode::is_xid_start"(i64 %0) #1 {
+entry:
+  %var.cat = alloca i64, align 8
+  %var.cp = alloca i64, align 8
+  store i64 %0, ptr %var.cp, align 8
+  %var.load = load i64, ptr %var.cp, align 8
+  %call.res = call i64 @"unicode::category_id"(i64 %var.load)
+  store i64 %call.res, ptr %var.cat, align 8
+  %var.load1 = load i64, ptr %var.cat, align 8
+  %cmptmp = icmp sle i64 %var.load1, 4
+  br i1 %cmptmp, label %or.10.then, label %or.10.else
+
+or.10.then:                                       ; preds = %entry
+  br label %or.10.exit
+
+or.10.else:                                       ; preds = %entry
+  %var.load2 = load i64, ptr %var.cat, align 8
+  %cmptmp3 = icmp eq i64 %var.load2, 9
+  br label %or.10.exit
+
+or.10.exit:                                       ; preds = %or.10.else, %or.10.then
+  %or.10.phi = phi i1 [ %cmptmp, %or.10.then ], [ %cmptmp3, %or.10.else ]
+  ret i1 %or.10.phi
+}
+
+define i1 @"unicode::is_xid_continue"(i64 %0) #1 {
+entry:
+  %var.cat = alloca i64, align 8
+  %var.cp = alloca i64, align 8
+  store i64 %0, ptr %var.cp, align 8
+  %var.load = load i64, ptr %var.cp, align 8
+  %call.res = call i64 @"unicode::category_id"(i64 %var.load)
+  store i64 %call.res, ptr %var.cat, align 8
+  %var.load1 = load i64, ptr %var.cat, align 8
+  %cmptmp = icmp sle i64 %var.load1, 6
+  br i1 %cmptmp, label %or.11.then, label %or.11.else
+
+or.11.then:                                       ; preds = %entry
+  br label %or.11.exit
+
+or.11.else:                                       ; preds = %entry
+  %var.load2 = load i64, ptr %var.cat, align 8
+  %cmptmp3 = icmp eq i64 %var.load2, 8
+  br label %or.11.exit
+
+or.11.exit:                                       ; preds = %or.11.else, %or.11.then
+  %or.11.phi = phi i1 [ %cmptmp, %or.11.then ], [ %cmptmp3, %or.11.else ]
+  br i1 %or.11.phi, label %or.12.then, label %or.12.else
+
+or.12.then:                                       ; preds = %or.11.exit
+  br label %or.12.exit
+
+or.12.else:                                       ; preds = %or.11.exit
+  %var.load4 = load i64, ptr %var.cat, align 8
+  %cmptmp5 = icmp eq i64 %var.load4, 9
+  br label %or.12.exit
+
+or.12.exit:                                       ; preds = %or.12.else, %or.12.then
+  %or.12.phi = phi i1 [ %or.11.phi, %or.12.then ], [ %cmptmp5, %or.12.else ]
+  br i1 %or.12.phi, label %or.13.then, label %or.13.else
+
+or.13.then:                                       ; preds = %or.12.exit
+  br label %or.13.exit
+
+or.13.else:                                       ; preds = %or.12.exit
+  %var.load6 = load i64, ptr %var.cat, align 8
+  %cmptmp7 = icmp eq i64 %var.load6, 11
+  br label %or.13.exit
+
+or.13.exit:                                       ; preds = %or.13.else, %or.13.then
+  %or.13.phi = phi i1 [ %or.12.phi, %or.13.then ], [ %cmptmp7, %or.13.else ]
+  ret i1 %or.13.phi
+}
+
+define i1 @"unicode::is_id_start"(i64 %0) #1 {
+entry:
+  %var.cp = alloca i64, align 8
+  store i64 %0, ptr %var.cp, align 8
+  %var.load = load i64, ptr %var.cp, align 8
+  %cmptmp = icmp eq i64 %var.load, 95
+  br i1 %cmptmp, label %or.14.then, label %or.14.else
+
+or.14.then:                                       ; preds = %entry
+  br label %or.14.exit
+
+or.14.else:                                       ; preds = %entry
+  %var.load1 = load i64, ptr %var.cp, align 8
+  %call.res = call i1 @"unicode::is_xid_start"(i64 %var.load1)
+  br label %or.14.exit
+
+or.14.exit:                                       ; preds = %or.14.else, %or.14.then
+  %or.14.phi = phi i1 [ %cmptmp, %or.14.then ], [ %call.res, %or.14.else ]
+  ret i1 %or.14.phi
+}
+
+define i1 @"unicode::is_id_continue"(i64 %0) #1 {
+entry:
+  %var.cp = alloca i64, align 8
+  store i64 %0, ptr %var.cp, align 8
+  %var.load = load i64, ptr %var.cp, align 8
+  %call.res = call i1 @"unicode::is_xid_continue"(i64 %var.load)
+  ret i1 %call.res
+}
+
+define i64 @"unicode::decode_rune_addr"(ptr %0, i64 %1) #1 {
+entry:
+  %var.b0 = alloca i64, align 8
+  %var.i = alloca i64, align 8
+  %var.p = alloca ptr, align 8
+  store ptr %0, ptr %var.p, align 8
+  store i64 %1, ptr %var.i, align 8
+  %var.load = load ptr, ptr %var.p, align 8
+  %var.load1 = load i64, ptr %var.i, align 8
+  %ptr.int.l = ptrtoint ptr %var.load to i64
+  %addtmp = add i64 %ptr.int.l, %var.load1
+  %ptr.res = inttoptr i64 %addtmp to ptr
+  %raw.int = ptrtoint ptr %ptr.res to i64
+  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
+  %addr.tag = lshr i64 %raw.int, 48
+  %addr.immortal = icmp eq i64 %addr.tag, 0
+  br i1 %addr.immortal, label %addr_ok, label %addr_gen_check
+
+addr_gen_check:                                   ; preds = %entry
+  %arena.gen = call ptr @dva_arena_current()
+  %arena.gen2 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen, i32 0, i32 4
+  %arena.gen3 = load i64, ptr %arena.gen2, align 8
+  %addr.tag.match = icmp eq i64 %addr.tag, %arena.gen3
+  br i1 %addr.tag.match, label %addr_ok, label %addr_stale
+
+addr_ok:                                          ; preds = %addr_stale, %addr_gen_check, %entry
+  %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
+  %coerce.zext = zext i8 %raw.load to i64
+  store i64 %coerce.zext, ptr %var.b0, align 8
+  %var.load4 = load i64, ptr %var.b0, align 8
+  %cmptmp = icmp slt i64 %var.load4, 128
+  br i1 %cmptmp, label %choice.case, label %choice.next
+
+addr_stale:                                       ; preds = %addr_gen_check
+  %2 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok
+
+choice.exit:                                      ; preds = %addr_ok156, %addr_ok79, %addr_ok24, %choice.case
+  %choice.res = phi i64 [ %var.load5, %choice.case ], [ %addtmp33, %addr_ok24 ], [ %addtmp88, %addr_ok79 ], [ %addtmp165, %addr_ok156 ]
+  ret i64 %choice.res
+
+choice.case:                                      ; preds = %addr_ok
+  %var.load5 = load i64, ptr %var.b0, align 8
+  br label %choice.exit
+
+choice.next:                                      ; preds = %addr_ok
+  %cmptmp8 = icmp slt i64 %var.load4, 224
+  br i1 %cmptmp8, label %choice.case6, label %choice.next7
+
+choice.case6:                                     ; preds = %choice.next
+  %var.load9 = load i64, ptr %var.b0, align 8
+  %subtmp = sub i64 %var.load9, 192
+  %multmp = mul i64 %subtmp, 64
+  %var.load10 = load ptr, ptr %var.p, align 8
+  %var.load11 = load i64, ptr %var.i, align 8
+  %ptr.int.l12 = ptrtoint ptr %var.load10 to i64
+  %addtmp13 = add i64 %ptr.int.l12, %var.load11
+  %ptr.res14 = inttoptr i64 %addtmp13 to ptr
+  %ptr.int.l15 = ptrtoint ptr %ptr.res14 to i64
+  %addtmp16 = add i64 %ptr.int.l15, 1
+  %ptr.res17 = inttoptr i64 %addtmp16 to ptr
+  %raw.int18 = ptrtoint ptr %ptr.res17 to i64
+  %raw.clean.int19 = and i64 %raw.int18, 281474976710655
+  %raw.clean.ptr20 = inttoptr i64 %raw.clean.int19 to ptr
+  %addr.tag21 = lshr i64 %raw.int18, 48
+  %addr.immortal22 = icmp eq i64 %addr.tag21, 0
+  br i1 %addr.immortal22, label %addr_ok24, label %addr_gen_check23
+
+choice.next7:                                     ; preds = %choice.next
+  %cmptmp36 = icmp slt i64 %var.load4, 240
+  br i1 %cmptmp36, label %choice.case34, label %choice.next35
+
+addr_gen_check23:                                 ; preds = %choice.case6
+  %arena.gen26 = call ptr @dva_arena_current()
+  %arena.gen27 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen26, i32 0, i32 4
+  %arena.gen28 = load i64, ptr %arena.gen27, align 8
+  %addr.tag.match29 = icmp eq i64 %addr.tag21, %arena.gen28
+  br i1 %addr.tag.match29, label %addr_ok24, label %addr_stale25
+
+addr_ok24:                                        ; preds = %addr_stale25, %addr_gen_check23, %choice.case6
+  %raw.load30 = load volatile i8, ptr %raw.clean.ptr20, align 1
+  %coerce.zext31 = zext i8 %raw.load30 to i64
+  %subtmp32 = sub i64 %coerce.zext31, 128
+  %addtmp33 = add i64 %multmp, %subtmp32
+  br label %choice.exit
+
+addr_stale25:                                     ; preds = %addr_gen_check23
+  %3 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok24
+
+choice.case34:                                    ; preds = %choice.next7
+  %var.load37 = load i64, ptr %var.b0, align 8
+  %subtmp38 = sub i64 %var.load37, 224
+  %multmp39 = mul i64 %subtmp38, 4096
+  %var.load40 = load ptr, ptr %var.p, align 8
+  %var.load41 = load i64, ptr %var.i, align 8
+  %ptr.int.l42 = ptrtoint ptr %var.load40 to i64
+  %addtmp43 = add i64 %ptr.int.l42, %var.load41
+  %ptr.res44 = inttoptr i64 %addtmp43 to ptr
+  %ptr.int.l45 = ptrtoint ptr %ptr.res44 to i64
+  %addtmp46 = add i64 %ptr.int.l45, 1
+  %ptr.res47 = inttoptr i64 %addtmp46 to ptr
+  %raw.int48 = ptrtoint ptr %ptr.res47 to i64
+  %raw.clean.int49 = and i64 %raw.int48, 281474976710655
+  %raw.clean.ptr50 = inttoptr i64 %raw.clean.int49 to ptr
+  %addr.tag51 = lshr i64 %raw.int48, 48
+  %addr.immortal52 = icmp eq i64 %addr.tag51, 0
+  br i1 %addr.immortal52, label %addr_ok54, label %addr_gen_check53
+
+choice.next35:                                    ; preds = %choice.next7
+  %var.load89 = load i64, ptr %var.b0, align 8
+  %subtmp90 = sub i64 %var.load89, 240
+  %multmp91 = mul i64 %subtmp90, 262144
+  %var.load92 = load ptr, ptr %var.p, align 8
+  %var.load93 = load i64, ptr %var.i, align 8
+  %ptr.int.l94 = ptrtoint ptr %var.load92 to i64
+  %addtmp95 = add i64 %ptr.int.l94, %var.load93
+  %ptr.res96 = inttoptr i64 %addtmp95 to ptr
+  %ptr.int.l97 = ptrtoint ptr %ptr.res96 to i64
+  %addtmp98 = add i64 %ptr.int.l97, 1
+  %ptr.res99 = inttoptr i64 %addtmp98 to ptr
+  %raw.int100 = ptrtoint ptr %ptr.res99 to i64
+  %raw.clean.int101 = and i64 %raw.int100, 281474976710655
+  %raw.clean.ptr102 = inttoptr i64 %raw.clean.int101 to ptr
+  %addr.tag103 = lshr i64 %raw.int100, 48
+  %addr.immortal104 = icmp eq i64 %addr.tag103, 0
+  br i1 %addr.immortal104, label %addr_ok106, label %addr_gen_check105
+
+addr_gen_check53:                                 ; preds = %choice.case34
+  %arena.gen56 = call ptr @dva_arena_current()
+  %arena.gen57 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen56, i32 0, i32 4
+  %arena.gen58 = load i64, ptr %arena.gen57, align 8
+  %addr.tag.match59 = icmp eq i64 %addr.tag51, %arena.gen58
+  br i1 %addr.tag.match59, label %addr_ok54, label %addr_stale55
+
+addr_ok54:                                        ; preds = %addr_stale55, %addr_gen_check53, %choice.case34
+  %raw.load60 = load volatile i8, ptr %raw.clean.ptr50, align 1
+  %coerce.zext61 = zext i8 %raw.load60 to i64
+  %subtmp62 = sub i64 %coerce.zext61, 128
+  %multmp63 = mul i64 %subtmp62, 64
+  %addtmp64 = add i64 %multmp39, %multmp63
+  %var.load65 = load ptr, ptr %var.p, align 8
+  %var.load66 = load i64, ptr %var.i, align 8
+  %ptr.int.l67 = ptrtoint ptr %var.load65 to i64
+  %addtmp68 = add i64 %ptr.int.l67, %var.load66
+  %ptr.res69 = inttoptr i64 %addtmp68 to ptr
+  %ptr.int.l70 = ptrtoint ptr %ptr.res69 to i64
+  %addtmp71 = add i64 %ptr.int.l70, 2
+  %ptr.res72 = inttoptr i64 %addtmp71 to ptr
+  %raw.int73 = ptrtoint ptr %ptr.res72 to i64
+  %raw.clean.int74 = and i64 %raw.int73, 281474976710655
+  %raw.clean.ptr75 = inttoptr i64 %raw.clean.int74 to ptr
+  %addr.tag76 = lshr i64 %raw.int73, 48
+  %addr.immortal77 = icmp eq i64 %addr.tag76, 0
+  br i1 %addr.immortal77, label %addr_ok79, label %addr_gen_check78
+
+addr_stale55:                                     ; preds = %addr_gen_check53
+  %4 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok54
+
+addr_gen_check78:                                 ; preds = %addr_ok54
+  %arena.gen81 = call ptr @dva_arena_current()
+  %arena.gen82 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen81, i32 0, i32 4
+  %arena.gen83 = load i64, ptr %arena.gen82, align 8
+  %addr.tag.match84 = icmp eq i64 %addr.tag76, %arena.gen83
+  br i1 %addr.tag.match84, label %addr_ok79, label %addr_stale80
+
+addr_ok79:                                        ; preds = %addr_stale80, %addr_gen_check78, %addr_ok54
+  %raw.load85 = load volatile i8, ptr %raw.clean.ptr75, align 1
+  %coerce.zext86 = zext i8 %raw.load85 to i64
+  %subtmp87 = sub i64 %coerce.zext86, 128
+  %addtmp88 = add i64 %addtmp64, %subtmp87
+  br label %choice.exit
+
+addr_stale80:                                     ; preds = %addr_gen_check78
+  %5 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok79
+
+addr_gen_check105:                                ; preds = %choice.next35
+  %arena.gen108 = call ptr @dva_arena_current()
+  %arena.gen109 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen108, i32 0, i32 4
+  %arena.gen110 = load i64, ptr %arena.gen109, align 8
+  %addr.tag.match111 = icmp eq i64 %addr.tag103, %arena.gen110
+  br i1 %addr.tag.match111, label %addr_ok106, label %addr_stale107
+
+addr_ok106:                                       ; preds = %addr_stale107, %addr_gen_check105, %choice.next35
+  %raw.load112 = load volatile i8, ptr %raw.clean.ptr102, align 1
+  %coerce.zext113 = zext i8 %raw.load112 to i64
+  %subtmp114 = sub i64 %coerce.zext113, 128
+  %multmp115 = mul i64 %subtmp114, 4096
+  %addtmp116 = add i64 %multmp91, %multmp115
+  %var.load117 = load ptr, ptr %var.p, align 8
+  %var.load118 = load i64, ptr %var.i, align 8
+  %ptr.int.l119 = ptrtoint ptr %var.load117 to i64
+  %addtmp120 = add i64 %ptr.int.l119, %var.load118
+  %ptr.res121 = inttoptr i64 %addtmp120 to ptr
+  %ptr.int.l122 = ptrtoint ptr %ptr.res121 to i64
+  %addtmp123 = add i64 %ptr.int.l122, 2
+  %ptr.res124 = inttoptr i64 %addtmp123 to ptr
+  %raw.int125 = ptrtoint ptr %ptr.res124 to i64
+  %raw.clean.int126 = and i64 %raw.int125, 281474976710655
+  %raw.clean.ptr127 = inttoptr i64 %raw.clean.int126 to ptr
+  %addr.tag128 = lshr i64 %raw.int125, 48
+  %addr.immortal129 = icmp eq i64 %addr.tag128, 0
+  br i1 %addr.immortal129, label %addr_ok131, label %addr_gen_check130
+
+addr_stale107:                                    ; preds = %addr_gen_check105
+  %6 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok106
+
+addr_gen_check130:                                ; preds = %addr_ok106
+  %arena.gen133 = call ptr @dva_arena_current()
+  %arena.gen134 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen133, i32 0, i32 4
+  %arena.gen135 = load i64, ptr %arena.gen134, align 8
+  %addr.tag.match136 = icmp eq i64 %addr.tag128, %arena.gen135
+  br i1 %addr.tag.match136, label %addr_ok131, label %addr_stale132
+
+addr_ok131:                                       ; preds = %addr_stale132, %addr_gen_check130, %addr_ok106
+  %raw.load137 = load volatile i8, ptr %raw.clean.ptr127, align 1
+  %coerce.zext138 = zext i8 %raw.load137 to i64
+  %subtmp139 = sub i64 %coerce.zext138, 128
+  %multmp140 = mul i64 %subtmp139, 64
+  %addtmp141 = add i64 %addtmp116, %multmp140
+  %var.load142 = load ptr, ptr %var.p, align 8
+  %var.load143 = load i64, ptr %var.i, align 8
+  %ptr.int.l144 = ptrtoint ptr %var.load142 to i64
+  %addtmp145 = add i64 %ptr.int.l144, %var.load143
+  %ptr.res146 = inttoptr i64 %addtmp145 to ptr
+  %ptr.int.l147 = ptrtoint ptr %ptr.res146 to i64
+  %addtmp148 = add i64 %ptr.int.l147, 3
+  %ptr.res149 = inttoptr i64 %addtmp148 to ptr
+  %raw.int150 = ptrtoint ptr %ptr.res149 to i64
+  %raw.clean.int151 = and i64 %raw.int150, 281474976710655
+  %raw.clean.ptr152 = inttoptr i64 %raw.clean.int151 to ptr
+  %addr.tag153 = lshr i64 %raw.int150, 48
+  %addr.immortal154 = icmp eq i64 %addr.tag153, 0
+  br i1 %addr.immortal154, label %addr_ok156, label %addr_gen_check155
+
+addr_stale132:                                    ; preds = %addr_gen_check130
+  %7 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok131
+
+addr_gen_check155:                                ; preds = %addr_ok131
+  %arena.gen158 = call ptr @dva_arena_current()
+  %arena.gen159 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen158, i32 0, i32 4
+  %arena.gen160 = load i64, ptr %arena.gen159, align 8
+  %addr.tag.match161 = icmp eq i64 %addr.tag153, %arena.gen160
+  br i1 %addr.tag.match161, label %addr_ok156, label %addr_stale157
+
+addr_ok156:                                       ; preds = %addr_stale157, %addr_gen_check155, %addr_ok131
+  %raw.load162 = load volatile i8, ptr %raw.clean.ptr152, align 1
+  %coerce.zext163 = zext i8 %raw.load162 to i64
+  %subtmp164 = sub i64 %coerce.zext163, 128
+  %addtmp165 = add i64 %addtmp141, %subtmp164
+  br label %choice.exit
+
+addr_stale157:                                    ; preds = %addr_gen_check155
+  %8 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok156
+}
+
+define i64 @"unicode::decode_rune_builder"(ptr %0, i64 %1) #1 {
+entry:
+  %var.i = alloca i64, align 8
+  %var.b = alloca ptr, align 8
+  store ptr %0, ptr %var.b, align 8
+  store i64 %1, ptr %var.i, align 8
+  %var.load = load ptr, ptr %var.b, align 8
+  %b.ptr = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load, i32 0, i32 1
+  %b.ptr1 = load ptr, ptr %b.ptr, align 8
+  %var.load2 = load i64, ptr %var.i, align 8
+  %call.res = call i64 @"unicode::decode_rune_addr"(ptr %b.ptr1, i64 %var.load2)
+  ret i64 %call.res
+}
+
+define i1 @"unicode::is_uax31"(ptr %0) #1 {
+entry:
+  %var.r = alloca i64, align 8
+  %var._ = alloca i64, align 8
+  %var._i = alloca i64, align 8
+  %loop.step.15 = alloca i64, align 8
+  %loop.idx.15 = alloca i64, align 8
+  %"var.i'" = alloca i64, align 8
+  %"var.ok'" = alloca i1, align 1
+  %var.r0 = alloca i64, align 8
+  %var.n = alloca i64, align 8
+  %var.s = alloca ptr, align 8
+  store ptr %0, ptr %var.s, align 8
+  %var.load = load ptr, ptr %var.s, align 8
+  %str.len.query = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
+  %str.len.query1 = load i64, ptr %str.len.query, align 8
+  %str.len.query2 = and i64 %str.len.query1, 281474976710655
+  %str.tag = lshr i64 %str.len.query1, 48
+  %str.immortal = icmp eq i64 %str.tag, 0
+  br i1 %str.immortal, label %str_ok, label %str_gen_check
+
+str_gen_check:                                    ; preds = %entry
+  %arena.gen = call ptr @dva_arena_current()
+  %arena.gen3 = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64 }, ptr %arena.gen, i32 0, i32 4
+  %arena.gen4 = load i64, ptr %arena.gen3, align 8
+  %str.tag.match = icmp eq i64 %str.tag, %arena.gen4
+  br i1 %str.tag.match, label %str_ok, label %str_stale
+
+str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
+  store i64 %str.len.query2, ptr %var.n, align 8
+  %var.load5 = load i64, ptr %var.n, align 8
+  %cmptmp = icmp eq i64 %var.load5, 0
+  br i1 %cmptmp, label %choice.then, label %choice.else
+
+str_stale:                                        ; preds = %str_gen_check
+  %1 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok
+
+choice.then:                                      ; preds = %str_ok
+  br label %choice.exit
+
+choice.else:                                      ; preds = %str_ok
+  %var.load6 = load ptr, ptr %var.s, align 8
+  %call.res = call i64 @"unicode::decode_rune"(ptr %var.load6, i64 0)
+  store i64 %call.res, ptr %var.r0, align 8
+  %var.load7 = load i64, ptr %var.r0, align 8
+  %call.res8 = call i1 @"unicode::is_id_start"(i64 %var.load7)
+  %nottmp = xor i1 %call.res8, true
+  br i1 %nottmp, label %choice.then9, label %choice.else10
+
+choice.exit:                                      ; preds = %choice.exit11, %choice.then
+  %choice.res35 = phi i1 [ false, %choice.then ], [ %choice.res, %choice.exit11 ]
+  ret i1 %choice.res35
+
+choice.then9:                                     ; preds = %choice.else
+  br label %choice.exit11
+
+choice.else10:                                    ; preds = %choice.else
+  store i1 true, ptr %"var.ok'", align 1
+  %var.load12 = load i64, ptr %var.r0, align 8
+  %r.cmp1 = icmp slt i64 %var.load12, 128
+  %r.cmp2 = icmp slt i64 %var.load12, 2048
+  %r.cmp3 = icmp slt i64 %var.load12, 65536
+  %r.w3 = select i1 %r.cmp3, i64 3, i64 4
+  %r.w2 = select i1 %r.cmp2, i64 2, i64 %r.w3
+  %r.width = select i1 %r.cmp1, i64 1, i64 %r.w2
+  store i64 %r.width, ptr %"var.i'", align 8
+  store i64 0, ptr %loop.idx.15, align 8
+  br label %loop.header.15
+
+choice.exit11:                                    ; preds = %loop.exit.15, %choice.then9
+  %choice.res = phi i1 [ false, %choice.then9 ], [ %var.load34, %loop.exit.15 ]
+  br label %choice.exit
+
+loop.header.15:                                   ; preds = %loop.latch.15, %choice.else10
+  %counter.load = load i64, ptr %loop.idx.15, align 8
+  br label %loop.body.15
+
+loop.body.15:                                     ; preds = %loop.header.15
+  %loop.rel.i = sub i64 %counter.load, 0
+  store i64 1, ptr %loop.step.15, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
+  store i64 %counter.load, ptr %var._, align 8
+  %var.load13 = load i64, ptr %"var.i'", align 8
+  %var.load14 = load i64, ptr %var.n, align 8
+  %cmptmp15 = icmp sge i64 %var.load13, %var.load14
+  br i1 %cmptmp15, label %choice.then16, label %choice.exit17
+
+loop.exit.nat.15:                                 ; No predecessors!
+  br label %loop.exit.15
+
+loop.latch.15:                                    ; preds = %choice.exit25
+  %step.val = load i64, ptr %loop.step.15, align 8
+  %loop.next = add i64 %counter.load, %step.val
+  store i64 %loop.next, ptr %loop.idx.15, align 8
+  br label %loop.header.15
+
+loop.exit.15:                                     ; preds = %choice.then24, %choice.then16, %loop.exit.nat.15
+  %var.load34 = load i1, ptr %"var.ok'", align 1
+  br label %choice.exit11
+
+choice.then16:                                    ; preds = %loop.body.15
+  br label %loop.exit.15
+
+choice.exit17:                                    ; preds = %loop.body.15
+  %var.load18 = load ptr, ptr %var.s, align 8
+  %var.load19 = load i64, ptr %"var.i'", align 8
+  %call.res20 = call i64 @"unicode::decode_rune"(ptr %var.load18, i64 %var.load19)
+  store i64 %call.res20, ptr %var.r, align 8
+  %var.load21 = load i64, ptr %var.r, align 8
+  %call.res22 = call i1 @"unicode::is_id_continue"(i64 %var.load21)
+  %nottmp23 = xor i1 %call.res22, true
+  br i1 %nottmp23, label %choice.then24, label %choice.exit25
+
+choice.then24:                                    ; preds = %choice.exit17
+  store i1 false, ptr %"var.ok'", align 1
+  br label %loop.exit.15
+
+choice.exit25:                                    ; preds = %choice.exit17
+  %var.load26 = load i64, ptr %"var.i'", align 8
+  %var.load27 = load i64, ptr %var.r, align 8
+  %r.cmp128 = icmp slt i64 %var.load27, 128
+  %r.cmp229 = icmp slt i64 %var.load27, 2048
+  %r.cmp330 = icmp slt i64 %var.load27, 65536
+  %r.w331 = select i1 %r.cmp330, i64 3, i64 4
+  %r.w232 = select i1 %r.cmp229, i64 2, i64 %r.w331
+  %r.width33 = select i1 %r.cmp128, i64 1, i64 %r.w232
+  %addtmp = add i64 %var.load26, %r.width33
+  store i64 %addtmp, ptr %"var.i'", align 8
+  br label %loop.latch.15
+}
+
+define i1 @"unicode::is_uax31_builder"(ptr %0) #1 {
+entry:
+  %var.r = alloca i64, align 8
+  %var._ = alloca i64, align 8
+  %var._i = alloca i64, align 8
+  %loop.step.16 = alloca i64, align 8
+  %loop.idx.16 = alloca i64, align 8
+  %"var.i'" = alloca i64, align 8
+  %"var.ok'" = alloca i1, align 1
+  %var.r0 = alloca i64, align 8
+  %var.p = alloca ptr, align 8
+  %var.n = alloca i64, align 8
+  %var.b = alloca ptr, align 8
+  store ptr %0, ptr %var.b, align 8
+  %var.load = load ptr, ptr %var.b, align 8
+  %b.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load, i32 0, i32 0
+  %b.len1 = load i64, ptr %b.len, align 8
+  store i64 %b.len1, ptr %var.n, align 8
+  %var.load2 = load i64, ptr %var.n, align 8
+  %cmptmp = icmp eq i64 %var.load2, 0
+  br i1 %cmptmp, label %choice.then, label %choice.else
+
+choice.then:                                      ; preds = %entry
+  br label %choice.exit
+
+choice.else:                                      ; preds = %entry
+  %var.load3 = load ptr, ptr %var.b, align 8
+  %b.ptr = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load3, i32 0, i32 1
+  %b.ptr4 = load ptr, ptr %b.ptr, align 8
+  store ptr %b.ptr4, ptr %var.p, align 8
+  %var.load5 = load ptr, ptr %var.p, align 8
+  %call.res = call i64 @"unicode::decode_rune_addr"(ptr %var.load5, i64 0)
+  store i64 %call.res, ptr %var.r0, align 8
+  %var.load6 = load i64, ptr %var.r0, align 8
+  %call.res7 = call i1 @"unicode::is_id_start"(i64 %var.load6)
+  %nottmp = xor i1 %call.res7, true
+  br i1 %nottmp, label %choice.then8, label %choice.else9
+
+choice.exit:                                      ; preds = %choice.exit10, %choice.then
+  %choice.res34 = phi i1 [ false, %choice.then ], [ %choice.res, %choice.exit10 ]
+  ret i1 %choice.res34
+
+choice.then8:                                     ; preds = %choice.else
+  br label %choice.exit10
+
+choice.else9:                                     ; preds = %choice.else
+  store i1 true, ptr %"var.ok'", align 1
+  %var.load11 = load i64, ptr %var.r0, align 8
+  %r.cmp1 = icmp slt i64 %var.load11, 128
+  %r.cmp2 = icmp slt i64 %var.load11, 2048
+  %r.cmp3 = icmp slt i64 %var.load11, 65536
+  %r.w3 = select i1 %r.cmp3, i64 3, i64 4
+  %r.w2 = select i1 %r.cmp2, i64 2, i64 %r.w3
+  %r.width = select i1 %r.cmp1, i64 1, i64 %r.w2
+  store i64 %r.width, ptr %"var.i'", align 8
+  store i64 0, ptr %loop.idx.16, align 8
+  br label %loop.header.16
+
+choice.exit10:                                    ; preds = %loop.exit.16, %choice.then8
+  %choice.res = phi i1 [ false, %choice.then8 ], [ %var.load33, %loop.exit.16 ]
+  br label %choice.exit
+
+loop.header.16:                                   ; preds = %loop.latch.16, %choice.else9
+  %counter.load = load i64, ptr %loop.idx.16, align 8
+  br label %loop.body.16
+
+loop.body.16:                                     ; preds = %loop.header.16
+  %loop.rel.i = sub i64 %counter.load, 0
+  store i64 1, ptr %loop.step.16, align 8
+  store i64 %loop.rel.i, ptr %var._i, align 8
+  store i64 %counter.load, ptr %var._, align 8
+  %var.load12 = load i64, ptr %"var.i'", align 8
+  %var.load13 = load i64, ptr %var.n, align 8
+  %cmptmp14 = icmp sge i64 %var.load12, %var.load13
+  br i1 %cmptmp14, label %choice.then15, label %choice.exit16
+
+loop.exit.nat.16:                                 ; No predecessors!
+  br label %loop.exit.16
+
+loop.latch.16:                                    ; preds = %choice.exit24
+  %step.val = load i64, ptr %loop.step.16, align 8
+  %loop.next = add i64 %counter.load, %step.val
+  store i64 %loop.next, ptr %loop.idx.16, align 8
+  br label %loop.header.16
+
+loop.exit.16:                                     ; preds = %choice.then23, %choice.then15, %loop.exit.nat.16
+  %var.load33 = load i1, ptr %"var.ok'", align 1
+  br label %choice.exit10
+
+choice.then15:                                    ; preds = %loop.body.16
+  br label %loop.exit.16
+
+choice.exit16:                                    ; preds = %loop.body.16
+  %var.load17 = load ptr, ptr %var.p, align 8
+  %var.load18 = load i64, ptr %"var.i'", align 8
+  %call.res19 = call i64 @"unicode::decode_rune_addr"(ptr %var.load17, i64 %var.load18)
+  store i64 %call.res19, ptr %var.r, align 8
+  %var.load20 = load i64, ptr %var.r, align 8
+  %call.res21 = call i1 @"unicode::is_id_continue"(i64 %var.load20)
+  %nottmp22 = xor i1 %call.res21, true
+  br i1 %nottmp22, label %choice.then23, label %choice.exit24
+
+choice.then23:                                    ; preds = %choice.exit16
+  store i1 false, ptr %"var.ok'", align 1
+  br label %loop.exit.16
+
+choice.exit24:                                    ; preds = %choice.exit16
+  %var.load25 = load i64, ptr %"var.i'", align 8
+  %var.load26 = load i64, ptr %var.r, align 8
+  %r.cmp127 = icmp slt i64 %var.load26, 128
+  %r.cmp228 = icmp slt i64 %var.load26, 2048
+  %r.cmp329 = icmp slt i64 %var.load26, 65536
+  %r.w330 = select i1 %r.cmp329, i64 3, i64 4
+  %r.w231 = select i1 %r.cmp228, i64 2, i64 %r.w330
+  %r.width32 = select i1 %r.cmp127, i64 1, i64 %r.w231
+  %addtmp = add i64 %var.load25, %r.width32
+  store i64 %addtmp, ptr %"var.i'", align 8
+  br label %loop.latch.16
 }
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

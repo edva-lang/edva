@@ -182,14 +182,14 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::scan_rune" = global ptr null
 @clo.const.48 = internal constant { ptr, ptr } { ptr @"lexer::scan_raw_string", ptr null }
 @"var.lexer::scan_raw_string" = global ptr null
-@clo.const.49 = internal constant { ptr, ptr } { ptr @"$anon_fn.119", ptr null }
+@clo.const.49 = internal constant { ptr, ptr } { ptr @"$anon_fn.120", ptr null }
 @clo.const.50 = internal constant { ptr, ptr } { ptr @"lexer::skip_line_comment", ptr null }
 @"var.lexer::skip_line_comment" = global ptr null
 @str.35 = internal unnamed_addr constant [51 x i8] c"Unterminated block comment -- missing closing '*/'\00"
 @str.35.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.35 }
 @clo.const.51 = internal constant { ptr, ptr } { ptr @"lexer::skip_block_comment", ptr null }
 @"var.lexer::skip_block_comment" = global ptr null
-@clo.const.52 = internal constant { ptr, ptr } { ptr @"$anon_fn.122", ptr null }
+@clo.const.52 = internal constant { ptr, ptr } { ptr @"$anon_fn.123", ptr null }
 @clo.const.53 = internal constant { ptr, ptr } { ptr @"lexer::scan_hash_word", ptr null }
 @"var.lexer::scan_hash_word" = global ptr null
 @clo.const.54 = internal constant { ptr, ptr } { ptr @"lexer::scan_qp_body", ptr null }
@@ -207,7 +207,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @clo.const.58 = internal constant { ptr, ptr } { ptr @"lexer::skip_ws", ptr null }
 @str.38 = internal unnamed_addr constant [51 x i8] c"Unterminated '#use(...)' \E2\80\94 expected closing ')'.\00"
 @str.38.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.38 }
-@clo.const.59 = internal constant { ptr, ptr } { ptr @"$anon_fn.129", ptr null }
+@clo.const.59 = internal constant { ptr, ptr } { ptr @"$anon_fn.130", ptr null }
 @str.39 = internal unnamed_addr constant [8 x i8] c"dynamic\00"
 @str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.39 }
 @str.40 = internal unnamed_addr constant [7 x i8] c"import\00"
@@ -238,14 +238,14 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.49 }
 @str.50 = internal unnamed_addr constant [8 x i8] c"swizzle\00"
 @str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.50 }
-@clo.const.63 = internal constant { ptr, ptr } { ptr @"$anon_fn.135", ptr null }
+@clo.const.63 = internal constant { ptr, ptr } { ptr @"$anon_fn.136", ptr null }
 @str.51 = internal unnamed_addr constant [8 x i8] c"default\00"
 @str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.51 }
-@clo.const.64 = internal constant { ptr, ptr } { ptr @"$anon_fn.136", ptr null }
+@clo.const.64 = internal constant { ptr, ptr } { ptr @"$anon_fn.137", ptr null }
 @str.52 = internal unnamed_addr constant [8 x i8] c"#pragma\00"
 @str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.52 }
 @clo.const.65 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_number", ptr null }
-@clo.const.66 = internal constant { ptr, ptr } { ptr @"$anon_fn.138", ptr null }
+@clo.const.66 = internal constant { ptr, ptr } { ptr @"$anon_fn.139", ptr null }
 @str.53 = internal unnamed_addr constant [4 x i8] c"all\00"
 @str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.53 }
 @str.54 = internal unnamed_addr constant [5 x i8] c"none\00"
@@ -255,9 +255,9 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.56 = internal unnamed_addr constant [32 x i8] c"' \E2\80\94 expected 'all' or 'none'.\00"
 @str.56.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.56 }
 @clo.const.67 = internal constant { ptr, ptr } { ptr @"lexer::pragma_fp_fail", ptr null }
-@clo.const.68 = internal constant { ptr, ptr } { ptr @"$anon_fn.140", ptr null }
+@clo.const.68 = internal constant { ptr, ptr } { ptr @"$anon_fn.141", ptr null }
 @clo.const.69 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_fp", ptr null }
-@clo.const.70 = internal constant { ptr, ptr } { ptr @"$anon_fn.142", ptr null }
+@clo.const.70 = internal constant { ptr, ptr } { ptr @"$anon_fn.143", ptr null }
 @str.57 = internal unnamed_addr constant [5 x i8] c"xyzw\00"
 @str.57.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.57 }
 @str.58 = internal unnamed_addr constant [5 x i8] c"rgba\00"
@@ -267,7 +267,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.60 = internal unnamed_addr constant [49 x i8] c"' \E2\80\94 expected 'all', 'xyzw', 'rgba', or 'none'.\00"
 @str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.60 }
 @clo.const.71 = internal constant { ptr, ptr } { ptr @"lexer::pragma_swizzle_fail", ptr null }
-@clo.const.72 = internal constant { ptr, ptr } { ptr @"$anon_fn.144", ptr null }
+@clo.const.72 = internal constant { ptr, ptr } { ptr @"$anon_fn.145", ptr null }
 @clo.const.73 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_swizzle", ptr null }
 @clo.const.74 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_body", ptr null }
 @str.61 = internal unnamed_addr constant [59 x i8] c"Expected 'number', 'fpfast', or 'swizzle' after '#pragma'.\00"
@@ -3693,46 +3693,22 @@ entry:
   %var.r = alloca i64, align 8
   store i64 %0, ptr %var.r, align 8
   %var.load = load i64, ptr %var.r, align 8
-  %call.res = call i1 @"unicode::is_alpha"(i64 %var.load)
-  %val.match = icmp eq i64 %var.load, 95
-  %case.or = or i1 %call.res, %val.match
-  br i1 %case.or, label %choice.case, label %choice.next
-
-choice.exit:                                      ; preds = %choice.next, %choice.case
-  %choice.res = phi i1 [ true, %choice.case ], [ false, %choice.next ]
-  ret i1 %choice.res
-
-choice.case:                                      ; preds = %entry
-  br label %choice.exit
-
-choice.next:                                      ; preds = %entry
-  br label %choice.exit
+  %call.res = call i1 @"unicode::is_id_start"(i64 %var.load)
+  ret i1 %call.res
 }
 
-declare i1 @"unicode::is_alpha"(i64) #1
+declare i1 @"unicode::is_id_start"(i64) #1
 
 define i1 @"lexer::is_id_char"(i64 %0) #1 {
 entry:
   %var.r = alloca i64, align 8
   store i64 %0, ptr %var.r, align 8
   %var.load = load i64, ptr %var.r, align 8
-  %call.res = call i1 @"lexer::is_id_start"(i64 %var.load)
-  %call.res1 = call i1 @"unicode::is_digit"(i64 %var.load)
-  %case.or = or i1 %call.res, %call.res1
-  br i1 %case.or, label %choice.case, label %choice.next
-
-choice.exit:                                      ; preds = %choice.next, %choice.case
-  %choice.res = phi i1 [ true, %choice.case ], [ false, %choice.next ]
-  ret i1 %choice.res
-
-choice.case:                                      ; preds = %entry
-  br label %choice.exit
-
-choice.next:                                      ; preds = %entry
-  br label %choice.exit
+  %call.res = call i1 @"unicode::is_id_continue"(i64 %var.load)
+  ret i1 %call.res
 }
 
-declare i1 @"unicode::is_digit"(i64) #1
+declare i1 @"unicode::is_id_continue"(i64) #1
 
 define i1 @"lexer::is_special"(i64 %0) #1 {
 entry:
@@ -3890,6 +3866,8 @@ entry:
   %call.res = call i1 @"unicode::is_digit"(i64 %var.load)
   ret i1 %call.res
 }
+
+declare i1 @"unicode::is_digit"(i64) #1
 
 define ptr @"lexer::scan_id"(ptr %0, i64 %1) #1 {
 entry:
@@ -10248,7 +10226,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.119"(i64 %0) #1 {
+define internal i1 @"$anon_fn.120"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -10462,7 +10440,7 @@ str_stale:                                        ; preds = %str_gen_check
   br label %str_ok
 }
 
-define internal i1 @"$anon_fn.122"(i64 %0) #1 {
+define internal i1 @"$anon_fn.123"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -11962,7 +11940,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.129"(i64 %0) #1 {
+define internal i1 @"$anon_fn.130"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -13472,7 +13450,7 @@ str.eq.merge316:                                  ; preds = %str.eq.else315, %st
   br i1 %str.eq.result322, label %choice.case288, label %choice.next289
 }
 
-define internal i1 @"$anon_fn.135"(i64 %0) #1 {
+define internal i1 @"$anon_fn.136"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -13482,7 +13460,7 @@ entry:
   ret i1 %nottmp
 }
 
-define internal i1 @"$anon_fn.136"(i64 %0) #1 {
+define internal i1 @"$anon_fn.137"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -13752,7 +13730,7 @@ str.eq.merge69:                                   ; preds = %str.eq.else68, %str
   br i1 %case.or, label %choice.case, label %choice.next
 }
 
-define internal i1 @"$anon_fn.138"(i64 %0) #1 {
+define internal i1 @"$anon_fn.139"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -13931,7 +13909,7 @@ str_overflow_abort61:                             ; preds = %concat.sum.len55
   br label %concat.tot.len60
 }
 
-define internal i1 @"$anon_fn.140"(i64 %0) #1 {
+define internal i1 @"$anon_fn.141"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -14313,7 +14291,7 @@ str.eq.merge136:                                  ; preds = %str.eq.else135, %st
   br i1 %case.or143, label %choice.case, label %choice.next
 }
 
-define internal i1 @"$anon_fn.142"(i64 %0) #1 {
+define internal i1 @"$anon_fn.143"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -14492,7 +14470,7 @@ str_overflow_abort61:                             ; preds = %concat.sum.len55
   br label %concat.tot.len60
 }
 
-define internal i1 @"$anon_fn.144"(i64 %0) #1 {
+define internal i1 @"$anon_fn.145"(i64 %0) #1 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -16112,6 +16090,8 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret ptr %choice.res
 }
 
+declare i1 @"unicode::is_alpha"(i64) #1
+
 define void @"lexer::stack_pop"(ptr %0, i64 %1) #1 {
 entry:
   %var.q = alloca i64, align 8
@@ -16493,7 +16473,7 @@ a.rd.err.null:                                    ; preds = %entry
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 1107, ptr %err.line.gep, align 8
+  store i64 1108, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 26, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -16514,7 +16494,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep10 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep10, align 8
   %err.line.gep11 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 3
-  store i64 1107, ptr %err.line.gep11, align 8
+  store i64 1108, ptr %err.line.gep11, align 8
   %err.col.gep12 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 4
   store i64 26, ptr %err.col.gep12, align 8
   %err.ctx.gep13 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc7, i32 0, i32 5
@@ -17457,8 +17437,8 @@ entry:
   %val.match = icmp eq i64 %var.load2, 0
   br i1 %val.match, label %choice.case, label %choice.next
 
-choice.exit:                                      ; preds = %choice.next156, %choice.case155, %choice.case140, %choice.case126, %choice.case112, %choice.case98, %choice.case87, %choice.case75, %choice.case58, %choice.case41, %choice.case30, %choice.case19, %choice.case6, %choice.case
-  %choice.res = phi ptr [ %call.res5, %choice.case ], [ %call.res18, %choice.case6 ], [ %call.res29, %choice.case19 ], [ %call.res40, %choice.case30 ], [ %call.res57, %choice.case41 ], [ %call.res74, %choice.case58 ], [ %call.res86, %choice.case75 ], [ %call.res97, %choice.case87 ], [ %call.res111, %choice.case98 ], [ %call.res125, %choice.case112 ], [ %call.res139, %choice.case126 ], [ %call.res154, %choice.case140 ], [ %call.res168, %choice.case155 ], [ %call.res176, %choice.next156 ]
+choice.exit:                                      ; preds = %choice.next155, %choice.case154, %choice.case140, %choice.case126, %choice.case112, %choice.case98, %choice.case87, %choice.case75, %choice.case58, %choice.case41, %choice.case30, %choice.case19, %choice.case6, %choice.case
+  %choice.res = phi ptr [ %call.res5, %choice.case ], [ %call.res18, %choice.case6 ], [ %call.res29, %choice.case19 ], [ %call.res40, %choice.case30 ], [ %call.res57, %choice.case41 ], [ %call.res74, %choice.case58 ], [ %call.res86, %choice.case75 ], [ %call.res97, %choice.case87 ], [ %call.res111, %choice.case98 ], [ %call.res125, %choice.case112 ], [ %call.res139, %choice.case126 ], [ %call.res153, %choice.case140 ], [ %call.res167, %choice.case154 ], [ %call.res175, %choice.next155 ]
   ret ptr %choice.res
 
 choice.case:                                      ; preds = %entry
@@ -17685,52 +17665,50 @@ choice.case126:                                   ; preds = %choice.next113
   br label %choice.exit
 
 choice.next127:                                   ; preds = %choice.next113
-  %call.res142 = call i1 @"unicode::is_alpha"(i64 %var.load2)
-  %val.match143 = icmp eq i64 %var.load2, 95
-  %case.or = or i1 %call.res142, %val.match143
-  br i1 %case.or, label %choice.case140, label %choice.next141
+  %call.res142 = call i1 @"lexer::is_id_start"(i64 %var.load2)
+  br i1 %call.res142, label %choice.case140, label %choice.next141
 
 choice.case140:                                   ; preds = %choice.next127
+  %var.load143 = load ptr, ptr %var.lx, align 8
   %var.load144 = load ptr, ptr %var.lx, align 8
-  %var.load145 = load ptr, ptr %var.lx, align 8
-  %fld.gep146 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load145, i32 0, i32 1
-  %fld.load147 = load i64, ptr %fld.gep146, align 8
-  %var.load148 = load ptr, ptr %var.lx, align 8
-  %fld.gep149 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load148, i32 0, i32 2
-  %fld.load150 = load i64, ptr %fld.gep149, align 8
-  %var.load151 = load ptr, ptr %var.lx, align 8
-  %fld.gep152 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load151, i32 0, i32 3
-  %fld.load153 = load i64, ptr %fld.gep152, align 8
-  %call.res154 = call ptr @"lexer::scan_ident"(ptr %var.load144, i64 %fld.load147, i64 %fld.load150, i64 %fld.load153)
+  %fld.gep145 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load144, i32 0, i32 1
+  %fld.load146 = load i64, ptr %fld.gep145, align 8
+  %var.load147 = load ptr, ptr %var.lx, align 8
+  %fld.gep148 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load147, i32 0, i32 2
+  %fld.load149 = load i64, ptr %fld.gep148, align 8
+  %var.load150 = load ptr, ptr %var.lx, align 8
+  %fld.gep151 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load150, i32 0, i32 3
+  %fld.load152 = load i64, ptr %fld.gep151, align 8
+  %call.res153 = call ptr @"lexer::scan_ident"(ptr %var.load143, i64 %fld.load146, i64 %fld.load149, i64 %fld.load152)
   br label %choice.exit
 
 choice.next141:                                   ; preds = %choice.next127
-  %val.match157 = icmp eq i64 %var.load2, 34
-  br i1 %val.match157, label %choice.case155, label %choice.next156
+  %val.match156 = icmp eq i64 %var.load2, 34
+  br i1 %val.match156, label %choice.case154, label %choice.next155
 
-choice.case155:                                   ; preds = %choice.next141
+choice.case154:                                   ; preds = %choice.next141
+  %var.load157 = load ptr, ptr %var.lx, align 8
   %var.load158 = load ptr, ptr %var.lx, align 8
-  %var.load159 = load ptr, ptr %var.lx, align 8
-  %fld.gep160 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load159, i32 0, i32 1
-  %fld.load161 = load i64, ptr %fld.gep160, align 8
-  %var.load162 = load ptr, ptr %var.lx, align 8
-  %fld.gep163 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load162, i32 0, i32 2
-  %fld.load164 = load i64, ptr %fld.gep163, align 8
-  %var.load165 = load ptr, ptr %var.lx, align 8
-  %fld.gep166 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load165, i32 0, i32 3
-  %fld.load167 = load i64, ptr %fld.gep166, align 8
-  %call.res168 = call ptr @"lexer::scan_string"(ptr %var.load158, i64 %fld.load161, i64 %fld.load164, i64 %fld.load167)
+  %fld.gep159 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load158, i32 0, i32 1
+  %fld.load160 = load i64, ptr %fld.gep159, align 8
+  %var.load161 = load ptr, ptr %var.lx, align 8
+  %fld.gep162 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load161, i32 0, i32 2
+  %fld.load163 = load i64, ptr %fld.gep162, align 8
+  %var.load164 = load ptr, ptr %var.lx, align 8
+  %fld.gep165 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load164, i32 0, i32 3
+  %fld.load166 = load i64, ptr %fld.gep165, align 8
+  %call.res167 = call ptr @"lexer::scan_string"(ptr %var.load157, i64 %fld.load160, i64 %fld.load163, i64 %fld.load166)
   br label %choice.exit
 
-choice.next156:                                   ; preds = %choice.next141
+choice.next155:                                   ; preds = %choice.next141
+  %var.load168 = load ptr, ptr %var.lx, align 8
   %var.load169 = load ptr, ptr %var.lx, align 8
-  %var.load170 = load ptr, ptr %var.lx, align 8
-  %fld.gep171 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load170, i32 0, i32 2
-  %fld.load172 = load i64, ptr %fld.gep171, align 8
-  %var.load173 = load ptr, ptr %var.lx, align 8
-  %fld.gep174 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load173, i32 0, i32 3
-  %fld.load175 = load i64, ptr %fld.gep174, align 8
-  %call.res176 = call ptr @"lexer::eof_tok"(ptr %var.load169, i64 %fld.load172, i64 %fld.load175)
+  %fld.gep170 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load169, i32 0, i32 2
+  %fld.load171 = load i64, ptr %fld.gep170, align 8
+  %var.load172 = load ptr, ptr %var.lx, align 8
+  %fld.gep173 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load172, i32 0, i32 3
+  %fld.load174 = load i64, ptr %fld.gep173, align 8
+  %call.res175 = call ptr @"lexer::eof_tok"(ptr %var.load168, i64 %fld.load171, i64 %fld.load174)
   br label %choice.exit
 }
 

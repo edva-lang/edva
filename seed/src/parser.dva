@@ -11,6 +11,8 @@
 #use "str"
 #use "operators"
 #use "diag"
+#use unicode
+
 
 #foreign "c"
    write: (fd: Int, buf: Addr, count: Int) => Int
@@ -4333,8 +4335,7 @@ guard_is_variant: lexer::Tok => <>
 guard_is_variant = t =>
    t.kind
       [Id]
-         u = t.text(0)
-         u !< 'A' && u !> 'Z'
+         ?t.text > 0 && unicode::is_upper(unicode::decode_rune(t.text, 0))
       | <->
 
 pattern_is_deep: ast::Pattern => <>
@@ -5552,8 +5553,7 @@ atom_ident = p, name =>
 // Whether an identifier's first rune is uppercase (a type-alias marker).
 name_is_upper: String => <>
 name_is_upper = name =>
-   u = name(0)
-   u !< 'A' && u !> 'Z'
+   ?name > 0 && unicode::is_upper(unicode::decode_rune(name, 0))
 
 // Whether an identifier ends with a prime suffix (foo').
 name_is_primed: String => <>

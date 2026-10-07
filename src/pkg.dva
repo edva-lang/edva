@@ -10,6 +10,7 @@
 #use libc
 #use str
 #use sys
+#use unicode
 #use version
 
 #foreign "c"
@@ -232,21 +233,10 @@
          | "my_pkg"
          |
             c0 = res(0)
-            c0 !< '0' && c0 !> '9' | "pkg_" + res | res
+            c0 < 'a' || c0 > 'z' | "pkg_" + res | res
 
    is_valid_identifier: String => <>
-   is_valid_identifier = s =>
-      ?s == 0 | --| <->
-      c0 = s(0)
-      valid_start = (c0 !< 'a' && c0 !> 'z') || (c0 !< 'A' && c0 !> 'Z') || c0 == '_'
-      !valid_start | --| <->
-      ok' = <+>
-      1..?s @ i =>
-         c = s(i)
-         is_char = (c !< 'a' && c !> 'z') || (c !< 'A' && c !> 'Z') ||
-            (c !< '0' && c !> '9') || c == '_'
-         !is_char | ok' = <->; -->
-      ok'
+   is_valid_identifier = s => unicode::is_uax31(s)
 
    is_sha_commit: String => <>
    is_sha_commit = s =>

@@ -818,3 +818,79 @@
    utf8_width: Rune => Int
    utf8_width = r =>
       r [< 0x80] 1 [< 0x800] 2 [< 0x10000] 3 | 4
+
+   // UAX #31: XID_Start characters (Lu, Ll, Lt, Lm, Lo, Nl)
+   is_xid_start: Rune => <>
+   is_xid_start = cp =>
+      cat = category_id(cp)
+      cat !> 4 || cat == 9
+
+   // UAX #31: XID_Continue characters (Lu..Lo, Mn, Mc, Nd, Nl, Pc)
+   is_xid_continue: Rune => <>
+   is_xid_continue = cp =>
+      cat = category_id(cp)
+      cat !> 6 || cat == 8 || cat == 9 || cat == 11
+
+   // Identifier start: XID_Start or '_'
+   is_id_start: Rune => <>
+   is_id_start = cp =>
+      cp == '_' || is_xid_start(cp)
+
+   // Identifier continuation: XID_Continue
+   is_id_continue: Rune => <>
+   is_id_continue = cp =>
+      is_xid_continue(cp)
+
+   // Decode the UTF-8 rune at Addr + i into its codepoint.
+   decode_rune_addr: Addr, Int => Rune
+   decode_rune_addr = p, i =>
+      b0 = Int(@[p + i u8])
+      Rune(b0
+         [< 0x80] b0
+         [< 0xE0] (b0 - 0xC0) * 0x40 + (Int(@[p + i + 1 u8]) - 0x80)
+         [< 0xF0]
+            (b0 - 0xE0) * 0x1000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x40 +
+               (Int(@[p + i + 2 u8]) - 0x80)
+         |
+            (b0 - 0xF0) * 0x40000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x1000 +
+               (Int(@[p + i + 2 u8]) - 0x80) * 0x40 + (Int(@[p + i + 3 u8]) - 0x80)
+      )
+
+   // Decode the UTF-8 rune at Builder buffer + i into its codepoint.
+   decode_rune_builder: Builder, Int => Rune
+   decode_rune_builder = b, i =>
+      decode_rune_addr(&b, i)
+
+   // Checks if a String conforms to UAX #31 identifier syntax.
+   is_uax31: String => <>
+   is_uax31 = s =>
+      n = ?s
+      n == 0 | <-> |
+         r0 = decode_rune(s, 0)
+         !is_id_start(r0) | <-> |
+            ok' = <+>
+            i' = ?r0
+            0.. @
+               i' !< n | -->
+               r = decode_rune(s, i')
+               !is_id_continue(r) | ok' = <->; -->
+               i' = i' + ?r
+            ok'
+
+   // Checks if a Builder buffer conforms to UAX #31 identifier syntax.
+   is_uax31_builder: Builder => <>
+   is_uax31_builder = b =>
+      n = ?b
+      n == 0 | <-> |
+         p = &b
+         r0 = decode_rune_addr(p, 0)
+         !is_id_start(r0) | <-> |
+            ok' = <+>
+            i' = ?r0
+            0.. @
+               i' !< n | -->
+               r = decode_rune_addr(p, i')
+               !is_id_continue(r) | ok' = <->; -->
+               i' = i' + ?r
+            ok'
+

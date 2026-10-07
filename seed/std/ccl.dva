@@ -7,6 +7,7 @@
 #use str
 #use io
 #use libc
+#use unicode
 
 #public
 
@@ -157,6 +158,9 @@ sort_strings = arr =>
       out
 
 // --- Identifier & Version Validation ----------------------------------------
+
+is_valid_alias: String => <>
+is_valid_alias = alias => unicode::is_uax31(alias)
 
 is_valid_package_name: String => <>
 is_valid_package_name = name =>
@@ -493,7 +497,7 @@ sort_deps = deps =>
 validate_dep: CclEntry, String => < PackageDep | Error >
 validate_dep = e, file =>
    alias = e.key
-   !is_valid_package_name(alias)
+   !is_valid_alias(alias)
       | <- ccl_error(file, "edva.ccl: invalid dependency alias '" + alias + "'", e.line, e.col) +>
       |
          e.val

@@ -45,27 +45,29 @@ target triple = "x86_64-unknown-linux-gnu"
 @dva_thread_rec = external thread_local global ptr
 @clo.const.9 = internal constant { ptr, ptr } { ptr @"ccl::sort_strings", ptr null }
 @"var.ccl::sort_strings" = global ptr null
-@clo.const.10 = internal constant { ptr, ptr } { ptr @"ccl::is_valid_package_name", ptr null }
+@clo.const.10 = internal constant { ptr, ptr } { ptr @"ccl::is_valid_alias", ptr null }
+@"var.ccl::is_valid_alias" = global ptr null
+@clo.const.11 = internal constant { ptr, ptr } { ptr @"ccl::is_valid_package_name", ptr null }
 @"var.ccl::is_valid_package_name" = global ptr null
-@clo.const.11 = internal constant { ptr, ptr } { ptr @"ccl::is_valid_version", ptr null }
+@clo.const.12 = internal constant { ptr, ptr } { ptr @"ccl::is_valid_version", ptr null }
 @"var.ccl::is_valid_version" = global ptr null
-@clo.const.12 = internal constant { ptr, ptr } { ptr @"ccl::ccl_error", ptr null }
+@clo.const.13 = internal constant { ptr, ptr } { ptr @"ccl::ccl_error", ptr null }
 @"var.ccl::ccl_error" = global ptr null
-@clo.const.13 = internal constant { ptr, ptr } { ptr @"ccl::has", ptr null }
+@clo.const.14 = internal constant { ptr, ptr } { ptr @"ccl::has", ptr null }
 @"var.ccl::has" = global ptr null
-@clo.const.14 = internal constant { ptr, ptr } { ptr @"ccl::count", ptr null }
+@clo.const.15 = internal constant { ptr, ptr } { ptr @"ccl::count", ptr null }
 @"var.ccl::count" = global ptr null
-@clo.const.15 = internal constant { ptr, ptr } { ptr @"ccl::get_entry", ptr null }
+@clo.const.16 = internal constant { ptr, ptr } { ptr @"ccl::get_entry", ptr null }
 @"var.ccl::get_entry" = global ptr null
-@clo.const.16 = internal constant { ptr, ptr } { ptr @"ccl::get", ptr null }
+@clo.const.17 = internal constant { ptr, ptr } { ptr @"ccl::get", ptr null }
 @"var.ccl::get" = global ptr null
-@clo.const.17 = internal constant { ptr, ptr } { ptr @"ccl::get_section", ptr null }
+@clo.const.18 = internal constant { ptr, ptr } { ptr @"ccl::get_section", ptr null }
 @"var.ccl::get_section" = global ptr null
-@clo.const.18 = internal constant { ptr, ptr } { ptr @"ccl::get_list", ptr null }
+@clo.const.19 = internal constant { ptr, ptr } { ptr @"ccl::get_list", ptr null }
 @"var.ccl::get_list" = global ptr null
-@clo.const.19 = internal constant { ptr, ptr } { ptr @"ccl::entries_for", ptr null }
+@clo.const.20 = internal constant { ptr, ptr } { ptr @"ccl::entries_for", ptr null }
 @"var.ccl::entries_for" = global ptr null
-@clo.const.20 = internal constant { ptr, ptr } { ptr @"ccl::split_raw_lines", ptr null }
+@clo.const.21 = internal constant { ptr, ptr } { ptr @"ccl::split_raw_lines", ptr null }
 @"var.ccl::split_raw_lines" = global ptr null
 @str.4 = internal unnamed_addr constant [3 x i8] c"/=\00"
 @str.4.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.4 }
@@ -74,15 +76,15 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.6 = internal unnamed_addr constant [33 x i8] c"syntax error: line missing '=': \00"
 @str.6.struct = internal unnamed_addr constant { i64, ptr } { i64 32, ptr @str.6 }
 @b_byte_msg = internal unnamed_addr constant [58 x i8] c"E4007: Builder append byte out of range (must be 0..255)\0A\00"
-@clo.const.21 = internal constant { ptr, ptr } { ptr @"ccl::parse_block_from", ptr null }
+@clo.const.22 = internal constant { ptr, ptr } { ptr @"ccl::parse_block_from", ptr null }
 @"var.ccl::parse_block_from" = global ptr null
-@clo.const.22 = internal constant { ptr, ptr } { ptr @"ccl::parse", ptr null }
+@clo.const.23 = internal constant { ptr, ptr } { ptr @"ccl::parse", ptr null }
 @"var.ccl::parse" = global ptr null
 @str.7 = internal unnamed_addr constant [19 x i8] c"cannot open file: \00"
 @str.7.struct = internal unnamed_addr constant { i64, ptr } { i64 18, ptr @str.7 }
 @str.8 = internal unnamed_addr constant [19 x i8] c"cannot read file: \00"
 @str.8.struct = internal unnamed_addr constant { i64, ptr } { i64 18, ptr @str.8 }
-@clo.const.23 = internal constant { ptr, ptr } { ptr @"ccl::parse_file", ptr null }
+@clo.const.24 = internal constant { ptr, ptr } { ptr @"ccl::parse_file", ptr null }
 @"var.ccl::parse_file" = global ptr null
 @str.9 = internal unnamed_addr constant [4 x i8] c"/= \00"
 @str.9.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.9 }
@@ -90,11 +92,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.10.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.10 }
 @str.11 = internal unnamed_addr constant [4 x i8] c" = \00"
 @str.11.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.11 }
-@clo.const.24 = internal constant { ptr, ptr } { ptr @"ccl::serialize_doc_indent", ptr null }
+@clo.const.25 = internal constant { ptr, ptr } { ptr @"ccl::serialize_doc_indent", ptr null }
 @"var.ccl::serialize_doc_indent" = global ptr null
-@clo.const.25 = internal constant { ptr, ptr } { ptr @"ccl::to_ccl", ptr null }
+@clo.const.26 = internal constant { ptr, ptr } { ptr @"ccl::to_ccl", ptr null }
 @"var.ccl::to_ccl" = global ptr null
-@clo.const.26 = internal constant { ptr, ptr } { ptr @"ccl::sort_deps", ptr null }
+@clo.const.27 = internal constant { ptr, ptr } { ptr @"ccl::sort_deps", ptr null }
 @"var.ccl::sort_deps" = global ptr null
 @str.12 = internal unnamed_addr constant [37 x i8] c"edva.ccl: invalid dependency alias '\00"
 @str.12.struct = internal unnamed_addr constant { i64, ptr } { i64 36, ptr @str.12 }
@@ -134,7 +136,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 14, ptr @str.29 }
 @str.30 = internal unnamed_addr constant [20 x i8] c"' must be a section\00"
 @str.30.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.30 }
-@clo.const.27 = internal constant { ptr, ptr } { ptr @"ccl::validate_dep", ptr null }
+@clo.const.28 = internal constant { ptr, ptr } { ptr @"ccl::validate_dep", ptr null }
 @"var.ccl::validate_dep" = global ptr null
 @str.31 = internal unnamed_addr constant [5 x i8] c"name\00"
 @str.31.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.31 }
@@ -176,7 +178,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.49 }
 @str.50 = internal unnamed_addr constant [15 x i8] c"' needs 'path'\00"
 @str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 14, ptr @str.50 }
-@clo.const.28 = internal constant { ptr, ptr } { ptr @"ccl::validate_manifest", ptr null }
+@clo.const.29 = internal constant { ptr, ptr } { ptr @"ccl::validate_manifest", ptr null }
 @"var.ccl::validate_manifest" = global ptr null
 @str.51 = internal unnamed_addr constant [8 x i8] c"name = \00"
 @str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.51 }
@@ -212,11 +214,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.66.struct = internal unnamed_addr constant { i64, ptr } { i64 15, ptr @str.66 }
 @str.67 = internal unnamed_addr constant [14 x i8] c"\0Aoverrides =\0A\00"
 @str.67.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.67 }
-@clo.const.29 = internal constant { ptr, ptr } { ptr @"ccl::manifest_to_ccl", ptr null }
+@clo.const.30 = internal constant { ptr, ptr } { ptr @"ccl::manifest_to_ccl", ptr null }
 @"var.ccl::manifest_to_ccl" = global ptr null
-@clo.const.30 = internal constant { ptr, ptr } { ptr @"ccl::sort_lock_packages", ptr null }
+@clo.const.31 = internal constant { ptr, ptr } { ptr @"ccl::sort_lock_packages", ptr null }
 @"var.ccl::sort_lock_packages" = global ptr null
-@clo.const.31 = internal constant { ptr, ptr } { ptr @"ccl::sort_lock_deps", ptr null }
+@clo.const.32 = internal constant { ptr, ptr } { ptr @"ccl::sort_lock_deps", ptr null }
 @"var.ccl::sort_lock_deps" = global ptr null
 @str.68 = internal unnamed_addr constant [5 x i8] c"lock\00"
 @str.68.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.68 }
@@ -236,7 +238,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.75.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.75 }
 @str.76 = internal unnamed_addr constant [5 x i8] c"root\00"
 @str.76.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.76 }
-@clo.const.32 = internal constant { ptr, ptr } { ptr @"ccl::validate_lockfile", ptr null }
+@clo.const.33 = internal constant { ptr, ptr } { ptr @"ccl::validate_lockfile", ptr null }
 @"var.ccl::validate_lockfile" = global ptr null
 @str.77 = internal unnamed_addr constant [8 x i8] c"lock = \00"
 @str.77.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.77 }
@@ -254,7 +256,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.83.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.83 }
 @str.84 = internal unnamed_addr constant [9 x i8] c"\0Aroot =\0A\00"
 @str.84.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.84 }
-@clo.const.33 = internal constant { ptr, ptr } { ptr @"ccl::lockfile_to_ccl", ptr null }
+@clo.const.34 = internal constant { ptr, ptr } { ptr @"ccl::lockfile_to_ccl", ptr null }
 @"var.ccl::lockfile_to_ccl" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_ccl, ptr null }]
 
@@ -305,30 +307,31 @@ entry:
   store ptr @clo.const.7, ptr @"var.ccl::find_char_idx", align 8
   store ptr @clo.const.8, ptr @"var.ccl::find_first_eq", align 8
   store ptr @clo.const.9, ptr @"var.ccl::sort_strings", align 8
-  store ptr @clo.const.10, ptr @"var.ccl::is_valid_package_name", align 8
-  store ptr @clo.const.11, ptr @"var.ccl::is_valid_version", align 8
-  store ptr @clo.const.12, ptr @"var.ccl::ccl_error", align 8
-  store ptr @clo.const.13, ptr @"var.ccl::has", align 8
-  store ptr @clo.const.14, ptr @"var.ccl::count", align 8
-  store ptr @clo.const.15, ptr @"var.ccl::get_entry", align 8
-  store ptr @clo.const.16, ptr @"var.ccl::get", align 8
-  store ptr @clo.const.17, ptr @"var.ccl::get_section", align 8
-  store ptr @clo.const.18, ptr @"var.ccl::get_list", align 8
-  store ptr @clo.const.19, ptr @"var.ccl::entries_for", align 8
-  store ptr @clo.const.20, ptr @"var.ccl::split_raw_lines", align 8
-  store ptr @clo.const.21, ptr @"var.ccl::parse_block_from", align 8
-  store ptr @clo.const.22, ptr @"var.ccl::parse", align 8
-  store ptr @clo.const.23, ptr @"var.ccl::parse_file", align 8
-  store ptr @clo.const.24, ptr @"var.ccl::serialize_doc_indent", align 8
-  store ptr @clo.const.25, ptr @"var.ccl::to_ccl", align 8
-  store ptr @clo.const.26, ptr @"var.ccl::sort_deps", align 8
-  store ptr @clo.const.27, ptr @"var.ccl::validate_dep", align 8
-  store ptr @clo.const.28, ptr @"var.ccl::validate_manifest", align 8
-  store ptr @clo.const.29, ptr @"var.ccl::manifest_to_ccl", align 8
-  store ptr @clo.const.30, ptr @"var.ccl::sort_lock_packages", align 8
-  store ptr @clo.const.31, ptr @"var.ccl::sort_lock_deps", align 8
-  store ptr @clo.const.32, ptr @"var.ccl::validate_lockfile", align 8
-  store ptr @clo.const.33, ptr @"var.ccl::lockfile_to_ccl", align 8
+  store ptr @clo.const.10, ptr @"var.ccl::is_valid_alias", align 8
+  store ptr @clo.const.11, ptr @"var.ccl::is_valid_package_name", align 8
+  store ptr @clo.const.12, ptr @"var.ccl::is_valid_version", align 8
+  store ptr @clo.const.13, ptr @"var.ccl::ccl_error", align 8
+  store ptr @clo.const.14, ptr @"var.ccl::has", align 8
+  store ptr @clo.const.15, ptr @"var.ccl::count", align 8
+  store ptr @clo.const.16, ptr @"var.ccl::get_entry", align 8
+  store ptr @clo.const.17, ptr @"var.ccl::get", align 8
+  store ptr @clo.const.18, ptr @"var.ccl::get_section", align 8
+  store ptr @clo.const.19, ptr @"var.ccl::get_list", align 8
+  store ptr @clo.const.20, ptr @"var.ccl::entries_for", align 8
+  store ptr @clo.const.21, ptr @"var.ccl::split_raw_lines", align 8
+  store ptr @clo.const.22, ptr @"var.ccl::parse_block_from", align 8
+  store ptr @clo.const.23, ptr @"var.ccl::parse", align 8
+  store ptr @clo.const.24, ptr @"var.ccl::parse_file", align 8
+  store ptr @clo.const.25, ptr @"var.ccl::serialize_doc_indent", align 8
+  store ptr @clo.const.26, ptr @"var.ccl::to_ccl", align 8
+  store ptr @clo.const.27, ptr @"var.ccl::sort_deps", align 8
+  store ptr @clo.const.28, ptr @"var.ccl::validate_dep", align 8
+  store ptr @clo.const.29, ptr @"var.ccl::validate_manifest", align 8
+  store ptr @clo.const.30, ptr @"var.ccl::manifest_to_ccl", align 8
+  store ptr @clo.const.31, ptr @"var.ccl::sort_lock_packages", align 8
+  store ptr @clo.const.32, ptr @"var.ccl::sort_lock_deps", align 8
+  store ptr @clo.const.33, ptr @"var.ccl::validate_lockfile", align 8
+  store ptr @clo.const.34, ptr @"var.ccl::lockfile_to_ccl", align 8
   ret void
 }
 
@@ -1355,7 +1358,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 146, ptr %err.line.gep, align 8
+  store i64 147, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 23, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -1376,7 +1379,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 146, ptr %err.line.gep78, align 8
+  store i64 147, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 23, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -1498,7 +1501,7 @@ a.rd.err.null117:                                 ; preds = %a.after104
   %err.file.gep133 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc130, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep133, align 8
   %err.line.gep134 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc130, i32 0, i32 3
-  store i64 150, ptr %err.line.gep134, align 8
+  store i64 151, ptr %err.line.gep134, align 8
   %err.col.gep135 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc130, i32 0, i32 4
   store i64 32, ptr %err.col.gep135, align 8
   %err.ctx.gep136 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc130, i32 0, i32 5
@@ -1519,7 +1522,7 @@ a.rd.err.oob118:                                  ; preds = %a.rd.check115
   %err.file.gep144 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc141, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep144, align 8
   %err.line.gep145 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc141, i32 0, i32 3
-  store i64 150, ptr %err.line.gep145, align 8
+  store i64 151, ptr %err.line.gep145, align 8
   %err.col.gep146 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc141, i32 0, i32 4
   store i64 32, ptr %err.col.gep146, align 8
   %err.ctx.gep147 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc141, i32 0, i32 5
@@ -1896,6 +1899,17 @@ declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 declare i32 @pthread_join(i64, ptr)
 
 declare void @pthread_exit(ptr)
+
+define i1 @"ccl::is_valid_alias"(ptr %0) #1 {
+entry:
+  %var.alias = alloca ptr, align 8
+  store ptr %0, ptr %var.alias, align 8
+  %var.load = load ptr, ptr %var.alias, align 8
+  %call.res = call i1 @"unicode::is_uax31"(ptr %var.load)
+  ret i1 %call.res
+}
+
+declare i1 @"unicode::is_uax31"(ptr) #1
 
 define i1 @"ccl::is_valid_package_name"(ptr %0) #1 {
 entry:
@@ -4698,7 +4712,7 @@ a.rd.err.null:                                    ; preds = %a.after22
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 316, ptr %err.line.gep, align 8
+  store i64 320, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 24, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -4719,7 +4733,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep39 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc36, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep39, align 8
   %err.line.gep40 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc36, i32 0, i32 3
-  store i64 316, ptr %err.line.gep40, align 8
+  store i64 320, ptr %err.line.gep40, align 8
   %err.col.gep41 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc36, i32 0, i32 4
   store i64 24, ptr %err.col.gep41, align 8
   %err.ctx.gep42 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc36, i32 0, i32 5
@@ -5520,7 +5534,7 @@ a.rd.err.null460:                                 ; preds = %a.after447
   %err.file.gep476 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc473, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep476, align 8
   %err.line.gep477 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc473, i32 0, i32 3
-  store i64 358, ptr %err.line.gep477, align 8
+  store i64 362, ptr %err.line.gep477, align 8
   %err.col.gep478 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc473, i32 0, i32 4
   store i64 70, ptr %err.col.gep478, align 8
   %err.ctx.gep479 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc473, i32 0, i32 5
@@ -5541,7 +5555,7 @@ a.rd.err.oob461:                                  ; preds = %a.rd.check458
   %err.file.gep487 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc484, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep487, align 8
   %err.line.gep488 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc484, i32 0, i32 3
-  store i64 358, ptr %err.line.gep488, align 8
+  store i64 362, ptr %err.line.gep488, align 8
   %err.col.gep489 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc484, i32 0, i32 4
   store i64 70, ptr %err.col.gep489, align 8
   %err.ctx.gep490 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc484, i32 0, i32 5
@@ -5729,7 +5743,7 @@ a.rd.err.null584:                                 ; preds = %a.after571
   %err.file.gep600 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc597, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep600, align 8
   %err.line.gep601 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc597, i32 0, i32 3
-  store i64 366, ptr %err.line.gep601, align 8
+  store i64 370, ptr %err.line.gep601, align 8
   %err.col.gep602 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc597, i32 0, i32 4
   store i64 78, ptr %err.col.gep602, align 8
   %err.ctx.gep603 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc597, i32 0, i32 5
@@ -5750,7 +5764,7 @@ a.rd.err.oob585:                                  ; preds = %a.rd.check582
   %err.file.gep611 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc608, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep611, align 8
   %err.line.gep612 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc608, i32 0, i32 3
-  store i64 366, ptr %err.line.gep612, align 8
+  store i64 370, ptr %err.line.gep612, align 8
   %err.col.gep613 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc608, i32 0, i32 4
   store i64 78, ptr %err.col.gep613, align 8
   %err.ctx.gep614 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc608, i32 0, i32 5
@@ -6017,7 +6031,7 @@ a.rd.err.null740:                                 ; preds = %a.after727
   %err.file.gep756 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc753, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep756, align 8
   %err.line.gep757 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc753, i32 0, i32 3
-  store i64 386, ptr %err.line.gep757, align 8
+  store i64 390, ptr %err.line.gep757, align 8
   %err.col.gep758 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc753, i32 0, i32 4
   store i64 80, ptr %err.col.gep758, align 8
   %err.ctx.gep759 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc753, i32 0, i32 5
@@ -6038,7 +6052,7 @@ a.rd.err.oob741:                                  ; preds = %a.rd.check738
   %err.file.gep767 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc764, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep767, align 8
   %err.line.gep768 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc764, i32 0, i32 3
-  store i64 386, ptr %err.line.gep768, align 8
+  store i64 390, ptr %err.line.gep768, align 8
   %err.col.gep769 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc764, i32 0, i32 4
   store i64 80, ptr %err.col.gep769, align 8
   %err.ctx.gep770 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc764, i32 0, i32 5
@@ -8588,7 +8602,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 480, ptr %err.line.gep, align 8
+  store i64 484, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 23, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -8609,7 +8623,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 480, ptr %err.line.gep78, align 8
+  store i64 484, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 23, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -8753,7 +8767,7 @@ a.rd.err.null125:                                 ; preds = %a.after112
   %err.file.gep141 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc138, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep141, align 8
   %err.line.gep142 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc138, i32 0, i32 3
-  store i64 484, ptr %err.line.gep142, align 8
+  store i64 488, ptr %err.line.gep142, align 8
   %err.col.gep143 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc138, i32 0, i32 4
   store i64 32, ptr %err.col.gep143, align 8
   %err.ctx.gep144 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc138, i32 0, i32 5
@@ -8774,7 +8788,7 @@ a.rd.err.oob126:                                  ; preds = %a.rd.check123
   %err.file.gep152 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc149, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep152, align 8
   %err.line.gep153 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc149, i32 0, i32 3
-  store i64 484, ptr %err.line.gep153, align 8
+  store i64 488, ptr %err.line.gep153, align 8
   %err.col.gep154 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc149, i32 0, i32 4
   store i64 32, ptr %err.col.gep154, align 8
   %err.ctx.gep155 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc149, i32 0, i32 5
@@ -9164,7 +9178,7 @@ entry:
   %fld.load = load ptr, ptr %fld.gep, align 8
   store ptr %fld.load, ptr %var.alias, align 8
   %var.load1 = load ptr, ptr %var.alias, align 8
-  %call.res = call i1 @"ccl::is_valid_package_name"(ptr %var.load1)
+  %call.res = call i1 @"ccl::is_valid_alias"(ptr %var.load1)
   %nottmp = xor i1 %call.res, true
   br i1 %nottmp, label %choice.then, label %choice.else
 
@@ -20864,7 +20878,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 791, ptr %err.line.gep, align 8
+  store i64 795, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 23, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -20885,7 +20899,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 791, ptr %err.line.gep78, align 8
+  store i64 795, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 23, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -21056,7 +21070,7 @@ a.rd.err.null141:                                 ; preds = %a.after128
   %err.file.gep157 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc154, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep157, align 8
   %err.line.gep158 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc154, i32 0, i32 3
-  store i64 796, ptr %err.line.gep158, align 8
+  store i64 800, ptr %err.line.gep158, align 8
   %err.col.gep159 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc154, i32 0, i32 4
   store i64 32, ptr %err.col.gep159, align 8
   %err.ctx.gep160 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc154, i32 0, i32 5
@@ -21077,7 +21091,7 @@ a.rd.err.oob142:                                  ; preds = %a.rd.check139
   %err.file.gep168 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc165, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep168, align 8
   %err.line.gep169 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc165, i32 0, i32 3
-  store i64 796, ptr %err.line.gep169, align 8
+  store i64 800, ptr %err.line.gep169, align 8
   %err.col.gep170 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc165, i32 0, i32 4
   store i64 32, ptr %err.col.gep170, align 8
   %err.ctx.gep171 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc165, i32 0, i32 5
@@ -21721,7 +21735,7 @@ a.rd.err.null:                                    ; preds = %a.after60
   %err.file.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep, align 8
   %err.line.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 3
-  store i64 813, ptr %err.line.gep, align 8
+  store i64 817, ptr %err.line.gep, align 8
   %err.col.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 4
   store i64 23, ptr %err.col.gep, align 8
   %err.ctx.gep = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc, i32 0, i32 5
@@ -21742,7 +21756,7 @@ a.rd.err.oob:                                     ; preds = %a.rd.check
   %err.file.gep77 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep77, align 8
   %err.line.gep78 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 3
-  store i64 813, ptr %err.line.gep78, align 8
+  store i64 817, ptr %err.line.gep78, align 8
   %err.col.gep79 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 4
   store i64 23, ptr %err.col.gep79, align 8
   %err.ctx.gep80 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc74, i32 0, i32 5
@@ -21870,7 +21884,7 @@ a.rd.err.null119:                                 ; preds = %a.after106
   %err.file.gep135 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc132, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep135, align 8
   %err.line.gep136 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc132, i32 0, i32 3
-  store i64 817, ptr %err.line.gep136, align 8
+  store i64 821, ptr %err.line.gep136, align 8
   %err.col.gep137 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc132, i32 0, i32 4
   store i64 32, ptr %err.col.gep137, align 8
   %err.ctx.gep138 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc132, i32 0, i32 5
@@ -21891,7 +21905,7 @@ a.rd.err.oob120:                                  ; preds = %a.rd.check117
   %err.file.gep146 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc143, i32 0, i32 2
   store ptr @str.2.struct, ptr %err.file.gep146, align 8
   %err.line.gep147 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc143, i32 0, i32 3
-  store i64 817, ptr %err.line.gep147, align 8
+  store i64 821, ptr %err.line.gep147, align 8
   %err.col.gep148 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc143, i32 0, i32 4
   store i64 32, ptr %err.col.gep148, align 8
   %err.ctx.gep149 = getelementptr inbounds { i64, ptr, ptr, i64, i64, { i64, i64 } }, ptr %err.alloc143, i32 0, i32 5

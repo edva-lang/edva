@@ -285,11 +285,12 @@ is_delim = c =>
 
 is_id_start: Rune => <>
 is_id_start = r =>
-   r [unicode::is_alpha, '_']
+   unicode::is_id_start(r)
 
 is_id_char: Rune => <>
 is_id_char = r =>
-   r [is_id_start, unicode::is_digit]
+   unicode::is_id_continue(r)
+
 
 // A SPECIAL character: munched into operator runs. Everything except
 // delimiters, whitespace, identifier chars, quotes, '#' and end-of-input.
@@ -1307,7 +1308,7 @@ dispatch_scan = lx =>
       [unicode::is_digit] scan_num(lx, lx.pos, lx.line, lx.col)
       ['\''] scan_rune(lx, lx.pos, lx.line, lx.col)
       [is_special] scan_op(lx, lx.pos, lx.line, lx.col)
-      [unicode::is_alpha, '_'] scan_ident(lx, lx.pos, lx.line, lx.col)
+      [is_id_start] scan_ident(lx, lx.pos, lx.line, lx.col)
       ['"'] scan_string(lx, lx.pos, lx.line, lx.col)
       | eof_tok(lx, lx.line, lx.col)
 

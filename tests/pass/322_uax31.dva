@@ -1,0 +1,67 @@
+#use unicode
+#use io
+
+#type Greek < Alpha, Ωmega, Δelta >
+
+flag_str: <> => String
+flag_str = f => f | "true" | "false"
+
+// Test is_xid_start
+io::out $ flag_str(unicode::is_xid_start('a'))
+io::out $ flag_str(unicode::is_xid_start('Z'))
+io::out $ flag_str(unicode::is_xid_start('λ'))
+io::out $ flag_str(unicode::is_xid_start('Ⅳ'))
+io::out $ flag_str(unicode::is_xid_start('_'))
+io::out $ flag_str(unicode::is_xid_start('0'))
+io::out $ flag_str(unicode::is_xid_start('+'))
+
+// Test is_xid_continue
+io::out $ flag_str(unicode::is_xid_continue('a'))
+io::out $ flag_str(unicode::is_xid_continue('_'))
+io::out $ flag_str(unicode::is_xid_continue('0'))
+io::out $ flag_str(unicode::is_xid_continue('λ'))
+io::out $ flag_str(unicode::is_xid_continue(Rune(0x0300)))
+io::out $ flag_str(unicode::is_xid_continue('+'))
+
+// Test is_uax31 on String
+io::out $ flag_str(unicode::is_uax31("hello_world"))
+io::out $ flag_str(unicode::is_uax31("_private"))
+io::out $ flag_str(unicode::is_uax31("переменная"))
+io::out $ flag_str(unicode::is_uax31("alpha_123"))
+io::out $ flag_str(unicode::is_uax31("123bad"))
+io::out $ flag_str(unicode::is_uax31("hello-world"))
+io::out $ flag_str(unicode::is_uax31(""))
+io::out $ flag_str(unicode::is_uax31("hello world"))
+
+// Test is_uax31_builder
+b1 = {32}
+b1 += "valid_name"
+io::out $ flag_str(unicode::is_uax31_builder(b1))
+
+b2 = {32}
+b2 += "123invalid"
+io::out $ flag_str(unicode::is_uax31_builder(b2))
+
+b3 = {32}
+b3 += "var_λ"
+io::out $ flag_str(unicode::is_uax31_builder(b3))
+
+b4 = {32}
+io::out $ flag_str(unicode::is_uax31_builder(b4))
+
+// Test Unicode variant tag matching in Dva
+g1 = Greek(Ωmega)
+g2 = Greek(Δelta)
+describe_greek: Greek => String
+describe_greek = g =>
+   g
+      [Alpha] "alpha"
+      [Ωmega] "omega"
+      [Δelta] "delta"
+
+io::out $ describe_greek(g1)
+io::out $ describe_greek(g2)
+
+// Test Unicode identifier in Dva
+π = 314
+io::out $ π
