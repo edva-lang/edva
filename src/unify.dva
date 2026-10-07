@@ -641,12 +641,7 @@ unify_ram = ctx, r1, r2 =>
 
 unify_array: Ctx, UArray, UArray => <>
 unify_array = ctx, a1, a2 =>
-   a1.count != a2.count
-      |
-         add_error(ctx, 3084, "Array size mismatch: " +
-            str::from_int(a1.count) + " vs " + str::from_int(a2.count))
-         <->
-      | unify(ctx, a1.elem, a2.elem)
+   unify(ctx, a1.elem, a2.elem)
 
 unify_map: Ctx, UMap, UMap => <>
 unify_map = ctx, m1, m2 =>

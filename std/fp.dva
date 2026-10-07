@@ -67,6 +67,62 @@
             | out += v
       out
 
+   // reject: inverse of filter — remove elements satisfying pred.
+   reject: #! E: Type, #! T: Type, (E => <>), T => T
+   reject = pred, xs =>
+      out = T
+      xs @ x =>
+         !pred(x)
+            | out += x
+      out
+
+   // reduce / fold: fold collection from left with an initial accumulator value.
+   // Safe on empty collections (returns init).
+   reduce: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => Acc
+   reduce = f, init, xs =>
+      acc' = init
+      xs @ x =>
+         acc' = f(acc', x)
+      acc'
+
+   fold: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => Acc
+   fold = f, init, xs =>
+      acc' = init
+      xs @ x =>
+         acc' = f(acc', x)
+      acc'
+
+   // scan: running accumulation from left, emitting initial and each
+   // intermediate accumulator state into a growable array.
+   scan: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => (Acc){}
+   scan = f, init, xs =>
+      out = Acc{}
+      acc' = init
+      out += acc'
+      xs @ x =>
+         acc' = f(acc', x)
+         out += acc'
+      out
+
+   // reverse: return a new container with elements in reversed order.
+   reverse: #! E: Type, #! T: Type, T => T
+   reverse = xs =>
+      out = T
+      n = ?xs
+      0..n @ i =>
+         idx = n - 1 - i
+         out += (xs(idx) | _ | E)
+      out
+
+   // flatten: concatenate an array of arrays into a single-level array.
+   flatten: #! E: Type, ((E){}){} => (E){}
+   flatten = xss =>
+      out = E{}
+      xss @ sub =>
+         sub @ x =>
+            out += x
+      out
+
    // find: search for the first element satisfying pred, returning < E | >.
    find: #! E: Type, #! T: Type, (E => <>), T => < E | >
    find = pred, xs =>

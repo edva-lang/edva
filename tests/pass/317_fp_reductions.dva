@@ -1,0 +1,103 @@
+// Comprehensive test for std/fp reductions & utilities (Issue #116)
+#use(import) fp
+#use io
+#use str
+
+add: Int, Int => Int
+add = a, b => a + b
+
+mul: Int, Int => Int
+mul = a, b => a * b
+
+is_even: Int => <>
+is_even = n => n % 2 == 0
+
+is_empty_str: String => <>
+is_empty_str = s => ?s == 0
+
+concat: String, String => String
+concat = acc, s => acc + s
+
+// 1. reduce / fold
+nums = Int{}
+nums += 1
+nums += 2
+nums += 3
+nums += 4
+nums += 5
+
+io::out $ "sum=" + str::from_int(reduce(add, 0, nums))
+io::out $ "prod=" + str::from_int(fold(mul, 1, nums))
+
+empty_nums = Int{}
+io::out $ "empty_sum=" + str::from_int(reduce(add, 99, empty_nums))
+
+words = String{}
+words += "hello"
+words += " "
+words += "world"
+io::out $ "joined=" + reduce(concat, "", words)
+
+// reduce on record
+rec = (10, 20, 30)
+io::out $ "rec_sum=" + str::from_int(reduce(add, 0, rec))
+
+// 2. reject
+odds = reject(is_even, nums)
+io::out $ "odds_len=" + str::from_int(?odds)
+odds @ x =>
+   io::out $ "odd=" + str::from_int(x)
+
+all_even = Int{}
+all_even += 2
+all_even += 4
+rej_all = reject(is_even, all_even)
+io::out $ "rej_all_len=" + str::from_int(?rej_all)
+
+// 3. scan
+running = scan(add, 0, nums)
+io::out $ "running_len=" + str::from_int(?running)
+running @ s =>
+   io::out $ "scan=" + str::from_int(s)
+
+empty_scan = scan(add, 42, empty_nums)
+io::out $ "empty_scan_len=" + str::from_int(?empty_scan)
+io::out $ "empty_scan_val=" + str::from_int(empty_scan(0) | _ | 0)
+
+// 4. reverse
+rev = reverse(nums)
+io::out $ "rev_len=" + str::from_int(?rev)
+rev @ r =>
+   io::out $ "rev=" + str::from_int(r)
+
+empty_rev = reverse(empty_nums)
+io::out $ "empty_rev_len=" + str::from_int(?empty_rev)
+
+single = Int{}
+single += 77
+rev_single = reverse(single)
+io::out $ "rev_single=" + str::from_int(rev_single(0) | _ | 0)
+
+// 5. flatten
+xss = (Int{}){}
+r1 = Int{}
+r1 += 10
+r1 += 20
+xss += r1
+
+r2 = Int{}
+xss += r2
+
+r3 = Int{}
+r3 += 30
+r3 += 40
+xss += r3
+
+flat = flatten(xss)
+io::out $ "flat_len=" + str::from_int(?flat)
+flat @ f =>
+   io::out $ "flat=" + str::from_int(f)
+
+empty_xss = (Int{}){}
+empty_flat = flatten(empty_xss)
+io::out $ "empty_flat_len=" + str::from_int(?empty_flat)
