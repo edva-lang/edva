@@ -2,14 +2,14 @@
 meta:
   audience: "Edva developers using functional patterns"
   status: "current reference"
-  audited: "c17e2aa"
-  evidence: "`std/fp.dva`, `tests/pass/302_user_fp_names.dva`"
+  audited: "master"
+  evidence: "`std/fp.dva`, `tests/pass/317_fp_reductions.dva`, `tests/pass/318_fp_slicing.dva`, `tests/pass/319_fp_zip.dva`, `tests/pass/320_fp_predicates.dva`, `tests/pass/321_fp_map_generalized.dva`"
 ---
 
 # `fp` standard library
 
 The `fp` module provides generic higher-order combinators, function composition utilities,
-and functional collection helpers.
+and functional collection helpers adapted to Dva's zero-overhead, type-erased execution model.
 
 ```dva
 #use fp
@@ -17,36 +17,121 @@ and functional collection helpers.
 #use(import) fp
 ```
 
-## Function combinators
+## Function application & composition
 
 | Function | Signature | Description |
 |---|---|---|
-| `fp::apply` | `(T => U), T => U` | Applies function `f` to argument `x` (`f $ x`) |
-| `fp::apply2` | `(T, U => V), T, U => V` | Applies binary function `f(a, b)` |
-| `fp::twice` | `(T => T), T => T` | Applies `f` twice: `f(f(x))` |
-| `fp::thrice` | `(T => T), T => T` | Applies `f` three times: `f(f(f(x)))` |
-| `fp::flip` | `(T, U => V), U, T => V` | Swaps the arguments of a binary function |
-| `fp::compose` | `(B => C), (A => B) => (A => C)` | Curried function composition: `f(g(x))` |
-| `fp::const` | `A => (B => A)` | Constant combinator: ignores second argument |
-| `fp::on` | `(T, T => V), (T => T), T, T => V` | Applies unary transform to both arguments before binary combination |
+| `apply` | `(T => U), T => U` | Applies function `f` to argument `x` (`f $ x`) |
+| `apply2` | `(T, U => V), T, U => V` | Applies binary function `f(a, b)` |
+| `apply3` | `(T, U, V => W), T, U, V => W` | Applies ternary function `f(a, b, c)` |
+| `twice` | `(T => T), T => T` | Applies `f` twice: `f(f(x))` |
+| `thrice` | `(T => T), T => T` | Applies `f` three times: `f(f(f(x)))` |
+| `flip` | `(T, U => V), U, T => V` | Swaps the arguments of a binary function: `f(b, a)` |
+| `compose` | `(B => C), (A => B) => (A => C)` | Curried right-to-left composition: `f(g(x))` |
+| `pipe` | `(A => B), (B => C) => (A => C)` | Curried left-to-right composition: `g(f(x))` |
+| `const` | `A => (B => A)` | Constant combinator: ignores second argument |
+| `on` | `(T, T => V), (T => T), T, T => V` | Applies unary transform to both arguments before binary combination |
+| `ident` | `T => T` | Identity function: returns argument unchanged |
+| `tap` | `T, (T => ()) => T` | Runs side-effect function on `v`, returning `v` unchanged |
 
 ```dva
-add_ten = fp::compose(x => x + 5, x => x + 5)
-result = add_ten(10) // 20
+inc: Int => Int
+inc = x => x + 1
+
+dbl: Int => Int
+dbl = x => x * 2
+
+pipeline = pipe(dbl, inc)
+result = pipeline(10) // 21
 ```
 
-## Collection combinators
+## Predicate combinators
 
-The collection combinators operate on homogeneous records and growable array types:
+| Function | Signature | Description |
+|---|---|---|
+| `complement` | `(T => <>) => (T => <>)` | Logical NOT of a predicate (`!pred(x)`) |
+| `both` | `(T => <>), (T => <>) => (T => <>)` | Logical AND of two predicates (`p1(x) && p2(x)`) |
+| `either_pred` | `(T => <>), (T => <>) => (T => <>)` | Logical OR of two predicates (`p1(x) \|\| p2(x)`) |
 
-| Function | Description |
-|---|---|
-| `fp::map(f, xs)` | Maps unary function `f` over each element of `xs` |
-| `fp::filter(p, xs)` | Returns elements satisfying predicate `p` |
-| `fp::foldl(f, init, xs)` | Left associative fold over elements |
-| `fp::foldr(f, init, xs)` | Right associative fold over elements |
-| `fp::any(p, xs)` | Checks if at least one element satisfies predicate `p` |
-| `fp::all(p, xs)` | Checks if all elements satisfy predicate `p` |
-| `fp::sum(xs)` | Calculates the numeric sum of elements |
-| `fp::product(xs)` | Calculates the numeric product of elements |
-| `fp::find(p, xs)` | Finds the first element satisfying predicate `p`, returning `RamPN` `< E | >` |
+```dva
+is_pos: Int => <>
+is_pos = n => n > 0
+
+is_even: Int => <>
+is_even = n => n % 2 == 0
+
+pos_even = both(is_pos, is_even)
+pos_even(4) // <+>
+pos_even(-2) // <->
+```
+
+## Collection transformations & reductions
+
+Collection combinators operate generically over growable arrays `(T){}`, slice views `(T[])`,
+and homogeneous records. All multi-argument collection combinators place the collection in
+the last parameter position, enabling functional application with `apply ($)`:
+
+| Function | Signature | Description |
+|---|---|---|
+| `map` | `(A => B), Coll => (B){}` | Applies `f` to each element, returning a new array |
+| `filter` | `(T => <>), Coll => Coll` | Keeps elements satisfying predicate `pred` |
+| `reject` | `(T => <>), Coll => Coll` | Inverse of `filter`: removes elements satisfying `pred` |
+| `reduce` | `(Acc, E => Acc), Acc, Coll => Acc` | Left fold with explicit initial value |
+| `fold` | `(Acc, E => Acc), Acc, Coll => Acc` | Alias to `reduce` |
+| `scan` | `(Acc, E => Acc), Acc, Coll => (Acc){}` | Running left reduction, emitting each intermediate accumulator |
+| `reverse` | `Coll => Coll` | Returns container with elements in reversed order |
+| `flatten` | `((E){}){} => (E){}` | Flattens a nested array of arrays into a single-level array |
+| `find` | `(E => <>), Coll => < E \| >` | Finds first element satisfying `pred`, returning `RamPN` |
+| `any` | `(E => <>), Coll => <>` | Checks if at least one element satisfies `pred` |
+
+```dva
+nums = Int{}
+nums += 1
+nums += 2
+nums += 3
+nums += 4
+
+sum = reduce(add, 0, nums) // 10
+odds = reject(is_even, nums) // [1, 3]
+running = scan(add, 0, nums) // [0, 1, 3, 6, 10]
+```
+
+## Slicing & sequence views
+
+Slicing operations return zero-copy slice views `(T[])` bounded by collection length `0..?xs`.
+Callers make an owned copy explicitly when independent storage is needed.
+
+| Function | Signature | Description |
+|---|---|---|
+| `take` | `Int, (T[]) => (T[])` | Slice view of first `n` elements (clamped to `0..?xs`) |
+| `drop` | `Int, (T[]) => (T[])` | Slice view omitting first `n` elements (clamped to `0..?xs`) |
+| `take_while` | `(T => <>), (T[]) => (T[])` | Slice view of leading elements where `pred` holds |
+| `drop_while` | `(T => <>), (T[]) => (T[])` | Slice view starting from the first non-matching element |
+| `partition` | `(T => <>), (T[]) => (passed: (T){}, rejected: (T){})` | Splits collection into passed and rejected arrays |
+| `sort` | `(T[]), (T, T => <>) => ()` | In-place insertion sort of slice view with comparison predicate |
+
+```dva
+sl = nums(..)
+first2 = take(2, sl)
+rest = drop(2, sl)
+split = partition(is_even, sl)
+```
+
+## Pairing & multi-collection combinators
+
+| Function | Signature | Description |
+|---|---|---|
+| `zip` | `(A[]), (B[]) => ((A, B)){}` | Pairs elements into 2-tuples until shorter collection ends |
+| `zip_with` | `(A, B => C), (A[]), (B[]) => (C){}` | Combines elements pairwise using `f` until shorter collection ends |
+
+```dva
+a = Int{}
+a += 1
+a += 2
+
+b = String{}
+b += "x"
+b += "y"
+
+pairs = zip(a(..), b(..)) // [(1, "x"), (2, "y")]
+```
