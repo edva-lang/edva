@@ -1703,6 +1703,15 @@ annotate_expr = ctx, env, expr =>
          ti = ast::TypeInfo(Prim, ast::ValueType(Builder))
          lay = layout::compute_layout(ctx, ut)
          tast::mk_typed_builder_new(cap_te, ut, ti, lay, 0, 0)
+      [ArrayCreate ac]
+         elem_ut = utype_from_ti_env(env, ac.elem_type)
+         elem_vt = unify::vt_from_utype(ctx, elem_ut)
+         real_cap = ac.cap < 1 | 16 | ac.cap
+         arr_ti = ast::TypeInfo(Array, (elem_vt, ac.elem_type, real_cap))
+         arr_ut = unify::mk_array(elem_ut, real_cap)
+         arr_lay = layout::compute_layout(ctx, arr_ut)
+         tast::mk_typed_expr(tast::TypedExprKind(ArrayNew, ac),
+            arr_ut, arr_ti, arr_lay, 0, 0)
       [NamedArg na]
          annotate_expr(ctx, env, na.val)
       [RawMemory rm]
@@ -4363,6 +4372,8 @@ refresh_typed_expr = ctx, te =>
             refresh_typed_expr(ctx, cy.1), refresh_target(ctx, cy.2), cy.3))
       [BuilderNew bn]
          tast::TypedExprKind(BuilderNew, refresh_typed_expr(ctx, bn))
+      [ArrayNew an]
+         tast::TypedExprKind(ArrayNew, an)
       [Copy cp]
          tast::TypedExprKind(Copy, refresh_typed_expr(ctx, cp))
       [RawMemory rm]

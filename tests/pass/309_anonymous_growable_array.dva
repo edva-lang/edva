@@ -76,4 +76,37 @@ flags: <>{}
 flags += <+>
 io::out $ (flags(0) | _ => 1 | 0)
 
+matrix: Int{}{}
+row: Int{}
+row += 999
+matrix += row
+r = matrix(0) | v => v | row
+io::out $ (r(0) | _ | _)
+
+// Expression constructors
+lit_arr = Int{}
+lit_arr += 111
+io::out $ ?lit_arr
+io::out $ (lit_arr(0) | _ | _)
+
+lit_arr32 = Int{32}
+lit_arr32 += 222
+io::out $ (lit_arr32(0) | _ | _)
+
+lit_parr = (Int){}
+lit_parr += 333
+io::out $ (lit_parr(0) | _ | _)
+
+lit_strs = String{}
+lit_strs += "anon"
+io::out $ (lit_strs(0) | _ | _)
+
+lit_mat = Int{}{}
+lit_row = Int{}
+lit_row += 777
+lit_mat += lit_row
+mr = lit_mat(0) | v => v | lit_row
+io::out $ (mr(0) | _ | _)
+
 io::out $ "OK"
+

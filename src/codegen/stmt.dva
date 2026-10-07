@@ -130,6 +130,7 @@ refs_name = e, name =>
          refs_name(esc.cycle, name) || refs_name(esc.branch, name)
       [RawMemory rm] refs_name(rm.addr, name)
       [BuilderCreate bc] refs_name(bc, name)
+      [ArrayCreate _] <->
       [Variant va] refs_name_exprs(va.args, name)
       [KeyAccess ka] refs_name(ka.target, name) || refs_name(ka.key, name)
       [Range r]
@@ -2015,6 +2016,7 @@ infer_ret = e, params, ptypes =>
       [Fn f] ast::ValueType(Fn)
       [Record _] ast::ValueType(Record)
       [BuilderCreate _] ast::ValueType(Builder)
+      [ArrayCreate _] ast::ValueType(Array)
       [Var v] param_vt(v, params, ptypes)
       [Choice c]
          ct = types::ctfe_eval_type_choice_simple(c)
@@ -2567,6 +2569,7 @@ fn_ret_var_override_target = cg, body, target, cur =>
          fn_ret_var_override_target(cg, body, fn_last_expr(target), cur)
       [Record _] ast::ValueType(Record)
       [BuilderCreate _] ast::ValueType(Builder)
+      [ArrayCreate _] ast::ValueType(Array)
       [Choice c]
          ?c.branches > 0
             | fn_ret_choice_override(cg, body, c, cur)
@@ -2609,7 +2612,15 @@ fn_stmt_array_anno: types::Cg, ast::Expr, String => <>
 fn_stmt_array_anno = cg, e, v =>
    e
       [Assign t]
-         (t.0 == v) && (is_fwd_anno(t)) && (typedef_is_array(cg, t.7) || (t.8 [Array _]))
+         t.0 == v
+            |
+               t.5
+                  [ArrayCreate _] <+>
+                  |
+                     is_fwd_anno(t)
+                        | typedef_is_array(cg, t.7) || (t.8 [Array _])
+                        | <->
+            | <->
       | <->
 
 fn_body_array_dtype: ast::Expr, String => String
@@ -2624,11 +2635,17 @@ fn_body_array_elem_vt_at = stmts, v, i, n =>
       |
          e = stmts(i)!!
          e [Assign t]
-            ((t.0 == v) && is_fwd_anno(t))
+            (t.0 == v)
                |
-                  t.8
-                     [Array a] a.0
-                     | fn_body_array_elem_vt_at(stmts, v, i + 1, n)
+                  t.5
+                     [ArrayCreate ac] types::vt_from_ti(ac.elem_type)
+                     |
+                        is_fwd_anno(t)
+                           |
+                              t.8
+                                 [Array a] a.0
+                                 | fn_body_array_elem_vt_at(stmts, v, i + 1, n)
+                           | fn_body_array_elem_vt_at(stmts, v, i + 1, n)
                | fn_body_array_elem_vt_at(stmts, v, i + 1, n)
          | fn_body_array_elem_vt_at(stmts, v, i + 1, n)
 
@@ -2644,8 +2661,14 @@ fn_body_array_dtype_at = stmts, v, i, n =>
       |
          e = stmts(i)!!
          e [Assign t]
-            ((t.0 == v) && is_fwd_anno(t))
-               | t.7
+            (t.0 == v)
+               |
+                  is_fwd_anno(t)
+                     | t.7
+                     |
+                        t.5
+                           [ArrayCreate _] "#arr_" + t.0
+                           | fn_body_array_dtype_at(stmts, v, i + 1, n)
                | fn_body_array_dtype_at(stmts, v, i + 1, n)
          | fn_body_array_dtype_at(stmts, v, i + 1, n)
 
@@ -5475,7 +5498,7 @@ tast_bin_has_arena_alloc = cg, op, lhs, rhs, depth =>
 tast_expr_has_arena_alloc_d: types::Cg, tast::TypedExpr, Int => <>
 tast_expr_has_arena_alloc_d = cg, te, depth =>
    te.kind
-      [Record, MapLiteral, BuilderNew, Copy, Lambda, Spawn] <+>
+      [Record, MapLiteral, BuilderNew, ArrayNew, Copy, Lambda, Spawn] <+>
       [Bin b]
          tast_bin_has_arena_alloc(cg, b.0, b.1, b.2, depth)
       [Call c]

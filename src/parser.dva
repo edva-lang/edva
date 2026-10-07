@@ -1891,6 +1891,7 @@ has_free_underscore = e =>
       [TypeCast t] has_free_underscore(t.expr)
       [Copy e] has_free_underscore(e)
       [BuilderCreate e] has_free_underscore(e)
+      [ArrayCreate _] <->
       [CompileTime t] has_free_underscore(t.expr)
       [Spawn t]
          has_free_underscore(t.call.fn_target) ||
@@ -3229,16 +3230,20 @@ add_type = lst, name, ti =>
 mk_tp: ast::ValueType, ast::TypeInfo, <> => (ast::ValueType, ast::TypeInfo, <>)
 mk_tp = vt, ti, ok => (vt, ti, ok)
 
+parse_type_suffixes: Parser,
+   (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
+parse_type_suffixes = p, at =>
+   p.curr.kind
+      [LBrace]
+         arr = parse_array_cap_and_close(p, at)
+         parse_type_suffixes(p, arr)
+      | parse_type_map(p, at)
+
 // The full type: the atom, optional '{}' array suffix, then a '^' map continuation.
 parse_type: Parser => (ast::ValueType, ast::TypeInfo, <>)
 parse_type = p =>
    at = parse_type_atom(p)
-   !at.2 | (at.0, at.1, <->) |
-      p.curr.kind
-         [LBrace]
-            arr = parse_array_cap_and_close(p, at)
-            parse_type_map(p, arr)
-         | parse_type_map(p, at)
+   !at.2 | (at.0, at.1, <->) | parse_type_suffixes(p, at)
 
 parse_type_map: Parser, (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
 parse_type_map = p, at =>
@@ -3874,7 +3879,10 @@ pp_write = p, lhs =>
          parse_postfix_calls(p, lhs)
             | c =>
                p.curr.kind
-                  [LBrace] parse_postfix_repetition(p, c)
+                  [LBrace]
+                     parse_postfix_repetition(p, c)
+                        | rc => pp_postfix(p, rc)
+                        | <-->
                   |
                      p.curr.text
                         ["=", ":="] parse_finish_assignment(p, c)
@@ -3888,7 +3896,12 @@ pp_postfix: Parser, ast::Expr => <ast::Expr|>
 pp_postfix = p, lhs =>
    parse_postfix_calls(p, lhs)
       | c =>
-         p.curr.kind [LBrace] parse_postfix_repetition(p, c) | <+ c ->
+         p.curr.kind
+            [LBrace]
+               parse_postfix_repetition(p, c)
+                  | rc => pp_postfix(p, rc)
+                  | <-->
+            | <+ c ->
       | <-->
 
 // Consumes trailing '(...)' postfix call lists on a completed expression.
@@ -4006,39 +4019,111 @@ args_loop = p, args =>
             | <-->
       | <+ args ->
 
+// Resolves an expression that represents a type name or type constructor into
+// TypeInfo, for anonymous array creation (e.g. "Int{}", "(Int){}", "matrix{}").
+expr_to_type_info: Parser, ast::Expr => <ast::TypeInfo|>
+expr_to_type_info = p, e =>
+   e
+      [Var name]
+         name == "Void" || name == "void"
+            | <-->
+            |
+               pr = parse_dva_type_name(name)
+               pr
+                  | vt => <+ ast::TypeInfo(Prim, vt) ->
+                  |
+                     lt = lookup_type(p.user_types, name)
+                     lt
+                        | _ => <+ ast::TypeInfo(TypeVar, name) ->
+                        |
+                           ct_scope_has(p.ct_scope, name)
+                              | <+ ast::TypeInfo(TypeVar, name) ->
+                              |
+                                 name_is_upper(name)
+                                    | <+ ast::TypeInfo(TypeVar, name) ->
+                                    | <-->
+      [Member m]
+         m.is_module_access
+            |
+               m.target
+                  [Var mod]
+                     qual = mod + "::" + m.field_name
+                     <+ ast::TypeInfo(TypeVar, qual) ->
+                  | <-->
+            | <-->
+      [ArrayCreate ac]
+         real_cap = ac.cap < 1 | 16 | ac.cap
+         elem_ti = ac.elem_type
+         elem_vt = type_info_value_type(elem_ti)
+         <+ ast::TypeInfo(Array, (elem_vt, elem_ti, real_cap)) ->
+      | <-->
+
 // "expr {N}" — postfix repetition: a record of N copies of expr.
+// When expr is a type ("T{}", "(T){}", "T{cap}"), this parses an anonymous
+// growable array constructor instead.
 parse_postfix_repetition: Parser, ast::Expr => <ast::Expr|>
 parse_postfix_repetition = p, lhs =>
+   has_lead = p.curr.lead
    parser_advance(p)
    p.curr.kind
-      [Int]
-         n = rep_count(p)
-         n < 1
+      [RBrace]
+         ti_opt = expr_to_type_info(p, lhs)
+         ti_opt
+            | ti =>
+               parser_advance(p)
+               <+ ast::Expr(ArrayCreate, ast::ArrayCreateExpr((ti, 0))) ->
             |
-               parser_error(p, 2065, "Repetition count must be a positive " +
-                  "integer, got '" + p.curr.text + "'")
+               parser_error(p, 2048,
+                  "Expected an integer repetition count after the " +
+                  "opening brace, got '}'")
                <-->
-            |
-               n > 1000000
+      [Int]
+         ti_opt = !has_lead | expr_to_type_info(p, lhs) | <-->
+         ti_opt
+            | ti =>
+               cap = rep_count(p)
+               parser_advance(p)
+               p.curr.kind
+                  [RBrace]
+                     parser_advance(p)
+                     <+ ast::Expr(ArrayCreate,
+                        ast::ArrayCreateExpr((ti, cap))) ->
                   |
-                     parser_error(p, 2056, "Repetition count " +
-                        str::from_int(n) + " exceeds the maximum of 1000000")
+                     parser_error(p, 2049,
+                        "Expected '}' after array capacity, got '" +
+                        p.curr.text + "'")
+                     <-->
+            |
+               n = rep_count(p)
+               n < 1
+                  |
+                     parser_error(p, 2065,
+                        "Repetition count must be a positive integer, got '" +
+                        p.curr.text + "'")
                      <-->
                   |
-                     parser_advance(p)
-                     p.curr.kind
-                        [RBrace]
-                           parser_advance(p)
-                           <+ ast::Expr(Record, (ast::RecordExpr((
-                              repeat_fields(lhs, n), <+>)))) ->
+                     n > 1000000
                         |
-                           parser_error(p, 2049,
-                              "Expected '}' after repetition count, got '" +
-                              p.curr.text + "'")
+                           parser_error(p, 2056,
+                              "Repetition count " + str::from_int(n) +
+                              " exceeds the maximum of 1000000")
                            <-->
+                        |
+                           parser_advance(p)
+                           p.curr.kind
+                              [RBrace]
+                                 parser_advance(p)
+                                 <+ ast::Expr(Record, (ast::RecordExpr((
+                                    repeat_fields(lhs, n), <+>)))) ->
+                              |
+                                 parser_error(p, 2049,
+                                    "Expected '}' after repetition count, " +
+                                    "got '" + p.curr.text + "'")
+                                 <-->
       |
-         parser_error(p, 2048, "Expected an integer repetition count after " +
-            "the opening brace, got '" + p.curr.text + "'")
+         parser_error(p, 2048,
+            "Expected an integer repetition count after the " +
+            "opening brace, got '" + p.curr.text + "'")
          <-->
 
 rep_count: Parser => Int

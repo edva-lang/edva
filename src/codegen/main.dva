@@ -867,15 +867,17 @@ codegen_builder_freeze = cg, b, name =>
 // { tid, arena, fn_ptr, env_ptr, args, ret, has_error, error_ptr }.
 // --- growable arrays (phase 4.4 #3) -----------------------------------------
 
-// An empty growable array: an arena-backed { len, data, cap } with cap 16.
-codegen_array_create: types::Cg, String => Addr
-codegen_array_create = cg, name =>
+// An empty growable array: an arena-backed { len, data, cap } with specified cap (default 16).
+codegen_array_create_cap: types::Cg, Int, String => Addr
+codegen_array_create_cap = cg, cap_int, name =>
+   real_cap = cap_int < 1 | 16 | cap_int
    i64t = LLVMInt64Type!
    bt = builder_struct_type(cg)
    a = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 24, 0), name)
    zero = LLVMConstInt(i64t, 0, 0)
-   cap = LLVMConstInt(i64t, 16, 0)
-   buf = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 128, 0), "a.buf")
+   cap = LLVMConstInt(i64t, real_cap, 0)
+   buf_bytes = real_cap * 8
+   buf = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, buf_bytes, 0), "a.buf")
    LLVMBuildStore(cg.builder, zero,
       LLVMBuildStructGEP2(cg.builder, bt, a, 0, "a.len.gep"))
    LLVMBuildStore(cg.builder, buf,
@@ -883,6 +885,10 @@ codegen_array_create = cg, name =>
    LLVMBuildStore(cg.builder, cap,
       LLVMBuildStructGEP2(cg.builder, bt, a, 2, "a.cap.gep"))
    a
+
+codegen_array_create: types::Cg, String => Addr
+codegen_array_create = cg, name =>
+   codegen_array_create_cap(cg, 16, name)
 
 // Deep-copies a growable array on the current arena.
 codegen_array_copy: types::Cg, Addr, String => Addr
@@ -2890,6 +2896,9 @@ codegen_typed_eval = cg, te =>
          bv = codegen_typed_eval(cg, b)
          (codegen_builder_create(cg, bv.0, "builder.new"),
             ast::ValueType(Builder))
+      [ArrayNew an]
+         (codegen_array_create_cap(cg, an.cap, "a.new"),
+            ast::ValueType(Array))
       [RamConstruct rc]
          is_pos = rc.1
          niche = types::is_niche_ram_ti(cg, te.ti)

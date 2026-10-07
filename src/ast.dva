@@ -184,6 +184,7 @@
 #type MapPair (key: Expr, value: Expr)
 #type MapPairs (MapPair){}
 #type MapLiteralExpr (pairs: MapPairs)
+#type ArrayCreateExpr (elem_type: TypeInfo, cap: Int)
 
 // --- Expr ------------------------------------------------------------------
 
@@ -218,6 +219,7 @@
    Copy(Expr)
    SizeOf(SizeOfExpr)
    BuilderCreate(Expr)
+   ArrayCreate(ArrayCreateExpr)
    MapLiteral(MapLiteralExpr)
    CompileTime(CompileTimeExpr)
    Spawn(SpawnExpr)

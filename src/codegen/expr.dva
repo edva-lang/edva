@@ -483,6 +483,7 @@ expr_has_arena_alloc_d = cg, e, depth =>
       [Fn _] <+>
       [MapLiteral _] <+>
       [BuilderCreate _] <+>
+      [ArrayCreate _] <+>
       [Bin t] expr_has_arena_alloc_bin_d(cg, t, depth)
       [Call c] types::is_user_type(cg, c.fn_name) ||
          (depth < 3 && fn_has_arena_alloc(cg, c.fn_name, depth + 1)) ||
@@ -949,6 +950,8 @@ codegen_eval = cg, expr =>
       [BuilderCreate b]
          bv = codegen_eval(cg, b)
          (main::codegen_builder_create(cg, bv.0, "builder.create"), ast::ValueType(Builder))
+      [ArrayCreate a]
+         (main::codegen_array_create_cap(cg, a.cap, "a.new"), ast::ValueType(Array))
       [Exit t]
          runtime::codegen_emit_exit(cg, t)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))

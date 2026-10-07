@@ -89,6 +89,7 @@
    RamConstruct((unify::URamShape, <>, <TypedExpr|>))
    EnumConstruct((String, <TypedExpr|>))
    BuilderNew(TypedExpr)
+   ArrayNew(ast::ArrayCreateExpr)
    Copy(TypedExpr)
    RawMemory((TypedExpr, ast::ValueType))
    RawMemoryWrite((TypedExpr, TypedExpr))
