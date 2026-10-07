@@ -3034,7 +3034,8 @@ run_driver = _ =>
             "' collides with an existing directory; pass -o <name> to set output name."
          sys::exit(1)
    ll_stem = opts.outpath != "" | (opts.is_module | base_name | opts.outpath) | base_name
-   output_ll = ll_stem + ".ll"
+   has_ll_ext = ?ll_stem !< 3 && ll_stem(?ll_stem - 3..) == ".ll"
+   output_ll = has_ll_ext | ll_stem | ll_stem + ".ll"
    ir_only = opts.ir_only
    is_freestanding = (?opts.triple !< 14 &&
       opts.triple(..14) == "wasm32-unknown")
