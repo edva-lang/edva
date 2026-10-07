@@ -261,3 +261,29 @@
             | p += x
             | r += x
       (passed = p, rejected = r)
+
+   // --- pairing & multi-collection -----------------------------------------
+
+   // zip: pair elements of two slices into an array of 2-tuples until the
+   // shorter collection ends.
+   zip: #! A: Type, #! B: Type, (A[]), (B[]) => ((A, B)){}
+   zip = xs, ys =>
+      na = ?xs
+      nb = ?ys
+      limit = na < nb | na | nb
+      out = (A, B){}
+      0..limit @ i =>
+         out += (xs(i), ys(i))
+      out
+
+   // zip_with: combine elements of two slices pairwise using a combining
+   // function f until the shorter collection ends.
+   zip_with: #! A: Type, #! B: Type, #! C: Type, (A, B => C), (A[]), (B[]) => (C){}
+   zip_with = f, xs, ys =>
+      na = ?xs
+      nb = ?ys
+      limit = na < nb | na | nb
+      out = C{}
+      0..limit @ i =>
+         out += f(xs(i), ys(i))
+      out

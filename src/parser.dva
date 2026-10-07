@@ -4056,6 +4056,23 @@ expr_to_type_info = p, e =>
          elem_ti = ac.elem_type
          elem_vt = type_info_value_type(elem_ti)
          <+ ast::TypeInfo(Array, (elem_vt, elem_ti, real_cap)) ->
+      [Record r]
+         fts' = ast::FieldTypes()
+         all_ok' = <+>
+         ?r.fields @ i =>
+            f = r.fields(i) | _ | ast::RecordField((<->, "", ast::Expr(Var, "")))
+            fti = expr_to_type_info(p, f.val)
+            fti
+               | ti =>
+                  vt = type_info_value_type(ti)
+                  fts' += ast::RecordFieldType((f.name, vt, ti, <->,
+                     ast::Expr(Int, 0)))
+               |
+                  all_ok' = <->
+         all_ok'
+            | <+ ast::TypeInfo(Rec, (fts', <->, <->, ast::ValueType(Unknown),
+               ?fts', <->)) ->
+            | <-->
       | <-->
 
 // "expr {N}" — postfix repetition: a record of N copies of expr.

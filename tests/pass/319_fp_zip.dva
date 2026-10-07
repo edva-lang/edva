@@ -1,0 +1,69 @@
+// Comprehensive test for std/fp multi-collection pairing (Issue #118)
+#use(import) fp
+#use io
+#use str
+
+add: Int, Int => Int
+add = a, b => a + b
+
+fmt: Int, String => String
+fmt = n, s => str::from_int(n) + ":" + s
+
+a3 = Int{}
+a3 += 1
+a3 += 2
+a3 += 3
+
+b2 = String{}
+b2 += "alpha"
+b2 += "beta"
+
+c3 = Int{}
+c3 += 10
+c3 += 20
+c3 += 30
+
+empty_int = Int{}
+empty_str = String{}
+
+// 1. zip equal length
+z_eq = zip(a3(..), c3(..))
+io::out $ "z_eq_len=" + str::from_int(?z_eq)
+z_eq @ p =>
+   io::out $ "z_eq=" + str::from_int(p.0) + "," + str::from_int(p.1)
+
+// 2. zip first shorter
+z_short_b = zip(a3(..), b2(..))
+io::out $ "z_sb_len=" + str::from_int(?z_short_b)
+z_short_b @ p =>
+   io::out $ "z_sb=" + str::from_int(p.0) + "," + p.1
+
+// 3. zip second shorter
+z_short_a = zip(b2(..), a3(..))
+io::out $ "z_sa_len=" + str::from_int(?z_short_a)
+z_short_a @ p =>
+   io::out $ "z_sa=" + p.0 + "," + str::from_int(p.1)
+
+// 4. zip with empty
+z_empty1 = zip(empty_int(..), b2(..))
+io::out $ "z_e1_len=" + str::from_int(?z_empty1)
+
+z_empty2 = zip(a3(..), empty_str(..))
+io::out $ "z_e2_len=" + str::from_int(?z_empty2)
+
+z_empty_both = zip(empty_int(..), empty_str(..))
+io::out $ "z_eb_len=" + str::from_int(?z_empty_both)
+
+// 5. zip_with
+sums = zip_with(add, a3(..), c3(..))
+io::out $ "sums_len=" + str::from_int(?sums)
+sums @ s =>
+   io::out $ "sum=" + str::from_int(s)
+
+fmts = zip_with(fmt, a3(..), b2(..))
+io::out $ "fmts_len=" + str::from_int(?fmts)
+fmts @ s =>
+   io::out $ "fmt=" + s
+
+zw_empty = zip_with(add, empty_int(..), c3(..))
+io::out $ "zw_empty_len=" + str::from_int(?zw_empty)
