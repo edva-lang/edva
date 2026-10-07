@@ -131,7 +131,7 @@ truth; the unified operator table with operand and result types is in §3.3):
 | sequence | 20 | 30 | `;` | left |
 | apply | 30 | 30 | `$` `$:` | right |
 | feed | 40 | 50 | `$>` `$>>` | left |
-| choice | 50 | 60 | `|` `[pattern]` `!|` | left |
+| choice | 50 | 60 | `|` `[pattern]` `!|` `|->` `|+>` `|-->` `|++>` | left |
 | assignment | 60 | 50 | `=` `:=` `+=` `::=` | right |
 | range | 70 | 80 | `..` | left |
 | logical or | 80 | 90 | `||` | left |

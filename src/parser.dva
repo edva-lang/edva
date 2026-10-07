@@ -105,7 +105,10 @@ token_is_op: lexer::Tok, String => <>
 token_is_op = t, text => tok_is_op(t) && t.text == text
 
 token_is_pipe: lexer::Tok => <>
-token_is_pipe = t => tok_is_op(t) && (t.text == "|" || t.text == "!|")
+token_is_pipe = t =>
+   tok_is_op(t) && (t.text == "|" || t.text == "!|" ||
+      t.text == "|->" || t.text == "|+>" ||
+      t.text == "|-->" || t.text == "|++>")
 
 // Whether an operator text already has a meaning: a built-in binary operator
 // (the generated bin_info table) or one of the special token forms (ram
@@ -120,7 +123,7 @@ op_is_reserved = text =>
             ["<+", "<-", "<+>", "<->", "<++>", "<-->", "<>", "+>", "->",
             "-->", "--^", "--|", ">--", "@", "[@",
             "@", "^", "^?", "?", "!", "*", "&", "=>",
-            "!=>", "|", "$:"]
+            "!=>", "|", "$:", "|->", "|+>", "|-->", "|++>"]
 
 user_op_lookup: (UserOpEntry){}, String => (found': <>, lbp': Int, rbp': Int)
 user_op_lookup = lst, text =>
@@ -302,7 +305,7 @@ parse_choice = p =>
    p.curr.kind
       [LBracket] choice_resume(p, ast::Expr(Var, "_"))
       |
-         token_is_op(p.curr, "|")
+         token_is_pipe(p.curr)
             | choice_resume(p, ast::Expr(Var, "_"))
             |
                parse_range(p)
@@ -4931,7 +4934,7 @@ choice_cont_step = p, brs, entry_indent, branch_indent, peek =>
 
 choice_cont_loop: Parser, (ParsedBranch){}, Int, Int => <(ParsedBranch){}|>
 choice_cont_loop = p, brs, entry_indent, branch_indent =>
-   p.fn_depth > 0 && token_is_op(p.curr, "|")
+   p.fn_depth > 0 && token_is_pipe(p.curr)
       | <+ brs ->
       |
          peek = choice_peek_pipe(p, entry_indent)
@@ -4958,6 +4961,18 @@ check_redundant_flag_pb = p, brs, bd =>
                   | <->
             | <->
       | <->
+
+mk_ram_return: Parser, String => ast::Expr
+mk_ram_return = p, text =>
+   line = p.curr.line
+   col = p.curr.col
+   tag = text
+      ["|->"]  ast::Tag(Negative)
+      ["|+>"]  ast::Tag(Positive)
+      ["|-->"] ast::Tag(Noth)
+      |        ast::Tag(Succ)
+   val = ast::Expr(Variant, (tag, ast::Exprs()))
+   ast::Expr(Return, (ast::ReturnExpr((<+>, val, line, col))))
 
 choice_step: Parser, (ParsedBranch){}, <> => <(ParsedBranch){}|>
 choice_step = p, brs, saw_sep =>
@@ -5022,6 +5037,11 @@ choice_step = p, brs, saw_sep =>
                               mk_branch(bd)))
                            <+ brs ->
                         | <-->
+            ["|->", "|+>", "|-->", "|++>"]
+               bd = mk_ram_return(p, p.curr.text)
+               parser_advance(p)
+               brs += ParsedBranch((pat_wildcard(), <->, mk_branch(bd)))
+               <+ brs ->
             | <-->
 
 expr_is_pos_flag: ast::Expr => <>
@@ -5327,6 +5347,11 @@ choice_same_line_step = p, brs =>
                               mk_branch(bd)))
                            <+ brs ->
                         | <-->
+            ["|->", "|+>", "|-->", "|++>"]
+               bd = mk_ram_return(p, p.curr.text)
+               parser_advance(p)
+               brs += ParsedBranch((pat_wildcard(), <->, mk_branch(bd)))
+               <+ brs ->
             | <-->
 
 choice_same_line_loop: Parser, (ParsedBranch){} => <(ParsedBranch){}|>

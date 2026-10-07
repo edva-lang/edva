@@ -526,6 +526,34 @@ scan_op = lx, start, line, col =>
       lx.col = col + 1
       --| mktok(lx, TokKind(Op), start, 1, line, col, "!")
 
+   is_ret_noth_split = i' - start > 4 && lx.src(start) == '|' &&
+      lx.src(start + 1) == '-' && lx.src(start + 2) == '-' && lx.src(start + 3) == '>'
+   is_ret_noth_split |
+      lx.pos = start + 4
+      lx.col = col + 4
+      --| mktok(lx, TokKind(Op), start, 4, line, col, "|-->")
+
+   is_ret_succ_split = i' - start > 4 && lx.src(start) == '|' &&
+      lx.src(start + 1) == '+' && lx.src(start + 2) == '+' && lx.src(start + 3) == '>'
+   is_ret_succ_split |
+      lx.pos = start + 4
+      lx.col = col + 4
+      --| mktok(lx, TokKind(Op), start, 4, line, col, "|++>")
+
+   is_ret_neg_split = i' - start > 3 && lx.src(start) == '|' &&
+      lx.src(start + 1) == '-' && lx.src(start + 2) == '>'
+   is_ret_neg_split |
+      lx.pos = start + 3
+      lx.col = col + 3
+      --| mktok(lx, TokKind(Op), start, 3, line, col, "|->")
+
+   is_ret_pos_split = i' - start > 3 && lx.src(start) == '|' &&
+      lx.src(start + 1) == '+' && lx.src(start + 2) == '>'
+   is_ret_pos_split |
+      lx.pos = start + 3
+      lx.col = col + 3
+      --| mktok(lx, TokKind(Op), start, 3, line, col, "|+>")
+
    mktok(lx, TokKind(Op), start, i' - start, line, col, lx.src(start..i'))
 
 // --- strings / runes / raw strings ----------------------------------------

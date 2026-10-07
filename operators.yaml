@@ -274,6 +274,38 @@ operators:
     operands: "ram, branch"
     result: "the second branch's value"
     desc: "skip-first choice sugar: X !| Y == X | (void) | Y; the void first slot matches and yields nothing, then Y parses as a plain '|' branch."
+  - symbol: "|->"
+    tier: choice
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "ram"
+    result: "<-> (early return)"
+    desc: "early return negative unit ram sugar: 'cond |->' desugars to 'cond | --| <->'."
+  - symbol: "|+>"
+    tier: choice
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "ram"
+    result: "<+> (early return)"
+    desc: "early return positive unit ram sugar: 'cond |+>' desugars to 'cond | --| <+>'."
+  - symbol: "|-->"
+    tier: choice
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "ram"
+    result: "<--> (early return)"
+    desc: "early return noth unit ram sugar: 'cond |-->' desugars to 'cond | --| <-->'."
+  - symbol: "|++>"
+    tier: choice
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "ram"
+    result: "<++> (early return)"
+    desc: "early return succ unit ram sugar: 'cond |++>' desugars to 'cond | --| <++>'."
 
   # ---- assignment (tier 4) ------------------------------------------------
   - symbol: "="

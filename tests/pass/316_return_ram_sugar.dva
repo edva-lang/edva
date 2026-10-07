@@ -1,0 +1,89 @@
+#use io
+
+// 1. |-> returning <-> (RamNN)
+check_neg: Int => <>
+check_neg = x =>
+   x < 0 |->
+   <+>
+
+// 2. |+> returning <+> (RamNN)
+check_pos: Int => <>
+check_pos = x =>
+   x > 0 |+>
+   <->
+
+// 3. |--> returning <--> (RamPN)
+find_positive: Int => <Int|>
+find_positive = x =>
+   x !> 0 |-->
+   <+ x ->
+
+// 4. |++> returning <++> (RamNP)
+ensure_success: Int => <|Int>
+ensure_success = x =>
+   x == 0 |++>
+   <- x +>
+
+// 5. Multiline branch
+multiline_test: Int => <>
+multiline_test = x =>
+   x < 0
+      |->
+      | <+>
+
+// 6. Same-line branch
+same_line_test: Int => <>
+same_line_test = x =>
+   x < 0 |-> | <+>
+
+// 7. Loop with early return sugar
+find_negative: (Int){} => <>
+find_negative = arr =>
+   ?arr @ i =>
+      val = arr(i) | _ | 0
+      val < 0 |->
+   <+>
+
+// Run tests
+io::out $ check_neg(-5) | "pos" | "neg"
+io::out $ check_neg(5) | "pos" | "neg"
+
+io::out $ check_pos(5) | "pos" | "neg"
+io::out $ check_pos(-5) | "pos" | "neg"
+
+res1 = find_positive(42)
+res1
+   | v => io::out $ "found: " + str::from_int(v)
+   | io::out $ "not found"
+
+res2 = find_positive(-1)
+res2
+   | v => io::out $ "found: " + str::from_int(v)
+   | io::out $ "not found"
+
+r_succ = ensure_success(0)
+r_succ
+   | io::out $ "succ"
+   | e => io::out $ "err: " + str::from_int(e)
+
+r_err = ensure_success(99)
+r_err
+   | io::out $ "succ"
+   | e => io::out $ "err: " + str::from_int(e)
+
+io::out $ multiline_test(-2) | "pos" | "neg"
+io::out $ multiline_test(2) | "pos" | "neg"
+
+io::out $ same_line_test(-3) | "pos" | "neg"
+io::out $ same_line_test(3) | "pos" | "neg"
+
+nums: (Int){}
+nums += 1
+nums += -4
+nums += 3
+io::out $ find_negative(nums) | "no neg" | "has neg"
+
+nums2: (Int){}
+nums2 += 1
+nums2 += 2
+io::out $ find_negative(nums2) | "no neg" | "has neg"
