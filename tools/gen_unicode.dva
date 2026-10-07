@@ -157,7 +157,8 @@ main = _ =>
          0
       |
          io::out $ "Parsing UnicodeData.txt in Dva..."
-         raw = libc::malloc(0x110000)
+         raw_buf = {0x110000}
+         raw = &raw_buf
          libc::memset(raw, 29, 0x110000)
 
          len = ?src
@@ -218,7 +219,8 @@ main = _ =>
 
          io::out $ "Building and deduplicating pages..."
          stage1 = Ints()
-         unique_pages_mem = libc::malloc(300 * 256)
+         pages_buf = {300 * 256}
+         unique_pages_mem = &pages_buf
          num_unique' = 0
 
          4352 @ p =>
@@ -239,7 +241,6 @@ main = _ =>
                   memcpy(unique_pages_mem + found' * 256, page_ptr, 256)
                   stage1 += found'
 
-         libc::free(raw)
          io::out $ "Unique pages: " + str::from_int(num_unique')
          io::out $ "Emitting std/unicode.dva..."
          out = {500000}
@@ -337,7 +338,6 @@ main = _ =>
             wcol' = wcol' + ?wtok
 
          out += "\n)\n\n"
-         libc::free(unique_pages_mem)
          out += "#pragma number default\n\n"
 
          out += """
