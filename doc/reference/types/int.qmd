@@ -87,12 +87,12 @@ Bitwise manipulations operate directly on the binary representation:
 x = 0b1100
 y = 0b1010
 
-and_res = x & y    // 0b1000 (Bitwise AND)
-or_res  = x | y    // 0b1110 (Bitwise OR)
-xor_res = x ^ y    // 0b0110 (Bitwise XOR)
-not_res = ~x       // Bitwise NOT (one's complement)
-shl_res = x << 2   // 0b110000 (Shift left)
-shr_res = x >> 1   // Shift right (arithmetic on signed, logical on unsigned)
+and_res = x .&. y    // 0b1000 (Bitwise AND)
+or_res  = x .|. y    // 0b1110 (Bitwise OR)
+xor_res = x .^. y    // 0b0110 (Bitwise XOR)
+not_res = .!.x       // Bitwise NOT (one's complement)
+shl_res = x .<. 2    // 0b110000 (Shift left)
+shr_res = x .>. 1    // Shift right (arithmetic on signed, logical on unsigned)
 ```
 
 ### Comparison operators

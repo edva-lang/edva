@@ -103,6 +103,30 @@ The void first slot matches successfully on success and yields nothing, while th
 `_` payload extractor on the second slot unwraps the `Error` payload,
 aborting with an error diagnostic if the write fails.
 
+### Returning ram sugar
+
+When early returning a unit ramification from an enclosing function, Edva provides compact branch shortcuts:
+
+| Shortcut | Equivalent Full Syntax | Target Ramification |
+|---|---|---|
+| `cond \|->` | `cond \| --\| <->` | `RamNN` (`<>`) negative unit (`false`) |
+| `cond \|+>` | `cond \| --\| <+>` | `RamNN` (`<>`) positive unit (`true`) |
+| `cond \|-->` | `cond \| --\| <-->` | `RamPN` (`< T \| >`) negative absence unit |
+| `cond \|++>` | `cond \| --\| <++>` | `RamNP` (`< \| E >`) positive success unit |
+
+```dva
+// Guard checking with ram return sugar:
+validate_positive: Int => <Int|>
+validate_positive = n =>
+   n !> 0 |-->
+   <+ n ->
+
+is_valid: Int => <>
+is_valid = n =>
+   n < 0 |->
+   <+>
+```
+
 ## Cycles (`@`)
 
 Cycles iterate over counts, ranges, or collections without keywords:
@@ -117,7 +141,7 @@ Cycles iterate over counts, ranges, or collections without keywords:
 
 ### Symbolic cycle controls
 
-- `-->`: Breaks the innermost cycle immediately.
+- `-->`: Breaks the innermost cycle immediately. (Contrasts with `--|`, which early-returns from a function).
 - `--^`: Continues to the next iteration of the innermost cycle.
 - `-->N`: Multi-level break—breaks the `N`th enclosing cycle (`-->2` breaks outer).
 - `--^N`: Multi-level continue—continues the `N`th enclosing cycle.

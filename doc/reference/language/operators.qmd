@@ -20,20 +20,21 @@ Right Binding Power (RBP), associativity, and semantic groupings.
 | **2. sequence** | 20 | 30 | `;` | left | Statement sequencing within a single line |
 | **3. apply** | 30 | 30 | `$` `$:` | right | Infix argument application, trailing block attachment |
 | **4. feed** | 40 | 50 | `$>` `$>>` | left | Reverse application (prepend argument), monadic ram bind |
-| **5. choice** | 50 | 60 | `|` `[guard]` `!|` | left | Branching, pattern matching, write-or-panic |
+| **5. choice** | 50 | 60 | `|` `[guard]` `!|` `|->` `|+>` `|-->` `|++>` | left | Branching, pattern matching, write-or-panic, ram return sugar |
 | **6. assignment** | 60 | 50 | `=` `:=` `+=` `::=` | right | Binding initialization, builder append, global mutation |
 | **7. range** | 70 | 80 | `..` | left | Range construction, string and slice views |
 | **8. logical or** | 80 | 90 | `||` | left | Short-circuit logical OR |
 | **9. logical and** | 90 | 100 | `&&` | left | Short-circuit logical AND |
-| **10. bitwise or** | 100 | 110 | `.|.` | left | Bitwise OR (integer types only) |
-| **11. bitwise and** | 110 | 120 | `.&.` | left | Bitwise AND (integer types only) |
-| **12. comparison** | 120 | 130 | `<` `>` `==` `!=` `!<` `!>` | left (same-line) | Equality and relational comparisons |
-| **13. shift** | 130 | 140 | `.<.` `.>.` | left | Bitwise logical left and right shifts |
-| **14. addition** | 140 | 150 | `+` `-` | left | Arithmetic addition and subtraction |
-| **15. multiplication** | 150 | 160 | `*` `/` `%` | left | Arithmetic multiplication, division, and modulo |
-| **16. unary prefix** | 160 | 180 | `!` `+` `&` `++` `.!.` `~~` `?` `??` `-x` `#size` | right | Flag negation, freeze, address, copy, length |
-| **17. postfix / call** | 170 | 180 | `()` `.` `::` `: cast` `{N}` `@[...]` `!!` `--!` | left | Function call, member access, unwrap, propagate |
-| **18. primary** | 180 | 180 | literals, identifiers, `(...)` | left | Atomic primary expressions |
+| **10. bitwise or** | 100 | 105 | `.|.` | left | Bitwise OR (integer types only) |
+| **11. bitwise xor** | 105 | 110 | `.^.` | left | Bitwise XOR (integer types only) |
+| **12. bitwise and** | 110 | 120 | `.&.` | left | Bitwise AND (integer types only) |
+| **13. comparison** | 120 | 130 | `<` `>` `==` `!=` `!<` `!>` | left (same-line) | Equality and relational comparisons |
+| **14. shift** | 130 | 140 | `.<.` `.>.` | left | Bitwise logical left and right shifts |
+| **15. addition** | 140 | 150 | `+` `-` | left | Arithmetic addition and subtraction |
+| **16. multiplication** | 150 | 160 | `*` `/` `%` | left | Arithmetic multiplication, division, and modulo |
+| **17. unary prefix** | 160 | 180 | `!` `+` `&` `++` `.!.` `~~` `?` `??` `-x` `#size` | right | Flag negation, freeze, address, copy, length |
+| **18. postfix / call** | 170 | 180 | `()` `.` `::` `: cast` `{N}` `@[...]` `!!` `--!` | left | Function call, member access, unwrap, propagate |
+| **19. primary** | 180 | 180 | literals, identifiers, `(...)` | left | Atomic primary expressions |
 
 Notable precedence characteristics:
 
@@ -46,7 +47,9 @@ Notable precedence characteristics:
 - `=` binds an immutable name; a primed identifier is rebindable with `=`.
 - `+=` appends to a Builder in place.
 - `|` and `[guard]` form choices; `!|` selects a ram's negative branch.
+- `|->`, `|+>`, `|-->`, and `|++>` are syntactic shortcuts for early returning unit ramifications (`| --| <->`, `| --| <+>`, `| --| <-->`, `| --| <++>`).
 - `@` and `@@` iterate; `-->`, `--^`, and `>--` control cycle escape.
+- `--|` performs an early return from an enclosing function (`--| val` with a value, or bare `--|` for void functions).
 - `..` forms ranges, including string and slice views.
 
 ```dva
@@ -73,7 +76,7 @@ io::out $ 2 $> sum(3)
 ## Numeric, logical, and bitwise operators
 
 Arithmetic uses `+ - * / %`; shifts use `.<.` and `.>.`; bitwise operations
-use `.|.`, `.&.`, and `.!.`. Bitwise operators accept integerish values only.
+use `.|.`, `.^.`, `.&.`, and `.!.`. Bitwise operators accept integerish values only.
 Comparisons produce a flag. `&&` and `||` short-circuit; combining heap rams
 requires compatible winner layouts, while flags only combine with flags.
 

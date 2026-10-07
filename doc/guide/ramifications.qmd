@@ -69,9 +69,26 @@ res_val = ParseResult(<+ 100 +>)
 |:---|:---|:---|:---|
 | **Positional Match** | `r \| val => ... \| err => ...` | Match first slot then second slot | `res \| v => print_int(v) \| print("err")` |
 | **Unwrap or Abort** | `r!!` | Unwraps positive payload; aborts program on negative | `val = list(0)!!` |
+| **Propagate** | `r--!` | Unwraps positive payload inline, or early-returns negative ram from function | `val = parse(s)--!` |
 | **Fallible Discard** | `write !\| _` | Fallible discard: ignores void success, panics on failure | `array(i) = v !\| _` |
+| **Return Ram Sugar** | `cond \|->`, `\|+>`, `\|-->`, `\|++>` | Early-return unit ram shortcut (`--\| <->`, `<+>`, `<-->`, `<++>`) | `n < 0 \|->` |
 | **Monadic Bind** | `r $>> fn` | Unpacks positive payload into `fn`; propagates negative | `lookup(k) $>> parse_int $>> validate` |
-| **Polarity Test** | `<>(r)` | Discards payload, extracts `<+>` (1st) or `<->` (2nd) | `is_ok = <>(res)` |
+| **Polarity Test** | `<>(r)` / `!<>(r)` | Discards payload, extracts `<+>` (1st) or `<->` (2nd); `!<>` negates polarity | `is_ok = <>(res)` |
+
+### Postfix propagation with `--!`
+
+The `--!` postfix operator unwraps a positive payload inline, or immediately returns the negative ramification from the enclosing function:
+- On `RamPP <T | E>` and `RamPN <T | >`: unwraps payload `T`.
+- On `RamNP < | E>`: yields unit `()`.
+- On negative slot: early returns the negative ram from the enclosing function.
+
+### Return ram sugar in choices
+
+When guarding an early exit with a unit ramification, Edva provides compact branch shortcuts:
+- `cond |->`: sugar for `cond | --| <->` (returns `<->`)
+- `cond |+>`: sugar for `cond | --| <+>` (returns `<+>`)
+- `cond |-->`: sugar for `cond | --| <-->` (returns `<-->`)
+- `cond |++>`: sugar for `cond | --| <++>` (returns `<++>`)
 
 ### Monadic chaining with `$>>`
 

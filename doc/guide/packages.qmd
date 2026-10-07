@@ -107,18 +107,45 @@ Submodules inside a dependency are reachable with a slash:
 
 ## CLI workflows
 
-### Fetching and locking
+### Initializing a package (`init`)
+
+To scaffold a new package skeleton in a directory:
+
+```bash
+edva init [dir] [--name <name>]
+```
+
+Creates `edva.ccl`, `src/<name>.dva`, and `src/main.dva`. Fails with `E7020` if `edva.ccl` already exists.
+
+### Adding dependencies (`add`)
+
+To declare a new dependency in `edva.ccl` with automatic transactional resolution:
+
+```bash
+# Add local path dependency
+edva add math_lib --path ../math_lib
+
+# Add Git dependency (defaults to master branch if --rev omitted)
+edva add term --git https://github.com/edva-lang/term --rev v1.2.0
+
+# Add archive dependency
+edva add zlib --url https://example.com/zlib.tar.gz --hash <sha256>
+```
+
+If resolution or fetch fails, changes to `edva.ccl` are rolled back automatically (`E7021`).
+
+### Fetching and locking (`fetch`)
 
 To resolve dependencies, download Git/archive sources into the local content store, and write the lockfile:
 
 ```bash
-edva pkg fetch
+edva fetch
 ```
 
 To enforce CI reproducibility without altering `edva.lock.ccl`:
 
 ```bash
-edva pkg fetch --locked
+edva fetch --locked
 ```
 
 If `edva.ccl` was modified without updating the lockfile, `--locked` fails with `E7007`.
@@ -126,21 +153,21 @@ If `edva.ccl` was modified without updating the lockfile, `--locked` fails with 
 To run entirely offline using cached store artifacts:
 
 ```bash
-edva pkg fetch --offline
+edva fetch --offline
 ```
 
-### Building targets
+### Building targets (`build`)
 
 ```bash
-edva pkg build
+edva build [dir]
 ```
 
 Resolves and fetches dependencies if missing, then compiles `src/main.dva` into `./<name>`.
 
-### Running tests
+### Running tests (`test`)
 
 ```bash
-edva pkg test
+edva test [dir]
 ```
 
 Discovers all `tests/*.dva` files, compiles each test target, runs it, and reports results:
@@ -150,3 +177,50 @@ test test_feature.dva ... ok
 test test_integration.dva ... ok
 2 passed, 0 failed
 ```
+
+### Updating dependencies (`update`)
+
+To selectively refresh moving Git branches or tags:
+
+```bash
+edva update term    # Refreshes only 'term'
+edva update         # Refreshes all moving pins
+```
+
+### Visualizing the dependency graph (`graph` / `tree`)
+
+```bash
+edva graph
+```
+
+Prints an ASCII tree of resolved package dependencies, source provenance, duplicate versions, and cycles.
+
+### Vendoring sources (`vendor`)
+
+To snapshot all external dependencies into a self-contained, air-gapped `vendor/` tree:
+
+```bash
+edva vendor
+```
+
+- Materializes dependencies under `vendor/<id>/` (stripped of `.git/` metadata).
+- Emits `vendor/vendor.ccl` recording origins and canonical tree hashes (`sha256-<hex>`).
+- Enables offline builds on air-gapped machines without touching the global cache:
+  ```bash
+  edva build --offline --locked
+  ```
+- Any modification to vendored files is detected during resolution (`E7005` tree hash mismatch).
+
+### Managing the compilation cache (`cache`)
+
+The compiler caches generated LLVM IR artifacts in `~/.cache/edva/ir/` to accelerate incremental builds:
+
+```bash
+edva cache dir      # Print cache directory path
+edva cache ls       # List cached IR files and sizes
+edva cache clean    # Evict cached LLVM IR objects
+```
+
+### Top-level vs `edva pkg` dispatch
+
+All package commands can be invoked either as top-level subcommands (`edva build`, `edva test`, `edva fetch`) or explicitly scoped under the package namespace (`edva pkg build`, `edva pkg test`, `edva pkg fetch`).

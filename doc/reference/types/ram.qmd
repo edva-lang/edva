@@ -117,13 +117,43 @@ fd = res!!
 arr(0) = 42 !| _
 ```
 
-### Flag extraction (`<>(r)`)
+### Flag extraction (`<>(r)` and `!<>(r)`)
 
-The constructor `<>(r)` discards any payload and extracts a pure boolean `Flag`:
+The constructor `<>(r)` discards any payload and extracts a pure boolean `Flag`. The spaceless negation `!<>(r)` negates the resulting flag directly:
 
 ```dva
 res: FileResult = <+ 10 +>
-is_ok = <>(res)    // <+>
+is_ok = <>(res)     // <+>
+is_err = !<>(res)   // <->
+```
+
+### Postfix propagate (`--!`)
+
+The `--!` operator unwraps the positive payload inline, or early-returns the negative ramification from the enclosing function:
+
+```dva
+read_data: String => <String | Error>
+read_data = path =>
+   fd = open_file(path)--!    // Returns early if open_file fails
+   <+ read_all(fd) +>
+```
+
+### Early return ram sugar
+
+Choices can early return unit ramifications using compact branch shortcuts:
+
+| Shortcut | Desugars to | Target Return Type |
+|---|---|---|
+| `cond \|->` | `cond \| --\| <->` | `RamNN` (`<>`) negative flag |
+| `cond \|+>` | `cond \| --\| <+>` | `RamNN` (`<>`) positive flag |
+| `cond \|-->` | `cond \| --\| <-->` | `RamPN` (`< T \| >`) negative absence unit |
+| `cond \|++>` | `cond \| --\| <++>` | `RamNP` (`< \| E >`) positive success unit |
+
+```dva
+check_limit: Int => <>
+check_limit = n =>
+   n < 0 |->
+   <+>
 ```
 
 ## Memory layout and ABI

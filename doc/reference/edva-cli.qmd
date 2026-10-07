@@ -45,18 +45,25 @@ you only need the generated LLVM IR. In the REPL, `:q` exits the session.
 ## Package management (`edva pkg`)
 
 ```text
+edva <init|add|fetch|build|test|update|graph|vendor|cache> [dir] [options]
 edva pkg <command> [dir] [options]
 ```
 
-`edva pkg` manages dependencies, lockfiles, targets, and test execution for packages containing an `edva.ccl` manifest.
+`edva pkg` manages dependencies, lockfiles, targets, and test execution for packages containing an `edva.ccl` manifest. All commands can also be invoked as top-level subcommands without the `pkg` prefix.
 
 ### Commands
 
 | Command | Description |
 |---|---|
-| `edva pkg fetch [dir]` | Resolve dependencies, fetch sources, verify content hashes, write `edva.lock.ccl`, and generate `.edva/imports.ccl`. |
-| `edva pkg build [dir]` | Fetch dependencies (if needed) and compile executable target `src/main.dva` into `./<name>`. |
-| `edva pkg test [dir]` | Fetch dependencies (if needed) and run every test target in `tests/*.dva`. |
+| `edva init [dir] [--name <name>]` | Initialize a new package skeleton with `edva.ccl`, `src/<name>.dva`, and `src/main.dva`. |
+| `edva add <alias> [source] [dir]` | Add a dependency to `edva.ccl` and resolve the graph transactionally (`--path`, `--git`, or `--url`). |
+| `edva fetch [dir]` | Resolve dependencies, fetch sources, verify content hashes, write `edva.lock.ccl`, and generate `.edva/imports.ccl`. |
+| `edva build [dir]` | Fetch dependencies (if needed) and compile executable target `src/main.dva` into `./<name>`. |
+| `edva test [dir]` | Fetch dependencies (if needed) and run every test target in `tests/*.dva`. |
+| `edva update [alias] [dir]` | Refresh moving branch/tag pins in `edva.lock.ccl` (selectively for `alias` or globally). |
+| `edva graph [dir]` / `edva tree` | Display the resolved dependency graph as an ASCII tree with source provenance. |
+| `edva vendor [dir]` | Materialize external dependencies into `<root>/vendor/` and generate `vendor/vendor.ccl` for offline builds. |
+| `edva cache <dir\|ls\|clean>` | Manage the LLVM IR compilation cache (`dir`: show path, `ls`: list entries, `clean`: evict cached objects). |
 
 ### Package options
 
@@ -65,7 +72,13 @@ edva pkg <command> [dir] [options]
 | `--locked` | Validate against `edva.lock.ccl` without updating or mutating it. |
 | `--offline` | Disallow network access; require all dependencies to be local or present in cache. |
 | `--store <dir>` | Path to content-addressed package store (default: `~/.cache/edva/store/`). |
+| `--cache <dir>` | Path to LLVM IR compilation cache directory (default: `~/.cache/edva/ir/`). |
 | `--git <exe>` | Path to git executable (default: `git`). |
+| `--name <name>` | Explicit package name overriding directory basename for `edva init`. |
+| `--path <path>` | Path source for `edva add`. |
+| `--rev <rev>` | Git revision/branch/tag for `edva add` (default: `master`). |
+| `--url <url>` | Archive download URL for `edva add`. |
+| `--hash <sha256>` | Expected SHA-256 archive checksum for `edva add`. |
 
 
 

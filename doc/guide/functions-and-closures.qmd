@@ -22,10 +22,26 @@ function used as a value needs a statically known signature. Edva does not
 attach a runtime signature to a function value and never defaults unknown
 parameter types to `Int`.
 
-A function returns the value of its last expression. There is no `return`
-keyword. If its last expression is an assignment or an inexhaustive statement
-choice, its result is Unit; declare that result as `()` in the function
-signature. `()` is a declaration-only type spelling, not an expression value.
+A function evaluates to the value of its last expression, or exits early using the `--|` return operator:
+
+- `--| value`: Early return with a value matching the function's annotated return type.
+- Bare `--|`: Early return from a void function (`=> ()`).
+- Ram sugar: `|->`, `|+>`, `|-->`, `|++>` provide compact branch shortcuts for returning unit ramifications (`<->`, `<+>`, `<-->`, `<++>`).
+
+There is no bare `return` keyword in Edva. If a function's last expression is an assignment or an inexhaustive statement choice without an early return, its result is Unit; declare that result as `()` in the function signature. `()` is a declaration-only type spelling, not an expression value.
+
+```dva
+clamp: Int, Int, Int => Int
+clamp = x, lo, hi =>
+   x < lo | --| lo
+   x > hi | --| hi
+   x
+
+find_positive: Int => <Int|>
+find_positive = x =>
+   x !> 0 |-->
+   <+ x ->
+```
 
 ## Closures
 
