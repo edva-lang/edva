@@ -1,0 +1,189 @@
+// src/diag.dva — centralized compiler diagnostic error messages (#114)
+
+#public
+
+E2010_colon_equals_retired: () => String
+E2010_colon_equals_retired = !=> "':=' is retired — use '=' with a prime suffix ('foo'') " +
+   "for mutable variables."
+
+E2024_bare_bar_position: () => String
+E2024_bare_bar_position = !=>
+   "Bare '|' is only allowed as the first branch (Left Value) or final " +
+   "branch (catch-all) in a choice expression."
+
+E2025_range_endpoint_whitespace: () => String
+E2025_range_endpoint_whitespace = !=> "Whitespace between range endpoint and '..' is forbidden."
+
+E2032_call_paren_whitespace: () => String
+E2032_call_paren_whitespace = !=> "Whitespace before call parenthesis is forbidden."
+
+E2037_params_parenthesized: () => String
+E2037_params_parenthesized = !=>
+   "Function parameters may not be parenthesized; write 'x, y =>' with no parentheses."
+
+E2039_expr_too_deep: () => String
+E2039_expr_too_deep = !=> "Expression nested too deeply"
+
+E2039_param_mutable_prefix: () => String
+E2039_param_mutable_prefix = !=>
+   "Function parameters cannot be mutable — remove prime suffix from '"
+
+E2093_assign_typed_load: () => String
+E2093_assign_typed_load = !=>
+   "Cannot assign to a typed load; write through the untyped '@[addr]' form instead."
+
+E2096_bar_before_guard: () => String
+E2096_bar_before_guard = !=>
+   "A '|' before a '[' guard is invalid — chain guarded branches adjacently."
+
+E2105_redundant_choice_tail: () => String
+E2105_redundant_choice_tail = !=> "Redundant choice tail '<+> | <->' is forbidden. " +
+   "Empty guard body '[guard]' already produces a bare flag."
+
+E2108_state_binding_target: () => String
+E2108_state_binding_target = !=>
+   "State binding operator '~~' requires a variable, member access, or indexed element target."
+
+E3003_choice_underscore_undefined: () => String
+E3003_choice_underscore_undefined = !=>
+   "Omitting a Choice/pattern branch's leading condition is only allowed when " +
+   "'_' is already defined in the enclosing scope (e.g. inside a '=> '-omitted-param " +
+   "lambda, or a cycle body). '_' is not defined here."
+
+E3008_not_invalid_type: () => String
+E3008_not_invalid_type = !=>
+   "Unary '!' cannot be applied to this type. Use Flag for logical NOT or '+' for Builder freeze."
+
+E3008_not_integer: () => String
+E3008_not_integer = !=> "Unary '!' cannot be applied to an integer. " +
+   "To create a Builder with capacity n, use the brace literal '{n}'."
+
+E3032_assign_void_var_prefix: () => String
+E3032_assign_void_var_prefix = !=> "Cannot assign Void expression to variable '"
+
+E3032_assign_void_elem_prefix: () => String
+E3032_assign_void_elem_prefix = !=> "Cannot assign Void expression to element of '"
+
+E3033_reassign_immutable_prefix: () => String
+E3033_reassign_immutable_prefix = !=> "Cannot re-assign immutable binding '"
+
+E3033_reassign_immutable_suffix: () => String
+E3033_reassign_immutable_suffix = !=> "'. Use a prime suffix ('"
+
+E3033_reassign_immutable_tail: () => String
+E3033_reassign_immutable_tail = !=> "'') for rebindable variables."
+
+reassign_immutable: String => String
+reassign_immutable = name =>
+   E3033_reassign_immutable_prefix! + name +
+   E3033_reassign_immutable_suffix! + name + E3033_reassign_immutable_tail!
+
+assign_void_variable: String => String
+assign_void_variable = name => E3032_assign_void_var_prefix! + name + "'."
+
+assign_void_element: String => String
+assign_void_element = name => E3032_assign_void_elem_prefix! + name + "'."
+
+whole_value_init: String => String
+whole_value_init = name =>
+   E3131_whole_val_init_prefix! + name + E3131_whole_val_init_suffix!
+
+record_default_missing: String, String => String
+record_default_missing = field, record =>
+   "Field '" + field + "' of '" + record +
+   "' has no default value and was not provided."
+
+enum_no_variant: String, String => String
+enum_no_variant = name, label =>
+   "Enum '" + name + "' has no variant labeled '" + label + "'."
+
+enum_unit_payload: String, String => String
+enum_unit_payload = name, label =>
+   "Enum '" + name + "' variant '" + label +
+   "' is a bare unit and takes no payload argument."
+
+enum_payload_type: String, String, String, String => String
+enum_payload_type = name, label, expected, got =>
+   "Enum '" + name + "' variant '" + label +
+   "' expects payload of type " + expected + ", got " + got + "."
+
+partial_composite_argument: String => String
+partial_composite_argument = name =>
+   "Passing a partially-initialized composite '" + name +
+   "' to a function is disallowed."
+
+E3051_dynamic_index_hetero: () => String
+E3051_dynamic_index_hetero = !=> "Dynamic indexing is only allowed on homogeneous records."
+
+E3051_cycle_iter_hetero: () => String
+E3051_cycle_iter_hetero = !=> "Cycle iteration is only allowed on homogeneous records."
+
+E3065_rawptr_to_string: () => String
+E3065_rawptr_to_string = !=>
+   "Cannot construct a String from a RawPtr — 'String(ptr)' is rejected. " +
+   "Build with literals, '+', '++', 's + n', or a Builder."
+
+E3078_addr_builder_or_string: () => String
+E3078_addr_builder_or_string = !=> "Address operator '&' requires a Builder or String operand."
+
+E3084_record_size_mismatch: () => String
+E3084_record_size_mismatch = !=> "Record size mismatch in arithmetic"
+
+E3084_arithmetic_type_mismatch: () => String
+E3084_arithmetic_type_mismatch = !=> "Arithmetic type mismatch"
+
+E3084_builder_append_type: () => String
+E3084_builder_append_type = !=> "Builder append requires byte or String"
+
+E3084_choice_branch_mismatch: () => String
+E3084_choice_branch_mismatch = !=> "Incompatible branch result types in choice"
+
+E3091_propagate_ram_operand: () => String
+E3091_propagate_ram_operand = !=> "Operand of '--!' must be a ramification"
+
+E3103_cannot_infer_type: () => String
+E3103_cannot_infer_type = !=> "Cannot infer concrete type for expression without RTTI"
+
+E3131_whole_val_init_prefix: () => String
+E3131_whole_val_init_prefix = !=> "Homogeneous record '"
+
+E3131_whole_val_init_suffix: () => String
+E3131_whole_val_init_suffix = !=> "' requires whole-value initialization before element access."
+
+E3133_addr_escape_restore: () => String
+E3133_addr_escape_restore = !=> "Cannot return Addr from an arena-restore scope. " +
+   "Copy data explicitly with '++' before boundary."
+
+E3134_addr_escape_lifecycle: () => String
+E3134_addr_escape_lifecycle = !=>
+   "Assignment of block-scoped Addr to outer-scope binding escapes arena lifecycle."
+
+E3136_type_choice_no_branch: () => String
+E3136_type_choice_no_branch = !=> "Compile-time type choice has no branch for this type."
+
+E3140_no_runtime_arena: () => String
+E3140_no_runtime_arena = !=>
+   "arena allocation under --no-runtime. The feature you used (a record, closure, " +
+   "String concat, Builder, or heap ram/enum) needs the runtime arena, " +
+   "which --no-runtime omits. Use only bare-metal features: Int arithmetic, " +
+   "String literals, '?s', 's(i)', and raw '@[Addr(...)]' memory."
+
+E3142_raw_write_type: () => String
+E3142_raw_write_type = !=>
+   "Raw memory write '@[addr] = expr' requires an integerish or pointer value, got Float"
+
+E3150_view_escape_frame: () => String
+E3150_view_escape_frame = !=> "View cannot escape function frame"
+
+E3172_exit_status_integerish: () => String
+E3172_exit_status_integerish = !=> "'#exit' expects an integerish status code"
+
+E3173_return_outside_fn: () => String
+E3173_return_outside_fn = !=> "Return '--|' can only be used inside a function."
+
+E3173_propagate_outside_fn: () => String
+E3173_propagate_outside_fn = !=> "Propagate operator '--!' can only be used inside a function."
+
+E3175_choice_const_discarded: () => String
+E3175_choice_const_discarded = !=>
+   "Choice has a constant expression in a branch and its value is discarded"

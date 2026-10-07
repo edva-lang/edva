@@ -11,6 +11,7 @@
 #use "expr"
 #use "stmt"
 #use "main"
+#use "../diag"
 
 #public
 
@@ -3005,8 +3006,7 @@ choice_has_constant_branch = c =>
 
 codegen_discarded_choice_constant_error: types::Cg => (Addr, ast::ValueType)
 codegen_discarded_choice_constant_error = cg =>
-   types::init_error(cg, "E3175",
-      "Choice has a constant expression in a branch and its value is discarded", 0, 0)
+   types::init_error(cg, "E3175", diag::E3175_choice_const_discarded!, 0, 0)
    (LLVMConstNull(LLVMInt32Type!), ast::ValueType(Unknown))
 
 codegen_eval_choice: types::Cg, ast::ChoiceExpr => (Addr, ast::ValueType)
@@ -3026,8 +3026,7 @@ codegen_eval_choice_body = cg, c =>
                br = c.branches(idx)!!
                expr::codegen_eval(cg, br.block)
             |
-               types::init_error(cg, "E3136", "Compile-time type choice has no " +
-                  "branch for this type.", 0, 0)
+               types::init_error(cg, "E3136", diag::E3136_type_choice_no_branch!, 0, 0)
                (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
       |
          untyped_fn = choice_untyped_fn_value(cg, c, ?c.branches - 1)
@@ -3200,8 +3199,7 @@ choice_condition_is_underscore = cond => cond [Var v] v == "_" | <->
 
 codegen_malformed_bare_pipe_error: types::Cg => (Addr, ast::ValueType)
 codegen_malformed_bare_pipe_error = cg =>
-   types::init_error(cg, "E2024", "Bare '|' is only allowed as the first branch " +
-      "(Left Value) or final branch (catch-all) in a choice expression.", 0, 0)
+   types::init_error(cg, "E2024", diag::E2024_bare_bar_position!, 0, 0)
    (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 choice_omits_undefined_condition: types::Cg, ast::ChoiceExpr => <>
@@ -3217,10 +3215,7 @@ choice_condition_is_undefined_underscore = cg, cond =>
 
 codegen_omitted_choice_condition_error: types::Cg => (Addr, ast::ValueType)
 codegen_omitted_choice_condition_error = cg =>
-   types::init_error(cg, "E3003", "Omitting a Choice/pattern branch's leading " +
-      "condition is only allowed when '_' is already defined in the enclosing " +
-      "scope (e.g. inside a '=> '-omitted-param lambda, or a cycle body). '_' " +
-      "is not defined here.", 0, 0)
+   types::init_error(cg, "E3003", diag::E3003_choice_underscore_undefined!, 0, 0)
    (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
 codegen_eval_choice_valid: types::Cg, ast::ChoiceExpr => (Addr, ast::ValueType)
@@ -3234,8 +3229,7 @@ codegen_eval_choice_valid = cg, c =>
                br = c.branches(idx)!!
                expr::codegen_eval(cg, br.block)
             |
-               types::init_error(cg, "E3136", "Compile-time type choice has no " +
-                  "branch for this type.", 0, 0)
+               types::init_error(cg, "E3136", diag::E3136_type_choice_no_branch!, 0, 0)
                (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
       |
          saved_discard = cg.discard_result

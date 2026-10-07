@@ -2,6 +2,7 @@
 
 #use(import) llvm
 #use "../ast"
+#use "../diag"
 #use "str"
 #use "../tast"
 #use "../unify"
@@ -558,8 +559,7 @@ init_check_escape_var = cg, v, line, col =>
 init_check_escape_full: Cg, String, Int, Int => ()
 init_check_escape_full = cg, v, line, col =>
    !init_fully_ok(cg, v)
-      | init_error(cg, "E3132", "Passing a partially-initialized composite '" +
-         v + "' to a function.", line, col)
+      | init_error(cg, "E3132", diag::partial_composite_argument(v), line, col)
 
 // This ordered pre-pass runs before user function bodies compile. That matters
 // for `f(t)`: a bad member access in f's body must not hide the caller-side
@@ -3287,9 +3287,8 @@ codegen_eval_record_ctor = cg, ti, t =>
                               LLVMBuildStore(cg.builder, cval_def,
                                  dst_gep_def)
                      |
-                        init_error(cg, "E3130", "Field '" + rf_def.name +
-                           "' of '" + t.fn_name +
-                           "' has no default value and was not provided.",
+                        init_error(cg, "E3130",
+                           diag::record_default_missing(rf_def.name, t.fn_name),
                            t.line, t.col)
          cg.last_rt = rm_rt_opt
          cg.last_fnames = rm_1
@@ -3464,25 +3463,23 @@ codegen_check_enum_ctor = cg, enum_name, slots, call =>
    idx_opt = enum_slot_index(slots, label)
    has_idx = <>(idx_opt)
    !has_idx
-      | init_error(cg, "E3096", "Enum '" + enum_name +
-         "' has no variant labeled '" + label + "'.", call.line, call.col)
+      | init_error(cg, "E3096", diag::enum_no_variant(enum_name, label),
+         call.line, call.col)
    idx_opt
       | _ =>
          payload = enum_slot_payload(slots, label)
          has_payload = enum_slot_has_payload(slots, label)
          nargs = ?call.args
          !has_payload && nargs > 1
-            | init_error(cg, "E3098", "Enum '" + enum_name + "' variant '" +
-               label + "' is a bare unit and takes no payload argument.",
+            | init_error(cg, "E3098", diag::enum_unit_payload(enum_name, label),
                call.line, call.col)
          has_payload && nargs > 1
             |
                actual = static_expr_vt(cg, call.args(1)!!)
                actual != ast::ValueType(Unknown) && actual != payload
-                  | init_error(cg, "E3099", "Enum '" + enum_name +
-                     "' variant '" + label + "' expects payload of type " +
-                     value_type_name(payload) + ", got " +
-                     value_type_name(actual) + ".", call.line, call.col)
+                  | init_error(cg, "E3099", diag::enum_payload_type(enum_name,
+                     label, value_type_name(payload), value_type_name(actual)),
+                     call.line, call.col)
 
 enum_slot_has_payload: ast::EnumSlots, String => <>
 enum_slot_has_payload = slots, label =>
@@ -4136,4 +4133,3 @@ error_field_names = !=>
    fn += "col"
    fn += "context"
    fn
-

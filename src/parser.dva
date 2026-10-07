@@ -10,6 +10,7 @@
 #use "ast"
 #use "str"
 #use "operators"
+#use "diag"
 
 #foreign "c"
    write: (fd: Int, buf: Addr, count: Int) => Int
@@ -341,9 +342,7 @@ parse_range = p =>
             |
                dot_trail
                   |
-                     parser_error(p, 2025,
-                        "Whitespace between range endpoint and '..' is " +
-                        "forbidden.")
+                     parser_error(p, 2025, diag::E2025_range_endpoint_whitespace!)
                      <-->
                   |
                      parse_bp(p, 30)
@@ -367,8 +366,7 @@ range_cont = p, lhs =>
          dot_trail = p.curr.trail
          dot_lead
             |
-               parser_error(p, 2025,
-                  "Whitespace between range endpoint and '..' is forbidden.")
+               parser_error(p, 2025, diag::E2025_range_endpoint_whitespace!)
                <-->
             |
                parser_advance(p)
@@ -376,9 +374,7 @@ range_cont = p, lhs =>
                   |
                      dot_trail
                         |
-                           parser_error(p, 2025,
-                              "Whitespace between range endpoint and " +
-                              "'..' is forbidden.")
+                           parser_error(p, 2025, diag::E2025_range_endpoint_whitespace!)
                            <-->
                         |
                            parse_bp(p, 30)
@@ -426,8 +422,7 @@ parse_range_with_lhs = p, lhs =>
          dot_trail = p.curr.trail
          dot_lead
             |
-               parser_error(p, 2025,
-                  "Whitespace between range endpoint and '..' is forbidden.")
+               parser_error(p, 2025, diag::E2025_range_endpoint_whitespace!)
                <-->
             |
                parser_advance(p)
@@ -435,9 +430,7 @@ parse_range_with_lhs = p, lhs =>
                   |
                      dot_trail
                         |
-                           parser_error(p, 2025,
-                              "Whitespace between range endpoint and " +
-                              "'..' is forbidden.")
+                           parser_error(p, 2025, diag::E2025_range_endpoint_whitespace!)
                            <-->
                         |
                            parse_bp(p, 30)
@@ -470,7 +463,7 @@ parse_bp = p, min_bp =>
 
 parse_bp_depth_error: Parser => <ast::Expr|>
 parse_bp_depth_error = p =>
-   parser_error(p, 2039, "Expression nested too deeply")
+   parser_error(p, 2039, diag::E2039_expr_too_deep!)
    p.expr_depth = p.expr_depth - 1
    <-->
 
@@ -779,16 +772,12 @@ atom_binding_target = p, target =>
          ?c.args > 0
             | atom_binding_call(p, c)
             |
-               parser_error(p, 2108,
-                  "State binding operator '~~' requires a variable, " +
-                  "member access, or indexed element target.")
+               parser_error(p, 2108, diag::E2108_state_binding_target!)
                <-->
       [Var v]
          atom_binding_var(p, v)
       |
-         parser_error(p, 2108,
-            "State binding operator '~~' requires a variable, " +
-            "member access, or indexed element target.")
+         parser_error(p, 2108, diag::E2108_state_binding_target!)
          <-->
 
 // "~~operand" — two-way state binding / property lens.
@@ -799,9 +788,7 @@ atom_binding = p =>
    tr
       | target => atom_binding_target(p, target)
       |
-         parser_error(p, 2108,
-            "State binding operator '~~' requires a variable, " +
-            "member access, or indexed element target.")
+         parser_error(p, 2108, diag::E2108_state_binding_target!)
          <-->
 
 // The token after p.curr without consuming it: clone the lexer and pull one
@@ -1689,8 +1676,7 @@ record_closed = p, fields =>
    parser_advance(p)
    p.curr.text == "=>"
       |
-         parser_error(p, 2037, "Function parameters may not be " +
-            "parenthesized; write 'x, y =>' with no parentheses.")
+         parser_error(p, 2037, diag::E2037_params_parenthesized!)
          <-->
       | <+ ast::Expr(Record, (ast::RecordExpr((fields, <->)))) ->
 
@@ -1829,8 +1815,7 @@ group_closed = p, inner =>
    parser_advance(p)
    p.curr.text == "=>"
       |
-         parser_error(p, 2037, "Function parameters may not be " +
-            "parenthesized; write 'x, y =>' with no parentheses.")
+         parser_error(p, 2037, diag::E2037_params_parenthesized!)
          <-->
       | has_free_underscore(inner)
          |
@@ -2178,8 +2163,7 @@ fn_params = p, params, ct_params =>
                name_is_primed(pname)
                   |
                      parser_error(p, 2039,
-                        "Function parameters cannot be mutable — " +
-                        "remove prime suffix from '" + pname + "'.")
+                        diag::E2039_param_mutable_prefix! + pname + "'.")
                      <-->
                   |
                      ct_params += pname
@@ -2194,8 +2178,7 @@ fn_params = p, params, ct_params =>
          name_is_primed(pname)
             |
                parser_error(p, 2039,
-                  "Function parameters cannot be mutable — " +
-                  "remove prime suffix from '" + pname + "'.")
+                  diag::E2039_param_mutable_prefix! + pname + "'.")
                <-->
             |
                params += pname
@@ -3912,8 +3895,7 @@ parse_postfix_calls = p, lhs =>
       [LParen]
          p.curr.lead
             |
-               parser_error(p, 2032,
-                  "Whitespace before call parenthesis is forbidden.")
+               parser_error(p, 2032, diag::E2032_call_paren_whitespace!)
                <-->
             |
                parser_advance(p)
@@ -4837,10 +4819,7 @@ finish_parsed_choice = p, lhs, pbrs =>
                gpbrs @ b => brs += b.branch
                ?brs > 2 && choice_branches_has_middle_bare(brs, 1)
                   |
-                     parser_error(p, 2024,
-                        "Bare '|' is only allowed as the first branch " +
-                        "(Left Value) or final branch (catch-all) in a " +
-                        "choice expression.")
+                     parser_error(p, 2024, diag::E2024_bare_bar_position!)
                      <-->
                   |
                      ?brs > 1 && choice_branches_first_bare_mix(brs)
@@ -4974,10 +4953,7 @@ check_redundant_flag_pb = p, brs, bd =>
                is_pos = expr_is_pos_flag(last.branch.block)
                is_pos
                   |
-                     parser_error(p, 2105,
-                        "Redundant choice tail '<+> | <->' is forbidden. " +
-                           "Empty guard body '[guard]' already produces a " +
-                           "bare flag.")
+                     parser_error(p, 2105, diag::E2105_redundant_choice_tail!)
                      <+>
                   | <->
             | <->
@@ -5016,8 +4992,7 @@ choice_step = p, brs, saw_sep =>
                parser_advance(p)
                p.curr.kind
                   [LBracket]
-                     parser_error(p, 2096, "A '|' before a '[' guard is " +
-                        "invalid — chain guarded branches adjacently.")
+                     parser_error(p, 2096, diag::E2096_bar_before_guard!)
                      <-->
                   |
                      body = choice_pipe_body(p, saw_sep)
@@ -5034,8 +5009,7 @@ choice_step = p, brs, saw_sep =>
                parser_advance(p)
                p.curr.kind
                   [LBracket]
-                     parser_error(p, 2096, "A '|' before a '[' guard is " +
-                        "invalid — chain guarded branches adjacently.")
+                     parser_error(p, 2096, diag::E2096_bar_before_guard!)
                      <-->
                   |
                      body = choice_pipe_body(p, saw_sep)
@@ -5076,9 +5050,7 @@ check_redundant_flag = p, brs, body =>
          is_pos = expr_is_pos_flag(last.block)
          is_pos
             |
-               parser_error(p, 2105,
-                  "Redundant choice tail '<+> | <->' is forbidden. "
-                     "Empty guard body '[guard]' already produces a bare flag.")
+               parser_error(p, 2105, diag::E2105_redundant_choice_tail!)
                <+>
             | <->
       | <->
@@ -5322,8 +5294,7 @@ choice_same_line_step = p, brs =>
                parser_advance(p)
                p.curr.kind
                   [LBracket]
-                     parser_error(p, 2096, "A '|' before a '[' guard is " +
-                        "invalid — chain guarded branches adjacently.")
+                     parser_error(p, 2096, diag::E2096_bar_before_guard!)
                      <-->
                   |
                      fnb = is_fn_start(p)
@@ -5343,8 +5314,7 @@ choice_same_line_step = p, brs =>
                parser_advance(p)
                p.curr.kind
                   [LBracket]
-                     parser_error(p, 2096, "A '|' before a '[' guard is " +
-                        "invalid — chain guarded branches adjacently.")
+                     parser_error(p, 2096, diag::E2096_bar_before_guard!)
                      <-->
                   |
                      body = choice_body_inner(p)
@@ -5952,9 +5922,7 @@ parse_named_assign_g: Parser, String, <>, <>, <> => <ast::Expr|>
 parse_named_assign_g = p, name, is_mut, is_compound, is_global =>
    is_mut
       |
-         parser_error(p, 2010,
-            "':=' is retired — use '=' with a prime suffix ('foo'') " +
-            "for mutable variables.")
+         parser_error(p, 2010, diag::E2010_colon_equals_retired!)
          <-->
       |
          parser_advance(p)
@@ -5999,8 +5967,7 @@ parse_expr_after_lparen: Parser, String => <ast::Expr|>
 parse_expr_after_lparen = p, name =>
    p.curr.lead
       |
-         parser_error(p, 2032,
-            "Whitespace before call parenthesis is forbidden.")
+         parser_error(p, 2032, diag::E2032_call_paren_whitespace!)
          <-->
       |
          parser_advance(p)
@@ -6029,9 +5996,7 @@ parse_finish_assignment = p, lhs =>
    is_compound = p.curr.text ["+="]
    is_mut
       |
-         parser_error(p, 2010,
-            "':=' is retired — use '=' with a prime suffix ('foo'') " +
-            "for mutable variables.")
+         parser_error(p, 2010, diag::E2010_colon_equals_retired!)
          <-->
       |
          parser_advance(p)

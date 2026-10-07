@@ -11,6 +11,7 @@
 #use "expr"
 #use "match"
 #use "main"
+#use "../diag"
 
 #public
 
@@ -240,9 +241,7 @@ lambda_add_params = cg, fn, params, ptypes, is_cap, i, np =>
                types::is_any_fn_name(cg, pname) || runtime::binding_state(cg, pname).found
                   |
                      types::init_error(cg, "E3033",
-                        "Cannot re-assign immutable binding '" + pname +
-                        "'. Use a prime suffix ('" + pname +
-                        "\'') for rebindable variables.", 0, 0)
+                        diag::reassign_immutable(pname), 0, 0)
                runtime::binding_add(cg, pname, <->)
          pv = LLVMGetParam(fn, (is_cap | i + 1 | i))
          pvt = (ptypes(i) | _ | ast::ValueType(Unknown))
@@ -353,7 +352,7 @@ compile_lambda = cg, f =>
    nc @ ci =>
       cname = (caps(ci) | _ | "")
       types::is_view_var(cname)
-         | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+         | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
       cap_names += cname
       cap_types += types::var_type(cg, cname)
    fnname = "__anon_fn_" + str::from_int(types::g.tmpc)
@@ -423,7 +422,7 @@ compile_lambda = cg, f =>
    types::g.fn_ret_ll = saved_ret_ll
    cg.discard_result = saved_discard
    types::is_view_expr(cg, f.body)
-      | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+      | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
    is_void = ret_vt' [Unit]
    is_void
       | !block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
@@ -1289,14 +1288,12 @@ is_heterogeneous_record_var = cg, name =>
 
 codegen_dynamic_record_index_error: types::Cg => (Addr, ast::ValueType)
 codegen_dynamic_record_index_error = cg =>
-   types::init_error(cg, "E3051", "Dynamic indexing is only allowed on homogeneous " +
-      "records.", 0, 0)
+   types::init_error(cg, "E3051", diag::E3051_dynamic_index_hetero!, 0, 0)
    (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_cycle_record_iter_error: types::Cg => (Addr, ast::ValueType)
 codegen_cycle_record_iter_error = cg =>
-   types::init_error(cg, "E3051", "Cycle iteration is only allowed on homogeneous " +
-      "records.", 0, 0)
+   types::init_error(cg, "E3051", diag::E3051_cycle_iter_hetero!, 0, 0)
    (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 cycle_range_start: types::Cg, ast::RangeExpr => Addr
@@ -3054,16 +3051,12 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
                types::has_str_at(params, pname, 0, i)
                   |
                      types::init_error(cg, "E3033",
-                        "Cannot re-assign immutable binding '" + pname +
-                        "'. Use a prime suffix ('" + pname +
-                        "\'') for rebindable variables.", 0, 0)
+                        diag::reassign_immutable(pname), 0, 0)
                   |
                      types::is_any_fn_name(cg, pname)
                         |
                            types::init_error(cg, "E3033",
-                              "Cannot re-assign immutable binding '" + pname +
-                              "'. Use a prime suffix ('" + pname +
-                              "\'') for rebindable variables.", 0, 0)
+                              diag::reassign_immutable(pname), 0, 0)
                runtime::binding_add(cg, pname, <->)
          target_pname = types::g.last_compiling_fn == ""
             | pname
@@ -3475,7 +3468,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    types::g.fn_ret_ll = saved_fn_ret_ll
    cg.discard_result = saved_discard
    types::is_view_expr(cg, fd.body)
-      | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+      | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
    is_void_ret = ret_vt' [Unit]
    actual_ret = is_void_ret | ast::ValueType(Unit) | bv.1
    is_rec_ret = types::is_record_vt(actual_ret) || (declared && types::is_record_vt(ret_vt'))
@@ -3715,9 +3708,7 @@ collect_if_fn = cg, t =>
                types::has_fn_name(cg, t.0) || types::has_str(types::g.foreign_fn_names, t.0)
                   |
                      types::init_error(cg, "E3033",
-                        "Cannot re-assign immutable binding '" + t.0 +
-                        "'. Use a prime suffix ('" + t.0 +
-                        "\'') for rebindable variables.", 0, 0)
+                        diag::reassign_immutable(t.0), 0, 0)
                   |
                      types::add_fn_def(cg, types::FnDef((t.0, f.params, f.body)))
 
@@ -5555,8 +5546,7 @@ codegen_typed_eval_block = cg, exprs =>
    expr::codegen_restore_scope_leave(cg, mark)
    has_alloc && types::is_ptr_vt(last.1)
       |
-         types::init_error(cg, "E3133", "Cannot return Addr from an arena-restore " +
-            "scope. Copy data explicitly with '++' before boundary.", 0, 0)
+         types::init_error(cg, "E3133", diag::E3133_addr_escape_restore!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       | last
 
@@ -5654,8 +5644,7 @@ codegen_typed_check_addr_escape = cg, name, val, ti =>
                is_addr = types::is_ptr_vt(target_vt) ||
                   (val.ti [Prim vt] types::is_ptr_vt(vt) | <->)
                is_addr && tast_is_block_scoped_addr(cg, val, threshold)
-                  | types::init_error(cg, "E3134", "Assignment of block-scoped Addr " +
-                     "to outer-scope binding escapes arena lifecycle.", 0, 0)
+                  | types::init_error(cg, "E3134", diag::E3134_addr_escape_lifecycle!, 0, 0)
 
 codegen_typed_eval_assign: types::Cg, String, <>, <>, <>, <>, tast::TypedExpr,
    ast::TypeInfo => (Addr, ast::ValueType)

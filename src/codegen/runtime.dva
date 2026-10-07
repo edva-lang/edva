@@ -2,6 +2,7 @@
 
 #use(import) llvm
 #use "../ast"
+#use "../diag"
 #use "str"
 #use "../tast"
 #use "../unify"
@@ -955,7 +956,7 @@ codegen_emit_compound_assign = cg, t =>
 codegen_emit_array_append: types::Cg, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 codegen_emit_array_append = cg, t =>
    types::is_view_expr(cg, t.5)
-      | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+      | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
    want = array_elem_type(cg, t.0)
    got = types::static_expr_vt(cg, t.5)
    mismatch = want.1 && (got != ast::ValueType(Unknown)) && (got != want.0) &&
@@ -1102,9 +1103,7 @@ codegen_check_binding_valid = cg, t =>
          types::is_any_fn_name(cg, t.0)
             |
                types::init_error(cg, "E3033",
-                  "Cannot re-assign immutable binding '" + t.0 +
-                  "'. Use a prime suffix ('" + t.0 +
-                  "\'') for rebindable variables.", 0, 0)
+                  diag::reassign_immutable(t.0), 0, 0)
             |
                prior = binding_state(cg, t.0)
                prior.found
@@ -1112,9 +1111,7 @@ codegen_check_binding_valid = cg, t =>
                      !prior.mutable
                         |
                            types::init_error(cg, "E3033",
-                              "Cannot re-assign immutable binding '" + t.0 +
-                              "'. Use a prime suffix ('" + t.0 +
-                              "\'') for rebindable variables.", 0, 0)
+                              diag::reassign_immutable(t.0), 0, 0)
                   |
                      is_mut = t.1 || name_is_primed(t.0)
                      binding_add(cg, t.0, is_mut)
@@ -1206,8 +1203,7 @@ codegen_emit_plain_assign_val = cg, t =>
    is_un = ev.1 [Unit]
    is_un
       |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to variable '" +
-            t.0 + "'.", 0, 0)
+         types::init_error(cg, "E3032", diag::assign_void_variable(t.0), 0, 0)
       |
          codegen_emit_plain_assign_val_store(cg, t, ev)
          t.5 [CompileTime ct]
@@ -1225,7 +1221,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    is_glob = t.3 || types::has_str(types::g.marked_globals, t.0)
    is_view = types::is_view_expr(cg, t.5)
    is_view && (!cg.in_fn || is_glob)
-      | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+      | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
    is_view | types::view_var_add(t.0)
    fresh_local = !is_glob | (cg.in_fn | !types::has_local_var(cg, t.0) | <->) | <->
    !fresh_local | codegen_check_flag_to_heap_assign(cg, t, ev.0)
@@ -1574,7 +1570,7 @@ member_assign_record = cg, root_name, m, t =>
                   m.field_name + "'.", 0, 0)
             |
                types::is_view_expr(cg, t.5)
-                  | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+                  | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
                f_vt = idx < 0 | ast::ValueType(Unknown) |
                   (target_fvts(idx) | _ | ast::ValueType(Unknown))
                rec_ok = f_vt == ast::ValueType(Record) &&
@@ -1675,8 +1671,7 @@ codegen_emit_record_assign = cg, t, call =>
    is_un = rhs_ev.1 [Unit]
    is_un
       |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to element of '" +
-            call.fn_name + "'.", 0, 0)
+         types::init_error(cg, "E3032", diag::assign_void_element(call.fn_name), 0, 0)
       |
          main::codegen_emit_index_bounds_check(cg, idx_ev.0, idx_ev.1, ?fvs)
          idx_i64 = main::codegen_widen_idx_to_i64(cg, idx_ev.0, idx_ev.1, "idx")
@@ -1703,8 +1698,7 @@ codegen_emit_slice_assign = cg, t, call =>
    is_un = rhs_ev.1 [Unit]
    is_un
       |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to element of '" +
-            call.fn_name + "'.", 0, 0)
+         types::init_error(cg, "E3032", diag::assign_void_element(call.fn_name), 0, 0)
       |
          sv = types::ptr_var_value_plain(cg, call.fn_name, "rec.ptr")
          data = main::slice_data(cg, sv, "slice.data")
@@ -1730,8 +1724,7 @@ codegen_emit_array_assign = cg, t, call =>
    is_un = rhs_ev.1 [Unit]
    is_un
       |
-         types::init_error(cg, "E3032", "Cannot assign Void expression to element of '" +
-            call.fn_name + "'.", 0, 0)
+         types::init_error(cg, "E3032", diag::assign_void_element(call.fn_name), 0, 0)
       |
          aval = types::ptr_var_value_plain(cg, call.fn_name, "rec.ptr")
          elem_vt = main::array_elem_vt(cg, call.fn_name)
@@ -1773,9 +1766,7 @@ codegen_emit_call_assign = cg, t, call =>
                      "' before whole-value initialization.", 0, 0)
                   |
                      is_rec && (not_init || main::var_partial(cg, call.fn_name))
-                        | types::init_error(cg, "E3131", "Homogeneous record '" +
-                           call.fn_name + "' requires whole-value " +
-                           "initialization before element access.", 0, 0)
+                        | types::init_error(cg, "E3131", diag::whole_value_init(call.fn_name), 0, 0)
                         |
                            ?call.args != 1
                               | types::init_error(cg, "E3029", "Record/Slice index " +

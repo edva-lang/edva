@@ -11,6 +11,7 @@
 #use "match"
 #use "stmt"
 #use "main"
+#use "../diag"
 
 #public
 
@@ -83,11 +84,7 @@ codegen_call_arena_alloc: types::Cg, Addr, String => Addr
 codegen_call_arena_alloc = cg, size, name =>
    cg.opts.no_runtime
       |
-         types::init_error(cg, "E3140", "arena allocation under --no-runtime. The " +
-            "feature you used (a record, closure, String concat, Builder, " +
-            "or heap ram/enum) needs the runtime arena, which --no-runtime " +
-            "omits. Use only bare-metal features: Int arithmetic, String " +
-            "literals, '?s', 's(i)', and raw '@[Addr(...)]' memory.", 0, 0)
+         types::init_error(cg, "E3140", diag::E3140_no_runtime_arena!, 0, 0)
          LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
       |
          cg.in_restore_scope > 0
@@ -657,8 +654,7 @@ codegen_check_addr_escape = cg, t =>
                is_addr = types::is_ptr_vt(types::var_type(cg, t.0)) ||
                   types::is_ptr_vt(types::static_expr_vt(cg, t.5)) || (t.7 == "Addr")
                is_addr && is_block_scoped_addr(cg, t.5, threshold)
-                  | types::init_error(cg, "E3134", "Assignment of block-scoped Addr " +
-                     "to outer-scope binding escapes arena lifecycle.", 0, 0)
+                  | types::init_error(cg, "E3134", diag::E3134_addr_escape_lifecycle!, 0, 0)
 
 
 codegen_block_arena_mark: types::Cg, <> => < Addr | >
@@ -970,9 +966,7 @@ codegen_eval = cg, expr =>
          codegen_restore_scope_leave(cg, mark)
          has_alloc && types::is_ptr_vt(last.1)
             |
-               types::init_error(cg, "E3133", "Cannot return Addr from an " +
-                  "arena-restore scope. Copy data explicitly with '++' " +
-                  "before boundary.", 0, 0)
+               types::init_error(cg, "E3133", diag::E3133_addr_escape_restore!, 0, 0)
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             | last
       [FastMathPragma s]
@@ -2555,8 +2549,7 @@ codegen_eval_unary_propagate: types::Cg, Addr, ast::ValueType,
 codegen_eval_unary_propagate = cg, val, vt, target =>
    !cg.in_fn
       |
-         types::init_error(cg, "E3173", "Propagate operator '--!' can only be used " +
-            "inside a function.", 0, 0)
+         types::init_error(cg, "E3173", diag::E3173_propagate_outside_fn!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          ret_ti_res = stmt::resolve_ti(cg, types::g.expected_fn_ti)
@@ -2690,12 +2683,10 @@ codegen_not_invalid: types::Cg, ast::ValueType => (Addr, ast::ValueType)
 codegen_not_invalid = cg, vt =>
    types::is_int_vt(vt)
       |
-         types::init_error(cg, "E3008", "Unary '!' cannot be applied to an integer. " +
-            "To create a Builder with capacity n, use the brace literal '{n}'.", 0, 0)
+         types::init_error(cg, "E3008", diag::E3008_not_integer!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
-         types::init_error(cg, "E3008", "Unary '!' cannot be applied to this type. " +
-            "Use Flag for logical NOT or '+' for Builder freeze.", 0, 0)
+         types::init_error(cg, "E3008", diag::E3008_not_invalid_type!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_eval_cast: types::Cg, ast::CastExpr => (Addr, ast::ValueType)
@@ -2751,10 +2742,7 @@ coerce_val = cg, v, v_vt, target =>
          types::is_str_vt(v_vt)
             | (v, ast::ValueType(Str))
             |
-               types::init_error(cg, "E3065",
-                  "Cannot construct a String from a RawPtr — " +
-                  "'String(ptr)' is rejected. Build with literals, '+', " +
-                  "'++', 's + n', or a Builder.", 0, 0)
+               types::init_error(cg, "E3065", diag::E3065_rawptr_to_string!, 0, 0)
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          types::is_int_vt(target)
@@ -5688,15 +5676,14 @@ codegen_typed_eval_exit = cg, e =>
                LLVMPositionBuilderAtEnd(cg.builder, dead')
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
       |
-         types::init_error(cg, "E3172", "'#exit' expects an integerish status code",
-            0, 0)
+         types::init_error(cg, "E3172", diag::E3172_exit_status_integerish!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 codegen_typed_eval_return: types::Cg, <>, tast::TypedExpr => (Addr, ast::ValueType)
 codegen_typed_eval_return = cg, has_val, val_te =>
    !cg.in_fn
       |
-         types::init_error(cg, "E3173", "Return '--|' can only be used inside a function.", 0, 0)
+         types::init_error(cg, "E3173", diag::E3173_return_outside_fn!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          !has_val
@@ -5754,7 +5741,7 @@ codegen_eval_return: types::Cg, ast::ReturnExpr => (Addr, ast::ValueType)
 codegen_eval_return = cg, r =>
    !cg.in_fn
       |
-         types::init_error(cg, "E3173", "Return '--|' can only be used inside a function.", 0, 0)
+         types::init_error(cg, "E3173", diag::E3173_return_outside_fn!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          !r.has_val

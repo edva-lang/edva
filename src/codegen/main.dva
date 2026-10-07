@@ -2,6 +2,7 @@
 
 #use(import) llvm
 #use "../ast"
+#use "../diag"
 #use "str"
 #use "../tast"
 #use "../unify"
@@ -2181,7 +2182,7 @@ codegen_eval_spawn = cg, se =>
    ?call.args @ i =>
       av = call.args(i)!!
       types::is_view_expr(cg, av)
-         | types::init_error(cg, "E3150", "View cannot escape function frame", 0, 0)
+         | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
       ev = expr::codegen_eval(cg, av)
       raw_args += ev.0
       raw_vts += ev.1
