@@ -177,6 +177,51 @@
    prep_close = ring, fd, user_data =>
       prep_sqe(ring, OP_CLOSE, fd, 0, sys::addr_null, 0, user_data)
 
+   prep_sqe_flags: Ring, Int, Int, Int, Addr, Int, Int, Int => <>
+   prep_sqe_flags = ring, op, fd, off, addr, len, op_flags, user_data =>
+      tail = Int(@[ring.sq_ptr + ring.sq_tail_off u32])
+      mask = Int(@[ring.sq_ptr + ring.sq_mask_off u32])
+      idx = tail .&. mask
+      sqe = ring.sqes_ptr + idx * 64
+      %memset(sqe, 0, 64)
+      clean_addr = Addr(Int(addr) .&. 281474976710655)
+      @[sqe + 0] = u8(op)
+      @[sqe + 4] = i32(fd)
+      @[sqe + 8] = off
+      @[sqe + 16] = clean_addr
+      @[sqe + 24] = u32(len)
+      @[sqe + 28] = u32(op_flags)
+      @[sqe + 32] = user_data
+      @[ring.sq_ptr + ring.sq_arr_off + idx * 4] = u32(idx)
+      @[ring.sq_ptr + ring.sq_tail_off] = u32(tail + 1)
+      <+>
+
+   prep_recv: Ring, Int, Addr, Int, Int, Int => <>
+   prep_recv = ring, fd, buf, len, flags, user_data =>
+      prep_sqe_flags(ring, OP_RECV, fd, 0, buf, len, flags, user_data)
+
+   prep_send: Ring, Int, Addr, Int, Int, Int => <>
+   prep_send = ring, fd, buf, len, flags, user_data =>
+      prep_sqe_flags(ring, OP_SEND, fd, 0, buf, len, flags, user_data)
+
+   prep_accept: Ring, Int, Addr, Addr, Int, Int => <>
+   prep_accept = ring, fd, addr, addrlen_ptr, flags, user_data =>
+      prep_sqe_flags(ring, OP_ACCEPT, fd, Int(addrlen_ptr), addr, 0, flags, user_data)
+
+   prep_cancel: Ring, Int, Int => <>
+   prep_cancel = ring, target_user_data, user_data =>
+      prep_sqe(ring, OP_ASYNC_CANCEL, 0, 0, Addr(target_user_data), 0, user_data)
+
+   prep_timeout: Ring, Addr, Int, Int, Int => <>
+   prep_timeout = ring, ts_ptr, count, flags, user_data =>
+      prep_sqe_flags(ring, OP_TIMEOUT, -1, 0, ts_ptr, count, flags, user_data)
+
+   sq_space: Ring => Int
+   sq_space = ring =>
+      head = Int(@[ring.sq_ptr + ring.sq_head_off u32])
+      tail = Int(@[ring.sq_ptr + ring.sq_tail_off u32])
+      ring.sq_entries - (tail - head)
+
    submit_and_wait: Ring, Int => Int
    submit_and_wait = ring, wait_nr =>
       head = Int(@[ring.sq_ptr + ring.sq_head_off u32])

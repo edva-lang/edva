@@ -67,3 +67,4 @@
     tcsetattr : (fd: Int, optional_actions: Int, termios_p: Addr) => Int
     cfmakeraw : (termios_p: Addr) => ()
     poll      : (fds: Addr, nfds: Int, timeout: Int) => Int
+    time      : (tloc: Addr) => Int
