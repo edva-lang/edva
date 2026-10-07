@@ -48,6 +48,7 @@
     memcpy    : (dest: Addr, src: Addr, n: Int) => Addr
     memmove   : (dest: Addr, src: Addr, n: Int) => Addr
     stat      : (path: String, buf: Addr) => Int
+    fstat     : (fd: Int, buf: Addr) => Int
     creat     : (path: String, mode: Int) => Int
     rename    : (oldpath: String, newpath: String) => Int
     unlink    : (path: String) => Int
