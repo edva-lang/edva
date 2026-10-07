@@ -1,0 +1,9 @@
+#use io
+
+f: <Int|> => <>
+f = opt => !<>(opt)
+
+io::out $ f(<+ 42 ->) | "yes" | "no"
+io::out $ f(<-->) | "yes" | "no"
+io::out $ !<>(<+ 100 ->) | "yes" | "no"
+io::out $ !<>(<-->) | "yes" | "no"

@@ -519,6 +519,13 @@ scan_op = lx, start, line, col =>
       lx.col = col + 3
       --| mktok(lx, TokKind(Op), start, 3, line, col, ".^.")
 
+   is_bang_ram_split = i' - start !< 3 && lx.src(start) == '!' &&
+      lx.src(start + 1) == '<' && lx.src(start + 2) == '>'
+   is_bang_ram_split |
+      lx.pos = start + 1
+      lx.col = col + 1
+      --| mktok(lx, TokKind(Op), start, 1, line, col, "!")
+
    mktok(lx, TokKind(Op), start, i' - start, line, col, lx.src(start..i'))
 
 // --- strings / runes / raw strings ----------------------------------------
