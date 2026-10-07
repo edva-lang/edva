@@ -1,0 +1,102 @@
+// Comprehensive test for std/fp slicing & sequence views (Issue #117)
+#use(import) fp
+#use io
+#use str
+
+lt30: Int => <>
+lt30 = x => x < 30
+
+always_true: Int => <>
+always_true = _ => <+>
+
+always_false: Int => <>
+always_false = _ => <->
+
+nums = Int{}
+nums += 10
+nums += 20
+nums += 30
+nums += 40
+nums += 50
+sl = nums(..)
+
+empty = Int{}
+empty_sl = empty(..)
+
+// 1. take
+t2 = take(2, sl)
+io::out $ "t2_len=" + str::from_int(?t2)
+t2 @ x => io::out $ "t2=" + str::from_int(x)
+
+t0 = take(0, sl)
+io::out $ "t0_len=" + str::from_int(?t0)
+
+t_over = take(10, sl)
+io::out $ "t_over_len=" + str::from_int(?t_over)
+
+t_neg = take(-3, sl)
+io::out $ "t_neg_len=" + str::from_int(?t_neg)
+
+t_empty = take(5, empty_sl)
+io::out $ "t_empty_len=" + str::from_int(?t_empty)
+
+// 2. drop
+d2 = drop(2, sl)
+io::out $ "d2_len=" + str::from_int(?d2)
+d2 @ x => io::out $ "d2=" + str::from_int(x)
+
+d0 = drop(0, sl)
+io::out $ "d0_len=" + str::from_int(?d0)
+
+d_over = drop(10, sl)
+io::out $ "d_over_len=" + str::from_int(?d_over)
+
+d_neg = drop(-3, sl)
+io::out $ "d_neg_len=" + str::from_int(?d_neg)
+
+d_empty = drop(5, empty_sl)
+io::out $ "d_empty_len=" + str::from_int(?d_empty)
+
+// 3. take_while
+tw = take_while(lt30, sl)
+io::out $ "tw_len=" + str::from_int(?tw)
+tw @ x => io::out $ "tw=" + str::from_int(x)
+
+tw_all = take_while(always_true, sl)
+io::out $ "tw_all_len=" + str::from_int(?tw_all)
+
+tw_none = take_while(always_false, sl)
+io::out $ "tw_none_len=" + str::from_int(?tw_none)
+
+tw_empty = take_while(lt30, empty_sl)
+io::out $ "tw_empty_len=" + str::from_int(?tw_empty)
+
+// 4. drop_while
+dw = drop_while(lt30, sl)
+io::out $ "dw_len=" + str::from_int(?dw)
+dw @ x => io::out $ "dw=" + str::from_int(x)
+
+dw_all = drop_while(always_true, sl)
+io::out $ "dw_all_len=" + str::from_int(?dw_all)
+
+dw_none = drop_while(always_false, sl)
+io::out $ "dw_none_len=" + str::from_int(?dw_none)
+
+dw_empty = drop_while(lt30, empty_sl)
+io::out $ "dw_empty_len=" + str::from_int(?dw_empty)
+
+// 5. partition
+part = partition(lt30, sl)
+io::out $ "part_p_len=" + str::from_int(?part.passed)
+part.passed @ x => io::out $ "part_p=" + str::from_int(x)
+io::out $ "part_r_len=" + str::from_int(?part.rejected)
+part.rejected @ x => io::out $ "part_r=" + str::from_int(x)
+
+part_empty = partition(lt30, empty_sl)
+io::out $ "part_empty_p=" + str::from_int(?part_empty.passed)
+io::out $ "part_empty_r=" + str::from_int(?part_empty.rejected)
+
+// 6. take slice elements iteration
+t3 = take(3, sl)
+io::out $ "t3_len=" + str::from_int(?t3)
+t3 @ x => io::out $ "t3=" + str::from_int(x)
