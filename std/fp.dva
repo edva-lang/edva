@@ -40,6 +40,11 @@
    compose: #! A: Type, #! B: Type, #! C: Type, (B => C), (A => B) => (A => C)
    compose = f, g => x => f $ g $ x
 
+   // pipe: g after f — left-to-right function composition ("g(f(x))"). Curried:
+   // pipe(f, g) is a function.
+   pipe: #! A: Type, #! B: Type, #! C: Type, (A => B), (B => C) => (A => C)
+   pipe = f, g => x => g $ f $ x
+
    // const: return its first argument, ignoring the second. Curried — the second
    // type param B is deferred to the returned lambda's own call site (deferred
    // generic inference): "const(42)" binds A=Int, and applying the result to any
@@ -146,6 +151,20 @@
                res' = <+>
                -->
       res'
+
+   // --- predicate combinators ------------------------------------------------
+
+   // complement: return the logical NOT of a predicate function.
+   complement: #! T: Type, (T => <>) => (T => <>)
+   complement = pred => x => !pred(x)
+
+   // both: return a predicate that is true only if both p1 and p2 hold.
+   both: #! T: Type, (T => <>), (T => <>) => (T => <>)
+   both = p1, p2 => x => p1(x) && p2(x)
+
+   // either_pred: return a predicate that is true if either p1 or p2 holds.
+   either_pred: #! T: Type, (T => <>), (T => <>) => (T => <>)
+   either_pred = p1, p2 => x => p1(x) || p2(x)
 
    // --- boolean mask reductions (issue #38) ----------------------------------
 

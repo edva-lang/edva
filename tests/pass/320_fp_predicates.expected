@@ -1,0 +1,14 @@
+3 is odd
+4 not odd
+eq_lens=1
+4 pos_even
+-2 not pos_even
+3 not pos_even
+3 pos_or_even
+-2 pos_or_even
+-3 not pos_or_even
+pipe(5)=11
+item=11
+mapped_0=-3
+mapped_4=5
+mapped_6=9
