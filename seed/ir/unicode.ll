@@ -1935,7 +1935,6 @@ entry:
   %loop.step.15 = alloca i64, align 8
   %loop.idx.15 = alloca i64, align 8
   %"var.i'" = alloca i64, align 8
-  %"var.ok'" = alloca i1, align 1
   %var.r0 = alloca i64, align 8
   %var.n = alloca i64, align 8
   %var.s = alloca ptr, align 8
@@ -1959,7 +1958,7 @@ str_ok:                                           ; preds = %str_stale, %str_gen
   store i64 %str.len.query2, ptr %var.n, align 8
   %var.load5 = load i64, ptr %var.n, align 8
   %cmptmp = icmp eq i64 %var.load5, 0
-  br i1 %cmptmp, label %choice.then, label %choice.else
+  br i1 %cmptmp, label %choice.then, label %choice.exit
 
 str_stale:                                        ; preds = %str_gen_check
   %1 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
@@ -1967,26 +1966,24 @@ str_stale:                                        ; preds = %str_gen_check
   br label %str_ok
 
 choice.then:                                      ; preds = %str_ok
-  br label %choice.exit
+  ret i1 false
 
-choice.else:                                      ; preds = %str_ok
+choice.exit:                                      ; preds = %ret.dead, %str_ok
   %var.load6 = load ptr, ptr %var.s, align 8
   %call.res = call i64 @"unicode::decode_rune"(ptr %var.load6, i64 0)
   store i64 %call.res, ptr %var.r0, align 8
   %var.load7 = load i64, ptr %var.r0, align 8
   %call.res8 = call i1 @"unicode::is_id_start"(i64 %var.load7)
   %nottmp = xor i1 %call.res8, true
-  br i1 %nottmp, label %choice.then9, label %choice.else10
+  br i1 %nottmp, label %choice.then9, label %choice.exit10
 
-choice.exit:                                      ; preds = %choice.exit11, %choice.then
-  %choice.res35 = phi i1 [ false, %choice.then ], [ %choice.res, %choice.exit11 ]
-  ret i1 %choice.res35
+ret.dead:                                         ; No predecessors!
+  br label %choice.exit
 
-choice.then9:                                     ; preds = %choice.else
-  br label %choice.exit11
+choice.then9:                                     ; preds = %choice.exit
+  ret i1 false
 
-choice.else10:                                    ; preds = %choice.else
-  store i1 true, ptr %"var.ok'", align 1
+choice.exit10:                                    ; preds = %ret.dead11, %choice.exit
   %var.load12 = load i64, ptr %var.r0, align 8
   %r.cmp1 = icmp slt i64 %var.load12, 128
   %r.cmp2 = icmp slt i64 %var.load12, 2048
@@ -1998,11 +1995,10 @@ choice.else10:                                    ; preds = %choice.else
   store i64 0, ptr %loop.idx.15, align 8
   br label %loop.header.15
 
-choice.exit11:                                    ; preds = %loop.exit.15, %choice.then9
-  %choice.res = phi i1 [ false, %choice.then9 ], [ %var.load34, %loop.exit.15 ]
-  br label %choice.exit
+ret.dead11:                                       ; No predecessors!
+  br label %choice.exit10
 
-loop.header.15:                                   ; preds = %loop.latch.15, %choice.else10
+loop.header.15:                                   ; preds = %loop.latch.15, %choice.exit10
   %counter.load = load i64, ptr %loop.idx.15, align 8
   br label %loop.body.15
 
@@ -2025,9 +2021,8 @@ loop.latch.15:                                    ; preds = %choice.exit25
   store i64 %loop.next, ptr %loop.idx.15, align 8
   br label %loop.header.15
 
-loop.exit.15:                                     ; preds = %choice.then24, %choice.then16, %loop.exit.nat.15
-  %var.load34 = load i1, ptr %"var.ok'", align 1
-  br label %choice.exit11
+loop.exit.15:                                     ; preds = %choice.then16, %loop.exit.nat.15
+  ret i1 true
 
 choice.then16:                                    ; preds = %loop.body.15
   br label %loop.exit.15
@@ -2043,21 +2038,23 @@ choice.exit17:                                    ; preds = %loop.body.15
   br i1 %nottmp23, label %choice.then24, label %choice.exit25
 
 choice.then24:                                    ; preds = %choice.exit17
-  store i1 false, ptr %"var.ok'", align 1
-  br label %loop.exit.15
+  ret i1 false
 
-choice.exit25:                                    ; preds = %choice.exit17
-  %var.load26 = load i64, ptr %"var.i'", align 8
-  %var.load27 = load i64, ptr %var.r, align 8
-  %r.cmp128 = icmp slt i64 %var.load27, 128
-  %r.cmp229 = icmp slt i64 %var.load27, 2048
-  %r.cmp330 = icmp slt i64 %var.load27, 65536
-  %r.w331 = select i1 %r.cmp330, i64 3, i64 4
-  %r.w232 = select i1 %r.cmp229, i64 2, i64 %r.w331
-  %r.width33 = select i1 %r.cmp128, i64 1, i64 %r.w232
-  %addtmp = add i64 %var.load26, %r.width33
+choice.exit25:                                    ; preds = %ret.dead26, %choice.exit17
+  %var.load27 = load i64, ptr %"var.i'", align 8
+  %var.load28 = load i64, ptr %var.r, align 8
+  %r.cmp129 = icmp slt i64 %var.load28, 128
+  %r.cmp230 = icmp slt i64 %var.load28, 2048
+  %r.cmp331 = icmp slt i64 %var.load28, 65536
+  %r.w332 = select i1 %r.cmp331, i64 3, i64 4
+  %r.w233 = select i1 %r.cmp230, i64 2, i64 %r.w332
+  %r.width34 = select i1 %r.cmp129, i64 1, i64 %r.w233
+  %addtmp = add i64 %var.load27, %r.width34
   store i64 %addtmp, ptr %"var.i'", align 8
   br label %loop.latch.15
+
+ret.dead26:                                       ; No predecessors!
+  br label %choice.exit25
 }
 
 define i1 @"unicode::is_uax31_builder"(ptr %0) #1 {
@@ -2068,7 +2065,6 @@ entry:
   %loop.step.16 = alloca i64, align 8
   %loop.idx.16 = alloca i64, align 8
   %"var.i'" = alloca i64, align 8
-  %"var.ok'" = alloca i1, align 1
   %var.r0 = alloca i64, align 8
   %var.p = alloca ptr, align 8
   %var.n = alloca i64, align 8
@@ -2080,12 +2076,12 @@ entry:
   store i64 %b.len1, ptr %var.n, align 8
   %var.load2 = load i64, ptr %var.n, align 8
   %cmptmp = icmp eq i64 %var.load2, 0
-  br i1 %cmptmp, label %choice.then, label %choice.else
+  br i1 %cmptmp, label %choice.then, label %choice.exit
 
 choice.then:                                      ; preds = %entry
-  br label %choice.exit
+  ret i1 false
 
-choice.else:                                      ; preds = %entry
+choice.exit:                                      ; preds = %ret.dead, %entry
   %var.load3 = load ptr, ptr %var.b, align 8
   %b.ptr = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load3, i32 0, i32 1
   %b.ptr4 = load ptr, ptr %b.ptr, align 8
@@ -2096,17 +2092,15 @@ choice.else:                                      ; preds = %entry
   %var.load6 = load i64, ptr %var.r0, align 8
   %call.res7 = call i1 @"unicode::is_id_start"(i64 %var.load6)
   %nottmp = xor i1 %call.res7, true
-  br i1 %nottmp, label %choice.then8, label %choice.else9
+  br i1 %nottmp, label %choice.then8, label %choice.exit9
 
-choice.exit:                                      ; preds = %choice.exit10, %choice.then
-  %choice.res34 = phi i1 [ false, %choice.then ], [ %choice.res, %choice.exit10 ]
-  ret i1 %choice.res34
+ret.dead:                                         ; No predecessors!
+  br label %choice.exit
 
-choice.then8:                                     ; preds = %choice.else
-  br label %choice.exit10
+choice.then8:                                     ; preds = %choice.exit
+  ret i1 false
 
-choice.else9:                                     ; preds = %choice.else
-  store i1 true, ptr %"var.ok'", align 1
+choice.exit9:                                     ; preds = %ret.dead10, %choice.exit
   %var.load11 = load i64, ptr %var.r0, align 8
   %r.cmp1 = icmp slt i64 %var.load11, 128
   %r.cmp2 = icmp slt i64 %var.load11, 2048
@@ -2118,11 +2112,10 @@ choice.else9:                                     ; preds = %choice.else
   store i64 0, ptr %loop.idx.16, align 8
   br label %loop.header.16
 
-choice.exit10:                                    ; preds = %loop.exit.16, %choice.then8
-  %choice.res = phi i1 [ false, %choice.then8 ], [ %var.load33, %loop.exit.16 ]
-  br label %choice.exit
+ret.dead10:                                       ; No predecessors!
+  br label %choice.exit9
 
-loop.header.16:                                   ; preds = %loop.latch.16, %choice.else9
+loop.header.16:                                   ; preds = %loop.latch.16, %choice.exit9
   %counter.load = load i64, ptr %loop.idx.16, align 8
   br label %loop.body.16
 
@@ -2145,9 +2138,8 @@ loop.latch.16:                                    ; preds = %choice.exit24
   store i64 %loop.next, ptr %loop.idx.16, align 8
   br label %loop.header.16
 
-loop.exit.16:                                     ; preds = %choice.then23, %choice.then15, %loop.exit.nat.16
-  %var.load33 = load i1, ptr %"var.ok'", align 1
-  br label %choice.exit10
+loop.exit.16:                                     ; preds = %choice.then15, %loop.exit.nat.16
+  ret i1 true
 
 choice.then15:                                    ; preds = %loop.body.16
   br label %loop.exit.16
@@ -2163,21 +2155,23 @@ choice.exit16:                                    ; preds = %loop.body.16
   br i1 %nottmp22, label %choice.then23, label %choice.exit24
 
 choice.then23:                                    ; preds = %choice.exit16
-  store i1 false, ptr %"var.ok'", align 1
-  br label %loop.exit.16
+  ret i1 false
 
-choice.exit24:                                    ; preds = %choice.exit16
-  %var.load25 = load i64, ptr %"var.i'", align 8
-  %var.load26 = load i64, ptr %var.r, align 8
-  %r.cmp127 = icmp slt i64 %var.load26, 128
-  %r.cmp228 = icmp slt i64 %var.load26, 2048
-  %r.cmp329 = icmp slt i64 %var.load26, 65536
-  %r.w330 = select i1 %r.cmp329, i64 3, i64 4
-  %r.w231 = select i1 %r.cmp228, i64 2, i64 %r.w330
-  %r.width32 = select i1 %r.cmp127, i64 1, i64 %r.w231
-  %addtmp = add i64 %var.load25, %r.width32
+choice.exit24:                                    ; preds = %ret.dead25, %choice.exit16
+  %var.load26 = load i64, ptr %"var.i'", align 8
+  %var.load27 = load i64, ptr %var.r, align 8
+  %r.cmp128 = icmp slt i64 %var.load27, 128
+  %r.cmp229 = icmp slt i64 %var.load27, 2048
+  %r.cmp330 = icmp slt i64 %var.load27, 65536
+  %r.w331 = select i1 %r.cmp330, i64 3, i64 4
+  %r.w232 = select i1 %r.cmp229, i64 2, i64 %r.w331
+  %r.width33 = select i1 %r.cmp128, i64 1, i64 %r.w232
+  %addtmp = add i64 %var.load26, %r.width33
   store i64 %addtmp, ptr %"var.i'", align 8
   br label %loop.latch.16
+
+ret.dead25:                                       ; No predecessors!
+  br label %choice.exit24
 }
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
