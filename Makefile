@@ -45,7 +45,7 @@ endif
 
 # --- Modules and Objects -----------------------------------------------------
 STD_MODULES      := str mem sys libc unicode io ccl
-COMPILER_MODULES := diag ast llvm operators dep_graph layout tast lexer unify type_env show parser annotate pkg \
+COMPILER_MODULES := diag ast llvm operators dep_graph layout tast lexer unify type_env show parser annotate version pkg \
                     codegen/types codegen/runtime codegen/expr codegen/match codegen/stmt codegen/main codegen
 ENTRY_MODULE     := edva
 
@@ -59,7 +59,7 @@ ALL_SRCS      := $(STD_MODULES:%=std/%.dva) $(COMPILER_MODULES:%=src/%.dva) src/
 SCAN_SRCS     := $(shell find src std -name '*.dva')
 DEPS_MK       := build/deps.mk
 
-.PHONY: all build clean test check driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators install uninstall
+.PHONY: all build clean test check driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install uninstall
 
 # Default target: incremental modular build
 all: edva
@@ -72,7 +72,7 @@ edva: $(ALL_OBJS)
 	@echo "Built edva successfully."
 
 # Ensure bootstrap compiler exists before compiling any object
-$(ALL_OBJS): | bootstrap build/obj
+$(ALL_OBJS): | bootstrap build/obj src/version.dva
 
 # Pattern rules for compilation units
 build/obj/%.o: std/%.dva
@@ -109,6 +109,13 @@ src/lexer.dva: tools/tokens.txt
 src/operators.dva: operators.yaml
 	@echo "Generating operator tables from operators.yaml..."
 	$(Q)$(NU) tools/opgen/main.nu
+
+src/version.dva: VERSION tools/gen_version.nu
+	@echo "Generating version from tools/gen_version.nu..."
+	$(Q)$(NU) tools/gen_version.nu
+
+gen-version:
+	$(Q)$(NU) tools/gen_version.nu
 
 gen-tokens: src/lexer.dva
 gen-operators: src/operators.dva
@@ -205,7 +212,7 @@ rebuild-seed: fixed-point
 
 # --- Clean & Test Gates -------------------------------------------------------
 
-build: gen-tokens gen-operators edva
+build: gen-tokens gen-operators gen-version edva
 
 test: edva
 	./run_tests.sh

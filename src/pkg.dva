@@ -10,6 +10,7 @@
 #use libc
 #use str
 #use sys
+#use version
 
 #foreign "c"
    getpid: () => Int
@@ -92,7 +93,7 @@
 
 // The language version this compiler implements (`edva = X.Y` minimum, §9).
 #public
-   lang_version = "0.4.0"
+   lang_version = version::VERSION
 
 // --- small utilities ---------------------------------------------------------
 
@@ -1123,8 +1124,10 @@
 
    usage: () => Int
    usage = !=>
-      out("usage: edva pkg <build|cache|fetch|test|init|add|update|graph|vendor> [dir] [options]")
-      out("       edva <build|fetch|test|init|add|update|graph|vendor> [dir] [options]")
+      out("usage: edva pkg <build|cache|fetch|test|update|graph|vendor> [dir] [options]")
+      out("       edva pkg init <dir> [--name <name>]")
+      out("       edva <build|fetch|test|update|graph|vendor> [dir] [options]")
+      out("       edva init <dir> [--name <name>]")
       2
 
    default_store: () => String
@@ -1174,7 +1177,8 @@
 
    parse_init_opts: Int => < (String, String) | >
    parse_init_opts = start =>
-      dir' = ++ "."
+      dir' = ++ ""
+      has_dir' = <->
       name' = ++ ""
       ok' = <+>
       i' = start
@@ -1191,9 +1195,16 @@
             |
                ?a > 0 && a(0) == '-'
                   | ok' = <->
-                  | dir' = a
+                  |
+                     dir' = a
+                     has_dir' = <+>
          i' = i' + 1
-      ok' | <+ (dir', name') +> | <-->
+      !has_dir'
+         |
+            fail(7002, "missing target directory for 'init' (specify directory or '.')")
+            <-->
+         |
+            ok' | <+ (dir', name') +> | <-->
 
    cmd_init: String, String => Int
    cmd_init = dir_arg, name_arg =>
@@ -2142,6 +2153,12 @@
                      | usage!
                ["help", "-h", "--help"]
                   usage!
+                  0
+               ["version", "-v", "--version"]
+                  ver_str = version::COMMIT_HASH == "" || version::COMMIT_HASH == "unknown"
+                     | "edva " + version::VERSION
+                     | "edva " + version::VERSION + " (commit " + version::COMMIT_HASH + ")"
+                  out(ver_str)
                   0
                |
                   fail(7015, "unknown pkg command '" + cmd + "'")

@@ -17,6 +17,7 @@
 #use "mem"
 #use "ccl"
 #use "pkg"
+#use "version"
 
 #public
 
@@ -2649,6 +2650,12 @@ repl_run = opts =>
          repl_loop(repl_opts, "", sess)
          repl_cleanup(sess)
 
+format_version: () => String
+format_version = !=>
+   version::COMMIT_HASH == "" || version::COMMIT_HASH == "unknown"
+      | "edva " + version::VERSION
+      | "edva " + version::VERSION + " (commit " + version::COMMIT_HASH + ")"
+
 parse_args_step: Int, CliOpts => CliOpts
 parse_args_step = i, opts =>
    i !< sys::argc
@@ -2656,6 +2663,10 @@ parse_args_step = i, opts =>
       |
          arg = sys::argv_string(i)
          arg
+            ["-v", "--version"]
+               print $ format_version!
+               sys::exit(0)
+               opts
             ["-h", "--help"]
                opts.help = <+>
                parse_args_step(i + 1, opts)
@@ -2874,6 +2885,7 @@ print_usage = _ =>
    print $ "       edva <init|add|fetch|build|test|update|graph|vendor> [dir] [options]"
    print $ "       edva pkg <command> [dir] [options]"
    print $ "Options:"
+   print $ "  -v, --version    Print compiler version and exit"
    print $ "  -ast, --ast      Print AST of target program"
    print $ "  -ast-tree        Print AST as an indented tree"
    print $ "  -typed-ast       Elaborate and verify typed AST"
@@ -2917,7 +2929,7 @@ dump_program_ast = prog, as_tree =>
 
 is_pkg_subcmd: String => <>
 is_pkg_subcmd = cmd =>
-   cmd ["init", "add", "fetch", "build", "test", "update", "graph", "tree", "vendor"]
+   cmd ["init", "add", "fetch", "build", "test", "update", "graph", "tree", "vendor", "version"]
 
 run_driver: Int => ()
 run_driver = _ =>

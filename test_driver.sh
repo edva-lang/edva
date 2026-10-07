@@ -1530,6 +1530,27 @@ echo "PASS"
 
 # --- Test 41: edva init workflow & duplicate prevention (E7020) ---
 echo -n "Testing edva init and duplicate prevention (E7020)... "
+
+# Verify edva pkg init with no args fails with E7002
+set +e
+timeout 30 ./edva pkg init >"$TMPDIR/t41_noargs.out" 2>"$TMPDIR/t41_noargs.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "E7002: missing target directory for 'init'" \
+    "$TMPDIR/t41_noargs.out" "$TMPDIR/t41_noargs.err"; then
+    echo "FAILED: edva pkg init with no args should fail with E7002"
+    cat "$TMPDIR/t41_noargs.out" "$TMPDIR/t41_noargs.err"
+    exit 1
+fi
+
+# Verify edva --version and -v
+VER_OUT="$(./edva --version)"
+V_OUT="$(./edva -v)"
+if ! echo "$VER_OUT" | grep -q "^edva 1.0.0" || [ "$VER_OUT" != "$V_OUT" ]; then
+    echo "FAILED: edva --version output invalid: '$VER_OUT' vs '$V_OUT'"
+    exit 1
+fi
+
 INIT_APP="$TMPDIR/init_app"
 INIT_LIB="$TMPDIR/init_lib"
 timeout 30 ./edva init "$INIT_APP" >"$TMPDIR/t41_init.out" 2>"$TMPDIR/t41_init.err"
@@ -1537,6 +1558,11 @@ rc=$?
 if [ $rc -ne 0 ] || [ ! -f "$INIT_APP/edva.ccl" ] || [ ! -f "$INIT_APP/src/init_app.dva" ] || [ ! -f "$INIT_APP/src/main.dva" ]; then
     echo "FAILED: edva init did not create expected skeleton files"
     cat "$TMPDIR/t41_init.out" "$TMPDIR/t41_init.err"
+    exit 1
+fi
+if ! grep -q "edva = 1.0.0" "$INIT_APP/edva.ccl"; then
+    echo "FAILED: edva init wrote incorrect compiler version into edva.ccl"
+    cat "$INIT_APP/edva.ccl"
     exit 1
 fi
 timeout 30 ./edva pkg init "$INIT_LIB" --name my_custom_lib >/dev/null 2>&1
