@@ -131,7 +131,7 @@
    find: #! E: Type, #! T: Type, (E => <>), T => < E | >
    find = pred, xs =>
       xs @ x =>
-         pred(x) | --| <+ x +>
+         pred(x) | --| <+ x ->
       <-->
 
    // any: check if any element in xs satisfies pred, returning <>.
