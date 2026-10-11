@@ -48,7 +48,8 @@ The empty branch of a ramification produces Unit when evaluated:
 When matching an empty slot, the branch simply performs a side effect or statement:
 
 ```dva
-opt: < Int | > = <-->
+opt: < Int | >
+opt = <-->
 
 opt |
    [val] print_int(val) |
@@ -63,6 +64,16 @@ debug_mode = <+>
 
 debug_mode |
    io::out("Debugging enabled\n")
+```
+
+### 4. Early return expressions (`--|`)
+The early return operator `--|` (whether returning a value `--| expr` or returning bare `--|`) always evaluates to `Unit` (`()`) at its local expression site, whether or not it returns a value to the caller. Because evaluating `--|` immediately terminates control flow in the enclosing function and returns to the caller, its value in local expression sequence composition is `Unit`.
+
+```dva
+check_even: Int => ()
+check_even = n =>
+   n % 2 != 0 | --|
+   io::out("Even\n")
 ```
 
 ## Runtime representation

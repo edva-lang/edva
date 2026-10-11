@@ -23,9 +23,9 @@ All ramifications belong to one of four distinct, mutually incompatible static s
 | Shape Name | Type Syntax | Positive (1st) Slot | Negative (2nd) Slot | Primary Use Case | LLVM Low-Level Representation |
 |:---|:---|:---|:---|:---|:---|
 | **RamNN** | `<>` | Bare positive `<+>` | Bare negative `<->` | Built-in boolean flag (`<+>`, `<->`) | `i1` register |
-| **RamPN** | `< T \| >` | Payload `T` | Absence unit `<-->` | Optional value (presence or absence) | `{ i1, i64 }*` union pointer |
-| **RamNP** | `< \| E >` | Success unit `<++>` | Payload `E` | Void write-or-fail operation | `{ i1, i64 }*` union pointer |
-| **RamPP** | `< T \| E >` | Payload `T` | Payload `E` | Fallible computation or lookup | `{ i1, i64 }` unboxed aggregate |
+| **RamPN** | `< T | >` | Payload `T` | Absence unit `<-->` | Optional value (presence or absence) | `{ i1, i64 }*` union pointer |
+| **RamNP** | `< | E >` | Success unit `<++>` | Payload `E` | Void write-or-fail operation | `{ i1, i64 }*` union pointer |
+| **RamPP** | `< T | E >` | Payload `T` | Payload `E` | Fallible computation or lookup | `{ i1, i64 }` unboxed aggregate |
 
 ### Shape incompatibility rules
 
@@ -41,8 +41,8 @@ All ramifications belong to one of four distinct, mutually incompatible static s
 |:---|:---|:---|:---|
 | `<+>` | Positive (1st) | `RamNN` (`<>`) | Flag truth constant |
 | `<->` | Negative (2nd) | `RamNN` (`<>`) | Flag falsehood constant |
-| `<++>` | Positive (1st) | `RamNP` (`< \| E >`) | Heap unit constant (void success slot) |
-| `<-->` | Negative (2nd) | `RamPN` (`< T \| >`) | Heap unit constant (absence/none slot) |
+| `<++>` | Positive (1st) | `RamNP` (`< | E >`) | Heap unit constant (void success slot) |
+| `<-->` | Negative (2nd) | `RamPN` (`< T | >`) | Heap unit constant (absence/none slot) |
 | `<+ expr ->` | Positive (1st) | `RamPP` | First slot of two-payload ram |
 | `<- expr +>` | Negative (2nd) | `RamPP` | Second slot of two-payload ram |
 | `<+ expr +>` | Positive (1st) | `RamPN` | Payload in positive slot, `<-->` in negative |
@@ -57,7 +57,7 @@ unambiguous without parentheses: `<+ a > b ->`.
 #type ParseResult < Int | Error >
 
 // Constructing various shapes:
-flag_val: <> = <+>
+flag_val = <+>
 opt_val = MaybeInt(<+ 42 +>)
 none_val = MaybeInt(<-->)
 res_val = ParseResult(<+ 100 ->)
@@ -67,11 +67,11 @@ res_val = ParseResult(<+ 100 ->)
 
 | Operator | Syntax | Description | Example |
 |:---|:---|:---|:---|
-| **Positional Match** | `r \| val => ... \| err => ...` | Match first slot then second slot | `res \| v => print_int(v) \| print("err")` |
+| **Positional Match** | `r | val => ... | err => ...` | Match first slot then second slot | `res | v => print_int(v) | print("err")` |
 | **Unwrap or Abort** | `r!!` | Unwraps positive payload; aborts program on negative | `val = list(0)!!` |
 | **Propagate** | `r--!` | Unwraps positive payload inline, or early-returns negative ram from function | `val = parse(s)--!` |
-| **Fallible Discard** | `write !\| _` | Fallible discard: ignores void success, panics on failure | `array(i) = v !\| _` |
-| **Return Ram Sugar** | `cond \|->`, `\|+>`, `\|-->`, `\|++>` | Early-return unit ram shortcut (`--\| <->`, `<+>`, `<-->`, `<++>`) | `n < 0 \|->` |
+| **Fallible Discard** | `write !| _` | Fallible discard: ignores void success, panics on failure | `array(i) = v !| _` |
+| **Return Ram Sugar** | `cond |->`, `|+>`, `|-->`, `|++>` | Early-return unit ram shortcut (`--| <->`, `<+>`, `<-->`, `<++>`) | `n < 0 |->` |
 | **Monadic Bind** | `r $>> fn` | Unpacks positive payload into `fn`; propagates negative | `lookup(k) $>> parse_int $>> validate` |
 | **Polarity Test** | `<>(r)` / `!<>(r)` | Discards payload, extracts `<+>` (1st) or `<->` (2nd); `!<>` negates polarity | `is_ok = <>(res)` |
 

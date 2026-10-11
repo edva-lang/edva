@@ -71,6 +71,34 @@ double = (_ * 2)       // Desugars to: _ => _ * 2
 invert = (100 - _)     // Desugars to: _ => 100 - _
 ```
 
+### Operator sections
+
+An operator section `op rhs` consists of a binary operator followed by whitespace and a right-hand operand. It desugars into a single-parameter function over the implicit placeholder `_` (`_ => _ op rhs`):
+
+```dva
+double = (* 2)          // Desugars to: _ => _ * 2
+inc = (+ 1)             // Desugars to: _ => _ + 1
+is_negative = (< 0)     // Desugars to: _ => _ < 0
+```
+
+#### Syntax rules:
+1. **Trailing whitespace is mandatory:** An operator section requires trailing whitespace immediately after the operator token (`* 2`, `+ 1`).
+   - `+ 2` (with whitespace) is an addition section.
+   - `+b` (without whitespace) is the Builder freeze operator.
+2. **Excluded binary operators:** The operators `||`, `&&`, `$`, `$>`, `$>>`, `!>`, `!<`, and `!=` never form operator sections.
+3. **Usage in choice predicate guards:** Operator sections are idiomatic as predicate guards in choice expressions without needing an explicit lambda:
+   ```dva
+   classify = n =>
+      n [< 0] "negative"
+      [> 0] "positive"
+      | "zero"
+   ```
+4. **Usage in pipelines:** Operator sections can be passed directly into feed (`$>`) and higher-order routines:
+   ```dva
+   res = 5 $> (* 2) $> (+ 10)    // (5 * 2) + 10 = 20
+   ```
+
+
 ### Capturing lexical scope (closures)
 
 A function captures variables from its enclosing lexical environment:

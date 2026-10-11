@@ -38,7 +38,7 @@ my_project/
 
 ## The package manifest (`edva.ccl`)
 
-The package manifest uses CCL (Configuration and Constraint Language) syntax:
+The package manifest uses CCL (Categorical Configuration Language) syntax:
 
 ```ccl
 name = my_project

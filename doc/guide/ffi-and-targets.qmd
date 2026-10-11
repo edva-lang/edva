@@ -29,7 +29,7 @@ generate a C header from export declarations.
 
 ## Buffers and ownership
 
-`&builder` and `&string` produce buffer addresses (RawPtr). They are unary
+`&builder` and `&string` produce buffer addresses (Addr). They are unary
 operators: there must be no whitespace between `&` and its operand.
 `?builder = count` updates a Builder's visible length after an FFI read. Do not
 retain arena-backed addresses beyond the lifetime guaranteed by the call or

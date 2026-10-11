@@ -12,11 +12,11 @@ The `String` type represents an immutable, length-prefixed, NUL-reserved sequenc
 
 ## Declaration and annotations
 
-Strings are bound with `=` or typed explicitly using `: String`:
+Strings are bound using `=`:
 
 ```dva
 greeting = "Hello, world!"
-path: String = "/etc/edva/config.ccl"
+path = "/etc/edva/config.ccl"
 ```
 
 ## Literals and syntax

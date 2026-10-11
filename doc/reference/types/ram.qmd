@@ -17,15 +17,15 @@ The four static layouts of ramifications are distinguished by whether each slot 
 | Layout | Syntax | Positive (1st) Slot | Negative (2nd) Slot | LLVM Representation | Common Role |
 |:---|:---|:---|:---|:---|:---|
 | **RamNN** | `<>` | Bare positive `<+>` | Bare negative `<->` | `i1` (scalar boolean) | `Flag`: truthiness, conditions |
-| **RamPN** | `< T \| >` | Payload `T` | Absence unit `<-->` | `{ i64 tag, ptr payload }` | `Option`: nullable / optional value |
-| **RamNP** | `< \| E >` | Success unit `<++>` | Payload `E` | `{ i64 tag, ptr payload }` | `Fallible`: void-or-error status |
-| **RamPP** | `< T \| E >` | Payload `T` | Payload `E` | `{ i64 tag, ptr payload }` | `Result`: value-or-error return |
+| **RamPN** | `< T | >` | Payload `T` | Absence unit `<-->` | `{ i64 tag, ptr payload }` | `Option`: nullable / optional value |
+| **RamNP** | `< | E >` | Success unit `<++>` | Payload `E` | `{ i64 tag, ptr payload }` | `Fallible`: void-or-error status |
+| **RamPP** | `< T | E >` | Payload `T` | Payload `E` | `{ i64 tag, ptr payload }` | `Result`: value-or-error return |
 
 The `Flag` (`<>`) is a native built-in type and does not require a `#type` declaration. The payload forms are defined via `#type`:
 
 ```dva
 // Built-in flag
-active: <> = <+>
+active = <+>
 
 // User-declared ram shapes
 #type MaybeInt < Int | >
@@ -63,8 +63,8 @@ opt_val = <+ 42 +> $> MaybeInt
 none_val = <--> $> MaybeInt
 
 // Constructing a Result (RamPP)
-success: FileResult = <+ 3 ->
-failure: FileResult = <- Error(404, "File not found") +>
+success = FileResult(<+ 3 ->)
+failure = FileResult(<- Error(404, "File not found") +>)
 ```
 
 ## Operations
@@ -87,7 +87,7 @@ e = !a         // <-> (Logical NOT)
 Ramifications are inspected and unpacked using vertical bar `|` choice expressions:
 
 ```dva
-res: FileResult = <+ 100 ->
+res = FileResult(<+ 100 ->)
 
 status = res |
    [fd] "File opened successfully on descriptor " + fd |
@@ -97,7 +97,7 @@ status = res |
 For non-payload slots, omission of payload bindings matches the branch:
 
 ```dva
-opt: MaybeInt = <-->
+opt = MaybeInt(<-->)
 
 val = opt |
    [x] x |
@@ -122,7 +122,7 @@ arr(0) = 42 !| _
 The constructor `<>(r)` discards any payload and extracts a pure boolean `Flag`. The spaceless negation `!<>(r)` negates the resulting flag directly:
 
 ```dva
-res: FileResult = <+ 10 ->
+res = FileResult(<+ 10 ->)
 is_ok = <>(res)     // <+>
 is_err = !<>(res)   // <->
 ```
@@ -144,10 +144,10 @@ Choices can early return unit ramifications using compact branch shortcuts:
 
 | Shortcut | Desugars to | Target Return Type |
 |---|---|---|
-| `cond \|->` | `cond \| --\| <->` | `RamNN` (`<>`) negative flag |
-| `cond \|+>` | `cond \| --\| <+>` | `RamNN` (`<>`) positive flag |
-| `cond \|-->` | `cond \| --\| <-->` | `RamPN` (`< T \| >`) negative absence unit |
-| `cond \|++>` | `cond \| --\| <++>` | `RamNP` (`< \| E >`) positive success unit |
+| `cond |->` | `cond | --| <->` | `RamNN` (`<>`) negative flag |
+| `cond |+>` | `cond | --| <+>` | `RamNN` (`<>`) positive flag |
+| `cond |-->` | `cond | --| <-->` | `RamPN` (`< T | >`) absence unit |
+| `cond |++>` | `cond | --| <++>` | `RamNP` (`< | E >`) success unit |
 
 ```dva
 check_limit: Int => <>

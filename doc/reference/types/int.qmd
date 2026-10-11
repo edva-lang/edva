@@ -116,16 +116,16 @@ is_ge  = x >= y    // <->
 Integer conversions are strictly explicit. There is no implicit widening or sign extension:
 
 ```dva
-big: Int = 100000
+big = 100000
 // Truncation: explicit cast to i16
 small = i16(big)
 
 // Sign conversion: explicit cast from u8 to i32
-raw_byte: u8 = 250
+raw_byte = u8(250)
 signed_int = i32(raw_byte)
 
 // Conversion to Int
-restored: Int = Int(small)
+restored = Int(small)
 ```
 
 ## Memory layout and ABI

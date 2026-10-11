@@ -12,13 +12,13 @@ The `Rune` type represents a single Unicode scalar value (ranging from `U+0000` 
 
 ## Declaration and annotations
 
-Variables can be bound to rune literals or annotated explicitly as `Rune`:
+Variables are bound to rune literals:
 
 ```dva
 letter = 'A'
-greek: Rune = 'λ'
+greek = 'λ'
 emoji = '🦀'
-newline: Rune = '\n'
+newline = '\n'
 ```
 
 ## Literals and escape sequences
@@ -84,7 +84,7 @@ Conversions between `Int` and `Rune` are identity operations at runtime:
 
 ```dva
 codepoint = 0x1F680       // Rocket emoji 🚀
-rocket: Rune = Rune(codepoint)
+rocket = Rune(codepoint)
 
 // Cast back to integer codepoint value
 int_val = Int(rocket)     // 128640

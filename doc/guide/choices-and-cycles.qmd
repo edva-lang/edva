@@ -109,10 +109,10 @@ When early returning a unit ramification from an enclosing function, Edva provid
 
 | Shortcut | Equivalent Full Syntax | Target Ramification |
 |---|---|---|
-| `cond \|->` | `cond \| --\| <->` | `RamNN` (`<>`) negative unit (`false`) |
-| `cond \|+>` | `cond \| --\| <+>` | `RamNN` (`<>`) positive unit (`true`) |
-| `cond \|-->` | `cond \| --\| <-->` | `RamPN` (`< T \| >`) negative absence unit |
-| `cond \|++>` | `cond \| --\| <++>` | `RamNP` (`< \| E >`) positive success unit |
+| `cond |->` | `cond | --| <->` | `RamNN` (`<>`) negative unit (`false`) |
+| `cond |+>` | `cond | --| <+>` | `RamNN` (`<>`) positive unit (`true`) |
+| `cond |-->` | `cond | --| <-->` | `RamPN` (`< T | >`) negative absence unit |
+| `cond |++>` | `cond | --| <++>` | `RamNP` (`< | E >`) positive success unit |
 
 ```dva
 // Guard checking with ram return sugar:

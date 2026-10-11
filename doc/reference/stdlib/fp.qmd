@@ -51,7 +51,7 @@ result = pipeline(10) // 21
 |---|---|---|
 | `complement` | `(T => <>) => (T => <>)` | Logical NOT of a predicate (`!pred(x)`) |
 | `both` | `(T => <>), (T => <>) => (T => <>)` | Logical AND of two predicates (`p1(x) && p2(x)`) |
-| `either_pred` | `(T => <>), (T => <>) => (T => <>)` | Logical OR of two predicates (`p1(x) \|\| p2(x)`) |
+| `either_pred` | `(T => <>), (T => <>) => (T => <>)` | Logical OR of two predicates (`p1(x) || p2(x)`) |
 
 ```dva
 is_pos: Int => <>
@@ -81,7 +81,7 @@ the last parameter position, enabling functional application with `apply ($)`:
 | `scan` | `(Acc, E => Acc), Acc, Coll => (Acc){}` | Running left reduction, emitting each intermediate accumulator |
 | `reverse` | `Coll => Coll` | Returns container with elements in reversed order |
 | `flatten` | `((E){}){} => (E){}` | Flattens a nested array of arrays into a single-level array |
-| `find` | `(E => <>), Coll => < E \| >` | Finds first element satisfying `pred`, returning `RamPN` |
+| `find` | `(E => <>), Coll => < E | >` | Finds first element satisfying `pred`, returning `RamPN` |
 | `any` | `(E => <>), Coll => <>` | Checks if at least one element satisfies `pred` |
 
 ```dva

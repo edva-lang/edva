@@ -188,7 +188,7 @@ Constructors:
   - Allocation: `b = {128}` allocates initial buffer capacity.
   - Streaming: Use record notation `b = ("header", "\n", item, "\n")` or `b = (13, 10)`. Elements are written directly into the buffer without intermediate string allocations.
   - Freeze (`+b`): Consumes and resets the Builder descriptor, transferring the buffer pointer directly into an immutable String with zero allocation.
-  - Interop: `&b` yields the raw writable buffer address (`RawPtr`); `?b = n` sets the visible length after an external FFI read.
+  - Interop: `&b` yields the raw writable buffer address (`Addr`); `?b = n` sets the visible length after an external FFI read.
 
 ---
 

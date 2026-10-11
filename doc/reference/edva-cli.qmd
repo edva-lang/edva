@@ -63,7 +63,7 @@ edva pkg <command> [dir] [options]
 | `edva update [alias] [dir]` | Refresh moving branch/tag pins in `edva.lock.ccl` (selectively for `alias` or globally). |
 | `edva graph [dir]` / `edva tree` | Display the resolved dependency graph as an ASCII tree with source provenance. |
 | `edva vendor [dir]` | Materialize external dependencies into `<root>/vendor/` and generate `vendor/vendor.ccl` for offline builds. |
-| `edva cache <dir\|ls\|clean>` | Manage the LLVM IR compilation cache (`dir`: show path, `ls`: list entries, `clean`: evict cached objects). |
+| `edva cache <dir|ls|clean>` | Manage the LLVM IR compilation cache (`dir`: show path, `ls`: list entries, `clean`: evict cached objects). |
 
 ### Package options
 

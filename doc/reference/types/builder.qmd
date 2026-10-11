@@ -85,7 +85,7 @@ b += "Hello, "
 b += "Edva!"
 
 // Freeze into immutable String (O(1) transfer)
-final_str: String = +b
+final_str = +b
 ```
 
 #### Semantics of freezing:

@@ -10,13 +10,18 @@ meta:
 
 The `Addr` type (also recognized as `ptr`) represents an untyped, raw memory address. In 64-bit systems, `Addr` is an 8-byte value that maps directly to LLVM's unified `ptr` type.
 
-## Declaration and annotations
+## Declaration and bindings
 
-Variables holding raw memory references are annotated with `Addr`:
+Local bindings in Edva are inferred directly from their right-hand side. Inline type annotations (`p: Addr = ...`) are **illegal syntax**. When an explicit type signature is desired, it must be declared on a separate preceding line:
 
 ```dva
-p: Addr = Addr(0)      // Null pointer
-handle: Addr = Addr(0x7fff0000)
+// Inferred binding (standard idiom)
+p = Addr(0)                  // Null pointer
+handle = Addr(0x7fff0000)
+
+// Explicit signature preceding binding
+p_explicit: Addr
+p_explicit = Addr(0)
 ```
 
 ## Obtaining pointers (`&`)
@@ -25,11 +30,11 @@ The unary prefix address-of operator `&` extracts the underlying memory pointer 
 
 ```dva
 str = "Static data"
-raw_str_ptr: Addr = &str
+raw_str_ptr = &str
 
-b = Builder(64)
+b = {64}
 b += "Bytes"
-raw_buf_ptr: Addr = &b
+raw_buf_ptr = &b
 ```
 
 ## Conversions and casting
@@ -38,10 +43,10 @@ Conversions between `Addr` and `Int` are explicit and bidirectional:
 
 ```dva
 // Integer to pointer
-base_addr: Addr = Addr(0x1000)
+base_addr = Addr(0x1000)
 
 // Pointer to integer
-numeric_val: Int = Int(base_addr)
+numeric_val = Int(base_addr)
 ```
 
 ## Operations
@@ -51,8 +56,8 @@ numeric_val: Int = Int(base_addr)
 Raw offsets can be added or subtracted directly:
 
 ```dva
-start: Addr = Addr(0x2000)
-offset: Int = 16
+start = Addr(0x2000)
+offset = 16
 
 next_page = start + offset    // Addr(0x2010)
 ```
@@ -69,6 +74,26 @@ is_null = p1 == Addr(0)       // <->
 is_less = p1 < p2             // <+>
 ```
 
+### Volatile memory load and store (`@[...]`)
+
+Direct memory reading and writing is performed using volatile bracket expressions:
+
+- **Typed load (`@[addr T]`)**: Reads a volatile value of type `T` from `addr`:
+  ```dva
+  val = @[ptr Int]
+  byte = @[ptr u8]
+  ```
+- **Untyped store (`@[addr] = val`)**: Stores `val` into memory at `addr`. The LHS derives its target type and write width directly from the RHS:
+  ```dva
+  @[ptr] = 42                 // Stores 64-bit Int
+  @[ptr] = u8(255)            // Stores 8-bit unsigned byte
+  @[ptr] = 1i32               // Stores 32-bit integer
+  ```
+
+> [!IMPORTANT]
+> Writing `@[addr T] = val` is a compile-time error (`E2093: Cannot assign to a typed load; write through the untyped '@[addr]' form instead`).
+> The LHS of an assignment must always be the untyped form `@[addr] = val`, deriving its storage type and width from the RHS value.
+
 ## Interacting with C FFI and standard library
 
 `Addr` is commonly used when declaring external foreign functions (`#foreign`) and interacting with low-level runtime modules like `#use @libc` or `#use @mem`:
@@ -79,7 +104,7 @@ is_less = p1 < p2             // <+>
 
 // Allocate raw bytes via standard allocator
 size = 256
-raw_mem: Addr = libc::malloc(size)
+raw_mem = libc::malloc(size)
 
 // Free allocated memory
 libc::free(raw_mem)

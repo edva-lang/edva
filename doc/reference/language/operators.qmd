@@ -102,7 +102,7 @@ concatenated segment equality without allocating. Unary `-` is integer/float neg
 | `result--!` | unwrap or propagate a negative ram from its function |
 | `~~lvalue` | two-way state binding lens record `(get = !=> ..., set = v => ...)` |
 | `expr {N}` | record repetition |
-| `@[address T]` | volatile typed memory load or record view |
+| `@[addr T]` | volatile typed memory load (`@[addr] = val` for store; `@[addr T] = val` is an error) |
 | `#size(Type)` | compile-time type size |
 
 Arithmetic multiplication (`a * b`) and operator sections (`* 2`) use `*`.
