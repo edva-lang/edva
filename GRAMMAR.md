@@ -486,9 +486,10 @@ Literal      ::= Integer | Float | Character | String
 
 Variable     ::= Identifier
 
-UnaryExpr    ::= "!" PrimaryExpr          (* type-directed, see §2.7.1 *)
+UnaryExpr    ::= "!" PrimaryExpr          (* type-directed Flag negation, §2.7.1 *)
                | "?" PrimaryExpr          (* length/count, §2.7.2 *)
-               | "*" PrimaryExpr          (* Builder buffer address, §3.7.1; no space *)
+               | "&" PrimaryExpr          (* buffer address / data pointer, §2.7.2; no space *)
+               | "+" PrimaryExpr          (* Builder freeze into String, §2.7.2; no space *)
                | "++" PrimaryExpr         (* deep copy *)
                | ".!." PrimaryExpr        (* bitwise not *)
                | "-" PrimaryExpr          (* desugars to 0 - x *)
@@ -589,8 +590,9 @@ them with a comparison, which yields a ramification). `+b` is Builder freeze.
 - `&s` — the String's **data pointer** as a `RawPtr` (the FFI read seam / C
   in-arg, e.g. `write(fd, &s, ?s)`).
 - `&b` — the Builder's **writable buffer address** as a `RawPtr`, for FFI read
-  targets. Requires **no trailing whitespace** (`&b`); `* x` with a space is
-  the multiplication section. Inside a call, `f(&b)` is the unary address.
+  targets. Requires **no trailing whitespace** (`&b`). Unary `*` is eliminated;
+  `* x` with a space is the multiplication section. Inside a call, `f(&b)` is
+  the unary address.
 
 This is the whole FFI-read pattern, with no `malloc`/`free`:
 
@@ -1073,9 +1075,10 @@ the truth values `<+>` (positive) and `<->` (negative).
 | `.!.` (prefix) | integerish | integerish (bitwise NOT) |
 | `.<.` `.>.` | integerish, integerish (count) | integerish — zero-fill (logical) shifts; count masked to operand width, shift ≥ width is a no-op |
 | `++` (prefix) | `String` / `Slice` / Record / Array | deep copy of the operand (fresh buffer); scalars are a reference no-op |
-| `!` (prefix) | see §2.7.1 / §3.3.1 | type-directed: `Ram→Ram`, `Builder→String` |
+| `!` (prefix) | Flag | Flag negation |
+| `+` (prefix, no space) | `Builder` | `String` — freeze into String in-place (§2.7.2) |
 | `?` (prefix) | `String` / `Builder` / `Array` / `Map` / `Record` / `Slice` | `Int` — byte length / element·entry count (§2.7.2) |
-| `*` (prefix, no space) | `Builder` | `RawPtr` — the writable buffer address (§2.7.2, §3.7.1) |
+| `&` (prefix, no space) | `Builder` / `String` | `RawPtr` — the writable buffer address or data pointer (§2.7.2) |
 | `-` (prefix) | `Int`/`Float` | desugars to `0 - x` |
 | `#size` (prefix) | a **type** name | `Int` constant |
 | `$>` | `lhs, fn-or-TypeName` | `fn(lhs)` / coercion result (reverse apply / feed) |
@@ -1202,8 +1205,8 @@ to a call needs an extra level — `f((=x=))`, `f $ (=x=)`, or bind it first
   and `s.data = p` are compile errors (`E3066`), and `String(ptr)`
   construction is rejected (`E3065`) — those would be mutable windows into
   memory the language cannot verify ownership of (§3.2). Length is the `?s`
-  operator and the data pointer is `*s`; `.len`/`.data` member access is
-  removed. Reads via `?s`/`*s`/`s(i)`/`s(a..b)` are the only ways *in*.
+  operator and the data pointer is `&s`; `.len`/`.data` member access is
+  removed. Reads via `?s`/`&s`/`s(i)`/`s(a..b)` are the only ways *in*.
 
 #### 3.6.2 Generation-tagged liveness
 
@@ -1221,7 +1224,7 @@ deterministic diagnostic. Strings built outside any restore scope (including
 |---|---|---|
 | `?s` | byte **length** (generation-masked) | `Int` |
 | `s(i)` | bounds-checked **byte read** at index `i` (0 ≤ `i` < `?s`, else `E4006`) | `Int` (zero-extended byte) |
-| `*s` | **FFI read seam**: the raw byte pointer (no member access) | `RawPtr` |
+| `&s` | **FFI read seam**: the raw byte pointer (no member access) | `RawPtr` |
 | `s(a..b)` | **view**: new String sharing the parent's buffer over `[a, b)` — O(1), no copy | `String` |
 | `s(i..)` | rest-from-`i` view; `s(..b)` prefix view; `s(..)` full-view alias | `String` |
 | `s == t` | **content equality**: length short-circuit, then `memcmp` | `Ramification` |

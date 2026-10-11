@@ -39,16 +39,25 @@ Line comments begin with `//`; block comments use `/*` and `*/`.
 | rune | `'a'`, `'λ'`, `'\n'` | one Unicode scalar value |
 | string | `"text\n"` | escaped UTF-8 string |
 | raw string | `(= text =)` | literal bytes, with one raw-string escape |
+| here-doc | `"""text"""` | multiline block with margin stripping & interpolation |
 
 `.5`, `1.`, and `3.e4` are not float literals. Integer literals require a
 static type context or explicit suffix; the compiler never silently chooses
 `Int`. `#pragma number <type>` changes the literal type for the rest of its
 file; `#pragma number default` restores the normal inference mode.
 
+### Here-Docs (`"""..."""`)
+
+Triple-double-quoted strings `"""..."""` define formatted multiline text:
+- **Baseline margin stripping**: When the closing `"""` sits on its own line, its column establishes the baseline indentation. That margin is stripped from each content line; any line indented less raises `E1017`.
+- **Newline trimming**: Leading newline after `"""` is discarded; line continuation with trailing `\` suppresses newlines.
+- **Interpolation**: `${expr}` evaluates expressions directly into the text.
+- **Escapes**: `\"""` escapes triple quotes; `\$` escapes interpolation; raw `"` and `""` are literal.
+
 ## Tokens and whitespace-sensitive forms
 
 The lexer consumes operators greedily. Keep operator operands separated by
-whitespace unless the syntax requires adjacency. In particular, `*builder` is
+whitespace unless the syntax requires adjacency. In particular, `&builder` is
 the unary buffer-address operator, whereas `* value` begins a multiplication
 section. Ramification payloads close with `+>` or `->`; a bare `>` is a
 comparison operator, not a delimiter.

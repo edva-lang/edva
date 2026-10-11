@@ -37,6 +37,7 @@ Identifiers conform to UAX31. Dva has zero bare keywords. Directives start with 
 - **Strings**:
   - Escaped: `"hello\nworld"`
   - Raw / Multiline: `(={"status": "ok", "count": 1}=)` (enclosed in `(= ... =)`, eliminating escaping).
+  - Here-Doc: `"""..."""` multiline blocks with baseline margin stripping, line continuation `\`, and `${expr}` dynamic interpolation.
 - **Repetition**: `expr {N}` generates a record containing `N` flat copies of `expr` (e.g., `0 {8}` produces `(0, 0, 0, 0, 0, 0, 0, 0)`).
 - **Builder Literal**: `{expr}` starting an expression creates a mutable Builder buffer with initial capacity `expr` (e.g., `{64}`).
 

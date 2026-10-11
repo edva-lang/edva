@@ -51,6 +51,13 @@ b += 'X'
 // Append formatted integers directly
 status_code = 200
 b += status_code
+
+// In-place here-doc append with interpolation (no intermediate string allocations)
+endpoint = "/users"
+b += """
+   POST ${endpoint} HTTP/1.1
+   Host: example.com
+   """
 ```
 
 ### Inspecting metadata

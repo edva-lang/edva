@@ -21,7 +21,7 @@ path: String = "/etc/edva/config.ccl"
 
 ## Literals and syntax
 
-Edva supports two string literal formats:
+Edva supports three string literal formats:
 
 ### Standard escaped strings
 Enclosed in double quotes `"..."`, supporting C-style escape sequences:
@@ -44,6 +44,56 @@ WHERE status = 'active'
 ```
 
 The only escape sequence recognized in raw strings is `=\)`, which emits a literal `=)`.
+
+### Here-Docs (`"""..."""`)
+Enclosed in triple double quotes `"""..."""`. Here-docs provide multiline formatted text blocks with baseline margin stripping and dynamic expression interpolation:
+
+```dva
+name = "world"
+count = 3
+template = """
+   Hello, ${name}!
+   Items remaining: ${count}
+   Note: unescaped "quotes" and ""double quotes"" work as-is.
+   """
+```
+
+#### Indentation & baseline margin stripping
+- When the closing `"""` delimiter is placed on its own line, its column defines the **baseline margin**. That leading whitespace prefix is stripped from the beginning of every content line.
+- Any non-empty line indented less than the baseline margin raises compile error `E1017`.
+- Blank lines are preserved without raising indentation errors.
+
+#### Newline handling & line continuation
+- An opening newline immediately following `"""` is discarded.
+- When the closing `"""` is on its own line, the preceding content line's trailing newline is preserved.
+- A trailing backslash `\` at the end of a line acts as a line continuation: it suppresses the newline while preserving baseline margin stripping on subsequent lines.
+
+```dva
+long_line = """
+   This is a single \
+   unbroken line of text.
+   """
+```
+
+#### Quotes & escaping
+- Unescaped `"` and `""` are literal inside the block.
+- `\"""` escapes to a literal `"""`.
+- `\$` and `\${` escape interpolation sequences to literal `$` and `${`.
+
+#### Expression interpolation
+- `${expr}` evaluates `expr` and splices the resulting value into the string at runtime:
+
+```dva
+part1 = "foo"
+part2 = "bar"
+combined = """
+   Value: ${part1 + "_" + part2}
+   """
+```
+
+#### Direct Builder lowering
+- Standalone here-docs evaluate to an immutable `String`.
+- When appended to a mutable buffer via compound assignment (`b += """..."""`), literal segments and interpolated expressions are appended directly into the `Builder` buffer in place without allocating intermediate `String` values.
 
 ## The `{ len, data }` fat-pointer ABI
 
