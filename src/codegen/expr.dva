@@ -2239,8 +2239,9 @@ codegen_eval_float_arith = cg, op, l, r =>
 
 codegen_emit_div_guard: types::Cg, Addr, Addr, <> => ()
 codegen_emit_div_guard = cg, l_val, r_val, is_signed =>
-   i64t = LLVMInt64Type!
-   zero = LLVMConstInt(i64t, 0, 0)
+   l_ty = LLVMTypeOf(l_val)
+   r_ty = LLVMTypeOf(r_val)
+   zero = LLVMConstInt(r_ty, 0, 0)
    is_zero = LLVMBuildICmp(cg.builder, 32, r_val, zero, "div.is.zero")
    cur_bb = LLVMGetInsertBlock(cg.builder)
    parent = LLVMGetBasicBlockParent(cur_bb)
@@ -2253,8 +2254,10 @@ codegen_emit_div_guard = cg, l_val, r_val, is_signed =>
    is_signed
       |
          LLVMPositionBuilderAtEnd(cg.builder, not_zero_bb)
-         int_min = LLVMConstInt(i64t, -9223372036854775807 - 1, 0)
-         minus_one = LLVMConstInt(i64t, -1, 1)
+         w = LLVMGetIntTypeWidth(l_ty)
+         min_val = w == 64 | -9223372036854775807 - 1 | 0 - (1 .<. (w - 1))
+         int_min = LLVMConstInt(l_ty, min_val, 1)
+         minus_one = LLVMConstInt(r_ty, -1, 1)
          is_min = LLVMBuildICmp(cg.builder, 32, l_val, int_min,
             "div.is.min")
          is_neg_one = LLVMBuildICmp(cg.builder, 32, r_val, minus_one,

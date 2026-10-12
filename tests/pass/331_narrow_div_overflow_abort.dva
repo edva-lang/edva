@@ -1,0 +1,7 @@
+// tests/pass/331_narrow_div_overflow_abort.dva — narrow INT_MIN / -1 aborts with E4013
+#use io
+
+a = i8(-128)
+b = i8(-1)
+c = a / b
+io::out $ c

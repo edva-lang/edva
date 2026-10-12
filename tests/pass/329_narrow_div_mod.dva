@@ -1,0 +1,53 @@
+// tests/pass/329_narrow_div_mod.dva — issue #128 regression: narrow integer div and mod
+#use io
+
+// i8
+s8_a = i8(100)
+s8_b = i8(3)
+io::out $ s8_a / s8_b
+io::out $ s8_a % s8_b
+s8_neg = i8(-100)
+io::out $ s8_neg / s8_b
+io::out $ s8_neg % s8_b
+
+// u8
+u8_a = u8(200)
+u8_b = u8(3)
+io::out $ u8_a / u8_b
+io::out $ u8_a % u8_b
+
+// i16
+s16_a = i16(1000)
+s16_b = i16(7)
+io::out $ s16_a / s16_b
+io::out $ s16_a % s16_b
+
+// u16
+u16_a = u16(50000)
+u16_b = u16(7)
+io::out $ u16_a / u16_b
+io::out $ u16_a % u16_b
+
+// i32
+s32_a = i32(100000)
+s32_b = i32(11)
+io::out $ s32_a / s32_b
+io::out $ s32_a % s32_b
+
+// u32
+u32_a = u32(3000000000)
+u32_b = u32(11)
+io::out $ u32_a / u32_b
+io::out $ u32_a % u32_b
+
+// i64
+s64_a = i64(10000000000)
+s64_b = i64(13)
+io::out $ s64_a / s64_b
+io::out $ s64_a % s64_b
+
+// u64
+u64_a = u64(10000000000)
+u64_b = u64(13)
+io::out $ u64_a / u64_b
+io::out $ u64_a % u64_b
