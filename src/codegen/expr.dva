@@ -2779,7 +2779,12 @@ coerce_val = cg, v, v_vt, target =>
          types::is_int_vt(target)
             |
                t_ll = types::llvm_type_of_vt(target)
-               (stmt::coerce_int_ext(cg, v, t_ll, types::is_unsigned_vt(v_vt)), target)
+               types::is_float_vt(v_vt)
+                  |
+                     types::is_unsigned_vt(target)
+                        | (LLVMBuildFPToUI(cg.builder, v, t_ll, "cast.fptoui"), target)
+                        | (LLVMBuildFPToSI(cg.builder, v, t_ll, "cast.fptosi"), target)
+                  | (stmt::coerce_int_ext(cg, v, t_ll, types::is_unsigned_vt(v_vt)), target)
             | (v, target)
 
 // Coerces an argument expression to a target ValueType ("Float(x)", "Int(x)"
@@ -7342,9 +7347,17 @@ codegen_typed_eval_cast_other = cg, target_vt, aev =>
                         |
                            is_intish = types::is_int_vt(target_vt)
                            is_intish
-                              | (stmt::coerce_int_ext(cg, aev.0,
-                                   types::llvm_type_of_vt(target_vt),
-                                   types::is_unsigned_vt(aev.1)),
-                                   target_vt)
+                              |
+                                 t_ll = types::llvm_type_of_vt(target_vt)
+                                 types::is_float_vt(aev.1)
+                                    |
+                                       types::is_unsigned_vt(target_vt)
+                                          | (LLVMBuildFPToUI(cg.builder, aev.0,
+                                               t_ll, "cast.fptoui"), target_vt)
+                                          | (LLVMBuildFPToSI(cg.builder, aev.0,
+                                               t_ll, "cast.fptosi"), target_vt)
+                                    | (stmt::coerce_int_ext(cg, aev.0,
+                                         t_ll, types::is_unsigned_vt(aev.1)),
+                                         target_vt)
                               | (aev.0, target_vt)
 

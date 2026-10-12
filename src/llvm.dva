@@ -92,6 +92,7 @@
    LLVMBuildSIToFP: (Builder: Addr, Val: Addr, DestTy: Addr, Name: String) => Addr
    LLVMBuildUIToFP: (Builder: Addr, Val: Addr, DestTy: Addr, Name: String) => Addr
    LLVMBuildFPToSI: (Builder: Addr, Val: Addr, DestTy: Addr, Name: String) => Addr
+   LLVMBuildFPToUI: (Builder: Addr, Val: Addr, DestTy: Addr, Name: String) => Addr
    LLVMBuildFPTrunc: (Builder: Addr, Val: Addr, DestTy: Addr, Name: String) => Addr
    LLVMBuildFPExt: (Builder: Addr, Val: Addr, Dest: Addr, Name: String) => Addr
    LLVMBuildSelect: (Builder: Addr, If: Addr, Then: Addr, Else: Addr, Name: String) => Addr

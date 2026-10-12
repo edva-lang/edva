@@ -1,0 +1,39 @@
+// tests/pass/334_float_to_int.dva — issue #131 regression: float to fixed-width integer conversions
+#use io
+
+// 1. Truncation toward zero from Float (f64)
+x = 3.99
+io::out $ Int(x)
+io::out $ i8(x)
+io::out $ u8(x)
+io::out $ i16(x)
+io::out $ u16(x)
+io::out $ i32(x)
+io::out $ u32(x)
+io::out $ i64(x)
+io::out $ u64(x)
+
+// 2. Negative Float truncation toward zero
+neg = -3.99
+io::out $ Int(neg)
+io::out $ i8(neg)
+io::out $ i16(neg)
+io::out $ i32(neg)
+io::out $ i64(neg)
+
+// 3. Conversions from f32
+f = f32(12.75)
+io::out $ Int(f)
+io::out $ i8(f)
+io::out $ u8(f)
+io::out $ i16(f)
+io::out $ u16(f)
+io::out $ i32(f)
+io::out $ u32(f)
+io::out $ i64(f)
+io::out $ u64(f)
+
+// 4. Large values
+large_u32 = 3000000000.5
+io::out $ u32(large_u32)
+io::out $ u64(large_u32)
