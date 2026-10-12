@@ -1,0 +1,5 @@
+params size: 120
+err0: io_uring_setup failed
+err_neg: io_uring_setup failed
+ring created ok
+cqe user_data: 42

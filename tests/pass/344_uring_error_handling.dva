@@ -1,0 +1,29 @@
+// tests/pass/344_uring_error_handling.dva — issue #123: uring error handling and packed params
+#use uring
+#use io
+#use str
+
+io::out $ "params size: " + str::from_int(#size(uring::IoUringParams))
+
+res0 = uring::new(0)
+res0
+   | ring => io::out $ "unexpected success"
+   | err => io::out $ "err0: " + err
+
+res_neg = uring::new(-1)
+res_neg
+   | ring => io::out $ "unexpected success"
+   | err => io::out $ "err_neg: " + err
+
+res_ok = uring::new(8)
+res_ok
+   | ring =>
+      io::out $ "ring created ok"
+      uring::prep_nop(ring, 42)
+      uring::submit(ring)
+      cqe = uring::wait_cqe(ring)
+      cqe
+         | c => io::out $ "cqe user_data: " + str::from_int(c.user_data)
+         | err => io::out $ "cqe err: " + err
+      uring::close(ring)
+   | err => io::out $ "unexpected failure: " + err

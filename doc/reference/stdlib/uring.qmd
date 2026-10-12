@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers implementing high-performance asynchronous I/O on Linux"
   status: "current reference"
   audited: "c17e2aa"
-  evidence: "`std/uring.dva`, `tests/pass/281_uring.dva`"
+  evidence: "`std/uring.dva`, `tests/pass/281_uring.dva`, `tests/pass/344_uring_error_handling.dva`"
 ---
 
 # `uring` standard library
