@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers performing file and process operations"
   status: "current reference"
   audited: "c17e2aa"
-  evidence: "`std/os.dva`, `tests/pass/41_posix_spawn.dva`"
+  evidence: "`std/os.dva`, `tests/pass/041_posix_spawn.dva`"
 ---
 
 # `os` standard library

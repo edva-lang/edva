@@ -5,7 +5,7 @@ meta:
   audited: "df88a80"
   evidence: >-
     `src/codegen/types.dva`, `src/codegen.dva`,
-    `tests/pass/20_tuples_and_records.dva`, `tests/pass/177_map_type.dva`,
+    `tests/pass/020_tuples_and_records.dva`, `tests/pass/177_map_type.dva`,
     `tests/pass/152_must_init_intersection.dva`, `tests/pass/104_builder_literal.dva`
 ---
 

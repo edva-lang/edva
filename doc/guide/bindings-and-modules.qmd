@@ -3,7 +3,7 @@ meta:
   audience: "Edva users"
   status: "current guide"
   audited: "8b8cb19"
-  evidence: "`src/annotate.dva`, `src/parser.dva`, `tests/pass/28_modules/`, `tests/pass/153_private.expected`"
+  evidence: "`src/annotate.dva`, `src/parser.dva`, `tests/pass/028_modules/`, `tests/pass/153_private.expected`"
 ---
 
 # Bindings and modules

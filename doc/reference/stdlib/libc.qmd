@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers interfacing with system C APIs"
   status: "current reference"
   audited: "c17e2aa"
-  evidence: "`std/libc.dva`, `tests/pass/30_foreign_libc.dva`"
+  evidence: "`std/libc.dva`, `tests/pass/030_foreign_libc.dva`"
 ---
 
 # `libc` standard library

@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers implementing TCP/UDP network services and HTTP handlers"
   status: "current reference"
   audited: "c17e2aa"
-  evidence: "`std/net.dva`, `std/net/http.dva`, `tests/pass/35_socket_functions.dva`"
+  evidence: "`std/net.dva`, `std/net/http.dva`, `tests/pass/035_socket_functions.dva`"
 ---
 
 # `net` standard library

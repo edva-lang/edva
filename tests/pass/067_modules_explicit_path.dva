@@ -1,4 +1,4 @@
-#use "28_modules/math_utils"
+#use "028_modules/math_utils"
 #use io
 
 io::out $ math_utils::square $ 5

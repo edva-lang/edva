@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers interacting with command-line arguments and process environment"
   status: "current reference"
   audited: "c17e2aa"
-  evidence: "`std/sys.dva`, `tests/pass/68_sys_argv_bounds_check.dva`"
+  evidence: "`std/sys.dva`, `tests/pass/068_sys_argv_bounds_check.dva`"
 ---
 
 # `sys` standard library

@@ -25,19 +25,19 @@ Always wrap ad-hoc test executions in explicit timeouts and 4 GB RAM limits (`ul
 Run a passing integration case directly:
 
 ```sh
-bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/pass/04_choice_inline.dva -r'
+bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/pass/004_choice_inline.dva -r'
 ```
 
 For a failure case, verify that compilation exits nonzero with the expected diagnostic:
 
 ```sh
-bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/fail/17_middle_bare_pipe_choice.dva'
+bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/fail/017_middle_bare_pipe_choice.dva'
 ```
 
 Use the module directory itself for a multi-file test:
 
 ```sh
-bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/pass/28_modules -r'
+bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/pass/028_modules -r'
 ```
 
 ## Driver regression suite

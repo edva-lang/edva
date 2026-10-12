@@ -3,7 +3,7 @@ meta:
   audience: "new Edva users"
   status: "current introductory path"
   audited: "df88a80"
-  evidence: "`tests/pass/04_choice_inline.dva`, `tests/pass/12_cycle_break.dva`, `tests/pass/121_fn_signatures.dva`, `tests/pass/104_builder_literal.dva`"
+  evidence: "`tests/pass/004_choice_inline.dva`, `tests/pass/012_cycle_break.dva`, `tests/pass/121_fn_signatures.dva`, `tests/pass/104_builder_literal.dva`"
 ---
 
 # Quickstart

@@ -3,7 +3,7 @@ meta:
   audience: "Edva users"
   status: "current guide"
   audited: "df88a80"
-  evidence: "`src/annotate.dva`, `src/codegen.dva`, `tests/pass/04_choice_inline.dva`, `tests/pass/06_choice_value_int.dva`, `tests/pass/12_cycle_break.dva`"
+  evidence: "`src/annotate.dva`, `src/codegen.dva`, `tests/pass/004_choice_inline.dva`, `tests/pass/006_choice_value_int.dva`, `tests/pass/012_cycle_break.dva`"
 ---
 
 # Choices and cycles
