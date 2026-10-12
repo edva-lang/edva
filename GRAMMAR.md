@@ -1063,7 +1063,7 @@ the truth values `<+>` (positive) and `<->` (negative).
 | `+` | `Addr/RawPtr, Int` (or mirrored) | `Addr` — pointer offset (unsafe) |
 | `-` | numeric, numeric | numeric |
 | `*` `/` `%` | numeric, numeric | numeric |
-| `<` `>` `!<` `!>` | numeric, numeric | `Ramification` |
+| `<` `>` `!<` `!>` | numeric, numeric | `Ramification` (bare Flag) — relational comparisons |
 | `==` | numeric, numeric | `Ramification` |
 | `!=` | numeric, numeric | `Ramification` — **value inequality**, the complement of `==` (unsigned operands use the unsigned NE predicate) |
 | `==` | `String, String` | `Ramification` — **content equality** (length short-circuit then `memcmp`) |
@@ -1111,6 +1111,9 @@ runtime (never silently mask/truncate).
   patterns, not compared.
 - `<` `>` `!<` `!>` on ramifications (`E3127`) — ramifications have no
   ordering; test their slots with `|` branches instead.
+- `!<` reads as "greater or equal" and `!>` reads as "less or equal". On floats,
+  these are ordered comparisons (LLVM `OGE` / `OLE`) and evaluate to false (`<->`)
+  if either operand is NaN, distinct from logical negation `!(x < y)`.
 - `String + Addr`, `Addr + Addr` — pointer arithmetic is
   disallowed; an `Addr` offsets only by `Int`.
 - `.&.`/`.|.`/`.<.`/`.>.`/`.!.` on `Float`/`String`/`Builder`/`Ramification` —

@@ -17,7 +17,8 @@
   - The type system never silently coerces ambiguous expressions or unresolved type variables
     to `Int`. Unresolved types emit `E3103`.
 - **Binary Comparisons**: `<`, `>`, `==`, `!=`, `!<` (greater-or-equal), `!>` (less-or-equal).
-  `>=` and `<=` do not exist.
+  `>=` and `<=` do not exist. On floats, `!<` and `!>` are ordered comparisons (OGE/OLE) that
+  evaluate to false (`<->`) if either operand is NaN (distinct from `!(x < y)`).
 - **Binding Mutability**: `=` binds immutably by default. Rebindable local variables use
   trailing prime (`'`) identifiers (`x' = 1; x' = x' + 1`).
 - **Clean Choices**: Single-branch choices `cond | action` evaluate as statements. Never supply

@@ -20,9 +20,12 @@
     unresolved type variables to `Int`. Ambiguous or unknowable types must be annotated explicitly
     or produce a compile-time error (`E3103`).
 - **Binary Comparisons**: Comparison operators are `<`, `>`, `==`, `!=`, `!<`, and `!>`.
-  - Greater-than-or-equal is written as `!<` ("not less than").
-  - Less-than-or-equal is written as `!>` ("not greater than").
+  - Greater-than-or-equal is written as `!<` (reads as "greater or equal").
+  - Less-than-or-equal is written as `!>` (reads as "less or equal").
   - `>=` and `<=` do NOT exist in the language.
+  - On floating-point values, `!<` and `!>` are ordered comparisons (LLVM `OGE` / `OLE`). If either
+    operand is NaN, the comparison evaluates to false (`<->`). This is distinct from logical
+    negation: for NaN `x`, `x !< 1.0` is false, while `!(x < 1.0)` is true.
 - **Binding Mutability**: Edva uses `=` uniformly for bindings and reassignments. Bindings are
   immutable by default. Rebindable local variables use trailing prime (`'`) identifiers
   (`x' = 1; x' = x' + 1`). Parameters are strictly immutable. Interior mutations (`pt.x = 1`,

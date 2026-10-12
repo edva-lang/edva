@@ -1,0 +1,31 @@
+#use io
+
+nan = 0.0 / 0.0
+inf = 1.0 / 0.0
+ninf = -1.0 / 0.0
+
+// 1. NaN on either side: !< and !> are ordered comparisons (OGE/OLE) returning false
+io::out $ (nan !< 1.0)
+io::out $ (1.0 !< nan)
+io::out $ (nan !> 1.0)
+io::out $ (1.0 !> nan)
+io::out $ !(nan < 1.0)
+io::out $ !(nan > 1.0)
+io::out $ (nan !< nan)
+io::out $ (nan !> nan)
+
+// 2. Infinities
+io::out $ (inf !< 100.0)
+io::out $ (100.0 !< inf)
+io::out $ (ninf !> -100.0)
+io::out $ (-100.0 !> ninf)
+io::out $ (inf !< inf)
+io::out $ (ninf !> ninf)
+
+// 3. Finite equal and unequal values
+io::out $ (2.5 !< 2.5)
+io::out $ (2.5 !> 2.5)
+io::out $ (3.0 !< 2.0)
+io::out $ (2.0 !< 3.0)
+io::out $ (2.0 !> 3.0)
+io::out $ (3.0 !> 2.0)

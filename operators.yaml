@@ -453,7 +453,7 @@ operators:
     assoc: left
     operands: "numeric, numeric"
     result: "Ramification (bare Flag)"
-    desc: "not-less-than (numeric)."
+    desc: "greater-or-equal (numeric): ordered >= comparison (false if either operand is NaN)."
   - symbol: "!>"
     tier: comparison
     kind: NotGreater
@@ -461,7 +461,7 @@ operators:
     assoc: left
     operands: "numeric, numeric"
     result: "Ramification (bare Flag)"
-    desc: "not-greater-than (numeric)."
+    desc: "less-or-equal (numeric): ordered <= comparison (returns false if either operand is NaN)."
 
   # ---- shift (tier 12) ----------------------------------------------------
   - symbol: ".<."

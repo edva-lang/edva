@@ -72,15 +72,31 @@ rem  = x % y    // 0.0 (floating-point remainder / fmod)
 
 ### Comparisons
 
-Comparisons produce the boolean `Flag` (`<>`):
+Comparisons produce the boolean `Flag` (`<>`). Relational operators include `<` (less),
+`>` (greater), `!<` (greater-or-equal), and `!>` (less-or-equal):
 
 ```dva
 a = 1.0
 b = 2.0
 
-less    = a < b     // <+>
-greater = a > b     // <->
-equal   = a == b    // <->
+less     = a < b     // <+>
+greater  = a > b     // <->
+ge       = a !< b    // <-> (greater-or-equal)
+le       = a !> b    // <+> (less-or-equal)
+equal    = a == b    // <->
+not_eq   = a != b    // <+>
+```
+
+#### NaN semantics
+
+Floating-point comparisons follow IEEE 754 ordered comparison semantics (`OGE` / `OLE`). If
+either operand is `NaN`, both `!<` and `!>` evaluate to false (`<->`). This is distinct from
+logical negation:
+
+```dva
+nan = 0.0 / 0.0
+is_ge  = nan !< 1.0  // <-> (ordered comparison returns false)
+not_lt = !(nan < 1.0) // <+> (logical negation of false)
 ```
 
 ### Special values and stdlib math
