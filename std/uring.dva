@@ -205,7 +205,7 @@
 
    prep_read: Ring, Int, Addr, Int, Int => <>
    prep_read = ring, fd, buf, len, user_data =>
-      prep_sqe(ring, OP_READ, fd, 0, buf, len, user_data)
+      prep_sqe(ring, OP_READ, fd, -1, buf, len, user_data)
 
    prep_read_at: Ring, Int, Addr, Int, Int, Int => <>
    prep_read_at = ring, fd, buf, len, off, user_data =>
@@ -213,7 +213,7 @@
 
    prep_write: Ring, Int, Addr, Int, Int => <>
    prep_write = ring, fd, buf, len, user_data =>
-      prep_sqe(ring, OP_WRITE, fd, 0, buf, len, user_data)
+      prep_sqe(ring, OP_WRITE, fd, -1, buf, len, user_data)
 
    prep_write_at: Ring, Int, Addr, Int, Int, Int => <>
    prep_write_at = ring, fd, buf, len, off, user_data =>
@@ -225,18 +225,23 @@
 
    prep_sqe_flags: Ring, Int, Int, Int, Addr, Int, Int, Int => <>
    prep_sqe_flags = ring, op, fd, off, addr, len, op_flags, user_data =>
+      head = Int(@[ring.sq_ptr + ring.sq_head_off u32])
       tail = Int(@[ring.sq_ptr + ring.sq_tail_off u32])
+      used = (tail - head) .&. 4294967295
+      used !< ring.sq_entries | --| <->
       mask = Int(@[ring.sq_ptr + ring.sq_mask_off u32])
       idx = tail .&. mask
       sqe_dest = ring.sqes_ptr + idx * #size(SQE)
-      clean_addr = Addr(Int(addr) .&. 281474976710655)
+      target_addr = op == OP_ASYNC_CANCEL
+         | addr
+         | Addr(Int(addr) .&. 281474976710655)
       item = SQE((
          opcode = u8(op),
          flags = 0u8,
          ioprio = 0u16,
          fd = i32(fd),
          off = off,
-         addr = clean_addr,
+         addr = target_addr,
          len = u32(len),
          op_flags = u32(op_flags),
          user_data = user_data,
@@ -265,23 +270,24 @@
 
    prep_cancel: Ring, Int, Int => <>
    prep_cancel = ring, target_user_data, user_data =>
-      prep_sqe(ring, OP_ASYNC_CANCEL, 0, 0, Addr(target_user_data), 0, user_data)
+      prep_sqe_flags(ring, OP_ASYNC_CANCEL, -1, 0, Addr(target_user_data), 0, 0, user_data)
 
    prep_timeout: Ring, Addr, Int, Int, Int => <>
    prep_timeout = ring, ts_ptr, count, flags, user_data =>
-      prep_sqe_flags(ring, OP_TIMEOUT, -1, 0, ts_ptr, count, flags, user_data)
+      prep_sqe_flags(ring, OP_TIMEOUT, -1, count, ts_ptr, 1, flags, user_data)
 
    sq_space: Ring => Int
    sq_space = ring =>
       head = Int(@[ring.sq_ptr + ring.sq_head_off u32])
       tail = Int(@[ring.sq_ptr + ring.sq_tail_off u32])
-      ring.sq_entries - (tail - head)
+      used = (tail - head) .&. 4294967295
+      ring.sq_entries - used
 
    submit_and_wait: Ring, Int => Int
    submit_and_wait = ring, wait_nr =>
       head = Int(@[ring.sq_ptr + ring.sq_head_off u32])
       tail = Int(@[ring.sq_ptr + ring.sq_tail_off u32])
-      to_submit = tail - head
+      to_submit = (tail - head) .&. 4294967295
       flags = wait_nr > 0 | IORING_ENTER_GETEVENTS | 0
       libc::syscall(SYS_IO_URING_ENTER, Addr(ring.fd), Addr(to_submit),
          Addr(wait_nr), Addr(flags), sys::addr_null, sys::addr_null)
@@ -299,13 +305,13 @@
             mask = Int(@[ring.cq_ptr + ring.cq_mask_off u32])
             idx = head .&. mask
             cqe_ptr = ring.cq_ptr + ring.cq_cqes_off + idx * #size(CQERaw)
-            raw_cqe = @[cqe_ptr CQERaw]
+            cqe = CQE((
+               user_data = Int(@[cqe_ptr i64]),
+               res = Int(@[cqe_ptr + 8 i32]),
+               flags = Int(@[cqe_ptr + 12 u32])
+            ))
             @[ring.cq_ptr + ring.cq_head_off] = u32(head + 1)
-            <+ CQE((
-               user_data = raw_cqe.user_data,
-               res = Int(raw_cqe.res),
-               flags = Int(raw_cqe.flags)
-            )) +>
+            <+ cqe +>
 
    wait_cqe: Ring => <CQE | String>
    wait_cqe = ring =>

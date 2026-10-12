@@ -1,0 +1,13 @@
+initial space 2
+full space 0
+third accepted <->
+after third 0
+space after reap 2
+first read abc
+second read def
+file position 6
+explicit offset read bcd
+file position after explicit 6
+timeout result -62
+cqe ud 301 res 0
+cqe ud 1311768467294899695 res -125

@@ -1,0 +1,93 @@
+// tests/pass/346_uring_correctness.dva — issue #146: uring queue capacity, file offset, timeout, cancellation
+#use libc
+#use uring
+#use io
+#use str
+
+r_res = uring::new(2)
+r_res
+   | ring =>
+      // 1. Queue capacity enforcement and non-corruption
+      sp0 = uring::sq_space(ring)
+      io::out $ "initial space " + str::from_int(sp0)
+
+      ok1 = uring::prep_nop(ring, 1)
+      ok2 = uring::prep_nop(ring, 2)
+      sp1 = uring::sq_space(ring)
+      io::out $ "full space " + str::from_int(sp1)
+
+      ok3 = uring::prep_nop(ring, 3)
+      io::out $ "third accepted " + (ok3 | "<+>" | "<->")
+      sp2 = uring::sq_space(ring)
+      io::out $ "after third " + str::from_int(sp2)
+
+      uring::submit_and_wait(ring, 2)
+      uring::reap(ring)
+      sp3 = uring::sq_space(ring)
+      io::out $ "space after reap " + str::from_int(sp3)
+
+      // 2. File read offset and positioning
+      test_path = "/tmp/uring_test_346_abcdef.txt"
+      wfd = libc::creat(test_path, 420)
+      data = "abcdef"
+      libc::write(wfd, data, 6)
+      libc::close(wfd)
+
+      fd = libc::open(test_path, 0)
+
+      b1 = {4}
+      uring::prep_read(ring, fd, &b1, 3, 101)
+      uring::submit_and_wait(ring, 1)
+      uring::reap(ring)
+      ?b1 = 3
+      io::out $ "first read " + (+b1)
+
+      b2 = {4}
+      uring::prep_read(ring, fd, &b2, 3, 102)
+      uring::submit_and_wait(ring, 1)
+      uring::reap(ring)
+      ?b2 = 3
+      io::out $ "second read " + (+b2)
+
+      pos = libc::lseek(fd, 0, 1)
+      io::out $ "file position " + str::from_int(pos)
+
+      b3 = {4}
+      uring::prep_read_at(ring, fd, &b3, 3, 1, 103)
+      uring::submit_and_wait(ring, 1)
+      uring::reap(ring)
+      ?b3 = 3
+      io::out $ "explicit offset read " + (+b3)
+
+      pos2 = libc::lseek(fd, 0, 1)
+      io::out $ "file position after explicit " + str::from_int(pos2)
+
+      // 3. Time-based timeout (count = 0, len = 1, off = count)
+      ts = 0u64 {2}
+      ts_addr = Addr(ts)
+      @[ts_addr] = 0
+      @[ts_addr + 8] = 1000000
+      uring::prep_timeout(ring, Addr(ts), 0, 0, 201)
+      uring::submit_and_wait(ring, 1)
+      cqes = uring::reap(ring)
+      cqes @ c =>
+         io::out $ "timeout result " + str::from_int(c.res)
+
+      // 4. Cancellation with 64-bit user_data
+      target_ud = 1311768467294899695
+      ts2 = 0u64 {2}
+      ts2_addr = Addr(ts2)
+      @[ts2_addr] = 10
+      @[ts2_addr + 8] = 0
+      uring::prep_timeout(ring, Addr(ts2), 0, 0, target_ud)
+      uring::prep_cancel(ring, target_ud, 301)
+      uring::submit_and_wait(ring, 2)
+      cqes2 = uring::reap(ring)
+      cqes2 @ c =>
+         io::out $ "cqe ud " + str::from_int(c.user_data) + " res " + str::from_int(c.res)
+
+      libc::close(fd)
+      libc::unlink(test_path)
+      uring::close(ring)
+   | err =>
+      io::out $ "uring new error: " + err
