@@ -2,7 +2,7 @@
 #use(import) mod_b
 #use io
 
-run = _ =>
+run = x =>
    io::out $ str::from_int(foo(1))
 
 run(0)

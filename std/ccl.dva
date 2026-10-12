@@ -439,7 +439,7 @@ parse_file = path =>
 serialize_doc_indent: CclDoc, Int, Builder => ()
 serialize_doc_indent = doc, indent, b =>
    doc.entries @ e =>
-      indent @ _ => b += ' '
+      indent @ b += ' '
       e.key == "/"
          |
             b += "/= "

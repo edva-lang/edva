@@ -61,7 +61,7 @@ b4 = container $:
 io::out $ b4
 
 // 6. Trailing event handler / callback
-b6 = button("Submit") $> on_click $: _ => "handled"
+b6 = button("Submit") $> on_click $: ignored => "handled"
 io::out $ b6
 
 // 7. Trailing lambda callback

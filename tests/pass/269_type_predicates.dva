@@ -10,7 +10,7 @@
 #type Empty ()
 
 classify: #! T: Type, T => String
-classify = _ =>
+classify = x =>
    T
       [Int, String] "exact_primitive"
       [type::is_record] "record"
@@ -19,7 +19,7 @@ classify = _ =>
       | "other"
 
 cap_check: #! T: Type, T => String
-cap_check = _ =>
+cap_check = x =>
    T
       [type::is_array] "array"
       [type::is_map] "map"
@@ -28,7 +28,7 @@ cap_check = _ =>
       | "other"
 
 num_check: #! T: Type, T => String
-num_check = _ =>
+num_check = x =>
    T
       [type::is_int] "int"
       [type::is_float] "float"

@@ -557,7 +557,7 @@ find_and_load_import_map = target_path, explicit_map_path =>
          target_full = canonical_path(target_path)
          start_dir = dir_exists(target_full) | target_full | dirname(target_full)
          curr_dir' = start_dir
-         0..128 @ _ =>
+         0..128 @
             curr_dir' == "" || curr_dir' == "/" | -->
             cand_ccl = path_join(curr_dir', "edva.ccl")
             file_exists(cand_ccl)
@@ -639,7 +639,7 @@ find_and_load_import_map = target_path, explicit_map_path =>
                                  plist @ s => nat_pkg' += s
                      <+ ImportMapState((<+>, map_path', eff_root, root_name', inst_list,
                         nat_libs', nat_pkg')) +>
-            | _ =>
+            |
                print $ "E5030: Could not parse import map '" + map_path' + "'"
                <-->
 
@@ -1498,7 +1498,7 @@ run_cmd = args =>
                            (status .>. 8) .&. 255
 
 get_default_target_triple: Int => String
-get_default_target_triple = _ =>
+get_default_target_triple = ignored =>
    sys::addr_opt(llvm_get_default_triple!)
       | t =>
          s = sys::c_str(t)
@@ -1575,7 +1575,7 @@ collect_link_libs = stmts =>
 )
 
 init_opts: Int => CliOpts
-init_opts = _ =>
+init_opts = ignored =>
    CliOpts(("", "", <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
       <->, <+>, "", <->, <->, "", "", "", <->))
 
@@ -1689,7 +1689,7 @@ collect_used_record_types = stmts, exports =>
                   ?params_ti @ j =>
                      pti = params_ti(j)!!
                      add_type_var_from_ti(pti, used)
-   0.. @ _ =>
+   0.. @
       prev_count = ?used
       ?stmts @ s_i =>
          st = stmts(s_i)!!
@@ -2285,7 +2285,7 @@ read_line_raw = sess =>
    @[pfd_buf + 4] = 1i16
    @[pfd_buf + 6] = 0i16
    refresh_line(line', pos')
-   0.. @ _ =>
+   0.. @
       rb = libc::read(0, c_buf, 1)
       rb < 1
          |
@@ -2614,7 +2614,7 @@ repl_loop = opts, session_src, sess =>
          print $ "Goodbye!"
 
 on_sigint: Int => Int
-on_sigint = _ =>
+on_sigint = sig =>
    disable_raw_mode!
    ?active_repl_src > 0 | unlink(active_repl_src)
    ?active_repl_ll > 0 | unlink(active_repl_ll)
@@ -2879,7 +2879,7 @@ parse_pos_arg = i, arg, opts =>
                      opts
 
 print_usage: Int => ()
-print_usage = _ =>
+print_usage = ignored =>
    print $ "Usage: edva <input.dva | module_dir> [options]"
    print $ "       edva <init|add|fetch|build|test|update|graph|vendor> [dir] [options]"
    print $ "       edva pkg <command> [dir] [options]"
@@ -2931,7 +2931,7 @@ is_pkg_subcmd = cmd =>
    cmd ["init", "add", "fetch", "build", "test", "update", "graph", "tree", "vendor", "version"]
 
 run_driver: Int => ()
-run_driver = _ =>
+run_driver = ignored =>
    sys::argc > 1 && sys::argv_string(1) == "pkg"
       |
          rc = pkg::main(2)

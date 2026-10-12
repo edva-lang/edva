@@ -48,7 +48,7 @@ io::out $ "pkt.flags.syn: " + str::from_int(pkt.flags.syn)
 io::out $ "pkt.flags.fin: " + str::from_int(pkt.flags.fin)
 
 test_overlay: Int => ()
-test_overlay = _ =>
+test_overlay = ignored =>
    buf = {4}
    buf += 42u8
    buf += 0x34u8

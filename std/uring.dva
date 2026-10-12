@@ -227,14 +227,14 @@
    prep_sqe_flags = ring, op, fd, off, addr, len, op_flags, user_data =>
       head = Int(@[ring.sq_ptr + ring.sq_head_off u32])
       tail = Int(@[ring.sq_ptr + ring.sq_tail_off u32])
-      used = (tail - head) .&. 4294967295
+      used = (tail - head) .&. 0xFFFFFFFF
       used !< ring.sq_entries | --| <->
       mask = Int(@[ring.sq_ptr + ring.sq_mask_off u32])
       idx = tail .&. mask
       sqe_dest = ring.sqes_ptr + idx * #size(SQE)
       target_addr = op == OP_ASYNC_CANCEL
          | addr
-         | Addr(Int(addr) .&. 281474976710655)
+         | Addr(Int(addr) .&. 0xFFFFFFFFFFFF)
       item = SQE((
          opcode = u8(op),
          flags = 0u8,

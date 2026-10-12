@@ -1,0 +1,2 @@
+// Explicit '_' as a single function parameter is rejected with E2040.
+f = _ => 42

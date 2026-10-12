@@ -1,7 +1,7 @@
 #use(import) views
 #use io
 
-run = _ =>
+run = x =>
    s' = State((10, "Item"))
    io::out $ render(s')
    s' = step(s')

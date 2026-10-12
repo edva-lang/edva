@@ -1,10 +1,10 @@
 // Implicit single parameter via a parenthesized expression with '_'
-// (desugars to "_ =>"), and the explicit "_ =>" form. Bare "=>" (omitted
+// (desugars to an implicit parameter lambda). Bare "=>" (omitted
 // parameters) is a parse error.
 #use io
 
 double = (_ * 2)
-add_ten = _ => _ + 10
+add_ten = (_ + 10)
 
 io::out $ double $ 21
 io::out $ add_ten $ 32

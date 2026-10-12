@@ -1,0 +1,1 @@
+E2040: Explicit '_' parameter is forbidden in function parameter lists — use a named parameter or omit unused binders.

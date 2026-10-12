@@ -1239,7 +1239,7 @@ ctfe_hash_val = v =>
 ctfe_next_cap: Int => Int
 ctfe_next_cap = n =>
    cap' = 8
-   64 @ _ =>
+   64 @
       cap' !< n | -->
       cap' = cap' * 2
    cap'
@@ -1287,7 +1287,7 @@ ctfe_lower_map = cg, m =>
    keys_slot = types::CtVals()
    vals_slot = types::CtVals()
    states = types::IntArr()
-   cap' @ _ =>
+   cap' @
       keys_slot += types::CtVal(None)
       vals_slot += types::CtVal(None)
       states += 0
@@ -1296,7 +1296,7 @@ ctfe_lower_map = cg, m =>
       v = m.1(i)!!
       hash = ctfe_hash_val(k)
       idx' = hash .&. (cap' - 1)
-      cap' @ _ =>
+      cap' @
          st0 = states(idx')!!
          st0 == 0
             |
@@ -2751,7 +2751,7 @@ enum_slots_for_label_at = cg, label, i, n =>
          td.ti
             [Enum slots]
                types::enum_slot_index(slots, label)
-                  | _ => (td.name, slots)
+                  | (td.name, slots)
                   | enum_slots_for_label_at(cg, label, i + 1, n)
             | enum_slots_for_label_at(cg, label, i + 1, n)
 

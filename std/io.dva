@@ -95,7 +95,7 @@
       +b
 
    clean_addr: Addr => Addr
-   clean_addr = a => Addr(Int(a) .&. 281474976710655)
+   clean_addr = a => Addr(Int(a) .&. 0xFFFFFFFFFFFF)
 
    // console.log-style to fd: the value's show text + a newline in a single atomic writev syscall.
    log: #! T: Type, Int, T => ()

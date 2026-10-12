@@ -1667,13 +1667,13 @@ make_flag_record_type: types::Cg, Int => Addr
 make_flag_record_type = cg, count =>
    types = types::Addrs()
    i1t = LLVMInt1Type!
-   count @ _ => types += i1t
+   count @ types += i1t
    types::struct_type_n(cg, types, count)
 
 make_flag_fvts: Int => ast::VTypes
 make_flag_fvts = count =>
    fvts = ast::VTypes()
-   count @ _ => fvts += ast::ValueType(Flag)
+   count @ fvts += ast::ValueType(Flag)
    fvts
 
 load_flag_vector: types::Cg, Addr, Int => Addr

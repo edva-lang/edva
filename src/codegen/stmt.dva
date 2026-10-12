@@ -4637,7 +4637,7 @@ record_field_vt = cg, f =>
             | ast::ValueType(Int)
       [Var v]
          types::var_rt(cg, v)
-            | _ => ast::ValueType(Record)
+            | ast::ValueType(Record)
             | types::var_type(cg, v)
       | ast::ValueType(Int)
 
@@ -5023,7 +5023,7 @@ pass_names: types::Cg, ast::Exprs, String => ast::Names
 pass_names = cg, stmts, name =>
    names = ast::Names()
    names += name
-   ?stmts @ _ =>
+   ?stmts @
       growing' = <->
       ?stmts @ i =>
          pass_grow(cg, stmts(i)!!, names) | growing' = <+>
@@ -5876,7 +5876,7 @@ find_and_compile_typed_fn = cg, rname, fname, i, n =>
 declare_external_fn: types::Cg, String => <>
 declare_external_fn = cg, name =>
    types::fninfo_index(cg, name)
-      | _ => <+>
+      | <+>
       |
          declared = fn_has_signature(types::g.pstmts, name, 0)
          !declared
@@ -5946,7 +5946,7 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
-      | _ =>
+      |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
          m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
@@ -6139,7 +6139,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
-      | _ =>
+      |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
          m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
@@ -6365,7 +6365,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
-      | _ =>
+      |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
          m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)

@@ -14,7 +14,7 @@
 #type Strs (String){}
 
 nfields: #! T: Type, T => Int
-nfields = _ => ?T
+nfields = x => ?T
 
 show_pair: #! T: Type, T => String
 show_pair = x =>

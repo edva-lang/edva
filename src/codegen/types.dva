@@ -1182,13 +1182,13 @@ decl_module_find = name, i, last =>
       | last
 
 decl_module: String, Int => String
-decl_module = name, _ =>
+decl_module = name, ignored =>
    last = decl_module_find(name, 0, -1)
    last < 0 | "" | name(0..last)
 
 // The bare name without module prefix ("is_alpha" from "unicode::is_alpha").
 decl_bare_name: String, Int => String
-decl_bare_name = name, _ =>
+decl_bare_name = name, ignored =>
    s = bare_name_start(name, 0, 0)
    name(s..?name)
 
@@ -1873,7 +1873,7 @@ find_var_slot = cg, name, i =>
 var_has_storage: Cg, String => <>
 var_has_storage = cg, name =>
    var_slot(cg, name)
-      | _ => <+>
+      | <+>
       | <>(var_direct(cg, name))
 
 // --- block / branch plumbing -------------------------------------------------
@@ -3223,7 +3223,7 @@ codegen_eval_record_ctor = cg, ti, t =>
             LLVMPointerType(rm_0, 0), "record.ptr")
          fields = ti [Rec r] r.0 | ast::FieldTypes()
          f_init = Flags()
-         tgt_nf @ _ => f_init += <->
+         tgt_nf @ f_init += <->
          nargs @ i =>
             sarg = t.args(i) | _ | ast::Expr(Int, 0)
             sarg [Range r]
@@ -3506,7 +3506,7 @@ codegen_check_enum_ctor = cg, enum_name, slots, call =>
       | init_error(cg, "E3096", diag::enum_no_variant(enum_name, label),
          call.line, call.col)
    idx_opt
-      | _ =>
+      |
          payload = enum_slot_payload(slots, label)
          has_payload = enum_slot_has_payload(slots, label)
          nargs = ?call.args

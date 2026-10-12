@@ -879,8 +879,8 @@ parse_atom = p =>
             ["!=>"] atom_to_ram(parse_fn(p))
             ["=>"]
                parser_error(p, 2050, "Function parameters may not be " +
-                  "omitted; write '_ =>' (or a parenthesized expression " +
-                  "with '_') for an implicit single parameter.")
+                  "omitted; write a named parameter (e.g. 'x =>') or use " +
+                  "a parenthesized grouped expression with '_'.")
                <- Error(2050, "Function parameters may not be omitted", "",
                   p.curr.line, p.curr.col, (0, 0)) +>
             | atom_to_ram(atom_op(p))
@@ -2164,37 +2164,47 @@ fn_params = p, params, ct_params =>
          p.curr.kind
             [Id]
                pname = p.curr.text
-               name_is_primed(pname)
+               pname == "_"
                   |
-                     parser_error(p, 2039,
-                        diag::E2039_param_mutable_prefix! + pname + "'.")
+                     parser_error(p, 2040, diag::E2040_underscore_param!)
                      <-->
                   |
-                     ct_params += pname
-                     parser_advance(p)
-                     fn_param_next(p, params, ct_params)
+                     name_is_primed(pname)
+                        |
+                           parser_error(p, 2039,
+                              diag::E2039_param_mutable_prefix! + pname + "'.")
+                           <-->
+                        |
+                           ct_params += pname
+                           parser_advance(p)
+                           fn_param_next(p, params, ct_params)
             |
                parser_error(p, 2085,
                   "Expected a name after '#!' in the parameter list.")
                <-->
       [Id]
          pname = p.curr.text
-         name_is_primed(pname)
+         pname == "_"
             |
-               parser_error(p, 2039,
-                  diag::E2039_param_mutable_prefix! + pname + "'.")
+               parser_error(p, 2040, diag::E2040_underscore_param!)
                <-->
             |
-               params += pname
-               parser_advance(p)
-               is_colon = p.curr.text [":"]
-               is_colon
+               name_is_primed(pname)
                   |
-                     parser_error(p, 2067,
-                        "Inline parameter types are removed — declare the " +
-                        "signature separately.")
+                     parser_error(p, 2039,
+                        diag::E2039_param_mutable_prefix! + pname + "'.")
                      <-->
-                  | fn_param_next(p, params, ct_params)
+                  |
+                     params += pname
+                     parser_advance(p)
+                     is_colon = p.curr.text [":"]
+                     is_colon
+                        |
+                           parser_error(p, 2067,
+                              "Inline parameter types are removed — declare the " +
+                              "signature separately.")
+                           <-->
+                        | fn_param_next(p, params, ct_params)
       | fn_arrow(p, params, ct_params)
 
 fn_param_next: Parser, ast::Names, ast::Names => <ast::Expr|>
@@ -2863,7 +2873,7 @@ rfield_repeat = p, fields, fname, vt, rec, is_slice, is_repeated =>
                                        ast::ValueType(Unknown)), <->)
                               |
                                  parser_advance(p)
-                                 n @ _ =>
+                                 n @
                                     fields += ast::RecordFieldType(("",
                                        vt, rec, <->, ast::Expr(Int, 0)))
                                  rfields(p, fields, is_slice, <+>)
@@ -4032,7 +4042,7 @@ expr_to_type_info = p, e =>
                   |
                      lt = lookup_type(p.user_types, name)
                      lt
-                        | _ => <+ ast::TypeInfo(TypeVar, name) +>
+                        | <+ ast::TypeInfo(TypeVar, name) +>
                         |
                            ct_scope_has(p.ct_scope, name)
                               | <+ ast::TypeInfo(TypeVar, name) +>
@@ -4148,7 +4158,7 @@ rep_count = p =>
 repeat_fields: ast::Expr, Int => ast::Fields
 repeat_fields = e, n =>
    fs = ast::Fields()
-   n @ _ => fs += ast::RecordField((<->, "", e))
+   n @ fs += ast::RecordField((<->, "", e))
    fs
 
 // --- choice tier ------------------------------------------------------------
@@ -4714,7 +4724,7 @@ desugar_inner_pattern_group: Parser, ast::Expr, (ParsedBranch){},
 desugar_inner_pattern_group = p, target, inner_pbrs, fallback_expr =>
    n = ?inner_pbrs
    cur_cont' = fallback_expr
-   n @ _, step =>
+   n @ step =>
       idx = (n - 1) - step
       b = inner_pbrs(idx) | _ | ParsedBranch((pat_wildcard(), <->,
          mk_branch(ast::Expr(Var, ""))))
@@ -4756,7 +4766,7 @@ desugar_deep_choice = p, lhs, pbrs =>
 
    cur_cont' = fallback_expr
    num_to_fold = end_idx + 1
-   num_to_fold @ _, step =>
+   num_to_fold @ step =>
       idx = end_idx - step
       pb = pbrs(idx) | _ | ParsedBranch((pat_wildcard(), <->,
          mk_branch(ast::Expr(Var, ""))))
@@ -5800,34 +5810,40 @@ ct_signature_g = p, name, prior_names, cps, is_global =>
    p.curr.kind
       [Id]
          ct_name = p.curr.text
-         parser_advance(p)
-         p.curr.text
-            [":"]
+         ct_name == "_"
+            |
+               parser_error(p, 2040, diag::E2040_underscore_param!)
+               p.ct_scope = ""
+               <-->
+            |
                parser_advance(p)
-               names = ct_names_append(prior_names, ct_name)
-               p.ct_scope = names
-               vt = parse_ct_type(p)
-               !vt.2
-                  |
-                     p.ct_scope = ""
-                     <-->
-                  |
-                     !is_valid_ct_param_type(vt.0)
+               p.curr.text
+                  [":"]
+                     parser_advance(p)
+                     names = ct_names_append(prior_names, ct_name)
+                     p.ct_scope = names
+                     vt = parse_ct_type(p)
+                     !vt.2
                         |
-                           parser_error(p, 2086,
-                              "Compile-time parameter type must be Type " +
-                              "or a scalar type.")
                            p.ct_scope = ""
                            <-->
                         |
-                           next_cps = cps
-                           next_cps += ast::CompileTimeParam((ct_name,
-                              vt.0, vt.1))
-                           ct_params_tail_g(p, name, names, next_cps,
-                              is_global)
-            |
-               p.ct_scope = ""
-               <-->
+                           !is_valid_ct_param_type(vt.0)
+                              |
+                                 parser_error(p, 2086,
+                                    "Compile-time parameter type must be Type " +
+                                    "or a scalar type.")
+                                 p.ct_scope = ""
+                                 <-->
+                              |
+                                 next_cps = cps
+                                 next_cps += ast::CompileTimeParam((ct_name,
+                                    vt.0, vt.1))
+                                 ct_params_tail_g(p, name, names, next_cps,
+                                    is_global)
+                  |
+                     p.ct_scope = ""
+                     <-->
       |
          p.ct_scope = ""
          <-->
@@ -5849,11 +5865,11 @@ parse_ct_type = p =>
          // when it fails.
          pn = parse_dva_type_name(p.curr.text)
          pn
-            | _ => parse_type(p)
+            | parse_type(p)
             |
                lk = lookup_type(p.user_types, p.curr.text)
                lk
-                  | _ => parse_type(p)
+                  | parse_type(p)
                   |
                      nm = p.curr.text
                      parser_advance(p)
@@ -6223,7 +6239,7 @@ pow10: Int => Float
 pow10 = n =>
    r' = 1.0
    a = n < 0 | 0 - n | n
-   a @ _ => r' = r' * 10.0
+   a @ r' = r' * 10.0
    n < 0 | 1.0 / r' | r'
 
 // Parses a float literal: optional sign, mantissa, fraction, exponent

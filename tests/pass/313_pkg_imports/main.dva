@@ -6,7 +6,7 @@
 #use "io"
 
 main: Int => Int
-main = _ =>
+main = x =>
    io::out(json::version(0))
    io::out(json_old::version(0))
    io::out(str::from_int(math::add(10, 20)))

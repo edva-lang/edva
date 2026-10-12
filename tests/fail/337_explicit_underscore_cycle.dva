@@ -1,0 +1,2 @@
+// Explicit '_' in cycle parameter list is rejected with E2040.
+0..10 @ _ => ()

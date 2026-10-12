@@ -907,7 +907,7 @@ is_flag_ut = ctx, ut =>
 make_rec_of: Int, unify::UType => unify::UType
 make_rec_of = n, elem_ut =>
    flds = unify::UFields()
-   n @ _ => flds += unify::UField(("", elem_ut))
+   n @ flds += unify::UField(("", elem_ut))
    unify::UType(Rec, flds)
 
 is_same_uprim: unify::UType, unify::UType => <>
@@ -1865,7 +1865,7 @@ annotate_expr = ctx, env, expr =>
                               | (fld_ut = elem_ut)
                               |
                                  res_fields' = unify::UFields()
-                                 flen @ _ => res_fields' += unify::UField(("", elem_ut))
+                                 flen @ res_fields' += unify::UField(("", elem_ut))
                                  fld_ut = unify::UType(Rec, res_fields')
                   |
                      swz_status' == 0 && fname' != ""
@@ -2965,7 +2965,7 @@ compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
             | a0.ut
          mask_count = c_mask [Rec mflds] ?mflds | 0
          out_flds = unify::UFields()
-         mask_count @ _ =>
+         mask_count @
             out_flds += unify::UField(("", elem_ut))
          unify::mk_rec(out_flds)
       ["%min", "%max", "%pow", "%uadd_sat", "%usub_sat"]
@@ -3059,7 +3059,7 @@ annotate_call = ctx, env, ce =>
             |
                !has_name_in(called_fns, ce.fn_name)
                   | (called_fns += ce.fn_name)
-               ?fn_alias_vars @ _ =>
+               ?fn_alias_vars @
                   ?fn_alias_vars @ ai =>
                      avn = fn_alias_vars(ai) | _ | ""
                      has_name_in(called_fns, avn)
@@ -3279,7 +3279,7 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf =>
          ast::ValueType(Unknown), ast::TypeInfo(Prim, ast::ValueType(Unknown)))
       val_expr_opt = find_record_ctor_field_expr(ce.args, fld, j, nf)
       has_val' = <->
-      val_expr_opt | _ => (has_val' = <+>)
+      val_expr_opt | (has_val' = <+>)
       !has_val'
          |
             unify::add_error(ctx, 3130,
@@ -5024,7 +5024,7 @@ elaborate_program_with_ctx = exprs =>
                m3 = type_env::decl_module(fname3, 0)
                type_env::set_current_module(env, m3)
                check_ground(ctx, env, exprs, fname3)
-   ?fn_alias_vars @ _ =>
+   ?fn_alias_vars @
       ?fn_alias_vars @ ai =>
          avn = fn_alias_vars(ai) | _ | ""
          has_name_in(called_fns, avn)

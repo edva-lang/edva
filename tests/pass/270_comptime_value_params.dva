@@ -7,7 +7,7 @@ make_buffer = !=> {N}
 repeat_str: #! N: Int, String => String
 repeat_str = s =>
    b = {N * ?s}
-   N @ _ => b += s
+   N @ b += s
    +b
 
 tag_msg: #! Prefix: String, String => String

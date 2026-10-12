@@ -14,18 +14,18 @@
 
 // Field count reflection:
 nfields: #! T: Type, T => Int
-nfields = _ => ?T
+nfields = x => ?T
 
 // Static field name access:
 field0_name: #! T: Type, T => String
-field0_name = _ => T.(0)
+field0_name = x => T.(0)
 
 field1_name: #! T: Type, T => String
-field1_name = _ => T.(1)
+field1_name = x => T.(1)
 
 // Join field names of any record:
 join_field_names: #! T: Type, T => String
-join_field_names = _ =>
+join_field_names = x =>
    out = {32}
    0..?T @ i =>
       i > 0 | out += ","
@@ -34,10 +34,10 @@ join_field_names = _ =>
 
 // Compile-time type check on fields:
 is_field0_int: #! T: Type, T => <>
-is_field0_int = _ => T.(0) == Int
+is_field0_int = x => T.(0) == Int
 
 is_field0_str: #! T: Type, T => <>
-is_field0_str = _ => T.(0) == String
+is_field0_str = x => T.(0) == String
 
 // Generic inspect function using compile-time type dispatch:
 inspect: #! T: Type, T => ()

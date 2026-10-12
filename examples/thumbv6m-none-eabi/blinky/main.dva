@@ -36,5 +36,5 @@
 //    Each volatile read is ~1 cycle; 2.5M iterations ~= 0.5s/phase.
 0.. @
    @[0xd000001c] = 0x02000000i32
-   0..2500000 @ _ =>
+   0..2500000 @
       @[0xd0000008 i32]

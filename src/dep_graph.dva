@@ -65,7 +65,7 @@ decl_module_find = name, i, last =>
       | last
 
 decl_module: String, Int => String
-decl_module = name, _ =>
+decl_module = name, ignored =>
    last = decl_module_find(name, 0, -1)
    last < 0 | "" | name(0..last)
 
@@ -259,7 +259,7 @@ init_tarjan_state = n =>
    counter: (Int){}
    counter += 0
    sccs: (SCC){}
-   n @ _ =>
+   n @
       indices += -1
       lowlinks += 0
       on_stack += <->
@@ -326,7 +326,7 @@ tarjan_dfs = graph, state, u =>
       |
          scc_names = ast::Names()
          is_self_rec = node_has_dep(u_node, u_node.name)
-         0.. @ _ =>
+         0.. @
             s_ptr = state.stack_ptr
             sp = s_ptr(0)!!
             sp == 0 | -->

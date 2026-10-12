@@ -1,0 +1,4 @@
+// Explicit '_' in choice branch lambda parameter is rejected with E2040.
+r: < Int | >
+r = <+ 10 +>
+r | _ => 0

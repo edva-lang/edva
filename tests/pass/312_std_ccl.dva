@@ -122,7 +122,7 @@ main = !=>
          | doc =>
             v = ccl::validate_manifest(doc, "edva.ccl")
             v
-               | _ => io::out("unexpected success")
+               | io::out("unexpected success")
                | e => io::out(e.msg)
          | e => io::out(e.msg)
 
@@ -208,7 +208,7 @@ main = !=>
          | doc =>
             v = ccl::validate_lockfile(doc, "edva.lock.ccl")
             v
-               | _ => io::out("unexpected success")
+               | io::out("unexpected success")
                | e => io::out(e.msg)
          | e => io::out(e.msg)
 

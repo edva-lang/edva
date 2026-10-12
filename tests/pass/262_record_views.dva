@@ -14,7 +14,7 @@ is_https = b =>
    h.dst_port == 443
 
 test_views: Int => Int
-test_views = _ =>
+test_views = ignored =>
    buf = {64}
    hdr = @[&buf PacketHeader]
    hdr.version = 4

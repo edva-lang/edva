@@ -4,6 +4,6 @@
 
 #type Pt (x: Int, y: Int)
 bad: #! T: Type, T => String
-bad = _ => T.(9)
+bad = x => T.(9)
 p = Pt(1, 2)
 io::out $ bad(p)

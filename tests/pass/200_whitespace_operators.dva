@@ -16,7 +16,7 @@ io::out $ ?b
 mul = 3 * 4
 io::out $ mul            
 
-// * 2 (trailing space) = multiplication section "_ => _ * 2".
+// * 2 (trailing space) = multiplication section "(* 2)".
 dbl = * 2
 io::out $ dbl(5)         // 10
 
@@ -28,7 +28,7 @@ io::out $ neg
 sub = 10 - 3
 io::out $ sub            
 
-// - 1 (trailing space) = subtraction section "_ => _ - 1".
+// - 1 (trailing space) = subtraction section "(- 1)".
 dec = - 1
 io::out $ dec(10)        // 9
 

@@ -647,6 +647,9 @@ Block      ::= Indent { Statement } Dedent
   live only in a separate signature. The parameter list is **mandatory for
   `=>`** — `=> body` with no parameters is a parse error (`E2050`); the one
   implicit form is a parenthesized expression containing `_`.
+  **Explicit `_` as a function parameter is forbidden**: `_ => ...`,
+  `x, _ => ...`, `items @ _ => ...`, `r | _ => ...`, and `#! _ => ...` emit
+  `E2040`. Use a named parameter (e.g. `ignored`) or omit unused binders.
 - **Signatures**: a full function type is declared separately, as a forward
   annotation whose type is a function signature:
   `fun: Int, String => < Int | >` (positional parameter types, `=>`, return
@@ -671,16 +674,17 @@ Block      ::= Indent { Statement } Dedent
   use `()` as an expression or argument (e.g. `f(())` or `x = ()`) is a
   compile error (`E2104`). Empty record literals do not exist.
 - **Implicit-param lambda**: a parenthesized expression containing a free `_`
-  desugars to `_ =>`, carrying exactly one implicit parameter `_` (never an
-  explicit list): `(3 - 2 * _)` is `_ => 3 - 2 * _`, `(_ * _)` is `_ => _ * _`,
-  `(_)` is the identity `_ => _`. Only the *innermost* parentheses desugar —
-  a nested group has already become a lambda (binding its own `_`) by the time
-  the enclosing group is scanned, so `(3 - 2 * (_ + 1))` leaves the inner
-  `(_ + 1)` as a lambda and the outer `3 - 2 * <lambda>` as a plain expression.
+  desugars to an implicit single-parameter lambda, carrying exactly one implicit
+  parameter `_` (never an explicit list): `(3 - 2 * _)` is an anonymous function,
+  `(_ * _)` multiplies its argument by itself, `(_)` is the identity function.
+  Only the *innermost* parentheses desugar — a nested group has already become a
+  lambda (binding its own `_`) by the time the enclosing group is scanned, so
+  `(3 - 2 * (_ + 1))` leaves the inner `(_ + 1)` as a lambda and the outer
+  `3 - 2 * <lambda>` as a plain expression.
   A cycle body `arr @` followed by an indented block is the same implicit form
   (`_` and `_i` bound); `5 @ (print_int $ _)` is the inline spelling.
 - **Section**: `+ 10` (an operator with trailing whitespace and an rhs) is
-  `_ => _ + 10`, usable wherever a function is expected.
+  an implicit single-parameter function over `_`, usable wherever a function is expected.
 - `=>` binds tighter than the infix-apply `$`: `fun $ x => x + 1` is
   `fun $ (x => x + 1)`, and `x => x + 1 $ v` is `(x => x + 1) $ v`; `$>`
   binds tighter still, so `x => x + 1 $> process` is `x => process(x + 1)`.
@@ -867,7 +871,7 @@ or subtyping between any of the four shapes.
 Ramification values are matched in choice branches **positionally** with bare
 `|` branches — the first branch tests the first slot, the second branch the
 second (`r | a => ... | b => ...`); the matched slot's payload is bound to the
-branch's lambda parameter (or `_` to ignore it). This is positional-only: no
+branch's lambda parameter (or a bare branch body to ignore it). This is positional-only: no
 keyword names a ram's slots (`[Positive]`/`[Succ]` on a real ram is `E3125`; a
 bare `Positive` label is `E3004`). The tag names surface in a ram's polarity match: `writeln $ (x | "Positive" | "Negative")`.
 output (`Positive`/`Negative`) are internal display strings, not syntax

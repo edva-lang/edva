@@ -7,7 +7,7 @@
 
 #use io
 
-mk = _ => "aaaa" + "b"
+mk = ignored => "aaaa" + "b"
 
 r0 = mk(0)
 base = addr(&r0)

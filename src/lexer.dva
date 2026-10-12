@@ -769,7 +769,7 @@ is_path_rune = r => !is_ws(r) && !is_nl(r) && r != ';' && r != '"' && r != '\0'
 scan_bare_path: Lx, Int => String
 scan_bare_path = lx, line => 
    p = lx.pos
-   0..1000000 @ _ =>
+   0..1000000 @
       c = pk(lx, 0)
       (!is_path_rune(c) || (c == '/' && pk_off(lx, 1) == '/')) | -->
       adv(lx, c)
@@ -783,13 +783,13 @@ scan_use_directive = lx, hstart, line, col =>
       lx.src(lx.pos..lx.pos + 8) == "-dynamic"
    is_dash_dyn
       |
-         8 @ _ => adv(lx, pk(lx, 0))
+         8 @ adv(lx, pk(lx, 0))
          is_dyn' = <+>
       |
          pk(lx, 0) == '('
             |
                adv(lx, pk(lx, 0))
-               0..100 @ _ =>
+               0..100 @
                   skip_ws(lx, 0)
                   c = pk(lx, 0)
                   c == ')'

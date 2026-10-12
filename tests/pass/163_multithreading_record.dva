@@ -7,6 +7,6 @@ greet = u =>
 
 h = #spawn greet(user)
 r = #join h
-p = r | v => v | _ => (name = "?", age = 0)
+p = r | v => v | (name = "?", age = 0)
 io::out $ p.name
 io::out $ p.age

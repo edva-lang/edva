@@ -4,7 +4,7 @@
 foo: Int => Int
 foo = x => x + 99
 
-run = _ =>
+run = x =>
    io::out $ str::from_int(foo(1))
 
 run(0)

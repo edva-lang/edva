@@ -4,5 +4,5 @@
 
 #type Fail < | String >
 bad = Fail(<- "x" ->)
-y = bad $>> (_ => Fail(<++>))
+y = bad $>> (v => Fail(<++>))
 io::out $ y

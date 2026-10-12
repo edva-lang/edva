@@ -4,7 +4,7 @@
 
 #type Color < Red, Green, Blue >
 bad: #! T: Type, T => String
-bad = _ => T.(9)
+bad = x => T.(9)
 c: Color
 c = Red
 io::out $ bad(c)

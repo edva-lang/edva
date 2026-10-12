@@ -2,4 +2,4 @@
 
 #public
 version: Int => String
-version = _ => "json_v1: " + utf8::encode("ok")
+version = x => "json_v1: " + utf8::encode("ok")

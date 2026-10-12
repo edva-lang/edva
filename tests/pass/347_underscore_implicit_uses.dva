@@ -1,0 +1,33 @@
+#use io
+#use str
+
+// 1. Grouped lambda
+dbl = (_ * 2)
+io::out $ str::from_int(dbl(21))
+
+// 2. Operator section
+tpl = * 3
+io::out $ str::from_int(tpl(7))
+
+// 3. Cycle implicit _ and _i
+0..3 @
+   io::out $ str::from_int(_ * 10 + _i)
+
+// 4. Bare ram extraction
+r: < Int | >
+r = <+ 99 +>
+io::out $ str::from_int(r | _ | 0)
+
+// 5. Destructuring pattern wildcard
+#type Pair (a: Int, b: Int)
+p = Pair(10, 20)
+res = p
+   [(a = _, b = 20)] "matched_wildcard"
+   | "no_match"
+io::out $ res
+
+// 6. Named parameter to ignore argument
+ignore_second: Int => (Int => Int)
+ignore_second = x => ignored => x
+f = ignore_second(123)
+io::out $ str::from_int(f(456))

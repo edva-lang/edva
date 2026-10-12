@@ -7,10 +7,10 @@ lt30: Int => <>
 lt30 = x => x < 30
 
 always_true: Int => <>
-always_true = _ => <+>
+always_true = x => <+>
 
 always_false: Int => <>
-always_false = _ => <->
+always_false = x => <->
 
 nums = Int{}
 nums += 10

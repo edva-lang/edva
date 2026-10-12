@@ -28,7 +28,7 @@ report: Lookup => ()
 report = result =>
    result
       | value => io::out(value)
-      | _ => io::out("missing")
+      | io::out("missing")
 ```
 
 ## Propagate or unwrap errors
@@ -98,7 +98,7 @@ is normal control flow rather than an `Error` payload.
 
 reader = io::reader(io::STDIN)
 chunk = io::read(reader, 4096)
-chunk | text => io::out(text) | _ => io::out("end of input")
+chunk | text => io::out(text) | io::out("end of input")
 ```
 
 `io::read_all`, `io::read_byte`, `io::read_until`, and `io::read_line` follow

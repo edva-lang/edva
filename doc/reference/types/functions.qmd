@@ -62,23 +62,26 @@ square = x => x * x
 > [!NOTE]
 > Parameter lists are never parenthesized in Edva definitions (`a, b => ...`, not `(a, b) => ...`).
 
+> [!IMPORTANT]
+> The exact identifier `_` cannot be used as an explicit function parameter (`_ => ...`, `x, _ => ...`, `items @ _ => ...`, `r | _ => ...` emit `E2040`). Use a named parameter (e.g. `ignored`) or omit unused binders. Implicit uses of `_` (grouped lambdas `(_ * 2)`, sections `(* 2)`, implicit cycle item/`_i`, bare ram extraction `r | _`, pattern wildcards `(a, _)`) remain valid.
+
 ### Implicit-parameter lambdas
 
-A parenthesized expression containing the placeholder `_` desugars into a single-parameter lambda:
+A parenthesized expression containing the placeholder `_` desugars into an implicit single-parameter lambda:
 
 ```dva
-double = (_ * 2)       // Desugars to: _ => _ * 2
-invert = (100 - _)     // Desugars to: _ => 100 - _
+double = (_ * 2)       // Anonymous single-parameter function: double(5) == 10
+invert = (100 - _)     // Anonymous single-parameter function: invert(20) == 80
 ```
 
 ### Operator sections
 
-An operator section `op rhs` consists of a binary operator followed by whitespace and a right-hand operand. It desugars into a single-parameter function over the implicit placeholder `_` (`_ => _ op rhs`):
+An operator section `op rhs` consists of a binary operator followed by whitespace and a right-hand operand. It desugars into a single-parameter function over the implicit placeholder `_`:
 
 ```dva
-double = (* 2)          // Desugars to: _ => _ * 2
-inc = (+ 1)             // Desugars to: _ => _ + 1
-is_negative = (< 0)     // Desugars to: _ => _ < 0
+double = (* 2)          // Equivalent to: (_ * 2)
+inc = (+ 1)             // Equivalent to: (_ + 1)
+is_negative = (< 0)     // Equivalent to: (_ < 0)
 ```
 
 #### Syntax rules:

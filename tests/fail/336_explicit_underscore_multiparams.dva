@@ -1,0 +1,2 @@
+// Explicit '_' in a multi-parameter list is rejected with E2040.
+f = x, _ => x

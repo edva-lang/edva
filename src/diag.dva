@@ -38,6 +38,10 @@ E2039_param_mutable_prefix: () => String
 E2039_param_mutable_prefix = !=>
    "Function parameters cannot be mutable — remove prime suffix from '"
 
+E2040_underscore_param: () => String
+E2040_underscore_param = !=>
+   "Explicit '_' parameter is forbidden in function parameter lists — use a named parameter or omit unused binders."
+
 E2093_assign_typed_load: () => String
 E2093_assign_typed_load = !=>
    "Cannot assign to a typed load; write through the untyped '@[addr]' form instead."

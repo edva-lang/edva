@@ -38,7 +38,7 @@ Use it with a compile-time type parameter rather than a runtime value:
 #use type
 
 numeric: #! T: Type, T => <>
-numeric = _ => type::is_numeric(T)
+numeric = x => type::is_numeric(T)
 ```
 
 The function bodies in `std/type.dva` are placeholders recognized by the

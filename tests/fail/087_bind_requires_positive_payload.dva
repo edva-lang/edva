@@ -4,5 +4,5 @@
 
 #type Flag <>
 f = Flag(<+>)
-x = f $>> (_ => Flag(<+>))
+x = f $>> (v => Flag(<+>))
 io::out $ x
