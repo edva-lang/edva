@@ -187,7 +187,10 @@ fixed-point: bootstrap
 	$(Q)rm -rf build/stage1 build/stage2 edva_stage2
 
 # --- Rebuild Seed -------------------------------------------------------------
-
+# Updates seed/ (seed/src, seed/std, seed/ir) with the verified compiler IR.
+# MANDATORY whenever language syntax, compiler intrinsics, runtime, or stdlib
+# changes are introduced, so fresh checkouts without a pre-existing ./edva binary
+# can bootstrap cleanly. Run `make rebuild-seed` and commit seed/.
 rebuild-seed: fixed-point
 	@echo "Syncing frozen sources to seed/..."
 	$(Q)rm -rf seed/src seed/std seed/ir

@@ -46,8 +46,9 @@ Upon successful verification, `edva_stage1` is installed as `./edva`.
 
 ## Rebuilding the seed
 
-Rebuilding the seed is a maintainer operation performed after major compiler or
-syntax milestones:
+Rebuilding the seed is a mandatory operation performed whenever language syntax,
+compiler intrinsics, runtime helpers, or standard library APIs (`std/*.dva`) are
+modified, before committing and pushing:
 
 ```sh
 make rebuild-seed
@@ -58,6 +59,13 @@ This target:
 2. Synchronizes the active sources into `seed/src/`, `seed/src/codegen/`,
    and `seed/std/`.
 3. Updates the frozen seed IR in `seed/ir/`.
+
+> **Important:** `make fixed-point` alone only verifies that the local `./edva`
+> binary can self-compile to identical IR. If syntax or stdlib changes are pushed
+> without `make rebuild-seed` and committing `seed/`, any clone on another host
+> or clean build (`rm -f edva && make clean && make`) will fail to cold-bootstrap
+> from `seed/ir/`. Always verify cold bootstrap (`rm -rf ~/.cache/edva/ir/* && make clean && rm -f edva && make`)
+> before pushing.
 
 Use `make clean` to remove temporary build objects and stage directories.
 
