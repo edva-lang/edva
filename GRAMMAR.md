@@ -1124,14 +1124,13 @@ buffers (e.g. `read`/`recv`) are declared `Addr`, never `String`.
 
 ### 3.3.1 `!` dispatch (reference)
 
-The two meanings of prefix `!` by operand static type — the §2.7.1 table is
+The meaning of prefix `!` by operand static type — the §2.7.1 table is
 the operative spec:
 
 | operand | operation | result | notes |
 |---|---|---|---|
 | `Ramification` (Flag unit or heap unit ram) | logical negation | `Ramification` | `!` of a positive ram is negative |
-| `Builder` | freeze | `String` | O(1) buffer transfer; **consumes** the Builder (`E3060` on later use) |
-| any other type | — | **error** `E3008` | Int, Float, String, Record, RawPtr, … — length is `?`, Builder creation is `{expr}` |
+| any other type | — | **error** `E3008` | Int, Float, String, Record, RawPtr, … |
 
 ### 3.4 Precedence
 
@@ -1281,11 +1280,12 @@ all rejected.
 
 ### 3.7 `Builder` — the mutable byte buffer
 
-A `Builder` is the **only mutable string surface** in the language: a
-uniquely-owned growable byte buffer, implemented as `{ i64 len, ptr data,
-i64 capacity }` — the String fat pointer plus a capacity word. The
-programmer never sees the struct; they use the operators. A Builder is never
-aliased (`b2 = b` is a compile error), which is what makes writing it sound.
+A `Builder` is the **only mutable string surface** in the language: an
+arena-allocated growable byte buffer, represented by a descriptor `{ i64 len,
+ptr data, i64 capacity }` — the String fat pointer plus a capacity word. The
+programmer never sees the raw struct; they use the operators. A Builder
+descriptor may be aliased (`b2 = b` or passed to functions as `b: Builder`),
+in which case aliases share the underlying descriptor and buffer.
 
 #### 3.7.1 The Builder operators
 
@@ -1301,7 +1301,7 @@ aliased (`b2 = b` is a compile error), which is what makes writing it sound.
 | `?b` | **written byte count** — a pure read of `len` | `Int` |
 | `&b` | **buffer address** — the writable `data` pointer as a `RawPtr`, for FFI read targets (no trailing space) | `RawPtr` |
 | `b(i)` | **peek** — bounds-checked read of one *written* byte (index < `len`, else `E4009`) | `Int` |
-| `+b` | **freeze** — build a String over the same buffer (O(1) transfer, no copy), stamping the generation; **consumes the Builder** | `String` |
+| `+b` | **freeze** — String buffer transfer; resets descriptor to `{0, 0, 0}` | `String` |
 
 #### 3.7.2 Semantics & guarantees
 
@@ -1326,14 +1326,21 @@ aliased (`b2 = b` is a compile error), which is what makes writing it sound.
 - **Freeze** (`+b`) transfers the Builder's buffer to the new String with no
   copy (O(1)); the String is generation-stamped at freeze time so a Builder
   created inside a save/restore scope yields a correctly-liveness-checked
-  String. **Consuming**: after `s = +b`, any further use of `b` is a compile
-  error (`E3060: use of Builder ... after it was consumed by '+'`) — enforced
-  conservatively by source order, because a Builder is never aliased.
+  String. **Detach and reset**: freezing detaches the buffer into the new `String`
+  and resets the Builder descriptor to empty `{ len: 0, cap: 0, data: null }`.
+  Any aliases to the Builder observe the empty descriptor (`?b == 0`), preventing
+  mutation of the already-frozen String. Subsequent appends (`+=`) to the Builder
+  (or any of its aliases) allocate a fresh arena buffer, making the Builder
+  cleanly reusable without affecting the frozen String.
 - **Peek** (`b(i)`) reads already-pushed bytes only (`i < len`); reading past
   the written count aborts `E4009`. `b(a..b)` views do not exist (`E3064`).
-- **No aliasing, no copies**: `b2 = b` (Builder of Builder) is a compile
-  error; `+`/`+=`/`(` never copy a Builder. `++b` is the copy *no-op* of §3.3
-  for scalars — a Builder is never deep-copied, since it must remain unique.
+- **Aliasing & sharing**: `b2 = b` shares the Builder descriptor; mutations via
+  `b2 += ...` affect the shared buffer. When frozen with `+b` (or `+b2`), the
+  buffer is transferred to the returned `String` and the shared descriptor is
+  reset to `{0, 0, 0}`, so all aliases observe an empty buffer without mutating
+  the frozen `String`. `b: Builder` passes a Builder by descriptor pointer into
+  functions so callees can mutate it in place. `++b` is the copy *no-op* of §3.3
+  for scalars.
 
 ### 3.8 Memory
 

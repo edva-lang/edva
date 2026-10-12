@@ -1,0 +1,39 @@
+#use "io"
+#use "str"
+
+// Test builder aliasing, freeze detach/reset, and immutability of frozen string
+b = {16}
+b += "A"
+c = b
+c += "B"
+
+// Freeze b into s1
+s1 = +b
+io::out $ s1
+
+// Both b and c observe empty descriptor (?b == 0, ?c == 0)
+io::out $ str::from_int(?b)
+io::out $ str::from_int(?c)
+
+// Subsequent append through b allocates fresh buffer
+b += "C"
+io::out $ str::from_int(?b)
+io::out $ str::from_int(?c)
+
+// Freeze c into s2
+s2 = +c
+io::out $ s2
+
+// Frozen s1 was not mutated by b += "C"
+io::out $ s1
+
+// Also test passing Builder to a function that mutates it
+append_excl: Builder => ()
+append_excl = b_arg =>
+   b_arg += "!"
+
+b2 = {16}
+b2 += "hello"
+append_excl(b2)
+s3 = +b2
+io::out $ s3

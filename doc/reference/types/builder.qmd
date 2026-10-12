@@ -8,7 +8,9 @@ meta:
 
 # `Builder`
 
-The `Builder` type is Edva's uniquely owned, growable mutable byte buffer. While `String` is strictly immutable, `Builder` provides the sole high-performance interface for dynamic text formatting, protocol packet generation, and serializing streams of bytes before freezing into an immutable `String`.
+The `Builder` type is Edva's growable mutable byte buffer. While `String` is strictly immutable,
+`Builder` provides the high-performance interface for dynamic text formatting, protocol packet
+generation, and serializing streams of bytes before freezing into an immutable `String`.
 
 ## Declaration and construction
 
@@ -24,13 +26,16 @@ buf = {1024}
 
 ## Runtime representation
 
-At runtime, a `Builder` is a 24-byte struct containing length, data buffer pointer, and allocated capacity:
+At runtime, a `Builder` is a 24-byte struct containing length, data buffer pointer, and allocated
+capacity:
 
 ```dva
 { len: i64, data: ptr, cap: i64 }
 ```
 
-The underlying memory is owned exclusively by the `Builder` instance. As data is appended, the buffer dynamically doubles in size when `len` approaches `cap`.
+The underlying memory is allocated in the active arena. Aliases (such as `c = b` or `b: Builder`
+function parameters) share access to the same descriptor and buffer until frozen. As data is
+appended, the buffer dynamically doubles in size when `len` approaches `cap`.
 
 ## Operations
 
@@ -89,9 +94,38 @@ final_str = +b
 ```
 
 #### Semantics of freezing:
-1. **Zero-copy handoff**: The underlying buffer pointer and current length are transferred directly into a `String` fat pointer `{ len, data }`.
-2. **NUL termination reservation**: The trailing byte `data[len]` is guaranteed to be set to `\0` upon freezing, satisfying the string ABI contract.
-3. **Linear ownership invalidation**: Once frozen, the source `Builder` cannot be mutated further, preventing any subsequent mutations from affecting the resulting immutable string.
+1. **Zero-copy handoff**: The underlying buffer pointer and current length are transferred
+   directly into a `String` fat pointer `{ len, data }`.
+2. **NUL termination reservation**: The trailing byte `data[len]` is guaranteed to be set to `\0`
+   upon freezing, satisfying the string ABI contract.
+3. **Detach and descriptor reset**: When `+b` freezes a Builder, it detaches the buffer into the
+   newly constructed `String` and resets the shared Builder descriptor to
+   `{ len: 0, data: null, cap: 0 }`. Any aliases to the Builder observe an empty descriptor
+   (`?b == 0`), preventing mutation of the frozen string. Subsequent `+=` appends allocate a fresh
+   buffer in the arena, allowing the descriptor to be cleanly reused without mutating the
+   already-frozen String.
+
+### Aliasing and immutability across freeze
+
+A Builder descriptor can be aliased by variable binding (`c = b`) or passed to functions
+(`b: Builder`). Aliases share the underlying buffer until freeze detaches it:
+
+```dva
+b = {16}
+b += "A"
+c = b               // c and b share the descriptor
+c += "B"
+
+// Freezes buffer into "AB", detaches buffer, resets descriptor to empty
+s = +b
+
+// s is immutable: "AB"
+// Both b and c now observe an empty buffer: ?c == 0, ?b == 0
+
+b += "C"            // Appending allocates a fresh buffer; does not mutate s
+s2 = +c             // Freezes fresh buffer into "C"
+// s remains "AB", s2 is "C"
+```
 
 ## Example: building structured output
 
