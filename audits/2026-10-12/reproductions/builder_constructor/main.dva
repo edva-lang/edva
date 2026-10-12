@@ -1,0 +1,4 @@
+#use io
+b = Builder(64)
+b += "A"
+io::out $ +b

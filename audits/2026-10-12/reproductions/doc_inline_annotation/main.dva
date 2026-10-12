@@ -1,0 +1,3 @@
+#use io
+x: i8 = 127
+io::out $ x

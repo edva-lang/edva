@@ -1,0 +1,4 @@
+#use io
+a = u8(255)
+b = u8(1)
+io::out $ a + b

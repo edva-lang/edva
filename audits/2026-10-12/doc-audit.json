@@ -1,0 +1,210 @@
+{
+  "qmd_pages": 61,
+  "missing_evidence_count": 40,
+  "pages_with_missing_evidence": 29,
+  "missing_evidence": [
+    {
+      "page": "doc/reference/edva-cli.qmd",
+      "line": 6,
+      "path": "selfhost/src/edva.dva:1480-1518"
+    },
+    {
+      "page": "doc/reference/diagnostics.qmd",
+      "line": 6,
+      "path": "selfhost/src/lexer.dva"
+    },
+    {
+      "page": "doc/reference/diagnostics.qmd",
+      "line": 6,
+      "path": "selfhost/src/parser.dva"
+    },
+    {
+      "page": "doc/reference/diagnostics.qmd",
+      "line": 6,
+      "path": "selfhost/src/codegen/*.dva"
+    },
+    {
+      "page": "doc/reference/diagnostics.qmd",
+      "line": 6,
+      "path": "selfhost/src/edva.dva"
+    },
+    {
+      "page": "doc/guide/metaprogramming.qmd",
+      "line": 6,
+      "path": "src/eval.dva"
+    },
+    {
+      "page": "doc/guide/ramifications.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/guide/ramifications.qmd",
+      "line": 6,
+      "path": "tests/pass/114_fallible_index_sugar.dva"
+    },
+    {
+      "page": "doc/guide/errors-and-io.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/guide/data-and-memory.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/compiler/bootstrap.qmd",
+      "line": 6,
+      "path": "seed/edva.ll"
+    },
+    {
+      "page": "doc/compiler/testing.qmd",
+      "line": 6,
+      "path": "selfhost/test_driver.sh"
+    },
+    {
+      "page": "doc/compiler/architecture.qmd",
+      "line": 6,
+      "path": "selfhost/src/edva.dva"
+    },
+    {
+      "page": "doc/compiler/architecture.qmd",
+      "line": 6,
+      "path": "selfhost/src/codegen/*.dva"
+    },
+    {
+      "page": "doc/compiler/targets.qmd",
+      "line": 6,
+      "path": "selfhost/src/edva.dva"
+    },
+    {
+      "page": "doc/reference/types/unit.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/ram.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/error.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/error.qmd",
+      "line": 6,
+      "path": "src/codegen/error.dva"
+    },
+    {
+      "page": "doc/reference/types/int.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/rune.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/float.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/string.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/array.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/array.qmd",
+      "line": 6,
+      "path": "src/codegen/array.dva"
+    },
+    {
+      "page": "doc/reference/types/map.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/map.qmd",
+      "line": 6,
+      "path": "src/codegen/map.dva"
+    },
+    {
+      "page": "doc/reference/types/addr.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/record.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/record.qmd",
+      "line": 6,
+      "path": "src/codegen/record.dva"
+    },
+    {
+      "page": "doc/reference/types/functions.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/functions.qmd",
+      "line": 6,
+      "path": "src/codegen/fn.dva"
+    },
+    {
+      "page": "doc/reference/types/type.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/type.qmd",
+      "line": 6,
+      "path": "src/codegen/metaprog.dva"
+    },
+    {
+      "page": "doc/reference/types/builder.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/types/index.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/stdlib/json.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/stdlib/type.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    },
+    {
+      "page": "doc/reference/stdlib/index.qmd",
+      "line": 6,
+      "path": "selfhost/src/edva.dva"
+    },
+    {
+      "page": "doc/reference/language/runtime.qmd",
+      "line": 6,
+      "path": "src/types.dva"
+    }
+  ],
+  "missing_links": [],
+  "missing_audit": [],
+  "llms_identical": false
+}

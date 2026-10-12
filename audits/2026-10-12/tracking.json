@@ -1,0 +1,145 @@
+{
+  "repository": "ike/dva",
+  "source_repository": "edva-lang/edva",
+  "audited_commit": "bc20a35ba2dd351bb0c891797a33d1ec8ae74940",
+  "milestone": {
+    "id": 6,
+    "title": "Edva correctness and documentation audit — 2026-10-12",
+    "url": "https://gitea.gde.to/ike/dva/milestone/6"
+  },
+  "issues": [
+    {
+      "finding": 1,
+      "number": 124,
+      "title": "Fix duplicate map keys when updating after tombstone deletion",
+      "url": "https://gitea.gde.to/ike/dva/issues/124",
+      "milestone_id": 6
+    },
+    {
+      "finding": 2,
+      "number": 125,
+      "title": "Bound map probes and rebuild tables saturated with tombstones",
+      "url": "https://gitea.gde.to/ike/dva/issues/125",
+      "milestone_id": 6
+    },
+    {
+      "finding": 3,
+      "number": 126,
+      "title": "Preserve outer String lifetimes across nested arena restores",
+      "url": "https://gitea.gde.to/ike/dva/issues/126",
+      "milestone_id": 6
+    },
+    {
+      "finding": 4,
+      "number": 127,
+      "title": "Define safe arena generation handling beyond 16-bit tag exhaustion",
+      "url": "https://gitea.gde.to/ike/dva/issues/127",
+      "milestone_id": 6
+    },
+    {
+      "finding": 5,
+      "number": 128,
+      "title": "Generate width-correct guards for narrow integer division and remainder",
+      "url": "https://gitea.gde.to/ike/dva/issues/128",
+      "milestone_id": 6
+    },
+    {
+      "finding": 6,
+      "number": 129,
+      "title": "Preserve operand width and result type in narrow bit shifts",
+      "url": "https://gitea.gde.to/ike/dva/issues/129",
+      "milestone_id": 6
+    },
+    {
+      "finding": 7,
+      "number": 130,
+      "title": "Use unsigned conversion for unsigned integer-to-float casts",
+      "url": "https://gitea.gde.to/ike/dva/issues/130",
+      "milestone_id": 6
+    },
+    {
+      "finding": 8,
+      "number": 131,
+      "title": "Implement valid float-to-fixed-width-integer conversions",
+      "url": "https://gitea.gde.to/ike/dva/issues/131",
+      "milestone_id": 6
+    },
+    {
+      "finding": 9,
+      "number": 132,
+      "title": "Validate primitive casts and Builder constructor arguments before codegen",
+      "url": "https://gitea.gde.to/ike/dva/issues/132",
+      "milestone_id": 6
+    },
+    {
+      "finding": 10,
+      "number": 133,
+      "title": "Check String map-key lengths before calling memcmp",
+      "url": "https://gitea.gde.to/ike/dva/issues/133",
+      "milestone_id": 6
+    },
+    {
+      "finding": 11,
+      "number": 134,
+      "title": "Align Builder ownership documentation with the accepted detach/reset contract",
+      "url": "https://gitea.gde.to/ike/dva/issues/134",
+      "milestone_id": 6
+    },
+    {
+      "finding": 12,
+      "number": 135,
+      "title": "Specify NaN behavior for !< and !> versus logical negation",
+      "url": "https://gitea.gde.to/ike/dva/issues/135",
+      "milestone_id": 6
+    },
+    {
+      "finding": 13,
+      "number": 136,
+      "title": "Reconcile semantic layout metadata with runtime and target ABI lowering",
+      "url": "https://gitea.gde.to/ike/dva/issues/136",
+      "milestone_id": 6
+    },
+    {
+      "finding": 14,
+      "number": 137,
+      "title": "Correct and test executable examples in the Quarto language reference",
+      "url": "https://gitea.gde.to/ike/dva/issues/137",
+      "milestone_id": 6
+    },
+    {
+      "finding": 15,
+      "number": 138,
+      "title": "Correct LLM ram constructors and generate consistent precedence guidance",
+      "url": "https://gitea.gde.to/ike/dva/issues/138",
+      "milestone_id": 6
+    },
+    {
+      "finding": 16,
+      "number": 139,
+      "title": "Correct mem API signatures, pool argument order, and missing API claims",
+      "url": "https://gitea.gde.to/ike/dva/issues/139",
+      "milestone_id": 6
+    },
+    {
+      "finding": 17,
+      "number": 140,
+      "title": "Reconcile ram representations and allocation guarantees across references",
+      "url": "https://gitea.gde.to/ike/dva/issues/140",
+      "milestone_id": 6
+    },
+    {
+      "finding": 18,
+      "number": 141,
+      "title": "Validate documentation evidence and examples in pull-request CI",
+      "url": "https://gitea.gde.to/ike/dva/issues/141",
+      "milestone_id": 6
+    },
+    {
+      "finding": 19,
+      "number": 142,
+      "title": "Fail privileged-test compilation errors before skipping hardware execution",
+      "url": "https://gitea.gde.to/ike/dva/issues/142",
+      "milestone_id": 6
+    }
+  ]
+}

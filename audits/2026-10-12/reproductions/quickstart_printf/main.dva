@@ -1,0 +1,3 @@
+#use io
+#use str
+io::outf("Processed items: {}", str::from_int(128))

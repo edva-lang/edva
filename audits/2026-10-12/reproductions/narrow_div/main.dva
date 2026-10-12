@@ -1,0 +1,4 @@
+#use io
+a = i8(100)
+b = i8(3)
+io::out $ a / b

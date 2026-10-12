@@ -1,0 +1,21 @@
+#use io
+#type M Int ^ Int
+m = M()
+m ^ 0 = 0
+deleted0 = m ^- 0
+m ^ 1 = 1
+deleted1 = m ^- 1
+m ^ 2 = 2
+deleted2 = m ^- 2
+m ^ 3 = 3
+deleted3 = m ^- 3
+m ^ 4 = 4
+deleted4 = m ^- 4
+m ^ 5 = 5
+deleted5 = m ^- 5
+m ^ 6 = 6
+deleted6 = m ^- 6
+m ^ 7 = 7
+deleted7 = m ^- 7
+io::out $ ?m
+io::out $ (m ^? 100)

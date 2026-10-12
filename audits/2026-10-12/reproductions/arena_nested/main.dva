@@ -1,0 +1,7 @@
+#use io
+0..1 @ i =>
+   s = "a" + "b"
+   0..1 @ j =>
+      t = "c" + "d"
+      ?t != 2 | io::out("bad")
+   io::out(s)

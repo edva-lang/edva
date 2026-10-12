@@ -1,0 +1,6 @@
+#use io
+a = u8(255)
+b = u64(18446744073709551615)
+io::out $ Float(a)
+io::out $ Float(b)
+io::out $ f32(a)

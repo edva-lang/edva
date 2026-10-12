@@ -1,0 +1,3 @@
+#use io
+s = "A"
+io::out $ s(0)!!

@@ -1,0 +1,12 @@
+[
+  {
+    "name": "map_duplicate",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/map_duplicate/main.ll\nSuccessfully compiled binary: <audit>/map_duplicate/main\n--- Running Executable ---\n2\n30\n<+>\n20\n"
+  },
+  {
+    "name": "map_tombstones",
+    "exit": 124,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/map_tombstones/main.ll\nSuccessfully compiled binary: <audit>/map_tombstones/main\n--- Running Executable ---\n0\n"
+  }
+]

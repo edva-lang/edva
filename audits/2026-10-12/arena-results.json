@@ -1,0 +1,27 @@
+[
+  {
+    "name": "arena_generation_wrap",
+    "exit": 1,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/arena_generation_wrap/main.ll\nSuccessfully compiled binary: <audit>/arena_generation_wrap/main\n--- Running Executable ---\nE4010: stale String read after arena restore\nE5014: Compiled program exited with code 1\n"
+  },
+  {
+    "name": "arena_nested",
+    "exit": 1,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/arena_nested/main.ll\nSuccessfully compiled binary: <audit>/arena_nested/main\n--- Running Executable ---\nE4010: stale String read after arena restore\nE5014: Compiled program exited with code 1\n"
+  },
+  {
+    "name": "float_narrow_not",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/float_narrow_not/main.ll\nSuccessfully compiled binary: <audit>/float_narrow_not/main\n--- Running Executable ---\n0\n"
+  },
+  {
+    "name": "llm_ffi_example",
+    "exit": 1,
+    "output": "<audit>/llm_ffi_example/main.dva:14:16: E3089: Cannot assign ramification of shape RamPP(<A|B>) to RamPN(<A|>)\n<audit>/llm_ffi_example/main.dva:14:16: E3084: Incompatible branch result types in choice\n<audit>/llm_ffi_example/main.dva:14:16: E3089: Cannot assign ramification of shape RamPN(<A|>) to RamPP(<A|B>)\n<audit>/llm_ffi_example/main.dva:14:16: E3084: Incompatible branch result types in choice\nE5011: Compilation aborted due to code generation errors.\n"
+  },
+  {
+    "name": "quickstart_printf",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/quickstart_printf/main.ll\nSuccessfully compiled binary: <audit>/quickstart_printf/main\n--- Running Executable ---\n128\n"
+  }
+]

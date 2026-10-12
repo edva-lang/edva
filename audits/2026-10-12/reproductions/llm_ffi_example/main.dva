@@ -1,0 +1,15 @@
+#use io
+#foreign "c"
+   open: (path: String, flags: Int) => Int
+   close: (fd: Int) => Int
+   read: (fd: Int, buf: Addr, count: Int) => Int
+   write: (fd: Int, buf: Addr, count: Int) => Int
+read_file: String => < String | >
+read_file = path =>
+   fd = open(path, 0)
+   fd [< 0] <-->
+   |
+      b = {4096}
+      n = read(fd, &b, 4096)
+      close(fd)
+      n > 0 | (?b = n; <+ +b ->) | <-->

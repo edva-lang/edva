@@ -1,0 +1,3 @@
+#use io
+io::out $ Int(1, 2)
+io::out $ Int()

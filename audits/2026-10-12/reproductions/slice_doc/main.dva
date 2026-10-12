@@ -1,0 +1,7 @@
+#use io
+#type Ints (Int){}
+xs = Ints()
+xs += 10
+xs += 20
+view: (Int[]) = xs(0 .. 1)
+io::out $ ?view

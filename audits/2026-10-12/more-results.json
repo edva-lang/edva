@@ -1,0 +1,47 @@
+[
+  {
+    "name": "map_duplicate",
+    "exit": 1,
+    "output": "<audit>/map_duplicate/main.dva:10:11: E3033: Cannot re-assign immutable binding '_'. Use a prime suffix ('_'') for rebindable variables.\nE5011: Compilation aborted due to code generation errors.\n"
+  },
+  {
+    "name": "map_tombstones",
+    "exit": 1,
+    "output": "<audit>/map_tombstones/main.dva:5:13: E3084: Type mismatch: cannot unify Int with ()\nE5011: Compilation aborted due to code generation errors.\n"
+  },
+  {
+    "name": "unsigned_float",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/unsigned_float/main.ll\nSuccessfully compiled binary: <audit>/unsigned_float/main\n--- Running Executable ---\n-1\n-1\n-1\n"
+  },
+  {
+    "name": "float_narrow_int",
+    "exit": 1,
+    "output": "E5011: LLVM module verification failed: PtrToInt source must be pointer\n  %coerce.ptr2int = ptrtoint double %var.load to i32\n\nE5011: Compilation aborted due to code generation errors.\n"
+  },
+  {
+    "name": "f32_arithmetic",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/f32_arithmetic/main.ll\nSuccessfully compiled binary: <audit>/f32_arithmetic/main\n--- Running Executable ---\n4\n"
+  },
+  {
+    "name": "cast_arity",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/cast_arity/main.ll\nSuccessfully compiled binary: <audit>/cast_arity/main\n--- Running Executable ---\n1\n0\n"
+  },
+  {
+    "name": "llm_propagate",
+    "exit": 1,
+    "output": "<audit>/llm_propagate/main.dva:360:39: E3089: Cannot assign ramification of shape RamPP(<A|B>) to RamPN(<A|>)\n<audit>/llm_propagate/main.dva:360:39: E3084: Return type mismatch in function: f\n<audit>/llm_propagate/main.dva:5:1: E3089: Cannot assign ramification of shape RamPP(<A|B>) to RamPN(<A|>)\n<audit>/llm_propagate/main.dva:5:1: E3084: Return type mismatch in function: f\nE5011: Compilation aborted due to code generation errors.\n"
+  },
+  {
+    "name": "doc_inline_annotation",
+    "exit": 1,
+    "output": "<audit>/doc_inline_annotation/main.dva:2:7: E2003: Expected newline or EOF after statement, got '='\n"
+  },
+  {
+    "name": "float_nan_logic",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/float_nan_logic/main.ll\nSuccessfully compiled binary: <audit>/float_nan_logic/main\n--- Running Executable ---\n<->\n<+>\n"
+  }
+]

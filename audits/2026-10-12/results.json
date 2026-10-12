@@ -1,0 +1,62 @@
+[
+  {
+    "name": "narrow_div",
+    "exit": 1,
+    "output": "E5011: LLVM module verification failed: Both operands to ICmp instruction are not of the same type!\n  %div.is.zero = icmp eq i8 %var.load1, i64 0\nBoth operands to ICmp instruction are not of the same type!\n  %div.is.min = icmp eq i8 %var.load, i64 -9223372036854775808\nBoth operands to ICmp instruction are not of the same type!\n  %div.is.negone = icmp eq i8 %var.load1, i64 -1\n\nE5011: Compilation aborted due to code generation errors.\n"
+  },
+  {
+    "name": "narrow_mod",
+    "exit": 1,
+    "output": "E5011: LLVM module verification failed: Both operands to ICmp instruction are not of the same type!\n  %div.is.zero = icmp eq i16 %var.load1, i64 0\n\nE5011: Compilation aborted due to code generation errors.\n"
+  },
+  {
+    "name": "narrow_shift",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/narrow_shift/main.ll\nSuccessfully compiled binary: <audit>/narrow_shift/main\n--- Running Executable ---\n0\n32768\n"
+  },
+  {
+    "name": "signed_narrow_shift",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/signed_narrow_shift/main.ll\nSuccessfully compiled binary: <audit>/signed_narrow_shift/main\n--- Running Executable ---\n9223372036854775744\n"
+  },
+  {
+    "name": "builder_alias",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/builder_alias/main.ll\nSuccessfully compiled binary: <audit>/builder_alias/main\n--- Running Executable ---\nAB\nC\n"
+  },
+  {
+    "name": "builder_constructor",
+    "exit": 1,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/builder_constructor/main.ll\nSuccessfully compiled binary: <audit>/builder_constructor/main\n--- Running Executable ---\nProcess terminated by signal 11\nE5014: Compiled program exited with code 139\n"
+  },
+  {
+    "name": "string_int_append",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/string_int_append/main.ll\nSuccessfully compiled binary: <audit>/string_int_append/main\n--- Running Executable ---\nitem_*\n65\n"
+  },
+  {
+    "name": "string_index_unwrap",
+    "exit": 1,
+    "output": "<audit>/string_index_unwrap/main.dva:3:15: E3091: Operand of '!!' must be a RamPP or RamPN ramification\nE5011: Compilation aborted due to code generation errors.\n"
+  },
+  {
+    "name": "bad_comparison",
+    "exit": 1,
+    "output": "<audit>/bad_comparison/main.dva:2:14: E2027: Expected ')' after grouped expression, got '<='.\n"
+  },
+  {
+    "name": "slice_doc",
+    "exit": 1,
+    "output": "<audit>/slice_doc/main.dva:6:15: E2003: Expected newline or EOF after statement, got '='\n"
+  },
+  {
+    "name": "narrow_add",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/narrow_add/main.ll\nSuccessfully compiled binary: <audit>/narrow_add/main\n--- Running Executable ---\n0\n"
+  },
+  {
+    "name": "rune_size",
+    "exit": 0,
+    "output": "Successfully generated LLVM IR via LLVM C API: <audit>/rune_size/main.ll\nSuccessfully compiled binary: <audit>/rune_size/main\n--- Running Executable ---\n8\n"
+  }
+]

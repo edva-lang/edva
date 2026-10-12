@@ -1,0 +1,4 @@
+#use io
+a = u16(100)
+b = u16(3)
+io::out $ a % b

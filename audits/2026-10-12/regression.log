@@ -1,0 +1,646 @@
+Building self-hosted compiler (edva)...
+
+Checking token enums are in sync (tokens.txt)...
+
+Checking operator tables are in sync (operators.yaml)...
+operators.yaml: all artifacts in sync.
+
+=========================================
+          EDVA DRIVER REGRESSION TESTS
+=========================================
+=== Running edva driver regression tests ===
+Testing F1 (parse failure propagation)... PASS
+Testing F1 (missing module failure propagation)... PASS
+Testing F2 (unwritable output path error without SIGSEGV)... PASS
+Testing F5 (file read exact length and empty file handling)... PASS
+Testing F8 (child signal termination reporting under -r)... PASS
+Testing --typed-ast (typed AST elaboration & error handling)... PASS
+Testing -H / --header (C header generation from #export)... PASS
+Testing WebAssembly target (-target wasm32-unknown-unknown)... PASS
+Testing modular compilation & interface-only #use loading... PASS
+Testing project name derivation for src/ directory target... PASS
+Testing E5022 directory collision handling... PASS
+Testing edva pkg CLI dispatch and usage... PASS
+Testing edva pkg fetch resolution, lockfile and imports.ccl generation... PASS
+Testing edva pkg fetch --locked validation... PASS
+Testing edva pkg fetch dependency cycle detection... PASS
+Testing edva pkg fetch overrides and --locked rejection... PASS
+Testing edva pkg fetch --offline rejection... PASS
+Testing edva pkg fetch git fixture, tree hashing and store layout... PASS
+Testing edva pkg fetch moving tag pinning... PASS
+Testing edva pkg fetch tree hash mismatch (E7005)... PASS
+Testing edva pkg fetch archive source and store caching... PASS
+Testing edva pkg fetch archive checksum mismatch (E7005)... PASS
+Testing edva pkg fetch zip-slip / traversal rejection (E7019)... PASS
+Testing edva pkg fetch escaping symlink rejection (E7019)... PASS
+Testing edva pkg fetch offline cache hit and miss... PASS
+Testing edva pkg fetch submodule and subdir actionable errors... PASS
+Testing edva pkg build with diamond dependency graph... PASS
+Testing edva pkg test runner... PASS
+Testing native dependencies FFI linkage (native.libs)... PASS
+Testing native pkg-config resolution and missing requirement error... PASS
+Testing library package build (no src/main.dva)... PASS
+Testing LLVM IR caching cold vs warm build... PASS
+Testing cache invalidation on source change... PASS
+Testing cache invalidation on dependency source change... PASS
+Testing cache invalidation on optimization flag change... PASS
+Testing cache invalidation on EDVA_COMPILER_ID change... PASS
+Testing cache invalidation on target triple change... PASS
+Testing diagnostics preservation on compilation... PASS
+Testing cache CLI commands (dir, ls, clean)... PASS
+Testing corrupt cache entry cleanup... PASS
+Testing edva init and duplicate prevention (E7020)... PASS
+Testing edva add and transactional rollback (E7021)... PASS
+Testing edva update selective pin refresh & --locked rejection... PASS
+Testing edva graph & tree with duplicate versions detection... PASS
+Testing top-level subcommands dispatch (edva <subcmd>)... PASS
+Testing edva vendor offline workflow, relocation & tamper checks... PASS
+=== All driver tests PASSED ===
+All driver regression tests passed.
+
+=========================================
+          EDVA COMPILER TEST SUITE
+=========================================
+
+=========================================
+          EXAMPLES COMPILE SMOKE
+=========================================
+  - hello: OK
+  - http_server: OK
+  - lexer: OK
+  - nc: OK
+
+[+] Running Positive Tests (tests/pass/)
+  - 01_literals: PASS
+  - 02_mutability: PASS
+  - 03_arithmetic: PASS
+  - 04_choice_inline: PASS
+  - 05_choice_indented: PASS
+  - 06_choice_value_int: PASS
+  - 07_nested_choice: PASS
+  - 08_inexhaustive_choice_stmt: PASS
+  - 09_single_branch_choice: PASS
+  - 100_enum: PASS
+  - 100_fmt: PASS
+  - 100_intrinsics: PASS
+  - 100_literal_pragma: PASS
+  - 101_pragma_number: PASS
+  - 101_sort: PASS
+  - 102_sizeof: PASS
+  - 103_str_module: PASS
+  - 104_builder_literal: PASS
+  - 105_non_exhaustive_predicate_choice: PASS
+  - 106_comma_or_guards: PASS
+  - 107_builder_address_and_len: PASS
+  - 108_http_module: PASS
+  - 109_builder_peephole_and_records: PASS
+  - 10_cycle_range: PASS
+  - 110_choice_all_terminating: PASS
+  - 111_mixed_width_arith: PASS
+  - 112_div_zero_abort: PASS
+  - 113_div_overflow_abort: PASS
+  - 114_unsigned_comparison: PASS
+  - 115_f32_at_eof: PASS
+  - 115_not_equal: PASS
+  - 116_foreign_explicit_i32_param: PASS
+  - 117_logical_ram_merge: PASS
+  - 118_monadic_bind: PASS
+  - 119_net_udp_loopback: PASS
+  - 11_cycle_sugar_double_at: PASS
+  - 120_http_url_utils: PASS
+  - 121_fn_signatures: PASS
+  - 122_unicode_module: PASS
+  - 123_flag_predicate_guards: PASS
+  - 124_enum_labels_as_values: PASS
+  - 125_prelude: PASS
+  - 126_growable_array: PASS
+  - 127_array_unwrap: PASS
+  - 128_array_oob_panic: PASS
+  - 129_global_mutation: PASS
+  - 12_cycle_break: PASS
+  - 130_recursive_types: PASS
+  - 131_json_parse: PASS
+  - 133_arena_transitive_helper_call: PASS
+  - 134_chained_subscripts: PASS
+  - 135_enum_qualified_label: PASS
+  - 136_fn_type_passthrough: PASS
+  - 137_unit_void: PASS
+  - 138_closures: PASS
+  - 139_structured_headers: PASS
+  - 13_range_omitted_start: PASS
+  - 140_cross_module_types: PASS
+  - 141_higher_order_chained_call: PASS
+  - 142_firstclass_fn_types: PASS
+  - 143_ram_typed_fn_params: PASS
+  - 144_raw_string_literals: PASS
+  - 145_compile_time_eval: PASS
+  - 146_monomorphization: PASS
+  - 147_type_generators: PASS
+  - 148_generic_fn_params: PASS
+  - 149_compile_time_type_dispatch: PASS
+  - 14_range_unbounded_start: PASS
+  - 150_generic_ram_params: PASS
+  - 151_type_equality_composites: PASS
+  - 152_must_init_intersection: PASS
+  - 153_private: PASS
+  - 154_word_mmio: PASS
+  - 155_math: PASS
+  - 15_infix_application_dollar: PASS
+  - 160_multithreading: PASS
+  - 161_multithreading_panic: PASS
+  - 162_multithreading_builder: PASS
+  - 163_multithreading_record: PASS
+  - 164_multithreading_array_slice: PASS
+  - 165_multithreading_ram_enum: PASS
+  - 166_array_return_typeinfo: PASS
+  - 167_indirect_call_composite_return: PASS
+  - 168_inline_lambda_arg_type: PASS
+  - 169_fn_value_inferred_params: PASS
+  - 16_user_functions: PASS
+  - 170_bidirectional_fn_inference: PASS
+  - 171_spawn_capturing_worker: PASS
+  - 172_spawn_lambda_target: PASS
+  - 173_flag_guard_negated: PASS
+  - 174_apply_named: PASS
+  - 175_choice_fn_branch_unification: PASS
+  - 176_nested_fn_inference: PASS
+  - 177_map_type: PASS
+  - 178_export_directive: PASS
+  - 179_mixed_guard_list: PASS
+  - 180_zero_arg_functions: PASS
+  - 181_sort_and_cmp: PASS
+  - 182_mutual_recursion: PASS
+  - 183_str_from_float: PASS
+  - 184_cross_module: PASS
+  - 185_fmt: PASS
+  - 187_json_number_strict: PASS
+  - 188_ws_operators: PASS
+  - 189_forward_ref_heap_enum_array: PASS
+  - 18_arena_string_concat: PASS
+  - 190_deep_nested_choice: PASS
+  - 191_named_predicate_guard: PASS
+  - 192_member_index_chain: PASS
+  - 193_forward_ref_enum_field: PASS
+  - 194_discarded_choice_mixed_branches: PASS
+  - 195_empty_ram_type: PASS
+  - 196_discarded_non_exhaustive_choice: PASS
+  - 197_builder_grow_in_restore_cycle: PASS
+  - 198_application_ops: PASS
+  - 199_closure_composites: PASS
+  - 19_cycle_int_operand: PASS
+  - 200_whitespace_operators: PASS
+  - 201_custom_operators: PASS
+  - 202_string_guard_choice: PASS
+  - 203_flag_guard_operand: PASS
+  - 204_builder_grow_in_restore_cycle: PASS
+  - 205_record_build_in_restore_cycle: PASS
+  - 206_enum_qualified_label_module: PASS
+  - 207_map_delete_literal_iteration: PASS
+  - 208_spawn_function_value_arg: PASS
+  - 209_cttr_generic_collect: PASS
+  - 20_tuples_and_records: PASS
+  - 210_ctfe_widened: PASS
+  - 211_ctfe_functions: PASS
+  - 212_prelude_collect: PASS
+  - 213_ctfe_generic: PASS
+  - 214_field_reflection: PASS
+  - 215_ctfe_higher_order: PASS
+  - 216_curried_const: PASS
+  - 217_field_iteration: PASS
+  - 218_enum_variant_iteration: PASS
+  - 219_match_function_value: PASS
+  - 21_tagged_unions_and_predicates: PASS
+  - 220_stdio: PASS
+  - 221_log: PASS
+  - 222_exit: PASS
+  - 223_exit_branch: PASS
+  - 224_single_bare_payload: PASS
+  - 225_one_field_record_payload: PASS
+  - 226_indented_type_block: PASS
+  - 227_ident_unwrap: PASS
+  - 228_record_layout_compat: PASS
+  - 229_enum_equality: PASS
+  - 22_dual_signatures_and_extractor: PASS
+  - 230_multiline_fn_body: PASS
+  - 231_member_compound: PASS
+  - 232_large_string: PASS
+  - 233_forward_named_fn_value: PASS
+  - 234_exit_lowest_precedence: PASS
+  - 235_choice_in_fn_args: PASS
+  - 236_aligned_choice_sequence: PASS
+  - 237_foreign_void: PASS
+  - 238_unification_higher_order_pipelines: PASS
+  - 239_unification_currying_closures: PASS
+  - 23_code_comments: PASS
+  - 240_unification_choice_closure_join: PASS
+  - 241_unification_mutual_recursion: PASS
+  - 242_prelude_find: PASS
+  - 243_array_copy: PASS
+  - 244_growable_array_iteration: PASS
+  - 245_multiline_string_concat: PASS
+  - 246_postfix_unwrap: PASS
+  - 247_vector_binops: PASS
+  - 248_flag_io_show: PASS
+  - 249_record_defaults_functional_update: PASS
+  - 24_raw_memory_references: PASS
+  - 250_indented_assignment: PASS
+  - 251_builder_length_choice: PASS
+  - 252_compile_time_type_guard: PASS
+  - 253_ram_propagate_operator: PASS
+  - 254_deep_pattern_destructuring: PASS
+  - 255_ram_null_niche: PASS
+  - 256_ram_unboxed: PASS
+  - 257_ram_polarity_cast: PASS
+  - 258_marked_global_declaration: PASS
+  - 259_user_diagnostics: PASS
+  - 25_integer_bases: PASS
+  - 260_c_header_generation: PASS
+  - 261_slice_negative_clamp: PASS
+  - 262_record_views: PASS
+  - 263_packed_records_bitfields: PASS
+  - 264_addr_arena_safety: PASS
+  - 265_io_read_repertoire: PASS
+  - 266_type_env_index: PASS
+  - 267_dependency_index: PASS
+  - 267_vector_reductions: PASS
+  - 268_record_field_reflection: PASS
+  - 269_type_predicates: PASS
+  - 26_float_types: PASS
+  - 270_comptime_value_params: PASS
+  - 271_builder_record_append: PASS
+  - 272_comptime_static_data: PASS
+  - 273_foreign_native_signature: PASS
+  - 274_rune_and_codepoint_cycle: PASS
+  - 275_typed_body_reuse: PASS
+  - 276_type_name_index: PASS
+  - 277_prime_mutability: PASS
+  - 278_record_splat: PASS
+  - 279_monomorphization_memo: PASS
+  - 27_operator_sections: PASS
+  - 280_string_tuple_cmp: PASS
+  - 281_builder_len_oob_abort: PASS
+  - 281_uring: PASS
+  - 282_use_dynamic: PASS
+  - 283_math_complex_fft: PASS
+  - 283_use_import: PASS
+  - 284_trailing_blocks: PASS
+  - 285_intrinsics_math: PASS
+  - 286_std_color: PASS
+  - 287_std_math_geom: PASS
+  - 288_intrinsics_mem: PASS
+  - 289_state_bindings: PASS
+  - 28_modules: PASS
+  - 290_std_mem: PASS
+  - 291_vector_swizzle: PASS
+  - 29_implicit_param_lambda: PASS
+  - 302_user_fp_names: PASS
+  - 303_builder_freeze_detach: PASS
+  - 304_oversized_shifts: PASS
+  - 305_cycle_escape_ram: PASS
+  - 306_lens_shared_cell: PASS
+  - 307_error_record: PASS
+  - 308_enum_deep_equality: PASS
+  - 309_anonymous_growable_array: PASS
+  - 30_foreign_libc: PASS
+  - 310_inexhaustive_ram_pn_choice: PASS
+  - 311_visibility_scoping: PASS
+  - 312_std_ccl: PASS
+  - 313_early_return: PASS
+  - 313_pkg_imports: PASS
+  - 314_bitwise_xor: PASS
+  - 315_spaceless_bang_ramnn: PASS
+  - 316_return_ram_sugar: PASS
+  - 317_fp_reductions: PASS
+  - 318_fp_slicing: PASS
+  - 319_fp_zip: PASS
+  - 31_sys_read_stdin: PASS
+  - 320_fp_predicates: PASS
+  - 321_fp_map_generalized: PASS
+  - 322_uax31: PASS
+  - 323_heredoc: PASS
+  - 32_sys_read_delim: PASS
+  - 33_type_wrangling: PASS
+  - 34_type_declarations: PASS
+  - 35_socket_functions: PASS
+  - 36_char_literals: PASS
+  - 37_choice_in_application: PASS
+  - 38_array_literals: PASS
+  - 39_array_slicing: PASS
+  - 40_array_iteration: PASS
+  - 41_posix_spawn: PASS
+  - 42_semicolon_separation: PASS
+  - 43_line_continuation: PASS
+  - 44_first_class_functions: PASS
+  - 45_logical_operators: PASS
+  - 46_choice_lambda_sugar: PASS
+  - 59_ramnn_unit_in_payload_ram: PASS
+  - 65_copy_operator: PASS
+  - 66_array_of_tuples: PASS
+  - 67_modules_explicit_path: PASS
+  - 68_sys_argv_bounds_check: PASS
+  - 69_tuple_bool_field_layout: PASS
+  - 70_cycle_jump_multilevel: PASS
+  - 71_cycle_escape_basic: PASS
+  - 72_cycle_escape_nested: PASS
+  - 73_string_embedded_nul: PASS
+  - 74_string_non_nul_to_foreign: PASS
+  - 75_arena_chunked_retention: PASS
+  - 76_arena_save_restore_cross_chunk: PASS
+  - 77_feed_operator: PASS
+  - 78_variant_payload_comparison: PASS
+  - 79_closure_and_higher_order: PASS
+  - 80_forward_annotation: PASS
+  - 81_plus_adjacent: PASS
+  - 82_type_coercion: PASS
+  - 83_record_unified: PASS
+  - 84_nested_record_type: PASS
+  - 85_nested_record_literal: PASS
+  - 86_inline_embedding: PASS
+  - 87_slices_in_records: PASS
+  - 88_cycle_fn_value: PASS
+  - 89_cycle_block_body: PASS
+  - 90_nested_decl_deep: PASS
+  - 91_nested_decl_mixed: PASS
+  - 92_choice_merge_type: PASS
+  - 93_narrow_index_bounds: PASS
+  - 94_char_escapes: PASS
+  - 95_negative_float_suffix: PASS
+  - 96_indent_type_decl: PASS
+  - 97_ram_type_decls: PASS
+  - 97_simd: PASS
+  - 98_unicode_module: PASS
+  - 99_bitwise_ops: PASS
+  - 99_enum_decl: PASS
+  - 99_fpfast: PASS
+  - views: PASS
+
+[-] Running Negative Tests (tests/fail/)
+  - 01_immutable_reassign: PASS (Caught Expected Error)
+  - 02_mixed_indentation: PASS (Caught Expected Error)
+  - 03_undefined_variable: PASS (Caught Expected Error)
+  - 04_invalid_unindent: PASS (Caught Expected Error)
+  - 05_choice_not_exhaustive: PASS (Caught Expected Error)
+  - 06_break_outside_cycle: PASS (Caught Expected Error)
+  - 07_range_whitespace_before: PASS (Caught Expected Error)
+  - 08_range_whitespace_after: PASS (Caught Expected Error)
+  - 09_fn_type_mismatch: PASS (Caught Expected Error)
+  - 100_array_elem_mismatch: PASS (Caught Expected Error)
+  - 100_parse_error_recovery: PASS (Caught Expected Error)
+  - 101_not_equal_on_rams: PASS (Caught Expected Error)
+  - 101_reserved_operator_fixity: PASS (Caught Expected Error)
+  - 102_non_assoc_chain: PASS (Caught Expected Error)
+  - 102_order_on_rams: PASS (Caught Expected Error)
+  - 10_invalid_payload_extractor: PASS (Caught Expected Error)
+  - 11_section_missing_whitespace: PASS (Caught Expected Error)
+  - 12_unimported_sys_call: PASS (Caught Expected Error)
+  - 133_unresolved_module_type: PASS (Caught Expected Error)
+  - 134_untyped_function_value: PASS (Caught Expected Error)
+  - 135_double_paren_fn_type: PASS (Caught Expected Error)
+  - 136_unterminated_raw_string: PASS (Caught Expected Error)
+  - 137_compile_time_not_evaluable: PASS (Caught Expected Error)
+  - 138_field_read_before_init: PASS (Caught Expected Error)
+  - 139_element_before_whole_init: PASS (Caught Expected Error)
+  - 13_equals_on_ramifications: PASS (Caught Expected Error)
+  - 140_escape_partial_composite: PASS (Caught Expected Error)
+  - 141_choice_partial_field_init: PASS (Caught Expected Error)
+  - 142_private_hidden: PASS (Caught Expected Error)
+  - 143_no_runtime_record: PASS (Caught Expected Error)
+  - 144_no_runtime_print: PASS (Caught Expected Error)
+  - 145_exit_noninteger: PASS (Caught Expected Error)
+  - 145_mmio_typed_load_assign: PASS (Caught Expected Error)
+  - 146_generic_fn_as_value: PASS (Caught Expected Error)
+  - 147_choice_mixed_fn_types: PASS (Caught Expected Error)
+  - 148_adjacent_exprs_choice: PASS (Caught Expected Error)
+  - 149_call_non_function: PASS (Caught Expected Error)
+  - 14_no_statement_separator: PASS (Caught Expected Error)
+  - 150_choice_mixed_undeclared_fn_types: PASS (Caught Expected Error)
+  - 151_map_bad_key_type: PASS (Caught Expected Error)
+  - 152_export_non_function: PASS (Caught Expected Error)
+  - 152_map_literal_value_mismatch: PASS (Caught Expected Error)
+  - 153_map_literal_key_mismatch: PASS (Caught Expected Error)
+  - 153_ws_range_both_spaces: PASS (Caught Expected Error)
+  - 154_ws_range_lead_space: PASS (Caught Expected Error)
+  - 155_ws_range_trail_space: PASS (Caught Expected Error)
+  - 15_disallowed_type_alias: PASS (Caught Expected Error)
+  - 16_choice_branch_type_mismatch: PASS (Caught Expected Error)
+  - 17_middle_bare_pipe_choice: PASS (Caught Expected Error)
+  - 18_not_on_payload_ram: PASS (Caught Expected Error)
+  - 198_pipe_before_guard: PASS (Caught Expected Error)
+  - 199_ws_postfix_bang_space: PASS (Caught Expected Error)
+  - 200_dynamic_member_index: PASS (Caught Expected Error)
+  - 201_enum_variant_index_range: PASS (Caught Expected Error)
+  - 202_record_arg_layout_mismatch: PASS (Caught Expected Error)
+  - 203_record_return_layout_mismatch: PASS (Caught Expected Error)
+  - 204_field_write_type_mismatch: PASS (Caught Expected Error)
+  - 205_annotated_rebind_layout_mismatch: PASS (Caught Expected Error)
+  - 206_enum_ordering: PASS (Caught Expected Error)
+  - 207_flag_to_heap_ram: PASS (Caught Expected Error)
+  - 208_logical_ram_unrepresentable: PASS (Caught Expected Error)
+  - 209_unit_value_rejected: PASS (Caught Expected Error)
+  - 211_fn_def_non_fn_annotation: PASS (Caught Expected Error)
+  - 212_value_def_fn_annotation: PASS (Caught Expected Error)
+  - 213_annotation_scalar_type_mismatch: PASS (Caught Expected Error)
+  - 214_uncalled_fn_return_mismatch: PASS (Caught Expected Error)
+  - 216_fn_return_unassignable: PASS (Caught Expected Error)
+  - 217_fn_ram_return_unassignable: PASS (Caught Expected Error)
+  - 218_duplicate_fn_def: PASS (Caught Expected Error)
+  - 220_void_assign: PASS (Caught Expected Error)
+  - 221_void_outside_foreign: PASS (Caught Expected Error)
+  - 222_lowercase_void_outside_foreign: PASS (Caught Expected Error)
+  - 223_ram_shape_return_mismatch: PASS (Caught Expected Error)
+  - 224_ram_shape_choice_mismatch: PASS (Caught Expected Error)
+  - 225_ram_shape_assign_mismatch: PASS (Caught Expected Error)
+  - 226_ram_shape_arg_mismatch: PASS (Caught Expected Error)
+  - 227_unification_ungrounded_param_e3128: PASS (Caught Expected Error)
+  - 228_unification_ungrounded_ret_e3103: PASS (Caught Expected Error)
+  - 229_unification_choice_closure_mismatch: PASS (Caught Expected Error)
+  - 230_unification_ungrounded_scc_e3128: PASS (Caught Expected Error)
+  - 231_call_paren_whitespace: PASS (Caught Expected Error)
+  - 232_unwrap_non_ram: PASS (Caught Expected Error)
+  - 233_unwrap_ram_np: PASS (Caught Expected Error)
+  - 234_unwrap_flag: PASS (Caught Expected Error)
+  - 235_record_default_missing: PASS (Caught Expected Error)
+  - 236_record_unknown_field: PASS (Caught Expected Error)
+  - 237_top_level_unexpected_indent: PASS (Caught Expected Error)
+  - 238_top_level_indent_split: PASS (Caught Expected Error)
+  - 239_call_too_many_args: PASS (Caught Expected Error)
+  - 240_call_too_few_args: PASS (Caught Expected Error)
+  - 241_propagate_non_ram_function: PASS (Caught Expected Error)
+  - 242_propagate_incompatible_ram_shape: PASS (Caught Expected Error)
+  - 243_propagate_operator_disabled_exclamation_question: PASS (Caught Expected Error)
+  - 245_record_literal_colon: PASS (Caught Expected Error)
+  - 246_invalid_marked_global: PASS (Caught Expected Error)
+  - 247_error_directive: PASS (Caught Expected Error)
+  - 248_header_arg_missing: PASS (Caught Expected Error)
+  - 249_view_escape_return: PASS (Caught Expected Error)
+  - 250_view_escape_global: PASS (Caught Expected Error)
+  - 251_view_escape_array: PASS (Caught Expected Error)
+  - 252_bitfield_width_mismatch: PASS (Caught Expected Error)
+  - 253_addr_escape_block_return: PASS (Caught Expected Error)
+  - 254_addr_escape_outer_assign: PASS (Caught Expected Error)
+  - 255_record_field_index_range: PASS (Caught Expected Error)
+  - 256_comptime_value_not_const: PASS (Caught Expected Error)
+  - 257_fn_param_prime: PASS (Caught Expected Error)
+  - 258_reassign_immutable: PASS (Caught Expected Error)
+  - 259_repoint_immutable_record: PASS (Caught Expected Error)
+  - 260_splat_non_record: PASS (Caught Expected Error)
+  - 263_duplicate_signature: PASS (Caught Expected Error)
+  - 289_state_binding_non_lvalue: PASS (Caught Expected Error)
+  - 28_mutable_string_literal: PASS (Caught Expected Error)
+  - 291_swizzle_oob: PASS (Caught Expected Error)
+  - 292_swizzle_mixed: PASS (Caught Expected Error)
+  - 293_swizzle_disabled: PASS (Caught Expected Error)
+  - 29_omitted_choice_condition_undefined: PASS (Caught Expected Error)
+  - 300_use_import_clash: PASS (Caught Expected Error)
+  - 301_use_import_local_clash: PASS (Caught Expected Error)
+  - 308_enum_fn_equality: PASS (Caught Expected Error)
+  - 309_discarded_choice_constant_branch: PASS (Caught Expected Error)
+  - 311_module_no_public_private: PASS (Caught Expected Error)
+  - 313_pkg_no_import_map: PASS (Caught Expected Error)
+  - 314_pkg_not_a_dep: PASS (Caught Expected Error)
+  - 315_pkg_self_import: PASS (Caught Expected Error)
+  - 316_pkg_no_root_module: PASS (Caught Expected Error)
+  - 317_pkg_no_submodule: PASS (Caught Expected Error)
+  - 318_pkg_internal_module: PASS (Caught Expected Error)
+  - 319_pkg_exports_nothing: PASS (Caught Expected Error)
+  - 320_pkg_import_cycle: PASS (Caught Expected Error)
+  - 321_return_outside_fn: PASS (Caught Expected Error)
+  - 322_return_void_with_value: PASS (Caught Expected Error)
+  - 323_return_missing_value: PASS (Caught Expected Error)
+  - 324_return_type_mismatch: PASS (Caught Expected Error)
+  - 325_return_reachable_fallthrough: PASS (Caught Expected Error)
+  - 326_xor_float: PASS (Caught Expected Error)
+  - 327_xor_string: PASS (Caught Expected Error)
+  - 328_generic_return_ram_shape_mismatch: PASS (Caught Expected Error)
+  - 329_heredoc_under_indented: PASS (Caught Expected Error)
+  - 32_walrus_reassign_immutable: PASS (Caught Expected Error)
+  - 33_cycle_jump_level_too_deep: PASS (Caught Expected Error)
+  - 34_cycle_escape_no_cycle: PASS (Caught Expected Error)
+  - 35_unknown_type_name: PASS (Caught Expected Error)
+  - 37_use_before_init: PASS (Caught Expected Error)
+  - 39_adjacent_operators: PASS (Caught Expected Error)
+  - 40_forward_annotated_slice_element: PASS (Caught Expected Error)
+  - 41_postfix_colon_coercion: PASS (Caught Expected Error)
+  - 42_reserved_type_name: PASS (Caught Expected Error)
+  - 43_typed_decl_with_init: PASS (Caught Expected Error)
+  - 44_dynamic_index_heterogeneous: PASS (Caught Expected Error)
+  - 45_heterogeneous_iteration: PASS (Caught Expected Error)
+  - 46_parenthesized_params: PASS (Caught Expected Error)
+  - 48_deep_nesting: PASS (Caught Expected Error)
+  - 49_unterminated_string: PASS (Caught Expected Error)
+  - 50_unterminated_comment: PASS (Caught Expected Error)
+  - 51_unterminated_char: PASS (Caught Expected Error)
+  - 52_empty_char: PASS (Caught Expected Error)
+  - 53_indent_decl_missing_colon: PASS (Caught Expected Error)
+  - 54_indent_decl_bad_indent: PASS (Caught Expected Error)
+  - 55_coloncolon_type_decl: PASS (Caught Expected Error)
+  - 56_ram_payload_in_unit_slot: PASS (Caught Expected Error)
+  - 57_ram_wrong_payload_type: PASS (Caught Expected Error)
+  - 58_ram_non_ram_arg: PASS (Caught Expected Error)
+  - 60_float_leading_dot: PASS (Caught Expected Error)
+  - 61_float_trailing_dot: PASS (Caught Expected Error)
+  - 62_float_leading_dot_exp: PASS (Caught Expected Error)
+  - 63_float_trailing_dot_exp: PASS (Caught Expected Error)
+  - 64_bitwise_float: PASS (Caught Expected Error)
+  - 65_bitnot_float: PASS (Caught Expected Error)
+  - 66_bad_pragma: PASS (Caught Expected Error)
+  - 67_bare_brace: PASS (Caught Expected Error)
+  - 68_bad_repeat_count: PASS (Caught Expected Error)
+  - 69_omitted_param_dollar_arrow: PASS (Caught Expected Error)
+  - 70_string_index_sugar_removed: PASS (Caught Expected Error)
+  - 71_string_len_write: PASS (Caught Expected Error)
+  - 72_string_index_write: PASS (Caught Expected Error)
+  - 73_string_ptr_construction: PASS (Caught Expected Error)
+  - 74_bang_integer: PASS (Caught Expected Error)
+  - 76_string_to_address_param: PASS (Caught Expected Error)
+  - 78_int_float_comparison: PASS (Caught Expected Error)
+  - 79_payload_extractor_on_flag: PASS (Caught Expected Error)
+  - 80_string_mul: PASS (Caught Expected Error)
+  - 81_repetition_count_too_large: PASS (Caught Expected Error)
+  - 82_type_repetition_count_too_large: PASS (Caught Expected Error)
+  - 83_raw_memory_non_integer_write: PASS (Caught Expected Error)
+  - 84_cycle_jump_zero_depth: PASS (Caught Expected Error)
+  - 85_logical_ram_incompatible: PASS (Caught Expected Error)
+  - 86_ramnn_unit_no_downcoerce: PASS (Caught Expected Error)
+  - 87_bind_requires_positive_payload: PASS (Caught Expected Error)
+  - 88_bind_unit_positive_rejected: PASS (Caught Expected Error)
+  - 89_inline_param_type: PASS (Caught Expected Error)
+  - 90_signature_arg_mismatch: PASS (Caught Expected Error)
+  - 91_signature_return_mismatch: PASS (Caught Expected Error)
+  - 92_enum_duplicate_label: PASS (Caught Expected Error)
+  - 94_enum_single_variant: PASS (Caught Expected Error)
+  - 95_enum_unknown_variant: PASS (Caught Expected Error)
+  - 96_enum_unit_with_payload: PASS (Caught Expected Error)
+  - 97_enum_not_exhaustive: PASS (Caught Expected Error)
+  - 98_array_arith_size_mismatch: PASS (Caught Expected Error)
+  - 98_enum_payload_mismatch: PASS (Caught Expected Error)
+  - 99_enum_label_ambiguous: PASS (Caught Expected Error)
+  - 99_fpfast_bad_mode: PASS (Caught Expected Error)
+
+[!] Running Hardware Privileged Tests (tests/sudo/)
+  - 01_scrolllock_on: FAIL (Output Mismatch)
+    Expected: 'Success'
+    Actual:   'sudo: ./01_scrolllock_on: command not found'
+  - 02_scrolllock_off: FAIL (Output Mismatch)
+    Expected: 'Success'
+    Actual:   'sudo: ./02_scrolllock_off: command not found'
+
+=========================================
+    SELFHOST DIFFERENTIAL HARNESSES
+=========================================
+
+-- driver_tests --
+=== Running edva driver regression tests ===
+Testing F1 (parse failure propagation)... PASS
+Testing F1 (missing module failure propagation)... PASS
+Testing F2 (unwritable output path error without SIGSEGV)... PASS
+Testing F5 (file read exact length and empty file handling)... PASS
+Testing F8 (child signal termination reporting under -r)... PASS
+Testing --typed-ast (typed AST elaboration & error handling)... PASS
+Testing -H / --header (C header generation from #export)... PASS
+Testing WebAssembly target (-target wasm32-unknown-unknown)... PASS
+Testing modular compilation & interface-only #use loading... PASS
+Testing project name derivation for src/ directory target... PASS
+Testing E5022 directory collision handling... PASS
+Testing edva pkg CLI dispatch and usage... PASS
+Testing edva pkg fetch resolution, lockfile and imports.ccl generation... PASS
+Testing edva pkg fetch --locked validation... PASS
+Testing edva pkg fetch dependency cycle detection... PASS
+Testing edva pkg fetch overrides and --locked rejection... PASS
+Testing edva pkg fetch --offline rejection... PASS
+Testing edva pkg fetch git fixture, tree hashing and store layout... PASS
+Testing edva pkg fetch moving tag pinning... PASS
+Testing edva pkg fetch tree hash mismatch (E7005)... PASS
+Testing edva pkg fetch archive source and store caching... PASS
+Testing edva pkg fetch archive checksum mismatch (E7005)... PASS
+Testing edva pkg fetch zip-slip / traversal rejection (E7019)... PASS
+Testing edva pkg fetch escaping symlink rejection (E7019)... PASS
+Testing edva pkg fetch offline cache hit and miss... PASS
+Testing edva pkg fetch submodule and subdir actionable errors... PASS
+Testing edva pkg build with diamond dependency graph... PASS
+Testing edva pkg test runner... PASS
+Testing native dependencies FFI linkage (native.libs)... PASS
+Testing native pkg-config resolution and missing requirement error... PASS
+Testing library package build (no src/main.dva)... PASS
+Testing LLVM IR caching cold vs warm build... PASS
+Testing cache invalidation on source change... PASS
+Testing cache invalidation on dependency source change... PASS
+Testing cache invalidation on optimization flag change... PASS
+Testing cache invalidation on EDVA_COMPILER_ID change... PASS
+Testing cache invalidation on target triple change... PASS
+Testing diagnostics preservation on compilation... PASS
+Testing cache CLI commands (dir, ls, clean)... PASS
+Testing corrupt cache entry cleanup... PASS
+Testing edva init and duplicate prevention (E7020)... PASS
+Testing edva add and transactional rollback (E7021)... PASS
+Testing edva update selective pin refresh & --locked rejection... PASS
+Testing edva graph & tree with duplicate versions detection... PASS
+Testing top-level subcommands dispatch (edva <subcmd>)... PASS
+Testing edva vendor offline workflow, relocation & tamper checks... PASS
+=== All driver tests PASSED ===
+  - driver_tests: PASS
+All differential harnesses passed.
+
+=========================================
+TEST SUMMARY: Total: 505 | Passed: 503 | Failed: 2
+=========================================

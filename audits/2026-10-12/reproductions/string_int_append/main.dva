@@ -1,0 +1,4 @@
+#use io
+io::out $ "item_" + 42
+s = "A"
+io::out $ s(0)

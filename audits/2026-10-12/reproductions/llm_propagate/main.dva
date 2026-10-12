@@ -1,0 +1,5 @@
+#use io
+#type R <Int | String>
+f: () => R
+f = !=> <+ 42 +>
+io::out $ f!

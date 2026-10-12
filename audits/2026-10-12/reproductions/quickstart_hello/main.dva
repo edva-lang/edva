@@ -1,0 +1,2 @@
+message = 10 > 5 | "greater" | "smaller"
+print $ message

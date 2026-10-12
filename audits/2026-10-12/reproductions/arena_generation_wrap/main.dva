@@ -1,0 +1,5 @@
+#use io
+0..65538 @ i =>
+   s = "a" + "b"
+   ?s != 2 | io::out("bad")
+io::out("done")

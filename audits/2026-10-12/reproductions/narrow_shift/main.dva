@@ -1,0 +1,4 @@
+#use io
+a = u8(128)
+io::out $ a .>. 8
+io::out $ a .<. 8

@@ -1,0 +1,3 @@
+#use io
+a = u8(255)
+io::out $ .!. a
