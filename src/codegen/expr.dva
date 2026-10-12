@@ -7171,15 +7171,19 @@ codegen_typed_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.rd.idx")
    stmt::llvm_add_incoming1(cg, idx_phi, idx0, cur)
+   probe_phi = LLVMBuildPhi(cg.builder, i64t, "m.rd.probe")
+   stmt::llvm_add_incoming1(cg, probe_phi, zero, cur)
+   reached_cap = LLVMBuildICmp(cg.builder, 32, probe_phi, cap, "m.rd.reached")
    state = LLVMBuildLoad2(cg.builder, LLVMInt8Type!,
       types::gep1(cg, LLVMInt8Type!, states, idx_phi, "m.rd.state.gep"),
       "m.rd.state")
    is_empty = LLVMBuildICmp(cg.builder, 32, state,
       LLVMConstInt(LLVMInt8Type!, 0, 0), "m.rd.is.empty")
+   stop = LLVMBuildOr(cg.builder, is_empty, reached_cap, "m.rd.stop")
+   LLVMBuildCondBr(cg.builder, stop, miss_bb, probe)
+   LLVMPositionBuilderAtEnd(cg.builder, probe)
    is_tomb = LLVMBuildICmp(cg.builder, 32, state,
       LLVMConstInt(LLVMInt8Type!, 2, 0), "m.rd.is.tomb")
-   LLVMBuildCondBr(cg.builder, is_empty, miss_bb, probe)
-   LLVMPositionBuilderAtEnd(cg.builder, probe)
    LLVMBuildCondBr(cg.builder, is_tomb, next, found_bb)
    LLVMPositionBuilderAtEnd(cg.builder, found_bb)
    key_slot = types::gep1(cg, i8p, keys, idx_phi, "m.rd.key.slot")
@@ -7190,7 +7194,9 @@ codegen_typed_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    idx_next = LLVMBuildAnd(cg.builder,
       LLVMBuildAdd(cg.builder, idx_phi, one, "m.rd.idx.add"), capm1,
       "m.rd.idx.next")
+   probe_next = LLVMBuildAdd(cg.builder, probe_phi, one, "m.rd.probe.next")
    stmt::llvm_add_incoming1(cg, idx_phi, idx_next, next)
+   stmt::llvm_add_incoming1(cg, probe_phi, probe_next, next)
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, hit)
    val_is_ptr = types::is_ptrish_vt(val_vt)

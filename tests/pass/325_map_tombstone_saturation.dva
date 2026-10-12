@@ -1,0 +1,48 @@
+// tests/pass/325_map_tombstone_saturation.dva — issue #125 regression: bound probes and handle tombstone saturation
+#use io
+
+#type M Int ^ Int
+
+m = M()
+
+// Insert and delete 0..7 so every bucket becomes a tombstone
+0..8 @ i =>
+   m ^ (i) = i * 10
+   d = m ^- (i)
+   !d | io::out("FAIL delete initial")
+
+?m != 0 | io::out("FAIL count should be 0")
+
+// Missing operations on all-tombstone table must terminate promptly
+m ^? 100 | io::out("FAIL membership for missing key")
+(m ^ 100 | _ | -1) != -1 | io::out("FAIL lookup for missing key")
+m ^- 100 | io::out("FAIL deletion for missing key")
+
+// Reinsert keys 0..7 into the saturated table
+0..8 @ i =>
+   m ^ (i) = i * 100
+
+?m != 8 | io::out("FAIL count after reinsertion")
+
+// Verify all values are correct
+0..8 @ i =>
+   (m ^ (i))!! != i * 100 | io::out("FAIL value after reinsertion")
+
+// Insert another key to trigger growth/rebuild
+m ^ 8 = 800
+?m != 9 | io::out("FAIL count after growth")
+(m ^ 8)!! != 800 | io::out("FAIL value for key 8")
+
+// Delete all keys again
+0..9 @ i =>
+   d = m ^- (i)
+   !d | io::out("FAIL second delete")
+
+?m != 0 | io::out("FAIL count after second all-delete")
+
+// Insert a single key and verify
+m ^ 42 = 4242
+?m != 1 | io::out("FAIL count after final insert")
+(m ^ 42)!! != 4242 | io::out("FAIL value after final insert")
+
+io::out("PASS")

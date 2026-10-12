@@ -1976,7 +1976,8 @@ map_struct_type = cg =>
    tarr += i8p
    tarr += i8p
    tarr += i8p
-   types::struct_type_n(cg, tarr, 5)
+   tarr += i64t
+   types::struct_type_n(cg, tarr, 6)
 
 // The (cap, keys, vals, states) fields of a map value.
 map_fields: types::Cg, Addr => (Addr, Addr, Addr, Addr)
@@ -1992,13 +1993,13 @@ map_fields = cg, m =>
       LLVMBuildStructGEP2(cg.builder, mt, m, 4, "m.states"), "m.states")
    (cap, keys, vals, states)
 
-// An empty map: an arena-backed { count, cap, keys, vals, states } with cap 8.
+// An empty map: an arena-backed { count, cap, keys, vals, states, tombs } with cap 8.
 codegen_map_create: types::Cg, String => Addr
 codegen_map_create = cg, name =>
    mt = map_struct_type(cg)
    i64t = LLVMInt64Type!
    m = expr::codegen_call_arena_alloc(cg,
-      LLVMConstInt(i64t, 40, 0), name)
+      LLVMConstInt(i64t, 48, 0), name)
    zero = LLVMConstInt(i64t, 0, 0)
    cap = LLVMConstInt(i64t, 8, 0)
    key_bytes = LLVMBuildMul(cg.builder, cap,
@@ -2019,6 +2020,8 @@ codegen_map_create = cg, name =>
       LLVMBuildStructGEP2(cg.builder, mt, m, 3, "m.vals.gep"))
    LLVMBuildStore(cg.builder, sb,
       LLVMBuildStructGEP2(cg.builder, mt, m, 4, "m.states.gep"))
+   LLVMBuildStore(cg.builder, zero,
+      LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.tombs.gep"))
    m
 
 // // FNV-1a of a String key via dva_hash_string(data, len), or Knuth/splitmix
@@ -2146,6 +2149,7 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
    LLVMPositionBuilderAtEnd(cg.builder, occ_bb)
    key_slot = types::gep1(cg, i8p, mf.1, idx_phi, "m.key.slot")
    eq = codegen_map_key_equal(cg, key_slot, key_val, key_vt)
+   occ_end = LLVMGetInsertBlock(cg.builder)
    LLVMBuildCondBr(cg.builder, eq, overwrite, next)
    LLVMPositionBuilderAtEnd(cg.builder, overwrite)
    LLVMBuildStore(cg.builder, val_val,
@@ -2154,7 +2158,7 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
    LLVMPositionBuilderAtEnd(cg.builder, next)
    next_tomb = LLVMBuildPhi(cg.builder, i64t, "m.next.tomb")
    stmt::llvm_add_incoming1(cg, next_tomb, tomb_from_tomb, tomb_bb)
-   stmt::llvm_add_incoming1(cg, next_tomb, tomb_phi, occ_bb)
+   stmt::llvm_add_incoming1(cg, next_tomb, tomb_phi, occ_end)
    idx_next = LLVMBuildAnd(cg.builder,
       LLVMBuildAdd(cg.builder, idx_phi, one, "m.idx.add"), capm1,
       "m.idx.next")
@@ -2179,12 +2183,17 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
    count_next = LLVMBuildAdd(cg.builder, count, one, "m.count.next")
    LLVMBuildStore(cg.builder, count_next,
       LLVMBuildStructGEP2(cg.builder, mt, m, 0, "m.count.gep"))
+   tombs_p = LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.ins.tombs.p")
+   cur_tombs = LLVMBuildLoad2(cg.builder, i64t, tombs_p, "m.ins.tombs")
+   tomb_dec = LLVMBuildSelect(cg.builder, use_tomb, one, zero, "m.tomb.dec")
+   tombs_next = LLVMBuildSub(cg.builder, cur_tombs, tomb_dec, "m.ins.tombs.next")
+   LLVMBuildStore(cg.builder, tombs_next, tombs_p)
    LLVMBuildBr(cg.builder, done)
    LLVMPositionBuilderAtEnd(cg.builder, done)
 
-// Double capacity and reinsert every occupied slot. The old arena buffers are
-// intentionally retained; only the map header is mutated to point at the new
-// hash table, matching the native arena ownership model.
+// Double capacity (or rebuild at same capacity if tombstones saturated) and reinsert
+// every occupied slot. The old arena buffers are intentionally retained; only the map
+// header is mutated to point at the new hash table, matching the native arena ownership model.
 codegen_map_grow: types::Cg, Addr, ast::ValueType => ()
 codegen_map_grow = cg, m, key_vt =>
    i64t = LLVMInt64Type!
@@ -2205,7 +2214,12 @@ codegen_map_grow = cg, m, key_vt =>
    two = LLVMConstInt(i64t, 2, 0)
    zero = LLVMConstInt(i64t, 0, 0)
    one = LLVMConstInt(i64t, 1, 0)
-   new_cap = LLVMBuildMul(cg.builder, old_cap, two, "m.new.cap")
+   double_cap = LLVMBuildMul(cg.builder, old_cap, two, "m.double.cap")
+   live_count = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, mt, m, 0, "m.live.cnt"), "m.live.cnt")
+   live_x2 = LLVMBuildMul(cg.builder, live_count, two, "m.live.x2")
+   should_double = LLVMBuildICmp(cg.builder, 38, live_x2, old_cap, "m.should.double")
+   new_cap = LLVMBuildSelect(cg.builder, should_double, double_cap, old_cap, "m.new.cap")
    key_bytes = LLVMBuildMul(cg.builder, new_cap,
       LLVMConstInt(i64t, 8, 0), "m.gk.bytes")
    new_keys = expr::codegen_call_arena_alloc(cg, key_bytes, "m.gk")
@@ -2225,6 +2239,8 @@ codegen_map_grow = cg, m, key_vt =>
       LLVMBuildStructGEP2(cg.builder, mt, m, 4, "m.states.gep"))
    LLVMBuildStore(cg.builder, zero,
       LLVMBuildStructGEP2(cg.builder, mt, m, 0, "m.count.gep"))
+   LLVMBuildStore(cg.builder, zero,
+      LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.tombs.gep"))
    start = LLVMGetInsertBlock(cg.builder)
    loop = LLVMAppendBasicBlock(cg.current_fn, "m.re.loop")
    body = LLVMAppendBasicBlock(cg.current_fn, "m.re.body")
@@ -2259,7 +2275,7 @@ codegen_map_grow = cg, m, key_vt =>
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, done)
 
-// Grow at load factor 0.75, then perform the normal probe/insert.
+// Grow/rebuild at occupancy load factor 0.75, then perform the normal probe/insert.
 codegen_map_insert: types::Cg, Addr, Addr, Addr, ast::ValueType => ()
 codegen_map_insert = cg, m, key_val, val_val, key_vt =>
    i64t = LLVMInt64Type!
@@ -2268,9 +2284,12 @@ codegen_map_insert = cg, m, key_val, val_val, key_vt =>
       LLVMBuildStructGEP2(cg.builder, mt, m, 0, "m.count"), "m.count")
    cap = LLVMBuildLoad2(cg.builder, i64t,
       LLVMBuildStructGEP2(cg.builder, mt, m, 1, "m.cap"), "m.cap")
+   tombs = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.tombs"), "m.tombs")
    one = LLVMConstInt(i64t, 1, 0)
+   occupied = LLVMBuildAdd(cg.builder, count, tombs, "m.occupied")
    lhs = LLVMBuildMul(cg.builder,
-      LLVMBuildAdd(cg.builder, count, one, "m.c.plus"),
+      LLVMBuildAdd(cg.builder, occupied, one, "m.c.plus"),
       LLVMConstInt(i64t, 4, 0), "m.c.lhs")
    rhs = LLVMBuildMul(cg.builder, cap,
       LLVMConstInt(i64t, 3, 0), "m.c.rhs")
@@ -2322,15 +2341,19 @@ codegen_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.rd.idx")
    stmt::llvm_add_incoming1(cg, idx_phi, idx0, cur)
+   probe_phi = LLVMBuildPhi(cg.builder, i64t, "m.rd.probe")
+   stmt::llvm_add_incoming1(cg, probe_phi, zero, cur)
+   reached_cap = LLVMBuildICmp(cg.builder, 32, probe_phi, cap, "m.rd.reached")
    state = LLVMBuildLoad2(cg.builder, LLVMInt8Type!,
       types::gep1(cg, LLVMInt8Type!, states, idx_phi, "m.rd.state.gep"),
       "m.rd.state")
    is_empty = LLVMBuildICmp(cg.builder, 32, state,
       LLVMConstInt(LLVMInt8Type!, 0, 0), "m.rd.is.empty")
+   stop = LLVMBuildOr(cg.builder, is_empty, reached_cap, "m.rd.stop")
+   LLVMBuildCondBr(cg.builder, stop, miss_bb, probe)
+   LLVMPositionBuilderAtEnd(cg.builder, probe)
    is_tomb = LLVMBuildICmp(cg.builder, 32, state,
       LLVMConstInt(LLVMInt8Type!, 2, 0), "m.rd.is.tomb")
-   LLVMBuildCondBr(cg.builder, is_empty, miss_bb, probe)
-   LLVMPositionBuilderAtEnd(cg.builder, probe)
    LLVMBuildCondBr(cg.builder, is_tomb, next, found_bb)
    LLVMPositionBuilderAtEnd(cg.builder, found_bb)
    key_slot = types::gep1(cg, i8p, keys, idx_phi, "m.rd.key.slot")
@@ -2341,7 +2364,9 @@ codegen_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    idx_next = LLVMBuildAnd(cg.builder,
       LLVMBuildAdd(cg.builder, idx_phi, one, "m.rd.idx.add"), capm1,
       "m.rd.idx.next")
+   probe_next = LLVMBuildAdd(cg.builder, probe_phi, one, "m.rd.probe.next")
    stmt::llvm_add_incoming1(cg, idx_phi, idx_next, next)
+   stmt::llvm_add_incoming1(cg, probe_phi, probe_next, next)
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, hit)
    LLVMBuildStore(cg.builder, one, tag_gep)
@@ -2395,6 +2420,7 @@ codegen_map_membership = cg, m, key_val, key_vt =>
    states = LLVMBuildLoad2(cg.builder, i8p,
       LLVMBuildStructGEP2(cg.builder, mt, m, 4, "m.states"), "m.states")
    hash = codegen_map_hash(cg, key_val, key_vt)
+   zero = LLVMConstInt(i64t, 0, 0)
    one = LLVMConstInt(i64t, 1, 0)
    capm1 = LLVMBuildSub(cg.builder, cap, one, "m.capm1")
    idx0 = LLVMBuildAnd(cg.builder, hash, capm1, "m.idx0")
@@ -2409,15 +2435,19 @@ codegen_map_membership = cg, m, key_val, key_vt =>
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.mem.idx")
    stmt::llvm_add_incoming1(cg, idx_phi, idx0, cur)
+   probe_phi = LLVMBuildPhi(cg.builder, i64t, "m.mem.probe")
+   stmt::llvm_add_incoming1(cg, probe_phi, zero, cur)
+   reached_cap = LLVMBuildICmp(cg.builder, 32, probe_phi, cap, "m.mem.reached")
    state = LLVMBuildLoad2(cg.builder, LLVMInt8Type!,
       types::gep1(cg, LLVMInt8Type!, states, idx_phi, "m.mem.state.gep"),
       "m.mem.state")
    is_empty = LLVMBuildICmp(cg.builder, 32, state,
       LLVMConstInt(LLVMInt8Type!, 0, 0), "m.mem.is.empty")
-   is_tomb = LLVMBuildICmp(cg.builder, 32, state,
-      LLVMConstInt(LLVMInt8Type!, 2, 0), "m.is.tomb")
-   LLVMBuildCondBr(cg.builder, is_empty, miss_bb, probe)
+   stop = LLVMBuildOr(cg.builder, is_empty, reached_cap, "m.mem.stop")
+   LLVMBuildCondBr(cg.builder, stop, miss_bb, probe)
    LLVMPositionBuilderAtEnd(cg.builder, probe)
+   is_tomb = LLVMBuildICmp(cg.builder, 32, state,
+      LLVMConstInt(LLVMInt8Type!, 2, 0), "m.mem.is.tomb")
    LLVMBuildCondBr(cg.builder, is_tomb, next, found)
    LLVMPositionBuilderAtEnd(cg.builder, found)
    key_slot = types::gep1(cg, i8p, keys, idx_phi, "m.mem.key.slot")
@@ -2428,7 +2458,9 @@ codegen_map_membership = cg, m, key_val, key_vt =>
    idx_next = LLVMBuildAnd(cg.builder,
       LLVMBuildAdd(cg.builder, idx_phi, one, "m.mem.idx.add"), capm1,
       "m.mem.idx.next")
+   probe_next = LLVMBuildAdd(cg.builder, probe_phi, one, "m.mem.probe.next")
    stmt::llvm_add_incoming1(cg, idx_phi, idx_next, next)
+   stmt::llvm_add_incoming1(cg, probe_phi, probe_next, next)
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, hit)
    LLVMBuildBr(cg.builder, done)
@@ -2455,6 +2487,7 @@ codegen_map_delete = cg, m, key_val, key_vt =>
    states = LLVMBuildLoad2(cg.builder, i8p,
       LLVMBuildStructGEP2(cg.builder, mt, m, 4, "m.states"), "m.states")
    hash = codegen_map_hash(cg, key_val, key_vt)
+   zero = LLVMConstInt(i64t, 0, 0)
    one = LLVMConstInt(i64t, 1, 0)
    capm1 = LLVMBuildSub(cg.builder, cap, one, "m.del.capm1")
    idx0 = LLVMBuildAnd(cg.builder, hash, capm1, "m.del.idx0")
@@ -2470,15 +2503,19 @@ codegen_map_delete = cg, m, key_val, key_vt =>
    LLVMPositionBuilderAtEnd(cg.builder, loop)
    idx_phi = LLVMBuildPhi(cg.builder, i64t, "m.del.idx")
    stmt::llvm_add_incoming1(cg, idx_phi, idx0, cur)
+   probe_phi = LLVMBuildPhi(cg.builder, i64t, "m.del.probe")
+   stmt::llvm_add_incoming1(cg, probe_phi, zero, cur)
+   reached_cap = LLVMBuildICmp(cg.builder, 32, probe_phi, cap, "m.del.reached")
    state_gep = types::gep1(cg, LLVMInt8Type!, states, idx_phi, "m.del.st.gep")
    state = LLVMBuildLoad2(cg.builder, LLVMInt8Type!,
       state_gep, "m.del.state")
    is_empty = LLVMBuildICmp(cg.builder, 32, state,
       LLVMConstInt(LLVMInt8Type!, 0, 0), "m.del.is.empty")
+   stop = LLVMBuildOr(cg.builder, is_empty, reached_cap, "m.del.stop")
+   LLVMBuildCondBr(cg.builder, stop, miss_bb, probe)
+   LLVMPositionBuilderAtEnd(cg.builder, probe)
    is_tomb = LLVMBuildICmp(cg.builder, 32, state,
       LLVMConstInt(LLVMInt8Type!, 2, 0), "m.del.is.tomb")
-   LLVMBuildCondBr(cg.builder, is_empty, miss_bb, probe)
-   LLVMPositionBuilderAtEnd(cg.builder, probe)
    LLVMBuildCondBr(cg.builder, is_tomb, next, found)
    LLVMPositionBuilderAtEnd(cg.builder, found)
    key_slot = types::gep1(cg, i8p, keys, idx_phi, "m.del.key.slot")
@@ -2488,7 +2525,9 @@ codegen_map_delete = cg, m, key_val, key_vt =>
    idx_next = LLVMBuildAnd(cg.builder,
       LLVMBuildAdd(cg.builder, idx_phi, one, "m.del.idx.add"), capm1,
       "m.del.idx.next")
+   probe_next = LLVMBuildAdd(cg.builder, probe_phi, one, "m.del.probe.next")
    stmt::llvm_add_incoming1(cg, idx_phi, idx_next, next)
+   stmt::llvm_add_incoming1(cg, probe_phi, probe_next, next)
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, hit)
    LLVMBuildStore(cg.builder,
@@ -2497,6 +2536,10 @@ codegen_map_delete = cg, m, key_val, key_vt =>
    cur_count = LLVMBuildLoad2(cg.builder, i64t, count_p, "m.del.count")
    count_next = LLVMBuildSub(cg.builder, cur_count, one, "m.del.cnt.next")
    LLVMBuildStore(cg.builder, count_next, count_p)
+   tombs_p = LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.del.tombs.p")
+   cur_tombs = LLVMBuildLoad2(cg.builder, i64t, tombs_p, "m.del.tombs")
+   tombs_next = LLVMBuildAdd(cg.builder, cur_tombs, one, "m.del.tombs.next")
+   LLVMBuildStore(cg.builder, tombs_next, tombs_p)
    LLVMBuildBr(cg.builder, done)
    LLVMPositionBuilderAtEnd(cg.builder, miss_bb)
    LLVMBuildBr(cg.builder, done)
