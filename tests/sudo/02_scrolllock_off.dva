@@ -1,4 +1,5 @@
 #use os
+#use io
 
 // Open Linux Console Device /dev/console (O_RDWR = 2)
 fd = os::open("/dev/console", 2)
@@ -7,4 +8,4 @@ fd = os::open("/dev/console", 2)
 res = os::ioctl(fd, 19250, 0)
 
 status = res [0] "Success" | "Failed"
-print $ status
+io::out $ status

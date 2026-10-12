@@ -18,11 +18,15 @@ Variables can be declared with immutable (`=`) or mutable (`'`) bindings. Types 
 // Inferred Int (i64)
 count = 42
 
-// Explicitly annotated scalar widths
-small_val: i8 = 127
-port: u16 = 8080
-status: u32 = 0x80000000
-timestamp: i64 = 1775347200
+// Explicitly annotated scalar widths (forward annotation on a separate line)
+small_val: i8
+small_val = 127i8
+port: u16
+port = 8080u16
+status: u32
+status = 0x80000000u32
+timestamp: i64
+timestamp = 1775347200i64
 
 // Mutable counter
 counter' = 0
@@ -92,7 +96,7 @@ or_res  = x .|. y    // 0b1110 (Bitwise OR)
 xor_res = x .^. y    // 0b0110 (Bitwise XOR)
 not_res = .!.x       // Bitwise NOT (one's complement)
 shl_res = x .<. 2    // 0b110000 (Shift left)
-shr_res = x .>. 1    // Shift right (arithmetic on signed, logical on unsigned)
+shr_res = x .>. 1    // Shift right (logical zero-fill)
 ```
 
 ### Comparison operators
@@ -106,9 +110,9 @@ y = 20
 is_eq  = x == y    // <->
 is_ne  = x != y    // <+>
 is_lt  = x < y     // <+>
-is_le  = x <= y    // <+>
+is_le  = x !> y    // <+> (less-or-equal / not greater than)
 is_gt  = x > y     // <->
-is_ge  = x >= y    // <->
+is_ge  = x !< y    // <-> (greater-or-equal / not less than)
 ```
 
 ## Conversions and casting

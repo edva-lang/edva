@@ -1,0 +1,121 @@
+// tests/pass/339_quarto_reference_examples.dva
+// Verifies corrected examples from Quarto reference documentation (Finding 14, Issue #137):
+// - Quickstart introductory hello with #use io and io::out
+// - Variable rebinding with primes
+// - Separate function signatures
+// - Choices and cycle escape
+// - Builder construction, string byte append vs str::from_int
+// - io::outf with value-first argument order
+// - Forward annotations for scalar widths
+// - !> and !< comparison operators on Int and Rune
+// - Logical right shift .>.
+// - Slice creation and cycle iteration
+// - Raw memory untyped write @[addr] = val and typed read @[addr T]
+
+#use io
+#use str
+#use mem
+
+#type Ints (Int){}
+
+greet: String, Int => String
+greet = name, count =>
+   count > 0 | "Hello, " + name | "Nobody"
+
+classify: Int => String
+classify = n =>
+   n [< 0] "negative"
+   [0] "zero"
+   [1, 2, 3] "small positive"
+   | "large positive"
+
+build_greeting: String => String
+build_greeting = name =>
+   b = {64}
+   b += "Welcome, "
+   b += name
+   b += "!"
+   +b
+
+sum_slice: (Int[]) => Int
+sum_slice = slice =>
+   tot' = 0
+   ?slice @ i =>
+      elem = slice(i)
+      tot' = tot' + elem
+   tot'
+
+main: () => ()
+main = !=>
+   // 1. Quickstart hello
+   message = 10 > 5 | "greater" | "smaller"
+   io::out $ message
+
+   // 2. Variable rebinding
+   total = 10
+   total' = total + 5
+   total'' = total' * 2
+   io::out $ total''
+
+   // 3. Separate function signatures
+   io::out $ greet("Alice", 3)
+
+   // 4. Choices
+   io::out $ classify(2)
+
+   // 5. Cycles and cycle escape
+   target = 56
+   found = 50..100 @ n =>
+      n == target | -->
+   >--
+      target
+   found
+      | n => io::out(n)
+      | io::out("not found")
+
+   // 6. Builder
+   io::out $ build_greeting("Edva Developer")
+
+   // 7. io::outf
+   io::outf(128, "Processed items: {}")
+
+   // 8. Forward scalar annotations and comparisons
+   small_val: i8
+   small_val = 127i8
+   io::out $ small_val
+   io::out $ (128u8 .>. 1)
+   x = 10
+   y = 20
+   io::out $ (x !> y)
+   io::out $ (x !< y)
+
+   // 9. Rune comparisons
+   ch = 'a'
+   io::out $ (ch !< 'a' && ch !> 'z')
+
+   // 10. String byte append vs formatted decimal, and byte indexing
+   prefix = "item_"
+   io::out $ prefix + 42
+   io::out $ prefix + str::from_int(42)
+   s = "A"
+   io::out $ s(0)
+
+   // 11. Slices and cycle iteration
+   xs = Ints()
+   xs += 10
+   xs += 20
+   xs += 30
+   xs += 40
+   view: (Int[])
+   view = xs(1..3)
+   io::out $ ?view
+   io::out $ view(0)
+   io::out $ sum_slice(view)
+
+   // 12. Raw memory write and typed load
+   ar = mem::arena(1024)
+   mem_buf = mem::alloc(ar, 8)
+   @[mem_buf] = 42i32
+   io::out $ @[mem_buf i32]
+
+main!

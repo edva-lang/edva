@@ -50,7 +50,7 @@ the multi-argument application operators:
 | `f $: block` | Block feed | Right | Lowest | Attach indented block as final argument |
 
 ```dva
-#use str
+#use io
 
 add: Int, Int => Int
 add = a, b => a + b
@@ -60,10 +60,10 @@ mul = a, b => a * b
 
 // Pipeline chaining: (5 + 3) * 2
 result = 5 $> add(3) $> mul(2)
-print_int $ result // prints 16
+io::out $ result // prints 16
 
 // Multi-argument append:
-print_int $ add(10) $ 20 // prints 30
+io::out $ add(10) $ 20 // prints 30
 ```
 
 ## Data structures
@@ -77,12 +77,12 @@ Records group heterogeneously typed fields. Fields may be named or positional:
 ```dva
 // Positional tuple
 point = (10, 20)
-print_int $ point.0 // prints 10
+io::out $ point.0 // prints 10
 
 // Named record
 #type User (id: Int, name: String, active: <>)
 user = User((id: 1, name: "Alice", active: <+>))
-print $ user.name
+io::out $ user.name
 ```
 
 **Definite field initialization:** A record declared by type (`u: User`) is **not**
@@ -103,11 +103,11 @@ list += 20
 list += 30
 
 // Read element length
-print_int $ ?list // prints 3
+io::out $ ?list // prints 3
 
 // Fallible read with unwrap-or-abort
 first = list(0)!!
-print_int $ first // prints 10
+io::out $ first // prints 10
 ```
 
 ### Key-value maps
@@ -123,7 +123,7 @@ cfg ^ "timeout" = 30
 
 // Map lookup yields < Int | Error >
 port = cfg ^ "port"
-port | val => print_int(val) | print("port not found")
+port | val => io::out(val) | io::out("port not found")
 ```
 
 ### Ramifications (Rams)
@@ -145,8 +145,8 @@ divide = a, b =>
 
 res = divide(10, 2)
 res
-   | value => print_int(value)
-   | err => print("failed")
+   | value => io::out(value)
+   | err => io::out("failed")
 ```
 
 ### Enums

@@ -131,13 +131,13 @@ For low-level systems programming, embedded targets, and driver development:
 |---|---|---|
 | Address extraction | `Addr(val)` | Raw pointer conversion to `Addr` |
 | Volatile typed load | `@[addr T]` | Read value of type `T` from raw memory address |
-| Volatile typed store | `@[addr T] = val` | Write value of type `T` to raw memory address |
+| Volatile store | `@[addr] = val` | Write typed `val` to raw memory address |
 | Compile-time size | `#size(Type)` | Size in bytes of any primitive or composite type |
 
 ```dva
 // Writing a 32-bit register at hardware memory address:
 UART0_BASE = 0x4000c000
-@[UART0_BASE i32] = 0x01
+@[UART0_BASE] = 0x01u32
 ```
 
 

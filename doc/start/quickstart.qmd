@@ -17,8 +17,10 @@ calls, and iteration are expressed through symbolic operators and expressions.
 Create a file named `hello.dva` (Edva source files use the official `.dva` file extension):
 
 ```dva
+#use io
+
 message = 10 > 5 | "greater" | "smaller"
-print $ message
+io::out $ message
 ```
 
 Compile and run it directly:
@@ -28,10 +30,11 @@ Compile and run it directly:
 ```
 
 It prints `greater`. In this snippet:
+- `#use io` imports the standard input/output module.
 - `=` declares an immutable local variable `message`.
 - `10 > 5 | "greater" | "smaller"` is a **choice expression**: when the condition is
   true, it yields `"greater"`; otherwise it evaluates the fallback `"smaller"`.
-- `print $ message` uses the apply operator `$` to call `print(message)`.
+- `io::out $ message` uses the apply operator `$` to call `io::out(message)`.
 
 ## Essential syntax cheat sheet
 
@@ -44,7 +47,7 @@ It prints `greater`. In this snippet:
 | Function signature | `add: Int, Int => Int` | `fn add(i64, i64) -> i64;` |
 | Choice (ternary / if-else) | `cond | "yes" | "no"` | `if cond { "yes" } else { "no" }` |
 | Multi-branch choice | `x [1] "one" [2] "two" | "other"` | `match x { 1 => "one", 2 => "two", _ => "other" }` |
-| Cycle (loop / iteration) | `0..10 @ i => print_int(i)` | `for i in 0..10 { ... }` |
+| Cycle (loop / iteration) | `0..10 @ i => io::out(i)` | `for i in 0..10 { ... }` |
 | Cycle break | `i == 5 | -->` | `if i == 5 { break; }` |
 | Cycle continue | `i % 2 == 0 | --^` | `if i % 2 == 0 { continue; }` |
 | Early return | `--| expr` / bare `--|` | `return expr;` / `return;` |
@@ -58,19 +61,22 @@ It prints `greater`. In this snippet:
 
 ### Variables and rebinding
 
-All bindings created with `=` are strictly immutable. To represent step-by-step
+All bindings created with `=` are immutable by default. To represent step-by-step
 transformations without naming collisions, append prime symbols (`'`):
 
 ```dva
+#use io
+
 total = 10
 total' = total + 5
 total'' = total' * 2
 
-print_int $ total'' // prints 30
+io::out $ total'' // prints 30
 ```
 
-Edva does not allow uninitialized variables. Every binding must be initialized
-immediately upon declaration.
+Variables declared with `=` are immutable unless declared with trailing primes
+(`x' = 10; x' = 20`) to allow reassignment. Composite types also support
+forward type annotation followed by definite field initialization before reads.
 
 ### Separate function signatures
 
@@ -78,6 +84,8 @@ In Edva, function parameter types are never written inline in the parameter list
 Types are declared in an independent signature preceding the body:
 
 ```dva
+#use io
+
 // 1. Signature: positional parameter types, '=>', return type
 greet: String, Int => String
 
@@ -85,7 +93,7 @@ greet: String, Int => String
 greet = name, count =>
    count > 0 | "Hello, " + name | "Nobody"
 
-print $ greet("Alice", 3)
+io::out $ greet("Alice", 3)
 ```
 
 If no signature is provided, the compiler infers parameter and return types via
@@ -99,6 +107,8 @@ with a condition or a scrutinee value, followed by ordered guarded branches, and
 an optional fallback branch introduced by `|`:
 
 ```dva
+#use io
+
 classify: Int => String
 classify = n =>
    n [< 0] "negative"
@@ -106,7 +116,7 @@ classify = n =>
    [1, 2, 3] "small positive"
    | "large positive"
 
-print $ classify(2)  // prints "small positive"
+io::out $ classify(2)  // prints "small positive"
 ```
 
 A choice used in expression position must be exhaustive (every possible path produces
@@ -118,29 +128,35 @@ evaluates to Unit (`()`). Dummy `| 0` fallbacks are strictly forbidden.
 The `@` operator iterates over counts, numeric ranges, or collections:
 
 ```dva
+#use io
+
 // Iterate 5 times (0 to 4)
 5 @ i =>
-   print_int(i)
+   io::out(i)
 
 // Iterate with early break and continue
 0..10 @ i =>
    i % 2 == 0 | --^   // skip even numbers
    i > 7 | -->        // stop when greater than 7
-   print_int(i)
+   io::out(i)
 ```
 
 Cycles can produce values via the **cycle-escape operator** `>--`, which returns
 `RamPN` (`< T | >`):
 
 ```dva
-// Find the first multiple of 7 after 50 (returns < Int | >)
-first_mult = 50..100 @ n =>
-   n % 7 == 0 | -->
-   >-- n
+#use io
 
-first_mult
-   | n => print_int(n)       // prints 56
-   | print("not found")
+// Search for a target value in a range (returns < Int | >)
+target = 56
+found = 50..100 @ n =>
+   n == target | -->
+>--
+   target
+
+found
+   | n => io::out(n)       // prints 56
+   | io::out("not found")
 ```
 
 ### String building and memory
@@ -149,6 +165,8 @@ Strings in Edva are immutable fat pointers `{ len, data }`. To construct strings
 efficiently without intermediate allocations, use a `Builder`:
 
 ```dva
+#use io
+
 build_greeting: String => String
 build_greeting = name =>
    b = {64}             // Allocate buffer with capacity 64
@@ -157,7 +175,7 @@ build_greeting = name =>
    b += "!"
    +b                   // Freeze into an immutable String in-place
 
-print $ build_greeting("Edva Developer")
+io::out $ build_greeting("Edva Developer")
 ```
 
 | Operator | Usage | Meaning |
@@ -177,7 +195,7 @@ Import standard library modules using `#use <name>`:
 #use io
 
 io::out("=== System Report ===")
-io::outf("Processed items: {}", str::from_int(128))
+io::outf(128, "Processed items: {}")
 ```
 
 To compile and link into an executable without running:
