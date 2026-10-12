@@ -2122,10 +2122,10 @@ codegen_emit_arith_operands = cg, op, lr, l_rt, l_fvts, rr, r_rt, r_fvts =>
                !ok_l || !ok_r
                   | codegen_emit_bitwise_error(cg)
                   |
-                     i64t = LLVMInt64Type!
-                     lv = stmt::coerce_int(cg, lr.0, i64t)
-                     rv = stmt::coerce_int(cg, rr.0, i64t)
-                     codegen_emit_bitwise_valid(cg, op, lv, rv)
+                     res_vt = lr.1 [Flag, Unknown, Unit] ast::ValueType(Int) | lr.1
+                     tgt_ty = types::llvm_type_of_vt(res_vt)
+                     lv = stmt::coerce_int_ext(cg, lr.0, tgt_ty, types::is_unsigned_vt(lr.1))
+                     codegen_emit_bitwise_valid(cg, op, lv, rr.0, res_vt)
             |
                requires_int = op [Mul, Div, Mod]
                any_float = types::is_float_vt(lr.1) || types::is_float_vt(rr.1)
@@ -2306,32 +2306,33 @@ codegen_emit_bitwise = cg, op, t =>
    !ok_l || !ok_r
       | codegen_emit_bitwise_error(cg)
       |
-         i64t = LLVMInt64Type!
-         lv = stmt::coerce_int_ext(cg, lr.0, i64t, types::is_unsigned_vt(lr.1))
-         rv = stmt::coerce_int_ext(cg, rr.0, i64t, types::is_unsigned_vt(rr.1))
-         codegen_emit_bitwise_valid(cg, op, lv, rv)
+         res_vt = lr.1 [Flag, Unknown, Unit] ast::ValueType(Int) | lr.1
+         tgt_ty = types::llvm_type_of_vt(res_vt)
+         lv = stmt::coerce_int_ext(cg, lr.0, tgt_ty, types::is_unsigned_vt(lr.1))
+         codegen_emit_bitwise_valid(cg, op, lv, rr.0, res_vt)
 
 codegen_emit_bitwise_error: types::Cg => (Addr, ast::ValueType)
 codegen_emit_bitwise_error = cg =>
    types::init_error(cg, "E3057", "Bitwise operator requires integer operands.", 0, 0)
    (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
-codegen_emit_bitwise_valid: types::Cg, ast::BinaryOp, Addr, Addr => (Addr, ast::ValueType)
-codegen_emit_bitwise_valid = cg, op, lv, rv =>
+codegen_emit_bitwise_valid: types::Cg, ast::BinaryOp, Addr, Addr, ast::ValueType => (Addr, ast::ValueType)
+codegen_emit_bitwise_valid = cg, op, lv, rv, res_vt =>
    l_ty = LLVMTypeOf(lv)
+   rv_cast = stmt::coerce_int(cg, rv, l_ty)
    w = LLVMGetTypeKind(l_ty) == 8
       | LLVMGetIntTypeWidth(l_ty)
       | 64
    mask = LLVMConstInt(l_ty, w - 1, 0)
    rv_safe = (op [Shl, Shr])
-      | LLVMBuildAnd(cg.builder, rv, mask, "sh.amt.masked")
-      | rv
+      | LLVMBuildAnd(cg.builder, rv_cast, mask, "sh.amt.masked")
+      | rv_cast
    op
-      [BitAnd] (LLVMBuildAnd(cg.builder, lv, rv, "bandtmp"), ast::ValueType(Int))
-      [BitOr] (LLVMBuildOr(cg.builder, lv, rv, "bortmp"), ast::ValueType(Int))
-      [BitXor] (LLVMBuildXor(cg.builder, lv, rv, "bxortmp"), ast::ValueType(Int))
-      [Shl] (LLVMBuildShl(cg.builder, lv, rv_safe, "shltmp"), ast::ValueType(Int))
-      [Shr] (LLVMBuildLShr(cg.builder, lv, rv_safe, "shrtmp"), ast::ValueType(Int))
+      [BitAnd] (LLVMBuildAnd(cg.builder, lv, rv_cast, "bandtmp"), res_vt)
+      [BitOr] (LLVMBuildOr(cg.builder, lv, rv_cast, "bortmp"), res_vt)
+      [BitXor] (LLVMBuildXor(cg.builder, lv, rv_cast, "bxortmp"), res_vt)
+      [Shl] (LLVMBuildShl(cg.builder, lv, rv_safe, "shltmp"), res_vt)
+      [Shr] (LLVMBuildLShr(cg.builder, lv, rv_safe, "shrtmp"), res_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 // --- logical && / || (flag case) ----------------------------------------------
@@ -4972,10 +4973,12 @@ codegen_typed_eval_bin_arith_default = cg, op, lv, rv, ti =>
    is_bit = op [BitAnd, BitOr, BitXor, Shl, Shr]
    is_bit
       |
-         i64t = LLVMInt64Type!
-         ext_l' = stmt::coerce_int_ext(cg, lv.0, i64t, types::is_unsigned_vt(lv.1))
-         ext_r' = stmt::coerce_int_ext(cg, rv.0, i64t, types::is_unsigned_vt(rv.1))
-         codegen_emit_bitwise_valid(cg, op, ext_l', ext_r')
+         ret_vt = types::vt_from_ti(ti)
+         tgt_vt = ret_vt [Unknown, Unit] lv.1 | ret_vt
+         tgt_vt' = tgt_vt [Unknown, Unit] ast::ValueType(Int) | tgt_vt
+         tgt_ty = types::llvm_type_of_vt(tgt_vt')
+         ext_l' = stmt::coerce_int_ext(cg, lv.0, tgt_ty, types::is_unsigned_vt(lv.1))
+         codegen_emit_bitwise_valid(cg, op, ext_l', rv.0, tgt_vt')
       |
          l_is_ptr = types::is_ptr_vt(lv.1) ||
             (types::llvm_val_opt(lv.0) | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 12 | <->)

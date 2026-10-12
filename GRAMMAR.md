@@ -1073,7 +1073,7 @@ the truth values `<+>` (positive) and `<->` (negative).
 | `&&` `||` | `heap Ram, heap Ram` or `Flag, Flag` | `Ramification` — short-circuit; the result is the winner with its payload intact. For `&&`, the RHS supplies the positive slot and both negative slots must match; for `||`, both positive slots must match and the RHS supplies the negative slot. A shared slot cannot mix unit and payload or unequal payloads (`E3089`). Flags never coerce into heap rams; write `<++>`/`<-->` explicitly. Comparison flags / `!ram` / predicates stay bare Flags. Non-ram operands (Int truthiness) give a Flag. |
 | `.|.` `.&.` | integerish, integerish | integerish (bitwise OR / AND) |
 | `.!.` (prefix) | integerish | integerish (bitwise NOT) |
-| `.<.` `.>.` | integerish, integerish (count) | integerish — zero-fill (logical) shifts; count masked to operand width, shift ≥ width is a no-op |
+| `.<.` `.>.` | integerish, integerish (count) | integerish — zero-fill (logical) shifts; count masked to operand width - 1 (wrapping modulo width) |
 | `++` (prefix) | `String` / `Slice` / Record / Array | deep copy of the operand (fresh buffer); scalars are a reference no-op |
 | `!` (prefix) | Flag | Flag negation |
 | `+` (prefix, no space) | `Builder` | `String` — freeze into String in-place (§2.7.2) |

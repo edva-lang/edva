@@ -1,0 +1,53 @@
+// tests/pass/332_narrow_shifts.dva — issue #129 regression: narrow bit shifts preserve width and type
+#use io
+
+// 1. u8: width = 8 (mask = 7)
+u8_val = u8(128)
+io::out $ u8_val .>. 0   // 128
+io::out $ u8_val .>. 7   // 1
+io::out $ u8_val .>. 8   // 8 & 7 = 0 => 128
+io::out $ u8_val .>. 9   // 9 & 7 = 1 => 64
+
+io::out $ u8_val .<. 0   // 128
+io::out $ u8_val .<. 1   // 0 (overflows u8)
+io::out $ u8_val .<. 7   // 0
+io::out $ u8_val .<. 8   // 8 & 7 = 0 => 128
+io::out $ u8_val .<. 9   // 9 & 7 = 1 => 0
+
+// 2. i8: width = 8 (mask = 7), logical right shift
+i8_val = i8(-128)        // 0x80
+io::out $ i8_val .>. 0   // -128 (0x80)
+io::out $ i8_val .>. 1   // 64 (0x40)
+io::out $ i8_val .>. 7   // 1 (0x01)
+io::out $ i8_val .>. 8   // -128
+io::out $ i8_val .>. 9   // 64
+
+// 3. u16: width = 16 (mask = 15)
+u16_val = u16(32768)     // 0x8000
+io::out $ u16_val .>. 0  // 32768
+io::out $ u16_val .>. 15 // 1
+io::out $ u16_val .>. 16 // 16 & 15 = 0 => 32768
+io::out $ u16_val .>. 17 // 17 & 15 = 1 => 16384
+
+// 4. i16: width = 16 (mask = 15)
+i16_val = i16(-32768)    // 0x8000
+io::out $ i16_val .>. 0  // -32768
+io::out $ i16_val .>. 1  // 16384
+io::out $ i16_val .>. 15 // 1
+io::out $ i16_val .>. 16 // -32768
+io::out $ i16_val .>. 17 // 16384
+
+// 5. u32: width = 32 (mask = 31)
+u32_val = u32(2147483648) // 0x80000000
+io::out $ u32_val .>. 0  // 2147483648
+io::out $ u32_val .>. 31 // 1
+io::out $ u32_val .>. 32 // 32 & 31 = 0 => 2147483648
+io::out $ u32_val .>. 33 // 33 & 31 = 1 => 1073741824
+
+// 6. i32: width = 32 (mask = 31)
+i32_val = i32(-2147483648)
+io::out $ i32_val .>. 0  // -2147483648
+io::out $ i32_val .>. 1  // 1073741824
+io::out $ i32_val .>. 31 // 1
+io::out $ i32_val .>. 32 // -2147483648
+io::out $ i32_val .>. 33 // 1073741824
