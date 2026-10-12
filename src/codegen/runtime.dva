@@ -2224,24 +2224,35 @@ codegen_map_hash = cg, key_val, key_vt =>
                LLVMBuildCall2(cg.builder, hash_t, hash_fn, sb, 2,
                   "hash.str")
 
-// Native maps compare String keys directly: both lengths are loaded before a
-// single memcmp, rather than using the general short-circuit String equality
-// expression lowering. The direct shape matters inside a probe loop.
+// Native maps compare String keys: check length equality first so memcmp
+// is never invoked over a length exceeding the stored key.
 codegen_map_string_key_equal: types::Cg, Addr, Addr => Addr
 codegen_map_string_key_equal = cg, slot, key_val =>
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    stored = LLVMBuildLoad2(cg.builder, i8p, slot, "mk.stored")
    stored_len = expr::codegen_string_len(cg, stored, "mk.slen")
-   stored_data = expr::codegen_string_data(cg, stored, "mk.sdata")
    new_len = expr::codegen_string_len(cg, key_val, "mk.nlen")
-   new_data = expr::codegen_string_data(cg, key_val, "mk.ndata")
    lengths_equal = LLVMBuildICmp(cg.builder, 32, stored_len, new_len,
       "mk.lenseq")
-   compared = types::call3(cg, cg.memcmp_t!!, cg.memcmp_fn!!, stored_data, new_data,
-      new_len, "mk.memcmp")
-   equal = LLVMBuildICmp(cg.builder, 32, compared,
+   eq_bb = LLVMAppendBasicBlock(cg.current_fn, "mk.eq.then")
+   neq_bb = LLVMAppendBasicBlock(cg.current_fn, "mk.eq.else")
+   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "mk.eq.merge")
+   LLVMBuildCondBr(cg.builder, lengths_equal, eq_bb, neq_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, eq_bb)
+   stored_data = expr::codegen_string_data(cg, stored, "mk.sdata")
+   new_data = expr::codegen_string_data(cg, key_val, "mk.ndata")
+   compared = types::call3(cg, cg.memcmp_t!!, cg.memcmp_fn!!, stored_data,
+      new_data, new_len, "mk.memcmp")
+   cmp_equal = LLVMBuildICmp(cg.builder, 32, compared,
       LLVMConstInt(LLVMInt32Type!, 0, 0), "mk.cmpeq")
-   LLVMBuildAnd(cg.builder, lengths_equal, equal, "mk.eq")
+   stmt::branch_to(cg, merge_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, neq_bb)
+   stmt::branch_to(cg, merge_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
+   phi = LLVMBuildPhi(cg.builder, LLVMInt1Type!, "mk.eq")
+   stmt::llvm_add_incoming1(cg, phi, cmp_equal, eq_bb)
+   stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(LLVMInt1Type!, 0, 0), neq_bb)
+   phi
 
 codegen_map_key_equal: types::Cg, Addr, Addr, ast::ValueType => Addr
 codegen_map_key_equal = cg, slot, key_val, key_vt =>
