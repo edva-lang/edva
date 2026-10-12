@@ -5,7 +5,7 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64 }
+@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
@@ -486,7 +486,7 @@ choice.else:                                      ; preds = %entry
 choice.exit:                                      ; preds = %choice.else, %choice.then
   %choice.res = phi i64 [ 67108864, %choice.then ], [ %var.load1, %choice.else ]
   store i64 %choice.res, ptr %var.sz, align 8
-  %call.res = call ptr @malloc(i64 131104)
+  %call.res = call ptr @malloc(i64 131632)
   store ptr %call.res, ptr %var.raw, align 8
   %var.load2 = load ptr, ptr %var.raw, align 8
   %addr.ffi.int = ptrtoint ptr %var.load2 to i64

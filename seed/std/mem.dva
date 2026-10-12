@@ -52,7 +52,7 @@
    arena: Int => Arena
    arena = chunk_size =>
       sz = chunk_size !> 0 | 67108864 | chunk_size
-      raw = libc::malloc(131104)
+      raw = libc::malloc(131632)
       dva_arena_init(raw, sz)
       Arena((raw, sz))
 

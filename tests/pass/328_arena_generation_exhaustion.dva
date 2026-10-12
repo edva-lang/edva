@@ -1,0 +1,17 @@
+// tests/pass/328_arena_generation_exhaustion.dva — issue #127 regression: safe arena generation wrap beyond 16-bit tag exhaustion
+#use io
+
+// 1. Monotonic iteration wrapping past 65536
+0..65538 @ i =>
+   s = "a" + "b"
+   ?s != 2 | io::out("bad s")
+
+// 2. Active outer scope generation is preserved and skipped during inner wrap
+0..1 @ i =>
+   outer = "outer" + "_value"
+   0..65538 @ j =>
+      inner = "inner" + "_value"
+      ?inner != 11 | io::out("bad inner")
+   ?outer != 11 | io::out("bad outer")
+
+io::out("PASS")

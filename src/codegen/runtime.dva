@@ -462,22 +462,70 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, clamped_depth, depth_gep)
 
    next_gen_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 6, "sv.next_gen.gep")
-   next_gen = LLVMBuildLoad2(cg.builder, i64t, next_gen_gep, "sv.next_gen")
-   gen_is_zero = LLVMBuildICmp(cg.builder, 32, next_gen, zero, "sv.gen_zero")
-   gen_val = LLVMBuildSelect(cg.builder, gen_is_zero, one, next_gen, "sv.gen_val")
-
-   gen_inc = LLVMBuildAdd(cg.builder, gen_val, one, "sv.gen_inc")
+   raw_next_gen = LLVMBuildLoad2(cg.builder, i64t, next_gen_gep, "sv.next_gen")
+   gen_is_zero = LLVMBuildICmp(cg.builder, 32, raw_next_gen, zero, "sv.gen_zero")
+   init_gen = LLVMBuildSelect(cg.builder, gen_is_zero, one, raw_next_gen, "sv.init_gen")
    max_gen = LLVMConstInt(i64t, 65536, 0)
-   wrap = LLVMBuildICmp(cg.builder, 39, gen_inc, max_gen, "sv.wrap")
-   next_val = LLVMBuildSelect(cg.builder, wrap, one, gen_inc, "sv.next_val")
-   LLVMBuildStore(cg.builder, next_val, next_gen_gep)
-
    sg_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 7, "sv.sg.gep")
+
+   has_scopes = LLVMBuildICmp(cg.builder, 38, cur_depth, zero, "sv.has_scopes")
+   sv_chk_hdr = LLVMAppendBasicBlock(save_fn, "sv_chk_hdr")
+   sv_chk_loop = LLVMAppendBasicBlock(save_fn, "sv_chk_loop")
+   sv_conflict = LLVMAppendBasicBlock(save_fn, "sv_conflict")
+   sv_chk_next = LLVMAppendBasicBlock(save_fn, "sv_chk_next")
+   sv_j_step = LLVMAppendBasicBlock(save_fn, "sv_j_step")
+   sv_chk_ok = LLVMAppendBasicBlock(save_fn, "sv_chk_ok")
+   sv_ready = LLVMAppendBasicBlock(save_fn, "sv_ready")
+
+   LLVMBuildCondBr(cg.builder, has_scopes, sv_chk_hdr, sv_ready)
+
+   LLVMPositionBuilderAtEnd(cg.builder, sv_chk_hdr)
+   cand_phi = LLVMBuildPhi(cg.builder, i64t, "cand.gen")
+   stmt::llvm_add_incoming1(cg, cand_phi, init_gen, sv_bb)
+   LLVMBuildBr(cg.builder, sv_chk_loop)
+
+   LLVMPositionBuilderAtEnd(cg.builder, sv_chk_loop)
+   j_phi = LLVMBuildPhi(cg.builder, i64t, "chk.j")
+   stmt::llvm_add_incoming1(cg, j_phi, one, sv_chk_hdr)
+   chk_slot = types::gep2(cg, sg_arr, sg_gep, zero, j_phi, "chk.slot")
+   active_g = LLVMBuildLoad2(cg.builder, i64t, chk_slot, "active.g")
+   conflicts = LLVMBuildICmp(cg.builder, 32, active_g, cand_phi, "sv.conflicts")
+   LLVMBuildCondBr(cg.builder, conflicts, sv_conflict, sv_chk_next)
+
+   LLVMPositionBuilderAtEnd(cg.builder, sv_conflict)
+   cand_inc = LLVMBuildAdd(cg.builder, cand_phi, one, "cand.inc")
+   cand_wrap = LLVMBuildICmp(cg.builder, 39, cand_inc, max_gen, "cand.wrap")
+   cand_next = LLVMBuildSelect(cg.builder, cand_wrap, one, cand_inc, "cand.next")
+   stmt::llvm_add_incoming1(cg, cand_phi, cand_next, sv_conflict)
+   LLVMBuildBr(cg.builder, sv_chk_hdr)
+
+   LLVMPositionBuilderAtEnd(cg.builder, sv_chk_next)
+   more_j = LLVMBuildICmp(cg.builder, 38, cur_depth, j_phi, "chk.more")
+   LLVMBuildCondBr(cg.builder, more_j, sv_j_step, sv_chk_ok)
+
+   LLVMPositionBuilderAtEnd(cg.builder, sv_j_step)
+   j_next = LLVMBuildAdd(cg.builder, j_phi, one, "chk.j.next")
+   stmt::llvm_add_incoming1(cg, j_phi, j_next, sv_j_step)
+   LLVMBuildBr(cg.builder, sv_chk_loop)
+
+   LLVMPositionBuilderAtEnd(cg.builder, sv_chk_ok)
+   LLVMBuildBr(cg.builder, sv_ready)
+
+   LLVMPositionBuilderAtEnd(cg.builder, sv_ready)
+   final_gen = LLVMBuildPhi(cg.builder, i64t, "final.gen")
+   stmt::llvm_add_incoming1(cg, final_gen, init_gen, sv_bb)
+   stmt::llvm_add_incoming1(cg, final_gen, cand_phi, sv_chk_ok)
+
    slot = types::gep2(cg, sg_arr, sg_gep, zero, clamped_depth, "sv.slot")
-   LLVMBuildStore(cg.builder, gen_val, slot)
+   LLVMBuildStore(cg.builder, final_gen, slot)
 
    cur_gen_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 4, "sv.cur_gen.gep")
-   LLVMBuildStore(cg.builder, gen_val, cur_gen_gep)
+   LLVMBuildStore(cg.builder, final_gen, cur_gen_gep)
+
+   inc = LLVMBuildAdd(cg.builder, final_gen, one, "sv.inc")
+   wrap = LLVMBuildICmp(cg.builder, 39, inc, max_gen, "sv.wrap")
+   next_val = LLVMBuildSelect(cg.builder, wrap, one, inc, "sv.next_val")
+   LLVMBuildStore(cg.builder, next_val, next_gen_gep)
 
    LLVMBuildRet(cg.builder, sv_mark)
 

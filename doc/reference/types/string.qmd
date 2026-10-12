@@ -108,7 +108,11 @@ When a whole `String` is allocated or created from a literal, Edva guarantees th
 This allows Edva strings to pass directly to C library APIs (like `libc::open`, `libc::printf`, or `os::stat`) using the address-of operator `&s` without copying or allocating temporary buffers.
 
 ### Generation-tagged liveness
-The upper bits of the 64-bit `len` word store an arena generation tag. If an arena resets, accessing a string that belonged to an earlier generation immediately traps with runtime error `E4010` rather than causing undefined behavior or use-after-free corruption.
+The upper 16 bits of the 64-bit `len` word (`len >> 48`) store an arena generation tag:
+- **Tag `0` (Immortal):** String literals and top-level allocations outside restore scopes carry generation tag `0` and never expire.
+- **Dynamic Scope Tracking:** Each nested loop or block restore scope is assigned an active generation tracked in the arena's active scope table (`scope_gens[1..depth]`). An allocation remains live as long as its tag matches any currently active enclosing scope, ensuring outer strings remain valid across inner restores.
+- **Stale Access Trapping (`E4010`):** Accessing a string whose tag does not match any active scope traps immediately with runtime error `E4010` (`stale String read after arena restore`) rather than allowing use-after-free corruption.
+- **Wrap & Exhaustion Policy:** The 16-bit counter spans generations `1..65535` and wraps back to `1` at `65536` (never resetting to `0` to prevent collision with immortal strings). On wrap, candidate generation values currently active in any enclosing scope are automatically skipped, guaranteeing unique active generation IDs and preventing false revival of stale allocations across long-running loops.
 
 ## Operations
 
