@@ -1,0 +1,24 @@
+// tests/pass/326_arena_nested_restore.dva — issue #126 regression: outer string lifetimes across nested arena restores
+#use io
+
+// 1. Basic 2-level nesting (reproduction case)
+0..2 @ i =>
+   s = "a" + "b"
+   0..2 @ j =>
+      t = "c" + "d"
+      ?t != 2 | io::out("bad t")
+   ?s != 2 | io::out("bad s")
+
+// 2. 3-level nesting
+0..2 @ i =>
+   s1 = "1" + "1"
+   0..2 @ j =>
+      s2 = "2" + "2"
+      0..2 @ k =>
+         s3 = "3" + "3"
+         ?s3 != 2 | io::out("bad s3")
+      ?s2 != 2 | io::out("bad s2")
+      ?s1 != 2 | io::out("bad s1")
+   ?s1 != 2 | io::out("bad s1 outer")
+
+io::out("PASS")

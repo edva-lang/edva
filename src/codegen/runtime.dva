@@ -77,13 +77,17 @@ arena_type = cg =>
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    chunks = LLVMArrayType(i8p, 16384)
+   sg_arr = LLVMArrayType(i64t, 64)
    tarr = types::Addrs()
    tarr += i64t
    tarr += i64t
    tarr += i64t
    tarr += chunks
    tarr += i64t
-   types::struct_type_n(cg, tarr, 5)
+   tarr += i64t
+   tarr += i64t
+   tarr += sg_arr
+   types::struct_type_n(cg, tarr, 8)
 
 // A NUL-terminated unnamed_addr constant string global.
 const_string_global: types::Cg, String, String => Addr
@@ -210,6 +214,12 @@ codegen_emit_runtime_module = cg =>
    rest_t = stmt::fn_type_n(cg, LLVMVoidType!, rest_params, 2)
    LLVMAddFunction(cg.module, "dva_arena_restore", rest_t)
 
+   vt_params = types::Addrs()
+   vt_params += atp
+   vt_params += i64t
+   vt_t = stmt::fn_type_n(cg, LLVMInt1Type!, vt_params, 2)
+   LLVMAddFunction(cg.module, "dva_arena_validate_tag", vt_t)
+
    adopt_params = types::Addrs()
    adopt_params += atp
    adopt_params += atp
@@ -246,6 +256,7 @@ codegen_emit_runtime_full = cg =>
    psb = &pp
    @[psb] = i8p
    chunks_arr = LLVMArrayType(i8p, 16384)
+   sg_arr = LLVMArrayType(i64t, 64)
    zero = LLVMConstInt(i64t, 0, 0)
    one = LLVMConstInt(i64t, 1, 0)
    cap_v = LLVMConstInt(i64t, 67108864, 0)
@@ -328,7 +339,9 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, cg0, LLVMBuildStructGEP2(cg.builder, at, a0, 0, "cap_ptr"))
    LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a0, 1, "num_chunks_ptr"))
    LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a0, 2, "off_ptr"))
-   LLVMBuildStore(cg.builder, one, LLVMBuildStructGEP2(cg.builder, at, a0, 4, "gen_ptr"))
+   LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a0, 4, "gen_ptr"))
+   LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a0, 5, "depth_ptr"))
+   LLVMBuildStore(cg.builder, one, LLVMBuildStructGEP2(cg.builder, at, a0, 6, "next_gen_ptr"))
    LLVMBuildRetVoid(cg.builder)
 
    // dva_arena_alloc(ptr, i64) -> ptr
@@ -362,7 +375,9 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildCondBr(cg.builder, uninit, al_l, al_i)
    LLVMPositionBuilderAtEnd(cg.builder, al_l)
    LLVMBuildStore(cg.builder, cap_v, cap_gep)
-   LLVMBuildStore(cg.builder, one, LLVMBuildStructGEP2(cg.builder, at, a1, 4, "gen_gep"))
+   LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a1, 4, "gen_gep"))
+   LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a1, 5, "depth_gep"))
+   LLVMBuildStore(cg.builder, one, LLVMBuildStructGEP2(cg.builder, at, a1, 6, "next_gen_gep"))
    LLVMBuildBr(cg.builder, al_i)
    LLVMPositionBuilderAtEnd(cg.builder, al_i)
    cap_phi = LLVMBuildPhi(cg.builder, i64t, "cap.phi")
@@ -437,6 +452,33 @@ codegen_emit_runtime_full = cg =>
    sv_lin = LLVMBuildAdd(cg.builder, sv_prod, sv_off, "linear_off")
    sv_emp = LLVMBuildICmp(cg.builder, 32, sv_nc, zero, "save_empty")
    sv_mark = LLVMBuildSelect(cg.builder, sv_emp, zero, sv_lin, "mark")
+
+   depth_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 5, "sv.depth.gep")
+   cur_depth = LLVMBuildLoad2(cg.builder, i64t, depth_gep, "sv.cur.depth")
+   new_depth = LLVMBuildAdd(cg.builder, cur_depth, one, "sv.new.depth")
+   max_depth = LLVMConstInt(i64t, 63, 0)
+   depth_ovf = LLVMBuildICmp(cg.builder, 38, new_depth, max_depth, "sv.depth_ovf")
+   clamped_depth = LLVMBuildSelect(cg.builder, depth_ovf, max_depth, new_depth, "sv.clamped_depth")
+   LLVMBuildStore(cg.builder, clamped_depth, depth_gep)
+
+   next_gen_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 6, "sv.next_gen.gep")
+   next_gen = LLVMBuildLoad2(cg.builder, i64t, next_gen_gep, "sv.next_gen")
+   gen_is_zero = LLVMBuildICmp(cg.builder, 32, next_gen, zero, "sv.gen_zero")
+   gen_val = LLVMBuildSelect(cg.builder, gen_is_zero, one, next_gen, "sv.gen_val")
+
+   gen_inc = LLVMBuildAdd(cg.builder, gen_val, one, "sv.gen_inc")
+   max_gen = LLVMConstInt(i64t, 65536, 0)
+   wrap = LLVMBuildICmp(cg.builder, 39, gen_inc, max_gen, "sv.wrap")
+   next_val = LLVMBuildSelect(cg.builder, wrap, one, gen_inc, "sv.next_val")
+   LLVMBuildStore(cg.builder, next_val, next_gen_gep)
+
+   sg_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 7, "sv.sg.gep")
+   slot = types::gep2(cg, sg_arr, sg_gep, zero, clamped_depth, "sv.slot")
+   LLVMBuildStore(cg.builder, gen_val, slot)
+
+   cur_gen_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 4, "sv.cur_gen.gep")
+   LLVMBuildStore(cg.builder, gen_val, cur_gen_gep)
+
    LLVMBuildRet(cg.builder, sv_mark)
 
    // dva_arena_restore(ptr, i64)
@@ -488,10 +530,87 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, r_new_nc, r_nc_gep)
    LLVMBuildBr(cg.builder, rs_d)
    LLVMPositionBuilderAtEnd(cg.builder, rs_d)
-   r_gen_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 4, "gen_gep")
-   r_gen = LLVMBuildLoad2(cg.builder, i64t, r_gen_gep, "gen")
-   LLVMBuildStore(cg.builder, LLVMBuildAdd(cg.builder, r_gen, one, "gen_next"), r_gen_gep)
+   r_depth_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 5, "rs.depth.gep")
+   r_depth = LLVMBuildLoad2(cg.builder, i64t, r_depth_gep, "rs.depth")
+   r_depth_gt0 = LLVMBuildICmp(cg.builder, 38, r_depth, zero, "rs.depth.gt0")
+
+   rs_pop = LLVMAppendBasicBlock(rest_fn, "rs_pop")
+   rs_fin = LLVMAppendBasicBlock(rest_fn, "rs_fin")
+   LLVMBuildCondBr(cg.builder, r_depth_gt0, rs_pop, rs_fin)
+
+   LLVMPositionBuilderAtEnd(cg.builder, rs_pop)
+   r_sg_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 7, "rs.sg.gep")
+   rs_slot = types::gep2(cg, sg_arr, r_sg_gep, zero, r_depth, "rs.slot")
+   LLVMBuildStore(cg.builder, zero, rs_slot)
+
+   r_new_depth = LLVMBuildSub(cg.builder, r_depth, one, "rs.new_depth")
+   LLVMBuildStore(cg.builder, r_new_depth, r_depth_gep)
+
+   r_cur_gen_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 4, "rs.cur_gen.gep")
+   r_new_gt0 = LLVMBuildICmp(cg.builder, 38, r_new_depth, zero, "rs.new.gt0")
+
+   rs_prev = LLVMAppendBasicBlock(rest_fn, "rs_prev")
+   rs_zero = LLVMAppendBasicBlock(rest_fn, "rs_zero")
+   LLVMBuildCondBr(cg.builder, r_new_gt0, rs_prev, rs_zero)
+
+   LLVMPositionBuilderAtEnd(cg.builder, rs_prev)
+   r_prev_slot = types::gep2(cg, sg_arr, r_sg_gep, zero, r_new_depth, "rs.prev.slot")
+   r_prev_gen = LLVMBuildLoad2(cg.builder, i64t, r_prev_slot, "rs.prev.gen")
+   LLVMBuildStore(cg.builder, r_prev_gen, r_cur_gen_gep)
+   LLVMBuildBr(cg.builder, rs_fin)
+
+   LLVMPositionBuilderAtEnd(cg.builder, rs_zero)
+   LLVMBuildStore(cg.builder, zero, r_cur_gen_gep)
+   LLVMBuildBr(cg.builder, rs_fin)
+
+   LLVMPositionBuilderAtEnd(cg.builder, rs_fin)
    LLVMBuildRetVoid(cg.builder)
+
+   // dva_arena_validate_tag(ptr, i64) -> i1
+   vt_params2 = types::Addrs()
+   vt_params2 += atp
+   vt_params2 += i64t
+   vt_t2 = stmt::fn_type_n(cg, LLVMInt1Type!, vt_params2, 2)
+   vt_fn = LLVMAddFunction(cg.module, "dva_arena_validate_tag", vt_t2)
+   vt_entry = LLVMAppendBasicBlock(vt_fn, "entry")
+   vt_loop = LLVMAppendBasicBlock(vt_fn, "loop")
+   vt_cont = LLVMAppendBasicBlock(vt_fn, "cont")
+   vt_step = LLVMAppendBasicBlock(vt_fn, "step")
+   vt_found = LLVMAppendBasicBlock(vt_fn, "found")
+   vt_not_found = LLVMAppendBasicBlock(vt_fn, "not_found")
+
+   LLVMPositionBuilderAtEnd(cg.builder, vt_entry)
+   vt_a0 = LLVMGetParam(vt_fn, 0)
+   vt_tag = LLVMGetParam(vt_fn, 1)
+
+   vt_depth_gep = LLVMBuildStructGEP2(cg.builder, at, vt_a0, 5, "vt.depth.gep")
+   vt_depth = LLVMBuildLoad2(cg.builder, i64t, vt_depth_gep, "vt.depth")
+   vt_depth_is_zero = LLVMBuildICmp(cg.builder, 32, vt_depth, zero, "vt.depth.zero")
+   LLVMBuildCondBr(cg.builder, vt_depth_is_zero, vt_not_found, vt_loop)
+
+   LLVMPositionBuilderAtEnd(cg.builder, vt_loop)
+   vt_i_phi = LLVMBuildPhi(cg.builder, i64t, "vt.i")
+   stmt::llvm_add_incoming1(cg, vt_i_phi, one, vt_entry)
+   vt_sg_gep = LLVMBuildStructGEP2(cg.builder, at, vt_a0, 7, "vt.sg.gep")
+   vt_slot = types::gep2(cg, sg_arr, vt_sg_gep, zero, vt_i_phi, "vt.slot")
+   vt_g = LLVMBuildLoad2(cg.builder, i64t, vt_slot, "vt.gen")
+   vt_eq = LLVMBuildICmp(cg.builder, 32, vt_g, vt_tag, "vt.eq")
+   LLVMBuildCondBr(cg.builder, vt_eq, vt_found, vt_cont)
+
+   LLVMPositionBuilderAtEnd(cg.builder, vt_cont)
+   vt_more = LLVMBuildICmp(cg.builder, 38, vt_depth, vt_i_phi, "vt.more")
+   LLVMBuildCondBr(cg.builder, vt_more, vt_step, vt_not_found)
+
+   LLVMPositionBuilderAtEnd(cg.builder, vt_step)
+   vt_i_next = LLVMBuildAdd(cg.builder, vt_i_phi, one, "vt.i.next")
+   stmt::llvm_add_incoming1(cg, vt_i_phi, vt_i_next, vt_step)
+   LLVMBuildBr(cg.builder, vt_loop)
+
+   LLVMPositionBuilderAtEnd(cg.builder, vt_found)
+   LLVMBuildRet(cg.builder, LLVMConstInt(LLVMInt1Type!, 1, 0))
+
+   LLVMPositionBuilderAtEnd(cg.builder, vt_not_found)
+   LLVMBuildRet(cg.builder, LLVMConstInt(LLVMInt1Type!, 0, 0))
 
    // dva_arena_destroy(ptr)
    dest_params = types::Addrs()

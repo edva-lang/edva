@@ -2245,9 +2245,9 @@ codegen_eval_spawn = cg, se =>
          env_ptr = clo_opt
             | clo => stmt::closure_env_ptr(cg, clo, "spawn.clo.env")
             | LLVMConstNull(i8p)
-         arena_raw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
-            LLVMConstInt(i64t, 8224, 0), "thread.arena.malloc")
          at = runtime::arena_type(cg)
+         arena_raw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
+            LLVMSizeOf(at), "thread.arena.malloc")
          atp = LLVMPointerType(at, 0)
          init_t = types::fn_type2(cg, LLVMVoidType!, atp, i64t)
          init_fn = LLVMGetNamedFunction(cg.module, "dva_arena_init")

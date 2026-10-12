@@ -146,6 +146,19 @@ codegen_arena_generation = cg, name =>
    gp = LLVMBuildStructGEP2(cg.builder, runtime::arena_type(cg), cur, 4, name)
    LLVMBuildLoad2(cg.builder, LLVMInt64Type!, gp, name)
 
+codegen_call_arena_validate_tag: types::Cg, Addr, Addr => Addr
+codegen_call_arena_validate_tag = cg, arena, tag =>
+   fn = LLVMGetNamedFunction(cg.module, "dva_arena_validate_tag")
+   params = types::Addrs()
+   params += LLVMPointerType(runtime::arena_type(cg), 0)
+   params += LLVMInt64Type!
+   fn_t = stmt::fn_type_n(cg, LLVMInt1Type!, params, 2)
+   args = {16}
+   ab = &args
+   @[ab] = arena
+   @[ab + 8] = tag
+   LLVMBuildCall2(cg.builder, fn_t, fn, ab, 2, "tag.valid")
+
 // Reads and validates the stored String length. A value stamped by a
 // save/restore scope must still carry the current arena generation.
 codegen_string_len: types::Cg, Addr, String => Addr
@@ -169,10 +182,9 @@ codegen_string_len = cg, val, name =>
          stale_bb = LLVMAppendBasicBlock(parent, "str_stale")
          LLVMBuildCondBr(cg.builder, immortal, ok_bb, check_bb)
          LLVMPositionBuilderAtEnd(cg.builder, check_bb)
-         cur_gen = codegen_arena_generation(cg, "arena.gen")
-         matches = LLVMBuildICmp(cg.builder, 32, tag, cur_gen,
-            "str.tag.match")
-         LLVMBuildCondBr(cg.builder, matches, ok_bb, stale_bb)
+         cur = codegen_arena_current(cg, "arena.cur")
+         valid = codegen_call_arena_validate_tag(cg, cur, tag)
+         LLVMBuildCondBr(cg.builder, valid, ok_bb, stale_bb)
          LLVMPositionBuilderAtEnd(cg.builder, stale_bb)
          runtime::emit_abort_msg(cg, "E4010: stale String read after arena restore\n",
             "stale_str_msg")
@@ -232,10 +244,9 @@ validate_and_strip_addr_tag = cg, value, i8p =>
                stale_bb = LLVMAppendBasicBlock(parent, "addr_stale")
                LLVMBuildCondBr(cg.builder, immortal, ok_bb, check_bb)
                LLVMPositionBuilderAtEnd(cg.builder, check_bb)
-               cur_gen = codegen_arena_generation(cg, "arena.gen")
-               matches = LLVMBuildICmp(cg.builder, 32, tag, cur_gen,
-                  "addr.tag.match")
-               LLVMBuildCondBr(cg.builder, matches, ok_bb, stale_bb)
+               cur = codegen_arena_current(cg, "arena.cur")
+               valid = codegen_call_arena_validate_tag(cg, cur, tag)
+               LLVMBuildCondBr(cg.builder, valid, ok_bb, stale_bb)
                LLVMPositionBuilderAtEnd(cg.builder, stale_bb)
                runtime::emit_abort_msg(cg,
                   "E4011: stale Addr dereference after arena restore\n",

@@ -1,0 +1,10 @@
+// tests/pass/327_arena_stale_read.dva — issue #126: reading inner string after restore aborts with E4010
+#use io
+
+s' = ++""
+0..1 @ i =>
+   0..1 @ j =>
+      s' = "inner" + "_value"
+   io::out(s')
+
+io::out("FAIL: should have aborted")
