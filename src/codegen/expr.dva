@@ -874,7 +874,7 @@ codegen_eval: types::Cg, ast::Expr => (Addr, ast::ValueType)
 codegen_eval = cg, expr =>
    expr
       [Int n] (LLVMConstInt(LLVMInt64Type!, n, 0), ast::ValueType(Int))
-      [Rune n] (LLVMConstInt(LLVMInt64Type!, n, 0), ast::ValueType(Rune))
+      [Rune n] (LLVMConstInt(LLVMInt32Type!, n, 0), ast::ValueType(Rune))
       [Float f] (LLVMConstReal(LLVMDoubleType!, f), ast::ValueType(Float))
       [Str s] (stmt::codegen_string_literal(cg, s), ast::ValueType(Str))
       [Var v]
@@ -5862,7 +5862,7 @@ codegen_typed_eval_error_construct = cg, args =>
    i64t = LLVMInt64Type!
    est = main::error_struct_type(cg)
    ep = codegen_call_arena_alloc(cg,
-      LLVMConstInt(i64t, 56, 0), "err.alloc")
+      LLVMConstInt(i64t, types::codegen_error_size(cg), 0), "err.alloc")
    nargs = ?args
    a0 = nargs > 0 | (args(0) | _ | tast::mk_lit_unit(0, 0)) |
       tast::mk_lit_unit(0, 0)

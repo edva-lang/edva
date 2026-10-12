@@ -1921,6 +1921,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
       dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
       opts.is_module, opts.module_name))
    annotate::set_source_file(opts.target)
+   annotate::set_target_triple(opts.triple)
    el_res = annotate::annotate_program(prog)
    cg_ok' = 0
    is_cached' = <->
@@ -2961,6 +2962,7 @@ run_driver = _ =>
          parser::parser_set_file(ppr, "<eval>")
          lexer::lex_set_file("<eval>")
          annotate::set_source_file("<eval>")
+         annotate::set_target_triple(opts.triple)
          prog_res = parser::parse_program(ppr)
          prog_res | prog =>
             opts.typed_ast
@@ -3046,6 +3048,7 @@ run_driver = _ =>
       | sys::exit(1)
       |
          annotate::set_source_file(opts.target)
+         annotate::set_target_triple(opts.triple)
          annotate::set_program_locs(load_result.out_files,
             load_result.out_lines, load_result.out_cols)
          program = ast::Expr(Block, ast::BlockExpr(load_result.exprs))

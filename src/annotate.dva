@@ -28,6 +28,7 @@
 #public
 
 cur_source_file = ""
+cur_target_triple = ""
 cur_stmt_files = ast::Names()
 cur_stmt_lines = ast::Ints()
 cur_stmt_cols = ast::Ints()
@@ -35,6 +36,27 @@ cur_stmt_cols = ast::Ints()
 set_source_file: String => ()
 set_source_file = f =>
    cur_source_file ::= f
+
+set_target_triple: String => ()
+set_target_triple = t =>
+   cur_target_triple ::= t
+   layout::set_target_triple(t)
+
+is_32bit_triple: String => <>
+is_32bit_triple = triple =>
+   (?triple !< 5 && triple(..5) == "arm64")
+      | <->
+      |
+         (?triple !< 6 && triple(..6) == "wasm32") ||
+            (?triple !< 4 && triple(..4) == "i386") ||
+            (?triple !< 4 && triple(..4) == "i686") ||
+            (?triple !< 7 && triple(..7) == "riscv32") ||
+            (?triple !< 5 && triple(..5) == "armv7") ||
+            (?triple !< 3 && triple(..3) == "arm")
+
+is_32bit_target: () => <>
+is_32bit_target = !=>
+   is_32bit_triple(cur_target_triple)
 
 set_program_locs: ast::Names, ast::Ints, ast::Ints => ()
 set_program_locs = files, lines, cols =>
@@ -587,6 +609,45 @@ mark_bitfield_fields_whole = env, prefix, ti =>
                   is_sub_bf
                      | type_env::init_mark_whole(env, sub_path)
                      | mark_bitfield_fields_whole(env, sub_path, fld.rec_type)
+rec_elem_ti_env: ast::FieldTypes => ast::TypeInfo
+rec_elem_ti_env = fields =>
+   ?fields > 0
+      |
+         f = fields(0) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->, ast::Expr(Int, 0)))
+         f.rec_type
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+align_to: Int, Int => Int
+align_to = offset, align =>
+   align !> 1
+      | offset
+      |
+         rem = offset % align
+         rem == 0 | offset | offset + (align - rem)
+
+annotate_type_align: type_env::TypeEnv, ast::ValueType, ast::TypeInfo => Int
+annotate_type_align = env, vt, ti =>
+   ptr_al = is_32bit_target! | 4 | 8
+   eff_ti = ti
+      [TypeVar tv]
+         u_opt = type_env::lookup_user_type(env, tv)
+         u_opt | u => u.ti | ti
+      | ti
+   eff_ti
+      [Bitfield _] 1
+      [Rec r]
+         r.5 | 1 | ptr_al
+      |
+         vt
+            [I8, U8, Flag] 1
+            [I16, U16] 2
+            [I32, U32, F32, Rune] 4
+            [Record] ptr_al
+            [RawPtr, Fn, Str, Slice, Map, Builder] ptr_al
+            [Error] 8
+            | ptr_al
+
 annotate_struct_size_packed: type_env::TypeEnv, ast::FieldTypes, Int, Int,
    Int => Int
 annotate_struct_size_packed = env, fields, i, n, acc =>
@@ -598,8 +659,26 @@ annotate_struct_size_packed = env, fields, i, n, acc =>
          fsz = annotate_type_size(env, f.val_type, f.rec_type)
          annotate_struct_size_packed(env, fields, i + 1, n, acc + fsz)
 
+annotate_struct_size_aligned: type_env::TypeEnv, ast::FieldTypes, Int, Int,
+   Int, Int => Int
+annotate_struct_size_aligned = env, fields, i, n, cur_off, max_al =>
+   i == n
+      | align_to(cur_off, max_al)
+      |
+         f = fields(i) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->, ast::Expr(Int, 0)))
+         fal = annotate_type_align(env, f.val_type, f.rec_type)
+         new_max = max_al < fal | fal | max_al
+         aligned_off = align_to(cur_off, fal)
+         fsz = annotate_type_size(env, f.val_type, f.rec_type)
+         annotate_struct_size_aligned(env, fields, i + 1, n, aligned_off + fsz,
+            new_max)
+
 annotate_type_size: type_env::TypeEnv, ast::ValueType, ast::TypeInfo => Int
 annotate_type_size = env, vt, ti =>
+   ptr_sz = is_32bit_target! | 4 | 8
+   min_sz = ptr_sz * 2
+   err_sz = is_32bit_target! | 48 | 56
    eff_ti = ti
       [TypeVar tv]
          u_opt = type_env::lookup_user_type(env, tv)
@@ -608,17 +687,36 @@ annotate_type_size = env, vt, ti =>
    eff_ti
       [Bitfield b] b.total_bits / 8
       [Rec r]
-         r.5
-            | annotate_struct_size_packed(env, r.0, 0, ?r.0, 0)
+         r.1
+            | min_sz
             |
-               sz = annotate_struct_size_packed(env, r.0, 0, ?r.0, 0)
-               sz < 16 | 16 | sz
+               r.2
+                  |
+                     elem_sz = annotate_type_size(env, r.3,
+                        rec_elem_ti_env(r.0))
+                     r.4 * elem_sz
+                  |
+                     r.5
+                        | annotate_struct_size_packed(env, r.0, 0, ?r.0, 0)
+                        |
+                           sz = annotate_struct_size_aligned(env, r.0, 0, ?r.0,
+                              0, 1)
+                           sz < min_sz | min_sz | sz
+      [Array a] annotate_type_size(env, a.0, a.1) * a.2
+      [Map _] min_sz
+      [Fn _] min_sz
+      [Enum _] min_sz
       |
          vt
             [I8, U8, Flag] 1
             [I16, U16] 2
-            [I32, U32, F32] 4
-            | 8
+            [I32, U32, F32, Rune] 4
+            [Int, I64, U64, Float] 8
+            [Addr, RawPtr] ptr_sz
+            [Str, Slice, Map] ptr_sz * 2
+            [Builder] ptr_sz * 3
+            [Error] err_sz
+            | ptr_sz
 
 is_integerish_ut: unify::Ctx, unify::UType => <>
 is_integerish_ut = ctx, ut =>

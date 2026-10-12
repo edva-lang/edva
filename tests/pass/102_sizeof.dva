@@ -2,7 +2,7 @@
 // Scalars use their LLVM ABI size; composite record types use the arena
 // size (min 16) the language allocates and strides by.
 
-// Scalars: Int/Rune/i64/u64/Float/f64/pointer-sized are 8 bytes.
+// Scalars and types: Int/Float/Addr are 8 bytes; Rune is 4 bytes; String is 16 bytes.
 io::out $ #size(Int)
 io::out $ #size(Rune)
 io::out $ #size(Float)

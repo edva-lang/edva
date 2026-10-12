@@ -1658,7 +1658,7 @@ codegen_eval_error_construct = cg, call =>
    i64t = LLVMInt64Type!
    est = error_struct_type(cg)
    ep = expr::codegen_call_arena_alloc(cg,
-      LLVMConstInt(i64t, 56, 0), "err.alloc")
+      LLVMConstInt(i64t, types::codegen_error_size(cg), 0), "err.alloc")
    a0 = call.args(0) | _ | ast::Expr(Int, 0)
    ev0 = expr::codegen_eval(cg, a0)
    c0 = ?call.args > 0 | ev0.0 | LLVMConstInt(i64t, 0, 0)
@@ -1727,7 +1727,7 @@ codegen_build_error = cg, code, msg, line, col, ctx0, ctx1 =>
    i64t = LLVMInt64Type!
    est = error_struct_type(cg)
    ep = expr::codegen_call_arena_alloc(cg,
-      LLVMConstInt(i64t, 56, 0), "err.alloc")
+      LLVMConstInt(i64t, types::codegen_error_size(cg), 0), "err.alloc")
    LLVMBuildStore(cg.builder, code,
       LLVMBuildStructGEP2(cg.builder, est, ep, 0, "err.code.gep"))
    msg_s = stmt::codegen_string_literal(cg, msg)
