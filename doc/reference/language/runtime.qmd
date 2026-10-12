@@ -3,7 +3,7 @@ meta:
   audience: "Edva users and FFI integrators"
   status: "current reference"
   audited: "8b8cb19"
-  evidence: "`GRAMMAR.md` §3.5–§3.8, `src/types.dva`, `src/codegen.dva`"
+  evidence: "`GRAMMAR.md` §3.5–§3.8, `src/codegen/types.dva`, `src/codegen.dva`"
 ---
 
 # Runtime and memory

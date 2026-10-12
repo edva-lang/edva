@@ -3,7 +3,7 @@ meta:
   audience: "compiler contributors"
   status: "current workflow"
   audited: "df88a80"
-  evidence: "`Makefile`, `seed/edva.ll`, `build.sh`"
+  evidence: "`Makefile`, `seed/ir/edva.ll`, `build.sh`"
 ---
 
 # Bootstrap and fixed-point checks

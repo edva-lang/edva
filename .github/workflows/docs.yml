@@ -5,6 +5,15 @@ on:
     branches: [ master, main ]
     paths:
       - 'doc/**'
+      - 'operators.yaml'
+      - 'GRAMMAR.md'
+      - '.github/workflows/docs.yml'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'doc/**'
+      - 'operators.yaml'
+      - 'GRAMMAR.md'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -14,18 +23,23 @@ permissions:
   id-token: write
 
 concurrency:
-  group: 'pages'
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Install Nushell
+        uses: hustcer/setup-nu@v3
+        with:
+          version: '0.115.1'
+
+      - name: Validate evidence, operators, and documentation examples
+        run: nu tools/check_docs.nu
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
@@ -37,13 +51,29 @@ jobs:
           touch _build/.nojekyll
 
       - name: Setup Pages
+        if: >-
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         uses: actions/configure-pages@v6
 
       - name: Upload artifact
+        if: >-
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
         uses: actions/upload-pages-artifact@v5
         with:
           path: doc/_build
 
+  deploy:
+    needs: validate
+    if: >-
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5

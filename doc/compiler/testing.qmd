@@ -3,7 +3,7 @@ meta:
   audience: "compiler contributors"
   status: "current workflow"
   audited: "df88a80"
-  evidence: "`build.sh`, `run_tests.sh`, `selfhost/test_driver.sh`"
+  evidence: "`build.sh`, `run_tests.sh`, `test_driver.sh`"
 ---
 
 # Testing the compiler
@@ -45,7 +45,7 @@ bash -c 'ulimit -v 4194304; timeout 10s ./edva tests/pass/28_modules -r'
 Run the driver suite alone when modifying CLI flags, module loading, or code generation modes:
 
 ```sh
-bash -c 'ulimit -v 4194304; timeout 120s ./selfhost/test_driver.sh'
+bash -c 'ulimit -v 4194304; timeout 120s ./test_driver.sh'
 ```
 
 `test_driver.sh` verifies real end-to-end driver behaviors across 11 regression gates:

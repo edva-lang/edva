@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/types.dva`, `src/codegen/array.dva`, `GRAMMAR.md` §2.5, §2.13"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §2.5, §2.13"
 ---
 
 # `Array` and `Slice`

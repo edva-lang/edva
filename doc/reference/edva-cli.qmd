@@ -3,7 +3,7 @@ meta:
   audience: "Edva users and integrators"
   status: "current"
   audited: "df88a80"
-  evidence: "`selfhost/src/edva.dva:1480-1518`, driver tests"
+  evidence: "`src/edva.dva`, driver tests"
 ---
 
 # `edva` command-line reference

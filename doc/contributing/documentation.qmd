@@ -26,7 +26,21 @@ Keep these roles distinct:
 - `tests/`: executable tests and behavioral verification.
 
 When a source change alters user-visible behavior, update the affected page,
-test any new snippet, update its audit commit, and render the Quarto book
-before review. Do not restore deleted numbered design chapters: their
-syntax and implementation claims were superseded.
+test any new snippet, update its audit commit, and validate documentation before
+review:
+
+- **Evidence anchors**: Every page must reference existing files/directories in
+  `meta.evidence`. Anchors are verified by `tools/check_docs.nu`.
+- **Code examples**:
+  - *Complete examples*: Full compilable programs tested as part of the test suite.
+  - *Partial examples*: Expression snippets or fragments, explicitly annotated with
+    `// partial` or code block attribute `{.partial}`.
+  - *Negative examples*: Examples demonstrating rejected syntax or error diagnostics,
+    annotated with `// expected-error: <CODE>` (e.g. `// expected-error: E3130`)
+    or attribute `{.compile-fail error="<CODE>"}`.
+- **Generated material**: Operator and LLM reference tables are generated and
+  checked via `nu tools/opgen/main.nu --check`.
+- **Rendering**: Render the Quarto book (`cd doc && quarto render`) before review.
+Do not restore deleted numbered design chapters: their syntax and implementation
+claims were superseded.
 

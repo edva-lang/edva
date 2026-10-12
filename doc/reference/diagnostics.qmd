@@ -3,7 +3,9 @@ meta:
   audience: "Edva users and contributors"
   status: "current reference"
   audited: "df88a80"
-  evidence: "`selfhost/src/lexer.dva`, `selfhost/src/parser.dva`, `selfhost/src/codegen/*.dva`, `selfhost/src/edva.dva`, `tests/fail/`"
+  evidence: >-
+    `src/lexer.dva`, `src/parser.dva`, `src/codegen/main.dva`,
+    `src/edva.dva`, `tests/fail/`
 ---
 
 # Diagnostics
@@ -45,6 +47,6 @@ follow an earlier reported source error. Include the command, target triple,
 and whether `-ir` succeeds when filing an issue.
 
 The CLI diagnostics for invalid paths, missing modules, output errors, and
-target flags are exercised by `selfhost/test_driver.sh`. Source-language
+target flags are exercised by `test_driver.sh`. Source-language
 diagnostics live in `tests/fail/`, paired with `.expected_err` files.
 

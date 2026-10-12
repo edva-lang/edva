@@ -3,7 +3,7 @@ meta:
   audience: "integrators and compiler contributors"
   status: "current reference"
   audited: "8b8cb19"
-  evidence: "`selfhost/src/edva.dva`, `std/target/`, `examples/thumbv6m-none-eabi/`"
+  evidence: "`src/edva.dva`, `std/target/`, `examples/thumbv6m-none-eabi/`"
 ---
 
 # Targets and toolchains

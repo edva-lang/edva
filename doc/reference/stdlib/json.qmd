@@ -3,7 +3,7 @@ meta:
   audience: "Edva users parsing JSON"
   status: "current parser reference"
   audited: "8b8cb19"
-  evidence: "`std/json.dva`, `src/types.dva`"
+  evidence: "`std/json.dva`, `src/codegen/types.dva`"
 ---
 
 # `json` standard library

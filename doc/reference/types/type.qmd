@@ -3,7 +3,7 @@ meta:
   audience: "Edva metaprogramming and library authors"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/types.dva`, `src/codegen/metaprog.dva`, `GRAMMAR.md` §2.14, §3.1"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §2.14, §3.1"
 ---
 
 # `Type` and compile-time reflection

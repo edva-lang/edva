@@ -3,7 +3,10 @@ meta:
   audience: "experienced Edva users"
   status: "current guide"
   audited: "8b8cb19"
-  evidence: "`src/annotate.dva`, `src/eval.dva`, `tests/pass/145_compile_time_eval.dva`, `tests/pass/148_generic_fn_params.dva`, `tests/pass/147_type_generators.dva`"
+  evidence: >-
+    `src/annotate.dva`, `src/edva.dva`,
+    `tests/pass/145_compile_time_eval.dva`, `tests/pass/148_generic_fn_params.dva`,
+    `tests/pass/147_type_generators.dva`
 ---
 
 # Metaprogramming

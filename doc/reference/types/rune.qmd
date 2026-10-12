@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/types.dva`, `src/lexer.dva`, `GRAMMAR.md`"
+  evidence: "`src/codegen/types.dva`, `src/lexer.dva`, `GRAMMAR.md`"
 ---
 
 # `Rune` and Unicode characters

@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/types.dva`, `src/codegen/record.dva`, `GRAMMAR.md` §2.5"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §2.5"
 ---
 
 # `Record`, tuples, and bitfields
@@ -84,9 +84,19 @@ When a record variable is declared with a forward annotation (`p: Point`), it is
 ```dva
 p: Point
 p.x = 100
-// Reading p.y here would trigger compiler error E2050 (Uninitialized field)
+// Reading p.y here would trigger compiler error E3130 (Uninitialized field)
 p.y = 200
 sum = p.x + p.y   // Valid: both fields definitely initialized
+```
+
+Attempting to read an uninitialized field produces a compile error:
+
+```dva
+// expected-error: E3130
+#type Point (x: Int, y: Int)
+p: Point
+p.x = 100
+bad = p.y
 ```
 
 ## Operations

@@ -3,13 +3,13 @@ meta:
   audience: "compiler contributors"
   status: "current overview"
   audited: "df88a80"
-  evidence: "`selfhost/src/edva.dva`, `selfhost/src/codegen/*.dva`, `Makefile`"
+  evidence: "`src/edva.dva`, `src/codegen/main.dva`, `Makefile`"
 ---
 
 # Compiler architecture
 
 `edva` is self-hosted: its compiler is written in Edva source under
-`selfhost/src/`. It parses source and imported modules, elaborates types, emits
+`src/`. It parses source and imported modules, elaborates types, emits
 LLVM IR through the LLVM 18 C API, then invokes `clang` for object emission and
 linking.
 
@@ -70,6 +70,6 @@ lexer → parser → AST → dep_graph / type_env / unify / annotate → typed A
 
 The standard library modules (`std/str.dva`, `std/mem.dva`, `std/sys.dva`,
 `std/libc.dva`, `std/unicode.dva`, `std/io.dva`) and compiler units are compiled as
-independent modular objects in `selfhost/obj/` and linked together.
+independent modular objects in `build/obj/` and linked together.
 
 

@@ -3,7 +3,7 @@ meta:
   audience: "authors of compile-time generic code"
   status: "current reference"
   audited: "8b8cb19"
-  evidence: "`std/type.dva`, `src/types.dva`"
+  evidence: "`std/type.dva`, `src/codegen/types.dva`"
 ---
 
 # `type` standard library

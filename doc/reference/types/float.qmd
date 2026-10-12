@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/types.dva`, `src/codegen/expr.dva`, `std/math.dva`"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `std/math.dva`"
 ---
 
 # `Float` and floating-point scalars

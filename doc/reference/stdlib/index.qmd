@@ -3,7 +3,7 @@ meta:
   audience: "Edva users and integrators"
   status: "public module inventory; per-module references are in progress"
   audited: "8b8cb19"
-  evidence: "`std/`, `selfhost/src/edva.dva`"
+  evidence: "`std/`, `src/edva.dva`"
 ---
 
 # Standard library

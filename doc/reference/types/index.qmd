@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers and language integrators"
   status: "current reference landing page"
   audited: "51081a6"
-  evidence: "`src/types.dva`, `src/ast.dva`, `GRAMMAR.md`"
+  evidence: "`src/codegen/types.dva`, `src/ast.dva`, `GRAMMAR.md`"
 ---
 
 # Type system overview

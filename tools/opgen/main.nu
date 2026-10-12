@@ -107,11 +107,13 @@ def main [--check] {
     let doc_path = ($root_dir | path join "GRAMMAR.md")
     let llms_path = ($root_dir | path join "doc/llms.txt")
     let llms_full_path = ($root_dir | path join "doc/llms-full.txt")
+    let quarto_path = ($root_dir | path join "doc/reference/language/operators.qmd")
 
     let operators_new = (artifact_operators)
     let doc_new = (artifact_doc (open --raw $doc_path))
     let llms_new = (artifact_doc (open --raw $llms_path))
     let llms_full_new = (artifact_doc (open --raw $llms_full_path))
+    let quarto_new = (artifact_doc (open --raw $quarto_path))
 
     if $check {
         let operators_ok = (
@@ -123,6 +125,8 @@ def main [--check] {
         let llms_ok = (($llms_new | str trim) == ($llms_new_raw | str trim))
         let llms_full_new_raw = (open --raw $llms_full_path)
         let llms_full_ok = (($llms_full_new | str trim) == ($llms_full_new_raw | str trim))
+        let quarto_new_raw = (open --raw $quarto_path)
+        let quarto_ok = (($quarto_new | str trim) == ($quarto_new_raw | str trim))
 
         if not $operators_ok {
             print "operators.yaml: src/operators.dva out of sync — run 'nu tools/opgen/main.nu'."
@@ -136,7 +140,14 @@ def main [--check] {
         if not $llms_full_ok {
             print "operators.yaml: doc/llms-full.txt out of sync — run 'nu tools/opgen/main.nu'."
         }
-        if (not $operators_ok) or (not $doc_ok) or (not $llms_ok) or (not $llms_full_ok) {
+        if not $quarto_ok {
+            print "operators.yaml: operators.qmd out of sync — run 'nu tools/opgen/main.nu'."
+        }
+        let any_failed = (
+            (not $operators_ok) or (not $doc_ok) or (not $llms_ok) or
+            (not $llms_full_ok) or (not $quarto_ok)
+        )
+        if $any_failed {
             exit 1
         }
         print "operators.yaml: all artifacts in sync."
@@ -145,6 +156,7 @@ def main [--check] {
         $doc_new | save -f $doc_path
         $llms_new | save -f $llms_path
         $llms_full_new | save -f $llms_full_path
-        print "operators.yaml: regenerated operators.dva, GRAMMAR.md, llms.txt, llms-full.txt."
+        $quarto_new | save -f $quarto_path
+        print "operators.yaml: regenerated operators.dva, GRAMMAR.md, llms, operators.qmd."
     }
 }

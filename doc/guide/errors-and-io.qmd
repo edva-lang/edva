@@ -3,7 +3,7 @@ meta:
   audience: "Edva users"
   status: "current guide"
   audited: "8b8cb19"
-  evidence: "`std/io.dva`, `src/types.dva`, `tests/pass/220_stdio.dva`"
+  evidence: "`std/io.dva`, `src/codegen/types.dva`, `tests/pass/220_stdio.dva`"
 ---
 
 # Errors and I/O

@@ -32,6 +32,13 @@ if ! nu tools/opgen/main.nu --check; then
 fi
 
 echo ""
+echo -e "${BOLD}Checking documentation evidence, operators, and examples...${NC}"
+if ! nu tools/check_docs.nu --compile-examples; then
+    echo -e "${RED}Documentation validation failed — run 'nu tools/check_docs.nu'.${NC}"
+    exit 1
+fi
+
+echo ""
 echo -e "${BOLD}=========================================${NC}"
 echo -e "${BOLD}          EDVA DRIVER REGRESSION TESTS   ${NC}"
 echo -e "${BOLD}=========================================${NC}"
