@@ -1,0 +1,29 @@
+// tests/pass/341_std_mem_pool_reference.dva
+// Verifies documented mem::pool signatures, argument order, and return types.
+
+#use mem
+#use io
+
+// Pool created with elem_size=16 and capacity=4:
+p = mem::pool(16, 4)
+
+// 1. Observable argument order verification:
+// capacity is 4, initial count is 0
+io::out $ mem::pool_capacity(p)
+io::out $ mem::pool_count(p)
+
+// 2. pool_alloc returns < Addr | > (RamPN)
+slot = mem::pool_alloc(p)
+slot
+   | addr =>
+      @[addr] = 42
+      io::out $ @[addr Int]
+      // 3. pool_free returns <> (Flag / RamNN)
+      freed = mem::pool_free(p, addr)
+      freed | io::out("freed") | io::out("invalid")
+   | io::out("pool exhausted")
+
+// 4. pool_count updated
+io::out $ mem::pool_count(p)
+
+mem::pool_destroy(p)

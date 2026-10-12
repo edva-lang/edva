@@ -3,7 +3,8 @@ meta:
   audience: "Edva developers managing explicit memory, arenas, and pools"
   status: "current reference"
   audited: "c17e2aa"
-  evidence: "`std/mem.dva`, `tests/pass/290_std_mem.dva`"
+  evidence:
+    "`std/mem.dva`, `tests/pass/290_std_mem.dva`, `tests/pass/341_std_mem_pool_reference.dva`"
 ---
 
 # `mem` standard library
@@ -19,8 +20,8 @@ low-level byte operations, regional bump arenas, and fixed-capacity object pools
 
 | Function | Signature | Description |
 |---|---|---|
-| `mem::copy` | `Addr, Addr, Int => ()` | Copies `bytes` count from source to destination (non-overlapping) |
-| `mem::move` | `Addr, Addr, Int => ()` | Copies `bytes` count with support for overlapping ranges |
+| `mem::copy` | `Addr, Addr, Int => ()` | Copies `bytes` count from source to destination |
+| `mem::move` | `Addr, Addr, Int => ()` | Copies `bytes` count with support for overlap |
 | `mem::zero` | `Addr, Int => ()` | Fills memory range with zeros |
 | `mem::set` | `Addr, Int, Int => ()` | Fills memory range with specified byte value |
 | `mem::align_forward` | `Addr, Int => Addr` | Advances address to meet alignment requirement |
@@ -29,7 +30,7 @@ low-level byte operations, regional bump arenas, and fixed-capacity object pools
 ## Regional bump arenas
 
 Arenas provide allocation without per-object free overhead. All allocations
-allocated within an arena are freed simultaneously when the arena is reset or destroyed.
+within an arena are freed simultaneously when the arena is reset or destroyed.
 
 ```dva
 #type Arena (raw: Addr, cap: Int)
@@ -41,12 +42,14 @@ allocated within an arena are freed simultaneously when the arena is reset or de
 | `mem::arena` | `Int => Arena` | Creates an arena with initial chunk capacity (bytes) |
 | `mem::arena_default` | `() => Arena` | Creates an arena with default 64 MB chunk capacity |
 | `mem::alloc` | `Arena, Int => Addr` | Allocates uninitialized memory of given byte size |
-| `mem::alloc_aligned` | `Arena, Int, Int => Addr` | Allocates memory aligned to specified power-of-two |
-| `mem::reset` | `Arena => ()` | Rewinds arena offset to zero, retaining allocated chunks |
-| `mem::destroy` | `Arena => ()` | Frees all backing chunks and the arena descriptor |
+| `mem::reset` | `Arena => ()` | Rewinds arena offset to zero, retaining chunks |
+| `mem::destroy` | `Arena => ()` | Frees all backing chunks and arena descriptor |
 | `mem::stats` | `Arena => ArenaStats` | Retrieves allocation metrics and chunk counts |
+| `mem::with` | `Arena, (() => ()) => ()` | Runs action with arena set as ambient allocator |
 
 ```dva
+#use mem
+
 ar = mem::arena(1024)
 buf = mem::alloc(ar, 256)
 // ... use buf ...
@@ -55,10 +58,41 @@ mem::destroy(ar)
 
 ## Fixed-capacity object pools
 
-Pools manage uniform, fixed-size element allocations with $O(1)$ allocation and deallocation:
+Pools manage uniform, fixed-size element allocations with $O(1)$ allocation and deallocation.
 
-- `mem::pool(capacity: Int, elem_size: Int) => Pool`
-- `mem::pool_alloc(pool: Pool) => Addr`
-- `mem::pool_free(pool: Pool, ptr: Addr) => ()`
-- `mem::pool_count(pool: Pool) => Int`
-- `mem::pool_destroy(pool: Pool) => ()`
+```dva
+#type Pool (buffer: Addr, free_stack: Addr, active: Addr, state: Addr,
+   elem_size: Int, capacity: Int)
+```
+
+| Function | Signature | Description |
+|---|---|---|
+| `mem::pool` | `Int, Int => Pool` | Creates pool: `mem::pool(elem_size, capacity)` |
+| `mem::pool_alloc` | `Pool => < Addr \| >` | Allocates slot: `<+ Addr +>` or `<-->` on full |
+| `mem::pool_free` | `Pool, Addr => <>` | Frees slot: `<+>` on success, `<->` on error |
+| `mem::pool_count` | `Pool => Int` | Number of currently active allocated slots |
+| `mem::pool_capacity` | `Pool => Int` | Maximum capacity of the pool |
+| `mem::pool_for_each` | `Pool, (Addr => ()) => ()` | Iterates over each active allocated slot |
+| `mem::pool_destroy` | `Pool => ()` | Releases pool memory buffer |
+
+```dva
+#use mem
+#use io
+
+// Create pool with element size 16 bytes and capacity of 4 slots:
+p = mem::pool(16, 4)
+
+io::out $ mem::pool_capacity(p) // 4
+io::out $ mem::pool_count(p)    // 0
+
+slot = mem::pool_alloc(p)
+slot
+   | addr =>
+      @[addr] = 42
+      io::out $ @[addr Int]
+      freed = mem::pool_free(p, addr)
+      freed | io::out("freed") | io::out("invalid")
+   | io::out("pool exhausted")
+
+mem::pool_destroy(p)
+```
