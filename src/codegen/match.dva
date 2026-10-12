@@ -1377,14 +1377,15 @@ ctfe_lower_map = cg, m =>
    LLVMSetGlobalConstant(sg, 1)
    LLVMSetUnnamedAddr(sg, 1)
 
-   mbuf = {5 * 8}
+   mbuf = {6 * 8}
    msb = &mbuf
    @[msb] = LLVMConstInt(i64t, n, 0)
    @[msb + 8] = LLVMConstInt(i64t, cap', 0)
    @[msb + 16] = kg
    @[msb + 24] = vg
    @[msb + 32] = sg
-   const_map = LLVMConstStruct(msb, 5, 0)
+   @[msb + 40] = LLVMConstInt(i64t, 0, 0)
+   const_map = LLVMConstStruct(msb, 6, 0)
    mt = runtime::map_struct_type(cg)
    mg_name = "ctfe.map." + str::from_int(?cg.typedefs)
    mg = LLVMAddGlobal(cg.module, mt, mg_name)

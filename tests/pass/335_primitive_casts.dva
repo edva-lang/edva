@@ -1,0 +1,10 @@
+#use io
+
+io::out $ Int(3.14)
+io::out $ Float(5)
+io::out $ Int(u8(255))
+io::out $ Int(<+>)
+io::out $ Int(<->)
+io::out $ String("valid")
+b = {32}
+io::out $ Addr(b) != Addr(0) | "ptr_ok" | "ptr_null"

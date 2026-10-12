@@ -759,6 +759,11 @@ codegen_eval_call_target = cg, t =>
       [Str] main::codegen_eval_base_str_access(cg, t, bv.0)
       | codegen_eval_indirect_target_call(cg, t, bv.0, bv.1)
 
+is_cast_type_name: String => <>
+is_cast_type_name = name =>
+   name ["Int", "i64", "i8", "i16", "i32", "u8", "u16", "u32", "u64",
+      "i1", "<>", "Rune", "Float", "f64", "f32", "String", "Addr", "ptr"]
+
 codegen_eval_call_non_addr: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_call_non_addr = cg, t =>
    is_intrinsic_name(t.fn_name)
@@ -773,17 +778,13 @@ codegen_eval_call_non_addr = cg, t =>
                call = t
                call.fn_name = rf
                tn = types::type_name_to_vt(t.fn_name)
-               tn.1
+               tn.1 && is_cast_type_name(t.fn_name)
                   |
-                     ?t.args == 0 && types::is_builder_vt(tn.0)
-                        |
-                           i64t = LLVMInt64Type!
-                           b_cap = LLVMConstInt(i64t, 32, 0)
-                           (main::codegen_builder_create(cg, b_cap, "builder.new"),
-                              ast::ValueType(Builder))
+                     ?t.args == 1
                         |
                            arg = t.args(0)!!
                            codegen_eval_coerce(cg, tn.0, arg)
+                        | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
                   |
                      !is_local_fn && (types::is_fn_name(cg, rf) || types::has_fn_name(cg, rf))
                         | codegen_eval_fn_call(cg, call)
@@ -6011,11 +6012,11 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
             |
                tn = fname != "" | types::type_name_to_vt(fname) |
                   (ast::ValueType(Unknown), <->)
-               is_cast = tn.1 && fname != "Error"
+               is_cast = tn.1 && is_cast_type_name(fname)
                is_cast
                   |
                      nargs' = ?args
-                     nargs' > 0
+                     nargs' == 1
                         |
                            arg0' = args(0) | _ | tast::mk_lit_unit(0, 0)
                            codegen_typed_eval_cast(cg, tn.0, arg0')
@@ -7359,5 +7360,10 @@ codegen_typed_eval_cast_other = cg, target_vt, aev =>
                                     | (stmt::coerce_int_ext(cg, aev.0,
                                          t_ll, types::is_unsigned_vt(aev.1)),
                                          target_vt)
-                              | (aev.0, target_vt)
+                              |
+                                 is_str_tgt = target_vt [Str]
+                                 is_str_tgt && types::is_str_vt(aev.1)
+                                    | (aev.0, ast::ValueType(Str))
+                                    | (LLVMConstInt(LLVMInt64Type!, 0, 0),
+                                       ast::ValueType(Unknown))
 
