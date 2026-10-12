@@ -1547,7 +1547,7 @@ fi
 VER_OUT="$(./edva --version)"
 V_OUT="$(./edva -v)"
 CMD_VER_OUT="$(./edva version)"
-if ! echo "$VER_OUT" | grep -qE "^edva 1\.1\.1(\+[0-9a-fA-F]+)?$" || [ "$VER_OUT" != "$V_OUT" ] || [ "$VER_OUT" != "$CMD_VER_OUT" ]; then
+if ! echo "$VER_OUT" | grep -qE "^edva 1\.1\.1(\+[0-9a-fA-F]+(-dirty)?)?$" || [ "$VER_OUT" != "$V_OUT" ] || [ "$VER_OUT" != "$CMD_VER_OUT" ]; then
     echo "FAILED: edva --version output invalid: '$VER_OUT' vs '$V_OUT' vs '$CMD_VER_OUT'"
     exit 1
 fi

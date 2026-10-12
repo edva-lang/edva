@@ -987,6 +987,8 @@
 #private
    tmp_seq: Int
    tmp_seq = 0
+   cached_compiler_id: String
+   cached_compiler_id = ""
 
 #public
    default_cache: () => String
@@ -1016,16 +1018,39 @@
       libc::unlink(tmp + ".out")
       rc == 0 | (txt | t => trim(t) | "") | ""
 
+   compiler_build_id: () => String
+   compiler_build_id = !=>
+      cached_compiler_id != "" | --| cached_compiler_id
+      env_override = env_or("EDVA_COMPILER_ID", "")
+      env_override != ""
+         |
+            cached_compiler_id ::= env_override
+            --| env_override
+      exe = canonical_path("/proc/self/exe")
+      pid_exe = "/proc/" + str::from_int(getpid!) + "/exe"
+      eff_exe = (exe != "/proc/self/exe" && file_exists(exe)) | exe |
+         (file_exists(pid_exe) | pid_exe | "")
+      h = eff_exe != "" | hash_file(eff_exe) | ""
+      short_h = ?h > 16 | h(..16) | h
+      commit = version::COMMIT_HASH
+      id = short_h != ""
+         | (commit != "" | commit + ":" + short_h | short_h)
+         | (commit != "" | commit | version::VERSION)
+      cached_compiler_id ::= id
+      id
+
    compute_ir_cache_key: String, Strings, Strings, Strings, String, String,
       CacheCodegenFlags, String => BuildKeyResult
    compute_ir_cache_key = target, loaded_files, nat_libs, nat_pkg, triple, opt, flags, ast_summary =>
       b = {4096}
-      b += "key_version = 1\n"
+      b += "key_version = 2\n"
       b += "target = " + target + "\n"
       b += "triple = " + triple + "\n"
       b += "opt = " + opt + "\n"
-      b += "compiler = 0.1.0\n"
-      b += "compiler_id = " + env_or("EDVA_COMPILER_ID", "default") + "\n"
+      b += "compiler = " + version::VERSION + "\n"
+      b += "compiler_commit = " + version::COMMIT_HASH + "\n"
+      b += "compiler_build = " + compiler_build_id! + "\n"
+      b += "compiler_id = " + compiler_build_id! + "\n"
       b += "llvm = 18\n"
       b += "flags =\n"
       b += "  is_module = " + (flags.is_module | "true" | "false") + "\n"
