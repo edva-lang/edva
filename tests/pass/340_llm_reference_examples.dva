@@ -1,0 +1,135 @@
+// tests/pass/340_llm_reference_examples.dva
+// Verifies code examples published in doc/llms.txt and doc/llms-full.txt.
+
+#use io
+
+#foreign "c"
+   open: (path: String, flags: Int) => Int
+   close: (fd: Int) => Int
+   read: (fd: Int, buf: Addr, count: Int) => Int
+
+// 1. Rebinding and statement choice
+test_rebinding: () => Int
+test_rebinding = !=>
+   x' = 10
+   x' = x' + 5
+   x' < 20 | x' = x' * 2
+   x'
+
+// 2. Choice with guards
+classify: Int => String
+classify = score =>
+   score [100]       "perfect"
+         [> 89]      "distinction"
+         [> 49]      "pass"
+         |           "fail"
+
+// 3. Cycle and cycle escape
+find_target: Int, Int => < Int | >
+find_target = count, target =>
+   0..count @ i =>
+      i [target] -->
+   >--
+      target
+
+// 4. Early return
+clamp: Int, Int, Int => Int
+clamp = x, lo, hi =>
+   x < lo | --| lo
+   x > hi | --| hi
+   x
+
+// 5. Ram branch return sugars
+find_positive: Int => < Int | >
+find_positive = n =>
+   n !> 0 |-->
+   <+ n +>
+
+// 6. All four ramification shapes and constructors
+#type RamOption < Int | >
+#type RamStatus < | String >
+#type RamResult < Int | String >
+
+make_pn_succ: Int => RamOption
+make_pn_succ = v => <+ v +>
+
+make_pn_fail: () => RamOption
+make_pn_fail = !=> <-->
+
+make_np_succ: () => RamStatus
+make_np_succ = !=> <++>
+
+make_np_fail: String => RamStatus
+make_np_fail = msg => <- msg ->
+
+make_pp_succ: Int => RamResult
+make_pp_succ = v => <+ v ->
+
+make_pp_fail: String => RamResult
+make_pp_fail = msg => <- msg +>
+
+// 7. Postfix error propagation (--!)
+step_a: Int => < Int | String >
+step_a = x =>
+   x < 0 | <- "negative" +> | <+ x * 2 ->
+
+step_b: Int => < Int | String >
+step_b = x =>
+   x == 0 | <- "zero" +> | <+ 100 / x ->
+
+compute: Int, Int => < Int | String >
+compute = a, b =>
+   v1 = step_a(a)--!
+   v2 = step_b(b)--!
+   <+ v1 + v2 ->
+
+// 8. Builder operations
+build_sample: String => String
+build_sample = name =>
+   b = {32}
+   b += "Hello, "
+   b += name
+   b += "!"
+   +b
+
+// 9. FFI read_file
+read_file: String => < String | >
+read_file = path =>
+   fd = open(path, 0)
+   fd [< 0] <-->
+   |
+      b = {4096}
+      n = read(fd, &b, 4096)
+      _ = close(fd)
+      n > 0 | (?b = n; <+ +b +>) | <-->
+
+// Main driver
+io::out $ test_rebinding!
+io::out $ classify(95)
+io::out $ classify(40)
+
+found = find_target(10, 7)
+found | v => io::out(v) | io::out("not found")
+
+io::out $ clamp(5, 10, 20)
+io::out $ clamp(15, 10, 20)
+io::out $ clamp(25, 10, 20)
+
+pos = find_positive(42)
+pos | v => io::out(v) | io::out("none")
+neg = find_positive(-5)
+neg | v => io::out(v) | io::out("none")
+
+c1 = compute(5, 2)
+c1 | v => io::out(v) | e => io::out(e)
+
+c2 = compute(-1, 2)
+c2 | v => io::out(v) | e => io::out(e)
+
+c3 = compute(5, 0)
+c3 | v => io::out(v) | e => io::out(e)
+
+io::out $ build_sample("World")
+
+file_res = read_file("/dev/null")
+file_res | s => io::out("read bytes") | io::out("empty or not found")
