@@ -5,7 +5,6 @@ Identifier    Id
 Integer       Int
 Float         Float
 String        Str
-RawString     RawStr
 Rune          Rune
 LBracket      LBracket
 RBracket      RBracket

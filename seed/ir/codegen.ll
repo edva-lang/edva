@@ -5,7 +5,7 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
-@global_arena = external global { i64, i64, i64, [16384 x ptr], i64 }
+@global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
@@ -60,6 +60,8 @@ declare void @dva_arena_destroy(ptr)
 declare i64 @dva_arena_save(ptr)
 
 declare void @dva_arena_restore(ptr, i64)
+
+declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
 
@@ -241,7 +243,11 @@ declare void @LLVMSetFastMathFlags(ptr, i64)
 
 declare ptr @LLVMBuildSIToFP(ptr, ptr, ptr, ptr)
 
+declare ptr @LLVMBuildUIToFP(ptr, ptr, ptr, ptr)
+
 declare ptr @LLVMBuildFPToSI(ptr, ptr, ptr, ptr)
+
+declare ptr @LLVMBuildFPToUI(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildFPTrunc(ptr, ptr, ptr, ptr)
 
@@ -605,6 +611,8 @@ declare ptr @memmove(ptr, ptr, i64)
 
 declare i64 @stat(ptr, ptr)
 
+declare i64 @fstat(i32, ptr)
+
 declare i64 @creat(ptr, i64)
 
 declare i64 @rename(ptr, ptr)
@@ -642,6 +650,16 @@ declare i64 @tcsetattr(i32, i64, ptr)
 declare void @cfmakeraw(ptr)
 
 declare i64 @poll(ptr, i64, i64)
+
+declare i64 @time(ptr)
+
+declare ptr @signal(i64, ptr)
+
+declare i64 @raise(i64)
+
+declare i64 @getrlimit(i64, ptr)
+
+declare i64 @setrlimit(i64, ptr)
 
 define ptr @"codegen::default_codegen_opts"() #1 {
 entry:

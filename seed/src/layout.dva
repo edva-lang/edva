@@ -9,6 +9,28 @@
 
 #public
 
+target_triple = ""
+
+set_target_triple: String => ()
+set_target_triple = t =>
+   target_triple ::= t
+
+is_32bit_triple: String => <>
+is_32bit_triple = triple =>
+   (?triple !< 5 && triple(..5) == "arm64")
+      | <->
+      |
+         (?triple !< 6 && triple(..6) == "wasm32") ||
+            (?triple !< 4 && triple(..4) == "i386") ||
+            (?triple !< 4 && triple(..4) == "i686") ||
+            (?triple !< 7 && triple(..7) == "riscv32") ||
+            (?triple !< 5 && triple(..5) == "armv7") ||
+            (?triple !< 3 && triple(..3) == "arm")
+
+is_32bit_target: () => <>
+is_32bit_target = !=>
+   is_32bit_triple(target_triple)
+
 align_up: Int, Int => Int
 align_up = offset, align =>
    align !> 1
@@ -17,6 +39,8 @@ align_up = offset, align =>
 
 compute_prim_layout: unify::UPrim => tast::TypedLayout
 compute_prim_layout = p =>
+   ptr_sz = is_32bit_target! | 4 | 8
+   ptr_align = is_32bit_target! | 4 | 8
    p
       [Int] tast::layout_scalar(8, 8)
       [I8] tast::layout_scalar(1, 1)
@@ -29,14 +53,17 @@ compute_prim_layout = p =>
       [U64] tast::layout_scalar(8, 8)
       [Float] tast::layout_scalar(8, 8)
       [F32] tast::layout_scalar(4, 4)
-      [Str] tast::layout_scalar(16, 8)
+      [Str] tast::layout_scalar(ptr_sz * 2, ptr_align)
       [Rune] tast::layout_scalar(4, 4)
       [Flag] tast::layout_scalar(1, 1)
       [Unit] tast::layout_void()
-      [RawPtr] tast::layout_scalar(8, 8)
-      [Builder] tast::layout_scalar(24, 8)
-      [Error] tast::layout_aggregate(48, 8)
-      | tast::layout_scalar(8, 8)
+      [RawPtr] tast::layout_scalar(ptr_sz, ptr_align)
+      [Builder] tast::layout_scalar(ptr_sz * 3, ptr_align)
+      [Error]
+         is_32bit_target!
+            | tast::layout_aggregate(48, 8)
+            | tast::layout_aggregate(56, 8)
+      | tast::layout_scalar(ptr_sz, ptr_align)
 
 is_niche_utype: unify::Ctx, unify::UType => <>
 is_niche_utype = ctx, ut =>
@@ -50,10 +77,13 @@ is_niche_utype = ctx, ut =>
 
 compute_layout: unify::Ctx, unify::UType => tast::TypedLayout
 compute_layout = ctx, ut =>
+   ptr_sz = is_32bit_target! | 4 | 8
+   ptr_align = is_32bit_target! | 4 | 8
+   min_rec_sz = is_32bit_target! | 8 | 16
    c = unify::canon(ctx, ut)
    c
       [Prim p] compute_prim_layout(p)
-      [Fn _] tast::layout_closure()
+      [Fn _] tast::TypedLayout((ptr_sz * 2, ptr_align, tast::LayoutKind(FnClosure)))
       [Rec r]
          cur_off' = 0
          max_align' = 1
@@ -64,31 +94,33 @@ compute_layout = ctx, ut =>
             max_align' = max_align' < f_align | f_align | max_align'
             cur_off' = align_up(cur_off', f_align) + flay.size
          total_size = align_up(cur_off', max_align')
-         tast::layout_aggregate(total_size, max_align')
+         fin_size = total_size < min_rec_sz | min_rec_sz | total_size
+         tast::layout_aggregate(fin_size, max_align')
       [Ram r]
          has_p = r.pos.has_payload
          has_n = r.neg.has_payload
          has_p && !has_n
             |
                is_niche_utype(ctx, r.pos.ut)
-                  | tast::layout_scalar(8, 8)
-                  | tast::layout_ram(16, 8)
+                  | tast::layout_scalar(ptr_sz, ptr_align)
+                  | tast::layout_ram(ptr_sz * 2, ptr_align)
             |
                !has_p && has_n
                   |
                      is_niche_utype(ctx, r.neg.ut)
-                        | tast::layout_scalar(8, 8)
-                        | tast::layout_ram(16, 8)
+                        | tast::layout_scalar(ptr_sz, ptr_align)
+                        | tast::layout_ram(ptr_sz * 2, ptr_align)
                   |
                      has_p || has_n
-                        | tast::layout_ram(16, 8)
+                        | tast::layout_ram(ptr_sz * 2, ptr_align)
                         | tast::layout_scalar(1, 1)
-      [Enum _] tast::layout_aggregate(16, 8)
+      [Enum _] tast::layout_aggregate(ptr_sz * 2, ptr_align)
       [Array a]
          elay = compute_layout(ctx, a.elem)
          e_align = elay.align < 1 | 1 | elay.align
          tast::TypedLayout((
             elay.size * a.count, e_align, tast::LayoutKind(Array)
          ))
-      [Slice _] tast::TypedLayout((16, 8, tast::LayoutKind(Slice)))
-      | tast::layout_scalar(8, 8)
+      [Slice _] tast::TypedLayout((ptr_sz * 2, ptr_align, tast::LayoutKind(Slice)))
+      | tast::layout_scalar(ptr_sz, ptr_align)
+

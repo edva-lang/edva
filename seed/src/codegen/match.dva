@@ -186,9 +186,7 @@ binop_name = op =>
 codegen_emit_cmp_enum_order_error: types::Cg, ast::BinaryOp => (Addr, ast::ValueType)
 codegen_emit_cmp_enum_order_error = cg, op =>
    types::init_error(cg, "E3127", "Operator '" + binop_name(op) +
-      "' cannot be applied to ramifications — " +
-      "ramifications have no ordering; test their slots with '|' " +
-      "branches instead.", 0, 0)
+      diag::E3127_ram_ordering_suffix!, 0, 0)
    (LLVMConstNull(LLVMInt1Type!), ast::ValueType(Flag))
 
 find_enum_slots_search: types::Cg, Int, Int => ast::EnumSlots
@@ -1241,7 +1239,7 @@ ctfe_hash_val = v =>
 ctfe_next_cap: Int => Int
 ctfe_next_cap = n =>
    cap' = 8
-   64 @ _ =>
+   64 @
       cap' !< n | -->
       cap' = cap' * 2
    cap'
@@ -1289,7 +1287,7 @@ ctfe_lower_map = cg, m =>
    keys_slot = types::CtVals()
    vals_slot = types::CtVals()
    states = types::IntArr()
-   cap' @ _ =>
+   cap' @
       keys_slot += types::CtVal(None)
       vals_slot += types::CtVal(None)
       states += 0
@@ -1298,7 +1296,7 @@ ctfe_lower_map = cg, m =>
       v = m.1(i)!!
       hash = ctfe_hash_val(k)
       idx' = hash .&. (cap' - 1)
-      cap' @ _ =>
+      cap' @
          st0 = states(idx')!!
          st0 == 0
             |
@@ -1377,14 +1375,15 @@ ctfe_lower_map = cg, m =>
    LLVMSetGlobalConstant(sg, 1)
    LLVMSetUnnamedAddr(sg, 1)
 
-   mbuf = {5 * 8}
+   mbuf = {6 * 8}
    msb = &mbuf
    @[msb] = LLVMConstInt(i64t, n, 0)
    @[msb + 8] = LLVMConstInt(i64t, cap', 0)
    @[msb + 16] = kg
    @[msb + 24] = vg
    @[msb + 32] = sg
-   const_map = LLVMConstStruct(msb, 5, 0)
+   @[msb + 40] = LLVMConstInt(i64t, 0, 0)
+   const_map = LLVMConstStruct(msb, 6, 0)
    mt = runtime::map_struct_type(cg)
    mg_name = "ctfe.map." + str::from_int(?cg.typedefs)
    mg = LLVMAddGlobal(cg.module, mt, mg_name)
@@ -1482,9 +1481,7 @@ codegen_emit_cmp_flag_ram_error = cg, op =>
             "Operator 'NotEqual' cannot be applied to ramifications", 0, 0)
       |
          types::init_error(cg, "E3127", "Operator '" + binop_name(op) +
-            "' cannot be applied to ramifications — " +
-            "ramifications have no ordering; test their slots with '|' " +
-            "branches instead.", 0, 0)
+            diag::E3127_ram_ordering_suffix!, 0, 0)
    (LLVMConstNull(LLVMInt1Type!), ast::ValueType(Flag))
 
 // FCmp predicates: OGT=2 OLT=4 OEQ=1 UNE=14 OLE=5 OGE=3.
@@ -2754,7 +2751,7 @@ enum_slots_for_label_at = cg, label, i, n =>
          td.ti
             [Enum slots]
                types::enum_slot_index(slots, label)
-                  | _ => (td.name, slots)
+                  | (td.name, slots)
                   | enum_slots_for_label_at(cg, label, i + 1, n)
             | enum_slots_for_label_at(cg, label, i + 1, n)
 
@@ -3317,8 +3314,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
          has_mi = <>(mi)
          !has_mi
             |
-               types::init_error(cg, "E3170", "Member index 'x.(i)' must be a " +
-                  "compile-time constant (a per-field cycle index).",
+               types::init_error(cg, "E3170", diag::member_index_constant!,
                   t.line, t.col)
                (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
             |
@@ -3426,9 +3422,7 @@ codegen_eval_member_rec_reflect = cg, t, ti =>
                   | iv =>
                      LLVMIsConstant(iv) == 0
                         |
-                           types::init_error(cg, "E3170", "Record field index " +
-                              "'T.(i)' must be a compile-time constant " +
-                              "(a per-field cycle index).",
+                           types::init_error(cg, "E3170", diag::record_field_index_constant!,
                               t.line, t.col)
                            <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) +>
                         |
@@ -3449,9 +3443,7 @@ codegen_eval_member_rec_reflect = cg, t, ti =>
                                  <+ (stmt::codegen_string_literal(cg, lbl),
                                     ast::ValueType(Str)) +>
                   |
-                     types::init_error(cg, "E3170", "Record field index 'T.(i)' " +
-                        "must be a compile-time constant (a per-field " +
-                        "cycle index).", t.line, t.col)
+                     types::init_error(cg, "E3170", diag::record_field_index_constant!, t.line, t.col)
                      <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) +>
             | <-->
       | <-->
@@ -3472,9 +3464,7 @@ codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
                   | iv =>
                      LLVMIsConstant(iv) == 0
                         |
-                           types::init_error(cg, "E3170", "Enum variant index " +
-                              "'T.(i)' must be a compile-time constant " +
-                              "(a per-variant cycle index).",
+                           types::init_error(cg, "E3170", diag::enum_variant_index_constant!,
                               t.line, t.col)
                            <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) +>
                         |
@@ -3493,9 +3483,7 @@ codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
                                  <+ (stmt::codegen_string_literal(cg, lbl),
                                     ast::ValueType(Str)) +>
                   |
-                     types::init_error(cg, "E3170", "Enum variant index 'T.(i)' " +
-                        "must be a compile-time constant (a per-variant " +
-                        "cycle index).", t.line, t.col)
+                     types::init_error(cg, "E3170", diag::enum_variant_index_constant!, t.line, t.col)
                      <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) +>
             | <-->
       | codegen_eval_member_rec_reflect(cg, t, ct_ti)

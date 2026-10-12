@@ -5,49 +5,49 @@
 #public
 
 is_record: Type => <>
-is_record = _ => <->
+is_record = t => <->
 
 is_enum: Type => <>
-is_enum = _ => <->
+is_enum = t => <->
 
 is_ram: Type => <>
-is_ram = _ => <->
+is_ram = t => <->
 
 is_fn: Type => <>
-is_fn = _ => <->
+is_fn = t => <->
 
 is_unit: Type => <>
-is_unit = _ => <->
+is_unit = t => <->
 
 is_homogeneous: Type => <>
-is_homogeneous = _ => <->
+is_homogeneous = t => <->
 
 is_indexable: Type => <>
-is_indexable = _ => <->
+is_indexable = t => <->
 
 is_iterable: Type => <>
-is_iterable = _ => <->
+is_iterable = t => <->
 
 is_array: Type => <>
-is_array = _ => <->
+is_array = t => <->
 
 is_slice: Type => <>
-is_slice = _ => <->
+is_slice = t => <->
 
 is_map: Type => <>
-is_map = _ => <->
+is_map = t => <->
 
 is_scalar: Type => <>
-is_scalar = _ => <->
+is_scalar = t => <->
 
 is_int: Type => <>
-is_int = _ => <->
+is_int = t => <->
 
 is_float: Type => <>
-is_float = _ => <->
+is_float = t => <->
 
 is_numeric: Type => <>
-is_numeric = _ => <->
+is_numeric = t => <->
 
 is_pointer: Type => <>
-is_pointer = _ => <->
+is_pointer = t => <->

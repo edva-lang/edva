@@ -105,7 +105,7 @@
       sock [< 0] --| Conn(<- "socket failed" +>)
       addr = SockAddrIn((i16(AF_INET),
          i16(htons $ port), i32(ip), 0))
-      ret = libc::connect(sock, Addr(addr), 16)
+      ret = libc::connect(sock, &addr, 16)
       ret [0] Conn(<+ sock ->) | Conn(<- "connect failed" +>)
 
    // Connect to a host by DNS name (or numeric IP) via getaddrinfo. Walks the
@@ -161,12 +161,11 @@
    tcp_listen = port, backlog =>
       sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
       sock [< 0] --| Conn(<- "socket failed" +>)
-      one = {4}
-      @[&one] = 1i32
+      one = 1i32
       libc::setsockopt(sock, net::SOL_SOCKET, net::SO_REUSEADDR, &one, 4)
       addr = SockAddrIn((i16(AF_INET),
          i16(htons $ port), i32(0), 0))
-      ret_b = libc::bind(sock, Addr(addr), 16)
+      ret_b = libc::bind(sock, &addr, 16)
       ret_l = ret_b [0] libc::listen(sock, backlog) | -1
       ret_l [0] Conn(<+ sock ->) | Conn(<- "bind/listen failed" +>)
 
@@ -216,14 +215,14 @@
    set_recv_timeout = fd, ms =>
       tv = Timeval((i64(ms / 1000),
          i64((ms % 1000) * 1000)))
-      libc::setsockopt(fd, net::SOL_SOCKET, net::SO_RCVTIMEO, Addr(tv), 16)
+      libc::setsockopt(fd, net::SOL_SOCKET, net::SO_RCVTIMEO, &tv, 16)
 
    // Set the send timeout on fd (ms). 0 clears it.
    set_send_timeout: Int, Int => Int
    set_send_timeout = fd, ms =>
       tv = Timeval((i64(ms / 1000),
          i64((ms % 1000) * 1000)))
-      libc::setsockopt(fd, net::SOL_SOCKET, net::SO_SNDTIMEO, Addr(tv), 16)
+      libc::setsockopt(fd, net::SOL_SOCKET, net::SO_SNDTIMEO, &tv, 16)
 
    // Put fd in non-blocking mode (flag != 0) or back to blocking (flag == 0).
    set_nonblocking: Int, Int => Int
@@ -242,7 +241,7 @@
    // Format a SockAddrIn as "a.b.c.d:port".
    addr_str: SockAddrIn => String
    addr_str = addr =>
-      ab = Addr(addr)
+      ab = &addr
       out = {32}
       out += str::from_int(@[ab + 4 i8])
       out += '.'
@@ -259,18 +258,16 @@
    peer_addr: Int => String
    peer_addr = fd =>
       a = (i16(0), i16(0), i32(0), i64(0))
-      len = {4}
-      @[&len] = 16i32
-      ret = libc::getpeername(fd, Addr(a), &len)
+      len = 16i32
+      ret = libc::getpeername(fd, &a, &len)
       ret [< 0] "" | net::addr_str(a)
 
    // This socket's own local address as "ip:port", or "" on error.
    local_addr: Int => String
    local_addr = fd =>
       a = (i16(0), i16(0), i32(0), i64(0))
-      len = {4}
-      @[&len] = 16i32
-      ret = libc::getsockname(fd, Addr(a), &len)
+      len = 16i32
+      ret = libc::getsockname(fd, &a, &len)
       ret [< 0] "" | net::addr_str(a)
 
    // Close a file descriptor.
@@ -294,7 +291,7 @@
    udp_bind = fd, port =>
       addr = SockAddrIn((i16(AF_INET),
          i16(htons $ port), i32(0), 0))
-      libc::bind(fd, Addr(addr), 16)
+      libc::bind(fd, &addr, 16)
 
    // Send one datagram to host:port (host must be a numeric IP). Returns the
    // number of bytes sent, or -1 on error.
@@ -305,7 +302,7 @@
       |
          addr = SockAddrIn((i16(AF_INET),
             i16(htons $ port), i32(ip), 0))
-         libc::sendto(fd, data, ?data, 0, Addr(addr), 16)
+         libc::sendto(fd, data, ?data, 0, &addr, 16)
 
    // Receive one datagram. Returns Chunk: <+ data +> on data, <-->
    // on none/error.

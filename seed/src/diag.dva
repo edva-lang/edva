@@ -1,4 +1,8 @@
 // src/diag.dva — centralized compiler diagnostic error messages (#114)
+// Keep repeated diagnostic text here, including text shared by typed and
+// untyped compiler paths. Callers supply names, type descriptions, error
+// codes, and source locations. Runtime messages retain their code and newline.
+// This leaf module must not depend on lexer, parser, type checker, or codegen.
 
 #public
 
@@ -33,6 +37,10 @@ E2039_expr_too_deep = !=> "Expression nested too deeply"
 E2039_param_mutable_prefix: () => String
 E2039_param_mutable_prefix = !=>
    "Function parameters cannot be mutable — remove prime suffix from '"
+
+E2040_underscore_param: () => String
+E2040_underscore_param = !=>
+   "Explicit '_' parameter is forbidden in function parameter lists — use a named parameter or omit unused binders."
 
 E2093_assign_typed_load: () => String
 E2093_assign_typed_load = !=>
@@ -193,3 +201,158 @@ E3173_propagate_outside_fn = !=> "Propagate operator '--!' can only be used insi
 E3175_choice_const_discarded: () => String
 E3175_choice_const_discarded = !=>
    "Choice has a constant expression in a branch and its value is discarded"
+
+// Shared text fragments retain caller-specific names, types, and source locations.
+
+uninitialized_variable_prefix: () => String
+uninitialized_variable_prefix = !=> "Use of uninitialized variable '"
+
+E3050_reserved_type_name_suffix: () => String
+E3050_reserved_type_name_suffix = !=>
+   "' — it is a built-in type name and is reserved for type coercion."
+
+return_type_mismatch_prefix: () => String
+return_type_mismatch_prefix = !=> "Return type mismatch in function: "
+
+assignment_type_mismatch_prefix: () => String
+assignment_type_mismatch_prefix = !=> "Type mismatch in assignment to: "
+
+member_index_constant: () => String
+member_index_constant = !=>
+   "Member index 'x.(i)' must be a compile-time constant (a per-field cycle index)."
+
+field_assignment_type_mismatch_prefix: () => String
+field_assignment_type_mismatch_prefix = !=> "Type mismatch in field assignment: "
+
+E3067_string_write_prefix: () => String
+E3067_string_write_prefix = !=> "Cannot write through a String call-target '"
+
+E3067_string_write_suffix: () => String
+E3067_string_write_suffix = !=>
+   "(...)' — Strings are immutable and a Builder is written with 'b + c'."
+
+E3049_slice_write_prefix: () => String
+E3049_slice_write_prefix = !=> "Cannot write element of forward-annotated slice '"
+
+E3049_slice_write_suffix: () => String
+E3049_slice_write_suffix = !=> "' before whole-value initialization."
+
+return_type_inference_prefix: () => String
+return_type_inference_prefix = !=> "Cannot infer concrete return type for function '"
+
+E3128_function_value_signature_suffix: () => String
+E3128_function_value_signature_suffix = !=>
+   "' is used as a value but its parameter types cannot be determined — no declared " +
+   "signature and no call site to infer from. Declare a signature: '"
+
+expected_primary_prefix: () => String
+expected_primary_prefix = !=> "Expected primary expression, got '"
+
+cycle_jump_depth_prefix: () => String
+cycle_jump_depth_prefix = !=>
+   "Cycle jump suffix must be a positive integer depth (e.g. '-->2'), got '"
+
+record_repeat_count_prefix: () => String
+record_repeat_count_prefix = !=> "Record type repetition count must be a positive integer, got '"
+
+record_repeat_limit_suffix: () => String
+record_repeat_limit_suffix = !=> " exceeds the maximum of 1000000"
+
+infix_right_binding_power_prefix: () => String
+infix_right_binding_power_prefix = !=> "Expected an integer right binding-power after '#infix "
+
+infix_left_binding_power_prefix: () => String
+infix_left_binding_power_prefix = !=> "Expected an integer left binding-power after '#infix', got '"
+
+imported_symbol_conflict_suffix: () => String
+imported_symbol_conflict_suffix = !=> "' conflicts with symbol already imported from '"
+
+E3033_foreign_function_clash_prefix: () => String
+E3033_foreign_function_clash_prefix = !=> "E3033: Name clash: foreign function '"
+
+declared_symbol_conflict_suffix: () => String
+declared_symbol_conflict_suffix = !=> "' declared in module conflicts with symbol imported from '"
+
+E5038_package_import_cycle_prefix: () => String
+E5038_package_import_cycle_prefix = !=> "E5038: module import cycle across packages: "
+
+clang_compilation_failed_suffix: () => String
+clang_compilation_failed_suffix = !=> ": Clang compilation failed with exit code "
+
+E5007_no_input: () => String
+E5007_no_input = !=> "E5007: No input .dva file specified."
+
+E3084_open_record_fields: () => String
+E3084_open_record_fields = !=> "Record does not satisfy open record fields"
+
+E3089_ram_shape_prefix: () => String
+E3089_ram_shape_prefix = !=> "Cannot assign ramification of shape "
+
+locked_manifest_stale_prefix: () => String
+locked_manifest_stale_prefix = !=> "--locked: edva.lock.ccl is out of date ("
+
+repository_illegal_path_suffix: () => String
+repository_illegal_path_suffix = !=> "': repository contains illegal path or escaping symlink"
+
+vendor_tree_mismatch_prefix: () => String
+vendor_tree_mismatch_prefix = !=> "tampered vendor content: tree hash mismatch for '"
+
+archive_illegal_path_suffix: () => String
+archive_illegal_path_suffix = !=> "': archive contains illegal path or path traversal"
+
+E3127_ram_ordering_suffix: () => String
+E3127_ram_ordering_suffix = !=>
+   "' cannot be applied to ramifications — ramifications have no ordering; test their " +
+   "slots with '|' branches instead."
+
+record_field_index_constant: () => String
+record_field_index_constant = !=>
+   "Record field index 'T.(i)' must be a compile-time constant (a per-field cycle index)."
+
+enum_variant_index_constant: () => String
+enum_variant_index_constant = !=>
+   "Enum variant index 'T.(i)' must be a compile-time constant (a per-variant cycle " +
+   "index)."
+
+E4002_string_length_overflow: () => String
+E4002_string_length_overflow = !=>
+   "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n"
+
+E3007_cycle_jump_level_prefix: () => String
+E3007_cycle_jump_level_prefix = !=> "' targets cycle-nesting level "
+
+E3007_cycle_jump_level_suffix: () => String
+E3007_cycle_jump_level_suffix = !=> " enclosing cycle(s) exist at this point."
+
+E4007_unwrap_empty_or_error: () => String
+E4007_unwrap_empty_or_error = !=> "E4007: unwrap on empty or error ramification\n"
+
+compile_time_parameter_suffix: () => String
+compile_time_parameter_suffix = !=> "' is not compile-time evaluable"
+
+E3105_enum_label_ambiguous_suffix: () => String
+E3105_enum_label_ambiguous_suffix = !=>
+   "' is ambiguous — declared by multiple enums; qualify the variant as 'Enum::"
+
+E4008_builder_length_bounds: () => String
+E4008_builder_length_bounds = !=> "E4008: Builder length assignment out of bounds\n"
+
+runtime_error_format: () => String
+runtime_error_format = !=> "Error %lld: %.*s\n  at %.*s:%lld:%lld\n"
+
+E4004_arena_allocation_too_large: () => String
+E4004_arena_allocation_too_large = !=>
+   "E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk " +
+   "cap %llu bytes)\n"
+
+E4003_arena_chunk_limit: () => String
+E4003_arena_chunk_limit = !=> "E4003: arena chunk limit reached (too many arena chunks)\n"
+
+E4001_arena_exhausted: () => String
+E4001_arena_exhausted = !=> "E4001: arena allocator exhausted (out of memory)\n"
+
+E5012_write_ir_prefix: () => String
+E5012_write_ir_prefix = !=> "E5012: Failed to write LLVM IR to '"
+
+E1008_string_unterminated: () => String
+E1008_string_unterminated = !=> "Unterminated string literal -- missing closing '\"'"

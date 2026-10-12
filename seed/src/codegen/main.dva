@@ -158,7 +158,7 @@ builder_set_len_checked = cg, b, len_val, gname =>
                      is_big = LLVMBuildICmp(cg.builder, 38, len_i64, cap_val, "b.len.big")
                      LLVMBuildCondBr(cg.builder, is_big, oob_bb, ok_bb)
                      LLVMPositionBuilderAtEnd(cg.builder, oob_bb)
-                     runtime::emit_abort_msg(cg, "E4008: Builder length assignment out of bounds\n", "builder_len_oob_msg")
+                     runtime::emit_abort_msg(cg, diag::E4008_builder_length_bounds!, "builder_len_oob_msg")
                      LLVMBuildBr(cg.builder, ok_bb)
                      LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
                      builder_set_len(cg, bv, len_i64)
@@ -782,11 +782,7 @@ codegen_builder_freeze: types::Cg, Addr, String => Addr
 codegen_builder_freeze = cg, b, name =>
    cg.opts.no_runtime
       |
-         types::init_error(cg, "E3140", "arena allocation under --no-runtime. The " +
-            "feature you used (a record, closure, String concat, Builder, " +
-            "or heap ram/enum) needs the runtime arena, which --no-runtime " +
-            "omits. Use only bare-metal features: Int arithmetic, String " +
-            "literals, '?s', 's(i)', and raw '@[Addr(...)]' memory.", 0, 0)
+         types::init_error(cg, "E3140", diag::E3140_no_runtime_arena!, 0, 0)
          LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
       |
          i64t = LLVMInt64Type!
@@ -1658,7 +1654,7 @@ codegen_eval_error_construct = cg, call =>
    i64t = LLVMInt64Type!
    est = error_struct_type(cg)
    ep = expr::codegen_call_arena_alloc(cg,
-      LLVMConstInt(i64t, 56, 0), "err.alloc")
+      LLVMConstInt(i64t, types::codegen_error_size(cg), 0), "err.alloc")
    a0 = call.args(0) | _ | ast::Expr(Int, 0)
    ev0 = expr::codegen_eval(cg, a0)
    c0 = ?call.args > 0 | ev0.0 | LLVMConstInt(i64t, 0, 0)
@@ -1727,7 +1723,7 @@ codegen_build_error = cg, code, msg, line, col, ctx0, ctx1 =>
    i64t = LLVMInt64Type!
    est = error_struct_type(cg)
    ep = expr::codegen_call_arena_alloc(cg,
-      LLVMConstInt(i64t, 56, 0), "err.alloc")
+      LLVMConstInt(i64t, types::codegen_error_size(cg), 0), "err.alloc")
    LLVMBuildStore(cg.builder, code,
       LLVMBuildStructGEP2(cg.builder, est, ep, 0, "err.code.gep"))
    msg_s = stmt::codegen_string_literal(cg, msg)
@@ -2245,9 +2241,9 @@ codegen_eval_spawn = cg, se =>
          env_ptr = clo_opt
             | clo => stmt::closure_env_ptr(cg, clo, "spawn.clo.env")
             | LLVMConstNull(i8p)
-         arena_raw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
-            LLVMConstInt(i64t, 8224, 0), "thread.arena.malloc")
          at = runtime::arena_type(cg)
+         arena_raw = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
+            LLVMSizeOf(at), "thread.arena.malloc")
          atp = LLVMPointerType(at, 0)
          init_t = types::fn_type2(cg, LLVMVoidType!, atp, i64t)
          init_fn = LLVMGetNamedFunction(cg.module, "dva_arena_init")

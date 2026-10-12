@@ -6,6 +6,7 @@
 // archives, or the network. Sources are kept in a minimal content store
 // (git mirrors, extracted trees); verification hardening is #102.
 
+#use "diag"
 #use ccl
 #use libc
 #use str
@@ -338,8 +339,12 @@
    // Dotted-integer version comparison: a < b.
    version_lt: String, String => <>
    version_lt = a, b =>
-      pa = split_char(a, '.')
-      pb = split_char(b, '.')
+      a_parts = split_char(a, '+')
+      b_parts = split_char(b, '+')
+      a_base = a_parts(0) | _ | a
+      b_base = b_parts(0) | _ | b
+      pa = split_char(a_base, '.')
+      pb = split_char(b_base, '.')
       n = ?pa > ?pb | ?pa | ?pb
       res' = <->
       n @ i =>
@@ -476,7 +481,7 @@
                   |
                      r.opts.locked
                         |
-                           fail(7007, "--locked: edva.lock.ccl is out of date (" + alias + " changed)")
+                           fail(7007, diag::locked_manifest_stale_prefix! + alias + " changed)")
                            <-->
                         |
                            fetch_mirror(r, url)
@@ -523,14 +528,14 @@
             !check_tree_security(r, v_dir)
                |
                   fail(7019, "dependency '" + alias +
-                     "': repository contains illegal path or escaping symlink")
+                     diag::repository_illegal_path_suffix!)
                   <-->
                |
                   compute_tree_hash(r, v_dir)
                      | tree_hash =>
                         expected_hash != "" && tree_hash != expected_hash
                            |
-                              fail(7005, "tampered vendor content: tree hash mismatch for '" + alias +
+                              fail(7005, diag::vendor_tree_mismatch_prefix! + alias +
                                  "' (expected " + expected_hash + ", got " + tree_hash + ")")
                               <-->
                            | <+ (v_dir, (expected_hash != "" | expected_hash | tree_hash)) +>
@@ -560,7 +565,7 @@
                                  |
                                     sh("rm -rf " + sq(tmp))
                                     fail(7019, "dependency '" + alias +
-                                       "': repository contains illegal path or escaping symlink")
+                                       diag::repository_illegal_path_suffix!)
                                     <-->
                                  |
                                     compute_tree_hash(r, tmp)
@@ -619,7 +624,7 @@
             !check_tree_security(r, v_dir)
                |
                   fail(7019, "dependency '" + alias +
-                     "': archive contains illegal path or path traversal")
+                     diag::archive_illegal_path_suffix!)
                   <-->
                |
                   compute_tree_hash(r, v_dir)
@@ -627,7 +632,7 @@
                         expected_hash = r.hashes ^ (hash) | _ | ""
                         expected_hash != "" && tree_hash != expected_hash
                            |
-                              fail(7005, "tampered vendor content: tree hash mismatch for '" + alias +
+                              fail(7005, diag::vendor_tree_mismatch_prefix! + alias +
                                  "' (expected " + expected_hash + ", got " + tree_hash + ")")
                               <-->
                            | <+ v_dir +>
@@ -675,7 +680,7 @@
                      |
                         libc::unlink(file)
                         fail(7019, "dependency '" + alias +
-                           "': archive contains illegal path or path traversal")
+                           diag::archive_illegal_path_suffix!)
                         <-->
                      |
                         tmp = tmp_path(r)
@@ -805,7 +810,7 @@
                !check_tree_security(r, abs)
                   |
                      fail(7019, "dependency '" + alias +
-                        "': repository contains illegal path or escaping symlink")
+                        diag::repository_illegal_path_suffix!)
                      <-->
                   |
                      load_manifest(abs)
@@ -819,7 +824,7 @@
                               | tree_hash =>
                                  expected_tree' != "" && tree_hash != expected_tree'
                                     |
-                                       fail(7005, "tampered vendor content: tree hash mismatch for '" + alias +
+                                       fail(7005, diag::vendor_tree_mismatch_prefix! + alias +
                                           "' (expected " + expected_tree' + ", got " + tree_hash + ")")
                                        <-->
                                     |
@@ -1105,7 +1110,7 @@
    find_root = start =>
       dir' = canonical_path(start)
       found' = ++ ""
-      0..128 @ _ =>
+      0..128 @
          file_exists(path_join(dir', "edva.ccl")) | found' = dir'; -->
          parent = dirname(dir')
          parent == "" || parent == dir' | -->
@@ -1496,7 +1501,7 @@
       files: Strings
       sys::addr_opt(libc::opendir(dir))
          | dp =>
-            0..1024 @ _ =>
+            0..1024 @
                ent = libc::readdir(dp)
                ent == sys::addr_null | -->
                d_type = @[ent + 18 i8]
@@ -1648,7 +1653,7 @@
                                              r.vendor_paths ^ (id) = abs_dir
                         ok'
                      | <+>
-               | _ =>
+               |
                   fail(7018, "invalid vendor/vendor.ccl")
                   <->
 
@@ -1715,7 +1720,7 @@
       changed = old_text != text
       r.opts.locked && changed
          |
-            fail(7007, "--locked: edva.lock.ccl is out of date (" + lock_change(prior, lock) +
+            fail(7007, diag::locked_manifest_stale_prefix! + lock_change(prior, lock) +
                " changed)")
             1
          |
@@ -1774,7 +1779,7 @@
                   count' = 0
                   sys::addr_opt(libc::opendir(entries_dir))
                      | dp =>
-                        0..10000 @ _ =>
+                        0..10000 @
                            ent = libc::readdir(dp)
                            ent == sys::addr_null | -->
                            d_type = @[ent + 18 i8]
@@ -1793,7 +1798,7 @@
                                                    ccl::get(d, "target")
                                                       | s => s
                                                       | ""
-                                                | _ => ""
+                                                | ""
                                        out(kname + " (" + (tgt' != "" | tgt' | "unknown") + ")")
                                        count' = count' + 1
                         libc::closedir(dp)
@@ -2145,10 +2150,7 @@
                   usage!
                   0
                ["version", "-v", "--version"]
-                  ver_str = version::COMMIT_HASH == "" || version::COMMIT_HASH == "unknown"
-                     | "edva " + version::VERSION
-                     | "edva " + version::VERSION + " (commit " + version::COMMIT_HASH + ")"
-                  out(ver_str)
+                  out("edva " + version::VERSION)
                   0
                |
                   fail(7015, "unknown pkg command '" + cmd + "'")

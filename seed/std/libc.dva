@@ -48,6 +48,7 @@
     memcpy    : (dest: Addr, src: Addr, n: Int) => Addr
     memmove   : (dest: Addr, src: Addr, n: Int) => Addr
     stat      : (path: String, buf: Addr) => Int
+    fstat     : (fd: Int, buf: Addr) => Int
     creat     : (path: String, mode: Int) => Int
     rename    : (oldpath: String, newpath: String) => Int
     unlink    : (path: String) => Int
@@ -67,3 +68,8 @@
     tcsetattr : (fd: Int, optional_actions: Int, termios_p: Addr) => Int
     cfmakeraw : (termios_p: Addr) => ()
     poll      : (fds: Addr, nfds: Int, timeout: Int) => Int
+    time      : (tloc: Addr) => Int
+    signal    : (sig: Int, handler: Addr) => Addr
+    raise     : (sig: Int) => Int
+    getrlimit : (resource: Int, rlim: Addr) => Int
+    setrlimit : (resource: Int, rlim: Addr) => Int

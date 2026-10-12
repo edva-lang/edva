@@ -10,26 +10,26 @@
    SYS_IO_URING_REGISTER = 427
 
    // io_uring_setup flags
-   IORING_SETUP_IOPOLL     = 1
-   IORING_SETUP_SQPOLL     = 2
-   IORING_SETUP_SQ_AFF     = 4
-   IORING_SETUP_CQSIZE     = 8
-   IORING_SETUP_CLAMP      = 16
-   IORING_SETUP_ATTACH_WQ  = 32
-   IORING_SETUP_R_DISABLED = 64
-   IORING_SETUP_SUBMIT_ALL = 128
+   IORING_SETUP_IOPOLL     = 0b1
+   IORING_SETUP_SQPOLL     = 0b10
+   IORING_SETUP_SQ_AFF     = 0b100
+   IORING_SETUP_CQSIZE     = 0b1000
+   IORING_SETUP_CLAMP      = 0b10000
+   IORING_SETUP_ATTACH_WQ  = 0b100000
+   IORING_SETUP_R_DISABLED = 0b1000000
+   IORING_SETUP_SUBMIT_ALL = 0b10000000
 
    // io_uring_enter flags
-   IORING_ENTER_GETEVENTS       = 1
-   IORING_ENTER_SQ_WAKEUP       = 2
-   IORING_ENTER_SQ_WAIT         = 4
-   IORING_ENTER_EXT_ARG         = 8
-   IORING_ENTER_REGISTERED_RING = 16
+   IORING_ENTER_GETEVENTS       = 0b1
+   IORING_ENTER_SQ_WAKEUP       = 0b10
+   IORING_ENTER_SQ_WAIT         = 0b100
+   IORING_ENTER_EXT_ARG         = 0b1000
+   IORING_ENTER_REGISTERED_RING = 0b10000
 
    // Magic mmap offsets
-   IORING_OFF_SQ_RING = 0
-   IORING_OFF_CQ_RING = 134217728  // 0x8000000
-   IORING_OFF_SQES    = 268435456  // 0x10000000
+   IORING_OFF_SQ_RING = 0x0
+   IORING_OFF_CQ_RING = 0x8000000
+   IORING_OFF_SQES    = 0x10000000
 
    // Operation opcodes
    OP_NOP             = 0
@@ -54,6 +54,62 @@
    PROT_WRITE    = 2
    MAP_SHARED    = 1
    MAP_POPULATE  = 32768
+
+   #type IoUringParams #packed (
+      sq_entries:      u32,
+      cq_entries:      u32,
+      flags:           u32,
+      sq_thread_cpu:   u32,
+      sq_thread_idle:  u32,
+      features:        u32,
+      wq_fd:           u32,
+      resv0:           u32,
+      resv1:           u32,
+      resv2:           u32,
+      sq_head:         u32,
+      sq_tail:         u32,
+      sq_ring_mask:    u32,
+      sq_ring_entries: u32,
+      sq_flags:        u32,
+      sq_dropped:      u32,
+      sq_array:        u32,
+      sq_resv0:        u32,
+      sq_resv1:        u32,
+      sq_resv2:        u32,
+      cq_head:         u32,
+      cq_tail:         u32,
+      cq_ring_mask:    u32,
+      cq_ring_entries: u32,
+      cq_overflow:     u32,
+      cqes:            u32,
+      cq_flags:        u32,
+      cq_resv0:        u32,
+      cq_resv1:        u32,
+      cq_resv2:        u32
+   )
+
+   #type SQE #packed (
+      opcode:       u8,
+      flags:        u8,
+      ioprio:       u16,
+      fd:           i32,
+      off:          Int,
+      addr:         Addr,
+      len:          u32,
+      op_flags:     u32,
+      user_data:    Int,
+      buf_index:    u16,
+      personality:  u16,
+      splice_fd_in: i32,
+      addr3:        Int,
+      pad:          Int
+   )
+
+   #type CQERaw #packed (
+      user_data: Int,
+      res:       i32,
+      flags:     u32
+   )
 
    #type CQE (
       user_data: Int,
@@ -85,35 +141,39 @@
 
    new: Int => <Ring | String>
    new = entries =>
-      pbuf = libc::malloc(128)
-      %memset(pbuf, 0, 128)
-      fd = libc::syscall(SYS_IO_URING_SETUP, Addr(entries), pbuf,
+      pbuf = 0u64 {16}
+      paddr = &pbuf
+      fd = libc::syscall(SYS_IO_URING_SETUP, Addr(entries), paddr,
          sys::addr_null, sys::addr_null, sys::addr_null, sys::addr_null)
-      fd < 0 |
-         libc::free(pbuf)
-         --| <- "io_uring_setup failed" +>
+      fd < 0 | --| <- "io_uring_setup failed" +>
 
-      sq_entries = Int(@[pbuf + 0 u32])
-      cq_entries = Int(@[pbuf + 4 u32])
-      sq_head = Int(@[pbuf + 40 u32])
-      sq_tail = Int(@[pbuf + 44 u32])
-      sq_mask = Int(@[pbuf + 48 u32])
-      sq_array = Int(@[pbuf + 64 u32])
-      cq_head = Int(@[pbuf + 80 u32])
-      cq_tail = Int(@[pbuf + 84 u32])
-      cq_mask = Int(@[pbuf + 88 u32])
-      cq_cqes = Int(@[pbuf + 100 u32])
-      libc::free(pbuf)
+      params = @[paddr IoUringParams]
+      sq_entries = Int(params.sq_entries)
+      cq_entries = Int(params.cq_entries)
 
-      sq_sz = sq_array + sq_entries * 4
+      sq_sz = Int(params.sq_array) + sq_entries * 4
       sq_ptr = libc::mmap(sys::addr_null, sq_sz, PROT_READ .|. PROT_WRITE,
          MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_SQ_RING)
+      Int(sq_ptr) == -1 |
+         libc::close(fd)
+         --| <- "mmap SQ ring failed" +>
+
       sqes_sz = sq_entries * 64
       sqes_ptr = libc::mmap(sys::addr_null, sqes_sz, PROT_READ .|. PROT_WRITE,
          MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_SQES)
-      cq_sz = cq_cqes + cq_entries * 16
+      Int(sqes_ptr) == -1 |
+         libc::munmap(sq_ptr, sq_sz)
+         libc::close(fd)
+         --| <- "mmap SQE array failed" +>
+
+      cq_sz = Int(params.cqes) + cq_entries * 16
       cq_ptr = libc::mmap(sys::addr_null, cq_sz, PROT_READ .|. PROT_WRITE,
          MAP_SHARED .|. MAP_POPULATE, fd, IORING_OFF_CQ_RING)
+      Int(cq_ptr) == -1 |
+         libc::munmap(sqes_ptr, sqes_sz)
+         libc::munmap(sq_ptr, sq_sz)
+         libc::close(fd)
+         --| <- "mmap CQ ring failed" +>
 
       <+ Ring((
          fd = fd,
@@ -123,35 +183,21 @@
          sqes_sz = sqes_sz,
          cq_ptr = cq_ptr,
          cq_sz = cq_sz,
-         sq_head_off = sq_head,
-         sq_tail_off = sq_tail,
-         sq_mask_off = sq_mask,
-         sq_arr_off = sq_array,
-         cq_head_off = cq_head,
-         cq_tail_off = cq_tail,
-         cq_mask_off = cq_mask,
-         cq_cqes_off = cq_cqes,
+         sq_head_off = Int(params.sq_head),
+         sq_tail_off = Int(params.sq_tail),
+         sq_mask_off = Int(params.sq_ring_mask),
+         sq_arr_off = Int(params.sq_array),
+         cq_head_off = Int(params.cq_head),
+         cq_tail_off = Int(params.cq_tail),
+         cq_mask_off = Int(params.cq_ring_mask),
+         cq_cqes_off = Int(params.cqes),
          sq_entries = sq_entries,
          cq_entries = cq_entries
       )) ->
 
    prep_sqe: Ring, Int, Int, Int, Addr, Int, Int => <>
    prep_sqe = ring, op, fd, off, addr, len, user_data =>
-      tail = Int(@[ring.sq_ptr + ring.sq_tail_off u32])
-      mask = Int(@[ring.sq_ptr + ring.sq_mask_off u32])
-      idx = tail .&. mask
-      sqe = ring.sqes_ptr + idx * 64
-      %memset(sqe, 0, 64)
-      clean_addr = Addr(Int(addr) .&. 281474976710655)
-      @[sqe + 0] = u8(op)
-      @[sqe + 4] = i32(fd)
-      @[sqe + 8] = off
-      @[sqe + 16] = clean_addr
-      @[sqe + 24] = u32(len)
-      @[sqe + 32] = user_data
-      @[ring.sq_ptr + ring.sq_arr_off + idx * 4] = u32(idx)
-      @[ring.sq_ptr + ring.sq_tail_off] = u32(tail + 1)
-      <+>
+      prep_sqe_flags(ring, op, fd, off, addr, len, 0, user_data)
 
    prep_nop: Ring, Int => <>
    prep_nop = ring, user_data =>
@@ -159,7 +205,7 @@
 
    prep_read: Ring, Int, Addr, Int, Int => <>
    prep_read = ring, fd, buf, len, user_data =>
-      prep_sqe(ring, OP_READ, fd, 0, buf, len, user_data)
+      prep_sqe(ring, OP_READ, fd, -1, buf, len, user_data)
 
    prep_read_at: Ring, Int, Addr, Int, Int, Int => <>
    prep_read_at = ring, fd, buf, len, off, user_data =>
@@ -167,7 +213,7 @@
 
    prep_write: Ring, Int, Addr, Int, Int => <>
    prep_write = ring, fd, buf, len, user_data =>
-      prep_sqe(ring, OP_WRITE, fd, 0, buf, len, user_data)
+      prep_sqe(ring, OP_WRITE, fd, -1, buf, len, user_data)
 
    prep_write_at: Ring, Int, Addr, Int, Int, Int => <>
    prep_write_at = ring, fd, buf, len, off, user_data =>
@@ -177,11 +223,71 @@
    prep_close = ring, fd, user_data =>
       prep_sqe(ring, OP_CLOSE, fd, 0, sys::addr_null, 0, user_data)
 
+   prep_sqe_flags: Ring, Int, Int, Int, Addr, Int, Int, Int => <>
+   prep_sqe_flags = ring, op, fd, off, addr, len, op_flags, user_data =>
+      head = @[ring.sq_ptr + ring.sq_head_off u32]
+      tail = @[ring.sq_ptr + ring.sq_tail_off u32]
+      used = Int(tail - head)
+      used !< ring.sq_entries |->
+      mask = @[ring.sq_ptr + ring.sq_mask_off u32]
+      idx = Int(tail .&. mask)
+      sqe_dest = ring.sqes_ptr + idx * #size(SQE)
+      target_addr = op == OP_ASYNC_CANCEL
+         | addr
+         | %ptrmask(addr, 0m48)
+      item = SQE((
+         opcode = u8(op),
+         flags = 0u8,
+         ioprio = 0u16,
+         fd = i32(fd),
+         off = off,
+         addr = target_addr,
+         len = u32(len),
+         op_flags = u32(op_flags),
+         user_data = user_data,
+         buf_index = 0u16,
+         personality = 0u16,
+         splice_fd_in = 0i32,
+         addr3 = 0,
+         pad = 0
+      ))
+      libc::memcpy(sqe_dest, &item, #size(SQE))
+      @[ring.sq_ptr + ring.sq_arr_off + idx * 4] = u32(idx)
+      @[ring.sq_ptr + ring.sq_tail_off] = tail + 1u32
+      <+>
+
+   prep_recv: Ring, Int, Addr, Int, Int, Int => <>
+   prep_recv = ring, fd, buf, len, flags, user_data =>
+      prep_sqe_flags(ring, OP_RECV, fd, 0, buf, len, flags, user_data)
+
+   prep_send: Ring, Int, Addr, Int, Int, Int => <>
+   prep_send = ring, fd, buf, len, flags, user_data =>
+      prep_sqe_flags(ring, OP_SEND, fd, 0, buf, len, flags, user_data)
+
+   prep_accept: Ring, Int, Addr, Addr, Int, Int => <>
+   prep_accept = ring, fd, addr, addrlen_ptr, flags, user_data =>
+      prep_sqe_flags(ring, OP_ACCEPT, fd, Int(addrlen_ptr), addr, 0, flags, user_data)
+
+   prep_cancel: Ring, Int, Int => <>
+   prep_cancel = ring, target_user_data, user_data =>
+      prep_sqe_flags(ring, OP_ASYNC_CANCEL, -1, 0, Addr(target_user_data), 0, 0, user_data)
+
+   prep_timeout: Ring, Addr, Int, Int, Int => <>
+   prep_timeout = ring, ts_ptr, count, flags, user_data =>
+      prep_sqe_flags(ring, OP_TIMEOUT, -1, count, ts_ptr, 1, flags, user_data)
+
+   sq_space: Ring => Int
+   sq_space = ring =>
+      head = @[ring.sq_ptr + ring.sq_head_off u32]
+      tail = @[ring.sq_ptr + ring.sq_tail_off u32]
+      used = Int(tail - head) .&. 0m32
+      ring.sq_entries - used
+
    submit_and_wait: Ring, Int => Int
    submit_and_wait = ring, wait_nr =>
-      head = Int(@[ring.sq_ptr + ring.sq_head_off u32])
-      tail = Int(@[ring.sq_ptr + ring.sq_tail_off u32])
-      to_submit = tail - head
+      head = @[ring.sq_ptr + ring.sq_head_off u32]
+      tail = @[ring.sq_ptr + ring.sq_tail_off u32]
+      to_submit = Int(tail - head) .&. 0m32
       flags = wait_nr > 0 | IORING_ENTER_GETEVENTS | 0
       libc::syscall(SYS_IO_URING_ENTER, Addr(ring.fd), Addr(to_submit),
          Addr(wait_nr), Addr(flags), sys::addr_null, sys::addr_null)
@@ -191,19 +297,20 @@
 
    peek_cqe: Ring => <CQE | >
    peek_cqe = ring =>
-      head = Int(@[ring.cq_ptr + ring.cq_head_off u32])
-      tail = Int(@[ring.cq_ptr + ring.cq_tail_off u32])
-      head == tail
-         | <-->
+      head = @[ring.cq_ptr + ring.cq_head_off u32]
+      tail = @[ring.cq_ptr + ring.cq_tail_off u32]
+      head != tail
          |
-            mask = Int(@[ring.cq_ptr + ring.cq_mask_off u32])
-            idx = head .&. mask
-            cqe_ptr = ring.cq_ptr + ring.cq_cqes_off + idx * 16
-            ud = @[cqe_ptr + 0 Int]
-            res = Int(@[cqe_ptr + 8 i32])
-            flags = Int(@[cqe_ptr + 12 u32])
-            @[ring.cq_ptr + ring.cq_head_off] = u32(head + 1)
-            <+ CQE((user_data = ud, res = res, flags = flags)) +>
+            mask = @[ring.cq_ptr + ring.cq_mask_off u32]
+            idx = Int(head .&. mask)
+            cqe_ptr = ring.cq_ptr + ring.cq_cqes_off + idx * #size(CQERaw)
+            cqe = CQE((
+               user_data = Int(@[cqe_ptr i64]),
+               res = Int(@[cqe_ptr + 8 i32]),
+               flags = Int(@[cqe_ptr + 12 u32])
+            ))
+            @[ring.cq_ptr + ring.cq_head_off] = head + 1u32
+            <+ cqe +>
 
    wait_cqe: Ring => <CQE | String>
    wait_cqe = ring =>

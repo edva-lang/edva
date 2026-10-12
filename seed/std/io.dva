@@ -17,16 +17,17 @@
    #type Reader (
       fd: Int,
       buf: Builder,
-      pos: Int
+      pos: Int,
+      cap: Int
    )
 
    reader: Int => Reader
-   reader = fd => Reader((fd, {4096}, 0))
+   reader = fd => Reader((fd, {4096}, 0, 4096))
 
    reader_with_cap: Int, Int => Reader
    reader_with_cap = fd, cap =>
       c = cap > 0 | cap | 4096
-      Reader((fd, {c}, 0))
+      Reader((fd, {c}, 0, c))
 
    // Raw length-aware write to fd.
    write: Int, String => ()
@@ -95,7 +96,7 @@
       +b
 
    clean_addr: Addr => Addr
-   clean_addr = a => Addr(Int(a) .&. 281474976710655)
+   clean_addr = a => %ptrmask(a, 0m48)
 
    // console.log-style to fd: the value's show text + a newline in a single atomic writev syscall.
    log: #! T: Type, Int, T => ()
@@ -103,7 +104,7 @@
       s = show(x)
       nl = "\n"
       iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
-      libc::writev(fd, Addr(iov), 2)
+      libc::writev(fd, &iov, 2)
 
    // Substitutes 'show(x)' for every '{}' in fmt (the scalar form of logf).
    logf_scalar: #! T: Type, Builder, T, String => ()
@@ -175,8 +176,7 @@
             rem > 0 | %memmove(&buf, &buf + r.pos, rem)
             ?buf = rem
             r.pos = 0
-      cap = @[Addr(buf) + 16 Int]
-      read_cap = cap > 0 | cap | 4096
+      read_cap = r.cap > 0 | r.cap | 4096
       space = read_cap - ?buf
       space !> 0
          | 0
@@ -209,7 +209,7 @@
    outs = s =>
       nl = "\n"
       iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
-      libc::writev(io::STDOUT, Addr(iov), 2)
+      libc::writev(io::STDOUT, &iov, 2)
 
    // console.log-style to stderr.
    err: #! T: Type, T => ()
@@ -220,7 +220,7 @@
    errs = s =>
       nl = "\n"
       iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
-      libc::writev(io::STDERR, Addr(iov), 2)
+      libc::writev(io::STDERR, &iov, 2)
 
    // Formatted ('{}' placeholders) to stdout.
    outf: #! T: Type, T, String => ()

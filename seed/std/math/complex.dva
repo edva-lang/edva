@@ -146,7 +146,7 @@
                out(j) = out(rev)!!
                out(rev) = tmp
       len' = 2
-      k @ _ =>
+      k @
          half = len' / 2
          sign = invert | 2.0 | (0.0 - 2.0)
          theta = (sign * math::pi) / Float(len')

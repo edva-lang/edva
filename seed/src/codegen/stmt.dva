@@ -532,7 +532,7 @@ codegen_string_literal_new = cg, s =>
 // a branch in the caller so the IR verifier has a successor for the dead path.
 emit_str_overflow_abort: types::Cg => ()
 emit_str_overflow_abort = cg =>
-   runtime::emit_abort_msg(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
+   runtime::emit_abort_msg(cg, diag::E4002_string_length_overflow!, "str_overflow_msg")
 
 // Emits an unsigned checked add and leaves the builder in the non-overflow
 // continuation block. The intrinsic guards the arena allocation that follows.
@@ -1851,9 +1851,9 @@ codegen_cycle_jump_outside = cg, j =>
 codegen_cycle_jump_too_deep: types::Cg, ast::CycleJumpExpr, Int => (Addr, ast::ValueType)
 codegen_cycle_jump_too_deep = cg, j, depth =>
    op = j.is_break | "-->" | "--^"
-   types::init_error(cg, "E3007", "'" + op + "' targets cycle-nesting level " +
+   types::init_error(cg, "E3007", "'" + op + diag::E3007_cycle_jump_level_prefix! +
       str::from_int(j.level) + ", but only " + str::from_int(depth) +
-      " enclosing cycle(s) exist at this point.", 0, 0)
+      diag::E3007_cycle_jump_level_suffix!, 0, 0)
    (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_eval_cycle_jump_valid: types::Cg, ast::CycleJumpExpr, Int => (Addr, ast::ValueType)
@@ -4637,7 +4637,7 @@ record_field_vt = cg, f =>
             | ast::ValueType(Int)
       [Var v]
          types::var_rt(cg, v)
-            | _ => ast::ValueType(Record)
+            | ast::ValueType(Record)
             | types::var_type(cg, v)
       | ast::ValueType(Int)
 
@@ -5023,7 +5023,7 @@ pass_names: types::Cg, ast::Exprs, String => ast::Names
 pass_names = cg, stmts, name =>
    names = ast::Names()
    names += name
-   ?stmts @ _ =>
+   ?stmts @
       growing' = <->
       ?stmts @ i =>
          pass_grow(cg, stmts(i)!!, names) | growing' = <+>
@@ -5876,7 +5876,7 @@ find_and_compile_typed_fn = cg, rname, fname, i, n =>
 declare_external_fn: types::Cg, String => <>
 declare_external_fn = cg, name =>
    types::fninfo_index(cg, name)
-      | _ => <+>
+      | <+>
       |
          declared = fn_has_signature(types::g.pstmts, name, 0)
          !declared
@@ -5946,7 +5946,7 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
-      | _ =>
+      |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
          m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
@@ -6139,7 +6139,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
-      | _ =>
+      |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
          m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
@@ -6365,7 +6365,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
    res_lt = types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
-      | _ =>
+      |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
          m_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.merge." + sc)
          r_al = types::hoisted_alloca(cg, res_lt, "escape.res." + sc)
@@ -6486,9 +6486,9 @@ codegen_typed_eval_cycle_jump = cg, is_break, level =>
          level > nb
             |
                op = is_break | "-->" | "--^"
-               msg = "'" + op + "' targets cycle-nesting level " +
+               msg = "'" + op + diag::E3007_cycle_jump_level_prefix! +
                   str::from_int(level) + ", but only " + str::from_int(nb) +
-                  " enclosing cycle(s) exist at this point."
+                  diag::E3007_cycle_jump_level_suffix!
                types::init_error(cg, "E3007", msg, 0, 0)
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |

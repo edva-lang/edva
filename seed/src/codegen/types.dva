@@ -943,6 +943,9 @@ codegen_init = opts =>
    @[psb] = i8p
    printf_fn = LLVMAddFunction(module, "printf",
       LLVMFunctionType(LLVMInt32Type!, psb, 1, 1))
+   eff_opts = CodegenOpts((triple, opts.no_runtime, opts.no_main,
+      opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
+      opts.compiler_exe, opts.is_module, opts.module_name))
    Cg((module, builder, <-->, CgVars(), <->, st, ut, st2,
       <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
       0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
@@ -954,7 +957,7 @@ codegen_init = opts =>
       <-->, 0, <-->, <-->,
       FieldInitState((ast::Names(), ast::Names())),
       ChoiceInitFrames(), BindingMuts(), <->, <-->, <->, ast::Names(),
-      Addrs(), "", 0, 0, opts))
+      Addrs(), "", 0, 0, eff_opts))
 
 // Define "i32 @main(i32, ptr)" or void @__dva_global_init().
 codegen_build_main: Cg => Addr
@@ -1024,6 +1027,34 @@ fn_type2 = cg, ret, p0, p1 =>
    @[sb] = p0
    @[sb + 8] = p1
    LLVMFunctionType(ret, sb, 2, 0)
+
+// --- target layout & size helpers -------------------------------------------
+
+is_32bit_triple: String => <>
+is_32bit_triple = triple =>
+   n = ?triple
+   (n !< 6 && triple(..6) == "wasm32") ||
+      (n !< 4 && triple(..4) == "wasm") ||
+      (n !< 4 && triple(..4) == "i386") ||
+      (n !< 4 && triple(..4) == "i486") ||
+      (n !< 4 && triple(..4) == "i586") ||
+      (n !< 4 && triple(..4) == "i686") ||
+      (n !< 5 && triple(..5) == "armv7") ||
+      (n !< 5 && triple(..5) == "armv6") ||
+      (n !< 5 && triple(..5) == "thumb") ||
+      (n !< 7 && triple(..7) == "riscv32")
+
+is_32bit_target: Cg => <>
+is_32bit_target = cg => is_32bit_triple(cg.opts.target_triple)
+
+target_ptr_size: Cg => Int
+target_ptr_size = cg => is_32bit_target(cg) | 4 | 8
+
+target_ptr_align: Cg => Int
+target_ptr_align = cg => is_32bit_target(cg) | 4 | 8
+
+codegen_error_size: Cg => Int
+codegen_error_size = cg => is_32bit_target(cg) | 48 | 56
 
 // --- type helpers ------------------------------------------------------------
 
@@ -1112,7 +1143,7 @@ llvm_type_of_vt = vt =>
       [Flag] i1t
       [I8, U8] i8t
       [I16, U16] i16t
-      [I32, U32] i32t
+      [I32, U32, Rune] i32t
       [Ram] i8p
       [Enum] i8p
       [Str] i8p
@@ -1151,13 +1182,13 @@ decl_module_find = name, i, last =>
       | last
 
 decl_module: String, Int => String
-decl_module = name, _ =>
+decl_module = name, ignored =>
    last = decl_module_find(name, 0, -1)
    last < 0 | "" | name(0..last)
 
 // The bare name without module prefix ("is_alpha" from "unicode::is_alpha").
 decl_bare_name: String, Int => String
-decl_bare_name = name, _ =>
+decl_bare_name = name, ignored =>
    s = bare_name_start(name, 0, 0)
    name(s..?name)
 
@@ -1736,7 +1767,7 @@ codegen_load_after_forward = cg, slot_opt, lt, name, vt =>
 
 codegen_uninitialized_load_error: Cg, String => <(Addr, ast::ValueType)|>
 codegen_uninitialized_load_error = cg, name =>
-   init_error(cg, "E3045", "Use of uninitialized variable '" + name +
+   init_error(cg, "E3045", diag::uninitialized_variable_prefix! + name +
       "' — a forward annotation ('name: Type') allocates no storage; assign " +
       "a value before reading.", 0, 0)
    <-->
@@ -1842,7 +1873,7 @@ find_var_slot = cg, name, i =>
 var_has_storage: Cg, String => <>
 var_has_storage = cg, name =>
    var_slot(cg, name)
-      | _ => <+>
+      | <+>
       | <>(var_direct(cg, name))
 
 // --- block / branch plumbing -------------------------------------------------
@@ -2169,8 +2200,12 @@ codegen_type_size = cg, vt, ti =>
          vt
             [I8, U8, Flag] 1
             [I16, U16] 2
-            [I32, U32, F32] 4
+            [I32, U32, F32, Rune] 4
             [Record] codegen_record_size_bytes(cg, ti)
+            [RawPtr, Fn] target_ptr_size(cg)
+            [Str, Slice, Map] target_ptr_size(cg) * 2
+            [Builder] target_ptr_size(cg) * 3
+            [Error] codegen_error_size(cg)
             | 8
 
 codegen_type_align: Cg, ast::ValueType, ast::TypeInfo => Int
@@ -2182,8 +2217,11 @@ codegen_type_align = cg, vt, ti =>
          vt
             [I8, U8, Flag] 1
             [I16, U16] 2
-            [I32, U32, F32] 4
+            [I32, U32, F32, Rune] 4
             [Record] codegen_record_align(cg, ti)
+            [RawPtr, Fn] target_ptr_align(cg)
+            [Str, Slice, Map, Builder] target_ptr_align(cg)
+            [Error] 8
             | 8
 
 align_to: Int, Int => Int
@@ -2205,16 +2243,18 @@ rec_elem_ti = fields =>
 codegen_record_size_bytes: Cg, ast::TypeInfo => Int
 codegen_record_size_bytes = cg, ti =>
    raw_sz = codegen_record_llvm_size(cg, ti)
-   ti_is_packed_or_bf(cg, ti) | raw_sz | (raw_sz < 16 | 16 | raw_sz)
+   min_sz = is_32bit_target(cg) | 8 | 16
+   ti_is_packed_or_bf(cg, ti) | raw_sz | (raw_sz < min_sz | min_sz | raw_sz)
 
 codegen_record_llvm_size: Cg, ast::TypeInfo => Int
 codegen_record_llvm_size = cg, ti =>
+   min_sz = is_32bit_target(cg) | 8 | 16
    ti
       [TypeVar name] codegen_record_llvm_size(cg, typedef_ti(cg, name))
       [Bitfield b] b.total_bits / 8
       [Rec r]
          r.1
-            | 16
+            | min_sz
             |
                r.2
                   |
@@ -2224,7 +2264,7 @@ codegen_record_llvm_size = cg, ti =>
                      r.5
                         | codegen_struct_size_packed(cg, r.0)
                         | codegen_struct_size(cg, r.0)
-      | 16
+      | min_sz
 
 codegen_struct_size_packed: Cg, ast::FieldTypes => Int
 codegen_struct_size_packed = cg, fields =>
@@ -2265,12 +2305,12 @@ codegen_record_align = cg, ti =>
             | 1
             |
                r.1
-                  | 8
+                  | (is_32bit_target(cg) | 4 | 8)
                   |
                      r.2
                         | codegen_type_align(cg, r.3, rec_elem_ti(r.0))
                         | codegen_struct_align(cg, r.0)
-      | 8
+      | (is_32bit_target(cg) | 4 | 8)
 
 codegen_struct_align: Cg, ast::FieldTypes => Int
 codegen_struct_align = cg, fields =>
@@ -3183,7 +3223,7 @@ codegen_eval_record_ctor = cg, ti, t =>
             LLVMPointerType(rm_0, 0), "record.ptr")
          fields = ti [Rec r] r.0 | ast::FieldTypes()
          f_init = Flags()
-         tgt_nf @ _ => f_init += <->
+         tgt_nf @ f_init += <->
          nargs @ i =>
             sarg = t.args(i) | _ | ast::Expr(Int, 0)
             sarg [Range r]
@@ -3466,7 +3506,7 @@ codegen_check_enum_ctor = cg, enum_name, slots, call =>
       | init_error(cg, "E3096", diag::enum_no_variant(enum_name, label),
          call.line, call.col)
    idx_opt
-      | _ =>
+      |
          payload = enum_slot_payload(slots, label)
          has_payload = enum_slot_has_payload(slots, label)
          nargs = ?call.args
@@ -3653,16 +3693,14 @@ codegen_check_ambiguous_enum_label = cg, label =>
          owners = enum_label_owner_count(cg, label, 0)
          owners > 1
             | init_error(cg, "E3105", "Enum label '" + label +
-               "' is ambiguous — declared by multiple enums; qualify the " +
-               "variant as 'Enum::" + label + "'.", 0, 0)
+               diag::E3105_enum_label_ambiguous_suffix! + label + "'.", 0, 0)
 
 codegen_eval_enum_label_val: Cg, String, Int => <(Addr, ast::ValueType)|>
 codegen_eval_enum_label_val = cg, label, owners =>
    owners > 1
       |
          init_error(cg, "E3105", "Enum label '" + label +
-            "' is ambiguous — declared by multiple enums; qualify the " +
-            "variant as 'Enum::" + label + "'.", 0, 0)
+            diag::E3105_enum_label_ambiguous_suffix! + label + "'.", 0, 0)
          <-->
       |
          es = match::enum_slots_for_label(cg, label)
