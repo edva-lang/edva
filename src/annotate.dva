@@ -3679,6 +3679,45 @@ choice_check_ram_pn = ctx, tb_list =>
    has_non_jump' && all_pn'
       | <+ cand_pos +>
 
+is_ram_np_ut: unify::Ctx, unify::UType => <unify::UType|>
+is_ram_np_ut = ctx, ut =>
+   c = unify::canon(ctx, ut)
+   c
+      [Ram r]
+         (!r.pos.has_payload && r.neg.has_payload)
+            | <+ r.neg.ut +>
+            | <-->
+      | <-->
+
+choice_check_ram_np: unify::Ctx, tast::TypedBranches => <unify::UType|>
+choice_check_ram_np = ctx, tb_list =>
+   all_np' = <+>
+   has_non_jump' = <->
+   cand_neg = unify::fresh_var(ctx)
+   ?tb_list @ i =>
+      tb = tb_list(i) | _ | tast::TypedBranch((ast::GuardKind(Bare),
+         tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
+         tast::mk_lit_unit(0, 0)))
+      is_jump = expr_is_jump(tb.body) || is_error_ut(ctx, tb.body.ut)
+      !is_jump
+         |
+            has_non_jump' = <+>
+            np_opt = is_ram_np_ut(ctx, tb.body.ut)
+            np_opt
+               | pay_ut =>
+                  ok = unify::unify(ctx, cand_neg, pay_ut)
+                  !ok
+                     |
+                        unify::add_error(ctx, 3084,
+                           diag::E3084_choice_branch_mismatch!)
+                        all_np' = <->
+                        -->
+               |
+                  all_np' = <->
+                  -->
+   has_non_jump' && all_np'
+      | <+ cand_neg +>
+
 choice_branch_is_constant: ast::Expr => <>
 choice_branch_is_constant = e =>
    e
@@ -3892,6 +3931,34 @@ annotate_choice = ctx, env, ch, is_disc =>
                               <->, ast::Expr(Variant, (ast::Tag(Noth),
                                  ast::Exprs()))))
                      final_ut' = ram_pn_ut
+                  |
+                     np_check = choice_check_ram_np(ctx, tb_list)
+                     np_check
+                        | neg_ut =>
+                           ram_np_ut = unify::ram_np(neg_ut)
+                           nb_br = ?ch.branches
+                           last_br = nb_br > 0 | ch.branches(nb_br - 1)!! | ast::ChoiceBranch((
+                              ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Int, 0),
+                              ast::Names(), ast::Names(), <->, ast::Expr(Int, 0)))
+                           is_last_bare = last_br.kind [Bare]
+                           already_has_fb = nb_br > 1 && is_last_bare
+                           !already_has_fb
+                              |
+                                 fb_ti = unify::type_info_from_utype(ctx, ram_np_ut)
+                                 fb_lay = layout::compute_layout(ctx, ram_np_ut)
+                                 fb_te = tast::mk_typed_ram_construct(
+                                    unify::URamShape(RamNP), <+>, <-->,
+                                    ram_np_ut, fb_ti, fb_lay, 0, 0)
+                                 tbr_fb = tast::TypedBranch((ast::GuardKind(Bare),
+                                    tast::TypedExprs(), <-->, ast::Names(),
+                                    ast::Names(), fb_te))
+                                 tb_list += tbr_fb
+                                 ch.branches += ast::ChoiceBranch((
+                                    ast::GuardKind(Bare), ast::Exprs(),
+                                    ast::Expr(Int, 0), ast::Names(), ast::Names(),
+                                    <->, ast::Expr(Variant, (ast::Tag(Succ),
+                                       ast::Exprs()))))
+                           final_ut' = ram_np_ut
    ti = unify::type_info_from_utype(ctx, final_ut')
    lay = layout::compute_layout(ctx, final_ut')
    tast::mk_typed_expr(tast::TypedExprKind(Choice, (cond_te, tb_list)),

@@ -3,7 +3,7 @@ meta:
   audience: "Edva users"
   status: "current guide"
   audited: "df88a80"
-  evidence: "`src/annotate.dva`, `src/codegen.dva`, `tests/pass/004_choice_inline.dva`, `tests/pass/006_choice_value_int.dva`, `tests/pass/012_cycle_break.dva`"
+  evidence: "`src/annotate.dva`, `src/codegen.dva`, `tests/pass/004_choice_inline.dva`, `tests/pass/006_choice_value_int.dva`, `tests/pass/012_cycle_break.dva`, `tests/pass/345_implicit_ram_fallback.dva`"
 ---
 
 # Choices and cycles
@@ -57,6 +57,36 @@ count > 10 | print("Threshold exceeded!")
 
 // 2. Expression choice: assigned to variable, exhaustive with fallback
 status = count > 10 | "exceeded" | "within limits"
+```
+
+### Implicit fallback for RamPN and RamNP choices
+
+In expression position, an inexhaustive choice expression whose non-jump branches all produce
+the same ramification shape automatically synthesizes an implicit fallback branch:
+
+- **`RamPN` (`< T | >`)**: synthesizes an implicit trailing `| <-->` fallback (absence unit).
+- **`RamNP` (`< | E >`)**: synthesizes an implicit trailing `| <++>` fallback (success unit).
+
+This eliminates repetitive boilerplate in guarded lookup tables and conditional constructors:
+
+```dva
+// 1. Guarded lookup table — implicitly falls back to | <-->
+lookup: Int => < String | >
+lookup = code =>
+   code
+      [200] <+ "OK" +>
+      [404] <+ "Not Found" +>
+      [500] <+ "Internal Error" +>
+
+// 2. Single-branch conditional constructor — implicitly falls back to | <-->
+find_user: Int => < String | >
+find_user = id =>
+   id > 0 | <+ "Alice" +>
+
+// 3. Error guard — implicitly falls back to | <++> (success)
+guard_positive: Int => < | String >
+guard_positive = n =>
+   n < 0 | <- "negative value" ->
 ```
 
 ## Ramification matching

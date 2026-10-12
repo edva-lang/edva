@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §2.12, §3.1"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `tests/pass/345_implicit_ram_fallback.dva`, `GRAMMAR.md` §2.12, §3.1"
 ---
 
 # `Flag` and ramifications
@@ -167,6 +167,26 @@ check_limit: Int => <>
 check_limit = n =>
    n < 0 |->
    <+>
+```
+
+### Implicit fallback in choice expressions
+
+In expression position, an inexhaustive choice expression whose non-jump branches all produce
+`RamPN` (`< T | >`) or `RamNP` (`< | E >`) automatically synthesizes an implicit fallback branch:
+
+- **`RamPN` (`< T | >`)**: synthesizes an implicit trailing `| <-->` (absence unit).
+- **`RamNP` (`< | E >`)**: synthesizes an implicit trailing `| <++>` (success unit).
+
+```dva
+// Returns < String | > with implicit | <--> fallback
+find_name: Int => < String | >
+find_name = id =>
+   id == 1 | <+ "Alice" +>
+
+// Returns < | String > with implicit | <++> fallback
+validate: Int => < | String >
+validate = x =>
+   x < 0 | <- "must be non-negative" ->
 ```
 
 ## Memory layout and ABI

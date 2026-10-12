@@ -24,7 +24,8 @@
 - **Binding Mutability**: `=` binds immutably by default. Rebindable local variables use
   trailing prime (`'`) identifiers (`x' = 1; x' = x' + 1`).
 - **Clean Choices**: Single-branch choices `cond | action` evaluate as statements. Never supply
-  dummy `| 0` fallbacks.
+  dummy `| 0` fallbacks. In expression position, choices whose branches all return `RamPN`
+  (`< T | >`) or `RamNP` (`< | E >`) synthesize an implicit `| <-->` or `| <++>` fallback.
 - **Unquoted Imports**: `#use net`, `#use io`, `#use libc`.
 - **Line Length**: Lines must not exceed 100 characters.
 

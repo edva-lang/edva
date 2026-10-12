@@ -46,6 +46,9 @@ guarded alternative and any trailing fallback—**must evaluate to the exact sam
 If branches yield differing types, the compiler rejects the expression with a type
 mismatch error (`E3003`). The choice must be exhaustive across all execution paths;
 never add a dummy `| 0` fallback (which corrupts the unified type to `Int`).
+When an inexhaustive choice in expression position has branches that all return `RamPN`
+(`< T | >`) or `RamNP` (`< | E >`), the compiler automatically synthesizes an implicit fallback
+branch (`| <-->` for `RamPN` absence, or `| <++>` for `RamNP` success).
 
 `@` iterates an iterable or range. `-->` breaks and `--^` continues the
 current cycle; `>--` supplies an escape-expression branch. See the

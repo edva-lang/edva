@@ -1,0 +1,67 @@
+// tests/pass/345_implicit_ram_fallback.dva — issue #93: implicit fallback for RamPN and RamNP
+#use io
+
+lookup_pn: Int => < String | >
+lookup_pn = code =>
+   code
+      [200] <+ "OK" +>
+      [404] <+ "Not Found" +>
+      [500] <+ "Internal Error" +>
+
+find_user: Int => < String | >
+find_user = id =>
+   id > 0 | <+ "Alice" +>
+
+check_status_np: Int => < | String >
+check_status_np = code =>
+   code
+      [404] <- "not found" ->
+      [500] <- "server error" ->
+
+guard_np: Int => < | String >
+guard_np = n =>
+   n < 0 | <- "negative" ->
+
+main: () => ()
+main = !=>
+   // 1. Multi-branch RamPN
+   s1 = lookup_pn(200)
+   s1
+      | msg => io::out("pn 200: " + msg)
+      | io::out("pn 200: none")
+   s2 = lookup_pn(999)
+   s2
+      | msg => io::out("pn 999: " + msg)
+      | io::out("pn 999: none")
+
+   // 2. Single-branch RamPN
+   u1 = find_user(42)
+   u1
+      | name => io::out("user 42: " + name)
+      | io::out("user 42: none")
+   u2 = find_user(0)
+   u2
+      | name => io::out("user 0: " + name)
+      | io::out("user 0: none")
+
+   // 3. Multi-branch RamNP
+   r1 = check_status_np(404)
+   r1
+      | io::out("np 404: success")
+      | err => io::out("np 404: " + err)
+   r2 = check_status_np(200)
+   r2
+      | io::out("np 200: success")
+      | err => io::out("np 200: " + err)
+
+   // 4. Single-branch RamNP
+   g1 = guard_np(-5)
+   g1
+      | io::out("guard -5: success")
+      | err => io::out("guard -5: " + err)
+   g2 = guard_np(10)
+   g2
+      | io::out("guard 10: success")
+      | err => io::out("guard 10: " + err)
+
+main!

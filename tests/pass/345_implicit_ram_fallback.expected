@@ -1,0 +1,8 @@
+pn 200: OK
+pn 999: none
+user 42: Alice
+user 0: none
+np 404: not found
+np 200: success
+guard -5: negative
+guard 10: success

@@ -216,6 +216,10 @@ is absence/unit, 0 extra tag bits). In `RamPP`, the `i1 tag` is a runtime polari
 (not RTTI; types are fully erased). The four shapes are distinct static types with incompatible
 representations; there is no implicit coercion between them.
 
+In expression position, an inexhaustive choice whose non-jump branches all produce `RamPN`
+(`< T | >`) or `RamNP` (`< | E >`) automatically synthesizes an implicit fallback branch:
+`| <-->` for `RamPN` (absence) or `| <++>` for `RamNP` (success).
+
 ## 5.3 Monadic Bind (`$>>`) & Error Bubbling (`--!`)
 - Monadic Bind (`$>>`): Left-associative bind over ramifications with a positive payload
   (`RamPP` or `RamPN`). Named functions receive the positive payload directly.
