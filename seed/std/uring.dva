@@ -235,23 +235,14 @@
       target_addr = op == OP_ASYNC_CANCEL
          | addr
          | %ptrmask(addr, 0m48)
-      item = SQE((
-         opcode = u8(op),
-         flags = 0u8,
-         ioprio = 0u16,
-         fd = i32(fd),
-         off = off,
-         addr = target_addr,
-         len = u32(len),
-         op_flags = u32(op_flags),
-         user_data = user_data,
-         buf_index = 0u16,
-         personality = 0u16,
-         splice_fd_in = 0i32,
-         addr3 = 0,
-         pad = 0
-      ))
-      libc::memcpy(sqe_dest, &item, #size(SQE))
+      %memset(sqe_dest, 0, 64)
+      @[sqe_dest + 0] = u8(op)
+      @[sqe_dest + 4] = i32(fd)
+      @[sqe_dest + 8] = off
+      @[sqe_dest + 16] = target_addr
+      @[sqe_dest + 24] = u32(len)
+      @[sqe_dest + 28] = u32(op_flags)
+      @[sqe_dest + 32] = user_data
       @[ring.sq_ptr + ring.sq_arr_off + idx * 4] = u32(idx)
       @[ring.sq_ptr + ring.sq_tail_off] = tail + 1u32
       <+>
