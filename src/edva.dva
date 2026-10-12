@@ -2653,10 +2653,7 @@ repl_run = opts =>
          repl_cleanup(sess)
 
 format_version: () => String
-format_version = !=>
-   version::COMMIT_HASH == "" || version::COMMIT_HASH == "unknown"
-      | "edva " + version::VERSION
-      | "edva " + version::VERSION + " (commit " + version::COMMIT_HASH + ")"
+format_version = !=> "edva " + version::VERSION
 
 parse_args_step: Int, CliOpts => CliOpts
 parse_args_step = i, opts =>

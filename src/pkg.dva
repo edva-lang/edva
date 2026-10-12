@@ -339,8 +339,12 @@
    // Dotted-integer version comparison: a < b.
    version_lt: String, String => <>
    version_lt = a, b =>
-      pa = split_char(a, '.')
-      pb = split_char(b, '.')
+      a_parts = split_char(a, '+')
+      b_parts = split_char(b, '+')
+      a_base = a_parts(0) | _ | a
+      b_base = b_parts(0) | _ | b
+      pa = split_char(a_base, '.')
+      pb = split_char(b_base, '.')
       n = ?pa > ?pb | ?pa | ?pb
       res' = <->
       n @ i =>
@@ -2146,10 +2150,7 @@
                   usage!
                   0
                ["version", "-v", "--version"]
-                  ver_str = version::COMMIT_HASH == "" || version::COMMIT_HASH == "unknown"
-                     | "edva " + version::VERSION
-                     | "edva " + version::VERSION + " (commit " + version::COMMIT_HASH + ")"
-                  out(ver_str)
+                  out("edva " + version::VERSION)
                   0
                |
                   fail(7015, "unknown pkg command '" + cmd + "'")

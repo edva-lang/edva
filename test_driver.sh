@@ -1543,11 +1543,12 @@ if [ $rc -eq 0 ] || ! grep -q "E7002: missing target directory for 'init'" \
     exit 1
 fi
 
-# Verify edva --version and -v
+# Verify edva --version, -v, and version subcommand
 VER_OUT="$(./edva --version)"
 V_OUT="$(./edva -v)"
-if ! echo "$VER_OUT" | grep -q "^edva 1.1.0" || [ "$VER_OUT" != "$V_OUT" ]; then
-    echo "FAILED: edva --version output invalid: '$VER_OUT' vs '$V_OUT'"
+CMD_VER_OUT="$(./edva version)"
+if ! echo "$VER_OUT" | grep -qE "^edva 1\.1\.0(\+[0-9a-fA-F]+)?$" || [ "$VER_OUT" != "$V_OUT" ] || [ "$VER_OUT" != "$CMD_VER_OUT" ]; then
+    echo "FAILED: edva --version output invalid: '$VER_OUT' vs '$V_OUT' vs '$CMD_VER_OUT'"
     exit 1
 fi
 

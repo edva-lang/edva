@@ -8,7 +8,7 @@ def root [] {
 def main [] {
     let repo_root = (root)
     let version_file = ($repo_root | path join "VERSION")
-    let version = if ($version_file | path exists) {
+    let base_version = if ($version_file | path exists) {
         open --raw $version_file | str trim
     } else {
         "1.0.0"
@@ -19,6 +19,12 @@ def main [] {
         git rev-parse --short HEAD | str trim
     } catch {
         "unknown"
+    }
+
+    let version = if $commit != "" and $commit != "unknown" {
+        $"($base_version)+($commit)"
+    } else {
+        $base_version
     }
 
     let target = ($repo_root | path join "src/version.dva")
