@@ -8,7 +8,12 @@
 #   5. Helix synchronization & grammar compilation
 
 def root [] {
-  $env.FILE_PWD? | default $env.PWD | path expand
+  let base = ($env.FILE_PWD? | default $env.PWD | path expand)
+  if ($base | str ends-with "tools/syntax") {
+    $base | path join ".." | path join ".." | path expand
+  } else {
+    $base
+  }
 }
 
 # -----------------------------------------------------------------------------
@@ -73,11 +78,6 @@ export def gen-vscode [] {
       },
       "strings": {
         "patterns": [
-          {
-            "name": "string.quoted.raw.dva",
-            "begin": "\\(=",
-            "end": "=\\)"
-          },
           {
             "name": "string.quoted.double.dva",
             "begin": "\"",
@@ -282,8 +282,7 @@ export def gen-vscode [] {
       { "open": "[", "close": "]" },
       { "open": "(", "close": ")" },
       { "open": "\"", "close": "\"" },
-      { "open": "'", "close": "'" },
-      { "open": "(=", "close": "=)" }
+      { "open": "'", "close": "'" }
     ],
     "surroundingPairs": [
       ["{", "}"],

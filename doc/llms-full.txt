@@ -56,7 +56,6 @@ Identifiers conform to UAX31. Edva has zero bare keywords. Directives start with
 - **Runes**: Single Unicode codepoints: `'a'`, `'🔥'`, `'\n'`.
 - **Strings**:
   - Escaped: `"hello\nworld"`
-  - Raw / Multiline: `(={"status": "ok", "count": 1}=)` (enclosed in `(= ... =)`).
   - Here-Doc: `"""..."""` multiline blocks with margin stripping, line continuation `\`,
     and `${expr}` dynamic interpolation.
 - **Repetition**: `expr {N}` generates a record containing `N` flat copies of `expr`

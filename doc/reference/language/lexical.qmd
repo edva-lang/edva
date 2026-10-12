@@ -38,7 +38,6 @@ Line comments begin with `//`; block comments use `/*` and `*/`.
 | float | `0.5`, `1.0`, `3.0e4` | digits are required on both sides of `.` |
 | rune | `'a'`, `'λ'`, `'\n'` | one Unicode scalar value |
 | string | `"text\n"` | escaped UTF-8 string |
-| raw string | `(= text =)` | literal bytes, with one raw-string escape |
 | here-doc | `"""text"""` | multiline block with margin stripping & interpolation |
 
 `.5`, `1.`, and `3.e4` are not float literals. Integer literals require a

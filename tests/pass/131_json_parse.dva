@@ -5,37 +5,33 @@
 // Value enum (String/Number/Float/Boolean/Null/Array/Object), and surface
 // malformed input as the Error branch of the returned <Value | Error> ram.
 // Ram slots are positional — matched with bare '|' branches, never by name.
-//
-// JSON text is written as raw string literals "(= ... =)": quotes and braces
-// are literal bytes, so no escaping is needed (vs the quoted form, which
-// would backslash-escape every '"'). A raw string is applied with '$'
-// ("parse $ (=...=)"), since a raw string immediately after a call's '('
-// would make "(=" the raw-string opener instead of the call paren.
+// JSON text is written as string literals.
+// Ram slots are positional — matched with bare '|' branches, never by name.
 
-n = json::parse $ (=42=)
+n = json::parse $ "42"
 n | v => io::out $ "number"
   | e => io::out $ "error"
 
-s = json::parse $ (="hi"=)
+s = json::parse $ "\"hi\""
 s | v => io::out $ "string"
   | e => io::out $ "error"
 
-t = json::parse $ (=true=)
+t = json::parse $ "true"
 t | v => io::out $ "bool"
   | e => io::out $ "error"
 
-u = json::parse $ (=null=)
+u = json::parse $ "null"
 u | v => io::out $ "null"
   | e => io::out $ "error"
 
-a = json::parse $ (=[1, 2.5, -3]=)
+a = json::parse $ "[1, 2.5, -3]"
 a | v => io::out $ "array"
   | e => io::out $ "error"
 
-o = json::parse $ (={"name": "dva", "n": 1}=)
+o = json::parse $ "{\"name\": \"dva\", \"n\": 1}"
 o | v => io::out $ "object"
   | e => io::out $ "error"
 
-bad = json::parse $ (={oops=)
+bad = json::parse $ "{oops"
 bad | v => io::out $ "no error"
     | e => io::out $ "caught"

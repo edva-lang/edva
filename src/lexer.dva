@@ -21,11 +21,11 @@
 //
 // Layout engine (INDENT/DEDENT, style locking, dedent bursts via a queue),
 // (INDENT/DEDENT, style locking, dedent bursts via a queue), line/col
-// tracking, // and /* */ comments, strings with the full escape set, raw
-// strings "(= ... =)", runes (emitted as decimal text), radix integers with
+// tracking, // and /* */ comments, strings with the full escape set,
+// runes (emitted as decimal text), radix integers with
 // type suffixes and the "#pragma number" default, floats with the
 // padding-zero rule and scientific notation, the "#" directive family, and
-// fatal diagnostics E1001–E1015 (E1006/E1016 retired).
+// fatal diagnostics E1001–E1015 (E1006/E1014/E1016 retired).
 //
 // Build & run:
 //   ./edva selfhost/lexer.dva
@@ -49,7 +49,6 @@
    Int
    Float
    Str
-   RawStr
    Rune
    LBracket
    RBracket
@@ -270,25 +269,6 @@ decode_escapes = raw =>
                | in_esc' = <+>
                | buf += r
    in_esc' | buf += '\\'
-   +buf
-
-// Decode the single escape of a raw string body: "=\)" -> "=)".
-decode_raw_esc: String => String
-decode_raw_esc = raw =>
-   total = ?raw
-   buf = { total }
-   i' = 0
-   0.. @
-      i' !< total | -->
-      take3 = raw(i') == '=' && i' + 2 < total &&
-         raw(i' + 1) == '\\' && raw(i' + 2) == ')'
-      take3
-         |
-            buf += "=)"
-            i' = i' + 3
-         |
-            buf += raw(i')
-            i' = i' + 1
    +buf
 
 // --- character classes ----------------------------------------------------
@@ -605,32 +585,6 @@ scan_string_body = lx, line, col =>
          | adv(lx, c)
    closed'
 
-// Raw string "(= ... =)"; content until "=)", "=\)" decodes to "=)".
-// Raw-string body walker: iterative (see scan_string_body).
-scan_raw_body: Lx, Int, Int => Int
-scan_raw_body = lx, line, col =>
-   closed' = 0
-   0.. @
-      lx.pos !< ?lx.src | -->
-      c = pk(lx, 0)
-      is_close = c == '=' && pk_off(lx, 1) == ')'
-      is_esc = c == '=' && pk_off(lx, 1) == '\\' && pk_off(lx, 2) == ')'
-      is_close
-         |
-            adv(lx, pk(lx, 0))
-            adv(lx, pk(lx, 0))
-            closed' = 1
-            -->
-         |
-            is_esc
-               |
-                  adv(lx, pk(lx, 0))
-                  adv(lx, pk(lx, 0))
-                  adv(lx, pk(lx, 0))
-                  lx.has_esc = 1
-               | adv(lx, c)
-   closed'
-
 skip_multiline_ws: String, Int, Int => Int
 skip_multiline_ws = src, i, n =>
    pos' = i
@@ -685,9 +639,7 @@ check_multiline_str = lx =>
                                  is_heredoc = c3 == '"' && p4 + 2 < n &&
                                     lx.src(p4 + 1) == '"' && lx.src(p4 + 2) == '"'
                                  is_quote = c3 == '"' && !is_heredoc
-                                 is_raw = c3 == '(' && p4 + 1 < n &&
-                                    lx.src(p4 + 1) == '='
-                                 is_quote || is_raw | p4 | 0
+                                 is_quote | p4 | 0
 
 adv_to: Lx, Int => ()
 adv_to = lx, target =>
@@ -696,31 +648,16 @@ adv_to = lx, target =>
 
 scan_next_str_part: Lx => String
 scan_next_str_part = lx =>
-   is_raw = pk(lx, 0) == '(' && pk_off(lx, 1) == '='
-   is_raw
-      |
-         adv(lx, pk(lx, 0))
-         adv(lx, pk(lx, 0))
-         body_raw = lx.pos
-         closed_raw = scan_raw_body(lx, lx.line, lx.col)
-         closed_raw [0] fail(1014, lx.line, lx.col,
-            "Unterminated raw string literal -- missing closing '=)'")
-         endmark = lx.pos - 2
-         raw_s = lx.src(body_raw..endmark)
-         part_raw = lx.has_esc [1] decode_raw_esc(raw_s) | raw_s
-         lx.has_esc = 0
-         part_raw
-      |
-         adv(lx, pk(lx, 0))
-         body_str = lx.pos
-         closed_str = scan_string_body(lx, lx.line, lx.col)
-         closed_str [0] fail(1008, lx.line, lx.col,
-            "Unterminated string literal -- missing closing '\"'")
-         endq = lx.pos - 1
-         str_s = lx.src(body_str..endq)
-         part_str = lx.has_esc [1] decode_escapes(str_s) | str_s
-         lx.has_esc = 0
-         part_str
+   adv(lx, pk(lx, 0))
+   body_str = lx.pos
+   closed_str = scan_string_body(lx, lx.line, lx.col)
+   closed_str [0] fail(1008, lx.line, lx.col,
+      "Unterminated string literal -- missing closing '\"'")
+   endq = lx.pos - 1
+   str_s = lx.src(body_str..endq)
+   part_str = lx.has_esc [1] decode_escapes(str_s) | str_s
+   lx.has_esc = 0
+   part_str
 
 concat_multiline_str: Lx, String => String
 concat_multiline_str = lx, text =>
@@ -764,21 +701,6 @@ scan_rune = lx, start, line, col =>
          "Unterminated character literal -- missing closing '''")
    mktok(lx, TokKind(Rune), start, lx.pos - start,
       line, col, str::from_int(val))
-
-scan_raw_string: Lx, Int, Int, Int => Tok
-scan_raw_string = lx, start, line, col => 
-   adv(lx, pk(lx, 0))
-   adv(lx, pk(lx, 0))
-   body = lx.pos
-   closed = scan_raw_body(lx, line, col)
-   closed [0] fail(1014, line, col,
-      "Unterminated raw string literal -- missing closing '=)'")
-   endmark = lx.pos - 2
-   raw = lx.src(body..endmark)
-   text' = lx.has_esc [1] decode_raw_esc(raw) | raw
-   lx.has_esc = 0
-   text' = concat_multiline_str(lx, text')
-   mktok(lx, TokKind(RawStr), start, lx.pos - start, line, col, text')
 
 // --- comments -------------------------------------------------------------
 
@@ -1563,7 +1485,7 @@ dispatch_bol = lx, q =>
    lx.bol [1] layout(lx, q) | dispatch_scan(lx)
 
 // The scanner dispatch: one choice over the current rune (after skip_hws).
-// Order matters — the two-char lookaheads (/*, //, (=) precede the generic
+// Order matters — the two-char lookaheads (/*, //) precede the generic
 // classes (delim, special). Every non-NUL rune is covered, so the eof_tok
 // fallback is unreachable for real input (the native lexer's safety net).
 dispatch_scan: Lx => Tok
@@ -1575,8 +1497,6 @@ dispatch_scan = lx =>
       [(_ == '/' && pk_off(lx, 1) == '*')] comment_block(lx, lx.line, lx.col)
       [(_ == '/' && pk_off(lx, 1) == '/')] comment_line(lx, lx.line)
       ['\n'] nl_tok(lx, lx.line, lx.col)
-      [(_ == '(' && pk_off(lx, 1) == '=')]
-         scan_raw_string(lx, lx.pos, lx.line, lx.col)
       [(_ == '%' && is_id_start(pk_off(lx, 1)))]
          scan_intrinsic(lx, lx.pos, lx.line, lx.col)
       [is_delim] scan_delim(lx, c, lx.line, lx.col)
@@ -1607,7 +1527,6 @@ kind_name = k =>
       [Int] "int"
       [Float] "float"
       [Str] "str"
-      [RawStr] "rawstr"
       [Rune] "rune"
       [Op] "op"
       [LParen] "("

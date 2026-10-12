@@ -1,2 +1,0 @@
-// A raw string opened with "(=" must be closed with "=)".
-x = (=never closed

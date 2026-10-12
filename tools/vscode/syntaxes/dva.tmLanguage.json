@@ -54,11 +54,6 @@
     "strings": {
       "patterns": [
         {
-          "name": "string.quoted.raw.dva",
-          "begin": "\\(=",
-          "end": "=\\)"
-        },
-        {
           "name": "string.quoted.double.dva",
           "begin": "\"",
           "end": "\"",

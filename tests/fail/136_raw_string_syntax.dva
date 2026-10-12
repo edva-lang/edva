@@ -1,0 +1,2 @@
+// Raw string syntax (= =) is removed; (= is not a valid literal opener.
+x = (=never closed=)

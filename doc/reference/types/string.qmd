@@ -32,19 +32,6 @@ message = "First line\nSecond line\t(tabbed)\nPath: \"/usr/bin\""
 
 Supported escapes include `\n`, `\t`, `\r`, `\0`, `\a`, `\b`, `\f`, `\v`, `\"`, `\'`, and `\\`.
 
-### Raw strings
-Enclosed in `(=` and `=)`. Raw strings contain literal bytes without escape processing (ideal for regex, embedded scripts, SQL queries, or Markdown):
-
-```dva
-raw_sql = (=
-SELECT id, username, email
-FROM users
-WHERE status = 'active'
-=)
-```
-
-The only escape sequence recognized in raw strings is `=\)`, which emits a literal `=)`.
-
 ### Here-Docs (`"""..."""`)
 Enclosed in triple double quotes `"""..."""`. Here-docs provide multiline formatted text blocks with baseline margin stripping and dynamic expression interpolation:
 

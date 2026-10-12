@@ -7,11 +7,11 @@
 check: String => String
 check = s => json::parse(s) | v => "ok" | e => "error"
 
-io::out $ check $ (=1.5=)
-io::out $ check $ (=-3=)
-io::out $ check $ (=2.5e-2=)
-io::out $ check $ (=-=)
-io::out $ check $ (=1.=)
-io::out $ check $ (=1e=)
-io::out $ check $ (=1e+=)
-io::out $ check $ (=.5=)
+io::out $ check $ "1.5"
+io::out $ check $ "-3"
+io::out $ check $ "2.5e-2"
+io::out $ check $ "-"
+io::out $ check $ "1."
+io::out $ check $ "1e"
+io::out $ check $ "1e+"
+io::out $ check $ ".5"

@@ -1,0 +1,19 @@
+// String literals with escape sequences. A string is a normal String value.
+
+#use io
+
+io::out $ "hello"
+io::out $ "hello world"
+io::out $ "\"quoted\""
+io::out $ "{ \"a\": 1, \"b\": [2, 3] }"
+io::out $ "a==b"
+io::out $ "C:\\path\\to\\file"
+io::out $ "multi\nline"
+io::out $ "a=)b"
+io::out $ "x=)"
+
+// A string flows into a call and through the '$' apply operator.
+f: String => String
+f = s => s
+io::out $ f("via call")
+io::out $ f $ "via dollar"

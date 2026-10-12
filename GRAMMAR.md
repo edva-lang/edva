@@ -33,7 +33,6 @@ inline statements. A `;` at the end of a line is an error.
 | Float | `3.14`, `1.5e-3`, `3.14f32` | padding zeros mandatory (see §1.4) |
 | Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
 | String | `"..."` | C-style escapes `\n \t \r \0 \a \b \f \v \" \' \\` |
-| String | `(= ... =)` | raw/long string: literal bytes, no C-style escaping; one escape `=\)` → a literal `=)` (see below) |
 | Here-Doc | `"""..."""` | multiline with baseline margin stripping, `${expr}` interpolation, and line continuation `\` |
 
 **Here-Doc (`"""..."""`)** — Multiline formatted text blocks with baseline margin stripping and expression interpolation:
@@ -45,9 +44,9 @@ inline statements. A `;` at the end of a line is an error.
 - **Lowering**: Standalone here-docs evaluate to `String`. In a compound append to a Builder (`b += """..."""`), segments and interpolated expressions are appended directly in place without intermediate string allocations.
 
 **Multiline string concatenation** — If a line ends with a string literal
-(regular `"..."` or raw `(= ... =)`), and the next line begins with another
-string literal indented deeper than the current block, they concatenate into a
-single string literal at compile time across lines.
+`"..."`, and the next line begins with another string literal indented deeper
+than the current block, they concatenate into a single string literal at compile
+time across lines.
 
 **Integer type suffixes** — an integer literal may carry an explicit type
 suffix, materializing the value at that width: `5i16`, `0xFFu8`, `0b101u16`,
@@ -704,8 +703,7 @@ Block      ::= Indent { Statement } Dedent
   non-reserved operator symbol (a maximal `.Op` run that is not a built-in
   operator or special token) is an ordinary function name. It can be defined
   (`+++ = a, b => ...`), annotated (`+++ : Int, Int => Int`), called prefix
-  (`+++(3, 4)`), or taken as a value (`(+++)`; note `=`-initial symbols are
-  shadowed by the raw-string `(= ... =)` lexer form inside parentheses). A
+  (`+++(3, 4)`), or taken as a value (`(+++)`). A
   fixity clause in the forward annotation gives it both binding powers,
   always written explicitly: `+++ : #infix <lbp> <rbp>, Int, Int => Int` —
   the weights are the Pratt `lhs_bp` / `rhs_bp`, and associativity falls out
@@ -1189,14 +1187,8 @@ the only String origins. Strings are *bytes*, not runes — `len` is a byte
 count and every index reads one byte. UTF-8 validity is not tracked.
 
 **Literal forms.** The quoted form `"..."` processes C-style escapes
-(`\n \t \r \0 \a \b \f \v \" \' \\`). The raw form `(= ... =)` is literal:
-quotes, braces, backslashes, and newlines are all content, with **one** escape —
-the sequence `=\)` produces a literal `=)`. So `(="hi"=)` is the three bytes
-`"hi"` (quotes included), `(=a==b=)` is `a==b` (no operator conflation), and a
-literal `=)` in the content is written `=\)`. `(=` and `=)` are single lexemes;
-because `(` immediately followed by `=` always opens a raw string, passing one
-to a call needs an extra level — `f((=x=))`, `f $ (=x=)`, or bind it first
-(`x = (=x=)`).
+(`\n \t \r \0 \a \b \f \v \" \' \\`). Here-docs `"""..."""` provide multiline
+text blocks with baseline margin stripping and `${expr}` dynamic interpolation.
 
 #### 3.6.1 The `{ len, data }` ABI
 

@@ -888,7 +888,6 @@ parse_atom = p =>
       [Int] atom_to_ram(atom_integer(p, k.text))
       [Float] atom_to_ram(atom_float(p, k.text))
       [Str] atom_to_ram(atom_str(p, k.text))
-      [RawStr] atom_to_ram(atom_str(p, k.text))
       [Rune] atom_to_ram(atom_rune(p, k.text))
       [Id]
          is_fn_start(p)
