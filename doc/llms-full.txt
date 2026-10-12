@@ -186,12 +186,12 @@ find_positive = n =>
 # 5. Type System & Algebraic Ramifications
 
 ## 5.1 Primitive Types
-- `Int`: 64-bit signed integer (`i64`).
+- `Int`: Fixed 64-bit signed integer (`i64`) on all architectures (no `isize`/`usize`).
 - `Float`: 64-bit IEEE 754 floating point (`double`).
 - `String`: Immutable UTF-8 fat pointer `{ i64 len, i8* data }`.
 - `Builder`: Mutable byte buffer `{ i64 len, i8* data, i64 cap }*`.
 - `Rune`: 32-bit Unicode scalar value (`i32`).
-- `Addr`: Raw memory address for FFI pointers.
+- `Addr`: Raw memory address (architecture-dependent: 4 bytes on 32-bit, 8 bytes on 64-bit).
 - `Flag`: Bare boolean (`i1`), constructed with `<+>` (true) or `<->` (false).
 - `Error`: Standard error record `(code: Int, msg: String, file: String, line: Int, col: Int)`.
 

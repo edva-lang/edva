@@ -12,7 +12,9 @@
 - **Zero Bare Keywords**: Control flow words (`if`, `else`, `for`, `while`, `fn`, `return`,
   `break`) are normal identifiers. All control flow is unified into symbolic expressions.
 - **No RTTI, Ever**: Types are erased at runtime; function values are `{ fn_ptr, env_ptr }`.
-- **Integer Literals & No Defaulting to Int**:
+- **Integer Literals & Types**:
+  - `Int` is fixed 64-bit (`i64`) on all CPU architectures (no target-dependent `isize`/`usize`).
+    Machine pointer width is represented by `Addr`.
   - Unsuffixed integer literals default to `Int` (or the type set by `#pragma number <type>`).
   - The type system never silently coerces ambiguous expressions or unresolved type variables
     to `Int`. Unresolved types emit `E3103`.

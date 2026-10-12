@@ -3,12 +3,21 @@ meta:
   audience: "Edva developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md`"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `src/layout.dva`, `GRAMMAR.md`"
 ---
 
 # `Int` and integer scalars
 
-The `Int` type represents a signed 64-bit two's complement integer. In addition to the default `Int`, Edva provides fixed-width signed (`i8`, `i16`, `i32`, `i64`) and unsigned (`u8`, `u16`, `u32`, `u64`) scalar types for systems programming, hardware interfacing, and compact serialization.
+The `Int` type represents a signed 64-bit two's complement integer. In addition to
+the default `Int`, Edva provides fixed-width signed (`i8`, `i16`, `i32`, `i64`) and
+unsigned (`u8`, `u16`, `u32`, `u64`) scalar types for systems programming, hardware
+interfacing, and compact serialization.
+
+> [!NOTE]
+> Unlike C's `long` or Rust's `isize`/`usize`, Edva's `Int` is **strictly fixed at 64-bit (`i64`)
+> on all target architectures**, including 32-bit targets like `wasm32` or `armv7`. It does
+> not scale with CPU pointer width. The only architecture-dependent pointer-width type in
+> Edva is `Addr` (4 bytes on 32-bit platforms, 8 bytes on 64-bit platforms).
 
 ## Declaration and annotations
 

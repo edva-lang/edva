@@ -3,12 +3,14 @@ meta:
   audience: "Edva systems developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §3.1"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `src/layout.dva`, `GRAMMAR.md` §3.1"
 ---
 
 # `Addr` and raw pointers
 
-The `Addr` type (also recognized as `ptr`) represents an untyped, raw memory address. In 64-bit systems, `Addr` is an 8-byte value that maps directly to LLVM's unified `ptr` type.
+The `Addr` type (also recognized as `ptr`) represents an untyped, raw memory address.
+`Addr` is architecture-dependent: it is an 8-byte value on 64-bit systems and a 4-byte value on
+32-bit targets (such as `wasm32`), mapping directly to LLVM's unified `ptr` type.
 
 ## Declaration and bindings
 
