@@ -2444,9 +2444,18 @@ codegen_eval_unary = cg, t =>
          ptr_opt = ev.1
             [Builder] <+ main::builder_data(cg, ev.0, "b.ptr") +>
             [Str] <+ codegen_string_data(cg, ev.0, "s.ptr") +>
-            | <-->
+            [Record, Array, Slice, Fn] <+ ev.0 +>
+            |
+               t.1
+                  [Var vn] types::var_slot(cg, vn)
+                  | <-->
          ptr_opt
-            | p => (tag_addr_with_arena_gen(cg, p), ast::ValueType(RawPtr))
+            | p =>
+               i8p = LLVMPointerType(LLVMInt8Type!, 0)
+               raw_p = LLVMGetTypeKind(LLVMTypeOf(p)) == 12
+                  | p
+                  | LLVMBuildIntToPtr(cg.builder, p, i8p, "slot.ptr")
+               (tag_addr_with_arena_gen(cg, raw_p), ast::ValueType(RawPtr))
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       [Unwrap] codegen_eval_unary_unwrap(cg, ev.0, ev.1, t.1)
       [Propagate] codegen_eval_unary_propagate(cg, ev.0, ev.1, t.1)
@@ -5049,10 +5058,19 @@ codegen_typed_eval_unary = cg, op, operand, ut, ti =>
                ptr_opt = ev.1
                   [Builder] <+ main::builder_data(cg, ev.0, "b.ptr") +>
                   [Str] <+ codegen_string_data(cg, ev.0, "s.ptr") +>
-                  | <-->
+                  [Record, Array, Slice, Fn] <+ ev.0 +>
+                  |
+                     operand.kind
+                        [Var vinfo] types::var_slot(cg, vinfo.0)
+                        | <-->
                ptr_opt
-                  | p => (tag_addr_with_arena_gen(cg, p),
-                     ast::ValueType(RawPtr))
+                  | p =>
+                     i8p = LLVMPointerType(LLVMInt8Type!, 0)
+                     raw_p = LLVMGetTypeKind(LLVMTypeOf(p)) == 12
+                        | p
+                        | LLVMBuildIntToPtr(cg.builder, p, i8p, "slot.ptr")
+                     (tag_addr_with_arena_gen(cg, raw_p),
+                        ast::ValueType(RawPtr))
                   | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             [Unwrap]
                ret_vt' = types::vt_from_ti_cg(cg, ti)
@@ -6754,6 +6772,26 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
          sz_val = intrin_size_val(cg, ev2)
          LLVMBuildMemSet(cg.builder, dst_ptr, v8, sz_val, 1)
          (dst_ptr, ast::ValueType(RawPtr))
+      ["%ptrmask"]
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         is_32 = types::is_32bit_target(cg)
+         intptr_t = is_32 | LLVMInt32Type! | LLVMInt64Type!
+         iname = is_32 | "llvm.ptrmask.p0.i32" | "llvm.ptrmask.p0.i64"
+         raw_p = types::llvm_val_opt(ev0.0)
+            | v =>
+               vty = LLVMTypeOf(v)
+               is_p = LLVMGetTypeKind(vty) == 12
+               is_p
+                  | v
+                  | LLVMBuildIntToPtr(cg.builder, v, i8p, "raw.ptr")
+            | LLVMConstNull(i8p)
+         mask_val = types::llvm_val_opt(ev1.0)
+            | v => stmt::coerce_int(cg, v, intptr_t)
+            | LLVMConstInt(intptr_t, 0, 0)
+         fty = intrin_fn_type2(i8p, i8p, intptr_t)
+         fn = get_or_add_intrinsic(cg, iname, fty)
+         res = call_fn2(cg, fty, fn, raw_p, mask_val, "ptrmask")
+         (res, ev0.1)
       |
          codegen_eval_math_intrinsic(cg, fname, args, ti, ev0, ev1, ev2)
 
@@ -6785,6 +6823,26 @@ codegen_eval_legacy_intrinsic = cg, t =>
          sz_val = intrin_size_val(cg, ev2)
          LLVMBuildMemSet(cg.builder, dst_ptr, v8, sz_val, 1)
          (dst_ptr, ast::ValueType(RawPtr))
+      ["%ptrmask"]
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         is_32 = types::is_32bit_target(cg)
+         intptr_t = is_32 | LLVMInt32Type! | LLVMInt64Type!
+         iname = is_32 | "llvm.ptrmask.p0.i32" | "llvm.ptrmask.p0.i64"
+         raw_p = types::llvm_val_opt(ev0.0)
+            | v =>
+               vty = LLVMTypeOf(v)
+               is_p = LLVMGetTypeKind(vty) == 12
+               is_p
+                  | v
+                  | LLVMBuildIntToPtr(cg.builder, v, i8p, "raw.ptr")
+            | LLVMConstNull(i8p)
+         mask_val = types::llvm_val_opt(ev1.0)
+            | v => stmt::coerce_int(cg, v, intptr_t)
+            | LLVMConstInt(intptr_t, 0, 0)
+         fty = intrin_fn_type2(i8p, i8p, intptr_t)
+         fn = get_or_add_intrinsic(cg, iname, fty)
+         res = call_fn2(cg, fty, fn, raw_p, mask_val, "ptrmask")
+         (res, ev0.1)
       | codegen_eval_scalar_math(cg, t.fn_name, ev0, ev1, ev2)
 
 rec_elem_fnames: types::Cg, Addr => ast::Names

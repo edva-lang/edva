@@ -116,8 +116,12 @@ Memory intrinsics operate on raw `Addr` pointers and byte counts:
 | `%memcpy(dst, src, n)` | `dst: Addr`, `src: Addr`, `n: Int` | `Addr` (`dst`) | `@llvm.memcpy` |
 | `%memmove(dst, src, n)` | `dst: Addr`, `src: Addr`, `n: Int` | `Addr` (`dst`) | `@llvm.memmove` |
 | `%memset(dst, val, n)` | `dst: Addr`, `val: Int`, `n: Int` | `Addr` (`dst`) | `@llvm.memset` |
+| `%ptrmask(ptr, mask)` | `ptr: Addr`, `mask: Int` | Same as `ptr` (`Addr`) | `@llvm.ptrmask` |
 
 `dst` and `src` accept pointers (`Addr`, `&b`, or `&s`). `%memmove` supports overlapping
 memory regions; `%memcpy` requires disjoint regions. `val` in `%memset` is truncated to
 an 8-bit byte. All three memory operations return the `dst` address.
+
+`%ptrmask(ptr, mask)` masks the address of `ptr` with `mask` (Int) preserving LLVM pointer
+provenance and alias analysis metadata (e.g. `%ptrmask(ptr, 0m48)` to strip 16-bit tags).
 

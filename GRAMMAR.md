@@ -29,7 +29,7 @@ inline statements. A `;` at the end of a line is an error.
 
 | Kind | Syntax | Notes |
 |------|--------|-------|
-| Integer | `42`, `0xFF`, `0o77`, `0b1010` | optional type suffix, see below |
+| Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0m48`, `0m-16` | optional type suffix, see below |
 | Float | `3.14`, `1.5e-3`, `3.14f32` | padding zeros mandatory (see §1.4) |
 | Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
 | String | `"..."` | C-style escapes `\n \t \r \0 \a \b \f \v \" \' \\` |
@@ -47,6 +47,12 @@ inline statements. A `;` at the end of a line is an error.
 `"..."`, and the next line begins with another string literal indented deeper
 than the current block, they concatenate into a single string literal at compile
 time across lines.
+
+**Mask literals (`0m<N>` / `0m-<N>`)** — integer literals for generating bitmasks
+of 0..64 bits (rejecting > 64 with `E2043`):
+- `0m<N>` sets the lower $N$ bits: `0m48` == `0x0000FFFFFFFFFFFF` ($(1 \ll 48) - 1$), `0m32` == `0xFFFFFFFF`.
+- `0m-<N>` sets the upper $N$ bits: `0m-16` == `0xFFFF000000000000` ($(-1) \ll (64 - 16)$).
+- Accepts optional integer type suffixes, e.g. `0m32u32`.
 
 **Integer type suffixes** — an integer literal may carry an explicit type
 suffix, materializing the value at that width: `5i16`, `0xFFu8`, `0b101u16`,
@@ -592,6 +598,11 @@ them with a comparison, which yields a ramification). `+b` is Builder freeze.
   targets. Requires **no trailing whitespace** (`&b`). Unary `*` is eliminated;
   `* x` with a space is the multiplication section. Inside a call, `f(&b)` is
   the unary address.
+- `&rec` / `&tup` — the memory address of a record, tuple, array, or slice.
+- `&scalar` — the address of a scalar local variable (`Int`, `Float`, `i8`..`u64`, `Rune`, `Flag`)
+  in downward **call-argument position** (Strategy 1: FFI out-parameters). Storing or returning
+  a scalar stack address is rejected (`E3078`). `Addr(...)` casts are restricted strictly to
+  integerish types and pointers; casting composites or buffers to `Addr(...)` is `E3084`.
 
 This is the whole FFI-read pattern, with no `malloc`/`free`:
 

@@ -375,11 +375,12 @@ radix_ok = c, kind =>
    is_b = kind == 'b'
    is_o = kind == 'o'
    is_x = kind == 'x'
+   is_m = kind ['m', 'M']
    dec = c !< '0' && c !> '9'
    bin = c ['0', '1']
    oct = c !< '0' && c !> '7'
    hex = dec || (c !< 'A' && c !> 'F') || (c !< 'a' && c !> 'f')
-   (is_b && bin) || (is_o && oct) || (is_x && hex)
+   (is_b && bin) || (is_o && oct) || (is_x && hex) || (is_m && dec)
 
 finish_int: Lx, Int, Int, Int => Tok
 finish_int = lx, start, line, col => 
@@ -393,6 +394,9 @@ scan_radix_rest: Lx, Rune, Int, Int, Int => Tok
 scan_radix_rest = lx, kind, start, line, col => 
    adv(lx, pk(lx, 0))
    adv(lx, pk(lx, 0))
+   is_m = kind ['m', 'M']
+   is_m && pk(lx, 0) == '-'
+      | adv(lx, pk(lx, 0))
    0.. @
       lx.pos !< ?lx.src | -->
       radix_ok(pk(lx, 0), kind)
@@ -446,7 +450,7 @@ scan_dec = lx, start, line, col =>
 scan_num: Lx, Int, Int, Int => Tok
 scan_num = lx, start, line, col => 
    k = pk(lx, 0)
-   is_r = pk_off(lx, 1) ['b', 'o', 'x']
+   is_r = pk_off(lx, 1) ['b', 'o', 'x', 'm', 'M']
    k == '0' && is_r
       | scan_radix_rest(lx, pk_off(lx, 1), start, line, col)
       | scan_dec(lx, start, line, col)

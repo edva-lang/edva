@@ -34,7 +34,7 @@ Line comments begin with `//`; block comments use `/*` and `*/`.
 
 | Kind | Examples | Notes |
 |---|---|---|
-| integer | `42`, `0xFF`, `0b101`, `5i16` | explicit widths use a suffix |
+| integer | `42`, `0xFF`, `0b101`, `0m48`, `0m-16`, `5i16` | explicit widths use a suffix |
 | float | `0.5`, `1.0`, `3.0e4` | digits are required on both sides of `.` |
 | rune | `'a'`, `'λ'`, `'\n'` | one Unicode scalar value |
 | string | `"text\n"` | escaped UTF-8 string |

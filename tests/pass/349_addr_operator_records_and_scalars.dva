@@ -1,0 +1,24 @@
+#use io
+
+read_int: Addr => Int
+read_int = ptr => @[ptr Int]
+
+set_i32: Addr, i32 => ()
+set_i32 = ptr, val => @[ptr] = val
+
+pt = (x = 123, y = 456)
+p_pt = &pt
+io::out $ @[p_pt Int]
+io::out $ @[p_pt + 8 Int]
+
+tup = (10, 20)
+p_tup = &tup
+io::out $ @[p_tup Int]
+io::out $ @[p_tup + 8 Int]
+
+val = 42
+io::out $ read_int(&val)
+
+out_val' = 0i32
+set_i32(&out_val', 777i32)
+io::out $ Int(out_val')

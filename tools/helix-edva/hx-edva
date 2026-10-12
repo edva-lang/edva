@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+edva_helix_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+edva_project_dir=$(CDPATH= cd -- "$edva_helix_dir/../.." && pwd)
+edva_grammar_src=${EDVA_GRAMMAR_SRC:-/home/ike/Z/tree-sitter-edva}
+edva_parser="$edva_project_dir/build/helix/edva.so"
+edva_helix_overlay="${TMPDIR:-/tmp}/edva-helix-${UID}"
+edva_helix_config="$edva_helix_overlay/helix"
+if [[ ! -f "$edva_parser" || "$edva_grammar_src/src/parser.c" -nt "$edva_parser" ||
+      "$edva_grammar_src/src/scanner.c" -nt "$edva_parser" ]]; then
+  mkdir -p "$(dirname "$edva_parser")"
+  cc -fPIC -shared -O2 -I "$edva_grammar_src/src" \
+    "$edva_grammar_src/src/parser.c" "$edva_grammar_src/src/scanner.c" \
+    -o "$edva_parser"
+fi
+mkdir -p "$edva_helix_config/runtime/grammars" "$edva_helix_config/runtime/queries"
+if [[ -e "$edva_helix_config/languages.toml" ]]; then
+  chmod u+w "$edva_helix_config/languages.toml"
+fi
+cp "$HOME/.config/helix/languages.toml" "$edva_helix_config/languages.toml"
+chmod u+w "$edva_helix_config/languages.toml"
+cat >> "$edva_helix_config/languages.toml" <<'TOML'
+
+[[language]]
+name = "edva"
+scope = "source.edva"
+file-types = ["dva"]
+comment-token = "//"
+grammar = "edva"
+indent = { tab-width = 3, unit = "   " }
+
+[[grammar]]
+name = "edva"
+source = { git = "https://github.com/edva-lang/tree-sitter-edva", rev = "fb4809b07f81cbaf7681b6e1ff6de445febfaca4" }
+TOML
+if [[ -e "$HOME/.config/helix/config.toml" ]]; then
+  ln -sfn "$HOME/.config/helix/config.toml" "$edva_helix_config/config.toml"
+fi
+ln -sfn "$edva_parser" "$edva_helix_config/runtime/grammars/edva.so"
+ln -sfn "$edva_helix_dir/queries" "$edva_helix_config/runtime/queries/edva"
+exec env XDG_CONFIG_HOME="$edva_helix_overlay" hx "$@"

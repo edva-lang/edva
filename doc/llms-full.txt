@@ -50,8 +50,8 @@ Identifiers conform to UAX31. Edva has zero bare keywords. Directives start with
 - `#pragma number <type>`: switches default integer literal type (`i16`, `i32`, `i64`, `default`).
 
 ## 2.2 Literals
-- **Integers**: Decimal (`42`), Hexadecimal (`0x2A`), Binary (`0b101010`).
-  Explicit type suffixes: `5i16`, `0xFFu8`, `100u32`, `9i64`.
+- **Integers**: Decimal (`42`), Hexadecimal (`0x2A`), Binary (`0b101010`), Octal (`0o755`), Mask (`0m48`, `0m-16`).
+  Explicit type suffixes: `5i16`, `0xFFu8`, `100u32`, `9i64`, `0m32u32`.
 - **Floats**: `3.14`, `0.5`, `1.0e-5`. Dangling dots (`.5`, `1.`) are illegal.
 - **Runes**: Single Unicode codepoints: `'a'`, `'🔥'`, `'\n'`.
 - **Strings**:
@@ -191,7 +191,7 @@ find_positive = n =>
 - `String`: Immutable UTF-8 fat pointer `{ i64 len, i8* data }`.
 - `Builder`: Mutable byte buffer `{ i64 len, i8* data, i64 cap }*`.
 - `Rune`: 32-bit Unicode scalar value (`i32`).
-- `Addr`: Raw memory address (architecture-dependent: 4 bytes on 32-bit, 8 bytes on 64-bit).
+- `Addr`: Raw memory address (architecture-dependent: 4 bytes on 32-bit, 8 bytes on 64-bit). Casts via `Addr(...)` are strictly restricted to integerish types (`Int`, `i8`..`u64`) and pointers. Memory addresses of strings, builders, records, and call-argument scalars are obtained via `&`.
 - `Flag`: Bare boolean (`i1`), constructed with `<+>` (true) or `<->` (false).
 - `Error`: Standard error record `(code: Int, msg: String, file: String, line: Int, col: Int)`.
 
@@ -252,8 +252,7 @@ In expression position, an inexhaustive choice whose non-jump branches all produ
   - Freeze (`+b`): Consumes and resets the Builder descriptor, transferring the buffer pointer
     directly into an immutable String in place (allocating only the 16-byte String descriptor
     in the active arena without copying bytes).
-  - Interop: `&b` yields the writable buffer address (`Addr`); `?b = n` sets the active length
-    after an external FFI read.
+  - Interop: `&b` yields the writable buffer address (`Addr`); `&s` yields the string data pointer; `&rec` yields a record/tuple pointer; `&scalar` yields a scalar address in call-argument position (e.g. FFI out-parameters); `?b = n` sets the active length after an external FFI read.
 
 ---
 
@@ -263,7 +262,7 @@ Intrinsics are prefixed with `%` and lower directly into LLVM IR instructions:
 - **Math**: `%min(a, b)`, `%max(a, b)`, `%clamp(val, min, max)`, `%abs(x)`, `%sqrt(x)`.
 - **Saturating Arithmetic**: `%uadd_sat(a, b)`, `%usub_sat(a, b)`.
 - **Vector Reductions**: `%sum(vec)`, `%prod(vec)`, `%dot(v1, v2)`.
-- **Memory**: `%memcpy(dst, src, len)`, `%memmove(dst, src, len)`, `%memset(dst, val, len)`.
+- **Memory**: `%memcpy(dst, src, len)`, `%memmove(dst, src, len)`, `%memset(dst, val, len)`, `%ptrmask(ptr, mask)`.
 
 ---
 

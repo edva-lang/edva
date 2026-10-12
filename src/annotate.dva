@@ -32,6 +32,8 @@ cur_target_triple = ""
 cur_stmt_files = ast::Names()
 cur_stmt_lines = ast::Ints()
 cur_stmt_cols = ast::Ints()
+cur_is_call_arg = <->
+
 
 set_source_file: String => ()
 set_source_file = f =>
@@ -223,12 +225,9 @@ cast_name_to_uprim = name =>
 
 check_addr_target: unify::Ctx, String, <>, unify::UType => ()
 check_addr_target = ctx, fn_name, is_tgt_ptr, src_ut =>
-   is_tgt_ptr
-      | --|
-      |
-         unify::add_error(ctx, 3084,
-            "Cannot cast '" + unify::show_utype(ctx, src_ut) +
-            "' to '" + fn_name + "'")
+   unify::add_error(ctx, 3084,
+      "Cannot cast '" + unify::show_utype(ctx, src_ut) +
+      "' to '" + fn_name + "'")
 
 validate_primitive_cast: unify::Ctx, String, unify::UPrim, unify::UType => ()
 validate_primitive_cast = ctx, fn_name, tgt_uprim, src_ut =>
@@ -271,7 +270,7 @@ validate_primitive_cast = ctx, fn_name, tgt_uprim, src_ut =>
                               is_src_ptr || is_src_str)
                         |
                            is_tgt_ptr
-                              | (is_src_ptr || is_src_int || is_src_builder)
+                              | (is_src_ptr || is_src_int)
                               |
                                  is_tgt_str
                                     |
@@ -1440,7 +1439,7 @@ annotate_expr = ctx, env, expr =>
                               [Fn f_res]
                                  ?f_res.params == 1
                                     |
-                                       arg_te = annotate_expr(ctx, env, b.1)
+                                       arg_te = annotate_call_arg(ctx, env, b.1)
                                        p0 = f_res.params(0) | _ |
                                           unify::UType(None)
                                        ok_p = unify::unify(ctx, p0, arg_te.ut)
@@ -1794,7 +1793,7 @@ annotate_expr = ctx, env, expr =>
       [Unary u]
          op = u.0
          inner_te = annotate_expr(ctx, env, u.1)
-         res_ut = annotate_unary_op(ctx, env, op, inner_te.ut)
+         res_ut = annotate_unary_op(ctx, env, op, inner_te.ut, u.1)
          ti = unify::type_info_from_utype(ctx, res_ut)
          lay = layout::compute_layout(ctx, res_ut)
          tast::mk_typed_unary(op, inner_te, res_ut, ti, lay, 0, 0)
@@ -2152,9 +2151,17 @@ annotate_expr = ctx, env, expr =>
       |
          tast::mk_lit_unit(0, 0)
 
+annotate_call_arg: unify::Ctx, type_env::TypeEnv, ast::Expr => tast::TypedExpr
+annotate_call_arg = ctx, env, a =>
+   saved = cur_is_call_arg
+   cur_is_call_arg ::= <+>
+   te = annotate_expr(ctx, env, a)
+   cur_is_call_arg ::= saved
+   te
+
 annotate_unary_op: unify::Ctx, type_env::TypeEnv, ast::UnaryOp,
-   unify::UType => unify::UType
-annotate_unary_op = ctx, env, op, t =>
+   unify::UType, ast::Expr => unify::UType
+annotate_unary_op = ctx, env, op, t, operand_expr =>
    op
       [Length]
          unify::prim_int()
@@ -2171,14 +2178,29 @@ annotate_unary_op = ctx, env, op, t =>
             [Prim p]
                p
                   [Builder, Str] unify::prim_rawptr()
+                  [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Flag]
+                     operand_expr
+                        [Var _]
+                           !cur_is_call_arg
+                              |
+                                 unify::add_error(ctx, 3078,
+                                    "Unary '&' on scalar variable is only valid in function call argument position.")
+                        |
+                           unify::add_error(ctx, 3078,
+                              "Unary '&' on scalar requires a variable target.")
+                     unify::prim_rawptr()
                   |
                      unify::add_error(ctx, 3078,
-                        diag::E3078_addr_builder_or_string!)
+                        "Address operator '&' cannot be applied to '" + unify::show_utype(ctx, t) + "\.")
                      unify::prim_rawptr()
-            [Var _]
-               unify::prim_rawptr()
+            [Rec _] unify::prim_rawptr()
+            [Array _] unify::prim_rawptr()
+            [Slice _] unify::prim_rawptr()
+            [Fn _] unify::prim_rawptr()
+            [Var _] unify::prim_rawptr()
             |
-               unify::add_error(ctx, 3078, diag::E3078_addr_builder_or_string!)
+               unify::add_error(ctx, 3078,
+                  "Address operator '&' cannot be applied to '" + unify::show_utype(ctx, t) + "\.")
                unify::prim_rawptr()
       [Freeze]
          ok = unify::unify(ctx, t, unify::prim_builder())
@@ -2924,7 +2946,7 @@ is_known_intrinsic = name =>
       "%popcount", "%clz", "%ctz", "%bswap", "%bitreverse",
       "%rotl", "%rotr",
       "%pow", "%sin", "%cos", "%exp2", "%log2", "%uadd_sat", "%usub_sat",
-      "%fmuladd", "%memcpy", "%memmove", "%memset"]
+      "%fmuladd", "%memcpy", "%memmove", "%memset", "%ptrmask"]
 
 expected_intrinsic_nargs: String => Int
 expected_intrinsic_nargs = name =>
@@ -2934,8 +2956,8 @@ expected_intrinsic_nargs = name =>
          "%popcount", "%clz", "%ctz", "%bswap", "%bitreverse",
          "%sin", "%cos", "%exp2", "%log2"] 1
       ["%min", "%max", "%dot", "%copysign", "%rotl", "%rotr",
-         "%pow", "%uadd_sat", "%usub_sat"] 2
-      ["%clamp", "%fma", "%fmuladd", "%memcpy", "%memmove", "%memset"] 3
+         "%pow", "%uadd_sat", "%usub_sat", "%ptrmask"] 2
+      ["%clamp", "%fma", "%fmuladd", "%memcpy", "%memmove", "%memset", "%ptrmask"] 3
       ["%shuffle"] 0
       | -1
 
@@ -2943,6 +2965,7 @@ compute_intrinsic_ret_ut: unify::Ctx, String, tast::TypedExprs,
    tast::TypedExpr, tast::TypedExpr, tast::TypedExpr => unify::UType
 compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
    name
+      ["%ptrmask"] a0.ut
       ["%memcpy", "%memmove", "%memset"] unify::prim_rawptr()
       ["%all", "%any"] unify::prim_flag()
       ["%sum", "%prod"]
@@ -3000,7 +3023,7 @@ annotate_intrinsic_call = ctx, env, ce =>
    typed_args = tast::TypedExprs()
    ?ce.args @ i =>
       a = ce.args(i) | _ | ast::Expr(Int, 0)
-      typed_args += annotate_expr(ctx, env, a)
+      typed_args += annotate_call_arg(ctx, env, a)
    name = ce.fn_name
    nargs = ?typed_args
    !is_known_intrinsic(name)
@@ -3075,7 +3098,7 @@ annotate_call = ctx, env, ce =>
                typed_args = tast::TypedExprs()
                ?ce.args @ i =>
                   a = ce.args(i) | _ | ast::Expr(Int, 0)
-                  typed_args += annotate_expr(ctx, env, a)
+                  typed_args += annotate_call_arg(ctx, env, a)
                b_ut = unify::prim_builder()
                b_ti = ast::TypeInfo(Prim, ast::ValueType(Builder))
                b_lay = layout::compute_layout(ctx, b_ut)
@@ -3090,7 +3113,7 @@ annotate_call = ctx, env, ce =>
                      typed_args = tast::TypedExprs()
                      ?ce.args @ i =>
                         a = ce.args(i) | _ | ast::Expr(Int, 0)
-                        typed_args += annotate_expr(ctx, env, a)
+                        typed_args += annotate_call_arg(ctx, env, a)
                      u_ut = unify::prim_unit()
                      u_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
                      u_lay = tast::layout_void()
@@ -3102,7 +3125,7 @@ annotate_call = ctx, env, ce =>
                            typed_args = tast::TypedExprs()
                            ?ce.args @ i =>
                               a = ce.args(i) | _ | ast::Expr(Int, 0)
-                              typed_args += annotate_expr(ctx, env, a)
+                              typed_args += annotate_call_arg(ctx, env, a)
                            nargs_err = ?typed_args
                            nargs_err > 6
                               |
@@ -3131,7 +3154,7 @@ annotate_call = ctx, env, ce =>
                                  typed_args = tast::TypedExprs()
                                  ?ce.args @ i =>
                                     a = ce.args(i) | _ | ast::Expr(Int, 0)
-                                    typed_args += annotate_expr(ctx, env, a)
+                                    typed_args += annotate_call_arg(ctx, env, a)
                                  nargs_cast = ?typed_args
                                  nargs_cast != 1
                                     |
@@ -3156,7 +3179,7 @@ annotate_call = ctx, env, ce =>
                                        typed_args = tast::TypedExprs()
                                        ?ce.args @ i =>
                                           a = ce.args(i) | _ | ast::Expr(Int, 0)
-                                          typed_args += annotate_expr(ctx, env, a)
+                                          typed_args += annotate_call_arg(ctx, env, a)
                                        nargs_addr = ?typed_args
                                        nargs_addr != 1
                                           |
@@ -3345,7 +3368,7 @@ annotate_call_normal = ctx, env, ce =>
                typed_args = tast::TypedExprs()
                ?ce.args @ i =>
                   a = ce.args(i) | _ | ast::Expr(Int, 0)
-                  typed_args += annotate_expr(ctx, env, a)
+                  typed_args += annotate_call_arg(ctx, env, a)
                n_args = ?typed_args
                c_udef
                   [Ram r]
@@ -3542,7 +3565,7 @@ annotate_call_normal = ctx, env, ce =>
          arg_uts = unify::UTypes()
          ?ce.args @ i =>
             a = ce.args(i) | _ | ast::Expr(Int, 0)
-            ta = annotate_expr(ctx, env, a)
+            ta = annotate_call_arg(ctx, env, a)
             a
                [Var v]
                   c = unify::canon(ctx, ta.ut)

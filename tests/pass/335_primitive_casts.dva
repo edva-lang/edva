@@ -6,5 +6,4 @@ io::out $ Int(u8(255))
 io::out $ Int(<+>)
 io::out $ Int(<->)
 io::out $ String("valid")
-b = {32}
-io::out $ Addr(b) != Addr(0) | "ptr_ok" | "ptr_null"
+io::out $ Addr(1234) != Addr(0) | "ptr_ok" | "ptr_null"

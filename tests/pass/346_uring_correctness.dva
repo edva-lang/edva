@@ -64,10 +64,10 @@ r_res
 
       // 3. Time-based timeout (count = 0, len = 1, off = count)
       ts = 0u64 {2}
-      ts_addr = Addr(ts)
+      ts_addr = &ts
       @[ts_addr] = 0
       @[ts_addr + 8] = 1000000
-      uring::prep_timeout(ring, Addr(ts), 0, 0, 201)
+      uring::prep_timeout(ring, &ts, 0, 0, 201)
       uring::submit_and_wait(ring, 1)
       cqes = uring::reap(ring)
       cqes @ c =>
@@ -76,10 +76,10 @@ r_res
       // 4. Cancellation with 64-bit user_data
       target_ud = 1311768467294899695
       ts2 = 0u64 {2}
-      ts2_addr = Addr(ts2)
+      ts2_addr = &ts2
       @[ts2_addr] = 10
       @[ts2_addr + 8] = 0
-      uring::prep_timeout(ring, Addr(ts2), 0, 0, target_ud)
+      uring::prep_timeout(ring, &ts2, 0, 0, target_ud)
       uring::prep_cancel(ring, target_ud, 301)
       uring::submit_and_wait(ring, 2)
       cqes2 = uring::reap(ring)

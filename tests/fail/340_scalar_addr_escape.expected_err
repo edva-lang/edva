@@ -1,0 +1,1 @@
+tests/fail/340_scalar_addr_escape.dva:2:1: E3078: Unary '&' on scalar variable is only valid in function call argument position.

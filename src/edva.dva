@@ -2644,7 +2644,7 @@ repl_run = opts =>
          active_repl_ll ::= session_ll
          active_repl_bin ::= session_bin
          active_repl_dir ::= scratch_dir
-         signal(2, @[Addr(on_sigint) Addr])
+         signal(2, @[&on_sigint Addr])
          sess = ReplSession((scratch_dir, session_src, session_ll,
             session_bin, ast::Names()))
          repl_opts = opts

@@ -31,24 +31,49 @@ p_explicit = Addr(0)
 The unary prefix address-of operator `&` extracts the underlying memory pointer of a value:
 
 ```dva
+// String data pointer
 str = "Static data"
 raw_str_ptr = &str
 
+// Builder writable buffer address
 b = {64}
 b += "Bytes"
 raw_buf_ptr = &b
+
+// Record and tuple memory address
+pt = (x = 10, y = 20)
+raw_pt_ptr = &pt
+```
+
+### Scalar out-parameters in call arguments
+
+Unary `&` on scalar local variables (`Int`, `Float`, `i8`..`u64`, `Rune`, `Flag`) is permitted strictly in **downward call-argument position** to support C FFI out-parameters and native pointer arguments:
+
+```dva
+// Valid: passing scalar address as a function/FFI call argument
+len' = 16i32
+libc::getsockname(fd, &addr, &len')
+
+// Forbidden: escaping scalar stack addresses outside call arguments is rejected at compile time (E3078)
+// p = &len'  // E3078: Unary '&' on scalar variable is only valid in function call argument position.
 ```
 
 ## Conversions and casting
 
-Conversions between `Addr` and `Int` are explicit and bidirectional:
+Conversions between `Addr` and integerish types are explicit and bidirectional. `Addr(...)` casts are **strictly restricted to integerish types** (`Int`, `i8`..`i64`, `u8`..`u64`) and pointers. Casting records, arrays, slices, builders, or functions to `Addr(...)` is rejected with `E3084`: use `&` to obtain their addresses instead.
 
 ```dva
-// Integer to pointer
+// Integer to pointer (allowed)
 base_addr = Addr(0x1000)
+null_ptr = Addr(0)
 
-// Pointer to integer
+// Pointer to integer (allowed)
 numeric_val = Int(base_addr)
+
+// Composites to pointer: use '&', not Addr(...)
+rec = (x = 1, y = 2)
+rec_ptr = &rec    // OK
+// Addr(rec)      // E3084: Cannot cast '(x: Int, y: Int)' to 'Addr'
 ```
 
 ## Operations
@@ -74,6 +99,18 @@ p2 = Addr(0x200)
 
 is_null = p1 == Addr(0)       // <->
 is_less = p1 < p2             // <+>
+```
+
+### Pointer masking (`%ptrmask`)
+
+To mask off low-order alignment bits or high-order generational tags while preserving LLVM pointer provenance and alias analysis metadata, use the `%ptrmask(ptr, mask)` intrinsic:
+
+```dva
+// Clear top 16 tag bits before passing an address to OS syscalls:
+canonical_ptr = %ptrmask(ptr, 0m48)
+
+// Align pointer down to 64-byte boundary:
+aligned_ptr = %ptrmask(ptr, 0 - 64)
 ```
 
 ### Volatile memory load and store (`@[...]`)
