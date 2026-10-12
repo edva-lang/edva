@@ -8,6 +8,7 @@ fi
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 BOLD='\033[1m'
 
@@ -254,6 +255,7 @@ wait
 
 PASSED=0
 FAILED=0
+SKIPPED=0
 TOTAL=0
 
 # Report Positive Tests
@@ -317,11 +319,18 @@ for test_file in tests/sudo/*.dva; do
 
     compile_timeout="${TEST_COMPILE_TIMEOUT:-30}"
     set +e
-    timeout "$compile_timeout" bash -c "ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$test_file\" < /dev/null" > /dev/null 2>&1
+    comp_cmd="ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$test_file\" < /dev/null"
+    comp_output=$(timeout "$compile_timeout" bash -c "$comp_cmd" 2>&1)
     comp_code=$?
     set -e
     if [ $comp_code -eq 124 ]; then
         echo -e "  - ${test_name}: ${RED}FAIL (Compilation timeout after ${compile_timeout}s)${NC}"
+        FAILED=$((FAILED + 1))
+        rm -f "${test_name}" "${test_name}.ll"
+        continue
+    elif [ $comp_code -ne 0 ]; then
+        echo -e "  - ${test_name}: ${RED}FAIL (Compilation error)${NC}"
+        echo "$comp_output" | sed 's/^/    /'
         FAILED=$((FAILED + 1))
         rm -f "${test_name}" "${test_name}.ll"
         continue
@@ -333,8 +342,8 @@ for test_file in tests/sudo/*.dva; do
     set -e
 
     if [ -n "$CI" ] || [ -n "$SKIP_SUDO" ]; then
-        echo -e "  - ${test_name}: ${GREEN}PASS (SKIPPED - Headless / CI environment)${NC}"
-        PASSED=$((PASSED + 1))
+        echo -e "  - ${test_name}: ${YELLOW}SKIP (Headless / CI; compilation passed)${NC}"
+        SKIPPED=$((SKIPPED + 1))
     elif [ $has_sudo -eq 0 ]; then
         run_timeout="${TEST_RUN_TIMEOUT:-10}"
         set +e
@@ -356,10 +365,13 @@ for test_file in tests/sudo/*.dva; do
                 echo "    Actual:   '$actual_output'"
                 FAILED=$((FAILED + 1))
             fi
+        else
+            echo -e "  - ${test_name}: ${GREEN}PASS${NC}"
+            PASSED=$((PASSED + 1))
         fi
     else
-        echo -e "  - ${test_name}: ${GREEN}PASS (SKIPPED - Requires sudo privilege)${NC}"
-        PASSED=$((PASSED + 1))
+        echo -e "  - ${test_name}: ${YELLOW}SKIP (Requires sudo; compilation passed)${NC}"
+        SKIPPED=$((SKIPPED + 1))
     fi
     rm -f "${test_name}" "${test_name}.ll"
 done
@@ -400,7 +412,10 @@ fi
 
 echo ""
 echo -e "${BOLD}=========================================${NC}"
-echo -e "${BOLD}TEST SUMMARY:${NC} Total: $TOTAL | Passed: ${GREEN}$PASSED${NC} | Failed: ${RED}$FAILED${NC}"
+echo -e "${BOLD}TEST SUMMARY:${NC} Total: $TOTAL" \
+    "| Passed: ${GREEN}$PASSED${NC}" \
+    "| Skipped: ${YELLOW}$SKIPPED${NC}" \
+    "| Failed: ${RED}$FAILED${NC}"
 echo -e "${BOLD}=========================================${NC}"
 
 if [ $FAILED -ne 0 ]; then
