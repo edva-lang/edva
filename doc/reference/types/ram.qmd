@@ -14,12 +14,12 @@ Edva replaces booleans, optionals, and exceptions with a single unified construc
 
 The four static layouts of ramifications are distinguished by whether each slot holds a payload type or an empty polarity constant:
 
-| Layout | Syntax | Positive (1st) Slot | Negative (2nd) Slot | LLVM Representation | Common Role |
+| Layout | Syntax | Positive (1st) | Negative (2nd) | LLVM Type | Role |
 |:---|:---|:---|:---|:---|:---|
-| **RamNN** | `<>` | Bare positive `<+>` | Bare negative `<->` | `i1` (scalar boolean) | `Flag`: truthiness, conditions |
-| **RamPN** | `< T | >` | Payload `T` | Absence unit `<-->` | `{ i64 tag, ptr payload }` | `Option`: nullable / optional value |
-| **RamNP** | `< | E >` | Success unit `<++>` | Payload `E` | `{ i64 tag, ptr payload }` | `Fallible`: void-or-error status |
-| **RamPP** | `< T | E >` | Payload `T` | Payload `E` | `{ i64 tag, ptr payload }` | `Result`: value-or-error return |
+| **RamNN** | `<>` | `<+>` | `<->` | `i1` | `Flag` |
+| **RamPN** | `< T \| >` | `T` | `<-->` | `ptr` (niche) / `{ i1, T }` | `Option` |
+| **RamNP** | `< \| E >` | `<++>` | `E` | `ptr` (niche) / `{ i1, E }` | `Fallible` |
+| **RamPP** | `< T \| E >` | `T` | `E` | `{ i1, i64 }` unboxed | `Result` |
 
 The `Flag` (`<>`) is a native built-in type and does not require a `#type` declaration. The payload forms are defined via `#type`:
 
@@ -55,16 +55,29 @@ heap_false = <-->   // Heap negative unit (absence slot)
 > A bare Flag `<+>` or `<->` **never implicitly coerces** to a heap ram unit `<++>` or `<-->`.
 
 ### Payload constructors
-Payload branches are constructed using `<+ ... ->` for the positive slot, and `<- ... +>` for the negative slot:
+Payload branches are constructed using:
+- `<+ val +>`: Positive slot of `RamPN` (`< T | >`)
+- `<-->`: Absence unit constant for `RamPN` (`< T | >`)
+- `<++>`: Success unit constant for `RamNP` (`< | E >`)
+- `<- err ->`: Negative slot of `RamNP` (`< | E >`)
+- `<+ val ->`: Positive slot of `RamPP` (`< T | E >`)
+- `<- err +>`: Negative slot of `RamPP` (`< T | E >`)
+
+All payload constructors close with `+>` or `->` (never bare `>`). Delimiters
+`<+`/`+>` and `<-`/`->` ensure comparisons inside payloads remain unambiguous: `<+ a > b ->`.
 
 ```dva
 // Constructing an Option (RamPN)
-opt_val = <+ 42 +> $> MaybeInt
-none_val = <--> $> MaybeInt
+opt_val = <+ 42 +>
+none_val = <-->
+
+// Constructing a Fallible status (RamNP)
+ok_val = <++>
+err_status = <- "disk full" ->
 
 // Constructing a Result (RamPP)
-success = FileResult(<+ 3 ->)
-failure = FileResult(<- Error(404, "File not found") +>)
+success = <+ 100 ->
+failure = <- "out of memory" +>
 ```
 
 ## Operations
@@ -158,5 +171,17 @@ check_limit = n =>
 
 ## Memory layout and ABI
 
-- **`Flag` (`<>`)**: Compiles to an unboxed `i1` in LLVM IR (1 byte on the stack, passed in standard integer registers).
-- **Payload Rams**: Stored as an unboxed or boxed `{ i64 tag, ptr payload }` struct, where `tag == 1` indicates positive polarity and `tag == 0` indicates negative polarity.
+- **`Flag` (`<>`)**: Compiles to an unboxed `i1` in LLVM IR (passed directly in integer registers).
+- **Single-payload Niche Rams (`RamPN`, `RamNP`)**: When the payload is a pointer type
+  (`String` fat pointer or `Record` pointer), the ram compiles directly to a single pointer (`ptr`)
+  using **null-pointer niche optimization**: `null` represents the unit slot (`<-->` or `<++>`),
+  while a non-null pointer carries the payload. This requires zero extra tag bits.
+- **Two-payload Rams (`RamPP`)**: Lowered in typed compilation as unboxed register aggregates
+  `{ i1, i64 }`. The `i1` field is a runtime polarity tag discriminant (1 = positive slot,
+  0 = negative slot), NOT an RTTI descriptor.
+- **Allocation Guarantees**: Returning or inspecting an unboxed `RamPP` value incurs zero heap
+  allocation for the wrapper itself. Constructing an error record on failure (such as `Error` on
+  out-of-bounds indexing or missing map key) allocates the Error struct fields.
+- **Buffer vs Descriptor Allocation**: Freezing a Builder (`+b`) transfers its allocated buffer
+  in place into the String without copying bytes, allocating only the 16-byte String descriptor
+  `{ len, ptr }` in the active arena.

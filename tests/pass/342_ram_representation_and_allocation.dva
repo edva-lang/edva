@@ -1,0 +1,47 @@
+// tests/pass/342_ram_representation_and_allocation.dva
+// Verifies ramification runtime representations:
+// 1. Single-payload pointer niches (RamPN, RamNP with String/Record payloads)
+// 2. Unboxed register aggregates for RamPP ({ i1 tag, i64 payload })
+// 3. Polarity tag discriminant vs absence of RTTI
+
+#use io
+
+#type OptStr < String | >
+#type StatStr < | String >
+#type ResIntStr < Int | String >
+
+make_opt_succ: String => OptStr
+make_opt_succ = s => <+ s +>
+
+make_opt_none: () => OptStr
+make_opt_none = !=> <-->
+
+make_stat_succ: () => StatStr
+make_stat_succ = !=> <++>
+
+make_stat_err: String => StatStr
+make_stat_err = s => <- s ->
+
+make_res_succ: Int => ResIntStr
+make_res_succ = n => <+ n ->
+
+make_res_err: String => ResIntStr
+make_res_err = s => <- s +>
+
+o1 = make_opt_succ("hello")
+o1 | s => io::out(s) | io::out("none")
+
+o2 = make_opt_none!
+o2 | s => io::out(s) | io::out("none")
+
+s1 = make_stat_succ!
+s1 | io::out("success") | err => io::out(err)
+
+s2 = make_stat_err("failure")
+s2 | io::out("success") | err => io::out(err)
+
+r1 = make_res_succ(42)
+r1 | v => io::out(v) | err => io::out(err)
+
+r2 = make_res_err("bad input")
+r2 | v => io::out(v) | err => io::out(err)

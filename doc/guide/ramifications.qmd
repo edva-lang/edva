@@ -20,20 +20,28 @@ selects the positive (first) slot; the second bare branch selects the negative
 
 All ramifications belong to one of four distinct, mutually incompatible static shapes:
 
-| Shape Name | Type Syntax | Positive (1st) Slot | Negative (2nd) Slot | Primary Use Case | LLVM Low-Level Representation |
+| Shape | Syntax | Positive | Negative | Primary Role | LLVM Low-Level Type |
 |:---|:---|:---|:---|:---|:---|
-| **RamNN** | `<>` | Bare positive `<+>` | Bare negative `<->` | Built-in boolean flag (`<+>`, `<->`) | `i1` register |
-| **RamPN** | `< T | >` | Payload `T` | Absence unit `<-->` | Optional value (presence or absence) | `{ i1, i64 }*` union pointer |
-| **RamNP** | `< | E >` | Success unit `<++>` | Payload `E` | Void write-or-fail operation | `{ i1, i64 }*` union pointer |
-| **RamPP** | `< T | E >` | Payload `T` | Payload `E` | Fallible computation or lookup | `{ i1, i64 }` unboxed aggregate |
+| **RamNN** | `<>` | `<+>` | `<->` | Boolean flag | `i1` register |
+| **RamPN** | `< T \| >` | `T` | `<-->` | Optional value | `ptr` (niche) / `{ i1, T }` |
+| **RamNP** | `< \| E >` | `<++>` | `E` | Void write-or-fail | `ptr` (niche) / `{ i1, E }` |
+| **RamPP** | `< T \| E >` | `T` | `E` | Fallible computation | `{ i1, i64 }` unboxed |
 
-### Shape incompatibility rules
+### Representation and allocation guarantees
 
-1. **No implicit coercion:** A bare Flag `<+>` or `<->` **never** coerces to a heap ram unit `<++>` or `<-->`.
-2. **Distinct types:** The four shapes cannot be assigned to one another or passed where another shape is expected.
-3. **No runtime tags:** Types are fully erased at compile time.
-4. **Unboxed registers:** In typed compilation, `RamPP` values (such as array indexing `a(i)` and map lookup `m ^ k`) are compiled as unboxed register aggregates `{ i1, i64 }`, requiring zero heap allocation.
-5. **Zero storage for empty slots:** Non-payload slots (`<+>`, `<->`, `<++>`, `<-->`) have zero payload storage footprint.
+1. **No implicit coercion:** A bare Flag `<+>` or `<->` **never** coerces to a heap unit.
+2. **Distinct types:** The four shapes cannot be assigned to one another or coerced.
+3. **No RTTI vs polarity tags:** Types are erased at compile time: values and functions never
+   carry runtime type descriptors or vtables. However, two-payload ramifications (`RamPP`)
+   carry a 1-bit runtime polarity tag (`i1`) to distinguish which slot is active. Single-payload
+   niche rams (`RamPN`, `RamNP`) test pointer nullity (`null` represents the unit slot) with
+   zero extra tag bits.
+4. **Unboxed register wrappers:** In typed compilation, `RamPP` values (such as array indexing
+   `a(i)` and map lookup `m(k)`) are returned as unboxed register aggregates `{ i1, i64 }`,
+   requiring zero heap allocation for the wrapper itself.
+5. **Payload allocation costs:** Constructing error payloads on a failure or miss (such as `Error`
+   on out-of-bounds indexing or missing map key) allocates the Error record struct.
+6. **Zero storage for empty slots:** Non-payload unit slots have zero payload storage footprint.
 
 ## Constructors
 

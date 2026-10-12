@@ -208,8 +208,11 @@ Ramifications represent binary outcomes with zero-cost runtime representations:
    - Positive constructor: `<+ val ->`
    - Negative constructor: `<- err +>`
 
-Payload constructors close with `+>` or `->` (never bare `>`). All four ramification shapes are
-distinct static types with incompatible representations; there is no implicit coercion between them.
+Payload constructors close with `+>` or `->` (never bare `>`). Single-payload rams with
+pointer payloads (`String`, `Record`) use null-pointer niche optimization (`ptr`, where null
+is absence/unit, 0 extra tag bits). In `RamPP`, the `i1 tag` is a runtime polarity discriminant
+(not RTTI; types are fully erased). The four shapes are distinct static types with incompatible
+representations; there is no implicit coercion between them.
 
 ## 5.3 Monadic Bind (`$>>`) & Error Bubbling (`--!`)
 - Monadic Bind (`$>>`): Left-associative bind over ramifications with a positive payload
@@ -241,7 +244,8 @@ distinct static types with incompatible representations; there is no implicit co
   - Allocation: `b = {128}` allocates initial buffer capacity.
   - In-place append: `b += "text"`, `b += 'A'`, or homogeneous records `b += (13, 10)`.
   - Freeze (`+b`): Consumes and resets the Builder descriptor, transferring the buffer pointer
-    directly into an immutable String in place.
+    directly into an immutable String in place (allocating only the 16-byte String descriptor
+    in the active arena without copying bytes).
   - Interop: `&b` yields the writable buffer address (`Addr`); `?b = n` sets the active length
     after an external FFI read.
 
