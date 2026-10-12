@@ -1270,7 +1270,7 @@ annotate_expr = ctx, env, expr =>
                   !type_env::init_is_ok(env, name)
                   |
                      unify::add_error(ctx, 3130,
-                        "Use of uninitialized variable '" + name + "'.")
+                        diag::uninitialized_variable_prefix! + name + "'.")
                ti0 = unify::type_info_from_utype(
                   ctx, b.ut)
                keep_b_ti = b.ti [TypeVar tv] tv != "" |
@@ -1486,7 +1486,7 @@ annotate_expr = ctx, env, expr =>
          is_reserved_type_name(name)
             |
                unify::add_error(ctx, 3050, "Cannot define '" + name +
-                  "' — it is a built-in type name and is reserved for type coercion.")
+                  diag::E3050_reserved_type_name_suffix!)
          is_mut = a.1 || name_is_primed(name)
          is_compound = a.2
          is_global = a.3 || type_env::is_marked_global(env, name)
@@ -1604,8 +1604,7 @@ annotate_expr = ctx, env, expr =>
                                        !ok_ret
                                           |
                                              unify::add_error(ctx, 3084,
-                                                "Return type mismatch in " +
-                                                "function: " + name)
+                                                diag::return_type_mismatch_prefix! + name)
                                        ret_res_ut = expr_is_jump(body_te) | f.ret | body_te.ut
                                        fn_ut = unify::mk_fn(param_uts,
                                           ret_res_ut)
@@ -1691,16 +1690,14 @@ annotate_expr = ctx, env, expr =>
                                              !ok
                                                 |
                                                    unify::add_error(ctx, 3084,
-                                                      "Type mismatch in " +
-                                                      "assignment to: " + name)
+                                                      diag::assignment_type_mismatch_prefix! + name)
                                  is_global && !is_both && !is_bld' && !a.4
                                     |
                                        ok_g = unify::unify(ctx, tb.ut, rhs'.ut)
                                        !ok_g
                                           |
                                              unify::add_error(ctx, 3084,
-                                                "Type mismatch in " +
-                                                "assignment to: " + name)
+                                                diag::assignment_type_mismatch_prefix! + name)
                         |
                            is_must_exist = is_global || a.4
                            is_must_exist
@@ -1877,8 +1874,7 @@ annotate_expr = ctx, env, expr =>
                fname' == "" && idx' < 0
                   |
                      unify::add_error(ctx, 3170,
-                        "Member index 'x.(i)' must be a compile-time " +
-                        "constant (a per-field cycle index).")
+                        diag::member_index_constant!)
                fld_ti_opt = fname' != "" && swz_status' != 1
                   | member_field_ti(env, target_te.ti, fname')
                   | <-->
@@ -4009,7 +4005,7 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
                      ok = fld_flag_int || unify::unify(ctx, fld_ut, rhs.ut)
                      !ok
                         |
-                           fld_msg = "Type mismatch in field assignment: " +
+                           fld_msg = diag::field_assignment_type_mismatch_prefix! +
                               mm.field_name
                            unify::add_error(ctx, 3084, fld_msg)
             [Array arr]
@@ -4025,7 +4021,7 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
                ok = fld_flag_int || unify::unify(ctx, fld_ut, rhs.ut)
                !ok
                   |
-                     fld_msg = "Type mismatch in field assignment: " +
+                     fld_msg = diag::field_assignment_type_mismatch_prefix! +
                         mm.field_name
                      unify::add_error(ctx, 3084, fld_msg)
       |
@@ -4034,7 +4030,7 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
          ok = fld_flag_int || unify::unify(ctx, fld_ut, rhs.ut)
          !ok
             |
-               fld_msg = "Type mismatch in field assignment: " +
+               fld_msg = diag::field_assignment_type_mismatch_prefix! +
                   mm.field_name
                unify::add_error(ctx, 3084, fld_msg)
    c_tgt = unify::canon(ctx, target_te.ut)
@@ -4065,9 +4061,8 @@ annotate_index_write = ctx, env, cc, val_expr =>
       [Prim p]
          p [Str, Builder]
             unify::add_error(ctx, 3067,
-               "Cannot write through a String call-target '" + cc.fn_name +
-               "(...)' — Strings are immutable and a Builder is written " +
-               "with 'b + c'.")
+               diag::E3067_string_write_prefix! + cc.fn_name +
+               diag::E3067_string_write_suffix!)
       [Array arr]
          cc.fn_name != "" && type_env::init_is_tracked(env, cc.fn_name) &&
             !type_env::init_is_whole(env, cc.fn_name)
@@ -4086,7 +4081,7 @@ annotate_index_write = ctx, env, cc, val_expr =>
             !type_env::init_is_whole(env, cc.fn_name)
             |
                unify::add_error(ctx, 3049,
-                  "Cannot write element of forward-annotated slice '" + cc.fn_name + "' before whole-value initialization.")
+                  diag::E3049_slice_write_prefix! + cc.fn_name + diag::E3049_slice_write_suffix!)
          unify::unify(ctx, idx_te.ut, unify::prim_int())
          ok_elem = unify::unify(ctx, elem, rhs.ut)
          !ok_elem
@@ -4281,8 +4276,7 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                        !ok_ret
                                           |
                                              unify::add_error(ctx, 3084,
-                                                "Return type mismatch in " +
-                                                "function: " + name)
+                                                diag::return_type_mismatch_prefix! + name)
                                        type_env::init_mark_whole(env, name)
                                        is_recursive && !has_name_in(declared_fns, name)
                                           |
@@ -4358,9 +4352,7 @@ check_ground = ctx, env, exprs, name =>
                                                 |
                                                    unify::add_error(ctx,
                                                       3103,
-                                                      "Cannot infer " +
-                                                      "concrete return " +
-                                                      "type for function '" +
+                                                      diag::return_type_inference_prefix! +
                                                       name +
                                                       "' without RTTI")
                               |
@@ -4376,8 +4368,7 @@ check_ground = ctx, env, exprs, name =>
                                  !ret_ok
                                     |
                                        unify::add_error(ctx, 3103,
-                                          "Cannot infer concrete return " +
-                                          "type for function '" + name +
+                                          diag::return_type_inference_prefix! + name +
                                           "' without RTTI")
                               |
                                  c_val_ok = unify::is_ground(ctx, c)
@@ -4979,7 +4970,7 @@ elaborate_program_with_ctx = exprs =>
       vfn != "" && !has_name_in(declared_fns, vfn) && !has_name_in(called_fns, vfn)
          |
             unify::add_error(ctx, 3128,
-               "Function '" + vfn + "' is used as a value but its parameter types cannot be determined — no declared signature and no call site to infer from. Declare a signature: '" + vfn + ": T1, T2 => R'.")
+               "Function '" + vfn + diag::E3128_function_value_signature_suffix! + vfn + ": T1, T2 => R'.")
 
    final_stmts = refresh_program_stmts(ctx, typed_stmts)
 

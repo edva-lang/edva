@@ -150,7 +150,7 @@ codegen_emit_runtime_module = cg =>
    at = arena_type(cg)
    atp = LLVMPointerType(at, 0)
 
-   const_string_global(cg, "Error %lld: %.*s\n  at %.*s:%lld:%lld\n", "fmt_error")
+   const_string_global(cg, diag::runtime_error_format!, "fmt_error")
    arena_tls = LLVMAddGlobal(cg.module, atp, "dva_arena_tls")
    LLVMSetThreadLocal(arena_tls, 1)
    garena = LLVMAddGlobal(cg.module, at, "global_arena")
@@ -175,11 +175,11 @@ codegen_emit_runtime_module = cg =>
    cg.exit_t = <+ e_ty +>
    cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty) +>
 
-   const_string_global(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
-   const_string_global(cg, "E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\n", "arena_toobig_msg")
-   const_string_global(cg, "E4003: arena chunk limit reached (too many arena chunks)\n", "arena_chunklimit_msg")
-   const_string_global(cg, "E4001: arena allocator exhausted (out of memory)\n", "arena_oom_msg")
-   const_string_global(cg, "E4008: Builder length assignment out of bounds\n", "builder_len_oob_msg")
+   const_string_global(cg, diag::E4002_string_length_overflow!, "str_overflow_msg")
+   const_string_global(cg, diag::E4004_arena_allocation_too_large!, "arena_toobig_msg")
+   const_string_global(cg, diag::E4003_arena_chunk_limit!, "arena_chunklimit_msg")
+   const_string_global(cg, diag::E4001_arena_exhausted!, "arena_oom_msg")
+   const_string_global(cg, diag::E4008_builder_length_bounds!, "builder_len_oob_msg")
 
    ovf_struct = types::struct_type2(i64t, LLVMInt1Type!)
    ovf_params = types::Addrs()
@@ -262,7 +262,7 @@ codegen_emit_runtime_full = cg =>
    cap_v = LLVMConstInt(i64t, 67108864, 0)
    maxc = LLVMConstInt(i64t, 16384, 0)
 
-   const_string_global(cg, "Error %lld: %.*s\n  at %.*s:%lld:%lld\n", "fmt_error")
+   const_string_global(cg, diag::runtime_error_format!, "fmt_error")
    arena_tls = LLVMAddGlobal(cg.module, atp, "dva_arena_tls")
    LLVMSetInitializer(arena_tls, LLVMConstNull(atp))
    LLVMSetThreadLocal(arena_tls, 1)
@@ -310,13 +310,12 @@ codegen_emit_runtime_full = cg =>
    cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty2) +>
 
    // message globals
-   const_string_global(cg, "E4002: string length overflow (concatenation exceeds 64-bit capacity)\n", "str_overflow_msg")
-   const_string_global(cg, "E4004: arena allocation too large for a " +
-      "single chunk (requested %llu bytes, chunk cap %llu bytes)\n",
+   const_string_global(cg, diag::E4002_string_length_overflow!, "str_overflow_msg")
+   const_string_global(cg, diag::E4004_arena_allocation_too_large!,
       "arena_toobig_msg")
-   const_string_global(cg, "E4003: arena chunk limit reached (too many arena chunks)\n", "arena_chunklimit_msg")
-   const_string_global(cg, "E4001: arena allocator exhausted (out of memory)\n", "arena_oom_msg")
-   const_string_global(cg, "E4008: Builder length assignment out of bounds\n", "builder_len_oob_msg")
+   const_string_global(cg, diag::E4003_arena_chunk_limit!, "arena_chunklimit_msg")
+   const_string_global(cg, diag::E4001_arena_exhausted!, "arena_oom_msg")
+   const_string_global(cg, diag::E4008_builder_length_bounds!, "builder_len_oob_msg")
 
    // llvm.uadd.with.overflow.i64 declaration
    ovf_struct = types::struct_type2(i64t, LLVMInt1Type!)
@@ -418,14 +417,14 @@ codegen_emit_runtime_full = cg =>
    limit_reached = LLVMBuildICmp(cg.builder, 39, nc_vl, maxc, "chunk_limit")
    LLVMBuildCondBr(cg.builder, limit_reached, al_lm, al_m)
    LLVMPositionBuilderAtEnd(cg.builder, al_lm)
-   emit_abort_msg(cg, "E4003: arena chunk limit reached (too many arena chunks)\n", "arena_chunklimit_msg")
+   emit_abort_msg(cg, diag::E4003_arena_chunk_limit!, "arena_chunklimit_msg")
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, al_m)
    chunk_v = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, cap_phi, "chunk")
    chunk_n = LLVMBuildICmp(cg.builder, 32, chunk_v, LLVMConstNull(i8p), "malloc_null")
    LLVMBuildCondBr(cg.builder, chunk_n, al_o, al_s)
    LLVMPositionBuilderAtEnd(cg.builder, al_o)
-   emit_abort_msg(cg, "E4001: arena allocator exhausted (out of memory)\n", "arena_oom_msg")
+   emit_abort_msg(cg, diag::E4001_arena_exhausted!, "arena_oom_msg")
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, al_s)
    chunks_new = LLVMBuildStructGEP2(cg.builder, at, a1, 3, "chunks_new")
@@ -1254,7 +1253,7 @@ codegen_check_binding = cg, t =>
 codegen_reserved_type_binding_error: types::Cg, String => ()
 codegen_reserved_type_binding_error = cg, name =>
    types::init_error(cg, "E3050", "Cannot define '" + name +
-      "' — it is a built-in type name and is reserved for type coercion.", 0, 0)
+      diag::E3050_reserved_type_name_suffix!, 0, 0)
 
 codegen_check_binding_valid: types::Cg,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
@@ -1547,7 +1546,7 @@ codegen_check_rebind_type = cg, name, rhs_vt, is_gmut, rhs_expr =>
                      !expr::ram_shape_compatible(cg, target_ti, rhs_ram_ti)
                         |
                            types::init_error(cg, "E3089",
-                              "Cannot assign ramification of shape " +
+                              diag::E3089_ram_shape_prefix! +
                               expr::ram_shape_str(cg, rhs_ram_ti) + " to '" + name +
                               "' (declared as " + expr::ram_shape_str(cg, target_ti) +
                               ").", 0, 0)
@@ -1780,8 +1779,7 @@ codegen_emit_raw_assign = cg, t, rm =>
    rm.load_type
       [Unknown] codegen_emit_raw_assign_untyped(cg, t, rm)
       |
-         types::init_error(cg, "E2093", "Cannot assign to a typed load; write through " +
-            "the untyped '@[addr]' form instead.", 0, 0)
+         types::init_error(cg, "E2093", diag::E2093_assign_typed_load!, 0, 0)
 
 codegen_emit_raw_assign_untyped: types::Cg,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo),
@@ -1800,8 +1798,7 @@ codegen_emit_raw_assign_pointer_value: types::Cg,
    ast::RawMemoryExpr, (Addr, ast::ValueType) => ()
 codegen_emit_raw_assign_pointer_value = cg, t, rm, ev =>
    ev.1 [Str, RawPtr, Error] codegen_emit_raw_assign_value(cg, t, rm, ev)
-      | types::init_error(cg, "E3142", "Raw memory write '@[addr] = expr' requires " +
-         "an integerish or pointer value, got Float", 0, 0)
+      | types::init_error(cg, "E3142", diag::E3142_raw_write_type!, 0, 0)
 
 codegen_emit_raw_assign_value: types::Cg,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo),
@@ -1912,15 +1909,13 @@ codegen_emit_call_assign = cg, t, call =>
    is_str = main::is_str_var(cg, call.fn_name) || (vt [Builder])
    is_str
       |
-         types::init_error(cg, "E3067", "Cannot write through a String call-target '" +
-            call.fn_name + "(...)' — Strings are immutable and a Builder is " +
-            "written with 'b + c'.", 0, 0)
+         types::init_error(cg, "E3067", diag::E3067_string_write_prefix! +
+            call.fn_name + diag::E3067_string_write_suffix!, 0, 0)
       |
          is_hetero = stmt::is_heterogeneous_record_var(cg, call.fn_name)
          is_hetero
             |
-               types::init_error(cg, "E3051", "Dynamic indexing is only allowed on " +
-                  "homogeneous records.", 0, 0)
+               types::init_error(cg, "E3051", diag::E3051_dynamic_index_hetero!, 0, 0)
             |
                is_rec = types::is_record_vt(vt)
                is_sl = main::is_slice_var(cg, call.fn_name)
@@ -1928,9 +1923,8 @@ codegen_emit_call_assign = cg, t, call =>
                is_dotted = types::find_dot(call.fn_name, 0) > 0
                not_init = !is_dotted && !types::var_has_storage(cg, call.fn_name)
                is_sl && (not_init || main::var_partial(cg, call.fn_name))
-                  | types::init_error(cg, "E3049", "Cannot write element of " +
-                     "forward-annotated slice '" + call.fn_name +
-                     "' before whole-value initialization.", 0, 0)
+                  | types::init_error(cg, "E3049", diag::E3049_slice_write_prefix! + call.fn_name +
+                     diag::E3049_slice_write_suffix!, 0, 0)
                   |
                      is_rec && (not_init || main::var_partial(cg, call.fn_name))
                         | types::init_error(cg, "E3131", diag::whole_value_init(call.fn_name), 0, 0)
@@ -1980,7 +1974,7 @@ codegen_emit_exit = cg, e =>
                dead' = LLVMAppendBasicBlock(cg.current_fn, "exit.done")
                LLVMPositionBuilderAtEnd(cg.builder, dead')
       |
-         types::init_error(cg, "E3172", "'#exit' expects an integerish status code", 0, 0)
+         types::init_error(cg, "E3172", diag::E3172_exit_status_integerish!, 0, 0)
 
 
 codegen_emit_stmt: types::Cg, ast::Expr => ()
@@ -2102,11 +2096,11 @@ codegen_finish = cg, out_path =>
                err_msg_opt
                   | err_msg =>
                      err_str = c_str(err_msg)
-                     print $ "E5012: Failed to write LLVM IR to '" + out_path +
+                     print $ diag::E5012_write_ir_prefix! + out_path +
                         "': " + err_str
                      LLVMDisposeMessage(err_msg)
                   |
-                     print $ "E5012: Failed to write LLVM IR to '" + out_path + "'"
+                     print $ diag::E5012_write_ir_prefix! + out_path + "'"
                cg.error = <+>
             |
                r = rename(tmp_out, out_path)

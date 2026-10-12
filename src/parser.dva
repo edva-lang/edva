@@ -917,8 +917,8 @@ parse_atom = p =>
       [Foreign] atom_to_ram(atom_foreign(p))
       |
          parser_error(p, 2064,
-            "Expected primary expression, got '" + p.curr.text + "'")
-         <- Error(2064, "Expected primary expression, got '" +
+            diag::expected_primary_prefix! + p.curr.text + "'")
+         <- Error(2064, diag::expected_primary_prefix! +
             p.curr.text + "'", "", p.curr.line, p.curr.col, (0, 0)) +>
 
 // "#pragma number <type>" — file-scoped directive, already applied by lexer.
@@ -1438,7 +1438,7 @@ atom_op = p =>
                | se => <+ se +>
                |
                   parser_error(p, 2064,
-                     "Expected primary expression, got '" + p.curr.text + "'")
+                     diag::expected_primary_prefix! + p.curr.text + "'")
                   <-->
          | atom_op_ident(p, p.curr.text)
 
@@ -1988,13 +1988,11 @@ atom_cycle_jump = p, is_break =>
                      parser_advance(p)
                      <+ ast::Expr(CycleJump, (is_break, level')) +>
                   |
-                     parser_error(p, 2066, "Cycle jump suffix must be " +
-                        "a positive integer depth (e.g. '-->2'), got '" +
+                     parser_error(p, 2066, diag::cycle_jump_depth_prefix! +
                         p.curr.text + "'")
                      <-->
             |
-               parser_error(p, 2066, "Cycle jump suffix must be a positive " +
-                  "integer depth (e.g. '-->2'), got '" + p.curr.text + "'")
+               parser_error(p, 2066, diag::cycle_jump_depth_prefix! + p.curr.text + "'")
                <-->
       | <+ ast::Expr(CycleJump, (is_break, level')) +>
 
@@ -2034,7 +2032,7 @@ atom_builder = p =>
             | <-->
       |
          parser_error(p, 2064,
-            "Expected primary expression, got '" + p.curr.text + "'")
+            diag::expected_primary_prefix! + p.curr.text + "'")
          <-->
 
 // "?operand" — the length operator (String/Builder/array/map/record/slice).
@@ -2850,8 +2848,7 @@ rfield_repeat = p, fields, fname, vt, rec, is_slice, is_repeated =>
                      n < 1
                         |
                            parser_error(p, 2019,
-                              "Record type repetition count must be a " +
-                              "positive integer, got '" + p.curr.text + "'")
+                              diag::record_repeat_count_prefix! + p.curr.text + "'")
                            mk_tp(ast::ValueType(Unknown),
                               ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                         |
@@ -2860,7 +2857,7 @@ rfield_repeat = p, fields, fname, vt, rec, is_slice, is_repeated =>
                                  parser_error(p, 2055,
                                     "Record type repetition count " +
                                     str::from_int(n) +
-                                    " exceeds the maximum of 1000000")
+                                    diag::record_repeat_limit_suffix!)
                                  mk_tp(ast::ValueType(Unknown),
                                     ast::TypeInfo(Prim,
                                        ast::ValueType(Unknown)), <->)
@@ -2872,8 +2869,7 @@ rfield_repeat = p, fields, fname, vt, rec, is_slice, is_repeated =>
                                  rfields(p, fields, is_slice, <+>)
                   |
                      parser_error(p, 2019,
-                        "Record type repetition count must be a positive " +
-                        "integer, got '" + p.curr.text + "'")
+                        diag::record_repeat_count_prefix! + p.curr.text + "'")
                      mk_tp(ast::ValueType(Unknown),
                         ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
@@ -4125,7 +4121,7 @@ parse_postfix_repetition = p, lhs =>
                         |
                            parser_error(p, 2056,
                               "Repetition count " + str::from_int(n) +
-                              " exceeds the maximum of 1000000")
+                              diag::record_repeat_limit_suffix!)
                            <-->
                         |
                            parser_advance(p)
@@ -5618,24 +5614,20 @@ parse_fixity_clause = p, name =>
                            | rbp_val =>
                               register_user_op(p, name, lbp_val, rbp_val)
                            |
-                              parser_error(p, 2098, "Expected an integer " +
-                                 "right binding-power after '#infix " +
+                              parser_error(p, 2098, diag::infix_right_binding_power_prefix! +
                                  str::from_int(lbp_val) + "', got '" +
                                  p.curr.text + "'.")
                               <->
                      |
-                        parser_error(p, 2098, "Expected an integer right " +
-                           "binding-power after '#infix " +
+                        parser_error(p, 2098, diag::infix_right_binding_power_prefix! +
                            str::from_int(lbp_val) + "', got '" +
                            p.curr.text + "'.")
                         <->
                |
-                  parser_error(p, 2098, "Expected an integer left " +
-                     "binding-power after '#infix', got '" + p.curr.text + "'.")
+                  parser_error(p, 2098, diag::infix_left_binding_power_prefix! + p.curr.text + "'.")
                   <->
          |
-            parser_error(p, 2098, "Expected an integer left binding-power " +
-               "after '#infix', got '" + p.curr.text + "'.")
+            parser_error(p, 2098, diag::infix_left_binding_power_prefix! + p.curr.text + "'.")
             <->
 
 // Registers a user operator's binding powers (rejecting a duplicate fixity).

@@ -31,6 +31,7 @@
 //   ./edva selfhost/lexer.dva
 //   ./lexer
 
+#use "diag"
 #use libc
 #use str
 #use unicode
@@ -652,7 +653,7 @@ scan_next_str_part = lx =>
    body_str = lx.pos
    closed_str = scan_string_body(lx, lx.line, lx.col)
    closed_str [0] fail(1008, lx.line, lx.col,
-      "Unterminated string literal -- missing closing '\"'")
+      diag::E1008_string_unterminated!)
    endq = lx.pos - 1
    str_s = lx.src(body_str..endq)
    part_str = lx.has_esc [1] decode_escapes(str_s) | str_s
@@ -675,7 +676,7 @@ scan_string = lx, start, line, col =>
    body = lx.pos
    closed = scan_string_body(lx, line, col)
    closed [0] fail(1008, line, col,
-      "Unterminated string literal -- missing closing '\"'")
+      diag::E1008_string_unterminated!)
    endq = lx.pos - 1
    raw = lx.src(body..endq)
    text' = lx.has_esc [1] decode_escapes(raw) | raw
@@ -1278,7 +1279,7 @@ scan_heredoc = lx, start, start_line, start_col =>
       lx.pos !< ?lx.src
          |
             fail(1018, start_line, start_col,
-               "Unterminated here-doc literal -- missing closing '\"\"\"'")
+               diag::E1018_heredoc_unterminated!)
             -->
       c = pk(lx, 0)
       is_closing = c == '"' && pk_off(lx, 1) == '"' && pk_off(lx, 2) == '"'
@@ -1404,12 +1405,12 @@ scan_heredoc = lx, start, start_line, start_col =>
                            [Text s]
                               sp = count_leading_indent(s)
                               sp < margin | fail(1017, line.line_num, sp + 1,
-                                 "Line indented less than closing delimiter in here-doc")
+                                 diag::E1017_heredoc_under_indented!)
                               new_s = s(margin..(?s))
                               assembled += HeredocPart(Text, new_s)
                            [Expr _]
                               margin > 0 | fail(1017, line.line_num, 1,
-                                 "Line indented less than closing delimiter in here-doc")
+                                 diag::E1017_heredoc_under_indented!)
                               assembled += p0
                      |
                         assembled += p0

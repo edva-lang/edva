@@ -35,6 +35,7 @@ lexer → parser → AST → dep_graph / type_env / unify / annotate → typed A
 | Area | Source modules | Responsibility |
 |---|---|---|
 | driver & CLI | `edva.dva` | Source loading, CLI parsing, module orchestration, REPL |
+| diagnostics | `diag.dva` | Shared diagnostic messages and fragments for compiler, driver, package, and runtime errors |
 | lexical & tokens | `lexer.dva`, `operators.dva` | Tokenization, token enums, operator tables from YAML |
 | parser | `parser.dva` | Top-down Pratt/precedence parser producing untyped AST |
 | syntax trees | `ast.dva`, `tast.dva`, `show.dva` | Untyped AST, typed AST (TAST), diagnostic printers |
@@ -47,6 +48,12 @@ lexer → parser → AST → dep_graph / type_env / unify / annotate → typed A
 | codegen statements | `codegen/stmt.dva` | Statement emitters, assignments, cycles (`@`, `-->`, `--^`), blocks |
 | codegen entry points | `codegen/main.dva` | Top-level typed program emission to LLVM module |
 | LLVM C bindings | `llvm.dva` | Foreign declarations for the LLVM 18 C API |
+
+Repeated diagnostic text belongs in `src/diag.dva`. Reuse its helpers across
+typed and untyped paths instead of copying strings. Keep caller-specific names,
+type descriptions, error codes, and source locations at the reporting site;
+runtime message helpers include their emitted code and trailing newline.
+The diagnostic module is a leaf and must not import compiler phases.
 
 ## Compilation models
 

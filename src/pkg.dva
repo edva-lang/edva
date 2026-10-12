@@ -6,6 +6,7 @@
 // archives, or the network. Sources are kept in a minimal content store
 // (git mirrors, extracted trees); verification hardening is #102.
 
+#use "diag"
 #use ccl
 #use libc
 #use str
@@ -476,7 +477,7 @@
                   |
                      r.opts.locked
                         |
-                           fail(7007, "--locked: edva.lock.ccl is out of date (" + alias + " changed)")
+                           fail(7007, diag::locked_manifest_stale_prefix! + alias + " changed)")
                            <-->
                         |
                            fetch_mirror(r, url)
@@ -523,14 +524,14 @@
             !check_tree_security(r, v_dir)
                |
                   fail(7019, "dependency '" + alias +
-                     "': repository contains illegal path or escaping symlink")
+                     diag::repository_illegal_path_suffix!)
                   <-->
                |
                   compute_tree_hash(r, v_dir)
                      | tree_hash =>
                         expected_hash != "" && tree_hash != expected_hash
                            |
-                              fail(7005, "tampered vendor content: tree hash mismatch for '" + alias +
+                              fail(7005, diag::vendor_tree_mismatch_prefix! + alias +
                                  "' (expected " + expected_hash + ", got " + tree_hash + ")")
                               <-->
                            | <+ (v_dir, (expected_hash != "" | expected_hash | tree_hash)) +>
@@ -560,7 +561,7 @@
                                  |
                                     sh("rm -rf " + sq(tmp))
                                     fail(7019, "dependency '" + alias +
-                                       "': repository contains illegal path or escaping symlink")
+                                       diag::repository_illegal_path_suffix!)
                                     <-->
                                  |
                                     compute_tree_hash(r, tmp)
@@ -619,7 +620,7 @@
             !check_tree_security(r, v_dir)
                |
                   fail(7019, "dependency '" + alias +
-                     "': archive contains illegal path or path traversal")
+                     diag::archive_illegal_path_suffix!)
                   <-->
                |
                   compute_tree_hash(r, v_dir)
@@ -627,7 +628,7 @@
                         expected_hash = r.hashes ^ (hash) | _ | ""
                         expected_hash != "" && tree_hash != expected_hash
                            |
-                              fail(7005, "tampered vendor content: tree hash mismatch for '" + alias +
+                              fail(7005, diag::vendor_tree_mismatch_prefix! + alias +
                                  "' (expected " + expected_hash + ", got " + tree_hash + ")")
                               <-->
                            | <+ v_dir +>
@@ -675,7 +676,7 @@
                      |
                         libc::unlink(file)
                         fail(7019, "dependency '" + alias +
-                           "': archive contains illegal path or path traversal")
+                           diag::archive_illegal_path_suffix!)
                         <-->
                      |
                         tmp = tmp_path(r)
@@ -805,7 +806,7 @@
                !check_tree_security(r, abs)
                   |
                      fail(7019, "dependency '" + alias +
-                        "': repository contains illegal path or escaping symlink")
+                        diag::repository_illegal_path_suffix!)
                      <-->
                   |
                      load_manifest(abs)
@@ -819,7 +820,7 @@
                               | tree_hash =>
                                  expected_tree' != "" && tree_hash != expected_tree'
                                     |
-                                       fail(7005, "tampered vendor content: tree hash mismatch for '" + alias +
+                                       fail(7005, diag::vendor_tree_mismatch_prefix! + alias +
                                           "' (expected " + expected_tree' + ", got " + tree_hash + ")")
                                        <-->
                                     |
@@ -1715,7 +1716,7 @@
       changed = old_text != text
       r.opts.locked && changed
          |
-            fail(7007, "--locked: edva.lock.ccl is out of date (" + lock_change(prior, lock) +
+            fail(7007, diag::locked_manifest_stale_prefix! + lock_change(prior, lock) +
                " changed)")
             1
          |

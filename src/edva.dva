@@ -4,6 +4,7 @@
 // declarations, then sends one flattened program to the selfhost codegen.
 // Directory modules, stdlib fallback, and CLI flags follow.
 
+#use "diag"
 #use "annotate"
 #use "ast"
 #use "codegen"
@@ -868,7 +869,7 @@ collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sour
                                           src = sources ^ bare | _ | ""
                                           print $ "E3033: Name clash: symbol '" +
                                              bare + "' imported from '" + bound_name +
-                                             "' conflicts with symbol already imported from '" +
+                                             diag::imported_symbol_conflict_suffix! +
                                              src + "'"
                                           ok' = <->
                                  |
@@ -914,9 +915,9 @@ collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sour
                               existing != f.dva_name
                                  |
                                     src = sources ^ bare | _ | ""
-                                    print $ "E3033: Name clash: foreign function '" +
+                                    print $ diag::E3033_foreign_function_clash_prefix! +
                                        bare + "' imported from '" + bound_name +
-                                       "' conflicts with symbol already imported from '" +
+                                       diag::imported_symbol_conflict_suffix! +
                                        src + "'"
                                     ok' = <->
                            |
@@ -938,7 +939,7 @@ check_file_clash = stmts, table, sources =>
                      |
                         src = sources ^ bare | _ | ""
                         print $ "E3033: Name clash: symbol '" + bare +
-                           "' declared in module conflicts with symbol imported from '" +
+                           diag::declared_symbol_conflict_suffix! +
                            src + "'"
                         ok' = <->
          [TypeDecl td]
@@ -955,8 +956,8 @@ check_file_clash = stmts, table, sources =>
             table ^? bare
                |
                   src = sources ^ bare | _ | ""
-                  print $ "E3033: Name clash: foreign function '" + bare +
-                     "' declared in module conflicts with symbol imported from '" +
+                  print $ diag::E3033_foreign_function_clash_prefix! + bare +
+                     diag::declared_symbol_conflict_suffix! +
                      src + "'"
                   ok' = <->
    ok'
@@ -1345,7 +1346,7 @@ load_resolved = resolved, imp_path, ldr =>
          stk_idx !< 0
             |
                chain = format_cycle_chain(ldr.loading_stack, stk_idx, f.canonical_id)
-               print $ "E5038: module import cycle across packages: " + chain
+               print $ diag::E5038_package_import_cycle_prefix! + chain
                <->
             |
                loaded_has(ldr.loaded, f.canonical_id)
@@ -1364,7 +1365,7 @@ load_resolved = resolved, imp_path, ldr =>
          stk_idx !< 0
             |
                chain = format_cycle_chain(ldr.loading_stack, stk_idx, d.canonical_id)
-               print $ "E5038: module import cycle across packages: " + chain
+               print $ diag::E5038_package_import_cycle_prefix! + chain
                <->
             |
                loaded_has(ldr.loaded, d.canonical_id)
@@ -1995,7 +1996,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                      cres != 0
                         |
                            print $ "E" + str::from_int(clang_err) +
-                              ": Clang compilation failed with exit code " +
+                              diag::clang_compilation_failed_suffix! +
                               str::from_int(cres)
                            <- cres ->
                         |
@@ -2083,7 +2084,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                            cres != 0
                               |
                                  print $ "E" + str::from_int(clang_err) +
-                                    ": Clang compilation failed with exit code " +
+                                    diag::clang_compilation_failed_suffix! +
                                     str::from_int(cres)
                                  <- cres ->
                               |
@@ -2979,7 +2980,7 @@ run_driver = _ =>
       |
          opts.target == ""
             |
-               print $ "E5007: No input .dva file specified."
+               print $ diag::E5007_no_input!
                print_usage(0)
                sys::exit(1)
          target_prefix_dump = opts.is_module | opts.module_name | ""
@@ -2994,7 +2995,7 @@ run_driver = _ =>
 
    opts.target == ""
       |
-         print $ "E5007: No input .dva file specified."
+         print $ diag::E5007_no_input!
          print_usage(0)
          sys::exit(1)
 

@@ -441,9 +441,7 @@ fn_value_meta = cg, name =>
 
 codegen_untyped_fn_value_error: types::Cg, String => < (Addr, ast::ValueType) | >
 codegen_untyped_fn_value_error = cg, name =>
-   types::init_error(cg, "E3128", "Function '" + name + "' is used as a value but " +
-      "its parameter types cannot be determined — no declared signature and " +
-      "no call site to infer from. Declare a signature: '" + name +
+   types::init_error(cg, "E3128", "Function '" + name + diag::E3128_function_value_signature_suffix! + name +
       ": T1, T2 => R'.", 0, 0)
    <-->
 
@@ -2538,7 +2536,7 @@ codegen_eval_unary_unwrap = cg, val, vt, target =>
                      main::codegen_emit_error_panic(cg, pay_ptr)
                   |
                      runtime::emit_abort_msg(cg,
-                        "E4007: unwrap on empty or error ramification\n",
+                        diag::E4007_unwrap_empty_or_error!,
                         "unwrap_abort_msg")
                      LLVMBuildUnreachable(cg.builder)
 
@@ -4016,7 +4014,7 @@ codegen_eval_named_call = cg, t =>
                      [Float f] bkey += str::from_float(f)
                      |
                         types::init_error(cg, "E3130", "Compile-time parameter '" +
-                           ct + "' is not compile-time evaluable",
+                           ct + diag::compile_time_parameter_suffix!,
                            t.line, t.col)
                |
                   inf = infer_ct_param(cg, tis, runtime_args, cavts',
@@ -5091,7 +5089,7 @@ codegen_typed_eval_unary = cg, op, operand, ut, ti =>
                is_niche'
                   |
                      runtime::emit_abort_msg(cg,
-                        "E4007: unwrap on empty or error ramification\n",
+                        diag::E4007_unwrap_empty_or_error!,
                         "unwrap_abort_msg")
                      LLVMBuildUnreachable(cg.builder)
                   |
@@ -5493,7 +5491,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
                      [Float f] bkey += str::from_float(f)
                      |
                         types::init_error(cg, "E3130", "Compile-time parameter '" +
-                           ct + "' is not compile-time evaluable", 0, 0)
+                           ct + diag::compile_time_parameter_suffix!, 0, 0)
                |
                   extracted = extract_ct_from_tis(cg, tis, catis', ct)
                   fallback = infer_ct_param(cg, tis, ast::Exprs(), cavts',

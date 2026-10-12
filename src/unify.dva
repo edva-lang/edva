@@ -4,6 +4,7 @@
 // structural record unification, and strict ramification shape invariance.
 // Part of Milestone 1 in process/unification-roadmap.md.
 
+#use "diag"
 #use "ast"
 #use "str"
 
@@ -579,7 +580,7 @@ unify_rec_open = ctx, r1, r2, v1, v2 =>
                <+>
             |
                add_error(ctx, 3084,
-                  "Record does not satisfy open record fields")
+                  diag::E3084_open_record_fields!)
                <->
       |
          open2 = v2 !< 0 && is_open_var(ctx, v2)
@@ -592,7 +593,7 @@ unify_rec_open = ctx, r1, r2, v1, v2 =>
                      <+>
                   |
                      add_error(ctx, 3084,
-                        "Record does not satisfy open record fields")
+                        diag::E3084_open_record_fields!)
                      <->
             | unify_rec(ctx, r1, r2)
 
@@ -624,7 +625,7 @@ unify_ram = ctx, r1, r2 =>
    s1 != s2
       |
          add_error(ctx, 3089,
-            "Cannot assign ramification of shape " +
+            diag::E3089_ram_shape_prefix! +
             show_ram_shape(s1) + " to " +
             show_ram_shape(s2))
          <->
