@@ -1,0 +1,38 @@
+// tests/pass/324_map_tombstone_update.dva — issue #124 regression: update after tombstone deletion in collision chain
+#use io
+
+#type M Int ^ Int
+
+m = M()
+m ^ 0 = 10
+m ^ 8 = 20
+
+// Delete 0 (creating a tombstone at index 0 in the collision chain of 0 and 8)
+deleted0 = m ^- 0
+?m != 1 | io::out("FAIL count after delete 0")
+m ^? 0 | io::out("FAIL 0 still present")
+
+// Update 8 (should overwrite slot 1, not insert at tombstone slot 0)
+m ^ 8 = 30
+?m != 1 | io::out("FAIL count after update 8")
+(m ^ 8)!! != 30 | io::out("FAIL value of 8 after update")
+
+// Delete 8
+deleted8 = m ^- 8
+?m != 0 | io::out("FAIL count after delete 8")
+m ^? 8 | io::out("FAIL 8 still present after delete")
+
+// Lookup 8 should now be absent
+val8 = m ^ 8 | _ | -1
+val8 != -1 | io::out("FAIL 8 should be absent")
+
+// Reinsert 0 and 8, then update 0 and delete 8
+m ^ 0 = 100
+m ^ 8 = 200
+?m != 2 | io::out("FAIL count after reinsertion")
+deleted8_2 = m ^- 8
+m ^ 0 = 101
+?m != 1 | io::out("FAIL count after second update")
+(m ^ 0)!! != 101 | io::out("FAIL value of 0 after second update")
+
+io::out("PASS")
