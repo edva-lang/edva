@@ -1,0 +1,43 @@
+// tests/pass/333_unsigned_to_float.dva — issue #130 regression: unsigned integer to float casts
+#use io
+
+// 1. u8
+io::out $ Float(u8(1))
+io::out $ Float(u8(127))
+io::out $ Float(u8(128))
+io::out $ Float(u8(255))
+io::out $ f32(u8(255))
+
+// 2. i8
+io::out $ Float(i8(1))
+io::out $ Float(i8(127))
+io::out $ Float(i8(-1))
+io::out $ Float(i8(-128))
+
+// 3. u16
+io::out $ Float(u16(1))
+io::out $ Float(u16(32767))
+io::out $ Float(u16(32768))
+io::out $ Float(u16(65535))
+io::out $ f32(u16(65535))
+
+// 4. i16
+io::out $ Float(i16(-1))
+io::out $ Float(i16(-32768))
+
+// 5. u32
+io::out $ Float(u32(1))
+io::out $ Float(u32(2147483648))
+io::out $ Float(u32(4294967295))
+io::out $ f32(u32(4294967295))
+
+// 6. i32
+io::out $ Float(i32(-1))
+io::out $ Float(i32(-2147483648))
+
+// 7. u64
+io::out $ Float(u64(1))
+io::out $ Float(u64(18446744073709551615))
+
+// 8. i64
+io::out $ Float(i64(-1))

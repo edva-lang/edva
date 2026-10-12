@@ -1255,7 +1255,10 @@ call_named = cg, name, args =>
 coerce_float: types::Cg, Addr, ast::ValueType => Addr
 coerce_float = cg, v, vt =>
    types::is_int_vt(vt)
-      | LLVMBuildSIToFP(cg.builder, v, LLVMDoubleType!, "sitofp")
+      |
+         types::is_unsigned_vt(vt)
+            | LLVMBuildUIToFP(cg.builder, v, LLVMDoubleType!, "uitofp")
+            | LLVMBuildSIToFP(cg.builder, v, LLVMDoubleType!, "sitofp")
       | v
 
 fixed_record_is_homogeneous: ast::VTypes, ast::ValueType, Int => <>
@@ -1453,8 +1456,12 @@ codegen_scalar_to_elem = cg, sv, elem_llvm, elem_vt =>
    types::is_float_vt(elem_vt)
       |
          types::is_int_vt(sv.1)
-            | LLVMBuildSIToFP(cg.builder, sv.0, elem_llvm,
-               "arr.scalar.sitofp")
+            |
+               types::is_unsigned_vt(sv.1)
+                  | LLVMBuildUIToFP(cg.builder, sv.0, elem_llvm,
+                     "arr.scalar.uitofp")
+                  | LLVMBuildSIToFP(cg.builder, sv.0, elem_llvm,
+                     "arr.scalar.sitofp")
             |
                LLVMTypeOf(sv.0) == elem_llvm
                   | sv.0
@@ -2718,8 +2725,11 @@ coerce_val = cg, v, v_vt, target =>
       [Float]
          types::is_int_vt(v_vt)
             |
-               (LLVMBuildSIToFP(cg.builder, v, LLVMDoubleType!,
-                  "cast.sitofp"), ast::ValueType(Float))
+               types::is_unsigned_vt(v_vt)
+                  | (LLVMBuildUIToFP(cg.builder, v, LLVMDoubleType!,
+                     "cast.uitofp"), ast::ValueType(Float))
+                  | (LLVMBuildSIToFP(cg.builder, v, LLVMDoubleType!,
+                     "cast.sitofp"), ast::ValueType(Float))
             |
                is_f32 = v_vt [F32]
                is_f32
@@ -2731,8 +2741,11 @@ coerce_val = cg, v, v_vt, target =>
       [F32]
          types::is_int_vt(v_vt)
             |
-               (LLVMBuildSIToFP(cg.builder, v, LLVMFloatType!,
-                  "cast.sitofp"), ast::ValueType(F32))
+               types::is_unsigned_vt(v_vt)
+                  | (LLVMBuildUIToFP(cg.builder, v, LLVMFloatType!,
+                     "cast.uitofp"), ast::ValueType(F32))
+                  | (LLVMBuildSIToFP(cg.builder, v, LLVMFloatType!,
+                     "cast.sitofp"), ast::ValueType(F32))
             |
                is_f64 = v_vt [Float]
                is_f64
@@ -7266,8 +7279,11 @@ codegen_typed_eval_cast_other = cg, target_vt, aev =>
       |
          types::is_int_vt(aev.1)
             |
-               (LLVMBuildSIToFP(cg.builder, aev.0, LLVMFloatType!,
-                  "cast.sitofp"), ast::ValueType(F32))
+               types::is_unsigned_vt(aev.1)
+                  | (LLVMBuildUIToFP(cg.builder, aev.0, LLVMFloatType!,
+                     "cast.uitofp"), ast::ValueType(F32))
+                  | (LLVMBuildSIToFP(cg.builder, aev.0, LLVMFloatType!,
+                     "cast.sitofp"), ast::ValueType(F32))
             |
                is_f64 = aev.1 [Float]
                is_f64
@@ -7282,9 +7298,13 @@ codegen_typed_eval_cast_other = cg, target_vt, aev =>
             |
                types::is_int_vt(aev.1)
                   |
-                     (LLVMBuildSIToFP(cg.builder, aev.0,
-                        LLVMDoubleType!, "cast.sitofp"),
-                        ast::ValueType(Float))
+                     types::is_unsigned_vt(aev.1)
+                        | (LLVMBuildUIToFP(cg.builder, aev.0,
+                           LLVMDoubleType!, "cast.uitofp"),
+                           ast::ValueType(Float))
+                        | (LLVMBuildSIToFP(cg.builder, aev.0,
+                           LLVMDoubleType!, "cast.sitofp"),
+                           ast::ValueType(Float))
                   |
                      is_f32_src = aev.1 [F32]
                      is_f32_src
