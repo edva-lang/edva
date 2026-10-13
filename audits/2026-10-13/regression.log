@@ -1,0 +1,690 @@
+[1mBuilding self-hosted compiler (edva)...[0m
+
+[1mChecking token enums are in sync (tokens.txt)...[0m
+
+[1mChecking operator tables are in sync (operators.yaml)...[0m
+operators.yaml: all artifacts in sync.
+
+[1mChecking documentation evidence, operators, and examples...[0m
+Validating documentation evidence anchors...
+  Scanned 61 pages, 184 anchors.
+  All evidence anchors resolved successfully.
+Validating operator & LLM table sync...
+  Operator tables in sync.
+Checking documentation code examples...
+  Examples: 1 complete, 1 partial, 1 negative.
+Documentation checks passed successfully.
+
+[1m=========================================[0m
+[1m          EDVA DRIVER REGRESSION TESTS   [0m
+[1m=========================================[0m
+=== Running edva driver regression tests ===
+Testing F1 (parse failure propagation)... PASS
+Testing F1 (missing module failure propagation)... PASS
+Testing F2 (unwritable output path error without SIGSEGV)... PASS
+Testing F5 (file read exact length and empty file handling)... PASS
+Testing F8 (child signal termination reporting under -r)... PASS
+Testing --typed-ast (typed AST elaboration & error handling)... PASS
+Testing -H / --header (C header generation from #export)... PASS
+Testing WebAssembly target (-target wasm32-unknown-unknown)... PASS
+Testing modular compilation & interface-only #use loading... PASS
+Testing project name derivation for src/ directory target... PASS
+Testing E5022 directory collision handling... PASS
+Testing edva pkg CLI dispatch and usage... PASS
+Testing edva pkg fetch resolution, lockfile and imports.ccl generation... PASS
+Testing edva pkg fetch --locked validation... PASS
+Testing edva pkg fetch dependency cycle detection... PASS
+Testing edva pkg fetch overrides and --locked rejection... PASS
+Testing edva pkg fetch --offline rejection... PASS
+Testing edva pkg fetch git fixture, tree hashing and store layout... PASS
+Testing edva pkg fetch moving tag pinning... PASS
+Testing edva pkg fetch tree hash mismatch (E7005)... PASS
+Testing edva pkg fetch archive source and store caching... PASS
+Testing edva pkg fetch archive checksum mismatch (E7005)... PASS
+Testing edva pkg fetch zip-slip / traversal rejection (E7019)... PASS
+Testing edva pkg fetch escaping symlink rejection (E7019)... PASS
+Testing edva pkg fetch offline cache hit and miss... PASS
+Testing edva pkg fetch submodule and subdir actionable errors... PASS
+Testing edva pkg build with diamond dependency graph... PASS
+Testing edva pkg test runner... PASS
+Testing native dependencies FFI linkage (native.libs)... PASS
+Testing native pkg-config resolution and missing requirement error... PASS
+Testing library package build (no src/main.dva)... PASS
+Testing LLVM IR caching cold vs warm build... PASS
+Testing cache invalidation on source change... PASS
+Testing cache invalidation on dependency source change... PASS
+Testing cache invalidation on optimization flag change... PASS
+Testing cache invalidation on EDVA_COMPILER_ID change... PASS
+Testing cache invalidation on target triple change... PASS
+Testing diagnostics preservation on compilation... PASS
+Testing cache CLI commands (dir, ls, clean)... PASS
+Testing corrupt cache entry cleanup... PASS
+Testing edva init and duplicate prevention (E7020)... PASS
+Testing edva add and transactional rollback (E7021)... PASS
+Testing edva update selective pin refresh & --locked rejection... PASS
+Testing edva graph & tree with duplicate versions detection... PASS
+Testing top-level subcommands dispatch (edva <subcmd>)... PASS
+Testing edva vendor offline workflow, relocation & tamper checks... PASS
+=== All driver tests PASSED ===
+[0;32mAll driver regression tests passed.[0m
+
+[1m=========================================[0m
+[1m          EDVA COMPILER TEST SUITE       [0m
+[1m=========================================[0m
+
+[1m=========================================[0m
+[1m          EXAMPLES COMPILE SMOKE         [0m
+[1m=========================================[0m
+  - hello: [0;32mOK[0m
+  - http_server: [0;32mOK[0m
+  - lexer: [0;32mOK[0m
+  - nc: [0;32mOK[0m
+
+[1m[+] Running Positive Tests (tests/pass/)[0m
+  - 001_literals: [0;32mPASS[0m
+  - 002_mutability: [0;32mPASS[0m
+  - 003_arithmetic: [0;32mPASS[0m
+  - 004_choice_inline: [0;32mPASS[0m
+  - 005_choice_indented: [0;32mPASS[0m
+  - 006_choice_value_int: [0;32mPASS[0m
+  - 007_nested_choice: [0;32mPASS[0m
+  - 008_inexhaustive_choice_stmt: [0;32mPASS[0m
+  - 009_single_branch_choice: [0;32mPASS[0m
+  - 010_cycle_range: [0;32mPASS[0m
+  - 011_cycle_sugar_double_at: [0;32mPASS[0m
+  - 012_cycle_break: [0;32mPASS[0m
+  - 013_range_omitted_start: [0;32mPASS[0m
+  - 014_range_unbounded_start: [0;32mPASS[0m
+  - 015_infix_application_dollar: [0;32mPASS[0m
+  - 016_user_functions: [0;32mPASS[0m
+  - 018_arena_string_concat: [0;32mPASS[0m
+  - 019_cycle_int_operand: [0;32mPASS[0m
+  - 020_tuples_and_records: [0;32mPASS[0m
+  - 021_tagged_unions_and_predicates: [0;32mPASS[0m
+  - 022_dual_signatures_and_extractor: [0;32mPASS[0m
+  - 023_code_comments: [0;32mPASS[0m
+  - 024_raw_memory_references: [0;32mPASS[0m
+  - 025_integer_bases: [0;32mPASS[0m
+  - 026_float_types: [0;32mPASS[0m
+  - 027_operator_sections: [0;32mPASS[0m
+  - 028_modules: [0;32mPASS[0m
+  - 029_implicit_param_lambda: [0;32mPASS[0m
+  - 030_foreign_libc: [0;32mPASS[0m
+  - 031_sys_read_stdin: [0;32mPASS[0m
+  - 032_sys_read_delim: [0;32mPASS[0m
+  - 033_type_wrangling: [0;32mPASS[0m
+  - 034_type_declarations: [0;32mPASS[0m
+  - 035_socket_functions: [0;32mPASS[0m
+  - 036_char_literals: [0;32mPASS[0m
+  - 037_choice_in_application: [0;32mPASS[0m
+  - 038_array_literals: [0;32mPASS[0m
+  - 039_array_slicing: [0;32mPASS[0m
+  - 040_array_iteration: [0;32mPASS[0m
+  - 041_posix_spawn: [0;32mPASS[0m
+  - 042_semicolon_separation: [0;32mPASS[0m
+  - 043_line_continuation: [0;32mPASS[0m
+  - 044_first_class_functions: [0;32mPASS[0m
+  - 045_logical_operators: [0;32mPASS[0m
+  - 046_choice_lambda_sugar: [0;32mPASS[0m
+  - 059_ramnn_unit_in_payload_ram: [0;32mPASS[0m
+  - 065_copy_operator: [0;32mPASS[0m
+  - 066_array_of_tuples: [0;32mPASS[0m
+  - 067_modules_explicit_path: [0;32mPASS[0m
+  - 068_sys_argv_bounds_check: [0;32mPASS[0m
+  - 069_tuple_bool_field_layout: [0;32mPASS[0m
+  - 070_cycle_jump_multilevel: [0;32mPASS[0m
+  - 071_cycle_escape_basic: [0;32mPASS[0m
+  - 072_cycle_escape_nested: [0;32mPASS[0m
+  - 073_string_embedded_nul: [0;32mPASS[0m
+  - 074_string_non_nul_to_foreign: [0;32mPASS[0m
+  - 075_arena_chunked_retention: [0;32mPASS[0m
+  - 076_arena_save_restore_cross_chunk: [0;32mPASS[0m
+  - 077_feed_operator: [0;32mPASS[0m
+  - 078_variant_payload_comparison: [0;32mPASS[0m
+  - 079_closure_and_higher_order: [0;32mPASS[0m
+  - 080_forward_annotation: [0;32mPASS[0m
+  - 081_plus_adjacent: [0;32mPASS[0m
+  - 082_type_coercion: [0;32mPASS[0m
+  - 083_record_unified: [0;32mPASS[0m
+  - 084_nested_record_type: [0;32mPASS[0m
+  - 085_nested_record_literal: [0;32mPASS[0m
+  - 086_inline_embedding: [0;32mPASS[0m
+  - 087_slices_in_records: [0;32mPASS[0m
+  - 088_cycle_fn_value: [0;32mPASS[0m
+  - 089_cycle_block_body: [0;32mPASS[0m
+  - 090_nested_decl_deep: [0;32mPASS[0m
+  - 091_nested_decl_mixed: [0;32mPASS[0m
+  - 092_choice_merge_type: [0;32mPASS[0m
+  - 093_narrow_index_bounds: [0;32mPASS[0m
+  - 094_char_escapes: [0;32mPASS[0m
+  - 095_negative_float_suffix: [0;32mPASS[0m
+  - 096_indent_type_decl: [0;32mPASS[0m
+  - 097_ram_type_decls: [0;32mPASS[0m
+  - 097_simd: [0;32mPASS[0m
+  - 098_unicode_module: [0;32mPASS[0m
+  - 099_bitwise_ops: [0;32mPASS[0m
+  - 099_enum_decl: [0;32mPASS[0m
+  - 099_fpfast: [0;32mPASS[0m
+  - 100_enum: [0;32mPASS[0m
+  - 100_fmt: [0;32mPASS[0m
+  - 100_intrinsics: [0;32mPASS[0m
+  - 100_literal_pragma: [0;32mPASS[0m
+  - 101_pragma_number: [0;32mPASS[0m
+  - 101_sort: [0;32mPASS[0m
+  - 102_sizeof: [0;32mPASS[0m
+  - 103_str_module: [0;32mPASS[0m
+  - 104_builder_literal: [0;32mPASS[0m
+  - 105_non_exhaustive_predicate_choice: [0;32mPASS[0m
+  - 106_comma_or_guards: [0;32mPASS[0m
+  - 107_builder_address_and_len: [0;32mPASS[0m
+  - 108_http_module: [0;32mPASS[0m
+  - 109_builder_peephole_and_records: [0;32mPASS[0m
+  - 110_choice_all_terminating: [0;32mPASS[0m
+  - 111_mixed_width_arith: [0;32mPASS[0m
+  - 112_div_zero_abort: [0;32mPASS[0m
+  - 113_div_overflow_abort: [0;32mPASS[0m
+  - 114_unsigned_comparison: [0;32mPASS[0m
+  - 115_f32_at_eof: [0;32mPASS[0m
+  - 115_not_equal: [0;32mPASS[0m
+  - 116_foreign_explicit_i32_param: [0;32mPASS[0m
+  - 117_logical_ram_merge: [0;32mPASS[0m
+  - 118_monadic_bind: [0;32mPASS[0m
+  - 119_net_udp_loopback: [0;32mPASS[0m
+  - 120_http_url_utils: [0;32mPASS[0m
+  - 121_fn_signatures: [0;32mPASS[0m
+  - 122_unicode_module: [0;32mPASS[0m
+  - 123_flag_predicate_guards: [0;32mPASS[0m
+  - 124_enum_labels_as_values: [0;32mPASS[0m
+  - 125_prelude: [0;32mPASS[0m
+  - 126_growable_array: [0;32mPASS[0m
+  - 127_array_unwrap: [0;32mPASS[0m
+  - 128_array_oob_panic: [0;32mPASS[0m
+  - 129_global_mutation: [0;32mPASS[0m
+  - 130_recursive_types: [0;32mPASS[0m
+  - 131_json_parse: [0;32mPASS[0m
+  - 133_arena_transitive_helper_call: [0;32mPASS[0m
+  - 134_chained_subscripts: [0;32mPASS[0m
+  - 135_enum_qualified_label: [0;32mPASS[0m
+  - 136_fn_type_passthrough: [0;32mPASS[0m
+  - 137_unit_void: [0;32mPASS[0m
+  - 138_closures: [0;32mPASS[0m
+  - 139_structured_headers: [0;32mPASS[0m
+  - 140_cross_module_types: [0;32mPASS[0m
+  - 141_higher_order_chained_call: [0;32mPASS[0m
+  - 142_firstclass_fn_types: [0;32mPASS[0m
+  - 143_ram_typed_fn_params: [0;32mPASS[0m
+  - 144_string_literals: [0;32mPASS[0m
+  - 145_compile_time_eval: [0;32mPASS[0m
+  - 146_monomorphization: [0;32mPASS[0m
+  - 147_type_generators: [0;32mPASS[0m
+  - 148_generic_fn_params: [0;32mPASS[0m
+  - 149_compile_time_type_dispatch: [0;32mPASS[0m
+  - 150_generic_ram_params: [0;32mPASS[0m
+  - 151_type_equality_composites: [0;32mPASS[0m
+  - 152_must_init_intersection: [0;32mPASS[0m
+  - 153_private: [0;32mPASS[0m
+  - 154_word_mmio: [0;32mPASS[0m
+  - 155_math: [0;32mPASS[0m
+  - 160_multithreading: [0;32mPASS[0m
+  - 161_multithreading_panic: [0;32mPASS[0m
+  - 162_multithreading_builder: [0;32mPASS[0m
+  - 163_multithreading_record: [0;32mPASS[0m
+  - 164_multithreading_array_slice: [0;32mPASS[0m
+  - 165_multithreading_ram_enum: [0;32mPASS[0m
+  - 166_array_return_typeinfo: [0;32mPASS[0m
+  - 167_indirect_call_composite_return: [0;32mPASS[0m
+  - 168_inline_lambda_arg_type: [0;32mPASS[0m
+  - 169_fn_value_inferred_params: [0;32mPASS[0m
+  - 170_bidirectional_fn_inference: [0;32mPASS[0m
+  - 171_spawn_capturing_worker: [0;32mPASS[0m
+  - 172_spawn_lambda_target: [0;32mPASS[0m
+  - 173_flag_guard_negated: [0;32mPASS[0m
+  - 174_apply_named: [0;32mPASS[0m
+  - 175_choice_fn_branch_unification: [0;32mPASS[0m
+  - 176_nested_fn_inference: [0;32mPASS[0m
+  - 177_map_type: [0;32mPASS[0m
+  - 178_export_directive: [0;32mPASS[0m
+  - 179_mixed_guard_list: [0;32mPASS[0m
+  - 180_zero_arg_functions: [0;32mPASS[0m
+  - 181_sort_and_cmp: [0;32mPASS[0m
+  - 182_mutual_recursion: [0;32mPASS[0m
+  - 183_str_from_float: [0;32mPASS[0m
+  - 184_cross_module: [0;32mPASS[0m
+  - 185_fmt: [0;32mPASS[0m
+  - 187_json_number_strict: [0;32mPASS[0m
+  - 188_ws_operators: [0;32mPASS[0m
+  - 189_forward_ref_heap_enum_array: [0;32mPASS[0m
+  - 190_deep_nested_choice: [0;32mPASS[0m
+  - 191_named_predicate_guard: [0;32mPASS[0m
+  - 192_member_index_chain: [0;32mPASS[0m
+  - 193_forward_ref_enum_field: [0;32mPASS[0m
+  - 194_discarded_choice_mixed_branches: [0;32mPASS[0m
+  - 195_empty_ram_type: [0;32mPASS[0m
+  - 196_discarded_non_exhaustive_choice: [0;32mPASS[0m
+  - 197_builder_grow_in_restore_cycle: [0;32mPASS[0m
+  - 198_application_ops: [0;32mPASS[0m
+  - 199_closure_composites: [0;32mPASS[0m
+  - 200_whitespace_operators: [0;32mPASS[0m
+  - 201_custom_operators: [0;32mPASS[0m
+  - 202_string_guard_choice: [0;32mPASS[0m
+  - 203_flag_guard_operand: [0;32mPASS[0m
+  - 204_builder_grow_in_restore_cycle: [0;32mPASS[0m
+  - 205_record_build_in_restore_cycle: [0;32mPASS[0m
+  - 206_enum_qualified_label_module: [0;32mPASS[0m
+  - 207_map_delete_literal_iteration: [0;32mPASS[0m
+  - 208_spawn_function_value_arg: [0;32mPASS[0m
+  - 209_cttr_generic_collect: [0;32mPASS[0m
+  - 210_ctfe_widened: [0;32mPASS[0m
+  - 211_ctfe_functions: [0;32mPASS[0m
+  - 212_prelude_collect: [0;32mPASS[0m
+  - 213_ctfe_generic: [0;32mPASS[0m
+  - 214_field_reflection: [0;32mPASS[0m
+  - 215_ctfe_higher_order: [0;32mPASS[0m
+  - 216_curried_const: [0;32mPASS[0m
+  - 217_field_iteration: [0;32mPASS[0m
+  - 218_enum_variant_iteration: [0;32mPASS[0m
+  - 219_match_function_value: [0;32mPASS[0m
+  - 220_stdio: [0;32mPASS[0m
+  - 221_log: [0;32mPASS[0m
+  - 222_exit: [0;32mPASS[0m
+  - 223_exit_branch: [0;32mPASS[0m
+  - 224_single_bare_payload: [0;32mPASS[0m
+  - 225_one_field_record_payload: [0;32mPASS[0m
+  - 226_indented_type_block: [0;32mPASS[0m
+  - 227_ident_unwrap: [0;32mPASS[0m
+  - 228_record_layout_compat: [0;32mPASS[0m
+  - 229_enum_equality: [0;32mPASS[0m
+  - 230_multiline_fn_body: [0;32mPASS[0m
+  - 231_member_compound: [0;32mPASS[0m
+  - 232_large_string: [0;32mPASS[0m
+  - 233_forward_named_fn_value: [0;32mPASS[0m
+  - 234_exit_lowest_precedence: [0;32mPASS[0m
+  - 235_choice_in_fn_args: [0;32mPASS[0m
+  - 236_aligned_choice_sequence: [0;32mPASS[0m
+  - 237_foreign_void: [0;32mPASS[0m
+  - 238_unification_higher_order_pipelines: [0;32mPASS[0m
+  - 239_unification_currying_closures: [0;32mPASS[0m
+  - 240_unification_choice_closure_join: [0;32mPASS[0m
+  - 241_unification_mutual_recursion: [0;32mPASS[0m
+  - 242_prelude_find: [0;32mPASS[0m
+  - 243_array_copy: [0;32mPASS[0m
+  - 244_growable_array_iteration: [0;32mPASS[0m
+  - 245_multiline_string_concat: [0;32mPASS[0m
+  - 246_postfix_unwrap: [0;32mPASS[0m
+  - 247_vector_binops: [0;32mPASS[0m
+  - 248_flag_io_show: [0;32mPASS[0m
+  - 249_record_defaults_functional_update: [0;32mPASS[0m
+  - 250_indented_assignment: [0;32mPASS[0m
+  - 251_builder_length_choice: [0;32mPASS[0m
+  - 252_compile_time_type_guard: [0;32mPASS[0m
+  - 253_ram_propagate_operator: [0;32mPASS[0m
+  - 254_deep_pattern_destructuring: [0;32mPASS[0m
+  - 255_ram_null_niche: [0;32mPASS[0m
+  - 256_ram_unboxed: [0;32mPASS[0m
+  - 257_ram_polarity_cast: [0;32mPASS[0m
+  - 258_marked_global_declaration: [0;32mPASS[0m
+  - 259_user_diagnostics: [0;32mPASS[0m
+  - 260_c_header_generation: [0;32mPASS[0m
+  - 261_slice_negative_clamp: [0;32mPASS[0m
+  - 262_record_views: [0;32mPASS[0m
+  - 263_packed_records_bitfields: [0;32mPASS[0m
+  - 264_addr_arena_safety: [0;32mPASS[0m
+  - 265_io_read_repertoire: [0;32mPASS[0m
+  - 266_type_env_index: [0;32mPASS[0m
+  - 267_dependency_index: [0;32mPASS[0m
+  - 267_vector_reductions: [0;32mPASS[0m
+  - 268_record_field_reflection: [0;32mPASS[0m
+  - 269_type_predicates: [0;32mPASS[0m
+  - 270_comptime_value_params: [0;32mPASS[0m
+  - 271_builder_record_append: [0;32mPASS[0m
+  - 272_comptime_static_data: [0;32mPASS[0m
+  - 273_foreign_native_signature: [0;32mPASS[0m
+  - 274_rune_and_codepoint_cycle: [0;32mPASS[0m
+  - 275_typed_body_reuse: [0;32mPASS[0m
+  - 276_type_name_index: [0;32mPASS[0m
+  - 277_prime_mutability: [0;32mPASS[0m
+  - 278_record_splat: [0;32mPASS[0m
+  - 279_monomorphization_memo: [0;32mPASS[0m
+  - 280_string_tuple_cmp: [0;32mPASS[0m
+  - 281_builder_len_oob_abort: [0;32mPASS[0m
+  - 281_uring: [0;32mPASS[0m
+  - 282_use_dynamic: [0;32mPASS[0m
+  - 283_math_complex_fft: [0;32mPASS[0m
+  - 283_use_import: [0;32mPASS[0m
+  - 284_trailing_blocks: [0;32mPASS[0m
+  - 285_intrinsics_math: [0;32mPASS[0m
+  - 286_std_color: [0;32mPASS[0m
+  - 287_std_math_geom: [0;32mPASS[0m
+  - 288_intrinsics_mem: [0;32mPASS[0m
+  - 289_state_bindings: [0;32mPASS[0m
+  - 290_std_mem: [0;32mPASS[0m
+  - 291_vector_swizzle: [0;32mPASS[0m
+  - 302_user_fp_names: [0;32mPASS[0m
+  - 303_builder_freeze_detach: [0;32mPASS[0m
+  - 304_oversized_shifts: [0;32mPASS[0m
+  - 305_cycle_escape_ram: [0;32mPASS[0m
+  - 306_lens_shared_cell: [0;32mPASS[0m
+  - 307_error_record: [0;32mPASS[0m
+  - 308_enum_deep_equality: [0;32mPASS[0m
+  - 309_anonymous_growable_array: [0;32mPASS[0m
+  - 310_inexhaustive_ram_pn_choice: [0;32mPASS[0m
+  - 311_visibility_scoping: [0;32mPASS[0m
+  - 312_std_ccl: [0;32mPASS[0m
+  - 313_early_return: [0;32mPASS[0m
+  - 313_pkg_imports: [0;32mPASS[0m
+  - 314_bitwise_xor: [0;32mPASS[0m
+  - 315_spaceless_bang_ramnn: [0;32mPASS[0m
+  - 316_return_ram_sugar: [0;32mPASS[0m
+  - 317_fp_reductions: [0;32mPASS[0m
+  - 318_fp_slicing: [0;32mPASS[0m
+  - 319_fp_zip: [0;32mPASS[0m
+  - 320_fp_predicates: [0;32mPASS[0m
+  - 321_fp_map_generalized: [0;32mPASS[0m
+  - 322_uax31: [0;32mPASS[0m
+  - 323_heredoc: [0;32mPASS[0m
+  - 324_map_tombstone_update: [0;32mPASS[0m
+  - 325_map_tombstone_saturation: [0;32mPASS[0m
+  - 326_arena_nested_restore: [0;32mPASS[0m
+  - 327_arena_stale_read: [0;32mPASS[0m
+  - 328_arena_generation_exhaustion: [0;32mPASS[0m
+  - 329_narrow_div_mod: [0;32mPASS[0m
+  - 330_narrow_div_zero_abort: [0;32mPASS[0m
+  - 331_narrow_div_overflow_abort: [0;32mPASS[0m
+  - 332_narrow_shifts: [0;32mPASS[0m
+  - 333_unsigned_to_float: [0;32mPASS[0m
+  - 334_float_to_int: [0;32mPASS[0m
+  - 335_primitive_casts: [0;32mPASS[0m
+  - 336_string_map_key_length_memcmp: [0;32mPASS[0m
+  - 337_builder_alias_freeze_reset: [0;32mPASS[0m
+  - 338_layout_size_reconciliation: [0;32mPASS[0m
+  - 339_quarto_reference_examples: [0;32mPASS[0m
+  - 340_llm_reference_examples: [0;32mPASS[0m
+  - 341_std_mem_pool_reference: [0;32mPASS[0m
+  - 342_ram_representation_and_allocation: [0;32mPASS[0m
+  - 343_float_nan_comparisons: [0;32mPASS[0m
+  - 344_uring_error_handling: [0;32mPASS[0m
+  - 345_implicit_ram_fallback: [0;32mPASS[0m
+  - 346_uring_correctness: [0;32mPASS[0m
+  - 347_underscore_implicit_uses: [0;32mPASS[0m
+  - 348_mask_literals_and_ptrmask: [0;32mPASS[0m
+  - 349_addr_operator_records_and_scalars: [0;32mPASS[0m
+  - views: [0;32mPASS[0m
+
+[1m[-] Running Negative Tests (tests/fail/)[0m
+  - 001_immutable_reassign: [0;32mPASS (Caught Expected Error)[0m
+  - 002_mixed_indentation: [0;32mPASS (Caught Expected Error)[0m
+  - 003_undefined_variable: [0;32mPASS (Caught Expected Error)[0m
+  - 004_invalid_unindent: [0;32mPASS (Caught Expected Error)[0m
+  - 005_choice_not_exhaustive: [0;32mPASS (Caught Expected Error)[0m
+  - 006_break_outside_cycle: [0;32mPASS (Caught Expected Error)[0m
+  - 007_range_whitespace_before: [0;32mPASS (Caught Expected Error)[0m
+  - 008_range_whitespace_after: [0;32mPASS (Caught Expected Error)[0m
+  - 009_fn_type_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 010_invalid_payload_extractor: [0;32mPASS (Caught Expected Error)[0m
+  - 011_section_missing_whitespace: [0;32mPASS (Caught Expected Error)[0m
+  - 012_unimported_sys_call: [0;32mPASS (Caught Expected Error)[0m
+  - 013_equals_on_ramifications: [0;32mPASS (Caught Expected Error)[0m
+  - 014_no_statement_separator: [0;32mPASS (Caught Expected Error)[0m
+  - 015_disallowed_type_alias: [0;32mPASS (Caught Expected Error)[0m
+  - 016_choice_branch_type_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 017_middle_bare_pipe_choice: [0;32mPASS (Caught Expected Error)[0m
+  - 018_not_on_payload_ram: [0;32mPASS (Caught Expected Error)[0m
+  - 028_mutable_string_literal: [0;32mPASS (Caught Expected Error)[0m
+  - 029_omitted_choice_condition_undefined: [0;32mPASS (Caught Expected Error)[0m
+  - 032_walrus_reassign_immutable: [0;32mPASS (Caught Expected Error)[0m
+  - 033_cycle_jump_level_too_deep: [0;32mPASS (Caught Expected Error)[0m
+  - 034_cycle_escape_no_cycle: [0;32mPASS (Caught Expected Error)[0m
+  - 035_unknown_type_name: [0;32mPASS (Caught Expected Error)[0m
+  - 037_use_before_init: [0;32mPASS (Caught Expected Error)[0m
+  - 039_adjacent_operators: [0;32mPASS (Caught Expected Error)[0m
+  - 040_forward_annotated_slice_element: [0;32mPASS (Caught Expected Error)[0m
+  - 041_postfix_colon_coercion: [0;32mPASS (Caught Expected Error)[0m
+  - 042_reserved_type_name: [0;32mPASS (Caught Expected Error)[0m
+  - 043_typed_decl_with_init: [0;32mPASS (Caught Expected Error)[0m
+  - 044_dynamic_index_heterogeneous: [0;32mPASS (Caught Expected Error)[0m
+  - 045_heterogeneous_iteration: [0;32mPASS (Caught Expected Error)[0m
+  - 046_parenthesized_params: [0;32mPASS (Caught Expected Error)[0m
+  - 048_deep_nesting: [0;32mPASS (Caught Expected Error)[0m
+  - 049_unterminated_string: [0;32mPASS (Caught Expected Error)[0m
+  - 050_unterminated_comment: [0;32mPASS (Caught Expected Error)[0m
+  - 051_unterminated_char: [0;32mPASS (Caught Expected Error)[0m
+  - 052_empty_char: [0;32mPASS (Caught Expected Error)[0m
+  - 053_indent_decl_missing_colon: [0;32mPASS (Caught Expected Error)[0m
+  - 054_indent_decl_bad_indent: [0;32mPASS (Caught Expected Error)[0m
+  - 055_coloncolon_type_decl: [0;32mPASS (Caught Expected Error)[0m
+  - 056_ram_payload_in_unit_slot: [0;32mPASS (Caught Expected Error)[0m
+  - 057_ram_wrong_payload_type: [0;32mPASS (Caught Expected Error)[0m
+  - 058_ram_non_ram_arg: [0;32mPASS (Caught Expected Error)[0m
+  - 060_float_leading_dot: [0;32mPASS (Caught Expected Error)[0m
+  - 061_float_trailing_dot: [0;32mPASS (Caught Expected Error)[0m
+  - 062_float_leading_dot_exp: [0;32mPASS (Caught Expected Error)[0m
+  - 063_float_trailing_dot_exp: [0;32mPASS (Caught Expected Error)[0m
+  - 064_bitwise_float: [0;32mPASS (Caught Expected Error)[0m
+  - 065_bitnot_float: [0;32mPASS (Caught Expected Error)[0m
+  - 066_bad_pragma: [0;32mPASS (Caught Expected Error)[0m
+  - 067_bare_brace: [0;32mPASS (Caught Expected Error)[0m
+  - 068_bad_repeat_count: [0;32mPASS (Caught Expected Error)[0m
+  - 069_omitted_param_dollar_arrow: [0;32mPASS (Caught Expected Error)[0m
+  - 070_string_index_sugar_removed: [0;32mPASS (Caught Expected Error)[0m
+  - 071_string_len_write: [0;32mPASS (Caught Expected Error)[0m
+  - 072_string_index_write: [0;32mPASS (Caught Expected Error)[0m
+  - 073_string_ptr_construction: [0;32mPASS (Caught Expected Error)[0m
+  - 074_bang_integer: [0;32mPASS (Caught Expected Error)[0m
+  - 076_string_to_address_param: [0;32mPASS (Caught Expected Error)[0m
+  - 078_int_float_comparison: [0;32mPASS (Caught Expected Error)[0m
+  - 079_payload_extractor_on_flag: [0;32mPASS (Caught Expected Error)[0m
+  - 080_string_mul: [0;32mPASS (Caught Expected Error)[0m
+  - 081_repetition_count_too_large: [0;32mPASS (Caught Expected Error)[0m
+  - 082_type_repetition_count_too_large: [0;32mPASS (Caught Expected Error)[0m
+  - 083_raw_memory_non_integer_write: [0;32mPASS (Caught Expected Error)[0m
+  - 084_cycle_jump_zero_depth: [0;32mPASS (Caught Expected Error)[0m
+  - 085_logical_ram_incompatible: [0;32mPASS (Caught Expected Error)[0m
+  - 086_ramnn_unit_no_downcoerce: [0;32mPASS (Caught Expected Error)[0m
+  - 087_bind_requires_positive_payload: [0;32mPASS (Caught Expected Error)[0m
+  - 088_bind_unit_positive_rejected: [0;32mPASS (Caught Expected Error)[0m
+  - 089_inline_param_type: [0;32mPASS (Caught Expected Error)[0m
+  - 090_signature_arg_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 091_signature_return_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 092_enum_duplicate_label: [0;32mPASS (Caught Expected Error)[0m
+  - 094_enum_single_variant: [0;32mPASS (Caught Expected Error)[0m
+  - 095_enum_unknown_variant: [0;32mPASS (Caught Expected Error)[0m
+  - 096_enum_unit_with_payload: [0;32mPASS (Caught Expected Error)[0m
+  - 097_enum_not_exhaustive: [0;32mPASS (Caught Expected Error)[0m
+  - 098_array_arith_size_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 098_enum_payload_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 099_enum_label_ambiguous: [0;32mPASS (Caught Expected Error)[0m
+  - 099_fpfast_bad_mode: [0;32mPASS (Caught Expected Error)[0m
+  - 100_array_elem_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 100_parse_error_recovery: [0;32mPASS (Caught Expected Error)[0m
+  - 101_not_equal_on_rams: [0;32mPASS (Caught Expected Error)[0m
+  - 101_reserved_operator_fixity: [0;32mPASS (Caught Expected Error)[0m
+  - 102_non_assoc_chain: [0;32mPASS (Caught Expected Error)[0m
+  - 102_order_on_rams: [0;32mPASS (Caught Expected Error)[0m
+  - 133_unresolved_module_type: [0;32mPASS (Caught Expected Error)[0m
+  - 134_untyped_function_value: [0;32mPASS (Caught Expected Error)[0m
+  - 135_double_paren_fn_type: [0;32mPASS (Caught Expected Error)[0m
+  - 136_raw_string_syntax: [0;32mPASS (Caught Expected Error)[0m
+  - 137_compile_time_not_evaluable: [0;32mPASS (Caught Expected Error)[0m
+  - 138_field_read_before_init: [0;32mPASS (Caught Expected Error)[0m
+  - 139_element_before_whole_init: [0;32mPASS (Caught Expected Error)[0m
+  - 140_escape_partial_composite: [0;32mPASS (Caught Expected Error)[0m
+  - 141_choice_partial_field_init: [0;32mPASS (Caught Expected Error)[0m
+  - 142_private_hidden: [0;32mPASS (Caught Expected Error)[0m
+  - 143_no_runtime_record: [0;32mPASS (Caught Expected Error)[0m
+  - 144_no_runtime_print: [0;32mPASS (Caught Expected Error)[0m
+  - 145_exit_noninteger: [0;32mPASS (Caught Expected Error)[0m
+  - 145_mmio_typed_load_assign: [0;32mPASS (Caught Expected Error)[0m
+  - 146_generic_fn_as_value: [0;32mPASS (Caught Expected Error)[0m
+  - 147_choice_mixed_fn_types: [0;32mPASS (Caught Expected Error)[0m
+  - 148_adjacent_exprs_choice: [0;32mPASS (Caught Expected Error)[0m
+  - 149_call_non_function: [0;32mPASS (Caught Expected Error)[0m
+  - 150_choice_mixed_undeclared_fn_types: [0;32mPASS (Caught Expected Error)[0m
+  - 151_map_bad_key_type: [0;32mPASS (Caught Expected Error)[0m
+  - 152_export_non_function: [0;32mPASS (Caught Expected Error)[0m
+  - 152_map_literal_value_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 153_map_literal_key_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 153_ws_range_both_spaces: [0;32mPASS (Caught Expected Error)[0m
+  - 154_ws_range_lead_space: [0;32mPASS (Caught Expected Error)[0m
+  - 155_ws_range_trail_space: [0;32mPASS (Caught Expected Error)[0m
+  - 198_pipe_before_guard: [0;32mPASS (Caught Expected Error)[0m
+  - 199_ws_postfix_bang_space: [0;32mPASS (Caught Expected Error)[0m
+  - 200_dynamic_member_index: [0;32mPASS (Caught Expected Error)[0m
+  - 201_enum_variant_index_range: [0;32mPASS (Caught Expected Error)[0m
+  - 202_record_arg_layout_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 203_record_return_layout_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 204_field_write_type_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 205_annotated_rebind_layout_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 206_enum_ordering: [0;32mPASS (Caught Expected Error)[0m
+  - 207_flag_to_heap_ram: [0;32mPASS (Caught Expected Error)[0m
+  - 208_logical_ram_unrepresentable: [0;32mPASS (Caught Expected Error)[0m
+  - 209_unit_value_rejected: [0;32mPASS (Caught Expected Error)[0m
+  - 211_fn_def_non_fn_annotation: [0;32mPASS (Caught Expected Error)[0m
+  - 212_value_def_fn_annotation: [0;32mPASS (Caught Expected Error)[0m
+  - 213_annotation_scalar_type_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 214_uncalled_fn_return_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 216_fn_return_unassignable: [0;32mPASS (Caught Expected Error)[0m
+  - 217_fn_ram_return_unassignable: [0;32mPASS (Caught Expected Error)[0m
+  - 218_duplicate_fn_def: [0;32mPASS (Caught Expected Error)[0m
+  - 220_void_assign: [0;32mPASS (Caught Expected Error)[0m
+  - 221_void_outside_foreign: [0;32mPASS (Caught Expected Error)[0m
+  - 222_lowercase_void_outside_foreign: [0;32mPASS (Caught Expected Error)[0m
+  - 223_ram_shape_return_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 224_ram_shape_choice_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 225_ram_shape_assign_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 226_ram_shape_arg_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 227_unification_ungrounded_param_e3128: [0;32mPASS (Caught Expected Error)[0m
+  - 228_unification_ungrounded_ret_e3103: [0;32mPASS (Caught Expected Error)[0m
+  - 229_unification_choice_closure_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 230_unification_ungrounded_scc_e3128: [0;32mPASS (Caught Expected Error)[0m
+  - 231_call_paren_whitespace: [0;32mPASS (Caught Expected Error)[0m
+  - 232_unwrap_non_ram: [0;32mPASS (Caught Expected Error)[0m
+  - 233_unwrap_ram_np: [0;32mPASS (Caught Expected Error)[0m
+  - 234_unwrap_flag: [0;32mPASS (Caught Expected Error)[0m
+  - 235_record_default_missing: [0;32mPASS (Caught Expected Error)[0m
+  - 236_record_unknown_field: [0;32mPASS (Caught Expected Error)[0m
+  - 237_top_level_unexpected_indent: [0;32mPASS (Caught Expected Error)[0m
+  - 238_top_level_indent_split: [0;32mPASS (Caught Expected Error)[0m
+  - 239_call_too_many_args: [0;32mPASS (Caught Expected Error)[0m
+  - 240_call_too_few_args: [0;32mPASS (Caught Expected Error)[0m
+  - 241_propagate_non_ram_function: [0;32mPASS (Caught Expected Error)[0m
+  - 242_propagate_incompatible_ram_shape: [0;32mPASS (Caught Expected Error)[0m
+  - 243_propagate_operator_disabled_exclamation_question: [0;32mPASS (Caught Expected Error)[0m
+  - 245_record_literal_colon: [0;32mPASS (Caught Expected Error)[0m
+  - 246_invalid_marked_global: [0;32mPASS (Caught Expected Error)[0m
+  - 247_error_directive: [0;32mPASS (Caught Expected Error)[0m
+  - 248_header_arg_missing: [0;32mPASS (Caught Expected Error)[0m
+  - 249_view_escape_return: [0;32mPASS (Caught Expected Error)[0m
+  - 250_view_escape_global: [0;32mPASS (Caught Expected Error)[0m
+  - 251_view_escape_array: [0;32mPASS (Caught Expected Error)[0m
+  - 252_bitfield_width_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 253_addr_escape_block_return: [0;32mPASS (Caught Expected Error)[0m
+  - 254_addr_escape_outer_assign: [0;32mPASS (Caught Expected Error)[0m
+  - 255_record_field_index_range: [0;32mPASS (Caught Expected Error)[0m
+  - 256_comptime_value_not_const: [0;32mPASS (Caught Expected Error)[0m
+  - 257_fn_param_prime: [0;32mPASS (Caught Expected Error)[0m
+  - 258_reassign_immutable: [0;32mPASS (Caught Expected Error)[0m
+  - 259_repoint_immutable_record: [0;32mPASS (Caught Expected Error)[0m
+  - 260_splat_non_record: [0;32mPASS (Caught Expected Error)[0m
+  - 263_duplicate_signature: [0;32mPASS (Caught Expected Error)[0m
+  - 289_state_binding_non_lvalue: [0;32mPASS (Caught Expected Error)[0m
+  - 291_swizzle_oob: [0;32mPASS (Caught Expected Error)[0m
+  - 292_swizzle_mixed: [0;32mPASS (Caught Expected Error)[0m
+  - 293_swizzle_disabled: [0;32mPASS (Caught Expected Error)[0m
+  - 300_use_import_clash: [0;32mPASS (Caught Expected Error)[0m
+  - 301_use_import_local_clash: [0;32mPASS (Caught Expected Error)[0m
+  - 308_enum_fn_equality: [0;32mPASS (Caught Expected Error)[0m
+  - 309_discarded_choice_constant_branch: [0;32mPASS (Caught Expected Error)[0m
+  - 311_module_no_public_private: [0;32mPASS (Caught Expected Error)[0m
+  - 313_pkg_no_import_map: [0;32mPASS (Caught Expected Error)[0m
+  - 314_pkg_not_a_dep: [0;32mPASS (Caught Expected Error)[0m
+  - 315_pkg_self_import: [0;32mPASS (Caught Expected Error)[0m
+  - 316_pkg_no_root_module: [0;32mPASS (Caught Expected Error)[0m
+  - 317_pkg_no_submodule: [0;32mPASS (Caught Expected Error)[0m
+  - 318_pkg_internal_module: [0;32mPASS (Caught Expected Error)[0m
+  - 319_pkg_exports_nothing: [0;32mPASS (Caught Expected Error)[0m
+  - 320_pkg_import_cycle: [0;32mPASS (Caught Expected Error)[0m
+  - 321_return_outside_fn: [0;32mPASS (Caught Expected Error)[0m
+  - 322_return_void_with_value: [0;32mPASS (Caught Expected Error)[0m
+  - 323_return_missing_value: [0;32mPASS (Caught Expected Error)[0m
+  - 324_return_type_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 325_return_reachable_fallthrough: [0;32mPASS (Caught Expected Error)[0m
+  - 326_xor_float: [0;32mPASS (Caught Expected Error)[0m
+  - 327_xor_string: [0;32mPASS (Caught Expected Error)[0m
+  - 328_generic_return_ram_shape_mismatch: [0;32mPASS (Caught Expected Error)[0m
+  - 329_heredoc_under_indented: [0;32mPASS (Caught Expected Error)[0m
+  - 330_builder_constructor_rejected: [0;32mPASS (Caught Expected Error)[0m
+  - 331_cast_arity_zero: [0;32mPASS (Caught Expected Error)[0m
+  - 332_cast_arity_excess: [0;32mPASS (Caught Expected Error)[0m
+  - 333_invalid_string_cast: [0;32mPASS (Caught Expected Error)[0m
+  - 334_invalid_float_cast: [0;32mPASS (Caught Expected Error)[0m
+  - 335_explicit_underscore_param: [0;32mPASS (Caught Expected Error)[0m
+  - 336_explicit_underscore_multiparams: [0;32mPASS (Caught Expected Error)[0m
+  - 337_explicit_underscore_cycle: [0;32mPASS (Caught Expected Error)[0m
+  - 338_explicit_underscore_choice: [0;32mPASS (Caught Expected Error)[0m
+  - 339_mask_literal_oob: [0;32mPASS (Caught Expected Error)[0m
+  - 340_scalar_addr_escape: [0;32mPASS (Caught Expected Error)[0m
+  - 341_addr_cast_record: [0;32mPASS (Caught Expected Error)[0m
+
+[1m[!] Running Hardware Privileged Tests (tests/sudo/)[0m
+  - 001_scrolllock_on: [0;33mSKIP (Headless / CI; compilation passed)[0m
+  - 002_scrolllock_off: [0;33mSKIP (Headless / CI; compilation passed)[0m
+
+[1m=========================================[0m
+[1m    SELFHOST DIFFERENTIAL HARNESSES      [0m
+[1m=========================================[0m
+
+[1m-- driver_tests --[0m
+=== Running edva driver regression tests ===
+Testing F1 (parse failure propagation)... PASS
+Testing F1 (missing module failure propagation)... PASS
+Testing F2 (unwritable output path error without SIGSEGV)... PASS
+Testing F5 (file read exact length and empty file handling)... PASS
+Testing F8 (child signal termination reporting under -r)... PASS
+Testing --typed-ast (typed AST elaboration & error handling)... PASS
+Testing -H / --header (C header generation from #export)... PASS
+Testing WebAssembly target (-target wasm32-unknown-unknown)... PASS
+Testing modular compilation & interface-only #use loading... PASS
+Testing project name derivation for src/ directory target... PASS
+Testing E5022 directory collision handling... PASS
+Testing edva pkg CLI dispatch and usage... PASS
+Testing edva pkg fetch resolution, lockfile and imports.ccl generation... PASS
+Testing edva pkg fetch --locked validation... PASS
+Testing edva pkg fetch dependency cycle detection... PASS
+Testing edva pkg fetch overrides and --locked rejection... PASS
+Testing edva pkg fetch --offline rejection... PASS
+Testing edva pkg fetch git fixture, tree hashing and store layout... PASS
+Testing edva pkg fetch moving tag pinning... PASS
+Testing edva pkg fetch tree hash mismatch (E7005)... PASS
+Testing edva pkg fetch archive source and store caching... PASS
+Testing edva pkg fetch archive checksum mismatch (E7005)... PASS
+Testing edva pkg fetch zip-slip / traversal rejection (E7019)... PASS
+Testing edva pkg fetch escaping symlink rejection (E7019)... PASS
+Testing edva pkg fetch offline cache hit and miss... PASS
+Testing edva pkg fetch submodule and subdir actionable errors... PASS
+Testing edva pkg build with diamond dependency graph... PASS
+Testing edva pkg test runner... PASS
+Testing native dependencies FFI linkage (native.libs)... PASS
+Testing native pkg-config resolution and missing requirement error... PASS
+Testing library package build (no src/main.dva)... PASS
+Testing LLVM IR caching cold vs warm build... PASS
+Testing cache invalidation on source change... PASS
+Testing cache invalidation on dependency source change... PASS
+Testing cache invalidation on optimization flag change... PASS
+Testing cache invalidation on EDVA_COMPILER_ID change... PASS
+Testing cache invalidation on target triple change... PASS
+Testing diagnostics preservation on compilation... PASS
+Testing cache CLI commands (dir, ls, clean)... PASS
+Testing corrupt cache entry cleanup... PASS
+Testing edva init and duplicate prevention (E7020)... PASS
+Testing edva add and transactional rollback (E7021)... PASS
+Testing edva update selective pin refresh & --locked rejection... PASS
+Testing edva graph & tree with duplicate versions detection... PASS
+Testing top-level subcommands dispatch (edva <subcmd>)... PASS
+Testing edva vendor offline workflow, relocation & tamper checks... PASS
+=== All driver tests PASSED ===
+  - driver_tests: [0;32mPASS[0m
+[0;32mAll differential harnesses passed.[0m
+
+[1m=========================================[0m
+[1mTEST SUMMARY:[0m Total: 543 | Passed: [0;32m541[0m | Skipped: [0;33m2[0m | Failed: [0;31m0[0m
+[1m=========================================[0m

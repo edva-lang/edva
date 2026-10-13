@@ -1,0 +1,2 @@
+/home/ike/Z/edva/audits/2026-10-12/reproductions/string_index_unwrap/main.dva:3:15: E3091: Operand of '!!' must be a RamPP or RamPN ramification
+E5011: Compilation aborted due to code generation errors.

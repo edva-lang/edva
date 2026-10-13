@@ -1,0 +1,3 @@
+/home/ike/Z/edva/audits/2026-10-12/reproductions/cast_arity/main.dva:2:20: E3084: Type cast 'Int' requires 1 argument, got 2
+/home/ike/Z/edva/audits/2026-10-12/reproductions/cast_arity/main.dva:3:16: E3084: Type cast 'Int' requires 1 argument, got 0
+E5011: Compilation aborted due to code generation errors.

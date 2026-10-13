@@ -1,0 +1,14 @@
+# Retain text evidence; generated executables, LLVM IR, and std symlinks stay local.
+results/**
+!results/*/
+!results/*/compile.stdout
+!results/*/compile.stderr
+!results/*/run.stdout
+!results/*/run.stderr
+previous/**
+!previous/*/
+!previous/*/compile.stdout
+!previous/*/compile.stderr
+!previous/*/run.stdout
+!previous/*/run.stderr
+!regression.log

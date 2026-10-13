@@ -1,0 +1,2 @@
+/home/ike/Z/edva/audits/2026-10-13/reproductions/ctfe_div_zero/probe.dva:E3130: '#!' expression is not compile-time evaluable
+/home/ike/Z/edva/audits/2026-10-13/reproductions/ctfe_div_zero/probe.dva:E3004: Undefined variable 'iov' in fn 'io::#log$Int'

@@ -1,0 +1,134 @@
+{
+  "milestone": {
+    "id": 7,
+    "title": "Edva correctness and documentation audit follow-ups — 2026-10-13"
+  },
+  "issues": [
+    {
+      "number": 149,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/149",
+      "title": "codegen: align array division and remainder guards with scalar semantics",
+      "finding": 1,
+      "created": false
+    },
+    {
+      "number": 150,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/150",
+      "title": "json: isolate nested container children instead of slicing shared arenas from zero",
+      "finding": 2,
+      "created": true
+    },
+    {
+      "number": 151,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/151",
+      "title": "json: enforce separators, number grammar, and complete document consumption",
+      "finding": 3,
+      "created": true
+    },
+    {
+      "number": 152,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/152",
+      "title": "json: validate hex escapes and decode UTF-16 surrogate pairs correctly",
+      "finding": 4,
+      "created": true
+    },
+    {
+      "number": 153,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/153",
+      "title": "json: preserve representable subnormal numbers during exponent scaling",
+      "finding": 5,
+      "created": true
+    },
+    {
+      "number": 154,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/154",
+      "title": "str/io: preserve significant digits and signed/unsigned limits in numeric formatting",
+      "finding": 6,
+      "created": true
+    },
+    {
+      "number": 155,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/155",
+      "title": "str: handle infinity and NaN before float formatting normalization",
+      "finding": 7,
+      "created": true
+    },
+    {
+      "number": 156,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/156",
+      "title": "io: fix placeholder advancement and bound brace lookahead",
+      "finding": 8,
+      "created": true
+    },
+    {
+      "number": 157,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/157",
+      "title": "io: preserve partial-write progress and expose write failures/backpressure",
+      "finding": 9,
+      "created": true
+    },
+    {
+      "number": 158,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/158",
+      "title": "io: distinguish read errors and would-block from EOF",
+      "finding": 10,
+      "created": true
+    },
+    {
+      "number": 159,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/159",
+      "title": "net: close sockets on failure and terminate addrinfo walks on socket exhaustion",
+      "finding": 11,
+      "created": true
+    },
+    {
+      "number": 160,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/160",
+      "title": "net: format IPv4 octets and ports as unsigned values",
+      "finding": 12,
+      "created": true
+    },
+    {
+      "number": 161,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/161",
+      "title": "layout: unify target classification for thumb and other 32-bit triples",
+      "finding": 13,
+      "created": true
+    },
+    {
+      "number": 162,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/162",
+      "title": "docs: replace stale stdlib APIs and repair executable networking and IO examples",
+      "finding": 14,
+      "created": true
+    },
+    {
+      "number": 163,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/163",
+      "title": "docs: explain recoverable named Error branches versus aborting extraction",
+      "finding": 15,
+      "created": true
+    },
+    {
+      "number": 164,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/164",
+      "title": "docs: classify every Dva block and enforce example compilation/execution in CI",
+      "finding": 16,
+      "created": true
+    },
+    {
+      "number": 165,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/165",
+      "title": "docs/llms: correct capability claims, literal rules, diagnostics, and coverage gaps",
+      "finding": 17,
+      "created": true
+    },
+    {
+      "number": 166,
+      "html_url": "https://gitea.gde.to/ike/dva/issues/166",
+      "title": "sort: add a stable scalable implementation for larger collections",
+      "finding": 18,
+      "created": true
+    }
+  ]
+}

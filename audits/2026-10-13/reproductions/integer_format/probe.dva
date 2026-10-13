@@ -1,0 +1,4 @@
+#use io
+#use str
+io::out $ str::from_int(-9223372036854775808)
+io::out $ u64(18446744073709551615)

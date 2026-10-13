@@ -1,0 +1,7 @@
+#use io
+#use json
+r = json::parse("-")
+r
+   | v => io::out("unexpected")
+   | e => io::out(e.msg)
+io::out("continued")

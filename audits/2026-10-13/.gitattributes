@@ -1,0 +1,2 @@
+# The HTTP example output intentionally captures protocol CRLF bytes.
+results/doc_http_example/run.stdout -whitespace

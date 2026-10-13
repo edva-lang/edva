@@ -1,0 +1,191 @@
+[
+  {
+    "case": "builder_alias",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "AB\nC\n",
+    "stderr": ""
+  },
+  {
+    "case": "f32_arithmetic",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "4\n",
+    "stderr": ""
+  },
+  {
+    "case": "signed_narrow_shift",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "64\n",
+    "stderr": ""
+  },
+  {
+    "case": "narrow_shift",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "128\n128\n",
+    "stderr": ""
+  },
+  {
+    "case": "string_int_append",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "item_*\n65\n",
+    "stderr": ""
+  },
+  {
+    "case": "string_index_unwrap",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "map_tombstones",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "doc_inline_annotation",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "map_duplicate",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "1\n30\n<->\nError 4013: key not found\n  at main.dva:0:0\n",
+    "stderr": ""
+  },
+  {
+    "case": "llm_propagate",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "quickstart_printf",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "128\n",
+    "stderr": ""
+  },
+  {
+    "case": "narrow_div",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "33\n",
+    "stderr": ""
+  },
+  {
+    "case": "float_nan_logic",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n<+>\n",
+    "stderr": ""
+  },
+  {
+    "case": "rune_size",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "4\n",
+    "stderr": ""
+  },
+  {
+    "case": "slice_doc",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "quickstart_hello",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "narrow_add",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n",
+    "stderr": ""
+  },
+  {
+    "case": "float_narrow_int",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "3\n",
+    "stderr": ""
+  },
+  {
+    "case": "llm_ffi_example",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "builder_constructor",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "bad_comparison",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "unsigned_float",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "255\n1.84467e19\n255\n",
+    "stderr": ""
+  },
+  {
+    "case": "arena_generation_wrap",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "done\n",
+    "stderr": ""
+  },
+  {
+    "case": "float_narrow_not",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n",
+    "stderr": ""
+  },
+  {
+    "case": "arena_nested",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "ab\n",
+    "stderr": ""
+  },
+  {
+    "case": "narrow_mod",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "1\n",
+    "stderr": ""
+  },
+  {
+    "case": "cast_arity",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  }
+]

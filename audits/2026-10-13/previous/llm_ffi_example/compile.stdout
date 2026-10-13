@@ -1,0 +1,5 @@
+/home/ike/Z/edva/audits/2026-10-12/reproductions/llm_ffi_example/main.dva:14:16: E3089: Cannot assign ramification of shape RamPP(<A|B>) to RamPN(<A|>)
+/home/ike/Z/edva/audits/2026-10-12/reproductions/llm_ffi_example/main.dva:14:16: E3084: Incompatible branch result types in choice
+/home/ike/Z/edva/audits/2026-10-12/reproductions/llm_ffi_example/main.dva:14:16: E3089: Cannot assign ramification of shape RamPN(<A|>) to RamPP(<A|B>)
+/home/ike/Z/edva/audits/2026-10-12/reproductions/llm_ffi_example/main.dva:14:16: E3084: Incompatible branch result types in choice
+E5011: Compilation aborted due to code generation errors.

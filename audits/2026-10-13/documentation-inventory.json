@@ -1,0 +1,858 @@
+[
+  {
+    "page": "doc/reference/types/unit.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/unit.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/unit.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/unit.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/unit.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/ram.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/error.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/error.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/error.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/error.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/error.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/int.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/int.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/int.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/int.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/int.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/int.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/int.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/rune.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/rune.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/rune.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/rune.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/rune.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/float.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/float.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/float.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/float.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/float.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/float.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/float.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/float.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/string.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/array.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/array.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/array.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/array.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/array.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/array.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/array.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/array.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/map.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/map.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/map.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/map.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/map.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/map.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/map.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/addr.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "negative"
+  },
+  {
+    "page": "doc/reference/types/record.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/functions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/type.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/type.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/type.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/type.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/builder.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/builder.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/builder.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/builder.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/builder.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/builder.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/types/builder.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/math.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/color.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/color.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/libc.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/fp.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/fp.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/fp.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/fp.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/fp.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/fp.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/in.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/sys.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/sys.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/sort.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/json.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/json.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/str.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/str.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/str.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/str.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/uring.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/uring.qmd",
+    "kind": "partial"
+  },
+  {
+    "page": "doc/reference/stdlib/uring.qmd",
+    "kind": "complete"
+  },
+  {
+    "page": "doc/reference/stdlib/os.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/os.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/unicode.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/unicode.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/fmt.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/net.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/net.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/net.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/mem.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/mem.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/mem.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/mem.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/mem.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/type.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/ccl.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/ccl.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/ccl.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/stdlib/index.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/lexical.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/intrinsics.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/declarations.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/declarations.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/declarations.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/expressions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/expressions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/expressions.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/operators.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/reference/language/operators.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/ffi-and-targets.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/ffi-and-targets.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/metaprogramming.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/metaprogramming.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/metaprogramming.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/ramifications.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/ramifications.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/errors-and-io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/errors-and-io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/errors-and-io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/errors-and-io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/errors-and-io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/errors-and-io.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/functions-and-closures.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/functions-and-closures.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/functions-and-closures.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/functions-and-closures.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/data-and-memory.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/data-and-memory.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/data-and-memory.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/data-and-memory.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/data-and-memory.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/bindings-and-modules.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/bindings-and-modules.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/bindings-and-modules.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/bindings-and-modules.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/choices-and-cycles.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/choices-and-cycles.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/choices-and-cycles.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/choices-and-cycles.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/choices-and-cycles.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/choices-and-cycles.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/choices-and-cycles.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/choices-and-cycles.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/packages.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/guide/packages.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/tour.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/tour.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/tour.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/tour.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/tour.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/tour.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/quickstart.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/quickstart.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/quickstart.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/quickstart.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/quickstart.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/quickstart.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/quickstart.qmd",
+    "kind": "unmarked"
+  },
+  {
+    "page": "doc/start/quickstart.qmd",
+    "kind": "unmarked"
+  }
+]

@@ -1,0 +1,7 @@
+#use io
+#use json
+io::out $ <>(json::parse("true garbage"))
+io::out $ <>(json::parse("[1 2]"))
+io::out $ <>(json::parse("[1,]"))
+io::out $ <>(json::parse("01"))
+io::out $ <>(json::parse("{\"a\":1 \"b\":2}"))

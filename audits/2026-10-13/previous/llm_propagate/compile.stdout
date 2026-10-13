@@ -1,0 +1,5 @@
+/home/ike/Z/edva/audits/2026-10-12/reproductions/llm_propagate/main.dva:360:39: E3089: Cannot assign ramification of shape RamPP(<A|B>) to RamPN(<A|>)
+/home/ike/Z/edva/audits/2026-10-12/reproductions/llm_propagate/main.dva:360:39: E3084: Return type mismatch in function: f
+/home/ike/Z/edva/audits/2026-10-12/reproductions/llm_propagate/main.dva:5:1: E3089: Cannot assign ramification of shape RamPP(<A|B>) to RamPN(<A|>)
+/home/ike/Z/edva/audits/2026-10-12/reproductions/llm_propagate/main.dva:5:1: E3084: Return type mismatch in function: f
+E5011: Compilation aborted due to code generation errors.

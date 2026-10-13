@@ -1,0 +1,4 @@
+#use io
+a = 10
+b = 0
+io::out $ a / b

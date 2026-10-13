@@ -1,0 +1,107 @@
+[
+  {
+    "n": 1000,
+    "median_ms": 29.736876,
+    "trials": [
+      {
+        "milliseconds": 29.736876,
+        "exit": 0,
+        "stdout": "1\n1000\n"
+      },
+      {
+        "milliseconds": 29.036658,
+        "exit": 0,
+        "stdout": "1\n1000\n"
+      },
+      {
+        "milliseconds": 31.234199,
+        "exit": 0,
+        "stdout": "1\n1000\n"
+      }
+    ]
+  },
+  {
+    "n": 2000,
+    "median_ms": 105.855992,
+    "trials": [
+      {
+        "milliseconds": 105.855992,
+        "exit": 0,
+        "stdout": "1\n2000\n"
+      },
+      {
+        "milliseconds": 106.508535,
+        "exit": 0,
+        "stdout": "1\n2000\n"
+      },
+      {
+        "milliseconds": 104.740076,
+        "exit": 0,
+        "stdout": "1\n2000\n"
+      }
+    ]
+  },
+  {
+    "n": 4000,
+    "median_ms": 413.838244,
+    "trials": [
+      {
+        "milliseconds": 409.479542,
+        "exit": 0,
+        "stdout": "1\n4000\n"
+      },
+      {
+        "milliseconds": 414.942912,
+        "exit": 0,
+        "stdout": "1\n4000\n"
+      },
+      {
+        "milliseconds": 413.838244,
+        "exit": 0,
+        "stdout": "1\n4000\n"
+      }
+    ]
+  },
+  {
+    "n": 8000,
+    "median_ms": 1647.745165,
+    "trials": [
+      {
+        "milliseconds": 1647.745165,
+        "exit": 0,
+        "stdout": "1\n8000\n"
+      },
+      {
+        "milliseconds": 1590.15292,
+        "exit": 0,
+        "stdout": "1\n8000\n"
+      },
+      {
+        "milliseconds": 1660.002619,
+        "exit": 0,
+        "stdout": "1\n8000\n"
+      }
+    ]
+  },
+  {
+    "n": 16000,
+    "median_ms": 3122.628175,
+    "trials": [
+      {
+        "milliseconds": 3395.894183,
+        "exit": 0,
+        "stdout": "1\n16000\n"
+      },
+      {
+        "milliseconds": 3122.628175,
+        "exit": 0,
+        "stdout": "1\n16000\n"
+      },
+      {
+        "milliseconds": 2968.518174,
+        "exit": 0,
+        "stdout": "1\n16000\n"
+      }
+    ]
+  }
+]

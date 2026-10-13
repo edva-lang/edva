@@ -1,0 +1,2 @@
+Successfully generated LLVM IR via LLVM C API: main.ll
+Successfully compiled binary: main

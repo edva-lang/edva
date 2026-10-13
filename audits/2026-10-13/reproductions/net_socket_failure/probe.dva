@@ -1,0 +1,14 @@
+#use io
+#use net
+#use libc
+r = net::resolve("127.0.0.1", 1)
+r
+   | address =>
+      limit = (cur = 32, max = 32)
+      io::out $ libc::setrlimit(7, &limit)
+      40 @
+         libc::open("/dev/null", 0)
+      io::out("before walk")
+      result = net::walk_connect(address)
+      io::out("after walk")
+   | msg => io::out(msg)

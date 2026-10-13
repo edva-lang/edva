@@ -1,0 +1,2 @@
+/home/ike/Z/edva/audits/2026-10-12/reproductions/builder_constructor/main.dva:2:16: E3084: Type 'Builder' cannot be used as a function or constructor. Use '{cap}' to create a Builder.
+E5011: Compilation aborted due to code generation errors.

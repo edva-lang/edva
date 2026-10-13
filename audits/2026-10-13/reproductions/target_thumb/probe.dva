@@ -1,0 +1,10 @@
+#use io
+#use "../../../../src/layout"
+#use "../../../../src/unify"
+layout::set_target_triple("thumbv6m-none-eabi")
+io::out $ layout::is_32bit_target!
+l = layout::compute_prim_layout(unify::UPrim(RawPtr))
+io::out(l.size)
+layout::set_target_triple("wasm32-unknown-unknown")
+w = layout::compute_prim_layout(unify::UPrim(RawPtr))
+io::out(w.size)

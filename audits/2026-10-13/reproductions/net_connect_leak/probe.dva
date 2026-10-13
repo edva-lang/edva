@@ -1,0 +1,11 @@
+#use io
+#use net
+#use libc
+before = libc::open("/dev/null", 0)
+libc::close(before)
+8 @
+   r = net::tcp_connect("127.0.0.1", 0)
+   r | fd => libc::close(fd) | msg => io::out(msg)
+after = libc::open("/dev/null", 0)
+io::out $ after - before
+libc::close(after)

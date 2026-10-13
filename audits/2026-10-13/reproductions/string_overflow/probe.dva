@@ -1,0 +1,6 @@
+#use io
+#use str
+r = str::to_int("9223372036854775808")
+r
+   | p => io::out(p.0)
+   | io::out("absent")
