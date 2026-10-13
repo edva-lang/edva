@@ -23,6 +23,16 @@ for file descriptors, standard streams, and sockets.
 | `io::STDOUT` | `1` | Standard output |
 | `io::STDERR` | `2` | Standard error |
 
+### Standard status and error constants
+
+| Constant | Value | Description |
+|---|---|---|
+| `io::EOF` | `0` | Stream end-of-file |
+| `io::EINTR` | `4` | Interrupted system call (retried automatically by `io` operations) |
+| `io::EBADF` | `9` | Bad file descriptor |
+| `io::EAGAIN` | `11` | Resource temporarily unavailable / would block |
+| `io::EWOULDBLOCK` | `11` | Alias for `io::EAGAIN` |
+
 ### Output functions
 
 | Function | Signature | Description | Example |
@@ -47,7 +57,8 @@ io::outf(("127.0.0.1", 9000), "Client connected from {}:{}")
 
 `io::reader(fd)` wraps a file descriptor in a buffered reader (default buffer 4096 bytes).
 All read methods return the optional ramification `< String | >` or `< Int | >`,
-distinguishing between available data and EOF:
+where the positive branch carries available data and the absent branch `<-->`
+indicates that no data is currently available (due to EOF, nonblocking would-block, or error):
 
 | Function | Signature | Return Type | Description |
 |---|---|---|---|
@@ -55,9 +66,33 @@ distinguishing between available data and EOF:
 | `io::reader_with_cap(fd, cap)` | `Int, Int => Reader` | `Reader` | Creates Reader with custom buffer size |
 | `io::read(r, max)` | `Reader, Int => < String | >` | `< String | >` | Reads available buffer chunk up to `max` bytes |
 | `io::read_all(r, max)` | `Reader, Int => < String | >` | `< String | >` | Drains stream completely up to `max` bytes |
-| `io::read_byte(r)` | `Reader => < Int | >` | `< Int | >` | Reads next byte code (`0..255`) or EOF |
+| `io::read_byte(r)` | `Reader => < Int | >` | `< Int | >` | Reads next byte code (`0..255`) or `<-->` |
 | `io::read_until(r, delim, max)`| `Reader, Int, Int => < String | >`| `< String | >` | Reads until delimiter byte is encountered |
 | `io::read_line(r, max)` | `Reader, Int => < String | >` | `< String | >` | Reads until newline (`\n` or `\r\n`) |
+
+### Reader state inspection
+
+When a read operation returns `<-->`, inspect the reader's state to distinguish between EOF,
+would-block on nonblocking descriptors, and unhandled read errors:
+
+| Function | Signature | Return Type | Description |
+|---|---|---|---|
+| `io::reader_eof(r)` | `Reader => <>` | `<>` | True (`<+>`) if clean EOF has been reached |
+| `io::reader_err(r)` | `Reader => Int` | `Int` | Returns errno of the last I/O failure (0 if none) |
+| `io::reader_would_block(r)` | `Reader => <>` | `<>` | True (`<+>`) if the last read on a nonblocking fd would block (`EAGAIN`/`EWOULDBLOCK`) |
+| `io::reader_has_err(r)` | `Reader => <>` | `<>` | True (`<+>`) if an unhandled read error occurred (`err != 0`) |
+| `io::reader_clear(r)` | `Reader => ()` | `()` | Resets error and EOF state flags on reader |
+
+### Nonblocking contract
+
+On nonblocking file descriptors (`O_NONBLOCK`), when no data is ready:
+- Read methods return the absent branch `<-->`.
+- `io::reader_would_block(r)` evaluates to `<+>`.
+- `io::reader_err(r)` is set to `io::EAGAIN` (`11`).
+- `io::reader_eof(r)` evaluates to `<->`.
+
+Callers can check `io::reader_would_block(r)` to yield or wait on readiness notifications (such as `epoll` or `poll`),
+resuming read operations once data arrives. Interrupted calls (`EINTR`) are automatically retried internally.
 
 ## Buffered input examples
 
@@ -72,18 +107,42 @@ r = io::reader(io::STDIN)
    line_res = io::read_line(r, 1024)
    line_res
       | line => io::outf(line, "Echo: {}")
-      | --> // Break on EOF
+      | --> // Break on EOF or error
 ```
 
-### Reading with unwrap-or-abort (`!!`)
-
-When expecting a mandatory header or fixed payload where EOF represents an error:
+### Distinguishing EOF, Would-Block, and Errors
 
 ```dva
 #use io
 
 r = io::reader(fd)
-header = io::read_line(r, 256)!! // Aborts with stack trace if EOF reached
+
+0.. @
+   chunk = io::read(r, 4096)
+   chunk
+      | data =>
+         io::outf(?data, "Received {} bytes")
+      |
+         io::reader_would_block(r)
+            | --> // Descriptor would block; wait for poll/epoll readiness
+         io::reader_eof(r)
+            |
+               io::out("Clean EOF reached")
+               -->
+         // Unhandled error (e.g. EBADF, EIO)
+         io::errf(io::reader_err(r), "Read failed with errno: {}")
+         -->
+```
+
+### Reading with unwrap-or-abort (`!!`)
+
+When expecting a mandatory header or fixed payload where absence represents an unrecoverable failure:
+
+```dva
+#use io
+
+r = io::reader(fd)
+header = io::read_line(r, 256)!! // Aborts with stack trace if EOF or error reached
 io::out("Received header: " + header)
 ```
 

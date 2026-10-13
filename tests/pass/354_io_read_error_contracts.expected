@@ -1,0 +1,13 @@
+badfd: absent branch as expected
+badfd: is_ebadf=<+> eof=<-> would_block=<-> has_err=<+>
+badfd read_byte: is_ebadf=<+>
+nb: absent branch as expected
+nb: is_eagain=<+> eof=<-> would_block=<+> has_err=<+>
+data: [hello]
+after data: err=0 eof=<-> would_block=<->
+line1: []
+line2: [world]
+eof: absent branch as expected
+after eof: err=0 eof=<+> would_block=<-> has_err=<->
+after clear: err=0 eof=<->
+constants: 0 4 9 11 11

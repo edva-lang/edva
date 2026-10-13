@@ -1,0 +1,83 @@
+#use io
+#use libc
+
+#type PipeFds (rfd: i32, wfd: i32)
+
+// 1. EBADF on invalid file descriptor (-1)
+r_bad = io::reader(-1)
+res_bad = io::read(r_bad, 16)
+res_bad
+   | d => io::out("badfd: unexpected data")
+   | io::out("badfd: absent branch as expected")
+
+io::outf((io::reader_err(r_bad) == io::EBADF,
+   io::reader_eof(r_bad),
+   io::reader_would_block(r_bad),
+   io::reader_has_err(r_bad)),
+   "badfd: is_ebadf={} eof={} would_block={} has_err={}")
+
+// read_byte on bad fd
+res_bad_b = io::read_byte(r_bad)
+io::outf(io::reader_err(r_bad) == io::EBADF, "badfd read_byte: is_ebadf={}")
+
+// 2. Nonblocking pipe (would-block)
+p = PipeFds((0, 0))
+_p = libc::pipe(&p)
+_fl = libc::fcntl(Int(p.rfd), 4, 2048) // F_SETFL=4, O_NONBLOCK=2048
+r_nb = io::reader(Int(p.rfd))
+
+res_nb = io::read(r_nb, 16)
+res_nb
+   | d => io::out("nb: unexpected data")
+   | io::out("nb: absent branch as expected")
+
+io::outf((io::reader_err(r_nb) == io::EAGAIN,
+   io::reader_eof(r_nb),
+   io::reader_would_block(r_nb),
+   io::reader_has_err(r_nb)),
+   "nb: is_eagain={} eof={} would_block={} has_err={}")
+
+// 3. Data available
+msg = "hello\nworld\n"
+_w = libc::write(Int(p.wfd), msg, ?msg)
+res_data = io::read(r_nb, 5)
+res_data
+   | d => io::outf(d, "data: [{}]")
+   | io::out("data: missing")
+
+io::outf((io::reader_err(r_nb), io::reader_eof(r_nb), io::reader_would_block(r_nb)),
+   "after data: err={} eof={} would_block={}")
+
+// read_line from buffer/stream
+res_line1 = io::read_line(r_nb, 64)
+res_line1
+   | l1 => io::outf(l1, "line1: [{}]")
+   | io::out("line1: missing")
+
+res_line2 = io::read_line(r_nb, 64)
+res_line2
+   | l2 => io::outf(l2, "line2: [{}]")
+   | io::out("line2: missing")
+
+// 4. EOF (close write end of pipe)
+_c1 = libc::close(Int(p.wfd))
+res_eof = io::read_line(r_nb, 64)
+res_eof
+   | d => io::out("eof: unexpected data")
+   | io::out("eof: absent branch as expected")
+
+io::outf((io::reader_err(r_nb),
+   io::reader_eof(r_nb),
+   io::reader_would_block(r_nb),
+   io::reader_has_err(r_nb)),
+   "after eof: err={} eof={} would_block={} has_err={}")
+
+// 5. reader_clear
+io::reader_clear(r_nb)
+io::outf((io::reader_err(r_nb), io::reader_eof(r_nb)), "after clear: err={} eof={}")
+
+// 6. Constants check
+io::outf((io::EOF, io::EINTR, io::EBADF, io::EAGAIN, io::EWOULDBLOCK),
+   "constants: {} {} {} {} {}")
+
+_c2 = libc::close(Int(p.rfd))

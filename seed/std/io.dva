@@ -14,20 +14,50 @@
    STDOUT = 1
    STDERR = 2
 
+   EOF         = 0
+   EINTR       = 4
+   EBADF       = 9
+   EAGAIN      = 11
+   EWOULDBLOCK = 11
+
    #type Reader (
       fd: Int,
       buf: Builder,
       pos: Int,
-      cap: Int
+      cap: Int,
+      err: Int,
+      eof: Int
    )
 
    reader: Int => Reader
-   reader = fd => Reader((fd, {4096}, 0, 4096))
+   reader = fd => Reader((fd, {4096}, 0, 4096, 0, 0))
 
    reader_with_cap: Int, Int => Reader
    reader_with_cap = fd, cap =>
       c = cap > 0 | cap | 4096
-      Reader((fd, {c}, 0, c))
+      Reader((fd, {c}, 0, c, 0, 0))
+
+   // Returns the last errno encountered by the reader (0 if none).
+   reader_err: Reader => Int
+   reader_err = r => r.err
+
+   // True (<+>) if clean EOF has been reached on the descriptor.
+   reader_eof: Reader => <>
+   reader_eof = r => r.eof [> 0]
+
+   // True (<+>) if the last read on a nonblocking descriptor would block (EAGAIN/EWOULDBLOCK).
+   reader_would_block: Reader => <>
+   reader_would_block = r => r.err [11]
+
+   // True (<+>) if any unhandled I/O error occurred on the descriptor (err != 0).
+   reader_has_err: Reader => <>
+   reader_has_err = r => r.err != 0
+
+   // Clears the error and EOF status on the reader.
+   reader_clear: Reader => ()
+   reader_clear = r =>
+      r.err = 0
+      r.eof = 0
 
    // Raw length-aware write to fd. Handles partial writes and retries on EINTR.
    write: Int, String => Int
@@ -209,12 +239,21 @@
                   |
                      errno_val = @[libc::__errno_location! i32]
                      errno_val == 4 | --^
+                     r.err = Int(errno_val)
                      n' = n
                      -->
                   |
-                     n > 0 | ?buf = cur + n
-                     n' = n
-                     -->
+                     n == 0
+                        |
+                           r.eof = 1
+                           r.err = 0
+                           n' = 0
+                           -->
+                        |
+                           ?buf = cur + n
+                           r.err = 0
+                           n' = n
+                           -->
             n'
 
 // --- public ergonomic surface ----------------------------------------------
@@ -294,11 +333,16 @@
             |
                errno_val = @[libc::__errno_location! i32]
                errno_val == 4 | --^
+               r.err = Int(errno_val)
                -->
             |
                n == 0
-                  | -->
-                  | ?res_b = cur + n
+                  |
+                     r.eof = 1
+                     -->
+                  |
+                     r.err = 0
+                     ?res_b = cur + n
       ?res_b == 0 | --| <-->
       <+ +res_b +>
 
