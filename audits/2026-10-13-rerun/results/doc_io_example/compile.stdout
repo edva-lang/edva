@@ -1,0 +1,7 @@
+/home/ike/Z/edva/audits/2026-10-13-rerun/reproductions/doc_io_example/probe.dva:2:41: E3084: Function arity mismatch: expected 1 params, got 2
+/home/ike/Z/edva/audits/2026-10-13-rerun/reproductions/doc_io_example/probe.dva:2:41: E3084: Function call signature mismatch
+/home/ike/Z/edva/audits/2026-10-13-rerun/reproductions/doc_io_example/probe.dva:2:41: E3103: Cannot infer concrete type for expression without RTTI
+/home/ike/Z/edva/audits/2026-10-13-rerun/reproductions/doc_io_example/probe.dva:3:59: E3084: Function arity mismatch: expected 2 params, got 3
+/home/ike/Z/edva/audits/2026-10-13-rerun/reproductions/doc_io_example/probe.dva:3:59: E3084: Function call signature mismatch
+/home/ike/Z/edva/audits/2026-10-13-rerun/reproductions/doc_io_example/probe.dva:3:59: E3103: Cannot infer concrete type for expression without RTTI
+E5011: Compilation aborted due to code generation errors.

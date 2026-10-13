@@ -1,0 +1,11 @@
+#use io
+#use sort
+#use sys
+#use str
+n = str::to_int(sys::argv_string(1)) | p => p.0 | 1000
+a = sort::Ints()
+n @ i =>
+   a += n - i
+b = sort::ints(a)
+io::out $ b(0)!!
+io::out $ b(n - 1)!!

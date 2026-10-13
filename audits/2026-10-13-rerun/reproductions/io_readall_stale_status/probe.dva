@@ -1,0 +1,17 @@
+#use io
+#use net
+#use libc
+fds = (0i32, 0i32)
+libc::pipe(&fds)
+rf = Int(fds.0)
+wf = Int(fds.1)
+net::set_nonblocking(rf, 1)
+r = io::reader(rf)
+io::out $ <>(io::read_all(r, 10))
+io::out $ io::reader_err(r)
+libc::close(wf)
+io::out $ <>(io::read_all(r, 10))
+io::out $ io::reader_eof(r)
+io::out $ io::reader_would_block(r)
+io::out $ io::reader_err(r)
+libc::close(rf)

@@ -1,0 +1,12 @@
+#use io
+#use json
+v = json::parse("[1,[2],3]")!!
+v
+   [Array xs]
+      io::out $ ?xs
+      xs @ e =>
+         e
+            [Number n] io::out(n)
+            [Array ys] io::out $ ?ys
+            | io::out("other")
+   | io::out("wrong root")

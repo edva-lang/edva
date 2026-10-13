@@ -1,0 +1,24 @@
+#use io
+#use net
+#use libc
+#foreign "c"
+   dup: (fd: Int) => Int
+   dup2: (fd: Int, target: Int) => Int
+fds = (0i32, 0i32)
+libc::pipe(&fds)
+rf = Int(fds.0)
+wf = Int(fds.1)
+net::set_nonblocking(wf, 1)
+saved = dup(1)
+dup2(wf, 1)
+b = {100000}
+100000 @
+   b += 'x'
+io::out(+b)
+dup2(saved, 1)
+libc::close(saved)
+libc::close(wf)
+buf = {100001}
+n = libc::read(rf, &buf, 100001)
+io::out(n)
+libc::close(rf)

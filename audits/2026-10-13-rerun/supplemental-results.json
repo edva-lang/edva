@@ -1,0 +1,23 @@
+[
+  {
+    "case": "doc_sort_current",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "io_write_count",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "65536\n65536\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_chunked_body",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n",
+    "stderr": ""
+  }
+]

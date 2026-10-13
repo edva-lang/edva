@@ -1,0 +1,4 @@
+#use io
+io::outf(7, "a{}b")
+io::outf(7, "{}{}")
+io::outf((7, 8), "a{}b{}c")

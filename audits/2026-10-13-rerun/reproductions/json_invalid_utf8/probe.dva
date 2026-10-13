@@ -1,0 +1,7 @@
+#use io
+#use json
+b = {3}
+b += '"'
+b += 255
+b += '"'
+io::out $ <>(json::parse(+b))

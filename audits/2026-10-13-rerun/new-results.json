@@ -1,0 +1,79 @@
+[
+  {
+    "case": "io_readall_stale_status",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n11\n<->\n<+>\n<+>\n11\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_query_key",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "1\nuser\n<+>\n<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_truncated_body",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "3\n",
+    "stderr": ""
+  },
+  {
+    "case": "io_out_partial",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "65536\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_compensated_number",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n<->\ninf\n0\n",
+    "stderr": ""
+  },
+  {
+    "case": "sort_correctness",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n4\n0\n16000\na\nz\nz\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_invalid_utf8",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<+>\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_content_length",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "12\n2\n<->\n<+>\n0\n",
+    "stderr": ""
+  },
+  {
+    "case": "doc_sort_current",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "io_write_count",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "65536\n65536\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_chunked_body",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n",
+    "stderr": ""
+  }
+]

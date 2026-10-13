@@ -1,0 +1,10 @@
+#use io
+#use json
+v = json::parse("\"\\uD83D\\uDE00\"")!!
+v
+   [String s]
+      io::out $ ?s
+      s @ b => io::out(b)
+   | io::out("wrong")
+w = json::parse("\"\\u004G\"")
+io::out $ <>(w)

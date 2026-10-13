@@ -1,0 +1,18 @@
+#use io
+#use net
+#use libc
+fds = (0i32, 0i32)
+libc::pipe(&fds)
+rf = Int(fds.0)
+wf = Int(fds.1)
+net::set_nonblocking(wf, 1)
+b = {100000}
+100000 @
+   b += 'x'
+written = io::write(wf, +b)
+libc::close(wf)
+buf = {100000}
+received = libc::read(rf, &buf, 100000)
+io::out(written)
+io::out(received)
+libc::close(rf)

@@ -1,0 +1,9 @@
+{
+  "total": 548,
+  "passed": 546,
+  "skipped": 2,
+  "failed": 0,
+  "source": "regression.log summary",
+  "process_exit_code": null,
+  "capture_note": "The test harness reached its final summary. A Nushell complete invocation around with-env failed afterward, so the harness process exit code was not captured."
+}

@@ -1,0 +1,128 @@
+[
+  {
+    "n": 1000,
+    "median_ms": 2.927418,
+    "trials": [
+      {
+        "milliseconds": 2.968124,
+        "exit": 0,
+        "stdout": "1\n1000\n"
+      },
+      {
+        "milliseconds": 2.767917,
+        "exit": 0,
+        "stdout": "1\n1000\n"
+      },
+      {
+        "milliseconds": 2.927418,
+        "exit": 0,
+        "stdout": "1\n1000\n"
+      }
+    ]
+  },
+  {
+    "n": 2000,
+    "median_ms": 4.138934,
+    "trials": [
+      {
+        "milliseconds": 3.262336,
+        "exit": 0,
+        "stdout": "1\n2000\n"
+      },
+      {
+        "milliseconds": 4.138934,
+        "exit": 0,
+        "stdout": "1\n2000\n"
+      },
+      {
+        "milliseconds": 4.940872,
+        "exit": 0,
+        "stdout": "1\n2000\n"
+      }
+    ]
+  },
+  {
+    "n": 4000,
+    "median_ms": 4.804098,
+    "trials": [
+      {
+        "milliseconds": 5.262993,
+        "exit": 0,
+        "stdout": "1\n4000\n"
+      },
+      {
+        "milliseconds": 4.804098,
+        "exit": 0,
+        "stdout": "1\n4000\n"
+      },
+      {
+        "milliseconds": 4.354694,
+        "exit": 0,
+        "stdout": "1\n4000\n"
+      }
+    ]
+  },
+  {
+    "n": 8000,
+    "median_ms": 6.361553,
+    "trials": [
+      {
+        "milliseconds": 6.361553,
+        "exit": 0,
+        "stdout": "1\n8000\n"
+      },
+      {
+        "milliseconds": 6.145144,
+        "exit": 0,
+        "stdout": "1\n8000\n"
+      },
+      {
+        "milliseconds": 7.283697,
+        "exit": 0,
+        "stdout": "1\n8000\n"
+      }
+    ]
+  },
+  {
+    "n": 16000,
+    "median_ms": 7.006808,
+    "trials": [
+      {
+        "milliseconds": 7.527095,
+        "exit": 0,
+        "stdout": "1\n16000\n"
+      },
+      {
+        "milliseconds": 6.616756,
+        "exit": 0,
+        "stdout": "1\n16000\n"
+      },
+      {
+        "milliseconds": 7.006808,
+        "exit": 0,
+        "stdout": "1\n16000\n"
+      }
+    ]
+  },
+  {
+    "n": 128000,
+    "median_ms": 41.895678,
+    "trials": [
+      {
+        "milliseconds": 46.111493,
+        "exit": 0,
+        "stdout": "1\n128000\n"
+      },
+      {
+        "milliseconds": 41.895678,
+        "exit": 0,
+        "stdout": "1\n128000\n"
+      },
+      {
+        "milliseconds": 41.798657,
+        "exit": 0,
+        "stdout": "1\n128000\n"
+      }
+    ]
+  }
+]

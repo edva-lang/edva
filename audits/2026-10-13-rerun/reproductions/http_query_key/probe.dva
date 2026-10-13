@@ -1,0 +1,6 @@
+#use io
+#use net/http
+io::out $ http::query_param("x=1&y=2", "y")!!
+io::out $ http::query_param("role=user&name=admin", "name")!!
+io::out $ <>(http::query_param("x=1", "z"))
+io::out $ <>(http::query_param("x=", "x"))

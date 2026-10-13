@@ -1,0 +1,5 @@
+#use io
+a = #! (255u8 + 1u8)
+io::out(a)
+b = #! (255u8 > 1u8)
+io::out(b)

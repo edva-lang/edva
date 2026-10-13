@@ -1,0 +1,8 @@
+# Preserve text evidence; generated executables, IR, and std symlinks stay local.
+results/**
+!results/*/
+!results/*/compile.stdout
+!results/*/compile.stderr
+!results/*/run.stdout
+!results/*/run.stderr
+!regression.log

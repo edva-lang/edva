@@ -1,0 +1,2 @@
+# This captured HTTP example contains intentional protocol CRLF bytes.
+results/doc_http_example/run.stdout -whitespace

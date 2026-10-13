@@ -1,0 +1,4 @@
+#use io
+r = io::reader(-1)
+io::out $ <>(io::read(r, 16))
+io::out $ <>(io::read_byte(r))

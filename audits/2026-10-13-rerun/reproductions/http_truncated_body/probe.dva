@@ -1,0 +1,18 @@
+#use io
+#use net
+#use net/http
+#use libc
+#foreign "c"
+   socketpair: (domain: Int, kind: Int, proto: Int, fds: Addr) => Int
+fds = (0i32, 0i32)
+socketpair(1, 1, 0, &fds)
+rf = Int(fds.0)
+wf = Int(fds.1)
+net::send_str(wf, "POST / HTTP/1.1\r\nContent-Length: 10\r\n\r\nabc")
+net::shutdown_fd(wf)
+res = http::read_request(rf, 1024)
+res
+   | req => io::out(?req.body)
+   | err => io::out(err)
+libc::close(rf)
+libc::close(wf)

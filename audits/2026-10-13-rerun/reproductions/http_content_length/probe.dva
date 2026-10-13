@@ -1,0 +1,7 @@
+#use io
+#use net/http
+io::out $ http::content_length("Content-Length: 12\r\n")!!
+io::out $ http::content_length("Content-Length:12\r\n")!!
+io::out $ <>(http::content_length("content-length: 12\r\n"))
+io::out $ <>(http::content_length("X-Content-Length: 12\r\n"))
+io::out $ http::content_length("Content-Length: invalid\r\n")!!

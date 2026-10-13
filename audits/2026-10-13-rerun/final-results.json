@@ -1,0 +1,296 @@
+[
+  {
+    "case": "string_overflow",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "-9223372036854775808\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_tiny_number",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_unicode",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "4\n240\n159\n152\n128\n<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "integer_format",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "-9223372036854775808\n18446744073709551615\n",
+    "stderr": ""
+  },
+  {
+    "case": "array_div_overflow",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4013: signed integer division overflow (INT_MIN / -1)\n"
+  },
+  {
+    "case": "io_format",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "a7b\n77\na7b8c\n",
+    "stderr": ""
+  },
+  {
+    "case": "float_format",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "100000\n120000\n123450\n",
+    "stderr": ""
+  },
+  {
+    "case": "doc_json_example",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "array_big_div_zero",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4012: integer division by zero\n"
+  },
+  {
+    "case": "array_div_zero",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4012: integer division by zero\n"
+  },
+  {
+    "case": "net_address",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "192.168.1.1:50000\n",
+    "stderr": ""
+  },
+  {
+    "case": "ctfe_narrow",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "net_socket_failure",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\nbefore walk\nafter walk\n",
+    "stderr": ""
+  },
+  {
+    "case": "array_unsigned_div_zero",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4012: integer division by zero\n"
+  },
+  {
+    "case": "float_infinity",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "inf\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_object",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "2\nouter\nlast\n",
+    "stderr": ""
+  },
+  {
+    "case": "io_short_write",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n0\n65536\n",
+    "stderr": ""
+  },
+  {
+    "case": "net_connect_leak",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "connect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\n0\n",
+    "stderr": ""
+  },
+  {
+    "case": "sort_scale",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "1\n1000\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_nested",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "3\n1\n1\n3\n",
+    "stderr": ""
+  },
+  {
+    "case": "float_nan",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "nan\n",
+    "stderr": ""
+  },
+  {
+    "case": "doc_http_example",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "HTTP/1.1 200 OK\r\ntext/plain\r\nHello, World!\n",
+    "stderr": ""
+  },
+  {
+    "case": "doc_io_example",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "json_invalid",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n<->\n<->\n<->\n<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "io_format_brace",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "end{\n",
+    "stderr": ""
+  },
+  {
+    "case": "scalar_div_control",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4012: integer division by zero\n"
+  },
+  {
+    "case": "target_thumb",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<+>\n4\n4\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_depth",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<+>\n",
+    "stderr": ""
+  },
+  {
+    "case": "io_read_error",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "ctfe_div_zero",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "json_recover",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "json: malformed number\ncontinued\n",
+    "stderr": ""
+  },
+  {
+    "case": "io_readall_stale_status",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n11\n<->\n<+>\n<+>\n11\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_query_key",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "1\nuser\n<+>\n<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_truncated_body",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "3\n",
+    "stderr": ""
+  },
+  {
+    "case": "io_out_partial",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "65536\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_compensated_number",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n<->\ninf\n0\n",
+    "stderr": ""
+  },
+  {
+    "case": "sort_correctness",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n4\n0\n16000\na\nz\nz\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_invalid_utf8",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<+>\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_content_length",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "12\n2\n<->\n<+>\n0\n",
+    "stderr": ""
+  },
+  {
+    "case": "doc_sort_current",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "io_write_count",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "65536\n65536\n",
+    "stderr": ""
+  },
+  {
+    "case": "http_chunked_body",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n",
+    "stderr": ""
+  }
+]

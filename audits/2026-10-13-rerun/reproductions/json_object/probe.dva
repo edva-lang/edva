@@ -1,0 +1,8 @@
+#use io
+#use json
+v = json::parse("{\"outer\":{\"inner\":1},\"last\":2}")!!
+v
+   [Object ps]
+      io::out $ ?ps
+      ps @ p => io::out(p.key)
+   | io::out("wrong root")

@@ -1,0 +1,18 @@
+#use io
+#use json
+large = {340}
+large += '1'
+309 @
+   large += '0'
+large += "e-309"
+a = json::parse(+large)!!
+a [Number n] io::out(n == 1.0)
+small = {430}
+small += "0."
+399 @
+   small += '0'
+small += "1e400"
+b = json::parse(+small)!!
+b [Number n] io::out(n == 1.0)
+a [Number n] io::out(n)
+b [Number n] io::out(n)

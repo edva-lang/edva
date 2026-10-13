@@ -1,0 +1,6 @@
+#use io
+#use json
+v = json::parse("1e-309")!!
+v
+   [Number n] io::out $ n == 0.0
+   | io::out("wrong")

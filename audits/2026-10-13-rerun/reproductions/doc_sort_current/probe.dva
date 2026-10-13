@@ -1,0 +1,8 @@
+#use sort
+
+numbers = sort::Ints()
+numbers += 9
+numbers += 2
+numbers += 5
+ordered = sort::ints(numbers)
+print_int(ordered(0)!!)

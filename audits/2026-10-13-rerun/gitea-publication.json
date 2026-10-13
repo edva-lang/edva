@@ -1,0 +1,68 @@
+{
+  "milestone": {
+    "id": 8,
+    "title": "Edva audit rerun — 2026-10-13 (b8e2267)"
+  },
+  "issues": [
+    {
+      "finding": 1,
+      "number": 169,
+      "title": "http: compare query parameter keys and preserve present empty values",
+      "url": "https://gitea.gde.to/ike/dva/issues/169"
+    },
+    {
+      "finding": 2,
+      "number": 170,
+      "title": "http: parse Content-Length with correct field boundaries and numeric validation",
+      "url": "https://gitea.gde.to/ike/dva/issues/170"
+    },
+    {
+      "finding": 3,
+      "number": 171,
+      "title": "http: reject incomplete bodies and unsupported framing instead of returning success",
+      "url": "https://gitea.gde.to/ike/dva/issues/171"
+    },
+    {
+      "finding": 4,
+      "number": 172,
+      "title": "io: finish partial-write and error handling in console output wrappers",
+      "url": "https://gitea.gde.to/ike/dva/issues/172"
+    },
+    {
+      "finding": 5,
+      "number": 173,
+      "title": "io: clear stale would-block state on EOF and expose stdin reader status",
+      "url": "https://gitea.gde.to/ike/dva/issues/173"
+    },
+    {
+      "finding": 6,
+      "number": 174,
+      "title": "json: preserve compensated decimal numbers across intermediate overflow and underflow",
+      "url": "https://gitea.gde.to/ike/dva/issues/174"
+    },
+    {
+      "finding": 7,
+      "number": 175,
+      "title": "json: validate raw UTF-8 string bytes or expose an explicit checked parser contract",
+      "url": "https://gitea.gde.to/ike/dva/issues/175"
+    },
+    {
+      "finding": 8,
+      "number": 176,
+      "title": "docs: finish stdlib signature, example, and sorting-complexity corrections",
+      "url": "https://gitea.gde.to/ike/dva/issues/176"
+    },
+    {
+      "finding": 9,
+      "number": 177,
+      "title": "docs: validate partial-example exemptions, expected output, and LLM code snippets",
+      "url": "https://gitea.gde.to/ike/dva/issues/177"
+    },
+    {
+      "finding": 10,
+      "number": 178,
+      "title": "docs/llms: reconcile completeness claims with API coverage and parser state contracts",
+      "url": "https://gitea.gde.to/ike/dva/issues/178"
+    }
+  ]
+}

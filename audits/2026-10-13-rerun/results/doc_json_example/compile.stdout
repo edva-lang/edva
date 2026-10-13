@@ -1,0 +1,3 @@
+/home/ike/Z/edva/audits/2026-10-13-rerun/reproductions/doc_json_example/probe.dva:3:39: E3004: Undefined function: print_int
+/home/ike/Z/edva/audits/2026-10-13-rerun/reproductions/doc_json_example/probe.dva:3:62: E3004: Undefined function: print
+E5011: Compilation aborted due to code generation errors.
