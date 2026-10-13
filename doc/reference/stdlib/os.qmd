@@ -11,7 +11,7 @@ meta:
 The `os` module provides safe, high-level abstractions over POSIX file operations,
 device controls, and process execution.
 
-```dva
+```dva run
 #use os
 ```
 
@@ -26,7 +26,7 @@ device controls, and process execution.
 | `os::ioctl` | `Int, Int, Int => Int` | Performs control device request |
 | `os::spawn` | `String, Addr => Int` | Spawns external executable with `argv` pointer and waits for completion |
 
-```dva
+```dva partial
 fd = os::open("output.txt", 577) // O_WRONLY | O_CREAT | O_TRUNC
 fd !< 0
    |

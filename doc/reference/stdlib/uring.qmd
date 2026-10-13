@@ -11,7 +11,7 @@ meta:
 The `uring` module provides low-level Linux `io_uring` kernel submission and completion rings
 for non-blocking asynchronous system calls.
 
-```dva
+```dva run
 #use uring
 ```
 

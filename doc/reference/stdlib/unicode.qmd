@@ -11,7 +11,7 @@ meta:
 Strings in Edva are raw UTF-8 byte sequences. The `unicode` module provides
 codepoint classification, UTF-8 byte decoding, and rune boundary helpers.
 
-```dva
+```dva run
 #use unicode
 ```
 
@@ -40,7 +40,7 @@ codepoint classification, UTF-8 byte decoding, and rune boundary helpers.
 Because strings are byte-indexed (`s(i)` returns a byte), decoding a multibyte
 UTF-8 string requires advancing by the rune's decoded byte width:
 
-```dva
+```dva run
 #use unicode
 #use io
 

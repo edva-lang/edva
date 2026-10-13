@@ -23,7 +23,7 @@ The four static layouts of ramifications are distinguished by whether each slot 
 
 The `Flag` (`<>`) is a native built-in type and does not require a `#type` declaration. The payload forms are defined via `#type`:
 
-```dva
+```dva run
 // Built-in flag
 active = <+>
 
@@ -38,7 +38,7 @@ active = <+>
 ### Flag constants
 The built-in flag `<>` has two literal values:
 
-```dva
+```dva run
 truthy = <+>    // Positive (true, 1)
 falsy  = <->    // Negative (false, 0)
 ```
@@ -46,7 +46,7 @@ falsy  = <->    // Negative (false, 0)
 ### Unit heap ram constants
 When an API requires a heap-allocated ram with unit branches (rather than a bare `i1`), use double-bracketed unit constants:
 
-```dva
+```dva run
 heap_true  = <++>   // Heap positive unit (void success slot)
 heap_false = <-->   // Heap negative unit (absence slot)
 ```
@@ -66,7 +66,7 @@ Payload branches are constructed using:
 All payload constructors close with `+>` or `->` (never bare `>`). Delimiters
 `<+`/`+>` and `<-`/`->` ensure comparisons inside payloads remain unambiguous: `<+ a > b ->`.
 
-```dva
+```dva run
 // Constructing an Option (RamPN)
 opt_val = <+ 42 +>
 none_val = <-->
@@ -86,7 +86,7 @@ failure = <- "out of memory" +>
 
 Flags support standard boolean logic:
 
-```dva
+```dva run
 a = <+>
 b = <->
 
@@ -99,7 +99,7 @@ e = !a         // <-> (Logical NOT)
 
 Ramifications are inspected and unpacked using vertical bar `|` choice expressions:
 
-```dva
+```dva partial
 res = FileResult(<+ 100 ->)
 
 status = res |
@@ -109,7 +109,7 @@ status = res |
 
 For non-payload slots, omission of payload bindings matches the branch:
 
-```dva
+```dva partial
 opt = MaybeInt(<-->)
 
 val = opt |
@@ -122,7 +122,7 @@ val = opt |
 - **Postfix unwrap `r!!`**: Unwraps the positive payload. If the ram holds the negative slot, execution halts with a panic displaying the negative payload.
 - **Fallible discard `!|`**: Fallible discard executes the fallback branch on failure, skipping the void success branch.
 
-```dva
+```dva partial
 // Unwrap or panic
 fd = res!!
 
@@ -134,7 +134,7 @@ arr(0) = 42 !| _
 
 The constructor `<>(r)` discards any payload and extracts a pure boolean `Flag`. The spaceless negation `!<>(r)` negates the resulting flag directly:
 
-```dva
+```dva partial
 res = FileResult(<+ 10 ->)
 is_ok = <>(res)     // <+>
 is_err = !<>(res)   // <->
@@ -144,7 +144,7 @@ is_err = !<>(res)   // <->
 
 The `--!` operator unwraps the positive payload inline, or early-returns the negative ramification from the enclosing function:
 
-```dva
+```dva partial
 read_data: String => <String | Error>
 read_data = path =>
    fd = open_file(path)--!    // Returns early if open_file fails
@@ -162,7 +162,7 @@ Choices can early return unit ramifications using compact branch shortcuts:
 | `cond |-->` | `cond | --| <-->` | `RamPN` (`< T | >`) absence unit |
 | `cond |++>` | `cond | --| <++>` | `RamNP` (`< | E >`) success unit |
 
-```dva
+```dva run
 check_limit: Int => <>
 check_limit = n =>
    n < 0 |->
@@ -177,7 +177,7 @@ In expression position, an inexhaustive choice expression whose non-jump branche
 - **`RamPN` (`< T | >`)**: synthesizes an implicit trailing `| <-->` (absence unit).
 - **`RamNP` (`< | E >`)**: synthesizes an implicit trailing `| <++>` (success unit).
 
-```dva
+```dva run
 // Returns < String | > with implicit | <--> fallback
 find_name: Int => < String | >
 find_name = id =>

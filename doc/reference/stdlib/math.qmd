@@ -12,7 +12,7 @@ The `math` module exposes C99 `libm` mathematical functions for 64-bit IEEE 754
 `Float` values, along with standard mathematical constants. Importing `math`
 automatically links `-lm`.
 
-```dva
+```dva run
 #use math
 ```
 

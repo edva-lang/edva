@@ -12,7 +12,7 @@ The `ccl` module implements the [Categorical Configuration Language (CCL)](https
 parser, data model, deterministic serializer, and package manifest/lockfile validator
 used by Edva's package manager.
 
-```dva
+```dva run
 #use ccl
 ```
 
@@ -20,7 +20,7 @@ used by Edva's package manager.
 
 The core document model represents nested, indentation-delimited key-value entries:
 
-```dva
+```dva run
 #type Strings (String){}
 
 #type CclVal <
@@ -54,7 +54,7 @@ The core document model represents nested, indentation-delimited key-value entri
 | `ccl::get_section` | `CclDoc, String => < CclDoc | >` | Retrieve a nested block section as a sub-document |
 | `ccl::get_list` | `CclDoc, String => < Strings | >` | Retrieve entries sharing the specified key as a list of strings |
 
-```dva
+```dva partial
 doc = ccl::parse("name = demo\nversion = 0.1.0", "edva.ccl")!!
 name = ccl::get(doc, "name") | n => n | "unknown"
 ```

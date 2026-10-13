@@ -11,7 +11,7 @@ meta:
 `json::parse` parses a document into the recursive `json::Value` enum. Import
 the module explicitly:
 
-```dva
+```dva run
 #use io
 #use json
 
@@ -35,7 +35,7 @@ The module also exports the growable arena types `Values` and `Pairs`, plus
 
 ## Parsing and failure
 
-```dva
+```dva partial
 parse: String => < Value | Error >
 ```
 
@@ -43,7 +43,7 @@ Malformed input produces the `Error` slot.
 
 - **Recoverable inspection**: Callers can inspect the error using named-branch pattern matching without aborting:
 
-```dva
+```dva run
 #use io
 #use json
 
@@ -55,7 +55,7 @@ r
 
 - **Fatal extraction (`!!`)**: Postfix `!!` unwraps the successful value or aborts execution with a fatal diagnostic if an `Error` occurs:
 
-```dva
+```dva partial
 #use json
 
 // Aborts execution with code 400 if parsing fails:

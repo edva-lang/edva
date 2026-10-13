@@ -55,7 +55,7 @@ Notable precedence characteristics:
 - `--|` performs an early return from an enclosing function (`--| val` with a value, or bare `--|` for void functions).
 - `..` forms ranges, including string and slice views.
 
-```dva
+```dva run
 score = 2
 label = score [1] "one" [2] "two" | "other"
 ```
@@ -67,7 +67,7 @@ right-associative; `$>` prepends one and is left-associative. `$>>` chains a
 ram with a positive payload through a continuation returning the same ram
 shape. `$:` attaches a trailing block as an argument.
 
-```dva
+```dva run
 #use io
 
 sum: Int, Int => Int

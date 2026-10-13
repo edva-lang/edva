@@ -14,7 +14,7 @@ The `Float` type represents an IEEE 754 double-precision 64-bit floating-point n
 
 Variables can be bound immutably (`=`) or mutably (`'`). Float literals are typed as `Float` unless explicitly annotated with `f32`.
 
-```dva
+```dva partial
 // Inferred Float (f64)
 pi = 3.141592653589793
 ratio = 0.05
@@ -29,7 +29,7 @@ total' = total' + 1.5
 
 Type aliases can define domain-specific quantities:
 
-```dva
+```dva run
 #type Radians Float
 #type Latitude Float
 #type Coordinate (x: Float, y: Float, z: Float)
@@ -39,7 +39,7 @@ Type aliases can define domain-specific quantities:
 
 Floating-point literals must contain a decimal point or an exponential part (`e` or `E`):
 
-```dva
+```dva run
 standard   = 42.0
 scientific = 6.02214076e23
 small      = 1.0e-9
@@ -59,7 +59,7 @@ negative   = -273.15
 
 Edva implements IEEE 754 arithmetic across identical floating-point types:
 
-```dva
+```dva run
 x = 7.5
 y = 2.5
 
@@ -75,7 +75,7 @@ rem  = x % y    // 0.0 (floating-point remainder / fmod)
 Comparisons produce the boolean `Flag` (`<>`). Relational operators include `<` (less),
 `>` (greater), `!<` (greater-or-equal), and `!>` (less-or-equal):
 
-```dva
+```dva run
 a = 1.0
 b = 2.0
 
@@ -93,7 +93,7 @@ Floating-point comparisons follow IEEE 754 ordered comparison semantics (`OGE` /
 either operand is `NaN`, both `!<` and `!>` evaluate to false (`<->`). This is distinct from
 logical negation:
 
-```dva
+```dva run
 nan = 0.0 / 0.0
 is_ge  = nan !< 1.0  // <-> (ordered comparison returns false)
 not_lt = !(nan < 1.0) // <+> (logical negation of false)
@@ -103,7 +103,7 @@ not_lt = !(nan < 1.0) // <+> (logical negation of false)
 
 Standard floating-point functions and mathematical constants are provided by `#use @math`:
 
-```dva
+```dva partial
 #use @math
 
 root = math::sqrt(16.0)     // 4.0
@@ -115,7 +115,7 @@ p    = math::pi              // 3.141592653589793
 
 Conversions between integers and floats, or between `f32` and `Float`, require explicit constructor calls:
 
-```dva
+```dva run
 integer_val = 42
 
 // Integer to Float

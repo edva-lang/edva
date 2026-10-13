@@ -16,7 +16,7 @@ The `Addr` type (also recognized as `ptr`) represents an untyped, raw memory add
 
 Local bindings in Edva are inferred directly from their right-hand side. Inline type annotations (`p: Addr = ...`) are **illegal syntax**. When an explicit type signature is desired, it must be declared on a separate preceding line:
 
-```dva
+```dva run
 // Inferred binding (standard idiom)
 p = Addr(0)                  // Null pointer
 handle = Addr(0x7fff0000)
@@ -30,7 +30,7 @@ p_explicit = Addr(0)
 
 The unary prefix address-of operator `&` extracts the underlying memory pointer of a value:
 
-```dva
+```dva run
 // String data pointer
 str = "Static data"
 raw_str_ptr = &str
@@ -49,7 +49,7 @@ raw_pt_ptr = &pt
 
 Unary `&` on scalar local variables (`Int`, `Float`, `i8`..`u64`, `Rune`, `Flag`) is permitted strictly in **downward call-argument position** to support C FFI out-parameters and native pointer arguments:
 
-```dva
+```dva partial
 // Valid: passing scalar address as a function/FFI call argument
 len' = 16i32
 libc::getsockname(fd, &addr, &len')
@@ -62,7 +62,7 @@ libc::getsockname(fd, &addr, &len')
 
 Conversions between `Addr` and integerish types are explicit and bidirectional. `Addr(...)` casts are **strictly restricted to integerish types** (`Int`, `i8`..`i64`, `u8`..`u64`) and pointers. Casting records, arrays, slices, builders, or functions to `Addr(...)` is rejected with `E3084`: use `&` to obtain their addresses instead.
 
-```dva
+```dva run
 // Integer to pointer (allowed)
 base_addr = Addr(0x1000)
 null_ptr = Addr(0)
@@ -82,7 +82,7 @@ rec_ptr = &rec    // OK
 
 Raw offsets can be added or subtracted directly:
 
-```dva
+```dva run
 start = Addr(0x2000)
 offset = 16
 
@@ -93,7 +93,7 @@ next_page = start + offset    // Addr(0x2010)
 
 Pointers can be compared for equality and ordering:
 
-```dva
+```dva run
 p1 = Addr(0x100)
 p2 = Addr(0x200)
 
@@ -105,7 +105,7 @@ is_less = p1 < p2             // <+>
 
 To mask off low-order alignment bits or high-order generational tags while preserving LLVM pointer provenance and alias analysis metadata, use the `%ptrmask(ptr, mask)` intrinsic:
 
-```dva
+```dva run
 // Clear top 16 tag bits before passing an address to OS syscalls:
 canonical_ptr = %ptrmask(ptr, 0m48)
 
@@ -118,12 +118,12 @@ aligned_ptr = %ptrmask(ptr, 0 - 64)
 Direct memory reading and writing is performed using volatile bracket expressions:
 
 - **Typed load (`@[addr T]`)**: Reads a volatile value of type `T` from `addr`:
-  ```dva
+  ```dva partial
   val = @[ptr Int]
   byte = @[ptr u8]
   ```
 - **Untyped store (`@[addr] = val`)**: Stores `val` into memory at `addr`. The LHS derives its target type and write width directly from the RHS:
-  ```dva
+  ```dva partial
   @[ptr] = 42                 // Stores 64-bit Int
   @[ptr] = u8(255)            // Stores 8-bit unsigned byte
   @[ptr] = 1i32               // Stores 32-bit integer
@@ -137,7 +137,7 @@ Direct memory reading and writing is performed using volatile bracket expression
 
 `Addr` is commonly used when declaring external foreign functions (`#foreign`) and interacting with low-level runtime modules like `#use @libc` or `#use @mem`:
 
-```dva
+```dva partial
 #use @libc
 #use @mem
 

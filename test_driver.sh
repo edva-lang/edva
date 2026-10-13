@@ -1965,5 +1965,79 @@ fi
 
 echo "PASS"
 
+# --- Test 47: F16 / #164 - Doc checker enforces classification and validation ---
+echo -n "Testing Test 47 (tools/check_docs.nu classification and example execution)... "
+DOC_TEST_DIR="$TMPDIR/doc_test_repo"
+mkdir -p "$DOC_TEST_DIR/doc" "$DOC_TEST_DIR/tools/opgen"
+cp tools/check_docs.nu "$DOC_TEST_DIR/tools/"
+cat <<'EOF' > "$DOC_TEST_DIR/tools/opgen/main.nu"
+def main [--check] { exit 0 }
+EOF
+
+# 1. Reject --compile-examples if edva binary is missing
+cat <<'EOF' > "$DOC_TEST_DIR/doc/sample.qmd"
+---
+meta:
+  evidence: doc/sample.qmd
+---
+```dva run
+x = 1
+```
+EOF
+set +e
+timeout 10 nu "$DOC_TEST_DIR/tools/check_docs.nu" --compile-examples >"$TMPDIR/t47_noedva.out" 2>"$TMPDIR/t47_noedva.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "binary was not found" "$TMPDIR/t47_noedva.err"; then
+    echo "FAILED: expected failure when edva is missing under --compile-examples"
+    cat "$TMPDIR/t47_noedva.err"
+    exit 1
+fi
+
+# Link real edva binary into mock repo
+ln -s "$(pwd)/edva" "$DOC_TEST_DIR/edva"
+
+# 2. Reject unclassified code blocks
+cat <<'EOF' > "$DOC_TEST_DIR/doc/sample.qmd"
+---
+meta:
+  evidence: doc/sample.qmd
+---
+```dva
+x = 1
+```
+EOF
+set +e
+timeout 10 nu "$DOC_TEST_DIR/tools/check_docs.nu" >"$TMPDIR/t47_unclass.out" 2>"$TMPDIR/t47_unclass.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "unclassified code blocks found" "$TMPDIR/t47_unclass.err"; then
+    echo "FAILED: expected failure on unclassified code block"
+    cat "$TMPDIR/t47_unclass.err"
+    exit 1
+fi
+
+# 3. Reject failing expected-error blocks when compilation succeeds
+cat <<'EOF' > "$DOC_TEST_DIR/doc/sample.qmd"
+---
+meta:
+  evidence: doc/sample.qmd
+---
+```dva expected-error="E9999"
+x = 1
+```
+EOF
+set +e
+timeout 10 nu "$DOC_TEST_DIR/tools/check_docs.nu" --compile-examples >"$TMPDIR/t47_badneg.out" 2>"$TMPDIR/t47_badneg.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -q "Block compiled successfully with exit code 0" "$TMPDIR/t47_badneg.err"; then
+    echo "FAILED: expected failure when expected-error block compiles cleanly"
+    cat "$TMPDIR/t47_badneg.err"
+    exit 1
+fi
+
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

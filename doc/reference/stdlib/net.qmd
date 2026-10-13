@@ -11,7 +11,7 @@ meta:
 The `net` module provides POSIX socket wrappers for TCP and UDP communication on Linux systems.
 The submodule `net/http` provides HTTP protocol parsing, header manipulation, and response generation.
 
-```dva
+```dva run
 #use io
 #use net
 #use net/http
@@ -21,7 +21,7 @@ The submodule `net/http` provides HTTP protocol parsing, header manipulation, an
 
 Socket helpers return recoverable `Conn` (`< Int | String >`) ramifications rather than poisonous abort errors.
 
-```dva
+```dva run
 #use io
 #use net
 
@@ -51,7 +51,7 @@ listener
 
 The `net/http` submodule parses HTTP/1.1 requests and formats responses:
 
-```dva
+```dva run
 #use io
 #use net/http
 

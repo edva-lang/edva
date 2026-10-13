@@ -12,7 +12,7 @@ Functions use `=>`; parameter types live in a separate signature, never in
 the body parameter list. A signature fixes parameter and result types before
 the implementation is checked.
 
-```dva
+```dva run
 add: Int, Int => Int
 add = left, right => left + right
 ```
@@ -30,7 +30,7 @@ A function evaluates to the value of its last expression, or exits early using t
 
 There is no bare `return` keyword in Edva. If a function's last expression is an assignment or an inexhaustive statement choice without an early return, its result is Unit; declare that result as `()` in the function signature. `()` is a declaration-only type spelling, not an expression value.
 
-```dva
+```dva run
 clamp: Int, Int, Int => Int
 clamp = x, lo, hi =>
    x < lo | --| lo
@@ -49,7 +49,7 @@ Nested functions and lambdas may capture an enclosing function's values.
 Capture is by value at closure construction, so each returned closure has its
 own copy of the captured state.
 
-```dva
+```dva partial
 make_adder: Int => (Int => Int)
 make_adder = base => value => base + value
 
@@ -68,7 +68,7 @@ Function values can be passed, returned, stored in records and arrays, and
 placed in ram or enum payloads when their static type is known. Use a
 parenthesized function type inside another signature:
 
-```dva
+```dva run
 apply_twice: (Int => Int), Int => Int
 apply_twice = f, value => f(f(value))
 ```

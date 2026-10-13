@@ -14,7 +14,7 @@ The `String` type represents an immutable, length-prefixed, NUL-reserved sequenc
 
 Strings are bound using `=`:
 
-```dva
+```dva run
 greeting = "Hello, world!"
 path = "/etc/edva/config.ccl"
 ```
@@ -26,7 +26,7 @@ Edva supports three string literal formats:
 ### Standard escaped strings
 Enclosed in double quotes `"..."`, supporting C-style escape sequences:
 
-```dva
+```dva run
 message = "First line\nSecond line\t(tabbed)\nPath: \"/usr/bin\""
 ```
 
@@ -35,7 +35,7 @@ Supported escapes include `\n`, `\t`, `\r`, `\0`, `\a`, `\b`, `\f`, `\v`, `\"`, 
 ### Here-Docs (`"""..."""`)
 Enclosed in triple double quotes `"""..."""`. Here-docs provide multiline formatted text blocks with baseline margin stripping and dynamic expression interpolation:
 
-```dva
+```dva run
 name = "world"
 count = 3
 template = """
@@ -55,7 +55,7 @@ template = """
 - When the closing `"""` is on its own line, the preceding content line's trailing newline is preserved.
 - A trailing backslash `\` at the end of a line acts as a line continuation: it suppresses the newline while preserving baseline margin stripping on subsequent lines.
 
-```dva
+```dva run
 long_line = """
    This is a single \
    unbroken line of text.
@@ -70,7 +70,7 @@ long_line = """
 #### Expression interpolation
 - `${expr}` evaluates `expr` and splices the resulting value into the string at runtime:
 
-```dva
+```dva run
 part1 = "foo"
 part2 = "bar"
 combined = """
@@ -86,7 +86,7 @@ combined = """
 
 At runtime, every `String` value is represented by a 16-byte fat pointer struct:
 
-```dva
+```dva partial
 { len: i64, data: ptr }
 ```
 
@@ -107,7 +107,7 @@ The upper 16 bits of the 64-bit `len` word (`len >> 48`) store an arena generati
 
 Edva deliberately avoids dot-property member access (`.len` and `.data` are compile-time errors `E3065` and `E3066`). Instead, prefix operators query string metadata:
 
-```dva
+```dva run
 s = "Edva Language"
 
 // Byte length
@@ -124,7 +124,7 @@ raw_ptr = &s           // Addr / ptr
 
 The binary `+` operator concatenates two strings, or appends a single byte when given an integer:
 
-```dva
+```dva run
 #use str
 
 prefix = "item_"
@@ -139,7 +139,7 @@ raw_byte = prefix + id                // "item_*" (appends byte value 42 == ASCI
 
 Strings support sub-range slicing and indexed byte access:
 
-```dva
+```dva partial
 text = "Antigravity"
 
 // Substring slicing: text(start .. end) returns a String

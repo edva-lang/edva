@@ -11,7 +11,7 @@ meta:
 The `io` module provides high-performance, buffered input and formatted output
 for file descriptors, standard streams, and sockets.
 
-```dva
+```dva run
 #use io
 ```
 
@@ -43,7 +43,7 @@ for file descriptors, standard streams, and sockets.
 | `io::errf(val, fmt)` | `#! T: Type, T, String => ()` | Formatted output to `STDERR` replacing `{}` placeholders with value | `io::errf(line, "Failed at line {}")` |
 | `io::write(fd, s)` | `Int, String => Int` | Raw length-aware write of String `s` to descriptor `fd`, returns bytes written | `io::write(io::STDOUT, "raw\n")` |
 
-```dva
+```dva run
 #use io
 
 // Multi-argument printing (records print space-separated):
@@ -98,7 +98,7 @@ resuming read operations once data arrives. Interrupted calls (`EINTR`) are auto
 
 ### Reading line by line
 
-```dva
+```dva complete
 #use io
 
 r = io::reader(io::STDIN)
@@ -112,7 +112,7 @@ r = io::reader(io::STDIN)
 
 ### Distinguishing EOF, Would-Block, and Errors
 
-```dva
+```dva partial
 #use io
 
 r = io::reader(fd)
@@ -138,7 +138,7 @@ r = io::reader(fd)
 
 When expecting a mandatory header or fixed payload where absence represents an unrecoverable failure:
 
-```dva
+```dva partial
 #use io
 
 r = io::reader(fd)

@@ -34,7 +34,7 @@ are evaluated while compiling and disappear with their `Type` arguments;
 Every predicate has the declaration `Type => <>` and returns a bare flag.
 Use it with a compile-time type parameter rather than a runtime value:
 
-```dva
+```dva run
 #use type
 
 numeric: #! T: Type, T => <>

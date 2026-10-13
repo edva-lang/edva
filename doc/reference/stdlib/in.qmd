@@ -19,7 +19,7 @@ slot indicates EOF.
 | `read_byte!` | `< Int | >` | read one byte |
 | `read_until(delim, max)` | `< String | >` | read through and consume `delim` |
 
-```dva
+```dva partial
 #use in
 
 line = in::read_line(4096)

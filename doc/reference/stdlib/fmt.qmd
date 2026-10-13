@@ -12,7 +12,7 @@ The `fmt` module provides lightweight, allocation-efficient printf-style string
 builders. Unlike `io::outf`, which writes formatted bytes to an I/O descriptor,
 `fmt` functions construct and return an immutable `String`.
 
-```dva
+```dva run
 #use fmt
 ```
 

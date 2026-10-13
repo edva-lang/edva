@@ -49,7 +49,7 @@ the multi-argument application operators:
 | `m $>> cont` | Monadic bind | Left | Tier 4 | Unpack positive ram, propagate negative |
 | `f $: block` | Block feed | Right | Lowest | Attach indented block as final argument |
 
-```dva
+```dva run
 #use io
 
 add: Int, Int => Int
@@ -74,14 +74,16 @@ Edva provides six primary structural shapes:
 
 Records group heterogeneously typed fields. Fields may be named or positional:
 
-```dva
+```dva run
+#use io
+
 // Positional tuple
 point = (10, 20)
 io::out $ point.0 // prints 10
 
 // Named record
 #type User (id: Int, name: String, active: <>)
-user = User((id: 1, name: "Alice", active: <+>))
+user = User((id = 1, name = "Alice", active = <+>))
 io::out $ user.name
 ```
 
@@ -94,7 +96,9 @@ initialization is rejected at compile time (`E3130`).
 Growable arrays are heap-allocated resizable buffers. Indexing is fallible and
 returns a ramification (`< T | Error >`):
 
-```dva
+```dva run
+#use io
+
 #type Ints (Int){}
 
 list = Ints()
@@ -114,7 +118,9 @@ io::out $ first // prints 10
 
 Maps associate keys (`String`, `Int`, or `Addr`) with values:
 
-```dva
+```dva run
+#use io
+
 #type Config String ^ Int
 
 cfg = Config()
@@ -134,7 +140,9 @@ Rams represent 2-slot algebraic sum values without runtime type overhead:
 - `< | Error >`: Fallible result (`<++>` success or `<- err ->`)
 - `< T | Error >`: Two-payload result (`<+ val ->` or `<- err +>`)
 
-```dva
+```dva run
+#use io
+
 #type SafeInt < Int | Error >
 
 divide: Int, Int => SafeInt
@@ -153,21 +161,23 @@ res
 
 Enums define named variants, with optional typed payloads:
 
-```dva
+```dva run
+#use io
+
 #type Shape <
-   Circle(radius: Float),
-   Rectangle(width: Float, height: Float),
+   Circle(Float),
+   Rectangle((Float, Float)),
    Point
 >
 
 area: Shape => Float
 area = s =>
-   s [Circle(r)] 3.14159 * r * r
-   [Rectangle(w, h)] w * h
+   s [Circle r] 3.14159 * r * r
+   [Rectangle dims] dims.0 * dims.1
    [Point] 0.0
 
-c = Shape(Circle(5.0))
-print_float $ area(c)
+c = Shape(Circle, 5.0)
+io::out $ area(c)
 ```
 
 ## Memory model and lifetimes

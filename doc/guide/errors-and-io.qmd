@@ -19,7 +19,7 @@ input.
 Use a positional choice when both outcomes are meaningful. The first bare
 branch receives the first slot; the second receives the second slot.
 
-```dva
+```dva run
 #use io
 
 #type Lookup < Int | >
@@ -40,7 +40,7 @@ Its fields can be inspected in pattern matches or choice branches.
 Edva provides two postfix operators for handling fallible ramifications:
 
 - `result!!` unwraps the positive payload or immediately aborts the program with diagnostic output:
-  ```dva
+  ```dva partial
   value = (table ^ "answer")!!
   io::out(value)
   ```
@@ -48,7 +48,7 @@ Edva provides two postfix operators for handling fallible ramifications:
   - On ramifications with a positive payload (`RamPP` `< T | Error >` or `RamPN` `< T | >`), it unwraps the positive value inline, or early-returns the negative ramification on failure.
   - On unit-success ramifications (`RamNP` `< | Error >`, such as growable array writes `a(i) = v`), it evaluates to `()` on success and early-returns the negative `Error` on failure.
 
-```dva
+```dva run
 #use io
 
 get_user_port: (String ^ Int), String => < Int | Error >
@@ -59,7 +59,7 @@ get_user_port = table, key =>
 
 When an error should be handled locally rather than propagated or aborted, match it with a positional choice:
 
-```dva
+```dva partial
 table ^ "port"
    | port => io::outf(port, "Listening on port {}")
    | err => io::errf(err.msg, "Configuration error: {}")
@@ -74,7 +74,7 @@ side-effect-only function with a `=> ()` signature.
 Standard stream operations are provided by `std/io.dva`. Import `io` with `#use io`
 to write to standard output or standard error:
 
-```dva
+```dva run
 #use io
 
 io::out("ready")
@@ -93,7 +93,7 @@ Create an `io::Reader` for a descriptor. Each read operation returns a
 positive payload when data is available and a unit second slot at EOF, so EOF
 is normal control flow rather than an `Error` payload.
 
-```dva
+```dva complete
 #use io
 
 reader = io::reader(io::STDIN)

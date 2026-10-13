@@ -14,7 +14,7 @@ The `Map` type represents an associative hash table mapping unique keys to value
 
 A map type is defined with `#type`:
 
-```dva
+```dva run
 #type ConfigMap String ^ String
 #type UserAges String ^ Int
 #type PointerIndex Addr ^ Int
@@ -32,7 +32,7 @@ Values can be any storable Edva type, including records, ramifications, arrays, 
 
 An empty map is instantiated using the type constructor:
 
-```dva
+```dva partial
 scores = UserAges()
 ```
 
@@ -42,7 +42,7 @@ scores = UserAges()
 
 Key-value associations are inserted or overwritten using the map operator `^`:
 
-```dva
+```dva partial
 scores = UserAges()
 
 // Insert or update entries
@@ -55,7 +55,7 @@ scores ^ "Carol" = 92
 
 Looking up a key with `map ^ key` is fallible and returns a ramification of type `< Value | Error >` (RamPP):
 
-```dva
+```dva partial
 // Fallible lookup
 result = scores ^ "Alice"
 
@@ -71,7 +71,7 @@ guaranteed = (scores ^ "Alice")!!
 
 The binary `^?` operator checks whether a key exists in the map, returning a boolean `Flag` (`<>`):
 
-```dva
+```dva partial
 has_bob = scores ^? "Bob"       // <+> (present)
 has_dan = scores ^? "Dan"       // <-> (absent)
 ```
@@ -80,7 +80,7 @@ has_dan = scores ^? "Dan"       // <-> (absent)
 
 The binary `^-` operator removes a key from the map, returning `<+>` if the key was present:
 
-```dva
+```dva partial
 deleted = scores ^- "Bob"       // <+>
 ```
 
@@ -88,7 +88,7 @@ deleted = scores ^- "Bob"       // <+>
 
 The unary prefix `?` operator returns the number of active live entries in the map:
 
-```dva
+```dva partial
 total_users = ?scores          // 2
 ```
 

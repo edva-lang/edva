@@ -63,7 +63,7 @@ Payload delimiters use `<+`/`+>` and `<-`/`->`. Because `<` and `>` are not
 overloaded as delimiters, comparisons inside constructors are completely
 unambiguous without parentheses: `<+ a > b ->`.
 
-```dva
+```dva run
 #type MaybeInt < Int | >
 #type ParseResult < Int | Error >
 
@@ -107,7 +107,7 @@ When guarding an early exit with a unit ramification, Edva provides compact bran
 - If LHS is positive, it unwraps the payload and calls the RHS continuation.
 - If LHS is negative, the negative payload (or unit) propagates immediately.
 
-```dva
+```dva run
 #type SafeInt < Int | Error >
 
 step1: Int => SafeInt

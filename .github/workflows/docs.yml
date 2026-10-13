@@ -28,18 +28,29 @@ concurrency:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Install LLVM 18 and Clang
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y llvm-18 llvm-18-dev clang-18 libllvm18 lld-18
+          sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-18 100
+          sudo update-alternatives --install /usr/bin/llvm-config llvm-config /usr/bin/llvm-config-18 100
+          sudo update-alternatives --install /usr/bin/wasm-ld wasm-ld /usr/bin/wasm-ld-18 100
 
       - name: Install Nushell
         uses: hustcer/setup-nu@v3
         with:
           version: '0.115.1'
 
+      - name: Build compiler
+        run: make
+
       - name: Validate evidence, operators, and documentation examples
-        run: nu tools/check_docs.nu
+        run: nu tools/check_docs.nu --compile-examples
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2

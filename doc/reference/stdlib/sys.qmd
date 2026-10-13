@@ -11,7 +11,7 @@ meta:
 The `sys` module exposes process-level primitives: command-line argument access (`argv`),
 standard stream descriptor constants, null-pointer safety helpers, and process termination.
 
-```dva
+```dva run
 #use sys
 ```
 
@@ -32,7 +32,7 @@ standard stream descriptor constants, null-pointer safety helpers, and process t
 | `sys::argv_matches` | `Int, String => <>` | Tests whether `argv[n]` equals specified string |
 | `sys::raw_argv` | `Int => Addr` | Returns raw C-string pointer `Addr` for FFI use |
 
-```dva
+```dva partial
 sys::argv(1)
    | file => io::out("Target file: " + file)
    | io::err("Usage: program <file>")

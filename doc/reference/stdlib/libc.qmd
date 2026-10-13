@@ -11,7 +11,7 @@ meta:
 The `libc` module exposes standard POSIX and C runtime system bindings via `#foreign "c"` declarations.
 It serves as the foundation for hosted I/O, process management, memory allocation, and networking.
 
-```dva
+```dva run
 #use libc
 ```
 
