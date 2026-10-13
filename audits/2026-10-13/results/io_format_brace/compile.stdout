@@ -1,2 +1,2 @@
-cached LLVM IR: probe.ll
+Successfully generated LLVM IR via LLVM C API: probe.ll
 Successfully compiled binary: probe

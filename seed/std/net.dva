@@ -106,7 +106,11 @@
       addr = SockAddrIn((i16(AF_INET),
          i16(htons $ port), i32(ip), 0))
       ret = libc::connect(sock, &addr, 16)
-      ret [0] Conn(<+ sock ->) | Conn(<- "connect failed" +>)
+      ret [0]
+         Conn(<+ sock ->)
+      |
+         net::close_fd(sock)
+         Conn(<- "connect failed" +>)
 
    // Connect to a host by DNS name (or numeric IP) via getaddrinfo. Walks the
    // resolver's result list (IPv4/IPv6, and any duplicate addresses) and tries
@@ -130,13 +134,16 @@
       0.. @
          Int(cur') [0] -->
          ai = Addrinfo(cur')
+         cur' = ai.ai_next
          sock = libc::socket(ai.ai_family, ai.ai_socktype, ai.ai_protocol)
          sock < 0
             | --^
          ret = libc::connect(sock, ai.ai_addr, ai.ai_addrlen)
-         ret [0] (res' = sock; -->)
+         ret [0]
+            |
+               res' = sock
+               -->
          net::close_fd(sock)
-         cur' = ai.ai_next
       libc::freeaddrinfo(l)
       res' [< 0] Conn(<- "connect failed" +>) | Conn(<+ res' ->)
 
@@ -167,7 +174,11 @@
          i16(htons $ port), i32(0), 0))
       ret_b = libc::bind(sock, &addr, 16)
       ret_l = ret_b [0] libc::listen(sock, backlog) | -1
-      ret_l [0] Conn(<+ sock ->) | Conn(<- "bind/listen failed" +>)
+      ret_l [0]
+         Conn(<+ sock ->)
+      |
+         net::close_fd(sock)
+         Conn(<- "bind/listen failed" +>)
 
    // Accept one incoming connection on server socket fd.
    // Returns Conn: <+ client fd +> on success, <- error -> on failure.
@@ -243,15 +254,15 @@
    addr_str = addr =>
       ab = &addr
       out = {32}
-      out += str::from_int(@[ab + 4 i8])
+      out += str::from_int(Int(@[ab + 4 u8]))
       out += '.'
-      out += str::from_int(@[ab + 5 i8])
+      out += str::from_int(Int(@[ab + 5 u8]))
       out += '.'
-      out += str::from_int(@[ab + 6 i8])
+      out += str::from_int(Int(@[ab + 6 u8]))
       out += '.'
-      out += str::from_int(@[ab + 7 i8])
+      out += str::from_int(Int(@[ab + 7 u8]))
       out += ':'
-      out += str::from_int(@[ab + 2 i8] * 256 + @[ab + 3 i8])
+      out += str::from_int(Int(@[ab + 2 u8]) * 256 + Int(@[ab + 3 u8]))
       +out
 
    // The remote peer's address as "ip:port", or "" on error.

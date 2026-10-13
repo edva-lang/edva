@@ -1,52 +1,87 @@
 [
   {
-    "case": "string_overflow",
-    "compile_exit": 0,
-    "run_exit": 0,
-    "stdout": "-\n",
-    "stderr": ""
-  },
-  {
-    "case": "json_tiny_number",
-    "compile_exit": 0,
-    "run_exit": 0,
-    "stdout": "<+>\n",
-    "stderr": ""
-  },
-  {
     "case": "json_unicode",
     "compile_exit": 0,
     "run_exit": 0,
-    "stdout": "6\n237\n160\n189\n237\n184\n128\n<+>\n",
+    "stdout": "4\n240\n159\n152\n128\n<->\n",
     "stderr": ""
   },
   {
-    "case": "integer_format",
-    "compile_exit": 0,
-    "run_exit": 0,
-    "stdout": "-\n-1\n",
-    "stderr": ""
-  },
-  {
-    "case": "array_div_overflow",
-    "compile_exit": 0,
-    "run_exit": -8,
+    "case": "ctfe_div_zero",
+    "compile_exit": 1,
+    "run_exit": -999,
     "stdout": "",
-    "stderr": "timeout: the monitored command dumped core\n"
-  },
-  {
-    "case": "io_format",
-    "compile_exit": 0,
-    "run_exit": 0,
-    "stdout": "a7\n7}\na7b8c\n",
     "stderr": ""
   },
   {
-    "case": "float_format",
+    "case": "array_div_zero",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4012: integer division by zero\n"
+  },
+  {
+    "case": "float_infinity",
     "compile_exit": 0,
     "run_exit": 0,
-    "stdout": "1\n12\n12345\n",
+    "stdout": "inf\n",
     "stderr": ""
+  },
+  {
+    "case": "array_big_div_zero",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4012: integer division by zero\n"
+  },
+  {
+    "case": "io_read_error",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "io_short_write",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\n0\n65536\n",
+    "stderr": ""
+  },
+  {
+    "case": "net_socket_failure",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "0\nbefore walk\nafter walk\n",
+    "stderr": ""
+  },
+  {
+    "case": "net_address",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "192.168.1.1:50000\n",
+    "stderr": ""
+  },
+  {
+    "case": "array_unsigned_div_zero",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4012: integer division by zero\n"
+  },
+  {
+    "case": "doc_io_example",
+    "compile_exit": 1,
+    "run_exit": -999,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "case": "scalar_div_control",
+    "compile_exit": 0,
+    "run_exit": 1,
+    "stdout": "",
+    "stderr": "E4012: integer division by zero\n"
   },
   {
     "case": "doc_json_example",
@@ -56,24 +91,17 @@
     "stderr": ""
   },
   {
-    "case": "array_big_div_zero",
+    "case": "doc_http_example",
     "compile_exit": 0,
     "run_exit": 0,
-    "stdout": "10\n",
+    "stdout": "HTTP/1.1 200 OK\r\ntext/plain\r\nHello, World!\n",
     "stderr": ""
   },
   {
-    "case": "array_div_zero",
+    "case": "io_format",
     "compile_exit": 0,
     "run_exit": 0,
-    "stdout": "10\n10\n",
-    "stderr": ""
-  },
-  {
-    "case": "net_address",
-    "compile_exit": 0,
-    "run_exit": 0,
-    "stdout": "-64.-88.1.1:-15536\n",
+    "stdout": "a7b\n77\na7b8c\n",
     "stderr": ""
   },
   {
@@ -84,39 +112,11 @@
     "stderr": ""
   },
   {
-    "case": "net_socket_failure",
-    "compile_exit": 1,
-    "run_exit": -999,
+    "case": "array_div_overflow",
+    "compile_exit": 0,
+    "run_exit": 1,
     "stdout": "",
-    "stderr": ""
-  },
-  {
-    "case": "array_unsigned_div_zero",
-    "compile_exit": 0,
-    "run_exit": -8,
-    "stdout": "",
-    "stderr": "timeout: the monitored command dumped core\n"
-  },
-  {
-    "case": "float_infinity",
-    "compile_exit": 0,
-    "run_exit": 124,
-    "stdout": "",
-    "stderr": ""
-  },
-  {
-    "case": "json_object",
-    "compile_exit": 0,
-    "run_exit": 0,
-    "stdout": "3\ninner\nouter\nlast\n",
-    "stderr": ""
-  },
-  {
-    "case": "net_connect_leak",
-    "compile_exit": 0,
-    "run_exit": 0,
-    "stdout": "connect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\n8\n",
-    "stderr": ""
+    "stderr": "E4013: signed integer division overflow (INT_MIN / -1)\n"
   },
   {
     "case": "sort_scale",
@@ -126,46 +126,74 @@
     "stderr": ""
   },
   {
-    "case": "json_nested",
+    "case": "integer_format",
     "compile_exit": 0,
     "run_exit": 0,
-    "stdout": "4\n1\n2\n2\n3\n",
+    "stdout": "-9223372036854775808\n18446744073709551615\n",
     "stderr": ""
   },
   {
-    "case": "float_nan",
+    "case": "string_overflow",
     "compile_exit": 0,
-    "run_exit": 1,
-    "stdout": "",
-    "stderr": "E4007: Builder append byte out of range (must be 0..255)\n"
+    "run_exit": 0,
+    "stdout": "-9223372036854775808\n",
+    "stderr": ""
   },
   {
-    "case": "doc_io_example",
-    "compile_exit": 1,
-    "run_exit": -999,
-    "stdout": "",
+    "case": "target_thumb",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<+>\n4\n4\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_object",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "2\nouter\nlast\n",
+    "stderr": ""
+  },
+  {
+    "case": "float_format",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "100000\n120000\n123450\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_tiny_number",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "<->\n",
+    "stderr": ""
+  },
+  {
+    "case": "json_nested",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "3\n1\n1\n3\n",
+    "stderr": ""
+  },
+  {
+    "case": "io_format_brace",
+    "compile_exit": 0,
+    "run_exit": 0,
+    "stdout": "end{\n",
     "stderr": ""
   },
   {
     "case": "json_invalid",
     "compile_exit": 0,
     "run_exit": 0,
-    "stdout": "<+>\n<+>\n<+>\n<+>\n<+>\n",
+    "stdout": "<->\n<->\n<->\n<->\n<->\n",
     "stderr": ""
   },
   {
-    "case": "io_format_brace",
+    "case": "net_connect_leak",
     "compile_exit": 0,
-    "run_exit": 1,
-    "stdout": "",
-    "stderr": "E4006: string byte index out of bounds\n"
-  },
-  {
-    "case": "scalar_div_control",
-    "compile_exit": 0,
-    "run_exit": 1,
-    "stdout": "",
-    "stderr": "E4012: integer division by zero\n"
+    "run_exit": 0,
+    "stdout": "connect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\nconnect failed\n0\n",
+    "stderr": ""
   },
   {
     "case": "json_depth",
@@ -175,17 +203,10 @@
     "stderr": ""
   },
   {
-    "case": "io_read_error",
+    "case": "float_nan",
     "compile_exit": 0,
     "run_exit": 0,
-    "stdout": "<->\n<->\n",
-    "stderr": ""
-  },
-  {
-    "case": "ctfe_div_zero",
-    "compile_exit": 1,
-    "run_exit": -999,
-    "stdout": "",
+    "stdout": "nan\n",
     "stderr": ""
   },
   {

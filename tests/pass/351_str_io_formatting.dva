@@ -1,0 +1,21 @@
+#use io
+#use str
+
+// 1. Min Int and Max u64 formatting
+io::out $ str::from_int(-9223372036854775808)
+io::out(u64(18446744073709551615))
+
+// 2. Float format without truncating integer zeros
+io::out $ str::from_float(100000.0)
+io::out $ str::from_float(120000.0)
+io::out $ str::from_float(123450.0)
+
+// 3. Inf and NaN
+io::out $ str::from_float(1.0 / 0.0)
+io::out $ str::from_float(0.0 / 0.0)
+
+// 4. outf placeholder advancement and brace lookahead
+io::outf(7, "a{}b")
+io::outf(7, "{}{}")
+io::outf((7, 8), "a{}b{}c")
+io::outf(7, "end{")

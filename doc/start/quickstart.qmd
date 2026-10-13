@@ -120,8 +120,9 @@ io::out $ classify(2)  // prints "small positive"
 ```
 
 A choice used in expression position must be exhaustive (every possible path produces
-a compatible value). A single-branch choice (`cond | action`) is a statement and
-evaluates to Unit (`()`). Dummy `| 0` fallbacks are strictly forbidden.
+a compatible value); for optional ramifications (`<T | >`), an unhandled absent branch
+synthesizes the absent variant automatically. A single-branch choice (`cond | action`)
+is a statement and evaluates to Unit (`()`). Dummy `| 0` fallbacks are strictly forbidden.
 
 ### Cycles and iteration
 

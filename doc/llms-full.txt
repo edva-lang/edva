@@ -295,7 +295,7 @@ read_file = path =>
 - `io`: Stream-based reading and console logging (`io::out`, `io::err`, `io::reader`,
   `io::read_all`).
 - `net` & `net/http`: TCP sockets, event polling, and HTTP request routing.
-- `json`: High-performance JSON tokenization, streaming parser, and serialization.
+- `json`: Whole-document JSON parser supporting UTF-16 surrogates, subnormals, and isolated containers.
 - `mem`: Arena allocators and memory blocks.
 
 ---
@@ -310,5 +310,5 @@ read_file = path =>
 - `E3084`: Type unification failure.
 - `E3089`: Incompatible ramification shapes in assignment or choice.
 - `E3103`: Cannot infer concrete type for expression without RTTI.
-- `E3130`–`E3132`: Field initialization tracking errors.
+- `E3130`–`E3132`: Field initialization tracking errors and compile-time evaluation failures.
 - `E5001`–`E5011`: Driver, linker, and target compilation errors.

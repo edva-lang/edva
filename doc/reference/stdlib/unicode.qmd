@@ -48,13 +48,13 @@ text = "Hello, 世界! 🌍"
 
 // Walk all codepoints in a UTF-8 string:
 byte_len = ?text
+offset' = 0
 0.. @
-   offset' = 0
    offset' !< byte_len | -->
    r = unicode::decode_rune(text, offset')
    width = unicode::utf8_width(r)
 
-   io::outf("Rune U+{:X} (width {} bytes)", Int(r), width)
+   io::outf((Int(r), width), "Rune codepoint {} (width {} bytes)")
    offset' = offset' + width
 ```
 

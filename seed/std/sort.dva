@@ -40,22 +40,114 @@ raw_bubble_slots = j, is_less, swap =>
    swap(j, j - 1)
    raw_bubble_slots(j - 1, is_less, swap)
 
+bubble_ints: Ints, Int, Int => ()
+bubble_ints = arr, j, lo =>
+   j !> lo | --|
+   arr(j)!! !< arr(j - 1)!! | --|
+   tmp = arr(j)!!
+   arr(j) = arr(j - 1)!!
+   arr(j - 1) = tmp
+   bubble_ints(arr, j - 1, lo)
+
+insertion_sort_ints: Ints, Int, Int => ()
+insertion_sort_ints = arr, lo, hi =>
+   (hi - lo) @ k =>
+      bubble_ints(arr, lo + k, lo)
+
+merge_ints: Ints, Ints, Int, Int, Int => ()
+merge_ints = arr, aux, lo, mid, hi =>
+   (hi - lo) @ k =>
+      aux(lo + k) = arr(lo + k)!!
+   i' = lo
+   j' = mid
+   (hi - lo) @ k =>
+      curr = lo + k
+      take_j = (i' !< mid) || (j' < hi && aux(j')!! < aux(i')!!)
+      take_j |
+         arr(curr) = aux(j')!!
+         j' = j' + 1
+      |
+         arr(curr) = aux(i')!!
+         i' = i' + 1
+
+msort_ints: Ints, Ints, Int, Int => ()
+msort_ints = arr, aux, lo, hi =>
+   hi - lo !> 16 |
+      insertion_sort_ints(arr, lo, hi)
+   |
+      mid = lo + (hi - lo) / 2
+      msort_ints(arr, aux, lo, mid)
+      msort_ints(arr, aux, mid, hi)
+      merge_ints(arr, aux, lo, mid, hi)
+
+bubble_strings: Strings, Int, Int => ()
+bubble_strings = arr, j, lo =>
+   j !> lo | --|
+   str::cmp(arr(j)!!, arr(j - 1)!!) !< 0 | --|
+   tmp = arr(j)!!
+   arr(j) = arr(j - 1)!!
+   arr(j - 1) = tmp
+   bubble_strings(arr, j - 1, lo)
+
+insertion_sort_strings: Strings, Int, Int => ()
+insertion_sort_strings = arr, lo, hi =>
+   (hi - lo) @ k =>
+      bubble_strings(arr, lo + k, lo)
+
+merge_strings: Strings, Strings, Int, Int, Int => ()
+merge_strings = arr, aux, lo, mid, hi =>
+   (hi - lo) @ k =>
+      aux(lo + k) = arr(lo + k)!!
+   i' = lo
+   j' = mid
+   (hi - lo) @ k =>
+      curr = lo + k
+      take_j = (i' !< mid) || (j' < hi && str::cmp(aux(j')!!, aux(i')!!) < 0)
+      take_j |
+         arr(curr) = aux(j')!!
+         j' = j' + 1
+      |
+         arr(curr) = aux(i')!!
+         i' = i' + 1
+
+msort_strings: Strings, Strings, Int, Int => ()
+msort_strings = arr, aux, lo, hi =>
+   hi - lo !> 16 |
+      insertion_sort_strings(arr, lo, hi)
+   |
+      mid = lo + (hi - lo) / 2
+      msort_strings(arr, aux, lo, mid)
+      msort_strings(arr, aux, mid, hi)
+      merge_strings(arr, aux, lo, mid, hi)
+
 sort_strings_pass: Strings => ()
 sort_strings_pass = out =>
-   cmp_str = a, b => str::cmp(out(a)!!, out(b)!!) < 0
-   sw_str = a, b =>
-      tmp = out(a)!!
-      out(a) = out(b)!!
-      out(b) = tmp
-      0
-   raw_sort_slots(?out, cmp_str, sw_str)
+   len = ?out
+   len !> 16 |
+      cmp_str = a, b => str::cmp(out(a)!!, out(b)!!) < 0
+      sw_str = a, b =>
+         tmp = out(a)!!
+         out(a) = out(b)!!
+         out(b) = tmp
+         0
+      raw_sort_slots(len, cmp_str, sw_str)
+   |
+      aux = Strings()
+      len @ aux += ""
+      msort_strings(out, aux, 0, len)
 
 sort_ints_pass: Ints => ()
 sort_ints_pass = out =>
-   cmp_int = a, b => out(a)!! < out(b)!!
-   sw_int = a, b =>
-      tmp = out(a)!!
-      out(a) = out(b)!!
-      out(b) = tmp
-      0
-   raw_sort_slots(?out, cmp_int, sw_int)
+   len = ?out
+   len !> 16 |
+      cmp_int = a, b => out(a)!! < out(b)!!
+      sw_int = a, b =>
+         tmp = out(a)!!
+         out(a) = out(b)!!
+         out(b) = tmp
+         0
+      raw_sort_slots(len, cmp_int, sw_int)
+   |
+      aux = Ints()
+      len @ aux += 0
+      msort_ints(out, aux, 0, len)

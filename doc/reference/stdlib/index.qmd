@@ -20,7 +20,7 @@ Standard stream writers and readers live in `std/io.dva`.
 | `fp` | functional programming combinators | [fp](fp.qmd) |
 | `in` | input readers and line scanning | [in](in.qmd) |
 | `io` | readers, writers, and standard streams | [io](io.qmd) |
-| `json` | JSON parsing, value tree, and serialization | [json](json.qmd) |
+| `json` | JSON parsing, value tree, and container model | [json](json.qmd) |
 | `libc` | POSIX and C library bindings | [libc](libc.qmd) |
 | `math` | math bindings, vectors; includes `complex` and `geom` | [math](math.qmd) |
 | `mem` | arenas, fixed object pools, and low-level memory | [mem](mem.qmd) |

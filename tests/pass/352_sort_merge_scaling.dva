@@ -1,0 +1,27 @@
+#use io
+#use sort
+
+// 1. Sort small ints (insertion sort path)
+small = sort::Ints()
+small += 5
+small += 2
+small += 8
+small += 1
+s_sorted = sort::ints(small)
+s_sorted @ n => io::out(n)
+
+// 2. Sort large ints (>16, merge sort path)
+large = sort::Ints()
+100 @ i =>
+   large += 100 - i
+l_sorted = sort::ints(large)
+io::out $ l_sorted(0)!!
+io::out $ l_sorted(99)!!
+
+// 3. Sort strings
+strs = sort::Strings()
+strs += "banana"
+strs += "apple"
+strs += "cherry"
+str_sorted = sort::strings(strs)
+str_sorted @ s => io::out(s)

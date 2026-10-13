@@ -45,16 +45,7 @@ set_target_triple = t =>
    layout::set_target_triple(t)
 
 is_32bit_triple: String => <>
-is_32bit_triple = triple =>
-   (?triple !< 5 && triple(..5) == "arm64")
-      | <->
-      |
-         (?triple !< 6 && triple(..6) == "wasm32") ||
-            (?triple !< 4 && triple(..4) == "i386") ||
-            (?triple !< 4 && triple(..4) == "i686") ||
-            (?triple !< 7 && triple(..7) == "riscv32") ||
-            (?triple !< 5 && triple(..5) == "armv7") ||
-            (?triple !< 3 && triple(..3) == "arm")
+is_32bit_triple = triple => layout::is_32bit_triple(triple)
 
 is_32bit_target: () => <>
 is_32bit_target = !=>

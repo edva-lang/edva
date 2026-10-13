@@ -1,1 +1,1 @@
-timeout: the monitored command dumped core
+E4013: signed integer division overflow (INT_MIN / -1)

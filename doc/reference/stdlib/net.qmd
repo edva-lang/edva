@@ -12,55 +12,61 @@ The `net` module provides POSIX socket wrappers for TCP and UDP communication on
 The submodule `net/http` provides HTTP protocol parsing, header manipulation, and response generation.
 
 ```dva
+#use io
 #use net
 #use net/http
 ```
 
 ## Socket operations
 
-Socket helpers return recoverable `< T | String >` ramifications rather than poisonous abort errors.
+Socket helpers return recoverable `Conn` (`< Int | String >`) ramifications rather than poisonous abort errors.
 
 ```dva
+#use io
 #use net
 
 // Create a listening TCP socket on port 8080
-sock = net::socket(net::AF_INET, net::SOCK_STREAM, 0)
-sock
+listener = net::tcp_listen(8080, 128)
+listener
    | fd =>
-      net::bind(fd, "0.0.0.0", 8080)
-      net::listen(fd, 128)
+      io::out(("Listening on fd", fd))
    | err =>
-      io::err("Socket error: " + err)
+      io::err(("Listen error:", err))
 ```
 
 | Function | Signature | Description |
 |---|---|---|
-| `net::socket` | `Int, Int, Int => < Int | String >` | Creates socket file descriptor |
-| `net::bind` | `Int, String, Int => < () | String >` | Binds socket to IPv4 address and port |
-| `net::listen` | `Int, Int => < () | String >` | Sets listening backlog capacity |
-| `net::accept` | `Int => < (Int, String, Int) | String >` | Accepts client connection: `(client_fd, client_ip, client_port)` |
-| `net::connect` | `Int, String, Int => < () | String >` | Connects to remote IPv4 host and port |
-| `net::send` | `Int, String => < Int | String >` | Sends string bytes over socket |
-| `net::recv` | `Int, Int => < String | String >` | Reads up to `count` bytes into string |
-| `net::close` | `Int => ()` | Closes socket descriptor |
-| `net::set_nonblocking` | `Int => < () | String >` | Toggles non-blocking socket flag (`O_NONBLOCK`) |
+| `net::tcp_listen` | `Int, Int => Conn` | Creates and binds listening TCP socket on IPv4 port |
+| `net::tcp_accept` | `Int => Conn` | Accepts client connection: `< client_fd \| error >` |
+| `net::tcp_connect` | `String, Int => Conn` | Connects to remote IPv4 host and port |
+| `net::tcp_connect_name` | `String, Int => Conn` | Connects via DNS name lookup using `getaddrinfo` |
+| `net::send_str` | `Int, String => Int` | Sends string bytes over socket |
+| `net::recv` | `Int, Int => Chunk` | Reads up to `max` bytes into Chunk (`< String \| >`) |
+| `net::close_fd` | `Int => ()` | Closes socket descriptor |
+| `net::set_nonblocking` | `Int, Int => Int` | Sets non-blocking socket flag (`O_NONBLOCK` when 1, blocking when 0) |
+| `net::peer_addr` | `Int => String` | Returns remote peer address `IP:port` formatted string |
+| `net::local_addr` | `Int => String` | Returns local bound address `IP:port` formatted string |
 
 ## HTTP protocol support (`net/http`)
 
-The `net/http` submodule parses HTTP/1.1 requests and formats responses without requiring external dependencies:
+The `net/http` submodule parses HTTP/1.1 requests and formats responses:
 
 ```dva
+#use io
 #use net/http
 
 req = "GET /index.html?v=1 HTTP/1.1\r\nHost: localhost\r\n\r\n"
 path = http::path_of(req) // "/index.html"
 
-// Construct standard HTTP response
-res = http::response(200, "text/plain", "Hello, World!")
+// Construct standard HTTP response with pre-formatted headers:
+body = "Hello, World!"
+headers = http::header("Content-Type", "text/plain") +
+          http::header("Content-Length", str::from_int(?body))
+res = http::response(200, headers, body)
 ```
 
 - `http::path_of(req: String) => String`: Extracts the normalized request target path.
 - `http::reason_of(code: Int) => String`: Maps status code (e.g. `200`, `404`) to reason phrase (`"OK"`, `"Not Found"`).
 - `http::header(name: String, value: String) => String`: Generates `Name: Value\r\n` line.
-- `http::response(status: Int, content_type: String, body: String) => String`: Constructs complete HTTP message with `Content-Length`.
-- `http::respond(fd: Int, status: Int, content_type: String, body: String) => ()`: Directly writes HTTP response to client socket.
+- `http::response(status: Int, headers: String, body: String) => String`: Constructs complete HTTP message: status line, headers, blank line separator, and body.
+- `http::respond(fd: Int, status: Int, headers: String, body: String) => Int`: Writes HTTP response to client socket; returns total bytes written.

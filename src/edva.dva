@@ -2977,6 +2977,7 @@ run_driver = ignored =>
       |
          opts.target == ""
             |
+               print $ format_version!
                print $ diag::E5007_no_input!
                print_usage(0)
                sys::exit(1)
@@ -2992,6 +2993,7 @@ run_driver = ignored =>
 
    opts.target == ""
       |
+         print $ format_version!
          print $ diag::E5007_no_input!
          print_usage(0)
          sys::exit(1)

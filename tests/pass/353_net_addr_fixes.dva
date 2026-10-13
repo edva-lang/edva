@@ -1,0 +1,5 @@
+#use io
+#use net
+
+a = net::SockAddrIn((2i16, i16(net::htons(50000)), i32(net::htonl(3232235777)), 0i64))
+io::out $ net::addr_str(a)

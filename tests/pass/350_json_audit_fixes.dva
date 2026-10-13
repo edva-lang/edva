@@ -1,0 +1,42 @@
+#use io
+#use json
+
+// 1. Isolated nested containers
+v = json::parse("[1, [2], 3]")!!
+v
+   [Array xs]
+      io::out $ ?xs
+      xs @ e =>
+         e
+            [Number n] io::out(n)
+            [Array ys] io::out $ ?ys
+            | io::out("other")
+   | io::out("bad")
+
+obj = json::parse("{\"outer\":{\"inner\":1},\"last\":2}")!!
+obj
+   [Object ps]
+      io::out $ ?ps
+      ps @ p => io::out(p.key)
+   | io::out("bad")
+
+// 2. Surrogate pair decoding
+u = json::parse("\"\\uD83D\\uDE00\"")!!
+u
+   [String s]
+      io::out $ ?s
+      s @ b => io::out(b)
+   | io::out("bad")
+
+// 3. Subnormal float parsing
+sub = json::parse("1e-309")!!
+sub
+   [Number n] io::out $ n == 0.0
+   | io::out("bad")
+
+// 4. Document-level checks and syntax rejection
+io::out $ <>(json::parse("true garbage"))
+io::out $ <>(json::parse("[1 2]"))
+io::out $ <>(json::parse("[1,]"))
+io::out $ <>(json::parse("01"))
+io::out $ <>(json::parse("{\"a\":1 \"b\":2}"))

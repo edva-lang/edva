@@ -1366,22 +1366,21 @@ codegen_array_vec_apply = cg, op, l, r, elem_llvm, elem_vt, count =>
             [Mod] LLVMBuildFRem(cg.builder, l, r_val', "arr.vec.rem")
             | LLVMConstNull(vec_ty)
       |
-         r_div = (!is_unsigned && (op [Div, Mod]))
+         (op [Div, Mod])
             |
-               is_zero = LLVMBuildICmp(cg.builder, 32, r_val',
-                  LLVMConstNull(vec_ty), "arr.div.iszero")
-               one = LLVMConstInt(elem_llvm, 1, 0)
-               one_vec = codegen_build_splat(cg, one, elem_llvm, count)
-               LLVMBuildSelect(cg.builder, is_zero, one_vec,
-                  r_val', "arr.div.safe")
-            | r_val'
+               i32t = LLVMInt32Type!
+               count @ i =>
+                  idx = LLVMConstInt(i32t, i, 0)
+                  l_elem = LLVMBuildExtractElement(cg.builder, l, idx, "arr.vec.lelem")
+                  r_elem = LLVMBuildExtractElement(cg.builder, r_val', idx, "arr.vec.relem")
+                  codegen_emit_div_guard(cg, l_elem, r_elem, !is_unsigned)
          r_safe = (op [Shl, Shr])
             |
                w = LLVMGetIntTypeWidth(elem_llvm)
                mask_elem = LLVMConstInt(elem_llvm, w - 1, 0)
                mask_vec = codegen_build_splat(cg, mask_elem, elem_llvm, count)
-               LLVMBuildAnd(cg.builder, r_div, mask_vec, "arr.vec.shmask")
-            | r_div
+               LLVMBuildAnd(cg.builder, r_val', mask_vec, "arr.vec.shmask")
+            | r_val'
          op
             [Add] LLVMBuildAdd(cg.builder, l, r_safe, "arr.vec.add")
             [Sub] LLVMBuildSub(cg.builder, l, r_safe, "arr.vec.sub")
@@ -1417,20 +1416,13 @@ codegen_array_scalar_apply = cg, op, l, r, elem_llvm, elem_vt =>
             [Mod] LLVMBuildFRem(cg.builder, l, r_val', "arr.elem.rem")
             | LLVMConstNull(elem_llvm)
       |
-         r_div' = (!is_unsigned && (op [Div, Mod]))
-            |
-               is_zero = LLVMBuildICmp(cg.builder, 32, r_val',
-                  LLVMConstNull(elem_llvm), "arr.div.iszero")
-               one = LLVMConstInt(elem_llvm, 1, 0)
-               LLVMBuildSelect(cg.builder, is_zero, one,
-                  r_val', "arr.div.safe")
-            | r_val'
+         (op [Div, Mod]) | codegen_emit_div_guard(cg, l, r_val', !is_unsigned)
          r_safe' = (op [Shl, Shr])
             |
                w' = LLVMGetIntTypeWidth(elem_llvm)
                mask_elem' = LLVMConstInt(elem_llvm, w' - 1, 0)
-               LLVMBuildAnd(cg.builder, r_div', mask_elem', "arr.elem.shmask")
-            | r_div'
+               LLVMBuildAnd(cg.builder, r_val', mask_elem', "arr.elem.shmask")
+            | r_val'
          op
             [Add] LLVMBuildAdd(cg.builder, l, r_safe', "arr.elem.add")
             [Sub] LLVMBuildSub(cg.builder, l, r_safe', "arr.elem.sub")

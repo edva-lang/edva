@@ -27,20 +27,20 @@ for file descriptors, standard streams, and sockets.
 
 | Function | Signature | Description | Example |
 |---|---|---|---|
-| `io::out(...)` | `#! T: Type, T => ()` | Prints value or space-separated record + newline to `STDOUT` | `io::out("Result:", 42)` |
-| `io::err(...)` | `#! T: Type, T => ()` | Prints value or space-separated record + newline to `STDERR` | `io::err("Error:", code)` |
-| `io::outf(fmt, ...)` | `#! T: Type, String, T => ()` | Formatted output to `STDOUT` replacing `{}` placeholders | `io::outf("Val: {}, Flag: {}", 10, <+>)` |
-| `io::errf(fmt, ...)` | `#! T: Type, String, T => ()` | Formatted output to `STDERR` replacing `{}` placeholders | `io::errf("Failed at line {}", line)` |
-| `io::write(fd, s)` | `Int, String => ()` | Raw length-aware write of String `s` to descriptor `fd` | `io::write(io::STDOUT, "raw\n")` |
+| `io::out(x)` | `#! T: Type, T => ()` | Prints value or space-separated record + newline to `STDOUT` | `io::out(("Result:", 42))` |
+| `io::err(x)` | `#! T: Type, T => ()` | Prints value or space-separated record + newline to `STDERR` | `io::err(("Error:", code))` |
+| `io::outf(val, fmt)` | `#! T: Type, T, String => ()` | Formatted output to `STDOUT` replacing `{}` placeholders with value | `io::outf((10, <+>), "Val: {}, Flag: {}")` |
+| `io::errf(val, fmt)` | `#! T: Type, T, String => ()` | Formatted output to `STDERR` replacing `{}` placeholders with value | `io::errf(line, "Failed at line {}")` |
+| `io::write(fd, s)` | `Int, String => Int` | Raw length-aware write of String `s` to descriptor `fd`, returns bytes written | `io::write(io::STDOUT, "raw\n")` |
 
 ```dva
 #use io
 
 // Multi-argument printing (records print space-separated):
-io::out("Server starting on port", 8080)
+io::out(("Server starting on port", 8080))
 
 // Placeholder formatting:
-io::outf("Client connected from {}:{}", "127.0.0.1", 9000)
+io::outf(("127.0.0.1", 9000), "Client connected from {}:{}")
 ```
 
 ## Buffered `Reader` API
@@ -68,10 +68,10 @@ distinguishing between available data and EOF:
 
 r = io::reader(io::STDIN)
 
-0.. @ =>
+0.. @
    line_res = io::read_line(r, 1024)
    line_res
-      | line => io::outf("Echo: {}", line)
+      | line => io::outf(line, "Echo: {}")
       | --> // Break on EOF
 ```
 

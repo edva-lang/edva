@@ -40,10 +40,11 @@ Line comments begin with `//`; block comments use `/*` and `*/`.
 | string | `"text\n"` | escaped UTF-8 string |
 | here-doc | `"""text"""` | multiline block with margin stripping & interpolation |
 
-`.5`, `1.`, and `3.e4` are not float literals. Integer literals require a
-static type context or explicit suffix; the compiler never silently chooses
-`Int`. `#pragma number <type>` changes the literal type for the rest of its
-file; `#pragma number default` restores the normal inference mode.
+`.5`, `1.`, and `3.e4` are not float literals. Unsuffixed integer literals
+default to `Int` unless constrained by static type context or an explicit
+suffix (`i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`).
+`#pragma number <type>` changes the default literal type for the rest of its
+file; `#pragma number default` restores standard `Int` default mode.
 
 ### Here-Docs (`"""..."""`)
 
