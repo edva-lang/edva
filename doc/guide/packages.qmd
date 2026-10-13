@@ -91,7 +91,7 @@ Declared native requirements are aggregated across the entire dependency graph i
 
 Dependencies declared in `edva.ccl` are available via the `@` prefix in `#use` directives:
 
-```dva partial
+```{.dva .partial}
 #use @term
 #use @math_utils
 
@@ -101,7 +101,7 @@ val = math_utils::calculate(10)
 
 Submodules inside a dependency are reachable with a slash:
 
-```dva partial
+```{.dva .partial}
 #use @term/colors
 ```
 

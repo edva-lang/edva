@@ -16,7 +16,7 @@ Edva provides two primary sequential container types:
 
 A growable array is declared using `#type Name (Element){}`. An optional integer inside `{...}` sets the initial pre-allocated capacity (default is 16):
 
-```dva run
+```{.dva .run}
 // Growable array of 64-bit integers
 #type Ints (Int){}
 
@@ -28,7 +28,7 @@ A growable array is declared using `#type Name (Element){}`. An optional integer
 
 A growable array is represented at runtime by a 24-byte struct:
 
-```dva partial
+```{.dva .partial}
 { len: i64, data: ptr, cap: i64 }
 ```
 
@@ -36,7 +36,7 @@ A growable array is represented at runtime by a 24-byte struct:
 
 Arrays are instantiated empty. Appending with `+=` automatically allocates and dynamically doubles the underlying buffer as needed:
 
-```dva partial
+```{.dva .partial}
 xs = Ints()
 
 // Append elements
@@ -54,7 +54,7 @@ In Edva, array indexing is fallible and produces a ramification:
 - **Indexed read `xs(i)`**: Returns `< T | Error >` (RamPP). If `i` is in bounds, the positive slot contains the element; otherwise, the negative slot contains an `Error`.
 - **Indexed write `xs(i) = val`**: Returns `< | Error >` (RamNP).
 
-```dva partial
+```{.dva .partial}
 xs = Ints()
 xs += 42
 
@@ -74,7 +74,7 @@ xs(0) = 99 !| _
 
 The unary prefix `++` operator creates an independent deep copy of an array:
 
-```dva partial
+```{.dva .partial}
 original = Ints()
 original += 1
 
@@ -88,7 +88,7 @@ copied += 2
 
 A slice is a non-owning window over contiguous memory. Slices are written as `(T[])` and consist of a 16-byte fat pointer:
 
-```dva partial
+```{.dva .partial}
 { len: i64, data: ptr }
 ```
 
@@ -96,7 +96,7 @@ A slice is a non-owning window over contiguous memory. Slices are written as `(T
 
 Slices are created by sub-slicing an array or a homogeneous record:
 
-```dva partial
+```{.dva .partial}
 xs = Ints()
 xs += 10
 xs += 20
@@ -115,7 +115,7 @@ first_elem = view(0)    // 20
 
 When writing functions that only need to inspect sequential elements without modifying buffer capacity, prefer slice types `(T[])` over growable arrays to avoid unnecessary couplings to heap allocation strategies:
 
-```dva run
+```{.dva .run}
 sum_slice: (Int[]) => Int
 sum_slice = slice =>
    total' = 0

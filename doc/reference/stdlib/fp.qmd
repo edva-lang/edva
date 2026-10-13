@@ -11,7 +11,7 @@ meta:
 The `fp` module provides generic higher-order combinators, function composition utilities,
 and functional collection helpers adapted to Dva's zero-overhead, type-erased execution model.
 
-```dva run
+```{.dva .run}
 #use fp
 // or import directly into unqualified scope:
 #use(import) fp
@@ -34,7 +34,7 @@ and functional collection helpers adapted to Dva's zero-overhead, type-erased ex
 | `ident` | `T => T` | Identity function: returns argument unchanged |
 | `tap` | `T, (T => ()) => T` | Runs side-effect function on `v`, returning `v` unchanged |
 
-```dva partial
+```{.dva .partial}
 inc: Int => Int
 inc = x => x + 1
 
@@ -53,7 +53,7 @@ result = pipeline(10) // 21
 | `both` | `(T => <>), (T => <>) => (T => <>)` | Logical AND of two predicates (`p1(x) && p2(x)`) |
 | `either_pred` | `(T => <>), (T => <>) => (T => <>)` | Logical OR of two predicates (`p1(x) || p2(x)`) |
 
-```dva partial
+```{.dva .partial}
 is_pos: Int => <>
 is_pos = n => n > 0
 
@@ -84,7 +84,7 @@ the last parameter position, enabling functional application with `apply ($)`:
 | `find` | `(E => <>), Coll => < E | >` | Finds first element satisfying `pred`, returning `RamPN` |
 | `any` | `(E => <>), Coll => <>` | Checks if at least one element satisfies `pred` |
 
-```dva partial
+```{.dva .partial}
 nums = Int{}
 nums += 1
 nums += 2
@@ -110,7 +110,7 @@ Callers make an owned copy explicitly when independent storage is needed.
 | `partition` | `(T => <>), (T[]) => (passed: (T){}, rejected: (T){})` | Splits collection into passed and rejected arrays |
 | `sort` | `(T[]), (T, T => <>) => ()` | In-place insertion sort of slice view with comparison predicate |
 
-```dva partial
+```{.dva .partial}
 sl = nums(..)
 first2 = take(2, sl)
 rest = drop(2, sl)
@@ -124,7 +124,7 @@ split = partition(is_even, sl)
 | `zip` | `(A[]), (B[]) => ((A, B)){}` | Pairs elements into 2-tuples until shorter collection ends |
 | `zip_with` | `(A, B => C), (A[]), (B[]) => (C){}` | Combines elements pairwise using `f` until shorter collection ends |
 
-```dva partial
+```{.dva .partial}
 a = Int{}
 a += 1
 a += 2

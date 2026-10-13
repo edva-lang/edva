@@ -16,7 +16,7 @@ calls, and iteration are expressed through symbolic operators and expressions.
 
 Create a file named `hello.dva` (Edva source files use the official `.dva` file extension):
 
-```dva run
+```{.dva .run}
 #use io
 
 message = 10 > 5 | "greater" | "smaller"
@@ -64,7 +64,7 @@ It prints `greater`. In this snippet:
 All bindings created with `=` are immutable by default. To represent step-by-step
 transformations without naming collisions, append prime symbols (`'`):
 
-```dva run
+```{.dva .run}
 #use io
 
 total = 10
@@ -83,7 +83,7 @@ forward type annotation followed by definite field initialization before reads.
 In Edva, function parameter types are never written inline in the parameter list.
 Types are declared in an independent signature preceding the body:
 
-```dva run
+```{.dva .run}
 #use io
 
 // 1. Signature: positional parameter types, '=>', return type
@@ -106,7 +106,7 @@ Choices replace `if`, `else`, `switch`, and pattern matching. A choice begins
 with a condition or a scrutinee value, followed by ordered guarded branches, and
 an optional fallback branch introduced by `|`:
 
-```dva run
+```{.dva .run}
 #use io
 
 classify: Int => String
@@ -128,7 +128,7 @@ is a statement and evaluates to Unit (`()`). Dummy `| 0` fallbacks are strictly 
 
 The `@` operator iterates over counts, numeric ranges, or collections:
 
-```dva run
+```{.dva .run}
 #use io
 
 // Iterate 5 times (0 to 4)
@@ -145,7 +145,7 @@ The `@` operator iterates over counts, numeric ranges, or collections:
 Cycles can produce values via the **cycle-escape operator** `>--`, which returns
 `RamPN` (`< T | >`):
 
-```dva run
+```{.dva .run}
 #use io
 
 // Search for a target value in a range (returns < Int | >)
@@ -165,7 +165,7 @@ found
 Strings in Edva are immutable fat pointers `{ len, data }`. To construct strings
 efficiently without intermediate allocations, use a `Builder`:
 
-```dva run
+```{.dva .run}
 #use io
 
 build_greeting: String => String
@@ -191,7 +191,7 @@ io::out $ build_greeting("Edva Developer")
 
 Import standard library modules using `#use <name>`:
 
-```dva run
+```{.dva .run}
 #use str
 #use io
 

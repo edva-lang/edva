@@ -91,7 +91,7 @@ def check_doc_examples [root_dir: string, compile: bool] {
 
     for file in $qmd_files {
         let content = (open --raw $file)
-        let blocks = ($content | parse -r '(?ms)^```dva([^\n]*)\n(.*?)```')
+        let blocks = ($content | parse -r '(?ms)^```(?:dva|\{\.dva|\{dva)([^\n]*)\n(.*?)```')
         for block in $blocks {
             let header = ($block.capture0 | str trim)
             let body = $block.capture1

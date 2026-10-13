@@ -30,7 +30,7 @@ Each branch normalizes to exactly one of four guard kinds:
 - **Commas in case guards form an OR-list:** `x [1, 2, 3] body` matches when `x` equals 1, 2, or 3. Commas in predicate guards (`[< 0, 5]`) are a syntax error.
 - **Bare `|` position:** A bare `|` is only legal in the very first position (as condition separator) or the very last position (as fallback). Using `|` in any middle position is a parse error.
 
-```dva run
+```{.dva .run}
 // Comprehensive guard demonstration:
 classify_number: Int => String
 classify_number = n =>
@@ -51,7 +51,7 @@ classify_number = n =>
 | Single-branch form | `cond | action` (allowed and idiomatic) | Rejected (`E3087`: incomplete expression) |
 | Dummy fallback | **Never use `| 0`** (corrupts type to `Int`) | Provide meaningful fallback or unwrap |
 
-```dva partial
+```{.dva .partial}
 // 1. Statement choice: side-effect only, no fallback needed
 count > 10 | print("Threshold exceeded!")
 
@@ -69,7 +69,7 @@ the same ramification shape automatically synthesizes an implicit fallback branc
 
 This eliminates repetitive boilerplate in guarded lookup tables and conditional constructors:
 
-```dva run
+```{.dva .run}
 // 1. Guarded lookup table — implicitly falls back to | <-->
 lookup: Int => < String | >
 lookup = code =>
@@ -103,7 +103,7 @@ Ramifications (rams) are matched **strictly by position** using bare `|` branche
 | Value with fallback | `r | val => action | default_val` | Binds positive payload; falls back to default if negative slot |
 | Skip-first sugar | `write !| _` | Sugar for `| (void) | _`: skips positive slot, unwraps negative slot |
 
-```dva partial
+```{.dva .partial}
 #type SafeInt < Int | Error >
 
 handle: SafeInt => ()
@@ -124,7 +124,7 @@ X !| Y  ==  X | (void) | Y
 
 This is primarily used for **write-or-panic** on fallible array element writes:
 
-```dva partial
+```{.dva .partial}
 // Write to array; on error (second slot), panic:
 array(index) = value !| _
 ```
@@ -144,7 +144,7 @@ When early returning a unit ramification from an enclosing function, Edva provid
 | `cond |-->` | `cond | --| <-->` | `RamPN` (`< T | >`) negative absence unit |
 | `cond |++>` | `cond | --| <++>` | `RamNP` (`< | E >`) positive success unit |
 
-```dva run
+```{.dva .run}
 // Guard checking with ram return sugar:
 validate_positive: Int => <Int|>
 validate_positive = n =>
@@ -176,7 +176,7 @@ Cycles iterate over counts, ranges, or collections without keywords:
 - `-->N`: Multi-level break—breaks the `N`th enclosing cycle (`-->2` breaks outer).
 - `--^N`: Multi-level continue—continues the `N`th enclosing cycle.
 
-```dva partial
+```{.dva .partial}
 // Nested cycle with multi-level break:
 0..10 @ row =>
    0..10 @ col =>
@@ -190,7 +190,7 @@ Appending `>--` followed by a branch turns a cycle into an expression returning 
 - If a `-->` break fires, the cycle terminates and evaluates to the positive ramification `<+ branch_val ->`.
 - If the cycle completes naturally without breaking, it yields the negative unit `<-->` (absence).
 
-```dva partial
+```{.dva .partial}
 // Find the first negative element in an array (returns < Int | >):
 find_negative: (Int){} => < Int | >
 find_negative = list =>

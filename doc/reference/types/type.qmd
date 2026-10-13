@@ -14,7 +14,7 @@ The `Type` primitive represents a compile-time value naming a type. It exists ex
 
 Functions that accept or return `Type` values must be marked with the compile-time execution directive `#!`:
 
-```dva partial
+```{.dva .partial}
 // Compile-time function computing type size
 #!
 size_of: Type => Int
@@ -28,7 +28,7 @@ Edva provides built-in compile-time intrinsics for querying type properties:
 ### `#size(T)`
 Returns the byte size of type `T` according to the target architecture's ABI:
 
-```dva run
+```{.dva .run}
 int_size   = #size(Int)     // 8 bytes
 float_size = #size(Float)   // 8 bytes
 i32_size   = #size(i32)     // 4 bytes
@@ -37,7 +37,7 @@ i32_size   = #size(i32)     // 4 bytes
 ### `#align(T)`
 Returns the byte alignment required for type `T`:
 
-```dva partial
+```{.dva .partial}
 int_align = #align(Int)     // 8
 i8_align  = #align(i8)      // 1
 ```
@@ -46,7 +46,7 @@ i8_align  = #align(i8)      // 1
 
 Type generators are compile-time functions that take `Type` arguments and return a new composite `Type`. When evaluated with `#type`, they instantiate concrete types:
 
-```dva partial
+```{.dva .partial}
 #!
 Pair: Type => Type
 Pair = T =>

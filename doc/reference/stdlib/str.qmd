@@ -11,7 +11,7 @@ meta:
 The `str` module provides byte-oriented string predicates, scalar conversions,
 lexicographic comparisons, and digit parsing primitives.
 
-```dva run
+```{.dva .run}
 #use str
 ```
 
@@ -39,7 +39,7 @@ lexicographic comparisons, and digit parsing primitives.
 
 Predicates return native `Flag` values, allowing direct use in choice conditions:
 
-```dva partial
+```{.dva .partial}
 #use str
 
 classify_byte = c =>
@@ -55,7 +55,7 @@ classify_byte = c =>
 The positive payload contains a pair `(value, rest_of_string)`. If no digits are found,
 the negative unit slot (`<-->`) is selected:
 
-```dva partial
+```{.dva .partial}
 #use str
 
 parse_dimension: String => Int
@@ -75,7 +75,7 @@ print_int $ width // prints 1920
 
 Use `str::lt` as a comparator for sorting string records or arrays:
 
-```dva run
+```{.dva .run}
 #use str
 #use sort
 

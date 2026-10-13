@@ -12,7 +12,7 @@ Use `=` to introduce and reassign bindings. An unprimed name is immutable;
 give a rebindable variable a trailing prime (`'`). Bindings are lexical: a
 function-local `name = value` creates a local name.
 
-```dva run
+```{.dva .run}
 count' = 0
 count' = count' + 1
 
@@ -30,7 +30,7 @@ for the complete syntax rules and diagnostics.
 Give functions a separate signature when their parameter or return type must
 be known statically. Inline parameter annotations are not part of Edva syntax.
 
-```dva run
+```{.dva .run}
 add: Int, Int => Int
 add = left, right => left + right
 ```
@@ -40,7 +40,7 @@ add = left, right => left + right
 `#use name` imports a module and its public names are qualified by the module
 prefix. `#use path/name` imports a subpath, whose final segment becomes the prefix.
 
-```dva partial
+```{.dva .partial}
 #use math_utils
 #use io
 
@@ -71,7 +71,7 @@ Use `#private` to hide declarations from importers:
   inside a public section, reverting to public upon dedent.
 - **Inline**: `#private helper = ...` hides a single declaration on the same line.
 
-```dva run
+```{.dva .run}
 #public
 
 // Exported public functions

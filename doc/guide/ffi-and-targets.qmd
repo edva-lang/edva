@@ -12,7 +12,7 @@ Use `#foreign` to bind a C symbol. A signature uses Edva type syntax and
 `Addr` for raw addresses. A string or Builder buffer is passed with its
 adjacent unary address form.
 
-```dva partial
+```{.dva .partial}
 #foreign "c"
    puts: String => Int
 
@@ -22,7 +22,7 @@ puts("hello")
 `#export` exposes an Edva function as a C ABI symbol. Pass `-H header.h` to
 generate a C header from export declarations.
 
-```dva run
+```{.dva .run}
 #export add: Int, Int => Int
 #export add = left, right => left + right
 ```

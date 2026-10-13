@@ -12,7 +12,7 @@ An ordinary `=` binding is immutable. A trailing prime makes the identifier
 rebindable. Interior mutation—such as appending to a Builder or writing a map
 entry—does not require a primed binding.
 
-```dva run
+```{.dva .run}
 total' = 0
 total' = total' + 1
 
@@ -23,7 +23,7 @@ buffer += "ok"
 Function parameters are always immutable and cannot be primed. A signature is
 separate from its body and fixes parameter and result types:
 
-```dva run
+```{.dva .run}
 add: Int, Int => Int
 add = left, right => left + right
 ```
@@ -34,7 +34,7 @@ add = left, right => left + right
 shape. Type names are registered before their bodies parse, which permits
 recursive and mutually recursive declarations.
 
-```dva run
+```{.dva .run}
 #type Point (x: Int, y: Int)
 #type MaybePoint < Point | >
 ```

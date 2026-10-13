@@ -14,7 +14,7 @@ The `Error` type is Edva's native structured error payload. It is commonly place
 
 An `Error` value carries five fields tracking error category, descriptive message, and source file coordinates:
 
-```dva run
+```{.dva .run}
 #type Error (
    code: Int,
    msg:  String,
@@ -34,7 +34,7 @@ An `Error` value carries five fields tracking error category, descriptive messag
 
 `Error` values are constructed using the built-in `Error` constructor:
 
-```dva run
+```{.dva .run}
 // Explicit constructor (file, line, col captured automatically from callsite)
 err = Error(404, "Entity not found")
 ```
@@ -43,7 +43,7 @@ err = Error(404, "Entity not found")
 
 In idiomatic Edva, operations that can fail return a `Result` (`RamPP`) or `Fallible` (`RamNP`):
 
-```dva partial
+```{.dva .partial}
 #type Result < String | Error >
 
 read_config: String => Result
@@ -57,7 +57,7 @@ read_config = path =>
 
 Error values can be unpacked using choice expressions:
 
-```dva partial
+```{.dva .partial}
 res = read_config("")
 
 res |
@@ -71,7 +71,7 @@ res |
 
 When an expression is unwrapped with postfix `!!`, Edva extracts the positive branch. If the value is a negative ramification holding an `Error`, the program immediately terminates with a diagnostic backtrace:
 
-```dva partial
+```{.dva .partial}
 // If read_config returns an Error, execution halts and prints:
 // Error 1: Path cannot be empty
 //   at /path/to/main.dva:14:10

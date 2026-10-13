@@ -12,7 +12,7 @@ meta:
 The `mem` module provides unified, explicit memory management:
 low-level byte operations, regional bump arenas, and fixed-capacity object pools.
 
-```dva run
+```{.dva .run}
 #use mem
 ```
 
@@ -32,7 +32,7 @@ low-level byte operations, regional bump arenas, and fixed-capacity object pools
 Arenas provide allocation without per-object free overhead. All allocations
 within an arena are freed simultaneously when the arena is reset or destroyed.
 
-```dva run
+```{.dva .run}
 #type Arena (raw: Addr, cap: Int)
 #type ArenaStats (bytes_allocated: Int, num_chunks: Int, cap: Int)
 ```
@@ -47,7 +47,7 @@ within an arena are freed simultaneously when the arena is reset or destroyed.
 | `mem::stats` | `Arena => ArenaStats` | Retrieves allocation metrics and chunk counts |
 | `mem::with` | `Arena, (() => ()) => ()` | Runs action with arena set as ambient allocator |
 
-```dva run
+```{.dva .run}
 #use mem
 
 ar = mem::arena(1024)
@@ -60,7 +60,7 @@ mem::destroy(ar)
 
 Pools manage uniform, fixed-size element allocations with $O(1)$ allocation and deallocation.
 
-```dva run
+```{.dva .run}
 #type Pool (buffer: Addr, free_stack: Addr, active: Addr, state: Addr,
    elem_size: Int, capacity: Int)
 ```
@@ -75,7 +75,7 @@ Pools manage uniform, fixed-size element allocations with $O(1)$ allocation and 
 | `mem::pool_for_each` | `Pool, (Addr => ()) => ()` | Iterates over each active allocated slot |
 | `mem::pool_destroy` | `Pool => ()` | Releases pool memory buffer |
 
-```dva run
+```{.dva .run}
 #use mem
 #use io
 

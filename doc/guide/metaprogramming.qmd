@@ -19,7 +19,7 @@ reflection tables.
 
 Prefix `#!` evaluates a supported pure expression during compilation:
 
-```dva partial
+```{.dva .partial}
 answer = #! 2 * 3 + 1
 print_int $ answer
 ```
@@ -31,7 +31,7 @@ Use `#size(Type)` to obtain the byte size of a type at compile time.
 A `#! T: Type` parameter is a compile-time type parameter. It is inferred at
 the call site and does not become a runtime parameter.
 
-```dva partial
+```{.dva .partial}
 identity: #! T: Type, T => T
 identity = value => value
 
@@ -41,7 +41,7 @@ print_int $ identity(42)
 Compile-time value parameters use the same form with an ordinary type, such as
 `#! N: Int`. Type generators return a type shape and are named with `#type`.
 
-```dva run
+```{.dva .run}
 Pair: #! T: Type => (first: T, count: Int)
 #type IntPair Pair(Int)
 ```

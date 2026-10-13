@@ -16,7 +16,7 @@ generation, and serializing streams of bytes before freezing into an immutable `
 
 A `Builder` is constructed empty or with a pre-allocated capacity:
 
-```dva run
+```{.dva .run}
 // Default initial capacity (typically 16 bytes)
 b = {16}
 
@@ -29,7 +29,7 @@ buf = {1024}
 At runtime, a `Builder` is a 24-byte struct containing length, data buffer pointer, and allocated
 capacity:
 
-```dva partial
+```{.dva .partial}
 { len: i64, data: ptr, cap: i64 }
 ```
 
@@ -43,7 +43,7 @@ appended, the buffer dynamically doubles in size when `len` approaches `cap`.
 
 The `+=` operator appends strings, runes, bytes, or integers to the buffer:
 
-```dva run
+```{.dva .run}
 b = {16}
 
 // Append string literals or String values
@@ -69,7 +69,7 @@ b += """
 
 Prefix operators query buffer state:
 
-```dva run
+```{.dva .run}
 b = {16}
 b += "Payload data"
 
@@ -84,7 +84,7 @@ data_ptr = &b      // Addr / ptr
 
 The unary prefix `+` operator freezes a `Builder` into an immutable `String`:
 
-```dva run
+```{.dva .run}
 b = {64}
 b += "Hello, "
 b += "Edva!"
@@ -110,7 +110,7 @@ final_str = +b
 A Builder descriptor can be aliased by variable binding (`c = b`) or passed to functions
 (`b: Builder`). Aliases share the underlying buffer until freeze detaches it:
 
-```dva run
+```{.dva .run}
 b = {16}
 b += "A"
 c = b               // c and b share the descriptor
@@ -129,7 +129,7 @@ s2 = +c             // Freezes fresh buffer into "C"
 
 ## Example: building structured output
 
-```dva run
+```{.dva .run}
 build_query: String, (String * 3) => String
 build_query = table, cols =>
    b = {128}

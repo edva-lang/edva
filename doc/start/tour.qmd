@@ -49,7 +49,7 @@ the multi-argument application operators:
 | `m $>> cont` | Monadic bind | Left | Tier 4 | Unpack positive ram, propagate negative |
 | `f $: block` | Block feed | Right | Lowest | Attach indented block as final argument |
 
-```dva run
+```{.dva .run}
 #use io
 
 add: Int, Int => Int
@@ -74,7 +74,7 @@ Edva provides six primary structural shapes:
 
 Records group heterogeneously typed fields. Fields may be named or positional:
 
-```dva run
+```{.dva .run}
 #use io
 
 // Positional tuple
@@ -96,7 +96,7 @@ initialization is rejected at compile time (`E3130`).
 Growable arrays are heap-allocated resizable buffers. Indexing is fallible and
 returns a ramification (`< T | Error >`):
 
-```dva run
+```{.dva .run}
 #use io
 
 #type Ints (Int){}
@@ -118,7 +118,7 @@ io::out $ first // prints 10
 
 Maps associate keys (`String`, `Int`, or `Addr`) with values:
 
-```dva run
+```{.dva .run}
 #use io
 
 #type Config String ^ Int
@@ -140,7 +140,7 @@ Rams represent 2-slot algebraic sum values without runtime type overhead:
 - `< | Error >`: Fallible result (`<++>` success or `<- err ->`)
 - `< T | Error >`: Two-payload result (`<+ val ->` or `<- err +>`)
 
-```dva run
+```{.dva .run}
 #use io
 
 #type SafeInt < Int | Error >
@@ -161,7 +161,7 @@ res
 
 Enums define named variants, with optional typed payloads:
 
-```dva run
+```{.dva .run}
 #use io
 
 #type Shape <

@@ -11,7 +11,7 @@ meta:
 The `color` module provides color representations, conversions between common color spaces
 (sRGB, Linear sRGB, Oklab, Oklch, HSV), alpha compositing, and hex packing/unpacking.
 
-```dva run
+```{.dva .run}
 #use color
 ```
 
@@ -31,7 +31,7 @@ vector operations (`+`, `-`, `*`).
 
 ## Constructors and hex conversions
 
-```dva partial
+```{.dva .partial}
 c1 = color::rgba(0.2, 0.4, 0.8, 1.0)
 c2 = color::rgb(1.0, 0.5, 0.0)             // Defaults alpha to 1.0
 hex_color = color::from_hex(0xFF00AAFF)     // Unpack 0xRRGGBBAA

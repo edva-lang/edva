@@ -19,7 +19,7 @@ Use `f(a, b)` for a direct call. `$` appends an argument to a call-shaped
 function expression, while `$>` feeds a value into the first argument position.
 Both are multi-argument operators, so pipelines can remain flat.
 
-```dva run
+```{.dva .run}
 sum: Int, Int => Int
 sum = left, right => left + right
 
@@ -35,7 +35,7 @@ needed.
 
 A choice has adjacent guarded branches and an optional trailing bare fallback:
 
-```dva run
+```{.dva .run}
 value = 2
 label = value [1] "one" [2] "two" | "other"
 ```
@@ -76,7 +76,7 @@ When returning a unit ramification from a choice branch, Edva provides compact s
 | `cond |-->` | `cond | --| <-->` | `RamPN` (`< T | >`) absence unit |
 | `cond |++>` | `cond | --| <++>` | `RamNP` (`< | E >`) success unit |
 
-```dva run
+```{.dva .run}
 find_positive: Int => < Int | >
 find_positive = n =>
    n !> 0 |-->

@@ -19,7 +19,7 @@ Intrinsics enforce strict static types: no implicit integer/float coercion occur
 Homogeneous records act as SIMD vectors; scalar operands passed alongside vector
 operands are automatically broadcast (splatted) across lanes.
 
-```dva run
+```{.dva .run}
 // Scalar operations
 low = %min(10, 20)          // 10
 root = %sqrt(16.0)          // 4.0

@@ -11,7 +11,7 @@ meta:
 The `uring` module provides low-level Linux `io_uring` kernel submission and completion rings
 for non-blocking asynchronous system calls.
 
-```dva run
+```{.dva .run}
 #use uring
 ```
 
@@ -27,7 +27,7 @@ It is available exclusively on Linux targets.
 
 ## Core structures
 
-```dva partial
+```{.dva .partial}
 #type CQE (
    user_data: Int,
    res:       Int,
@@ -107,7 +107,7 @@ Completed operations report kernel status in `CQE.res`:
 
 ## Example
 
-```dva complete
+```{.dva .complete}
 #use libc
 #use uring
 

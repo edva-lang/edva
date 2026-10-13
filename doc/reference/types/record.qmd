@@ -15,7 +15,7 @@ A `Record` in Edva is a product type grouping multiple values together. Records 
 Records are declared with `#type` followed by the field specifications:
 
 ### 1. Named records
-```dva run
+```{.dva .run}
 #type Point (x: Int, y: Int)
 
 // Multiline indentation form
@@ -28,7 +28,7 @@ Records are declared with `#type` followed by the field specifications:
 ### 2. Positional records (tuples)
 Positional records omit field names and are accessed by index:
 
-```dva run
+```{.dva .run}
 #type Pair (Int, String)
 #type Triple (Float, Float, Float)
 ```
@@ -36,7 +36,7 @@ Positional records omit field names and are accessed by index:
 ### 3. Homogeneous repeated records
 Fixed-length arrays allocated inline as a single contiguous record:
 
-```dva run
+```{.dva .run}
 #type Matrix3x3 (Float * 9)   // 9 consecutive Floats
 #type MacAddress (u8 * 6)     // 6 consecutive bytes
 ```
@@ -44,7 +44,7 @@ Fixed-length arrays allocated inline as a single contiguous record:
 ### 4. Packed records (`#packed`)
 Packed records disable interior and tail alignment padding, ensuring exact byte-level layout for binary network protocols and file headers:
 
-```dva partial
+```{.dva .partial}
 #type EthernetHeader #packed (
    dest_mac: u8 * 6,
    src_mac:  u8 * 6,
@@ -55,7 +55,7 @@ Packed records disable interior and tail alignment padding, ensuring exact byte-
 ### 5. Bitfields
 Bitfield records pack specific bit widths into a backing integer (`u8`, `u16`, `u32`, `u64`). The sum of all field widths must exactly equal the backing integer's width (`E3153`):
 
-```dva run
+```{.dva .run}
 #type TcpFlags #packed u16 (
    fin: 1, syn: 1, rst: 1, psh: 1,
    ack: 1, urg: 1, ece: 1, cwr: 1,
@@ -67,7 +67,7 @@ Bitfield records pack specific bit widths into a backing integer (`u8`, `u16`, `
 
 Records can be instantiated via type constructors or positional literals:
 
-```dva partial
+```{.dva .partial}
 // Named record instantiation
 pt = Point(10, 20)
 
@@ -81,7 +81,7 @@ mac = MacAddress(0x00, 0x1A, 0x2B, 0x3C, 0x4D, 0x5E)
 ### Strict field initialization
 When a record variable is declared with a forward annotation (`p: Point`), it is **not** zero-filled. Every field must be definitely written before any field is read:
 
-```dva partial
+```{.dva .partial}
 p: Point
 p.x = 100
 // Reading p.y here would trigger compiler error E3130 (Uninitialized field)
@@ -91,7 +91,7 @@ sum = p.x + p.y   // Valid: both fields definitely initialized
 
 Attempting to read an uninitialized field produces a compile error:
 
-```dva expected-error="E3130"
+```{.dva expected-error="E3130"}
 // expected-error: E3130
 #type Point (x: Int, y: Int)
 p: Point
@@ -105,7 +105,7 @@ bad = p.y
 
 Fields are accessed using dot notation:
 
-```dva partial
+```{.dva .partial}
 // Named access
 pt = Point(15, 30)
 x_coord = pt.x

@@ -17,7 +17,7 @@ The `Unit` type, written as `()`, represents the zero-sized type (lowered to LLV
 
 `()` is valid exclusively in type annotations and function signatures:
 
-```dva partial
+```{.dva .partial}
 // Function executing purely for side effects, returning Unit
 log_message: String => ()
 log_message = msg =>
@@ -34,7 +34,7 @@ At runtime, several expressions produce Unit results implicitly without using an
 ### 1. Assignment expressions
 Assignments in Edva evaluate to Unit:
 
-```dva run
+```{.dva .run}
 // The assignment expression evaluates to Unit
 x = 10
 ```
@@ -47,7 +47,7 @@ The empty branch of a ramification produces Unit when evaluated:
 
 When matching an empty slot, the branch simply performs a side effect or statement:
 
-```dva partial
+```{.dva .partial}
 opt: < Int | >
 opt = <-->
 
@@ -59,7 +59,7 @@ opt |
 ### 3. Statement choice expressions
 A choice expression whose branches perform imperative statements or assignments evaluates to Unit:
 
-```dva partial
+```{.dva .partial}
 debug_mode = <+>
 
 debug_mode |
@@ -69,7 +69,7 @@ debug_mode |
 ### 4. Early return expressions (`--|`)
 The early return operator `--|` (whether returning a value `--| expr` or returning bare `--|`) always evaluates to `Unit` (`()`) at its local expression site, whether or not it returns a value to the caller. Because evaluating `--|` immediately terminates control flow in the enclosing function and returns to the caller, its value in local expression sequence composition is `Unit`.
 
-```dva partial
+```{.dva .partial}
 check_even: Int => ()
 check_even = n =>
    n % 2 != 0 | --|

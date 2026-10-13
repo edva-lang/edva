@@ -1980,7 +1980,7 @@ cat <<'EOF' > "$DOC_TEST_DIR/doc/sample.qmd"
 meta:
   evidence: doc/sample.qmd
 ---
-```dva run
+```{.dva .run}
 x = 1
 ```
 EOF
@@ -2023,7 +2023,7 @@ cat <<'EOF' > "$DOC_TEST_DIR/doc/sample.qmd"
 meta:
   evidence: doc/sample.qmd
 ---
-```dva expected-error="E9999"
+```{.dva expected-error="E9999"}
 x = 1
 ```
 EOF

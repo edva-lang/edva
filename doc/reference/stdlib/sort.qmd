@@ -19,7 +19,7 @@ input into a new growable array and leave the original unchanged.
 | `ints` | `Ints => Ints` | ascending numeric order |
 | `raw_sort_slots` | `Int, (Int, Int => <>), (Int, Int => Int) => ()` | callback-driven in-place slot engine |
 
-```dva partial
+```{.dva .partial}
 #use sort
 
 numbers = sort::Ints()

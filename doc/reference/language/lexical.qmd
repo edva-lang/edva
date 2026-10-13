@@ -21,7 +21,7 @@ everywhere within a source file; mixing them is a syntax error. An indented
 block is equivalent to semicolon-separated statements, but a semicolon at the
 end of a source line is invalid. Keep lines to 100 characters or fewer.
 
-```dva run
+```{.dva .run}
 check = value =>
    value > 0
       | "positive"

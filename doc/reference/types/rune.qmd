@@ -14,7 +14,7 @@ The `Rune` type represents a single Unicode scalar value (ranging from `U+0000` 
 
 Variables are bound to rune literals:
 
-```dva run
+```{.dva .run}
 letter = 'A'
 greek = 'λ'
 emoji = '🦀'
@@ -43,7 +43,7 @@ Rune literals are enclosed in single quotes `'...'` and represent exactly one Un
 `Rune` values represent Unicode scalar values backed by `i32` in LLVM code generation. Runes
 interoperate with integers and other runes in comparisons and offset arithmetic:
 
-```dva run
+```{.dva .run}
 ch = 'a'
 
 // Direct rune comparison
@@ -60,7 +60,7 @@ offset = ch - 'a'                        // 0
 
 While the unary prefix operator `?` returns the raw byte count of a string or buffer, the `??` operator counts the total number of Unicode codepoints (runes):
 
-```dva run
+```{.dva .run}
 str = "café"
 
 bytes = ?str    // 5 (UTF-8 encoding of 'é' is 2 bytes: 0xC3 0xA9)
@@ -71,7 +71,7 @@ runes = ??str   // 4 (c, a, f, é)
 
 The `#use str` and `#use unicode` modules provide classification and transformation routines for runes:
 
-```dva run
+```{.dva .run}
 #use str
 #use unicode
 
@@ -83,7 +83,7 @@ is_space = str::is_ws(Int('\t'))     // <+>
 
 Conversions between `Int` and `Rune` are identity operations at runtime:
 
-```dva run
+```{.dva .run}
 codepoint = 0x1F680       // Rocket emoji 🚀
 rocket = Rune(codepoint)
 
