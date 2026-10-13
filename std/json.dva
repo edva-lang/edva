@@ -83,20 +83,75 @@ bool_str = b => b | "true" | "false"
 
 // --- string scanning ------------------------------------------------
 
+// Validate and append a raw UTF-8 sequence starting at index k with lead byte c0.
+scan_utf8_char: Builder, Int, Int => <Int | Error>
+scan_utf8_char = b, k, c0 =>
+   c0_val = c0 .&. 0xFF
+   c0_val !< 0xC2 && c0_val !> 0xDF
+      |
+         k + 1 !< ?src | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+         c1 = src(k + 1) .&. 0xFF
+         c1 < 0x80 || c1 > 0xBF
+            | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+            |
+               b += c0
+               b += c1
+               scan_string(b, k + 2)
+      |
+         c0_val !< 0xE0 && c0_val !> 0xEF
+            |
+               k + 2 !< ?src | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+               c1 = src(k + 1) .&. 0xFF
+               c2 = src(k + 2) .&. 0xFF
+               c2 < 0x80 || c2 > 0xBF
+                  | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+                  |
+                     c1_ok = c0_val == 0xE0 | (c1 !< 0xA0 && c1 !> 0xBF) | (c0_val == 0xED | (c1 !< 0x80 && c1 !> 0x9F) | (c1 !< 0x80 && c1 !> 0xBF))
+                     c1_ok
+                        |
+                           b += c0
+                           b += c1
+                           b += c2
+                           scan_string(b, k + 3)
+                        | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+            |
+               c0_val !< 0xF0 && c0_val !> 0xF4
+                  |
+                     k + 3 !< ?src | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+                     c1 = src(k + 1) .&. 0xFF
+                     c2 = src(k + 2) .&. 0xFF
+                     c3 = src(k + 3) .&. 0xFF
+                     c2 < 0x80 || c2 > 0xBF || c3 < 0x80 || c3 > 0xBF
+                        | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+                        |
+                           c1_ok = c0_val == 0xF0 | (c1 !< 0x90 && c1 !> 0xBF) | (c0_val == 0xF4 | (c1 !< 0x80 && c1 !> 0x8F) | (c1 !< 0x80 && c1 !> 0xBF))
+                           c1_ok
+                              |
+                                 b += c0
+                                 b += c1
+                                 b += c2
+                                 b += c3
+                                 scan_string(b, k + 4)
+                              | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+                  | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
+
 // Scan the body of a string literal starting at index k (after the
 // opening quote), appending decoded bytes to b. Returns <Int | Error>:
 // the positive slot is the index of the closing quote.
 scan_string: Builder, Int => <Int | Error>
 scan_string = b, k =>
-   c = k [< ?src] src(k) | -1
+   k !< ?src | <- Error(400, "json: unterminated string", "std/json.dva", 0, 0, (k, 0)) +>
+   c = src(k)
    c
    ['"'] <+ k ->
    ['\\'] parse_escape(b, k)
    [< 0x20] <- Error(400, "json: control character in string",
    "std/json.dva", 0, 0, (k, 0)) +>
-   |
+   [< 0x80]
       b += c
       scan_string(b, k + 1)
+   |
+      scan_utf8_char(b, k, c)
 
 // Handle a backslash escape at index k (k is the '\').
 parse_escape: Builder, Int => <Int | Error>
@@ -168,23 +223,6 @@ parse_surrogate_pair = b, k, cp =>
 // True when src[p] exists and is a digit.
 is_digit_at: Int => i1
 is_digit_at = p => p < ?src && str::is_digit(src(p))
-
-// Consume [0-9] digits at p, accumulating into a Float; returns
-// (value, next index) where next is the first non-digit index.
-scan_digits: Float, Int => (Float, Int)
-scan_digits = f, p =>
-   is_digit_at(p) |
-      scan_digits(f * 10 + Float(src(p) - '0'), p + 1)
-   | (f, p)
-
-// Consume fractional digits at p, each scaled by an ever-smaller power
-// of 0.1; returns (value, next index).
-scan_fraction: Float, Float, Int => (Float, Int)
-scan_fraction = f, scale, p =>
-   is_digit_at(p) |
-      next = f + Float(src(p) - '0') * scale
-      scan_fraction(next, scale * 0.1, p + 1)
-   | (f, p)
 
 // --- value parsing ------------------------------------------------
 
@@ -341,18 +379,49 @@ parse_number = !=>
       has_leading_zero |
          <- Error(400, "json: leading zero not allowed", "std/json.dva", 0, 0, (p', 0)) +>
       |
-         sd = scan_digits(Float(0), p')
-         ip = sd.0
-         p2' = sd.1
-         had_int = (p2' > p')
-         fv' = ip
+         p2' = p'
+         had_int' = 0
+         sig_digits' = 0
+         fv' = 0.0
+         exp10' = 0
+         0.. @
+            p2' !< ?src | -->
+            c = src(p2')
+            c !< '0' && c !> '9'
+               |
+                  had_int' = 1
+                  d = c - '0'
+                  sig_digits' > 0 || d != 0
+                     |
+                        sig_digits' < 17
+                           |
+                              fv' = fv' * 10.0 + Float(d)
+                              sig_digits' = sig_digits' + 1
+                           |
+                              exp10' = exp10' + 1
+                  p2' = p2' + 1
+               | -->
          has_dot = (p2' < ?src && src(p2') == '.')
          had_frac' = <->
          has_dot |
-            sd3 = scan_fraction(fv', 0.1, p2' + 1)
-            fv' = sd3.0
-            had_frac' = (sd3.1 > p2' + 1)
-            p2' = sd3.1
+            p2' = p2' + 1
+            0.. @
+               p2' !< ?src | -->
+               c = src(p2')
+               c !< '0' && c !> '9'
+                  |
+                     had_frac' = <+>
+                     d = c - '0'
+                     (sig_digits' == 0 && d == 0)
+                        |
+                           exp10' = exp10' - 1
+                        |
+                           sig_digits' < 17 |
+                              fv' = fv' * 10.0 + Float(d)
+                              sig_digits' = sig_digits' + 1
+                              exp10' = exp10' - 1
+                     p2' = p2' + 1
+                  | -->
          has_exp = (p2' < ?src && (src(p2') == 'e' || src(p2') == 'E'))
          had_exp' = <->
          has_exp |
@@ -365,22 +434,34 @@ parse_number = !=>
             plus = (e0 == '+')
             plus |
                p3' = p3' + 1
-            sd2 = scan_digits(Float(0), p3')
-            ev = sd2.0
-            p4 = sd2.1
-            had_exp' = (p4 > p3')
-            p2' = p4
-            // Scale fv' directly in the loop to preserve subnormal values
-            // (e.g. 1e-309). Doubling 10^309 in a separate denominator overflows
-            // float64 to infinity, collapsing representable subnormals to 0.0.
-            eclamp = (ev < -400.0 | -400.0 | (ev > 400.0 | 400.0 | ev))
-            Int(eclamp) @
-               fv' = (eneg' == 1 | fv' / 10.0 | fv' * 10.0)
-            0
+            ev' = 0
+            over_exp' = 0
+            had_exp_digits' = 0
+            0.. @
+               p3' !< ?src | -->
+               ec = src(p3')
+               ec !< '0' && ec !> '9'
+                  |
+                     had_exp_digits' = 1
+                     ed = ec - '0'
+                     ev' > 1000000
+                        | (over_exp' = 1)
+                        | (ev' = ev' * 10 + ed)
+                     p3' = p3' + 1
+                  | -->
+            had_exp' = (had_exp_digits' == 1)
+            p2' = p3'
+            exp_val = over_exp' == 1 | 1000000 | ev'
+            exp10' = eneg' == 1 | exp10' - exp_val | exp10' + exp_val
+         fv' != 0.0 |
+            eclamp = exp10' < -400 | -400 | (exp10' > 400 | 400 | exp10')
+            abs_e = eclamp < 0 | 0 - eclamp | eclamp
+            abs_e @
+               fv' = eclamp < 0 | fv' / 10.0 | fv' * 10.0
          // JSON number grammar: -?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)? — digits
          // are required after '-', after '.', and after the exponent marker
          // (a bare '-', "1.", or "1e" must be rejected, not parsed as 0 / 1.0).
-         valid = (had_int && (!has_dot || had_frac') && (!has_exp || had_exp'))
+         valid = (had_int' == 1 && (!has_dot || had_frac') && (!has_exp || had_exp'))
          valid
             |
                f = (neg' == 1 | 0 - fv' | fv')

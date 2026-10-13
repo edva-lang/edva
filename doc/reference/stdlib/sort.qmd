@@ -8,18 +8,21 @@ meta:
 
 # `sort` standard library
 
-`sort` provides stable insertion-sort helpers. The typed helpers copy their
-input into a new growable array and leave the original unchanged.
+`sort` provides collection sorting helpers. The typed helpers `sort::ints` and
+`sort::strings` use a hybrid merge sort ($O(n \log n)$ time complexity) that copies
+their input into a new growable array and leaves the original unchanged.
+The low-level `raw_sort_slots` engine uses in-place quadratic insertion sort ($O(n^2)$ worst case).
 
 | Export | Signature | Behavior |
 |---|---|---|
 | `Strings` | `(String){}` | growable string-array type |
 | `Ints` | `(Int){}` | growable integer-array type |
-| `strings` | `Strings => Strings` | ascending `str::cmp` order |
-| `ints` | `Ints => Ints` | ascending numeric order |
-| `raw_sort_slots` | `Int, (Int, Int => <>), (Int, Int => Int) => ()` | callback-driven in-place slot engine |
+| `strings` | `Strings => Strings` | ascending `str::cmp` order ($O(n \log n)$ hybrid merge sort) |
+| `ints` | `Ints => Ints` | ascending numeric order ($O(n \log n)$ hybrid merge sort) |
+| `raw_sort_slots` | `Int, (Int, Int => <>), (Int, Int => Int) => ()` | callback-driven in-place slot engine ($O(n^2)$ insertion sort) |
 
-```{.dva .partial}
+```{.dva .run}
+#use io
 #use sort
 
 numbers = sort::Ints()
@@ -27,10 +30,10 @@ numbers += 9
 numbers += 2
 numbers += 5
 ordered = sort::ints(numbers)
-print_int(ordered(0)!!)
+io::out(ordered(0)!!)
+// => 2
 ```
 
-The implementation is quadratic in the worst case and is intended for small
-collections. `raw_sort_slots` accepts an index comparator and swap callback;
-the caller owns the storage that those callbacks access.
+`raw_sort_slots` accepts an element count, an index comparator `(i, j) => <>`, and a
+swap callback `(i, j) => Int`; the caller owns the storage that those callbacks access.
 

@@ -55,6 +55,7 @@ export def gen-vscode [] {
       { "include": "#characters" },
       { "include": "#ramification_constants" },
       { "include": "#ramification_delimiters" },
+      { "include": "#ramification_returns" },
       { "include": "#directives" },
       { "include": "#types" },
       { "include": "#control" },
@@ -103,15 +104,23 @@ export def gen-vscode [] {
         "patterns": [
           {
             "name": "constant.language.ramification.dva",
-            "match": "<\\+>|<->|<\\+\\+>|<-->|<>"
+            "match": "<\\+\\+>|<-->|<\\+>|<->"
           }
         ]
       },
       "ramification_delimiters": {
         "patterns": [
           {
-            "name": "punctuation.definition.ramification.dva",
+            "name": "constant.language.ramification.delimiter.dva",
             "match": "<\\+|\\+>|<-|->"
+          }
+        ]
+      },
+      "ramification_returns": {
+        "patterns": [
+          {
+            "name": "constant.language.ramification.return.dva",
+            "match": "\\|\\+\\+>|\\|-->|\\|\\+>|\\|->"
           }
         ]
       },
@@ -127,7 +136,7 @@ export def gen-vscode [] {
         "patterns": [
           {
             "name": "storage.type.primitive.dva",
-            "match": "\\b(Int|Float|String|Address|Rune|Builder|Error|Type|i1|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|float|double|void|ptr)\\b"
+            "match": "\\b(Int|Float|String|Address|Rune|Builder|Error|Type|i1|i8|i16|i32|i64|u8|u16|u32|u64|f32|f64|float|double|void|ptr)\\b|<>"
           }
         ]
       },
@@ -143,7 +152,7 @@ export def gen-vscode [] {
           },
           {
             "name": "keyword.control.conditional.dva",
-            "match": "(!\\||\\|)"
+            "match": "(!\\||\\||\\[|\\])"
           }
         ]
       },

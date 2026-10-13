@@ -2,8 +2,9 @@
 
 > Edva is a zero-keyword, expression-oriented systems programming language featuring
 > deterministic memory, algebraic ramifications, and native LLVM code generation.
-> For the comprehensive specification and complete standard library reference,
-> see [llms-full.txt](llms-full.txt).
+> This file is a curated language guide and reference index. For the extended language
+> specification and core standard library guide, see [llms-full.txt](llms-full.txt).
+> Complete module-by-module references are maintained under `doc/reference/stdlib/`.
 
 ---
 
@@ -92,7 +93,7 @@ types and cannot be implicitly coerced between one another.
 - **Branch Return Sugars**: `|->` (returns `<->`), `|+>` (returns `<+>`), `|-->` (returns `<-->`),
   `|++>` (returns `<++>`).
 - **Error Propagation (`--!`)**:
-  ```dva
+  ```dva partial reason="error propagation fragment with placeholder step functions"
   compute: Int, Int => < Int | String >
   compute = a, b =>
      v1 = step_a(a)--!
@@ -104,8 +105,8 @@ types and cannot be implicitly coerced between one another.
 
 # 5. Documentation Index
 
-- [Full Specification](llms-full.txt): Complete language reference, grammar, and standard library.
+- [Curated Full Guide](llms-full.txt): Extended language guide, grammar, and standard library modules.
 - [Quickstart](start/quickstart.qmd): Introduction to syntax and essential concepts.
 - [Operators](reference/language/operators.qmd): Detailed operator documentation.
 - [Ramifications Guide](guide/ramifications.qmd): Comprehensive ramification concepts.
-- [Standard Library](reference/stdlib/index.qmd): Core stdlib modules (`io`, `str`, `os`, `mem`).
+- [Standard Library](reference/stdlib/index.qmd): Full module reference (`io`, `in`, `net`, `json`, `sort`, `math`, `str`, `uring`, `color`, `fp`, `type`).

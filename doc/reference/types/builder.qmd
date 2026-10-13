@@ -3,7 +3,7 @@ meta:
   audience: "Edva developers"
   status: "current reference"
   audited: "51081a6"
-  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `GRAMMAR.md` §3.7"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `src/codegen/main.dva`, `GRAMMAR.md` §3.7"
 ---
 
 # `Builder`
@@ -39,30 +39,112 @@ appended, the buffer dynamically doubles in size when `len` approaches `cap`.
 
 ## Operations
 
-### Appending (`+=`)
+### Growing a `Builder`
 
-The `+=` operator appends strings, runes, bytes, or integers to the buffer:
+Edva provides several mechanisms for growing and populating a `Builder`, optimized for different
+data sources and calling patterns:
+
+#### 1. Single-value append (`+=`)
+
+The `+=` operator appends individual values directly to the buffer:
+
+- **Strings**: appends the byte sequence of a literal or runtime `String`.
+- **Runes**: encodes Unicode code points into 1 to 4 UTF-8 bytes in-place.
+- **Bytes / integers**: integer values in the range `0..255` are appended directly as single bytes.
 
 ```{.dva .run}
 b = {16}
 
-// Append string literals or String values
+// Append string literals or String expressions
 b += "HTTP/1.1 200 OK\r\n"
 b += "Content-Type: text/plain\r\n"
 
-// Append runes
-b += 'X'
+// Append runes (UTF-8 encoded in-place)
+b += 'λ'
 
-// Append formatted integers directly
-status_code = 200
-b += status_code
+// Append single byte values (range 0..255)
+b += 65
+```
 
-// In-place here-doc append with interpolation (no intermediate string allocations)
+#### 2. String concatenation peephole (`+= s1 + s2 + ...`)
+
+When appending a string concatenation chain `b += s1 + s2 + s3`, the compiler's peephole optimizer
+flattens the operation into sequential appends directly onto the `Builder` buffer. Intermediate
+concatenated `String` allocations are completely eliminated:
+
+```{.dva .run}
+b = {32}
+s1 = "Hello, "
+s2 = "world"
+b += s1 + s2 + "!\n"
+```
+
+#### 3. Mass-appends with record notation (`+= (...)` and `= (...)`)
+
+When multiple values must be appended together, pass a record/tuple. The compiler calculates the
+total required length across all fields upfront, ensures capacity in a single growth step, and
+emits the fields consecutively into the buffer:
+
+```{.dva .run}
+b = {64}
+
+// Mass-append a tuple of strings and bytes
+b += ("Server: ", "Edva/1.0", "\r\n")
+
+// Record assignment on an existing Builder also acts as a mass-append
+crlf = (13, 10)
+b = crlf
+```
+
+This works with heterogeneous tuples combining strings, runes, and byte integers, as well as
+variables holding record values.
+
+#### 4. In-place here-doc append (`+= """..."""`)
+
+Multi-line here-docs stream directly into the `Builder` with `${expr}` string interpolation without
+materializing any intermediate template strings:
+
+```{.dva .run}
 endpoint = "/users"
+status = 200
+b = {128}
+
 b += """
    POST ${endpoint} HTTP/1.1
+   Status: ${status}
    Host: example.com
    """
+```
+
+#### 5. Direct address writes and length update (`&b` and `?b = n`)
+
+For operating system calls, C FFI buffers (`read(2)`), or low-level memory operations, callers can
+write directly into the `Builder` memory and update its recorded length:
+
+- Unary prefix `&b` yields the writable buffer address (`Addr` / `ptr`).
+- Unary prefix `?b = new_len` updates the current length (bounds-checked: `0 <= new_len <= cap`,
+  aborting with `E4008` if out of bounds).
+
+```{.dva .run}
+b = {16}
+
+// Write raw bytes directly into the buffer via pointer
+@[&b] = 72i8
+@[&b + 1] = 105i8
+
+// Advance the builder length to reflect written bytes
+?b = 2
+```
+
+#### 6. Pure copy-and-append (`b + x`)
+
+The binary `+` operator evaluates to a new `Builder` holding a copy of `b` with the right-hand
+element appended, leaving the original `Builder` unchanged:
+
+```{.dva .run}
+b1 = {16}
+b1 += "Base"
+b2 = b1 + " + extra"
 ```
 
 ### Inspecting metadata
@@ -129,12 +211,27 @@ s2 = +c             // Freezes fresh buffer into "C"
 
 ## Example: building structured output
 
+Building formatted output can be accomplished via record notation for compact mass-appends, or
+via here-docs with interpolation for multi-line templating:
+
 ```{.dva .run}
-build_query: String, (String * 3) => String
-build_query = table, cols =>
+// 1. Using record notation for structured mass-appends
+build_query_record: String, (String * 3) => String
+build_query_record = table, cols =>
    b = {128}
-   b += "SELECT "
-   b += cols.0 + ", " + cols.1 + ", " + cols.2
-   b += " FROM " + table + ";"
+   b = ("SELECT ", cols.0, ", ", cols.1, ", ", cols.2, " FROM ", table, ";")
    +b
+
+// 2. Using an in-place here-doc with string interpolation
+build_query_heredoc: String, String => String
+build_query_heredoc = table, cols_str =>
+   b = {128}
+   b += """
+      SELECT ${cols_str}
+      FROM ${table};
+      """
+   +b
+
+q1 = build_query_record("users", ("id", "name", "email"))
+q2 = build_query_heredoc("orders", "id, total, status")
 ```

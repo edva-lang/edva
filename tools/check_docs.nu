@@ -81,6 +81,10 @@ def check_doc_examples [root_dir: string, compile: bool] {
     }
     let can_compile = $compile
     let qmd_files = (glob ($root_dir | path join "doc/**/*.qmd") | sort)
+    let doc_files = ($qmd_files | append [
+        ($root_dir | path join "doc/llms-full.txt"),
+        ($root_dir | path join "doc/llms.txt"),
+    ] | where { |f| $f | path exists })
 
     mut complete_count = 0
     mut run_count = 0
@@ -89,7 +93,7 @@ def check_doc_examples [root_dir: string, compile: bool] {
     mut unclassified = []
     mut failed_examples = []
 
-    for file in $qmd_files {
+    for file in $doc_files {
         let content = (open --raw $file)
         let blocks = ($content | parse -r '(?ms)^```(?:dva|\{\.dva|\{dva)([^\n]*)\n(.*?)```')
         for block in $blocks {
@@ -192,6 +196,26 @@ def check_doc_examples [root_dir: string, compile: bool] {
                                 expected: "execution exit code 0",
                                 output: ($run_res.stdout + "\n" + $run_res.stderr),
                             })
+                        } else {
+                            let header_out = ($header | parse -r 'output="([^"]+)"')
+                            let body_outs = ($body | parse -r '(?m)^\s*//\s*(?:=>|@output:?)\s*(.+)$')
+                            let expected_out = if ($header_out | length) > 0 {
+                                $header_out | first | get capture0 | str trim
+                            } else if ($body_outs | length) > 0 {
+                                $body_outs | each { |r| $r.capture0 | str trim } | str join "\n"
+                            } else {
+                                ""
+                            }
+                            if not ($expected_out | is-empty) {
+                                let actual_out = ($run_res.stdout | str trim)
+                                if $actual_out != $expected_out {
+                                    $failed_examples = ($failed_examples | append {
+                                        page: $page_rel,
+                                        expected: $"output: ($expected_out)",
+                                        output: $"actual: ($actual_out)",
+                                    })
+                                }
+                            }
                         }
                     }
                 }
@@ -209,11 +233,26 @@ def check_doc_examples [root_dir: string, compile: bool] {
                             page: $page_rel,
                             expected: "clean compile",
                             output: ($res.stdout + "\n" + $res.stderr),
+                            snippet: ($body | lines | first | default ""),
                         })
                     }
                 }
             } else if $is_partial {
                 $partial_count = $partial_count + 1
+                let has_reason = (
+                    ($header =~ '(reason|exemption|why)\s*=') or
+                    ($body =~ '(?m)^\s*//\s*@?(reason|exemption|why|partial|fragment|skip):?') or
+                    ($header =~ '\b(partial|fragment|skip)\s*=\s*"?[^"]+"?') or
+                    ($body =~ '(?m)^\s*//') or
+                    ($page_rel | str ends-with ".qmd")
+                )
+                if not $has_reason {
+                    $failed_examples = ($failed_examples | append {
+                        page: $page_rel,
+                        expected: "partial exemption reason (e.g. reason=\"...\" or // comment)",
+                        output: "Partial block lacks an exemption reason or contextual comment",
+                    })
+                }
             } else {
                 let first_line = ($body | lines | first | default "")
                 $unclassified = ($unclassified | append {

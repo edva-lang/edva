@@ -1,8 +1,9 @@
-# Edva Language Specification & Comprehensive Reference (llms-full.txt)
+# Edva Language Guide & Extended Reference (llms-full.txt)
 
-> This document contains the complete reference specification, grammar rules, type system,
-> operator tables, and standard library overview for the Edva programming language (`edva`),
-> compiled into a single file for direct ingestion by Large Language Models and AI coding agents.
+> This document contains a curated language reference, grammar rules, operational semantics,
+> operator tables, and standard library guide for the Edva programming language (`edva`),
+> formatted for ingestion by Large Language Models and AI coding agents. Complete, maintained
+> module-by-module documentation is available in the Quarto reference at `doc/reference/stdlib/`.
 
 ---
 
@@ -110,7 +111,7 @@ Notable precedence facts:
 ## 4.1 Choice Expressions
 Choices replace `if`, `switch`, and pattern matching. A choice consists of a scrutinee, an
 ordered chain of guarded branches, and an optional fallback:
-```dva
+```dva complete
 classify: Int => String
 classify = score =>
    score [100]       "perfect"
@@ -125,13 +126,13 @@ classify = score =>
   - `[> 89]`: Operator section predicate comparison.
   - `[Variant(payload)]`: Tagged enum variant decomposition.
 - **Statement Choices**: Single-branch choices without fallbacks evaluate for side effects:
-  ```dva
-  has_error | log("Error detected")
-  ```
+```dva partial reason="statement choice fragment"
+has_error | log("Error detected")
+```
 
 ## 4.2 Cycles & Control
 Iteration is performed using `@`:
-```dva
+```dva partial reason="cycle jump fragment"
 // Iterate over an integer range (0 to count-1)
 0..count @ i =>
    i [2] --^         // --^ skips this iteration (continue)
@@ -145,7 +146,7 @@ Multi-level jumps support integer suffixes: `-->2` breaks out of two enclosing l
 Appending `>-- BranchBody` turns a cycle into an expression returning `RamPN` `< T | >`:
 - If the cycle breaks via `-->`, the branch evaluates and returns `<+ branch_value +>`.
 - If the cycle completes normally without breaking, the result is `<-->` (negative unit):
-```dva
+```dva complete
 find_target: Int, Int => < Int | >
 find_target = count, target =>
    0..count @ i =>
@@ -159,7 +160,7 @@ Functions exit early using `--|`:
 - `--| value`: Returns `value` immediately; must match the function's declared return type.
 - Bare `--|`: Early return from a void function (`() => ()`).
 
-```dva
+```dva complete
 clamp: Int, Int, Int => Int
 clamp = x, lo, hi =>
    x < lo | --| lo
@@ -174,7 +175,7 @@ Choice branches can return unit ramifications directly from an enclosing functio
 - `cond |-->` desugars to `cond | --| <-->` (`RamPN` `< T | >` negative unit / absence)
 - `cond |++>` desugars to `cond | --| <++>` (`RamNP` `< | E >` positive unit / success)
 
-```dva
+```dva complete
 find_positive: Int => < Int | >
 find_positive = n =>
    n !> 0 |-->
@@ -269,7 +270,7 @@ Intrinsics are prefixed with `%` and lower directly into LLVM IR instructions:
 # 8. POSIX & Foreign Function Interface (FFI)
 
 Foreign C symbols are declared under `#foreign "c"` with typed function signatures:
-```dva
+```dva complete
 #foreign "c"
    open: (path: String, flags: Int) => Int
    close: (fd: Int) => Int
@@ -288,15 +289,46 @@ read_file = path =>
 
 ---
 
-# 9. Standard Library Overview
+# 9. Standard Library Overview & Module Contracts
 
-- `libc`: Direct POSIX C standard library bindings (`open`, `close`, `read`, `write`, `malloc`).
-- `str`: String conversion, parsing, and inspection (`from_int`, `from_float`, `is_digit`, `split`).
-- `io`: Stream-based reading and console logging (`io::out`, `io::err`, `io::reader`,
-  `io::read_all`).
-- `net` & `net/http`: TCP sockets, event polling, and HTTP request routing.
-- `json`: Whole-document JSON parser supporting UTF-16 surrogates, subnormals, and isolated containers.
-- `mem`: Arena allocators and memory blocks.
+Complete reference documentation for each module is maintained in `doc/reference/stdlib/`.
+
+- **`io`**: Stream-based buffered reading (`Reader`, `read_line`, `read_all`) and console logging
+  (`out`, `outs`, `err`, `errs`, `outf`, `errf`).
+  - *Contract*: Output wrappers loop across partial transfers, retry on `EINTR`, and return total
+    bytes transferred (or `-1` on initial error).
+- **`in`**: Singleton standard-input reader wrapping `stdin_r`.
+  - *Functions*: `read_line(max)`, `read_bytes(max)`, `read_byte!`, `read_until(delim, max)`.
+  - *Status*: `err!` (last errno), `eof!` (clean EOF), `would_block!` (`EAGAIN`), `has_err!`, `clear!`.
+- **`str`**: String conversion, Unicode inspection, and transformations.
+  - *Functions*: `from_int`, `from_float`, `to_int`, `is_digit`, `split`, `trim`, `repeat`.
+- **`net` & `net/http`**: TCP networking and HTTP/1.1 protocol handling.
+  - *Network*: `tcp_listen`, `tcp_accept`, `tcp_connect`, `send_str`, `recv`, `close_fd: Int => Int`.
+  - *HTTP*: `read_request`, `path_of`, `header`, `response`, `respond(fd, status, content_type, body)`.
+  - *Contract*: Request reading rejects unsupported `Transfer-Encoding`, enforces Content-Length bounds,
+    and returns `Req(<- "incomplete body" +>)` on truncated payloads.
+- **`json`**: Whole-document JSON parser (`json::parse: String => <Value | Error>`).
+  - *Types*: `Value` (`String`, `Number`, `Boolean`, `Null`, `Array`, `Object`).
+  - *Contract*: Uses module-global `::src`/`::pos` state; **not reentrant and not thread-safe**.
+    Concurrent calls must be synchronized or run in separate processes. Raw strings are validated
+    for strict UTF-8 (rejecting overlong encodings, invalid continuation/lead bytes, surrogate halves
+    `0xD800`–`0xDFFF`, and out-of-range scalars). Numbers preserve compensated decimal exponents.
+- **`sort`**: Collection sorting helpers.
+  - *Functions*: `ints(Ints) => Ints` and `strings(Strings) => Strings` use hybrid merge sort
+    ($O(n \log n)$) on array copies. `raw_sort_slots` uses callback-driven in-place insertion sort
+    ($O(n^2)$) for small custom collections.
+- **`math`**, **`math/geom`**, **`math/complex`**: Numerical and spatial operations.
+  - *Scalars*: `sin`, `cos`, `tan`, `sqrt`, `atan2`, `floor`, `ceil`, `fabs`, `ldexp`.
+  - *Geometry*: `Vec2`, `Vec3`, `Vec4`, `Rect`, `dot`, `len`, `dist`, `norm`, `lerp`, `angle`, `rotate`.
+  - *Complex*: `Complex`, `make`, `real`, `imag`, `add`, `sub`, `mul`, `abs`, `exp`, `fft`, `ifft`.
+- **`uring`**: Linux `io_uring` asynchronous I/O submission and completion queues (`setup`, `enter`).
+- **`color`**: ANSI escape sequences and color types (`RGB`, `RGBA`, `hex`, `ansi`).
+- **`fp`**: Functional combinators over collections and slices (`map`, `filter`, `fold`, `zip`, `chain`).
+- **`type`**: Type introspection intrinsics and numeric limits (`#size`, `#align`, limits).
+- **`libc`**: Direct POSIX C system call bindings (`open`, `close`, `read`, `write`, `malloc`).
+- **`mem`**: Memory management utilities and arena allocators.
+- **`os`** & **`sys`**: Operating system environment, command-line arguments (`sys::argv`), and exits.
+- **`ccl`**: Configuration file parsing for the CCL format (`ccl::parse`).
 
 ---
 

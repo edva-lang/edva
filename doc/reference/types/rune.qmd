@@ -67,6 +67,23 @@ bytes = ?str    // 5 (UTF-8 encoding of 'é' is 2 bytes: 0xC3 0xA9)
 runes = ??str   // 4 (c, a, f, é)
 ```
 
+### Appending runes to a `Builder` (`+=`)
+
+Appending a `Rune` to a mutable `Builder` encodes the Unicode codepoint into 1 to 4 UTF-8 bytes in-place:
+
+```{.dva .run}
+b = {16}
+
+// Appending runes encodes variable-length UTF-8 bytes in-place
+b += 'A'          // 1 byte (0x41)
+b += 'λ'          // 2 bytes (0xCE 0xBB)
+b += '🦀'         // 4 bytes (0xF0 0x9F 0xA6 0x80)
+
+result = +b       // "Aλ🦀"
+len = ?result     // 7 bytes
+count = ??result  // 3 runes
+```
+
 ### Classification with standard library
 
 The `#use str` and `#use unicode` modules provide classification and transformation routines for runes:
@@ -75,8 +92,8 @@ The `#use str` and `#use unicode` modules provide classification and transformat
 #use str
 #use unicode
 
-is_alpha = str::is_alpha(Int('Z'))   // <+>
-is_space = str::is_ws(Int('\t'))     // <+>
+is_alpha = unicode::is_alpha('Z')   // <+>
+is_space = str::is_ws('\t')         // <+>
 ```
 
 ## Conversions and casting

@@ -264,7 +264,7 @@ body.quarto-dark code span.va {
   }
 }
 
-/* Ramification constants (<+>, <->, <++>, <-->) */
+/* Ramifications (unit constants, payload delimiters, sugared returns) */
 code span.cn {
   color: #b45309 !important;
   font-weight: 600;
@@ -277,6 +277,22 @@ body.quarto-dark code span.cn {
 @media (prefers-color-scheme: dark) {
   body:not(.quarto-light) code span.cn {
     color: #fbbf24 !important;
+  }
+}
+
+/* Branching and jumps (choice |, !|, cycle @, breaks -->, continues --^, early returns --|, escapes >--) */
+code span.cf {
+  color: #4f46e5 !important;
+  font-weight: 600;
+}
+
+body.quarto-dark code span.cf {
+  color: #818cf8 !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  body:not(.quarto-light) code span.cf {
+    color: #818cf8 !important;
   }
 }
 

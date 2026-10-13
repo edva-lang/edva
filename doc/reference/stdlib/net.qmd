@@ -42,7 +42,7 @@ listener
 | `net::tcp_connect_name` | `String, Int => Conn` | Connects via DNS name lookup using `getaddrinfo` |
 | `net::send_str` | `Int, String => Int` | Sends string bytes over socket |
 | `net::recv` | `Int, Int => Chunk` | Reads up to `max` bytes into Chunk (`< String \| >`) |
-| `net::close_fd` | `Int => ()` | Closes socket descriptor |
+| `net::close_fd` | `Int => Int` | Closes socket descriptor (returns 0 on success, -1 on error) |
 | `net::set_nonblocking` | `Int, Int => Int` | Sets non-blocking socket flag (`O_NONBLOCK` when 1, blocking when 0) |
 | `net::peer_addr` | `Int => String` | Returns remote peer address `IP:port` formatted string |
 | `net::local_addr` | `Int => String` | Returns local bound address `IP:port` formatted string |
@@ -69,4 +69,4 @@ res = http::response(200, headers, body)
 - `http::reason_of(code: Int) => String`: Maps status code (e.g. `200`, `404`) to reason phrase (`"OK"`, `"Not Found"`).
 - `http::header(name: String, value: String) => String`: Generates `Name: Value\r\n` line.
 - `http::response(status: Int, headers: String, body: String) => String`: Constructs complete HTTP message: status line, headers, blank line separator, and body.
-- `http::respond(fd: Int, status: Int, headers: String, body: String) => Int`: Writes HTTP response to client socket; returns total bytes written.
+- `http::respond(fd: Int, status: Int, content_type: String, body: String) => Int`: Formats standard Content-Type and Content-Length headers and writes complete response to client socket; returns total bytes written.

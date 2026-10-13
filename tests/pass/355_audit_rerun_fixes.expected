@@ -1,0 +1,22 @@
+F1 y=2
+F1 name=admin
+F1 z present=<->
+F1 x empty present=<+> len=0
+F2 cl1=12
+F2 cl2=12
+F2 cl3=12
+F2 x-cl present=<->
+F2 invalid present=<->
+F2 overflow present=<->
+F2 conflicting present=<->
+F4 outs test
+F4 write test
+F4 write ret=<+>
+F5 in status err=0 eof=<-> wb=<-> has_err=<->
+F5 in::clear called
+F6 large n==1.0: <+>
+F6 small n==1.0: <+>
+F7 bad byte 255 present=<->
+F7 overlong present=<->
+F7 surrogate present=<->
+F7 valid utf8 present=<+>

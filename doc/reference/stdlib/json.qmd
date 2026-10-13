@@ -64,5 +64,12 @@ val = json::parse(config_text)!!
 
 ## Supported JSON features
 
-The parser supports strings and escapes (including UTF-16 surrogate pairs for supplementary Unicode characters `U+10000`..`U+10FFFF`), numbers with optional sign, fraction, and exponent (`1e-309` subnormals preserved), booleans, null, arrays, and objects. Arrays and objects are isolated per container. Strict JSON syntax is enforced: trailing commas, leading zeros in numbers, and trailing characters after the document root are rejected.
+The parser supports strings and escapes (including UTF-16 surrogate pairs for supplementary Unicode characters `U+10000`..`U+10FFFF`), numbers with optional sign, fraction, and exponent (`1e-309` subnormals and compensated large exponents preserved), booleans, null, arrays, and objects. Arrays and objects are isolated per container. Strict JSON syntax is enforced: trailing commas, leading zeros in numbers, and trailing characters after the document root are rejected.
+
+## Parser state and concurrency contract
+
+The parser operates on an in-memory document slice using module-global scanning state (`::src`, `::pos`) for zero-allocation helper traversal:
+- **Reentrancy**: The parser is **not reentrant**. Calling `json::parse` while another parse is active within the same runtime environment is not supported.
+- **Threading**: The parser is **not thread-safe**. Concurrent calls to `json::parse` across threads must be synchronized with a mutex or delegated to separate processes.
+- **Validation**: Raw string bytes are validated as strict UTF-8 (rejecting invalid lead or continuation bytes, overlong encodings, surrogate code points `0xD800`–`0xDFFF`, and out-of-range scalars). Numbers preserve compensated decimal representations without intermediate overflow or underflow.
 

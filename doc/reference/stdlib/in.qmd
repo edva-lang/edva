@@ -8,9 +8,10 @@ meta:
 
 # `in` standard library
 
-`in` provides a shared buffered reader over standard input. Every operation
-returns an optional ram: the positive slot carries data, and the unit second
-slot indicates EOF.
+`in` provides a shared buffered reader over standard input. Read operations
+return an optional ram: the positive slot carries data, and the unit second
+slot indicates EOF or would-block / error status. Status accessors expose the
+underlying reader state.
 
 | Function | Result | Behavior |
 |---|---|---|
@@ -18,12 +19,18 @@ slot indicates EOF.
 | `read_bytes(max)` | `< String | >` | read at most `max` available bytes |
 | `read_byte!` | `< Int | >` | read one byte |
 | `read_until(delim, max)` | `< String | >` | read through and consume `delim` |
+| `err!` | `Int` | returns last errno encountered (0 if none) |
+| `eof!` | `<>` | true (`<+>`) if clean EOF has been reached on stdin |
+| `would_block!` | `<>` | true (`<+>`) if the last read on stdin encountered `EAGAIN` / `EWOULDBLOCK` |
+| `has_err!` | `<>` | true (`<+>`) if an unhandled I/O error occurred (`err != 0`) |
+| `clear!` | `()` | clears the error and EOF flags on the stdin reader |
 
-```{.dva .partial}
+```{.dva .partial reason="reads from interactive stdin"}
 #use in
+#use io
 
 line = in::read_line(4096)
-line | text => print(text) | print("end of input")
+line | text => io::out(text) | io::out("end of input")
 ```
 
 The reader is module-global, so calls share buffering and advance the same

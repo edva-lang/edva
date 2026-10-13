@@ -288,22 +288,33 @@
       d | http::parse_after_scheme(url, _, total) | UrlRes(<- "no scheme" +>)
 
    // Look up "key=value" in a query string ("a=1&b=2"). Returns a Chunk: the
-   // value, or none when the key is absent.
+   // value, or none when the key is absent. When duplicate keys appear, the first
+   // match takes precedence. Present keys with an empty value ("key=") return an
+   // empty string. Keys and values are treated as raw slices without decoding.
    query_param: String, String => Chunk
    query_param = qs, key =>
       total = ?qs
       klen = ?key
+      klen !> 0 | Chunk(<-->)
       out = {0}
+      found' = <->
       i' = 0
       0.. @
          i' !< total | -->
          amp = http::find_char(qs, i', 38)
-         seg_end = amp | _ | total
-         match = seg_end - i' > klen && qs(i' + klen) == 61
-         match
-            | out += qs(i' + klen + 1..seg_end); -->
-         i' = amp | _ + 1 | total
-      ?out > 0
+         seg_end = amp | pos => pos | total
+         seg_len = seg_end - i'
+         has_eq = seg_len > klen && qs(i' + klen) == 61
+         bare_match = seg_len == klen && qs(i'..seg_end) == key
+         is_match = (has_eq && qs(i'..i' + klen) == key) || bare_match
+         is_match
+            |
+               val_start = has_eq | i' + klen + 1 | seg_end
+               out += qs(val_start..seg_end)
+               found' = <+>
+               -->
+         i' = amp | pos => pos + 1 | total
+      found'
          | Chunk(<+ +out +>)
          | Chunk(<-->)
 
@@ -346,18 +357,16 @@
          | Chunk(<+ +b +>)
          | Chunk(<-->)
 
-   // Append one header line to a Builder (in place); returns 1 for the blank
-   // line that terminates the header block, else 0. Extracted as a
-   // helper so the
-   // read_headers branch lambda stays a single expression.
-   append_header: Builder, String => Int
+   // Append one header line to a Builder (in place); returns <+> for the blank
+   // line that terminates the header block, else <->.
+   append_header: Builder, String => <>
    append_header = out, line =>
-      ?line [0] 1
+      ?line [0] <+>
       |
          out += line
          out += 13
          out += 10
-         0
+         <->
 
    // Read header lines until the blank line; returns the raw header block
    // ("Name: Value\r\n..." without the trailing blank line).
@@ -368,22 +377,112 @@
          line = http::read_line(fd, max)
          done = line
             | http::append_header(out, _)
-            | 1
-         done [1] -->
+            | <+>
+         done | -->
       +out
 
-   // The Content-Length of a raw header block, or none when absent.
+   // Extract the trimmed value of a header from a single "Name: Value\r\n" line.
+   header_line_val: String, String => Chunk
+   header_line_val = line, target_name =>
+      total = ?line
+      tlen = ?target_name
+      cpos = http::find_char(line, 0, 58)
+      cpos
+         | colon =>
+            name_len = colon
+            name_len != tlen
+               | Chunk(<-->)
+               |
+                  match' = <+>
+                  tlen @ j =>
+                     !http::ci_eq(line(j), target_name(j))
+                        | (match' = <->; -->)
+                  match'
+                     |
+                        vstart' = colon + 1
+                        0.. @
+                           vstart' !< total | -->
+                           c = line(vstart')
+                           c [32, 9] (vstart' = vstart' + 1) | -->
+                        vend' = total
+                        0.. @
+                           vend' !> vstart' | -->
+                           c = line(vend' - 1)
+                           c [32, 9, 13, 10] (vend' = vend' - 1) | -->
+                        Chunk(<+ line(vstart'..vend') +>)
+                     | Chunk(<-->)
+         | Chunk(<-->)
+
+   // Look up the value of a header in a raw header block "Name: Val\r\n...".
+   find_header: String, String => Chunk
+   find_header = headers, name =>
+      total = ?headers
+      i' = 0
+      res' = Chunk(<-->)
+      0.. @
+         i' !< total | -->
+         lf = http::find_char(headers, i', 10)
+         line_end = lf | _ | total
+         line = headers(i'..line_end)
+         val = http::header_line_val(line, name)
+         val
+            | v =>
+               res' = Chunk(<+ v +>)
+               -->
+         i' = lf | (+ 1) | total
+      res'
+
+   // Check whether a header is present in a raw header block.
+   has_header: String, String => <>
+   has_header = headers, name =>
+      <>(http::find_header(headers, name))
+
+   // The Content-Length of a raw header block, or none when absent or invalid.
+   // Rejects malformed values, negative numbers, overflow, and conflicting duplicate headers.
    content_length: String => Num
    content_length = headers =>
       total = ?headers
-      found = http::find_str(headers, "Content-Length:")
-      found
-         |
-            rest = headers(_ + 16..total)
-            Num(<+ http::to_int(rest) +>)
+      i' = 0
+      cl_found' = -1
+      cl_invalid' = <->
+      0.. @
+         i' !< total | -->
+         lf = http::find_char(headers, i', 10)
+         line_end = lf | pos => pos | total
+         line = headers(i'..line_end)
+         val = http::header_line_val(line, "content-length")
+         val
+            | v =>
+               vlen = ?v
+               vlen !> 0
+                  | (cl_invalid' = <+>)
+                  |
+                     parsed' = 0
+                     over' = <->
+                     vlen @ j =>
+                        c = v(j)
+                        c !< 48 && c !> 57
+                           |
+                              d = c - 48
+                              parsed' > 922337203685477580
+                                 | (over' = <+>)
+                                 | (parsed' = parsed' * 10 + d)
+                           | (cl_invalid' = <+>; -->)
+                     over'
+                        | (cl_invalid' = <+>)
+                        |
+                           cl_found' !< 0 && parsed' != cl_found'
+                              | (cl_invalid' = <+>)
+                              | (cl_found' = parsed')
+         i' = lf | pos => pos + 1 | total
+      cl_invalid'
          | Num(<-->)
+         |
+            cl_found' !< 0
+               | Num(<+ cl_found' +>)
+               | Num(<-->)
 
-   // Read exactly n bytes of body from fd. Returns a Chunk.
+   // Read exactly n bytes of body from fd. Returns a Chunk (none on incomplete read).
    read_body: Int, Int => Chunk
    read_body = fd, n =>
       b = {n}
@@ -394,16 +493,16 @@
          r [< 1] -->
          got' = got' + r
       ?b = got'
-      got' > 0
+      got' == n
          | Chunk(<+ +b +>)
          | Chunk(<-->)
 
-   // Read the request body per a Content-Length (0/none -> "").
-   read_req_body: Int, Int => String
+   // Read the request body per a Content-Length (0/none -> empty Chunk).
+   read_req_body: Int, Int => Chunk
    read_req_body = fd, cl =>
       cl > 0
-         | (http::read_body(fd, cl) | _ | "")
-         | ""
+         | http::read_body(fd, cl)
+         | Chunk(<+ "" +>)
 
    // Build a Request from a request line whose first space is at `v`. Extracted
    // as a helper so the line_req branch lambda stays a single expression.
@@ -424,8 +523,7 @@
       sp | http::line_req_method(line, _) | Req(<- "malformed request line" +>)
 
    // Build a Request from a request line whose first space is at `v`, plus the
-   // read headers/body. Extracted as a helper so the request_from_line branch
-   // lambda stays a single expression.
+   // read headers/body.
    request_method: Int, String, Int, Int => Req
    request_method = fd, ln, v, max =>
       method = ln(0..v)
@@ -434,10 +532,22 @@
       rp = http::find_char(rest, 0, 32)
       path = rp | rest(0.._) | rest
       headers = http::read_headers(fd, max)
-      cl = http::content_length(headers)
-      cl_val = cl | _ | 0
-      body = http::read_req_body(fd, cl_val)
-      Req(<+ (method, path, body) ->)
+      http::has_header(headers, "transfer-encoding")
+         | Req(<- "unsupported transfer encoding" +>)
+         |
+            has_cl = http::has_header(headers, "content-length")
+            cl = http::content_length(headers)
+            has_cl && !<>(cl)
+               | Req(<- "invalid content-length" +>)
+               |
+                  cl_val = cl | len => len | 0
+                  cl_val > max
+                     | Req(<- "content-length exceeds limit" +>)
+                     |
+                        body_chunk = http::read_req_body(fd, cl_val)
+                        body_chunk
+                           | b => Req(<+ (method, path, b) ->)
+                           | Req(<- "incomplete body" +>)
 
    // Build a Request from a request line plus the read headers/body.
    request_from_line: Int, String, Int => Req

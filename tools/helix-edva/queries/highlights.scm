@@ -60,8 +60,8 @@
 ] @constant.builtin.ram
 
 ;; Unit ramification type "<>".
-"<>" @constant.builtin.ram
-(ram_or_enum_type_decl "<>" @constant.builtin.ram)
+"<>" @type.builtin
+(ram_or_enum_type_decl "<>" @type.builtin)
 
 ;; Branch return unit sugars: "|+>", "|->", "|++>", "|-->".
 (branch "|+>" @constant.builtin.ram)
@@ -136,7 +136,7 @@
 (ram_or_enum_type_decl "|" @punctuation.delimiter)
 (ram_or_enum_type_decl "<" @punctuation.bracket)
 (ram_or_enum_type_decl ">" @punctuation.bracket)
-"<>" @constant.builtin.ram
+(ram_or_enum_type_decl "<>" @type.builtin)
 
 ;; Enum variant labels in declarations.
 (enum_variant (identifier) @type.enum.variant)
