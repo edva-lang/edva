@@ -2185,24 +2185,36 @@ codegen_map_create = cg, name =>
       LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.tombs.gep"))
    m
 
-// // FNV-1a of a String key via dva_hash_string(data, len), or Knuth/splitmix
-// multiplication for integer/pointer keys.
+// Mix 64-bit integer bits via SplitMix64 / Stafford variant 13 finalizer
+// so high bits propagate into low bits before power-of-two bucket masking.
+codegen_mix_int64: types::Cg, Addr => Addr
+codegen_mix_int64 = cg, k =>
+   i64t' = LLVMInt64Type!
+   s1 = LLVMBuildLShr(cg.builder, k, LLVMConstInt(i64t', 30, 0), "mix.s1")
+   x1 = LLVMBuildXor(cg.builder, k, s1, "mix.x1")
+   m1 = LLVMConstInt(i64t', 0 - 4658895280553007687, 0)
+   x2 = LLVMBuildMul(cg.builder, x1, m1, "mix.x2")
+   s2 = LLVMBuildLShr(cg.builder, x2, LLVMConstInt(i64t', 27, 0), "mix.s2")
+   x3 = LLVMBuildXor(cg.builder, x2, s2, "mix.x3")
+   m2 = LLVMConstInt(i64t', 0 - 7723503512211097109, 0)
+   x4 = LLVMBuildMul(cg.builder, x3, m2, "mix.x4")
+   s3 = LLVMBuildLShr(cg.builder, x4, LLVMConstInt(i64t', 31, 0), "mix.s3")
+   LLVMBuildXor(cg.builder, x4, s3, "mix.res")
+
+// FNV-1a of a String key via dva_hash_string(data, len), or SplitMix64
+// integer finalizer for integer/pointer keys.
 codegen_map_hash: types::Cg, Addr, ast::ValueType => Addr
 codegen_map_hash = cg, key_val, key_vt =>
    is_int = types::is_int_vt(key_vt)
    is_int
-      |
-         i64t' = LLVMInt64Type!
-         mix' = LLVMConstInt(i64t', 0 - 7046029254386353131, 0)
-         LLVMBuildMul(cg.builder, key_val, mix', "mk.hash")
+      | codegen_mix_int64(cg, key_val)
       |
          is_ptr = key_vt [RawPtr]
          is_ptr
             |
                i64t' = LLVMInt64Type!
-               mix' = LLVMConstInt(i64t', 0 - 7046029254386353131, 0)
                k = LLVMBuildPtrToInt(cg.builder, key_val, i64t', "mk.ptr")
-               LLVMBuildMul(cg.builder, k, mix', "mk.hash")
+               codegen_mix_int64(cg, k)
             |
                data = expr::codegen_string_data(cg, key_val, "mk.data")
                len = expr::codegen_string_len(cg, key_val, "mk.len")

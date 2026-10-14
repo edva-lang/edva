@@ -228,7 +228,7 @@
       "exit_code": 0
     },
     "run": {
-      "stdout": "0\n5\n2\n4\n1\n3\n1\n",
+      "stdout": "0\n1\n4\n5\n3\n2\n1\n",
       "stderr": "",
       "exit_code": 0
     }
@@ -254,7 +254,7 @@
       "exit_code": 0
     },
     "run": {
-      "stdout": "0\n5\n2\n4\n1\n3\n999\n",
+      "stdout": "0\n1\n4\n5\n3\n2\n999\n",
       "stderr": "",
       "exit_code": 0
     }
