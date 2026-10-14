@@ -229,18 +229,18 @@ validate_primitive_cast = ctx, fn_name, tgt_uprim, src_ut =>
    is_tgt_str = is_uprim_str(tgt_uprim)
 
    src_ut
-      [Var _] --|
-      [Ram _]
+      [Var] --|
+      [Ram]
          is_tgt_flag
             | --|
             |
                unify::add_error(ctx, 3084,
                   "Cannot cast '" + unify::show_utype(ctx, src_ut) +
                   "' to '" + fn_name + "'")
-      [Rec _] check_addr_target(ctx, fn_name, is_tgt_ptr, src_ut)
-      [Array _] check_addr_target(ctx, fn_name, is_tgt_ptr, src_ut)
-      [Slice _] check_addr_target(ctx, fn_name, is_tgt_ptr, src_ut)
-      [Fn _] check_addr_target(ctx, fn_name, is_tgt_ptr, src_ut)
+      [Rec] check_addr_target(ctx, fn_name, is_tgt_ptr, src_ut)
+      [Array] check_addr_target(ctx, fn_name, is_tgt_ptr, src_ut)
+      [Slice] check_addr_target(ctx, fn_name, is_tgt_ptr, src_ut)
+      [Fn] check_addr_target(ctx, fn_name, is_tgt_ptr, src_ut)
       [Prim src_prim]
          is_src_int = is_uprim_int(src_prim)
          is_src_float = is_uprim_float(src_prim)
@@ -460,7 +460,7 @@ instantiate_unbound_fn: unify::Ctx, unify::UType => unify::UType
 instantiate_unbound_fn = ctx, ut =>
    c = unify::canon(ctx, ut)
    c
-      [Fn _]
+      [Fn]
          res = instantiate_unbound_step(ctx, VarInstMap(), c)
          res.ut
       | ut
@@ -563,16 +563,16 @@ utype_from_ti_env = env, ti =>
 is_bitfield_ti_env: type_env::TypeEnv, ast::TypeInfo => <>
 is_bitfield_ti_env = env, ti =>
    ti
-      [Bitfield _] <+>
+      [Bitfield] <+>
       [TypeVar tv]
          u_opt = type_env::lookup_user_type(env, tv)
-         u_opt | u => u.ti [Bitfield _] | <->
+         u_opt | u => u.ti [Bitfield] | <->
       | <->
 
 is_growable_ti_env: type_env::TypeEnv, ast::TypeInfo => <>
 is_growable_ti_env = env, ti =>
    ti
-      [Array _] <+>
+      [Array] <+>
       [TypeVar tv]
          u_opt = type_env::lookup_user_type(env, tv)
          u_opt | u => is_growable_ti_env(env, u.ti) | <->
@@ -625,7 +625,7 @@ annotate_type_align = env, vt, ti =>
          u_opt | u => u.ti | ti
       | ti
    eff_ti
-      [Bitfield _] 1
+      [Bitfield] 1
       [Rec r]
          r.5 | 1 | ptr_al
       |
@@ -693,9 +693,9 @@ annotate_type_size = env, vt, ti =>
                               0, 1)
                            sz < min_sz | min_sz | sz
       [Array a] annotate_type_size(env, a.0, a.1) * a.2
-      [Map _] min_sz
-      [Fn _] min_sz
-      [Enum _] min_sz
+      [Map] min_sz
+      [Fn] min_sz
+      [Enum] min_sz
       |
          vt
             [I8, U8, Flag] 1
@@ -870,7 +870,7 @@ is_builder_append_rec = ctx, fields, i, n =>
       |
          fld = fields(i) | _ | unify::UField(("", unify::UType(None)))
          c_fld = unify::canon(ctx, fld.ut)
-         ok = c_fld [Prim pr] is_builder_append_prim(pr) | (c_fld [Var _])
+         ok = c_fld [Prim pr] is_builder_append_prim(pr) | (c_fld [Var])
          ok
             | is_builder_append_rec(ctx, fields, i + 1, n)
             | <->
@@ -1273,7 +1273,7 @@ annotate_expr = ctx, env, expr =>
                ti0 = unify::type_info_from_utype(
                   ctx, b.ut)
                keep_b_ti = b.ti [TypeVar tv] tv != "" |
-                  (b.ti [Bitfield _] <+> |
+                  (b.ti [Bitfield] <+> |
                   (b.ti [Rec r] r.5 | <->))
                ti = keep_b_ti | b.ti | ti0
                lay = layout::compute_layout(
@@ -1375,10 +1375,10 @@ annotate_expr = ctx, env, expr =>
          b.0
             [Bind]
                pos_body' = b.2
-               is_fn = pos_body' [Fn _]
+               is_fn = pos_body' [Fn]
                !is_fn
                   |
-                     is_var = pos_body' [Var _]
+                     is_var = pos_body' [Var]
                      fn_n = is_var | (pos_body' [Var v] v | "") | ""
                      fn_t = is_var | ast::Expr(Var, "") | pos_body'
                      args = ast::Exprs()
@@ -1390,7 +1390,7 @@ annotate_expr = ctx, env, expr =>
                   pos_body'))
                lhs_te = annotate_expr(ctx, env, b.1)
                c_lhs = unify::canon(ctx, lhs_te.ut)
-               lhs_is_ram = c_lhs [Ram _]
+               lhs_is_ram = c_lhs [Ram]
                !lhs_is_ram
                   |
                      unify::add_error(ctx, 3091,
@@ -1416,7 +1416,7 @@ annotate_expr = ctx, env, expr =>
                   branches)))
                ch_te = annotate_expr(ctx, env, ch_expr)
                c_res = unify::canon(ctx, ch_te.ut)
-               is_ram_res = c_res [Ram _]
+               is_ram_res = c_res [Ram]
                !is_ram_res
                   |
                      unify::add_error(ctx, 3091,
@@ -1508,7 +1508,7 @@ annotate_expr = ctx, env, expr =>
                   | type_env::bind_local(env, name, decl_ut, declared_ti,
                      is_mut)
                c_decl = unify::canon(ctx, decl_ut)
-               is_fn = c_decl [Fn _]
+               is_fn = c_decl [Fn]
                is_bf = is_bitfield_ti_env(env, declared_ti)
                is_growable = is_growable_ti_env(env, declared_ti)
                is_bf || is_growable
@@ -1629,7 +1629,7 @@ annotate_expr = ctx, env, expr =>
                                                    ok_rhs' =
                                                       is_builder_append_rec(ctx,
                                                          r, 0, ?r)
-                                                [Var _]
+                                                [Var]
                                                    ok_rhs' = <+>
                                              !ok_rhs'
                                                 |
@@ -1652,7 +1652,7 @@ annotate_expr = ctx, env, expr =>
                                                 "Type mismatch in array " +
                                                 "append to: " + name)
                                     |
-                                       is_var = c_tb [Var _]
+                                       is_var = c_tb [Var]
                                        !is_var
                                           |
                                              unify::add_error(ctx, 3084,
@@ -1663,8 +1663,8 @@ annotate_expr = ctx, env, expr =>
                                  c_tb
                                     [Prim p_bld]
                                        is_bld' = p_bld [Builder]
-                                 is_fn_fe = val_expr [Fn _]
-                                 is_tb_fn = c_tb [Fn _]
+                                 is_fn_fe = val_expr [Fn]
+                                 is_tb_fn = c_tb [Fn]
                                  is_both = is_fn_fe && is_tb_fn
                                  c_rhs_u = unify::canon(ctx, rhs'.ut)
                                  is_rhs_unit = c_rhs_u [Prim p_u] (p_u [Unit]) | <->
@@ -2096,7 +2096,7 @@ annotate_expr = ctx, env, expr =>
             res_ut, res_ti, res_lay, 0, 0)
       [NamedArg na]
          annotate_expr(ctx, env, na.val)
-      [FastMathPragma _]
+      [FastMathPragma]
          tast::mk_lit_unit(0, 0)
       [SwizzlePragma mode]
          env.swizzle_mode = mode
@@ -2202,7 +2202,7 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
                   [Builder, Str] unify::prim_rawptr()
                   [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Flag]
                      operand_expr
-                        [Var _]
+                        [Var]
                            !cur_is_call_arg
                               |
                                  unify::add_error(ctx, 3078,
@@ -2215,11 +2215,11 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
                      unify::add_error(ctx, 3078,
                         "Address operator '&' cannot be applied to '" + unify::show_utype(ctx, t) + "\.")
                      unify::prim_rawptr()
-            [Rec _] unify::prim_rawptr()
-            [Array _] unify::prim_rawptr()
-            [Slice _] unify::prim_rawptr()
-            [Fn _] unify::prim_rawptr()
-            [Var _] unify::prim_rawptr()
+            [Rec] unify::prim_rawptr()
+            [Array] unify::prim_rawptr()
+            [Slice] unify::prim_rawptr()
+            [Fn] unify::prim_rawptr()
+            [Var] unify::prim_rawptr()
             |
                unify::add_error(ctx, 3078,
                   "Address operator '&' cannot be applied to '" + unify::show_utype(ctx, t) + "\.")
@@ -2250,7 +2250,7 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
                   |
                      unify::add_error(ctx, 3008, diag::E3008_not_invalid_type!)
                      unify::prim_flag()
-            [Var _]
+            [Var]
                unify::fresh_var(ctx)
             |
                unify::add_error(ctx, 3008, diag::E3008_not_invalid_type!)
@@ -2364,7 +2364,7 @@ ut_has_fn: unify::Ctx, unify::UType, ast::Names => <>
 ut_has_fn = ctx, ut, visited =>
    c = unify::canon(ctx, ut)
    c
-      [Fn _] <+>
+      [Fn] <+>
       [Rec flds] rec_fields_has_fn(ctx, flds, 0, ?flds, visited)
       [Array a] ut_has_fn(ctx, a.elem, visited)
       [Slice s] ut_has_fn(ctx, s, visited)
@@ -2688,15 +2688,15 @@ unify_apply = ctx, fn_ut, arg_ut =>
                unify::unify(ctx, p0, arg_ut)
                ret_ut' = f.ret
             | ret_ut' = f.ret
-      [Prim _]
+      [Prim]
          ret_ut' = fn_ut
-      [Ram _]
+      [Ram]
          unify::unify(ctx, fn_ut, arg_ut)
          ret_ut' = fn_ut
-      [Enum _]
+      [Enum]
          unify::unify(ctx, fn_ut, arg_ut)
          ret_ut' = fn_ut
-      [Rec _]
+      [Rec]
          unify::unify(ctx, fn_ut, arg_ut)
          ret_ut' = fn_ut
       |
@@ -2823,7 +2823,7 @@ unify_logical = ctx, is_and, t1, t2 =>
                                  t1
                         |
                            c2
-                              [Ram _]
+                              [Ram]
                                  err_ram_nonram(ctx)
                                  t2
                               | unify::prim_flag()
@@ -2901,8 +2901,8 @@ unify_shift = ctx, t1, t2 =>
             |
                c1_pre = unify::canon(ctx, t1)
                c2_pre = unify::canon(ctx, t2)
-               is_v1 = c1_pre [Var _]
-               is_v2 = c2_pre [Var _]
+               is_v1 = c1_pre [Var]
+               is_v2 = c2_pre [Var]
                is_v1 || is_v2
                   |
                      int1_pre = is_integerish_ut(ctx, c1_pre)
@@ -2945,7 +2945,7 @@ annotate_block = ctx, env, exprs, is_disc =>
    tast::mk_typed_block(tes, block_ut, ti, lay, 0, 0)
 
 is_range_expr: ast::Expr => <>
-is_range_expr = e => e [Range _]
+is_range_expr = e => e [Range]
 
 find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
@@ -3033,10 +3033,10 @@ compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
          c0 = unify::canon(ctx, a0.ut)
          c1 = unify::canon(ctx, a1.ut)
          c0
-            [Rec _] a0.ut
+            [Rec] a0.ut
             |
                c1
-                  [Rec _] a1.ut
+                  [Rec] a1.ut
                   |
                      unify::unify(ctx, a0.ut, a1.ut)
                      a0.ut
@@ -3045,13 +3045,13 @@ compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
          c1 = unify::canon(ctx, a1.ut)
          c2 = unify::canon(ctx, a2.ut)
          c0
-            [Rec _] a0.ut
+            [Rec] a0.ut
             |
                c1
-                  [Rec _] a1.ut
+                  [Rec] a1.ut
                   |
                      c2
-                        [Rec _] a2.ut
+                        [Rec] a2.ut
                         | a0.ut
       | a0.ut
 
@@ -3258,8 +3258,8 @@ find_record_ctor_field_expr = args, fld, j, nf =>
          a0_first = ?args > 0
             | (args(0) | _ | ast::Expr(Int, 0))
             | ast::Expr(Int, 0)
-         a0_is_rec = a0_first [Record _]
-         fld_is_rec = fld.rec_type [Rec _]
+         a0_is_rec = a0_first [Record]
+         fld_is_rec = fld.rec_type [Rec]
          is_tuple_arg = ?args == 1 &&
             (nf > 1 || (a0_is_rec && !fld_is_rec))
          pos_res' = <-->
@@ -3485,7 +3485,7 @@ annotate_call_normal = ctx, env, ce =>
                   | b =>
                      c_ut = unify::canon(ctx, b.ut)
                      c_ut
-                        [Fn _]
+                        [Fn]
                            fn_ut' = resolve_fn_ut(ctx, env, ce.fn_name, b.ut)
                         [Prim p]
                            p
@@ -3557,7 +3557,7 @@ annotate_call_normal = ctx, env, ce =>
                            fn_ut' = unify::fresh_var(ctx)
             |
                tgt_expr = has_dot | dotted_to_expr(ce.fn_name) | ce.fn_target
-               is_lit_rec = tgt_expr [Record _]
+               is_lit_rec = tgt_expr [Record]
                target_te = annotate_expr(ctx, env, tgt_expr)
                target_val' = <+ target_te +>
                c_tgt = unify::canon(ctx, target_te.ut)
@@ -3621,7 +3621,7 @@ annotate_call_normal = ctx, env, ce =>
                [Var v]
                   c = unify::canon(ctx, ta.ut)
                   c
-                     [Rec _]
+                     [Rec]
                         full = type_env::init_is_fully_init(env, v, c)
                         !full
                            |
@@ -3645,7 +3645,7 @@ annotate_call_normal = ctx, env, ce =>
             |
                ret_ut = unify::fresh_var(ctx)
                c_fn = unify::canon(ctx, fn_ut')
-               is_fn_var = c_fn [Var _]
+               is_fn_var = c_fn [Var]
                is_fn_var
                   | unify::add_call_constraint(ctx, fn_ut', arg_uts, ret_ut)
                   |
@@ -3801,10 +3801,10 @@ choice_check_ram_np = ctx, tb_list =>
 choice_branch_is_constant: ast::Expr => <>
 choice_branch_is_constant = e =>
    e
-      [Int _] <+>
-      [Float _] <+>
-      [Str _] <+>
-      [Rune _] <+>
+      [Int] <+>
+      [Float] <+>
+      [Str] <+>
+      [Rune] <+>
       [Variant v] ?v.args == 0
       [Block b]
          ?b.exprs == 1
@@ -3945,7 +3945,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                   is_fn_bnd = bnd_opt
                      | b =>
                         cb = unify::canon(ctx, b.ut)
-                        cb [Fn _]
+                        cb [Fn]
                      | <->
                   gen_opt = is_var_bare
                      | type_env::lookup_generic(env, vname)
@@ -4150,7 +4150,7 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
                            ok_rhs' = is_builder_append_prim(pr)
                         [Rec r]
                            ok_rhs' = is_builder_append_rec(ctx, r, 0, ?r)
-                        [Var _]
+                        [Var]
                            ok_rhs' = <+>
                      !ok_rhs'
                         |
@@ -4777,7 +4777,7 @@ refresh_map_pairs = ctx, pairs =>
 refresh_typed_expr = ctx, te =>
    c_ut = unify::canon(ctx, te.ut)
    is_named_ti = te.ti [TypeVar tv] tv != "" | <->
-   is_bf_ti = te.ti [Bitfield _]
+   is_bf_ti = te.ti [Bitfield]
    is_packed_ti = te.ti [Rec r] r.5 | <->
    keep_ti = is_named_ti || is_bf_ti || is_packed_ti
    new_ti = keep_ti
@@ -4908,7 +4908,7 @@ elaborate_program_with_ctx = exprs =>
          [TypeDecl td0]
             td0_mod = type_env::decl_module(td0.name, 0)
             type_env::set_current_module(env, td0_mod)
-            is_enum0 = td0.type_info [Enum _]
+            is_enum0 = td0.type_info [Enum]
             init_ut = is_enum0
                |
                   unify::UType(Enum, unify::UEnum((td0.name,
@@ -4981,7 +4981,7 @@ elaborate_program_with_ctx = exprs =>
                            | type_env::bind_global(env, a.0, decl_ut, a.8)
                            | type_env::bind_local(env, a.0, decl_ut, a.8, a.1)
                         c_decl = unify::canon(ctx, decl_ut)
-                        is_fn = c_decl [Fn _]
+                        is_fn = c_decl [Fn]
                         is_fn && a.0 != "" | declared_fns += a.0
                         is_bf = is_bitfield_ti_env(env, a.8)
                         is_growable = is_growable_ti_env(env, a.8)
@@ -5097,7 +5097,7 @@ elaborate_program_with_ctx = exprs =>
             env.discard_result = <+>
             te = annotate_expr(ctx, env, e_stmt)
             solve_unconstrained_rams(ctx, te.ut)
-            te.kind [UserDiag _]
+            te.kind [UserDiag]
                | unify::unify(ctx, te.ut, unify::prim_unit())
             ground_ok = unify::is_ground(ctx, te.ut)
             !ground_ok

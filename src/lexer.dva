@@ -1441,7 +1441,7 @@ scan_heredoc = lx, start, start_line, start_col =>
                                  diag::E1017_heredoc_under_indented!)
                               new_s = s(margin..(?s))
                               assembled += HeredocPart(Text, new_s)
-                           [Expr _]
+                           [Expr]
                               margin > 0 | fail(1017, line.line_num, 1,
                                  diag::E1017_heredoc_under_indented!)
                               assembled += p0
@@ -1456,7 +1456,7 @@ scan_heredoc = lx, start, start_line, start_col =>
    expr_count' = 0
    0..?assembled @ k =>
       assembled(k)!!
-         [Expr _] expr_count' = expr_count' + 1
+         [Expr] expr_count' = expr_count' + 1
 
    expr_count' == 0
       |
@@ -1476,7 +1476,7 @@ scan_heredoc = lx, start, start_line, start_col =>
                [Text s]
                   text_buf += s
                   has_text' = <+>
-               [Expr _]
+               [Expr]
                   has_text'
                      |
                         merged += HeredocPart(Text, +text_buf)
@@ -1491,7 +1491,7 @@ scan_heredoc = lx, start, start_line, start_col =>
             part
                [Text s]
                   (?s > 0 || ?merged == 1) | active += part
-               [Expr _]
+               [Expr]
                   active += part
 
          qu = lx.queue

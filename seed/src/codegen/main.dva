@@ -1061,7 +1061,7 @@ codegen_eval_array_index: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_array_index = cg, t =>
    av = t.args(0)!!
    av
-      [Range _]
+      [Range]
          codegen_eval_array_range(cg, t)
       |
          saved_discard = cg.discard_result
@@ -1143,7 +1143,7 @@ codegen_eval_evaluated_array_access: types::Cg, ast::CallExpr,
 codegen_eval_evaluated_array_access = cg, t, aval =>
    av = t.args(0)!!
    av
-      [Range _]
+      [Range]
          codegen_eval_array_view_base(cg, t, aval)
       |
          saved_discard = cg.discard_result
@@ -1204,7 +1204,7 @@ slice_len = cg, s, name =>
 // read.
 slice_or_range: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 slice_or_range = cg, t =>
-   arg_is_range = t.args(0)!! [Range _]
+   arg_is_range = t.args(0)!! [Range]
    arg_is_range
       | codegen_eval_array_range(cg, t)
       | codegen_eval_slice_index(cg, t)
@@ -1232,7 +1232,7 @@ codegen_eval_base_rec_access: types::Cg, ast::CallExpr, Addr, Addr,
    ast::VTypes => (Addr, ast::ValueType)
 codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
    arg = t.args(0)!!
-   arg_is_range = arg [Range _]
+   arg_is_range = arg [Range]
    arg_is_range
       |
          i64t = LLVMInt64Type!
@@ -1335,7 +1335,7 @@ codegen_eval_evaluated_slice_access = cg, t, base_ptr =>
          slot = LLVMBuildAlloca(cg.builder, cg.slice_t, "sl.base.slot")
          LLVMBuildStore(cg.builder, sv', slot)
          sv' = slot
-   arg_is_range = arg [Range _]
+   arg_is_range = arg [Range]
    arg_is_range
       |
          rng = range_arg_of(t)
@@ -1881,8 +1881,8 @@ thread_ret_typedef = cg, rt, ret_ti, fname =>
    tname' = ret_ti [TypeVar tn] tn | ""
    tname' == "" && (fname != "") && types::has_type_name(cg, "#ret_" + fname)
       | tname' = "#ret_" + fname
-   is_ram = ret_ti [Ram _]
-   is_rec = ret_ti [Rec _]
+   is_ram = ret_ti [Ram]
+   is_rec = ret_ti [Rec]
    is_ram_rec = is_ram || is_rec
    tname' == "" && (fname != "") && is_ram_rec
       |
@@ -2608,7 +2608,7 @@ codegen_typed_eval = cg, te =>
                      bname = is_qual | v.0(b_idx..?v.0) | v.0
                      mti0 = is_qual | types::typedef_ti(cg, tname) |
                         ast::TypeInfo(Prim, ast::ValueType(Unknown))
-                     has_mti0 = mti0 [Enum _]
+                     has_mti0 = mti0 [Enum]
                      mti = (!has_mti0 && is_qual && cg.current_module != "")
                         | types::typedef_ti(cg, cg.current_module + "::" + tname)
                         | mti0
@@ -2869,7 +2869,7 @@ codegen_typed_eval = cg, te =>
       [Assign a]
          !cg.in_fn && cg.opts.is_module && !types::name_is_in_current_module(cg, a.0)
             |
-               is_lam = a.5.kind [Lambda _]
+               is_lam = a.5.kind [Lambda]
                !is_lam && types::is_external_module_name(cg, a.0)
                   | stmt::declare_external_var(cg, a.0, a.5.ti)
                (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
@@ -2914,7 +2914,7 @@ codegen_typed_eval = cg, te =>
          bare_lbl = types::decl_bare_name(lbl, 0)
          mod_name = types::decl_module(lbl, 0)
          td_ti = mod_name != "" | types::typedef_ti(cg, mod_name) |
-            (te.ti [Enum _] te.ti | types::typedef_ti(cg, te.ti [TypeVar tv] tv | ""))
+            (te.ti [Enum] te.ti | types::typedef_ti(cg, te.ti [TypeVar tv] tv | ""))
          lbl_info = match::enum_slots_for_label(cg, bare_lbl)
          slots = td_ti [Enum s] s | lbl_info.1
          tname = mod_name != "" | mod_name | (te.ti [TypeVar tv] tv | lbl_info.0)

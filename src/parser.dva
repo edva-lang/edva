@@ -691,7 +691,7 @@ atom_binding_module_var = p, target =>
 expr_is_lvalue: ast::Expr => <>
 expr_is_lvalue = e =>
    e
-      [Var _] <+>
+      [Var] <+>
       [Member m] expr_is_lvalue(m.target)
       | <->
 
@@ -970,14 +970,14 @@ mark_export = p, e, alias =>
             | <-->
       [Assign t]
          t.5
-            [Fn _]
+            [Fn]
                entry = alias != "" | (t.0 + "=" + alias) | t.0
                p.exports += entry
                add_public_name(p, t.0)
                <+ e +>
             |
                t.8
-                  [Fn _]
+                  [Fn]
                      entry = alias != "" | (t.0 + "=" + alias) | t.0
                      p.exports += entry
                      add_public_name(p, t.0)
@@ -1787,9 +1787,9 @@ parse_trailing_block_expr = p, lhs =>
    bk
       | be =>
          be
-            [Fn _]
+            [Fn]
                <+ ast::Expr(Bin, (ast::BinaryOp(Apply), lhs, be)) +>
-            [Record _]
+            [Record]
                <+ ast::Expr(Bin, (ast::BinaryOp(Apply), lhs, be)) +>
             [Block b]
                n_exprs = ?b.exprs
@@ -1797,7 +1797,7 @@ parse_trailing_block_expr = p, lhs =>
                   |
                      first_e = b.exprs(0) | _ | ast::Expr(Int, 0)
                      first_e
-                        [Fn _]
+                        [Fn]
                            <+ ast::Expr(Bin, (ast::BinaryOp(Apply),
                               lhs, first_e)) +>
                         |
@@ -1917,7 +1917,7 @@ has_free_underscore = e =>
       [TypeCast t] has_free_underscore(t.expr)
       [Copy e] has_free_underscore(e)
       [BuilderCreate e] has_free_underscore(e)
-      [ArrayCreate _] <->
+      [ArrayCreate] <->
       [CompileTime t] has_free_underscore(t.expr)
       [Spawn t]
          has_free_underscore(t.call.fn_target) ||
@@ -3042,11 +3042,11 @@ ram_ti_vt = ti =>
 type_info_value_type: ast::TypeInfo => ast::ValueType
 type_info_value_type = ti =>
    ti
-      [Rec _] ast::ValueType(Record)
-      [Ram _] ram_ti_vt(ti)
-      [Enum _] ast::ValueType(Enum)
-      [Array _] ast::ValueType(Array)
-      [Map _] ast::ValueType(Map)
+      [Rec] ast::ValueType(Record)
+      [Ram] ram_ti_vt(ti)
+      [Enum] ast::ValueType(Enum)
+      [Array] ast::ValueType(Array)
+      [Map] ast::ValueType(Map)
       [Prim vt] vt
       | ast::ValueType(Record)
 
@@ -3064,7 +3064,7 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
          tv == name
             | arg_ti
             | ti
-      [Prim _] ti
+      [Prim] ti
       [Rec r]
          new_fields = ast::FieldTypes()
          ?r.0 @ i =>
@@ -3182,7 +3182,7 @@ parse_named_type_valid = p, tok, name =>
          lt
             | ti =>
                is_lp = p.curr.kind [LParen]
-               is_gen = ti [Fn _]
+               is_gen = ti [Fn]
                is_lp && is_gen
                   | parse_type_gen_call(p, name, ti)
                   |
@@ -4504,9 +4504,15 @@ parse_pattern = p =>
                            sub = parse_pattern(p)
                            sub
                               | s =>
-                                 subs = ast::Patterns()
-                                 subs += s
-                                 <+ pat_variant(tag, subs) +>
+                                 pr = pat_rec(s)
+                                 pr.kind
+                                    [Wildcard]
+                                       parser_error(p, 2109, diag::E2109_disallowed_variant_wildcard(tag))
+                                       <+ pat_variant(tag, ast::Patterns()) +>
+                                    |
+                                       subs = ast::Patterns()
+                                       subs += s
+                                       <+ pat_variant(tag, subs) +>
                               | <-->
                         |
                            <+ pat_variant(tag, ast::Patterns()) +>
@@ -4782,7 +4788,7 @@ desugar_inner_pattern_group = p, target, inner_pbrs, fallback_expr =>
 desugar_deep_choice: Parser, ast::Expr, (ParsedBranch){} => ast::Expr
 desugar_deep_choice = p, lhs, pbrs =>
    n = ?pbrs
-   is_var = lhs [Var _]
+   is_var = lhs [Var]
    s_name = is_var | "" | fresh_dp_var(p)
    scrut = is_var | lhs | ast::Expr(Var, s_name)
 
@@ -5762,7 +5768,7 @@ type_atom_name = ti, tok_text =>
 ti_is_packed: ast::TypeInfo => <>
 ti_is_packed = ti =>
    ti
-      [Bitfield _] <+>
+      [Bitfield] <+>
       [Rec r] r.5
       | <->
 
@@ -6128,7 +6134,7 @@ parse_named_assign_g = p, name, is_mut, is_compound, is_global =>
                   | <-->
 
 expr_is_string_literal: ast::Expr => <>
-expr_is_string_literal = e => e [Str _]
+expr_is_string_literal = e => e [Str]
 
 // "name ::= rhs" — global mutation; the RHS parses at the addition tier so a
 // following '|' choice wraps the whole write.

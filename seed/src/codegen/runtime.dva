@@ -885,7 +885,7 @@ codegen_emit_forward: types::Cg, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, 
 codegen_emit_forward = cg, t =>
    codegen_forward_registry(cg, t)
    ti = forward_type_info(cg, t)
-   is_arr_anno = ti [Array _]
+   is_arr_anno = ti [Array]
    is_arr_anno
       |
          types::var_slot(cg, t.0)
@@ -1050,7 +1050,7 @@ codegen_forward_registry = cg, t =>
             | types::llvm_type_of_vt(vt')
    is_ct_sig = t.7(..4) == "@ct0"
    is_sig = t.7(..5) == "@sig0"
-   is_fn_ti = ti [Fn _]
+   is_fn_ti = ti [Fn]
    is_fn_sig = is_fn_ti || is_ct_sig || is_sig
    !is_fn_sig && string_has_double_colon(t.7, 0) && !types::has_type_name(cg, t.7)
       | types::init_error(cg, "E3120", "Unresolved type name '" + t.7 + "'", 0, 0)
@@ -1285,37 +1285,37 @@ codegen_check_binding_valid = cg, t =>
 // Whether an Assign's LHS is a key-access write ("e ^ 'a' = v" — a map
 // element store, not a binding reassign).
 lhs_is_keyaccess: (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => <>
-lhs_is_keyaccess = t => t.6 [KeyAccess _]
+lhs_is_keyaccess = t => t.6 [KeyAccess]
 
 lhs_is_rawmemory: (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => <>
-lhs_is_rawmemory = t => t.6 [RawMemory _]
+lhs_is_rawmemory = t => t.6 [RawMemory]
 
 lhs_is_call: (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => <>
-lhs_is_call = t => t.6 [Call _]
+lhs_is_call = t => t.6 [Call]
 
 expr_kind_str: ast::Expr => String
 expr_kind_str = e =>
    e
-      [Int _] "Int"
-      [Rune _] "Rune"
-      [Float _] "Float"
-      [Str _] "Str"
+      [Int] "Int"
+      [Rune] "Rune"
+      [Float] "Float"
+      [Str] "Str"
       [Var v] "Var(" + v + ")"
-      [Bin _] "Bin"
-      [Unary _] "Unary"
-      [Call _] "Call"
-      [Block _] "Block"
-      [Assign _] "Assign"
-      [Choice _] "Choice"
-      [Cycle _] "Cycle"
-      [Fn _] "Fn"
-      [Member _] "Member"
-      [Record _] "Record"
+      [Bin] "Bin"
+      [Unary] "Unary"
+      [Call] "Call"
+      [Block] "Block"
+      [Assign] "Assign"
+      [Choice] "Choice"
+      [Cycle] "Cycle"
+      [Fn] "Fn"
+      [Member] "Member"
+      [Record] "Record"
       | "Other"
 
 codegen_emit_plain_assign: types::Cg, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 codegen_emit_plain_assign = cg, t =>
-   is_fn_decl = !cg.in_fn && (t.5 [Fn _])
+   is_fn_decl = !cg.in_fn && (t.5 [Fn])
    is_fn_decl
       |
          f = t.5 [Fn fe] fe | ast::FnExpr((ast::Names(), ast::Names(),
@@ -1435,7 +1435,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    final_dt = use_prior | types::var_dtype(cg, t.0) | dtype
    cg.vars += types::CgVar((t.0, ev.1, is_heap, final_dt, final_rm0_opt, final_rm1,
       <+ slot +>, is_local, <->, cg.last_fvts, <-->))
-   is_rec_expr = t.5 [Record _]
+   is_rec_expr = t.5 [Record]
    is_part = !fresh_local | main::var_partial(cg, t.0) | <->
    is_whole = is_composite_vt(ev.1) | <+> | (is_rec_expr | <+> | is_part)
    is_whole | types::init_mark_whole(cg, t.0)
@@ -1538,10 +1538,10 @@ codegen_check_rebind_type = cg, name, rhs_vt, is_gmut, rhs_expr =>
    !(cg.in_fn && !is_gmut && !types::has_local_var(cg, name))
       |
          target_ti = expr::var_ti(cg, name)
-         target_ti [Ram _]
+         target_ti [Ram]
             |
                rhs_ram_ti = expr::codegen_ram_type_of_expr(cg, rhs_expr)
-               rhs_ram_ti [Ram _]
+               rhs_ram_ti [Ram]
                   |
                      !expr::ram_shape_compatible(cg, target_ti, rhs_ram_ti)
                         |
@@ -1581,11 +1581,11 @@ vtypes_same = left, right, at =>
 
 // Is an Assign's LHS a member write? ("r.f = v" / "r.0 = v")
 lhs_is_member: (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => <>
-lhs_is_member = t => t.6 [Member _]
+lhs_is_member = t => t.6 [Member]
 
 // Is an Assign's RHS a function definition? ("f = x => body")
 rhs_is_fn: (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => <>
-rhs_is_fn = t => t.5 [Fn _]
+rhs_is_fn = t => t.5 [Fn]
 
 member_root_name: ast::Expr => String
 member_root_name = e =>
@@ -1634,7 +1634,7 @@ member_assign_bitfield: types::Cg, String, ast::MemberExpr,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo),
    ast::BitfieldInfo => ()
 member_assign_bitfield = cg, root_name, m, t, bfi =>
-   is_var = m.target [Var _]
+   is_var = m.target [Var]
    !is_var && main::var_partial(cg, root_name) && !types::alloc_rec_has(root_name)
       |
          fvs_sz = ?match::var_fvts(cg, root_name) * 8
@@ -1715,7 +1715,7 @@ member_assign_record = cg, root_name, m, t =>
          types::alloc_rec_add(root_name)
    main::var_partial(cg, root_name) | types::init_mark_written(cg, root_name + "." + types::member_fpath(m))
    target_ev = expr::codegen_eval(cg, m.target)
-   is_var = m.target [Var _]
+   is_var = m.target [Var]
    target_rt_opt = is_var
       | (types::var_rt(cg, root_name) | cg.last_rt)
       | cg.last_rt
@@ -2185,24 +2185,36 @@ codegen_map_create = cg, name =>
       LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.tombs.gep"))
    m
 
-// // FNV-1a of a String key via dva_hash_string(data, len), or Knuth/splitmix
-// multiplication for integer/pointer keys.
+// Mix 64-bit integer bits via SplitMix64 / Stafford variant 13 finalizer
+// so high bits propagate into low bits before power-of-two bucket masking.
+codegen_mix_int64: types::Cg, Addr => Addr
+codegen_mix_int64 = cg, k =>
+   i64t' = LLVMInt64Type!
+   s1 = LLVMBuildLShr(cg.builder, k, LLVMConstInt(i64t', 30, 0), "mix.s1")
+   x1 = LLVMBuildXor(cg.builder, k, s1, "mix.x1")
+   m1 = LLVMConstInt(i64t', 0 - 4658895280553007687, 0)
+   x2 = LLVMBuildMul(cg.builder, x1, m1, "mix.x2")
+   s2 = LLVMBuildLShr(cg.builder, x2, LLVMConstInt(i64t', 27, 0), "mix.s2")
+   x3 = LLVMBuildXor(cg.builder, x2, s2, "mix.x3")
+   m2 = LLVMConstInt(i64t', 0 - 7723503512211097109, 0)
+   x4 = LLVMBuildMul(cg.builder, x3, m2, "mix.x4")
+   s3 = LLVMBuildLShr(cg.builder, x4, LLVMConstInt(i64t', 31, 0), "mix.s3")
+   LLVMBuildXor(cg.builder, x4, s3, "mix.res")
+
+// Additive 64-bit FNV-1 variant of a String key via dva_hash_string(data, len), or SplitMix64
+// integer finalizer for integer/pointer keys.
 codegen_map_hash: types::Cg, Addr, ast::ValueType => Addr
 codegen_map_hash = cg, key_val, key_vt =>
    is_int = types::is_int_vt(key_vt)
    is_int
-      |
-         i64t' = LLVMInt64Type!
-         mix' = LLVMConstInt(i64t', 0 - 7046029254386353131, 0)
-         LLVMBuildMul(cg.builder, key_val, mix', "mk.hash")
+      | codegen_mix_int64(cg, key_val)
       |
          is_ptr = key_vt [RawPtr]
          is_ptr
             |
                i64t' = LLVMInt64Type!
-               mix' = LLVMConstInt(i64t', 0 - 7046029254386353131, 0)
                k = LLVMBuildPtrToInt(cg.builder, key_val, i64t', "mk.ptr")
-               LLVMBuildMul(cg.builder, k, mix', "mk.hash")
+               codegen_mix_int64(cg, k)
             |
                data = expr::codegen_string_data(cg, key_val, "mk.data")
                len = expr::codegen_string_len(cg, key_val, "mk.len")
@@ -2271,9 +2283,11 @@ codegen_map_key_equal = cg, slot, key_val, key_vt =>
                LLVMBuildICmp(cg.builder, 32, si, ki, "mk.eq")
             | codegen_map_string_key_equal(cg, slot, key_val)
 
-// Insert or rebind a key with an i64 value, without resizing.
-codegen_map_insert_raw: types::Cg, Addr, Addr, Addr, ast::ValueType => ()
-codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
+codegen_map_grow: types::Cg, Addr, ast::ValueType => ()
+
+// Insert or rebind a key with an i64 value, optionally checking growth if inserting a new key.
+codegen_map_insert_raw: types::Cg, Addr, Addr, Addr, ast::ValueType, Int => ()
+codegen_map_insert_raw = cg, m, key_val, val_val, key_vt, allow_grow =>
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    mt = map_struct_type(cg)
@@ -2340,6 +2354,29 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
    stmt::llvm_add_incoming1(cg, probe_phi, probe_next, next)
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, empty_bb)
+   allow_grow != 0
+      |
+         count_p0 = LLVMBuildStructGEP2(cg.builder, mt, m, 0, "m.grow.cnt.p")
+         count0 = LLVMBuildLoad2(cg.builder, i64t, count_p0, "m.grow.cnt")
+         tombs_p0 = LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.grow.tm.p")
+         cur_tombs0 = LLVMBuildLoad2(cg.builder, i64t, tombs_p0, "m.grow.tm")
+         occupied0 = LLVMBuildAdd(cg.builder, count0, cur_tombs0, "m.occupied")
+         lhs0 = LLVMBuildMul(cg.builder,
+            LLVMBuildAdd(cg.builder, occupied0, one, "m.c.plus"),
+            LLVMConstInt(i64t, 4, 0), "m.c.lhs")
+         rhs0 = LLVMBuildMul(cg.builder, mf.0,
+            LLVMConstInt(i64t, 3, 0), "m.c.rhs")
+         need0 = LLVMBuildICmp(cg.builder, 38, lhs0, rhs0, "m.need.grow")
+         grow_bb = LLVMAppendBasicBlock(cg.current_fn, "m.grow")
+         ins_bb = LLVMAppendBasicBlock(cg.current_fn, "m.ins.slot")
+         LLVMBuildCondBr(cg.builder, need0, grow_bb, ins_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, grow_bb)
+         codegen_map_grow(cg, m, key_vt)
+         codegen_map_insert_raw(cg, m, key_val, val_val, key_vt, 0)
+         LLVMBuildBr(cg.builder, done)
+
+         LLVMPositionBuilderAtEnd(cg.builder, ins_bb)
    use_tomb = LLVMBuildICmp(cg.builder, 33, tomb_phi, minus_one, "m.use.tomb")
    ins_idx = LLVMBuildSelect(cg.builder, use_tomb, tomb_phi, idx_phi,
       "m.ins.idx")
@@ -2366,7 +2403,6 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
 // Double capacity (or rebuild at same capacity if tombstones saturated) and reinsert
 // every occupied slot. The old arena buffers are intentionally retained; only the map
 // header is mutated to point at the new hash table, matching the native arena ownership model.
-codegen_map_grow: types::Cg, Addr, ast::ValueType => ()
 codegen_map_grow = cg, m, key_vt =>
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -2439,7 +2475,7 @@ codegen_map_grow = cg, m, key_vt =>
       | LLVMBuildLoad2(cg.builder, i64t, key_slot, "m.re.key")
       | LLVMBuildLoad2(cg.builder, i8p, key_slot, "m.re.key")
    val = LLVMBuildLoad2(cg.builder, i64t, val_slot, "m.re.val")
-   codegen_map_insert_raw(cg, m, key, val, key_vt)
+   codegen_map_insert_raw(cg, m, key, val, key_vt, 0)
    LLVMBuildBr(cg.builder, cont)
    LLVMPositionBuilderAtEnd(cg.builder, cont)
    next = LLVMBuildAdd(cg.builder, i, one, "m.re.i.next")
@@ -2447,33 +2483,26 @@ codegen_map_grow = cg, m, key_vt =>
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, done)
 
-// Grow/rebuild at occupancy load factor 0.75, then perform the normal probe/insert.
+codegen_map_pack_val: types::Cg, Addr, ast::ValueType => Addr
+codegen_map_pack_val = cg, v, vt =>
+   i64t = LLVMInt64Type!
+   types::is_ptrish_vt(vt)
+      | LLVMBuildPtrToInt(cg.builder, v, i64t, "m.wr.p2i")
+      |
+         types::is_float_vt(vt)
+            |
+               is_f32 = vt [F32]
+               is_f32
+                  |
+                     f32_i32 = LLVMBuildBitCast(cg.builder, v, LLVMInt32Type!, "m.wr.f2i32")
+                     LLVMBuildZExt(cg.builder, f32_i32, i64t, "m.wr.f2i64")
+                  | LLVMBuildBitCast(cg.builder, v, i64t, "m.wr.f2i")
+            | stmt::coerce_int(cg, v, i64t)
+
+// Insert a key-value pair, checking existing-key replacement before growing.
 codegen_map_insert: types::Cg, Addr, Addr, Addr, ast::ValueType => ()
 codegen_map_insert = cg, m, key_val, val_val, key_vt =>
-   i64t = LLVMInt64Type!
-   mt = map_struct_type(cg)
-   count = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, mt, m, 0, "m.count"), "m.count")
-   cap = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, mt, m, 1, "m.cap"), "m.cap")
-   tombs = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.tombs"), "m.tombs")
-   one = LLVMConstInt(i64t, 1, 0)
-   occupied = LLVMBuildAdd(cg.builder, count, tombs, "m.occupied")
-   lhs = LLVMBuildMul(cg.builder,
-      LLVMBuildAdd(cg.builder, occupied, one, "m.c.plus"),
-      LLVMConstInt(i64t, 4, 0), "m.c.lhs")
-   rhs = LLVMBuildMul(cg.builder, cap,
-      LLVMConstInt(i64t, 3, 0), "m.c.rhs")
-   need = LLVMBuildICmp(cg.builder, 38, lhs, rhs, "m.need.grow")
-   grow = LLVMAppendBasicBlock(cg.current_fn, "m.grow")
-   ins = LLVMAppendBasicBlock(cg.current_fn, "m.ins")
-   LLVMBuildCondBr(cg.builder, need, grow, ins)
-   LLVMPositionBuilderAtEnd(cg.builder, grow)
-   codegen_map_grow(cg, m, key_vt)
-   LLVMBuildBr(cg.builder, ins)
-   LLVMPositionBuilderAtEnd(cg.builder, ins)
-   codegen_map_insert_raw(cg, m, key_val, val_val, key_vt)
+   codegen_map_insert_raw(cg, m, key_val, val_val, key_vt, 1)
 
 // A lookup returns `< value | Error >`: it allocates one result union before
 // probing, skips tombstones, and writes either a boxed value or E4013 Error.
@@ -2548,7 +2577,19 @@ codegen_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
          types::gep1(cg, i8p, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
       | LLVMBuildLoad2(cg.builder, i64t,
          types::gep1(cg, i64t, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
-   main::codegen_array_box_payload(cg, result, val, val_vt)
+   val_unpacked = val_is_ptr
+      | val
+      |
+         types::is_float_vt(val_vt)
+            |
+               is_f32 = val_vt [F32]
+               is_f32
+                  |
+                     f_i32 = LLVMBuildTrunc(cg.builder, val, LLVMInt32Type!, "m.rd.f.i32")
+                     LLVMBuildBitCast(cg.builder, f_i32, LLVMFloatType!, "m.rd.f.flt")
+                  | LLVMBuildBitCast(cg.builder, val, LLVMDoubleType!, "m.rd.v.flt")
+            | val
+   main::codegen_array_box_payload(cg, result, val_unpacked, val_vt)
    LLVMBuildBr(cg.builder, done)
    LLVMPositionBuilderAtEnd(cg.builder, miss_bb)
    LLVMBuildStore(cg.builder, zero, tag_gep)

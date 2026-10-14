@@ -1,0 +1,4 @@
+// Disallow syntax [Foo _] (E2109), use [Foo] instead.
+#type Box < Item(Int), Empty >
+box = Box(Item, 3)
+kind = box [Item _] 1 | 0

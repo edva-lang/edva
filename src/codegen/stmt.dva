@@ -130,7 +130,7 @@ refs_name = e, name =>
          refs_name(esc.cycle, name) || refs_name(esc.branch, name)
       [RawMemory rm] refs_name(rm.addr, name)
       [BuilderCreate bc] refs_name(bc, name)
-      [ArrayCreate _] <->
+      [ArrayCreate] <->
       [Variant va] refs_name_exprs(va.args, name)
       [KeyAccess ka] refs_name(ka.target, name) || refs_name(ka.key, name)
       [Range r]
@@ -1566,7 +1566,7 @@ codegen_eval_cycle_body_cond: types::Cg, ast::Expr => (Addr, ast::ValueType)
 codegen_eval_cycle_body_cond = cg, bfn =>
    bfn
       [Fn f] expr::codegen_eval(cg, f.body)
-      [Block _] expr::codegen_eval(cg, bfn)
+      [Block] expr::codegen_eval(cg, bfn)
       |
          callee = expr::apply_callee_name(bfn)
          callee != ""
@@ -1580,7 +1580,7 @@ codegen_eval_cycle_body: types::Cg, ast::Expr => (Addr, ast::ValueType)
 codegen_eval_cycle_body = cg, bfn =>
    bfn
       [Fn f] expr::codegen_eval(cg, f.body)
-      [Block _] expr::codegen_eval(cg, bfn)
+      [Block] expr::codegen_eval(cg, bfn)
       |
          callee = expr::apply_callee_name(bfn)
          callee != ""
@@ -1818,7 +1818,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
 
 codegen_eval_cycle_valid: types::Cg, ast::CycleExpr => (Addr, ast::ValueType)
 codegen_eval_cycle_valid = cg, c =>
-   is_rng = c.iterable [Range _]
+   is_rng = c.iterable [Range]
    is_rng
       | codegen_eval_indexed_cycle(cg, c, <+>, <-->)
       |
@@ -1975,9 +1975,9 @@ param_vt_at = v, params, ptypes, i, n =>
 e_is_int: ast::Expr, ast::Names, ast::VTypes => <>
 e_is_int = e, params, ptypes =>
    e
-      [Int _] <+>
-      [Rune _] <+>
-      [SizeOf _] <+>
+      [Int] <+>
+      [Rune] <+>
+      [SizeOf] <+>
       [Var v] param_int(v, params, ptypes)
       [Unary u]
          u.0 [Length]
@@ -2021,14 +2021,14 @@ infer_ret: ast::Expr, ast::Names, ast::VTypes => ast::ValueType
 infer_ret = e, params, ptypes =>
    e
       [Int n] ast::ValueType(Int)
-      [SizeOf _] ast::ValueType(Int)
+      [SizeOf] ast::ValueType(Int)
       [Rune n] ast::ValueType(Rune)
       [Float f] ast::ValueType(Float)
       [Str s] ast::ValueType(Str)
       [Fn f] ast::ValueType(Fn)
-      [Record _] ast::ValueType(Record)
-      [BuilderCreate _] ast::ValueType(Builder)
-      [ArrayCreate _] ast::ValueType(Array)
+      [Record] ast::ValueType(Record)
+      [BuilderCreate] ast::ValueType(Builder)
+      [ArrayCreate] ast::ValueType(Array)
       [Var v] param_vt(v, params, ptypes)
       [Choice c]
          ct = types::ctfe_eval_type_choice_simple(c)
@@ -2213,9 +2213,9 @@ typedef_vt = cg, name, fallback =>
       |
          ti = types::typedef_ti(cg, name)
          ti
-            [Ram _] ast::ValueType(Ram)
-            [Enum _] ast::ValueType(Ram)
-            [Rec _] ast::ValueType(Record)
+            [Ram] ast::ValueType(Ram)
+            [Enum] ast::ValueType(Ram)
+            [Rec] ast::ValueType(Record)
             | fallback
       | fallback
 
@@ -2242,7 +2242,7 @@ fn_assign_type: types::Cg, ast::Exprs, ast::Expr, String, String,
    Int => ast::ValueType
 fn_assign_type = cg, stmts, rhs, name, dt, i =>
    rhs
-      [Fn _] ast::ValueType(Fn)
+      [Fn] ast::ValueType(Fn)
       |
          dt != "" && fn_has_signature(stmts, name, 0)
             | ast::ValueType(Fn)
@@ -2422,7 +2422,7 @@ fn_body_is_builder_at = stmts, v, i, n =>
 fn_stmt_is_builder: ast::Expr, String => <>
 fn_stmt_is_builder = e, v =>
    e
-      [Assign t] (t.0 == v) && (t.5 [BuilderCreate _] || t.7 == "Builder")
+      [Assign t] (t.0 == v) && (t.5 [BuilderCreate] || t.7 == "Builder")
       | <->
 
 fn_local_fn_ret: types::Cg, ast::Expr, String => ast::ValueType
@@ -2482,7 +2482,7 @@ fn_ret_call_override = cg, body, c, cur =>
       |
          fn_var_is_sl(cg, fname)
             |
-               ?c.args > 0 && (c.args(0)!! [Range _])
+               ?c.args > 0 && (c.args(0)!! [Range])
                   | ast::ValueType(Slice)
                   | ast::ValueType(Int)
             |
@@ -2555,7 +2555,7 @@ fn_ret_unary_override = cg, body, op, target, cur =>
                fn_body_is_builder(body, v)
                   | ast::ValueType(Str)
                   | ast::ValueType(Flag)
-            [BuilderCreate _] ast::ValueType(Str)
+            [BuilderCreate] ast::ValueType(Str)
             | ast::ValueType(Flag)
       [Unwrap]
          target
@@ -2577,11 +2577,11 @@ fn_ret_var_override_target: types::Cg, ast::Expr, ast::Expr,
    ast::ValueType => ast::ValueType
 fn_ret_var_override_target = cg, body, target, cur =>
    target
-      [Block _]
+      [Block]
          fn_ret_var_override_target(cg, body, fn_last_expr(target), cur)
-      [Record _] ast::ValueType(Record)
-      [BuilderCreate _] ast::ValueType(Builder)
-      [ArrayCreate _] ast::ValueType(Array)
+      [Record] ast::ValueType(Record)
+      [BuilderCreate] ast::ValueType(Builder)
+      [ArrayCreate] ast::ValueType(Array)
       [Choice c]
          ?c.branches > 0
             | fn_ret_choice_override(cg, body, c, cur)
@@ -2627,10 +2627,10 @@ fn_stmt_array_anno = cg, e, v =>
          t.0 == v
             |
                t.5
-                  [ArrayCreate _] <+>
+                  [ArrayCreate] <+>
                   |
                      is_fwd_anno(t)
-                        | typedef_is_array(cg, t.7) || (t.8 [Array _])
+                        | typedef_is_array(cg, t.7) || (t.8 [Array])
                         | <->
             | <->
       | <->
@@ -2679,7 +2679,7 @@ fn_body_array_dtype_at = stmts, v, i, n =>
                      | t.7
                      |
                         t.5
-                           [ArrayCreate _] "#arr_" + t.0
+                           [ArrayCreate] "#arr_" + t.0
                            | fn_body_array_dtype_at(stmts, v, i + 1, n)
                | fn_body_array_dtype_at(stmts, v, i + 1, n)
          | fn_body_array_dtype_at(stmts, v, i + 1, n)
@@ -2700,7 +2700,7 @@ is_fwd_anno = t => t.5 [Var vv] (vv == "<fwd>") | <->
 // Whether a '#type' name is a growable-array typedef.
 typedef_is_array: types::Cg, String => <>
 typedef_is_array = cg, name =>
-   types::typedef_ti(cg, name) [Array _]
+   types::typedef_ti(cg, name) [Array]
    
 // The last expression of a body (unwraps a trailing Block).
 fn_last_expr: ast::Expr => ast::Expr
@@ -2884,7 +2884,7 @@ param_is_heap_ram = cg, dtype =>
       |
          ti = types::typedef_ti(cg, dtype)
          ti
-            [Enum _] <+>
+            [Enum] <+>
             [Ram s] s.0.has_payload || s.1.has_payload
             | <->
       | <->
@@ -2897,7 +2897,7 @@ param_ll_type = cg, i8p, pdtype, pvt, has_rec, is_arr, is_sl, is_clo =>
       | types::llvm_type_of_vt(pvt)
 
 ti_is_array: ast::TypeInfo => <>
-ti_is_array = ti => ti [Array _]
+ti_is_array = ti => ti [Array]
 
 ti_is_slice: ast::TypeInfo => <>
 ti_is_slice = ti =>
@@ -3129,7 +3129,7 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
          sl_fvts = ast::VTypes()
          sl_elem_vt != ast::ValueType(Unknown) | sl_fvts += sl_elem_vt
          pr2 = is_sl | sl_fvts | (prec | p => p.2 | empty_fvts)
-         is_rec_ti = pti [Rec _]
+         is_rec_ti = pti [Rec]
          is_anon_param = pdtype' == "" && is_rec && is_rec_ti
          is_anon_param
             |
@@ -3140,7 +3140,7 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
                      prec_fnames = prec | p => p.1 | ast::Names()
                      runtime::add_type_rec(cg, param_tname', pti, prec_rt, prec_fnames)
                pdtype' = param_tname'
-         is_ram_ti = pti [Ram _]
+         is_ram_ti = pti [Ram]
          is_unboxed = types::g.is_typed_pipeline && types::is_unboxed_ram_ti(cg, pti)
          niche = types::g.is_typed_pipeline | types::is_niche_ram_ti(cg, pti) |
             (<->, <->, ast::ValueType(Unknown))
@@ -3153,7 +3153,7 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
                !types::has_type_name(cg, param_tname')
                   | runtime::add_type(cg, param_tname', pti)
                pdtype' = param_tname'
-         is_arr_ti = pti [Array _]
+         is_arr_ti = pti [Array]
          is_anon_arr = pdtype' == "" && is_arr_ti
          is_anon_arr
             |
@@ -3571,10 +3571,10 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
             | LLVMConstNull(ret_ll)
          !cg.error && !block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
    ret_ti_res = resolve_ti(cg, ret_ti)
-   ret_ti_res [Ram _]
+   ret_ti_res [Ram]
       |
          body_ram_ti = expr::codegen_ram_type_of_expr(cg, fd.body)
-         body_ram_ti [Ram _]
+         body_ram_ti [Ram]
             |
                !expr::ram_shape_compatible(cg, ret_ti_res, body_ram_ti)
                   |
@@ -3778,7 +3778,7 @@ compile_fn_lazy_force = cg, name, call_types =>
          ret_rm_1 = ret_rm | m => m.1 | ast::Names()
          ret_fvts = types::field_vts(cg, ret_ti)
          ret_dtype0 = ret_ti [TypeVar tname] tname | ""
-         is_rec_ret = ret_ti [Rec _]
+         is_rec_ret = ret_ti [Rec]
          is_anon_rec = ret_dtype0 == "" && is_rec_ret
          ret_dtype = is_anon_rec
             |
@@ -3818,7 +3818,7 @@ fn_has_signature_rev = stmts, name, at =>
          e = stmts(at)!!
          e
             [Assign t]
-               is_sig = (t.8 [Fn _]) || (marker_ct0_name(t.7) != "")
+               is_sig = (t.8 [Fn]) || (marker_ct0_name(t.7) != "")
                types::sig_name_matches(t.0, name) && is_sig
                   | <+>
                   | fn_has_signature_rev(stmts, name, at - 1)
@@ -4350,9 +4350,9 @@ codegen_scan_record_expr = cg, stmts, e =>
 is_rec_candidate: ast::Expr => Int
 is_rec_candidate = e =>
    e
-      [Call _] 1
-      [Record _] 1
-      [Var _] 1
+      [Call] 1
+      [Record] 1
+      [Var] 1
       | 0
 
 codegen_scan_record_args_of: types::Cg, ast::Exprs, ast::CallExpr, Int => ()
@@ -4467,7 +4467,7 @@ sig_ct0_name_rev = stmts, name, at =>
                               res' = fn_ct
                               -->
                            |
-                              t.8 [Fn _] -->
+                              t.8 [Fn] -->
    res'
 
 marker_ct0_name: String => String
@@ -5408,7 +5408,7 @@ infer_call_expr_type = cg, c =>
                                  vt
                                     [Str]
                                        is_range = ?c.args > 0 &&
-                                          (c.args(0) [Range _])
+                                          (c.args(0) [Range])
                                        is_range
                                           | (ast::ValueType(Str),
                                              ast::TypeInfo(Prim,
@@ -5622,7 +5622,7 @@ codegen_typed_eval_fwd = cg, name, ti =>
          types::init_mark_whole(cg, name)
    dt0 = ti [TypeVar tv] tv | ""
    dt' = dt0
-   ti [Array _]
+   ti [Array]
       |
          anon_dt = "#arr_" + name
          !types::has_type_name(cg, anon_dt) |
@@ -5637,8 +5637,8 @@ codegen_typed_eval_fwd = cg, name, ti =>
 tast_is_addr_arg_scoped: types::Cg, tast::TypedExpr, Int => <>
 tast_is_addr_arg_scoped = cg, arg, threshold =>
    arg.kind
-      [LitInt _] <->
-      [LitRune _] <->
+      [LitInt] <->
+      [LitRune] <->
       | tast_is_block_scoped_addr(cg, arg, threshold)
 
 tast_is_block_scoped_addr: types::Cg, tast::TypedExpr, Int => <>
@@ -5654,8 +5654,8 @@ tast_is_block_scoped_addr = cg, expr, threshold =>
       [Bin b]
          tast_is_block_scoped_addr(cg, b.1, threshold) ||
             tast_is_block_scoped_addr(cg, b.2, threshold)
-      [Block _] <+>
-      [RawMemory _] <+>
+      [Block] <+>
+      [RawMemory] <+>
       [Call c]
          c.0 == "Addr"
             | ?c.2 > 0
@@ -5698,7 +5698,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
          target_is_arr = target_vt [Array]
          target_is_bld = target_vt [Builder]
          is_coll_append = target_is_arr || target_is_bld
-         is_lam_def = !is_coll_append && (val.kind [Lambda _])
+         is_lam_def = !is_coll_append && (val.kind [Lambda])
          is_lam_def
             |
                rname = types::resolve_fn_name(cg, name)
@@ -5712,7 +5712,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                      lam = val.kind [Lambda l] l |
                         (ast::Names(), tast::mk_lit_unit(0, 0),
                            tast::TypedCaptures())
-                     fn_ti = ti [Fn _] ti | val.ti
+                     fn_ti = ti [Fn] ti | val.ti
                      codegen_typed_compile_fn(cg, name, lam.0, lam.1, fn_ti)
                cg.last_closure_fn = lr.1
                slot' = is_fresh
@@ -5747,7 +5747,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                         [Prim p]
                            p [Unknown, Unit] val.ti | ti
                         | ti
-                     is_sp = val.kind [Spawn _]
+                     is_sp = val.kind [Spawn]
                      i8p = LLVMPointerType(LLVMInt8Type!, 0)
                      llvm_ty = is_sp
                         | i8p
@@ -5790,7 +5790,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                     (ti [Rec r2] r2.0 | ast::FieldTypes())
                                  ?ti_r @ fi =>
                                     rec_fvs += types::vt_from_ti(ti_r(fi)!!.rec_type)
-                                 is_sp_var = val.kind [Spawn _]
+                                 is_sp_var = val.kind [Spawn]
                                  i1_ty = LLVMInt1Type!
                                  is_h_ram = types::is_ram_vt(ev.1) &&
                                     LLVMTypeOf(ev.0) != i1_ty
@@ -5852,12 +5852,12 @@ try_compile_typed_assign = cg, tname, val_e, ti, rname, fname =>
          is_match = tname != "" && (tname == rname || tname == fname ||
             types::resolve_fn_name(cg, tname) == rname ||
             types::decl_bare_name(tname, 0) == fname)
-         is_lam = val_e.kind [Lambda _]
+         is_lam = val_e.kind [Lambda]
          is_match && is_lam
             |
                lam = val_e.kind [Lambda l] l |
                   (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
-               fn_ti = ti [Fn _] ti | val_e.ti
+               fn_ti = ti [Fn] ti | val_e.ti
                codegen_typed_compile_fn(cg, tname, lam.0, lam.1, fn_ti)
                <+>
             | <->
@@ -6006,12 +6006,12 @@ codegen_typed_eval_cycle: types::Cg, tast::TypedExpr, tast::TypedExpr,
    <tast::TypedExpr|>, <>, ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_cycle = cg, iterable, body_fn, esc_opt, is_rune, ti =>
    is_flag = iterable.ti [Prim p] (p [Flag]) | <->
-   is_ram = iterable.ti [Ram _]
+   is_ram = iterable.ti [Ram]
    is_cond = is_flag || is_ram
    is_cond
       | codegen_typed_eval_condition_cycle(cg, iterable, body_fn, esc_opt, ti)
       |
-         is_map = iterable.ti [Map _]
+         is_map = iterable.ti [Map]
          is_map
             | codegen_typed_eval_map_cycle(cg, iterable, body_fn, esc_opt, ti)
             |
@@ -6780,7 +6780,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
                      real_ret_ti = ret_ti
                         [TypeVar tv] types::typedef_ti(cg, tv)
                         | ret_ti
-                     is_ram_ret = real_ret_ti [Ram _]
+                     is_ram_ret = real_ret_ti [Ram]
                      ret_coerced = is_ram_ret
                         |
                            ret_k = LLVMGetTypeKind(ret_ll)
@@ -6891,14 +6891,14 @@ codegen_typed_emit_stmt = cg, stmt =>
       [Binding b]
          cg.opts.is_module && !types::name_is_in_current_module(cg, b.0)
             |
-               is_lam = b.2.kind [Lambda _]
+               is_lam = b.2.kind [Lambda]
                !is_lam && types::is_external_module_name(cg, b.0)
                   | declare_external_var(cg, b.0, b.1)
             | codegen_typed_eval_assign(cg, b.0, b.3, <->, <->, <->, b.2, b.1)
       [GlobalBinding b]
          cg.opts.is_module && !types::name_is_in_current_module(cg, b.0)
             |
-               is_lam = b.2.kind [Lambda _]
+               is_lam = b.2.kind [Lambda]
                !is_lam && types::is_external_module_name(cg, b.0)
                   | declare_external_var(cg, b.0, b.1)
             | codegen_typed_eval_assign(cg, b.0, <->, <->, <+>, <->, b.2, b.1)

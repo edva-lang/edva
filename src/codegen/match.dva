@@ -129,7 +129,7 @@ codegen_emit_cmp_eval = cg, op, t =>
             | cg.last_type = ename
             |
                ti = types::typedef_ti(cg, types::resolve_type_name(cg, cg.last_type))
-               is_e = ti [Enum _]
+               is_e = ti [Enum]
                !is_e | cg.last_type = ""
    l_un = lr.1 [Unit]
    r_un = rr.1 [Unit]
@@ -165,7 +165,7 @@ cmp_order_op = op => op [Gt, Lt, NotGt, NotLt]
 cmp_expr_is_enum: types::Cg, ast::Expr => <>
 cmp_expr_is_enum = cg, e =>
    name = e [Var v] types::var_dtype(cg, v) | ""
-   types::typedef_ti(cg, name) [Enum _]
+   types::typedef_ti(cg, name) [Enum]
 
 binop_name: ast::BinaryOp => String
 binop_name = op =>
@@ -602,12 +602,12 @@ ctfe_eq = a, b =>
 ctfe_val_vt: types::CtVal => ast::ValueType
 ctfe_val_vt = v =>
    v
-      [Int _] ast::ValueType(Int)
-      [Float _] ast::ValueType(Float)
-      [Str _] ast::ValueType(Str)
-      [Fn _] ast::ValueType(Fn)
-      [Rec _] ast::ValueType(Record)
-      [Map _] ast::ValueType(Map)
+      [Int] ast::ValueType(Int)
+      [Float] ast::ValueType(Float)
+      [Str] ast::ValueType(Str)
+      [Fn] ast::ValueType(Fn)
+      [Rec] ast::ValueType(Record)
+      [Map] ast::ValueType(Map)
       | ast::ValueType(Unknown)
 
 ctfe_is_none: types::CtVal => <>
@@ -895,12 +895,12 @@ ctfe_eval_var = cg, name, frames =>
       |
          val' = found.0
          val'
-            [Int _] (val', ast::ValueType(Int))
-            [Float _] (val', ast::ValueType(Float))
-            [Str _] (val', ast::ValueType(Str))
-            [Fn _] (val', ast::ValueType(Fn))
-            [Rec _] (val', ast::ValueType(Record))
-            [Map _] (val', ast::ValueType(Map))
+            [Int] (val', ast::ValueType(Int))
+            [Float] (val', ast::ValueType(Float))
+            [Str] (val', ast::ValueType(Str))
+            [Fn] (val', ast::ValueType(Fn))
+            [Rec] (val', ast::ValueType(Record))
+            [Map] (val', ast::ValueType(Map))
             | (val', ast::ValueType(Unknown))
       |
          rname = types::resolve_fn_name(cg, name)
@@ -917,12 +917,12 @@ ctfe_eval_var = cg, name, frames =>
                         |
                            val' = ct_v.0
                            val'
-                              [Int _] (val', ast::ValueType(Int))
-                              [Float _] (val', ast::ValueType(Float))
-                              [Str _] (val', ast::ValueType(Str))
-                              [Fn _] (val', ast::ValueType(Fn))
-                              [Rec _] (val', ast::ValueType(Record))
-                              [Map _] (val', ast::ValueType(Map))
+                              [Int] (val', ast::ValueType(Int))
+                              [Float] (val', ast::ValueType(Float))
+                              [Str] (val', ast::ValueType(Str))
+                              [Fn] (val', ast::ValueType(Fn))
+                              [Rec] (val', ast::ValueType(Record))
+                              [Map] (val', ast::ValueType(Map))
                               | (val', ast::ValueType(Unknown))
                         | (types::CtVal(None), ast::ValueType(Unknown))
 
@@ -1677,7 +1677,7 @@ ram_payload_types_equal = left, right =>
    types::value_type_name(left) == types::value_type_name(right)
 
 ram_named: types::Cg, String => <>
-ram_named = cg, name => types::typedef_ti(cg, name) [Ram _]
+ram_named = cg, name => types::typedef_ti(cg, name) [Ram]
 
 ram_slots_of: types::Cg, String => (ast::RamSlotInfo, ast::RamSlotInfo)
 ram_slots_of = cg, name =>
@@ -1714,7 +1714,7 @@ entry_is_predicate = cg, e =>
 codegen_choice_match_entry: types::Cg, Addr, ast::ValueType, ast::Expr => Addr
 codegen_choice_match_entry = cg, cond_val, cond_type, ev =>
    ev
-      [Fn _] codegen_eval_predicate(cg, ev, cond_val, cond_type)
+      [Fn] codegen_eval_predicate(cg, ev, cond_val, cond_type)
       |
          pred_info = entry_is_predicate(cg, ev)
          pred_info.1
@@ -1826,8 +1826,8 @@ choice_case_values_are_ints = vals, j, n =>
       |
          cv = vals(j)!!
          cv
-            [Int _] choice_case_values_are_ints(vals, j + 1, n)
-            [Rune _] choice_case_values_are_ints(vals, j + 1, n)
+            [Int] choice_case_values_are_ints(vals, j + 1, n)
+            [Rune] choice_case_values_are_ints(vals, j + 1, n)
             | <->
 
 choice_first_live_val: types::Addrs, types::Flags, Int => <Addr|>
@@ -2475,7 +2475,7 @@ codegen_eval_branch_body = cg, body, pay_opt, pay_type, use_pay, is_under =>
 codegen_eval_branch_body_under: types::Cg, ast::Expr, <Addr|>, ast::ValueType,
    <> => (Addr, ast::ValueType)
 codegen_eval_branch_body_under = cg, body, pay_opt, pay_type, is_under =>
-   is_fn = body [Fn _]
+   is_fn = body [Fn]
    pay_opt
       | pay =>
          is_under || is_fn || stmt::refs_name(body, "_")
@@ -2640,7 +2640,7 @@ eval_heap_branch_with_under = cg, body, ppay, pay_type =>
 ram_ti_is_heap: types::Cg, ast::TypeInfo => <>
 ram_ti_is_heap = cg, ti =>
    ti
-      [Enum _] <+>
+      [Enum] <+>
       [Ram slots] !types::ram_slots_are_flag(slots)
       [TypeVar name] ram_ti_is_heap(cg, types::typedef_ti(cg, name))
       | <->
@@ -2934,7 +2934,7 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
                (<+ meta.0 +>, meta.1, fvts)
             | (<-->, ast::Names(), ast::VTypes())
          v_raw_dt' = slot_ti [TypeVar name] name | ""
-         is_rec_ti = rec_ti [Rec _]
+         is_rec_ti = rec_ti [Rec]
          rec_info_0_opt = rec_info.0
          is_anon_pay = v_raw_dt' == "" && is_rec_ti
          v_raw_dt' = is_anon_pay
@@ -2996,10 +2996,10 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
 choice_branch_is_constant: ast::Expr => <>
 choice_branch_is_constant = e =>
    e
-      [Int _] <+>
-      [Float _] <+>
-      [Str _] <+>
-      [Rune _] <+>
+      [Int] <+>
+      [Float] <+>
+      [Str] <+>
+      [Rune] <+>
       [Variant v] ?v.args == 0
       [Block b]
          ?b.exprs == 1
@@ -3160,14 +3160,14 @@ choice_branch_result_type = br =>
 static_expr_vt_no_cg: ast::Expr => (ast::ValueType, <>)
 static_expr_vt_no_cg = e =>
    e
-      [Int _] (ast::ValueType(Int), <+>)
-      [Float _] (ast::ValueType(Float), <+>)
+      [Int] (ast::ValueType(Int), <+>)
+      [Float] (ast::ValueType(Float), <+>)
       [TypeCast t] (t.target_type, <+>)
-      [Str _] (ast::ValueType(Str), <+>)
+      [Str] (ast::ValueType(Str), <+>)
       [Variant v]
          is_flag = v.tag_name [Positive, Negative] && ?v.args == 0
          is_flag | (ast::ValueType(Flag), <+>) | (ast::ValueType(Ram), <+>)
-      [Record _] (ast::ValueType(Record), <+>)
+      [Record] (ast::ValueType(Record), <+>)
       [Call c]
          c.fn_name == "_"
             | static_expr_vt_no_cg(choice_call_first_arg(c))
@@ -3725,7 +3725,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                         cg.vars += types::CgVar((pname', pos_vt,
                            types::is_ptrish_vt(pos_vt), "", pos_rm1_0_opt, pos_rm1_1,
                            <+ slot_p0' +>, <+>, <->, pos_fvts1, pv_then1_opt))
-         b0_is_lam1 = b0.body.kind [Lambda _]
+         b0_is_lam1 = b0.body.kind [Lambda]
          cond_lam1 = can_pos1 && b0_is_lam1
          cond_lam1
             |
@@ -3789,7 +3789,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                            types::is_ptrish_vt(pos_vt), "", pos_rm_0_opt, pos_rm_1,
                            <+ slot_p0' +>, <+>, <->, pos_fvts, pv_then_opt))
          b0_is_under = b0.body.kind [Var v] (v.0 == "_") | <->
-         b0_is_lam = b0.body.kind [Lambda _]
+         b0_is_lam = b0.body.kind [Lambda]
          tv = b0_is_under && is_unboxed
             | (pv_then_opt!!, pos_vt)
             |
@@ -3856,7 +3856,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                            types::is_ptrish_vt(neg_vt), "", neg_rm_0_opt, neg_rm_1,
                            <+ slot_p1' +>, <+>, <->, neg_fvts, pv_else_opt))
          b1_is_under = b1.body.kind [Var v] (v.0 == "_") | <->
-         b1_is_lam = b1.body.kind [Lambda _]
+         b1_is_lam = b1.body.kind [Lambda]
          ev = b1_is_under && is_unboxed
             |
                neg_vt [Error] codegen_error_or_yield(cg, pv_else_opt!!, neg_vt) |
@@ -4079,7 +4079,7 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                         (<+ meta.0 +>, meta.1, fvts)
                      | (<-->, ast::Names(), ast::VTypes())
                   v_raw_dt' = slot_ti [TypeVar name] name | ""
-                  is_rec_ti = rec_ti [Rec _]
+                  is_rec_ti = rec_ti [Rec]
                   rec_info_0_opt = rec_info.0
                   is_anon_pay = v_raw_dt' == "" && is_rec_ti
                   v_raw_dt' = is_anon_pay

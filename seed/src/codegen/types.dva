@@ -1927,16 +1927,16 @@ typedef_ti = cg, name =>
 vt_from_ti: ast::TypeInfo => ast::ValueType
 vt_from_ti = ti =>
    ti
-      [Enum _] ast::ValueType(Enum)
+      [Enum] ast::ValueType(Enum)
       [Ram s]
          is_flag = !s.0.has_payload && !s.1.has_payload
          is_flag | ast::ValueType(Flag) | ast::ValueType(Ram)
-      [Array _] ast::ValueType(Array)
-      [Map _] ast::ValueType(Map)
+      [Array] ast::ValueType(Array)
+      [Map] ast::ValueType(Map)
       [Rec r]
          r.1 | ast::ValueType(Slice) | ast::ValueType(Record)
       [Bitfield b] b.backing_type
-      [Fn _] ast::ValueType(Fn)
+      [Fn] ast::ValueType(Fn)
       [Prim vt] vt
       | ast::ValueType(Unknown)
 
@@ -2070,7 +2070,7 @@ ti_get_bitfield = cg, ti =>
 ti_is_packed_or_bf: Cg, ast::TypeInfo => <>
 ti_is_packed_or_bf = cg, ti =>
    ti
-      [Bitfield _] <+>
+      [Bitfield] <+>
       [Rec r] r.5
       [TypeVar name]
          is_user_type(cg, name)
@@ -2140,7 +2140,7 @@ typed_member_target_ti = cg, te =>
          dt_ti = dt != "" && has_type_name(cg, dt)
             | typedef_ti(cg, dt)
             | ast::TypeInfo(Prim, ast::ValueType(Unknown))
-         is_bf = dt_ti [Bitfield _]
+         is_bf = dt_ti [Bitfield]
          is_bf
             | dt_ti
             |
@@ -2692,7 +2692,7 @@ type_is_record = ti =>
 type_is_enum: ast::TypeInfo => <>
 type_is_enum = ti =>
    ti
-      [Enum _] <+>
+      [Enum] <+>
       [Prim p]
          is_en = p [Enum]
          is_en
@@ -2701,7 +2701,7 @@ type_is_enum = ti =>
 type_is_ram: ast::TypeInfo => <>
 type_is_ram = ti =>
    ti
-      [Ram _] <+>
+      [Ram] <+>
       [Prim p]
          is_rm = p [Ram, Flag]
          is_rm
@@ -2710,7 +2710,7 @@ type_is_ram = ti =>
 type_is_fn: ast::TypeInfo => <>
 type_is_fn = ti =>
    ti
-      [Fn _] <+>
+      [Fn] <+>
       [Prim p]
          is_f = p [Fn]
          is_f
@@ -2743,7 +2743,7 @@ type_is_homogeneous = ti =>
 type_is_array: ast::TypeInfo => <>
 type_is_array = ti =>
    ti
-      [Array _] <+>
+      [Array] <+>
       [Prim p]
          is_arr = p [Array]
          is_arr
@@ -2761,7 +2761,7 @@ type_is_slice = ti =>
 type_is_map: ast::TypeInfo => <>
 type_is_map = ti =>
    ti
-      [Map _] <+>
+      [Map] <+>
       [Prim p]
          is_mp = p [Map]
          is_mp
@@ -3156,7 +3156,7 @@ call_arg_is_splat = a =>
       | <->
 
 call_arg_is_named: ast::Expr => <>
-call_arg_is_named = a => a [NamedArg _]
+call_arg_is_named = a => a [NamedArg]
 
 call_has_splat_or_named: ast::Exprs, Int, Int => <>
 call_has_splat_or_named = args, i, n =>
@@ -3530,11 +3530,11 @@ enum_slot_has_payload = slots, label =>
 static_expr_vt: Cg, ast::Expr => ast::ValueType
 static_expr_vt = cg, e =>
    e
-      [Int _] ast::ValueType(Int)
-      [Rune _] ast::ValueType(Rune)
-      [Float _] ast::ValueType(Float)
+      [Int] ast::ValueType(Int)
+      [Rune] ast::ValueType(Rune)
+      [Float] ast::ValueType(Float)
       [TypeCast t] t.target_type
-      [Str _] ast::ValueType(Str)
+      [Str] ast::ValueType(Str)
       [Var v] var_type(cg, v)
       [Unary u]
          u.0
@@ -3552,8 +3552,8 @@ static_expr_vt = cg, e =>
       [Variant v]
          is_flag = v.tag_name [Positive, Negative] && ?v.args == 0
          is_flag | ast::ValueType(Flag) | ast::ValueType(Ram)
-      [Record _] ast::ValueType(Record)
-      [Fn _] ast::ValueType(Fn)
+      [Record] ast::ValueType(Record)
+      [Fn] ast::ValueType(Fn)
       [Call c]
          c.fn_name == "Builder" && ?c.args == 0
             | ast::ValueType(Builder)
@@ -3562,11 +3562,11 @@ static_expr_vt = cg, e =>
                   |
                      ti = typedef_ti(cg, c.fn_name)
                      ti
-                        [Enum _] ast::ValueType(Enum)
-                        [Ram _] ast::ValueType(Ram)
-                        [Rec _] ast::ValueType(Record)
-                        [Map _] ast::ValueType(Map)
-                        [Array _] ast::ValueType(Array)
+                        [Enum] ast::ValueType(Enum)
+                        [Ram] ast::ValueType(Ram)
+                        [Rec] ast::ValueType(Record)
+                        [Map] ast::ValueType(Map)
+                        [Array] ast::ValueType(Array)
                         | ast::ValueType(Unknown)
                   | ast::ValueType(Unknown)
       | ast::ValueType(Unknown)
@@ -3807,7 +3807,7 @@ codegen_eval_raw_memory = cg, rm =>
 raw_address_uses_string: Cg, ast::Expr => <>
 raw_address_uses_string = cg, e =>
    e
-      [Str _] <+>
+      [Str] <+>
       [Var v] main::is_str_var(cg, v)
       [Bin t] raw_address_uses_string(cg, t.1) || raw_address_uses_string(cg, t.2)
       | <->

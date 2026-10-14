@@ -445,7 +445,7 @@ serialize_doc_indent = doc, indent, b =>
             b += "/= "
             e.val
                [Str s] b += s; b += 10
-               [Block _] b += 10
+               [Block] b += 10
          |
             e.key == ""
                |
@@ -572,7 +572,7 @@ validate_dep = e, file =>
                                              <- ccl_error(file,
                                                 "edva.ccl: dependency '" + alias + "' needs 'hash'",
                                                 e.line, e.col) +>
-            [Str _]
+            [Str]
                <- ccl_error(file,
                   "edva.ccl: dependency '" + alias + "' must be a section", e.line, e.col) +>
 
@@ -711,7 +711,7 @@ validate_manifest = doc, file =>
                                     err_val' = ccl_error(file,
                                        "edva.ccl: override '" + oe.key + "' needs 'path'",
                                        oe.line, oe.col)
-                           [Str _]
+                           [Str]
                               has_err' = <+>
                               err_val' = ccl_error(file,
                                  "edva.ccl: override '" + oe.key + "' must be a section",
@@ -883,7 +883,7 @@ validate_lockfile = doc, file =>
                                  id, k', g_url, g_rev, g_commit,
                                  a_url, a_hash, p_path, sort_lock_deps(p_deps), is_ovr
                               ))
-                           [Str _]
+                           [Str]
                               has_err' = <+>
                               err_val' = ccl_error(file,
                                  "edva.lock.ccl: package '" + id + "' must be a section",

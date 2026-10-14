@@ -288,6 +288,17 @@ is_flag_uprim: UPrim => <>
 is_flag_uprim = p =>
    p [Flag]
 
+is_map_key_uprim: UPrim => <>
+is_map_key_uprim = p =>
+   p [Str, Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, RawPtr]
+
+is_map_key_utype: Ctx, UType => <>
+is_map_key_utype = ctx, ut =>
+   c = canon(ctx, ut)
+   c
+      [Prim p] is_map_key_uprim(p)
+      | <->
+
 // --- Ramification Shape ----------------------------------------------------
 
 ram_shape: URam => URamShape
@@ -310,7 +321,7 @@ canon = ctx, t =>
                b.is_bound
                   |
                      b.bound
-                        [Var _]
+                        [Var]
                            root = canon(ctx, b.bound)
                            ctx.bindings(id) = VarBinding((<+>, root)) !| _
                            root
@@ -604,7 +615,7 @@ unify_rec = ctx, r1, r2 =>
 is_unbound_var: Ctx, UType => <>
 is_unbound_var = ctx, t =>
    c = canon(ctx, t)
-   c [Var _]
+   c [Var]
 
 unify_ram: Ctx, URam, URam => <>
 unify_ram = ctx, r1, r2 =>
@@ -847,8 +858,8 @@ is_ground: Ctx, UType => <>
 is_ground = ctx, t =>
    c = canon(ctx, t)
    c
-      [Var _] <->
-      [Prim _] <+>
+      [Var] <->
+      [Prim] <+>
       [Fn f]
          ret_ok = is_ground(ctx, f.ret)
          ret_ok
@@ -1112,15 +1123,15 @@ vt_from_utype = ctx, u =>
    c = canon(ctx, u)
    c
       [Prim p] uprim_to_vt(p)
-      [Enum _] ast::ValueType(Enum)
+      [Enum] ast::ValueType(Enum)
       [Ram r]
          has_p = r.pos.has_payload || r.neg.has_payload
          has_p | ast::ValueType(Ram) | ast::ValueType(Flag)
-      [Array _] ast::ValueType(Array)
-      [Slice _] ast::ValueType(Slice)
-      [Rec _] ast::ValueType(Record)
-      [Map _] ast::ValueType(Map)
-      [Fn _] ast::ValueType(Fn)
+      [Array] ast::ValueType(Array)
+      [Slice] ast::ValueType(Slice)
+      [Rec] ast::ValueType(Record)
+      [Map] ast::ValueType(Map)
+      [Fn] ast::ValueType(Fn)
       | ast::ValueType(Unknown)
 
 type_info_from_utype: Ctx, UType => ast::TypeInfo
@@ -1203,10 +1214,10 @@ value_type_from_ti = ti =>
    ti
       [Prim vt] vt
       [Rec r] (r.1 | ast::ValueType(Slice) | ast::ValueType(Record))
-      [Bitfield _] ast::ValueType(Record)
-      [Ram _] ast::ValueType(Ram)
-      [Fn _] ast::ValueType(Fn)
-      [Array _] ast::ValueType(Array)
-      [Enum _] ast::ValueType(Enum)
-      [Map _] ast::ValueType(Map)
+      [Bitfield] ast::ValueType(Record)
+      [Ram] ast::ValueType(Ram)
+      [Fn] ast::ValueType(Fn)
+      [Array] ast::ValueType(Array)
+      [Enum] ast::ValueType(Enum)
+      [Map] ast::ValueType(Map)
       | ast::ValueType(Unknown)

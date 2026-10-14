@@ -62,6 +62,10 @@ E2108_state_binding_target: () => String
 E2108_state_binding_target = !=>
    "State binding operator '~~' requires a variable, member access, or indexed element target."
 
+E2109_disallowed_variant_wildcard: String => String
+E2109_disallowed_variant_wildcard = tag =>
+   "Disallowed syntax '[" + tag + " _]'. Use '[" + tag + "]' instead."
+
 E3003_choice_underscore_undefined: () => String
 E3003_choice_underscore_undefined = !=>
    "Omitting a Choice/pattern branch's leading condition is only allowed when " +

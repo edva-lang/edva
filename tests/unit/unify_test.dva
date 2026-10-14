@@ -85,7 +85,7 @@ test_type_vars = !=>
    a3 = unify::fresh_var(ctx)
    assert_ok(unify::unify(ctx, a2, a3), "unbound variables alias")
    before = unify::canon(ctx, a2)
-   assert_ok(before [Var _], "an unbound alias stays unresolved")
+   assert_ok(before [Var], "an unbound alias stays unresolved")
    assert_ok(unify::unify(ctx, a3, t_str), "alias target binds to Str")
    after = unify::canon(ctx, a2)
    assert_ok(unify::show_utype(ctx, after) == "String",

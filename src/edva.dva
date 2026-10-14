@@ -380,7 +380,7 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                            is_pub = is_public_name(publics, privates, clean)
                            is_pub
                               |
-                                 is_fn = t.5 [Fn _]
+                                 is_fn = t.5 [Fn]
                                  is_fn
                                     |
                                        is_gen = is_generic_assign(t)
@@ -1253,7 +1253,7 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                      is_iface = ldr.is_modular && ldr.is_dep
                      st_idx' = 0
                      stmts @ st2 =>
-                        is_imp = st2 [Import _]
+                        is_imp = st2 [Import]
                         !is_imp
                            |
                               cur_st = has_imp_mods'
@@ -1762,7 +1762,7 @@ generate_c_header = prog, exports, header_path =>
                   !loaded_has(emitted_structs, b_name)
                      |
                         td.type_info
-                           [Rec _]
+                           [Rec]
                               hdr += format_record_c_struct(td)
                               emitted_structs += b_name
    has_error' = <->

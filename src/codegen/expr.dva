@@ -475,7 +475,7 @@ fn_has_arena_alloc = cg, name, depth =>
          target = rf != "" | rf | name
          body = fn_body_of(cg, target)
          body
-            [Var _] <->
+            [Var] <->
             | expr_has_arena_alloc_d(cg, body, depth)
 
 // Static approximation of the native arena-allocation walk. It decides
@@ -487,12 +487,12 @@ expr_has_arena_alloc = cg, e => expr_has_arena_alloc_d(cg, e, 0)
 expr_has_arena_alloc_d: types::Cg, ast::Expr, Int => <>
 expr_has_arena_alloc_d = cg, e, depth =>
    e
-      [Record _] <+>
-      [Variant _] <+>
-      [Fn _] <+>
-      [MapLiteral _] <+>
-      [BuilderCreate _] <+>
-      [ArrayCreate _] <+>
+      [Record] <+>
+      [Variant] <+>
+      [Fn] <+>
+      [MapLiteral] <+>
+      [BuilderCreate] <+>
+      [ArrayCreate] <+>
       [Bin t] expr_has_arena_alloc_bin_d(cg, t, depth)
       [Call c] types::is_user_type(cg, c.fn_name) ||
          (depth < 3 && fn_has_arena_alloc(cg, c.fn_name, depth + 1)) ||
@@ -508,7 +508,7 @@ expr_has_arena_alloc_d = cg, e, depth =>
          expr_has_arena_alloc_d(cg, t.6, depth)
       [TypeCast c] expr_has_arena_alloc_d(cg, c.expr, depth)
       [Unary t] expr_has_arena_alloc_d(cg, t.1, depth)
-      [Copy _] <+>
+      [Copy] <+>
       [Member m] expr_has_arena_alloc_d(cg, m.target, depth) ||
          expr_has_arena_alloc_d(cg, m.index_expr, depth)
       [RawMemory r] expr_has_arena_alloc_d(cg, r.addr, depth)
@@ -603,8 +603,8 @@ var_index = cg, name =>
 is_addr_arg_scoped: types::Cg, ast::Expr, Int => <>
 is_addr_arg_scoped = cg, arg, threshold =>
    arg
-      [Int _] <->
-      [Rune _] <->
+      [Int] <->
+      [Rune] <->
       | is_block_scoped_addr(cg, arg, threshold)
 
 record_fields_has_block_scoped_addr: types::Cg, ast::Fields, Int, Int => <>
@@ -629,8 +629,8 @@ is_block_scoped_addr = cg, expr, threshold =>
       [Bin b]
          is_block_scoped_addr(cg, b.1, threshold) ||
             is_block_scoped_addr(cg, b.2, threshold)
-      [Block _] <+>
-      [RawMemory _] <+>
+      [Block] <+>
+      [RawMemory] <+>
       [TypeCast tc] is_block_scoped_addr(cg, tc.expr, threshold)
       [Record r] record_fields_has_block_scoped_addr(cg, r.fields, 0, threshold)
       [Variant v] exprs_has_block_scoped_addr(cg, v.args, 0, threshold)
@@ -2578,7 +2578,7 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
          ret_ti_res = stmt::resolve_ti(cg, types::g.expected_fn_ti)
-         ret_is_ram = ret_ti_res [Ram _]
+         ret_is_ram = ret_ti_res [Ram]
          !ret_is_ram
             |
                types::init_error(cg, "E3173", "Propagate operator '--!' is only " +
@@ -2601,7 +2601,7 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
                      op_ti0 = codegen_ram_type_of_expr(cg, target)
                      dtype0 = target [Var v] types::var_dtype(cg, v) | ""
                      dtype = dtype0 != "" | dtype0 | cg.last_type
-                     is_ram_ti = op_ti0 [Ram _]
+                     is_ram_ti = op_ti0 [Ram]
                      ti = is_ram_ti
                         | op_ti0
                         |
@@ -2823,10 +2823,10 @@ coerce_phi_incoming = cg, val_raw, val_vt, phi_ty, target_vt =>
 
 // A recognized type name (the value-producing half of parse_dva_type_name).
 e_str_lit: ast::Expr => <>
-e_str_lit = e => e [Str _]
+e_str_lit = e => e [Str]
 
 e_flt_lit: ast::Expr => <>
-e_flt_lit = e => e [Float _]
+e_flt_lit = e => e [Float]
 
 // A named call "f(a, b)" to a compiled user function.
 codegen_eval_fn_call: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
@@ -3133,7 +3133,7 @@ codegen_ram_type_of_expr = cg, expr =>
    expr
       [Var vn]
          vti = var_ti(cg, vn)
-         vti [Ram _] vti | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+         vti [Ram] vti | ast::TypeInfo(Prim, ast::ValueType(Unknown))
       [Call c]
          real_name = types::resolve_fn_name(cg, c.fn_name)
          fname = fn_alias(cg, real_name)
@@ -3287,7 +3287,7 @@ infer_slice_arg_elem: types::Cg, ast::Expr => (ast::ValueType, ast::TypeInfo, St
 infer_slice_arg_elem = cg, arg =>
    arg
       [Call c]
-         ?c.args > 0 && (c.args(0)!! [Range _])
+         ?c.args > 0 && (c.args(0)!! [Range])
             |
                target = c.fn_name
                tvt' = types::var_type(cg, target)
@@ -3355,10 +3355,10 @@ synth_rec_ti_from_var = cg, v =>
 infer_expr_type_and_info: types::Cg, ast::Expr => (ast::ValueType, ast::TypeInfo)
 infer_expr_type_and_info = cg, e =>
    e
-      [Int _] (ast::ValueType(Int), ast::TypeInfo(Prim, ast::ValueType(Int)))
-      [Float _] (ast::ValueType(Float), ast::TypeInfo(Prim, ast::ValueType(Float)))
-      [Str _] (ast::ValueType(Str), ast::TypeInfo(Prim, ast::ValueType(Str)))
-      [Rune _] (ast::ValueType(Rune), ast::TypeInfo(Prim, ast::ValueType(Rune)))
+      [Int] (ast::ValueType(Int), ast::TypeInfo(Prim, ast::ValueType(Int)))
+      [Float] (ast::ValueType(Float), ast::TypeInfo(Prim, ast::ValueType(Float)))
+      [Str] (ast::ValueType(Str), ast::TypeInfo(Prim, ast::ValueType(Str)))
+      [Rune] (ast::ValueType(Rune), ast::TypeInfo(Prim, ast::ValueType(Rune)))
       [Variant v]
          is_flag = v.tag_name [Positive, Negative] && ?v.args == 0
          is_flag
@@ -3543,9 +3543,9 @@ extract_ct_binding = cg, param_ti, arg_ti, ct_name =>
                real_dt = is_ut | tv_name | ""
                <+ (real_vt, real_ti, real_dt) +>
       [Array p_arr] extract_ct_from_arr(cg, p_arr.1, arg_ti, ct_name)
-      [Fn _] extract_ct_from_fn(cg, param_ti, arg_ti, ct_name)
-      [Ram _] extract_ct_from_ram(cg, param_ti, arg_ti, ct_name)
-      [Rec _] extract_ct_from_rec(cg, param_ti, arg_ti, ct_name)
+      [Fn] extract_ct_from_fn(cg, param_ti, arg_ti, ct_name)
+      [Ram] extract_ct_from_ram(cg, param_ti, arg_ti, ct_name)
+      [Rec] extract_ct_from_rec(cg, param_ti, arg_ti, ct_name)
 
 extract_ct_from_tis: types::Cg, ast::VInfos, ast::VInfos,
    String => < (ast::ValueType, ast::TypeInfo, String) | >
@@ -3569,7 +3569,7 @@ infer_ct_param = cg, tis, args, cavts, cadts, ct_name =>
       |
          ti_param = tis(pidx) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown))
          ti_param
-            [Ram _]
+            [Ram]
                arg' = args(pidx) | _ | ast::Expr(Var, "")
                ram_inf = infer_ct_from_ram_arg(cg, arg')
                ram_inf.0 != ast::ValueType(Unknown)
@@ -3692,7 +3692,7 @@ ti_to_type_key = cg, ti, vt, dtype =>
       [Map m]
          "Map(" + vt_to_type_key(cg, m.0, "") + "," +
             vt_to_type_key(cg, m.1, "") + ")"
-      [Enum _]
+      [Enum]
          dtype != "" | dtype | "Enum"
       |
          dtype != "" && types::is_user_type(cg, dtype)
@@ -3939,7 +3939,7 @@ compile_mono_fn = cg, orig, mono, ct_names, b_vts, b_tis, b_dts, b_ct_vals =>
                ret_rm_1 = ret_rm | m => m.1 | ast::Names()
                ret_fvts = types::field_vts(cg, ret_ti')
                ret_dtype0 = ret_ti' [TypeVar tname] tname | ""
-               is_rec_ret = ret_ti' [Rec _]
+               is_rec_ret = ret_ti' [Rec]
                is_anon_rec = ret_dtype0 == "" && is_rec_ret
                ret_dtype = is_anon_rec
                   |
@@ -4263,10 +4263,10 @@ codegen_eval_named_call_emit = cg, t, fname, fn, fty, ret, ptypes =>
 is_ram_arg_mismatch: types::Cg, ast::TypeInfo, ast::Expr => <>
 is_ram_arg_mismatch = cg, param_ti, arg_expr =>
    param_ti
-      [Ram _]
+      [Ram]
          arg_ti = codegen_ram_type_of_expr(cg, arg_expr)
          arg_ti
-            [Ram _] !ram_shape_compatible(cg, param_ti, arg_ti)
+            [Ram] !ram_shape_compatible(cg, param_ti, arg_ti)
             | <->
       | <->
 
@@ -4543,7 +4543,7 @@ codegen_closure_call_env = cg, t, fty, ret =>
    (res, ret)
 
 fn_body_is_choice: ast::FnExpr => <>
-fn_body_is_choice = f => f.body [Choice _]
+fn_body_is_choice = f => f.body [Choice]
 
 is_match_function_name: types::Cg, String => <>
 is_match_function_name = cg, v =>
@@ -4638,7 +4638,7 @@ fi_param_name_at = cg, name, i, j =>
 // Whether an expression is a function VALUE (a lambda literal, or a call that
 // returns a closure — e.g. "make_adder(5)").
 is_fnv_t: ast::Expr => <>
-is_fnv_t = e => e [Fn _]
+is_fnv_t = e => e [Fn]
 
 // The compiled lambda's fn name bound to `name` (a closure-valued variable),
 // or "".
@@ -4901,8 +4901,8 @@ codegen_typed_eval_bin = cg, op, lhs, rhs, ut, ti =>
                is_eq_op = op [Eq, NotEq]
                l_is_str = types::is_str_vt(lv'.1)
                r_is_str = types::is_str_vt(rv'.1)
-               l_is_rec = (lv'.1 [Record]) || (<>(lhs.ti [Rec _]))
-               r_is_rec = (rv'.1 [Record]) || (<>(rhs.ti [Rec _]))
+               l_is_rec = (lv'.1 [Record]) || (<>(lhs.ti [Rec]))
+               r_is_rec = (rv'.1 [Record]) || (<>(rhs.ti [Rec]))
                is_str_tuple_lr = is_eq_op && l_is_str && r_is_rec
                is_str_tuple_rl = is_eq_op && r_is_str && l_is_rec
                is_str_tuple_lr
@@ -5214,7 +5214,7 @@ codegen_typed_eval_member = cg, target, fname, idx, ti =>
 codegen_typed_eval_member_normal: types::Cg, tast::TypedExpr, String, Int,
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_member_normal = cg, target, fname, idx, ti =>
-   is_v = target.kind [Var _]
+   is_v = target.kind [Var]
    vname = is_v | (target.kind [Var v] v.0 | "") | ""
    has_var = vname != "" && (<>(types::var_slot(cg, vname)) || <>(types::var_direct(cg, vname)))
    ct = !has_var && vname != ""
@@ -5283,7 +5283,7 @@ codegen_typed_eval_member_normal = cg, target, fname, idx, ti =>
                   |
                      rm = runtime::record_meta_from_ti(cg, tgt_ti)
                      rm0 = <>(rm) | rm | runtime::record_meta_from_ti(cg, target.ti)
-                     is_m = target.kind [Member _]
+                     is_m = target.kind [Member]
                      st_from_var = vname != ""
                         | types::var_rt(cg, vname)
                         | <-->
@@ -5816,10 +5816,10 @@ codegen_eval_return = cg, r =>
             |
                ret_ti = types::g.expected_fn_ti
                ret_ti_res = stmt::resolve_ti(cg, ret_ti)
-               ret_ti_res [Ram _]
+               ret_ti_res [Ram]
                   |
                      val_ram_ti = codegen_ram_type_of_expr(cg, r.val)
-                     val_ram_ti [Ram _]
+                     val_ram_ti [Ram]
                         |
                            !ram_shape_compatible(cg, ret_ti_res, val_ram_ti)
                               |
@@ -6009,16 +6009,16 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                                  (aev.0, ast::ValueType(Record))
                               |
                                  td_ti
-                                    [Ram _]
+                                    [Ram]
                                        match::codegen_typed_coerce_ram(cg, aev,
                                           arg0'.ti, td_ti)
                                     | aev
                         |
                            td_ti
-                              [Array _]
+                              [Array]
                                  (main::codegen_array_create(cg, "a.new"),
                                     ast::ValueType(Array))
-                              [Map _]
+                              [Map]
                                  (runtime::codegen_map_create(cg, "m.new"),
                                     ast::ValueType(Map))
                               |
@@ -7122,7 +7122,7 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
                   | LLVMBuildPtrToInt(cg.builder, vv.0, i64t', "a.wr.p2i")
                   | stmt::coerce_int(cg, vv.0, i64t')
                LLVMBuildStore(cg.builder, val_st', slot)
-               is_ram = ti [Ram _]
+               is_ram = ti [Ram]
                is_ram
                   |
                      is_unboxed = types::is_unboxed_ram_ti(cg, ti)

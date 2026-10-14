@@ -390,11 +390,15 @@ io::out(label)
 
 #type Box < Item(Int), Empty >
 box = Box(Item, 3)
-kind = box [Item _] "item" | "empty"
+kind = box [Item] "item" | "empty"
 io::out(kind)
 // => matched
 // => item
 ```
+
+Matching a variant without binding its payload uses `[Item]`, not `[Item _]`.
+The syntax `[Item _]` is disallowed with E2109 because it is equivalent to
+`[Item]` and adds nothing.
 
 Nested patterns can use the same wildcard, for example `[Mul (_, Lit 0)]`.
 Each wildcard independently ignores its component. Repeated `_` patterns do
