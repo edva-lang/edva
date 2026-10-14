@@ -3492,23 +3492,27 @@ annotate_call_normal = ctx, env, ce =>
                            sl_ut = unify::mk_slice(elem)
                            index_ret_ut' = is_rng | sl_ut | elem
                         [Rec rec]
-                           is_var_index' = <+>
-                           n_flds = ?rec
-                           n_flds > 0
+                           ?ce.args == 1
                               |
-                                 !is_ufields_homogeneous(ctx, rec)
+                                 is_var_index' = <+>
+                                 n_flds = ?rec
+                                 n_flds > 0
                                     |
-                                       unify::add_error(ctx, 3051,
-                                          diag::E3051_dynamic_index_hetero!)
-                                 f0 = rec(0) | _ |
-                                    unify::UField(("",
-                                       unify::UType(None)))
-                                 first_a = ce.args(0) | _ | ast::Expr(Int, 0)
-                                 is_rng = is_range_expr(first_a)
-                                 f0_ut = f0.ut
-                                 sl_ut = unify::mk_slice(f0_ut)
-                                 index_ret_ut' = is_rng | sl_ut | f0_ut
-                              | index_ret_ut' = unify::fresh_var(ctx)
+                                       !is_ufields_homogeneous(ctx, rec)
+                                          |
+                                             unify::add_error(ctx, 3051,
+                                                diag::E3051_dynamic_index_hetero!)
+                                       f0 = rec(0) | _ |
+                                          unify::UField(("",
+                                             unify::UType(None)))
+                                       first_a = ce.args(0) | _ | ast::Expr(Int, 0)
+                                       is_rng = is_range_expr(first_a)
+                                       f0_ut = f0.ut
+                                       sl_ut = unify::mk_slice(f0_ut)
+                                       index_ret_ut' = is_rng | sl_ut | f0_ut
+                                    | index_ret_ut' = unify::fresh_var(ctx)
+                              |
+                                 fn_ut' = resolve_fn_ut(ctx, env, ce.fn_name, b.ut)
                         |
                            fn_ut' = resolve_fn_ut(ctx, env, ce.fn_name, b.ut)
                      is_var_index'
@@ -3529,6 +3533,7 @@ annotate_call_normal = ctx, env, ce =>
                            fn_ut' = unify::fresh_var(ctx)
             |
                tgt_expr = has_dot | dotted_to_expr(ce.fn_name) | ce.fn_target
+               is_lit_rec = tgt_expr [Record _]
                target_te = annotate_expr(ctx, env, tgt_expr)
                target_val' = <+ target_te +>
                c_tgt = unify::canon(ctx, target_te.ut)
@@ -3560,19 +3565,27 @@ annotate_call_normal = ctx, env, ce =>
                      sl_ut2 = unify::mk_slice(elem2)
                      index_ret_ut' = is_rng2 | sl_ut2 | elem2
                   [Rec rec2]
-                     is_var_index' = <+>
-                     n_flds2 = ?rec2
-                     n_flds2 > 0
+                     !is_lit_rec && ?ce.args == 1
                         |
-                           f02 = rec2(0) | _ |
-                              unify::UField(("",
-                                 unify::UType(None)))
-                           first_a2 = ce.args(0) | _ | ast::Expr(Int, 0)
-                           is_rng2 = is_range_expr(first_a2)
-                           f0_ut2 = f02.ut
-                           sl_ut2 = unify::mk_slice(f0_ut2)
-                           index_ret_ut' = is_rng2 | sl_ut2 | f0_ut2
-                        | index_ret_ut' = unify::fresh_var(ctx)
+                           is_var_index' = <+>
+                           n_flds2 = ?rec2
+                           n_flds2 > 0
+                              |
+                                 !is_ufields_homogeneous(ctx, rec2)
+                                    |
+                                       unify::add_error(ctx, 3051,
+                                          diag::E3051_dynamic_index_hetero!)
+                                 f02 = rec2(0) | _ |
+                                    unify::UField(("",
+                                       unify::UType(None)))
+                                 first_a2 = ce.args(0) | _ | ast::Expr(Int, 0)
+                                 is_rng2 = is_range_expr(first_a2)
+                                 f0_ut2 = f02.ut
+                                 sl_ut2 = unify::mk_slice(f0_ut2)
+                                 index_ret_ut' = is_rng2 | sl_ut2 | f0_ut2
+                              | index_ret_ut' = unify::fresh_var(ctx)
+                        |
+                           fn_ut' = instantiate_unbound_fn(ctx, target_te.ut)
                   | fn_ut' = instantiate_unbound_fn(ctx, target_te.ut)
 
          typed_args = tast::TypedExprs()
@@ -3595,6 +3608,12 @@ annotate_call_normal = ctx, env, ce =>
 
          is_var_index'
             |
+               ?typed_args > 0
+                  |
+                     a0 = typed_args(0) | _ | tast::mk_lit_int(0, 0, 0)
+                     first_ce_a = ?ce.args > 0 | (ce.args(0) | _ | ast::Expr(Int, 0)) | ast::Expr(Int, 0)
+                     is_rng_ce = is_range_expr(first_ce_a)
+                     !is_rng_ce | unify::unify(ctx, a0.ut, unify::prim_int())
                ti = unify::type_info_from_utype(ctx, index_ret_ut')
                lay = layout::compute_layout(ctx, index_ret_ut')
                tast::mk_typed_call(ce.fn_name, target_val', typed_args,

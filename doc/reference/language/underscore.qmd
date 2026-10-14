@@ -207,7 +207,7 @@ bodies, and properly restores enclosing bindings across nesting:
 ```{.dva .run}
 #use io
 
-10..11 @
+10..12 @
    io::out $ _
    1 @ io::out $ _
    io::out $ _

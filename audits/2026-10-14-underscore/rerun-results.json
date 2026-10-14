@@ -12,7 +12,7 @@
   {
     "name": "ct_param",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/ct_param.dva:1:7: E2040: Explicit '_' parameter is forbidden in function parameter lists \u2014 use a named parameter or omit unused binders.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/ct_param.dva:1:7: E2040: Explicit '_' parameter is forbidden in function parameter lists — use a named parameter or omit unused binders.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -32,7 +32,7 @@
   {
     "name": "discard_in_cycle",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_in_cycle.dva:3:6: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_in_cycle.dva:3:6: E2044: Cannot assign to '_' — '_' cannot be used as an assignment target.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -42,7 +42,7 @@
   {
     "name": "discard_read",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_read.dva:2:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_read.dva:2:3: E2044: Cannot assign to '_' — '_' cannot be used as an assignment target.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -52,7 +52,7 @@
   {
     "name": "discard_repeat",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_repeat.dva:2:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_repeat.dva:3:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_repeat.dva:2:3: E2044: Cannot assign to '_' — '_' cannot be used as an assignment target.\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_repeat.dva:3:3: E2044: Cannot assign to '_' — '_' cannot be used as an assignment target.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -62,7 +62,7 @@
   {
     "name": "discard_same_type",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_same_type.dva:2:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_same_type.dva:3:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_same_type.dva:2:3: E2044: Cannot assign to '_' — '_' cannot be used as an assignment target.\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_same_type.dva:3:3: E2044: Cannot assign to '_' — '_' cannot be used as an assignment target.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -171,12 +171,12 @@
   },
   {
     "name": "negative_payload",
-    "compile_exit": 1,
-    "diagnostics": "E5011: LLVM module verification failed: PtrToInt source must be pointer\n  %coerce.ptr2int = ptrtoint { i1, i64 } %var.load to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int2 = ptrtoint { i1, i64 } %var.load1 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int5 = ptrtoint { i1, i64 } %var.load to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int80 = ptrtoint { i1, i64 } %var.load to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int10 = ptrtoint { i1, i64 } %var.load9 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int12 = ptrtoint { i1, i64 } %var.load11 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int28 = ptrtoint { i1, i64 } %var.load27 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int32 = ptrtoint { i1, i64 } %var.load31 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int97 = ptrtoint { i1, i64 } %var.load96 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int103 = ptrtoint { i1, i64 } %var.load102 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int145 = ptrtoint { i1, i64 } %var.load144 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int152 = ptrtoint { i1, i64 } %var.load151 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int195 = ptrtoint { i1, i64 } %var.load194 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int200 = ptrtoint { i1, i64 } %var.load199 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int292 = ptrtoint { i1, i64 } %var.load291 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int298 = ptrtoint { i1, i64 } %var.load297 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int340 = ptrtoint { i1, i64 } %var.load339 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int347 = ptrtoint { i1, i64 } %var.load346 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int390 = ptrtoint { i1, i64 } %var.load389 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int397 = ptrtoint { i1, i64 } %var.load396 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int440 = ptrtoint { i1, i64 } %var.load439 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int445 = ptrtoint { i1, i64 } %var.load444 to i64\n\nE5011: Compilation aborted due to code generation errors.\n",
+    "compile_exit": 0,
+    "diagnostics": "",
     "run": {
-      "exit_code": -999,
-      "stdout": "",
-      "stderr": ""
+      "stdout": "9\n",
+      "stderr": "",
+      "exit_code": 0
     }
   },
   {
@@ -232,7 +232,7 @@
   {
     "name": "numeric_capture",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/numeric_capture.dva:2:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/numeric_capture.dva:2:3: E2044: Cannot assign to '_' — '_' cannot be used as an assignment target.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -302,7 +302,7 @@
   {
     "name": "record_literal",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/record_literal.dva:3:1: E3004: Undefined: _ in \nE5011: Compilation aborted due to code generation errors.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/record_literal.dva:3:1: E3004: Undefined: _ in \n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/record_literal.dva:3:13: E3084: Type mismatch: cannot unify (a: ?T369, b: Int) with (Int) => ?T371\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/record_literal.dva:3:13: E3084: Function call signature mismatch\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/record_literal.dva:3:13: E3103: Cannot infer concrete type for expression without RTTI\nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",

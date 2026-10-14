@@ -3266,15 +3266,22 @@ var_forward_ti_rev = cg, stmts, name, at =>
 
 var_ti: types::Cg, String => ast::TypeInfo
 var_ti = cg, name =>
-   ti = var_forward_ti(cg, types::g.pstmts, name)
-   ti [Prim vt]
-      vt [Unknown]
+   types::has_local_var(cg, name)
+      |
          dt = types::var_dtype(cg, name)
          dt != "" && types::has_type_name(cg, dt)
             | types::typedef_ti(cg, dt)
+            | ast::TypeInfo(Prim, types::var_type(cg, name))
+      |
+         ti = var_forward_ti(cg, types::g.pstmts, name)
+         ti [Prim vt]
+            vt [Unknown]
+               dt = types::var_dtype(cg, name)
+               dt != "" && types::has_type_name(cg, dt)
+                  | types::typedef_ti(cg, dt)
+                  | ti
             | ti
-      | ti
-   | ti
+         | ti
 
 infer_slice_arg_elem: types::Cg, ast::Expr => (ast::ValueType, ast::TypeInfo, String)
 infer_slice_arg_elem = cg, arg =>
