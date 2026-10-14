@@ -2201,7 +2201,7 @@ codegen_mix_int64 = cg, k =>
    s3 = LLVMBuildLShr(cg.builder, x4, LLVMConstInt(i64t', 31, 0), "mix.s3")
    LLVMBuildXor(cg.builder, x4, s3, "mix.res")
 
-// FNV-1a of a String key via dva_hash_string(data, len), or SplitMix64
+// Additive 64-bit FNV-1 variant of a String key via dva_hash_string(data, len), or SplitMix64
 // integer finalizer for integer/pointer keys.
 codegen_map_hash: types::Cg, Addr, ast::ValueType => Addr
 codegen_map_hash = cg, key_val, key_vt =>
