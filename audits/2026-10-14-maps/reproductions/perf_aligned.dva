@@ -1,0 +1,6 @@
+#use io
+#type M Int ^ Int
+m = M()
+0..20000 @ i =>
+   m ^ (i * 65536) = i + 0
+io::out $ ?m

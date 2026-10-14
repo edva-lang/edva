@@ -1,0 +1,5 @@
+#use io
+#type M Int ^ Int
+m = M()
+m ^ 1 = "oops"
+io::out $ m ^ 1 | _ | -1

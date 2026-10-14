@@ -1,0 +1,5 @@
+#use io
+#type M Int ^ Int
+m = M()
+m ^ "x" = 4
+io::out $ ?m

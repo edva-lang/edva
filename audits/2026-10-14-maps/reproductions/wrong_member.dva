@@ -1,0 +1,5 @@
+#use io
+#type M String ^ Int
+m = M()
+m ^ "x" = 42
+io::out $ m ^? 1

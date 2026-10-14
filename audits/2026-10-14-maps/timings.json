@@ -1,0 +1,42 @@
+[
+  {
+    "name": "perf_sequential",
+    "runs": [
+      {
+        "elapsed_ms": 3.014598,
+        "exit": 0,
+        "stdout": "20000\n"
+      },
+      {
+        "elapsed_ms": 3.404252,
+        "exit": 0,
+        "stdout": "20000\n"
+      },
+      {
+        "elapsed_ms": 3.631993,
+        "exit": 0,
+        "stdout": "20000\n"
+      }
+    ]
+  },
+  {
+    "name": "perf_aligned",
+    "runs": [
+      {
+        "elapsed_ms": 308.045692,
+        "exit": 0,
+        "stdout": "20000\n"
+      },
+      {
+        "elapsed_ms": 293.763923,
+        "exit": 0,
+        "stdout": "20000\n"
+      },
+      {
+        "elapsed_ms": 296.995086,
+        "exit": 0,
+        "stdout": "20000\n"
+      }
+    ]
+  }
+]

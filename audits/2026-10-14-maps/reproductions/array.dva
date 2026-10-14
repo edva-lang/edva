@@ -1,0 +1,8 @@
+#use io
+#type A Int{}
+#type M Int ^ A
+m = M()
+m ^ 1 = {10, 20}
+a = m ^ 1 | _ | A()
+io::out $ a(1)!!
+m @ v, k => io::out $ v(0)!!

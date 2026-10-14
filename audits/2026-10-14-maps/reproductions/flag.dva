@@ -1,0 +1,6 @@
+#use io
+#type M Int ^ <>
+m = M()
+m ^ 1 = <+>
+io::out $ m ^ 1 | _ | <->
+m @ v, k => io::out(v)

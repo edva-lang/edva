@@ -1,0 +1,7 @@
+#use io
+#type R < Int | >
+#type M Int ^ R
+m = M()
+m ^ 1 = R(<+ 42 +>)
+r = m ^ 1 | _ | R(<-->)
+io::out $ r | _ | -1

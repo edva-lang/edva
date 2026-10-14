@@ -1,0 +1,9 @@
+#use io
+#type Inner Int ^ Int
+#type Outer Int ^ Inner
+m = Outer()
+n = Inner()
+n ^ 2 = 42
+m ^ 1 = n
+p = m ^ 1 | _ | Inner()
+io::out $ p ^ 2 | _ | -1

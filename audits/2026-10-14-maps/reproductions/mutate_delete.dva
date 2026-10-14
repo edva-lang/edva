@@ -1,0 +1,11 @@
+#use io
+#type M Int ^ Int
+m = M()
+0..6 @ i =>
+   m ^ (i) = i + 0
+m @ v, k =>
+   m ^ 100 = 100
+   0..6 @ j =>
+      m ^- j
+   io::out(k)
+io::out $ ?m

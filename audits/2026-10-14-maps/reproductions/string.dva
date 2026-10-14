@@ -1,0 +1,6 @@
+#use io
+#type M Int ^ String
+m = M()
+m ^ 1 = "hello"
+io::out $ m ^ 1 | _ | "missing"
+m @ v, k => io::out(v)

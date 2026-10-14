@@ -1,0 +1,6 @@
+#use io
+#type M Int ^ Float
+m = M()
+m ^ 1 = 1.5
+io::out $ m ^ 1 | _ | 0.0
+m @ v, k => io::out(v)

@@ -1,0 +1,9 @@
+#use io
+#type UserAges String ^ Int
+scores = UserAges()
+scores ^ "Alice" = 95
+result = scores ^ "Alice"
+alice_score = result |
+   [score] score |
+   [err] 0
+io::out(alice_score)

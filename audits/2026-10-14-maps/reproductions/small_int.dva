@@ -1,0 +1,6 @@
+#use io
+#type M Int ^ UInt8
+m = M()
+m ^ 1 = UInt8(255)
+io::out $ m ^ 1 | _ | UInt8(0)
+m @ v, k => io::out(v)

@@ -1,0 +1,5 @@
+#use io
+#type A (a: Int)
+#type B (b: Int, c: Int)
+m = (1 ^= A(4), 2 ^= B(5, 6))
+io::out $ ?m

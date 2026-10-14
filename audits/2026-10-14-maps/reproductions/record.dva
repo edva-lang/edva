@@ -1,0 +1,9 @@
+#use io
+#type R (x: Int, y: Int)
+#type M Int ^ R
+m = M()
+m ^ 1 = R(10, 20)
+r = m ^ 1 | _ | R(0, 0)
+io::out(r.x)
+io::out(r.y)
+m @ v, k => io::out(v.y)

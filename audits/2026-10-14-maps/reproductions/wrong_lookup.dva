@@ -1,0 +1,5 @@
+#use io
+#type M Int ^ Int
+m = M()
+m ^ 1 = 42
+io::out $ m ^ "x" | _ | -1

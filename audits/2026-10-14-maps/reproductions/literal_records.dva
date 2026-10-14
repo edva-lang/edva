@@ -1,0 +1,7 @@
+#use io
+#type A (a: Int)
+#type B (b: Int, c: Int)
+m = (1 ^= A(4))
+n = (1 ^= B(5, 6))
+x = n ^ 1 | _ | B(0, 0)
+io::out(x.c)

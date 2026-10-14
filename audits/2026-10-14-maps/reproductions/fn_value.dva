@@ -1,0 +1,9 @@
+#use io
+#type M Int ^ (Int => Int)
+m = M()
+x = 10
+f: Int => Int
+f = y => x + y
+m ^ 1 = f
+g = m ^ 1 | _ | (v => v)
+io::out $ g(5)
