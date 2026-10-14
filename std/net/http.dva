@@ -236,14 +236,15 @@
          llen = ?line
          llen !> nlen + 1 | --^
          line(nlen) != 58 | --^
-         matched' = 1
+         matched' = <+>
          nlen @ j =>
             !http::ci_eq(line(j), name(j))
-               | (matched' = 0)
-         matched' [1]
-            out += line(nlen + 2..llen)
-            found' = Chunk(<+ +out +>)
-            -->
+               | (matched' = <->)
+         matched'
+            |
+               out += line(nlen + 2..llen)
+               found' = Chunk(<+ +out +>)
+               -->
       found'
 
    // Build a response header block through the structured API (append, then a

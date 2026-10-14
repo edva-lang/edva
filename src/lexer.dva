@@ -372,15 +372,31 @@ scan_float_suffix = lx, q =>
 
 radix_ok: Rune, Rune => <>
 radix_ok = c, kind =>
-   is_b = kind == 'b'
-   is_o = kind == 'o'
-   is_x = kind == 'x'
-   is_m = kind ['m', 'M']
+   is_b = kind ['b', 'B']
+   is_o = kind ['o', 'O']
+   is_x = kind ['x', 'X']
    dec = c !< '0' && c !> '9'
    bin = c ['0', '1']
    oct = c !< '0' && c !> '7'
    hex = dec || (c !< 'A' && c !> 'F') || (c !< 'a' && c !> 'f')
-   (is_b && bin) || (is_o && oct) || (is_x && hex) || (is_m && dec)
+   (is_b && bin) || (is_o && oct) || (is_x && hex)
+
+try_scan_repeat: Lx => <>
+try_scan_repeat = lx =>
+   p' = lx.pos + 1
+   0.. @
+      p' !< ?lx.src | -->
+      c = lx.src(p')
+      c !< '0' && c !> '9'
+         | p' = p' + 1
+         | -->
+   p' > lx.pos + 1 && p' < ?lx.src && lx.src(p') == '}'
+      |
+         count = p' + 1 - lx.pos
+         count @
+            adv(lx, pk(lx, 0))
+         <+>
+      | <->
 
 finish_int: Lx, Int, Int, Int => Tok
 finish_int = lx, start, line, col => 
@@ -394,14 +410,14 @@ scan_radix_rest: Lx, Rune, Int, Int, Int => Tok
 scan_radix_rest = lx, kind, start, line, col => 
    adv(lx, pk(lx, 0))
    adv(lx, pk(lx, 0))
-   is_m = kind ['m', 'M']
-   is_m && pk(lx, 0) == '-'
-      | adv(lx, pk(lx, 0))
    0.. @
       lx.pos !< ?lx.src | -->
       radix_ok(pk(lx, 0), kind)
          | adv(lx, pk(lx, 0))
-         | -->
+         |
+            pk(lx, 0) == '{' && lx.pos > start + 2 && try_scan_repeat(lx)
+               | --^
+               | -->
    finish_int(lx, start, line, col)
 
 finish_float: Lx, Int, Int, Int => Tok
@@ -435,6 +451,11 @@ scan_exp_opt = lx, q, line, col =>
 scan_dec: Lx, Int, Int, Int => Tok
 scan_dec = lx, start, line, col => 
    skip_digits(lx, 0)
+   0.. @
+      lx.pos !< ?lx.src | -->
+      pk(lx, 0) == '{' && lx.pos > start && try_scan_repeat(lx)
+         | skip_digits(lx, 0)
+         | -->
    f1 = scan_frac_opt(lx, 0, start, line, col)
    bad_dot = !f1 && pk(lx, 0) == '.' && pk_off(lx, 1) != '.' &&
       !is_special(pk_off(lx, 1)) && !(start > 0 && lx.src(start - 1) == '.')
@@ -450,7 +471,7 @@ scan_dec = lx, start, line, col =>
 scan_num: Lx, Int, Int, Int => Tok
 scan_num = lx, start, line, col => 
    k = pk(lx, 0)
-   is_r = pk_off(lx, 1) ['b', 'o', 'x', 'm', 'M']
+   is_r = pk_off(lx, 1) ['b', 'B', 'o', 'O', 'x', 'X']
    k == '0' && is_r
       | scan_radix_rest(lx, pk_off(lx, 1), start, line, col)
       | scan_dec(lx, start, line, col)

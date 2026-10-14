@@ -1519,10 +1519,11 @@ atom_integer = p, text =>
             | <+ ast::Expr(TypeCast, ast::CastExpr((suf.0, iexpr))) +>
             | <+ iexpr +>
       |
-         ?text > 1 && (text(..2) ["0m", "0M"])
+         has_brace = has_char(text, '{')
+         has_brace
             |
                parser_error(p, 2043,
-                  "Bit count in mask literal '" + text + "' must be between 0 and 64")
+                  "Repeat count in integer literal '" + text + "' must be between 0 and 64")
                <-->
             | <-->
 
@@ -6204,36 +6205,65 @@ digit_val = c =>
       [(_ > '`' && _ < 'g')] c - 'a' + 10
       | -1
 
+has_char: String, Rune => <>
+has_char = s, ch =>
+   found' = <->
+   ?s @ i =>
+      s(i) == ch | found' = <+>
+   found'
+
+expand_int_repeats: String => <String|>
+expand_int_repeats = s =>
+   slen = ?s
+   !has_char(s, '{') | <+ s +> |
+      b = {slen * 2}
+      i' = 0
+      err' = <->
+      0.. @
+         i' !< slen | -->
+         c = s(i')
+         i' + 1 < slen && s(i' + 1) == '{'
+            |
+               is_prefix_letter = i' == 1 && s(0) == '0' && (c ['b', 'B', 'x', 'X', 'o', 'O'])
+               is_prefix_letter
+                  | (err' = <+>; -->)
+                  |
+                     close' = 0 - 1
+                     j' = i' + 2
+                     0.. @
+                        j' !< slen | -->
+                        s(j') == '}'
+                           | (close' = j'; -->)
+                           |
+                              s(j') !< '0' && s(j') !> '9'
+                                 | (j' = j' + 1)
+                                 | -->
+                     close' < 0
+                        | (err' = <+>; -->)
+                        |
+                           cnt_str = s(i' + 2..close')
+                           cnt = str::to_int(cnt_str) | v => v.0 | -1
+                           (cnt < 0 || cnt > 64)
+                              | (err' = <+>; -->)
+                              |
+                                 cnt @
+                                    b += c
+                                 i' = close' + 1
+            |
+               b += c
+               i' = i' + 1
+      err' | <--> | <+ +b +>
+
 // Parses an integer literal: optional 0x/0b/0o base, optional type suffix
 // (both stripped). Returns <Int|>.
 parse_int_text: String => <Int|>
 parse_int_text = text =>
    clean = int_clean(text)
-   is_mask = ?clean > 2 && (clean(..2) ["0m", "0M"])
-   is_mask
-      |
-         raw_m = clean(2..)
-         is_top = ?raw_m > 0 && raw_m(0) == '-'
-         m_digits = is_top | raw_m(1..) | raw_m
-         nbits = str::to_int(m_digits) | v => v.0 | -1
-         (nbits !< 0 && nbits !> 64)
-            |
-               nbits == 0
-                  | <+ 0 +>
-                  |
-                     is_top
-                        |
-                           nbits == 64
-                              | <+ 0 - 1 +>
-                              | <+ (0 - 1) .<. (64 - nbits) +>
-                        |
-                           nbits == 64
-                              | <+ 0 - 1 +>
-                              | <+ (1 .<. nbits) - 1 +>
-            | <-->
-      |
-         base = int_base(clean)
-         digits = base [16, 2, 8] clean(2..) | clean
+   exp = expand_int_repeats(clean)
+   exp
+      | expanded =>
+         base = int_base(expanded)
+         digits = base [16, 2, 8] expanded(2..) | expanded
          okf' = ?digits > 0
          val' = 0
          digits @ c =>
@@ -6244,6 +6274,7 @@ parse_int_text = text =>
                |
                   okf' = <->
          okf' | <+ val' +>
+      | <-->
 
 
 // Strips a float suffix ("f32", "f", "F").

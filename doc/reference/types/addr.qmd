@@ -107,7 +107,7 @@ To mask off low-order alignment bits or high-order generational tags while prese
 
 ```{.dva .run}
 // Clear top 16 tag bits before passing an address to OS syscalls:
-canonical_ptr = %ptrmask(ptr, 0m48)
+canonical_ptr = %ptrmask(ptr, 0b1{48})
 
 // Align pointer down to 64-byte boundary:
 aligned_ptr = %ptrmask(ptr, 0 - 64)

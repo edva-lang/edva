@@ -26,16 +26,16 @@
       pos: Int,
       cap: Int,
       err: Int,
-      eof: Int
+      eof: <>
    )
 
    reader: Int => Reader
-   reader = fd => Reader((fd, {4096}, 0, 4096, 0, 0))
+   reader = fd => Reader((fd, {4096}, 0, 4096, 0, <->))
 
    reader_with_cap: Int, Int => Reader
    reader_with_cap = fd, cap =>
       c = cap > 0 | cap | 4096
-      Reader((fd, {c}, 0, c, 0, 0))
+      Reader((fd, {c}, 0, c, 0, <->))
 
    // Returns the last errno encountered by the reader (0 if none).
    reader_err: Reader => Int
@@ -43,7 +43,7 @@
 
    // True (<+>) if clean EOF has been reached on the descriptor.
    reader_eof: Reader => <>
-   reader_eof = r => r.eof [> 0]
+   reader_eof = r => r.eof
 
    // True (<+>) if the last read on a nonblocking descriptor would block (EAGAIN/EWOULDBLOCK).
    reader_would_block: Reader => <>
@@ -57,7 +57,7 @@
    reader_clear: Reader => ()
    reader_clear = r =>
       r.err = 0
-      r.eof = 0
+      r.eof = <->
 
    // Raw length-aware write to fd. Handles partial writes and retries on EINTR.
    write: Int, String => Int
@@ -144,7 +144,7 @@
       +b
 
    clean_addr: Addr => Addr
-   clean_addr = a => %ptrmask(a, 0m48)
+   clean_addr = a => %ptrmask(a, 0b1{48})
 
    // Writes s1 followed by s2 to fd, advancing across partial transfers and retrying on EINTR.
    // Returns the total bytes transferred, or -1 on error.
@@ -285,7 +285,7 @@
                   |
                      n == 0
                         |
-                           r.eof = 1
+                           r.eof = <+>
                            r.err = 0
                            n' = 0
                            -->
@@ -337,10 +337,10 @@
    // Returns <+ String +> or <--> on EOF.
    read: Reader, Int => < String | >
    read = r, max =>
-      max !> 0 | --| <-->
+      max !> 0 |-->
       r.pos !< ?r.buf |
          _ = refill(r)
-      r.pos !< ?r.buf | --| <-->
+      r.pos !< ?r.buf |-->
       avail = ?r.buf - r.pos
       take = avail < max | avail | max
       res = {take}
@@ -354,7 +354,7 @@
    // Returns <+ String +> or <--> if EOF before any bytes were read.
    read_all: Reader, Int => < String | >
    read_all = r, max =>
-      max !> 0 | --| <-->
+      max !> 0 |-->
       res_b = {max}
       avail = ?r.buf - r.pos
       avail > 0
@@ -380,22 +380,21 @@
             |
                n == 0
                   |
-                     r.eof = 1
+                     r.eof = <+>
                      r.err = 0
                      -->
                   |
                      r.err = 0
                      ?res_b = cur + n
-      ?res_b == 0 | --| <-->
+      ?res_b == 0 |-->
       <+ +res_b +>
 
    // Buffered read: reads a single byte from reader.
    // Returns <+ byte +> or <--> on EOF.
    read_byte: Reader => < Int | >
    read_byte = r =>
-      r.pos !< ?r.buf |
-         _ = refill(r)
-      r.pos !< ?r.buf | --| <-->
+      r.pos !< ?r.buf | refill(r)
+      r.pos !< ?r.buf |-->
       b = Int(@[&r.buf + r.pos i8]) .&. 255
       r.pos = r.pos + 1
       <+ b +>

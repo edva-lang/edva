@@ -234,7 +234,7 @@
       sqe_dest = ring.sqes_ptr + idx * #size(SQE)
       target_addr = op == OP_ASYNC_CANCEL
          | addr
-         | %ptrmask(addr, 0m48)
+         | %ptrmask(addr, 0b1{48})
       %memset(sqe_dest, 0, 64)
       @[sqe_dest + 0] = u8(op)
       @[sqe_dest + 4] = i32(fd)
@@ -271,14 +271,14 @@
    sq_space = ring =>
       head = @[ring.sq_ptr + ring.sq_head_off u32]
       tail = @[ring.sq_ptr + ring.sq_tail_off u32]
-      used = Int(tail - head) .&. 0m32
+      used = Int(tail - head) .&. 0b1{32}
       ring.sq_entries - used
 
    submit_and_wait: Ring, Int => Int
    submit_and_wait = ring, wait_nr =>
       head = @[ring.sq_ptr + ring.sq_head_off u32]
       tail = @[ring.sq_ptr + ring.sq_tail_off u32]
-      to_submit = Int(tail - head) .&. 0m32
+      to_submit = Int(tail - head) .&. 0b1{32}
       flags = wait_nr > 0 | IORING_ENTER_GETEVENTS | 0
       libc::syscall(SYS_IO_URING_ENTER, Addr(ring.fd), Addr(to_submit),
          Addr(wait_nr), Addr(flags), sys::addr_null, sys::addr_null)

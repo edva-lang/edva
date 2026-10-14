@@ -51,8 +51,8 @@ Identifiers conform to UAX31. Edva has zero bare keywords. Directives start with
 - `#pragma number <type>`: switches default integer literal type (`i16`, `i32`, `i64`, `default`).
 
 ## 2.2 Literals
-- **Integers**: Decimal (`42`), Hexadecimal (`0x2A`), Binary (`0b101010`), Octal (`0o755`), Mask (`0m48`, `0m-16`).
-  Explicit type suffixes: `5i16`, `0xFFu8`, `100u32`, `9i64`, `0m32u32`.
+- **Integers**: Decimal (`42`), Hexadecimal (`0x2A`), Binary (`0b101010`), Octal (`0o755`), Repeating (`0b1{4}`, `10{6}`, `0b1{48}`).
+  Explicit type suffixes: `5i16`, `0xFFu8`, `100u32`, `9i64`, `0b1{32}u32`.
 - **Floats**: `3.14`, `0.5`, `1.0e-5`. Dangling dots (`.5`, `1.`) are illegal.
 - **Runes**: Single Unicode codepoints: `'a'`, `'🔥'`, `'\n'`.
 - **Strings**:

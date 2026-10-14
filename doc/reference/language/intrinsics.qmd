@@ -123,5 +123,5 @@ memory regions; `%memcpy` requires disjoint regions. `val` in `%memset` is trunc
 an 8-bit byte. All three memory operations return the `dst` address.
 
 `%ptrmask(ptr, mask)` masks the address of `ptr` with `mask` (Int) preserving LLVM pointer
-provenance and alias analysis metadata (e.g. `%ptrmask(ptr, 0m48)` to strip 16-bit tags).
+provenance and alias analysis metadata (e.g. `%ptrmask(ptr, 0b1{48})` to strip 16-bit tags).
 

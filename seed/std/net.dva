@@ -235,13 +235,12 @@
          i64((ms % 1000) * 1000)))
       libc::setsockopt(fd, net::SOL_SOCKET, net::SO_SNDTIMEO, &tv, 16)
 
-   // Put fd in non-blocking mode (flag != 0) or back to blocking (flag == 0).
-   set_nonblocking: Int, Int => Int
+   // Put fd in non-blocking mode (<+>) or back to blocking (<->).
+   set_nonblocking: Int, <> => Int
    set_nonblocking = fd, flag =>
       flags = libc::fcntl(fd, net::F_GETFL, 0)
       flags [< 0] -1 |
-         new_flags = flag [0] flags .&. .!. net::O_NONBLOCK
-            | flags .|. net::O_NONBLOCK
+         new_flags = flag | (flags .|. net::O_NONBLOCK) | (flags .&. .!. net::O_NONBLOCK)
          libc::fcntl(fd, net::F_SETFL, new_flags)
 
    // Send FIN on fd without closing the read side.

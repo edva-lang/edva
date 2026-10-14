@@ -52,15 +52,16 @@ Custom aliases for integer types can be created using `#type`:
 
 ## Literals and constants
 
-Integer constants can be expressed in decimal, hexadecimal, binary, octal, and mask notations:
+Integer constants can be expressed in decimal, hexadecimal, binary, and octal notations, with optional repeating digit syntax `{N}`:
 
 ```{.dva .run}
 dec_val = 1000            // Decimal
 hex_val = 0xDEADBEEF      // Hexadecimal (case-insensitive)
 bin_val = 0b10101011      // Binary
 oct_val = 0o755           // Octal
-mask_lo = 0m48            // Lower 48 bits set (0x0000FFFFFFFFFFFF)
-mask_hi = 0m-16           // Upper 16 bits set (0xFFFF000000000000)
+rep_dec = 10{6}           // Decimal repeat: 1000000
+mask_lo = 0b1{48}         // Lower 48 bits set (0x0000FFFFFFFFFFFF)
+mask_hi = 0b1{16}0{48}    // Upper 16 bits set (0xFFFF000000000000)
 neg_val = -42             // Negation
 ```
 

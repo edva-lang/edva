@@ -1,5 +1,5 @@
 #use io
 #use str
 
-x = 0m65
+x = 0b1{65}
 io::out $ str::from_int(x)

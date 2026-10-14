@@ -1,32 +1,36 @@
 #use io
 #use str
 
-// 1. Bottom masks (0m<N>)
-io::out $ str::from_int(0m0)
-io::out $ str::from_int(0m8)
-io::out $ str::from_int(0m16)
-io::out $ str::from_int(0m32)
-io::out $ str::from_int(0m48)
-io::out $ str::from_int(0m64)
+// 1. Repeating binary literals (0b1{N})
+io::out $ str::from_int(0)
+io::out $ str::from_int(0b1{8})
+io::out $ str::from_int(0b1{16})
+io::out $ str::from_int(0b1{32})
+io::out $ str::from_int(0b1{48})
+io::out $ str::from_int(0b1{64})
 
-// 2. Top masks (0m-<N>)
-io::out $ str::from_int(0m-0)
-io::out $ str::from_int(0m-16)
-io::out $ str::from_int(0m-64)
+// 2. High bits with repeating syntax (0b1{16}0{48})
+io::out $ str::from_int(0)
+io::out $ str::from_int(0b1{16}0{48})
+io::out $ str::from_int(0b1{64})
 
-// 3. Mask literals with type suffix
+// 3. Repeating literals with type suffix
 x32: u32
-x32 = 0m32u32
+x32 = 0b1{32}u32
 io::out $ str::from_int(Int(x32))
 
 // 4. Intrinsic %ptrmask
 s = "hello world"
 addr = &s
-cleaned = %ptrmask(addr, 0m48)
+cleaned = %ptrmask(addr, 0b1{48})
 io::out $ cleaned == addr | "true" | "false"
 
 // 5. Masking with an address that has high bits simulated
-tagged_val = Int(addr) .|. 0m-16
+tagged_val = Int(addr) .|. 0b1{16}0{48}
 tagged_addr = Addr(tagged_val)
-untagged = %ptrmask(tagged_addr, 0m48)
+untagged = %ptrmask(tagged_addr, 0b1{48})
 io::out $ untagged == addr | "true" | "false"
+
+// 6. Issue #179 examples
+io::out $ (0b1{4} == 0b1111) | "true" | "false"
+io::out $ (10{6} == 1000000) | "true" | "false"

@@ -26,16 +26,16 @@
       pos: Int,
       cap: Int,
       err: Int,
-      eof: Int
+      eof: <>
    )
 
    reader: Int => Reader
-   reader = fd => Reader((fd, {4096}, 0, 4096, 0, 0))
+   reader = fd => Reader((fd, {4096}, 0, 4096, 0, <->))
 
    reader_with_cap: Int, Int => Reader
    reader_with_cap = fd, cap =>
       c = cap > 0 | cap | 4096
-      Reader((fd, {c}, 0, c, 0, 0))
+      Reader((fd, {c}, 0, c, 0, <->))
 
    // Returns the last errno encountered by the reader (0 if none).
    reader_err: Reader => Int
@@ -43,7 +43,7 @@
 
    // True (<+>) if clean EOF has been reached on the descriptor.
    reader_eof: Reader => <>
-   reader_eof = r => r.eof [> 0]
+   reader_eof = r => r.eof
 
    // True (<+>) if the last read on a nonblocking descriptor would block (EAGAIN/EWOULDBLOCK).
    reader_would_block: Reader => <>
@@ -57,7 +57,7 @@
    reader_clear: Reader => ()
    reader_clear = r =>
       r.err = 0
-      r.eof = 0
+      r.eof = <->
 
    // Raw length-aware write to fd. Handles partial writes and retries on EINTR.
    write: Int, String => Int
@@ -144,15 +144,55 @@
       +b
 
    clean_addr: Addr => Addr
-   clean_addr = a => %ptrmask(a, 0m48)
+   clean_addr = a => %ptrmask(a, 0b1{48})
+
+   // Writes s1 followed by s2 to fd, advancing across partial transfers and retrying on EINTR.
+   // Returns the total bytes transferred, or -1 on error.
+   writev_all: Int, String, String => Int
+   writev_all = fd, s1, s2 =>
+      len1 = ?s1
+      len2 = ?s2
+      total = len1 + len2
+      total [0] --| 0
+      off' = 0
+      0.. @
+         off' !< total | -->
+         off' < len1
+            |
+               rem1 = len1 - off'
+               p1 = clean_addr(&s1 + off')
+               p2 = clean_addr(&s2)
+               iov = (p1, rem1, p2, len2)
+               w = libc::writev(fd, &iov, 2)
+               w < 0
+                  |
+                     errno_val = @[libc::__errno_location! i32]
+                     errno_val == 4 | --^
+                     off' == 0 | --| -1 | -->
+                  |
+                     w [0] -->
+                     off' = off' + w
+            |
+               off2 = off' - len1
+               rem2 = len2 - off2
+               p2 = clean_addr(&s2 + off2)
+               w = libc::write_ptr(fd, p2, rem2)
+               w < 0
+                  |
+                     errno_val = @[libc::__errno_location! i32]
+                     errno_val == 4 | --^
+                     off' == 0 | --| -1 | -->
+                  |
+                     w [0] -->
+                     off' = off' + w
+      off'
 
    // console.log-style to fd: the value's show text + a newline in a single atomic writev syscall.
-   log: #! T: Type, Int, T => ()
+   log: #! T: Type, Int, T => Int
    log = fd, x =>
       s = show(x)
       nl = "\n"
-      iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
-      libc::writev(fd, &iov, 2)
+      writev_all(fd, s, nl)
 
    // Substitutes 'show(x)' for every '{}' in fmt (the scalar form of logf).
    logf_scalar: #! T: Type, Builder, T, String => ()
@@ -172,7 +212,7 @@
 
    // Formatted to fd: '{}' placeholders in fmt are replaced by each field
    // (or the single value) in order, then written + newline.
-   logf: #! T: Type, Int, T, String => ()
+   logf: #! T: Type, Int, T, String => Int
    logf = fd, x, fmt =>
       b = {?fmt + 64}
       T
@@ -245,7 +285,7 @@
                   |
                      n == 0
                         |
-                           r.eof = 1
+                           r.eof = <+>
                            r.err = 0
                            n' = 0
                            -->
@@ -261,33 +301,35 @@
 #public
    // console.log-style to stdout.
    out: #! T: Type, T => ()
-   out = x => log(io::STDOUT, x)
+   out = x =>
+      _ = log(io::STDOUT, x)
 
    // Monomorphic string output with trailing newline to stdout.
    outs: String => ()
    outs = s =>
       nl = "\n"
-      iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
-      libc::writev(io::STDOUT, &iov, 2)
+      _ = writev_all(io::STDOUT, s, nl)
 
    // console.log-style to stderr.
    err: #! T: Type, T => ()
-   err = x => log(io::STDERR, x)
+   err = x =>
+      _ = log(io::STDERR, x)
 
    // Monomorphic string output with trailing newline to stderr.
    errs: String => ()
    errs = s =>
       nl = "\n"
-      iov = (clean_addr(&s), ?s, clean_addr(&nl), 1)
-      libc::writev(io::STDERR, &iov, 2)
+      _ = writev_all(io::STDERR, s, nl)
 
    // Formatted ('{}' placeholders) to stdout.
    outf: #! T: Type, T, String => ()
-   outf = x, fmt => logf(io::STDOUT, x, fmt)
+   outf = x, fmt =>
+      _ = logf(io::STDOUT, x, fmt)
 
    // Formatted ('{}' placeholders) to stderr.
    errf: #! T: Type, T, String => ()
-   errf = x, fmt => logf(io::STDERR, x, fmt)
+   errf = x, fmt =>
+      _ = logf(io::STDERR, x, fmt)
 
    // --- Reader-based buffered reading ----------------------------------------
 
@@ -338,21 +380,21 @@
             |
                n == 0
                   |
-                     r.eof = 1
+                     r.eof = <+>
+                     r.err = 0
                      -->
                   |
                      r.err = 0
                      ?res_b = cur + n
-      ?res_b == 0 | --| <-->
+      ?res_b == 0 |-->
       <+ +res_b +>
 
    // Buffered read: reads a single byte from reader.
    // Returns <+ byte +> or <--> on EOF.
    read_byte: Reader => < Int | >
    read_byte = r =>
-      r.pos !< ?r.buf |
-         _ = refill(r)
-      r.pos !< ?r.buf | --| <-->
+      r.pos !< ?r.buf | refill(r)
+      r.pos !< ?r.buf |-->
       b = Int(@[&r.buf + r.pos i8]) .&. 255
       r.pos = r.pos + 1
       <+ b +>

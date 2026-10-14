@@ -342,15 +342,15 @@ parse_object_after_val = entries, s, v =>
             <- Error(400, "json: expected ',' or '}' in object", "std/json.dva", 0, 0, (p, 0)) +>
    | e2 => <- e2 +>
 
-parse_lit: Int, Int => <Value | Error>
+parse_lit: <>, Int => <Value | Error>
 parse_lit = tag, len =>
    p = skip_ws(pos)
    pos ::= p
-   word = tag == 1 | "true" | "false"
+   word = tag | "true" | "false"
    ok = p + len !> ?src && src(p..p + len) == word
    ok |
       pos ::= p + len
-      <+ Value(Boolean, tag == 1) ->
+      <+ Value(Boolean, tag) ->
    | <- Error(400, "json: bad literal", "std/json.dva", 0, 0, (p, 0)) +>
 
 parse_null: () => <Value | Error>
@@ -371,16 +371,16 @@ parse_number = !=>
    c0 = p' [< ?src] src(p') | -1
    is_num_start = c0 !< '0' && c0 !> '9' || c0 == '-'
    is_num_start |
-      neg' = 0
+      neg' = <->
       c0 ['-']
-         neg' = 1
+         neg' = <+>
          p' = p' + 1
       has_leading_zero = p' < ?src && src(p') == '0' && p' + 1 < ?src && is_digit_at(p' + 1)
       has_leading_zero |
          <- Error(400, "json: leading zero not allowed", "std/json.dva", 0, 0, (p', 0)) +>
       |
          p2' = p'
-         had_int' = 0
+         had_int' = <->
          sig_digits' = 0
          fv' = 0.0
          exp10' = 0
@@ -389,7 +389,7 @@ parse_number = !=>
             c = src(p2')
             c !< '0' && c !> '9'
                |
-                  had_int' = 1
+                  had_int' = <+>
                   d = c - '0'
                   sig_digits' > 0 || d != 0
                      |
@@ -426,33 +426,33 @@ parse_number = !=>
          had_exp' = <->
          has_exp |
             p3' = p2' + 1
-            eneg' = 0
+            eneg' = <->
             e0 = p3' [< ?src] src(p3') | -1
             e0 ['-']
-               eneg' = 1
+               eneg' = <+>
                p3' = p3' + 1
             plus = (e0 == '+')
             plus |
                p3' = p3' + 1
             ev' = 0
-            over_exp' = 0
-            had_exp_digits' = 0
+            over_exp' = <->
+            had_exp_digits' = <->
             0.. @
                p3' !< ?src | -->
                ec = src(p3')
                ec !< '0' && ec !> '9'
                   |
-                     had_exp_digits' = 1
+                     had_exp_digits' = <+>
                      ed = ec - '0'
                      ev' > 1000000
-                        | (over_exp' = 1)
+                        | (over_exp' = <+>)
                         | (ev' = ev' * 10 + ed)
                      p3' = p3' + 1
                   | -->
-            had_exp' = (had_exp_digits' == 1)
+            had_exp' = had_exp_digits'
             p2' = p3'
-            exp_val = over_exp' == 1 | 1000000 | ev'
-            exp10' = eneg' == 1 | exp10' - exp_val | exp10' + exp_val
+            exp_val = over_exp' | 1000000 | ev'
+            exp10' = eneg' | exp10' - exp_val | exp10' + exp_val
          fv' != 0.0 |
             eclamp = exp10' < -400 | -400 | (exp10' > 400 | 400 | exp10')
             abs_e = eclamp < 0 | 0 - eclamp | eclamp
@@ -461,10 +461,10 @@ parse_number = !=>
          // JSON number grammar: -?(0|[1-9]\d*)(\.\d+)?([eE][+-]?\d+)? — digits
          // are required after '-', after '.', and after the exponent marker
          // (a bare '-', "1.", or "1e" must be rejected, not parsed as 0 / 1.0).
-         valid = (had_int' == 1 && (!has_dot || had_frac') && (!has_exp || had_exp'))
+         valid = (had_int' && (!has_dot || had_frac') && (!has_exp || had_exp'))
          valid
             |
-               f = (neg' == 1 | 0 - fv' | fv')
+               f = (neg' | 0 - fv' | fv')
                pos ::= p2'
                <+ Value(Number, f) ->
             |
@@ -505,7 +505,7 @@ parse_value = !=>
    ['"'] parse_string!
    ['{'] parse_object!
    ['['] parse_array!
-   ['t'] parse_lit(1, 4)
-   ['f'] parse_lit(0, 5)
+   ['t'] parse_lit(<+>, 4)
+   ['f'] parse_lit(<->, 5)
    ['n'] parse_null!
    | parse_number!

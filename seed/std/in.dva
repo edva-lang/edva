@@ -25,3 +25,23 @@
    // Consumes delimiter. Returns <+ String +> or <--> on EOF.
    read_until: Int, Int => < String | >
    read_until = delim, max => io::read_until(stdin_r, delim, max)
+
+   // Returns the last errno encountered by stdin reader (0 if none).
+   err: () => Int
+   err = !=> io::reader_err(stdin_r)
+
+   // True (<+>) if clean EOF has been reached on stdin.
+   eof: () => <>
+   eof = !=> io::reader_eof(stdin_r)
+
+   // True (<+>) if the last read on stdin would block (EAGAIN/EWOULDBLOCK).
+   would_block: () => <>
+   would_block = !=> io::reader_would_block(stdin_r)
+
+   // True (<+>) if any unhandled I/O error occurred on stdin (err != 0).
+   has_err: () => <>
+   has_err = !=> io::reader_has_err(stdin_r)
+
+   // Clears the error and EOF status on stdin.
+   clear: () => ()
+   clear = !=> io::reader_clear(stdin_r)

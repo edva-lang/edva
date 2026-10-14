@@ -43,7 +43,7 @@ listener
 | `net::send_str` | `Int, String => Int` | Sends string bytes over socket |
 | `net::recv` | `Int, Int => Chunk` | Reads up to `max` bytes into Chunk (`< String \| >`) |
 | `net::close_fd` | `Int => Int` | Closes socket descriptor (returns 0 on success, -1 on error) |
-| `net::set_nonblocking` | `Int, Int => Int` | Sets non-blocking socket flag (`O_NONBLOCK` when 1, blocking when 0) |
+| `net::set_nonblocking` | `Int, <> => Int` | Sets non-blocking socket mode (`O_NONBLOCK` when `<+>`, blocking when `<->`) |
 | `net::peer_addr` | `Int => String` | Returns remote peer address `IP:port` formatted string |
 | `net::local_addr` | `Int => String` | Returns local bound address `IP:port` formatted string |
 
