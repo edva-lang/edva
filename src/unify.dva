@@ -455,14 +455,8 @@ unify_concrete = ctx, c1, c2, v1, v2 =>
                            report_mismatch(ctx, c1, c2)
                            <->
             [Ram r2]
-               is_int1_r = is_integerish_uprim(p1)
-               is_int1_r && is_open_unit_ram(ctx, r2)
-                  |
-                     bind_open_unit_ram_int(ctx, r2)
-                     <+>
-                  |
-                     report_mismatch(ctx, c1, c2)
-                     <->
+               report_mismatch(ctx, c1, c2)
+               <->
             [Rec r2]
                p1 [Error]
                   unify_rec_open(ctx, error_ufields!, r2, v1, v2)
@@ -496,14 +490,8 @@ unify_concrete = ctx, c1, c2, v1, v2 =>
             [Ram ram2]
                unify_ram(ctx, ram1, ram2)
             [Prim p2]
-               is_int2_p = is_integerish_uprim(p2)
-               is_int2_p && is_open_unit_ram(ctx, ram1)
-                  |
-                     bind_open_unit_ram_int(ctx, ram1)
-                     <+>
-                  |
-                     report_mismatch(ctx, c1, c2)
-                     <->
+               report_mismatch(ctx, c1, c2)
+               <->
             |
                report_mismatch(ctx, c1, c2)
                <->

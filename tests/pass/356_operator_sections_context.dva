@@ -1,0 +1,58 @@
+#use io
+
+// 1. Shift section inference
+shl = .<. 2
+shr = .>. 1
+io::outf(shl(12), "shl={}")
+io::outf(shr(12), "shr={}")
+
+// 2. Enum branch section evaluation
+#type Box < Val(Int), Empty >
+b1 = Box(Val, 3)
+b2 = Box(Empty)
+
+v1 = b1 [Val value] (+ 2) | 0
+v2 = b1 [Val] (+ 2) | 0
+v3 = b1 [Val] _ + 2 | 0
+v4 = b1 [Val value] value + 2 | 0
+add2 = (+ 2)
+v5 = b1 [Val] add2 | 0
+v6 = b2 [Val] (+ 2) | 0
+
+io::outf(v1, "v1={}")
+io::outf(v2, "v2={}")
+io::outf(v3, "v3={}")
+io::outf(v4, "v4={}")
+io::outf(v5, "v5={}")
+io::outf(v6, "v6={}")
+
+// 3. Monadic bind continuation
+#type Opt < Int | >
+opt_some = Opt(<+ 4 +>)
+opt_none = Opt(<-->)
+opt_step = n => Opt(<+ n + 2 +>)
+b_some = opt_some $>> opt_step
+b_none = opt_none $>> opt_step
+io::outf(b_some | _ | -1, "b_some={}")
+io::outf(b_none | _ | -1, "b_none={}")
+
+#type Result < Int | String >
+res_ok = Result(<+ 10 ->)
+res_err = Result(<- "fail" +>)
+res_step = n => Result(<+ n * 3 ->)
+r_ok = res_ok $>> res_step
+r_err = res_err $>> res_step
+io::outf(r_ok | _ | -1, "r_ok={}")
+io::outf(r_err | "err" | _, "r_err={}")
+
+// 4. Function-valued ordinary branches
+choose: Int => (Int => Int)
+choose = mode => mode [> 0] (* 2) | (+ 1)
+fn_pos = choose(1)
+fn_neg = choose(0)
+io::outf(fn_pos(5), "fn_pos={}")
+io::outf(fn_neg(5), "fn_neg={}")
+
+// 5. Section RHS binding power
+mul_add = (* 2 + 3)
+io::outf(mul_add(4), "mul_add={}")

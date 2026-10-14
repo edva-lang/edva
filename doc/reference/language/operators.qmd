@@ -64,8 +64,9 @@ label = score [1] "one" [2] "two" | "other"
 
 `f(a, b)` calls directly. `$` appends a call argument and is
 right-associative; `$>` prepends one and is left-associative. `$>>` chains a
-ram with a positive payload through a continuation returning the same ram
-shape. `$:` attaches a trailing block as an argument.
+ram with a positive payload (`RamPP` or `RamPN`) through a continuation that must
+return a ramification of compatible shape (passing a non-ram continuation emits `E3091`).
+`$:` attaches a trailing block as an argument.
 
 ```{.dva .run}
 #use io
@@ -80,6 +81,10 @@ io::out $ 2 $> sum(3)
 
 Arithmetic uses `+ - * / %`; shifts use `.<.` and `.>.`; bitwise operations
 use `.|.`, `.^.`, `.&.`, and `.!.`. Bitwise operators accept integerish values only.
+Shift sections (`.<. n`, `.>. n`) infer `Int => Int` without explicit type signatures.
+Operator sections (`op rhs`) form single-parameter functions over an implicit `_`
+with an RHS binding power of 130; `||`, `&&`, `$`, `$>`, `$>>`, `!>`, `!<`, and `!=`
+are excluded from forming sections.
 Comparisons produce a flag. `&&` and `||` short-circuit; combining heap rams
 requires compatible winner layouts, while flags only combine with flags.
 

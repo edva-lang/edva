@@ -2921,13 +2921,10 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
       1, "pay.gep")
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    pay_ptr = LLVMBuildLoad2(cg.builder, i8p, pgep, "payload.ptr")
-   nb = ?br.bind_vars
-   nb > 0
+   has_pay = ptype != ast::ValueType(Unit) && ptype != ast::ValueType(Unknown)
+   has_pay
       |
-         pname = br.bind_vars(0)!!
          pv = eval_heap_pay_value(cg, pay_ptr, ptype)
-         slot = types::hoisted_alloca(cg, i8p, "var." + pname)
-         LLVMBuildStore(cg.builder, pv, slot)
          rec_ti = types::resolve_record_ti(cg, slot_ti)
          rec_info = rec_ti
             [Rec rr]
@@ -2951,30 +2948,50 @@ eval_variant_branch = cg, br, cond_val, ptype, slot_ti =>
          v_dtype = v_raw_dt' != ""
             | types::resolve_type_name(cg, v_raw_dt')
             | (rec_info_0_opt | rt => types::typedef_name_of_rt(cg, rt) | "")
-         cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info_0_opt,
-            rec_info.1, <+ slot +>, <+>, <->, rec_info.2, <-->))
-         is_fn_pt' = ptype [Fn]
-         tgt_fn' = is_fn_pt' | types::fn_ret_sig_with_ti(cg, slot_ti) | ""
-         is_fn_pt' && (tgt_fn' != "") | cg.last_closure_fn = tgt_fn'
-         cg.closure_vars += pname
-         cg.closure_tgts += tgt_fn'
-         expr::codegen_eval(cg, br.block)
-      |
+         slot_under = types::hoisted_alloca(cg, i8p, "var._")
+         LLVMBuildStore(cg.builder, pv, slot_under)
+         cg.vars += types::CgVar(("_", ptype, <->, v_dtype, rec_info_0_opt,
+            rec_info.1, <+ slot_under +>, <+>, <->, rec_info.2, <-->))
+         nb = ?br.bind_vars
+         nb > 0
+            |
+               pname = br.bind_vars(0)!!
+               pname != "" && pname != "_"
+                  |
+                     slot = types::hoisted_alloca(cg, i8p, "var." + pname)
+                     LLVMBuildStore(cg.builder, pv, slot)
+                     cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info_0_opt,
+                        rec_info.1, <+ slot +>, <+>, <->, rec_info.2, <-->))
+                     is_fn_pt' = ptype [Fn]
+                     tgt_fn' = is_fn_pt' | types::fn_ret_sig_with_ti(cg, slot_ti) | ""
+                     is_fn_pt' && (tgt_fn' != "") | cg.last_closure_fn = tgt_fn'
+                     cg.closure_vars += pname
+                     cg.closure_tgts += tgt_fn'
          br.block
+            [Fn f]
+               pname_f = f.params(0) | _ | "_"
+               pname_f != "" && pname_f != "_"
+                  |
+                     slot_f = types::hoisted_alloca(cg, i8p, "var." + pname_f)
+                     LLVMBuildStore(cg.builder, pv, slot_f)
+                     cg.vars += types::CgVar((pname_f, ptype, <->, v_dtype, rec_info_0_opt,
+                        rec_info.1, <+ slot_f +>, <+>, <->, rec_info.2, <-->))
+               expr::codegen_eval(cg, f.body)
             [Var v]
                v == "_"
+                  | (pv, ptype)
                   |
-                     is_fn_pt' = ptype [Fn]
-                     is_fn_pt'
+                     (types::is_fn_name(cg, v) || types::has_fn_name(cg, v))
                         |
-                           ret_vt = types::ti_fn_ret_vt(cg, slot_ti)
-                           tgt_fn' = types::fn_ret_sig_with_ti(cg, slot_ti)
-                           tgt_fn' != "" | cg.last_closure_fn = tgt_fn'
-                           ret_vt != ast::ValueType(Unknown)
-                              | cg.last_type = types::value_type_name(ret_vt)
-                     (eval_heap_pay_value(cg, pay_ptr, ptype), ptype)
-                  | expr::codegen_eval(cg, br.block)
+                           cargs = ast::Exprs()
+                           cargs += ast::Expr(Var, "_")
+                           call_e = ast::Expr(Call, ast::CallExpr((v,
+                              ast::Expr(Var, ""), cargs, 0, 0)))
+                           eval_heap_branch_with_under(cg, call_e, pay_ptr, ptype)
+                        | expr::codegen_eval(cg, br.block)
             | expr::codegen_eval(cg, br.block)
+      |
+         expr::codegen_eval(cg, br.block)
 
 choice_branch_is_constant: ast::Expr => <>
 choice_branch_is_constant = e =>
@@ -4028,12 +4045,12 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
             LLVMBuildCondBr(cg.builder, match, case_bb, next_bb)
             LLVMPositionBuilderAtEnd(cg.builder, case_bb)
             saved_nvars = ?cg.vars
-            is_var && ?br.bind_vars > 0
+            lbl0' = br.variant_names(0) | _ | ""
+            bare_lbl0' = types::decl_bare_name(lbl0', 0)
+            slots' = enum_slots_for_ti_or_label(cg, cond.ti, lbl0')
+            has_slot_pay = is_var && (bare_lbl0' != "") && types::enum_slot_has_payload(slots', bare_lbl0')
+            has_slot_pay
                |
-                  lbl0' = br.variant_names(0) | _ | ""
-                  bare_lbl0' = types::decl_bare_name(lbl0', 0)
-                  slots' = enum_slots_for_ti_or_label(cg, cond.ti, lbl0')
-                  pname = br.bind_vars(0) | _ | ""
                   ptype = types::enum_slot_payload(slots', bare_lbl0')
                   pv = is_unboxed_c
                      |
@@ -4052,8 +4069,6 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                               eval_heap_pay_value(cg, pay_ptr, ptype)
                            | LLVMConstNull(types::llvm_type_of_vt(ptype))
                   pty = types::llvm_type_of_vt(ptype)
-                  slot = types::create_slot(cg, pname, pty, <+>)
-                  LLVMBuildStore(cg.builder, pv, slot)
                   slot_ti = types::enum_slot_ti(slots', bare_lbl0')
                   rec_ti = types::resolve_record_ti(cg, slot_ti)
                   rec_info = rec_ti
@@ -4078,8 +4093,18 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                   v_dtype = v_raw_dt' != ""
                      | types::resolve_type_name(cg, v_raw_dt')
                      | (rec_info_0_opt | rt => types::typedef_name_of_rt(cg, rt) | "")
-                  cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info_0_opt,
-                     rec_info.1, <+ slot +>, <+>, <->, rec_info.2, <-->))
+                  slot_under = types::create_slot(cg, "_", pty, <+>)
+                  LLVMBuildStore(cg.builder, pv, slot_under)
+                  cg.vars += types::CgVar(("_", ptype, <->, v_dtype, rec_info_0_opt,
+                     rec_info.1, <+ slot_under +>, <+>, <->, rec_info.2, <-->))
+                  ?br.bind_vars @ bvi =>
+                     pname = br.bind_vars(bvi) | _ | ""
+                     pname != "" && pname != "_"
+                        |
+                           slot = types::create_slot(cg, pname, pty, <+>)
+                           LLVMBuildStore(cg.builder, pv, slot)
+                           cg.vars += types::CgVar((pname, ptype, <->, v_dtype, rec_info_0_opt,
+                              rec_info.1, <+ slot +>, <+>, <->, rec_info.2, <-->))
             bv' = main::codegen_typed_eval(cg, br.body)
             cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
             c_term = stmt::block_is_terminated(cg)

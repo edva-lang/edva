@@ -337,10 +337,10 @@
    // Returns <+ String +> or <--> on EOF.
    read: Reader, Int => < String | >
    read = r, max =>
-      max !> 0 | --| <-->
+      max !> 0 |-->
       r.pos !< ?r.buf |
          _ = refill(r)
-      r.pos !< ?r.buf | --| <-->
+      r.pos !< ?r.buf |-->
       avail = ?r.buf - r.pos
       take = avail < max | avail | max
       res = {take}
@@ -354,7 +354,7 @@
    // Returns <+ String +> or <--> if EOF before any bytes were read.
    read_all: Reader, Int => < String | >
    read_all = r, max =>
-      max !> 0 | --| <-->
+      max !> 0 |-->
       res_b = {max}
       avail = ?r.buf - r.pos
       avail > 0

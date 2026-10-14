@@ -1,0 +1,15 @@
+shl=48
+shr=6
+v1=5
+v2=5
+v3=5
+v4=5
+v5=5
+v6=0
+b_some=6
+b_none=-1
+r_ok=30
+r_err=fail
+fn_pos=10
+fn_neg=6
+mul_add=20

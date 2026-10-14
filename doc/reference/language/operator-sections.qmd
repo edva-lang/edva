@@ -266,16 +266,11 @@ read `7 [> 0] (* 2) | 0` as an automatic doubling operation: its branches
 would produce a function and an integer. To transform the subject in an
 ordinary guarded branch, name it and write the arithmetic expression.
 
-::: {.callout-warning title="Enum payload branches: unresolved behavior"}
-Do not assume that an enum-pattern branch supplies its payload to an operator
-section in the same way as a bare ramification branch. With
-`#type Box < Item(Int), Empty >` and `b = Box(Item, 3)`, the current compiler
-evaluates `b [Item value] (+ 2) | 0` to **2**, not 5. The implicit argument
-is not handled as the expected payload in this case.
-
-Use the explicit pattern binding: `b [Item value] value + 2 | 0` produces 5.
-Treat direct sections in enum payload branch bodies as unresolved rather than
-as a supported payload-transform shorthand.
+::: {.callout-note title="Enum payload branches"}
+An enum-pattern branch supplies its payload to an operator section or function value.
+With `#type Box < Item(Int), Empty >` and `b = Box(Item, 3)`, the forms `b [Item value] (+ 2) | 0`,
+`b [Item] (+ 2) | 0`, and `b [Item] _ + 2 | 0` all cleanly evaluate to 5.
+Matching a unit variant without a payload (e.g. `b [Empty] (+ 2)`) is rejected as a type mismatch without inventing zero operands.
 :::
 
 ## Returned closures and stored function values
@@ -351,11 +346,9 @@ io::out(result!!)                 // 5
 ```
 
 ::: {.callout-note title="Bind result typing"}
-An unannotated `r $>> (+ 2)` is currently accepted for a positive Int payload
-and can produce a plain Int. That does not establish a valid ramification
-mapping contract: requiring a result of `< Int | >` rejects that expression
-with E3084. Use an explicitly ram-returning continuation rather than relying
-on this inference behavior.
+The continuation of `$>>` must return a ramification. Passing a continuation that returns
+a non-ramification such as `r $>> (+ 2)` is rejected at compile time with E3091
+(`Continuation of '$>>' must return a ramification`).
 :::
 
 ## Right-hand expressions, precedence, and evaluation
@@ -422,36 +415,25 @@ such as `(_ + 1)` used as the right operand of another section, remains a
 separate function value; it does not splice its expression into the outer
 section.
 
-## Type inference and current limits
+## Type inference
 
-Provide a function signature when the section's type is not established by
-its use or when passing a separately named function value. In particular,
-the current compiler needs explicit integer typing for these shift sections:
+Shift sections (`.<. n` and `.>. n`) automatically infer `Int => Int` when unannotated,
+without requiring explicit type signatures:
 
 ```{.dva .run}
 #use io
 
-shift_left: Int => Int
 shift_left = .<. 1
-shift_right: Int => Int
 shift_right = .>. 1
 
 io::out(shift_left(12))            // 24
 io::out(shift_right(12))           // 6
 ```
 
-Without those signatures, the equivalent bindings followed by Int calls can
-still fail with E3057. This is a current inference limitation, not an exclusion
-of shifts from section syntax.
-
 A section retains the ordinary operator's errors and result types. It does
 not make division by zero safe, turn a numeric expression into a flag,
 automatically wrap a result in a ramification, or make unsupported operand
 types compatible.
-
-The confirmed defects and unresolved design choices described here are tracked
-in [issue #180](https://gitea.gde.to/ike/dva/issues/180). Changes to branch
-application must preserve the ability to return a function as a branch value.
 
 ## Compile-time calls
 
@@ -482,7 +464,7 @@ captures, or side effects available to compile-time evaluation. See
 | `[op rhs]` guard | Tests the subject with a predicate section |
 | Bare ram payload branch | Evaluates the section body against that payload |
 | Ordinary guarded branch | Can return a function value; no automatic subject application |
-| Enum payload branch | Direct payload application is unresolved; use a named payload |
+| Enum payload branch | Evaluates the section body against that payload |
 | Function return | Returns a section, possibly capturing lexical values |
 | Record, array, map, ram, or enum storage | Stores a statically typed function value |
 | `@` body | Evaluates per item; does not collect the arithmetic results |

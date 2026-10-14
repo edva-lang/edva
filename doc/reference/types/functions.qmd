@@ -86,22 +86,41 @@ An operator section `op rhs` consists of a binary operator followed by whitespac
 double = (* 2)          // Equivalent to: (_ * 2)
 inc = (+ 1)             // Equivalent to: (_ + 1)
 is_negative = (< 0)     // Equivalent to: (_ < 0)
+shl = (.<. 2)           // Equivalent to: (_ .<. 2), infers Int => Int
 ```
 
-#### Syntax rules:
-1. **Trailing whitespace is mandatory:** An operator section requires trailing whitespace immediately after the operator token (`* 2`, `+ 1`).
+#### Syntax and typing rules:
+1. **Trailing whitespace is mandatory:** An operator section requires trailing whitespace immediately after the operator token (`* 2`, `+ 1`, `.<. 2`).
    - `+ 2` (with whitespace) is an addition section.
    - `+b` (without whitespace) is the Builder freeze operator.
-2. **Excluded binary operators:** The operators `||`, `&&`, `$`, `$>`, `$>>`, `!>`, `!<`, and `!=` never form operator sections.
-3. **Usage in choice predicate guards:** Operator sections are idiomatic as predicate guards in choice expressions without needing an explicit lambda:
-   ```dva partial
+2. **Excluded binary operators:** The operators `||`, `&&`, `$`, `$>`, `$>>`, `!>`, `!<`, and `!=` never form operator sections. Logical short-circuit operators (`||`, `&&`), application/feed pipelines (`$`, `$>`, `$>>`), and relational negation/ordering (`!>`, `!<`, `!=`) carry non-standard evaluation or syntactic roles that exclude them from section synthesis.
+3. **Precedence and RHS binding power:** Operator sections parse their right-hand side operand with a binding power of 130. Operators with precedence higher than 130 (e.g. arithmetic `+`, `-`, `*`, `/`) bind tightly to the section's RHS operand. For example, `(* 2 + 3)` parses as `_ => _ * (2 + 3)` (`_ => _ * 5`).
+4. **Shift section type inference:** Shift sections (`.<. n` and `.>. n`) infer integerish operand and return types (`Int => Int`) when unannotated without requiring explicit signatures.
+5. **Usage in enum branch pattern matching:** When an operator section or function value is used in a variant branch of an enum with a payload, the payload value is bound to `_` (along with any named binders) and evaluated by the section:
+   ```{.dva .partial}
+   #type Box < Val(Int), Empty >
+   b = Box(Val, 3)
+   res1 = b [Val] (+ 2) | 0         // Evaluates to 5
+   res2 = b [Val v] (+ 2) | 0       // Evaluates to 5
+   add2 = (+ 2)
+   res3 = b [Val] add2 | 0          // Evaluates to 5
+   ```
+   Matching a unit variant without a payload against an operator section is rejected at compile time as a type mismatch without inventing zero operands.
+6. **Preserving function-valued ordinary branches:** In guarded value choices, branches returning operator sections or functions retain their functional value and are not automatically applied:
+   ```{.dva .partial}
+   choose: Int => (Int => Int)
+   choose = mode => mode [> 0] (* 2) | (+ 1)
+   ```
+   Evaluating `choose(1)` yields the function `(* 2)`.
+7. **Usage in choice predicate guards:** Operator sections are idiomatic as predicate guards in choice expressions without needing an explicit lambda:
+   ```{.dva .partial}
    classify = n =>
       n [< 0] "negative"
       [> 0] "positive"
       | "zero"
    ```
-4. **Usage in pipelines:** Operator sections can be passed directly into feed (`$>`) and higher-order routines:
-   ```dva partial
+8. **Usage in pipelines:** Operator sections can be passed directly into feed (`$>`) and higher-order routines:
+   ```{.dva .partial}
    res = 5 $> (* 2) $> (+ 10)    // (5 * 2) + 10 = 20
    ```
 

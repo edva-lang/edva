@@ -10217,13 +10217,13 @@ entry:
   %var.f = alloca ptr, align 8
   %var._48 = alloca ptr, align 8
   %var._45 = alloca ptr, align 8
-  %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
   %var.i = alloca i64, align 8
   %loop.step.27 = alloca i64, align 8
   %loop.idx.27 = alloca i64, align 8
   %"var.all_wr'" = alloca i1, align 1
   %var.flds = alloca ptr, align 8
+  %var._ = alloca ptr, align 8
   %var.ut = alloca ptr, align 8
   %var.name = alloca ptr, align 8
   %var.env = alloca ptr, align 8
@@ -10273,6 +10273,7 @@ choice.exit7:                                     ; preds = %choice.next, %loop.
 choice.case:                                      ; preds = %choice.else
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %var.load6, i32 0, i32 1
   %payload.ptr = load ptr, ptr %pay.gep, align 8
+  store ptr %payload.ptr, ptr %var._, align 8
   store ptr %payload.ptr, ptr %var.flds, align 8
   store i1 true, ptr %"var.all_wr'", align 1
   %var.load8 = load ptr, ptr %var.flds, align 8

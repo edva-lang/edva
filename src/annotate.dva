@@ -1414,7 +1414,14 @@ annotate_expr = ctx, env, expr =>
                branches += b1
                ch_expr = ast::Expr(Choice, ast::ChoiceExpr((b.1, <+>,
                   branches)))
-               annotate_expr(ctx, env, ch_expr)
+               ch_te = annotate_expr(ctx, env, ch_expr)
+               c_res = unify::canon(ctx, ch_te.ut)
+               is_ram_res = c_res [Ram _]
+               !is_ram_res
+                  |
+                     unify::add_error(ctx, 3091,
+                        "Continuation of '$>>' must return a ramification")
+               ch_te
             [Feed, Apply]
                split = apply_split(expr)
                split.0
@@ -2868,6 +2875,22 @@ unify_shift = ctx, t1, t2 =>
                unify_shift(ctx, e1, t2)
                t1
             |
+               c1_pre = unify::canon(ctx, t1)
+               c2_pre = unify::canon(ctx, t2)
+               is_v1 = c1_pre [Var _]
+               is_v2 = c2_pre [Var _]
+               is_v1 || is_v2
+                  |
+                     int1_pre = is_integerish_ut(ctx, c1_pre)
+                     int2_pre = is_integerish_ut(ctx, c2_pre)
+                     is_v1
+                        |
+                           tgt1 = int2_pre | c2_pre | unify::prim_int()
+                           unify::unify(ctx, c1_pre, tgt1)
+                     is_v2
+                        |
+                           tgt2 = int1_pre | c1_pre | unify::prim_int()
+                           unify::unify(ctx, c2_pre, tgt2)
                int1 = is_integerish_ut(ctx, t1)
                int2 = is_integerish_ut(ctx, t2)
                int1 && int2
@@ -3862,7 +3885,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                         annotate_expr(ctx, env, br.block)
                |
                   vname = br.block [Var v] v | ""
-                  is_var_bare = br.kind [Bare] && vname != "" && vname != "_"
+                  is_var_bare = br.kind [Bare, Case, Variant] && vname != "" && vname != "_"
                   bnd_opt = is_var_bare
                      | type_env::lookup_binding(env, vname)
                      | <-->
