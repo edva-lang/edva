@@ -1,9 +1,9 @@
 ---
 meta:
   audience: "Edva users writing transformations, predicates, and callbacks"
-  status: "current reference; implementation limitations identified below"
-  audited: "2ebb4ab"
-  evidence: "`src/parser.dva`, `src/operators.dva`, `src/codegen/match.dva`, `std/fp.dva`, `tests/pass/027_operator_sections.dva`, `tests/pass/188_ws_operators.dva`, `tests/pass/199_closure_composites.dva`, `tests/pass/347_underscore_implicit_uses.dva`, `tests/fail/011_section_missing_whitespace.dva`"
+  status: "current reference"
+  audited: "cfd5a5f"
+  evidence: "`src/parser.dva`, `src/operators.dva`, `src/annotate.dva`, `src/codegen/match.dva`, `src/unify.dva`, `std/fp.dva`, `tests/pass/027_operator_sections.dva`, `tests/pass/188_ws_operators.dva`, `tests/pass/199_closure_composites.dva`, `tests/pass/347_underscore_implicit_uses.dva`, `tests/pass/356_operator_sections_context.dva`, `tests/fail/011_section_missing_whitespace.dva`, `tests/fail/342_bind_non_ram_continuation.dva`"
 ---
 
 # Operator sections
@@ -266,12 +266,25 @@ read `7 [> 0] (* 2) | 0` as an automatic doubling operation: its branches
 would produce a function and an integer. To transform the subject in an
 ordinary guarded branch, name it and write the arithmetic expression.
 
-::: {.callout-note title="Enum payload branches"}
-An enum-pattern branch supplies its payload to an operator section or function value.
-With `#type Box < Item(Int), Empty >` and `b = Box(Item, 3)`, the forms `b [Item value] (+ 2) | 0`,
-`b [Item] (+ 2) | 0`, and `b [Item] _ + 2 | 0` all cleanly evaluate to 5.
-Matching a unit variant without a payload (e.g. `b [Empty] (+ 2)`) is rejected as a type mismatch without inventing zero operands.
-:::
+### Enum payload branches
+
+An enum pattern branch matching a variant with a payload automatically binds that payload to `_` (as well as any named binders). An operator section, implicit-parameter expression, or compatible named function value used as the branch body evaluates directly against the payload:
+
+```{.dva .run}
+#use io
+
+#type Box < Item(Int), Empty >
+b = Box(Item, 3)
+
+add2 = (+ 2)
+
+io::out $ b [Item value] (+ 2) | 0    // 5 (bound pattern with inline section)
+io::out $ b [Item] (+ 2) | 0          // 5 (unbound pattern with inline section)
+io::out $ b [Item] _ + 2 | 0          // 5 (implicit parameter payload)
+io::out $ b [Item] add2 | 0           // 5 (extracted named function)
+```
+
+Matching a unit variant without a payload (e.g. `Empty`) against an operator section or function expecting an argument is rejected at compile time as a type mismatch (`E3084`), without inventing zero operands.
 
 ## Returned closures and stored function values
 
@@ -347,8 +360,13 @@ io::out(result!!)                 // 5
 
 ::: {.callout-note title="Bind result typing"}
 The continuation of `$>>` must return a ramification. Passing a continuation that returns
-a non-ramification such as `r $>> (+ 2)` is rejected at compile time with E3091
-(`Continuation of '$>>' must return a ramification`).
+a non-ramification such as `r $>> (+ 2)` is rejected at compile time with `E3091`:
+
+```{.dva expected-error="E3091"}
+#type Option < Int | >
+some = Option(<+ 7 +>)
+res = some $>> (+ 2)
+```
 :::
 
 ## Right-hand expressions, precedence, and evaluation
