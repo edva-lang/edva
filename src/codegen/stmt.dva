@@ -6344,9 +6344,18 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
 
    mf = runtime::map_fields(cg, m)
    cap = mf.0
-   keys = mf.1
-   vals = mf.2
-   states = mf.3
+   live_keys = mf.1
+   live_vals = mf.2
+   live_states = mf.3
+   eight = LLVMConstInt(i64t, 8, 0)
+   key_bytes = LLVMBuildMul(cg.builder, cap, eight, "m.snap.kbytes")
+   val_bytes = LLVMBuildMul(cg.builder, cap, eight, "m.snap.vbytes")
+   keys = expr::codegen_call_arena_alloc(cg, key_bytes, "m.snap.keys")
+   vals = expr::codegen_call_arena_alloc(cg, val_bytes, "m.snap.vals")
+   states = expr::codegen_call_arena_alloc(cg, cap, "m.snap.states")
+   LLVMBuildMemCpy(cg.builder, keys, 1, live_keys, 1, key_bytes, 0)
+   LLVMBuildMemCpy(cg.builder, vals, 1, live_vals, 1, val_bytes, 0)
+   LLVMBuildMemCpy(cg.builder, states, 1, live_states, 1, cap, 0)
 
    counter_alloca = types::hoisted_alloca(cg, i64t, "loop.midx." + sc)
    LLVMBuildStore(cg.builder, LLVMConstInt(i64t, 0, 0),

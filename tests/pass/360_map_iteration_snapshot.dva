@@ -1,0 +1,41 @@
+#use io
+
+#type M Int ^ Int
+
+m1 = M()
+0..6 @ i =>
+   m1 ^ (i) = i + 10
+seen1 = 0
+m1 @ v, k =>
+   0..6 @ j =>
+      m1 ^- j
+   seen1 = seen1 + 1
+io::out(seen1)
+io::out(?m1)
+
+m2 = M()
+0..6 @ i =>
+   m2 ^ (i) = i + 10
+seen2 = 0
+m2 @ v, k =>
+   m2 ^ 100 = 100
+   0..6 @ j =>
+      m2 ^- j
+   seen2 = seen2 + 1
+io::out(seen2)
+io::out(?m2)
+
+m3 = M()
+0..6 @ i =>
+   m3 ^ (i) = i + 10
+v_sum = 0
+m3 @ v, k =>
+   m3 ^ 0 = 999
+   m3 ^ 1 = 999
+   m3 ^ 2 = 999
+   m3 ^ 3 = 999
+   m3 ^ 4 = 999
+   m3 ^ 5 = 999
+   v_sum = v_sum + v
+io::out(v_sum)
+io::out(m3 ^ 0 | _ | -1)
