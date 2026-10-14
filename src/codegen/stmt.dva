@@ -6830,14 +6830,11 @@ codegen_typed_eval_map_literal = cg, pairs, ti =>
    np == 0
       | (m, ast::ValueType(Map))
       |
-         i64t = LLVMInt64Type!
          np @ i =>
             p = pairs(i)!!
             kv = main::codegen_typed_eval(cg, p.key)
             vv = main::codegen_typed_eval(cg, p.val)
-            val_st = types::is_ptrish_vt(vv.1)
-               | LLVMBuildPtrToInt(cg.builder, vv.0, i64t, "m.wr.p2i")
-               | coerce_int(cg, vv.0, i64t)
+            val_st = runtime::codegen_map_pack_val(cg, vv.0, vv.1)
             runtime::codegen_map_insert(cg, m, kv.0, val_st, kv.1)
          (m, ast::ValueType(Map))
 

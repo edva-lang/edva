@@ -7151,11 +7151,7 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
                      is_map = tv.1 [Map]
                      is_map
                         |
-                           i64t' = LLVMInt64Type!
-                           val_st' = types::is_ptrish_vt(vv.1)
-                              | LLVMBuildPtrToInt(cg.builder, vv.0,
-                                 i64t', "m.wr.p2i")
-                              | stmt::coerce_int(cg, vv.0, i64t')
+                           val_st' = runtime::codegen_map_pack_val(cg, vv.0, vv.1)
                            runtime::codegen_map_insert(cg, tv.0, iv.0, val_st', iv.1)
                            (vv.0, vv.1)
                         | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))

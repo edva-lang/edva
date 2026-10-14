@@ -54,27 +54,27 @@
   {
     "name": "badkey_delete",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: badkey_delete.ll\nSuccessfully compiled binary: badkey_delete\n",
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/badkey_delete.dva:6:19: E3084: Type mismatch: cannot unify Int with String\nE5011: Compilation aborted due to code generation errors.\n",
       "stderr": "",
-      "exit_code": 0
+      "exit_code": 1
     },
     "run": {
+      "exit_code": -999,
       "stdout": "",
-      "stderr": "timeout: the monitored command dumped core\n",
-      "exit_code": -11
+      "stderr": ""
     }
   },
   {
     "name": "badkey_member",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: badkey_member.ll\nSuccessfully compiled binary: badkey_member\n",
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/badkey_member.dva:6:19: E3084: Type mismatch: cannot unify Int with String\nE5011: Compilation aborted due to code generation errors.\n",
       "stderr": "",
-      "exit_code": 0
+      "exit_code": 1
     },
     "run": {
+      "exit_code": -999,
       "stdout": "",
-      "stderr": "timeout: the monitored command dumped core\n",
-      "exit_code": -11
+      "stderr": ""
     }
   },
   {
@@ -145,27 +145,27 @@
   {
     "name": "float",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: float.ll\nE5013: Clang compilation failed with exit code 1\n",
-      "stderr": "float.ll:788:13: error: invalid cast opcode for cast from 'double' to 'i64'\n  788 |   store i64 ptrtoint (double 1.500000e+00 to i64), ptr %m.val.slot67, align 8\n      |             ^\n1 error generated.\n",
-      "exit_code": 1
+      "stdout": "Successfully generated LLVM IR via LLVM C API: float.ll\nSuccessfully compiled binary: float\n",
+      "stderr": "",
+      "exit_code": 0
     },
     "run": {
-      "exit_code": -999,
-      "stdout": "",
-      "stderr": ""
+      "stdout": "1.5\n1.5\n",
+      "stderr": "",
+      "exit_code": 0
     }
   },
   {
     "name": "float_literal",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: float_literal.ll\nE5013: Clang compilation failed with exit code 1\n",
-      "stderr": "float_literal.ll:781:13: error: invalid cast opcode for cast from 'double' to 'i64'\n  781 |   store i64 ptrtoint (double 1.500000e+00 to i64), ptr %m.val.slot67, align 8\n      |             ^\n1 error generated.\n",
-      "exit_code": 1
+      "stdout": "Successfully generated LLVM IR via LLVM C API: float_literal.ll\nSuccessfully compiled binary: float_literal\n",
+      "stderr": "",
+      "exit_code": 0
     },
     "run": {
-      "exit_code": -999,
-      "stdout": "",
-      "stderr": ""
+      "stdout": "1.5\n",
+      "stderr": "",
+      "exit_code": 0
     }
   },
   {
@@ -275,7 +275,7 @@
   {
     "name": "nonmap_delete",
     "compile": {
-      "stdout": "E5011: LLVM module verification failed: Load operand must be a pointer.\n  %m.cap = load i64, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 1), align 8\nLoad operand must be a pointer.\n  %m.keys = load ptr, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 2), align 8\nLoad operand must be a pointer.\n  %m.states = load ptr, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 4), align 8\nLoad operand must be a pointer.\n  %m.del.count = load i64, i64 1, align 8\nStore operand must be a pointer.\n  store i64 %m.del.cnt.next, i64 1, align 8\nLoad operand must be a pointer.\n  %m.del.tombs = load i64, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 5), align 8\nStore operand must be a pointer.\n  store i64 %m.del.tombs.next, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 5), align 8\n\nE5011: Compilation aborted due to code generation errors.\n",
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/nonmap_delete.dva:2:17: E3084: Type mismatch: cannot unify Int with Map(Int, ?T370)\nE5011: Compilation aborted due to code generation errors.\n",
       "stderr": "",
       "exit_code": 1
     },
@@ -288,7 +288,7 @@
   {
     "name": "nonmap_member",
     "compile": {
-      "stdout": "E5011: LLVM module verification failed: Load operand must be a pointer.\n  %m.cap = load i64, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 1), align 8\nLoad operand must be a pointer.\n  %m.keys = load ptr, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 2), align 8\nLoad operand must be a pointer.\n  %m.states = load ptr, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 4), align 8\n\nE5011: Compilation aborted due to code generation errors.\n",
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/nonmap_member.dva:2:17: E3084: Type mismatch: cannot unify Int with Map(Int, ?T370)\nE5011: Compilation aborted due to code generation errors.\n",
       "stderr": "",
       "exit_code": 1
     },
@@ -392,14 +392,14 @@
   {
     "name": "wrong_delete",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: wrong_delete.ll\nSuccessfully compiled binary: wrong_delete\n",
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/wrong_delete.dva:5:17: E3084: Type mismatch: cannot unify String with Int\nE5011: Compilation aborted due to code generation errors.\n",
       "stderr": "",
-      "exit_code": 0
+      "exit_code": 1
     },
     "run": {
-      "stdout": "<->\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
@@ -431,14 +431,14 @@
   {
     "name": "wrong_member",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: wrong_member.ll\nSuccessfully compiled binary: wrong_member\n",
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/wrong_member.dva:5:17: E3084: Type mismatch: cannot unify String with Int\nE5011: Compilation aborted due to code generation errors.\n",
       "stderr": "",
-      "exit_code": 0
+      "exit_code": 1
     },
     "run": {
-      "stdout": "<->\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {

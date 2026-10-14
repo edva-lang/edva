@@ -2447,6 +2447,22 @@ codegen_map_grow = cg, m, key_vt =>
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, done)
 
+codegen_map_pack_val: types::Cg, Addr, ast::ValueType => Addr
+codegen_map_pack_val = cg, v, vt =>
+   i64t = LLVMInt64Type!
+   types::is_ptrish_vt(vt)
+      | LLVMBuildPtrToInt(cg.builder, v, i64t, "m.wr.p2i")
+      |
+         types::is_float_vt(vt)
+            |
+               is_f32 = vt [F32]
+               is_f32
+                  |
+                     f32_i32 = LLVMBuildBitCast(cg.builder, v, LLVMInt32Type!, "m.wr.f2i32")
+                     LLVMBuildZExt(cg.builder, f32_i32, i64t, "m.wr.f2i64")
+                  | LLVMBuildBitCast(cg.builder, v, i64t, "m.wr.f2i")
+            | stmt::coerce_int(cg, v, i64t)
+
 // Grow/rebuild at occupancy load factor 0.75, then perform the normal probe/insert.
 codegen_map_insert: types::Cg, Addr, Addr, Addr, ast::ValueType => ()
 codegen_map_insert = cg, m, key_val, val_val, key_vt =>
@@ -2548,7 +2564,19 @@ codegen_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
          types::gep1(cg, i8p, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
       | LLVMBuildLoad2(cg.builder, i64t,
          types::gep1(cg, i64t, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
-   main::codegen_array_box_payload(cg, result, val, val_vt)
+   val_unpacked = val_is_ptr
+      | val
+      |
+         types::is_float_vt(val_vt)
+            |
+               is_f32 = val_vt [F32]
+               is_f32
+                  |
+                     f_i32 = LLVMBuildTrunc(cg.builder, val, LLVMInt32Type!, "m.rd.f.i32")
+                     LLVMBuildBitCast(cg.builder, f_i32, LLVMFloatType!, "m.rd.f.flt")
+                  | LLVMBuildBitCast(cg.builder, val, LLVMDoubleType!, "m.rd.v.flt")
+            | val
+   main::codegen_array_box_payload(cg, result, val_unpacked, val_vt)
    LLVMBuildBr(cg.builder, done)
    LLVMPositionBuilderAtEnd(cg.builder, miss_bb)
    LLVMBuildStore(cg.builder, zero, tag_gep)
