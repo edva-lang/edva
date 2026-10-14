@@ -1,8 +1,8 @@
 ---
 meta:
   audience: "Edva users working with implicit arguments, choices, cycles, and patterns"
-  status: "current reference; consistency limitations identified below"
-  audited: "8b092c9"
+  status: "current reference; consistency review resolved"
+  audited: "7b0e39e"
   evidence: "`src/parser.dva`, `src/annotate.dva`, `src/codegen/types.dva`, `src/codegen/match.dva`, `src/codegen/stmt.dva`, `tests/pass/029_implicit_param_lambda.dva`, `tests/pass/347_underscore_implicit_uses.dva`, `tests/pass/254_deep_pattern_destructuring.dva`, `tests/fail/335_explicit_underscore_param.dva`, `audits/2026-10-14-underscore/`"
 ---
 
@@ -24,9 +24,9 @@ wildcard. Its spelling alone does not tell you which role applies.
 | `_ => expression` | Forbidden explicit parameter declaration |
 | `_name`, `__`, `_i` | Different identifiers; `_i` additionally has a cycle role |
 
-These roles share syntax but do not yet have fully consistent scoping and
-typing. The [consistency review](#consistency-review) below distinguishes
-supported forms, language-design choices, and reproduced defects.
+These roles share syntax and have strict, consistent scoping and typing rules.
+The [consistency review](#consistency-review) below summarizes the resolved
+contracts and compiler guarantees.
 
 ## Identifiers and literal text
 
@@ -51,8 +51,8 @@ from that spelling. A prime-suffixed identifier follows the ordinary mutable
 binding rules; it is not the exact identifier `_`.
 
 Inside a String or Rune literal, `_` is literal text. It is not a numeric
-separator: spell one thousand as `1000`, not `1_000`. The current compiler
-also rejects `1_000.5`.
+separator: spell one thousand as `1000`, not `1_000`. The compiler rejects
+underscores in integer and float literals (`1_000`, `1_000.5`) with E1019.
 
 ## Grouped implicit-parameter lambdas
 
@@ -202,36 +202,32 @@ inside a cycle, `_` becomes the lambda's parameter and `_i` is captured
 from the enclosing cycle.
 
 The implementation also makes implicit aliases available in named cycle
-bodies, but explicit names are preferable when values must survive nesting:
+bodies, and properly restores enclosing bindings across nesting:
 
 ```{.dva .run}
 #use io
 
-10..12 @ outer =>
-   1 @ inner =>
-      io::out(inner)
-   io::out(outer)
+10..11 @
+   io::out $ _
+   1 @ io::out $ _
+   io::out $ _
+// => 10
 // => 0
 // => 10
+// => 11
 // => 0
 // => 11
 ```
 
-::: {.callout-warning title="Nested cycles and index lifetime"}
-Currently, reading `_` after the inner cycle in this example produces 0,
-not the outer item. The inner alias is not restored consistently.
+Nested cycles preserve outer values by saving and restoring `_` and `_i` at cycle entry and exit.
 
-Post-cycle `_i` is also unreliable. Breaking at byte `b` in `"abc"` yielded
-0 through `_i`, while a named String-cycle index yielded 1. Use explicit
-item/index names for nested loops and for scanner positions needed after a
-cycle. Do not infer an alias's lifetime from the lifetime of a named variable.
-:::
+Implicit cycle variables `_` and `_i` do not survive cycle exit: reading `_i` after a cycle finishes or after an early break is rejected at compile time with `E3004: Undefined: _i`. If a loop index must persist after loop termination (such as a scan position in a String cycle), declare an explicit named cycle index (`text @ b, index =>`).
 
 ### Maps use a key, not a sequential index
 
 Map cycles have value/key roles. Their lowering uses `_` for the value and
-`_i` for the key, whose type need not be Int. The current implicit-key typing
-is inconsistent for String keys; use explicit names:
+`_i` for the key, whose type reflects the actual map key type (for example,
+`String` for `String ^ Int`):
 
 ```{.dva .run}
 #use io
@@ -240,16 +236,12 @@ is inconsistent for String keys; use explicit names:
 values = Values()
 values ^ "key" = 7
 
-values @ value, key =>
-   io::out(value)
-   io::out(key)
+values @
+   io::out $ _
+   io::out $ _i
 // => 7
 // => key
 ```
-
-In the corresponding implicit block, printing `_i` currently prints a large
-integer instead of `key`. That is a compiler defect, not a supported
-conversion of map keys to indices.
 
 ## Ramification payloads
 
@@ -284,9 +276,9 @@ io::out(value)
 ```
 
 Do not confuse a negative payload with a unit/absence slot. For `< Int | >`,
-the second slot has no integer payload: use `r | _ | 0` to supply an explicit
-default. The current acceptance of `r | _ | _` on absence, yielding 0,
-is an inconsistency rather than a reliable extraction rule.
+the second slot has no integer payload: extracting `_` from an absent unit slot
+(`r | _ | _`) is rejected at compile time with `E3004: Undefined: _`. Always
+supply an explicit default expression (such as `r | _ | 0`).
 
 ### Error extraction is special
 
@@ -312,14 +304,20 @@ Use a named negative branch to inspect a recoverable Error, as described in
 
 ### Parentheses around payload expressions
 
-`(r | _ | 0)` currently remains a value expression because the parser treats
-the bare identity extractor specially. `(r | _ + 2 | 0)` instead becomes an
-implicit lambda: the free-underscore scan does not recognize that the
-arithmetic branch's `_` is locally supplied by the ramification.
+The free-underscore scan is binder-aware: payload-bearing branches (`Bare`, `Variant`)
+bind `_` within their branch body. Grouping an expression containing payload arithmetic,
+such as `(r | _ + 2 | 0)`, produces a normal value expression rather than converting
+the grouped choice into an implicit lambda:
 
-Until this is resolved, bind the ungrouped choice to a named value, as in
-`increased = r | _ + 2 | 0` above, and pass that name onward. Adding arithmetic
-to a payload branch should not silently change a grouped expression's arity.
+```{.dva .run}
+#use io
+
+r: < Int | >
+r = <+ 5 +>
+x = (r | _ + 2 | 0)
+io::out(x)
+// => 7
+```
 
 ## Choice predicates and omitted subjects
 
@@ -356,16 +354,26 @@ io::out(sign(2))
 An omitted subject without an enclosing implicit value is rejected with
 E3003. It does not mean “reuse the previous expression's result.”
 
-::: {.callout-warning title="Branch bodies do not consistently bind the subject"}
-Do not assume `_` in an ordinary guarded branch body means the choice
-subject. The probe `7 [> 0] _ + 2 | 0` produced **2**, not 9. Name the
-subject and use that name in the branch body.
+Ordinary value and predicate choices (`7 [> 0] ... | 0`) test conditions on a subject
+rather than extracting a payload from a container. They do not bind `_` in their branch
+bodies; referencing `_` in an ordinary guarded branch (such as `7 [> 0] _ + 2 | 0`)
+is rejected with `E3004: Undefined: _`. To use the subject, bind it explicitly with a
+named function parameter (`x => x [> 0] x + 2 | 0`).
 
-The related enum payload/section defect was fixed in `cfd5a5f`; that fix does
-not resolve the ordinary guarded-branch probe above. See
-[Operator sections](operator-sections.qmd#sections-as-branch-bodies) and
-[issue #180](https://gitea.gde.to/ike/dva/issues/180).
-:::
+This behavior also preserves function-valued branches in ordinary choices, such as
+selecting operator sections:
+
+```{.dva .run}
+#use io
+
+choose_transform: Int => (Int => Int)
+choose_transform = mode =>
+   mode [> 0] (* 2) | (+ 1)
+
+transform = choose_transform(1)
+io::out(transform(7))
+// => 14
+```
 
 ## Wildcards in structured patterns
 
@@ -429,41 +437,31 @@ as `ignored` when a callable must accept an unused argument. For a branch that
 just returns a constant, write the constant without introducing a function.
 Names such as `_arg`, `__`, and `_i` remain legal explicit parameter names.
 
-::: {.callout-warning title="Missing `_` can silently become zero"}
-Outside a supported implicit-binding context, `_` should not be used as a
-value. The current compiler accepts `x: Int; x = _` and produces 0. Likewise,
-`f: Int => Int; f = value => _ + 1` produces 1 for `f(8)`.
+### Undefined implicit value references
 
-This is a missing diagnostic, not an implicit default argument or an alias
-for `value`. Use the parameter's declared name. The explicit E3003 check for
-omitted choice subjects does not currently protect all other `_` reads.
-:::
+Outside a supported implicit-binding context, `_` cannot be read as a value. The compiler rejects unbound value references (`x = _`, `value => _ + 1`) with `E3004: Undefined: _`. `_` is not an automatic alias for explicitly named function parameters, nor does it synthesize a default zero value:
+
+```{.dva expected-error="E3004"}
+x: Int
+x = _
+```
 
 ## Consistency review
 
-The main implementation findings are:
+The underscore scoping and typing contracts are specified and enforced as follows:
 
-| Area | Inconsistency | More consistent contract |
+| Area | Contract and resolution | Diagnostic |
 |---|---|---|
-| Name resolution | Missing `_` can produce zero; omitted choice subjects instead get E3003 | Reject every value read without a supplying binder |
-| Discard idiom | `_ = value` binds, can be read, rejects repetition, and can hide a cycle item | Decide explicitly between an ordinary binding and a nonbinding sink |
-| Grouping | Identity payload branches are exempt from lambda synthesis; arithmetic payload branches are not | Recognize branch-local bindings during free-variable analysis |
-| Branch subjects | Annotation accepts subject/payload references that lowering does not consistently supply | Agree on which branch forms bind `_`, then bind or reject consistently |
-| Nested cycles | Inner aliases replace the outer implicit value after the inner cycle | Restore the enclosing binding on scope exit |
-| Cycle indices | Named and implicit indices disagree after a String-cycle break | Specify alias lifetime and exit values consistently |
-| Map keys | `_i` is typed as Int while lowering supplies a String key | Use the actual key type for map cycles |
-| Absent payloads | `_` extraction from an absent slot can manufacture an Int zero | Reject extraction from a slot with no payload |
+| Name resolution | Unbound references (`x = _`, `value => _ + 1`) are rejected; omitted choice subjects without enclosing `_` are rejected | `E3004` / `E3003` |
+| Discard idiom | Assignment to `_` (`_ = ...`, `_ := ...`, `_ ::= ...`) is forbidden; bare call statements are used directly | `E2044` |
+| Grouping | Payload-bearing branches (`Bare`, `Variant`) are recognized as bound; grouped arithmetic payload branches `(r | _ + 2 | 0)` evaluate to values | Validated |
+| Branch subjects | Ordinary value and predicate choices do not bind `_` in branch bodies, preserving function-valued branches | `E3004` on unbound `_` |
+| Nested cycles | Inner cycles save and restore outer implicit item `_` and index `_i` bindings upon completion | Validated |
+| Cycle indices | Implicit index `_i` does not survive cycle exit; post-cycle reads are rejected | `E3004` |
+| Map keys | Implicit key `_i` is typed with the map's actual key type (`m.key`) | Validated |
+| Absent payloads | Payload extraction from absent unit slots (`< Int | >` negative slot or payload-free enum variant) is rejected | `E3004` |
+| Numeric separators | Underscore numeric separators (`1_000`, `1_000.5`) are rejected | `E1019` |
 
-Other distinctions are deliberate syntax rules: `_` in a pattern is not an
-expression; a grouped implicit lambda has one parameter; `_i` does not itself
-trigger lambda synthesis; and the explicit-parameter ban targets the exact
-identifier `_`.
+Other distinctions remain standard syntax rules: `_` in a pattern is a wildcard, not an expression; a grouped implicit lambda introduces one parameter; and `_i` is an identifier with cycle index semantics.
 
-These observations do not imply that every branch should automatically apply
-a function to its subject. Preserve ordinary function-valued branches and
-make any special payload-binding context explicit.
-
-The [detailed review and reproductions](../../../audits/2026-10-14-underscore/report.md)
-record outputs, controls, relevant implementation paths, and the limits of the
-analysis. The recommendations above describe possible fixes, not language
-changes implemented by this chapter.
+The [detailed review and reproductions](../../../audits/2026-10-14-underscore/report.md) record the original audit baseline and rerun probe results.
