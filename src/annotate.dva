@@ -1991,8 +1991,15 @@ annotate_expr = ctx, env, expr =>
          ka.line > 0 | unify::set_pos(ctx, ka.line, ka.col)
          target_te = annotate_expr(ctx, env, ka.target)
          key_te = annotate_expr(ctx, env, ka.key)
+         c_tgt = unify::canon(ctx, target_te.ut)
          ka.is_membership || ka.is_delete
             |
+               c_tgt
+                  [Map m]
+                     unify::unify(ctx, m.key, key_te.ut)
+                  |
+                     var_map = unify::mk_map(key_te.ut, unify::fresh_var(ctx))
+                     unify::unify(ctx, target_te.ut, var_map)
                flg_ut = unify::prim_flag()
                flg_ti = ast::TypeInfo(Prim, ast::ValueType(Flag))
                flg_lay = layout::compute_layout(ctx, flg_ut)
@@ -2001,14 +2008,19 @@ annotate_expr = ctx, env, expr =>
                   flg_ut, flg_ti, flg_lay, ka.line, ka.col)
             |
                elem_ut' = unify::fresh_var(ctx)
-               c_tgt = unify::canon(ctx, target_te.ut)
                c_tgt
-                  [Array arr] (elem_ut' = arr.elem)
-                  [Slice sl] (elem_ut' = sl)
+                  [Array arr]
+                     unify::unify(ctx, key_te.ut, unify::prim_int())
+                     elem_ut' = arr.elem
+                  [Slice sl]
+                     unify::unify(ctx, key_te.ut, unify::prim_int())
+                     elem_ut' = sl
                   [Map m]
                      unify::unify(ctx, m.key, key_te.ut)
                      elem_ut' = m.val
-                  | (elem_ut' = unify::fresh_var(ctx))
+                  |
+                     var_map2 = unify::mk_map(key_te.ut, elem_ut')
+                     unify::unify(ctx, target_te.ut, var_map2)
                ram_ut = unify::ram_pp(elem_ut', unify::prim_error())
                ti = unify::type_info_from_utype(ctx, ram_ut)
                lay = layout::compute_layout(ctx, ram_ut)

@@ -1,0 +1,4 @@
+#use io
+#type M Int ^ Int
+m = M()
+io::out $ m ^? "key"
