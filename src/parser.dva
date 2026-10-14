@@ -212,6 +212,7 @@ parser_skip_layout = p =>
 
 parser_error: Parser, Int, String => ()
 parser_error = p, code, msg =>
+   p.recovered_errors = p.recovered_errors + 1
    fn = p.source_file != "" | p.source_file + ":" | ""
    print $ fn + str::from_int(p.curr.line) + ":" + str::from_int(p.curr.col) +
       ": E" + str::from_int(code) + ": " + msg
