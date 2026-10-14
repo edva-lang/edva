@@ -704,7 +704,7 @@ clo.merge:                                        ; preds = %clo.plain, %clo.cap
 
 define ptr @"mem::pool"(i64 %0, i64 %1) #1 {
 entry:
-  %var._55 = alloca i64, align 8
+  %var.st_cap = alloca i64, align 8
   %var._ = alloca i64, align 8
   %var._i = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -854,9 +854,10 @@ loop.latch.0:                                     ; preds = %addr_ok51
   br label %loop.header.0
 
 loop.exit.0:                                      ; preds = %loop.exit.nat.0
-  store i64 0, ptr %var._55, align 8
+  %var.load55 = load i64, ptr %var.cap, align 8
+  store i64 %var.load55, ptr %var.st_cap, align 8
   %var.load56 = load ptr, ptr %var.st, align 8
-  %var.load57 = load i64, ptr %var.cap, align 8
+  %var.load57 = load i64, ptr %var.st_cap, align 8
   %raw.int58 = ptrtoint ptr %var.load56 to i64
   %raw.clean.int59 = and i64 %raw.int58, 281474976710655
   %raw.clean.ptr60 = inttoptr i64 %raw.clean.int59 to ptr

@@ -1,18 +1,18 @@
 [
   {
     "name": "bare_wildcard",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/bare_wildcard.dva:2:1: E3004: Undefined: _ in io\nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "no\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
     "name": "ct_param",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/ct_param.dva:1:7: E2040: Explicit '_' parameter is forbidden in function parameter lists — use a named parameter or omit unused binders.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/ct_param.dva:1:7: E2040: Explicit '_' parameter is forbidden in function parameter lists \u2014 use a named parameter or omit unused binders.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -31,28 +31,28 @@
   },
   {
     "name": "discard_in_cycle",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_in_cycle.dva:3:6: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
     "run": {
-      "stdout": "99\n99\n99\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
     "name": "discard_read",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_read.dva:2:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
     "run": {
-      "stdout": "7\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
     "name": "discard_repeat",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_repeat.dva:4:1: E3033: Cannot re-assign immutable binding '_'. Use a prime suffix ('_'') for rebindable variables.\nE5011: Compilation aborted due to code generation errors.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_repeat.dva:2:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_repeat.dva:3:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -62,7 +62,7 @@
   {
     "name": "discard_same_type",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_same_type.dva:4:1: E3033: Cannot re-assign immutable binding '_'. Use a prime suffix ('_'') for rebindable variables.\nE5011: Compilation aborted due to code generation errors.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_same_type.dva:2:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/discard_same_type.dva:3:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -91,12 +91,12 @@
   },
   {
     "name": "implicit_cycle",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/implicit_cycle.dva:5:1: E3004: Undefined: _i in io\nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "10\n0\n11\n1\n0\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
@@ -104,7 +104,7 @@
     "compile_exit": 0,
     "diagnostics": "",
     "run": {
-      "stdout": "7\n94783412886960\n",
+      "stdout": "7\nkey\n",
       "stderr": "",
       "exit_code": 0
     }
@@ -134,19 +134,19 @@
     "compile_exit": 0,
     "diagnostics": "",
     "run": {
-      "stdout": "0\n10\n0\n0\n11\n0\n",
+      "stdout": "0\n10\n10\n0\n11\n11\n",
       "stderr": "",
       "exit_code": 0
     }
   },
   {
     "name": "named_lambda_alias",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/named_lambda_alias.dva:466:39: E3004: Undefined: _ in \nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "1\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
@@ -194,7 +194,7 @@
     "compile_exit": 0,
     "diagnostics": "",
     "run": {
-      "stdout": "0\n10\n0\n0\n11\n0\n",
+      "stdout": "0\n10\n10\n0\n11\n11\n",
       "stderr": "",
       "exit_code": 0
     }
@@ -221,22 +221,22 @@
   },
   {
     "name": "normal_guard",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/normal_guard.dva:2:1: E3004: Undefined: _ in io\nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "2\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
     "name": "numeric_capture",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/numeric_capture.dva:2:3: E2044: Cannot assign to '_' \u2014 '_' cannot be used as an assignment target.\n",
     "run": {
-      "stdout": "4\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
@@ -252,7 +252,7 @@
   {
     "name": "omitted_unbound",
     "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/omitted_unbound.dva:1:1: E3003: Omitting a Choice/pattern branch's leading condition is only allowed when '_' is already defined in the enclosing scope (e.g. inside a '=> '-omitted-param lambda, or a cycle body). '_' is not defined here.\nE5011: Compilation aborted due to code generation errors.\n",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/omitted_unbound.dva:1:1: E3003: Omitting a Choice/pattern branch's leading condition is only allowed when '_' is already defined in the enclosing scope (e.g. inside a '=> '-omitted-param lambda, or a cycle body). '_' is not defined here.\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/omitted_unbound.dva:1:1: E3004: Undefined: _ in \nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -281,12 +281,12 @@
   },
   {
     "name": "ram_grouping_transform",
-    "compile_exit": 1,
-    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/ram_grouping_transform.dva:466:39: E3084: Type mismatch: cannot unify Int with (?T370) => Int\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/ram_grouping_transform.dva:466:39: E3084: Return type mismatch in function: test\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/ram_grouping_transform.dva:8:1: E3084: Type mismatch: cannot unify Int with (?T370) => Int\n/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/ram_grouping_transform.dva:8:1: E3084: Return type mismatch in function: test\nE5011: Compilation aborted due to code generation errors.\n",
+    "compile_exit": 0,
+    "diagnostics": "",
     "run": {
-      "exit_code": -999,
-      "stdout": "",
-      "stderr": ""
+      "stdout": "5\n",
+      "stderr": "",
+      "exit_code": 0
     }
   },
   {
@@ -301,18 +301,18 @@
   },
   {
     "name": "record_literal",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/record_literal.dva:3:1: E3004: Undefined: _ in \nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "0\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
     "name": "separator_float",
     "compile_exit": 1,
-    "diagnostics": "",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/separator_float.dva:2:9: E1019: Underscore numeric separators are not supported.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -322,7 +322,7 @@
   {
     "name": "separator_int",
     "compile_exit": 1,
-    "diagnostics": "",
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/separator_int.dva:2:9: E1019: Underscore numeric separators are not supported.\n",
     "run": {
       "exit_code": -999,
       "stdout": "",
@@ -331,12 +331,12 @@
   },
   {
     "name": "string_cycle_escape",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/string_cycle_escape.dva:7:1: E3004: Undefined: _i in io\nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "0\n1\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
@@ -351,12 +351,12 @@
   },
   {
     "name": "unbound",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/unbound.dva:4:1: E3004: Undefined: _ in \nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "0\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
@@ -381,22 +381,22 @@
   },
   {
     "name": "unit_payload",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/unit_payload.dva:4:1: E3004: Undefined: _ in \nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "0\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {
     "name": "wildcard_zero",
-    "compile_exit": 0,
-    "diagnostics": "",
+    "compile_exit": 1,
+    "diagnostics": "/home/ike/Z/edva/audits/2026-10-14-underscore/reproductions/wildcard_zero.dva:2:1: E3004: Undefined: _ in io\nE5011: Compilation aborted due to code generation errors.\n",
     "run": {
-      "stdout": "match\n",
-      "stderr": "",
-      "exit_code": 0
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
     }
   },
   {

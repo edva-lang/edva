@@ -1927,7 +1927,8 @@ has_free_underscore_branches = bs =>
             has_free_underscore_exprs(b.case_values)
                | (found' = <+>; -->)
                |
-                  has_free_underscore(b.block)
+                  is_payload_branch = b.kind [Bare, Variant]
+                  !is_payload_branch && has_free_underscore(b.block)
                      | (found' = <+>; -->)
    found'
 
@@ -4587,10 +4588,8 @@ mk_extract_pay = target, tag_name, out_var =>
    br0 = ast::ChoiceBranch((ast::GuardKind(Variant), ast::Exprs(),
       ast::Expr(Var, "?"), tag_names_single(tag_name), binds, <->,
       ast::Expr(Var, out_var)))
-   br1 = mk_branch(ast::Expr(Var, "_"))
    brs = ast::Branches()
    brs += br0
-   brs += br1
    rhs = ast::Expr(Choice, ast::ChoiceExpr((target, <+>, brs)))
    mk_assign(out_var, rhs)
 
@@ -5579,12 +5578,17 @@ parse_colon_ctx = p, name => parse_colon_ctx_g(p, name, <->)
 
 parse_colon_ctx_g: Parser, String, <> => <ast::Expr|>
 parse_colon_ctx_g = p, name, is_global =>
-   p.in_rhs
+   name == "_"
       |
-         parser_error(p, 2003,
-            "Expected newline or EOF after statement, got ':'")
+         parser_error(p, 2044, diag::E2044_underscore_assign!)
          <-->
-      | parse_colon_g(p, name, is_global)
+      |
+         p.in_rhs
+            |
+               parser_error(p, 2003,
+                  "Expected newline or EOF after statement, got ':'")
+               <-->
+            | parse_colon_g(p, name, is_global)
 
 parse_colon: Parser, String => <ast::Expr|>
 parse_colon = p, name => parse_colon_g(p, name, <->)
@@ -6062,29 +6066,34 @@ parse_named_assign = p, name, is_mut, is_compound =>
 
 parse_named_assign_g: Parser, String, <>, <>, <> => <ast::Expr|>
 parse_named_assign_g = p, name, is_mut, is_compound, is_global =>
-   is_mut
+   name == "_"
       |
-         parser_error(p, 2010, diag::E2010_colon_equals_retired!)
+         parser_error(p, 2044, diag::E2044_underscore_assign!)
          <-->
       |
-         parser_advance(p)
-         p.in_rhs = <+>
-         rhs = parse_assign_rhs(p)
-         p.in_rhs = <->
-         rhs
-            | re =>
-               is_mutable = name_is_primed(name)
-               is_mutable && !is_compound && expr_is_string_literal(re)
-                  |
-                     parser_error(p, 2001, "Cannot make a mutable binding of " +
-                        "a string literal; assign a copy with '++'.")
-                     <-->
-                  |
-                     n = ast::Expr(Assign, (name, is_mutable, is_compound,
-                        is_global, <->, re, ast::Expr(Var, ""), "",
-                        ast::TypeInfo(Prim, ast::ValueType(Unknown))))
-                     seq_cont_loop(p, n)
-            | <-->
+         is_mut
+            |
+               parser_error(p, 2010, diag::E2010_colon_equals_retired!)
+               <-->
+            |
+               parser_advance(p)
+               p.in_rhs = <+>
+               rhs = parse_assign_rhs(p)
+               p.in_rhs = <->
+               rhs
+                  | re =>
+                     is_mutable = name_is_primed(name)
+                     is_mutable && !is_compound && expr_is_string_literal(re)
+                        |
+                           parser_error(p, 2001, "Cannot make a mutable binding of " +
+                              "a string literal; assign a copy with '++'.")
+                           <-->
+                        |
+                           n = ast::Expr(Assign, (name, is_mutable, is_compound,
+                              is_global, <->, re, ast::Expr(Var, ""), "",
+                              ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+                           seq_cont_loop(p, n)
+                  | <-->
 
 expr_is_string_literal: ast::Expr => <>
 expr_is_string_literal = e => e [Str _]
@@ -6093,15 +6102,20 @@ expr_is_string_literal = e => e [Str _]
 // following '|' choice wraps the whole write.
 parse_global_assign: Parser, String => <ast::Expr|>
 parse_global_assign = p, name =>
-   parser_advance(p)
-   rhs = tok_is_nl(p.curr) | parse_indented_rhs(p) | parse_bp(p, 130)
-   rhs
-      | re =>
-         n = ast::Expr(Assign, (name, <->, <->, <+>, <->, re,
-            ast::Expr(Var, ""), "",
-            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
-         choice_cont(p, n)
-      | <-->
+   name == "_"
+      |
+         parser_error(p, 2044, diag::E2044_underscore_assign!)
+         <-->
+      |
+         parser_advance(p)
+         rhs = tok_is_nl(p.curr) | parse_indented_rhs(p) | parse_bp(p, 130)
+         rhs
+            | re =>
+               n = ast::Expr(Assign, (name, <->, <->, <+>, <->, re,
+                  ast::Expr(Var, ""), "",
+                  ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+               choice_cont(p, n)
+            | <-->
 
 // "name(arg1, arg2)" — a parenthesized call, then postfix calls and the
 // cycle/choice continuation.

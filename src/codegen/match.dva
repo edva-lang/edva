@@ -435,7 +435,7 @@ codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
 
          unreachable_bb = LLVMAppendBasicBlock(cg.current_fn, "enum.unreachable")
          LLVMPositionBuilderAtEnd(cg.builder, unreachable_bb)
-         _ = LLVMBuildUnreachable(cg.builder)
+         LLVMBuildUnreachable(cg.builder)
 
          LLVMPositionBuilderAtEnd(cg.builder, tag_match_bb)
          sw = LLVMBuildSwitch(cg.builder, l_tag, unreachable_bb, n_slots)

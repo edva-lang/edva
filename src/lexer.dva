@@ -415,6 +415,8 @@ scan_radix_rest = lx, kind, start, line, col =>
       radix_ok(pk(lx, 0), kind)
          | adv(lx, pk(lx, 0))
          |
+            pk(lx, 0) == '_'
+               | fail(1019, line, col, "Underscore numeric separators are not supported.")
             pk(lx, 0) == '{' && lx.pos > start + 2 && try_scan_repeat(lx)
                | --^
                | -->
@@ -436,6 +438,8 @@ scan_frac_opt = lx, q, start, line, col =>
       |
          adv(lx, pk(lx, 0))
          skip_digits(lx, 0)
+         pk(lx, 0) == '_'
+            | fail(1019, line, col, "Underscore numeric separators are not supported.")
    ok
 
 // Optional exponent (e[+-]digits). Returns 1 when consumed.
@@ -446,11 +450,15 @@ scan_exp_opt = lx, q, line, col =>
    has_sign = is_e && (pk(lx, 0) == '+' || pk(lx, 0) == '-')
    has_sign | adv(lx, pk(lx, 0))
    is_e | skip_digits(lx, line)
+   is_e && pk(lx, 0) == '_'
+      | fail(1019, line, col, "Underscore numeric separators are not supported.")
    is_e
 
 scan_dec: Lx, Int, Int, Int => Tok
 scan_dec = lx, start, line, col => 
    skip_digits(lx, 0)
+   pk(lx, 0) == '_'
+      | fail(1019, line, col, "Underscore numeric separators are not supported.")
    0.. @
       lx.pos !< ?lx.src | -->
       pk(lx, 0) == '{' && lx.pos > start && try_scan_repeat(lx)

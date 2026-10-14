@@ -101,8 +101,8 @@
       %memset(act, 0, act_sz)
       cap @ i =>
          @[fs + i * 8] = i
-      _ = 0
-      @[st] = cap
+      st_cap = cap
+      @[st] = st_cap
       @[st + 8] = 0
       Pool((buf, fs, act, st, es, cap))
 

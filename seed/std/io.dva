@@ -302,34 +302,34 @@
    // console.log-style to stdout.
    out: #! T: Type, T => ()
    out = x =>
-      _ = log(io::STDOUT, x)
+      log(io::STDOUT, x)
 
    // Monomorphic string output with trailing newline to stdout.
    outs: String => ()
    outs = s =>
       nl = "\n"
-      _ = writev_all(io::STDOUT, s, nl)
+      writev_all(io::STDOUT, s, nl)
 
    // console.log-style to stderr.
    err: #! T: Type, T => ()
    err = x =>
-      _ = log(io::STDERR, x)
+      log(io::STDERR, x)
 
    // Monomorphic string output with trailing newline to stderr.
    errs: String => ()
    errs = s =>
       nl = "\n"
-      _ = writev_all(io::STDERR, s, nl)
+      writev_all(io::STDERR, s, nl)
 
    // Formatted ('{}' placeholders) to stdout.
    outf: #! T: Type, T, String => ()
    outf = x, fmt =>
-      _ = logf(io::STDOUT, x, fmt)
+      logf(io::STDOUT, x, fmt)
 
    // Formatted ('{}' placeholders) to stderr.
    errf: #! T: Type, T, String => ()
    errf = x, fmt =>
-      _ = logf(io::STDERR, x, fmt)
+      logf(io::STDERR, x, fmt)
 
    // --- Reader-based buffered reading ----------------------------------------
 
@@ -339,7 +339,7 @@
    read = r, max =>
       max !> 0 |-->
       r.pos !< ?r.buf |
-         _ = refill(r)
+         refill(r)
       r.pos !< ?r.buf |-->
       avail = ?r.buf - r.pos
       take = avail < max | avail | max

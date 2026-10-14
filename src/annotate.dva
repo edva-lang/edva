@@ -1008,6 +1008,9 @@ annotate_cycle = ctx, env, c, esc_opt =>
    has_elem = iter_elem_info.0
    elem_ut = iter_elem_info.1
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
+   key_ut' = c_iter [Map m] m.key | unify::prim_int()
+   prev_u = type_env::lookup_binding_exact(env, "_")
+   prev_ui = type_env::lookup_binding_exact(env, "_i")
    body_te = c.body_fn
       [Fn fe]
          p0 = fe.params(0) | _ | ""
@@ -1061,7 +1064,7 @@ annotate_cycle = ctx, env, c, esc_opt =>
                      type_env::bind_local(env, p1, unify::prim_int(),
                         ti_unk, <->)
                      type_env::init_mark_whole(env, p1)
-         type_env::bind_local(env, "_i", unify::prim_int(), ti_unk, <->)
+         type_env::bind_local(env, "_i", key_ut', ti_unk, <->)
          type_env::bind_local(env, "_", elem_ut, ti_unk, <->)
          env.discard_result = <+>
          fe_body_te = annotate_expr(ctx, env, fe.body)
@@ -1082,7 +1085,7 @@ annotate_cycle = ctx, env, c, esc_opt =>
          ti_fn = unify::type_info_from_utype(ctx, fn_ut)
          mk_lambda_te(fe.params, fe_body_te, fn_ut, ti_fn)
       |
-         type_env::bind_local(env, "_i", unify::prim_int(), ti_unk, <->)
+         type_env::bind_local(env, "_i", key_ut', ti_unk, <->)
          type_env::bind_local(env, "_", elem_ut, ti_unk, <->)
          env.discard_result = <+>
          callee = apply_callee_name(c.body_fn)
@@ -1103,6 +1106,12 @@ annotate_cycle = ctx, env, c, esc_opt =>
                ti_fn = unify::type_info_from_utype(ctx, fn_ut)
                mk_lambda_te(pnames, fe_body_te, fn_ut, ti_fn)
             | annotate_expr(ctx, env, c.body_fn)
+   prev_u
+      | pu => type_env::bind_local(env, "_", pu.ut, pu.ti, pu.is_mut)
+      | type_env::unbind_local(env, "_")
+   prev_ui
+      | pui => type_env::bind_local(env, "_i", pui.ut, pui.ti, pui.is_mut)
+      | type_env::unbind_local(env, "_i")
    esc_opt
       | esc_te =>
          ram_ut = unify::ram_pn(esc_te.ut)
@@ -1273,34 +1282,25 @@ annotate_expr = ctx, env, expr =>
                   b.depth, b.is_mut, b.ut,
                   ti, lay, 0, 0)
             |
-               name == "_"
+               gen_opt = type_env::lookup_generic(
+                  env, name)
+               gen_opt
+                  | gen_ti =>
+                     gen_ut =
+                        instantiate_generic_ti(
+                           ctx, gen_ti)
+                     ti =
+                        unify::type_info_from_utype(
+                           ctx, gen_ut)
+                     lay =
+                        layout::compute_layout(
+                           ctx, gen_ut)
+                     tast::mk_typed_var(name,
+                        0, <->, gen_ut, ti,
+                        lay, 0, 0)
                   |
-                     wut = unify::fresh_var(ctx)
-                     wti = ast::TypeInfo(Prim,
-                        ast::ValueType(Unknown))
-                     wlay = tast::layout_scalar(8, 8)
-                     tast::mk_typed_var("_", 0, <->,
-                        wut, wti, wlay, 0, 0)
-                  |
-                     gen_opt = type_env::lookup_generic(
-                        env, name)
-                     gen_opt
-                        | gen_ti =>
-                           gen_ut =
-                              instantiate_generic_ti(
-                                 ctx, gen_ti)
-                           ti =
-                              unify::type_info_from_utype(
-                                 ctx, gen_ut)
-                           lay =
-                              layout::compute_layout(
-                                 ctx, gen_ut)
-                           tast::mk_typed_var(name,
-                              0, <->, gen_ut, ti,
-                              lay, 0, 0)
-                        |
-                           ut_opt = type_env::lookup_user_type(env, name)
-                           ut_opt
+                     ut_opt = type_env::lookup_user_type(env, name)
+                     ut_opt
                               | udef =>
                                  type_ut = unify::prim_type()
                                  type_ti = ast::TypeInfo(Prim,
@@ -3808,25 +3808,33 @@ annotate_choice = ctx, env, ch, is_disc =>
       c_cond = unify::canon(ctx, cond_te.ut)
       payload_ut' = unify::fresh_var(ctx)
       has_pay' = <->
+      is_unit_slot' = <->
       c_cond
          [Ram r]
             i == 0
                |
                   r.0.has_payload
                      | (payload_ut' = r.0.ut; has_pay' = <+>)
+                     | (is_unit_slot' = <+>)
                |
                   r.1.has_payload
                      | (payload_ut' = r.1.ut; has_pay' = <+>)
+                     | (is_unit_slot' = <+>)
          [Enum uenum]
             vname = br.variant_names(0) | _ | ""
             def_ev = unify::UEnumVariant(("", <->, unify::UType(None)))
             ?uenum.variants @ v_k =>
                v = uenum.variants(v_k) | _ | def_ev
-               v.label == vname && v.has_payload
-                  | (payload_ut' = v.payload_type; has_pay' = <+>; -->)
+               v.label == vname
+                  |
+                     v.has_payload
+                        | (payload_ut' = v.payload_type; has_pay' = <+>; -->)
+                        | (is_unit_slot' = <+>; -->)
          |
-            payload_ut' = cond_te.ut
-            has_pay' = <->
+            is_bare = br.kind [Bare]
+            is_bare
+               | (payload_ut' = cond_te.ut)
+               | (is_unit_slot' = <+>)
       typed_cvs = tast::TypedExprs()
       ?br.case_values @ cv_i =>
          cv = br.case_values(cv_i) | _ | ast::Expr(Int, 0)
@@ -3855,9 +3863,11 @@ annotate_choice = ctx, env, ch, is_disc =>
             <+ pred_te +>
          | <-->
       type_env::enter_scope(env)
-      pay_ti = unify::type_info_from_utype(ctx, payload_ut')
-      type_env::bind_local(env, "_", payload_ut', pay_ti, <->)
       cur_bind_vars = br.bind_vars
+      pay_ti = unify::type_info_from_utype(ctx, payload_ut')
+      !is_unit_slot'
+         |
+            type_env::bind_local(env, "_", payload_ut', pay_ti, <->)
       ?br.bind_vars @ bv_i =>
          bv = br.bind_vars(bv_i) | _ | ""
          bv != "" && bv != "_"

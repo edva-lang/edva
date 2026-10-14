@@ -42,6 +42,10 @@ E2040_underscore_param: () => String
 E2040_underscore_param = !=>
    "Explicit '_' parameter is forbidden in function parameter lists — use a named parameter or omit unused binders."
 
+E2044_underscore_assign: () => String
+E2044_underscore_assign = !=>
+   "Cannot assign to '_' — '_' cannot be used as an assignment target."
+
 E2093_assign_typed_load: () => String
 E2093_assign_typed_load = !=>
    "Cannot assign to a typed load; write through the untyped '@[addr]' form instead."

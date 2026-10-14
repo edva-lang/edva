@@ -562,5 +562,6 @@
    // <- error -> on failure.
    read_request: Int, Int => Req
    read_request = fd, max =>
-      line = http::read_line(fd, max)
-      line | http::request_from_line(fd, _, max) | Req(<- _ +>)
+      http::read_line(fd, max)
+         | http::request_from_line(fd, _, max)
+         | Req(<- "incomplete request line" +>)

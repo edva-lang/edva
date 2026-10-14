@@ -166,6 +166,18 @@ bind_local = env, name, ut, ti, is_mut =>
          scs(cur_idx) = cur_sc !| _
          env.scopes = scs
 
+unbind_local: TypeEnv, String => ()
+unbind_local = env, name =>
+   cur_idx = env.cur_scope
+   cur_idx !< 0
+      |
+         scs = env.scopes
+         cur_sc = scs(cur_idx) | _ | empty_scope()
+         indices = cur_sc.indices
+         indices ^ (name) = 0 - 1
+         scs(cur_idx) = cur_sc !| _
+         env.scopes = scs
+
 bind_global: TypeEnv, String, unify::UType, ast::TypeInfo => ()
 bind_global = env, name, ut, ti =>
    gls = env.globals
@@ -215,9 +227,12 @@ lookup_scope = scope, name =>
    indices ^? name
       |
          idx = indices ^ name | _ | _
-         scope.bindings(idx)
-            | binding => <+ binding +>
+         idx < 0
             | <-->
+            |
+               scope.bindings(idx)
+                  | binding => <+ binding +>
+                  | <-->
       | <-->
 
 lookup_local: TypeEnv, String => < TypeBinding | >

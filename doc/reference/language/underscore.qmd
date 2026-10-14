@@ -20,7 +20,7 @@ wildcard. Its spelling alone does not tell you which role applies.
 | Bare ram payload branch | Payload of the selected slot |
 | Omitted choice subject | Existing implicit value being tested |
 | Structured pattern, such as `(a = _, b = 20)` | Match without binding that component |
-| `_ = expression` | Currently an ordinary readable binding, **not a true discard target** |
+| `_ = expression` | Forbidden assignment target (E2044); call functions directly to discard results |
 | `_ => expression` | Forbidden explicit parameter declaration |
 | `_name`, `__`, `_i` | Different identifiers; `_i` additionally has a cycle role |
 
@@ -112,9 +112,9 @@ The transformation is syntactic. Even when an outer `_` already exists,
 ```{.dva .run}
 #use io
 
-_ = 7
-increment = (_ + 1)
-io::out(increment(3))
+7..8 @
+   increment = (_ + 1)
+   io::out(increment(3))
 // => 4
 ```
 
@@ -403,23 +403,14 @@ Pattern matching and record construction are different contexts.
 
 ## Assignment to `_` and ignored results
 
-The library often writes `_ = operation(...)` to signal that the return value
-is unimportant. The current implementation still creates a readable binding:
+Assigning to `_` (`_ = ...`, `_ := ...`, `_ ::= ...`) is forbidden (E2044).
+It cannot be used as an assignment target:
 
-```{.dva .run}
-#use io
-
+```{.dva expected-error="E2044"}
 _ = 7
-io::out $ _
-// => 7
 ```
 
-Repeating `_ = 8` in the same scope is rejected with E3033, just as reassignment
-to another immutable binding would be. Inside an implicit cycle, `_ = 99`
-changes the value seen by a subsequent `_` read. This is not a safe,
-scope-neutral discard operation.
-
-To call a function for its effects, use a bare call statement when its API and
+To call a function for its effects, use a bare call statement directly when its API and
 the surrounding construct allow that. If its result matters, bind it to a
 descriptive name. Do not use `_ = ...` to mean error handling: assigning a
 result does not inspect or propagate its error slot.

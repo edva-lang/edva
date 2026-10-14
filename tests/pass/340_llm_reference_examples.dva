@@ -100,7 +100,7 @@ read_file = path =>
    |
       b = {4096}
       n = read(fd, &b, 4096)
-      _ = close(fd)
+      close(fd)
       n > 0 | (?b = n; <+ +b +>) | <-->
 
 // Main driver

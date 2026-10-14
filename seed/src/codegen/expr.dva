@@ -877,7 +877,7 @@ codegen_eval = cg, expr =>
       [Str s] (stmt::codegen_string_literal(cg, s), ast::ValueType(Str))
       [Var v]
          rv = types::resolve_var_name(cg, v)
-         is_v = (v == "_") || types::var_has_storage(cg, v)
+         is_v = types::var_has_storage(cg, v)
          v_opt = is_v
             | types::codegen_load(cg, rv)
             |

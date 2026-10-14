@@ -1774,9 +1774,7 @@ codegen_uninitialized_load_error = cg, name =>
 
 codegen_missing_load: Cg, String => <(Addr, ast::ValueType)|>
 codegen_missing_load = cg, name =>
-   name == "_"
-      | <-->
-      | (dotted_var_val(cg, name) | v => <+ v +> | codegen_undefined_name_error(cg, name))
+   dotted_var_val(cg, name) | v => <+ v +> | codegen_undefined_name_error(cg, name)
 
 codegen_undefined_name_error: Cg, String => <(Addr, ast::ValueType)|>
 codegen_undefined_name_error = cg, name =>
@@ -4012,10 +4010,7 @@ codegen_eval_record = cg, r =>
 rec_meta: Cg, ast::ValueType => <(Addr, ast::Names)|>
 rec_meta = cg, vt =>
    vt [Record]
-      |
-         cg.last_rt
-            | rt => <+ (rt, cg.last_fnames) +>
-            | <-->
+      (cg.last_rt | rt => <+ (rt, cg.last_fnames) +> | <-->)
       | <-->
 
 td_record_meta: Cg, Int => <(Addr, ast::Names)|>
