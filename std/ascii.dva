@@ -1,0 +1,82 @@
+// Standard ASCII Module (std/ascii.dva)
+//
+// ASCII classification, case conversion, and hexadecimal digit conversion.
+// Operates on byte / code point integer values.
+//
+// Predicates return false for negative numbers and values outside their ASCII range.
+// Case conversions leave non-ASCII values unchanged.
+// hex_value accepts ASCII '0'..'9', 'a'..'f', 'A'..'F' and returns absence for invalid input.
+// hex_digit_lower / hex_digit_upper return checked values for 0..15.
+// hex_char_lower / hex_char_upper return encoded byte values assuming 0 <= n <= 15.
+
+#public
+   // --- Predicates ---
+
+   is_ascii: Int => <>
+   is_ascii = c => c !< 0 && c !> 127
+
+   is_digit: Int => <>
+   is_digit = c => c !< 48 && c !> 57
+
+   is_upper: Int => <>
+   is_upper = c => c !< 65 && c !> 90
+
+   is_lower: Int => <>
+   is_lower = c => c !< 97 && c !> 122
+
+   is_alpha: Int => <>
+   is_alpha = c => ascii::is_upper(c) || ascii::is_lower(c)
+
+   is_alnum: Int => <>
+   is_alnum = c => ascii::is_digit(c) || ascii::is_alpha(c)
+
+   is_hex: Int => <>
+   is_hex = c => ascii::is_digit(c) || (c !< 65 && c !> 70) || (c !< 97 && c !> 102)
+
+   // --- Case Conversion ---
+
+   to_lower: Int => Int
+   to_lower = c =>
+      ascii::is_upper(c)
+         | c + 32
+         | c
+
+   to_upper: Int => Int
+   to_upper = c =>
+      ascii::is_lower(c)
+         | c - 32
+         | c
+
+   // --- Hexadecimal Conversion ---
+
+   hex_value: Int => < Int | >
+   hex_value = c =>
+      c !< 48 && c !> 57
+         | <+ c - 48 +>
+         | c !< 65 && c !> 70
+            | <+ c - 55 +>
+            | c !< 97 && c !> 102
+               | <+ c - 87 +>
+               | <-->
+
+   hex_digit_lower: Int => < Int | >
+   hex_digit_lower = n =>
+      n !< 0 && n !> 15
+         | <+ n < 10 | 48 + n | 87 + n +>
+         | <-->
+
+   hex_digit_upper: Int => < Int | >
+   hex_digit_upper = n =>
+      n !< 0 && n !> 15
+         | <+ n < 10 | 48 + n | 55 + n +>
+         | <-->
+
+   // Documented precondition: 0 <= n <= 15
+   hex_char_lower: Int => Int
+   hex_char_lower = n =>
+      n < 10 | 48 + n | 87 + n
+
+   // Documented precondition: 0 <= n <= 15
+   hex_char_upper: Int => Int
+   hex_char_upper = n =>
+      n < 10 | 48 + n | 55 + n

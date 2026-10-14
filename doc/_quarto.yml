@@ -57,6 +57,7 @@ book:
         - guide/packages.qmd
     - part: reference/stdlib/index.qmd
       chapters:
+        - reference/stdlib/ascii.qmd
         - reference/stdlib/ccl.qmd
         - reference/stdlib/color.qmd
         - reference/stdlib/fmt.qmd

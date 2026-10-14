@@ -1,0 +1,122 @@
+// Exhaustive tests for std/ascii and caller integrations.
+
+#use ascii
+#use str
+#use json
+#use "net/http"
+#use unicode
+#use io
+
+// 1. Exhaustive classification over all 256 bytes
+ascii_count' = 0
+digit_count' = 0
+upper_count' = 0
+lower_count' = 0
+alpha_count' = 0
+alnum_count' = 0
+hex_count' = 0
+hex_val_count' = 0
+
+256 @ i =>
+   ascii::is_ascii(i) | ascii_count' = ascii_count' + 1
+   ascii::is_digit(i) | digit_count' = digit_count' + 1
+   ascii::is_upper(i) | upper_count' = upper_count' + 1
+   ascii::is_lower(i) | lower_count' = lower_count' + 1
+   ascii::is_alpha(i) | alpha_count' = alpha_count' + 1
+   ascii::is_alnum(i) | alnum_count' = alnum_count' + 1
+   ascii::is_hex(i) | hex_count' = hex_count' + 1
+   ascii::hex_value(i) | v => hex_val_count' = hex_val_count' + 1
+
+io::out(ascii_count')
+io::out(digit_count')
+io::out(upper_count')
+io::out(lower_count')
+io::out(alpha_count')
+io::out(alnum_count')
+io::out(hex_count')
+io::out(hex_val_count')
+
+// 2. Negative and out-of-range inputs
+neg = 0 - 1
+io::out(ascii::is_ascii(neg) | "FAIL" | "ok")
+io::out(ascii::is_digit(neg) | "FAIL" | "ok")
+io::out(ascii::is_upper(neg) | "FAIL" | "ok")
+io::out(ascii::is_lower(neg) | "FAIL" | "ok")
+io::out(ascii::is_alpha(neg) | "FAIL" | "ok")
+io::out(ascii::is_alnum(neg) | "FAIL" | "ok")
+io::out(ascii::is_hex(neg) | "FAIL" | "ok")
+io::out(ascii::hex_value(neg) | v => "FAIL" | "ok")
+
+io::out(ascii::is_ascii(300) | "FAIL" | "ok")
+io::out(ascii::is_digit(300) | "FAIL" | "ok")
+io::out(ascii::is_upper(300) | "FAIL" | "ok")
+io::out(ascii::is_lower(300) | "FAIL" | "ok")
+io::out(ascii::is_alpha(300) | "FAIL" | "ok")
+io::out(ascii::is_alnum(300) | "FAIL" | "ok")
+io::out(ascii::is_hex(300) | "FAIL" | "ok")
+io::out(ascii::hex_value(300) | v => "FAIL" | "ok")
+
+// 3. Case conversion boundaries
+io::out(ascii::to_lower(64))
+io::out(ascii::to_lower(65))
+io::out(ascii::to_lower(90))
+io::out(ascii::to_lower(91))
+io::out(ascii::to_lower(neg))
+io::out(ascii::to_lower(200))
+
+io::out(ascii::to_upper(96))
+io::out(ascii::to_upper(97))
+io::out(ascii::to_upper(122))
+io::out(ascii::to_upper(123))
+io::out(ascii::to_upper(neg))
+io::out(ascii::to_upper(200))
+
+// 4. Hex encoding / decoding round trips
+round_trip_lower' = <+>
+round_trip_upper' = <+>
+16 @ n =>
+   c_lo = ascii::hex_digit_lower(n) | c => c | 0
+   v_lo = ascii::hex_value(c_lo) | v => v | 0 - 1
+   v_lo != n | round_trip_lower' = <->
+   c_up = ascii::hex_digit_upper(n) | c => c | 0
+   v_up = ascii::hex_value(c_up) | v => v | 0 - 1
+   v_up != n | round_trip_upper' = <->
+
+io::out(round_trip_lower' | "ok" | "FAIL")
+io::out(round_trip_upper' | "ok" | "FAIL")
+io::out(ascii::hex_digit_lower(neg) | v => "FAIL" | "ok")
+io::out(ascii::hex_digit_lower(16) | v => "FAIL" | "ok")
+io::out(ascii::hex_digit_upper(neg) | v => "FAIL" | "ok")
+io::out(ascii::hex_digit_upper(16) | v => "FAIL" | "ok")
+
+// 5. str::is_* compatibility
+io::out(str::is_digit(53) | "ok" | "FAIL")
+io::out(str::is_alpha(65) | "ok" | "FAIL")
+io::out(str::is_alnum(97) | "ok" | "FAIL")
+io::out(str::is_hex(70) | "ok" | "FAIL")
+io::out(str::is_ws(32) | "ok" | "FAIL")
+io::out(str::hex_to_str(255))
+d = str::to_hex("1a2b")
+io::out(d | (_.0) | -1)
+
+// 6. http caller regressions (hex_val invalid inputs, percent_decode valid & malformed)
+io::out(http::hex_val(103))
+io::out(http::hex_val(0))
+io::out(http::hex_val(neg))
+io::out(http::percent_decode("hello%20world"))
+io::out(http::percent_decode("malformed%2Gescape"))
+io::out(http::percent_decode("truncated%"))
+io::out(http::percent_decode("truncated%4"))
+io::out(http::percent_decode("%2F%3A"))
+
+// 7. json caller regressions
+j1 = json::parse("\"\\u0041\\u0042\"")
+j1 | v => io::out("string ok") | e => io::out("FAIL")
+j2 = json::parse("\"\\u004G\"")
+j2 | v => io::out("FAIL") | e => io::out("bad escape caught")
+
+// 8. Unicode vs ASCII distinction preservation
+// Cyrillic Capital Letter A (U+0410, codepoint 1040)
+cyrillic_a = Rune(1040)
+io::out(unicode::is_alpha(cyrillic_a) | "ok" | "FAIL")
+io::out(ascii::is_alpha(1040) | "FAIL" | "ok")

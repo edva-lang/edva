@@ -7,6 +7,7 @@
 // (git mirrors, extracted trees); verification hardening is #102.
 
 #use "diag"
+#use ascii
 #use ccl
 #use libc
 #use str
@@ -222,19 +223,16 @@
       b = {64}
       ?s @ i =>
          c = s(i)
-         is_upper = c !< 'A' && c !> 'Z'
-         is_lower = c !< 'a' && c !> 'z'
-         is_digit = c !< '0' && c !> '9'
-         is_upper | b += c + 32
-         is_lower | b += c
-         is_digit | b += c
+         ascii::is_upper(c) | b += ascii::to_lower(c)
+         ascii::is_lower(c) | b += c
+         ascii::is_digit(c) | b += c
          c == '-' || c == '_' | b += '_'
       res = +b
       ?res == 0
          | "my_pkg"
          |
             c0 = res(0)
-            c0 < 'a' || c0 > 'z' | "pkg_" + res | res
+            !ascii::is_lower(c0) | "pkg_" + res | res
 
    is_valid_identifier: String => <>
    is_valid_identifier = s => unicode::is_uax31(s)
@@ -245,8 +243,7 @@
       ok' = <+>
       0..40 @ i =>
          c = s(i)
-         is_hex = (c !< '0' && c !> '9') || (c !< 'a' && c !> 'f') || (c !< 'A' && c !> 'F')
-         !is_hex | ok' = <->; -->
+         !ascii::is_hex(c) | ok' = <->; -->
       ok'
 
    pkg_base_name: String => String
@@ -317,11 +314,10 @@
          c = Int(s(i))
          h' = h' .^. c
          h' = h' * 1099511628211
-      digits = "0123456789abcdef"
       b = {16}
       16 @ i =>
          nib = (h' .>. (60 - i * 4)) .&. 15
-         b += digits(nib)
+         b += ascii::hex_char_lower(nib)
       +b
 
    names_has: Strings, String => <>

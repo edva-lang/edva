@@ -32,6 +32,7 @@
 //   ./lexer
 
 #use "diag"
+#use ascii
 #use libc
 #use str
 #use unicode
@@ -375,10 +376,11 @@ radix_ok = c, kind =>
    is_b = kind ['b', 'B']
    is_o = kind ['o', 'O']
    is_x = kind ['x', 'X']
-   dec = c !< '0' && c !> '9'
+   ci = Int(c)
+   dec = ascii::is_digit(ci)
    bin = c ['0', '1']
-   oct = c !< '0' && c !> '7'
-   hex = dec || (c !< 'A' && c !> 'F') || (c !< 'a' && c !> 'f')
+   oct = ci !< '0' && ci !> '7'
+   hex = ascii::is_hex(ci)
    (is_b && bin) || (is_o && oct) || (is_x && hex)
 
 try_scan_repeat: Lx => <>
@@ -387,7 +389,7 @@ try_scan_repeat = lx =>
    0.. @
       p' !< ?lx.src | -->
       c = lx.src(p')
-      c !< '0' && c !> '9'
+      ascii::is_digit(Int(c))
          | p' = p' + 1
          | -->
    p' > lx.pos + 1 && p' < ?lx.src && lx.src(p') == '}'

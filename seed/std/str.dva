@@ -12,22 +12,23 @@
 // Comparisons and && / || already yield ramifications, so a predicate is just
 // the boolean expression — no "| <+> | <->" identity scaffolding needed.
 
+#use ascii
+
 #public
-   is_digit: Int => i1
-   is_digit = c => c !< '0' && c !> '9'
+   is_digit: Int => <>
+   is_digit = c => ascii::is_digit(c)
 
-   is_alpha: Int => i1
-   is_alpha = c => c !< 'a' && c !> 'z' || c !< 'A' && c !> 'Z'
+   is_alpha: Int => <>
+   is_alpha = c => ascii::is_alpha(c)
 
-   is_alnum: Int => i1
-   is_alnum = c => str::is_digit(c) || str::is_alpha(c)
+   is_alnum: Int => <>
+   is_alnum = c => ascii::is_alnum(c)
 
-   is_ws: Int => i1
+   is_ws: Int => <>
    is_ws    = c => c == ' ' || c == '\t' || c == '\n' || c == '\r'
 
-   is_hex: Int => i1
-   is_hex   = c => c !< '0' && c !> '9' || c !< 'a' && c !> 'f' ||
-      c !< 'A' && c !> 'F'
+   is_hex: Int => <>
+   is_hex   = c => ascii::is_hex(c)
 
    // --- conversion ---
 
@@ -214,13 +215,9 @@
    to_hex = s =>
       val' = 0
       s @ b, i =>
-         !str::is_hex(b) | -->
-         digit = str::is_digit(b)
-            | b - '0'
-            | b !< 'A' && b !> 'F'
-               | b - 'A' + 10
-               | b - 'a' + 10
-         val' = val' * 16 + digit
+         ascii::hex_value(b)
+            | d => val' = val' * 16 + d
+            | -->
       i [0] --| Digits(<-->)
       Digits(<+ (val', s(i..)) +>)
 
@@ -235,7 +232,7 @@
       32 @
          n' [> 0]
             digit = n' % 16
-            ch = digit [< 10] '0' + digit | 'A' + (digit - 10)
+            ch = ascii::hex_char_upper(digit)
             b += ch
             n' = n' / 16
          | -->
