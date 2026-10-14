@@ -1,0 +1,72 @@
+[
+  {
+    "name": "177_map_type",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 177_map_type.ll\nSuccessfully compiled binary: 177_map_type\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "10\n2\n2\nPositive\nNegative\nanswer\n1\n7\n20\n190\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "207_map_delete_literal_iteration",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 207_map_delete_literal_iteration.ll\nSuccessfully compiled binary: 207_map_delete_literal_iteration\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "count=3\na=1 z=-1 has-b=y\ndel-b=y del-b2=n count=2\nb=-1 a=1 b2=99\nc:3 a:1 b:99 \nx count=2\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "324_map_tombstone_update",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 324_map_tombstone_update.ll\nSuccessfully compiled binary: 324_map_tombstone_update\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "PASS\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "325_map_tombstone_saturation",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 325_map_tombstone_saturation.ll\nSuccessfully compiled binary: 325_map_tombstone_saturation\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "PASS\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "336_string_map_key_length_memcmp",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 336_string_map_key_length_memcmp.ll\nSuccessfully compiled binary: 336_string_map_key_length_memcmp\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "not found\n-1\nnot found\n-1\n100\n5\ns2 found\n999\ns3 not found\n-1\ns4 not found\n-1\n200\ndel ok\ndeleted\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  }
+]

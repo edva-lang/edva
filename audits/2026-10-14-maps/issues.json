@@ -1,0 +1,84 @@
+[
+  {
+    "number": 195,
+    "title": "maps: validate membership and deletion receiver/key types before lowering",
+    "url": "https://gitea.gde.to/ike/dva/issues/195",
+    "probes": [
+      "badkey_member",
+      "badkey_delete",
+      "wrong_member",
+      "wrong_delete",
+      "nonmap_member",
+      "nonmap_delete"
+    ]
+  },
+  {
+    "number": 196,
+    "title": "maps: correctly pack Float values for insertion and literals",
+    "url": "https://gitea.gde.to/ike/dva/issues/196",
+    "probes": [
+      "float",
+      "float_literal",
+      "lookup_float_only"
+    ]
+  },
+  {
+    "number": 197,
+    "title": "parser: parse bare identifier map keys correctly in assignments",
+    "url": "https://gitea.gde.to/ike/dva/issues/197",
+    "probes": [
+      "bare_identifier_key",
+      "parenthesized_key"
+    ]
+  },
+  {
+    "number": 198,
+    "title": "maps: enforce supported key types for inferred literals",
+    "url": "https://gitea.gde.to/ike/dva/issues/198",
+    "probes": [
+      "bad_literal_key",
+      "decl_bad_key"
+    ]
+  },
+  {
+    "number": 199,
+    "title": "maps: define and enforce mutation-during-iteration semantics",
+    "url": "https://gitea.gde.to/ike/dva/issues/199",
+    "probes": [
+      "mutate_delete",
+      "mutate_delete_control",
+      "mutation"
+    ]
+  },
+  {
+    "number": 200,
+    "title": "maps: mix high key bits before power-of-two bucket selection",
+    "url": "https://gitea.gde.to/ike/dva/issues/200",
+    "probes": [
+      "perf_aligned",
+      "perf_sequential"
+    ]
+  },
+  {
+    "number": 201,
+    "title": "docs: correct map examples, hashing claims and iteration contracts",
+    "url": "https://gitea.gde.to/ike/dva/issues/201",
+    "probes": [
+      "doc_lookup"
+    ]
+  },
+  {
+    "number": 202,
+    "title": "parser: fail compilation when map documentation example emits E2024",
+    "url": "https://gitea.gde.to/ike/dva/issues/202",
+    "probes": [
+      "doc_lookup"
+    ]
+  },
+  {
+    "number": 203,
+    "title": "maps: avoid unnecessary rehash on overwrite and retained-buffer growth under churn",
+    "url": "https://gitea.gde.to/ike/dva/issues/203",
+    "probes": []
+  }
+]

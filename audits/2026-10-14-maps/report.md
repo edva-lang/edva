@@ -1,6 +1,8 @@
 # Native map (`^`) implementation audit — 2026-10-14
 
-Source HEAD: `6d9c162`; compiler: `edva 1.1.1+8b092c9-dirty`. The intervening commit changes documentation/audit evidence only. This review concerns native associative maps, not `std/fp::map`. No compiler changes or remote issues were made for this review.
+Original source HEAD: `6d9c162`; compiler: `edva 1.1.1+8b092c9-dirty`. The intervening commit changes documentation/audit evidence only. This review concerns native associative maps, not `std/fp::map`. No compiler implementation was changed for this review.
+
+Publication follow-up: pulled upstream `4e5b2f5`, including the underscore fixes in `7b0e39e`, and rebased the audit as `e259385`. Rebuilt the compiler and reran all 35 probes plus the five existing map regression tests. The implicit-key defect in section 7 is now fixed; the other reproduced findings remain. See [rerun compiler identity](rerun-build.json), [rerun results](rerun-results.json), and [rerun regressions](rerun-regressions.json). Original timing measurements remain labeled with the original build; they were not rebenchmarked during publication.
 
 Evidence: [build identity](build.json), [35 exploratory probes](results.json), [sources](reproductions/), [timings](timings.json), [five existing regression tests](regressions.json). These are local Linux/native results, not a cross-target or exhaustive audit. Three unsuccessful exploratory probes (`array`, `f32`, `small_int`) use unsupported syntax/type names; they are retained for transparency and are not findings. `array_fixed` is the valid array-value control.
 
@@ -70,9 +72,9 @@ Both programs report the correct count. Timings include process launch and are i
 
 Fix: use a proper integer finalizer that mixes high bits into low bits, and test aligned keys in addition to consecutive keys. Consider a keyed string hash if adversarially selected keys are part of the intended use case.
 
-## 7. Existing defect: implicit map key `_i` has the wrong annotation type
+## 7. Fixed upstream: implicit map key `_i` had the wrong annotation type
 
-`implicit_key` iterates `("key" ^= 7)` and prints `_i` as a large address-like integer, not `key`. Already tracked in [Gitea #187](https://gitea.gde.to/ike/dva/issues/187); do not duplicate it. Use the map key's type in annotation, matching lowering and named-key iteration.
+The original `implicit_key` probe iterated `("key" ^= 7)` and printed `_i` as a large address-like integer, not `key`. Tracked and now closed in [Gitea #187](https://gitea.gde.to/ike/dva/issues/187). After pulling and rebuilding, the same probe correctly prints `key`. No duplicate issue was created.
 
 ## 8. Documentation discrepancies and a parser-status defect exposed by its example
 
@@ -95,4 +97,17 @@ The existing map tests 177, 207, 324, 325, and 336 all pass with exact expected 
 
 Prioritize (1) unsafe membership/deletion typing, (2) Float storage, (3) key assignment parsing and inferred-key validation, then iteration semantics and hashing. Keep the existing `_i` ticket and treat documentation/parser-status corrections separately. The results retain failed exploratory inputs and controls so the limits of each conclusion are visible.
 
-Run `nu audits/2026-10-14-maps/run_probes.nu` to rerun the probe sources. Outputs go to `rerun-results.json`; original evidence is preserved. Binaries/IR are created outside the repository. No issues, commits, or pushes are part of this audit request.
+Run `nu audits/2026-10-14-maps/run_probes.nu` to rerun the probe sources. Outputs go to `rerun-results.json`; original evidence is preserved. Binaries/IR are created outside the repository. The follow-up publication request created the Gitea issues listed below and pushed the report and evidence to GitHub.
+
+
+## Gitea tracking
+
+- [#195](https://gitea.gde.to/ike/dva/issues/195): maps: validate membership and deletion receiver/key types before lowering
+- [#196](https://gitea.gde.to/ike/dva/issues/196): maps: correctly pack Float values for insertion and literals
+- [#197](https://gitea.gde.to/ike/dva/issues/197): parser: parse bare identifier map keys correctly in assignments
+- [#198](https://gitea.gde.to/ike/dva/issues/198): maps: enforce supported key types for inferred literals
+- [#199](https://gitea.gde.to/ike/dva/issues/199): maps: define and enforce mutation-during-iteration semantics
+- [#200](https://gitea.gde.to/ike/dva/issues/200): maps: mix high key bits before power-of-two bucket selection
+- [#201](https://gitea.gde.to/ike/dva/issues/201): docs: correct map examples, hashing claims and iteration contracts
+- [#202](https://gitea.gde.to/ike/dva/issues/202): parser: fail compilation when map documentation example emits E2024
+- [#203](https://gitea.gde.to/ike/dva/issues/203): maps: avoid unnecessary rehash on overwrite and retained-buffer growth under churn

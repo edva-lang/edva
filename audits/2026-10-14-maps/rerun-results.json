@@ -1,0 +1,457 @@
+[
+  {
+    "name": "array",
+    "compile": {
+      "stdout": "",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "array_fixed",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: array_fixed.ll\nSuccessfully compiled binary: array_fixed\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "20\n10\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "bad_literal_key",
+    "compile": {
+      "stdout": "E5011: LLVM module verification failed: Load operand must be a pointer.\n  %mk.data67 = load ptr, double getelementptr inbounds ({ i64, ptr }, double 1.500000e+00, i32 0, i32 1), align 8\nLoad operand must be a pointer.\n  %mk.len68 = load i64, double 1.500000e+00, align 8\nLoad operand must be a pointer.\n  %mk.nlen111 = load i64, double 1.500000e+00, align 8\nLoad operand must be a pointer.\n  %mk.ndata126 = load ptr, double getelementptr inbounds ({ i64, ptr }, double 1.500000e+00, i32 0, i32 1), align 8\n\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "bad_record_value",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/bad_record_value.dva:4:29: E3084: Record field count mismatch: 1 vs 2\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "badkey_delete",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: badkey_delete.ll\nSuccessfully compiled binary: badkey_delete\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "",
+      "stderr": "timeout: the monitored command dumped core\n",
+      "exit_code": -11
+    }
+  },
+  {
+    "name": "badkey_member",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: badkey_member.ll\nSuccessfully compiled binary: badkey_member\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "",
+      "stderr": "timeout: the monitored command dumped core\n",
+      "exit_code": -11
+    }
+  },
+  {
+    "name": "bare_identifier_key",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/bare_identifier_key.dva:5:11: E3033: Cannot re-assign immutable binding 'k'. Use a prime suffix ('k'') for rebindable variables.\n/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/bare_identifier_key.dva:5:11: E3084: Type mismatch: cannot unify Int with ()\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "decl_bad_key",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/decl_bad_key.dva:1:20: E2090: Map key type must be String, Int, or Addr\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "doc_lookup",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/doc_lookup.dva:8:11: E2024: Bare '|' is only allowed as the first branch (Left Value) or final branch (catch-all) in a choice expression.\nSuccessfully generated LLVM IR via LLVM C API: doc_lookup.ll\nSuccessfully compiled binary: doc_lookup\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "f32",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/f32.dva:2:22: E2014: Unknown type name 'Float32'\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "flag",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: flag.ll\nSuccessfully compiled binary: flag\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "<+>\n<+>\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "float",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: float.ll\nE5013: Clang compilation failed with exit code 1\n",
+      "stderr": "float.ll:788:13: error: invalid cast opcode for cast from 'double' to 'i64'\n  788 |   store i64 ptrtoint (double 1.500000e+00 to i64), ptr %m.val.slot67, align 8\n      |             ^\n1 error generated.\n",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "float_literal",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: float_literal.ll\nE5013: Clang compilation failed with exit code 1\n",
+      "stderr": "float_literal.ll:781:13: error: invalid cast opcode for cast from 'double' to 'i64'\n  781 |   store i64 ptrtoint (double 1.500000e+00 to i64), ptr %m.val.slot67, align 8\n      |             ^\n1 error generated.\n",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "fn_value",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: fn_value.ll\nSuccessfully compiled binary: fn_value\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "15\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "implicit_key",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: implicit_key.ll\nSuccessfully compiled binary: implicit_key\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "key\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "literal_records",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: literal_records.ll\nSuccessfully compiled binary: literal_records\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "6\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "lookup_float_only",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: lookup_float_only.ll\nSuccessfully compiled binary: lookup_float_only\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "2.5\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "mutate_delete",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: mutate_delete.ll\nSuccessfully compiled binary: mutate_delete\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "0\n5\n2\n4\n1\n3\n1\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "mutate_delete_control",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: mutate_delete_control.ll\nSuccessfully compiled binary: mutate_delete_control\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "0\n0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "mutation",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: mutation.ll\nSuccessfully compiled binary: mutation\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "0\n5\n2\n4\n1\n3\n999\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "nested",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: nested.ll\nSuccessfully compiled binary: nested\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "42\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "nonmap_delete",
+    "compile": {
+      "stdout": "E5011: LLVM module verification failed: Load operand must be a pointer.\n  %m.cap = load i64, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 1), align 8\nLoad operand must be a pointer.\n  %m.keys = load ptr, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 2), align 8\nLoad operand must be a pointer.\n  %m.states = load ptr, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 4), align 8\nLoad operand must be a pointer.\n  %m.del.count = load i64, i64 1, align 8\nStore operand must be a pointer.\n  store i64 %m.del.cnt.next, i64 1, align 8\nLoad operand must be a pointer.\n  %m.del.tombs = load i64, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 5), align 8\nStore operand must be a pointer.\n  store i64 %m.del.tombs.next, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 5), align 8\n\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "nonmap_member",
+    "compile": {
+      "stdout": "E5011: LLVM module verification failed: Load operand must be a pointer.\n  %m.cap = load i64, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 1), align 8\nLoad operand must be a pointer.\n  %m.keys = load ptr, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 2), align 8\nLoad operand must be a pointer.\n  %m.states = load ptr, i64 getelementptr inbounds ({ i64, i64, ptr, ptr, ptr, i64 }, i64 1, i32 0, i32 4), align 8\n\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "parenthesized_key",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: parenthesized_key.ll\nSuccessfully compiled binary: parenthesized_key\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "42\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "perf_aligned",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: perf_aligned.ll\nSuccessfully compiled binary: perf_aligned\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "20000\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "perf_sequential",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: perf_sequential.ll\nSuccessfully compiled binary: perf_sequential\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "20000\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "ram",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: ram.ll\nSuccessfully compiled binary: ram\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "42\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "record",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: record.ll\nSuccessfully compiled binary: record\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "10\n20\n20\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "small_int",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/small_int.dva:2:20: E2014: Unknown type name 'UInt8'\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "string",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: string.ll\nSuccessfully compiled binary: string\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "hello\nhello\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "wrong_delete",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: wrong_delete.ll\nSuccessfully compiled binary: wrong_delete\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "<->\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "wrong_key",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/wrong_key.dva:3:8: E3084: Type mismatch: cannot unify Int with String\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "wrong_lookup",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/wrong_lookup.dva:5:19: E3084: Type mismatch: cannot unify Int with String\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "wrong_member",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: wrong_member.ll\nSuccessfully compiled binary: wrong_member\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "<->\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "wrong_value",
+    "compile": {
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/wrong_value.dva:3:8: E3084: Type mismatch: cannot unify Int with String\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  }
+]
