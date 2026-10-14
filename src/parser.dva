@@ -67,6 +67,7 @@
    just_dedented: <>,
    in_rhs: <>,
    is_stmt: <>,
+   no_assign: <>,
    allow_module_refs: <>,
    exports: ast::Names,
    publics: ast::Names,
@@ -168,7 +169,7 @@ parser_init = lx =>
    tc = ast::Ints()
    p = Parser((lx, lexer::Tok((lexer::TokKind(Eof), 0, 0, 1, 1, <->, <->, "")),
       0, 0, 0, 0, 0, 0, user_types, forward_refs, user_ops,
-      <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
+      <->, <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
       <->, <->, <+>, lexer::lex_get_file(), tl, tc))
    parser_advance(p)
    p
@@ -1461,13 +1462,19 @@ atom_double_colon = p =>
          parser_advance(p)
          is_stmt = p.is_stmt
          p.is_stmt = <->
-         p.curr.text
-            [":="] parse_named_assign_g(p, name, <+>, <->, <+>)
-            ["="] parse_named_assign_g(p, name, <->, <->, <+>)
-            ["+="] parse_named_assign_g(p, name, <->, <+>, <+>)
-            [":"] parse_colon_ctx_g(p, name, <+>)
-            ["("] parse_expr_after_lparen(p, name)
-            | <+ ast::Expr(Var, name) +>
+         p.no_assign
+            |
+               p.curr.text
+                  ["("] parse_expr_after_lparen(p, name)
+                  | <+ ast::Expr(Var, name) +>
+            |
+               p.curr.text
+                  [":="] parse_named_assign_g(p, name, <+>, <->, <+>)
+                  ["="] parse_named_assign_g(p, name, <->, <->, <+>)
+                  ["+="] parse_named_assign_g(p, name, <->, <+>, <+>)
+                  [":"] parse_colon_ctx_g(p, name, <+>)
+                  ["("] parse_expr_after_lparen(p, name)
+                  | <+ ast::Expr(Var, name) +>
       |
          parser_error(p, 2064,
             "Expected identifier after '::', got '" + nxt.text + "'")
@@ -1481,14 +1488,20 @@ atom_double_colon = p =>
 atom_op_ident: Parser, String => <ast::Expr|>
 atom_op_ident = p, name =>
    parser_advance(p)
-   p.curr.text
-      [":="] parse_named_assign(p, name, <+>, <->)
-      ["="] parse_named_assign(p, name, <->, <->)
-      ["+="] parse_named_assign(p, name, <->, <+>)
-      ["::="] parse_global_assign(p, name)
-      [":"] parse_colon(p, name)
-      ["("] parse_expr_after_lparen(p, name)
-      | <+ ast::Expr(Var, name) +>
+   p.no_assign
+      |
+         p.curr.text
+            ["("] parse_expr_after_lparen(p, name)
+            | <+ ast::Expr(Var, name) +>
+      |
+         p.curr.text
+            [":="] parse_named_assign(p, name, <+>, <->)
+            ["="] parse_named_assign(p, name, <->, <->)
+            ["+="] parse_named_assign(p, name, <->, <+>)
+            ["::="] parse_global_assign(p, name)
+            [":"] parse_colon(p, name)
+            ["("] parse_expr_after_lparen(p, name)
+            | <+ ast::Expr(Var, name) +>
 
 int_suffix_vt: String => (ast::ValueType, <>)
 int_suffix_vt = text =>
@@ -1564,8 +1577,10 @@ atom_var = p, text =>
 
 atom_paren: Parser => <ast::Expr|>
 atom_paren = p =>
+   saved_no_assign = p.no_assign
+   p.no_assign = <->
    parser_advance(p)
-   p.curr.kind
+   res = p.curr.kind
       [RParen]
          // "()" is the unit/void TYPE, not a value: it is only valid in a type
          // declaration. A function declared "=> ()" coerces any value to unit
@@ -1579,6 +1594,8 @@ atom_paren = p =>
             | paren_has_comma(p)
                | parse_paren_record(p)
                | parse_paren_group(p)
+   p.no_assign = saved_no_assign
+   res
 
 paren_has_map_step: lexer::Lx, lexer::Tok, Int => <>
 paren_has_map_step = c, t, depth =>
@@ -3849,6 +3866,14 @@ pp_dot = p, lhs =>
             ast::Expr(Var, ""), p.curr.line, p.curr.col)))))
       | <-->
 
+parse_key_atom: Parser => < ast::Expr | Error >
+parse_key_atom = p =>
+   saved_no_assign = p.no_assign
+   p.no_assign = <+>
+   res = parse_atom(p)
+   p.no_assign = saved_no_assign
+   res
+
 pp_caret: Parser, ast::Expr => <ast::Expr|>
 pp_caret = p, lhs =>
    parser_advance(p)
@@ -3856,7 +3881,7 @@ pp_caret = p, lhs =>
    // postfix repetition/calls on the KEY would otherwise steal a trailing
    // "expr {N}" meant for the whole access ("m ^ k {2}" repeats the access,
    // not k).
-   parse_atom(p)
+   parse_key_atom(p)
       | key =>
          pp_member(p, ast::Expr(KeyAccess,
             (ast::KeyAccessExpr((lhs, key, <->, <->,
@@ -3866,7 +3891,7 @@ pp_caret = p, lhs =>
 pp_caret_mem: Parser, ast::Expr => <ast::Expr|>
 pp_caret_mem = p, lhs =>
    parser_advance(p)
-   parse_atom(p)
+   parse_key_atom(p)
       | key =>
          <+ ast::Expr(KeyAccess, (ast::KeyAccessExpr((lhs, key, <+>, <->,
             p.curr.line, p.curr.col)))) +>
@@ -3877,7 +3902,7 @@ pp_caret_mem = p, lhs =>
 pp_caret_del: Parser, ast::Expr => <ast::Expr|>
 pp_caret_del = p, lhs =>
    parser_advance(p)
-   parse_atom(p)
+   parse_key_atom(p)
       | key =>
          <+ ast::Expr(KeyAccess, (ast::KeyAccessExpr((lhs, key, <->, <+>,
             p.curr.line, p.curr.col)))) +>
@@ -5552,14 +5577,20 @@ atom_ident = p, name =>
                   "type declarations use 'TypeName: (field: Type)'.")
                <-->
             |
-               p.curr.text
-                  [":="] parse_named_assign(p, name, <+>, <->)
-                  ["="] parse_named_assign(p, name, <->, <->)
-                  ["+="] parse_named_assign(p, name, <->, <+>)
-                  ["::="] parse_global_assign(p, name)
-                  [":"] parse_colon_ctx(p, name)
-                  ["("] parse_expr_after_lparen(p, name)
-                  | <+ ast::Expr(Var, name) +>
+               p.no_assign
+                  |
+                     p.curr.text
+                        ["("] parse_expr_after_lparen(p, name)
+                        | <+ ast::Expr(Var, name) +>
+                  |
+                     p.curr.text
+                        [":="] parse_named_assign(p, name, <+>, <->)
+                        ["="] parse_named_assign(p, name, <->, <->)
+                        ["+="] parse_named_assign(p, name, <->, <+>)
+                        ["::="] parse_global_assign(p, name)
+                        [":"] parse_colon_ctx(p, name)
+                        ["("] parse_expr_after_lparen(p, name)
+                        | <+ ast::Expr(Var, name) +>
 
 // Whether an identifier's first rune is uppercase (a type-alias marker).
 name_is_upper: String => <>

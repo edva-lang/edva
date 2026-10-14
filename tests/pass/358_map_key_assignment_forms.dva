@@ -1,0 +1,29 @@
+#use io
+
+#type M Int ^ Int
+#type SM String ^ String
+
+m = M()
+k = 1
+m ^ k = 10
+io::out $ m ^ 1 | _ | -1
+
+m ^ (k) = 20
+io::out $ m ^ 1 | _ | -1
+
+m ^ 2 = 30
+io::out $ m ^ 2 | _ | -1
+
+m ^ (k + 2) = 40
+io::out $ m ^ 3 | _ | -1
+
+sm = SM()
+sk = "alpha"
+sm ^ sk = "first"
+io::out $ sm ^ "alpha" | _ | "none"
+
+sm ^ (sk) = "second"
+io::out $ sm ^ "alpha" | _ | "none"
+
+sm ^ "beta" = "third"
+io::out $ sm ^ "beta" | _ | "none"

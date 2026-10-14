@@ -15,7 +15,7 @@
   {
     "name": "array_fixed",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: array_fixed.ll\nSuccessfully compiled binary: array_fixed\n",
+      "stdout": "cached LLVM IR: array_fixed.ll\nSuccessfully compiled binary: array_fixed\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -80,14 +80,14 @@
   {
     "name": "bare_identifier_key",
     "compile": {
-      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/bare_identifier_key.dva:5:11: E3033: Cannot re-assign immutable binding 'k'. Use a prime suffix ('k'') for rebindable variables.\n/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/bare_identifier_key.dva:5:11: E3084: Type mismatch: cannot unify Int with ()\nE5011: Compilation aborted due to code generation errors.\n",
+      "stdout": "cached LLVM IR: bare_identifier_key.ll\nSuccessfully compiled binary: bare_identifier_key\n",
       "stderr": "",
-      "exit_code": 1
+      "exit_code": 0
     },
     "run": {
-      "exit_code": -999,
-      "stdout": "",
-      "stderr": ""
+      "stdout": "42\n",
+      "stderr": "",
+      "exit_code": 0
     }
   },
   {
@@ -106,7 +106,7 @@
   {
     "name": "doc_lookup",
     "compile": {
-      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/doc_lookup.dva:8:11: E2024: Bare '|' is only allowed as the first branch (Left Value) or final branch (catch-all) in a choice expression.\nSuccessfully generated LLVM IR via LLVM C API: doc_lookup.ll\nSuccessfully compiled binary: doc_lookup\n",
+      "stdout": "/home/ike/Z/edva/audits/2026-10-14-maps/reproductions/doc_lookup.dva:8:11: E2024: Bare '|' is only allowed as the first branch (Left Value) or final branch (catch-all) in a choice expression.\ncached LLVM IR: doc_lookup.ll\nSuccessfully compiled binary: doc_lookup\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -132,7 +132,7 @@
   {
     "name": "flag",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: flag.ll\nSuccessfully compiled binary: flag\n",
+      "stdout": "cached LLVM IR: flag.ll\nSuccessfully compiled binary: flag\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -145,7 +145,7 @@
   {
     "name": "float",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: float.ll\nSuccessfully compiled binary: float\n",
+      "stdout": "cached LLVM IR: float.ll\nSuccessfully compiled binary: float\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -158,7 +158,7 @@
   {
     "name": "float_literal",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: float_literal.ll\nSuccessfully compiled binary: float_literal\n",
+      "stdout": "cached LLVM IR: float_literal.ll\nSuccessfully compiled binary: float_literal\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -171,7 +171,7 @@
   {
     "name": "fn_value",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: fn_value.ll\nSuccessfully compiled binary: fn_value\n",
+      "stdout": "cached LLVM IR: fn_value.ll\nSuccessfully compiled binary: fn_value\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -184,7 +184,7 @@
   {
     "name": "implicit_key",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: implicit_key.ll\nSuccessfully compiled binary: implicit_key\n",
+      "stdout": "cached LLVM IR: implicit_key.ll\nSuccessfully compiled binary: implicit_key\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -197,7 +197,7 @@
   {
     "name": "literal_records",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: literal_records.ll\nSuccessfully compiled binary: literal_records\n",
+      "stdout": "cached LLVM IR: literal_records.ll\nSuccessfully compiled binary: literal_records\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -210,7 +210,7 @@
   {
     "name": "lookup_float_only",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: lookup_float_only.ll\nSuccessfully compiled binary: lookup_float_only\n",
+      "stdout": "cached LLVM IR: lookup_float_only.ll\nSuccessfully compiled binary: lookup_float_only\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -223,7 +223,7 @@
   {
     "name": "mutate_delete",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: mutate_delete.ll\nSuccessfully compiled binary: mutate_delete\n",
+      "stdout": "cached LLVM IR: mutate_delete.ll\nSuccessfully compiled binary: mutate_delete\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -236,7 +236,7 @@
   {
     "name": "mutate_delete_control",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: mutate_delete_control.ll\nSuccessfully compiled binary: mutate_delete_control\n",
+      "stdout": "cached LLVM IR: mutate_delete_control.ll\nSuccessfully compiled binary: mutate_delete_control\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -249,7 +249,7 @@
   {
     "name": "mutation",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: mutation.ll\nSuccessfully compiled binary: mutation\n",
+      "stdout": "cached LLVM IR: mutation.ll\nSuccessfully compiled binary: mutation\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -262,7 +262,7 @@
   {
     "name": "nested",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: nested.ll\nSuccessfully compiled binary: nested\n",
+      "stdout": "cached LLVM IR: nested.ll\nSuccessfully compiled binary: nested\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -301,7 +301,7 @@
   {
     "name": "parenthesized_key",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: parenthesized_key.ll\nSuccessfully compiled binary: parenthesized_key\n",
+      "stdout": "cached LLVM IR: parenthesized_key.ll\nSuccessfully compiled binary: parenthesized_key\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -314,7 +314,7 @@
   {
     "name": "perf_aligned",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: perf_aligned.ll\nSuccessfully compiled binary: perf_aligned\n",
+      "stdout": "cached LLVM IR: perf_aligned.ll\nSuccessfully compiled binary: perf_aligned\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -327,7 +327,7 @@
   {
     "name": "perf_sequential",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: perf_sequential.ll\nSuccessfully compiled binary: perf_sequential\n",
+      "stdout": "cached LLVM IR: perf_sequential.ll\nSuccessfully compiled binary: perf_sequential\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -340,7 +340,7 @@
   {
     "name": "ram",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: ram.ll\nSuccessfully compiled binary: ram\n",
+      "stdout": "cached LLVM IR: ram.ll\nSuccessfully compiled binary: ram\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -353,7 +353,7 @@
   {
     "name": "record",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: record.ll\nSuccessfully compiled binary: record\n",
+      "stdout": "cached LLVM IR: record.ll\nSuccessfully compiled binary: record\n",
       "stderr": "",
       "exit_code": 0
     },
@@ -379,7 +379,7 @@
   {
     "name": "string",
     "compile": {
-      "stdout": "Successfully generated LLVM IR via LLVM C API: string.ll\nSuccessfully compiled binary: string\n",
+      "stdout": "cached LLVM IR: string.ll\nSuccessfully compiled binary: string\n",
       "stderr": "",
       "exit_code": 0
     },
