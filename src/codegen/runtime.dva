@@ -2283,9 +2283,11 @@ codegen_map_key_equal = cg, slot, key_val, key_vt =>
                LLVMBuildICmp(cg.builder, 32, si, ki, "mk.eq")
             | codegen_map_string_key_equal(cg, slot, key_val)
 
-// Insert or rebind a key with an i64 value, without resizing.
-codegen_map_insert_raw: types::Cg, Addr, Addr, Addr, ast::ValueType => ()
-codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
+codegen_map_grow: types::Cg, Addr, ast::ValueType => ()
+
+// Insert or rebind a key with an i64 value, optionally checking growth if inserting a new key.
+codegen_map_insert_raw: types::Cg, Addr, Addr, Addr, ast::ValueType, Int => ()
+codegen_map_insert_raw = cg, m, key_val, val_val, key_vt, allow_grow =>
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    mt = map_struct_type(cg)
@@ -2352,6 +2354,29 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
    stmt::llvm_add_incoming1(cg, probe_phi, probe_next, next)
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, empty_bb)
+   allow_grow != 0
+      |
+         count_p0 = LLVMBuildStructGEP2(cg.builder, mt, m, 0, "m.grow.cnt.p")
+         count0 = LLVMBuildLoad2(cg.builder, i64t, count_p0, "m.grow.cnt")
+         tombs_p0 = LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.grow.tm.p")
+         cur_tombs0 = LLVMBuildLoad2(cg.builder, i64t, tombs_p0, "m.grow.tm")
+         occupied0 = LLVMBuildAdd(cg.builder, count0, cur_tombs0, "m.occupied")
+         lhs0 = LLVMBuildMul(cg.builder,
+            LLVMBuildAdd(cg.builder, occupied0, one, "m.c.plus"),
+            LLVMConstInt(i64t, 4, 0), "m.c.lhs")
+         rhs0 = LLVMBuildMul(cg.builder, mf.0,
+            LLVMConstInt(i64t, 3, 0), "m.c.rhs")
+         need0 = LLVMBuildICmp(cg.builder, 38, lhs0, rhs0, "m.need.grow")
+         grow_bb = LLVMAppendBasicBlock(cg.current_fn, "m.grow")
+         ins_bb = LLVMAppendBasicBlock(cg.current_fn, "m.ins.slot")
+         LLVMBuildCondBr(cg.builder, need0, grow_bb, ins_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, grow_bb)
+         codegen_map_grow(cg, m, key_vt)
+         codegen_map_insert_raw(cg, m, key_val, val_val, key_vt, 0)
+         LLVMBuildBr(cg.builder, done)
+
+         LLVMPositionBuilderAtEnd(cg.builder, ins_bb)
    use_tomb = LLVMBuildICmp(cg.builder, 33, tomb_phi, minus_one, "m.use.tomb")
    ins_idx = LLVMBuildSelect(cg.builder, use_tomb, tomb_phi, idx_phi,
       "m.ins.idx")
@@ -2378,7 +2403,6 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt =>
 // Double capacity (or rebuild at same capacity if tombstones saturated) and reinsert
 // every occupied slot. The old arena buffers are intentionally retained; only the map
 // header is mutated to point at the new hash table, matching the native arena ownership model.
-codegen_map_grow: types::Cg, Addr, ast::ValueType => ()
 codegen_map_grow = cg, m, key_vt =>
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -2451,7 +2475,7 @@ codegen_map_grow = cg, m, key_vt =>
       | LLVMBuildLoad2(cg.builder, i64t, key_slot, "m.re.key")
       | LLVMBuildLoad2(cg.builder, i8p, key_slot, "m.re.key")
    val = LLVMBuildLoad2(cg.builder, i64t, val_slot, "m.re.val")
-   codegen_map_insert_raw(cg, m, key, val, key_vt)
+   codegen_map_insert_raw(cg, m, key, val, key_vt, 0)
    LLVMBuildBr(cg.builder, cont)
    LLVMPositionBuilderAtEnd(cg.builder, cont)
    next = LLVMBuildAdd(cg.builder, i, one, "m.re.i.next")
@@ -2475,33 +2499,10 @@ codegen_map_pack_val = cg, v, vt =>
                   | LLVMBuildBitCast(cg.builder, v, i64t, "m.wr.f2i")
             | stmt::coerce_int(cg, v, i64t)
 
-// Grow/rebuild at occupancy load factor 0.75, then perform the normal probe/insert.
+// Insert a key-value pair, checking existing-key replacement before growing.
 codegen_map_insert: types::Cg, Addr, Addr, Addr, ast::ValueType => ()
 codegen_map_insert = cg, m, key_val, val_val, key_vt =>
-   i64t = LLVMInt64Type!
-   mt = map_struct_type(cg)
-   count = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, mt, m, 0, "m.count"), "m.count")
-   cap = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, mt, m, 1, "m.cap"), "m.cap")
-   tombs = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, mt, m, 5, "m.tombs"), "m.tombs")
-   one = LLVMConstInt(i64t, 1, 0)
-   occupied = LLVMBuildAdd(cg.builder, count, tombs, "m.occupied")
-   lhs = LLVMBuildMul(cg.builder,
-      LLVMBuildAdd(cg.builder, occupied, one, "m.c.plus"),
-      LLVMConstInt(i64t, 4, 0), "m.c.lhs")
-   rhs = LLVMBuildMul(cg.builder, cap,
-      LLVMConstInt(i64t, 3, 0), "m.c.rhs")
-   need = LLVMBuildICmp(cg.builder, 38, lhs, rhs, "m.need.grow")
-   grow = LLVMAppendBasicBlock(cg.current_fn, "m.grow")
-   ins = LLVMAppendBasicBlock(cg.current_fn, "m.ins")
-   LLVMBuildCondBr(cg.builder, need, grow, ins)
-   LLVMPositionBuilderAtEnd(cg.builder, grow)
-   codegen_map_grow(cg, m, key_vt)
-   LLVMBuildBr(cg.builder, ins)
-   LLVMPositionBuilderAtEnd(cg.builder, ins)
-   codegen_map_insert_raw(cg, m, key_val, val_val, key_vt)
+   codegen_map_insert_raw(cg, m, key_val, val_val, key_vt, 1)
 
 // A lookup returns `< value | Error >`: it allocates one result union before
 // probing, skips tombstones, and writes either a boxed value or E4013 Error.

@@ -1,0 +1,26 @@
+#use io
+
+#type M Int ^ Int
+
+m = M()
+// 1. Fill to threshold (6 items in cap 8)
+0..6 @ i =>
+   m ^ (i) = i * 10
+
+// 2. Overwrite at threshold many times
+0..10000 @ i =>
+   m ^ (i % 6) = (i % 6) * 100 + i
+
+io::out $ ?m
+io::out $ m ^ 0 | _ | -1
+io::out $ m ^ 5 | _ | -1
+
+// 3. Steady-live-count churn: insert & delete
+0..10000 @ i =>
+   m ^ (1000 + i) = i
+   m ^- (1000 + i)
+
+io::out $ ?m
+io::out $ m ^ 0 | _ | -1
+io::out $ m ^ 5 | _ | -1
+io::out $ m ^ 1000 | _ | -1
