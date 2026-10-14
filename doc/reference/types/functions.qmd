@@ -67,6 +67,9 @@ square = x => x * x
 
 ### Implicit-parameter lambdas
 
+See [Underscore: implicit values and wildcards](../language/underscore.qmd)
+for `_` in lambdas, branches, cycles, and patterns, including scope limitations.
+
 A parenthesized expression containing the placeholder `_` desugars into an implicit single-parameter lambda:
 
 ```{.dva .run}

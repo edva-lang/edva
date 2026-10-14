@@ -1,0 +1,4 @@
+#use io
+#type Pair (a: Int, b: Int)
+p = Pair(10, 20)
+io::out $ p [(a = _, b = 20)] _ | 0

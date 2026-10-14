@@ -1,0 +1,104 @@
+[
+  {
+    "number": 181,
+    "title": "underscore: reject unbound implicit value references",
+    "url": "https://gitea.gde.to/ike/dva/issues/181",
+    "probes": [
+      "unbound",
+      "named_lambda_alias",
+      "omitted_unbound"
+    ]
+  },
+  {
+    "number": 182,
+    "title": "underscore: define nonbinding discard assignment semantics",
+    "url": "https://gitea.gde.to/ike/dva/issues/182",
+    "probes": [
+      "discard_read",
+      "discard_same_type",
+      "discard_in_cycle"
+    ]
+  },
+  {
+    "number": 183,
+    "title": "parser: respect branch payload scope in implicit-lambda detection",
+    "url": "https://gitea.gde.to/ike/dva/issues/183",
+    "probes": [
+      "ram_grouping",
+      "ram_grouping_transform"
+    ]
+  },
+  {
+    "number": 184,
+    "title": "choices: supply or reject underscore in ordinary guarded branch bodies",
+    "url": "https://gitea.gde.to/ike/dva/issues/184",
+    "probes": [
+      "normal_guard"
+    ]
+  },
+  {
+    "number": 185,
+    "title": "cycles: restore enclosing implicit item after nested iteration",
+    "url": "https://gitea.gde.to/ike/dva/issues/185",
+    "probes": [
+      "nested_cycle",
+      "named_cycle_shadow"
+    ]
+  },
+  {
+    "number": 186,
+    "title": "cycles: define implicit index lifetime and post-break value",
+    "url": "https://gitea.gde.to/ike/dva/issues/186",
+    "probes": [
+      "string_cycle_escape",
+      "implicit_cycle"
+    ]
+  },
+  {
+    "number": 187,
+    "title": "maps: type implicit cycle key using the actual key type",
+    "url": "https://gitea.gde.to/ike/dva/issues/187",
+    "probes": [
+      "map_cycle",
+      "map_named"
+    ]
+  },
+  {
+    "number": 188,
+    "title": "choices: reject payload extraction from absent unit slots",
+    "url": "https://gitea.gde.to/ike/dva/issues/188",
+    "probes": [
+      "unit_payload",
+      "unit_named",
+      "error_extract"
+    ]
+  },
+  {
+    "number": 189,
+    "title": "type checking: reject calling a record literal as a function",
+    "url": "https://gitea.gde.to/ike/dva/issues/189",
+    "probes": [
+      "record_literal",
+      "record_lambda"
+    ]
+  },
+  {
+    "number": 190,
+    "title": "codegen: diagnose or correctly lower anonymous ram extraction passed to output",
+    "url": "https://gitea.gde.to/ike/dva/issues/190",
+    "probes": [
+      "negative_payload",
+      "negative_typed",
+      "negative_named"
+    ]
+  },
+  {
+    "number": 191,
+    "title": "diagnostics: report unsupported underscore numeric separators",
+    "url": "https://gitea.gde.to/ike/dva/issues/191",
+    "probes": [
+      "separator_int",
+      "separator_float"
+    ]
+  }
+]

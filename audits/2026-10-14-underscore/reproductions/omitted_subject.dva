@@ -1,0 +1,7 @@
+#use io
+f = ([< 0] -1 | 1)
+io::out(f(-2))
+io::out(f(2))
+0..2 @
+   [0] io::out("zero")
+   | io::out("other")

@@ -1,0 +1,7 @@
+#use io
+#type Pair (a: Int, b: Int)
+p = Pair(10, 20)
+io::out $ p [(a = _, b = 20)] "match" | "no"
+#type Box < Item(Int), Empty >
+b = Box(Item, 3)
+io::out $ b [Item _] "item" | "empty"

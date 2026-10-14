@@ -1,0 +1,412 @@
+[
+  {
+    "name": "unbound",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "discard_read",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "7\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "discard_repeat",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/discard_repeat.dva:4:1: E3033: Cannot re-assign immutable binding '_'. Use a prime suffix ('_'') for rebindable variables.\nE5011: Compilation aborted due to code generation errors.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "discard_in_cycle",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "99\n99\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "normal_guard",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "2\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "named_cycle",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "10\n10\n0\n0\n11\n11\n1\n1\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "implicit_cycle",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "10\n0\n11\n1\n0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "map_cycle",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "7\n94011336224176\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "nested_cycle",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "0\n10\n0\n0\n11\n0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "grouping",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "16\n7\n0\n1\n2\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "nested_group",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/nested_group.dva:3:1: E3084: Type mismatch: cannot unify Int with (Int) => Int\n/tmp/edva-underscore-check/nested_group.dva:3:1: E3084: Arithmetic type mismatch\n/tmp/edva-underscore-check/nested_group.dva:3:13: E3084: Type mismatch: cannot unify Int with (Int) => ?T372\n/tmp/edva-underscore-check/nested_group.dva:3:13: E3084: Function call signature mismatch\nE5011: Compilation aborted due to code generation errors.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "record_literal",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "ram_grouping",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "3\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "ram_grouping_transform",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/ram_grouping_transform.dva:466:39: E3084: Type mismatch: cannot unify Int with (?T370) => Int\n/tmp/edva-underscore-check/ram_grouping_transform.dva:466:39: E3084: Return type mismatch in function: test\n/tmp/edva-underscore-check/ram_grouping_transform.dva:8:1: E3084: Type mismatch: cannot unify Int with (?T370) => Int\n/tmp/edva-underscore-check/ram_grouping_transform.dva:8:1: E3084: Return type mismatch in function: test\nE5011: Compilation aborted due to code generation errors.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "omitted_subject",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "-1\n1\nzero\nother\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "omitted_unbound",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/omitted_unbound.dva:1:1: E3003: Omitting a Choice/pattern branch's leading condition is only allowed when '_' is already defined in the enclosing scope (e.g. inside a '=> '-omitted-param lambda, or a cycle body). '_' is not defined here.\nE5011: Compilation aborted due to code generation errors.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "wildcards",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "match\nitem\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "bare_wildcard",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "no\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "negative_payload",
+    "compile_exit": 1,
+    "diagnostics": "E5011: LLVM module verification failed: PtrToInt source must be pointer\n  %coerce.ptr2int = ptrtoint { i1, i64 } %var.load to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int2 = ptrtoint { i1, i64 } %var.load1 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int5 = ptrtoint { i1, i64 } %var.load to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int80 = ptrtoint { i1, i64 } %var.load to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int10 = ptrtoint { i1, i64 } %var.load9 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int12 = ptrtoint { i1, i64 } %var.load11 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int28 = ptrtoint { i1, i64 } %var.load27 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int32 = ptrtoint { i1, i64 } %var.load31 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int97 = ptrtoint { i1, i64 } %var.load96 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int103 = ptrtoint { i1, i64 } %var.load102 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int145 = ptrtoint { i1, i64 } %var.load144 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int152 = ptrtoint { i1, i64 } %var.load151 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int195 = ptrtoint { i1, i64 } %var.load194 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int200 = ptrtoint { i1, i64 } %var.load199 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int292 = ptrtoint { i1, i64 } %var.load291 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int298 = ptrtoint { i1, i64 } %var.load297 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int340 = ptrtoint { i1, i64 } %var.load339 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int347 = ptrtoint { i1, i64 } %var.load346 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int390 = ptrtoint { i1, i64 } %var.load389 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int397 = ptrtoint { i1, i64 } %var.load396 to i32\nPtrToInt source must be pointer\n  %coerce.ptr2int440 = ptrtoint { i1, i64 } %var.load439 to i64\nPtrToInt source must be pointer\n  %coerce.ptr2int445 = ptrtoint { i1, i64 } %var.load444 to i64\n\nE5011: Compilation aborted due to code generation errors.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "unit_payload",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "separator_int",
+    "compile_exit": 1,
+    "diagnostics": "",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "separator_float",
+    "compile_exit": 1,
+    "diagnostics": "",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "names",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "5\n5\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "discard_same_type",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/discard_same_type.dva:4:1: E3033: Cannot re-assign immutable binding '_'. Use a prime suffix ('_'') for rebindable variables.\nE5011: Compilation aborted due to code generation errors.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "map_named",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "7\nkey\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "negative_typed",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "9\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "negative_named",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "9\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "error_extract",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "Error 4011: array index out of bounds\n  at error_extract.dva:3:11\n",
+      "stderr": "",
+      "exit_code": 1
+    }
+  },
+  {
+    "name": "unit_named",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/unit_named.dva:6:1: E3084: Type mismatch: cannot unify Int with (?T374) => Int\n/tmp/edva-underscore-check/unit_named.dva:6:1: E3084: Incompatible branch result types in choice\nE5011: Compilation aborted due to code generation errors.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "wildcard_zero",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "match\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "pattern_read",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/pattern_read.dva:3:17: E3084: Type mismatch: cannot unify Flag with Int\n/tmp/edva-underscore-check/pattern_read.dva:3:17: E3084: Incompatible branch result types in choice\nE5011: Compilation aborted due to code generation errors.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "tuple_destructure",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/tuple_destructure.dva:2:8: E2003: Expected newline or EOF after statement, got '='\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "named_lambda_alias",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "1\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "cycle_index_group",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "0\n10\n1\n11\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "numeric_capture",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "4\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "record_lambda",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "4\n1\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "nested_lambda_outer",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "underscore_i_param",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "4\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "named_cycle_shadow",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "0\n10\n0\n0\n11\n0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "string_cycle_escape",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "run": {
+      "stdout": "0\n1\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "ct_param",
+    "compile_exit": 1,
+    "diagnostics": "/tmp/edva-underscore-check/ct_param.dva:1:7: E2040: Explicit '_' parameter is forbidden in function parameter lists — use a named parameter or omit unused binders.\n",
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  }
+]

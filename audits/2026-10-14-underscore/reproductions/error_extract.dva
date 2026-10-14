@@ -1,0 +1,4 @@
+#use io
+xs = Int{}
+v = xs(0) | _ | _
+io::out(v)

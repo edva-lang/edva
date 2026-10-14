@@ -1,0 +1,6 @@
+#use io
+10..12 @ value, index =>
+   io::out(value)
+   io::out $ _
+   io::out(index)
+   io::out $ _i

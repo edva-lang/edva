@@ -1,0 +1,7 @@
+#use io
+10..12 @
+   outer = _
+   1 @
+      io::out $ _
+   io::out(outer)
+   io::out $ _

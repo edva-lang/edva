@@ -1,0 +1,4 @@
+#use io
+r: < Int | >
+r = <-->
+io::out $ r | _ | _

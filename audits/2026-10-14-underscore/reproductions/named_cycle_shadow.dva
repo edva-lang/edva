@@ -1,0 +1,6 @@
+#use io
+10..12 @ outer =>
+   1 @ inner =>
+      io::out(inner)
+   io::out(outer)
+   io::out $ _

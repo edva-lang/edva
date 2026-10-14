@@ -1,0 +1,2 @@
+#use io
+io::out $ 0 [_] "match" | "no"

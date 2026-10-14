@@ -1,0 +1,4 @@
+#use io
+_ = 7
+_ = "hello"
+io::out $ _

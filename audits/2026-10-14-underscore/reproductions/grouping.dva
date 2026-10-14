@@ -1,0 +1,6 @@
+#use io
+square = (_ * _)
+io::out(square(4))
+identity = (_)
+io::out(identity(7))
+3 @ (io::out $ _)

@@ -1,0 +1,6 @@
+#use io
+2 @
+   i = (_i)
+   io::out(i)
+   f = (_ + _i)
+   io::out(f(10))

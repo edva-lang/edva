@@ -1,0 +1,164 @@
+[
+  {
+    "block": 0,
+    "passed": true,
+    "expected": "5\n5",
+    "stdout": "5\n5\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 1,
+    "passed": true,
+    "expected": "7\n16\n8",
+    "stdout": "7\n16\n8\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 2,
+    "passed": true,
+    "expected": "0\n1\n2",
+    "stdout": "0\n1\n2\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 3,
+    "passed": true,
+    "expected": "4",
+    "stdout": "4\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 4,
+    "passed": true,
+    "expected": "13",
+    "stdout": "13\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 5,
+    "passed": true,
+    "expected": "4\n1",
+    "stdout": "4\n1\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 6,
+    "passed": true,
+    "expected": "12\n16",
+    "stdout": "12\n16\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 7,
+    "passed": true,
+    "expected": "10\n0\n11\n1",
+    "stdout": "10\n0\n11\n1\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 8,
+    "passed": true,
+    "expected": "0\n10\n0\n11",
+    "stdout": "0\n10\n0\n11\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 9,
+    "passed": true,
+    "expected": "7\nkey",
+    "stdout": "7\nkey\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 10,
+    "passed": true,
+    "expected": "5\n7",
+    "stdout": "5\n7\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 11,
+    "passed": true,
+    "expected": "9",
+    "stdout": "9\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 12,
+    "passed": true,
+    "expected": "42",
+    "stdout": "42\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 13,
+    "passed": true,
+    "expected": "single digit",
+    "stdout": "single digit\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 14,
+    "passed": true,
+    "expected": "-1\n1\nzero\nother",
+    "stdout": "-1\n1\nzero\nother\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 15,
+    "passed": true,
+    "expected": "matched\nitem",
+    "stdout": "matched\nitem\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 16,
+    "passed": true,
+    "expected": "7",
+    "stdout": "7\n",
+    "compile_exit": 0,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  },
+  {
+    "block": 17,
+    "passed": true,
+    "expected": "E2040",
+    "stdout": "",
+    "compile_exit": 1,
+    "diagnostics": "",
+    "runtime_stderr": ""
+  }
+]

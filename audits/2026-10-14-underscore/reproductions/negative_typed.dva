@@ -1,0 +1,6 @@
+#use io
+#type R < Int | Int >
+r = R(<- 7 +>)
+answer: Int
+answer = r | _ + 1 | _ + 2
+io::out(answer)

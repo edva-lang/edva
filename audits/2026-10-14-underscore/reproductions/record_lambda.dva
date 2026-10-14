@@ -1,0 +1,6 @@
+#use io
+f: Int => (a: Int, b: Int)
+f = ((a = _, b = 1))
+p = f(4)
+io::out(p.a)
+io::out(p.b)

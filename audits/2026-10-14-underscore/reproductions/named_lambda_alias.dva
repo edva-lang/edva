@@ -1,0 +1,4 @@
+#use io
+f: Int => Int
+f = value => _ + 1
+io::out(f(8))

@@ -1,0 +1,6 @@
+#use io
+r: < Int | >
+r = <-->
+v: Int
+v = r | _ | ignored => 42
+io::out(v)

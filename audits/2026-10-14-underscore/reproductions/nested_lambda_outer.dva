@@ -1,0 +1,5 @@
+#use io
+make: Int => (Int => Int)
+make = (value => _ + value)
+f = make(10)
+io::out(f(3))

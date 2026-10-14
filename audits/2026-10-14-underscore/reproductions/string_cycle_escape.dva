@@ -1,0 +1,7 @@
+#use io
+"abc" @
+   _ == 98 | -->
+io::out $ _i
+"abc" @ byte, index =>
+   byte == 98 | -->
+io::out(index)

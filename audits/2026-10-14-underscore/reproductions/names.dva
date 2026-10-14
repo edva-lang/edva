@@ -1,0 +1,6 @@
+#use io
+_value = 4
+__ = 5
+f = _arg => _arg + 1
+io::out(f(_value))
+io::out(__)

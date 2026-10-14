@@ -1,0 +1,5 @@
+#use io
+10..12 @
+   io::out $ _
+   io::out $ _i
+io::out $ _i

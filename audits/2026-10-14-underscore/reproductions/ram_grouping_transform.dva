@@ -1,0 +1,8 @@
+#use io
+test: Int => Int
+test = input =>
+   r: < Int | >
+   r = <+ input +>
+   x = (r | _ + 2 | 0)
+   x
+io::out(test(3))

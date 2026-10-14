@@ -1,0 +1,4 @@
+#use io
+x: Int
+x = _
+io::out(x)

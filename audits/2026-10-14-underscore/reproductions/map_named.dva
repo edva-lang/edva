@@ -1,0 +1,7 @@
+#use io
+#type M String ^ Int
+m = M()
+m ^ "key" = 7
+m @ value, key =>
+   io::out(value)
+   io::out(key)

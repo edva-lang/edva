@@ -1,0 +1,3 @@
+#use io
+f = (a = _, b = 1)
+io::out(f(4))

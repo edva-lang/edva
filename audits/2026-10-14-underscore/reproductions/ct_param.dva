@@ -1,0 +1,2 @@
+f: #! _: Type, Int => Int
+f = x => x
