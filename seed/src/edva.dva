@@ -2649,7 +2649,7 @@ repl_run = opts =>
             session_bin, ast::Names()))
          repl_opts = opts
          repl_opts.repl_mode = <+>
-         repl_loop(repl_opts, "", sess)
+         repl_loop(repl_opts, "#use io", sess)
          repl_cleanup(sess)
 
 format_version: () => String

@@ -2039,5 +2039,24 @@ fi
 
 echo "PASS"
 
+# --- Test 48: edva -repl autoimports io ---
+echo -n "Testing edva -repl autoimport io... "
+set +e
+timeout 15 ./edva -repl <<'EOF' >"$TMPDIR/t48_repl.out" 2>"$TMPDIR/t48_repl.err"
+1 + 2
+x = 40
+x + 2
+:q
+EOF
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "3" "$TMPDIR/t48_repl.out" || ! grep -q "42" "$TMPDIR/t48_repl.out"; then
+    echo "FAILED: edva -repl failed to evaluate expressions using autoimported io"
+    cat "$TMPDIR/t48_repl.out"
+    cat "$TMPDIR/t48_repl.err"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 
