@@ -288,6 +288,17 @@ is_flag_uprim: UPrim => <>
 is_flag_uprim = p =>
    p [Flag]
 
+is_map_key_uprim: UPrim => <>
+is_map_key_uprim = p =>
+   p [Str, Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, RawPtr]
+
+is_map_key_utype: Ctx, UType => <>
+is_map_key_utype = ctx, ut =>
+   c = canon(ctx, ut)
+   c
+      [Prim p] is_map_key_uprim(p)
+      | <->
+
 // --- Ramification Shape ----------------------------------------------------
 
 ram_shape: URam => URamShape

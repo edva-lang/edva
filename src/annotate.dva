@@ -1783,6 +1783,10 @@ annotate_expr = ctx, env, expr =>
             unify::unify(ctx, k_ut, kte.ut)
             unify::unify(ctx, v_ut, vte.ut)
             typed_pairs += tast::TypedMapPair((kte, vte))
+         !unify::is_map_key_utype(ctx, k_ut)
+            |
+               unify::add_error(ctx, 2090,
+                  "Map key type must be String, Int, or Addr")
          map_ut = unify::mk_map(k_ut, v_ut)
          ti = unify::type_info_from_utype(ctx, map_ut)
          lay = layout::compute_layout(ctx, map_ut)
@@ -1998,6 +2002,10 @@ annotate_expr = ctx, env, expr =>
                   [Map m]
                      unify::unify(ctx, m.key, key_te.ut)
                   |
+                     !unify::is_map_key_utype(ctx, key_te.ut)
+                        |
+                           unify::add_error(ctx, 2090,
+                              "Map key type must be String, Int, or Addr")
                      var_map = unify::mk_map(key_te.ut, unify::fresh_var(ctx))
                      unify::unify(ctx, target_te.ut, var_map)
                flg_ut = unify::prim_flag()
@@ -2019,6 +2027,10 @@ annotate_expr = ctx, env, expr =>
                      unify::unify(ctx, m.key, key_te.ut)
                      elem_ut' = m.val
                   |
+                     !unify::is_map_key_utype(ctx, key_te.ut)
+                        |
+                           unify::add_error(ctx, 2090,
+                              "Map key type must be String, Int, or Addr")
                      var_map2 = unify::mk_map(key_te.ut, elem_ut')
                      unify::unify(ctx, target_te.ut, var_map2)
                ram_ut = unify::ram_pp(elem_ut', unify::prim_error())
@@ -4267,6 +4279,10 @@ annotate_key_write = ctx, env, ka, val_expr =>
          unify::unify(ctx, m.key, key_te.ut)
          unify::unify(ctx, m.val, rhs.ut)
       |
+         !unify::is_map_key_utype(ctx, key_te.ut)
+            |
+               unify::add_error(ctx, 2090,
+                  "Map key type must be String, Int, or Addr")
          var_map = unify::mk_map(key_te.ut, rhs.ut)
          unify::unify(ctx, target_te.ut, var_map)
    ut = unify::prim_unit()
