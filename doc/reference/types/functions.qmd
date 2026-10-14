@@ -76,6 +76,10 @@ invert = (100 - _)     // Anonymous single-parameter function: invert(20) == 80
 
 ### Operator sections
 
+See [Operator sections](../language/operator-sections.qmd) for the complete
+operator set, use contexts, precedence and evaluation rules, and current
+implementation limitations.
+
 An operator section `op rhs` consists of a binary operator followed by whitespace and a right-hand operand. It desugars into a single-parameter function over the implicit placeholder `_`:
 
 ```{.dva .run}

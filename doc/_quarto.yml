@@ -24,6 +24,7 @@ book:
         - reference/language/declarations.qmd
         - reference/language/expressions.qmd
         - reference/language/operators.qmd
+        - reference/language/operator-sections.qmd
         - reference/language/intrinsics.qmd
         - reference/language/runtime.qmd
     - part: reference/types/index.qmd
