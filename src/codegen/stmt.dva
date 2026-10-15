@@ -560,6 +560,32 @@ codegen_add_checked_u64 = cg, a, b, name =>
    LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
    sum
 
+// Emits an unsigned checked multiplication and leaves the builder in the non-overflow
+// continuation block.
+codegen_mul_checked_u64: types::Cg, Addr, Addr, String => Addr
+codegen_mul_checked_u64 = cg, a, b, name =>
+   i64t = LLVMInt64Type!
+   ovf_t = types::struct_type2(i64t, LLVMInt1Type!)
+   fty = types::fn_type2(cg, ovf_t, i64t, i64t)
+   args = {16}
+   sb = &args
+   @[sb] = a
+   @[sb + 8] = b
+   fn_opt = types::llvm_find_function(cg.module, "llvm.umul.with.overflow.i64")
+   umul_fn = fn_opt | _ | LLVMAddFunction(cg.module, "llvm.umul.with.overflow.i64", fty)
+   res = LLVMBuildCall2(cg.builder, fty, umul_fn, sb, 2, name)
+   prod = LLVMBuildExtractValue(cg.builder, res, 0, "prod")
+   ovf = LLVMBuildExtractValue(cg.builder, res, 1, "ovf")
+   parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+   ok_bb = LLVMAppendBasicBlock(parent, name)
+   abort_bb = LLVMAppendBasicBlock(parent, "arr_overflow_abort")
+   LLVMBuildCondBr(cg.builder, ovf, abort_bb, ok_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, abort_bb)
+   runtime::emit_abort_msg(cg, "E4002: capacity overflow\n", "arr_overflow_msg")
+   LLVMBuildBr(cg.builder, ok_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
+   prod
+
 // "s + t" — a fresh arena buffer with both spans copied (NUL-reserved).
 codegen_string_concat: types::Cg, Addr, Addr => Addr
 codegen_string_concat = cg, l, r =>
@@ -5778,7 +5804,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                               |
                                  a_val = main::codegen_array_var_value(cg, name,
                                     "a.load")
-                                 main::codegen_array_append(cg, a_val, ev.0)
+                                 main::codegen_array_append(cg, a_val, ev.0, ev.1)
                               |
                                  store_val = types::llvm_val_opt(ev.0)
                                     | evv => evv
@@ -6214,24 +6240,14 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                      arr_slot = types::gep1(cg, i64t, s_data_opt!!, curr_i, "arr.elem.gep")
                      arr_raw = LLVMBuildLoad2(cg.builder, i64t,
                         arr_slot, "arr.elem.raw")
-                     types::is_ptrish_vt(elem_vt)
-                        | LLVMBuildIntToPtr(cg.builder, arr_raw, elem_ty,
-                           "arr.elem.ptr")
-                        |
-                           types::is_float_vt(elem_vt)
-                              | LLVMBuildBitCast(cg.builder, arr_raw,
-                                 elem_ty, "arr.elem.flt")
-                              | arr_raw
+                     runtime::codegen_unpack_slot(cg, arr_raw, elem_vt)
                   |
                      iter_mode == 3
                         |
-                           typed_data = LLVMBuildPointerCast(cg.builder,
-                              s_data_opt!!, LLVMPointerType(elem_ty, 0),
-                              "sl.data.typed")
-                           elem_slot = types::gep1(cg, elem_ty, typed_data, curr_i,
-                              "sl.elem.gep")
-                           LLVMBuildLoad2(cg.builder, elem_ty, elem_slot,
-                              "sl.elem.val")
+                           arr_slot = types::gep1(cg, i64t, s_data_opt!!, curr_i, "sl.elem.gep")
+                           arr_raw = LLVMBuildLoad2(cg.builder, i64t,
+                              arr_slot, "sl.elem.raw")
+                           runtime::codegen_unpack_slot(cg, arr_raw, elem_vt)
                         |
                            iter_mode == 4
                               |

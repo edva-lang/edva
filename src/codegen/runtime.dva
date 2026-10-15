@@ -1150,7 +1150,7 @@ codegen_emit_array_append_valid: types::Cg, (String, <>, <>, <>, <>, ast::Expr, 
 codegen_emit_array_append_valid = cg, t =>
    aval = types::ptr_var_value(cg, t.0, "a.load")
    ev = expr::codegen_eval(cg, t.5)
-   main::codegen_array_append(cg, aval, ev.0)
+   main::codegen_array_append(cg, aval, ev.0, ev.1)
 
 // "r.out += v" — a compound append to a record field (a Builder / growable
 // array). GEP into the record's field slot and append to the field value.
@@ -1178,7 +1178,7 @@ codegen_emit_member_compound = cg, t, m =>
          is_arr
             |
                ev = expr::codegen_eval(cg, t.5)
-               main::codegen_array_append(cg, val_ptr, ev.0)
+               main::codegen_array_append(cg, val_ptr, ev.0, ev.1)
             | main::codegen_builder_append(cg, val_ptr, t.5)
 
 
@@ -2483,21 +2483,49 @@ codegen_map_grow = cg, m, key_vt =>
    LLVMBuildBr(cg.builder, loop)
    LLVMPositionBuilderAtEnd(cg.builder, done)
 
-codegen_map_pack_val: types::Cg, Addr, ast::ValueType => Addr
-codegen_map_pack_val = cg, v, vt =>
+codegen_pack_slot: types::Cg, Addr, ast::ValueType => Addr
+codegen_pack_slot = cg, v, vt =>
    i64t = LLVMInt64Type!
    types::is_ptrish_vt(vt)
-      | LLVMBuildPtrToInt(cg.builder, v, i64t, "m.wr.p2i")
+      | LLVMBuildPtrToInt(cg.builder, v, i64t, "slot.p2i")
       |
          types::is_float_vt(vt)
             |
                is_f32 = vt [F32]
                is_f32
                   |
-                     f32_i32 = LLVMBuildBitCast(cg.builder, v, LLVMInt32Type!, "m.wr.f2i32")
-                     LLVMBuildZExt(cg.builder, f32_i32, i64t, "m.wr.f2i64")
-                  | LLVMBuildBitCast(cg.builder, v, i64t, "m.wr.f2i")
-            | stmt::coerce_int(cg, v, i64t)
+                     f32_i32 = LLVMBuildBitCast(cg.builder, v, LLVMInt32Type!, "slot.f2i32")
+                     LLVMBuildZExt(cg.builder, f32_i32, i64t, "slot.f2i64")
+                  |
+                     (LLVMTypeOf(v) == LLVMDoubleType!)
+                        | LLVMBuildBitCast(cg.builder, v, i64t, "slot.d2i")
+                        | stmt::coerce_int(cg, v, i64t)
+            |
+               is_uns = types::is_unsigned_vt(vt) || types::is_flag_vt(vt)
+               stmt::coerce_int_ext(cg, v, i64t, is_uns)
+
+codegen_unpack_slot: types::Cg, Addr, ast::ValueType => Addr
+codegen_unpack_slot = cg, raw_i64, vt =>
+   elem_ll = types::llvm_type_of_vt(vt)
+   types::is_ptrish_vt(vt)
+      | LLVMBuildIntToPtr(cg.builder, raw_i64, elem_ll, "slot.i2p")
+      |
+         types::is_float_vt(vt)
+            |
+               is_f32 = vt [F32]
+               is_f32
+                  |
+                     f32_i32 = LLVMBuildTrunc(cg.builder, raw_i64, LLVMInt32Type!, "slot.i2f32_raw")
+                     LLVMBuildBitCast(cg.builder, f32_i32, elem_ll, "slot.i2f32")
+                  | LLVMBuildBitCast(cg.builder, raw_i64, elem_ll, "slot.i2flt")
+            |
+               types::is_flag_vt(vt)
+                  | LLVMBuildTrunc(cg.builder, raw_i64, LLVMInt1Type!, "slot.i2flag")
+                  | stmt::coerce_int_ext(cg, raw_i64, elem_ll, types::is_unsigned_vt(vt))
+
+codegen_map_pack_val: types::Cg, Addr, ast::ValueType => Addr
+codegen_map_pack_val = cg, v, vt =>
+   codegen_pack_slot(cg, v, vt)
 
 // Insert a key-value pair, checking existing-key replacement before growing.
 codegen_map_insert: types::Cg, Addr, Addr, Addr, ast::ValueType => ()

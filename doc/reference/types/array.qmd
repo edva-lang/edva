@@ -51,8 +51,8 @@ count = ?xs       // 3
 ### Indexing and bounds checking
 
 In Edva, array indexing is fallible and produces a ramification:
-- **Indexed read `xs(i)`**: Returns `< T | Error >` (RamPP). If `i` is in bounds, the positive slot contains the element; otherwise, the negative slot contains an `Error`.
-- **Indexed write `xs(i) = val`**: Returns `< | Error >` (RamNP).
+- **Indexed read `xs(i)`**: Returns `< T | Error >` (RamPP). If `i` is in bounds (`0 <= i < ?xs`), the positive slot contains the element; otherwise, the negative slot contains an `Error`.
+- **Indexed write `xs(i) = val`**: Returns `< | Error >` (RamNP). If `i` is in bounds (`0 <= i < ?xs`), the assignment updates the slot and produces `< | >`; otherwise, it returns `< | Error >` without modifying storage.
 
 ```{.dva .partial}
 xs = Ints()
@@ -61,18 +61,16 @@ xs += 42
 // Unwrap or panic on out-of-bounds read
 val = xs(0)!!
 
-// Handling fallible access with choice matching
-element = xs(1) |
-   [v] v |
-   [err] -1
+// Handling fallible access with ramification matching
+element = xs(1) | v => v | err => -1
 
 // Write-or-panic on assignment
 xs(0) = 99 !| _
 ```
 
-### Deep copying (`++`)
+### Container copying (`++`)
 
-The unary prefix `++` operator creates an independent deep copy of an array:
+The unary prefix `++` operator creates a clone of the array container:
 
 ```{.dva .partial}
 original = Ints()
@@ -83,6 +81,16 @@ copied += 2
 
 // original still has length 1, copied has length 2
 ```
+
+`++array` allocates a fresh backing buffer and copies the element slots. For scalar element types (integers, floats, flags), modifying or appending to `copied` does not affect `original`. For reference-bearing element types (records, inner arrays), `++` performs a shallow copy of the container slots: the pointers are copied, so referenced nested objects remain shared between the original and copied arrays.
+
+### Iteration and mutation across growth
+
+Arrays can be iterated with `?xs @ elem => ...`. The iteration captures the initial length and backing buffer pointer upon loop entry.
+
+- **In-place updates**: Mutations to existing slots within the pre-growth buffer (`xs(i) = new_val`) during iteration are visible to subsequent loop iterations if no reallocation occurs.
+- **Buffer reallocation on growth**: If elements are appended during iteration (`xs += elem`) triggering a capacity reallocation, the array variable `xs` points to the newly allocated buffer, while the active loop continues iterating through the initial buffer up to the pre-loop length.
+
 
 ## Slices (`(T[])`)
 
@@ -110,6 +118,12 @@ view = xs(1..3)
 view_len = ?view       // 2
 first_elem = view(0)    // 20
 ```
+
+### Slice lifetime and array growth
+
+Because a slice captures `{ len, data }` pointing directly into the array's backing buffer at the time of slice creation:
+- Writes through the slice (`view(i) = val`) or direct writes to the array within range mutate the shared buffer slots.
+- If the originating array subsequently grows beyond its current capacity and reallocates a new backing buffer, existing slices continue to reference the previous buffer. Slices are non-owning views and do not automatically track array reallocations.
 
 ### Function parameters
 

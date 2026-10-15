@@ -853,7 +853,7 @@ codegen_materialize_ti: types::Cg, ast::TypeInfo, String => < (Addr, ast::ValueT
 codegen_materialize_ti = cg, ti, tname =>
    ti
       [Array ae]
-         u' = main::codegen_array_create(cg, "cttr.array")
+         u' = main::codegen_array_create_cap(cg, ae.2, "cttr.array")
          tname != "" | cg.last_type = tname
          <+ (u', ast::ValueType(Array)) +>
       [Map mk]
@@ -6014,8 +6014,8 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                                     | aev
                         |
                            td_ti
-                              [Array]
-                                 (main::codegen_array_create(cg, "a.new"),
+                              [Array ae]
+                                 (main::codegen_array_create_cap(cg, ae.2, "a.new"),
                                     ast::ValueType(Array))
                               [Map]
                                  (runtime::codegen_map_create(cg, "m.new"),
@@ -7013,15 +7013,14 @@ codegen_typed_eval_index = cg, target, index, ti =>
                is_sl
                   |
                      data = main::slice_data(cg, tv.0, "slice.data")
-                     elem_ll' = types::llvm_type_of_vt(ret_vt)
-                     typed_data' = LLVMBuildPointerCast(cg.builder, data,
-                        LLVMPointerType(elem_ll', 0), "slice.data.typed")
                      idx_i64' = main::codegen_widen_idx_to_i64(cg, iv.0, iv.1, "idx")
-                     slot2 = types::gep1(cg, elem_ll', typed_data', idx_i64',
+                     i64t' = LLVMInt64Type!
+                     slot2 = types::gep1(cg, i64t', data, idx_i64',
                         "slice.elem.gep")
-                     ev' = LLVMBuildLoad2(cg.builder, elem_ll', slot2,
-                        "slice.elem.val")
-                     (ev', ret_vt)
+                     ev' = LLVMBuildLoad2(cg.builder, i64t', slot2,
+                        "slice.elem.raw")
+                     unpacked' = runtime::codegen_unpack_slot(cg, ev', ret_vt)
+                     (unpacked', ret_vt)
                   |
                      is_arr
                         |
@@ -7101,12 +7100,10 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
    is_sl
       |
          data' = main::slice_data(cg, tv.0, "slice.data")
-         elem_ll' = types::llvm_type_of_vt(vv.1)
-         typed_data = LLVMBuildPointerCast(cg.builder, data',
-            LLVMPointerType(elem_ll', 0), "slice.data.typed")
+         i64t' = LLVMInt64Type!
          idx_i64' = main::codegen_widen_idx_to_i64(cg, iv.0, iv.1, "idx")
-         slot2 = types::gep1(cg, elem_ll', typed_data, idx_i64', "slice.elem.gep")
-         cval' = stmt::coerce_int_ext(cg, vv.0, elem_ll', types::is_unsigned_vt(vv.1))
+         slot2 = types::gep1(cg, i64t', data', idx_i64', "slice.elem.gep")
+         cval' = runtime::codegen_pack_slot(cg, vv.0, vv.1)
          LLVMBuildStore(cg.builder, cval', slot2)
          (vv.0, vv.1)
       |
@@ -7114,22 +7111,80 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
          is_arr
             |
                i64t' = LLVMInt64Type!
-               data' = main::builder_data(cg, tv.0, "a.wr.data")
+               i8p = LLVMPointerType(LLVMInt8Type!, 0)
+               zero = LLVMConstInt(i64t', 0, 0)
+               one = LLVMConstInt(i64t', 1, 0)
                idx_i64' = main::codegen_widen_idx_to_i64(cg, iv.0, iv.1, "idx")
+               val_st' = runtime::codegen_pack_slot(cg, vv.0, vv.1)
+               line' = target.line != 0 | target.line | index.line
+               col' = target.col != 0 | target.col | index.col
+               nonnull = LLVMBuildICmp(cg.builder, 33, tv.0,
+                  LLVMConstNull(i8p), "a.wr.nonnull")
+               parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+               check_bb = LLVMAppendBasicBlock(parent, "a.wr.check")
+               ok_bb = LLVMAppendBasicBlock(parent, "a.wr.ok")
+               null_bb = LLVMAppendBasicBlock(parent, "a.wr.err.null")
+               oob_bb = LLVMAppendBasicBlock(parent, "a.wr.err.oob")
+               done = LLVMAppendBasicBlock(parent, "a.wr.done")
+               LLVMBuildCondBr(cg.builder, nonnull, check_bb, null_bb)
+               LLVMPositionBuilderAtEnd(cg.builder, check_bb)
+               len_v = main::builder_len(cg, tv.0, "a.wr.len")
+               ge0 = LLVMBuildICmp(cg.builder, 39, idx_i64', zero, "a.wr.ge0")
+               lt = LLVMBuildICmp(cg.builder, 40, idx_i64', len_v, "a.wr.lt")
+               in_bounds = LLVMBuildAnd(cg.builder, ge0, lt, "a.wr.bounds")
+               LLVMBuildCondBr(cg.builder, in_bounds, ok_bb, oob_bb)
+               LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
+               data' = main::builder_data(cg, tv.0, "a.wr.data")
                slot = types::gep1(cg, i64t', data', idx_i64', "a.elem.gep")
-               val_st' = types::is_ptrish_vt(vv.1)
-                  | LLVMBuildPtrToInt(cg.builder, vv.0, i64t', "a.wr.p2i")
-                  | stmt::coerce_int(cg, vv.0, i64t')
                LLVMBuildStore(cg.builder, val_st', slot)
+               ok_end = LLVMGetInsertBlock(cg.builder)
+               LLVMBuildBr(cg.builder, done)
+               LLVMPositionBuilderAtEnd(cg.builder, null_bb)
+               err0 = main::codegen_build_error(cg, LLVMConstInt(i64t', 4011, 0),
+                  "array is not initialized", line', col', zero, zero)
+               null_end = LLVMGetInsertBlock(cg.builder)
+               LLVMBuildBr(cg.builder, done)
+               LLVMPositionBuilderAtEnd(cg.builder, oob_bb)
+               err1 = main::codegen_build_error(cg, LLVMConstInt(i64t', 4011, 0),
+                  "array index out of bounds", line', col', idx_i64', len_v)
+               oob_end = LLVMGetInsertBlock(cg.builder)
+               LLVMBuildBr(cg.builder, done)
+               LLVMPositionBuilderAtEnd(cg.builder, done)
                is_ram = ti [Ram]
                is_ram
                   |
                      is_unboxed = types::is_unboxed_ram_ti(cg, ti)
                      is_unboxed
-                        | match::codegen_unboxed_ram_construct(cg, <+>, <-->, ti)
                         |
-                           ram_res = match::codegen_typed_build_union(cg, 1, <-->,
-                              "a.wr.succ")
+                           tag_phi = LLVMBuildPhi(cg.builder, LLVMInt1Type!, "a.wr.tag")
+                           stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 1, 0), ok_end)
+                           stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 0, 0), null_end)
+                           stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 0, 0), oob_end)
+                           err0_i64 = LLVMBuildPtrToInt(cg.builder, err0, i64t', "err0.p2i")
+                           err1_i64 = LLVMBuildPtrToInt(cg.builder, err1, i64t', "err1.p2i")
+                           pay_phi = LLVMBuildPhi(cg.builder, i64t', "a.wr.pay")
+                           stmt::llvm_add_incoming1(cg, pay_phi, zero, ok_end)
+                           stmt::llvm_add_incoming1(cg, pay_phi, err0_i64, null_end)
+                           stmt::llvm_add_incoming1(cg, pay_phi, err1_i64, oob_end)
+                           st = match::unboxed_ram_struct_t(cg)
+                           u0 = LLVMConstNull(st)
+                           u1 = LLVMBuildInsertValue(cg.builder, u0, tag_phi, 0, "ram.tag")
+                           u2 = LLVMBuildInsertValue(cg.builder, u1, pay_phi, 1, "ram.pay")
+                           (u2, ast::ValueType(Ram))
+                        |
+                           tag_phi = LLVMBuildPhi(cg.builder, i64t', "a.wr.tag")
+                           stmt::llvm_add_incoming1(cg, tag_phi, one, ok_end)
+                           stmt::llvm_add_incoming1(cg, tag_phi, zero, null_end)
+                           stmt::llvm_add_incoming1(cg, tag_phi, zero, oob_end)
+                           pay_phi = LLVMBuildPhi(cg.builder, i8p, "a.wr.pay")
+                           stmt::llvm_add_incoming1(cg, pay_phi, LLVMConstNull(i8p), ok_end)
+                           stmt::llvm_add_incoming1(cg, pay_phi, err0, null_end)
+                           stmt::llvm_add_incoming1(cg, pay_phi, err1, oob_end)
+                           ram_res = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t', 16, 0), "a.wr.succ")
+                           tgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, ram_res, 0, "tag.gep")
+                           pgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, ram_res, 1, "pay.gep")
+                           LLVMBuildStore(cg.builder, tag_phi, tgep)
+                           LLVMBuildStore(cg.builder, pay_phi, pgep)
                            (ram_res, ast::ValueType(Ram))
                   | (vv.0, vv.1)
             |
