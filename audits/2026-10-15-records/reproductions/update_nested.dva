@@ -1,0 +1,8 @@
+#use io
+#type C (x: Int, y: Int)
+#type P (child: C, z: Int)
+p = P(C(1,2), 3)
+q = P(..p, z: 4)
+q.child.x = 99
+io::out $ p.child.x
+io::out $ q.child.x

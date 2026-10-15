@@ -1,0 +1,8 @@
+{
+  "head": "c0869ad6cd4ba5790af9f8602eeb015fa10b521f",
+  "compiler": "edva 1.1.1+01fe6c1",
+  "compiler_sha256": "d10a734451dff1fe98caf444d02048c3b9250ff2cea51a347625e360f7d07b5d",
+  "make_edva": "passed, no rebuild required",
+  "preexisting_change": "src/version.dva",
+  "probe_count": 44
+}

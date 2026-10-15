@@ -1,0 +1,8 @@
+#use io
+#type P (a: u8, b: u8)
+p = P(1u8, 2u8)
+io::out $ p.a
+io::out $ p.b
+p.b = 99u8
+io::out $ p.b
+io::out $ @[&p + 1 u8]

@@ -1,0 +1,6 @@
+#use io
+#type C (x: Int, y: Int)
+#type P (child: C, z: Int)
+p: P
+p.child.x = 1
+io::out $ p.child.y

@@ -1,0 +1,442 @@
+=== packed_ctor ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  %arena.cur = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i8, i16, i8 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i8, i16, i8 }, ptr %rec.alloc, i32 0, i32 0
+  store i8 1, ptr %rec.fld, align 1
+  %rec.fld1 = getelementptr inbounds { i8, i16, i8 }, ptr %rec.alloc, i32 0, i32 1
+  store i16 4660, ptr %rec.fld1, align 2
+  %rec.fld2 = getelementptr inbounds { i8, i16, i8 }, ptr %rec.alloc, i32 0, i32 2
+  store i8 99, ptr %rec.fld2, align 1
+  store ptr %rec.alloc, ptr @var.p, align 8
+  %var.load = load ptr, ptr @var.p, align 8
+  %fld.gep = getelementptr inbounds <{ i8, i16, i8 }>, ptr %var.load, i32 0, i32 0
+  %fld.load = load i8, ptr %fld.gep, align 1
+  call void @"io::out$u8"(i8 %fld.load)
+  %var.load3 = load ptr, ptr @var.p, align 8
+  %fld.gep4 = getelementptr inbounds <{ i8, i16, i8 }>, ptr %var.load3, i32 0, i32 1
+  %fld.load5 = load i16, ptr %fld.gep4, align 2
+  call void @"io::out$u16"(i16 %fld.load5)
+  %var.load6 = load ptr, ptr @var.p, align 8
+  %fld.gep7 = getelementptr inbounds <{ i8, i16, i8 }>, ptr %var.load6, i32 0, i32 2
+  %fld.load8 = load i8, ptr %fld.gep7, align 1
+  call void @"io::out$u8"(i8 %fld.load8)
+  %var.load9 = load ptr, ptr @var.p, align 8
+  %ptr.int.l = ptrtoint ptr %var.load9 to i64
+  %addtmp = add i64 %ptr.int.l, 1
+  %ptr.res = inttoptr i64 %addtmp to ptr
+  %raw.int = ptrtoint ptr %ptr.res to i64
+  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
+  %addr.tag = lshr i64 %raw.int, 48
+  %addr.immortal = icmp eq i64 %addr.tag, 0
+  br i1 %addr.immortal, label %addr_ok, label %addr_gen_check
+
+addr_gen_check:                                   ; preds = %entry
+  %arena.cur10 = call ptr @dva_arena_current()
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur10, i64 %addr.tag)
+  br i1 %tag.valid, label %addr_ok, label %addr_stale
+
+addr_ok:                                          ; preds = %addr_stale, %addr_gen_check, %entry
+  %raw.load = load volatile i16, ptr %raw.clean.ptr, align 2
+  call void @"io::out$u16"(i16 %raw.load)
+  %var.load11 = load ptr, ptr @var.p, align 8
+  %ptr.int.l12 = ptrtoint ptr %var.load11 to i64
+  %addtmp13 = add i64 %ptr.int.l12, 3
+  %ptr.res14 = inttoptr i64 %addtmp13 to ptr
+  %raw.int15 = ptrtoint ptr %ptr.res14 to i64
+  %raw.clean.int16 = and i64 %raw.int15, 281474976710655
+  %raw.clean.ptr17 = inttoptr i64 %raw.clean.int16 to ptr
+  %addr.tag18 = lshr i64 %raw.int15, 48
+  %addr.immortal19 = icmp eq i64 %addr.tag18, 0
+  br i1 %addr.immortal19, label %addr_ok21, label %addr_gen_check20
+
+addr_stale:                                       ; preds = %addr_gen_check
+  %2 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok
+
+addr_gen_check20:                                 ; preds = %addr_ok
+  %arena.cur23 = call ptr @dva_arena_current()
+  %tag.valid24 = call i1 @dva_arena_validate_tag(ptr %arena.cur23, i64 %addr.tag18)
+  br i1 %tag.valid24, label %addr_ok21, label %addr_stale22
+
+addr_ok21:                                        ; preds = %addr_stale22, %addr_gen_check20, %addr_ok
+  %raw.load25 = load volatile i8, ptr %raw.clean.ptr17, align 1
+  call void @"io::out$u8"(i8 %raw.load25)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+
+addr_stale22:                                     ; preds = %addr_gen_check20
+  %3 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok21
+}
+
+=== narrow_ctor ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  %arena.cur = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64 }, ptr %rec.alloc, i32 0, i32 0
+  store i64 1, ptr %rec.fld, align 8
+  %rec.fld1 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 2, ptr %rec.fld1, align 8
+  store ptr %rec.alloc, ptr @var.p, align 8
+  %var.load = load ptr, ptr @var.p, align 8
+  %fld.gep = getelementptr inbounds { i8, i8 }, ptr %var.load, i32 0, i32 0
+  %fld.load = load i8, ptr %fld.gep, align 1
+  call void @"io::out$u8"(i8 %fld.load)
+  %var.load2 = load ptr, ptr @var.p, align 8
+  %fld.gep3 = getelementptr inbounds { i8, i8 }, ptr %var.load2, i32 0, i32 1
+  %fld.load4 = load i8, ptr %fld.gep3, align 1
+  call void @"io::out$u8"(i8 %fld.load4)
+  %var.load5 = load ptr, ptr @var.p, align 8
+  %fld.gep6 = getelementptr inbounds { i8, i8 }, ptr %var.load5, i32 0, i32 1
+  store i8 99, ptr %fld.gep6, align 1
+  %var.load7 = load ptr, ptr @var.p, align 8
+  %fld.gep8 = getelementptr inbounds { i8, i8 }, ptr %var.load7, i32 0, i32 1
+  %fld.load9 = load i8, ptr %fld.gep8, align 1
+  call void @"io::out$u8"(i8 %fld.load9)
+  %var.load10 = load ptr, ptr @var.p, align 8
+  %ptr.int.l = ptrtoint ptr %var.load10 to i64
+  %addtmp = add i64 %ptr.int.l, 1
+  %ptr.res = inttoptr i64 %addtmp to ptr
+  %raw.int = ptrtoint ptr %ptr.res to i64
+  %raw.clean.int = and i64 %raw.int, 281474976710655
+  %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
+  %addr.tag = lshr i64 %raw.int, 48
+  %addr.immortal = icmp eq i64 %addr.tag, 0
+  br i1 %addr.immortal, label %addr_ok, label %addr_gen_check
+
+addr_gen_check:                                   ; preds = %entry
+  %arena.cur11 = call ptr @dva_arena_current()
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur11, i64 %addr.tag)
+  br i1 %tag.valid, label %addr_ok, label %addr_stale
+
+addr_ok:                                          ; preds = %addr_stale, %addr_gen_check, %entry
+  %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
+  call void @"io::out$u8"(i8 %raw.load)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+
+addr_stale:                                       ; preds = %addr_gen_check
+  %2 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  br label %addr_ok
+}
+
+=== bitfield_ctor ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  %arena.cur = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({}, ptr null, i32 1) to i64))
+  store ptr %rec.alloc, ptr @var.b, align 8
+  %var.load = load i8, ptr @var.b, align 1
+  %bf.load = load i8, ptr @var.b, align 1
+  %bf.mask = and i8 %bf.load, 15
+  %bf.ext = zext i8 %bf.mask to i64
+  %coerce.trunc = trunc i64 %bf.ext to i8
+  call void @"io::out$u8"(i8 %coerce.trunc)
+  %var.load1 = load i8, ptr @var.b, align 1
+  %bf.load2 = load i8, ptr @var.b, align 1
+  %bf.shr = lshr i8 %bf.load2, 4
+  %bf.mask3 = and i8 %bf.shr, 15
+  %bf.ext4 = zext i8 %bf.mask3 to i64
+  %coerce.trunc5 = trunc i64 %bf.ext4 to i8
+  call void @"io::out$u8"(i8 %coerce.trunc5)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+}
+
+=== bitfield64 ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  store i64 0, ptr @var.b, align 8
+  %var.load = load i64, ptr @var.b, align 8
+  %bf.cur = load i64, ptr @var.b, align 8
+  %bf.clr = and i64 %bf.cur, -1
+  %bf.new = or i64 %bf.clr, 0
+  store i64 %bf.new, ptr @var.b, align 8
+  %var.load1 = load i64, ptr @var.b, align 8
+  %bf.load = load i64, ptr @var.b, align 8
+  %bf.mask = and i64 %bf.load, 0
+  call void @"io::out$u64"(i64 %bf.mask)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+}
+
+=== fixed_record_write ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  %arena.cur = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64 }, ptr %rec.alloc, i32 0, i32 0
+  store i64 1, ptr %rec.fld, align 8
+  %rec.fld1 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 2, ptr %rec.fld1, align 8
+  %arena.cur2 = call ptr @dva_arena_current()
+  %rec.alloc3 = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64))
+  %rec.fld4 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc3, i32 0, i32 0
+  store i64 3, ptr %rec.fld4, align 8
+  %rec.fld5 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc3, i32 0, i32 1
+  store i64 4, ptr %rec.fld5, align 8
+  %arena.cur6 = call ptr @dva_arena_current()
+  %rec.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 ptrtoint (ptr getelementptr ({ { i64, i64 }, { i64, i64 } }, ptr null, i32 1) to i64))
+  %rec.fld8 = getelementptr inbounds { { i64, i64 }, { i64, i64 } }, ptr %rec.alloc7, i32 0, i32 0
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld8, ptr align 1 %rec.alloc, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64), i1 false)
+  %rec.fld9 = getelementptr inbounds { { i64, i64 }, { i64, i64 } }, ptr %rec.alloc7, i32 0, i32 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld9, ptr align 1 %rec.alloc3, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64), i1 false)
+  store ptr %rec.alloc7, ptr @var.r, align 8
+  %var.load = load ptr, ptr @var.r, align 8
+  %arena.cur10 = call ptr @dva_arena_current()
+  %rec.alloc11 = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64))
+  %rec.fld12 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc11, i32 0, i32 0
+  store i64 10, ptr %rec.fld12, align 8
+  %rec.fld13 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc11, i32 0, i32 1
+  store i64 20, ptr %rec.fld13, align 8
+  %rec.elem.gep = getelementptr ptr, ptr %var.load, i64 1
+  store ptr %rec.alloc11, ptr %rec.elem.gep, align 8
+  %var.load14 = load ptr, ptr @var.r, align 8
+  %fld.gep = getelementptr inbounds { { i64, i64 }, { i64, i64 } }, ptr %var.load14, i32 0, i32 0
+  %fld.gep15 = getelementptr inbounds { i64, i64 }, ptr %fld.gep, i32 0, i32 0
+  %fld.load = load i64, ptr %fld.gep15, align 8
+  call void @"io::out$Int"(i64 %fld.load)
+  %var.load16 = load ptr, ptr @var.r, align 8
+  %fld.gep17 = getelementptr inbounds { { i64, i64 }, { i64, i64 } }, ptr %var.load16, i32 0, i32 0
+  %fld.gep18 = getelementptr inbounds { i64, i64 }, ptr %fld.gep17, i32 0, i32 1
+  %fld.load19 = load i64, ptr %fld.gep18, align 8
+  call void @"io::out$Int"(i64 %fld.load19)
+  %var.load20 = load ptr, ptr @var.r, align 8
+  %fld.gep21 = getelementptr inbounds { { i64, i64 }, { i64, i64 } }, ptr %var.load20, i32 0, i32 1
+  %fld.gep22 = getelementptr inbounds { i64, i64 }, ptr %fld.gep21, i32 0, i32 0
+  %fld.load23 = load i64, ptr %fld.gep22, align 8
+  call void @"io::out$Int"(i64 %fld.load23)
+  %var.load24 = load ptr, ptr @var.r, align 8
+  %fld.gep25 = getelementptr inbounds { { i64, i64 }, { i64, i64 } }, ptr %var.load24, i32 0, i32 1
+  %fld.gep26 = getelementptr inbounds { i64, i64 }, ptr %fld.gep25, i32 0, i32 1
+  %fld.load27 = load i64, ptr %fld.gep26, align 8
+  call void @"io::out$Int"(i64 %fld.load27)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+}
+
+=== large_const_mutation ===
+@"$const_arr.4.55" = internal unnamed_addr constant [64 x i64] [i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1, i64 1]
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  store ptr @"$const_arr.4.55", ptr @var.r, align 8
+  %var.load = load ptr, ptr @var.r, align 8
+  %rec.elem.gep = getelementptr i64, ptr %var.load, i64 1
+  store i64 99, ptr %rec.elem.gep, align 8
+  %var.load1 = load ptr, ptr @var.r, align 8
+  %rec.elem.gep2 = getelementptr i64, ptr %var.load1, i64 1
+  %rec.elem.val = load i64, ptr %rec.elem.gep2, align 8
+  call void @"io::out$Int"(i64 %rec.elem.val)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+}
+
+=== fixed_narrow_write ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  %arena.cur = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i8, i8, i8 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i8, i8, i8 }, ptr %rec.alloc, i32 0, i32 0
+  store i8 10, ptr %rec.fld, align 1
+  %rec.fld1 = getelementptr inbounds { i8, i8, i8 }, ptr %rec.alloc, i32 0, i32 1
+  store i8 20, ptr %rec.fld1, align 1
+  %rec.fld2 = getelementptr inbounds { i8, i8, i8 }, ptr %rec.alloc, i32 0, i32 2
+  store i8 30, ptr %rec.fld2, align 1
+  store ptr %rec.alloc, ptr @var.r, align 8
+  %var.load = load ptr, ptr @var.r, align 8
+  %rec.elem.gep = getelementptr i64, ptr %var.load, i64 1
+  store i64 99, ptr %rec.elem.gep, align 8
+  %var.load3 = load ptr, ptr @var.r, align 8
+  %fld.gep = getelementptr inbounds { i8, i8, i8 }, ptr %var.load3, i32 0, i32 0
+  %fld.load = load i8, ptr %fld.gep, align 1
+  call void @"io::out$u8"(i8 %fld.load)
+  %var.load4 = load ptr, ptr @var.r, align 8
+  %fld.gep5 = getelementptr inbounds { i8, i8, i8 }, ptr %var.load4, i32 0, i32 1
+  %fld.load6 = load i8, ptr %fld.gep5, align 1
+  call void @"io::out$u8"(i8 %fld.load6)
+  %var.load7 = load ptr, ptr @var.r, align 8
+  %fld.gep8 = getelementptr inbounds { i8, i8, i8 }, ptr %var.load7, i32 0, i32 2
+  %fld.load9 = load i8, ptr %fld.gep8, align 1
+  call void @"io::out$u8"(i8 %fld.load9)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+}
+
+=== fixed_u8_slice ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  %arena.cur = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i8, i8, i8 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i8, i8, i8 }, ptr %rec.alloc, i32 0, i32 0
+  store i8 10, ptr %rec.fld, align 1
+  %rec.fld1 = getelementptr inbounds { i8, i8, i8 }, ptr %rec.alloc, i32 0, i32 1
+  store i8 20, ptr %rec.fld1, align 1
+  %rec.fld2 = getelementptr inbounds { i8, i8, i8 }, ptr %rec.alloc, i32 0, i32 2
+  store i8 30, ptr %rec.fld2, align 1
+  store ptr %rec.alloc, ptr @var.r, align 8
+  %var.load = load ptr, ptr @var.r, align 8
+  %rec.elem.gep = getelementptr i8, ptr %var.load, i64 0
+  %arena.cur3 = call ptr @dva_arena_current()
+  %rec.view.slice = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 16)
+  %rec.view.data.gep = getelementptr inbounds { ptr, i64 }, ptr %rec.view.slice, i32 0, i32 0
+  store ptr %rec.elem.gep, ptr %rec.view.data.gep, align 8
+  %rec.view.len.gep = getelementptr inbounds { ptr, i64 }, ptr %rec.view.slice, i32 0, i32 1
+  store i64 3, ptr %rec.view.len.gep, align 8
+  store ptr %rec.view.slice, ptr @var.s, align 8
+  %var.load4 = load ptr, ptr @var.s, align 8
+  %slice.data.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load4, i32 0, i32 0
+  %slice.data = load ptr, ptr %slice.data.gep, align 8
+  %slice.elem.gep = getelementptr i64, ptr %slice.data, i64 1
+  %slice.elem.raw = load i64, ptr %slice.elem.gep, align 8
+  %coerce.trunc = trunc i64 %slice.elem.raw to i8
+  call void @"io::out$u8"(i8 %coerce.trunc)
+  %var.load5 = load ptr, ptr @var.s, align 8
+  %slice.data.gep6 = getelementptr inbounds { ptr, i64 }, ptr %var.load5, i32 0, i32 0
+  %slice.data7 = load ptr, ptr %slice.data.gep6, align 8
+  %slice.elem.gep8 = getelementptr i64, ptr %slice.data7, i64 1
+  store i64 99, ptr %slice.elem.gep8, align 8
+  %var.load9 = load ptr, ptr @var.r, align 8
+  %fld.gep = getelementptr inbounds { i8, i8, i8 }, ptr %var.load9, i32 0, i32 0
+  %fld.load = load i8, ptr %fld.gep, align 1
+  call void @"io::out$u8"(i8 %fld.load)
+  %var.load10 = load ptr, ptr @var.r, align 8
+  %fld.gep11 = getelementptr inbounds { i8, i8, i8 }, ptr %var.load10, i32 0, i32 1
+  %fld.load12 = load i8, ptr %fld.gep11, align 1
+  call void @"io::out$u8"(i8 %fld.load12)
+  %var.load13 = load ptr, ptr @var.r, align 8
+  %fld.gep14 = getelementptr inbounds { i8, i8, i8 }, ptr %var.load13, i32 0, i32 2
+  %fld.load15 = load i8, ptr %fld.gep14, align 1
+  call void @"io::out$u8"(i8 %fld.load15)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+}
+
+=== fixed_record_slice ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  %arena.cur = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64 }, ptr %rec.alloc, i32 0, i32 0
+  store i64 1, ptr %rec.fld, align 8
+  %rec.fld1 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 2, ptr %rec.fld1, align 8
+  %arena.cur2 = call ptr @dva_arena_current()
+  %rec.alloc3 = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64))
+  %rec.fld4 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc3, i32 0, i32 0
+  store i64 3, ptr %rec.fld4, align 8
+  %rec.fld5 = getelementptr inbounds { i64, i64 }, ptr %rec.alloc3, i32 0, i32 1
+  store i64 4, ptr %rec.fld5, align 8
+  %arena.cur6 = call ptr @dva_arena_current()
+  %rec.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 ptrtoint (ptr getelementptr ({ { i64, i64 }, { i64, i64 } }, ptr null, i32 1) to i64))
+  %rec.fld8 = getelementptr inbounds { { i64, i64 }, { i64, i64 } }, ptr %rec.alloc7, i32 0, i32 0
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld8, ptr align 1 %rec.alloc, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64), i1 false)
+  %rec.fld9 = getelementptr inbounds { { i64, i64 }, { i64, i64 } }, ptr %rec.alloc7, i32 0, i32 1
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld9, ptr align 1 %rec.alloc3, i64 ptrtoint (ptr getelementptr ({ i64, i64 }, ptr null, i32 1) to i64), i1 false)
+  store ptr %rec.alloc7, ptr @var.r, align 8
+  %var.load = load ptr, ptr @var.r, align 8
+  %rec.elem.gep = getelementptr ptr, ptr %var.load, i64 0
+  %arena.cur10 = call ptr @dva_arena_current()
+  %rec.view.slice = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 16)
+  %rec.view.data.gep = getelementptr inbounds { ptr, i64 }, ptr %rec.view.slice, i32 0, i32 0
+  store ptr %rec.elem.gep, ptr %rec.view.data.gep, align 8
+  %rec.view.len.gep = getelementptr inbounds { ptr, i64 }, ptr %rec.view.slice, i32 0, i32 1
+  store i64 2, ptr %rec.view.len.gep, align 8
+  store ptr %rec.view.slice, ptr @var.s, align 8
+  %var.load11 = load ptr, ptr @var.s, align 8
+  %slice.data.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load11, i32 0, i32 0
+  %slice.data = load ptr, ptr %slice.data.gep, align 8
+  %slice.elem.gep = getelementptr i64, ptr %slice.data, i64 1
+  %slice.elem.raw = load i64, ptr %slice.elem.gep, align 8
+  %slot.i2p = inttoptr i64 %slice.elem.raw to ptr
+  store ptr %slot.i2p, ptr @var.e, align 8
+  %var.load12 = load ptr, ptr @var.e, align 8
+  %fld.gep = getelementptr inbounds { i64, i64 }, ptr %var.load12, i32 0, i32 0
+  %fld.load = load i64, ptr %fld.gep, align 8
+  call void @"io::out$Int"(i64 %fld.load)
+  %var.load13 = load ptr, ptr @var.e, align 8
+  %fld.gep14 = getelementptr inbounds { i64, i64 }, ptr %var.load13, i32 0, i32 1
+  %fld.load15 = load i64, ptr %fld.gep14, align 8
+  call void @"io::out$Int"(i64 %fld.load15)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+}
+
+=== fixed_read_oob ===
+define i32 @main(i32 %0, ptr %1) #1 {
+entry:
+  %argc.i64 = sext i32 %0 to i64
+  store i64 %argc.i64, ptr @sys_argc_global, align 8
+  store ptr %1, ptr @sys_argv_global, align 8
+  call void @dva_arena_init(ptr @global_arena, i64 67108864)
+  store ptr @clo.const.47, ptr @var.get, align 8
+  %arena.cur = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i64, i64, i64 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 0
+  store i64 10, ptr %rec.fld, align 8
+  %rec.fld1 = getelementptr inbounds { i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 20, ptr %rec.fld1, align 8
+  %rec.fld2 = getelementptr inbounds { i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
+  store i64 30, ptr %rec.fld2, align 8
+  store ptr %rec.alloc, ptr @var.r, align 8
+  %var.load = load ptr, ptr @var.r, align 8
+  %call.res = call i64 @get(ptr %var.load, i64 3)
+  call void @"io::out$Int"(i64 %call.res)
+  call void @dva_arena_destroy(ptr @global_arena)
+  ret i32 0
+}
+
+define internal i64 @get(ptr %0, i64 %1) #1 {
+entry:
+  %var.n = alloca i64, align 8
+  %var.r = alloca ptr, align 8
+  store ptr %0, ptr %var.r, align 8
+  store i64 %1, ptr %var.n, align 8
+  %var.load = load ptr, ptr %var.r, align 8
+  %var.load1 = load i64, ptr %var.n, align 8
+  %rec.elem.gep = getelementptr i64, ptr %var.load, i64 %var.load1
+  %rec.elem.val = load i64, ptr %rec.elem.gep, align 8
+  ret i64 %rec.elem.val
+}

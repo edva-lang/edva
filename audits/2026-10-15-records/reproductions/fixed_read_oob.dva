@@ -1,0 +1,6 @@
+#use io
+#type R (Int * 3)
+get: R, Int => Int
+get = r, n => r(n)
+r = R(10,20,30)
+io::out $ get(r,3)

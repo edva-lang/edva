@@ -1,0 +1,565 @@
+{
+  "work": "/tmp/edva_records_2hft85wf",
+  "results": [
+    {
+      "name": "alias_record",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: alias_record.ll\nSuccessfully compiled binary: alias_record\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "99\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bitfield32_control",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: bitfield32_control.ll\nSuccessfully compiled binary: bitfield32_control\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "123\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bitfield64",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: bitfield64.ll\nSuccessfully compiled binary: bitfield64\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "0\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bitfield_copy",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: bitfield_copy.ll\nSuccessfully compiled binary: bitfield_copy\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "3\n9\n5\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bitfield_ctor",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: bitfield_ctor.ll\nSuccessfully compiled binary: bitfield_ctor\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "0\n1\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "bitfield_ctor_zero",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: bitfield_ctor_zero.ll\nSuccessfully compiled binary: bitfield_ctor_zero\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "0\n1\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "const63_control",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: const63_control.ll\nSuccessfully compiled binary: const63_control\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "99\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "const64_volatile",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: const64_volatile.ll\nSuccessfully compiled binary: const64_volatile\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "copy_array",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: copy_array.ll\nSuccessfully compiled binary: copy_array\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "2\n2\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "copy_nested",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: copy_nested.ll\nSuccessfully compiled binary: copy_nested\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n99\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "ctor_excess_effect",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: ctor_excess_effect.ll\nSuccessfully compiled binary: ctor_excess_effect\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "ctor_once",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: ctor_once.ll\nSuccessfully compiled binary: ctor_once\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "make\nmake\n10\n11\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "ctor_order",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: ctor_order.ll\nSuccessfully compiled binary: ctor_order\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n2\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "duplicate_args",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: duplicate_args.ll\nSuccessfully compiled binary: duplicate_args\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "extra_args",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: extra_args.ll\nSuccessfully compiled binary: extra_args\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n2\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_float_write",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_float_write.ll\nSuccessfully compiled binary: fixed_float_write\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "3.5\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_narrow_explicit_write",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_narrow_explicit_write.ll\nSuccessfully compiled binary: fixed_narrow_explicit_write\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "10\n99\n30\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_narrow_read",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_narrow_read.ll\nSuccessfully compiled binary: fixed_narrow_read\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "20\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_narrow_write",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_narrow_write.ll\nSuccessfully compiled binary: fixed_narrow_write\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "10\n20\n30\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_read_negative",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_read_negative.ll\nSuccessfully compiled binary: fixed_read_negative\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "67112946\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_read_oob",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_read_oob.ll\nSuccessfully compiled binary: fixed_read_oob\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "0\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_record_slice",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_record_slice.ll\nSuccessfully compiled binary: fixed_record_slice\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": -11,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_record_write",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_record_write.ll\nSuccessfully compiled binary: fixed_record_write\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n140103544467536\n3\n4\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_u8_slice",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_u8_slice.ll\nSuccessfully compiled binary: fixed_u8_slice\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "127\n10\n20\n30\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_write_negative",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_write_negative.ll\nSuccessfully compiled binary: fixed_write_negative\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "accepted\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "fixed_write_oob",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: fixed_write_oob.ll\nSuccessfully compiled binary: fixed_write_oob\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "accepted\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "float_explicit",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: float_explicit.ll\nSuccessfully compiled binary: float_explicit\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1.5\n2.5\n3.5\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "float_member",
+      "compile": {
+        "exit_code": 1,
+        "stdout": "/home/ike/Z/edva/audits/2026-10-15-records/reproductions/float_member.dva:3:16: E3084: Type mismatch: cannot unify f32 with Float\n/home/ike/Z/edva/audits/2026-10-15-records/reproductions/float_member.dva:5:14: E3084: Type mismatch: cannot unify f32 with Float\n/home/ike/Z/edva/audits/2026-10-15-records/reproductions/float_member.dva:5:14: E3084: Type mismatch in field assignment: a\nE5011: Compilation aborted due to code generation errors.\n",
+        "stderr": ""
+      },
+      "run": null
+    },
+    {
+      "name": "large_const_mutation",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: large_const_mutation.ll\nSuccessfully compiled binary: large_const_mutation\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "large_copy_mutation",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: large_copy_mutation.ll\nSuccessfully compiled binary: large_copy_mutation\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n99\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "narrow_ctor",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: narrow_ctor.ll\nSuccessfully compiled binary: narrow_ctor\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n0\n99\n99\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "narrow_explicit",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: narrow_explicit.ll\nSuccessfully compiled binary: narrow_explicit\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n2\n99\n99\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "nested_replace",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: nested_replace.ll\nSuccessfully compiled binary: nested_replace\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "10\n20\n3\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "packed_ctor",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: packed_ctor.ll\nSuccessfully compiled binary: packed_ctor\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n13312\n18\n13312\n18\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "packed_update",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: packed_update.ll\nSuccessfully compiled binary: packed_update\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n13312\n18\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "splat_once",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: splat_once.ll\nSuccessfully compiled binary: splat_once\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "make\nmake\n10\n11\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "uninit_alias",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: uninit_alias.ll\nSuccessfully compiled binary: uninit_alias\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "0\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "uninit_copy",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: uninit_copy.ll\nSuccessfully compiled binary: uninit_copy\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "0\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "uninit_literal",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: uninit_literal.ll\nSuccessfully compiled binary: uninit_literal\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "0\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "uninit_nested",
+      "compile": {
+        "exit_code": 1,
+        "stdout": "/home/ike/Z/edva/audits/2026-10-15-records/reproductions/uninit_nested.dva:6:18: E3130: Field 'y' of 'p.child' read before init.\nE5011: Compilation aborted due to code generation errors.\n",
+        "stderr": ""
+      },
+      "run": null
+    },
+    {
+      "name": "uninit_splat",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: uninit_splat.ll\nSuccessfully compiled binary: uninit_splat\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "0\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "uninit_update",
+      "compile": {
+        "exit_code": 1,
+        "stdout": "/home/ike/Z/edva/audits/2026-10-15-records/reproductions/uninit_update.dva:5:11: E3130: Field 'y' of 'p' read before init.\nE5011: Compilation aborted due to code generation errors.\n",
+        "stderr": ""
+      },
+      "run": null
+    },
+    {
+      "name": "update_nested",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: update_nested.ll\nSuccessfully compiled binary: update_nested\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "1\n99\n",
+        "stderr": ""
+      }
+    },
+    {
+      "name": "update_once",
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: update_once.ll\nSuccessfully compiled binary: update_once\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "make\nmake\n10\n11\n99\n",
+        "stderr": ""
+      }
+    }
+  ]
+}

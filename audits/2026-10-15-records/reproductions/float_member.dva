@@ -1,0 +1,7 @@
+#use io
+#type P (a: f32, b: Float)
+p = P(1.5, 2.5)
+io::out $ p.a
+io::out $ p.b
+p.a = 3.5
+io::out $ p.a

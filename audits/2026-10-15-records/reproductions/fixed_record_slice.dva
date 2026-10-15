@@ -1,0 +1,6 @@
+#use io
+r = ((x = 1, y = 2), (x = 3, y = 4))
+s = r(0..2)
+e = s(1)
+io::out $ e.x
+io::out $ e.y

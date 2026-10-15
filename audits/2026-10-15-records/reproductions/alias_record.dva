@@ -1,0 +1,5 @@
+#use io
+p = (x = 1, y = 2)
+q = p
+q.x = 99
+io::out $ p.x

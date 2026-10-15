@@ -1,0 +1,4 @@
+#use io
+#type P (x: Int, y: Int)
+p = P(x: 1, x: 99, y: 2)
+io::out $ p.x

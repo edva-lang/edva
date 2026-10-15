@@ -1,0 +1,10 @@
+#use io
+#type P #packed (a: u8, b: u16, c: u8)
+p: P
+p.a = 1u8
+p.b = 4660u16
+p.c = 99u8
+q = P(..p)
+io::out $ q.a
+io::out $ q.b
+io::out $ q.c

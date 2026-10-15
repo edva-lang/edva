@@ -1,0 +1,7 @@
+#use io
+#type P (x: Int, y: Int)
+f: Int => Int
+f = n =>
+   io::out $ n
+   n
+p = P(y: f(2), x: f(1))

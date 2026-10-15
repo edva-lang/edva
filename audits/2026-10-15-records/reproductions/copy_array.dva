@@ -1,0 +1,9 @@
+#use io
+#type A Int{}
+a = A()
+a += 1
+p = (a = a, z = 2)
+q = ++p
+q.a += 99
+io::out $ ?p.a
+io::out $ ?q.a

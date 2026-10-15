@@ -1,0 +1,10 @@
+#use io
+#type B #packed u8 (a: 4, b: 4)
+b: B
+b.a = 3
+b.b = 5
+c = ++b
+c.a = 9
+io::out $ b.a
+io::out $ c.a
+io::out $ c.b

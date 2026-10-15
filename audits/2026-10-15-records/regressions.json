@@ -1,0 +1,215 @@
+{
+  "comparison": "Matches run_tests.sh: ignore trailing newlines; exact_output_match also recorded.",
+  "results": [
+    {
+      "name": "020_tuples_and_records",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 020_tuples_and_records.ll\nSuccessfully compiled binary: 020_tuples_and_records\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "10\n20\nKea\n30\n100\n200\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "083_record_unified",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 083_record_unified.ll\nSuccessfully compiled binary: 083_record_unified\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "10\n20\n30\n3\n10\n20\n30\n1\n2\n1\n2\ndva\n30\ndva\n30\n5\n1\n2\n3\n10\n60\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "084_nested_record_type",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 084_nested_record_type.ll\nSuccessfully compiled binary: 084_nested_record_type\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "2\n4\n5\n6\n3\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "085_nested_record_literal",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 085_nested_record_literal.ll\nSuccessfully compiled binary: 085_nested_record_literal\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "2\n3\n6\n5\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "087_slices_in_records",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 087_slices_in_records.ll\nSuccessfully compiled binary: 087_slices_in_records\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "dva\n3\n2\n2\n2\n30\n40\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "225_one_field_record_payload",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 225_one_field_record_payload.ll\nSuccessfully compiled binary: 225_one_field_record_payload\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "9\n42\n5\n",
+        "stderr": ""
+      },
+      "exact_output_match": false
+    },
+    {
+      "name": "228_record_layout_compat",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 228_record_layout_compat.ll\nSuccessfully compiled binary: 228_record_layout_compat\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "5\n7\nok\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "249_record_defaults_functional_update",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 249_record_defaults_functional_update.ll\nSuccessfully compiled binary: 249_record_defaults_functional_update\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "16777215 8 4\n255 8 4\n255 8 10\n100 20 12\n65280 16 2\n65280 32 2\n10 20\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "254_deep_pattern_destructuring",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 254_deep_pattern_destructuring.ll\nSuccessfully compiled binary: 254_deep_pattern_destructuring\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "30\n-42\n0\n0\n20\n42\n1\n2\n3\n7\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "262_record_views",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 262_record_views.ll\nSuccessfully compiled binary: 262_record_views\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "4\n64\n8080\n443\n12345\n12345\n99999\nhttps\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "263_packed_records_bitfields",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 263_packed_records_bitfields.ll\nSuccessfully compiled binary: 263_packed_records_bitfields\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "header size: 4\ntcpflags size: 2\npacket size: 6\nflags.syn: 1\nflags.ack: 1\nflags.fin: 0\npkt.src: 80\npkt.dst: 443\npkt.flags.syn: 1\npkt.flags.fin: 0\nafter reset:\npkt.flags.syn: 0\npkt.flags.fin: 1\noverlay a: 42\noverlay b: 4660\noverlay c: 99\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "268_record_field_reflection",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 268_record_field_reflection.ll\nSuccessfully compiled binary: 268_record_field_reflection\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "2\nx\ny\nx,y\nx\ny\n3\nname,age,active\nname\nage\nactive\npt.0 is int\npt.0 is not str\nper.0 is str\nPt.0==Int\nPt.1==Int\nPerson.0==Str\n0,1\nx:int=10\ny:int=20\nname:str=Alice\nage:int=30\nactive:other\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "278_record_splat",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 278_record_splat.ll\nSuccessfully compiled binary: 278_record_splat\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "10\n20\n30\n40\n50\n100\n200\n300\n1\n2\n3\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    },
+    {
+      "name": "349_addr_operator_records_and_scalars",
+      "ok": true,
+      "compile": {
+        "exit_code": 0,
+        "stdout": "Successfully generated LLVM IR via LLVM C API: 349_addr_operator_records_and_scalars.ll\nSuccessfully compiled binary: 349_addr_operator_records_and_scalars\n",
+        "stderr": ""
+      },
+      "run": {
+        "exit_code": 0,
+        "stdout": "123\n456\n10\n20\n42\n777\n",
+        "stderr": ""
+      },
+      "exact_output_match": true
+    }
+  ]
+}

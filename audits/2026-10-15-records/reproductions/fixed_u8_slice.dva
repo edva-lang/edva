@@ -1,0 +1,8 @@
+#use io
+r = (10u8, 20u8, 30u8)
+s = r(0..3)
+io::out $ s(1)
+s(1) = 99u8
+io::out $ r.0
+io::out $ r.1
+io::out $ r.2

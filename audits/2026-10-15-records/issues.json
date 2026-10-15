@@ -1,0 +1,52 @@
+[
+  {
+    "finding": 1,
+    "title": "records: bounds-check homogeneous indexed reads and writes",
+    "url": "https://gitea.gde.to/ike/dva/issues/218"
+  },
+  {
+    "finding": 2,
+    "title": "records: use target element layout for indexed assignments",
+    "url": "https://gitea.gde.to/ike/dva/issues/219"
+  },
+  {
+    "finding": 3,
+    "title": "records: preserve inline element layout in fixed-record slices",
+    "url": "https://gitea.gde.to/ike/dva/issues/220"
+  },
+  {
+    "finding": 4,
+    "title": "records: honor declared packed layout and narrow field types in constructors",
+    "url": "https://gitea.gde.to/ike/dva/issues/221"
+  },
+  {
+    "finding": 5,
+    "title": "records: preserve mutation semantics for large constant records",
+    "url": "https://gitea.gde.to/ike/dva/issues/222"
+  },
+  {
+    "finding": 6,
+    "title": "records: reject partially initialized values in whole-record operations",
+    "url": "https://gitea.gde.to/ike/dva/issues/223"
+  },
+  {
+    "finding": 7,
+    "title": "records: evaluate constructor and splat operands once",
+    "url": "https://gitea.gde.to/ike/dva/issues/224"
+  },
+  {
+    "finding": 8,
+    "title": "records: reject excess and duplicate constructor arguments",
+    "url": "https://gitea.gde.to/ike/dva/issues/225"
+  },
+  {
+    "finding": 9,
+    "title": "bitfields: pack constructor arguments or reject unsupported construction",
+    "url": "https://gitea.gde.to/ike/dva/issues/226"
+  },
+  {
+    "finding": 10,
+    "title": "bitfields: handle full-width 64-bit masks without shift overflow",
+    "url": "https://gitea.gde.to/ike/dva/issues/227"
+  }
+]

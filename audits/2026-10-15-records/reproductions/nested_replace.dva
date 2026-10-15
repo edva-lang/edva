@@ -1,0 +1,6 @@
+#use io
+p = (child = (x = 1, y = 2), z = 3)
+p.child = (x = 10, y = 20)
+io::out $ p.child.x
+io::out $ p.child.y
+io::out $ p.z

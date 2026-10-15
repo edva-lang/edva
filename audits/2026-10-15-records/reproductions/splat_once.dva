@@ -1,0 +1,8 @@
+#use io
+make: Int => (x: Int, y: Int)
+make = n =>
+   io::out $ "make"
+   (x = n, y = n+1)
+p = (0, ..make(10), 99)
+io::out $ p.x
+io::out $ p.y

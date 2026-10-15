@@ -1,0 +1,9 @@
+#use io
+#type P (x: Int, y: Int)
+make: Int => P
+make = n =>
+   io::out $ "make"
+   P(n, n + 1)
+p = P(make(10))
+io::out $ p.x
+io::out $ p.y

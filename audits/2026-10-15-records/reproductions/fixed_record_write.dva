@@ -1,0 +1,7 @@
+#use io
+r = ((x = 1, y = 2), (x = 3, y = 4))
+r(1) = (x = 10, y = 20)
+io::out $ r.0.x
+io::out $ r.0.y
+io::out $ r.1.x
+io::out $ r.1.y

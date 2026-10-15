@@ -1,0 +1,6 @@
+#use io
+#type P (x: Int, y: Int)
+p: P
+p.x = 1
+q = (child = p, z = 2)
+io::out $ q.child.y

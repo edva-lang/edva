@@ -1,0 +1,5 @@
+#use io
+#type B #packed u64 (all: 64)
+b: B
+b.all = 123
+io::out $ b.all

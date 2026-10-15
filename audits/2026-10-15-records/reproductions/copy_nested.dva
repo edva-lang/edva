@@ -1,0 +1,6 @@
+#use io
+p = (child = (x = 1, y = 2), z = 3)
+q = ++p
+q.child.x = 99
+io::out $ p.child.x
+io::out $ q.child.x
