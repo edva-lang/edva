@@ -82,3 +82,17 @@ Ten existing tests pass with exact expected output and exit status: 093, 126, 12
 Fix write bounds first, then establish a shared element representation across storage and views. Follow with floating-point handling, capacity propagation, and explicit copy/iteration/view contracts. Update the array chapter: it currently promises checked writes and deep copying and also retains the same unsupported choice-example style previously found in the map chapter.
 
 Run `nu audits/2026-10-15-arrays/run_probes.nu` to reproduce the probes; it saves `rerun-results.json` without overwriting the original results. Compilation/runtime are bounded by timeouts, with generated files outside the repository.
+
+
+## Publication follow-up
+
+Integrated accessor-section commit `5a3805a` and published this audit. Original evidence remains tied to `d8538a0`. Gitea tracking:
+
+- [#206](https://gitea.gde.to/ike/dva/issues/206): arrays: bounds-check indexed writes before storing
+- [#207](https://gitea.gde.to/ike/dva/issues/207): arrays: use consistent element stride in narrow-element slices
+- [#208](https://gitea.gde.to/ike/dva/issues/208): arrays: normalize signed and unsigned scalar slot packing
+- [#209](https://gitea.gde.to/ike/dva/issues/209): arrays: fix Float writes and f32 iteration lowering
+- [#210](https://gitea.gde.to/ike/dva/issues/210): arrays: reconcile deep-copy contract with shared nested elements
+- [#211](https://gitea.gde.to/ike/dva/issues/211): arrays: define iterator mutation and slice lifetime behavior across growth
+- [#212](https://gitea.gde.to/ike/dva/issues/212): arrays: preserve declared capacity in named constructors and lazy initialization
+- [#213](https://gitea.gde.to/ike/dva/issues/213): arrays: remove extra-byte growth copy and check size arithmetic

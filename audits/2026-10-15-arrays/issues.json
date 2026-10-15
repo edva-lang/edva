@@ -1,0 +1,78 @@
+[
+  {
+    "number": 206,
+    "title": "arrays: bounds-check indexed writes before storing",
+    "url": "https://gitea.gde.to/ike/dva/issues/206",
+    "probes": [
+      "oob_write",
+      "negative_write",
+      "oob_read",
+      "write_result"
+    ]
+  },
+  {
+    "number": 207,
+    "title": "arrays: use consistent element stride in narrow-element slices",
+    "url": "https://gitea.gde.to/ike/dva/issues/207",
+    "probes": [
+      "u8_slice",
+      "flag_slice",
+      "slice_records"
+    ]
+  },
+  {
+    "number": 208,
+    "title": "arrays: normalize signed and unsigned scalar slot packing",
+    "url": "https://gitea.gde.to/ike/dva/issues/208",
+    "probes": [
+      "i8_index",
+      "u8_index",
+      "narrow_scalar_control"
+    ]
+  },
+  {
+    "number": 209,
+    "title": "arrays: fix Float writes and f32 iteration lowering",
+    "url": "https://gitea.gde.to/ike/dva/issues/209",
+    "probes": [
+      "float_update",
+      "float_iter",
+      "f32_array"
+    ]
+  },
+  {
+    "number": 210,
+    "title": "arrays: reconcile deep-copy contract with shared nested elements",
+    "url": "https://gitea.gde.to/ike/dva/issues/210",
+    "probes": [
+      "copy_record",
+      "copy_nested"
+    ]
+  },
+  {
+    "number": 211,
+    "title": "arrays: define iterator mutation and slice lifetime behavior across growth",
+    "url": "https://gitea.gde.to/ike/dva/issues/211",
+    "probes": [
+      "iter_growth16",
+      "iter_control",
+      "slice_growth16"
+    ]
+  },
+  {
+    "number": 212,
+    "title": "arrays: preserve declared capacity in named constructors and lazy initialization",
+    "url": "https://gitea.gde.to/ike/dva/issues/212",
+    "probes": [
+      "slice_growth",
+      "capacity_forward",
+      "capacity_inline"
+    ]
+  },
+  {
+    "number": 213,
+    "title": "arrays: remove extra-byte growth copy and check size arithmetic",
+    "url": "https://gitea.gde.to/ike/dva/issues/213",
+    "probes": []
+  }
+]
