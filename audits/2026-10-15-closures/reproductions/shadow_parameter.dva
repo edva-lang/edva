@@ -1,0 +1,7 @@
+#use io
+make: Int => (Int => Int)
+make = x =>
+   f = x => x + 1
+   f
+f = make(100)
+io::out $ f(3)

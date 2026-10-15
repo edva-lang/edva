@@ -1,0 +1,9 @@
+#use io
+make: Int => (Int => Int)
+make = x =>
+   n' = x
+   f = y => n' + y
+   n' = n' + 100
+   f
+result = make(10)
+io::out $ result(1)

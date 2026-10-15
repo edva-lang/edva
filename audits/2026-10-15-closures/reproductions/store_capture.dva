@@ -1,0 +1,11 @@
+#use io
+#type Fns ((Int => Int)){}
+make: Int => (Int => Int)
+make = n => x => n + x
+fs = Fns()
+fs += make(10)
+fs += make(100)
+f = fs(0)!!
+g = fs(1)!!
+io::out $ f(3)
+io::out $ g(3)

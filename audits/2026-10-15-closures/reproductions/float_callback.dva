@@ -1,0 +1,6 @@
+#use io
+apply: (Float => Float), Float => Float
+apply = f, x => f(x)
+make: Float => (Float => Float)
+make = n => x => n + x
+io::out $ apply(make(1.5), 2.25)

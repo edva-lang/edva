@@ -1,0 +1,12 @@
+#use io
+#type Pair (a: (Int => Int), b: (Int => Int))
+make: Int => Pair
+make = x =>
+   n' = x
+   a = step => (n' = n' + step; n')
+   b = step => (n' = n' + step; n')
+   Pair(a, b)
+p = make(10)
+io::out $ p.a(1)
+io::out $ p.b(2)
+io::out $ p.a(1)

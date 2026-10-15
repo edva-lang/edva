@@ -1,0 +1,10 @@
+#use io
+run: (Int => Int) => Int
+run = f => f(1) + f(1)
+make: Int => (Int => Int)
+make = n =>
+   state' = n
+   step => (state' = state' + step; state')
+f = make(10)
+io::out $ run(f)
+io::out $ f(1)

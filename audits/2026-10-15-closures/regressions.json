@@ -1,0 +1,156 @@
+[
+  {
+    "name": "044_first_class_functions",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 044_first_class_functions.ll\nSuccessfully compiled binary: 044_first_class_functions\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "30\n30\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "079_closure_and_higher_order",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 079_closure_and_higher_order.ll\nSuccessfully compiled binary: 079_closure_and_higher_order\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "7\n12\n11\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "138_closures",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 138_closures.ll\nSuccessfully compiled binary: 138_closures\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "20\n7\nhi bob\n111\n101\n102\n1005\n6\n7\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "141_higher_order_chained_call",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 141_higher_order_chained_call.ll\nSuccessfully compiled binary: 141_higher_order_chained_call\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "7\n30\n8\n8\n11\n6\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "168_inline_lambda_arg_type",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 168_inline_lambda_arg_type.ll\nSuccessfully compiled binary: 168_inline_lambda_arg_type\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "hi bob\n84\nk\n30\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "199_closure_composites",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 199_closure_composites.ll\nSuccessfully compiled binary: 199_closure_composites\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "42\n42\n42\n42\n42\n30\n6\n50\n6\n50\n18\n42\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "219_match_function_value",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 219_match_function_value.ll\nSuccessfully compiled binary: 219_match_function_value\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "-6\n6\n-6\n8\none\nother\ntwo\n22\n22\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "238_unification_higher_order_pipelines",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 238_unification_higher_order_pipelines.ll\nSuccessfully compiled binary: 238_unification_higher_order_pipelines\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "15\n7\n[test]: item ok\n42\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "239_unification_currying_closures",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 239_unification_currying_closures.ll\nSuccessfully compiled binary: 239_unification_currying_closures\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "42\nval: + active\n101\n106\n510\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "240_unification_choice_closure_join",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 240_unification_choice_closure_join.ll\nSuccessfully compiled binary: 240_unification_choice_closure_join\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "15\n100\n120\n20\n100\nINFO: starting\n[WARN] low disk\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "363_accessor_sections",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 363_accessor_sections.ll\nSuccessfully compiled binary: 363_accessor_sections\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "named binding: Alice\nnamed binding age: 30\npos binding: 100\npos binding second: 200\nchained selector: Alice\ncallback named: Alice\ncallback chained: Alice\nchoice payload: Alice\nchoice fallback: fallback\nchoice tup 0: 100\nchoice tup none: -1\nenum val: Alice\nenum empty: empty\nchoose pos: 30\nchoose neg: 30\ncalc: 30\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  }
+]

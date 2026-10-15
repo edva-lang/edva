@@ -1,0 +1,8 @@
+#use io
+make: Int => (Int => Int)
+make = ignored =>
+   sum: Int => Int
+   sum = n => n [0] 0 | n + sum(n - 1)
+   sum
+f = make(10)
+io::out $ f(3)

@@ -1,0 +1,6 @@
+#use io
+#type Opt < Int | >
+make: Opt => (Int => Int)
+make = r => x => (r | _ | 0) + x
+f = make(Opt(<+ 10 +>))
+io::out $ f(3)

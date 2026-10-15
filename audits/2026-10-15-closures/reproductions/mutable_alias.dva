@@ -1,0 +1,10 @@
+#use io
+make: Int => (Int => Int)
+make = n =>
+   value' = n
+   step => (value' = value' + step; value')
+f = make(10)
+g = f
+io::out $ f(1)
+io::out $ g(1)
+io::out $ f(1)

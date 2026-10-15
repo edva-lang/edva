@@ -1,0 +1,9 @@
+#use io
+choose: Int, Int, String => (Int => Int)
+choose = mode, n, s =>
+   mode [1] (x => x + n)
+   | (x => x + ?s)
+f = choose(1, 10, "abc")
+g = choose(0, 10, "abc")
+io::out $ f(2)
+io::out $ g(2)

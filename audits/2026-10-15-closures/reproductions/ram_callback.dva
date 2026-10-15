@@ -1,0 +1,8 @@
+#use io
+#type Opt < Int | >
+apply: (Int => Opt), Int => Opt
+apply = f, x => f(x)
+make: Int => (Int => Opt)
+make = n => x => Opt(<+ n + x +>)
+r = apply(make(10), 3)
+io::out $ r | _ | -1

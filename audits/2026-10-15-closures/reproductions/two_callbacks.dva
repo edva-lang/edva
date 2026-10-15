@@ -1,0 +1,5 @@
+#use io
+run: (Int => Int), (Int => Int), Int => Int
+run = f, g, x => f(x) + g(x)
+make = a => b => a + b
+io::out $ run(make(10), make(100), 3)

@@ -1,0 +1,6 @@
+#use io
+apply: (Int => Int), Int => Int
+apply = f, x => f(x)
+text: String => String
+text = s => s
+io::out $ apply(text, 3)

@@ -1,0 +1,5 @@
+#use io
+make: i8 => (i8 => Int)
+make = n => x => Int(n) + Int(x)
+f = make(i8(-1))
+io::out $ f(i8(-2))

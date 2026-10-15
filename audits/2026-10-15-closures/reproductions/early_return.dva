@@ -1,0 +1,9 @@
+#use io
+make: Int => (Int => Int)
+make = n =>
+   n > 0 | --| (x => x + n)
+   x => x - n
+f = make(10)
+g = make(-10)
+io::out $ f(3)
+io::out $ g(3)

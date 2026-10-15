@@ -1,0 +1,13 @@
+#use io
+make_add: Int => (Int => Int)
+make_add = a =>
+   inner = x => x + a
+   inner
+make_mul: Int => (Int => Int)
+make_mul = a =>
+   inner = x => x * a
+   inner
+add = make_add(10)
+mul = make_mul(10)
+io::out $ add(3)
+io::out $ mul(3)

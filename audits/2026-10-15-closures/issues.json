@@ -1,0 +1,41 @@
+[
+  {
+    "number": 214,
+    "title": "closures: assign unique lexical identities to nested named functions",
+    "url": "https://gitea.gde.to/ike/dva/issues/214",
+    "probes": [
+      "duplicate_inner_names",
+      "duplicate_inner_renamed"
+    ]
+  },
+  {
+    "number": 215,
+    "title": "closures: resolve stored function values before same-named nested declarations",
+    "url": "https://gitea.gde.to/ike/dva/issues/215",
+    "probes": [
+      "snapshot",
+      "snapshot_renamed"
+    ]
+  },
+  {
+    "number": 216,
+    "title": "closures: pass captured environment in recursive nested calls",
+    "url": "https://gitea.gde.to/ike/dva/issues/216",
+    "probes": [
+      "nested_recursion",
+      "nested_recursion_plain",
+      "named_local_call"
+    ]
+  },
+  {
+    "number": 217,
+    "title": "typing: propagate expected callback signatures before annotating ramification lambdas",
+    "url": "https://gitea.gde.to/ike/dva/issues/217",
+    "probes": [
+      "ram_argument_inline",
+      "ram_argument_block",
+      "ram_argument_typed_inner",
+      "ram_argument_plain"
+    ]
+  }
+]

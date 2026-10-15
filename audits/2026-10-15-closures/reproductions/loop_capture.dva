@@ -1,0 +1,10 @@
+#use io
+#type Fns ((Int => Int)){}
+make: Int => Fns
+make = n =>
+   fs = Fns()
+   n @ i =>
+      fs += (x => i + x)
+   fs
+fs = make(3)
+fs @ f => io::out $ f(10)

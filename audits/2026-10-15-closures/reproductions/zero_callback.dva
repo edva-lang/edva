@@ -1,0 +1,7 @@
+#use io
+run: (() => Int) => Int
+run = f => f!
+make: Int => (() => Int)
+make = n => !=> n + 1
+f = make(10)
+io::out $ run(f)

@@ -1,0 +1,9 @@
+#use io
+make: Int => (Int => (Int => Int))
+make = n =>
+   x => y => n + x + y
+apply: (Int => (Int => Int)), Int => (Int => Int)
+apply = f, x => f(x)
+f = make(10)
+g = apply(f, 20)
+io::out $ g(3)

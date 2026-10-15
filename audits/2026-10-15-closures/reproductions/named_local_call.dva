@@ -1,0 +1,6 @@
+#use io
+outer: Int => Int
+outer = base =>
+   inner = x => x + base
+   inner(3)
+io::out $ outer(10)

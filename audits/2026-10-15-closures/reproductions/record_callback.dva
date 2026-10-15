@@ -1,0 +1,9 @@
+#use io
+#type Pair (a: Int, b: Int)
+apply: (Int => Pair), Int => Pair
+apply = f, x => f(x)
+make: Int => (Int => Pair)
+make = n => x => Pair(n, x)
+p = apply(make(10), 3)
+io::out(p.a)
+io::out(p.b)

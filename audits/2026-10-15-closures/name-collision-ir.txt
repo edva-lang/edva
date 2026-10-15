@@ -1,0 +1,7 @@
+148:@clo.const.48 = internal constant { ptr, ptr } { ptr @inner, ptr null }
+10165:define internal ptr @make_add(i64 %0) #1 {
+10178:  store ptr @inner, ptr %clo.fn.gep, align 8
+10181:  store ptr %clo.alloc, ptr %var.inner, align 8
+10186:define internal i64 @inner(ptr %0, i64 %1) #1 {
+10197:define internal ptr @make_mul(i64 %0) #1 {
+10202:  store ptr @clo.const.48, ptr %var.inner, align 8

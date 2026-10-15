@@ -1,0 +1,6 @@
+#use io
+apply: (Int, Int => Int), Int, Int => Int
+apply = f, a, b => f(a, b)
+make: Int => (Int, Int => Int)
+make = n => a, b => n + a + b
+io::out $ apply(make(10), 2, 3)

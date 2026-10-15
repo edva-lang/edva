@@ -1,0 +1,6 @@
+#use io
+identity: (Int => Int) => (Int => Int)
+identity = f => f
+make = a => b => a + b
+f = identity(make(10))
+io::out $ f(3)

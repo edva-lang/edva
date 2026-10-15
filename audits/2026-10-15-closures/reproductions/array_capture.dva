@@ -1,0 +1,9 @@
+#use io
+#type A Int{}
+make: A => (Int => Int)
+make = a => x => a(0)!! + x
+a = A()
+a += 10
+f = make(a)
+a(0) = 100 !| _
+io::out $ f(1)

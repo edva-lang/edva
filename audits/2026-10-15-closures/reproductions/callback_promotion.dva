@@ -1,0 +1,7 @@
+#use io
+inc: Float => Float
+inc = x => x + 0.5
+apply: (Float => Float), Int => Float
+apply = f, x => f(x)
+io::out $ inc(2)
+io::out $ apply(inc, 2)

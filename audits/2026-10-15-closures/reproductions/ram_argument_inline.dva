@@ -1,0 +1,5 @@
+#use io
+#type Opt < Int | >
+apply: (Opt => Int), Opt => Int
+apply = f, r => f(r)
+io::out $ apply(r => r | _ | 0, Opt(<+ 3 +>))

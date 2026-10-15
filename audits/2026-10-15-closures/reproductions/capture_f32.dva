@@ -1,0 +1,5 @@
+#use io
+make: f32 => (f32 => f32)
+make = n => x => n + x
+f = make(f32(1.5))
+io::out $ Float(f(f32(2.25)))

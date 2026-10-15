@@ -1,0 +1,7 @@
+#use io
+wrap: (Int => Int) => (Int => Int)
+wrap = f => x => f(x) + 1
+make: Int => (Int => Int)
+make = n => x => n + x
+f = wrap(make(10))
+io::out $ f(3)

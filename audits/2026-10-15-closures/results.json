@@ -1,0 +1,509 @@
+[
+  {
+    "name": "array_capture",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: array_capture.ll\nSuccessfully compiled binary: array_capture\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "101\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "bad_callback",
+    "compile": {
+      "stdout": "/tmp/edva-closure-audit/bad_callback.dva:6:25: E3084: Type mismatch: cannot unify Int with String\n/tmp/edva-closure-audit/bad_callback.dva:6:25: E3084: Function call signature mismatch\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "callback_factory",
+    "compile": {
+      "stdout": "/tmp/edva-closure-audit/callback_factory.dva:7:27: E3128: Function 'base' is used as a value but its parameter types cannot be determined — no declared signature and no call site to infer from. Declare a signature: 'base: T1, T2 => R'.\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "callback_factory_typed",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: callback_factory_typed.ll\nSuccessfully compiled binary: callback_factory_typed\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "callback_pair",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: callback_pair.ll\nSuccessfully compiled binary: callback_pair\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "15\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "callback_promotion",
+    "compile": {
+      "stdout": "/tmp/edva-closure-audit/callback_promotion.dva:5:21: E3084: Type mismatch: cannot unify Float with Int\n/tmp/edva-closure-audit/callback_promotion.dva:5:21: E3084: Function call signature mismatch\n/tmp/edva-closure-audit/callback_promotion.dva:6:17: E3084: Type mismatch: cannot unify Float with Int\n/tmp/edva-closure-audit/callback_promotion.dva:6:17: E3084: Function call signature mismatch\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "callback_return",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: callback_return.ll\nSuccessfully compiled binary: callback_return\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "capture_f32",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: capture_f32.ll\nSuccessfully compiled binary: capture_f32\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "3.75\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "capture_fn",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: capture_fn.ll\nSuccessfully compiled binary: capture_fn\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "14\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "capture_ram",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: capture_ram.ll\nSuccessfully compiled binary: capture_ram\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "capture_small",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: capture_small.ll\nSuccessfully compiled binary: capture_small\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "-3\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "closure_returning_closure",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: closure_returning_closure.ll\nSuccessfully compiled binary: closure_returning_closure\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "33\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "different_env",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: different_env.ll\nSuccessfully compiled binary: different_env\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "12\n5\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "duplicate_inner_names",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: duplicate_inner_names.ll\nSuccessfully compiled binary: duplicate_inner_names\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n",
+      "stderr": "timeout: the monitored command dumped core\n",
+      "exit_code": -11
+    }
+  },
+  {
+    "name": "duplicate_inner_renamed",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: duplicate_inner_renamed.ll\nSuccessfully compiled binary: duplicate_inner_renamed\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n30\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "early_return",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: early_return.ll\nSuccessfully compiled binary: early_return\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "float_callback",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: float_callback.ll\nSuccessfully compiled binary: float_callback\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "3.75\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "loop_capture",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: loop_capture.ll\nSuccessfully compiled binary: loop_capture\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "10\n11\n12\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "mutable_alias",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: mutable_alias.ll\nSuccessfully compiled binary: mutable_alias\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "11\n12\n13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "mutable_callback",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: mutable_callback.ll\nSuccessfully compiled binary: mutable_callback\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "23\n13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "named_local_call",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: named_local_call.ll\nSuccessfully compiled binary: named_local_call\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "nested_recursion",
+    "compile": {
+      "stdout": "E5011: LLVM module verification failed: Incorrect number of arguments passed to called function!\n  %call.res = call i64 @sum(ptr %arg.i2p)\n\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "nested_recursion_plain",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: nested_recursion_plain.ll\nSuccessfully compiled binary: nested_recursion_plain\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "6\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "ram_argument",
+    "compile": {
+      "stdout": "/tmp/edva-closure-audit/ram_argument.dva:4:21: E3084: Type mismatch: cannot unify <Int|> with Int\n/tmp/edva-closure-audit/ram_argument.dva:4:21: E3084: Return type mismatch in function: make\n/tmp/edva-closure-audit/ram_argument.dva:7:1: E3084: Type mismatch: cannot unify <Int|> with Int\n/tmp/edva-closure-audit/ram_argument.dva:7:1: E3084: Return type mismatch in function: make\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "ram_argument_block",
+    "compile": {
+      "stdout": "/tmp/edva-closure-audit/ram_argument_block.dva:4:21: E3084: Type mismatch: cannot unify <Int|> with Int\n/tmp/edva-closure-audit/ram_argument_block.dva:4:21: E3084: Return type mismatch in function: make\n/tmp/edva-closure-audit/ram_argument_block.dva:10:1: E3084: Type mismatch: cannot unify <Int|> with Int\n/tmp/edva-closure-audit/ram_argument_block.dva:10:1: E3084: Return type mismatch in function: make\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "ram_argument_inline",
+    "compile": {
+      "stdout": "/tmp/edva-closure-audit/ram_argument_inline.dva:5:45: E3084: Type mismatch: cannot unify <Int|> with Int\n/tmp/edva-closure-audit/ram_argument_inline.dva:5:45: E3084: Function call signature mismatch\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "ram_argument_named",
+    "compile": {
+      "stdout": "/tmp/edva-closure-audit/ram_argument_named.dva:4:21: E3084: Type mismatch: cannot unify (?T411) => ?T411 with Int\n/tmp/edva-closure-audit/ram_argument_named.dva:4:21: E3084: Incompatible branch result types in choice\n/tmp/edva-closure-audit/ram_argument_named.dva:4:21: E3084: Type mismatch: cannot unify (?T411) => ?T411 with Int\n/tmp/edva-closure-audit/ram_argument_named.dva:4:21: E3084: Arithmetic type mismatch\n/tmp/edva-closure-audit/ram_argument_named.dva:4:21: E3084: Type mismatch: cannot unify Int with (?T411) => ?T411\n/tmp/edva-closure-audit/ram_argument_named.dva:4:21: E3084: Return type mismatch in function: make\n/tmp/edva-closure-audit/ram_argument_named.dva:7:1: E3084: Type mismatch: cannot unify Int with (?T411) => ?T411\n/tmp/edva-closure-audit/ram_argument_named.dva:7:1: E3084: Return type mismatch in function: make\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "ram_argument_plain",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: ram_argument_plain.ll\nSuccessfully compiled binary: ram_argument_plain\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "3\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "ram_argument_typed_inner",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: ram_argument_typed_inner.ll\nSuccessfully compiled binary: ram_argument_typed_inner\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "ram_callback",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: ram_callback.ll\nSuccessfully compiled binary: ram_callback\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "record_callback",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: record_callback.ll\nSuccessfully compiled binary: record_callback\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "10\n3\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "record_capture",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: record_capture.ll\nSuccessfully compiled binary: record_capture\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "101\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "shadow_parameter",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: shadow_parameter.ll\nSuccessfully compiled binary: shadow_parameter\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "4\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "siblings",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: siblings.ll\nSuccessfully compiled binary: siblings\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "11\n12\n12\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "snapshot",
+    "compile": {
+      "stdout": "E5011: LLVM module verification failed: Incorrect number of arguments passed to called function!\n  %call.res1 = call i64 @f(ptr inttoptr (i64 1 to ptr))\n\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "snapshot_renamed",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: snapshot_renamed.ll\nSuccessfully compiled binary: snapshot_renamed\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "11\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "store_capture",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: store_capture.ll\nSuccessfully compiled binary: store_capture\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "13\n103\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "two_callbacks",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: two_callbacks.ll\nSuccessfully compiled binary: two_callbacks\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "116\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "zero_callback",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: zero_callback.ll\nSuccessfully compiled binary: zero_callback\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "11\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  }
+]
