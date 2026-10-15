@@ -38,15 +38,6 @@
    encode_codepoint = cp =>
       encode_rune(Rune(cp))
 
-   // Number of UTF-8 bytes required to encode a Rune
-   rune_len: Rune => Int
-   rune_len = r =>
-      cp = Int(r)
-      cp [< 0x80] 1
-         [< 0x800] 2
-         [< 0x10000] 3
-         | 4
-
    // Decode the UTF-8 rune at Addr + i into its codepoint
    decode_rune_addr: Addr, Int => Rune
    decode_rune_addr = p, i => unicode::decode_rune_addr(p, i)
