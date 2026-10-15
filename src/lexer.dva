@@ -254,6 +254,7 @@ esc_val = e =>
       ['b'] '\b'
       ['f'] '\f'
       ['v'] '\v'
+      ['e'] 27
       | e
 
 // Decode the C-style escapes of a scanned string body into real bytes.
