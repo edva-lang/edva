@@ -288,10 +288,7 @@
    // --- Packed 24-bit TrueColor Integer Operations (0xRRGGBB) ---
    rgb: Int, Int, Int => Int
    rgb = r, g, b =>
-      rc = r < 0 | 0 | (r > 255 | 255 | r)
-      gc = g < 0 | 0 | (g > 255 | 255 | g)
-      bc = b < 0 | 0 | (b > 255 | 255 | b)
-      (rc .<. 16) .|. (gc .<. 8) .|. bc
+      ((r .&. 0xFF) .<. 16) .|. ((g .&. 0xFF) .<. 8) .|. (b .&. 0xFF)
 
    red: Int => Int
    red = c => (c .>. 16) .&. 255
