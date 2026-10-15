@@ -32,7 +32,7 @@ inline statements. A `;` at the end of a line is an error.
 | Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0m48`, `0m-16` | optional type suffix, see below |
 | Float | `3.14`, `1.5e-3`, `3.14f32` | padding zeros mandatory (see §1.4) |
 | Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
-| String | `"..."` | C-style escapes `\n \t \r \0 \a \b \f \v \" \' \\` |
+| String | `"..."` | C-style escapes `\n \t \r \0 \a \b \f \v \e \" \' \\` |
 | Here-Doc | `"""..."""` | multiline with baseline margin stripping, `${expr}` interpolation, and line continuation `\` |
 
 **Here-Doc (`"""..."""`)** — Multiline formatted text blocks with baseline margin stripping and expression interpolation:
@@ -1202,7 +1202,7 @@ the only String origins. Strings are *bytes*, not runes — `len` is a byte
 count and every index reads one byte. UTF-8 validity is not tracked.
 
 **Literal forms.** The quoted form `"..."` processes C-style escapes
-(`\n \t \r \0 \a \b \f \v \" \' \\`). Here-docs `"""..."""` provide multiline
+(`\n \t \r \0 \a \b \f \v \e \" \' \\`). Here-docs `"""..."""` provide multiline
 text blocks with baseline margin stripping and `${expr}` dynamic interpolation.
 
 #### 3.6.1 The `{ len, data }` ABI

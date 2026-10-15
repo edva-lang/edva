@@ -30,7 +30,7 @@ Enclosed in double quotes `"..."`, supporting C-style escape sequences:
 message = "First line\nSecond line\t(tabbed)\nPath: \"/usr/bin\""
 ```
 
-Supported escapes include `\n`, `\t`, `\r`, `\0`, `\a`, `\b`, `\f`, `\v`, `\"`, `\'`, and `\\`.
+Supported escapes include `\n`, `\t`, `\r`, `\0`, `\a`, `\b`, `\f`, `\v`, `\e`, `\"`, `\'`, and `\\`.
 
 ### Here-Docs (`"""..."""`)
 Enclosed in triple double quotes `"""..."""`. Here-docs provide multiline formatted text blocks with baseline margin stripping and dynamic expression interpolation:

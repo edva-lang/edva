@@ -33,6 +33,7 @@ Rune literals are enclosed in single quotes `'...'` and represent exactly one Un
 | `'\r'` | Carriage return | `U+000D` |
 | `'\t'` | Horizontal tab | `U+0009` |
 | `'\0'` | NUL terminator | `U+0000` |
+| `'\e'` | Escape character (ESC, ASCII 27) | `U+001B` |
 | `'\\'` | Backslash | `U+005C` |
 | `'\''` | Single quote | `U+0027` |
 | `'\x1b'` | Hexadecimal 8-bit escape (ESC) | `U+001B` |
