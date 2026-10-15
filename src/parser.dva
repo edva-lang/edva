@@ -1576,6 +1576,87 @@ atom_var = p, text =>
    parser_advance(p)
    <+ ast::Expr(Var, text) +>
 
+fresh_accessor_var: Parser => String
+fresh_accessor_var = p =>
+   p.dp_var_count = p.dp_var_count + 1
+   "_acc_" + str::from_int(p.dp_var_count)
+
+paren_is_accessor_step: lexer::Lx, lexer::Tok => <>
+paren_is_accessor_step = c, t =>
+   t.kind
+      [Newline, Indent, Dedent]
+         paren_is_accessor_step(c, lexer::next_tok(c, 0))
+      [Op]
+         t.text == "."
+      | <->
+
+paren_is_accessor: Parser => <>
+paren_is_accessor = p =>
+   p.curr.kind [Op] && p.curr.text == "."
+      | <+>
+      |
+         c = lexer::clone_lx(p.lx)
+         paren_is_accessor_step(c, p.curr)
+
+parse_accessor_chain: Parser, String, ast::Expr => <ast::Expr|>
+parse_accessor_chain = p, param_name, cur_target =>
+   parser_skip_layout(p)
+   is_dot = p.curr.kind [Op] && p.curr.text == "."
+   is_dot
+      |
+         parser_advance(p)
+         parser_skip_layout(p)
+         p.curr.kind
+            [Id, Int]
+               next_field = p.curr.text
+               f_line = p.curr.line
+               f_col = p.curr.col
+               parser_advance(p)
+               next_target = ast::Expr(Member, (ast::MemberExpr((cur_target, next_field,
+                  <->, ast::Expr(Var, ""), f_line, f_col))))
+               parse_accessor_chain(p, param_name, next_target)
+            |
+               parser_error(p, 2064, "Expected field name or tuple index after '.', got '" +
+                  p.curr.text + "'")
+               <-->
+      |
+         p.curr.kind
+            [RParen]
+               parser_advance(p)
+               params = ast::Names()
+               params += param_name
+               fe = ast::Expr(Fn, (ast::FnExpr((params, ast::Names(), cur_target))))
+               p.curr.text == "=>"
+                  |
+                     parser_error(p, 2037, diag::E2037_params_parenthesized!)
+                     <-->
+                  | pp_postfix(p, fe)
+            |
+               parser_error(p, 2027, "Expected ')' after accessor section, got '" +
+                  p.curr.text + "'.")
+               <-->
+
+parse_accessor_section: Parser => <ast::Expr|>
+parse_accessor_section = p =>
+   parser_skip_layout(p)
+   param_name = fresh_accessor_var(p)
+   target = ast::Expr(Var, param_name)
+   parser_advance(p)
+   parser_skip_layout(p)
+   p.curr.kind
+      [Id, Int]
+         first_field = p.curr.text
+         f_line = p.curr.line
+         f_col = p.curr.col
+         parser_advance(p)
+         cur_target = ast::Expr(Member, (ast::MemberExpr((target, first_field,
+            <->, ast::Expr(Var, ""), f_line, f_col))))
+         parse_accessor_chain(p, param_name, cur_target)
+      |
+         parser_error(p, 2064, "Expected field name or tuple index after '.', got '" +
+            p.curr.text + "'")
+         <-->
+
 atom_paren: Parser => <ast::Expr|>
 atom_paren = p =>
    saved_no_assign = p.no_assign
@@ -1590,11 +1671,13 @@ atom_paren = p =>
             "declaration, not as a value")
          <-->
       |
-         paren_has_map(p)
-            | parse_paren_map_literal(p)
-            | paren_has_comma(p)
-               | parse_paren_record(p)
-               | parse_paren_group(p)
+         paren_is_accessor(p)
+            | parse_accessor_section(p)
+            | paren_has_map(p)
+               | parse_paren_map_literal(p)
+               | paren_has_comma(p)
+                  | parse_paren_record(p)
+                  | parse_paren_group(p)
    p.no_assign = saved_no_assign
    res
 
@@ -2710,7 +2793,7 @@ array_cap = p =>
 
 int_of_text: String => Int
 int_of_text = text =>
-   str::to_int(text) | v => v.0 | 0
+   str::to_int(text) | (.0) | 0
 
 parse_array_cap_and_close: Parser,
    (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
@@ -4187,7 +4270,7 @@ parse_postfix_repetition = p, lhs =>
 
 rep_count: Parser => Int
 rep_count = p =>
-   str::to_int(p.curr.text) | v => v.0 | 0
+   str::to_int(p.curr.text) | (.0) | 0
 
 repeat_fields: ast::Expr, Int => ast::Fields
 repeat_fields = e, n =>
@@ -6294,7 +6377,7 @@ expand_int_repeats = s =>
                         | (err' = <+>; -->)
                         |
                            cnt_str = s(i' + 2..close')
-                           cnt = str::to_int(cnt_str) | v => v.0 | -1
+                           cnt = str::to_int(cnt_str) | (.0) | -1
                            (cnt < 0 || cnt > 64)
                               | (err' = <+>; -->)
                               |

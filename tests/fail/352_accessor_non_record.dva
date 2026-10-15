@@ -1,0 +1,3 @@
+// Field access on non-record type rejected
+get_0: Int => Int
+get_0 = (.0)

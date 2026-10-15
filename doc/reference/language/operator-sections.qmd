@@ -3,7 +3,7 @@ meta:
   audience: "Edva users writing transformations, predicates, and callbacks"
   status: "current reference"
   audited: "cfd5a5f"
-  evidence: "`src/parser.dva`, `src/operators.dva`, `src/annotate.dva`, `src/codegen/match.dva`, `src/unify.dva`, `std/fp.dva`, `tests/pass/027_operator_sections.dva`, `tests/pass/188_ws_operators.dva`, `tests/pass/199_closure_composites.dva`, `tests/pass/347_underscore_implicit_uses.dva`, `tests/pass/356_operator_sections_context.dva`, `tests/fail/011_section_missing_whitespace.dva`, `tests/fail/342_bind_non_ram_continuation.dva`"
+  evidence: "`src/parser.dva`, `src/operators.dva`, `src/annotate.dva`, `src/codegen/match.dva`, `src/unify.dva`, `std/fp.dva`, `tests/pass/027_operator_sections.dva`, `tests/pass/188_ws_operators.dva`, `tests/pass/199_closure_composites.dva`, `tests/pass/347_underscore_implicit_uses.dva`, `tests/pass/356_operator_sections_context.dva`, `tests/pass/363_accessor_sections.dva`, `tests/fail/011_section_missing_whitespace.dva`, `tests/fail/342_bind_non_ram_continuation.dva`, `tests/fail/349_accessor_bad_syntax.dva`"
 ---
 
 # Operator sections
@@ -471,6 +471,99 @@ The section is still ordinary function syntax; `#!` requests evaluation of
 the call at compile time. This does not make arbitrary closures, runtime
 captures, or side effects available to compile-time evaluation. See
 [Metaprogramming](../../guide/metaprogramming.qmd) for its restrictions.
+
+## Field-accessor sections
+
+A **field-accessor section** writes a unary projection function using a leading
+dot inside parentheses:
+
+- `(.field)` is equivalent to `r => r.field`.
+- `(.0)` is equivalent to `r => r.0` (positional selector for tuples and records).
+- `(.outer.inner)` chains selectors, equivalent to `r => r.outer.inner`.
+
+```{.dva .run}
+#use io
+
+#type User (name: String, age: Int)
+#type Nested (user: User, tag: String)
+
+u = User(("Alice", 30))
+n = Nested((u, "admin"))
+
+get_name: User => String
+get_name = (.name)
+
+get_age: User => Int
+get_age = (.age)
+
+get_first: ((Int, Int)) => Int
+get_first = (.0)
+
+get_user_name: Nested => String
+get_user_name = (.user.name)
+
+io::out(get_name(u))          // Alice
+io::out(get_age(u))           // 30
+io::out(get_first((10, 20)))  // 10
+io::out(get_user_name(n))     // Alice
+```
+
+### Static selectors and syntax rules
+
+The selector remains a static member label or integer index. Variable names
+in the enclosing scope do not affect its meaning. Unparenthesized `.field` is
+not an accessor section and emits `E2064`:
+
+```{.dva expected-error="E2064"}
+x = (.)
+```
+
+Chained selectors such as `(.user.name)` and `(.0.field)` are supported.
+Because tuple indexing interactions with floating-point tokens treat `0.1` as a
+single numeric token, write `r.0` directly or use named accessors when chaining.
+
+### Distinction from `(_.field)`
+
+Grouped implicit lambdas such as `(_.field)` and `(_.0)` already express field
+projections, but they explicitly reference and consume the implicit parameter `_`.
+In contrast, accessor sections `(.field)` and `(.0)` lower with a fresh internal
+parameter identity. An accessor section nested inside an implicit lambda does
+not capture or overwrite an outer `_`:
+
+```{.dva .run}
+#use io
+
+#type User (name: String, age: Int)
+
+apply_user: (User => Int), User => Int
+apply_user = f, u => f(u)
+
+calc = (_ * 2 + apply_user((.age), User(("Bob", 20))))
+io::out(calc(5))              // 30
+```
+
+### Choice branch payload extraction
+
+In choice branches where the scrutinee supplies a payload (such as a ramification
+or an enum variant), an accessor section evaluates directly against that payload,
+concisely extracting the desired field or tuple element:
+
+```{.dva .run}
+#use io
+
+#type User (name: String, age: Int)
+#type UserOpt < User | >
+
+u = User(("Alice", 30))
+opt_some = UserOpt(<+ u +>)
+opt_none = UserOpt(<-->)
+
+io::out $ opt_some | (.name) | "none"      // Alice
+io::out $ opt_none | (.name) | "fallback"  // fallback
+```
+
+In ordinary choices without payloads, accessor sections retain their function values
+just like explicit lambdas.
 
 ## Context checklist
 

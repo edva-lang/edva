@@ -1,0 +1,4 @@
+// Out of range positional accessor selector rejected by type checker
+#type Pair (Int, Int)
+get_2: Pair => Int
+get_2 = (.2)

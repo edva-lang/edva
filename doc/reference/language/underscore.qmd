@@ -124,6 +124,26 @@ outer implicit parameter captured by that inner lambda:
 ```{.dva .run}
 #use io
 
+outer = (_ * 2)
+io::out(outer(3))   // 6
+```
+
+Similarly, field-accessor sections `(.field)` and positional accessors `(.0)` desugar
+using a fresh internal parameter, not `_`. Unlike `(_.field)`, which explicitly
+references `_`, an accessor section nested inside an implicit lambda does not
+capture, shadow, or overwrite the outer `_`:
+
+```{.dva .run}
+#use io
+
+#type Pair (x: Int, y: Int)
+run_fst: (Pair => Int), Pair => Int
+run_fst = f, p => f(p)
+
+calc = (_ * 2 + run_fst((.x), Pair((10, 20))))
+io::out(calc(5))    // 20
+```
+
 make_adder: Int => (Int => Int)
 make_adder = (value => _ + value)
 

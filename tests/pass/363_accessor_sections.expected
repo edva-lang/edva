@@ -1,0 +1,16 @@
+named binding: Alice
+named binding age: 30
+pos binding: 100
+pos binding second: 200
+chained selector: Alice
+callback named: Alice
+callback chained: Alice
+choice payload: Alice
+choice fallback: fallback
+choice tup 0: 100
+choice tup none: -1
+enum val: Alice
+enum empty: empty
+choose pos: 30
+choose neg: 30
+calc: 30

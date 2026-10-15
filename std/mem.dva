@@ -110,7 +110,7 @@
    pool_count = p => @[p.state + 8 Int]
 
    pool_capacity: Pool => Int
-   pool_capacity = p => p.capacity
+   pool_capacity = (.capacity)
 
    pool_alloc: Pool => < Addr | >
    pool_alloc = p =>

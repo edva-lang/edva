@@ -39,11 +39,11 @@
 
    // Returns the last errno encountered by the reader (0 if none).
    reader_err: Reader => Int
-   reader_err = r => r.err
+   reader_err = (.err)
 
    // True (<+>) if clean EOF has been reached on the descriptor.
    reader_eof: Reader => <>
-   reader_eof = r => r.eof
+   reader_eof = (.eof)
 
    // True (<+>) if the last read on a nonblocking descriptor would block (EAGAIN/EWOULDBLOCK).
    reader_would_block: Reader => <>

@@ -30,10 +30,10 @@
    // --- Field Accessors ---
 
    real: Complex => Float
-   real = z => z.re
+   real = (.re)
 
    imag: Complex => Float
-   imag = z => z.im
+   imag = (.im)
 
    // --- Arithmetic Operations ---
 

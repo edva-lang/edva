@@ -1,0 +1,74 @@
+#use io
+
+#type User (name: String, age: Int)
+#type Nested (user: User, tag: String)
+#type Box < Val(User), Empty >
+
+u = User(("Alice", 30))
+n = Nested((u, "admin"))
+t = (100, 200)
+
+// 1. Typed bindings with named and positional accessors
+get_name: User => String
+get_name = (.name)
+io::outf(get_name(u), "named binding: {}")
+
+get_age: User => Int
+get_age = (.age)
+io::outf(get_age(u), "named binding age: {}")
+
+get_first: ((Int, Int)) => Int
+get_first = (.0)
+io::outf(get_first(t), "pos binding: {}")
+
+get_second: ((Int, Int)) => Int
+get_second = (.1)
+io::outf(get_second(t), "pos binding second: {}")
+
+// 2. Chained selectors (.outer.inner)
+get_user_name: Nested => String
+get_user_name = (.user.name)
+io::outf(get_user_name(n), "chained selector: {}")
+
+// 3. Passing accessor sections as callbacks
+map_user: (User => String), User => String
+map_user = f, item => f(item)
+io::outf(map_user((.name), u), "callback named: {}")
+
+map_nested: (Nested => String), Nested => String
+map_nested = f, item => f(item)
+io::outf(map_nested(get_user_name, n), "callback chained: {}")
+
+#type UserOpt < User | >
+#type TupOpt < (Int, Int) | >
+
+// 4. Record and tuple payload extraction in choice branches
+opt_user_some = UserOpt(<+ u +>)
+opt_user_none = UserOpt(<-->)
+io::outf(opt_user_some | (.name) | "none", "choice payload: {}")
+io::outf(opt_user_none | (.name) | "fallback", "choice fallback: {}")
+
+opt_tup_some = TupOpt(<+ t +>)
+opt_tup_none = TupOpt(<-->)
+io::outf(opt_tup_some | (.0) | -1, "choice tup 0: {}")
+io::outf(opt_tup_none | (.1) | -1, "choice tup none: {}")
+
+// 5. Enum variant payload extraction
+b_val = Box(Val, u)
+b_empty = Box(Empty)
+io::outf(b_val [Val] (.name) | "empty", "enum val: {}")
+io::outf(b_empty [Val] (.name) | "empty", "enum empty: {}")
+
+// 6. Ordinary function-valued branches
+choose: Int => (User => Int)
+choose = mode => mode [> 0] (.age) | get_age
+fn_pos = choose(1)
+fn_neg = choose(0)
+io::outf(fn_pos(u), "choose pos: {}")
+io::outf(fn_neg(u), "choose neg: {}")
+
+// 7. Nesting inside implicit lambda: enclosing '_' is isolated
+run_user_age: (User => Int), User => Int
+run_user_age = f, item => f(item)
+calc = (_ * 2 + run_user_age((.age), User(("Bob", 20))))
+io::outf(calc(5), "calc: {}")

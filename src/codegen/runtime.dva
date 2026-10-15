@@ -1035,8 +1035,8 @@ codegen_forward_registry = cg, t =>
    bf_opt_fwd = types::ti_get_bitfield(cg, ti)
    is_bf_fwd = <>(bf_opt_fwd)
    rec_m = record_meta_from_ti(cg, ti)
-   rec_fnames = rec_m | m => m.1 | ast::Names()
-   vt_bf = bf_opt_fwd | b => b.backing_type | tv.0
+   rec_fnames = rec_m | (.1) | ast::Names()
+   vt_bf = bf_opt_fwd | (.backing_type) | tv.0
    vt0 = is_bf_fwd | vt_bf | tv.0
    rec_vt = !is_bf_fwd && ?rec_fnames > 0 | ast::ValueType(Record) | vt0
    ti_vt = types::vt_from_ti(ti)
@@ -1424,7 +1424,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
       types::is_slice_vt(ev.1) || (ev.1 [Fn])
    dtype0 = keep_dt | cg.last_type | ""
    dtype = rt_name != "" | rt_name | dtype0
-   rm_fnames = rm | m => m.1 | ast::Names()
+   rm_fnames = rm | (.1) | ast::Names()
    need_fnames = !fresh_local | (is_rec | ?rm_fnames == 0 | <->) | <->
    prior_fnames = need_fnames | types::var_fnames(cg, t.0) | ast::Names()
    use_prior = need_fnames | ?prior_fnames > 0 | <->
