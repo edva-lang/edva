@@ -4133,15 +4133,28 @@ coerce_ret_ptr_int = cg, bv_val, ret_ll, vt =>
 named_call_emit_pre: types::Cg, String, Addr, Addr, ast::ValueType, types::Addrs,
    ast::VTypes => (Addr, ast::ValueType)
 named_call_emit_pre = cg, fname, fn, fty, ret, args, arg_vts =>
-   n = ?args
+   fi_idx = types::fninfo_index(cg, fname)
+   fi_opt = <>(fi_idx) | fi_idx | types::fninfo_index(cg, types::resolve_fn_name(cg, fname))
+   is_cap_fn = fi_opt | idx => !cg.fninfos(idx)!!.no_capture | <->
+   is_rec_cap = (fn != sys::addr_null) && (cg.current_fn == fn) && is_cap_fn
+   call_args = types::Addrs()
+   call_vts = ast::VTypes()
+   is_rec_cap
+      |
+         call_args += LLVMGetParam(cg.current_fn, 0)
+         call_vts += ast::ValueType(RawPtr)
+   ?args @ ci =>
+      call_args += args(ci)!!
+      call_vts += (arg_vts(ci) | _ | ast::ValueType(Unknown))
+   n = ?call_args
    buf = {n * 8}
    sb = &buf
    n @ i =>
-      a = args(i)!!
+      a = call_args(i)!!
       has_fn = (types::llvm_val_opt(fn) | f => i < LLVMCountParams(f) | <->)
       pty_opt = has_fn | <+ LLVMTypeOf(LLVMGetParam(fn, i)) +> | <-->
       is_int_p = pty_opt | p => LLVMGetTypeKind(p) == 8 | <->
-      avt = (arg_vts(i) | _ | ast::ValueType(Unknown))
+      avt = (call_vts(i) | _ | ast::ValueType(Unknown))
       pty_raw = pty_opt | _ | LLVMInt64Type!
       av = is_int_p | stmt::coerce_int_ext(cg, a, pty_raw, types::is_unsigned_vt(avt)) | a
       av_null = pty_opt | p => LLVMConstNull(p) | LLVMConstInt(LLVMInt64Type!, 0, 0)
@@ -6060,12 +6073,13 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                                           | codegen_typed_eval_type_pred(cg,
                                              pred_name, args)
                         |
+                           fa0 = fn_alias(cg, fname)
+                           fa = fa0 != "" | fa0 | fn_alias(cg, types::resolve_fn_name(cg, fname))
                            is_local_fn = types::has_local_var(cg, fname) ||
                               <>(stmt::param_clo_ty(cg, fname))
-                           rf = is_local_fn | fname |
-                              types::resolve_fn_name(cg, fname)
+                           rf = fa != "" | fa | (is_local_fn | fname | types::resolve_fn_name(cg, fname))
                            has_real_fn = types::is_fn_name(cg, rf) ||
-                              types::has_fn_name(cg, rf) || (fn_alias(cg, fname) != "")
+                              types::has_fn_name(cg, rf) || (fa != "")
                            has_vslot = fname != "" && <>(types::var_slot(cg, fname))
                            is_ext_sig = !has_vslot &&
                               (stmt::fn_has_signature(types::g.pstmts, rf, 0) ||

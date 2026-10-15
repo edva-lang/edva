@@ -5729,7 +5729,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
             |
                rname = types::resolve_fn_name(cg, name)
                fidx0 = types::fninfo_index(cg, rname)
-               fidx = <>(fidx0) | fidx0 | types::fninfo_index(cg, name)
+               fidx = (!cg.in_fn) | (<>(fidx0) | fidx0 | types::fninfo_index(cg, name)) | <-->
                lr = fidx
                   | idx =>
                      fi = cg.fninfos(idx)!!
@@ -5739,7 +5739,12 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                         (ast::Names(), tast::mk_lit_unit(0, 0),
                            tast::TypedCaptures())
                      fn_ti = ti [Fn] ti | val.ti
-                     codegen_typed_compile_fn(cg, name, lam.0, lam.1, fn_ti)
+                     enclosing = types::g.last_compiling_fn != "" | types::g.last_compiling_fn | "fn"
+                     top_name = rname != "" | rname | name
+                     fn_sym = cg.in_fn
+                        | (enclosing + "$" + name + "." + str::from_int(?cg.fninfos))
+                        | top_name
+                     codegen_typed_compile_fn(cg, fn_sym, lam.0, lam.1, fn_ti, name)
                cg.last_closure_fn = lr.1
                slot' = is_fresh
                   | types::create_slot(cg, name,
@@ -5884,7 +5889,7 @@ try_compile_typed_assign = cg, tname, val_e, ti, rname, fname =>
                lam = val_e.kind [Lambda l] l |
                   (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
                fn_ti = ti [Fn] ti | val_e.ti
-               codegen_typed_compile_fn(cg, tname, lam.0, lam.1, fn_ti)
+               codegen_typed_compile_fn(cg, tname, lam.0, lam.1, fn_ti, tname)
                <+>
             | <->
 
@@ -5959,7 +5964,12 @@ compile_typed_fn_lazy = cg, name =>
          has_fn = <>(types::fninfo_index(cg, rname)) || <>(types::fninfo_index(cg, name))
          has_fn
             | <+>
-            | find_and_compile_typed_fn(cg, rname, name, 0, ?types::g.typed_program_stmts)
+            |
+               saved_in_fn = cg.in_fn
+               cg.in_fn = <->
+               res = find_and_compile_typed_fn(cg, rname, name, 0, ?types::g.typed_program_stmts)
+               cg.in_fn = saved_in_fn
+               res
 
 codegen_typed_cycle_escape_construct: types::Cg, <>, <tast::TypedExpr|>, ast::TypeInfo => Addr
 codegen_typed_cycle_escape_construct = cg, is_pos, pay_opt, ti =>
@@ -6647,20 +6657,20 @@ typed_refs_name = te, name =>
       [Exit e] typed_refs_name(e, name)
       | <->
 
-typed_lambda_captures_at: types::Cg, ast::Names, tast::TypedExpr, Int, Int, ast::Names => ast::Names
-typed_lambda_captures_at = cg, params, body, i, n, acc =>
+typed_lambda_captures_at: types::Cg, ast::Names, tast::TypedExpr, String, Int, Int, ast::Names => ast::Names
+typed_lambda_captures_at = cg, params, body, self_name, i, n, acc =>
    i == n
       | acc
       |
          cv = cg.vars(i)!!
-         (cv.is_local && !param_in(params, cv.name) &&
-            typed_refs_name(body, cv.name))
+         (cv.is_local && (self_name == "" || cv.name != self_name) &&
+            !param_in(params, cv.name) && typed_refs_name(body, cv.name))
             | acc += cv.name
-         typed_lambda_captures_at(cg, params, body, i + 1, n, acc)
+         typed_lambda_captures_at(cg, params, body, self_name, i + 1, n, acc)
 
-typed_lambda_captures: types::Cg, ast::Names, tast::TypedExpr => ast::Names
-typed_lambda_captures = cg, params, body =>
-   typed_lambda_captures_at(cg, params, body, cg.fn_var_start, ?cg.vars,
+typed_lambda_captures: types::Cg, ast::Names, tast::TypedExpr, String => ast::Names
+typed_lambda_captures = cg, params, body, self_name =>
+   typed_lambda_captures_at(cg, params, body, self_name, cg.fn_var_start, ?cg.vars,
       ast::Names())
 
 typed_member_root_name: tast::TypedExpr => String
@@ -6671,20 +6681,19 @@ typed_member_root_name = te =>
       | ""
 
 codegen_typed_compile_fn: types::Cg, String, ast::Names, tast::TypedExpr,
-   ast::TypeInfo => (Addr, String)
-codegen_typed_compile_fn = cg, name, params, body, ti =>
+   ast::TypeInfo, String => (Addr, String)
+codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    is_anon = ?name > 0 && name(0) == '$'
-   is_top = !is_anon && (types::has_fn_name(cg, name) ||
-      types::has_fn_name(cg, types::resolve_fn_name(cg, name)))
+   saved_in_fn = cg.in_fn
+   is_top = !saved_in_fn && !is_anon
    can_capture = !is_top
-   caps = can_capture | typed_lambda_captures(cg, params, body) | ast::Names()
+   caps = can_capture | typed_lambda_captures(cg, params, body, orig_name) | ast::Names()
    nc = ?caps
    is_cap = can_capture && nc > 0
 
    saved_module = cg.current_module
    saved_fn = cg.current_fn
    saved_bb = LLVMGetInsertBlock(cg.builder)
-   saved_in_fn = cg.in_fn
    saved_nvars = ?cg.vars
    saved_var_start = cg.fn_var_start
    saved_nbindings = ?cg.bindings
@@ -6695,6 +6704,11 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
    types::g.last_compiling_fn = name
    saved_expected_ti = types::g.expected_fn_ti
    saved_fn_ret_ll = types::g.fn_ret_ll
+   saved_aliases_n = ?cg.fn_alias_names
+   saved_in_fn && orig_name != ""
+      |
+         cg.fn_alias_names += orig_name
+         cg.fn_alias_tgts += name
 
    cap_vals = is_cap | lambda_load_caps_at(cg, caps, 0, nc, types::Addrs()) | types::Addrs()
    cap_vts = is_cap | lambda_caps_vts_at(cg, caps, 0, nc, ast::VTypes()) |
@@ -6819,6 +6833,8 @@ codegen_typed_compile_fn = cg, name, params, body, ti =>
                is_fn_ret && (cg.last_closure_fn != "")
                   | fn_ret_fn_add(name, cg.last_closure_fn)
 
+   cg.fn_alias_names = types::truncate_names(cg.fn_alias_names, saved_aliases_n)
+   cg.fn_alias_tgts = types::truncate_names(cg.fn_alias_tgts, saved_aliases_n)
    cg.in_fn = saved_in_fn
    cg.vars = truncate_vars(cg.vars, saved_nvars)
    cg.bindings = saved_bindings

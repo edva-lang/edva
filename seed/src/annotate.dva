@@ -33,7 +33,8 @@ cur_stmt_files = ast::Names()
 cur_stmt_lines = ast::Ints()
 cur_stmt_cols = ast::Ints()
 cur_is_call_arg = <->
-
+cur_expected_ut: <unify::UType|>
+cur_expected_ut = <-->
 
 set_source_file: String => ()
 set_source_file = f =>
@@ -1586,9 +1587,12 @@ annotate_expr = ctx, env, expr =>
                                        cached = is_top
                                           | type_env::lookup_fn_body(env, name)
                                           | <-->
+                                       saved_assign_exp = cur_expected_ut
+                                       cur_expected_ut ::= <+ f.ret +>
                                        body_te = cached
                                           | _
                                           | annotate_expr(ctx, env, fe.body)
+                                       cur_expected_ut ::= saved_assign_exp
                                        is_view_expr(fe.body)
                                           | unify::add_error(ctx, 3150,
                                              diag::E3150_view_escape_frame!)
@@ -2929,14 +2933,19 @@ annotate_block = ctx, env, exprs, is_disc =>
    tes = tast::TypedExprs()
    last_ut' = unify::prim_unit()
    n = ?exprs
+   saved_block_exp = cur_expected_ut
    ?exprs @ i =>
       e = exprs(i) | _ | ast::Expr(Int, 0)
       is_last = i == n - 1
       disc_val = is_last | is_disc | <+>
       env.discard_result = disc_val
+      is_last
+         | cur_expected_ut ::= saved_block_exp
+         | cur_expected_ut ::= <-->
       te = annotate_expr(ctx, env, e)
       tes += te
       last_ut' = te.ut
+   cur_expected_ut ::= saved_block_exp
    env.discard_result = is_disc
    type_env::leave_scope(env)
    block_ut = is_disc | unify::prim_unit() | last_ut'
@@ -3614,9 +3623,16 @@ annotate_call_normal = ctx, env, ce =>
 
          typed_args = tast::TypedExprs()
          arg_uts = unify::UTypes()
+         c_callee = unify::canon(ctx, fn_ut')
          ?ce.args @ i =>
             a = ce.args(i) | _ | ast::Expr(Int, 0)
+            exp_arg = c_callee
+               [Fn f_sig] (i < ?f_sig.params | <+ f_sig.params(i)!! +> | <-->)
+               | <-->
+            saved_exp = cur_expected_ut
+            cur_expected_ut ::= exp_arg
             ta = annotate_call_arg(ctx, env, a)
+            cur_expected_ut ::= saved_exp
             a
                [Var v]
                   c = unify::canon(ctx, ta.ut)
@@ -3676,19 +3692,38 @@ annotate_fn = ctx, env, fe, is_disc =>
    saved_fn_ret = env.cur_fn_ret
    saved_init = type_env::init_snapshot(env)
    env.in_fn = <+>
-   ret_var = is_disc | unify::prim_unit() | unify::fresh_var(ctx)
+   exp_fn_opt = cur_expected_ut
+      | u =>
+         c = unify::canon(ctx, u)
+         c [Fn exp_f] <+ exp_f +> | <-->
+      | <-->
+   exp_ret_ut = exp_fn_opt | ef => <+ ef.ret +> | <-->
+   ret_var = is_disc
+      | unify::prim_unit()
+      |
+         v = unify::fresh_var(ctx)
+         exp_ret_ut | er => unify::unify(ctx, v, er)
+         v
    env.cur_fn_ret = <+ ret_var +>
    env.init = type_env::new_init()
    param_uts = unify::UTypes()
    ?fe.params @ i =>
       pname = fe.params(i) | _ | ""
+      p_exp = exp_fn_opt
+         | ef =>
+            i < ?ef.params | <+ ef.params(i)!! +> | <-->
+         | <-->
       p_var = unify::fresh_var(ctx)
+      p_exp | pe => unify::unify(ctx, p_var, pe)
       param_uts += p_var
-      ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
-      type_env::bind_local(env, pname, p_var, ti_unk, <->)
+      ti_p = unify::type_info_from_utype(ctx, p_var)
+      type_env::bind_local(env, pname, p_var, ti_p, <->)
       pname != "" | type_env::init_mark_whole(env, pname)
    env.discard_result = is_disc
+   saved_exp = cur_expected_ut
+   cur_expected_ut ::= exp_ret_ut
    body_te = annotate_expr(ctx, env, fe.body)
+   cur_expected_ut ::= saved_exp
    type_env::init_restore(env, saved_init)
    env.in_fn = saved_in_fn
    env.cur_fn_ret = saved_fn_ret
@@ -3826,6 +3861,8 @@ choice_has_constant_branch = c =>
 annotate_choice: unify::Ctx, type_env::TypeEnv,
    ast::ChoiceExpr, <> => tast::TypedExpr
 annotate_choice = ctx, env, ch, is_disc =>
+   saved_choice_exp = cur_expected_ut
+   cur_expected_ut ::= <-->
    is_disc && choice_has_constant_branch(ch)
       |
          unify::add_error(ctx, 3175, diag::E3175_choice_const_discarded!)
@@ -3918,6 +3955,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                type_env::bind_local(env, bv, payload_ut', pay_ti, <->)
                type_env::init_mark_whole(env, bv)
       env.discard_result = is_disc
+      cur_expected_ut ::= saved_choice_exp
       body_te = has_pay'
          |
             br.block
@@ -3967,6 +4005,7 @@ annotate_choice = ctx, env, ch, is_disc =>
          |
             env.discard_result = is_disc
             annotate_expr(ctx, env, br.block)
+      cur_expected_ut ::= <-->
       type_env::leave_scope(env)
       is_jump = expr_is_jump(body_te) || is_error_ut(ctx, body_te.ut)
       !is_jump
@@ -4049,6 +4088,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                                     <->, ast::Expr(Variant, (ast::Tag(Succ),
                                        ast::Exprs()))))
                            final_ut' = ram_np_ut
+   cur_expected_ut ::= saved_choice_exp
    ti = unify::type_info_from_utype(ctx, final_ut')
    lay = layout::compute_layout(ctx, final_ut')
    tast::mk_typed_expr(tast::TypedExprKind(Choice, (cond_te, tb_list)),
@@ -4420,8 +4460,11 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                        c_ret
                                           [Prim p] (is_ret_unit' = p [Unit])
                                        env.discard_result = is_ret_unit'
+                                       saved_decl_exp = cur_expected_ut
+                                       cur_expected_ut ::= <+ f.ret +>
                                        body_te = annotate_expr(ctx, env,
                                           fe.body)
+                                       cur_expected_ut ::= saved_decl_exp
                                        is_view_expr(fe.body)
                                           | unify::add_error(ctx, 3150,
                                              diag::E3150_view_escape_frame!)

@@ -61696,7 +61696,7 @@ concat.tot.len3514:                               ; preds = %str_overflow_abort3
   %var.load3531 = load ptr, ptr %var.te, align 8
   %fld.gep3532 = getelementptr inbounds { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr %var.load3531, i32 0, i32 2
   %fld.load3533 = load ptr, ptr %fld.gep3532, align 8
-  %call.res3534 = call ptr @"stmt::codegen_typed_compile_fn"(ptr %var.load3524, ptr %var.load3525, ptr %fld.load3528, ptr %fld.gep3530, ptr %fld.load3533)
+  %call.res3534 = call ptr @"stmt::codegen_typed_compile_fn"(ptr %var.load3524, ptr %var.load3525, ptr %fld.load3528, ptr %fld.gep3530, ptr %fld.load3533, ptr @str.0.struct)
   store ptr %call.res3534, ptr %var.lr, align 8
   %var.load3535 = load ptr, ptr %var.cg, align 8
   %var.load3536 = load ptr, ptr %var.lr, align 8
@@ -64165,7 +64165,7 @@ declare ptr @"unify::prim_unit"() #1
 
 declare i1 @"types::is_record_vt"(ptr) #1
 
-declare ptr @"stmt::codegen_typed_compile_fn"(ptr, ptr, ptr, ptr, ptr) #1
+declare ptr @"stmt::codegen_typed_compile_fn"(ptr, ptr, ptr, ptr, ptr, ptr) #1
 
 declare ptr @"stmt::codegen_typed_eval_block"(ptr, ptr) #1
 

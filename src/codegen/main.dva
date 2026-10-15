@@ -2859,7 +2859,7 @@ codegen_typed_eval = cg, te =>
                (rec_ptr, ast::ValueType(Record))
       [Lambda lam]
          anon_name = "$anon_fn." + str::from_int(?cg.fninfos)
-         lr = stmt::codegen_typed_compile_fn(cg, anon_name, lam.0, lam.1, te.ti)
+         lr = stmt::codegen_typed_compile_fn(cg, anon_name, lam.0, lam.1, te.ti, "")
          cg.last_closure_fn = lr.1
          (lr.0, ast::ValueType(Fn))
       [Block exprs]

@@ -14,6 +14,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @sys_argc_global = global i64 0
 @sys_argv_global = global ptr null
 @environ = external global ptr
+@"var.annotate::cur_expected_ut" = external global ptr
 @"var.main::empty_fndef" = external global ptr
 @"var.stmt::empty_fndef" = external global ptr
 @"var.match::empty_fndef" = external global ptr
