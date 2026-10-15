@@ -1,0 +1,8 @@
+#use io
+#type A <>{}
+a = A()
+a += <+>
+a += <+>
+s = a(..)
+io::out $ a(1)!!
+io::out $ s(1)

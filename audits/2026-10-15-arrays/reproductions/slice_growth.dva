@@ -1,0 +1,10 @@
+#use io
+#type A Int{2}
+a = A()
+a += 10
+a += 20
+s = a(..)
+a += 30
+a(1) = 99 !| _
+io::out $ s(1)
+io::out $ a(1)!!

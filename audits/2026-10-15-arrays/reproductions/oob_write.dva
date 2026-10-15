@@ -1,0 +1,7 @@
+#use io
+#type A Int{}
+a = A()
+a += 10
+r = a(5) = 99
+io::out $ r | "accepted" | err => "rejected"
+io::out $ ?a

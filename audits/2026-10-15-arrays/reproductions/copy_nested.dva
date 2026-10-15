@@ -1,0 +1,11 @@
+#use io
+#type A Int{}
+#type B A{}
+a = A()
+a += 10
+b = B()
+b += a
+c = ++b
+x = c(0)!!
+x += 20
+io::out $ ?(b(0)!!)

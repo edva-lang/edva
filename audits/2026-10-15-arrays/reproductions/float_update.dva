@@ -1,0 +1,7 @@
+#use io
+#type A Float{}
+a = A()
+a += 1.5
+io::out $ a(0)!!
+a(0) = 2.5 !| _
+io::out $ a(0)!!

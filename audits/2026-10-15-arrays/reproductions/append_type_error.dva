@@ -1,0 +1,4 @@
+#use io
+#type A Int{}
+a = A()
+a += "bad"

@@ -1,0 +1,5 @@
+#use io
+#type A Int{}
+a = A()
+a += 10
+io::out $ a("bad")!!

@@ -1,0 +1,6 @@
+#use io
+#type A Float{}
+a = A()
+a += 1.5
+a += 2.5
+a @ v => io::out(v)

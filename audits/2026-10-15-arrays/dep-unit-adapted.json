@@ -1,0 +1,13 @@
+{
+  "adaptation": "Temporary copy: add #use io and replace legacy print with io::out; source imports resolved with src symlink",
+  "compile": {
+    "stdout": "Successfully generated LLVM IR via LLVM C API: dep_test.ll\nSuccessfully compiled binary: dep_test\n",
+    "stderr": "",
+    "exit_code": 0
+  },
+  "run": {
+    "stdout": "=== Running Dependency Graph & Tarjan SCC Tests ===\nPASS: has_name finds alpha\nPASS: has_name finds beta\nPASS: has_name misses gamma\nPASS: copy_names copies length\nPASS: collect_expr_refs finds 1 free reference\nPASS: finds global_val\nPASS: ignores local param x\nPASS: build_dep_graph produces 2 nodes\nPASS: independent functions produce 2 SCCs\nPASS: independent node is not recursive\nPASS: DAG produces 3 SCCs\nPASS: leaf C is first in SCCs\nPASS: B is second in SCCs\nPASS: A is third in SCCs\nPASS: self-recursive function is 1 SCC\nPASS: self-recursive SCC is marked recursive\nPASS: contains fact\nPASS: mutually recursive functions form 1 SCC\nPASS: SCC has 2 mutually recursive functions\nPASS: mutually recursive SCC is marked recursive\nPASS: contains is_even\nPASS: contains is_odd\nPASS: 3-cycle forms 1 SCC\nPASS: 3-cycle SCC contains 3 functions\nPASS: 3-cycle SCC is marked recursive\nPASS: contains a\nPASS: contains b\nPASS: contains c\nALL DEPENDENCY GRAPH & TARJAN SCC TESTS PASSED!\n",
+    "stderr": "",
+    "exit_code": 0
+  }
+}

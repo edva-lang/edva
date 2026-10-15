@@ -1,0 +1,9 @@
+#use io
+a = Int{}
+16 @ i => a += i
+a @ v, i =>
+   i == 0 |
+      a += 16
+      a(1) = 99 !| _
+   i < 2 | io::out(v)
+io::out $ a(1)!!

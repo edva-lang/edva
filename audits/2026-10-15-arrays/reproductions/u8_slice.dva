@@ -1,0 +1,12 @@
+#use io
+#type A u8{}
+a = A()
+a += u8(10)
+a += u8(20)
+a += u8(30)
+s = a(..)
+io::out $ Int(a(1)!!)
+io::out $ Int(s(1))
+s(1) = u8(99)
+io::out $ Int(a(0)!!)
+io::out $ Int(a(1)!!)

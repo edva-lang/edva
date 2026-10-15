@@ -1,0 +1,142 @@
+[
+  {
+    "name": "126_growable_array",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 126_growable_array.ll\nSuccessfully compiled binary: 126_growable_array\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "3\n42\n100\n99\nlang\n5\n6\n1\n2\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "127_array_unwrap",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 127_array_unwrap.ll\nSuccessfully compiled binary: 127_array_unwrap\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "42\n7\n100\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "128_array_oob_panic",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 128_array_oob_panic.ll\nSuccessfully compiled binary: 128_array_oob_panic\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "42\nError 4011: array index out of bounds\n  at 128_array_oob_panic.dva:10:18\n",
+      "stderr": "",
+      "exit_code": 1
+    }
+  },
+  {
+    "name": "166_array_return_typeinfo",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 166_array_return_typeinfo.ll\nSuccessfully compiled binary: 166_array_return_typeinfo\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "10\n11\n2\n5\n6\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "189_forward_ref_heap_enum_array",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 189_forward_ref_heap_enum_array.ll\nSuccessfully compiled binary: 189_forward_ref_heap_enum_array\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "3\n11\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "243_array_copy",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 243_array_copy.ll\nSuccessfully compiled binary: 243_array_copy\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "3\n10\n20\n30\n4\n99\n20\n30\n40\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "244_growable_array_iteration",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 244_growable_array_iteration.ll\nSuccessfully compiled binary: 244_growable_array_iteration\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "10\n20\n30\n0\n10\n1\n20\n2\n30\n10\n0\n20\n1\n30\n2\nhello\nworld\n0\nhello\n1\nworld\n3\n4\n5\n6\n0\n3\n4\n1\n5\n6\ndone empty\n777\n10\n30\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "261_slice_negative_clamp",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 261_slice_negative_clamp.ll\nSuccessfully compiled binary: 261_slice_negative_clamp\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "def\n3\nabcd\n4\ncde\n3\nbcd\n3\nabcdef\n6\nabcdef\n6\nabcdef\n6\n\n0\n\n0\n\n0\n2\n40\n50\n3\n10\n20\n30\n3\n20\n30\n40\n5\n0\n2\n30\n40\n2\n20\n30\n0\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "309_anonymous_growable_array",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 309_anonymous_growable_array.ll\nSuccessfully compiled binary: 309_anonymous_growable_array\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "3\n10\n20\n30\n60\n2\nhello\nworld\n7\n4\n10\n40\n2\nfirst_tag\nsecond_tag\niter:\n10\n20\n30\n99\n3\n99\n500\n1\n999\n1\n111\n222\n333\nanon\n777\nOK\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "093_narrow_index_bounds",
+    "passed": true,
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: 093_narrow_index_bounds.ll\nSuccessfully compiled binary: 093_narrow_index_bounds\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "20\n99\n30\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  }
+]

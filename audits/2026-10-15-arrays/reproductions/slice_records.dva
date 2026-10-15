@@ -1,0 +1,8 @@
+#use io
+#type R (x: Int, y: Int)
+#type A R{}
+a = A()
+a += R(10, 20)
+a += R(30, 40)
+s = a(..)
+io::out $ s(1).y

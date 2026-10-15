@@ -1,0 +1,7 @@
+#use io
+#type A Int{}
+a = A()
+a += 1
+r = a(0) = 42
+io::out $ r | "success" | err => "failure"
+io::out $ a(0)!!

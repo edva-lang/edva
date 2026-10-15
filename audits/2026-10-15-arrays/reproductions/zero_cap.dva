@@ -1,0 +1,5 @@
+#use io
+#type A Int{0}
+a = A()
+a += 1
+io::out $ a(0)!!

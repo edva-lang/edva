@@ -1,0 +1,12 @@
+{
+  "compile": {
+    "stdout": "dep_test.dva:52:33: E3004: Undefined function: print\ndep_test.dva:52:33: E3004: Undefined function: print\ndep_test.dva:14:22: E3004: Undefined function: print\ndep_test.dva:14:22: E3004: Undefined function: print\ndep_test.dva:23:22: E3004: Undefined function: print\ndep_test.dva:188:46: E3004: Undefined function: print\nE5011: Compilation aborted due to code generation errors.\n",
+    "stderr": "",
+    "exit_code": 1
+  },
+  "run": {
+    "exit_code": -999,
+    "stdout": "",
+    "stderr": ""
+  }
+}

@@ -1,0 +1,7 @@
+#use io
+#type A Int{}
+a = A()
+a += 1
+b = a
+b += 2
+io::out $ ?a

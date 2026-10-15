@@ -1,0 +1,366 @@
+[
+  {
+    "name": "alias",
+    "compile": {
+      "stdout": "cached LLVM IR: alias.ll\nSuccessfully compiled binary: alias\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "2\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "append_type_error",
+    "compile": {
+      "stdout": "/tmp/edva-array-audit/append_type_error.dva:3:8: E3084: Type mismatch: cannot unify Int with String\n/tmp/edva-array-audit/append_type_error.dva:3:8: E3084: Type mismatch in array append to: a\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "copy_nested",
+    "compile": {
+      "stdout": "cached LLVM IR: copy_nested.ll\nSuccessfully compiled binary: copy_nested\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "2\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "copy_record",
+    "compile": {
+      "stdout": "cached LLVM IR: copy_record.ll\nSuccessfully compiled binary: copy_record\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "flag_slice",
+    "compile": {
+      "stdout": "cached LLVM IR: flag_slice.ll\nSuccessfully compiled binary: flag_slice\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "<+>\n<->\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "float_iter",
+    "compile": {
+      "stdout": "cached LLVM IR: float_iter.ll\nSuccessfully compiled binary: float_iter\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "1.5\n2.5\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "float_update",
+    "compile": {
+      "stdout": "cached LLVM IR: float_update.ll\nE5013: Clang compilation failed with exit code 1\n",
+      "stderr": "float_update.ll:859:13: error: invalid cast opcode for cast from 'double' to 'i64'\n  859 |   store i64 ptrtoint (double 2.500000e+00 to i64), ptr %a.elem.gep72, align 8\n      |             ^\n1 error generated.\n",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "i8_index",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: i8_index.ll\nSuccessfully compiled binary: i8_index\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "255\n-2\n-2\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "index_type_error",
+    "compile": {
+      "stdout": "/tmp/edva-array-audit/index_type_error.dva:5:19: E3084: Type mismatch: cannot unify String with Int\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "iter_control",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: iter_control.ll\nSuccessfully compiled binary: iter_control\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "10\n99\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "iter_growth",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: iter_growth.ll\nSuccessfully compiled binary: iter_growth\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "10\n99\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "iter_growth16",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: iter_growth16.ll\nSuccessfully compiled binary: iter_growth16\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "0\n1\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "member_append",
+    "compile": {
+      "stdout": "cached LLVM IR: member_append.ll\nSuccessfully compiled binary: member_append\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "2\n20\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "negative_write",
+    "compile": {
+      "stdout": "cached LLVM IR: negative_write.ll\nSuccessfully compiled binary: negative_write\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "accepted\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "oob_read",
+    "compile": {
+      "stdout": "cached LLVM IR: oob_read.ll\nSuccessfully compiled binary: oob_read\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "-1\n-1\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "oob_write",
+    "compile": {
+      "stdout": "cached LLVM IR: oob_write.ll\nSuccessfully compiled binary: oob_write\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "accepted\n1\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "slice_growth",
+    "compile": {
+      "stdout": "cached LLVM IR: slice_growth.ll\nSuccessfully compiled binary: slice_growth\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "99\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "slice_growth16",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: slice_growth16.ll\nSuccessfully compiled binary: slice_growth16\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "1\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "slice_records",
+    "compile": {
+      "stdout": "cached LLVM IR: slice_records.ll\nSuccessfully compiled binary: slice_records\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "40\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "u8_index",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: u8_index.ll\nSuccessfully compiled binary: u8_index\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "255\n-128\n128\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "u8_slice",
+    "compile": {
+      "stdout": "cached LLVM IR: u8_slice.ll\nSuccessfully compiled binary: u8_slice\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "20\n0\n25354\n20\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "write_result",
+    "compile": {
+      "stdout": "cached LLVM IR: write_result.ll\nSuccessfully compiled binary: write_result\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "success\n42\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "write_type_error",
+    "compile": {
+      "stdout": "/tmp/edva-array-audit/write_type_error.dva:3:8: E3084: Type mismatch: cannot unify Int with String\n/tmp/edva-array-audit/write_type_error.dva:3:8: E3084: Type mismatch in array index assignment\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "zero_cap",
+    "compile": {
+      "stdout": "cached LLVM IR: zero_cap.ll\nSuccessfully compiled binary: zero_cap\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "1\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "f32_array",
+    "compile": {
+      "stdout": "E5011: LLVM module verification failed: Invalid bitcast\n  %arr.elem.flt = bitcast i64 %arr.elem.raw to float\n\nE5011: Compilation aborted due to code generation errors.\n",
+      "stderr": "",
+      "exit_code": 1
+    },
+    "run": {
+      "exit_code": -999,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  {
+    "name": "narrow_scalar_control",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: narrow_scalar_control.ll\nSuccessfully compiled binary: narrow_scalar_control\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "-1\n128\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "capacity_inline",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: capacity_inline.ll\nSuccessfully compiled binary: capacity_inline\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "20\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  },
+  {
+    "name": "capacity_forward",
+    "compile": {
+      "stdout": "Successfully generated LLVM IR via LLVM C API: capacity_forward.ll\nSuccessfully compiled binary: capacity_forward\n",
+      "stderr": "",
+      "exit_code": 0
+    },
+    "run": {
+      "stdout": "99\n99\n",
+      "stderr": "",
+      "exit_code": 0
+    }
+  }
+]

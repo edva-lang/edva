@@ -1,0 +1,7 @@
+#use io
+a = i8{}
+a += i8(-1)
+io::out $ Int(a(0)!!)
+a(0) = i8(-2) !| _
+io::out $ Int(a(0)!!)
+a @ v => io::out $ Int(v)

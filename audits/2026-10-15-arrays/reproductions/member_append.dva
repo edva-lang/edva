@@ -1,0 +1,7 @@
+#use io
+#type R (a: Int{})
+r = R(Int{})
+r.a += 10
+r.a += 20
+io::out $ ?r.a
+io::out $ r.a(1)!!

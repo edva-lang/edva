@@ -1,0 +1,5 @@
+#use io
+a = f32{}
+a += f32(1.5)
+io::out $ Float(a(0)!!)
+a @ v => io::out $ Float(v)

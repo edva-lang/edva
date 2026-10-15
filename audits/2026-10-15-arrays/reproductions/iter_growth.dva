@@ -1,0 +1,11 @@
+#use io
+#type A Int{2}
+a = A()
+a += 10
+a += 20
+a @ v, i =>
+   i == 0 |
+      a += 30
+      a(1) = 99 !| _
+   io::out(v)
+io::out $ a(1)!!

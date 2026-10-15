@@ -1,0 +1,9 @@
+#use io
+#type R (v: Int)
+#type A R{}
+a = A()
+a += R(10)
+b = ++a
+r = b(0)!!
+r.v = 99
+io::out $ a(0)!!.v
