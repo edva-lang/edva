@@ -148,7 +148,7 @@
    // Hex value of an ASCII hex digit (0-9, A-F, a-f); 0 for anything else.
    hex_val: Int => Int
    hex_val = c =>
-      ascii::hex_value(c) | v => v | 0
+      ascii::hex_value(c) | _ | 0
 
    // Percent-decode a URL-encoded string ("%XX" -> byte).
    // Truncated escapes (e.g. "%" or "%A" at string end) and malformed escapes
@@ -168,8 +168,8 @@
             valid = h1 && h2
             valid
                |
-                  v1 = h1 | v => v | 0
-                  v2 = h2 | v => v | 0
+                  v1 = h1 | _ | 0
+                  v2 = h2 | _ | 0
                   out += v1 * 16 + v2
                   i' = i' + 3
                |

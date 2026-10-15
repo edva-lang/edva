@@ -377,9 +377,9 @@ str_overflow_abort:                               ; preds = %choice.exit
 
 define i64 @"io::reader_err"(ptr %0) #1 {
 entry:
-  %var.r = alloca ptr, align 8
-  store ptr %0, ptr %var.r, align 8
-  %var.load = load ptr, ptr %var.r, align 8
+  %var._acc_1 = alloca ptr, align 8
+  store ptr %0, ptr %var._acc_1, align 8
+  %var.load = load ptr, ptr %var._acc_1, align 8
   %fld.gep = getelementptr inbounds { i64, ptr, i64, i64, i64, i1 }, ptr %var.load, i32 0, i32 4
   %fld.load = load i64, ptr %fld.gep, align 8
   ret i64 %fld.load
@@ -387,9 +387,9 @@ entry:
 
 define i1 @"io::reader_eof"(ptr %0) #1 {
 entry:
-  %var.r = alloca ptr, align 8
-  store ptr %0, ptr %var.r, align 8
-  %var.load = load ptr, ptr %var.r, align 8
+  %var._acc_2 = alloca ptr, align 8
+  store ptr %0, ptr %var._acc_2, align 8
+  %var.load = load ptr, ptr %var._acc_2, align 8
   %fld.gep = getelementptr inbounds { i64, ptr, i64, i64, i64, i1 }, ptr %var.load, i32 0, i32 5
   %fld.load = load i1, ptr %fld.gep, align 1
   ret i1 %fld.load

@@ -931,7 +931,10 @@ codegen_array_var_value_local = cg, name, lname =>
          after_bb = LLVMAppendBasicBlock(cg.current_fn, "a.after")
          LLVMBuildCondBr(cg.builder, is_null, create_bb, after_bb)
          LLVMPositionBuilderAtEnd(cg.builder, create_bb)
-         made = codegen_array_create(cg, "a.create")
+         dt = types::var_dtype(cg, name)
+         ti = dt != "" | types::typedef_ti(cg, dt) | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+         cap_val = ti [Array ae] ae.2 | 16
+         made = codegen_array_create_cap(cg, cap_val, "a.create")
          LLVMBuildStore(cg.builder, made, slot)
          LLVMBuildBr(cg.builder, after_bb)
          LLVMPositionBuilderAtEnd(cg.builder, after_bb)
@@ -1504,25 +1507,21 @@ get_or_emit_array_grow = cg =>
          cur_len = builder_len(cg, a, "a.len")
          cur_cap = builder_cap(cg, a, "a.cap")
          data = builder_data(cg, a, "a.data")
-         cap2 = LLVMBuildMul(cg.builder, cur_cap,
+         cap2 = stmt::codegen_mul_checked_u64(cg, cur_cap,
             LLVMConstInt(i64t, 2, 0), "a.cap2")
          mincap = LLVMConstInt(i64t, 16, 0)
          new_cap = LLVMBuildSelect(cg.builder,
             LLVMBuildICmp(cg.builder, 40, cap2, mincap, "a.cap.small"),
             mincap, cap2, "a.new.cap")
          esize = LLVMConstInt(i64t, 8, 0)
-         grow_bytes = LLVMBuildMul(cg.builder, new_cap, esize,
+         grow_bytes = stmt::codegen_mul_checked_u64(cg, new_cap, esize,
             "a.grow.bytes")
-         new_bytes = stmt::codegen_add_checked_u64(cg, grow_bytes, one,
-            "a.grow.bytes1")
          new_buf = cg.in_restore_scope > 0
-            | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, new_bytes, "a.new.buf")
-            | expr::codegen_call_arena_alloc(cg, new_bytes, "a.new.buf")
+            | types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!, grow_bytes, "a.new.buf")
+            | expr::codegen_call_arena_alloc(cg, grow_bytes, "a.new.buf")
          copy_bytes = LLVMBuildMul(cg.builder, cur_len, esize,
             "a.copy.bytes")
-         copy_n = stmt::codegen_add_checked_u64(cg, copy_bytes, one,
-            "a.copy.bytes1")
-         LLVMBuildMemCpy(cg.builder, new_buf, 1, data, 1, copy_n, 0)
+         LLVMBuildMemCpy(cg.builder, new_buf, 1, data, 1, copy_bytes, 0)
          LLVMBuildStore(cg.builder, new_buf,
             LLVMBuildStructGEP2(cg.builder, b_ty, a, 1,
                "a.new.data.gep"))
@@ -1535,8 +1534,8 @@ get_or_emit_array_grow = cg =>
          fn
 
 // "a += v" — growable-array append of an i64 element (grows on demand).
-codegen_array_append: types::Cg, Addr, Addr => Addr
-codegen_array_append = cg, a, elem =>
+codegen_array_append: types::Cg, Addr, Addr, ast::ValueType => Addr
+codegen_array_append = cg, a, elem, elem_vt =>
    i64t = LLVMInt64Type!
    one = LLVMConstInt(i64t, 1, 0)
    grow_fn = get_or_emit_array_grow(cg)
@@ -1561,9 +1560,7 @@ codegen_array_append = cg, a, elem =>
    cur_len2 = builder_len(cg, a, "a.cur.len")
    slot = types::gep1(cg, i64t, cur_data, cur_len2, "a.elem.gep")
    el0 = types::llvm_val_opt(elem) | _ | LLVMConstNull(i64t)
-   el = LLVMGetTypeKind(LLVMTypeOf(el0)) == 12
-      | LLVMBuildPtrToInt(cg.builder, el0, i64t, "a.elem.p2i")
-      | el0
+   el = runtime::codegen_pack_slot(cg, el0, elem_vt)
    LLVMBuildStore(cg.builder, el, slot)
    next_len = LLVMBuildAdd(cg.builder, cur_len2, one, "a.next.len")
    builder_set_len(cg, a, next_len)
@@ -1613,7 +1610,8 @@ codegen_array_index = cg, a, idx, elem_vt, name, line, col =>
       |
          box = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 8, 0),
             "get.pay.alloc")
-         LLVMBuildStore(cg.builder, ev, box)
+         unpacked = runtime::codegen_unpack_slot(cg, ev, elem_vt)
+         LLVMBuildStore(cg.builder, unpacked, box)
          LLVMBuildStore(cg.builder, box, hit_pay)
    LLVMBuildBr(cg.builder, done)
    LLVMPositionBuilderAtEnd(cg.builder, null_bb)
@@ -2756,7 +2754,7 @@ codegen_typed_eval = cg, te =>
                               |
                                  a_val = LLVMBuildLoad2(cg.builder, i8p',
                                     fgep', "a.fld.load")
-                                 codegen_array_append(cg, a_val, ev'.0)
+                                 codegen_array_append(cg, a_val, ev'.0, ev'.1)
                               |
                                  target_ft =
                                     LLVMStructGetTypeAtIndex(st',

@@ -3452,7 +3452,7 @@ codegen_eval_ctor: Cg, ast::TypeInfo, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_ctor = cg, ti, t =>
    ti
       [Array ae]
-         u' = main::codegen_array_create(cg, "a.new")
+         u' = main::codegen_array_create_cap(cg, ae.2, "a.new")
          (u', ast::ValueType(Array))
       [Map mk]
          u' = runtime::codegen_map_create(cg, "m.new")

@@ -3820,7 +3820,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          tv_opt = types::llvm_val_opt(tv.0)
          tv_val_opt = phi_ty_opt
             | pty =>
-               tv_raw = tv_opt | v => v | LLVMConstNull(pty)
+               tv_raw = tv_opt | _ | LLVMConstNull(pty)
                <+ expr::coerce_phi_incoming(cg, tv_raw, tv.1, pty, vt) +>
             | <-->
          then_term = stmt::block_is_terminated(cg)
@@ -3889,7 +3889,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          ev_opt = types::llvm_val_opt(ev.0)
          ev_val_opt = phi_ty_opt
             | pty =>
-               ev_raw = ev_opt | v => v | LLVMConstNull(pty)
+               ev_raw = ev_opt | _ | LLVMConstNull(pty)
                <+ expr::coerce_phi_incoming(cg, ev_raw, ev.1, pty, vt) +>
             | <-->
          else_term = stmt::block_is_terminated(cg)
@@ -4240,8 +4240,16 @@ convert_unboxed_pay = cg, pay_raw, vt =>
       | pay_raw
       |
          types::is_float_vt(vt)
-            | LLVMBuildBitCast(cg.builder, pay_raw,
-               LLVMDoubleType!, "pay.float")
+            |
+               (vt [F32])
+                  |
+                     f32_i32 = LLVMBuildTrunc(cg.builder, pay_raw,
+                        LLVMInt32Type!, "pay.f2i32")
+                     LLVMBuildBitCast(cg.builder, f32_i32,
+                        LLVMFloatType!, "pay.f32")
+                  |
+                     LLVMBuildBitCast(cg.builder, pay_raw,
+                        LLVMDoubleType!, "pay.float")
             |
                types::is_ptrish_vt(vt)
                   | LLVMBuildIntToPtr(cg.builder, pay_raw, i8p, "pay.ptr")
@@ -4271,7 +4279,13 @@ coerce_pay_to_i64 = cg, v, vt =>
    types::llvm_val_opt(v)
       | vv =>
          types::is_float_vt(vt) || (LLVMTypeOf(vv) == LLVMDoubleType!)
-            | LLVMBuildBitCast(cg.builder, vv, i64t, "f.to.i64")
+            |
+               (vt [F32]) || (LLVMTypeOf(vv) == LLVMFloatType!)
+                  |
+                     f32_i32 = LLVMBuildBitCast(cg.builder, vv,
+                        LLVMInt32Type!, "pay.f32to32")
+                     LLVMBuildZExt(cg.builder, f32_i32, i64t, "pay.f32toi64")
+                  | LLVMBuildBitCast(cg.builder, vv, i64t, "f.to.i64")
             |
                (LLVMGetTypeKind(LLVMTypeOf(vv)) == 12)
                   | LLVMBuildPtrToInt(cg.builder, vv, i64t, "ptr.to.i64")
@@ -4493,7 +4507,13 @@ codegen_unboxed_ram_construct = cg, is_pos, pay_opt, ti =>
          types::llvm_val_opt(pev.0)
             | pev_val =>
                types::is_float_vt(pev.1)
-                  | LLVMBuildBitCast(cg.builder, pev_val, i64t, "f.to.i64")
+                  |
+                     (pev.1 [F32]) || (LLVMTypeOf(pev_val) == LLVMFloatType!)
+                        |
+                           f32_i32 = LLVMBuildBitCast(cg.builder, pev_val,
+                              LLVMInt32Type!, "ram.f2i32")
+                           LLVMBuildZExt(cg.builder, f32_i32, i64t, "ram.f2i64")
+                        | LLVMBuildBitCast(cg.builder, pev_val, i64t, "f.to.i64")
                   |
                      (LLVMGetTypeKind(LLVMTypeOf(pev_val)) == 12)
                         | LLVMBuildPtrToInt(cg.builder, pev_val, i64t,

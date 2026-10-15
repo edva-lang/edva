@@ -18,6 +18,7 @@
 // `parse` returns <Value | Error>, and unwrapping the Error branch
 // aborts with the diagnostic.
 
+#use ascii
 #use str
 #use unicode
 
@@ -52,13 +53,11 @@ skip_ws = p =>
 // The value of a hex digit, or -1 when not a hex digit.
 hexval: Int => Int
 hexval = h =>
-   (h !< '0' && h !> '9') | h - '0' |
-   ((h !< 'A' && h !> 'F') | h - 'A' + 10 |
-   ((h !< 'a' && h !> 'f') | h - 'a' + 10 | -1))
+   ascii::hex_value(h) | _ | -1
 
 // True when src[p] exists and is a hex digit.
-is_hex_at: Int => i1
-is_hex_at = p => p < ?src && hexval(src(p)) !< 0
+is_hex_at: Int => <>
+is_hex_at = p => p < ?src && ascii::is_hex(src(p))
 
 // Append the UTF-8 encoding of a rune to a Builder.
 append_utf8: Builder, Rune => ()

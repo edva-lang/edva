@@ -53,7 +53,7 @@ skip_ws = p =>
 // The value of a hex digit, or -1 when not a hex digit.
 hexval: Int => Int
 hexval = h =>
-   ascii::hex_value(h) | v => v | -1
+   ascii::hex_value(h) | _ | -1
 
 // True when src[p] exists and is a hex digit.
 is_hex_at: Int => <>

@@ -2,5 +2,5 @@
 #type A Int{}
 a = A()
 a += 10
-io::out $ a(5) | v => v | err => -1
-io::out $ a(-1) | v => v | err => -1
+io::out $ a(5) | _ | -1
+io::out $ a(-1) | _ | -1

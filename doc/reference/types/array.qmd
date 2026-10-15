@@ -62,7 +62,7 @@ xs += 42
 val = xs(0)!!
 
 // Handling fallible access with ramification matching
-element = xs(1) | v => v | err => -1
+element = xs(1) | _ | -1
 
 // Write-or-panic on assignment
 xs(0) = 99 !| _

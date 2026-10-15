@@ -3820,7 +3820,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          tv_opt = types::llvm_val_opt(tv.0)
          tv_val_opt = phi_ty_opt
             | pty =>
-               tv_raw = tv_opt | v => v | LLVMConstNull(pty)
+               tv_raw = tv_opt | _ | LLVMConstNull(pty)
                <+ expr::coerce_phi_incoming(cg, tv_raw, tv.1, pty, vt) +>
             | <-->
          then_term = stmt::block_is_terminated(cg)
@@ -3889,7 +3889,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          ev_opt = types::llvm_val_opt(ev.0)
          ev_val_opt = phi_ty_opt
             | pty =>
-               ev_raw = ev_opt | v => v | LLVMConstNull(pty)
+               ev_raw = ev_opt | _ | LLVMConstNull(pty)
                <+ expr::coerce_phi_incoming(cg, ev_raw, ev.1, pty, vt) +>
             | <-->
          else_term = stmt::block_is_terminated(cg)

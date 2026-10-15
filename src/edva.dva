@@ -1895,7 +1895,7 @@ resolve_pkg_config = name, clang_args =>
 env_or: String, String => String
 env_or = name, fallback =>
    getenv_opt(name)
-      | v => v
+      | _
       | fallback
 
 copy_file: String, String => <>

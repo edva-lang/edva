@@ -10,6 +10,7 @@
 // render — but for writing responses, the flat String form is sufficient and
 // zero-copy.
 
+#use ascii
 #use net
 #use str
 
@@ -147,13 +148,11 @@
    // Hex value of an ASCII hex digit (0-9, A-F, a-f); 0 for anything else.
    hex_val: Int => Int
    hex_val = c =>
-      c !< 48 && c !> 57
-         | c - 48
-         | c !< 65 && c !> 70
-            | c - 55
-            | c - 87
+      ascii::hex_value(c) | _ | 0
 
    // Percent-decode a URL-encoded string ("%XX" -> byte).
+   // Truncated escapes (e.g. "%" or "%A" at string end) and malformed escapes
+   // (e.g. "%ZZ") are preserved verbatim.
    percent_decode: String => String
    percent_decode = s =>
       out = {?s}
@@ -163,8 +162,19 @@
          i' !< total | -->
          c = s(i')
          c [37]
-            out += http::hex_val(s(i' + 1)) * 16 + http::hex_val(s(i' + 2))
-            i' = i' + 3
+            has_two = i' + 2 < total
+            h1 = has_two | ascii::hex_value(s(i' + 1)) | <-->
+            h2 = has_two | ascii::hex_value(s(i' + 2)) | <-->
+            valid = h1 && h2
+            valid
+               |
+                  v1 = h1 | _ | 0
+                  v2 = h2 | _ | 0
+                  out += v1 * 16 + v2
+                  i' = i' + 3
+               |
+                  out += c
+                  i' = i' + 1
          |
             out += c
             i' = i' + 1

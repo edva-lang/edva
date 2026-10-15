@@ -63,5 +63,5 @@ io::out(lower)
 
 // Hexadecimal decoding
 h = ascii::hex_value(102) // 'f'
-io::out(h | v => v | -1)
+io::out(h | _ | -1)
 ```

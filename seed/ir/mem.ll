@@ -971,9 +971,9 @@ addr_stale:                                       ; preds = %addr_gen_check
 
 define i64 @"mem::pool_capacity"(ptr %0) #1 {
 entry:
-  %var.p = alloca ptr, align 8
-  store ptr %0, ptr %var.p, align 8
-  %var.load = load ptr, ptr %var.p, align 8
+  %var._acc_1 = alloca ptr, align 8
+  store ptr %0, ptr %var._acc_1, align 8
+  %var.load = load ptr, ptr %var._acc_1, align 8
   %fld.gep = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load, i32 0, i32 5
   %fld.load = load i64, ptr %fld.gep, align 8
   ret i64 %fld.load
