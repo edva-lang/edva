@@ -1151,6 +1151,12 @@ rewrite_import_expr = e, table, locals =>
       [Exit ex]
          new_ex = rewrite_import_expr(ex.code, table, locals)
          ast::Expr(Exit, (ast::ExitExpr(new_ex)))
+      [Return r]
+         new_val = r.has_val | rewrite_import_expr(r.val, table, locals) | r.val
+         ast::Expr(Return, (ast::ReturnExpr((r.has_val, new_val, r.line, r.col))))
+      [ArrayCreate ac]
+         new_elem = rewrite_import_type_info(ac.elem_type, table)
+         ast::Expr(ArrayCreate, (ast::ArrayCreateExpr((new_elem, ac.cap))))
       [UserDiag ud]
          new_msg = rewrite_import_expr(ud.msg, table, locals)
          ast::Expr(UserDiag, (ast::UserDiagExpr((ud.is_warn, new_msg,
