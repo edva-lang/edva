@@ -1,0 +1,56 @@
+// std/utf.dva — UTF-8 encoding and decoding utilities
+
+#use "unicode"
+
+#public
+   // Append the UTF-8 encoding of a Rune to a Builder
+   append_rune: Builder, Rune => ()
+   append_rune = b, r =>
+      cp = Int(r)
+      cp [< 0x80] b += cp
+         [< 0x800]
+            b += 0xC0 + (cp .>. 6)
+            b += 0x80 + (cp .&. 0x3F)
+         [< 0x10000]
+            b += 0xE0 + (cp .>. 12)
+            b += 0x80 + ((cp .>. 6) .&. 0x3F)
+            b += 0x80 + (cp .&. 0x3F)
+         |
+            b += 0xF0 + (cp .>. 18)
+            b += 0x80 + ((cp .>. 12) .&. 0x3F)
+            b += 0x80 + ((cp .>. 6) .&. 0x3F)
+            b += 0x80 + (cp .&. 0x3F)
+
+   // Append the UTF-8 encoding of an integer codepoint to a Builder
+   append_codepoint: Builder, Int => ()
+   append_codepoint = b, cp =>
+      append_rune(b, Rune(cp))
+
+   // Encode a Rune into a fresh UTF-8 String
+   encode_rune: Rune => String
+   encode_rune = r =>
+      b = {4}
+      append_rune(b, r)
+      +b
+
+   // Encode an integer codepoint into a fresh UTF-8 String
+   encode_codepoint: Int => String
+   encode_codepoint = cp =>
+      encode_rune(Rune(cp))
+
+   // Number of UTF-8 bytes required to encode a Rune
+   rune_len: Rune => Int
+   rune_len = r =>
+      cp = Int(r)
+      cp [< 0x80] 1
+         [< 0x800] 2
+         [< 0x10000] 3
+         | 4
+
+   // Decode the UTF-8 rune at Addr + i into its codepoint
+   decode_rune_addr: Addr, Int => Rune
+   decode_rune_addr = p, i => unicode::decode_rune_addr(p, i)
+
+   // Decode the UTF-8 rune at Builder buffer + i into its codepoint
+   decode_rune_builder: Builder, Int => Rune
+   decode_rune_builder = b, i => unicode::decode_rune_builder(b, i)
