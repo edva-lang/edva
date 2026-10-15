@@ -1663,8 +1663,8 @@ member_assign_bitfield = cg, root_name, m, t, bfi =>
             |
                bty = types::llvm_type_of_vt(bfi.backing_type)
                curr = LLVMBuildLoad2(cg.builder, bty, bf_ptr, "bf.cur")
-               fmask = (1 .<. bf.bit_width) - 1
-               shifted_mask = fmask .<. bf.bit_offset
+               fmask = bf.bit_width !< 64 | -1 | ((1 .<. bf.bit_width) - 1)
+               shifted_mask = bf.bit_width !< 64 | -1 | (fmask .<. bf.bit_offset)
                cmask = .!. shifted_mask
                cmask_val = LLVMConstInt(bty, cmask, 0)
                cleared = LLVMBuildAnd(cg.builder, curr, cmask_val,
@@ -1843,8 +1843,16 @@ codegen_emit_record_assign = cg, t, call =>
          typed_arr = LLVMBuildPointerCast(cg.builder, base_ptr,
             LLVMPointerType(elem_ll_type, 0), "rec.typed")
          elem_gep = types::gep1(cg, elem_ll_type, typed_arr, idx_i64, "rec.elem.gep")
-         cval = stmt::coerce_int(cg, rhs_ev.0, elem_ll_type)
-         LLVMBuildStore(cg.builder, cval, elem_gep)
+         is_rec_elem = elem_vt [Record]
+         is_rec_elem
+            |
+               inner_sz = LLVMSizeOf(elem_ll_type)
+               LLVMBuildMemCpy(cg.builder, elem_gep, 1, rhs_ev.0, 1, inner_sz, 0)
+            |
+               is_flt = elem_vt [Float]
+               cval = is_flt | rhs_ev.0 | stmt::coerce_int_ext(cg, rhs_ev.0, elem_ll_type,
+                  types::is_unsigned_vt(elem_vt))
+               LLVMBuildStore(cg.builder, cval, elem_gep)
 
 slice_elem_vt: types::Cg, String => ast::ValueType
 slice_elem_vt = cg, name =>

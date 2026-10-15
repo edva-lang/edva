@@ -2677,8 +2677,8 @@ codegen_typed_eval = cg, te =>
                      bty = types::llvm_type_of_vt(bfi.backing_type)
                      curr = LLVMBuildLoad2(cg.builder, bty, bf_ptr,
                         "bf.cur")
-                     fmask = (1 .<. bf.bit_width) - 1
-                     shifted_mask = fmask .<. bf.bit_offset
+                     fmask = bf.bit_width !< 64 | -1 | ((1 .<. bf.bit_width) - 1)
+                     shifted_mask = bf.bit_width !< 64 | -1 | (fmask .<. bf.bit_offset)
                      cmask = .!. shifted_mask
                      cmask_val = LLVMConstInt(bty, cmask, 0)
                      cleared = LLVMBuildAnd(cg.builder, curr, cmask_val,
@@ -2788,75 +2788,110 @@ codegen_typed_eval = cg, te =>
                   | (ev'.0, ev'.1)
       [Record r]
          nf = ?r
-         ftypes = types::Addrs()
-         fvals = types::Addrs()
-         fnames' = ast::Names()
-         fvts' = ast::VTypes()
-         all_const' = <+>
-         all_same_ty' = <+>
-         any_rec' = <->
-         first_ty' = LLVMVoidType!
-         nf @ i =>
-            tf = r(i) | _ | tast::TypedField(("", tast::mk_lit_unit(0, 0), 0,
-               unify::prim_unit()))
-            fev = codegen_typed_eval(cg, tf.val)
-            fev_is_rec = types::is_record_vt(fev.1)
-            fev_is_rec | any_rec' = <+>
-            rm_f = fev_is_rec
-               | runtime::record_meta_from_ti(cg, tf.val.ti)
-               | <-->
-            fev0_opt = types::llvm_val_opt(fev.0)
-            raw_fty = fev0_opt
-               | f0 => LLVMTypeOf(f0)
-               | types::llvm_type_of_vt(fev.1)
-            rec_t' = rm_f | m => m.0 | (cg.last_rt | _ | raw_fty)
-            fty_i = fev_is_rec | rec_t' | raw_fty
-            fev_val = fev0_opt | _ | LLVMConstNull(fty_i)
-            is_c = (types::llvm_val_opt(fev_val) | fv => LLVMIsConstant(fv) != 0 | <->)
-            !is_c | all_const' = <->
-            i == 0
-               | first_ty' = fty_i
-               | (fty_i != first_ty' | all_same_ty' = <->)
-            fvals += fev_val
-            ftypes += fty_i
-            fnames' += tf.name
-            fvts' += fev.1
-         st' = types::struct_type_n(cg, ftypes, nf)
-         cg.last_rt = <+ st' +>
-         cg.last_fnames = fnames'
-         cg.last_fvts = fvts'
-         all_const' && all_same_ty' && !any_rec' && (nf !< 64)
-            |
-               buf = {nf * 8}
-               esb = &buf
-               nf @ k =>
-                  @[esb + k * 8] = fvals(k)!!
-               arr_ty = LLVMArrayType(first_ty', nf)
-               const_arr = LLVMConstArray2(first_ty', esb, nf)
-               gname = "$const_arr." + str::from_int(?cg.typedefs) + "." + str::from_int(types::g.tmpc)
-               types::g.tmpc = types::g.tmpc + 1
-               gv = LLVMAddGlobal(cg.module, arr_ty, gname)
-               LLVMSetInitializer(gv, const_arr)
-               LLVMSetGlobalConstant(gv, 1)
-               LLVMSetUnnamedAddr(gv, 1)
-               LLVMSetLinkage(gv, 8)
-               (gv, ast::ValueType(Record))
-            |
-               sz_c' = LLVMSizeOf(st')
-               rec_ptr = expr::codegen_call_arena_alloc(cg, sz_c', "rec.alloc")
+         resolved_ti = te.ti [TypeVar tv] types::typedef_ti(cg, tv) | te.ti
+         bf_opt = types::ti_get_bitfield(cg, resolved_ti)
+         bf_opt
+            | bfi =>
+               bty = types::llvm_type_of_vt(bfi.backing_type)
+               packed_acc' = LLVMConstInt(bty, 0, 0)
                nf @ j =>
-                  fgep' = LLVMBuildStructGEP2(cg.builder, st', rec_ptr, j,
-                     "rec.fld")
-                  fval_j = fvals(j)!!
-                  fld_is_rec = types::is_record_vt(fvts'(j) | _ | ast::ValueType(Unknown))
-                  fld_is_rec
-                     |
-                        fld_ty = ftypes(j)!!
-                        inner_sz' = LLVMSizeOf(fld_ty)
-                        LLVMBuildMemCpy(cg.builder, fgep', 1, fval_j, 1,
-                           inner_sz', 0)
-                     | LLVMBuildStore(cg.builder, fval_j, fgep')
-               (rec_ptr, ast::ValueType(Record))
+                  tf = r(j) | _ | tast::TypedField(("", tast::mk_lit_unit(0, 0), 0, unify::prim_unit()))
+                  bf_fld = types::find_bitfield_field(bfi.fields, tf.name)
+                  bf = bf_fld | _ | (bfi.fields(j) | _ | ast::BitfieldField(("", 0, 0)))
+                  fev = codegen_typed_eval(cg, tf.val)
+                  fmask = bf.bit_width !< 64 | -1 | ((1 .<. bf.bit_width) - 1)
+                  v_cast = stmt::coerce_int(cg, fev.0, bty)
+                  v_masked = LLVMBuildAnd(cg.builder, v_cast, LLVMConstInt(bty, fmask, 0), "bf.val")
+                  v_shifted = bf.bit_offset > 0
+                     | LLVMBuildShl(cg.builder, v_masked, LLVMConstInt(bty, bf.bit_offset, 0), "bf.shl")
+                     | v_masked
+                  packed_acc' = LLVMBuildOr(cg.builder, packed_acc', v_shifted, "bf.acc")
+               (packed_acc', bfi.backing_type)
+            |
+               is_packed = resolved_ti [Rec rr] rr.5 | <->
+               decl_fts = resolved_ti [Rec rr] rr.0 | ast::FieldTypes()
+               has_decl = ?decl_fts == nf
+               ftypes = types::Addrs()
+               fvals = types::Addrs()
+               fnames' = ast::Names()
+               fvts' = ast::VTypes()
+               all_const' = <+>
+               all_same_ty' = <+>
+               any_rec' = <->
+               first_ty' = LLVMVoidType!
+               nf @ i =>
+                  tf = r(i) | _ | tast::TypedField(("", tast::mk_lit_unit(0, 0), 0,
+                     unify::prim_unit()))
+                  fev = codegen_typed_eval(cg, tf.val)
+                  fev_is_rec = types::is_record_vt(fev.1)
+                  fev_is_rec | any_rec' = <+>
+                  rm_f = fev_is_rec
+                     | runtime::record_meta_from_ti(cg, tf.val.ti)
+                     | <-->
+                  fev0_opt = types::llvm_val_opt(fev.0)
+                  raw_fty = fev0_opt
+                     | f0 => LLVMTypeOf(f0)
+                     | types::llvm_type_of_vt(fev.1)
+                  decl_rf_opt = has_decl | <+ decl_fts(i)!! +> | <-->
+                  decl_vt = decl_rf_opt | rf => runtime::rec_field_vt(cg, rf) | fev.1
+                  decl_ll = decl_rf_opt | rf => runtime::rec_field_llvm_type(cg, rf) | raw_fty
+                  rec_t' = rm_f | m => m.0 | (cg.last_rt | _ | raw_fty)
+                  fty_i = fev_is_rec | rec_t' | (has_decl | decl_ll | raw_fty)
+                  raw_val = fev0_opt | _ | LLVMConstNull(fty_i)
+                  needs_coerce = has_decl && !fev_is_rec && !types::is_float_vt(decl_vt)
+                  fev_val = needs_coerce
+                     | stmt::coerce_int_ext(cg, raw_val, fty_i, types::is_unsigned_vt(decl_vt))
+                     | raw_val
+                  is_c = (types::llvm_val_opt(fev_val) | fv => LLVMIsConstant(fv) != 0 | <->)
+                  !is_c | all_const' = <->
+                  i == 0
+                     | first_ty' = fty_i
+                     | (fty_i != first_ty' | all_same_ty' = <->)
+                  fvals += fev_val
+                  ftypes += fty_i
+                  fnames' += tf.name
+                  fvts' += (has_decl | decl_vt | fev.1)
+               st' = types::struct_type_packed_n(cg, ftypes, nf, is_packed)
+               cg.last_rt = <+ st' +>
+               cg.last_fnames = fnames'
+               cg.last_fvts = fvts'
+               all_const' && all_same_ty' && !any_rec' && !is_packed && (nf !< 64)
+                  |
+                     buf = {nf * 8}
+                     esb = &buf
+                     nf @ k =>
+                        @[esb + k * 8] = fvals(k)!!
+                     arr_ty = LLVMArrayType(first_ty', nf)
+                     const_arr = LLVMConstArray2(first_ty', esb, nf)
+                     gname = "$const_arr." + str::from_int(?cg.typedefs) + "." + str::from_int(types::g.tmpc)
+                     types::g.tmpc = types::g.tmpc + 1
+                     gv = LLVMAddGlobal(cg.module, arr_ty, gname)
+                     LLVMSetInitializer(gv, const_arr)
+                     LLVMSetGlobalConstant(gv, 1)
+                     LLVMSetUnnamedAddr(gv, 1)
+                     LLVMSetLinkage(gv, 8)
+                     sz_c' = LLVMSizeOf(st')
+                     rec_ptr = expr::codegen_call_arena_alloc(cg, sz_c', "rec.alloc")
+                     gv_ptr = LLVMBuildPointerCast(cg.builder, gv, LLVMPointerType(LLVMInt8Type!, 0), "rec.const.src")
+                     rec_i8 = LLVMBuildPointerCast(cg.builder, rec_ptr, LLVMPointerType(LLVMInt8Type!, 0), "rec.const.dst")
+                     LLVMBuildMemCpy(cg.builder, rec_i8, 1, gv_ptr, 1, sz_c', 0)
+                     (rec_ptr, ast::ValueType(Record))
+                  |
+                     sz_c' = LLVMSizeOf(st')
+                     rec_ptr = expr::codegen_call_arena_alloc(cg, sz_c', "rec.alloc")
+                     nf @ j =>
+                        fgep' = LLVMBuildStructGEP2(cg.builder, st', rec_ptr, j,
+                           "rec.fld")
+                        fval_j = fvals(j)!!
+                        fld_is_rec = types::is_record_vt(fvts'(j) | _ | ast::ValueType(Unknown))
+                        fld_is_rec
+                           |
+                              fld_ty = ftypes(j)!!
+                              inner_sz' = LLVMSizeOf(fld_ty)
+                              LLVMBuildMemCpy(cg.builder, fgep', 1, fval_j, 1,
+                                 inner_sz', 0)
+                           | LLVMBuildStore(cg.builder, fval_j, fgep')
+                     (rec_ptr, ast::ValueType(Record))
       [Lambda lam]
          anon_name = "$anon_fn." + str::from_int(?cg.fninfos)
          lr = stmt::codegen_typed_compile_fn(cg, anon_name, lam.0, lam.1, te.ti, "")

@@ -3291,7 +3291,7 @@ codeg_eval_member_valid = cg, t, vname, bv =>
                   | LLVMBuildLShr(cg.builder, raw_val,
                      LLVMConstInt(bty, bf.bit_offset, 0), "bf.shr")
                   | raw_val
-               fmask = (1 .<. bf.bit_width) - 1
+               fmask = bf.bit_width !< 64 | -1 | ((1 .<. bf.bit_width) - 1)
                masked = LLVMBuildAnd(cg.builder, sh,
                   LLVMConstInt(bty, fmask, 0), "bf.mask")
                ext = LLVMBuildZExt(cg.builder, masked,

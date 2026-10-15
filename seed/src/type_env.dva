@@ -59,6 +59,7 @@
    discard_result: <>,
    in_fn: <>,
    in_lvalue: <>,
+   in_member_target: <>,
    generic_bindings: ast::Names,
    marked_globals: ast::Names,
    cur_fn_ret: <unify::UType|>,
@@ -83,7 +84,7 @@ new_env = !=>
    generics: (GenericDecl){}
    user_types: (UserTypeDef){}
    TypeEnv((scopes, 0, 0, globals, new_init(), generics,
-      user_types, CachedBodies(), "", <->, <->, <->,
+      user_types, CachedBodies(), "", <->, <->, <->, <->,
       ast::Names(), ast::Names(), <-->, "none"))
 
 cache_fn_body: TypeEnv, String, tast::TypedExpr => ()
@@ -458,7 +459,7 @@ init_is_fully_init = env, name, ut =>
                               all_wr' = <->
                               -->
                all_wr'
-            | <+>
+            | init_is_ok_walk(env, name) || init_has_name(env.init.written, name)
 
 bind_generic: TypeEnv, String, ast::TypeInfo => ()
 bind_generic = env, name, ti =>

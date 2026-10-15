@@ -5278,14 +5278,15 @@ codegen_typed_eval_member_normal = cg, target, fname, idx, ti =>
                            bf_ptr = vname != ""
                               | (types::var_slot(cg, vname) | _ | tv.0)
                               | tv.0
-                           raw_val = LLVMBuildLoad2(cg.builder, bty,
+                           is_direct = (LLVMGetTypeKind(LLVMTypeOf(bf_ptr)) == 8)
+                           raw_val = is_direct | bf_ptr | LLVMBuildLoad2(cg.builder, bty,
                               bf_ptr, "bf.load")
                            sh = bf.bit_offset > 0
                               | LLVMBuildLShr(cg.builder, raw_val,
                                  LLVMConstInt(bty, bf.bit_offset, 0),
                                  "bf.shr")
                               | raw_val
-                           fmask = (1 .<. bf.bit_width) - 1
+                           fmask = bf.bit_width !< 64 | -1 | ((1 .<. bf.bit_width) - 1)
                            masked = LLVMBuildAnd(cg.builder, sh,
                               LLVMConstInt(bty, fmask, 0), "bf.mask")
                            ext = LLVMBuildZExt(cg.builder, masked,
@@ -6959,7 +6960,11 @@ codegen_typed_eval_index = cg, target, index, ti =>
                               | fvs(0) | _ | ast::ValueType(Int)
                               | ast::ValueType(Int)
                            elem_vt' = ti [Rec r] r.3 | fvs_elem
-                           elem_ll' = types::llvm_type_of_vt(elem_vt')
+                           r_flds = target.ti [Rec r] r.0 | ast::FieldTypes()
+                           has_flds = ?r_flds > 0
+                           elem_ti = has_flds | r_flds(0)!!.rec_type | ast::TypeInfo(Prim, elem_vt')
+                           rm = runtime::record_meta_from_ti(cg, elem_ti)
+                           elem_ll' = rm | m => m.0 | types::llvm_type_of_vt(elem_vt')
                            typed_arr' = LLVMBuildPointerCast(cg.builder,
                               tv.0, LLVMPointerType(elem_ll', 0),
                               "rec.typed")
@@ -7028,13 +7033,31 @@ codegen_typed_eval_index = cg, target, index, ti =>
                   |
                      data = main::slice_data(cg, tv.0, "slice.data")
                      idx_i64' = main::codegen_widen_idx_to_i64(cg, iv.0, iv.1, "idx")
-                     i64t' = LLVMInt64Type!
-                     slot2 = types::gep1(cg, i64t', data, idx_i64',
-                        "slice.elem.gep")
-                     ev' = LLVMBuildLoad2(cg.builder, i64t', slot2,
-                        "slice.elem.raw")
-                     unpacked' = runtime::codegen_unpack_slot(cg, ev', ret_vt)
-                     (unpacked', ret_vt)
+                     sl_elem_vt = target.ti [Rec r] r.3 | ret_vt
+                     sl_flds = target.ti [Rec r] r.0 | ast::FieldTypes()
+                     elem_ti = ?sl_flds > 0 | sl_flds(0)!!.rec_type | ast::TypeInfo(Prim, sl_elem_vt)
+                     rm = runtime::record_meta_from_ti(cg, elem_ti)
+                     elem_ll' = rm | m => m.0 | types::llvm_type_of_vt(sl_elem_vt)
+                     typed_data = LLVMBuildPointerCast(cg.builder, data,
+                        LLVMPointerType(elem_ll', 0), "sl.typed")
+                     elem_gep = types::gep1(cg, elem_ll', typed_data, idx_i64',
+                        "sl.elem.gep")
+                     is_rec_elem = sl_elem_vt [Record]
+                     is_rec_elem
+                        | (elem_gep, ast::ValueType(Record))
+                        |
+                           is_narrow = (LLVMGetTypeKind(elem_ll') == 8) && (LLVMGetIntTypeWidth(elem_ll') < 64)
+                           is_narrow
+                              |
+                                 raw = LLVMBuildLoad2(cg.builder, elem_ll', elem_gep, "sl.elem.narrow")
+                                 cval = types::is_unsigned_vt(sl_elem_vt)
+                                    | LLVMBuildZExt(cg.builder, raw, LLVMInt64Type!, "sl.elem.zext")
+                                    | LLVMBuildSExt(cg.builder, raw, LLVMInt64Type!, "sl.elem.sext")
+                                 (cval, ret_vt)
+                              |
+                                 ev' = LLVMBuildLoad2(cg.builder, elem_ll', elem_gep, "slice.elem.raw")
+                                 unpacked' = runtime::codegen_unpack_slot(cg, ev', ret_vt)
+                                 (unpacked', ret_vt)
                   |
                      is_arr
                         |
@@ -7055,8 +7078,12 @@ codegen_typed_eval_index = cg, target, index, ti =>
                         |
                            is_rec
                               |
+                                 tgt_nm = target.kind [Var v] v.0 | ""
                                  r_flds = target.ti [Rec r] r.0 |
                                     ast::FieldTypes()
+                                 rec_nf = ?r_flds
+                                 rec_count = rec_nf > 0 | rec_nf | (tgt_nm != "" | ?match::var_fvts(cg, tgt_nm) | 0)
+                                 rec_count > 0 | main::codegen_emit_index_bounds_check(cg, iv.0, iv.1, rec_count)
                                  has_flds = ?r_flds > 0
                                  elem_ti = has_flds | r_flds(0)!!.rec_type |
                                     ast::TypeInfo(Prim, ret_vt)
@@ -7114,11 +7141,25 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
    is_sl
       |
          data' = main::slice_data(cg, tv.0, "slice.data")
-         i64t' = LLVMInt64Type!
          idx_i64' = main::codegen_widen_idx_to_i64(cg, iv.0, iv.1, "idx")
-         slot2 = types::gep1(cg, i64t', data', idx_i64', "slice.elem.gep")
-         cval' = runtime::codegen_pack_slot(cg, vv.0, vv.1)
-         LLVMBuildStore(cg.builder, cval', slot2)
+         sl_elem_vt = target.ti [Rec r] r.3 | vv.1
+         sl_flds = target.ti [Rec r] r.0 | ast::FieldTypes()
+         elem_ti = ?sl_flds > 0 | sl_flds(0)!!.rec_type | ast::TypeInfo(Prim, sl_elem_vt)
+         rm = runtime::record_meta_from_ti(cg, elem_ti)
+         elem_ll' = rm | m => m.0 | types::llvm_type_of_vt(sl_elem_vt)
+         typed_data = LLVMBuildPointerCast(cg.builder, data',
+            LLVMPointerType(elem_ll', 0), "sl.typed")
+         elem_gep = types::gep1(cg, elem_ll', typed_data, idx_i64', "sl.elem.gep")
+         is_rec_elem = sl_elem_vt [Record]
+         is_rec_elem
+            |
+               inner_sz = LLVMSizeOf(elem_ll')
+               LLVMBuildMemCpy(cg.builder, elem_gep, 1, vv.0, 1, inner_sz, 0)
+            |
+               is_flt = sl_elem_vt [Float]
+               cval' = is_flt | vv.0 | stmt::coerce_int_ext(cg, vv.0, elem_ll',
+                  types::is_unsigned_vt(sl_elem_vt))
+               LLVMBuildStore(cg.builder, cval', elem_gep)
          (vv.0, vv.1)
       |
          is_arr = tv.1 [Array]
@@ -7205,15 +7246,32 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
                is_rec = tv.1 [Record]
                is_rec
                   |
-                     elem_ll' = types::llvm_type_of_vt(vv.1)
+                     tgt_nm = target.kind [Var v] v.0 | ""
+                     r_flds = target.ti [Rec r] r.0 | ast::FieldTypes()
+                     rec_nf = ?r_flds
+                     rec_count = rec_nf > 0 | rec_nf | (tgt_nm != "" | ?match::var_fvts(cg, tgt_nm) | 0)
+                     rec_count > 0 | main::codegen_emit_index_bounds_check(cg, iv.0, iv.1, rec_count)
+                     has_flds = ?r_flds > 0
+                     elem_ti = has_flds | r_flds(0)!!.rec_type | ast::TypeInfo(Prim, vv.1)
+                     elem_vt = types::vt_from_ti(elem_ti)
+                     rm = runtime::record_meta_from_ti(cg, elem_ti)
+                     elem_ll_opt = tgt_nm != "" | (types::var_rt(cg, tgt_nm) | rt => <+ LLVMStructGetTypeAtIndex(rt, 0) +> | <-->) | <-->
+                     elem_ll' = elem_ll_opt | ty => ty | (rm | m => m.0 | types::llvm_type_of_vt(elem_vt))
                      idx_i64' = main::codegen_widen_idx_to_i64(cg, iv.0, iv.1, "idx")
                      typed_arr = LLVMBuildPointerCast(cg.builder, tv.0,
                         LLVMPointerType(elem_ll', 0), "rec.typed")
                      elem_gep = types::gep1(cg, elem_ll', typed_arr, idx_i64',
                         "rec.elem.gep")
-                     cval' = stmt::coerce_int_ext(cg, vv.0, elem_ll',
-                        types::is_unsigned_vt(vv.1))
-                     LLVMBuildStore(cg.builder, cval', elem_gep)
+                     is_rec_elem = elem_vt [Record]
+                     is_rec_elem
+                        |
+                           inner_sz = LLVMSizeOf(elem_ll')
+                           LLVMBuildMemCpy(cg.builder, elem_gep, 1, vv.0, 1, inner_sz, 0)
+                        |
+                           is_flt = elem_vt [Float]
+                           cval' = is_flt | vv.0 | stmt::coerce_int_ext(cg, vv.0, elem_ll',
+                              types::is_unsigned_vt(elem_vt))
+                           LLVMBuildStore(cg.builder, cval', elem_gep)
                      (vv.0, vv.1)
                   |
                      is_map = tv.1 [Map]
