@@ -52,8 +52,11 @@ Identifiers conform to UAX31. Edva has zero bare keywords. Directives start with
 
 ## 2.2 Literals
 - **Integers**: Decimal (`42`), Hexadecimal (`0x2A`), Binary (`0b101010`), Octal (`0o755`), Repeating (`0b1{4}`, `10{6}`, `0b1{48}`).
+  Limits: `0max`, `0min` (with optional suffixes: `0maxu64`, `0mini32`).
   Explicit type suffixes: `5i16`, `0xFFu8`, `100u32`, `9i64`, `0b1{32}u32`.
-- **Floats**: `3.14`, `0.5`, `1.0e-5`. Dangling dots (`.5`, `1.`) are illegal.
+- **Floats**: `3.14`, `0.5`, `1.0e-5`. Built-in FP constants: `-.0` (negative zero), `.inf`, `-.inf` (infinities),
+  `.max`, `-.max` (finite bounds), `.min` (minimal positive normal), `.sub` (minimal positive subnormal),
+  with optional suffixes (`.maxf32`, `-.0f32`). Dangling dots (`.5`, `1.`) are illegal.
 - **Runes**: Single Unicode codepoints: `'a'`, `'🔥'`, `'\n'`.
 - **Strings**:
   - Escaped: `"hello\nworld"`
@@ -124,7 +127,9 @@ classify = score =>
   - `[val]`: Equality test (`x [target]` == `x == target`).
   - `[1, 2, 3]`: Comma-separated value OR-list (matches if `x` equals any item).
   - `[> 89]`: Operator section predicate comparison.
-  - `[Variant(payload)]`: Tagged enum variant decomposition.
+  - `[Variant]`: Unit enum variant match (or payload-ignoring match; `[Variant _]` is disallowed).
+  - `[V1, V2]`: Multi-variant OR guard.
+  - `[Variant payload]`: Tagged enum variant payload binding (space-separated juxtaposition without parentheses; parentheses introduce a nested tuple/record subpattern such as `[Add (a, b)]`; construct enums with `Enum(Variant)` or `Enum(Variant, payload)`).
 - **Statement Choices**: Single-branch choices without fallbacks evaluate for side effects:
 ```dva partial reason="statement choice fragment"
 has_error | log("Error detected")

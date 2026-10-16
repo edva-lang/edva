@@ -479,21 +479,103 @@ scan_dec = lx, start, line, col =>
       | finish_float(lx, start, line, col)
       | finish_int(lx, start, line, col)
 
+is_int_lim: Lx => <>
+is_int_lim = lx =>
+   rem = ?lx.src - lx.pos
+   rem !< 4 && (lx.src(lx.pos..lx.pos + 4) ["0max", "0min"])
+      |
+         p = lx.pos + 4
+         rem2 = ?lx.src - p
+         s3 = rem2 !< 3 | lx.src(p..p + 3) | ""
+         s2 = rem2 !< 2 | lx.src(p..p + 2) | ""
+         has_s3 = s3 ["i16", "i32", "i64", "u16", "u32", "u64"]
+         has_s2 = !has_s3 && (s2 ["i8", "u8"])
+         suf_len = has_s3 | 3 | (has_s2 | 2 | 0)
+         end_p = p + suf_len
+         end_p !< ?lx.src
+            | <+>
+            |
+               r = unicode::decode_rune(lx.src, end_p)
+               !is_id_char(r)
+      | <->
+
 scan_num: Lx, Int, Int, Int => Tok
 scan_num = lx, start, line, col => 
    k = pk(lx, 0)
-   is_r = pk_off(lx, 1) ['b', 'B', 'o', 'O', 'x', 'X']
-   k == '0' && is_r
-      | scan_radix_rest(lx, pk_off(lx, 1), start, line, col)
-      | scan_dec(lx, start, line, col)
+   k == '0' && is_int_lim(lx)
+      |
+         4 @ adv(lx, pk(lx, 0))
+         finish_int(lx, start, line, col)
+      |
+         is_r = pk_off(lx, 1) ['b', 'B', 'o', 'O', 'x', 'X']
+         k == '0' && is_r
+            | scan_radix_rest(lx, pk_off(lx, 1), start, line, col)
+            | scan_dec(lx, start, line, col)
 
 pk_off: Lx, Int => Rune
 pk_off = lx, n => pk(lx, n)
+
+fp_const_base_len_at: Lx, Int => Int
+fp_const_base_len_at = lx, p =>
+   rem = ?lx.src - p
+   rem !< 4 && (lx.src(p..p + 4) [".inf", ".max", ".min", ".sub"])
+      | 4
+      | 0
+
+is_fp_const_at: Lx, Int => <>
+is_fp_const_at = lx, p =>
+   blen = fp_const_base_len_at(lx, p)
+   blen == 0
+      | <->
+      |
+         p_end_base = p + blen
+         rem = ?lx.src - p_end_base
+         s3 = rem !< 3 | lx.src(p_end_base..p_end_base + 3) | ""
+         s1 = rem !< 1 | lx.src(p_end_base..p_end_base + 1) | ""
+         has_f32 = s3 == "f32"
+         has_f = !has_f32 && (s1 ["f", "F"])
+         suf_len = has_f32 | 3 | (has_f | 1 | 0)
+         end_p = p_end_base + suf_len
+         end_p !< ?lx.src
+            | <+>
+            |
+               r = unicode::decode_rune(lx.src, end_p)
+               !is_id_char(r)
+
+is_fp_const: Lx => <>
+is_fp_const = lx => is_fp_const_at(lx, lx.pos)
+
+fp_const_base_len: Lx => Int
+fp_const_base_len = lx => fp_const_base_len_at(lx, lx.pos)
+
+is_neg_zero_at: Lx, Int => Int
+is_neg_zero_at = lx, start =>
+   rem = ?lx.src - start
+   rem !< 3 && lx.src(start..start + 3) == "-.0"
+      |
+         p = start + 3
+         rem2 = ?lx.src - p
+         s3 = rem2 !< 3 | lx.src(p..p + 3) | ""
+         s1 = rem2 !< 1 | lx.src(p..p + 1) | ""
+         has_f32 = s3 == "f32"
+         has_f = !has_f32 && (s1 ["f", "F"])
+         suf_len = has_f32 | 3 | (has_f | 1 | 0)
+         end_p = p + suf_len
+         end_p !< ?lx.src
+            | end_p - start
+            |
+               r = unicode::decode_rune(lx.src, end_p)
+               !is_id_char(r) | end_p - start | 0
+      | 0
 
 // Operators: the maximal unbroken run of special characters, as ONE generic
 // Op token. Ram literals, cycle jumps and operators are the parser's job.
 scan_op: Lx, Int, Int, Int => Tok
 scan_op = lx, start, line, col => 
+   neg_z_len = is_neg_zero_at(lx, start)
+   neg_z_len > 0 |
+      neg_z_len @ adv(lx, pk(lx, 0))
+      --| mktok(lx, TokKind(Float), start, neg_z_len, line, col, lx.src(start..start + neg_z_len))
    total = ?lx.src
    i' = lx.pos
    ncol' = lx.col
@@ -507,6 +589,13 @@ scan_op = lx, start, line, col =>
          | -->
    lx.pos = i'
    lx.col = ncol'
+   is_neg_fp_split = i' - start > 1 && lx.src(start) == '-' &&
+      lx.src(start + 1) == '.' && is_fp_const_at(lx, start + 1)
+   is_neg_fp_split |
+      lx.pos = start + 1
+      lx.col = col + 1
+      --| mktok(lx, TokKind(Op), start, 1, line, col, "-")
+
    // Range ".." followed by negative sign, '?', or other operator characters:
    // split ".." into the range operator and the separate trailing operator.
    is_dotdot_split = i' - start > 2 && lx.src(start) == '.' &&
@@ -628,7 +717,7 @@ skip_multiline_ws = src, i, n =>
    0.. @
       pos' !< n | -->
       c = src(pos')
-      c == ' ' || c == '\t' | pos' = pos' + 1 | -->
+      c [' ', '\t'] (pos' = pos' + 1) | -->
    pos'
 
 skip_eol_comment: String, Int, Int => Int
@@ -637,7 +726,7 @@ skip_eol_comment = src, i, n =>
    0.. @
       pos' !< n | -->
       c = src(pos')
-      c == '\n' || c == '\r' | -->
+      c ['\n', '\r'] -->
       pos' = pos' + 1
    pos'
 
@@ -1263,7 +1352,7 @@ count_leading_indent = s =>
    0.. @
       sp' !< ?s | -->
       c = s(sp')
-      c == ' ' || c == '\t' | sp' = sp' + 1 | -->
+      c [' ', '\t'] (sp' = sp' + 1) | -->
    sp'
 
 scan_heredoc_expr: Lx => TokArr
@@ -1521,6 +1610,12 @@ dispatch_bol: Lx, Int => Tok
 dispatch_bol = lx, q => 
    lx.bol [1] layout(lx, q) | dispatch_scan(lx)
 
+scan_fp_const: Lx, Int, Int, Int => Tok
+scan_fp_const = lx, start, line, col =>
+   blen = fp_const_base_len(lx)
+   blen @ adv(lx, pk(lx, 0))
+   finish_float(lx, start, line, col)
+
 // The scanner dispatch: one choice over the current rune (after skip_hws).
 // Order matters — the two-char lookaheads (/*, //) precede the generic
 // classes (delim, special). Every non-NUL rune is covered, so the eof_tok
@@ -1540,6 +1635,8 @@ dispatch_scan = lx =>
       ['#'] scan_hash(lx, lx.line, lx.col)
       [unicode::is_digit] scan_num(lx, lx.pos, lx.line, lx.col)
       ['\''] scan_rune(lx, lx.pos, lx.line, lx.col)
+      [(_ == '.' && is_fp_const(lx))]
+         scan_fp_const(lx, lx.pos, lx.line, lx.col)
       [is_special] scan_op(lx, lx.pos, lx.line, lx.col)
       [is_id_start] scan_ident(lx, lx.pos, lx.line, lx.col)
       ['"']

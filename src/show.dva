@@ -40,7 +40,7 @@ show_expr = e =>
       [Copy e] "Copy(" + show_expr(e) + ")"
       [BuilderCreate e] "Builder(" + show_expr(e) + ")"
       [ArrayCreate a] "ArrayCreate(" + str::from_int(a.cap) + ")"
-      [Assign t] "Assign(" + t.0 + " " + (t.2 | "+= " | (t.1 | ":= " | "= ")) +
+      [Assign t] "Assign(" + t.0 + " " + (t.2 | "+= " | "= ") +
          show_fwd_rhs(t.5) + ")"
       [Choice t] "Choice(" + show_expr(t.cond) + " " +
          show_branches(t.branches) + ")"
@@ -274,7 +274,7 @@ show_tree = e, ind =>
    pad = show_indent(ind)
    e
       [Assign t]
-         op = t.2 | "+=" | (t.1 | ":=" | "=")
+         op = t.2 | "+=" | "="
          pad + "Assign(" + t.0 + " " + op + ")\n" +
             show_tree(t.5, ind + 1)
       [Fn t]
@@ -420,7 +420,7 @@ show_typed_tree = ctx, te, ind =>
       str::from_int(te.layout.size) + "B]"
    te.kind
       [Assign t]
-         op = t.1 | ":=" | "="
+         op = "="
          pad + "Assign(" + t.0 + " " + op + ")" + info + "\n" +
             show_typed_tree(ctx, t.5, ind + 1)
       [Lambda t]

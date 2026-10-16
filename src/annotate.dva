@@ -703,7 +703,7 @@ annotate_type_size = env, vt, ti =>
             [I16, U16] 2
             [I32, U32, F32, Rune] 4
             [Int, I64, U64, Float] 8
-            [Addr, RawPtr] ptr_sz
+            [RawPtr] ptr_sz
             [Str, Slice, Map] ptr_sz * 2
             [Builder] ptr_sz * 3
             [Error] err_sz
@@ -718,12 +718,12 @@ is_int_or_ptr_ut: unify::Ctx, unify::UType => <>
 is_int_or_ptr_ut = ctx, ut =>
    c = unify::canon(ctx, ut)
    c [Prim p] (p [Int, Rune, I8, I16, I32, I64,
-      U8, U16, U32, U64, Addr, RawPtr]) | <->
+      U8, U16, U32, U64, RawPtr]) | <->
 
 is_ptr_ut: unify::Ctx, unify::UType => <>
 is_ptr_ut = ctx, ut =>
    c = unify::canon(ctx, ut)
-   c [Prim p] (p [Addr, RawPtr]) | <->
+   c [Prim p] (p [RawPtr]) | <->
 
 is_builder_ut: unify::Ctx, unify::UType => <>
 is_builder_ut = ctx, ut =>
@@ -2384,24 +2384,44 @@ ut_has_fn = ctx, ut, visited =>
                enum_variants_has_fn(ctx, e.variants, 0, ?e.variants, vis')
       | <->
 
+cmp_binop_name: ast::BinaryOp => String
+cmp_binop_name = op =>
+   op
+      [Gt] "Greater"
+      [Lt] "Less"
+      [Eq] "Equals"
+      [NotGt] "NotGreater"
+      [NotLt] "NotLess"
+      [NotEq] "NotEqual"
+      | ""
+
 unify_cmp_op: unify::Ctx, ast::BinaryOp, unify::UType,
    unify::UType => unify::UType
 unify_cmp_op = ctx, op, t1, t2 =>
    is_eq_neq = op [Eq, NotEq]
-   is_str_tuple = is_eq_neq &&
-      ((is_str_ut(ctx, t1) && is_str_record(ctx, t2)) ||
-       (is_str_record(ctx, t1) && is_str_ut(ctx, t2)))
-   is_str_tuple
-      | unify::prim_flag()
+   c1_ord = unify::canon(ctx, t1)
+   c2_ord = unify::canon(ctx, t2)
+   is_enum_ord = !is_eq_neq && ((c1_ord [Enum]) || (c2_ord [Enum]))
+   is_enum_ord
       |
-         has_fn = is_eq_neq &&
-            (ut_has_fn(ctx, t1, ast::Names()) || ut_has_fn(ctx, t2, ast::Names()))
-         has_fn
+         unify::add_error(ctx, 3127, "Operator '" + cmp_binop_name(op) +
+            diag::E3127_enum_ordering_suffix!)
+         unify::prim_flag()
+      |
+         is_str_tuple = is_eq_neq &&
+            ((is_str_ut(ctx, t1) && is_str_record(ctx, t2)) ||
+             (is_str_record(ctx, t1) && is_str_ut(ctx, t2)))
+         is_str_tuple
+            | unify::prim_flag()
             |
-               unify::add_error(ctx, 3084,
-                  "Type containing function does not support equality")
-               unify::prim_flag()
-            | unify_cmp(ctx, t1, t2)
+               has_fn = is_eq_neq &&
+                  (ut_has_fn(ctx, t1, ast::Names()) || ut_has_fn(ctx, t2, ast::Names()))
+               has_fn
+                  |
+                     unify::add_error(ctx, 3084,
+                        "Type containing function does not support equality")
+                     unify::prim_flag()
+                  | unify_cmp(ctx, t1, t2)
 
 annotate_bin_op: unify::Ctx, ast::BinaryOp, unify::UType,
    unify::UType => unify::UType
@@ -3588,6 +3608,82 @@ annotate_call_normal = ctx, env, ce =>
          c_udef
             [Rec flds]
                annotate_record_ctor(ctx, env, ce, udef, flds)
+            [Enum uenum]
+               n_args = ?ce.args
+               ti = udef.ti
+               lay = layout::compute_layout(ctx, udef.ut)
+               typed_args = tast::TypedExprs()
+               n_args == 0
+                  |
+                     unify::add_error(ctx, 3096,
+                        diag::enum_no_variant(ce.fn_name, ""))
+                  |
+                     arg0_e = ce.args(0) | _ | ast::Expr(Var, "")
+                     lbl_str = arg0_e [Var v] v | ""
+                     idx' = -1
+                     ?uenum.variants @ si =>
+                        v_info = uenum.variants(si) | _ |
+                           unify::UEnumVariant(("", <->, unify::UType(None)))
+                        v_info.label == lbl_str | (idx' = si; -->)
+                     idx' < 0
+                        |
+                           can_cast = n_args == 1 &&
+                              (lbl_str == "" || <>(type_env::lookup_binding(env, lbl_str)))
+                           can_cast
+                              |
+                                 a0 = annotate_call_arg(ctx, env, arg0_e)
+                                 typed_args += a0
+                                 ok_cast = unify::unify(ctx, udef.ut, a0.ut)
+                                 !ok_cast
+                                    |
+                                       unify::add_error(ctx, 3096,
+                                          diag::enum_no_variant(ce.fn_name, lbl_str))
+                              |
+                                 unify::add_error(ctx, 3096,
+                                    diag::enum_no_variant(ce.fn_name, lbl_str))
+                        |
+                           v_info = uenum.variants(idx') | _ |
+                              unify::UEnumVariant(("", <->, unify::UType(None)))
+                           typed_args += tast::mk_typed_var(lbl_str, 0, <->,
+                              udef.ut, ti, lay, ce.line, ce.col)
+                           ?ce.args @ ai =>
+                              ai > 0
+                                 |
+                                    a_e = ce.args(ai) | _ | ast::Expr(Int, 0)
+                                    saved_enum_exp = cur_expected_ut
+                                    (ai == 1 && v_info.has_payload)
+                                       | cur_expected_ut ::= <+ v_info.payload_type +>
+                                    a_te = annotate_call_arg(ctx, env, a_e)
+                                    cur_expected_ut ::= saved_enum_exp
+                                    typed_args += a_te
+                           !v_info.has_payload && n_args > 1
+                              |
+                                 unify::add_error(ctx, 3098,
+                                    diag::enum_unit_payload(ce.fn_name, lbl_str))
+                           v_info.has_payload && n_args == 1
+                              |
+                                 unify::add_error(ctx, 3097,
+                                    "Enum '" + ce.fn_name + "' variant '" +
+                                    lbl_str + "' requires a payload argument.")
+                           v_info.has_payload && n_args > 2
+                              |
+                                 unify::add_error(ctx, 3098,
+                                    "Enum '" + ce.fn_name + "' variant '" +
+                                    lbl_str + "' takes 1 payload argument, got " +
+                                    str::from_int(n_args - 1) + ".")
+                           v_info.has_payload && n_args == 2
+                              |
+                                 arg1 = typed_args(1) | _ | tast::mk_lit_unit(0, 0)
+                                 ok_p = unify::unify(ctx, v_info.payload_type, arg1.ut)
+                                 !ok_p
+                                    |
+                                       exp_name = unify::show_utype(ctx, v_info.payload_type)
+                                       got_name = unify::show_utype(ctx, arg1.ut)
+                                       unify::add_error(ctx, 3099,
+                                          diag::enum_payload_type(ce.fn_name,
+                                             lbl_str, exp_name, got_name))
+               tast::mk_typed_call(ce.fn_name, <-->, typed_args, udef.ut, ti,
+                  lay, ce.line, ce.col)
             |
                typed_args = tast::TypedExprs()
                ?ce.args @ i =>
@@ -3612,47 +3708,6 @@ annotate_call_normal = ctx, env, ce =>
                         |
                            a0 = typed_args(0) | _ | tast::mk_lit_int(0, 0, 0)
                            unify::unify(ctx, udef.ut, a0.ut)
-               c_udef
-                  [Enum uenum]
-                     n_args = ?ce.args
-                     arg0_e = n_args > 0 | (ce.args(0) | _ | ast::Expr(Var, "")) | ast::Expr(Var, "")
-                     lbl_str = arg0_e [Var v] v | ""
-                     idx' = -1
-                     ?uenum.variants @ si =>
-                        v_info = uenum.variants(si) | _ |
-                           unify::UEnumVariant(("", <->, unify::UType(None)))
-                        v_info.label == lbl_str | (idx' = si; -->)
-                     idx' < 0
-                        |
-                           n_args == 1
-                              |
-                                 a0 = typed_args(0) | _ | tast::mk_lit_unit(0, 0)
-                                 ok_cast = unify::unify(ctx, udef.ut, a0.ut)
-                                 !ok_cast
-                                    |
-                                       unify::add_error(ctx, 3096,
-                                          diag::enum_no_variant(ce.fn_name, lbl_str))
-                              |
-                                 unify::add_error(ctx, 3096,
-                                    diag::enum_no_variant(ce.fn_name, lbl_str))
-                        |
-                           v_info = uenum.variants(idx') | _ |
-                              unify::UEnumVariant(("", <->, unify::UType(None)))
-                           !v_info.has_payload && n_args > 1
-                              |
-                                 unify::add_error(ctx, 3098,
-                                    diag::enum_unit_payload(ce.fn_name, lbl_str))
-                           v_info.has_payload && n_args > 1
-                              |
-                                 arg1 = typed_args(1) | _ | tast::mk_lit_unit(0, 0)
-                                 ok_p = unify::unify(ctx, v_info.payload_type, arg1.ut)
-                                 !ok_p
-                                    |
-                                       exp_name = unify::show_utype(ctx, v_info.payload_type)
-                                       got_name = unify::show_utype(ctx, arg1.ut)
-                                       unify::add_error(ctx, 3099,
-                                          diag::enum_payload_type(ce.fn_name,
-                                             lbl_str, exp_name, got_name))
                ti = udef.ti
                lay = layout::compute_layout(ctx, udef.ut)
                tast::mk_typed_call(ce.fn_name, <-->, typed_args, udef.ut, ti,
@@ -4035,6 +4090,68 @@ choice_has_constant_branch = c =>
       choice_branch_is_constant(br.block) | (has' = <+>; -->)
    has'
 
+bare_enum_label: String => String
+bare_enum_label = s =>
+   n = ?s
+   res' = s
+   n @ i =>
+      (i + 1 < n && s(i) == ':' && s(i + 1) == ':')
+         | res' = s(i + 2..n)
+   res'
+
+enum_branches_has_bare: ast::Branches => <>
+enum_branches_has_bare = branches =>
+   has' = <->
+   ?branches @ i =>
+      br = branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
+         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+         ast::Expr(Int, 0)))
+      br.kind [Bare] (has' = <+>; -->)
+   has'
+
+enum_branches_cover_label: ast::Branches, String => <>
+enum_branches_cover_label = branches, label =>
+   found' = <->
+   ?branches @ i =>
+      br = branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
+         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+         ast::Expr(Int, 0)))
+      br.kind
+         [Variant]
+            ?br.variant_names @ vi =>
+               vn = bare_enum_label(br.variant_names(vi) | _ | "")
+               vn == label | (found' = <+>; -->)
+            found' | -->
+   found'
+
+enum_branches_missing: unify::UEnumVariants, ast::Branches => String
+enum_branches_missing = variants, branches =>
+   enum_branches_has_bare(branches)
+      | ""
+      |
+         missing' = ++""
+         ?variants @ i =>
+            v = variants(i) | _ | unify::UEnumVariant(("", <->, unify::UType(None)))
+            v.label != "" && !enum_branches_cover_label(branches, v.label)
+               |
+                  missing' = missing' == "" | ++v.label | missing' + ", " + v.label
+         missing'
+
+all_tb_unit: unify::Ctx, tast::TypedBranches => <>
+all_tb_unit = ctx, tb_list =>
+   all_u' = <+>
+   ?tb_list @ i =>
+      tb = tb_list(i) | _ | tast::TypedBranch((ast::GuardKind(Bare),
+         tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
+         tast::mk_lit_unit(0, 0)))
+      is_jump = expr_is_jump(tb.body) || is_error_ut(ctx, tb.body.ut)
+      !is_jump
+         |
+            c_b = unify::canon(ctx, tb.body.ut)
+            is_u = c_b [Prim p] (p [Unit]) | <->
+            !is_u | (all_u' = <->; -->)
+   all_u'
+
 annotate_choice: unify::Ctx, type_env::TypeEnv,
    ast::ChoiceExpr, <> => tast::TypedExpr
 annotate_choice = ctx, env, ch, is_disc =>
@@ -4051,6 +4168,25 @@ annotate_choice = ctx, env, ch, is_disc =>
             |
                unify::add_error(ctx, 3003, diag::E3003_choice_underscore_undefined!)
    cond_te = annotate_expr(ctx, env, ch.cond)
+   c_cond0 = unify::canon(ctx, cond_te.ut)
+   is_synth_extract = ?ch.branches == 1 && ch.is_exhaustive
+   missing_enum_labels' = ++""
+   is_exhaustive' = ch.is_exhaustive
+   c_cond0
+      [Enum uenum0_raw]
+         uenum0' = uenum0_raw
+         ?uenum0'.variants == 0 && uenum0'.name != ""
+            |
+               ut_opt0 = type_env::lookup_user_type(env, uenum0'.name)
+               ut_opt0
+                  | udef0 =>
+                     c_udef0 = unify::canon(ctx, udef0.ut)
+                     c_udef0
+                        [Enum ue0_res] (uenum0' = ue0_res)
+         !is_synth_extract
+            |
+               missing_enum_labels' = enum_branches_missing(uenum0'.variants, ch.branches)
+               is_exhaustive' = missing_enum_labels' == ""
    tb_list = tast::TypedBranches()
    res_ut = unify::fresh_var(ctx)
    init_pre = type_env::init_snapshot(env)
@@ -4066,6 +4202,7 @@ annotate_choice = ctx, env, ch, is_disc =>
       payload_ut' = unify::fresh_var(ctx)
       has_pay' = <->
       is_unit_slot' = <->
+      br_kind' = br.kind
       c_cond
          [Ram r]
             i == 0
@@ -4077,21 +4214,79 @@ annotate_choice = ctx, env, ch, is_disc =>
                   r.1.has_payload
                      | (payload_ut' = r.1.ut; has_pay' = <+>)
                      | (is_unit_slot' = <+>)
-         [Enum uenum]
-            vname = br.variant_names(0) | _ | ""
+         [Enum uenum_raw]
+            uenum' = uenum_raw
+            ?uenum'.variants == 0 && uenum'.name != ""
+               |
+                  ut_opt_e = type_env::lookup_user_type(env, uenum'.name)
+                  ut_opt_e
+                     | udef_e =>
+                        c_udef = unify::canon(ctx, udef_e.ut)
+                        c_udef
+                           [Enum ue_res] (uenum' = ue_res)
+            enum_disp = uenum'.name != "" | bare_enum_label(uenum'.name) |
+               (cond_te.ti [TypeVar tv] bare_enum_label(tv) | "enum")
             def_ev = unify::UEnumVariant(("", <->, unify::UType(None)))
-            ?uenum.variants @ v_k =>
-               v = uenum.variants(v_k) | _ | def_ev
-               v.label == vname
-                  |
-                     v.has_payload
-                        | (payload_ut' = v.payload_type; has_pay' = <+>; -->)
-                        | (is_unit_slot' = <+>; -->)
+            is_var_br = br.kind [Variant]
+            is_var_br
+               |
+                  n_ev = ?uenum'.variants
+                  n_ev == 0
+                     |
+                        nbv = ?br.bind_vars
+                        has_pay' = nbv != 0
+                     |
+                        ?br.variant_names @ vn_i =>
+                           vn_raw = br.variant_names(vn_i) | _ | ""
+                           vname = bare_enum_label(vn_raw)
+                           found_v' = <->
+                           ?uenum'.variants @ v_k =>
+                              v = uenum'.variants(v_k) | _ | def_ev
+                              v.label == vname
+                                 |
+                                    found_v' = <+>
+                                    vn_i == 0
+                                       |
+                                          v.has_payload
+                                             | (payload_ut' = v.payload_type; has_pay' = <+>)
+                                             | (is_unit_slot' = <+>)
+                                    -->
+                           !found_v'
+                              |
+                                 unify::add_error(ctx, 3096,
+                                    diag::enum_no_variant(enum_disp, vname))
+                        is_unit_slot'
+                           |
+                              ?br.bind_vars @ bvi =>
+                                 bv_chk = br.bind_vars(bvi) | _ | ""
+                                 bv_chk != "" && bv_chk != "_"
+                                    |
+                                       v0_lbl = bare_enum_label(br.variant_names(0) | _ | "")
+                                       unify::add_error(ctx, 3098,
+                                          diag::enum_unit_payload(enum_disp, v0_lbl))
+                                       -->
+               | (is_unit_slot' = <+>)
          |
             is_bare = br.kind [Bare]
             is_bare
                | (payload_ut' = cond_te.ut)
-               | (is_unit_slot' = <+>)
+               |
+                  is_unit_slot' = <+>
+                  is_var_br = br.kind [Variant]
+                  is_var_cond = c_cond [Var]
+                  is_type_cond = c_cond [Prim p] (p [Type]) | <->
+                  is_var_br && !is_var_cond && !is_type_cond
+                     |
+                        has_named_bind' = <->
+                        ?br.bind_vars @ bvi =>
+                           bv_chk = br.bind_vars(bvi) | _ | ""
+                           bv_chk != "" && bv_chk != "_" | (has_named_bind' = <+>)
+                        has_named_bind'
+                           |
+                              unify::add_error(ctx, 3084,
+                                 "Variant pattern guard cannot be applied to non-enum type " +
+                                 unify::show_utype(ctx, c_cond))
+                           | (br_kind' = ast::GuardKind(Case))
       typed_cvs = tast::TypedExprs()
       ?br.case_values @ cv_i =>
          cv = br.case_values(cv_i) | _ | ast::Expr(Int, 0)
@@ -4106,7 +4301,14 @@ annotate_choice = ctx, env, ch, is_disc =>
                      unify::unify(ctx, cond_te.ut, p0_cv)
                   | unify::unify(ctx, cond_te.ut, cv_te.ut)
             | unify::unify(ctx, cond_te.ut, cv_te.ut)
-      is_pred = br.kind [Predicate]
+      (?br.case_values == 0 && (br_kind' [Case]) && ?br.variant_names > 0)
+         |
+            ?br.variant_names @ vn_i =>
+               vn_str = br.variant_names(vn_i) | _ | ""
+               cv_te = annotate_expr(ctx, env, ast::Expr(Var, vn_str))
+               typed_cvs += cv_te
+               unify::unify(ctx, cond_te.ut, cv_te.ut)
+      is_pred = br_kind' [Predicate]
       pred_opt = is_pred
          |
             pred_te = annotate_expr(ctx, env, br.pred_fn)
@@ -4153,7 +4355,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                         annotate_expr(ctx, env, br.block)
                |
                   vname = br.block [Var v] v | ""
-                  is_var_bare = br.kind [Bare, Case, Variant] && vname != "" && vname != "_"
+                  is_var_bare = br_kind' [Bare, Case, Variant] && vname != "" && vname != "_"
                   bnd_opt = is_var_bare
                      | type_env::lookup_binding(env, vname)
                      | <-->
@@ -4193,22 +4395,22 @@ annotate_choice = ctx, env, ch, is_disc =>
                   init_merged' = type_env::init_snapshot(env)
                   has_merged' = <+>
             num_joins' = num_joins' + 1
-            ch.is_exhaustive && !is_disc
+            is_exhaustive' && !is_disc
                |
                   ok = unify::unify(ctx, res_ut, body_te.ut)
                   !ok
                      |
                         unify::add_error(ctx, 3084,
                            diag::E3084_choice_branch_mismatch!)
-      tbr = tast::TypedBranch((br.kind, typed_cvs, pred_opt,
+      tbr = tast::TypedBranch((br_kind', typed_cvs, pred_opt,
          br.variant_names, cur_bind_vars, body_te))
       tb_list += tbr
    has_merged' | type_env::init_restore(env, init_merged')
    final_ut' = unify::prim_unit()
-   ch.is_exhaustive && !is_disc && num_joins' > 0
+   is_exhaustive' && !is_disc && num_joins' > 0
       | (final_ut' = res_ut)
       |
-         !ch.is_exhaustive && !is_disc && num_joins' > 0
+         !is_exhaustive' && !is_disc && num_joins' > 0
             |
                pn_check = choice_check_ram_pn(ctx, tb_list)
                pn_check
@@ -4265,6 +4467,26 @@ annotate_choice = ctx, env, ch, is_disc =>
                                     <->, ast::Expr(Variant, (ast::Tag(Succ),
                                        ast::Exprs()))))
                            final_ut' = ram_np_ut
+                        |
+                           missing_enum_labels' != "" && !all_tb_unit(ctx, tb_list)
+                              |
+                                 ?tb_list @ tbi =>
+                                    tb_item = tb_list(tbi) | _ | tast::TypedBranch((
+                                       ast::GuardKind(Bare), tast::TypedExprs(), <-->,
+                                       ast::Names(), ast::Names(), tast::mk_lit_unit(0, 0)))
+                                    is_j = expr_is_jump(tb_item.body) || is_error_ut(ctx, tb_item.body.ut)
+                                    !is_j
+                                       |
+                                          ok_u = unify::unify(ctx, res_ut, tb_item.body.ut)
+                                          !ok_u
+                                             |
+                                                unify::add_error(ctx, 3084,
+                                                   diag::E3084_choice_branch_mismatch!)
+                                 unify::add_error(ctx, 3102,
+                                    "Choice over an enum does not cover variants: " +
+                                    missing_enum_labels' +
+                                    " — add a branch for each or a trailing '|' fallback.")
+                                 final_ut' = res_ut
    cur_expected_ut ::= saved_choice_exp
    ti = unify::type_info_from_utype(ctx, final_ut')
    lay = layout::compute_layout(ctx, final_ut')
@@ -4821,20 +5043,11 @@ register_enum_variants = env, td_name, td_ut =>
          ?uenum.variants @ v_i =>
             v = uenum.variants(v_i) | _ |
                unify::UEnumVariant(("", <->, unify::UType(None)))
-            v.label != ""
+            v.label != "" && !v.has_payload
                |
-                  v.has_payload
-                     |
-                        f_params = unify::UTypes()
-                        f_params += v.payload_type
-                        fn_ut = unify::mk_fn(f_params, td_ut)
-                        type_env::bind_local(env, v.label, fn_ut, td_ti, <->)
-                        type_env::bind_local(env, td_name + "::" + v.label,
-                           fn_ut, td_ti, <->)
-                     |
-                        type_env::bind_local(env, v.label, td_ut, td_ti, <->)
-                        type_env::bind_local(env, td_name + "::" + v.label,
-                           td_ut, td_ti, <->)
+                  type_env::bind_local(env, v.label, td_ut, td_ti, <->)
+                  type_env::bind_local(env, td_name + "::" + v.label,
+                     td_ut, td_ti, <->)
 
 #type ElabStats (
    num_stmts: Int,

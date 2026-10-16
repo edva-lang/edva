@@ -186,7 +186,7 @@ binop_name = op =>
 codegen_emit_cmp_enum_order_error: types::Cg, ast::BinaryOp => (Addr, ast::ValueType)
 codegen_emit_cmp_enum_order_error = cg, op =>
    types::init_error(cg, "E3127", "Operator '" + binop_name(op) +
-      diag::E3127_ram_ordering_suffix!, 0, 0)
+      diag::E3127_enum_ordering_suffix!, 0, 0)
    (LLVMConstNull(LLVMInt1Type!), ast::ValueType(Flag))
 
 find_enum_slots_search: types::Cg, Int, Int => ast::EnumSlots

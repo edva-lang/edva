@@ -2585,7 +2585,7 @@ codegen_typed_eval = cg, te =>
                decl_vt = types::var_type(cg, rv)
                vt0 = types::vt_from_ti_cg(cg, te.ti)
                vt' = vt0 [Unknown, Unit] decl_vt | vt0
-               eff_ti = te.ti [Unknown, Unit] expr::var_ti(cg, rv) | te.ti
+               eff_ti = vt0 [Unknown, Unit] expr::var_ti(cg, rv) | te.ti
                bf_v_opt = types::ti_get_bitfield(cg, eff_ti)
                vt' = bf_v_opt | b => b.backing_type | vt'
                ty' = types::is_unboxed_ram_ti(cg, eff_ti)

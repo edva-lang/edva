@@ -4704,7 +4704,8 @@ codegen_typed_eval_logical_evaled = cg, is_and, lv, lhs_ti, rhs, ti =>
          types::g.tmpc = types::g.tmpc + 1
          sc = str::from_int(t0)
          pre = is_and | "and." + sc | "or." + sc
-         eff_ti = ti [Unknown, Unit] rhs.ti | ti
+         ti_vt = types::vt_from_ti(ti)
+         eff_ti = ti_vt [Unknown, Unit] rhs.ti | ti
          res_vt0 = types::vt_from_ti(eff_ti)
          res_vt = res_vt0 [Unknown, Unit] lv.1 | res_vt0
          res_lt0 = types::is_unboxed_ram_ti(cg, eff_ti)

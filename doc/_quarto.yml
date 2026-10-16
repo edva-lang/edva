@@ -36,6 +36,7 @@ book:
         - reference/types/string.qmd
         - reference/types/builder.qmd
         - reference/types/ram.qmd
+        - reference/types/enum.qmd
         - reference/types/record.qmd
         - reference/types/array.qmd
         - reference/types/map.qmd

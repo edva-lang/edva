@@ -3201,7 +3201,7 @@ concat.tot.len18:                                 ; preds = %str_overflow_abort1
   store i64 %sum, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
-  %call.res22 = call ptr @"diag::E3127_ram_ordering_suffix"()
+  %call.res22 = call ptr @"diag::E3127_enum_ordering_suffix"()
   %concat.lhs23 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 0
   %concat.lhs24 = load i64, ptr %concat.lhs23, align 8
   %concat.lhs25 = and i64 %concat.lhs24, 281474976710655
@@ -3414,7 +3414,7 @@ choice.next47:                                    ; preds = %choice.next42
   br label %choice.exit
 }
 
-declare ptr @"diag::E3127_ram_ordering_suffix"() #1
+declare ptr @"diag::E3127_enum_ordering_suffix"() #1
 
 declare void @"types::init_error"(ptr, ptr, ptr, i64, i64) #1
 
@@ -13350,6 +13350,8 @@ str_overflow_abort64:                             ; preds = %concat.sum.len58
   call void @exit(i32 1)
   br label %concat.tot.len63
 }
+
+declare ptr @"diag::E3127_ram_ordering_suffix"() #1
 
 declare i1 @"types::is_unsigned_vt"(ptr) #1
 

@@ -286,9 +286,12 @@
       oklab_to_rgba((new_l, lab(1), lab(2), lab(3)))
 
    // --- Packed 24-bit TrueColor Integer Operations (0xRRGGBB) ---
-   rgb: Int, Int, Int => Int
-   rgb = r, g, b =>
+   pack_rgb: Int, Int, Int => Int
+   pack_rgb = r, g, b =>
       ((r .&. 0xFF) .<. 16) .|. ((g .&. 0xFF) .<. 8) .|. (b .&. 0xFF)
+
+   rgb24: Int, Int, Int => Int
+   rgb24 = r, g, b => pack_rgb(r, g, b)
 
    red: Int => Int
    red = c => (c .>. 16) .&. 255

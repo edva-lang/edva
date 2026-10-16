@@ -12,10 +12,6 @@ E1017_heredoc_under_indented = !=> "Line indented less than closing delimiter in
 E1018_heredoc_unterminated: () => String
 E1018_heredoc_unterminated = !=> "Unterminated here-doc literal -- missing closing '\"\"\"'"
 
-E2010_colon_equals_retired: () => String
-E2010_colon_equals_retired = !=> "':=' is retired — use '=' with a prime suffix ('foo'') " +
-   "for mutable variables."
-
 E2024_bare_bar_position: () => String
 E2024_bare_bar_position = !=>
    "Bare '|' is only allowed as the first branch (Left Value) or final " +
@@ -312,6 +308,11 @@ E3127_ram_ordering_suffix: () => String
 E3127_ram_ordering_suffix = !=>
    "' cannot be applied to ramifications — ramifications have no ordering; test their " +
    "slots with '|' branches instead."
+
+E3127_enum_ordering_suffix: () => String
+E3127_enum_ordering_suffix = !=>
+   "' cannot be applied to enums — enums have no ordering; match their " +
+   "variants with '[Variant]' branches instead."
 
 record_field_index_constant: () => String
 record_field_index_constant = !=>

@@ -25,6 +25,7 @@ Native type names in Edva are strictly uppercase (`Int`, `Float`, `String`, `Add
 | **Byte Strings** | [`String`](string.qmd) | `{ i64 len, ptr data }` | Immutable, length-prefixed, NUL-reserved byte sequence |
 | **Buffers** | [`Builder`](builder.qmd) | `{ i64 len, ptr data, i64 cap }` | Uniquely owned, growable mutable byte buffer |
 | **Ramifications** | [`Flag` & Rams](ram.qmd) | `i1` or `{ i64 tag, ptr payload }` | Binary polarities, options, fallibles, and results |
+| **Enums** | [`Enum`](enum.qmd) | `{ i64 tag, ptr payload }` | Nominal tagged unions of $\ge 2$ unit or payload-bearing variants |
 | **Records** | [`Record`](record.qmd) | `{ T1, T2, ... }` | Named, positional, homogeneous, and packed bitfield records |
 | **Arrays & Slices** | [`Array` & `Slice`](array.qmd) | `{ i64 len, ptr data, i64 cap }` | Growable dynamic arrays and non-owning contiguous slices |
 | **Hash Maps** | [`Map`](map.qmd) | `{ ptr table, i64 count, i64 cap }` | Associative key-value tables (`Key ^ Value`) |

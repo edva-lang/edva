@@ -109,9 +109,7 @@ token_is_op = t, text => tok_is_op(t) && t.text == text
 
 token_is_pipe: lexer::Tok => <>
 token_is_pipe = t =>
-   tok_is_op(t) && (t.text == "|" || t.text == "!|" ||
-      t.text == "|->" || t.text == "|+>" ||
-      t.text == "|-->" || t.text == "|++>")
+   tok_is_op(t) && (t.text ["|", "!|", "|->", "|+>", "|-->", "|++>"])
 
 // Whether an operator text already has a meaning: a built-in binary operator
 // (the generated bin_info table) or one of the special token forms (ram
@@ -125,7 +123,7 @@ op_is_reserved = text =>
          text
             ["<+", "<-", "<+>", "<->", "<++>", "<-->", "<>", "+>", "->",
             "-->", "--^", "--|", ">--", "@", "[@",
-            "@", "^", "^?", "?", "!", "*", "&", "=>",
+            "@@", "^", "^?", "?", "!", "*", "&", "=>",
             "!=>", "|", "$:", "|->", "|+>", "|-->", "|++>"]
 
 user_op_lookup: (UserOpEntry){}, String => (found': <>, lbp': Int, rbp': Int)
@@ -820,11 +818,16 @@ atom_minus = p =>
 atom_minus_int: Parser => <ast::Expr|>
 atom_minus_int = p =>
    parser_advance(p)
-   r = parse_int_text(p.curr.text)
+   text = p.curr.text
+   r = parse_int_text(text)
    r
       | v =>
          parser_advance(p)
-         <+ ast::Expr(Int, 0 - v) +>
+         suf = int_suffix_vt(text)
+         iexpr = ast::Expr(Int, 0 - v)
+         suf.1
+            | <+ ast::Expr(TypeCast, ast::CastExpr((suf.0, iexpr))) +>
+            | <+ iexpr +>
       | <-->
 
 atom_minus_float: Parser => <ast::Expr|>
@@ -836,7 +839,8 @@ atom_minus_float = p =>
       | v =>
          parser_advance(p)
          vt = float_suffix_vt(text)
-         flt = ast::Expr(Float, 0.0 - v)
+         neg_val = v == 0.0 | -1.0 * 0.0 | (0.0 - v)
+         flt = ast::Expr(Float, neg_val)
          vt [F32]
             <+ ast::Expr(TypeCast, ast::CastExpr((ast::ValueType(F32),
                flt))) +>
@@ -1160,7 +1164,7 @@ atom_user_diag = p, is_warn =>
    is_term = p.curr.kind [Newline, Dedent, Semi, Eof]
    is_op = p.curr.kind [Op]
    txt = p.curr.text
-   is_br = txt == "]" || txt == "|" || txt == "!|" || txt == ")"
+   is_br = txt ["]", "|", "!|", ")"]
    is_end = is_term || (is_op && is_br)
    is_end
       |
@@ -1470,9 +1474,8 @@ atom_double_colon = p =>
                   | <+ ast::Expr(Var, name) +>
             |
                p.curr.text
-                  [":="] parse_named_assign_g(p, name, <+>, <->, <+>)
-                  ["="] parse_named_assign_g(p, name, <->, <->, <+>)
-                  ["+="] parse_named_assign_g(p, name, <->, <+>, <+>)
+                  ["="] parse_named_assign_g(p, name, <->, <+>)
+                  ["+="] parse_named_assign_g(p, name, <+>, <+>)
                   [":"] parse_colon_ctx_g(p, name, <+>)
                   ["("] parse_expr_after_lparen(p, name)
                   | <+ ast::Expr(Var, name) +>
@@ -1482,7 +1485,7 @@ atom_double_colon = p =>
          <-->
 
 // A non-reserved operator symbol in primary position: mirror of atom_ident for
-// the '.'-free symbol forms — ":=" / "=" / "+=" / "::=" define or rebind the
+// the '.'-free symbol forms — "=" / "+=" / "::=" define or rebind the
 // operator function, ":" starts the forward annotation (with the optional
 // #infix fixity clause), "(" is a prefix call, and anything else is a bare
 // function value (which pp_member/postfix-calls then chain or call).
@@ -1496,9 +1499,8 @@ atom_op_ident = p, name =>
             | <+ ast::Expr(Var, name) +>
       |
          p.curr.text
-            [":="] parse_named_assign(p, name, <+>, <->)
-            ["="] parse_named_assign(p, name, <->, <->)
-            ["+="] parse_named_assign(p, name, <->, <+>)
+            ["="] parse_named_assign(p, name, <->)
+            ["+="] parse_named_assign(p, name, <+>)
             ["::="] parse_global_assign(p, name)
             [":"] parse_colon(p, name)
             ["("] parse_expr_after_lparen(p, name)
@@ -2115,7 +2117,7 @@ atom_early_return = p =>
    is_term = p.curr.kind [Newline, Dedent, Semi, Eof, RParen, RBracket, RBrace]
    is_op = p.curr.kind [Op]
    txt = p.curr.text
-   is_br = txt == "]" || txt == "|" || txt == "!|" || txt == ")" || txt == "}"
+   is_br = txt ["]", "|", "!|", ")", "}"]
    is_end = is_term || (is_op && is_br)
    is_end
       | <+ ast::Expr(Return, (ast::ReturnExpr((<->, ast::Expr(Int, 0), line, col)))) +>
@@ -3247,8 +3249,8 @@ parse_named_type = p =>
    tok = p.curr
    name = p.curr.text
    parser_advance(p)
-   name == "Void" || name == "void"
-      |
+   name
+      ["Void", "void"]
          parser_error(p, 2106,
             "'Void' is illegal syntax anywhere except #foreign blocks")
          mk_tp(ast::ValueType(Unknown),
@@ -3632,7 +3634,7 @@ decl_is_enum = p =>
          peek_non_layout(c)
       | tok
    first_is_paren = first.kind [LParen]
-   is_ram = first.text == "|" || (first.text == ">") || first_is_paren
+   is_ram = (first.text ["|", ">"]) || first_is_paren
    is_ram
       | <->
       |
@@ -3681,14 +3683,21 @@ enum_slots_loop = p, is_block, es =>
    p.curr.kind
       [Id]
          label = p.curr.text
-         parser_advance(p)
-         enum_has_label(es, label)
+         !guard_is_variant(p.curr)
             |
-               parser_error(p, 2074, "Duplicate variant label '" + label +
-                  "' in enum declaration")
+               parser_error(p, 2071,
+                  "Enum variant label '" + label +
+                  "' must start with an uppercase letter")
                <-->
             |
-               enum_parse_payload(p, is_block, es, label)
+               parser_advance(p)
+               enum_has_label(es, label)
+                  |
+                     parser_error(p, 2074, "Duplicate variant label '" + label +
+                        "' in enum declaration")
+                     <-->
+                  |
+                     enum_parse_payload(p, is_block, es, label)
       |
          parser_error(p, 2071,
             "Expected a variant label in enum declaration")
@@ -3829,13 +3838,13 @@ trim_use_str = s =>
       start' = 0
       0..n @ i =>
          c = s(i)
-         (c == ' ' || c == '\t') | (start' = i + 1) | -->
+         c [' ', '\t'] (start' = i + 1) | -->
       end' = n
       0..n @ j =>
          idx = n - 1 - j
          idx < start' | -->
          c = s(idx)
-         (c == ' ' || c == '\t') | (end' = idx) | -->
+         c [' ', '\t'] (end' = idx) | -->
       start' < end' | s(start'..end') | ""
 
 // "#use module" / "#use "path"" / "#use alias = path" —
@@ -3913,13 +3922,21 @@ parse_primary_atom = p, a =>
 // Continue a member/key chain: ':: name', '. name', '^ key', '^? key'.
 pp_member: Parser, ast::Expr => <ast::Expr|>
 pp_member = p, lhs =>
-   p.curr.text
-      ["::"] pp_double_colon(p, lhs)
-      ["."] pp_dot(p, lhs)
-      ["^"] pp_caret(p, lhs)
-      ["^?"] pp_caret_mem(p, lhs)
-      ["^-"] pp_caret_del(p, lhs)
-      | <+ lhs +>
+   is_dot_float = p.curr.kind [Float] && ?p.curr.text > 1 && p.curr.text(0) == '.'
+   is_dot_float
+      |
+         f = p.curr.text(1..)
+         parser_advance(p)
+         pp_member(p, ast::Expr(Member, (ast::MemberExpr((lhs, f, <->,
+            ast::Expr(Var, ""), p.curr.line, p.curr.col)))))
+      |
+         p.curr.text
+            ["::"] pp_double_colon(p, lhs)
+            ["."] pp_dot(p, lhs)
+            ["^"] pp_caret(p, lhs)
+            ["^?"] pp_caret_mem(p, lhs)
+            ["^-"] pp_caret_del(p, lhs)
+            | <+ lhs +>
 
 pp_double_colon: Parser, ast::Expr => <ast::Expr|>
 pp_double_colon = p, lhs =>
@@ -3992,13 +4009,12 @@ pp_caret_del = p, lhs =>
             p.curr.line, p.curr.col)))) +>
       | <-->
 
-// A writable member/key: '=' / ':=' assignment, else postfix calls +
+// A writable member/key: '=' assignment, else postfix calls +
 // repetition.
 pp_write: Parser, ast::Expr => <ast::Expr|>
 pp_write = p, lhs =>
    p.curr.text
       ["="] parse_finish_assignment(p, lhs)
-      [":="] parse_finish_assignment(p, lhs)
       ["+="] parse_finish_assignment(p, lhs)
       |
          parse_postfix_calls(p, lhs)
@@ -4010,7 +4026,7 @@ pp_write = p, lhs =>
                         | <-->
                   |
                      p.curr.text
-                        ["=", ":="] parse_finish_assignment(p, c)
+                        ["="] parse_finish_assignment(p, c)
                         | <+ c +>
             | <-->
 
@@ -4111,7 +4127,7 @@ parse_arg: Parser => <ast::Expr|>
 parse_arg = p =>
    is_id = p.curr.kind [Id]
    nxt = parser_peek_next(p)
-   is_named = is_id && (nxt.text == ":" || nxt.text == "=")
+   is_named = is_id && (nxt.text [":", "="])
    is_named
       |
          name = p.curr.text
@@ -4150,8 +4166,8 @@ expr_to_type_info: Parser, ast::Expr => <ast::TypeInfo|>
 expr_to_type_info = p, e =>
    e
       [Var name]
-         name == "Void" || name == "void"
-            | <-->
+         name
+            ["Void", "void"] <-->
             |
                pr = parse_dva_type_name(name)
                pr
@@ -4524,7 +4540,8 @@ parse_lit_pattern = p =>
                      txt = p.curr.text
                      parser_advance(p)
                      fval = parse_float_text(txt) | _ | 0.0
-                     <+ pat_lit(ast::Expr(Float, 0.0 - fval)) +>
+                     neg_val = fval == 0.0 | -1.0 * 0.0 | (0.0 - fval)
+                     <+ pat_lit(ast::Expr(Float, neg_val)) +>
                   | <-->
             | <-->
 
@@ -5674,9 +5691,8 @@ atom_ident = p, name =>
                         | <+ ast::Expr(Var, name) +>
                   |
                      p.curr.text
-                        [":="] parse_named_assign(p, name, <+>, <->)
-                        ["="] parse_named_assign(p, name, <->, <->)
-                        ["+="] parse_named_assign(p, name, <->, <+>)
+                        ["="] parse_named_assign(p, name, <->)
+                        ["+="] parse_named_assign(p, name, <+>)
                         ["::="] parse_global_assign(p, name)
                         [":"] parse_colon_ctx(p, name)
                         ["("] parse_expr_after_lparen(p, name)
@@ -6178,30 +6194,25 @@ parse_assign_rhs = p =>
                   | <-->
             | parse_cycle(p)
 
-// "name = rhs" / "name := rhs" / "name += rhs" — a named assignment. The RHS
+// "name = rhs" / "name += rhs" — a named assignment. The RHS
 // parses at the cycle tier (a trailing '|' stays with an enclosing choice);
 // the assignment continues as a ';'-sequence.
-parse_named_assign: Parser, String, <>, <> => <ast::Expr|>
-parse_named_assign = p, name, is_mut, is_compound =>
-   parse_named_assign_g(p, name, is_mut, is_compound, <->)
+parse_named_assign: Parser, String, <> => <ast::Expr|>
+parse_named_assign = p, name, is_compound =>
+   parse_named_assign_g(p, name, is_compound, <->)
 
-parse_named_assign_g: Parser, String, <>, <>, <> => <ast::Expr|>
-parse_named_assign_g = p, name, is_mut, is_compound, is_global =>
+parse_named_assign_g: Parser, String, <>, <> => <ast::Expr|>
+parse_named_assign_g = p, name, is_compound, is_global =>
    name == "_"
       |
          parser_error(p, 2044, diag::E2044_underscore_assign!)
          <-->
       |
-         is_mut
-            |
-               parser_error(p, 2010, diag::E2010_colon_equals_retired!)
-               <-->
-            |
-               parser_advance(p)
-               p.in_rhs = <+>
-               rhs = parse_assign_rhs(p)
-               p.in_rhs = <->
-               rhs
+         parser_advance(p)
+         p.in_rhs = <+>
+         rhs = parse_assign_rhs(p)
+         p.in_rhs = <->
+         rhs
                   | re =>
                      is_mutable = name_is_primed(name)
                      is_mutable && !is_compound && expr_is_string_literal(re)
@@ -6259,35 +6270,29 @@ parse_expr_after_lparen = p, name =>
                      pc
                         | pce =>
                            p.curr.text
-                              ["=", ":="] parse_finish_assignment(p, pce)
+                              ["="] parse_finish_assignment(p, pce)
                               | <+ pce +>
                         | <-->
                   | <-->
             | <-->
 
-// "lhs = rhs" / "lhs := rhs" — a member/key/call write. The RHS parses at the
+// "lhs = rhs" / "lhs += rhs" — a member/key/call write. The RHS parses at the
 // addition tier so a following '|' / '!|' choice wraps the whole write.
 parse_finish_assignment: Parser, ast::Expr => <ast::Expr|>
 parse_finish_assignment = p, lhs =>
-   is_mut = p.curr.text [":="]
    is_compound = p.curr.text ["+="]
-   is_mut
-      |
-         parser_error(p, 2010, diag::E2010_colon_equals_retired!)
-         <-->
-      |
-         parser_advance(p)
-         rhs = tok_is_nl(p.curr) | parse_indented_rhs(p) | parse_bp(p, 130)
-         rhs
-            | re =>
-               is_mut_lhs = name_is_primed(lhs_name(lhs))
-               n = ast::Expr(Assign, (lhs_name(lhs), is_mut_lhs, is_compound,
-                  <->, <->, re, lhs, "",
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown))))
-               lhs
-                  [Call] choice_cont(p, n)
-                  | seq_cont_loop(p, n)
-            | <-->
+   parser_advance(p)
+   rhs = tok_is_nl(p.curr) | parse_indented_rhs(p) | parse_bp(p, 130)
+   rhs
+      | re =>
+         is_mut_lhs = name_is_primed(lhs_name(lhs))
+         n = ast::Expr(Assign, (lhs_name(lhs), is_mut_lhs, is_compound,
+            <->, <->, re, lhs, "",
+            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         lhs
+            [Call] choice_cont(p, n)
+            | seq_cont_loop(p, n)
+      | <-->
 
 lhs_name: ast::Expr => String
 lhs_name = e =>
@@ -6394,40 +6399,67 @@ expand_int_repeats = s =>
 parse_int_text: String => <Int|>
 parse_int_text = text =>
    clean = int_clean(text)
-   exp = expand_int_repeats(clean)
-   exp
-      | expanded =>
-         base = int_base(expanded)
-         digits = base [16, 2, 8] expanded(2..) | expanded
-         okf' = ?digits > 0
-         val' = 0
-         digits @ c =>
-            dv = digit_val(c)
-            dv !< 0
-               |
-                  val' = val' * base + dv
-               |
-                  okf' = <->
-         okf' | <+ val' +>
-      | <-->
+   clean
+      ["0max", "0min"]
+         clean == "0max"
+            |
+               text
+                  ["0maxu64"] <+ (0 - 1) +>
+                  ["0maxu32"] <+ 4294967295 +>
+                  ["0maxu16"] <+ 65535 +>
+                  ["0maxu8"]  <+ 255 +>
+                  ["0maxi32"] <+ 2147483647 +>
+                  ["0maxi16"] <+ 32767 +>
+                  ["0maxi8"]  <+ 127 +>
+                  | <+ 9223372036854775807 +>
+            |
+               text
+                  ["0minu64", "0minu32", "0minu16", "0minu8"] <+ 0 +>
+                  ["0mini32"] <+ (0 - 2147483648) +>
+                  ["0mini16"] <+ (0 - 32768) +>
+                  ["0mini8"]  <+ (0 - 128) +>
+                  | <+ -9223372036854775808 +>
+      |
+         exp = expand_int_repeats(clean)
+         exp
+            | expanded =>
+               base = int_base(expanded)
+               digits = base [16, 2, 8] expanded(2..) | expanded
+               okf' = ?digits > 0
+               val' = 0
+               digits @ c =>
+                  dv = digit_val(c)
+                  dv !< 0
+                     |
+                        val' = val' * base + dv
+                     |
+                        okf' = <->
+               okf' | <+ val' +>
+            | <-->
 
 
 // Strips a float suffix ("f32", "f", "F").
 float_clean: String => String
 float_clean = text =>
-   s3 = text(-3..)
-   s1 = text(-1..)
-   s3 == "f32"
-      | text(..-3)
-      | s1 ["f", "F"] text(..-1) | text
+   text
+      [".inf", "-.inf"] text
+      |
+         s3 = text(-3..)
+         s1 = text(-1..)
+         s3 == "f32"
+            | text(..-3)
+            | s1 ["f", "F"] text(..-1) | text
 
 float_suffix_vt: String => ast::ValueType
 float_suffix_vt = text =>
-   s3 = text(-3..)
-   s1 = text(-1..)
-   s3 == "f32" || s1 == "f" || s1 == "F"
-      | ast::ValueType(F32)
-      | ast::ValueType(Float)
+   text
+      [".inf", "-.inf"] ast::ValueType(Float)
+      |
+         s3 = text(-3..)
+         s1 = text(-1..)
+         s3 == "f32" || (s1 ["f", "F"])
+            | ast::ValueType(F32)
+            | ast::ValueType(Float)
 
 // 10.0^n via repeated multiplication (negative n -> 1/10^|n|).
 pow10: Int => Float
@@ -6465,6 +6497,27 @@ digit_add = in_exp, c, st, in_frac =>
 parse_float_text: String => <Float|>
 parse_float_text = text =>
    clean = float_clean(text)
+   is_f32 = float_suffix_vt(text) [F32]
+   clean == ".inf"
+      | --| <+ (1.0 / 0.0) +>
+   clean == ".max"
+      | --| <+ (is_f32 | 3.4028234663852886e+38 | 1.7976931348623157e+308) +>
+   clean == ".min"
+      | --| <+ (is_f32 | 1.1754943508222875e-38 | 2.2250738585072014e-308) +>
+   clean == ".sub"
+      | --| <+ (is_f32 | 1.401298464324817e-45 | (2.2250738585072014e-308 / 4503599627370496.0)) +>
+   clean == ".0"
+      | --| <+ 0.0 +>
+   clean == "-.inf"
+      | --| <+ (0.0 - (1.0 / 0.0)) +>
+   clean == "-.max"
+      | --| <+ (0.0 - (is_f32 | 3.4028234663852886e+38 | 1.7976931348623157e+308)) +>
+   clean == "-.min"
+      | --| <+ (0.0 - (is_f32 | 1.1754943508222875e-38 | 2.2250738585072014e-308)) +>
+   clean == "-.sub"
+      | --| <+ (0.0 - (is_f32 | 1.401298464324817e-45 | (2.2250738585072014e-308 / 4503599627370496.0))) +>
+   clean == "-.0"
+      | --| <+ (-1.0 * 0.0) +>
    i' = 0
    neg' = <->
    ?clean > 0 && clean(0) == '-'

@@ -1,0 +1,29 @@
+#use io
+
+#type Pair <A, B>
+#type Color <Red, Green, Blue>
+
+both: Pair => Int
+both = p =>
+   p
+      [A, B] 42
+
+classify: Color => String
+classify = c =>
+   c
+      [Red, Green] "warm_or_green"
+      [Blue] "blue"
+
+MAX = 10
+check_max: Int => String
+check_max = n =>
+   n
+      [MAX] "max"
+      | "other"
+
+io::out $ both(Pair(A))
+io::out $ both(Pair(B))
+io::out $ classify(Color(Green))
+io::out $ classify(Color(Blue))
+io::out $ check_max(10)
+io::out $ check_max(5)

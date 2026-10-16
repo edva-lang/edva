@@ -1,0 +1,7 @@
+#type Maybe <Some(String), Noth>
+f: Maybe => String
+f = m =>
+   m
+      [Some s] s
+      [Noth x] "none"
+f(Maybe(Noth))

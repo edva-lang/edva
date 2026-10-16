@@ -1,0 +1,71 @@
+#use io
+
+// Integer limit constants
+io::out $ 0max
+io::out $ 0min
+io::out $ 0maxu64
+io::out $ 0minu64
+io::out $ 0maxu32
+io::out $ 0minu32
+io::out $ 0maxu16
+io::out $ 0minu16
+io::out $ 0maxu8
+io::out $ 0minu8
+io::out $ 0maxi32
+io::out $ 0mini32
+io::out $ 0maxi16
+io::out $ 0mini16
+io::out $ 0maxi8
+io::out $ 0mini8
+io::out $ 0maxi64
+io::out $ 0mini64
+
+// Arithmetic wraps
+io::out $ (0max + 1 == 0min)
+io::out $ (0maxu64 + 1u64 == 0u64)
+io::out $ (0maxi32 + 1i32 == 0mini32)
+
+// Floating point constants
+io::out $ .inf
+io::out $ -.inf
+io::out $ .max
+io::out $ -.max
+io::out $ .min
+io::out $ -.0
+
+// Negative zero properties
+io::out $ (1.0 / -.0)
+io::out $ (-.0 == 0.0)
+io::out $ (1.0 / -.0 == -.inf)
+
+// Inf & subnormal properties
+io::out $ (.inf > .max)
+io::out $ (-.inf < -.max)
+io::out $ (.sub > 0.0)
+io::out $ (.sub / 2.0 == 0.0)
+io::out $ (.min > .sub)
+
+// F32 constants and properties
+io::out $ .inff32
+io::out $ -.inff32
+io::out $ .maxf32
+io::out $ -.maxf32
+io::out $ .minf32
+io::out $ -.0f32
+io::out $ (1.0f32 / -.0f32 == -.inff32)
+io::out $ (.inff32 > .maxf32)
+io::out $ (-.inff32 < -.maxf32)
+io::out $ (.subf32 > 0.0f32)
+io::out $ (.subf32 / 2.0f32 == 0.0f32)
+io::out $ (.minf32 > .subf32)
+
+// Record field and tuple indexing coexistence
+rec = (max = 10, min = 5, inf = 1, sub = 2)
+io::out $ rec.max
+io::out $ rec.min
+io::out $ rec.inf
+io::out $ rec.sub
+
+t = (100, 200)
+io::out $ t.0
+io::out $ t.1

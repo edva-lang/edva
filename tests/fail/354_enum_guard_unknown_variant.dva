@@ -1,0 +1,9 @@
+#type Color <Red, Green, Blue>
+f: Color => Int
+f = c =>
+   c
+      [Red] 1
+      [Greeen] 2
+      [Blue] 3
+      | 0
+f(Color(Red))

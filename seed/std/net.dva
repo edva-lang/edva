@@ -101,6 +101,7 @@
    tcp_connect = host, port =>
       ip = libc::inet_addr $ host
       ip [< 0] --| net::tcp_connect_name(host, port)
+      ip [4294967295] --| net::tcp_connect_name(host, port)
       sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
       sock [< 0] --| Conn(<- "socket failed" +>)
       addr = SockAddrIn((i16(AF_INET),
@@ -135,14 +136,15 @@
          Int(cur') [0] -->
          ai = Addrinfo(cur')
          cur' = ai.ai_next
+         ai.ai_socktype != 1
+            | --^
          sock = libc::socket(ai.ai_family, ai.ai_socktype, ai.ai_protocol)
          sock < 0
             | --^
          ret = libc::connect(sock, ai.ai_addr, ai.ai_addrlen)
          ret [0]
-            |
-               res' = sock
-               -->
+            res' = sock
+            -->
          net::close_fd(sock)
       libc::freeaddrinfo(l)
       res' [< 0] Conn(<- "connect failed" +>) | Conn(<+ res' ->)

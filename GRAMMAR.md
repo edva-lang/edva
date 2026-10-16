@@ -29,11 +29,21 @@ inline statements. A `;` at the end of a line is an error.
 
 | Kind | Syntax | Notes |
 |------|--------|-------|
-| Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0m48`, `0m-16` | optional type suffix, see below |
-| Float | `3.14`, `1.5e-3`, `3.14f32` | padding zeros mandatory (see §1.4) |
+| Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0m48`, `0m-16`, `0max`, `0min` | optional type suffix (`0maxu64`, `0mini32`), see below |
+| Float | `3.14`, `1.5e-3`, `3.14f32`, `-.0`, `.inf`, `-.inf`, `.max`, `-.max`, `.min`, `.sub` | built-in FP constants, padding zeros mandatory otherwise (see §1.4) |
 | Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
 | String | `"..."` | C-style escapes `\n \t \r \0 \a \b \f \v \e \" \' \\` |
 | Here-Doc | `"""..."""` | multiline with baseline margin stripping, `${expr}` interpolation, and line continuation `\` |
+
+**Built-in numeric limit constants** — Built-in language constants for integer boundaries and IEEE-754 floating-point properties:
+- **Integer limits (`0max` / `0min`)**: Represent the maximum and minimum representable values. Without suffix, `0max` evaluates to `Int` maximum (`9223372036854775807`) and `0min` to `Int` minimum (`-9223372036854775808`). Accepts any integer width suffix: `0maxu64`, `0minu64`, `0maxu32`, `0minu32`, `0maxi32`, `0mini32`, `0maxu16`, `0minu16`, `0maxi16`, `0mini16`, `0maxu8`, `0minu8`, `0maxi8`, `0mini8`, `0maxi64`, `0mini64`.
+- **Floating-point constants**:
+  - `-.0`: IEEE-754 signed negative zero (distinct from `0.0`; `1.0 / -.0 == -.inf`).
+  - `.inf` / `-.inf`: positive and negative infinity (`1.0 / 0.0` and `-1.0 / 0.0`).
+  - `.max` / `-.max`: maximal and minimal finite floating-point values (`DBL_MAX` / `-DBL_MAX`).
+  - `.min`: minimal positive normalized floating-point value (`DBL_MIN`).
+  - `.sub`: minimal positive subnormal floating-point value (`DBL_TRUE_MIN`).
+  - All float constants accept optional float suffixes (`f32`, `f`, `F`), resolving to single-precision float bounds (e.g. `.maxf32`, `.minf32`, `.subf32`, `-.0f32`, `.inff32`).
 
 **Here-Doc (`"""..."""`)** — Multiline formatted text blocks with baseline margin stripping and expression interpolation:
 - **Delimiter**: Triple double quotes `"""..."""`. Unescaped `"` and `""` are literal; `\"""` escapes to literal `"""`.
@@ -281,6 +291,7 @@ list and optional return type; a bare `TypeName` declares a foreign variable.
 ```
 TypeDeclStmt  ::= "#type" Identifier "(" [ FieldTypeList ] ")"
                |  "#type" Identifier Newline INDENT IndentFieldList DEDENT
+               |  "#type" Identifier EnumTypeDecl
                |  "#type" Identifier RamTypeDecl
                |  "#type" Identifier "(" TypeName ")" "{}"    (* growable array *)
                |  "#type" Identifier GeneratorCall            (* instantiation *)
@@ -291,14 +302,19 @@ FieldType     ::= [ Identifier ":" ] TypeName
 IndentFieldList ::= IndentField { Newline IndentField }
 IndentField   ::= Identifier ":" TypeName
                |  Identifier ":" Newline INDENT IndentFieldList DEDENT
+EnumTypeDecl  ::= "<" EnumVariant "," EnumVariant { "," EnumVariant } ">"
+               |  "<" Newline INDENT EnumVariant { [ "," ] Newline EnumVariant } DEDENT ">"
+EnumVariant   ::= UpperIdentifier [ "(" TypeName ")" ]
 ```
 
-Declares a named record type with the given fields. The parenthesized form
-(`#type Name (...)`) uses commas between fields; the indent-based form
-(`#type Name` followed by an indented block of `field: Type` lines) uses
-indentation instead. In the indent form a field whose own `field:` is followed
-by a deeper-indented block declares a nested inline record type. The type name
-becomes a coercion function (§2.10) and is reserved.
+Declares a named record, enum, ramification, growable array, or generator instantiation.
+
+**Record declarations.** The parenthesized form (`#type Name (...)`) uses commas between fields; the indent-based form (`#type Name` followed by an indented block of `field: Type` lines) uses indentation instead. In the indent form a field whose own `field:` is followed by a deeper-indented block declares a nested inline record type. The type name becomes a coercion/constructor function (§2.10) and is reserved.
+
+**Enum declarations (`EnumTypeDecl`).** An enum declares at least **two** named variants (`E2070`) enclosed in `< ... >` (distinguished from a `RamTypeDecl` by the absence of a top-level `|`). Each variant label must start with an uppercase letter (`E2071`) and be unique within the enum (`E2074`). Variants may be bare unit labels (`Red`) or carry a single payload type in parentheses (`Some(String)`, `Add((Expr, Expr))`). Multi-line block declarations may separate variants by newlines with optional trailing commas.
+- **Construction**: `EnumName(Variant)` constructs a unit variant; `EnumName(Variant, payload)` constructs a payload-bearing variant (`E3096` unknown variant, `E3097` missing payload, `E3098` payload on unit variant, `E3099` payload type mismatch). Unambiguous unit variant labels may also be referenced bare (`Red`) or qualified (`Color::Red`, `mod::Color::Red`; `E3105` when an unqualified unit label is declared by multiple enums).
+- **Pattern matching**: Matched in choice expressions using bracket guards: `[Variant]` (unit or ignored payload; `[Variant _]` is rejected by `E2109`), `[V1, V2]` (multi-variant OR guard), `[Variant x]` (juxtaposed payload binding without parentheses), or deep nested patterns `[Add (Lit a, Lit b)]`. Value-producing choices over an enum must cover all variants or include a trailing `|` fallback (`E3102`).
+- **Equality & Reflection**: Enums support `==` and `!=` (provided no variant payload contains a function type, `E3084`), and reject ordering operators `<, <=, >, >=` (`E3127`). At compile time, `?EnumType` yields the number of variants and `EnumType.(i)` yields the `i`-th variant's label as a `String` (`E3170`, `E3171`).
 
 **Packed records and bitfields.** A record declaration or colon type declaration
 can be marked `#packed`:
@@ -1013,22 +1029,22 @@ the LLVM lowercase scalar type names (`i8`/`u8`..`i64`/`u64`, `f32`, `void`,
 | `Type` | a compile-time-only type value naming a type; **erased** at runtime (§2.14). Never a runtime value. |
 | function type | a first-class function value (a `{ fn_ptr, env_ptr }` closure pointer); the full signature (params + return) is a `.Function` type carried like a ram's slot layout. Written flat: `Int, Int => Float` (§2.8) |
 | record | named/positional tuple schema |
+| enum | tagged union of $\ge 2$ uppercase-named unit or payload-bearing variants (`#type Name < V1, V2(T) >`) |
 | array / slice | fixed / variable-length sequences |
-| user types | tuple schemas declared with `#type Name (...)`, referenced by name |
+| user types | composite schemas declared with `#type Name ...`, referenced by name |
 
 `rune` literals (`'a'`) are `Rune`-typed; `Rune(x)` coerces an `Int` to a
 `Rune` (identity at i64), so `'a' + 1` and `'a' < 127` work directly.
 
-**Ramification** — the single ram kind, with **four instances** distinguished
+**Ramification** — the single binary sum kind, with **four instances** distinguished
 only by their slot layout (in the ram's `TypeInfo`), never by a separate
 `ValueType`: `Flag` (`<>`, both slots unit — a bare i1), `Option`
-(`< A | >`, positive payload / negative unit), `Either` (`< A | B >`, both
+(` < A | >`, positive payload / negative unit), `Either` (`< A | B >`, both
 payloads), and `Fallible` (`< | B >`, positive unit / negative payload). The
-runtime representation is either a bare i1 (Flag) or a heap
-`{ i64 tag, ptr payload }` pointer (the payload forms); codegen picks which
+runtime representation is either a bare i1 (Flag), a null-niche pointer, an unboxed `{ i1, i64 }`, or a heap
+`{ i64 tag, ptr payload }` pointer; codegen picks which
 via the ram TypeInfo or the value's actual shape. `&&`/`||`/`!` operate on
-ram truthiness. A future user-defined `TaggedUnion` is a distinct type and
-must declare at least three variants.
+ram truthiness. User-defined **Enums** (`#type Name < V1, V2(T), ... >`) are distinct nominal tagged union types declaring at least two uppercase variants and matched with `[Variant]` guards.
 
 ### 3.2 Value Model
 
