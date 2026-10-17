@@ -93,14 +93,13 @@ compute_layout = ctx, ut =>
       [Rec r]
          cur_off' = 0
          max_align' = 1
-         ?r @ i =>
-            f = r(i) | _ | unify::UField(("", unify::UType(None)))
+         r @ f =>
             flay = compute_layout(ctx, f.ut)
-            f_align = flay.align < 1 | 1 | flay.align
-            max_align' = max_align' < f_align | f_align | max_align'
+            f_align = %max(flay.align, 1)
+            max_align' = %max(max_align', f_align)
             cur_off' = align_up(cur_off', f_align) + flay.size
          total_size = align_up(cur_off', max_align')
-         fin_size = total_size < min_rec_sz | min_rec_sz | total_size
+         fin_size = %max(total_size, min_rec_sz)
          tast::layout_aggregate(fin_size, max_align')
       [Ram r]
          has_p = r.pos.has_payload

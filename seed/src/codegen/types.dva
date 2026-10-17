@@ -590,7 +590,7 @@ codegen_scan_partial_escape_expr = cg, e =>
          codegen_scan_partial_escape_expr(cg, t.1)
          codegen_scan_partial_escape_expr(cg, t.2)
       [Call c]
-         ?c.args @ i => init_check_escape(cg, c.args(i)!!, c.line, c.col)
+         c.args @ a => init_check_escape(cg, a, c.line, c.col)
          codegen_scan_partial_escape_exprs(cg, c.args, 0)
       [Block b] codegen_scan_partial_escape_exprs(cg, b.exprs, 0)
       [Member m]
@@ -2081,8 +2081,7 @@ ti_is_packed_or_bf = cg, ti =>
 find_bitfield_field: ast::BitfieldFields, String => <ast::BitfieldField|>
 find_bitfield_field = fields, name =>
    res' = <-->
-   ?fields @ i =>
-      f = fields(i) | _ | ast::BitfieldField(("", 0, 0))
+   fields @ f =>
       f.name == name
          |
             res' = <+ f +>
@@ -2092,9 +2091,7 @@ find_bitfield_field = fields, name =>
 member_index_in_fields: ast::FieldTypes, String => Int
 member_index_in_fields = flds, name =>
    res' = -1
-   ?flds @ i =>
-      f = flds(i) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
-         ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->, ast::Expr(Int, 0)))
+   flds @ f, i =>
       f.name == name
          |
             res' = i
@@ -3957,8 +3954,7 @@ codegen_eval_record = cg, r =>
    fvals = Addrs()
    fvts = ast::VTypes()
    fnames = ast::Names()
-   ?r.fields @ i =>
-      f = r.fields(i)!!
+   r.fields @ f =>
       ev = expr::codegen_eval(cg, f.val)
       fvals += ev.0
       is_rec_field = ev.1 [Record]

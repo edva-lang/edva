@@ -108,8 +108,7 @@ mark_generic_binding = env, name =>
 is_generic_binding: TypeEnv, String => <>
 is_generic_binding = env, name =>
    found' = <->
-   ?env.generic_bindings @ i =>
-      n = env.generic_bindings(i) | _ | ""
+   env.generic_bindings @ n =>
       n == name | (found' = <+>; -->)
    found'
 
@@ -121,8 +120,7 @@ is_marked_global: TypeEnv, String => <>
 is_marked_global = env, name =>
    found' = <->
    qname = env.current_module != "" | env.current_module + "::" + name | name
-   ?env.marked_globals @ i =>
-      n = env.marked_globals(i) | _ | ""
+   env.marked_globals @ n =>
       match = n == name || n == qname ||
          (env.current_module != "" && name == env.current_module + "::" + n)
       match | (found' = <+>; -->)
@@ -274,10 +272,7 @@ lookup_binding_exact = env, name =>
          g_found' = <-->
          ?gls @ k =>
             i = (?gls) - 1 - k
-            b = gls(i) | _ |
-               TypeBinding(("", unify::UType(None),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-                  <->, <->, 0))
+            b = gls(i)!!
             b.name == name
                | (g_found' = <+ b +>; -->)
          g_found'
@@ -314,8 +309,7 @@ drop_last_dot = s =>
 
 init_has_name: ast::Names, String => <>
 init_has_name = names, s =>
-   ?names @ i =>
-      n = names(i) | _ | ""
+   names @ n =>
       n == s | --| <+>
    <->
 
@@ -365,8 +359,7 @@ init_has_subpath = written, path =>
    prefix = path + "."
    plen = ?prefix
    has' = <->
-   ?written @ i =>
-      w = written(i) | _ | ""
+   written @ w =>
       ?w > plen && w(0..plen) == prefix
          | (has' = <+>; -->)
    has'
@@ -379,39 +372,21 @@ init_is_ok = env, path =>
 init_snapshot: TypeEnv => FieldInit
 init_snapshot = env =>
    tr = ast::Names()
-   etr = env.init.tracked
-   ?etr @ i =>
-      t = etr(i) | _ | ""
-      tr += t
+   env.init.tracked @ t => tr += t
    wh = ast::Names()
-   ew = env.init.whole
-   ?ew @ i =>
-      w = ew(i) | _ | ""
-      wh += w
+   env.init.whole @ w => wh += w
    wr = ast::Names()
-   ewr = env.init.written
-   ?ewr @ i =>
-      p = ewr(i) | _ | ""
-      wr += p
+   env.init.written @ p => wr += p
    FieldInit((tr, wh, wr))
 
 init_snapshot_of: FieldInit => FieldInit
 init_snapshot_of = fi =>
    tr = ast::Names()
-   ftr = fi.tracked
-   ?ftr @ i =>
-      t = ftr(i) | _ | ""
-      tr += t
+   fi.tracked @ t => tr += t
    wh = ast::Names()
-   fw = fi.whole
-   ?fw @ i =>
-      w = fw(i) | _ | ""
-      wh += w
+   fi.whole @ w => wh += w
    wr = ast::Names()
-   fwr = fi.written
-   ?fwr @ i =>
-      p = fwr(i) | _ | ""
-      wr += p
+   fi.written @ p => wr += p
    FieldInit((tr, wh, wr))
 
 init_restore: TypeEnv, FieldInit => ()
@@ -421,23 +396,14 @@ init_restore = env, snap =>
 init_merge_two: FieldInit, FieldInit => FieldInit
 init_merge_two = a, b =>
    tr = ast::Names()
-   atr = a.tracked
-   ?atr @ i =>
-      t = atr(i) | _ | ""
-      tr += t
-   btr = b.tracked
-   ?btr @ i =>
-      t2 = btr(i) | _ | ""
+   a.tracked @ t => tr += t
+   b.tracked @ t2 =>
       !init_has_name(tr, t2) | tr += t2
    wh = ast::Names()
-   aw = a.whole
-   ?aw @ i =>
-      name = aw(i) | _ | ""
+   a.whole @ name =>
       init_has_name(b.whole, name) | wh += name
    wr = ast::Names()
-   awr = a.written
-   ?awr @ i =>
-      path = awr(i) | _ | ""
+   a.written @ path =>
       init_has_name(b.written, path) | wr += path
    FieldInit((tr, wh, wr))
 
@@ -449,8 +415,7 @@ init_is_fully_init = env, name, ut =>
          ut
             [Rec flds]
                all_wr' = <+>
-               ?flds @ i =>
-                  f = flds(i) | _ | unify::UField(("", unify::UType(None)))
+               flds @ f =>
                   f.name != ""
                      |
                         path = name + "." + f.name
@@ -472,8 +437,7 @@ lookup_generic_exact = env, name =>
    res' = <-->
    ?env.generics @ k =>
       i = (?env.generics) - 1 - k
-      g = env.generics(i) | _ | GenericDecl(("", ast::TypeInfo(Prim,
-         ast::ValueType(Unknown))))
+      g = env.generics(i)!!
       g.name == name | (res' = <+ g.ti +>; -->)
    res'
 
@@ -505,8 +469,7 @@ lookup_user_type_exact = env, name =>
    res' = <-->
    ?env.user_types @ k =>
       i = (?env.user_types) - 1 - k
-      u = env.user_types(i) | _ | UserTypeDef(("", ast::TypeInfo(Prim,
-         ast::ValueType(Unknown)), unify::UType(None)))
+      u = env.user_types(i)!!
       u.name == name | (res' = <+ u +>; -->)
    res'
 

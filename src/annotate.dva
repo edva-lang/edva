@@ -290,8 +290,7 @@ validate_primitive_cast = ctx, fn_name, tgt_uprim, src_ut =>
 tv_lookup: TypeVarMap, String => < unify::UType | >
 tv_lookup = tvm, name =>
    res' = <-->
-   ?tvm @ i =>
-      e = tvm(i) | _ | TypeVarMapEntry(("", unify::UType(None)))
+   tvm @ e =>
       e.name == name | (res' = <+ e.ut +>; -->)
    res'
 
@@ -324,17 +323,13 @@ instantiate_ti_step = ctx, tvm, ti =>
          cur_tvm' = tvm
          vinfos = f.1
          params = unify::UTypes()
-         ?f.4 @ cp_i =>
-            cp = f.4(cp_i) | _ | ast::CompileTimeParam(("",
-               ast::ValueType(Unknown),
-               ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         f.4 @ cp =>
             cp.1 != ast::ValueType(Type)
                |
                   cp_res = instantiate_ti_step(ctx, cur_tvm', cp.2)
                   cur_tvm' = cp_res.tvm
                   params += cp_res.ut
-         ?vinfos @ i =>
-            pi = vinfos(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+         vinfos @ pi =>
             p_res = instantiate_ti_step(ctx, cur_tvm', pi)
             cur_tvm' = p_res.tvm
             params += p_res.ut
@@ -848,14 +843,10 @@ is_view_expr = e =>
       [Var v] is_view_name(v)
       [RawMemory rm] rm.rec_name != ""
       [Block b]
-         n = ?b.exprs
-         n > 0 | is_view_expr(b.exprs(n - 1) | _ | ast::Expr(Int, 0)) | <->
+         b.exprs(?b.exprs - 1) | last_e => is_view_expr(last_e) | <->
       [Choice c]
          has' = <->
-         ?c.branches @ bi =>
-            br = c.branches(bi) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
-               ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-               ast::Expr(Int, 0)))
+         c.branches @ br =>
             is_view_expr(br.block) | (has' = <+>; -->)
          has'
       | <->
@@ -1733,8 +1724,7 @@ annotate_expr = ctx, env, expr =>
                                           name)
                            name != ""
                               |
-                                 ?ce_rhs.args @ ci =>
-                                    ca = ce_rhs.args(ci) | _ | ast::Expr(Int, 0)
+                                 ce_rhs.args @ ca =>
                                     ca
                                        [Var cvn]
                                           cvn != "" && has_name_in(user_fns, cvn)
@@ -1753,10 +1743,7 @@ annotate_expr = ctx, env, expr =>
                         [Choice ch_rhs]
                            name != ""
                               |
-                                 ?ch_rhs.branches @ cbi =>
-                                    cbr = ch_rhs.branches(cbi) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
-                                       ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-                                       ast::Expr(Int, 0)))
+                                 ch_rhs.branches @ cbr =>
                                     cbr.block
                                        [Var cbvn]
                                           cbvn != "" && has_name_in(user_fns, cbvn)
@@ -1779,9 +1766,7 @@ annotate_expr = ctx, env, expr =>
          k_ut = unify::fresh_var(ctx)
          v_ut = unify::fresh_var(ctx)
          typed_pairs = tast::TypedMapPairs()
-         ?ml.pairs @ i =>
-            pair = ml.pairs(i) | _ | ast::MapPair((ast::Expr(Int, 0),
-               ast::Expr(Int, 0)))
+         ml.pairs @ pair =>
             kte = annotate_expr(ctx, env, pair.key)
             vte = annotate_expr(ctx, env, pair.value)
             unify::unify(ctx, k_ut, kte.ut)
@@ -2120,8 +2105,8 @@ annotate_expr = ctx, env, expr =>
          !env.in_fn
             |
                unify::add_error(ctx, 3173, diag::E3173_return_outside_fn!)
-               val_te = r.has_val | annotate_expr(ctx, env, r.val) | tast::mk_lit_unit(r.line, r.col)
-               tast::mk_typed_return(r.has_val, val_te, unify::prim_unit(),
+               val_opt = r.has_val | <+ annotate_expr(ctx, env, r.val) +> | <-->
+               tast::mk_typed_return(val_opt, unify::prim_unit(),
                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
             |
                env.cur_fn_ret
@@ -2135,17 +2120,17 @@ annotate_expr = ctx, env, expr =>
                                  unify::add_error(ctx, 3173,
                                     "Cannot return a value from a void function.")
                                  val_te = annotate_expr(ctx, env, r.val)
-                                 tast::mk_typed_return(r.has_val, val_te, unify::prim_unit(),
+                                 tast::mk_typed_return(<+ val_te +>, unify::prim_unit(),
                                     ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
                               |
-                                 tast::mk_typed_return(<->, tast::mk_lit_unit(r.line, r.col), unify::prim_unit(),
+                                 tast::mk_typed_return(<-->, unify::prim_unit(),
                                     ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
                         |
                            !r.has_val
                               |
                                  unify::add_error(ctx, 3173,
                                     "Missing return value in function returning a value.")
-                                 tast::mk_typed_return(<->, tast::mk_lit_unit(r.line, r.col), unify::prim_unit(),
+                                 tast::mk_typed_return(<-->, unify::prim_unit(),
                                     ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
                               |
                                  val_te = annotate_expr(ctx, env, r.val)
@@ -2154,7 +2139,7 @@ annotate_expr = ctx, env, expr =>
                                     |
                                        unify::add_error(ctx, 3084,
                                           "Return expression type mismatch")
-                                 tast::mk_typed_return(<+>, val_te, unify::prim_unit(),
+                                 tast::mk_typed_return(<+ val_te +>, unify::prim_unit(),
                                     ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
                   |
                      r.has_val
@@ -2163,10 +2148,10 @@ annotate_expr = ctx, env, expr =>
                            ret_v = unify::fresh_var(ctx)
                            env.cur_fn_ret = <+ ret_v +>
                            unify::unify(ctx, ret_v, val_te.ut)
-                           tast::mk_typed_return(<+>, val_te, unify::prim_unit(),
+                           tast::mk_typed_return(<+ val_te +>, unify::prim_unit(),
                               ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
                         |
-                           tast::mk_typed_return(<->, tast::mk_lit_unit(r.line, r.col), unify::prim_unit(),
+                           tast::mk_typed_return(<-->, unify::prim_unit(),
                               ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
       [UserDiag diag]
          diag.line > 0 | unify::set_pos(ctx, diag.line, diag.col)
@@ -2187,6 +2172,13 @@ annotate_call_arg = ctx, env, a =>
    te = annotate_expr(ctx, env, a)
    cur_is_call_arg ::= saved
    te
+
+annotate_call_args: unify::Ctx, type_env::TypeEnv, ast::Exprs => tast::TypedExprs
+annotate_call_args = ctx, env, args =>
+   typed = tast::TypedExprs()
+   args @ a =>
+      typed += annotate_call_arg(ctx, env, a)
+   typed
 
 annotate_unary_op: unify::Ctx, type_env::TypeEnv, ast::UnaryOp,
    unify::UType, ast::Expr => unify::UType
@@ -3090,10 +3082,7 @@ compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
 annotate_intrinsic_call: unify::Ctx, type_env::TypeEnv,
    ast::CallExpr => tast::TypedExpr
 annotate_intrinsic_call = ctx, env, ce =>
-   typed_args = tast::TypedExprs()
-   ?ce.args @ i =>
-      a = ce.args(i) | _ | ast::Expr(Int, 0)
-      typed_args += annotate_call_arg(ctx, env, a)
+   typed_args = annotate_call_args(ctx, env, ce.args)
    name = ce.fn_name
    nargs = ?typed_args
    !is_known_intrinsic(name)
@@ -3165,10 +3154,7 @@ annotate_call = ctx, env, ce =>
                unify::add_error(ctx, 3084,
                   "Type 'Builder' cannot be used as a function or constructor. " +
                   "Use '{cap}' to create a Builder.")
-               typed_args = tast::TypedExprs()
-               ?ce.args @ i =>
-                  a = ce.args(i) | _ | ast::Expr(Int, 0)
-                  typed_args += annotate_call_arg(ctx, env, a)
+               typed_args = annotate_call_args(ctx, env, ce.args)
                b_ut = unify::prim_builder()
                b_ti = ast::TypeInfo(Prim, ast::ValueType(Builder))
                b_lay = layout::compute_layout(ctx, b_ut)
@@ -3180,10 +3166,7 @@ annotate_call = ctx, env, ce =>
                      unify::add_error(ctx, 3084,
                         "Type '" + ce.fn_name +
                         "' cannot be used as a function or constructor.")
-                     typed_args = tast::TypedExprs()
-                     ?ce.args @ i =>
-                        a = ce.args(i) | _ | ast::Expr(Int, 0)
-                        typed_args += annotate_call_arg(ctx, env, a)
+                     typed_args = annotate_call_args(ctx, env, ce.args)
                      u_ut = unify::prim_unit()
                      u_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
                      u_lay = tast::layout_void()
@@ -3192,10 +3175,7 @@ annotate_call = ctx, env, ce =>
                   |
                      ce.fn_name == "Error"
                         |
-                           typed_args = tast::TypedExprs()
-                           ?ce.args @ i =>
-                              a = ce.args(i) | _ | ast::Expr(Int, 0)
-                              typed_args += annotate_call_arg(ctx, env, a)
+                           typed_args = annotate_call_args(ctx, env, ce.args)
                            nargs_err = ?typed_args
                            nargs_err > 6
                               |
@@ -3221,10 +3201,7 @@ annotate_call = ctx, env, ce =>
                            cast_opt = cast_name_to_uprim(ce.fn_name)
                            cast_opt
                               | uprim =>
-                                 typed_args = tast::TypedExprs()
-                                 ?ce.args @ i =>
-                                    a = ce.args(i) | _ | ast::Expr(Int, 0)
-                                    typed_args += annotate_call_arg(ctx, env, a)
+                                 typed_args = annotate_call_args(ctx, env, ce.args)
                                  nargs_cast = ?typed_args
                                  nargs_cast != 1
                                     |
@@ -3246,10 +3223,7 @@ annotate_call = ctx, env, ce =>
                               |
                                  ce.fn_name == "addr"
                                     |
-                                       typed_args = tast::TypedExprs()
-                                       ?ce.args @ i =>
-                                          a = ce.args(i) | _ | ast::Expr(Int, 0)
-                                          typed_args += annotate_call_arg(ctx, env, a)
+                                       typed_args = annotate_call_args(ctx, env, ce.args)
                                        nargs_addr = ?typed_args
                                        nargs_addr != 1
                                           |
@@ -3286,43 +3260,38 @@ find_record_ctor_field_expr: ast::Exprs, ast::RecordFieldType,
    Int, Int => < ast::Expr | >
 find_record_ctor_field_expr = args, fld, j, nf =>
    named_res' = <-->
-   ?args @ i =>
-      arg_i = args(i) | _ | ast::Expr(Int, 0)
+   args @ arg_i =>
       arg_i [NamedArg na]
          na.name == fld.name | (named_res' = <+ na.val +>; -->)
    named_res'
       | val => <+ val +>
       |
-         a0_first = ?args > 0
-            | (args(0) | _ | ast::Expr(Int, 0))
-            | ast::Expr(Int, 0)
-         a0_is_rec = a0_first [Record]
+         args_first = args(0)
+         a0_is_rec = args_first | a0 => a0 [Record] | <->
          fld_is_rec = fld.rec_type [Rec]
          is_tuple_arg = ?args == 1 &&
             (nf > 1 || (a0_is_rec && !fld_is_rec))
          pos_res' = <-->
-         !is_tuple_arg && j < ?args
+         !is_tuple_arg
             |
-               arg_j = args(j) | _ | ast::Expr(Int, 0)
-               !(arg_j [NamedArg, Range])
-                  | pos_res' = <+ arg_j +>
+               arg_j_opt = args(j)
+               arg_j_opt
+                  | arg_j =>
+                     !(arg_j [NamedArg, Range]) | pos_res' = <+ arg_j +>
          pos_res'
             | val => <+ val +>
             |
                tuple_res' = <-->
                ?args == 1
                   |
-                     a0 = args(0) | _ | ast::Expr(Int, 0)
+                     a0 = args(0)!!
                      !(a0 [NamedArg, Range])
                         |
                            a0
                               [Record rec_lit]
-                                 j < ?rec_lit.fields
-                                    |
-                                       rf = rec_lit.fields(j) | _ |
-                                          ast::RecordField((<->, "",
-                                             ast::Expr(Int, 0)))
-                                       tuple_res' = <+ rf.val +>
+                                 rf_opt = rec_lit.fields(j)
+                                 rf_opt
+                                    | rf => (tuple_res' = <+ rf.val +>)
                               |
                                  idx_e = ast::Expr(Member,
                                     (ast::MemberExpr((a0, "", <->,
@@ -3332,8 +3301,7 @@ find_record_ctor_field_expr = args, fld, j, nf =>
                   | val => <+ val +>
                   |
                      splat_res' = <-->
-                     ?args @ k =>
-                        s_arg = args(k) | _ | ast::Expr(Int, 0)
+                     args @ s_arg =>
                         s_arg [Range r]
                            !r.has_lhs && r.has_rhs
                               |
@@ -3360,15 +3328,16 @@ annotate_record_ctor_fields: unify::Ctx, type_env::TypeEnv, ast::CallExpr,
    Int, <>, ast::TypeInfo => tast::TypedExpr
 annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield, res_ti =>
    effective_args = ast::Exprs()
-   a0_first = ?ce.args > 0 | (ce.args(0) | _ | ast::Expr(Int, 0)) | ast::Expr(Int, 0)
-   a0_rec_opt = a0_first [Record r] <+ r +> | <-->
-   fld0_is_rec = nf > 0 | ((fields(0) | _ | ast::mk_rfield_type("", ast::ValueType(Unknown), ast::TypeInfo(Prim, ast::ValueType(Unknown)))).rec_type [Rec]) | <->
+   a0_rec_opt = ce.args(0)
+      | a0 =>
+         a0 [Record r] <+ r +> | <-->
+      | <-->
+   fld0_is_rec = fields(0) | f0 => f0.rec_type [Rec] | <->
    is_tuple_lit = ?ce.args == 1 && <>(a0_rec_opt) && (nf > 1 || !fld0_is_rec)
    is_tuple_lit
       |
          rec_lit = a0_rec_opt!!
-         ?rec_lit.fields @ rfi =>
-            rf = rec_lit.fields(rfi) | _ | ast::RecordField((<->, "", ast::Expr(Int, 0)))
+         rec_lit.fields @ rf =>
             rf.has_name
                | effective_args += ast::Expr(NamedArg, ast::NamedArgExpr((rf.name, rf.val)))
                | effective_args += rf.val
@@ -3377,22 +3346,18 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
    seen_names = ast::Names()
    has_splat' = <->
    pos_count' = 0
-   ?effective_args @ ai =>
-      arg = effective_args(ai) | _ | ast::Expr(Int, 0)
+   effective_args @ arg =>
       arg
          [NamedArg na]
             found_fld' = <->
-            nf @ fi =>
-               f = fields(fi) | _ | ast::mk_rfield_type("",
-                  ast::ValueType(Unknown), ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+            fields @ f =>
                f.name == na.name | (found_fld' = <+>; -->)
             !found_fld'
                |
                   unify::add_error(ctx, 3117,
                      "Record '" + ce.fn_name + "' has no field '" + na.name + "'")
             is_dup = <->
-            ?seen_names @ si =>
-               s_nm = seen_names(si) | _ | ""
+            seen_names @ s_nm =>
                s_nm == na.name | (is_dup = <+>; -->)
             is_dup
                |
@@ -3403,8 +3368,7 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
          [Range r] (has_splat' = <+>)
          |
             pos_count' = pos_count' + 1
-   eff_a0 = ?effective_args > 0 | (effective_args(0) | _ | ast::Expr(Int, 0)) | ast::Expr(Int, 0)
-   eff_a0_is_rec = eff_a0 [Record]
+   eff_a0_is_rec = effective_args(0) | a0 => a0 [Record] | <->
    is_tuple_arg = ?effective_args == 1 && (nf > 1 || (eff_a0_is_rec && !fld0_is_rec))
    !is_tuple_arg && !has_splat' && pos_count' > nf
       |
@@ -3413,17 +3377,15 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
    !is_tuple_arg
       |
          pos_idx' = 0
-         ?effective_args @ ai =>
-            arg = effective_args(ai) | _ | ast::Expr(Int, 0)
+         effective_args @ arg =>
             !(arg [NamedArg, Range])
                |
                   pos_idx' < nf
                      |
-                        f_at = fields(pos_idx') | _ | ast::mk_rfield_type("", ast::ValueType(Unknown), ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+                        f_at = fields(pos_idx')!!
                         f_at.name != ""
                            |
-                              ?seen_names @ si =>
-                                 s_nm = seen_names(si) | _ | ""
+                              seen_names @ s_nm =>
                                  s_nm == f_at.name
                                     |
                                        unify::add_error(ctx, 3117,
@@ -3433,14 +3395,11 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
                   pos_idx' = pos_idx' + 1
    needs_reorder' = <->
    last_fi' = -1
-   ?effective_args @ ai =>
-      arg = effective_args(ai) | _ | ast::Expr(Int, 0)
+   effective_args @ arg, ai =>
       arg
          [NamedArg na]
             fi' = -1
-            nf @ fi =>
-               f = fields(fi) | _ | ast::mk_rfield_type("",
-                  ast::ValueType(Unknown), ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+            fields @ f, fi =>
                f.name == na.name | (fi' = fi; -->)
             (fi' !< 0 && fi' < last_fi') | (needs_reorder' = <+>)
             fi' !< 0 | (last_fi' = fi')
@@ -3454,8 +3413,7 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
    !needs_eval_temps
       | (new_args = effective_args)
       |
-         ?effective_args @ ai =>
-            arg = effective_args(ai) | _ | ast::Expr(Int, 0)
+         effective_args @ arg, ai =>
             arg
                [NamedArg na]
                   is_triv = is_trivial_expr(na.val)
@@ -3572,8 +3530,7 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
    bf_fields = bf_opt
       | bfi =>
          bfs = ast::FieldTypes()
-         ?bfi.fields @ bi =>
-            bf = bfi.fields(bi) | _ | ast::BitfieldField(("", 0, 0))
+         bfi.fields @ bf =>
             bfs += ast::mk_rfield_type(bf.name, bfi.backing_type, ast::TypeInfo(Prim, bfi.backing_type))
          bfs
       | ast::FieldTypes()
@@ -3583,7 +3540,7 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
    raw_te' = tast::mk_lit_unit(0, 0)
    ?ce.args == 1
       |
-         a0 = ce.args(0) | _ | ast::Expr(Int, 0)
+         a0 = ce.args(0)!!
          a0_te = annotate_expr(ctx, env, a0)
          c_a0 = unify::canon(ctx, a0_te.ut)
          c_a0
@@ -3685,16 +3642,13 @@ annotate_call_normal = ctx, env, ce =>
                tast::mk_typed_call(ce.fn_name, <-->, typed_args, udef.ut, ti,
                   lay, ce.line, ce.col)
             |
-               typed_args = tast::TypedExprs()
-               ?ce.args @ i =>
-                  a = ce.args(i) | _ | ast::Expr(Int, 0)
-                  typed_args += annotate_call_arg(ctx, env, a)
+               typed_args = annotate_call_args(ctx, env, ce.args)
                n_args = ?typed_args
                c_udef
                   [Ram r]
                      n_args == 1
                         |
-                           a0 = typed_args(0) | _ | tast::mk_lit_int(0, 0, 0)
+                           a0 = typed_args(0)!!
                            c_a0 = unify::canon(ctx, a0.ut)
                            c_a0
                               [Ram r_arg]
@@ -3744,16 +3698,14 @@ annotate_call_normal = ctx, env, ce =>
                                     b.ut)
                         [Array arr]
                            is_var_index' = <+>
-                           first_a = ce.args(0) | _ | ast::Expr(Int, 0)
-                           is_rng = is_range_expr(first_a)
+                           is_rng = ce.args(0) | a => is_range_expr(a) | <->
                            sl_ut = unify::mk_slice(arr.elem)
                            err_ut = unify::prim_error()
                            elem_ut = unify::ram_pp(arr.elem, err_ut)
                            index_ret_ut' = is_rng | sl_ut | elem_ut
                         [Slice elem]
                            is_var_index' = <+>
-                           first_a = ce.args(0) | _ | ast::Expr(Int, 0)
-                           is_rng = is_range_expr(first_a)
+                           is_rng = ce.args(0) | a => is_range_expr(a) | <->
                            sl_ut = unify::mk_slice(elem)
                            index_ret_ut' = is_rng | sl_ut | elem
                         [Rec rec]
@@ -3767,11 +3719,8 @@ annotate_call_normal = ctx, env, ce =>
                                           |
                                              unify::add_error(ctx, 3051,
                                                 diag::E3051_dynamic_index_hetero!)
-                                       f0 = rec(0) | _ |
-                                          unify::UField(("",
-                                             unify::UType(None)))
-                                       first_a = ce.args(0) | _ | ast::Expr(Int, 0)
-                                       is_rng = is_range_expr(first_a)
+                                       f0 = rec(0)!!
+                                       is_rng = ce.args(0) | a => is_range_expr(a) | <->
                                        f0_ut = f0.ut
                                        sl_ut = unify::mk_slice(f0_ut)
                                        index_ret_ut' = is_rng | sl_ut | f0_ut
@@ -3817,16 +3766,14 @@ annotate_call_normal = ctx, env, ce =>
                         | fn_ut' = instantiate_unbound_fn(ctx, target_te.ut)
                   [Array arr2]
                      is_var_index' = <+>
-                     first_a2 = ce.args(0) | _ | ast::Expr(Int, 0)
-                     is_rng2 = is_range_expr(first_a2)
+                     is_rng2 = ce.args(0) | a => is_range_expr(a) | <->
                      sl_ut2 = unify::mk_slice(arr2.elem)
                      err_ut2 = unify::prim_error()
                      elem_ut2 = unify::ram_pp(arr2.elem, err_ut2)
                      index_ret_ut' = is_rng2 | sl_ut2 | elem_ut2
                   [Slice elem2]
                      is_var_index' = <+>
-                     first_a2 = ce.args(0) | _ | ast::Expr(Int, 0)
-                     is_rng2 = is_range_expr(first_a2)
+                     is_rng2 = ce.args(0) | a => is_range_expr(a) | <->
                      sl_ut2 = unify::mk_slice(elem2)
                      index_ret_ut' = is_rng2 | sl_ut2 | elem2
                   [Rec rec2]
@@ -3840,11 +3787,8 @@ annotate_call_normal = ctx, env, ce =>
                                     |
                                        unify::add_error(ctx, 3051,
                                           diag::E3051_dynamic_index_hetero!)
-                                 f02 = rec2(0) | _ |
-                                    unify::UField(("",
-                                       unify::UType(None)))
-                                 first_a2 = ce.args(0) | _ | ast::Expr(Int, 0)
-                                 is_rng2 = is_range_expr(first_a2)
+                                 f02 = rec2(0)!!
+                                 is_rng2 = ce.args(0) | a => is_range_expr(a) | <->
                                  f0_ut2 = f02.ut
                                  sl_ut2 = unify::mk_slice(f0_ut2)
                                  index_ret_ut' = is_rng2 | sl_ut2 | f0_ut2
@@ -3856,8 +3800,7 @@ annotate_call_normal = ctx, env, ce =>
          typed_args = tast::TypedExprs()
          arg_uts = unify::UTypes()
          c_callee = unify::canon(ctx, fn_ut')
-         ?ce.args @ i =>
-            a = ce.args(i) | _ | ast::Expr(Int, 0)
+         ce.args @ a, i =>
             exp_arg = c_callee
                [Fn f_sig] (i < ?f_sig.params | <+ f_sig.params(i)!! +> | <-->)
                | <-->
@@ -3882,9 +3825,8 @@ annotate_call_normal = ctx, env, ce =>
             |
                ?typed_args > 0
                   |
-                     a0 = typed_args(0) | _ | tast::mk_lit_int(0, 0, 0)
-                     first_ce_a = ?ce.args > 0 | (ce.args(0) | _ | ast::Expr(Int, 0)) | ast::Expr(Int, 0)
-                     is_rng_ce = is_range_expr(first_ce_a)
+                     a0 = typed_args(0)!!
+                     is_rng_ce = ce.args(0) | a => is_range_expr(a) | <->
                      !is_rng_ce | unify::unify(ctx, a0.ut, unify::prim_int())
                ti = unify::type_info_from_utype(ctx, index_ret_ut')
                lay = layout::compute_layout(ctx, index_ret_ut')
@@ -4083,10 +4025,7 @@ choice_branch_is_constant = e =>
 choice_has_constant_branch: ast::ChoiceExpr => <>
 choice_has_constant_branch = c =>
    has' = <->
-   ?c.branches @ i =>
-      br = c.branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
-         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-         ast::Expr(Int, 0)))
+   c.branches @ br =>
       choice_branch_is_constant(br.block) | (has' = <+>; -->)
    has'
 
@@ -4102,24 +4041,18 @@ bare_enum_label = s =>
 enum_branches_has_bare: ast::Branches => <>
 enum_branches_has_bare = branches =>
    has' = <->
-   ?branches @ i =>
-      br = branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
-         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-         ast::Expr(Int, 0)))
+   branches @ br =>
       br.kind [Bare] (has' = <+>; -->)
    has'
 
 enum_branches_cover_label: ast::Branches, String => <>
 enum_branches_cover_label = branches, label =>
    found' = <->
-   ?branches @ i =>
-      br = branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
-         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-         ast::Expr(Int, 0)))
+   branches @ br =>
       br.kind
          [Variant]
-            ?br.variant_names @ vi =>
-               vn = bare_enum_label(br.variant_names(vi) | _ | "")
+            br.variant_names @ vn_raw =>
+               vn = bare_enum_label(vn_raw)
                vn == label | (found' = <+>; -->)
             found' | -->
    found'
@@ -4193,10 +4126,7 @@ annotate_choice = ctx, env, ch, is_disc =>
    init_merged' = type_env::new_init()
    has_merged' = <->
    num_joins' = 0
-   ?ch.branches @ i =>
-      br = ch.branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
-         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-         ast::Expr(Int, 0)))
+   ch.branches @ br, i =>
       type_env::init_restore(env, type_env::init_snapshot_of(init_pre))
       c_cond = unify::canon(ctx, cond_te.ut)
       payload_ut' = unify::fresh_var(ctx)
@@ -4288,8 +4218,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                                  unify::show_utype(ctx, c_cond))
                            | (br_kind' = ast::GuardKind(Case))
       typed_cvs = tast::TypedExprs()
-      ?br.case_values @ cv_i =>
-         cv = br.case_values(cv_i) | _ | ast::Expr(Int, 0)
+      br.case_values @ cv =>
          cv_te = annotate_expr(ctx, env, cv)
          typed_cvs += cv_te
          c_cv = unify::canon(ctx, cv_te.ut)
@@ -4303,8 +4232,7 @@ annotate_choice = ctx, env, ch, is_disc =>
             | unify::unify(ctx, cond_te.ut, cv_te.ut)
       (?br.case_values == 0 && (br_kind' [Case]) && ?br.variant_names > 0)
          |
-            ?br.variant_names @ vn_i =>
-               vn_str = br.variant_names(vn_i) | _ | ""
+            br.variant_names @ vn_str =>
                cv_te = annotate_expr(ctx, env, ast::Expr(Var, vn_str))
                typed_cvs += cv_te
                unify::unify(ctx, cond_te.ut, cv_te.ut)
@@ -4417,10 +4345,8 @@ annotate_choice = ctx, env, ch, is_disc =>
                   | pos_ut =>
                      ram_pn_ut = unify::ram_pn(pos_ut)
                      nb_br = ?ch.branches
-                     last_br = nb_br > 0 | ch.branches(nb_br - 1)!! | ast::ChoiceBranch((
-                        ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Int, 0),
-                        ast::Names(), ast::Names(), <->, ast::Expr(Int, 0)))
-                     is_last_bare = last_br.kind [Bare]
+                     last_br = ch.branches(nb_br - 1)
+                     is_last_bare = last_br | br => br.kind [Bare] | <->
                      already_has_fb = nb_br > 1 && is_last_bare
                      !already_has_fb
                         |
@@ -4435,7 +4361,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                            tb_list += tbr_fb
                            ch.branches += ast::ChoiceBranch((
                               ast::GuardKind(Bare), ast::Exprs(),
-                              ast::Expr(Int, 0), ast::Names(), ast::Names(),
+                              ast::Expr(Var, "_"), ast::Names(), ast::Names(),
                               <->, ast::Expr(Variant, (ast::Tag(Noth),
                                  ast::Exprs()))))
                      final_ut' = ram_pn_ut
@@ -4445,10 +4371,8 @@ annotate_choice = ctx, env, ch, is_disc =>
                         | neg_ut =>
                            ram_np_ut = unify::ram_np(neg_ut)
                            nb_br = ?ch.branches
-                           last_br = nb_br > 0 | ch.branches(nb_br - 1)!! | ast::ChoiceBranch((
-                              ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Int, 0),
-                              ast::Names(), ast::Names(), <->, ast::Expr(Int, 0)))
-                           is_last_bare = last_br.kind [Bare]
+                           last_br = ch.branches(nb_br - 1)
+                           is_last_bare = last_br | br => br.kind [Bare] | <->
                            already_has_fb = nb_br > 1 && is_last_bare
                            !already_has_fb
                               |
@@ -4463,7 +4387,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                                  tb_list += tbr_fb
                                  ch.branches += ast::ChoiceBranch((
                                     ast::GuardKind(Bare), ast::Exprs(),
-                                    ast::Expr(Int, 0), ast::Names(), ast::Names(),
+                                    ast::Expr(Var, "_"), ast::Names(), ast::Names(),
                                     <->, ast::Expr(Variant, (ast::Tag(Succ),
                                        ast::Exprs()))))
                            final_ut' = ram_np_ut
@@ -4507,8 +4431,7 @@ annotate_record = ctx, env, re =>
    uf_list' = unify::UFields()
    pre_stmts = tast::TypedExprs()
    cur_off' = 0
-   ?re.fields @ i =>
-      f = re.fields(i) | _ | ast::RecordField((<->, "", ast::Expr(Int, 0)))
+   re.fields @ f, i =>
       splat_opt = is_splat_expr(f.val)
       splat_opt
          | splat_rhs =>
@@ -5139,7 +5062,7 @@ count_expr_nodes = te =>
       [Exit e]
          count' = count' + count_expr_nodes(e)
       [Return r]
-         count' = count' + (r.0 | count_expr_nodes(r.1) | 0)
+         count' = count' + count_target_nodes(r)
    count'
 
 count_program_nodes: tast::TypedProgram => Int
@@ -5325,7 +5248,7 @@ refresh_typed_expr = ctx, te =>
       [Exit e]
          tast::TypedExprKind(Exit, refresh_typed_expr(ctx, e))
       [Return r]
-         tast::TypedExprKind(Return, (r.0, refresh_typed_expr(ctx, r.1)))
+         tast::TypedExprKind(Return, (r | v => <+ refresh_typed_expr(ctx, v) +> | <-->))
       | te.kind
    tast::TypedExpr((new_kind, c_ut, new_ti, new_lay, te.line, te.col))
 
@@ -5362,8 +5285,7 @@ elaborate_program_with_ctx = exprs =>
    fn_alias_tgts ::= ast::Names()
 
    // 1a. Pre-register user type names (enables recursive & mutual types)
-   ?exprs @ i_td0 =>
-      e_td0 = exprs(i_td0) | _ | ast::Expr(Int, 0)
+   exprs @ e_td0 =>
       e_td0
          [TypeDecl td0]
             td0_mod = type_env::decl_module(td0.name, 0)
@@ -5378,8 +5300,7 @@ elaborate_program_with_ctx = exprs =>
 
    // 1b. Multi-pass type resolution for forward & mutually recursive types
    3 @ _pass =>
-      ?exprs @ i_td =>
-         e_td = exprs(i_td) | _ | ast::Expr(Int, 0)
+      exprs @ e_td =>
          e_td
             [TypeDecl td]
                type_env::set_current_module(env,
@@ -5396,8 +5317,7 @@ elaborate_program_with_ctx = exprs =>
                type_env::bind_user_type(env, td.name, td.type_info, td_ut')
 
    // 1c. Register enum variants
-   ?exprs @ i_ev =>
-      e_ev = exprs(i_ev) | _ | ast::Expr(Int, 0)
+   exprs @ e_ev =>
       e_ev
          [TypeDecl td_ev]
             ev_opt = type_env::lookup_user_type(env, td_ev.name)
@@ -5405,8 +5325,7 @@ elaborate_program_with_ctx = exprs =>
                | udef => register_enum_variants(env, td_ev.name, udef.ut)
 
    gen_names = ast::Names()
-   ?exprs @ i_scan =>
-      e_scan = exprs(i_scan) | _ | ast::Expr(Int, 0)
+   exprs @ e_scan =>
       e_scan
          [Assign ascan]
             ascan.3 && ascan.0 != ""
@@ -5415,8 +5334,7 @@ elaborate_program_with_ctx = exprs =>
             is_gen = is_generic_sig(ascan) || is_fe
             is_gen && ascan.0 != "" | gen_names += ascan.0
 
-   ?exprs @ i_decl =>
-      e_decl = exprs(i_decl) | _ | ast::Expr(Int, 0)
+   exprs @ e_decl =>
       e_decl
          [Assign a]
             type_env::set_current_module(env, type_env::decl_module(a.0, 0))
@@ -5526,7 +5444,7 @@ elaborate_program_with_ctx = exprs =>
    // 4. Elaborate all program statements
    env.swizzle_mode = active_swizzle_mode_at(exprs, 0)
    typed_stmts = tast::TypedStmts()
-   ?exprs @ i_stmt =>
+   exprs @ e_stmt, i_stmt =>
       i_stmt < ?cur_stmt_files
          |
             s_f = cur_stmt_files(i_stmt) | _ | cur_source_file
@@ -5535,7 +5453,6 @@ elaborate_program_with_ctx = exprs =>
             unify::set_location(ctx, s_f, s_l, s_c)
          |
             unify::set_file(ctx, cur_source_file)
-      e_stmt = exprs(i_stmt) | _ | ast::Expr(Int, 0)
       is_skip' = <->
       e_stmt
          [Assign a_stmt]

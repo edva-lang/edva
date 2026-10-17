@@ -106,10 +106,7 @@ show_vt = v =>
 show_branches: ast::Branches => String
 show_branches = bs =>
    out = {16}
-   ?bs @ i =>
-      b = bs(i) | _ | ast::ChoiceBranch((
-         ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Var, "?"),
-         ast::Names(), ast::Names(), <->, ast::Expr(Var, "?")))
+   bs @ b, i =>
       out += (i > 0 | " | " | "")
       out += show_branch(b)
    +out
@@ -157,8 +154,7 @@ show_map_pairs: ast::MapPairs => String
 show_map_pairs = ps =>
    out = {16}
    out += "Map("
-   ?ps @ i =>
-      pr = ps(i) | _ | ast::MapPair((ast::Expr(Var, "?"), ast::Expr(Var, "?")))
+   ps @ pr =>
       out += (show_expr(pr.key), "^=", show_expr(pr.value), " ")
    out += ")"
    +out
@@ -166,8 +162,7 @@ show_map_pairs = ps =>
 show_fields: ast::Fields => String
 show_fields = fs =>
    out = {16}
-   ?fs @ i =>
-      f = fs(i) | _ | ast::RecordField((<->, "", ast::Expr(Var, "?")))
+   fs @ f, i =>
       out += (i > 0 | ", " | "")
       out += (f.has_name | f.name + "=" | "") + show_expr(f.val)
    +out
@@ -175,9 +170,9 @@ show_fields = fs =>
 show_exprs: ast::Exprs => String
 show_exprs = xs =>
    out = {16}
-   ?xs @ i =>
+   xs @ x, i =>
       out += (i > 0 | " " | "")
-      out += show_expr(xs(i) | _ | ast::Expr(Var, "?"))
+      out += show_expr(x)
    +out
 
 show_tag: ast::Tag => String
@@ -238,16 +233,14 @@ show_indent = n =>
 show_names: ast::Names => String
 show_names = ns =>
    out = {16}
-   ?ns @ i =>
-      n = ns(i) | _ | ""
+   ns @ n, i =>
       out += (i > 0 | ", " | "") + n
    +out
 
 show_tree_exprs: ast::Exprs, Int => String
 show_tree_exprs = xs, ind =>
    out = {16}
-   ?xs @ i =>
-      x = xs(i) | _ | ast::Expr(Var, "?")
+   xs @ x, i =>
       out += (i > 0 | "\n" | "") + show_tree(x, ind)
    +out
 
@@ -255,10 +248,7 @@ show_tree_branches: ast::Branches, Int => String
 show_tree_branches = bs, ind =>
    out = {16}
    pad = show_indent(ind)
-   ?bs @ i =>
-      b = bs(i) | _ | ast::ChoiceBranch((
-         ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Var, "?"),
-         ast::Names(), ast::Names(), <->, ast::Expr(Var, "?")))
+   bs @ b, i =>
       g = b.kind
          [Variant] show_var(b)
          [Predicate] "pred"
@@ -322,17 +312,14 @@ show_typed_target = ctx, tgt =>
 show_typed_exprs: unify::Ctx, tast::TypedExprs => String
 show_typed_exprs = ctx, xs =>
    out = {16}
-   ?xs @ i =>
-      x = xs(i) | _ | tast::mk_lit_unit(0, 0)
+   xs @ x, i =>
       out += (i > 0 | " " | "") + show_typed_expr(ctx, x)
    +out
 
 show_typed_fields: unify::Ctx, tast::TypedFields => String
 show_typed_fields = ctx, fs =>
    out = {16}
-   ?fs @ i =>
-      f = fs(i) | _ | tast::TypedField(("", tast::mk_lit_unit(0, 0), 0,
-         unify::UType(None)))
+   fs @ f, i =>
       out += (i > 0 | ", " | "")
       out += f.name + "=" + show_typed_expr(ctx, f.val)
    +out
@@ -376,7 +363,7 @@ show_typed_expr = ctx, te =>
          show_typed_expr(ctx, t.1) + ")" + ty_str
       [CycleJump t] "CycleJump(" + (t.0 | "break" | "cont") + " " +
          str::from_int(t.1) + ")" + ty_str
-      [Return r] "Return(" + (r.0 | show_typed_expr(ctx, r.1) | "") + ")" + ty_str
+      [Return r] "Return(" + (r | v => show_typed_expr(ctx, v) | "") + ")" + ty_str
       [RamConstruct t] "Ram(" + unify::show_ram_shape(t.0) + ")" + ty_str
       [EnumConstruct t] "Enum(" + t.0 + ")" + ty_str
       [BuilderNew e] "BuilderNew(" + show_typed_expr(ctx, e) + ")" + ty_str
@@ -390,8 +377,7 @@ show_typed_expr = ctx, te =>
 show_typed_tree_exprs: unify::Ctx, tast::TypedExprs, Int => String
 show_typed_tree_exprs = ctx, xs, ind =>
    out = {16}
-   ?xs @ i =>
-      x = xs(i) | _ | tast::mk_lit_unit(0, 0)
+   xs @ x, i =>
       out += (i > 0 | "\n" | "") + show_typed_tree(ctx, x, ind)
    +out
 
@@ -399,10 +385,7 @@ show_typed_tree_branches: unify::Ctx, tast::TypedBranches, Int => String
 show_typed_tree_branches = ctx, bs, ind =>
    out = {16}
    pad = show_indent(ind)
-   ?bs @ i =>
-      b = bs(i) | _ | tast::TypedBranch((ast::GuardKind(Bare),
-         tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
-         tast::mk_lit_unit(0, 0)))
+   bs @ b, i =>
       g = b.kind
          [Variant] (b.variant_names(0) | _ | "")
          [Predicate] "pred"
@@ -486,7 +469,7 @@ show_typed_tree = ctx, te, ind =>
          pad + "CycleJump(" + (t.0 | "break" | "cont") + " " +
             str::from_int(t.1) + ")" + info
       [Return r]
-         pad + "Return(" + (r.0 | show_typed_expr(ctx, r.1) | "") + ")" + info
+         pad + "Return(" + (r | v => show_typed_expr(ctx, v) | "") + ")" + info
       [Copy e]
          pad + "Copy" + info + "\n" +
             show_typed_tree(ctx, e, ind + 1)
@@ -528,8 +511,7 @@ show_typed_tree_stmt = ctx, stmt, ind =>
 
 dump_typed_program: unify::Ctx, tast::TypedProgram, <> => ()
 dump_typed_program = ctx, prog, as_tree =>
-   ?prog.stmts @ i =>
-      st = prog.stmts(i) | _ | tast::TypedStmt(Expr, tast::mk_lit_unit(0, 0))
+   prog.stmts @ st =>
       as_tree
          | print $ show_typed_tree_stmt(ctx, st, 0)
          | print $ show_typed_stmt(ctx, st)

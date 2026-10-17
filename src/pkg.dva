@@ -1056,8 +1056,7 @@
       b += "sources =\n"
       seen = SMap()
       src_lines = Strings()
-      ?loaded_files @ i =>
-         f = loaded_files(i) | s => s | ""
+      loaded_files @ f =>
          ?f > 0 && !(seen ^? f) && file_exists(f)
             |
                seen ^ (f) = "1"

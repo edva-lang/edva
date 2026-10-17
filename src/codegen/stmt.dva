@@ -368,9 +368,9 @@ compile_lambda = cg, f =>
       | exp_ptypes
       | infer_param_types_env(types::FnDef((fnname, f.params, f.body)), ast::VTypes(), cap_names, cap_types)
    all_params = ast::Names()
-   ?f.params @ pi => all_params += (f.params(pi) | _ | "")
+   f.params @ p => all_params += p
    all_ptypes = ast::VTypes()
-   ?ptypes @ pti => all_ptypes += (ptypes(pti) | _ | ast::ValueType(Unknown))
+   ptypes @ pt => all_ptypes += pt
    nc @ c2i =>
       all_params += (cap_names(c2i) | _ | "")
       all_ptypes += (cap_types(c2i) | _ | ast::ValueType(Unknown))
@@ -3197,8 +3197,7 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
 vtypes_has_unknown: ast::VTypes => <>
 vtypes_has_unknown = vts =>
    found' = <->
-   ?vts @ i =>
-      vt = vts(i) | _ | ast::ValueType(Unknown)
+   vts @ vt =>
       vt == ast::ValueType(Unknown)
          |
             found' = <+>
@@ -3339,8 +3338,7 @@ codegen_emit_reload_so_body = cg, name, fn =>
    LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
    pfx = mod_name + "::"
    pfx_len = ?pfx
-   ?cg.fns @ i =>
-      fd = cg.fns(i)!!
+   cg.fns @ fd =>
       fname = fd.name
       is_mod_fn = ?fname > pfx_len && fname(..pfx_len) == pfx &&
          fname != (pfx + "reload_so") && fname != (pfx + "reload")
@@ -4230,16 +4228,14 @@ codegen_declared_return_error = cg, name, declared, actual =>
 // here: its synthetic lambda name is only known after the producer compiles.
 codegen_scan_closure_args: types::Cg, ast::Exprs => ()
 codegen_scan_closure_args = cg, stmts =>
-   ?stmts @ i =>
-      e = stmts(i)!!
+   stmts @ e =>
       e
          [Assign a]
             a.5
                [Call c]
                   !fn_has_signature(stmts, c.fn_name, 0)
                      |
-                        ?c.args @ j =>
-                           av = c.args(j)!!
+                        c.args @ av, j =>
                            av
                               [Fn f]
                                  pn' = expr::fi_param_name(cg, c.fn_name, j)
@@ -4311,13 +4307,13 @@ codegen_scan_record_expr = cg, stmts, e =>
    e
       [Call c]
          codegen_scan_record_args_of(cg, stmts, c, 0)
-         ?c.args @ i =>
-            codegen_scan_record_expr(cg, stmts, c.args(i)!!)
+         c.args @ ca =>
+            codegen_scan_record_expr(cg, stmts, ca)
       [Spawn s]
          scall = s.call
          codegen_scan_record_args_of(cg, stmts, scall, 0)
-         ?scall.args @ i =>
-            codegen_scan_record_expr(cg, stmts, scall.args(i)!!)
+         scall.args @ sa =>
+            codegen_scan_record_expr(cg, stmts, sa)
       [Bin b]
          is_feed = b.0 [Feed]
          is_apply = b.0 [Apply]
@@ -4330,7 +4326,7 @@ codegen_scan_record_expr = cg, stmts, e =>
                   [Call c]
                      args' = ast::Exprs()
                      is_feed | args' += vside
-                     ?c.args @ i => args' += c.args(i)!!
+                     c.args @ ca => args' += ca
                      !is_feed | args' += vside
                      codegen_scan_record_call(cg, stmts, c.fn_name, args',
                         c.line, c.col)
@@ -4349,12 +4345,11 @@ codegen_scan_record_expr = cg, stmts, e =>
          codegen_scan_record_expr(cg, stmts, t.6)
       [Choice c]
          codegen_scan_record_expr(cg, stmts, c.cond)
-         ?c.branches @ i =>
-            br = c.branches(i)!!
+         c.branches @ br =>
             codegen_scan_record_expr(cg, stmts, br.block)
       [Block b]
-         ?b.exprs @ i =>
-            codegen_scan_record_expr(cg, stmts, b.exprs(i)!!)
+         b.exprs @ be =>
+            codegen_scan_record_expr(cg, stmts, be)
       [Cycle c]
          codegen_scan_record_expr(cg, stmts, c.iterable)
          codegen_scan_record_expr(cg, stmts, c.body_fn)
@@ -4366,8 +4361,7 @@ codegen_scan_record_expr = cg, stmts, e =>
       [Copy e1]
          codegen_scan_record_expr(cg, stmts, e1)
       [Record r]
-         ?r.fields @ i =>
-            rf = r.fields(i)!!
+         r.fields @ rf =>
             codegen_scan_record_expr(cg, stmts, rf.val)
       [Member m]
          codegen_scan_record_expr(cg, stmts, m.target)
@@ -5009,23 +5003,22 @@ lambda_infer_fty = cg, f =>
    caps = lambda_captures(cg, f)
    cap_names = ast::Names()
    cap_types = ast::VTypes()
-   ?caps @ ci =>
-      cname = (caps(ci) | _ | "")
+   caps @ cname =>
       cap_names += cname
       cap_types += types::var_type(cg, cname)
    ptypes = infer_param_types_env(types::FnDef(("l", f.params, f.body)), ast::VTypes(), cap_names, cap_types)
    all_params = ast::Names()
-   ?f.params @ pi => all_params += (f.params(pi) | _ | "")
+   f.params @ p => all_params += p
    all_ptypes = ast::VTypes()
-   ?ptypes @ pti => all_ptypes += (ptypes(pti) | _ | ast::ValueType(Unknown))
-   ?cap_names @ c2i =>
-      all_params += (cap_names(c2i) | _ | "")
+   ptypes @ pt => all_ptypes += pt
+   cap_names @ cname, c2i =>
+      all_params += cname
       all_ptypes += (cap_types(c2i) | _ | ast::ValueType(Unknown))
    ret_vt' = infer_ret(f.body, all_params, all_ptypes)
    ret_vt' = fn_ret_override(cg, f.body, ret_vt')
    ret_ll = types::llvm_type_of_vt(ret_vt')
    param_ll = types::Addrs()
-   ?f.params @ i => param_ll += types::llvm_type_of_vt(ptypes(i)!!)
+   ptypes @ pt => param_ll += types::llvm_type_of_vt(pt)
    (fn_type_n(cg, ret_ll, param_ll, ?f.params), ret_vt')
 
 
@@ -5063,8 +5056,8 @@ pass_names = cg, stmts, name =>
    names += name
    ?stmts @
       growing' = <->
-      ?stmts @ i =>
-         pass_grow(cg, stmts(i)!!, names) | growing' = <+>
+      stmts @ st =>
+         pass_grow(cg, st, names) | growing' = <+>
       !growing' | -->
    names
 
@@ -5211,8 +5204,7 @@ scan_call = cg, e, names, hints =>
       [Call c]
          name_is_in(names, c.fn_name)
             |
-               ?c.args @ i =>
-                  av = c.args(i)!!
+               c.args @ av =>
                   hints += infer_expr_type(cg, av)
                <+>
             | <->
@@ -5309,8 +5301,8 @@ hof_body_scan = cg, stmts, e, fd, p, outer, hints, bound_var =>
       [Call c]
          c.fn_name == p
             |
-               ?c.args @ k =>
-                  hints += hof_arg_type(cg, c.args(k)!!, fd, outer)
+               c.args @ ca =>
+                  hints += hof_arg_type(cg, ca, fd, outer)
                <+>
             |
                hof_call_args_scan(cg, stmts, c.args, fd, p, outer, hints,
@@ -5341,8 +5333,8 @@ hof_lam_body_scan = cg, e, fd, lam, p, outer, hints, lam_hints =>
       [Call c]
          c.fn_name == p
             |
-               ?c.args @ k =>
-                  hints += hof_lam_arg_type(cg, c.args(k)!!,
+               c.args @ ca =>
+                  hints += hof_lam_arg_type(cg, ca,
                      fd, lam, outer, lam_hints)
                <+>
             |
@@ -5819,8 +5811,8 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                  rec_fvs = ast::VTypes()
                                  ti_r = val.ti [Rec r] r.0 |
                                     (ti [Rec r2] r2.0 | ast::FieldTypes())
-                                 ?ti_r @ fi =>
-                                    rec_fvs += types::vt_from_ti(ti_r(fi)!!.rec_type)
+                                 ti_r @ rfi =>
+                                    rec_fvs += types::vt_from_ti(rfi.rec_type)
                                  is_sp_var = val.kind [Spawn]
                                  i1_ty = LLVMInt1Type!
                                  is_h_ram = types::is_ram_vt(ev.1) &&

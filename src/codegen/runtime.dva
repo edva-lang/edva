@@ -910,8 +910,7 @@ record_meta_from_ti = cg, ti =>
                   rr.5) +>
             [Bitfield b]
                fnames = ast::Names()
-               ?b.fields @ i =>
-                  bf = b.fields(i) | _ | ast::BitfieldField(("", 0, 0))
+               b.fields @ bf =>
                   fnames += ++bf.name
                <+ (types::llvm_type_of_vt(b.backing_type), fnames) +>
             [TypeVar name] types::td_record_meta_by_name(cg, name)
@@ -2034,8 +2033,7 @@ add_type_rec = cg, name, ti, rt, fnames =>
 
 codegen_emit_stmts: types::Cg, ast::Exprs => ()
 codegen_emit_stmts = cg, stmts =>
-   ?stmts @ i =>
-      e = stmts(i)!!
+   stmts @ e =>
       saved_module = cg.current_module
       e
          [Assign t] cg.current_module = types::decl_module(t.0, 0)

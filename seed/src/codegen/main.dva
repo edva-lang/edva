@@ -2179,8 +2179,7 @@ codegen_eval_spawn = cg, se =>
    call = se.call
    raw_args = types::Addrs()
    raw_vts = ast::VTypes()
-   ?call.args @ i =>
-      av = call.args(i)!!
+   call.args @ av =>
       types::is_view_expr(cg, av)
          | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)
       ev = expr::codegen_eval(cg, av)
@@ -2252,8 +2251,7 @@ codegen_eval_spawn = cg, se =>
          LLVMBuildCall2(cg.builder, init_t, init_fn, sb, 2, "")
          args = types::Addrs()
          arg_ts = types::Addrs()
-         ?raw_args @ i =>
-            rv = raw_args(i)!!
+         raw_args @ rv, i =>
             rt = raw_vts(i)!!
             cv = codegen_thread_copy_value(cg, rv, rt, arena_raw)
             pty = LLVMTypeOf(LLVMGetParam(fn,
@@ -2519,8 +2517,7 @@ codegen_compile_uncalled_signed_fns: types::Cg, ast::Exprs => ()
 codegen_compile_uncalled_signed_fns = cg, stmts =>
    !cg.opts.no_runtime
       |
-         ?cg.fns @ i =>
-            fd = cg.fns(i)!!
+         cg.fns @ fd =>
             !types::is_fn_name(cg, fd.name)
                |
                   has_sig = stmt::fn_has_signature(stmts, fd.name, 0)
@@ -3039,7 +3036,7 @@ codegen_typed_eval = cg, te =>
       [Spawn s] codegen_eval_spawn(cg, s)
       [Join j] codegen_typed_eval_join(cg, j, te.ti)
       [Exit e] expr::codegen_typed_eval_exit(cg, e)
-      [Return r] expr::codegen_typed_eval_return(cg, r.0, r.1)
+      [Return r] expr::codegen_typed_eval_return(cg, r)
       [UserDiag ud] match::codegen_eval_user_diag(cg, ud)
       [CompileTime ct]
          ct_res = match::ctfe_eval(cg, ct.expr, types::CtFrames(), 0)
@@ -3048,8 +3045,7 @@ codegen_typed_eval = cg, te =>
 
 codegen_typed_emit_stmts: types::Cg, tast::TypedStmts => ()
 codegen_typed_emit_stmts = cg, stmts =>
-   ?stmts @ i =>
-      st = stmts(i) | _ | tast::TypedStmt(Expr, tast::mk_lit_unit(0, 0))
+   stmts @ st =>
       !cg.error | stmt::codegen_typed_emit_stmt(cg, st)
 
 codegen_typed_program_opts: tast::TypedProgram, ast::Expr, String,
@@ -3081,8 +3077,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    types::g.pstmts = raw_exprs
    types::g.typed_program_stmts = prog.stmts
    types::g.pexports = exports
-   ?raw_exprs @ i_mg =>
-      e_mg = raw_exprs(i_mg) | _ | ast::Expr(Int, 0)
+   raw_exprs @ e_mg =>
       e_mg
          [Assign amg]
             amg.3 && amg.0 != "" && !types::has_str(types::g.marked_globals, amg.0)
@@ -3104,8 +3099,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    codegen_typed_emit_stmts(cg, prog.stmts)
    cg.opts.is_module
       |
-         ?cg.fns @ i_mod_fn =>
-            fd_i = cg.fns(i_mod_fn) | _ | empty_fndef
+         cg.fns @ fd_i =>
             types::name_is_in_current_module(cg, fd_i.name)
                | stmt::compile_typed_fn_lazy(cg, fd_i.name)
    !cg.error | runtime::codegen_finish(cg, out_path)

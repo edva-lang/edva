@@ -1115,7 +1115,7 @@ call_lambda = cg, cl, args =>
          fi = cg.fninfos(fidx)!!
          arg_vals = types::Addrs()
          arg_vals += stmt::closure_env_ptr(cg, cl.0, "clo.env")
-         ?args @ i => arg_vals += args(i)!!
+         args @ a => arg_vals += a
          n = ?arg_vals
          buf = {n * 8}
          sb = &buf
@@ -1154,9 +1154,8 @@ apply_split = fn =>
                   |
                      args' = ast::Exprs()
                      args' += b.1
-                     ?sub'.3 @ i =>
-                        arg_i' = sub'.3(i) | _ | ast::Expr(Int, 0)
-                        args' += arg_i'
+                     sub'.3 @ arg_i =>
+                        args' += arg_i
                      (<+>, sub'.1, sub'.2, args')
                   |
                      callee' = apply_callee_name(b.2)
@@ -1169,9 +1168,8 @@ apply_split = fn =>
                sub'.0
                   |
                      args' = ast::Exprs()
-                     ?sub'.3 @ i =>
-                        arg_i' = sub'.3(i) | _ | ast::Expr(Int, 0)
-                        args' += arg_i'
+                     sub'.3 @ arg_i =>
+                        args' += arg_i
                      args' += b.2
                      (<+>, sub'.1, sub'.2, args')
                   |
@@ -1201,7 +1199,7 @@ codegen_emit_apply_feed = cg, op, t =>
             |
                args' = ast::Exprs()
                is_feed | args' += vside
-               ?sp.3 @ i => args' += sp.3(i)!!
+               sp.3 @ a => args' += a
                !is_feed | args' += vside
                call' = ast::CallExpr((sp.1, sp.2, args', 0, 0))
                codegen_eval_call(cg, call')
@@ -3386,8 +3384,7 @@ infer_expr_type_and_info = cg, e =>
 synth_rec_ti_from_record_expr: types::Cg, ast::RecordExpr => ast::TypeInfo
 synth_rec_ti_from_record_expr = cg, r =>
    fts = ast::FieldTypes()
-   ?r.fields @ i =>
-      f = r.fields(i)!!
+   r.fields @ f =>
       fname = f.has_name | f.name | ""
       finf = infer_expr_type_and_info(cg, f.val)
       fts += ast::RecordFieldType((fname, finf.0, finf.1,
@@ -3461,13 +3458,10 @@ extract_ct_from_fn = cg, p_ti, arg_ti, ct_name =>
             [Fn a_fn]
                pis = p_fn.1
                ais = a_fn.1
-               ?pis @ m =>
-                  pi = pis(m) | _ |
-                     ast::TypeInfo(Prim, ast::ValueType(Unknown))
+               pis @ pi, m =>
                   m < ?ais && ti_has_ct_name(pi, ct_name)
                      |
-                        ai = ais(m) | _ |
-                           ast::TypeInfo(Prim, ast::ValueType(Unknown))
+                        ai = ais(m)!!
                         b = extract_ct_binding(cg, pi, ai, ct_name)
                         b | (res' = b; found' = <+>; -->)
                !found' && ti_has_ct_name(p_fn.3, ct_name)
@@ -3513,14 +3507,10 @@ extract_ct_from_rec = cg, p_ti, arg_ti, ct_name =>
             [Rec a_rec]
                pfts = p_rec.0
                afts = a_rec.0
-               d_ft = ast::RecordFieldType(("", ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-                  <->, ast::Expr(Int, 0)))
-               ?pfts @ m =>
-                  pf = pfts(m) | _ | d_ft
+               pfts @ pf, m =>
                   m < ?afts && ti_has_ct_name(pf.rec_type, ct_name)
                      |
-                        af = afts(m) | _ | d_ft
+                        af = afts(m)!!
                         b = extract_ct_binding(cg, pf.rec_type,
                            af.rec_type, ct_name)
                         b | (res' = b; -->)
@@ -3552,12 +3542,10 @@ extract_ct_from_tis: types::Cg, ast::VInfos, ast::VInfos,
    String => < (ast::ValueType, ast::TypeInfo, String) | >
 extract_ct_from_tis = cg, tis, catis, ct_name =>
    res' = <-->
-   d_ti = ast::TypeInfo(Prim, ast::ValueType(Unknown))
-   ?tis @ j =>
-      ti_j = tis(j) | _ | d_ti
+   tis @ ti_j, j =>
       j < ?catis && ti_has_ct_name(ti_j, ct_name)
          |
-            ca_j = catis(j) | _ | d_ti
+            ca_j = catis(j)!!
             b = extract_ct_binding(cg, ti_j, ca_j, ct_name)
             b | (res' = b; -->)
    res'
@@ -3884,8 +3872,7 @@ compile_mono_fn = cg, orig, mono, ct_names, b_vts, b_tis, b_dts, b_ct_vals =>
                saved_ct_n = ?types::g.ct_bind_names
                saved_ct_v_n = ?types::g.ct_val_names
                saved_cg_vars = ?cg.vars
-               ?ct_names @ k =>
-                  ct = ct_names(k) | _ | ""
+               ct_names @ ct, k =>
                   ct_val = b_ct_vals(k) | _ | types::CtVal(None)
                   ct_val
                      [None]
@@ -4001,8 +3988,7 @@ codegen_eval_named_call = cg, t =>
          b_ct_vals = types::CtVals()
          bkey = {64}
          bkey += fname'
-         ?ct_names @ k =>
-            ct = ct_names(k) | _ | ""
+         ct_names @ ct, k =>
             cp = stmt::find_cparam(cps, ct)
             is_val_cp = (cp.name != "") &&
                (cp.val_type != ast::ValueType(Type))
@@ -4062,10 +4048,9 @@ codegen_eval_named_call = cg, t =>
                      cavts' = ast::VTypes()
                      saved_discard' = cg.discard_result
                      cg.discard_result = <->
-                     ?t.args @ i =>
-                        av' = t.args(i)!!
-                        types::init_check_escape(cg, av', t.line, t.col)
-                        aev' = codegen_eval(cg, av')
+                     t.args @ av =>
+                        types::init_check_escape(cg, av, t.line, t.col)
+                        aev' = codegen_eval(cg, av)
                         cargs' += aev'.0
                         cavts' += aev'.1
                      cg.discard_result = saved_discard'
@@ -4143,8 +4128,8 @@ named_call_emit_pre = cg, fname, fn, fty, ret, args, arg_vts =>
       |
          call_args += LLVMGetParam(cg.current_fn, 0)
          call_vts += ast::ValueType(RawPtr)
-   ?args @ ci =>
-      call_args += args(ci)!!
+   args @ ca, ci =>
+      call_args += ca
       call_vts += (arg_vts(ci) | _ | ast::ValueType(Unknown))
    n = ?call_args
    buf = {n * 8}
@@ -4384,8 +4369,7 @@ codegen_closure_call_indirect_val = cg, t, clo_val, ret =>
    saved_discard = cg.discard_result
    cg.discard_result = <->
    arg_vals = types::Addrs()
-   ?t.args @ i =>
-      av = t.args(i)!!
+   t.args @ av =>
       arg_vals += codegen_eval(cg, av).0
    cg.discard_result = saved_discard
 
@@ -4506,8 +4490,7 @@ codegen_closure_call_plain = cg, t, fty, ret, cfn =>
    saved_discard = cg.discard_result
    cg.discard_result = <->
    arg_vals = types::Addrs()
-   ?t.args @ i =>
-      av = t.args(i)!!
+   t.args @ av =>
       ev = codegen_eval(cg, av)
       arg_vals += ev.0
    cg.discard_result = saved_discard
@@ -4535,8 +4518,7 @@ codegen_closure_call_env = cg, t, fty, ret =>
    cg.discard_result = <->
    arg_vals = types::Addrs()
    arg_vals += envp
-   ?t.args @ i =>
-      av = t.args(i)!!
+   t.args @ av =>
       ev = codegen_eval(cg, av)
       arg_vals += ev.0
    cg.discard_result = saved_discard
@@ -4786,9 +4768,7 @@ codegen_str_tuple_cmp = cg, eq, s_val, rec_te, rec_val, rec_rt_opt, rec_fvts =>
    lens' = types::Addrs()
    rec_te.kind
       [Record r_fields]
-         ?r_fields @ i =>
-            f = r_fields(i) | _ | tast::TypedField(("",
-               tast::mk_lit_unit(0, 0), 0, unify::prim_unit()))
+         r_fields @ f =>
             fev = main::codegen_typed_eval(cg, f.val)
             flen = codegen_string_len(cg, fev.0, "seg.len")
             parts' += fev.0
@@ -5502,8 +5482,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
          b_ct_vals = types::CtVals()
          bkey = {64}
          bkey += rname
-         ?ct_names @ k =>
-            ct = ct_names(k) | _ | ""
+         ct_names @ ct, k =>
             cp = stmt::find_cparam(cps, ct)
             is_val_cp = (cp.name != "") &&
                (cp.val_type != ast::ValueType(Type))
@@ -5637,8 +5616,7 @@ codegen_typed_eval_indirect_call = cg, clo_val, args, ti =>
    envp = LLVMBuildLoad2(cg.builder, i8p, env_gep, "clo.env.load")
 
    arg_vals = types::Addrs()
-   ?args @ i =>
-      av = args(i)!!
+   args @ av =>
       arg_vals += (main::codegen_typed_eval(cg, av)).0
 
    n = ?arg_vals
@@ -5755,21 +5733,15 @@ codegen_typed_eval_exit = cg, e =>
          types::init_error(cg, "E3172", diag::E3172_exit_status_integerish!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
-codegen_typed_eval_return: types::Cg, <>, tast::TypedExpr => (Addr, ast::ValueType)
-codegen_typed_eval_return = cg, has_val, val_te =>
+codegen_typed_eval_return: types::Cg, <tast::TypedExpr|> => (Addr, ast::ValueType)
+codegen_typed_eval_return = cg, val_opt =>
    !cg.in_fn
       |
          types::init_error(cg, "E3173", diag::E3173_return_outside_fn!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
-         !has_val
-            |
-               !stmt::block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
-               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
-               LLVMPositionBuilderAtEnd(cg.builder, dead)
-               cg.exited = <+>
-               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
-            |
+         val_opt
+            | val_te =>
                ev = main::codegen_typed_eval(cg, val_te)
                bvv = ev.0
                i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -5808,6 +5780,12 @@ codegen_typed_eval_return = cg, has_val, val_te =>
                                  LLVMInt64Type!, "ret.int")
                               | stmt::coerce_int(cg, bvv, ret_ll)
                !stmt::block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
+               dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
+               LLVMPositionBuilderAtEnd(cg.builder, dead)
+               cg.exited = <+>
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
+            |
+               !stmt::block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
                dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead)
                cg.exited = <+>

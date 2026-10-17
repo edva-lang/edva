@@ -352,16 +352,14 @@ fn_occurs = ctx, v, f =>
       | <+>
       |
          found' = <->
-         ?f.params @ i =>
-            p = f.params(i) | _ | UType(None)
+         f.params @ p =>
             occurs(ctx, v, p) | (found' = <+>; -->)
          found'
 
 rec_occurs: Ctx, Int, UFields => <>
 rec_occurs = ctx, v, r =>
    found' = <->
-   ?r @ i =>
-      fld = r(i) | _ | UField(("", UType(None)))
+   r @ fld =>
       occurs(ctx, v, fld.ut) | (found' = <+>; -->)
    found'
 
@@ -377,8 +375,7 @@ enum_occurs = ctx, v, e =>
       | <->
       |
          found' = <->
-         ?e.variants @ i =>
-            vr = e.variants(i) | _ | UEnumVariant(("", <->, UType(None)))
+         e.variants @ vr =>
             vr.has_payload && occurs(ctx, v, vr.payload_type)
                | (found' = <+>; -->)
          found'
@@ -544,9 +541,8 @@ unify_fn = ctx, f1, f2 =>
          <->
       |
          all_ok' = <+>
-         ?f1.params @ i =>
-            p1 = f1.params(i) | _ | UType(None)
-            p2 = f2.params(i) | _ | UType(None)
+         f1.params @ p1, i =>
+            p2 = f2.params(i)!!
             ok = unify(ctx, p1, p2)
             !ok | (all_ok' = <->; -->)
          all_ok'
@@ -556,13 +552,12 @@ unify_fn = ctx, f1, f2 =>
 is_sub_record: Ctx, UFields, UFields => <>
 is_sub_record = ctx, sub_flds, full_flds =>
    all_ok' = <+>
-   ?sub_flds @ i =>
-      f1 = sub_flds(i) | _ | UField(("", UType(None)))
+   sub_flds @ f1 =>
       idx = find_field_idx(full_flds, f1.name)
       idx < 0
          | (all_ok' = <->; -->)
          |
-            f2 = full_flds(idx) | _ | UField(("", UType(None)))
+            f2 = full_flds(idx)!!
             ok = unify(ctx, f1.ut, f2.ut)
             !ok | (all_ok' = <->; -->)
    all_ok'
@@ -605,9 +600,8 @@ unify_rec = ctx, r1, r2 =>
          <->
       |
          all_ok' = <+>
-         ?r1 @ i =>
-            f1 = r1(i) | _ | UField(("", UType(None)))
-            f2 = r2(i) | _ | UField(("", UType(None)))
+         r1 @ f1, i =>
+            f2 = r2(i)!!
             ok = unify(ctx, f1.ut, f2.ut)
             !ok | (all_ok' = <->; -->)
          all_ok'
@@ -665,11 +659,8 @@ unify_enum = ctx, e1, e2 =>
                <->
             |
                all_ok' = <+>
-               ?e1.variants @ i =>
-                  v1 = e1.variants(i) | _ |
-                     UEnumVariant(("", <->, UType(None)))
-                  v2 = e2.variants(i) | _ |
-                     UEnumVariant(("", <->, UType(None)))
+               e1.variants @ v1, i =>
+                  v2 = e2.variants(i)!!
                   diff_payload = v1.has_payload && !v2.has_payload ||
                      !v1.has_payload && v2.has_payload
                   v1.label != v2.label || diff_payload
@@ -734,8 +725,7 @@ solve_constraint = ctx, c =>
 solve_constraints: Ctx, Constraints => <>
 solve_constraints = ctx, cs =>
    all_ok' = <+>
-   ?cs @ i =>
-      c = cs(i) | _ | Constraint(Equality, (UType(None), UType(None)))
+   cs @ c =>
       ok = solve_constraint(ctx, c)
       !ok | (all_ok' = <->; -->)
    all_ok'
@@ -743,8 +733,7 @@ solve_constraints = ctx, cs =>
 is_open_var: Ctx, Int => <>
 is_open_var = ctx, v =>
    found' = <->
-   ?ctx.open_vars @ i =>
-      ov = ctx.open_vars(i) | _ | -1
+   ctx.open_vars @ ov =>
       ov == v | (found' = <+>; -->)
    found'
 
@@ -834,8 +823,7 @@ find_field_idx = flds, name =>
       | -1
       |
          found' = -1
-         ?flds @ i =>
-            f = flds(i) | _ | UField(("", UType(None)))
+         flds @ f, i =>
             f.name == name | (found' = i; -->)
          found' !< 0
             | found'
@@ -846,8 +834,7 @@ find_field_idx = flds, name =>
 solve_choice_join: Ctx, UType, UTypes => <>
 solve_choice_join = ctx, res_type, branches =>
    all_ok' = <+>
-   ?branches @ i =>
-      bt = branches(i) | _ | UType(None)
+   branches @ bt =>
       ok = unify(ctx, res_type, bt)
       !ok | (all_ok' = <->; -->)
    all_ok'
@@ -865,15 +852,13 @@ is_ground = ctx, t =>
          ret_ok
             |
                all_ok' = <+>
-               ?f.params @ i =>
-                  p = f.params(i) | _ | UType(None)
+               f.params @ p =>
                   !is_ground(ctx, p) | (all_ok' = <->; -->)
                all_ok'
             | <->
       [Rec r]
          all_ok' = <+>
-         ?r @ i =>
-            f = r(i) | _ | UField(("", UType(None)))
+         r @ f =>
             !is_ground(ctx, f.ut) | (all_ok' = <->; -->)
          all_ok'
       [Ram r]
@@ -891,8 +876,7 @@ is_ground = ctx, t =>
             | <+>
             |
                all_ok' = <+>
-               ?e.variants @ i =>
-                  v = e.variants(i) | _ | UEnumVariant(("", <->, UType(None)))
+               e.variants @ v =>
                   v.has_payload && !is_ground(ctx, v.payload_type)
                      | (all_ok' = <->; -->)
                all_ok'
@@ -941,16 +925,14 @@ show_utype = ctx, t =>
 show_utypes: Ctx, UTypes => String
 show_utypes = ctx, ts =>
    out = {32}
-   ?ts @ i =>
-      t = ts(i) | _ | UType(None)
+   ts @ t, i =>
       out += (i > 0 | ", " | "") + show_utype(ctx, t)
    +out
 
 show_ufields: Ctx, UFields => String
 show_ufields = ctx, flds =>
    out = {32}
-   ?flds @ i =>
-      f = flds(i) | _ | UField(("", UType(None)))
+   flds @ f, i =>
       out += (i > 0 | ", " | "") + f.name + ": " + show_utype(ctx, f.ut)
    +out
 
@@ -1058,20 +1040,14 @@ utype_from_type_info = ti =>
                   | UType(Prim, vt_to_uprim(r.3))
                UType(Slice, elem_ut)
             |
-               fts_rec = r.0
                flds_rec = UFields()
-               ?fts_rec @ i =>
-                  ft = fts_rec(i) | _ | ast::RecordFieldType(("",
-                     ast::ValueType(Unknown),
-                     ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-                     <->, ast::Expr(Int, 0)))
+               r.0 @ ft =>
                   flds_rec += UField((ft.name,
                      utype_from_type_info(ft.rec_type)))
                UType(Rec, flds_rec)
       [Bitfield b]
          flds_bf = UFields()
-         ?b.fields @ i =>
-            bf = b.fields(i) | _ | ast::BitfieldField(("", 0, 0))
+         b.fields @ bf =>
             flds_bf += UField((bf.name,
                UType(Prim, vt_to_uprim(b.backing_type))))
          UType(Rec, flds_bf)
@@ -1091,10 +1067,8 @@ utype_from_type_info = ti =>
                slot1 = URamSlot((s1.has_payload, n_ut))
                UType(Ram, URam((slot0, slot1)))
       [Fn f]
-         vinfos = f.1
          params = UTypes()
-         ?vinfos @ i =>
-            pi = vinfos(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+         f.1 @ pi =>
             params += utype_from_type_info(pi)
          ret = utype_from_type_info(f.3)
          UType(Fn, UFn((params, ret)))
@@ -1102,10 +1076,7 @@ utype_from_type_info = ti =>
          UType(Array, UArray((utype_from_type_info(a.1), a.2)))
       [Enum slots]
          vars = UEnumVariants()
-         ?slots @ i =>
-            sl = slots(i) | _ | ast::EnumSlotInfo(("", <->,
-               ast::ValueType(Unknown),
-               ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         slots @ sl =>
             p_ut_enum = sl.has_payload
                | utype_from_type_info(sl.payload_record)
                | UType(None)
@@ -1144,8 +1115,7 @@ type_info_from_utype = ctx, u =>
             | ast::TypeInfo(TypeVar, e.name)
             |
                slots = ast::EnumSlots()
-               ?e.variants @ i =>
-                  v = e.variants(i) | _ | UEnumVariant(("", <->, UType(None)))
+               e.variants @ v =>
                   p_ti = v.has_payload
                      | type_info_from_utype(ctx, v.payload_type)
                      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
@@ -1158,8 +1128,7 @@ type_info_from_utype = ctx, u =>
       [Fn f]
          vts = ast::VTypes()
          vinfos = ast::VInfos()
-         ?f.params @ i =>
-            p = f.params(i) | _ | UType(None)
+         f.params @ p =>
             ti = type_info_from_utype(ctx, p)
             vts += vt_from_utype(ctx, p)
             vinfos += ti
@@ -1168,8 +1137,7 @@ type_info_from_utype = ctx, u =>
          ast::TypeInfo(Fn, (vts, vinfos, ret_vt, ret_ti, ast::CParams()))
       [Rec r]
          fts = ast::FieldTypes()
-         ?r @ i =>
-            fld = r(i) | _ | UField(("", UType(None)))
+         r @ fld =>
             fld_ti = type_info_from_utype(ctx, fld.ut)
             fld_vt = vt_from_utype(ctx, fld.ut)
             fts += ast::RecordFieldType((fld.name, fld_vt, fld_ti,

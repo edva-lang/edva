@@ -65,10 +65,9 @@
    filter: #! E: Type, #! T: Type, (E => <>), T => T
    filter = pred, xs =>
       out = T
-      ?xs @ i =>
-         v = xs(i) | _ | E
-         pred(v)
-            | out += v
+      xs @ x =>
+         pred(x)
+            | out += x
       out
 
    // reject: inverse of filter — remove elements satisfying pred.
@@ -115,7 +114,7 @@
       n = ?xs
       0..n @ i =>
          idx = n - 1 - i
-         out += (xs(idx) | _ | E)
+         out += xs(idx)!!
       out
 
    // flatten: concatenate an array of arrays into a single-level array.

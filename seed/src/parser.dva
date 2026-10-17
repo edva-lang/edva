@@ -131,8 +131,7 @@ user_op_lookup = lst, text =>
    found' = <->
    lbp' = 0
    rbp' = 0
-   ?lst @ i =>
-      e = lst(i) | _ | UserOpEntry(("", 0, 0))
+   lst @ e =>
       e.text == text
          |
             found' = <+>
@@ -738,8 +737,7 @@ atom_binding_call = p, c =>
    stmts = ast::Exprs()
    stmts += arr_assign
    bound_args = ast::Exprs()
-   ?c.args @ i =>
-      arg_e = c.args(i) | _ | ast::Expr(Int, 0)
+   c.args @ arg_e =>
       idx_name = fresh_dp_var(p)
       idx_var = ast::Expr(Var, idx_name)
       idx_assign = ast::Expr(Assign, (idx_name, <->, <->, <->, <->,
@@ -1844,10 +1842,9 @@ append_field: ast::Fields, <>, String, ast::Expr => ast::Fields
 append_field = fields, has_name, name, v =>
    v
       [Record r]
-         r.is_repeat
+          r.is_repeat
             |
-               ?r.fields @ i =>
-                  f = read_field(r.fields, i)
+               r.fields @ f =>
                   fields += ast::RecordField((has_name, name, f.val))
                fields
             |
@@ -1880,7 +1877,7 @@ parse_trailing_block_expr = p, lhs =>
                n_exprs = ?b.exprs
                n_exprs == 1
                   |
-                     first_e = b.exprs(0) | _ | ast::Expr(Int, 0)
+                     first_e = b.exprs(0)!!
                      first_e
                         [Fn]
                            <+ ast::Expr(Bin, (ast::BinaryOp(Apply),
@@ -1894,8 +1891,7 @@ parse_trailing_block_expr = p, lhs =>
                               lhs, rec)) +>
                   |
                      fields' = ast::Fields()
-                     ?b.exprs @ i =>
-                        e = b.exprs(i) | _ | ast::Expr(Int, 0)
+                     b.exprs @ e =>
                         fields' = trailing_block_field(fields', e)
                      rec = ast::Expr(Record, (ast::RecordExpr((fields', <->))))
                      <+ ast::Expr(Bin, (ast::BinaryOp(Apply), lhs, rec)) +>
@@ -1964,8 +1960,7 @@ has_free_underscore = e =>
       [Var v] v == "_"
       [Fn f]
          bound' = <->
-         ?f.params @ i =>
-            pname = read_str(f.params, i)
+         f.params @ pname =>
             pname == "_" | bound' = <+>; -->
          bound'
             | <->
@@ -2013,18 +2008,15 @@ has_free_underscore = e =>
 has_free_underscore_exprs: ast::Exprs => <>
 has_free_underscore_exprs = xs =>
    found' = <->
-   ?xs @ i =>
-      has_free_underscore(xs(i) | _ | ast::Expr(Var, "?"))
+   xs @ x =>
+      has_free_underscore(x)
          | found' = <+>; -->
    found'
 
 has_free_underscore_branches: ast::Branches => <>
 has_free_underscore_branches = bs =>
    found' = <->
-   ?bs @ i =>
-      b = bs(i) | _ | ast::ChoiceBranch((
-         ast::GuardKind(Case), ast::Exprs(), ast::Expr(Var, "?"),
-         ast::Names(), ast::Names(), <->, ast::Expr(Var, "?")))
+   bs @ b =>
       !b.is_identity_extractor
          |
             has_free_underscore_exprs(b.case_values)
@@ -2038,8 +2030,7 @@ has_free_underscore_branches = bs =>
 has_free_underscore_fields: ast::Fields => <>
 has_free_underscore_fields = fs =>
    found' = <->
-   ?fs @ i =>
-      f = fs(i) | _ | ast::RecordField((<->, "", ast::Expr(Var, "?")))
+   fs @ f =>
       has_free_underscore(f.val)
          | found' = <+>; -->
    found'
@@ -2423,10 +2414,7 @@ parse_program = p =>
 resolve_refs: Parser => <>
 resolve_refs = p =>
    ok' = <+>
-   ?p.forward_refs @ i =>
-      fr = p.forward_refs(i) | _ | ForwardRef((
-         lexer::Tok((lexer::TokKind(Eof), 0, 0, 1, 1, <->, <->, "")),
-         "", ast::TypeInfo(TypeVar, "")))
+   p.forward_refs @ fr =>
       has_lt = <>(lookup_type(p.user_types, fr.name))
       has_mod = string_has_double_colon(fr.name, 0)
       fn = p.source_file != "" | p.source_file + ":" | ""
@@ -3017,11 +3005,7 @@ rfield_fn_type = p, all_fields, cur_vt, cur_rec =>
             parser_advance(p)
             params = ast::VTypes()
             infos = ast::VInfos()
-            ?all_fields @ i =>
-               f = all_fields(i) | _ | ast::RecordFieldType(("",
-                  ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-                  <->, ast::Expr(Int, 0)))
+            all_fields @ f =>
                params += f.val_type
                infos += f.rec_type
             is_unit = cur_vt [Unit]
@@ -3152,11 +3136,7 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
       [Prim] ti
       [Rec r]
          new_fields = ast::FieldTypes()
-         ?r.0 @ i =>
-            f = r.0(i) | _ | ast::RecordFieldType(("",
-               ast::ValueType(Unknown),
-               ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-               <->, ast::Expr(Int, 0)))
+         r.0 @ f =>
             sub_ti = ctfe_subst_type(f.rec_type, name, arg_vt, arg_ti)
             sub_vt = ti_is_typevar(f.rec_type, name) | arg_vt | f.val_type
             new_fields += ast::RecordFieldType((f.name, sub_vt, sub_ti,
@@ -3327,9 +3307,7 @@ lookup_type: (TypeEntry){}, String => <ast::TypeInfo|>
 lookup_type = lst, name =>
    found' = <->
    res' = ast::TypeInfo(Prim, ast::ValueType(Unknown))
-   ?lst @ i =>
-      e = lst(i) | _ | TypeEntry((
-         "", ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+   lst @ e =>
       e.name == name
          |
             found' = <+>
@@ -4200,8 +4178,7 @@ expr_to_type_info = p, e =>
       [Record r]
          fts' = ast::FieldTypes()
          all_ok' = <+>
-         ?r.fields @ i =>
-            f = r.fields(i) | _ | ast::RecordField((<->, "", ast::Expr(Var, "")))
+         r.fields @ f =>
             fti = expr_to_type_info(p, f.val)
             fti
                | ti =>
@@ -4693,7 +4670,7 @@ mk_block = stmts, last =>
       | last
       |
          exprs = ast::Exprs()
-         ?stmts @ i => exprs += stmts(i)!!
+         stmts @ st => exprs += st
          exprs += last
          ast::Expr(Block, ast::BlockExpr(exprs))
 
@@ -4732,8 +4709,7 @@ pat_is_unconditional = pat_in =>
       [Wildcard, Bind] <+>
       [Record]
          all_unc' = <+>
-         ?pat.subpatterns @ i =>
-            sub = pat.subpatterns(i) | _ | pat_wildcard()
+         pat.subpatterns @ sub =>
             !pat_is_unconditional(sub) | all_unc' = <->
          all_unc'
       | <->
@@ -4745,8 +4721,7 @@ pat_has_binds = pat_in =>
       [Bind] <+>
       [Variant, Record]
          has' = <->
-         ?pat.subpatterns @ i =>
-            sub = pat.subpatterns(i) | _ | pat_wildcard()
+         pat.subpatterns @ sub =>
             pat_has_binds(sub) | has' = <+>
          has'
       | <->
@@ -4777,7 +4752,7 @@ pat_extract_bindings = p, target, pat_in =>
                            pay_var = ast::Expr(Var, pay_name)
                            res += mk_extract_pay(target, pat.name, pay_name)
                            sub_binds = pat_extract_bindings(p, pay_var, sub_raw)
-                           ?sub_binds @ i => res += sub_binds(i)!!
+                           sub_binds @ sb => res += sb
                            res
                         | res
       [Record]
@@ -4791,7 +4766,7 @@ pat_extract_bindings = p, target, pat_in =>
             fld_access = ast::Expr(Member, (ast::MemberExpr((target,
                fld_str, <->, ast::Expr(Var, ""), 0, 0))))
             sub_binds = pat_extract_bindings(p, fld_access, sub_raw)
-            ?sub_binds @ i => res += sub_binds(i)!!
+            sub_binds @ sb => res += sb
          res
       | res
 
@@ -4846,7 +4821,7 @@ pat_match_cond = p, target, pat_in =>
                   fld_access = ast::Expr(Member, (ast::MemberExpr((target,
                      fld_str, <->, ast::Expr(Var, ""), 0, 0))))
                   sub_res = pat_match_cond(p, fld_access, sub_raw)
-                  ?sub_res.stmts @ si => stmts += sub_res.stmts(si)!!
+                  sub_res.stmts @ sbs => stmts += sbs
                   cond_var = fresh_dp_var(p)
                   stmts += mk_assign(cond_var, sub_res.cond)
                   cond_ref = ast::Expr(Var, cond_var)
@@ -5360,8 +5335,8 @@ mk_shallow_pb = res =>
 pat_extract_binds: ast::Patterns => ast::Names
 pat_extract_binds = sps =>
    binds = ast::Names()
-   ?sps @ i =>
-      sp = pat_rec(sps(i) | _ | pat_wildcard())
+   sps @ sp_in =>
+      sp = pat_rec(sp_in)
       is_b = sp.kind [Bind]
       is_b | binds += sp.name | binds += "_"
    binds
@@ -5914,9 +5889,7 @@ fwd_marker = ti =>
 fwd_fields_str: ast::FieldTypes => String
 fwd_fields_str = flds =>
    m = {16}
-   ?flds @ i =>
-      f = flds(i) | _ | ast::RecordFieldType(("", ast::ValueType(Int),
-         ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
+   flds @ f, i =>
       i > 0 | m += ","
       m += f.name
    +m
@@ -6564,8 +6537,7 @@ parse_float_text = text =>
 has_free_underscore_map: ast::MapPairs => <>
 has_free_underscore_map = ps =>
    found' = <->
-   ?ps @ i =>
-      pr = ps(i) | _ | ast::MapPair((ast::Expr(Var, "?"), ast::Expr(Var, "?")))
+   ps @ pr =>
       has_free_underscore(pr.key) || has_free_underscore(pr.value)
          | found' = <+>; -->
    found'

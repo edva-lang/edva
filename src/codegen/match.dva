@@ -276,9 +276,7 @@ codegen_record_pay_eq = cg, l_rec, r_rec, rec_struct_opt, fields, depth =>
 
          LLVMPositionBuilderAtEnd(cg.builder, cmp_fields_b)
          eq_acc = LLVMConstInt(i1t, 1, 0)
-         ?fields @ fi =>
-            rf = fields(fi) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
-               ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->, ast::Expr(Int, 0)))
+         fields @ rf, fi =>
             fvt = rf.val_type
             fty = types::llvm_type_of_vt(fvt)
             lg = LLVMBuildStructGEP2(cg.builder, rec_struct_t, l_rec, fi, "l.rf.gep")
@@ -321,8 +319,7 @@ codegen_error_pay_eq = cg, l_val, r_val =>
    err_t = main::error_struct_type(cg)
    vts = types::error_field_vts!
    eq_acc = LLVMConstInt(i1t, 1, 0)
-   ?vts @ i =>
-      fvt = vts(i) | _ | ast::ValueType(Unknown)
+   vts @ fvt, i =>
       fti = types::error_field_ti_by_idx(i)
       fty = types::llvm_type_of_vt(fvt)
       lg = LLVMBuildStructGEP2(cg.builder, err_t, l_val, i, "l.err.gep")
@@ -443,9 +440,7 @@ codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
          pay_ends = types::Addrs()
          pay_vals = types::Addrs()
 
-         ?slots @ si =>
-            sl = slots(si) | _ | ast::EnumSlotInfo(("", <->, ast::ValueType(Unknown),
-               ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         slots @ sl, si =>
             case_tag = LLVMConstInt(i64t, si, 0)
             !sl.has_payload
                | (unit_bb_opt | ubb => LLVMAddCase(sw, case_tag, ubb))
@@ -477,8 +472,7 @@ codegen_emit_enum_deep_cmp_depth = cg, op, lr, rr, slots, depth =>
          stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 0, 0), entry_bb)
          unit_bb_opt
             | ubb => stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(i1t, 1, 0), ubb)
-         ?pay_ends @ pi =>
-            p_end = pay_ends(pi)!!
+         pay_ends @ p_end, pi =>
             p_val = pay_vals(pi)!!
             stmt::llvm_add_incoming1(cg, phi, p_val, p_end)
 
@@ -745,8 +739,7 @@ ctfe_lookup_var_at = frames, name, idx =>
 ctfe_push_frame: types::CtFrames, types::CtFrame => types::CtFrames
 ctfe_push_frame = frames, fr =>
    acc = types::CtFrames()
-   ?frames @ i =>
-      elem = frames(i)!!
+   frames @ elem =>
       acc += elem
    acc += fr
    acc
@@ -808,8 +801,7 @@ ctfe_eval_args = cg, args, frames, depth, i, acc =>
             [None] (acc, <->)
             |
                next_acc = types::CtVals()
-               ?acc @ j =>
-                  elem = acc(j)!!
+               acc @ elem =>
                   next_acc += elem
                next_acc += res.0
                ctfe_eval_args(cg, args, frames, depth, i + 1, next_acc)
@@ -1073,8 +1065,7 @@ ctfe_eval_record = cg, r, frames, depth =>
    vals = types::CtVals()
    names = ast::Names()
    has_err' = <->
-   ?r.fields @ i =>
-      f = r.fields(i)!!
+   r.fields @ f =>
       f_res = ctfe_eval(cg, f.val, frames, depth + 1)
       f_res.0
          [None] has_err' = <+>
@@ -1091,8 +1082,7 @@ ctfe_eval_map_literal = cg, lit, frames, depth =>
    keys = types::CtVals()
    vals = types::CtVals()
    has_err' = <->
-   ?lit.pairs @ i =>
-      p = lit.pairs(i)!!
+   lit.pairs @ p =>
       k_res = ctfe_eval(cg, p.key, frames, depth + 1)
       ctfe_is_none(k_res.0) | has_err' = <+>
       v_res = ctfe_eval(cg, p.value, frames, depth + 1)
@@ -2657,10 +2647,7 @@ load_flag_pay = cg, ppay =>
 
 is_flag_pay_vt: types::Cg, ast::ValueType => <>
 is_flag_pay_vt = cg, pay_type =>
-   pay_type
-      [Flag] <+>
-      [Ram] (!ram_ti_is_heap(cg, types::typedef_ti(cg, cg.last_type)))
-      | <->
+   pay_type [Flag]
 
 // The payload VALUE for a body that binds it: an Int unboxes through the
 // null-check chain (the builder lands in the merge block, so the body
@@ -3011,10 +2998,7 @@ choice_branch_is_constant = e =>
 choice_has_constant_branch: ast::ChoiceExpr => <>
 choice_has_constant_branch = c =>
    has' = <->
-   ?c.branches @ i =>
-      br = c.branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
-         ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-         ast::Expr(Int, 0)))
+   c.branches @ br =>
       choice_branch_is_constant(br.block) | (has' = <+>; -->)
    has'
 
@@ -3715,14 +3699,13 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                cg.vars += types::CgVar(("_", pos_vt, types::is_ptrish_vt(pos_vt), "",
                   pos_rm1_0_opt, pos_rm1_1, <+ slot_then1 +>, <+>, <->, pos_fvts1,
                   pv_then1_opt))
-               ?b0.bind_vars @ bv_i =>
-                  pname' = b0.bind_vars(bv_i) | _ | ""
-                  pname' != "" && pname' != "_"
+               b0.bind_vars @ pname =>
+                  pname != "" && pname != "_"
                      |
                         p0_ty' = types::llvm_type_of_vt(pos_vt)
-                        slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + pname')
+                        slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + pname)
                         LLVMBuildStore(cg.builder, pv_then1_opt!!, slot_p0')
-                        cg.vars += types::CgVar((pname', pos_vt,
+                        cg.vars += types::CgVar((pname, pos_vt,
                            types::is_ptrish_vt(pos_vt), "", pos_rm1_0_opt, pos_rm1_1,
                            <+ slot_p0' +>, <+>, <->, pos_fvts1, pv_then1_opt))
          b0_is_lam1 = b0.body.kind [Lambda]
@@ -3778,14 +3761,13 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                pos_fvts = types::field_vts(cg, pos_ti)
                cg.vars += types::CgVar(("_", pos_vt, types::is_ptrish_vt(pos_vt), "",
                   pos_rm_0_opt, pos_rm_1, <+ slot_then +>, <+>, <->, pos_fvts, pv_then_opt))
-               ?b0.bind_vars @ bv_i =>
-                  pname' = b0.bind_vars(bv_i) | _ | ""
-                  pname' != "" && pname' != "_"
+               b0.bind_vars @ pname =>
+                  pname != "" && pname != "_"
                      |
                         p0_ty' = types::llvm_type_of_vt(pos_vt)
-                        slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + pname')
+                        slot_p0' = types::hoisted_alloca(cg, p0_ty', "var." + pname)
                         LLVMBuildStore(cg.builder, pv_then_opt!!, slot_p0')
-                        cg.vars += types::CgVar((pname', pos_vt,
+                        cg.vars += types::CgVar((pname, pos_vt,
                            types::is_ptrish_vt(pos_vt), "", pos_rm_0_opt, pos_rm_1,
                            <+ slot_p0' +>, <+>, <->, pos_fvts, pv_then_opt))
          b0_is_under = b0.body.kind [Var v] (v.0 == "_") | <->
@@ -3845,8 +3827,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                neg_fvts = types::field_vts(cg, neg_ti)
                cg.vars += types::CgVar(("_", neg_vt, types::is_ptrish_vt(neg_vt), "",
                   neg_rm_0_opt, neg_rm_1, <+ slot_else +>, <+>, <->, neg_fvts, pv_else_opt))
-               ?b1.bind_vars @ bv_e =>
-                  pname_e = b1.bind_vars(bv_e) | _ | ""
+               b1.bind_vars @ pname_e =>
                   pname_e != "" && pname_e != "_"
                      |
                         p1_ty' = types::llvm_type_of_vt(neg_vt)
@@ -4097,8 +4078,7 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                   LLVMBuildStore(cg.builder, pv, slot_under)
                   cg.vars += types::CgVar(("_", ptype, <->, v_dtype, rec_info_0_opt,
                      rec_info.1, <+ slot_under +>, <+>, <->, rec_info.2, <-->))
-                  ?br.bind_vars @ bvi =>
-                     pname = br.bind_vars(bvi) | _ | ""
+                  br.bind_vars @ pname =>
                      pname != "" && pname != "_"
                         |
                            slot = types::create_slot(cg, pname, pty, <+>)

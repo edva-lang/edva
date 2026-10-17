@@ -1154,42 +1154,33 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_return"(i1 %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #1 {
+define ptr @"tast::mk_typed_return"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #1 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
   %var.lay = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
   %var.ut = alloca ptr, align 8
-  %var.val = alloca ptr, align 8
-  %var.has_val = alloca i1, align 1
-  store i1 %0, ptr %var.has_val, align 1
-  store ptr %1, ptr %var.val, align 8
-  store ptr %2, ptr %var.ut, align 8
-  store ptr %3, ptr %var.ti, align 8
-  store ptr %4, ptr %var.lay, align 8
-  store i64 %5, ptr %var.line, align 8
-  store i64 %6, ptr %var.col, align 8
+  %var.val_opt = alloca ptr, align 8
+  store ptr %0, ptr %var.val_opt, align 8
+  store ptr %1, ptr %var.ut, align 8
+  store ptr %2, ptr %var.ti, align 8
+  store ptr %3, ptr %var.lay, align 8
+  store i64 %4, ptr %var.line, align 8
+  store i64 %5, ptr %var.col, align 8
   %arena.cur = call ptr @dva_arena_current()
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 34, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  %var.load = load i1, ptr %var.has_val, align 1
-  %var.load1 = load ptr, ptr %var.val, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
-  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr null, i32 1) to i64))
-  %rec.fld = getelementptr inbounds { i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr %rec.alloc, i32 0, i32 0
-  store i1 %var.load, ptr %rec.fld, align 1
-  %rec.fld3 = getelementptr inbounds { i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr %rec.alloc, i32 0, i32 1
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld3, ptr align 1 %var.load1, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr null, i32 1) to i64), i1 false)
-  store ptr %rec.alloc, ptr %pay.gep, align 8
-  %var.load4 = load ptr, ptr %var.ut, align 8
-  %var.load5 = load ptr, ptr %var.ti, align 8
-  %var.load6 = load ptr, ptr %var.lay, align 8
-  %var.load7 = load i64, ptr %var.line, align 8
-  %var.load8 = load i64, ptr %var.col, align 8
-  %call.res = call ptr @"tast::mk_typed_expr"(ptr %enum.alloc, ptr %var.load4, ptr %var.load5, ptr %var.load6, i64 %var.load7, i64 %var.load8)
+  %var.load = load ptr, ptr %var.val_opt, align 8
+  store ptr %var.load, ptr %pay.gep, align 8
+  %var.load1 = load ptr, ptr %var.ut, align 8
+  %var.load2 = load ptr, ptr %var.ti, align 8
+  %var.load3 = load ptr, ptr %var.lay, align 8
+  %var.load4 = load i64, ptr %var.line, align 8
+  %var.load5 = load i64, ptr %var.col, align 8
+  %call.res = call ptr @"tast::mk_typed_expr"(ptr %enum.alloc, ptr %var.load1, ptr %var.load2, ptr %var.load3, i64 %var.load4, i64 %var.load5)
   ret ptr %call.res
 }
 

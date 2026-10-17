@@ -237,8 +237,7 @@ loaded_add = names, name =>
 
 append_names_to: ast::Names, ast::Names => ()
 append_names_to = dest, src =>
-   ?src @ i =>
-      dest += (src(i) | _ | "")
+   src @ s => dest += s
 
 unmark_private_name: String => String
 unmark_private_name = name =>
@@ -1240,9 +1239,8 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
       |
          import_table = ImportMap()
          import_source = ImportMap()
-         ?import_entries @ mi =>
+         import_entries @ ientry =>
             !ok' | -->
-            ientry = import_entries(mi) | _ | ImportEntry(("", "", <->))
             cres = collect_module_exports(ldr.out_exprs, ientry.bound_name,
                ientry.canonical_id, ientry.is_import, import_table, import_source)
             !cres | ok' = <->
@@ -1310,8 +1308,8 @@ load_single_file = path, prefix, is_pkg, imp_path, ldr =>
                               [Block b]
                                  !ldr.is_dep
                                     |
-                                       ?ppr.exports @ ei =>
-                                          ldr.exports += (ppr.exports(ei) | _ | "")
+                                       ppr.exports @ exp =>
+                                          ldr.exports += exp
                                  load_stmts(b.exprs, dirname(path), prefix,
                                     ppr.publics, ppr.privates, ldr, path,
                                     ppr.top_lines, ppr.top_cols)
@@ -1336,9 +1334,8 @@ load_file = path, prefix, is_pkg, imp_path, ldr =>
 load_dir_files: ast::Names, String, String, <>, String, Loader => <>
 load_dir_files = files, dir_path, prefix, is_pkg, imp_path, ldr =>
    ok' = <+>
-   ?files @ i =>
+   files @ fname =>
       !ok' | -->
-      fname = (files(i) | _ | "")
       child_path = path_join(dir_path, fname)
       res = load_single_file(child_path, prefix, is_pkg, imp_path, ldr)
       !res | ok' = <->
@@ -1639,8 +1636,7 @@ find_assign_sig: ast::Exprs, String => SigResult
 find_assign_sig = stmts, name =>
    found' = <->
    res' = ast::TypeInfo(Prim, ast::ValueType(Unit))
-   ?stmts @ i =>
-      st = stmts(i)!!
+   stmts @ st =>
       st
          [Assign a]
             a.8
@@ -1655,8 +1651,7 @@ find_assign_sig = stmts, name =>
 find_assign_params: ast::Exprs, String => ast::Names
 find_assign_params = stmts, name =>
    params' = ast::Names()
-   ?stmts @ i =>
-      st = stmts(i)!!
+   stmts @ st =>
       st
          [Assign a]
             a.5
@@ -1678,8 +1673,7 @@ add_type_var_from_ti = ti, names =>
 collect_used_record_types: ast::Exprs, ast::Names => ast::Names
 collect_used_record_types = stmts, exports =>
    used = ast::Names()
-   ?exports @ i =>
-      item = exports(i)!!
+   exports @ item =>
       eq_pos = find_char_at(item, 0, 61)
       dva_name = eq_pos > 0 | item(0..eq_pos) | item
       bare = codegen::decl_bare_name(dva_name, 0)
@@ -1692,13 +1686,11 @@ collect_used_record_types = stmts, exports =>
                [Fn fn_info]
                   add_type_var_from_ti(fn_info.3, used)
                   params_ti = fn_info.1
-                  ?params_ti @ j =>
-                     pti = params_ti(j)!!
+                  params_ti @ pti =>
                      add_type_var_from_ti(pti, used)
    0.. @
       prev_count = ?used
-      ?stmts @ s_i =>
-         st = stmts(s_i)!!
+      stmts @ st =>
          st
             [TypeDecl td]
                bare_td = codegen::decl_bare_name(td.name, 0)
@@ -1707,8 +1699,7 @@ collect_used_record_types = stmts, exports =>
                      td.type_info
                         [Rec r]
                            flds = r.0
-                           ?flds @ f_i =>
-                              f = flds(f_i)!!
+                           flds @ f =>
                               add_type_var_from_ti(f.rec_type, used)
       ?used == prev_count | -->
    used
@@ -1720,8 +1711,7 @@ format_record_c_struct = td =>
       [Rec r]
          b += "typedef struct {\n"
          flds = r.0
-         ?flds @ i =>
-            f = flds(i)!!
+         flds @ f, i =>
             f_type = c_type_of_ti(f.val_type, f.rec_type)
             f_name = f.name != "" | f.name | ("_" + str::from_int(i))
             b += "    " + f_type + " " + f_name + ";\n"
@@ -1733,8 +1723,7 @@ format_record_c_struct = td =>
          b += "typedef struct {\n"
          f_type_bf = c_type_of_ti(bf.backing_type,
             ast::TypeInfo(Prim, bf.backing_type))
-         ?bf.fields @ i =>
-            f_bf = bf.fields(i)!!
+         bf.fields @ f_bf =>
             b += "    " + f_type_bf + " " + f_bf.name + " : " +
                str::from_int(f_bf.bit_width) + ";\n"
          b_name_bf = codegen::decl_bare_name(td.name, 0)
@@ -1758,8 +1747,7 @@ generate_c_header = prog, exports, header_path =>
 
    used_records = collect_used_record_types(stmts, exports)
    emitted_structs = ast::Names()
-   ?stmts @ s_i =>
-      st = stmts(s_i)!!
+   stmts @ st =>
       st
          [TypeDecl td]
             b_name = codegen::decl_bare_name(td.name, 0)
@@ -1773,8 +1761,7 @@ generate_c_header = prog, exports, header_path =>
                               emitted_structs += b_name
    has_error' = <->
    emitted_symbols = ast::Names()
-   ?exports @ e_i =>
-      item = exports(e_i)!!
+   exports @ item =>
       eq_pos = find_char_at(item, 0, 61)
       dva_name = eq_pos > 0 | item(0..eq_pos) | item
       c_name0 = eq_pos > 0 | item(eq_pos + 1..?item) |
@@ -1805,8 +1792,7 @@ generate_c_header = prog, exports, header_path =>
                         ?params_vt == 0
                            | proto += "void"
                            |
-                              ?params_vt @ j =>
-                                 p_vt = params_vt(j)!!
+                              params_vt @ p_vt, j =>
                                  p_ti = params_ti(j)!!
                                  p_type = c_type_of_ti(p_vt, p_ti)
                                  p_name' = j < ?pnames'
@@ -1848,10 +1834,8 @@ is_wasm_triple = triple =>
 
 print_program_errors: unify::TypeErrors => ()
 print_program_errors = errs =>
-   ?errs @ i =>
-      err_res = errs(i)
-      err_res | err =>
-         print $ unify::format_error(err)
+   errs @ err =>
+      print $ unify::format_error(err)
 
 sq: String => String
 sq = s =>
@@ -2054,16 +2038,13 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                            clang_args += output_ll
                            prog_exprs = prog [Block b] b.exprs | ast::Exprs()
                            link_libs = collect_link_libs(prog_exprs)
-                           ?link_libs @ i =>
-                              lib = (link_libs(i) | _ | "")
+                           link_libs @ lib =>
                               clang_args += "-l" + lib
-                           ?nat_libs @ i =>
-                              lib = (nat_libs(i) | _ | "")
+                           nat_libs @ lib =>
                               clang_args += "-l" + lib
-                           ?nat_pkg @ i =>
+                           nat_pkg @ pname =>
                               !pkg_err'
                                  |
-                                    pname = (nat_pkg(i) | _ | "")
                                     ok = resolve_pkg_config(pname, clang_args)
                                     !ok
                                        |
@@ -2922,8 +2903,7 @@ dump_program_ast: ast::Expr, <> => ()
 dump_program_ast = prog, as_tree =>
    prog
       [Block b]
-         ?b.exprs @ i =>
-            st = (b.exprs(i) | _ | ast::Expr(Var, "?"))
+         b.exprs @ st =>
             as_tree
                | print $ show::show_tree(st, 0)
                | print $ show::show_expr(st)
