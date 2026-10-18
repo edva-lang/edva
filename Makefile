@@ -37,14 +37,17 @@ ifeq ($(LLVM_LIBS),)
 endif
 LIBS         ?= $(LLVM_LIBS) -lm -ldl
 
-ALL_LDFLAGS  := -Qunused-arguments -Wno-unused-command-line-argument $(CFLAGS) \
+ALL_LDFLAGS  := -Qunused-arguments -Wno-unused-command-line-argument -Wno-override-module $(CFLAGS) \
                 -Wl,--export-dynamic $(LLVM_LDFLAGS) $(LDFLAGS)
 
 # --- Verbosity Control -------------------------------------------------------
-ifeq ($(V),1)
-  Q :=
+# Default: verbose (print commands). Run `make V=0` for quiet mode.
+ifeq ($(V),0)
+  Q    := @
+  ECHO := @echo
 else
-  Q := @
+  Q    :=
+  ECHO := @:
 endif
 
 # Polling backend selection (poll, epoll, uring)
@@ -74,7 +77,7 @@ all: edva
 # --- Incremental Modular Compilation -----------------------------------------
 
 edva: $(ALL_OBJS)
-	@echo "Linking edva..."
+	$(ECHO) "Linking edva..."
 	$(Q)$(CC) $(ALL_LDFLAGS) $(ALL_OBJS) $(LIBS) -o $@
 	@echo "Built edva successfully."
 
@@ -92,17 +95,17 @@ src/poll.dva: config-poll
 
 # Pattern rules for compilation units
 build/obj/%.o: std/%.dva
-	@echo "Compiling std/$*..."
+	$(ECHO) "Compiling std/$*..."
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(EDVA) $< -c --module $* -o $@ $(EDVA_FLAGS)
 
 build/obj/%.o: src/%.dva
-	@echo "Compiling src/$*..."
+	$(ECHO) "Compiling src/$*..."
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(EDVA) $< -c --module $(notdir $*) -o $@ $(EDVA_FLAGS)
 
 build/obj/edva.o: src/edva.dva
-	@echo "Compiling edva entry..."
+	$(ECHO) "Compiling edva entry..."
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(EDVA) $< -c --entry -o $@ $(EDVA_FLAGS)
 
