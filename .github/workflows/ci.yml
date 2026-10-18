@@ -50,13 +50,13 @@ jobs:
             image: archlinux:latest
             setup: |
               pacman -Syu --noconfirm
-              pacman -S --noconfirm clang llvm lld make git nushell diffutils
+              pacman -S --noconfirm clang llvm lld make git nushell diffutils file
               git config --global --add safe.directory '*'
 
           - name: Fedora
             image: fedora:latest
             setup: |
-              dnf install -y clang llvm-devel lld make git nushell diffutils findutils
+              dnf install -y clang llvm-devel lld make git nushell diffutils findutils file
               git config --global --add safe.directory '*'
 
     steps:

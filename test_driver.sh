@@ -318,9 +318,18 @@ if [ ! -f "$TMPDIR/math.wasm" ]; then
     echo "FAILED: wasm binary was not created at expected path"
     exit 1
 fi
-if ! file "$TMPDIR/math.wasm" | grep -q "WebAssembly"; then
-    echo "FAILED: output file is not a valid WebAssembly binary"
-    exit 1
+if command -v file >/dev/null 2>&1; then
+    if ! file "$TMPDIR/math.wasm" | grep -q "WebAssembly"; then
+        echo "FAILED: output file is not a valid WebAssembly binary"
+        exit 1
+    fi
+else
+    # Fallback when 'file' utility is not installed: verify 4-byte Wasm magic header \0asm
+    magic=$(head -c 4 "$TMPDIR/math.wasm" 2>/dev/null || true)
+    if [ "$magic" != $'\0asm' ]; then
+        echo "FAILED: output file is not a valid WebAssembly binary (invalid header)"
+        exit 1
+    fi
 fi
 if command -v node >/dev/null 2>&1; then
     node_out=$(node --disable-wasm-trap-handler -e '
