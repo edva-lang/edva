@@ -57,6 +57,8 @@ entry:
 
 declare i32 @open(ptr, i32)
 
+declare i64 @creat(ptr, i64)
+
 declare i32 @close(i32)
 
 declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
@@ -137,8 +139,6 @@ declare i64 @stat(ptr, ptr)
 
 declare i64 @fstat(i32, ptr)
 
-declare i64 @creat(ptr, i64)
-
 declare i64 @rename(ptr, ptr)
 
 declare i64 @unlink(ptr)
@@ -174,6 +174,12 @@ declare i64 @tcsetattr(i32, i64, ptr)
 declare void @cfmakeraw(ptr)
 
 declare i64 @poll(ptr, i64, i64)
+
+declare i64 @epoll_create1(i32)
+
+declare i64 @epoll_ctl(i64, i64, i32, ptr)
+
+declare i64 @epoll_wait(i64, ptr, i64, i64)
 
 declare i64 @time(ptr)
 

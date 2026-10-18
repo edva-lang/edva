@@ -19,6 +19,7 @@
 #use "ccl"
 #use "pkg"
 #use "version"
+#use "poll"
 
 #public
 
@@ -2228,10 +2229,9 @@ write_esc = seq =>
    s = +b
    libc::write(1, s, ?s)
 
-check_stdin_ready: Addr => <>
-check_stdin_ready = pfd =>
-   @[pfd + 6] = 0i16
-   libc::poll(pfd, 1, 50) > 0
+check_stdin_ready: () => <>
+check_stdin_ready = !=>
+   poll::stdin_ready(50)
 
 refresh_line: String, Int => ()
 refresh_line = line, pos =>
@@ -2267,10 +2267,6 @@ read_line_raw = sess =>
    eof' = <->
    c_buf = libc::malloc(8)
    seq_buf = libc::malloc(8)
-   pfd_buf = libc::malloc(8)
-   @[pfd_buf] = 0i32
-   @[pfd_buf + 4] = 1i16
-   @[pfd_buf + 6] = 0i16
    refresh_line(line', pos')
    0.. @
       rb = libc::read(0, c_buf, 1)
@@ -2364,13 +2360,13 @@ read_line_raw = sess =>
                         refresh_line(line', pos')
             b0 == 27
                |
-                  check_stdin_ready(pfd_buf)
+                  check_stdin_ready!
                      |
                         libc::read(0, seq_buf, 1)
                         b1 = Int(@[seq_buf i8])
                         b1 == 91
                            |
-                              check_stdin_ready(pfd_buf)
+                              check_stdin_ready!
                                  |
                                     libc::read(0, seq_buf, 1)
                                     b2 = Int(@[seq_buf i8])
@@ -2416,7 +2412,7 @@ read_line_raw = sess =>
                                           refresh_line(line', pos')
                                     b2 == 51
                                        |
-                                          check_stdin_ready(pfd_buf) |
+                                          check_stdin_ready! |
                                              libc::read(0, seq_buf, 1)
                                           pos' < ?line'
                                              |
@@ -2425,19 +2421,19 @@ read_line_raw = sess =>
                                                 refresh_line(line', pos')
                                     b2 == 49 || b2 == 55
                                        |
-                                          check_stdin_ready(pfd_buf) |
+                                          check_stdin_ready! |
                                              libc::read(0, seq_buf, 1)
                                           pos' = 0
                                           refresh_line(line', pos')
                                     b2 == 52 || b2 == 56
                                        |
-                                          check_stdin_ready(pfd_buf) |
+                                          check_stdin_ready! |
                                              libc::read(0, seq_buf, 1)
                                           pos' = ?line'
                                           refresh_line(line', pos')
                         b1 == 79
                            |
-                              check_stdin_ready(pfd_buf)
+                              check_stdin_ready!
                                  |
                                     libc::read(0, seq_buf, 1)
                                     b2 = Int(@[seq_buf i8])
@@ -2494,7 +2490,6 @@ read_line_raw = sess =>
                   refresh_line(line', pos')
    libc::free(c_buf)
    libc::free(seq_buf)
-   libc::free(pfd_buf)
    disable_raw_mode!
    eof' | <--> | <+ line' +>
 

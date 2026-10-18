@@ -30,7 +30,7 @@ inline statements. A `;` at the end of a line is an error.
 | Kind | Syntax | Notes |
 |------|--------|-------|
 | Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0m48`, `0m-16`, `0max`, `0min` | optional type suffix (`0maxu64`, `0mini32`), see below |
-| Float | `3.14`, `1.5e-3`, `3.14f32`, `-.0`, `.inf`, `-.inf`, `.max`, `-.max`, `.min`, `.sub` | built-in FP constants, padding zeros mandatory otherwise (see §1.4) |
+| Float | `3.14`, `1.5e-3`, `3.14f32`, `-.0`, `.inf`, `-.inf`, `.nan`, `.max`, `-.max`, `.min`, `.sub` | built-in FP constants, padding zeros mandatory otherwise (see §1.4) |
 | Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
 | String | `"..."` | C-style escapes `\n \t \r \0 \a \b \f \v \e \" \' \\` |
 | Here-Doc | `"""..."""` | multiline with baseline margin stripping, `${expr}` interpolation, and line continuation `\` |
@@ -40,10 +40,11 @@ inline statements. A `;` at the end of a line is an error.
 - **Floating-point constants**:
   - `-.0`: IEEE-754 signed negative zero (distinct from `0.0`; `1.0 / -.0 == -.inf`).
   - `.inf` / `-.inf`: positive and negative infinity (`1.0 / 0.0` and `-1.0 / 0.0`).
+  - `.nan` / `-.nan`: IEEE-754 quiet NaN (`0.0 / 0.0`).
   - `.max` / `-.max`: maximal and minimal finite floating-point values (`DBL_MAX` / `-DBL_MAX`).
   - `.min`: minimal positive normalized floating-point value (`DBL_MIN`).
   - `.sub`: minimal positive subnormal floating-point value (`DBL_TRUE_MIN`).
-  - All float constants accept optional float suffixes (`f32`, `f`, `F`), resolving to single-precision float bounds (e.g. `.maxf32`, `.minf32`, `.subf32`, `-.0f32`, `.inff32`).
+  - All float constants accept optional float suffixes (`f32`, `f`, `F`), resolving to single-precision float bounds (e.g. `.nanf32`, `.maxf32`, `.minf32`, `.subf32`, `-.0f32`, `.inff32`).
 
 **Here-Doc (`"""..."""`)** — Multiline formatted text blocks with baseline margin stripping and expression interpolation:
 - **Delimiter**: Triple double quotes `"""..."""`. Unescaped `"` and `""` are literal; `\"""` escapes to literal `"""`.

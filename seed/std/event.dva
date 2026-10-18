@@ -1,0 +1,130 @@
+// Standard Event Multiplexing Module (std/event.dva)
+// High-performance descriptor event notification loop backed by Linux epoll(7).
+
+#use libc
+#use sys
+
+#public
+   // Event type bitmasks
+   READ     = 1   // Ready for reading (EPOLLIN / POLLIN)
+   WRITE    = 2   // Ready for writing (EPOLLOUT / POLLOUT)
+   PRI      = 4   // Exceptional condition (EPOLLPRI / POLLPRI)
+   ERR      = 8   // Error condition (EPOLLERR / POLLERR)
+   HUP      = 16  // Hang up (EPOLLHUP / POLLHUP)
+   RDHUP    = 8192 // Peer closed write half of stream (EPOLLRDHUP)
+
+   // epoll_ctl operation codes
+   CTL_ADD  = 1
+   CTL_DEL  = 2
+   CTL_MOD  = 3
+
+   // Event record returned from wait()
+   #type Event (
+      fd: Int,
+      events: Int,
+      data: Int
+   )
+
+   // Internal C epoll_event layout (12 bytes packed on Linux x86_64)
+   EpollEvent: #packed (
+      events: u32,
+      data:   u64
+   )
+
+   // Poller context
+   #type Poller (
+      epfd: Int,
+      is_closed: <>,
+      max_events: Int
+   )
+
+   // Create a new event poller with default capacity (64 concurrent events)
+   new: () => <Poller | String>
+   new = !=> new_with_cap(64)
+
+   // Create a new event poller with specified maximum concurrent event capacity
+   new_with_cap: Int => <Poller | String>
+   new_with_cap = max_ev =>
+      fd = libc::epoll_create1(0)
+      fd < 0 | --| <- "epoll_create1 failed" +>
+      cap = max_ev > 0 | max_ev | 64
+      <+ Poller((fd, <->, cap)) ->
+
+   // Register descriptor with interest mask and user data token
+   add: Poller, Int, Int, Int => <>
+   add = p, fd, mask, user_data =>
+      p.is_closed | --| <->
+      packed_data = (u64(fd) .<. 32) .|. (u64(user_data) .&. 0xFFFFFFFFu64)
+      ev' = EpollEvent(u32(mask), packed_data)
+      rc = libc::epoll_ctl(p.epfd, CTL_ADD, fd, &ev')
+      rc == 0
+
+   // Convenience: register descriptor with mask, using fd itself as the data token
+   add_fd: Poller, Int, Int => <>
+   add_fd = p, fd, mask => add(p, fd, mask, fd)
+
+   // Modify existing descriptor interest mask and user data token
+   mod: Poller, Int, Int, Int => <>
+   mod = p, fd, mask, user_data =>
+      p.is_closed | --| <->
+      packed_data = (u64(fd) .<. 32) .|. (u64(user_data) .&. 0xFFFFFFFFu64)
+      ev' = EpollEvent(u32(mask), packed_data)
+      rc = libc::epoll_ctl(p.epfd, CTL_MOD, fd, &ev')
+      rc == 0
+
+   // Convenience: modify descriptor mask, using fd as data token
+   mod_fd: Poller, Int, Int => <>
+   mod_fd = p, fd, mask => mod(p, fd, mask, fd)
+
+   // Deregister descriptor from the poller
+   del: Poller, Int => <>
+   del = p, fd =>
+      p.is_closed | --| <->
+      dummy' = EpollEvent(0u32, 0u64)
+      rc = libc::epoll_ctl(p.epfd, CTL_DEL, fd, &dummy')
+      rc == 0
+
+   // Wait for readiness events up to timeout_ms (-1 = infinite, 0 = non-blocking poll)
+   wait: Poller, Int => (Event){}
+   wait = p, timeout_ms =>
+      res' = (Event){}
+      p.is_closed | res'
+      buf = {p.max_events * 12}
+      buf_ptr = &buf
+      n = libc::epoll_wait(p.epfd, buf_ptr, p.max_events, timeout_ms)
+      n !> 0 | res'
+      n @ i =>
+         ev_ptr = buf_ptr + i * 12
+         ev_mask = Int(@[ev_ptr u32])
+         ev_raw_data = @[ev_ptr + 4 u64]
+         ev_fd = Int(ev_raw_data .>. 32)
+         ev_udata = Int(ev_raw_data .&. 0xFFFFFFFFu64)
+         res' += Event((ev_fd, ev_mask, ev_udata))
+      res'
+
+   // Close and release poller resources
+   close: Poller => ()
+   close = p =>
+      !p.is_closed |
+         libc::close(p.epfd)
+         p.is_closed = <+>
+
+   // Event inspection predicates
+   is_read: Event => <>
+   is_read = ev => (ev.events .&. READ) != 0
+
+   is_write: Event => <>
+   is_write = ev => (ev.events .&. WRITE) != 0
+
+   is_err: Event => <>
+   is_err = ev => (ev.events .&. ERR) != 0
+
+   is_hup: Event => <>
+   is_hup = ev => (ev.events .&. (HUP .|. RDHUP)) != 0
+
+   // Single-descriptor poll helpers delegating to sys
+   poll_in: Int, Int => <>
+   poll_in = fd, timeout_ms => sys::poll_in(fd, timeout_ms)
+
+   poll_out: Int, Int => <>
+   poll_out = fd, timeout_ms => sys::poll_out(fd, timeout_ms)

@@ -518,7 +518,7 @@ pk_off = lx, n => pk(lx, n)
 fp_const_base_len_at: Lx, Int => Int
 fp_const_base_len_at = lx, p =>
    rem = ?lx.src - p
-   rem !< 4 && (lx.src(p..p + 4) [".inf", ".max", ".min", ".sub"])
+   rem !< 4 && (lx.src(p..p + 4) [".inf", ".max", ".min", ".sub", ".nan"])
       | 4
       | 0
 

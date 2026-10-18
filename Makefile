@@ -43,9 +43,12 @@ else
   Q := @
 endif
 
+# Polling backend selection (poll, epoll, uring)
+POLL_BACKEND ?= poll
+
 # --- Modules and Objects -----------------------------------------------------
-STD_MODULES      := ascii str mem sys libc unicode io ccl
-COMPILER_MODULES := diag ast llvm operators dep_graph layout tast lexer unify type_env show parser annotate version pkg \
+STD_MODULES      := ascii str mem sys libc unicode io ccl uring event
+COMPILER_MODULES := poll diag ast llvm operators dep_graph layout tast lexer unify type_env show parser annotate version pkg \
                     codegen/types codegen/runtime codegen/expr codegen/match codegen/stmt codegen/main codegen
 ENTRY_MODULE     := edva
 
@@ -72,7 +75,16 @@ edva: $(ALL_OBJS)
 	@echo "Built edva successfully."
 
 # Ensure bootstrap compiler exists before compiling any object
-$(ALL_OBJS): | bootstrap build/obj src/version.dva
+$(ALL_OBJS): | bootstrap build/obj src/version.dva src/poll.dva
+
+.PHONY: config-poll
+config-poll:
+	$(Q)if [ ! -f src/poll.dva ] || ! cmp -s src/poll_$(POLL_BACKEND).dva src/poll.dva; then \
+		echo "Configuring compiler poll backend: $(POLL_BACKEND)..."; \
+		cp src/poll_$(POLL_BACKEND).dva src/poll.dva; \
+	fi
+
+src/poll.dva: config-poll
 
 # Pattern rules for compilation units
 build/obj/%.o: std/%.dva

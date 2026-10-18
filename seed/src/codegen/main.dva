@@ -381,7 +381,7 @@ codegen_builder_append_byte = cg, b, byte_val =>
          ge0 = LLVMBuildICmp(cg.builder, 39, byte_i64,
             LLVMConstInt(i64t, 0, 0), "b.b.ge0")
          le255 = LLVMBuildICmp(cg.builder, 41, byte_i64,
-            LLVMConstInt(i64t, 255, 0), "b.b.le255")
+            LLVMConstInt(i64t, 0maxu8, 0), "b.b.le255")
          range_ok = LLVMBuildAnd(cg.builder, ge0, le255, "b.byte.range")
          parent = LLVMGetBasicBlockParent(
             LLVMGetInsertBlock(cg.builder))

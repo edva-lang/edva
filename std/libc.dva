@@ -3,6 +3,8 @@
 
 #public #foreign "c"
     open      : (path: String, flags: Int) => Int
+    open_mode = open: (path: String, flags: Int, mode: Int) => Int
+    creat     : (path: String, mode: Int) => Int
     close     : (fd: Int) => Int
     posix_spawn : (pid: Addr, path: String, acts: Addr, attr: Addr, argv: Addr, envp: Addr) => Int
     posix_spawnp : (pid: Addr, file: String, acts: Addr, attr: Addr, argv: Addr, envp: Addr) => Int
@@ -68,6 +70,9 @@
     tcsetattr : (fd: Int, optional_actions: Int, termios_p: Addr) => Int
     cfmakeraw : (termios_p: Addr) => ()
     poll      : (fds: Addr, nfds: Int, timeout: Int) => Int
+    epoll_create1 : (flags: Int) => Int
+    epoll_ctl     : (epfd: Int, op: Int, fd: Int, event: Addr) => Int
+    epoll_wait    : (epfd: Int, events: Addr, maxevents: Int, timeout: Int) => Int
     time      : (tloc: Addr) => Int
     signal    : (sig: Int, handler: Addr) => Addr
     raise     : (sig: Int) => Int

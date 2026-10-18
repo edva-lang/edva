@@ -55,8 +55,8 @@ Identifiers conform to UAX31. Edva has zero bare keywords. Directives start with
   Limits: `0max`, `0min` (with optional suffixes: `0maxu64`, `0mini32`).
   Explicit type suffixes: `5i16`, `0xFFu8`, `100u32`, `9i64`, `0b1{32}u32`.
 - **Floats**: `3.14`, `0.5`, `1.0e-5`. Built-in FP constants: `-.0` (negative zero), `.inf`, `-.inf` (infinities),
-  `.max`, `-.max` (finite bounds), `.min` (minimal positive normal), `.sub` (minimal positive subnormal),
-  with optional suffixes (`.maxf32`, `-.0f32`). Dangling dots (`.5`, `1.`) are illegal.
+  `.nan` (quiet NaN), `.max`, `-.max` (finite bounds), `.min` (minimal positive normal), `.sub` (minimal positive subnormal),
+  with optional suffixes (`.nanf32`, `.maxf32`, `-.0f32`). Dangling dots (`.5`, `1.`) are illegal.
 - **Runes**: Single Unicode codepoints: `'a'`, `'🔥'`, `'\n'`.
 - **Strings**:
   - Escaped: `"hello\nworld"`

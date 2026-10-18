@@ -1,0 +1,21 @@
+// Compiler polling backend: POSIX poll(2)
+#use libc
+
+#public
+   backend_name: () => String
+   backend_name = !=> "poll"
+
+   PollFd: #packed (
+      fd: i32,
+      events: i16,
+      revents: i16
+   )
+
+   poll_in: Int, Int => <>
+   poll_in = fd, timeout_ms =>
+      pfd' = PollFd(i32(fd), 1i16, 0i16)
+      res = libc::poll(&pfd', 1, timeout_ms)
+      res > 0 && (Int(pfd'.revents) .&. 1) != 0
+
+   stdin_ready: Int => <>
+   stdin_ready = timeout_ms => poll_in(0, timeout_ms)

@@ -2252,7 +2252,12 @@ codegen_emit_div_guard = cg, l_val, r_val, is_signed =>
       |
          LLVMPositionBuilderAtEnd(cg.builder, not_zero_bb)
          w = LLVMGetIntTypeWidth(l_ty)
-         min_val = w == 64 | -9223372036854775807 - 1 | 0 - (1 .<. (w - 1))
+         min_val = w
+            [64] 0min
+            [32] 0mini32
+            [16] 0mini16
+            [8]  0mini8
+            | 0 - (1 .<. (w - 1))
          int_min = LLVMConstInt(l_ty, min_val, 1)
          minus_one = LLVMConstInt(r_ty, -1, 1)
          is_min = LLVMBuildICmp(cg.builder, 32, l_val, int_min,

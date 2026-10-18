@@ -69,7 +69,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::is_special" = global ptr null
 @clo.const.18 = internal constant { ptr, ptr } { ptr @"lexer::scan_while", ptr null }
 @"var.lexer::scan_while" = global ptr null
-@clo.const.19 = internal constant { ptr, ptr } { ptr @"$anon_fn.95", ptr null }
+@clo.const.19 = internal constant { ptr, ptr } { ptr @"$anon_fn.100", ptr null }
 @clo.const.20 = internal constant { ptr, ptr } { ptr @"lexer::skip_digits", ptr null }
 @"var.lexer::skip_digits" = global ptr null
 @clo.const.21 = internal constant { ptr, ptr } { ptr @"lexer::scan_id", ptr null }
@@ -137,46 +137,48 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.24.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.24 }
 @str.25 = internal unnamed_addr constant [5 x i8] c".sub\00"
 @str.25.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.25 }
+@str.26 = internal unnamed_addr constant [5 x i8] c".nan\00"
+@str.26.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.26 }
 @clo.const.35 = internal constant { ptr, ptr } { ptr @"lexer::fp_const_base_len_at", ptr null }
 @"var.lexer::fp_const_base_len_at" = global ptr null
-@str.26 = internal unnamed_addr constant [2 x i8] c"f\00"
-@str.26.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.26 }
-@str.27 = internal unnamed_addr constant [2 x i8] c"F\00"
+@str.27 = internal unnamed_addr constant [2 x i8] c"f\00"
 @str.27.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.27 }
+@str.28 = internal unnamed_addr constant [2 x i8] c"F\00"
+@str.28.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.28 }
 @clo.const.36 = internal constant { ptr, ptr } { ptr @"lexer::is_fp_const_at", ptr null }
 @"var.lexer::is_fp_const_at" = global ptr null
 @clo.const.37 = internal constant { ptr, ptr } { ptr @"lexer::is_fp_const", ptr null }
 @"var.lexer::is_fp_const" = global ptr null
 @clo.const.38 = internal constant { ptr, ptr } { ptr @"lexer::fp_const_base_len", ptr null }
 @"var.lexer::fp_const_base_len" = global ptr null
-@str.28 = internal unnamed_addr constant [4 x i8] c"-.0\00"
-@str.28.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.28 }
+@str.29 = internal unnamed_addr constant [4 x i8] c"-.0\00"
+@str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.29 }
 @clo.const.39 = internal constant { ptr, ptr } { ptr @"lexer::is_neg_zero_at", ptr null }
 @"var.lexer::is_neg_zero_at" = global ptr null
-@str.29 = internal unnamed_addr constant [2 x i8] c"-\00"
-@str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.29 }
-@str.30 = internal unnamed_addr constant [3 x i8] c"..\00"
-@str.30.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.30 }
-@str.31 = internal unnamed_addr constant [3 x i8] c"!!\00"
+@str.30 = internal unnamed_addr constant [2 x i8] c"-\00"
+@str.30.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.30 }
+@str.31 = internal unnamed_addr constant [3 x i8] c"..\00"
 @str.31.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.31 }
-@str.32 = internal unnamed_addr constant [4 x i8] c"--!\00"
-@str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.32 }
-@str.33 = internal unnamed_addr constant [4 x i8] c"--|\00"
+@str.32 = internal unnamed_addr constant [3 x i8] c"!!\00"
+@str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.32 }
+@str.33 = internal unnamed_addr constant [4 x i8] c"--!\00"
 @str.33.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.33 }
-@str.34 = internal unnamed_addr constant [3 x i8] c"~~\00"
-@str.34.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.34 }
-@str.35 = internal unnamed_addr constant [4 x i8] c".^.\00"
-@str.35.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.35 }
-@str.36 = internal unnamed_addr constant [2 x i8] c"!\00"
-@str.36.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.36 }
-@str.37 = internal unnamed_addr constant [5 x i8] c"|-->\00"
-@str.37.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.37 }
-@str.38 = internal unnamed_addr constant [5 x i8] c"|++>\00"
+@str.34 = internal unnamed_addr constant [4 x i8] c"--|\00"
+@str.34.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.34 }
+@str.35 = internal unnamed_addr constant [3 x i8] c"~~\00"
+@str.35.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.35 }
+@str.36 = internal unnamed_addr constant [4 x i8] c".^.\00"
+@str.36.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.36 }
+@str.37 = internal unnamed_addr constant [2 x i8] c"!\00"
+@str.37.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.37 }
+@str.38 = internal unnamed_addr constant [5 x i8] c"|-->\00"
 @str.38.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.38 }
-@str.39 = internal unnamed_addr constant [4 x i8] c"|->\00"
-@str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.39 }
-@str.40 = internal unnamed_addr constant [4 x i8] c"|+>\00"
+@str.39 = internal unnamed_addr constant [5 x i8] c"|++>\00"
+@str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.39 }
+@str.40 = internal unnamed_addr constant [4 x i8] c"|->\00"
 @str.40.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.40 }
+@str.41 = internal unnamed_addr constant [4 x i8] c"|+>\00"
+@str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.41 }
 @clo.const.40 = internal constant { ptr, ptr } { ptr @"lexer::scan_op", ptr null }
 @"var.lexer::scan_op" = global ptr null
 @clo.const.41 = internal constant { ptr, ptr } { ptr @"lexer::maybe_esc_adv", ptr null }
@@ -200,102 +202,102 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::concat_multiline_str" = global ptr null
 @clo.const.51 = internal constant { ptr, ptr } { ptr @"lexer::scan_string", ptr null }
 @"var.lexer::scan_string" = global ptr null
-@str.41 = internal unnamed_addr constant [70 x i8] c"Empty character literal '' -- expected a character between the quotes\00"
-@str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 69, ptr @str.41 }
-@str.42 = internal unnamed_addr constant [54 x i8] c"Unterminated character literal -- missing closing '''\00"
-@str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 53, ptr @str.42 }
+@str.42 = internal unnamed_addr constant [70 x i8] c"Empty character literal '' -- expected a character between the quotes\00"
+@str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 69, ptr @str.42 }
+@str.43 = internal unnamed_addr constant [54 x i8] c"Unterminated character literal -- missing closing '''\00"
+@str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 53, ptr @str.43 }
 @clo.const.52 = internal constant { ptr, ptr } { ptr @"lexer::scan_rune", ptr null }
 @"var.lexer::scan_rune" = global ptr null
-@clo.const.53 = internal constant { ptr, ptr } { ptr @"$anon_fn.133", ptr null }
+@clo.const.53 = internal constant { ptr, ptr } { ptr @"$anon_fn.138", ptr null }
 @clo.const.54 = internal constant { ptr, ptr } { ptr @"lexer::skip_line_comment", ptr null }
 @"var.lexer::skip_line_comment" = global ptr null
-@str.43 = internal unnamed_addr constant [51 x i8] c"Unterminated block comment -- missing closing '*/'\00"
-@str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.43 }
+@str.44 = internal unnamed_addr constant [51 x i8] c"Unterminated block comment -- missing closing '*/'\00"
+@str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.44 }
 @clo.const.55 = internal constant { ptr, ptr } { ptr @"lexer::skip_block_comment", ptr null }
 @"var.lexer::skip_block_comment" = global ptr null
-@clo.const.56 = internal constant { ptr, ptr } { ptr @"$anon_fn.136", ptr null }
+@clo.const.56 = internal constant { ptr, ptr } { ptr @"$anon_fn.141", ptr null }
 @clo.const.57 = internal constant { ptr, ptr } { ptr @"lexer::scan_hash_word", ptr null }
 @"var.lexer::scan_hash_word" = global ptr null
 @clo.const.58 = internal constant { ptr, ptr } { ptr @"lexer::scan_qp_body", ptr null }
 @"var.lexer::scan_qp_body" = global ptr null
-@str.44 = internal unnamed_addr constant [48 x i8] c"Unterminated import path -- missing closing '\22'\00"
-@str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.44 }
+@str.45 = internal unnamed_addr constant [48 x i8] c"Unterminated import path -- missing closing '\22'\00"
+@str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.45 }
 @clo.const.59 = internal constant { ptr, ptr } { ptr @"lexer::scan_quoted_path", ptr null }
 @"var.lexer::scan_quoted_path" = global ptr null
 @clo.const.60 = internal constant { ptr, ptr } { ptr @"lexer::is_path_rune", ptr null }
 @"var.lexer::is_path_rune" = global ptr null
 @clo.const.61 = internal constant { ptr, ptr } { ptr @"lexer::scan_bare_path", ptr null }
 @"var.lexer::scan_bare_path" = global ptr null
-@str.45 = internal unnamed_addr constant [9 x i8] c"-dynamic\00"
-@str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.45 }
+@str.46 = internal unnamed_addr constant [9 x i8] c"-dynamic\00"
+@str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.46 }
 @clo.const.62 = internal constant { ptr, ptr } { ptr @"lexer::skip_ws", ptr null }
-@str.46 = internal unnamed_addr constant [51 x i8] c"Unterminated '#use(...)' \E2\80\94 expected closing ')'.\00"
-@str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.46 }
-@clo.const.63 = internal constant { ptr, ptr } { ptr @"$anon_fn.143", ptr null }
-@str.47 = internal unnamed_addr constant [8 x i8] c"dynamic\00"
-@str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.47 }
-@str.48 = internal unnamed_addr constant [7 x i8] c"import\00"
-@str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.48 }
-@str.49 = internal unnamed_addr constant [22 x i8] c"Invalid #use option '\00"
-@str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 21, ptr @str.49 }
-@str.50 = internal unnamed_addr constant [38 x i8] c"' \E2\80\94 expected 'dynamic' or 'import'.\00"
-@str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.50 }
+@str.47 = internal unnamed_addr constant [51 x i8] c"Unterminated '#use(...)' \E2\80\94 expected closing ')'.\00"
+@str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.47 }
+@clo.const.63 = internal constant { ptr, ptr } { ptr @"$anon_fn.148", ptr null }
+@str.48 = internal unnamed_addr constant [8 x i8] c"dynamic\00"
+@str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.48 }
+@str.49 = internal unnamed_addr constant [7 x i8] c"import\00"
+@str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.49 }
+@str.50 = internal unnamed_addr constant [22 x i8] c"Invalid #use option '\00"
+@str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 21, ptr @str.50 }
+@str.51 = internal unnamed_addr constant [38 x i8] c"' \E2\80\94 expected 'dynamic' or 'import'.\00"
+@str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.51 }
 @clo.const.64 = internal constant { ptr, ptr } { ptr @"lexer::skip_hws", ptr null }
-@str.51 = internal unnamed_addr constant [52 x i8] c"Expected a module name or quoted path after '#use'.\00"
-@str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 51, ptr @str.51 }
-@str.52 = internal unnamed_addr constant [49 x i8] c"Expected a module name or quoted path after '='.\00"
-@str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.52 }
-@str.53 = internal unnamed_addr constant [4 x i8] c" = \00"
-@str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.53 }
+@str.52 = internal unnamed_addr constant [52 x i8] c"Expected a module name or quoted path after '#use'.\00"
+@str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 51, ptr @str.52 }
+@str.53 = internal unnamed_addr constant [49 x i8] c"Expected a module name or quoted path after '='.\00"
+@str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.53 }
+@str.54 = internal unnamed_addr constant [4 x i8] c" = \00"
+@str.54.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.54 }
 @clo.const.65 = internal constant { ptr, ptr } { ptr @"lexer::scan_use_directive", ptr null }
 @"var.lexer::scan_use_directive" = global ptr null
 @"var.lexer::skip_ws" = global ptr null
-@str.54 = internal unnamed_addr constant [32 x i8] c"Invalid '#pragma number' type '\00"
-@str.54.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.54 }
-@str.55 = internal unnamed_addr constant [62 x i8] c"' \E2\80\94 expected an integer type (i8/u8..i64/u64) or 'default'.\00"
-@str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 61, ptr @str.55 }
+@str.55 = internal unnamed_addr constant [32 x i8] c"Invalid '#pragma number' type '\00"
+@str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.55 }
+@str.56 = internal unnamed_addr constant [62 x i8] c"' \E2\80\94 expected an integer type (i8/u8..i64/u64) or 'default'.\00"
+@str.56.struct = internal unnamed_addr constant { i64, ptr } { i64 61, ptr @str.56 }
 @clo.const.66 = internal constant { ptr, ptr } { ptr @"lexer::pragma_suffix_fail", ptr null }
 @"var.lexer::pragma_suffix_fail" = global ptr null
-@str.56 = internal unnamed_addr constant [7 x i8] c"number\00"
-@str.56.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.56 }
-@str.57 = internal unnamed_addr constant [7 x i8] c"fpfast\00"
+@str.57 = internal unnamed_addr constant [7 x i8] c"number\00"
 @str.57.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.57 }
-@str.58 = internal unnamed_addr constant [8 x i8] c"swizzle\00"
-@str.58.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.58 }
-@clo.const.67 = internal constant { ptr, ptr } { ptr @"$anon_fn.149", ptr null }
-@str.59 = internal unnamed_addr constant [8 x i8] c"default\00"
+@str.58 = internal unnamed_addr constant [7 x i8] c"fpfast\00"
+@str.58.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.58 }
+@str.59 = internal unnamed_addr constant [8 x i8] c"swizzle\00"
 @str.59.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.59 }
-@clo.const.68 = internal constant { ptr, ptr } { ptr @"$anon_fn.150", ptr null }
-@str.60 = internal unnamed_addr constant [8 x i8] c"#pragma\00"
+@clo.const.67 = internal constant { ptr, ptr } { ptr @"$anon_fn.154", ptr null }
+@str.60 = internal unnamed_addr constant [8 x i8] c"default\00"
 @str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.60 }
+@clo.const.68 = internal constant { ptr, ptr } { ptr @"$anon_fn.155", ptr null }
+@str.61 = internal unnamed_addr constant [8 x i8] c"#pragma\00"
+@str.61.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.61 }
 @clo.const.69 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_number", ptr null }
-@clo.const.70 = internal constant { ptr, ptr } { ptr @"$anon_fn.152", ptr null }
-@str.61 = internal unnamed_addr constant [4 x i8] c"all\00"
-@str.61.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.61 }
-@str.62 = internal unnamed_addr constant [5 x i8] c"none\00"
-@str.62.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.62 }
-@str.63 = internal unnamed_addr constant [32 x i8] c"Invalid '#pragma fpfast' mode '\00"
-@str.63.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.63 }
-@str.64 = internal unnamed_addr constant [32 x i8] c"' \E2\80\94 expected 'all' or 'none'.\00"
+@clo.const.70 = internal constant { ptr, ptr } { ptr @"$anon_fn.157", ptr null }
+@str.62 = internal unnamed_addr constant [4 x i8] c"all\00"
+@str.62.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.62 }
+@str.63 = internal unnamed_addr constant [5 x i8] c"none\00"
+@str.63.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.63 }
+@str.64 = internal unnamed_addr constant [32 x i8] c"Invalid '#pragma fpfast' mode '\00"
 @str.64.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.64 }
+@str.65 = internal unnamed_addr constant [32 x i8] c"' \E2\80\94 expected 'all' or 'none'.\00"
+@str.65.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.65 }
 @clo.const.71 = internal constant { ptr, ptr } { ptr @"lexer::pragma_fp_fail", ptr null }
-@clo.const.72 = internal constant { ptr, ptr } { ptr @"$anon_fn.154", ptr null }
+@clo.const.72 = internal constant { ptr, ptr } { ptr @"$anon_fn.159", ptr null }
 @clo.const.73 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_fp", ptr null }
-@clo.const.74 = internal constant { ptr, ptr } { ptr @"$anon_fn.156", ptr null }
-@str.65 = internal unnamed_addr constant [5 x i8] c"xyzw\00"
-@str.65.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.65 }
-@str.66 = internal unnamed_addr constant [5 x i8] c"rgba\00"
+@clo.const.74 = internal constant { ptr, ptr } { ptr @"$anon_fn.161", ptr null }
+@str.66 = internal unnamed_addr constant [5 x i8] c"xyzw\00"
 @str.66.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.66 }
-@str.67 = internal unnamed_addr constant [33 x i8] c"Invalid '#pragma swizzle' mode '\00"
-@str.67.struct = internal unnamed_addr constant { i64, ptr } { i64 32, ptr @str.67 }
-@str.68 = internal unnamed_addr constant [49 x i8] c"' \E2\80\94 expected 'all', 'xyzw', 'rgba', or 'none'.\00"
-@str.68.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.68 }
+@str.67 = internal unnamed_addr constant [5 x i8] c"rgba\00"
+@str.67.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.67 }
+@str.68 = internal unnamed_addr constant [33 x i8] c"Invalid '#pragma swizzle' mode '\00"
+@str.68.struct = internal unnamed_addr constant { i64, ptr } { i64 32, ptr @str.68 }
+@str.69 = internal unnamed_addr constant [49 x i8] c"' \E2\80\94 expected 'all', 'xyzw', 'rgba', or 'none'.\00"
+@str.69.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.69 }
 @clo.const.75 = internal constant { ptr, ptr } { ptr @"lexer::pragma_swizzle_fail", ptr null }
-@clo.const.76 = internal constant { ptr, ptr } { ptr @"$anon_fn.158", ptr null }
+@clo.const.76 = internal constant { ptr, ptr } { ptr @"$anon_fn.163", ptr null }
 @clo.const.77 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_swizzle", ptr null }
 @clo.const.78 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma_body", ptr null }
-@str.69 = internal unnamed_addr constant [59 x i8] c"Expected 'number', 'fpfast', or 'swizzle' after '#pragma'.\00"
-@str.69.struct = internal unnamed_addr constant { i64, ptr } { i64 58, ptr @str.69 }
+@str.70 = internal unnamed_addr constant [59 x i8] c"Expected 'number', 'fpfast', or 'swizzle' after '#pragma'.\00"
+@str.70.struct = internal unnamed_addr constant { i64, ptr } { i64 58, ptr @str.70 }
 @clo.const.79 = internal constant { ptr, ptr } { ptr @"lexer::pragma_miss_fail", ptr null }
 @clo.const.80 = internal constant { ptr, ptr } { ptr @"lexer::scan_pragma", ptr null }
 @"var.lexer::scan_pragma" = global ptr null
@@ -306,60 +308,60 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::pragma_fp_fail" = global ptr null
 @"var.lexer::scan_pragma_swizzle" = global ptr null
 @"var.lexer::pragma_swizzle_fail" = global ptr null
-@str.70 = internal unnamed_addr constant [8 x i8] c"foreign\00"
-@str.70.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.70 }
-@str.71 = internal unnamed_addr constant [9 x i8] c"#foreign\00"
-@str.71.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.71 }
-@str.72 = internal unnamed_addr constant [5 x i8] c"type\00"
-@str.72.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.72 }
-@str.73 = internal unnamed_addr constant [6 x i8] c"#type\00"
-@str.73.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.73 }
-@str.74 = internal unnamed_addr constant [7 x i8] c"packed\00"
-@str.74.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.74 }
-@str.75 = internal unnamed_addr constant [8 x i8] c"#packed\00"
-@str.75.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.75 }
-@str.76 = internal unnamed_addr constant [8 x i8] c"private\00"
+@str.71 = internal unnamed_addr constant [8 x i8] c"foreign\00"
+@str.71.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.71 }
+@str.72 = internal unnamed_addr constant [9 x i8] c"#foreign\00"
+@str.72.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.72 }
+@str.73 = internal unnamed_addr constant [5 x i8] c"type\00"
+@str.73.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.73 }
+@str.74 = internal unnamed_addr constant [6 x i8] c"#type\00"
+@str.74.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.74 }
+@str.75 = internal unnamed_addr constant [7 x i8] c"packed\00"
+@str.75.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.75 }
+@str.76 = internal unnamed_addr constant [8 x i8] c"#packed\00"
 @str.76.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.76 }
-@str.77 = internal unnamed_addr constant [9 x i8] c"#private\00"
-@str.77.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.77 }
-@str.78 = internal unnamed_addr constant [7 x i8] c"public\00"
-@str.78.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.78 }
-@str.79 = internal unnamed_addr constant [4 x i8] c"pub\00"
-@str.79.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.79 }
-@str.80 = internal unnamed_addr constant [2 x i8] c"#\00"
-@str.80.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.80 }
-@str.81 = internal unnamed_addr constant [7 x i8] c"export\00"
-@str.81.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.81 }
-@str.82 = internal unnamed_addr constant [8 x i8] c"#export\00"
-@str.82.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.82 }
-@str.83 = internal unnamed_addr constant [6 x i8] c"spawn\00"
-@str.83.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.83 }
-@str.84 = internal unnamed_addr constant [7 x i8] c"#spawn\00"
-@str.84.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.84 }
-@str.85 = internal unnamed_addr constant [5 x i8] c"join\00"
-@str.85.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.85 }
-@str.86 = internal unnamed_addr constant [6 x i8] c"#join\00"
-@str.86.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.86 }
-@str.87 = internal unnamed_addr constant [5 x i8] c"exit\00"
-@str.87.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.87 }
-@str.88 = internal unnamed_addr constant [6 x i8] c"#exit\00"
-@str.88.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.88 }
-@str.89 = internal unnamed_addr constant [6 x i8] c"error\00"
+@str.77 = internal unnamed_addr constant [8 x i8] c"private\00"
+@str.77.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.77 }
+@str.78 = internal unnamed_addr constant [9 x i8] c"#private\00"
+@str.78.struct = internal unnamed_addr constant { i64, ptr } { i64 8, ptr @str.78 }
+@str.79 = internal unnamed_addr constant [7 x i8] c"public\00"
+@str.79.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.79 }
+@str.80 = internal unnamed_addr constant [4 x i8] c"pub\00"
+@str.80.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.80 }
+@str.81 = internal unnamed_addr constant [2 x i8] c"#\00"
+@str.81.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.81 }
+@str.82 = internal unnamed_addr constant [7 x i8] c"export\00"
+@str.82.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.82 }
+@str.83 = internal unnamed_addr constant [8 x i8] c"#export\00"
+@str.83.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.83 }
+@str.84 = internal unnamed_addr constant [6 x i8] c"spawn\00"
+@str.84.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.84 }
+@str.85 = internal unnamed_addr constant [7 x i8] c"#spawn\00"
+@str.85.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.85 }
+@str.86 = internal unnamed_addr constant [5 x i8] c"join\00"
+@str.86.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.86 }
+@str.87 = internal unnamed_addr constant [6 x i8] c"#join\00"
+@str.87.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.87 }
+@str.88 = internal unnamed_addr constant [5 x i8] c"exit\00"
+@str.88.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.88 }
+@str.89 = internal unnamed_addr constant [6 x i8] c"#exit\00"
 @str.89.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.89 }
-@str.90 = internal unnamed_addr constant [7 x i8] c"#error\00"
-@str.90.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.90 }
-@str.91 = internal unnamed_addr constant [5 x i8] c"warn\00"
-@str.91.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.91 }
-@str.92 = internal unnamed_addr constant [6 x i8] c"#warn\00"
-@str.92.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.92 }
-@str.93 = internal unnamed_addr constant [7 x i8] c"pragma\00"
-@str.93.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.93 }
-@str.94 = internal unnamed_addr constant [4 x i8] c"use\00"
-@str.94.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.94 }
+@str.90 = internal unnamed_addr constant [6 x i8] c"error\00"
+@str.90.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.90 }
+@str.91 = internal unnamed_addr constant [7 x i8] c"#error\00"
+@str.91.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.91 }
+@str.92 = internal unnamed_addr constant [5 x i8] c"warn\00"
+@str.92.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.92 }
+@str.93 = internal unnamed_addr constant [6 x i8] c"#warn\00"
+@str.93.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.93 }
+@str.94 = internal unnamed_addr constant [7 x i8] c"pragma\00"
+@str.94.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.94 }
+@str.95 = internal unnamed_addr constant [4 x i8] c"use\00"
+@str.95.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.95 }
 @clo.const.81 = internal constant { ptr, ptr } { ptr @"lexer::scan_directive", ptr null }
 @"var.lexer::scan_directive" = global ptr null
-@str.95 = internal unnamed_addr constant [3 x i8] c"#!\00"
-@str.95.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.95 }
+@str.96 = internal unnamed_addr constant [3 x i8] c"#!\00"
+@str.96.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.96 }
 @clo.const.82 = internal constant { ptr, ptr } { ptr @"lexer::scan_hash_ct", ptr null }
 @"var.lexer::scan_hash_ct" = global ptr null
 @clo.const.83 = internal constant { ptr, ptr } { ptr @"lexer::scan_hash_name", ptr null }
@@ -377,51 +379,51 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::stack_overwrite" = global ptr null
 @clo.const.89 = internal constant { ptr, ptr } { ptr @"lexer::stack_push", ptr null }
 @"var.lexer::stack_push" = global ptr null
-@str.96 = internal unnamed_addr constant [7 x i8] c"DEDENT\00"
-@str.96.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.96 }
+@str.97 = internal unnamed_addr constant [7 x i8] c"DEDENT\00"
+@str.97.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.97 }
 @clo.const.90 = internal constant { ptr, ptr } { ptr @"lexer::queue_dedent", ptr null }
 @"var.lexer::queue_dedent" = global ptr null
 @clo.const.91 = internal constant { ptr, ptr } { ptr @"lexer::take_queued", ptr null }
 @"var.lexer::take_queued" = global ptr null
-@str.97 = internal unnamed_addr constant [61 x i8] c"Mixed spaces and tabs in indentation are strictly forbidden.\00"
-@str.97.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.97 }
-@str.98 = internal unnamed_addr constant [55 x i8] c"Inconsistent indentation. Expected tabs, found spaces.\00"
-@str.98.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.98 }
-@str.99 = internal unnamed_addr constant [55 x i8] c"Inconsistent indentation. Expected spaces, found tabs.\00"
+@str.98 = internal unnamed_addr constant [61 x i8] c"Mixed spaces and tabs in indentation are strictly forbidden.\00"
+@str.98.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.98 }
+@str.99 = internal unnamed_addr constant [55 x i8] c"Inconsistent indentation. Expected tabs, found spaces.\00"
 @str.99.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.99 }
+@str.100 = internal unnamed_addr constant [55 x i8] c"Inconsistent indentation. Expected spaces, found tabs.\00"
+@str.100.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.100 }
 @clo.const.92 = internal constant { ptr, ptr } { ptr @"lexer::count_indent", ptr null }
 @"var.lexer::count_indent" = global ptr null
-@str.100 = internal unnamed_addr constant [16 x i8] c"Unindent level \00"
-@str.100.struct = internal unnamed_addr constant { i64, ptr } { i64 15, ptr @str.100 }
-@str.101 = internal unnamed_addr constant [45 x i8] c" does not match any outer indentation level.\00"
-@str.101.struct = internal unnamed_addr constant { i64, ptr } { i64 44, ptr @str.101 }
+@str.101 = internal unnamed_addr constant [16 x i8] c"Unindent level \00"
+@str.101.struct = internal unnamed_addr constant { i64, ptr } { i64 15, ptr @str.101 }
+@str.102 = internal unnamed_addr constant [45 x i8] c" does not match any outer indentation level.\00"
+@str.102.struct = internal unnamed_addr constant { i64, ptr } { i64 44, ptr @str.102 }
 @clo.const.93 = internal constant { ptr, ptr } { ptr @"lexer::drain_to", ptr null }
 @"var.lexer::drain_to" = global ptr null
 @clo.const.94 = internal constant { ptr, ptr } { ptr @"lexer::skip_blank", ptr null }
-@str.102 = internal unnamed_addr constant [7 x i8] c"INDENT\00"
-@str.102.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.102 }
+@str.103 = internal unnamed_addr constant [7 x i8] c"INDENT\00"
+@str.103.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.103 }
 @clo.const.95 = internal constant { ptr, ptr } { ptr @"lexer::flush_indents", ptr null }
 @clo.const.96 = internal constant { ptr, ptr } { ptr @"lexer::comment_block", ptr null }
 @clo.const.97 = internal constant { ptr, ptr } { ptr @"lexer::comment_line", ptr null }
 @clo.const.98 = internal constant { ptr, ptr } { ptr @"lexer::nl_tok", ptr null }
-@str.103 = internal unnamed_addr constant [2 x i8] c"%\00"
-@str.103.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.103 }
+@str.104 = internal unnamed_addr constant [2 x i8] c"%\00"
+@str.104.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.104 }
 @clo.const.99 = internal constant { ptr, ptr } { ptr @"lexer::scan_intrinsic", ptr null }
 @clo.const.100 = internal constant { ptr, ptr } { ptr @"lexer::scan_delim", ptr null }
 @clo.const.101 = internal constant { ptr, ptr } { ptr @"lexer::scan_fp_const", ptr null }
 @clo.const.102 = internal constant { ptr, ptr } { ptr @"lexer::scan_ident", ptr null }
-@str.104 = internal unnamed_addr constant [4 x i8] c"\22\22\22\00"
-@str.104.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.104 }
-@str.105 = internal unnamed_addr constant [70 x i8] c"Unterminated here-doc literal -- missing closing '}' in interpolation\00"
-@str.105.struct = internal unnamed_addr constant { i64, ptr } { i64 69, ptr @str.105 }
+@str.105 = internal unnamed_addr constant [4 x i8] c"\22\22\22\00"
+@str.105.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.105 }
+@str.106 = internal unnamed_addr constant [70 x i8] c"Unterminated here-doc literal -- missing closing '}' in interpolation\00"
+@str.106.struct = internal unnamed_addr constant { i64, ptr } { i64 69, ptr @str.106 }
 @clo.const.103 = internal constant { ptr, ptr } { ptr @"lexer::scan_heredoc_expr", ptr null }
 @clo.const.104 = internal constant { ptr, ptr } { ptr @"lexer::count_leading_indent", ptr null }
-@str.106 = internal unnamed_addr constant [2 x i8] c"(\00"
-@str.106.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.106 }
-@str.107 = internal unnamed_addr constant [2 x i8] c"+\00"
+@str.107 = internal unnamed_addr constant [2 x i8] c"(\00"
 @str.107.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.107 }
-@str.108 = internal unnamed_addr constant [2 x i8] c")\00"
+@str.108 = internal unnamed_addr constant [2 x i8] c"+\00"
 @str.108.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.108 }
+@str.109 = internal unnamed_addr constant [2 x i8] c")\00"
+@str.109.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.109 }
 @clo.const.105 = internal constant { ptr, ptr } { ptr @"lexer::scan_heredoc", ptr null }
 @clo.const.106 = internal constant { ptr, ptr } { ptr @"lexer::eof_tok", ptr null }
 @clo.const.107 = internal constant { ptr, ptr } { ptr @"lexer::dispatch_scan", ptr null }
@@ -450,49 +452,49 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.lexer::dispatch_bol" = global ptr null
 @"var.lexer::scan_fp_const" = global ptr null
 @"var.lexer::dispatch_scan" = global ptr null
-@str.109 = internal unnamed_addr constant [3 x i8] c"id\00"
-@str.109.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.109 }
-@str.110 = internal unnamed_addr constant [4 x i8] c"int\00"
-@str.110.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.110 }
-@str.111 = internal unnamed_addr constant [6 x i8] c"float\00"
-@str.111.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.111 }
-@str.112 = internal unnamed_addr constant [4 x i8] c"str\00"
-@str.112.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.112 }
-@str.113 = internal unnamed_addr constant [5 x i8] c"rune\00"
-@str.113.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.113 }
-@str.114 = internal unnamed_addr constant [3 x i8] c"op\00"
-@str.114.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.114 }
-@str.115 = internal unnamed_addr constant [2 x i8] c"[\00"
-@str.115.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.115 }
-@str.116 = internal unnamed_addr constant [2 x i8] c"]\00"
+@str.110 = internal unnamed_addr constant [3 x i8] c"id\00"
+@str.110.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.110 }
+@str.111 = internal unnamed_addr constant [4 x i8] c"int\00"
+@str.111.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.111 }
+@str.112 = internal unnamed_addr constant [6 x i8] c"float\00"
+@str.112.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.112 }
+@str.113 = internal unnamed_addr constant [4 x i8] c"str\00"
+@str.113.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.113 }
+@str.114 = internal unnamed_addr constant [5 x i8] c"rune\00"
+@str.114.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.114 }
+@str.115 = internal unnamed_addr constant [3 x i8] c"op\00"
+@str.115.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.115 }
+@str.116 = internal unnamed_addr constant [2 x i8] c"[\00"
 @str.116.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.116 }
-@str.117 = internal unnamed_addr constant [2 x i8] c"{\00"
+@str.117 = internal unnamed_addr constant [2 x i8] c"]\00"
 @str.117.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.117 }
-@str.118 = internal unnamed_addr constant [2 x i8] c"}\00"
+@str.118 = internal unnamed_addr constant [2 x i8] c"{\00"
 @str.118.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.118 }
-@str.119 = internal unnamed_addr constant [2 x i8] c",\00"
+@str.119 = internal unnamed_addr constant [2 x i8] c"}\00"
 @str.119.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.119 }
-@str.120 = internal unnamed_addr constant [2 x i8] c";\00"
+@str.120 = internal unnamed_addr constant [2 x i8] c",\00"
 @str.120.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.120 }
-@str.121 = internal unnamed_addr constant [8 x i8] c"newline\00"
-@str.121.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.121 }
-@str.122 = internal unnamed_addr constant [5 x i8] c"#use\00"
-@str.122.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.122 }
-@str.123 = internal unnamed_addr constant [14 x i8] c"#use(dynamic)\00"
-@str.123.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.123 }
-@str.124 = internal unnamed_addr constant [13 x i8] c"#use(import)\00"
-@str.124.struct = internal unnamed_addr constant { i64, ptr } { i64 12, ptr @str.124 }
-@str.125 = internal unnamed_addr constant [22 x i8] c"#use(dynamic, import)\00"
-@str.125.struct = internal unnamed_addr constant { i64, ptr } { i64 21, ptr @str.125 }
-@str.126 = internal unnamed_addr constant [8 x i8] c"#public\00"
-@str.126.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.126 }
-@str.127 = internal unnamed_addr constant [4 x i8] c"eof\00"
-@str.127.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.127 }
-@str.128 = internal unnamed_addr constant [2 x i8] c"?\00"
-@str.128.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.128 }
-@clo.const.113 = internal constant { ptr, ptr } { ptr @"lexer::kind_name", ptr null }
-@str.129 = internal unnamed_addr constant [2 x i8] c" \00"
+@str.121 = internal unnamed_addr constant [2 x i8] c";\00"
+@str.121.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.121 }
+@str.122 = internal unnamed_addr constant [8 x i8] c"newline\00"
+@str.122.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.122 }
+@str.123 = internal unnamed_addr constant [5 x i8] c"#use\00"
+@str.123.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.123 }
+@str.124 = internal unnamed_addr constant [14 x i8] c"#use(dynamic)\00"
+@str.124.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.124 }
+@str.125 = internal unnamed_addr constant [13 x i8] c"#use(import)\00"
+@str.125.struct = internal unnamed_addr constant { i64, ptr } { i64 12, ptr @str.125 }
+@str.126 = internal unnamed_addr constant [22 x i8] c"#use(dynamic, import)\00"
+@str.126.struct = internal unnamed_addr constant { i64, ptr } { i64 21, ptr @str.126 }
+@str.127 = internal unnamed_addr constant [8 x i8] c"#public\00"
+@str.127.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.127 }
+@str.128 = internal unnamed_addr constant [4 x i8] c"eof\00"
+@str.128.struct = internal unnamed_addr constant { i64, ptr } { i64 3, ptr @str.128 }
+@str.129 = internal unnamed_addr constant [2 x i8] c"?\00"
 @str.129.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.129 }
+@clo.const.113 = internal constant { ptr, ptr } { ptr @"lexer::kind_name", ptr null }
+@str.130 = internal unnamed_addr constant [2 x i8] c" \00"
+@str.130.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.130 }
 @clo.const.114 = internal constant { ptr, ptr } { ptr @"lexer::show", ptr null }
 @"var.lexer::show" = global ptr null
 @"var.lexer::kind_name" = global ptr null
@@ -648,6 +650,8 @@ entry:
 
 declare i32 @open(ptr, i32)
 
+declare i64 @creat(ptr, i64)
+
 declare i32 @close(i32)
 
 declare i64 @posix_spawn(ptr, ptr, ptr, ptr, ptr, ptr)
@@ -728,8 +732,6 @@ declare i64 @stat(ptr, ptr)
 
 declare i64 @fstat(i32, ptr)
 
-declare i64 @creat(ptr, i64)
-
 declare i64 @rename(ptr, ptr)
 
 declare i64 @unlink(ptr)
@@ -765,6 +767,12 @@ declare i64 @tcsetattr(i32, i64, ptr)
 declare void @cfmakeraw(ptr)
 
 declare i64 @poll(ptr, i64, i64)
+
+declare i64 @epoll_create1(i32)
+
+declare i64 @epoll_ctl(i64, i64, i32, ptr)
+
+declare i64 @epoll_wait(i64, ptr, i64, i64)
 
 declare i64 @time(ptr)
 
@@ -3338,7 +3346,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.95"(i32 %0) #1 {
+define internal i1 @"$anon_fn.100"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -6773,10 +6781,10 @@ choice.exit:                                      ; preds = %choice.next, %choic
   %choice.res = phi i1 [ true, %choice.case ], [ false, %choice.next ]
   br label %and.45.exit
 
-choice.case:                                      ; preds = %str.eq.merge120
+choice.case:                                      ; preds = %str.eq.merge150
   br label %choice.exit
 
-choice.next:                                      ; preds = %str.eq.merge120
+choice.next:                                      ; preds = %str.eq.merge150
   br label %choice.exit
 
 str_gen_check25:                                  ; preds = %str_ok13
@@ -6979,17 +6987,69 @@ str.eq.else119:                                   ; preds = %str_ok113
 str.eq.merge120:                                  ; preds = %str.eq.else119, %str.eq.then118
   %str.eq.result126 = phi i1 [ %eq.cmp.zero125, %str.eq.then118 ], [ false, %str.eq.else119 ]
   %case.or127 = or i1 %case.or97, %str.eq.result126
-  br i1 %case.or127, label %choice.case, label %choice.next
+  %eq.lhs.len128 = getelementptr inbounds { i64, ptr }, ptr %str.view, i32 0, i32 0
+  %eq.lhs.len129 = load i64, ptr %eq.lhs.len128, align 8
+  %eq.lhs.len130 = and i64 %eq.lhs.len129, 281474976710655
+  %str.tag131 = lshr i64 %eq.lhs.len129, 48
+  %str.immortal132 = icmp eq i64 %str.tag131, 0
+  br i1 %str.immortal132, label %str_ok134, label %str_gen_check133
+
+str_gen_check133:                                 ; preds = %str.eq.merge120
+  %arena.cur136 = call ptr @dva_arena_current()
+  %tag.valid137 = call i1 @dva_arena_validate_tag(ptr %arena.cur136, i64 %str.tag131)
+  br i1 %tag.valid137, label %str_ok134, label %str_stale135
+
+str_ok134:                                        ; preds = %str_stale135, %str_gen_check133, %str.eq.merge120
+  %eq.rhs.len138 = load i64, ptr @str.26.struct, align 8
+  %eq.rhs.len139 = and i64 %eq.rhs.len138, 281474976710655
+  %str.tag140 = lshr i64 %eq.rhs.len138, 48
+  %str.immortal141 = icmp eq i64 %str.tag140, 0
+  br i1 %str.immortal141, label %str_ok143, label %str_gen_check142
+
+str_stale135:                                     ; preds = %str_gen_check133
+  %12 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok134
+
+str_gen_check142:                                 ; preds = %str_ok134
+  %arena.cur145 = call ptr @dva_arena_current()
+  %tag.valid146 = call i1 @dva_arena_validate_tag(ptr %arena.cur145, i64 %str.tag140)
+  br i1 %tag.valid146, label %str_ok143, label %str_stale144
+
+str_ok143:                                        ; preds = %str_stale144, %str_gen_check142, %str_ok134
+  %eq.len147 = icmp eq i64 %eq.lhs.len130, %eq.rhs.len139
+  br i1 %eq.len147, label %str.eq.then148, label %str.eq.else149
+
+str_stale144:                                     ; preds = %str_gen_check142
+  %13 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok143
+
+str.eq.then148:                                   ; preds = %str_ok143
+  %eq.lhs.data151 = getelementptr inbounds { i64, ptr }, ptr %str.view, i32 0, i32 1
+  %eq.lhs.data152 = load ptr, ptr %eq.lhs.data151, align 8
+  %eq.rhs.data153 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.26.struct, i32 0, i32 1), align 8
+  %eq.memcmp154 = call i32 @memcmp(ptr %eq.lhs.data152, ptr %eq.rhs.data153, i64 %eq.lhs.len130)
+  %eq.cmp.zero155 = icmp eq i32 %eq.memcmp154, 0
+  br label %str.eq.merge150
+
+str.eq.else149:                                   ; preds = %str_ok143
+  br label %str.eq.merge150
+
+str.eq.merge150:                                  ; preds = %str.eq.else149, %str.eq.then148
+  %str.eq.result156 = phi i1 [ %eq.cmp.zero155, %str.eq.then148 ], [ false, %str.eq.else149 ]
+  %case.or157 = or i1 %case.or127, %str.eq.result156
+  br i1 %case.or157, label %choice.case, label %choice.next
 
 choice.then:                                      ; preds = %and.45.exit
-  br label %choice.exit128
+  br label %choice.exit158
 
 choice.else:                                      ; preds = %and.45.exit
-  br label %choice.exit128
+  br label %choice.exit158
 
-choice.exit128:                                   ; preds = %choice.else, %choice.then
-  %choice.res129 = phi i64 [ 4, %choice.then ], [ 0, %choice.else ]
-  ret i64 %choice.res129
+choice.exit158:                                   ; preds = %choice.else, %choice.then
+  %choice.res159 = phi i64 [ 4, %choice.then ], [ 0, %choice.else ]
+  ret i64 %choice.res159
 }
 
 define i1 @"lexer::is_fp_const_at"(ptr %0, i64 %1) #1 {
@@ -7269,7 +7329,7 @@ str_gen_check104:                                 ; preds = %and.46.then
   br i1 %tag.valid108, label %str_ok105, label %str_stale106
 
 str_ok105:                                        ; preds = %str_stale106, %str_gen_check104, %and.46.then
-  %eq.rhs.len109 = load i64, ptr @str.26.struct, align 8
+  %eq.rhs.len109 = load i64, ptr @str.27.struct, align 8
   %eq.rhs.len110 = and i64 %eq.rhs.len109, 281474976710655
   %str.tag111 = lshr i64 %eq.rhs.len109, 48
   %str.immortal112 = icmp eq i64 %str.tag111, 0
@@ -7297,7 +7357,7 @@ str_stale115:                                     ; preds = %str_gen_check113
 str.eq.then119:                                   ; preds = %str_ok114
   %eq.lhs.data122 = getelementptr inbounds { i64, ptr }, ptr %var.load97, i32 0, i32 1
   %eq.lhs.data123 = load ptr, ptr %eq.lhs.data122, align 8
-  %eq.rhs.data124 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.26.struct, i32 0, i32 1), align 8
+  %eq.rhs.data124 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
   %eq.memcmp125 = call i32 @memcmp(ptr %eq.lhs.data123, ptr %eq.rhs.data124, i64 %eq.lhs.len101)
   %eq.cmp.zero126 = icmp eq i32 %eq.memcmp125, 0
   br label %str.eq.merge121
@@ -7320,7 +7380,7 @@ str_gen_check133:                                 ; preds = %str.eq.merge121
   br i1 %tag.valid137, label %str_ok134, label %str_stale135
 
 str_ok134:                                        ; preds = %str_stale135, %str_gen_check133, %str.eq.merge121
-  %eq.rhs.len138 = load i64, ptr @str.27.struct, align 8
+  %eq.rhs.len138 = load i64, ptr @str.28.struct, align 8
   %eq.rhs.len139 = and i64 %eq.rhs.len138, 281474976710655
   %str.tag140 = lshr i64 %eq.rhs.len138, 48
   %str.immortal141 = icmp eq i64 %str.tag140, 0
@@ -7348,7 +7408,7 @@ str_stale144:                                     ; preds = %str_gen_check142
 str.eq.then148:                                   ; preds = %str_ok143
   %eq.lhs.data151 = getelementptr inbounds { i64, ptr }, ptr %var.load97, i32 0, i32 1
   %eq.lhs.data152 = load ptr, ptr %eq.lhs.data151, align 8
-  %eq.rhs.data153 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
+  %eq.rhs.data153 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.28.struct, i32 0, i32 1), align 8
   %eq.memcmp154 = call i32 @memcmp(ptr %eq.lhs.data152, ptr %eq.rhs.data153, i64 %eq.lhs.len130)
   %eq.cmp.zero155 = icmp eq i32 %eq.memcmp154, 0
   br label %str.eq.merge150
@@ -7569,7 +7629,7 @@ str_gen_check25:                                  ; preds = %str_ok13
   br i1 %tag.valid29, label %str_ok26, label %str_stale27
 
 str_ok26:                                         ; preds = %str_stale27, %str_gen_check25, %str_ok13
-  %eq.rhs.len = load i64, ptr @str.28.struct, align 8
+  %eq.rhs.len = load i64, ptr @str.29.struct, align 8
   %eq.rhs.len30 = and i64 %eq.rhs.len, 281474976710655
   %str.tag31 = lshr i64 %eq.rhs.len, 48
   %str.immortal32 = icmp eq i64 %str.tag31, 0
@@ -7597,7 +7657,7 @@ str_stale35:                                      ; preds = %str_gen_check33
 str.eq.then:                                      ; preds = %str_ok34
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %str.view, i32 0, i32 1
   %eq.lhs.data38 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.28.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.29.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data38, ptr %eq.rhs.data, i64 %eq.lhs.len22)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -7861,7 +7921,7 @@ str_gen_check185:                                 ; preds = %and.48.then
   br i1 %tag.valid189, label %str_ok186, label %str_stale187
 
 str_ok186:                                        ; preds = %str_stale187, %str_gen_check185, %and.48.then
-  %eq.rhs.len190 = load i64, ptr @str.26.struct, align 8
+  %eq.rhs.len190 = load i64, ptr @str.27.struct, align 8
   %eq.rhs.len191 = and i64 %eq.rhs.len190, 281474976710655
   %str.tag192 = lshr i64 %eq.rhs.len190, 48
   %str.immortal193 = icmp eq i64 %str.tag192, 0
@@ -7889,7 +7949,7 @@ str_stale196:                                     ; preds = %str_gen_check194
 str.eq.then200:                                   ; preds = %str_ok195
   %eq.lhs.data203 = getelementptr inbounds { i64, ptr }, ptr %var.load178, i32 0, i32 1
   %eq.lhs.data204 = load ptr, ptr %eq.lhs.data203, align 8
-  %eq.rhs.data205 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.26.struct, i32 0, i32 1), align 8
+  %eq.rhs.data205 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
   %eq.memcmp206 = call i32 @memcmp(ptr %eq.lhs.data204, ptr %eq.rhs.data205, i64 %eq.lhs.len182)
   %eq.cmp.zero207 = icmp eq i32 %eq.memcmp206, 0
   br label %str.eq.merge202
@@ -7912,7 +7972,7 @@ str_gen_check214:                                 ; preds = %str.eq.merge202
   br i1 %tag.valid218, label %str_ok215, label %str_stale216
 
 str_ok215:                                        ; preds = %str_stale216, %str_gen_check214, %str.eq.merge202
-  %eq.rhs.len219 = load i64, ptr @str.27.struct, align 8
+  %eq.rhs.len219 = load i64, ptr @str.28.struct, align 8
   %eq.rhs.len220 = and i64 %eq.rhs.len219, 281474976710655
   %str.tag221 = lshr i64 %eq.rhs.len219, 48
   %str.immortal222 = icmp eq i64 %str.tag221, 0
@@ -7940,7 +8000,7 @@ str_stale225:                                     ; preds = %str_gen_check223
 str.eq.then229:                                   ; preds = %str_ok224
   %eq.lhs.data232 = getelementptr inbounds { i64, ptr }, ptr %var.load178, i32 0, i32 1
   %eq.lhs.data233 = load ptr, ptr %eq.lhs.data232, align 8
-  %eq.rhs.data234 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.27.struct, i32 0, i32 1), align 8
+  %eq.rhs.data234 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.28.struct, i32 0, i32 1), align 8
   %eq.memcmp235 = call i32 @memcmp(ptr %eq.lhs.data233, ptr %eq.rhs.data234, i64 %eq.lhs.len211)
   %eq.cmp.zero236 = icmp eq i32 %eq.memcmp235, 0
   br label %str.eq.merge231
@@ -8429,7 +8489,7 @@ choice.then123:                                   ; preds = %and.53.exit
   %var.load138 = load i64, ptr %var.start, align 8
   %var.load139 = load i64, ptr %var.line, align 8
   %var.load140 = load i64, ptr %var.col, align 8
-  %call.res141 = call ptr @"lexer::mktok"(ptr %var.load133, ptr %enum.alloc135, i64 %var.load138, i64 1, i64 %var.load139, i64 %var.load140, ptr @str.29.struct)
+  %call.res141 = call ptr @"lexer::mktok"(ptr %var.load133, ptr %enum.alloc135, i64 %var.load138, i64 1, i64 %var.load139, i64 %var.load140, ptr @str.30.struct)
   ret ptr %call.res141
 
 choice.exit124:                                   ; preds = %ret.dead142, %and.53.exit
@@ -8568,7 +8628,7 @@ choice.then199:                                   ; preds = %and.55.exit
   %var.load214 = load i64, ptr %var.start, align 8
   %var.load215 = load i64, ptr %var.line, align 8
   %var.load216 = load i64, ptr %var.col, align 8
-  %call.res217 = call ptr @"lexer::mktok"(ptr %var.load209, ptr %enum.alloc211, i64 %var.load214, i64 2, i64 %var.load215, i64 %var.load216, ptr @str.30.struct)
+  %call.res217 = call ptr @"lexer::mktok"(ptr %var.load209, ptr %enum.alloc211, i64 %var.load214, i64 2, i64 %var.load215, i64 %var.load216, ptr @str.31.struct)
   ret ptr %call.res217
 
 choice.exit200:                                   ; preds = %ret.dead218, %and.55.exit
@@ -8707,7 +8767,7 @@ choice.then275:                                   ; preds = %and.57.exit
   %var.load290 = load i64, ptr %var.start, align 8
   %var.load291 = load i64, ptr %var.line, align 8
   %var.load292 = load i64, ptr %var.col, align 8
-  %call.res293 = call ptr @"lexer::mktok"(ptr %var.load285, ptr %enum.alloc287, i64 %var.load290, i64 2, i64 %var.load291, i64 %var.load292, ptr @str.31.struct)
+  %call.res293 = call ptr @"lexer::mktok"(ptr %var.load285, ptr %enum.alloc287, i64 %var.load290, i64 2, i64 %var.load291, i64 %var.load292, ptr @str.32.struct)
   ret ptr %call.res293
 
 choice.exit276:                                   ; preds = %ret.dead294, %and.57.exit
@@ -8898,7 +8958,7 @@ choice.then377:                                   ; preds = %and.60.exit
   %var.load392 = load i64, ptr %var.start, align 8
   %var.load393 = load i64, ptr %var.line, align 8
   %var.load394 = load i64, ptr %var.col, align 8
-  %call.res395 = call ptr @"lexer::mktok"(ptr %var.load387, ptr %enum.alloc389, i64 %var.load392, i64 3, i64 %var.load393, i64 %var.load394, ptr @str.32.struct)
+  %call.res395 = call ptr @"lexer::mktok"(ptr %var.load387, ptr %enum.alloc389, i64 %var.load392, i64 3, i64 %var.load393, i64 %var.load394, ptr @str.33.struct)
   ret ptr %call.res395
 
 choice.exit378:                                   ; preds = %ret.dead396, %and.60.exit
@@ -9089,7 +9149,7 @@ choice.then479:                                   ; preds = %and.63.exit
   %var.load494 = load i64, ptr %var.start, align 8
   %var.load495 = load i64, ptr %var.line, align 8
   %var.load496 = load i64, ptr %var.col, align 8
-  %call.res497 = call ptr @"lexer::mktok"(ptr %var.load489, ptr %enum.alloc491, i64 %var.load494, i64 3, i64 %var.load495, i64 %var.load496, ptr @str.33.struct)
+  %call.res497 = call ptr @"lexer::mktok"(ptr %var.load489, ptr %enum.alloc491, i64 %var.load494, i64 3, i64 %var.load495, i64 %var.load496, ptr @str.34.struct)
   ret ptr %call.res497
 
 choice.exit480:                                   ; preds = %ret.dead498, %and.63.exit
@@ -9228,7 +9288,7 @@ choice.then555:                                   ; preds = %and.65.exit
   %var.load570 = load i64, ptr %var.start, align 8
   %var.load571 = load i64, ptr %var.line, align 8
   %var.load572 = load i64, ptr %var.col, align 8
-  %call.res573 = call ptr @"lexer::mktok"(ptr %var.load565, ptr %enum.alloc567, i64 %var.load570, i64 2, i64 %var.load571, i64 %var.load572, ptr @str.34.struct)
+  %call.res573 = call ptr @"lexer::mktok"(ptr %var.load565, ptr %enum.alloc567, i64 %var.load570, i64 2, i64 %var.load571, i64 %var.load572, ptr @str.35.struct)
   ret ptr %call.res573
 
 choice.exit556:                                   ; preds = %ret.dead574, %and.65.exit
@@ -9419,7 +9479,7 @@ choice.then657:                                   ; preds = %and.68.exit
   %var.load672 = load i64, ptr %var.start, align 8
   %var.load673 = load i64, ptr %var.line, align 8
   %var.load674 = load i64, ptr %var.col, align 8
-  %call.res675 = call ptr @"lexer::mktok"(ptr %var.load667, ptr %enum.alloc669, i64 %var.load672, i64 3, i64 %var.load673, i64 %var.load674, ptr @str.35.struct)
+  %call.res675 = call ptr @"lexer::mktok"(ptr %var.load667, ptr %enum.alloc669, i64 %var.load672, i64 3, i64 %var.load673, i64 %var.load674, ptr @str.36.struct)
   ret ptr %call.res675
 
 choice.exit658:                                   ; preds = %ret.dead676, %and.68.exit
@@ -9610,7 +9670,7 @@ choice.then759:                                   ; preds = %and.71.exit
   %var.load774 = load i64, ptr %var.start, align 8
   %var.load775 = load i64, ptr %var.line, align 8
   %var.load776 = load i64, ptr %var.col, align 8
-  %call.res777 = call ptr @"lexer::mktok"(ptr %var.load769, ptr %enum.alloc771, i64 %var.load774, i64 1, i64 %var.load775, i64 %var.load776, ptr @str.36.struct)
+  %call.res777 = call ptr @"lexer::mktok"(ptr %var.load769, ptr %enum.alloc771, i64 %var.load774, i64 1, i64 %var.load775, i64 %var.load776, ptr @str.37.struct)
   ret ptr %call.res777
 
 choice.exit760:                                   ; preds = %ret.dead778, %and.71.exit
@@ -9853,7 +9913,7 @@ choice.then887:                                   ; preds = %and.75.exit
   %var.load902 = load i64, ptr %var.start, align 8
   %var.load903 = load i64, ptr %var.line, align 8
   %var.load904 = load i64, ptr %var.col, align 8
-  %call.res905 = call ptr @"lexer::mktok"(ptr %var.load897, ptr %enum.alloc899, i64 %var.load902, i64 4, i64 %var.load903, i64 %var.load904, ptr @str.37.struct)
+  %call.res905 = call ptr @"lexer::mktok"(ptr %var.load897, ptr %enum.alloc899, i64 %var.load902, i64 4, i64 %var.load903, i64 %var.load904, ptr @str.38.struct)
   ret ptr %call.res905
 
 choice.exit888:                                   ; preds = %ret.dead906, %and.75.exit
@@ -10096,7 +10156,7 @@ choice.then1015:                                  ; preds = %and.79.exit
   %var.load1030 = load i64, ptr %var.start, align 8
   %var.load1031 = load i64, ptr %var.line, align 8
   %var.load1032 = load i64, ptr %var.col, align 8
-  %call.res1033 = call ptr @"lexer::mktok"(ptr %var.load1025, ptr %enum.alloc1027, i64 %var.load1030, i64 4, i64 %var.load1031, i64 %var.load1032, ptr @str.38.struct)
+  %call.res1033 = call ptr @"lexer::mktok"(ptr %var.load1025, ptr %enum.alloc1027, i64 %var.load1030, i64 4, i64 %var.load1031, i64 %var.load1032, ptr @str.39.struct)
   ret ptr %call.res1033
 
 choice.exit1016:                                  ; preds = %ret.dead1034, %and.79.exit
@@ -10287,7 +10347,7 @@ choice.then1117:                                  ; preds = %and.82.exit
   %var.load1132 = load i64, ptr %var.start, align 8
   %var.load1133 = load i64, ptr %var.line, align 8
   %var.load1134 = load i64, ptr %var.col, align 8
-  %call.res1135 = call ptr @"lexer::mktok"(ptr %var.load1127, ptr %enum.alloc1129, i64 %var.load1132, i64 3, i64 %var.load1133, i64 %var.load1134, ptr @str.39.struct)
+  %call.res1135 = call ptr @"lexer::mktok"(ptr %var.load1127, ptr %enum.alloc1129, i64 %var.load1132, i64 3, i64 %var.load1133, i64 %var.load1134, ptr @str.40.struct)
   ret ptr %call.res1135
 
 choice.exit1118:                                  ; preds = %ret.dead1136, %and.82.exit
@@ -10478,7 +10538,7 @@ choice.then1219:                                  ; preds = %and.85.exit
   %var.load1234 = load i64, ptr %var.start, align 8
   %var.load1235 = load i64, ptr %var.line, align 8
   %var.load1236 = load i64, ptr %var.col, align 8
-  %call.res1237 = call ptr @"lexer::mktok"(ptr %var.load1229, ptr %enum.alloc1231, i64 %var.load1234, i64 3, i64 %var.load1235, i64 %var.load1236, ptr @str.40.struct)
+  %call.res1237 = call ptr @"lexer::mktok"(ptr %var.load1229, ptr %enum.alloc1231, i64 %var.load1234, i64 3, i64 %var.load1235, i64 %var.load1236, ptr @str.41.struct)
   ret ptr %call.res1237
 
 choice.exit1220:                                  ; preds = %ret.dead1238, %and.85.exit
@@ -12108,7 +12168,7 @@ or.97.exit:                                       ; preds = %or.97.else, %or.97.
 choice.then:                                      ; preds = %or.97.exit
   %var.load13 = load i64, ptr %var.line, align 8
   %var.load14 = load i64, ptr %var.col, align 8
-  %call.res15 = call i64 @"lexer::fail"(i64 1009, i64 %var.load13, i64 %var.load14, ptr @str.41.struct)
+  %call.res15 = call i64 @"lexer::fail"(i64 1009, i64 %var.load13, i64 %var.load14, ptr @str.42.struct)
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.then, %or.97.exit
@@ -12175,7 +12235,7 @@ choice.then48:                                    ; preds = %choice.exit39
 choice.else49:                                    ; preds = %choice.exit39
   %var.load55 = load i64, ptr %var.line, align 8
   %var.load56 = load i64, ptr %var.col, align 8
-  %call.res57 = call i64 @"lexer::fail"(i64 1010, i64 %var.load55, i64 %var.load56, ptr @str.42.struct)
+  %call.res57 = call i64 @"lexer::fail"(i64 1010, i64 %var.load55, i64 %var.load56, ptr @str.43.struct)
   br label %choice.exit50
 
 choice.exit50:                                    ; preds = %choice.else49, %choice.then48
@@ -12212,7 +12272,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.133"(i32 %0) #1 {
+define internal i1 @"$anon_fn.138"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -12346,7 +12406,7 @@ choice.exit21:                                    ; preds = %choice.else
 choice.then35:                                    ; preds = %loop.exit.98
   %var.load37 = load i64, ptr %var.line, align 8
   %var.load38 = load i64, ptr %var.col, align 8
-  %call.res39 = call i64 @"lexer::fail"(i64 1007, i64 %var.load37, i64 %var.load38, ptr @str.43.struct)
+  %call.res39 = call i64 @"lexer::fail"(i64 1007, i64 %var.load37, i64 %var.load38, ptr @str.44.struct)
   br label %choice.exit36
 
 choice.exit36:                                    ; preds = %choice.then35, %loop.exit.98
@@ -12424,7 +12484,7 @@ str_stale:                                        ; preds = %str_gen_check
   br label %str_ok
 }
 
-define internal i1 @"$anon_fn.136"(i32 %0) #1 {
+define internal i1 @"$anon_fn.141"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -12589,7 +12649,7 @@ choice.exit:                                      ; preds = %choice.next, %choic
 choice.case:                                      ; preds = %entry
   %var.load8 = load i64, ptr %var.line, align 8
   %var.load9 = load i64, ptr %var.col, align 8
-  %call.res10 = call i64 @"lexer::fail"(i64 1011, i64 %var.load8, i64 %var.load9, ptr @str.44.struct)
+  %call.res10 = call i64 @"lexer::fail"(i64 1011, i64 %var.load8, i64 %var.load9, ptr @str.45.struct)
   br label %choice.exit
 
 choice.next:                                      ; preds = %entry
@@ -12974,7 +13034,7 @@ str_gen_check31:                                  ; preds = %str_ok14
   br i1 %tag.valid35, label %str_ok32, label %str_stale33
 
 str_ok32:                                         ; preds = %str_stale33, %str_gen_check31, %str_ok14
-  %eq.rhs.len = load i64, ptr @str.45.struct, align 8
+  %eq.rhs.len = load i64, ptr @str.46.struct, align 8
   %eq.rhs.len36 = and i64 %eq.rhs.len, 281474976710655
   %str.tag37 = lshr i64 %eq.rhs.len, 48
   %str.immortal38 = icmp eq i64 %str.tag37, 0
@@ -13002,7 +13062,7 @@ str_stale41:                                      ; preds = %str_gen_check39
 str.eq.then:                                      ; preds = %str_ok40
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %str.view, i32 0, i32 1
   %eq.lhs.data44 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.45.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.46.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data44, ptr %eq.rhs.data, i64 %eq.lhs.len28)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -13133,7 +13193,7 @@ or.111.exit:                                      ; preds = %or.111.else, %or.11
 choice.then80:                                    ; preds = %or.111.exit
   %var.load82 = load i64, ptr %var.line, align 8
   %var.load83 = load i64, ptr %var.col, align 8
-  %call.res84 = call i64 @"lexer::fail"(i64 1015, i64 %var.load82, i64 %var.load83, ptr @str.46.struct)
+  %call.res84 = call i64 @"lexer::fail"(i64 1015, i64 %var.load82, i64 %var.load83, ptr @str.47.struct)
   br label %loop.exit.110
 
 choice.exit81:                                    ; preds = %or.111.exit
@@ -13230,7 +13290,7 @@ str_gen_check138:                                 ; preds = %str_ok99
   br i1 %tag.valid142, label %str_ok139, label %str_stale140
 
 str_ok139:                                        ; preds = %str_stale140, %str_gen_check138, %str_ok99
-  %eq.rhs.len143 = load i64, ptr @str.47.struct, align 8
+  %eq.rhs.len143 = load i64, ptr @str.48.struct, align 8
   %eq.rhs.len144 = and i64 %eq.rhs.len143, 281474976710655
   %str.tag145 = lshr i64 %eq.rhs.len143, 48
   %str.immortal146 = icmp eq i64 %str.tag145, 0
@@ -13258,7 +13318,7 @@ str_stale149:                                     ; preds = %str_gen_check147
 str.eq.then153:                                   ; preds = %str_ok148
   %eq.lhs.data156 = getelementptr inbounds { i64, ptr }, ptr %var.load131, i32 0, i32 1
   %eq.lhs.data157 = load ptr, ptr %eq.lhs.data156, align 8
-  %eq.rhs.data158 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.47.struct, i32 0, i32 1), align 8
+  %eq.rhs.data158 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.48.struct, i32 0, i32 1), align 8
   %eq.memcmp159 = call i32 @memcmp(ptr %eq.lhs.data157, ptr %eq.rhs.data158, i64 %eq.lhs.len135)
   %eq.cmp.zero160 = icmp eq i32 %eq.memcmp159, 0
   br label %str.eq.merge155
@@ -13278,7 +13338,7 @@ choice.next163:                                   ; preds = %str.eq.merge186
   %var.load193 = load i64, ptr %var.line, align 8
   %var.load194 = load i64, ptr %var.col, align 8
   %var.load195 = load ptr, ptr %var.word, align 8
-  %concat.lhs = load i64, ptr @str.49.struct, align 8
+  %concat.lhs = load i64, ptr @str.50.struct, align 8
   %concat.lhs196 = and i64 %concat.lhs, 281474976710655
   %str.tag197 = lshr i64 %concat.lhs, 48
   %str.immortal198 = icmp eq i64 %str.tag197, 0
@@ -13290,7 +13350,7 @@ str_gen_check169:                                 ; preds = %choice.next
   br i1 %tag.valid173, label %str_ok170, label %str_stale171
 
 str_ok170:                                        ; preds = %str_stale171, %str_gen_check169, %choice.next
-  %eq.rhs.len174 = load i64, ptr @str.48.struct, align 8
+  %eq.rhs.len174 = load i64, ptr @str.49.struct, align 8
   %eq.rhs.len175 = and i64 %eq.rhs.len174, 281474976710655
   %str.tag176 = lshr i64 %eq.rhs.len174, 48
   %str.immortal177 = icmp eq i64 %str.tag176, 0
@@ -13318,7 +13378,7 @@ str_stale180:                                     ; preds = %str_gen_check178
 str.eq.then184:                                   ; preds = %str_ok179
   %eq.lhs.data187 = getelementptr inbounds { i64, ptr }, ptr %var.load131, i32 0, i32 1
   %eq.lhs.data188 = load ptr, ptr %eq.lhs.data187, align 8
-  %eq.rhs.data189 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.48.struct, i32 0, i32 1), align 8
+  %eq.rhs.data189 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
   %eq.memcmp190 = call i32 @memcmp(ptr %eq.lhs.data188, ptr %eq.rhs.data189, i64 %eq.lhs.len166)
   %eq.cmp.zero191 = icmp eq i32 %eq.memcmp190, 0
   br label %str.eq.merge186
@@ -13336,7 +13396,7 @@ str_gen_check199:                                 ; preds = %choice.next163
   br i1 %tag.valid203, label %str_ok200, label %str_stale201
 
 str_ok200:                                        ; preds = %str_stale201, %str_gen_check199, %choice.next163
-  %concat.lhs204 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.49.struct, i32 0, i32 1), align 8
+  %concat.lhs204 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load195, i32 0, i32 0
   %concat.rhs205 = load i64, ptr %concat.rhs, align 8
   %concat.rhs206 = and i64 %concat.rhs205, 281474976710655
@@ -13412,7 +13472,7 @@ str_gen_check230:                                 ; preds = %concat.tot.len219
 str_ok231:                                        ; preds = %str_stale232, %str_gen_check230, %concat.tot.len219
   %concat.lhs235 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs236 = load ptr, ptr %concat.lhs235, align 8
-  %concat.rhs237 = load i64, ptr @str.50.struct, align 8
+  %concat.rhs237 = load i64, ptr @str.51.struct, align 8
   %concat.rhs238 = and i64 %concat.rhs237, 281474976710655
   %str.tag239 = lshr i64 %concat.rhs237, 48
   %str.immortal240 = icmp eq i64 %str.tag239, 0
@@ -13429,7 +13489,7 @@ str_gen_check241:                                 ; preds = %str_ok231
   br i1 %tag.valid245, label %str_ok242, label %str_stale243
 
 str_ok242:                                        ; preds = %str_stale243, %str_gen_check241, %str_ok231
-  %concat.rhs246 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.50.struct, i32 0, i32 1), align 8
+  %concat.rhs246 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.51.struct, i32 0, i32 1), align 8
   %concat.sum.len247 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs227, i64 %concat.rhs238)
   %sum248 = extractvalue { i64, i1 } %concat.sum.len247, 0
   %ovf249 = extractvalue { i64, i1 } %concat.sum.len247, 1
@@ -13540,7 +13600,7 @@ str_stale315:                                     ; preds = %str_gen_check313
 choice.then319:                                   ; preds = %str_ok314
   %var.load321 = load i64, ptr %var.line, align 8
   %var.load322 = load i64, ptr %var.col, align 8
-  %call.res323 = call i64 @"lexer::fail"(i64 1015, i64 %var.load321, i64 %var.load322, ptr @str.51.struct)
+  %call.res323 = call i64 @"lexer::fail"(i64 1015, i64 %var.load321, i64 %var.load322, ptr @str.52.struct)
   br label %choice.exit320
 
 choice.exit320:                                   ; preds = %choice.then319, %str_ok314
@@ -13646,7 +13706,7 @@ str_stale369:                                     ; preds = %str_gen_check367
 choice.then373:                                   ; preds = %str_ok368
   %var.load375 = load i64, ptr %var.line, align 8
   %var.load376 = load i64, ptr %var.col, align 8
-  %call.res377 = call i64 @"lexer::fail"(i64 1015, i64 %var.load375, i64 %var.load376, ptr @str.52.struct)
+  %call.res377 = call i64 @"lexer::fail"(i64 1015, i64 %var.load375, i64 %var.load376, ptr @str.53.struct)
   br label %choice.exit374
 
 choice.exit374:                                   ; preds = %choice.then373, %str_ok368
@@ -13666,7 +13726,7 @@ str_gen_check384:                                 ; preds = %choice.exit374
 str_ok385:                                        ; preds = %str_stale386, %str_gen_check384, %choice.exit374
   %concat.lhs389 = getelementptr inbounds { i64, ptr }, ptr %var.load378, i32 0, i32 1
   %concat.lhs390 = load ptr, ptr %concat.lhs389, align 8
-  %concat.rhs391 = load i64, ptr @str.53.struct, align 8
+  %concat.rhs391 = load i64, ptr @str.54.struct, align 8
   %concat.rhs392 = and i64 %concat.rhs391, 281474976710655
   %str.tag393 = lshr i64 %concat.rhs391, 48
   %str.immortal394 = icmp eq i64 %str.tag393, 0
@@ -13683,7 +13743,7 @@ str_gen_check395:                                 ; preds = %str_ok385
   br i1 %tag.valid399, label %str_ok396, label %str_stale397
 
 str_ok396:                                        ; preds = %str_stale397, %str_gen_check395, %str_ok385
-  %concat.rhs400 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.53.struct, i32 0, i32 1), align 8
+  %concat.rhs400 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
   %concat.sum.len401 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs381, i64 %concat.rhs392)
   %sum402 = extractvalue { i64, i1 } %concat.sum.len401, 0
   %ovf403 = extractvalue { i64, i1 } %concat.sum.len401, 1
@@ -13895,7 +13955,7 @@ entry:
   ret i64 %call.res
 }
 
-define internal i1 @"$anon_fn.143"(i32 %0) #1 {
+define internal i1 @"$anon_fn.148"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -13988,7 +14048,7 @@ entry:
   %var.load = load i64, ptr %var.line, align 8
   %var.load1 = load i64, ptr %var.col, align 8
   %var.load2 = load ptr, ptr %var.word, align 8
-  %concat.lhs = load i64, ptr @str.54.struct, align 8
+  %concat.lhs = load i64, ptr @str.55.struct, align 8
   %concat.lhs3 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -14000,7 +14060,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %tag.valid, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.54.struct, i32 0, i32 1), align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 0
   %concat.rhs5 = load i64, ptr %concat.rhs, align 8
   %concat.rhs6 = and i64 %concat.rhs5, 281474976710655
@@ -14076,7 +14136,7 @@ str_gen_check28:                                  ; preds = %concat.tot.len19
 str_ok29:                                         ; preds = %str_stale30, %str_gen_check28, %concat.tot.len19
   %concat.lhs33 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs34 = load ptr, ptr %concat.lhs33, align 8
-  %concat.rhs35 = load i64, ptr @str.55.struct, align 8
+  %concat.rhs35 = load i64, ptr @str.56.struct, align 8
   %concat.rhs36 = and i64 %concat.rhs35, 281474976710655
   %str.tag37 = lshr i64 %concat.rhs35, 48
   %str.immortal38 = icmp eq i64 %str.tag37, 0
@@ -14093,7 +14153,7 @@ str_gen_check39:                                  ; preds = %str_ok29
   br i1 %tag.valid43, label %str_ok40, label %str_stale41
 
 str_ok40:                                         ; preds = %str_stale41, %str_gen_check39, %str_ok29
-  %concat.rhs44 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.55.struct, i32 0, i32 1), align 8
+  %concat.rhs44 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
   %concat.sum.len45 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs25, i64 %concat.rhs36)
   %sum46 = extractvalue { i64, i1 } %concat.sum.len45, 0
   %ovf47 = extractvalue { i64, i1 } %concat.sum.len45, 1
@@ -14269,7 +14329,7 @@ str_gen_check32:                                  ; preds = %str_ok15
   br i1 %tag.valid36, label %str_ok33, label %str_stale34
 
 str_ok33:                                         ; preds = %str_stale34, %str_gen_check32, %str_ok15
-  %eq.rhs.len = load i64, ptr @str.56.struct, align 8
+  %eq.rhs.len = load i64, ptr @str.57.struct, align 8
   %eq.rhs.len37 = and i64 %eq.rhs.len, 281474976710655
   %str.tag38 = lshr i64 %eq.rhs.len, 48
   %str.immortal39 = icmp eq i64 %str.tag38, 0
@@ -14297,7 +14357,7 @@ str_stale42:                                      ; preds = %str_gen_check40
 str.eq.then:                                      ; preds = %str_ok41
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %str.view, i32 0, i32 1
   %eq.lhs.data45 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.56.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data45, ptr %eq.rhs.data, i64 %eq.lhs.len29)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -14411,7 +14471,7 @@ str_gen_check113:                                 ; preds = %str_ok73
   br i1 %tag.valid117, label %str_ok114, label %str_stale115
 
 str_ok114:                                        ; preds = %str_stale115, %str_gen_check113, %str_ok73
-  %eq.rhs.len118 = load i64, ptr @str.57.struct, align 8
+  %eq.rhs.len118 = load i64, ptr @str.58.struct, align 8
   %eq.rhs.len119 = and i64 %eq.rhs.len118, 281474976710655
   %str.tag120 = lshr i64 %eq.rhs.len118, 48
   %str.immortal121 = icmp eq i64 %str.tag120, 0
@@ -14439,7 +14499,7 @@ str_stale124:                                     ; preds = %str_gen_check122
 str.eq.then128:                                   ; preds = %str_ok123
   %eq.lhs.data131 = getelementptr inbounds { i64, ptr }, ptr %str.view105, i32 0, i32 1
   %eq.lhs.data132 = load ptr, ptr %eq.lhs.data131, align 8
-  %eq.rhs.data133 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.57.struct, i32 0, i32 1), align 8
+  %eq.rhs.data133 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
   %eq.memcmp134 = call i32 @memcmp(ptr %eq.lhs.data132, ptr %eq.rhs.data133, i64 %eq.lhs.len110)
   %eq.cmp.zero135 = icmp eq i32 %eq.memcmp134, 0
   br label %str.eq.merge130
@@ -14542,7 +14602,7 @@ str_gen_check204:                                 ; preds = %str_ok164
   br i1 %tag.valid208, label %str_ok205, label %str_stale206
 
 str_ok205:                                        ; preds = %str_stale206, %str_gen_check204, %str_ok164
-  %eq.rhs.len209 = load i64, ptr @str.58.struct, align 8
+  %eq.rhs.len209 = load i64, ptr @str.59.struct, align 8
   %eq.rhs.len210 = and i64 %eq.rhs.len209, 281474976710655
   %str.tag211 = lshr i64 %eq.rhs.len209, 48
   %str.immortal212 = icmp eq i64 %str.tag211, 0
@@ -14570,7 +14630,7 @@ str_stale215:                                     ; preds = %str_gen_check213
 str.eq.then219:                                   ; preds = %str_ok214
   %eq.lhs.data222 = getelementptr inbounds { i64, ptr }, ptr %str.view196, i32 0, i32 1
   %eq.lhs.data223 = load ptr, ptr %eq.lhs.data222, align 8
-  %eq.rhs.data224 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.58.struct, i32 0, i32 1), align 8
+  %eq.rhs.data224 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.59.struct, i32 0, i32 1), align 8
   %eq.memcmp225 = call i32 @memcmp(ptr %eq.lhs.data223, ptr %eq.rhs.data224, i64 %eq.lhs.len201)
   %eq.cmp.zero226 = icmp eq i32 %eq.memcmp225, 0
   br label %str.eq.merge221
@@ -14819,7 +14879,7 @@ choice.exit:                                      ; preds = %choice.next256, %ch
   %subtmp = sub i64 %fld.load300, %var.load301
   %var.load302 = load i64, ptr %var.line, align 8
   %var.load303 = load i64, ptr %var.col, align 8
-  %call.res304 = call ptr @"lexer::mktok"(ptr %var.load295, ptr %enum.alloc, i64 %var.load297, i64 %subtmp, i64 %var.load302, i64 %var.load303, ptr @str.60.struct)
+  %call.res304 = call ptr @"lexer::mktok"(ptr %var.load295, ptr %enum.alloc, i64 %var.load297, i64 %subtmp, i64 %var.load302, i64 %var.load303, ptr @str.61.struct)
   ret ptr %call.res304
 
 choice.case:                                      ; preds = %str.eq.merge
@@ -14839,7 +14899,7 @@ str_gen_check24:                                  ; preds = %str_ok
   br i1 %tag.valid28, label %str_ok25, label %str_stale26
 
 str_ok25:                                         ; preds = %str_stale26, %str_gen_check24, %str_ok
-  %eq.rhs.len = load i64, ptr @str.59.struct, align 8
+  %eq.rhs.len = load i64, ptr @str.60.struct, align 8
   %eq.rhs.len29 = and i64 %eq.rhs.len, 281474976710655
   %str.tag30 = lshr i64 %eq.rhs.len, 48
   %str.immortal31 = icmp eq i64 %str.tag30, 0
@@ -14867,7 +14927,7 @@ str_stale34:                                      ; preds = %str_gen_check32
 str.eq.then:                                      ; preds = %str_ok33
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
   %eq.lhs.data37 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.59.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.60.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data37, ptr %eq.rhs.data, i64 %eq.lhs.len21)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -15335,7 +15395,7 @@ str.eq.merge279:                                  ; preds = %str.eq.else278, %st
   br i1 %str.eq.result285, label %choice.case255, label %choice.next256
 }
 
-define internal i1 @"$anon_fn.149"(i32 %0) #1 {
+define internal i1 @"$anon_fn.154"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -15345,7 +15405,7 @@ entry:
   ret i1 %nottmp
 }
 
-define internal i1 @"$anon_fn.150"(i32 %0) #1 {
+define internal i1 @"$anon_fn.155"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -15512,7 +15572,7 @@ str_gen_check24:                                  ; preds = %str_ok
   br i1 %tag.valid28, label %str_ok25, label %str_stale26
 
 str_ok25:                                         ; preds = %str_stale26, %str_gen_check24, %str_ok
-  %eq.rhs.len = load i64, ptr @str.61.struct, align 8
+  %eq.rhs.len = load i64, ptr @str.62.struct, align 8
   %eq.rhs.len29 = and i64 %eq.rhs.len, 281474976710655
   %str.tag30 = lshr i64 %eq.rhs.len, 48
   %str.immortal31 = icmp eq i64 %str.tag30, 0
@@ -15540,7 +15600,7 @@ str_stale34:                                      ; preds = %str_gen_check32
 str.eq.then:                                      ; preds = %str_ok33
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
   %eq.lhs.data37 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.61.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data37, ptr %eq.rhs.data, i64 %eq.lhs.len21)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -15563,7 +15623,7 @@ str_gen_check43:                                  ; preds = %str.eq.merge
   br i1 %tag.valid47, label %str_ok44, label %str_stale45
 
 str_ok44:                                         ; preds = %str_stale45, %str_gen_check43, %str.eq.merge
-  %eq.rhs.len48 = load i64, ptr @str.62.struct, align 8
+  %eq.rhs.len48 = load i64, ptr @str.63.struct, align 8
   %eq.rhs.len49 = and i64 %eq.rhs.len48, 281474976710655
   %str.tag50 = lshr i64 %eq.rhs.len48, 48
   %str.immortal51 = icmp eq i64 %str.tag50, 0
@@ -15591,7 +15651,7 @@ str_stale54:                                      ; preds = %str_gen_check52
 str.eq.then58:                                    ; preds = %str_ok53
   %eq.lhs.data61 = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
   %eq.lhs.data62 = load ptr, ptr %eq.lhs.data61, align 8
-  %eq.rhs.data63 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
+  %eq.rhs.data63 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.63.struct, i32 0, i32 1), align 8
   %eq.memcmp64 = call i32 @memcmp(ptr %eq.lhs.data62, ptr %eq.rhs.data63, i64 %eq.lhs.len40)
   %eq.cmp.zero65 = icmp eq i32 %eq.memcmp64, 0
   br label %str.eq.merge60
@@ -15605,7 +15665,7 @@ str.eq.merge60:                                   ; preds = %str.eq.else59, %str
   br i1 %case.or, label %choice.case, label %choice.next
 }
 
-define internal i1 @"$anon_fn.152"(i32 %0) #1 {
+define internal i1 @"$anon_fn.157"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -15626,7 +15686,7 @@ entry:
   %var.load = load i64, ptr %var.line, align 8
   %var.load1 = load i64, ptr %var.col, align 8
   %var.load2 = load ptr, ptr %var.word, align 8
-  %concat.lhs = load i64, ptr @str.63.struct, align 8
+  %concat.lhs = load i64, ptr @str.64.struct, align 8
   %concat.lhs3 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -15638,7 +15698,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %tag.valid, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.63.struct, i32 0, i32 1), align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.64.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 0
   %concat.rhs5 = load i64, ptr %concat.rhs, align 8
   %concat.rhs6 = and i64 %concat.rhs5, 281474976710655
@@ -15714,7 +15774,7 @@ str_gen_check28:                                  ; preds = %concat.tot.len19
 str_ok29:                                         ; preds = %str_stale30, %str_gen_check28, %concat.tot.len19
   %concat.lhs33 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs34 = load ptr, ptr %concat.lhs33, align 8
-  %concat.rhs35 = load i64, ptr @str.64.struct, align 8
+  %concat.rhs35 = load i64, ptr @str.65.struct, align 8
   %concat.rhs36 = and i64 %concat.rhs35, 281474976710655
   %str.tag37 = lshr i64 %concat.rhs35, 48
   %str.immortal38 = icmp eq i64 %str.tag37, 0
@@ -15731,7 +15791,7 @@ str_gen_check39:                                  ; preds = %str_ok29
   br i1 %tag.valid43, label %str_ok40, label %str_stale41
 
 str_ok40:                                         ; preds = %str_stale41, %str_gen_check39, %str_ok29
-  %concat.rhs44 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.64.struct, i32 0, i32 1), align 8
+  %concat.rhs44 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.65.struct, i32 0, i32 1), align 8
   %concat.sum.len45 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs25, i64 %concat.rhs36)
   %sum46 = extractvalue { i64, i1 } %concat.sum.len45, 0
   %ovf47 = extractvalue { i64, i1 } %concat.sum.len45, 1
@@ -15776,7 +15836,7 @@ str_overflow_abort54:                             ; preds = %concat.sum.len48
   br label %concat.tot.len53
 }
 
-define internal i1 @"$anon_fn.154"(i32 %0) #1 {
+define internal i1 @"$anon_fn.159"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -15943,7 +16003,7 @@ str_gen_check24:                                  ; preds = %str_ok
   br i1 %tag.valid28, label %str_ok25, label %str_stale26
 
 str_ok25:                                         ; preds = %str_stale26, %str_gen_check24, %str_ok
-  %eq.rhs.len = load i64, ptr @str.61.struct, align 8
+  %eq.rhs.len = load i64, ptr @str.62.struct, align 8
   %eq.rhs.len29 = and i64 %eq.rhs.len, 281474976710655
   %str.tag30 = lshr i64 %eq.rhs.len, 48
   %str.immortal31 = icmp eq i64 %str.tag30, 0
@@ -15971,7 +16031,7 @@ str_stale34:                                      ; preds = %str_gen_check32
 str.eq.then:                                      ; preds = %str_ok33
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
   %eq.lhs.data37 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.61.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data37, ptr %eq.rhs.data, i64 %eq.lhs.len21)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -15994,7 +16054,7 @@ str_gen_check43:                                  ; preds = %str.eq.merge
   br i1 %tag.valid47, label %str_ok44, label %str_stale45
 
 str_ok44:                                         ; preds = %str_stale45, %str_gen_check43, %str.eq.merge
-  %eq.rhs.len48 = load i64, ptr @str.65.struct, align 8
+  %eq.rhs.len48 = load i64, ptr @str.66.struct, align 8
   %eq.rhs.len49 = and i64 %eq.rhs.len48, 281474976710655
   %str.tag50 = lshr i64 %eq.rhs.len48, 48
   %str.immortal51 = icmp eq i64 %str.tag50, 0
@@ -16022,7 +16082,7 @@ str_stale54:                                      ; preds = %str_gen_check52
 str.eq.then58:                                    ; preds = %str_ok53
   %eq.lhs.data61 = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
   %eq.lhs.data62 = load ptr, ptr %eq.lhs.data61, align 8
-  %eq.rhs.data63 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.65.struct, i32 0, i32 1), align 8
+  %eq.rhs.data63 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.66.struct, i32 0, i32 1), align 8
   %eq.memcmp64 = call i32 @memcmp(ptr %eq.lhs.data62, ptr %eq.rhs.data63, i64 %eq.lhs.len40)
   %eq.cmp.zero65 = icmp eq i32 %eq.memcmp64, 0
   br label %str.eq.merge60
@@ -16046,7 +16106,7 @@ str_gen_check72:                                  ; preds = %str.eq.merge60
   br i1 %tag.valid76, label %str_ok73, label %str_stale74
 
 str_ok73:                                         ; preds = %str_stale74, %str_gen_check72, %str.eq.merge60
-  %eq.rhs.len77 = load i64, ptr @str.66.struct, align 8
+  %eq.rhs.len77 = load i64, ptr @str.67.struct, align 8
   %eq.rhs.len78 = and i64 %eq.rhs.len77, 281474976710655
   %str.tag79 = lshr i64 %eq.rhs.len77, 48
   %str.immortal80 = icmp eq i64 %str.tag79, 0
@@ -16074,7 +16134,7 @@ str_stale83:                                      ; preds = %str_gen_check81
 str.eq.then87:                                    ; preds = %str_ok82
   %eq.lhs.data90 = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
   %eq.lhs.data91 = load ptr, ptr %eq.lhs.data90, align 8
-  %eq.rhs.data92 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.66.struct, i32 0, i32 1), align 8
+  %eq.rhs.data92 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.67.struct, i32 0, i32 1), align 8
   %eq.memcmp93 = call i32 @memcmp(ptr %eq.lhs.data91, ptr %eq.rhs.data92, i64 %eq.lhs.len69)
   %eq.cmp.zero94 = icmp eq i32 %eq.memcmp93, 0
   br label %str.eq.merge89
@@ -16098,7 +16158,7 @@ str_gen_check102:                                 ; preds = %str.eq.merge89
   br i1 %tag.valid106, label %str_ok103, label %str_stale104
 
 str_ok103:                                        ; preds = %str_stale104, %str_gen_check102, %str.eq.merge89
-  %eq.rhs.len107 = load i64, ptr @str.62.struct, align 8
+  %eq.rhs.len107 = load i64, ptr @str.63.struct, align 8
   %eq.rhs.len108 = and i64 %eq.rhs.len107, 281474976710655
   %str.tag109 = lshr i64 %eq.rhs.len107, 48
   %str.immortal110 = icmp eq i64 %str.tag109, 0
@@ -16126,7 +16186,7 @@ str_stale113:                                     ; preds = %str_gen_check111
 str.eq.then117:                                   ; preds = %str_ok112
   %eq.lhs.data120 = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
   %eq.lhs.data121 = load ptr, ptr %eq.lhs.data120, align 8
-  %eq.rhs.data122 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.62.struct, i32 0, i32 1), align 8
+  %eq.rhs.data122 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.63.struct, i32 0, i32 1), align 8
   %eq.memcmp123 = call i32 @memcmp(ptr %eq.lhs.data121, ptr %eq.rhs.data122, i64 %eq.lhs.len99)
   %eq.cmp.zero124 = icmp eq i32 %eq.memcmp123, 0
   br label %str.eq.merge119
@@ -16140,7 +16200,7 @@ str.eq.merge119:                                  ; preds = %str.eq.else118, %st
   br i1 %case.or126, label %choice.case, label %choice.next
 }
 
-define internal i1 @"$anon_fn.156"(i32 %0) #1 {
+define internal i1 @"$anon_fn.161"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -16161,7 +16221,7 @@ entry:
   %var.load = load i64, ptr %var.line, align 8
   %var.load1 = load i64, ptr %var.col, align 8
   %var.load2 = load ptr, ptr %var.word, align 8
-  %concat.lhs = load i64, ptr @str.67.struct, align 8
+  %concat.lhs = load i64, ptr @str.68.struct, align 8
   %concat.lhs3 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -16173,7 +16233,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %tag.valid, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.67.struct, i32 0, i32 1), align 8
+  %concat.lhs4 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.68.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 0
   %concat.rhs5 = load i64, ptr %concat.rhs, align 8
   %concat.rhs6 = and i64 %concat.rhs5, 281474976710655
@@ -16249,7 +16309,7 @@ str_gen_check28:                                  ; preds = %concat.tot.len19
 str_ok29:                                         ; preds = %str_stale30, %str_gen_check28, %concat.tot.len19
   %concat.lhs33 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs34 = load ptr, ptr %concat.lhs33, align 8
-  %concat.rhs35 = load i64, ptr @str.68.struct, align 8
+  %concat.rhs35 = load i64, ptr @str.69.struct, align 8
   %concat.rhs36 = and i64 %concat.rhs35, 281474976710655
   %str.tag37 = lshr i64 %concat.rhs35, 48
   %str.immortal38 = icmp eq i64 %str.tag37, 0
@@ -16266,7 +16326,7 @@ str_gen_check39:                                  ; preds = %str_ok29
   br i1 %tag.valid43, label %str_ok40, label %str_stale41
 
 str_ok40:                                         ; preds = %str_stale41, %str_gen_check39, %str_ok29
-  %concat.rhs44 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.68.struct, i32 0, i32 1), align 8
+  %concat.rhs44 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.69.struct, i32 0, i32 1), align 8
   %concat.sum.len45 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs25, i64 %concat.rhs36)
   %sum46 = extractvalue { i64, i1 } %concat.sum.len45, 0
   %ovf47 = extractvalue { i64, i1 } %concat.sum.len45, 1
@@ -16303,7 +16363,7 @@ concat.tot.len53:                                 ; preds = %str_overflow_abort5
   %str.build.data.gep62 = getelementptr inbounds { i64, ptr }, ptr %concat.str60, i32 0, i32 1
   store ptr %concat.buf56, ptr %str.build.data.gep62, align 8
   %call.res = call i64 @"lexer::fail"(i64 1013, i64 %var.load, i64 %var.load1, ptr %concat.str60)
-  ret ptr @str.62.struct
+  ret ptr @str.63.struct
 
 str_overflow_abort54:                             ; preds = %concat.sum.len48
   %10 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
@@ -16311,7 +16371,7 @@ str_overflow_abort54:                             ; preds = %concat.sum.len48
   br label %concat.tot.len53
 }
 
-define internal i1 @"$anon_fn.158"(i32 %0) #1 {
+define internal i1 @"$anon_fn.163"(i32 %0) #1 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -16333,7 +16393,7 @@ entry:
   store i64 %3, ptr %var.col, align 8
   %var.load = load i64, ptr %var.line, align 8
   %var.load1 = load i64, ptr %var.col, align 8
-  %call.res = call i64 @"lexer::fail"(i64 1013, i64 %var.load, i64 %var.load1, ptr @str.69.struct)
+  %call.res = call i64 @"lexer::fail"(i64 1013, i64 %var.load, i64 %var.load1, ptr @str.70.struct)
   %var.load2 = load ptr, ptr %var.lx, align 8
   %arena.cur = call ptr @dva_arena_current()
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -16344,7 +16404,7 @@ entry:
   %var.load3 = load i64, ptr %var.hstart, align 8
   %var.load4 = load i64, ptr %var.line, align 8
   %var.load5 = load i64, ptr %var.col, align 8
-  %call.res6 = call ptr @"lexer::mktok"(ptr %var.load2, ptr %enum.alloc, i64 %var.load3, i64 0, i64 %var.load4, i64 %var.load5, ptr @str.60.struct)
+  %call.res6 = call ptr @"lexer::mktok"(ptr %var.load2, ptr %enum.alloc, i64 %var.load3, i64 0, i64 %var.load4, i64 %var.load5, ptr @str.61.struct)
   ret ptr %call.res6
 }
 
@@ -16403,7 +16463,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %tag.valid, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %eq.rhs.len = load i64, ptr @str.70.struct, align 8
+  %eq.rhs.len = load i64, ptr @str.71.struct, align 8
   %eq.rhs.len3 = and i64 %eq.rhs.len, 281474976710655
   %str.tag4 = lshr i64 %eq.rhs.len, 48
   %str.immortal5 = icmp eq i64 %str.tag4, 0
@@ -16431,7 +16491,7 @@ str_stale8:                                       ; preds = %str_gen_check6
 str.eq.then:                                      ; preds = %str_ok7
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data11 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.70.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.71.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data11, ptr %eq.rhs.data, i64 %eq.lhs.len2)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -16452,7 +16512,7 @@ str_ok21:                                         ; preds = %str_stale22, %str_g
   %addtmp = add i64 %str.len.query17, 1
   %var.load25 = load i64, ptr %var.line, align 8
   %var.load26 = load i64, ptr %var.col, align 8
-  %call.res = call ptr @"lexer::mktok"(ptr %var.load12, ptr %enum.alloc, i64 %var.load14, i64 %addtmp, i64 %var.load25, i64 %var.load26, ptr @str.71.struct)
+  %call.res = call ptr @"lexer::mktok"(ptr %var.load12, ptr %enum.alloc, i64 %var.load14, i64 %addtmp, i64 %var.load25, i64 %var.load26, ptr @str.72.struct)
   br label %choice.exit
 
 str_stale22:                                      ; preds = %str_gen_check20
@@ -16491,7 +16551,7 @@ str_gen_check34:                                  ; preds = %choice.next
   br i1 %tag.valid38, label %str_ok35, label %str_stale36
 
 str_ok35:                                         ; preds = %str_stale36, %str_gen_check34, %choice.next
-  %eq.rhs.len39 = load i64, ptr @str.72.struct, align 8
+  %eq.rhs.len39 = load i64, ptr @str.73.struct, align 8
   %eq.rhs.len40 = and i64 %eq.rhs.len39, 281474976710655
   %str.tag41 = lshr i64 %eq.rhs.len39, 48
   %str.immortal42 = icmp eq i64 %str.tag41, 0
@@ -16519,7 +16579,7 @@ str_stale45:                                      ; preds = %str_gen_check43
 str.eq.then49:                                    ; preds = %str_ok44
   %eq.lhs.data52 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data53 = load ptr, ptr %eq.lhs.data52, align 8
-  %eq.rhs.data54 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.72.struct, i32 0, i32 1), align 8
+  %eq.rhs.data54 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.73.struct, i32 0, i32 1), align 8
   %eq.memcmp55 = call i32 @memcmp(ptr %eq.lhs.data53, ptr %eq.rhs.data54, i64 %eq.lhs.len31)
   %eq.cmp.zero56 = icmp eq i32 %eq.memcmp55, 0
   br label %str.eq.merge51
@@ -16540,7 +16600,7 @@ str_ok71:                                         ; preds = %str_stale72, %str_g
   %addtmp75 = add i64 %str.len.query67, 1
   %var.load76 = load i64, ptr %var.line, align 8
   %var.load77 = load i64, ptr %var.col, align 8
-  %call.res78 = call ptr @"lexer::mktok"(ptr %var.load58, ptr %enum.alloc60, i64 %var.load63, i64 %addtmp75, i64 %var.load76, i64 %var.load77, ptr @str.73.struct)
+  %call.res78 = call ptr @"lexer::mktok"(ptr %var.load58, ptr %enum.alloc60, i64 %var.load63, i64 %addtmp75, i64 %var.load76, i64 %var.load77, ptr @str.74.struct)
   br label %choice.exit
 
 str_stale72:                                      ; preds = %str_gen_check70
@@ -16579,7 +16639,7 @@ str_gen_check86:                                  ; preds = %choice.next28
   br i1 %tag.valid90, label %str_ok87, label %str_stale88
 
 str_ok87:                                         ; preds = %str_stale88, %str_gen_check86, %choice.next28
-  %eq.rhs.len91 = load i64, ptr @str.74.struct, align 8
+  %eq.rhs.len91 = load i64, ptr @str.75.struct, align 8
   %eq.rhs.len92 = and i64 %eq.rhs.len91, 281474976710655
   %str.tag93 = lshr i64 %eq.rhs.len91, 48
   %str.immortal94 = icmp eq i64 %str.tag93, 0
@@ -16607,7 +16667,7 @@ str_stale97:                                      ; preds = %str_gen_check95
 str.eq.then101:                                   ; preds = %str_ok96
   %eq.lhs.data104 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data105 = load ptr, ptr %eq.lhs.data104, align 8
-  %eq.rhs.data106 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.74.struct, i32 0, i32 1), align 8
+  %eq.rhs.data106 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.75.struct, i32 0, i32 1), align 8
   %eq.memcmp107 = call i32 @memcmp(ptr %eq.lhs.data105, ptr %eq.rhs.data106, i64 %eq.lhs.len83)
   %eq.cmp.zero108 = icmp eq i32 %eq.memcmp107, 0
   br label %str.eq.merge103
@@ -16628,7 +16688,7 @@ str_ok123:                                        ; preds = %str_stale124, %str_
   %addtmp127 = add i64 %str.len.query119, 1
   %var.load128 = load i64, ptr %var.line, align 8
   %var.load129 = load i64, ptr %var.col, align 8
-  %call.res130 = call ptr @"lexer::mktok"(ptr %var.load110, ptr %enum.alloc112, i64 %var.load115, i64 %addtmp127, i64 %var.load128, i64 %var.load129, ptr @str.75.struct)
+  %call.res130 = call ptr @"lexer::mktok"(ptr %var.load110, ptr %enum.alloc112, i64 %var.load115, i64 %addtmp127, i64 %var.load128, i64 %var.load129, ptr @str.76.struct)
   br label %choice.exit
 
 str_stale124:                                     ; preds = %str_gen_check122
@@ -16667,7 +16727,7 @@ str_gen_check138:                                 ; preds = %choice.next80
   br i1 %tag.valid142, label %str_ok139, label %str_stale140
 
 str_ok139:                                        ; preds = %str_stale140, %str_gen_check138, %choice.next80
-  %eq.rhs.len143 = load i64, ptr @str.76.struct, align 8
+  %eq.rhs.len143 = load i64, ptr @str.77.struct, align 8
   %eq.rhs.len144 = and i64 %eq.rhs.len143, 281474976710655
   %str.tag145 = lshr i64 %eq.rhs.len143, 48
   %str.immortal146 = icmp eq i64 %str.tag145, 0
@@ -16695,7 +16755,7 @@ str_stale149:                                     ; preds = %str_gen_check147
 str.eq.then153:                                   ; preds = %str_ok148
   %eq.lhs.data156 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data157 = load ptr, ptr %eq.lhs.data156, align 8
-  %eq.rhs.data158 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.76.struct, i32 0, i32 1), align 8
+  %eq.rhs.data158 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.77.struct, i32 0, i32 1), align 8
   %eq.memcmp159 = call i32 @memcmp(ptr %eq.lhs.data157, ptr %eq.rhs.data158, i64 %eq.lhs.len135)
   %eq.cmp.zero160 = icmp eq i32 %eq.memcmp159, 0
   br label %str.eq.merge155
@@ -16716,7 +16776,7 @@ str_ok175:                                        ; preds = %str_stale176, %str_
   %addtmp179 = add i64 %str.len.query171, 1
   %var.load180 = load i64, ptr %var.line, align 8
   %var.load181 = load i64, ptr %var.col, align 8
-  %call.res182 = call ptr @"lexer::mktok"(ptr %var.load162, ptr %enum.alloc164, i64 %var.load167, i64 %addtmp179, i64 %var.load180, i64 %var.load181, ptr @str.77.struct)
+  %call.res182 = call ptr @"lexer::mktok"(ptr %var.load162, ptr %enum.alloc164, i64 %var.load167, i64 %addtmp179, i64 %var.load180, i64 %var.load181, ptr @str.78.struct)
   br label %choice.exit
 
 str_stale176:                                     ; preds = %str_gen_check174
@@ -16755,7 +16815,7 @@ str_gen_check190:                                 ; preds = %choice.next132
   br i1 %tag.valid194, label %str_ok191, label %str_stale192
 
 str_ok191:                                        ; preds = %str_stale192, %str_gen_check190, %choice.next132
-  %eq.rhs.len195 = load i64, ptr @str.78.struct, align 8
+  %eq.rhs.len195 = load i64, ptr @str.79.struct, align 8
   %eq.rhs.len196 = and i64 %eq.rhs.len195, 281474976710655
   %str.tag197 = lshr i64 %eq.rhs.len195, 48
   %str.immortal198 = icmp eq i64 %str.tag197, 0
@@ -16783,7 +16843,7 @@ str_stale201:                                     ; preds = %str_gen_check199
 str.eq.then205:                                   ; preds = %str_ok200
   %eq.lhs.data208 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data209 = load ptr, ptr %eq.lhs.data208, align 8
-  %eq.rhs.data210 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.78.struct, i32 0, i32 1), align 8
+  %eq.rhs.data210 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.79.struct, i32 0, i32 1), align 8
   %eq.memcmp211 = call i32 @memcmp(ptr %eq.lhs.data209, ptr %eq.rhs.data210, i64 %eq.lhs.len187)
   %eq.cmp.zero212 = icmp eq i32 %eq.memcmp211, 0
   br label %str.eq.merge207
@@ -16806,7 +16866,7 @@ str_gen_check219:                                 ; preds = %str.eq.merge207
   br i1 %tag.valid223, label %str_ok220, label %str_stale221
 
 str_ok220:                                        ; preds = %str_stale221, %str_gen_check219, %str.eq.merge207
-  %eq.rhs.len224 = load i64, ptr @str.79.struct, align 8
+  %eq.rhs.len224 = load i64, ptr @str.80.struct, align 8
   %eq.rhs.len225 = and i64 %eq.rhs.len224, 281474976710655
   %str.tag226 = lshr i64 %eq.rhs.len224, 48
   %str.immortal227 = icmp eq i64 %str.tag226, 0
@@ -16834,7 +16894,7 @@ str_stale230:                                     ; preds = %str_gen_check228
 str.eq.then234:                                   ; preds = %str_ok229
   %eq.lhs.data237 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data238 = load ptr, ptr %eq.lhs.data237, align 8
-  %eq.rhs.data239 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.79.struct, i32 0, i32 1), align 8
+  %eq.rhs.data239 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.80.struct, i32 0, i32 1), align 8
   %eq.memcmp240 = call i32 @memcmp(ptr %eq.lhs.data238, ptr %eq.rhs.data239, i64 %eq.lhs.len216)
   %eq.cmp.zero241 = icmp eq i32 %eq.memcmp240, 0
   br label %str.eq.merge236
@@ -16857,7 +16917,7 @@ str_ok256:                                        ; preds = %str_stale257, %str_
   %var.load261 = load i64, ptr %var.line, align 8
   %var.load262 = load i64, ptr %var.col, align 8
   %var.load263 = load ptr, ptr %var.word, align 8
-  %concat.lhs = load i64, ptr @str.80.struct, align 8
+  %concat.lhs = load i64, ptr @str.81.struct, align 8
   %concat.lhs264 = and i64 %concat.lhs, 281474976710655
   %str.tag265 = lshr i64 %concat.lhs, 48
   %str.immortal266 = icmp eq i64 %str.tag265, 0
@@ -16874,7 +16934,7 @@ str_gen_check267:                                 ; preds = %str_ok256
   br i1 %tag.valid271, label %str_ok268, label %str_stale269
 
 str_ok268:                                        ; preds = %str_stale269, %str_gen_check267, %str_ok256
-  %concat.lhs272 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.80.struct, i32 0, i32 1), align 8
+  %concat.lhs272 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.81.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load263, i32 0, i32 0
   %concat.rhs273 = load i64, ptr %concat.rhs, align 8
   %concat.rhs274 = and i64 %concat.rhs273, 281474976710655
@@ -16969,7 +17029,7 @@ str_gen_check299:                                 ; preds = %choice.next184
   br i1 %tag.valid303, label %str_ok300, label %str_stale301
 
 str_ok300:                                        ; preds = %str_stale301, %str_gen_check299, %choice.next184
-  %eq.rhs.len304 = load i64, ptr @str.81.struct, align 8
+  %eq.rhs.len304 = load i64, ptr @str.82.struct, align 8
   %eq.rhs.len305 = and i64 %eq.rhs.len304, 281474976710655
   %str.tag306 = lshr i64 %eq.rhs.len304, 48
   %str.immortal307 = icmp eq i64 %str.tag306, 0
@@ -16997,7 +17057,7 @@ str_stale310:                                     ; preds = %str_gen_check308
 str.eq.then314:                                   ; preds = %str_ok309
   %eq.lhs.data317 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data318 = load ptr, ptr %eq.lhs.data317, align 8
-  %eq.rhs.data319 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.81.struct, i32 0, i32 1), align 8
+  %eq.rhs.data319 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.82.struct, i32 0, i32 1), align 8
   %eq.memcmp320 = call i32 @memcmp(ptr %eq.lhs.data318, ptr %eq.rhs.data319, i64 %eq.lhs.len296)
   %eq.cmp.zero321 = icmp eq i32 %eq.memcmp320, 0
   br label %str.eq.merge316
@@ -17018,7 +17078,7 @@ str_ok336:                                        ; preds = %str_stale337, %str_
   %addtmp340 = add i64 %str.len.query332, 1
   %var.load341 = load i64, ptr %var.line, align 8
   %var.load342 = load i64, ptr %var.col, align 8
-  %call.res343 = call ptr @"lexer::mktok"(ptr %var.load323, ptr %enum.alloc325, i64 %var.load328, i64 %addtmp340, i64 %var.load341, i64 %var.load342, ptr @str.82.struct)
+  %call.res343 = call ptr @"lexer::mktok"(ptr %var.load323, ptr %enum.alloc325, i64 %var.load328, i64 %addtmp340, i64 %var.load341, i64 %var.load342, ptr @str.83.struct)
   br label %choice.exit
 
 str_stale337:                                     ; preds = %str_gen_check335
@@ -17057,7 +17117,7 @@ str_gen_check351:                                 ; preds = %choice.next293
   br i1 %tag.valid355, label %str_ok352, label %str_stale353
 
 str_ok352:                                        ; preds = %str_stale353, %str_gen_check351, %choice.next293
-  %eq.rhs.len356 = load i64, ptr @str.83.struct, align 8
+  %eq.rhs.len356 = load i64, ptr @str.84.struct, align 8
   %eq.rhs.len357 = and i64 %eq.rhs.len356, 281474976710655
   %str.tag358 = lshr i64 %eq.rhs.len356, 48
   %str.immortal359 = icmp eq i64 %str.tag358, 0
@@ -17085,7 +17145,7 @@ str_stale362:                                     ; preds = %str_gen_check360
 str.eq.then366:                                   ; preds = %str_ok361
   %eq.lhs.data369 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data370 = load ptr, ptr %eq.lhs.data369, align 8
-  %eq.rhs.data371 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.83.struct, i32 0, i32 1), align 8
+  %eq.rhs.data371 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.84.struct, i32 0, i32 1), align 8
   %eq.memcmp372 = call i32 @memcmp(ptr %eq.lhs.data370, ptr %eq.rhs.data371, i64 %eq.lhs.len348)
   %eq.cmp.zero373 = icmp eq i32 %eq.memcmp372, 0
   br label %str.eq.merge368
@@ -17106,7 +17166,7 @@ str_ok388:                                        ; preds = %str_stale389, %str_
   %addtmp392 = add i64 %str.len.query384, 1
   %var.load393 = load i64, ptr %var.line, align 8
   %var.load394 = load i64, ptr %var.col, align 8
-  %call.res395 = call ptr @"lexer::mktok"(ptr %var.load375, ptr %enum.alloc377, i64 %var.load380, i64 %addtmp392, i64 %var.load393, i64 %var.load394, ptr @str.84.struct)
+  %call.res395 = call ptr @"lexer::mktok"(ptr %var.load375, ptr %enum.alloc377, i64 %var.load380, i64 %addtmp392, i64 %var.load393, i64 %var.load394, ptr @str.85.struct)
   br label %choice.exit
 
 str_stale389:                                     ; preds = %str_gen_check387
@@ -17145,7 +17205,7 @@ str_gen_check403:                                 ; preds = %choice.next345
   br i1 %tag.valid407, label %str_ok404, label %str_stale405
 
 str_ok404:                                        ; preds = %str_stale405, %str_gen_check403, %choice.next345
-  %eq.rhs.len408 = load i64, ptr @str.85.struct, align 8
+  %eq.rhs.len408 = load i64, ptr @str.86.struct, align 8
   %eq.rhs.len409 = and i64 %eq.rhs.len408, 281474976710655
   %str.tag410 = lshr i64 %eq.rhs.len408, 48
   %str.immortal411 = icmp eq i64 %str.tag410, 0
@@ -17173,7 +17233,7 @@ str_stale414:                                     ; preds = %str_gen_check412
 str.eq.then418:                                   ; preds = %str_ok413
   %eq.lhs.data421 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data422 = load ptr, ptr %eq.lhs.data421, align 8
-  %eq.rhs.data423 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.85.struct, i32 0, i32 1), align 8
+  %eq.rhs.data423 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.86.struct, i32 0, i32 1), align 8
   %eq.memcmp424 = call i32 @memcmp(ptr %eq.lhs.data422, ptr %eq.rhs.data423, i64 %eq.lhs.len400)
   %eq.cmp.zero425 = icmp eq i32 %eq.memcmp424, 0
   br label %str.eq.merge420
@@ -17194,7 +17254,7 @@ str_ok440:                                        ; preds = %str_stale441, %str_
   %addtmp444 = add i64 %str.len.query436, 1
   %var.load445 = load i64, ptr %var.line, align 8
   %var.load446 = load i64, ptr %var.col, align 8
-  %call.res447 = call ptr @"lexer::mktok"(ptr %var.load427, ptr %enum.alloc429, i64 %var.load432, i64 %addtmp444, i64 %var.load445, i64 %var.load446, ptr @str.86.struct)
+  %call.res447 = call ptr @"lexer::mktok"(ptr %var.load427, ptr %enum.alloc429, i64 %var.load432, i64 %addtmp444, i64 %var.load445, i64 %var.load446, ptr @str.87.struct)
   br label %choice.exit
 
 str_stale441:                                     ; preds = %str_gen_check439
@@ -17233,7 +17293,7 @@ str_gen_check455:                                 ; preds = %choice.next397
   br i1 %tag.valid459, label %str_ok456, label %str_stale457
 
 str_ok456:                                        ; preds = %str_stale457, %str_gen_check455, %choice.next397
-  %eq.rhs.len460 = load i64, ptr @str.87.struct, align 8
+  %eq.rhs.len460 = load i64, ptr @str.88.struct, align 8
   %eq.rhs.len461 = and i64 %eq.rhs.len460, 281474976710655
   %str.tag462 = lshr i64 %eq.rhs.len460, 48
   %str.immortal463 = icmp eq i64 %str.tag462, 0
@@ -17261,7 +17321,7 @@ str_stale466:                                     ; preds = %str_gen_check464
 str.eq.then470:                                   ; preds = %str_ok465
   %eq.lhs.data473 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data474 = load ptr, ptr %eq.lhs.data473, align 8
-  %eq.rhs.data475 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.87.struct, i32 0, i32 1), align 8
+  %eq.rhs.data475 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.88.struct, i32 0, i32 1), align 8
   %eq.memcmp476 = call i32 @memcmp(ptr %eq.lhs.data474, ptr %eq.rhs.data475, i64 %eq.lhs.len452)
   %eq.cmp.zero477 = icmp eq i32 %eq.memcmp476, 0
   br label %str.eq.merge472
@@ -17282,7 +17342,7 @@ str_ok492:                                        ; preds = %str_stale493, %str_
   %addtmp496 = add i64 %str.len.query488, 1
   %var.load497 = load i64, ptr %var.line, align 8
   %var.load498 = load i64, ptr %var.col, align 8
-  %call.res499 = call ptr @"lexer::mktok"(ptr %var.load479, ptr %enum.alloc481, i64 %var.load484, i64 %addtmp496, i64 %var.load497, i64 %var.load498, ptr @str.88.struct)
+  %call.res499 = call ptr @"lexer::mktok"(ptr %var.load479, ptr %enum.alloc481, i64 %var.load484, i64 %addtmp496, i64 %var.load497, i64 %var.load498, ptr @str.89.struct)
   br label %choice.exit
 
 str_stale493:                                     ; preds = %str_gen_check491
@@ -17321,7 +17381,7 @@ str_gen_check507:                                 ; preds = %choice.next449
   br i1 %tag.valid511, label %str_ok508, label %str_stale509
 
 str_ok508:                                        ; preds = %str_stale509, %str_gen_check507, %choice.next449
-  %eq.rhs.len512 = load i64, ptr @str.89.struct, align 8
+  %eq.rhs.len512 = load i64, ptr @str.90.struct, align 8
   %eq.rhs.len513 = and i64 %eq.rhs.len512, 281474976710655
   %str.tag514 = lshr i64 %eq.rhs.len512, 48
   %str.immortal515 = icmp eq i64 %str.tag514, 0
@@ -17349,7 +17409,7 @@ str_stale518:                                     ; preds = %str_gen_check516
 str.eq.then522:                                   ; preds = %str_ok517
   %eq.lhs.data525 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data526 = load ptr, ptr %eq.lhs.data525, align 8
-  %eq.rhs.data527 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.89.struct, i32 0, i32 1), align 8
+  %eq.rhs.data527 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.90.struct, i32 0, i32 1), align 8
   %eq.memcmp528 = call i32 @memcmp(ptr %eq.lhs.data526, ptr %eq.rhs.data527, i64 %eq.lhs.len504)
   %eq.cmp.zero529 = icmp eq i32 %eq.memcmp528, 0
   br label %str.eq.merge524
@@ -17370,7 +17430,7 @@ str_ok544:                                        ; preds = %str_stale545, %str_
   %addtmp548 = add i64 %str.len.query540, 1
   %var.load549 = load i64, ptr %var.line, align 8
   %var.load550 = load i64, ptr %var.col, align 8
-  %call.res551 = call ptr @"lexer::mktok"(ptr %var.load531, ptr %enum.alloc533, i64 %var.load536, i64 %addtmp548, i64 %var.load549, i64 %var.load550, ptr @str.90.struct)
+  %call.res551 = call ptr @"lexer::mktok"(ptr %var.load531, ptr %enum.alloc533, i64 %var.load536, i64 %addtmp548, i64 %var.load549, i64 %var.load550, ptr @str.91.struct)
   br label %choice.exit
 
 str_stale545:                                     ; preds = %str_gen_check543
@@ -17409,7 +17469,7 @@ str_gen_check559:                                 ; preds = %choice.next501
   br i1 %tag.valid563, label %str_ok560, label %str_stale561
 
 str_ok560:                                        ; preds = %str_stale561, %str_gen_check559, %choice.next501
-  %eq.rhs.len564 = load i64, ptr @str.91.struct, align 8
+  %eq.rhs.len564 = load i64, ptr @str.92.struct, align 8
   %eq.rhs.len565 = and i64 %eq.rhs.len564, 281474976710655
   %str.tag566 = lshr i64 %eq.rhs.len564, 48
   %str.immortal567 = icmp eq i64 %str.tag566, 0
@@ -17437,7 +17497,7 @@ str_stale570:                                     ; preds = %str_gen_check568
 str.eq.then574:                                   ; preds = %str_ok569
   %eq.lhs.data577 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data578 = load ptr, ptr %eq.lhs.data577, align 8
-  %eq.rhs.data579 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.91.struct, i32 0, i32 1), align 8
+  %eq.rhs.data579 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.92.struct, i32 0, i32 1), align 8
   %eq.memcmp580 = call i32 @memcmp(ptr %eq.lhs.data578, ptr %eq.rhs.data579, i64 %eq.lhs.len556)
   %eq.cmp.zero581 = icmp eq i32 %eq.memcmp580, 0
   br label %str.eq.merge576
@@ -17458,7 +17518,7 @@ str_ok596:                                        ; preds = %str_stale597, %str_
   %addtmp600 = add i64 %str.len.query592, 1
   %var.load601 = load i64, ptr %var.line, align 8
   %var.load602 = load i64, ptr %var.col, align 8
-  %call.res603 = call ptr @"lexer::mktok"(ptr %var.load583, ptr %enum.alloc585, i64 %var.load588, i64 %addtmp600, i64 %var.load601, i64 %var.load602, ptr @str.92.struct)
+  %call.res603 = call ptr @"lexer::mktok"(ptr %var.load583, ptr %enum.alloc585, i64 %var.load588, i64 %addtmp600, i64 %var.load601, i64 %var.load602, ptr @str.93.struct)
   br label %choice.exit
 
 str_stale597:                                     ; preds = %str_gen_check595
@@ -17488,7 +17548,7 @@ str_gen_check611:                                 ; preds = %choice.next553
   br i1 %tag.valid615, label %str_ok612, label %str_stale613
 
 str_ok612:                                        ; preds = %str_stale613, %str_gen_check611, %choice.next553
-  %eq.rhs.len616 = load i64, ptr @str.93.struct, align 8
+  %eq.rhs.len616 = load i64, ptr @str.94.struct, align 8
   %eq.rhs.len617 = and i64 %eq.rhs.len616, 281474976710655
   %str.tag618 = lshr i64 %eq.rhs.len616, 48
   %str.immortal619 = icmp eq i64 %str.tag618, 0
@@ -17516,7 +17576,7 @@ str_stale622:                                     ; preds = %str_gen_check620
 str.eq.then626:                                   ; preds = %str_ok621
   %eq.lhs.data629 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data630 = load ptr, ptr %eq.lhs.data629, align 8
-  %eq.rhs.data631 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.93.struct, i32 0, i32 1), align 8
+  %eq.rhs.data631 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.94.struct, i32 0, i32 1), align 8
   %eq.memcmp632 = call i32 @memcmp(ptr %eq.lhs.data630, ptr %eq.rhs.data631, i64 %eq.lhs.len608)
   %eq.cmp.zero633 = icmp eq i32 %eq.memcmp632, 0
   br label %str.eq.merge628
@@ -17559,7 +17619,7 @@ str_gen_check647:                                 ; preds = %choice.next605
   br i1 %tag.valid651, label %str_ok648, label %str_stale649
 
 str_ok648:                                        ; preds = %str_stale649, %str_gen_check647, %choice.next605
-  %eq.rhs.len652 = load i64, ptr @str.94.struct, align 8
+  %eq.rhs.len652 = load i64, ptr @str.95.struct, align 8
   %eq.rhs.len653 = and i64 %eq.rhs.len652, 281474976710655
   %str.tag654 = lshr i64 %eq.rhs.len652, 48
   %str.immortal655 = icmp eq i64 %str.tag654, 0
@@ -17587,7 +17647,7 @@ str_stale658:                                     ; preds = %str_gen_check656
 str.eq.then662:                                   ; preds = %str_ok657
   %eq.lhs.data665 = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
   %eq.lhs.data666 = load ptr, ptr %eq.lhs.data665, align 8
-  %eq.rhs.data667 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.94.struct, i32 0, i32 1), align 8
+  %eq.rhs.data667 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.95.struct, i32 0, i32 1), align 8
   %eq.memcmp668 = call i32 @memcmp(ptr %eq.lhs.data666, ptr %eq.rhs.data667, i64 %eq.lhs.len644)
   %eq.cmp.zero669 = icmp eq i32 %eq.memcmp668, 0
   br label %str.eq.merge664
@@ -17609,7 +17669,7 @@ str_ok689:                                        ; preds = %str_stale690, %str_
   %var.load694 = load i64, ptr %var.line, align 8
   %var.load695 = load i64, ptr %var.col, align 8
   %var.load696 = load ptr, ptr %var.word, align 8
-  %concat.lhs697 = load i64, ptr @str.80.struct, align 8
+  %concat.lhs697 = load i64, ptr @str.81.struct, align 8
   %concat.lhs698 = and i64 %concat.lhs697, 281474976710655
   %str.tag699 = lshr i64 %concat.lhs697, 48
   %str.immortal700 = icmp eq i64 %str.tag699, 0
@@ -17626,7 +17686,7 @@ str_gen_check701:                                 ; preds = %str_ok689
   br i1 %tag.valid705, label %str_ok702, label %str_stale703
 
 str_ok702:                                        ; preds = %str_stale703, %str_gen_check701, %str_ok689
-  %concat.lhs706 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.80.struct, i32 0, i32 1), align 8
+  %concat.lhs706 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.81.struct, i32 0, i32 1), align 8
   %concat.rhs707 = getelementptr inbounds { i64, ptr }, ptr %var.load696, i32 0, i32 0
   %concat.rhs708 = load i64, ptr %concat.rhs707, align 8
   %concat.rhs709 = and i64 %concat.rhs708, 281474976710655
@@ -17720,7 +17780,7 @@ entry:
   %subtmp = sub i64 %fld.load, 2
   %var.load9 = load i64, ptr %var.line, align 8
   %var.load10 = load i64, ptr %var.col, align 8
-  %call.res11 = call ptr @"lexer::mktok"(ptr %var.load7, ptr %enum.alloc, i64 %subtmp, i64 2, i64 %var.load9, i64 %var.load10, ptr @str.95.struct)
+  %call.res11 = call ptr @"lexer::mktok"(ptr %var.load7, ptr %enum.alloc, i64 %subtmp, i64 2, i64 %var.load9, i64 %var.load10, ptr @str.96.struct)
   ret ptr %call.res11
 }
 
@@ -17834,7 +17894,7 @@ choice.else:                                      ; preds = %entry
   %fld.load = load i64, ptr %fld.gep, align 8
   %var.load8 = load i64, ptr %var.line, align 8
   %var.load9 = load i64, ptr %var.col, align 8
-  %call.res10 = call ptr @"lexer::mktok"(ptr %var.load6, ptr %enum.alloc, i64 %fld.load, i64 1, i64 %var.load8, i64 %var.load9, ptr @str.80.struct)
+  %call.res10 = call ptr @"lexer::mktok"(ptr %var.load6, ptr %enum.alloc, i64 %fld.load, i64 1, i64 %var.load8, i64 %var.load9, ptr @str.81.struct)
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.then
@@ -18186,7 +18246,7 @@ entry:
   %rec.fld11 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc, i32 0, i32 6
   store i1 false, ptr %rec.fld11, align 1
   %rec.fld12 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc, i32 0, i32 7
-  store ptr @str.96.struct, ptr %rec.fld12, align 8
+  store ptr @str.97.struct, ptr %rec.fld12, align 8
   %a.load = load ptr, ptr %var.qu, align 8
   %a.null = icmp eq ptr %a.load, null
   br i1 %a.null, label %a.create, label %a.after
@@ -18533,7 +18593,7 @@ choice.then27:                                    ; preds = %and.126.exit
   %var.load29 = load ptr, ptr %var.lx, align 8
   %fld.gep = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load29, i32 0, i32 2
   %fld.load = load i64, ptr %fld.gep, align 8
-  %call.res30 = call i64 @"lexer::fail"(i64 1001, i64 %fld.load, i64 1, ptr @str.97.struct)
+  %call.res30 = call i64 @"lexer::fail"(i64 1001, i64 %fld.load, i64 1, ptr @str.98.struct)
   br label %choice.exit28
 
 choice.exit28:                                    ; preds = %choice.then27, %and.126.exit
@@ -18609,7 +18669,7 @@ choice.then57:                                    ; preds = %and.129.exit
   %var.load59 = load ptr, ptr %var.lx, align 8
   %fld.gep60 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load59, i32 0, i32 2
   %fld.load61 = load i64, ptr %fld.gep60, align 8
-  %call.res62 = call i64 @"lexer::fail"(i64 1002, i64 %fld.load61, i64 1, ptr @str.98.struct)
+  %call.res62 = call i64 @"lexer::fail"(i64 1002, i64 %fld.load61, i64 1, ptr @str.99.struct)
   br label %choice.exit58
 
 choice.exit58:                                    ; preds = %choice.then57, %and.129.exit
@@ -18635,7 +18695,7 @@ choice.then69:                                    ; preds = %and.130.exit
   %var.load71 = load ptr, ptr %var.lx, align 8
   %fld.gep72 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load71, i32 0, i32 2
   %fld.load73 = load i64, ptr %fld.gep72, align 8
-  %call.res74 = call i64 @"lexer::fail"(i64 1003, i64 %fld.load73, i64 1, ptr @str.99.struct)
+  %call.res74 = call i64 @"lexer::fail"(i64 1003, i64 %fld.load73, i64 1, ptr @str.100.struct)
   br label %choice.exit70
 
 choice.exit70:                                    ; preds = %choice.then69, %and.130.exit
@@ -18738,7 +18798,7 @@ choice.then10:                                    ; preds = %loop.exit.131
   %var.load12 = load i64, ptr %var.line, align 8
   %var.load13 = load i64, ptr %var.depth, align 8
   %call.res14 = call ptr @"str::from_int"(i64 %var.load13)
-  %concat.lhs = load i64, ptr @str.100.struct, align 8
+  %concat.lhs = load i64, ptr @str.101.struct, align 8
   %concat.lhs15 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -18755,7 +18815,7 @@ str_gen_check:                                    ; preds = %choice.then10
   br i1 %tag.valid, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %choice.then10
-  %concat.lhs16 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.100.struct, i32 0, i32 1), align 8
+  %concat.lhs16 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.101.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %call.res14, i32 0, i32 0
   %concat.rhs17 = load i64, ptr %concat.rhs, align 8
   %concat.rhs18 = and i64 %concat.rhs17, 281474976710655
@@ -18831,7 +18891,7 @@ str_gen_check40:                                  ; preds = %concat.tot.len31
 str_ok41:                                         ; preds = %str_stale42, %str_gen_check40, %concat.tot.len31
   %concat.lhs45 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   %concat.lhs46 = load ptr, ptr %concat.lhs45, align 8
-  %concat.rhs47 = load i64, ptr @str.101.struct, align 8
+  %concat.rhs47 = load i64, ptr @str.102.struct, align 8
   %concat.rhs48 = and i64 %concat.rhs47, 281474976710655
   %str.tag49 = lshr i64 %concat.rhs47, 48
   %str.immortal50 = icmp eq i64 %str.tag49, 0
@@ -18848,7 +18908,7 @@ str_gen_check51:                                  ; preds = %str_ok41
   br i1 %tag.valid55, label %str_ok52, label %str_stale53
 
 str_ok52:                                         ; preds = %str_stale53, %str_gen_check51, %str_ok41
-  %concat.rhs56 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.101.struct, i32 0, i32 1), align 8
+  %concat.rhs56 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.102.struct, i32 0, i32 1), align 8
   %concat.sum.len57 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs37, i64 %concat.rhs48)
   %sum58 = extractvalue { i64, i1 } %concat.sum.len57, 0
   %ovf59 = extractvalue { i64, i1 } %concat.sum.len57, 1
@@ -19133,7 +19193,7 @@ choice.then:                                      ; preds = %entry
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
   %var.load6 = load i64, ptr %var.line, align 8
-  %call.res7 = call ptr @"lexer::mktok"(ptr %var.load5, ptr %enum.alloc, i64 0, i64 0, i64 %var.load6, i64 1, ptr @str.102.struct)
+  %call.res7 = call ptr @"lexer::mktok"(ptr %var.load5, ptr %enum.alloc, i64 0, i64 0, i64 %var.load6, i64 1, ptr @str.103.struct)
   br label %choice.exit
 
 choice.else:                                      ; preds = %entry
@@ -19764,7 +19824,7 @@ entry:
   %var.load8 = load i64, ptr %var.line, align 8
   %var.load9 = load i64, ptr %var.col, align 8
   %var.load10 = load ptr, ptr %var.word, align 8
-  %concat.lhs = load i64, ptr @str.103.struct, align 8
+  %concat.lhs = load i64, ptr @str.104.struct, align 8
   %concat.lhs11 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -19776,7 +19836,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %tag.valid, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs13 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.103.struct, i32 0, i32 1), align 8
+  %concat.lhs13 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.104.struct, i32 0, i32 1), align 8
   %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load10, i32 0, i32 0
   %concat.rhs14 = load i64, ptr %concat.rhs, align 8
   %concat.rhs15 = and i64 %concat.rhs14, 281474976710655
@@ -20164,7 +20224,7 @@ str_gen_check:                                    ; preds = %entry
   br i1 %tag.valid, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %eq.rhs.len = load i64, ptr @str.70.struct, align 8
+  %eq.rhs.len = load i64, ptr @str.71.struct, align 8
   %eq.rhs.len5 = and i64 %eq.rhs.len, 281474976710655
   %str.tag6 = lshr i64 %eq.rhs.len, 48
   %str.immortal7 = icmp eq i64 %str.tag6, 0
@@ -20192,7 +20252,7 @@ str_stale10:                                      ; preds = %str_gen_check8
 str.eq.then:                                      ; preds = %str_ok9
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 1
   %eq.lhs.data13 = load ptr, ptr %eq.lhs.data, align 8
-  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.70.struct, i32 0, i32 1), align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.71.struct, i32 0, i32 1), align 8
   %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data13, ptr %eq.rhs.data, i64 %eq.lhs.len4)
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
@@ -20757,7 +20817,7 @@ choice.then153:                                   ; preds = %and.148.exit
   %call.res170 = call i32 @"lexer::pk"(ptr %var.load169, i64 0)
   %call.res171 = call i32 @"lexer::adv"(ptr %var.load168, i32 %call.res170)
   %b.load = load ptr, ptr %"var.cur_text'", align 8
-  %app.str.len = load i64, ptr @str.104.struct, align 8
+  %app.str.len = load i64, ptr @str.105.struct, align 8
   %app.str.len172 = and i64 %app.str.len, 281474976710655
   %str.tag173 = lshr i64 %app.str.len, 48
   %str.immortal174 = icmp eq i64 %str.tag173, 0
@@ -20820,7 +20880,7 @@ b.nogrow2:                                        ; preds = %b.app.new.len183
   br label %b.grow_done
 
 b.grow_done:                                      ; preds = %b.nogrow2, %b.new.buf.len2190
-  %app.str.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.104.struct, i32 0, i32 1), align 8
+  %app.str.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.105.struct, i32 0, i32 1), align 8
   %b.app.data = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 1
   %b.app.data193 = load ptr, ptr %b.app.data, align 8
   %b.app.dst = getelementptr i8, ptr %b.app.data193, i64 %b.app.cur.len180
@@ -25435,7 +25495,7 @@ loop.exit.183:                                    ; preds = %loop.exit.nat.183
   %rec.fld3017 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3010, i32 0, i32 6
   store i1 false, ptr %rec.fld3017, align 1
   %rec.fld3018 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3010, i32 0, i32 7
-  store ptr @str.106.struct, ptr %rec.fld3018, align 8
+  store ptr @str.107.struct, ptr %rec.fld3018, align 8
   %a.load3019 = load ptr, ptr %var.qu, align 8
   %a.null3020 = icmp eq ptr %a.load3019, null
   br i1 %a.null3020, label %a.create3021, label %a.after3022
@@ -25902,7 +25962,7 @@ loop.exit.186:                                    ; preds = %loop.exit.nat.186
   %rec.fld3559 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3552, i32 0, i32 6
   store i1 false, ptr %rec.fld3559, align 1
   %rec.fld3560 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3552, i32 0, i32 7
-  store ptr @str.108.struct, ptr %rec.fld3560, align 8
+  store ptr @str.109.struct, ptr %rec.fld3560, align 8
   %a.load3561 = load ptr, ptr %var.qu, align 8
   %a.null3562 = icmp eq ptr %a.load3561, null
   br i1 %a.null3562, label %a.create3563, label %a.after3564
@@ -25934,7 +25994,7 @@ choice.then3069:                                  ; preds = %loop.body.186
   %rec.fld3086 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3079, i32 0, i32 6
   store i1 false, ptr %rec.fld3086, align 1
   %rec.fld3087 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3079, i32 0, i32 7
-  store ptr @str.107.struct, ptr %rec.fld3087, align 8
+  store ptr @str.108.struct, ptr %rec.fld3087, align 8
   %a.load3088 = load ptr, ptr %var.qu, align 8
   %a.null3089 = icmp eq ptr %a.load3088, null
   br i1 %a.null3089, label %a.create3090, label %a.after3091
@@ -26294,7 +26354,7 @@ choice.case3288:                                  ; preds = %choice.next3223
   %rec.fld3311 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3304, i32 0, i32 6
   store i1 false, ptr %rec.fld3311, align 1
   %rec.fld3312 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3304, i32 0, i32 7
-  store ptr @str.106.struct, ptr %rec.fld3312, align 8
+  store ptr @str.107.struct, ptr %rec.fld3312, align 8
   %a.load3313 = load ptr, ptr %var.qu, align 8
   %a.null3314 = icmp eq ptr %a.load3313, null
   br i1 %a.null3314, label %a.create3315, label %a.after3316
@@ -26425,7 +26485,7 @@ loop.exit.188:                                    ; preds = %loop.exit.nat.188
   %rec.fld3512 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3505, i32 0, i32 6
   store i1 false, ptr %rec.fld3512, align 1
   %rec.fld3513 = getelementptr inbounds { ptr, i64, i64, i64, i64, i1, i1, ptr }, ptr %rec.alloc3505, i32 0, i32 7
-  store ptr @str.108.struct, ptr %rec.fld3513, align 8
+  store ptr @str.109.struct, ptr %rec.fld3513, align 8
   %a.load3514 = load ptr, ptr %var.qu, align 8
   %a.null3515 = icmp eq ptr %a.load3514, null
   br i1 %a.null3515, label %a.create3516, label %a.after3517
@@ -26844,7 +26904,7 @@ choice.case:                                      ; preds = %loop.body.153
   %var.load27 = load ptr, ptr %var.lx, align 8
   %fld.gep28 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64, ptr, i64, ptr, i64, i1, ptr, i64, i64 }, ptr %var.load27, i32 0, i32 3
   %fld.load29 = load i64, ptr %fld.gep28, align 8
-  %call.res30 = call i64 @"lexer::fail"(i64 1018, i64 %fld.load26, i64 %fld.load29, ptr @str.105.struct)
+  %call.res30 = call i64 @"lexer::fail"(i64 1018, i64 %fld.load26, i64 %fld.load29, ptr @str.106.struct)
   br label %loop.exit.153
 
 choice.next:                                      ; preds = %loop.body.153
@@ -27226,7 +27286,7 @@ str_gen_check:                                    ; preds = %entry
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
   %concat.lhs3 = getelementptr inbounds { i64, ptr }, ptr %call.res, i32 0, i32 1
   %concat.lhs4 = load ptr, ptr %concat.lhs3, align 8
-  %concat.rhs = load i64, ptr @str.129.struct, align 8
+  %concat.rhs = load i64, ptr @str.130.struct, align 8
   %concat.rhs5 = and i64 %concat.rhs, 281474976710655
   %str.tag6 = lshr i64 %concat.rhs, 48
   %str.immortal7 = icmp eq i64 %str.tag6, 0
@@ -27243,7 +27303,7 @@ str_gen_check8:                                   ; preds = %str_ok
   br i1 %tag.valid12, label %str_ok9, label %str_stale10
 
 str_ok9:                                          ; preds = %str_stale10, %str_gen_check8, %str_ok
-  %concat.rhs13 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.129.struct, i32 0, i32 1), align 8
+  %concat.rhs13 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.130.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs2, i64 %concat.rhs5)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -27520,7 +27580,7 @@ entry:
   br i1 %tag.match, label %choice.case, label %choice.next
 
 choice.exit:                                      ; preds = %choice.next172, %choice.case171, %choice.case166, %choice.case161, %choice.case156, %choice.case151, %choice.case146, %choice.case141, %choice.case136, %choice.case131, %choice.case126, %choice.case121, %choice.case116, %choice.case111, %choice.case106, %choice.case101, %choice.case96, %choice.case91, %choice.case86, %choice.case81, %choice.case76, %choice.case71, %choice.case66, %choice.case61, %choice.case56, %choice.case51, %choice.case46, %choice.case41, %choice.case36, %choice.case31, %choice.case26, %choice.case21, %choice.case16, %choice.case11, %choice.case6, %choice.case1, %choice.case
-  %choice.res = phi ptr [ @str.109.struct, %choice.case ], [ @str.110.struct, %choice.case1 ], [ @str.111.struct, %choice.case6 ], [ @str.112.struct, %choice.case11 ], [ @str.113.struct, %choice.case16 ], [ @str.114.struct, %choice.case21 ], [ @str.106.struct, %choice.case26 ], [ @str.108.struct, %choice.case31 ], [ @str.115.struct, %choice.case36 ], [ @str.116.struct, %choice.case41 ], [ @str.117.struct, %choice.case46 ], [ @str.118.struct, %choice.case51 ], [ @str.119.struct, %choice.case56 ], [ @str.120.struct, %choice.case61 ], [ @str.121.struct, %choice.case66 ], [ @str.102.struct, %choice.case71 ], [ @str.96.struct, %choice.case76 ], [ @str.122.struct, %choice.case81 ], [ @str.123.struct, %choice.case86 ], [ @str.124.struct, %choice.case91 ], [ @str.125.struct, %choice.case96 ], [ @str.71.struct, %choice.case101 ], [ @str.73.struct, %choice.case106 ], [ @str.75.struct, %choice.case111 ], [ @str.77.struct, %choice.case116 ], [ @str.126.struct, %choice.case121 ], [ @str.82.struct, %choice.case126 ], [ @str.84.struct, %choice.case131 ], [ @str.86.struct, %choice.case136 ], [ @str.88.struct, %choice.case141 ], [ @str.90.struct, %choice.case146 ], [ @str.92.struct, %choice.case151 ], [ @str.60.struct, %choice.case156 ], [ @str.60.struct, %choice.case161 ], [ @str.95.struct, %choice.case166 ], [ @str.127.struct, %choice.case171 ], [ @str.128.struct, %choice.next172 ]
+  %choice.res = phi ptr [ @str.110.struct, %choice.case ], [ @str.111.struct, %choice.case1 ], [ @str.112.struct, %choice.case6 ], [ @str.113.struct, %choice.case11 ], [ @str.114.struct, %choice.case16 ], [ @str.115.struct, %choice.case21 ], [ @str.107.struct, %choice.case26 ], [ @str.109.struct, %choice.case31 ], [ @str.116.struct, %choice.case36 ], [ @str.117.struct, %choice.case41 ], [ @str.118.struct, %choice.case46 ], [ @str.119.struct, %choice.case51 ], [ @str.120.struct, %choice.case56 ], [ @str.121.struct, %choice.case61 ], [ @str.122.struct, %choice.case66 ], [ @str.103.struct, %choice.case71 ], [ @str.97.struct, %choice.case76 ], [ @str.123.struct, %choice.case81 ], [ @str.124.struct, %choice.case86 ], [ @str.125.struct, %choice.case91 ], [ @str.126.struct, %choice.case96 ], [ @str.72.struct, %choice.case101 ], [ @str.74.struct, %choice.case106 ], [ @str.76.struct, %choice.case111 ], [ @str.78.struct, %choice.case116 ], [ @str.127.struct, %choice.case121 ], [ @str.83.struct, %choice.case126 ], [ @str.85.struct, %choice.case131 ], [ @str.87.struct, %choice.case136 ], [ @str.89.struct, %choice.case141 ], [ @str.91.struct, %choice.case146 ], [ @str.93.struct, %choice.case151 ], [ @str.61.struct, %choice.case156 ], [ @str.61.struct, %choice.case161 ], [ @str.96.struct, %choice.case166 ], [ @str.128.struct, %choice.case171 ], [ @str.129.struct, %choice.next172 ]
   ret ptr %choice.res
 
 choice.case:                                      ; preds = %entry

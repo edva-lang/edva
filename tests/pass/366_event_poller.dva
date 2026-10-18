@@ -1,0 +1,50 @@
+// Event module integration test: epoll-backed event loop
+#use libc
+#use event
+#use io
+#use str
+
+pbuf = libc::malloc(8)
+libc::pipe(pbuf)
+rfd = Int(@[pbuf + 0 i32])
+wfd = Int(@[pbuf + 4 i32])
+libc::free(pbuf)
+
+p_res = event::new!
+p_res
+   | p =>
+      // 1. Initially no events
+      evs0 = event::wait(p, 10)
+      io::out("initial events=" + str::from_int(?evs0))
+
+      // 2. Add pipe read descriptor with token 999
+      add_ok = event::add(p, rfd, event::READ, 999)
+      io::out("add_ok=" + (add_ok | "true" | "false"))
+
+      // 3. Write data into pipe
+      msg = "event test\n"
+      libc::write(wfd, msg, ?msg)
+
+      // 4. Wait for event
+      evs1 = event::wait(p, 50)
+      io::out("after write events=" + str::from_int(?evs1))
+      ?evs1 > 0 |
+         e = evs1(0)!!
+         io::out("fd_match=" + (e.fd == rfd | "true" | "false"))
+         io::out("is_read=" + (event::is_read(e) | "true" | "false"))
+         io::out("data_match=" + (e.data == 999 | "true" | "false"))
+
+      // 5. Read data out
+      drain = {32}
+      libc::read(rfd, &drain, 32)
+
+      // 6. Delete descriptor
+      del_ok = event::del(p, rfd)
+      io::out("del_ok=" + (del_ok | "true" | "false"))
+
+      // 7. Clean up
+      event::close(p)
+      libc::close(rfd)
+      libc::close(wfd)
+   | err =>
+      io::out("event::new failed: " + err)

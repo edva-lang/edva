@@ -1,0 +1,7 @@
+initial events=0
+add_ok=true
+after write events=1
+fd_match=true
+is_read=true
+data_match=true
+del_ok=true

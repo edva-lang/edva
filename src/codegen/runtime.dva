@@ -2053,7 +2053,7 @@ codegen_register_global_ctor = cg, fn =>
    ctor_struct_type = LLVMStructType(sb3, 3, 0)
    vbuf = {24}
    svbuf = &vbuf
-   @[svbuf] = LLVMConstInt(i32t, 65535, 0)
+   @[svbuf] = LLVMConstInt(i32t, 0maxu16, 0)
    @[svbuf + 8] = fn
    @[svbuf + 16] = LLVMConstNull(i8p)
    ctor_const = LLVMConstStruct(svbuf, 3, 0)

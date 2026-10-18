@@ -267,6 +267,10 @@
    prep_timeout = ring, ts_ptr, count, flags, user_data =>
       prep_sqe_flags(ring, OP_TIMEOUT, -1, count, ts_ptr, 1, flags, user_data)
 
+   prep_poll_add: Ring, Int, Int, Int => <>
+   prep_poll_add = ring, fd, poll_mask, user_data =>
+      prep_sqe_flags(ring, OP_POLL_ADD, fd, 0, sys::addr_null, 0, poll_mask, user_data)
+
    sq_space: Ring => Int
    sq_space = ring =>
       head = @[ring.sq_ptr + ring.sq_head_off u32]

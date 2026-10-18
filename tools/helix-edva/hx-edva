@@ -37,6 +37,9 @@ TOML
 if [[ -e "$HOME/.config/helix/config.toml" ]]; then
   ln -sfn "$HOME/.config/helix/config.toml" "$edva_helix_config/config.toml"
 fi
+if [[ -d "$HOME/.config/helix/themes" ]]; then
+  ln -sfn "$HOME/.config/helix/themes" "$edva_helix_config/themes"
+fi
 ln -sfn "$edva_parser" "$edva_helix_config/runtime/grammars/edva.so"
 ln -sfn "$edva_helix_dir/queries" "$edva_helix_config/runtime/queries/edva"
 exec env XDG_CONFIG_HOME="$edva_helix_overlay" hx "$@"

@@ -54,3 +54,23 @@
 
    exit: Int => ()
    exit = code => libc::exit $ code
+
+   PollFd: #packed (
+      fd: i32,
+      events: i16,
+      revents: i16
+   )
+
+   // Checks if descriptor has input ready within timeout_ms (-1 = infinite, 0 = non-blocking).
+   poll_in: Int, Int => <>
+   poll_in = fd, timeout_ms =>
+      pfd' = PollFd(i32(fd), 1i16, 0i16)
+      res = libc::poll(&pfd', 1, timeout_ms)
+      res > 0 && (Int(pfd'.revents) .&. 1) != 0
+
+   // Checks if descriptor is ready for writing within timeout_ms (-1 = infinite, 0 = non-blocking).
+   poll_out: Int, Int => <>
+   poll_out = fd, timeout_ms =>
+      pfd' = PollFd(i32(fd), 4i16, 0i16)
+      res = libc::poll(&pfd', 1, timeout_ms)
+      res > 0 && (Int(pfd'.revents) .&. 4) != 0
