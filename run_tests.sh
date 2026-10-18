@@ -67,14 +67,7 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 HAS_IO_URING=0
 cat <<'EOF' > "$TMP_DIR/probe_uring.dva"
 #use uring
-main: () => Int
-main = !=>
-   res = uring::new(2)
-   res
-      | ring =>
-         uring::close(ring)
-         0
-      | err => 1
+#exit uring::new(2) | 0 | 1
 EOF
 if "$DVA_COMPILER" "$TMP_DIR/probe_uring.dva" -o "$TMP_DIR/probe_uring" >/dev/null 2>&1; then
     if "$TMP_DIR/probe_uring" >/dev/null 2>&1; then
