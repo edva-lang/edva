@@ -31,7 +31,11 @@ LDFLAGS      ?=
 LLVM_CONFIG  ?= llvm-config
 LLVM_LIBDIR  := $(shell $(LLVM_CONFIG) --libdir 2>/dev/null)
 LLVM_LDFLAGS := $(if $(LLVM_LIBDIR),-L$(LLVM_LIBDIR),)
-LIBS         ?= -lLLVM-18 -lm -ldl
+LLVM_LIBS    ?= $(shell $(LLVM_CONFIG) --libs 2>/dev/null)
+ifeq ($(LLVM_LIBS),)
+  LLVM_LIBS  := -lLLVM-18
+endif
+LIBS         ?= $(LLVM_LIBS) -lm -ldl
 
 ALL_LDFLAGS  := -Qunused-arguments -Wno-unused-command-line-argument $(CFLAGS) \
                 -Wl,--export-dynamic $(LLVM_LDFLAGS) $(LDFLAGS)

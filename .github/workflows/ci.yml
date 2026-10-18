@@ -11,7 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
+  ubuntu:
+    name: Ubuntu 24.04
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -29,6 +30,41 @@ jobs:
         uses: hustcer/setup-nu@v3
         with:
           version: '0.115.1'
+
+      - name: Build compiler and run test suite
+        run: ./build.sh
+
+      - name: Verify 2-stage fixed point
+        run: make fixed-point
+
+  distros:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    container:
+      image: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Arch Linux
+            image: archlinux:latest
+            setup: |
+              pacman -Syu --noconfirm
+              pacman -S --noconfirm clang llvm lld make git nushell diffutils
+              git config --global --add safe.directory '*'
+
+          - name: Fedora
+            image: fedora:latest
+            setup: |
+              dnf install -y clang llvm-devel lld make git nushell diffutils findutils
+              git config --global --add safe.directory '*'
+
+    steps:
+      - name: Install Dependencies
+        run: ${{ matrix.setup }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
       - name: Build compiler and run test suite
         run: ./build.sh
