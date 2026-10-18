@@ -63,6 +63,27 @@ TEST_MEM_LIMIT="${TEST_MEM_LIMIT:-2097152}"
 TMP_DIR=$(mktemp -d -t dva_tests_XXXXXX)
 trap 'rm -rf "$TMP_DIR"' EXIT
 
+# Probe whether io_uring is supported and permitted by the kernel / container using Edva
+HAS_IO_URING=0
+cat <<'EOF' > "$TMP_DIR/probe_uring.dva"
+#use uring
+main: () => Int
+main = !=>
+   res = uring::new(2)
+   res
+      | ring =>
+         uring::close(ring)
+         0
+      | err => 1
+EOF
+if "$DVA_COMPILER" "$TMP_DIR/probe_uring.dva" -o "$TMP_DIR/probe_uring" >/dev/null 2>&1; then
+    if "$TMP_DIR/probe_uring" >/dev/null 2>&1; then
+        HAS_IO_URING=1
+    fi
+    rm -f "$TMP_DIR/probe_uring" "$TMP_DIR/probe_uring.dva" "$TMP_DIR/probe_uring.ll"
+fi
+export HAS_IO_URING
+
 echo ""
 echo -e "${BOLD}=========================================${NC}"
 echo -e "${BOLD}          EXAMPLES COMPILE SMOKE         ${NC}"
@@ -114,6 +135,12 @@ run_pos_test() {
     local test_tmp="$TMP_DIR/pos_${test_name}"
     mkdir -p "$test_tmp"
     ln -s "$REPO_ROOT/std" "$test_tmp/std" 2>/dev/null || true
+
+    # Skip uring tests if host kernel or container environment does not permit io_uring
+    if [ "${HAS_IO_URING:-1}" -eq 0 ] && [[ "$test_name" == *uring* ]]; then
+        echo "POS_SKIP:${test_name}:SKIP (io_uring not available or permitted)" > "$TMP_DIR/res_pos_${test_name}"
+        return
+    fi
 
     # Compile with timeout (default 30s, can be overridden via TEST_COMPILE_TIMEOUT)
     local compile_timeout="${TEST_COMPILE_TIMEOUT:-30}"
@@ -222,7 +249,7 @@ run_neg_test() {
 }
 
 export -f run_pos_test run_neg_test
-export TMP_DIR RED GREEN NC BOLD REPO_ROOT="$PWD" TEST_MEM_LIMIT
+export TMP_DIR RED GREEN NC BOLD REPO_ROOT="$PWD" TEST_MEM_LIMIT HAS_IO_URING
 
 # Execute positive tests in parallel
 for test_entry in $(ls -d tests/pass/* 2>/dev/null | sort); do
@@ -278,6 +305,9 @@ for test_entry in $(ls -d tests/pass/* 2>/dev/null | sort); do
         if [ "$status_tag" == "POS_PASS" ]; then
             echo -e "  - ${test_name}: ${GREEN}${msg}${NC}"
             PASSED=$((PASSED + 1))
+        elif [ "$status_tag" == "POS_SKIP" ]; then
+            echo -e "  - ${test_name}: ${YELLOW}${msg}${NC}"
+            SKIPPED=$((SKIPPED + 1))
         else
             echo -e "  - ${test_name}: ${RED}${msg}${NC}"
             tail -n +2 "$res_file" 2>/dev/null || true
