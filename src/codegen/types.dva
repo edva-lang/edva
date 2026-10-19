@@ -1563,6 +1563,9 @@ codegen_get_global = cg, name, llvm_type =>
          is_ext = cg.opts.is_module && is_external_module_name(cg, name)
          !is_ext
             | LLVMSetInitializer(g2, LLVMConstNull(llvm_type))
+         is_dyn = stmt::is_module_dynamic(cg, name) || cg.opts.is_shared || cg.opts.is_module
+         !is_dyn
+            | LLVMSetLinkage(g2, 8)
          g2
 
 // Whether a named variable's ram slot is a heap union pointer (not a flag).
