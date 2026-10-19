@@ -310,8 +310,8 @@ timeout 30 ./edva "$TMPDIR/test_wasm.dva" -target wasm32-unknown-unknown -o "$TM
 rc=$?
 set -e
 if [ $rc -ne 0 ]; then
-    if grep -q "nix-wrapped compiler" "$TMPDIR/t8.err" 2>/dev/null; then
-        echo "SKIPPED (nix-wrapped compiler does not support wasm32 target)"
+    if grep -q "nix-wrapped compiler" "$TMPDIR/t8.err" 2>/dev/null || grep -q "wasm-ld linking failed" "$TMPDIR/t8.out" 2>/dev/null; then
+        echo "SKIPPED (wasm-ld or wasm32 toolchain unavailable)"
     else
         echo "FAILED: expected 0 exit on wasm compilation, got $rc"
         cat "$TMPDIR/t8.out" "$TMPDIR/t8.err"

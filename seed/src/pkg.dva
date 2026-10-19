@@ -504,7 +504,7 @@
    compute_tree_hash: Resolver, String => < String | >
    compute_tree_hash = r, dir =>
       cmd = "cd " + sq(dir) + " && find . -mindepth 1 \\( -name .git -o -name .edva -o -name .hg -o -name .svn \\) -prune -o \\( -type f -o -type l \\) -print | LC_ALL=C sort | while IFS= read -r p; do " +
-         "rel=\"${p#./}\"; " +
+         "rel=\"\${p#./}\"; " +
          "if [ -L \"$p\" ]; then " +
          "echo \"symlink $(readlink \"$p\") $rel\"; " +
          "else " +

@@ -6282,6 +6282,18 @@ codegen_eval_scalar_math = cg, fname, ev0, ev1, ev2 =>
    i64t = LLVMInt64Type!
    i1t = LLVMInt1Type!
    fname
+      ["%to_str"]
+         types::is_str_vt(ev0.1)
+            | (ev0.0, ast::ValueType(Str))
+            |
+               types::is_rune_vt(ev0.1)
+                  | (stmt::codegen_rune_to_str(cg, ev0.0), ast::ValueType(Str))
+                  |
+                     types::is_float_vt(ev0.1)
+                        | (stmt::codegen_float_to_str(cg, ev0.0), ast::ValueType(Str))
+                        |
+                           is_uns = types::is_unsigned_vt(ev0.1)
+                           (stmt::codegen_int_to_str(cg, ev0.0, is_uns), ast::ValueType(Str))
       ["%sqrt"]
          fn = get_or_add_intrinsic(cg, "llvm.sqrt.f64", types::fn_type1(f64t, f64t))
          (call_fn1(cg, types::fn_type1(f64t, f64t), fn, ev0.0, "sqrt"),

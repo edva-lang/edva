@@ -86,9 +86,9 @@ $(ALL_OBJS): | bootstrap build/obj src/version.dva src/poll.dva
 
 .PHONY: config-poll
 config-poll:
-	$(Q)if [ ! -f src/poll.dva ] || ! cmp -s src/poll_$(POLL_BACKEND).dva src/poll.dva; then \
+	$(Q)if [ ! -f src/poll.dva ] || ! cmp -s src/poll/$(POLL_BACKEND).dva src/poll.dva; then \
 		echo "Configuring compiler poll backend: $(POLL_BACKEND)..."; \
-		cp src/poll_$(POLL_BACKEND).dva src/poll.dva; \
+		cp src/poll/$(POLL_BACKEND).dva src/poll.dva; \
 	fi
 
 src/poll.dva: config-poll

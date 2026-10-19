@@ -244,31 +244,27 @@ main = _ =>
          io::out $ "Unique pages: " + str::from_int(num_unique')
          io::out $ "Emitting std/unicode.dva..."
          out = {500000}
-         out += """
-            // std/unicode.dva - Unicode: rune classification via unified 2-stage
-            // category page table, plus UTF-8 encode/decode helpers.
-            // Generated from UnicodeData.txt.
-
-            // Unicode general category classifications:
-            //   Letters:      Lu (Uppercase), Ll (Lowercase), Lt (Titlecase),
-            //                 Lm (Modifier), Lo (Other)
-            //   Marks:        Mn (Nonspacing), Mc (Spacing), Me (Enclosing)
-            //   Numbers:      Nd (Decimal), Nl (Letter), No (Other)
-            //   Punctuation:  Pc (Connector), Pd (Dash), Ps (Open), Pe (Close),
-            //                 Pi (Initial), Pf (Final), Po (Other)
-            //   Symbols:      Sm (Math), Sc (Currency), Sk (Modifier), So (Other)
-            //   Separators:   Zs (Space), Zl (Line), Zp (Paragraph)
-            //   Other:        Cc (Control), Cf (Format), Cs (Surrogate),
-            //                 Co (Private Use), Cn (Unassigned)
-
-            #public
-            #type Category < Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pc,
-               Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp,
-               Cc, Cf, Cs, Co, Cn >
-
-            #pragma number i16
-            #private cat_s1 = (
-            """
+         out += "\n" +
+            "// std/unicode.dva - Unicode: rune classification via unified 2-stage\n" +
+            "// category page table, plus UTF-8 encode/decode helpers.\n" +
+            "// Generated from UnicodeData.txt.\n\n" +
+            "// Unicode general category classifications:\n" +
+            "//   Letters:      Lu (Uppercase), Ll (Lowercase), Lt (Titlecase),\n" +
+            "//                 Lm (Modifier), Lo (Other)\n" +
+            "//   Marks:        Mn (Nonspacing), Mc (Spacing), Me (Enclosing)\n" +
+            "//   Numbers:      Nd (Decimal), Nl (Letter), No (Other)\n" +
+            "//   Punctuation:  Pc (Connector), Pd (Dash), Ps (Open), Pe (Close),\n" +
+            "//                 Pi (Initial), Pf (Final), Po (Other)\n" +
+            "//   Symbols:      Sm (Math), Sc (Currency), Sk (Modifier), So (Other)\n" +
+            "//   Separators:   Zs (Space), Zl (Line), Zp (Paragraph)\n" +
+            "//   Other:        Cc (Control), Cf (Format), Cs (Surrogate),\n" +
+            "//                 Co (Private Use), Cn (Unassigned)\n\n" +
+            "#public\n" +
+            "#type Category < Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pc,\n" +
+            "   Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp,\n" +
+            "   Cc, Cf, Cs, Co, Cn >\n\n" +
+            "#pragma number i16\n" +
+            "#private cat_s1 = (\n"
          out += "   "
 
          idx' = 0
@@ -340,7 +336,8 @@ main = _ =>
          out += "\n)\n\n"
          out += "#pragma number default\n\n"
 
-         out += """
+         out += "\n"
+         out += "
             #public
                category_id: Rune => Int
                category_id = cp =>
@@ -549,7 +546,7 @@ main = _ =>
 
                is_uax31_builder: Builder => <>
                is_uax31_builder = b => unicode::is_uax31(b)
-            """
+            "
 
          write_file_text("std/unicode.dva", +out)
          io::out $ "Successfully generated std/unicode.dva in Dva!"

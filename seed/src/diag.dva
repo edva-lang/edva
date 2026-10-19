@@ -6,11 +6,17 @@
 
 #public
 
+E1017_multiline_under_indented: () => String
+E1017_multiline_under_indented = !=> "Line indented less than first line in multi-line string"
+
+E1018_multiline_unterminated: () => String
+E1018_multiline_unterminated = !=> "Unterminated multi-line string literal -- missing closing '\"'"
+
 E1017_heredoc_under_indented: () => String
-E1017_heredoc_under_indented = !=> "Line indented less than closing delimiter in here-doc"
+E1017_heredoc_under_indented = !=> E1017_multiline_under_indented!
 
 E1018_heredoc_unterminated: () => String
-E1018_heredoc_unterminated = !=> "Unterminated here-doc literal -- missing closing '\"\"\"'"
+E1018_heredoc_unterminated = !=> E1018_multiline_unterminated!
 
 E2024_bare_bar_position: () => String
 E2024_bare_bar_position = !=>

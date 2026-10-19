@@ -59,9 +59,10 @@ Identifiers conform to UAX31. Edva has zero bare keywords. Directives start with
   with optional suffixes (`.nanf32`, `.maxf32`, `-.0f32`). Dangling dots (`.5`, `1.`) are illegal.
 - **Runes**: Single Unicode codepoints: `'a'`, `'🔥'`, `'\n'`.
 - **Strings**:
-  - Escaped: `"hello\nworld"`
-  - Here-Doc: `"""..."""` multiline blocks with margin stripping, line continuation `\`,
-    and `${expr}` dynamic interpolation.
+  - Escaped & Unified: `"hello\nworld"` or multiline `"\n    line 1\n    line 2\n    "`.
+    Supports margin stripping when starting with `"\n`, line continuation `\`,
+    and `${expr}` dynamic interpolation for scalar primitives (lowered via the `%to_str`
+    intrinsic without requiring `#use str`). Triple-quote `"""` is retired.
 - **Repetition**: `expr {N}` generates a record containing `N` flat copies of `expr`
   (e.g., `0 {8}` produces `(0, 0, 0, 0, 0, 0, 0, 0)`).
 - **Builder Literal**: `{expr}` starting an expression creates a mutable Builder buffer with
@@ -269,6 +270,7 @@ Intrinsics are prefixed with `%` and lower directly into LLVM IR instructions:
 - **Saturating Arithmetic**: `%uadd_sat(a, b)`, `%usub_sat(a, b)`.
 - **Vector Reductions**: `%sum(vec)`, `%prod(vec)`, `%dot(v1, v2)`.
 - **Memory**: `%memcpy(dst, src, len)`, `%memmove(dst, src, len)`, `%memset(dst, val, len)`, `%ptrmask(ptr, mask)`.
+- **String Conversion**: `%to_str(scalar)` converts scalar primitives (`Int`, `UInt`, `Float`, `Rune`, `String`) into an arena-allocated `String` (used as the underlying lowering for `"${expr}"` interpolation).
 
 ---
 

@@ -808,6 +808,75 @@ codegen_string_append_byte = cg, str_val, byte_val =>
             LLVMConstInt(i8t, 0, 0), nul_dst)
          expr::codegen_string_build(cg, tot_len, buf, "str.byte.res")
 
+ensure_snprintf: types::Cg => (Addr, Addr)
+ensure_snprintf = cg =>
+   i32t = LLVMInt32Type!
+   i64t = LLVMInt64Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   pp = {24}
+   psb = &pp
+   @[psb] = i8p
+   @[psb + 8] = i64t
+   @[psb + 16] = i8p
+   ty = LLVMFunctionType(i32t, psb, 3, 1)
+   fn = LLVMGetNamedFunction(cg.module, "snprintf")
+   has_fn = <>(types::llvm_val_opt(fn))
+   snp = has_fn | fn | LLVMAddFunction(cg.module, "snprintf", ty)
+   (snp, ty)
+
+codegen_rune_to_str: types::Cg, Addr => Addr
+codegen_rune_to_str = cg, rune_val =>
+   codegen_string_append_rune(cg, codegen_string_literal(cg, ""), rune_val)
+
+codegen_int_to_str: types::Cg, Addr, <> => Addr
+codegen_int_to_str = cg, int_val, is_unsigned =>
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   valid = !cg.error && <>(types::llvm_val_opt(int_val))
+   !valid
+      | LLVMConstNull(i8p)
+      |
+         i64t = LLVMInt64Type!
+         snp_info = ensure_snprintf(cg)
+         buf = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 32, 0), "to_str.buf")
+         fmt_str = is_unsigned | "%llu" | "%lld"
+         fmt_name = is_unsigned | "dva_fmt_u64" | "dva_fmt_i64"
+         fmt_gv = runtime::const_string_global(cg, fmt_str, fmt_name)
+         ext_val = coerce_int_ext(cg, int_val, i64t, is_unsigned)
+         args = {32}
+         ab = &args
+         @[ab] = buf
+         @[ab + 8] = LLVMConstInt(i64t, 32, 0)
+         @[ab + 16] = fmt_gv
+         @[ab + 24] = ext_val
+         n = LLVMBuildCall2(cg.builder, snp_info.1, snp_info.0, ab, 4, "to_str.n")
+         n64 = LLVMBuildZExt(cg.builder, n, i64t, "to_str.len")
+         expr::codegen_string_build(cg, n64, buf, "to_str.res")
+
+codegen_float_to_str: types::Cg, Addr => Addr
+codegen_float_to_str = cg, fl_val =>
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   valid = !cg.error && <>(types::llvm_val_opt(fl_val))
+   !valid
+      | LLVMConstNull(i8p)
+      |
+         i64t = LLVMInt64Type!
+         f64t = LLVMDoubleType!
+         snp_info = ensure_snprintf(cg)
+         buf = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 48, 0), "to_str.fbuf")
+         fmt_gv = runtime::const_string_global(cg, "%g", "dva_fmt_g")
+         d_val = LLVMGetTypeKind(LLVMTypeOf(fl_val)) == LLVMGetTypeKind(f64t)
+            | fl_val
+            | LLVMBuildFPExt(cg.builder, fl_val, f64t, "to_str.d")
+         args = {32}
+         ab = &args
+         @[ab] = buf
+         @[ab + 8] = LLVMConstInt(i64t, 48, 0)
+         @[ab + 16] = fmt_gv
+         @[ab + 24] = d_val
+         n = LLVMBuildCall2(cg.builder, snp_info.1, snp_info.0, ab, 4, "to_str.fn")
+         n64 = LLVMBuildZExt(cg.builder, n, i64t, "to_str.flen")
+         expr::codegen_string_build(cg, n64, buf, "to_str.fres")
+
 codegen_decode_rune_at: types::Cg, Addr, Addr => (Addr, Addr)
 codegen_decode_rune_at = cg, sdata, curr_i =>
    i64t = LLVMInt64Type!

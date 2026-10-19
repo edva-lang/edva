@@ -20,7 +20,6 @@
 
 #use ascii
 #use str
-#use unicode
 
 #public
    #type Value <

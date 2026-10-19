@@ -43,12 +43,20 @@
    // shutdown "how"
    SHUT_WR = 1
 
+   // IPv4 in_addr layout (4 bytes)
+   #type InAddr #packed (
+      b0: u8,
+      b1: u8,
+      b2: u8,
+      b3: u8,
+   )
+
    // sockaddr_in layout (16 bytes, matches struct sockaddr_in on Linux x86_64)
-   #type SockAddrIn (
-      sin_family: i16,
-      sin_port:   i16,
-      sin_addr:   i32,
-      sin_zero:   i64,
+   #type SockAddrIn #packed (
+      sin_family: u16,
+      sin_port:   u16,
+      sin_addr:   InAddr,
+      sin_zero:   u64,
    )
 
    // struct timeval for SO_RCVTIMEO/SO_SNDTIMEO.
@@ -68,6 +76,18 @@
       ai_addr:      Addr,
       ai_canonname: Addr,
       ai_next:      Addr,
+   )
+
+   // struct ifaddrs for network interface enumeration
+   #type IfAddrs (
+      ifa_next:    Addr,
+      ifa_name:    Addr,
+      ifa_flags:   i32,
+      ifa_pad:     i32,
+      ifa_addr:    Addr,
+      ifa_netmask: Addr,
+      ifa_ifu:     Addr,
+      ifa_data:    Addr,
    )
 
    // Result rams. The socket/data-returning helpers use these instead of
@@ -93,6 +113,21 @@
    ntohl: Int => Int
    ntohl = x => %bswap(x) .>. 32
 
+   // Convert 32-bit integer IPv4 to InAddr
+   in_addr_u32: Int => InAddr
+   in_addr_u32 = v =>
+      InAddr((
+         u8(v .&. 0xFF),
+         u8((v .>. 8) .&. 0xFF),
+         u8((v .>. 16) .&. 0xFF),
+         u8((v .>. 24) .&. 0xFF)
+      ))
+
+   // Default zero InAddr (0.0.0.0 / INADDR_ANY)
+   in_addr_any: () => InAddr
+   in_addr_any = !=>
+      InAddr((0u8, 0u8, 0u8, 0u8))
+
    // Open a TCP client socket connected to host:port. Host may be a numeric IP
    // or a DNS name (resolved via getaddrinfo).
    // Returns Conn: <+ fd +> on success,
@@ -104,8 +139,8 @@
       ip [4294967295] --| net::tcp_connect_name(host, port)
       sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
       sock [< 0] --| Conn(<- "socket failed" +>)
-      addr = SockAddrIn((i16(AF_INET),
-         i16(htons $ port), i32(ip), 0))
+      addr = SockAddrIn((u16(AF_INET),
+         u16(htons $ port), in_addr_u32(ip), 0u64))
       ret = libc::connect(sock, &addr, 16)
       ret [0]
          Conn(<+ sock ->)
@@ -172,8 +207,8 @@
       sock [< 0] --| Conn(<- "socket failed" +>)
       one = 1i32
       libc::setsockopt(sock, net::SOL_SOCKET, net::SO_REUSEADDR, &one, 4)
-      addr = SockAddrIn((i16(AF_INET),
-         i16(htons $ port), i32(0), 0))
+      addr = SockAddrIn((u16(AF_INET),
+         u16(htons $ port), in_addr_any!, 0u64))
       ret_b = libc::bind(sock, &addr, 16)
       ret_l = ret_b [0] libc::listen(sock, backlog) | -1
       ret_l [0]
@@ -250,26 +285,20 @@
    shutdown_fd = fd =>
       libc::shutdown(fd, net::SHUT_WR)
 
-   // Format a SockAddrIn as "a.b.c.d:port".
+   // Format IPv4 address as "a.b.c.d"
+   ip_str: SockAddrIn => String
+   ip_str = sa =>
+      "${sa.sin_addr.b0}.${sa.sin_addr.b1}.${sa.sin_addr.b2}.${sa.sin_addr.b3}"
+
+   // Format a SockAddrIn as "a.b.c.d:port"
    addr_str: SockAddrIn => String
-   addr_str = addr =>
-      ab = &addr
-      out = {32}
-      out += str::from_int(Int(@[ab + 4 u8]))
-      out += '.'
-      out += str::from_int(Int(@[ab + 5 u8]))
-      out += '.'
-      out += str::from_int(Int(@[ab + 6 u8]))
-      out += '.'
-      out += str::from_int(Int(@[ab + 7 u8]))
-      out += ':'
-      out += str::from_int(Int(@[ab + 2 u8]) * 256 + Int(@[ab + 3 u8]))
-      +out
+   addr_str = sa =>
+      "${ip_str(sa)}:${ntohs(Int(sa.sin_port))}"
 
    // The remote peer's address as "ip:port", or "" on error.
    peer_addr: Int => String
    peer_addr = fd =>
-      a = (i16(0), i16(0), i32(0), i64(0))
+      a = SockAddrIn((0u16, 0u16, in_addr_any!, 0u64))
       len = 16i32
       ret = libc::getpeername(fd, &a, &len)
       ret [< 0] "" | net::addr_str(a)
@@ -277,7 +306,7 @@
    // This socket's own local address as "ip:port", or "" on error.
    local_addr: Int => String
    local_addr = fd =>
-      a = (i16(0), i16(0), i32(0), i64(0))
+      a = SockAddrIn((0u16, 0u16, in_addr_any!, 0u64))
       len = 16i32
       ret = libc::getsockname(fd, &a, &len)
       ret [< 0] "" | net::addr_str(a)
@@ -301,8 +330,8 @@
    // Returns 0 on success, -1 on failure.
    udp_bind: Int, Int => Int
    udp_bind = fd, port =>
-      addr = SockAddrIn((i16(AF_INET),
-         i16(htons $ port), i32(0), 0))
+      addr = SockAddrIn((u16(AF_INET),
+         u16(htons $ port), in_addr_any!, 0u64))
       libc::bind(fd, &addr, 16)
 
    // Send one datagram to host:port (host must be a numeric IP). Returns the
@@ -312,8 +341,8 @@
       ip = libc::inet_addr $ host
       ip [< 0] -1
       |
-         addr = SockAddrIn((i16(AF_INET),
-            i16(htons $ port), i32(ip), 0))
+         addr = SockAddrIn((u16(AF_INET),
+            u16(htons $ port), in_addr_u32(ip), 0u64))
          libc::sendto(fd, data, ?data, 0, &addr, 16)
 
    // Receive one datagram. Returns Chunk: <+ data +> on data, <-->
@@ -325,3 +354,58 @@
       n [< 1] Chunk(<-->) |
          ?b = n
          Chunk(<+ +b +>)
+
+   // Match network interface from ifaddrs linked list by IP
+   find_iface: Addr, InAddr => String
+   find_iface = curr, target =>
+      Int(curr) [0] "" |
+         ifa = IfAddrs(curr)
+         ifa.ifa_addr == sys::addr_null | find_iface(ifa.ifa_next, target) |
+            sa = SockAddrIn(ifa.ifa_addr)
+            is_match = (Int(sa.sin_family) == AF_INET) &&
+               (sa.sin_addr.b0 == target.b0) && (sa.sin_addr.b1 == target.b1) &&
+               (sa.sin_addr.b2 == target.b2) && (sa.sin_addr.b3 == target.b3)
+            is_match
+               | sys::c_str(ifa.ifa_name)
+               | find_iface(ifa.ifa_next, target)
+
+   // Query local routing IP and default outbound interface
+   get_route_info: () => (String, String)
+   get_route_info = !=>
+      sock = libc::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
+      sock [< 0] ("127.0.0.1", "lo") |
+         dest = SockAddrIn((u16(AF_INET), u16(htons $ 53), InAddr((1u8, 1u8, 1u8, 1u8)), 0u64))
+         rc = libc::connect(sock, &dest, 16)
+         rc [0]
+            addr = SockAddrIn((0u16, 0u16, in_addr_any!, 0u64))
+            len = 16i32
+            rc2 = libc::getsockname(sock, &addr, &len)
+            libc::close(sock)
+            rc2 [0]
+               ip = ip_str(addr)
+               ifap_buf = {8}
+               rc_if = libc::getifaddrs(&ifap_buf)
+               iface = rc_if [< 0] "" |
+                  head = Addr(@[&ifap_buf Int])
+                  name = find_iface(head, addr.sin_addr)
+                  libc::freeifaddrs(head)
+                  name
+               (ip, iface)
+            | ("127.0.0.1", "lo")
+         |
+            libc::close(sock)
+            ("127.0.0.1", "lo")
+
+   // Get default local IPv4 address
+   local_ip: () => String
+   local_ip = !=>
+      r = get_route_info!
+      r.0
+
+   // Get default outbound network interface
+   default_interface: () => String
+   default_interface = !=>
+      r = get_route_info!
+      r.1
+
+

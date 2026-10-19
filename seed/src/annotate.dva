@@ -3008,7 +3008,7 @@ is_known_intrinsic = name =>
       "%popcount", "%clz", "%ctz", "%bswap", "%bitreverse",
       "%rotl", "%rotr",
       "%pow", "%sin", "%cos", "%exp2", "%log2", "%uadd_sat", "%usub_sat",
-      "%fmuladd", "%memcpy", "%memmove", "%memset", "%ptrmask"]
+      "%fmuladd", "%memcpy", "%memmove", "%memset", "%ptrmask", "%to_str"]
 
 expected_intrinsic_nargs: String => Int
 expected_intrinsic_nargs = name =>
@@ -3016,7 +3016,7 @@ expected_intrinsic_nargs = name =>
       ["%abs", "%all", "%any", "%sum", "%prod", "%sqrt",
          "%floor", "%ceil", "%trunc", "%round",
          "%popcount", "%clz", "%ctz", "%bswap", "%bitreverse",
-         "%sin", "%cos", "%exp2", "%log2"] 1
+         "%sin", "%cos", "%exp2", "%log2", "%to_str"] 1
       ["%min", "%max", "%dot", "%copysign", "%rotl", "%rotr",
          "%pow", "%uadd_sat", "%usub_sat", "%ptrmask"] 2
       ["%clamp", "%fma", "%fmuladd", "%memcpy", "%memmove", "%memset", "%ptrmask"] 3
@@ -3027,6 +3027,7 @@ compute_intrinsic_ret_ut: unify::Ctx, String, tast::TypedExprs,
    tast::TypedExpr, tast::TypedExpr, tast::TypedExpr => unify::UType
 compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
    name
+      ["%to_str"] unify::prim_str()
       ["%ptrmask"] a0.ut
       ["%memcpy", "%memmove", "%memset"] unify::prim_rawptr()
       ["%all", "%any"] unify::prim_flag()
@@ -3123,6 +3124,13 @@ annotate_intrinsic_call = ctx, env, ce =>
                   |
                      t2 = typed_args(2)
                      arg2 = t2 | _ | def_unit
+               name == "%to_str"
+                  |
+                     is_ok = is_str_ut(ctx, arg0.ut) || is_rune_ut(ctx, arg0.ut) ||
+                        is_integerish_ut(ctx, arg0.ut) || is_float_ut(ctx, arg0.ut)
+                     !is_ok |
+                        unify::add_error(ctx, 3105,
+                           "String interpolation does not support non-scalar type.")
                ret_ut = compute_intrinsic_ret_ut(ctx, name, typed_args,
                   arg0, arg1, arg2)
                ti = unify::type_info_from_utype(ctx, ret_ut)

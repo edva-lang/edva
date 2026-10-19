@@ -32,8 +32,7 @@ inline statements. A `;` at the end of a line is an error.
 | Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0m48`, `0m-16`, `0max`, `0min` | optional type suffix (`0maxu64`, `0mini32`), see below |
 | Float | `3.14`, `1.5e-3`, `3.14f32`, `-.0`, `.inf`, `-.inf`, `.nan`, `.max`, `-.max`, `.min`, `.sub` | built-in FP constants, padding zeros mandatory otherwise (see §1.4) |
 | Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
-| String | `"..."` | C-style escapes `\n \t \r \0 \a \b \f \v \e \" \' \\` |
-| Here-Doc | `"""..."""` | multiline with baseline margin stripping, `${expr}` interpolation, and line continuation `\` |
+| String | `"..."` | C-style escapes, `${expr}` interpolation; multiline with margin stripping when starting with `"\n` |
 
 **Built-in numeric limit constants** — Built-in language constants for integer boundaries and IEEE-754 floating-point properties:
 - **Integer limits (`0max` / `0min`)**: Represent the maximum and minimum representable values. Without suffix, `0max` evaluates to `Int` maximum (`9223372036854775807`) and `0min` to `Int` minimum (`-9223372036854775808`). Accepts any integer width suffix: `0maxu64`, `0minu64`, `0maxu32`, `0minu32`, `0maxi32`, `0mini32`, `0maxu16`, `0minu16`, `0maxi16`, `0mini16`, `0maxu8`, `0minu8`, `0maxi8`, `0mini8`, `0maxi64`, `0mini64`.
@@ -46,13 +45,15 @@ inline statements. A `;` at the end of a line is an error.
   - `.sub`: minimal positive subnormal floating-point value (`DBL_TRUE_MIN`).
   - All float constants accept optional float suffixes (`f32`, `f`, `F`), resolving to single-precision float bounds (e.g. `.nanf32`, `.maxf32`, `.minf32`, `.subf32`, `-.0f32`, `.inff32`).
 
-**Here-Doc (`"""..."""`)** — Multiline formatted text blocks with baseline margin stripping and expression interpolation:
-- **Delimiter**: Triple double quotes `"""..."""`. Unescaped `"` and `""` are literal; `\"""` escapes to literal `"""`.
-- **Indentation & Margin Stripping**: When the closing `"""` is on its own line, its column defines the baseline margin. That indentation prefix is stripped from the beginning of every content line. Any non-empty line indented less than the baseline raises compile error `E1017`. Blank lines are preserved without error.
-- **Newline Trimming**: An opening newline immediately following `"""` is discarded. When the closing `"""` is on its own line, the preceding content line's newline is preserved.
-- **Interpolation**: `${expr}` evaluates `expr` and splices it into the text. Escaped as `\$` or `\${`.
-- **Line Continuation**: A trailing `\` at the end of a line suppresses the newline while maintaining indentation stripping on subsequent lines.
-- **Lowering**: Standalone here-docs evaluate to `String`. In a compound append to a Builder (`b += """..."""`), segments and interpolated expressions are appended directly in place without intermediate string allocations.
+**Unified String Literals (`"..."`)** — Double-quoted string literals with expression interpolation and multiline formatting:
+- **Interpolation**: `${expr}` evaluates scalar primitives (`Int`, `Float`, `Rune`, `String`, sized int/float types) directly into the string (desugaring to `%to_str(expr)`). Escaped as `\$` or `\${`. Bare `$` is literal.
+- **Multiline Blocks**: When a string literal begins immediately with a newline (`"\n`), it enters multiline mode:
+  - The first line sets the baseline margin indentation.
+  - Subsequent lines must not be indented less than the first line (raises `E1017`).
+  - The closing `"` can close the last line directly (no trailing newline is emitted), or sit on its own line aligned with the content or dedented one level.
+  - Line continuation with trailing `\` suppresses newlines while maintaining indentation stripping on subsequent lines.
+- **Lowering**: Standalone strings evaluate to `String`. In a compound append to a Builder (`b += "..."`), segments and interpolated expressions are appended directly in place without intermediate string allocations.
+- **Retired Syntax**: Triple double quotes `"""..."""` are retired.
 
 **Multiline string concatenation** — If a line ends with a string literal
 `"..."`, and the next line begins with another string literal indented deeper
@@ -1219,8 +1220,8 @@ the only String origins. Strings are *bytes*, not runes — `len` is a byte
 count and every index reads one byte. UTF-8 validity is not tracked.
 
 **Literal forms.** The quoted form `"..."` processes C-style escapes
-(`\n \t \r \0 \a \b \f \v \e \" \' \\`). Here-docs `"""..."""` provide multiline
-text blocks with baseline margin stripping and `${expr}` dynamic interpolation.
+(`\n \t \r \0 \a \b \f \v \e \" \' \\`), `${expr}` dynamic interpolation, and
+multiline text blocks with baseline margin stripping when starting with `"\n`.
 
 #### 3.6.1 The `{ len, data }` ABI
 

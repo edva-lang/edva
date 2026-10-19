@@ -37,8 +37,7 @@ Line comments begin with `//`; block comments use `/*` and `*/`.
 | integer | `42`, `0xFF`, `0b101`, `0b1{4}`, `10{6}`, `5i16` | repeating syntax `{N}`, explicit widths use suffix |
 | float | `0.5`, `1.0`, `3.0e4` | digits are required on both sides of `.` |
 | rune | `'a'`, `'λ'`, `'\n'` | one Unicode scalar value |
-| string | `"text\n"` | escaped UTF-8 string |
-| here-doc | `"""text"""` | multiline block with margin stripping & interpolation |
+| string | `"text\n"`, `"\n  text\n"` | escaped UTF-8 string with `${expr}` interpolation; multiline when starting with `"\n` |
 
 `.5`, `1.`, and `3.e4` are not float literals. Unsuffixed integer literals
 default to `Int` unless constrained by static type context or an explicit
@@ -46,13 +45,16 @@ suffix (`i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`).
 `#pragma number <type>` changes the default literal type for the rest of its
 file; `#pragma number default` restores standard `Int` default mode.
 
-### Here-Docs (`"""..."""`)
+### Unified Strings and Multiline Blocks (`"..."`)
 
-Triple-double-quoted strings `"""..."""` define formatted multiline text:
-- **Baseline margin stripping**: When the closing `"""` sits on its own line, its column establishes the baseline indentation. That margin is stripped from each content line; any line indented less raises `E1017`.
-- **Newline trimming**: Leading newline after `"""` is discarded; line continuation with trailing `\` suppresses newlines.
-- **Interpolation**: `${expr}` evaluates expressions directly into the text.
-- **Escapes**: `\"""` escapes triple quotes; `\$` escapes interpolation; raw `"` and `""` are literal.
+Edva uses unified double-quoted strings `"..."` for both single-line and multiline text:
+- **Interpolation**: `${expr}` evaluates scalar primitives (`Int`, `Float`, `Rune`, `String`, sized int/float types) directly into the text (desugaring to the `%to_str(expr)` compiler intrinsic). Bare `$` is literal. `\$` and `\${` escape interpolation.
+- **Multiline Blocks**: When a string literal begins immediately with a newline (`"\n`), it enters multiline mode.
+  - The first line sets the baseline margin indentation.
+  - Subsequent lines must not be indented less than the first line (raises `E1017`).
+  - The closing quote `"` can close the last line directly (no trailing newline is emitted), or sit on its own line aligned with the content or dedented one level.
+  - Line continuation with trailing `\` suppresses newlines.
+- **Retired Syntax**: Triple-double-quoted `"""..."""` heredocs are retired. Use unified `"..."` strings instead.
 
 ## Tokens and whitespace-sensitive forms
 

@@ -99,9 +99,9 @@ b = crlf
 This works with heterogeneous tuples combining strings, runes, and byte integers, as well as
 variables holding record values.
 
-#### 4. In-place here-doc append (`+= """..."""`)
+#### 4. In-place multi-line append (`+= "..."`)
 
-Multi-line here-docs stream directly into the `Builder` with `${expr}` string interpolation without
+Multi-line strings stream directly into the `Builder` with `${expr}` string interpolation without
 materializing any intermediate template strings:
 
 ```{.dva .run}
@@ -109,11 +109,11 @@ endpoint = "/users"
 status = 200
 b = {128}
 
-b += """
+b += "
    POST ${endpoint} HTTP/1.1
    Status: ${status}
    Host: example.com
-   """
+   "
 ```
 
 #### 5. Direct address writes and length update (`&b` and `?b = n`)
@@ -222,16 +222,16 @@ build_query_record = table, cols =>
    b = ("SELECT ", cols.0, ", ", cols.1, ", ", cols.2, " FROM ", table, ";")
    +b
 
-// 2. Using an in-place here-doc with string interpolation
-build_query_heredoc: String, String => String
-build_query_heredoc = table, cols_str =>
+// 2. Using an in-place multi-line string with string interpolation
+build_query_multiline: String, String => String
+build_query_multiline = table, cols_str =>
    b = {128}
-   b += """
+   b += "
       SELECT ${cols_str}
       FROM ${table};
-      """
+      "
    +b
 
 q1 = build_query_record("users", ("id", "name", "email"))
-q2 = build_query_heredoc("orders", "id, total, status")
+q2 = build_query_multiline("orders", "id, total, status")
 ```

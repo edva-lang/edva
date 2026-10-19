@@ -2016,6 +2016,10 @@ declare i64 @getaddrinfo(ptr, ptr, ptr, ptr)
 
 declare void @freeaddrinfo(ptr)
 
+declare i64 @getifaddrs(ptr)
+
+declare void @freeifaddrs(ptr)
+
 declare ptr @memset(ptr, i64, i64)
 
 declare i64 @atoi(ptr)

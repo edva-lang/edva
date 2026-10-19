@@ -1,0 +1,28 @@
+// Compiler polling backend: Linux epoll(7)
+#use libc
+
+#public
+   backend_name: () => String
+   backend_name = !=> "epoll"
+
+   EpollEvent: #packed (
+      events: u32,
+      data: u64
+   )
+
+   poll_in: Int, Int => <>
+   poll_in = fd, timeout_ms =>
+      epfd = libc::epoll_create1(0)
+      epfd < 0 | --| <->
+      ev' = EpollEvent(1u32, u64(fd)) // EPOLLIN = 1
+      rc = libc::epoll_ctl(epfd, 1, fd, &ev') // EPOLL_CTL_ADD = 1
+      rc != 0 |
+         libc::close(epfd)
+         --| <->
+      out_ev' = EpollEvent(0u32, 0u64)
+      n = libc::epoll_wait(epfd, &out_ev', 1, timeout_ms)
+      libc::close(epfd)
+      n > 0 && (Int(out_ev'.events) .&. 1) != 0
+
+   stdin_ready: Int => <>
+   stdin_ready = timeout_ms => poll_in(0, timeout_ms)

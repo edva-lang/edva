@@ -1,0 +1,29 @@
+// Compiler polling backend: Linux io_uring
+#use libc
+#use uring
+#use sys
+
+#public
+   backend_name: () => String
+   backend_name = !=> "uring"
+
+   poll_in: Int, Int => <>
+   poll_in = fd, timeout_ms =>
+      r_res = uring::new(4)
+      r_res
+         | ring =>
+            uring::prep_poll_add(ring, fd, 1, 1001) // OP_POLL_ADD, POLLIN = 1
+            uring::submit(ring)
+            cqe_res = uring::wait_cqe(ring)
+            uring::close(ring)
+            cqe_res
+               | cqe => (cqe.res .&. 1) != 0
+               | <->
+         |
+            // Fallback to POSIX poll if io_uring is unsupported in this environment
+            pfd' = sys::PollFd(i32(fd), 1i16, 0i16)
+            res = libc::poll(&pfd', 1, timeout_ms)
+            res > 0 && (Int(pfd'.revents) .&. 1) != 0
+
+   stdin_ready: Int => <>
+   stdin_ready = timeout_ms => poll_in(0, timeout_ms)

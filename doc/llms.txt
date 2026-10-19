@@ -28,6 +28,10 @@
   dummy `| 0` fallbacks. In expression position, choices whose branches all return `RamPN`
   (`< T | >`) or `RamNP` (`< | E >`) synthesize an implicit `| <-->` or `| <++>` fallback.
 - **Unquoted Imports**: `#use net`, `#use io`, `#use libc`.
+- **Unified Strings & Interpolation**: Double-quoted strings `"..."` support single-line and
+  multiline (margin stripping when starting with `"\n`). Dynamic interpolation `${expr}` supports
+  scalar primitives (`Int`, `UInt`, `Float`, `Rune`, `String`), desugaring to `%to_str(expr)`
+  without requiring `#use str`. Triple-quotes `"""` are retired (`E1018`).
 - **Line Length**: Lines must not exceed 100 characters.
 
 ---

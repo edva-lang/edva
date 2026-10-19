@@ -2272,9 +2272,8 @@ codegen_eval_spawn = cg, se =>
          n > 0
             |
                args_ty = types::struct_type_n(cg, arg_ts, n)
-               asz = n * 8
                araw' = types::call1(cg, cg.malloc_t!!, cg.malloc_fn!!,
-                  LLVMConstInt(i64t, asz, 0), "thread.args.malloc")
+                  LLVMSizeOf(args_ty), "thread.args.malloc")
                at_ptr = LLVMBuildPointerCast(cg.builder, araw',
                   LLVMPointerType(args_ty, 0), "thread.args")
                n @ i =>

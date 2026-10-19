@@ -1267,6 +1267,7 @@ ctfe_lower_record = cg, r =>
    LLVMSetInitializer(gv, const_struct)
    LLVMSetGlobalConstant(gv, 1)
    LLVMSetUnnamedAddr(gv, 1)
+   LLVMSetLinkage(gv, 8)
    (gv, ast::ValueType(Record))
 
 ctfe_lower_map: types::Cg, (types::CtVals, types::CtVals) => (Addr, ast::ValueType)
@@ -1332,6 +1333,7 @@ ctfe_lower_map = cg, m =>
    LLVMSetInitializer(kg, const_keys)
    LLVMSetGlobalConstant(kg, 1)
    LLVMSetUnnamedAddr(kg, 1)
+   LLVMSetLinkage(kg, 8)
 
    vbuf = {cap' * 8}
    vsb = &vbuf
@@ -1351,6 +1353,7 @@ ctfe_lower_map = cg, m =>
    LLVMSetInitializer(vg, const_vals)
    LLVMSetGlobalConstant(vg, 1)
    LLVMSetUnnamedAddr(vg, 1)
+   LLVMSetLinkage(vg, 8)
 
    sbuf = {cap' * 8}
    ssb = &sbuf
@@ -1364,6 +1367,7 @@ ctfe_lower_map = cg, m =>
    LLVMSetInitializer(sg, const_states)
    LLVMSetGlobalConstant(sg, 1)
    LLVMSetUnnamedAddr(sg, 1)
+   LLVMSetLinkage(sg, 8)
 
    mbuf = {6 * 8}
    msb = &mbuf
@@ -1380,6 +1384,7 @@ ctfe_lower_map = cg, m =>
    LLVMSetInitializer(mg, const_map)
    LLVMSetGlobalConstant(mg, 1)
    LLVMSetUnnamedAddr(mg, 1)
+   LLVMSetLinkage(mg, 8)
 
    n > 0
       |

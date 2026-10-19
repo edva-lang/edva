@@ -21,66 +21,66 @@ path = "/etc/edva/config.ccl"
 
 ## Literals and syntax
 
-Edva supports three string literal formats:
+Edva supports unified string literals enclosed in double quotes `"..."` supporting C-style escapes and `${...}` interpolation for both single-line and multi-line strings.
 
-### Standard escaped strings
-Enclosed in double quotes `"..."`, supporting C-style escape sequences:
+### Standard single-line strings
+Enclosed in double quotes `"..."`, supporting C-style escape sequences and `${expr}` interpolation:
 
 ```{.dva .run}
 message = "First line\nSecond line\t(tabbed)\nPath: \"/usr/bin\""
 ```
 
-Supported escapes include `\n`, `\t`, `\r`, `\0`, `\a`, `\b`, `\f`, `\v`, `\e`, `\"`, `\'`, and `\\`.
+Supported escapes include `\n`, `\t`, `\r`, `\0`, `\a`, `\b`, `\f`, `\v`, `\e`, `\"`, `\'`, `\\`, and `\$`.
 
-### Here-Docs (`"""..."""`)
-Enclosed in triple double quotes `"""..."""`. Here-docs provide multiline formatted text blocks with baseline margin stripping and dynamic expression interpolation:
+### Multi-line strings (`"..."`)
+A string starting immediately after `"\n` enters multi-line mode, providing multiline formatted text blocks with baseline margin stripping and dynamic expression interpolation:
 
 ```{.dva .run}
 name = "world"
 count = 3
-template = """
+template = "
    Hello, ${name}!
    Items remaining: ${count}
-   Note: unescaped "quotes" and ""double quotes"" work as-is.
-   """
+   "
 ```
 
 #### Indentation & baseline margin stripping
-- When the closing `"""` delimiter is placed on its own line, its column defines the **baseline margin**. That leading whitespace prefix is stripped from the beginning of every content line.
-- Any non-empty line indented less than the baseline margin raises compile error `E1017`.
+- The indentation of the first content line defines the **baseline margin**. That leading whitespace prefix is stripped from the beginning of every content line.
+- Any subsequent non-empty line indented less than the baseline margin raises compile error `E1017`.
 - Blank lines are preserved without raising indentation errors.
 
 #### Newline handling & line continuation
-- An opening newline immediately following `"""` is discarded.
-- When the closing `"""` is on its own line, the preceding content line's trailing newline is preserved.
+- An opening newline immediately following `"` is discarded.
+- When the closing `"` is on its own line, the preceding content line's trailing newline is preserved.
+- When the closing `"` closes the last line directly, no trailing newline is emitted.
 - A trailing backslash `\` at the end of a line acts as a line continuation: it suppresses the newline while preserving baseline margin stripping on subsequent lines.
 
 ```{.dva .run}
-long_line = """
+long_line = "
    This is a single \
    unbroken line of text.
-   """
+   "
 ```
 
 #### Quotes & escaping
-- Unescaped `"` and `""` are literal inside the block.
-- `\"""` escapes to a literal `"""`.
-- `\$` and `\${` escape interpolation sequences to literal `$` and `${`.
+- `\"` escapes to a literal `"`.
+- `\$` and `\${` escape interpolation sequences to literal `$` and `${`. Bare `$` without `{` is literal `$`.
 
 #### Expression interpolation
-- `${expr}` evaluates `expr` and splices the resulting value into the string at runtime:
+- `${expr}` evaluates `expr` and splices the resulting scalar value (`String`, `Rune`, integer widths, `Float`) into the string at runtime without requiring `#use str`.
+- Under the hood, interpolation desugars directly to the `%to_str(expr)` compiler intrinsic, which converts scalar primitives directly into arena-allocated strings. `%to_str` can also be called directly as an intrinsic (`s = %to_str(val)`). Non-scalar types (records, arrays, raw pointers) cannot be interpolated and produce compile-time error `E3105`.
 
 ```{.dva .run}
 part1 = "foo"
 part2 = "bar"
-combined = """
+combined = "
    Value: ${part1 + "_" + part2}
-   """
+   "
 ```
 
 #### Direct Builder lowering
-- Standalone here-docs evaluate to an immutable `String`.
-- When appended to a mutable buffer via compound assignment (`b += """..."""`), literal segments and interpolated expressions are appended directly into the `Builder` buffer in place without allocating intermediate `String` values.
+- Standalone strings evaluate to an immutable `String`.
+- When appended to a mutable buffer via compound assignment (`b += "..."`), literal segments and interpolated expressions are appended directly into the `Builder` buffer in place without allocating intermediate `String` values.
 
 ## The `{ len, data }` fat-pointer ABI
 

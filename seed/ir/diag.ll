@@ -11,66 +11,70 @@ target triple = "x86_64-unknown-linux-gnu"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@str.0 = internal unnamed_addr constant [54 x i8] c"Line indented less than closing delimiter in here-doc\00"
-@str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 53, ptr @str.0 }
-@clo.const = internal constant { ptr, ptr } { ptr @"diag::E1017_heredoc_under_indented", ptr null }
+@str.0 = internal unnamed_addr constant [56 x i8] c"Line indented less than first line in multi-line string\00"
+@str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 55, ptr @str.0 }
+@clo.const = internal constant { ptr, ptr } { ptr @"diag::E1017_multiline_under_indented", ptr null }
+@"var.diag::E1017_multiline_under_indented" = global ptr null
+@str.1 = internal unnamed_addr constant [62 x i8] c"Unterminated multi-line string literal -- missing closing '\22'\00"
+@str.1.struct = internal unnamed_addr constant { i64, ptr } { i64 61, ptr @str.1 }
+@clo.const.1 = internal constant { ptr, ptr } { ptr @"diag::E1018_multiline_unterminated", ptr null }
+@"var.diag::E1018_multiline_unterminated" = global ptr null
+@clo.const.2 = internal constant { ptr, ptr } { ptr @"diag::E1017_heredoc_under_indented", ptr null }
 @"var.diag::E1017_heredoc_under_indented" = global ptr null
-@str.1 = internal unnamed_addr constant [55 x i8] c"Unterminated here-doc literal -- missing closing '\22\22\22'\00"
-@str.1.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.1 }
-@clo.const.1 = internal constant { ptr, ptr } { ptr @"diag::E1018_heredoc_unterminated", ptr null }
+@clo.const.3 = internal constant { ptr, ptr } { ptr @"diag::E1018_heredoc_unterminated", ptr null }
 @"var.diag::E1018_heredoc_unterminated" = global ptr null
 @str.2 = internal unnamed_addr constant [68 x i8] c"Bare '|' is only allowed as the first branch (Left Value) or final \00"
 @str.2.struct = internal unnamed_addr constant { i64, ptr } { i64 67, ptr @str.2 }
 @str.3 = internal unnamed_addr constant [43 x i8] c"branch (catch-all) in a choice expression.\00"
 @str.3.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.3 }
 @stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
-@clo.const.2 = internal constant { ptr, ptr } { ptr @"diag::E2024_bare_bar_position", ptr null }
+@clo.const.4 = internal constant { ptr, ptr } { ptr @"diag::E2024_bare_bar_position", ptr null }
 @"var.diag::E2024_bare_bar_position" = global ptr null
 @str.4 = internal unnamed_addr constant [57 x i8] c"Whitespace between range endpoint and '..' is forbidden.\00"
 @str.4.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.4 }
-@clo.const.3 = internal constant { ptr, ptr } { ptr @"diag::E2025_range_endpoint_whitespace", ptr null }
+@clo.const.5 = internal constant { ptr, ptr } { ptr @"diag::E2025_range_endpoint_whitespace", ptr null }
 @"var.diag::E2025_range_endpoint_whitespace" = global ptr null
 @str.5 = internal unnamed_addr constant [49 x i8] c"Whitespace before call parenthesis is forbidden.\00"
 @str.5.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.5 }
-@clo.const.4 = internal constant { ptr, ptr } { ptr @"diag::E2032_call_paren_whitespace", ptr null }
+@clo.const.6 = internal constant { ptr, ptr } { ptr @"diag::E2032_call_paren_whitespace", ptr null }
 @"var.diag::E2032_call_paren_whitespace" = global ptr null
 @str.6 = internal unnamed_addr constant [83 x i8] c"Function parameters may not be parenthesized; write 'x, y =>' with no parentheses.\00"
 @str.6.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.6 }
-@clo.const.5 = internal constant { ptr, ptr } { ptr @"diag::E2037_params_parenthesized", ptr null }
+@clo.const.7 = internal constant { ptr, ptr } { ptr @"diag::E2037_params_parenthesized", ptr null }
 @"var.diag::E2037_params_parenthesized" = global ptr null
 @str.7 = internal unnamed_addr constant [29 x i8] c"Expression nested too deeply\00"
 @str.7.struct = internal unnamed_addr constant { i64, ptr } { i64 28, ptr @str.7 }
-@clo.const.6 = internal constant { ptr, ptr } { ptr @"diag::E2039_expr_too_deep", ptr null }
+@clo.const.8 = internal constant { ptr, ptr } { ptr @"diag::E2039_expr_too_deep", ptr null }
 @"var.diag::E2039_expr_too_deep" = global ptr null
 @str.8 = internal unnamed_addr constant [69 x i8] c"Function parameters cannot be mutable \E2\80\94 remove prime suffix from '\00"
 @str.8.struct = internal unnamed_addr constant { i64, ptr } { i64 68, ptr @str.8 }
-@clo.const.7 = internal constant { ptr, ptr } { ptr @"diag::E2039_param_mutable_prefix", ptr null }
+@clo.const.9 = internal constant { ptr, ptr } { ptr @"diag::E2039_param_mutable_prefix", ptr null }
 @"var.diag::E2039_param_mutable_prefix" = global ptr null
 @str.9 = internal unnamed_addr constant [114 x i8] c"Explicit '_' parameter is forbidden in function parameter lists \E2\80\94 use a named parameter or omit unused binders.\00"
 @str.9.struct = internal unnamed_addr constant { i64, ptr } { i64 113, ptr @str.9 }
-@clo.const.8 = internal constant { ptr, ptr } { ptr @"diag::E2040_underscore_param", ptr null }
+@clo.const.10 = internal constant { ptr, ptr } { ptr @"diag::E2040_underscore_param", ptr null }
 @"var.diag::E2040_underscore_param" = global ptr null
 @str.10 = internal unnamed_addr constant [69 x i8] c"Cannot assign to '_' \E2\80\94 '_' cannot be used as an assignment target.\00"
 @str.10.struct = internal unnamed_addr constant { i64, ptr } { i64 68, ptr @str.10 }
-@clo.const.9 = internal constant { ptr, ptr } { ptr @"diag::E2044_underscore_assign", ptr null }
+@clo.const.11 = internal constant { ptr, ptr } { ptr @"diag::E2044_underscore_assign", ptr null }
 @"var.diag::E2044_underscore_assign" = global ptr null
 @str.11 = internal unnamed_addr constant [81 x i8] c"Cannot assign to a typed load; write through the untyped '@[addr]' form instead.\00"
 @str.11.struct = internal unnamed_addr constant { i64, ptr } { i64 80, ptr @str.11 }
-@clo.const.10 = internal constant { ptr, ptr } { ptr @"diag::E2093_assign_typed_load", ptr null }
+@clo.const.12 = internal constant { ptr, ptr } { ptr @"diag::E2093_assign_typed_load", ptr null }
 @"var.diag::E2093_assign_typed_load" = global ptr null
 @str.12 = internal unnamed_addr constant [75 x i8] c"A '|' before a '[' guard is invalid \E2\80\94 chain guarded branches adjacently.\00"
 @str.12.struct = internal unnamed_addr constant { i64, ptr } { i64 74, ptr @str.12 }
-@clo.const.11 = internal constant { ptr, ptr } { ptr @"diag::E2096_bar_before_guard", ptr null }
+@clo.const.13 = internal constant { ptr, ptr } { ptr @"diag::E2096_bar_before_guard", ptr null }
 @"var.diag::E2096_bar_before_guard" = global ptr null
 @str.13 = internal unnamed_addr constant [49 x i8] c"Redundant choice tail '<+> | <->' is forbidden. \00"
 @str.13.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.13 }
 @str.14 = internal unnamed_addr constant [57 x i8] c"Empty guard body '[guard]' already produces a bare flag.\00"
 @str.14.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.14 }
-@clo.const.12 = internal constant { ptr, ptr } { ptr @"diag::E2105_redundant_choice_tail", ptr null }
+@clo.const.14 = internal constant { ptr, ptr } { ptr @"diag::E2105_redundant_choice_tail", ptr null }
 @"var.diag::E2105_redundant_choice_tail" = global ptr null
 @str.15 = internal unnamed_addr constant [91 x i8] c"State binding operator '~~' requires a variable, member access, or indexed element target.\00"
 @str.15.struct = internal unnamed_addr constant { i64, ptr } { i64 90, ptr @str.15 }
-@clo.const.13 = internal constant { ptr, ptr } { ptr @"diag::E2108_state_binding_target", ptr null }
+@clo.const.15 = internal constant { ptr, ptr } { ptr @"diag::E2108_state_binding_target", ptr null }
 @"var.diag::E2108_state_binding_target" = global ptr null
 @str.16 = internal unnamed_addr constant [21 x i8] c"Disallowed syntax '[\00"
 @str.16.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.16 }
@@ -78,7 +82,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.17.struct = internal unnamed_addr constant { i64, ptr } { i64 12, ptr @str.17 }
 @str.18 = internal unnamed_addr constant [12 x i8] c"]' instead.\00"
 @str.18.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.18 }
-@clo.const.14 = internal constant { ptr, ptr } { ptr @"diag::E2109_disallowed_variant_wildcard", ptr null }
+@clo.const.16 = internal constant { ptr, ptr } { ptr @"diag::E2109_disallowed_variant_wildcard", ptr null }
 @"var.diag::E2109_disallowed_variant_wildcard" = global ptr null
 @str.19 = internal unnamed_addr constant [75 x i8] c"Omitting a Choice/pattern branch's leading condition is only allowed when \00"
 @str.19.struct = internal unnamed_addr constant { i64, ptr } { i64 74, ptr @str.19 }
@@ -86,53 +90,53 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.20.struct = internal unnamed_addr constant { i64, ptr } { i64 81, ptr @str.20 }
 @str.21 = internal unnamed_addr constant [51 x i8] c"lambda, or a cycle body). '_' is not defined here.\00"
 @str.21.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.21 }
-@clo.const.15 = internal constant { ptr, ptr } { ptr @"diag::E3003_choice_underscore_undefined", ptr null }
+@clo.const.17 = internal constant { ptr, ptr } { ptr @"diag::E3003_choice_underscore_undefined", ptr null }
 @"var.diag::E3003_choice_underscore_undefined" = global ptr null
 @str.22 = internal unnamed_addr constant [94 x i8] c"Unary '!' cannot be applied to this type. Use Flag for logical NOT or '+' for Builder freeze.\00"
 @str.22.struct = internal unnamed_addr constant { i64, ptr } { i64 93, ptr @str.22 }
-@clo.const.16 = internal constant { ptr, ptr } { ptr @"diag::E3008_not_invalid_type", ptr null }
+@clo.const.18 = internal constant { ptr, ptr } { ptr @"diag::E3008_not_invalid_type", ptr null }
 @"var.diag::E3008_not_invalid_type" = global ptr null
 @str.23 = internal unnamed_addr constant [44 x i8] c"Unary '!' cannot be applied to an integer. \00"
 @str.23.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.23 }
 @str.24 = internal unnamed_addr constant [66 x i8] c"To create a Builder with capacity n, use the brace literal '{n}'.\00"
 @str.24.struct = internal unnamed_addr constant { i64, ptr } { i64 65, ptr @str.24 }
-@clo.const.17 = internal constant { ptr, ptr } { ptr @"diag::E3008_not_integer", ptr null }
+@clo.const.19 = internal constant { ptr, ptr } { ptr @"diag::E3008_not_integer", ptr null }
 @"var.diag::E3008_not_integer" = global ptr null
 @str.25 = internal unnamed_addr constant [44 x i8] c"Cannot assign Void expression to variable '\00"
 @str.25.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.25 }
-@clo.const.18 = internal constant { ptr, ptr } { ptr @"diag::E3032_assign_void_var_prefix", ptr null }
+@clo.const.20 = internal constant { ptr, ptr } { ptr @"diag::E3032_assign_void_var_prefix", ptr null }
 @"var.diag::E3032_assign_void_var_prefix" = global ptr null
 @str.26 = internal unnamed_addr constant [46 x i8] c"Cannot assign Void expression to element of '\00"
 @str.26.struct = internal unnamed_addr constant { i64, ptr } { i64 45, ptr @str.26 }
-@clo.const.19 = internal constant { ptr, ptr } { ptr @"diag::E3032_assign_void_elem_prefix", ptr null }
+@clo.const.21 = internal constant { ptr, ptr } { ptr @"diag::E3032_assign_void_elem_prefix", ptr null }
 @"var.diag::E3032_assign_void_elem_prefix" = global ptr null
 @str.27 = internal unnamed_addr constant [37 x i8] c"Cannot re-assign immutable binding '\00"
 @str.27.struct = internal unnamed_addr constant { i64, ptr } { i64 36, ptr @str.27 }
-@clo.const.20 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_prefix", ptr null }
+@clo.const.22 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_prefix", ptr null }
 @"var.diag::E3033_reassign_immutable_prefix" = global ptr null
 @str.28 = internal unnamed_addr constant [25 x i8] c"'. Use a prime suffix ('\00"
 @str.28.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.28 }
-@clo.const.21 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_suffix", ptr null }
+@clo.const.23 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_suffix", ptr null }
 @"var.diag::E3033_reassign_immutable_suffix" = global ptr null
 @str.29 = internal unnamed_addr constant [30 x i8] c"'') for rebindable variables.\00"
 @str.29.struct = internal unnamed_addr constant { i64, ptr } { i64 29, ptr @str.29 }
-@clo.const.22 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_tail", ptr null }
+@clo.const.24 = internal constant { ptr, ptr } { ptr @"diag::E3033_reassign_immutable_tail", ptr null }
 @"var.diag::E3033_reassign_immutable_tail" = global ptr null
-@clo.const.23 = internal constant { ptr, ptr } { ptr @"diag::reassign_immutable", ptr null }
+@clo.const.25 = internal constant { ptr, ptr } { ptr @"diag::reassign_immutable", ptr null }
 @"var.diag::reassign_immutable" = global ptr null
 @str.30 = internal unnamed_addr constant [3 x i8] c"'.\00"
 @str.30.struct = internal unnamed_addr constant { i64, ptr } { i64 2, ptr @str.30 }
-@clo.const.24 = internal constant { ptr, ptr } { ptr @"diag::assign_void_variable", ptr null }
+@clo.const.26 = internal constant { ptr, ptr } { ptr @"diag::assign_void_variable", ptr null }
 @"var.diag::assign_void_variable" = global ptr null
-@clo.const.25 = internal constant { ptr, ptr } { ptr @"diag::assign_void_element", ptr null }
+@clo.const.27 = internal constant { ptr, ptr } { ptr @"diag::assign_void_element", ptr null }
 @"var.diag::assign_void_element" = global ptr null
 @str.31 = internal unnamed_addr constant [21 x i8] c"Homogeneous record '\00"
 @str.31.struct = internal unnamed_addr constant { i64, ptr } { i64 20, ptr @str.31 }
-@clo.const.26 = internal constant { ptr, ptr } { ptr @"diag::E3131_whole_val_init_prefix", ptr null }
+@clo.const.28 = internal constant { ptr, ptr } { ptr @"diag::E3131_whole_val_init_prefix", ptr null }
 @str.32 = internal unnamed_addr constant [61 x i8] c"' requires whole-value initialization before element access.\00"
 @str.32.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.32 }
-@clo.const.27 = internal constant { ptr, ptr } { ptr @"diag::E3131_whole_val_init_suffix", ptr null }
-@clo.const.28 = internal constant { ptr, ptr } { ptr @"diag::whole_value_init", ptr null }
+@clo.const.29 = internal constant { ptr, ptr } { ptr @"diag::E3131_whole_val_init_suffix", ptr null }
+@clo.const.30 = internal constant { ptr, ptr } { ptr @"diag::whole_value_init", ptr null }
 @"var.diag::whole_value_init" = global ptr null
 @str.33 = internal unnamed_addr constant [8 x i8] c"Field '\00"
 @str.33.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.33 }
@@ -140,19 +144,19 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.34.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.34 }
 @str.35 = internal unnamed_addr constant [45 x i8] c"' has no default value and was not provided.\00"
 @str.35.struct = internal unnamed_addr constant { i64, ptr } { i64 44, ptr @str.35 }
-@clo.const.29 = internal constant { ptr, ptr } { ptr @"diag::record_default_missing", ptr null }
+@clo.const.31 = internal constant { ptr, ptr } { ptr @"diag::record_default_missing", ptr null }
 @"var.diag::record_default_missing" = global ptr null
 @str.36 = internal unnamed_addr constant [7 x i8] c"Enum '\00"
 @str.36.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.36 }
 @str.37 = internal unnamed_addr constant [27 x i8] c"' has no variant labeled '\00"
 @str.37.struct = internal unnamed_addr constant { i64, ptr } { i64 26, ptr @str.37 }
-@clo.const.30 = internal constant { ptr, ptr } { ptr @"diag::enum_no_variant", ptr null }
+@clo.const.32 = internal constant { ptr, ptr } { ptr @"diag::enum_no_variant", ptr null }
 @"var.diag::enum_no_variant" = global ptr null
 @str.38 = internal unnamed_addr constant [12 x i8] c"' variant '\00"
 @str.38.struct = internal unnamed_addr constant { i64, ptr } { i64 11, ptr @str.38 }
 @str.39 = internal unnamed_addr constant [48 x i8] c"' is a bare unit and takes no payload argument.\00"
 @str.39.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.39 }
-@clo.const.31 = internal constant { ptr, ptr } { ptr @"diag::enum_unit_payload", ptr null }
+@clo.const.33 = internal constant { ptr, ptr } { ptr @"diag::enum_unit_payload", ptr null }
 @"var.diag::enum_unit_payload" = global ptr null
 @str.40 = internal unnamed_addr constant [27 x i8] c"' expects payload of type \00"
 @str.40.struct = internal unnamed_addr constant { i64, ptr } { i64 26, ptr @str.40 }
@@ -160,55 +164,55 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.41.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.41 }
 @str.42 = internal unnamed_addr constant [2 x i8] c".\00"
 @str.42.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.42 }
-@clo.const.32 = internal constant { ptr, ptr } { ptr @"diag::enum_payload_type", ptr null }
+@clo.const.34 = internal constant { ptr, ptr } { ptr @"diag::enum_payload_type", ptr null }
 @"var.diag::enum_payload_type" = global ptr null
 @str.43 = internal unnamed_addr constant [44 x i8] c"Passing a partially-initialized composite '\00"
 @str.43.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.43 }
 @str.44 = internal unnamed_addr constant [31 x i8] c"' to a function is disallowed.\00"
 @str.44.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.44 }
-@clo.const.33 = internal constant { ptr, ptr } { ptr @"diag::partial_composite_argument", ptr null }
+@clo.const.35 = internal constant { ptr, ptr } { ptr @"diag::partial_composite_argument", ptr null }
 @"var.diag::partial_composite_argument" = global ptr null
 @str.45 = internal unnamed_addr constant [57 x i8] c"Dynamic indexing is only allowed on homogeneous records.\00"
 @str.45.struct = internal unnamed_addr constant { i64, ptr } { i64 56, ptr @str.45 }
-@clo.const.34 = internal constant { ptr, ptr } { ptr @"diag::E3051_dynamic_index_hetero", ptr null }
+@clo.const.36 = internal constant { ptr, ptr } { ptr @"diag::E3051_dynamic_index_hetero", ptr null }
 @"var.diag::E3051_dynamic_index_hetero" = global ptr null
 @str.46 = internal unnamed_addr constant [56 x i8] c"Cycle iteration is only allowed on homogeneous records.\00"
 @str.46.struct = internal unnamed_addr constant { i64, ptr } { i64 55, ptr @str.46 }
-@clo.const.35 = internal constant { ptr, ptr } { ptr @"diag::E3051_cycle_iter_hetero", ptr null }
+@clo.const.37 = internal constant { ptr, ptr } { ptr @"diag::E3051_cycle_iter_hetero", ptr null }
 @"var.diag::E3051_cycle_iter_hetero" = global ptr null
 @str.47 = internal unnamed_addr constant [72 x i8] c"Cannot construct a String from a RawPtr \E2\80\94 'String(ptr)' is rejected. \00"
 @str.47.struct = internal unnamed_addr constant { i64, ptr } { i64 71, ptr @str.47 }
 @str.48 = internal unnamed_addr constant [55 x i8] c"Build with literals, '+', '++', 's + n', or a Builder.\00"
 @str.48.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.48 }
-@clo.const.36 = internal constant { ptr, ptr } { ptr @"diag::E3065_rawptr_to_string", ptr null }
+@clo.const.38 = internal constant { ptr, ptr } { ptr @"diag::E3065_rawptr_to_string", ptr null }
 @"var.diag::E3065_rawptr_to_string" = global ptr null
 @str.49 = internal unnamed_addr constant [59 x i8] c"Address operator '&' requires a Builder or String operand.\00"
 @str.49.struct = internal unnamed_addr constant { i64, ptr } { i64 58, ptr @str.49 }
-@clo.const.37 = internal constant { ptr, ptr } { ptr @"diag::E3078_addr_builder_or_string", ptr null }
+@clo.const.39 = internal constant { ptr, ptr } { ptr @"diag::E3078_addr_builder_or_string", ptr null }
 @"var.diag::E3078_addr_builder_or_string" = global ptr null
 @str.50 = internal unnamed_addr constant [35 x i8] c"Record size mismatch in arithmetic\00"
 @str.50.struct = internal unnamed_addr constant { i64, ptr } { i64 34, ptr @str.50 }
-@clo.const.38 = internal constant { ptr, ptr } { ptr @"diag::E3084_record_size_mismatch", ptr null }
+@clo.const.40 = internal constant { ptr, ptr } { ptr @"diag::E3084_record_size_mismatch", ptr null }
 @"var.diag::E3084_record_size_mismatch" = global ptr null
 @str.51 = internal unnamed_addr constant [25 x i8] c"Arithmetic type mismatch\00"
 @str.51.struct = internal unnamed_addr constant { i64, ptr } { i64 24, ptr @str.51 }
-@clo.const.39 = internal constant { ptr, ptr } { ptr @"diag::E3084_arithmetic_type_mismatch", ptr null }
+@clo.const.41 = internal constant { ptr, ptr } { ptr @"diag::E3084_arithmetic_type_mismatch", ptr null }
 @"var.diag::E3084_arithmetic_type_mismatch" = global ptr null
 @str.52 = internal unnamed_addr constant [39 x i8] c"Builder append requires byte or String\00"
 @str.52.struct = internal unnamed_addr constant { i64, ptr } { i64 38, ptr @str.52 }
-@clo.const.40 = internal constant { ptr, ptr } { ptr @"diag::E3084_builder_append_type", ptr null }
+@clo.const.42 = internal constant { ptr, ptr } { ptr @"diag::E3084_builder_append_type", ptr null }
 @"var.diag::E3084_builder_append_type" = global ptr null
 @str.53 = internal unnamed_addr constant [43 x i8] c"Incompatible branch result types in choice\00"
 @str.53.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.53 }
-@clo.const.41 = internal constant { ptr, ptr } { ptr @"diag::E3084_choice_branch_mismatch", ptr null }
+@clo.const.43 = internal constant { ptr, ptr } { ptr @"diag::E3084_choice_branch_mismatch", ptr null }
 @"var.diag::E3084_choice_branch_mismatch" = global ptr null
 @str.54 = internal unnamed_addr constant [40 x i8] c"Operand of '--!' must be a ramification\00"
 @str.54.struct = internal unnamed_addr constant { i64, ptr } { i64 39, ptr @str.54 }
-@clo.const.42 = internal constant { ptr, ptr } { ptr @"diag::E3091_propagate_ram_operand", ptr null }
+@clo.const.44 = internal constant { ptr, ptr } { ptr @"diag::E3091_propagate_ram_operand", ptr null }
 @"var.diag::E3091_propagate_ram_operand" = global ptr null
 @str.55 = internal unnamed_addr constant [55 x i8] c"Cannot infer concrete type for expression without RTTI\00"
 @str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.55 }
-@clo.const.43 = internal constant { ptr, ptr } { ptr @"diag::E3103_cannot_infer_type", ptr null }
+@clo.const.45 = internal constant { ptr, ptr } { ptr @"diag::E3103_cannot_infer_type", ptr null }
 @"var.diag::E3103_cannot_infer_type" = global ptr null
 @"var.diag::E3131_whole_val_init_prefix" = global ptr null
 @"var.diag::E3131_whole_val_init_suffix" = global ptr null
@@ -216,15 +220,15 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.56.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.56 }
 @str.57 = internal unnamed_addr constant [48 x i8] c"Copy data explicitly with '++' before boundary.\00"
 @str.57.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.57 }
-@clo.const.44 = internal constant { ptr, ptr } { ptr @"diag::E3133_addr_escape_restore", ptr null }
+@clo.const.46 = internal constant { ptr, ptr } { ptr @"diag::E3133_addr_escape_restore", ptr null }
 @"var.diag::E3133_addr_escape_restore" = global ptr null
 @str.58 = internal unnamed_addr constant [80 x i8] c"Assignment of block-scoped Addr to outer-scope binding escapes arena lifecycle.\00"
 @str.58.struct = internal unnamed_addr constant { i64, ptr } { i64 79, ptr @str.58 }
-@clo.const.45 = internal constant { ptr, ptr } { ptr @"diag::E3134_addr_escape_lifecycle", ptr null }
+@clo.const.47 = internal constant { ptr, ptr } { ptr @"diag::E3134_addr_escape_lifecycle", ptr null }
 @"var.diag::E3134_addr_escape_lifecycle" = global ptr null
 @str.59 = internal unnamed_addr constant [54 x i8] c"Compile-time type choice has no branch for this type.\00"
 @str.59.struct = internal unnamed_addr constant { i64, ptr } { i64 53, ptr @str.59 }
-@clo.const.46 = internal constant { ptr, ptr } { ptr @"diag::E3136_type_choice_no_branch", ptr null }
+@clo.const.48 = internal constant { ptr, ptr } { ptr @"diag::E3136_type_choice_no_branch", ptr null }
 @"var.diag::E3136_type_choice_no_branch" = global ptr null
 @str.60 = internal unnamed_addr constant [79 x i8] c"arena allocation under --no-runtime. The feature you used (a record, closure, \00"
 @str.60.struct = internal unnamed_addr constant { i64, ptr } { i64 78, ptr @str.60 }
@@ -234,229 +238,229 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.62.struct = internal unnamed_addr constant { i64, ptr } { i64 72, ptr @str.62 }
 @str.63 = internal unnamed_addr constant [62 x i8] c"String literals, '?s', 's(i)', and raw '@[Addr(...)]' memory.\00"
 @str.63.struct = internal unnamed_addr constant { i64, ptr } { i64 61, ptr @str.63 }
-@clo.const.47 = internal constant { ptr, ptr } { ptr @"diag::E3140_no_runtime_arena", ptr null }
+@clo.const.49 = internal constant { ptr, ptr } { ptr @"diag::E3140_no_runtime_arena", ptr null }
 @"var.diag::E3140_no_runtime_arena" = global ptr null
 @str.64 = internal unnamed_addr constant [85 x i8] c"Raw memory write '@[addr] = expr' requires an integerish or pointer value, got Float\00"
 @str.64.struct = internal unnamed_addr constant { i64, ptr } { i64 84, ptr @str.64 }
-@clo.const.48 = internal constant { ptr, ptr } { ptr @"diag::E3142_raw_write_type", ptr null }
+@clo.const.50 = internal constant { ptr, ptr } { ptr @"diag::E3142_raw_write_type", ptr null }
 @"var.diag::E3142_raw_write_type" = global ptr null
 @str.65 = internal unnamed_addr constant [34 x i8] c"View cannot escape function frame\00"
 @str.65.struct = internal unnamed_addr constant { i64, ptr } { i64 33, ptr @str.65 }
-@clo.const.49 = internal constant { ptr, ptr } { ptr @"diag::E3150_view_escape_frame", ptr null }
+@clo.const.51 = internal constant { ptr, ptr } { ptr @"diag::E3150_view_escape_frame", ptr null }
 @"var.diag::E3150_view_escape_frame" = global ptr null
 @str.66 = internal unnamed_addr constant [42 x i8] c"'#exit' expects an integerish status code\00"
 @str.66.struct = internal unnamed_addr constant { i64, ptr } { i64 41, ptr @str.66 }
-@clo.const.50 = internal constant { ptr, ptr } { ptr @"diag::E3172_exit_status_integerish", ptr null }
+@clo.const.52 = internal constant { ptr, ptr } { ptr @"diag::E3172_exit_status_integerish", ptr null }
 @"var.diag::E3172_exit_status_integerish" = global ptr null
 @str.67 = internal unnamed_addr constant [49 x i8] c"Return '--|' can only be used inside a function.\00"
 @str.67.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.67 }
-@clo.const.51 = internal constant { ptr, ptr } { ptr @"diag::E3173_return_outside_fn", ptr null }
+@clo.const.53 = internal constant { ptr, ptr } { ptr @"diag::E3173_return_outside_fn", ptr null }
 @"var.diag::E3173_return_outside_fn" = global ptr null
 @str.68 = internal unnamed_addr constant [61 x i8] c"Propagate operator '--!' can only be used inside a function.\00"
 @str.68.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.68 }
-@clo.const.52 = internal constant { ptr, ptr } { ptr @"diag::E3173_propagate_outside_fn", ptr null }
+@clo.const.54 = internal constant { ptr, ptr } { ptr @"diag::E3173_propagate_outside_fn", ptr null }
 @"var.diag::E3173_propagate_outside_fn" = global ptr null
 @str.69 = internal unnamed_addr constant [72 x i8] c"Choice has a constant expression in a branch and its value is discarded\00"
 @str.69.struct = internal unnamed_addr constant { i64, ptr } { i64 71, ptr @str.69 }
-@clo.const.53 = internal constant { ptr, ptr } { ptr @"diag::E3175_choice_const_discarded", ptr null }
+@clo.const.55 = internal constant { ptr, ptr } { ptr @"diag::E3175_choice_const_discarded", ptr null }
 @"var.diag::E3175_choice_const_discarded" = global ptr null
 @str.70 = internal unnamed_addr constant [32 x i8] c"Use of uninitialized variable '\00"
 @str.70.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.70 }
-@clo.const.54 = internal constant { ptr, ptr } { ptr @"diag::uninitialized_variable_prefix", ptr null }
+@clo.const.56 = internal constant { ptr, ptr } { ptr @"diag::uninitialized_variable_prefix", ptr null }
 @"var.diag::uninitialized_variable_prefix" = global ptr null
 @str.71 = internal unnamed_addr constant [68 x i8] c"' \E2\80\94 it is a built-in type name and is reserved for type coercion.\00"
 @str.71.struct = internal unnamed_addr constant { i64, ptr } { i64 67, ptr @str.71 }
-@clo.const.55 = internal constant { ptr, ptr } { ptr @"diag::E3050_reserved_type_name_suffix", ptr null }
+@clo.const.57 = internal constant { ptr, ptr } { ptr @"diag::E3050_reserved_type_name_suffix", ptr null }
 @"var.diag::E3050_reserved_type_name_suffix" = global ptr null
 @str.72 = internal unnamed_addr constant [35 x i8] c"Return type mismatch in function: \00"
 @str.72.struct = internal unnamed_addr constant { i64, ptr } { i64 34, ptr @str.72 }
-@clo.const.56 = internal constant { ptr, ptr } { ptr @"diag::return_type_mismatch_prefix", ptr null }
+@clo.const.58 = internal constant { ptr, ptr } { ptr @"diag::return_type_mismatch_prefix", ptr null }
 @"var.diag::return_type_mismatch_prefix" = global ptr null
 @str.73 = internal unnamed_addr constant [33 x i8] c"Type mismatch in assignment to: \00"
 @str.73.struct = internal unnamed_addr constant { i64, ptr } { i64 32, ptr @str.73 }
-@clo.const.57 = internal constant { ptr, ptr } { ptr @"diag::assignment_type_mismatch_prefix", ptr null }
+@clo.const.59 = internal constant { ptr, ptr } { ptr @"diag::assignment_type_mismatch_prefix", ptr null }
 @"var.diag::assignment_type_mismatch_prefix" = global ptr null
 @str.74 = internal unnamed_addr constant [80 x i8] c"Member index 'x.(i)' must be a compile-time constant (a per-field cycle index).\00"
 @str.74.struct = internal unnamed_addr constant { i64, ptr } { i64 79, ptr @str.74 }
-@clo.const.58 = internal constant { ptr, ptr } { ptr @"diag::member_index_constant", ptr null }
+@clo.const.60 = internal constant { ptr, ptr } { ptr @"diag::member_index_constant", ptr null }
 @"var.diag::member_index_constant" = global ptr null
 @str.75 = internal unnamed_addr constant [36 x i8] c"Type mismatch in field assignment: \00"
 @str.75.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.75 }
-@clo.const.59 = internal constant { ptr, ptr } { ptr @"diag::field_assignment_type_mismatch_prefix", ptr null }
+@clo.const.61 = internal constant { ptr, ptr } { ptr @"diag::field_assignment_type_mismatch_prefix", ptr null }
 @"var.diag::field_assignment_type_mismatch_prefix" = global ptr null
 @str.76 = internal unnamed_addr constant [44 x i8] c"Cannot write through a String call-target '\00"
 @str.76.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.76 }
-@clo.const.60 = internal constant { ptr, ptr } { ptr @"diag::E3067_string_write_prefix", ptr null }
+@clo.const.62 = internal constant { ptr, ptr } { ptr @"diag::E3067_string_write_prefix", ptr null }
 @"var.diag::E3067_string_write_prefix" = global ptr null
 @str.77 = internal unnamed_addr constant [72 x i8] c"(...)' \E2\80\94 Strings are immutable and a Builder is written with 'b + c'.\00"
 @str.77.struct = internal unnamed_addr constant { i64, ptr } { i64 71, ptr @str.77 }
-@clo.const.61 = internal constant { ptr, ptr } { ptr @"diag::E3067_string_write_suffix", ptr null }
+@clo.const.63 = internal constant { ptr, ptr } { ptr @"diag::E3067_string_write_suffix", ptr null }
 @"var.diag::E3067_string_write_suffix" = global ptr null
 @str.78 = internal unnamed_addr constant [50 x i8] c"Cannot write element of forward-annotated slice '\00"
 @str.78.struct = internal unnamed_addr constant { i64, ptr } { i64 49, ptr @str.78 }
-@clo.const.62 = internal constant { ptr, ptr } { ptr @"diag::E3049_slice_write_prefix", ptr null }
+@clo.const.64 = internal constant { ptr, ptr } { ptr @"diag::E3049_slice_write_prefix", ptr null }
 @"var.diag::E3049_slice_write_prefix" = global ptr null
 @str.79 = internal unnamed_addr constant [37 x i8] c"' before whole-value initialization.\00"
 @str.79.struct = internal unnamed_addr constant { i64, ptr } { i64 36, ptr @str.79 }
-@clo.const.63 = internal constant { ptr, ptr } { ptr @"diag::E3049_slice_write_suffix", ptr null }
+@clo.const.65 = internal constant { ptr, ptr } { ptr @"diag::E3049_slice_write_suffix", ptr null }
 @"var.diag::E3049_slice_write_suffix" = global ptr null
 @str.80 = internal unnamed_addr constant [49 x i8] c"Cannot infer concrete return type for function '\00"
 @str.80.struct = internal unnamed_addr constant { i64, ptr } { i64 48, ptr @str.80 }
-@clo.const.64 = internal constant { ptr, ptr } { ptr @"diag::return_type_inference_prefix", ptr null }
+@clo.const.66 = internal constant { ptr, ptr } { ptr @"diag::return_type_inference_prefix", ptr null }
 @"var.diag::return_type_inference_prefix" = global ptr null
 @str.81 = internal unnamed_addr constant [83 x i8] c"' is used as a value but its parameter types cannot be determined \E2\80\94 no declared \00"
 @str.81.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.81 }
 @str.82 = internal unnamed_addr constant [65 x i8] c"signature and no call site to infer from. Declare a signature: '\00"
 @str.82.struct = internal unnamed_addr constant { i64, ptr } { i64 64, ptr @str.82 }
-@clo.const.65 = internal constant { ptr, ptr } { ptr @"diag::E3128_function_value_signature_suffix", ptr null }
+@clo.const.67 = internal constant { ptr, ptr } { ptr @"diag::E3128_function_value_signature_suffix", ptr null }
 @"var.diag::E3128_function_value_signature_suffix" = global ptr null
 @str.83 = internal unnamed_addr constant [35 x i8] c"Expected primary expression, got '\00"
 @str.83.struct = internal unnamed_addr constant { i64, ptr } { i64 34, ptr @str.83 }
-@clo.const.66 = internal constant { ptr, ptr } { ptr @"diag::expected_primary_prefix", ptr null }
+@clo.const.68 = internal constant { ptr, ptr } { ptr @"diag::expected_primary_prefix", ptr null }
 @"var.diag::expected_primary_prefix" = global ptr null
 @str.84 = internal unnamed_addr constant [72 x i8] c"Cycle jump suffix must be a positive integer depth (e.g. '-->2'), got '\00"
 @str.84.struct = internal unnamed_addr constant { i64, ptr } { i64 71, ptr @str.84 }
-@clo.const.67 = internal constant { ptr, ptr } { ptr @"diag::cycle_jump_depth_prefix", ptr null }
+@clo.const.69 = internal constant { ptr, ptr } { ptr @"diag::cycle_jump_depth_prefix", ptr null }
 @"var.diag::cycle_jump_depth_prefix" = global ptr null
 @str.85 = internal unnamed_addr constant [63 x i8] c"Record type repetition count must be a positive integer, got '\00"
 @str.85.struct = internal unnamed_addr constant { i64, ptr } { i64 62, ptr @str.85 }
-@clo.const.68 = internal constant { ptr, ptr } { ptr @"diag::record_repeat_count_prefix", ptr null }
+@clo.const.70 = internal constant { ptr, ptr } { ptr @"diag::record_repeat_count_prefix", ptr null }
 @"var.diag::record_repeat_count_prefix" = global ptr null
 @str.86 = internal unnamed_addr constant [32 x i8] c" exceeds the maximum of 1000000\00"
 @str.86.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.86 }
-@clo.const.69 = internal constant { ptr, ptr } { ptr @"diag::record_repeat_limit_suffix", ptr null }
+@clo.const.71 = internal constant { ptr, ptr } { ptr @"diag::record_repeat_limit_suffix", ptr null }
 @"var.diag::record_repeat_limit_suffix" = global ptr null
 @str.87 = internal unnamed_addr constant [55 x i8] c"Expected an integer right binding-power after '#infix \00"
 @str.87.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.87 }
-@clo.const.70 = internal constant { ptr, ptr } { ptr @"diag::infix_right_binding_power_prefix", ptr null }
+@clo.const.72 = internal constant { ptr, ptr } { ptr @"diag::infix_right_binding_power_prefix", ptr null }
 @"var.diag::infix_right_binding_power_prefix" = global ptr null
 @str.88 = internal unnamed_addr constant [61 x i8] c"Expected an integer left binding-power after '#infix', got '\00"
 @str.88.struct = internal unnamed_addr constant { i64, ptr } { i64 60, ptr @str.88 }
-@clo.const.71 = internal constant { ptr, ptr } { ptr @"diag::infix_left_binding_power_prefix", ptr null }
+@clo.const.73 = internal constant { ptr, ptr } { ptr @"diag::infix_left_binding_power_prefix", ptr null }
 @"var.diag::infix_left_binding_power_prefix" = global ptr null
 @str.89 = internal unnamed_addr constant [48 x i8] c"' conflicts with symbol already imported from '\00"
 @str.89.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.89 }
-@clo.const.72 = internal constant { ptr, ptr } { ptr @"diag::imported_symbol_conflict_suffix", ptr null }
+@clo.const.74 = internal constant { ptr, ptr } { ptr @"diag::imported_symbol_conflict_suffix", ptr null }
 @"var.diag::imported_symbol_conflict_suffix" = global ptr null
 @str.90 = internal unnamed_addr constant [38 x i8] c"E3033: Name clash: foreign function '\00"
 @str.90.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.90 }
-@clo.const.73 = internal constant { ptr, ptr } { ptr @"diag::E3033_foreign_function_clash_prefix", ptr null }
+@clo.const.75 = internal constant { ptr, ptr } { ptr @"diag::E3033_foreign_function_clash_prefix", ptr null }
 @"var.diag::E3033_foreign_function_clash_prefix" = global ptr null
 @str.91 = internal unnamed_addr constant [59 x i8] c"' declared in module conflicts with symbol imported from '\00"
 @str.91.struct = internal unnamed_addr constant { i64, ptr } { i64 58, ptr @str.91 }
-@clo.const.74 = internal constant { ptr, ptr } { ptr @"diag::declared_symbol_conflict_suffix", ptr null }
+@clo.const.76 = internal constant { ptr, ptr } { ptr @"diag::declared_symbol_conflict_suffix", ptr null }
 @"var.diag::declared_symbol_conflict_suffix" = global ptr null
 @str.92 = internal unnamed_addr constant [45 x i8] c"E5038: module import cycle across packages: \00"
 @str.92.struct = internal unnamed_addr constant { i64, ptr } { i64 44, ptr @str.92 }
-@clo.const.75 = internal constant { ptr, ptr } { ptr @"diag::E5038_package_import_cycle_prefix", ptr null }
+@clo.const.77 = internal constant { ptr, ptr } { ptr @"diag::E5038_package_import_cycle_prefix", ptr null }
 @"var.diag::E5038_package_import_cycle_prefix" = global ptr null
 @str.93 = internal unnamed_addr constant [43 x i8] c": Clang compilation failed with exit code \00"
 @str.93.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.93 }
-@clo.const.76 = internal constant { ptr, ptr } { ptr @"diag::clang_compilation_failed_suffix", ptr null }
+@clo.const.78 = internal constant { ptr, ptr } { ptr @"diag::clang_compilation_failed_suffix", ptr null }
 @"var.diag::clang_compilation_failed_suffix" = global ptr null
 @str.94 = internal unnamed_addr constant [37 x i8] c"E5007: No input .dva file specified.\00"
 @str.94.struct = internal unnamed_addr constant { i64, ptr } { i64 36, ptr @str.94 }
-@clo.const.77 = internal constant { ptr, ptr } { ptr @"diag::E5007_no_input", ptr null }
+@clo.const.79 = internal constant { ptr, ptr } { ptr @"diag::E5007_no_input", ptr null }
 @"var.diag::E5007_no_input" = global ptr null
 @str.95 = internal unnamed_addr constant [43 x i8] c"Record does not satisfy open record fields\00"
 @str.95.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.95 }
-@clo.const.78 = internal constant { ptr, ptr } { ptr @"diag::E3084_open_record_fields", ptr null }
+@clo.const.80 = internal constant { ptr, ptr } { ptr @"diag::E3084_open_record_fields", ptr null }
 @"var.diag::E3084_open_record_fields" = global ptr null
 @str.96 = internal unnamed_addr constant [37 x i8] c"Cannot assign ramification of shape \00"
 @str.96.struct = internal unnamed_addr constant { i64, ptr } { i64 36, ptr @str.96 }
-@clo.const.79 = internal constant { ptr, ptr } { ptr @"diag::E3089_ram_shape_prefix", ptr null }
+@clo.const.81 = internal constant { ptr, ptr } { ptr @"diag::E3089_ram_shape_prefix", ptr null }
 @"var.diag::E3089_ram_shape_prefix" = global ptr null
 @str.97 = internal unnamed_addr constant [41 x i8] c"--locked: edva.lock.ccl is out of date (\00"
 @str.97.struct = internal unnamed_addr constant { i64, ptr } { i64 40, ptr @str.97 }
-@clo.const.80 = internal constant { ptr, ptr } { ptr @"diag::locked_manifest_stale_prefix", ptr null }
+@clo.const.82 = internal constant { ptr, ptr } { ptr @"diag::locked_manifest_stale_prefix", ptr null }
 @"var.diag::locked_manifest_stale_prefix" = global ptr null
 @str.98 = internal unnamed_addr constant [56 x i8] c"': repository contains illegal path or escaping symlink\00"
 @str.98.struct = internal unnamed_addr constant { i64, ptr } { i64 55, ptr @str.98 }
-@clo.const.81 = internal constant { ptr, ptr } { ptr @"diag::repository_illegal_path_suffix", ptr null }
+@clo.const.83 = internal constant { ptr, ptr } { ptr @"diag::repository_illegal_path_suffix", ptr null }
 @"var.diag::repository_illegal_path_suffix" = global ptr null
 @str.99 = internal unnamed_addr constant [50 x i8] c"tampered vendor content: tree hash mismatch for '\00"
 @str.99.struct = internal unnamed_addr constant { i64, ptr } { i64 49, ptr @str.99 }
-@clo.const.82 = internal constant { ptr, ptr } { ptr @"diag::vendor_tree_mismatch_prefix", ptr null }
+@clo.const.84 = internal constant { ptr, ptr } { ptr @"diag::vendor_tree_mismatch_prefix", ptr null }
 @"var.diag::vendor_tree_mismatch_prefix" = global ptr null
 @str.100 = internal unnamed_addr constant [51 x i8] c"': archive contains illegal path or path traversal\00"
 @str.100.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.100 }
-@clo.const.83 = internal constant { ptr, ptr } { ptr @"diag::archive_illegal_path_suffix", ptr null }
+@clo.const.85 = internal constant { ptr, ptr } { ptr @"diag::archive_illegal_path_suffix", ptr null }
 @"var.diag::archive_illegal_path_suffix" = global ptr null
 @str.101 = internal unnamed_addr constant [85 x i8] c"' cannot be applied to ramifications \E2\80\94 ramifications have no ordering; test their \00"
 @str.101.struct = internal unnamed_addr constant { i64, ptr } { i64 84, ptr @str.101 }
 @str.102 = internal unnamed_addr constant [33 x i8] c"slots with '|' branches instead.\00"
 @str.102.struct = internal unnamed_addr constant { i64, ptr } { i64 32, ptr @str.102 }
-@clo.const.84 = internal constant { ptr, ptr } { ptr @"diag::E3127_ram_ordering_suffix", ptr null }
+@clo.const.86 = internal constant { ptr, ptr } { ptr @"diag::E3127_ram_ordering_suffix", ptr null }
 @"var.diag::E3127_ram_ordering_suffix" = global ptr null
 @str.103 = internal unnamed_addr constant [70 x i8] c"' cannot be applied to enums \E2\80\94 enums have no ordering; match their \00"
 @str.103.struct = internal unnamed_addr constant { i64, ptr } { i64 69, ptr @str.103 }
 @str.104 = internal unnamed_addr constant [44 x i8] c"variants with '[Variant]' branches instead.\00"
 @str.104.struct = internal unnamed_addr constant { i64, ptr } { i64 43, ptr @str.104 }
-@clo.const.85 = internal constant { ptr, ptr } { ptr @"diag::E3127_enum_ordering_suffix", ptr null }
+@clo.const.87 = internal constant { ptr, ptr } { ptr @"diag::E3127_enum_ordering_suffix", ptr null }
 @"var.diag::E3127_enum_ordering_suffix" = global ptr null
 @str.105 = internal unnamed_addr constant [86 x i8] c"Record field index 'T.(i)' must be a compile-time constant (a per-field cycle index).\00"
 @str.105.struct = internal unnamed_addr constant { i64, ptr } { i64 85, ptr @str.105 }
-@clo.const.86 = internal constant { ptr, ptr } { ptr @"diag::record_field_index_constant", ptr null }
+@clo.const.88 = internal constant { ptr, ptr } { ptr @"diag::record_field_index_constant", ptr null }
 @"var.diag::record_field_index_constant" = global ptr null
 @str.106 = internal unnamed_addr constant [81 x i8] c"Enum variant index 'T.(i)' must be a compile-time constant (a per-variant cycle \00"
 @str.106.struct = internal unnamed_addr constant { i64, ptr } { i64 80, ptr @str.106 }
 @str.107 = internal unnamed_addr constant [8 x i8] c"index).\00"
 @str.107.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.107 }
-@clo.const.87 = internal constant { ptr, ptr } { ptr @"diag::enum_variant_index_constant", ptr null }
+@clo.const.89 = internal constant { ptr, ptr } { ptr @"diag::enum_variant_index_constant", ptr null }
 @"var.diag::enum_variant_index_constant" = global ptr null
 @str.108 = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @str.108.struct = internal unnamed_addr constant { i64, ptr } { i64 70, ptr @str.108 }
-@clo.const.88 = internal constant { ptr, ptr } { ptr @"diag::E4002_string_length_overflow", ptr null }
+@clo.const.90 = internal constant { ptr, ptr } { ptr @"diag::E4002_string_length_overflow", ptr null }
 @"var.diag::E4002_string_length_overflow" = global ptr null
 @str.109 = internal unnamed_addr constant [31 x i8] c"' targets cycle-nesting level \00"
 @str.109.struct = internal unnamed_addr constant { i64, ptr } { i64 30, ptr @str.109 }
-@clo.const.89 = internal constant { ptr, ptr } { ptr @"diag::E3007_cycle_jump_level_prefix", ptr null }
+@clo.const.91 = internal constant { ptr, ptr } { ptr @"diag::E3007_cycle_jump_level_prefix", ptr null }
 @"var.diag::E3007_cycle_jump_level_prefix" = global ptr null
 @str.110 = internal unnamed_addr constant [41 x i8] c" enclosing cycle(s) exist at this point.\00"
 @str.110.struct = internal unnamed_addr constant { i64, ptr } { i64 40, ptr @str.110 }
-@clo.const.90 = internal constant { ptr, ptr } { ptr @"diag::E3007_cycle_jump_level_suffix", ptr null }
+@clo.const.92 = internal constant { ptr, ptr } { ptr @"diag::E3007_cycle_jump_level_suffix", ptr null }
 @"var.diag::E3007_cycle_jump_level_suffix" = global ptr null
 @str.111 = internal unnamed_addr constant [46 x i8] c"E4007: unwrap on empty or error ramification\0A\00"
 @str.111.struct = internal unnamed_addr constant { i64, ptr } { i64 45, ptr @str.111 }
-@clo.const.91 = internal constant { ptr, ptr } { ptr @"diag::E4007_unwrap_empty_or_error", ptr null }
+@clo.const.93 = internal constant { ptr, ptr } { ptr @"diag::E4007_unwrap_empty_or_error", ptr null }
 @"var.diag::E4007_unwrap_empty_or_error" = global ptr null
 @str.112 = internal unnamed_addr constant [32 x i8] c"' is not compile-time evaluable\00"
 @str.112.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.112 }
-@clo.const.92 = internal constant { ptr, ptr } { ptr @"diag::compile_time_parameter_suffix", ptr null }
+@clo.const.94 = internal constant { ptr, ptr } { ptr @"diag::compile_time_parameter_suffix", ptr null }
 @"var.diag::compile_time_parameter_suffix" = global ptr null
 @str.113 = internal unnamed_addr constant [78 x i8] c"' is ambiguous \E2\80\94 declared by multiple enums; qualify the variant as 'Enum::\00"
 @str.113.struct = internal unnamed_addr constant { i64, ptr } { i64 77, ptr @str.113 }
-@clo.const.93 = internal constant { ptr, ptr } { ptr @"diag::E3105_enum_label_ambiguous_suffix", ptr null }
+@clo.const.95 = internal constant { ptr, ptr } { ptr @"diag::E3105_enum_label_ambiguous_suffix", ptr null }
 @"var.diag::E3105_enum_label_ambiguous_suffix" = global ptr null
 @str.114 = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @str.114.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.114 }
-@clo.const.94 = internal constant { ptr, ptr } { ptr @"diag::E4008_builder_length_bounds", ptr null }
+@clo.const.96 = internal constant { ptr, ptr } { ptr @"diag::E4008_builder_length_bounds", ptr null }
 @"var.diag::E4008_builder_length_bounds" = global ptr null
 @str.115 = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @str.115.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.115 }
-@clo.const.95 = internal constant { ptr, ptr } { ptr @"diag::runtime_error_format", ptr null }
+@clo.const.97 = internal constant { ptr, ptr } { ptr @"diag::runtime_error_format", ptr null }
 @"var.diag::runtime_error_format" = global ptr null
 @str.116 = internal unnamed_addr constant [83 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk \00"
 @str.116.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.116 }
 @str.117 = internal unnamed_addr constant [17 x i8] c"cap %llu bytes)\0A\00"
 @str.117.struct = internal unnamed_addr constant { i64, ptr } { i64 16, ptr @str.117 }
-@clo.const.96 = internal constant { ptr, ptr } { ptr @"diag::E4004_arena_allocation_too_large", ptr null }
+@clo.const.98 = internal constant { ptr, ptr } { ptr @"diag::E4004_arena_allocation_too_large", ptr null }
 @"var.diag::E4004_arena_allocation_too_large" = global ptr null
 @str.118 = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @str.118.struct = internal unnamed_addr constant { i64, ptr } { i64 57, ptr @str.118 }
-@clo.const.97 = internal constant { ptr, ptr } { ptr @"diag::E4003_arena_chunk_limit", ptr null }
+@clo.const.99 = internal constant { ptr, ptr } { ptr @"diag::E4003_arena_chunk_limit", ptr null }
 @"var.diag::E4003_arena_chunk_limit" = global ptr null
 @str.119 = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @str.119.struct = internal unnamed_addr constant { i64, ptr } { i64 49, ptr @str.119 }
-@clo.const.98 = internal constant { ptr, ptr } { ptr @"diag::E4001_arena_exhausted", ptr null }
+@clo.const.100 = internal constant { ptr, ptr } { ptr @"diag::E4001_arena_exhausted", ptr null }
 @"var.diag::E4001_arena_exhausted" = global ptr null
 @str.120 = internal unnamed_addr constant [36 x i8] c"E5012: Failed to write LLVM IR to '\00"
 @str.120.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.120 }
-@clo.const.99 = internal constant { ptr, ptr } { ptr @"diag::E5012_write_ir_prefix", ptr null }
+@clo.const.101 = internal constant { ptr, ptr } { ptr @"diag::E5012_write_ir_prefix", ptr null }
 @"var.diag::E5012_write_ir_prefix" = global ptr null
 @str.121 = internal unnamed_addr constant [51 x i8] c"Unterminated string literal -- missing closing '\22'\00"
 @str.121.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.121 }
-@clo.const.100 = internal constant { ptr, ptr } { ptr @"diag::E1008_string_unterminated", ptr null }
+@clo.const.102 = internal constant { ptr, ptr } { ptr @"diag::E1008_string_unterminated", ptr null }
 @"var.diag::E1008_string_unterminated" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_diag, ptr null }]
 
@@ -499,118 +503,132 @@ declare i64 @dva_hash_string(ptr, i64)
 
 define internal void @__dva_global_init_diag() #1 {
 entry:
-  store ptr @clo.const, ptr @"var.diag::E1017_heredoc_under_indented", align 8
-  store ptr @clo.const.1, ptr @"var.diag::E1018_heredoc_unterminated", align 8
-  store ptr @clo.const.2, ptr @"var.diag::E2024_bare_bar_position", align 8
-  store ptr @clo.const.3, ptr @"var.diag::E2025_range_endpoint_whitespace", align 8
-  store ptr @clo.const.4, ptr @"var.diag::E2032_call_paren_whitespace", align 8
-  store ptr @clo.const.5, ptr @"var.diag::E2037_params_parenthesized", align 8
-  store ptr @clo.const.6, ptr @"var.diag::E2039_expr_too_deep", align 8
-  store ptr @clo.const.7, ptr @"var.diag::E2039_param_mutable_prefix", align 8
-  store ptr @clo.const.8, ptr @"var.diag::E2040_underscore_param", align 8
-  store ptr @clo.const.9, ptr @"var.diag::E2044_underscore_assign", align 8
-  store ptr @clo.const.10, ptr @"var.diag::E2093_assign_typed_load", align 8
-  store ptr @clo.const.11, ptr @"var.diag::E2096_bar_before_guard", align 8
-  store ptr @clo.const.12, ptr @"var.diag::E2105_redundant_choice_tail", align 8
-  store ptr @clo.const.13, ptr @"var.diag::E2108_state_binding_target", align 8
-  store ptr @clo.const.14, ptr @"var.diag::E2109_disallowed_variant_wildcard", align 8
-  store ptr @clo.const.15, ptr @"var.diag::E3003_choice_underscore_undefined", align 8
-  store ptr @clo.const.16, ptr @"var.diag::E3008_not_invalid_type", align 8
-  store ptr @clo.const.17, ptr @"var.diag::E3008_not_integer", align 8
-  store ptr @clo.const.18, ptr @"var.diag::E3032_assign_void_var_prefix", align 8
-  store ptr @clo.const.19, ptr @"var.diag::E3032_assign_void_elem_prefix", align 8
-  store ptr @clo.const.20, ptr @"var.diag::E3033_reassign_immutable_prefix", align 8
-  store ptr @clo.const.21, ptr @"var.diag::E3033_reassign_immutable_suffix", align 8
-  store ptr @clo.const.22, ptr @"var.diag::E3033_reassign_immutable_tail", align 8
-  store ptr @clo.const.23, ptr @"var.diag::reassign_immutable", align 8
-  store ptr @clo.const.24, ptr @"var.diag::assign_void_variable", align 8
-  store ptr @clo.const.25, ptr @"var.diag::assign_void_element", align 8
-  store ptr @clo.const.28, ptr @"var.diag::whole_value_init", align 8
-  store ptr @clo.const.29, ptr @"var.diag::record_default_missing", align 8
-  store ptr @clo.const.30, ptr @"var.diag::enum_no_variant", align 8
-  store ptr @clo.const.31, ptr @"var.diag::enum_unit_payload", align 8
-  store ptr @clo.const.32, ptr @"var.diag::enum_payload_type", align 8
-  store ptr @clo.const.33, ptr @"var.diag::partial_composite_argument", align 8
-  store ptr @clo.const.34, ptr @"var.diag::E3051_dynamic_index_hetero", align 8
-  store ptr @clo.const.35, ptr @"var.diag::E3051_cycle_iter_hetero", align 8
-  store ptr @clo.const.36, ptr @"var.diag::E3065_rawptr_to_string", align 8
-  store ptr @clo.const.37, ptr @"var.diag::E3078_addr_builder_or_string", align 8
-  store ptr @clo.const.38, ptr @"var.diag::E3084_record_size_mismatch", align 8
-  store ptr @clo.const.39, ptr @"var.diag::E3084_arithmetic_type_mismatch", align 8
-  store ptr @clo.const.40, ptr @"var.diag::E3084_builder_append_type", align 8
-  store ptr @clo.const.41, ptr @"var.diag::E3084_choice_branch_mismatch", align 8
-  store ptr @clo.const.42, ptr @"var.diag::E3091_propagate_ram_operand", align 8
-  store ptr @clo.const.43, ptr @"var.diag::E3103_cannot_infer_type", align 8
-  store ptr @clo.const.26, ptr @"var.diag::E3131_whole_val_init_prefix", align 8
-  store ptr @clo.const.27, ptr @"var.diag::E3131_whole_val_init_suffix", align 8
-  store ptr @clo.const.44, ptr @"var.diag::E3133_addr_escape_restore", align 8
-  store ptr @clo.const.45, ptr @"var.diag::E3134_addr_escape_lifecycle", align 8
-  store ptr @clo.const.46, ptr @"var.diag::E3136_type_choice_no_branch", align 8
-  store ptr @clo.const.47, ptr @"var.diag::E3140_no_runtime_arena", align 8
-  store ptr @clo.const.48, ptr @"var.diag::E3142_raw_write_type", align 8
-  store ptr @clo.const.49, ptr @"var.diag::E3150_view_escape_frame", align 8
-  store ptr @clo.const.50, ptr @"var.diag::E3172_exit_status_integerish", align 8
-  store ptr @clo.const.51, ptr @"var.diag::E3173_return_outside_fn", align 8
-  store ptr @clo.const.52, ptr @"var.diag::E3173_propagate_outside_fn", align 8
-  store ptr @clo.const.53, ptr @"var.diag::E3175_choice_const_discarded", align 8
-  store ptr @clo.const.54, ptr @"var.diag::uninitialized_variable_prefix", align 8
-  store ptr @clo.const.55, ptr @"var.diag::E3050_reserved_type_name_suffix", align 8
-  store ptr @clo.const.56, ptr @"var.diag::return_type_mismatch_prefix", align 8
-  store ptr @clo.const.57, ptr @"var.diag::assignment_type_mismatch_prefix", align 8
-  store ptr @clo.const.58, ptr @"var.diag::member_index_constant", align 8
-  store ptr @clo.const.59, ptr @"var.diag::field_assignment_type_mismatch_prefix", align 8
-  store ptr @clo.const.60, ptr @"var.diag::E3067_string_write_prefix", align 8
-  store ptr @clo.const.61, ptr @"var.diag::E3067_string_write_suffix", align 8
-  store ptr @clo.const.62, ptr @"var.diag::E3049_slice_write_prefix", align 8
-  store ptr @clo.const.63, ptr @"var.diag::E3049_slice_write_suffix", align 8
-  store ptr @clo.const.64, ptr @"var.diag::return_type_inference_prefix", align 8
-  store ptr @clo.const.65, ptr @"var.diag::E3128_function_value_signature_suffix", align 8
-  store ptr @clo.const.66, ptr @"var.diag::expected_primary_prefix", align 8
-  store ptr @clo.const.67, ptr @"var.diag::cycle_jump_depth_prefix", align 8
-  store ptr @clo.const.68, ptr @"var.diag::record_repeat_count_prefix", align 8
-  store ptr @clo.const.69, ptr @"var.diag::record_repeat_limit_suffix", align 8
-  store ptr @clo.const.70, ptr @"var.diag::infix_right_binding_power_prefix", align 8
-  store ptr @clo.const.71, ptr @"var.diag::infix_left_binding_power_prefix", align 8
-  store ptr @clo.const.72, ptr @"var.diag::imported_symbol_conflict_suffix", align 8
-  store ptr @clo.const.73, ptr @"var.diag::E3033_foreign_function_clash_prefix", align 8
-  store ptr @clo.const.74, ptr @"var.diag::declared_symbol_conflict_suffix", align 8
-  store ptr @clo.const.75, ptr @"var.diag::E5038_package_import_cycle_prefix", align 8
-  store ptr @clo.const.76, ptr @"var.diag::clang_compilation_failed_suffix", align 8
-  store ptr @clo.const.77, ptr @"var.diag::E5007_no_input", align 8
-  store ptr @clo.const.78, ptr @"var.diag::E3084_open_record_fields", align 8
-  store ptr @clo.const.79, ptr @"var.diag::E3089_ram_shape_prefix", align 8
-  store ptr @clo.const.80, ptr @"var.diag::locked_manifest_stale_prefix", align 8
-  store ptr @clo.const.81, ptr @"var.diag::repository_illegal_path_suffix", align 8
-  store ptr @clo.const.82, ptr @"var.diag::vendor_tree_mismatch_prefix", align 8
-  store ptr @clo.const.83, ptr @"var.diag::archive_illegal_path_suffix", align 8
-  store ptr @clo.const.84, ptr @"var.diag::E3127_ram_ordering_suffix", align 8
-  store ptr @clo.const.85, ptr @"var.diag::E3127_enum_ordering_suffix", align 8
-  store ptr @clo.const.86, ptr @"var.diag::record_field_index_constant", align 8
-  store ptr @clo.const.87, ptr @"var.diag::enum_variant_index_constant", align 8
-  store ptr @clo.const.88, ptr @"var.diag::E4002_string_length_overflow", align 8
-  store ptr @clo.const.89, ptr @"var.diag::E3007_cycle_jump_level_prefix", align 8
-  store ptr @clo.const.90, ptr @"var.diag::E3007_cycle_jump_level_suffix", align 8
-  store ptr @clo.const.91, ptr @"var.diag::E4007_unwrap_empty_or_error", align 8
-  store ptr @clo.const.92, ptr @"var.diag::compile_time_parameter_suffix", align 8
-  store ptr @clo.const.93, ptr @"var.diag::E3105_enum_label_ambiguous_suffix", align 8
-  store ptr @clo.const.94, ptr @"var.diag::E4008_builder_length_bounds", align 8
-  store ptr @clo.const.95, ptr @"var.diag::runtime_error_format", align 8
-  store ptr @clo.const.96, ptr @"var.diag::E4004_arena_allocation_too_large", align 8
-  store ptr @clo.const.97, ptr @"var.diag::E4003_arena_chunk_limit", align 8
-  store ptr @clo.const.98, ptr @"var.diag::E4001_arena_exhausted", align 8
-  store ptr @clo.const.99, ptr @"var.diag::E5012_write_ir_prefix", align 8
-  store ptr @clo.const.100, ptr @"var.diag::E1008_string_unterminated", align 8
+  store ptr @clo.const, ptr @"var.diag::E1017_multiline_under_indented", align 8
+  store ptr @clo.const.1, ptr @"var.diag::E1018_multiline_unterminated", align 8
+  store ptr @clo.const.2, ptr @"var.diag::E1017_heredoc_under_indented", align 8
+  store ptr @clo.const.3, ptr @"var.diag::E1018_heredoc_unterminated", align 8
+  store ptr @clo.const.4, ptr @"var.diag::E2024_bare_bar_position", align 8
+  store ptr @clo.const.5, ptr @"var.diag::E2025_range_endpoint_whitespace", align 8
+  store ptr @clo.const.6, ptr @"var.diag::E2032_call_paren_whitespace", align 8
+  store ptr @clo.const.7, ptr @"var.diag::E2037_params_parenthesized", align 8
+  store ptr @clo.const.8, ptr @"var.diag::E2039_expr_too_deep", align 8
+  store ptr @clo.const.9, ptr @"var.diag::E2039_param_mutable_prefix", align 8
+  store ptr @clo.const.10, ptr @"var.diag::E2040_underscore_param", align 8
+  store ptr @clo.const.11, ptr @"var.diag::E2044_underscore_assign", align 8
+  store ptr @clo.const.12, ptr @"var.diag::E2093_assign_typed_load", align 8
+  store ptr @clo.const.13, ptr @"var.diag::E2096_bar_before_guard", align 8
+  store ptr @clo.const.14, ptr @"var.diag::E2105_redundant_choice_tail", align 8
+  store ptr @clo.const.15, ptr @"var.diag::E2108_state_binding_target", align 8
+  store ptr @clo.const.16, ptr @"var.diag::E2109_disallowed_variant_wildcard", align 8
+  store ptr @clo.const.17, ptr @"var.diag::E3003_choice_underscore_undefined", align 8
+  store ptr @clo.const.18, ptr @"var.diag::E3008_not_invalid_type", align 8
+  store ptr @clo.const.19, ptr @"var.diag::E3008_not_integer", align 8
+  store ptr @clo.const.20, ptr @"var.diag::E3032_assign_void_var_prefix", align 8
+  store ptr @clo.const.21, ptr @"var.diag::E3032_assign_void_elem_prefix", align 8
+  store ptr @clo.const.22, ptr @"var.diag::E3033_reassign_immutable_prefix", align 8
+  store ptr @clo.const.23, ptr @"var.diag::E3033_reassign_immutable_suffix", align 8
+  store ptr @clo.const.24, ptr @"var.diag::E3033_reassign_immutable_tail", align 8
+  store ptr @clo.const.25, ptr @"var.diag::reassign_immutable", align 8
+  store ptr @clo.const.26, ptr @"var.diag::assign_void_variable", align 8
+  store ptr @clo.const.27, ptr @"var.diag::assign_void_element", align 8
+  store ptr @clo.const.30, ptr @"var.diag::whole_value_init", align 8
+  store ptr @clo.const.31, ptr @"var.diag::record_default_missing", align 8
+  store ptr @clo.const.32, ptr @"var.diag::enum_no_variant", align 8
+  store ptr @clo.const.33, ptr @"var.diag::enum_unit_payload", align 8
+  store ptr @clo.const.34, ptr @"var.diag::enum_payload_type", align 8
+  store ptr @clo.const.35, ptr @"var.diag::partial_composite_argument", align 8
+  store ptr @clo.const.36, ptr @"var.diag::E3051_dynamic_index_hetero", align 8
+  store ptr @clo.const.37, ptr @"var.diag::E3051_cycle_iter_hetero", align 8
+  store ptr @clo.const.38, ptr @"var.diag::E3065_rawptr_to_string", align 8
+  store ptr @clo.const.39, ptr @"var.diag::E3078_addr_builder_or_string", align 8
+  store ptr @clo.const.40, ptr @"var.diag::E3084_record_size_mismatch", align 8
+  store ptr @clo.const.41, ptr @"var.diag::E3084_arithmetic_type_mismatch", align 8
+  store ptr @clo.const.42, ptr @"var.diag::E3084_builder_append_type", align 8
+  store ptr @clo.const.43, ptr @"var.diag::E3084_choice_branch_mismatch", align 8
+  store ptr @clo.const.44, ptr @"var.diag::E3091_propagate_ram_operand", align 8
+  store ptr @clo.const.45, ptr @"var.diag::E3103_cannot_infer_type", align 8
+  store ptr @clo.const.28, ptr @"var.diag::E3131_whole_val_init_prefix", align 8
+  store ptr @clo.const.29, ptr @"var.diag::E3131_whole_val_init_suffix", align 8
+  store ptr @clo.const.46, ptr @"var.diag::E3133_addr_escape_restore", align 8
+  store ptr @clo.const.47, ptr @"var.diag::E3134_addr_escape_lifecycle", align 8
+  store ptr @clo.const.48, ptr @"var.diag::E3136_type_choice_no_branch", align 8
+  store ptr @clo.const.49, ptr @"var.diag::E3140_no_runtime_arena", align 8
+  store ptr @clo.const.50, ptr @"var.diag::E3142_raw_write_type", align 8
+  store ptr @clo.const.51, ptr @"var.diag::E3150_view_escape_frame", align 8
+  store ptr @clo.const.52, ptr @"var.diag::E3172_exit_status_integerish", align 8
+  store ptr @clo.const.53, ptr @"var.diag::E3173_return_outside_fn", align 8
+  store ptr @clo.const.54, ptr @"var.diag::E3173_propagate_outside_fn", align 8
+  store ptr @clo.const.55, ptr @"var.diag::E3175_choice_const_discarded", align 8
+  store ptr @clo.const.56, ptr @"var.diag::uninitialized_variable_prefix", align 8
+  store ptr @clo.const.57, ptr @"var.diag::E3050_reserved_type_name_suffix", align 8
+  store ptr @clo.const.58, ptr @"var.diag::return_type_mismatch_prefix", align 8
+  store ptr @clo.const.59, ptr @"var.diag::assignment_type_mismatch_prefix", align 8
+  store ptr @clo.const.60, ptr @"var.diag::member_index_constant", align 8
+  store ptr @clo.const.61, ptr @"var.diag::field_assignment_type_mismatch_prefix", align 8
+  store ptr @clo.const.62, ptr @"var.diag::E3067_string_write_prefix", align 8
+  store ptr @clo.const.63, ptr @"var.diag::E3067_string_write_suffix", align 8
+  store ptr @clo.const.64, ptr @"var.diag::E3049_slice_write_prefix", align 8
+  store ptr @clo.const.65, ptr @"var.diag::E3049_slice_write_suffix", align 8
+  store ptr @clo.const.66, ptr @"var.diag::return_type_inference_prefix", align 8
+  store ptr @clo.const.67, ptr @"var.diag::E3128_function_value_signature_suffix", align 8
+  store ptr @clo.const.68, ptr @"var.diag::expected_primary_prefix", align 8
+  store ptr @clo.const.69, ptr @"var.diag::cycle_jump_depth_prefix", align 8
+  store ptr @clo.const.70, ptr @"var.diag::record_repeat_count_prefix", align 8
+  store ptr @clo.const.71, ptr @"var.diag::record_repeat_limit_suffix", align 8
+  store ptr @clo.const.72, ptr @"var.diag::infix_right_binding_power_prefix", align 8
+  store ptr @clo.const.73, ptr @"var.diag::infix_left_binding_power_prefix", align 8
+  store ptr @clo.const.74, ptr @"var.diag::imported_symbol_conflict_suffix", align 8
+  store ptr @clo.const.75, ptr @"var.diag::E3033_foreign_function_clash_prefix", align 8
+  store ptr @clo.const.76, ptr @"var.diag::declared_symbol_conflict_suffix", align 8
+  store ptr @clo.const.77, ptr @"var.diag::E5038_package_import_cycle_prefix", align 8
+  store ptr @clo.const.78, ptr @"var.diag::clang_compilation_failed_suffix", align 8
+  store ptr @clo.const.79, ptr @"var.diag::E5007_no_input", align 8
+  store ptr @clo.const.80, ptr @"var.diag::E3084_open_record_fields", align 8
+  store ptr @clo.const.81, ptr @"var.diag::E3089_ram_shape_prefix", align 8
+  store ptr @clo.const.82, ptr @"var.diag::locked_manifest_stale_prefix", align 8
+  store ptr @clo.const.83, ptr @"var.diag::repository_illegal_path_suffix", align 8
+  store ptr @clo.const.84, ptr @"var.diag::vendor_tree_mismatch_prefix", align 8
+  store ptr @clo.const.85, ptr @"var.diag::archive_illegal_path_suffix", align 8
+  store ptr @clo.const.86, ptr @"var.diag::E3127_ram_ordering_suffix", align 8
+  store ptr @clo.const.87, ptr @"var.diag::E3127_enum_ordering_suffix", align 8
+  store ptr @clo.const.88, ptr @"var.diag::record_field_index_constant", align 8
+  store ptr @clo.const.89, ptr @"var.diag::enum_variant_index_constant", align 8
+  store ptr @clo.const.90, ptr @"var.diag::E4002_string_length_overflow", align 8
+  store ptr @clo.const.91, ptr @"var.diag::E3007_cycle_jump_level_prefix", align 8
+  store ptr @clo.const.92, ptr @"var.diag::E3007_cycle_jump_level_suffix", align 8
+  store ptr @clo.const.93, ptr @"var.diag::E4007_unwrap_empty_or_error", align 8
+  store ptr @clo.const.94, ptr @"var.diag::compile_time_parameter_suffix", align 8
+  store ptr @clo.const.95, ptr @"var.diag::E3105_enum_label_ambiguous_suffix", align 8
+  store ptr @clo.const.96, ptr @"var.diag::E4008_builder_length_bounds", align 8
+  store ptr @clo.const.97, ptr @"var.diag::runtime_error_format", align 8
+  store ptr @clo.const.98, ptr @"var.diag::E4004_arena_allocation_too_large", align 8
+  store ptr @clo.const.99, ptr @"var.diag::E4003_arena_chunk_limit", align 8
+  store ptr @clo.const.100, ptr @"var.diag::E4001_arena_exhausted", align 8
+  store ptr @clo.const.101, ptr @"var.diag::E5012_write_ir_prefix", align 8
+  store ptr @clo.const.102, ptr @"var.diag::E1008_string_unterminated", align 8
   ret void
 }
 
-define ptr @"diag::E1017_heredoc_under_indented"() #1 {
+define ptr @"diag::E1017_multiline_under_indented"() #1 {
 entry:
   ret ptr @str.0.struct
 }
 
-define ptr @"diag::E1018_heredoc_unterminated"() #1 {
+define ptr @"diag::E1018_multiline_unterminated"() #1 {
 entry:
   ret ptr @str.1.struct
+}
+
+define ptr @"diag::E1017_heredoc_under_indented"() #1 {
+entry:
+  %call.res = call ptr @"diag::E1017_multiline_under_indented"()
+  ret ptr %call.res
+}
+
+define ptr @"diag::E1018_heredoc_unterminated"() #1 {
+entry:
+  %call.res = call ptr @"diag::E1018_multiline_unterminated"()
+  ret ptr %call.res
 }
 
 define ptr @"diag::E2024_bare_bar_position"() #1 {

@@ -8,7 +8,6 @@
 // operations (+, -, *).
 
 #use math
-#use str
 
 #public
    #type Color      (Float, Float, Float, Float)

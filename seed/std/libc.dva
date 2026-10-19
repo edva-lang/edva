@@ -40,6 +40,8 @@
     fcntl      : (fd: Int, cmd: Int, arg: Int) => Int
     getaddrinfo : (node: String, service: String, hints: Addr, res: Addr) => Int
     freeaddrinfo : (res: Addr) => ()
+    getifaddrs  : (ifap: Addr) => Int
+    freeifaddrs : (ifa: Addr) => ()
     memset    : (Addr: Addr, val: Int, size: Int) => Addr
     atoi      : (s: String) => Int
     opendir   : (name: String) => Addr

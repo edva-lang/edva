@@ -24,6 +24,7 @@ operands are automatically broadcast (splatted) across lanes.
 low = %min(10, 20)          // 10
 root = %sqrt(16.0)          // 4.0
 bits = %popcount(7)         // 3
+str = %to_str(42)           // "42"
 
 // Vector math and broadcasting
 vec = (10, 20, 30)
@@ -124,4 +125,22 @@ an 8-bit byte. All three memory operations return the `dst` address.
 
 `%ptrmask(ptr, mask)` masks the address of `ptr` with `mask` (Int) preserving LLVM pointer
 provenance and alias analysis metadata (e.g. `%ptrmask(ptr, 0b1{48})` to strip 16-bit tags).
+
+## String conversion
+
+String conversion intrinsics convert scalar values directly to strings:
+
+| Intrinsic | Argument Types | Return Type | LLVM Lowering |
+|---|---|---|---|
+| `%to_str(x)` | `Int`, `UInt`, `Float`, `Rune`, or `String` | `String` | Arena-allocated string |
+
+`%to_str(x)` converts a scalar primitive value into an arena-allocated `String` without requiring an explicit
+`#use str` import:
+- Integer types (`Int`, `UInt`, sized widths) are converted to decimal format.
+- Floating-point values (`Float`, sized floats) are formatted using compact representation (`%.6g`).
+- `Rune` values are UTF-8 encoded into a 1..4 byte string.
+- `String` values pass through by identity (no reallocation).
+
+Passing non-scalar types (such as records, arrays, or raw pointers) is a compile-time error (`E3105`).
+`%to_str` is also the underlying primitive emitted by string interpolation (`"${expr}"`).
 
