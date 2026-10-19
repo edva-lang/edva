@@ -7,7 +7,6 @@
 #use str
 #use io
 #use libc
-#use unicode
 
 #public
 
@@ -160,7 +159,18 @@ sort_strings = arr =>
 // --- Identifier & Version Validation ----------------------------------------
 
 is_valid_alias: String => <>
-is_valid_alias = alias => unicode::is_uax31(alias)
+is_valid_alias = alias =>
+   n = ?alias
+   n == 0 | <-> |
+      first = alias(0)
+      is_start = (first !< 'a' && first !> 'z') || (first !< 'A' && first !> 'Z') || first == '_' || first > 0x7F
+      !is_start | <-> |
+         ok' = <+>
+         1..n @ i =>
+            c = alias(i)
+            is_cont = (c !< 'a' && c !> 'z') || (c !< 'A' && c !> 'Z') || (c !< '0' && c !> '9') || c == '_' || c > 0x7F
+            !is_cont | ok' = <->; -->
+         ok'
 
 is_valid_package_name: String => <>
 is_valid_package_name = name =>
