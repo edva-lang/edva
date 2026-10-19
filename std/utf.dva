@@ -1,7 +1,5 @@
 // std/utf.dva — UTF-8 encoding and decoding utilities
 
-#use "unicode"
-
 #public
    // Append the UTF-8 encoding of a Rune to a Builder
    append_rune: Builder, Rune => ()
@@ -40,8 +38,21 @@
 
    // Decode the UTF-8 rune at Addr + i into its codepoint
    decode_rune_addr: Addr, Int => Rune
-   decode_rune_addr = p, i => unicode::decode_rune_addr(p, i)
+   decode_rune_addr = p, i =>
+      b0 = Int(@[p + i u8])
+      Rune(b0
+         [< 0x80] b0
+         [< 0xE0] (b0 - 0xC0) * 0x40 + (Int(@[p + i + 1 u8]) - 0x80)
+         [< 0xF0]
+            (b0 - 0xE0) * 0x1000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x40 +
+               (Int(@[p + i + 2 u8]) - 0x80)
+         |
+            (b0 - 0xF0) * 0x40000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x1000 +
+               (Int(@[p + i + 2 u8]) - 0x80) * 0x40 +
+               (Int(@[p + i + 3 u8]) - 0x80)
+      )
 
    // Decode the UTF-8 rune at Builder buffer + i into its codepoint
    decode_rune_builder: Builder, Int => Rune
-   decode_rune_builder = b, i => unicode::decode_rune_builder(b, i)
+   decode_rune_builder = b, i =>
+      decode_rune_addr(&b, i)
