@@ -8,6 +8,7 @@
 #use "annotate"
 #use "ast"
 #use "codegen"
+#use "fs"
 #use "libc"
 #use "parser"
 #use "show"
@@ -114,21 +115,14 @@ find_last_slash = path, i, last =>
 
 dirname: String => String
 dirname = path =>
-   last = find_last_slash(path, 0, -1)
-   last < 0 | "" | path(..last)
+   p = fs::parent(path)
+   p == "." | "" | p
 
 path_join: String, String => String
-path_join = a, b =>
-   ?a == 0 | b | a + "/" + b
+path_join = a, b => fs::join(a, b)
 
 canonical_path: String => String
-canonical_path = path =>
-   sys::addr_opt(libc::realpath(path, sys::addr_null))
-      | raw =>
-         res = sys::c_str(raw)
-         libc::free(raw)
-         res
-      | path
+canonical_path = path => fs::resolve(path)
 
 compiler_std_dir: String
 compiler_std_dir = "std"
@@ -174,31 +168,8 @@ init_compiler_paths = !=>
                      dir_exists(cand_share)
                         | compiler_std_dir ::= cand_share
 
-dirent_name: Addr => String
-dirent_name = entry =>
-   raw = entry + 19
-   b = {256}
-   0.. @ i =>
-      c = @[raw + i i8]
-      c == 0i8 | -->
-      b += c
-   +b
-
 is_dva_file: String => <>
-is_dva_file = name =>
-   name(-4..) == ".dva"
-
-read_dir_entries: Addr, ast::Names => ast::Names
-read_dir_entries = dp, names =>
-   sys::addr_opt(libc::readdir(dp))
-      | ent =>
-         d_type = @[ent + 18 i8]
-         d_type != 4i8
-            |
-               fname = dirent_name(ent)
-               is_dva_file(fname) | names += fname
-         read_dir_entries(dp, names)
-      | names
+is_dva_file = name => ?name > 4 && name(-4..) == ".dva"
 
 sort_names: ast::Names => ()
 sort_names = names =>
@@ -214,13 +185,12 @@ sort_names = names =>
 
 dir_dva_files: String => ast::Names
 dir_dva_files = dir_path =>
-   sys::addr_opt(libc::opendir(dir_path))
-      | dp =>
-         names = read_dir_entries(dp, ast::Names())
-         libc::closedir(dp)
-         sort_names(names)
-         names
-      | ast::Names()
+   names = ast::Names()
+   entries = fs::read_dir(dir_path)
+   entries @ e =>
+      !e.is_dir && is_dva_file(e.name) | names += e.name
+   sort_names(names)
+   names
 
 loaded_has_step: ast::Names, String, Int => <>
 loaded_has_step = names, name, i =>
@@ -426,33 +396,14 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                   |
                      acc += e
 
-path_mode: String => Int
-path_mode = path =>
-   buf = {144}
-   rc = libc::stat(path, &buf)
-   mode_ptr = &buf + 24
-   rc == 0 | Int(@[mode_ptr i32]) | -1
-
 file_exists: String => <>
-file_exists = path =>
-   m = path_mode(path)
-   m !< 0 && (m .&. 0xf000) != 0x4000
+file_exists = path => fs::exists(path) && !fs::is_dir(path)
 
 dir_exists: String => <>
-dir_exists = path =>
-   m = path_mode(path)
-   m !< 0 && (m .&. 0xf000) == 0x4000
+dir_exists = path => fs::is_dir(path)
 
 path_mtime: String => Int
-path_mtime = path =>
-   buf = {144}
-   rc = libc::stat(path, &buf)
-   rc == 0
-      |
-         sec = Int(@[(&buf + 88) i64])
-         nsec = Int(@[(&buf + 96) i64])
-         sec * 1000000000 + nsec
-      | -1
+path_mtime = path => fs::mtime_ns(path)
 
 empty_pkg_instance: () => PkgInstance
 empty_pkg_instance = !=>

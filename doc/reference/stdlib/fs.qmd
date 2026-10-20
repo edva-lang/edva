@@ -1,0 +1,90 @@
+---
+meta:
+  audience: "Edva developers working with filesystem paths, file I/O, directories, and stats"
+  status: "current reference"
+  audited: "215bac4"
+  evidence: "`std/fs.dva`, `tests/pass/374_std_fs.dva`"
+---
+
+# `fs` standard library
+
+The `fs` module provides high-level safe abstractions for filesystem path manipulation,
+file and directory CRUD operations, metadata querying, directory traversal, filesystem
+capacity inspection, and file attribute formatting.
+
+All operations avoid raw pointer arithmetic, using typed `#packed` records (`StatRaw`,
+`Statvfs`, `DirentPrefix`) and safe options `<T | >`.
+
+```{.dva .run}
+#use fs
+#use io
+
+io::out $ fs::join("/tmp", "example.txt")
+```
+
+## Types and Records
+
+| Type | Kind | Fields | Description |
+|---|---|---|---|
+| `fs::Metadata` | Record | `size, mode, mtime, mtime_nsec, atime, is_dir, is_file, is_symlink, is_exec` | High-level file metadata returned by `fs::stat` and `fs::lstat_meta` |
+| `fs::DirEntry` | Record | `name, is_dir, is_file, is_symlink` | Directory entry returned by `fs::read_dir` |
+| `fs::Entry` | Record | `name, is_dir, is_exec, size, fmt_size, perms, mtime` | Rich directory entry with formatted strings returned by `fs::list_dir` |
+| `fs::FsSpace` | Record | `total_bytes, free_bytes, available_bytes` | Filesystem capacity statistics returned by `fs::space` |
+| `fs::StatRaw` | `#packed` | POSIX `struct stat` layout (144 bytes) | Low-level stat layout |
+| `fs::Statvfs` | `#packed` | POSIX `struct statvfs` layout (112 bytes) | Low-level statvfs layout |
+| `fs::DirentPrefix` | `#packed` | `d_ino, d_off, d_reclen, d_type` (19 bytes) | Low-level dirent prefix |
+
+## Function catalog
+
+| Category | Function | Signature | Description |
+|---|---|---|---|
+| **Path Primitives** | `fs::join(p1, p2)` | `String, String => String` | Joins two path components cleanly with a single slash |
+| | `fs::parent(p)` | `String => String` | Returns the directory containing the given path |
+| | `fs::basename(p)` | `String => String` | Returns the trailing filename component of a path |
+| | `fs::ext(p)` | `String => String` | Returns the file extension (including leading `.`) or empty string |
+| | `fs::is_abs(p)` | `String => <>` | Checks if a path is absolute (starts with `/`) |
+| | `fs::cwd()` | `() => String` | Returns the current working directory |
+| | `fs::home()` | `() => String` | Returns user's home directory from `$HOME` |
+| | `fs::resolve(p)` | `String => String` | Resolves canonical absolute path using `realpath` |
+| **File & Dir CRUD** | `fs::read_to_string(p)` | `String => <String \| >` | Reads an entire file into an owned String |
+| | `fs::write_file(p, s)` | `String, String => <>` | Writes full string content to a file (creates or truncates) |
+| | `fs::copy_file(src, dst)` | `String, String => <>` | Copies file contents from source to destination |
+| | `fs::rename_path(old, new)` | `String, String => <>` | Atomically renames/moves a file or directory |
+| | `fs::create_dir(p)` | `String => <>` | Creates a single directory with permissions `0755` |
+| | `fs::create_dir_all(p)` | `String => <>` | Recursively creates parent directories as needed |
+| | `fs::remove(p)` | `String => <>` | Removes a single file or empty directory |
+| | `fs::remove_all(p)` | `String => <>` | Recursively removes a directory tree or single file |
+| **Metadata & Query** | `fs::stat(p)` | `String => <Metadata \| >` | Queries file metadata (follows symlinks) |
+| | `fs::lstat_meta(p)` | `String => <Metadata \| >` | Queries metadata without following symlinks |
+| | `fs::exists(p)` | `String => <>` | Checks if a file or directory exists |
+| | `fs::is_file(p)` | `String => <>` | Checks if path is a regular file |
+| | `fs::is_dir(p)` | `String => <>` | Checks if path is a directory |
+| | `fs::is_symlink(p)` | `String => <>` | Checks if path is a symbolic link |
+| | `fs::mtime(p)` | `String => Int` | Returns modification timestamp in seconds |
+| | `fs::size(p)` | `String => Int` | Returns file size in bytes |
+| | `fs::readlink_path(p)` | `String => <String \| >` | Reads the target of a symbolic link |
+| **Traversal & Space** | `fs::read_dir(p)` | `String => (DirEntry){}` | Lists immediate child entries in a directory |
+| | `fs::list_dir(p, h, m, r)` | `String, <>, Int, <> => (Entry){}` | Lists, formats, and sorts entries with dirs first |
+| | `fs::space(p)` | `String => <FsSpace \| >` | Queries total, free, and available bytes via statvfs |
+| | `fs::get_fs_stats(p)` | `String => (Int, Int, Int, Int)` | Returns `(used_gb, total_gb, pct, free_gb)` |
+| **Formatters** | `fs::format_size(sz, is_dir)` | `Int, <> => String` | Human-readable size format (`"12 KB"`, `"1.4 GB"`, `"DIR"`) |
+| | `fs::format_perms(m, is_dir)` | `Int, <> => String` | Formats mode bits into standard `"rwxr-xr-x"` format |
+| | `fs::format_time(ts)` | `Int => String` | Formats timestamp into `"YYYY-MM-DD HH:MM"` |
+| | `fs::format_number(n)` | `Int => String` | Formats number with commas (`1,000,000`) |
+| | `fs::auto_rename_path(p)` | `String => String` | Generates non-colliding duplicate name (`"file (1).txt"`) |
+
+## Example usage
+
+```{.dva .run}
+#use fs
+#use io
+
+dir = fs::parent("/usr/local/bin")
+io::out $ "Parent: " + dir
+
+ext = fs::ext("archive.tar.gz")
+io::out $ "Ext: " + ext
+
+sz_str = fs::format_size(1048576, <->)
+io::out $ "Size: " + sz_str
+```

@@ -1,0 +1,27 @@
+p1: /tmp/foo
+p2: /tmp/foo
+p3: /bar
+parent(/a/b/c): /a/b
+parent(/a): /
+parent(/): /
+basename(/a/b/file.txt): file.txt
+ext(file.tar.gz): .gz
+ext(no_ext): 
+is_abs(/foo): yes
+is_abs(foo): no
+create_dir_all: yes
+is_dir(nested/sub): yes
+write_file: yes
+exists: yes
+is_file: yes
+size: 19
+read_to_string: Hello from std/fs!
+copy_file: yes
+copy_exists: yes
+rename_path: yes
+renamed_exists: yes
+read_dir count: 3
+list_dir count: 3
+space ok: yes
+remove_all: yes
+exists_after_rm: no

@@ -304,6 +304,14 @@ Complete reference documentation for each module is maintained in `doc/reference
   (`out`, `outs`, `err`, `errs`, `outf`, `errf`).
   - *Contract*: Output wrappers loop across partial transfers, retry on `EINTR`, and return total
     bytes transferred (or `-1` on initial error).
+- **`fs`**: High-level safe filesystem operations, paths, directory traversal, and capacity stats.
+  - *Functions*: `join`, `parent`, `basename`, `ext`, `is_abs`, `cwd`, `home`, `resolve`, `read_to_string`,
+    `write_file`, `copy_file`, `rename_path`, `remove`, `remove_all`, `create_dir`, `create_dir_all`, `stat`,
+    `lstat_meta`, `exists`, `is_file`, `is_dir`, `is_symlink`, `mtime`, `size`, `readlink_path`, `read_dir`,
+    `list_dir`, `space`, `get_fs_stats`, `format_size`, `format_perms`, `format_time`, `format_number`,
+    `auto_rename_path`.
+  - *Contract*: Uses typed `#packed` records (`StatRaw`, `Statvfs`, `DirentPrefix`) and safe options `<T | >`.
+    Zero raw pointer dereference operations.
 - **`in`**: Singleton standard-input reader wrapping `stdin_r`.
   - *Functions*: `read_line(max)`, `read_bytes(max)`, `read_byte!`, `read_until(delim, max)`.
   - *Status*: `err!` (last errno), `eof!` (clean EOF), `would_block!` (`EAGAIN`), `has_err!`, `clear!`.

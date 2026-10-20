@@ -113,4 +113,4 @@ types and cannot be implicitly coerced between one another.
 - [Quickstart](start/quickstart.qmd): Introduction to syntax and essential concepts.
 - [Operators](reference/language/operators.qmd): Detailed operator documentation.
 - [Ramifications Guide](guide/ramifications.qmd): Comprehensive ramification concepts.
-- [Standard Library](reference/stdlib/index.qmd): Full module reference (`io`, `in`, `net`, `json`, `sort`, `math`, `str`, `uring`, `color`, `fp`, `type`).
+- [Standard Library](reference/stdlib/index.qmd): Full module reference (`io`, `fs`, `in`, `net`, `json`, `sort`, `math`, `str`, `uring`, `color`, `fp`, `type`).

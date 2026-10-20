@@ -54,7 +54,7 @@ endif
 POLL_BACKEND ?= poll
 
 # --- Modules and Objects -----------------------------------------------------
-STD_MODULES      := ascii str mem sys libc unicode io ccl uring event
+STD_MODULES      := ascii str mem sys libc unicode io ccl uring event fs
 COMPILER_MODULES := poll diag ast llvm operators dep_graph layout tast lexer unify type_env show parser annotate version pkg \
                     codegen/types codegen/runtime codegen/expr codegen/match codegen/stmt codegen/main codegen
 ENTRY_MODULE     := edva

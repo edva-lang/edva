@@ -1,0 +1,78 @@
+// tests/pass/374_std_fs.dva — Comprehensive test for std/fs module
+#use io
+#use str
+#use fs
+
+bool_str: <> => String
+bool_str = b => b | "yes" | "no"
+
+run: () => ()
+run = !=>
+   // 1. Path operations
+   p1 = fs::join("/tmp", "foo")
+   p2 = fs::join("/tmp/", "foo")
+   p3 = fs::join("/tmp", "/bar")
+   io::out $ "p1: " + p1
+   io::out $ "p2: " + p2
+   io::out $ "p3: " + p3
+
+   io::out $ "parent(/a/b/c): " + fs::parent("/a/b/c")
+   io::out $ "parent(/a): " + fs::parent("/a")
+   io::out $ "parent(/): " + fs::parent("/")
+   io::out $ "basename(/a/b/file.txt): " + fs::basename("/a/b/file.txt")
+   io::out $ "ext(file.tar.gz): " + fs::ext("file.tar.gz")
+   io::out $ "ext(no_ext): " + fs::ext("no_ext")
+   io::out $ "is_abs(/foo): " + bool_str(fs::is_abs("/foo"))
+   io::out $ "is_abs(foo): " + bool_str(fs::is_abs("foo"))
+
+   // 2. Directory and file CRUD
+   test_dir = "/tmp/edva_fs_test_" + str::from_int(fs::mtime("Makefile"))
+   fs::remove_all(test_dir)
+   
+   ok_dir = fs::create_dir_all(fs::join(test_dir, "nested/sub"))
+   io::out $ "create_dir_all: " + bool_str(ok_dir)
+   io::out $ "is_dir(nested/sub): " + bool_str(fs::is_dir(fs::join(test_dir, "nested/sub")))
+
+   // Write and read
+   fpath = fs::join(test_dir, "hello.txt")
+   ok_write = fs::write_file(fpath, "Hello from std/fs!\n")
+   io::out $ "write_file: " + bool_str(ok_write)
+   io::out $ "exists: " + bool_str(fs::exists(fpath))
+   io::out $ "is_file: " + bool_str(fs::is_file(fpath))
+   io::out $ "size: " + str::from_int(fs::size(fpath))
+
+   content = fs::read_to_string(fpath)
+   content
+      | text => io::out $ "read_to_string: " + text(..18)
+      | io::out $ "read_to_string failed"
+
+   // Copy
+   cpath = fs::join(test_dir, "copy.txt")
+   ok_copy = fs::copy_file(fpath, cpath)
+   io::out $ "copy_file: " + bool_str(ok_copy)
+   io::out $ "copy_exists: " + bool_str(fs::exists(cpath))
+
+   // Rename
+   rpath = fs::join(test_dir, "renamed.txt")
+   ok_ren = fs::rename_path(cpath, rpath)
+   io::out $ "rename_path: " + bool_str(ok_ren)
+   io::out $ "renamed_exists: " + bool_str(fs::exists(rpath))
+
+   // read_dir
+   entries = fs::read_dir(test_dir)
+   io::out $ "read_dir count: " + str::from_int(?entries)
+   full_entries = fs::list_dir(test_dir, <->, 0, <->)
+   io::out $ "list_dir count: " + str::from_int(?full_entries)
+
+   // 3. Statvfs / space
+   sp = fs::space("/")
+   sp
+      | s => io::out $ "space ok: " + bool_str(s.total_bytes > 0)
+      | io::out $ "space failed"
+
+   // 4. Cleanup
+   ok_rm = fs::remove_all(test_dir)
+   io::out $ "remove_all: " + bool_str(ok_rm)
+   io::out $ "exists_after_rm: " + bool_str(fs::exists(test_dir))
+
+run!

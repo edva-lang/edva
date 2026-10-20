@@ -9,6 +9,7 @@
 #use "diag"
 #use ascii
 #use ccl
+#use fs
 #use libc
 #use str
 #use sys
@@ -18,7 +19,6 @@
 #foreign "c"
    getpid: () => Int
    getenv: (name: String) => Addr
-   mkdir: (path: String, mode: Int) => Int
 
 #public
 
@@ -121,74 +121,38 @@
       v = getenv_opt(name) | s => s | ""
       v == "" | dflt | v
 
-   path_mode: String => Int
-   path_mode = path =>
-      buf = {144}
-      rc = libc::stat(path, &buf)
-      rc == 0 | Int(@[(&buf + 24) i32]) | -1
-
    file_exists: String => <>
-   file_exists = path =>
-      m = path_mode(path)
-      m !< 0 && (m .&. 0xf000) != 0x4000
+   file_exists = path => fs::exists(path) && !fs::is_dir(path)
 
    dir_exists: String => <>
-   dir_exists = path =>
-      m = path_mode(path)
-      m !< 0 && (m .&. 0xf000) == 0x4000
+   dir_exists = path => fs::is_dir(path)
 
    path_join: String, String => String
-   path_join = a, b => ?b > 0 && b(0) == '/' | b | (?a == 0 | b | a + "/" + b)
+   path_join = a, b => fs::join(a, b)
 
    dirname: String => String
    dirname = path =>
-      last' = -1
-      ?path @ i => path(i) == '/' | last' = i
-      last' < 0
-         | ""
-         | last' == 0 | "/" | path(..last')
+      p = fs::parent(path)
+      p == "." | "" | p
 
    canonical_path: String => String
-   canonical_path = path =>
-      sys::addr_opt(libc::realpath(path, sys::addr_null))
-         | raw =>
-            res = sys::c_str(raw)
-            libc::free(raw)
-            res
-         | path
+   canonical_path = path => fs::resolve(path)
 
    mkdir_p: String => <>
-   mkdir_p = path =>
-      dir_exists(path) | <+> |
-         parent = dirname(path)
-         parent != "" && parent != path | mkdir_p(parent)
-         mkdir(path, 493)
-         dir_exists(path)
+   mkdir_p = path => fs::create_dir_all(path)
 
    read_text: String => < String | >
-   read_text = path =>
-      fd = libc::open(path, 0)
-      fd < 0 | --| <-->
-      r = io::reader(fd)
-      txt = io::read_all(r, 16777216)
-      libc::close(fd)
-      txt
-         | t => <+ t +>
-         | <-->
+   read_text = path => fs::read_to_string(path)
 
    // Write via a sibling temp file + rename so readers never see a torn file.
    write_text: String, String => <>
    write_text = path, text =>
       tmp = path + ".tmp" + str::from_int(getpid!)
-      fd = libc::creat(tmp, 420)
-      fd < 0 | --| <->
-      n = libc::write(fd, text, ?text)
-      libc::close(fd)
-      n != ?text
-         |
-            libc::unlink(tmp)
-            --| <->
-      libc::rename(tmp, path) == 0
+      ok = fs::write_file(tmp, text)
+      !ok |
+         fs::remove(tmp)
+         --| <->
+      fs::rename_path(tmp, path)
 
    trim: String => String
    trim = s =>
@@ -211,12 +175,7 @@
    ends_with = s, suf => ?s !< ?suf && s(?s - ?suf..) == suf
 
    basename: String => String
-   basename = path =>
-      last' = 0 - 1
-      ?path @ i => path(i) == '/' | last' = i
-      last' < 0
-         | path
-         | last' + 1 < ?path | path(last' + 1..) | ""
+   basename = path => fs::basename(path)
 
    clean_pkg_name: String => String
    clean_pkg_name = s =>
@@ -1506,30 +1465,13 @@
                               rc == 0 | 0 | 1
                            | 1
 
-   dirent_name: Addr => String
-   dirent_name = entry =>
-      raw = entry + 19
-      b = {256}
-      0.. @ i =>
-         c = @[raw + i i8]
-         c == 0i8 | -->
-         b += Int(c)
-      +b
-
    list_test_files: String => Strings
    list_test_files = dir =>
       files: Strings
-      sys::addr_opt(libc::opendir(dir))
-         | dp =>
-            0..1024 @
-               ent = libc::readdir(dp)
-               ent == sys::addr_null | -->
-               d_type = @[ent + 18 i8]
-               d_type != 4i8
-                  |
-                     fname = dirent_name(ent)
-                     ?fname > 4 && fname(?fname - 4..) == ".dva" | files += fname
-            libc::closedir(dp)
+      entries = fs::read_dir(dir)
+      entries @ e =>
+         !e.is_dir && ?e.name > 4 && e.name(?e.name - 4..) == ".dva" |
+            files += e.name
       ccl::sort_strings(files)
 
    // `edva pkg test`: resolve the root's graph, then compile and run each
@@ -1797,31 +1739,23 @@
                   0
                |
                   count' = 0
-                  sys::addr_opt(libc::opendir(entries_dir))
-                     | dp =>
-                        0..10000 @
-                           ent = libc::readdir(dp)
-                           ent == sys::addr_null | -->
-                           d_type = @[ent + 18 i8]
-                           d_type == 4i8
-                              |
-                                 kname = dirent_name(ent)
-                                 kname != "." && kname != ".."
-                                    |
-                                       meta_f = path_join(path_join(entries_dir, kname),
-                                          "meta.ccl")
-                                       tgt' = ++ ""
-                                       file_exists(meta_f)
-                                          |
-                                             tgt' = ccl::parse_file(meta_f)
-                                                | d =>
-                                                   ccl::get(d, "target")
-                                                      | s => s
-                                                      | ""
-                                                | ""
-                                       out(kname + " (" + (tgt' != "" | tgt' | "unknown") + ")")
-                                       count' = count' + 1
-                        libc::closedir(dp)
+                  entries = fs::read_dir(entries_dir)
+                  entries @ e =>
+                     e.is_dir |
+                        kname = e.name
+                        meta_f = path_join(path_join(entries_dir, kname),
+                           "meta.ccl")
+                        tgt' = ++ ""
+                        file_exists(meta_f)
+                           |
+                              tgt' = ccl::parse_file(meta_f)
+                                 | d =>
+                                    ccl::get(d, "target")
+                                       | s => s
+                                       | ""
+                                 | ""
+                        out(kname + " (" + (tgt' != "" | tgt' | "unknown") + ")")
+                        count' = count' + 1
                   out(str::from_int(count') + (count' == 1 | " entry" | " entries"))
                   0
          |

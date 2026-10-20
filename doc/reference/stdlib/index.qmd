@@ -19,6 +19,7 @@ Standard stream writers and readers live in `std/io.dva`.
 | `color` | color spaces, alpha compositing, and hex packing | [color](color.qmd) |
 | `fmt` | allocation-efficient string formatting | [fmt](fmt.qmd) |
 | `fp` | functional programming combinators | [fp](fp.qmd) |
+| `fs` | paths, file I/O, directory traversal, and filesystem stats | [fs](fs.qmd) |
 | `in` | input readers and line scanning | [in](in.qmd) |
 | `io` | readers, writers, and standard streams | [io](io.qmd) |
 | `json` | JSON parsing, value tree, and container model | [json](json.qmd) |
@@ -35,7 +36,7 @@ Standard stream writers and readers live in `std/io.dva`.
 | `uring` | Linux io_uring asynchronous I/O | [uring](uring.qmd) |
 
 Target-support files are implementation probes, not public
-API. Dedicated reference pages are provided for all 19 standard library modules.
+API. Dedicated reference pages are provided for all 20 standard library modules.
 
 ```{.dva .run}
 #use io
