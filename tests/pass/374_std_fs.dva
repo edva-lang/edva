@@ -70,7 +70,14 @@ run = !=>
       | s => io::out $ "space ok: " + bool_str(s.total_bytes > 0)
       | io::out $ "space failed"
 
-   // 4. Cleanup
+   // 4. Permissions & Bitfield helpers
+   io::out $ "octal 0o755: " + fs::octal_perms(0o755)
+   io::out $ "octal 0o644: " + fs::octal_perms(0o644)
+   io::out $ "octal 0o4755: " + fs::octal_perms(0o4755)
+   io::out $ "perms 0o755: " + fs::format_perms(0o755, <->)
+   io::out $ "perms 0o755 dir: " + fs::format_perms(0o755, <+>)
+
+   // 5. Cleanup
    ok_rm = fs::remove_all(test_dir)
    io::out $ "remove_all: " + bool_str(ok_rm)
    io::out $ "exists_after_rm: " + bool_str(fs::exists(test_dir))

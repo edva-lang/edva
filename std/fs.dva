@@ -87,6 +87,39 @@ empty_statvfs = !=>
       0i32, 0i32, 0i32, 0i32, 0i32, 0i32
    ))
 
+// POSIX file mode bitfield layout (16 bits)
+#type FileMode #packed u16 (
+   other:   3,
+   group:   3,
+   user:    3,
+   special: 3,
+   fmt:     4
+)
+
+#type ModeWrap #packed (
+   mode: FileMode
+)
+
+#type PermsBits #packed u16 (
+   other_x: 1,
+   other_w: 1,
+   other_r: 1,
+   group_x: 1,
+   group_w: 1,
+   group_r: 1,
+   user_x:  1,
+   user_w:  1,
+   user_r:  1,
+   sticky:  1,
+   setgid:  1,
+   setuid:  1,
+   fmt:     4
+)
+
+#type PermsWrap #packed (
+   bits: PermsBits
+)
+
 #type Metadata (
    size: Int,
    mode: Int,
@@ -254,10 +287,15 @@ stat_atime_sec = s =>
 make_metadata: StatRaw, <> => Metadata
 make_metadata = s, is_link =>
    m = stat_mode(s)
-   fmt = m .&. 0xF000
-   is_d = fmt == 0x4000
-   is_reg = fmt == 0x8000
-   is_x = (m .&. 73) != 0 && !is_d
+   buf = {2}
+   @[&buf] = u16(m)
+   _fs_mode_wrap = @[&buf ModeWrap]
+   fmt = Int(_fs_mode_wrap.mode.fmt)
+   is_d = fmt == 4
+   is_reg = fmt == 8
+   is_l = is_link || fmt == 10
+   _fs_perms_wrap = @[&buf PermsWrap]
+   is_x = (_fs_perms_wrap.bits.user_x != 0 || _fs_perms_wrap.bits.group_x != 0 || _fs_perms_wrap.bits.other_x != 0) && !is_d
    Metadata((
       stat_size(s),
       m,
@@ -266,7 +304,7 @@ make_metadata = s, is_link =>
       stat_atime_sec(s),
       is_d,
       is_reg,
-      is_link,
+      is_l,
       is_x
    ))
 
@@ -283,7 +321,10 @@ lstat_meta = path =>
    rc = lstat(path, &s')
    rc != 0 |-->
    m = stat_mode(s')
-   is_link = (m .&. 0xF000) == 0xA000
+   buf = {2}
+   @[&buf] = u16(m)
+   _fs_mode_wrap = @[&buf ModeWrap]
+   is_link = Int(_fs_mode_wrap.mode.fmt) == 10
    <+ make_metadata(s', is_link) +>
 
 exists: String => <>
@@ -524,24 +565,27 @@ format_size: Int, <> => String
 format_size = sz, is_d =>
    is_d | --| "DIR"
    sz
-      [< 0x400] str::from_int(sz) + " B"
-      [< 0x100000] str::from_int(sz / 0x400) + " KB"
-      [< 0x40000000] str::from_int(sz / 0x100000) + " MB"
-      | str::from_int(sz / 0x40000000) + " GB"
+      [< 0x400] "${sz} B"
+      [< 0x100000] "${sz / 0x400} KB"
+      [< 0x40000000] "${sz / 0x100000} MB"
+      | "${sz / 0x40000000} GB"
 
 format_perms: Int, <> => String
 format_perms = mode, is_d =>
+   buf = {2}
+   @[&buf] = u16(mode)
+   _fs_perms_wrap = @[&buf PermsWrap]
    b = {16}
    b += is_d | 'd' | '-'
-   b += (mode .&. 0x100) != 0 | 'r' | '-'
-   b += (mode .&. 0x080) != 0 | 'w' | '-'
-   b += (mode .&. 0x040) != 0 | 'x' | '-'
-   b += (mode .&. 0x020) != 0 | 'r' | '-'
-   b += (mode .&. 0x010) != 0 | 'w' | '-'
-   b += (mode .&. 0x008) != 0 | 'x' | '-'
-   b += (mode .&. 0x004) != 0 | 'r' | '-'
-   b += (mode .&. 0x002) != 0 | 'w' | '-'
-   b += (mode .&. 0x001) != 0 | 'x' | '-'
+   b += _fs_perms_wrap.bits.user_r != 0 | 'r' | '-'
+   b += _fs_perms_wrap.bits.user_w != 0 | 'w' | '-'
+   b += _fs_perms_wrap.bits.user_x != 0 | 'x' | '-'
+   b += _fs_perms_wrap.bits.group_r != 0 | 'r' | '-'
+   b += _fs_perms_wrap.bits.group_w != 0 | 'w' | '-'
+   b += _fs_perms_wrap.bits.group_x != 0 | 'x' | '-'
+   b += _fs_perms_wrap.bits.other_r != 0 | 'r' | '-'
+   b += _fs_perms_wrap.bits.other_w != 0 | 'w' | '-'
+   b += _fs_perms_wrap.bits.other_x != 0 | 'x' | '-'
    +b
 
 format_time: Int => String
@@ -559,7 +603,7 @@ format_time = ts =>
 
 format_number: Int => String
 format_number = n =>
-   s = str::from_int(n)
+   s = %to_str(n)
    len = ?s
    len < 4 | --| s
    b = {32}
@@ -570,14 +614,25 @@ format_number = n =>
       b += s(i)
    +b
 
-octal_perms: String => String
-octal_perms = perms =>
+octal_perms: Int => String
+octal_perms = mode =>
+   buf = {2}
+   @[&buf] = u16(mode)
+   _fs_mode_wrap = @[&buf ModeWrap]
+   s = Int(_fs_mode_wrap.mode.special)
+   u = Int(_fs_mode_wrap.mode.user)
+   g = Int(_fs_mode_wrap.mode.group)
+   o = Int(_fs_mode_wrap.mode.other)
+   s > 0 | "${s}${u}${g}${o}" | "0${u}${g}${o}"
+
+octal_perms_str: String => String
+octal_perms_str = perms =>
    len = ?perms
    len < 10 | --| "0644"
    u = (perms(1) == 'r' | 4 | 0) + (perms(2) == 'w' | 2 | 0) + (perms(3) == 'x' | 1 | 0)
    g = (perms(4) == 'r' | 4 | 0) + (perms(5) == 'w' | 2 | 0) + (perms(6) == 'x' | 1 | 0)
    o = (perms(7) == 'r' | 4 | 0) + (perms(8) == 'w' | 2 | 0) + (perms(9) == 'x' | 1 | 0)
-   "0" + str::from_int(u) + str::from_int(g) + str::from_int(o)
+   "0${u}${g}${o}"
 
 auto_rename_path: String => String
 auto_rename_path = full_p =>
@@ -597,8 +652,8 @@ auto_rename_path = full_p =>
    cand_path' = full_p
    1..1000 @ num =>
       cand = dir_part != ""
-         | dir_part + "/" + base_name + " (" + str::from_int(num) + ")" + ext_part
-         | base_name + " (" + str::from_int(num) + ")" + ext_part
+         | "${dir_part}/${base_name} (${num})${ext_part}"
+         | "${base_name} (${num})${ext_part}"
       !exists(cand) |
          cand_path' = cand
          -->
@@ -611,7 +666,8 @@ auto_rename_path = full_p =>
    size: Int,
    fmt_size: String,
    perms: String,
-   mtime: Int
+   mtime: Int,
+   mode: Int
 )
 
 cmp_entries: Entry, Entry, Int, <> => Int
@@ -666,7 +722,7 @@ list_dir = dir_path, show_hidden, sort_mode, sort_rev =>
 
       fmt_sz = format_size(size', is_d')
       perms = format_perms(mode', is_d')
-      entry = Entry((name, is_d', is_x', size', fmt_sz, perms, mtime'))
+      entry = Entry((name, is_d', is_x', size', fmt_sz, perms, mtime', mode'))
 
       is_d' | dirs += entry | file_list += entry
 

@@ -1,7 +1,7 @@
 ; ModuleID = 'dva_module'
 source_filename = "dva_module"
-target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-darwin24.6.0"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = thread_local global ptr null
@@ -2118,7 +2118,7 @@ declare i64 @unlink(ptr)
 
 declare i64 @pipe(ptr)
 
-declare ptr @__error()
+declare ptr @__errno_location()
 
 declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
 
@@ -18644,7 +18644,7 @@ choice.exit6:                                     ; preds = %choice.else, %choic
   br i1 %cmptmp14, label %choice.then15, label %choice.else16
 
 choice.then15:                                    ; preds = %choice.exit6
-  %call.res18 = call ptr @__error()
+  %call.res18 = call ptr @__errno_location()
   %raw.int = ptrtoint ptr %call.res18 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
@@ -41239,7 +41239,7 @@ entry:
   br i1 %cmptmp, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %entry
-  %call.res3 = call ptr @__error()
+  %call.res3 = call ptr @__errno_location()
   %raw.int = ptrtoint ptr %call.res3 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
@@ -53511,7 +53511,7 @@ choice.exit:                                      ; preds = %choice.exit10, %cho
   ret i1 %choice.res38
 
 choice.then8:                                     ; preds = %choice.else
-  %call.res11 = call ptr @__error()
+  %call.res11 = call ptr @__errno_location()
   store ptr %call.res11, ptr %var.errno_ptr, align 8
   %var.load12 = load ptr, ptr %var.errno_ptr, align 8
   %raw.int = ptrtoint ptr %var.load12 to i64

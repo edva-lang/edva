@@ -1,7 +1,7 @@
 ; ModuleID = 'dva_module'
 source_filename = "dva_module"
-target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-apple-darwin24.6.0"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
@@ -228,7 +228,7 @@ declare i64 @unlink(ptr)
 
 declare i64 @pipe(ptr)
 
-declare ptr @__error()
+declare ptr @__errno_location()
 
 declare ptr @mmap(ptr, i64, i64, i64, i32, i64)
 
@@ -567,7 +567,7 @@ choice.exit17:                                    ; preds = %choice.exit35, %cho
   br label %loop.latch.0
 
 choice.case18:                                    ; preds = %choice.exit6
-  %call.res21 = call ptr @__error()
+  %call.res21 = call ptr @__errno_location()
   %raw.int = ptrtoint ptr %call.res21 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
@@ -1767,7 +1767,7 @@ choice.exit24:                                    ; preds = %choice.exit100, %ch
   br label %loop.latch.1
 
 choice.then48:                                    ; preds = %choice.then23
-  %call.res51 = call ptr @__error()
+  %call.res51 = call ptr @__errno_location()
   %raw.int = ptrtoint ptr %call.res51 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
@@ -1835,7 +1835,7 @@ choice.next67:                                    ; preds = %choice.else49
   br label %choice.exit65
 
 choice.then98:                                    ; preds = %choice.else
-  %call.res101 = call ptr @__error()
+  %call.res101 = call ptr @__errno_location()
   %raw.int102 = ptrtoint ptr %call.res101 to i64
   %raw.clean.int103 = and i64 %raw.int102, 281474976710655
   %raw.clean.ptr104 = inttoptr i64 %raw.clean.int103 to ptr
@@ -2109,7 +2109,7 @@ loop.exit.2:                                      ; preds = %b.len_ok119, %choic
   br label %choice.exit54
 
 choice.then71:                                    ; preds = %loop.body.2
-  %call.res74 = call ptr @__error()
+  %call.res74 = call ptr @__errno_location()
   %raw.int75 = ptrtoint ptr %call.res74 to i64
   %raw.clean.int76 = and i64 %raw.int75, 281474976710655
   %raw.clean.ptr77 = inttoptr i64 %raw.clean.int76 to ptr
@@ -2776,7 +2776,7 @@ choice.exit75:                                    ; preds = %choice.else74, %cho
   br i1 %cmptmp95, label %choice.then96, label %choice.else97
 
 choice.then96:                                    ; preds = %choice.exit75
-  %call.res99 = call ptr @__error()
+  %call.res99 = call ptr @__errno_location()
   %raw.int100 = ptrtoint ptr %call.res99 to i64
   %raw.clean.int101 = and i64 %raw.int100, 281474976710655
   %raw.clean.ptr102 = inttoptr i64 %raw.clean.int101 to ptr

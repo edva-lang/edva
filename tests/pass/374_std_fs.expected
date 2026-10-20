@@ -23,5 +23,10 @@ renamed_exists: yes
 read_dir count: 3
 list_dir count: 3
 space ok: yes
+octal 0o755: 0755
+octal 0o644: 0644
+octal 0o4755: 4755
+perms 0o755: -rwxr-xr-x
+perms 0o755 dir: drwxr-xr-x
 remove_all: yes
 exists_after_rm: no

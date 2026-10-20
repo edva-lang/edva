@@ -1579,6 +1579,7 @@ annotate_expr = ctx, env, expr =>
                                           | type_env::lookup_fn_body(env, name)
                                           | <-->
                                        saved_assign_exp = cur_expected_ut
+                                       saved_views = view_vars
                                        cur_expected_ut ::= <+ f.ret +>
                                        body_te = cached
                                           | _
@@ -1587,6 +1588,7 @@ annotate_expr = ctx, env, expr =>
                                        is_view_expr(fe.body)
                                           | unify::add_error(ctx, 3150,
                                              diag::E3150_view_escape_frame!)
+                                       view_vars ::= saved_views
                                        type_env::init_restore(env, saved_init)
                                        env.in_fn = saved_in_fn
                                        env.cur_fn_ret = saved_fn_ret
@@ -4818,6 +4820,7 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                           [Prim p] (is_ret_unit' = p [Unit])
                                        env.discard_result = is_ret_unit'
                                        saved_decl_exp = cur_expected_ut
+                                       saved_views = view_vars
                                        cur_expected_ut ::= <+ f.ret +>
                                        body_te = annotate_expr(ctx, env,
                                           fe.body)
@@ -4825,6 +4828,7 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                        is_view_expr(fe.body)
                                           | unify::add_error(ctx, 3150,
                                              diag::E3150_view_escape_frame!)
+                                       view_vars ::= saved_views
                                        can_cache
                                           | type_env::cache_fn_body(env, name,
                                                body_te)
