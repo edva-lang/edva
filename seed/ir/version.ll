@@ -1,7 +1,7 @@
 ; ModuleID = 'dva_module'
 source_filename = "dva_module"
-target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
-target triple = "x86_64-unknown-linux-gnu"
+target datalayout = "e-m:o-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-apple-darwin24.6.0"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
@@ -11,10 +11,10 @@ target triple = "x86_64-unknown-linux-gnu"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@str.0 = internal unnamed_addr constant [20 x i8] c"1.4.0+215bac4-dirty\00"
+@str.0 = internal unnamed_addr constant [20 x i8] c"1.4.1+c0dea1d-dirty\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.0 }
 @"var.version::VERSION" = global ptr null
-@str.1 = internal unnamed_addr constant [14 x i8] c"215bac4-dirty\00"
+@str.1 = internal unnamed_addr constant [14 x i8] c"c0dea1d-dirty\00"
 @str.1.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.1 }
 @"var.version::COMMIT_HASH" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_version, ptr null }]

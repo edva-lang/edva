@@ -1784,6 +1784,19 @@ is_wasm_triple = triple =>
    (?triple !< 6 && triple(..6) == "wasm32") ||
       (?triple !< 4 && triple(..4) == "wasm")
 
+is_darwin_triple: String => <>
+is_darwin_triple = triple =>
+   n = ?triple
+   found' = <->
+   n !< 6
+      |
+         (n - 5) @ i =>
+            triple(i..i + 6) == "darwin" || triple(i..i + 5) == "apple"
+               |
+                  found' = <+>
+                  -->
+   found'
+
 print_program_errors: unify::TypeErrors => ()
 print_program_errors = errs =>
    errs @ err =>
@@ -1975,10 +1988,14 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                      clang_args += "-w"
                      clang_args += (opts.opt != "" | opts.opt | "-O2")
                      clang_args += "--target=" + target_triple
+                     is_darwin = is_darwin_triple(target_triple)
                      opts.is_shared
                         |
                            clang_args += "-shared"
                            clang_args += "-fPIC"
+                           is_darwin
+                              |
+                                 clang_args += "-Wl,-undefined,dynamic_lookup"
                      pkg_err' = <->
                      opts.is_module
                         |
@@ -2005,8 +2022,8 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                                           pkg_err' = <+>
                            ?dynamic_mods > 0
                               |
-                                 clang_args += "-Wl,--export-dynamic"
-                                 clang_args += "-ldl"
+                                 clang_args += (is_darwin | "-Wl,-export_dynamic" | "-Wl,--export-dynamic")
+                                 !is_darwin | clang_args += "-ldl"
                            clang_args += "-o"
                            clang_args += output_bin
                      pkg_err'

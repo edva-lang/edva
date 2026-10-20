@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
+for nix_bin in /nix/store/*-coreutils-*/bin /nix/store/*-gnused-*/bin; do
+    [ -d "$nix_bin" ] && export PATH="$nix_bin:$PATH"
+done
+
 ulimit -v 20971520 2>/dev/null || true
 if command -v llvm-config >/dev/null 2>&1; then
     export LIBRARY_PATH="$(llvm-config --libdir 2>/dev/null):$LIBRARY_PATH"
@@ -18,25 +22,27 @@ make edva
 REPO_ROOT="${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 DVA_COMPILER="${DVA_COMPILER:-$REPO_ROOT/edva}"
 
-echo ""
-echo -e "${BOLD}Checking token enums are in sync (tokens.txt)...${NC}"
-if ! nu tools/gen_tokens.nu --check; then
-    echo -e "${RED}Token enums are out of sync with tools/tokens.txt — run 'nu tools/gen_tokens.nu'.${NC}"
-    exit 1
-fi
+if command -v nu >/dev/null 2>&1; then
+    echo ""
+    echo -e "${BOLD}Checking token enums are in sync (tokens.txt)...${NC}"
+    if ! nu tools/gen_tokens.nu --check; then
+        echo -e "${RED}Token enums are out of sync with tools/tokens.txt — run 'nu tools/gen_tokens.nu'.${NC}"
+        exit 1
+    fi
 
-echo ""
-echo -e "${BOLD}Checking operator tables are in sync (operators.yaml)...${NC}"
-if ! nu tools/opgen/main.nu --check; then
-    echo -e "${RED}Operator tables are out of sync with operators.yaml — run 'nu tools/opgen/main.nu'.${NC}"
-    exit 1
-fi
+    echo ""
+    echo -e "${BOLD}Checking operator tables are in sync (operators.yaml)...${NC}"
+    if ! nu tools/opgen/main.nu --check; then
+        echo -e "${RED}Operator tables are out of sync with operators.yaml — run 'nu tools/opgen/main.nu'.${NC}"
+        exit 1
+    fi
 
-echo ""
-echo -e "${BOLD}Checking documentation evidence, operators, and examples...${NC}"
-if ! nu tools/check_docs.nu --compile-examples; then
-    echo -e "${RED}Documentation validation failed — run 'nu tools/check_docs.nu'.${NC}"
-    exit 1
+    echo ""
+    echo -e "${BOLD}Checking documentation evidence, operators, and examples...${NC}"
+    if ! nu tools/check_docs.nu --compile-examples; then
+        echo -e "${RED}Documentation validation failed — run 'nu tools/check_docs.nu'.${NC}"
+        exit 1
+    fi
 fi
 
 echo ""
@@ -91,7 +97,7 @@ for example in examples/*.dva; do
     [ -e "$example" ] || continue
     ex_name=$(basename "$example" .dva)
     set +e
-    if ! timeout 60 bash -c "ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$example\" < /dev/null" > /dev/null 2>&1; then
+    if ! timeout 60 bash -c "ulimit -v $TEST_MEM_LIMIT 2>/dev/null || true; '$DVA_COMPILER' \"$example\" < /dev/null" > /dev/null 2>&1; then
         echo -e "  - ${ex_name}: ${RED}FAIL (does not compile)${NC}"
         EXAMPLES_FAILED=1
     else
@@ -104,7 +110,7 @@ for example_dir in examples/*/; do
     [ -f "$example_dir/main.dva" ] || continue
     ex_name=$(basename "$example_dir")
     set +e
-    if ! timeout 60 bash -c "ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$example_dir/main.dva\" < /dev/null" > /dev/null 2>&1; then
+    if ! timeout 60 bash -c "ulimit -v $TEST_MEM_LIMIT 2>/dev/null || true; '$DVA_COMPILER' \"$example_dir/main.dva\" < /dev/null" > /dev/null 2>&1; then
         echo -e "  - ${ex_name}: ${RED}FAIL (does not compile)${NC}"
         EXAMPLES_FAILED=1
     else
@@ -128,6 +134,9 @@ run_pos_test() {
     local test_tmp="$TMP_DIR/pos_${test_name}"
     mkdir -p "$test_tmp"
     ln -s "$REPO_ROOT/std" "$test_tmp/std" 2>/dev/null || true
+    if [ -f "$REPO_ROOT/$test_entry/.edva/imports.ccl" ]; then
+        touch "$REPO_ROOT/$test_entry/.edva/imports.ccl" 2>/dev/null || true
+    fi
 
     # Skip uring tests if host kernel or container environment does not permit io_uring
     if [ "${HAS_IO_URING:-1}" -eq 0 ] && [[ "$test_name" == *uring* ]]; then
@@ -138,7 +147,7 @@ run_pos_test() {
     # Compile with timeout (default 30s, can be overridden via TEST_COMPILE_TIMEOUT)
     local compile_timeout="${TEST_COMPILE_TIMEOUT:-30}"
     set +e
-    timeout "$compile_timeout" bash -c "ulimit -v $TEST_MEM_LIMIT; cd '$test_tmp' && '$DVA_COMPILER' '$REPO_ROOT/$test_entry' < /dev/null > /dev/null 2>&1"
+    timeout "$compile_timeout" bash -c "ulimit -v $TEST_MEM_LIMIT 2>/dev/null || true; cd '$test_tmp' && '$DVA_COMPILER' '$REPO_ROOT/$test_entry' < /dev/null > /dev/null 2>&1"
     local comp_code=$?
     set -e
 
@@ -218,7 +227,7 @@ run_neg_test() {
     # Compile with timeout (default 30s, can be overridden via TEST_COMPILE_TIMEOUT)
     local compile_timeout="${TEST_COMPILE_TIMEOUT:-30}"
     set +e
-    compiler_output=$(timeout "$compile_timeout" bash -c "ulimit -v $TEST_MEM_LIMIT; '$DVA_COMPILER' \"$test_file\" $test_flags < /dev/null" 2>&1)
+    compiler_output=$(timeout "$compile_timeout" bash -c "ulimit -v $TEST_MEM_LIMIT 2>/dev/null || true; '$DVA_COMPILER' \"$test_file\" $test_flags < /dev/null" 2>&1)
     exit_code=$?
     set -e
 

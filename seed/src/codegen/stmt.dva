@@ -3789,6 +3789,19 @@ codegen_emit_foreign_var = cg, f =>
          cg.vars += types::CgVar((f.dva_name, f.return_type, <->, "", <-->,
             ast::Names(), <+ glob +>, <->, <->, ast::VTypes(), <-->))
 
+is_darwin_triple: String => <>
+is_darwin_triple = triple =>
+   n = ?triple
+   found' = <->
+   n !< 6
+      |
+         (n - 5) @ i =>
+            triple(i..i + 6) == "darwin" || triple(i..i + 5) == "apple"
+               |
+                  found' = <+>
+                  -->
+   found'
+
 collect_if_foreign_fn: types::Cg, ast::ForeignFnDecl => ()
 collect_if_foreign_fn = cg, f =>
    f.is_variable
@@ -3798,13 +3811,14 @@ collect_if_foreign_fn = cg, f =>
          params_res = collect_foreign_params(cg, f, 0, types::Addrs(), ast::VTypes())
          param_ll = params_res.0
          param_vts = params_res.1
-         ret_ll = llvm_foreign_ret_type(f.c_name, f.return_type)
-         is_vararg = f.c_name == "ioctl"
+         c_name = is_darwin_triple(cg.opts.target_triple) && f.c_name == "__errno_location" | "__error" | f.c_name
+         ret_ll = llvm_foreign_ret_type(c_name, f.return_type)
+         is_vararg = c_name == "ioctl"
          fn_type = fn_type_n_vararg(cg, ret_ll, param_ll, ?f.params,
             is_vararg)
-         llvm_fn = types::llvm_find_function(cg.module, f.c_name)
+         llvm_fn = types::llvm_find_function(cg.module, c_name)
             | fn => fn
-            | LLVMAddFunction(cg.module, f.c_name, fn_type)
+            | LLVMAddFunction(cg.module, c_name, fn_type)
          cg.fninfos += types::FnInfo((f.dva_name, <+ llvm_fn +>, <+ fn_type +>, ?f.params,
             param_vts, f.return_type, <+>, <->, <+>, <+>))
 

@@ -35,10 +35,26 @@
    SO_RCVTIMEO  = 20
    SO_SNDTIMEO  = 21
 
-   // fcntl command / flag (Linux)
+   // fcntl command / flag (Linux; translated on Darwin via libc::fcntl)
    F_GETFL     = 3
    F_SETFL     = 4
    O_NONBLOCK  = 2048
+
+   // Platform-resolved socket constants and sockaddr_in sin_family field
+   sin_fam_inet: () => u16
+   sin_fam_inet = !=> libc::is_darwin! | u16((AF_INET .<. 8) .|. 16) | u16(AF_INET)
+
+   sol_socket: () => Int
+   sol_socket = !=> libc::is_darwin! | 65535 | SOL_SOCKET
+
+   so_reuseaddr: () => Int
+   so_reuseaddr = !=> libc::is_darwin! | 4 | SO_REUSEADDR
+
+   so_rcvtimeo: () => Int
+   so_rcvtimeo = !=> libc::is_darwin! | 4102 | SO_RCVTIMEO
+
+   so_sndtimeo: () => Int
+   so_sndtimeo = !=> libc::is_darwin! | 4101 | SO_SNDTIMEO
 
    // shutdown "how"
    SHUT_WR = 1
@@ -65,7 +81,8 @@
       tv_usec: i64,
    )
 
-   // struct addrinfo (Linux x86_64): getaddrinfo result list node.
+   // struct addrinfo (Linux x86_64; on Darwin ai_canonname and ai_addr are swapped):
+   // getaddrinfo result list node.
    #type Addrinfo (
       ai_flags:     i32,
       ai_family:    i32,
@@ -139,7 +156,7 @@
       ip [4294967295] --| net::tcp_connect_name(host, port)
       sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
       sock [< 0] --| Conn(<- "socket failed" +>)
-      addr = SockAddrIn((u16(AF_INET),
+      addr = SockAddrIn((net::sin_fam_inet!,
          u16(htons $ port), in_addr_u32(ip), 0u64))
       ret = libc::connect(sock, &addr, 16)
       ret [0]
@@ -176,7 +193,8 @@
          sock = libc::socket(ai.ai_family, ai.ai_socktype, ai.ai_protocol)
          sock < 0
             | --^
-         ret = libc::connect(sock, ai.ai_addr, ai.ai_addrlen)
+         ai_addr_ptr = libc::is_darwin! | ai.ai_canonname | ai.ai_addr
+         ret = libc::connect(sock, ai_addr_ptr, ai.ai_addrlen)
          ret [0]
             res' = sock
             -->
@@ -206,8 +224,8 @@
       sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
       sock [< 0] --| Conn(<- "socket failed" +>)
       one = 1i32
-      libc::setsockopt(sock, net::SOL_SOCKET, net::SO_REUSEADDR, &one, 4)
-      addr = SockAddrIn((u16(AF_INET),
+      libc::setsockopt(sock, net::sol_socket!, net::so_reuseaddr!, &one, 4)
+      addr = SockAddrIn((net::sin_fam_inet!,
          u16(htons $ port), in_addr_any!, 0u64))
       ret_b = libc::bind(sock, &addr, 16)
       ret_l = ret_b [0] libc::listen(sock, backlog) | -1
@@ -263,14 +281,14 @@
    set_recv_timeout = fd, ms =>
       tv = Timeval((i64(ms / 1000),
          i64((ms % 1000) * 1000)))
-      libc::setsockopt(fd, net::SOL_SOCKET, net::SO_RCVTIMEO, &tv, 16)
+      libc::setsockopt(fd, net::sol_socket!, net::so_rcvtimeo!, &tv, 16)
 
    // Set the send timeout on fd (ms). 0 clears it.
    set_send_timeout: Int, Int => Int
    set_send_timeout = fd, ms =>
       tv = Timeval((i64(ms / 1000),
          i64((ms % 1000) * 1000)))
-      libc::setsockopt(fd, net::SOL_SOCKET, net::SO_SNDTIMEO, &tv, 16)
+      libc::setsockopt(fd, net::sol_socket!, net::so_sndtimeo!, &tv, 16)
 
    // Put fd in non-blocking mode (<+>) or back to blocking (<->).
    set_nonblocking: Int, <> => Int
@@ -330,7 +348,7 @@
    // Returns 0 on success, -1 on failure.
    udp_bind: Int, Int => Int
    udp_bind = fd, port =>
-      addr = SockAddrIn((u16(AF_INET),
+      addr = SockAddrIn((net::sin_fam_inet!,
          u16(htons $ port), in_addr_any!, 0u64))
       libc::bind(fd, &addr, 16)
 
@@ -341,7 +359,7 @@
       ip = libc::inet_addr $ host
       ip [< 0] -1
       |
-         addr = SockAddrIn((u16(AF_INET),
+         addr = SockAddrIn((net::sin_fam_inet!,
             u16(htons $ port), in_addr_u32(ip), 0u64))
          libc::sendto(fd, data, ?data, 0, &addr, 16)
 
@@ -362,7 +380,8 @@
          ifa = IfAddrs(curr)
          ifa.ifa_addr == sys::addr_null | find_iface(ifa.ifa_next, target) |
             sa = SockAddrIn(ifa.ifa_addr)
-            is_match = (Int(sa.sin_family) == AF_INET) &&
+            fam = Int(sa.sin_family)
+            is_match = ((fam == AF_INET) || ((fam .>. 8) == AF_INET)) &&
                (sa.sin_addr.b0 == target.b0) && (sa.sin_addr.b1 == target.b1) &&
                (sa.sin_addr.b2 == target.b2) && (sa.sin_addr.b3 == target.b3)
             is_match
@@ -374,7 +393,7 @@
    get_route_info = !=>
       sock = libc::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
       sock [< 0] ("127.0.0.1", "lo") |
-         dest = SockAddrIn((u16(AF_INET), u16(htons $ 53), InAddr((1u8, 1u8, 1u8, 1u8)), 0u64))
+         dest = SockAddrIn((net::sin_fam_inet!, u16(htons $ 53), InAddr((1u8, 1u8, 1u8, 1u8)), 0u64))
          rc = libc::connect(sock, &dest, 16)
          rc [0]
             addr = SockAddrIn((0u16, 0u16, in_addr_any!, 0u64))

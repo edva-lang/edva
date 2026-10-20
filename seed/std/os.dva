@@ -5,6 +5,9 @@
 #use mem
 #use sys
 
+#foreign
+   environ: Addr
+
 #public
    open: String, Int => Int
    open  = path, flags => libc::open(path, flags)
@@ -35,14 +38,16 @@
       ar = mem::arena(64)
       pid_ptr = mem::alloc(ar, 8)
       status_ptr = mem::alloc(ar, 8)
+      @[pid_ptr] = 0
+      @[status_ptr] = 0
       spawn_res = libc::posix_spawn(pid_ptr, path, sys::addr_null, sys::addr_null,
-         argv, sys::addr_null)
-      failed = spawn_res < 0
+         argv, environ)
+      failed = spawn_res != 0
       result' = -1
       !failed
          |
-            pid = @[pid_ptr Int]
+            pid = Int(@[pid_ptr i32])
             libc::waitpid(pid, status_ptr, 0)
-            result' = @[status_ptr Int]
+            result' = Int(@[status_ptr i32])
       mem::destroy(ar)
       result'

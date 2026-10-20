@@ -2,7 +2,10 @@
 # Real-driver regression test suite for edva: verifies CLI behavior,
 # error propagation, signal handling, and atomic file outputs.
 set -e
-ulimit -v 4194304
+for nix_bin in /nix/store/*-coreutils-*/bin /nix/store/*-gnused-*/bin; do
+    [ -d "$nix_bin" ] && export PATH="$nix_bin:$PATH"
+done
+ulimit -v 4194304 2>/dev/null || true
 cd "$(dirname "$0")"
 
 if [ ! -x ./edva ]; then
@@ -310,7 +313,7 @@ timeout 30 ./edva "$TMPDIR/test_wasm.dva" -target wasm32-unknown-unknown -o "$TM
 rc=$?
 set -e
 if [ $rc -ne 0 ]; then
-    if grep -q "nix-wrapped compiler" "$TMPDIR/t8.err" 2>/dev/null || grep -q "wasm-ld linking failed" "$TMPDIR/t8.out" 2>/dev/null; then
+    if grep -qE "nix-wrapped compiler|No available targets are compatible with triple" "$TMPDIR/t8.err" 2>/dev/null || grep -q "wasm-ld linking failed" "$TMPDIR/t8.out" 2>/dev/null; then
         echo "SKIPPED (wasm-ld or wasm32 toolchain unavailable)"
     else
         echo "FAILED: expected 0 exit on wasm compilation, got $rc"
@@ -1982,6 +1985,9 @@ echo "PASS"
 
 # --- Test 47: F16 / #164 - Doc checker enforces classification and validation ---
 echo -n "Testing Test 47 (tools/check_docs.nu classification and example execution)... "
+if ! command -v nu >/dev/null 2>&1; then
+    echo "SKIPPED (nu not available)"
+else
 DOC_TEST_DIR="$TMPDIR/doc_test_repo"
 mkdir -p "$DOC_TEST_DIR/doc" "$DOC_TEST_DIR/tools/opgen"
 cp tools/check_docs.nu "$DOC_TEST_DIR/tools/"
@@ -2053,6 +2059,7 @@ if [ $rc -eq 0 ] || ! grep -q "Block compiled successfully with exit code 0" "$T
 fi
 
 echo "PASS"
+fi
 
 # --- Test 48: edva -repl autoimports io ---
 echo -n "Testing edva -repl autoimport io... "

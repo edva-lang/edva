@@ -37,7 +37,7 @@
     getpeername : (sockfd: Int, addr: Addr, addrlen_ptr: Addr) => Int
     getsockname : (sockfd: Int, addr: Addr, addrlen_ptr: Addr) => Int
     shutdown   : (sockfd: Int, how: Int) => Int
-    fcntl      : (fd: Int, cmd: Int, arg: Int) => Int
+    c_fcntl = fcntl: (fd: Int, cmd: Int, arg: Int) => Int
     getaddrinfo : (node: String, service: String, hints: Addr, res: Addr) => Int
     freeaddrinfo : (res: Addr) => ()
     getifaddrs  : (ifap: Addr) => Int
@@ -80,3 +80,22 @@
     raise     : (sig: Int) => Int
     getrlimit : (resource: Int, rlim: Addr) => Int
     setrlimit : (resource: Int, rlim: Addr) => Int
+    uname     : (buf: Addr) => Int
+
+#private
+    ::os_darwin_cache = 0
+
+#public
+    is_darwin: () => <>
+    is_darwin = !=>
+       os_darwin_cache == 0
+          |
+             buf = {2048}
+             uname(&buf)
+             os_darwin_cache ::= (@[&buf i8] == 68i8 | 1 | 2)
+       os_darwin_cache == 1
+
+    fcntl: Int, Int, Int => Int
+    fcntl = fd, cmd, arg =>
+       eff_arg = is_darwin! && cmd == 4 && (arg .&. 2048) != 0 | ((arg .&. .!. 2048) .|. 4) | arg
+       c_fcntl(fd, cmd, eff_arg)

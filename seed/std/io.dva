@@ -279,7 +279,7 @@
                   |
                      errno_val = @[libc::__errno_location! i32]
                      errno_val == 4 | --^
-                     r.err = Int(errno_val)
+                     r.err = (libc::is_darwin! && errno_val == 35 | 11 | Int(errno_val))
                      n' = n
                      -->
                   |
@@ -375,7 +375,7 @@
             |
                errno_val = @[libc::__errno_location! i32]
                errno_val == 4 | --^
-               r.err = Int(errno_val)
+               r.err = (libc::is_darwin! && errno_val == 35 | 11 | Int(errno_val))
                -->
             |
                n == 0
