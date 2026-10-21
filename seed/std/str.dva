@@ -228,16 +228,18 @@
    hex_to_str = val =>
       val [0] --| "0x0"
       b = {32}
-      n' = val
+      neg = val < 0
+      n' = neg | u64(0 - val) | u64(val)
       32 @
-         n' [> 0]
-            digit = n' % 16
+         n' [> 0u64]
+            digit = Int(n' .&. 15u64)
             ch = ascii::hex_char_upper(digit)
             b += ch
-            n' = n' / 16
+            n' = n' .>. 4u64
          | -->
       b += 'x'
       b += '0'
+      neg | b += '-'
       s = +b
       out = {32}
       ?s @ i =>

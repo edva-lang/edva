@@ -19,8 +19,9 @@ Variables can be bound immutably (`=`) or mutably (`'`). Float literals are type
 pi = 3.141592653589793
 ratio = 0.05
 
-// Explicit single-precision float
-light_weight: f32 = 1.25
+// Explicit single-precision float (forward annotation on a separate line)
+light_weight: f32
+light_weight = 1.25f32
 
 // Mutable accumulator
 total' = 0.0
@@ -57,7 +58,7 @@ negative   = -273.15
 
 ### Arithmetic operators
 
-Edva implements IEEE 754 arithmetic across identical floating-point types:
+Edva implements IEEE 754 arithmetic across floating-point types. Combining an `Int` or `f32` with a `Float` (`f64`) in binary arithmetic promotes the operand to `Float`:
 
 ```{.dva .run}
 x = 7.5
@@ -68,6 +69,7 @@ diff = x - y    // 5.0
 prod = x * y    // 18.75
 quot = x / y    // 3.0
 rem  = x % y    // 0.0 (floating-point remainder / fmod)
+mixed = 10 + y  // 12.5 (Int promoted to Float)
 ```
 
 ### Comparisons

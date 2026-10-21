@@ -200,7 +200,7 @@ find_positive = n =>
 - `Rune`: 32-bit Unicode scalar value (`i32`).
 - `Addr`: Raw memory address (architecture-dependent: 4 bytes on 32-bit, 8 bytes on 64-bit). Casts via `Addr(...)` are strictly restricted to integerish types (`Int`, `i8`..`u64`) and pointers. Memory addresses of strings, builders, records, and call-argument scalars are obtained via `&`.
 - `Flag`: Bare boolean (`i1`), constructed with `<+>` (true) or `<->` (false).
-- `Error`: Standard error record `(code: Int, msg: String, file: String, line: Int, col: Int)`.
+- `Error`: Standard error record `(code: Int, msg: String, file: String, line: Int, col: Int, context: (Int, Int))`.
 
 ## 5.2 The Four Ramification Shapes & Constructors
 Ramifications represent binary outcomes with zero-cost runtime representations:
@@ -302,8 +302,7 @@ Complete reference documentation for each module is maintained in `doc/reference
 
 - **`io`**: Stream-based buffered reading (`Reader`, `read_line`, `read_all`) and console logging
   (`out`, `outs`, `err`, `errs`, `outf`, `errf`).
-  - *Contract*: Output wrappers loop across partial transfers, retry on `EINTR`, and return total
-    bytes transferred (or `-1` on initial error).
+  - *Contract*: Output helpers (`out`, `outs`, `err`, `errs`, `outf`, `errf`) loop across partial transfers, retry on `EINTR`, and return `()`. Low-level `io::write(fd, s)` returns total bytes transferred (`Int`, or `-1` on initial error).
 - **`fs`**: High-level safe filesystem operations, paths, directory traversal, and capacity stats.
   - *Functions*: `join`, `parent`, `basename`, `ext`, `is_abs`, `cwd`, `home`, `resolve`, `read_to_string`,
     `write_file`, `copy_file`, `rename_path`, `remove`, `remove_all`, `create_dir`, `create_dir_all`, `stat`,
@@ -311,12 +310,12 @@ Complete reference documentation for each module is maintained in `doc/reference
     `list_dir`, `space`, `get_fs_stats`, `format_size`, `format_perms`, `format_time`, `format_number`,
     `auto_rename_path`.
   - *Contract*: Uses typed `#packed` records (`StatRaw`, `Statvfs`, `DirentPrefix`) and safe options `<T | >`.
-    Zero raw pointer dereference operations.
 - **`in`**: Singleton standard-input reader wrapping `stdin_r`.
   - *Functions*: `read_line(max)`, `read_bytes(max)`, `read_byte!`, `read_until(delim, max)`.
   - *Status*: `err!` (last errno), `eof!` (clean EOF), `would_block!` (`EAGAIN`), `has_err!`, `clear!`.
-- **`str`**: String conversion, Unicode inspection, and transformations.
-  - *Functions*: `from_int`, `from_float`, `to_int`, `is_digit`, `split`, `trim`, `repeat`.
+- **`str`**: Byte-oriented string predicates, scalar conversions, ordering, and digit parsing.
+  - *Functions*: `from_byte`, `from_int`, `from_float`, `hex_to_str`, `to_int`, `to_hex`, `cmp`, `lt`, `is_digit`, `is_alpha`, `is_alnum`, `is_ws`, `is_hex`.
+- **`unicode`** & **`utf`**: Unicode general category classification and UTF-8 rune encoding/decoding (`decode_rune`, `utf8_width`, `encode_rune`, `append_rune`).
 - **`net` & `net/http`**: TCP networking and HTTP/1.1 protocol handling.
   - *Network*: `tcp_listen`, `tcp_accept`, `tcp_connect`, `send_str`, `recv`, `close_fd: Int => Int`.
   - *HTTP*: `read_request`, `path_of`, `header`, `response`, `respond(fd, status, content_type, body)`.
@@ -334,12 +333,13 @@ Complete reference documentation for each module is maintained in `doc/reference
     ($O(n^2)$) for small custom collections.
 - **`math`**, **`math/geom`**, **`math/complex`**: Numerical and spatial operations.
   - *Scalars*: `sin`, `cos`, `tan`, `sqrt`, `atan2`, `floor`, `ceil`, `fabs`, `ldexp`.
-  - *Geometry*: `Vec2`, `Vec3`, `Vec4`, `Rect`, `dot`, `len`, `dist`, `norm`, `lerp`, `angle`, `rotate`.
+  - *Geometry*: `Vec2`, `Vec3`, `Vec4`, `Rect`, `dot`, `len`, `dist`, `norm`, `lerp`, `angle`, `rotate`, `rect_contains`, `circle_contains`, `rect_union`, `rect_intersect`.
   - *Complex*: `Complex`, `make`, `real`, `imag`, `add`, `sub`, `mul`, `abs`, `exp`, `fft`, `ifft`.
-- **`uring`**: Linux `io_uring` asynchronous I/O submission and completion queues (`setup`, `enter`).
-- **`color`**: ANSI escape sequences and color types (`RGB`, `RGBA`, `hex`, `ansi`).
-- **`fp`**: Functional combinators over collections and slices (`map`, `filter`, `fold`, `zip`, `chain`).
-- **`type`**: Type introspection intrinsics and numeric limits (`#size`, `#align`, limits).
+- **`event`**: Portable file descriptor readiness multiplexing backed by `poll(2)` (`Poller`, `Event`, `new!`, `add`, `mod`, `del`, `wait`, `close`).
+- **`uring`**: Linux `io_uring` asynchronous I/O submission and completion queues (`new`, `prep_read`, `prep_write`, `submit`, `wait_cqe`, `reap`, `close`).
+- **`color`** & **`color/palette`**: Color spaces (`Rgba`, `LinearRgba`, `Oklab`, `Oklch`, `Hsv`), hex packing (`from_hex`, `to_hex`, `from_hex_str`, `to_hex_str`), alpha blending (`alpha_blend`), perceptual interpolation (`lerp_oklab`), and theme palettes (`palette::Palette`).
+- **`fp`**: Functional combinators over collections (`map`, `filter`, `fold`, `reduce`, `any`, `all`, `count`, `find`, `take`, `drop`, `reverse`, `zip`).
+- **`type`**: Compile-time type predicates and numeric limits (`is_int`, `is_float`, `is_signed`, `is_unsigned`, `bit_width`, `min_val`, `max_val`).
 - **`libc`**: Direct POSIX C system call bindings (`open`, `close`, `read`, `write`, `malloc`).
 - **`mem`**: Memory management utilities and arena allocators.
 - **`os`** & **`sys`**: Operating system environment, command-line arguments (`sys::argv`), and exits.
@@ -352,9 +352,8 @@ Complete reference documentation for each module is maintained in `doc/reference
 - `E2001`–`E2099`: Lexical and syntax parse errors.
 - `E3004`: Undefined identifier or symbol.
 - `E3008`: Negation `!` applied to non-Flag type (use `+b` for freeze, `!!` for unwrap).
-- `E3027`: Equality comparison on unsupported non-enum ramifications.
 - `E3033`: Reassignment to an unprimed immutable binding.
-- `E3084`: Type unification failure.
+- `E3084`: Type unification failure (including invalid equality on non-enum ramifications).
 - `E3089`: Incompatible ramification shapes in assignment or choice.
 - `E3103`: Cannot infer concrete type for expression without RTTI.
 - `E3130`–`E3132`: Field initialization tracking errors and compile-time evaluation failures.

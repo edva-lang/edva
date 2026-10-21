@@ -428,7 +428,13 @@ parse = src, file =>
    lines = split_raw_lines(src)
    res = parse_block_from(lines, 0, 0, file)
    res
-      | pair => <+ pair.0 ->
+      | pair =>
+         pair.1 < ?lines
+            |
+               bad = lines(pair.1) | _ | ParsedLine((1, 0, ""))
+               <- ccl_error(file, "syntax error: unexpected dedent",
+                  bad.line_no, bad.indent + 1) +>
+            | <+ pair.0 ->
       | e => <- e +>
 
 parse_file: String => < CclDoc | Error >
@@ -446,6 +452,35 @@ parse_file = path =>
 
 // --- Deterministic Serialization --------------------------------------------
 
+has_newline: String => <>
+has_newline = s =>
+   found' = <->
+   s @ ch =>
+      ch == 10
+         | found' = <+>; -->
+   found'
+
+append_multiline_str: String, Int, Builder => ()
+append_multiline_str = s, child_indent, b =>
+   line_start' = 0
+   n = ?s
+   0..n @ i =>
+      s(i) == 10
+         |
+            part = s(line_start'..i)
+            ?part > 0
+               |
+                  child_indent @ b += ' '
+                  b += part
+            b += 10
+            line_start' = i + 1
+   last_part = s(line_start'..n)
+   ?last_part > 0 || n == 0
+      |
+         child_indent @ b += ' '
+         b += last_part
+         b += 10
+
 serialize_doc_indent: CclDoc, Int, Builder => ()
 serialize_doc_indent = doc, indent, b =>
    doc.entries @ e =>
@@ -459,20 +494,36 @@ serialize_doc_indent = doc, indent, b =>
          |
             e.key == ""
                |
-                  b += "= "
                   e.val
-                     [Str s] b += s; b += 10
+                     [Str s]
+                        has_newline(s)
+                           |
+                              b += "="
+                              b += 10
+                              append_multiline_str(s, indent + 2, b)
+                           |
+                              b += "= "
+                              b += s
+                              b += 10
                      [Block sub]
+                        b += "= "
                         b += 10
                         serialize_doc_indent(sub, indent + 2, b)
                |
                   b += e.key
-                  b += " = "
                   e.val
                      [Str s]
-                        b += s
-                        b += 10
+                        has_newline(s)
+                           |
+                              b += " ="
+                              b += 10
+                              append_multiline_str(s, indent + 2, b)
+                           |
+                              b += " = "
+                              b += s
+                              b += 10
                      [Block sub]
+                        b += " = "
                         b += 10
                         serialize_doc_indent(sub, indent + 2, b)
 

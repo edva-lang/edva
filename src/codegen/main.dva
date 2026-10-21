@@ -242,6 +242,8 @@ codegen_thread_copy_array = cg, src, dst_arena =>
 codegen_thread_copy_slice: types::Cg, Addr, Addr => Addr
 codegen_thread_copy_slice = cg, src, dst_arena =>
    i64t = LLVMInt64Type!
+   raw_len = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, cg.slice_t, src, 1, "dc.sl.rlen.gep"), "dc.sl.rlen")
    len = slice_len(cg, src, "dc.sl.len")
    data = slice_data(cg, src, "dc.sl.data")
    bytes = LLVMBuildMul(cg.builder, len,
@@ -252,7 +254,7 @@ codegen_thread_copy_slice = cg, src, dst_arena =>
       LLVMConstInt(i64t, 16, 0), "dc.sl.struct")
    LLVMBuildStore(cg.builder, buf,
       LLVMBuildStructGEP2(cg.builder, cg.slice_t, out, 0, "dc.sl.nd.gep"))
-   LLVMBuildStore(cg.builder, len,
+   LLVMBuildStore(cg.builder, raw_len,
       LLVMBuildStructGEP2(cg.builder, cg.slice_t, out, 1, "dc.sl.nl.gep"))
    out
 
@@ -810,7 +812,7 @@ codegen_builder_freeze = cg, b, name =>
             "b.freeze.last.idx")
          chunks_gep = LLVMBuildStructGEP2(cg.builder, at, arena, 3,
             "b.freeze.chunks.gep")
-         last_slot = types::gep2(cg, LLVMArrayType(i8p, 4096), chunks_gep,
+         last_slot = types::gep2(cg, LLVMArrayType(i8p, 16384), chunks_gep,
             zero, last_idx, "b.freeze.chunk.slot")
          last_chunk = LLVMBuildLoad2(cg.builder, i8p, last_slot,
             "b.freeze.last.chunk")
@@ -837,8 +839,11 @@ codegen_builder_freeze = cg, b, name =>
          LLVMBuildCondBr(cg.builder, reaped, copy_bb, done_bb)
 
          LLVMPositionBuilderAtEnd(cg.builder, copy_bb)
-         fresh = expr::codegen_call_arena_alloc(cg, len, "b.freeze.fresh")
+         alloc_len = LLVMBuildAdd(cg.builder, len, one, "b.freeze.alen")
+         fresh = expr::codegen_call_arena_alloc(cg, alloc_len, "b.freeze.fresh")
          LLVMBuildMemMove(cg.builder, fresh, 1, data, 1, len, 0)
+         nul_ptr = types::gep1(cg, LLVMInt8Type!, fresh, len, "b.freeze.nul")
+         LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt8Type!, 0, 0), nul_ptr)
          LLVMBuildBr(cg.builder, done_bb)
 
          LLVMPositionBuilderAtEnd(cg.builder, done_bb)
@@ -1126,7 +1131,9 @@ codegen_eval_array_view_base = cg, t, aval =>
    LLVMBuildStore(cg.builder, view_data,
       LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice, 0,
          "a.view.data.gep"))
-   LLVMBuildStore(cg.builder, view_len,
+   tagged_len = LLVMBuildOr(cg.builder, view_len,
+      LLVMConstInt(i64t, 4611686018427387904, 0), "a.view.len.tagged")
+   LLVMBuildStore(cg.builder, tagged_len,
       LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice, 1,
          "a.view.len.gep"))
    dt = t.fn_name != "" | t.fn_name | cg.last_type
@@ -1178,14 +1185,22 @@ codegen_eval_slice_range = cg, t =>
    final_start = c_res.0
    view_len = c_res.1
    base_data = slice_data(cg, aval, "slice.data")
-   view_data = types::gep1(cg, i64t, base_data, final_start, "slice.elem.gep")
+   sl_elem_vt = runtime::slice_elem_vt(cg, t.fn_name)
+   elem_ll = types::is_ptrish_vt(sl_elem_vt)
+      | LLVMPointerType(LLVMInt8Type!, 0)
+      | types::llvm_type_of_vt(sl_elem_vt)
+   view_gep = slice_elem_gep(cg, aval, base_data, elem_ll, final_start,
+      "slice.elem.gep")
+   view_data = LLVMBuildPointerCast(cg.builder, view_gep,
+      LLVMPointerType(LLVMInt8Type!, 0), "slice.view.data")
+   pbit = slice_packed_bit(cg, aval, "slice.pbit")
+   tagged_len = LLVMBuildOr(cg.builder, view_len, pbit, "slice.len.tagged")
    slice = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 16, 0),
       "slice.alloc")
    LLVMBuildStore(cg.builder, view_data,
       LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice, 0, "new.slice.data.gep"))
-   LLVMBuildStore(cg.builder, view_len,
+   LLVMBuildStore(cg.builder, tagged_len,
       LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice, 1, "new.slice.len.gep"))
-   sl_elem_vt = runtime::slice_elem_vt(cg, t.fn_name)
    sl_fvs = ast::VTypes()
    sl_fvs += sl_elem_vt
    cg.last_fvts = sl_fvs
@@ -1197,11 +1212,90 @@ slice_data = cg, s, name =>
    LLVMBuildLoad2(cg.builder, LLVMPointerType(LLVMInt8Type!, 0),
       LLVMBuildStructGEP2(cg.builder, cg.slice_t, s, 0, name + ".gep"), name)
 
-// The length of a Slice value.
+// The length of a Slice value (with the packed-stride tag bit masked off).
 slice_len: types::Cg, Addr, String => Addr
 slice_len = cg, s, name =>
-   LLVMBuildLoad2(cg.builder, LLVMInt64Type!,
-      LLVMBuildStructGEP2(cg.builder, cg.slice_t, s, 1, name + ".gep"), name)
+   i64t = LLVMInt64Type!
+   raw_len = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, cg.slice_t, s, 1, name + ".gep"),
+      name + ".raw")
+   LLVMBuildAnd(cg.builder, raw_len,
+      LLVMConstInt(i64t, 4611686018427387903, 0), name)
+
+slice_packed_bit: types::Cg, Addr, String => Addr
+slice_packed_bit = cg, s, name =>
+   i64t = LLVMInt64Type!
+   raw_len = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, cg.slice_t, s, 1, name + ".gep"),
+      name + ".raw")
+   LLVMBuildAnd(cg.builder, raw_len,
+      LLVMConstInt(i64t, 4611686018427387904, 0), name)
+
+slice_is_packed: types::Cg, Addr, String => Addr
+slice_is_packed = cg, s, name =>
+   i64t = LLVMInt64Type!
+   pbit = slice_packed_bit(cg, s, name + ".bit")
+   LLVMBuildICmp(cg.builder, 33, pbit, LLVMConstInt(i64t, 0, 0), name)
+
+slice_elem_gep: types::Cg, Addr, Addr, Addr, Addr, String => Addr
+slice_elem_gep = cg, s, data, elem_ll, idx_i64, name =>
+   i64t = LLVMInt64Type!
+   is_packed = slice_is_packed(cg, s, name + ".isp")
+   p_gep = types::gep1(cg, i64t, data, idx_i64, name + ".pgep")
+   p_cast = LLVMBuildPointerCast(cg.builder, p_gep,
+      LLVMPointerType(elem_ll, 0), name + ".pcast")
+   typed_data = LLVMBuildPointerCast(cg.builder, data,
+      LLVMPointerType(elem_ll, 0), name + ".typed")
+   n_gep = types::gep1(cg, elem_ll, typed_data, idx_i64, name + ".ngep")
+   LLVMBuildSelect(cg.builder, is_packed, p_cast, n_gep, name)
+
+slice_load_rec_elem: types::Cg, Addr, Addr, Addr, Addr, String => Addr
+slice_load_rec_elem = cg, s, data, elem_ll, idx_i64, name =>
+   i64t = LLVMInt64Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   is_packed = slice_is_packed(cg, s, name + ".isp")
+   parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+   p_bb = LLVMAppendBasicBlock(parent, name + ".pbb")
+   n_bb = LLVMAppendBasicBlock(parent, name + ".nbb")
+   d_bb = LLVMAppendBasicBlock(parent, name + ".dbb")
+   LLVMBuildCondBr(cg.builder, is_packed, p_bb, n_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, p_bb)
+   p_gep = types::gep1(cg, i64t, data, idx_i64, name + ".pgep")
+   p_val = LLVMBuildLoad2(cg.builder, i8p, p_gep, name + ".pval")
+   LLVMBuildBr(cg.builder, d_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, n_bb)
+   typed_data = LLVMBuildPointerCast(cg.builder, data,
+      LLVMPointerType(elem_ll, 0), name + ".typed")
+   n_gep = types::gep1(cg, elem_ll, typed_data, idx_i64, name + ".ngep")
+   n_val = LLVMBuildPointerCast(cg.builder, n_gep, i8p, name + ".nval")
+   LLVMBuildBr(cg.builder, d_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, d_bb)
+   phi = LLVMBuildPhi(cg.builder, i8p, name)
+   stmt::llvm_add_incoming1(cg, phi, p_val, p_bb)
+   stmt::llvm_add_incoming1(cg, phi, n_val, n_bb)
+   phi
+
+slice_store_rec_elem: types::Cg, Addr, Addr, Addr, Addr, Addr, String => ()
+slice_store_rec_elem = cg, s, data, elem_ll, idx_i64, val_ptr, name =>
+   i64t = LLVMInt64Type!
+   is_packed = slice_is_packed(cg, s, name + ".isp")
+   parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
+   p_bb = LLVMAppendBasicBlock(parent, name + ".pbb")
+   n_bb = LLVMAppendBasicBlock(parent, name + ".nbb")
+   d_bb = LLVMAppendBasicBlock(parent, name + ".dbb")
+   LLVMBuildCondBr(cg.builder, is_packed, p_bb, n_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, p_bb)
+   p_gep = types::gep1(cg, i64t, data, idx_i64, name + ".pgep")
+   LLVMBuildStore(cg.builder, val_ptr, p_gep)
+   LLVMBuildBr(cg.builder, d_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, n_bb)
+   typed_data = LLVMBuildPointerCast(cg.builder, data,
+      LLVMPointerType(elem_ll, 0), name + ".typed")
+   n_gep = types::gep1(cg, elem_ll, typed_data, idx_i64, name + ".ngep")
+   inner_sz = LLVMSizeOf(elem_ll)
+   LLVMBuildMemCpy(cg.builder, n_gep, 1, val_ptr, 1, inner_sz, 0)
+   LLVMBuildBr(cg.builder, d_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, d_bb)
 
 // A slice-var call with a Range arg is a sub-slice; an Int arg is an element
 // read.
@@ -1224,10 +1318,8 @@ codegen_eval_slice_index = cg, t =>
    elem_ll = types::is_ptrish_vt(elem_vt)
       | LLVMPointerType(LLVMInt8Type!, 0)
       | types::llvm_type_of_vt(elem_vt)
-   typed_data = LLVMBuildPointerCast(cg.builder, data,
-      LLVMPointerType(elem_ll, 0), "slice.data.typed")
    idx_i64 = codegen_widen_idx_to_i64(cg, idx_ev.0, idx_ev.1, "idx")
-   slot2 = types::gep1(cg, elem_ll, typed_data, idx_i64, "slice.elem.gep")
+   slot2 = slice_elem_gep(cg, sv, data, elem_ll, idx_i64, "slice.elem.gep")
    ev = LLVMBuildLoad2(cg.builder, elem_ll, slot2, "slice.elem.val")
    (ev, elem_vt)
 
@@ -1353,13 +1445,22 @@ codegen_eval_evaluated_slice_access = cg, t, base_ptr =>
          final_start = c_res.0
          view_len = c_res.1
          base_data = slice_data(cg, sv', "slice.data")
-         view_data = types::gep1(cg, i64t, base_data, final_start, "slice.elem.gep")
+         elem_vt = ?cg.last_fvts > 0
+            | (cg.last_fvts(0) | _ | ast::ValueType(Int))
+            | ast::ValueType(Int)
+         elem_ll = cg.last_rt | _ | types::llvm_type_of_vt(elem_vt)
+         view_gep = slice_elem_gep(cg, sv', base_data, elem_ll, final_start,
+            "slice.elem.gep")
+         view_data = LLVMBuildPointerCast(cg.builder, view_gep,
+            LLVMPointerType(LLVMInt8Type!, 0), "slice.view.data")
+         pbit = slice_packed_bit(cg, sv', "slice.pbit")
+         tagged_len = LLVMBuildOr(cg.builder, view_len, pbit, "slice.len.tagged")
          slice = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 16, 0),
             "slice.alloc")
          LLVMBuildStore(cg.builder, view_data,
             LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice, 0,
                "new.slice.data.gep"))
-         LLVMBuildStore(cg.builder, view_len,
+         LLVMBuildStore(cg.builder, tagged_len,
             LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice, 1,
                "new.slice.len.gep"))
          (slice, ast::ValueType(Slice))
@@ -1370,18 +1471,19 @@ codegen_eval_evaluated_slice_access = cg, t, base_ptr =>
          elem_vt = ?cg.last_fvts > 0
             | (cg.last_fvts(0) | _ | ast::ValueType(Int))
             | ast::ValueType(Int)
-         elem_ll = cg.last_rt | _ | i64t
-         typed_data = LLVMBuildPointerCast(cg.builder, data,
-            LLVMPointerType(elem_ll, 0), "slice.typed")
-         slot2 = types::gep1(cg, elem_ll, typed_data, idx_i64, "slice.elem.gep")
+         elem_ll = cg.last_rt | _ | types::llvm_type_of_vt(elem_vt)
          elem_is_rec = elem_vt [Record]
          elem_is_rec
             |
+               rec_ptr = slice_load_rec_elem(cg, sv', data, elem_ll, idx_i64,
+                  "slice.rec.elem")
                cg.last_rt = <+ elem_ll +>
                cg.last_fnames = ast::Names()
                cg.last_fvts = match::struct_sub_fvts(elem_ll)
-               (slot2, ast::ValueType(Record))
+               (rec_ptr, ast::ValueType(Record))
             |
+               slot2 = slice_elem_gep(cg, sv', data, elem_ll, idx_i64,
+                  "slice.elem.gep")
                ev = LLVMBuildLoad2(cg.builder, elem_ll, slot2, "rec.val")
                (ev, elem_vt)
 
@@ -1776,16 +1878,7 @@ codegen_emit_error_panic = cg, err_ptr =>
    file_len32 = LLVMBuildTrunc(cg.builder, file_len, i32t,
       "err.file.len32")
    file_data = expr::codegen_string_data(cg, file_s, "err.file.data")
-   pargs = {64}
-   pb = &pargs
-   @[pb] = fgep
-   @[pb + 8] = code_v
-   @[pb + 16] = msg_len32
-   @[pb + 24] = msg_data
-   @[pb + 32] = file_len32
-   @[pb + 40] = file_data
-   @[pb + 48] = line_v
-   @[pb + 56] = col_v
+   pargs = (fgep, code_v, msg_len32, msg_data, file_len32, file_data, line_v, col_v)
    pp = {8}
    ppb = &pp
    @[ppb] = i8p
@@ -1822,7 +1915,7 @@ codegen_emit_error_panic = cg, err_ptr =>
    LLVMPositionBuilderAtEnd(cg.builder, normal_bb)
    LLVMBuildCall2(cg.builder,
       LLVMFunctionType(i32t, ppb, 1, 1),
-      LLVMGetNamedFunction(cg.module, "printf"), pb, 8, "err.panic.printf")
+      LLVMGetNamedFunction(cg.module, "printf"), &pargs, 8, "err.panic.printf")
    eargs = {16}
    eb = &eargs
    @[eb] = LLVMConstInt(i32t, 1, 0)
@@ -2018,6 +2111,7 @@ codegen_array_box_payload = cg, union_ptr, elem_val, elem_type =>
          i64t = LLVMInt64Type!
          pay_raw = expr::codegen_call_arena_alloc(cg,
             LLVMConstInt(i64t, 8, 0), "get.pay.alloc")
+         LLVMBuildStore(cg.builder, LLVMConstInt(i64t, 0, 0), pay_raw)
          pay_llvm = types::llvm_type_of_vt(elem_type)
          pay_ptr = LLVMBuildPointerCast(cg.builder, pay_raw,
             LLVMPointerType(pay_llvm, 0), "get.pay.ptr")
@@ -2315,16 +2409,11 @@ codegen_eval_spawn = cg, se =>
          wrapper = codegen_emit_thread_wrapper(cg, fn, fty, n, arg_ts, ret,
             is_cap)
          tid_p = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 0, "rec.tid.gep")
-         cargs = {32}
-         cb = &cargs
-         @[cb] = tid_p
-         @[cb + 8] = LLVMConstNull(i8p)
-         @[cb + 16] = wrapper
-         @[cb + 24] = rraw
+         cargs = (tid_p, LLVMConstNull(i8p), wrapper, rraw)
          pfn = cg.pthread_create_fn | _ | LLVMConstNull(i8p)
          LLVMBuildCall2(cg.builder,
             fn_type4(LLVMInt32Type!, LLVMPointerType(i64t, 0), i8p, i8p, i8p),
-            pfn, cb, 4, "thread.create")
+            pfn, &cargs, 4, "thread.create")
          sig_ti = stmt::fn_signature_return_ti(cg, types::g.pstmts, call.fn_name, 0)
          cg.last_type = thread_ret_typedef(cg, ret, sig_ti, call.fn_name)
          (rec, ast::ValueType(Ram))
@@ -2463,15 +2552,7 @@ codegen_typed_eval_join = cg, je, ti =>
    ret_vt = ti [Ram s] s.0.payload_type | ast::ValueType(Int)
    ret_val = codegen_ptr_word_to_value(cg, ret_word, ret_vt)
    ret_copy = codegen_thread_copy_value(cg, ret_val, ret_vt, parent_arena)
-   ret_i64 = types::is_float_vt(ret_vt)
-      | LLVMBuildBitCast(cg.builder, ret_copy, i64t, "f.to.i64")
-      |
-         (LLVMGetTypeKind(LLVMTypeOf(ret_copy)) == 12)
-            | LLVMBuildPtrToInt(cg.builder, ret_copy, i64t, "p.to.i64")
-            |
-               (LLVMTypeOf(ret_copy) == i64t)
-                  | ret_copy
-                  | LLVMBuildZExt(cg.builder, ret_copy, i64t, "zext.i64")
+   ret_i64 = match::coerce_pay_to_i64(cg, ret_copy, ret_vt)
    ok_end = LLVMGetInsertBlock(cg.builder)
    LLVMBuildBr(cg.builder, done_bb)
 

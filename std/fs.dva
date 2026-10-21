@@ -434,28 +434,50 @@ read_to_string = path =>
          buf = {sz}
          n = libc::read(fd, &buf, sz)
          libc::close(fd)
-         n !> 0 | <+ "" +> |
-            ?buf = n
-            <+ +buf +>
+         n < 0
+            | <-->
+            |
+               n == 0
+                  | <+ "" +>
+                  |
+                     ?buf = n
+                     <+ +buf +>
       |
          b' = ++""
          chunk = {4096}
+         read_err' = <->
          0.. @
             n = libc::read(fd, &chunk, 4096)
-            n !> 0 | -->
+            n < 0
+               |
+                  read_err' = <+>
+                  -->
+            n == 0 | -->
             ?chunk = n
             b' = b' + (+chunk)
          libc::close(fd)
-         <+ b' +>
+         read_err'
+            | <-->
+            | <+ b' +>
 
 write_file: String, String => <>
 write_file = path, content =>
    fd = libc::open_mode(path, open_wronly_creat_trunc!, 0o644) // O_WRONLY | O_CREAT | O_TRUNC
    fd < 0 |->
    len = ?content
-   len > 0 | libc::write(fd, content, len)
-   libc::close(fd)
-   <+>
+   off' = 0
+   ok' = <+>
+   0.. @
+      off' !< len | -->
+      v = content(off'..len)
+      w = libc::write(fd, v, ?v)
+      w !> 0
+         |
+            ok' = <->
+            -->
+         | off' = off' + w
+   rc = libc::close(fd)
+   ok' && rc == 0
 
 copy_file: String, String => <>
 copy_file = src_path, dst_path =>
@@ -603,10 +625,13 @@ format_time = ts =>
 
 format_number: Int => String
 format_number = n =>
-   s = %to_str(n)
+   s_full = %to_str(n)
+   is_neg = ?s_full > 0 && s_full(0) == '-'
+   s = is_neg | s_full(1..) | s_full
    len = ?s
-   len < 4 | --| s
+   len < 4 | --| s_full
    b = {32}
+   is_neg | b += '-'
    rem' = len % 3
    rem' == 0 | rem' = 3
    len @ i =>

@@ -1,0 +1,5 @@
+// Bare '|' choice condition requires a Flag (<>) or Ramification; Int is rejected.
+n = 42
+res = n
+   | "nonzero"
+   | "zero"

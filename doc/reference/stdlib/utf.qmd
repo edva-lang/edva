@@ -1,0 +1,35 @@
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`std/utf.dva`, `tests/pass/122_unicode_module.dva`"
+---
+
+# `utf` standard library
+
+The `utf` module provides UTF-8 rune encoding and decoding utilities for `String`, `Builder`, and raw memory addresses (`Addr`).
+
+```{.dva .run}
+#use utf
+```
+
+## Function catalog
+
+| Function | Signature | Description |
+|---|---|---|
+| `utf::append_rune` | `Builder, Rune => ()` | Appends the 1–4 byte UTF-8 encoding of a `Rune` to a `Builder` |
+| `utf::append_codepoint` | `Builder, Int => ()` | Appends the UTF-8 encoding of an integer codepoint to a `Builder` |
+| `utf::encode_rune` | `Rune => String` | Encodes a `Rune` into a newly allocated UTF-8 `String` |
+| `utf::encode_codepoint` | `Int => String` | Encodes an integer codepoint into a newly allocated UTF-8 `String` |
+| `utf::decode_rune_addr` | `Addr, Int => Rune` | Decodes the UTF-8 rune at `p + i` (returns `U+FFFD` on invalid sequence) |
+| `utf::decode_rune_builder` | `Builder, Int => Rune` | Bounds-checked UTF-8 rune decode at byte offset `i` in `Builder` |
+
+```{.dva .run}
+#use io
+#use utf
+
+s = utf::encode_rune('λ')
+io::out(?s)
+// => 2
+```

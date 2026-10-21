@@ -443,6 +443,9 @@
                      r.pos = r.pos + scan_count
                      ?out !< max
                         |
+                           has_delim = r.pos < ?r.buf &&
+                              (Int(@[&r.buf + r.pos i8]) .&. 255) == delim
+                           has_delim | r.pos = r.pos + 1
                            done' = <+>
                            -->
             done'

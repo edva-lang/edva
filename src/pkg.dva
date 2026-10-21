@@ -34,7 +34,8 @@
    is_module: <>,
    is_shared: <>,
    no_runtime: <>,
-   no_main: <>
+   no_main: <>,
+   module_name: String
 )
 
 #type PkgOpts (
@@ -101,6 +102,15 @@
 // --- small utilities ---------------------------------------------------------
 
 #private
+   clean_semver: String => String
+   clean_semver = v =>
+      b = {?v}
+      ?v @ i =>
+         c = v(i)
+         c == '+' || c == '-' | -->
+         b += c
+      +b
+
    out: String => ()
    out = s =>
       libc::write(1, s + "\n", ?s + 1)
@@ -462,17 +472,27 @@
 
    compute_tree_hash: Resolver, String => < String | >
    compute_tree_hash = r, dir =>
-      cmd = "cd " + sq(dir) + " && find . -mindepth 1 \\( -name .git -o -name .edva -o -name .hg -o -name .svn \\) -prune -o \\( -type f -o -type l \\) -print | LC_ALL=C sort | while IFS= read -r p; do " +
+      tmp_l = tmp_path(r) + ".list"
+      tmp_m = tmp_path(r) + ".manifest"
+      cmd = "cd " + sq(dir) + " && find . -mindepth 1 \\( -name .git -o -name .edva -o -name .hg -o -name .svn \\) -prune -o \\( -type f -o -type l \\) -print | LC_ALL=C sort > " + sq(tmp_l) +
+         " && while IFS= read -r p; do " +
          "rel=\"\${p#./}\"; " +
          "if [ -L \"$p\" ]; then " +
-         "echo \"symlink $(readlink \"$p\") $rel\"; " +
+         "lnk=\"$(readlink \"$p\")\" || exit 1; " +
+         "echo \"symlink $lnk $rel\"; " +
          "else " +
          "if [ -x \"$p\" ]; then mode=\"100755\"; else mode=\"100644\"; fi; " +
-         "echo \"$(sha256sum \"$p\" | cut -c1-64) $mode $rel\"; " +
+         "sum=\"$(sha256sum \"$p\")\" || exit 1; " +
+         "echo \"\${sum%% *} $mode $rel\"; " +
          "fi; " +
-         "done | sha256sum | cut -c1-64"
-      capture(r, cmd)
-         | h => <+ "sha256-" + h +>
+         "done < " + sq(tmp_l) + " > " + sq(tmp_m) +
+         " && out=\"$(sha256sum " + sq(tmp_m) + ")\" && echo \"\${out%% *}\""
+      res = capture(r, cmd)
+      libc::unlink(tmp_l)
+      libc::unlink(tmp_m)
+      res
+         | h =>
+            ?h == 64 | <+ "sha256-" + h +> | <-->
          | <-->
 
    checkout_git: Resolver, String, String, String, String => < (String, String) | >
@@ -621,8 +641,9 @@
             fail(7011, "dependency '" + alias + "': cannot fetch " + url)
             <-->
          |
-            got = "sha256-" + (capture(r, "sha256sum " + sq(file) + " | cut -c1-64") | g => g | "")
-            got != hash
+            raw_h = capture(r, "out=\"$(sha256sum " + sq(file) + ")\" && echo \"\${out%% *}\"") | g => g | ""
+            got = "sha256-" + raw_h
+            ?raw_h != 64 || got != hash
                |
                   libc::unlink(file)
                   fail(7005, "dependency '" + alias + "': hash mismatch (expected " +
@@ -692,9 +713,13 @@
    fetch_dep: Resolver, ccl::PackageDep, String, <> => < Fetched | >
    fetch_dep = r, d, base_dir, parent_is_path =>
       base = source_base(d, base_dir)
-      r.overrides ^? base
+      alias_key = "alias " + d.alias
+      (r.overrides ^? base) || (r.overrides ^? alias_key)
          |
-            ovr = r.overrides ^ base | _ | ""
+            r.fetched ^ ("ovr " + d.alias) = "1"
+            (r.overrides ^? ("base_alias " + base))
+               | r.fetched ^ ("ovr " + (r.overrides ^ ("base_alias " + base) | _ | "")) = "1"
+            ovr = (r.overrides ^ base | s => s | (r.overrides ^ alias_key | s2 => s2 | ""))
             fetch_path(r, d.alias, ovr, <+>, "")
          |
             d.kind
@@ -955,23 +980,31 @@
    hash_file = path =>
       tmp = "/tmp/edva_hf_" + str::from_int(getpid!) + "_" + str::from_int(tmp_seq) + ".tmp"
       tmp_seq ::= tmp_seq + 1
-      cmd = "sha256sum " + sq(path) + " | cut -c1-64 > " + sq(tmp) + " 2>/dev/null"
+      cmd = "sha256sum " + sq(path) + " > " + sq(tmp) + " 2>/dev/null"
       rc = sh(cmd)
       txt = read_text(tmp)
       libc::unlink(tmp)
-      rc == 0 | (txt | t => trim(t) | "") | ""
+      rc == 0
+         |
+            t = txt | s => trim(s) | ""
+            ?t !< 64 | t(..64) | ""
+         | ""
 
    hash_string: String => String
    hash_string = s =>
       tmp = "/tmp/edva_hs_" + str::from_int(getpid!) + "_" + str::from_int(tmp_seq) + ".tmp"
       tmp_seq ::= tmp_seq + 1
       write_text(tmp, s)
-      cmd = "sha256sum " + sq(tmp) + " | cut -c1-64 > " + sq(tmp) + ".out 2>/dev/null"
+      cmd = "sha256sum " + sq(tmp) + " > " + sq(tmp) + ".out 2>/dev/null"
       rc = sh(cmd)
       libc::unlink(tmp)
       txt = read_text(tmp + ".out")
       libc::unlink(tmp + ".out")
-      rc == 0 | (txt | t => trim(t) | "") | ""
+      rc == 0
+         |
+            t = txt | s2 => trim(s2) | ""
+            ?t !< 64 | t(..64) | ""
+         | ""
 
    compiler_build_id: () => String
    compiler_build_id = !=>
@@ -1012,6 +1045,7 @@
       b += "  is_shared = " + (flags.is_shared | "true" | "false") + "\n"
       b += "  no_runtime = " + (flags.no_runtime | "true" | "false") + "\n"
       b += "  no_main = " + (flags.no_main | "true" | "false") + "\n"
+      flags.module_name != "" | b += "  module_name = " + flags.module_name + "\n"
       b += "sources =\n"
       seen = SMap()
       src_lines = Strings()
@@ -1035,7 +1069,10 @@
                |
                   b += "  pkg-config =\n"
                   ccl::sort_strings(nat_pkg) @ p => b += "    = " + p + "\n"
-      b += "ast_hash = " + hash_string(ast_summary) + "\n"
+      ast_h = ast_summary == ""
+         | "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+         | hash_string(ast_summary)
+      b += "ast_hash = " + ast_h + "\n"
       meta = +b
       k = hash_string(meta)
       BuildKeyResult((k, meta))
@@ -1205,7 +1242,7 @@
                            |
                               raw_base = target_dir == "." | basename(canonical_path(".")) | basename(target_dir)
                               pkg_name' = clean_pkg_name(raw_base)
-                        manifest_text = "name = " + pkg_name' + "\nversion = 0.1.0\nedva = " + lang_version + "\n"
+                        manifest_text = "name = " + pkg_name' + "\nversion = 0.1.0\nedva = " + clean_semver(lang_version) + "\n"
                         !write_text(manifest_file, manifest_text)
                            |
                               fail(7017, "cannot write " + manifest_file)
@@ -1650,14 +1687,15 @@
                   fail(7008, "--locked: override for '" + o.alias + "' is not allowed")
                   ok' = <->
                |
-                  base' = ++ ""
-                  m.deps @ d => d.alias == o.alias | base' = source_base(d, r.opts.root)
-                  base' == ""
-                     |
-                        fail(7016, "edva.ccl: override '" + o.alias +
-                           "' does not name a dependency")
-                        ok' = <->
-                     | r.overrides ^ (base') = canonical_path(path_join(r.opts.root, o.path))
+                  abs_ovr = canonical_path(path_join(r.opts.root, o.path))
+                  r.overrides ^ ("alias " + o.alias) = abs_ovr
+                  m.deps @ d =>
+                     d.alias == o.alias
+                        |
+                           base = source_base(d, r.opts.root)
+                           r.overrides ^ (base) = abs_ovr
+                           r.overrides ^ ("base_alias " + base) = o.alias
+                           r.fetched ^ ("ovr " + o.alias) = "1"
       ok'
 
    resolve_with_root: Resolver, ccl::PackageManifest, ccl::Lockfile, <> => Int
@@ -1671,6 +1709,12 @@
                resolve_dep(r, d, r.opts.root, <+>)
                   | id => root_deps += ccl::LockDep((d.alias, id))
                   | ok' = <->
+         m.overrides @ o =>
+            ok' && !(r.fetched ^? ("ovr " + o.alias))
+               |
+                  fail(7016, "edva.ccl: override '" + o.alias +
+                     "' does not name a dependency")
+                  ok' = <->
          !ok' | 1 | write_outputs(r, m, prior, has_lock, root_deps)
 
    write_outputs: Resolver, ccl::PackageManifest, ccl::Lockfile, <>, ccl::LockDeps => Int
@@ -1938,7 +1982,7 @@
             !file_exists(lock_file)
                |
                   fetch_rc = run_fetch(opts)
-                  fetch_rc != 0 | fetch_rc
+                  fetch_rc != 0 | --| fetch_rc
             m_res = load_manifest(opts.root)
             m_res
                | m =>
@@ -2039,18 +2083,13 @@
          |
             opts.root = root
             opts.store = canonical_path(opts.store)
+            fetch_rc = run_fetch(opts)
+            fetch_rc != 0
+               | --| fetch_rc
             lock_file = path_join(opts.root, "edva.lock.ccl")
-            !file_exists(lock_file)
-               |
-                  fetch_rc = run_fetch(opts)
-                  fetch_rc != 0 | fetch_rc
             lock_res = read_lock(lock_file)
             lock_res
-               | lock =>
-                  fetch_rc = run_fetch(opts)
-                  fetch_rc != 0
-                     | fetch_rc
-                     | cmd_vendor_materialize(opts, lock)
+               | lock => cmd_vendor_materialize(opts, lock)
                | e =>
                   fail(7018, e.msg)
                   1

@@ -541,13 +541,10 @@ codegen_add_checked_u64 = cg, a, b, name =>
    i64t = LLVMInt64Type!
    ovf_t = types::struct_type2(i64t, LLVMInt1Type!)
    fty = types::fn_type2(cg, ovf_t, i64t, i64t)
-   args = {16}
-   sb = &args
-   @[sb] = a
-   @[sb + 8] = b
+   args = (a, b)
    fn_opt = types::llvm_find_function(cg.module, "llvm.uadd.with.overflow.i64")
    uadd_fn = fn_opt | _ | LLVMAddFunction(cg.module, "llvm.uadd.with.overflow.i64", fty)
-   res = LLVMBuildCall2(cg.builder, fty, uadd_fn, sb, 2, name)
+   res = LLVMBuildCall2(cg.builder, fty, uadd_fn, &args, 2, name)
    sum = LLVMBuildExtractValue(cg.builder, res, 0, "sum")
    ovf = LLVMBuildExtractValue(cg.builder, res, 1, "ovf")
    parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
@@ -813,12 +810,8 @@ ensure_snprintf = cg =>
    i32t = LLVMInt32Type!
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   pp = {24}
-   psb = &pp
-   @[psb] = i8p
-   @[psb + 8] = i64t
-   @[psb + 16] = i8p
-   ty = LLVMFunctionType(i32t, psb, 3, 1)
+   pp = (i8p, i64t, i8p)
+   ty = LLVMFunctionType(i32t, &pp, 3, 1)
    fn = LLVMGetNamedFunction(cg.module, "snprintf")
    has_fn = <>(types::llvm_val_opt(fn))
    snp = has_fn | fn | LLVMAddFunction(cg.module, "snprintf", ty)
@@ -842,13 +835,8 @@ codegen_int_to_str = cg, int_val, is_unsigned =>
          fmt_name = is_unsigned | "dva_fmt_u64" | "dva_fmt_i64"
          fmt_gv = runtime::const_string_global(cg, fmt_str, fmt_name)
          ext_val = coerce_int_ext(cg, int_val, i64t, is_unsigned)
-         args = {32}
-         ab = &args
-         @[ab] = buf
-         @[ab + 8] = LLVMConstInt(i64t, 32, 0)
-         @[ab + 16] = fmt_gv
-         @[ab + 24] = ext_val
-         n = LLVMBuildCall2(cg.builder, snp_info.1, snp_info.0, ab, 4, "to_str.n")
+         args = (buf, LLVMConstInt(i64t, 32, 0), fmt_gv, ext_val)
+         n = LLVMBuildCall2(cg.builder, snp_info.1, snp_info.0, &args, 4, "to_str.n")
          n64 = LLVMBuildZExt(cg.builder, n, i64t, "to_str.len")
          expr::codegen_string_build(cg, n64, buf, "to_str.res")
 
@@ -1108,7 +1096,7 @@ codegen_cond_value_valid = cg, v, vt =>
             |
                types::is_int_vt(vt)
                   | LLVMBuildICmp(cg.builder, 33, v,
-                     LLVMConstInt(LLVMInt64Type!, 0, 0), "is.pos")
+                     LLVMConstInt(LLVMTypeOf(v), 0, 0), "is.pos")
                   |
                      LLVMGetTypeKind(LLVMTypeOf(v)) == 12
                         |
@@ -1852,10 +1840,8 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
          is_sl
             |
                data_ptr = main::slice_data(cg, iv_val, "slice.data")
-               typed_data = LLVMBuildPointerCast(cg.builder, data_ptr,
-                  LLVMPointerType(sl_elem_ll, 0), "slice.data.typed")
-               elem_gep2 = types::gep1(cg, sl_elem_ll, typed_data, curr_i,
-                  "slice.elem.gep")
+               elem_gep2 = main::slice_elem_gep(cg, iv_val, data_ptr,
+                  sl_elem_ll, curr_i, "slice.elem.gep")
                <+ LLVMBuildLoad2(cg.builder, sl_elem_ll, elem_gep2, "slice.elem") +>
             |
                str_rune
@@ -3664,10 +3650,10 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
             | LLVMConstNull(ret_ll)
          !cg.error && !block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
    ret_ti_res = resolve_ti(cg, ret_ti)
-   ret_ti_res [Ram]
+   (ret_ti_res [Ram])
       |
          body_ram_ti = expr::codegen_ram_type_of_expr(cg, fd.body)
-         body_ram_ti [Ram]
+         (body_ram_ti [Ram])
             |
                !expr::ram_shape_compatible(cg, ret_ti_res, body_ram_ti)
                   |
@@ -5723,7 +5709,7 @@ codegen_typed_eval_fwd = cg, name, ti =>
          types::init_mark_whole(cg, name)
    dt0 = ti [TypeVar tv] tv | ""
    dt' = dt0
-   ti [Array]
+   (ti [Array])
       |
          anon_dt = "#arr_" + name
          !types::has_type_name(cg, anon_dt) |
@@ -5840,6 +5826,11 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                cg.last_rt = <-->
                cg.last_fnames = ast::Names()
                cg.last_fvts = ast::VTypes()
+               !len && !is_fresh && target_is_bld && cmp
+                  |
+                     b_val' = types::ptr_var_value(cg, name, "b.load")
+                     expr::codegen_typed_builder_append(cg, b_val', val)
+                     --| (b_val', ast::ValueType(Builder))
                ev = main::codegen_typed_eval(cg, val)
                len
                   |
@@ -6052,9 +6043,12 @@ codegen_typed_cycle_escape_construct = cg, is_pos, pay_opt, ti =>
    niche.0
       | (match::codegen_niche_ram_construct(cg, is_pos, niche.1, pay_opt)).0
       |
-         tid = is_pos | 1 | 3
-         alloc_nm = is_pos | "cycle.some.alloc" | "cycle.none.alloc"
-         match::codegen_typed_build_union(cg, tid, pay_opt, alloc_nm)
+         types::is_unboxed_ram_ti(cg, ti)
+            | (match::codegen_unboxed_ram_construct(cg, is_pos, pay_opt, ti)).0
+            |
+               tid = is_pos | 1 | 3
+               alloc_nm = is_pos | "cycle.some.alloc" | "cycle.none.alloc"
+               match::codegen_typed_build_union(cg, tid, pay_opt, alloc_nm)
 
 codegen_typed_eval_condition_cycle: types::Cg, tast::TypedExpr, tast::TypedExpr,
    <tast::TypedExpr|>, ast::TypeInfo => (Addr, ast::ValueType)
@@ -6067,7 +6061,9 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
    done = LLVMAppendBasicBlock(cg.current_fn, "loop.exit." + sc)
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
-   res_lt = types::llvm_type_of_vt(b_vt)
+   res_lt = (has_esc && types::is_unboxed_ram_ti(cg, ti))
+      | match::unboxed_ram_struct_t(cg)
+      | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
@@ -6135,6 +6131,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    sc = str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
    i64t = LLVMInt64Type!
+   sl_ptr' = LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0))
    iter_info = iterable.kind
       [Bin b]
          is_seq = b.0 [Seq]
@@ -6182,6 +6179,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                   |
                      is_sl
                         |
+                           sl_ptr' = iv'.0
                            sl_len = main::slice_len(cg, iv'.0, "sl.len")
                            sl_data = main::slice_data(cg, iv'.0, "sl.data")
                            sl_elem_vt = iterable.ti [Rec r] r.3 |
@@ -6268,7 +6266,9 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    done = LLVMAppendBasicBlock(cg.current_fn, "loop.exit." + sc)
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
-   res_lt = types::llvm_type_of_vt(b_vt)
+   res_lt = (has_esc && types::is_unboxed_ram_ti(cg, ti))
+      | match::unboxed_ram_struct_t(cg)
+      | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)
@@ -6329,10 +6329,25 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                   |
                      iter_mode == 3
                         |
-                           arr_slot = types::gep1(cg, i64t, s_data_opt!!, curr_i, "sl.elem.gep")
-                           arr_raw = LLVMBuildLoad2(cg.builder, i64t,
-                              arr_slot, "sl.elem.raw")
-                           runtime::codegen_unpack_slot(cg, arr_raw, elem_vt)
+                           r_flds' = iterable.ti [Rec r] r.0 |
+                              ast::FieldTypes()
+                           elem_ti = ?r_flds' > 0
+                              | r_flds'(0)!!.rec_type
+                              | ast::TypeInfo(Prim, elem_vt)
+                           rm = runtime::record_meta_from_ti(cg, elem_ti)
+                           sl_elem_ll = rm | m => m.0 | elem_ty
+                           is_rec_elem = elem_vt [Record]
+                           is_rec_elem
+                              |
+                                 main::slice_load_rec_elem(cg, sl_ptr',
+                                    s_data_opt!!, sl_elem_ll, curr_i,
+                                    "sl.rec.elem")
+                              |
+                                 sl_slot = main::slice_elem_gep(cg, sl_ptr',
+                                    s_data_opt!!, sl_elem_ll, curr_i,
+                                    "sl.elem.gep")
+                                 LLVMBuildLoad2(cg.builder, sl_elem_ll,
+                                    sl_slot, "sl.elem.val")
                         |
                            iter_mode == 4
                               |
@@ -6509,7 +6524,9 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
 
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
-   res_lt = types::llvm_type_of_vt(b_vt)
+   res_lt = (has_esc && types::is_unboxed_ram_ti(cg, ti))
+      | match::unboxed_ram_struct_t(cg)
+      | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
          b_bb = LLVMAppendBasicBlock(cg.current_fn, "escape.branch." + sc)

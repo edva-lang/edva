@@ -1178,9 +1178,23 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                               dprog | dp =>
                                  dp [Block db]
                                     db.exprs @ de =>
+                                       prev_dlen = ?ldr.out_exprs
                                        prefix_stmt_to_acc(de, cid,
                                           dppr.publics, dppr.privates,
                                           ldr.out_exprs, <->)
+                                       added_d = ?ldr.out_exprs - prev_dlen
+                                       added_d > 0
+                                          |
+                                             ldr_df = ldr.out_files
+                                             ldr_dl = ldr.out_lines
+                                             ldr_dc = ldr.out_cols
+                                             added_d @ _di =>
+                                                ldr_df += path
+                                                ldr_dl += 1
+                                                ldr_dc += 1
+                                             ldr.out_files = ldr_df
+                                             ldr.out_lines = ldr_dl
+                                             ldr.out_cols = ldr_dc
                   saved_dep = ldr.is_dep
                   ldr.is_dep = <+>
                   res = load_resolved(resolved, imp.module_path, ldr)
@@ -1216,20 +1230,23 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                                  | rewrite_import_expr(st2, import_table,
                                     ast::Names())
                                  | st2
+                              prev_len = ?ldr.out_exprs
                               prefix_stmt_to_acc(cur_st, prefix, publics,
                                  privates, ldr.out_exprs, is_iface)
-                              !is_iface
+                              added = ?ldr.out_exprs - prev_len
+                              added > 0
                                  |
                                     f_line = lines(st_idx') | _ | 1
                                     f_col = cols(st_idx') | _ | 1
                                     ldr_f = ldr.out_files
-                                    ldr_f += path
-                                    ldr.out_files = ldr_f
                                     ldr_l = ldr.out_lines
-                                    ldr_l += f_line
-                                    ldr.out_lines = ldr_l
                                     ldr_c = ldr.out_cols
-                                    ldr_c += f_col
+                                    added @ _ai =>
+                                       ldr_f += path
+                                       ldr_l += f_line
+                                       ldr_c += f_col
+                                    ldr.out_files = ldr_f
+                                    ldr.out_lines = ldr_l
                                     ldr.out_cols = ldr_c
                         st_idx' = st_idx' + 1
                      ok'
@@ -1359,6 +1376,7 @@ load_all = target, target_prefix, is_modular, import_map_arg =>
             ast::Names(), ast::Names(), is_modular, <->,
             map, ast::Names(), ast::Names(), ast::Ints(), ast::Ints(),
             ast::Names()))
+         map.has_map && map.map_path != "" | ldr.loaded_files += map.map_path
          tres = load_target(target, target_prefix, ldr)
          ModuleLoad((ldr.out_exprs, ldr.loaded, ldr.exports,
             ldr.dynamic_mods, ldr.dynamic_paths, tres,
@@ -1424,24 +1442,24 @@ run_cmd = args =>
          argv_buf = mem::alloc(cmd_a, (n + 1) * 8)
          build_argv(cmd_a, args, 0, n, argv_buf)
          @[argv_buf + n * 8] = sys::addr_null
-         pid_buf = mem::alloc(cmd_a, 8)
+         pid_raw' = 0i32
          file = args(0) | _ | ""
-         ret = libc::posix_spawnp(pid_buf, file, sys::addr_null, sys::addr_null,
+         ret = libc::posix_spawnp(&pid_raw', file, sys::addr_null, sys::addr_null,
             argv_buf, environ)
          ret != 0
             |
                mem::destroy(cmd_a)
                0 - 1
             |
-               pid = Int(@[pid_buf i32])
-               status_buf = mem::alloc(cmd_a, 8)
-               wres = waitpid_loop(pid, status_buf)
+               pid = Int(pid_raw')
+               status_raw' = 0i32
+               wres = waitpid_loop(pid, &status_raw')
                wres < 0
                   |
                      mem::destroy(cmd_a)
                      0 - 1
                   |
-                     status = Int(@[status_buf i32])
+                     status = Int(status_raw')
                      mem::destroy(cmd_a)
                      sig = status .&. 127
                      sig != 0
@@ -1557,10 +1575,11 @@ c_header_guard = path =>
    b = {?base + 8}
    ?base @ i =>
       b += c_guard_char(base(i))
-   s = +b
-   has_h = s(-2..) == "_H"
+   s0 = +b
+   s = (?s0 > 0 && s0(0) !< 48 && s0(0) !> 57) | "_" + s0 | s0
+   has_h = ?s !< 2 && s(-2..) == "_H"
    res = has_h | s | s + "_H"
-   ?res == 0 | "DVA_EXPORTS_H" | res
+   ?s0 == 0 | "DVA_EXPORTS_H" | res
 
 c_type_of_ti: ast::ValueType, ast::TypeInfo => String
 c_type_of_ti = vt, ti =>
@@ -1593,7 +1612,7 @@ find_assign_sig = stmts, name =>
          [Assign a]
             a.8
                [Fn fn_info]
-                  a.0 == name
+                  a.0 == name || codegen::decl_bare_name(a.0, 0) == name
                      |
                         res' = ast::TypeInfo(Fn, fn_info)
                         found' = <+>
@@ -1608,7 +1627,7 @@ find_assign_params = stmts, name =>
          [Assign a]
             a.5
                [Fn f]
-                  a.0 == name
+                  a.0 == name || codegen::decl_bare_name(a.0, 0) == name
                      |
                         params' = f.params
                         -->
@@ -1708,7 +1727,7 @@ generate_c_header = prog, exports, header_path =>
                   !loaded_has(emitted_structs, b_name)
                      |
                         td.type_info
-                           [Rec]
+                           [Rec, Bitfield]
                               hdr += format_record_c_struct(td)
                               emitted_structs += b_name
    has_error' = <->
@@ -1870,13 +1889,15 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
    output_bin = out_bin
    dynamic_mods = dmods
    dynamic_paths = dpaths
-   quiet = opts.repl_mode
+   is_eval_quiet = opts.eval_src != "" && !opts.ir_only && !opts.is_module && !opts.is_shared && opts.outpath == ""
+   quiet = opts.repl_mode || is_eval_quiet
    cg_err = opts.repl_mode | 6002 | 5011
    clang_err = opts.repl_mode | 6003 | 5013
    cg_opts = codegen::CodegenOpts((opts.triple, opts.no_runtime, opts.no_main,
       dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
       opts.is_module, opts.module_name))
-   annotate::set_source_file(opts.target)
+   src_f = opts.target != "" | opts.target | "<eval>"
+   annotate::set_source_file(src_f)
    annotate::set_target_triple(opts.triple)
    el_res = annotate::annotate_program(prog)
    cg_ok' = 0
@@ -1886,7 +1907,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
          use_cache = !opts.no_cache && env_or("EDVA_NO_CACHE", "") != "1"
          eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
          cache_flags = pkg::CacheCodegenFlags((opts.is_module, opts.is_shared,
-            opts.no_runtime, opts.no_main))
+            opts.no_runtime, opts.no_main, opts.module_name))
          ast_summary = ""
          opt_str = opts.opt != "" | opts.opt | "-O2"
          target_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
@@ -2067,7 +2088,7 @@ read_stdin_line = max =>
          | -->
          |
             n' = i + 1
-            bval = Int(@[buf + i i8])
+            bval = Int(@[buf + i u8])
             bval == 10
                | -->
    n' == 0
@@ -2075,10 +2096,10 @@ read_stdin_line = max =>
          mem::destroy(ar)
          <-->
       |
-         len = (Int(@[buf + (n' - 1) i8]) == 10) | n' - 1 | n'
+         len = (Int(@[buf + (n' - 1) u8]) == 10) | n' - 1 | n'
          out = {len}
          len @ j =>
-            out += @[buf + j i8]
+            out += Int(@[buf + j u8])
          mem::destroy(ar)
          <+ +out +>
 
@@ -2123,6 +2144,17 @@ exprs_have_decl = exprs =>
       is_decl_stmt(e) | (found' = <+>; -->)
    found'
 
+line_is_empty: String => <>
+line_is_empty = line =>
+   i' = 0
+   0.. @
+      i' !< ?line | -->
+      c = line(i')
+      c == ' ' || c == '\t' || c == '\r' || c == '\n'
+         | i' = i' + 1
+         | -->
+   i' !< ?line || (i' + 1 < ?line && line(i') == '/' && line(i' + 1) == '/')
+
 line_has_decl: String => <>
 line_has_decl = line =>
    p = parser::parse_init(line)
@@ -2138,11 +2170,57 @@ is_writer_line: String => <>
 is_writer_line = line =>
    line(..6) == "print " ||
       line(..7) == "print\t" ||
+      line(..7) == "print($" ||
+      line(..6) == "print(" ||
       line(..9) == "print_int" ||
       line(..7) == "io::out" ||
       line(..7) == "writeln" ||
       line(..11) == "libc::write" ||
       line(..10) == "libc::puts"
+
+line_returns_unit: CliOpts, String, String, String => <>
+line_returns_unit = opts, temp_src, session_src, line =>
+   raw_src = session_src == "" | line | session_src + "\n" + line
+   !write_file(temp_src, raw_src)
+      | <->
+      |
+         lres = load_all(temp_src, "", <->, opts.import_map)
+         !lres.ok || ?lres.exprs == 0
+            | <->
+            |
+               prog = ast::Expr(Block, ast::BlockExpr(lres.exprs))
+               el = annotate::annotate_program(prog)
+               el
+                  | succ =>
+                     n = ?succ.prog.stmts
+                     n == 0
+                        | <+>
+                        |
+                           last_st = succ.prog.stmts(n - 1)!!
+                           last_st
+                              [Expr te]
+                                 c_ut = unify::canon(succ.ctx, te.ut)
+                                 c_ut [Prim p] (p [Unit]) | <->
+                              | <+>
+                  | <->
+
+prog_is_non_unit_expr: ast::Expr => <>
+prog_is_non_unit_expr = prog =>
+   el = annotate::annotate_program(prog)
+   el
+      | succ =>
+         n = ?succ.prog.stmts
+         n == 0
+            | <->
+            |
+               last_st = succ.prog.stmts(n - 1)!!
+               last_st
+                  [Expr te]
+                     c_ut = unify::canon(succ.ctx, te.ut)
+                     is_u = c_ut [Prim p] (p [Unit]) | <->
+                     !is_u
+                  | <->
+      | <->
 
 active_repl_src: String
 active_repl_src = ""
@@ -2233,17 +2311,17 @@ read_line_raw = sess =>
    nh = ?sess.history
    hist_idx' = nh
    eof' = <->
-   c_buf = libc::malloc(8)
-   seq_buf = libc::malloc(8)
+   c_byte' = 0u8
+   seq_byte' = 0u8
    refresh_line(line', pos')
    0.. @
-      rb = libc::read(0, c_buf, 1)
+      rb = libc::read(0, &c_byte', 1)
       rb < 1
          |
             eof' = <+>
             -->
          |
-            b0 = Int(@[c_buf i8])
+            b0 = Int(c_byte')
             b0 == 10 || b0 == 13
                |
                   libc::write(1, "\r\n", 2)
@@ -2330,14 +2408,14 @@ read_line_raw = sess =>
                |
                   check_stdin_ready!
                      |
-                        libc::read(0, seq_buf, 1)
-                        b1 = Int(@[seq_buf i8])
+                        libc::read(0, &seq_byte', 1)
+                        b1 = Int(seq_byte')
                         b1 == 91
                            |
                               check_stdin_ready!
                                  |
-                                    libc::read(0, seq_buf, 1)
-                                    b2 = Int(@[seq_buf i8])
+                                    libc::read(0, &seq_byte', 1)
+                                    b2 = Int(seq_byte')
                                     b2 == 65
                                        |
                                           cur_nh = ?sess.history
@@ -2381,7 +2459,7 @@ read_line_raw = sess =>
                                     b2 == 51
                                        |
                                           check_stdin_ready! |
-                                             libc::read(0, seq_buf, 1)
+                                             libc::read(0, &seq_byte', 1)
                                           pos' < ?line'
                                              |
                                                 line' = line'(0..pos') +
@@ -2390,21 +2468,21 @@ read_line_raw = sess =>
                                     b2 == 49 || b2 == 55
                                        |
                                           check_stdin_ready! |
-                                             libc::read(0, seq_buf, 1)
+                                             libc::read(0, &seq_byte', 1)
                                           pos' = 0
                                           refresh_line(line', pos')
                                     b2 == 52 || b2 == 56
                                        |
                                           check_stdin_ready! |
-                                             libc::read(0, seq_buf, 1)
+                                             libc::read(0, &seq_byte', 1)
                                           pos' = ?line'
                                           refresh_line(line', pos')
                         b1 == 79
                            |
                               check_stdin_ready!
                                  |
-                                    libc::read(0, seq_buf, 1)
-                                    b2 = Int(@[seq_buf i8])
+                                    libc::read(0, &seq_byte', 1)
+                                    b2 = Int(seq_byte')
                                     b2 == 65
                                        |
                                           cur_nh = ?sess.history
@@ -2456,8 +2534,6 @@ read_line_raw = sess =>
                   line' = line'(0..pos') + ch + line'(pos'..)
                   pos' = pos' + 1
                   refresh_line(line', pos')
-   libc::free(c_buf)
-   libc::free(seq_buf)
    disable_raw_mode!
    eof' | <--> | <+ line' +>
 
@@ -2508,44 +2584,49 @@ repl_cleanup = sess =>
 repl_step: CliOpts, String, String, ReplSession => String
 repl_step = opts, session_src, line, sess =>
    disable_raw_mode!
-   is_decl = line_has_decl(line)
-   candidate = is_decl || is_writer_line(line) | line |
-      "io::out(" + line + ")"
-   full_src = session_src == "" | candidate |
-      session_src + "\n" + candidate
-   temp_src = sess.src_path
-   !write_file(temp_src, full_src)
+   line_is_empty(line)
+      | session_src
       |
-         print $ "E6001: Could not write scratch source file"
-         session_src
-      |
-         load_res = load_all(temp_src, "", <->, opts.import_map)
-         !load_res.ok || ?load_res.exprs == 0
-            | session_src
+         is_decl = line_has_decl(line)
+         is_unit = !is_decl && !is_writer_line(line) &&
+            line_returns_unit(opts, sess.src_path, session_src, line)
+         candidate = is_decl || is_writer_line(line) || is_unit | line |
+            "io::out(" + line + ")"
+         full_src = session_src == "" | candidate |
+            session_src + "\n" + candidate
+         temp_src = sess.src_path
+         !write_file(temp_src, full_src)
             |
-               prog = ast::Expr(Block, ast::BlockExpr(load_res.exprs))
-               comp = compile_ast_to_binary(prog, load_res.exports,
-                  opts, sess.ll_path, sess.bin_path,
-                  load_res.dynamic_mods, load_res.dynamic_paths,
-                  load_res.native_libs, load_res.native_pkg_config,
-                  load_res.loaded_files)
-               comp
-                  |
-                     run_args = ast::Names()
-                     run_args += sess.bin_path
-                     rres = run_cmd(run_args)
-                     rres != 0
-                        |
-                           print $ "E6004: Program exited with code " +
-                              str::from_int(rres)
-                           session_src
-                        |
-                           is_decl
-                              |
-                                 session_src == "" | line |
-                                    session_src + "\n" + line
-                              | session_src
+               print $ "E6001: Could not write scratch source file"
+               session_src
+            |
+               load_res = load_all(temp_src, "", <->, opts.import_map)
+               !load_res.ok || ?load_res.exprs == 0
                   | session_src
+                  |
+                     prog = ast::Expr(Block, ast::BlockExpr(load_res.exprs))
+                     comp = compile_ast_to_binary(prog, load_res.exports,
+                        opts, sess.ll_path, sess.bin_path,
+                        load_res.dynamic_mods, load_res.dynamic_paths,
+                        load_res.native_libs, load_res.native_pkg_config,
+                        load_res.loaded_files)
+                     comp
+                        |
+                           run_args = ast::Names()
+                           run_args += sess.bin_path
+                           rres = run_cmd(run_args)
+                           rres != 0
+                              |
+                                 print $ "E6004: Program exited with code " +
+                                    str::from_int(rres)
+                                 session_src
+                              |
+                                 is_decl
+                                    |
+                                       session_src == "" | line |
+                                          session_src + "\n" + line
+                                    | session_src
+                        | session_src
 
 repl_loop: CliOpts, String, ReplSession => ()
 repl_loop = opts, session_src, sess =>
@@ -2599,6 +2680,7 @@ repl_run = opts =>
             session_bin, ast::Names()))
          repl_opts = opts
          repl_opts.repl_mode = <+>
+         repl_opts.no_cache = <+>
          repl_loop(repl_opts, "#use io", sess)
          repl_cleanup(sess)
 
@@ -2729,7 +2811,8 @@ parse_eval_arg = i, opts =>
    i + 1 !< sys::argc
       |
          print $ "E5019: '-e' requires a code string argument"
-         opts.help = <+>
+         print_usage(0)
+         sys::exit(1)
          opts
       |
          opts.eval_src = sys::argv_string(i + 1)
@@ -2740,7 +2823,8 @@ parse_target_arg = i, opts =>
    i + 1 !< sys::argc
       |
          print $ "E5015: '-target' requires a target triple argument"
-         opts.help = <+>
+         print_usage(0)
+         sys::exit(1)
          opts
       |
          tv = sys::argv_string(i + 1)
@@ -2810,7 +2894,8 @@ parse_pos_arg = i, arg, opts =>
       |
          print $ "E5008: Unknown option '" +
             arg + "'"
-         opts.help = <+>
+         print_usage(0)
+         sys::exit(1)
          opts
       |
          opts.target == ""
@@ -2825,13 +2910,14 @@ parse_pos_arg = i, arg, opts =>
                   |
                      print $ "E5008: Extra argument '" +
                         arg + "'"
-                     opts.help = <+>
+                     print_usage(0)
+                     sys::exit(1)
                      opts
 
 print_usage: Int => ()
 print_usage = ignored =>
    print $ "Usage: edva <input.dva | module_dir> [options]"
-   print $ "       edva <init|add|fetch|build|test|update|graph|vendor> [dir] [options]"
+   print $ "       edva <init|add|fetch|build|test|update|graph|vendor|cache> [dir] [options]"
    print $ "       edva pkg <command> [dir] [options]"
    print $ "Options:"
    print $ "  -v, --version    Print compiler version and exit"
@@ -2877,7 +2963,125 @@ dump_program_ast = prog, as_tree =>
 
 is_pkg_subcmd: String => <>
 is_pkg_subcmd = cmd =>
-   cmd ["init", "add", "fetch", "build", "test", "update", "graph", "tree", "vendor", "version"]
+   cmd ["init", "add", "fetch", "build", "test", "update", "graph", "tree", "vendor", "cache", "version"]
+
+eval_cleanup: String, String, String, String => ()
+eval_cleanup = dir, src_f, ll_f, bin_f =>
+   ?src_f > 0 | unlink(src_f)
+   ?ll_f > 0 | unlink(ll_f)
+   ?bin_f > 0 | unlink(bin_f)
+   ?dir > 0 | rmdir(dir)
+
+run_eval: CliOpts => ()
+run_eval = opts =>
+   opts.ast_dump && !opts.typed_ast
+      |
+         src = opts.eval_src + "\n"
+         ppr = parser::parse_init(src)
+         parser::parser_set_file(ppr, "<eval>")
+         lexer::lex_set_file("<eval>")
+         prog_res = parser::parse_program(ppr)
+         prog_res
+            | prog =>
+               dump_program_ast(prog, opts.ast_tree)
+               sys::exit(0)
+            |
+               sys::exit(1)
+   eval_dir = make_scratch_dir!
+   ?eval_dir == 0
+      |
+         print $ "E6005: Could not create scratch directory for -e"
+         sys::exit(1)
+   eval_file = path_join(eval_dir, "eval.dva")
+   eval_ll = path_join(eval_dir, "eval.ll")
+   eval_bin = path_join(eval_dir, "eval")
+   !write_file(eval_file, opts.eval_src + "\n")
+      |
+         eval_cleanup(eval_dir, eval_file, "", "")
+         print $ "E6001: Could not write scratch source file"
+         sys::exit(1)
+   eval_prefix = opts.is_module && opts.no_main | opts.module_name | ""
+   eval_load = load_all(eval_file, eval_prefix, opts.is_module, opts.import_map)
+   !eval_load.ok
+      |
+         eval_cleanup(eval_dir, eval_file, "", "")
+         sys::exit(1)
+   annotate::set_source_file("<eval>")
+   annotate::set_target_triple(opts.triple)
+   annotate::set_program_locs(eval_load.out_files,
+      eval_load.out_lines, eval_load.out_cols)
+   eval_prog' = ast::Expr(Block, ast::BlockExpr(eval_load.exprs))
+   eval_exports' = eval_load.exports
+   eval_dyn_mods' = eval_load.dynamic_mods
+   eval_dyn_paths' = eval_load.dynamic_paths
+   eval_nat_libs' = eval_load.native_libs
+   eval_nat_pkg' = eval_load.native_pkg_config
+   eval_files' = eval_load.loaded_files
+   opts.typed_ast && !opts.run_exec && !opts.ir_only && (opts.outpath == "")
+      |
+         eval_cleanup(eval_dir, eval_file, "", "")
+         verify_typed_ast(eval_prog', opts.ast_dump || opts.ast_tree,
+            opts.ast_tree)
+   eval_run_default = !opts.ir_only && !opts.is_module && !opts.is_shared && opts.outpath == ""
+   should_wrap = eval_run_default && ?eval_load.exprs == 1 && !line_has_decl(opts.eval_src) && !is_writer_line(opts.eval_src) && prog_is_non_unit_expr(eval_prog')
+   should_wrap
+      |
+         wrapped_src = "#use io\nio::out(" + opts.eval_src + ")\n"
+         write_file(eval_file, wrapped_src)
+            |
+               w_load = load_all(eval_file, "", <->, opts.import_map)
+               w_load.ok
+                  |
+                     w_prog = ast::Expr(Block, ast::BlockExpr(w_load.exprs))
+                     eval_prog' = w_prog
+                     eval_exports' = w_load.exports
+                     eval_dyn_mods' = w_load.dynamic_mods
+                     eval_dyn_paths' = w_load.dynamic_paths
+                     eval_nat_libs' = w_load.native_libs
+                     eval_nat_pkg' = w_load.native_pkg_config
+                     eval_files' = w_load.loaded_files
+                     annotate::set_program_locs(w_load.out_files,
+                        w_load.out_lines, w_load.out_cols)
+   eval_opts = opts
+   eval_run_default | eval_opts.no_cache = <+>
+   def_triple = get_default_target_triple(0)
+   eval_triple = opts.triple != "" | opts.triple | def_triple
+   eval_wasm = is_wasm_triple(eval_triple)
+   mod_suf = opts.is_module | ".o" | ""
+   sh_suf = opts.is_shared | ".so" | mod_suf
+   eval_suffix = eval_wasm | ".wasm" | sh_suf
+   fb_bin = opts.outpath != "" | opts.outpath | "eval" + eval_suffix
+   out_bin = eval_run_default | eval_bin | fb_bin
+   mod_stem = opts.is_module | "eval" | opts.outpath
+   ll_stem_e = opts.outpath != "" | mod_stem | "eval"
+   has_ll_e = ?ll_stem_e !< 3 && ll_stem_e(?ll_stem_e - 3..) == ".ll"
+   fb_ll = has_ll_e | ll_stem_e | ll_stem_e + ".ll"
+   out_ll = eval_run_default | eval_ll | fb_ll
+   rm_ll = eval_run_default | eval_ll | ""
+   rm_bin = eval_run_default | eval_bin | ""
+   comp_e = compile_ast_to_binary(eval_prog', eval_exports', eval_opts,
+      out_ll, out_bin, eval_dyn_mods', eval_dyn_paths',
+      eval_nat_libs', eval_nat_pkg', eval_files')
+   comp_e !| code =>
+      eval_cleanup(eval_dir, eval_file, rm_ll, rm_bin)
+      sys::exit(code)
+   eval_run_default || opts.run_exec
+      |
+         run_args = ast::Names()
+         is_abs_e = (?out_bin > 0 && out_bin(0) == '/') || out_bin(..2) == "./"
+         exec_e = is_abs_e | out_bin | "./" + out_bin
+         run_args += exec_e
+         rres = run_cmd(run_args)
+         eval_cleanup(eval_dir, eval_file, rm_ll, rm_bin)
+         rres != 0
+            |
+               print $ "E5014: Compiled program exited with code " +
+                  str::from_int(rres)
+               sys::exit(1)
+         sys::exit(0)
+      |
+         eval_cleanup(eval_dir, eval_file, "", "")
+         sys::exit(0)
 
 run_driver: Int => ()
 run_driver = ignored =>
@@ -2904,23 +3108,8 @@ run_driver = ignored =>
 
    opts.eval_src != ""
       |
-         src = opts.eval_src + "\n"
-         ppr = parser::parse_init(src)
-         parser::parser_set_file(ppr, "<eval>")
-         lexer::lex_set_file("<eval>")
-         annotate::set_source_file("<eval>")
-         annotate::set_target_triple(opts.triple)
-         prog_res = parser::parse_program(ppr)
-         prog_res | prog =>
-            opts.typed_ast
-               |
-                  verify_typed_ast(prog, opts.ast_dump || opts.ast_tree,
-                     opts.ast_tree)
-               |
-                  dump_program_ast(prog, opts.ast_tree)
-                  sys::exit(0)
-         |
-            sys::exit(1)
+         run_eval(opts)
+         sys::exit(0)
 
    opts.ast_dump && !opts.typed_ast
       |

@@ -172,6 +172,14 @@ collect_expr_refs = e, locals, refs =>
          collect_expr_refs(ex.code, locals, refs)
       [UserDiag ud]
          collect_expr_refs(ud.msg, locals, refs)
+      [Return r]
+         r.has_val | collect_expr_refs(r.val, locals, refs)
+      [MapLiteral m]
+         m.pairs @ p =>
+            collect_expr_refs(p.key, locals, refs)
+            collect_expr_refs(p.value, locals, refs)
+      [RawMemory rm]
+         collect_expr_refs(rm.addr, locals, refs)
 
 find_node_idx: DepGraph, String => Int
 find_node_idx = graph, name =>

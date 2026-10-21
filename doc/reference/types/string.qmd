@@ -105,7 +105,7 @@ The upper 16 bits of the 64-bit `len` word (`len >> 48`) store an arena generati
 
 ### Reading string metadata
 
-Edva deliberately avoids dot-property member access (`.len` and `.data` are compile-time errors `E3065` and `E3066`). Instead, prefix operators query string metadata:
+Edva deliberately avoids dot-property member access (`.len` and `.data` are compile-time errors `E3065` / `E3084`). Instead, prefix operators query string metadata:
 
 ```{.dva .run}
 s = "Edva Language"

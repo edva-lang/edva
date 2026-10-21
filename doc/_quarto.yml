@@ -61,8 +61,10 @@ book:
         - reference/stdlib/ascii.qmd
         - reference/stdlib/ccl.qmd
         - reference/stdlib/color.qmd
+        - reference/stdlib/event.qmd
         - reference/stdlib/fmt.qmd
         - reference/stdlib/fp.qmd
+        - reference/stdlib/fs.qmd
         - reference/stdlib/in.qmd
         - reference/stdlib/io.qmd
         - reference/stdlib/json.qmd
@@ -77,6 +79,7 @@ book:
         - reference/stdlib/type.qmd
         - reference/stdlib/unicode.qmd
         - reference/stdlib/uring.qmd
+        - reference/stdlib/utf.qmd
     - part: "Tooling & Diagnostics"
       chapters:
         - reference/edva-cli.qmd

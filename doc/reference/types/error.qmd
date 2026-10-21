@@ -12,15 +12,16 @@ The `Error` type is Edva's native structured error payload. It is commonly place
 
 ## Structure and fields
 
-An `Error` value carries five fields tracking error category, descriptive message, and source file coordinates:
+An `Error` value carries six fields tracking error category, descriptive message, source file coordinates, and an auxiliary context pair:
 
 ```{.dva .run}
 #type Error (
-   code: Int,
-   msg:  String,
-   file: String,
-   line: Int,
-   col:  Int,
+   code:    Int,
+   msg:     String,
+   file:    String,
+   line:    Int,
+   col:     Int,
+   context: (Int, Int),
 )
 ```
 
@@ -29,6 +30,7 @@ An `Error` value carries five fields tracking error category, descriptive messag
 - `file`: Path to the source file where the error occurred.
 - `line`: 1-based source line number.
 - `col`: 1-based source column number.
+- `context`: Auxiliary `(Int, Int)` pair (defaults to `(0, 0)`).
 
 ## Constructing errors
 

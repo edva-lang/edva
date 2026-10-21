@@ -12,12 +12,14 @@
       r_res = uring::new(4)
       r_res
          | ring =>
+            ts' = (timeout_ms / 1000, (timeout_ms % 1000) * 1000000)
             uring::prep_poll_add(ring, fd, 1, 1001) // OP_POLL_ADD, POLLIN = 1
+            timeout_ms !< 0 | uring::prep_timeout(ring, &ts', 1, 0, 1002)
             uring::submit(ring)
             cqe_res = uring::wait_cqe(ring)
             uring::close(ring)
             cqe_res
-               | cqe => (cqe.res .&. 1) != 0
+               | cqe => cqe.user_data == 1001 && cqe.res > 0 && (cqe.res .&. 1) != 0
                | <->
          |
             // Fallback to POSIX poll if io_uring is unsupported in this environment

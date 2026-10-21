@@ -76,7 +76,7 @@ is_niche_utype = ctx, ut =>
    c = unify::canon(ctx, ut)
    c
       [Prim p]
-         p [Str]
+         p [Str, Error]
       [Rec r]
          ?r > 0
       | <->
@@ -120,11 +120,9 @@ compute_layout = ctx, ut =>
                         | tast::layout_ram(ptr_sz * 2, ptr_align)
                         | tast::layout_scalar(1, 1)
       [Enum] tast::layout_aggregate(ptr_sz * 2, ptr_align)
-      [Array a]
-         elay = compute_layout(ctx, a.elem)
-         e_align = elay.align < 1 | 1 | elay.align
+      [Array]
          tast::TypedLayout((
-            elay.size * a.count, e_align, tast::LayoutKind(Array)
+            ptr_sz * 3, ptr_align, tast::LayoutKind(Array)
          ))
       [Slice] tast::TypedLayout((ptr_sz * 2, ptr_align, tast::LayoutKind(Slice)))
       | tast::layout_scalar(ptr_sz, ptr_align)

@@ -53,7 +53,7 @@ Packed records disable interior and tail alignment padding, ensuring exact byte-
 ```
 
 ### 5. Bitfields
-Bitfield records pack specific bit widths into a backing integer (`u8`, `u16`, `u32`, `u64`). The sum of all field widths must exactly equal the backing integer's width (`E3153`):
+Bitfield records pack specific bit widths into a backing integer (`u8`, `u16`, `u32`, `u64`). The sum of all field widths must not exceed the backing integer's width (`E2055`):
 
 ```{.dva .run}
 #type TcpFlags #packed u16 (

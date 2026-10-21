@@ -52,7 +52,8 @@ The core document model represents nested, indentation-delimited key-value entri
 | `ccl::has` | `CclDoc, String => <>` | Check if a top-level key exists in the document |
 | `ccl::get` | `CclDoc, String => < String | >` | Retrieve the string value of a top-level key |
 | `ccl::get_section` | `CclDoc, String => < CclDoc | >` | Retrieve a nested block section as a sub-document |
-| `ccl::get_list` | `CclDoc, String => < Strings | >` | Retrieve entries sharing the specified key as a list of strings |
+| `ccl::get_list` | `CclDoc, String => < Strings | >` | Retrieve `= item` list entries inside the named section |
+| `ccl::entries_for` | `CclDoc, String => Strings` | Retrieve all string values for repeated occurrences of a key |
 
 ```{.dva .partial}
 doc = ccl::parse("name = demo\nversion = 0.1.0", "edva.ccl")!!
@@ -63,7 +64,7 @@ name = ccl::get(doc, "name") | n => n | "unknown"
 
 The module provides schema models and validators for `edva.ccl` manifests and `edva.lock.ccl` lockfiles:
 
-- `ccl::validate_manifest`: validates a `CclDoc` against Edva package manifest requirements (`name`, `version`, `edva`, `dependencies`, `native-libs`).
+- `ccl::validate_manifest`: validates a `CclDoc` against Edva package manifest requirements (`name`, `version`, `edva`, `dependencies`, `overrides`, `native`).
 - `ccl::manifest_to_ccl`: serializes a `PackageManifest` record back into deterministic CCL.
 - `ccl::validate_lockfile`: validates resolved package lockfile data.
 - `ccl::lockfile_to_ccl`: renders a resolved `Lockfile` structure into deterministic lockfile format.

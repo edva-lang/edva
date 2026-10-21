@@ -6,6 +6,8 @@ build/
 AGENTS.md
 .gemini/
 .agents/
+.envrc
+audits
 process
 benchmarks
 *.ll

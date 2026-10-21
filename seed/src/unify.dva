@@ -1166,7 +1166,9 @@ type_info_from_utype = ctx, u =>
       [Slice s]
          elem_ti_s = type_info_from_utype(ctx, s)
          elem_vt_s = vt_from_utype(ctx, s)
-         elem_flds = elem_ti_s [Rec r] r.0 | ast::FieldTypes()
+         elem_flds = ast::FieldTypes()
+         elem_flds += ast::RecordFieldType(("", elem_vt_s, elem_ti_s, <->,
+            ast::Expr(Int, 0)))
          ast::TypeInfo(Rec, (elem_flds, <+>, <->, elem_vt_s, 0, <->))
       [Map m]
          k_ti = type_info_from_utype(ctx, m.key)

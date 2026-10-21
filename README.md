@@ -77,7 +77,7 @@ cd edva
 ## Repository Map
 
 - `src/` — Self-hosted compiler implementation
-- `std/` & `prelude.dva` — Standard library and language prelude
+- `std/` — Standard library modules
 - `tests/` — Compiler regression suite (pass, fail, driver)
 - `examples/` — Code examples and sample applications
 - `tools/` — Lexer token and operator table generators

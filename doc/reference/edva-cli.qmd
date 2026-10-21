@@ -55,7 +55,7 @@ edva pkg <command> [dir] [options]
 
 | Command | Description |
 |---|---|
-| `edva init [dir] [--name <name>]` | Initialize a new package skeleton with `edva.ccl`, `src/<name>.dva`, and `src/main.dva`. |
+| `edva init <dir> [--name <name>]` | Initialize a new package skeleton with `edva.ccl`, `src/<name>.dva`, and `src/main.dva`. |
 | `edva add <alias> [source] [dir]` | Add a dependency to `edva.ccl` and resolve the graph transactionally (`--path`, `--git`, or `--url`). |
 | `edva fetch [dir]` | Resolve dependencies, fetch sources, verify content hashes, write `edva.lock.ccl`, and generate `.edva/imports.ccl`. |
 | `edva build [dir]` | Fetch dependencies (if needed) and compile executable target `src/main.dva` into `./<name>`. |

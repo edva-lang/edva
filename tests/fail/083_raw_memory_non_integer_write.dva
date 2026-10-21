@@ -1,4 +1,4 @@
-// A raw-memory write stores the value at its own width — integerish or
-// pointer-shaped only. A float has no raw slot, so it is rejected (E3142).
+// A raw-memory write stores a scalar or record value at its byte width.
+// Flag (<>) has no raw memory representation, so it is rejected (E3142).
 b = {16}
-@[&b] = 3.5
+@[&b] = <+>

@@ -44,7 +44,7 @@ One-branch choices are statements, not exhaustive values. In an assignable choic
 (used as a binding value, argument, or return value), all branches—including every
 guarded alternative and any trailing fallback—**must evaluate to the exact same type**.
 If branches yield differing types, the compiler rejects the expression with a type
-mismatch error (`E3003`). The choice must be exhaustive across all execution paths;
+mismatch error (`E3084`). The choice must be exhaustive across all execution paths;
 never add a dummy `| 0` fallback (which corrupts the unified type to `Int`).
 When an inexhaustive choice in expression position has branches that all return `RamPN`
 (`< T | >`) or `RamNP` (`< | E >`), the compiler automatically synthesizes an implicit fallback

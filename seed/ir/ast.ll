@@ -117,6 +117,7 @@ entry:
   %arena.cur3 = call ptr @dva_arena_current()
   %enum.pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 8)
   store i64 0, ptr %enum.pay.alloc, align 8
+  store i64 0, ptr %enum.pay.alloc, align 8
   store ptr %enum.pay.alloc, ptr %pay.gep, align 8
   %arena.cur4 = call ptr @dva_arena_current()
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur4, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, i1, ptr }, ptr null, i32 1) to i64))
@@ -492,9 +493,12 @@ str_gen_check:                                    ; preds = %choice.then
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %choice.then
   %copy.len8 = getelementptr inbounds { i64, ptr }, ptr %var.load4, i32 0, i32 1
   %copy.len9 = load ptr, ptr %copy.len8, align 8
+  %copy.alen = add i64 %copy.len6, 1
   %arena.cur10 = call ptr @dva_arena_current()
-  %copy.buf = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 %copy.len6)
+  %copy.buf = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 %copy.alen)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %copy.buf, ptr align 1 %copy.len9, i64 %copy.len6, i1 false)
+  %copy.nul = getelementptr i8, ptr %copy.buf, i64 %copy.len6
+  store i8 0, ptr %copy.nul, align 1
   %arena.cur11 = call ptr @dva_arena_current()
   %copy.str = call ptr @dva_arena_alloc(ptr %arena.cur11, i64 16)
   %str.copy.len.gep = getelementptr inbounds { i64, ptr }, ptr %copy.str, i32 0, i32 0

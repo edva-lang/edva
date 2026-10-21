@@ -295,7 +295,8 @@
    set_nonblocking = fd, flag =>
       flags = libc::fcntl(fd, net::F_GETFL, 0)
       flags [< 0] -1 |
-         new_flags = flag | (flags .|. net::O_NONBLOCK) | (flags .&. .!. net::O_NONBLOCK)
+         nb_mask = net::O_NONBLOCK .|. (libc::is_darwin! | 4 | 0)
+         new_flags = flag | (flags .|. net::O_NONBLOCK) | (flags .&. .!. nb_mask)
          libc::fcntl(fd, net::F_SETFL, new_flags)
 
    // Send FIN on fd without closing the read side.
@@ -357,11 +358,12 @@
    udp_send: Int, String, Int, String => Int
    udp_send = fd, host, port, data =>
       ip = libc::inet_addr $ host
-      ip [< 0] -1
-      |
-         addr = SockAddrIn((net::sin_fam_inet!,
-            u16(htons $ port), in_addr_u32(ip), 0u64))
-         libc::sendto(fd, data, ?data, 0, &addr, 16)
+      ip < 0 || ip == 4294967295
+         | -1
+         |
+            addr = SockAddrIn((net::sin_fam_inet!,
+               u16(htons $ port), in_addr_u32(ip), 0u64))
+            libc::sendto(fd, data, ?data, 0, &addr, 16)
 
    // Receive one datagram. Returns Chunk: <+ data +> on data, <-->
    // on none/error.

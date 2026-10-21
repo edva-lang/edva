@@ -42,17 +42,53 @@
       b0 = Int(@[p + i u8])
       Rune(b0
          [< 0x80] b0
-         [< 0xE0] (b0 - 0xC0) * 0x40 + (Int(@[p + i + 1 u8]) - 0x80)
+         [< 0xC2] 0xFFFD
+         [< 0xE0]
+            b1 = Int(@[p + i + 1 u8])
+            (b1 .&. 0xC0) == 0x80
+               | (b0 - 0xC0) * 0x40 + (b1 - 0x80)
+               | 0xFFFD
          [< 0xF0]
-            (b0 - 0xE0) * 0x1000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x40 +
-               (Int(@[p + i + 2 u8]) - 0x80)
-         |
-            (b0 - 0xF0) * 0x40000 + (Int(@[p + i + 1 u8]) - 0x80) * 0x1000 +
-               (Int(@[p + i + 2 u8]) - 0x80) * 0x40 +
-               (Int(@[p + i + 3 u8]) - 0x80)
+            b1 = Int(@[p + i + 1 u8])
+            (b1 .&. 0xC0) == 0x80
+               |
+                  b2 = Int(@[p + i + 2 u8])
+                  (b2 .&. 0xC0) == 0x80
+                     |
+                        cp3 = (b0 - 0xE0) * 0x1000 + (b1 - 0x80) * 0x40 + (b2 - 0x80)
+                        cp3 !< 0x800 && (cp3 < 0xD800 || cp3 > 0xDFFF)
+                           | cp3
+                           | 0xFFFD
+                     | 0xFFFD
+               | 0xFFFD
+         [< 0xF5]
+            b1 = Int(@[p + i + 1 u8])
+            (b1 .&. 0xC0) == 0x80
+               |
+                  b2 = Int(@[p + i + 2 u8])
+                  (b2 .&. 0xC0) == 0x80
+                     |
+                        b3 = Int(@[p + i + 3 u8])
+                        (b3 .&. 0xC0) == 0x80
+                           |
+                              cp4 = (b0 - 0xF0) * 0x40000 + (b1 - 0x80) * 0x1000 +
+                                 (b2 - 0x80) * 0x40 + (b3 - 0x80)
+                              cp4 !< 0x10000 && cp4 !> 0x10FFFF
+                                 | cp4
+                                 | 0xFFFD
+                           | 0xFFFD
+                     | 0xFFFD
+               | 0xFFFD
+         | 0xFFFD
       )
 
    // Decode the UTF-8 rune at Builder buffer + i into its codepoint
    decode_rune_builder: Builder, Int => Rune
    decode_rune_builder = b, i =>
-      decode_rune_addr(&b, i)
+      n = ?b
+      i < 0 || i !< n | --| Rune(0xFFFD)
+      p = &b
+      b0 = Int(@[p + i u8])
+      need = b0 [< 0x80] 1 [< 0xE0] 2 [< 0xF0] 3 | 4
+      i + need > n | --| Rune(0xFFFD)
+      decode_rune_addr(p, i)

@@ -529,7 +529,7 @@ b.len_oob:                                        ; preds = %b.len_big_check, %a
 b.freeze.check:                                   ; preds = %b.len_ok
   %b.freeze.last.idx = sub i64 %b.freeze.nc, 1
   %b.freeze.chunks.gep = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %b.freeze.arena, i32 0, i32 3
-  %b.freeze.chunk.slot = getelementptr [4096 x ptr], ptr %b.freeze.chunks.gep, i64 0, i64 %b.freeze.last.idx
+  %b.freeze.chunk.slot = getelementptr [16384 x ptr], ptr %b.freeze.chunks.gep, i64 0, i64 %b.freeze.last.idx
   %b.freeze.last.chunk = load ptr, ptr %b.freeze.chunk.slot, align 8
   %b.freeze.off.gep = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %b.freeze.arena, i32 0, i32 2
   %b.freeze.off = load i64, ptr %b.freeze.off.gep, align 8
@@ -545,9 +545,12 @@ b.freeze.check:                                   ; preds = %b.len_ok
   br i1 %b.freeze.reaped, label %b.freeze.copy, label %b.freeze.done
 
 b.freeze.copy:                                    ; preds = %b.freeze.check
+  %b.freeze.alen = add i64 %b.freeze.len26, 1
   %arena.cur28 = call ptr @dva_arena_current()
-  %b.freeze.fresh = call ptr @dva_arena_alloc(ptr %arena.cur28, i64 %b.freeze.len26)
+  %b.freeze.fresh = call ptr @dva_arena_alloc(ptr %arena.cur28, i64 %b.freeze.alen)
   call void @llvm.memmove.p0.p0.i64(ptr align 1 %b.freeze.fresh, ptr align 1 %b.freeze.data27, i64 %b.freeze.len26, i1 false)
+  %b.freeze.nul = getelementptr i8, ptr %b.freeze.fresh, i64 %b.freeze.len26
+  store i8 0, ptr %b.freeze.nul, align 1
   br label %b.freeze.done
 
 b.freeze.done:                                    ; preds = %b.freeze.copy, %b.freeze.check, %b.len_ok
@@ -580,7 +583,7 @@ entry:
   ret ptr %call.res1
 }
 
-define ptr @"sys::addr_opt"(ptr %0) #1 {
+define { i1, i64 } @"sys::addr_opt"(ptr %0) #1 {
 entry:
   %var.a = alloca ptr, align 8
   store ptr %0, ptr %var.a, align 8
@@ -592,27 +595,17 @@ entry:
   br i1 %cmptmp, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %entry
-  %arena.cur = call ptr @dva_arena_current()
-  %ram.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
-  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 0
-  store i64 1, ptr %tag.gep, align 8
-  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 1
   %var.load2 = load ptr, ptr %var.a, align 8
-  store ptr %var.load2, ptr %pay.gep, align 8
+  %p.to.i64 = ptrtoint ptr %var.load2 to i64
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
   br label %choice.exit
 
 choice.else:                                      ; preds = %entry
-  %arena.cur3 = call ptr @dva_arena_current()
-  %ram.alloc4 = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 16)
-  %tag.gep5 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc4, i32 0, i32 0
-  store i64 0, ptr %tag.gep5, align 8
-  %pay.gep6 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc4, i32 0, i32 1
-  store ptr null, ptr %pay.gep6, align 8
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi ptr [ %ram.alloc, %choice.then ], [ %ram.alloc4, %choice.else ]
-  ret ptr %choice.res
+  %choice.res = phi { i1, i64 } [ %ram.pay, %choice.then ], [ zeroinitializer, %choice.else ]
+  ret { i1, i64 } %choice.res
 }
 
 define ptr @"sys::argv"(i64 %0) #1 {
@@ -623,19 +616,15 @@ entry:
   store i64 %0, ptr %var.n, align 8
   %var.load = load i64, ptr %var.n, align 8
   %call.res = call ptr @"sys::raw_argv"(i64 %var.load)
-  %call.res1 = call ptr @"sys::addr_opt"(ptr %call.res)
-  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %call.res1, i32 0, i32 0
-  %tag.id = load i64, ptr %tag.gep, align 8
-  %tag.eq.one = icmp eq i64 %tag.id, 1
-  %tag.eq.two = icmp eq i64 %tag.id, 2
-  %is.pos = or i1 %tag.eq.one, %tag.eq.two
-  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %call.res1, i32 0, i32 1
-  %payload.ptr = load ptr, ptr %pay.gep, align 8
-  br i1 %is.pos, label %choice.then, label %choice.else
+  %call.res1 = call { i1, i64 } @"sys::addr_opt"(ptr %call.res)
+  %ram.tag = extractvalue { i1, i64 } %call.res1, 0
+  br i1 %ram.tag, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %entry
-  store ptr %payload.ptr, ptr %var._, align 8
-  store ptr %payload.ptr, ptr %var.raw, align 8
+  %ram.pay = extractvalue { i1, i64 } %call.res1, 1
+  %pay.ptr = inttoptr i64 %ram.pay to ptr
+  store ptr %pay.ptr, ptr %var._, align 8
+  store ptr %pay.ptr, ptr %var.raw, align 8
   %var.load2 = load ptr, ptr %var.raw, align 8
   %call.res3 = call ptr @"sys::c_str"(ptr %var.load2)
   br label %choice.exit

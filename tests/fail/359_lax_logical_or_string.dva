@@ -1,0 +1,2 @@
+// Logical '||' requires Flag (<>) operands; String is rejected.
+x = <-> || "hello"

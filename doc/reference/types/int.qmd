@@ -82,7 +82,7 @@ neg_val = -42             // Negation
 
 ### Arithmetic operators
 
-Edva supports standard binary arithmetic operators on integers of identical types:
+Edva supports standard binary arithmetic operators on integers of identical width and signedness (mixing `Int` with `Float` in binary arithmetic promotes the `Int` operand to `Float`):
 
 ```{.dva .run}
 a = 20

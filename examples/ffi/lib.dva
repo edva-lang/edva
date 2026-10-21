@@ -10,9 +10,9 @@
 #export dva_fact = n =>
    n [0, 1] 1
    |
-   acc' = 1
-   n @ k => acc = acc * (k + 1)
-   acc'
+      acc' = 1
+      n @ k => acc' = acc' * (k + 1)
+      acc'
 
 #export dva_greet: Int => Int
 #export dva_greet = n =>

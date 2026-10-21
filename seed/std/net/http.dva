@@ -344,6 +344,7 @@
    read_line = fd, max =>
       b = {max}
       peek_buf = {1024}
+      got_any' = <->
       0.. @
          rem = max - ?b
          rem !> 0 | -->
@@ -359,12 +360,13 @@
          to_consume = found' !< 0 | found' + 1 | p
          r = libc::recv(fd, &peek_buf, to_consume, 0)
          r [< 1] -->
+         got_any' = <+>
          limit = found' !< 0 | found' | r
          0..limit @ j =>
             c = @[&peek_buf + j i8]
             c != 13 | (b += c)
          found' !< 0 | -->
-      ?b > 0
+      got_any'
          | Chunk(<+ +b +>)
          | Chunk(<-->)
 
@@ -475,7 +477,9 @@
                         c !< 48 && c !> 57
                            |
                               d = c - 48
-                              parsed' > 922337203685477580
+                              is_over = parsed' > 922337203685477580 ||
+                                 (parsed' == 922337203685477580 && d > 7)
+                              is_over
                                  | (over' = <+>)
                                  | (parsed' = parsed' * 10 + d)
                            | (cl_invalid' = <+>; -->)

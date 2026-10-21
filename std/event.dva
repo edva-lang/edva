@@ -117,7 +117,7 @@
    wait: Poller, Int => (Event){}
    wait = p, timeout_ms =>
       res' = (Event){}
-      p.is_closed | res'
+      p.is_closed | --| res'
       pfds = {p.max_events * 8}
       idxs = {p.max_events * 8}
       nfds' = 0
@@ -136,7 +136,7 @@
                @[&idxs + k * 8] = i
                nfds' = nfds' + 1
       n = libc::poll(&pfds, nfds', timeout_ms)
-      n !> 0 | res'
+      n !> 0 | --| res'
       0..nfds' @ k =>
          rev = Int(@[&pfds + k * 8 + 6 i16]) .&. 65535
          rev != 0

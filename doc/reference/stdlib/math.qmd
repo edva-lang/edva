@@ -102,8 +102,10 @@ Import with `#use math/geom`. Operates on homogeneous float tuples leveraging ha
 | `geom::dist3` | `Vec3, Vec3 => Float` | 3D Euclidean distance |
 | `geom::norm3` | `Vec3 => Vec3` | Unit normalized 3D vector |
 | `geom::cross3` | `Vec3, Vec3 => Vec3` | 3D vector cross product |
-| `geom::contains` | `Rect, Point2 => <>` | Tests whether point `(px, py)` lies inside rectangle |
-| `geom::intersects` | `Rect, Rect => <>` | Tests whether two axis-aligned rectangles overlap |
+| `geom::rect_contains` | `Rect, Point2 => <>` | Tests whether point `(px, py)` lies inside rectangle |
+| `geom::circle_contains` | `Point2, Float, Point2 => <>` | Tests whether point lies within circle `(center, radius)` |
+| `geom::rect_union` | `Rect, Rect => Rect` | Bounding rectangle enclosing both rectangles |
+| `geom::rect_intersect` | `Rect, Rect => Rect` | Overlapping region of two rectangles |
 
 ```{.dva .run}
 #use io
@@ -138,8 +140,8 @@ Import with `#use math/complex`. Provides Cartesian and polar complex arithmetic
 | `complex::arg` | `Complex => Float` | Principal phase angle in radians $(-\pi, \pi]$ |
 | `complex::polar` | `Float, Float => Complex` | Constructs from polar coordinates `(r, theta)` |
 | `complex::exp` | `Complex => Complex` | Complex exponential $e^z = e^{\text{re}}(\cos(\text{im}) + i\sin(\text{im}))$ |
-| `complex::fft` | `ComplexArray, Int => ComplexArray` | In-place Cooley-Tukey Radix-2 forward FFT ($N = 2^k$) |
-| `complex::ifft` | `ComplexArray, Int => ComplexArray` | In-place inverse FFT normalized by $1/N$ |
+| `complex::fft` | `ComplexArray => ComplexArray` | Cooley-Tukey Radix-2 forward FFT ($N = 2^k$) |
+| `complex::ifft` | `ComplexArray => ComplexArray` | Inverse FFT normalized by $1/N$ |
 
 ```{.dva .run}
 #use io

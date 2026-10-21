@@ -26,7 +26,7 @@ Each branch normalizes to exactly one of four guard kinds:
 
 ### Guard chaining and adjacency rules
 
-- **Guarded branches chain adjacently:** `x [1] "a" [2] "b" | "c"`. There must be **no `|`** between guarded branches; writing `| [2]` produces compile error `E2096`.
+- **Guarded branches chain adjacently:** `x [1] "a" [2] "b" | "c"`. There must be **no `|`** between guarded branches; writing `| [2]` produces compile error `E2095`.
 - **Commas in case guards form an OR-list:** `x [1, 2, 3] body` matches when `x` equals 1, 2, or 3. Commas in predicate guards (`[< 0, 5]`) are a syntax error.
 - **Bare `|` position:** A bare `|` is only legal in the very first position (as condition separator) or the very last position (as fallback). Using `|` in any middle position is a parse error.
 
@@ -48,7 +48,7 @@ classify_number = n =>
 | Syntactic position | Standalone statement | RHS of assignment, return value, or arg |
 | Exhaustiveness | Never required | Strictly required across all paths |
 | Result type | Unit (`()`) | Unified type of branch bodies |
-| Single-branch form | `cond | action` (allowed and idiomatic) | Rejected (`E3087`: incomplete expression) |
+| Single-branch form | `cond | action` (allowed and idiomatic) | Rejected (`E3093`: non-exhaustive choice) |
 | Dummy fallback | **Never use `| 0`** (corrupts type to `Int`) | Provide meaningful fallback or unwrap |
 
 ```{.dva .partial}
@@ -95,7 +95,7 @@ Ramifications (rams) are matched **strictly by position** using bare `|` branche
 
 - **First bare branch:** matches the positive (first) slot.
 - **Second bare branch:** matches the negative (second) slot.
-- **No slot names:** Ram slots have no source-level keywords or labels (`Positive` and `Negative` are internal compiler tags; writing named labels emits `E3125` / `E3004`).
+- **No slot names:** Ram slots have no source-level keywords or labels (`Positive` and `Negative` are internal compiler tags; writing named labels emits `E3084` / `E3004`).
 
 | Choice Form | Syntax | Behavior |
 |---|---|---|
@@ -187,7 +187,7 @@ Cycles iterate over counts, ranges, or collections without keywords:
 ### Cycle-escape expressions (`>--`)
 
 Appending `>--` followed by a branch turns a cycle into an expression returning `RamPN` (`< T | >`):
-- If a `-->` break fires, the cycle terminates and evaluates to the positive ramification `<+ branch_val ->`.
+- If a `-->` break fires, the cycle terminates and evaluates to the positive ramification `<+ branch_val +>`.
 - If the cycle completes naturally without breaking, it yields the negative unit `<-->` (absence).
 
 ```{.dva .partial}

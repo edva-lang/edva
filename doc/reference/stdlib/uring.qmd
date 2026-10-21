@@ -108,7 +108,7 @@ Completed operations report kernel status in `CQE.res`:
 ## Example
 
 ```{.dva .complete}
-#use libc
+#use io
 #use uring
 
 ring_res = uring::new(8)
@@ -118,6 +118,6 @@ ring_res
       uring::submit(ring)
       cqe_opt = uring::wait_cqe(ring)
       cqe_opt
-         | cqe => libc::close(ring.fd)
+         | cqe => io::out(cqe.user_data)
       uring::close(ring)
 ```

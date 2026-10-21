@@ -1834,7 +1834,7 @@ declare ptr @"tast::layout_aggregate"(i64, i64) #1
 define i1 @"layout::is_niche_utype"(ptr %0, ptr %1) #1 {
 entry:
   %var.r = alloca ptr, align 8
-  %var._17 = alloca ptr, align 8
+  %var._18 = alloca ptr, align 8
   %var.p = alloca ptr, align 8
   %var._ = alloca ptr, align 8
   %var.c = alloca ptr, align 8
@@ -1852,9 +1852,9 @@ entry:
   %tag.match = icmp eq i64 %tag.id, 0
   br i1 %tag.match, label %choice.case, label %choice.next
 
-choice.exit:                                      ; preds = %choice.next11, %a.after, %choice.exit4
-  %choice.res22 = phi i1 [ %choice.res, %choice.exit4 ], [ %cmptmp, %a.after ], [ false, %choice.next11 ]
-  ret i1 %choice.res22
+choice.exit:                                      ; preds = %choice.next12, %a.after, %choice.exit4
+  %choice.res23 = phi i1 [ %choice.res, %choice.exit4 ], [ %cmptmp, %a.after ], [ false, %choice.next12 ]
+  ret i1 %choice.res23
 
 choice.case:                                      ; preds = %entry
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 1
@@ -1865,13 +1865,15 @@ choice.case:                                      ; preds = %entry
   %tag.gep7 = getelementptr inbounds { i64, ptr }, ptr %var.load3, i32 0, i32 0
   %tag.id8 = load i64, ptr %tag.gep7, align 8
   %tag.match9 = icmp eq i64 %tag.id8, 11
-  br i1 %tag.match9, label %choice.case5, label %choice.next6
+  %tag.match10 = icmp eq i64 %tag.id8, 17
+  %tag.or = or i1 %tag.match9, %tag.match10
+  br i1 %tag.or, label %choice.case5, label %choice.next6
 
 choice.next:                                      ; preds = %entry
-  %tag.gep12 = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 0
-  %tag.id13 = load i64, ptr %tag.gep12, align 8
-  %tag.match14 = icmp eq i64 %tag.id13, 3
-  br i1 %tag.match14, label %choice.case10, label %choice.next11
+  %tag.gep13 = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 0
+  %tag.id14 = load i64, ptr %tag.gep13, align 8
+  %tag.match15 = icmp eq i64 %tag.id14, 3
+  br i1 %tag.match15, label %choice.case11, label %choice.next12
 
 choice.exit4:                                     ; preds = %choice.next6, %choice.case5
   %choice.res = phi i1 [ true, %choice.case5 ], [ false, %choice.next6 ]
@@ -1883,38 +1885,38 @@ choice.case5:                                     ; preds = %choice.case
 choice.next6:                                     ; preds = %choice.case
   br label %choice.exit4
 
-choice.case10:                                    ; preds = %choice.next
-  %pay.gep15 = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 1
-  %payload.ptr16 = load ptr, ptr %pay.gep15, align 8
-  store ptr %payload.ptr16, ptr %var._17, align 8
-  store ptr %payload.ptr16, ptr %var.r, align 8
-  %var.load18 = load ptr, ptr %var.r, align 8
+choice.case11:                                    ; preds = %choice.next
+  %pay.gep16 = getelementptr inbounds { i64, ptr }, ptr %var.load2, i32 0, i32 1
+  %payload.ptr17 = load ptr, ptr %pay.gep16, align 8
+  store ptr %payload.ptr17, ptr %var._18, align 8
+  store ptr %payload.ptr17, ptr %var.r, align 8
+  %var.load19 = load ptr, ptr %var.r, align 8
   %a.load = load ptr, ptr %var.r, align 8
   %a.null = icmp eq ptr %a.load, null
   br i1 %a.null, label %a.create, label %a.after
 
-choice.next11:                                    ; preds = %choice.next
+choice.next12:                                    ; preds = %choice.next
   br label %choice.exit
 
-a.create:                                         ; preds = %choice.case10
+a.create:                                         ; preds = %choice.case11
   %arena.cur = call ptr @dva_arena_current()
-  %a.create19 = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
-  %arena.cur20 = call ptr @dva_arena_current()
-  %a.buf = call ptr @dva_arena_alloc(ptr %arena.cur20, i64 128)
-  %a.len.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create19, i32 0, i32 0
+  %a.create20 = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
+  %arena.cur21 = call ptr @dva_arena_current()
+  %a.buf = call ptr @dva_arena_alloc(ptr %arena.cur21, i64 128)
+  %a.len.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create20, i32 0, i32 0
   store i64 0, ptr %a.len.gep, align 8
-  %a.data.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create19, i32 0, i32 1
+  %a.data.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create20, i32 0, i32 1
   store ptr %a.buf, ptr %a.data.gep, align 8
-  %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create19, i32 0, i32 2
+  %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create20, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
-  store ptr %a.create19, ptr %var.r, align 8
+  store ptr %a.create20, ptr %var.r, align 8
   br label %a.after
 
-a.after:                                          ; preds = %a.create, %choice.case10
+a.after:                                          ; preds = %a.create, %choice.case11
   %a.load2 = load ptr, ptr %var.r, align 8
   %a.len.query = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2, i32 0, i32 0
-  %a.len.query21 = load i64, ptr %a.len.query, align 8
-  %cmptmp = icmp sgt i64 %a.len.query21, 0
+  %a.len.query22 = load i64, ptr %a.len.query, align 8
+  %cmptmp = icmp sgt i64 %a.len.query22, 0
   br label %choice.exit
 }
 
@@ -1922,10 +1924,7 @@ declare ptr @"unify::canon"(ptr, ptr) #1
 
 define ptr @"layout::compute_layout"(ptr %0, ptr %1) #1 {
 entry:
-  %var._205 = alloca ptr, align 8
-  %var.e_align = alloca i64, align 8
-  %var.elay = alloca ptr, align 8
-  %var.a = alloca ptr, align 8
+  %var._185 = alloca ptr, align 8
   %var._165 = alloca ptr, align 8
   %var._153 = alloca ptr, align 8
   %var.has_n = alloca i1, align 1
@@ -2002,9 +2001,9 @@ choice.exit9:                                     ; preds = %choice.else8, %choi
   %tag.match = icmp eq i64 %tag.id, 0
   br i1 %tag.match, label %choice.case, label %choice.next
 
-choice.exit14:                                    ; preds = %choice.next199, %choice.case198, %choice.exit176, %choice.case146, %choice.exit92, %loop.exit.22, %choice.case17, %choice.case
-  %choice.res221 = phi ptr [ %call.res16, %choice.case ], [ %rec.alloc, %choice.case17 ], [ %call.res70, %loop.exit.22 ], [ %choice.res145, %choice.exit92 ], [ %call.res157, %choice.case146 ], [ %rec.alloc194, %choice.exit176 ], [ %rec.alloc214, %choice.case198 ], [ %call.res220, %choice.next199 ]
-  ret ptr %choice.res221
+choice.exit14:                                    ; preds = %choice.next179, %choice.case178, %choice.case158, %choice.case146, %choice.exit92, %loop.exit.22, %choice.case17, %choice.case
+  %choice.res201 = phi ptr [ %call.res16, %choice.case ], [ %rec.alloc, %choice.case17 ], [ %call.res70, %loop.exit.22 ], [ %choice.res145, %choice.exit92 ], [ %call.res157, %choice.case146 ], [ %rec.alloc174, %choice.case158 ], [ %rec.alloc194, %choice.case178 ], [ %call.res200, %choice.next179 ]
+  ret ptr %choice.res201
 
 choice.case:                                      ; preds = %choice.exit9
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %var.load13, i32 0, i32 1
@@ -2115,12 +2114,12 @@ loop.body.22:                                     ; preds = %loop.header.22
   %var.load50 = load ptr, ptr %var.flay, align 8
   %fld.gep51 = getelementptr inbounds { i64, i64, ptr }, ptr %var.load50, i32 0, i32 1
   %fld.load52 = load i64, ptr %fld.gep51, align 8
-  %smax = call i64 @llvm.smax.i64(i64 %fld.load52, i64 1)
-  store i64 %smax, ptr %var.f_align, align 8
+  %max = call i64 @llvm.smax.i64(i64 %fld.load52, i64 1)
+  store i64 %max, ptr %var.f_align, align 8
   %var.load53 = load i64, ptr %"var.max_align'", align 8
   %var.load54 = load i64, ptr %var.f_align, align 8
-  %smax55 = call i64 @llvm.smax.i64(i64 %var.load53, i64 %var.load54)
-  store i64 %smax55, ptr %"var.max_align'", align 8
+  %max55 = call i64 @llvm.smax.i64(i64 %var.load53, i64 %var.load54)
+  store i64 %max55, ptr %"var.max_align'", align 8
   %var.load56 = load i64, ptr %"var.cur_off'", align 8
   %var.load57 = load i64, ptr %var.f_align, align 8
   %call.res58 = call i64 @"layout::align_up"(i64 %var.load56, i64 %var.load57)
@@ -2148,8 +2147,8 @@ loop.exit.22:                                     ; preds = %loop.exit.nat.22
   store i64 %call.res64, ptr %var.total_size, align 8
   %var.load65 = load i64, ptr %var.total_size, align 8
   %var.load66 = load i64, ptr %var.min_rec_sz, align 8
-  %smax67 = call i64 @llvm.smax.i64(i64 %var.load65, i64 %var.load66)
-  store i64 %smax67, ptr %var.fin_size, align 8
+  %max67 = call i64 @llvm.smax.i64(i64 %var.load65, i64 %var.load66)
+  store i64 %max67, ptr %var.fin_size, align 8
   %var.load68 = load i64, ptr %var.fin_size, align 8
   %var.load69 = load i64, ptr %"var.max_align'", align 8
   %call.res70 = call ptr @"tast::layout_aggregate"(i64 %var.load68, i64 %var.load69)
@@ -2317,49 +2316,42 @@ choice.case158:                                   ; preds = %choice.next147
   %pay.gep163 = getelementptr inbounds { i64, ptr }, ptr %var.load13, i32 0, i32 1
   %payload.ptr164 = load ptr, ptr %pay.gep163, align 8
   store ptr %payload.ptr164, ptr %var._165, align 8
-  store ptr %payload.ptr164, ptr %var.a, align 8
-  %var.load166 = load ptr, ptr %var.ctx, align 8
-  %var.load167 = load ptr, ptr %var.a, align 8
-  %fld.gep168 = getelementptr inbounds { ptr, i64 }, ptr %var.load167, i32 0, i32 0
-  %fld.load169 = load ptr, ptr %fld.gep168, align 8
-  %call.res170 = call ptr @"layout::compute_layout"(ptr %var.load166, ptr %fld.load169)
-  store ptr %call.res170, ptr %var.elay, align 8
-  %var.load171 = load ptr, ptr %var.elay, align 8
-  %fld.gep172 = getelementptr inbounds { i64, i64, ptr }, ptr %var.load171, i32 0, i32 1
-  %fld.load173 = load i64, ptr %fld.gep172, align 8
-  %cmptmp = icmp slt i64 %fld.load173, 1
-  br i1 %cmptmp, label %choice.then174, label %choice.else175
+  %var.load166 = load i64, ptr %var.ptr_sz, align 8
+  %multmp167 = mul i64 %var.load166, 3
+  %var.load168 = load i64, ptr %var.ptr_align, align 8
+  %arena.cur169 = call ptr @dva_arena_current()
+  %enum.alloc170 = call ptr @dva_arena_alloc(ptr %arena.cur169, i64 16)
+  %tag.gep171 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc170, i32 0, i32 0
+  store i64 5, ptr %tag.gep171, align 8
+  %pay.gep172 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc170, i32 0, i32 1
+  store ptr null, ptr %pay.gep172, align 8
+  %arena.cur173 = call ptr @dva_arena_current()
+  %rec.alloc174 = call ptr @dva_arena_alloc(ptr %arena.cur173, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
+  %rec.fld175 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc174, i32 0, i32 0
+  store i64 %multmp167, ptr %rec.fld175, align 8
+  %rec.fld176 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc174, i32 0, i32 1
+  store i64 %var.load168, ptr %rec.fld176, align 8
+  %rec.fld177 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc174, i32 0, i32 2
+  store ptr %enum.alloc170, ptr %rec.fld177, align 8
+  br label %choice.exit14
 
 choice.next159:                                   ; preds = %choice.next147
-  %tag.gep200 = getelementptr inbounds { i64, ptr }, ptr %var.load13, i32 0, i32 0
-  %tag.id201 = load i64, ptr %tag.gep200, align 8
-  %tag.match202 = icmp eq i64 %tag.id201, 7
-  br i1 %tag.match202, label %choice.case198, label %choice.next199
+  %tag.gep180 = getelementptr inbounds { i64, ptr }, ptr %var.load13, i32 0, i32 0
+  %tag.id181 = load i64, ptr %tag.gep180, align 8
+  %tag.match182 = icmp eq i64 %tag.id181, 7
+  br i1 %tag.match182, label %choice.case178, label %choice.next179
 
-choice.then174:                                   ; preds = %choice.case158
-  br label %choice.exit176
-
-choice.else175:                                   ; preds = %choice.case158
-  %var.load177 = load ptr, ptr %var.elay, align 8
-  %fld.gep178 = getelementptr inbounds { i64, i64, ptr }, ptr %var.load177, i32 0, i32 1
-  %fld.load179 = load i64, ptr %fld.gep178, align 8
-  br label %choice.exit176
-
-choice.exit176:                                   ; preds = %choice.else175, %choice.then174
-  %choice.res180 = phi i64 [ 1, %choice.then174 ], [ %fld.load179, %choice.else175 ]
-  store i64 %choice.res180, ptr %var.e_align, align 8
-  %var.load181 = load ptr, ptr %var.elay, align 8
-  %fld.gep182 = getelementptr inbounds { i64, i64, ptr }, ptr %var.load181, i32 0, i32 0
-  %fld.load183 = load i64, ptr %fld.gep182, align 8
-  %var.load184 = load ptr, ptr %var.a, align 8
-  %fld.gep185 = getelementptr inbounds { ptr, i64 }, ptr %var.load184, i32 0, i32 1
-  %fld.load186 = load i64, ptr %fld.gep185, align 8
-  %multmp187 = mul i64 %fld.load183, %fld.load186
-  %var.load188 = load i64, ptr %var.e_align, align 8
+choice.case178:                                   ; preds = %choice.next159
+  %pay.gep183 = getelementptr inbounds { i64, ptr }, ptr %var.load13, i32 0, i32 1
+  %payload.ptr184 = load ptr, ptr %pay.gep183, align 8
+  store ptr %payload.ptr184, ptr %var._185, align 8
+  %var.load186 = load i64, ptr %var.ptr_sz, align 8
+  %multmp187 = mul i64 %var.load186, 2
+  %var.load188 = load i64, ptr %var.ptr_align, align 8
   %arena.cur189 = call ptr @dva_arena_current()
   %enum.alloc190 = call ptr @dva_arena_alloc(ptr %arena.cur189, i64 16)
   %tag.gep191 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc190, i32 0, i32 0
-  store i64 5, ptr %tag.gep191, align 8
+  store i64 4, ptr %tag.gep191, align 8
   %pay.gep192 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc190, i32 0, i32 1
   store ptr null, ptr %pay.gep192, align 8
   %arena.cur193 = call ptr @dva_arena_current()
@@ -2372,33 +2364,10 @@ choice.exit176:                                   ; preds = %choice.else175, %ch
   store ptr %enum.alloc190, ptr %rec.fld197, align 8
   br label %choice.exit14
 
-choice.case198:                                   ; preds = %choice.next159
-  %pay.gep203 = getelementptr inbounds { i64, ptr }, ptr %var.load13, i32 0, i32 1
-  %payload.ptr204 = load ptr, ptr %pay.gep203, align 8
-  store ptr %payload.ptr204, ptr %var._205, align 8
-  %var.load206 = load i64, ptr %var.ptr_sz, align 8
-  %multmp207 = mul i64 %var.load206, 2
-  %var.load208 = load i64, ptr %var.ptr_align, align 8
-  %arena.cur209 = call ptr @dva_arena_current()
-  %enum.alloc210 = call ptr @dva_arena_alloc(ptr %arena.cur209, i64 16)
-  %tag.gep211 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc210, i32 0, i32 0
-  store i64 4, ptr %tag.gep211, align 8
-  %pay.gep212 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc210, i32 0, i32 1
-  store ptr null, ptr %pay.gep212, align 8
-  %arena.cur213 = call ptr @dva_arena_current()
-  %rec.alloc214 = call ptr @dva_arena_alloc(ptr %arena.cur213, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
-  %rec.fld215 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc214, i32 0, i32 0
-  store i64 %multmp207, ptr %rec.fld215, align 8
-  %rec.fld216 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc214, i32 0, i32 1
-  store i64 %var.load208, ptr %rec.fld216, align 8
-  %rec.fld217 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc214, i32 0, i32 2
-  store ptr %enum.alloc210, ptr %rec.fld217, align 8
-  br label %choice.exit14
-
-choice.next199:                                   ; preds = %choice.next159
-  %var.load218 = load i64, ptr %var.ptr_sz, align 8
-  %var.load219 = load i64, ptr %var.ptr_align, align 8
-  %call.res220 = call ptr @"tast::layout_scalar"(i64 %var.load218, i64 %var.load219)
+choice.next179:                                   ; preds = %choice.next159
+  %var.load198 = load i64, ptr %var.ptr_sz, align 8
+  %var.load199 = load i64, ptr %var.ptr_align, align 8
+  %call.res200 = call ptr @"tast::layout_scalar"(i64 %var.load198, i64 %var.load199)
   br label %choice.exit14
 }
 

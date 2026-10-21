@@ -114,6 +114,7 @@
    is_blank: <>,
    line_num: Int,
    continued: <>,
+   indent: Int,
 )
 #type HeredocLines (HeredocLine){}
 
@@ -257,21 +258,91 @@ esc_val = e =>
       ['e'] 27
       | e
 
+hex_digit_val: Rune => <Int|>
+hex_digit_val = r =>
+   ci = Int(r)
+   ci !< '0' && ci !> '9'
+      | <+ ci - '0' +>
+      | ci !< 'a' && ci !> 'f'
+         | <+ ci - 'a' + 10 +>
+         | ci !< 'A' && ci !> 'F'
+            | <+ ci - 'A' + 10 +>
+            | <-->
+
+scan_esc_rune: Lx => Rune
+scan_esc_rune = lx =>
+   esc_c = pk(lx, 0)
+   adv(lx, esc_c)
+   esc_c
+      ['x']
+         hex_digit_val(pk(lx, 0))
+            | d1 =>
+               hex_digit_val(pk(lx, 1))
+                  | d2 =>
+                     adv(lx, pk(lx, 0))
+                     adv(lx, pk(lx, 0))
+                     Rune((d1 .<. 4) .|. d2)
+                  | 'x'
+            | 'x'
+      ['u']
+         pk(lx, 0) == '{'
+            |
+               adv(lx, pk(lx, 0))
+               val' = 0
+               ndig' = 0
+               0..6 @
+                  hex_digit_val(pk(lx, 0))
+                     | d =>
+                        adv(lx, pk(lx, 0))
+                        val' = (val' .<. 4) .|. d
+                        ndig' = ndig' + 1
+                     | -->
+               pk(lx, 0) == '}' && ndig' > 0
+                  |
+                     adv(lx, pk(lx, 0))
+                     Rune(val')
+                  | 'u'
+            | 'u'
+      | esc_val(esc_c)
+
+scan_esc_byte_opt: Lx => <Int|>
+scan_esc_byte_opt = lx =>
+   pk(lx, 0) == 'x'
+      |
+         hex_digit_val(pk(lx, 1))
+            | d1 =>
+               hex_digit_val(pk(lx, 2))
+                  | d2 =>
+                     adv(lx, pk(lx, 0))
+                     adv(lx, pk(lx, 0))
+                     adv(lx, pk(lx, 0))
+                     <+ (d1 .<. 4) .|. d2 +>
+                  | <-->
+            | <-->
+      | <-->
+
 // Decode the C-style escapes of a scanned string body into real bytes.
 decode_escapes: String => String
 decode_escapes = raw =>
+   lx = lex_init(raw)
    buf = { ?raw }
-   in_esc' = <->
-   raw @@ r =>
-      in_esc'
+   0.. @
+      lx.pos !< ?lx.src | -->
+      c = pk(lx, 0)
+      c == '\\'
          |
-            buf += esc_val(r)
-            in_esc' = <->
+            adv(lx, c)
+            lx.pos < ?lx.src
+               |
+                  scan_esc_byte_opt(lx)
+                     | b => buf += b
+                     |
+                        er = scan_esc_rune(lx)
+                        buf += er
+               | buf += '\\'
          |
-            r == '\\'
-               | in_esc' = <+>
-               | buf += r
-   in_esc' | buf += '\\'
+            adv(lx, c)
+            buf += c
    +buf
 
 // --- character classes ----------------------------------------------------
@@ -803,10 +874,11 @@ scan_rune = lx, start, line, col =>
    bad_head | fail(1009, line, col,
       "Empty character literal '' -- expected a character between the quotes")
    v = pk(lx, 0)
-   is_e = v == '\\'
-   val = is_e | esc_val(pk_off(lx, 1)) | adv(lx, v)
-   is_e | adv(lx, pk(lx, 0))
-   is_e | adv(lx, pk(lx, 0))
+   val = v == '\\'
+      |
+         adv(lx, v)
+         scan_esc_rune(lx)
+      | adv(lx, v)
    pk(lx, 0) == '\''
       | adv(lx, pk(lx, 0))
       | fail(1010, line, col,
@@ -1296,14 +1368,11 @@ scan_delim = lx, c, line, col =>
    adv(lx, c)
    mktok(lx, kind, p, 1, line, col, lx.src(p..p + 1))
 
-// Identifier, except the reserved bare name 'foreign' gets its own kind.
+// Identifier token.
 scan_ident: Lx, Int, Int, Int => Tok
 scan_ident = lx, start, line, col => 
    word = scan_id(lx, start)
-   word
-      ["foreign"] mktok(lx, TokKind(Foreign), start,
-         lx.pos - start, line, col, word)
-      | mktok(lx, TokKind(Id), start, lx.pos - start, line, col, word)
+   mktok(lx, TokKind(Id), start, lx.pos - start, line, col, word)
 
 scan_intrinsic: Lx, Int, Int, Int => Tok
 scan_intrinsic = lx, start, line, col =>
@@ -1348,6 +1417,7 @@ scan_str_expr = lx, is_multiline =>
    sub_lx.line = lx.line
    sub_lx.col = lx.col
    sub_lx.bol = 0
+   sub_lx.def = lx.def
    etoks = TokArr()
    nesting' = 0
    0.. @
@@ -1452,8 +1522,14 @@ scan_single_string = lx, start, start_line, start_col =>
       c
          ['"']
             adv(lx, pk(lx, 0))
-            ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
-            -->
+            target = check_multiline_str(lx)
+            target != 0
+               |
+                  adv_to(lx, target)
+                  adv(lx, pk(lx, 0))
+               |
+                  ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
+                  -->
          ['\n', '\r']
             fail(1008, lx.line, lx.col,
                diag::E1008_string_unterminated!)
@@ -1472,9 +1548,11 @@ scan_single_string = lx, start, start_line, start_col =>
                         cur_text' += '"'
                      |
                         adv(lx, pk(lx, 0))
-                        esc_c = pk(lx, 0)
-                        adv(lx, esc_c)
-                        cur_text' += esc_val(esc_c)
+                        scan_esc_byte_opt(lx)
+                           | b => cur_text' += b
+                           |
+                              er = scan_esc_rune(lx)
+                              cur_text' += er
          ['$']
             pk_off(lx, 1) == '{'
                |
@@ -1499,8 +1577,7 @@ scan_single_string = lx, start, start_line, start_col =>
                   [Text s] s
                   | ""
             | ""
-         text' = concat_multiline_str(lx, p0_s)
-         mktok(lx, TokKind(Str), start, lx.pos - start, start_line, start_col, text')
+         mktok(lx, TokKind(Str), start, lx.pos - start, start_line, start_col, p0_s)
       |
          emit_interp_tokens(lx, cur_parts', start, start_line, start_col)
 
@@ -1514,6 +1591,7 @@ scan_multiline_string = lx, start, start_line, start_col =>
    cur_text' = {256}
    cur_line_num' = lx.line
    cur_is_blank' = <+>
+   cur_indent' = 0
    closed_on_last_line' = <->
 
    0.. @
@@ -1526,15 +1604,14 @@ scan_multiline_string = lx, start, start_line, start_col =>
       c
          ['"']
             raw_last_s = +cur_text'
-            is_only_ws = ?cur_parts' == 0 && count_leading_indent(raw_last_s) == ?raw_last_s
-            is_only_ws
+            cur_is_blank'
                |
                   adv(lx, pk(lx, 0))
                   -->
                |
                   adv(lx, pk(lx, 0))
                   ?raw_last_s > 0 | cur_parts' += HeredocPart(Text, raw_last_s)
-                  lines += HeredocLine((cur_parts', cur_is_blank', cur_line_num', <->))
+                  lines += HeredocLine((cur_parts', cur_is_blank', cur_line_num', <->, cur_indent'))
                   closed_on_last_line' = <+>
                   -->
          ['\\']
@@ -1546,11 +1623,12 @@ scan_multiline_string = lx, start, start_line, start_col =>
                   pk(lx, 0) == '\r' | adv(lx, pk(lx, 0))
                   adv(lx, pk(lx, 0))
                   ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
-                  lines += HeredocLine((cur_parts', cur_is_blank', cur_line_num', <+>))
+                  lines += HeredocLine((cur_parts', cur_is_blank', cur_line_num', <+>, cur_indent'))
                   cur_parts' = HeredocParts()
                   cur_text' = {256}
                   cur_line_num' = lx.line
                   cur_is_blank' = <+>
+                  cur_indent' = 0
                |
                   pk_off(lx, 1) == '$'
                      |
@@ -1567,10 +1645,12 @@ scan_multiline_string = lx, start, start_line, start_col =>
                               cur_is_blank' = <->
                            |
                               adv(lx, pk(lx, 0))
-                              esc_c = pk(lx, 0)
-                              adv(lx, esc_c)
-                              cur_text' += esc_val(esc_c)
-                              esc_c != ' ' && esc_c != '\t' | cur_is_blank' = <->
+                              scan_esc_byte_opt(lx)
+                                 | b => cur_text' += b
+                                 |
+                                    er = scan_esc_rune(lx)
+                                    cur_text' += er
+                              cur_is_blank' = <->
          ['$']
             pk_off(lx, 1) == '{'
                |
@@ -1590,15 +1670,20 @@ scan_multiline_string = lx, start, start_line, start_col =>
             c == '\r' | adv(lx, pk(lx, 0))
             adv(lx, pk(lx, 0))
             ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
-            lines += HeredocLine((cur_parts', cur_is_blank', cur_line_num', <->))
+            lines += HeredocLine((cur_parts', cur_is_blank', cur_line_num', <->, cur_indent'))
             cur_parts' = HeredocParts()
             cur_text' = {256}
             cur_line_num' = lx.line
             cur_is_blank' = <+>
+            cur_indent' = 0
          |
             adv(lx, c)
             cur_text' += c
-            c != ' ' && c != '\t' | cur_is_blank' = <->
+            c
+               [' ', '\t']
+                  cur_is_blank' | cur_indent' = cur_indent' + 1
+               |
+                  cur_is_blank' = <->
 
    nlines = ?lines
    nlines == 0
@@ -1613,12 +1698,7 @@ scan_multiline_string = lx, start, start_line, start_col =>
          first_nb_idx' !< 0
             |
                fl = lines(first_nb_idx')!!
-               sp = ?fl.parts > 0
-                  |
-                     fl.parts(0)!!
-                        [Text s] count_leading_indent(s)
-                        | 0
-                  | 0
+               sp = fl.indent
                sp == 0 | fail(1017, fl.line_num, 1,
                   diag::E1017_multiline_under_indented!)
                margin' = sp
@@ -1632,20 +1712,18 @@ scan_multiline_string = lx, start, start_line, start_col =>
                |
                   add_nl | assembled += HeredocPart(Text, "\n")
                |
+                  sp = line.indent
+                  sp < margin' | fail(1017, line.line_num, sp + 1,
+                     diag::E1017_multiline_under_indented!)
                   nparts = ?line.parts
                   nparts > 0
                      |
                         p0 = line.parts(0)!!
                         p0
                            [Text s]
-                              sp = count_leading_indent(s)
-                              sp < margin' | fail(1017, line.line_num, sp + 1,
-                                 diag::E1017_multiline_under_indented!)
                               new_s = s(margin'..(?s))
                               ?new_s > 0 | assembled += HeredocPart(Text, new_s)
                            [Expr]
-                              margin' > 0 | fail(1017, line.line_num, 1,
-                                 diag::E1017_multiline_under_indented!)
                               assembled += p0
                         1..nparts @ j =>
                            assembled += line.parts(j)!!

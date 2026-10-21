@@ -47,7 +47,7 @@ show_expr = e =>
       [Block t] "Block(" + show_exprs(t.exprs) + ")"
       [Call t] "Call(" +
          (t.fn_name == "" | show_expr(t.fn_target) | t.fn_name) +
-         show_exprs(t.args) + ")"
+         (0 < ?t.args | " " | "") + show_exprs(t.args) + ")"
       [Range t] "Range(" + (t.has_lhs | show_expr(t.lhs) | "_") + ".." +
          (t.has_rhs | show_expr(t.rhs) | "_") + ")"
       [Cycle t] "Cycle(" + show_expr(t.iterable) + " " +

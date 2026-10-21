@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-for nix_bin in /nix/store/*-coreutils-*/bin /nix/store/*-gnused-*/bin; do
-    [ -d "$nix_bin" ] && export PATH="$nix_bin:$PATH"
-done
-
 ulimit -v 20971520 2>/dev/null || true
 if command -v llvm-config >/dev/null 2>&1; then
     export LIBRARY_PATH="$(llvm-config --libdir 2>/dev/null):$LIBRARY_PATH"
@@ -408,39 +404,7 @@ for test_file in tests/sudo/*.dva; do
     rm -f "${test_name}" "${test_name}.ll"
 done
 
-echo ""
-echo -e "${BOLD}=========================================${NC}"
-echo -e "${BOLD}    SELFHOST DIFFERENTIAL HARNESSES      ${NC}"
-echo -e "${BOLD}=========================================${NC}"
-
-# The regression harnesses verify the compiler components.
-HARNESS_OK=1
-for spec in "driver_tests:./test_driver.sh"; do
-    name="${spec%%:*}"
-    script="${spec##*:}"
-    echo ""
-    echo -e "${BOLD}-- $name --${NC}"
-    if [ ! -f "$script" ]; then
-        echo -e "  - $name: ${GREEN}PASS (SKIPPED)${NC}"
-        continue
-    fi
-    set +e
-    timeout 120 bash "$script" < /dev/null
-    RC=$?
-    set -e
-    if [ $RC -eq 0 ]; then
-        echo -e "  - $name: ${GREEN}PASS${NC}"
-    else
-        echo -e "  - $name: ${RED}FAIL${NC}"
-        HARNESS_OK=0
-    fi
-done
-if [ $HARNESS_OK -ne 0 ]; then
-    echo -e "${GREEN}All differential harnesses passed.${NC}"
-else
-    echo -e "${RED}A differential harness failed.${NC}"
-    exit 1
-fi
+# Driver regression tests already ran at the beginning of run_tests.sh.
 
 echo ""
 echo -e "${BOLD}=========================================${NC}"

@@ -349,12 +349,17 @@ codegen_string_build = cg, len, data, name =>
 // arena restores; used for the definite-init path keys).
 codegen_string_copy: types::Cg, Addr => Addr
 codegen_string_copy = cg, val =>
+   i64t = LLVMInt64Type!
    ld = codegen_string_len_data(cg, val, "copy.len")
-   buf = codegen_call_arena_alloc(cg, ld.0, "copy.buf")
+   alloc_len = LLVMBuildAdd(cg.builder, ld.0, LLVMConstInt(i64t, 1, 0),
+      "copy.alen")
+   buf = codegen_call_arena_alloc(cg, alloc_len, "copy.buf")
    LLVMBuildMemCpy(cg.builder, buf, 1, ld.1, 1, ld.0, 0)
+   nul_ptr = types::gep1(cg, LLVMInt8Type!, buf, ld.0, "copy.nul")
+   LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt8Type!, 0, 0), nul_ptr)
    st = cg.str_t
    sp = codegen_call_arena_alloc(cg,
-      LLVMConstInt(LLVMInt64Type!, 16, 0), "copy.str")
+      LLVMConstInt(i64t, 16, 0), "copy.str")
    lgep = LLVMBuildStructGEP2(cg.builder, st, sp, 0, "str.copy.len.gep")
    LLVMBuildStore(cg.builder, ld.0, lgep)
    dgep = LLVMBuildStructGEP2(cg.builder, st, sp, 1, "str.copy.data.gep")
@@ -1334,12 +1339,25 @@ codegen_vector_type = elem_llvm, count =>
 
 codegen_build_splat: types::Cg, Addr, Addr, Int => Addr
 codegen_build_splat = cg, scalar, elem_llvm, count =>
+   sty = LLVMTypeOf(scalar)
+   c_scalar = sty == elem_llvm
+      | scalar
+      |
+         (LLVMGetTypeKind(elem_llvm) == 8) && (LLVMGetTypeKind(sty) == 8)
+            | stmt::coerce_int(cg, scalar, elem_llvm)
+            |
+               (elem_llvm == LLVMFloatType!) && (sty == LLVMDoubleType!)
+                  | LLVMBuildFPTrunc(cg.builder, scalar, elem_llvm, "splat.fptrunc")
+                  |
+                     (elem_llvm == LLVMDoubleType!) && (sty == LLVMFloatType!)
+                        | LLVMBuildFPExt(cg.builder, scalar, elem_llvm, "splat.fpext")
+                        | scalar
    zero_buf = {count * 8}
    zero_p = &zero_buf
    count @ i => @[zero_p + i * 8] = LLVMConstNull(elem_llvm)
    base_vec = LLVMConstVector(zero_p, count)
    zero32 = LLVMConstInt(LLVMInt32Type!, 0, 0)
-   inserted = LLVMBuildInsertElement(cg.builder, base_vec, scalar,
+   inserted = LLVMBuildInsertElement(cg.builder, base_vec, c_scalar,
       zero32, "arr.splat.ins")
    mask_buf = {count * 8}
    mask_p = &mask_buf
@@ -2461,11 +2479,11 @@ codegen_eval_unary = cg, t =>
 unwrap_pay_value: types::Cg, Addr, ast::ValueType => Addr
 unwrap_pay_value = cg, pay_ptr, pay_type =>
    types::is_int_vt(pay_type)
-      | LLVMBuildLoad2(cg.builder, LLVMInt64Type!, pay_ptr,
+      | LLVMBuildLoad2(cg.builder, types::llvm_type_of_vt(pay_type), pay_ptr,
          "unwrap.int")
       |
          types::is_float_vt(pay_type)
-            | LLVMBuildLoad2(cg.builder, LLVMDoubleType!, pay_ptr,
+            | LLVMBuildLoad2(cg.builder, types::llvm_type_of_vt(pay_type), pay_ptr,
                "unwrap.float")
             |
                match::is_flag_pay_vt(cg, pay_type)
@@ -5073,7 +5091,7 @@ codegen_typed_eval_unary = cg, op, operand, ut, ti =>
                ret_vt' = types::vt_from_ti_cg(cg, ti)
                niche' = types::is_niche_ram_ti(cg, operand.ti)
                is_niche' = niche'.0
-               is_unboxed' = !is_niche' && types::is_unboxed_ram_ti(cg, operand.ti)
+               is_unboxed' = !is_niche' && (LLVMGetTypeKind(LLVMTypeOf(ev.0)) == 10)
                i8p = LLVMPointerType(LLVMInt8Type!, 0)
                t0' = types::g.tmpc
                types::g.tmpc = types::g.tmpc + 1
@@ -5101,22 +5119,30 @@ codegen_typed_eval_unary = cg, op, operand, ut, ti =>
                               "unwrap.is_pos")
                LLVMBuildCondBr(cg.builder, is_pos', pos_bb', abort_bb)
                LLVMPositionBuilderAtEnd(cg.builder, abort_bb)
-               is_niche'
+               eff_op_ti = operand.ti [TypeVar tv] types::typedef_ti(cg, tv) | operand.ti
+               neg_is_err = eff_op_ti
+                  [Ram s] s.1.has_payload &&
+                     (types::slot_payload_type(cg, s.1) == ast::ValueType(Error))
+                  | <->
+               !neg_is_err
                   |
                      runtime::emit_abort_msg(cg,
                         diag::E4007_unwrap_empty_or_error!,
                         "unwrap_abort_msg")
                      LLVMBuildUnreachable(cg.builder)
                   |
-                     is_unboxed'
+                     is_niche'
+                        | main::codegen_emit_error_panic(cg, ev.0)
                         |
-                           err_raw = LLVMBuildExtractValue(cg.builder,
-                              ev.0, 1, "unwrap.pay.abort")
-                           err_p = LLVMBuildIntToPtr(cg.builder,
-                              err_raw, i8p, "err.ptr")
-                           main::codegen_emit_error_panic(cg, err_p)
-                        |
-                           main::codegen_emit_error_panic(cg, match::union_pay_ptr(cg, ev.0))
+                           is_unboxed'
+                              |
+                                 err_raw = LLVMBuildExtractValue(cg.builder,
+                                    ev.0, 1, "unwrap.pay.abort")
+                                 err_p = LLVMBuildIntToPtr(cg.builder,
+                                    err_raw, i8p, "err.ptr")
+                                 main::codegen_emit_error_panic(cg, err_p)
+                              |
+                                 main::codegen_emit_error_panic(cg, match::union_pay_ptr(cg, ev.0))
                LLVMPositionBuilderAtEnd(cg.builder, pos_bb')
                res_val' = is_niche'
                   | ev.0
@@ -5131,7 +5157,7 @@ codegen_typed_eval_unary = cg, op, operand, ut, ti =>
                niche' = types::is_niche_ram_ti(cg, operand.ti)
                is_niche' = niche'.0
                is_niche_pn' = niche'.1
-               is_unboxed' = !is_niche' && types::is_unboxed_ram_ti(cg, operand.ti)
+               is_unboxed' = !is_niche' && (LLVMGetTypeKind(LLVMTypeOf(ev.0)) == 10)
                t0' = types::g.tmpc
                types::g.tmpc = types::g.tmpc + 1
                sc' = str::from_int(t0')
@@ -5165,24 +5191,50 @@ codegen_typed_eval_unary = cg, op, operand, ut, ti =>
                real_fn_ret_ti = types::g.expected_fn_ti
                   [TypeVar tv] types::typedef_ti(cg, tv)
                   | types::g.expected_fn_ti
+               fn_niche = types::is_niche_ram_ti(cg, real_fn_ret_ti)
                fn_is_unboxed = types::is_unboxed_ram_ti(cg, real_fn_ret_ti)
+               i8p' = LLVMPointerType(LLVMInt8Type!, 0)
                ev_k = LLVMGetTypeKind(LLVMTypeOf(ev.0))
-               ret_val = fn_is_unboxed && is_niche' && !is_niche_pn'
+               ret_val = fn_niche.0
                   |
-                     i64t' = LLVMInt64Type!
-                     pay_i64 = LLVMBuildPtrToInt(cg.builder, ev.0, i64t',
-                        "prop.niche.p2i")
-                     st_ub = match::unboxed_ram_struct_t(cg)
-                     u0_ub = LLVMConstNull(st_ub)
-                     u1_ub = LLVMBuildInsertValue(cg.builder, u0_ub,
-                        LLVMConstInt(LLVMInt1Type!, 0, 0), 0, "ram.tag")
-                     LLVMBuildInsertValue(cg.builder, u1_ub, pay_i64, 1,
-                        "ram.pay")
-                  |
-                     fn_is_unboxed && ev_k == 12
-                        | match::convert_heap_ram_to_unboxed(cg, ev.0, real_fn_ret_ti)
+                     fn_niche.1
+                        | LLVMConstNull(i8p')
                         |
-                           !fn_is_unboxed && ev_k == 10
+                           is_niche'
+                              | ev.0
+                              |
+                                 is_unboxed'
+                                    |
+                                       pay_raw = LLVMBuildExtractValue(cg.builder,
+                                          ev.0, 1, "prop.pay")
+                                       LLVMBuildIntToPtr(cg.builder, pay_raw, i8p',
+                                          "prop.ptr")
+                                    | match::union_pay_ptr(cg, ev.0)
+                  |
+                     fn_is_unboxed
+                        |
+                           is_unboxed'
+                              | ev.0
+                              |
+                                 is_niche'
+                                    |
+                                       st_ub = match::unboxed_ram_struct_t(cg)
+                                       is_niche_pn'
+                                          | LLVMConstNull(st_ub)
+                                          |
+                                             i64t' = LLVMInt64Type!
+                                             pay_i64 = LLVMBuildPtrToInt(cg.builder,
+                                                ev.0, i64t', "prop.niche.p2i")
+                                             u0_ub = LLVMConstNull(st_ub)
+                                             u1_ub = LLVMBuildInsertValue(cg.builder,
+                                                u0_ub, LLVMConstInt(LLVMInt1Type!, 0, 0),
+                                                0, "ram.tag")
+                                             LLVMBuildInsertValue(cg.builder, u1_ub,
+                                                pay_i64, 1, "ram.pay")
+                                    | match::convert_heap_ram_to_unboxed(cg, ev.0,
+                                       real_fn_ret_ti)
+                        |
+                           ev_k == 10
                               | match::convert_unboxed_ram_to_heap(cg, ev.0,
                                  real_fn_ret_ti)
                               | ev.0
@@ -5336,7 +5388,11 @@ codegen_typed_eval_member_normal = cg, target, fname, idx, ti =>
                                        cg.last_fnames = cg_fns
                                        (fgep, vt)
                               |
-                                 ty = types::llvm_type_of_vt(vt)
+                                 fld_st_ty = LLVMStructGetTypeAtIndex(st, lookup_idx)
+                                 ty = (types::is_unboxed_ram_ti(cg, eff_ti) ||
+                                    (LLVMGetTypeKind(fld_st_ty) == 10))
+                                    | match::unboxed_ram_struct_t(cg)
+                                    | types::llvm_type_of_vt(vt)
                                  val = LLVMBuildLoad2(
                                     cg.builder, ty, fgep, "fld.load")
                                  (val, vt)
@@ -5758,32 +5814,21 @@ codegen_typed_eval_return = cg, val_opt =>
                   (<->, <->, ast::ValueType(Unknown))
                use_niche_ret = niche.0
                is_ptr_ret = LLVMGetTypeKind(LLVMTypeOf(bvv)) == 12
+               is_struct_ret = LLVMGetTypeKind(LLVMTypeOf(bvv)) == 10
                is_ptr_ret_int = ret_ll == LLVMInt64Type! && is_ptr_ret
                ret_v = use_unboxed_ret && is_ptr_ret
                   | match::convert_heap_ram_to_unboxed(cg, bvv, ret_ti)
                   |
-                     use_niche_ret && is_ptr_ret
+                     use_niche_ret && is_struct_ret
+                        | match::convert_unboxed_ram_to_heap(cg, bvv, ret_ti)
                         |
-                           tgep = LLVMBuildStructGEP2(cg.builder,
-                              cg.union_t, bvv, 0, "tag.gep")
-                           tag = LLVMBuildLoad2(cg.builder,
-                              LLVMInt64Type!, tgep, "tag")
-                           is_pos = LLVMBuildICmp(cg.builder, 33,
-                              tag, LLVMConstInt(
-                                 LLVMInt64Type!, 0, 0), "is_pos")
-                           pgep = LLVMBuildStructGEP2(cg.builder,
-                              cg.union_t, bvv, 1, "pay.gep")
-                           pay_ptr = LLVMBuildLoad2(cg.builder,
-                              i8p, pgep, "pay.ptr")
-                           cond_pos = niche.1 | is_pos |
-                              LLVMBuildNot(cg.builder, is_pos, "is_neg")
-                           LLVMBuildSelect(cg.builder, cond_pos,
-                              pay_ptr, LLVMConstNull(i8p), "ret.niche")
-                        |
-                           is_ptr_ret_int
-                              | LLVMBuildPtrToInt(cg.builder, bvv,
-                                 LLVMInt64Type!, "ret.int")
-                              | stmt::coerce_int(cg, bvv, ret_ll)
+                           use_niche_ret && is_ptr_ret
+                              | bvv
+                              |
+                                 is_ptr_ret_int
+                                    | LLVMBuildPtrToInt(cg.builder, bvv,
+                                       LLVMInt64Type!, "ret.int")
+                                    | stmt::coerce_int(cg, bvv, ret_ll)
                !stmt::block_is_terminated(cg) | LLVMBuildRet(cg.builder, ret_v)
                dead = LLVMAppendBasicBlock(cg.current_fn, "ret.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead)
@@ -5813,10 +5858,10 @@ codegen_eval_return = cg, r =>
             |
                ret_ti = types::g.expected_fn_ti
                ret_ti_res = stmt::resolve_ti(cg, ret_ti)
-               ret_ti_res [Ram]
+               (ret_ti_res [Ram])
                   |
                      val_ram_ti = codegen_ram_type_of_expr(cg, r.val)
-                     val_ram_ti [Ram]
+                     (val_ram_ti [Ram])
                         |
                            !ram_shape_compatible(cg, ret_ti_res, val_ram_ti)
                               |
@@ -6275,12 +6320,65 @@ codegen_eval_swizzle = cg, target, fname, ti =>
                   mask_vec, "swizzle")
                store_rec_vec(cg, res_vec, ti, elem_llvm, elem_vt, out_count)
 
+vec_elem_type_str: ast::ValueType => String
+vec_elem_type_str = vt =>
+   vt
+      [F32] "f32"
+      [Float] "f64"
+      [I8, U8] "i8"
+      [I16, U16] "i16"
+      [I32, U32, Rune] "i32"
+      | "i64"
+
+coerce_math_arg: types::Cg, Addr, Addr, <> => Addr
+coerce_math_arg = cg, v, target_ll, is_uns =>
+   vty = LLVMTypeOf(v)
+   vty == target_ll
+      | v
+      |
+         (LLVMGetTypeKind(target_ll) == 8) && (LLVMGetTypeKind(vty) == 8)
+            | stmt::coerce_int_ext(cg, v, target_ll, is_uns)
+            |
+               (target_ll == LLVMFloatType!) && (vty == LLVMDoubleType!)
+                  | LLVMBuildFPTrunc(cg.builder, v, target_ll, "math.fptrunc")
+                  |
+                     (target_ll == LLVMDoubleType!) && (vty == LLVMFloatType!)
+                        | LLVMBuildFPExt(cg.builder, v, target_ll, "math.fpext")
+                        |
+                           is_fp_from_int = ((target_ll == LLVMDoubleType!) || (target_ll == LLVMFloatType!)) &&
+                              (LLVMGetTypeKind(vty) == 8)
+                           is_fp_from_int
+                              |
+                                 is_uns
+                                    | LLVMBuildUIToFP(cg.builder, v, target_ll, "math.uitofp")
+                                    | LLVMBuildSIToFP(cg.builder, v, target_ll, "math.sitofp")
+                              | v
+
 codegen_eval_scalar_math: types::Cg, String, (Addr, ast::ValueType),
    (Addr, ast::ValueType), (Addr, ast::ValueType) => (Addr, ast::ValueType)
 codegen_eval_scalar_math = cg, fname, ev0, ev1, ev2 =>
-   f64t = LLVMDoubleType!
-   i64t = LLVMInt64Type!
    i1t = LLVMInt1Type!
+   int_vt = ev0.1
+   int_ll = types::llvm_type_of_vt(int_vt)
+   is_uns = types::is_unsigned_vt(int_vt)
+   int_tstr = vec_elem_type_str(int_vt)
+   is_f32_0 = ev0.1 [F32]
+   is_f32_1 = ev1.1 [F32]
+   is_f32_2 = ev2.1 [F32]
+   is_f64_0 = ev0.1 [Float]
+   is_f64_1 = ev1.1 [Float]
+   is_f64_2 = ev2.1 [Float]
+   flt_vt1 = is_f32_0 | ast::ValueType(F32) | ast::ValueType(Float)
+   flt_ll1 = types::llvm_type_of_vt(flt_vt1)
+   flt_tstr1 = vec_elem_type_str(flt_vt1)
+   use_f32_2 = (is_f32_0 || is_f32_1) && !(is_f64_0 || is_f64_1)
+   flt_vt2 = use_f32_2 | ast::ValueType(F32) | ast::ValueType(Float)
+   flt_ll2 = types::llvm_type_of_vt(flt_vt2)
+   flt_tstr2 = vec_elem_type_str(flt_vt2)
+   use_f32_3 = (is_f32_0 || is_f32_1 || is_f32_2) && !(is_f64_0 || is_f64_1 || is_f64_2)
+   flt_vt3 = use_f32_3 | ast::ValueType(F32) | ast::ValueType(Float)
+   flt_ll3 = types::llvm_type_of_vt(flt_vt3)
+   flt_tstr3 = vec_elem_type_str(flt_vt3)
    fname
       ["%to_str"]
          types::is_str_vt(ev0.1)
@@ -6292,134 +6390,167 @@ codegen_eval_scalar_math = cg, fname, ev0, ev1, ev2 =>
                      types::is_float_vt(ev0.1)
                         | (stmt::codegen_float_to_str(cg, ev0.0), ast::ValueType(Str))
                         |
-                           is_uns = types::is_unsigned_vt(ev0.1)
                            (stmt::codegen_int_to_str(cg, ev0.0, is_uns), ast::ValueType(Str))
       ["%sqrt"]
-         fn = get_or_add_intrinsic(cg, "llvm.sqrt.f64", types::fn_type1(f64t, f64t))
-         (call_fn1(cg, types::fn_type1(f64t, f64t), fn, ev0.0, "sqrt"),
-            ast::ValueType(Float))
+         a0 = coerce_math_arg(cg, ev0.0, flt_ll1, is_uns)
+         fn = get_or_add_intrinsic(cg, "llvm.sqrt." + flt_tstr1,
+            types::fn_type1(flt_ll1, flt_ll1))
+         (call_fn1(cg, types::fn_type1(flt_ll1, flt_ll1), fn, a0, "sqrt"),
+            flt_vt1)
       ["%floor", "%ceil", "%trunc", "%round", "%sin", "%cos", "%exp2", "%log2"]
          op_s = fname(1..)
-         fn = get_or_add_intrinsic(cg, "llvm." + op_s + ".f64",
-            types::fn_type1(f64t, f64t))
-         (call_fn1(cg, types::fn_type1(f64t, f64t), fn, ev0.0, op_s),
-            ast::ValueType(Float))
+         a0 = coerce_math_arg(cg, ev0.0, flt_ll1, is_uns)
+         fn = get_or_add_intrinsic(cg, "llvm." + op_s + "." + flt_tstr1,
+            types::fn_type1(flt_ll1, flt_ll1))
+         (call_fn1(cg, types::fn_type1(flt_ll1, flt_ll1), fn, a0, op_s),
+            flt_vt1)
       ["%pow"]
-         fn = get_or_add_intrinsic(cg, "llvm.pow.f64",
-            intrin_fn_type2(f64t, f64t, f64t))
-         (call_fn2(cg, intrin_fn_type2(f64t, f64t, f64t), fn, ev0.0, ev1.0,
-            "pow"), ast::ValueType(Float))
+         a0 = coerce_math_arg(cg, ev0.0, flt_ll2, is_uns)
+         a1 = coerce_math_arg(cg, ev1.0, flt_ll2, types::is_unsigned_vt(ev1.1))
+         fn = get_or_add_intrinsic(cg, "llvm.pow." + flt_tstr2,
+            intrin_fn_type2(flt_ll2, flt_ll2, flt_ll2))
+         (call_fn2(cg, intrin_fn_type2(flt_ll2, flt_ll2, flt_ll2), fn, a0, a1,
+            "pow"), flt_vt2)
       ["%uadd_sat", "%usub_sat"]
+         a0 = coerce_math_arg(cg, ev0.0, int_ll, is_uns)
+         a1 = coerce_math_arg(cg, ev1.0, int_ll, is_uns)
          iname = fname == "%uadd_sat"
-            | "llvm.uadd.sat.i64"
-            | "llvm.usub.sat.i64"
+            | "llvm.uadd.sat." + int_tstr
+            | "llvm.usub.sat." + int_tstr
          fn = get_or_add_intrinsic(cg, iname,
-            intrin_fn_type2(i64t, i64t, i64t))
-         (call_fn2(cg, intrin_fn_type2(i64t, i64t, i64t), fn, ev0.0, ev1.0,
-            fname(1..)), ast::ValueType(Int))
+            intrin_fn_type2(int_ll, int_ll, int_ll))
+         (call_fn2(cg, intrin_fn_type2(int_ll, int_ll, int_ll), fn, a0, a1,
+            fname(1..)), int_vt)
       ["%fma", "%fmuladd"]
          op_s = fname(1..)
-         fn = get_or_add_intrinsic(cg, "llvm." + op_s + ".f64",
-            types::fn_type3(f64t, f64t, f64t, f64t))
-         (call_fn3(cg, types::fn_type3(f64t, f64t, f64t, f64t), fn, ev0.0, ev1.0,
-            ev2.0, op_s), ast::ValueType(Float))
+         a0 = coerce_math_arg(cg, ev0.0, flt_ll3, is_uns)
+         a1 = coerce_math_arg(cg, ev1.0, flt_ll3, types::is_unsigned_vt(ev1.1))
+         a2 = coerce_math_arg(cg, ev2.0, flt_ll3, types::is_unsigned_vt(ev2.1))
+         fn = get_or_add_intrinsic(cg, "llvm." + op_s + "." + flt_tstr3,
+            types::fn_type3(flt_ll3, flt_ll3, flt_ll3, flt_ll3))
+         (call_fn3(cg, types::fn_type3(flt_ll3, flt_ll3, flt_ll3, flt_ll3), fn,
+            a0, a1, a2, op_s), flt_vt3)
       ["%copysign"]
-         fn = get_or_add_intrinsic(cg, "llvm.copysign.f64",
-            intrin_fn_type2(f64t, f64t, f64t))
-         (call_fn2(cg, intrin_fn_type2(f64t, f64t, f64t), fn, ev0.0, ev1.0,
-            "copysign"), ast::ValueType(Float))
+         a0 = coerce_math_arg(cg, ev0.0, flt_ll2, is_uns)
+         a1 = coerce_math_arg(cg, ev1.0, flt_ll2, types::is_unsigned_vt(ev1.1))
+         fn = get_or_add_intrinsic(cg, "llvm.copysign." + flt_tstr2,
+            intrin_fn_type2(flt_ll2, flt_ll2, flt_ll2))
+         (call_fn2(cg, intrin_fn_type2(flt_ll2, flt_ll2, flt_ll2), fn, a0, a1,
+            "copysign"), flt_vt2)
       ["%abs"]
          types::is_float_vt(ev0.1)
             |
-               fn = get_or_add_intrinsic(cg, "llvm.fabs.f64",
-                  types::fn_type1(f64t, f64t))
-               (call_fn1(cg, types::fn_type1(f64t, f64t), fn, ev0.0, "fabs"),
-                  ast::ValueType(Float))
+               fn = get_or_add_intrinsic(cg, "llvm.fabs." + flt_tstr1,
+                  types::fn_type1(flt_ll1, flt_ll1))
+               (call_fn1(cg, types::fn_type1(flt_ll1, flt_ll1), fn, ev0.0, "fabs"),
+                  flt_vt1)
             |
-               fn = get_or_add_intrinsic(cg, "llvm.abs.i64",
-                  intrin_fn_type2(i64t, i64t, i1t))
-               (call_fn2(cg, intrin_fn_type2(i64t, i64t, i1t), fn, ev0.0,
-                  LLVMConstInt(i1t, 0, 0), "abs"), ast::ValueType(Int))
+               fn = get_or_add_intrinsic(cg, "llvm.abs." + int_tstr,
+                  intrin_fn_type2(int_ll, int_ll, i1t))
+               (call_fn2(cg, intrin_fn_type2(int_ll, int_ll, i1t), fn, ev0.0,
+                  LLVMConstInt(i1t, 0, 0), "abs"), int_vt)
       ["%min"]
          types::is_float_vt(ev0.1) || types::is_float_vt(ev1.1)
             |
-               fn = get_or_add_intrinsic(cg, "llvm.minnum.f64",
-                  intrin_fn_type2(f64t, f64t, f64t))
-               (call_fn2(cg, intrin_fn_type2(f64t, f64t, f64t), fn, ev0.0,
-                  ev1.0, "min"), ast::ValueType(Float))
+               a0 = coerce_math_arg(cg, ev0.0, flt_ll2, is_uns)
+               a1 = coerce_math_arg(cg, ev1.0, flt_ll2, types::is_unsigned_vt(ev1.1))
+               fn = get_or_add_intrinsic(cg, "llvm.minnum." + flt_tstr2,
+                  intrin_fn_type2(flt_ll2, flt_ll2, flt_ll2))
+               (call_fn2(cg, intrin_fn_type2(flt_ll2, flt_ll2, flt_ll2), fn, a0,
+                  a1, "min"), flt_vt2)
             |
-               fn = get_or_add_intrinsic(cg, "llvm.smin.i64",
-                  intrin_fn_type2(i64t, i64t, i64t))
-               (call_fn2(cg, intrin_fn_type2(i64t, i64t, i64t), fn, ev0.0,
-                  ev1.0, "smin"), ast::ValueType(Int))
+               a0 = coerce_math_arg(cg, ev0.0, int_ll, is_uns)
+               a1 = coerce_math_arg(cg, ev1.0, int_ll, is_uns)
+               iname = is_uns | "llvm.umin." + int_tstr | "llvm.smin." + int_tstr
+               fn = get_or_add_intrinsic(cg, iname,
+                  intrin_fn_type2(int_ll, int_ll, int_ll))
+               (call_fn2(cg, intrin_fn_type2(int_ll, int_ll, int_ll), fn, a0,
+                  a1, "min"), int_vt)
       ["%max"]
          types::is_float_vt(ev0.1) || types::is_float_vt(ev1.1)
             |
-               fn = get_or_add_intrinsic(cg, "llvm.maxnum.f64",
-                  intrin_fn_type2(f64t, f64t, f64t))
-               (call_fn2(cg, intrin_fn_type2(f64t, f64t, f64t), fn, ev0.0,
-                  ev1.0, "max"), ast::ValueType(Float))
+               a0 = coerce_math_arg(cg, ev0.0, flt_ll2, is_uns)
+               a1 = coerce_math_arg(cg, ev1.0, flt_ll2, types::is_unsigned_vt(ev1.1))
+               fn = get_or_add_intrinsic(cg, "llvm.maxnum." + flt_tstr2,
+                  intrin_fn_type2(flt_ll2, flt_ll2, flt_ll2))
+               (call_fn2(cg, intrin_fn_type2(flt_ll2, flt_ll2, flt_ll2), fn, a0,
+                  a1, "max"), flt_vt2)
             |
-               fn = get_or_add_intrinsic(cg, "llvm.smax.i64",
-                  intrin_fn_type2(i64t, i64t, i64t))
-               (call_fn2(cg, intrin_fn_type2(i64t, i64t, i64t), fn, ev0.0,
-                  ev1.0, "smax"), ast::ValueType(Int))
+               a0 = coerce_math_arg(cg, ev0.0, int_ll, is_uns)
+               a1 = coerce_math_arg(cg, ev1.0, int_ll, is_uns)
+               iname = is_uns | "llvm.umax." + int_tstr | "llvm.smax." + int_tstr
+               fn = get_or_add_intrinsic(cg, iname,
+                  intrin_fn_type2(int_ll, int_ll, int_ll))
+               (call_fn2(cg, intrin_fn_type2(int_ll, int_ll, int_ll), fn, a0,
+                  a1, "max"), int_vt)
       ["%clamp"]
          is_flt = types::is_float_vt(ev0.1) || types::is_float_vt(ev1.1) || types::is_float_vt(ev2.1)
          is_flt
             |
-               max_fn = get_or_add_intrinsic(cg, "llvm.maxnum.f64",
-                  intrin_fn_type2(f64t, f64t, f64t))
-               min_fn = get_or_add_intrinsic(cg, "llvm.minnum.f64",
-                  intrin_fn_type2(f64t, f64t, f64t))
-               max_v = call_fn2(cg, intrin_fn_type2(f64t, f64t, f64t), max_fn,
-                  ev0.0, ev1.0, "clamp.max")
-               res_v = call_fn2(cg, intrin_fn_type2(f64t, f64t, f64t), min_fn,
-                  max_v, ev2.0, "clamp.min")
-               (res_v, ast::ValueType(Float))
+               a0 = coerce_math_arg(cg, ev0.0, flt_ll3, is_uns)
+               a1 = coerce_math_arg(cg, ev1.0, flt_ll3, types::is_unsigned_vt(ev1.1))
+               a2 = coerce_math_arg(cg, ev2.0, flt_ll3, types::is_unsigned_vt(ev2.1))
+               max_fn = get_or_add_intrinsic(cg, "llvm.maxnum." + flt_tstr3,
+                  intrin_fn_type2(flt_ll3, flt_ll3, flt_ll3))
+               min_fn = get_or_add_intrinsic(cg, "llvm.minnum." + flt_tstr3,
+                  intrin_fn_type2(flt_ll3, flt_ll3, flt_ll3))
+               max_v = call_fn2(cg, intrin_fn_type2(flt_ll3, flt_ll3, flt_ll3), max_fn,
+                  a0, a1, "clamp.max")
+               res_v = call_fn2(cg, intrin_fn_type2(flt_ll3, flt_ll3, flt_ll3), min_fn,
+                  max_v, a2, "clamp.min")
+               (res_v, flt_vt3)
             |
-               max_fn = get_or_add_intrinsic(cg, "llvm.smax.i64",
-                  intrin_fn_type2(i64t, i64t, i64t))
-               min_fn = get_or_add_intrinsic(cg, "llvm.smin.i64",
-                  intrin_fn_type2(i64t, i64t, i64t))
-               max_v = call_fn2(cg, intrin_fn_type2(i64t, i64t, i64t), max_fn,
-                  ev0.0, ev1.0, "clamp.max")
-               res_v = call_fn2(cg, intrin_fn_type2(i64t, i64t, i64t), min_fn,
-                  max_v, ev2.0, "clamp.min")
-               (res_v, ast::ValueType(Int))
+               a0 = coerce_math_arg(cg, ev0.0, int_ll, is_uns)
+               a1 = coerce_math_arg(cg, ev1.0, int_ll, is_uns)
+               a2 = coerce_math_arg(cg, ev2.0, int_ll, is_uns)
+               max_name = is_uns | "llvm.umax." + int_tstr | "llvm.smax." + int_tstr
+               min_name = is_uns | "llvm.umin." + int_tstr | "llvm.smin." + int_tstr
+               max_fn = get_or_add_intrinsic(cg, max_name,
+                  intrin_fn_type2(int_ll, int_ll, int_ll))
+               min_fn = get_or_add_intrinsic(cg, min_name,
+                  intrin_fn_type2(int_ll, int_ll, int_ll))
+               max_v = call_fn2(cg, intrin_fn_type2(int_ll, int_ll, int_ll), max_fn,
+                  a0, a1, "clamp.max")
+               res_v = call_fn2(cg, intrin_fn_type2(int_ll, int_ll, int_ll), min_fn,
+                  max_v, a2, "clamp.min")
+               (res_v, int_vt)
       ["%popcount"]
-         fn = get_or_add_intrinsic(cg, "llvm.ctpop.i64", types::fn_type1(i64t, i64t))
-         (call_fn1(cg, types::fn_type1(i64t, i64t), fn, ev0.0, "ctpop"),
-            ast::ValueType(Int))
+         fn = get_or_add_intrinsic(cg, "llvm.ctpop." + int_tstr,
+            types::fn_type1(int_ll, int_ll))
+         (call_fn1(cg, types::fn_type1(int_ll, int_ll), fn, ev0.0, "ctpop"),
+            int_vt)
       ["%clz"]
-         fn = get_or_add_intrinsic(cg, "llvm.ctlz.i64",
-            intrin_fn_type2(i64t, i64t, i1t))
-         (call_fn2(cg, intrin_fn_type2(i64t, i64t, i1t), fn, ev0.0,
-            LLVMConstInt(i1t, 0, 0), "ctlz"), ast::ValueType(Int))
+         fn = get_or_add_intrinsic(cg, "llvm.ctlz." + int_tstr,
+            intrin_fn_type2(int_ll, int_ll, i1t))
+         (call_fn2(cg, intrin_fn_type2(int_ll, int_ll, i1t), fn, ev0.0,
+            LLVMConstInt(i1t, 0, 0), "ctlz"), int_vt)
       ["%ctz"]
-         fn = get_or_add_intrinsic(cg, "llvm.cttz.i64",
-            intrin_fn_type2(i64t, i64t, i1t))
-         (call_fn2(cg, intrin_fn_type2(i64t, i64t, i1t), fn, ev0.0,
-            LLVMConstInt(i1t, 0, 0), "cttz"), ast::ValueType(Int))
+         fn = get_or_add_intrinsic(cg, "llvm.cttz." + int_tstr,
+            intrin_fn_type2(int_ll, int_ll, i1t))
+         (call_fn2(cg, intrin_fn_type2(int_ll, int_ll, i1t), fn, ev0.0,
+            LLVMConstInt(i1t, 0, 0), "cttz"), int_vt)
       ["%bswap"]
-         fn = get_or_add_intrinsic(cg, "llvm.bswap.i64", types::fn_type1(i64t, i64t))
-         (call_fn1(cg, types::fn_type1(i64t, i64t), fn, ev0.0, "bswap"),
-            ast::ValueType(Int))
+         fn = get_or_add_intrinsic(cg, "llvm.bswap." + int_tstr,
+            types::fn_type1(int_ll, int_ll))
+         (call_fn1(cg, types::fn_type1(int_ll, int_ll), fn, ev0.0, "bswap"),
+            int_vt)
       ["%bitreverse"]
-         fn = get_or_add_intrinsic(cg, "llvm.bitreverse.i64",
-            types::fn_type1(i64t, i64t))
-         (call_fn1(cg, types::fn_type1(i64t, i64t), fn, ev0.0, "bitreverse"),
-            ast::ValueType(Int))
+         fn = get_or_add_intrinsic(cg, "llvm.bitreverse." + int_tstr,
+            types::fn_type1(int_ll, int_ll))
+         (call_fn1(cg, types::fn_type1(int_ll, int_ll), fn, ev0.0, "bitreverse"),
+            int_vt)
       ["%rotl"]
-         fn = get_or_add_intrinsic(cg, "llvm.fshl.i64",
-            types::fn_type3(i64t, i64t, i64t, i64t))
-         (call_fn3(cg, types::fn_type3(i64t, i64t, i64t, i64t), fn, ev0.0, ev0.0,
-            ev1.0, "rotl"), ast::ValueType(Int))
+         a1 = coerce_math_arg(cg, ev1.0, int_ll, is_uns)
+         fn = get_or_add_intrinsic(cg, "llvm.fshl." + int_tstr,
+            types::fn_type3(int_ll, int_ll, int_ll, int_ll))
+         (call_fn3(cg, types::fn_type3(int_ll, int_ll, int_ll, int_ll), fn,
+            ev0.0, ev0.0, a1, "rotl"), int_vt)
       ["%rotr"]
-         fn = get_or_add_intrinsic(cg, "llvm.fshr.i64",
-            types::fn_type3(i64t, i64t, i64t, i64t))
-         (call_fn3(cg, types::fn_type3(i64t, i64t, i64t, i64t), fn, ev0.0, ev0.0,
-            ev1.0, "rotr"), ast::ValueType(Int))
+         a1 = coerce_math_arg(cg, ev1.0, int_ll, is_uns)
+         fn = get_or_add_intrinsic(cg, "llvm.fshr." + int_tstr,
+            types::fn_type3(int_ll, int_ll, int_ll, int_ll))
+         (call_fn3(cg, types::fn_type3(int_ll, int_ll, int_ll, int_ll), fn,
+            ev0.0, ev0.0, a1, "rotr"), int_vt)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 codegen_eval_vec_math: types::Cg, String, tast::TypedExprs, ast::TypeInfo,
@@ -6441,9 +6572,10 @@ codegen_eval_vec_math = cg, fname, args, ti, ev0, ev1, ev2 =>
             | rec_elem_vt(fvts1)
             | rec_elem_vt(fvts2)
    is_flt = types::is_float_vt(elem_vt)
-   elem_llvm = is_flt | LLVMDoubleType! | LLVMInt64Type!
+   is_uns = types::is_unsigned_vt(elem_vt)
+   elem_llvm = types::llvm_type_of_vt(elem_vt)
    vec_ty = codegen_vector_type(elem_llvm, vec_count)
-   vstr = "v" + str::from_int(vec_count) + (is_flt | "f64" | "i64")
+   vstr = "v" + str::from_int(vec_count) + vec_elem_type_str(elem_vt)
    v0 = is_rec0
       | load_rec_vec(cg, ev0.0, elem_llvm, elem_vt, vec_count)
       | codegen_build_splat(cg, ev0.0, elem_llvm, vec_count)
@@ -6523,10 +6655,11 @@ codegen_eval_vec_math = cg, fname, args, ti, ev0, ev1, ev2 =>
                   fn, v0, v1, "vec.min")
                store_rec_vec(cg, vec_res, ti, elem_llvm, elem_vt, vec_count)
             |
-               fn = get_or_add_intrinsic(cg, "llvm.smin." + vstr,
+               iname = is_uns | "llvm.umin." + vstr | "llvm.smin." + vstr
+               fn = get_or_add_intrinsic(cg, iname,
                   intrin_fn_type2(vec_ty, vec_ty, vec_ty))
                vec_res = call_fn2(cg, intrin_fn_type2(vec_ty, vec_ty, vec_ty),
-                  fn, v0, v1, "vec.smin")
+                  fn, v0, v1, "vec.min")
                store_rec_vec(cg, vec_res, ti, elem_llvm, elem_vt, vec_count)
       ["%max"]
          is_flt
@@ -6537,10 +6670,11 @@ codegen_eval_vec_math = cg, fname, args, ti, ev0, ev1, ev2 =>
                   fn, v0, v1, "vec.max")
                store_rec_vec(cg, vec_res, ti, elem_llvm, elem_vt, vec_count)
             |
-               fn = get_or_add_intrinsic(cg, "llvm.smax." + vstr,
+               iname = is_uns | "llvm.umax." + vstr | "llvm.smax." + vstr
+               fn = get_or_add_intrinsic(cg, iname,
                   intrin_fn_type2(vec_ty, vec_ty, vec_ty))
                vec_res = call_fn2(cg, intrin_fn_type2(vec_ty, vec_ty, vec_ty),
-                  fn, v0, v1, "vec.smax")
+                  fn, v0, v1, "vec.max")
                store_rec_vec(cg, vec_res, ti, elem_llvm, elem_vt, vec_count)
       ["%clamp"]
          is_flt
@@ -6555,9 +6689,11 @@ codegen_eval_vec_math = cg, fname, args, ti, ev0, ev1, ev2 =>
                   min_fn, max_v, v2, "vec.clamp.min")
                store_rec_vec(cg, res_v, ti, elem_llvm, elem_vt, vec_count)
             |
-               max_fn = get_or_add_intrinsic(cg, "llvm.smax." + vstr,
+               max_name = is_uns | "llvm.umax." + vstr | "llvm.smax." + vstr
+               min_name = is_uns | "llvm.umin." + vstr | "llvm.smin." + vstr
+               max_fn = get_or_add_intrinsic(cg, max_name,
                   intrin_fn_type2(vec_ty, vec_ty, vec_ty))
-               min_fn = get_or_add_intrinsic(cg, "llvm.smin." + vstr,
+               min_fn = get_or_add_intrinsic(cg, min_name,
                   intrin_fn_type2(vec_ty, vec_ty, vec_ty))
                max_v = call_fn2(cg, intrin_fn_type2(vec_ty, vec_ty, vec_ty),
                   max_fn, v0, v1, "vec.clamp.max")
@@ -6679,15 +6815,16 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
          count = ?fvts0
          elem_vt = rec_elem_vt(fvts0)
          is_flt = types::is_float_vt(elem_vt)
-         elem_llvm = is_flt | LLVMDoubleType! | LLVMInt64Type!
+         elem_llvm = types::llvm_type_of_vt(elem_vt)
+         tstr = vec_elem_type_str(elem_vt)
          vec_val = load_rec_vec(cg, ev0.0, elem_llvm, elem_vt, count)
          vec_ty = codegen_vector_type(elem_llvm, count)
          is_sum = fname == "%sum"
          is_flt
             |
                iname = is_sum
-                  | "llvm.vector.reduce.fadd.v" + str::from_int(count) + "f64"
-                  | "llvm.vector.reduce.fmul.v" + str::from_int(count) + "f64"
+                  | "llvm.vector.reduce.fadd.v" + str::from_int(count) + tstr
+                  | "llvm.vector.reduce.fmul.v" + str::from_int(count) + tstr
                fty = intrin_fn_type2(elem_llvm, elem_llvm, vec_ty)
                fn = get_or_add_intrinsic(cg, iname, fty)
                s_val = is_sum
@@ -6697,8 +6834,8 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
                (res, elem_vt)
             |
                iname = is_sum
-                  | "llvm.vector.reduce.add.v" + str::from_int(count) + "i64"
-                  | "llvm.vector.reduce.mul.v" + str::from_int(count) + "i64"
+                  | "llvm.vector.reduce.add.v" + str::from_int(count) + tstr
+                  | "llvm.vector.reduce.mul.v" + str::from_int(count) + tstr
                fty = types::fn_type1(elem_llvm, vec_ty)
                fn = get_or_add_intrinsic(cg, iname, fty)
                res = call_fn1(cg, fty, fn, vec_val, "reduce.int")
@@ -6707,15 +6844,15 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
          count = ?fvts0
          elem_vt = rec_elem_vt(fvts0)
          is_flt = types::is_float_vt(elem_vt)
-         elem_llvm = is_flt | LLVMDoubleType! | LLVMInt64Type!
+         elem_llvm = types::llvm_type_of_vt(elem_vt)
+         tstr = vec_elem_type_str(elem_vt)
          v0 = load_rec_vec(cg, ev0.0, elem_llvm, elem_vt, count)
          v1 = load_rec_vec(cg, ev1.0, elem_llvm, elem_vt, count)
          vec_ty = codegen_vector_type(elem_llvm, count)
          is_flt
             |
                vmul = LLVMBuildFMul(cg.builder, v0, v1, "dot.fmul")
-               iname = "llvm.vector.reduce.fadd.v" + str::from_int(count) +
-                  "f64"
+               iname = "llvm.vector.reduce.fadd.v" + str::from_int(count) + tstr
                fty = intrin_fn_type2(elem_llvm, elem_llvm, vec_ty)
                fn = get_or_add_intrinsic(cg, iname, fty)
                s_val = LLVMConstReal(elem_llvm, -0.0)
@@ -6723,8 +6860,7 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
                (res, elem_vt)
             |
                vmul = LLVMBuildMul(cg.builder, v0, v1, "dot.mul")
-               iname = "llvm.vector.reduce.add.v" + str::from_int(count) +
-                  "i64"
+               iname = "llvm.vector.reduce.add.v" + str::from_int(count) + tstr
                fty = types::fn_type1(elem_llvm, vec_ty)
                fn = get_or_add_intrinsic(cg, iname, fty)
                res = call_fn1(cg, fty, fn, vmul, "dot.red")
@@ -6734,9 +6870,7 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
          mask_count = ?types::field_vts(cg, mask_te.ti)
          v0_count = ?fvts0
          elem_vt = rec_elem_vt(fvts0)
-         elem_llvm = types::is_float_vt(elem_vt)
-            | LLVMDoubleType!
-            | LLVMInt64Type!
+         elem_llvm = types::llvm_type_of_vt(elem_vt)
          v0 = load_rec_vec(cg, ev0.0, elem_llvm, elem_vt, v0_count)
          v1 = nargs == 3
             | load_rec_vec(cg, ev1.0, elem_llvm, elem_vt, ?fvts1)
@@ -6896,21 +7030,25 @@ codegen_typed_eval_index = cg, target, index, ti =>
                view_len' = clamped'.1
                base_data' = main::slice_data(cg, tv.0, "slice.data")
                elem_vt' = ti [Rec r] r.3 | ast::ValueType(Int)
-               elem_ll' = types::llvm_type_of_vt(elem_vt')
-               typed_data' = LLVMBuildPointerCast(cg.builder, base_data',
-                  LLVMPointerType(elem_ll', 0), "slice.data.typed")
-               view_data_typed = types::gep1(cg, elem_ll', typed_data', final_start',
-                  "slice.elem.gep")
+               r_flds = ti [Rec r] r.0 | ast::FieldTypes()
+               elem_ti = ?r_flds > 0 | r_flds(0)!!.rec_type | ast::TypeInfo(Prim, elem_vt')
+               rm = runtime::record_meta_from_ti(cg, elem_ti)
+               elem_ll' = rm | m => m.0 | types::llvm_type_of_vt(elem_vt')
+               view_gep = main::slice_elem_gep(cg, tv.0, base_data', elem_ll',
+                  final_start', "slice.elem.gep")
                view_data' = LLVMBuildPointerCast(cg.builder,
-                  view_data_typed,
+                  view_gep,
                   LLVMPointerType(LLVMInt8Type!, 0),
                   "slice.view.data")
+               pbit = main::slice_packed_bit(cg, tv.0, "slice.pbit")
+               tagged_len' = LLVMBuildOr(cg.builder, view_len', pbit,
+                  "slice.len.tagged")
                slice' = codegen_call_arena_alloc(cg,
                   LLVMConstInt(i64t', 16, 0), "slice.alloc")
                LLVMBuildStore(cg.builder, view_data',
                   LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice', 0,
                      "slice.data.gep"))
-               LLVMBuildStore(cg.builder, view_len',
+               LLVMBuildStore(cg.builder, tagged_len',
                   LLVMBuildStructGEP2(cg.builder, cg.slice_t, slice', 1,
                      "slice.len.gep"))
                (slice', ast::ValueType(Slice))
@@ -6929,12 +7067,15 @@ codegen_typed_eval_index = cg, target, index, ti =>
                         LLVMConstInt(i64t', 0, 0), "a.view.off")
                      view_data' = types::gep1(cg, LLVMInt8Type!, base_data',
                         byte_off, "a.view.data")
+                     tagged_len' = LLVMBuildOr(cg.builder, view_len',
+                        LLVMConstInt(i64t', 4611686018427387904, 0),
+                        "a.view.len.tagged")
                      slice' = codegen_call_arena_alloc(cg,
                         LLVMConstInt(i64t', 16, 0), "a.view.slice")
                      LLVMBuildStore(cg.builder, view_data',
                         LLVMBuildStructGEP2(cg.builder, cg.slice_t,
                            slice', 0, "a.view.data.gep"))
-                     LLVMBuildStore(cg.builder, view_len',
+                     LLVMBuildStore(cg.builder, tagged_len',
                         LLVMBuildStructGEP2(cg.builder, cg.slice_t,
                            slice', 1, "a.view.len.gep"))
                      (slice', ast::ValueType(Slice))
@@ -7034,26 +7175,26 @@ codegen_typed_eval_index = cg, target, index, ti =>
                      elem_ti = ?sl_flds > 0 | sl_flds(0)!!.rec_type | ast::TypeInfo(Prim, sl_elem_vt)
                      rm = runtime::record_meta_from_ti(cg, elem_ti)
                      elem_ll' = rm | m => m.0 | types::llvm_type_of_vt(sl_elem_vt)
-                     typed_data = LLVMBuildPointerCast(cg.builder, data,
-                        LLVMPointerType(elem_ll', 0), "sl.typed")
-                     elem_gep = types::gep1(cg, elem_ll', typed_data, idx_i64',
-                        "sl.elem.gep")
                      is_rec_elem = sl_elem_vt [Record]
                      is_rec_elem
-                        | (elem_gep, ast::ValueType(Record))
                         |
-                           is_narrow = (LLVMGetTypeKind(elem_ll') == 8) && (LLVMGetIntTypeWidth(elem_ll') < 64)
-                           is_narrow
-                              |
-                                 raw = LLVMBuildLoad2(cg.builder, elem_ll', elem_gep, "sl.elem.narrow")
-                                 cval = types::is_unsigned_vt(sl_elem_vt)
-                                    | LLVMBuildZExt(cg.builder, raw, LLVMInt64Type!, "sl.elem.zext")
-                                    | LLVMBuildSExt(cg.builder, raw, LLVMInt64Type!, "sl.elem.sext")
-                                 (cval, ret_vt)
-                              |
-                                 ev' = LLVMBuildLoad2(cg.builder, elem_ll', elem_gep, "slice.elem.raw")
-                                 unpacked' = runtime::codegen_unpack_slot(cg, ev', ret_vt)
-                                 (unpacked', ret_vt)
+                           rec_ptr = main::slice_load_rec_elem(cg, tv.0, data,
+                              elem_ll', idx_i64', "sl.rec.elem")
+                           (rec_ptr, ast::ValueType(Record))
+                        |
+                           elem_gep = main::slice_elem_gep(cg, tv.0, data,
+                              elem_ll', idx_i64', "sl.elem.gep")
+                           ev' = LLVMBuildLoad2(cg.builder, elem_ll', elem_gep,
+                              "slice.elem.raw")
+                           ret_ll = types::llvm_type_of_vt(ret_vt)
+                           need_coerce = (LLVMTypeOf(ev') != ret_ll) &&
+                              (LLVMGetTypeKind(elem_ll') == 8) &&
+                              (LLVMGetTypeKind(ret_ll) == 8)
+                           cval = need_coerce
+                              | stmt::coerce_int_ext(cg, ev', ret_ll,
+                                 types::is_unsigned_vt(sl_elem_vt))
+                              | ev'
+                           (cval, ret_vt)
                   |
                      is_arr
                         |
@@ -7143,16 +7284,15 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
          elem_ti = ?sl_flds > 0 | sl_flds(0)!!.rec_type | ast::TypeInfo(Prim, sl_elem_vt)
          rm = runtime::record_meta_from_ti(cg, elem_ti)
          elem_ll' = rm | m => m.0 | types::llvm_type_of_vt(sl_elem_vt)
-         typed_data = LLVMBuildPointerCast(cg.builder, data',
-            LLVMPointerType(elem_ll', 0), "sl.typed")
-         elem_gep = types::gep1(cg, elem_ll', typed_data, idx_i64', "sl.elem.gep")
          is_rec_elem = sl_elem_vt [Record]
          is_rec_elem
             |
-               inner_sz = LLVMSizeOf(elem_ll')
-               LLVMBuildMemCpy(cg.builder, elem_gep, 1, vv.0, 1, inner_sz, 0)
+               main::slice_store_rec_elem(cg, tv.0, data', elem_ll', idx_i64',
+                  vv.0, "sl.rec.store")
             |
-               is_flt = sl_elem_vt [Float]
+               elem_gep = main::slice_elem_gep(cg, tv.0, data', elem_ll',
+                  idx_i64', "sl.elem.gep")
+               is_flt = types::is_float_vt(sl_elem_vt)
                cval' = is_flt | vv.0 | stmt::coerce_int_ext(cg, vv.0, elem_ll',
                   types::is_unsigned_vt(sl_elem_vt))
                LLVMBuildStore(cg.builder, cval', elem_gep)
@@ -7204,39 +7344,48 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
                is_ram = ti [Ram]
                is_ram
                   |
-                     is_unboxed = types::is_unboxed_ram_ti(cg, ti)
-                     is_unboxed
+                     niche = types::is_niche_ram_ti(cg, ti)
+                     niche.0
                         |
-                           tag_phi = LLVMBuildPhi(cg.builder, LLVMInt1Type!, "a.wr.tag")
-                           stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 1, 0), ok_end)
-                           stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 0, 0), null_end)
-                           stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 0, 0), oob_end)
-                           err0_i64 = LLVMBuildPtrToInt(cg.builder, err0, i64t', "err0.p2i")
-                           err1_i64 = LLVMBuildPtrToInt(cg.builder, err1, i64t', "err1.p2i")
-                           pay_phi = LLVMBuildPhi(cg.builder, i64t', "a.wr.pay")
-                           stmt::llvm_add_incoming1(cg, pay_phi, zero, ok_end)
-                           stmt::llvm_add_incoming1(cg, pay_phi, err0_i64, null_end)
-                           stmt::llvm_add_incoming1(cg, pay_phi, err1_i64, oob_end)
-                           st = match::unboxed_ram_struct_t(cg)
-                           u0 = LLVMConstNull(st)
-                           u1 = LLVMBuildInsertValue(cg.builder, u0, tag_phi, 0, "ram.tag")
-                           u2 = LLVMBuildInsertValue(cg.builder, u1, pay_phi, 1, "ram.pay")
-                           (u2, ast::ValueType(Ram))
-                        |
-                           tag_phi = LLVMBuildPhi(cg.builder, i64t', "a.wr.tag")
-                           stmt::llvm_add_incoming1(cg, tag_phi, one, ok_end)
-                           stmt::llvm_add_incoming1(cg, tag_phi, zero, null_end)
-                           stmt::llvm_add_incoming1(cg, tag_phi, zero, oob_end)
-                           pay_phi = LLVMBuildPhi(cg.builder, i8p, "a.wr.pay")
+                           pay_phi = LLVMBuildPhi(cg.builder, i8p, "a.wr.niche")
                            stmt::llvm_add_incoming1(cg, pay_phi, LLVMConstNull(i8p), ok_end)
                            stmt::llvm_add_incoming1(cg, pay_phi, err0, null_end)
                            stmt::llvm_add_incoming1(cg, pay_phi, err1, oob_end)
-                           ram_res = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t', 16, 0), "a.wr.succ")
-                           tgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, ram_res, 0, "tag.gep")
-                           pgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, ram_res, 1, "pay.gep")
-                           LLVMBuildStore(cg.builder, tag_phi, tgep)
-                           LLVMBuildStore(cg.builder, pay_phi, pgep)
-                           (ram_res, ast::ValueType(Ram))
+                           (pay_phi, ast::ValueType(Ram))
+                        |
+                           is_unboxed = types::is_unboxed_ram_ti(cg, ti)
+                           is_unboxed
+                              |
+                                 tag_phi = LLVMBuildPhi(cg.builder, LLVMInt1Type!, "a.wr.tag")
+                                 stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 1, 0), ok_end)
+                                 stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 0, 0), null_end)
+                                 stmt::llvm_add_incoming1(cg, tag_phi, LLVMConstInt(LLVMInt1Type!, 0, 0), oob_end)
+                                 err0_i64 = LLVMBuildPtrToInt(cg.builder, err0, i64t', "err0.p2i")
+                                 err1_i64 = LLVMBuildPtrToInt(cg.builder, err1, i64t', "err1.p2i")
+                                 pay_phi = LLVMBuildPhi(cg.builder, i64t', "a.wr.pay")
+                                 stmt::llvm_add_incoming1(cg, pay_phi, zero, ok_end)
+                                 stmt::llvm_add_incoming1(cg, pay_phi, err0_i64, null_end)
+                                 stmt::llvm_add_incoming1(cg, pay_phi, err1_i64, oob_end)
+                                 st = match::unboxed_ram_struct_t(cg)
+                                 u0 = LLVMConstNull(st)
+                                 u1 = LLVMBuildInsertValue(cg.builder, u0, tag_phi, 0, "ram.tag")
+                                 u2 = LLVMBuildInsertValue(cg.builder, u1, pay_phi, 1, "ram.pay")
+                                 (u2, ast::ValueType(Ram))
+                              |
+                                 tag_phi = LLVMBuildPhi(cg.builder, i64t', "a.wr.tag")
+                                 stmt::llvm_add_incoming1(cg, tag_phi, one, ok_end)
+                                 stmt::llvm_add_incoming1(cg, tag_phi, zero, null_end)
+                                 stmt::llvm_add_incoming1(cg, tag_phi, zero, oob_end)
+                                 pay_phi = LLVMBuildPhi(cg.builder, i8p, "a.wr.pay")
+                                 stmt::llvm_add_incoming1(cg, pay_phi, LLVMConstNull(i8p), ok_end)
+                                 stmt::llvm_add_incoming1(cg, pay_phi, err0, null_end)
+                                 stmt::llvm_add_incoming1(cg, pay_phi, err1, oob_end)
+                                 ram_res = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t', 16, 0), "a.wr.succ")
+                                 tgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, ram_res, 0, "tag.gep")
+                                 pgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, ram_res, 1, "pay.gep")
+                                 LLVMBuildStore(cg.builder, tag_phi, tgep)
+                                 LLVMBuildStore(cg.builder, pay_phi, pgep)
+                                 (ram_res, ast::ValueType(Ram))
                   | (vv.0, vv.1)
             |
                is_rec = tv.1 [Record]
@@ -7264,7 +7413,7 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
                            inner_sz = LLVMSizeOf(elem_ll')
                            LLVMBuildMemCpy(cg.builder, elem_gep, 1, vv.0, 1, inner_sz, 0)
                         |
-                           is_flt = elem_vt [Float]
+                           is_flt = types::is_float_vt(elem_vt)
                            cval' = is_flt | vv.0 | stmt::coerce_int_ext(cg, vv.0, elem_ll',
                               types::is_unsigned_vt(elem_vt))
                            LLVMBuildStore(cg.builder, cval', elem_gep)

@@ -34,14 +34,6 @@ float_size = #size(Float)   // 8 bytes
 i32_size   = #size(i32)     // 4 bytes
 ```
 
-### `#align(T)`
-Returns the byte alignment required for type `T`:
-
-```{.dva .partial}
-int_align = #align(Int)     // 8
-i8_align  = #align(i8)      // 1
-```
-
 ## Type generators (generics)
 
 Type generators are compile-time functions that take `Type` arguments and return a new composite `Type`. When evaluated with `#type`, they instantiate concrete types:

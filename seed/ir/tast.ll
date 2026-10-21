@@ -323,6 +323,7 @@ entry:
   %var.load = load i64, ptr %var.val, align 8
   %arena.cur10 = call ptr @dva_arena_current()
   %enum.pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 8)
+  store i64 0, ptr %enum.pay.alloc, align 8
   store i64 %var.load, ptr %enum.pay.alloc, align 8
   store ptr %enum.pay.alloc, ptr %pay.gep9, align 8
   %var.load11 = load ptr, ptr %var.ut, align 8
@@ -372,6 +373,7 @@ entry:
   %var.load = load double, ptr %var.val, align 8
   %arena.cur10 = call ptr @dva_arena_current()
   %enum.pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 8)
+  store i64 0, ptr %enum.pay.alloc, align 8
   store double %var.load, ptr %enum.pay.alloc, align 8
   store ptr %enum.pay.alloc, ptr %pay.gep9, align 8
   %var.load11 = load ptr, ptr %var.ut, align 8
@@ -467,6 +469,7 @@ entry:
   %var.load = load i1, ptr %var.val, align 1
   %arena.cur10 = call ptr @dva_arena_current()
   %enum.pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 8)
+  store i64 0, ptr %enum.pay.alloc, align 8
   store i1 %var.load, ptr %enum.pay.alloc, align 1
   store ptr %enum.pay.alloc, ptr %pay.gep9, align 8
   %var.load11 = load ptr, ptr %var.ut, align 8

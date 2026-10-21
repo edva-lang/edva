@@ -1966,7 +1966,7 @@ slot_payload_type = cg, slot =>
       | slot.payload_type
 
 is_niche_payload_vt: ast::ValueType => <>
-is_niche_payload_vt = vt => vt [Str, Record]
+is_niche_payload_vt = vt => vt [Str, Record, Error]
 
 is_niche_ram_ti: Cg, ast::TypeInfo => (<>, <>, ast::ValueType)
 is_niche_ram_ti = cg, ti =>
@@ -1998,7 +1998,7 @@ is_unboxed_ram_ti = cg, ti =>
       [Ram slots]
          s0 = slots.0
          s1 = slots.1
-         s0.has_payload && s1.has_payload
+         s0.has_payload || s1.has_payload
             |
                niche = is_niche_ram_ti(cg, ti)
                !niche.0
@@ -2020,7 +2020,7 @@ codegen_cond_value_with_ti = cg, v, vt, ti =>
                LLVMBuildICmp(cg.builder, 32, v,
                   LLVMConstNull(LLVMTypeOf(v)), "niche.eq.null")
       |
-         is_unboxed_ram_ti(cg, ti)
+         (LLVMGetTypeKind(LLVMTypeOf(v)) == 10)
             | LLVMBuildExtractValue(cg.builder, v, 0, "ram.tag")
             | stmt::codegen_cond_value(cg, v, vt)
 
@@ -3890,6 +3890,7 @@ codegen_build_union = cg, tid, args, alloc_name =>
                box_name = alloc_name == "enum.alloc" | "enum.pay.alloc" | "pay.alloc"
                box = expr::codegen_call_arena_alloc(cg,
                   LLVMConstInt(LLVMInt64Type!, 8, 0), box_name)
+               LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt64Type!, 0, 0), box)
                LLVMBuildStore(cg.builder, ev.0, box)
                LLVMBuildStore(cg.builder, box, pgep')
       |

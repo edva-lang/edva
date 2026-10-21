@@ -23,11 +23,11 @@ vector operations (`+`, `-`, `*`).
 
 | Type | Components | Description |
 |---|---|---|
-| `color::Rgba` | `(r, g, b, a)` | Standard non-linear sRGB with alpha |
+| `color::Color` / `color::Rgba` | `(r, g, b, a)` | Standard non-linear sRGB with alpha |
 | `color::LinearRgba` | `(r, g, b, a)` | Radiometrically linear sRGB |
 | `color::Oklab` | `(l, a, b, alpha)` | Perceptually uniform Oklab color space |
-| `color::Oklch` | `(l, c, h, alpha)` | Cylindrical Oklch (Lightness, Chroma, Hue in radians) |
-| `color::Hsv` | `(h, s, v, alpha)` | Hue, Saturation, Value |
+| `color::Oklch` | `(l, c, h, alpha)` | Cylindrical Oklch (Lightness, Chroma, Hue in degrees `[0, 360)`) |
+| `color::Hsv` | `(h, s, v, alpha)` | Hue (`[0, 360)`), Saturation, Value |
 
 ## Constructors and hex conversions
 
@@ -35,7 +35,9 @@ vector operations (`+`, `-`, `*`).
 c1 = color::rgba(0.2, 0.4, 0.8, 1.0)
 c2 = color::rgb(1.0, 0.5, 0.0)             // Defaults alpha to 1.0
 hex_color = color::from_hex(0xFF00AAFF)     // Unpack 0xRRGGBBAA
-val = color::to_hex(c1)                    // Pack to 0xRRGGBBAA
+rgb_color = color::from_hex_rgb(0xFF00AA)   // Unpack 0xRRGGBB (alpha = 1.0)
+val = color::to_hex(c1)                     // Pack to 0xRRGGBBAA
+val_rgb = color::to_hex_rgb(c1)             // Pack to 0xRRGGBB
 ```
 
 ## Transformations and blending
@@ -44,12 +46,36 @@ val = color::to_hex(c1)                    // Pack to 0xRRGGBBAA
 |---|---|---|
 | `color::srgb_to_linear` | `Rgba => LinearRgba` | Converts sRGB gamma to linear space |
 | `color::linear_to_srgb` | `LinearRgba => Rgba` | Encodes linear sRGB to gamma-corrected sRGB |
-| `color::rgb_to_oklab` | `Rgba => Oklab` | Converts sRGB to perceptually uniform Oklab |
-| `color::oklab_to_rgb` | `Oklab => Rgba` | Converts Oklab back to sRGB |
-| `color::oklab_to_oklch` | `Oklab => Oklch` | Converts Cartesian Oklab to polar Oklch |
+| `color::linear_to_oklab` | `LinearRgba => Oklab` | Converts linear sRGB to Oklab |
+| `color::oklab_to_linear` | `Oklab => LinearRgba` | Converts Oklab to linear sRGB |
+| `color::rgba_to_oklab` / `color::srgb_to_oklab` | `Rgba => Oklab` | Converts sRGB to perceptually uniform Oklab |
+| `color::oklab_to_rgba` / `color::oklab_to_srgb` | `Oklab => Rgba` | Converts Oklab back to sRGB |
+| `color::oklab_to_oklch` | `Oklab => Oklch` | Converts Cartesian Oklab to polar Oklch (hue in degrees) |
 | `color::oklch_to_oklab` | `Oklch => Oklab` | Converts polar Oklch to Cartesian Oklab |
-| `color::rgb_to_hsv` | `Rgba => Hsv` | Converts sRGB to HSV |
-| `color::hsv_to_rgb` | `Hsv => Rgba` | Converts HSV to sRGB |
-| `color::over` | `Rgba, Rgba => Rgba` | Porter-Duff source-over alpha compositing |
-| `color::mix` | `Rgba, Rgba, Float => Rgba` | Linear interpolation in sRGB space |
-| `color::mix_oklab` | `Rgba, Rgba, Float => Rgba` | Perceptually uniform color interpolation |
+| `color::rgba_to_oklch` / `color::srgb_to_oklch` | `Rgba => Oklch` | Direct sRGB to Oklch conversion |
+| `color::oklch_to_rgba` / `color::oklch_to_srgb` | `Oklch => Rgba` | Direct Oklch to sRGB conversion |
+| `color::rgba_to_hsv` / `color::srgb_to_hsv` | `Rgba => Hsv` | Converts sRGB to HSV |
+| `color::hsv_to_rgba` / `color::hsv_to_srgb` | `Hsv => Rgba` | Converts HSV to sRGB |
+| `color::alpha_blend` | `Rgba, Rgba => Rgba` | Porter-Duff source-over alpha compositing in sRGB |
+| `color::alpha_blend_linear` | `Rgba, Rgba => Rgba` | Porter-Duff source-over alpha compositing in linear sRGB |
+| `color::lerp` | `Color, Color, Float => Color` | Linear interpolation in component space |
+| `color::lerp_oklab` | `Rgba, Rgba, Float => Rgba` | Perceptually uniform color interpolation in Oklab |
+| `color::adjust_lightness` | `Rgba, Float => Rgba` | Adjusts Oklab lightness `L` by `delta` |
+
+## Packed 24-bit TrueColor integer operations (`0xRRGGBB`)
+
+| Export | Signature | Description |
+|---|---|---|
+| `color::BLACK` / `color::WHITE` | `Int` | `0x000000` and `0xFFFFFF` |
+| `color::pack_rgb` / `color::rgb24` | `Int, Int, Int => Int` | Packs `(r, g, b)` (`0..255`) into `0xRRGGBB` |
+| `color::red`, `color::green`, `color::blue` | `Int => Int` | Extracts 8-bit channel (`0..255`) from `0xRRGGBB` |
+| `color::blend` | `Int, Int, Int => Int` | Blends `c1` and `c2` by percentage `t` (`0..100`) |
+| `color::lighten` / `color::darken` | `Int, Int => Int` | Lightens toward white or darkens toward black by `0..100`% |
+| `color::grayscale` | `Int => Int` | Converts `0xRRGGBB` to BT.601 grayscale `0xYYYYYY` |
+| `color::luminance` | `Int => Int` | Relative BT.601 luminance (`0..255`) |
+| `color::from_hex_str` | `String => Int` | Parses `"#RRGGBB"`, `"RRGGBB"`, `"#RGB"`, or `"RGB"` into `0xRRGGBB` |
+| `color::to_hex_str` | `Int => String` | Formats `0xRRGGBB` as lowercase `"#rrggbb"` |
+
+## Submodule: `color/palette`
+
+Import with `#use color/palette`. Provides the 12-slot `palette::Palette` record (`bg`, `surface`, `border`, `muted`, `fg`, `red`, `orange`, `yellow`, `green`, `cyan`, `blue`, `purple`) and 10 standard theme presets (`CATPPUCCIN`, `MONOKAI`, `NORD`, `TOKYONIGHT`, `SOLARIZED_DARK`, `SOLARIZED_LIGHT`, `GRUVBOX_DARK`, `ONE_DARK`, `DRACULA`, `ROSE_PINE`).

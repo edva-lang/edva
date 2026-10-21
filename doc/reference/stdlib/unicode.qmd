@@ -19,11 +19,11 @@ codepoint classification, UTF-8 byte decoding, and rune boundary helpers.
 
 | Category | Function | Signature | Return Type | Description |
 |---|---|---|---|---|
-| **Classification** | `unicode::is_alpha(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode alphabetic |
-| | `unicode::is_digit(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode decimal digit |
-| | `unicode::is_upper(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode uppercase letter |
-| | `unicode::is_lower(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode lowercase letter |
-| | `unicode::is_space(r)` | `Rune => i1` | Flag `<>` | True if rune is Unicode whitespace |
+| **Classification** | `unicode::is_alpha(r)` | `Rune => <>` | Flag `<>` | True if rune is Unicode alphabetic |
+| | `unicode::is_digit(r)` | `Rune => <>` | Flag `<>` | True if rune is Unicode decimal digit |
+| | `unicode::is_upper(r)` | `Rune => <>` | Flag `<>` | True if rune is Unicode uppercase letter |
+| | `unicode::is_lower(r)` | `Rune => <>` | Flag `<>` | True if rune is Unicode lowercase letter |
+| | `unicode::is_space(r)` | `Rune => <>` | Flag `<>` | True if rune is Unicode whitespace |
 | **Decoding** | `unicode::decode_rune(s, off)` | `String, Int => Rune` | `Rune` | Decodes the UTF-8 codepoint starting at byte offset `off` |
 | | `unicode::utf8_width(r)` | `Rune => Int` | `Int` | Returns the encoded UTF-8 byte width (`1` to `4` bytes) |
 

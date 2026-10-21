@@ -106,11 +106,13 @@ is_less = p1 < p2             // <+>
 To mask off low-order alignment bits or high-order generational tags while preserving LLVM pointer provenance and alias analysis metadata, use the `%ptrmask(ptr, mask)` intrinsic:
 
 ```{.dva .run}
+p = Addr(0x7fff0040)
+
 // Clear top 16 tag bits before passing an address to OS syscalls:
-canonical_ptr = %ptrmask(ptr, 0b1{48})
+canonical_ptr = %ptrmask(p, 0b1{48})
 
 // Align pointer down to 64-byte boundary:
-aligned_ptr = %ptrmask(ptr, 0 - 64)
+aligned_ptr = %ptrmask(p, 0 - 64)
 ```
 
 ### Volatile memory load and store (`@[...]`)

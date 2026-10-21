@@ -91,7 +91,7 @@ requires compatible winner layouts, while flags only combine with flags.
 `==` and `!=` between two enums perform deep structural equality, comparing
 both variant tag and payload value (yielding a bare flag). If a payload type
 does not support equality (e.g. function values), comparison is rejected at
-compile time (`E3084`). Non-enum ramifications do not support equality (`E3027`).
+compile time (`E3084`). Non-enum ramifications do not support equality (`E3084`).
 Relational operators `<` (less), `>` (greater), `!<` (greater-or-equal), and `!>` (less-or-equal)
 perform numeric ordering. On floating-point types, `!<` and `!>` follow ordered comparison semantics
 (LLVM `OGE` / `OLE`) and evaluate to `<->` (false) if either operand is NaN, distinct from logical

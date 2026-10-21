@@ -22,7 +22,7 @@ initialization without a tracing garbage collector or runtime type overhead.
 | `(Int, String)`<br>**Positional Record** | Flat tuple aggregate | Static field count | Immutable; rebind with `'` | Compile error on bad index `.0` |
 | `(i8 * 16)`<br>**Homogeneous Record** | Fixed inline array | Fixed compile-time count | Elements mutable | Must-init before access |
 | `(T){}`<br>**Growable Array** | Resizable heap buffer | `?array` | Append with `+=`, index write | Yields `< T | Error >` |
-| `(T)[]`<br>**Slice View** | Non-owning pointer + len | `?slice` | Read-only view | Bounds check returns `< T | Error >` |
+| `(T)[]`<br>**Slice View** | Non-owning pointer + len | `?slice` | Mutable view (`s(i) = v`) | Bounds-checked indexing returns `T` (aborts `E4002` out of bounds) |
 | `Key ^ Value`<br>**Key-Value Map** | Open-addressing hash table | `?map` | Key write: `m ^ k = v` | Lookup yields `< Value | Error >` |
 | `Builder`<br>**Builder** | Mutable buffer `{ len, ptr, cap }` | `?builder` | In-place append `+=` | Write past cap reallocates |
 | `String`<br>**String** | Immutable fat pointer `{ len, ptr }` | `?string` | Immutable; freeze from Builder | Indexing returns `Rune` or byte |
@@ -108,7 +108,7 @@ Maps are open-addressing keyed containers. A map type uses `Key ^ Value`, with
 | Key membership | `map ^? key` | Flag `<>` | Fast `<+>` (present) or `<->` (absent) |
 | Delete entry | `map ^- key` | Flag `<>` | Leaves tombstone; returns `<+>` if key existed |
 | Entry count | `?map` | `Int` | Active live entry count |
-| Entry iteration | `map @ (k, v) =>` | Unit (`()`) | Iterates all live (non-deleted) entries |
+| Entry iteration | `map @ v, k =>` | Unit (`()`) | Iterates all live (non-deleted) entries (value `v`, key `k`) |
 
 ```{.dva .partial}
 #type ScoreMap String ^ Int

@@ -437,7 +437,7 @@ operators:
     assoc: left
     operands: "numeric, numeric | String, String | Builder, Builder | enum, enum"
     result: "Ramification (bare Flag)"
-    desc: "equality: numeric value equality; String content equality (length short-circuit then memcmp); Builder pointer identity; two ENUM values compare their variant TAG (payload ignored). Non-enum rams stay E3027."
+    desc: "equality: numeric value equality; String content equality (length short-circuit then memcmp); Builder pointer identity; two ENUM values perform deep structural equality (variant tag and payload). Non-enum rams emit E3084."
   - symbol: "!="
     tier: comparison
     kind: NotEqual
@@ -445,7 +445,7 @@ operators:
     assoc: left
     operands: "numeric, numeric | String, String | Builder, Builder | enum, enum"
     result: "Ramification (bare Flag)"
-    desc: "inequality: the complement of == (unsigned operands use the unsigned NE predicate); on two enums, the complement of tag equality."
+    desc: "inequality: the complement of == (unsigned operands use the unsigned NE predicate); on two enums, the complement of deep structural equality."
   - symbol: "!<"
     tier: comparison
     kind: NotLess
@@ -489,7 +489,7 @@ operators:
     assoc: left
     operands: "numeric, numeric | Rune, Int | String, String | String, byte | Builder, byte | Builder, String | Address, Int"
     result: "numeric | String | Builder | Address"
-    desc: "addition: numeric add (wider float wins; Rune is i64-backed), String concat (new buffer), String+byte append (E4008 out of range), Builder+byte pure push (E4007), Builder+String pure append, Address+Int pointer offset. No arithmetic on Strings (E3065)."
+    desc: "addition: numeric add (wider float wins; Rune is i32-backed), String concat (new buffer), String+byte append (E4008 out of range), Builder+byte pure push (E4007), Builder+String pure append, Address+Int pointer offset. No arithmetic on Strings (E3065)."
   - symbol: "-"
     tier: addition
     kind: Sub

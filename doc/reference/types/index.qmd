@@ -21,7 +21,7 @@ Native type names in Edva are strictly uppercase (`Int`, `Float`, `String`, `Add
 |:---|:---|:---|:---|
 | **Integers** | [`Int`](int.qmd), `i8`..`i64`, `u8`..`u64` | `i64`, `i8`, `i16`, `i32` | Two's complement signed and unsigned fixed-width integers |
 | **Floating-Point** | [`Float`](float.qmd), `f32`, `f64` | `double`, `float` | IEEE 754 single and double precision floating-point numbers |
-| **Characters** | [`Rune`](rune.qmd) | `i64` | Unicode scalar value (U+0000 to U+10FFFF) |
+| **Characters** | [`Rune`](rune.qmd) | `i32` | Unicode scalar value (U+0000 to U+10FFFF) |
 | **Byte Strings** | [`String`](string.qmd) | `{ i64 len, ptr data }` | Immutable, length-prefixed, NUL-reserved byte sequence |
 | **Buffers** | [`Builder`](builder.qmd) | `{ i64 len, ptr data, i64 cap }` | Uniquely owned, growable mutable byte buffer |
 | **Ramifications** | [`Flag` & Rams](ram.qmd) | `i1` or `{ i64 tag, ptr payload }` | Binary polarities, options, fallibles, and results |
@@ -31,14 +31,14 @@ Native type names in Edva are strictly uppercase (`Int`, `Float`, `String`, `Add
 | **Hash Maps** | [`Map`](map.qmd) | `{ ptr table, i64 count, i64 cap }` | Associative key-value tables (`Key ^ Value`) |
 | **Addresses** | [`Addr`](addr.qmd) | `ptr` | Raw memory pointers, FFI handles, and system allocations |
 | **Functions** | [Functions and closures](functions.qmd) | `{ ptr fn_ptr, ptr env_ptr }` | First-class closures and arrow signatures |
-| **Errors** | [`Error`](error.qmd) | `{ i64 code, String msg, String file, i64 line, i64 col }` | Structured error diagnostic records with unwrapping semantics |
-| **Metatypes** | [`Type`](type.qmd) | *Compile-time only (erased)* | Compile-time types, `#size`, `#align`, and type generators |
+| **Errors** | [`Error`](error.qmd) | `{ i64 code, String msg, String file, i64 line, i64 col, { i64, i64 } context }` | Structured error diagnostic records with unwrapping semantics |
+| **Metatypes** | [`Type`](type.qmd) | *Compile-time only (erased)* | Compile-time types, `#size`, and type generators |
 | **Unit** | [`Unit`](unit.qmd) | `void` / empty | Zero-sized value `()` denoting expressions evaluated solely for side effects |
 
 ## General type rules
 
-### No implicit coercion
-Edva strictly forbids implicit type widening, sign conversion, or integer-to-float promotion. For example, adding an `Int` to a `Float` or passing an `i32` where `Int` (`i64`) is expected produces a compile-time type mismatch error (`E3001`). All conversions must be explicit via constructor invocations (`Int(f)`, `Float(n)`, `i32(x)`).
+### Explicit conversions and numeric promotion
+Edva forbids implicit integer width or sign conversions: passing an `i32` where `Int` (`i64`) is expected or adding `i32` to `Int` produces a compile-time type mismatch error (`E3084`). In binary arithmetic and relational comparisons, combining `Int` with `Float` or `f32` with `Float` promotes the narrower operand to `Float` (`f64`). All other conversions—including argument passing and narrowing conversions—must be explicit via constructor invocations (`Int(f)`, `Float(n)`, `i32(x)`).
 
 ### Strict initialization
 Uninitialized variables cannot be read. While composite values declared with whole-value assignment (`=`) are initialized immediately, forward-annotated records (`r: Record`) are not zero-filled; definite-assignment analysis rejects any path that attempts to read an unwritten field.

@@ -1,0 +1,2 @@
+// Logical '!' requires a Flag (<>) or Ramification operand; String is rejected.
+x = !"hello"

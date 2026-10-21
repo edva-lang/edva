@@ -324,7 +324,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   ret i64 %choice.res
 }
 
-define ptr @"ascii::hex_value"(i64 %0) #1 {
+define { i1, i64 } @"ascii::hex_value"(i64 %0) #1 {
 entry:
   %var.c = alloca i64, align 8
   store i64 %0, ptr %var.c, align 8
@@ -345,104 +345,74 @@ and.10.exit:                                      ; preds = %and.10.else, %and.1
   br i1 %and.10.phi, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %and.10.exit
-  %arena.cur = call ptr @dva_arena_current()
-  %ram.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
-  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 0
-  store i64 1, ptr %tag.gep, align 8
-  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 1
   %var.load3 = load i64, ptr %var.c, align 8
   %subtmp = sub i64 %var.load3, 48
-  %arena.cur4 = call ptr @dva_arena_current()
-  %pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur4, i64 8)
-  store i64 %subtmp, ptr %pay.alloc, align 8
-  store ptr %pay.alloc, ptr %pay.gep, align 8
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp, 1
   br label %choice.exit
 
 choice.else:                                      ; preds = %and.10.exit
-  %var.load5 = load i64, ptr %var.c, align 8
-  %cmptmp6 = icmp sge i64 %var.load5, 65
-  br i1 %cmptmp6, label %and.11.then, label %and.11.else
+  %var.load4 = load i64, ptr %var.c, align 8
+  %cmptmp5 = icmp sge i64 %var.load4, 65
+  br i1 %cmptmp5, label %and.11.then, label %and.11.else
 
-choice.exit:                                      ; preds = %choice.exit11, %choice.then
-  %choice.res40 = phi ptr [ %ram.alloc, %choice.then ], [ %choice.res39, %choice.exit11 ]
-  ret ptr %choice.res40
+choice.exit:                                      ; preds = %choice.exit10, %choice.then
+  %choice.res25 = phi { i1, i64 } [ %ram.pay, %choice.then ], [ %choice.res24, %choice.exit10 ]
+  ret { i1, i64 } %choice.res25
 
 and.11.then:                                      ; preds = %choice.else
-  %var.load7 = load i64, ptr %var.c, align 8
-  %cmptmp8 = icmp sle i64 %var.load7, 70
+  %var.load6 = load i64, ptr %var.c, align 8
+  %cmptmp7 = icmp sle i64 %var.load6, 70
   br label %and.11.exit
 
 and.11.else:                                      ; preds = %choice.else
   br label %and.11.exit
 
 and.11.exit:                                      ; preds = %and.11.else, %and.11.then
-  %and.11.phi = phi i1 [ %cmptmp8, %and.11.then ], [ %cmptmp6, %and.11.else ]
-  br i1 %and.11.phi, label %choice.then9, label %choice.else10
+  %and.11.phi = phi i1 [ %cmptmp7, %and.11.then ], [ %cmptmp5, %and.11.else ]
+  br i1 %and.11.phi, label %choice.then8, label %choice.else9
 
-choice.then9:                                     ; preds = %and.11.exit
-  %arena.cur12 = call ptr @dva_arena_current()
-  %ram.alloc13 = call ptr @dva_arena_alloc(ptr %arena.cur12, i64 16)
-  %tag.gep14 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc13, i32 0, i32 0
-  store i64 1, ptr %tag.gep14, align 8
-  %pay.gep15 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc13, i32 0, i32 1
-  %var.load16 = load i64, ptr %var.c, align 8
-  %subtmp17 = sub i64 %var.load16, 55
-  %arena.cur18 = call ptr @dva_arena_current()
-  %pay.alloc19 = call ptr @dva_arena_alloc(ptr %arena.cur18, i64 8)
-  store i64 %subtmp17, ptr %pay.alloc19, align 8
-  store ptr %pay.alloc19, ptr %pay.gep15, align 8
-  br label %choice.exit11
+choice.then8:                                     ; preds = %and.11.exit
+  %var.load11 = load i64, ptr %var.c, align 8
+  %subtmp12 = sub i64 %var.load11, 55
+  %ram.pay13 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp12, 1
+  br label %choice.exit10
 
-choice.else10:                                    ; preds = %and.11.exit
-  %var.load20 = load i64, ptr %var.c, align 8
-  %cmptmp21 = icmp sge i64 %var.load20, 97
-  br i1 %cmptmp21, label %and.12.then, label %and.12.else
+choice.else9:                                     ; preds = %and.11.exit
+  %var.load14 = load i64, ptr %var.c, align 8
+  %cmptmp15 = icmp sge i64 %var.load14, 97
+  br i1 %cmptmp15, label %and.12.then, label %and.12.else
 
-choice.exit11:                                    ; preds = %choice.exit26, %choice.then9
-  %choice.res39 = phi ptr [ %ram.alloc13, %choice.then9 ], [ %choice.res, %choice.exit26 ]
+choice.exit10:                                    ; preds = %choice.exit20, %choice.then8
+  %choice.res24 = phi { i1, i64 } [ %ram.pay13, %choice.then8 ], [ %choice.res, %choice.exit20 ]
   br label %choice.exit
 
-and.12.then:                                      ; preds = %choice.else10
-  %var.load22 = load i64, ptr %var.c, align 8
-  %cmptmp23 = icmp sle i64 %var.load22, 102
+and.12.then:                                      ; preds = %choice.else9
+  %var.load16 = load i64, ptr %var.c, align 8
+  %cmptmp17 = icmp sle i64 %var.load16, 102
   br label %and.12.exit
 
-and.12.else:                                      ; preds = %choice.else10
+and.12.else:                                      ; preds = %choice.else9
   br label %and.12.exit
 
 and.12.exit:                                      ; preds = %and.12.else, %and.12.then
-  %and.12.phi = phi i1 [ %cmptmp23, %and.12.then ], [ %cmptmp21, %and.12.else ]
-  br i1 %and.12.phi, label %choice.then24, label %choice.else25
+  %and.12.phi = phi i1 [ %cmptmp17, %and.12.then ], [ %cmptmp15, %and.12.else ]
+  br i1 %and.12.phi, label %choice.then18, label %choice.else19
 
-choice.then24:                                    ; preds = %and.12.exit
-  %arena.cur27 = call ptr @dva_arena_current()
-  %ram.alloc28 = call ptr @dva_arena_alloc(ptr %arena.cur27, i64 16)
-  %tag.gep29 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc28, i32 0, i32 0
-  store i64 1, ptr %tag.gep29, align 8
-  %pay.gep30 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc28, i32 0, i32 1
-  %var.load31 = load i64, ptr %var.c, align 8
-  %subtmp32 = sub i64 %var.load31, 87
-  %arena.cur33 = call ptr @dva_arena_current()
-  %pay.alloc34 = call ptr @dva_arena_alloc(ptr %arena.cur33, i64 8)
-  store i64 %subtmp32, ptr %pay.alloc34, align 8
-  store ptr %pay.alloc34, ptr %pay.gep30, align 8
-  br label %choice.exit26
+choice.then18:                                    ; preds = %and.12.exit
+  %var.load21 = load i64, ptr %var.c, align 8
+  %subtmp22 = sub i64 %var.load21, 87
+  %ram.pay23 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp22, 1
+  br label %choice.exit20
 
-choice.else25:                                    ; preds = %and.12.exit
-  %arena.cur35 = call ptr @dva_arena_current()
-  %ram.alloc36 = call ptr @dva_arena_alloc(ptr %arena.cur35, i64 16)
-  %tag.gep37 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc36, i32 0, i32 0
-  store i64 0, ptr %tag.gep37, align 8
-  %pay.gep38 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc36, i32 0, i32 1
-  store ptr null, ptr %pay.gep38, align 8
-  br label %choice.exit26
+choice.else19:                                    ; preds = %and.12.exit
+  br label %choice.exit20
 
-choice.exit26:                                    ; preds = %choice.else25, %choice.then24
-  %choice.res = phi ptr [ %ram.alloc28, %choice.then24 ], [ %ram.alloc36, %choice.else25 ]
-  br label %choice.exit11
+choice.exit20:                                    ; preds = %choice.else19, %choice.then18
+  %choice.res = phi { i1, i64 } [ %ram.pay23, %choice.then18 ], [ zeroinitializer, %choice.else19 ]
+  br label %choice.exit10
 }
 
-define ptr @"ascii::hex_digit_lower"(i64 %0) #1 {
+define { i1, i64 } @"ascii::hex_digit_lower"(i64 %0) #1 {
 entry:
   %var.n = alloca i64, align 8
   store i64 %0, ptr %var.n, align 8
@@ -463,27 +433,16 @@ and.13.exit:                                      ; preds = %and.13.else, %and.1
   br i1 %and.13.phi, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %and.13.exit
-  %arena.cur = call ptr @dva_arena_current()
-  %ram.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
-  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 0
-  store i64 1, ptr %tag.gep, align 8
-  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 1
   %var.load3 = load i64, ptr %var.n, align 8
   %cmptmp4 = icmp slt i64 %var.load3, 10
   br i1 %cmptmp4, label %choice.then5, label %choice.else6
 
 choice.else:                                      ; preds = %and.13.exit
-  %arena.cur12 = call ptr @dva_arena_current()
-  %ram.alloc13 = call ptr @dva_arena_alloc(ptr %arena.cur12, i64 16)
-  %tag.gep14 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc13, i32 0, i32 0
-  store i64 0, ptr %tag.gep14, align 8
-  %pay.gep15 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc13, i32 0, i32 1
-  store ptr null, ptr %pay.gep15, align 8
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.exit7
-  %choice.res16 = phi ptr [ %ram.alloc, %choice.exit7 ], [ %ram.alloc13, %choice.else ]
-  ret ptr %choice.res16
+  %choice.res11 = phi { i1, i64 } [ %ram.pay, %choice.exit7 ], [ zeroinitializer, %choice.else ]
+  ret { i1, i64 } %choice.res11
 
 choice.then5:                                     ; preds = %choice.then
   %var.load8 = load i64, ptr %var.n, align 8
@@ -497,14 +456,11 @@ choice.else6:                                     ; preds = %choice.then
 
 choice.exit7:                                     ; preds = %choice.else6, %choice.then5
   %choice.res = phi i64 [ %addtmp, %choice.then5 ], [ %addtmp10, %choice.else6 ]
-  %arena.cur11 = call ptr @dva_arena_current()
-  %pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur11, i64 8)
-  store i64 %choice.res, ptr %pay.alloc, align 8
-  store ptr %pay.alloc, ptr %pay.gep, align 8
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %choice.res, 1
   br label %choice.exit
 }
 
-define ptr @"ascii::hex_digit_upper"(i64 %0) #1 {
+define { i1, i64 } @"ascii::hex_digit_upper"(i64 %0) #1 {
 entry:
   %var.n = alloca i64, align 8
   store i64 %0, ptr %var.n, align 8
@@ -525,27 +481,16 @@ and.14.exit:                                      ; preds = %and.14.else, %and.1
   br i1 %and.14.phi, label %choice.then, label %choice.else
 
 choice.then:                                      ; preds = %and.14.exit
-  %arena.cur = call ptr @dva_arena_current()
-  %ram.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
-  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 0
-  store i64 1, ptr %tag.gep, align 8
-  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %ram.alloc, i32 0, i32 1
   %var.load3 = load i64, ptr %var.n, align 8
   %cmptmp4 = icmp slt i64 %var.load3, 10
   br i1 %cmptmp4, label %choice.then5, label %choice.else6
 
 choice.else:                                      ; preds = %and.14.exit
-  %arena.cur12 = call ptr @dva_arena_current()
-  %ram.alloc13 = call ptr @dva_arena_alloc(ptr %arena.cur12, i64 16)
-  %tag.gep14 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc13, i32 0, i32 0
-  store i64 0, ptr %tag.gep14, align 8
-  %pay.gep15 = getelementptr inbounds { i64, ptr }, ptr %ram.alloc13, i32 0, i32 1
-  store ptr null, ptr %pay.gep15, align 8
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.exit7
-  %choice.res16 = phi ptr [ %ram.alloc, %choice.exit7 ], [ %ram.alloc13, %choice.else ]
-  ret ptr %choice.res16
+  %choice.res11 = phi { i1, i64 } [ %ram.pay, %choice.exit7 ], [ zeroinitializer, %choice.else ]
+  ret { i1, i64 } %choice.res11
 
 choice.then5:                                     ; preds = %choice.then
   %var.load8 = load i64, ptr %var.n, align 8
@@ -559,10 +504,7 @@ choice.else6:                                     ; preds = %choice.then
 
 choice.exit7:                                     ; preds = %choice.else6, %choice.then5
   %choice.res = phi i64 [ %addtmp, %choice.then5 ], [ %addtmp10, %choice.else6 ]
-  %arena.cur11 = call ptr @dva_arena_current()
-  %pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur11, i64 8)
-  store i64 %choice.res, ptr %pay.alloc, align 8
-  store ptr %pay.alloc, ptr %pay.gep, align 8
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %choice.res, 1
   br label %choice.exit
 }
 

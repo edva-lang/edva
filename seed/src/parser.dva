@@ -124,7 +124,9 @@ op_is_reserved = text =>
             ["<+", "<-", "<+>", "<->", "<++>", "<-->", "<>", "+>", "->",
             "-->", "--^", "--|", ">--", "@", "[@",
             "@@", "^", "^?", "?", "!", "*", "&", "=>",
-            "!=>", "|", "$:", "|->", "|+>", "|-->", "|++>"]
+            "!=>", "|", "$:", "|->", "|+>", "|-->", "|++>",
+            "=", ":=", "+=", "::=", "..", "::", ".", ":",
+            "??", ".!.", "++", "~~", "--!", "!!", "^-", "^="]
 
 user_op_lookup: (UserOpEntry){}, String => (found': <>, lbp': Int, rbp': Int)
 user_op_lookup = lst, text =>
@@ -152,7 +154,7 @@ is_continuation_op = t =>
    is_delim = t.kind [Comma, LParen, LBracket, LBrace]
    is_op = t.kind [Op] &&
       (t.text ["+", "-", "*", "/", "%", "$", "$>", "$>>",
-         "..", "::", "&&", "||", ".<.", ".>.", ".&.", ".|."])
+         "..", "::", "&&", "||", ".<.", ".>.", ".&.", ".|.", ".^."])
    is_delim || is_op
 
 // --- driver ----------------------------------------------------------------
@@ -1023,13 +1025,13 @@ names_has = names, name => names_has_at(names, name, 0)
 add_public_name: Parser, String => ()
 add_public_name = p, name =>
    clean = clean_decl_name(name)
-   clean != "" && !names_has(p.publics, clean)
+   clean != "" && !names_has(p.publics, clean) && !names_has(p.privates, clean)
       | p.publics += clean
 
 add_private_name: Parser, String => ()
 add_private_name = p, name =>
    clean = clean_decl_name(name)
-   clean != "" && !names_has(p.privates, clean)
+   clean != "" && !names_has(p.privates, clean) && !names_has(p.publics, clean)
       | p.privates += clean
 
 mark_decl_item: Parser, ast::Expr => ()
@@ -1071,8 +1073,13 @@ atom_public = p =>
    is_same_line = !tok_is_nl(p.curr) && !tok_is_eof(p.curr)
    is_same_line
       |
+         old_vis = p.is_public
          p.is_public = <+>
-         parse_expr(p)
+         res = parse_expr(p)
+         res | s =>
+            p.module_level | mark_decl_item(p, s)
+         p.is_public = old_vis
+         res
       |
          has_ind
             |
@@ -1099,8 +1106,13 @@ atom_private = p =>
    is_same_line = !tok_is_nl(p.curr) && !tok_is_eof(p.curr)
    is_same_line
       |
+         old_vis = p.is_public
          p.is_public = <->
-         parse_expr(p)
+         res = parse_expr(p)
+         res | s =>
+            p.module_level | mark_decl_item(p, s)
+         p.is_public = old_vis
+         res
       |
          has_ind
             |
@@ -3141,7 +3153,9 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
             sub_vt = ti_is_typevar(f.rec_type, name) | arg_vt | f.val_type
             new_fields += ast::RecordFieldType((f.name, sub_vt, sub_ti,
                f.has_default, f.default_expr))
-         new_elem_vt = r.1 | arg_vt | r.3
+         new_elem_vt = r.1 && ?new_fields > 0
+            | (new_fields(0) | nf => nf.val_type | r.3)
+            | r.3
          ast::TypeInfo(Rec, (new_fields, r.1, r.2, new_elem_vt, r.4, r.5))
       [Bitfield b] ast::TypeInfo(Bitfield, b)
       [Ram r]
@@ -3164,6 +3178,30 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
                ast::RamSlotInfo((<+>, sub_vt1, sub_ti1))
             | s1
          ast::TypeInfo(Ram, (new_s0, new_s1))
+      [Enum slots]
+         new_slots = ast::EnumSlots()
+         slots @ s =>
+            new_s = s.has_payload
+               |
+                  sub_ti = ctfe_subst_type(s.payload_record, name, arg_vt, arg_ti)
+                  sub_vt = ti_is_typevar(s.payload_record, name) | arg_vt | s.payload_type
+                  ast::EnumSlotInfo((s.label, <+>, sub_vt, sub_ti))
+               | s
+            new_slots += new_s
+         ast::TypeInfo(Enum, new_slots)
+      [Fn f]
+         new_vts = ast::VTypes()
+         new_vis = ast::VInfos()
+         ?f.0 @ k =>
+            pvt = f.0(k) | _ | ast::ValueType(Unknown)
+            pti = f.1(k) | _ | ast::TypeInfo(Prim, pvt)
+            sub_pti = ctfe_subst_type(pti, name, arg_vt, arg_ti)
+            sub_pvt = ti_is_typevar(pti, name) | arg_vt | pvt
+            new_vts += sub_pvt
+            new_vis += sub_pti
+         sub_ret_ti = ctfe_subst_type(f.3, name, arg_vt, arg_ti)
+         sub_ret_vt = ti_is_typevar(f.3, name) | arg_vt | f.2
+         ast::TypeInfo(Fn, (new_vts, new_vis, sub_ret_vt, sub_ret_ti, f.4))
       [Array a]
          sub_elem_ti = ctfe_subst_type(a.1, name, arg_vt, arg_ti)
          sub_elem_vt = ti_is_typevar(a.1, name) | arg_vt | a.0
@@ -4501,7 +4539,7 @@ parse_lit_pattern = p =>
       [Rune]
          txt = p.curr.text
          parser_advance(p)
-         rval = ?txt > 0 | txt(0) | ' '
+         rval = parse_int_text(txt) | n => Rune(n) | ' '
          <+ pat_lit(ast::Expr(Rune, rval)) +>
       |
          token_is_op(p.curr, "-")
@@ -6203,8 +6241,8 @@ parse_named_assign_g = p, name, is_compound, is_global =>
 expr_is_string_literal: ast::Expr => <>
 expr_is_string_literal = e => e [Str]
 
-// "name ::= rhs" — global mutation; the RHS parses at the addition tier so a
-// following '|' choice wraps the whole write.
+// "name ::= rhs" — global mutation; the RHS is a full expression (or indented
+// block), matching '=' and '+=' so enclosing choices are not swallowed.
 parse_global_assign: Parser, String => <ast::Expr|>
 parse_global_assign = p, name =>
    name == "_"
@@ -6213,13 +6251,15 @@ parse_global_assign = p, name =>
          <-->
       |
          parser_advance(p)
-         rhs = tok_is_nl(p.curr) | parse_indented_rhs(p) | parse_bp(p, 130)
+         p.in_rhs = <+>
+         rhs = parse_assign_rhs(p)
+         p.in_rhs = <->
          rhs
             | re =>
                n = ast::Expr(Assign, (name, <->, <->, <+>, <->, re,
                   ast::Expr(Var, ""), "",
                   ast::TypeInfo(Prim, ast::ValueType(Unknown))))
-               choice_cont(p, n)
+               seq_cont_loop(p, n)
             | <-->
 
 // "name(arg1, arg2)" — a parenthesized call, then postfix calls and the

@@ -19,11 +19,11 @@ lexicographic comparisons, and digit parsing primitives.
 
 | Category | Function | Signature | Return Type | Description |
 |---|---|---|---|---|
-| **Predicates** | `str::is_digit(c)` | `Int => i1` | Flag `<>` | True if byte `c` is `'0'..'9'` |
-| | `str::is_alpha(c)` | `Int => i1` | Flag `<>` | True if byte `c` is `'a'..'z'` or `'A'..'Z'` |
-| | `str::is_alnum(c)` | `Int => i1` | Flag `<>` | True if byte is alphanumeric |
-| | `str::is_ws(c)` | `Int => i1` | Flag `<>` | True if byte is space, tab, `\n`, or `\r` |
-| | `str::is_hex(c)` | `Int => i1` | Flag `<>` | True if byte is valid hex digit (`0..9`, `a..f`, `A..F`) |
+| **Predicates** | `str::is_digit(c)` | `Int => <>` | Flag `<>` | True if byte `c` is `'0'..'9'` |
+| | `str::is_alpha(c)` | `Int => <>` | Flag `<>` | True if byte `c` is `'a'..'z'` or `'A'..'Z'` |
+| | `str::is_alnum(c)` | `Int => <>` | Flag `<>` | True if byte is alphanumeric |
+| | `str::is_ws(c)` | `Int => <>` | Flag `<>` | True if byte is space, tab, `\n`, or `\r` |
+| | `str::is_hex(c)` | `Int => <>` | Flag `<>` | True if byte is valid hex digit (`0..9`, `a..f`, `A..F`) |
 | **Conversions** | `str::from_byte(b)` | `Int => String` | `String` | Creates single-byte owned String from byte code |
 | | `str::from_int(v)` | `Int => String` | `String` | Formats integer to ASCII decimal |
 | | `str::from_float(f)` | `Float => String` | `String` | Formats float to `%g`-style decimal string |
@@ -56,6 +56,7 @@ The positive payload contains a pair `(value, rest_of_string)`. If no digits are
 the negative unit slot (`<-->`) is selected:
 
 ```{.dva .partial}
+#use io
 #use str
 
 parse_dimension: String => Int
@@ -63,12 +64,12 @@ parse_dimension = input =>
    res = str::to_int(input)
    res
       | pair =>
-         print $ "Unit suffix: " + pair.1 // e.g. "px"
+         io::out $ "Unit suffix: " + pair.1 // e.g. "px"
          pair.0
       | 0 // Fallback when string contains no leading digits
 
 width = parse_dimension("1920px")
-print_int $ width // prints 1920
+io::out $ width // prints 1920
 ```
 
 ### Lexicographical sorting

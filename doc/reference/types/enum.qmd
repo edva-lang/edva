@@ -17,7 +17,7 @@ Enums are declared with `#type Name < ... >` and distinguished from ramification
 Every enum declaration must satisfy three rules:
 
 1. **At least two variants**: Single-variant or empty enums are rejected (`E2070`).
-2. **Uppercase variant labels**: Every variant label must begin with an uppercase letter (`E2071`).
+2. **Uppercase variant labels**: Every variant label must begin with an uppercase letter (`E2012`).
 3. **Unique labels within the enum**: Duplicate variant names inside the same enum declaration are rejected (`E2074`).
 
 ### Inline and multi-line forms
@@ -165,7 +165,7 @@ Enums support `==` and `!=` out of the box:
 Inside a generic function parameterized by `#! T: Type`, where `T` is bound to an enum type:
 
 - **`?T`**: Evaluates at compile time to the number of variants (`Int`).
-- **`T.(i)`**: Evaluates at compile time to the `String` label of the `i`-th variant (`0 <= i < ?T`). The index `i` must be a compile-time constant or an unrolled `0..?T @ i =>` cycle variable (`E3170`, `E3171`).
+- **`T.(i)`**: Evaluates at compile time to the `String` label of the `i`-th variant (`0 <= i < ?T`). The index `i` must be a compile-time constant or an unrolled `0..?T @ i =>` cycle variable (`E3170`).
 
 ```{.dva .run}
 #use io

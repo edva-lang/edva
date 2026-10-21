@@ -138,8 +138,7 @@ Combining a bare Flag with a heap ram, or combining rams with incompatible candi
 | Diagnostic | Cause | Correct Action |
 |:---|:---|:---|
 | `E3008` | Unary `!` applied to a non-Flag value | Use `+b` to freeze Builder; use `!!` to unwrap rams |
-| `E3027` | Equality `==` used on non-enum ramification | Compare enum variants or test polarity with `<>(r)` |
+| `E3084` | Equality `==` or named variant guard on ramification | Compare enum variants or match rams positionally with bare `|` |
 | `E3089` | Incompatible ram layouts in `&&` or `||` | Align positive/negative slot shapes across operands |
 | `E3091` | Monadic `$>>` applied to RamNP or non-ram | `$>>` requires a positive payload (`RamPP` or `RamPN`) |
-| `E3125` | Using named labels to match ramification slots | Match positionally with bare `|` branches |
 | `E3127` | Relational ordering (`<`, `>`, `<=`, `>=`) on rams | Rams cannot be ordered; compare payload fields explicitly |

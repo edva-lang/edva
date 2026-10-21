@@ -1,0 +1,48 @@
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "51081a6"
+  evidence: "`std/event.dva`, `tests/pass/366_event_poller.dva`"
+---
+
+# `event` standard library
+
+The `event` module provides portable file descriptor readiness notification backed by POSIX `poll(2)`.
+
+```{.dva .run}
+#use event
+```
+
+## Types and constants
+
+| Export | Kind | Description |
+|---|---|---|
+| `event::Poller` | `(epfd: Int, is_closed: <>, max_events: Int, buf: Builder, count: Int)` | Event multiplexer context |
+| `event::Event` | `(fd: Int, events: Int, data: Int)` | Ready event descriptor returned by `event::wait` |
+| `event::READ` | `Int` (`1`) | Descriptor ready for reading (`POLLIN`) |
+| `event::WRITE` | `Int` (`2`) | Descriptor ready for writing (`POLLOUT`) |
+| `event::PRI` | `Int` (`4`) | Urgent/exceptional condition (`POLLPRI`) |
+| `event::ERR` | `Int` (`8`) | Error condition (`POLLERR`) |
+| `event::HUP` | `Int` (`16`) | Hang up (`POLLHUP`) |
+| `event::RDHUP` | `Int` (`8192`) | Peer closed write half of stream |
+
+## Function catalog
+
+| Function | Signature | Description |
+|---|---|---|
+| `event::new!` | `() => <Poller \| String>` | Creates a poller with default capacity (`64` descriptors) |
+| `event::new_with_cap` | `Int => <Poller \| String>` | Creates a poller with the specified maximum capacity |
+| `event::add` | `Poller, Int, Int, Int => <>` | Registers `fd` with interest `mask` and `user_data` token |
+| `event::add_fd` | `Poller, Int, Int => <>` | Registers `fd` with interest `mask`, using `fd` as `user_data` |
+| `event::mod` | `Poller, Int, Int, Int => <>` | Modifies interest `mask` and `user_data` for registered `fd` |
+| `event::mod_fd` | `Poller, Int, Int => <>` | Modifies interest `mask` for registered `fd` |
+| `event::del` | `Poller, Int => <>` | Deregisters `fd` from the poller |
+| `event::wait` | `Poller, Int => (Event){}` | Waits up to `timeout_ms` (`-1` infinite, `0` non-blocking) and returns ready events |
+| `event::close` | `Poller => ()` | Marks the poller closed |
+| `event::is_read` | `Event => <>` | `<+>` if `READ` is set on `ev.events` |
+| `event::is_write` | `Event => <>` | `<+>` if `WRITE` is set on `ev.events` |
+| `event::is_err` | `Event => <>` | `<+>` if `ERR` is set on `ev.events` |
+| `event::is_hup` | `Event => <>` | `<+>` if `HUP` or `RDHUP` is set on `ev.events` |
+| `event::poll_in` | `Int, Int => <>` | Single-descriptor read readiness check with timeout in milliseconds |
+| `event::poll_out` | `Int, Int => <>` | Single-descriptor write readiness check with timeout in milliseconds |

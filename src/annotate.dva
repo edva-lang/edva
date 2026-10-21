@@ -688,10 +688,21 @@ annotate_type_size = env, vt, ti =>
                            sz = annotate_struct_size_aligned(env, r.0, 0, ?r.0,
                               0, 1)
                            sz < min_sz | min_sz | sz
-      [Array a] annotate_type_size(env, a.0, a.1) * a.2
+      [Array] ptr_sz * 3
       [Map] min_sz
       [Fn] min_sz
       [Enum] min_sz
+      [Ram r]
+         s0 = r.0
+         s1 = r.1
+         has0 = s0.has_payload && !(s0.payload_type [Unit])
+         has1 = s1.has_payload && !(s1.payload_type [Unit])
+         !has0 && !has1
+            | 1
+            |
+               is_niche0 = has0 && !has1 && (s0.payload_type [Str, Record, Error])
+               is_niche1 = !has0 && has1 && (s1.payload_type [Str, Record, Error])
+               is_niche0 || is_niche1 | ptr_sz | min_sz
       |
          vt
             [I8, U8, Flag] 1
@@ -964,8 +975,8 @@ is_cmp_rec = ctx, u =>
       | <->
 
 annotate_cycle: unify::Ctx, type_env::TypeEnv, ast::CycleExpr,
-   <tast::TypedExpr|> => tast::TypedExpr
-annotate_cycle = ctx, env, c, esc_opt =>
+   <ast::Expr|> => tast::TypedExpr
+annotate_cycle = ctx, env, c, esc_expr_opt =>
    iter_te = annotate_expr(ctx, env, c.iterable)
    c_iter = unify::canon(ctx, iter_te.ut)
    c.is_rune
@@ -1003,13 +1014,25 @@ annotate_cycle = ctx, env, c, esc_opt =>
    key_ut' = c_iter [Map m] m.key | unify::prim_int()
    prev_u = type_env::lookup_binding_exact(env, "_")
    prev_ui = type_env::lookup_binding_exact(env, "_i")
+   p0_saved = c.body_fn
+      [Fn fe0] (fe0.params(0) | _ | "")
+      | ""
+   p1_saved = c.body_fn
+      [Fn fe1] (fe1.params(1) | _ | "")
+      | ""
+   prev_p0 = p0_saved != "" && p0_saved != "_"
+      | type_env::lookup_local_exact(env, p0_saved)
+      | <-->
+   prev_p1 = p1_saved != "" && p1_saved != "_"
+      | type_env::lookup_local_exact(env, p1_saved)
+      | <-->
    body_te = c.body_fn
       [Fn fe]
-         p0 = fe.params(0) | _ | ""
-         p1 = fe.params(1) | _ | ""
+         p0 = p0_saved
+         p1 = p1_saved
          np = ?fe.params
          np > 2
-            | unify::add_error(ctx, 3133,
+            | unify::add_error(ctx, 3138,
                "Cycle body takes at most two parameters")
          has_elem
             |
@@ -1068,7 +1091,7 @@ annotate_cycle = ctx, env, c, esc_opt =>
                | b => b.ut
                |
                   pi < 2
-                     | unify::add_error(ctx, 3134,
+                     | unify::add_error(ctx, 3139,
                         "Cycle body parameter '" + pname +
                         "' has no inferred type")
                   unify::fresh_var(ctx)
@@ -1098,6 +1121,20 @@ annotate_cycle = ctx, env, c, esc_opt =>
                ti_fn = unify::type_info_from_utype(ctx, fn_ut)
                mk_lambda_te(pnames, fe_body_te, fn_ut, ti_fn)
             | annotate_expr(ctx, env, c.body_fn)
+   esc_opt = esc_expr_opt
+      | esc_e =>
+         env.discard_result = <->
+         <+ annotate_expr(ctx, env, esc_e) +>
+      | <-->
+   p0_saved != "" && p0_saved != "_"
+      |
+         prev_p0
+            | pp0 => type_env::bind_local(env, p0_saved, pp0.ut, pp0.ti, pp0.is_mut)
+            | type_env::unbind_local(env, p0_saved)
+   p1_saved != "" && p1_saved != "_"
+      |
+         prev_p1
+            | pp1 => type_env::bind_local(env, p1_saved, pp1.ut, pp1.ti, pp1.is_mut)
    prev_u
       | pu => type_env::bind_local(env, "_", pu.ut, pu.ti, pu.is_mut)
       | type_env::unbind_local(env, "_")
@@ -1614,7 +1651,7 @@ annotate_expr = ctx, env, expr =>
                               |
                                  c_tb
                                     [Prim p]
-                                       p [Builder]
+                                       (p [Builder])
                                           |
                                              c_rhs = unify::canon(ctx, rhs'.ut)
                                              ok_rhs' = <->
@@ -1884,8 +1921,7 @@ annotate_expr = ctx, env, expr =>
       [CycleEscape ce]
          ce.cycle
             [Cycle c2]
-               esc_te = annotate_expr(ctx, env, ce.branch)
-               annotate_cycle(ctx, env, c2, <+ esc_te +>)
+               annotate_cycle(ctx, env, c2, <+ ce.branch +>)
             |
                esc_te = annotate_expr(ctx, env, ce.branch)
                cyc_te = annotate_expr(ctx, env, ce.cycle)
@@ -1920,7 +1956,8 @@ annotate_expr = ctx, env, expr =>
          annotate_expr(ctx, env, na.val)
       [RawMemory rm]
          addr_te = annotate_expr(ctx, env, rm.addr)
-         unify::unify(ctx, addr_te.ut, unify::prim_rawptr())
+         !is_int_or_ptr_ut(ctx, addr_te.ut)
+            | unify::unify(ctx, addr_te.ut, unify::prim_rawptr())
          is_unk = rm.load_type [Unknown]
          is_rec = rm.rec_name != ""
          is_rec
@@ -2396,26 +2433,44 @@ unify_cmp_op = ctx, op, t1, t2 =>
    c1_ord = unify::canon(ctx, t1)
    c2_ord = unify::canon(ctx, t2)
    is_enum_ord = !is_eq_neq && ((c1_ord [Enum]) || (c2_ord [Enum]))
+   is_ram1 = c1_ord [Ram]
+   is_ram2 = c2_ord [Ram]
+   is_flg1 = c1_ord [Prim p1] (p1 [Flag]) | <->
+   is_flg2 = c2_ord [Prim p2] (p2 [Flag]) | <->
+   is_ram_cmp = is_ram1 || is_ram2 || (is_flg1 && is_flg2)
    is_enum_ord
       |
          unify::add_error(ctx, 3127, "Operator '" + cmp_binop_name(op) +
             diag::E3127_enum_ordering_suffix!)
          unify::prim_flag()
       |
-         is_str_tuple = is_eq_neq &&
-            ((is_str_ut(ctx, t1) && is_str_record(ctx, t2)) ||
-             (is_str_record(ctx, t1) && is_str_ut(ctx, t2)))
-         is_str_tuple
-            | unify::prim_flag()
+         is_ram_cmp
             |
-               has_fn = is_eq_neq &&
-                  (ut_has_fn(ctx, t1, ast::Names()) || ut_has_fn(ctx, t2, ast::Names()))
-               has_fn
+               is_eq_neq
                   |
-                     unify::add_error(ctx, 3084,
-                        "Type containing function does not support equality")
-                     unify::prim_flag()
-                  | unify_cmp(ctx, t1, t2)
+                     unify::add_error(ctx, 3027, "Operator '" +
+                        cmp_binop_name(op) +
+                        "' cannot be applied to ramifications")
+                  |
+                     unify::add_error(ctx, 3127, "Operator '" +
+                        cmp_binop_name(op) +
+                        diag::E3127_ram_ordering_suffix!)
+               unify::prim_flag()
+            |
+               is_str_tuple = is_eq_neq &&
+                  ((is_str_ut(ctx, t1) && is_str_record(ctx, t2)) ||
+                   (is_str_record(ctx, t1) && is_str_ut(ctx, t2)))
+               is_str_tuple
+                  | unify::prim_flag()
+                  |
+                     has_fn = is_eq_neq &&
+                        (ut_has_fn(ctx, t1, ast::Names()) || ut_has_fn(ctx, t2, ast::Names()))
+                     has_fn
+                        |
+                           unify::add_error(ctx, 3084,
+                              "Type containing function does not support equality")
+                           unify::prim_flag()
+                        | unify_cmp(ctx, t1, t2)
 
 annotate_bin_op: unify::Ctx, ast::BinaryOp, unify::UType,
    unify::UType => unify::UType
@@ -2653,15 +2708,23 @@ unify_cmp = ctx, t1, t2 =>
                unify::add_error(ctx, 3084,
                   "Record size mismatch in comparison")
                unify::prim_flag()
-            | make_rec_of(cnt1, unify::prim_flag())
+            |
+               e1 = rec_elem(ctx, t1)
+               e2 = rec_elem(ctx, t2)
+               unify_cmp(ctx, e1, e2)
+               make_rec_of(cnt1, unify::prim_flag())
       |
          r1
             |
+               e1 = rec_elem(ctx, t1)
+               unify_cmp(ctx, e1, t2)
                cnt1 = rec_count(ctx, t1)
                make_rec_of(cnt1, unify::prim_flag())
             |
                r2
                   |
+                     e2 = rec_elem(ctx, t2)
+                     unify_cmp(ctx, t1, e2)
                      cnt2 = rec_count(ctx, t2)
                      make_rec_of(cnt2, unify::prim_flag())
                   |
@@ -2820,15 +2883,22 @@ unify_logical = ctx, is_and, t1, t2 =>
                unify::add_error(ctx, 3084,
                   "Record size mismatch in logical op")
                unify::prim_flag()
-            | make_rec_of(cnt1, unify::prim_flag())
+            |
+               unify::unify(ctx, rec_elem(ctx, t1), unify::prim_flag())
+               unify::unify(ctx, rec_elem(ctx, t2), unify::prim_flag())
+               make_rec_of(cnt1, unify::prim_flag())
       |
          r1
             |
+               unify::unify(ctx, rec_elem(ctx, t1), unify::prim_flag())
+               unify::unify(ctx, t2, unify::prim_flag())
                cnt1 = rec_count(ctx, t1)
                make_rec_of(cnt1, unify::prim_flag())
             |
                r2
                   |
+                     unify::unify(ctx, t1, unify::prim_flag())
+                     unify::unify(ctx, rec_elem(ctx, t2), unify::prim_flag())
                      cnt2 = rec_count(ctx, t2)
                      make_rec_of(cnt2, unify::prim_flag())
                   |
@@ -2840,14 +2910,21 @@ unify_logical = ctx, is_and, t1, t2 =>
                               [Ram ram2]
                                  unify_logical_ram(ctx, is_and, ram1, ram2)
                               |
-                                 err_ram_nonram(ctx)
+                                 is_flag_ut(ctx, c2)
+                                    | err_flag_heap(ctx)
+                                    | err_ram_nonram(ctx)
                                  t1
                         |
                            c2
                               [Ram]
-                                 err_ram_nonram(ctx)
+                                 is_flag_ut(ctx, c1)
+                                    | err_flag_heap(ctx)
+                                    | err_ram_nonram(ctx)
                                  t2
-                              | unify::prim_flag()
+                              |
+                                 unify::unify(ctx, t1, unify::prim_flag())
+                                 unify::unify(ctx, t2, unify::prim_flag())
+                                 unify::prim_flag()
 
 unify_bitwise: unify::Ctx, unify::UType, unify::UType => unify::UType
 unify_bitwise = ctx, t1, t2 =>
@@ -3021,24 +3098,68 @@ expected_intrinsic_nargs = name =>
          "%sin", "%cos", "%exp2", "%log2", "%to_str"] 1
       ["%min", "%max", "%dot", "%copysign", "%rotl", "%rotr",
          "%pow", "%uadd_sat", "%usub_sat", "%ptrmask"] 2
-      ["%clamp", "%fma", "%fmuladd", "%memcpy", "%memmove", "%memset", "%ptrmask"] 3
+      ["%clamp", "%fma", "%fmuladd", "%memcpy", "%memmove", "%memset"] 3
       ["%shuffle"] 0
       | -1
+
+intrin_scalar_ut: unify::Ctx, unify::UType => unify::UType
+intrin_scalar_ut = ctx, ut =>
+   c = unify::canon(ctx, ut)
+   c [Rec] rec_elem(ctx, ut) | ut
+
+is_flt_or_flt_rec_ut: unify::Ctx, unify::UType => <>
+is_flt_or_flt_rec_ut = ctx, ut =>
+   c = unify::canon(ctx, ut)
+   c [Var] <+> | is_float_ut(ctx, ut) ||
+      (is_numeric_rec(ctx, ut) && is_float_ut(ctx, rec_elem(ctx, ut)))
+
+is_int_or_int_rec_ut: unify::Ctx, unify::UType => <>
+is_int_or_int_rec_ut = ctx, ut =>
+   c = unify::canon(ctx, ut)
+   c [Var] <+> | is_integerish_ut(ctx, ut) ||
+      (is_numeric_rec(ctx, ut) && is_integerish_ut(ctx, rec_elem(ctx, ut)))
+
+is_num_or_num_rec_ut: unify::Ctx, unify::UType => <>
+is_num_or_num_rec_ut = ctx, ut =>
+   is_int_or_int_rec_ut(ctx, ut) || is_flt_or_flt_rec_ut(ctx, ut)
+
+check_intrin_arg: unify::Ctx, String, <> => ()
+check_intrin_arg = ctx, name, ok =>
+   !ok
+      |
+         unify::add_error(ctx, 3084,
+            "Invalid operand type for intrinsic '" + name + "'")
 
 compute_intrinsic_ret_ut: unify::Ctx, String, tast::TypedExprs,
    tast::TypedExpr, tast::TypedExpr, tast::TypedExpr => unify::UType
 compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
    name
       ["%to_str"] unify::prim_str()
-      ["%ptrmask"] a0.ut
-      ["%memcpy", "%memmove", "%memset"] unify::prim_rawptr()
-      ["%all", "%any"] unify::prim_flag()
+      ["%ptrmask"]
+         check_intrin_arg(ctx, name, is_int_or_ptr_ut(ctx, a0.ut))
+         check_intrin_arg(ctx, name, is_integerish_ut(ctx, a1.ut))
+         a0.ut
+      ["%memcpy", "%memmove"]
+         ok0 = is_int_or_ptr_ut(ctx, a0.ut) || is_str_ut(ctx, a0.ut) || is_builder_ut(ctx, a0.ut)
+         ok1 = is_int_or_ptr_ut(ctx, a1.ut) || is_str_ut(ctx, a1.ut) || is_builder_ut(ctx, a1.ut)
+         check_intrin_arg(ctx, name, ok0 && ok1 && is_integerish_ut(ctx, a2.ut))
+         unify::prim_rawptr()
+      ["%memset"]
+         ok0 = is_int_or_ptr_ut(ctx, a0.ut) || is_builder_ut(ctx, a0.ut)
+         check_intrin_arg(ctx, name, ok0 && is_integerish_ut(ctx, a1.ut) && is_integerish_ut(ctx, a2.ut))
+         unify::prim_rawptr()
+      ["%all", "%any"]
+         ok_flg = is_cmp_rec(ctx, a0.ut) && is_flag_ut(ctx, rec_elem(ctx, a0.ut))
+         check_intrin_arg(ctx, name, ok_flg)
+         unify::prim_flag()
       ["%sum", "%prod"]
+         check_intrin_arg(ctx, name, is_numeric_rec(ctx, a0.ut))
          c0 = unify::canon(ctx, a0.ut)
          c0
             [Rec flds] first_rec_field_ut(flds)
             | a0.ut
       ["%dot"]
+         check_intrin_arg(ctx, name, is_numeric_rec(ctx, a0.ut) && is_numeric_rec(ctx, a1.ut))
          unify::unify(ctx, a0.ut, a1.ut)
          c0 = unify::canon(ctx, a0.ut)
          c0
@@ -3056,30 +3177,53 @@ compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
          mask_count @
             out_flds += unify::UField(("", elem_ut))
          unify::mk_rec(out_flds)
-      ["%min", "%max", "%pow", "%uadd_sat", "%usub_sat"]
+      ["%min", "%max"]
+         check_intrin_arg(ctx, name, is_num_or_num_rec_ut(ctx, a0.ut) && is_num_or_num_rec_ut(ctx, a1.ut))
+         unify::unify(ctx, intrin_scalar_ut(ctx, a0.ut), intrin_scalar_ut(ctx, a1.ut))
          c0 = unify::canon(ctx, a0.ut)
          c1 = unify::canon(ctx, a1.ut)
-         c0
-            [Rec] a0.ut
-            |
-               c1
-                  [Rec] a1.ut
-                  |
-                     unify::unify(ctx, a0.ut, a1.ut)
-                     a0.ut
-      ["%fma", "%fmuladd"]
+         c0 [Rec] a0.ut | (c1 [Rec] a1.ut | a0.ut)
+      ["%pow", "%copysign"]
+         check_intrin_arg(ctx, name, is_flt_or_flt_rec_ut(ctx, a0.ut) && is_flt_or_flt_rec_ut(ctx, a1.ut))
+         unify::unify(ctx, intrin_scalar_ut(ctx, a0.ut), intrin_scalar_ut(ctx, a1.ut))
+         c0 = unify::canon(ctx, a0.ut)
+         c1 = unify::canon(ctx, a1.ut)
+         c0 [Rec] a0.ut | (c1 [Rec] a1.ut | a0.ut)
+      ["%uadd_sat", "%usub_sat", "%rotl", "%rotr"]
+         check_intrin_arg(ctx, name, is_int_or_int_rec_ut(ctx, a0.ut) && is_int_or_int_rec_ut(ctx, a1.ut))
+         unify::unify(ctx, intrin_scalar_ut(ctx, a0.ut), intrin_scalar_ut(ctx, a1.ut))
+         c0 = unify::canon(ctx, a0.ut)
+         c1 = unify::canon(ctx, a1.ut)
+         c0 [Rec] a0.ut | (c1 [Rec] a1.ut | a0.ut)
+      ["%clamp"]
+         check_intrin_arg(ctx, name, is_num_or_num_rec_ut(ctx, a0.ut) &&
+            is_num_or_num_rec_ut(ctx, a1.ut) && is_num_or_num_rec_ut(ctx, a2.ut))
+         s0 = intrin_scalar_ut(ctx, a0.ut)
+         unify::unify(ctx, s0, intrin_scalar_ut(ctx, a1.ut))
+         unify::unify(ctx, s0, intrin_scalar_ut(ctx, a2.ut))
          c0 = unify::canon(ctx, a0.ut)
          c1 = unify::canon(ctx, a1.ut)
          c2 = unify::canon(ctx, a2.ut)
-         c0
-            [Rec] a0.ut
-            |
-               c1
-                  [Rec] a1.ut
-                  |
-                     c2
-                        [Rec] a2.ut
-                        | a0.ut
+         c0 [Rec] a0.ut | (c1 [Rec] a1.ut | (c2 [Rec] a2.ut | a0.ut))
+      ["%fma", "%fmuladd"]
+         check_intrin_arg(ctx, name, is_flt_or_flt_rec_ut(ctx, a0.ut) &&
+            is_flt_or_flt_rec_ut(ctx, a1.ut) && is_flt_or_flt_rec_ut(ctx, a2.ut))
+         s0 = intrin_scalar_ut(ctx, a0.ut)
+         unify::unify(ctx, s0, intrin_scalar_ut(ctx, a1.ut))
+         unify::unify(ctx, s0, intrin_scalar_ut(ctx, a2.ut))
+         c0 = unify::canon(ctx, a0.ut)
+         c1 = unify::canon(ctx, a1.ut)
+         c2 = unify::canon(ctx, a2.ut)
+         c0 [Rec] a0.ut | (c1 [Rec] a1.ut | (c2 [Rec] a2.ut | a0.ut))
+      ["%sqrt", "%floor", "%ceil", "%trunc", "%round", "%sin", "%cos", "%exp2", "%log2"]
+         check_intrin_arg(ctx, name, is_flt_or_flt_rec_ut(ctx, a0.ut))
+         a0.ut
+      ["%popcount", "%clz", "%ctz", "%bswap", "%bitreverse"]
+         check_intrin_arg(ctx, name, is_int_or_int_rec_ut(ctx, a0.ut))
+         a0.ut
+      ["%abs"]
+         check_intrin_arg(ctx, name, is_num_or_num_rec_ut(ctx, a0.ut))
+         a0.ut
       | a0.ut
 
 annotate_intrinsic_call: unify::Ctx, type_env::TypeEnv,
@@ -4205,11 +4349,26 @@ annotate_choice = ctx, env, ch, is_disc =>
                                        unify::add_error(ctx, 3098,
                                           diag::enum_unit_payload(enum_disp, v0_lbl))
                                        -->
-               | (is_unit_slot' = <+>)
+               |
+                  i == 0 && (br.kind [Bare])
+                     |
+                        unify::add_error(ctx, 3084,
+                           "Bare '|' condition requires Flag or ramification, got " +
+                           enum_disp)
+                  is_unit_slot' = <+>
          |
             is_bare = br.kind [Bare]
             is_bare
-               | (payload_ut' = cond_te.ut)
+               |
+                  i == 0
+                     |
+                        is_flg = c_cond [Prim p] (p [Flag, Unknown]) | (c_cond [Var])
+                        !is_flg
+                           |
+                              unify::add_error(ctx, 3084,
+                                 "Bare '|' condition requires Flag or ramification, got " +
+                                 unify::show_utype(ctx, c_cond))
+                  payload_ut' = cond_te.ut
                |
                   is_unit_slot' = <+>
                   is_var_br = br.kind [Variant]
@@ -4697,14 +4856,15 @@ annotate_raw_write = ctx, env, rm, val_expr =>
       |
          unify::add_error(ctx, 2093, diag::E2093_assign_typed_load!)
    addr_te = annotate_expr(ctx, env, rm.addr)
-   unify::unify(ctx, addr_te.ut, unify::prim_rawptr())
+   !is_int_or_ptr_ut(ctx, addr_te.ut)
+      | unify::unify(ctx, addr_te.ut, unify::prim_rawptr())
    rhs = annotate_expr(ctx, env, val_expr)
    c_rhs = unify::canon(ctx, rhs.ut)
    ok_w = <->
    c_rhs
       [Prim p]
          p
-            [Int, I8, I16, I32, U8, U16, U32, U64, Rune, Str, RawPtr, Error]
+            [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Str, RawPtr, Error]
                ok_w = <+>
    !ok_w
       |
@@ -4885,6 +5045,14 @@ check_ground = ctx, env, exprs, name =>
          idx = find_assign_idx(exprs, name)
          idx !< 0
             |
+               idx < ?cur_stmt_files
+                  |
+                     s_f = cur_stmt_files(idx) | _ | cur_source_file
+                     s_l = cur_stmt_lines(idx) | _ | 0
+                     s_c = cur_stmt_cols(idx) | _ | 0
+                     unify::set_location(ctx, s_f, s_l, s_c)
+                  |
+                     unify::set_file(ctx, cur_source_file)
                e = exprs(idx) | _ | ast::Expr(Int, 0)
                e
                   [Assign a]
@@ -5346,7 +5514,15 @@ elaborate_program_with_ctx = exprs =>
             is_gen = is_generic_sig(ascan) || is_fe
             is_gen && ascan.0 != "" | gen_names += ascan.0
 
-   exprs @ e_decl =>
+   exprs @ e_decl, i_decl =>
+      i_decl < ?cur_stmt_files
+         |
+            s_f = cur_stmt_files(i_decl) | _ | cur_source_file
+            s_l = cur_stmt_lines(i_decl) | _ | 0
+            s_c = cur_stmt_cols(i_decl) | _ | 0
+            unify::set_location(ctx, s_f, s_l, s_c)
+         |
+            unify::set_file(ctx, cur_source_file)
       e_decl
          [Assign a]
             type_env::set_current_module(env, type_env::decl_module(a.0, 0))
@@ -5486,7 +5662,7 @@ elaborate_program_with_ctx = exprs =>
             env.discard_result = <+>
             te = annotate_expr(ctx, env, e_stmt)
             solve_unconstrained_rams(ctx, te.ut)
-            te.kind [UserDiag]
+            (te.kind [UserDiag])
                | unify::unify(ctx, te.ut, unify::prim_unit())
             ground_ok = unify::is_ground(ctx, te.ut)
             !ground_ok

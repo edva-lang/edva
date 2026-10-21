@@ -458,7 +458,9 @@ codegen_emit_runtime_full = cg =>
    max_depth = LLVMConstInt(i64t, 63, 0)
    depth_ovf = LLVMBuildICmp(cg.builder, 38, new_depth, max_depth, "sv.depth_ovf")
    clamped_depth = LLVMBuildSelect(cg.builder, depth_ovf, max_depth, new_depth, "sv.clamped_depth")
-   LLVMBuildStore(cg.builder, clamped_depth, depth_gep)
+   cur_ovf = LLVMBuildICmp(cg.builder, 38, cur_depth, max_depth, "sv.cur_ovf")
+   clamped_cur = LLVMBuildSelect(cg.builder, cur_ovf, max_depth, cur_depth, "sv.clamped_cur")
+   LLVMBuildStore(cg.builder, new_depth, depth_gep)
 
    next_gen_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 6, "sv.next_gen.gep")
    raw_next_gen = LLVMBuildLoad2(cg.builder, i64t, next_gen_gep, "sv.next_gen")
@@ -467,7 +469,7 @@ codegen_emit_runtime_full = cg =>
    max_gen = LLVMConstInt(i64t, 65536, 0)
    sg_gep = LLVMBuildStructGEP2(cg.builder, at, a2, 7, "sv.sg.gep")
 
-   has_scopes = LLVMBuildICmp(cg.builder, 38, cur_depth, zero, "sv.has_scopes")
+   has_scopes = LLVMBuildICmp(cg.builder, 38, clamped_cur, zero, "sv.has_scopes")
    sv_chk_hdr = LLVMAppendBasicBlock(save_fn, "sv_chk_hdr")
    sv_chk_loop = LLVMAppendBasicBlock(save_fn, "sv_chk_loop")
    sv_conflict = LLVMAppendBasicBlock(save_fn, "sv_conflict")
@@ -499,7 +501,7 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildBr(cg.builder, sv_chk_hdr)
 
    LLVMPositionBuilderAtEnd(cg.builder, sv_chk_next)
-   more_j = LLVMBuildICmp(cg.builder, 38, cur_depth, j_phi, "chk.more")
+   more_j = LLVMBuildICmp(cg.builder, 38, clamped_cur, j_phi, "chk.more")
    LLVMBuildCondBr(cg.builder, more_j, sv_j_step, sv_chk_ok)
 
    LLVMPositionBuilderAtEnd(cg.builder, sv_j_step)
@@ -587,8 +589,12 @@ codegen_emit_runtime_full = cg =>
 
    LLVMPositionBuilderAtEnd(cg.builder, rs_pop)
    r_sg_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 7, "rs.sg.gep")
-   rs_slot = types::gep2(cg, sg_arr, r_sg_gep, zero, r_depth, "rs.slot")
-   LLVMBuildStore(cg.builder, zero, rs_slot)
+   r_depth_ovf = LLVMBuildICmp(cg.builder, 38, r_depth, max_depth, "rs.depth_ovf")
+   r_clamped_depth = LLVMBuildSelect(cg.builder, r_depth_ovf, max_depth, r_depth, "rs.clamped_depth")
+   rs_slot = types::gep2(cg, sg_arr, r_sg_gep, zero, r_clamped_depth, "rs.slot")
+   r_old_sg = LLVMBuildLoad2(cg.builder, i64t, rs_slot, "rs.old.sg")
+   r_clr_sg = LLVMBuildSelect(cg.builder, r_depth_ovf, r_old_sg, zero, "rs.clr.sg")
+   LLVMBuildStore(cg.builder, r_clr_sg, rs_slot)
 
    r_new_depth = LLVMBuildSub(cg.builder, r_depth, one, "rs.new_depth")
    LLVMBuildStore(cg.builder, r_new_depth, r_depth_gep)
@@ -601,7 +607,9 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildCondBr(cg.builder, r_new_gt0, rs_prev, rs_zero)
 
    LLVMPositionBuilderAtEnd(cg.builder, rs_prev)
-   r_prev_slot = types::gep2(cg, sg_arr, r_sg_gep, zero, r_new_depth, "rs.prev.slot")
+   r_new_ovf = LLVMBuildICmp(cg.builder, 38, r_new_depth, max_depth, "rs.new_ovf")
+   r_clamped_new = LLVMBuildSelect(cg.builder, r_new_ovf, max_depth, r_new_depth, "rs.clamped_new")
+   r_prev_slot = types::gep2(cg, sg_arr, r_sg_gep, zero, r_clamped_new, "rs.prev.slot")
    r_prev_gen = LLVMBuildLoad2(cg.builder, i64t, r_prev_slot, "rs.prev.gen")
    LLVMBuildStore(cg.builder, r_prev_gen, r_cur_gen_gep)
    LLVMBuildBr(cg.builder, rs_fin)
@@ -631,7 +639,9 @@ codegen_emit_runtime_full = cg =>
    vt_tag = LLVMGetParam(vt_fn, 1)
 
    vt_depth_gep = LLVMBuildStructGEP2(cg.builder, at, vt_a0, 5, "vt.depth.gep")
-   vt_depth = LLVMBuildLoad2(cg.builder, i64t, vt_depth_gep, "vt.depth")
+   vt_raw_depth = LLVMBuildLoad2(cg.builder, i64t, vt_depth_gep, "vt.raw.depth")
+   vt_depth_ovf = LLVMBuildICmp(cg.builder, 38, vt_raw_depth, max_depth, "vt.depth_ovf")
+   vt_depth = LLVMBuildSelect(cg.builder, vt_depth_ovf, max_depth, vt_raw_depth, "vt.depth")
    vt_depth_is_zero = LLVMBuildICmp(cg.builder, 32, vt_depth, zero, "vt.depth.zero")
    LLVMBuildCondBr(cg.builder, vt_depth_is_zero, vt_not_found, vt_loop)
 
@@ -701,6 +711,8 @@ codegen_emit_runtime_full = cg =>
    adopt_fn = LLVMAddFunction(cg.module, "dva_arena_adopt", adopt_t)
    ad_e = LLVMAppendBasicBlock(adopt_fn, "entry")
    ad_ap = LLVMAppendBasicBlock(adopt_fn, "append")
+   ad_lm = LLVMAppendBasicBlock(adopt_fn, "chunk_limit")
+   ad_ok = LLVMAppendBasicBlock(adopt_fn, "limit_ok")
    ad_pz = LLVMAppendBasicBlock(adopt_fn, "parent_zero")
    ad_pp = LLVMAppendBasicBlock(adopt_fn, "parent_pos")
    ad_l = LLVMAppendBasicBlock(adopt_fn, "loop")
@@ -718,6 +730,13 @@ codegen_emit_runtime_full = cg =>
    ad_p_nc_gep = LLVMBuildStructGEP2(cg.builder, at, ad_parent, 1,
       "p_nc_gep")
    ad_p_nc = LLVMBuildLoad2(cg.builder, i64t, ad_p_nc_gep, "p_nc")
+   ad_tot_nc = LLVMBuildAdd(cg.builder, ad_p_nc, ad_c_nc, "tot_nc")
+   ad_ovf = LLVMBuildICmp(cg.builder, 38, ad_tot_nc, maxc, "ad_chunk_limit")
+   LLVMBuildCondBr(cg.builder, ad_ovf, ad_lm, ad_ok)
+   LLVMPositionBuilderAtEnd(cg.builder, ad_lm)
+   emit_abort_msg(cg, diag::E4003_arena_chunk_limit!, "arena_chunklimit_msg")
+   LLVMBuildRetVoid(cg.builder)
+   LLVMPositionBuilderAtEnd(cg.builder, ad_ok)
    ad_p_chunks = LLVMBuildStructGEP2(cg.builder, at, ad_parent, 3,
       "p_chunks")
    ad_c_chunks = LLVMBuildStructGEP2(cg.builder, at, ad_child, 3,
@@ -725,6 +744,18 @@ codegen_emit_runtime_full = cg =>
    ad_p_emp = LLVMBuildICmp(cg.builder, 32, ad_p_nc, zero, "p_emp")
    LLVMBuildCondBr(cg.builder, ad_p_emp, ad_pz, ad_pp)
    LLVMPositionBuilderAtEnd(cg.builder, ad_pz)
+   ad_p_cap_gep = LLVMBuildStructGEP2(cg.builder, at, ad_parent, 0, "p_cap_gep")
+   ad_p_cap = LLVMBuildLoad2(cg.builder, i64t, ad_p_cap_gep, "p_cap")
+   ad_p_cap_z = LLVMBuildICmp(cg.builder, 32, ad_p_cap, zero, "p_cap_zero")
+   ad_c_cap = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, at, ad_child, 0, "c_cap_gep"), "c_cap")
+   ad_new_cap = LLVMBuildSelect(cg.builder, ad_p_cap_z, ad_c_cap, ad_p_cap, "p_new_cap")
+   LLVMBuildStore(cg.builder, ad_new_cap, ad_p_cap_gep)
+   ad_p_ng_gep = LLVMBuildStructGEP2(cg.builder, at, ad_parent, 6, "p_ng_gep")
+   ad_p_ng = LLVMBuildLoad2(cg.builder, i64t, ad_p_ng_gep, "p_ng")
+   ad_p_ng_z = LLVMBuildICmp(cg.builder, 32, ad_p_ng, zero, "p_ng_zero")
+   ad_new_ng = LLVMBuildSelect(cg.builder, ad_p_ng_z, one, ad_p_ng, "p_new_ng")
+   LLVMBuildStore(cg.builder, ad_new_ng, ad_p_ng_gep)
    ad_c_off_gep = LLVMBuildStructGEP2(cg.builder, at, ad_child, 2,
       "c_off_gep")
    ad_c_off = LLVMBuildLoad2(cg.builder, i64t, ad_c_off_gep, "c_off")
@@ -958,15 +989,20 @@ rec_field_llvm_type = cg, rf =>
       | b => types::llvm_type_of_vt(b.backing_type)
       |
          vt = rec_field_vt(cg, rf)
-         is_heap = vt [Ram] match::ram_ti_is_heap(cg, rf.rec_type) | (vt [Enum])
-         is_sl = (vt [Slice]) || stmt::ti_is_slice(rf.rec_type)
-         is_rec = (vt [Record]) && !is_sl
-         is_heap || is_sl
-            | LLVMPointerType(LLVMInt8Type!, 0)
+         is_unboxed_ram = types::g.is_typed_pipeline &&
+            types::is_unboxed_ram_ti(cg, rf.rec_type)
+         is_unboxed_ram
+            | match::unboxed_ram_struct_t(cg)
             |
-               is_rec
-                  | rec_field_rec_llvm_type(cg, rf.rec_type)
-                  | types::llvm_type_of_vt(vt)
+               is_heap = vt [Ram] match::ram_ti_is_heap(cg, rf.rec_type) | (vt [Enum])
+               is_sl = (vt [Slice]) || stmt::ti_is_slice(rf.rec_type)
+               is_rec = (vt [Record]) && !is_sl
+               is_heap || is_sl
+                  | LLVMPointerType(LLVMInt8Type!, 0)
+                  |
+                     is_rec
+                        | rec_field_rec_llvm_type(cg, rf.rec_type)
+                        | types::llvm_type_of_vt(vt)
 
 build_rec_meta: types::Cg, ast::FieldTypes, Int, Int, types::Addrs, ast::Names => (Addr, ast::Names)
 build_rec_meta = cg, fields, i, nf, ftypes, fnames =>
@@ -1046,7 +1082,10 @@ codegen_forward_registry = cg, t =>
       |
          types::is_record_vt(vt')
             | LLVMPointerType(LLVMInt8Type!, 0)
-            | types::llvm_type_of_vt(vt')
+            |
+               types::g.is_typed_pipeline && types::is_unboxed_ram_ti(cg, ti)
+                  | match::unboxed_ram_struct_t(cg)
+                  | types::llvm_type_of_vt(vt')
    is_ct_sig = t.7(..4) == "@ct0"
    is_sig = t.7(..5) == "@sig0"
    is_fn_ti = ti [Fn]
@@ -1537,10 +1576,10 @@ codegen_check_rebind_type = cg, name, rhs_vt, is_gmut, rhs_expr =>
    !(cg.in_fn && !is_gmut && !types::has_local_var(cg, name))
       |
          target_ti = expr::var_ti(cg, name)
-         target_ti [Ram]
+         (target_ti [Ram])
             |
                rhs_ram_ti = expr::codegen_ram_type_of_expr(cg, rhs_expr)
-               rhs_ram_ti [Ram]
+               (rhs_ram_ti [Ram])
                   |
                      !expr::ram_shape_compatible(cg, target_ti, rhs_ram_ti)
                         |
@@ -1796,7 +1835,7 @@ codegen_emit_raw_assign_pointer_value: types::Cg,
    (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo),
    ast::RawMemoryExpr, (Addr, ast::ValueType) => ()
 codegen_emit_raw_assign_pointer_value = cg, t, rm, ev =>
-   ev.1 [Str, RawPtr, Error] codegen_emit_raw_assign_value(cg, t, rm, ev)
+   ev.1 [Float, F32, Str, RawPtr, Error] codegen_emit_raw_assign_value(cg, t, rm, ev)
       | types::init_error(cg, "E3142", diag::E3142_raw_write_type!, 0, 0)
 
 codegen_emit_raw_assign_value: types::Cg,
@@ -1848,7 +1887,7 @@ codegen_emit_record_assign = cg, t, call =>
                inner_sz = LLVMSizeOf(elem_ll_type)
                LLVMBuildMemCpy(cg.builder, elem_gep, 1, rhs_ev.0, 1, inner_sz, 0)
             |
-               is_flt = elem_vt [Float]
+               is_flt = types::is_float_vt(elem_vt)
                cval = is_flt | rhs_ev.0 | stmt::coerce_int_ext(cg, rhs_ev.0, elem_ll_type,
                   types::is_unsigned_vt(elem_vt))
                LLVMBuildStore(cg.builder, cval, elem_gep)
@@ -1877,11 +1916,10 @@ codegen_emit_slice_assign = cg, t, call =>
          elem_ll = types::is_ptrish_vt(elem_vt)
             | LLVMPointerType(LLVMInt8Type!, 0)
             | types::llvm_type_of_vt(elem_vt)
-         typed_data = LLVMBuildPointerCast(cg.builder, data,
-            LLVMPointerType(elem_ll, 0), "slice.data.typed")
          idx_i64 = main::codegen_widen_idx_to_i64(cg, idx_ev.0, idx_ev.1, "idx")
-         slot2 = types::gep1(cg, elem_ll, typed_data, idx_i64, "slice.elem.gep")
-         cval = stmt::coerce_int(cg, rhs_ev.0, elem_ll)
+         slot2 = main::slice_elem_gep(cg, sv, data, elem_ll, idx_i64, "slice.elem.gep")
+         is_flt = types::is_float_vt(elem_vt)
+         cval = is_flt | rhs_ev.0 | stmt::coerce_int(cg, rhs_ev.0, elem_ll)
          LLVMBuildStore(cg.builder, cval, slot2)
 
 codegen_emit_array_assign: types::Cg,
@@ -2513,21 +2551,24 @@ codegen_pack_slot = cg, v, vt =>
 codegen_unpack_slot: types::Cg, Addr, ast::ValueType => Addr
 codegen_unpack_slot = cg, raw_i64, vt =>
    elem_ll = types::llvm_type_of_vt(vt)
-   types::is_ptrish_vt(vt)
-      | LLVMBuildIntToPtr(cg.builder, raw_i64, elem_ll, "slot.i2p")
+   LLVMTypeOf(raw_i64) == elem_ll
+      | raw_i64
       |
-         types::is_float_vt(vt)
+         types::is_ptrish_vt(vt)
+            | LLVMBuildIntToPtr(cg.builder, raw_i64, elem_ll, "slot.i2p")
             |
-               is_f32 = vt [F32]
-               is_f32
+               types::is_float_vt(vt)
                   |
-                     f32_i32 = LLVMBuildTrunc(cg.builder, raw_i64, LLVMInt32Type!, "slot.i2f32_raw")
-                     LLVMBuildBitCast(cg.builder, f32_i32, elem_ll, "slot.i2f32")
-                  | LLVMBuildBitCast(cg.builder, raw_i64, elem_ll, "slot.i2flt")
-            |
-               types::is_flag_vt(vt)
-                  | LLVMBuildTrunc(cg.builder, raw_i64, LLVMInt1Type!, "slot.i2flag")
-                  | stmt::coerce_int_ext(cg, raw_i64, elem_ll, types::is_unsigned_vt(vt))
+                     is_f32 = vt [F32]
+                     is_f32
+                        |
+                           f32_i32 = LLVMBuildTrunc(cg.builder, raw_i64, LLVMInt32Type!, "slot.i2f32_raw")
+                           LLVMBuildBitCast(cg.builder, f32_i32, elem_ll, "slot.i2f32")
+                        | LLVMBuildBitCast(cg.builder, raw_i64, elem_ll, "slot.i2flt")
+                  |
+                     types::is_flag_vt(vt)
+                        | LLVMBuildTrunc(cg.builder, raw_i64, LLVMInt1Type!, "slot.i2flag")
+                        | stmt::coerce_int_ext(cg, raw_i64, elem_ll, types::is_unsigned_vt(vt))
 
 codegen_map_pack_val: types::Cg, Addr, ast::ValueType => Addr
 codegen_map_pack_val = cg, v, vt =>
