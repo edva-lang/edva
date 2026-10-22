@@ -1016,8 +1016,10 @@
             --| env_override
       exe = canonical_path("/proc/self/exe")
       pid_exe = "/proc/" + str::from_int(getpid!) + "/exe"
+      // No /proc on macOS: fall back to argv[0], as the stdlib lookup does
+      argv_exe = canonical_path(sys::argv_string(0))
       eff_exe = (exe != "/proc/self/exe" && file_exists(exe)) | exe |
-         (file_exists(pid_exe) | pid_exe | "")
+         (file_exists(pid_exe) | pid_exe | (file_exists(argv_exe) | argv_exe | ""))
       h = eff_exe != "" | hash_file(eff_exe) | ""
       short_h = ?h > 16 | h(..16) | h
       commit = version::COMMIT_HASH
