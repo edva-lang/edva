@@ -1,10 +1,16 @@
 // tests/pass/327_arena_stale_read.dva — issue #126: reading inner string after restore aborts with E4010
+//
+// A block value built inside the block's own restore scope must be copied out
+// with '++' (see 264_addr_arena_safety); reading it uncopied afterwards aborts.
+// (Assigning the inner string straight to the outer s' now keeps it alive:
+// the loop body writes outer state, so it no longer restores the arena.)
 #use io
 
 s' = ++""
 0..1 @ i =>
-   0..1 @ j =>
-      s' = "inner" + "_value"
+   s' =
+      t = "inner" + "_value"
+      t
    io::out(s')
 
 io::out("FAIL: should have aborted")

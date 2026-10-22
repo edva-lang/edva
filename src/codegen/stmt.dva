@@ -5639,6 +5639,139 @@ tast_branches_has_arena_alloc_d = cg, bs, at, depth =>
          tast_expr_has_arena_alloc_d(cg, br.body, depth) ||
             tast_branches_has_arena_alloc_d(cg, bs, at + 1, depth)
 
+// --- Restore-scope escape check ----------------------------------------------
+// A block's restore scope reclaims what *callees* allocate while it runs (the
+// block's own allocations already bypass the arena). That is only sound when
+// nothing a callee allocated can outlive the block, so a block that writes a
+// heap-capable value into an outer-scope variable, or hands an outer heap value
+// to a call that could store into it, must not restore. Raw Addr values are
+// left out: escaping one is already rejected at compile time (E3134).
+
+ut_is_scalar: unify::UType => <>
+ut_is_scalar = ut =>
+   ut
+      [Prim p] (p [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Flag, Unit,
+         RawPtr])
+      | <->
+
+name_before_dot: String => String
+name_before_dot = s =>
+   cut' = -1
+   ?s @ i =>
+      cut' < 0 && s(i) == '.' | cut' = i
+   cut' < 0 | s | s(0..cut')
+
+// The receiver of a dotted call ("x.f" -> "x"); a plain call's result is fresh
+dotted_root: String => String
+dotted_root = s =>
+   root = name_before_dot(s)
+   root == s | "" | root
+
+// The variable a place expression (x, x.f, x(i), x.f(i).g, ...) is rooted at
+tast_root_var: tast::TypedExpr => String
+tast_root_var = te =>
+   te.kind
+      [Var v] v.0
+      [Member m] tast_root_var(m.0)
+      [Index ix] tast_root_var(ix.0)
+      [Unary u] tast_root_var(u.1)
+      [KeyAccess k] tast_root_var(k.0)
+      [RawMemory r] tast_root_var(r.0)
+      [Call c] (c.1 | t => tast_root_var(t) | dotted_root(c.0))
+      | ""
+
+tast_is_outer_var: types::Cg, String, Int => <>
+tast_is_outer_var = cg, name, threshold =>
+   name == "" | --| <->
+   idx = expr::var_index(cg, name)
+   (idx !< 0 && idx < threshold) || types::has_str(types::g.marked_globals, name)
+
+// A heap-capable value flowing into the outer place rooted at `name`
+tast_outer_heap_write: types::Cg, String, tast::TypedExpr, Int => <>
+tast_outer_heap_write = cg, name, val, threshold =>
+   !ut_is_scalar(val.ut) && tast_is_outer_var(cg, name, threshold)
+
+tast_args_pass_outer_heap: types::Cg, tast::TypedExprs, Int, Int => <>
+tast_args_pass_outer_heap = cg, args, at, threshold =>
+   at == ?args
+      | <->
+      |
+         a = args(at) | _ | tast::mk_lit_unit(0, 0)
+         tast_outer_heap_write(cg, tast_root_var(a), a, threshold) ||
+            tast_args_pass_outer_heap(cg, args, at + 1, threshold)
+
+tast_opt_escapes: types::Cg, <tast::TypedExpr|>, Int => <>
+tast_opt_escapes = cg, o, threshold =>
+   o | e => tast_expr_escapes(cg, e, threshold) | <->
+
+tast_expr_escapes: types::Cg, tast::TypedExpr, Int => <>
+tast_expr_escapes = cg, te, threshold =>
+   te.kind
+      [Assign a]
+         tast_outer_heap_write(cg, name_before_dot(a.0), a.5, threshold) ||
+            tast_expr_escapes(cg, a.5, threshold)
+      [MemberWrite mw]
+         tast_outer_heap_write(cg, tast_root_var(mw.0), mw.3, threshold) ||
+            tast_expr_escapes(cg, mw.0, threshold) || tast_expr_escapes(cg, mw.3, threshold)
+      [IndexWrite iw]
+         tast_outer_heap_write(cg, tast_root_var(iw.0), iw.2, threshold) ||
+            tast_expr_escapes(cg, iw.1, threshold) || tast_expr_escapes(cg, iw.2, threshold)
+      [RawMemoryWrite rw]
+         tast_outer_heap_write(cg, tast_root_var(rw.0), rw.1, threshold) ||
+            tast_expr_escapes(cg, rw.1, threshold)
+      [Call c]
+         user_fn = !types::has_str(types::g.foreign_fn_names, c.0)
+         hands_out = tast_args_pass_outer_heap(cg, c.2, 0, threshold)
+         leaks = user_fn && (hands_out || expr::fn_writes_outer(cg, c.0, threshold, 0))
+         leaks || tast_opt_escapes(cg, c.1, threshold) || tast_exprs_escape(cg, c.2, 0, threshold)
+      [Bin b] tast_expr_escapes(cg, b.1, threshold) || tast_expr_escapes(cg, b.2, threshold)
+      [Unary u] tast_expr_escapes(cg, u.1, threshold)
+      [Member m] tast_expr_escapes(cg, m.0, threshold)
+      [Index ix] tast_expr_escapes(cg, ix.0, threshold) || tast_expr_escapes(cg, ix.1, threshold)
+      [Record r] tast_fields_escape(cg, r, 0, threshold)
+      [Choice c] tast_expr_escapes(cg, c.0, threshold) || tast_branches_escape(cg, c.1, 0, threshold)
+      [Lambda l] tast_expr_escapes(cg, l.1, threshold)
+      [Block exprs] tast_exprs_escape(cg, exprs, 0, threshold)
+      [Cycle c]
+         tast_expr_escapes(cg, c.0, threshold) || tast_expr_escapes(cg, c.1, threshold) ||
+            tast_opt_escapes(cg, c.2, threshold)
+      [RamConstruct r] tast_opt_escapes(cg, r.2, threshold)
+      [EnumConstruct e] tast_opt_escapes(cg, e.1, threshold)
+      [BuilderNew b] tast_expr_escapes(cg, b, threshold)
+      [Copy c] tast_expr_escapes(cg, c, threshold)
+      [RawMemory r] tast_expr_escapes(cg, r.0, threshold)
+      [KeyAccess k] tast_expr_escapes(cg, k.0, threshold) || tast_expr_escapes(cg, k.1, threshold)
+      [Return r] tast_opt_escapes(cg, r, threshold)
+      [Exit e] tast_expr_escapes(cg, e, threshold)
+      | <->
+
+tast_exprs_escape: types::Cg, tast::TypedExprs, Int, Int => <>
+tast_exprs_escape = cg, es, at, threshold =>
+   at == ?es
+      | <->
+      |
+         te = es(at) | _ | tast::mk_lit_unit(0, 0)
+         tast_expr_escapes(cg, te, threshold) || tast_exprs_escape(cg, es, at + 1, threshold)
+
+tast_fields_escape: types::Cg, tast::TypedFields, Int, Int => <>
+tast_fields_escape = cg, fs, at, threshold =>
+   at == ?fs
+      | <->
+      |
+         f = fs(at)!!
+         tast_expr_escapes(cg, f.val, threshold) || tast_fields_escape(cg, fs, at + 1, threshold)
+
+tast_branches_escape: types::Cg, tast::TypedBranches, Int, Int => <>
+tast_branches_escape = cg, bs, at, threshold =>
+   at == ?bs
+      | <->
+      |
+         br = bs(at)!!
+         tast_exprs_escape(cg, br.case_values, 0, threshold) ||
+            tast_opt_escapes(cg, br.pred_fn, threshold) ||
+            tast_expr_escapes(cg, br.body, threshold) ||
+            tast_branches_escape(cg, bs, at + 1, threshold)
+
 typed_block_is_binding: tast::TypedExprs => <>
 typed_block_is_binding = exprs =>
    nb = ?exprs
@@ -5661,7 +5794,7 @@ typed_block_is_binding = exprs =>
 codegen_typed_eval_block: types::Cg, tast::TypedExprs => (Addr, ast::ValueType)
 codegen_typed_eval_block = cg, exprs =>
    has_alloc = tast_exprs_has_arena_alloc_d(cg, exprs, 0, 0) && !cg.in_fn &&
-      !typed_block_is_binding(exprs)
+      !typed_block_is_binding(exprs) && !tast_exprs_escape(cg, exprs, 0, ?cg.vars)
    mark = expr::codegen_block_arena_mark(cg, has_alloc)
    expr::codegen_restore_scope_enter(cg, has_alloc)
    last = codegen_typed_eval_block_step(cg, exprs, 0, ?exprs)
