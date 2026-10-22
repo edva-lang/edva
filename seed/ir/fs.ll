@@ -3280,7 +3280,7 @@ entry:
 choice.then:                                      ; preds = %entry
   %var.load1 = load ptr, ptr %"var.s'", align 8
   %ptr.int.l = ptrtoint ptr %var.load1 to i64
-  %addtmp = add i64 %ptr.int.l, 8
+  %addtmp = add i64 %ptr.int.l, 4
   %ptr.res = inttoptr i64 %addtmp to ptr
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
@@ -3331,7 +3331,7 @@ entry:
 choice.then:                                      ; preds = %entry
   %var.load1 = load ptr, ptr %"var.s'", align 8
   %ptr.int.l = ptrtoint ptr %var.load1 to i64
-  %addtmp = add i64 %ptr.int.l, 72
+  %addtmp = add i64 %ptr.int.l, 96
   %ptr.res = inttoptr i64 %addtmp to ptr
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
@@ -3378,7 +3378,7 @@ entry:
 choice.then:                                      ; preds = %entry
   %var.load1 = load ptr, ptr %"var.s'", align 8
   %ptr.int.l = ptrtoint ptr %var.load1 to i64
-  %addtmp = add i64 %ptr.int.l, 40
+  %addtmp = add i64 %ptr.int.l, 48
   %ptr.res = inttoptr i64 %addtmp to ptr
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
@@ -3425,7 +3425,7 @@ entry:
 choice.then:                                      ; preds = %entry
   %var.load1 = load ptr, ptr %"var.s'", align 8
   %ptr.int.l = ptrtoint ptr %var.load1 to i64
-  %addtmp = add i64 %ptr.int.l, 48
+  %addtmp = add i64 %ptr.int.l, 56
   %ptr.res = inttoptr i64 %addtmp to ptr
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
@@ -3472,7 +3472,7 @@ entry:
 choice.then:                                      ; preds = %entry
   %var.load1 = load ptr, ptr %"var.s'", align 8
   %ptr.int.l = ptrtoint ptr %var.load1 to i64
-  %addtmp = add i64 %ptr.int.l, 24
+  %addtmp = add i64 %ptr.int.l, 32
   %ptr.res = inttoptr i64 %addtmp to ptr
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
@@ -4669,7 +4669,7 @@ choice.exit30:                                    ; preds = %loop.body.22
 choice.then32:                                    ; preds = %choice.exit30
   %var.load34 = load ptr, ptr %var.ent, align 8
   %ptr.int.l35 = ptrtoint ptr %var.load34 to i64
-  %addtmp = add i64 %ptr.int.l35, 8
+  %addtmp = add i64 %ptr.int.l35, 21
   %ptr.res = inttoptr i64 %addtmp to ptr
   %call.res36 = call ptr @"sys::c_str"(ptr %ptr.res)
   br label %choice.exit33
@@ -4811,7 +4811,7 @@ choice.exit92:                                    ; preds = %or.23.exit
 choice.then94:                                    ; preds = %choice.exit92
   %var.load97 = load ptr, ptr %var.ent, align 8
   %ptr.int.l98 = ptrtoint ptr %var.load97 to i64
-  %addtmp99 = add i64 %ptr.int.l98, 6
+  %addtmp99 = add i64 %ptr.int.l98, 20
   %ptr.res100 = inttoptr i64 %addtmp99 to ptr
   %raw.int = ptrtoint ptr %ptr.res100 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
