@@ -3797,10 +3797,15 @@ collect_if_foreign_fn = cg, f =>
          params_res = collect_foreign_params(cg, f, 0, types::Addrs(), ast::VTypes())
          param_ll = params_res.0
          param_vts = params_res.1
-         c_name = is_darwin_triple(cg.opts.target_triple) && f.c_name == "__errno_location" | "__error" | f.c_name
+         is_darwin = is_darwin_triple(cg.opts.target_triple)
+         c_name = is_darwin && f.c_name == "__errno_location" | "__error" | f.c_name
          ret_ll = llvm_foreign_ret_type(c_name, f.return_type)
-         is_vararg = c_name == "ioctl"
-         fn_type = fn_type_n_vararg(cg, ret_ll, param_ll, ?f.params,
+         // Darwin arm64 passes C varargs on the stack, so these must be
+         // declared with only their two fixed params to receive the rest.
+         c_varargs = is_darwin && (c_name == "open" || c_name == "fcntl" || c_name == "ioctl")
+         n_fixed = c_varargs | %min(2, ?f.params) | ?f.params
+         is_vararg = c_name == "ioctl" || c_varargs
+         fn_type = fn_type_n_vararg(cg, ret_ll, param_ll, n_fixed,
             is_vararg)
          llvm_fn = types::llvm_find_function(cg.module, c_name)
             | fn => fn
