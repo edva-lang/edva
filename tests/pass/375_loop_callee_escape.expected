@@ -1,0 +1,4 @@
+store via callee:  3 (expect 3)
+assign from call:  3 (expect 3)
+append via callee: 780 (expect 780)
+append to global via callee: 780 (expect 780)

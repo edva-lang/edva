@@ -1,0 +1,70 @@
+// tests/pass/375_loop_callee_escape.dva
+// Top-level loop bodies reset the arena at the end of each iteration. Values a
+// *called function* allocates and leaves in an outer variable must survive that.
+// The local `label` string gives each body an allocation of its own, which is
+// what turns the per-iteration reset on; junk() then allocates over whatever
+// the reset freed, so a lost value reads back as 999.
+#use io
+
+#type Cell (a: Int, b: Int)
+#type Box (cells: (Cell){})
+#type Cells (Cell){}
+
+cells: Cells
+
+mk: Int => Cell
+mk = v => Cell((v, v))
+
+junk: () => Int
+junk = !=>
+   t' = 0
+   0..8 @ i =>
+      j = mk(999)
+      t' = t' + j.a
+   t'
+
+put: Box, Int => ()
+put = bx, v => bx.cells(0) = mk(v)
+
+push: (Cell){}, Int => ()
+push = arr, v => arr += mk(v)
+
+remember: Int => ()
+remember = v =>
+   cells += mk(v)
+
+// 1. callee stores a fresh record into an outer container (term's render_diff case)
+bx = Box(((Cell){}))
+bx.cells += mk(0)
+0..3 @ i =>
+   label = "iteration ${i}"
+   put(bx, i + 1)
+junk!
+io::out $ "store via callee:  ${bx.cells(0)!!.a} (expect 3)"
+
+// 2. outer variable assigned a record the callee returned
+held' = mk(0)
+0..3 @ i =>
+   label = "iteration ${i}"
+   held' = mk(i + 1)
+junk!
+io::out $ "assign from call:  ${held'.a} (expect 3)"
+
+// 3. callee appends to an outer array (its storage may grow inside the callee)
+arr = (Cell){}
+0..40 @ i =>
+   label = "iteration ${i}"
+   push(arr, i)
+junk!
+sum' = 0
+arr @ c => sum' = sum' + c.a
+io::out $ "append via callee: ${sum'} (expect 780)"
+
+// 4. callee appends to a top-level array it reaches as a global
+0..40 @ i =>
+   label = "iteration ${i}"
+   remember(i)
+junk!
+gsum' = 0
+cells @ c => gsum' = gsum' + c.a
+io::out $ "append to global via callee: ${gsum'} (expect 780)"
