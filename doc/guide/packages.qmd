@@ -32,8 +32,9 @@ my_project/
 
 ### Targets
 
-- **Executable target (`src/main.dva`)**: Built by `edva pkg build`. Compiled into a binary named after the package manifest (`./my_project`).
-- **Library target (`src/<name>.dva`)**: Used when other packages import `@my_project`. If `src/main.dva` is absent, `edva pkg build` reports a library package notice.
+- **Default executable target (`src/main.dva`)**: Built by `edva pkg build` when no `targets =` section is declared in `edva.ccl`. Compiled into a binary named after the package manifest (`./my_project`).
+- **Configured build targets (`targets =` in `edva.ccl`)**: Packages that build multiple artifacts or require custom target triples, optimization levels, or backend C/target flags (such as a client WebAssembly module alongside a native server binary) can declare named targets under `targets =`.
+- **Library target (`src/<name>.dva`)**: Used when other packages import `@my_project`. If neither `targets =` nor `src/main.dva` is present, `edva pkg build` reports a library package notice.
 - **Test targets (`tests/*.dva`)**: Discovered and executed by `edva pkg test`. Each test file is compiled and executed independently; a test passes if it exits with status code 0.
 
 ## The package manifest (`edva.ccl`)
@@ -77,6 +78,33 @@ overrides =
   term =
     path = ../local_fork_of_term
 ```
+
+### Multi-target builds (`targets =`)
+
+By default, `edva build` compiles `src/main.dva` into `./<name>`. To build multiple artifacts or pass target-specific compilation parameters (`src`, `out`, `target`, `opt`, `cflags`), add a `targets =` section to `edva.ccl`:
+
+```ccl
+targets =
+  client =
+    src = src/client.dva
+    out = public/client.wasm
+    target = wasm32-unknown-unknown
+    opt = -O3
+    cflags =
+      = -msimd128
+  my_project =
+    src = src/main.dva
+    out = my_project
+    opt = -O3
+```
+
+Each entry `<target_name> =` under `targets =` is a user-chosen identifier supporting:
+
+- **`src`**: Entry source file relative to the package root (defaults to `src/main.dva`).
+- **`out`**: Output binary/artifact path relative to the package root (defaults to `<target_name>`; parent directories are created automatically).
+- **`target`**: Target triple passed via `-target <triple>` (e.g., `wasm32-unknown-unknown`).
+- **`opt`**: Optimization level (`-O0`, `-O1`, `-O2`, `-O3`).
+- **`cflags`**: Additional Clang/backend flags (either a CCL list `= -msimd128` or space-separated string) forwarded via `-cflag <flag>`.
 
 ## Native dependencies
 
@@ -162,7 +190,7 @@ edva fetch --offline
 edva build [dir]
 ```
 
-Resolves and fetches dependencies if missing, then compiles `src/main.dva` into `./<name>`.
+Resolves and fetches dependencies if missing, then builds all targets configured under `targets =` in `edva.ccl` (or compiles `src/main.dva` into `./<name>` when `targets =` is omitted).
 
 ### Running tests (`test`)
 

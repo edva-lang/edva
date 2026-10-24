@@ -357,17 +357,9 @@ operators:
     kind: Apply
     kind_self: Apply
     assoc: right
-    operands: "fn, arg"
-    result: "call result (f $ a == f(a))"
-    desc: "infix apply: f $ a == f(a). The loosest binary tier, right-assoc: f $ g $ x == f $ (g $ x). Its single argument is one expression."
-  - symbol: "$:"
-    tier: apply
-    kind: null
-    kind_self: null
-    assoc: right
-    operands: "fn/call, block"
-    result: "call result (f $: block == f(block_record))"
-    desc: "block-feed / trailing block attachment: attaches an indented block of expressions as a record argument to the preceding call/function (e.g. vbox(spacing: 12) $: child1 \\n child2), or passes a trailing callback directly."
+    operands: "fn/call, arg/block"
+    result: "call result (f $ a == f(a); f $ block == f(block_record))"
+    desc: "infix apply: f $ a == f(a). The loosest binary tier, right-assoc: f $ g $ x == f $ (g $ x). When followed on the same line, its argument is one expression; when followed immediately by an indented block, attaches the block's expressions as a record argument (e.g. vbox(12) $ child1 \\n child2)."
 
   # ---- logical or / and (tiers 7-8) ---------------------------------------
   - symbol: "||"

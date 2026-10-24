@@ -57,6 +57,37 @@
     "strings": {
       "patterns": [
         {
+          "name": "string.quoted.triple.dva",
+          "begin": "\"\"\"",
+          "end": "\"\"\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.dva",
+              "match": "\\\\."
+            },
+            {
+              "name": "meta.interpolation.dva",
+              "begin": "\\$\\{",
+              "beginCaptures": {
+                "0": {
+                  "name": "punctuation.section.interpolation.begin.dva"
+                }
+              },
+              "end": "\\}",
+              "endCaptures": {
+                "0": {
+                  "name": "punctuation.section.interpolation.end.dva"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "$self"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "string.quoted.double.dva",
           "begin": "\"",
           "end": "\"",
@@ -64,6 +95,26 @@
             {
               "name": "constant.character.escape.dva",
               "match": "\\\\."
+            },
+            {
+              "name": "meta.interpolation.dva",
+              "begin": "\\$\\{",
+              "beginCaptures": {
+                "0": {
+                  "name": "punctuation.section.interpolation.begin.dva"
+                }
+              },
+              "end": "\\}",
+              "endCaptures": {
+                "0": {
+                  "name": "punctuation.section.interpolation.end.dva"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "$self"
+                }
+              ]
             }
           ]
         }
@@ -105,7 +156,7 @@
       "patterns": [
         {
           "name": "keyword.control.directive.dva",
-          "match": "#(use|type|foreign|pragma|private|export|spawn|join|!|size)\\b"
+          "match": "#(use|type|foreign|pragma|public|pub|private|export|spawn|join|!|size)\\b"
         }
       ]
     },
@@ -169,7 +220,7 @@
         },
         {
           "name": "keyword.operator.apply.dva",
-          "match": "(\\$>>|\\$>|\\$:|\\$)"
+          "match": "(\\$>>|\\$>|\\$)"
         },
         {
           "name": "keyword.operator.logical.dva",

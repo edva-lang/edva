@@ -79,7 +79,7 @@ The operator precedence hierarchy is organized into binding tiers (from loosest 
 |---|---|---|---|---|
 | cycle | 10 | 20 | `@` `@@` `>--` `-->` `--^` | left |
 | sequence | 20 | 30 | `;` | left |
-| apply | 30 | 30 | `$` `$:` | right |
+| apply | 30 | 30 | `$` | right |
 | feed | 40 | 50 | `$>` `$>>` | left |
 | choice | 50 | 60 | `|` `[pattern]` `!|` `|->` `|+>` `|-->` `|++>` | left |
 | assignment | 60 | 50 | `=` `:=` `+=` `::=` | right |

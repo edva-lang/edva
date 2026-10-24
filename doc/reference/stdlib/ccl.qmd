@@ -64,7 +64,7 @@ name = ccl::get(doc, "name") | n => n | "unknown"
 
 The module provides schema models and validators for `edva.ccl` manifests and `edva.lock.ccl` lockfiles:
 
-- `ccl::validate_manifest`: validates a `CclDoc` against Edva package manifest requirements (`name`, `version`, `edva`, `dependencies`, `overrides`, `native`).
+- `ccl::validate_manifest`: validates a `CclDoc` against Edva package manifest requirements (`name`, `version`, `edva`, `dependencies`, `overrides`, `native`, `targets`).
 - `ccl::manifest_to_ccl`: serializes a `PackageManifest` record back into deterministic CCL.
 - `ccl::validate_lockfile`: validates resolved package lockfile data.
 - `ccl::lockfile_to_ccl`: renders a resolved `Lockfile` structure into deterministic lockfile format.

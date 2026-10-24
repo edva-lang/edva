@@ -124,7 +124,7 @@ op_is_reserved = text =>
             ["<+", "<-", "<+>", "<->", "<++>", "<-->", "<>", "+>", "->",
             "-->", "--^", "--|", ">--", "@", "[@",
             "@@", "^", "^?", "?", "!", "*", "&", "=>",
-            "!=>", "|", "$:", "|->", "|+>", "|-->", "|++>",
+            "!=>", "|", "|->", "|+>", "|-->", "|++>",
             "=", ":=", "+=", "::=", "..", "::", ".", ":",
             "??", ".!.", "++", "~~", "--!", "!!", "^-", "^="]
 
@@ -153,7 +153,7 @@ is_continuation_op: lexer::Tok => <>
 is_continuation_op = t =>
    is_delim = t.kind [Comma, LParen, LBracket, LBrace]
    is_op = t.kind [Op] &&
-      (t.text ["+", "-", "*", "/", "%", "$", "$>", "$>>",
+      (t.text ["+", "-", "*", "/", "%", "$>", "$>>",
          "..", "::", "&&", "||", ".<.", ".>.", ".&.", ".|.", ".^."])
    is_delim || is_op
 
@@ -487,22 +487,13 @@ bp_loop = p, res, min_bp, cmp_line =>
    p.just_dedented || tok_is_nl(p.curr) || tok_is_eof(p.curr) || !tok_is_op(p.curr)
       | <+ res +>
       |
-         token_is_op(p.curr, "$:")
+         operators::bin_info(p.curr.text)
+            | bp_cont(p, res, min_bp, cmp_line, _)
             |
-               min_bp > 30
+               uo = user_op_lookup(p.user_ops, p.curr.text)
+               uo.0
+                  | bp_cont_user(p, res, min_bp, cmp_line, uo.1, uo.2)
                   | <+ res +>
-                  |
-                     parse_trailing_block_expr(p, res)
-                        | node => bp_loop(p, node, min_bp, cmp_line)
-                        | <-->
-            |
-               operators::bin_info(p.curr.text)
-                  | bp_cont(p, res, min_bp, cmp_line, _)
-                  |
-                     uo = user_op_lookup(p.user_ops, p.curr.text)
-                     uo.0
-                        | bp_cont_user(p, res, min_bp, cmp_line, uo.1, uo.2)
-                        | <+ res +>
 
 // Consume one binary operator (the token is an Op whose BinOpInfo is in hand):
 // bound check, comparison same-line check, advance, parse the right operand,
@@ -515,16 +506,22 @@ bp_cont = p, res, min_bp, cmp_line, i =>
       |
          op_line = p.curr.line
          parser_advance(p)
-         parse_bp(p, i.rbp)
-            | rre =>
-               apply_feed_rhs(p, rre, i.op)
-                  | cae =>
-                     node = ast::Expr(Bin, (i.op, res, cae))
-                     set_cmp = i.same_line && cmp_line == -1
-                     nc = set_cmp | op_line | cmp_line
-                     bp_loop(p, node, min_bp, nc)
+         (i.op [Apply]) && tok_is_nl(p.curr)
+            |
+               parse_trailing_block_expr(p, res)
+                  | node => bp_loop(p, node, min_bp, cmp_line)
                   | <-->
-            | <-->
+            |
+               parse_bp(p, i.rbp)
+                  | rre =>
+                     apply_feed_rhs(p, rre, i.op)
+                        | cae =>
+                           node = ast::Expr(Bin, (i.op, res, cae))
+                           set_cmp = i.same_line && cmp_line == -1
+                           nc = set_cmp | op_line | cmp_line
+                           bp_loop(p, node, min_bp, nc)
+                        | <-->
+                  | <-->
 
 // Whether an operator is apply/feed ($, $>, $>>) — the binary tiers BELOW
 // the choice tier, whose right operand absorbs a choice continuation.
@@ -1876,7 +1873,6 @@ trailing_block_field = fields, e =>
       | append_field(fields, <->, "", e)
 
 parse_trailing_block_expr = p, lhs =>
-   parser_advance(p)
    bk = parse_block(p)
    bk
       | be =>

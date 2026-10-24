@@ -80,6 +80,31 @@ export def gen-vscode [] {
       "strings": {
         "patterns": [
           {
+            "name": "string.quoted.triple.dva",
+            "begin": "\"\"\"",
+            "end": "\"\"\"",
+            "patterns": [
+              {
+                "name": "constant.character.escape.dva",
+                "match": "\\\\."
+              },
+              {
+                "name": "meta.interpolation.dva",
+                "begin": "\\$\\{",
+                "beginCaptures": {
+                  "0": { "name": "punctuation.section.interpolation.begin.dva" }
+                },
+                "end": "\\}",
+                "endCaptures": {
+                  "0": { "name": "punctuation.section.interpolation.end.dva" }
+                },
+                "patterns": [
+                  { "include": "$self" }
+                ]
+              }
+            ]
+          },
+          {
             "name": "string.quoted.double.dva",
             "begin": "\"",
             "end": "\"",
@@ -87,6 +112,20 @@ export def gen-vscode [] {
               {
                 "name": "constant.character.escape.dva",
                 "match": "\\\\."
+              },
+              {
+                "name": "meta.interpolation.dva",
+                "begin": "\\$\\{",
+                "beginCaptures": {
+                  "0": { "name": "punctuation.section.interpolation.begin.dva" }
+                },
+                "end": "\\}",
+                "endCaptures": {
+                  "0": { "name": "punctuation.section.interpolation.end.dva" }
+                },
+                "patterns": [
+                  { "include": "$self" }
+                ]
               }
             ]
           }
@@ -128,7 +167,7 @@ export def gen-vscode [] {
         "patterns": [
           {
             "name": "keyword.control.directive.dva",
-            "match": "#(use|type|foreign|pragma|private|export|spawn|join|!|size)\\b"
+            "match": "#(use|type|foreign|pragma|public|pub|private|export|spawn|join|!|size)\\b"
           }
         ]
       },
@@ -192,7 +231,7 @@ export def gen-vscode [] {
           },
           {
             "name": "keyword.operator.apply.dva",
-            "match": "(\\$>>|\\$>|\\$:|\\$)"
+            "match": "(\\$>>|\\$>|\\$)"
           },
           {
             "name": "keyword.operator.logical.dva",
@@ -314,33 +353,49 @@ export def gen-vscode [] {
 # -----------------------------------------------------------------------------
 
 export def sync-helix [] {
-  let ts_dir = if (($env.PWD | path join "../tree-sitter-edva") | path exists) {
-    $env.PWD | path join "../tree-sitter-edva"
+  let r = (root)
+  let ts_dir = if (($r | path join "../tree-sitter-edva") | path exists) {
+    $r | path join "../tree-sitter-edva" | path expand
   } else {
-    $env.PWD | path join "../tree-sitter-dva"
+    $r | path join "../tree-sitter-dva" | path expand
   }
-  let hx_dir = ($env.HOME | path join ".config/helix/runtime/queries/dva")
+  let hx_edva_dir = ($env.HOME | path join ".config/helix/runtime/queries/edva")
+  let hx_dva_dir = ($env.HOME | path join ".config/helix/runtime/queries/dva")
+  let repo_hx_dir = ($r | path join "tools/helix-edva/queries")
 
   if not ($ts_dir | path exists) {
     print $"[!] tree-sitter-edva not found at ($ts_dir)"
     return
   }
 
-  mkdir $hx_dir
+  mkdir $hx_edva_dir
+  mkdir $hx_dva_dir
+  mkdir $repo_hx_dir
   let queries = ["highlights.scm", "indents.scm", "textobjects.scm"]
   for q in $queries {
     let src = ($ts_dir | path join $"queries/($q)")
-    let dst = ($hx_dir | path join $q)
     if ($src | path exists) {
-      try { cp -f $src $dst }
+      try { cp -f $src ($hx_edva_dir | path join $q) }
+      try { cp -f $src ($hx_dva_dir | path join $q) }
+      try { cp -f $src ($repo_hx_dir | path join $q) }
       print $"[✓] Synced Helix query ($q)"
     }
   }
 
-  print "[*] Rebuilding Helix grammar for dva..."
-  let res = (do { ^hx -g build dva } | complete)
+  print "[*] Building Helix grammar edva.so..."
+  let gram_dir = ($env.HOME | path join ".config/helix/runtime/grammars")
+  let build_hx_dir = ($r | path join "build/helix")
+  mkdir $gram_dir
+  mkdir $build_hx_dir
+  let parser_c = ($ts_dir | path join "src/parser.c")
+  let scanner_c = ($ts_dir | path join "src/scanner.c")
+  let inc_dir = ($ts_dir | path join "src")
+  let out_so = ($gram_dir | path join "edva.so")
+  let res = (do { ^cc -fPIC -shared -O2 -I $inc_dir $parser_c $scanner_c -o $out_so } | complete)
   if $res.exit_code == 0 {
-    print "[✓] Helix dva grammar built successfully."
+    try { cp -f $out_so ($gram_dir | path join "dva.so") }
+    try { cp -f $out_so ($build_hx_dir | path join "edva.so") }
+    print $"[✓] Helix edva grammar built and installed to ($out_so)"
   } else {
     print $"[!] Helix build warning: ($res.stderr)"
   }

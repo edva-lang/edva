@@ -52,6 +52,7 @@
       <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
         <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/" />
         <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="BlockComment" />
+        <StringDetect attribute="String" context="TripleString" String="&quot;&quot;&quot;" />
         <DetectChar attribute="String" context="String" char="&quot;" />
         <!-- Mutables: foo', x', total'' (highlighted in reddish) -->
         <RegExpr attribute="Mutable" context="#stay" String="\b[a-zA-Z_][a-zA-Z0-9_]*'+" />
@@ -105,7 +106,6 @@
         <StringDetect attribute="Operator" context="#stay" String=".." />
         <StringDetect attribute="Operator" context="#stay" String="$&gt;&gt;" />
         <StringDetect attribute="Operator" context="#stay" String="$&gt;" />
-        <StringDetect attribute="Operator" context="#stay" String="$:" />
         <DetectChar attribute="Operator" context="#stay" char="$" />
         <StringDetect attribute="Operator" context="#stay" String="&amp;&amp;" />
         <StringDetect attribute="Operator" context="#stay" String="||" />
@@ -144,9 +144,19 @@
       <context name="BlockComment" attribute="Comment" lineEndContext="#stay">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment" />
       </context>
+      <context name="TripleString" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="Special" context="#stay" char="\" />
+        <Detect2Chars attribute="Special" context="Interpolation" char="$" char1="{" />
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" />
+      </context>
       <context name="String" attribute="String" lineEndContext="#stay">
         <DetectChar attribute="Special" context="#stay" char="\" />
+        <Detect2Chars attribute="Special" context="Interpolation" char="$" char1="{" />
         <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context name="Interpolation" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Special" context="#pop" char="}" />
+        <IncludeRules context="Normal" />
       </context>
       <context name="Char" attribute="Char" lineEndContext="#stay">
         <DetectChar attribute="Special" context="#stay" char="\" />

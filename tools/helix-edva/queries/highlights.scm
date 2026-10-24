@@ -15,6 +15,8 @@
   "#type"
   "#foreign"
   "#pragma"
+  "#public"
+  "#pub"
   "#private"
   "#export"
   "#spawn"
@@ -32,9 +34,11 @@
 ;; Literals
 ;; ------------------------------------------------------------------
 (string_literal) @string
-(char_literal) @character
-(integer_literal) @number
-(float_literal) @number.float
+(string_interpolation "${" @punctuation.special)
+(string_interpolation "}" @punctuation.special)
+(char_literal) @constant.character
+(integer_literal) @constant.numeric.integer
+(float_literal) @constant.numeric.float
 
 ;; ------------------------------------------------------------------
 ;; Ramifications
@@ -57,6 +61,7 @@
   "<+"
   "+>"
   "<-"
+  "->"
 ] @constant.builtin.ram
 
 ;; Unit ramification type "<>".
@@ -136,7 +141,7 @@
 (ram_or_enum_type_decl "|" @punctuation.delimiter)
 (ram_or_enum_type_decl "<" @punctuation.bracket)
 (ram_or_enum_type_decl ">" @punctuation.bracket)
-(ram_or_enum_type_decl "<>" @type.builtin)
+"<>" @constant.builtin.ram
 
 ;; Enum variant labels in declarations.
 (enum_variant (identifier) @type.enum.variant)
@@ -243,8 +248,9 @@
   (op_global_assign)
   (op_plus_assign)
   (op_arrow)
-  "->"
+  "!=>"
 ] @operator
+(foreign_binding "->" @operator)
 
 ; Infix binary operators (scoped so "<" / ">" don't hit ram/enum type decls).
 (binary_expr "&&" @operator)
@@ -269,7 +275,6 @@
 
 ; Infix apply, range, map access, block feed.
 (dollar_call "$" @operator)
-(dollar_call "$:" @operator)
 (range_expr ".." @operator)
 (key_access_expr "^" @operator)
 (key_access_expr "^?" @operator)

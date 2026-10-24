@@ -155,7 +155,7 @@ truth; the unified operator table with operand and result types is in §3.3):
 |---|---|---|---|---|
 | cycle | 10 | 20 | `@` `@@` `>--` `-->` `--^` | left |
 | sequence | 20 | 30 | `;` | left |
-| apply | 30 | 30 | `$` `$:` | right |
+| apply | 30 | 30 | `$` | right |
 | feed | 40 | 50 | `$>` `$>>` | left |
 | choice | 50 | 60 | `|` `[pattern]` `!|` `|->` `|+>` `|-->` `|++>` | left |
 | assignment | 60 | 50 | `=` `:=` `+=` `::=` | right |

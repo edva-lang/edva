@@ -85,3 +85,19 @@ ch = 'Z'
 s11 = "items: ${count}, code: ${ch}"
 expected11 = "items: 10, code: Z"
 s11 == expected11 | io::out $ "PASS 11" | io::out $ "FAIL 11"
+
+// 12. Triple-quoted single-line string without quote escaping
+s12 = """hello "world" and ""double"" with ${count}!"""
+expected12 = "hello \"world\" and \"\"double\"\" with 10!"
+s12 == expected12 | io::out $ "PASS 12" | io::out $ "FAIL 12"
+
+// 13. Triple-quoted multiline string without quote escaping
+s13 = """
+   {
+      "name": "${name}",
+      "count": ${count}
+   }
+   """
+expected13 = "{\n   \"name\": \"world\",\n   \"count\": 10\n}\n"
+s13 == expected13 | io::out $ "PASS 13" | io::out $ "FAIL 13"
+

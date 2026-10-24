@@ -47,7 +47,7 @@ the multi-argument application operators:
 | `x $> f(y)` | Feed (reverse apply) | Left | Tier 4 | Prepend argument: lowers to `f(x, y)` |
 | `f(x) $ y` | Infix apply | Right | Tier 3 | Append argument: lowers to `f(x, y)` |
 | `m $>> cont` | Monadic bind | Left | Tier 4 | Unpack positive ram, propagate negative |
-| `f $: block` | Block feed | Right | Lowest | Attach indented block as final argument |
+| `f $ block` | Block feed | Right | Tier 3 | Attach indented block as final record argument |
 
 ```{.dva .run}
 #use io

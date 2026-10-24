@@ -19,7 +19,7 @@ Right Binding Power (RBP), associativity, and semantic groupings.
 |---|---|---|---|---|
 | cycle | 10 | 20 | `@` `@@` `>--` `-->` `--^` | left |
 | sequence | 20 | 30 | `;` | left |
-| apply | 30 | 30 | `$` `$:` | right |
+| apply | 30 | 30 | `$` | right |
 | feed | 40 | 50 | `$>` `$>>` | left |
 | choice | 50 | 60 | `|` `[pattern]` `!|` `|->` `|+>` `|-->` `|++>` | left |
 | assignment | 60 | 50 | `=` `:=` `+=` `::=` | right |
@@ -66,7 +66,7 @@ label = score [1] "one" [2] "two" | "other"
 right-associative; `$>` prepends one and is left-associative. `$>>` chains a
 ram with a positive payload (`RamPP` or `RamPN`) through a continuation that must
 return a ramification of compatible shape (passing a non-ram continuation emits `E3091`).
-`$:` attaches a trailing block as an argument.
+When `$` is followed immediately by an indented block, it attaches the block's expressions as a record argument.
 
 ```{.dva .run}
 #use io
