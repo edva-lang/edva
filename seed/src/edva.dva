@@ -1544,13 +1544,14 @@ collect_link_libs = stmts =>
    module_name: String,
    import_map: String,
    cache_dir: String,
-   no_cache: <>
+   no_cache: <>,
+   cflags: ast::Names
 )
 
 init_opts: Int => CliOpts
 init_opts = ignored =>
    CliOpts(("", "", <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
-      <->, <+>, "", <->, <->, "", "", "", <->))
+      <->, <+>, "", <->, <->, "", "", "", <->, ast::Names()))
 
 
 find_char_at: String, Int, Int => Int
@@ -1964,6 +1965,8 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                      clang_args += "-w"
                      clang_args += (opts.opt != "" | opts.opt | "-O2")
                      clang_args += "--target=" + target_triple
+                     opts.cflags @ cf =>
+                        clang_args += cf
                      clang_args += "-c"
                      clang_args += output_ll
                      clang_args += "-o"
@@ -1980,6 +1983,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                            ld_args += "wasm-ld"
                            ld_args += "--no-entry"
                            ld_args += "--export-all"
+                           ld_args += "--allow-undefined"
                            ld_args += output_o
                            ld_args += "-o"
                            ld_args += output_bin
@@ -2009,6 +2013,8 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                      clang_args += "-w"
                      clang_args += (opts.opt != "" | opts.opt | "-O2")
                      clang_args += "--target=" + target_triple
+                     opts.cflags @ cf =>
+                        clang_args += cf
                      is_darwin = is_darwin_triple(target_triple)
                      opts.is_shared
                         |
@@ -2773,8 +2779,21 @@ parse_args_step = i, opts =>
                parse_args_step(i + 1, opts)
             ["-o", "--output"]
                parse_output_arg(i, opts)
+            ["-cflag", "--cflag", "-cflags", "--cflags"]
+               parse_cflag_arg(i, opts)
             |
                parse_pos_arg(i, arg, opts)
+
+parse_cflag_arg: Int, CliOpts => CliOpts
+parse_cflag_arg = i, opts =>
+   i + 1 !< sys::argc
+      |
+         print $ "E5016: '-cflag' requires a flag argument"
+         sys::exit(1)
+         opts
+      |
+         opts.cflags += sys::argv_string(i + 1)
+         parse_args_step(i + 2, opts)
 
 parse_cache_arg: Int, CliOpts => CliOpts
 parse_cache_arg = i, opts =>
@@ -3177,9 +3196,6 @@ run_driver = ignored =>
    has_ll_ext = ?ll_stem !< 3 && ll_stem(?ll_stem - 3..) == ".ll"
    output_ll = has_ll_ext | ll_stem | ll_stem + ".ll"
    ir_only = opts.ir_only
-   is_freestanding = (?opts.triple !< 14 &&
-      opts.triple(..14) == "wasm32-unknown")
-   is_freestanding && !opts.no_runtime | opts.no_runtime = <+>
    target_prefix = opts.is_module && opts.no_main | opts.module_name | ""
    load_result = load_all(opts.target, target_prefix, opts.is_module, opts.import_map)
    !load_result.ok

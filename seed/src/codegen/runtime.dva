@@ -845,7 +845,21 @@ codegen_emit_runtime_full = cg =>
    stmt::llvm_add_incoming1(cg, i_phi, inx, hs_b)
    LLVMBuildBr(cg.builder, hs_l)
    LLVMPositionBuilderAtEnd(cg.builder, hs_d)
-   LLVMBuildRet(cg.builder, h_phi)
+   res_ret = LLVMBuildRet(cg.builder, h_phi)
+
+   is_wasm_rt = ?cg.opts.target_triple !< 5 && cg.opts.target_triple(..5) == "wasm3"
+   is_wasm_rt |
+      LLVMSetLinkage(cur_fn, 8)
+      LLVMSetLinkage(set_cur_fn, 8)
+      LLVMSetLinkage(init_fn, 8)
+      LLVMSetLinkage(alloc_fn, 8)
+      LLVMSetLinkage(save_fn, 8)
+      LLVMSetLinkage(rest_fn, 8)
+      LLVMSetLinkage(vt_fn, 8)
+      LLVMSetLinkage(dest_fn, 8)
+      LLVMSetLinkage(adopt_fn, 8)
+      LLVMSetLinkage(hash_fn, 8)
+   res_ret
 
 // "x = <expr>" — evaluate the RHS and store it into the variable's global.
 // A heap ram (Ram-typed but a pointer, not an i1) is stored as a pointer and
@@ -2106,7 +2120,8 @@ codegen_register_global_ctor = cg, fn =>
 // Finish: ret i32 0 or ret void in __dva_global_init, verify and print module.
 codegen_finish: types::Cg, String => ()
 codegen_finish = cg, out_path =>
-   !cg.opts.no_runtime && !cg.opts.no_main | emit_arena_destroy(cg)
+   is_wasm_fin = ?cg.opts.target_triple !< 5 && cg.opts.target_triple(..5) == "wasm3"
+   !cg.opts.no_runtime && !cg.opts.no_main && !is_wasm_fin | emit_arena_destroy(cg)
    cg.opts.no_main
       |
          LLVMBuildRetVoid(cg.builder)

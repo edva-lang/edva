@@ -48,6 +48,17 @@
 
 #type PackageDeps (PackageDep){}
 
+#type BuildTarget (
+   name: String,
+   src: String,
+   out: String,
+   target: String,
+   opt: String,
+   cflags: Strings
+)
+
+#type BuildTargets (BuildTarget){}
+
 #type PackageManifest (
    name: String,
    version: String,
@@ -55,7 +66,8 @@
    deps: PackageDeps,
    native_libs: Strings,
    native_pkg_config: Strings,
-   overrides: PackageDeps
+   overrides: PackageDeps,
+   targets: BuildTargets
 )
 
 #type LockDep (
@@ -637,6 +649,59 @@ validate_dep = e, file =>
                <- ccl_error(file,
                   "edva.ccl: dependency '" + alias + "' must be a section", e.line, e.col) +>
 
+split_words: String => Strings
+split_words = s =>
+   res: Strings
+   n = ?s
+   i' = 0
+   0.. @
+      i' = trim_left_idx(s, i')
+      i' !< n | -->
+      start = i'
+      0.. @
+         i' !< n || is_space(s(i')) | -->
+         i' = i' + 1
+      res += s(start..i')
+   res
+
+validate_target: CclEntry, String => < BuildTarget | Error >
+validate_target = e, file =>
+   tname = e.key
+   !is_valid_alias(tname)
+      | <- ccl_error(file, "edva.ccl: invalid target name '" + tname + "'", e.line, e.col) +>
+      |
+         e.val
+            [Block tdoc]
+               has_err' = <->
+               err_val' = ccl_error(file, ++"", 0, 0)
+               tdoc.entries @ te =>
+                  !has_err' |
+                     k = te.key
+                     is_known = k == "src" || k == "out" || k == "target" ||
+                        k == "opt" || k == "cflags" || k == "/"
+                     !is_known |
+                        has_err' = <+>
+                        err_val' = ccl_error(file,
+                           "edva.ccl: unknown key 'targets." + tname + "." + k + "'",
+                           te.line, te.col)
+               has_err'
+                  | <- err_val' +>
+                  |
+                     src = get(tdoc, "src") | s => s | ""
+                     out_p = get(tdoc, "out") | s => s | ""
+                     triple = get(tdoc, "target") | s => s | ""
+                     opt = get(tdoc, "opt") | s => s | ""
+                     cflags: Strings
+                     get_list(tdoc, "cflags")
+                        | clist => cflags = clist
+                        |
+                           get(tdoc, "cflags")
+                              | cstr => cflags = split_words(cstr)
+                     <+ BuildTarget((tname, src, out_p, triple, opt, cflags)) ->
+            [Str]
+               <- ccl_error(file,
+                  "edva.ccl: target '" + tname + "' must be a section", e.line, e.col) +>
+
 validate_manifest: CclDoc, String => < PackageManifest | Error >
 validate_manifest = doc, file =>
    has_err' = <->
@@ -646,7 +711,8 @@ validate_manifest = doc, file =>
    doc.entries @ e =>
       k = e.key
       is_known = k == "name" || k == "version" || k == "edva" ||
-         k == "dependencies" || k == "native" || k == "overrides" || k == "/"
+         k == "dependencies" || k == "native" || k == "overrides" ||
+         k == "targets" || k == "/"
       !is_known && !has_err'
          |
             has_err' = <+>
@@ -778,6 +844,23 @@ validate_manifest = doc, file =>
                                  "edva.ccl: override '" + oe.key + "' must be a section",
                                  oe.line, oe.col)
 
+   // 7. Build Targets
+   targets: BuildTargets
+   !has_err'
+      |
+         opt_targets = get_section(doc, "targets")
+         opt_targets
+            | tdoc =>
+               tdoc.entries @ te =>
+                  te.key != "/" && !has_err'
+                     |
+                        tres = validate_target(te, file)
+                        tres
+                           | tgt => targets += tgt
+                           | e =>
+                              has_err' = <+>
+                              err_val' = e
+
    has_err'
       | <- err_val' +>
       |
@@ -788,7 +871,8 @@ validate_manifest = doc, file =>
             sort_deps(deps),
             sort_strings(native_libs),
             sort_strings(native_pkg_config),
-            sort_deps(overrides)
+            sort_deps(overrides),
+            targets
          )) ->
 
 // --- Deterministic Manifest Serialization -----------------------------------
@@ -840,6 +924,21 @@ manifest_to_ccl = m =>
          sorted_ovr @ o =>
             b += "  " + o.alias + " =\n"
             b += "    path = " + o.path + "\n"
+
+   ?m.targets > 0
+      |
+         b += "\ntargets =\n"
+         m.targets @ t =>
+            b += "  " + t.name + " =\n"
+            t.src != "" | b += "    src = " + t.src + "\n"
+            t.out != "" | b += "    out = " + t.out + "\n"
+            t.target != "" | b += "    target = " + t.target + "\n"
+            t.opt != "" | b += "    opt = " + t.opt + "\n"
+            ?t.cflags > 0
+               |
+                  b += "    cflags =\n"
+                  t.cflags @ cf =>
+                     b += "      = " + cf + "\n"
 
    +b
 

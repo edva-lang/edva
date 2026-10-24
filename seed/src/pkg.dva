@@ -1468,8 +1468,8 @@
             opts.store = canonical_path(opts.store)
             run_fetch(opts)
 
-   // `edva pkg build`: resolve the root's graph, then compile src/main.dva
-   // to binary <name> in the package root.
+   // `edva pkg build`: resolve the root's graph, then compile configured targets
+   // in edva.ccl (or fall back to src/main.dva -> <name> when `targets` is omitted).
    cmd_build: PkgOpts => Int
    cmd_build = opts =>
       root = find_root(opts.root)
@@ -1484,23 +1484,55 @@
             fetch_rc != 0
                | fetch_rc
                |
-                  main_src = path_join(path_join(opts.root, "src"), "main.dva")
-                  !file_exists(main_src)
-                     |
-                        out("no executable target src/main.dva (library package)")
-                        0
-                     |
-                        m_res = load_manifest(opts.root)
-                        m_res
-                           | m =>
-                              out_bin = path_join(opts.root, m.name)
+                  m_res = load_manifest(opts.root)
+                  m_res
+                     | m =>
+                        ?m.targets > 0
+                           |
                               compiler = sys::argv_string(0)
-                              cmd' = sq(compiler) + " " + sq(main_src) + " -o " + sq(out_bin)
-                              opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
-                              opts.no_cache | cmd' = cmd' + " --no-cache"
-                              rc = sh(cmd')
-                              rc == 0 | 0 | 1
-                           | 1
+                              rc' = 0
+                              m.targets @ t =>
+                                 rc' == 0 |
+                                    src_rel = t.src != "" | t.src | "src/main.dva"
+                                    out_rel = t.out != "" | t.out | t.name
+                                    src_path = path_join(opts.root, src_rel)
+                                    out_path = path_join(opts.root, out_rel)
+                                    !file_exists(src_path)
+                                       |
+                                          fail(7019, "target '" + t.name + "': source file '" + src_rel + "' not found")
+                                          rc' = 1
+                                       |
+                                          out_dir = dirname(out_path)
+                                          out_dir != "" | mkdir_p(out_dir)
+                                          cmd' = sq(compiler) + " " + sq(src_path) + " -o " + sq(out_path)
+                                          t.target != "" | cmd' = cmd' + " -target " + sq(t.target)
+                                          t.opt != "" |
+                                             opt_flag = t.opt(0) == '-' | t.opt | "-" + t.opt
+                                             cmd' = cmd' + " " + sq(opt_flag)
+                                          t.cflags @ cf =>
+                                             cmd' = cmd' + " -cflag " + sq(cf)
+                                          opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
+                                          opts.no_cache | cmd' = cmd' + " --no-cache"
+                                          step_rc = sh(cmd')
+                                          libc::unlink(out_path + ".ll")
+                                          step_rc != 0 | rc' = 1
+                              rc'
+                           |
+                              main_src = path_join(path_join(opts.root, "src"), "main.dva")
+                              !file_exists(main_src)
+                                 |
+                                    out("no executable target src/main.dva (library package)")
+                                    0
+                                 |
+                                    out_bin = path_join(opts.root, m.name)
+                                    compiler = sys::argv_string(0)
+                                    cmd' = sq(compiler) + " " + sq(main_src) + " -o " + sq(out_bin)
+                                    opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
+                                    opts.no_cache | cmd' = cmd' + " --no-cache"
+                                    rc = sh(cmd')
+                                    libc::unlink(out_bin + ".ll")
+                                    rc == 0 | 0 | 1
+                     | 1
 
    list_test_files: String => Strings
    list_test_files = dir =>
