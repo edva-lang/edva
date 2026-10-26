@@ -27,6 +27,12 @@
 
 #public
 
+cur_target_triple = ""
+
+set_target_triple: String => ()
+set_target_triple = t =>
+   cur_target_triple ::= t
+
 // --- parser state ----------------------------------------------------------
 
 // user_types maps a declared type name to its TypeInfo (a growable array —
@@ -2639,8 +2645,11 @@ rfields_packed = p, fields =>
                0
          ft = parse_type(p)
          !ft.2 | mk_tp(ft.0, ft.1, <->) |
-            rf = ast::RecordFieldType((fname', ft.0, ft.1, <->,
-               ast::Expr(Int, 0)))
+            is_int_ft = ft.0 [Int, I8, I16, I32, I64, U8, U16, U32, U64]
+            def_e = is_int_ft
+               | ast::Expr(TypeCast, ast::CastExpr((ft.0, ast::Expr(Int, 0))))
+               | ast::Expr(Int, 0)
+            rf = ast::RecordFieldType((fname', ft.0, ft.1, is_int_ft, def_e))
             fields += rf
             skip_type_layout(p)
             p.curr.kind
@@ -2758,6 +2767,103 @@ parse_bitfield_fields = p, fields, cur_off, expected_bits, bvt =>
             ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 
+eval_ct_type_str: ast::Expr => String
+eval_ct_type_str = e =>
+   e
+      [Str s] s
+      [Var v]
+         v
+            ["os"] ast::triple_os(cur_target_triple)
+            ["arch"] ast::triple_arch(cur_target_triple)
+            ["target"] cur_target_triple
+            | ""
+      | ""
+
+eval_ct_type_bool: ast::Expr => <>
+eval_ct_type_bool = e =>
+   e
+      [Bin b]
+         b.0
+            [Eq] eval_ct_type_str(b.1) == eval_ct_type_str(b.2)
+            [NotEq] eval_ct_type_str(b.1) != eval_ct_type_str(b.2)
+            [And] eval_ct_type_bool(b.1) && eval_ct_type_bool(b.2)
+            [Or] eval_ct_type_bool(b.1) || eval_ct_type_bool(b.2)
+            | <->
+      [Unary u]
+         u.0
+            [Not] !eval_ct_type_bool(u.1)
+            | <->
+      | <->
+
+validate_ct_type_branch: Parser, ast::Expr => ()
+validate_ct_type_branch = p, e =>
+   e
+      [Var tname]
+         lt = lookup_type(p.user_types, tname)
+         !<>(lt) && !<>(parse_dva_type_name(tname))
+            | parser_error(p, 2064, "Undeclared type '" + tname + "' in #! type expression")
+      [Choice ch]
+         ch.branches @ br => validate_ct_type_branch(p, br.block)
+
+eval_ct_case_match: String, ast::Exprs => <>
+eval_ct_case_match = cond_s, cases =>
+   matched' = <->
+   cases @ cv =>
+      eval_ct_type_str(cv) == cond_s | (matched' = <+>; -->)
+   matched'
+
+eval_ct_type_expr: Parser, ast::Expr => (ast::ValueType, ast::TypeInfo, <>)
+eval_ct_type_expr = p, e =>
+   e
+      [Var tname]
+         lt = lookup_type(p.user_types, tname)
+         lt
+            | ti => mk_tp(type_info_value_type(ti), ti, <+>)
+            |
+               pr = parse_dva_type_name(tname)
+               pr
+                  | vt => mk_tp(vt, ast::TypeInfo(Prim, vt), <+>)
+                  |
+                     mk_tp(ast::ValueType(Unknown),
+                        ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      [Choice ch]
+         ch.branches @ br => validate_ct_type_branch(p, br.block)
+         cond_s = eval_ct_type_str(ch.cond)
+         cond_b = eval_ct_type_bool(ch.cond)
+         nbr = ?ch.branches
+         picked' = ast::Expr(Int, 0)
+         found' = <->
+         nbr @ bi =>
+            br = ch.branches(bi)!!
+            !found'
+               |
+                  is_match = br.kind
+                     [Case] eval_ct_case_match(cond_s, br.case_values)
+                     [Bare] (bi == nbr - 1) || cond_b
+                     | <->
+                  is_match
+                     |
+                        picked' = br.block
+                        found' = <+>
+         found'
+            | eval_ct_type_expr(p, picked')
+            |
+               mk_tp(ast::ValueType(Unknown),
+                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      |
+         mk_tp(ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
+parse_ct_type_expr: Parser => (ast::ValueType, ast::TypeInfo, <>)
+parse_ct_type_expr = p =>
+   parser_advance(p)
+   ch_opt = parse_choice(p)
+   ch_opt
+      | ch_e => eval_ct_type_expr(p, ch_e)
+      |
+         mk_tp(ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
 // The type atom: a primitive name, a user-declared type, a forward reference,
 // a parenthesized record/slice type, or a ramification '<>' / '<...>'.
 parse_type_atom: Parser => (ast::ValueType, ast::TypeInfo, <>)
@@ -2768,6 +2874,7 @@ parse_type_atom = p =>
       ["<"] parse_ram_type(p)
       |
          p.curr.kind
+            [CT] parse_ct_type_expr(p)
             [PackedKw] parse_packed_type(p)
             [LParen]
                decl_is_array(p)

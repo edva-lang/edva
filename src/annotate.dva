@@ -33,6 +33,7 @@ cur_stmt_files = ast::Names()
 cur_stmt_lines = ast::Ints()
 cur_stmt_cols = ast::Ints()
 cur_is_call_arg = <->
+in_ct_expr = <->
 cur_expected_ut: <unify::UType|>
 cur_expected_ut = <-->
 
@@ -1374,32 +1375,42 @@ annotate_expr = ctx, env, expr =>
                                                       "default", 0, <->,
                                                       d_ut, d_ti, d_lay, 0, 0)
                                                 |
-                                                   is_intrinsic_name(name)
+                                                   in_ct_expr && (name ["os", "arch", "target"])
                                                       |
-                                                         unify::add_error(ctx,
-                                                            3100,
-                                                            "Intrinsic '" +
-                                                            name + "' must " +
-                                                            "be called with " +
-                                                            "arguments.")
+                                                         ct_s_ut = unify::prim_str()
+                                                         ct_s_ti = ast::TypeInfo(Prim,
+                                                            ast::ValueType(Str))
+                                                         ct_s_lay = layout::compute_layout(
+                                                            ctx, ct_s_ut)
+                                                         tast::mk_typed_var(name, 0, <->,
+                                                            ct_s_ut, ct_s_ti, ct_s_lay, 0, 0)
                                                       |
-                                                         unify::add_error(ctx,
-                                                            3004,
-                                                            "Undefined: " +
-                                                            name + " in " +
-                                                            env.current_module)
-                                                   err_ut =
-                                                      unify::fresh_var(ctx)
-                                                   err_ti = ast::TypeInfo(
-                                                      Prim,
-                                                      ast::ValueType(Unknown))
-                                                   err_lay =
-                                                      tast::layout_scalar(
-                                                         8, 8)
-                                                   tast::mk_typed_var(name,
-                                                      0, <->, err_ut,
-                                                      err_ti, err_lay,
-                                                      0, 0)
+                                                         is_intrinsic_name(name)
+                                                            |
+                                                               unify::add_error(ctx,
+                                                                  3100,
+                                                                  "Intrinsic '" +
+                                                                  name + "' must " +
+                                                                  "be called with " +
+                                                                  "arguments.")
+                                                            |
+                                                               unify::add_error(ctx,
+                                                                  3004,
+                                                                  "Undefined: " +
+                                                                  name + " in " +
+                                                                  env.current_module)
+                                                         err_ut =
+                                                            unify::fresh_var(ctx)
+                                                         err_ti = ast::TypeInfo(
+                                                            Prim,
+                                                            ast::ValueType(Unknown))
+                                                         err_lay =
+                                                            tast::layout_scalar(
+                                                               8, 8)
+                                                         tast::mk_typed_var(name,
+                                                            0, <->, err_ut,
+                                                            err_ti, err_lay,
+                                                            0, 0)
       [Bin b]
          b.0
             [Bind]
@@ -2117,7 +2128,10 @@ annotate_expr = ctx, env, expr =>
          tast::mk_typed_expr(tast::TypedExprKind(Join, je),
             ret_ut', ti, lay, 0, 0)
       [CompileTime ct]
+         saved_in_ct = in_ct_expr
+         in_ct_expr ::= <+>
          inner_te = annotate_expr(ctx, env, ct.expr)
+         in_ct_expr ::= saved_in_ct
          c_ut = unify::canon(ctx, inner_te.ut)
          is_flag = c_ut [Prim p] (p [Flag]) | <->
          res_ut = is_flag | unify::prim_int() | inner_te.ut

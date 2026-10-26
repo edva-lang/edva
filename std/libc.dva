@@ -81,18 +81,9 @@
     setrlimit : (resource: Int, rlim: Addr) => Int
     uname     : (buf: Addr) => Int
 
-#private
-    ::os_darwin_cache = 0
-
 #public
     is_darwin: () => <>
-    is_darwin = !=>
-       os_darwin_cache == 0
-          |
-             buf = {2048}
-             uname(&buf)
-             os_darwin_cache ::= (@[&buf i8] == 68i8 | 1 | 2)
-       os_darwin_cache == 1
+    is_darwin = !=> (#! os) == "darwin"
 
     fcntl: Int, Int, Int => Int
     fcntl = fd, cmd, arg =>

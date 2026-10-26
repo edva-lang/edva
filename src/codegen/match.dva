@@ -916,7 +916,18 @@ ctfe_eval_var = cg, name, frames =>
                               [Rec] (val', ast::ValueType(Record))
                               [Map] (val', ast::ValueType(Map))
                               | (val', ast::ValueType(Unknown))
-                        | (types::CtVal(None), ast::ValueType(Unknown))
+                        |
+                           name
+                              ["os"]
+                                 (types::CtVal(Str, ast::triple_os(cg.opts.target_triple)),
+                                    ast::ValueType(Str))
+                              ["arch"]
+                                 (types::CtVal(Str, ast::triple_arch(cg.opts.target_triple)),
+                                    ast::ValueType(Str))
+                              ["target"]
+                                 (types::CtVal(Str, cg.opts.target_triple),
+                                    ast::ValueType(Str))
+                              | (types::CtVal(None), ast::ValueType(Unknown))
 
 ctfe_eval_unary: types::Cg, ast::UnaryOp, ast::Expr, types::CtFrames,
    Int => (types::CtVal, ast::ValueType)

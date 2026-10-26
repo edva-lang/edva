@@ -269,3 +269,52 @@ is_cell_var = name =>
 cell_var_reset: () => ()
 cell_var_reset = !=>
    cell_var_names ::= Names()
+
+str_has_sub_at: String, String, Int, Int, Int => <>
+str_has_sub_at = s, sub, i, n, m =>
+   i + m > n
+      | <->
+      | s(i..i + m) == sub | <+> | str_has_sub_at(s, sub, i + 1, n, m)
+
+str_has_sub: String, String => <>
+str_has_sub = s, sub =>
+   m = ?sub
+   m == 0 | <+> | str_has_sub_at(s, sub, 0, ?s, m)
+
+triple_os: String => String
+triple_os = triple =>
+   str_has_sub(triple, "darwin") || str_has_sub(triple, "macosx") || str_has_sub(triple, "apple")
+      | "darwin"
+      | str_has_sub(triple, "linux")
+         | "linux"
+         | str_has_sub(triple, "windows") || str_has_sub(triple, "msvc") || str_has_sub(triple, "mingw")
+            | "windows"
+            | str_has_sub(triple, "freebsd")
+               | "freebsd"
+               | str_has_sub(triple, "openbsd")
+                  | "openbsd"
+                  | str_has_sub(triple, "netbsd")
+                     | "netbsd"
+                     | str_has_sub(triple, "wasi")
+                        | "wasi"
+                        | str_has_sub(triple, "wasm")
+                           | "wasm"
+                           | "unknown"
+
+triple_first_seg_at: String, Int, Int => String
+triple_first_seg_at = s, i, n =>
+   i == n
+      | s
+      | s(i) == 45
+         | s(..i)
+         | triple_first_seg_at(s, i + 1, n)
+
+triple_arch: String => String
+triple_arch = triple =>
+   seg = triple_first_seg_at(triple, 0, ?triple)
+   seg
+      ["arm64", "aarch64"] "aarch64"
+      ["x86_64", "amd64"] "x86_64"
+      ["i386", "i486", "i586", "i686"] "x86"
+      [""] "unknown"
+      | seg

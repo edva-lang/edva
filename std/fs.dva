@@ -19,7 +19,7 @@
 #public
 
 // Linux x86_64 struct stat layout (144 bytes)
-#type StatRaw #packed (
+#type StatRawLinux #packed (
    st_dev:     u64,
    st_ino:     u64,
    st_nlink:   u64,
@@ -41,14 +41,6 @@
    resv2:      i64,
    resv3:      i64
 )
-
-empty_stat: () => StatRaw
-empty_stat = !=>
-   StatRaw((
-      0u64, 0u64, 0u64, 0u32, 0u32, 0u32, 0u32, 0u64,
-      0i64, 0i64, 0i64, 0i64, 0i64, 0i64, 0i64, 0i64, 0i64,
-      0i64, 0i64, 0i64
-   ))
 
 // Darwin (macOS arm64 / 64-bit inode) struct stat layout (144 bytes)
 #type StatRawDarwin #packed (
@@ -78,8 +70,13 @@ empty_stat = !=>
    st_qspare1:     i64
 )
 
+#type StatRaw #! (os ["darwin"] StatRawDarwin | StatRawLinux)
+
+empty_stat: () => StatRaw
+empty_stat = !=> StatRaw(..default)
+
 // Linux x86_64 struct dirent prefix (19 bytes up to d_name)
-#type DirentPrefix #packed (
+#type DirentPrefixLinux #packed (
    d_ino:    u64,
    d_off:    u64,
    d_reclen: u16,
@@ -95,8 +92,10 @@ empty_stat = !=>
    d_type:    u8
 )
 
+#type DirentPrefix #! (os ["darwin"] DirentPrefixDarwin | DirentPrefixLinux)
+
 // Linux x86_64 struct statvfs layout (112 bytes)
-#type Statvfs #packed (
+#type StatvfsLinux #packed (
    f_bsize:   u64,
    f_frsize:  u64,
    f_blocks:  u64,
@@ -131,13 +130,10 @@ empty_stat = !=>
    f_namemax: u64
 )
 
+#type Statvfs #! (os ["darwin"] StatvfsDarwin | StatvfsLinux)
+
 empty_statvfs: () => Statvfs
-empty_statvfs = !=>
-   Statvfs((
-      0u64, 0u64, 0u64, 0u64, 0u64,
-      0u64, 0u64, 0u64, 0u64, 0u64, 0u64,
-      0i32, 0i32, 0i32, 0i32, 0i32, 0i32
-   ))
+empty_statvfs = !=> Statvfs(..default)
 
 // POSIX file mode bitfield layout (16 bits)
 #type FileMode #packed u16 (
@@ -304,49 +300,19 @@ get_ext = name =>
 // --- Metadata & Queries ---
 
 stat_mode: StatRaw => Int
-stat_mode = s =>
-   s' = s
-   libc::is_darwin!
-      |
-         sd = StatRawDarwin(&s')
-         Int(sd.st_mode)
-      | Int(s.st_mode)
+stat_mode = s => Int(s.st_mode)
 
 stat_size: StatRaw => Int
-stat_size = s =>
-   s' = s
-   libc::is_darwin!
-      |
-         sd = StatRawDarwin(&s')
-         Int(sd.st_size)
-      | Int(s.st_size)
+stat_size = s => Int(s.st_size)
 
 stat_mtime_sec: StatRaw => Int
-stat_mtime_sec = s =>
-   s' = s
-   libc::is_darwin!
-      |
-         sd = StatRawDarwin(&s')
-         Int(sd.mtime_sec)
-      | Int(s.mtime_sec)
+stat_mtime_sec = s => Int(s.mtime_sec)
 
 stat_mtime_nsec: StatRaw => Int
-stat_mtime_nsec = s =>
-   s' = s
-   libc::is_darwin!
-      |
-         sd = StatRawDarwin(&s')
-         Int(sd.mtime_nsec)
-      | Int(s.mtime_nsec)
+stat_mtime_nsec = s => Int(s.mtime_nsec)
 
 stat_atime_sec: StatRaw => Int
-stat_atime_sec = s =>
-   s' = s
-   libc::is_darwin!
-      |
-         sd = StatRawDarwin(&s')
-         Int(sd.atime_sec)
-      | Int(s.atime_sec)
+stat_atime_sec = s => Int(s.atime_sec)
 
 make_metadata: StatRaw, <> => Metadata
 make_metadata = s, is_link =>
@@ -449,21 +415,13 @@ read_dir = dir_path =>
    res = (DirEntry){}
    dp = libc::opendir(dir_path)
    dp == sys::addr_null | --| res
-   is_mac = libc::is_darwin!
    0.. @
       ent = libc::readdir(dp)
       ent == sys::addr_null | -->
-      name = is_mac
-         | sys::c_str(ent + #size(DirentPrefixDarwin))
-         | sys::c_str(ent + #size(DirentPrefix))
+      name = sys::c_str(ent + #size(DirentPrefix))
       name == "." || name == ".." | --^
-      dt = is_mac
-         |
-            dp_mac = DirentPrefixDarwin(ent)
-            Int(dp_mac.d_type)
-         |
-            dp_ent = DirentPrefix(ent)
-            Int(dp_ent.d_type)
+      dp_ent = DirentPrefix(ent)
+      dt = Int(dp_ent.d_type)
       is_d = dt == 4
       is_f = dt == 8
       is_l = dt == 10
@@ -482,7 +440,7 @@ read_dir = dir_path =>
 // --- File CRUD & Operations ---
 
 open_wronly_creat_trunc: () => Int
-open_wronly_creat_trunc = !=> libc::is_darwin! | 1537 | 577
+open_wronly_creat_trunc = !=> #! (os ["darwin"] 1537 | 577)
 
 read_to_string: String => <String | >
 read_to_string = path =>
@@ -618,11 +576,9 @@ space = path =>
    frsize = Int(st'.f_frsize)
    eff_frsize' = frsize == 0 | Int(st'.f_bsize) | frsize
    eff_frsize' = eff_frsize' == 0 | 4096 | eff_frsize'
-   is_mac = libc::is_darwin!
-   st_mac = StatvfsDarwin(&st')
-   blocks = is_mac | Int(st_mac.f_blocks) | Int(st'.f_blocks)
-   bfree = is_mac | Int(st_mac.f_bfree) | Int(st'.f_bfree)
-   bavail = is_mac | Int(st_mac.f_bavail) | Int(st'.f_bavail)
+   blocks = Int(st'.f_blocks)
+   bfree = Int(st'.f_bfree)
+   bavail = Int(st'.f_bavail)
    total = blocks * eff_frsize'
    free = bfree * eff_frsize'
    avail = bavail * eff_frsize'

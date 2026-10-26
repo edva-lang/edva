@@ -3119,6 +3119,10 @@ run_driver = ignored =>
       |
          print_usage(0)
          sys::exit(0)
+   eff_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
+   opts.triple = eff_triple
+   parser::set_target_triple(eff_triple)
+   annotate::set_target_triple(eff_triple)
 
    opts.repl_mode
       |
