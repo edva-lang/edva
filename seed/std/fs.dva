@@ -50,12 +50,49 @@ empty_stat = !=>
       0i64, 0i64, 0i64
    ))
 
+// Darwin (macOS arm64 / 64-bit inode) struct stat layout (144 bytes)
+#type StatRawDarwin #packed (
+   st_dev:         i32,
+   st_mode:        u16,
+   st_nlink:       u16,
+   st_ino:         u64,
+   st_uid:         u32,
+   st_gid:         u32,
+   st_rdev:        i32,
+   pad0:           i32,
+   atime_sec:      i64,
+   atime_nsec:     i64,
+   mtime_sec:      i64,
+   mtime_nsec:     i64,
+   ctime_sec:      i64,
+   ctime_nsec:     i64,
+   birthtime_sec:  i64,
+   birthtime_nsec: i64,
+   st_size:        i64,
+   st_blocks:      i64,
+   st_blksize:     i32,
+   st_flags:       u32,
+   st_gen:         u32,
+   st_lspare:      i32,
+   st_qspare0:     i64,
+   st_qspare1:     i64
+)
+
 // Linux x86_64 struct dirent prefix (19 bytes up to d_name)
 #type DirentPrefix #packed (
    d_ino:    u64,
    d_off:    u64,
    d_reclen: u16,
    d_type:   u8
+)
+
+// Darwin (macOS 64-bit inode) struct dirent prefix (21 bytes up to d_name)
+#type DirentPrefixDarwin #packed (
+   d_ino:     u64,
+   d_seekoff: u64,
+   d_reclen:  u16,
+   d_namlen:  u16,
+   d_type:    u8
 )
 
 // Linux x86_64 struct statvfs layout (112 bytes)
@@ -79,6 +116,21 @@ empty_stat = !=>
    f_spare5:  i32
 )
 
+// Darwin struct statvfs layout (64 bytes)
+#type StatvfsDarwin #packed (
+   f_bsize:   u64,
+   f_frsize:  u64,
+   f_blocks:  u32,
+   f_bfree:   u32,
+   f_bavail:  u32,
+   f_files:   u32,
+   f_ffree:   u32,
+   f_favail:  u32,
+   f_fsid:    u64,
+   f_flag:    u64,
+   f_namemax: u64
+)
+
 empty_statvfs: () => Statvfs
 empty_statvfs = !=>
    Statvfs((
@@ -96,10 +148,6 @@ empty_statvfs = !=>
    fmt:     4
 )
 
-#type ModeWrap #packed (
-   mode: FileMode
-)
-
 #type PermsBits #packed u16 (
    other_x: 1,
    other_w: 1,
@@ -114,10 +162,6 @@ empty_statvfs = !=>
    setgid:  1,
    setuid:  1,
    fmt:     4
-)
-
-#type PermsWrap #packed (
-   bits: PermsBits
 )
 
 #type Metadata (
@@ -262,40 +306,58 @@ get_ext = name =>
 stat_mode: StatRaw => Int
 stat_mode = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 4) u16]) | Int(s.st_mode)
+   libc::is_darwin!
+      |
+         sd = StatRawDarwin(&s')
+         Int(sd.st_mode)
+      | Int(s.st_mode)
 
 stat_size: StatRaw => Int
 stat_size = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 96) i64]) | Int(s.st_size)
+   libc::is_darwin!
+      |
+         sd = StatRawDarwin(&s')
+         Int(sd.st_size)
+      | Int(s.st_size)
 
 stat_mtime_sec: StatRaw => Int
 stat_mtime_sec = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 48) i64]) | Int(s.mtime_sec)
+   libc::is_darwin!
+      |
+         sd = StatRawDarwin(&s')
+         Int(sd.mtime_sec)
+      | Int(s.mtime_sec)
 
 stat_mtime_nsec: StatRaw => Int
 stat_mtime_nsec = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 56) i64]) | Int(s.mtime_nsec)
+   libc::is_darwin!
+      |
+         sd = StatRawDarwin(&s')
+         Int(sd.mtime_nsec)
+      | Int(s.mtime_nsec)
 
 stat_atime_sec: StatRaw => Int
 stat_atime_sec = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 32) i64]) | Int(s.atime_sec)
+   libc::is_darwin!
+      |
+         sd = StatRawDarwin(&s')
+         Int(sd.atime_sec)
+      | Int(s.atime_sec)
 
 make_metadata: StatRaw, <> => Metadata
 make_metadata = s, is_link =>
    m = stat_mode(s)
-   buf = {2}
-   @[&buf] = u16(m)
-   _fs_mode_wrap = @[&buf ModeWrap]
-   fmt = Int(_fs_mode_wrap.mode.fmt)
+   fm = FileMode(m)
+   fmt = fm.fmt
    is_d = fmt == 4
    is_reg = fmt == 8
    is_l = is_link || fmt == 10
-   _fs_perms_wrap = @[&buf PermsWrap]
-   is_x = (_fs_perms_wrap.bits.user_x != 0 || _fs_perms_wrap.bits.group_x != 0 || _fs_perms_wrap.bits.other_x != 0) && !is_d
+   pb = PermsBits(m)
+   is_x = (pb.user_x != 0 || pb.group_x != 0 || pb.other_x != 0) && !is_d
    Metadata((
       stat_size(s),
       m,
@@ -321,10 +383,8 @@ lstat_meta = path =>
    rc = lstat(path, &s')
    rc != 0 |-->
    m = stat_mode(s')
-   buf = {2}
-   @[&buf] = u16(m)
-   _fs_mode_wrap = @[&buf ModeWrap]
-   is_link = Int(_fs_mode_wrap.mode.fmt) == 10
+   fm = FileMode(m)
+   is_link = fm.fmt == 10
    <+ make_metadata(s', is_link) +>
 
 exists: String => <>
@@ -394,13 +454,15 @@ read_dir = dir_path =>
       ent = libc::readdir(dp)
       ent == sys::addr_null | -->
       name = is_mac
-         | sys::c_str(ent + 21)
+         | sys::c_str(ent + #size(DirentPrefixDarwin))
          | sys::c_str(ent + #size(DirentPrefix))
       name == "." || name == ".." | --^
       dt = is_mac
-         | Int(@[(ent + 20) u8])
          |
-            dp_ent = @[ent DirentPrefix]
+            dp_mac = DirentPrefixDarwin(ent)
+            Int(dp_mac.d_type)
+         |
+            dp_ent = DirentPrefix(ent)
             Int(dp_ent.d_type)
       is_d = dt == 4
       is_f = dt == 8
@@ -434,14 +496,14 @@ read_to_string = path =>
          buf = {sz}
          n = libc::read(fd, &buf, sz)
          libc::close(fd)
-         n < 0
-            | <-->
+         n
+            [< 0]
+               <-->
+            [0]
+               <+ "" +>
             |
-               n == 0
-                  | <+ "" +>
-                  |
-                     ?buf = n
-                     <+ +buf +>
+               ?buf = n
+               <+ +buf +>
       |
          b' = ++""
          chunk = {4096}
@@ -557,9 +619,10 @@ space = path =>
    eff_frsize' = frsize == 0 | Int(st'.f_bsize) | frsize
    eff_frsize' = eff_frsize' == 0 | 4096 | eff_frsize'
    is_mac = libc::is_darwin!
-   blocks = is_mac | Int(@[(&st' + 16) u32]) | Int(st'.f_blocks)
-   bfree = is_mac | Int(@[(&st' + 20) u32]) | Int(st'.f_bfree)
-   bavail = is_mac | Int(@[(&st' + 24) u32]) | Int(st'.f_bavail)
+   st_mac = StatvfsDarwin(&st')
+   blocks = is_mac | Int(st_mac.f_blocks) | Int(st'.f_blocks)
+   bfree = is_mac | Int(st_mac.f_bfree) | Int(st'.f_bfree)
+   bavail = is_mac | Int(st_mac.f_bavail) | Int(st'.f_bavail)
    total = blocks * eff_frsize'
    free = bfree * eff_frsize'
    avail = bavail * eff_frsize'
@@ -594,20 +657,18 @@ format_size = sz, is_d =>
 
 format_perms: Int, <> => String
 format_perms = mode, is_d =>
-   buf = {2}
-   @[&buf] = u16(mode)
-   _fs_perms_wrap = @[&buf PermsWrap]
+   pb = PermsBits(mode)
    b = {16}
    b += is_d | 'd' | '-'
-   b += _fs_perms_wrap.bits.user_r != 0 | 'r' | '-'
-   b += _fs_perms_wrap.bits.user_w != 0 | 'w' | '-'
-   b += _fs_perms_wrap.bits.user_x != 0 | 'x' | '-'
-   b += _fs_perms_wrap.bits.group_r != 0 | 'r' | '-'
-   b += _fs_perms_wrap.bits.group_w != 0 | 'w' | '-'
-   b += _fs_perms_wrap.bits.group_x != 0 | 'x' | '-'
-   b += _fs_perms_wrap.bits.other_r != 0 | 'r' | '-'
-   b += _fs_perms_wrap.bits.other_w != 0 | 'w' | '-'
-   b += _fs_perms_wrap.bits.other_x != 0 | 'x' | '-'
+   b += pb.user_r != 0 | 'r' | '-'
+   b += pb.user_w != 0 | 'w' | '-'
+   b += pb.user_x != 0 | 'x' | '-'
+   b += pb.group_r != 0 | 'r' | '-'
+   b += pb.group_w != 0 | 'w' | '-'
+   b += pb.group_x != 0 | 'x' | '-'
+   b += pb.other_r != 0 | 'r' | '-'
+   b += pb.other_w != 0 | 'w' | '-'
+   b += pb.other_x != 0 | 'x' | '-'
    +b
 
 format_time: Int => String
@@ -641,13 +702,11 @@ format_number = n =>
 
 octal_perms: Int => String
 octal_perms = mode =>
-   buf = {2}
-   @[&buf] = u16(mode)
-   _fs_mode_wrap = @[&buf ModeWrap]
-   s = Int(_fs_mode_wrap.mode.special)
-   u = Int(_fs_mode_wrap.mode.user)
-   g = Int(_fs_mode_wrap.mode.group)
-   o = Int(_fs_mode_wrap.mode.other)
+   fm = FileMode(mode)
+   s = fm.special
+   u = fm.user
+   g = fm.group
+   o = fm.other
    s > 0 | "${s}${u}${g}${o}" | "0${u}${g}${o}"
 
 octal_perms_str: String => String

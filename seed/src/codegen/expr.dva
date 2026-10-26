@@ -484,6 +484,100 @@ fn_has_arena_alloc = cg, name, depth =>
             [Var] <->
             | expr_has_arena_alloc_d(cg, body, depth)
 
+// Does calling `name` (or what it calls, a few levels deep) write state that
+// outlives the call: an outer-scope variable that is not one of its own params,
+// via '::=', '+=' or an in-place member/index/key write? Whatever the callee
+// allocates and stores there must survive the caller's restore scope.
+fn_writes_outer: types::Cg, String, Int, Int => <>
+fn_writes_outer = cg, name, threshold, depth =>
+   depth > 3
+      | <->
+      |
+         rf = types::resolve_fn_name(cg, name)
+         target = rf != "" | rf | name
+         fd = fn_def_of_rev(cg, target, ?cg.fns - 1)
+         fd.name != "" && expr_writes_outer_d(cg, fd.body, fd.params, threshold, depth)
+
+fn_def_of_rev: types::Cg, String, Int => FnDef
+fn_def_of_rev = cg, name, i =>
+   i < 0
+      | FnDef(("", ast::Names(), ast::Expr(Var, "")))
+      |
+         fd = cg.fns(i)!!
+         fd.name == name
+            | fd
+            | fn_def_of_rev(cg, name, i - 1)
+
+ast_root_var: ast::Expr => String
+ast_root_var = e =>
+   e
+      [Var v] v
+      [Member m] ast_root_var(m.target)
+      [KeyAccess k] ast_root_var(k.target)
+      [Unary u] ast_root_var(u.1)
+      [Call c]
+         c.fn_target
+            [Var v] (v != "" | v | stmt::dotted_root(c.fn_name))
+            | ast_root_var(c.fn_target)
+      | ""
+
+vt_is_plain_scalar: ast::ValueType => <>
+vt_is_plain_scalar = vt =>
+   vt [Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Flag, Unit]
+
+expr_writes_outer_d: types::Cg, ast::Expr, ast::Names, Int, Int => <>
+expr_writes_outer_d = cg, e, params, threshold, depth =>
+   e
+      [Assign t]
+         target = t.0 != "" | stmt::name_before_dot(t.0) | ast_root_var(t.6)
+         in_place = t.6 [Member, Call, KeyAccess]
+         scalar_global = t.3 && !t.2 && !in_place &&
+            vt_is_plain_scalar(types::var_type(cg, target))
+         shared = (t.3 || t.2 || in_place) && !scalar_global &&
+            !types::has_str(params, target) && stmt::tast_is_outer_var(cg, target, threshold)
+         shared || expr_writes_outer_d(cg, t.5, params, threshold, depth)
+      [Call c]
+         fn_writes_outer(cg, c.fn_name, threshold, depth + 1) ||
+            exprs_write_outer_d(cg, c.args, 0, params, threshold, depth)
+      [Choice c]
+         expr_writes_outer_d(cg, c.cond, params, threshold, depth) ||
+            branches_write_outer_d(cg, c.branches, 0, params, threshold, depth)
+      [Block b] exprs_write_outer_d(cg, b.exprs, 0, params, threshold, depth)
+      [Cycle c]
+         expr_writes_outer_d(cg, c.iterable, params, threshold, depth) ||
+            expr_writes_outer_d(cg, c.body_fn, params, threshold, depth)
+      [CycleEscape c]
+         expr_writes_outer_d(cg, c.cycle, params, threshold, depth) ||
+            expr_writes_outer_d(cg, c.branch, params, threshold, depth)
+      [Fn f] expr_writes_outer_d(cg, f.body, params, threshold, depth)
+      [Bin t]
+         expr_writes_outer_d(cg, t.1, params, threshold, depth) ||
+            expr_writes_outer_d(cg, t.2, params, threshold, depth)
+      [Unary t] expr_writes_outer_d(cg, t.1, params, threshold, depth)
+      [TypeCast c] expr_writes_outer_d(cg, c.expr, params, threshold, depth)
+      [Member m]
+         expr_writes_outer_d(cg, m.target, params, threshold, depth) ||
+            expr_writes_outer_d(cg, m.index_expr, params, threshold, depth)
+      | <->
+
+exprs_write_outer_d: types::Cg, ast::Exprs, Int, ast::Names, Int, Int => <>
+exprs_write_outer_d = cg, es, at, params, threshold, depth =>
+   at == ?es
+      | <->
+      | expr_writes_outer_d(cg, es(at)!!, params, threshold, depth) ||
+         exprs_write_outer_d(cg, es, at + 1, params, threshold, depth)
+
+branches_write_outer_d: types::Cg, ast::Branches, Int, ast::Names, Int, Int => <>
+branches_write_outer_d = cg, bs, at, params, threshold, depth =>
+   at == ?bs
+      | <->
+      |
+         br = bs(at)!!
+         exprs_write_outer_d(cg, br.case_values, 0, params, threshold, depth) ||
+            expr_writes_outer_d(cg, br.pred_fn, params, threshold, depth) ||
+            expr_writes_outer_d(cg, br.block, params, threshold, depth) ||
+            branches_write_outer_d(cg, bs, at + 1, params, threshold, depth)
+
 // Static approximation of the native arena-allocation walk. It decides
 // whether a Block needs a save/restore pair before lowering mutates LLVM;
 // the result is deliberately structural, never a runtime type descriptor.
@@ -6041,20 +6135,28 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                         |
                            arg0' = args(0) | _ | tast::mk_lit_unit(0, 0)
                            aev = main::codegen_typed_eval(cg, arg0')
-                           rm = runtime::record_meta_from_ti(cg, td_ti)
-                           rm
-                              | m =>
-                                 cg.last_rt = <+ m.0 +>
-                                 cg.last_fnames = m.1
-                                 cg.last_fvts = types::field_vts(cg, td_ti)
+                           bf_opt = types::ti_get_bitfield(cg, td_ti)
+                           bf_opt
+                              | bfi =>
+                                 bty = types::llvm_type_of_vt(bfi.backing_type)
+                                 v_cast = stmt::coerce_int_ext(cg, aev.0, bty, <+>)
                                  cg.last_type = fname
-                                 (aev.0, ast::ValueType(Record))
+                                 (v_cast, bfi.backing_type)
                               |
-                                 td_ti
-                                    [Ram]
-                                       match::codegen_typed_coerce_ram(cg, aev,
-                                          arg0'.ti, td_ti)
-                                    | aev
+                                 rm = runtime::record_meta_from_ti(cg, td_ti)
+                                 rm
+                                    | m =>
+                                       cg.last_rt = <+ m.0 +>
+                                       cg.last_fnames = m.1
+                                       cg.last_fvts = types::field_vts(cg, td_ti)
+                                       cg.last_type = fname
+                                       (aev.0, ast::ValueType(Record))
+                                    |
+                                       td_ti
+                                          [Ram]
+                                             match::codegen_typed_coerce_ram(cg, aev,
+                                                arg0'.ti, td_ti)
+                                          | aev
                         |
                            td_ti
                               [Array ae]

@@ -3367,8 +3367,11 @@ annotate_call = ctx, env, ce =>
                                     |
                                        arg0 = typed_args(0)!!
                                        c_a0 = unify::canon(ctx, arg0.ut)
-                                       validate_primitive_cast(ctx, ce.fn_name,
-                                          uprim, c_a0)
+                                       is_bf_src = is_bitfield_ti_env(env, arg0.ti)
+                                       !(is_bf_src && is_uprim_int(uprim))
+                                          |
+                                             validate_primitive_cast(ctx, ce.fn_name,
+                                                uprim, c_a0)
                                  cast_ut = unify::UType(Prim, uprim)
                                  ti = unify::type_info_from_utype(ctx, cast_ut)
                                  lay = layout::compute_layout(ctx, cast_ut)
@@ -3695,17 +3698,33 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
    ?ce.args == 1
       |
          a0 = ce.args(0)!!
-         a0_te = annotate_expr(ctx, env, a0)
-         c_a0 = unify::canon(ctx, a0_te.ut)
-         c_a0
-            [Prim p]
-               p [RawPtr] (is_raw_cast' = <+>; raw_te' = a0_te)
+         !(a0 [NamedArg, Range])
+            |
+               a0_te = annotate_expr(ctx, env, a0)
+               c_a0 = unify::canon(ctx, a0_te.ut)
+               c_a0
+                  [Prim p]
+                     p
+                        [RawPtr]
+                           is_raw_cast' = <+>
+                           raw_te' = a0_te
+                        [Int, I8, I16, I32, I64, U8, U16, U32, U64]
+                           <>(bf_opt)
+                              |
+                                 is_raw_cast' = <+>
+                                 raw_te' = a0_te
+                  [Var]
+                     <>(bf_opt) && nf > 1
+                        |
+                           unify::unify(ctx, a0_te.ut, unify::prim_int())
+                           is_raw_cast' = <+>
+                           raw_te' = a0_te
    is_raw_cast'
       |
          call_args = tast::TypedExprs()
          call_args += raw_te'
          lay = layout::compute_layout(ctx, udef.ut)
-         tast::mk_typed_call(ce.fn_name, <-->, call_args, udef.ut, udef.ti,
+         tast::mk_typed_call(ce.fn_name, <-->, call_args, udef.ut, resolved_ti',
             lay, ce.line, ce.col)
       | annotate_record_ctor_fields(ctx, env, ce, udef, flds, fields, nf, <>(bf_opt), resolved_ti')
 

@@ -6032,7 +6032,8 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                  is_heap_var = is_sp_var || is_h_ram
                                  is_rec = types::is_record_vt(vt) ||
                                     types::is_record_vt(ev.1)
-                                 keep_dt = is_heap_var || is_rec ||
+                                 is_bf = <>(types::ti_get_bitfield(cg, eff_ti))
+                                 keep_dt = is_heap_var || is_rec || is_bf ||
                                     types::is_array_vt(vt) || types::is_map_vt(vt) ||
                                     types::is_slice_vt(vt) || (vt [Fn])
                                  ti_dt0 = val.ti [TypeVar tv] tv | ""

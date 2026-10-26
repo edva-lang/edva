@@ -61,3 +61,9 @@ test_overlay = ignored =>
    io::out $ "overlay c: " + str::from_int(h.c)
 
 test_overlay(0)
+
+cast_flags = TcpFlags(0x12)
+io::out $ "cast syn: " + str::from_int(cast_flags.syn)
+io::out $ "cast ack: " + str::from_int(cast_flags.ack)
+io::out $ "cast fin: " + str::from_int(cast_flags.fin)
+io::out $ "cast raw: " + str::from_int(u16(cast_flags))

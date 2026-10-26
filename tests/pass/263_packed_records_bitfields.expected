@@ -14,3 +14,7 @@ pkt.flags.fin: 1
 overlay a: 42
 overlay b: 4660
 overlay c: 99
+cast syn: 1
+cast ack: 1
+cast fin: 0
+cast raw: 18
