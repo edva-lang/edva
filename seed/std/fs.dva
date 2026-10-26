@@ -262,27 +262,27 @@ get_ext = name =>
 stat_mode: StatRaw => Int
 stat_mode = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 8) u16]) | Int(s.st_mode)
+   libc::is_darwin! | Int(@[(&s' + 4) u16]) | Int(s.st_mode)
 
 stat_size: StatRaw => Int
 stat_size = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 72) i64]) | Int(s.st_size)
+   libc::is_darwin! | Int(@[(&s' + 96) i64]) | Int(s.st_size)
 
 stat_mtime_sec: StatRaw => Int
 stat_mtime_sec = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 40) i64]) | Int(s.mtime_sec)
+   libc::is_darwin! | Int(@[(&s' + 48) i64]) | Int(s.mtime_sec)
 
 stat_mtime_nsec: StatRaw => Int
 stat_mtime_nsec = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 48) i64]) | Int(s.mtime_nsec)
+   libc::is_darwin! | Int(@[(&s' + 56) i64]) | Int(s.mtime_nsec)
 
 stat_atime_sec: StatRaw => Int
 stat_atime_sec = s =>
    s' = s
-   libc::is_darwin! | Int(@[(&s' + 24) i64]) | Int(s.atime_sec)
+   libc::is_darwin! | Int(@[(&s' + 32) i64]) | Int(s.atime_sec)
 
 make_metadata: StatRaw, <> => Metadata
 make_metadata = s, is_link =>
@@ -394,11 +394,11 @@ read_dir = dir_path =>
       ent = libc::readdir(dp)
       ent == sys::addr_null | -->
       name = is_mac
-         | sys::c_str(ent + 8)
+         | sys::c_str(ent + 21)
          | sys::c_str(ent + #size(DirentPrefix))
       name == "." || name == ".." | --^
       dt = is_mac
-         | Int(@[(ent + 6) u8])
+         | Int(@[(ent + 20) u8])
          |
             dp_ent = @[ent DirentPrefix]
             Int(dp_ent.d_type)
