@@ -23,7 +23,7 @@ def main [] {
 
     let is_dirty = try {
         cd $repo_root
-        let s = (do { git status --porcelain -uno -- ':!src/version.dva' ':!seed/' } | complete)
+        let s = (do { git status --porcelain -uno -- ':!VERSION' ':!src/version.dva' ':!seed/' } | complete)
         if $s.exit_code == 0 {
             ($s.stdout | str trim) != ""
         } else {
