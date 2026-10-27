@@ -1801,21 +1801,11 @@ generate_c_header = prog, exports, header_path =>
 
 is_wasm_triple: String => <>
 is_wasm_triple = triple =>
-   (?triple !< 6 && triple(..6) == "wasm32") ||
-      (?triple !< 4 && triple(..4) == "wasm")
+   ast::triple_arch(triple) ["wasm32", "wasm"]
 
 is_darwin_triple: String => <>
 is_darwin_triple = triple =>
-   n = ?triple
-   found' = <->
-   n !< 6
-      |
-         (n - 5) @ i =>
-            triple(i..i + 6) == "darwin" || triple(i..i + 5) == "apple"
-               |
-                  found' = <+>
-                  -->
-   found'
+   ast::triple_os(triple) == "darwin"
 
 print_program_errors: unify::TypeErrors => ()
 print_program_errors = errs =>

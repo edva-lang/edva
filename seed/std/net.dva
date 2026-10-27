@@ -1,9 +1,7 @@
 // net module for Dva
-// POSIX socket helpers. **Linux/x86-64 only**: the sockaddr_in / addrinfo
-// struct layouts and the numeric constants below (AF_*, SO_*, SOL_SOCKET,
-// F_GETFL/SETFL, O_NONBLOCK, SHUT_WR) are the Linux-x86-64 values — on
-// macOS/BSD the structs misalign and several constants differ, so this module
-// is not portable as-is.
+// POSIX socket helpers with compile-time target OS selection (#! os) for
+// struct layouts (Addrinfo) and numeric constants (AF_*, SO_*, SOL_SOCKET,
+// O_NONBLOCK).
 //
 // Error convention: the socket helpers return `<T | String>` rams — positive
 // = the value, negative = a short human-readable message ("socket failed",
@@ -19,7 +17,7 @@
 #public
    // Addr family constants
    AF_INET  = 2
-   AF_INET6 = 10
+   AF_INET6 = #! (os ["darwin"] 30 | 10)
 
    // Socket type constants
    SOCK_STREAM = 1
@@ -30,31 +28,31 @@
    IPPROTO_UDP = 17
 
    // SOL_SOCKET / SO_REUSEADDR / SO_*TIMEO
-   SOL_SOCKET   = 1
-   SO_REUSEADDR = 2
-   SO_RCVTIMEO  = 20
-   SO_SNDTIMEO  = 21
+   SOL_SOCKET   = #! (os ["darwin"] 65535 | 1)
+   SO_REUSEADDR = #! (os ["darwin"] 4 | 2)
+   SO_RCVTIMEO  = #! (os ["darwin"] 4102 | 20)
+   SO_SNDTIMEO  = #! (os ["darwin"] 4101 | 21)
 
-   // fcntl command / flag (Linux; translated on Darwin via libc::fcntl)
+   // fcntl command / flag
    F_GETFL     = 3
    F_SETFL     = 4
-   O_NONBLOCK  = 2048
+   O_NONBLOCK  = #! (os ["darwin"] 4 | 2048)
 
    // Platform-resolved socket constants and sockaddr_in sin_family field
    sin_fam_inet: () => u16
-   sin_fam_inet = !=> libc::is_darwin! | u16((AF_INET .<. 8) .|. 16) | u16(AF_INET)
+   sin_fam_inet = !=> u16(#! (os ["darwin"] ((2 .<. 8) .|. 16) | 2))
 
    sol_socket: () => Int
-   sol_socket = !=> libc::is_darwin! | 65535 | SOL_SOCKET
+   sol_socket = !=> SOL_SOCKET
 
    so_reuseaddr: () => Int
-   so_reuseaddr = !=> libc::is_darwin! | 4 | SO_REUSEADDR
+   so_reuseaddr = !=> SO_REUSEADDR
 
    so_rcvtimeo: () => Int
-   so_rcvtimeo = !=> libc::is_darwin! | 4102 | SO_RCVTIMEO
+   so_rcvtimeo = !=> SO_RCVTIMEO
 
    so_sndtimeo: () => Int
-   so_sndtimeo = !=> libc::is_darwin! | 4101 | SO_SNDTIMEO
+   so_sndtimeo = !=> SO_SNDTIMEO
 
    // shutdown "how"
    SHUT_WR = 1
@@ -81,9 +79,9 @@
       tv_usec: i64,
    )
 
-   // struct addrinfo (Linux x86_64; on Darwin ai_canonname and ai_addr are swapped):
+   // struct addrinfo (Linux vs Darwin: ai_addr and ai_canonname are swapped):
    // getaddrinfo result list node.
-   #type Addrinfo (
+   #type AddrinfoLinux (
       ai_flags:     i32,
       ai_family:    i32,
       ai_socktype:  i32,
@@ -94,6 +92,20 @@
       ai_canonname: Addr,
       ai_next:      Addr,
    )
+
+   #type AddrinfoDarwin (
+      ai_flags:     i32,
+      ai_family:    i32,
+      ai_socktype:  i32,
+      ai_protocol:  i32,
+      ai_addrlen:   i32,
+      ai_pad:       i32,
+      ai_canonname: Addr,
+      ai_addr:      Addr,
+      ai_next:      Addr,
+   )
+
+   #type Addrinfo #! (os ["darwin"] AddrinfoDarwin | AddrinfoLinux)
 
    // struct ifaddrs for network interface enumeration
    #type IfAddrs (
@@ -193,8 +205,7 @@
          sock = libc::socket(ai.ai_family, ai.ai_socktype, ai.ai_protocol)
          sock < 0
             | --^
-         ai_addr_ptr = libc::is_darwin! | ai.ai_canonname | ai.ai_addr
-         ret = libc::connect(sock, ai_addr_ptr, ai.ai_addrlen)
+         ret = libc::connect(sock, ai.ai_addr, ai.ai_addrlen)
          ret [0]
             res' = sock
             -->
@@ -295,8 +306,7 @@
    set_nonblocking = fd, flag =>
       flags = libc::fcntl(fd, net::F_GETFL, 0)
       flags [< 0] -1 |
-         nb_mask = net::O_NONBLOCK .|. (libc::is_darwin! | 4 | 0)
-         new_flags = flag | (flags .|. net::O_NONBLOCK) | (flags .&. .!. nb_mask)
+         new_flags = flag | (flags .|. net::O_NONBLOCK) | (flags .&. .!. net::O_NONBLOCK)
          libc::fcntl(fd, net::F_SETFL, new_flags)
 
    // Send FIN on fd without closing the read side.

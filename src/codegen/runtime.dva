@@ -847,7 +847,7 @@ codegen_emit_runtime_full = cg =>
    LLVMPositionBuilderAtEnd(cg.builder, hs_d)
    res_ret = LLVMBuildRet(cg.builder, h_phi)
 
-   is_wasm_rt = ?cg.opts.target_triple !< 5 && cg.opts.target_triple(..5) == "wasm3"
+   is_wasm_rt = ast::triple_arch(cg.opts.target_triple) == "wasm32"
    is_wasm_rt |
       LLVMSetLinkage(cur_fn, 8)
       LLVMSetLinkage(set_cur_fn, 8)
@@ -2120,7 +2120,7 @@ codegen_register_global_ctor = cg, fn =>
 // Finish: ret i32 0 or ret void in __dva_global_init, verify and print module.
 codegen_finish: types::Cg, String => ()
 codegen_finish = cg, out_path =>
-   is_wasm_fin = ?cg.opts.target_triple !< 5 && cg.opts.target_triple(..5) == "wasm3"
+   is_wasm_fin = ast::triple_arch(cg.opts.target_triple) == "wasm32"
    !cg.opts.no_runtime && !cg.opts.no_main && !is_wasm_fin | emit_arena_destroy(cg)
    cg.opts.no_main
       |

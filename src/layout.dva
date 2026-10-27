@@ -17,21 +17,8 @@ set_target_triple = t =>
 
 is_32bit_triple: String => <>
 is_32bit_triple = triple =>
-   n = ?triple
-   (n !< 5 && triple(..5) == "arm64")
-      | <->
-      |
-         (n !< 6 && triple(..6) == "wasm32") ||
-            (n !< 4 && triple(..4) == "wasm") ||
-            (n !< 4 && triple(..4) == "i386") ||
-            (n !< 4 && triple(..4) == "i486") ||
-            (n !< 4 && triple(..4) == "i586") ||
-            (n !< 4 && triple(..4) == "i686") ||
-            (n !< 5 && triple(..5) == "armv7") ||
-            (n !< 5 && triple(..5) == "armv6") ||
-            (n !< 5 && triple(..5) == "thumb") ||
-            (n !< 7 && triple(..7) == "riscv32") ||
-            (n !< 3 && triple(..3) == "arm")
+   ast::triple_arch(triple)
+      ["wasm32", "wasm", "x86", "armv7", "armv6", "thumb", "riscv32", "arm"]
 
 is_32bit_target: () => <>
 is_32bit_target = !=>

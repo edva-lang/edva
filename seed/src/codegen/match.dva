@@ -641,6 +641,8 @@ ctfe_eval_int_bin = op, a, b =>
       [BitAnd] (types::CtVal(Int, a .&. b), ast::ValueType(Int))
       [BitOr] (types::CtVal(Int, a .|. b), ast::ValueType(Int))
       [BitXor] (types::CtVal(Int, a .^. b), ast::ValueType(Int))
+      [Shl] (types::CtVal(Int, a .<. b), ast::ValueType(Int))
+      [Shr] (types::CtVal(Int, a .>. b), ast::ValueType(Int))
       | (types::CtVal(None), ast::ValueType(Unknown))
 
 ctfe_eval_flt_bin: ast::BinaryOp, Float, Float => (types::CtVal, ast::ValueType)
@@ -692,8 +694,11 @@ ctfe_eval_bin_vals = op, lv, rv =>
       [Str ls]
          rv
             [Str rs]
-               op [Add] (types::CtVal(Str, ls + rs), ast::ValueType(Str))
-               | (types::CtVal(None), ast::ValueType(Unknown))
+               op
+                  [Add] (types::CtVal(Str, ls + rs), ast::ValueType(Str))
+                  [Eq] ctfe_int_bool(ls == rs)
+                  [NotEq] ctfe_int_bool(ls != rs)
+                  | (types::CtVal(None), ast::ValueType(Unknown))
             [Int rn]
                op
                   [Add]
@@ -1219,6 +1224,14 @@ ctfe_eval = cg, expr, frames, depth =>
             [Member m] ctfe_eval_member(cg, m, frames, depth)
             [KeyAccess ka] ctfe_eval_key_access(cg, ka, frames, depth)
             [CompileTime ct] ctfe_eval(cg, ct.expr, frames, depth + 1)
+            [Variant v]
+               ?v.args == 0
+                  |
+                     v.tag_name
+                        [Positive] (types::CtVal(Int, 1), ast::ValueType(Int))
+                        [Negative] (types::CtVal(Int, 0), ast::ValueType(Int))
+                        | (types::CtVal(None), ast::ValueType(Unknown))
+                  | (types::CtVal(None), ast::ValueType(Unknown))
             [Return r]
                r.has_val | ctfe_eval(cg, r.val, frames, depth + 1) |
                   (types::CtVal(None), ast::ValueType(Unit))

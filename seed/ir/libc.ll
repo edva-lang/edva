@@ -271,8 +271,7 @@ entry:
   store i64 %0, ptr %var.fd, align 8
   store i64 %1, ptr %var.cmd, align 8
   store i64 %2, ptr %var.arg, align 8
-  %call.res = call i1 @"libc::is_darwin"()
-  br i1 %call.res, label %and.0.then, label %and.0.else
+  br i1 false, label %and.0.then, label %and.0.else
 
 and.0.then:                                       ; preds = %entry
   %var.load = load i64, ptr %var.cmd, align 8
@@ -283,7 +282,7 @@ and.0.else:                                       ; preds = %entry
   br label %and.0.exit
 
 and.0.exit:                                       ; preds = %and.0.else, %and.0.then
-  %and.0.phi = phi i1 [ %cmptmp, %and.0.then ], [ %call.res, %and.0.else ]
+  %and.0.phi = phi i1 [ %cmptmp, %and.0.then ], [ false, %and.0.else ]
   br i1 %and.0.phi, label %and.1.then, label %and.1.else
 
 and.1.then:                                       ; preds = %and.0.exit
@@ -316,8 +315,8 @@ choice.exit:                                      ; preds = %choice.else, %choic
   %var.load7 = load i64, ptr %var.cmd, align 8
   %var.load8 = load i64, ptr %var.eff_arg, align 8
   %coerce.trunc = trunc i64 %var.load6 to i32
-  %call.res9 = call i64 @fcntl(i32 %coerce.trunc, i64 %var.load7, i64 %var.load8)
-  ret i64 %call.res9
+  %call.res = call i64 @fcntl(i32 %coerce.trunc, i64 %var.load7, i64 %var.load8)
+  ret i64 %call.res
 }
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

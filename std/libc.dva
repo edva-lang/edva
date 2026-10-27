@@ -87,5 +87,5 @@
 
     fcntl: Int, Int, Int => Int
     fcntl = fd, cmd, arg =>
-       eff_arg = is_darwin! && cmd == 4 && (arg .&. 2048) != 0 | ((arg .&. .!. 2048) .|. 4) | arg
+       eff_arg = (#! (os ["darwin"] 1 | 0)) != 0 && cmd == 4 && (arg .&. 2048) != 0 | ((arg .&. .!. 2048) .|. 4) | arg
        c_fcntl(fd, cmd, eff_arg)

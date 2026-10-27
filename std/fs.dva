@@ -665,15 +665,6 @@ octal_perms = mode =>
    o = fm.other
    s > 0 | "${s}${u}${g}${o}" | "0${u}${g}${o}"
 
-octal_perms_str: String => String
-octal_perms_str = perms =>
-   len = ?perms
-   len < 10 | --| "0644"
-   u = (perms(1) == 'r' | 4 | 0) + (perms(2) == 'w' | 2 | 0) + (perms(3) == 'x' | 1 | 0)
-   g = (perms(4) == 'r' | 4 | 0) + (perms(5) == 'w' | 2 | 0) + (perms(6) == 'x' | 1 | 0)
-   o = (perms(7) == 'r' | 4 | 0) + (perms(8) == 'w' | 2 | 0) + (perms(9) == 'x' | 1 | 0)
-   "0${u}${g}${o}"
-
 auto_rename_path: String => String
 auto_rename_path = full_p =>
    dir_raw = parent(full_p)
