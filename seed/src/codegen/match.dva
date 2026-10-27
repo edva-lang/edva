@@ -885,8 +885,46 @@ ctfe_eval_call = cg, c, frames, depth =>
                   | ctfe_eval_call_val(cg, c, ct_v.0, frames, depth)
                   | ctfe_eval_call_fn(cg, c.fn_name, c.args, frames, depth + 1)
 
-ctfe_eval_var: types::Cg, String, types::CtFrames => (types::CtVal, ast::ValueType)
-ctfe_eval_var = cg, name, frames =>
+ctfe_lookup_top_const_at: types::Cg, ast::Exprs, String, <>, Int, Int,
+   types::CtFrames, Int => (types::CtVal, ast::ValueType)
+ctfe_lookup_top_const_at = cg, stmts, name, exact, i, n, frames, depth =>
+   i == n
+      | (types::CtVal(None), ast::ValueType(Unknown))
+      |
+         e = stmts(i)!!
+         e
+            [Assign t]
+               is_const = t.0 != "" && !t.1 && !t.2 && !t.3 && !t.4 &&
+                  !(t.5 [Fn]) && !types::has_str(types::g.marked_globals, t.0)
+               matched = exact | (t.0 == name) | types::sig_name_matches(t.0, name)
+               is_const && matched
+                  | ctfe_eval(cg, t.5, frames, depth + 1)
+                  | ctfe_lookup_top_const_at(cg, stmts, name, exact, i + 1, n, frames, depth)
+            [Block b]
+               res = ctfe_lookup_top_const_at(cg, b.exprs, name, exact, 0, ?b.exprs, frames, depth)
+               res.0
+                  [None] ctfe_lookup_top_const_at(cg, stmts, name, exact, i + 1, n, frames, depth)
+                  | res
+            | ctfe_lookup_top_const_at(cg, stmts, name, exact, i + 1, n, frames, depth)
+
+ctfe_lookup_top_const: types::Cg, String, types::CtFrames, Int => (types::CtVal, ast::ValueType)
+ctfe_lookup_top_const = cg, name, frames, depth =>
+   stmts = types::g.pstmts
+   n = ?stmts
+   rname = cg.current_module != "" | cg.current_module + "::" + name | name
+   res0 = ctfe_lookup_top_const_at(cg, stmts, rname, <+>, 0, n, frames, depth)
+   res0.0
+      [None]
+         res1 = rname != name
+            | ctfe_lookup_top_const_at(cg, stmts, name, <+>, 0, n, frames, depth)
+            | (types::CtVal(None), ast::ValueType(Unknown))
+         res1.0
+            [None] ctfe_lookup_top_const_at(cg, stmts, name, <->, 0, n, frames, depth)
+            | res1
+      | res0
+
+ctfe_eval_var: types::Cg, String, types::CtFrames, Int => (types::CtVal, ast::ValueType)
+ctfe_eval_var = cg, name, frames, depth =>
    found = ctfe_lookup_var_at(frames, name, ?frames - 1)
    found.1
       |
@@ -932,7 +970,7 @@ ctfe_eval_var = cg, name, frames =>
                               ["target"]
                                  (types::CtVal(Str, cg.opts.target_triple),
                                     ast::ValueType(Str))
-                              | (types::CtVal(None), ast::ValueType(Unknown))
+                              | ctfe_lookup_top_const(cg, name, frames, depth)
 
 ctfe_eval_unary: types::Cg, ast::UnaryOp, ast::Expr, types::CtFrames,
    Int => (types::CtVal, ast::ValueType)
@@ -1033,26 +1071,32 @@ ctfe_map_find_key = keys, k, i =>
 ctfe_eval_member: types::Cg, ast::MemberExpr,
    types::CtFrames, Int => (types::CtVal, ast::ValueType)
 ctfe_eval_member = cg, m, frames, depth =>
-   tgt = ctfe_eval(cg, m.target, frames, depth + 1)
-   tgt.0
-      [Rec r]
-         idx' = -1
-         m.field_name != ""
-            |
-               idx' = find_name_index_at(r.1, m.field_name, 0, ?r.1)
-               idx' < 0 && is_all_digits_at(m.field_name, 0, ?m.field_name)
+   m.is_module_access
+      |
+         mod_name = module_member_name(m.target)
+         qname = mod_name + "::" + m.field_name
+         ctfe_eval_var(cg, qname, frames, depth)
+      |
+         tgt = ctfe_eval(cg, m.target, frames, depth + 1)
+         tgt.0
+            [Rec r]
+               idx' = -1
+               m.field_name != ""
                   |
-                     parsed = str::to_int(m.field_name) | p => p.0 | -1
-                     idx' = parsed
-            |
-               idx_res = ctfe_eval(cg, m.index_expr, frames, depth + 1)
-               idx_res.0 [Int n] idx' = n
-         idx' !< 0 && idx' < ?r.0
-            |
-               elem = r.0(idx')!!
-               (elem, ctfe_val_vt(elem))
+                     idx' = find_name_index_at(r.1, m.field_name, 0, ?r.1)
+                     idx' < 0 && is_all_digits_at(m.field_name, 0, ?m.field_name)
+                        |
+                           parsed = str::to_int(m.field_name) | p => p.0 | -1
+                           idx' = parsed
+                  |
+                     idx_res = ctfe_eval(cg, m.index_expr, frames, depth + 1)
+                     idx_res.0 [Int n] idx' = n
+               idx' !< 0 && idx' < ?r.0
+                  |
+                     elem = r.0(idx')!!
+                     (elem, ctfe_val_vt(elem))
+                  | (types::CtVal(None), ast::ValueType(Unknown))
             | (types::CtVal(None), ast::ValueType(Unknown))
-      | (types::CtVal(None), ast::ValueType(Unknown))
 
 ctfe_eval_key_access: types::Cg, ast::KeyAccessExpr,
    types::CtFrames, Int => (types::CtVal, ast::ValueType)
@@ -1216,7 +1260,7 @@ ctfe_eval = cg, expr, frames, depth =>
             [Bin b] ctfe_eval_bin(cg, b.0, b.1, b.2, frames, depth)
             [Choice c] ctfe_eval_choice(cg, c, frames, depth)
             [Block b] ctfe_eval_block_at(cg, b.exprs, 0, frames, depth)
-            [Var name] ctfe_eval_var(cg, name, frames)
+            [Var name] ctfe_eval_var(cg, name, frames, depth)
             [Call c] ctfe_eval_call(cg, c, frames, depth)
             [UserDiag ud] ctfe_eval_user_diag(cg, ud, frames, depth)
             [Record r] ctfe_eval_record(cg, r, frames, depth)

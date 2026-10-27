@@ -40,7 +40,7 @@
 
    // Platform-resolved socket constants and sockaddr_in sin_family field
    sin_fam_inet: () => u16
-   sin_fam_inet = !=> u16(#! (os ["darwin"] ((2 .<. 8) .|. 16) | 2))
+   sin_fam_inet = !=> u16(#! (os ["darwin"] ((AF_INET .<. 8) .|. 16) | AF_INET))
 
    sol_socket: () => Int
    sol_socket = !=> SOL_SOCKET
