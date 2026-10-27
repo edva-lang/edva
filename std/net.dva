@@ -392,8 +392,8 @@
          ifa = IfAddrs(curr)
          ifa.ifa_addr == sys::addr_null | find_iface(ifa.ifa_next, target) |
             sa = SockAddrIn(ifa.ifa_addr)
-            fam = Int(sa.sin_family)
-            is_match = ((fam == AF_INET) || ((fam .>. 8) == AF_INET)) &&
+            fam = Int(sa.sin_family) .>. #! (os ["darwin"] 8 | 0)
+            is_match = (fam == AF_INET) &&
                (sa.sin_addr.b0 == target.b0) && (sa.sin_addr.b1 == target.b1) &&
                (sa.sin_addr.b2 == target.b2) && (sa.sin_addr.b3 == target.b3)
             is_match
@@ -403,8 +403,9 @@
    // Query local routing IP and default outbound interface
    get_route_info: () => (String, String)
    get_route_info = !=>
+      lo = #! (os ["darwin"] "lo0" | "lo")
       sock = libc::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
-      sock [< 0] ("127.0.0.1", "lo") |
+      sock [< 0] ("127.0.0.1", lo) |
          dest = SockAddrIn((net::sin_fam_inet!, u16(htons $ 53), InAddr((1u8, 1u8, 1u8, 1u8)), 0u64))
          rc = libc::connect(sock, &dest, 16)
          rc [0]
@@ -422,10 +423,10 @@
                   libc::freeifaddrs(head)
                   name
                (ip, iface)
-            | ("127.0.0.1", "lo")
+            | ("127.0.0.1", lo)
          |
             libc::close(sock)
-            ("127.0.0.1", "lo")
+            ("127.0.0.1", lo)
 
    // Get default local IPv4 address
    local_ip: () => String
