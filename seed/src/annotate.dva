@@ -2132,13 +2132,8 @@ annotate_expr = ctx, env, expr =>
          in_ct_expr ::= <+>
          inner_te = annotate_expr(ctx, env, ct.expr)
          in_ct_expr ::= saved_in_ct
-         c_ut = unify::canon(ctx, inner_te.ut)
-         is_flag = c_ut [Prim p] (p [Flag]) | <->
-         res_ut = is_flag | unify::prim_int() | inner_te.ut
-         res_ti = is_flag | ast::TypeInfo(Prim, ast::ValueType(Int)) | inner_te.ti
-         res_lay = is_flag | layout::compute_layout(ctx, res_ut) | inner_te.layout
          tast::mk_typed_expr(tast::TypedExprKind(CompileTime, ct),
-            res_ut, res_ti, res_lay, 0, 0)
+            inner_te.ut, inner_te.ti, inner_te.layout, 0, 0)
       [NamedArg na]
          annotate_expr(ctx, env, na.val)
       [FastMathPragma]

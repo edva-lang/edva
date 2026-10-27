@@ -5,10 +5,10 @@
 #use "str"
 #use io
 
-io::out $ str::from_int(#!(2 < 3))
-io::out $ str::from_int(#!!(5 > 3))
-io::out $ str::from_int(#!(2 < 3 && 5 > 4))
-io::out $ str::from_int(#!(2 > 3 || 5 > 4))
+io::out $ #!(2 < 3)
+io::out $ #!!(5 > 3)
+io::out $ #!(2 < 3 && 5 > 4)
+io::out $ #!(2 > 3 || 5 > 4)
 io::out $ str::from_int(#! (2 < 3 | 100 | 0))
 io::out $ str::from_int(#! (2 > 3 | 100 | 0))
 io::out $ #! (2 < 3 | "yes" | "no")

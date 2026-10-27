@@ -615,8 +615,8 @@ ctfe_vals_get = vals, idx =>
 ctfe_int_bool: <> => (types::CtVal, ast::ValueType)
 ctfe_int_bool = b =>
    b
-      | (types::CtVal(Int, 1), ast::ValueType(Int))
-      | (types::CtVal(Int, 0), ast::ValueType(Int))
+      | (types::CtVal(Int, 1), ast::ValueType(Flag))
+      | (types::CtVal(Int, 0), ast::ValueType(Flag))
 
 ctfe_eval_int_bin: ast::BinaryOp, Int, Int => (types::CtVal, ast::ValueType)
 ctfe_eval_int_bin = op, a, b =>
@@ -775,7 +775,7 @@ ctfe_eval_branches = cg, cond_v, branches, i, frames, depth =>
    i == ?branches
       |
          ?branches > 0 && ctfe_is_pos_flag_expr(branches(?branches - 1)!!.block)
-            | (types::CtVal(Int, 0), ast::ValueType(Int))
+            | (types::CtVal(Int, 0), ast::ValueType(Flag))
             | (types::CtVal(None), ast::ValueType(Unknown))
       |
          br = branches(i)!!
@@ -998,7 +998,7 @@ ctfe_eval_unary = cg, op, e, frames, depth =>
                   | (types::CtVal(None), ast::ValueType(Unknown))
             |
                op
-                  [Not] (types::CtVal(Int, n == 0 | 1 | 0), ast::ValueType(Int))
+                  [Not] (types::CtVal(Int, n == 0 | 1 | 0), ast::ValueType(Flag))
                   [BitNot] (types::CtVal(Int, .!. n), ast::ValueType(Int))
                   | (types::CtVal(None), ast::ValueType(Unknown))
       [Str s]
@@ -1027,7 +1027,7 @@ ctfe_eval_bin = cg, op, lhs, rhs, frames, depth =>
          op
             [And]
                !ctfe_truthy(lres.0)
-                  | (types::CtVal(Int, 0), ast::ValueType(Int))
+                  | (types::CtVal(Int, 0), ast::ValueType(Flag))
                   |
                      rres' = ctfe_eval(cg, rhs, frames, depth + 1)
                      rres'.0
@@ -1035,7 +1035,7 @@ ctfe_eval_bin = cg, op, lhs, rhs, frames, depth =>
                         | ctfe_int_bool(ctfe_truthy(rres'.0))
             [Or]
                ctfe_truthy(lres.0)
-                  | (types::CtVal(Int, 1), ast::ValueType(Int))
+                  | (types::CtVal(Int, 1), ast::ValueType(Flag))
                   |
                      rres' = ctfe_eval(cg, rhs, frames, depth + 1)
                      rres'.0
@@ -1281,8 +1281,8 @@ ctfe_eval = cg, expr, frames, depth =>
                ?v.args == 0
                   |
                      v.tag_name
-                        [Positive] (types::CtVal(Int, 1), ast::ValueType(Int))
-                        [Negative] (types::CtVal(Int, 0), ast::ValueType(Int))
+                        [Positive] (types::CtVal(Int, 1), ast::ValueType(Flag))
+                        [Negative] (types::CtVal(Int, 0), ast::ValueType(Flag))
                         | (types::CtVal(None), ast::ValueType(Unknown))
                   | (types::CtVal(None), ast::ValueType(Unknown))
             [Return r]
@@ -1498,7 +1498,10 @@ ctfe_lower = cg, cv, vt =>
       |
          cv
             [Int n]
-               val' = LLVMConstInt(LLVMInt64Type!, n, 0)
+               is_flag = vt [Flag]
+               val' = is_flag
+                  | LLVMConstInt(LLVMInt1Type!, n != 0 | 1 | 0, 0)
+                  | LLVMConstInt(LLVMInt64Type!, n, 0)
                (val', vt)
             [Float f]
                val' = LLVMConstReal(LLVMDoubleType!, f)
