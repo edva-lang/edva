@@ -23,7 +23,7 @@ io::outf(io::reader_err(r_bad) == io::EBADF, "badfd read_byte: is_ebadf={}")
 // 2. Nonblocking pipe (would-block)
 p = PipeFds((0, 0))
 _p = libc::pipe(&p)
-_fl = libc::fcntl(Int(p.rfd), 4, 2048) // F_SETFL=4, O_NONBLOCK=2048
+_fl = libc::fcntl(Int(p.rfd), 4, #! (os ["darwin"] 4 | 2048)) // F_SETFL=4, O_NONBLOCK
 r_nb = io::reader(Int(p.rfd))
 
 res_nb = io::read(r_nb, 16)

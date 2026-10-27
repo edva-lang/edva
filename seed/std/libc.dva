@@ -37,7 +37,7 @@
     getpeername : (sockfd: Int, addr: Addr, addrlen_ptr: Addr) => Int
     getsockname : (sockfd: Int, addr: Addr, addrlen_ptr: Addr) => Int
     shutdown   : (sockfd: Int, how: Int) => Int
-    c_fcntl = fcntl: (fd: Int, cmd: Int, arg: Int) => Int
+    fcntl      : (fd: Int, cmd: Int, arg: Int) => Int
     getaddrinfo : (node: String, service: String, hints: Addr, res: Addr) => Int
     freeaddrinfo : (res: Addr) => ()
     getifaddrs  : (ifap: Addr) => Int
@@ -80,9 +80,3 @@
     getrlimit : (resource: Int, rlim: Addr) => Int
     setrlimit : (resource: Int, rlim: Addr) => Int
     uname     : (buf: Addr) => Int
-
-#public
-    fcntl: Int, Int, Int => Int
-    fcntl = fd, cmd, arg =>
-       eff_arg = (#! (os ["darwin"] 1 | 0)) != 0 && cmd == 4 && (arg .&. 2048) != 0 | ((arg .&. .!. 2048) .|. 4) | arg
-       c_fcntl(fd, cmd, eff_arg)

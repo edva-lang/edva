@@ -763,11 +763,20 @@ ctfe_match_cases = cg, cond_v, cases, j, frames, depth =>
                   | <+>
                   | ctfe_match_cases(cg, cond_v, cases, j + 1, frames, depth)
 
+ctfe_is_pos_flag_expr: ast::Expr => <>
+ctfe_is_pos_flag_expr = e =>
+   e
+      [Variant v] ?v.args == 0 && (v.tag_name [Positive])
+      | <->
+
 ctfe_eval_branches: types::Cg, types::CtVal, ast::Branches, Int,
    types::CtFrames, Int => (types::CtVal, ast::ValueType)
 ctfe_eval_branches = cg, cond_v, branches, i, frames, depth =>
    i == ?branches
-      | (types::CtVal(None), ast::ValueType(Unknown))
+      |
+         ?branches > 0 && ctfe_is_pos_flag_expr(branches(?branches - 1)!!.block)
+            | (types::CtVal(Int, 0), ast::ValueType(Int))
+            | (types::CtVal(None), ast::ValueType(Unknown))
       |
          br = branches(i)!!
          br.kind
