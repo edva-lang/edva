@@ -11,15 +11,13 @@ target triple = "x86_64-unknown-linux-gnu"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@str.0 = internal unnamed_addr constant [20 x i8] c"1.4.3+6634f85-dirty\00"
-@str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.0 }
+@str.0 = internal unnamed_addr constant [14 x i8] c"1.4.4+11c8042\00"
+@str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.0 }
 @"var.version::VERSION" = global ptr null
-@str.1 = internal unnamed_addr constant [14 x i8] c"6634f85-dirty\00"
-@str.1.struct = internal unnamed_addr constant { i64, ptr } { i64 13, ptr @str.1 }
+@str.1 = internal unnamed_addr constant [8 x i8] c"11c8042\00"
+@str.1.struct = internal unnamed_addr constant { i64, ptr } { i64 7, ptr @str.1 }
 @"var.version::COMMIT_HASH" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_version, ptr null }]
-
-declare i32 @printf(ptr, ...)
 
 declare ptr @dva_arena_current()
 
@@ -28,10 +26,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -49,10 +43,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
