@@ -1,7 +1,7 @@
 #use io
 
-#type Ints (Int){}
-#type Names (String){3}
+#type Ints Int{}
+#type Names String{3}
 
 xs: Ints
 xs += 42
@@ -21,7 +21,7 @@ view = name(0..n)
 io::out $ view(1)
 
 #type Rect (w: Int, h: Int)
-#type Grid (Rect){}
+#type Grid Rect{}
 grid: Grid
 grid += (w = 3, h = 4)
 grid += (w = 5, h = 6)

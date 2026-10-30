@@ -114,7 +114,7 @@ concatenated segment equality without allocating. Unary `-` is integer/float neg
 | `~~lvalue` | two-way state binding lens record `(get = !=> ..., set = v => ...)` |
 | `expr {N}` | record repetition |
 | `@[addr T]` | volatile typed memory load (`@[addr] = val` for store; `@[addr T] = val` is an error) |
-| `#size(Type)` | compile-time type size |
+| `#size Type` | compile-time type size |
 
 Arithmetic multiplication (`a * b`) and operator sections (`* 2`) use `*`.
 Unary prefix `+` (without trailing space) is Builder freeze; `+ 2` with a space

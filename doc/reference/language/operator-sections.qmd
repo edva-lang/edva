@@ -312,10 +312,10 @@ contexts, distinct from using a section as an enum branch body:
 #use io
 
 #type Handler (run: (Int => Int), tag: Int)
-handler = Handler(((* 2), 0))
+handler = Handler((* 2), 0)
 io::out(handler.run(5))            // 10
 
-#type Functions ((Int => Int)){}
+#type Functions (Int => Int){}
 functions = Functions()
 functions += (+ 1)
 increment = functions(0)!!
@@ -487,8 +487,8 @@ dot inside parentheses:
 #type User (name: String, age: Int)
 #type Nested (user: User, tag: String)
 
-u = User(("Alice", 30))
-n = Nested((u, "admin"))
+u = User("Alice", 30)
+n = Nested(u, "admin")
 
 get_name: User => String
 get_name = (.name)
@@ -496,7 +496,7 @@ get_name = (.name)
 get_age: User => Int
 get_age = (.age)
 
-get_first: ((Int, Int)) => Int
+get_first: (Int, Int) => Int
 get_first = (.0)
 
 get_user_name: Nested => String
@@ -538,7 +538,7 @@ not capture or overwrite an outer `_`:
 apply_user: (User => Int), User => Int
 apply_user = f, u => f(u)
 
-calc = (_ * 2 + apply_user((.age), User(("Bob", 20))))
+calc = (_ * 2 + apply_user((.age), User("Bob", 20)))
 io::out(calc(5))              // 30
 ```
 
@@ -554,7 +554,7 @@ concisely extracting the desired field or tuple element:
 #type User (name: String, age: Int)
 #type UserOpt < User | >
 
-u = User(("Alice", 30))
+u = User("Alice", 30)
 opt_some = UserOpt(<+ u +>)
 opt_none = UserOpt(<-->)
 

@@ -210,8 +210,8 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.54.struct = internal unnamed_addr constant { i64, ptr } { i64 39, ptr @str.54 }
 @clo.const.44 = internal constant { ptr, ptr } { ptr @"diag::E3091_propagate_ram_operand", ptr null }
 @"var.diag::E3091_propagate_ram_operand" = global ptr null
-@str.55 = internal unnamed_addr constant [55 x i8] c"Cannot infer concrete type for expression without RTTI\00"
-@str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 54, ptr @str.55 }
+@str.55 = internal unnamed_addr constant [42 x i8] c"Cannot infer concrete type for expression\00"
+@str.55.struct = internal unnamed_addr constant { i64, ptr } { i64 41, ptr @str.55 }
 @clo.const.45 = internal constant { ptr, ptr } { ptr @"diag::E3103_cannot_infer_type", ptr null }
 @"var.diag::E3103_cannot_infer_type" = global ptr null
 @"var.diag::E3131_whole_val_init_prefix" = global ptr null
@@ -464,8 +464,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.diag::E1008_string_unterminated" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_diag, ptr null }]
 
-declare i32 @printf(ptr, ...)
-
 declare ptr @dva_arena_current()
 
 declare ptr @dva_arena_set_current(ptr)
@@ -473,10 +471,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -494,10 +488,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -706,6 +696,10 @@ str_overflow_abort16:                             ; preds = %concat.sum.len12
   call void @exit(i32 1)
   br label %concat.tot.len15
 }
+
+declare i64 @write(i32, ptr, i64)
+
+declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2

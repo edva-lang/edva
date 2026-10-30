@@ -92,3 +92,41 @@ lighter = color::adjust_lightness(orig, 0.1)
 lab_orig = color::rgba_to_oklab(orig)
 lab_light = color::rgba_to_oklab(lighter)
 print_flag $ lab_light(0) > lab_orig(0)
+
+// 9. Named base colors and record field access
+print_flag $ approx_eq(color::red.r, 0.95)
+print_flag $ approx_eq(color::green.g, 0.85)
+print_flag $ approx_eq(color::blue.b, 0.95)
+print_flag $ approx_eq(color::amber.r, 1.00)
+print_flag $ approx_eq(color::white.a, 1.0)
+print_flag $ approx_eq(color::black.r, 0.0)
+
+// 10. Procedural color providers
+uni = color::uniform(color::emerald)
+print_flag $ approx_eq(uni(0).g, 0.95)
+print_flag $ approx_eq(uni(42).g, 0.95)
+
+strp = color::stripes(color::ruby, color::sapphire)
+print_flag $ approx_eq(strp(0).r, 0.95)
+print_flag $ approx_eq(strp(1).b, 0.95)
+
+rain0 = color::rainbow(0)
+rain1 = color::rainbow(1)
+rain4 = color::rainbow(4)
+rain5 = color::rainbow(5)
+rain6 = color::rainbow(6)
+print_flag $ approx_eq(rain0.r, color::red.r)
+print_flag $ approx_eq(rain1.r, color::orange.r)
+print_flag $ approx_eq(rain4.b, color::cyan.b)
+print_flag $ approx_eq(rain5.b, color::blue.b)
+print_flag $ approx_eq(rain6.r, color::violet.r)
+
+// 11. 24-bit TrueColor channel extractors & hex string conversions (via str::to_hex & ascii)
+print_flag $ color::red24(0xFF8040) == 255
+print_flag $ color::green24(0xFF8040) == 128
+print_flag $ color::blue24(0xFF8040) == 64
+print_flag $ color::from_hex_str("#FF8040") == 0xFF8040
+print_flag $ color::from_hex_str("1a2b3c") == 0x1A2B3C
+print_flag $ color::from_hex_str("#f84") == 0xFF8844
+print_flag $ color::from_hex_str("#12345z") == 0
+print_flag $ color::to_hex_str(0xFF8040) == "#ff8040"

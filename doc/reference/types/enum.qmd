@@ -32,15 +32,15 @@ Short enums can be written inline with comma-separated variants, or wrapped acro
 #type Maybe < Some(String), Noth >
 ```
 
-Multi-line block declarations place `<` at the end of the `#type` line, indent the variants on subsequent lines (where trailing commas are optional), and close with `>`:
+Multi-line block declarations place `<` at the end of the `#type` line, indent the variants at a consistent column on subsequent lines (where commas between lines and trailing commas are optional, while multiple variants on the same line require commas), and close with `>`:
 
 ```{.dva .run}
 // Recursive algebraic data type with tuple payloads
 #type Expr <
    Lit(Int)
    Neg(Expr)
-   Add((Expr, Expr))
-   Mul((Expr, Expr))
+   Add(Expr, Expr)
+   Mul(Expr, Expr)
 >
 ```
 
@@ -123,7 +123,7 @@ Parentheses after a variant name in a guard introduce a **nested record/tuple su
 ```{.dva .run}
 #use io
 
-#type Expr < Lit(Int), Neg(Expr), Add((Expr, Expr)), Mul((Expr, Expr)) >
+#type Expr < Lit(Int), Neg(Expr), Add(Expr, Expr), Mul(Expr, Expr) >
 
 simplify: Expr => Int
 simplify = e =>
@@ -192,5 +192,5 @@ print_variants(c)
 
 ## Memory layout
 
-- **Runtime representation**: In the typed pipeline, an enum value is represented as a 16-byte tagged union `{ i64 tag, ptr payload }` (8-byte 0-based variant index and 8-byte payload pointer, `#size(EnumType) == 16`).
-- **Recursive enums**: Because payload-bearing variants store their payload via a heap/arena pointer, recursive and mutually recursive enums (`#type Tree < Leaf(Int), Node((Tree, Tree)) >`) have a fixed size and require no explicit pointer indirection in the source declaration.
+- **Runtime representation**: In the typed pipeline, an enum value is represented as a 16-byte tagged union `{ i64 tag, ptr payload }` (8-byte 0-based variant index and 8-byte payload pointer, `#size EnumType == 16`).
+- **Recursive enums**: Because payload-bearing variants store their payload via a heap/arena pointer, recursive and mutually recursive enums (`#type Tree < Leaf(Int), Node(Tree, Tree) >`) have a fixed size and require no explicit pointer indirection in the source declaration.

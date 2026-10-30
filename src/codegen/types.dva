@@ -66,12 +66,12 @@ dbg = s =>
 #type CgVar (name: String, vt: ast::ValueType, is_heap: <>, dtype: String,
    rt: <Addr|>, fnames: ast::Names, slot: <Addr|>, is_local: <>,
    is_partial: <>, fvts: ast::VTypes, direct: <Addr|>)
-#type CgVars (CgVar){}
+#type CgVars CgVar{}
 
 // Binding mutability is separate from CgVar so type/layout metadata remains
 // stable. is_local selects the current function scope over same-named globals.
 #type BindingMut (name: String, mod_name: String, is_local: <>, mutable: <>)
-#type BindingMuts (BindingMut){}
+#type BindingMuts BindingMut{}
 #type BindingState (found: <>, mutable: <>)
 
 // A record-typed function PARAMETER's schema, pre-passed from its first call
@@ -79,12 +79,12 @@ dbg = s =>
 // list, and the per-field ValueTypes. Used to type member reads on a param
 // ("id = r => r.a") that the body alone cannot infer.
 #type ParamRec (name: String, rt: Addr, fnames: ast::Names, fvts: ast::VTypes)
-#type ParamRecs (ParamRec){}
+#type ParamRecs ParamRec{}
 #type FnRetRec (name: String, rt: <Addr|>, fnames: ast::Names,
    fvts: ast::VTypes, dtype: String)
-#type FnRetRecs (FnRetRec){}
-#type Addrs (Addr){}
-#type IntArr (Int){}
+#type FnRetRecs FnRetRec{}
+#type Addrs Addr{}
+#type IntArr Int{}
 
 // Definite-initialization state for forward-annotated composites: dotted
 // var/field paths that are whole-initialized ("" ancestors cover descendants)
@@ -96,39 +96,39 @@ dbg = s =>
 // is exhaustive — no fall-through path).
 #type ChoiceInitFrame (pre: FieldInitState, merged: FieldInitState,
    started: <>, exhaustive: <>)
-#type ChoiceInitFrames (ChoiceInitFrame){}
+#type ChoiceInitFrames ChoiceInitFrame{}
 
 // A user function definition and its compiled LLVM shape.
 #type FnDef (name: String, params: ast::Names, body: ast::Expr)
-#type FnDefs (FnDef){}
+#type FnDefs FnDef{}
 #type FnNameIndex String ^ Int
 #type FnInfo (name: String, llvm_fn: <Addr|>, llvm_type: <Addr|>, nparams: Int,
    param_types: ast::VTypes, ret_vt: ast::ValueType, declared: <>,
    generic: <>, value_safe: <>, no_capture: <>)
-#type FnInfos (FnInfo){}
+#type FnInfos FnInfo{}
 
 // A declared '#type' name -> its TypeInfo (for payload resolution).
 #type TypeDef (name: String, ti: ast::TypeInfo, rt: <Addr|>, in_progress: <>, fnames: ast::Names)
-#type TypeDefs (TypeDef){}
+#type TypeDefs TypeDef{}
 #type TypeIndex String ^ Int
 
 #type LambdaEnvInfo (name: String, est: Addr, nc: Int, vts: ast::VTypes)
-#type LambdaEnvInfos (LambdaEnvInfo){}
+#type LambdaEnvInfos LambdaEnvInfo{}
 
-empty_fndef = FnDef(("", ast::Names(), ast::Expr(Var, "")))
+empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
 
-#type CtVals (CtVal){}
+#type CtVals CtVal{}
 #type CtVal <
    None
    Int(Int)
    Float(Float)
    Str(String)
    Fn(String)
-   Rec((CtVals, ast::Names))
-   Map((CtVals, CtVals))
+   Rec(CtVals, ast::Names)
+   Map(CtVals, CtVals)
 >
 #type CtFrame (params: ast::Names, vals: CtVals)
-#type CtFrames (CtFrame){}
+#type CtFrames CtFrame{}
 
 // The codegen state: the LLVM module/builder handles, the main function, the
 // variables' types, whether the last evaluated branch ended in '#exit' (so a
@@ -148,8 +148,8 @@ empty_fndef = FnDef(("", ast::Names(), ast::Expr(Var, "")))
 )
 
 default_codegen_opts: () => CodegenOpts
-default_codegen_opts = !=> CodegenOpts(("", <->, <->, ast::Names(),
-   ast::Names(), <->, "", <->, ""))
+default_codegen_opts = !=> CodegenOpts("", <->, <->, ast::Names(),
+   ast::Names(), <->, "", <->, "")
 
 #type Cg (
    module: Addr,
@@ -219,7 +219,7 @@ param_clo_tys: Addrs,
    opts: CodegenOpts,
 )
 
-#type Flags (<>){}
+#type Flags <>{}
 #type FnValueMeta (found: <>, declared: <>, generic: <>, value_safe: <>)
 
 #type GlobalState (
@@ -407,7 +407,7 @@ is_view_expr = cg, e =>
    e
       [Var v] is_view_var(v)
       [RawMemory rm] rm.rec_name != ""
-      [Block b] ?b.exprs > 0 && is_view_expr(cg, b.exprs(?b.exprs - 1)!!)
+      [Block b] ?b > 0 && is_view_expr(cg, b(?b - 1)!!)
       [Choice c] choice_has_view(cg, c.branches, 0)
       | <->
 
@@ -486,7 +486,7 @@ init_snapshot: FieldInitState => FieldInitState
 init_snapshot = s =>
    ws = copy_names_at(s.whole, 0, ?s.whole, ast::Names())
    ws2 = copy_names_at(s.written, 0, ?s.written, ast::Names())
-   FieldInitState((ws, ws2))
+   FieldInitState(ws, ws2)
 
 init_merge_whole_at: ast::Names, FieldInitState, Int, Int, ast::Names => ast::Names
 init_merge_whole_at = whole, b, i, n, acc =>
@@ -511,7 +511,7 @@ init_merge: FieldInitState, FieldInitState => FieldInitState
 init_merge = a, b =>
    ws = init_merge_whole_at(a.whole, b, 0, ?a.whole, ast::Names())
    ws2 = init_merge_written_at(a.written, b, 0, ?a.written, ast::Names())
-   FieldInitState((ws, ws2))
+   FieldInitState(ws, ws2)
 
 // Reports a definite-init violation and marks the compile failed.
 init_error: Cg, String, String, Int, Int => ()
@@ -592,7 +592,7 @@ codegen_scan_partial_escape_expr = cg, e =>
       [Call c]
          c.args @ a => init_check_escape(cg, a, c.line, c.col)
          codegen_scan_partial_escape_exprs(cg, c.args, 0)
-      [Block b] codegen_scan_partial_escape_exprs(cg, b.exprs, 0)
+      [Block b] codegen_scan_partial_escape_exprs(cg, b, 0)
       [Member m]
          codegen_scan_partial_escape_expr(cg, m.target)
          codegen_scan_partial_escape_expr(cg, m.index_expr)
@@ -615,14 +615,14 @@ codegen_scan_partial_write = cg, m =>
 
 choice_enter: Cg, <> => ()
 choice_enter = cg, exhaustive =>
-   cg.choice_frames += ChoiceInitFrame((init_snapshot(cg.init),
-      FieldInitState((ast::Names(), ast::Names())), <->, exhaustive))
+   cg.choice_frames += ChoiceInitFrame(init_snapshot(cg.init),
+      FieldInitState(ast::Names(), ast::Names()), <->, exhaustive)
 
 choice_branch_reset: Cg => ()
 choice_branch_reset = cg =>
    (?cg.choice_frames > 0)
       |
-         fr = cg.choice_frames(?(cg.choice_frames) - 1)!!
+         fr = cg.choice_frames(?cg.choice_frames - 1)!!
          cg.init = init_snapshot(fr.pre)
 
 choice_branch_capture: Cg => ()
@@ -632,10 +632,10 @@ choice_branch_capture = cg =>
          i = ?cg.choice_frames - 1
          fr = cg.choice_frames(i)!!
          fr.started
-            | choice_frame_set(cg, i, ChoiceInitFrame((fr.pre,
-               init_merge(fr.merged, cg.init), fr.started, fr.exhaustive)))
-            | choice_frame_set(cg, i, ChoiceInitFrame((fr.pre,
-               init_snapshot(cg.init), <+>, fr.exhaustive)))
+            | choice_frame_set(cg, i, ChoiceInitFrame(fr.pre,
+               init_merge(fr.merged, cg.init), fr.started, fr.exhaustive))
+            | choice_frame_set(cg, i, ChoiceInitFrame(fr.pre,
+               init_snapshot(cg.init), <+>, fr.exhaustive))
 
 choice_leave: Cg => ()
 choice_leave = cg =>
@@ -683,11 +683,8 @@ choice_frame_pop = cg, i =>
 // struct { e0, e1 }
 struct_type2: Addr, Addr => Addr
 struct_type2 = e0, e1 =>
-   tarr = {16}
-   sb = &tarr
-   @[sb] = e0
-   @[sb + 8] = e1
-   LLVMStructType(sb, 2, 0)
+   tarr = (e0, e1)
+   LLVMStructType(&tarr, 2, 0)
 
 // fn type ret() (zero params)
 fn_type0: Addr => Addr
@@ -905,15 +902,12 @@ codegen_init = opts =>
          LLVMDisposeMessage(def_raw)
          def_s
    LLVMSetTarget(module, triple)
-   ar = mem::arena(1024)
-   target_buf = mem::alloc(ar, 8)
-   err_buf = mem::alloc(ar, 8)
-   @[err_buf] = sys::addr_null
-   res = LLVMGetTargetFromTriple(triple, target_buf, err_buf)
+   target_raw' = 0
+   err_raw' = 0
+   res = LLVMGetTargetFromTriple(triple, &target_raw', &err_raw')
    layout = res == 0
       |
-         target_ref = @[target_buf Addr]
-         tm = LLVMCreateTargetMachine(target_ref, triple, "", "", 2, 0, 0)
+         tm = LLVMCreateTargetMachine(Addr(target_raw'), triple, "", "", 2, 0, 0)
          td = LLVMCreateTargetDataLayout(tm)
          raw_l = LLVMCopyStringRepOfTargetData(td)
          l_str = c_str(raw_l)
@@ -922,13 +916,12 @@ codegen_init = opts =>
          LLVMDisposeTargetMachine(tm)
          l_str
       |
-         err_ptr_opt = llvm_val_opt(@[err_buf Addr])
+         err_ptr_opt = llvm_val_opt(Addr(err_raw'))
          err_s = c_str_opt(err_ptr_opt)
          print $ "E3069: No LLVM target registered for triple '" + triple + "'" +
             (?err_s > 0 | ": " + err_s | "")
          err_ptr_opt | err_ptr => LLVMDisposeMessage(err_ptr)
          codegen_layout
-   mem::destroy(ar)
    LLVMSetDataLayout(module, layout)
    builder = LLVMCreateBuilder!
    i64t = LLVMInt64Type!
@@ -937,16 +930,10 @@ codegen_init = opts =>
    st = struct_type2(i64t, i8p)
    ut = struct_type2(i64t, i8p)
    st2 = struct_type2(i8p, i64t)
-   malloc_t = fn_type1(i8p, i64t)
-   pp = {16}
-   psb = &pp
-   @[psb] = i8p
-   printf_fn = LLVMAddFunction(module, "printf",
-      LLVMFunctionType(LLVMInt32Type!, psb, 1, 1))
-   eff_opts = CodegenOpts((triple, opts.no_runtime, opts.no_main,
+   eff_opts = CodegenOpts(triple, opts.no_runtime, opts.no_main,
       opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
-      opts.compiler_exe, opts.is_module, opts.module_name))
-   Cg((module, builder, <-->, CgVars(), <->, st, ut, st2,
+      opts.compiler_exe, opts.is_module, opts.module_name)
+   Cg(module, builder, <-->, CgVars(), <->, st, ut, st2,
       <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
       0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
       ast::Names(),
@@ -955,9 +942,9 @@ codegen_init = opts =>
       ast::Names(), ast::Names(), Addrs(), ast::VTypes(), ParamRecs(),
       ast::Names(), ast::Names(), <-->, <-->, <-->, <-->,
       <-->, 0, <-->, <-->,
-      FieldInitState((ast::Names(), ast::Names())),
+      FieldInitState(ast::Names(), ast::Names()),
       ChoiceInitFrames(), BindingMuts(), <->, <-->, <->, ast::Names(),
-      Addrs(), "", 0, 0, eff_opts))
+      Addrs(), "", 0, 0, eff_opts)
 
 // Define "i32 @main(i32, ptr)" or void @__dva_global_init().
 codegen_build_main: Cg => Addr
@@ -1037,6 +1024,79 @@ is_32bit_triple = triple =>
 
 is_32bit_target: Cg => <>
 is_32bit_target = cg => is_32bit_triple(cg.opts.target_triple)
+
+is_wasm_triple: String => <>
+is_wasm_triple = triple =>
+   ast::triple_arch(triple)
+      ["wasm32", "wasm64", "wasm"]
+
+is_wasm_target: Cg => <>
+is_wasm_target = cg => is_wasm_triple(cg.opts.target_triple)
+
+emit_wasm_trap: Cg => Addr
+emit_wasm_trap = cg =>
+   trap_ty = fn_type0(LLVMVoidType!)
+   trap_fn = llvm_find_function(cg.module, "llvm.trap")
+      | fn => fn
+      | LLVMAddFunction(cg.module, "llvm.trap", trap_ty)
+   call0(cg, trap_ty, trap_fn, "")
+
+ensure_printf_fn: Cg => (Addr, Addr)
+ensure_printf_fn = cg =>
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   pp = {8}
+   psb = &pp
+   @[psb] = i8p
+   pty = LLVMFunctionType(LLVMInt32Type!, psb, 1, 1)
+   pfn = llvm_find_function(cg.module, "printf")
+      | fn => fn
+      | LLVMAddFunction(cg.module, "printf", pty)
+   (pty, pfn)
+
+ensure_write_fn: Cg => (Addr, Addr)
+ensure_write_fn = cg =>
+   cg.write_fn
+      | fn => (cg.write_t!!, fn)
+      |
+         i64t = LLVMInt64Type!
+         i32t = LLVMInt32Type!
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         w_ty = fn_type3(i64t, i32t, i8p, i64t)
+         w_fn = llvm_find_function(cg.module, "write")
+            | fn => fn
+            | LLVMAddFunction(cg.module, "write", w_ty)
+         cg.write_t = <+ w_ty +>
+         cg.write_fn = <+ w_fn +>
+         (w_ty, w_fn)
+
+ensure_exit_fn: Cg => (Addr, Addr)
+ensure_exit_fn = cg =>
+   cg.exit_fn
+      | fn => (cg.exit_t!!, fn)
+      |
+         i32t = LLVMInt32Type!
+         e_ty = fn_type1(LLVMVoidType!, i32t)
+         e_fn = llvm_find_function(cg.module, "exit")
+            | fn => fn
+            | LLVMAddFunction(cg.module, "exit", e_ty)
+         cg.exit_t = <+ e_ty +>
+         cg.exit_fn = <+ e_fn +>
+         (e_ty, e_fn)
+
+ensure_memcmp_fn: Cg => (Addr, Addr)
+ensure_memcmp_fn = cg =>
+   cg.memcmp_fn
+      | fn => (cg.memcmp_t!!, fn)
+      |
+         i64t = LLVMInt64Type!
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         mc_ty = fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
+         mc_fn = llvm_find_function(cg.module, "memcmp")
+            | fn => fn
+            | LLVMAddFunction(cg.module, "memcmp", mc_ty)
+         cg.memcmp_t = <+ mc_ty +>
+         cg.memcmp_fn = <+ mc_fn +>
+         (mc_ty, mc_fn)
 
 target_ptr_size: Cg => Int
 target_ptr_size = cg => is_32bit_target(cg) | 4 | 8
@@ -1289,8 +1349,8 @@ has_fn_name = cg, name => cg.fn_names ^? name
 add_fn_def: Cg, FnDef => ()
 add_fn_def = cg, fd =>
    names = cg.fn_names
-   known = names ^? (fd.name)
-   !known | names ^ (fd.name) = ?cg.fns
+   known = names ^? fd.name
+   !known | names ^ fd.name = ?cg.fns
    cg.fns += fd
 
 is_fn_name: Cg, String => <>
@@ -1921,6 +1981,7 @@ typedef_ti = cg, name =>
 vt_from_ti: ast::TypeInfo => ast::ValueType
 vt_from_ti = ti =>
    ti
+      [Align a] vt_from_ti(a.1)
       [Enum] ast::ValueType(Enum)
       [Ram s]
          is_flag = !s.0.has_payload && !s.1.has_payload
@@ -2035,8 +2096,8 @@ fn_ret_sig_with_ti = cg, ti =>
                fret = expr::fn_ret_vt_of(cg, sname)
                fret == ast::ValueType(Unknown)
                   |
-                     cg.fninfos += FnInfo((sname, <-->, <-->, 0,
-                        ast::VTypes(), ret_vt, <->, <->, <+>, <->))
+                     cg.fninfos += FnInfo(sname, <-->, <-->, 0,
+                        ast::VTypes(), ret_vt, <->, <->, <+>, <->)
                ret_ti = f.3
                is_rec = ret_vt [Record]
                is_rec
@@ -2064,6 +2125,7 @@ ti_get_bitfield = cg, ti =>
 ti_is_packed_or_bf: Cg, ast::TypeInfo => <>
 ti_is_packed_or_bf = cg, ti =>
    ti
+      [Align a] ti_is_packed_or_bf(cg, a.1)
       [Bitfield] <+>
       [Rec r] r.5
       [TypeVar name]
@@ -2180,6 +2242,10 @@ codegen_sizeof_bytes = cg, so =>
       [Record] codegen_record_size_bytes(cg, so.rec_type)
       | codegen_type_size(cg, so.val_type, so.rec_type)
 
+codegen_alignof_bytes: Cg, ast::AlignOfExpr => Int
+codegen_alignof_bytes = cg, ao =>
+   codegen_type_align(cg, ao.val_type, ao.rec_type)
+
 codegen_type_size: Cg, ast::ValueType, ast::TypeInfo => Int
 codegen_type_size = cg, vt, ti =>
    bf_opt = ti_get_bitfield(cg, ti)
@@ -2239,6 +2305,9 @@ codegen_record_llvm_size: Cg, ast::TypeInfo => Int
 codegen_record_llvm_size = cg, ti =>
    min_sz = is_32bit_target(cg) | 8 | 16
    ti
+      [Align a]
+         inner_sz = codegen_record_llvm_size(cg, a.1)
+         align_to(inner_sz, a.0)
       [TypeVar name] codegen_record_llvm_size(cg, typedef_ti(cg, name))
       [Bitfield b] b.total_bits / 8
       [Rec r]
@@ -2287,6 +2356,9 @@ codegen_struct_size_step = cg, fields, i, n, cur_off, max_al =>
 codegen_record_align: Cg, ast::TypeInfo => Int
 codegen_record_align = cg, ti =>
    ti
+      [Align a]
+         inner_al = codegen_record_align(cg, a.1)
+         a.0 < inner_al | inner_al | a.0
       [TypeVar name] codegen_record_align(cg, typedef_ti(cg, name))
       [Bitfield b] 1
       [Rec r]
@@ -2403,12 +2475,12 @@ rec_fields_equal_at = f1, f2, i, n =>
    i == n
       | <+>
       |
-         f1i = f1(i) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
+         f1i = f1(i) | _ | ast::RecordFieldType("", ast::ValueType(Unknown),
             ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-            <->, ast::Expr(Int, 0)))
-         f2i = f2(i) | _ | ast::RecordFieldType(("", ast::ValueType(Unknown),
+            <->, ast::Expr(Int, 0))
+         f2i = f2(i) | _ | ast::RecordFieldType("", ast::ValueType(Unknown),
             ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-            <->, ast::Expr(Int, 0)))
+            <->, ast::Expr(Int, 0))
          match = f1i.name == f2i.name && f1i.val_type == f2i.val_type &&
             type_info_equal(f1i.rec_type, f2i.rec_type)
          match
@@ -2420,10 +2492,10 @@ enum_slots_equal_at = s1, s2, i, n =>
    i == n
       | <+>
       |
-         s1i = s1(i) | _ | ast::EnumSlotInfo(("", <->, ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
-         s2i = s2(i) | _ | ast::EnumSlotInfo(("", <->, ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         s1i = s1(i) | _ | ast::EnumSlotInfo("", <->, ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+         s2i = s2(i) | _ | ast::EnumSlotInfo("", <->, ast::ValueType(Unknown),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)))
          same_p = s1i.has_payload | s2i.has_payload | !s2i.has_payload
          match = s1i.label == s2i.label && same_p &&
             (!s1i.has_payload || (s1i.payload_type == s2i.payload_type &&
@@ -2435,6 +2507,11 @@ enum_slots_equal_at = s1, s2, i, n =>
 type_info_equal: ast::TypeInfo, ast::TypeInfo => <>
 type_info_equal = a, b =>
    a
+      [Align a1]
+         b
+            [Align a2]
+               a1.0 == a2.0 && type_info_equal(a1.1, a2.1)
+            | type_info_equal(a1.1, b)
       [Prim p1]
          b
             [Prim p2] p1 == p2
@@ -2638,6 +2715,7 @@ ctfe_eval_type_flag = cg, cond =>
 ctfe_canonical_ti: Cg, ast::TypeInfo => ast::TypeInfo
 ctfe_canonical_ti = cg, ti =>
    ti
+      [Align a] ctfe_canonical_ti(cg, a.1)
       [TypeVar n]
          is_user_type(cg, n)
             | typedef_ti(cg, n)
@@ -2652,9 +2730,9 @@ is_rec_homo_fields = flds, f0_ti, f0_vt, i, n =>
    i == n
       | <+>
       |
-         fi = flds(i) | _ | ast::RecordFieldType(("",
+         fi = flds(i) | _ | ast::RecordFieldType("",
             ast::ValueType(Unknown), ast::TypeInfo(Prim,
-            ast::ValueType(Unknown)), <->, ast::Expr(Int, 0)))
+            ast::ValueType(Unknown)), <->, ast::Expr(Int, 0))
          fi.val_type == f0_vt && type_info_equal(fi.rec_type, f0_ti)
             | is_rec_homo_fields(flds, f0_ti, f0_vt, i + 1, n)
             | <->
@@ -2662,6 +2740,7 @@ is_rec_homo_fields = flds, f0_ti, f0_vt, i, n =>
 is_rec_homo: ast::TypeInfo => <>
 is_rec_homo = ti =>
    ti
+      [Align a] is_rec_homo(a.1)
       [Rec r]
          nf = ?r.0
          nf == 0
@@ -2674,6 +2753,7 @@ is_rec_homo = ti =>
 type_is_record: ast::TypeInfo => <>
 type_is_record = ti =>
    ti
+      [Align a] type_is_record(a.1)
       [Rec r] !r.1
       [Prim p]
          is_rec = p [Record, Unit]
@@ -2975,9 +3055,9 @@ ctfe_find_matching_type_branch = cg, branches, i, n, target_ti =>
    i == n
       | -1
       |
-         br = branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
+         br = branches(i) | _ | ast::ChoiceBranch(ast::GuardKind(Bare),
             ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-            ast::Expr(Int, 0)))
+            ast::Expr(Int, 0))
          ctfe_branch_matches_type(cg, br, target_ti)
             | i
             | ctfe_find_matching_type_branch(cg, branches, i + 1, n, target_ti)
@@ -2988,9 +3068,9 @@ ctfe_find_matching_type_branch_simple = branches, i, n, target_ti =>
    i == n
       | -1
       |
-         br = branches(i) | _ | ast::ChoiceBranch((ast::GuardKind(Bare),
+         br = branches(i) | _ | ast::ChoiceBranch(ast::GuardKind(Bare),
             ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-            ast::Expr(Int, 0)))
+            ast::Expr(Int, 0))
          ctfe_branch_matches_type_simple(br, target_ti)
             | i
             | ctfe_find_matching_type_branch_simple(branches, i + 1, n,
@@ -3202,7 +3282,7 @@ codegen_eval_record_ctor = cg, ti, t =>
    tgt_nf = ?tgt_fvts
    nargs = ?t.args
    is_update = call_has_splat_or_named(t.args, 0, nargs) ||
-      (nargs == 0 && tgt_nf > 0)
+      (nargs == 0 && tgt_nf > 0) || nargs > 1
    is_update
       |
          sz' = <>(rm) | LLVMSizeOf(rm_0) |
@@ -3443,8 +3523,16 @@ codegen_eval_ctor: Cg, ast::TypeInfo, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_ctor = cg, ti, t =>
    ti
       [Array ae]
-         u' = main::codegen_array_create_cap(cg, ae.2, "a.new")
-         (u', ast::ValueType(Array))
+         ?t.args > 0
+            |
+               init_e = ast::Expr(Call, ast::CallExpr(t.fn_name, ast::Expr(Var, ""), ast::Exprs(), t.line, t.col))
+               elem_is_fn = ae.0 [Fn]
+               res = expr::desugar_array_lit_call_ast(cg, t, init_e, elem_is_fn)
+               cg.last_type = t.fn_name
+               res
+            |
+               u' = main::codegen_array_create_cap(cg, ae.2, "a.new")
+               (u', ast::ValueType(Array))
       [Map mk]
          u' = runtime::codegen_map_create(cg, "m.new")
          (u', ast::ValueType(Map))
@@ -3546,20 +3634,23 @@ static_expr_vt = cg, e =>
       [Record] ast::ValueType(Record)
       [Fn] ast::ValueType(Fn)
       [Call c]
-         c.fn_name == "Builder" && ?c.args == 0
-            | ast::ValueType(Builder)
+         c.fn_name == "%bitcast" && ?c.args == 2
+            | ((c.args(0)!!) [SizeOf so] vt_from_ti_cg(cg, so.rec_type) | ast::ValueType(Unknown))
             |
-               is_user_type(cg, c.fn_name)
+               c.fn_name == "Builder" && ?c.args == 0
+                  | ast::ValueType(Builder)
                   |
-                     ti = typedef_ti(cg, c.fn_name)
-                     ti
-                        [Enum] ast::ValueType(Enum)
-                        [Ram] ast::ValueType(Ram)
-                        [Rec] ast::ValueType(Record)
-                        [Map] ast::ValueType(Map)
-                        [Array] ast::ValueType(Array)
+                     is_user_type(cg, c.fn_name)
+                        |
+                           ti = typedef_ti(cg, c.fn_name)
+                           ti
+                              [Enum] ast::ValueType(Enum)
+                              [Ram] ast::ValueType(Ram)
+                              [Rec] ast::ValueType(Record)
+                              [Map] ast::ValueType(Map)
+                              [Array] ast::ValueType(Array)
+                              | ast::ValueType(Unknown)
                         | ast::ValueType(Unknown)
-                  | ast::ValueType(Unknown)
       | ast::ValueType(Unknown)
 
 value_type_name: ast::ValueType => String
@@ -3723,15 +3814,15 @@ codegen_map_literal_insert_rest = cg, m, pairs, i, n, key_vt =>
 
 // Map literal keys and values are homogeneous. Check this before lowering so
 // a mismatched literal never becomes a partially-emitted map value.
-codegen_eval_map_literal: Cg, ast::MapLiteralExpr => (Addr, ast::ValueType)
-codegen_eval_map_literal = cg, lit =>
-   codegen_check_map_pairs(cg, lit.pairs, 0)
+codegen_eval_map_literal: Cg, ast::MapPairs => (Addr, ast::ValueType)
+codegen_eval_map_literal = cg, pairs =>
+   codegen_check_map_pairs(cg, pairs, 0)
    m = runtime::codegen_map_create(cg, "map.literal")
-   np = ?lit.pairs
+   np = ?pairs
    np == 0
       | (m, ast::ValueType(Map))
       |
-         first = lit.pairs(0)!!
+         first = pairs(0)!!
          kv0 = expr::codegen_eval(cg, first.key)
          vv0 = expr::codegen_eval(cg, first.value)
          key_vt = kv0.1
@@ -3746,7 +3837,7 @@ codegen_eval_map_literal = cg, lit =>
          cg.last_type = tname
          runtime::codegen_map_insert(cg, m, kv0.0, vv0.0, key_vt)
          np > 1
-            | codegen_map_literal_insert_rest(cg, m, lit.pairs, 1, np, key_vt)
+            | codegen_map_literal_insert_rest(cg, m, pairs, 1, np, key_vt)
          (m, ast::ValueType(Map))
 
 raw_addr_value: Cg, Addr, ast::ValueType, Addr => <Addr|>
@@ -3961,8 +4052,8 @@ codegen_eval_record = cg, r =>
    ?fnames > 0 && typedef_name_of_rt(cg, st) == ""
       |
          anon_name = "$rec." + str::from_int(?cg.typedefs)
-         runtime::push_typedef(cg, TypeDef((anon_name,
-            ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st +>, <->, fnames)))
+         runtime::push_typedef(cg, TypeDef(anon_name,
+            ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st +>, <->, fnames))
    cg.last_rt = <+ st +>
    cg.last_fnames = fnames
    cg.last_fvts = fvts
@@ -4013,11 +4104,11 @@ td_record_meta = cg, idx =>
          td.rt
             | rt => <+ (rt, td.fnames) +>
             |
-               cg.typedefs(idx) = TypeDef((td.name, td.ti, <-->, <+>, td.fnames)) !| _
+               cg.typedefs(idx) = TypeDef(td.name, td.ti, <-->, <+>, td.fnames) !| _
                meta = runtime::record_meta_from_ti(cg, td.ti)
                cached_rt = meta | m => <+ m.0 +> | <-->
                cached_fn = meta | m => m.1 | ast::Names()
-               cg.typedefs(idx) = TypeDef((td.name, td.ti, cached_rt, <->, cached_fn)) !| _
+               cg.typedefs(idx) = TypeDef(td.name, td.ti, cached_rt, <->, cached_fn) !| _
                meta
 
 td_record_meta_by_name: Cg, String => <(Addr, ast::Names)|>
@@ -4057,6 +4148,7 @@ typedef_ti_of_rt = cg, rt =>
 record_field_ti: Cg, ast::TypeInfo, Int => ast::TypeInfo
 record_field_ti = cg, ti, idx =>
    ti
+      [Align a] record_field_ti(cg, a.1, idx)
       [Rec rr]
          fields = rr.0
          (idx < ?fields)
@@ -4096,6 +4188,7 @@ record_field_dtype = cg, ti, idx =>
 field_vts: Cg, ast::TypeInfo => ast::VTypes
 field_vts = cg, ti =>
    ti
+      [Align a] field_vts(cg, a.1)
       [Rec rr] runtime::field_vts_step(cg, rr.0, 0, ?rr.0, ast::VTypes())
       [TypeVar name] field_vts(cg, typedef_ti(cg, name))
       [Prim p]
@@ -4108,10 +4201,10 @@ field_vts = cg, ti =>
 error_context_ti: () => ast::TypeInfo
 error_context_ti = !=>
    flds = ast::FieldTypes()
-   flds += ast::RecordFieldType(("", ast::ValueType(Int),
-      ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
-   flds += ast::RecordFieldType(("", ast::ValueType(Int),
-      ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0)))
+   flds += ast::RecordFieldType("", ast::ValueType(Int),
+      ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0))
+   flds += ast::RecordFieldType("", ast::ValueType(Int),
+      ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0))
    ast::TypeInfo(Rec, (flds, <->, <->, ast::ValueType(Record), 2, <->))
 
 error_field_ti_by_idx: Int => ast::TypeInfo

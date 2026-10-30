@@ -22,7 +22,7 @@
 
 #public
 
-#type Strings (String){}
+#type Strings String{}
 #type SMap String ^ String
 
 #type BuildKeyResult (
@@ -64,7 +64,7 @@
 // One resolved package instance (a lockfile entry plus the data the import
 // map needs: the package name and the on-disk source directory).
 #type Inst (pkg: ccl::LockPackage, name: String, src: String, key: String, dir: String)
-#type Insts (Inst){}
+#type Insts Inst{}
 
 // A dependency after applying root overrides: where its tree lives and how it
 // is identified.
@@ -329,7 +329,7 @@
    empty_lock_pkg: () => ccl::LockPackage
    empty_lock_pkg = !=>
       deps: ccl::LockDeps
-      ccl::LockPackage(("", ccl::DepKind(Path), "", "", "", "", "", "", deps, <->))
+      ccl::LockPackage("", ccl::DepKind(Path), "", "", "", "", "", "", deps, <->)
 
    tmp_path: Resolver => String
    tmp_path = r =>
@@ -390,7 +390,7 @@
                      sh("rm -rf " + sq(tmp))
                      fail(7011, "dependency '" + alias + "': cannot fetch " + url)
                   |
-                     r.fetched ^ (url) = "1"
+                     r.fetched ^ url = "1"
                      libc::rename(tmp, m) == 0 || dir_exists(m)
 
    // Refresh branches and (possibly moved) tags once per run.
@@ -398,7 +398,7 @@
    fetch_mirror = r, url =>
       !r.opts.offline && !(r.fetched ^? url)
          |
-            r.fetched ^ (url) = "1"
+            r.fetched ^ url = "1"
             sh(git_cmd(r, mirror_dir(r, url)) + "fetch --quiet --force " + sq(url) +
                " '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*' 2>/dev/null")
 
@@ -452,7 +452,7 @@
                            fetch_mirror(r, url)
                            rev_parse(r, url, rev)
                               | c =>
-                                 r.memo ^ (key) = c
+                                 r.memo ^ key = c
                                  <+ c +>
                               |
                                  fail(7004, "dependency '" + alias + "': revision '" + rev +
@@ -593,7 +593,7 @@
 
    fetch_archive: Resolver, String, String, String => < String | >
    fetch_archive = r, alias, url, hash =>
-      v_dir = r.vendor_archive ^ (hash) | _ | ""
+      v_dir = r.vendor_archive ^ hash | _ | ""
       v_dir != "" && dir_exists(v_dir)
          |
             !check_tree_security(r, v_dir)
@@ -604,7 +604,7 @@
                |
                   compute_tree_hash(r, v_dir)
                      | tree_hash =>
-                        expected_hash = r.hashes ^ (hash) | _ | ""
+                        expected_hash = r.hashes ^ hash | _ | ""
                         expected_hash != "" && tree_hash != expected_hash
                            |
                               fail(7005, diag::vendor_tree_mismatch_prefix! + alias +
@@ -725,9 +725,9 @@
             d.kind
                [Path]
                   v_dir' = ++ ""
-                  v_dir' = r.vendor_paths ^ (d.path) | s => s | ""
+                  v_dir' = r.vendor_paths ^ d.path | s => s | ""
                   v_dir' == "" |
-                     v_dir' = r.vendor_paths ^ (d.alias) | s => s | ""
+                     v_dir' = r.vendor_paths ^ d.alias | s => s | ""
                   v_dir' != "" && dir_exists(v_dir')
                      | fetch_path(r, d.alias, v_dir', <->, d.path)
                      |
@@ -755,8 +755,8 @@
                                     pkg.archive_hash = tree_hash
                                     id = m.name + "@" + c(..7)
                                     pkg.id = id
-                                    <+ Fetched((m.name, dir, id, "git " + d.git_url + " " + c,
-                                       pkg, m)) +>
+                                    <+ Fetched(m.name, dir, id, "git " + d.git_url + " " + c,
+                                       pkg, m) +>
                                  | <-->
                            | <-->
                      | <-->
@@ -771,8 +771,8 @@
                               pkg.archive_hash = d.archive_hash
                               id = m.name + "@" + d.archive_hash(7..15)
                               pkg.id = id
-                              <+ Fetched((m.name, dir, id, "url " + d.archive_url + " " +
-                                 d.archive_hash, pkg, m)) +>
+                              <+ Fetched(m.name, dir, id, "url " + d.archive_url + " " +
+                                 d.archive_hash, pkg, m) +>
                            | <-->
                      | <-->
 
@@ -797,9 +797,9 @@
                         | m =>
                            id = m.name + "@path"
                            expected_tree' = ++ ""
-                           expected_tree' = r.hashes ^ (id) | s => s | ""
+                           expected_tree' = r.hashes ^ id | s => s | ""
                            expected_tree' == "" && orig_path != "" |
-                              expected_tree' = r.hashes ^ (orig_path) | s => s | ""
+                              expected_tree' = r.hashes ^ orig_path | s => s | ""
                            compute_tree_hash(r, abs)
                               | tree_hash =>
                                  expected_tree' != "" && tree_hash != expected_tree'
@@ -814,7 +814,7 @@
                                           | pkg.path = relpath(r.opts.root, abs)
                                        pkg.is_override = is_override
                                        pkg.id = id
-                                       <+ Fetched((m.name, abs, id, "path " + abs, pkg, m)) +>
+                                       <+ Fetched(m.name, abs, id, "path " + abs, pkg, m) +>
                               | <-->
                         | <-->
 
@@ -850,9 +850,9 @@
                |
                   fail(7002, "dependency cycle: " + cycle_chain(r.stack, f.id))
                   <-->
-               | r.done ^? (f.id)
+               | r.done ^? f.id
                   |
-                     prev_key = r.done ^ (f.id) | _ | ""
+                     prev_key = r.done ^ f.id | _ | ""
                      prev_key == f.key
                         | <+ f.id +>
                         |
@@ -871,7 +871,7 @@
          is_path = f.pkg.kind [Path]
          f.manifest.deps @ d =>
             resolve_dep(r, d, f.dir, is_path)
-               | id => deps += ccl::LockDep((d.alias, id))
+               | id => deps += ccl::LockDep(d.alias, id)
                |
                   ok' = <->
                   -->
@@ -880,8 +880,8 @@
          r.stack = pop
          !ok' | <--> |
             f.pkg.deps = deps
-            r.done ^ (f.id) = f.key
-            r.insts += Inst((f.pkg, f.name, path_join(f.dir, "src"), f.key, f.dir))
+            r.done ^ f.id = f.key
+            r.insts += Inst(f.pkg, f.name, path_join(f.dir, "src"), f.key, f.dir)
             <+ f.id +>
 
 // --- lock / import map ---------------------------------------------------------
@@ -1054,7 +1054,7 @@
       loaded_files @ f =>
          ?f > 0 && !(seen ^? f) && file_exists(f)
             |
-               seen ^ (f) = "1"
+               seen ^ f = "1"
                h = hash_file(f)
                src_lines += f + ": " + h
       ccl::sort_strings(src_lines) @ line =>
@@ -1077,7 +1077,7 @@
       b += "ast_hash = " + ast_h + "\n"
       meta = +b
       k = hash_string(meta)
-      BuildKeyResult((k, meta))
+      BuildKeyResult(k, meta)
 
    cache_lookup: String, String => < String | >
    cache_lookup = cache_dir, key =>
@@ -1150,9 +1150,9 @@
 
    parse_opts: Int => < PkgOpts | >
    parse_opts = start =>
-      opts = PkgOpts((".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
+      opts = PkgOpts(".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
          env_or("EDVA_GIT", "git"), default_cache!, env_or("EDVA_NO_CACHE", "") == "1",
-         <->, ""))
+         <->, "")
       ok' = <+>
       i' = start
       0.. @
@@ -1267,9 +1267,9 @@
 
    parse_add_opts: Int => < AddOpts | >
    parse_add_opts = start =>
-      opts = PkgOpts((".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
+      opts = PkgOpts(".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
          env_or("EDVA_GIT", "git"), default_cache!, env_or("EDVA_NO_CACHE", "") == "1",
-         <->, ""))
+         <->, "")
       alias' = ++ ""
       kind' = ccl::DepKind(Path)
       git_url' = ++ ""
@@ -1367,7 +1367,7 @@
          i' = i' + 1
       git_url' != "" && git_rev' == "" | git_rev' = ++ "master"
       ok' && alias' != "" && has_kind'
-         | <+ AddOpts((alias', kind', git_url', git_rev', path', archive_url', archive_hash', opts)) +>
+         | <+ AddOpts(alias', kind', git_url', git_rev', path', archive_url', archive_hash', opts) +>
          | <-->
 
    cmd_add: AddOpts => Int
@@ -1397,7 +1397,7 @@
       m_res = load_manifest(root)
       m_res
          | m =>
-            new_dep = ccl::PackageDep((
+            new_dep = ccl::PackageDep(
                add_opts.alias,
                add_opts.kind,
                add_opts.git_url,
@@ -1405,7 +1405,7 @@
                add_opts.path,
                add_opts.archive_url,
                add_opts.archive_hash
-            ))
+            )
             new_deps: ccl::PackageDeps
             found' = <->
             m.deps @ d =>
@@ -1609,7 +1609,7 @@
          |
             prior_res = has_lock
                | read_lock(lock_file)
-               | <+ ccl::Lockfile((1, ccl::LockPackages(), ccl::LockDeps())) ->
+               | <+ ccl::Lockfile(1, ccl::LockPackages(), ccl::LockDeps()) ->
             prior_res
                | prior => resolve_root(opts, prior, has_lock)
                | e =>
@@ -1647,7 +1647,7 @@
                   ccl::get_section(doc, "packages")
                      | pkgs_doc =>
                         ok' = <+>
-                        pkgs_doc.entries @ e =>
+                        pkgs_doc @ e =>
                            ok' |
                               id = e.key
                               e.val [Block b]
@@ -1666,8 +1666,8 @@
                                           "' not found at '" + abs_dir + "'")
                                        ok' = <->
                                     |
-                                       r.vendor_pkgs ^ (id) = abs_dir
-                                       tree != "" | r.hashes ^ (id) = tree
+                                       r.vendor_pkgs ^ id = abs_dir
+                                       tree != "" | r.hashes ^ id = tree
                                        kind_str
                                           ["git"]
                                              commit != "" | r.vendor_git ^ (url + "#" + commit) = abs_dir
@@ -1677,13 +1677,13 @@
                                                 r.hashes ^ (url + "#" + rev) = tree
                                                 r.hashes ^ (url + "#" + commit) = tree
                                           ["archive"]
-                                             hash != "" | r.vendor_archive ^ (hash) = abs_dir
-                                             tree != "" | r.hashes ^ (hash) = tree
+                                             hash != "" | r.vendor_archive ^ hash = abs_dir
+                                             tree != "" | r.hashes ^ hash = tree
                                           ["path"]
                                              path != "" |
-                                                r.vendor_paths ^ (path) = abs_dir
-                                                tree != "" | r.hashes ^ (path) = tree
-                                             r.vendor_paths ^ (id) = abs_dir
+                                                r.vendor_paths ^ path = abs_dir
+                                                tree != "" | r.hashes ^ path = tree
+                                             r.vendor_paths ^ id = abs_dir
                         ok'
                      | <+>
                |
@@ -1692,8 +1692,8 @@
 
    resolve_root: PkgOpts, ccl::Lockfile, <> => Int
    resolve_root = opts, prior, has_lock =>
-      r = Resolver((opts, Insts(), SMap(), Strings(), SMap(), SMap(), SMap(), SMap(),
-         Strings(), Strings(), 0, SMap(), SMap(), SMap(), SMap()))
+      r = Resolver(opts, Insts(), SMap(), Strings(), SMap(), SMap(), SMap(), SMap(),
+         Strings(), Strings(), 0, SMap(), SMap(), SMap(), SMap())
       !load_vendor_map(r) | 1 |
          prior.packages @ p =>
             p.kind
@@ -1706,7 +1706,7 @@
                         r.memo ^ (p.git_url + "#" + p.git_rev) = p.git_commit
                         p.archive_hash != "" | r.hashes ^ (p.git_url + "#" + p.git_rev) = p.archive_hash
                [Archive]
-                  p.archive_hash != "" | r.hashes ^ (p.archive_url) = p.archive_hash
+                  p.archive_hash != "" | r.hashes ^ p.archive_url = p.archive_hash
          load_manifest(opts.root)
             | m => resolve_with_root(r, m, prior, has_lock)
             | 1
@@ -1727,7 +1727,7 @@
                      d.alias == o.alias
                         |
                            base = source_base(d, r.opts.root)
-                           r.overrides ^ (base) = abs_ovr
+                           r.overrides ^ base = abs_ovr
                            r.overrides ^ ("base_alias " + base) = o.alias
                            r.fetched ^ ("ovr " + o.alias) = "1"
       ok'
@@ -1741,7 +1741,7 @@
          m.deps @ d =>
             ok' |
                resolve_dep(r, d, r.opts.root, <+>)
-                  | id => root_deps += ccl::LockDep((d.alias, id))
+                  | id => root_deps += ccl::LockDep(d.alias, id)
                   | ok' = <->
          m.overrides @ o =>
             ok' && !(r.fetched ^? ("ovr " + o.alias))
@@ -1753,7 +1753,7 @@
 
    write_outputs: Resolver, ccl::PackageManifest, ccl::Lockfile, <>, ccl::LockDeps => Int
    write_outputs = r, m, prior, has_lock, root_deps =>
-      lock = ccl::Lockfile((1, lock_pkgs(r), root_deps))
+      lock = ccl::Lockfile(1, lock_pkgs(r), root_deps)
       text = ccl::lockfile_to_ccl(lock)
       lock_file = path_join(r.opts.root, "edva.lock.ccl")
       old_text = read_text(lock_file) | t => t | ""
@@ -1842,9 +1842,9 @@
 
    parse_update_opts: Int => < (PkgOpts, String) | >
    parse_update_opts = start =>
-      opts = PkgOpts((".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
+      opts = PkgOpts(".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
          env_or("EDVA_GIT", "git"), default_cache!, env_or("EDVA_NO_CACHE", "") == "1",
-         <+>, ""))
+         <+>, "")
       alias' = ++ ""
       ok' = <+>
       i' = start
@@ -1944,23 +1944,23 @@
    print_dep_tree = pkgs, deps, indent, visited, dup_map =>
       n = ?deps
       0..n @ i =>
-         dep = deps(i) | d => d | ccl::LockDep(("", ""))
+         dep = deps(i) | d => d | ccl::LockDep("", "")
          is_last = i == n - 1
          branch = is_last | "└── " | "├── "
          next_indent = indent + (is_last | "    " | "│   ")
          base = pkg_base_name(dep.id)
-         is_dup = dup_map ^? (base)
+         is_dup = dup_map ^? base
          dup_tag = is_dup | " [duplicate version]" | ""
          pkg_opt = find_lock_pkg(pkgs, dep.id)
          pkg_opt
             | p =>
                desc = format_pkg_source(p)
                out(indent + branch + dep.alias + " -> " + dep.id + " (" + desc + ")" + dup_tag)
-               is_visited = visited ^? (dep.id)
+               is_visited = visited ^? dep.id
                is_visited
                   | out(next_indent + "└── ... (cycle)")
                   |
-                     visited ^ (dep.id) = "1"
+                     visited ^ dep.id = "1"
                      ?p.deps > 0
                         | print_dep_tree(pkgs, p.deps, next_indent, visited, dup_map)
             |
@@ -1972,22 +1972,22 @@
       pkg_ids = SMap()
       lock.packages @ p =>
          base = pkg_base_name(p.id)
-         pkg_ids ^? (base)
+         pkg_ids ^? base
             |
-               prev_id = pkg_ids ^ (base) | _ | ""
+               prev_id = pkg_ids ^ base | _ | ""
                prev_id != p.id
                   |
-                     dup_map ^ (base) = "dup"
-                     pkg_ids ^ (base) = prev_id + ", " + p.id
+                     dup_map ^ base = "dup"
+                     pkg_ids ^ base = prev_id + ", " + p.id
             |
-               pkg_ids ^ (base) = p.id
+               pkg_ids ^ base = p.id
       out(m.name + " v" + m.version + " (" + root_dir + ")")
       visited = SMap()
       print_dep_tree(lock.packages, lock.root_deps, "", visited, dup_map)
       has_dups' = <->
       lock.packages @ p =>
          base = pkg_base_name(p.id)
-         (dup_map ^? (base)) && !has_dups' | has_dups' = <+>
+         (dup_map ^? base) && !has_dups' | has_dups' = <+>
       has_dups'
          |
             out("")
@@ -1995,10 +1995,10 @@
             reported = SMap()
             lock.packages @ p =>
                base = pkg_base_name(p.id)
-               (dup_map ^? (base)) && !(reported ^? (base))
+               (dup_map ^? base) && !(reported ^? base)
                   |
-                     reported ^ (base) = "1"
-                     ids_str = pkg_ids ^ (base) | _ | ""
+                     reported ^ base = "1"
+                     ids_str = pkg_ids ^ base | _ | ""
                      out("  " + base + ": " + ids_str)
       0
 
@@ -2036,8 +2036,8 @@
             fail(7017, "cannot create vendor directory '" + vendor_dir + "'")
             1
          |
-            r = Resolver((opts, Insts(), SMap(), Strings(), SMap(), SMap(), SMap(), SMap(),
-               Strings(), Strings(), 0, SMap(), SMap(), SMap(), SMap()))
+            r = Resolver(opts, Insts(), SMap(), Strings(), SMap(), SMap(), SMap(), SMap(),
+               Strings(), Strings(), 0, SMap(), SMap(), SMap(), SMap())
             b = {4096}
             b += "vendor = 1\n\n"
             b += "packages =\n"

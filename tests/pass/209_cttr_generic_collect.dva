@@ -7,8 +7,8 @@
 #use "str"
 #use io
 
-#type Ints (Int){}
-#type Strs (String){}
+#type Ints Int{}
+#type Strs String{}
 
 map_f: #! T: Type, (Int => Int), T => T
 map_f = f, xs =>

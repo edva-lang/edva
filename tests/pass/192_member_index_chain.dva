@@ -13,6 +13,6 @@ f = t => t.0.x
 g: (P, Int) => Int
 g = t => t.0.y + t.1
 
-p = P((3, 4))
+p = P(3, 4)
 io::out $ f((p, 0))
 io::out $ g((p, 10))

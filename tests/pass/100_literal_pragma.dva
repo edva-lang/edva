@@ -1,4 +1,4 @@
-// Typed integer literals, #pragma number, and postfix {N} repetition.
+// Typed integer literals, #pragma integer, and postfix {N} repetition.
 #use io
 
 a = 5i16

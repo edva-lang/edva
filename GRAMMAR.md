@@ -29,21 +29,12 @@ inline statements. A `;` at the end of a line is an error.
 
 | Kind | Syntax | Notes |
 |------|--------|-------|
-| Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0m48`, `0m-16`, `0max`, `0min` | optional type suffix (`0maxu64`, `0mini32`), see below |
-| Float | `3.14`, `1.5e-3`, `3.14f32`, `-.0`, `.inf`, `-.inf`, `.nan`, `.max`, `-.max`, `.min`, `.sub` | built-in FP constants, padding zeros mandatory otherwise (see §1.4) |
+| Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0b1{48}` | optional type suffix (`42u64`, `-5i32`), repeating digits `{N}` |
+| Float | `3.14`, `1.5e-3`, `3.14f32`, `-0.0` | padding zeros mandatory on both sides of `.` (see §1.4) |
 | Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
 | String | `"..."` | C-style escapes, `${expr}` interpolation; multiline with margin stripping when starting with `"\n` |
 
-**Built-in numeric limit constants** — Built-in language constants for integer boundaries and IEEE-754 floating-point properties:
-- **Integer limits (`0max` / `0min`)**: Represent the maximum and minimum representable values. Without suffix, `0max` evaluates to `Int` maximum (`9223372036854775807`) and `0min` to `Int` minimum (`-9223372036854775808`). Accepts any integer width suffix: `0maxu64`, `0minu64`, `0maxu32`, `0minu32`, `0maxi32`, `0mini32`, `0maxu16`, `0minu16`, `0maxi16`, `0mini16`, `0maxu8`, `0minu8`, `0maxi8`, `0mini8`, `0maxi64`, `0mini64`.
-- **Floating-point constants**:
-  - `-.0`: IEEE-754 signed negative zero (distinct from `0.0`; `1.0 / -.0 == -.inf`).
-  - `.inf` / `-.inf`: positive and negative infinity (`1.0 / 0.0` and `-1.0 / 0.0`).
-  - `.nan` / `-.nan`: IEEE-754 quiet NaN (`0.0 / 0.0`).
-  - `.max` / `-.max`: maximal and minimal finite floating-point values (`DBL_MAX` / `-DBL_MAX`).
-  - `.min`: minimal positive normalized floating-point value (`DBL_MIN`).
-  - `.sub`: minimal positive subnormal floating-point value (`DBL_TRUE_MIN`).
-  - All float constants accept optional float suffixes (`f32`, `f`, `F`), resolving to single-precision float bounds (e.g. `.nanf32`, `.maxf32`, `.minf32`, `.subf32`, `-.0f32`, `.inff32`).
+> **Numeric limits and IEEE-754 constants** — Explicit-width integer bounds (`const::max_i64`, `const::min_i64`, `const::max_i32`, `const::min_i32`, `const::max_i16`, `const::min_i16`, `const::max_i8`, `const::min_i8`, `const::max_u64`, `const::max_u32`, `const::max_u16`, `const::max_u8`) and IEEE-754 floating-point constants (`const::inf_f64`, `const::inf_f32`, `const::nan_f64`, `const::nan_f32`, `const::max_f64`, `const::max_f32`, `const::min_f64`, `const::min_f32`, `const::sub_f64`, `const::sub_f32`, `const::eps_f64`, `const::eps_f32`) are provided by the `std/const` module (`#use const`). Signed negative zero is written directly as `-0.0` (or `-0.0f32`).
 
 **Unified String Literals (`"..."`)** — Double-quoted string literals with expression interpolation and multiline formatting:
 - **Interpolation**: `${expr}` evaluates scalar primitives (`Int`, `Float`, `Rune`, `String`, sized int/float types) directly into the string (desugaring to `%to_str(expr)`). Escaped as `\$` or `\${`. Bare `$` is literal.
@@ -82,13 +73,18 @@ A `#`-prefixed word is a directive. Directives are lexed as single tokens.
 
 - `#foreign` — opens a foreign-binding block (§2.4). An optional string
   argument names the library: `#foreign "c"`.
-- `#pragma number <type>` — a positional, file-scoped directive that switches
+- `#pragma integer <type>` — a positional, file-scoped directive that switches
   the **default integer literal type** for the rest of the file. `<type>` is
   any integer type name (`i8`/`u8`..`i64`/`u64`) or `default` to restore
   `Int`. An explicit literal suffix always overrides the pragma. Typical use:
-  `#pragma number i16` before an i16 table, `#pragma number i64` before an
+  `#pragma integer i16` before an i16 table, `#pragma integer i64` before an
   i64 table. Invalid types produce `E1013`. The directive itself is a no-op
   statement.
+- `#pragma float <type>` — a positional, file-scoped directive that switches
+  the **default float literal type** for the rest of the file. `<type>` is
+  `f32`, `f64`, `Float`, or `default` (to restore `Float`). An explicit literal
+  suffix (`f32`, `f64`, `f`, `F`) always overrides the pragma. Invalid types
+  produce `E1013`.
 - `#!` — compile-time execution (§2.14). As a prefix on an expression,
    `#! expr` folds a constant expression at compile time (CTFE). As a prefix on
    a parameter (`#! T`), it marks a compile-time type parameter.
@@ -266,7 +262,8 @@ public or private.
 ### 2.3 Pragma
 
 ```
-PragmaStmt ::= "#pragma" "number" ( TypeName | "default" )
+PragmaStmt ::= "#pragma" "integer" ( TypeName | "default" )
+             | "#pragma" "float" ( "f32" | "f64" | "Float" | "default" )
              | "#pragma" "fpfast" ( "all" | "none" )
              | "#pragma" "swizzle" ( "all" | "xyzw" | "rgba" | "none" )
 ```
@@ -297,23 +294,23 @@ TypeDeclStmt  ::= "#type" Identifier "(" [ FieldTypeList ] ")"
                |  "#type" Identifier RamTypeDecl
                |  "#type" Identifier "(" TypeName ")" "{}"    (* growable array *)
                |  "#type" Identifier GeneratorCall            (* instantiation *)
-FieldTypeList ::= FieldType { "," FieldType }
-FieldType     ::= [ Identifier ":" ] TypeName
+FieldTypeList ::= FieldType { ( "," | Newline ) FieldType } [ "," ]
+FieldType     ::= [ Identifier ":" ] TypeName [ "=" Expr ]
                |  TypeName "*" Integer          (* repeated: N fields of Type *)
-               |  TypeName "[" "]"              (* dynamic slice: (T[]) *)
-IndentFieldList ::= IndentField { Newline IndentField }
-IndentField   ::= Identifier ":" TypeName
+               |  TypeName "[" "]"              (* dynamic slice: T[] *)
+IndentFieldList ::= IndentField { ( "," | Newline ) IndentField } [ "," ]
+IndentField   ::= Identifier ":" TypeName [ "=" Expr ]
                |  Identifier ":" Newline INDENT IndentFieldList DEDENT
-EnumTypeDecl  ::= "<" EnumVariant "," EnumVariant { "," EnumVariant } ">"
-               |  "<" Newline INDENT EnumVariant { [ "," ] Newline EnumVariant } DEDENT ">"
+EnumTypeDecl  ::= "<" EnumVariant "," EnumVariant { "," EnumVariant } [ "," ] ">"
+               |  "<" Newline INDENT EnumVariant { ( "," | Newline ) EnumVariant } [ "," ] DEDENT ">"
 EnumVariant   ::= UpperIdentifier [ "(" TypeName ")" ]
 ```
 
 Declares a named record, enum, ramification, growable array, or generator instantiation.
 
-**Record declarations.** The parenthesized form (`#type Name (...)`) uses commas between fields; the indent-based form (`#type Name` followed by an indented block of `field: Type` lines) uses indentation instead. In the indent form a field whose own `field:` is followed by a deeper-indented block declares a nested inline record type. The type name becomes a coercion/constructor function (§2.10) and is reserved.
+**Record declarations.** The parenthesized form (`#type Name (...)`, as well as `#packed (...)` and `#packed uN (...)`) separates fields with commas or, in multiline declarations, with newlines between aligned fields sharing the first field's indentation (`E2015` when multiple fields appear on the same line without a comma or when a comma-free sibling field is misaligned; deeper indentation continues the current field's type or default expression). The indent-based form (`#type Name` followed by an indented block of `field: Type` lines) likewise separates aligned fields by newlines or commas, and a field whose own `field:` is followed by a deeper-indented block declares a nested inline record type. Function parameter lists in `(A, B => C)` always require commas between parameter types. The type name becomes a coercion/constructor function (§2.10) and is reserved.
 
-**Enum declarations (`EnumTypeDecl`).** An enum declares at least **two** named variants (`E2070`) enclosed in `< ... >` (distinguished from a `RamTypeDecl` by the absence of a top-level `|`). Each variant label must start with an uppercase letter (`E2071`) and be unique within the enum (`E2074`). Variants may be bare unit labels (`Red`) or carry a single payload type in parentheses (`Some(String)`, `Add((Expr, Expr))`). Multi-line block declarations may separate variants by newlines with optional trailing commas.
+**Enum declarations (`EnumTypeDecl`).** An enum declares at least **two** named variants (`E2070`) enclosed in `< ... >` (distinguished from a `RamTypeDecl` by the absence of a top-level `|`). Each variant label must start with an uppercase letter (`E2071`) and be unique within the enum (`E2074`). Variants may be bare unit labels (`Red`) or carry a payload type or record field list in a single pair of parentheses (`Some(String)`, `Add(Expr, Expr)`, `Ok(w: Int, h: Int)`; redundant double parentheses `Add((Expr, Expr))` are rejected with `E2083`). Multi-line block declarations may separate aligned variants by newlines with optional commas; multiple variants on the same line require commas (`E2076`), and comma-free sibling variants must align with the first variant (`E2075`).
 - **Construction**: `EnumName(Variant)` constructs a unit variant; `EnumName(Variant, payload)` constructs a payload-bearing variant (`E3096` unknown variant, `E3097` missing payload, `E3098` payload on unit variant, `E3099` payload type mismatch). Unambiguous unit variant labels may also be referenced bare (`Red`) or qualified (`Color::Red`, `mod::Color::Red`; `E3105` when an unqualified unit label is declared by multiple enums).
 - **Pattern matching**: Matched in choice expressions using bracket guards: `[Variant]` (unit or ignored payload; `[Variant _]` is rejected by `E2109`), `[V1, V2]` (multi-variant OR guard), `[Variant x]` (juxtaposed payload binding without parentheses), or deep nested patterns `[Add (Lit a, Lit b)]`. Value-producing choices over an enum must cover all variants or include a trailing `|` fallback (`E3102`).
 - **Equality & Reflection**: Enums support `==` and `!=` (provided no variant payload contains a function type, `E3084`), and reject ordering operators `<, <=, >, >=` (`E3127`). At compile time, `?EnumType` yields the number of variants and `EnumType.(i)` yields the `i`-th variant's label as a `String` (`E3170`, `E3171`).
@@ -324,7 +321,7 @@ can be marked `#packed`:
 Header: #packed (a: u8, b: u16, c: u8)
 ```
 Packed records have byte alignment with zero interior or tail padding
-(`#size(Header)` is 4 bytes). Integer bitfield definitions specify a backing
+(`#size Header` is 4 bytes). Integer bitfield definitions specify a backing
 integer type (`u8`, `u16`, `u32`, `u64`) with per-field bit widths:
 ```dva
 TcpFlags: #packed u16 (
@@ -354,19 +351,19 @@ followed by `:` and a type). `:` alone never declares a type; it only
 annotates a binding or a function signature (`fun: <Int|> => Int`).
 
 **Repeated and slice types.** `(Int * 5)` is a fixed record of five `Int`s
-(5-element homogeneous record); `(Int[])` is a dynamic slice (a size-less
+(5-element homogeneous record); `Int[]` is a dynamic slice (a size-less
 view over an array of `Int`, valid only as the sole element of a type
 signature). A slice is stored by reference; a repeated/fixed record is stored
 inline.
 
-**Growable arrays.** `#type Values (Value){}` declares a growable array type
-whose elements are `Value`; `(Value){100}` names an initial capacity of 100 (0
+**Growable arrays.** `#type Values Value{}` declares a growable array type
+whose elements are `Value`; `Value{100}` names an initial capacity of 100 (0
 = default 16). A variable is typed with the declared name (`xs: Values`) or
 materialized empty with `xs = Values`. It is a Builder-shaped
 `{ len, data, cap }` struct over a run-time-sized element buffer:
 
 ```
-#type Ints (Int){}
+#type Ints Int{}
 xs: Ints
 xs += 42                      // append (first append creates the struct+buffer)
 print_int $ ?xs                 // length (0 before any append)
@@ -410,7 +407,7 @@ e = <- (404, "Type error") +> $> CompilerDiagnostic  // second slot, payload (In
 
 **Recursive and forward-referenced types.** A ram/enum declaration registers
 its name before its body parses, so a payload may reference the type itself
-(`#type Tree <Leaf(Int), Branch((Tree[]))>`). A type atom naming a
+(`#type Tree <Leaf(Int), Branch(Tree[])>`). A type atom naming a
 not-yet-declared type is a **forward reference**: it defers to a placeholder
 that codegen resolves against the fully-registered type table, so declarations
 may be mutually recursive across separate `#type` statements
@@ -557,12 +554,12 @@ whose capacity is `a * 3 * 4`, and `*` stays multiplication inside the braces.
 Inside a record literal a `{N}` group splices flat: `(0, 1 {3}, 2)` is
 the 5-element record `[0, 1, 1, 1, 2]`.
 
-**Compile-time size.** `#size T` (also `#size(T)`; a parenthesized single
+**Compile-time size.** `#size T` (also `#size T`; a parenthesized single
 unnamed type unwraps) is a compile-time unary operator over a **type**, not a
 value: it folds to an `Int` constant equal to the byte size of `T`. Scalars
 use their LLVM ABI size (`Int`/`Rune`/`Float`/pointer-sized types = 8,`i32`/`f32` = 4, `i16` = 2, `i8`/`i1` = 1). Composite record types use the
 arena-floored size the language allocates and strides by (≥ 16 bytes).
-Examples: `#size(Int)` is 8, `#size(Int * 2)` is 16, `#size(Pt)` for
+Examples: `#size Int` is 8, `#size(Int * 2)` is 16, `#size Pt` for
 `#type Pt (x: Int, y: Int)` is 16. The operand may be a declared record type or a
 record type literal (`#size((x: Int, y: Int))`).
 
@@ -845,7 +842,7 @@ the number of bytes consumed, so a scanner can build its rest-view with
 `s(i..)` (see `std/str.dva`'s `to_int`/`to_hex`). A zero-length String runs
 the body zero times with the index at 0.
 
-A growable array iterable (`(T){}`) iterates its live elements in index order
+A growable array iterable (`T{}`) iterates its live elements in index order
 (`0..?xs`). The body's first parameter binds the unwrapped element (`T`), and an
 optional second parameter binds the 0-based integer index (`Int`):
 
@@ -919,8 +916,9 @@ TupleExpr    ::= "(" Expr { "," Expr } ")"
 - A record is a comma-separated list of expressions (each is a full
   expression, so `(0 * 3548)` is multiplication, not repetition — use
   `0 {3548}` for repetition).
-- `(expr)` is a grouped expression and unwraps to the inner value; `(expr,)`
-  — with a trailing comma — is a 1-element positional record.
+- `(expr)` is a grouped expression and unwraps to the inner value; single-field
+  records (`(a: T)`, `(expr,)`) are illegal (`E2084`) — a record must have at
+  least 2 fields.
 - A `{N}` group inside a record splices flat.
 - Indexing: `arr(i)` reads element `i`; `arr(a..b)` produces a slice. Length
   is the unary `?` (`?arr`, `?sl`), never a `(*)` form.

@@ -30,12 +30,12 @@
    )
 
    reader: Int => Reader
-   reader = fd => Reader((fd, {4096}, 0, 4096, 0, <->))
+   reader = fd => Reader(fd, {4096}, 0, 4096, 0, <->)
 
    reader_with_cap: Int, Int => Reader
    reader_with_cap = fd, cap =>
       c = cap > 0 | cap | 4096
-      Reader((fd, {c}, 0, c, 0, <->))
+      Reader(fd, {c}, 0, c, 0, <->)
 
    // Returns the last errno encountered by the reader (0 if none).
    reader_err: Reader => Int

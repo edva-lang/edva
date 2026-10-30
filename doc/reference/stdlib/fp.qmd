@@ -67,20 +67,20 @@ pos_even(-2) // <->
 
 ## Collection transformations & reductions
 
-Collection combinators operate generically over growable arrays `(T){}`, slice views `(T[])`,
+Collection combinators operate generically over growable arrays `T{}`, slice views `T[]`,
 and homogeneous records. All multi-argument collection combinators place the collection in
 the last parameter position, enabling functional application with `apply ($)`:
 
 | Function | Signature | Description |
 |---|---|---|
-| `map` | `(A => B), Coll => (B){}` | Applies `f` to each element, returning a new array |
+| `map` | `(A => B), Coll => B{}` | Applies `f` to each element, returning a new array |
 | `filter` | `(T => <>), Coll => Coll` | Keeps elements satisfying predicate `pred` |
 | `reject` | `(T => <>), Coll => Coll` | Inverse of `filter`: removes elements satisfying `pred` |
 | `reduce` | `(Acc, E => Acc), Acc, Coll => Acc` | Left fold with explicit initial value |
 | `fold` | `(Acc, E => Acc), Acc, Coll => Acc` | Alias to `reduce` |
-| `scan` | `(Acc, E => Acc), Acc, Coll => (Acc){}` | Running left reduction, emitting each intermediate accumulator |
+| `scan` | `(Acc, E => Acc), Acc, Coll => Acc{}` | Running left reduction, emitting each intermediate accumulator |
 | `reverse` | `Coll => Coll` | Returns container with elements in reversed order |
-| `flatten` | `((E){}){} => (E){}` | Flattens a nested array of arrays into a single-level array |
+| `flatten` | `(E{}){} => E{}` | Flattens a nested array of arrays into a single-level array |
 | `find` | `(E => <>), Coll => < E | >` | Finds first element satisfying `pred`, returning `RamPN` |
 | `any` | `(E => <>), Coll => <>` | Checks if at least one element satisfies `pred` |
 
@@ -98,17 +98,17 @@ running = scan(add, 0, nums) // [0, 1, 3, 6, 10]
 
 ## Slicing & sequence views
 
-Slicing operations return zero-copy slice views `(T[])` bounded by collection length `0..?xs`.
+Slicing operations return zero-copy slice views `T[]` bounded by collection length `0..?xs`.
 Callers make an owned copy explicitly when independent storage is needed.
 
 | Function | Signature | Description |
 |---|---|---|
-| `take` | `Int, (T[]) => (T[])` | Slice view of first `n` elements (clamped to `0..?xs`) |
-| `drop` | `Int, (T[]) => (T[])` | Slice view omitting first `n` elements (clamped to `0..?xs`) |
-| `take_while` | `(T => <>), (T[]) => (T[])` | Slice view of leading elements where `pred` holds |
-| `drop_while` | `(T => <>), (T[]) => (T[])` | Slice view starting from the first non-matching element |
-| `partition` | `(T => <>), (T[]) => (passed: (T){}, rejected: (T){})` | Splits collection into passed and rejected arrays |
-| `sort` | `(T[]), (T, T => <>) => ()` | In-place insertion sort of slice view with comparison predicate |
+| `take` | `Int, T[] => T[]` | Slice view of first `n` elements (clamped to `0..?xs`) |
+| `drop` | `Int, T[] => T[]` | Slice view omitting first `n` elements (clamped to `0..?xs`) |
+| `take_while` | `(T => <>), T[] => T[]` | Slice view of leading elements where `pred` holds |
+| `drop_while` | `(T => <>), T[] => T[]` | Slice view starting from the first non-matching element |
+| `partition` | `(T => <>), T[] => (passed: T{}, rejected: T{})` | Splits collection into passed and rejected arrays |
+| `sort` | `T[], (T, T => <>) => ()` | In-place insertion sort of slice view with comparison predicate |
 
 ```{.dva .partial}
 sl = nums(..)
@@ -121,8 +121,8 @@ split = partition(is_even, sl)
 
 | Function | Signature | Description |
 |---|---|---|
-| `zip` | `(A[]), (B[]) => ((A, B)){}` | Pairs elements into 2-tuples until shorter collection ends |
-| `zip_with` | `(A, B => C), (A[]), (B[]) => (C){}` | Combines elements pairwise using `f` until shorter collection ends |
+| `zip` | `A[], B[] => (A, B){}` | Pairs elements into 2-tuples until shorter collection ends |
+| `zip_with` | `(A, B => C), A[], B[] => C{}` | Combines elements pairwise using `f` until shorter collection ends |
 
 ```{.dva .partial}
 a = Int{}

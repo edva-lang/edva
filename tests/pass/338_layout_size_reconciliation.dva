@@ -12,15 +12,15 @@ PackedRecord: #packed (a: i8, b: i32, c: i16)
 
 main: () => ()
 main = !=>
-   io::out $ #size(Rune)
-   io::out $ #size(Error)
-   io::out $ #size(Addr)
-   io::out $ #size(String)
-   io::out $ #size(Builder)
-   io::out $ #size(PackedRecord)
-   io::out $ #size(AlignedRecord)
-   io::out $ #size(ThreeFields)
-   io::out $ #size(RecordWithPointer)
+   io::out $ #size Rune
+   io::out $ #size Error
+   io::out $ #size Addr
+   io::out $ #size String
+   io::out $ #size Builder
+   io::out $ #size PackedRecord
+   io::out $ #size AlignedRecord
+   io::out $ #size ThreeFields
+   io::out $ #size RecordWithPointer
 
    err = Error(404, "item not found", "test.dva", 42, 12, (10, 20))
    io::out(err.code)

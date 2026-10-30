@@ -33,7 +33,7 @@ iv.z == 300 | io::out $ "int scalar swizzle ok"
 
 // 5. Named fields on homogeneous record
 #type Rect (x: Float, y: Float, w: Float, h: Float)
-rc = Rect((1.0, 2.0, 100.0, 200.0))
+rc = Rect(1.0, 2.0, 100.0, 200.0)
 wh = rc.wh
 wh.0 == 100.0 && wh.1 == 200.0 | io::out $ "named wh ok"
 xy = rc.xy

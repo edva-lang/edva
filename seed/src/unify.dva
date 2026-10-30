@@ -12,16 +12,16 @@
 
 // --- Unification Types -----------------------------------------------------
 
-#type UTypes (UType){}
+#type UTypes UType{}
 
 #type UPrim <
-   Int I8 I16 I32 I64 U8 U16 U32 U64
-   Float F32 Str Rune Flag Unit RawPtr
-   Builder Error ThreadId Type Unknown
+   Int, I8, I16, I32, I64, U8, U16, U32, U64,
+   Float, F32, Str, Rune, Flag, Unit, RawPtr,
+   Builder, Error, ThreadId, Type, Unknown
 >
 
 #type UField (name: String, ut: UType)
-#type UFields (UField){}
+#type UFields UField{}
 
 #type URamShape < RamNN, RamPN, RamNP, RamPP >
 
@@ -50,7 +50,7 @@
    has_payload: <>,
    payload_type: UType
 )
-#type UEnumVariants (UEnumVariant){}
+#type UEnumVariants UEnumVariant{}
 
 #type UEnum (
    name: String,
@@ -81,7 +81,7 @@
    is_bound: <>,
    bound: UType
 )
-#type VarBindings (VarBinding){}
+#type VarBindings VarBinding{}
 
 #type TypeError (
    code: Int,
@@ -90,17 +90,17 @@
    line: Int,
    col: Int
 )
-#type TypeErrors (TypeError){}
+#type TypeErrors TypeError{}
 
-#type OpenVars (Int){}
+#type OpenVars Int{}
 
 #type Constraint <
-   Equality((UType, UType))
-   Call((UType, UTypes, UType))
-   Field((UType, String, UType))
-   ChoiceJoin((UType, UTypes))
+   Equality(UType, UType)
+   Call(UType, UTypes, UType)
+   Field(UType, String, UType)
+   ChoiceJoin(UType, UTypes)
 >
-#type Constraints (Constraint){}
+#type Constraints Constraint{}
 
 #type Ctx (
    next_var: Int,
@@ -151,68 +151,68 @@ prim_unknown = !=> UType(Prim, UPrim(Unknown))
 error_ufields: () => UFields
 error_ufields = !=>
    flds = UFields()
-   flds += UField(("code", prim_int!))
-   flds += UField(("msg", prim_str!))
-   flds += UField(("file", prim_str!))
-   flds += UField(("line", prim_int!))
-   flds += UField(("col", prim_int!))
+   flds += UField("code", prim_int!)
+   flds += UField("msg", prim_str!)
+   flds += UField("file", prim_str!)
+   flds += UField("line", prim_int!)
+   flds += UField("col", prim_int!)
    ctx_flds = UFields()
-   ctx_flds += UField(("", prim_int!))
-   ctx_flds += UField(("", prim_int!))
-   flds += UField(("context", UType(Rec, ctx_flds)))
+   ctx_flds += UField("", prim_int!)
+   ctx_flds += UField("", prim_int!)
+   flds += UField("context", UType(Rec, ctx_flds))
    flds
 
 // Ramification constructors:
 // RamNN is <> (Flag, no payloads in either slot)
 ram_nn: () => UType
 ram_nn = !=>
-   slot0 = URamSlot((<->, UType(None)))
-   slot1 = URamSlot((<->, UType(None)))
-   UType(Ram, URam((slot0, slot1)))
+   slot0 = URamSlot(<->, UType(None))
+   slot1 = URamSlot(<->, UType(None))
+   UType(Ram, URam(slot0, slot1))
 
 // RamPN is <A|> (positive payload, negative unit)
 ram_pn: UType => UType
 ram_pn = pos =>
-   slot0 = URamSlot((<+>, pos))
-   slot1 = URamSlot((<->, UType(None)))
-   UType(Ram, URam((slot0, slot1)))
+   slot0 = URamSlot(<+>, pos)
+   slot1 = URamSlot(<->, UType(None))
+   UType(Ram, URam(slot0, slot1))
 
 // RamNP is <|B> (positive unit, negative payload)
 ram_np: UType => UType
 ram_np = neg =>
-   slot0 = URamSlot((<->, UType(None)))
-   slot1 = URamSlot((<+>, neg))
-   UType(Ram, URam((slot0, slot1)))
+   slot0 = URamSlot(<->, UType(None))
+   slot1 = URamSlot(<+>, neg)
+   UType(Ram, URam(slot0, slot1))
 
 // RamPP is <A|B> (positive payload, negative payload)
 ram_pp: UType, UType => UType
 ram_pp = pos, neg =>
-   slot0 = URamSlot((<+>, pos))
-   slot1 = URamSlot((<+>, neg))
-   UType(Ram, URam((slot0, slot1)))
+   slot0 = URamSlot(<+>, pos)
+   slot1 = URamSlot(<+>, neg)
+   UType(Ram, URam(slot0, slot1))
 
 mk_ram: URamSlot, URamSlot => UType
-mk_ram = pos, neg => UType(Ram, URam((pos, neg)))
+mk_ram = pos, neg => UType(Ram, URam(pos, neg))
 
 mk_fn: UTypes, UType => UType
-mk_fn = params, ret => UType(Fn, UFn((params, ret)))
+mk_fn = params, ret => UType(Fn, UFn(params, ret))
 
 mk_rec: UFields => UType
 mk_rec = flds => UType(Rec, flds)
 
 mk_array: UType, Int => UType
-mk_array = elem, count => UType(Array, UArray((elem, count)))
+mk_array = elem, count => UType(Array, UArray(elem, count))
 
 mk_slice: UType => UType
 mk_slice = elem => UType(Slice, elem)
 
 mk_map: UType, UType => UType
-mk_map = k, v => UType(Map, UMap((k, v)))
+mk_map = k, v => UType(Map, UMap(k, v))
 
 // --- Context Operations ----------------------------------------------------
 
 new_ctx: () => Ctx
-new_ctx = !=> Ctx((0, VarBindings(), TypeErrors(), OpenVars(), Constraints(), "", 0, 0))
+new_ctx = !=> Ctx(0, VarBindings(), TypeErrors(), OpenVars(), Constraints(), "", 0, 0)
 
 set_location: Ctx, String, Int, Int => ()
 set_location = ctx, file, line, col =>
@@ -240,14 +240,14 @@ fresh_var = ctx =>
    id = ctx.next_var
    ctx.next_var = id + 1
    bs = ctx.bindings
-   bs += VarBinding((<->, UType(None)))
+   bs += VarBinding(<->, UType(None))
    ctx.bindings = bs
    UType(Var, id)
 
 add_error: Ctx, Int, String => ()
 add_error = ctx, code, msg =>
    errs = ctx.errors
-   errs += TypeError((code, msg, ctx.cur_file, ctx.cur_line, ctx.cur_col))
+   errs += TypeError(code, msg, ctx.cur_file, ctx.cur_line, ctx.cur_col)
    ctx.errors = errs
 
 add_error_at: Ctx, Int, String, Int, Int => ()
@@ -255,7 +255,7 @@ add_error_at = ctx, code, msg, line, col =>
    errs = ctx.errors
    l = line > 0 | line | ctx.cur_line
    c = col > 0 | col | ctx.cur_col
-   errs += TypeError((code, msg, ctx.cur_file, l, c))
+   errs += TypeError(code, msg, ctx.cur_file, l, c)
    ctx.errors = errs
 
 has_errors: Ctx => <>
@@ -266,7 +266,7 @@ error_count = ctx => ?ctx.errors
 
 first_error: Ctx => TypeError
 first_error = ctx =>
-   ctx.errors(0) | _ | TypeError((0, "", "", 0, 0))
+   ctx.errors(0) | _ | TypeError(0, "", "", 0, 0)
 
 error_code: TypeError => Int
 error_code = e => e.code
@@ -317,13 +317,13 @@ canon = ctx, t =>
       [Var id]
          (id !< 0 && id < ?ctx.bindings)
             |
-               b = ctx.bindings(id) | _ | VarBinding((<->, UType(None)))
+               b = ctx.bindings(id) | _ | VarBinding(<->, UType(None))
                b.is_bound
                   |
                      b.bound
                         [Var]
                            root = canon(ctx, b.bound)
-                           ctx.bindings(id) = VarBinding((<+>, root)) !| _
+                           ctx.bindings(id) = VarBinding(<+>, root) !| _
                            root
                         | b.bound
                   | t
@@ -384,7 +384,7 @@ enum_occurs = ctx, v, e =>
 
 do_bind: Ctx, Int, UType => <>
 do_bind = ctx, v, c =>
-   ctx.bindings(v) = VarBinding((<+>, c)) !| _
+   ctx.bindings(v) = VarBinding(<+>, c) !| _
    <+>
 
 bind_var: Ctx, Int, UType => <>
@@ -695,7 +695,7 @@ solve_constraint = ctx, c =>
                n_flds = ?rec
                n_flds > 0
                   |
-                     f0 = rec(0) | _ | UField(("", UType(None)))
+                     f0 = rec(0) | _ | UField("", UType(None))
                      unify(ctx, call.2, f0.ut)
                   |
                      exp_r = mk_fn(call.1, call.2)
@@ -744,7 +744,7 @@ root_var_id = ctx, t =>
          id < 0 || id !< ?ctx.bindings
             | id
             |
-               b = ctx.bindings(id) | _ | VarBinding((<->, UType(None)))
+               b = ctx.bindings(id) | _ | VarBinding(<->, UType(None))
                b.is_bound
                   |
                      b.bound
@@ -759,7 +759,7 @@ solve_field = ctx, rec_type, name, fld_type =>
    c
       [Var v]
          flds = UFields()
-         flds += UField((name, fld_type))
+         flds += UField(name, fld_type)
          bind_var(ctx, v, UType(Rec, flds))
          ctx.open_vars += v
          <+>
@@ -767,14 +767,14 @@ solve_field = ctx, rec_type, name, fld_type =>
          idx = find_field_idx(r, name)
          idx !< 0
             |
-               f = r(idx) | _ | UField(("", UType(None)))
+               f = r(idx) | _ | UField("", UType(None))
                unify(ctx, f.ut, fld_type)
             |
                root_v = root_var_id(ctx, rec_type)
                is_open = root_v !< 0 && is_open_var(ctx, root_v)
                is_open
                   |
-                     r += UField((name, fld_type))
+                     r += UField(name, fld_type)
                      bind_var(ctx, root_v, UType(Rec, r))
                      <+>
                   |
@@ -789,7 +789,7 @@ solve_field = ctx, rec_type, name, fld_type =>
                idx = find_field_idx(eflds, name)
                idx !< 0
                   |
-                     f = eflds(idx) | _ | UField(("", UType(None)))
+                     f = eflds(idx) | _ | UField("", UType(None))
                      unify(ctx, f.ut, fld_type)
                   |
                      add_error(ctx, 3130, "Record has no field named '" + name +
@@ -1024,6 +1024,7 @@ vt_to_uprim = vt =>
 utype_from_type_info: ast::TypeInfo => UType
 utype_from_type_info = ti =>
    ti
+      [Align a] utype_from_type_info(a.1)
       [Prim vt] UType(Prim, vt_to_uprim(vt))
       [Rec r]
          r.1
@@ -1032,24 +1033,24 @@ utype_from_type_info = ti =>
                n_fts = ?fts_sl
                elem_ut = n_fts > 0
                   |
-                     f0 = fts_sl(0) | _ | ast::RecordFieldType(("",
+                     f0 = fts_sl(0) | _ | ast::RecordFieldType("",
                         ast::ValueType(Unknown),
                         ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-                        <->, ast::Expr(Int, 0)))
+                        <->, ast::Expr(Int, 0))
                      utype_from_type_info(f0.rec_type)
                   | UType(Prim, vt_to_uprim(r.3))
                UType(Slice, elem_ut)
             |
                flds_rec = UFields()
                r.0 @ ft =>
-                  flds_rec += UField((ft.name,
-                     utype_from_type_info(ft.rec_type)))
+                  flds_rec += UField(ft.name,
+                     utype_from_type_info(ft.rec_type))
                UType(Rec, flds_rec)
       [Bitfield b]
          flds_bf = UFields()
          b.fields @ bf =>
-            flds_bf += UField((bf.name,
-               UType(Prim, vt_to_uprim(b.backing_type))))
+            flds_bf += UField(bf.name,
+               UType(Prim, vt_to_uprim(b.backing_type)))
          UType(Rec, flds_bf)
       [Ram r]
          s0 = r.0
@@ -1063,30 +1064,30 @@ utype_from_type_info = ti =>
                n_ut = s1.has_payload
                   | utype_from_type_info(s1.payload_record)
                   | UType(None)
-               slot0 = URamSlot((s0.has_payload, p_ut))
-               slot1 = URamSlot((s1.has_payload, n_ut))
-               UType(Ram, URam((slot0, slot1)))
+               slot0 = URamSlot(s0.has_payload, p_ut)
+               slot1 = URamSlot(s1.has_payload, n_ut)
+               UType(Ram, URam(slot0, slot1))
       [Fn f]
          params = UTypes()
          f.1 @ pi =>
             params += utype_from_type_info(pi)
          ret = utype_from_type_info(f.3)
-         UType(Fn, UFn((params, ret)))
+         UType(Fn, UFn(params, ret))
       [Array a]
-         UType(Array, UArray((utype_from_type_info(a.1), a.2)))
+         UType(Array, UArray(utype_from_type_info(a.1), a.2))
       [Enum slots]
          vars = UEnumVariants()
          slots @ sl =>
             p_ut_enum = sl.has_payload
                | utype_from_type_info(sl.payload_record)
                | UType(None)
-            vars += UEnumVariant((sl.label, sl.has_payload, p_ut_enum))
-         UType(Enum, UEnum(("", vars)))
+            vars += UEnumVariant(sl.label, sl.has_payload, p_ut_enum)
+         UType(Enum, UEnum("", vars))
       [Map m]
          k_ut = UType(Prim, vt_to_uprim(m.0))
          v_raw = utype_from_type_info(m.2)
          v_ut = v_raw [None] UType(Prim, vt_to_uprim(m.1)) | v_raw
-         UType(Map, UMap((k_ut, v_ut)))
+         UType(Map, UMap(k_ut, v_ut))
       | UType(None)
 
 vt_from_utype: Ctx, UType => ast::ValueType
@@ -1122,8 +1123,8 @@ type_info_from_utype = ctx, u =>
                   p_vt = v.has_payload
                      | vt_from_utype(ctx, v.payload_type)
                      | ast::ValueType(Unknown)
-                  slots += ast::EnumSlotInfo((v.label, v.has_payload, p_vt,
-                     p_ti))
+                  slots += ast::EnumSlotInfo(v.label, v.has_payload, p_vt,
+                     p_ti)
                ast::TypeInfo(Enum, slots)
       [Fn f]
          vts = ast::VTypes()
@@ -1140,8 +1141,8 @@ type_info_from_utype = ctx, u =>
          r @ fld =>
             fld_ti = type_info_from_utype(ctx, fld.ut)
             fld_vt = vt_from_utype(ctx, fld.ut)
-            fts += ast::RecordFieldType((fld.name, fld_vt, fld_ti,
-               <->, ast::Expr(Int, 0)))
+            fts += ast::RecordFieldType(fld.name, fld_vt, fld_ti,
+               <->, ast::Expr(Int, 0))
          ast::TypeInfo(Rec, (fts, <->, <->, ast::ValueType(Record), ?r, <->))
       [Ram r]
          pos_ti = r.pos.has_payload
@@ -1156,8 +1157,8 @@ type_info_from_utype = ctx, u =>
          neg_vt = r.neg.has_payload
             | vt_from_utype(ctx, r.neg.ut)
             | ast::ValueType(Unknown)
-         s0 = ast::RamSlotInfo((r.pos.has_payload, pos_vt, pos_ti))
-         s1 = ast::RamSlotInfo((r.neg.has_payload, neg_vt, neg_ti))
+         s0 = ast::RamSlotInfo(r.pos.has_payload, pos_vt, pos_ti)
+         s1 = ast::RamSlotInfo(r.neg.has_payload, neg_vt, neg_ti)
          ast::TypeInfo(Ram, (s0, s1))
       [Array a]
          elem_ti_a = type_info_from_utype(ctx, a.elem)
@@ -1167,8 +1168,8 @@ type_info_from_utype = ctx, u =>
          elem_ti_s = type_info_from_utype(ctx, s)
          elem_vt_s = vt_from_utype(ctx, s)
          elem_flds = ast::FieldTypes()
-         elem_flds += ast::RecordFieldType(("", elem_vt_s, elem_ti_s, <->,
-            ast::Expr(Int, 0)))
+         elem_flds += ast::RecordFieldType("", elem_vt_s, elem_ti_s, <->,
+            ast::Expr(Int, 0))
          ast::TypeInfo(Rec, (elem_flds, <+>, <->, elem_vt_s, 0, <->))
       [Map m]
          k_ti = type_info_from_utype(ctx, m.key)
@@ -1183,6 +1184,7 @@ type_info_from_utype = ctx, u =>
 value_type_from_ti: ast::TypeInfo => ast::ValueType
 value_type_from_ti = ti =>
    ti
+      [Align a] value_type_from_ti(a.1)
       [Prim vt] vt
       [Rec r] (r.1 | ast::ValueType(Slice) | ast::ValueType(Record))
       [Bitfield] ast::ValueType(Record)

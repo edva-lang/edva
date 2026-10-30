@@ -1,11 +1,11 @@
 // Recursive types: a ram/enum variant may carry a payload that references the
 // very type being declared (register-before-body). "Tree: <Leaf(Int),
-// Branch((Tree[]))>" is a JSON-shaped recursive enum over a slice of itself.
+// Branch(Tree[])>" is a JSON-shaped recursive enum over a slice of itself.
 
 #use io
 
-#type Tree <Leaf(Int), Branch((Tree[]))>
-#type Trees (Tree){}
+#type Tree <Leaf(Int), Branch(Tree[])>
+#type Trees Tree{}
 
 count: Tree => Int
 count = t =>

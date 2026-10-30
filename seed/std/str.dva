@@ -13,6 +13,7 @@
 // the boolean expression — no "| <+> | <->" identity scaffolding needed.
 
 #use ascii
+#use const
 
 #public
    is_digit: Int => <>
@@ -85,8 +86,8 @@
    from_float: Float => String
    from_float = v =>
       v != v | --| "nan"
-      v > 1.7976931348623157e308 | --| "inf"
-      v < 0.0 - 1.7976931348623157e308 | --| "-inf"
+      v > const::max_f64 | --| "inf"
+      v < -const::max_f64 | --| "-inf"
       neg = v < 0.0
       a = neg | 0.0 - v | v
       a == 0.0 | --| (1.0 / v < 0.0 | "-0" | "0")

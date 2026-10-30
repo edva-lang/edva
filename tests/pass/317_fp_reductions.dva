@@ -79,7 +79,7 @@ rev_single = reverse(single)
 io::out $ "rev_single=" + str::from_int(rev_single(0) | _ | 0)
 
 // 5. flatten
-xss = (Int{}){}
+xss = Int{}{}
 r1 = Int{}
 r1 += 10
 r1 += 20
@@ -98,6 +98,6 @@ io::out $ "flat_len=" + str::from_int(?flat)
 flat @ f =>
    io::out $ "flat=" + str::from_int(f)
 
-empty_xss = (Int{}){}
+empty_xss = Int{}{}
 empty_flat = flatten(empty_xss)
 io::out $ "empty_flat_len=" + str::from_int(?empty_flat)

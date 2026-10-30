@@ -29,7 +29,7 @@ When a function type appears as a field in a record, inside an array, or in anot
 
 ```{.dva .run}
 #type Transform (Int => Int)
-#type Callback (run: (String => ()))
+#type Callback (name: String, run: (String => ()))
 ```
 
 ## Runtime representation
@@ -149,7 +149,7 @@ Functions evaluate to the result of their final expression or exit early using `
 - **Ram return sugar**: Choice branches can return unit ramifications directly using `|->` (`<->`), `|+>` (`<+>`), `|-->` (`<-->`), or `|++>` (`<++>`).
 
 ```{.dva .run}
-find_first_negative: (Int){} => <Int|>
+find_first_negative: Int{} => <Int|>
 find_first_negative = arr =>
    ?arr @ i =>
       v = arr(i) | _ | 0

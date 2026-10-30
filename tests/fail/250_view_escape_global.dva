@@ -1,4 +1,4 @@
-#type Header (a: Int)
+#type Header (a: Int, b: Int)
 
 ::g: Header
 

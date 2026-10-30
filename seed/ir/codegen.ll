@@ -20,6 +20,39 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.runtime::empty_fndef" = external global ptr
 @"var.types::codegen_layout" = external global ptr
 @"var.ast::cell_var_names" = external global ptr
+@"var.const::pi" = external global double
+@"var.const::tau" = external global double
+@"var.const::e" = external global double
+@"var.const::phi" = external global double
+@"var.const::inv_phi" = external global double
+@"var.const::sqrt2" = external global double
+@"var.const::sqrt3" = external global double
+@"var.const::ln2" = external global double
+@"var.const::ln10" = external global double
+@"var.const::max_i64" = external global i64
+@"var.const::min_i64" = external global i64
+@"var.const::max_i32" = external global i32
+@"var.const::min_i32" = external global i32
+@"var.const::max_i16" = external global i16
+@"var.const::min_i16" = external global i16
+@"var.const::max_i8" = external global i8
+@"var.const::min_i8" = external global i8
+@"var.const::max_u64" = external global i64
+@"var.const::max_u32" = external global i32
+@"var.const::max_u16" = external global i16
+@"var.const::max_u8" = external global i8
+@"var.const::inf_f64" = external global double
+@"var.const::nan_f64" = external global double
+@"var.const::max_f64" = external global double
+@"var.const::min_f64" = external global double
+@"var.const::sub_f64" = external global double
+@"var.const::eps_f64" = external global double
+@"var.const::inf_f32" = external global float
+@"var.const::nan_f32" = external global float
+@"var.const::max_f32" = external global float
+@"var.const::min_f32" = external global float
+@"var.const::sub_f32" = external global float
+@"var.const::eps_f32" = external global float
 @"var.sys::STDIN" = external global i64
 @"var.sys::STDOUT" = external global i64
 @"var.sys::STDERR" = external global i64
@@ -34,8 +67,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.codegen::codegen_typed_program_opts" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_codegen, ptr null }]
 
-declare i32 @printf(ptr, ...)
-
 declare ptr @dva_arena_current()
 
 declare ptr @dva_arena_set_current(ptr)
@@ -43,10 +74,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -64,10 +91,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -311,6 +334,10 @@ declare i64 @LLVMGetIntTypeWidth(ptr)
 
 declare ptr @LLVMBuildNot(ptr, ptr, ptr)
 
+declare ptr @LLVMBuildNeg(ptr, ptr, ptr)
+
+declare ptr @LLVMBuildFNeg(ptr, ptr, ptr)
+
 declare i64 @LLVMGetTypeKind(ptr)
 
 declare ptr @LLVMGetEntryBasicBlock(ptr)
@@ -547,9 +574,13 @@ declare i64 @read(i32, ptr, i64)
 
 declare i64 @lseek(i32, i64, i64)
 
+declare i64 @write(i32, ptr, i64)
+
 declare i64 @writev(i32, ptr, i64)
 
 declare i32 @ioctl(i32, i64, i64, ...)
+
+declare void @exit(i32)
 
 declare i64 @htons(i64)
 
@@ -608,6 +639,8 @@ declare ptr @opendir(ptr)
 declare ptr @readdir(ptr)
 
 declare i64 @closedir(ptr)
+
+declare i64 @strlen(ptr)
 
 declare i64 @strcmp(ptr, ptr)
 
@@ -710,32 +743,52 @@ entry:
   store ptr %4, ptr %var.src_file, align 8
   store ptr %5, ptr %var.opts, align 8
   %var.load = load ptr, ptr %var.prog, align 8
-  %var.load1 = load ptr, ptr %var.raw, align 8
-  %var.load2 = load ptr, ptr %var.out_path, align 8
-  %var.load3 = load ptr, ptr %var.exports, align 8
-  %a.load = load ptr, ptr %var.exports, align 8
+  %a.load = load ptr, ptr %var.prog, align 8
   %a.null = icmp eq ptr %a.load, null
   br i1 %a.null, label %a.create, label %a.after
 
 a.create:                                         ; preds = %entry
   %arena.cur = call ptr @dva_arena_current()
-  %a.create4 = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
-  %arena.cur5 = call ptr @dva_arena_current()
-  %a.buf = call ptr @dva_arena_alloc(ptr %arena.cur5, i64 128)
-  %a.len.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create4, i32 0, i32 0
+  %a.create1 = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
+  %arena.cur2 = call ptr @dva_arena_current()
+  %a.buf = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 128)
+  %a.len.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1, i32 0, i32 0
   store i64 0, ptr %a.len.gep, align 8
-  %a.data.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create4, i32 0, i32 1
+  %a.data.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1, i32 0, i32 1
   store ptr %a.buf, ptr %a.data.gep, align 8
-  %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create4, i32 0, i32 2
+  %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
-  store ptr %a.create4, ptr %var.exports, align 8
+  store ptr %a.create1, ptr %var.prog, align 8
   br label %a.after
 
 a.after:                                          ; preds = %a.create, %entry
-  %a.load2 = load ptr, ptr %var.exports, align 8
-  %var.load6 = load ptr, ptr %var.src_file, align 8
-  %var.load7 = load ptr, ptr %var.opts, align 8
-  %call.res = call i64 @"main::codegen_typed_program_opts"(ptr %var.load, ptr %var.load1, ptr %var.load2, ptr %a.load2, ptr %var.load6, ptr %var.load7)
+  %a.load2 = load ptr, ptr %var.prog, align 8
+  %var.load3 = load ptr, ptr %var.raw, align 8
+  %var.load4 = load ptr, ptr %var.out_path, align 8
+  %var.load5 = load ptr, ptr %var.exports, align 8
+  %a.load6 = load ptr, ptr %var.exports, align 8
+  %a.null7 = icmp eq ptr %a.load6, null
+  br i1 %a.null7, label %a.create8, label %a.after9
+
+a.create8:                                        ; preds = %a.after
+  %arena.cur10 = call ptr @dva_arena_current()
+  %a.create11 = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 24)
+  %arena.cur12 = call ptr @dva_arena_current()
+  %a.buf13 = call ptr @dva_arena_alloc(ptr %arena.cur12, i64 128)
+  %a.len.gep14 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create11, i32 0, i32 0
+  store i64 0, ptr %a.len.gep14, align 8
+  %a.data.gep15 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create11, i32 0, i32 1
+  store ptr %a.buf13, ptr %a.data.gep15, align 8
+  %a.cap.gep16 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create11, i32 0, i32 2
+  store i64 16, ptr %a.cap.gep16, align 8
+  store ptr %a.create11, ptr %var.exports, align 8
+  br label %a.after9
+
+a.after9:                                         ; preds = %a.create8, %a.after
+  %a.load217 = load ptr, ptr %var.exports, align 8
+  %var.load18 = load ptr, ptr %var.src_file, align 8
+  %var.load19 = load ptr, ptr %var.opts, align 8
+  %call.res = call i64 @"main::codegen_typed_program_opts"(ptr %a.load2, ptr %var.load3, ptr %var.load4, ptr %a.load217, ptr %var.load18, ptr %var.load19)
   ret i64 %call.res
 }
 

@@ -140,7 +140,7 @@ capture, shadow, or overwrite the outer `_`:
 run_fst: (Pair => Int), Pair => Int
 run_fst = f, p => f(p)
 
-calc = (_ * 2 + run_fst((.x), Pair((10, 20))))
+calc = (_ * 2 + run_fst((.x), Pair(10, 20)))
 io::out(calc(5))    // 20
 ```
 

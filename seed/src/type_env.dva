@@ -23,7 +23,7 @@
 #type BindingIndices String ^ Int
 
 #type TypeScope (
-   bindings: (TypeBinding){},
+   bindings: TypeBinding{},
    parent: Int,
    indices: BindingIndices
 )
@@ -47,13 +47,13 @@
 #type CachedBodies String ^ tast::TypedExpr
 
 #type TypeEnv (
-   scopes: (TypeScope){},
+   scopes: TypeScope{},
    cur_scope: Int,
    cur_depth: Int,
-   globals: (TypeBinding){},
+   globals: TypeBinding{},
    init: FieldInit,
-   generics: (GenericDecl){},
-   user_types: (UserTypeDef){},
+   generics: GenericDecl{},
+   user_types: UserTypeDef{},
    cached_bodies: CachedBodies,
    current_module: String,
    discard_result: <>,
@@ -68,29 +68,29 @@
 
 empty_scope: () => TypeScope
 empty_scope = !=>
-   b: (TypeBinding){}
-   TypeScope((b, -1, BindingIndices()))
+   b: TypeBinding{}
+   TypeScope(b, -1, BindingIndices())
 
 new_init: () => FieldInit
-new_init = !=> FieldInit((ast::Names(), ast::Names(), ast::Names()))
+new_init = !=> FieldInit(ast::Names(), ast::Names(), ast::Names())
 
 new_env: () => TypeEnv
 new_env = !=>
-   b: (TypeBinding){}
-   root_scope = TypeScope((b, -1, BindingIndices()))
-   scopes: (TypeScope){}
+   b: TypeBinding{}
+   root_scope = TypeScope(b, -1, BindingIndices())
+   scopes: TypeScope{}
    scopes += root_scope
-   globals: (TypeBinding){}
-   generics: (GenericDecl){}
-   user_types: (UserTypeDef){}
-   TypeEnv((scopes, 0, 0, globals, new_init(), generics,
+   globals: TypeBinding{}
+   generics: GenericDecl{}
+   user_types: UserTypeDef{}
+   TypeEnv(scopes, 0, 0, globals, new_init(), generics,
       user_types, CachedBodies(), "", <->, <->, <->, <->,
-      ast::Names(), ast::Names(), <-->, "none"))
+      ast::Names(), ast::Names(), <-->, "none")
 
 cache_fn_body: TypeEnv, String, tast::TypedExpr => ()
 cache_fn_body = env, name, body =>
    bodies = env.cached_bodies
-   bodies ^ (name) = body
+   bodies ^ name = body
 
 lookup_fn_body: TypeEnv, String => < tast::TypedExpr | >
 lookup_fn_body = env, name =>
@@ -129,8 +129,8 @@ is_marked_global = env, name =>
 enter_scope: TypeEnv => ()
 enter_scope = env =>
    parent_idx = env.cur_scope
-   bnds: (TypeBinding){}
-   new_scope = TypeScope((bnds, parent_idx, BindingIndices()))
+   bnds: TypeBinding{}
+   new_scope = TypeScope(bnds, parent_idx, BindingIndices())
    scs = env.scopes
    new_idx = ?scs
    scs += new_scope
@@ -159,8 +159,8 @@ bind_local = env, name, ut, ti, is_mut =>
          cur_sc = scs(cur_idx) | _ | empty_scope()
          bnds = cur_sc.bindings
          indices = cur_sc.indices
-         indices ^ (name) = ?bnds
-         bnds += TypeBinding((name, ut, ti, is_mut, <->, env.cur_depth))
+         indices ^ name = ?bnds
+         bnds += TypeBinding(name, ut, ti, is_mut, <->, env.cur_depth)
          cur_sc.bindings = bnds
          scs(cur_idx) = cur_sc !| _
          env.scopes = scs
@@ -173,14 +173,14 @@ unbind_local = env, name =>
          scs = env.scopes
          cur_sc = scs(cur_idx) | _ | empty_scope()
          indices = cur_sc.indices
-         indices ^ (name) = 0 - 1
+         indices ^ name = 0 - 1
          scs(cur_idx) = cur_sc !| _
          env.scopes = scs
 
 bind_global: TypeEnv, String, unify::UType, ast::TypeInfo => ()
 bind_global = env, name, ut, ti =>
    gls = env.globals
-   gls += TypeBinding((name, ut, ti, <->, <+>, 0))
+   gls += TypeBinding(name, ut, ti, <->, <+>, 0)
    env.globals = gls
 
 name_is_qualified: String, Int => <>
@@ -319,7 +319,7 @@ init_mark_tracked = env, name =>
       |
          tr = env.init.tracked
          tr += name
-         env.init = FieldInit((tr, env.init.whole, env.init.written))
+         env.init = FieldInit(tr, env.init.whole, env.init.written)
 
 init_is_tracked: TypeEnv, String => <>
 init_is_tracked = env, name =>
@@ -331,7 +331,7 @@ init_mark_whole = env, name =>
       |
          wh = env.init.whole
          wh += name
-         env.init = FieldInit((env.init.tracked, wh, env.init.written))
+         env.init = FieldInit(env.init.tracked, wh, env.init.written)
 
 init_is_whole: TypeEnv, String => <>
 init_is_whole = env, name =>
@@ -343,7 +343,7 @@ init_mark_written = env, path =>
       |
          wr = env.init.written
          wr += path
-         env.init = FieldInit((env.init.tracked, env.init.whole, wr))
+         env.init = FieldInit(env.init.tracked, env.init.whole, wr)
 
 init_is_ok_walk: TypeEnv, String => <>
 init_is_ok_walk = env, p =>
@@ -377,7 +377,7 @@ init_snapshot = env =>
    env.init.whole @ w => wh += w
    wr = ast::Names()
    env.init.written @ p => wr += p
-   FieldInit((tr, wh, wr))
+   FieldInit(tr, wh, wr)
 
 init_snapshot_of: FieldInit => FieldInit
 init_snapshot_of = fi =>
@@ -387,7 +387,7 @@ init_snapshot_of = fi =>
    fi.whole @ w => wh += w
    wr = ast::Names()
    fi.written @ p => wr += p
-   FieldInit((tr, wh, wr))
+   FieldInit(tr, wh, wr)
 
 init_restore: TypeEnv, FieldInit => ()
 init_restore = env, snap =>
@@ -405,7 +405,7 @@ init_merge_two = a, b =>
    wr = ast::Names()
    a.written @ path =>
       init_has_name(b.written, path) | wr += path
-   FieldInit((tr, wh, wr))
+   FieldInit(tr, wh, wr)
 
 init_is_fully_init: TypeEnv, String, unify::UType => <>
 init_is_fully_init = env, name, ut =>
@@ -429,7 +429,7 @@ init_is_fully_init = env, name, ut =>
 bind_generic: TypeEnv, String, ast::TypeInfo => ()
 bind_generic = env, name, ti =>
    gens = env.generics
-   gens += GenericDecl((name, ti))
+   gens += GenericDecl(name, ti)
    env.generics = gens
 
 lookup_generic_exact: TypeEnv, String => < ast::TypeInfo | >
@@ -461,7 +461,7 @@ lookup_generic = env, name =>
 bind_user_type: TypeEnv, String, ast::TypeInfo, unify::UType => ()
 bind_user_type = env, name, ti, ut =>
    uts = env.user_types
-   uts += UserTypeDef((name, ti, ut))
+   uts += UserTypeDef(name, ti, ut)
    env.user_types = uts
 
 lookup_user_type_exact: TypeEnv, String => < UserTypeDef | >

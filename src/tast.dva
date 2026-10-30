@@ -31,7 +31,7 @@
 
 // --- Typed AST Nodes -------------------------------------------------------
 
-#type TypedExprs (TypedExpr){}
+#type TypedExprs TypedExpr{}
 
 #type TypedField (
    name: String,
@@ -39,7 +39,7 @@
    offset: Int,
    ut: unify::UType
 )
-#type TypedFields (TypedField){}
+#type TypedFields TypedField{}
 
 #type TypedBranch (
    kind: ast::GuardKind,
@@ -49,20 +49,20 @@
    bind_vars: ast::Names,
    body: TypedExpr
 )
-#type TypedBranches (TypedBranch){}
+#type TypedBranches TypedBranch{}
 
 #type TypedCapture (
    name: String,
    ut: unify::UType,
    offset: Int
 )
-#type TypedCaptures (TypedCapture){}
+#type TypedCaptures TypedCapture{}
 
 #type TypedMapPair (
    key: TypedExpr,
    val: TypedExpr
 )
-#type TypedMapPairs (TypedMapPair){}
+#type TypedMapPairs TypedMapPair{}
 
 #type TypedExprKind <
    LitInt(Int)
@@ -71,37 +71,37 @@
    LitRune(Int)
    LitFlag(<>)
    LitUnit
-   Var((String, Int, <>))
-   Bin((ast::BinaryOp, TypedExpr, TypedExpr))
-   Unary((ast::UnaryOp, TypedExpr))
-   Call((String, <TypedExpr|>, TypedExprs))
+   Var(String, Int, <>)
+   Bin(ast::BinaryOp, TypedExpr, TypedExpr)
+   Unary(ast::UnaryOp, TypedExpr)
+   Call(String, <TypedExpr|>, TypedExprs)
    Record(TypedFields)
-   Member((TypedExpr, String, Int))
-   MemberWrite((TypedExpr, String, Int, TypedExpr))
-   Index((TypedExpr, TypedExpr))
-   IndexWrite((TypedExpr, TypedExpr, TypedExpr))
-   Choice((TypedExpr, TypedBranches))
-   Lambda((ast::Names, TypedExpr, TypedCaptures))
+   Member(TypedExpr, String, Int)
+   MemberWrite(TypedExpr, String, Int, TypedExpr)
+   Index(TypedExpr, TypedExpr)
+   IndexWrite(TypedExpr, TypedExpr, TypedExpr)
+   Choice(TypedExpr, TypedBranches)
+   Lambda(ast::Names, TypedExpr, TypedCaptures)
    Block(TypedExprs)
-   Assign((String, <>, <>, <>, <>, TypedExpr))
-   Cycle((TypedExpr, TypedExpr, <TypedExpr|>, <>))
-   CycleJump((<>, Int))
-   RamConstruct((unify::URamShape, <>, <TypedExpr|>))
-   EnumConstruct((String, <TypedExpr|>))
+   Assign(String, <>, <>, <>, <>, TypedExpr)
+   Cycle(TypedExpr, TypedExpr, <TypedExpr|>, <>)
+   CycleJump(<>, Int)
+   RamConstruct(unify::URamShape, <>, <TypedExpr|>)
+   EnumConstruct(String, <TypedExpr|>)
    BuilderNew(TypedExpr)
    ArrayNew(ast::ArrayCreateExpr)
    Copy(TypedExpr)
-   RawMemory((TypedExpr, ast::ValueType))
-   RawMemoryWrite((TypedExpr, TypedExpr))
-   PoisonError((Int, String))
+   RawMemory(TypedExpr, ast::ValueType)
+   RawMemoryWrite(TypedExpr, TypedExpr)
+   PoisonError(Int, String)
    MapLiteral(TypedMapPairs)
-   KeyAccess((TypedExpr, TypedExpr, <>, <>))
-   Spawn(ast::SpawnExpr)
-   Join(ast::JoinExpr)
+   KeyAccess(TypedExpr, TypedExpr, <>, <>)
+   Spawn(ast::CallExpr)
+   Join(ast::Expr)
    Exit(TypedExpr)
    Return(<TypedExpr|>)
    UserDiag(ast::UserDiagExpr)
-   CompileTime(ast::CompileTimeExpr)
+   CompileTime(ast::Expr)
 >
 
 #type TypedExpr (
@@ -117,44 +117,41 @@
 
 #type TypedStmt <
    Expr(TypedExpr)
-   Binding((String, ast::TypeInfo, TypedExpr, <>))
-   GlobalBinding((String, ast::TypeInfo, TypedExpr))
-   TypeDecl((String, ast::TypeInfo))
+   Binding(String, ast::TypeInfo, TypedExpr, <>)
+   GlobalBinding(String, ast::TypeInfo, TypedExpr)
+   TypeDecl(String, ast::TypeInfo)
 >
-#type TypedStmts (TypedStmt){}
-
-#type TypedProgram (
-   stmts: TypedStmts
-)
+#type TypedStmts TypedStmt{}
+#type TypedProgram TypedStmt{}
 
 // --- Layout Constructors ---------------------------------------------------
 
 layout_scalar: Int, Int => TypedLayout
 layout_scalar = size, align =>
-   TypedLayout((size, align, LayoutKind(Scalar)))
+   TypedLayout(size, align, LayoutKind(Scalar))
 
 layout_aggregate: Int, Int => TypedLayout
 layout_aggregate = size, align =>
-   TypedLayout((size, align, LayoutKind(Aggregate)))
+   TypedLayout(size, align, LayoutKind(Aggregate))
 
 layout_ram: Int, Int => TypedLayout
 layout_ram = size, align =>
-   TypedLayout((size, align, LayoutKind(Ram)))
+   TypedLayout(size, align, LayoutKind(Ram))
 
 layout_closure: () => TypedLayout
 layout_closure = !=>
-   TypedLayout((16, 8, LayoutKind(FnClosure)))
+   TypedLayout(16, 8, LayoutKind(FnClosure))
 
 layout_void: () => TypedLayout
 layout_void = !=>
-   TypedLayout((0, 1, LayoutKind(Void)))
+   TypedLayout(0, 1, LayoutKind(Void))
 
 // --- Node Constructors -----------------------------------------------------
 
 mk_typed_expr: TypedExprKind, unify::UType, ast::TypeInfo, TypedLayout,
    Int, Int => TypedExpr
 mk_typed_expr = kind, ut, ti, layout, line, col =>
-   TypedExpr((kind, ut, ti, layout, line, col))
+   TypedExpr(kind, ut, ti, layout, line, col)
 
 mk_lit_int: Int, Int, Int => TypedExpr
 mk_lit_int = val, line, col =>

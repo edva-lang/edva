@@ -21,7 +21,7 @@ used by Edva's package manager.
 The core document model represents nested, indentation-delimited key-value entries:
 
 ```{.dva .run}
-#type Strings (String){}
+#type Strings String{}
 
 #type CclVal <
    Str(String),
@@ -35,11 +35,9 @@ The core document model represents nested, indentation-delimited key-value entri
    col: Int
 )
 
-#type CclEntries (CclEntry){}
+#type CclEntries CclEntry{}
 
-#type CclDoc (
-   entries: CclEntries
-)
+#type CclDoc CclEntry{}
 ```
 
 ## Parsing and serialization

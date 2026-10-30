@@ -55,7 +55,7 @@
    // map: apply a transformation function f to each element of a collection
    // (growable array, slice view, or record), building a new growable array of
    // element type B. Supports arbitrary element type transitions (A => B).
-   map: #! A: Type, #! B: Type, #! T: Type, (A => B), T => (B){}
+   map: #! A: Type, #! B: Type, #! T: Type, (A => B), T => B{}
    map = f, xs =>
       out = B{}
       xs @ x =>
@@ -97,7 +97,7 @@
 
    // scan: running accumulation from left, emitting initial and each
    // intermediate accumulator state into a growable array.
-   scan: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => (Acc){}
+   scan: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => Acc{}
    scan = f, init, xs =>
       out = Acc{}
       acc' = init
@@ -118,7 +118,7 @@
       out
 
    // flatten: concatenate an array of arrays into a single-level array.
-   flatten: #! E: Type, ((E){}){} => (E){}
+   flatten: #! E: Type, E{}{} => E{}
    flatten = xss =>
       out = E{}
       xss @ sub =>
@@ -197,7 +197,7 @@
    // through to the backing array/record. `lt` is a "less than" predicate; the
    // element type T is inferred from the slice argument. A String order is
    // str::lt (bytewise, via str::cmp).
-   sort: #! T: Type, (T[]), (T, T => <>) => ()
+   sort: #! T: Type, T[], (T, T => <>) => ()
    sort = xs, lt =>
       n = ?xs
       1..n @ i =>
@@ -217,7 +217,7 @@
 
    // take: return a zero-copy slice view of the first n elements (clamped to
    // 0..?xs). Callers copy explicitly with "++take(...)" when owned data is needed.
-   take: #! T: Type, Int, (T[]) => (T[])
+   take: #! T: Type, Int, T[] => T[]
    take = n, xs =>
       len = ?xs
       k = n < 0 | 0 | (n > len | len | n)
@@ -225,7 +225,7 @@
 
    // drop: return a zero-copy slice view omitting the first n elements (clamped
    // to 0..?xs).
-   drop: #! T: Type, Int, (T[]) => (T[])
+   drop: #! T: Type, Int, T[] => T[]
    drop = n, xs =>
       len = ?xs
       k = n < 0 | 0 | (n > len | len | n)
@@ -233,7 +233,7 @@
 
    // take_while: return a zero-copy slice view of leading elements where pred
    // holds true.
-   take_while: #! T: Type, (T => <>), (T[]) => (T[])
+   take_while: #! T: Type, (T => <>), T[] => T[]
    take_while = pred, xs =>
       len = ?xs
       count' = len
@@ -246,7 +246,7 @@
 
    // drop_while: return a zero-copy slice view starting from the first element
    // where pred is false.
-   drop_while: #! T: Type, (T => <>), (T[]) => (T[])
+   drop_while: #! T: Type, (T => <>), T[] => T[]
    drop_while = pred, xs =>
       len = ?xs
       start' = len
@@ -259,7 +259,7 @@
 
    // partition: split a collection into two growable arrays (passed, rejected)
    // according to predicate.
-   partition: #! T: Type, (T => <>), (T[]) => (passed: (T){}, rejected: (T){})
+   partition: #! T: Type, (T => <>), T[] => (passed: T{}, rejected: T{})
    partition = pred, xs =>
       p = T{}
       r = T{}
@@ -273,7 +273,7 @@
 
    // zip: pair elements of two slices into an array of 2-tuples until the
    // shorter collection ends.
-   zip: #! A: Type, #! B: Type, (A[]), (B[]) => ((A, B)){}
+   zip: #! A: Type, #! B: Type, A[], B[] => (A, B){}
    zip = xs, ys =>
       na = ?xs
       nb = ?ys
@@ -285,7 +285,7 @@
 
    // zip_with: combine elements of two slices pairwise using a combining
    // function f until the shorter collection ends.
-   zip_with: #! A: Type, #! B: Type, #! C: Type, (A, B => C), (A[]), (B[]) => (C){}
+   zip_with: #! A: Type, #! B: Type, #! C: Type, (A, B => C), A[], B[] => C{}
    zip_with = f, xs, ys =>
       na = ?xs
       nb = ?ys

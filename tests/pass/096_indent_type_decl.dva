@@ -19,7 +19,7 @@ io::out $ r.address
 
 // A type-decl whose first field is a slice (the same-line type path).
 #type Vec
-   items: (Int[])
+   items: Int[]
    n: Int
 
 v: Vec

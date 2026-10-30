@@ -7,7 +7,7 @@
 
 #use io
 
-#type Names (String){}
+#type Names String{}
 #type FnExpr (params: Names, ct_params: Names, body: Expr)
 #type Expr < Int(Int), Str(String), Fn(FnExpr) >
 

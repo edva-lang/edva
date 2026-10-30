@@ -1,0 +1,5 @@
+// Negative test: non-exhaustive conditional element in bare record literal is forbidden (E3084)
+#use io
+flag = <+>
+r = (1, flag | 2, 3)
+io::out(r.0)

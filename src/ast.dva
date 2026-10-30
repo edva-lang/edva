@@ -11,19 +11,19 @@
 #public
 
 #type ValueType <
-   Unknown Int I8 I16 I32 I64 U8 U16 U32 U64
-   Rune Float F32 Str Ram Record Unit RawPtr Fn Type
-   Slice Builder Array Map Error ThreadId Flag Enum
+   Unknown, Int, I8, I16, I32, I64, U8, U16, U32, U64,
+   Rune, Float, F32, Str, Ram, Record, Unit, RawPtr, Fn, Type,
+   Slice, Builder, Array, Map, Error, ThreadId, Flag, Enum
 >
 
 #type BinaryOp <
-   Add Sub Mul Div Mod
-   Gt Lt Eq NotGt NotLt NotEq
-   And Or Feed Apply Bind
-   BitAnd BitOr BitXor Shl Shr Seq
+   Add, Sub, Mul, Div, Mod,
+   Gt, Lt, Eq, NotGt, NotLt, NotEq,
+   And, Or, Feed, Apply, Bind,
+   BitAnd, BitOr, BitXor, Shl, Shr, Seq
 >
 
-#type UnaryOp <Not, BitNot, Length, AddrOf, Freeze, Unwrap, Propagate, RuneCount>
+#type UnaryOp <Not, BitNot, Length, AddrOf, Freeze, Unwrap, Propagate, RuneCount, Neg>
 
 // The built-in ramification variant tags (Positive/Negative for the unit
 // flags, Some/Err for payload rams, Succ/Noth for the unit upper variants).
@@ -31,17 +31,17 @@
 
 // --- named growable arrays -------------------------------------------------
 
-#type Exprs (Expr){}
-#type Names (String){}
-#type Ints (Int){}
-#type Fields (RecordField){}
-#type Branches (ChoiceBranch){}
-#type FieldTypes (RecordFieldType){}
-#type EnumSlots (EnumSlotInfo){}
-#type CParams (CompileTimeParam){}
-#type FParams (ForeignFnParam){}
-#type VTypes (ValueType){}
-#type VInfos (TypeInfo){}
+#type Exprs Expr{}
+#type Names String{}
+#type Ints Int{}
+#type Fields RecordField{}
+#type Branches ChoiceBranch{}
+#type FieldTypes RecordFieldType{}
+#type EnumSlots EnumSlotInfo{}
+#type CParams CompileTimeParam{}
+#type FParams ForeignFnParam{}
+#type VTypes ValueType{}
+#type VInfos TypeInfo{}
 
 // --- TypeInfo --------------------------------------------------------------
 
@@ -63,7 +63,7 @@
 #type CompileTimeParam (name: String, val_type: ValueType, type_info: TypeInfo)
 
 #type BitfieldField (name: String, bit_width: Int, bit_offset: Int)
-#type BitfieldFields (BitfieldField){}
+#type BitfieldFields BitfieldField{}
 #type BitfieldInfo (
    fields: BitfieldFields,
    backing_type: ValueType,
@@ -76,14 +76,15 @@
 #type TypeInfo <
    Prim(ValueType)
    TypeVar(String)
-   Rec((FieldTypes, <>, <>, ValueType, Int, <>))
+   Rec(FieldTypes, <>, <>, ValueType, Int, <>)
    Bitfield(BitfieldInfo)
-   Ram((RamSlotInfo, RamSlotInfo))
+   Ram(RamSlotInfo, RamSlotInfo)
    Enum(EnumSlots)
-   Array((ValueType, TypeInfo, Int))
-   Map((ValueType, ValueType, TypeInfo))
-   Fn((VTypes, VInfos, ValueType, TypeInfo, CParams))
-   ThreadId((ValueType, TypeInfo))
+   Array(ValueType, TypeInfo, Int)
+   Map(ValueType, ValueType, TypeInfo)
+   Fn(VTypes, VInfos, ValueType, TypeInfo, CParams)
+   ThreadId(ValueType, TypeInfo)
+   Align(Int, TypeInfo)
 >
 
 // --- Expr sub-records ------------------------------------------------------
@@ -103,7 +104,7 @@
    Empty
 >
 
-#type Patterns (Pattern){}
+#type Patterns Pattern{}
 
 #type GuardKind < Case, Predicate, Variant, Bare >
 
@@ -118,8 +119,6 @@
 )
 
 #type ChoiceExpr (cond: Expr, is_exhaustive: <>, branches: Branches)
-
-#type BlockExpr (exprs: Exprs)
 
 #type CallExpr (
    fn_name: String, fn_target: Expr, args: Exprs,
@@ -170,20 +169,13 @@
 #type RawMemoryExpr (addr: Expr, load_type: ValueType, rec_name: String)
 
 #type SizeOfExpr (val_type: ValueType, rec_type: TypeInfo)
+#type AlignOfExpr (val_type: ValueType, rec_type: TypeInfo)
 
-#type CompileTimeExpr (expr: Expr)
-
-#type SpawnExpr (call: CallExpr)
-
-#type JoinExpr (handle: Expr)
-
-#type ExitExpr (code: Expr)
 #type ReturnExpr (has_val: <>, val: Expr, line: Int, col: Int)
 #type UserDiagExpr (is_warn: <>, msg: Expr, line: Int, col: Int)
 
 #type MapPair (key: Expr, value: Expr)
-#type MapPairs (MapPair){}
-#type MapLiteralExpr (pairs: MapPairs)
+#type MapPairs MapPair{}
 #type ArrayCreateExpr (elem_type: TypeInfo, cap: Int)
 
 // --- Expr ------------------------------------------------------------------
@@ -196,10 +188,10 @@
    Str(String)
    Var(String)
    Rune(Int)
-   Bin((BinaryOp, Expr, Expr))
-   Assign((String, <>, <>, <>, <>, Expr, Expr, String, TypeInfo))
+   Bin(BinaryOp, Expr, Expr)
+   Assign(String, <>, <>, <>, <>, Expr, Expr, String, TypeInfo)
    Choice(ChoiceExpr)
-   Block(BlockExpr)
+   Block(Exprs)
    Call(CallExpr)
    CycleJump(CycleJumpExpr)
    CycleEscape(CycleEscapeExpr)
@@ -215,34 +207,31 @@
    Foreign(ForeignFnDecl)
    TypeCast(CastExpr)
    TypeDecl(TypeDeclExpr)
-   Unary((UnaryOp, Expr))
+   Unary(UnaryOp, Expr)
    Copy(Expr)
    SizeOf(SizeOfExpr)
    BuilderCreate(Expr)
    ArrayCreate(ArrayCreateExpr)
-   MapLiteral(MapLiteralExpr)
-   CompileTime(CompileTimeExpr)
-   Spawn(SpawnExpr)
-   Join(JoinExpr)
-   Exit(ExitExpr)
+   MapLiteral(MapPairs)
+   CompileTime(Expr)
+   Spawn(CallExpr)
+   Join(Expr)
+   Exit(Expr)
    FastMathPragma(String)
    SwizzlePragma(String)
    NamedArg(NamedArgExpr)
    Return(ReturnExpr)
    UserDiag(UserDiagExpr)
+   AlignOf(AlignOfExpr)
 >
-
-// --- Stmt ------------------------------------------------------------------
-
-#type Stmt (expr: Expr)
 
 mk_rfield_type: String, ValueType, TypeInfo => RecordFieldType
 mk_rfield_type = name, vt, ti =>
-   RecordFieldType((name, vt, ti, <->, Expr(Int, 0)))
+   RecordFieldType(name, vt, ti, <->, Expr(Int, 0))
 
 mk_rfield_type_default: String, ValueType, TypeInfo, Expr => RecordFieldType
 mk_rfield_type_default = name, vt, ti, def_expr =>
-   RecordFieldType((name, vt, ti, <+>, def_expr))
+   RecordFieldType(name, vt, ti, <+>, def_expr)
 
 cell_var_names = Names()
 

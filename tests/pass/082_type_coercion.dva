@@ -23,7 +23,7 @@ io::out $ wrap
 
 // User-defined type as coercion/constructor.
 #type T (a: Int, b: Int)
-t = T((10, 20))
+t = T(10, 20)
 io::out $ t.a
 io::out $ t.b
 

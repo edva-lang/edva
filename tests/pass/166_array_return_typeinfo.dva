@@ -4,7 +4,7 @@
 
 #use io
 
-#type Ints (Int){}
+#type Ints Int{}
 
 mk: Int => Ints
 mk = n =>
@@ -24,7 +24,7 @@ src += 5
 src += 6
 src += 7
 
-head2: Ints => (Int[])
+head2: Ints => Int[]
 head2 = xs =>
    xs(0..2)
 

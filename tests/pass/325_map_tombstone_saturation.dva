@@ -7,8 +7,8 @@ m = M()
 
 // Insert and delete 0..7 so every bucket becomes a tombstone
 0..8 @ i =>
-   m ^ (i) = i * 10
-   d = m ^- (i)
+   m ^ i = i * 10
+   d = m ^- i
    !d | io::out("FAIL delete initial")
 
 ?m != 0 | io::out("FAIL count should be 0")
@@ -20,13 +20,13 @@ m ^- 100 | io::out("FAIL deletion for missing key")
 
 // Reinsert keys 0..7 into the saturated table
 0..8 @ i =>
-   m ^ (i) = i * 100
+   m ^ i = i * 100
 
 ?m != 8 | io::out("FAIL count after reinsertion")
 
 // Verify all values are correct
 0..8 @ i =>
-   (m ^ (i))!! != i * 100 | io::out("FAIL value after reinsertion")
+   (m ^ i)!! != i * 100 | io::out("FAIL value after reinsertion")
 
 // Insert another key to trigger growth/rebuild
 m ^ 8 = 800
@@ -35,7 +35,7 @@ m ^ 8 = 800
 
 // Delete all keys again
 0..9 @ i =>
-   d = m ^- (i)
+   d = m ^- i
    !d | io::out("FAIL second delete")
 
 ?m != 0 | io::out("FAIL count after second all-delete")

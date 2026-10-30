@@ -1,5 +1,5 @@
-#type Header (a: Int)
-#type Headers (Header){}
+#type Header (a: Int, b: Int)
+#type Headers Header{}
 
 f: Addr => Int
 f = p =>

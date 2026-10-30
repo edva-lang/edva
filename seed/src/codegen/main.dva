@@ -3,6 +3,7 @@
 #use(import) llvm
 #use "../ast"
 #use "../diag"
+#use "const"
 #use "str"
 #use "../tast"
 #use "../unify"
@@ -57,7 +58,7 @@ dbg: String => Int
 dbg = s => types::dbg(s)
 
 empty_fndef: FnDef
-empty_fndef = FnDef(("", ast::Names(), ast::Expr(Var, "")))
+empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
 
 #private
    print: String => Int
@@ -383,7 +384,7 @@ codegen_builder_append_byte = cg, b, byte_val =>
          ge0 = LLVMBuildICmp(cg.builder, 39, byte_i64,
             LLVMConstInt(i64t, 0, 0), "b.b.ge0")
          le255 = LLVMBuildICmp(cg.builder, 41, byte_i64,
-            LLVMConstInt(i64t, 0maxu8, 0), "b.b.le255")
+            LLVMConstInt(i64t, const::max_u8, 0), "b.b.le255")
          range_ok = LLVMBuildAnd(cg.builder, ge0, le255, "b.byte.range")
          parent = LLVMGetBasicBlockParent(
             LLVMGetInsertBlock(cg.builder))
@@ -657,7 +658,7 @@ builder_append_rec_lens = cg, fields, i, n, vals, vts, lens, total_add =>
    i == n
       | (vals, vts, lens, total_add)
       |
-         rf = fields(i) | _ | ast::RecordField((<->, "", ast::Expr(Var, "")))
+         rf = fields(i) | _ | ast::RecordField(<->, "", ast::Expr(Var, ""))
          ev = expr::codegen_eval(cg, rf.val)
          is_str = types::is_str_vt(ev.1)
          one = LLVMConstInt(LLVMInt64Type!, 1, 0)
@@ -1087,12 +1088,12 @@ codegen_eval_array_index = cg, t =>
 range_arg_of: ast::CallExpr => ast::RangeExpr
 range_arg_of = t =>
    ?t.args == 0
-      | ast::RangeExpr((<->, <->, ast::Expr(Var, "?"), ast::Expr(Var, "?")))
+      | ast::RangeExpr(<->, <->, ast::Expr(Var, "?"), ast::Expr(Var, "?"))
       |
          t.args(0)!!
             [Range r] r
-            | ast::RangeExpr((<->, <->, ast::Expr(Var, "?"),
-               ast::Expr(Var, "?")))
+            | ast::RangeExpr(<->, <->, ast::Expr(Var, "?"),
+               ast::Expr(Var, "?"))
 
 // "xs(a..b)" — a Slice view over the array's buffer: a fresh { data, len }
 // slice pointing at element a, with len = b - a. The slice reuses the array's
@@ -1111,10 +1112,10 @@ codegen_eval_array_view_base = cg, t, aval =>
    i64t = LLVMInt64Type!
    rng = range_arg_of(t)
    start_val' = LLVMConstInt(i64t, 0, 0)
-   rng.has_lhs | start_val' = (expr::codegen_eval(cg, rng.lhs)).0
+   rng.has_lhs | start_val' = expr::codegen_eval(cg, rng.lhs).0
    base_len = builder_len(cg, aval, "a.view.len")
    end_val' = base_len
-   rng.has_rhs | end_val' = (expr::codegen_eval(cg, rng.rhs)).0
+   rng.has_rhs | end_val' = expr::codegen_eval(cg, rng.rhs).0
    base_data = builder_data(cg, aval, "a.view.data")
    c_res = codegen_clamp_slice_range(cg, start_val', end_val', rng.has_lhs,
       rng.has_rhs, base_len)
@@ -1174,11 +1175,11 @@ codegen_eval_slice_range = cg, t =>
    i64t = LLVMInt64Type!
    rng = range_arg_of(t)
    start_val' = LLVMConstInt(i64t, 0, 0)
-   rng.has_lhs | start_val' = (expr::codegen_eval(cg, rng.lhs)).0
+   rng.has_lhs | start_val' = expr::codegen_eval(cg, rng.lhs).0
    aval = types::ptr_var_value_plain(cg, t.fn_name, "rec.ptr")
    base_len = slice_len(cg, aval, "slice.len")
    end_val = rng.has_rhs
-      | (expr::codegen_eval(cg, rng.rhs)).0
+      | expr::codegen_eval(cg, rng.rhs).0
       | base_len
    c_res = codegen_clamp_slice_range(cg, start_val', end_val, rng.has_lhs,
       rng.has_rhs, base_len)
@@ -1333,7 +1334,7 @@ codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
          i64t = LLVMInt64Type!
          rng = range_arg_of(t)
          start_val' = LLVMConstInt(i64t, 0, 0)
-         rng.has_lhs | start_val' = (expr::codegen_eval(cg, rng.lhs)).0
+         rng.has_lhs | start_val' = expr::codegen_eval(cg, rng.lhs).0
          fvs2' = ?fvs > 0 | fvs | match::struct_sub_fvts(rt)
          elem_vt' = ?fvs2' > 0
             | (fvs2'(0) | _ | ast::ValueType(Unknown))
@@ -1341,7 +1342,7 @@ codegen_eval_base_rec_access = cg, t, base_ptr, rt, fvs =>
          elem_ll' = LLVMStructGetTypeAtIndex(rt, 0)
          base_len = LLVMConstInt(i64t, ?fvs2', 0)
          end_val = rng.has_rhs
-            | (expr::codegen_eval(cg, rng.rhs)).0
+            | expr::codegen_eval(cg, rng.rhs).0
             | base_len
          c_res = codegen_clamp_slice_range(cg, start_val', end_val,
             rng.has_lhs, rng.has_rhs, base_len)
@@ -1435,10 +1436,10 @@ codegen_eval_evaluated_slice_access = cg, t, base_ptr =>
       |
          rng = range_arg_of(t)
          start_val' = LLVMConstInt(i64t, 0, 0)
-         rng.has_lhs | start_val' = (expr::codegen_eval(cg, rng.lhs)).0
+         rng.has_lhs | start_val' = expr::codegen_eval(cg, rng.lhs).0
          base_len = slice_len(cg, sv', "slice.len")
          end_val = rng.has_rhs
-            | (expr::codegen_eval(cg, rng.rhs)).0
+            | expr::codegen_eval(cg, rng.rhs).0
             | base_len
          c_res = codegen_clamp_slice_range(cg, start_val', end_val,
             rng.has_lhs, rng.has_rhs, base_len)
@@ -1499,9 +1500,9 @@ codegen_eval_base_str_access = cg, t, s_val =>
          arg
             [Range rng]
                start_val' = LLVMConstInt(i64t, 0, 0)
-               rng.has_lhs | start_val' = (expr::codegen_eval(cg, rng.lhs)).0
+               rng.has_lhs | start_val' = expr::codegen_eval(cg, rng.lhs).0
                end_val' = len_val
-               rng.has_rhs | end_val' = (expr::codegen_eval(cg, rng.rhs)).0
+               rng.has_rhs | end_val' = expr::codegen_eval(cg, rng.rhs).0
                c_res = codegen_clamp_slice_range(cg, start_val', end_val',
                   rng.has_lhs, rng.has_rhs, len_val)
                final_start = c_res.0
@@ -1563,9 +1564,9 @@ array_read_typedef = cg, arr_name =>
    have = types::has_type_name(cg, tname)
    !have
       |
-         pos = ast::RamSlotInfo((<+>, elem_vt, elem_rec'))
-         neg = ast::RamSlotInfo((<+>, ast::ValueType(Error),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         pos = ast::RamSlotInfo(<+>, elem_vt, elem_rec')
+         neg = ast::RamSlotInfo(<+>, ast::ValueType(Error),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)))
          runtime::add_type(cg, tname, ast::TypeInfo(Ram, (pos, neg)))
    tname
 
@@ -1579,9 +1580,9 @@ map_read_typedef = cg, map_name =>
    have = types::has_type_name(cg, tname)
    !have
       |
-         pos = ast::RamSlotInfo((<+>, val_vt, val_ti))
-         neg = ast::RamSlotInfo((<+>, ast::ValueType(Error),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+         pos = ast::RamSlotInfo(<+>, val_vt, val_ti)
+         neg = ast::RamSlotInfo(<+>, ast::ValueType(Error),
+            ast::TypeInfo(Prim, ast::ValueType(Unknown)))
          runtime::add_type(cg, tname, ast::TypeInfo(Ram, (pos, neg)))
    tname
 
@@ -1848,79 +1849,84 @@ codegen_build_error = cg, code, msg, line, col, ctx0, ctx1 =>
 // printf, then exit(1) + unreachable.
 codegen_emit_error_panic: types::Cg, Addr => ()
 codegen_emit_error_panic = cg, err_ptr =>
-   i64t = LLVMInt64Type!
-   i32t = LLVMInt32Type!
-   i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   est = error_struct_type(cg)
-   zero = LLVMConstInt(i64t, 0, 0)
-   fg = LLVMGetNamedGlobal(cg.module, "fmt_error")
-   fgep = types::gep2(cg, LLVMTypeOf(fg), fg, zero, zero, "err.fmt.ptr")
-   code_v = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, est, err_ptr, 0, "err.code.gep"),
-      "err.code")
-   msg_s = LLVMBuildLoad2(cg.builder, i8p,
-      LLVMBuildStructGEP2(cg.builder, est, err_ptr, 1, "err.msg.gep"),
-      "err.msg.struct")
-   file_s = LLVMBuildLoad2(cg.builder, i8p,
-      LLVMBuildStructGEP2(cg.builder, est, err_ptr, 2, "err.file.gep"),
-      "err.file.struct")
-   line_v = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, est, err_ptr, 3, "err.line.gep"),
-      "err.line")
-   col_v = LLVMBuildLoad2(cg.builder, i64t,
-      LLVMBuildStructGEP2(cg.builder, est, err_ptr, 4, "err.col.gep"),
-      "err.col")
-   msg_len = expr::codegen_string_len(cg, msg_s, "err.msg.len")
-   msg_len32 = LLVMBuildTrunc(cg.builder, msg_len, i32t,
-      "err.msg.len32")
-   msg_data = expr::codegen_string_data(cg, msg_s, "err.msg.data")
-   file_len = expr::codegen_string_len(cg, file_s, "err.file.len")
-   file_len32 = LLVMBuildTrunc(cg.builder, file_len, i32t,
-      "err.file.len32")
-   file_data = expr::codegen_string_data(cg, file_s, "err.file.data")
-   pargs = (fgep, code_v, msg_len32, msg_data, file_len32, file_data, line_v, col_v)
-   pp = {8}
-   ppb = &pp
-   @[ppb] = i8p
-   // A panic inside a spawned thread records the Error into the thread record
-   // and exits the thread (pthread_exit) instead of killing the process; the
-   // join side then reports it as the ram's negative slot. On the main thread
-   // (dva_thread_rec is null) this falls through to the normal printf+exit.
-   trec = LLVMBuildLoad2(cg.builder, i8p, thread_tls_global(cg),
-      "err.thread.rec")
-   is_thread = LLVMBuildICmp(cg.builder, 33, trec,
-      LLVMConstNull(i8p), "err.is.thread")
-   cur_bb = LLVMGetInsertBlock(cg.builder)
-   parent = LLVMGetBasicBlockParent(cur_bb)
-   thread_bb = LLVMAppendBasicBlock(parent, "err.thread")
-   normal_bb = LLVMAppendBasicBlock(parent, "err.normal")
-   LLVMBuildCondBr(cg.builder, is_thread, thread_bb, normal_bb)
-   LLVMPositionBuilderAtEnd(cg.builder, thread_bb)
-   rec_t = codegen_ensure_pthread(cg)
-   rec_ptr = LLVMBuildBitCast(cg.builder, trec,
-      LLVMPointerType(rec_t, 0), "err.rec")
-   LLVMBuildStore(cg.builder, LLVMConstInt(i64t, 1, 0),
-      LLVMBuildStructGEP2(cg.builder, rec_t, rec_ptr, 6,
-         "err.haserr.gep"))
-   LLVMBuildStore(cg.builder, err_ptr,
-      LLVMBuildStructGEP2(cg.builder, rec_t, rec_ptr, 7,
-         "err.err.gep"))
-   pex = {8}
-   peb = &pex
-   @[peb] = LLVMConstNull(i8p)
-   pfn = cg.pthread_exit_fn | _ | LLVMConstNull(i8p)
-   LLVMBuildCall2(cg.builder,
-      types::fn_type1(LLVMVoidType!, i8p), pfn, peb, 1, "")
-   LLVMBuildUnreachable(cg.builder)
-   LLVMPositionBuilderAtEnd(cg.builder, normal_bb)
-   LLVMBuildCall2(cg.builder,
-      LLVMFunctionType(i32t, ppb, 1, 1),
-      LLVMGetNamedFunction(cg.module, "printf"), &pargs, 8, "err.panic.printf")
-   eargs = {16}
-   eb = &eargs
-   @[eb] = LLVMConstInt(i32t, 1, 0)
-   LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, eb, 1, "")
-   LLVMBuildUnreachable(cg.builder)
+   cg.opts.no_runtime || types::is_wasm_target(cg)
+      |
+         !cg.opts.no_runtime | types::emit_wasm_trap(cg)
+         LLVMBuildUnreachable(cg.builder)
+      |
+         i64t = LLVMInt64Type!
+         i32t = LLVMInt32Type!
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         est = error_struct_type(cg)
+         zero = LLVMConstInt(i64t, 0, 0)
+         fg = LLVMGetNamedGlobal(cg.module, "fmt_error")
+         fgep = types::gep2(cg, LLVMTypeOf(fg), fg, zero, zero, "err.fmt.ptr")
+         code_v = LLVMBuildLoad2(cg.builder, i64t,
+            LLVMBuildStructGEP2(cg.builder, est, err_ptr, 0, "err.code.gep"),
+            "err.code")
+         msg_s = LLVMBuildLoad2(cg.builder, i8p,
+            LLVMBuildStructGEP2(cg.builder, est, err_ptr, 1, "err.msg.gep"),
+            "err.msg.struct")
+         file_s = LLVMBuildLoad2(cg.builder, i8p,
+            LLVMBuildStructGEP2(cg.builder, est, err_ptr, 2, "err.file.gep"),
+            "err.file.struct")
+         line_v = LLVMBuildLoad2(cg.builder, i64t,
+            LLVMBuildStructGEP2(cg.builder, est, err_ptr, 3, "err.line.gep"),
+            "err.line")
+         col_v = LLVMBuildLoad2(cg.builder, i64t,
+            LLVMBuildStructGEP2(cg.builder, est, err_ptr, 4, "err.col.gep"),
+            "err.col")
+         msg_len = expr::codegen_string_len(cg, msg_s, "err.msg.len")
+         msg_len32 = LLVMBuildTrunc(cg.builder, msg_len, i32t,
+            "err.msg.len32")
+         msg_data = expr::codegen_string_data(cg, msg_s, "err.msg.data")
+         file_len = expr::codegen_string_len(cg, file_s, "err.file.len")
+         file_len32 = LLVMBuildTrunc(cg.builder, file_len, i32t,
+            "err.file.len32")
+         file_data = expr::codegen_string_data(cg, file_s, "err.file.data")
+         pargs = (fgep, code_v, msg_len32, msg_data, file_len32, file_data,
+            line_v, col_v)
+         // A panic inside a spawned thread records the Error into the thread
+         // record and exits the thread (pthread_exit) instead of killing the
+         // process; the join side then reports it as the ram's negative slot.
+         // On the main thread (dva_thread_rec is null) this falls through to
+         // the normal printf+exit.
+         trec = LLVMBuildLoad2(cg.builder, i8p, thread_tls_global(cg),
+            "err.thread.rec")
+         is_thread = LLVMBuildICmp(cg.builder, 33, trec,
+            LLVMConstNull(i8p), "err.is.thread")
+         cur_bb = LLVMGetInsertBlock(cg.builder)
+         parent = LLVMGetBasicBlockParent(cur_bb)
+         thread_bb = LLVMAppendBasicBlock(parent, "err.thread")
+         normal_bb = LLVMAppendBasicBlock(parent, "err.normal")
+         LLVMBuildCondBr(cg.builder, is_thread, thread_bb, normal_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, thread_bb)
+         rec_t = codegen_ensure_pthread(cg)
+         rec_ptr = LLVMBuildBitCast(cg.builder, trec,
+            LLVMPointerType(rec_t, 0), "err.rec")
+         LLVMBuildStore(cg.builder, LLVMConstInt(i64t, 1, 0),
+            LLVMBuildStructGEP2(cg.builder, rec_t, rec_ptr, 6,
+               "err.haserr.gep"))
+         LLVMBuildStore(cg.builder, err_ptr,
+            LLVMBuildStructGEP2(cg.builder, rec_t, rec_ptr, 7,
+               "err.err.gep"))
+         pex = {8}
+         peb = &pex
+         @[peb] = LLVMConstNull(i8p)
+         pfn = cg.pthread_exit_fn | _ | LLVMConstNull(i8p)
+         LLVMBuildCall2(cg.builder,
+            types::fn_type1(LLVMVoidType!, i8p), pfn, peb, 1, "")
+         LLVMBuildUnreachable(cg.builder)
+         LLVMPositionBuilderAtEnd(cg.builder, normal_bb)
+         pf = types::ensure_printf_fn(cg)
+         ef = types::ensure_exit_fn(cg)
+         LLVMBuildCall2(cg.builder,
+            pf.0, pf.1, &pargs, 8, "err.panic.printf")
+         eargs = {16}
+         eb = &eargs
+         @[eb] = LLVMConstInt(i32t, 1, 0)
+         LLVMBuildCall2(cg.builder, ef.0, ef.1, eb, 1, "")
+         LLVMBuildUnreachable(cg.builder)
 
 codegen_ensure_pthread: types::Cg => Addr
 codegen_ensure_pthread = cg =>
@@ -1998,21 +2004,16 @@ thread_ret_typedef = cg, rt, ret_ti, fname =>
       |
          unk_ti = ast::TypeInfo(Prim, ast::ValueType(Unknown))
          pos_ti = tname' != "" | ast::TypeInfo(TypeVar, tname') | unk_ti
-         pos = ast::RamSlotInfo((<+>, rt, pos_ti))
-         neg = ast::RamSlotInfo((<+>, ast::ValueType(Error), unk_ti))
+         pos = ast::RamSlotInfo(<+>, rt, pos_ti)
+         neg = ast::RamSlotInfo(<+>, ast::ValueType(Error), unk_ti)
          runtime::add_type(cg, name, ast::TypeInfo(Ram, (pos, neg)))
    name
 
 // "i32 (i64, ptr, ptr, ptr)" — pthread_create's signature.
 fn_type4: Addr, Addr, Addr, Addr, Addr => Addr
 fn_type4 = ret, p0, p1, p2, p3 =>
-   parr = {32}
-   sb = &parr
-   @[sb] = p0
-   @[sb + 8] = p1
-   @[sb + 16] = p2
-   @[sb + 24] = p3
-   LLVMFunctionType(ret, sb, 4, 0)
+   parr = (p0, p1, p2, p3)
+   LLVMFunctionType(ret, &parr, 4, 0)
 
 // free(ptr) — one-shot (a raw store to the i8* buffer).
 free1: types::Cg, Addr => ()
@@ -2267,10 +2268,9 @@ codegen_deep_copy_env = cg, env_ptr, est, nc, vts, arena_raw =>
 // function or a capturing closure; the args and environment are copied into
 // the child arena; the record is malloc'd, the start thunk is emitted, and
 // pthread_create launches it.
-codegen_eval_spawn: types::Cg, ast::SpawnExpr => (Addr, ast::ValueType)
-codegen_eval_spawn = cg, se =>
+codegen_eval_spawn: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
+codegen_eval_spawn = cg, call =>
    codegen_ensure_pthread(cg)
-   call = se.call
    raw_args = types::Addrs()
    raw_vts = ast::VTypes()
    call.args @ av =>
@@ -2338,11 +2338,8 @@ codegen_eval_spawn = cg, se =>
          atp = LLVMPointerType(at, 0)
          init_t = types::fn_type2(cg, LLVMVoidType!, atp, i64t)
          init_fn = LLVMGetNamedFunction(cg.module, "dva_arena_init")
-         iargs = {16}
-         sb = &iargs
-         @[sb] = arena_raw
-         @[sb + 8] = LLVMConstInt(i64t, 67108864, 0)
-         LLVMBuildCall2(cg.builder, init_t, init_fn, sb, 2, "")
+         iargs = (arena_raw, LLVMConstInt(i64t, 67108864, 0))
+         LLVMBuildCall2(cg.builder, init_t, init_fn, &iargs, 2, "")
          args = types::Addrs()
          arg_ts = types::Addrs()
          raw_args @ rv, i =>
@@ -2422,12 +2419,12 @@ codegen_eval_spawn = cg, se =>
 // "#join h" — blocks (pthread_join), deep-copies the worker's result (or Error)
 // into the parent arena, frees the child arena/args/record, and returns
 // the fallible "< ret | Error >" union.
-codegen_eval_join: types::Cg, ast::JoinExpr => (Addr, ast::ValueType)
+codegen_eval_join: types::Cg, ast::Expr => (Addr, ast::ValueType)
 codegen_eval_join = cg, je =>
    rec_t = codegen_ensure_pthread(cg)
-   hd = je.handle [Var hv] hv | ""
+   hd = je [Var hv] hv | ""
    dt = hd != "" | types::var_dtype(cg, hd) | cg.last_type
-   hv2 = expr::codegen_eval(cg, je.handle)
+   hv2 = expr::codegen_eval(cg, je)
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    rec = LLVMBuildPointerCast(cg.builder, hv2.0,
@@ -2504,11 +2501,11 @@ codegen_eval_join = cg, je =>
    cg.last_type = dt
    (union_ptr, ast::ValueType(Ram))
 
-codegen_typed_eval_join: types::Cg, ast::JoinExpr,
+codegen_typed_eval_join: types::Cg, ast::Expr,
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_join = cg, je, ti =>
    rec_t = codegen_ensure_pthread(cg)
-   hv2 = expr::codegen_eval(cg, je.handle)
+   hv2 = expr::codegen_eval(cg, je)
    i64t = LLVMInt64Type!
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    rec = LLVMBuildPointerCast(cg.builder, hv2.0,
@@ -2872,9 +2869,9 @@ codegen_typed_eval = cg, te =>
                bty = types::llvm_type_of_vt(bfi.backing_type)
                packed_acc' = LLVMConstInt(bty, 0, 0)
                nf @ j =>
-                  tf = r(j) | _ | tast::TypedField(("", tast::mk_lit_unit(0, 0), 0, unify::prim_unit()))
+                  tf = r(j) | _ | tast::TypedField("", tast::mk_lit_unit(0, 0), 0, unify::prim_unit())
                   bf_fld = types::find_bitfield_field(bfi.fields, tf.name)
-                  bf = bf_fld | _ | (bfi.fields(j) | _ | ast::BitfieldField(("", 0, 0)))
+                  bf = bf_fld | _ | (bfi.fields(j) | _ | ast::BitfieldField("", 0, 0))
                   fev = codegen_typed_eval(cg, tf.val)
                   fmask = bf.bit_width !< 64 | -1 | ((1 .<. bf.bit_width) - 1)
                   v_cast = stmt::coerce_int(cg, fev.0, bty)
@@ -2897,8 +2894,8 @@ codegen_typed_eval = cg, te =>
                any_rec' = <->
                first_ty' = LLVMVoidType!
                nf @ i =>
-                  tf = r(i) | _ | tast::TypedField(("", tast::mk_lit_unit(0, 0), 0,
-                     unify::prim_unit()))
+                  tf = r(i) | _ | tast::TypedField("", tast::mk_lit_unit(0, 0), 0,
+                     unify::prim_unit())
                   fev = codegen_typed_eval(cg, tf.val)
                   fev_is_rec = types::is_record_vt(fev.1)
                   fev_is_rec | any_rec' = <+>
@@ -3119,7 +3116,7 @@ codegen_typed_eval = cg, te =>
       [Return r] expr::codegen_typed_eval_return(cg, r)
       [UserDiag ud] match::codegen_eval_user_diag(cg, ud)
       [CompileTime ct]
-         ct_res = match::ctfe_eval(cg, ct.expr, types::CtFrames(), 0)
+         ct_res = match::ctfe_eval(cg, ct, types::CtFrames(), 0)
          match::ctfe_lower(cg, ct_res.0, ct_res.1)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
@@ -3149,13 +3146,13 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    cg = types::codegen_init(opts)
    cg.source_file = src_file
    raw_exprs = raw
-      [Block b] b.exprs
+      [Block b] b
       |
          init_exprs = ast::Exprs()
          init_exprs += raw
          init_exprs
    types::g.pstmts = raw_exprs
-   types::g.typed_program_stmts = prog.stmts
+   types::g.typed_program_stmts = prog
    types::g.pexports = exports
    raw_exprs @ e_mg =>
       e_mg
@@ -3176,7 +3173,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    cg.in_fn = <->
    main_entry = LLVMGetEntryBasicBlock(cg.current_fn)
    LLVMPositionBuilderAtEnd(cg.builder, main_entry)
-   codegen_typed_emit_stmts(cg, prog.stmts)
+   codegen_typed_emit_stmts(cg, prog)
    cg.opts.is_module
       |
          cg.fns @ fd_i =>

@@ -3,7 +3,7 @@
 
 #type Point (x: Int, y: Int)
 
-#type Nested < Single(Int), Pair((Int, Int)) >
+#type Nested < Single(Int), Pair(Int, Int) >
 
 #type Value <
    Num(Int)

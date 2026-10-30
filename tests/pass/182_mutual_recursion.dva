@@ -6,7 +6,7 @@
 
 #type Expr <
    Int(Int)
-   Add((Expr, Expr))
+   Add(Expr, Expr)
    Pick(ChoiceExpr)
 >
 

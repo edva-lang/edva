@@ -12,6 +12,39 @@ target triple = "x86_64-unknown-linux-gnu"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @"var.ast::cell_var_names" = external global ptr
+@"var.const::pi" = external global double
+@"var.const::tau" = external global double
+@"var.const::e" = external global double
+@"var.const::phi" = external global double
+@"var.const::inv_phi" = external global double
+@"var.const::sqrt2" = external global double
+@"var.const::sqrt3" = external global double
+@"var.const::ln2" = external global double
+@"var.const::ln10" = external global double
+@"var.const::max_i64" = external global i64
+@"var.const::min_i64" = external global i64
+@"var.const::max_i32" = external global i32
+@"var.const::min_i32" = external global i32
+@"var.const::max_i16" = external global i16
+@"var.const::min_i16" = external global i16
+@"var.const::max_i8" = external global i8
+@"var.const::min_i8" = external global i8
+@"var.const::max_u64" = external global i64
+@"var.const::max_u32" = external global i32
+@"var.const::max_u16" = external global i16
+@"var.const::max_u8" = external global i8
+@"var.const::inf_f64" = external global double
+@"var.const::nan_f64" = external global double
+@"var.const::max_f64" = external global double
+@"var.const::min_f64" = external global double
+@"var.const::sub_f64" = external global double
+@"var.const::eps_f64" = external global double
+@"var.const::inf_f32" = external global float
+@"var.const::nan_f32" = external global float
+@"var.const::max_f32" = external global float
+@"var.const::min_f32" = external global float
+@"var.const::sub_f32" = external global float
+@"var.const::eps_f32" = external global float
 @clo.const = internal constant { ptr, ptr } { ptr @"type_env::empty_scope", ptr null }
 @"var.type_env::empty_scope" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"type_env::new_init", ptr null }
@@ -127,8 +160,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.type_env::lookup_user_type" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_type_env, ptr null }]
 
-declare i32 @printf(ptr, ...)
-
 declare ptr @dva_arena_current()
 
 declare ptr @dva_arena_set_current(ptr)
@@ -136,10 +167,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -157,10 +184,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -637,6 +660,10 @@ arr_overflow_abort9:                              ; preds = %a.cap25
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.umul.with.overflow.i64(i64, i64) #0
+
+declare i64 @write(i32, ptr, i64)
+
+declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #3
@@ -1171,6 +1198,8 @@ mk.eq.merge191:                                   ; preds = %mk.eq.else190, %mk.
   br i1 %mk.eq198, label %m.overwrite151, label %m.next152
 }
 
+declare i32 @memcmp(ptr, ptr, i64)
+
 define ptr @"type_env::lookup_fn_body"(ptr %0, ptr %1) #1 {
 entry:
   %var.body = alloca ptr, align 8
@@ -1560,6 +1589,8 @@ declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 declare i32 @pthread_join(i64, ptr)
 
 declare void @pthread_exit(ptr)
+
+declare i32 @printf(ptr, ...)
 
 define void @"type_env::mark_generic_binding"(ptr %0, ptr %1) #1 {
 entry:

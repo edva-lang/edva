@@ -15,7 +15,7 @@ f = bs =>
 m = (1, 2, 3, 4, 5)
 f(m)
 
-#type Ints (Int){}
+#type Ints Int{}
 g2 = bs =>
    a = Ints()
    ?bs @ i =>

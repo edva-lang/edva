@@ -1,4 +1,5 @@
 #use "math/geom"
+#use const
 #use math
 #use io
 
@@ -41,7 +42,7 @@ print_flag $ approx_eq(mid(1), 15.0)
 
 // rotation
 vx = geom::vec2(1.0, 0.0)
-vy = geom::rotate(vx, math::pi / 2.0)
+vy = geom::rotate(vx, const::pi / 2.0)
 print_flag $ approx_eq(vy(0), 0.0)
 print_flag $ approx_eq(vy(1), 1.0)
 
@@ -60,9 +61,13 @@ print_flag $ approx_eq(geom::len3(n3), 1.0)
 x_axis = geom::vec3(1.0, 0.0, 0.0)
 y_axis = geom::vec3(0.0, 1.0, 0.0)
 z_axis = geom::cross3(x_axis, y_axis)
-print_flag $ approx_eq(z_axis(0), 0.0)
-print_flag $ approx_eq(z_axis(1), 0.0)
-print_flag $ approx_eq(z_axis(2), 1.0)
+print_flag $ approx_eq(z_axis.x, 0.0)
+print_flag $ approx_eq(z_axis.y, 0.0)
+print_flag $ approx_eq(z_axis.z, 1.0)
+
+// surface normal: normal3((0,0,0), (2,0,0), (0,2,0)) = (0, 0, 1)
+tri_n = geom::normal3(geom::vec3(0.0, 0.0, 0.0), geom::vec3(2.0, 0.0, 0.0), geom::vec3(0.0, 2.0, 0.0))
+print_flag $ approx_eq(tri_n.x, 0.0) && approx_eq(tri_n.y, 0.0) && approx_eq(tri_n.z, 1.0)
 
 // 3. 4D Vector operations
 a4 = geom::vec4(1.0, 2.0, 3.0, 4.0)

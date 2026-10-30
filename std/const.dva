@@ -1,0 +1,49 @@
+// Standard Mathematical and Numeric Constants Module (std/const.dva)
+//
+// Fundamental mathematical, geometric, integer limit, and IEEE 754
+// floating-point constants. Separated from `std/math` so pure/Wasm modules can
+// use constants alongside `%` compiler intrinsics without linking C `libm` (-lm).
+
+#public
+   // Mathematical constants (64-bit Float)
+   pi       = 3.14159265358979323846
+   tau      = 6.28318530717958647692
+   e        = 2.71828182845904523536
+   phi      = 1.61803398874989484820
+   inv_phi  = 0.61803398874989484820
+   sqrt2    = 1.41421356237309504880
+   sqrt3    = 1.73205080756887729352
+   ln2      = 0.69314718055994530942
+   ln10     = 2.30258509299404568402
+
+   // Signed integer limits
+   max_i64  = 0x7fffffffffffffff
+   min_i64  = 0x8000000000000000
+   max_i32  = 0x7fffffffi32
+   min_i32  = -2147483648i32
+   max_i16  = 0x7fffi16
+   min_i16  = -32768i16
+   max_i8   = 0x7fi8
+   min_i8   = -128i8
+
+   // Unsigned integer limits
+   max_u64  = 0xffffffffffffffffu64
+   max_u32  = 0xffffffffu32
+   max_u16  = 0xffffu16
+   max_u8   = 0xffu8
+
+   // Floating-point limits and IEEE-754 constants (f64 / Float)
+   inf_f64  = %bitcast(Float, 0x7ff0000000000000)
+   nan_f64  = %bitcast(Float, 0x7ff8000000000000)
+   max_f64  = %bitcast(Float, 0x7fefffffffffffff)
+   min_f64  = %bitcast(Float, 0x0010000000000000)
+   sub_f64  = %bitcast(Float, 0x0000000000000001)
+   eps_f64  = %bitcast(Float, 0x3cb0000000000000)
+
+   // Floating-point limits and IEEE-754 constants (f32)
+   inf_f32  = %bitcast(f32, 0x7f800000u32)
+   nan_f32  = %bitcast(f32, 0x7fc00000u32)
+   max_f32  = %bitcast(f32, 0x7f7fffffu32)
+   min_f32  = %bitcast(f32, 0x00800000u32)
+   sub_f32  = %bitcast(f32, 0x00000001u32)
+   eps_f32  = %bitcast(f32, 0x34000000u32)

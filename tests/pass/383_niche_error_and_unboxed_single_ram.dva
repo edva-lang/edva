@@ -1,0 +1,57 @@
+// Test #229 (<|Error> null-pointer niche optimization) and
+// #228 (<T|> and <|T> unboxed { i1, i64 } scalar ramifications).
+
+#use io
+
+check_positive: Int => <|Error>
+check_positive = x =>
+   x > 0
+      | <++>
+      | <- Error(42, "not positive", "test.dva", 1, 1, (0, 0)) ->
+
+run_fallible: Int => <|Error>
+run_fallible = x =>
+   check_positive(x)--!
+   <++>
+
+maybe_double: Int => <Int|>
+maybe_double = x =>
+   x > 0 | <+ x * 2 +> | <-->
+
+neg_int: Int => <|Int>
+neg_int = x =>
+   x < 0 | <- -x -> | <++>
+
+// #229: <|Error> success (<++>), failure (<- err ->), propagate (--!), choice
+run_fallible(10) !| _
+r1 = run_fallible(5)
+   | "ok"
+   | e => e.msg
+io::out $ r1
+
+r2 = run_fallible(-3)
+   | "ok"
+   | e => "${e.code}:${e.msg}"
+io::out $ r2
+
+// #228: <Int|> (RamPN) and <|Int> (RamNP) unboxed { i1, i64 }
+io::out $ maybe_double(21)!!
+m1 = maybe_double(7)
+   | v => v + 1
+   | 0
+io::out $ m1
+
+m2 = maybe_double(-1)
+   | v => v + 1
+   | 99
+io::out $ m2
+
+n1 = neg_int(10)
+   | 100
+   | v => v
+io::out $ n1
+
+n2 = neg_int(-25)
+   | 100
+   | v => v
+io::out $ n2

@@ -76,7 +76,7 @@ compute_layout = ctx, ut =>
    c = unify::canon(ctx, ut)
    c
       [Prim p] compute_prim_layout(p)
-      [Fn] tast::TypedLayout((ptr_sz * 2, ptr_align, tast::LayoutKind(FnClosure)))
+      [Fn] tast::TypedLayout(ptr_sz * 2, ptr_align, tast::LayoutKind(FnClosure))
       [Rec r]
          cur_off' = 0
          max_align' = 1
@@ -108,9 +108,9 @@ compute_layout = ctx, ut =>
                         | tast::layout_scalar(1, 1)
       [Enum] tast::layout_aggregate(ptr_sz * 2, ptr_align)
       [Array]
-         tast::TypedLayout((
+         tast::TypedLayout(
             ptr_sz * 3, ptr_align, tast::LayoutKind(Array)
-         ))
-      [Slice] tast::TypedLayout((ptr_sz * 2, ptr_align, tast::LayoutKind(Slice)))
+         )
+      [Slice] tast::TypedLayout(ptr_sz * 2, ptr_align, tast::LayoutKind(Slice))
       | tast::layout_scalar(ptr_sz, ptr_align)
 

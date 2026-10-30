@@ -7,7 +7,7 @@
 #use "str"
 #use io
 
-#type Ints (Int){}
+#type Ints Int{}
 
 inc: Int => Int
 inc = n => n + 1

@@ -82,7 +82,7 @@ main = !=>
                io::out(m.version)
                io::out(m.edva)
                io::out(?m.deps)
-               dummy_dep = ccl::PackageDep(("", ccl::DepKind(Path), "", "", "", "", ""))
+               dummy_dep = ccl::PackageDep("", ccl::DepKind(Path), "", "", "", "", "")
                d0 = m.deps(0) | _ | dummy_dep
                d1 = m.deps(1) | _ | dummy_dep
                io::out(d0.alias)
@@ -170,15 +170,15 @@ main = !=>
                io::out(lock.lock_version)
                io::out(?lock.packages)
                empty_deps: ccl::LockDeps
-               dummy_pkg = ccl::LockPackage(("", ccl::DepKind(Path),
-                  "", "", "", "", "", "", empty_deps, <->))
+               dummy_pkg = ccl::LockPackage("", ccl::DepKind(Path),
+                  "", "", "", "", "", "", empty_deps, <->)
                p0 = lock.packages(0) | _ | dummy_pkg
                p1 = lock.packages(1) | _ | dummy_pkg
                io::out(p0.id)
                io::out(p1.id)
                io::out(?lock.root_deps)
-               r0 = lock.root_deps(0) | _ | ccl::LockDep(("", ""))
-               r1 = lock.root_deps(1) | _ | ccl::LockDep(("", ""))
+               r0 = lock.root_deps(0) | _ | ccl::LockDep("", "")
+               r1 = lock.root_deps(1) | _ | ccl::LockDep("", "")
                io::out(r0.alias)
                io::out(r1.alias)
 

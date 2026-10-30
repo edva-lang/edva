@@ -111,6 +111,6 @@ int_val = Int(rocket)     // 128640
 
 ## Memory layout and ABI
 
-- `Rune` is a 4-byte (32-bit) scalar value (`i32`), aligned to a 4-byte boundary (`#size(Rune)` is 4).
+- `Rune` is a 4-byte (32-bit) scalar value (`i32`), aligned to a 4-byte boundary (`#size Rune` is 4).
 - When stored in records or arrays, it occupies 4 bytes (`i32`).
 - When passed across C FFI boundaries, it passes as a 32-bit integer scalar.

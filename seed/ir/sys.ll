@@ -14,8 +14,8 @@ target triple = "x86_64-unknown-linux-gnu"
 @sys_argc_global = external global i64
 @sys_argv_global = external global ptr
 @"var.sys::STDIN" = global i64 0
-@"var.sys::STDOUT" = global i64 0
-@"var.sys::STDERR" = global i64 0
+@"var.sys::STDOUT" = global i64 1
+@"var.sys::STDERR" = global i64 2
 @"var.sys::addr_null" = global ptr null
 @clo.const = internal constant { ptr, ptr } { ptr @"sys::addr_is_null", ptr null }
 @"var.sys::addr_is_null" = global ptr null
@@ -43,8 +43,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.sys::poll_out" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_sys, ptr null }]
 
-declare i32 @printf(ptr, ...)
-
 declare ptr @dva_arena_current()
 
 declare ptr @dva_arena_set_current(ptr)
@@ -52,10 +50,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -73,10 +67,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -115,9 +105,13 @@ declare i64 @read(i32, ptr, i64)
 
 declare i64 @lseek(i32, i64, i64)
 
+declare i64 @write(i32, ptr, i64)
+
 declare i64 @writev(i32, ptr, i64)
 
 declare i32 @ioctl(i32, i64, i64, ...)
+
+declare void @exit(i32)
 
 declare i64 @htons(i64)
 
@@ -176,6 +170,8 @@ declare ptr @opendir(ptr)
 declare ptr @readdir(ptr)
 
 declare i64 @closedir(ptr)
+
+declare i64 @strlen(ptr)
 
 declare i64 @strcmp(ptr, ptr)
 

@@ -1,20 +1,21 @@
 #use io
+#use const
 
 // 1. NaN representation
-io::out $ .nan
-io::out $ -.nan
-io::out $ .nanf32
-io::out $ -.nanf32
+io::out $ const::nan_f64
+io::out $ -const::nan_f64
+io::out $ const::nan_f32
+io::out $ -const::nan_f32
 
 // 2. IEEE-754 inequality property: NaN != NaN
-io::out $ (.nan != .nan)
-io::out $ (.nan == .nan)
-io::out $ (.nanf32 != .nanf32)
-io::out $ (.nanf32 == .nanf32)
+io::out $ (const::nan_f64 != const::nan_f64)
+io::out $ (const::nan_f64 == const::nan_f64)
+io::out $ (const::nan_f32 != const::nan_f32)
+io::out $ (const::nan_f32 == const::nan_f32)
 
 // 3. Propagation in arithmetic
-io::out $ (.nan + 1.0)
-io::out $ (.nan * 0.0)
+io::out $ (const::nan_f64 + 1.0)
+io::out $ (const::nan_f64 * 0.0)
 
 // 4. Coexistence with record member access
 rec = (nan = 100, max = 50)

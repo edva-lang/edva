@@ -37,7 +37,7 @@ same_line_test = x =>
    x < 0 |-> | <+>
 
 // 7. Loop with early return sugar
-find_negative: (Int){} => <>
+find_negative: Int{} => <>
 find_negative = arr =>
    ?arr @ i =>
       val = arr(i) | _ | 0
@@ -77,13 +77,13 @@ io::out $ multiline_test(2) | "pos" | "neg"
 io::out $ same_line_test(-3) | "pos" | "neg"
 io::out $ same_line_test(3) | "pos" | "neg"
 
-nums: (Int){}
+nums: Int{}
 nums += 1
 nums += -4
 nums += 3
 io::out $ find_negative(nums) | "no neg" | "has neg"
 
-nums2: (Int){}
+nums2: Int{}
 nums2 += 1
 nums2 += 2
 io::out $ find_negative(nums2) | "no neg" | "has neg"

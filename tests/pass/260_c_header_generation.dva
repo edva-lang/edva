@@ -3,12 +3,12 @@
 #type Point (x: Int, y: Int)
 
 #export add_points: Point, Point => Point
-add_points = p1, p2 => Point((p1.x + p2.x, p1.y + p2.y))
+add_points = p1, p2 => Point(p1.x + p2.x, p1.y + p2.y)
 
 #export add_int: Int, Int => Int
 add_int = a, b => a + b
 
-pt = add_points(Point((10, 20)), Point((30, 40)))
+pt = add_points(Point(10, 20), Point(30, 40))
 io::out $ pt.x
 io::out $ pt.y
 io::out $ add_int(5, 7)

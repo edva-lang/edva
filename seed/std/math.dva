@@ -1,21 +1,32 @@
 // Standard Math Module (std/math.dva)
-// C99 libm bindings: each function maps 1:1 to its C counterpart, so
-// Float is a 64-bit double on both sides. Importing this module links -lm.
+// C99 libm bindings for functions not directly covered by % intrinsics,
+// plus angle conversion helpers. Importing this module links -lm.
+//
+// Mathematical constants (pi, tau, e, phi, inv_phi, sqrt2, sqrt3, ln2, ln10)
+// live in `std/const` (`#use const`).
+//
+// Built-in compiler intrinsics (no import required, support SIMD vectors):
+//   %sqrt(x), %pow(x, y), %exp2(x), %log2(x), %sin(x), %cos(x),
+//   %floor(x), %ceil(x), %trunc(x), %round(x), %abs(x),
+//   %min(a, b), %max(a, b), %clamp(x, lo, hi), %copysign(m, s),
+//   %fma(a, b, c), %fmuladd(a, b, c)
+
+#use const
 
 #public #foreign "m"
-   sqrt      : (x: Float) => Float
+   // sqrt      : (x: Float) => Float -- use intrinsic %sqrt(x)
    cbrt      : (x: Float) => Float
    hypot     : (x: Float, y: Float) => Float
-   pow       : (x: Float, y: Float) => Float
+   // pow       : (x: Float, y: Float) => Float -- use intrinsic %pow(x, y)
    exp       : (x: Float) => Float
-   exp2      : (x: Float) => Float
+   // exp2      : (x: Float) => Float -- use intrinsic %exp2(x)
    expm1     : (x: Float) => Float
    log       : (x: Float) => Float
-   log2      : (x: Float) => Float
+   // log2      : (x: Float) => Float -- use intrinsic %log2(x)
    log10     : (x: Float) => Float
    log1p     : (x: Float) => Float
-   sin       : (x: Float) => Float
-   cos       : (x: Float) => Float
+   // sin       : (x: Float) => Float -- use intrinsic %sin(x)
+   // cos       : (x: Float) => Float -- use intrinsic %cos(x)
    tan       : (x: Float) => Float
    asin      : (x: Float) => Float
    acos      : (x: Float) => Float
@@ -27,25 +38,29 @@
    asinh     : (x: Float) => Float
    acosh     : (x: Float) => Float
    atanh     : (x: Float) => Float
-   floor     : (x: Float) => Float
-   ceil      : (x: Float) => Float
+   // floor     : (x: Float) => Float -- use intrinsic %floor(x)
+   // ceil      : (x: Float) => Float -- use intrinsic %ceil(x)
    // trunc     : (x: Float) => Float -- use intrinsic %trunc(x)
    // round     : (x: Float) => Float -- use intrinsic %round(x)
    rint      : (x: Float) => Float
    nearbyint : (x: Float) => Float
-   fabs      : (x: Float) => Float
+   // fabs      : (x: Float) => Float -- use intrinsic %abs(x)
    fmod      : (x: Float, y: Float) => Float
    remainder : (x: Float, y: Float) => Float
    // copysign  : (x: Float, y: Float) => Float -- use intrinsic %copysign(x, y)
-   fmin      : (x: Float, y: Float) => Float
-   fmax      : (x: Float, y: Float) => Float
+   // fmin      : (x: Float, y: Float) => Float -- use intrinsic %min(x, y)
+   // fmax      : (x: Float, y: Float) => Float -- use intrinsic %max(x, y)
    fdim      : (x: Float, y: Float) => Float
    // fma: (x: Float, y: Float, z: Float) => Float
    //      -- use intrinsic %fma(x, y, z)
    ldexp     : (x: Float, exp: i32) => Float
    scalbn    : (x: Float, n: i32) => Float
 
-// Constants (not libm symbols — C exposes these as macros).
 #public
-   pi = 3.14159265358979323846
-   e  = 2.71828182845904523536
+   // Convert degrees to radians
+   rad: Float => Float
+   rad = deg_val => deg_val * const::pi / 180.0
+
+   // Convert radians to degrees
+   deg: Float => Float
+   deg = rad_val => rad_val * 180.0 / const::pi

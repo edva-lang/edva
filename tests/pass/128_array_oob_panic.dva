@@ -3,7 +3,7 @@
 // "throws on error" contract — the panic message is the runtime output.
 #use io
 
-#type Ints (Int){}
+#type Ints Int{}
 xs: Ints
 xs += 42
 io::out $ (xs(0) | _ | _)

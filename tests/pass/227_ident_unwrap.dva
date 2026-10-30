@@ -3,7 +3,7 @@
 #use(import) fp
 #use io
 
-#type Ints (Int){}
+#type Ints Int{}
 
 // A named function reference as a bare ram branch applies to the payload —
 // the named counterpart of the "| d => d |" identity lambda.

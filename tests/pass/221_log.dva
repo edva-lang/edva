@@ -13,7 +13,7 @@ io::out(("tag", "A"))
 io::out(("hello", 42))
 io::out(("sent:", 5, 2.5))
 io::out(("name", "dva", 1))
-io::out(('A',))
+io::out('A')
 io::out(("rune:", 'B'))
 io::out(("pair", 'x', 7))
 

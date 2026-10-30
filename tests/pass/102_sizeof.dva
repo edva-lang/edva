@@ -3,17 +3,17 @@
 // size (min 16) the language allocates and strides by.
 
 // Scalars and types: Int/Float/Addr are 8 bytes; Rune is 4 bytes; String is 16 bytes.
-io::out $ #size(Int)
-io::out $ #size(Rune)
-io::out $ #size(Float)
-io::out $ #size(Addr)
-io::out $ #size(String)
+io::out $ #size Int
+io::out $ #size Rune
+io::out $ #size Float
+io::out $ #size Addr
+io::out $ #size String
 
 // Narrow scalars.
-io::out $ #size(i8)
-io::out $ #size(i16)
-io::out $ #size(i32)
-io::out $ #size(i1)
+io::out $ #size i8
+io::out $ #size i16
+io::out $ #size i32
+io::out $ #size i1
 
 // Bare form without parentheses.
 io::out $ #size Int
@@ -22,13 +22,13 @@ io::out $ #size Int
 #use libc
 #use io
 #type Pt (x: Int, y: Int)
-buf = libc::malloc $ #size(Pt)
+buf = libc::malloc $ #size Pt
 io::out $ ( buf !< 1 | "Positive" | "Negative")
 
 // Sizes are compile-time constants: they fold into arithmetic.
-total = #size(i8) + #size(i32) + #size(i64)
+total = #size i8 + #size i32 + #size i64
 io::out $ total
 
 // Composite records floor to the 16-byte arena chunk.
-io::out $ #size(Pt)
+io::out $ #size Pt
 io::out $ #size(Int * 2)

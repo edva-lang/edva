@@ -324,7 +324,7 @@ make_metadata = s, is_link =>
    is_l = is_link || fmt == 10
    pb = PermsBits(m)
    is_x = (pb.user_x != 0 || pb.group_x != 0 || pb.other_x != 0) && !is_d
-   Metadata((
+   Metadata(
       stat_size(s),
       m,
       stat_mtime_sec(s),
@@ -334,7 +334,7 @@ make_metadata = s, is_link =>
       is_reg,
       is_l,
       is_x
-   ))
+   )
 
 stat: String => <Metadata | >
 stat = path =>
@@ -410,15 +410,15 @@ read_symlink = p =>
 
 // --- Directory Traversal ---
 
-read_dir: String => (DirEntry){}
+read_dir: String => DirEntry{}
 read_dir = dir_path =>
-   res = (DirEntry){}
+   res = DirEntry{}
    dp = libc::opendir(dir_path)
    dp == sys::addr_null | --| res
    0.. @
       ent = libc::readdir(dp)
       ent == sys::addr_null | -->
-      name = sys::c_str(ent + #size(DirentPrefix))
+      name = sys::c_str(ent + #size DirentPrefix)
       name == "." || name == ".." | --^
       dp_ent = DirentPrefix(ent)
       dt = Int(dp_ent.d_type)
@@ -433,7 +433,7 @@ read_dir = dir_path =>
             is_d = mi.is_dir
             is_f = mi.is_file
             is_l = mi.is_symlink
-      res += DirEntry((name, is_d, is_f, is_l))
+      res += DirEntry(name, is_d, is_f, is_l)
    libc::closedir(dp)
    res
 
@@ -582,7 +582,7 @@ space = path =>
    total = blocks * eff_frsize'
    free = bfree * eff_frsize'
    avail = bavail * eff_frsize'
-   <+ FsSpace((total, free, avail)) +>
+   <+ FsSpace(total, free, avail) +>
 
 get_fs_stats: String => (Int, Int, Int, Int)
 get_fs_stats = p =>
@@ -720,17 +720,17 @@ cmp_entries = e1, e2, mode, rev =>
          res' = str::cmp(e1.name, e2.name)
    rev | -res' | res'
 
-list_dir_simple: String => (Entry){}
+list_dir_simple: String => Entry{}
 list_dir_simple = dir_path =>
    list_dir(dir_path, <->, 0, <->)
 
-list_dir: String, <>, Int, <> => (Entry){}
+list_dir: String, <>, Int, <> => Entry{}
 list_dir = dir_path, show_hidden, sort_mode, sort_rev =>
-   res = (Entry){}
+   res = Entry{}
    entries = read_dir(dir_path)
 
-   dirs = (Entry){}
-   file_list = (Entry){}
+   dirs = Entry{}
+   file_list = Entry{}
 
    entries @ e =>
       name = e.name
@@ -753,7 +753,7 @@ list_dir = dir_path, show_hidden, sort_mode, sort_rev =>
 
       fmt_sz = format_size(size', is_d')
       perms = format_perms(mode', is_d')
-      entry = Entry((name, is_d', is_x', size', fmt_sz, perms, mtime', mode'))
+      entry = Entry(name, is_d', is_x', size', fmt_sz, perms, mtime', mode')
 
       is_d' | dirs += entry | file_list += entry
 

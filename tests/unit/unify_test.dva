@@ -111,7 +111,7 @@ test_occurs_check = !=>
    ctx2 = unify::new_ctx!
    a1 = unify::fresh_var(ctx2)
    flds = unify::UFields()
-   flds += unify::UField(("next", a1))
+   flds += unify::UField("next", a1)
    rec_cyclic = unify::mk_rec(flds)
    ok2 = unify::unify(ctx2, a1, rec_cyclic)
    assert_fail(ok2, "Occurs check must reject a1 = (next: a1)")
@@ -155,13 +155,13 @@ test_records = !=>
    a0 = unify::fresh_var(ctx)
 
    f1 = unify::UFields()
-   f1 += unify::UField(("x", a0))
-   f1 += unify::UField(("y", unify::prim_float!))
+   f1 += unify::UField("x", a0)
+   f1 += unify::UField("y", unify::prim_float!)
    r1 = unify::mk_rec(f1)
 
    f2 = unify::UFields()
-   f2 += unify::UField(("x", unify::prim_int!))
-   f2 += unify::UField(("y", unify::prim_float!))
+   f2 += unify::UField("x", unify::prim_int!)
+   f2 += unify::UField("y", unify::prim_float!)
    r2 = unify::mk_rec(f2)
 
    ok1 = unify::unify(ctx, r1, r2)
@@ -171,8 +171,8 @@ test_records = !=>
    // Field order/name mismatch
    ctx2 = unify::new_ctx!
    f3 = unify::UFields()
-   f3 += unify::UField(("y", unify::prim_float!))
-   f3 += unify::UField(("x", unify::prim_int!))
+   f3 += unify::UField("y", unify::prim_float!)
+   f3 += unify::UField("x", unify::prim_int!)
    r3 = unify::mk_rec(f3)
    ok2 = unify::unify(ctx2, r2, r3)
    assert_fail(ok2, "Records with different field order must fail")
@@ -180,8 +180,8 @@ test_records = !=>
    // Field name compatibility: records unify by layout
    ctx3 = unify::new_ctx!
    f4 = unify::UFields()
-   f4 += unify::UField(("a", unify::prim_int!))
-   f4 += unify::UField(("b", unify::prim_float!))
+   f4 += unify::UField("a", unify::prim_int!)
+   f4 += unify::UField("b", unify::prim_float!)
    r4 = unify::mk_rec(f4)
    ok3 = unify::unify(ctx3, r2, r4)
    assert_ok(ok3, "Records with different field names unify by layout")
@@ -189,8 +189,8 @@ test_records = !=>
    // Anonymous / positional record unifies with named record
    ctx4 = unify::new_ctx!
    f_anon = unify::UFields()
-   f_anon += unify::UField(("", unify::prim_int!))
-   f_anon += unify::UField(("", unify::prim_float!))
+   f_anon += unify::UField("", unify::prim_int!)
+   f_anon += unify::UField("", unify::prim_float!)
    r_anon = unify::mk_rec(f_anon)
    ok4 = unify::unify(ctx4, r2, r_anon)
    assert_ok(ok4, "Anonymous positional record unifies with named record")

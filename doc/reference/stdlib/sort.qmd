@@ -15,8 +15,8 @@ The low-level `raw_sort_slots` engine uses in-place quadratic insertion sort ($O
 
 | Export | Signature | Behavior |
 |---|---|---|
-| `Strings` | `(String){}` | growable string-array type |
-| `Ints` | `(Int){}` | growable integer-array type |
+| `Strings` | `String{}` | growable string-array type |
+| `Ints` | `Int{}` | growable integer-array type |
 | `strings` | `Strings => Strings` | ascending `str::cmp` order ($O(n \log n)$ hybrid merge sort) |
 | `ints` | `Ints => Ints` | ascending numeric order ($O(n \log n)$ hybrid merge sort) |
 | `raw_sort_slots` | `Int, (Int, Int => <>), (Int, Int => Int) => ()` | callback-driven in-place slot engine ($O(n^2)$ insertion sort) |

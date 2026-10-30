@@ -8,8 +8,8 @@
 #use str
 
 #public
-   #type Strings (String){}
-   #type Ints (Int){}
+   #type Strings String{}
+   #type Ints Int{}
 
    // Shared untyped insertion-sort engine: operates on index positions with
    // caller-provided comparator and swap closures.

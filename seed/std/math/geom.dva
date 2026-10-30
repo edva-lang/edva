@@ -6,14 +6,23 @@
 // Operates on fixed homogeneous float tuples, leveraging compiler intrinsics
 // and SIMD vector instructions (%dot, %sqrt, %sin, %cos, %min, %max).
 
+#use const
 #use math
 
 #public
-   #type Vec2   (Float, Float)
-   #type Vec3   (Float, Float, Float)
-   #type Vec4   (Float, Float, Float, Float)
-   #type Point2 (Float, Float)
-   #type Rect   (Float, Float, Float, Float)
+   #type Vec2   (x: Float, y: Float)
+   #type Vec3   (x: Float, y: Float, z: Float)
+   #type Vec4   (x: Float, y: Float, z: Float, w: Float)
+   #type Point2 (x: Float, y: Float)
+   #type Point3 (x: Float, y: Float, z: Float)
+   #type Rect   (x: Float, y: Float, w: Float, h: Float)
+
+   // Angle Conversions
+   rad: Float => Float
+   rad = deg_val => deg_val * const::pi / 180.0
+
+   deg: Float => Float
+   deg = rad_val => rad_val * 180.0 / const::pi
 
    // Constructors
    vec2: Float, Float => Vec2
@@ -82,8 +91,8 @@
 
    angle_deg: Vec2 => Float
    angle_deg = v =>
-      deg = angle(v) * 180.0 / math::pi
-      deg < 0.0 | deg + 360.0 | deg
+      d = deg(angle(v))
+      d < 0.0 | d + 360.0 | d
 
    rotate: Vec2, Float => Vec2
    rotate = v, rad =>
@@ -124,6 +133,10 @@
       (a(1) * b(2) - a(2) * b(1),
          a(2) * b(0) - a(0) * b(2),
          a(0) * b(1) - a(1) * b(0))
+
+   normal3: Vec3, Vec3, Vec3 => Vec3
+   normal3 = a, b, c =>
+      norm3(cross3(b - a, c - a))
 
    // --- 4D Vector Operations ---
 
@@ -242,13 +255,13 @@
             t_ * (2.0 * t - 2.0) * (2.0 * t - 2.0) + 1.0
 
    ease_in_sine: Float => Float
-   ease_in_sine = t => 1.0 - %cos(t * math::pi * 0.5)
+   ease_in_sine = t => 1.0 - %cos(t * const::pi * 0.5)
 
    ease_out_sine: Float => Float
-   ease_out_sine = t => %sin(t * math::pi * 0.5)
+   ease_out_sine = t => %sin(t * const::pi * 0.5)
 
    ease_in_out_sine: Float => Float
-   ease_in_out_sine = t => 0.5 * (1.0 - %cos(math::pi * t))
+   ease_in_out_sine = t => 0.5 * (1.0 - %cos(const::pi * t))
 
    ease_in_expo: Float => Float
    ease_in_expo = t =>

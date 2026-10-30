@@ -38,7 +38,7 @@ The `event` module provides portable file descriptor readiness notification back
 | `event::mod` | `Poller, Int, Int, Int => <>` | Modifies interest `mask` and `user_data` for registered `fd` |
 | `event::mod_fd` | `Poller, Int, Int => <>` | Modifies interest `mask` for registered `fd` |
 | `event::del` | `Poller, Int => <>` | Deregisters `fd` from the poller |
-| `event::wait` | `Poller, Int => (Event){}` | Waits up to `timeout_ms` (`-1` infinite, `0` non-blocking) and returns ready events |
+| `event::wait` | `Poller, Int => Event{}` | Waits up to `timeout_ms` (`-1` infinite, `0` non-blocking) and returns ready events |
 | `event::close` | `Poller => ()` | Marks the poller closed |
 | `event::is_read` | `Event => <>` | `<+>` if `READ` is set on `ev.events` |
 | `event::is_write` | `Event => <>` | `<+>` if `WRITE` is set on `ev.events` |

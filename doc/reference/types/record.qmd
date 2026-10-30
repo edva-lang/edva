@@ -18,12 +18,20 @@ Records are declared with `#type` followed by the field specifications:
 ```{.dva .run}
 #type Point (x: Int, y: Int)
 
-// Multiline indentation form
+// Multiline parenthesized form (aligned fields may omit commas)
+#type Foo (
+   bar: Int
+   baz: Float
+)
+
+// Multiline indentation form (without parentheses)
 #type User
    id: Int
    name: String
    is_admin: <>
 ```
+
+In multiline record, `#packed`, and bitfield declarations, a newline between entries aligned at the first entry's column acts as a separator (commas and trailing commas remain optional). Multiple entries on the same line always require commas (`E2015`), while deeper indentation continues the current field's type or default expression.
 
 ### 2. Positional records (tuples)
 Positional records omit field names and are accessed by index:
@@ -41,14 +49,23 @@ Fixed-length arrays allocated inline as a single contiguous record:
 #type MacAddress (u8 * 6)     // 6 consecutive bytes
 ```
 
-### 4. Packed records (`#packed`)
-Packed records disable interior and tail alignment padding, ensuring exact byte-level layout for binary network protocols and file headers:
+### 4. Packed and aligned records (`#packed`, `#align N`)
+Packed records disable interior and tail alignment padding, ensuring exact byte-level layout for binary network protocols, GPU vertex buffers, and file headers. Explicit power-of-two byte alignment can be specified with `#align N` (and combined with `#packed` in either order):
 
 ```{.dva .partial}
 #type EthernetHeader #packed (
    dest_mac: u8 * 6,
    src_mac:  u8 * 6,
    ethertype: u16,
+)
+
+#type AlignedVec #align 16 (
+   x: f32, y: f32, z: f32, w: f32
+)
+
+#type CacheLineBlock #align 64 #packed (
+   flag: u8,
+   tag: u8
 )
 ```
 
@@ -124,5 +141,7 @@ is_ack = flags.ack
 ## Memory layout and ABI
 
 - **Standard records**: Follow the platform C ABI struct layout (fields aligned to natural boundaries, tail-padded to struct alignment). They map 1:1 to C `struct` types across `#foreign` functions.
-- **Packed records**: Have alignment 1, with zero padding between fields.
+- **Homogeneous named-field records**: Records whose fields all share the same numeric type (e.g., `(r: Float, g: Float, b: Float, a: Float)` or `(x: Float, y: Float, z: Float)`) also support positional indexing (`v(i)`) and native SIMD vector operations (`+`, `-`, `*`, `/`, `%dot`).
+- **Packed records (`#packed`)**: Have alignment 1 (unless overridden by `#align N`), with zero padding between fields.
+- **Explicit alignment (`#align N`)**: Forces minimum power-of-two alignment `N` bytes and tail-pads `#size T` to a multiple of `N`. Query a type's alignment at compile time with `#align T` or `#align T`.
 - **Bitfields**: Occupy exactly the width of the backing integer type.

@@ -1,0 +1,34 @@
+// Verify #export follows the same syntax rules as #public:
+// 1. Same-line (with and without symbol alias)
+// 2. Indented block
+// 3. Unindented chunk-level switch
+
+#use io
+
+#export "aliased_add" add_alias: Int, Int => Int
+#export "aliased_add" add_alias = a, b => a + b
+
+#export sub_one: Int => Int
+#export sub_one = x => x - 1
+
+#export
+   block_mul = x, y => x * y
+   block_div = x, y => x / y
+
+#export
+
+chunk_fn1 = x => x + 10
+
+chunk_fn2: Int => Int
+chunk_fn2 = x => x * 10
+
+#public
+
+base_val = 5
+
+io::out $ add_alias(base_val, 3)
+io::out $ sub_one(base_val)
+io::out $ block_mul(base_val, 4)
+io::out $ block_div(20, base_val)
+io::out $ chunk_fn1(base_val)
+io::out $ chunk_fn2(base_val)

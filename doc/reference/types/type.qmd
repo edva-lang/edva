@@ -18,20 +18,20 @@ Functions that accept or return `Type` values must be marked with the compile-ti
 // Compile-time function computing type size
 #!
 size_of: Type => Int
-size_of = T => #size(T)
+size_of = T => #size T
 ```
 
 ## Type reflection intrinsics
 
 Edva provides built-in compile-time intrinsics for querying type properties:
 
-### `#size(T)`
+### `#size T`
 Returns the byte size of type `T` according to the target architecture's ABI:
 
 ```{.dva .run}
-int_size   = #size(Int)     // 8 bytes
-float_size = #size(Float)   // 8 bytes
-i32_size   = #size(i32)     // 4 bytes
+int_size   = #size Int     // 8 bytes
+float_size = #size Float   // 8 bytes
+i32_size   = #size i32     // 4 bytes
 ```
 
 ## Type generators (generics)

@@ -58,7 +58,7 @@ r5 = #join h5
 io::out $ (r5 | _ | _)
 
 // An enum with a nested record payload, both directions.
-#type Pkg <Ok((w: Int, h: Int)), Bad>
+#type Pkg <Ok(w: Int, h: Int), Bad>
 
 area: Pkg => Int
 area = p =>

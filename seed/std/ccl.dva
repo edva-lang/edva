@@ -12,7 +12,11 @@
 
 // --- Core CCL Data Model ----------------------------------------------------
 
-#type Strings (String){}
+#type Strings String{}
+
+#type CclEntries CclEntry{}
+
+#type CclDoc CclEntry{}
 
 #type CclVal <
    Str(String),
@@ -24,12 +28,6 @@
    val: CclVal,
    line: Int,
    col: Int
-)
-
-#type CclEntries (CclEntry){}
-
-#type CclDoc (
-   entries: CclEntries
 )
 
 // --- Package Schema Data Model (#97, #98) -----------------------------------
@@ -46,7 +44,7 @@
    archive_hash: String
 )
 
-#type PackageDeps (PackageDep){}
+#type PackageDeps PackageDep{}
 
 #type BuildTarget (
    name: String,
@@ -57,7 +55,7 @@
    cflags: Strings
 )
 
-#type BuildTargets (BuildTarget){}
+#type BuildTargets BuildTarget{}
 
 #type PackageManifest (
    name: String,
@@ -75,7 +73,7 @@
    id: String
 )
 
-#type LockDeps (LockDep){}
+#type LockDeps LockDep{}
 
 #type LockPackage (
    id: String,
@@ -90,7 +88,7 @@
    is_override: <>
 )
 
-#type LockPackages (LockPackage){}
+#type LockPackages LockPackage{}
 
 #type Lockfile (
    lock_version: Int,
@@ -102,16 +100,15 @@
 
 doc_new: () => CclDoc
 doc_new = !=>
-   entries: CclEntries
-   CclDoc((entries))
+   CclDoc()
 
 entry_new_str: String, String, Int, Int => CclEntry
 entry_new_str = k, s, line, col =>
-   CclEntry((k, CclVal(Str, s), line, col))
+   CclEntry(k, CclVal(Str, s), line, col)
 
 entry_new_block: String, CclDoc, Int, Int => CclEntry
 entry_new_block = k, doc, line, col =>
-   CclEntry((k, CclVal(Block, doc), line, col))
+   CclEntry(k, CclVal(Block, doc), line, col)
 
 // --- String Utilities -------------------------------------------------------
 
@@ -228,8 +225,8 @@ ccl_error = file, msg, line, col =>
 has: CclDoc, String => <>
 has = doc, key =>
    found' = <->
-   0..?doc.entries @ i =>
-      e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
+   0..?doc @ i =>
+      e = doc(i) | _ | CclEntry("", CclVal(Str, ""), 0, 0)
       e.key == key |
          found' = <+>
          -->
@@ -238,15 +235,15 @@ has = doc, key =>
 count: CclDoc, String => Int
 count = doc, key =>
    c' = 0
-   doc.entries @ e =>
+   doc @ e =>
       e.key == key | c' = c' + 1
    c'
 
 get_entry: CclDoc, String => < CclEntry | >
 get_entry = doc, key =>
    res' = <-->
-   0..?doc.entries @ i =>
-      e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
+   0..?doc @ i =>
+      e = doc(i) | _ | CclEntry("", CclVal(Str, ""), 0, 0)
       e.key == key |
          res' = <+ e +>
          -->
@@ -255,8 +252,8 @@ get_entry = doc, key =>
 get: CclDoc, String => < String | >
 get = doc, key =>
    res' = <-->
-   0..?doc.entries @ i =>
-      e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
+   0..?doc @ i =>
+      e = doc(i) | _ | CclEntry("", CclVal(Str, ""), 0, 0)
       e.key == key |
          e.val [Str s]
             res' = <+ s +>
@@ -266,8 +263,8 @@ get = doc, key =>
 get_section: CclDoc, String => < CclDoc | >
 get_section = doc, key =>
    res' = <-->
-   0..?doc.entries @ i =>
-      e = doc.entries(i) | _ | CclEntry(("", CclVal(Str, ""), 0, 0))
+   0..?doc @ i =>
+      e = doc(i) | _ | CclEntry("", CclVal(Str, ""), 0, 0)
       e.key == key |
          e.val [Block b]
             res' = <+ b +>
@@ -278,7 +275,7 @@ get_list: CclDoc, String => < Strings | >
 get_list = doc, key =>
    sec = get_section(doc, key) | _ | --| <-->
    res: Strings
-   sec.entries @ e =>
+   sec @ e =>
       e.key == "" |
          e.val [Str s] res += s
    <+ res +>
@@ -286,7 +283,7 @@ get_list = doc, key =>
 entries_for: CclDoc, String => CclEntries
 entries_for = doc, key =>
    res: CclEntries
-   doc.entries @ e =>
+   doc @ e =>
       e.key == key | res += e
    res
 
@@ -298,7 +295,7 @@ entries_for = doc, key =>
    text: String
 )
 
-#type ParsedLines (ParsedLine){}
+#type ParsedLines ParsedLine{}
 
 split_raw_lines: String => ParsedLines
 split_raw_lines = src =>
@@ -315,7 +312,7 @@ split_raw_lines = src =>
                raw = src(cur_start'..line_end)
                ind = trim_left_idx(raw, 0)
                content = raw(ind..)
-               lines += ParsedLine((line_no', ind, content))
+               lines += ParsedLine(line_no', ind, content)
                line_no' = line_no' + 1
                cur_start' = i + 1
       cur_start' < len
@@ -324,7 +321,7 @@ split_raw_lines = src =>
             raw = src(cur_start'..line_end)
             ind = trim_left_idx(raw, 0)
             content = raw(ind..)
-            lines += ParsedLine((line_no', ind, content))
+            lines += ParsedLine(line_no', ind, content)
       lines
 
 parse_block_from: ParsedLines, Int, Int, String => < (CclDoc, Int) | Error >
@@ -339,7 +336,7 @@ parse_block_from = lines, start_idx, min_indent, file =>
    0.. @
       has_err' | -->
       idx' !< total | -->
-      pl = lines(idx') | _ | ParsedLine((0, 0, ""))
+      pl = lines(idx') | _ | ParsedLine(0, 0, "")
       pl.text == ""
          | idx' = idx' + 1
          |
@@ -355,7 +352,7 @@ parse_block_from = lines, start_idx, min_indent, file =>
                         is_comment
                            |
                               c_val = trim_str(pl.text(2..))
-                              doc.entries += entry_new_str("/", c_val, pl.line_no, pl.indent + 1)
+                              doc += entry_new_str("/", c_val, pl.line_no, pl.indent + 1)
                               idx' = idx' + 1
                            |
                               eq_idx = find_first_eq(pl.text)
@@ -372,7 +369,7 @@ parse_block_from = lines, start_idx, min_indent, file =>
 
                                     after_trim != ""
                                        |
-                                          doc.entries += entry_new_str(k, after_trim,
+                                          doc += entry_new_str(k, after_trim,
                                              pl.line_no, pl.indent + 1)
                                           idx' = idx' + 1
                                        |
@@ -381,7 +378,7 @@ parse_block_from = lines, start_idx, min_indent, file =>
                                           child_ind' = 0 - 1
                                           0.. @
                                              next_idx' !< total | -->
-                                             cand = lines(next_idx') | _ | ParsedLine((0, 0, ""))
+                                             cand = lines(next_idx') | _ | ParsedLine(0, 0, "")
                                              cand.text != ""
                                                 | child_ind' = cand.indent; -->
                                                 | next_idx' = next_idx' + 1
@@ -390,7 +387,7 @@ parse_block_from = lines, start_idx, min_indent, file =>
                                              |
                                                 // Test if child contains '='
                                                 cand_line = lines(next_idx') | _ |
-                                                   ParsedLine((0, 0, ""))
+                                                   ParsedLine(0, 0, "")
                                                 has_eq = find_first_eq(cand_line.text) !< 0
                                                 has_eq
                                                    |
@@ -398,7 +395,7 @@ parse_block_from = lines, start_idx, min_indent, file =>
                                                          next_idx', child_ind', file)
                                                       child_res
                                                          | cres =>
-                                                            doc.entries += entry_new_block(k,
+                                                            doc += entry_new_block(k,
                                                                cres.0, pl.line_no, pl.indent + 1)
                                                             idx' = cres.1
                                                          | e =>
@@ -410,7 +407,7 @@ parse_block_from = lines, start_idx, min_indent, file =>
                                                       0.. @
                                                          next_idx' !< total | -->
                                                          cl = lines(next_idx') | _ |
-                                                            ParsedLine((0, 0, ""))
+                                                            ParsedLine(0, 0, "")
                                                          cl.text == ""
                                                             |
                                                                tb += 10
@@ -422,12 +419,12 @@ parse_block_from = lines, start_idx, min_indent, file =>
                                                                      ?tb > 0 | tb += 10
                                                                      tb += cl.text
                                                                      next_idx' = next_idx' + 1
-                                                      doc.entries += entry_new_str(k, +tb,
+                                                      doc += entry_new_str(k, +tb,
                                                          pl.line_no, pl.indent + 1)
                                                       idx' = next_idx'
                                              |
                                                 // Empty value
-                                                doc.entries += entry_new_str(k, "",
+                                                doc += entry_new_str(k, "",
                                                    pl.line_no, pl.indent + 1)
                                                 idx' = idx' + 1
 
@@ -443,7 +440,7 @@ parse = src, file =>
       | pair =>
          pair.1 < ?lines
             |
-               bad = lines(pair.1) | _ | ParsedLine((1, 0, ""))
+               bad = lines(pair.1) | _ | ParsedLine(1, 0, "")
                <- ccl_error(file, "syntax error: unexpected dedent",
                   bad.line_no, bad.indent + 1) +>
             | <+ pair.0 ->
@@ -495,7 +492,7 @@ append_multiline_str = s, child_indent, b =>
 
 serialize_doc_indent: CclDoc, Int, Builder => ()
 serialize_doc_indent = doc, indent, b =>
-   doc.entries @ e =>
+   doc @ e =>
       indent @ b += ' '
       e.key == "/"
          |
@@ -554,11 +551,11 @@ sort_deps = deps =>
       out: PackageDeps
       deps @ d => out += d
       1..n @ i =>
-         key = out(i) | _ | PackageDep(("", DepKind(Path), "", "", "", "", ""))
+         key = out(i) | _ | PackageDep("", DepKind(Path), "", "", "", "", "")
          j' = i
          0.. @
             j' !> 0 | -->
-            prev = out(j' - 1) | _ | PackageDep(("", DepKind(Path), "", "", "", "", ""))
+            prev = out(j' - 1) | _ | PackageDep("", DepKind(Path), "", "", "", "", "")
             str::cmp(prev.alias, key.alias) > 0
                |
                   out(j') = prev !| _
@@ -577,7 +574,7 @@ validate_dep = e, file =>
             [Block ddoc]
                has_err' = <->
                err_val' = ccl_error(file, ++"", 0, 0)
-               ddoc.entries @ dde =>
+               ddoc @ dde =>
                   !has_err' |
                      k = dde.key
                      is_known = k == "git" || k == "rev" || k == "path" || k == "url" || k == "hash"
@@ -624,7 +621,7 @@ validate_dep = e, file =>
                                  opt_rev = get(ddoc, "rev")
                                  opt_rev
                                     | rev =>
-                                       <+ PackageDep((alias, DepKind(Git), g_url, rev, "", "", "")) ->
+                                       <+ PackageDep(alias, DepKind(Git), g_url, rev, "", "", "") ->
                                     |
                                        <- ccl_error(file,
                                           "edva.ccl: dependency '" + alias + "' needs 'rev'",
@@ -633,14 +630,14 @@ validate_dep = e, file =>
                                  has_path
                                     |
                                        p = get(ddoc, "path") | _ | ""
-                                       <+ PackageDep((alias, DepKind(Path), "", "", p, "", "")) ->
+                                       <+ PackageDep(alias, DepKind(Path), "", "", p, "", "") ->
                                     |
                                        u = get(ddoc, "url") | _ | ""
                                        opt_hash = get(ddoc, "hash")
                                        opt_hash
                                           | h =>
-                                             <+ PackageDep((alias, DepKind(Archive),
-                                                "", "", "", u, h)) ->
+                                             <+ PackageDep(alias, DepKind(Archive),
+                                                "", "", "", u, h) ->
                                           |
                                              <- ccl_error(file,
                                                 "edva.ccl: dependency '" + alias + "' needs 'hash'",
@@ -674,7 +671,7 @@ validate_target = e, file =>
             [Block tdoc]
                has_err' = <->
                err_val' = ccl_error(file, ++"", 0, 0)
-               tdoc.entries @ te =>
+               tdoc @ te =>
                   !has_err' |
                      k = te.key
                      is_known = k == "src" || k == "out" || k == "target" ||
@@ -697,7 +694,7 @@ validate_target = e, file =>
                         |
                            get(tdoc, "cflags")
                               | cstr => cflags = split_words(cstr)
-                     <+ BuildTarget((tname, src, out_p, triple, opt, cflags)) ->
+                     <+ BuildTarget(tname, src, out_p, triple, opt, cflags) ->
             [Str]
                <- ccl_error(file,
                   "edva.ccl: target '" + tname + "' must be a section", e.line, e.col) +>
@@ -708,7 +705,7 @@ validate_manifest = doc, file =>
    err_val' = ccl_error(file, ++"", 0, 0)
 
    // 1. Check unknown top-level keys
-   doc.entries @ e =>
+   doc @ e =>
       k = e.key
       is_known = k == "name" || k == "version" || k == "edva" ||
          k == "dependencies" || k == "native" || k == "overrides" ||
@@ -782,7 +779,7 @@ validate_manifest = doc, file =>
          opt_deps = get_section(doc, "dependencies")
          opt_deps
             | ddoc =>
-               ddoc.entries @ de =>
+               ddoc @ de =>
                   de.key != "/" && !has_err'
                      |
                         dep_res = validate_dep(de, file)
@@ -800,7 +797,7 @@ validate_manifest = doc, file =>
          opt_native = get_section(doc, "native")
          opt_native
             | ndoc =>
-               ndoc.entries @ ne =>
+               ndoc @ ne =>
                   k = ne.key
                   is_k = k == "libs" || k == "pkg-config" || k == "/"
                   !is_k && !has_err'
@@ -823,7 +820,7 @@ validate_manifest = doc, file =>
          opt_ovr = get_section(doc, "overrides")
          opt_ovr
             | odoc =>
-               odoc.entries @ oe =>
+               odoc @ oe =>
                   oe.key != "/" && !has_err'
                      |
                         oe.val
@@ -831,8 +828,8 @@ validate_manifest = doc, file =>
                               path_opt = get(oblock, "path")
                               path_opt
                                  | p =>
-                                    overrides += PackageDep((oe.key, DepKind(Path),
-                                       "", "", p, "", ""))
+                                    overrides += PackageDep(oe.key, DepKind(Path),
+                                       "", "", p, "", "")
                                  |
                                     has_err' = <+>
                                     err_val' = ccl_error(file,
@@ -851,7 +848,7 @@ validate_manifest = doc, file =>
          opt_targets = get_section(doc, "targets")
          opt_targets
             | tdoc =>
-               tdoc.entries @ te =>
+               tdoc @ te =>
                   te.key != "/" && !has_err'
                      |
                         tres = validate_target(te, file)
@@ -864,7 +861,7 @@ validate_manifest = doc, file =>
    has_err'
       | <- err_val' +>
       |
-         <+ PackageManifest((
+         <+ PackageManifest(
             pkg_name',
             pkg_ver',
             edva_ver',
@@ -873,7 +870,7 @@ validate_manifest = doc, file =>
             sort_strings(native_pkg_config),
             sort_deps(overrides),
             targets
-         )) ->
+         ) ->
 
 // --- Deterministic Manifest Serialization -----------------------------------
 
@@ -953,12 +950,12 @@ sort_lock_packages = pkgs =>
       empty_deps: LockDeps
       1..n @ i =>
          key = out(i) | _ |
-            LockPackage(("", DepKind(Path), "", "", "", "", "", "", empty_deps, <->))
+            LockPackage("", DepKind(Path), "", "", "", "", "", "", empty_deps, <->)
          j' = i
          0.. @
             j' !> 0 | -->
             prev = out(j' - 1) | _ |
-               LockPackage(("", DepKind(Path), "", "", "", "", "", "", empty_deps, <->))
+               LockPackage("", DepKind(Path), "", "", "", "", "", "", empty_deps, <->)
             str::cmp(prev.id, key.id) > 0
                |
                   out(j') = prev !| _
@@ -974,11 +971,11 @@ sort_lock_deps = deps =>
       out: LockDeps
       deps @ d => out += d
       1..n @ i =>
-         key = out(i) | _ | LockDep(("", ""))
+         key = out(i) | _ | LockDep("", "")
          j' = i
          0.. @
             j' !> 0 | -->
-            prev = out(j' - 1) | _ | LockDep(("", ""))
+            prev = out(j' - 1) | _ | LockDep("", "")
             str::cmp(prev.alias, key.alias) > 0
                |
                   out(j') = prev !| _
@@ -1012,7 +1009,7 @@ validate_lockfile = doc, file =>
          opt_pkgs_sec = get_section(doc, "packages")
          opt_pkgs_sec
             | psec =>
-               psec.entries @ pe =>
+               psec @ pe =>
                   pe.key != "/" && !has_err'
                      |
                         id = pe.key
@@ -1033,16 +1030,16 @@ validate_lockfile = doc, file =>
                               opt_deps_sec = get_section(pd, "deps")
                               opt_deps_sec
                                  | ds =>
-                                    ds.entries @ dse =>
-                                       dse.val [Str sid] p_deps += LockDep((dse.key, sid))
+                                    ds @ dse =>
+                                       dse.val [Str sid] p_deps += LockDep(dse.key, sid)
 
                               k' = DepKind(Archive)
                               has_path | k' = DepKind(Path)
                               has_git | k' = DepKind(Git)
-                              pkgs += LockPackage((
+                              pkgs += LockPackage(
                                  id, k', g_url, g_rev, g_commit,
                                  a_url, a_hash, p_path, sort_lock_deps(p_deps), is_ovr
-                              ))
+                              )
                            [Str]
                               has_err' = <+>
                               err_val' = ccl_error(file,
@@ -1055,14 +1052,14 @@ validate_lockfile = doc, file =>
          opt_root_sec = get_section(doc, "root")
          opt_root_sec
             | rsec =>
-               rsec.entries @ re =>
+               rsec @ re =>
                   re.key != "/"
                      |
-                        re.val [Str sid] root_deps += LockDep((re.key, sid))
+                        re.val [Str sid] root_deps += LockDep(re.key, sid)
 
    has_err'
       | <- err_val' +>
-      | <+ Lockfile((ver', sort_lock_packages(pkgs), sort_lock_deps(root_deps))) ->
+      | <+ Lockfile(ver', sort_lock_packages(pkgs), sort_lock_deps(root_deps)) ->
 
 lockfile_to_ccl: Lockfile => String
 lockfile_to_ccl = lock =>

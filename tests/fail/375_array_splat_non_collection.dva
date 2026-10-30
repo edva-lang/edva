@@ -1,0 +1,6 @@
+// Negative test: splatting a non-collection into an array constructor is forbidden (E3084)
+#use io
+#type Ints Int{}
+n = 42
+xs = Ints(1, ..n, 3)
+io::out(?xs)

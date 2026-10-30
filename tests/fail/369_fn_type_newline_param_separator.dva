@@ -1,0 +1,4 @@
+#type BadFn (
+   Int
+   Float => Int
+)

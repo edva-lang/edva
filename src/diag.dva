@@ -166,7 +166,7 @@ E3091_propagate_ram_operand: () => String
 E3091_propagate_ram_operand = !=> "Operand of '--!' must be a ramification"
 
 E3103_cannot_infer_type: () => String
-E3103_cannot_infer_type = !=> "Cannot infer concrete type for expression without RTTI"
+E3103_cannot_infer_type = !=> "Cannot infer concrete type for expression"
 
 E3131_whole_val_init_prefix: () => String
 E3131_whole_val_init_prefix = !=> "Homogeneous record '"

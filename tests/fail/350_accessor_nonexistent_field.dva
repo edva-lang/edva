@@ -1,4 +1,4 @@
 // Nonexistent field in accessor section rejected by type checker
-#type Rec (a: Int)
+#type Rec (a: Int, c: Int)
 get_b: Rec => Int
 get_b = (.b)

@@ -5,8 +5,8 @@
 
 #use io
 
-#type Exprs (Expr){}
-#type Expr < Int(Int), Str(String), Add((Expr, Expr)) >
+#type Exprs Expr{}
+#type Expr < Int(Int), Str(String), Add(Expr, Expr) >
 
 f: Int => Int
 f = n =>

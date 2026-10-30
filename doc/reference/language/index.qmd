@@ -29,7 +29,7 @@ explain use and constraints rather than maintaining a competing copy.
 | branching | `value [case] body | fallback` |
 | iteration | `iterable @ item => body`, `-->`, `--^`, `>--` |
 | composite values | records, growable arrays, maps, rams, enums |
-| compile time | `#!`, `#! T: Type`, `#size(Type)` |
+| compile time | `#!`, `#! T: Type`, `#size Type` |
 | interop | `#foreign`, `#export`, `Addr`, `&builder`, `&string` |
 
 ## Core concepts

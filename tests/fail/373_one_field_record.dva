@@ -1,0 +1,6 @@
+// Negative test: single-field and empty standalone records are forbidden (E2084)
+#use io
+#type Empty ()
+#type Mono (x: Int)
+r = (x = 42)
+io::out(r.x)

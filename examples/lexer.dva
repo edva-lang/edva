@@ -82,7 +82,7 @@ scan_id = src, start =>
       is_id_char(r)
          | i' = i' + unicode::utf8_width(r); 0
          | -->
-   Tok((Id, start, i' - start))
+   Tok(Id, start, i' - start)
 
 scan_int: String, Int => Tok
 scan_int = src, start =>
@@ -92,7 +92,7 @@ scan_int = src, start =>
       i' !< total | -->
       k = class256(src(i'))
       k [Int] i' = i' + 1; 0 | -->
-   Tok((Int, start, i' - start))
+   Tok(Int, start, i' - start)
 
 scan_op: String, Int => Tok
 scan_op = src, start =>
@@ -102,7 +102,7 @@ scan_op = src, start =>
       i' !< total | -->
       k = class256(src(i'))
       k [Op] i' = i' + 1; 0 | -->
-   Tok((Op, start, i' - start))
+   Tok(Op, start, i' - start)
 
 // Scan a "..." string literal starting at the opening quote; the token's span
 // covers the raw literal (quotes and backslash escapes included). A backslash
@@ -120,14 +120,14 @@ scan_string = src, start =>
          ['"'] done' = 1
          ['\\'] i' = i' + 1
       i' = i' + 1
-   Tok((Str, start, i' - start))
+   Tok(Str, start, i' - start)
 
 // Scan a 'x' rune literal starting at the opening quote. An escaped content
 // ('\n') makes the literal four source bytes; a plain one is three.
 scan_rune: String, Int => Tok
 scan_rune = src, start =>
    c = src(start + 1)
-   c ['\\'] Tok((Rune, start, 4)) | Tok((Rune, start, 3))
+   c ['\\'] Tok(Rune, start, 4) | Tok(Rune, start, 3)
 
 // --- whitespace / comments / token dispatch -------------------------------
 
@@ -179,7 +179,7 @@ token_at = src, start =>
    i = skip_ws(src, start)
    i < total
       | classify(src, i)
-      | Tok((Eof, i, 0))
+      | Tok(Eof, i, 0)
 
 // Token class of src[i]: ASCII bytes come straight from the class256 table;
 // bytes 128..255 are UTF-8 lead bytes, so their class is decided by decoding
@@ -201,7 +201,7 @@ classify = src, i =>
       [Str] scan_string(src, i)
       [Rune] scan_rune(src, i)
       [Op] scan_op(src, i)
-      | Tok((Other, i, unicode::utf8_width(r)))
+      | Tok(Other, i, unicode::utf8_width(r))
 
 // Display name for a token kind ("Id" -> "id", ...). The enum labels are the
 // canonical identity; the printable names are a separate concern.

@@ -21,7 +21,7 @@ initialization without a tracing garbage collector or runtime type overhead.
 | `(x: Int, y: Int)`<br>**Named Record** | Flat aggregate on stack/arena | Static field count | Immutable; rebind with `'` | Compile error on unknown field |
 | `(Int, String)`<br>**Positional Record** | Flat tuple aggregate | Static field count | Immutable; rebind with `'` | Compile error on bad index `.0` |
 | `(i8 * 16)`<br>**Homogeneous Record** | Fixed inline array | Fixed compile-time count | Elements mutable | Must-init before access |
-| `(T){}`<br>**Growable Array** | Resizable heap buffer | `?array` | Append with `+=`, index write | Yields `< T | Error >` |
+| `T{}`<br>**Growable Array** | Resizable heap buffer | `?array` | Append with `+=`, index write | Yields `< T | Error >` |
 | `(T)[]`<br>**Slice View** | Non-owning pointer + len | `?slice` | Mutable view (`s(i) = v`) | Bounds-checked indexing returns `T` (aborts `E4002` out of bounds) |
 | `Key ^ Value`<br>**Key-Value Map** | Open-addressing hash table | `?map` | Key write: `m ^ k = v` | Lookup yields `< Value | Error >` |
 | `Builder`<br>**Builder** | Mutable buffer `{ len, ptr, cap }` | `?builder` | In-place append `+=` | Write past cap reallocates |
@@ -135,7 +135,7 @@ For low-level systems programming, embedded targets, and driver development:
 | Address extraction | `Addr(val)` | Raw pointer conversion to `Addr` |
 | Volatile typed load | `@[addr T]` | Read value of type `T` from raw memory address |
 | Volatile store | `@[addr] = val` | Write typed `val` to raw memory address |
-| Compile-time size | `#size(Type)` | Size in bytes of any primitive or composite type |
+| Compile-time size | `#size Type` | Size in bytes of any primitive or composite type |
 
 ```{.dva .partial}
 // Writing a 32-bit register at hardware memory address:

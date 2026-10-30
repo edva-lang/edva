@@ -16,7 +16,8 @@ Standard stream writers and readers live in `std/io.dva`.
 |---|---|---|
 | `ascii` | ASCII byte classification and hex conversion | [ascii](ascii.qmd) |
 | `ccl` | CCL parser, manifest, and lockfile validation | [ccl](ccl.qmd) |
-| `color` | color spaces, alpha compositing, hex packing; includes `color/palette` | [color](color.qmd) |
+| `color` | color spaces, alpha compositing, gradients, hex packing; includes `color/palette` | [color](color.qmd) |
+| `const` | fundamental mathematical and geometric constants (`pi`, `tau`, `e`, `phi`, etc.) | [const](const.qmd) |
 | `event` | portable descriptor readiness multiplexing (`poll`) | [event](event.qmd) |
 | `fmt` | allocation-efficient string formatting | [fmt](fmt.qmd) |
 | `fp` | functional programming combinators | [fp](fp.qmd) |
@@ -38,7 +39,7 @@ Standard stream writers and readers live in `std/io.dva`.
 | `utf` | UTF-8 rune encoding and decoding | [utf](utf.qmd) |
 
 Target-support files are implementation probes, not public
-API. Dedicated reference pages are provided for all 22 standard library modules.
+API. Dedicated reference pages are provided for all 23 standard library modules.
 
 ```{.dva .run}
 #use io

@@ -1,0 +1,4 @@
+#type BadAlign #align 7 (
+   x: Int,
+   y: Int
+)

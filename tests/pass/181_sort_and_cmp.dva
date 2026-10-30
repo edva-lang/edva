@@ -1,6 +1,6 @@
 // str::cmp (bytewise lexicographic three-way), str::lt, and the prelude's
 // generic sort (insertion sort over a slice view). Sort is generic over the
-// element type via a `(T[])` slice param; the element type is inferred from
+// element type via a `T[]` slice param; the element type is inferred from
 // the slice argument. A String order is str::lt; Ints use a named "less than".
 
 #use(import) fp

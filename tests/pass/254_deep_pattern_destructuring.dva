@@ -2,7 +2,7 @@
 
 #use io
 
-#type Expr < Lit(Int), Add((Expr, Expr)), Neg(Expr), Mul((Expr, Expr)) >
+#type Expr < Lit(Int), Add(Expr, Expr), Neg(Expr), Mul(Expr, Expr) >
 
 eval: Expr => Int
 eval = e =>

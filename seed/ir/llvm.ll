@@ -13,8 +13,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_llvm, ptr null }]
 
-declare i32 @printf(ptr, ...)
-
 declare ptr @dva_arena_current()
 
 declare ptr @dva_arena_set_current(ptr)
@@ -22,10 +20,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -43,10 +37,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -286,6 +276,10 @@ declare void @LLVMSetVolatile(ptr, i64)
 declare i64 @LLVMGetIntTypeWidth(ptr)
 
 declare ptr @LLVMBuildNot(ptr, ptr, ptr)
+
+declare ptr @LLVMBuildNeg(ptr, ptr, ptr)
+
+declare ptr @LLVMBuildFNeg(ptr, ptr, ptr)
 
 declare i64 @LLVMGetTypeKind(ptr)
 

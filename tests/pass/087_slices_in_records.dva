@@ -1,7 +1,7 @@
 // Slices as record fields (by-reference) and record-of-slices.
 #use io
 
-#type S (name: String, items: (Int[]))
+#type S (name: String, items: Int[])
 s: S
 src = (1, 2, 3)
 s.name = "dva"

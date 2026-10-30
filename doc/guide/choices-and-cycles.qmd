@@ -192,7 +192,7 @@ Appending `>--` followed by a branch turns a cycle into an expression returning 
 
 ```{.dva .partial}
 // Find the first negative element in an array (returns < Int | >):
-find_negative: (Int){} => < Int | >
+find_negative: Int{} => < Int | >
 find_negative = list =>
    ?list @ i =>
       val = list(i)!!
@@ -200,7 +200,7 @@ find_negative = list =>
    >--
       val
 
-nums = (Int){}
+nums = Int{}
 nums += 10
 nums += -4
 nums += 25

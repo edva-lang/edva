@@ -1,22 +1,23 @@
+#use const
 #use math
 #use io
 
-// powers / roots
-io::out $ math::sqrt(16.0)
-io::out $ math::pow(2.0, 10.0)
+// powers / roots (intrinsics + libm)
+io::out $ %sqrt(16.0)
+io::out $ %pow(2.0, 10.0)
 
 // trig
-io::out $ math::sin(0.0)
-io::out $ math::cos(0.0)
+io::out $ %sin(0.0)
+io::out $ %cos(0.0)
 
 // exp / log
 io::out $ math::log(1.0)
 io::out $ math::exp(0.0)
 
-// rounding
-io::out $ math::floor(3.7)
-io::out $ math::ceil(3.2)
-io::out $ math::fabs(-2.5)
+// rounding / abs
+io::out $ %floor(3.7)
+io::out $ %ceil(3.2)
+io::out $ %abs(-2.5)
 
 // constants
-io::out $ math::pi
+io::out $ const::pi

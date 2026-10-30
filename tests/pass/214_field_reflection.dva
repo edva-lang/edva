@@ -10,8 +10,8 @@
 
 #type Pt (x: Int, y: Int)
 #type Pair (a: Int, b: Int)
-#type Ints (Int){}
-#type Strs (String){}
+#type Ints Int{}
+#type Strs String{}
 
 nfields: #! T: Type, T => Int
 nfields = x => ?T

@@ -3,7 +3,7 @@
 #use io
 #use str
 
-io::out $ "params size: " + str::from_int(#size(uring::IoUringParams))
+io::out $ "params size: " + str::from_int(#size uring::IoUringParams)
 
 res0 = uring::new(0)
 res0

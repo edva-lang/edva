@@ -19,7 +19,7 @@
    Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp,
    Cc, Cf, Cs, Co, Cn >
 
-#pragma number i16
+#pragma integer i16
 #private cat_s1 = (
    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
    17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38,
@@ -38,7 +38,7 @@
    17 {44}, 162, 101 {2563}, 163, 164, 101 {254}, 60 {255}, 165, 60 {255}, 165
 )
 
-#pragma number i64
+#pragma integer i64
 #private cat_s2 = (
    0x1919191919191919 {4}, 0x1111111311111116, 0x11110c1112110e0d,
    0x808080808080808, 0x1112121211110808, 0x11, 0, 0, 0xb140e110d000000,
@@ -673,7 +673,7 @@
    0x1d1d1c1c1c1c1c1c
 )
 
-#pragma number default
+#pragma integer default
 
 #public
    category_id: Rune => Int

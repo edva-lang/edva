@@ -19,12 +19,17 @@ adjacent unary address form.
 puts("hello")
 ```
 
-`#export` exposes an Edva function as a C ABI symbol. Pass `-H header.h` to
+`#export` exposes Edva functions as C ABI symbols (and supports inline, indented-block,
+and standing chunk-level forms just like `#public`). Pass `-H header.h` to
 generate a C header from export declarations.
 
 ```{.dva .run}
 #export add: Int, Int => Int
 #export add = left, right => left + right
+
+#export
+   mul: Int, Int => Int
+   mul = left, right => left * right
 ```
 
 ## Buffers and ownership

@@ -4,7 +4,7 @@
 
 #use io
 
-#type Ints (Int){}
+#type Ints Int{}
 
 counter: Int
 vals: Ints

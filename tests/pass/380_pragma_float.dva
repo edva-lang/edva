@@ -1,0 +1,19 @@
+#use(import) io
+
+#pragma float f32
+add_f32: f32, f32 => f32
+add_f32 = a, b => a + b
+
+x = 1.5
+y = 2.25
+out $ add_f32(x, y)
+
+// explicit f64 suffix overrides #pragma float f32
+add_f64: Float, Float => Float
+add_f64 = a, b => a + b
+out $ add_f64(10.5f64, 0.25f64)
+
+#pragma float default
+z = 4.5
+w = 1.25
+out $ add_f64(z, w)

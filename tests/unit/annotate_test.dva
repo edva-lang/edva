@@ -134,7 +134,7 @@ main = !=>
    call_args = ast::Exprs()
    call_args += ast::Expr(Int, 10)
    call_args += ast::Expr(Int, 20)
-   call_expr = ast::CallExpr(("my_add", ast::Expr(Int, 0), call_args, 1, 1))
+   call_expr = ast::CallExpr("my_add", ast::Expr(Int, 0), call_args, 1, 1)
    te_call = annotate::annotate_call(ctx_fn, env_fn, call_expr)
    assert_true(!unify::has_errors(ctx_fn),
       "Valid function call produces no errors")
@@ -149,7 +149,7 @@ main = !=>
    bad_args = ast::Exprs()
    bad_args += ast::Expr(Int, 10)
    bad_args += ast::Expr(Str, "twenty")
-   bad_call_expr = ast::CallExpr(("my_add", ast::Expr(Int, 0), bad_args, 1, 1))
+   bad_call_expr = ast::CallExpr("my_add", ast::Expr(Int, 0), bad_args, 1, 1)
    annotate::annotate_call(ctx_bad_call, env_bad_call, bad_call_expr)
    assert_true(unify::has_errors(ctx_bad_call),
       "Bad argument type produces error")
@@ -161,7 +161,7 @@ main = !=>
    lam_params += "a"
    lam_body = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "a"),
       ast::Expr(Int, 1)))
-   lam_expr = ast::FnExpr((lam_params, ast::Names(), lam_body))
+   lam_expr = ast::FnExpr(lam_params, ast::Names(), lam_body)
    te_lam = annotate::annotate_fn(ctx_lam, env_lam, lam_expr, <->)
    assert_true(!unify::has_errors(ctx_lam), "Lambda inferred without errors")
    assert_eq_int(te_lam.layout.size, 16, "Closure layout size is 16")
@@ -170,11 +170,11 @@ main = !=>
    ctx_rec = unify::new_ctx()
    env_rec = type_env::new_env()
    r_fields = ast::Fields()
-   r_fields += ast::RecordField((<+>, "id", ast::Expr(Int, 1)))
-   r_fields += ast::RecordField((<+>, "name", ast::Expr(Str, "item")))
-   r_fields += ast::RecordField((<+>, "active", ast::Expr(Rune, 65)))
+   r_fields += ast::RecordField(<+>, "id", ast::Expr(Int, 1))
+   r_fields += ast::RecordField(<+>, "name", ast::Expr(Str, "item"))
+   r_fields += ast::RecordField(<+>, "active", ast::Expr(Rune, 65))
    te_rec = annotate::annotate_record(ctx_rec, env_rec,
-      ast::RecordExpr((r_fields, <->)))
+      ast::RecordExpr(r_fields, <->))
    assert_true(!unify::has_errors(ctx_rec), "Record literal creates cleanly")
    assert_true(te_rec.layout.size !< 24,
       "Record layout has expected composite size")
@@ -228,8 +228,8 @@ main = !=>
    env_m = type_env::new_env()
    type_env::bind_local(env_m, "rec", te_rec.ut, te_rec.ti, <->)
    type_env::init_mark_whole(env_m, "rec")
-   m_expr = ast::Expr(Member, ast::MemberExpr((ast::Expr(Var, "rec"),
-      "name", <->, ast::Expr(Int, 0), 0, 0)))
+   m_expr = ast::Expr(Member, ast::MemberExpr(ast::Expr(Var, "rec"),
+      "name", <->, ast::Expr(Int, 0), 0, 0))
    te_m = annotate::annotate_expr(ctx_m, env_m, m_expr)
    c_m = unify::canon(ctx_m, te_m.ut)
    is_m_str = c_m [Prim p] p == unify::UPrim(Str) | <->
@@ -240,14 +240,14 @@ main = !=>
    env_cyc = type_env::new_env()
    cyc_body = ast::Expr(Fn, (ast::Names(), ast::Names(), ast::Expr(Int, 0)))
    cyc_expr = ast::Expr(Cycle,
-      ast::CycleExpr((ast::Expr(Int, 5), cyc_body, <->)))
+      ast::CycleExpr(ast::Expr(Int, 5), cyc_body, <->))
    te_cyc = annotate::annotate_expr(ctx_cyc, env_cyc, cyc_expr)
    c_cyc = unify::canon(ctx_cyc, te_cyc.ut)
    is_cyc_unit = c_cyc [Prim p] p == unify::UPrim(Unit) | <->
    assert_true(is_cyc_unit, "Cycle expression yields Unit")
 
-   esc_expr = ast::Expr(CycleEscape, ast::CycleEscapeExpr((cyc_expr,
-      ast::Expr(Int, 99))))
+   esc_expr = ast::Expr(CycleEscape, ast::CycleEscapeExpr(cyc_expr,
+      ast::Expr(Int, 99)))
    te_esc = annotate::annotate_expr(ctx_cyc, env_cyc, esc_expr)
    c_esc = unify::canon(ctx_cyc, te_esc.ut)
    is_esc_int = c_esc [Prim p] p == unify::UPrim(Int) | <->
@@ -309,8 +309,8 @@ main = !=>
    env_init1 = type_env::new_env!
    type_env::bind_local(env_init1, "obj", te_rec.ut, te_rec.ti, <->)
    type_env::init_mark_tracked(env_init1, "obj")
-   bad_read = ast::Expr(Member, ast::MemberExpr((ast::Expr(Var, "obj"),
-      "name", <->, ast::Expr(Int, 0), 0, 0)))
+   bad_read = ast::Expr(Member, ast::MemberExpr(ast::Expr(Var, "obj"),
+      "name", <->, ast::Expr(Int, 0), 0, 0))
    annotate::annotate_expr(ctx_init1, env_init1, bad_read)
    assert_true(unify::has_errors(ctx_init1),
       "Uninitialized field read produces E3130 error")
@@ -327,8 +327,8 @@ main = !=>
    call_f_params += te_rec.ut
    call_f_sig = unify::mk_fn(call_f_params, unify::prim_unit!)
    type_env::bind_local(env_init2, "consume_obj", call_f_sig, ti_unk, <->)
-   call_partial = ast::CallExpr(("consume_obj", ast::Expr(Int, 0),
-      call_f_args, 0, 0))
+   call_partial = ast::CallExpr("consume_obj", ast::Expr(Int, 0),
+      call_f_args, 0, 0)
    annotate::annotate_call(ctx_init2, env_init2, call_partial)
    assert_true(unify::has_errors(ctx_init2),
       "Passing partially-initialized composite produces E3132 error")
@@ -340,22 +340,22 @@ main = !=>
    br1_exprs = ast::Exprs()
    br1_exprs += ast::Expr(Assign, ("obj3", <->, <->, <->, <->,
       ast::Expr(Int, 1),
-      ast::Expr(Member, ast::MemberExpr((ast::Expr(Var, "obj3"),
-         "id", <->, ast::Expr(Int, 0), 0, 0))),
+      ast::Expr(Member, ast::MemberExpr(ast::Expr(Var, "obj3"),
+         "id", <->, ast::Expr(Int, 0), 0, 0)),
       "", ast::TypeInfo(Prim, ast::ValueType(Unknown))))
    br1_block = ast::Expr(Block, ast::BlockExpr(br1_exprs))
    br2_exprs = ast::Exprs()
    br2_exprs += ast::Expr(Int, 0)
    br2_block = ast::Expr(Block, ast::BlockExpr(br2_exprs))
    choice_brs = ast::Branches()
-   choice_brs += ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
-      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, br1_block))
-   choice_brs += ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
-      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, br2_block))
-   choice_join = ast::ChoiceExpr((ast::Expr(Int, 1), <->, choice_brs))
+   choice_brs += ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, br1_block)
+   choice_brs += ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, br2_block)
+   choice_join = ast::ChoiceExpr(ast::Expr(Int, 1), <->, choice_brs)
    annotate::annotate_choice(ctx_init3, env_init3, choice_join, <->)
-   post_read = ast::Expr(Member, ast::MemberExpr((ast::Expr(Var, "obj3"),
-      "id", <->, ast::Expr(Int, 0), 0, 0)))
+   post_read = ast::Expr(Member, ast::MemberExpr(ast::Expr(Var, "obj3"),
+      "id", <->, ast::Expr(Int, 0), 0, 0))
    annotate::annotate_expr(ctx_init3, env_init3, post_read)
    assert_true(unify::has_errors(ctx_init3),
       "Field written in only one branch is uninitialized after join (E3130)")
@@ -366,11 +366,11 @@ main = !=>
    caller_params += "x"
    callee_args = ast::Exprs()
    callee_args += ast::Expr(Var, "x")
-   callee_call = ast::Expr(Call, ast::CallExpr(("callee", ast::Expr(Int, 0),
-      callee_args, 0, 0)))
+   callee_call = ast::Expr(Call, ast::CallExpr("callee", ast::Expr(Int, 0),
+      callee_args, 0, 0))
    caller_body = ast::Expr(Bin, (ast::BinaryOp(Add), callee_call,
       ast::Expr(Int, 1)))
-   fe_caller = ast::FnExpr((caller_params, ast::Names(), caller_body))
+   fe_caller = ast::FnExpr(caller_params, ast::Names(), caller_body)
    assign_caller = ast::Expr(Assign, ("caller", <->, <->, <->, <->,
       ast::Expr(Fn, fe_caller), ast::Expr(Int, 0), "",
       ast::TypeInfo(Prim, ast::ValueType(Unknown))))
@@ -379,7 +379,7 @@ main = !=>
    callee_params += "y"
    callee_body = ast::Expr(Bin, (ast::BinaryOp(Mul), ast::Expr(Var, "y"),
       ast::Expr(Int, 2)))
-   fe_callee = ast::FnExpr((callee_params, ast::Names(), callee_body))
+   fe_callee = ast::FnExpr(callee_params, ast::Names(), callee_body)
    assign_callee = ast::Expr(Assign, ("callee", <->, <->, <->, <->,
       ast::Expr(Fn, fe_callee), ast::Expr(Int, 0), "",
       ast::TypeInfo(Prim, ast::ValueType(Unknown))))
@@ -398,23 +398,23 @@ main = !=>
    even_params += "n"
    even_cond = ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Var, "n"),
       ast::Expr(Int, 0)))
-   even_br1 = ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
+   even_br1 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
       ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
       ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
-         ast::Expr(Int, 1)))))
+         ast::Expr(Int, 1))))
    odd_args = ast::Exprs()
    odd_args += ast::Expr(Bin, (ast::BinaryOp(Sub), ast::Expr(Var, "n"),
       ast::Expr(Int, 1)))
-   odd_call = ast::Expr(Call, ast::CallExpr(("is_odd", ast::Expr(Int, 0),
-      odd_args, 0, 0)))
-   even_br2 = ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
-      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, odd_call))
+   odd_call = ast::Expr(Call, ast::CallExpr("is_odd", ast::Expr(Int, 0),
+      odd_args, 0, 0))
+   even_br2 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, odd_call)
    even_brs = ast::Branches()
    even_brs += even_br1
    even_brs += even_br2
-   even_choice = ast::Expr(Choice, ast::ChoiceExpr((even_cond, <->,
-      even_brs)))
-   fe_even = ast::FnExpr((even_params, ast::Names(), even_choice))
+   even_choice = ast::Expr(Choice, ast::ChoiceExpr(even_cond, <->,
+      even_brs))
+   fe_even = ast::FnExpr(even_params, ast::Names(), even_choice)
    assign_even = ast::Expr(Assign, ("is_even", <->, <->, <->, <->,
       ast::Expr(Fn, fe_even), ast::Expr(Int, 0), "",
       ast::TypeInfo(Prim, ast::ValueType(Unknown))))
@@ -423,23 +423,23 @@ main = !=>
    odd_params += "n"
    odd_cond = ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Var, "n"),
       ast::Expr(Int, 0)))
-   odd_br1 = ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
+   odd_br1 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
       ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
       ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
-         ast::Expr(Int, 0)))))
+         ast::Expr(Int, 0))))
    even_args = ast::Exprs()
    even_args += ast::Expr(Bin, (ast::BinaryOp(Sub), ast::Expr(Var, "n"),
       ast::Expr(Int, 1)))
-   even_call = ast::Expr(Call, ast::CallExpr(("is_even", ast::Expr(Int, 0),
-      even_args, 0, 0)))
-   odd_br2 = ast::ChoiceBranch((ast::GuardKind(Bare), ast::Exprs(),
-      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, even_call))
+   even_call = ast::Expr(Call, ast::CallExpr("is_even", ast::Expr(Int, 0),
+      even_args, 0, 0))
+   odd_br2 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
+      ast::Expr(Int, 0), ast::Names(), ast::Names(), <->, even_call)
    odd_brs = ast::Branches()
    odd_brs += odd_br1
    odd_brs += odd_br2
-   odd_choice = ast::Expr(Choice, ast::ChoiceExpr((odd_cond, <->,
-      odd_brs)))
-   fe_odd = ast::FnExpr((odd_params, ast::Names(), odd_choice))
+   odd_choice = ast::Expr(Choice, ast::ChoiceExpr(odd_cond, <->,
+      odd_brs))
+   fe_odd = ast::FnExpr(odd_params, ast::Names(), odd_choice)
    assign_odd = ast::Expr(Assign, ("is_odd", <->, <->, <->, <->,
       ast::Expr(Fn, fe_odd), ast::Expr(Int, 0), "",
       ast::TypeInfo(Prim, ast::ValueType(Unknown))))
@@ -458,9 +458,9 @@ main = !=>
    poly_params += "x"
    poly_args = ast::Exprs()
    poly_args += ast::Expr(Var, "x")
-   poly_call = ast::Expr(Call, ast::CallExpr(("poly_fn", ast::Expr(Int, 0),
-      poly_args, 0, 0)))
-   fe_poly = ast::FnExpr((poly_params, ast::Names(), poly_call))
+   poly_call = ast::Expr(Call, ast::CallExpr("poly_fn", ast::Expr(Int, 0),
+      poly_args, 0, 0))
+   fe_poly = ast::FnExpr(poly_params, ast::Names(), poly_call)
    assign_poly = ast::Expr(Assign, ("poly_fn", <->, <->, <->, <->,
       ast::Expr(Fn, fe_poly), ast::Expr(Int, 0), "",
       ast::TypeInfo(Prim, ast::ValueType(Unknown))))
@@ -476,8 +476,8 @@ main = !=>
    // 17. RawMemory elaboration
    rm_ctx = unify::new_ctx()
    rm_env = type_env::new_env()
-   rm_expr = ast::Expr(RawMemory, ast::RawMemoryExpr((ast::Expr(Int, 1000),
-      ast::ValueType(I32), "")))
+   rm_expr = ast::Expr(RawMemory, ast::RawMemoryExpr(ast::Expr(Int, 1000),
+      ast::ValueType(I32), ""))
    rm_te = annotate::annotate_expr(rm_ctx, rm_env, rm_expr)
    assert_eq_int(rm_te.layout.size, 4, "RawMemory I32 size is 4")
    assert_eq_int(rm_te.layout.align, 4, "RawMemory I32 align is 4")

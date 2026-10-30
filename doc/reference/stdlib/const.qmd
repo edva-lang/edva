@@ -1,0 +1,79 @@
+---
+meta:
+  audience: "Edva users"
+  status: "current reference"
+  audited: "df88a80"
+  evidence: "`std/const.dva`, `tests/pass/365_numeric_limits.dva`, `tests/pass/367_nan_constant.dva`, `tests/pass/378_math_constants.dva`"
+---
+
+# `const` standard library
+
+The `const` module provides fundamental mathematical, geometric, integer limit,
+and IEEE 754 floating-point constants. Because `const` has no foreign `libm`
+bindings, it can be imported freely in standalone and WebAssembly
+(`wasm32-unknown-unknown`) modules alongside `%` compiler intrinsics without
+linking `-lm`.
+
+```{.dva .run}
+#use const
+```
+
+## Mathematical Constants (`Float`)
+
+| Constant | Type | Value | Description |
+|---|---|---|---|
+| `const::pi` | `Float` | `3.14159265358979323846` | Archimedes' constant $\pi$ |
+| `const::tau` | `Float` | `6.28318530717958647692` | Circle constant $\tau = 2\pi$ |
+| `const::e` | `Float` | `2.71828182845904523536` | Euler's number $e$ |
+| `const::phi` | `Float` | `1.61803398874989484820` | Golden ratio $\phi = (1 + \sqrt{5}) / 2$ |
+| `const::inv_phi` | `Float` | `0.61803398874989484820` | Inverse golden ratio $1/\phi = \phi - 1$ |
+| `const::sqrt2` | `Float` | `1.41421356237309504880` | Square root of 2 $\sqrt{2}$ |
+| `const::sqrt3` | `Float` | `1.73205080756887729352` | Square root of 3 $\sqrt{3}$ |
+| `const::ln2` | `Float` | `0.69314718055994530942` | Natural logarithm of 2 $\ln(2)$ |
+| `const::ln10` | `Float` | `2.30258509299404568402` | Natural logarithm of 10 $\ln(10)$ |
+
+## Integer Limits
+
+| Constant | Type | Value | Description |
+|---|---|---|---|
+| `const::max_i64` | `Int` (`i64`) | `9223372036854775807` | Maximum signed 64-bit integer |
+| `const::min_i64` | `Int` (`i64`) | `-9223372036854775808` | Minimum signed 64-bit integer |
+| `const::max_i32` | `i32` | `2147483647i32` | Maximum signed 32-bit integer |
+| `const::min_i32` | `i32` | `-2147483648i32` | Minimum signed 32-bit integer |
+| `const::max_i16` | `i16` | `32767i16` | Maximum signed 16-bit integer |
+| `const::min_i16` | `i16` | `-32768i16` | Minimum signed 16-bit integer |
+| `const::max_i8` | `i8` | `127i8` | Maximum signed 8-bit integer |
+| `const::min_i8` | `i8` | `-128i8` | Minimum signed 8-bit integer |
+| `const::max_u64` | `u64` | `18446744073709551615u64` | Maximum unsigned 64-bit integer |
+| `const::max_u32` | `u32` | `4294967295u32` | Maximum unsigned 32-bit integer |
+| `const::max_u16` | `u16` | `65535u16` | Maximum unsigned 16-bit integer |
+| `const::max_u8` | `u8` | `255u8` | Maximum unsigned 8-bit integer |
+
+## Floating-Point Limits & IEEE-754 Constants
+
+Use unary `-` for negative infinity (`-const::inf_f64`, `-const::inf_f32`) and
+most negative finite values (`-const::max_f64`, `-const::max_f32`). Signed
+negative zero is written directly as `-0.0` or `-0.0f32`.
+
+| Constant | Type | IEEE-754 Bit Pattern | Description |
+|---|---|---|---|
+| `const::inf_f64` | `Float` (`f64`) | `0x7ff0000000000000` | Positive infinity ($+\infty$) |
+| `const::nan_f64` | `Float` (`f64`) | `0x7ff8000000000000` | Quiet NaN |
+| `const::max_f64` | `Float` (`f64`) | `0x7fefffffffffffff` | Largest finite `f64` (`1.7976931348623157e+308`) |
+| `const::min_f64` | `Float` (`f64`) | `0x0010000000000000` | Smallest positive normal `f64` (`2.2250738585072014e-308`) |
+| `const::sub_f64` | `Float` (`f64`) | `0x0000000000000001` | Smallest positive subnormal `f64` (`5e-324`) |
+| `const::eps_f64` | `Float` (`f64`) | `0x3cb0000000000000` | Machine epsilon for `f64` ($2^{-52} \approx 2.220446049250313\times 10^{-16}$) |
+| `const::inf_f32` | `f32` | `0x7f800000u32` | Positive infinity ($+\infty$) |
+| `const::nan_f32` | `f32` | `0x7fc00000u32` | Quiet NaN |
+| `const::max_f32` | `f32` | `0x7f7fffffu32` | Largest finite `f32` (`3.4028235e+38f32`) |
+| `const::min_f32` | `f32` | `0x00800000u32` | Smallest positive normal `f32` (`1.1754944e-38f32`) |
+| `const::sub_f32` | `f32` | `0x00000001u32` | Smallest positive subnormal `f32` (`1.4012985e-45f32`) |
+| `const::eps_f32` | `f32` | `0x34000000u32` | Machine epsilon for `f32` ($2^{-23} \approx 1.1920929\times 10^{-7}$) |
+
+```{.dva .run}
+#use const
+#use io
+
+io::out(const::tau / const::pi)
+// => 2
+```

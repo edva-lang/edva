@@ -117,7 +117,7 @@
       flags:     Int
    )
 
-   #type CQEs (CQE){}
+   #type CQEs CQE{}
 
    #type Ring (
       fd:          Int,
@@ -175,7 +175,7 @@
          libc::close(fd)
          --| <- "mmap CQ ring failed" +>
 
-      <+ Ring((
+      <+ Ring(
          fd = fd,
          sq_ptr = sq_ptr,
          sq_sz = sq_sz,
@@ -193,7 +193,7 @@
          cq_cqes_off = Int(params.cqes),
          sq_entries = sq_entries,
          cq_entries = cq_entries
-      )) ->
+      ) ->
 
    prep_sqe: Ring, Int, Int, Int, Addr, Int, Int => <>
    prep_sqe = ring, op, fd, off, addr, len, user_data =>
@@ -231,7 +231,7 @@
       used !< ring.sq_entries |->
       mask = @[ring.sq_ptr + ring.sq_mask_off u32]
       idx = Int(tail .&. mask)
-      sqe_dest = ring.sqes_ptr + idx * #size(SQE)
+      sqe_dest = ring.sqes_ptr + idx * #size SQE
       target_addr = op == OP_ASYNC_CANCEL
          | addr
          | %ptrmask(addr, 0b1{48})
@@ -298,12 +298,12 @@
          |
             mask = @[ring.cq_ptr + ring.cq_mask_off u32]
             idx = Int(head .&. mask)
-            cqe_ptr = ring.cq_ptr + ring.cq_cqes_off + idx * #size(CQERaw)
-            cqe = CQE((
+            cqe_ptr = ring.cq_ptr + ring.cq_cqes_off + idx * #size CQERaw
+            cqe = CQE(
                user_data = Int(@[cqe_ptr i64]),
                res = Int(@[cqe_ptr + 8 i32]),
                flags = Int(@[cqe_ptr + 12 u32])
-            ))
+            )
             @[ring.cq_ptr + ring.cq_head_off] = head + 1u32
             <+ cqe +>
 

@@ -1,6 +1,6 @@
 #use io
 
-xs: (Int){}
+xs: Int{}
 xs += 10
 xs += 20
 xs += 30
@@ -9,7 +9,7 @@ io::out $ (xs(0) | _ | _)
 io::out $ (xs(1) | _ | _)
 io::out $ (xs(2) | _ | _)
 
-sum: (Int){} => Int
+sum: Int{} => Int
 sum = a =>
    tot' = 0
    ?a @ i =>
@@ -19,7 +19,7 @@ sum = a =>
 s = sum(xs)
 io::out $ s
 
-names: (String){3}
+names: String{3}
 names += "hello"
 names += "world"
 io::out $ ?names
@@ -28,16 +28,16 @@ io::out $ (names(1) | _ | _)
 
 #type Container (
    id: Int,
-   tags: (String){}
+   tags: String{}
 )
 
 c: Container
 c.id = 7
 io::out $ c.id
 
-make_ints: Int => (Int){}
+make_ints: Int => Int{}
 make_ints = n =>
-   arr: (Int){}
+   arr: Int{}
    n @ i => arr += (i + 1) * 10
    arr
 
@@ -46,9 +46,9 @@ io::out $ ?res
 io::out $ (res(0) | _ | _)
 io::out $ (res(3) | _ | _)
 
-make_strs: String => (String){}
+make_strs: String => String{}
 make_strs = s =>
-   arr: (String){}
+   arr: String{}
    arr += s
    arr
 
@@ -93,7 +93,7 @@ lit_arr32 = Int{32}
 lit_arr32 += 222
 io::out $ (lit_arr32(0) | _ | _)
 
-lit_parr = (Int){}
+lit_parr = Int{}
 lit_parr += 333
 io::out $ (lit_parr(0) | _ | _)
 

@@ -21,9 +21,9 @@ Packet: #packed (
    flags: TcpFlags,
 )
 
-io::out $ "header size: " + str::from_int(#size(Header))
-io::out $ "tcpflags size: " + str::from_int(#size(TcpFlags))
-io::out $ "packet size: " + str::from_int(#size(Packet))
+io::out $ "header size: " + str::from_int(#size Header)
+io::out $ "tcpflags size: " + str::from_int(#size TcpFlags)
+io::out $ "packet size: " + str::from_int(#size Packet)
 
 flags: TcpFlags
 flags.syn = 1

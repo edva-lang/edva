@@ -1,0 +1,6 @@
+// Negative test: parenthesizing a single term is forbidden (E2084)
+#use io
+#type Cell (a: Int, b: Int)
+c = (Cell){}
+x = (42)
+io::out(x)

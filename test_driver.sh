@@ -256,7 +256,7 @@ echo -n "Testing -H / --header (C header generation from #export)... "
 cat <<'EOF' > "$TMPDIR/test_export.dva"
 #type Point (x: Int, y: Int)
 #export add_points: Point, Point => Point
-add_points = p1, p2 => Point((p1.x + p2.x, p1.y + p2.y))
+add_points = p1, p2 => Point(p1.x + p2.x, p1.y + p2.y)
 #export mul_int: Int, Int => Int
 mul_int = a, b => a * b
 EOF
@@ -365,7 +365,7 @@ cat <<'EOF' > "$TMPDIR/lib_mod.dva"
 #type Point (x: Int, y: Int)
 
 add_pts: Point, Point => Point
-add_pts = p1, p2 => Point((p1.x + p2.x, p1.y + p2.y))
+add_pts = p1, p2 => Point(p1.x + p2.x, p1.y + p2.y)
 
 #private
 secret: Int => Int
@@ -377,8 +377,8 @@ cat <<'EOF' > "$TMPDIR/main_mod.dva"
 #foreign "c"
    exit: (code: Int) => ()
 
-pt1 = lib_mod::Point((10, 20))
-pt2 = lib_mod::Point((30, 40))
+pt1 = lib_mod::Point(10, 20)
+pt2 = lib_mod::Point(30, 40)
 pt3 = lib_mod::add_pts(pt1, pt2)
 exit(pt3.x + pt3.y)
 EOF

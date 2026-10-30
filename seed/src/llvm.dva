@@ -124,6 +124,8 @@
    LLVMSetVolatile: (MemoryAccessInst: Addr, IsVolatile: Int) => ()
    LLVMGetIntTypeWidth: (IntegerTy: Addr) => Int
    LLVMBuildNot: (Builder: Addr, Val: Addr, Name: String) => Addr
+   LLVMBuildNeg: (Builder: Addr, Val: Addr, Name: String) => Addr
+   LLVMBuildFNeg: (Builder: Addr, Val: Addr, Name: String) => Addr
    LLVMGetTypeKind: (Ty: Addr) => Int
    LLVMGetEntryBasicBlock: (Fn: Addr) => Addr
    LLVMGetFirstInstruction: (BB: Addr) => Addr

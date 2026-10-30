@@ -12,18 +12,18 @@
 #type DepNode (name: String, deps: ast::Names, stmt_idx: Int)
 #type NameSet String ^ <>
 #type NodeIndices String ^ Int
-#type DepGraph (nodes: (DepNode){}, indices: NodeIndices)
+#type DepGraph (nodes: DepNode{}, indices: NodeIndices)
 
 #type SCC (names: ast::Names, is_recursive: <>)
 
 #type TarjanState (
-   indices: (Int){},
-   lowlinks: (Int){},
-   on_stack: (<>){},
-   stack: (Int){},
-   stack_ptr: (Int){},
-   counter: (Int){},
-   sccs: (SCC){}
+   indices: Int{},
+   lowlinks: Int{},
+   on_stack: <>{},
+   stack: Int{},
+   stack_ptr: Int{},
+   counter: Int{},
+   sccs: SCC{}
 )
 
 is_fwd_assign: (String, <>, <>, <>, <>, ast::Expr, ast::Expr,
@@ -109,7 +109,7 @@ collect_expr_refs = e, locals, refs =>
          collect_expr_refs(fe.body, fn_locals, refs)
       [Block be]
          blk_locals = copy_names(locals)
-         be.exprs @ st =>
+         be @ st =>
             st
                [Assign a]
                   collect_expr_refs(a.5, blk_locals, refs)
@@ -163,19 +163,19 @@ collect_expr_refs = e, locals, refs =>
       [TypeCast tc]
          collect_expr_refs(tc.expr, locals, refs)
       [CompileTime ct]
-         collect_expr_refs(ct.expr, locals, refs)
+         collect_expr_refs(ct, locals, refs)
       [Spawn sp]
-         collect_expr_refs(ast::Expr(Call, sp.call), locals, refs)
+         collect_expr_refs(ast::Expr(Call, sp), locals, refs)
       [Join jn]
-         collect_expr_refs(jn.handle, locals, refs)
+         collect_expr_refs(jn, locals, refs)
       [Exit ex]
-         collect_expr_refs(ex.code, locals, refs)
+         collect_expr_refs(ex, locals, refs)
       [UserDiag ud]
          collect_expr_refs(ud.msg, locals, refs)
       [Return r]
          r.has_val | collect_expr_refs(r.val, locals, refs)
       [MapLiteral m]
-         m.pairs @ p =>
+         m @ p =>
             collect_expr_refs(p.key, locals, refs)
             collect_expr_refs(p.value, locals, refs)
       [RawMemory rm]
@@ -203,30 +203,30 @@ is_generic_sig = a =>
 
 build_dep_graph: ast::Exprs => DepGraph
 build_dep_graph = stmts =>
-   nodes: (DepNode){}
-   graph = DepGraph((nodes, NodeIndices()))
+   nodes: DepNode{}
+   graph = DepGraph(nodes, NodeIndices())
    gen_names = NameSet()
    stmts @ stk =>
       stk
          [Assign ak]
             is_fe = ak.5 [Fn fek] (?fek.ct_params > 0) | <->
             is_gen = is_generic_sig(ak) || is_fe
-            is_gen && ak.0 != "" | gen_names ^ (ak.0) = <+>
+            is_gen && ak.0 != "" | gen_names ^ ak.0 = <+>
    def_names = NameSet()
    stmts @ st1 =>
       st1
           [Assign a1]
              is_fwd1 = is_fwd_assign(a1)
-             is_gen1 = gen_names ^? (a1.0)
+             is_gen1 = gen_names ^? a1.0
              name1 = a1.0
              !is_fwd1 && !is_gen1 && !a1.2 && !a1.4 && name1 != ""
-                | def_names ^ (name1) = <+>
+                | def_names ^ name1 = <+>
 
    stmts @ st2, j =>
       st2
          [Assign a2]
             is_fwd2 = is_fwd_assign(a2)
-            is_gen2 = gen_names ^? (a2.0)
+            is_gen2 = gen_names ^? a2.0
             name2 = a2.0
             !is_fwd2 && !is_gen2 && !a2.2 && !a2.4 && name2 != ""
                |
@@ -240,26 +240,26 @@ build_dep_graph = stmts =>
                         | filtered_deps += target_ref
                   node_indices = graph.indices
                   known = node_indices ^? name2
-                  !known | node_indices ^ (name2) = ?graph.nodes
-                  graph.nodes += DepNode((name2, filtered_deps, j))
+                  !known | node_indices ^ name2 = ?graph.nodes
+                  graph.nodes += DepNode(name2, filtered_deps, j)
    graph
 
 init_tarjan_state: Int => TarjanState
 init_tarjan_state = n =>
-   indices: (Int){}
-   lowlinks: (Int){}
-   on_stack: (<>){}
-   stack: (Int){}
-   stack_ptr: (Int){}
+   indices: Int{}
+   lowlinks: Int{}
+   on_stack: <>{}
+   stack: Int{}
+   stack_ptr: Int{}
    stack_ptr += 0
-   counter: (Int){}
+   counter: Int{}
    counter += 0
-   sccs: (SCC){}
+   sccs: SCC{}
    n @
       indices += -1
       lowlinks += 0
       on_stack += <->
-   TarjanState((indices, lowlinks, on_stack, stack, stack_ptr, counter, sccs))
+   TarjanState(indices, lowlinks, on_stack, stack, stack_ptr, counter, sccs)
 
 push_stack: TarjanState, Int => ()
 push_stack = state, u =>
@@ -326,9 +326,9 @@ tarjan_dfs = graph, state, u =>
             scc_names += w_node.name
             w == u | -->
          is_rec = ?scc_names > 1 || is_self_rec
-         state.sccs += SCC((scc_names, is_rec))
+         state.sccs += SCC(scc_names, is_rec)
 
-tarjan_scc: DepGraph => (SCC){}
+tarjan_scc: DepGraph => SCC{}
 tarjan_scc = graph =>
    n = ?graph.nodes
    state = init_tarjan_state(n)

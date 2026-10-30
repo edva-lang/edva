@@ -1,9 +1,9 @@
 #use io
 
-#type Ints (Int){}
-#type Names (String){}
+#type Ints Int{}
+#type Names String{}
 #type Rect (w: Int, h: Int)
-#type Grid (Rect){}
+#type Grid Rect{}
 
 // 1. Int growable array iteration
 xs: Ints

@@ -27,11 +27,6 @@ io::out $ h.age
 io::out $ h.0
 io::out $ h.1
 
-// One-element records: "(5,)" is a record, "(5)" is a grouped expression.
-one = (5,)
-io::out $ one(0)
-io::out $ ?one
-
 // Record length on a named record.
 io::out $ ?n
 

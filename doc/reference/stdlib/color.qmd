@@ -18,12 +18,13 @@ The `color` module provides color representations, conversions between common co
 ## Color spaces and data types
 
 All color spaces in `color` are represented by normalized 4-float records `(Float, Float, Float, Float)`
-where the fourth component represents alpha ($0.0 \dots 1.0$). This layout leverages element-wise
-vector operations (`+`, `-`, `*`).
+where the fourth component represents alpha ($0.0 \dots 1.0$). `Color` and `Rgba` define named fields
+`(r: Float, g: Float, b: Float, a: Float)`, supporting both named field access (`.r`, `.g`, `.b`, `.a`),
+positional indexing (`c(0)..c(3)`), and native SIMD element-wise vector operations (`+`, `-`, `*`).
 
 | Type | Components | Description |
 |---|---|---|
-| `color::Color` / `color::Rgba` | `(r, g, b, a)` | Standard non-linear sRGB with alpha |
+| `color::Color` / `color::Rgba` | `(r: Float, g: Float, b: Float, a: Float)` | Standard non-linear sRGB with alpha |
 | `color::LinearRgba` | `(r, g, b, a)` | Radiometrically linear sRGB |
 | `color::Oklab` | `(l, a, b, alpha)` | Perceptually uniform Oklab color space |
 | `color::Oklch` | `(l, c, h, alpha)` | Cylindrical Oklch (Lightness, Chroma, Hue in degrees `[0, 360)`) |
@@ -62,13 +63,39 @@ val_rgb = color::to_hex_rgb(c1)             // Pack to 0xRRGGBB
 | `color::lerp_oklab` | `Rgba, Rgba, Float => Rgba` | Perceptually uniform color interpolation in Oklab |
 | `color::adjust_lightness` | `Rgba, Float => Rgba` | Adjusts Oklab lightness `L` by `delta` |
 
+## Standard base colors and procedural providers
+
+The module provides modern vibrant base colors as 4-float `Color` records (`r, g, b, a = 1.0`):
+
+| Constant | Value | Description |
+|---|---|---|
+| `color::white`, `color::black` | `(1, 1, 1, 1)`, `(0, 0, 0, 1)` | Pure white and pure black |
+| `color::red`, `color::orange`, `color::yellow` | `(0.95, 0.25, 0.25, 1)`, etc. | Warm spectral colors |
+| `color::green`, `color::cyan`, `color::blue`, `color::violet` | `(0.20, 0.85, 0.35, 1)`, etc. | Cool spectral colors |
+| `color::magenta`, `color::amber`, `color::emerald` | `(0.95, 0.25, 0.80, 1)`, etc. | Vibrant accent colors |
+| `color::ruby`, `color::sapphire`, `color::turquoise`, `color::slate` | Deep jewel & neutral tones | Material & 3D styling tones |
+
+Higher-order procedural color providers for procedural meshes, animations, and chart series:
+
+| Provider | Signature | Description |
+|---|---|---|
+| `color::with_alpha` | `Color, Float => Color` | Returns copy of `Color` with alpha set to `a` |
+| `color::glass` | `(Int => Color), Float => (Int => Color)` | Wraps a discrete color provider with translucent alpha `a` |
+| `color::gradient` | `Color, Color => (Float => Color)` | Continuous clamped linear color gradient for $t \in [0.0, 1.0]$ |
+| `color::gradient_oklab` | `Color, Color => (Float => Color)` | Continuous perceptually uniform Oklab color gradient for $t \in [0.0, 1.0]$ |
+| `color::uniform` | `Color => (Int => Color)` | Constant color for all indices |
+| `color::stripes` | `Color, Color => (Int => Color)` | Alternating two-color stripe sequence |
+| `color::rainbow` | `Int => Color` | 7-stripe spectral rainbow (`red`, `orange`, `yellow`, `green`, `cyan`, `blue`, `violet` — КОЖЗГСФ) |
+| `color::warm` | `Int => Color` | 5-color warm sunset sequence |
+| `color::cool` | `Int => Color` | 5-color cool jewel/ocean sequence |
+
 ## Packed 24-bit TrueColor integer operations (`0xRRGGBB`)
 
 | Export | Signature | Description |
 |---|---|---|
 | `color::BLACK` / `color::WHITE` | `Int` | `0x000000` and `0xFFFFFF` |
 | `color::pack_rgb` / `color::rgb24` | `Int, Int, Int => Int` | Packs `(r, g, b)` (`0..255`) into `0xRRGGBB` |
-| `color::red`, `color::green`, `color::blue` | `Int => Int` | Extracts 8-bit channel (`0..255`) from `0xRRGGBB` |
+| `color::red24`, `color::green24`, `color::blue24` | `Int => Int` | Extracts 8-bit channel (`0..255`) from `0xRRGGBB` |
 | `color::blend` | `Int, Int, Int => Int` | Blends `c1` and `c2` by percentage `t` (`0..100`) |
 | `color::lighten` / `color::darken` | `Int, Int => Int` | Lightens toward white or darkens toward black by `0..100`% |
 | `color::grayscale` | `Int => Int` | Converts `0xRRGGBB` to BT.601 grayscale `0xYYYYYY` |

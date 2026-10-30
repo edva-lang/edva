@@ -1,0 +1,48 @@
+// Test prefix unary negation (-expr) on Int, Float, f32, parenthesized expressions,
+// and homogeneous SIMD numeric records (Vec2, Vec3, Vec4).
+
+#use(import) io
+#use "math/geom"
+
+#type Vec3f (x: f32, y: f32, z: f32)
+#type Vec3i (x: Int, y: Int, z: Int)
+
+// Scalar f32 negation
+s = 1.5f32
+ns = -s
+n_paren = -(s + 0.5f32)
+out $ Float(ns)
+out $ Float(n_paren)
+
+// Scalar Float negation
+d = 2.25
+nd = -d
+nd_expr = -(d * 2.0)
+out $ nd
+out $ nd_expr
+
+// Scalar Int negation
+i = 42
+ni = -i
+ni_expr = -(i + 8)
+out $ ni
+out $ ni_expr
+
+// SIMD Vec3 (Float) negation
+v = geom::vec3(1.0, -2.5, 3.75)
+nv = -v
+out $ "${nv.x} ${nv.y} ${nv.z}"
+
+// SIMD Vec3f (f32) negation
+vf = Vec3f(1.25f32, -2.0f32, 0.5f32)
+nvf = -vf
+out $ "${Float(nvf.x)} ${Float(nvf.y)} ${Float(nvf.z)}"
+
+// SIMD Vec3i (Int) negation
+vi = Vec3i(10, -20, 30)
+nvi = -vi
+out $ "${nvi.x} ${nvi.y} ${nvi.z}"
+
+// Double negation
+nnv = -(-v)
+out $ "${nnv.x} ${nnv.y} ${nnv.z}"

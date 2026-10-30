@@ -7,6 +7,6 @@ my_find = pred, xs =>
       pred(x) | --| <+ x ->
    <-->
 
-arr = (Int){}
+arr = Int{}
 arr += 10
 res = my_find(x => x > 5, arr)

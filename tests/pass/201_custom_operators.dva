@@ -27,7 +27,7 @@ io::out $ (1 + 2) === 3
 // Operator as a value.
 f = <~>
 io::out $ f(2, 3)          // 7
-io::out $ (<~>)(4, 5)      // 13
+io::out $ <~>(4, 5)        // 13
 
 // Generic payload (Float).
 <*~> : #infix 40 45, Float, Float => Float

@@ -1,0 +1,25 @@
+#use const
+#use io
+
+approx_eq = a, b => %abs(a - b) < 0.00001
+print_flag = f => io::out $ f | 1 | 0
+
+// Test lowercase phi and inv_phi
+print_flag $ approx_eq(const::phi, 1.6180339887)
+print_flag $ approx_eq(const::inv_phi, 0.6180339887)
+
+// Test phi relation: phi * phi == phi + 1
+print_flag $ approx_eq(const::phi * const::phi, const::phi + 1.0)
+// Test inv_phi relation: 1 / phi == phi - 1
+print_flag $ approx_eq(1.0 / const::phi, const::phi - 1.0)
+
+// Test tau == 2 * pi
+print_flag $ approx_eq(const::tau, 2.0 * const::pi)
+
+// Test sqrt2 and sqrt3
+print_flag $ approx_eq(const::sqrt2 * const::sqrt2, 2.0)
+print_flag $ approx_eq(const::sqrt3 * const::sqrt3, 3.0)
+
+// Test ln2 and ln10
+print_flag $ approx_eq(const::ln2, 0.693147)
+print_flag $ approx_eq(const::ln10, 2.302585)

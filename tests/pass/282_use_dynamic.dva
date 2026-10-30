@@ -1,7 +1,7 @@
 #use(dynamic) views
 #use io
 
-s' = views::State((10, "Item"))
+s' = views::State(10, "Item")
 
 // 1. Initial render using static implementation
 io::out $ views::render(s')

@@ -17,46 +17,46 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.sys::STDOUT" = external global i64
 @"var.sys::STDERR" = external global i64
 @"var.sys::addr_null" = external global ptr
-@"var.uring::SYS_IO_URING_SETUP" = global i64 0
-@"var.uring::SYS_IO_URING_ENTER" = global i64 0
-@"var.uring::SYS_IO_URING_REGISTER" = global i64 0
-@"var.uring::IORING_SETUP_IOPOLL" = global i64 0
-@"var.uring::IORING_SETUP_SQPOLL" = global i64 0
-@"var.uring::IORING_SETUP_SQ_AFF" = global i64 0
-@"var.uring::IORING_SETUP_CQSIZE" = global i64 0
-@"var.uring::IORING_SETUP_CLAMP" = global i64 0
-@"var.uring::IORING_SETUP_ATTACH_WQ" = global i64 0
-@"var.uring::IORING_SETUP_R_DISABLED" = global i64 0
-@"var.uring::IORING_SETUP_SUBMIT_ALL" = global i64 0
-@"var.uring::IORING_ENTER_GETEVENTS" = global i64 0
-@"var.uring::IORING_ENTER_SQ_WAKEUP" = global i64 0
-@"var.uring::IORING_ENTER_SQ_WAIT" = global i64 0
-@"var.uring::IORING_ENTER_EXT_ARG" = global i64 0
-@"var.uring::IORING_ENTER_REGISTERED_RING" = global i64 0
+@"var.uring::SYS_IO_URING_SETUP" = global i64 425
+@"var.uring::SYS_IO_URING_ENTER" = global i64 426
+@"var.uring::SYS_IO_URING_REGISTER" = global i64 427
+@"var.uring::IORING_SETUP_IOPOLL" = global i64 1
+@"var.uring::IORING_SETUP_SQPOLL" = global i64 2
+@"var.uring::IORING_SETUP_SQ_AFF" = global i64 4
+@"var.uring::IORING_SETUP_CQSIZE" = global i64 8
+@"var.uring::IORING_SETUP_CLAMP" = global i64 16
+@"var.uring::IORING_SETUP_ATTACH_WQ" = global i64 32
+@"var.uring::IORING_SETUP_R_DISABLED" = global i64 64
+@"var.uring::IORING_SETUP_SUBMIT_ALL" = global i64 128
+@"var.uring::IORING_ENTER_GETEVENTS" = global i64 1
+@"var.uring::IORING_ENTER_SQ_WAKEUP" = global i64 2
+@"var.uring::IORING_ENTER_SQ_WAIT" = global i64 4
+@"var.uring::IORING_ENTER_EXT_ARG" = global i64 8
+@"var.uring::IORING_ENTER_REGISTERED_RING" = global i64 16
 @"var.uring::IORING_OFF_SQ_RING" = global i64 0
-@"var.uring::IORING_OFF_CQ_RING" = global i64 0
-@"var.uring::IORING_OFF_SQES" = global i64 0
+@"var.uring::IORING_OFF_CQ_RING" = global i64 134217728
+@"var.uring::IORING_OFF_SQES" = global i64 268435456
 @"var.uring::OP_NOP" = global i64 0
-@"var.uring::OP_READV" = global i64 0
-@"var.uring::OP_WRITEV" = global i64 0
-@"var.uring::OP_FSYNC" = global i64 0
-@"var.uring::OP_POLL_ADD" = global i64 0
-@"var.uring::OP_POLL_REMOVE" = global i64 0
-@"var.uring::OP_TIMEOUT" = global i64 0
-@"var.uring::OP_TIMEOUT_REMOVE" = global i64 0
-@"var.uring::OP_ACCEPT" = global i64 0
-@"var.uring::OP_ASYNC_CANCEL" = global i64 0
-@"var.uring::OP_CONNECT" = global i64 0
-@"var.uring::OP_CLOSE" = global i64 0
-@"var.uring::OP_READ" = global i64 0
-@"var.uring::OP_WRITE" = global i64 0
-@"var.uring::OP_SEND" = global i64 0
-@"var.uring::OP_RECV" = global i64 0
-@"var.uring::OP_SHUTDOWN" = global i64 0
-@"var.uring::PROT_READ" = global i64 0
-@"var.uring::PROT_WRITE" = global i64 0
-@"var.uring::MAP_SHARED" = global i64 0
-@"var.uring::MAP_POPULATE" = global i64 0
+@"var.uring::OP_READV" = global i64 1
+@"var.uring::OP_WRITEV" = global i64 2
+@"var.uring::OP_FSYNC" = global i64 3
+@"var.uring::OP_POLL_ADD" = global i64 6
+@"var.uring::OP_POLL_REMOVE" = global i64 7
+@"var.uring::OP_TIMEOUT" = global i64 11
+@"var.uring::OP_TIMEOUT_REMOVE" = global i64 12
+@"var.uring::OP_ACCEPT" = global i64 13
+@"var.uring::OP_ASYNC_CANCEL" = global i64 14
+@"var.uring::OP_CONNECT" = global i64 16
+@"var.uring::OP_CLOSE" = global i64 19
+@"var.uring::OP_READ" = global i64 22
+@"var.uring::OP_WRITE" = global i64 23
+@"var.uring::OP_SEND" = global i64 26
+@"var.uring::OP_RECV" = global i64 27
+@"var.uring::OP_SHUTDOWN" = global i64 34
+@"var.uring::PROT_READ" = global i64 1
+@"var.uring::PROT_WRITE" = global i64 2
+@"var.uring::MAP_SHARED" = global i64 1
+@"var.uring::MAP_POPULATE" = global i64 32768
 @str.0 = internal unnamed_addr constant [22 x i8] c"io_uring_setup failed\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 21, ptr @str.0 }
 @stale_addr_msg = internal unnamed_addr constant [51 x i8] c"E4011: stale Addr dereference after arena restore\0A\00"
@@ -117,8 +117,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.uring::close" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_uring, ptr null }]
 
-declare i32 @printf(ptr, ...)
-
 declare ptr @dva_arena_current()
 
 declare ptr @dva_arena_set_current(ptr)
@@ -126,10 +124,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -147,10 +141,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -237,9 +227,13 @@ declare i64 @read(i32, ptr, i64)
 
 declare i64 @lseek(i32, i64, i64)
 
+declare i64 @write(i32, ptr, i64)
+
 declare i64 @writev(i32, ptr, i64)
 
 declare i32 @ioctl(i32, i64, i64, ...)
+
+declare void @exit(i32)
 
 declare i64 @htons(i64)
 
@@ -298,6 +292,8 @@ declare ptr @opendir(ptr)
 declare ptr @readdir(ptr)
 
 declare i64 @closedir(ptr)
+
+declare i64 @strlen(ptr)
 
 declare i64 @strcmp(ptr, ptr)
 

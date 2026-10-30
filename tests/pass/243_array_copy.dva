@@ -1,6 +1,6 @@
 #use io
 
-#type Ints (Int){}
+#type Ints Int{}
 
 orig: Ints
 orig += 10

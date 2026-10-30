@@ -9,40 +9,40 @@ meta:
 # `math` standard library
 
 The `math` module exposes C99 `libm` mathematical functions for 64-bit IEEE 754
-`Float` values, along with standard mathematical constants. Importing `math`
+`Float` values, along with angle conversion helpers. Importing `math`
 automatically links `-lm`.
+
+Mathematical constants (`const::pi`, `const::tau`, `const::e`, `const::phi`, `const::inv_phi`, `const::sqrt2`, `const::sqrt3`, `const::ln2`, `const::ln10`) live in the [`const`](const.qmd) standard library module (`#use const`).
 
 ```{.dva .run}
 #use math
 ```
 
-## Constants
-
-| Constant | Type | Value | Description |
-|---|---|---|---|
-| `math::pi` | `Float` | `3.14159265358979323846` | Archimedes' constant $\pi$ |
-| `math::e` | `Float` | `2.71828182845904523536` | Euler's number $e$ |
-
 ## Function catalog
+
+*(Note: Operations covered by hardware/LLVM intrinsics — `%sqrt`, `%pow`, `%exp2`, `%log2`, `%sin`, `%cos`, `%floor`, `%ceil`, `%trunc`, `%round`, `%abs`, `%min`, `%max`, `%clamp`, `%copysign`, `%fma`, `%fmuladd` — are built into the language directly and also support SIMD vector tuples).*
+
+### Angle conversions
+
+| Function | Signature | Description | Example |
+|---|---|---|---|
+| `math::rad(deg)` | `Float => Float` | Converts degrees to radians (`deg * const::pi / 180.0`) | `math::rad(180.0)` $\rightarrow$ $\pi$ |
+| `math::deg(rad)` | `Float => Float` | Converts radians to degrees (`rad * 180.0 / const::pi`) | `math::deg(const::pi)` $\rightarrow$ `180.0` |
 
 ### Roots and powers
 
 | Function | Signature | Description | Example |
 |---|---|---|---|
-| `math::sqrt(x)` | `Float => Float` | Square root $\sqrt{x}$ | `math::sqrt(16.0)` $\rightarrow$ `4.0` |
 | `math::cbrt(x)` | `Float => Float` | Cube root $\sqrt[3]{x}$ | `math::cbrt(27.0)` $\rightarrow$ `3.0` |
 | `math::hypot(x, y)` | `Float, Float => Float` | Hypotenuse $\sqrt{x^2 + y^2}$ | `math::hypot(3.0, 4.0)` $\rightarrow$ `5.0` |
-| `math::pow(x, y)` | `Float, Float => Float` | Power $x^y$ | `math::pow(2.0, 8.0)` $\rightarrow$ `256.0` |
 
 ### Exponentials and logarithms
 
 | Function | Signature | Description |
 |---|---|---|
 | `math::exp(x)` | `Float => Float` | Natural exponential $e^x$ |
-| `math::exp2(x)` | `Float => Float` | Base-2 exponential $2^x$ |
 | `math::expm1(x)` | `Float => Float` | $e^x - 1$ (accurate for small $x$) |
 | `math::log(x)` | `Float => Float` | Natural logarithm $\ln(x)$ |
-| `math::log2(x)` | `Float => Float` | Binary logarithm $\log_2(x)$ |
 | `math::log10(x)` | `Float => Float` | Common logarithm $\log_{10}(x)$ |
 | `math::log1p(x)` | `Float => Float` | $\ln(1 + x)$ (accurate for small $x$) |
 
@@ -50,7 +50,7 @@ automatically links `-lm`.
 
 | Function | Signature | Description |
 |---|---|---|
-| `math::sin(x)`, `math::cos(x)`, `math::tan(x)` | `Float => Float` | Sine, cosine, tangent (radians) |
+| `math::tan(x)` | `Float => Float` | Tangent (radians) |
 | `math::asin(x)`, `math::acos(x)`, `math::atan(x)` | `Float => Float` | Inverse circular functions |
 | `math::atan2(y, x)` | `Float, Float => Float` | Multi-quadrant inverse tangent |
 | `math::sinh(x)`, `math::cosh(x)`, `math::tanh(x)` | `Float => Float` | Hyperbolic sine, cosine, tangent |
@@ -60,34 +60,34 @@ automatically links `-lm`.
 
 | Function | Signature | Description |
 |---|---|---|
-| `math::floor(x)` | `Float => Float` | Largest integer not greater than $x$ |
-| `math::ceil(x)` | `Float => Float` | Smallest integer not less than $x$ |
 | `math::rint(x)` | `Float => Float` | Round to nearest integer using current rounding mode |
-| `math::fabs(x)` | `Float => Float` | Absolute value of $x$ |
+| `math::nearbyint(x)` | `Float => Float` | Round to nearest integer without raising `FE_INEXACT` |
 | `math::fmod(x, y)` | `Float, Float => Float` | Floating-point remainder of $x / y$ |
-| `math::fmin(x, y)` | `Float, Float => Float` | Minimum of $x$ and $y$ |
-| `math::fmax(x, y)` | `Float, Float => Float` | Maximum of $x$ and $y$ |
+| `math::remainder(x, y)` | `Float, Float => Float` | IEEE 754 remainder of $x / y$ |
+| `math::fdim(x, y)` | `Float, Float => Float` | Positive difference $\max(x - y, 0)$ |
 | `math::ldexp(x, exp)` | `Float, i32 => Float` | $x \times 2^{\text{exp}}$ |
-
-*(Note: Truncation, round-to-nearest, and copysign are provided by built-in LLVM intrinsics: `%trunc(x)`, `%round(x)`, and `%copysign(x, y)`).*
+| `math::scalbn(x, n)` | `Float, i32 => Float` | $x \times \text{FLT\_RADIX}^n$ |
 
 ## Submodules
 
-### `math/geom` — 2D and 3D Euclidean geometry
+### `math/geom` — 2D, 3D, and 4D Euclidean geometry
 
-Import with `#use math/geom`. Operates on homogeneous float tuples leveraging hardware vector and SIMD intrinsics.
+Import with `#use math/geom`. Operates on homogeneous named-field float tuples (`Vec2`, `Vec3`, `Vec4`, `Point2`, `Point3`, `Rect`), supporting `.x`/`.y`/`.z`/`.w` field access, `v(0)..v(3)` indexing, native SIMD arithmetic (`+`, `-`, `*`, `/`), and hardware vector intrinsics (`%dot`, `%sqrt`, `%fmuladd`).
 
 | Export | Signature | Description |
 |---|---|---|
-| `Vec2` | `(Float, Float)` | 2D vector / coordinate tuple |
-| `Vec3` | `(Float, Float, Float)` | 3D vector tuple |
-| `Vec4` | `(Float, Float, Float, Float)` | 4D vector / homogeneous coordinate tuple |
-| `Point2` | `(Float, Float)` | 2D point alias |
-| `Rect` | `(Float, Float, Float, Float)` | 2D axis-aligned rectangle `(x, y, w, h)` |
+| `Vec2` | `(x: Float, y: Float)` | 2D vector / coordinate tuple |
+| `Vec3` | `(x: Float, y: Float, z: Float)` | 3D vector tuple |
+| `Vec4` | `(x: Float, y: Float, z: Float, w: Float)` | 4D vector / homogeneous coordinate tuple |
+| `Point2` | `(x: Float, y: Float)` | 2D point alias |
+| `Point3` | `(x: Float, y: Float, z: Float)` | 3D point alias |
+| `Rect` | `(x: Float, y: Float, w: Float, h: Float)` | 2D axis-aligned rectangle `(x, y, w, h)` |
 | `geom::vec2` | `Float, Float => Vec2` | 2D vector constructor |
 | `geom::vec3` | `Float, Float, Float => Vec3` | 3D vector constructor |
 | `geom::vec4` | `Float, Float, Float, Float => Vec4` | 4D vector constructor |
 | `geom::rect` | `Float, Float, Float, Float => Rect` | Rectangle constructor |
+| `geom::rad` | `Float => Float` | Converts degrees to radians (`deg * const::pi / 180.0`) |
+| `geom::deg` | `Float => Float` | Converts radians to degrees (`rad * 180.0 / const::pi`) |
 | `geom::dot` | `Vec2, Vec2 => Float` | 2D dot product via `%dot` |
 | `geom::len` | `Vec2 => Float` | 2D vector Euclidean magnitude |
 | `geom::dist` | `Vec2, Vec2 => Float` | 2D Euclidean distance between vectors |
@@ -102,6 +102,7 @@ Import with `#use math/geom`. Operates on homogeneous float tuples leveraging ha
 | `geom::dist3` | `Vec3, Vec3 => Float` | 3D Euclidean distance |
 | `geom::norm3` | `Vec3 => Vec3` | Unit normalized 3D vector |
 | `geom::cross3` | `Vec3, Vec3 => Vec3` | 3D vector cross product |
+| `geom::normal3` | `Vec3, Vec3, Vec3 => Vec3` | Unit surface normal `norm3(cross3(b - a, c - a))` |
 | `geom::rect_contains` | `Rect, Point2 => <>` | Tests whether point `(px, py)` lies inside rectangle |
 | `geom::circle_contains` | `Point2, Float, Point2 => <>` | Tests whether point lies within circle `(center, radius)` |
 | `geom::rect_union` | `Rect, Rect => Rect` | Bounding rectangle enclosing both rectangles |

@@ -4,8 +4,8 @@
 #use "str"
 #use io
 
-#type Ints (Int){}
-#type Names (String){}
+#type Ints Int{}
+#type Names String{}
 
 is_gt_10: Int => <>
 is_gt_10 = n => n > 10

@@ -7,13 +7,13 @@
 #use io
 
 #type Cell (a: Int, b: Int)
-#type Box (cells: (Cell){})
-#type Cells (Cell){}
+#type Box (cells: Cell{}, id: Int)
+#type Cells Cell{}
 
 cells: Cells
 
 mk: Int => Cell
-mk = v => Cell((v, v))
+mk = v => Cell(v, v)
 
 junk: () => Int
 junk = !=>
@@ -26,7 +26,7 @@ junk = !=>
 put: Box, Int => ()
 put = bx, v => bx.cells(0) = mk(v)
 
-push: (Cell){}, Int => ()
+push: Cell{}, Int => ()
 push = arr, v => arr += mk(v)
 
 remember: Int => ()
@@ -34,7 +34,7 @@ remember = v =>
    cells += mk(v)
 
 // 1. callee stores a fresh record into an outer container (term's render_diff case)
-bx = Box(((Cell){}))
+bx = Box(Cell{}, 0)
 bx.cells += mk(0)
 0..3 @ i =>
    label = "iteration ${i}"
@@ -51,7 +51,7 @@ junk!
 io::out $ "assign from call:  ${held'.a} (expect 3)"
 
 // 3. callee appends to an outer array (its storage may grow inside the callee)
-arr = (Cell){}
+arr = Cell{}
 0..40 @ i =>
    label = "iteration ${i}"
    push(arr, i)

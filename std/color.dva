@@ -7,11 +7,13 @@
 // with alpha in the 4th component, benefiting from element-wise vector
 // operations (+, -, *).
 
+#use ascii
+#use const
 #use math
 
 #public
-   #type Color      (Float, Float, Float, Float)
-   #type Rgba       (Float, Float, Float, Float)
+   #type Color      (r: Float, g: Float, b: Float, a: Float)
+   #type Rgba       (r: Float, g: Float, b: Float, a: Float)
    #type LinearRgba (Float, Float, Float, Float)
    #type Oklab      (Float, Float, Float, Float)
    #type Oklch      (Float, Float, Float, Float)
@@ -19,10 +21,92 @@
 
    // Constructors
    rgba: Float, Float, Float, Float => Rgba
-   rgba = r, g, b, a => (r, g, b, a)
+   rgba = r, g, b, a => Rgba(r, g, b, a)
 
    rgb: Float, Float, Float => Rgba
-   rgb = r, g, b => (r, g, b, 1.0)
+   rgb = r, g, b => Rgba(r, g, b, 1.0)
+
+   // Alias constructor
+   color: Float, Float, Float => Color
+   color = r, g, b => Color(r, g, b, 1.0)
+
+   color_rgba: Float, Float, Float, Float => Color
+   color_rgba = r, g, b, a => Color(r, g, b, a)
+
+   // Standard Modern Vibrant Base Colors (4-float RGBA)
+   white     = Color(1.00, 1.00, 1.00, 1.0)
+   black     = Color(0.00, 0.00, 0.00, 1.0)
+   red       = Color(0.95, 0.25, 0.25, 1.0)
+   orange    = Color(0.95, 0.50, 0.15, 1.0)
+   yellow    = Color(0.95, 0.85, 0.20, 1.0)
+   green     = Color(0.25, 0.85, 0.35, 1.0)
+   cyan      = Color(0.15, 0.85, 0.95, 1.0)
+   blue      = Color(0.25, 0.45, 0.95, 1.0)
+   violet    = Color(0.75, 0.25, 0.95, 1.0)
+   magenta   = Color(0.95, 0.25, 0.80, 1.0)
+   amber     = Color(1.00, 0.75, 0.15, 1.0)
+   emerald   = Color(0.20, 0.95, 0.45, 1.0)
+   ruby      = Color(0.95, 0.20, 0.35, 1.0)
+   sapphire  = Color(0.20, 0.40, 0.95, 1.0)
+   turquoise = Color(0.15, 0.85, 0.80, 1.0)
+   slate     = Color(0.20, 0.25, 0.32, 1.0)
+
+   // General Procedural Color Providers
+   with_alpha: Color, Float => Color
+   with_alpha = c, a => Color(c.r, c.g, c.b, a)
+
+   glass: (Int => Color), Float => (Int => Color)
+   glass = fn, a => (i => with_alpha(fn(i), a))
+
+   // Continuous Color Gradient Providers (t in [0.0, 1.0] => Color)
+   gradient: Color, Color => (Float => Color)
+   gradient = c1, c2 =>
+      t =>
+         tc = t < 0.0 | 0.0 | (t > 1.0 | 1.0 | t)
+         lerp(c1, c2, tc)
+
+   gradient_oklab: Color, Color => (Float => Color)
+   gradient_oklab = c1, c2 =>
+      t =>
+         tc = t < 0.0 | 0.0 | (t > 1.0 | 1.0 | t)
+         res = lerp_oklab(Rgba(c1.r, c1.g, c1.b, c1.a), Rgba(c2.r, c2.g, c2.b, c2.a), tc)
+         Color(res.r, res.g, res.b, res.a)
+
+   uniform: Color => (Int => Color)
+   uniform = c => (i => c)
+
+   stripes: Color, Color => (Int => Color)
+   stripes = c1, c2 => (i => i % 2 == 0 | c1 | c2)
+
+   // 7-stripe Rainbow (КОЖЗГСФ: Red, Orange, Yellow, Green, Cyan/Голубой, Blue/Синий, Violet/Фиолетовый)
+   rainbow: Int => Color
+   rainbow = idx =>
+      idx % 7
+         [0] red
+         [1] orange
+         [2] yellow
+         [3] green
+         [4] cyan
+         [5] blue
+         |   violet
+
+   warm: Int => Color
+   warm = idx =>
+      idx % 5
+         [0] Color(0.95, 0.25, 0.25, 1.0)
+         [1] Color(0.95, 0.50, 0.20, 1.0)
+         [2] Color(0.95, 0.75, 0.20, 1.0)
+         [3] Color(0.95, 0.35, 0.45, 1.0)
+         |   Color(0.85, 0.20, 0.30, 1.0)
+
+   cool: Int => Color
+   cool = idx =>
+      idx % 5
+         [0] Color(0.15, 0.85, 0.95, 1.0)
+         [1] Color(0.20, 0.65, 0.95, 1.0)
+         [2] Color(0.25, 0.40, 0.95, 1.0)
+         [3] Color(0.20, 0.85, 0.65, 1.0)
+         |   Color(0.60, 0.35, 0.95, 1.0)
 
    oklab: Float, Float, Float, Float => Oklab
    oklab = l, a, b, alpha => (l, a, b, alpha)
@@ -149,7 +233,7 @@
       lab_b = c(2)
       C = %sqrt(lab_a * lab_a + lab_b * lab_b)
       rad = math::atan2(lab_b, lab_a)
-      deg = rad * 180.0 / math::pi
+      deg = math::deg(rad)
       deg_pos = deg < 0.0 | deg + 360.0 | deg
       h = C < 1e-6 | 0.0 | deg_pos
       (L, C, h, c(3))
@@ -159,7 +243,7 @@
       L = c(0)
       C = c(1)
       h = c(2)
-      rad = h * math::pi / 180.0
+      rad = math::rad(h)
       lab_a = C * %cos(rad)
       lab_b = C * %sin(rad)
       (L, lab_a, lab_b, c(3))
@@ -292,23 +376,23 @@
    rgb24: Int, Int, Int => Int
    rgb24 = r, g, b => pack_rgb(r, g, b)
 
-   red: Int => Int
-   red = c => (c .>. 16) .&. 255
+   red24: Int => Int
+   red24 = c => (c .>. 16) .&. 255
 
-   green: Int => Int
-   green = c => (c .>. 8) .&. 255
+   green24: Int => Int
+   green24 = c => (c .>. 8) .&. 255
 
-   blue: Int => Int
-   blue = c => c .&. 255
+   blue24: Int => Int
+   blue24 = c => c .&. 255
 
    // Blend c1 and c2: t is 0..100 (percentage of c2)
    blend: Int, Int, Int => Int
    blend = c1, c2, t =>
       p = t < 0 | 0 | (t > 100 | 100 | t)
       inv = 100 - p
-      r = (red(c1) * inv + red(c2) * p) / 100
-      g = (green(c1) * inv + green(c2) * p) / 100
-      b = (blue(c1) * inv + blue(c2) * p) / 100
+      r = (red24(c1) * inv + red24(c2) * p) / 100
+      g = (green24(c1) * inv + green24(c2) * p) / 100
+      b = (blue24(c1) * inv + blue24(c2) * p) / 100
       pack_rgb(r, g, b)
 
    // Lighten color by percent (0..100) towards white
@@ -324,67 +408,48 @@
    // Convert color to grayscale using standard ITU-R BT.601 perceptual weights
    grayscale: Int => Int
    grayscale = c =>
-      y = (red(c) * 299 + green(c) * 587 + blue(c) * 114) / 1000
+      y = (red24(c) * 299 + green24(c) * 587 + blue24(c) * 114) / 1000
       pack_rgb(y, y, y)
 
    // Relative luminance (0..1000)
    luminance: Int => Int
    luminance = c =>
-      (red(c) * 299 + green(c) * 587 + blue(c) * 114) / 1000
-
-   // Parse hex character to 0..15 (or -1 if invalid)
-   hex_digit: Int => Int
-   hex_digit = ch =>
-      ch !< '0' && ch !> '9' | ch - 48
-         | (ch !< 'a' && ch !> 'f' | ch - 87
-            | (ch !< 'A' && ch !> 'F' | ch - 55 | -1))
+      (red24(c) * 299 + green24(c) * 587 + blue24(c) * 114) / 1000
 
    // Parse hex string (e.g. "#RRGGBB", "RRGGBB", "#RGB", "RGB")
    from_hex_str: String => Int
    from_hex_str = s =>
       len = ?s
-      len == 0 | 0
+      len == 0 | --| 0
+      start = s(0) == '#' | 1 | 0
+      n = len - start
+      n != 6 && n != 3 | --| 0
+      val' = 0
+      ok' = <+>
+      start..len @ i =>
+         ascii::hex_value(s(i))
+            | d => val' = (val' .<. 4) .|. d
+            |
+               ok' = <->
+               -->
+      !ok' | --| 0
+      n == 6
+         | val'
          |
-            has_hash = s(0) == '#'
-            start = has_hash | 1 | 0
-            n = len - start
-            n == 6
-               |
-                  r1 = hex_digit(s(start))
-                  r2 = hex_digit(s(start + 1))
-                  g1 = hex_digit(s(start + 2))
-                  g2 = hex_digit(s(start + 3))
-                  b1 = hex_digit(s(start + 4))
-                  b2 = hex_digit(s(start + 5))
-                  r1 < 0 || r2 < 0 || g1 < 0 || g2 < 0 || b1 < 0 || b2 < 0
-                     | 0
-                     | pack_rgb((r1 .<. 4) .|. r2, (g1 .<. 4) .|. g2, (b1 .<. 4) .|. b2)
-               |
-                  n == 3
-                     |
-                        r = hex_digit(s(start))
-                        g = hex_digit(s(start + 1))
-                        b = hex_digit(s(start + 2))
-                        r < 0 || g < 0 || b < 0
-                           | 0
-                           | pack_rgb((r .<. 4) .|. r, (g .<. 4) .|. g, (b .<. 4) .|. b)
-                     | 0
+            r = (val' .>. 8) .&. 0xF
+            g = (val' .>. 4) .&. 0xF
+            b = val' .&. 0xF
+            pack_rgb((r .<. 4) .|. r, (g .<. 4) .|. g, (b .<. 4) .|. b)
 
    // Format color as hex string ("#rrggbb")
    to_hex_str: Int => String
    to_hex_str = c =>
-      hex_chars = "0123456789abcdef"
-      r = red(c)
-      g = green(c)
-      b = blue(c)
       buf = {7}
       buf += '#'
-      buf += hex_chars(r .>. 4)
-      buf += hex_chars(r .&. 15)
-      buf += hex_chars(g .>. 4)
-      buf += hex_chars(g .&. 15)
-      buf += hex_chars(b .>. 4)
-      buf += hex_chars(b .&. 15)
+      (red24, green24, blue24) @ fn =>
+         ch = fn(c)
+         buf += ascii::hex_char_lower(ch .>. 4)
+         buf += ascii::hex_char_lower(ch .&. 15)
       +buf
 
    // Constants

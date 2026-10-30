@@ -6,9 +6,9 @@
 
 add_ten = x => x + 10
 
-#type IntArr (Int){}
-#type UserArr (User){}
-#type Matrix (IntArr){}
+#type IntArr Int{}
+#type UserArr User{}
+#type Matrix IntArr{}
 
 // 1. Basic array element unwrap
 a = IntArr()
@@ -24,8 +24,8 @@ io::out $ str::from_int(z)
 
 // 2. Member chaining: users(i)!!.name
 users = UserArr()
-users += User(("Alice", 30))
-users += User(("Bob", 25))
+users += User("Alice", 30)
+users += User("Bob", 25)
 io::out $ users(0)!!.name
 io::out $ str::from_int(users(1)!!.age)
 

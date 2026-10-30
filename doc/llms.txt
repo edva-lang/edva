@@ -16,7 +16,8 @@
 - **Integer Literals & Types**:
   - `Int` is fixed 64-bit (`i64`) on all CPU architectures (no target-dependent `isize`/`usize`).
     Machine pointer width is represented by `Addr`.
-  - Unsuffixed integer literals default to `Int` (or the type set by `#pragma number <type>`).
+  - Unsuffixed integer literals default to `Int` (or the type set by `#pragma integer <type>`).
+  - Unsuffixed float literals default to `Float` (or the type set by `#pragma float <type>`).
   - The type system never silently coerces ambiguous expressions or unresolved type variables
     to `Int`. Unresolved types emit `E3103`.
 - **Binary Comparisons**: `<`, `>`, `==`, `!=`, `!<` (greater-or-equal), `!>` (less-or-equal).

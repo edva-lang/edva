@@ -104,9 +104,14 @@ Bitwise and saturating intrinsics strictly require `Int` operands or homogeneous
 | `%rotr(x, n)` | `x`: `Int`/`(Int * N)`, `n`: `Int`/`(Int * N)` | Same as `x` | `@llvm.fshr` |
 | `%uadd_sat(a, b)` | `Int`, `(Int * N)` | Same as args | `@llvm.uadd.sat` |
 | `%usub_sat(a, b)` | `Int`, `(Int * N)` | Same as args | `@llvm.usub.sat` |
+| `%bitcast(T, x)` | `T`: numeric scalar or SIMD tuple type, `x`: equal-width numeric scalar or SIMD tuple | `T` | `bitcast` |
 
 `%uadd_sat` and `%usub_sat` treat operands as unsigned 64-bit integers. Underflow in `%usub_sat`
 saturates at `0`.
+
+`%bitcast(T, x)` reinterprets the raw bits of `x` as type `T` without numeric conversion (for example,
+`%bitcast(u32, 1.0f32)` or `%bitcast((i32 * 4), vf)`). Both `T` and the type of `x` must have the exact
+same bit width; mismatched bit widths or non-numeric types are rejected with `E3084`.
 
 ## Memory block primitives
 

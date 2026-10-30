@@ -48,7 +48,7 @@ b4 = {16}
 b4 += "ab"
 s4 = +b4
 
-m ^ (s1) = 999
+m ^ s1 = 999
 
 io::out $ str::from_int(?s1)
 io::out $ (m ^? s2) | "s2 found" | "s2 not found"

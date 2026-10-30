@@ -17,15 +17,15 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.sys::STDOUT" = external global i64
 @"var.sys::STDERR" = external global i64
 @"var.sys::addr_null" = external global ptr
-@"var.event::READ" = global i64 0
-@"var.event::WRITE" = global i64 0
-@"var.event::PRI" = global i64 0
-@"var.event::ERR" = global i64 0
-@"var.event::HUP" = global i64 0
-@"var.event::RDHUP" = global i64 0
-@"var.event::CTL_ADD" = global i64 0
-@"var.event::CTL_DEL" = global i64 0
-@"var.event::CTL_MOD" = global i64 0
+@"var.event::READ" = global i64 1
+@"var.event::WRITE" = global i64 2
+@"var.event::PRI" = global i64 4
+@"var.event::ERR" = global i64 8
+@"var.event::HUP" = global i64 16
+@"var.event::RDHUP" = global i64 8192
+@"var.event::CTL_ADD" = global i64 1
+@"var.event::CTL_DEL" = global i64 2
+@"var.event::CTL_MOD" = global i64 3
 @clo.const = internal constant { ptr, ptr } { ptr @"event::new_with_cap", ptr null }
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"event::new", ptr null }
 @"var.event::new" = global ptr null
@@ -60,8 +60,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.event::poll_out" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_event, ptr null }]
 
-declare i32 @printf(ptr, ...)
-
 declare ptr @dva_arena_current()
 
 declare ptr @dva_arena_set_current(ptr)
@@ -69,10 +67,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -90,10 +84,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -142,9 +132,13 @@ declare i64 @read(i32, ptr, i64)
 
 declare i64 @lseek(i32, i64, i64)
 
+declare i64 @write(i32, ptr, i64)
+
 declare i64 @writev(i32, ptr, i64)
 
 declare i32 @ioctl(i32, i64, i64, ...)
+
+declare void @exit(i32)
 
 declare i64 @htons(i64)
 
@@ -203,6 +197,8 @@ declare ptr @opendir(ptr)
 declare ptr @readdir(ptr)
 
 declare i64 @closedir(ptr)
+
+declare i64 @strlen(ptr)
 
 declare i64 @strcmp(ptr, ptr)
 

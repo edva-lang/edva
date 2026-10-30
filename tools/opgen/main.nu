@@ -28,7 +28,7 @@ def gen_operators_file [] {
         let t = ($d.tiers | where name == $o.tier | first)
         let sl = if $t.same_line { "<+>" } else { "<->" }
         let op = $"ast::BinaryOp\(($o.kind_self)\)"
-        let info = $"BinOpInfo\(\(($t.lbp), ($t.rbp), ($op), ($sl)\)\)"
+        let info = $"BinOpInfo\(($t.lbp), ($t.rbp), ($op), ($sl)\)"
         $"      [\"($o.symbol)\"]  <+ ($info) +>"
     } | str join "\n")
     [

@@ -21,9 +21,9 @@ io::out $ classify(<+ 42 +>)
 io::out $ classify(<+ "x" +>)
 
 // Array types compare by element type.
-#type Ints (Int){}
-#type Ints2 (Int){}
-#type Strs (String){}
+#type Ints Int{}
+#type Ints2 Int{}
+#type Strs String{}
 
 io::out $ (Ints == Ints2 | 1 | 0)
 io::out $ (Ints == Strs | 1 | 0)

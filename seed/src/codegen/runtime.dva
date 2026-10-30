@@ -3,6 +3,7 @@
 #use(import) llvm
 #use "../ast"
 #use "../diag"
+#use "const"
 #use "str"
 #use "../tast"
 #use "../unify"
@@ -58,7 +59,7 @@ dbg: String => Int
 dbg = s => types::dbg(s)
 
 empty_fndef: FnDef
-empty_fndef = FnDef(("", ast::Names(), ast::Expr(Var, "")))
+empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
 
 #private
    print: String => Int
@@ -122,23 +123,29 @@ emit_abort_msg = cg, msg, gname =>
          dead_bb = LLVMAppendBasicBlock(parent, "no_rt.abort")
          LLVMPositionBuilderAtEnd(cg.builder, dead_bb)
       |
-         gv = const_string_global(cg, msg, gname)
-         mlen = ?msg
-         i8t = LLVMInt8Type!
-         i32t = LLVMInt32Type!
-         zero = LLVMConstInt(LLVMInt64Type!, 0, 0)
-         garr = LLVMTypeOf(gv)
-         msg_ptr = types::gep2(cg, garr, gv, zero, zero, "fail.msg.ptr")
-         wargs = {24}
-         sb = &wargs
-         @[sb] = LLVMConstInt(i32t, 2, 0)
-         @[sb + 8] = msg_ptr
-         @[sb + 16] = LLVMConstInt(LLVMInt64Type!, mlen, 0)
-         LLVMBuildCall2(cg.builder, cg.write_t!!, cg.write_fn!!, sb, 3, "")
-         eargs = {16}
-         esb = &eargs
-         @[esb] = LLVMConstInt(i32t, 1, 0)
-         LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, esb, 1, "")
+         types::is_wasm_target(cg)
+            |
+               types::emit_wasm_trap(cg)
+            |
+               wf = types::ensure_write_fn(cg)
+               ef = types::ensure_exit_fn(cg)
+               gv = const_string_global(cg, msg, gname)
+               mlen = ?msg
+               i8t = LLVMInt8Type!
+               i32t = LLVMInt32Type!
+               zero = LLVMConstInt(LLVMInt64Type!, 0, 0)
+               garr = LLVMTypeOf(gv)
+               msg_ptr = types::gep2(cg, garr, gv, zero, zero, "fail.msg.ptr")
+               wargs = {24}
+               sb = &wargs
+               @[sb] = LLVMConstInt(i32t, 2, 0)
+               @[sb + 8] = msg_ptr
+               @[sb + 16] = LLVMConstInt(LLVMInt64Type!, mlen, 0)
+               LLVMBuildCall2(cg.builder, wf.0, wf.1, sb, 3, "")
+               eargs = {16}
+               esb = &eargs
+               @[esb] = LLVMConstInt(i32t, 1, 0)
+               LLVMBuildCall2(cg.builder, ef.0, ef.1, esb, 1, "")
 
 // Emits the full runtime: the arena globals + helper functions, the message
 // globals, the FNV hash, and the string-overflow intrinsic declaration.
@@ -168,12 +175,6 @@ codegen_emit_runtime_module = cg =>
    cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty) +>
    free_t = types::fn_type1(LLVMVoidType!, i8p)
    LLVMAddFunction(cg.module, "free", free_t)
-   w_ty = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
-   cg.write_t = <+ w_ty +>
-   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty) +>
-   e_ty = types::fn_type1(LLVMVoidType!, i32t)
-   cg.exit_t = <+ e_ty +>
-   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty) +>
 
    const_string_global(cg, diag::E4002_string_length_overflow!, "str_overflow_msg")
    const_string_global(cg, diag::E4004_arena_allocation_too_large!, "arena_toobig_msg")
@@ -225,12 +226,6 @@ codegen_emit_runtime_module = cg =>
    adopt_params += atp
    adopt_t = stmt::fn_type_n(cg, LLVMVoidType!, adopt_params, 2)
    LLVMAddFunction(cg.module, "dva_arena_adopt", adopt_t)
-
-   strlen_t = types::fn_type1(i64t, i8p)
-   LLVMAddFunction(cg.module, "strlen", strlen_t)
-   mc_ty = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
-   cg.memcmp_t = <+ mc_ty +>
-   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty) +>
 
    hash_params = types::Addrs()
    hash_params += i8p
@@ -302,12 +297,6 @@ codegen_emit_runtime_full = cg =>
    cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty2) +>
    free_t = types::fn_type1(LLVMVoidType!, i8p)
    free_fn = LLVMAddFunction(cg.module, "free", free_t)
-   w_ty2 = types::fn_type3(LLVMInt64Type!, i32t, i8p, i64t)
-   cg.write_t = <+ w_ty2 +>
-   cg.write_fn = <+ LLVMAddFunction(cg.module, "write", w_ty2) +>
-   e_ty2 = types::fn_type1(LLVMVoidType!, i32t)
-   cg.exit_t = <+ e_ty2 +>
-   cg.exit_fn = <+ LLVMAddFunction(cg.module, "exit", e_ty2) +>
 
    // message globals
    const_string_global(cg, diag::E4002_string_length_overflow!, "str_overflow_msg")
@@ -364,6 +353,9 @@ codegen_emit_runtime_full = cg =>
    LLVMPositionBuilderAtEnd(cg.builder, al_e)
    a1 = LLVMGetParam(alloc_fn, 0)
    s1 = LLVMGetParam(alloc_fn, 1)
+   al_15 = LLVMConstInt(i64t, 15, 0)
+   al_neg16 = LLVMConstInt(i64t, -16, 0)
+   s1_al = LLVMBuildAnd(cg.builder, LLVMBuildAdd(cg.builder, s1, al_15, "al.add"), al_neg16, "s1.aligned")
    cap_gep = LLVMBuildStructGEP2(cg.builder, at, a1, 0, "cap_gep")
    cap_vl = LLVMBuildLoad2(cg.builder, i64t, cap_gep, "cap")
    nc_gep = LLVMBuildStructGEP2(cg.builder, at, a1, 1, "num_chunks_gep")
@@ -382,27 +374,31 @@ codegen_emit_runtime_full = cg =>
    cap_phi = LLVMBuildPhi(cg.builder, i64t, "cap.phi")
    stmt::llvm_add_incoming1(cg, cap_phi, cap_v, al_l)
    stmt::llvm_add_incoming1(cg, cap_phi, cap_vl, al_e)
-   too_big = LLVMBuildICmp(cg.builder, 38, s1, cap_phi, "size_gt_cap")
+   too_big = LLVMBuildICmp(cg.builder, 38, s1_al, cap_phi, "size_gt_cap")
    LLVMBuildCondBr(cg.builder, too_big, al_b, al_c)
    LLVMPositionBuilderAtEnd(cg.builder, al_b)
-   pargs = {24}
-   pb = &pargs
-   @[pb] = LLVMGetNamedGlobal(cg.module, "arena_toobig_msg")
-   @[pb + 8] = s1
-   @[pb + 16] = cap_phi
-   LLVMBuildCall2(cg.builder,
-      LLVMFunctionType(i32t, psb, 1, 1),
-      LLVMGetNamedFunction(cg.module, "printf"), pb, 3, "")
-   eargs = {16}
-   eb = &eargs
-   @[eb] = LLVMConstInt(i32t, 1, 0)
-   LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, eb, 1, "")
+   types::is_wasm_target(cg)
+      |
+         types::emit_wasm_trap(cg)
+      |
+         pf = types::ensure_printf_fn(cg)
+         ef = types::ensure_exit_fn(cg)
+         pargs = {24}
+         pb = &pargs
+         @[pb] = LLVMGetNamedGlobal(cg.module, "arena_toobig_msg")
+         @[pb + 8] = s1_al
+         @[pb + 16] = cap_phi
+         LLVMBuildCall2(cg.builder, pf.0, pf.1, pb, 3, "")
+         eargs = {16}
+         eb = &eargs
+         @[eb] = LLVMConstInt(i32t, 1, 0)
+         LLVMBuildCall2(cg.builder, ef.0, ef.1, eb, 1, "")
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, al_c)
    no_c = LLVMBuildICmp(cg.builder, 32, nc_vl, zero, "no_chunks")
    LLVMBuildCondBr(cg.builder, no_c, al_n, al_f)
    LLVMPositionBuilderAtEnd(cg.builder, al_f)
-   new_off = LLVMBuildAdd(cg.builder, off_vl, s1, "new_off")
+   new_off = LLVMBuildAdd(cg.builder, off_vl, s1_al, "new_off")
    full = LLVMBuildICmp(cg.builder, 38, new_off, cap_phi, "chunk_full")
    LLVMBuildCondBr(cg.builder, full, al_n, al_u)
    LLVMPositionBuilderAtEnd(cg.builder, al_u)
@@ -432,7 +428,7 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, chunk_v, new_slot)
    nc_next = LLVMBuildAdd(cg.builder, nc_vl, one, "num_chunks_next")
    LLVMBuildStore(cg.builder, nc_next, nc_gep)
-   LLVMBuildStore(cg.builder, s1, off_gep)
+   LLVMBuildStore(cg.builder, s1_al, off_gep)
    LLVMBuildRet(cg.builder, chunk_v)
 
    // dva_arena_save(ptr) -> i64
@@ -806,12 +802,6 @@ codegen_emit_runtime_full = cg =>
    LLVMPositionBuilderAtEnd(cg.builder, ad_d)
    LLVMBuildRetVoid(cg.builder)
 
-   strlen_t = types::fn_type1(i64t, i8p)
-   strlen_fn = LLVMAddFunction(cg.module, "strlen", strlen_t)
-   mc_ty3 = types::fn_type3(LLVMInt32Type!, i8p, i8p, i64t)
-   cg.memcmp_t = <+ mc_ty3 +>
-   cg.memcmp_fn = <+ LLVMAddFunction(cg.module, "memcmp", mc_ty3) +>
-
    // dva_hash_string(ptr, i64) -> i64
    hash_params = types::Addrs()
    hash_params += i8p
@@ -949,6 +939,7 @@ record_meta_from_ti = cg, ti =>
       | <-->
       |
          ti
+            [Align a] record_meta_from_ti(cg, a.1)
             [Rec rr]
                nf = ?rr.0
                <+ build_rec_meta_packed(cg, rr.0, 0, nf, types::Addrs(), ast::Names(),
@@ -973,6 +964,10 @@ rec_field_vt = cg, rf =>
       | ast::ValueType(Slice)
       |
          rf.rec_type
+            [Align a]
+               stmt::ti_is_slice(a.1)
+                  | ast::ValueType(Slice)
+                  | types::vt_from_ti(a.1)
             [TypeVar name]
                ti = types::typedef_ti(cg, name)
                stmt::ti_is_slice(ti)
@@ -1059,7 +1054,7 @@ codegen_register_types_step = cg, stmts, i =>
          e = stmts(i)!!
          e
             [TypeDecl t] add_type(cg, t.name, t.type_info)
-            [Block b] codegen_register_types(cg, b.exprs)
+            [Block b] codegen_register_types(cg, b)
          codegen_register_types_step(cg, stmts, i + 1)
 
 string_has_double_colon: String, Int => <>
@@ -1117,8 +1112,8 @@ codegen_forward_registry = cg, t =>
          | <-->
    is_partial = !is_bf_fwd && is_partial_anno(cg, tv.0, t.7, t.8)
    rec_m0_opt = rec_m | m => <+ m.0 +> | <-->
-   cg.vars += types::CgVar((t.0, vt', <->, t.7, rec_m0_opt, rec_fnames, slot_opt,
-      cg.in_fn, is_partial, types::field_vts(cg, ti), <-->))
+   cg.vars += types::CgVar(t.0, vt', <->, t.7, rec_m0_opt, rec_fnames, slot_opt,
+      cg.in_fn, is_partial, types::field_vts(cg, ti), <-->)
    bf_opt_fwd
       | bfi =>
          slot_opt
@@ -1151,7 +1146,7 @@ codegen_register_forwards_step = cg, stmts, i =>
          e
             [Assign t]
                is_fwd_expr(cg, t) | codegen_forward_registry(cg, t)
-            [Block b] codegen_register_forwards(cg, b.exprs)
+            [Block b] codegen_register_forwards(cg, b)
          codegen_register_forwards_step(cg, stmts, i + 1)
 
 // "b += rhs" — in-place Builder append (also "arr += v" for growable arrays).
@@ -1186,7 +1181,7 @@ codegen_emit_array_append = cg, t =>
       | codegen_emit_array_append_valid(cg, t)
 
 // The element type carried by a growable-array typedef such as
-// '#type Ints (Int){}'. It remains compile-time-only metadata.
+// '#type Ints Int{}'. It remains compile-time-only metadata.
 array_elem_type: types::Cg, String => (ast::ValueType, <>)
 array_elem_type = cg, name =>
    ti = types::typedef_ti(cg, types::var_dtype(cg, name))
@@ -1241,7 +1236,7 @@ codegen_emit_member_compound = cg, t, m =>
 binding_state_at: types::Cg, String, Int => types::BindingState
 binding_state_at = cg, name, i =>
    i < 0
-      | types::BindingState((<->, <->))
+      | types::BindingState(<->, <->)
       |
          b = cg.bindings(i)!!
          is_cur = (!cg.in_fn && !b.is_local) ||
@@ -1252,7 +1247,7 @@ binding_state_at = cg, name, i =>
             cg.current_module
          mod_ok = b.is_local || (b.mod_name == req_mod)
          b.name == bname && mod_ok
-            | types::BindingState((<+>, cur_mut))
+            | types::BindingState(<+>, cur_mut)
             | binding_state_at(cg, name, i - 1)
 
 name_is_primed: String => <>
@@ -1267,7 +1262,7 @@ binding_add = cg, name, mutable =>
    bname = types::decl_bare_name(name, 0)
    mname = types::name_is_qualified(name, 0) | types::decl_module(name, 0) |
       cg.current_module
-   cg.bindings += types::BindingMut((bname, mname, cg.in_fn, mutable))
+   cg.bindings += types::BindingMut(bname, mname, cg.in_fn, mutable)
 
 binding_truncate_step: types::BindingMuts, Int, Int, types::BindingMuts => types::BindingMuts
 binding_truncate_step = bs, n, i, acc =>
@@ -1370,11 +1365,11 @@ codegen_emit_plain_assign = cg, t =>
    is_fn_decl = !cg.in_fn && (t.5 [Fn])
    is_fn_decl
       |
-         f = t.5 [Fn fe] fe | ast::FnExpr((ast::Names(), ast::Names(),
-            ast::Expr(Var, "")))
+         f = t.5 [Fn fe] fe | ast::FnExpr(ast::Names(), ast::Names(),
+            ast::Expr(Var, ""))
          types::has_fn_name(cg, t.0)
             |
-               types::add_fn_def(cg, types::FnDef((t.0, f.params, f.body)))
+               types::add_fn_def(cg, types::FnDef(t.0, f.params, f.body))
                types::is_fn_name(cg, t.0)
                   | stmt::compile_fn_lazy_force(cg, t.0, ast::VTypes())
       |
@@ -1399,9 +1394,9 @@ rhs_is_inexhaustive_choice: ast::Expr => <>
 rhs_is_inexhaustive_choice = e =>
    e [Choice c]
       nb = ?c.branches
-      last_br = nb > 0 | c.branches(nb - 1)!! | ast::ChoiceBranch((
+      last_br = nb > 0 | c.branches(nb - 1)!! | ast::ChoiceBranch(
          ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Int, 0), ast::Names(),
-         ast::Names(), <->, ast::Expr(Int, 0)))
+         ast::Names(), <->, ast::Expr(Int, 0))
       is_bare = last_br.kind [Bare]
       has_bare = nb > 0 && is_bare
       !c.is_exhaustive && !has_bare
@@ -1425,7 +1420,7 @@ codegen_emit_plain_assign_val = cg, t =>
       |
          codegen_emit_plain_assign_val_store(cg, t, ev)
          t.5 [CompileTime ct]
-            ct_res = match::ctfe_eval(cg, ct.expr, types::CtFrames(), 0)
+            ct_res = match::ctfe_eval(cg, ct, types::CtFrames(), 0)
             !match::ctfe_is_none(ct_res.0)
                |
                   types::ct_val_bind_push(t.0, ct_res.0)
@@ -1445,7 +1440,7 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    !fresh_local | codegen_check_flag_to_heap_assign(cg, t, ev.0)
    !fresh_local | codegen_check_rebind_type(cg, t.0, ev.1, t.3, t.5)
    !fresh_local | codegen_check_annotated_record_rebind(cg, t, ev.1)
-   is_clo = main::is_fn_vt(ev.1) || (expr::is_fnv_t(t.5))
+   is_clo = main::is_fn_vt(ev.1) || expr::is_fnv_t(t.5)
    is_clo && !match::choice_mixed_declared_fns(cg, t.5)
       |
          cg.closure_vars += t.0
@@ -1485,8 +1480,8 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    final_rm0_opt = <>(prior_rt) | prior_rt | rm_rt_opt
    final_rm1 = use_prior | prior_fnames | rm_fnames
    final_dt = use_prior | types::var_dtype(cg, t.0) | dtype
-   cg.vars += types::CgVar((t.0, ev.1, is_heap, final_dt, final_rm0_opt, final_rm1,
-      <+ slot +>, is_local, <->, cg.last_fvts, <-->))
+   cg.vars += types::CgVar(t.0, ev.1, is_heap, final_dt, final_rm0_opt, final_rm1,
+      <+ slot +>, is_local, <->, cg.last_fvts, <-->)
    is_rec_expr = t.5 [Record]
    is_part = !fresh_local | main::var_partial(cg, t.0) | <->
    is_whole = is_composite_vt(ev.1) | <+> | (is_rec_expr | <+> | is_part)
@@ -1649,7 +1644,7 @@ member_root_name = e =>
 // "r.field = v" / "r.0 = v" — a member write: GEP into the record and store.
 codegen_emit_member_assign: types::Cg, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 codegen_emit_member_assign = cg, t =>
-   m = (t.6 [Member mm] mm | ast::MemberExpr((ast::Expr(Var, ""), "", <->, ast::Expr(Var, ""), 0, 0)))
+   m = (t.6 [Member mm] mm | ast::MemberExpr(ast::Expr(Var, ""), "", <->, ast::Expr(Var, ""), 0, 0))
    root_name = member_root_name(m.target)
    root_vt = types::var_type(cg, root_name)
    root_vt [Str] types::init_error(cg, "E3066", "Cannot write member '" + m.field_name +
@@ -1703,7 +1698,7 @@ member_assign_bitfield = cg, root_name, m, t, bfi =>
          vname = m.target [Var v] v | ""
          bf_ptr = (vname != "" | types::var_slot(cg, vname) | <-->)
             | _
-            | (expr::codegen_eval(cg, m.target)).0
+            | expr::codegen_eval(cg, m.target).0
          saved_discard = cg.discard_result
          cg.discard_result = <->
          ev = expr::codegen_eval(cg, t.5)
@@ -2005,9 +2000,9 @@ codegen_emit_call_assign = cg, t, call =>
 // "#exit code" — truncate to i32, destroy the global arena, call exit(code),
 // park the builder at a fresh dead block so subsequent emission (including
 // main's destroy+ret epilogue) stays valid.
-codegen_emit_exit: types::Cg, ast::ExitExpr => ()
+codegen_emit_exit: types::Cg, ast::Expr => ()
 codegen_emit_exit = cg, e =>
-   ev = expr::codegen_eval(cg, e.code)
+   ev = expr::codegen_eval(cg, e)
    types::is_int_vt(ev.1)
       |
          i32t = LLVMInt32Type!
@@ -2023,10 +2018,11 @@ codegen_emit_exit = cg, e =>
                LLVMPositionBuilderAtEnd(cg.builder, dead')
             |
                emit_arena_destroy(cg)
+               ef = types::ensure_exit_fn(cg)
                eargs = {16}
                esb = &eargs
                @[esb] = tr
-               LLVMBuildCall2(cg.builder, cg.exit_t!!, cg.exit_fn!!, esb, 1,
+               LLVMBuildCall2(cg.builder, ef.0, ef.1, esb, 1,
                   "")
                LLVMBuildUnreachable(cg.builder)
                cg.exited = <+>
@@ -2042,7 +2038,7 @@ codegen_emit_stmt = cg, e =>
       [Assign t] codegen_emit_assign(cg, t)
       [Exit t] codegen_emit_exit(cg, t)
       [TypeDecl t] add_type(cg, t.name, t.type_info)
-      [Block b] codegen_emit_stmts(cg, b.exprs)
+      [Block b] codegen_emit_stmts(cg, b)
       [Foreign f] stmt::codegen_emit_foreign_var(cg, f)
       | expr::codegen_eval(cg, e); 0
 
@@ -2056,32 +2052,32 @@ update_type_ti = cg, name, ti =>
    idx !< 0
       |
          td = cg.typedefs(idx)!!
-         cg.typedefs(idx) = types::TypeDef((name, ti, td.rt, td.in_progress, td.fnames)) !| _
+         cg.typedefs(idx) = types::TypeDef(name, ti, td.rt, td.in_progress, td.fnames) !| _
 
 update_type_rec: types::Cg, String, ast::TypeInfo, <Addr|>, ast::Names => ()
 update_type_rec = cg, name, ti, rt, fnames =>
    indices = cg.type_indices
    idx = indices ^ name | _ | -1
    idx !< 0
-      | cg.typedefs(idx) = types::TypeDef((name, ti, rt, <->, fnames)) !| _
+      | cg.typedefs(idx) = types::TypeDef(name, ti, rt, <->, fnames) !| _
 
 push_typedef: types::Cg, types::TypeDef => ()
 push_typedef = cg, td =>
    indices = cg.type_indices
-   indices ^ (td.name) = ?cg.typedefs
+   indices ^ td.name = ?cg.typedefs
    cg.typedefs += td
 
 add_type: types::Cg, String, ast::TypeInfo => ()
 add_type = cg, name, ti =>
    types::has_type_name(cg, name)
       | update_type_ti(cg, name, ti)
-      | push_typedef(cg, types::TypeDef((name, ti, <-->, <->, ast::Names())))
+      | push_typedef(cg, types::TypeDef(name, ti, <-->, <->, ast::Names()))
 
 add_type_rec: types::Cg, String, ast::TypeInfo, <Addr|>, ast::Names => ()
 add_type_rec = cg, name, ti, rt, fnames =>
    types::has_type_name(cg, name)
       | update_type_rec(cg, name, ti, rt, fnames)
-      | push_typedef(cg, types::TypeDef((name, ti, rt, <->, fnames)))
+      | push_typedef(cg, types::TypeDef(name, ti, rt, <->, fnames))
 
 codegen_emit_stmts: types::Cg, ast::Exprs => ()
 codegen_emit_stmts = cg, stmts =>
@@ -2105,7 +2101,7 @@ codegen_register_global_ctor = cg, fn =>
    ctor_struct_type = LLVMStructType(sb3, 3, 0)
    vbuf = {24}
    svbuf = &vbuf
-   @[svbuf] = LLVMConstInt(i32t, 0maxu16, 0)
+   @[svbuf] = LLVMConstInt(i32t, const::max_u16, 0)
    @[svbuf + 8] = fn
    @[svbuf + 16] = LLVMConstNull(i8p)
    ctor_const = LLVMConstStruct(svbuf, 3, 0)
@@ -2306,7 +2302,8 @@ codegen_map_string_key_equal = cg, slot, key_val =>
    LLVMPositionBuilderAtEnd(cg.builder, eq_bb)
    stored_data = expr::codegen_string_data(cg, stored, "mk.sdata")
    new_data = expr::codegen_string_data(cg, key_val, "mk.ndata")
-   compared = types::call3(cg, cg.memcmp_t!!, cg.memcmp_fn!!, stored_data,
+   mc = types::ensure_memcmp_fn(cg)
+   compared = types::call3(cg, mc.0, mc.1, stored_data,
       new_data, new_len, "mk.memcmp")
    cmp_equal = LLVMBuildICmp(cg.builder, 32, compared,
       LLVMConstInt(LLVMInt32Type!, 0, 0), "mk.cmpeq")

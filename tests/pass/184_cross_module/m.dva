@@ -2,8 +2,8 @@
 
 #type Color <Red, Green>
 
-#type Tree <Leaf(Int), Branch((Tree[]))>
+#type Tree <Leaf(Int), Branch(Tree[])>
 
-#type Colors (Color){}
+#type Colors Color{}
 
 #type Env String ^ Int

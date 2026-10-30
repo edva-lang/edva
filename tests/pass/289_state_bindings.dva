@@ -3,9 +3,9 @@
 #use io
 
 #type Settings (volume: Int, active: <>)
-#type Stats (health: Int)
-#type Player (stats: Stats)
-#type IntArr (Int){}
+#type Stats (health: Int, mana: Int)
+#type Player (stats: Stats, id: Int)
+#type IntArr Int{}
 #type FlagBinding (get: (() => <>), set: (<> => ()))
 #type IntBinding (get: (() => Int), set: (Int => ()))
 
@@ -22,8 +22,8 @@ checkbox = label, binding =>
 get_player: () => Player
 get_player = !=>
    ::player_evals = ::player_evals + 1
-   st = Stats((100))
-   Player((st))
+   st = Stats(100, 50)
+   Player(st, 1)
 
 calc_idx: () => Int
 calc_idx = !=>
@@ -31,7 +31,7 @@ calc_idx = !=>
    1
 
 // 1. Direct record field lens
-s = Settings((75, <+>))
+s = Settings(75, <+>)
 b_vol = ~~s.volume
 io::out $ b_vol.get()
 b_vol.set(90)
@@ -84,7 +84,7 @@ c_to_f = c => c * 2 + 30
 f_to_c: Int => Int
 f_to_c = f => (f - 30) / 2
 
-c_temp = Settings((25, <+>))
+c_temp = Settings(25, <+>)
 f_lens = map_binding(~~c_temp.volume, c_to_f, f_to_c)
 io::out $ f_lens.get()
 f_lens.set(100)

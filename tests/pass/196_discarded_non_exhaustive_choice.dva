@@ -17,6 +17,6 @@ f = p =>
       [RBracket] io::out $ "rb"
    0
 
-io::out $ f(Tok((TokKind(Id), "n")))
-io::out $ f(Tok((TokKind(RBracket), "x")))
-io::out $ f(Tok((TokKind(Op), "+")))
+io::out $ f(Tok(TokKind(Id), "n"))
+io::out $ f(Tok(TokKind(RBracket), "x"))
+io::out $ f(Tok(TokKind(Op), "+"))

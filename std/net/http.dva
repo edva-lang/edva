@@ -210,7 +210,7 @@
    // line, render_headers flattens back to the wire form,
    // and lookup_header reads
    // a value case-insensitively.
-   #type Headers (String){}
+   #type Headers String{}
 
    // Case-insensitive ASCII byte equality: A-Z folds to a-z.
    ci_eq: Int, Int => i1

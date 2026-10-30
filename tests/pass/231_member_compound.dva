@@ -3,7 +3,7 @@
 // first (field-init tracking).
 #use io
 
-#type Ints (Int){}
+#type Ints Int{}
 #type R (m: Builder, a: Ints)
 r: R
 r.m = {4}

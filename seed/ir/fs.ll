@@ -13,6 +13,39 @@ target triple = "x86_64-unknown-linux-gnu"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
 @sys_argc_global = external global i64
 @sys_argv_global = external global ptr
+@"var.const::pi" = external global double
+@"var.const::tau" = external global double
+@"var.const::e" = external global double
+@"var.const::phi" = external global double
+@"var.const::inv_phi" = external global double
+@"var.const::sqrt2" = external global double
+@"var.const::sqrt3" = external global double
+@"var.const::ln2" = external global double
+@"var.const::ln10" = external global double
+@"var.const::max_i64" = external global i64
+@"var.const::min_i64" = external global i64
+@"var.const::max_i32" = external global i32
+@"var.const::min_i32" = external global i32
+@"var.const::max_i16" = external global i16
+@"var.const::min_i16" = external global i16
+@"var.const::max_i8" = external global i8
+@"var.const::min_i8" = external global i8
+@"var.const::max_u64" = external global i64
+@"var.const::max_u32" = external global i32
+@"var.const::max_u16" = external global i16
+@"var.const::max_u8" = external global i8
+@"var.const::inf_f64" = external global double
+@"var.const::nan_f64" = external global double
+@"var.const::max_f64" = external global double
+@"var.const::min_f64" = external global double
+@"var.const::sub_f64" = external global double
+@"var.const::eps_f64" = external global double
+@"var.const::inf_f32" = external global float
+@"var.const::nan_f32" = external global float
+@"var.const::max_f32" = external global float
+@"var.const::min_f32" = external global float
+@"var.const::sub_f32" = external global float
+@"var.const::eps_f32" = external global float
 @"var.sys::STDIN" = external global i64
 @"var.sys::STDOUT" = external global i64
 @"var.sys::STDERR" = external global i64
@@ -184,8 +217,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.fs::list_dir" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_fs, ptr null }]
 
-declare i32 @printf(ptr, ...)
-
 declare ptr @dva_arena_current()
 
 declare ptr @dva_arena_set_current(ptr)
@@ -193,10 +224,6 @@ declare ptr @dva_arena_set_current(ptr)
 declare ptr @malloc(i64)
 
 declare void @free(ptr)
-
-declare i64 @write(i32, ptr, i64)
-
-declare void @exit(i32)
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
 declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
@@ -214,10 +241,6 @@ declare void @dva_arena_restore(ptr, i64)
 declare i1 @dva_arena_validate_tag(ptr, i64)
 
 declare void @dva_arena_adopt(ptr, ptr)
-
-declare i64 @strlen(ptr)
-
-declare i32 @memcmp(ptr, ptr, i64)
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -300,9 +323,13 @@ declare i64 @read(i32, ptr, i64)
 
 declare i64 @lseek(i32, i64, i64)
 
+declare i64 @write(i32, ptr, i64)
+
 declare i64 @writev(i32, ptr, i64)
 
 declare i32 @ioctl(i32, i64, i64, ...)
+
+declare void @exit(i32)
 
 declare i64 @htons(i64)
 
@@ -361,6 +388,8 @@ declare ptr @opendir(ptr)
 declare ptr @readdir(ptr)
 
 declare i64 @closedir(ptr)
+
+declare i64 @strlen(ptr)
 
 declare i64 @strcmp(ptr, ptr)
 
@@ -1484,6 +1513,8 @@ b.freeze.done:                                    ; preds = %b.freeze.copy, %b.f
   store i64 0, ptr %b.freeze.rst.cap, align 8
   br label %choice.exit87
 }
+
+declare i32 @memcmp(ptr, ptr, i64)
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #2
@@ -12336,7 +12367,7 @@ choice.exit83:                                    ; preds = %choice.else82, %cho
 
 choice.then101:                                   ; preds = %choice.exit
   %var.load104 = load i64, ptr %"var.res'", align 8
-  %subtmp = sub i64 0, %var.load104
+  %negtmp = sub i64 0, %var.load104
   br label %choice.exit103
 
 choice.else102:                                   ; preds = %choice.exit
@@ -12344,7 +12375,7 @@ choice.else102:                                   ; preds = %choice.exit
   br label %choice.exit103
 
 choice.exit103:                                   ; preds = %choice.else102, %choice.then101
-  %choice.res106 = phi i64 [ %subtmp, %choice.then101 ], [ %var.load105, %choice.else102 ]
+  %choice.res106 = phi i64 [ %negtmp, %choice.then101 ], [ %var.load105, %choice.else102 ]
   ret i64 %choice.res106
 }
 
@@ -14210,6 +14241,8 @@ declare i32 @pthread_create(ptr, ptr, ptr, ptr)
 declare i32 @pthread_join(i64, ptr)
 
 declare void @pthread_exit(ptr)
+
+declare i32 @printf(ptr, ...)
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #1 = { "nounwind" }

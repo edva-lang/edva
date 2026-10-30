@@ -71,9 +71,16 @@ qualified access (`module::name`) receives compile error `E3004`.
 `name = value` (or `::name = value`) writes the marked global without creating a
 local shadow. The target must already exist.
 
-Use `#foreign` to declare C ABI bindings and `#export` to expose an Edva
-binding to C. Foreign signatures use Edva types; buffer addresses use `Addr`
-and the unary `&builder` or `&string` forms. See the
+Use `#foreign` to declare C ABI bindings and `#export` to expose Edva functions
+as C ABI symbols. Like `#public` and `#private`, `#export` supports all three
+scoping forms:
+
+- **Inline**: `#export add = a, b => a + b` (or with an alias: `#export "c_add" add = a, b => a + b`).
+- **Scoped block**: `#export` followed by an indented block of function declarations.
+- **Standing directive**: `#export` on its own line (with no indented block) exports all subsequent function declarations until `#public` or `#private`.
+
+Foreign signatures use Edva types; buffer addresses use `Addr` and the unary
+`&builder` or `&string` forms. See the
 [FFI and targets guide](../../guide/ffi-and-targets.qmd) for all foreign
 directives and linkage rules.
 

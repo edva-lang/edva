@@ -8,8 +8,8 @@
 // process/codebase_review.md).
 //
 // A JSON document parses into a recursive `Value` enum: String(String),
-// Number(Float), Boolean(<>), Null, Array((Value[])) and
-// Object((pairs[])) where pairs are (key, value) records. Array/Object
+// Number(Float), Boolean(<>), Null, Array(Value[]) and
+// Object(pairs[]) where pairs are (key, value) records. Array/Object
 // hold slice views over the parse arenas (the module-level `vals`/
 // `pairs` growable arrays), which the parser fills element-by-element.
 // The parser is a stateful recursive descent over the module-level
@@ -27,12 +27,12 @@
        Number(Float)
        Boolean(<>)
        Null
-       Array((Value[]))
-       Object(((key: String, value: Value)[]))
+       Array(Value[])
+       Object((key: String, value: Value)[])
    >
 
-   #type Values (Value){}
-   #type Pairs ((key: String, value: Value)){}
+   #type Values Value{}
+   #type Pairs (key: String, value: Value){}
    #type Result <Value | Error>
 
 src: String

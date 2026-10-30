@@ -29,6 +29,6 @@ io::out $ r.a + r.b
 #use io
 big = Env()
 0..20 @ i =>
-   big ^ (str::from_int(i)) = i * 10
+   big ^ str::from_int(i) = i * 10
 io::out $ ?big
 io::out $ (big ^ "19" | _ | _)

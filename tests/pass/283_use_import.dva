@@ -2,7 +2,7 @@
 #use io
 
 run = x =>
-   s' = State((10, "Item"))
+   s' = State(10, "Item")
    io::out $ render(s')
    s' = step(s')
    io::out $ render(s')

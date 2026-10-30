@@ -1,0 +1,54 @@
+// Verify #align directive and #align compile-time operator:
+// 1. #align N on records and types
+// 2. #align T and #align T operator
+// 3. Combined #align and #packed
+// 4. Arena auto-alignment to 16 bytes for odd allocations
+
+#use io
+#use mem
+
+#type AlignedVec #align 16 (
+   x: f32,
+   y: f32,
+   z: f32,
+   w: f32
+)
+
+#type CacheLineBlock #align 64 #packed (
+   flag: u8,
+   tag: u8
+)
+
+#type CacheLineBlock2 #packed #align 32 (
+   flag: u8,
+   tag: u8
+)
+
+// 1. #align compile-time operator
+io::out $ #align AlignedVec
+io::out $ #align AlignedVec
+io::out $ #size AlignedVec
+io::out $ #align CacheLineBlock
+io::out $ #size CacheLineBlock
+io::out $ #align CacheLineBlock2
+
+// 2. Arena 16-byte auto-alignment
+a = mem::arena_default!
+p1 = mem::alloc(a, 1)
+p2 = mem::alloc(a, 5)
+p3 = mem::alloc(a, 1513)
+p4 = mem::alloc(a, 64)
+
+io::out $ Int(p1) % 16
+io::out $ Int(p2) % 16
+io::out $ Int(p3) % 16
+io::out $ Int(p4) % 16
+
+// 3. Builder allocations in arena
+b1 = {1}
+b2 = {1512}
+b3 = {1024}
+
+io::out $ Int(&b1) % 16
+io::out $ Int(&b2) % 16
+io::out $ Int(&b3) % 16

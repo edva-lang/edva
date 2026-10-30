@@ -61,6 +61,7 @@ book:
         - reference/stdlib/ascii.qmd
         - reference/stdlib/ccl.qmd
         - reference/stdlib/color.qmd
+        - reference/stdlib/const.qmd
         - reference/stdlib/event.qmd
         - reference/stdlib/fmt.qmd
         - reference/stdlib/fp.qmd

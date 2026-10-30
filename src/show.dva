@@ -44,7 +44,7 @@ show_expr = e =>
          show_fwd_rhs(t.5) + ")"
       [Choice t] "Choice(" + show_expr(t.cond) + " " +
          show_branches(t.branches) + ")"
-      [Block t] "Block(" + show_exprs(t.exprs) + ")"
+      [Block t] "Block(" + show_exprs(t) + ")"
       [Call t] "Call(" +
          (t.fn_name == "" | show_expr(t.fn_target) | t.fn_name) +
          (0 < ?t.args | " " | "") + show_exprs(t.args) + ")"
@@ -58,9 +58,10 @@ show_expr = e =>
       [KeyAccess t] "Key(" + show_expr(t.target) + "^" + show_expr(t.key) + ")"
       [TypeCast t] "Cast(" + show_expr(t.expr) + ")"
       [Record t] "Record(" + show_fields(t.fields) + ")"
-      [MapLiteral t] show_map_pairs(t.pairs)
+      [MapLiteral t] show_map_pairs(t)
       [RawMemory t] "Raw(" + show_expr(t.addr) + ")"
       [SizeOf t] "Size(" + show_vt(t.val_type) + ")"
+      [AlignOf t] "Align(" + show_vt(t.val_type) + ")"
       [NamedArg t] "NamedArg(" + t.name + " " + show_expr(t.val) + ")"
       // CompileTime / Spawn / Join have no native dump case — they serialize
       // as "?" (the native dump_expr's default), so the differential harness
@@ -224,6 +225,7 @@ show_unop = o =>
       [Unwrap] "!!"
       [Propagate] "--!"
       [RuneCount] "??"
+      [Neg] "-"
       | "?"
 
 show_indent: Int => String
@@ -293,7 +295,7 @@ show_tree = e, ind =>
                pad + "Call(" + tgt + ")\n" +
                   show_tree_exprs(t.args, ind + 1)
       [Block t]
-         pad + "Block\n" + show_tree_exprs(t.exprs, ind + 1)
+         pad + "Block\n" + show_tree_exprs(t, ind + 1)
       [Choice t]
          pad + "Choice\n" +
             pad + "  Cond:\n" + show_tree(t.cond, ind + 2) + "\n" +
@@ -511,7 +513,7 @@ show_typed_tree_stmt = ctx, stmt, ind =>
 
 dump_typed_program: unify::Ctx, tast::TypedProgram, <> => ()
 dump_typed_program = ctx, prog, as_tree =>
-   prog.stmts @ st =>
+   prog @ st =>
       as_tree
          | print $ show_typed_tree_stmt(ctx, st, 0)
          | print $ show_typed_stmt(ctx, st)

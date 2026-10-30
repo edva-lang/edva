@@ -54,7 +54,7 @@
       sz = chunk_size !> 0 | 67108864 | chunk_size
       raw = libc::malloc(131632)
       dva_arena_init(raw, sz)
-      Arena((raw, sz))
+      Arena(raw, sz)
 
    arena_default: () => Arena
    arena_default = !=> arena(67108864)
@@ -75,7 +75,7 @@
       num_chunks = @[a.raw + 8 Int]
       off = @[a.raw + 16 Int]
       allocated = num_chunks > 1 | (num_chunks - 1) * a.cap + off | off
-      ArenaStats((allocated, num_chunks, a.cap))
+      ArenaStats(allocated, num_chunks, a.cap)
 
    with: Arena, (() => ()) => ()
    with = a, action =>
@@ -104,7 +104,7 @@
       st_cap = cap
       @[st] = st_cap
       @[st + 8] = 0
-      Pool((buf, fs, act, st, es, cap))
+      Pool(buf, fs, act, st, es, cap)
 
    pool_count: Pool => Int
    pool_count = p => @[p.state + 8 Int]

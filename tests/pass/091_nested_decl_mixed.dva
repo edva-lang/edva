@@ -3,7 +3,7 @@
 #use io
 
 #type Inner (a: Int, b: Int)
-#type Mixed (name: String, vec: (Int * 3), inner: Inner, items: (Int[]))
+#type Mixed (name: String, vec: (Int * 3), inner: Inner, items: Int[])
 
 m: Mixed
 m.name = "mix"

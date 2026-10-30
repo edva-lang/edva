@@ -1,6 +1,6 @@
 #use io
 
-#type Ints (Int){}
+#type Ints Int{}
 
 grow = xs =>
    xs += 99

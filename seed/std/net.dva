@@ -145,17 +145,17 @@
    // Convert 32-bit integer IPv4 to InAddr
    in_addr_u32: Int => InAddr
    in_addr_u32 = v =>
-      InAddr((
+      InAddr(
          u8(v .&. 0xFF),
          u8((v .>. 8) .&. 0xFF),
          u8((v .>. 16) .&. 0xFF),
          u8((v .>. 24) .&. 0xFF)
-      ))
+      )
 
    // Default zero InAddr (0.0.0.0 / INADDR_ANY)
    in_addr_any: () => InAddr
    in_addr_any = !=>
-      InAddr((0u8, 0u8, 0u8, 0u8))
+      InAddr(0u8, 0u8, 0u8, 0u8)
 
    // Open a TCP client socket connected to host:port. Host may be a numeric IP
    // or a DNS name (resolved via getaddrinfo).
@@ -168,8 +168,8 @@
       ip [4294967295] --| net::tcp_connect_name(host, port)
       sock = libc::socket(net::AF_INET, net::SOCK_STREAM, net::IPPROTO_TCP)
       sock [< 0] --| Conn(<- "socket failed" +>)
-      addr = SockAddrIn((net::sin_fam_inet!,
-         u16(htons $ port), in_addr_u32(ip), 0u64))
+      addr = SockAddrIn(net::sin_fam_inet!,
+         u16(htons $ port), in_addr_u32(ip), 0u64)
       ret = libc::connect(sock, &addr, 16)
       ret [0]
          Conn(<+ sock ->)
@@ -236,8 +236,8 @@
       sock [< 0] --| Conn(<- "socket failed" +>)
       one = 1i32
       libc::setsockopt(sock, net::sol_socket!, net::so_reuseaddr!, &one, 4)
-      addr = SockAddrIn((net::sin_fam_inet!,
-         u16(htons $ port), in_addr_any!, 0u64))
+      addr = SockAddrIn(net::sin_fam_inet!,
+         u16(htons $ port), in_addr_any!, 0u64)
       ret_b = libc::bind(sock, &addr, 16)
       ret_l = ret_b [0] libc::listen(sock, backlog) | -1
       ret_l [0]
@@ -290,15 +290,15 @@
    // Set the receive timeout on fd (ms). 0 clears it (block forever).
    set_recv_timeout: Int, Int => Int
    set_recv_timeout = fd, ms =>
-      tv = Timeval((i64(ms / 1000),
-         i64((ms % 1000) * 1000)))
+      tv = Timeval(i64(ms / 1000),
+         i64((ms % 1000) * 1000))
       libc::setsockopt(fd, net::sol_socket!, net::so_rcvtimeo!, &tv, 16)
 
    // Set the send timeout on fd (ms). 0 clears it.
    set_send_timeout: Int, Int => Int
    set_send_timeout = fd, ms =>
-      tv = Timeval((i64(ms / 1000),
-         i64((ms % 1000) * 1000)))
+      tv = Timeval(i64(ms / 1000),
+         i64((ms % 1000) * 1000))
       libc::setsockopt(fd, net::sol_socket!, net::so_sndtimeo!, &tv, 16)
 
    // Put fd in non-blocking mode (<+>) or back to blocking (<->).
@@ -327,7 +327,7 @@
    // The remote peer's address as "ip:port", or "" on error.
    peer_addr: Int => String
    peer_addr = fd =>
-      a = SockAddrIn((0u16, 0u16, in_addr_any!, 0u64))
+      a = SockAddrIn(0u16, 0u16, in_addr_any!, 0u64)
       len = 16i32
       ret = libc::getpeername(fd, &a, &len)
       ret [< 0] "" | net::addr_str(a)
@@ -335,7 +335,7 @@
    // This socket's own local address as "ip:port", or "" on error.
    local_addr: Int => String
    local_addr = fd =>
-      a = SockAddrIn((0u16, 0u16, in_addr_any!, 0u64))
+      a = SockAddrIn(0u16, 0u16, in_addr_any!, 0u64)
       len = 16i32
       ret = libc::getsockname(fd, &a, &len)
       ret [< 0] "" | net::addr_str(a)
@@ -359,8 +359,8 @@
    // Returns 0 on success, -1 on failure.
    udp_bind: Int, Int => Int
    udp_bind = fd, port =>
-      addr = SockAddrIn((net::sin_fam_inet!,
-         u16(htons $ port), in_addr_any!, 0u64))
+      addr = SockAddrIn(net::sin_fam_inet!,
+         u16(htons $ port), in_addr_any!, 0u64)
       libc::bind(fd, &addr, 16)
 
    // Send one datagram to host:port (host must be a numeric IP). Returns the
@@ -371,8 +371,8 @@
       ip < 0 || ip == 4294967295
          | -1
          |
-            addr = SockAddrIn((net::sin_fam_inet!,
-               u16(htons $ port), in_addr_u32(ip), 0u64))
+            addr = SockAddrIn(net::sin_fam_inet!,
+               u16(htons $ port), in_addr_u32(ip), 0u64)
             libc::sendto(fd, data, ?data, 0, &addr, 16)
 
    // Receive one datagram. Returns Chunk: <+ data +> on data, <-->
@@ -406,10 +406,10 @@
       lo = #! (os ["darwin"] "lo0" | "lo")
       sock = libc::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
       sock [< 0] ("127.0.0.1", lo) |
-         dest = SockAddrIn((net::sin_fam_inet!, u16(htons $ 53), InAddr((1u8, 1u8, 1u8, 1u8)), 0u64))
+         dest = SockAddrIn(net::sin_fam_inet!, u16(htons $ 53), InAddr(1u8, 1u8, 1u8, 1u8), 0u64)
          rc = libc::connect(sock, &dest, 16)
          rc [0]
-            addr = SockAddrIn((0u16, 0u16, in_addr_any!, 0u64))
+            addr = SockAddrIn(0u16, 0u16, in_addr_any!, 0u64)
             len = 16i32
             rc2 = libc::getsockname(sock, &addr, &len)
             libc::close(sock)

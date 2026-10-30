@@ -1,0 +1,1 @@
+E3023: Redundant double parentheses in record constructor 'Point': write 'Point(...)', not 'Point((...))'

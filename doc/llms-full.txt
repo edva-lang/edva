@@ -16,7 +16,9 @@
   closures. All polymorphism and function types are statically verified and resolved.
 - **Integer Literals & No Defaulting to Int**:
   - Unsuffixed integer literals evaluate to the current default integer type (`Int` by default,
-    or as configured by `#pragma number <type>`).
+    or as configured by `#pragma integer <type>`).
+  - Unsuffixed float literals evaluate to the current default float type (`Float` by default,
+    or as configured by `#pragma float <type>`).
   - No Defaulting to Int: The type system never silently coerces ambiguous expressions or
     unresolved type variables to `Int`. Ambiguous or unknowable types must be annotated explicitly
     or produce a compile-time error (`E3103`).
@@ -44,19 +46,19 @@
 ## 2.1 Identifiers & Keywords
 Identifiers conform to UAX31. Edva has zero bare keywords. Directives start with `#`:
 - `#use`: imports a module (`#use net`, `#use str`).
-- `#type`: declares a nominal record, ram, or enum type (`#type Point (x: Int, y: Int)`).
+- `#type`: declares a nominal record, ram, or enum type (`#type Point (x: Int, y: Int)`). Multiline record (`(...)`, `#packed (...)`, `#packed uN (...)`) and enum (`< ... >`) declarations allow aligned comma-free entries across lines; multiple entries on the same line require commas.
 - `#foreign`: declares foreign C ABI functions (`#foreign "c"`).
 - `#public` / `#private`: access visibility directives.
 - `#!`: compile-time evaluation.
-- `#pragma number <type>`: switches default integer literal type (`i16`, `i32`, `i64`, `default`).
+- `#pragma integer <type>`: switches default integer literal type (`i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `Int`, `default`).
+- `#pragma float <type>`: switches default float literal type (`f32`, `f64`, `Float`, `default`).
 
 ## 2.2 Literals
 - **Integers**: Decimal (`42`), Hexadecimal (`0x2A`), Binary (`0b101010`), Octal (`0o755`), Repeating (`0b1{4}`, `10{6}`, `0b1{48}`).
-  Limits: `0max`, `0min` (with optional suffixes: `0maxu64`, `0mini32`).
   Explicit type suffixes: `5i16`, `0xFFu8`, `100u32`, `9i64`, `0b1{32}u32`.
-- **Floats**: `3.14`, `0.5`, `1.0e-5`. Built-in FP constants: `-.0` (negative zero), `.inf`, `-.inf` (infinities),
-  `.nan` (quiet NaN), `.max`, `-.max` (finite bounds), `.min` (minimal positive normal), `.sub` (minimal positive subnormal),
-  with optional suffixes (`.nanf32`, `.maxf32`, `-.0f32`). Dangling dots (`.5`, `1.`) are illegal.
+  Numeric limits live in `std/const` (`const::max_i64`, `const::min_i64`, `const::max_i32`, `const::min_i32`, `const::max_u64`, etc.).
+- **Floats**: `3.14`, `0.5`, `1.0e-5`, `-0.0` (signed negative zero). Dangling dots (`.5`, `1.`) are illegal.
+  IEEE-754 constants and bounds live in `std/const` (`const::inf_f64`, `const::inf_f32`, `const::nan_f64`, `const::nan_f32`, `const::max_f64`, `const::max_f32`, `const::min_f64`, `const::min_f32`, `const::sub_f64`, `const::sub_f32`, `const::eps_f64`, `const::eps_f32`).
 - **Runes**: Single Unicode codepoints: `'a'`, `'🔥'`, `'\n'`.
 - **Strings**:
   - Escaped & Unified: `"hello\nworld"` or multiline `"\n    line 1\n    line 2\n    "`.
@@ -355,6 +357,6 @@ Complete reference documentation for each module is maintained in `doc/reference
 - `E3033`: Reassignment to an unprimed immutable binding.
 - `E3084`: Type unification failure (including invalid equality on non-enum ramifications).
 - `E3089`: Incompatible ramification shapes in assignment or choice.
-- `E3103`: Cannot infer concrete type for expression without RTTI.
+- `E3103`: Cannot infer concrete type for expression.
 - `E3130`–`E3132`: Field initialization tracking errors and compile-time evaluation failures.
 - `E5001`–`E5011`: Driver, linker, and target compilation errors.

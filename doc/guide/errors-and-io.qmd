@@ -51,7 +51,7 @@ Edva provides two postfix operators for handling fallible ramifications:
 ```{.dva .run}
 #use io
 
-get_user_port: (String ^ Int), String => < Int | Error >
+get_user_port: String ^ Int, String => < Int | Error >
 get_user_port = table, key =>
    port = (table ^ key)--!
    <+ port ->

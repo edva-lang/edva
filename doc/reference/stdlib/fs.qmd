@@ -63,8 +63,8 @@ io::out $ fs::join("/tmp", "example.txt")
 | | `fs::mtime(p)` | `String => Int` | Returns modification timestamp in seconds |
 | | `fs::size(p)` | `String => Int` | Returns file size in bytes |
 | | `fs::readlink_path(p)` | `String => <String \| >` | Reads the target of a symbolic link |
-| **Traversal & Space** | `fs::read_dir(p)` | `String => (DirEntry){}` | Lists immediate child entries in a directory |
-| | `fs::list_dir(p, h, m, r)` | `String, <>, Int, <> => (Entry){}` | Lists, formats, and sorts entries with dirs first |
+| **Traversal & Space** | `fs::read_dir(p)` | `String => DirEntry{}` | Lists immediate child entries in a directory |
+| | `fs::list_dir(p, h, m, r)` | `String, <>, Int, <> => Entry{}` | Lists, formats, and sorts entries with dirs first |
 | | `fs::space(p)` | `String => <FsSpace \| >` | Queries total, free, and available bytes via statvfs |
 | | `fs::get_fs_stats(p)` | `String => (Int, Int, Int, Int)` | Returns `(used_gb, total_gb, pct, free_gb)` |
 | **Formatters** | `fs::format_size(sz, is_dir)` | `Int, <> => String` | Human-readable size format (`"12 KB"`, `"1.4 GB"`, `"DIR"`) |

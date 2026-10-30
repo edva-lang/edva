@@ -17,15 +17,15 @@
       street: String
       city: String
 
-p = Point((3, 4))
+p = Point(3, 4)
 io::out $ p.x
 io::out $ p.y
 
-r = Rect((Point((1, 2)), 5))
+r = Rect(Point(1, 2), 5)
 io::out $ r.origin.x
 io::out $ r.w
 
-pe = Person(("Ann", ("Main St", "Springfield")))
+pe = Person("Ann", ("Main St", "Springfield"))
 io::out $ pe.name
 io::out $ pe.addr.street
 io::out $ pe.addr.city

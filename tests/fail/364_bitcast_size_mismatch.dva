@@ -1,0 +1,4 @@
+#use(import) io
+// Bitcasting a 64-bit Int to a 32-bit f32 must be rejected with E3084.
+x = %bitcast(f32, 1065353216)
+out $ x

@@ -48,7 +48,7 @@
    new_with_cap: Int => <Poller | String>
    new_with_cap = max_ev =>
       cap = max_ev > 0 | max_ev | 64
-      <+ Poller((0, <->, cap, {cap * 24}, 0)) ->
+      <+ Poller(0, <->, cap, {cap * 24}, 0) ->
 
    // Register descriptor with interest mask and user data token
    add: Poller, Int, Int, Int => <>
@@ -114,9 +114,9 @@
       found'
 
    // Wait for readiness events up to timeout_ms (-1 = infinite, 0 = non-blocking poll)
-   wait: Poller, Int => (Event){}
+   wait: Poller, Int => Event{}
    wait = p, timeout_ms =>
-      res' = (Event){}
+      res' = Event{}
       p.is_closed | --| res'
       pfds = {p.max_events * 8}
       idxs = {p.max_events * 8}
@@ -149,7 +149,7 @@
                   ((rev .&. 2) != 0 | PRI | 0) .|.
                   ((rev .&. 8) != 0 | ERR | 0) .|.
                   ((rev .&. 16) != 0 | HUP | 0)
-               res' += Event((ev_fd, ev_mask, ev_udata))
+               res' += Event(ev_fd, ev_mask, ev_udata)
       res'
 
    // Close and release poller resources

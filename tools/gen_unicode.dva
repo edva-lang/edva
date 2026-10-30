@@ -263,7 +263,7 @@ main = _ =>
             "#type Category < Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pc,\n" +
             "   Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp,\n" +
             "   Cc, Cf, Cs, Co, Cn >\n\n" +
-            "#pragma number i16\n" +
+            "#pragma integer i16\n" +
             "#private cat_s1 = (\n"
          out += "   "
 
@@ -299,7 +299,7 @@ main = _ =>
 
          out += "\n)\n\n"
 
-         out += "#pragma number i64\n"
+         out += "#pragma integer i64\n"
          out += "#private cat_s2 = (\n   "
 
          total_words = num_unique' * 32
@@ -334,7 +334,7 @@ main = _ =>
             wcol' = wcol' + ?wtok
 
          out += "\n)\n\n"
-         out += "#pragma number default\n\n"
+         out += "#pragma integer default\n\n"
 
          out += "\n"
          out += "

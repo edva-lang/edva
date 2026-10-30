@@ -5,11 +5,11 @@
 
 #public
 
-#type Public (n: Int)
+#type Public (n: Int, m: Int)
 
 make: Int => Int
 make = n =>
    h = Hidden(Value, n)
-   p = Public(n)
+   p = Public(n, 0)
    h [Value x] io::out $ x
    p.n + n

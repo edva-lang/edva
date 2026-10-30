@@ -1,0 +1,42 @@
+#use io
+#use const
+
+FILAMENT_PTS   = 320
+FILAMENT_SEGS  = 180
+FILAMENT_COUNT = FILAMENT_PTS * FILAMENT_SEGS * 6
+
+SPHERE_RINGS    = 12
+SPHERE_SECTORS  = 24
+SPHERE_VERTICES = (SPHERE_RINGS - 1) * SPHERE_SECTORS * 6
+
+MASK_BITS = 10
+MASK_VAL  = (1 .<. MASK_BITS) - 1
+
+SMALL_BASE = 2
+SMALL_REP  = SMALL_BASE * 2
+SMALL_CAP  = SMALL_REP + 4
+
+HALF_PI = const::pi * 0.5
+PREFIX  = "hello"
+BANNER  = PREFIX + "_comptime"
+
+get_filament_count: () => Int
+get_filament_count = !=> FILAMENT_COUNT
+
+scale_by: #! N: Int, Int => Int
+scale_by = x => x * N
+
+io::out $ get_filament_count!
+io::out $ SPHERE_VERTICES
+io::out $ MASK_VAL
+io::out $ scale_by(SPHERE_VERTICES, 2)
+
+rec = 7 {SMALL_REP}
+io::out $ (rec.0 + rec.1 + rec.2 + rec.3)
+
+arr = Int{SMALL_CAP}
+arr += SMALL_CAP
+io::out $ (arr(0) | _ | 0)
+
+io::out $ (HALF_PI > 1.57 && HALF_PI < 1.58)
+io::out $ BANNER

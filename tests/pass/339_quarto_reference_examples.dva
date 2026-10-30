@@ -16,7 +16,7 @@
 #use str
 #use mem
 
-#type Ints (Int){}
+#type Ints Int{}
 
 greet: String, Int => String
 greet = name, count =>
@@ -37,7 +37,7 @@ build_greeting = name =>
    b += "!"
    +b
 
-sum_slice: (Int[]) => Int
+sum_slice: Int[] => Int
 sum_slice = slice =>
    tot' = 0
    ?slice @ i =>
@@ -106,7 +106,7 @@ main = !=>
    xs += 20
    xs += 30
    xs += 40
-   view: (Int[])
+   view: Int[]
    view = xs(1..3)
    io::out $ ?view
    io::out $ view(0)

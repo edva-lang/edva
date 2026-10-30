@@ -4,13 +4,13 @@
 // declared, a String where a Builder...) are ABI-identical pointer slots.
 #use io
 
-#type A (a: Int)
-#type B (b: Int)
+#type A (a: Int, a2: Int)
+#type B (b: Int, b2: Int)
 f: A => Int
 f = r =>
    r.a
-io::out(f((5,)))
-io::out(f(B((7,))))
+io::out(f((5, 0)))
+io::out(f(B(7, 0)))
 
 // A bare unit flag field takes an integerish truthiness; a heap enum field
 // takes an enum value.

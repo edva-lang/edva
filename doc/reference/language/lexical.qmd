@@ -42,8 +42,9 @@ Line comments begin with `//`; block comments use `/*` and `*/`.
 `.5`, `1.`, and `3.e4` are not float literals. Unsuffixed integer literals
 default to `Int` unless constrained by static type context or an explicit
 suffix (`i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`).
-`#pragma number <type>` changes the default literal type for the rest of its
-file; `#pragma number default` restores standard `Int` default mode.
+`#pragma integer <type>` and `#pragma float <type>` change the default integer
+or float literal type for the rest of the file; `#pragma integer default` and
+`#pragma float default` restore standard `Int` and `Float` default modes.
 
 ### Unified Strings and Multiline Blocks (`"..."`)
 

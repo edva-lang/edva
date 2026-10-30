@@ -1,0 +1,114 @@
+// 384_comma_free_type_decls.dva — Aligned comma-free entries in multiline type declarations (#168).
+#use io
+#use str
+
+// 1. Exact example from issue #168 and comma-separated equivalent
+#type foo (
+   bar: Int
+   baz: Float
+)
+
+#type foo_comma (bar: Int, baz: Float)
+
+// 2. Comments, blank lines, trailing commas, mixed commas, deeper-indented types & defaults
+#type RichRecord (
+   // leading comment
+   a: Int
+
+   /* block comment */
+   b:
+      Int
+   c: Int, d: Int
+   e: Int =
+      10 + 20
+   f: Int = 5 +
+      6,
+)
+
+// 3. Nested record and function types inside comma-free record
+#type Outer (
+   inner: (
+      x: Int
+      y: Int
+   )
+   cb: (
+      Int,
+      Int => Int
+   )
+   tail: String = "ok"
+)
+
+// 4. Multiline packed record and bitfield without commas
+#type PackedHdr #packed (
+   magic: u16
+   version: u8
+   flags: u8
+)
+
+#type PackedHdrComma #packed (magic: u16, version: u8, flags: u8)
+
+#type BitFlags #packed u8 (
+   read: 1
+   write: 1
+   exec: 1
+   rest: 5
+)
+
+// 5. Multiline enum with payload variants, nested comma-free record payload, and same-line comma group
+#type Value <
+   Number(Int)
+   Text(String)
+   Pair(
+      left: Int
+      right: Int
+   )
+   Empty, Unknown
+>
+
+// 6. Existing indentation-only record block without parentheses
+#type IndentRec
+   x: Int
+   nested:
+      p: Int
+      q: Int =
+         7 + 8
+   y: Int = 99
+
+add_pair: Int, Int => Int
+add_pair = x, y => x + y
+
+eval_value: Value => Int
+eval_value = v =>
+   v
+      [Number n] n
+      [Text s] ?s
+      [Pair p] p.left + p.right
+      [Empty] 0
+      [Unknown] -1
+
+f1 = foo(10, 2.5)
+f2 = foo_comma(10, 2.5)
+io::out(str::from_int(f1.bar) + " " + str::from_float(f1.baz))
+io::out(str::from_int(#size foo) + " " + str::from_int(#size foo_comma))
+io::out(str::from_int(#align foo) + " " + str::from_int(#align foo_comma))
+
+r = RichRecord(1, 2, 3, 4)
+io::out(str::from_int(r.a + r.b + r.c + r.d + r.e + r.f))
+
+o = Outer((10, 20), add_pair)
+cb_fn = o.cb
+io::out(str::from_int(o.inner.x + o.inner.y + cb_fn(3, 4)) + " " + o.tail)
+
+ph = PackedHdr(258u16, 1u8, 7u8)
+io::out(str::from_int(#size PackedHdr) + " " + str::from_int(#size PackedHdrComma) + " " + str::from_int(Int(ph.version) + Int(ph.flags)))
+
+bf = BitFlags(1, 0, 1, 3)
+io::out(str::from_int(bf.read) + ":" + str::from_int(bf.write) + ":" + str::from_int(bf.exec) + ":" + str::from_int(bf.rest))
+
+v1 = Value(Number, 42)
+v2 = Value(Pair, (15, 27))
+v3 = Value(Unknown)
+io::out(str::from_int(eval_value(v1)) + " " + str::from_int(eval_value(v2)) + " " + str::from_int(eval_value(v3)))
+
+ir = IndentRec(5, (1, 15))
+io::out(str::from_int(ir.x + ir.nested.p + ir.nested.q + ir.y))

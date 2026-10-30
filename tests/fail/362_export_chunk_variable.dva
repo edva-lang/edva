@@ -1,0 +1,7 @@
+// Unindented #export chunk rejects variable bindings (functions-only in v1).
+
+#export
+
+fn1 = x => x + 1
+
+not_a_fn = 42

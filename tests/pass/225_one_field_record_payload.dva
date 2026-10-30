@@ -1,28 +1,23 @@
-// A 1-field record constructed from a single non-record argument must store
-// a record POINTER, not the raw field value (a later field read used to
-// dereference the value as an address and SEGV). Also covers a 1-field
-// record holding an enum (forward-referenced), used as an enum payload — the
-// exact shape behind the selfhost's CompileTimeExpr/JoinExpr — and a 1-field
-// record whose sole field is a nested RECORD, constructed from that record
-// value ("Payload(Inner(42))" wraps it inline rather than coercing its
-// scalar field into the nested-record slot).
+// Record holding an enum (forward-referenced), used as an enum payload,
+// and a record whose field is a nested RECORD constructed from that record
+// value.
 #use io
 
-#type Inner (x: Int)
-#type Payload (e: Inner)
-#type Holder (e: Expr)
+#type Inner (x: Int, y: Int)
+#type Payload (e: Inner, tag: Int)
+#type Holder (e: Expr, tag: Int)
 #type Expr <
    Num(Int)
    Holds(Holder)
 >
 
-r = Inner(9)
+r = Inner(9, 1)
 io::out $ r.x
 
-p = Payload(Inner(42))
+p = Payload(Inner(42, 2), 0)
 io::out $ p.e.x
 
-e = Expr(Holds, Holder(Expr(Num, 5)))
+e = Expr(Holds, Holder(Expr(Num, 5), 0))
 e
    [Num n] io::out $ n
    [Holds h]

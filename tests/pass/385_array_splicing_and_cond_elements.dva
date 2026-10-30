@@ -1,0 +1,66 @@
+// Test #33: Collection splicing and conditional element literals in records and arrays
+#use io
+
+#type Ints Int{}
+#type Strs String{}
+#type OptInt <Int|>
+#type Pair (a: Int, b: Int)
+#type Tag < A, B(Int), C >
+
+// 1. Named array constructor with initial elements, conditional elements, and splats
+base = Ints(10, 20)
+include_mid = <+>
+skip_val = <->
+opt_some = OptInt(<+ 30 +>)
+opt_none = OptInt(<-->)
+hom_rec = (40, 50)
+sl = base(0..2)
+
+arr1 = Ints(
+   1,
+   include_mid | 2,
+   skip_val | 999,
+   include_mid | 3 | 888,
+   ..base,
+   opt_some | v => v,
+   opt_none | v => v,
+   ..sl,
+   ..hom_rec,
+   include_mid | ..Ints(60, 70),
+   skip_val | ..Ints(777, 888),
+   100
+)
+
+io::out(?arr1)
+arr1 @ x =>
+   io::out(x)
+
+// 2. Pattern-matching conditional element in array constructor
+t1 = Tag(B, 42)
+t2 = Tag(A)
+p = Pair(7, 8)
+arr2 = Int{}(
+   t1 [B n] n,
+   t2 [B n] n,
+   p [(a, b)] a + b,
+   99
+)
+io::out(?arr2)
+arr2 @ x =>
+   io::out(x)
+
+// 3. Inline anonymous array constructor with capacity and splats
+arr3 = String{8}(
+   "alpha",
+   include_mid | "beta",
+   skip_val | "nope",
+   ..Strs("gamma", "delta")
+)
+io::out(?arr3)
+arr3 @ s =>
+   io::out(s)
+
+// 4. Static record splat and exhaustive choice in record literal still work
+r_base = (x = 1, y = 2)
+r_ext = (..r_base, z = include_mid | 3 | 4)
+io::out(r_ext.x + r_ext.y + r_ext.z)
