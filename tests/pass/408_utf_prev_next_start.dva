@@ -1,0 +1,16 @@
+#use io
+#use utf
+#use str
+
+s = "aé€😀b"
+io::out $ str::from_int(utf::next_start(s, 0))
+io::out $ str::from_int(utf::next_start(s, 1))
+io::out $ str::from_int(utf::next_start(s, 3))
+io::out $ str::from_int(utf::next_start(s, 6))
+io::out $ str::from_int(utf::next_start(s, 10))
+io::out $ str::from_int(utf::prev_start(s, 11))
+io::out $ str::from_int(utf::prev_start(s, 10))
+io::out $ str::from_int(utf::prev_start(s, 6))
+io::out $ str::from_int(utf::prev_start(s, 3))
+io::out $ str::from_int(utf::prev_start(s, 1))
+io::out $ str::from_int(utf::prev_start(s, 0))
