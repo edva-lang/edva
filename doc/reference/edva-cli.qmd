@@ -8,12 +8,13 @@ meta:
 
 # CLI and Package Manager (`edva.ccl`)
 
-The `edva` binary provides single-file / modular compilation, interactive REPL and inline evaluation (`-i`, `-e`), AST/type inspection, canonical code formatting (`edva fmt`), Language Server Protocol support (`edva lsp`), and the integrated `edva pkg` package and build system.
+The `edva` binary provides single-file / modular compilation, interactive REPL and inline evaluation (`-i`, `-e`), AST/type inspection, canonical code formatting (`edva fmt`), Language Server Protocol support (`edva lsp`), and top-level package management (`edva init`, `edva add`, `edva rm`, `edva build`, `edva run`, `edva test`, `edva fetch`, `edva update`, `edva tree`, `edva vendor`, `edva cache`).
 
 ## Compiler invocation and options
 
 ```sh
-edva [options] <input.dva | dir> [output]
+edva [options] [input.dva | dir] [output]
+edva <command> [options] [args...]
 edva -e "<code_string>" [options]
 edva -i
 edva fmt [--check] [--stdout] [--stdin] [path...]
@@ -54,25 +55,27 @@ edva lsp
 | `EDVA_PATH` / `EDVA_STDLIB` | `<exe_dir>/std` | Overrides standard library directory resolution |
 | `XDG_CACHE_HOME` | `~/.cache` | Base directory for compilation cache (`edva/ir`) and package store (`edva/store`) |
 | `EDVA_STORE` | `~/.cache/edva/store` | Content-addressed package store directory |
-| `EDVA_OFFLINE` | `"0"` | Set to `"1"` to enforce `--offline` mode across `edva pkg` commands |
-| `EDVA_NO_CACHE` | `"0"` | Set to `"1"` to disable IR caching across `edva pkg` commands |
+| `EDVA_OFFLINE` | `"0"` | Set to `"1"` to enforce `--offline` mode across package commands |
+| `EDVA_NO_CACHE` | `"0"` | Set to `"1"` to disable IR caching across compiler and package commands |
 | `EDVA_GIT` | `"git"` | Git executable used when fetching git dependencies |
 
 ## Package and cache subcommands
 
-All package commands may be invoked at top level (`edva build`) or under `edva pkg` (`edva pkg build`):
+All package and cache commands are first-class top-level subcommands (`edva <command> --help` shows command-scoped help):
 
 | Command | Arguments & Options | Behavior | Diagnostics |
 |---|---|---|---|
-| `edva init` | `<dir> [--name <name>]` | Scaffolds `edva.ccl`, `src/<name>.dva`, and `src/main.dva` in `<dir>` | `E7002`: missing `<dir>`<br>`E7020`: `edva.ccl` already exists |
-| `edva add` | `<alias> <path_or_git_url>`<br>`<alias> --path <p>`<br>`<alias> --git <url> [--rev <r>]`<br>`<alias> --url <u> --hash <h>` | Transactionally adds dependency to `edva.ccl`, resolves graph, and updates `edva.lock.ccl` (rolls back `edva.ccl` on failure) | `E7021`: rollback on fetch/resolve failure |
+| `edva init` | `[dir] [-n/--name <name>] [--lib]` | Scaffolds `edva.ccl`, `src/<name>.dva`, and (unless `--lib`) `src/main.dva` in `[dir]` (default: `.`) | `E7020`: `edva.ccl` already exists |
+| `edva add` | `[<alias>] <spec> [--as <alias>] [--rev <r>]`<br>`[<alias>] --path <p>`<br>`[<alias>] --git <url> [--rev <r>]`<br>`[<alias>] --url <u> --hash <h>` | Transactionally adds dependency to `edva.ccl` (auto-inferring alias from `edva.ccl` `name` or repo/dir basename when omitted, supporting `<spec>@<rev>`, `owner/repo`, and `host/owner/repo` shorthand), resolves graph, and updates `edva.lock.ccl` (rolls back `edva.ccl` on failure) | `E7021`: rollback on fetch/resolve failure |
+| `edva rm` | `<alias> [dir]` (alias `remove`) | Removes `<alias>` from `edva.ccl` and updates `edva.lock.ccl` and `.edva/imports.ccl` | `E7004`: dependency not found |
+| `edva build` | `[dir \| file.dva] [-o <out>] [-t <triple>] [-O <opt>] [--cflag <f>] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Dual-mode: builds package targets from `edva.ccl` (or `src/main.dva` $\to$ `./<name>`) or compiles a single `.dva` file | `E5039`: missing `pkg-config` lib |
+| `edva run` | `[dir \| file.dva] [options] [-- <args...>]` | Dual-mode: builds and executes the package binary or single `.dva` file, forwarding arguments after `--` to the program | `E7019`: missing source or target |
+| `edva test` | `[dir \| file.dva] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Compiles and runs all `tests/*.dva` in a package, or a single test `.dva` file if specified | — |
 | `edva fetch` | `[dir] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Resolves dependencies, populates content store, writes `edva.lock.ccl` and `.edva/imports.ccl` | `E7007`: lockfile out of date (`--locked`) |
-| `edva build` | `[dir] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Fetches if needed, then builds all targets under `targets =` (or `src/main.dva` $\to$ `./<name>`) | `E5039`: missing `pkg-config` lib |
-| `edva test` | `[dir] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Compiles and runs every `tests/*.dva` file independently; passes when exit code is `0` | — |
 | `edva update` | `[pkg_name] [dir]` | Refreshes moving Git branches/tags in `edva.lock.ccl` (all or single `<pkg_name>`) | — |
-| `edva graph` | `[dir]` (alias `tree`) | Prints ASCII dependency tree with provenance, duplicate versions, and cycle checks | — |
+| `edva tree` | `[dir]` (alias `graph`) | Prints ASCII dependency tree with provenance, duplicate versions, and cycle checks | — |
 | `edva vendor` | `[dir]` | Materializes external dependencies into `vendor/<id>/` + `vendor/vendor.ccl` for air-gapped `--offline --locked` builds | `E7005`: tree hash mismatch |
-| `edva cache` | `dir`, `ls`, `clean` | Prints cache directory, lists cached `.ll` objects and sizes, or evicts cached IR artifacts | `E5026`–`E5028`: cache CLI errors |
+| `edva cache` | `[dir \| ls \| clean] [--cache <d>]` | Prints cache directory (default), lists cached `.ll` entries, or cleans cached IR artifacts | — |
 
 ## Formatter and Language Server (`edva fmt`, `edva lsp`)
 

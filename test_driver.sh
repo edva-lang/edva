@@ -480,29 +480,30 @@ if ! grep -q "E5022" "$TMPDIR/t11.out" "$TMPDIR/t11.err"; then
 fi
 echo "PASS"
 
-# --- Test 12: edva pkg CLI usage and dispatch ---
-echo -n "Testing edva pkg CLI dispatch and usage... "
+# --- Test 12: edva top-level CLI subcommands and scoped help ---
+echo -n "Testing edva CLI top-level subcommands and scoped help... "
 set +e
-timeout 30 ./edva pkg >"$TMPDIR/t12.out" 2>"$TMPDIR/t12.err"
+timeout 30 ./edva --help >"$TMPDIR/t12.out" 2>"$TMPDIR/t12.err"
 rc=$?
 set -e
-if [ $rc -ne 2 ] || ! grep -q "usage: edva pkg" "$TMPDIR/t12.out"; then
-    echo "FAILED: expected rc=2 and usage message for 'edva pkg'"
+if [ $rc -ne 0 ] || ! grep -q "Commands:" "$TMPDIR/t12.out" || ! grep -q "init" "$TMPDIR/t12.out" || ! grep -q "add" "$TMPDIR/t12.out" || ! grep -q "rm, remove" "$TMPDIR/t12.out"; then
+    echo "FAILED: expected rc=0 and Commands section in 'edva --help'"
     cat "$TMPDIR/t12.out" "$TMPDIR/t12.err"
     exit 1
 fi
 set +e
-timeout 30 ./edva pkg --help >"$TMPDIR/t12_h.out" 2>"$TMPDIR/t12_h.err"
+timeout 30 ./edva add --help >"$TMPDIR/t12_h.out" 2>"$TMPDIR/t12_h.err"
 rc=$?
 set -e
-if [ $rc -ne 0 ] || ! grep -q "usage: edva pkg" "$TMPDIR/t12_h.out"; then
-    echo "FAILED: expected rc=0 and usage message for 'edva pkg --help'"
+if [ $rc -ne 0 ] || ! grep -q "edva add \[options\]" "$TMPDIR/t12_h.out" || ! grep -q -- "--as <str>" "$TMPDIR/t12_h.out"; then
+    echo "FAILED: expected rc=0 and scoped usage message for 'edva add --help'"
+    cat "$TMPDIR/t12_h.out" "$TMPDIR/t12_h.err"
     exit 1
 fi
 echo "PASS"
 
-# --- Test 13: edva pkg fetch generates lock and import map ---
-echo -n "Testing edva pkg fetch resolution, lockfile and imports.ccl generation... "
+# --- Test 13: edva fetch generates lock and import map ---
+echo -n "Testing edva fetch resolution, lockfile and imports.ccl generation... "
 PKGDIR="$TMPDIR/pkg_app"
 mkdir -p "$PKGDIR/src" "$PKGDIR/packages/lib_a/src"
 cat <<'EOF' > "$PKGDIR/edva.ccl"
@@ -530,11 +531,11 @@ io::out $ str::from_int(a::forty_two)
 EOF
 
 set +e
-timeout 30 ./edva pkg fetch "$PKGDIR" >"$TMPDIR/t13.out" 2>"$PKGDIR/t13.err"
+timeout 30 ./edva fetch "$PKGDIR" >"$TMPDIR/t13.out" 2>"$PKGDIR/t13.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || [ ! -f "$PKGDIR/edva.lock.ccl" ] || [ ! -f "$PKGDIR/.edva/imports.ccl" ]; then
-    echo "FAILED: edva pkg fetch failed to generate lockfile or imports map, rc=$rc"
+    echo "FAILED: edva fetch failed to generate lockfile or imports map, rc=$rc"
     cat "$TMPDIR/t13.out" "$PKGDIR/t13.err"
     exit 1
 fi
@@ -548,10 +549,10 @@ if ! grep -q "aliases =" "$PKGDIR/.edva/imports.ccl"; then
 fi
 echo "PASS"
 
-# --- Test 14: edva pkg fetch --locked enforcement ---
-echo -n "Testing edva pkg fetch --locked validation... "
+# --- Test 14: edva fetch --locked enforcement ---
+echo -n "Testing edva fetch --locked validation... "
 set +e
-timeout 30 ./edva pkg fetch "$PKGDIR" --locked >"$TMPDIR/t14.out" 2>"$TMPDIR/t14.err"
+timeout 30 ./edva fetch "$PKGDIR" --locked >"$TMPDIR/t14.out" 2>"$TMPDIR/t14.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ]; then
@@ -561,7 +562,7 @@ fi
 # Mutate manifest to trigger out of date error
 printf '  extra =\n    path = ./packages/lib_a\n' >> "$PKGDIR/edva.ccl"
 set +e
-timeout 30 ./edva pkg fetch "$PKGDIR" --locked >"$TMPDIR/t14_stale.out" 2>"$TMPDIR/t14_stale.err"
+timeout 30 ./edva fetch "$PKGDIR" --locked >"$TMPDIR/t14_stale.out" 2>"$TMPDIR/t14_stale.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7007" "$TMPDIR/t14_stale.out"; then
@@ -571,7 +572,7 @@ if [ $rc -eq 0 ] || ! grep -q "E7007" "$TMPDIR/t14_stale.out"; then
 fi
 rm -f "$PKGDIR/edva.lock.ccl"
 set +e
-timeout 30 ./edva pkg fetch "$PKGDIR" --locked >"$TMPDIR/t14_missing.out" 2>"$TMPDIR/t14_missing.err"
+timeout 30 ./edva fetch "$PKGDIR" --locked >"$TMPDIR/t14_missing.out" 2>"$TMPDIR/t14_missing.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7006" "$TMPDIR/t14_missing.out"; then
@@ -581,8 +582,8 @@ if [ $rc -eq 0 ] || ! grep -q "E7006" "$TMPDIR/t14_missing.out"; then
 fi
 echo "PASS"
 
-# --- Test 15: edva pkg fetch cycle detection ---
-echo -n "Testing edva pkg fetch dependency cycle detection... "
+# --- Test 15: edva fetch cycle detection ---
+echo -n "Testing edva fetch dependency cycle detection... "
 CYCDIR="$TMPDIR/pkg_cycle"
 mkdir -p "$CYCDIR/packages/c1/src" "$CYCDIR/packages/c2/src"
 cat <<'EOF' > "$CYCDIR/edva.ccl"
@@ -613,7 +614,7 @@ dependencies =
     path = ../c1
 EOF
 set +e
-timeout 30 ./edva pkg fetch "$CYCDIR" >"$TMPDIR/t15.out" 2>"$TMPDIR/t15.err"
+timeout 30 ./edva fetch "$CYCDIR" >"$TMPDIR/t15.out" 2>"$TMPDIR/t15.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7002: dependency cycle: c1@path -> c2@path -> c1@path" "$TMPDIR/t15.out"; then
@@ -623,8 +624,8 @@ if [ $rc -eq 0 ] || ! grep -q "E7002: dependency cycle: c1@path -> c2@path -> c1
 fi
 echo "PASS"
 
-# --- Test 16: edva pkg fetch root overrides and --locked rejection ---
-echo -n "Testing edva pkg fetch overrides and --locked rejection... "
+# --- Test 16: edva fetch root overrides and --locked rejection ---
+echo -n "Testing edva fetch overrides and --locked rejection... "
 OVRDIR="$TMPDIR/pkg_ovr"
 mkdir -p "$OVRDIR/packages/orig/src" "$OVRDIR/packages/rep/src"
 cat <<'EOF' > "$OVRDIR/packages/orig/edva.ccl"
@@ -651,7 +652,7 @@ overrides =
     path = ./packages/rep
 EOF
 set +e
-timeout 30 ./edva pkg fetch "$OVRDIR" >"$TMPDIR/t16.out" 2>"$TMPDIR/t16.err"
+timeout 30 ./edva fetch "$OVRDIR" >"$TMPDIR/t16.out" 2>"$TMPDIR/t16.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || ! grep -q "rep@path" "$OVRDIR/edva.lock.ccl"; then
@@ -664,7 +665,7 @@ if ! grep -q "override = true" "$OVRDIR/edva.lock.ccl"; then
     exit 1
 fi
 set +e
-timeout 30 ./edva pkg fetch "$OVRDIR" --locked >"$TMPDIR/t16_lock.out" 2>"$TMPDIR/t16_lock.err"
+timeout 30 ./edva fetch "$OVRDIR" --locked >"$TMPDIR/t16_lock.out" 2>"$TMPDIR/t16_lock.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7008" "$TMPDIR/t16_lock.out"; then
@@ -674,8 +675,8 @@ if [ $rc -eq 0 ] || ! grep -q "E7008" "$TMPDIR/t16_lock.out"; then
 fi
 echo "PASS"
 
-# --- Test 17: edva pkg fetch --offline enforcement ---
-echo -n "Testing edva pkg fetch --offline rejection... "
+# --- Test 17: edva fetch --offline enforcement ---
+echo -n "Testing edva fetch --offline rejection... "
 OFFDIR="$TMPDIR/pkg_off"
 mkdir -p "$OFFDIR"
 cat <<'EOF' > "$OFFDIR/edva.ccl"
@@ -689,7 +690,7 @@ dependencies =
     rev = main
 EOF
 set +e
-timeout 30 ./edva pkg fetch "$OFFDIR" --offline --store "$TMPDIR/store" >"$TMPDIR/t17.out" 2>"$TMPDIR/t17.err"
+timeout 30 ./edva fetch "$OFFDIR" --offline --store "$TMPDIR/store" >"$TMPDIR/t17.out" 2>"$TMPDIR/t17.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7003: offline:" "$TMPDIR/t17.out"; then
@@ -700,7 +701,7 @@ fi
 echo "PASS"
 
 # --- Test 18: local Git fixture fetch, tree hashing, store layout, and imports map ---
-echo -n "Testing edva pkg fetch git fixture, tree hashing and store layout... "
+echo -n "Testing edva fetch git fixture, tree hashing and store layout... "
 GIT_REPO="$TMPDIR/fixture_git"
 mkdir -p "$GIT_REPO/src"
 cat <<'EOF' > "$GIT_REPO/edva.ccl"
@@ -735,11 +736,11 @@ dependencies =
 EOF
 
 set +e
-timeout 30 ./edva pkg fetch "$GIT_APP" --store "$STORE_DIR" >"$TMPDIR/t18.out" 2>"$TMPDIR/t18.err"
+timeout 30 ./edva fetch "$GIT_APP" --store "$STORE_DIR" >"$TMPDIR/t18.out" 2>"$TMPDIR/t18.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ]; then
-    echo "FAILED: edva pkg fetch failed for git fixture, rc=$rc"
+    echo "FAILED: edva fetch failed for git fixture, rc=$rc"
     cat "$TMPDIR/t18.out" "$TMPDIR/t18.err"
     exit 1
 fi
@@ -767,7 +768,7 @@ fi
 echo "PASS"
 
 # --- Test 19: moving tag pinning in locked fetch ---
-echo -n "Testing edva pkg fetch moving tag pinning... "
+echo -n "Testing edva fetch moving tag pinning... "
 echo "new_val = 200" >> "$GIT_REPO/src/git_pkg.dva"
 git -C "$GIT_REPO" commit --quiet -am "update git_pkg"
 git -C "$GIT_REPO" tag -f v1.0.0 >/dev/null
@@ -778,7 +779,7 @@ if [ "$FIRST_COMMIT" = "$NEW_COMMIT" ]; then
 fi
 
 set +e
-timeout 30 ./edva pkg fetch "$GIT_APP" --store "$STORE_DIR" >"$TMPDIR/t19.out" 2>"$TMPDIR/t19.err"
+timeout 30 ./edva fetch "$GIT_APP" --store "$STORE_DIR" >"$TMPDIR/t19.out" 2>"$TMPDIR/t19.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ]; then
@@ -793,7 +794,7 @@ if ! grep -q "commit = $FIRST_COMMIT" "$GIT_APP/edva.lock.ccl"; then
 fi
 # Also verify under --locked
 set +e
-timeout 30 ./edva pkg fetch "$GIT_APP" --store "$STORE_DIR" --locked >"$TMPDIR/t19_locked.out" 2>"$TMPDIR/t19_locked.err"
+timeout 30 ./edva fetch "$GIT_APP" --store "$STORE_DIR" --locked >"$TMPDIR/t19_locked.out" 2>"$TMPDIR/t19_locked.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ]; then
@@ -804,7 +805,7 @@ fi
 echo "PASS"
 
 # --- Test 20: Git tree hash mismatch detection (E7005) ---
-echo -n "Testing edva pkg fetch tree hash mismatch (E7005)... "
+echo -n "Testing edva fetch tree hash mismatch (E7005)... "
 BAD_HASH_APP="$TMPDIR/bad_hash_app"
 mkdir -p "$BAD_HASH_APP/src"
 cat <<EOF > "$BAD_HASH_APP/edva.ccl"
@@ -821,7 +822,7 @@ EOF
 sed "s/hash = sha256-.*/hash = sha256-0000000000000000000000000000000000000000000000000000000000000000/" "$GIT_APP/edva.lock.ccl" > "$BAD_HASH_APP/edva.lock.ccl"
 
 set +e
-timeout 30 ./edva pkg fetch "$BAD_HASH_APP" --store "$STORE_DIR" >"$TMPDIR/t20.out" 2>"$TMPDIR/t20.err"
+timeout 30 ./edva fetch "$BAD_HASH_APP" --store "$STORE_DIR" >"$TMPDIR/t20.out" 2>"$TMPDIR/t20.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7005: dependency 'dep': hash mismatch" "$TMPDIR/t20.out"; then
@@ -832,7 +833,7 @@ fi
 echo "PASS"
 
 # --- Test 21: archive fetching, checksum verification, store caching ---
-echo -n "Testing edva pkg fetch archive source and store caching... "
+echo -n "Testing edva fetch archive source and store caching... "
 ARCH_SRC="$TMPDIR/arch_src"
 mkdir -p "$ARCH_SRC/src"
 cat <<'EOF' > "$ARCH_SRC/edva.ccl"
@@ -863,7 +864,7 @@ dependencies =
 EOF
 
 set +e
-timeout 30 ./edva pkg fetch "$ARCH_APP" --store "$STORE_DIR" >"$TMPDIR/t21.out" 2>"$TMPDIR/t21.err"
+timeout 30 ./edva fetch "$ARCH_APP" --store "$STORE_DIR" >"$TMPDIR/t21.out" 2>"$TMPDIR/t21.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ]; then
@@ -884,7 +885,7 @@ fi
 echo "PASS"
 
 # --- Test 22: archive checksum mismatch (E7005) & corrupt downloads ---
-echo -n "Testing edva pkg fetch archive checksum mismatch (E7005)... "
+echo -n "Testing edva fetch archive checksum mismatch (E7005)... "
 BAD_ARCH_APP="$TMPDIR/bad_arch_app"
 mkdir -p "$BAD_ARCH_APP/src"
 cat <<EOF > "$BAD_ARCH_APP/edva.ccl"
@@ -899,7 +900,7 @@ dependencies =
 EOF
 
 set +e
-timeout 30 ./edva pkg fetch "$BAD_ARCH_APP" --store "$STORE_DIR" >"$TMPDIR/t22.out" 2>"$TMPDIR/t22.err"
+timeout 30 ./edva fetch "$BAD_ARCH_APP" --store "$STORE_DIR" >"$TMPDIR/t22.out" 2>"$TMPDIR/t22.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7005: dependency 'myarch': hash mismatch" "$TMPDIR/t22.out"; then
@@ -914,7 +915,7 @@ fi
 echo "PASS"
 
 # --- Test 23: zip-slip / path traversal archive rejection (E7019) ---
-echo -n "Testing edva pkg fetch zip-slip / traversal rejection (E7019)... "
+echo -n "Testing edva fetch zip-slip / traversal rejection (E7019)... "
 EVIL_TAR="$TMPDIR/evil.tar.gz"
 EVIL_STAGE="$TMPDIR/evil_stage/sub"
 mkdir -p "$EVIL_STAGE"
@@ -935,7 +936,7 @@ dependencies =
 EOF
 
 set +e
-timeout 30 ./edva pkg fetch "$EVIL_APP" --store "$STORE_DIR" >"$TMPDIR/t23.out" 2>"$TMPDIR/t23.err"
+timeout 30 ./edva fetch "$EVIL_APP" --store "$STORE_DIR" >"$TMPDIR/t23.out" 2>"$TMPDIR/t23.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7019: dependency 'evil': archive contains illegal path or path traversal" "$TMPDIR/t23.out"; then
@@ -950,7 +951,7 @@ fi
 echo "PASS"
 
 # --- Test 24: escaping symlink rejection (E7019) ---
-echo -n "Testing edva pkg fetch escaping symlink rejection (E7019)... "
+echo -n "Testing edva fetch escaping symlink rejection (E7019)... "
 SYM_SRC="$TMPDIR/sym_src"
 mkdir -p "$SYM_SRC/src"
 cat <<'EOF' > "$SYM_SRC/edva.ccl"
@@ -978,7 +979,7 @@ dependencies =
 EOF
 
 set +e
-timeout 30 ./edva pkg fetch "$SYM_APP" --store "$STORE_DIR" >"$TMPDIR/t24.out" 2>"$TMPDIR/t24.err"
+timeout 30 ./edva fetch "$SYM_APP" --store "$STORE_DIR" >"$TMPDIR/t24.out" 2>"$TMPDIR/t24.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7019: dependency 'sym_dep': archive contains illegal path or escaping symlink" "$TMPDIR/t24.out"; then
@@ -989,10 +990,10 @@ fi
 echo "PASS"
 
 # --- Test 25: offline cache hit vs miss ---
-echo -n "Testing edva pkg fetch offline cache hit and miss... "
+echo -n "Testing edva fetch offline cache hit and miss... "
 # Hit: ARCH_APP has ARCH_HASH already in STORE_DIR
 set +e
-timeout 30 ./edva pkg fetch "$ARCH_APP" --store "$STORE_DIR" --offline >"$TMPDIR/t25_hit.out" 2>"$TMPDIR/t25_hit.err"
+timeout 30 ./edva fetch "$ARCH_APP" --store "$STORE_DIR" --offline >"$TMPDIR/t25_hit.out" 2>"$TMPDIR/t25_hit.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ]; then
@@ -1004,7 +1005,7 @@ fi
 EMPTY_STORE="$TMPDIR/empty_store"
 mkdir -p "$EMPTY_STORE"
 set +e
-timeout 30 ./edva pkg fetch "$ARCH_APP" --store "$EMPTY_STORE" --offline >"$TMPDIR/t25_miss.out" 2>"$TMPDIR/t25_miss.err"
+timeout 30 ./edva fetch "$ARCH_APP" --store "$EMPTY_STORE" --offline >"$TMPDIR/t25_miss.out" 2>"$TMPDIR/t25_miss.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7003: offline:" "$TMPDIR/t25_miss.out"; then
@@ -1015,7 +1016,7 @@ fi
 echo "PASS"
 
 # --- Test 26: submodule and subdir actionable diagnostics ---
-echo -n "Testing edva pkg fetch submodule and subdir actionable errors... "
+echo -n "Testing edva fetch submodule and subdir actionable errors... "
 SUBM_APP="$TMPDIR/subm_app"
 mkdir -p "$SUBM_APP"
 cat <<'EOF' > "$SUBM_APP/edva.ccl"
@@ -1030,7 +1031,7 @@ dependencies =
     submodules = true
 EOF
 set +e
-timeout 30 ./edva pkg fetch "$SUBM_APP" >"$TMPDIR/t26_subm.out" 2>"$TMPDIR/t26_subm.err"
+timeout 30 ./edva fetch "$SUBM_APP" >"$TMPDIR/t26_subm.out" 2>"$TMPDIR/t26_subm.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "git submodules are not supported" "$TMPDIR/t26_subm.out"; then
@@ -1053,7 +1054,7 @@ dependencies =
     subdir = packages/sub
 EOF
 set +e
-timeout 30 ./edva pkg fetch "$SUBD_APP" >"$TMPDIR/t26_subd.out" 2>"$TMPDIR/t26_subd.err"
+timeout 30 ./edva fetch "$SUBD_APP" >"$TMPDIR/t26_subd.out" 2>"$TMPDIR/t26_subd.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "package subdirectory selection ('subdir') is not supported in v1" "$TMPDIR/t26_subd.out"; then
@@ -1063,8 +1064,8 @@ if [ $rc -eq 0 ] || ! grep -q "package subdirectory selection ('subdir') is not 
 fi
 echo "PASS"
 
-# --- Test 27: edva pkg build with src/main.dva and diamond dependencies ---
-echo -n "Testing edva pkg build with diamond dependency graph... "
+# --- Test 27: edva build with src/main.dva and diamond dependencies ---
+echo -n "Testing edva build with diamond dependency graph... "
 DIAMOND_DIR="$TMPDIR/diamond_test"
 mkdir -p "$DIAMOND_DIR/base/src" "$DIAMOND_DIR/mid1/src" "$DIAMOND_DIR/mid2/src" "$DIAMOND_DIR/app/src"
 cat <<'EOF' > "$DIAMOND_DIR/base/edva.ccl"
@@ -1131,7 +1132,7 @@ val == 127 | libc::exit(0) | libc::exit(1)
 EOF
 
 set +e
-timeout 30 ./edva pkg build "$DIAMOND_DIR/app" >"$TMPDIR/t27.out" 2>"$TMPDIR/t27.err"
+timeout 30 ./edva build "$DIAMOND_DIR/app" >"$TMPDIR/t27.out" 2>"$TMPDIR/t27.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || [ ! -x "$DIAMOND_DIR/app/d_app" ]; then
@@ -1149,8 +1150,8 @@ if [ $app_rc -ne 0 ]; then
 fi
 echo "PASS"
 
-# --- Test 28: edva pkg test with passing and failing test targets ---
-echo -n "Testing edva pkg test runner... "
+# --- Test 28: edva test with passing, failing, and single-file test targets ---
+echo -n "Testing edva test runner... "
 mkdir -p "$DIAMOND_DIR/app/tests"
 cat <<'EOF' > "$DIAMOND_DIR/app/tests/t1.dva"
 #use @m1
@@ -1165,12 +1166,23 @@ m2::mid2_val! == 84 | libc::exit(0) | libc::exit(1)
 EOF
 
 set +e
-timeout 30 ./edva pkg test "$DIAMOND_DIR/app" >"$TMPDIR/t28.out" 2>"$TMPDIR/t28.err"
+timeout 30 ./edva test "$DIAMOND_DIR/app" >"$TMPDIR/t28.out" 2>"$TMPDIR/t28.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || ! grep -q "test t1.dva ... ok" "$TMPDIR/t28.out" || ! grep -q "test t2.dva ... ok" "$TMPDIR/t28.out" || ! grep -q "2 passed, 0 failed" "$TMPDIR/t28.out"; then
     echo "FAILED: expected 2 passed tests"
     cat "$TMPDIR/t28.out" "$TMPDIR/t28.err"
+    exit 1
+fi
+
+# Single-file test execution
+set +e
+timeout 30 ./edva test "$DIAMOND_DIR/app/tests/t1.dva" >"$TMPDIR/t28_single.out" 2>"$TMPDIR/t28_single.err"
+rc=$?
+set -e
+if [ $rc -ne 0 ] || ! grep -q "test t1.dva ... ok" "$TMPDIR/t28_single.out" || ! grep -q "1 passed, 0 failed" "$TMPDIR/t28_single.out"; then
+    echo "FAILED: expected single test file execution to pass"
+    cat "$TMPDIR/t28_single.out" "$TMPDIR/t28_single.err"
     exit 1
 fi
 
@@ -1180,7 +1192,7 @@ libc::exit(1)
 EOF
 
 set +e
-timeout 30 ./edva pkg test "$DIAMOND_DIR/app" >"$TMPDIR/t28_fail.out" 2>"$TMPDIR/t28_fail.err"
+timeout 30 ./edva test "$DIAMOND_DIR/app" >"$TMPDIR/t28_fail.out" 2>"$TMPDIR/t28_fail.err"
 fail_rc=$?
 set -e
 rm -f "$DIAMOND_DIR/app/tests/t3_fail.dva"
@@ -1216,7 +1228,7 @@ c == 1.0 | libc::exit(0) | libc::exit(1)
 EOF
 
 set +e
-timeout 30 ./edva pkg build "$NAT_DIR" >"$TMPDIR/t29.out" 2>"$TMPDIR/t29.err"
+timeout 30 ./edva build "$NAT_DIR" >"$TMPDIR/t29.out" 2>"$TMPDIR/t29.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || [ ! -x "$NAT_DIR/nat_pkg" ]; then
@@ -1253,7 +1265,7 @@ x = 0
 EOF
 
 set +e
-timeout 30 ./edva pkg build "$PKGCONF_DIR" >"$TMPDIR/t30_miss.out" 2>"$TMPDIR/t30_miss.err"
+timeout 30 ./edva build "$PKGCONF_DIR" >"$TMPDIR/t30_miss.out" 2>"$TMPDIR/t30_miss.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "missing native requirement: pkg-config 'nonexistent_native_package_xyz' failed" "$TMPDIR/t30_miss.out" "$TMPDIR/t30_miss.err"; then
@@ -1295,7 +1307,7 @@ c == 1.0 | libc::exit(0) | libc::exit(1)
 EOF
 
 set +e
-PATH="$MOCK_BIN:$PATH" timeout 30 ./edva pkg build "$PKGCONF_DIR" >"$TMPDIR/t30_ok.out" 2>"$TMPDIR/t30_ok.err"
+PATH="$MOCK_BIN:$PATH" timeout 30 ./edva build "$PKGCONF_DIR" >"$TMPDIR/t30_ok.out" 2>"$TMPDIR/t30_ok.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || [ ! -x "$PKGCONF_DIR/pkgconf_pkg" ]; then
@@ -1321,7 +1333,7 @@ cat <<'EOF' > "$LIB_PKG/src/lib_only.dva"
 EOF
 
 set +e
-timeout 30 ./edva pkg build "$LIB_PKG" >"$TMPDIR/t31.out" 2>"$TMPDIR/t31.err"
+timeout 30 ./edva build "$LIB_PKG" >"$TMPDIR/t31.out" 2>"$TMPDIR/t31.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || ! grep -q "library package" "$TMPDIR/t31.out"; then
@@ -1538,24 +1550,24 @@ echo "PASS"
 
 # --- Test 39: Cache CLI management (ls, dir, clean) ---
 echo -n "Testing cache CLI commands (dir, ls, clean)... "
-DIR_OUT="$(./edva pkg cache dir --cache "$CACHE_DIR")"
+DIR_OUT="$(./edva cache dir --cache "$CACHE_DIR")"
 if [ "$DIR_OUT" != "$CACHE_DIR" ]; then
     echo "FAILED: expected cache dir $CACHE_DIR, got $DIR_OUT"
     exit 1
 fi
-LS_OUT="$(./edva pkg cache ls --cache "$CACHE_DIR")"
+LS_OUT="$(./edva cache ls --cache "$CACHE_DIR")"
 if ! echo "$LS_OUT" | grep -q "entries"; then
     echo "FAILED: cache ls should report entries"
     echo "$LS_OUT"
     exit 1
 fi
-CLEAN_OUT="$(./edva pkg cache clean --cache "$CACHE_DIR")"
+CLEAN_OUT="$(./edva cache clean --cache "$CACHE_DIR")"
 if ! echo "$CLEAN_OUT" | grep -q "cache cleaned"; then
     echo "FAILED: cache clean failed"
     echo "$CLEAN_OUT"
     exit 1
 fi
-EMPTY_LS="$(./edva pkg cache ls --cache "$CACHE_DIR")"
+EMPTY_LS="$(./edva cache ls --cache "$CACHE_DIR")"
 if [ "$EMPTY_LS" != "0 cached entries" ]; then
     echo "FAILED: expected 0 entries after clean, got $EMPTY_LS"
     exit 1
@@ -1569,23 +1581,21 @@ mkdir -p "$CORRUPT_ENTRY"
 echo "not valid ccl [[[" > "$CORRUPT_ENTRY/meta.ccl"
 touch "$CORRUPT_ENTRY/output.ll"
 # A build whose key happens to collide with corrupt entry or cache lookup encountering corrupt entry deletes it
-timeout 30 ./edva pkg cache ls --cache "$CACHE_DIR" >/dev/null 2>&1
+timeout 30 ./edva cache ls --cache "$CACHE_DIR" >/dev/null 2>&1
 # Rebuilding something should cleanly proceed
 timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >/dev/null 2>&1
 echo "PASS"
 
-# --- Test 41: edva init workflow & duplicate prevention (E7020) ---
+# --- Test 41: edva init workflow (default '.', --lib, --name) & duplicate prevention (E7020) ---
 echo -n "Testing edva init and duplicate prevention (E7020)... "
 
-# Verify edva pkg init with no args fails with E7002
-set +e
-timeout 30 ./edva pkg init >"$TMPDIR/t41_noargs.out" 2>"$TMPDIR/t41_noargs.err"
-rc=$?
-set -e
-if [ $rc -eq 0 ] || ! grep -q "E7002: missing target directory for 'init'" \
-    "$TMPDIR/t41_noargs.out" "$TMPDIR/t41_noargs.err"; then
-    echo "FAILED: edva pkg init with no args should fail with E7002"
-    cat "$TMPDIR/t41_noargs.out" "$TMPDIR/t41_noargs.err"
+# Verify edva init with no args initializes the current directory
+INIT_DOT="$TMPDIR/init_dot"
+mkdir -p "$INIT_DOT"
+(cd "$INIT_DOT" && timeout 30 "$ORIG_DIR/edva" init >"$TMPDIR/t41_dot.out" 2>"$TMPDIR/t41_dot.err")
+if [ ! -f "$INIT_DOT/edva.ccl" ] || [ ! -f "$INIT_DOT/src/init_dot.dva" ] || [ ! -f "$INIT_DOT/src/main.dva" ]; then
+    echo "FAILED: edva init with no args should initialize current directory '.'"
+    cat "$TMPDIR/t41_dot.out" "$TMPDIR/t41_dot.err"
     exit 1
 fi
 
@@ -1614,9 +1624,9 @@ if ! grep -q "edva = $EXP_VER" "$INIT_APP/edva.ccl"; then
     cat "$INIT_APP/edva.ccl"
     exit 1
 fi
-timeout 30 ./edva pkg init "$INIT_LIB" --name my_custom_lib >/dev/null 2>&1
-if [ ! -f "$INIT_LIB/edva.ccl" ] || [ ! -f "$INIT_LIB/src/my_custom_lib.dva" ]; then
-    echo "FAILED: edva pkg init --name did not create expected named skeleton"
+timeout 30 ./edva init "$INIT_LIB" --name my_custom_lib --lib >/dev/null 2>&1
+if [ ! -f "$INIT_LIB/edva.ccl" ] || [ ! -f "$INIT_LIB/src/my_custom_lib.dva" ] || [ -f "$INIT_LIB/src/main.dva" ]; then
+    echo "FAILED: edva init --name --lib did not create expected library skeleton without src/main.dva"
     exit 1
 fi
 set +e
@@ -1640,10 +1650,42 @@ if [ "$APP_RUN_OUT" != "Hello from init_app!" ]; then
     echo "FAILED: unexpected output from initialized app binary: $APP_RUN_OUT"
     exit 1
 fi
+# Also verify edva run on package and on single .dva file with -- args
+RUN_PKG_OUT="$(./edva run "$INIT_APP" | tail -n 1)"
+if [ "$RUN_PKG_OUT" != "Hello from init_app!" ]; then
+    echo "FAILED: unexpected output from 'edva run \$INIT_APP': $RUN_PKG_OUT"
+    exit 1
+fi
+cat <<'EOF' > "$TMPDIR/run_args_test.dva"
+#use io
+#use cli
+args = cli::args!
+io::out("arg0=" + (args(0) | s => s | "none"))
+EOF
+RUN_FILE_OUT="$(./edva run "$TMPDIR/run_args_test.dva" -- hello_passthru | tail -n 1)"
+if [ "$RUN_FILE_OUT" != "arg0=hello_passthru" ]; then
+    echo "FAILED: unexpected output from 'edva run file.dva -- hello_passthru': $RUN_FILE_OUT"
+    exit 1
+fi
 echo "PASS"
 
-# --- Test 42: edva add transactional rollback on failure (E7021) & successful add ---
-echo -n "Testing edva add and transactional rollback (E7021)... "
+# --- Test 42: edva add (auto-alias, --as, rollback E7021) & edva rm ---
+echo -n "Testing edva add (auto-alias, --as, rollback E7021) and edva rm... "
+# Single-arg auto-inferred alias from target edva.ccl name ('my_custom_lib')
+(cd "$INIT_APP" && timeout 30 "$ORIG_DIR/edva" add "$INIT_LIB" >"$TMPDIR/t42_auto.out" 2>"$TMPDIR/t42_auto.err")
+if ! grep -q "my_custom_lib" "$INIT_APP/edva.ccl" || ! grep -q "my_custom_lib@path" "$INIT_APP/edva.lock.ccl"; then
+    echo "FAILED: single-arg 'edva add <path>' did not auto-infer alias my_custom_lib"
+    cat "$TMPDIR/t42_auto.out" "$TMPDIR/t42_auto.err"
+    exit 1
+fi
+# Remove it via 'edva rm'
+timeout 30 ./edva rm my_custom_lib "$INIT_APP" >"$TMPDIR/t42_rm.out" 2>"$TMPDIR/t42_rm.err"
+if grep -q "my_custom_lib" "$INIT_APP/edva.ccl"; then
+    echo "FAILED: 'edva rm my_custom_lib' did not remove dependency from edva.ccl"
+    cat "$INIT_APP/edva.ccl"
+    exit 1
+fi
+# Explicit alias via two-arg / --path
 timeout 30 ./edva add my_lib --path "$INIT_LIB" "$INIT_APP" >"$TMPDIR/t42_add.out" 2>"$TMPDIR/t42_add.err"
 rc=$?
 if [ $rc -ne 0 ] || ! grep -q "my_lib" "$INIT_APP/edva.ccl" || ! grep -q "my_custom_lib@path" "$INIT_APP/edva.lock.ccl"; then

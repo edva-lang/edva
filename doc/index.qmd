@@ -42,7 +42,7 @@ Edva (`.dva`) is a statically typed, expression-oriented systems language with s
 | 12 | [Functions & Closures](reference/types/functions.qmd) | Arrow types (`A => B`), `{ fn_ptr, env_ptr }` ABI, lambdas, headless choices, closure capture, and pipelines |
 | 13 | [Compile-Time (`#!`) & `Type` Reflection](reference/types/type.qmd) | `#!` CTFE, generic `Type` parameters, `#size`/`#align`, `T.name`/`T.zero`/`?T`, shape guards, and `T @ f =>` unrolling |
 | 14 | [Memory, Arenas, `Addr` & FFI](reference/types/addr.qmd) | Arena lifecycle, `++` deep copy, `~~` lenses, `Addr` pointers, `&`, volatile `@[addr]`, C ABI, and target triples |
-| 15 | [CLI & Package Manager (`edva.ccl`)](reference/edva-cli.qmd) | `edva` compiler flags, `edva pkg` commands, `edva.ccl` manifest schema, multi-target builds, and vendoring |
+| 15 | [CLI & Package Manager (`edva.ccl`)](reference/edva-cli.qmd) | `edva` compiler flags, package subcommands, `edva.ccl` manifest schema, multi-target builds, and vendoring |
 | 16 | [Compiler & Runtime Diagnostics](reference/diagnostics.qmd) | Complete `E1xxx`–`E7xxx` lexer, parser, typechecker, runtime, codegen, and package error reference |
 | 17 | [Compiler Architecture, Bootstrap & Testing](compiler/architecture.qmd) | Self-hosted compiler pipeline, 3-stage fixed-point bootstrap, test suites, and documentation verification |
 | Ref | [Standard Library](reference/stdlib/index.qmd) | 43 standard library modules (`io`, `fs`, `net`, `json`, `ccl`, `regex`, `crypto`, `flate`, `img`, `kv`, `math`, `str`, `uring`, etc.) |

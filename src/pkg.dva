@@ -1,4 +1,4 @@
-// src/pkg.dva — the `edva pkg` package tool: dependency-graph resolution,
+// src/pkg.dva — the Edva package manager: dependency-graph resolution,
 // edva.lock.ccl writing, and the .edva/imports.ccl map the compiler consumes.
 //
 // Contract: process/packages.md §2, §4–§7, §13 (issues #97, #101). The
@@ -9,6 +9,7 @@
 #use "diag"
 #use ascii
 #use ccl
+#use cli
 #use fs
 #use libc
 #use path
@@ -1046,6 +1047,16 @@
    rev_parse = r, url, rev =>
       capture(r, git_cmd(r, mirror_dir(r, url)) + "rev-parse --verify --quiet " +
          sq(rev + "^{commit}"))
+         | c => <+ c +>
+         |
+            rev == "master"
+               |
+                  capture(r, git_cmd(r, mirror_dir(r, url)) + "rev-parse --verify --quiet " +
+                     sq("main^{commit}"))
+                     | c2 => <+ c2 +>
+                     | capture(r, git_cmd(r, mirror_dir(r, url)) + "rev-parse --verify --quiet " +
+                        sq("HEAD^{commit}"))
+               | <-->
 
    // The locked commit for (url, rev) if the lock has one, else resolve the
    // moving reference against a freshly fetched mirror.
@@ -1770,92 +1781,27 @@
          dir' = parent
       found'
 
-   usage: () => Int
-   usage = !=>
-      out("usage: edva pkg <build|cache|fetch|test|update|graph|vendor> [dir] [options]")
-      out("       edva pkg init <dir> [--name <name>]")
-      out("       edva <build|fetch|test|update|graph|vendor> [dir] [options]")
-      out("       edva init <dir> [--name <name>]")
-      2
-
    default_store: () => String
    default_store = !=>
       xdg = env_or("XDG_CACHE_HOME", path_join(env_or("HOME", "/tmp"), ".cache"))
       env_or("EDVA_STORE", path_join(xdg, "edva/store"))
 
-   parse_opts: Int => < PkgOpts | >
-   parse_opts = start =>
-      opts = PkgOpts(".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
-         env_or("EDVA_GIT", "git"), default_cache!, env_or("EDVA_NO_CACHE", "") == "1",
-         <->, "")
-      ok' = <+>
-      i' = start
-      0.. @
-         i' !< sys::argc | -->
-         a = sys::argv_string(i')
-         has_val = i' + 1 < sys::argc
-         a
-            ["--locked"] opts.locked = <+>
-            ["--offline"] opts.offline = <+>
-            ["--cache"]
-               has_val
-                  |
-                     opts.cache = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            ["--no-cache"] opts.no_cache = <+>
-            ["--store"]
-               has_val
-                  |
-                     opts.store = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            ["--git"]
-               has_val
-                  |
-                     opts.git = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            |
-               ?a > 0 && a(0) == '-'
-                  | ok' = <->
-                  | opts.root = a
-         i' = i' + 1
-      ok' | <+ opts +> | <-->
+   opts_from_parsed: cli::Parsed, String => PkgOpts
+   opts_from_parsed = p, root_arg =>
+      eff_root = root_arg != "" | root_arg | "."
+      locked = cli::flag(p, "locked")
+      offline = cli::flag(p, "offline") || env_or("EDVA_OFFLINE", "") == "1"
+      store_s = cli::str(p, "store")
+      eff_store = store_s != "" | store_s | default_store!
+      git_s = cli::str(p, "git-bin")
+      eff_git = git_s != "" | git_s | env_or("EDVA_GIT", "git")
+      cache_s = cli::str(p, "cache")
+      eff_cache = cache_s != "" | cache_s | default_cache!
+      no_cache = cli::flag(p, "no-cache") || env_or("EDVA_NO_CACHE", "") == "1"
+      PkgOpts(eff_root, locked, offline, eff_store, eff_git, eff_cache, no_cache, <->, "")
 
-   parse_init_opts: Int => < (String, String) | >
-   parse_init_opts = start =>
-      dir' = ++ ""
-      has_dir' = <->
-      name' = ++ ""
-      ok' = <+>
-      i' = start
-      0.. @
-         i' !< sys::argc | -->
-         a = sys::argv_string(i')
-         a
-            ["--name"]
-               i' + 1 < sys::argc
-                  |
-                     name' = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            |
-               ?a > 0 && a(0) == '-'
-                  | ok' = <->
-                  |
-                     dir' = a
-                     has_dir' = <+>
-         i' = i' + 1
-      !has_dir'
-         |
-            fail(7002, "missing target directory for 'init' (specify directory or '.')")
-            <-->
-         |
-            ok' | <+ (dir', name') +> | <-->
-
-   cmd_init: String, String => Int
-   cmd_init = dir_arg, name_arg =>
+   cmd_init: String, String, <> => Int
+   cmd_init = dir_arg, name_arg, is_lib =>
       target_dir = dir_arg == "" | "." | dir_arg
       manifest_file = path_join(target_dir, "edva.ccl")
       file_exists(manifest_file)
@@ -1891,117 +1837,185 @@
                                     lib_text = "#public\n\nhello: () => String\nhello = !=> \"Hello from " +
                                        pkg_name' + "!\"\n"
                                     write_text(lib_file, lib_text)
-                              main_file = path_join(src_dir, "main.dva")
-                              !file_exists(main_file)
+                              !is_lib
                                  |
-                                    main_text = "#use io\n\nio::out $ \"Hello from " +
-                                       pkg_name' + "!\"\n"
-                                    write_text(main_file, main_text)
+                                    main_file = path_join(src_dir, "main.dva")
+                                    !file_exists(main_file)
+                                       |
+                                          main_text = "#use io\n\nio::out $ \"Hello from " +
+                                             pkg_name' + "!\"\n"
+                                          write_text(main_file, main_text)
                               log::info("initialized package '" + pkg_name' + "' in " + target_dir)
                               0
 
-   parse_add_opts: Int => < AddOpts | >
-   parse_add_opts = start =>
-      opts = PkgOpts(".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
-         env_or("EDVA_GIT", "git"), default_cache!, env_or("EDVA_NO_CACHE", "") == "1",
-         <->, "")
-      alias' = ++ ""
-      kind' = DepKind(Path)
-      git_url' = ++ ""
-      git_rev' = ++ ""
-      path' = ++ ""
-      archive_url' = ++ ""
-      archive_hash' = ++ ""
-      has_kind' = <->
-      pos_count' = 0
+   split_at_rev: String => (String, String)
+   split_at_rev = spec =>
+      // Split `<spec>@<rev>` when `@` is not part of `git@host:...`
+      idx' = -1
+      start_i = starts_with(spec, "git@") | 4 | 0
+      start_i..?spec @ i =>
+         spec(i) == '@' | idx' = i
+      idx' > 0 && idx' + 1 < ?spec
+         | (++ spec(..idx'), ++ spec(idx' + 1..))
+         | (spec, "")
 
-      ok' = <+>
-      i' = start
-      0.. @
-         i' !< sys::argc | -->
-         a = sys::argv_string(i')
-         has_val = i' + 1 < sys::argc
-         a
-            ["--path"]
-               has_val
-                  |
-                     path' = sys::argv_string(i' + 1)
-                     kind' = DepKind(Path)
-                     has_kind' = <+>
-                     i' = i' + 1
-                  | ok' = <->
-            ["--git"]
-               has_val
-                  |
-                     git_url' = sys::argv_string(i' + 1)
-                     kind' = DepKind(Git)
-                     has_kind' = <+>
-                     i' = i' + 1
-                  | ok' = <->
-            ["--rev"]
-               has_val
-                  |
-                     git_rev' = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            ["--url"]
-               has_val
-                  |
-                     archive_url' = sys::argv_string(i' + 1)
-                     kind' = DepKind(Archive)
-                     has_kind' = <+>
-                     i' = i' + 1
-                  | ok' = <->
-            ["--hash"]
-               has_val
-                  |
-                     archive_hash' = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            ["--locked"] opts.locked = <+>
-            ["--offline"] opts.offline = <+>
-            ["--cache"]
-               has_val
-                  |
-                     opts.cache = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            ["--no-cache"] opts.no_cache = <+>
-            ["--store"]
-               has_val
-                  |
-                     opts.store = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
+   infer_alias_from_git: String => String
+   infer_alias_from_git = url =>
+      base' = basename(url)
+      ends_with(base', ".git") && ?base' > 4
+         | base' = ++ base'(..?base' - 4)
+      clean_pkg_name(base')
+
+   infer_alias_from_path: String, String => String
+   infer_alias_from_path = root_dir, rel_or_abs =>
+      abs_p = starts_with(rel_or_abs, "/")
+         | rel_or_abs
+         | path_join(root_dir, rel_or_abs)
+      fallback_name = clean_pkg_name(basename(canonical_path(abs_p)))
+      m_file = path_join(abs_p, "edva.ccl")
+      file_exists(m_file)
+         |
+            load_manifest(abs_p)
+               | m =>
+                  m.name != "" | m.name | fallback_name
+               | fallback_name
+         | fallback_name
+
+   find_char_idx: String, Int => Int
+   find_char_idx = s, ch =>
+      idx' = -1
+      ?s @ i =>
+         s(i) == ch
             |
-               ?a > 0 && a(0) == '-'
-                  | ok' = <->
-                  |
-                     pos_count' == 0
-                        |
-                           alias' = a
-                           pos_count' = 1
-                        |
-                           !has_kind'
-                              |
-                                 has_kind' = <+>
-                                 is_git = starts_with(a, "git@") ||
-                                    starts_with(a, "https://") ||
-                                    starts_with(a, "http://") ||
-                                    starts_with(a, "git://") ||
-                                    ends_with(a, ".git")
-                                 is_git
-                                    |
-                                       git_url' = a
-                                       kind' = DepKind(Git)
-                                    |
-                                       path' = a
-                                       kind' = DepKind(Path)
-                              |
-                                 opts.root = a
-         i' = i' + 1
+               idx' = i
+               -->
+      idx'
+
+   is_domain_shorthand: String => <>
+   is_domain_shorthand = s =>
+      slash_idx = find_char_idx(s, '/')
+      slash_idx !> 0
+         | <->
+         |
+            host = s(..slash_idx)
+            dot_idx = find_char_idx(host, '.')
+            dot_idx > 0 && host != "." && host != ".."
+
+   is_github_shorthand: String => <>
+   is_github_shorthand = s =>
+      slash_idx = find_char_idx(s, '/')
+      slash_idx !> 0 || slash_idx + 1 !< ?s
+         | <->
+         |
+            owner = s(..slash_idx)
+            rest = s(slash_idx + 1..)
+            owner != "." && owner != ".." && find_char_idx(rest, '/') < 0 &&
+               find_char_idx(owner, '.') < 0 && find_char_idx(owner, ':') < 0
+
+   classify_dep_spec: String, String => (DepKind, String, String, String)
+   classify_dep_spec = raw_spec, root_dir =>
+      parts = split_at_rev(raw_spec)
+      base_spec = parts.0
+      spec_rev = parts.1
+      is_url = starts_with(base_spec, "git@") ||
+         starts_with(base_spec, "https://") ||
+         starts_with(base_spec, "http://") ||
+         starts_with(base_spec, "ssh://") ||
+         starts_with(base_spec, "git://") ||
+         starts_with(base_spec, "file://") ||
+         ends_with(base_spec, ".git")
+      is_url
+         | (DepKind(Git), base_spec, spec_rev, "")
+         |
+            is_Explicit_path = starts_with(base_spec, "./") ||
+               starts_with(base_spec, "../") ||
+               starts_with(base_spec, "/") ||
+               starts_with(base_spec, "~/") ||
+               base_spec == "." || base_spec == ".."
+            is_Explicit_path
+               | (DepKind(Path), "", "", base_spec)
+               |
+                  cand_local = path_join(root_dir, base_spec)
+                  dir_exists(cand_local) || dir_exists(base_spec)
+                     | (DepKind(Path), "", "", base_spec)
+                     |
+                        is_domain_shorthand(base_spec)
+                           | (DepKind(Git), "https://" + base_spec + ".git", spec_rev, "")
+                           |
+                              is_github_shorthand(base_spec)
+                                 | (DepKind(Git), "https://github.com/" + base_spec + ".git", spec_rev, "")
+                                 | (DepKind(Path), "", "", base_spec)
+
+   resolve_add_opts: cli::Parsed => < AddOpts | >
+   resolve_add_opts = p =>
+      opts = opts_from_parsed(p, ".")
+      pos_args = cli::rest(p)
+      as_alias = cli::str(p, "as")
+      flag_path = cli::str(p, "path")
+      flag_git = cli::str(p, "git")
+      flag_rev = cli::str(p, "rev")
+      flag_url = cli::str(p, "url")
+      flag_hash = cli::str(p, "hash")
+
+      has_explicit_flag = flag_path != "" || flag_git != "" || flag_url != ""
+      alias' = as_alias
+      kind' = DepKind(Path)
+      git_url' = flag_git
+      git_rev' = flag_rev
+      path' = flag_path
+      archive_url' = flag_url
+      archive_hash' = flag_hash
+      ok' = <+>
+
+      has_explicit_flag
+         |
+            flag_path != "" | kind' = DepKind(Path)
+            flag_git != "" | kind' = DepKind(Git)
+            flag_url != "" | kind' = DepKind(Archive)
+            ?pos_args !< 1 && alias' == ""
+               | alias' = (pos_args(0) | s => s | "")
+            ?pos_args !< 2
+               | opts.root = (pos_args(1) | s => s | ".")
+         |
+            ?pos_args == 0
+               | ok' = <->
+               |
+                  ?pos_args == 1
+                     |
+                        spec = pos_args(0) | s => s | ""
+                        classified = classify_dep_spec(spec, opts.root)
+                        kind' = classified.0
+                        git_url' = classified.1
+                        classified.2 != "" && git_rev' == "" | git_rev' = classified.2
+                        path' = classified.3
+                     |
+                        // 2+ positional args: `<alias> <spec> [dir]`
+                        first_arg = pos_args(0) | s => s | ""
+                        second_arg = pos_args(1) | s => s | ""
+                        alias' == "" | alias' = first_arg
+                        classified = classify_dep_spec(second_arg, opts.root)
+                        kind' = classified.0
+                        git_url' = classified.1
+                        classified.2 != "" && git_rev' == "" | git_rev' = classified.2
+                        path' = classified.3
+                        ?pos_args !< 3
+                           | opts.root = (pos_args(2) | s => s | ".")
+
+      alias' == "" && ok'
+         |
+            eff_root = find_root(opts.root)
+            root_for_infer = eff_root != "" | eff_root | opts.root
+            kind'
+               [Path]
+                  path' != "" | alias' = infer_alias_from_path(root_for_infer, path')
+               [Git]
+                  git_url' != "" | alias' = infer_alias_from_git(git_url')
+               [Archive]
+                  archive_url' != "" | alias' = infer_alias_from_git(archive_url')
+
       git_url' != "" && git_rev' == "" | git_rev' = ++ "master"
-      ok' && alias' != "" && has_kind'
+      has_source = path' != "" || git_url' != "" || archive_url' != ""
+      ok' && alias' != "" && has_source
          | <+ AddOpts(alias', kind', git_url', git_rev', path', archive_url', archive_hash', opts) +>
          | <-->
 
@@ -2091,7 +2105,55 @@
             0
          | 1
 
-   // `edva pkg fetch`: resolve the root's graph, write edva.lock.ccl when it
+   cmd_rm: PkgOpts, String => Int
+   cmd_rm = opts, alias =>
+      root = find_root(opts.root)
+      root == ""
+         |
+            fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
+            --| 1
+      opts.root = root
+      opts.store = canonical_path(opts.store)
+      alias == ""
+         |
+            fail(7002, "missing dependency alias to remove")
+            --| 1
+      manifest_file = path_join(root, "edva.ccl")
+      old_ccl = read_text(manifest_file) | s => s | ""
+      old_ccl == ""
+         |
+            fail(7015, "cannot read " + manifest_file)
+            --| 1
+      m_res = load_manifest(root)
+      m_res
+         | m =>
+            new_deps: PackageDeps
+            found' = <->
+            m.deps @ d =>
+               d.alias == alias
+                  | found' = <+>
+                  | new_deps += d
+            !found'
+               |
+                  fail(7004, "dependency '" + alias + "' not found in edva.ccl")
+                  --| 1
+            m.deps = new_deps
+            new_ccl = manifest_to_ccl(m)
+            !write_text(manifest_file, new_ccl)
+               |
+                  fail(7017, "cannot write " + manifest_file)
+                  --| 1
+            fetch_rc = run_fetch(opts)
+            fetch_rc != 0
+               |
+                  write_text(manifest_file, old_ccl)
+                  fail(7021, "rolled back edva.ccl changes after resolution failure")
+                  --| fetch_rc
+            log::info("removed dependency '" + alias + "'")
+            0
+         | 1
+
+   // `edva fetch`: resolve the root's graph, write edva.lock.ccl when it
    // changed, and (re)write .edva/imports.ccl.
    cmd_fetch: PkgOpts => Int
    cmd_fetch = opts =>
@@ -2105,71 +2167,203 @@
             opts.store = canonical_path(opts.store)
             run_fetch(opts)
 
-   // `edva pkg build`: resolve the root's graph, then compile configured targets
-   // in edva.ccl (or fall back to src/main.dva -> <name> when `targets` is omitted).
+   is_dva_file_target: String => <>
+   is_dva_file_target = target =>
+      target != "" && (ends_with(target, ".dva") || (file_exists(target) && !dir_exists(target)))
+
+   append_compiler_flags: String, String, String, Strings, PkgOpts => String
+   append_compiler_flags = base_cmd, target_triple, opt_level, cflags, opts =>
+      cmd' = base_cmd
+      target_triple != "" | cmd' = cmd' + " -target " + sq(target_triple)
+      opt_level != ""
+         |
+            opt_flag = opt_level(0) == '-' | opt_level | "-" + opt_level
+            cmd' = cmd' + " " + sq(opt_flag)
+      cflags @ cf =>
+         cmd' = cmd' + " -cflag " + sq(cf)
+      opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
+      opts.no_cache | cmd' = cmd' + " --no-cache"
+      cmd'
+
+   ensure_pkg_fetched_for_file: String, PkgOpts => Int
+   ensure_pkg_fetched_for_file = file_path, opts =>
+      file_dir = dirname(canonical_path(file_path))
+      pkg_root = find_root(file_dir != "" | file_dir | ".")
+      pkg_root == ""
+         | 0
+         |
+            imp_map = path_join(path_join(pkg_root, ".edva"), "imports.ccl")
+            file_exists(imp_map)
+               | 0
+               |
+                  opts.root = pkg_root
+                  opts.store = canonical_path(opts.store)
+                  run_fetch(opts)
+
+   // `edva build [dir|file.dva]`: dual-mode package or single-file build.
+   cmd_build_ex: PkgOpts, String, String, String, Strings => Int
+   cmd_build_ex = opts, out_override, target_override, opt_override, cflags_override =>
+      is_dva_file_target(opts.root)
+         |
+            src_file = opts.root
+            !file_exists(src_file)
+               |
+                  fail(7019, "source file '" + src_file + "' not found")
+                  --| 1
+            fetch_rc = ensure_pkg_fetched_for_file(src_file, opts)
+            fetch_rc != 0 | --| fetch_rc
+            base_name = basename(src_file)
+            stem = ends_with(base_name, ".dva") && ?base_name > 4
+               | ++ base_name(..?base_name - 4)
+               | base_name + ".out"
+            out_path = out_override != "" | out_override | stem
+            compiler = sys::argv_string(0)
+            base_cmd = sq(compiler) + " " + sq(src_file) + " -o " + sq(out_path)
+            cmd = append_compiler_flags(base_cmd, target_override, opt_override, cflags_override, opts)
+            rc = sh(cmd)
+            libc::unlink(out_path + ".ll")
+            rc == 0 | 0 | 1
+         |
+            root = find_root(opts.root)
+            root == ""
+               |
+                  fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
+                  1
+               |
+                  opts.root = root
+                  opts.store = canonical_path(opts.store)
+                  fetch_rc = run_fetch(opts)
+                  fetch_rc != 0
+                     | fetch_rc
+                     |
+                        m_res = load_manifest(opts.root)
+                        m_res
+                           | m =>
+                              ?m.targets > 0
+                                 |
+                                    compiler = sys::argv_string(0)
+                                    rc' = 0
+                                    m.targets @ t =>
+                                       rc' == 0 |
+                                          src_rel = t.src != "" | t.src | "src/main.dva"
+                                          out_rel = out_override != "" && ?m.targets == 1
+                                             | out_override
+                                             | (t.out != "" | t.out | t.name)
+                                          src_path = path_join(opts.root, src_rel)
+                                          out_path = starts_with(out_rel, "/")
+                                             | out_rel
+                                             | path_join(opts.root, out_rel)
+                                          !file_exists(src_path)
+                                             |
+                                                fail(7019, "target '" + t.name + "': source file '" + src_rel + "' not found")
+                                                rc' = 1
+                                             |
+                                                out_dir = dirname(out_path)
+                                                out_dir != "" | mkdir_p(out_dir)
+                                                eff_target = target_override != "" | target_override | t.target
+                                                eff_opt = opt_override != "" | opt_override | t.opt
+                                                eff_cflags: Strings
+                                                t.cflags @ cf => eff_cflags += cf
+                                                cflags_override @ cf => eff_cflags += cf
+                                                base_cmd = sq(compiler) + " " + sq(src_path) + " -o " + sq(out_path)
+                                                cmd' = append_compiler_flags(base_cmd, eff_target, eff_opt, eff_cflags, opts)
+                                                step_rc = sh(cmd')
+                                                libc::unlink(out_path + ".ll")
+                                                step_rc != 0 | rc' = 1
+                                    rc'
+                                 |
+                                    main_src = path_join(path_join(opts.root, "src"), "main.dva")
+                                    !file_exists(main_src)
+                                       |
+                                          log::info("no executable target src/main.dva (library package)")
+                                          0
+                                       |
+                                          out_bin = out_override != ""
+                                             | (starts_with(out_override, "/") | out_override | path_join(opts.root, out_override))
+                                             | path_join(opts.root, m.name)
+                                          compiler = sys::argv_string(0)
+                                          base_cmd = sq(compiler) + " " + sq(main_src) + " -o " + sq(out_bin)
+                                          cmd' = append_compiler_flags(base_cmd, target_override, opt_override, cflags_override, opts)
+                                          rc = sh(cmd')
+                                          libc::unlink(out_bin + ".ll")
+                                          rc == 0 | 0 | 1
+                           | 1
+
    cmd_build: PkgOpts => Int
    cmd_build = opts =>
-      root = find_root(opts.root)
-      root == ""
+      cmd_build_ex(opts, "", "", "", Strings())
+
+   // `edva run [dir|file.dva] [-- <args...>]`: build and execute binary or single file.
+   cmd_run: PkgOpts, String, String, String, Strings, Strings => Int
+   cmd_run = opts, out_override, target_override, opt_override, cflags_override, run_args =>
+      is_dva_file_target(opts.root)
          |
-            fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
-            1
-         |
-            opts.root = root
-            opts.store = canonical_path(opts.store)
-            fetch_rc = run_fetch(opts)
-            fetch_rc != 0
-               | fetch_rc
+            src_file = opts.root
+            !file_exists(src_file)
                |
-                  m_res = load_manifest(opts.root)
-                  m_res
-                     | m =>
+                  fail(7019, "source file '" + src_file + "' not found")
+                  --| 1
+            fetch_rc = ensure_pkg_fetched_for_file(src_file, opts)
+            fetch_rc != 0 | --| fetch_rc
+            base_name = basename(src_file)
+            stem = ends_with(base_name, ".dva") && ?base_name > 4
+               | ++ base_name(..?base_name - 4)
+               | base_name
+            tmp_bin = out_override != ""
+               | out_override
+               | "/tmp/edva_run_" + str::from_int(getpid!) + "_" + stem
+            compiler = sys::argv_string(0)
+            base_cmd = sq(compiler) + " " + sq(src_file) + " -o " + sq(tmp_bin)
+            build_cmd = append_compiler_flags(base_cmd, target_override, opt_override, cflags_override, opts)
+            b_rc = sh(build_cmd)
+            libc::unlink(tmp_bin + ".ll")
+            b_rc != 0
+               |
+                  out_override == "" | libc::unlink(tmp_bin)
+                  1
+               |
+                  exec_cmd' = sq(tmp_bin)
+                  run_args @ a => exec_cmd' = exec_cmd' + " " + sq(a)
+                  r_rc = sh(exec_cmd')
+                  out_override == "" | libc::unlink(tmp_bin)
+                  r_rc == 0 | 0 | 1
+         |
+            target_dir = opts.root
+            root = find_root(target_dir)
+            root == ""
+               |
+                  fail(7015, "no edva.ccl found in '" + target_dir + "' or any parent directory")
+                  --| 1
+            opts.root = root
+            b_rc = cmd_build_ex(opts, out_override, target_override, opt_override, cflags_override)
+            b_rc != 0 | --| b_rc
+            m_res = load_manifest(root)
+            m_res
+               | m =>
+                  bin_path' = ++ ""
+                  out_override != ""
+                     |
+                        bin_path' = starts_with(out_override, "/")
+                           | out_override
+                           | path_join(root, out_override)
+                     |
                         ?m.targets > 0
                            |
-                              compiler = sys::argv_string(0)
-                              rc' = 0
-                              m.targets @ t =>
-                                 rc' == 0 |
-                                    src_rel = t.src != "" | t.src | "src/main.dva"
-                                    out_rel = t.out != "" | t.out | t.name
-                                    src_path = path_join(opts.root, src_rel)
-                                    out_path = path_join(opts.root, out_rel)
-                                    !file_exists(src_path)
-                                       |
-                                          fail(7019, "target '" + t.name + "': source file '" + src_rel + "' not found")
-                                          rc' = 1
-                                       |
-                                          out_dir = dirname(out_path)
-                                          out_dir != "" | mkdir_p(out_dir)
-                                          cmd' = sq(compiler) + " " + sq(src_path) + " -o " + sq(out_path)
-                                          t.target != "" | cmd' = cmd' + " -target " + sq(t.target)
-                                          t.opt != "" |
-                                             opt_flag = t.opt(0) == '-' | t.opt | "-" + t.opt
-                                             cmd' = cmd' + " " + sq(opt_flag)
-                                          t.cflags @ cf =>
-                                             cmd' = cmd' + " -cflag " + sq(cf)
-                                          opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
-                                          opts.no_cache | cmd' = cmd' + " --no-cache"
-                                          step_rc = sh(cmd')
-                                          libc::unlink(out_path + ".ll")
-                                          step_rc != 0 | rc' = 1
-                              rc'
+                              t0 = m.targets(0) | t => t | BuildTarget("", "", "", "", "", Strings())
+                              out_rel = t0.out != "" | t0.out | t0.name
+                              bin_path' = path_join(root, out_rel)
                            |
-                              main_src = path_join(path_join(opts.root, "src"), "main.dva")
-                              !file_exists(main_src)
-                                 |
-                                    log::info("no executable target src/main.dva (library package)")
-                                    0
-                                 |
-                                    out_bin = path_join(opts.root, m.name)
-                                    compiler = sys::argv_string(0)
-                                    cmd' = sq(compiler) + " " + sq(main_src) + " -o " + sq(out_bin)
-                                    opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
-                                    opts.no_cache | cmd' = cmd' + " --no-cache"
-                                    rc = sh(cmd')
-                                    libc::unlink(out_bin + ".ll")
-                                    rc == 0 | 0 | 1
-                     | 1
+                              bin_path' = path_join(root, m.name)
+                  !file_exists(bin_path')
+                     |
+                        fail(7019, "no executable target found in package '" + m.name + "'")
+                        1
+                     |
+                        exec_cmd' = sq(bin_path')
+                        run_args @ a => exec_cmd' = exec_cmd' + " " + sq(a)
+                        r_rc = sh(exec_cmd')
+                        r_rc == 0 | 0 | 1
+               | 1
 
    list_test_files: String => Strings
    list_test_files = dir =>
@@ -2180,58 +2374,88 @@
             files += e.name
       ccl::sort_strings(files)
 
-   // `edva pkg test`: resolve the root's graph, then compile and run each
-   // test in tests/*.dva.
+   // `edva test [dir|file.dva]`: resolve the root's graph, then compile and run
+   // tests/*.dva or a single test file.
    cmd_test: PkgOpts => Int
    cmd_test = opts =>
-      root = find_root(opts.root)
-      root == ""
+      is_dva_file_target(opts.root)
          |
-            fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
-            1
-         |
-            opts.root = root
-            opts.store = canonical_path(opts.store)
-            fetch_rc = run_fetch(opts)
-            fetch_rc != 0
-               | fetch_rc
+            tpath = opts.root
+            !file_exists(tpath)
                |
-                  tests_dir = path_join(opts.root, "tests")
-                  !dir_exists(tests_dir)
+                  fail(7019, "test file '" + tpath + "' not found")
+                  --| 1
+            fetch_rc = ensure_pkg_fetched_for_file(tpath, opts)
+            fetch_rc != 0 | --| fetch_rc
+            tf = basename(tpath)
+            stem = ends_with(tf, ".dva") && ?tf > 4 | tf(..-4) | tf
+            compiler = sys::argv_string(0)
+            tmp_bin = "/tmp/edva_test_" + str::from_int(getpid!) + "_" + stem
+            cmd' = sq(compiler) + " " + sq(tpath) + " -o " +
+               sq(tmp_bin) + " -r >/dev/null 2>&1"
+            opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
+            opts.no_cache | cmd' = cmd' + " --no-cache"
+            rc = sh(cmd')
+            libc::unlink(tmp_bin)
+            libc::unlink(tmp_bin + ".ll")
+            rc == 0
+               |
+                  out("test " + tf + " ... ok")
+                  out("1 passed, 0 failed")
+                  0
+               |
+                  out("test " + tf + " ... FAIL")
+                  out("0 passed, 1 failed")
+                  1
+         |
+            root = find_root(opts.root)
+            root == ""
+               |
+                  fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
+                  1
+               |
+                  opts.root = root
+                  opts.store = canonical_path(opts.store)
+                  fetch_rc = run_fetch(opts)
+                  fetch_rc != 0
+                     | fetch_rc
                      |
-                        out("0 passed, 0 failed")
-                        0
-                     |
-                        test_files = list_test_files(tests_dir)
-                        ?test_files == 0
+                        tests_dir = path_join(opts.root, "tests")
+                        !dir_exists(tests_dir)
                            |
                               out("0 passed, 0 failed")
                               0
                            |
-                              passed' = 0
-                              failed' = 0
-                              compiler = sys::argv_string(0)
-                              test_files @ tf =>
-                                 tpath = path_join(tests_dir, tf)
-                                 tmp_bin = "/tmp/edva_test_" + str::from_int(getpid!) +
-                                    "_" + tf(..-4)
-                                 cmd' = sq(compiler) + " " + sq(tpath) + " -o " +
-                                    sq(tmp_bin) + " -r >/dev/null 2>&1"
-                                 opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
-                                 opts.no_cache | cmd' = cmd' + " --no-cache"
-                                 rc = sh(cmd')
-                                 libc::unlink(tmp_bin)
-                                 libc::unlink(tmp_bin + ".ll")
-                                 rc == 0
-                                    |
-                                       out("test " + tf + " ... ok")
-                                       passed' = passed' + 1
-                                    |
-                                       out("test " + tf + " ... FAIL")
-                                       failed' = failed' + 1
-                              out(str::from_int(passed') + " passed, " +
-                                 str::from_int(failed') + " failed")
-                              failed' == 0 | 0 | 1
+                              test_files = list_test_files(tests_dir)
+                              ?test_files == 0
+                                 |
+                                    out("0 passed, 0 failed")
+                                    0
+                                 |
+                                    passed' = 0
+                                    failed' = 0
+                                    compiler = sys::argv_string(0)
+                                    test_files @ tf =>
+                                       tpath = path_join(tests_dir, tf)
+                                       tmp_bin = "/tmp/edva_test_" + str::from_int(getpid!) +
+                                          "_" + tf(..-4)
+                                       cmd' = sq(compiler) + " " + sq(tpath) + " -o " +
+                                          sq(tmp_bin) + " -r >/dev/null 2>&1"
+                                       opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
+                                       opts.no_cache | cmd' = cmd' + " --no-cache"
+                                       rc = sh(cmd')
+                                       libc::unlink(tmp_bin)
+                                       libc::unlink(tmp_bin + ".ll")
+                                       rc == 0
+                                          |
+                                             out("test " + tf + " ... ok")
+                                             passed' = passed' + 1
+                                          |
+                                             out("test " + tf + " ... FAIL")
+                                             failed' = failed' + 1
+                                    out(str::from_int(passed') + " passed, " +
+                                       str::from_int(failed') + " failed")
+                                    failed' == 0 | 0 | 1
 
    run_fetch: PkgOpts => Int
    run_fetch = opts =>
@@ -2430,10 +2654,10 @@
                         log::info("locked " + str::from_int(n) + (n == 1 | " package" | " packages"))
                         0
 
-   cmd_cache: PkgOpts => Int
-   cmd_cache = opts =>
-      subcmd = opts.root == "." | "dir" | opts.root
-      eff_cache = opts.cache != "" | opts.cache | default_cache!
+   cmd_cache_action: String, String => Int
+   cmd_cache_action = action, cache_override =>
+      subcmd = action == "" | "dir" | action
+      eff_cache = cache_override != "" | cache_override | default_cache!
       subcmd
          ["clean"]
             entries_dir = path_join(eff_cache, "entries")
@@ -2444,7 +2668,7 @@
          ["dir"]
             out(eff_cache)
             0
-         ["ls", "list"]
+         ["ls", "list", "status"]
             entries_dir = path_join(eff_cache, "entries")
             !dir_exists(entries_dir)
                |
@@ -2472,57 +2696,8 @@
                   out(str::from_int(count') + (count' == 1 | " entry" | " entries"))
                   0
          |
-            out("usage: edva pkg cache <clean|dir|ls>")
+            out("usage: edva cache [dir|ls|clean]")
             2
-
-   parse_update_opts: Int => < (PkgOpts, String) | >
-   parse_update_opts = start =>
-      opts = PkgOpts(".", <->, env_or("EDVA_OFFLINE", "") == "1", default_store!,
-         env_or("EDVA_GIT", "git"), default_cache!, env_or("EDVA_NO_CACHE", "") == "1",
-         <+>, "")
-      alias' = ++ ""
-      ok' = <+>
-      i' = start
-      0.. @
-         i' !< sys::argc | -->
-         a = sys::argv_string(i')
-         has_val = i' + 1 < sys::argc
-         a
-            ["--locked"] opts.locked = <+>
-            ["--offline"] opts.offline = <+>
-            ["--cache"]
-               has_val
-                  |
-                     opts.cache = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            ["--no-cache"] opts.no_cache = <+>
-            ["--store"]
-               has_val
-                  |
-                     opts.store = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            ["--git"]
-               has_val
-                  |
-                     opts.git = sys::argv_string(i' + 1)
-                     i' = i' + 1
-                  | ok' = <->
-            |
-               ?a > 0 && a(0) == '-'
-                  | ok' = <->
-                  |
-                     is_dir_target = file_exists(path_join(a, "edva.ccl")) ||
-                        starts_with(a, "/") || starts_with(a, "./") || starts_with(a, "../")
-                     is_dir_target
-                        | opts.root = a
-                        |
-                           alias' == ""
-                              | alias' = a
-                              | opts.root = a
-         i' = i' + 1
-      ok' | <+ (opts, alias') +> | <-->
 
    cmd_update: PkgOpts, String => Int
    cmd_update = opts, target_alias =>
@@ -2764,56 +2939,81 @@
                   1
 
 #public
-   // `edva pkg <cmd> ...` or `edva <cmd> ...`
-   main: Int => Int
-   main = start =>
-      start !< sys::argc
-         | usage!
-         |
-            cmd = sys::argv_string(start)
-            cmd
-               ["init"]
-                  parse_init_opts(start + 1)
-                     | opts => cmd_init(opts.0, opts.1)
-                     | usage!
-               ["add"]
-                  parse_add_opts(start + 1)
-                     | opts => cmd_add(opts)
-                     | usage!
-               ["fetch"]
-                  parse_opts(start + 1)
-                     | opts => cmd_fetch(opts)
-                     | usage!
-               ["build"]
-                  parse_opts(start + 1)
-                     | opts => cmd_build(opts)
-                     | usage!
-               ["test"]
-                  parse_opts(start + 1)
-                     | opts => cmd_test(opts)
-                     | usage!
-               ["update"]
-                  parse_update_opts(start + 1)
-                     | opts => cmd_update(opts.0, opts.1)
-                     | usage!
-               ["graph", "tree"]
-                  parse_opts(start + 1)
-                     | opts => cmd_graph(opts)
-                     | usage!
-               ["cache"]
-                  parse_opts(start + 1)
-                     | opts => cmd_cache(opts)
-                     | usage!
-               ["vendor"]
-                  parse_opts(start + 1)
-                     | opts => cmd_vendor(opts)
-                     | usage!
-               ["help", "-h", "--help"]
-                  usage!
-                  0
-               ["version", "-v", "--version"]
-                  out("edva " + version::VERSION)
-                  0
+   dispatch: String, cli::Parsed => Int
+   dispatch = subcmd, p =>
+      subcmd
+         ["init"]
+            dir_s = cli::str(p, "dir")
+            name_s = cli::str(p, "name")
+            is_lib = cli::flag(p, "lib")
+            cmd_init(dir_s, name_s, is_lib)
+         ["add"]
+            resolve_add_opts(p)
+               | add_opts => cmd_add(add_opts)
                |
-                  fail(7015, "unknown pkg command '" + cmd + "'")
-                  usage!
+                  fail(7002, "usage: edva add [<alias>] <spec> [--as <alias>] [--rev <rev>] [--path <dir>] [--git <url>]")
+                  2
+         ["rm", "remove"]
+            alias_s = cli::str(p, "alias")
+            dir_s = cli::str(p, "dir")
+            opts = opts_from_parsed(p, dir_s)
+            cmd_rm(opts, alias_s)
+         ["fetch"]
+            dir_s = cli::str(p, "dir")
+            opts = opts_from_parsed(p, dir_s)
+            cmd_fetch(opts)
+         ["build"]
+            target_s = cli::str(p, "target-path")
+            opts = opts_from_parsed(p, target_s)
+            out_s = cli::str(p, "output")
+            triple_s = cli::str(p, "target")
+            opt_s = cli::str(p, "opt")
+            cflags = cli::strs(p, "cflag")
+            cmd_build_ex(opts, out_s, triple_s, opt_s, cflags)
+         ["run"]
+            target_s = cli::str(p, "target-path")
+            opts = opts_from_parsed(p, target_s)
+            out_s = cli::str(p, "output")
+            triple_s = cli::str(p, "target")
+            opt_s = cli::str(p, "opt")
+            cflags = cli::strs(p, "cflag")
+            pass_args = cli::passthrough(p)
+            cmd_run(opts, out_s, triple_s, opt_s, cflags, pass_args)
+         ["test"]
+            target_s = cli::str(p, "target-path")
+            opts = opts_from_parsed(p, target_s)
+            cmd_test(opts)
+         ["update"]
+            pos_args = cli::rest(p)
+            alias' = ++ ""
+            dir' = ++ "."
+            pos_args @ a =>
+               is_dir_target = file_exists(path_join(a, "edva.ccl")) ||
+                  starts_with(a, "/") || starts_with(a, "./") ||
+                  starts_with(a, "../") || a == "." || a == ".."
+               is_dir_target
+                  | dir' = a
+                  |
+                     alias' == ""
+                        | alias' = a
+                        | dir' = a
+            opts = opts_from_parsed(p, dir')
+            cmd_update(opts, alias')
+         ["tree", "graph"]
+            dir_s = cli::str(p, "dir")
+            opts = opts_from_parsed(p, dir_s)
+            cmd_graph(opts)
+         ["vendor"]
+            dir_s = cli::str(p, "dir")
+            opts = opts_from_parsed(p, dir_s)
+            cmd_vendor(opts)
+         ["cache"]
+            cache_s = cli::str(p, "cache")
+            nested_sub = cli::sub(p)
+               | sp => cli::subcmd(sp)
+               | ""
+            action_s = nested_sub != "" | nested_sub | cli::str(p, "action")
+            cmd_cache_action(action_s, cache_s)
+         |
+            fail(7015, "unknown command '" + subcmd + "'")
+            2

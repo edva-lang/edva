@@ -23,7 +23,7 @@ flowchart LR
 
 | Stage / Subsystem | Primary Source Files | Responsibilities |
 |---|---|---|
-| **CLI & Driver** | `src/edva.dva`, `src/pkg.dva` | CLI flag parsing, module graph loading, IR caching (`~/.cache/edva/ir/`), `edva pkg` commands, and `clang` invocation |
+| **CLI & Driver** | `src/edva.dva`, `src/pkg.dva` | CLI flag/subcommand parsing, module graph loading, IR caching (`~/.cache/edva/ir/`), package manager subcommands, and `clang` invocation |
 | **Operator Table (SSOT)** | `operators.yaml`, `tools/opgen/main.nu`, `src/operators.dva` | Single source of truth for operator tiers, LBP/RBP binding powers, associativity, and generated tables |
 | **Lexical Analysis** | `src/lexer.dva`, `src/token.dva` | UTF-8 scanning, indentation stack (`INDENT`/`DEDENT`), string margin stripping, `${...}` interpolation tokens |
 | **Parsing** | `src/parser.dva`, `src/ast.dva` | Pratt expression parsing, choice guard classification, headless choice/section synthesis, `#type` / `#!` AST nodes |

@@ -153,6 +153,60 @@ test::check(str::contains(help_txt, "--color"), "help contains long-only color")
 test::check(str::contains(help_txt, "(required)"), "help contains required")
 test::check(str::contains(help_txt, "-h, --help"), "help contains auto -h/--help")
 
+// Subcommands (cli::cmd) and Positional Arguments (cli::pos)
+sub_opts = cli::Opts(
+   cli::cmd("add", "Add dependency", cli::Opts(
+      cli::pos("spec", String, "Dependency spec"),
+      cli::opt("as", "", "Explicit alias")
+   )),
+   cli::cmd("rm|remove", "Remove dependency", cli::Opts(
+      cli::pos("alias", String, "Dependency alias")
+   )),
+   cli::cmd("run", "Run target", cli::Opts(
+      cli::pos("target", ".", "Target path")
+   )),
+   cli::pos("input", "", "Optional input file"),
+   cli::opt("v:verbose", <->, "Verbose output")
+)
+
+res_add = cli::parse_args(sub_opts, cli::Args("add", "owner/repo", "--as", "my_repo"))
+test::ok(res_add, "cli::cmd add parse")
+res_add
+   | p =>
+      test::eq(cli::subcmd(p), "add", "cli::subcmd canonical name")
+      test::eq(cli::str(p, "spec"), "owner/repo", "cli::pos spec in subcommand")
+      test::eq(cli::str(p, "as"), "my_repo", "cli::opt --as in subcommand")
+      test::check(cli::has(p, "spec"), "cli::has pos spec")
+      test::check(cli::has(p, "as"), "cli::has opt as")
+
+res_rm = cli::parse_args(sub_opts, cli::Args("remove", "old_dep"))
+test::ok(res_rm, "cli::cmd alias 'remove' -> 'rm'")
+res_rm
+   | p =>
+      test::eq(cli::subcmd(p), "rm", "cli::subcmd canonical 'rm' from alias 'remove'")
+      test::eq(cli::str(p, "alias"), "old_dep", "cli::pos alias")
+
+res_run = cli::parse_args(sub_opts, cli::Args("run", "app.dva", "--", "--port", "8080"))
+test::ok(res_run, "cli::cmd run with passthrough")
+res_run
+   | p =>
+      test::eq(cli::subcmd(p), "run", "cli::subcmd run")
+      test::eq(cli::str(p, "target"), "app.dva", "cli::pos target")
+      pt = cli::passthrough(p)
+      test::eq(?pt, 2, "cli::passthrough count")
+      test::eq(pt(0)!!, "--port", "cli::passthrough 0")
+      test::eq(pt(1)!!, "8080", "cli::passthrough 1")
+
+// Missing required positional in subcommand
+test::err(cli::parse_args(sub_opts, cli::Args("rm")), "cli::pos missing required <alias>")
+
+// Help formatting with Commands and Arguments sections
+sub_help = cli::format_help(sub_opts, "edva", "Driver", "1.0.0")
+test::check(str::contains(sub_help, "Commands:"), "sub_help Commands section")
+test::check(str::contains(sub_help, "rm, remove"), "sub_help command alias formatting")
+test::check(str::contains(sub_help, "Arguments:"), "sub_help Arguments section")
+test::check(str::contains(sub_help, "[input]"), "sub_help optional positional")
+
 // Bench module
 test::suite("bench")
 t0 = bench::start!
