@@ -1160,9 +1160,9 @@ codegen_eval_evaluated_array_access = cg, t, aval =>
       |
          saved_discard = cg.discard_result
          cg.discard_result = <->
+         dt = cg.last_type
          ev = expr::codegen_eval(cg, av)
          cg.discard_result = saved_discard
-         dt = cg.last_type
          cg.last_type = array_read_typedef(cg, dt)
          elem_vt = array_elem_vt(cg, dt)
          ram_res = codegen_array_index(cg, aval, ev.0, elem_vt, "a.idx",

@@ -1,0 +1,340 @@
+// Keyed DOM lists. Item, State, and Key are fully erased after specialization.
+#use dom
+#use str
+
+#public
+Rendered: #! State: Type => (element: dom::Element, state: State)
+#type Entry (slot: < Int | >, seen: Int, key: < String | >)
+#type IntIndex Int ^ Entry
+#type StringIndex String ^ Entry
+#type NodeIndex Int ^ Int
+#type Indices (ints: IntIndex, strings: StringIndex)
+
+List: #! Item: Type, #! State: Type, #! Key: Type => (
+   container: dom::Element,
+   keys: Key{}, nodes: dom::Element{}, states: State{}, revisions: Int{},
+   active: <>{}, dirty: <>{}, index: Indices, node_index: NodeIndex,
+   order: Int{}, order_count: Int, order_dirty: <>,
+   plan: Key{}, plan_count: Int, wanted: Int{},
+   tails: Int{}, previous: Int{}, stable: <>{}, positions: Int{},
+   free: Int{}, free_count: Int,
+   epoch: Int, closed: <>, started: <>,
+   key_fn: < (Item => Key) | >,
+   create_fn: < (Item => < Rendered(State) | Error >) | >,
+   update_fn: < (State, Item => < | Error >) | >,
+   dispose_fn: < (State => < | Error >) | >,
+   revision_fn: < (Item => Int) | >
+)
+
+new: #! Item: Type, #! State: Type, #! Key: Type,
+   dom::Element, (Item => Key), (Item => < Rendered(State) | Error >),
+   (State, Item => < | Error >), (State => < | Error >) => < List(Item, State, Key) | Error >
+new = container, key_fn, create_fn, update_fn, dispose_fn =>
+   empty = dom::is_empty(container)--!
+   !empty
+      | --| <- Error(dom::INVALID_OPTIONS, "List container must be empty",
+         "std/dom/list", 0, 0, (0, 0)) +>
+   index = Key
+      [Int] Indices(IntIndex(), StringIndex())
+      [String] Indices(IntIndex(), StringIndex())
+      | #error "DOM list keys must be Int or String"
+   <+ (
+      container = container,
+      keys = Key{}, nodes = dom::Elements(), states = State{}, revisions = Int{},
+      active = <>{}, dirty = <>{}, index = index, node_index = NodeIndex(),
+      order = Int{}, order_count = 0, order_dirty = <->,
+      plan = Key{}, plan_count = 0, wanted = Int{},
+      tails = Int{}, previous = Int{}, stable = <>{}, positions = Int{},
+      free = Int{}, free_count = 0,
+      epoch = 0, closed = <->, started = <->,
+      key_fn = <+ key_fn +>, create_fn = <+ create_fn +>,
+      update_fn = <+ update_fn +>, dispose_fn = <+ dispose_fn +>,
+      revision_fn = <-->
+   ) ->
+
+with_revisions: #! Item: Type, #! State: Type, #! Key: Type,
+   List(Item, State, Key), (Item => Int) => < | Error >
+with_revisions = list, revision =>
+   list.closed || list.started
+      | --| <- Error(dom::INVALID_OPTIONS, "Set revisions before the first sync",
+         "std/dom/list", 0, 0, (0, 0)) ->
+   list.revision_fn = <+ revision +>
+   <++>
+
+#private
+id: dom::Element => Int
+id = element => element.slot .|. (element.generation .<. 32)
+
+has_entry: #! Key: Type, Indices, Key => <>
+has_entry = index, key =>
+   Key
+      [Int]
+         ints = index.ints
+         ints ^? key
+      [String]
+         strings = index.strings
+         strings ^? key
+      | #error "DOM list keys must be Int or String"
+get_entry: #! Key: Type, Indices, Key => < Entry | Error >
+get_entry = index, key =>
+   Key
+      [Int]
+         ints = index.ints
+         ints ^ key
+      [String]
+         strings = index.strings
+         strings ^ key
+      | #error "DOM list keys must be Int or String"
+put_entry: #! Key: Type, Indices, Key, Entry => ()
+put_entry = index, key, entry =>
+   Key
+      [Int]
+         ints = index.ints
+         ints ^ key = entry
+      [String]
+         strings = index.strings
+         strings ^ key = entry
+      | #error "DOM list keys must be Int or String"
+delete_entry: #! Key: Type, Indices, Key => ()
+delete_entry = index, key =>
+   Key
+      [Int]
+         ints = index.ints
+         ints ^- key
+      [String]
+         strings = index.strings
+         strings ^- key
+      | #error "DOM list keys must be Int or String"
+
+set_item: #! Collection: Type, #! Value: Type, Collection, Int, Value => ()
+set_item = array, index, value => array(index) = value
+
+set_int: Int{}, Int, Int => ()
+set_int = array, index, value =>
+   index == ?array
+      | array += value
+      |
+         array(index) = value !| _
+set_flag: <>{}, Int, <> => ()
+set_flag = array, index, value =>
+   index == ?array
+      | array += value
+      |
+         array(index) = value !| _
+
+// Longest increasing subsequence of previous positions, O(n log n).
+// Only entries outside that subsequence need DOM moves.
+mark_stable: Int{}, Int, Int{}, Int{}, Int{}, <>{} => ()
+mark_stable = wanted, count, positions, tails, previous, stable =>
+   length' = 0
+   count @ i =>
+      set_flag(stable, i, <->)
+      slot = wanted(i)!!
+      position = positions(slot)!!
+      set_int(previous, i, -1)
+      position !< 0
+         |
+            low' = 0
+            high' = length'
+            low' < high' @
+               middle = low' + (high' - low') / 2
+               candidate = wanted(tails(middle)!!)!!
+               positions(candidate)!! < position
+                  | low' = middle + 1
+                  | high' = middle
+            low' > 0 | set_int(previous, i, tails(low' - 1)!!)
+            set_int(tails, low', i)
+            low' == length' | length' = length' + 1
+   length' > 0
+      |
+         current' = tails(length' - 1)!!
+         current' !< 0 @
+            set_flag(stable, current', <+>)
+            current' = previous(current')!!
+
+#public
+sync: #! Item: Type, #! State: Type, #! Key: Type,
+   List(Item, State, Key), Item[] => < | Error >
+sync = list, items =>
+   result = sync_impl(Item, State, Key, list, items)
+   result !| failure =>
+      list.plan @ item_key, i =>
+         i !< list.plan_count | -->
+         has_entry(list.index, item_key)
+            |
+               entry = get_entry(list.index, item_key)!!
+               !<>(entry.slot) | delete_entry(list.index, item_key)
+      --| <- failure ->
+   result
+
+#private
+sync_impl: #! Item: Type, #! State: Type, #! Key: Type,
+   List(Item, State, Key), Item[] => < | Error >
+sync_impl = list, items =>
+   list.closed
+      | --| <- Error(dom::CLOSED, "DOM list is closed", "std/dom/list", 0, 0, (0, 0)) ->
+   // This read enforces explicit flush ordering before callbacks can mutate data.
+   dom::is_empty(list.container)--!
+   key_callback = list.key_fn!!
+   create_callback = list.create_fn!!
+   update_callback = list.update_fn!!
+   dispose_callback = list.dispose_fn!!
+   list.started = <+>
+   list.epoch = list.epoch + 1
+   epoch = list.epoch
+   list.plan_count = 0
+   // Resolve each item_key exactly once and reject duplicates before any DOM mutation.
+   items @ item, i =>
+      item_key: Key
+      item_key = key_callback(item)
+      entry = has_entry(list.index, item_key)
+         | get_entry(list.index, item_key)!!
+         |
+            retained = Key [String] <+ ++item_key +> | <-->
+            fresh = Entry(<-->, 0, retained)
+            owned_key = Key [String] retained!! | item_key
+            put_entry(list.index, owned_key, fresh)
+            fresh
+      entry.seen == epoch
+         | --| <- Error(dom::DUPLICATE_KEY, "Duplicate DOM list item_key",
+            "std/dom/list", 0, 0, (i, 0)) ->
+      entry.seen = epoch
+      owned_key = Key [String] entry.key!! | item_key
+      i == ?list.plan
+         | list.plan += owned_key
+         |
+            set_item(list.plan, i, owned_key)
+      list.plan_count = i + 1
+   // Reconstruct ordering only after a partially successful earlier move pass.
+   list.order_dirty
+      |
+         actual: dom::Elements
+         actual = dom::children(list.container)--!
+         list.order_count = 0
+         actual @ element, i =>
+            slot_result: < Int | Error >
+            slot_result = list.node_index ^ id(element)
+            slot = slot_result--!
+            set_int(list.order, i, slot)
+            list.order_count = i + 1
+         list.order_dirty = <->
+   // Remove absent rows. A failed disposer leaves the row retryable.
+   list.active @ active, slot =>
+      active
+         |
+            remove_key: Key
+            remove_key = list.keys(slot)!!
+            remove_entry: Entry
+            remove_entry = get_entry(list.index, remove_key)!!
+            remove_entry.seen != epoch
+               |
+                  dispose_callback(list.states(slot)!!)--!
+                  list.order_dirty = <+>
+                  remove_node: dom::Element
+                  remove_node = list.nodes(slot)!!
+                  dom::remove(remove_node)--!
+                  list.node_index ^- id(remove_node)
+                  delete_entry(list.index, remove_key)
+                  set_item(list.active, slot, <->)
+                  set_int(list.free, list.free_count, slot)
+                  list.free_count = list.free_count + 1
+   list.positions @ position, slot =>
+      set_item(list.positions, slot, -1)
+   list.order @ slot, i =>
+      i !< list.order_count | -->
+      list.active(slot)!! | set_int(list.positions, slot, i)
+   // Apply creates/updates without changing revision state on a failed update.
+   items @ item, i =>
+      plan_key: Key
+      plan_key = list.plan(i)!!
+      apply_entry: Entry
+      apply_entry = get_entry(list.index, plan_key)!!
+      slot = <>(apply_entry.slot)
+         |
+            existing = apply_entry.slot!!
+            <>(list.revision_fn)
+               |
+                  revision_callback = list.revision_fn!!
+                  revision = revision_callback(item)
+                  changed = list.dirty(existing)!! || list.revisions(existing)!! != revision
+                  changed
+                     |
+                        set_item(list.dirty, existing, <+>)
+                        update_callback(list.states(existing)!!, item)--!
+                        set_item(list.revisions, existing, revision)
+                        set_item(list.dirty, existing, <->)
+               |
+                  update_callback(list.states(existing)!!, item)--!
+            existing
+         |
+            row = create_callback(item)--!
+            slot' = ?list.nodes
+            list.free_count > 0
+               |
+                  list.free_count = list.free_count - 1
+                  slot' = list.free(list.free_count)!!
+            slot' == ?list.nodes
+               |
+                  list.keys += plan_key
+                  list.nodes += row.element
+                  list.states += row.state
+                  list.active += <+>
+                  list.dirty += <->
+                  list.positions += -1
+               |
+                  set_item(list.keys, slot', plan_key)
+                  set_item(list.nodes, slot', row.element)
+                  set_item(list.states, slot', row.state)
+                  set_item(list.active, slot', <+>)
+                  set_item(list.dirty, slot', <->)
+            <>(list.revision_fn)
+               |
+                  revision_callback = list.revision_fn!!
+                  revision = revision_callback(item)
+                  set_int(list.revisions, slot', revision)
+            apply_entry.slot = <+ slot' +>
+            node_key = id(row.element)
+            list.node_index ^ node_key = slot'
+            slot'
+      set_int(list.wanted, i, slot)
+   mark_stable(list.wanted, ?items, list.positions, list.tails, list.previous, list.stable)
+   // Walk backwards, retaining the increasing subsequence as anchors.
+   ?items @ reverse =>
+      i = ?items - reverse - 1
+      slot = list.wanted(i)!!
+      node = list.nodes(slot)!!
+      !list.stable(i)!!
+         |
+            list.order_dirty = <+>
+            result: < | Error >
+            result = i + 1 < ?items
+               | dom::insert_before(list.container, node,
+                  list.nodes(list.wanted(i + 1)!!)!!)
+               | dom::append(list.container, node)
+            result--!
+   ?items @ i => set_int(list.order, i, list.wanted(i)!!)
+   list.order_count = ?items
+   list.order_dirty = <->
+   <++>
+
+#public
+close: #! Item: Type, #! State: Type, #! Key: Type,
+   List(Item, State, Key) => < | Error >
+close = list =>
+   list.closed
+      | --| <- Error(dom::CLOSED, "DOM list is closed", "std/dom/list", 0, 0, (0, 0)) ->
+   dom::is_empty(list.container)--!
+   dispose_fn = list.dispose_fn!!
+   list.active @ active, slot =>
+      active
+         |
+            dispose_fn(list.states(slot)!!)--!
+            dom::remove(list.nodes(slot)!!)--!
+            set_item(list.active, slot, <->)
+   list.closed = <+>
+   list.key_fn = <-->
+   list.create_fn = <-->
+   list.update_fn = <-->
+   list.dispose_fn = <-->
+   list.revision_fn = <-->
+   <++>

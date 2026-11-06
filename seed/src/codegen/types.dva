@@ -2090,7 +2090,8 @@ fn_ret_sig_with_ti = cg, ti =>
          ret_vt == ast::ValueType(Unknown)
             | ""
             |
-               sname = "#sig_" + value_type_name(ret_vt)
+               sname = "#sig_" + ensure_ti_dtype(cg, ti)
+               !has_type_name(cg, sname) | runtime::add_type(cg, sname, ti)
                fret = expr::fn_ret_vt_of(cg, sname)
                fret == ast::ValueType(Unknown)
                   |
@@ -3679,6 +3680,14 @@ codegen_copy_base_fields = cg, dst, base_ev, tgt_rt, flds, tfvts, fin, n =>
                   LLVMBuildStore(cg.builder, cval_base, dst_gep)
             fin(k) = <+> !| _
 
+coerce_record_field: Cg, Addr, ast::TypeInfo, Int, Addr => Addr
+coerce_record_field = cg, value, parent, index, llvm_type =>
+   field_ti = record_field_ti(cg, parent, index)
+   resolved = stmt::resolve_ti(cg, field_ti)
+   resolved
+      [Ram] match::coerce_ram_repr(cg, value, resolved)
+      | stmt::coerce_int(cg, value, llvm_type)
+
 codegen_eval_record_ctor: Cg, ast::TypeInfo,
    ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_record_ctor = cg, ti, t =>
@@ -3750,8 +3759,8 @@ codegen_eval_record_ctor = cg, ti, t =>
                                  |
                                     ft_named' = LLVMStructGetTypeAtIndex(
                                        rm_0, idx_named)
-                                    cval_named = stmt::coerce_int(cg, ev_named.0,
-                                       ft_named')
+                                    cval_named = coerce_record_field(cg, ev_named.0, ti,
+                                       idx_named, ft_named')
                                     LLVMBuildStore(cg.builder,
                                        cval_named, dst_gep_named)
                               f_init(idx_named) = <+> !| _
@@ -3775,8 +3784,8 @@ codegen_eval_record_ctor = cg, ti, t =>
                                  |
                                     ft_pos' = LLVMStructGetTypeAtIndex(
                                        rm_0, i)
-                                    cval_pos = stmt::coerce_int(cg, ev_pos.0,
-                                       ft_pos')
+                                    cval_pos = coerce_record_field(cg, ev_pos.0, ti,
+                                       i, ft_pos')
                                     LLVMBuildStore(cg.builder,
                                        cval_pos, dst_gep_pos)
                               f_init(i) = <+> !| _
@@ -3800,7 +3809,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                                  def_ev.0, 1, isz_def, 0)
                            |
                               ft_def' = LLVMStructGetTypeAtIndex(rm_0, i)
-                              cval_def = stmt::coerce_int(cg, def_ev.0, ft_def')
+                              cval_def = coerce_record_field(cg, def_ev.0, ti, i, ft_def')
                               LLVMBuildStore(cg.builder, cval_def,
                                  dst_gep_def)
                      |
@@ -4576,6 +4585,26 @@ record_field_gep = cg, rt, fvts, base, idx =>
 // list are recorded (cg.last_rt / last_fnames) for the member-access path.
 codegen_eval_record: Cg, ast::RecordExpr => (Addr, ast::ValueType)
 codegen_eval_record = cg, r =>
+   expected = g.expected_fn_ti
+   payload = expected [Ram slots] slots.0.payload_record | expected
+   ti = stmt::resolve_ti(cg, payload)
+   ti [Rec schema]
+      matches' = ?schema.0 == ?r.fields && ?r.fields > 0
+      r.fields @ field, i =>
+         !field.has_name | matches' = <->
+         i < ?schema.0
+            | schema.0(i)!!.name != field.name | matches' = <->
+      matches'
+         |
+            args = ast::Exprs()
+            r.fields @ field =>
+               args += ast::Expr(NamedArg, ast::NamedArgExpr(field.name, field.val))
+            --| codegen_eval_record_ctor(cg, ti,
+               ast::CallExpr("", ast::Expr(Var, ""), args, 0, 0))
+   codegen_eval_record_inferred(cg, r)
+
+codegen_eval_record_inferred: Cg, ast::RecordExpr => (Addr, ast::ValueType)
+codegen_eval_record_inferred = cg, r =>
    nf = ?r.fields
    ftypes = Addrs()
    fvals = Addrs()

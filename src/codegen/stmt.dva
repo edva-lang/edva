@@ -1457,6 +1457,12 @@ cycle_record_info = cg, e =>
          (n', elem_vt', elem_ll')
       | (0, ast::ValueType(Unknown), LLVMInt64Type!)
 
+element_dtype: types::Cg, ast::TypeInfo => String
+element_dtype = cg, ti =>
+   resolved = resolve_ti(cg, ti)
+   name = types::ensure_ti_dtype(cg, resolved)
+   name != "" | name | types::value_type_name(types::vt_from_ti_cg(cg, resolved))
+
 slice_elem_dtype: types::Cg, String => String
 slice_elem_dtype = cg, dt =>
    dt == ""
@@ -1469,10 +1475,10 @@ slice_elem_dtype = cg, dt =>
                ?fields > 0
                   |
                      f0 = fields(0)!!
-                     f0.rec_type [TypeVar name] name | ""
+                     element_dtype(cg, f0.rec_type)
                   | ""
             [Array ae]
-               ae.1 [TypeVar name] name | ""
+               element_dtype(cg, ae.1)
             | ""
 
 cycle_array_elem_vt: types::Cg, String, String => ast::ValueType
@@ -1484,7 +1490,20 @@ cycle_array_elem_vt = cg, vname, dt =>
          resolved_ti = a.1 [TypeVar n] types::typedef_ti(cg, n) | a.1
          resolved_vt = types::vt_from_ti(resolved_ti)
          resolved_vt != ast::ValueType(Unknown) | resolved_vt | a.0
-      | ast::ValueType(Int)
+      |
+         // Legacy array metadata names the element directly; newer paths
+         // retain the whole Array TypeInfo. Both are static information.
+         primitive = types::type_name_to_vt(eff_dt)
+         known = types::vt_from_ti(ti)
+         primitive.1
+            | primitive.0
+            |
+               (known [Record, Enum])
+                  | known
+                  |
+                     types::init_error(cg, "E3103", "Cannot determine element type for array '" +
+                        vname + "' in '" + types::g.last_compiling_fn + "'", 0, 0)
+                     ast::ValueType(Unknown)
 
 cycle_array_elem_val: types::Cg, Addr, Addr, <>, ast::ValueType, Addr => Addr
 cycle_array_elem_val = cg, arr, cur_i, is_ptr, vt, elem_ll =>
@@ -1492,12 +1511,7 @@ cycle_array_elem_val = cg, arr, cur_i, is_ptr, vt, elem_ll =>
    arr_data = main::builder_data(cg, arr, "arr.cycle.data")
    arr_slot = types::gep1(cg, i64t, arr_data, cur_i, "arr.elem.gep")
    arr_raw = LLVMBuildLoad2(cg.builder, i64t, arr_slot, "arr.elem.raw")
-   raw_ptr = LLVMBuildIntToPtr(cg.builder, arr_raw, elem_ll,
-      "arr.elem.ptr")
-   raw_flt = LLVMBuildBitCast(cg.builder, arr_raw,
-      LLVMDoubleType!, "arr.elem.flt")
-   flt_or_raw = types::is_float_vt(vt) | raw_flt | arr_raw
-   is_ptr | raw_ptr | flt_or_raw
+   runtime::codegen_unpack_slot(cg, arr_raw, vt)
 
 cycle_bind_params: types::Cg, ast::Expr, <>, Addr, ast::ValueType, String, Addr, Addr, <Addr|> => ()
 cycle_bind_params = cg, bfn, has_e, eval, evt, elem_dt, cur_i, ca, ert_opt =>
@@ -1646,11 +1660,11 @@ codegen_eval_map_cycle = cg, c, m =>
    LLVMBuildCondBr(cg.builder, is_live, live_bb, latch)
    LLVMPositionBuilderAtEnd(cg.builder, live_bb)
    val_is_ptr = types::is_ptrish_vt(val_vt)
-   val_slot = types::gep1(cg, val_is_ptr | i8p | i64t, vals, curr_i, "m.it.v.slot")
+   val_slot = types::gep1(cg, i64t, vals, curr_i, "m.it.v.slot")
    val_val = LLVMBuildLoad2(cg.builder, val_is_ptr | i8p | i64t,
       val_slot, "m.it.v")
    key_is_ptr = types::is_ptrish_vt(key_vt)
-   key_slot = types::gep1(cg, key_is_ptr | i8p | i64t, keys, curr_i, "m.it.k.slot")
+   key_slot = types::gep1(cg, i64t, keys, curr_i, "m.it.k.slot")
    key_val = LLVMBuildLoad2(cg.builder, key_is_ptr | i8p | i64t,
       key_slot, "m.it.k")
    saved_cycle_vars = ?cg.vars
@@ -4351,7 +4365,12 @@ fn_signature_return_rev = cg, stmts, name, at =>
 
 fn_signature_return_ti: types::Cg, ast::Exprs, String, Int => ast::TypeInfo
 fn_signature_return_ti = cg, stmts, name, at =>
-   fn_signature_return_ti_rev(cg, stmts, name, ?stmts - 1)
+   static_sig = types::has_type_name(cg, name)
+      | types::typedef_ti(cg, name)
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+   static_sig
+      [Fn f] f.3
+      | fn_signature_return_ti_rev(cg, stmts, name, ?stmts - 1)
 
 fn_signature_return_ti_rev: types::Cg, ast::Exprs, String, Int => ast::TypeInfo
 fn_signature_return_ti_rev = cg, stmts, name, at =>
@@ -6800,7 +6819,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
 
    LLVMPositionBuilderAtEnd(cg.builder, live_bb)
    val_is_ptr = types::is_ptrish_vt(val_vt)
-   val_slot = types::gep1(cg, val_is_ptr | i8p | i64t, vals, curr_i, "m.it.v.slot")
+   val_slot = types::gep1(cg, i64t, vals, curr_i, "m.it.v.slot")
    val_raw = LLVMBuildLoad2(cg.builder, val_is_ptr | i8p | i64t,
       val_slot, "m.it.v")
    val_val = val_is_ptr
@@ -6811,7 +6830,7 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
             | coerce_int_ext(cg, val_raw, val_ll, types::is_unsigned_vt(val_vt))
 
    key_is_ptr = types::is_ptrish_vt(key_vt)
-   key_slot = types::gep1(cg, key_is_ptr | i8p | i64t, keys, curr_i, "m.it.k.slot")
+   key_slot = types::gep1(cg, i64t, keys, curr_i, "m.it.k.slot")
    key_raw = LLVMBuildLoad2(cg.builder, key_is_ptr | i8p | i64t,
       key_slot, "m.it.k")
    key_val = key_is_ptr

@@ -1,0 +1,28 @@
+#use io
+pick: Int => Int
+pick = x => x + 1
+pick: Int, Int => Int
+pick = x, y => x * 10 + y
+apply: (Int => Int), Int => Int
+apply = callback, x => callback(x)
+apply: (Int, Int => Int), Int, Int => Int
+apply = callback, x, y => callback(x, y)
+selected: Int => Int
+selected = pick
+io::out(pick(4))
+io::out(pick(4, 2))
+io::out $ 4 $> pick
+io::out $ pick $ 4
+io::out $ 4 $> pick(2)
+io::out $ pick(4) $ 2
+io::out(apply(pick, 4))
+io::out(apply(pick, 4, 2))
+io::out(selected(9))
+shadow: (Int => Int) => Int
+shadow = pick => pick(6)
+io::out(shadow(selected))
+local_shadow: Int => Int
+local_shadow = x =>
+   pick = n => n * 3
+   pick(x)
+io::out(local_shadow(5))

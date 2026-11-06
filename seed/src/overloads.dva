@@ -1,0 +1,270 @@
+// Static arity overload resolution, before annotation and type erasure.
+#use ast
+#use str
+
+#public
+#type Definition (name: String, arity: Int, signature: ast::TypeInfo)
+#type Definitions Definition{}
+#type Context (defs: Definitions, families: ast::Names)
+
+unknown: () => ast::TypeInfo
+unknown = !=> ast::TypeInfo(Prim, ast::ValueType(Unknown))
+contains: ast::Names, String => <>
+contains = names, name =>
+   found' = <->
+   names @ n => n == name | found' = <+>
+   found'
+
+name_of: ast::Expr => String
+name_of = e =>
+   e
+      [Var n] n
+      [Member m]
+         m.is_module_access | name_of(m.target) + "::" + m.field_name | ""
+      | ""
+
+symbol: String, Int => String
+symbol = name, arity => name + "$arity" + str::from_int(arity)
+
+is_family: Context, String => <>
+is_family = ctx, name => contains(ctx.families, name)
+
+has_variants: Context, String => <>
+has_variants = ctx, name =>
+   first' = -1
+   result' = <->
+   ctx.defs @ d =>
+      d.name == name
+         |
+            first' < 0 | first' = d.arity
+            d.arity != first' | result' = <+>
+   result'
+
+signature: Context, String, Int => ast::TypeInfo
+signature = ctx, name, arity =>
+   result' = unknown!
+   ctx.defs @ d =>
+      d.name == name && (arity < 0 || d.arity == arity)
+         | d.signature [Fn] result' = d.signature
+   result'
+
+select_value: ast::Expr, ast::TypeInfo, Context, ast::Names => ast::Expr
+select_value = e, expected, ctx, locals =>
+   n = name_of(e)
+   is_family(ctx, n) && !contains(locals, n)
+      |
+         expected
+            [Fn f] ast::Expr(Var, symbol(n, ?f.0))
+            | e
+      | e
+
+application: ast::Expr => ast::Expr
+application = e =>
+   e
+      [Bin b]
+         fn_e = b.0 [Feed] b.2 | b.1
+         arg = b.0 [Feed] b.1 | b.2
+         base = fn_e
+            [Bin inner]
+               inner.0 [Feed, Apply] application(fn_e) | fn_e
+            | fn_e
+         args = ast::Exprs()
+         base
+            [Call c]
+               b.0 [Feed] args += arg
+               c.args @ a => args += a
+               b.0 [Apply] args += arg
+               ast::Expr(Call, ast::CallExpr(c.fn_name, c.fn_target, args, c.line, c.col))
+            |
+               args += arg
+               ast::Expr(Call, ast::CallExpr(name_of(base), base, args, 0, 0))
+      | e
+
+keep_type: ast::TypeInfo, Context => ast::TypeInfo
+keep_type = ti, ctx => ti
+keep_fparams: ast::FParams, Context => ast::FParams
+keep_fparams = params, ctx => params
+
+walk: ast::Expr, Context, ast::Names => ast::Expr
+walk_many: ast::Exprs, Context, ast::Names => ast::Exprs
+walk_many = exprs, ctx, locals =>
+   result = ast::Exprs()
+   exprs @ e => result += walk(e, ctx, locals)
+   result
+
+walk_call: ast::CallExpr, Context, ast::Names => ast::CallExpr
+walk_call = c, ctx, locals =>
+   original = c.fn_name != "" | c.fn_name | name_of(c.fn_target)
+   family = is_family(ctx, original) && !contains(locals, original)
+   target_name = family | symbol(original, ?c.args) | c.fn_name
+   expected = signature(ctx, original, ?c.args)
+   args = ast::Exprs()
+   c.args @ a, i =>
+      arg_ti = expected
+         [Fn f]
+            i < ?f.1 | f.1(i)!! | unknown!
+         | unknown!
+      args += select_value(walk(a, ctx, locals), arg_ti, ctx, locals)
+   target = family | ast::Expr(Var, target_name) | walk(c.fn_target, ctx, locals)
+   ast::CallExpr(target_name, target, args, c.line, c.col)
+
+walk = e, table, locals =>
+   e
+      [Var v]
+         e
+      [Call c]
+         ast::Expr(Call, walk_call(c, table, locals))
+      [Bin b]
+         b.0
+            [Feed, Apply]
+               expanded = application(e)
+               callee = expanded [Call c] c.fn_name | ""
+               is_family(table, callee) && !contains(locals, callee)
+                  | walk(expanded, table, locals)
+                  | ast::Expr(Bin, (b.0, walk(b.1, table, locals),
+                     walk(b.2, table, locals)))
+            | ast::Expr(Bin, (b.0, walk(b.1, table, locals),
+               walk(b.2, table, locals)))
+      [Unary u]
+         ast::Expr(Unary, (u.0,
+            walk(u.1, table, locals)))
+      [Fn fe]
+         fn_locals = ++locals
+         fn_locals += "#overload_local"
+         fe.params @ p => (p != "" | fn_locals += p)
+         fe.ct_params @ cp => (cp != "" | fn_locals += cp)
+         new_body = walk(fe.body, table, fn_locals)
+         ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params, new_body))
+      [Block be]
+         blk_locals = ++locals
+         new_exprs = ast::Exprs()
+         be @ child =>
+            new_exprs += walk(child, table, blk_locals)
+            child [Assign ca]
+               contains(locals, "#overload_local") || !is_family(table, ca.0)
+                  | blk_locals += ca.0
+         ast::Expr(Block, new_exprs)
+      [Choice ch]
+         new_cond = walk(ch.cond, table, locals)
+         new_branches = ast::Branches()
+         ch.branches @ br =>
+            br_locals = ++locals
+            br.bind_vars @ bv => (bv != "" | br_locals += bv)
+            new_cases = walk_many(br.case_values, table, br_locals)
+            new_pred = walk(br.pred_fn, table, br_locals)
+            new_blk = walk(br.block, table, br_locals)
+            new_branches += ast::ChoiceBranch(br.kind, new_cases, new_pred,
+               br.variant_names, br.bind_vars, br.is_identity_extractor,
+               new_blk)
+         ast::Expr(Choice, ast::ChoiceExpr(new_cond, ch.is_exhaustive,
+            new_branches))
+      [Assign a]
+         arity = a.5 [Fn fn] ?fn.params |
+            (a.8 [Fn ft] ?ft.0 | -1)
+         family = is_family(table, a.0) && !contains(locals, "#overload_local")
+         new_name = family && arity !< 0 | symbol(a.0, arity) | a.0
+         expected = a.8 [Fn] a.8 | signature(table, a.0, -1)
+         new_rhs = select_value(walk(a.5, table, locals), expected, table, locals)
+         new_lhs = walk(a.6, table, locals)
+         ast::Expr(Assign, (new_name, a.1, a.2, a.3, a.4, new_rhs, new_lhs,
+            a.7, a.8))
+      [TypeDecl td]
+         new_ti = keep_type(td.type_info, table)
+         ast::Expr(TypeDecl, ast::TypeDeclExpr(td.name, new_ti))
+      [Foreign f]
+         new_params = keep_fparams(f.params, table)
+         new_ret_ti = keep_type(f.ret_record_info, table)
+         ast::Expr(Foreign, ast::ForeignFnDecl(f.c_name, f.dva_name,
+            f.abi, new_params, f.return_type, new_ret_ti, f.is_variable))
+      [Member m]
+         m.is_module_access
+            | ast::Expr(Var, name_of(e))
+            |
+               ast::Expr(Member, ast::MemberExpr(walk(m.target, table, locals),
+                  m.field_name, <->, walk(m.index_expr, table, locals), m.line, m.col))
+      [Record re]
+         new_fields = ast::Fields()
+         re.fields @ fld =>
+            new_val = walk(fld.val, table, locals)
+            new_fields += ast::RecordField(fld.has_name, fld.name, new_val)
+         ast::Expr(Record, ast::RecordExpr(new_fields, re.is_repeat))
+      [KeyAccess ka]
+         new_target = walk(ka.target, table, locals)
+         new_key = walk(ka.key, table, locals)
+         ast::Expr(KeyAccess, ast::KeyAccessExpr(new_target, new_key,
+            ka.is_membership, ka.is_delete, ka.line, ka.col))
+      [Cycle cy]
+         new_iter = walk(cy.iterable, table, locals)
+         new_fn = walk(cy.body_fn, table, locals)
+         ast::Expr(Cycle, ast::CycleExpr(new_iter, new_fn, cy.is_rune))
+      [CycleEscape ce]
+         new_cy = walk(ce.cycle, table, locals)
+         new_br = walk(ce.branch, table, locals)
+         ast::Expr(CycleEscape, ast::CycleEscapeExpr(new_cy, new_br))
+      [Range r]
+         new_lhs = r.has_lhs | walk(r.lhs, table, locals) | r.lhs
+         new_rhs = r.has_rhs | walk(r.rhs, table, locals) | r.rhs
+         ast::Expr(Range, ast::RangeExpr(r.has_lhs, r.has_rhs, new_lhs,
+            new_rhs, r.is_inclusive))
+      [NamedArg na]
+         new_val = walk(na.val, table, locals)
+         ast::Expr(NamedArg, ast::NamedArgExpr(na.name, new_val))
+      [Variant v]
+         new_args = walk_many(v.args, table, locals)
+         ast::Expr(Variant, ast::VariantExpr(v.tag_name, new_args))
+      [TypeCast tc]
+         new_expr = walk(tc.expr, table, locals)
+         ast::Expr(TypeCast, ast::CastExpr(tc.target_type, new_expr))
+      [Spawn sp]
+         ast::Expr(Spawn, walk_call(sp, table, locals))
+      [Join jn]
+         ast::Expr(Join, walk(jn, table, locals))
+      [Exit ex]
+         new_ex = walk(ex, table, locals)
+         ast::Expr(Exit, new_ex)
+      [Return r]
+         new_val = r.has_val | walk(r.val, table, locals) | r.val
+         ast::Expr(Return, ast::ReturnExpr(r.has_val, new_val, r.line, r.col))
+      [ArrayCreate ac]
+         new_elem = keep_type(ac.elem_type, table)
+         ast::Expr(ArrayCreate, ast::ArrayCreateExpr(new_elem, ac.cap))
+      [UserDiag ud]
+         new_msg = walk(ud.msg, table, locals)
+         ast::Expr(UserDiag, ast::UserDiagExpr(ud.is_warn, new_msg,
+            ud.line, ud.col))
+      [RawMemory rm]
+         new_addr = walk(rm.addr, table, locals)
+         ast::Expr(RawMemory, ast::RawMemoryExpr(new_addr, rm.load_type,
+            rm.rec_name))
+      [SizeOf so]
+         new_sti = keep_type(so.rec_type, table)
+         ast::Expr(SizeOf, ast::SizeOfExpr(so.val_type, new_sti))
+      [MapLiteral ml]
+         new_pairs = ast::MapPairs()
+         ml @ p =>
+            new_pairs += ast::MapPair(walk(p.key, table, locals),
+               walk(p.value, table, locals))
+         ast::Expr(MapLiteral, new_pairs)
+      [CompileTime ct]
+         new_ce = walk(ct, table, locals)
+         ast::Expr(CompileTime, new_ce)
+      [Copy cp]
+         ast::Expr(Copy, walk(cp, table, locals))
+      [BuilderCreate bc]
+         ast::Expr(BuilderCreate, walk(bc, table, locals))
+      | e
+
+resolve: ast::Expr => ast::Expr
+resolve = program =>
+   defs = Definitions()
+   exprs = program [Block b] b | ast::Exprs()
+   exprs @ e =>
+      e
+         [Assign a]
+            arity = a.5 [Fn fn] ?fn.params | (a.8 [Fn f] ?f.0 | -1)
+            arity !< 0 | defs += Definition(a.0, arity, a.8)
+   ctx = Context(defs, ast::Names())
+   defs @ d =>
+      has_variants(ctx, d.name) && !contains(ctx.families, d.name)
+         | ctx.families += d.name
+   ?ctx.families > 0 | walk(program, ctx, ast::Names()) | program

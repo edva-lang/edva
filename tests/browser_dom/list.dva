@@ -1,0 +1,109 @@
+#use dom
+#use dom/list
+
+#foreign "c"
+   dom_test_phase: (Int) => ()
+   dom_test_failure: (Int, Int, Int, Int, Int) => ()
+
+report: Error => Int
+report = error =>
+   dom_test_failure(error.code, error.line, error.col, error.context.0, error.context.1)
+   error.code
+
+#type Item (id: Int, label: String, revision: Int)
+#type State (element: dom::Element, updates: Int)
+::creates = 0
+::updates = 0
+::disposes = 0
+::fail_updates = 0
+
+key: Item => Int
+key = item => item.id
+string_key: Item => String
+string_key = item => item.label
+revision: Item => Int
+revision = item => item.revision
+create: Item => < (element: dom::Element, state: State) | Error >
+create = item =>
+   el = dom::create("li")--!
+   dom::text(el, item.label)--!
+   creates = creates + 1
+   <+ (element = el, state = State(el, 0)) ->
+update: State, Item => < | Error >
+update = state, item =>
+   updates = updates + 1
+   dom::text(state.element, item.label)--!
+   fail_updates > 0
+      |
+         fail_updates = fail_updates - 1
+         --| <- Error(77, "Expected update failure", "list test", 0, 0, (0, 0)) ->
+   <++>
+dispose: State => < | Error >
+dispose = state =>
+   disposes = disposes + 1
+   <++>
+
+#export
+   list_run: () => Int
+   list_run = !=>
+      parent = dom::find("#list")!!
+      rows = list::new(parent, key, create, update, dispose)!!
+      first = Item{}
+      first += Item(1, "one", 1)
+      first += Item(2, "two", 1)
+      first += Item(3, "three", 1)
+      list::sync(rows, first(..)) !| error => --| report(error)
+      dom_test_phase(1)
+      second = Item{}
+      second += Item(3, "THREE", 2)
+      second += Item(1, "ONE", 2)
+      second += Item(2, "TWO", 2)
+      list::sync(rows, second(..)) !| error => --| report(error)
+      dom_test_phase(2)
+      third = Item{}
+      third += Item(2, "two", 3)
+      third += Item(4, "four", 1)
+      list::sync(rows, third(..)) !| error => --| report(error)
+      dom_test_phase(3)
+      duplicate = Item{}
+      duplicate += Item(2, "wrong", 9)
+      duplicate += Item(2, "wrong", 9)
+      code = list::sync(rows, duplicate(..)) | -1 | error => error.code
+      code != dom::DUPLICATE_KEY | --| 101
+      dom_test_phase(4)
+      list::close(rows) !| error => --| report(error)
+      dom_test_phase(5)
+      revised = list::new(parent, key, create, update, dispose)!!
+      list::with_revisions(revised, revision) !| error => --| report(error)
+      list::sync(revised, first(..)) !| error => --| report(error)
+      before = updates
+      list::sync(revised, first(..)) !| error => --| report(error)
+      updates != before | --| 102
+      fail_updates = 1
+      failed = list::sync(revised, second(..)) | -1 | error => error.code
+      failed != 77 | --| 105
+      list::sync(revised, first(..)) !| error => --| report(error)
+      updates != before + 2 | --| 106
+      list::sync(revised, second(..)) !| error => --| report(error)
+      updates != before + 5 | --| 103
+      list::close(revised) !| error => --| report(error)
+      strings = list::new(parent, string_key, create, update, dispose)!!
+      list::sync(strings, first(..)) !| error => --| report(error)
+      list::sync(strings, first(..)) !| error => --| report(error)
+      list::close(strings) !| error => --| report(error)
+      dom_test_phase(6)
+      creates != 10 || disposes != 10 | --| 104
+      recovery = list::new(parent, key, create, update, dispose)!!
+      list::sync(recovery, first(..)) !| error => --| report(error)
+      reverse = Item{}
+      reverse += Item(3, "THREE", 2)
+      reverse += Item(2, "TWO", 2)
+      reverse += Item(1, "ONE", 2)
+      dom_test_phase(7)
+      failed_move = list::sync(recovery, reverse(..)) | -1 | error => error.code
+      failed_move != dom::BROWSER_ERROR | --| 107
+      dom_test_phase(8)
+      list::sync(recovery, reverse(..)) !| error => --| report(error)
+      dom_test_phase(9)
+      list::close(recovery) !| error => --| report(error)
+      0

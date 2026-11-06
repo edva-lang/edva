@@ -38,6 +38,7 @@ book:
         - reference/stdlib/binary.qmd
         - reference/stdlib/ccl.qmd
         - reference/stdlib/cli.qmd
+        - reference/stdlib/dom.qmd
         - reference/stdlib/color.qmd
         - reference/stdlib/const.qmd
         - reference/stdlib/crypto.qmd

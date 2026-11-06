@@ -1,0 +1,7 @@
+{
+  "name": "edva-dom-tests",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "bash run.sh" },
+  "devDependencies": { "jsdom": "31.0.0" }
+}

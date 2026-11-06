@@ -1,0 +1,809 @@
+// Browser DOM toolkit. The compiler emits the matching dom/bridge.js adapter.
+#use libc
+#use str
+#use binary
+
+#foreign "c"
+   realloc: (Addr, Int) => Addr
+   memcmp: (Addr, Addr, Int) => i32
+   edva_dom_call: (Int, Int, Int, Int, Addr, Int, Addr, Int, Addr) => Int
+   edva_dom_batch: (Addr, Int, Addr) => Int
+   edva_dom_measure: (Addr, Int, Addr) => Int
+   edva_dom_free: (Addr) => ()
+   edva_dom_report: (Addr, Int) => ()
+   dva_arena_set_current: (Addr) => Addr
+
+#public
+#type Element (slot: Int, generation: Int)
+#type Event (event_slot: Int, generation: Int)
+#type Listener (listener_slot: Int, generation: Int)
+#type Rect (x: Float, y: Float, width: Float, height: Float)
+#type Pointer (x: Float, y: Float, button: Int)
+#type ListenerOptions (
+   capture: <> = <->, passive: <> = <->, once: <> = <->,
+   coalesce: <> = <->, prevent_default: <> = <->
+)
+NOT_FOUND = 1
+INVALID_SELECTOR = 2
+STALE_HANDLE = 3
+BROWSER_ERROR = 4
+PENDING_WRITES = 5
+CLOSED = 6
+EXPIRED_EVENT = 7
+INVALID_OPTIONS = 8
+DUPLICATE_KEY = 9
+INVALID_RESULT = 10
+
+#private
+Reply: #packed (first: Int, length: Int, x: Float, y: Float, z: Float, w: Float)
+#type Owned (data: Addr, length: Int, capacity: Int)
+#type Property (op: Int, key: Owned, value: Owned, flag: Int, valid: <>)
+#type Properties Property{}
+#type Cache (properties: Properties, live: <>, used: Int)
+#public
+#type Caches Int ^ Cache
+#type CacheRows Cache{}
+#type Replies Reply{}
+#private
+caches = Caches()
+replies = Replies()
+free_rows = CacheRows()
+::reply_depth = 0
+::free_count = 0
+::pending = 0
+::flushing = <->
+
+error: Int, String => Error
+error = code, message => Error(code, message, "std/dom", 0, 0, (0, 0))
+
+empty_owned: () => Owned
+empty_owned = !=> Owned(Addr(0), 0, 0)
+
+owned_store: Owned, String => < | Error >
+owned_store = buffer, value =>
+   ?value > buffer.capacity
+      |
+         cap = %max(?value, %max(buffer.capacity * 2, 32))
+         data = realloc(buffer.data, cap)
+         Int(data) == 0 | --| <- error(BROWSER_ERROR, "Cannot retain DOM bytes") ->
+         buffer.data = data
+         buffer.capacity = cap
+   ?value > 0 | %memcpy(buffer.data, &value, ?value)
+   buffer.length = ?value
+   <++>
+
+owned_equal: Owned, String => <>
+owned_equal = buffer, value =>
+   buffer.length == ?value && (?value == 0 || memcmp(buffer.data, &value, ?value) == 0)
+
+// HTML attribute names are ASCII case insensitive. Treat aliases conservatively
+// for every element, preserving correctness for case-sensitive SVG names too.
+owned_name_equal: Owned, String => <>
+owned_name_equal = buffer, value =>
+   buffer.length != ?value |->
+   ?value @ i =>
+      a = Int(@[buffer.data + i u8])
+      b = value(i)
+      al = a [65...90] a + 32 | a
+      bl = b [65...90] b + 32 | b
+      al != bl |->
+   <+>
+
+owned_names_equal: Owned, Owned => <>
+owned_names_equal = left, right =>
+   left.length != right.length |->
+   left.length @ i =>
+      a = Int(@[left.data + i u8])
+      b = Int(@[right.data + i u8])
+      al = a [65...90] a + 32 | a
+      bl = b [65...90] b + 32 | b
+      al != bl |->
+   <+>
+
+invalidate_attribute: Int, String => ()
+invalidate_attribute = id, name =>
+   caches ^ id
+      | row => row.properties @ p =>
+         p.op == 15 && owned_name_equal(p.key, name) | p.valid = <->
+
+owned_free: Owned => ()
+owned_free = buffer =>
+   libc::free(buffer.data)
+   buffer.data = Addr(0)
+   buffer.length = 0
+   buffer.capacity = 0
+
+owned_string: Owned => String
+owned_string = buffer =>
+   b = {buffer.length}
+   buffer.length > 0 | %memcpy(&b, buffer.data, buffer.length)
+   ?b = buffer.length
+   +b
+
+token: Element => Int
+token = element => element.slot .|. (element.generation .<. 32)
+element_from: Int => Element
+element_from = id => Element(id .&. 0xFFFFFFFF, id .>. 32)
+event_token: Event => Int
+event_token = event => event.event_slot .|. (event.generation .<. 32)
+listener_token: Listener => Int
+listener_token = listener => listener.listener_slot .|. (listener.generation .<. 32)
+
+reply_string: Reply => String
+reply_string = reply =>
+   b = {reply.length}
+   reply.length > 0 | %memcpy(&b, Addr(reply.first), reply.length)
+   ?b = reply.length
+   edva_dom_free(Addr(reply.first))
+   +b
+
+available: () => < | Error >
+available = !=>
+   pending > 0 && !flushing
+      | <- error(PENDING_WRITES, "Flush pending DOM writes explicitly") ->
+      | <++>
+
+reply_enter: () => Reply
+reply_enter = !=>
+   index = reply_depth
+   reply_depth ::= reply_depth + 1
+   index == ?replies
+      |
+         prev = dva_arena_set_current(Addr(0))
+         replies += Reply(0, 0, 0.0, 0.0, 0.0, 0.0)
+         dva_arena_set_current(prev)
+   replies(index)!!
+
+reply_leave: () => ()
+reply_leave = !=> reply_depth ::= reply_depth - 1
+
+call: Int, Int, Int, Int, String, String => < Reply | Error >
+call = op, a, b, c, key, value =>
+   reply = reply_enter!
+   code = edva_dom_call(op, a, b, c, &key, ?key, &value, ?value, &reply)
+   reply_leave!
+   code != 0
+      | <- error(code, reply_string(reply)) +>
+      | <+ reply ->
+
+unit_call: Int, Int, Int, Int, String, String => < | Error >
+unit_call = op, a, b, c, key, value =>
+   available()--!
+   call(op, a, b, c, key, value)--!
+   <++>
+
+string_call: Int, Int, String => < String | Error >
+string_call = op, a, key =>
+   available()--!
+   reply = call(op, a, 0, 0, key, "")--!
+   <+ reply_string(reply) ->
+
+cache_row: Int => Cache
+cache_row = id =>
+   caches ^ id
+      | row => row
+      |
+         prev = dva_arena_set_current(Addr(0))
+         row = free_count > 0
+            |
+               free_count ::= free_count - 1
+               free_rows(free_count)!!
+            | Cache(Properties(), <+>, 0)
+         row.live = <+>
+         row.used = 0
+         caches ^ id = row
+         dva_arena_set_current(prev)
+         row
+
+property: Int, Int, String => Property
+property = id, op, key =>
+   row = cache_row(id)
+   row.properties @ p, i =>
+      i !< row.used | -->
+      p.op == op && owned_equal(p.key, key) | --| p
+   prev = dva_arena_set_current(Addr(0))
+   row.used == ?row.properties
+      | row.properties += Property(op, empty_owned!, empty_owned!, 0, <->)
+   p = row.properties(row.used)!!
+   row.used = row.used + 1
+   p.op = op
+   p.valid = <->
+   dva_arena_set_current(prev)
+   owned_store(p.key, key) !| _
+   p
+
+property_owned: Int, Int, Owned => Property
+property_owned = id, op, key =>
+   row = cache_row(id)
+   row.properties @ p, i =>
+      i !< row.used | -->
+      same = p.key.length == key.length &&
+         (key.length == 0 || memcmp(p.key.data, key.data, key.length) == 0)
+      p.op == op && same | --| p
+   prev = dva_arena_set_current(Addr(0))
+   row.used == ?row.properties
+      | row.properties += Property(op, empty_owned!, empty_owned!, 0, <->)
+   p = row.properties(row.used)!!
+   row.used = row.used + 1
+   p.op = op
+   p.valid = <->
+   dva_arena_set_current(prev)
+   reserve(p.key, key.length) !| _
+   key.length > 0 | %memcpy(p.key.data, key.data, key.length)
+   p
+
+write: Int, Element, String, String, Int => < | Error >
+write = op, element, key, value, flag =>
+   available()--!
+   id = token(element)
+   p = property(id, op, key)
+   // Form state must always validate live browser state; other tracked writes
+   // can avoid even entering JavaScript when the exact value is already applied.
+   stable = op [11, 15, 17, 18, 21]
+   stable && p.valid && p.flag == flag && owned_equal(p.value, value) |++>
+   op == 15 | invalidate_attribute(id, key)
+   call(op, id, 0, flag, key, value)--!
+   owned_store(p.value, value)--!
+   p.flag = flag
+   p.valid = <+>
+   <++>
+
+#public
+find: String => < Element | Error >
+find = selector =>
+   available()--!
+   r = call(1, 0, 0, 0, selector, "")--!
+   <+ element_from(r.first) ->
+find_in: Element, String => < Element | Error >
+find_in = scope, selector =>
+   available()--!
+   r = call(2, token(scope), 0, 0, selector, "")--!
+   <+ element_from(r.first) ->
+create: String => < Element | Error >
+create = tag =>
+   available()--!
+   r = call(3, 0, 0, 0, tag, "")--!
+   <+ element_from(r.first) ->
+append: Element, Element => < | Error >
+append = parent, child => unit_call(4, token(parent), token(child), 0, "", "")
+insert_before: Element, Element, Element => < | Error >
+insert_before = parent, child, before =>
+   unit_call(5, token(parent), token(child), token(before), "", "")
+detach: Element => < | Error >
+detach = element => unit_call(6, token(element), 0, 0, "", "")
+remove: Element => < | Error >
+remove = element => unit_call(7, token(element), 0, 0, "", "")
+
+text: Element => < String | Error >
+text = element => string_call(10, token(element), "")
+text: Element, String => < | Error >
+text = element, value => write(11, element, "", value, 0)
+value: Element => < String | Error >
+value = element => string_call(12, token(element), "")
+value: Element, String => < | Error >
+value = element, value => write(13, element, "", value, 0)
+attr: Element, String => < < String | > | Error >
+attr = element, name =>
+   available()--!
+   r = call(14, token(element), 0, 0, name, "")--!
+   s = reply_string(r)
+   present = r.x != 0.0 | <+ s +> | <-->
+   <+ present ->
+attr: Element, String, String => < | Error >
+attr = element, name, value => write(15, element, name, value, 0)
+remove_attr: Element, String => < | Error >
+remove_attr = element, name =>
+   available()--!
+   invalidate_attribute(token(element), name)
+   unit_call(16, token(element), 0, 0, name, "")
+style: Element, String, String => < | Error >
+style = element, name, value => write(17, element, name, value, 0)
+class_set: Element, String, <> => < | Error >
+class_set = element, name, enabled => write(18, element, name, "", enabled | 1 | 0)
+checked: Element => < <> | Error >
+checked = element =>
+   available()--!
+   r = call(19, token(element), 0, 0, "", "")--!
+   <+ r.first != 0 ->
+checked: Element, <> => < | Error >
+checked = element, enabled => write(20, element, "", "", enabled | 1 | 0)
+hidden: Element, <> => < | Error >
+hidden = element, enabled => write(21, element, "", "", enabled | 1 | 0)
+invalidate: Element => < | Error >
+invalidate = element => unit_call(22, token(element), 0, 0, "", "")
+invalidate_subtree: Element => < | Error >
+invalidate_subtree = element => unit_call(23, token(element), 0, 0, "", "")
+bounds: Element => < Rect | Error >
+bounds = element =>
+   available()--!
+   r = call(30, token(element), 0, 0, "", "")--!
+   <+ Rect(r.x, r.y, r.z, r.w) ->
+computed_style: Element, String => < String | Error >
+computed_style = element, name => string_call(31, token(element), name)
+is_empty: Element => < <> | Error >
+is_empty = element =>
+   available()--!
+   r = call(49, token(element), 0, 0, "", "")--!
+   <+ r.first != 0 ->
+
+#export
+   dom_invalidate: Int => ()
+   dom_invalidate = id =>
+      caches ^ id
+         | row => row.properties @ p => p.valid = <->
+
+   dom_invalidate_kind: Int, Int => ()
+   dom_invalidate_kind = id, kind =>
+      caches ^ id
+         | row => row.properties @ p =>
+            related = kind
+               [1] p.op == 11
+               [2] p.op == 17 || (p.op == 15 && owned_name_equal(p.key, "style"))
+               [3] p.op == 18 || (p.op == 15 && owned_name_equal(p.key, "class"))
+               [4] p.op == 21 || (p.op == 15 && owned_name_equal(p.key, "hidden"))
+               [5] p.op == 15 && owned_name_equal(p.key, "class")
+               | <+>
+            related | p.valid = <->
+
+#public
+release: Element => < | Error >
+release = element => remove(element)
+
+#private
+#type Command (op: Int, a: Int, b: Int, c: Int, key: Owned, value: Owned)
+#type Commands Command{}
+
+#public
+#type Batch (commands: Commands, count: Int, wire: Owned, closed: <>)
+#type MeasurementResult (kind: Int, rect: Rect, text: Owned, ready: <>)
+#type MeasurementResults MeasurementResult{}
+#type Measurements (
+   commands: Commands, count: Int, wire: Owned,
+   results: MeasurementResults, closed: <>
+)
+
+#private
+::active_batch: < Batch | >
+::active_batch = <-->
+::active_measurements: < Measurements | >
+::active_measurements = <-->
+
+reserve: Owned, Int => < | Error >
+reserve = buffer, size =>
+   size > buffer.capacity
+      |
+         cap = %max(size, %max(buffer.capacity * 2, 256))
+         data = realloc(buffer.data, cap)
+         Int(data) == 0 | --| <- error(BROWSER_ERROR, "Cannot retain DOM commands") ->
+         buffer.data = data
+         buffer.capacity = cap
+   buffer.length = size
+   <++>
+
+serialize: Commands, Int, Owned => < | Error >
+serialize = commands, count, wire =>
+   reserve(wire, count * 64)--!
+   commands @ command, i =>
+      i !< count | -->
+      p = wire.data + i * 64
+      @[p] = command.op
+      @[p + 8] = command.a
+      @[p + 16] = command.b
+      @[p + 24] = command.c
+      @[p + 32] = Int(command.key.data)
+      @[p + 40] = command.key.length
+      @[p + 48] = Int(command.value.data)
+      @[p + 56] = command.value.length
+   <++>
+
+command_slot: Commands, Int => Command
+command_slot = commands, i =>
+   i < ?commands | --| commands(i)!!
+   prev = dva_arena_set_current(Addr(0))
+   command = Command(0, 0, 0, 0, empty_owned!, empty_owned!)
+   commands += command
+   dva_arena_set_current(prev)
+   command
+
+clear_commands: Commands, Int => ()
+clear_commands = commands, count =>
+   commands @ command, i =>
+      i !< count | -->
+      command.key.length = 0
+      command.value.length = 0
+
+free_commands: Commands => ()
+free_commands = commands =>
+   commands @ command =>
+      owned_free(command.key)
+      owned_free(command.value)
+
+queue: Batch, Int, Element, Int, Int, String, String => < | Error >
+queue = batch, op, element, b, c, key, value =>
+   batch.closed | --| <- error(CLOSED, "DOM batch is closed") ->
+   flushing | --| <- error(PENDING_WRITES, "Cannot enqueue during flush") ->
+   stable = op [11, 15, 17, 18, 21]
+   pending == 0 && stable
+      |
+         p = property(token(element), op, key)
+         p.valid && p.flag == c && owned_equal(p.value, value) |++>
+   command = command_slot(batch.commands, batch.count)
+   owned_store(command.key, key)--!
+   owned_store(command.value, value)--!
+   command.op = op
+   command.a = token(element)
+   command.b = b
+   command.c = c
+   batch.count = batch.count + 1
+   pending ::= pending + 1
+   <++>
+
+#public
+batch: () => Batch
+batch = !=>
+   prev = dva_arena_set_current(Addr(0))
+   result = Batch(Commands(), 0, empty_owned!, <->)
+   dva_arena_set_current(prev)
+   result
+
+discard: Batch => < | Error >
+discard = batch =>
+   batch.closed | --| <- error(CLOSED, "DOM batch is closed") ->
+   flushing | --| <- error(PENDING_WRITES, "Cannot discard during flush") ->
+   pending ::= pending - batch.count
+   clear_commands(batch.commands, batch.count)
+   batch.count = 0
+   batch.wire.length = 0
+   <++>
+
+close_batch: Batch => < | Error >
+close_batch = batch =>
+   discard(batch)--!
+   free_commands(batch.commands)
+   owned_free(batch.wire)
+   batch.closed = <+>
+   <++>
+
+flush: Batch => < | Error >
+flush = batch =>
+   batch.closed | --| <- error(CLOSED, "DOM batch is closed") ->
+   flushing | --| <- error(PENDING_WRITES, "Nested flush is forbidden") ->
+   batch.count == 0 |++>
+   serialize(batch.commands, batch.count, batch.wire)--!
+   reply = reply_enter!
+   active_batch ::= <+ batch +>
+   flushing ::= <+>
+   code = edva_dom_batch(batch.wire.data, batch.count, &reply)
+   reply_leave!
+   flushing ::= <->
+   active_batch ::= <-->
+   count = batch.count
+   discard(batch)--!
+   code != 0
+      |
+         message = reply_string(reply)
+         index = Int(reply.x)
+         <- Error(code, message, "std/dom", 0, 0, (index, index)) ->
+      | <++>
+
+measurements: () => Measurements
+measurements = !=>
+   prev = dva_arena_set_current(Addr(0))
+   result = Measurements(Commands(), 0, empty_owned!, MeasurementResults(), <->)
+   dva_arena_set_current(prev)
+   result
+
+#private
+request: Measurements, Int, Element, String => < Int | Error >
+request = measurements, op, element, key =>
+   measurements.closed | --| <- error(CLOSED, "Measurements are closed") +>
+   command = command_slot(measurements.commands, measurements.count)
+   owned_store(command.key, key)--!
+   command.op = op
+   command.a = token(element)
+   command.b = 0
+   command.c = 0
+   i = measurements.count
+   i !< ?measurements.results
+      |
+         prev = dva_arena_set_current(Addr(0))
+         measurements.results += MeasurementResult(op, Rect(0.0, 0.0, 0.0, 0.0),
+            empty_owned!, <->)
+         dva_arena_set_current(prev)
+   result = measurements.results(i)!!
+   result.ready = <->
+   result.kind = op
+   measurements.count = i + 1
+   <+ i ->
+
+#public
+request_bounds: Measurements, Element => < Int | Error >
+request_bounds = measurements, element => request(measurements, 30, element, "")
+request_style: Measurements, Element, String => < Int | Error >
+request_style = measurements, element, name => request(measurements, 31, element, name)
+
+measure: Measurements => < | Error >
+measure = measurements =>
+   measurements.closed | --| <- error(CLOSED, "Measurements are closed") ->
+   available()--!
+   measurements.results @ result => result.ready = <->
+   serialize(measurements.commands, measurements.count, measurements.wire)--!
+   active_measurements ::= <+ measurements +>
+   reply = reply_enter!
+   code = edva_dom_measure(measurements.wire.data, measurements.count, &reply)
+   reply_leave!
+   active_measurements ::= <-->
+   code != 0
+      |
+         measurements.results @ result => result.ready = <->
+         message = reply_string(reply)
+         index = Int(reply.x)
+         <- Error(code, message, "std/dom", 0, 0, (index, index)) ->
+      | <++>
+
+measured_bounds: Measurements, Int => < Rect | Error >
+measured_bounds = measurements, index =>
+   measurements.closed | --| <- error(CLOSED, "Measurements are closed") +>
+   result = measurements.results(index)--!
+   !result.ready || result.kind != 30
+      | --| <- error(INVALID_RESULT, "No bounds at this measurement index") +>
+   <+ result.rect ->
+
+measured_style: Measurements, Int => < String | Error >
+measured_style = measurements, index =>
+   measurements.closed | --| <- error(CLOSED, "Measurements are closed") +>
+   result = measurements.results(index)--!
+   !result.ready || result.kind != 31
+      | --| <- error(INVALID_RESULT, "No style at this measurement index") +>
+   <+ owned_string(result.text) ->
+
+close_measurements: Measurements => < | Error >
+close_measurements = measurements =>
+   measurements.closed | --| <- error(CLOSED, "Measurements are closed") ->
+   free_commands(measurements.commands)
+   owned_free(measurements.wire)
+   measurements.results @ result =>
+      owned_free(result.text)
+      result.ready = <->
+   measurements.closed = <+>
+   <++>
+
+#export
+   dom_commit: Int => ()
+   dom_commit = index =>
+      active_batch
+         | current =>
+            command = current.commands(index)!!
+            command.op [15, 16]
+               caches ^ command.a
+                  | row => row.properties @ cached =>
+                     cached.op == 15 && owned_names_equal(cached.key, command.key)
+                        | cached.valid = <->
+            command.op
+               [11, 13, 15, 17, 18, 20, 21]
+                  p = property_owned(command.a, command.op, command.key)
+                  reserve(p.value, command.value.length) !| _
+                  command.value.length > 0
+                     | %memcpy(p.value.data, command.value.data, command.value.length)
+                  p.flag = command.c
+                  p.valid = <+>
+
+   dom_measure_result: Int, Addr => ()
+   dom_measure_result = index, address =>
+      active_measurements
+         | current =>
+            r = @[address Reply]
+            result = current.results(index)!!
+            result.kind
+               [30]
+                  result.rect.x = r.x
+                  result.rect.y = r.y
+                  result.rect.width = r.z
+                  result.rect.height = r.w
+               [31]
+                  text = reply_string(r)
+                  owned_store(result.text, text) !| _
+            result.ready = <+>
+
+   dom_forget: Int => ()
+   dom_forget = id =>
+      caches ^ id
+         | row =>
+            row.properties @ p =>
+               owned_free(p.key)
+               owned_free(p.value)
+               p.valid = <->
+            row.live = <->
+            row.used = 0
+            caches ^- id
+            free_count < ?free_rows
+               |
+                  free_rows(free_count) = row !| _
+               | free_rows += row
+            free_count ::= free_count + 1
+
+#public
+queue_text: Batch, Element, String => < | Error >
+queue_text = batch, element, value =>
+   queue(batch, 11, element, 0, 0, "", value)
+
+queue_value: Batch, Element, String => < | Error >
+queue_value = batch, element, value =>
+   queue(batch, 13, element, 0, 0, "", value)
+
+queue_attr: Batch, Element, String, String => < | Error >
+queue_attr = batch, element, name, value =>
+   queue(batch, 15, element, 0, 0, name, value)
+
+queue_remove_attr: Batch, Element, String => < | Error >
+queue_remove_attr = batch, element, name =>
+   queue(batch, 16, element, 0, 0, name, "")
+
+queue_style: Batch, Element, String, String => < | Error >
+queue_style = batch, element, name, value =>
+   queue(batch, 17, element, 0, 0, name, value)
+
+queue_class_set: Batch, Element, String, <> => < | Error >
+queue_class_set = batch, element, name, enabled =>
+   flag = enabled | 1 | 0
+   queue(batch, 18, element, 0, flag, name, "")
+
+queue_checked: Batch, Element, <> => < | Error >
+queue_checked = batch, element, enabled =>
+   flag = enabled | 1 | 0
+   queue(batch, 20, element, 0, flag, "", "")
+
+queue_hidden: Batch, Element, <> => < | Error >
+queue_hidden = batch, element, enabled =>
+   flag = enabled | 1 | 0
+   queue(batch, 21, element, 0, flag, "", "")
+
+queue_append: Batch, Element, Element => < | Error >
+queue_append = batch, element, child => queue(batch, 4, element, token(child), 0, "", "")
+
+queue_detach: Batch, Element => < | Error >
+queue_detach = batch, element => queue(batch, 6, element, 0, 0, "", "")
+
+queue_remove: Batch, Element => < | Error >
+queue_remove = batch, element => queue(batch, 7, element, 0, 0, "", "")
+
+
+#private
+#type CallbackSlot (callback: < (Event => < | Error >) | >, alive: <>)
+#type CallbackSlots CallbackSlot{}
+#public
+#type CallbackTable CallbackSlot{}
+#private
+callbacks = CallbackTable()
+
+#public
+on_with: Element, String, ListenerOptions, (Event => < | Error >) => < Listener | Error >
+on_with = element, kind, options, callback =>
+   register(element, kind, "", options, callback)
+on: Element, String, (Event => < | Error >) => < Listener | Error >
+on = element, kind, callback => on_with(element, kind, ListenerOptions(), callback)
+delegate: Element, String, String, (Event => < | Error >) => < Listener | Error >
+delegate = element, kind, selector, callback =>
+   register(element, kind, selector, ListenerOptions(), callback)
+delegate_with: Element, String, String, ListenerOptions,
+   (Event => < | Error >) => < Listener | Error >
+delegate_with = element, kind, selector, options, callback =>
+   register(element, kind, selector, options, callback)
+off: Listener => < | Error >
+off = listener => unit_call(41, listener_token(listener), 0, 0, "", "")
+event_target: Event => < Element | Error >
+event_target = event =>
+   r = call(42, event_token(event), 0, 0, "", "")--!
+   <+ element_from(r.first) ->
+event_matched: Event => < Element | Error >
+event_matched = event =>
+   r = call(43, event_token(event), 0, 0, "", "")--!
+   <+ element_from(r.first) ->
+event_value: Event => < String | Error >
+event_value = event => string_call(44, event_token(event), "")
+event_key: Event => < String | Error >
+event_key = event =>
+   r = call(45, event_token(event), 0, 0, "", "")--!
+   <+ reply_string(r) ->
+event_pointer: Event => < Pointer | Error >
+event_pointer = event =>
+   r = call(46, event_token(event), 0, 0, "", "")--!
+   <+ Pointer(r.x, r.y, Int(r.z)) ->
+prevent_default: Event => < | Error >
+prevent_default = event =>
+   call(47, event_token(event), 0, 0, "", "")--!
+   <++>
+stop_propagation: Event => < | Error >
+stop_propagation = event =>
+   call(48, event_token(event), 0, 0, "", "")--!
+   <++>
+
+#private
+register: Element, String, String, ListenerOptions,
+   (Event => < | Error >) => < Listener | Error >
+register = element, kind, selector, options, callback =>
+   available()--!
+   options.passive && options.prevent_default
+      | --| <- error(INVALID_OPTIONS, "Passive listener cannot prevent default") +>
+   index' = ?callbacks
+   callbacks @ slot, i =>
+      !slot.alive
+         |
+            index' = i
+            -->
+   prev = dva_arena_set_current(Addr(0))
+   index' == ?callbacks | callbacks += CallbackSlot(<-->, <->)
+   dva_arena_set_current(prev)
+   slot = callbacks(index')!!
+   slot.callback = <+ callback +>
+   slot.alive = <+>
+   bits = (options.capture | 1 | 0) .|. (options.passive | 2 | 0) .|.
+      (options.once | 4 | 0) .|. (options.coalesce | 8 | 0) .|.
+      (options.prevent_default | 16 | 0)
+   r = call(40, token(element), index', bits, kind, selector)
+   r
+      | reply => <+ Listener(reply.first .&. 0xFFFFFFFF, reply.first .>. 32) ->
+      | failure =>
+         slot.callback = <-->
+         slot.alive = <->
+         <- failure +>
+
+report: Error => ()
+report = failure =>
+   message = "DOM Error " + str::from_int(failure.code) + ": " + failure.msg
+   edva_dom_report(&message, ?message)
+#public
+#type ErrorHandlerState (handler: < (Error => ()) | >, busy: <>)
+#private
+error_state = ErrorHandlerState(<-->, <->)
+
+#public
+on_error: (Error => ()) => ()
+on_error = handler =>
+   error_state.handler = <+ handler +>
+
+#export
+   dom_dispatch: Int, Int => ()
+   dom_dispatch = index, id =>
+      callbacks(index)
+         | slot =>
+            slot.alive
+               |
+                  slot.callback
+                     | callback =>
+                        callback(Event(id .&. 0xFFFFFFFF, id .>. 32))
+                           !| failure =>
+                              error_state.busy
+                                 | report(failure)
+                                 |
+                                    handler_opt = error_state.handler
+                                    error_state.busy = <+>
+                                    handler_opt
+                                       | handler => handler(failure)
+                                       | report(failure)
+                                    error_state.busy = <->
+
+   dom_release_listener: Int => ()
+   dom_release_listener = index =>
+      callbacks(index)
+         | slot =>
+            slot.callback = <-->
+            slot.alive = <->
+
+
+#public
+#type Elements Element{}
+children: Element => < Elements | Error >
+children = parent =>
+   available()--!
+   reply = call(51, token(parent), 0, 0, "", "")--!
+   result = Elements()
+   reply.length @ i =>
+      id = @[Addr(reply.first) + i * 8 Int]
+      result += element_from(id)
+   edva_dom_free(Addr(reply.first))
+   <+ result ->
+
+queue_insert_before: Batch, Element, Element, Element => < | Error >
+queue_insert_before = batch, parent, child, before =>
+   queue(batch, 5, parent, token(child), token(before), "", "")

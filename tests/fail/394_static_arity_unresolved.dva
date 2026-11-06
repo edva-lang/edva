@@ -1,0 +1,5 @@
+f: Int => Int
+f = x => x
+f: Int, Int => Int
+f = x, y => x + y
+value = f

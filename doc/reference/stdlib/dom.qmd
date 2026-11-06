@@ -1,0 +1,158 @@
+---
+meta:
+  audience: "Edva browser application developers"
+  status: "current reference"
+  evidence: "`std/dom.dva`, `std/dom/list.dva`, `std/dom/bridge.js`, `src/overloads.dva`, `tests/browser_dom/`, `tools/browser_dom/`"
+---
+
+# Browser DOM toolkit
+
+`#use dom` provides reusable element handles and error rams. Compile for the browser:
+
+```sh
+./edva client.dva -target wasm32-unknown-unknown -o client.wasm
+```
+
+The compiler writes the matching `client.dom.js` adapter beside the Wasm file.
+Load it as an ES module, then compose the application imports with the adapter:
+
+```js
+import { instantiateDOM } from './client.dom.js';
+const { instance, dom } = await instantiateDOM(
+  await (await fetch('./client.wasm')).arrayBuffer(), applicationImports
+);
+instance.exports.main(0, 0);
+// Invoke an exported application initializer after main initializes module state.
+instance.exports.start();
+```
+
+The adapter supplies the C memory functions needed by the Edva runtime. An existing
+loader can use `createDOMAdapter()`, merge `adapter.imports.env` into its imports,
+and call `adapter.attach(instance)` before executing any Edva code.
+
+For HTML containing `#output` and `#button`, this application resolves handles
+once and captures the output handle in its callback:
+
+```{.dva .partial}
+#use dom
+
+click: dom::Element => (dom::Event => < | Error >)
+click = output => event => dom::text(output, "Clicked")
+
+#export
+   start: () => ()
+   start = !=>
+      output = dom::find("#output")!!
+      button = dom::find("#button")!!
+      writes = dom::batch!
+      dom::queue_text(writes, output, "Ready") !| _
+      dom::queue_attr(writes, button, "type", "button") !| _
+      dom::flush(writes) !| _
+      dom::close_batch(writes) !| _
+      dom::on(button, "click", click(output)) !| _
+```
+
+## Properties and lifetime
+
+Lookup with `find(selector)` or `find_in(scope, selector)` once, then reuse the
+returned `Element`. Both return `<Element|Error>`; missing elements, invalid
+selectors, and stale scopes have distinct error codes. `create(tag)` returns an
+unattached element. `append(parent, child)` and
+`insert_before(parent, child, before)` move existing nodes. `detach(element)` keeps
+handles and listeners alive; `remove(element)` invalidates and releases the managed
+subtree, including listeners and retained cache bytes.
+
+The property names are overloaded statically by arity:
+
+| Operation | Read | Write |
+|---|---|---|
+| Text | `text(el)` | `text(el, text)` |
+| Form value | `value(el)` | `value(el, value)` |
+| Checkbox | `checked(el)` | `checked(el, flag)` |
+| Attribute | `attr(el, name)` | `attr(el, name, value)` |
+
+Reads return `<Value|Error>`; `attr` returns `<<String|>|Error>`, preserving the
+difference between a missing attribute and an empty value. Writes return `<|Error>`.
+Use `--!` to propagate or `!| _` to abort on a write failure. Reads of unsupported
+form properties return errors, matching setters.
+
+Additional setters are `remove_attr`, `style`, `class_set`, and `hidden`.
+Exact unchanged writes are tracked in Edva and can skip the JavaScript boundary.
+Coupled DOM operations invalidate affected cache entries. Style shorthands require
+conservative invalidation of other style entries. Form value and checked setters
+always validate browser state, including silent user or script changes.
+
+The toolkit owns managed properties. After an external mutation, explicitly call
+`invalidate(el)` or `invalidate_subtree(el)` before relying on write tracking.
+Handles copied from events follow the ordinary element lifetime rules.
+
+## Explicit batches and measurements
+
+Create a reusable `batch()`. Queue operations with `queue_text`, `queue_value`,
+`queue_attr`, `queue_remove_attr`, `queue_style`, `queue_class_set`, `queue_checked`,
+`queue_hidden`, `queue_append`, `queue_insert_before`, `queue_detach`, or `queue_remove`.
+`flush(batch)` crosses the bridge once for the command buffer. It stops at the first
+error, retains the applied prefix, and discards the unexecuted remainder.
+`Error.context` contains `(failed_command_index, successful_command_count)`, both
+zero based. The batch remains reusable. `discard` cancels queued writes;
+`close_batch` discards and frees retained command buffers.
+
+Live reads and immediate writes return `PENDING_WRITES` while any batch has pending
+commands. No read flushes implicitly. Empty flushes stay in Edva.
+
+`bounds(el)` and `computed_style(el, name)` read individually. For one bridge call,
+create `measurements()`, register `request_bounds` / `request_style`, and call
+`measure`. Retrieve by returned indices using `measured_bounds` / `measured_style`.
+Failed measurements invalidate all results. `close_measurements` frees retained
+buffers. Measurements are live browser queries and obey the same flush ordering.
+
+## Events
+
+`on(el, kind, callback)` and `delegate(root, kind, selector, callback)` accept
+`Event => <|Error>` callbacks and return listener handles. `on_with` and
+`delegate_with` also accept `ListenerOptions`: `capture`, `passive`, `once`,
+`coalesce`, and `prevent_default`. `off(listener)` removes a registration.
+
+Delivery is immediate by default. `coalesce` delivers only the latest event in the
+next animation frame. `prevent_default` cancels synchronously at binding delivery;
+passive cancellation is rejected. Cancellation and propagation requests made from
+a deferred callback return an error because browser dispatch has finished.
+
+Event data is lazy: `event_target`, `event_matched`, `event_value`, `event_key`,
+and `event_pointer`. Asking for data absent from that event returns an error.
+`prevent_default(event)` and `stop_propagation(event)` operate
+on immediate events. Event handles expire when the callback returns, including on
+failure. Copy values needed later. Callback failures reach `on_error(Error => ())`;
+the default handler reports to the browser console.
+
+## Keyed lists
+
+Import `#use dom/list` for the `list` module. `list::new(container, key, create,
+update, dispose)` requires an empty container. Callbacks have these shapes:
+
+- `key: Item => Key`, where Key is statically Int or String.
+- `create: Item => <(element: dom::Element, state: State)|Error>`.
+- `update: State, Item => <|Error>`.
+- `dispose: State => <|Error>`.
+
+Use `list::sync(rows, items(..))` with an item slice. Each key is evaluated once;
+duplicate keys are rejected before DOM changes. Retained rows keep their element
+and state. An O(n log n) longest increasing subsequence minimizes node moves.
+`list::with_revisions(rows, revision)` configures an `Item => Int` callback before
+the first sync. Equal revisions skip updates; without revisions every retained
+item is updated. Failed updates remain dirty and retry on the next explicit sync.
+There is no rollback of previous successful mutations. A failed move pass recovers
+actual child order before the next sync. `list::close` disposes rows, removes their
+nodes, and clears callback references.
+
+The list owns its children. Create callbacks must return unattached roots and must
+clean up their own resources if creation fails. Keep state and callback captures in
+an arena whose lifetime covers the list, following ordinary Edva ownership rules.
+
+## Verification
+
+Run `npm ci --prefix tools/browser_dom`, then `make dom-test`. These tests execute
+compiled Wasm with jsdom under Node, including mutation batches, events, keyed
+lists, and bridge-call counts. They do not measure browser layout or painting time.
+`dom.stats` exposes bridge calls, commands, DOM writes, callbacks, and adapter
+allocations; `dom.memoryStats()` reports adapter-managed memory.

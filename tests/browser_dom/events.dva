@@ -1,0 +1,71 @@
+#use dom
+
+::direct = 0
+::delegated = 0
+::once = 0
+::frames = 0
+::errors = 0
+::last_key = ""
+
+count: dom::Event => < | Error >
+count = event =>
+   direct = direct + 1
+   <++>
+matched: dom::Event => < | Error >
+matched = event =>
+   element = dom::event_matched(event)--!
+   name = dom::attr(element, "data-row")--!
+   name!! != "target" | --| <- Error(90, "Wrong delegated target", "events", 0, 0, (0, 0)) ->
+   delegated = delegated + 1
+   <++>
+count_once: dom::Event => < | Error >
+count_once = event =>
+   once = once + 1
+   <++>
+frame: dom::Event => < | Error >
+frame = event =>
+   frames = frames + 1
+   last_key = dom::event_key(event)--!
+   dom::prevent_default(event)
+fail: dom::Event => < | Error >
+fail = event => <- Error(77, "Expected callback failure", "events", 0, 0, (0, 0)) ->
+handle_error: Error => ()
+handle_error = error => errors = errors + 1
+
+#export
+   setup_events: () => Int
+   setup_events = !=>
+      root = dom::find("#events")!!
+      button = dom::find("#event-button")!!
+      dom::on_error(handle_error)
+      dom::on(button, "click", count) !| error => --| error.code
+      dom::delegate(root, "click", "[data-row]", matched) !| error => --| error.code
+      options = dom::ListenerOptions()
+      options.once = <+>
+      dom::on_with(button, "click", options, count_once) !| error => --| error.code
+      deferred = dom::ListenerOptions()
+      deferred.coalesce = <+>
+      dom::on_with(button, "keydown", deferred, frame) !| error => --| error.code
+      cancel = dom::ListenerOptions()
+      cancel.prevent_default = <+>
+      dom::on_with(button, "submit", cancel, count) !| error => --| error.code
+      dom::on(button, "fail", fail) !| error => --| error.code
+      passive = dom::ListenerOptions()
+      passive.passive = <+>
+      passive.prevent_default = <+>
+      result = dom::on_with(button, "click", passive, count)
+      code = result | listener => -1 | error => error.code
+      code != dom::INVALID_OPTIONS | --| 91
+      listener = dom::on(button, "off", count)!!
+      dom::off(listener) !| error => --| error.code
+      0
+
+   event_count: Int => Int
+   event_count = which =>
+      which [0] direct [1] delegated [2] once [3] frames [4] errors | -1
+
+   final_key: () => String
+   final_key = !=> last_key
+
+   remove_event_root: () => ()
+   remove_event_root = !=> dom::remove(dom::find("#events")!!) !| _

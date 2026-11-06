@@ -78,7 +78,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.time::SEC_PER_MIN" = external global i64
 @"var.time::SEC_PER_HOUR" = external global i64
 @"var.time::SEC_PER_DAY" = external global i64
-@str.0 = internal unnamed_addr constant [20 x i8] c"1.4.8+730aed6-dirty\00"
+@str.0 = internal unnamed_addr constant [20 x i8] c"1.4.8+4eb287d-dirty\00"
 @str.0.struct = internal unnamed_addr constant { i64, ptr } { i64 19, ptr @str.0 }
 @"var.pkg::lang_version" = global ptr null
 @stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
@@ -31620,7 +31620,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys590, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys590, i64 %m.idx
   %mk.stored = load ptr, ptr %m.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen604 = load i64, ptr %mk.slen, align 8
@@ -31753,7 +31753,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb809 = icmp ne i64 %m.tomb603, -1
   %m.ins.idx810 = select i1 %m.use.tomb809, i64 %m.tomb603, i64 %m.idx
-  %m.key.slot811 = getelementptr ptr, ptr %m.keys590, i64 %m.ins.idx810
+  %m.key.slot811 = getelementptr i64, ptr %m.keys590, i64 %m.ins.idx810
   store ptr %var.load588, ptr %m.key.slot811, align 8
   %m.val.slot812 = getelementptr i64, ptr %m.vals591, i64 %m.ins.idx810
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot812, align 8
@@ -31805,7 +31805,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal730, label %str_ok732, label %str_gen_check731
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys625, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys625, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals626, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -31863,7 +31863,7 @@ m.tomb657:                                        ; preds = %m.check.tomb656
   br label %m.next660
 
 m.found658:                                       ; preds = %m.check.tomb656
-  %m.key.slot674 = getelementptr ptr, ptr %m.keys635, i64 %m.idx663
+  %m.key.slot674 = getelementptr i64, ptr %m.keys635, i64 %m.idx663
   %mk.stored675 = load ptr, ptr %m.key.slot674, align 8
   %mk.slen676 = getelementptr inbounds { i64, ptr }, ptr %mk.stored675, i32 0, i32 0
   %mk.slen677 = load i64, ptr %mk.slen676, align 8
@@ -31887,7 +31887,7 @@ m.next660:                                        ; preds = %mk.eq.merge699, %m.
 m.empty661:                                       ; preds = %m.loop655
   %m.use.tomb = icmp ne i64 %m.tomb664, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb664, i64 %m.idx663
-  %m.key.slot712 = getelementptr ptr, ptr %m.keys635, i64 %m.ins.idx
+  %m.key.slot712 = getelementptr i64, ptr %m.keys635, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot712, align 8
   %m.val.slot713 = getelementptr i64, ptr %m.vals637, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot713, align 8
@@ -31993,7 +31993,7 @@ m.tomb741:                                        ; preds = %m.check.tomb740
   br label %m.next744
 
 m.found742:                                       ; preds = %m.check.tomb740
-  %m.key.slot758 = getelementptr ptr, ptr %m.keys719, i64 %m.idx747
+  %m.key.slot758 = getelementptr i64, ptr %m.keys719, i64 %m.idx747
   %mk.stored759 = load ptr, ptr %m.key.slot758, align 8
   %mk.slen760 = getelementptr inbounds { i64, ptr }, ptr %mk.stored759, i32 0, i32 0
   %mk.slen761 = load i64, ptr %mk.slen760, align 8
@@ -32017,7 +32017,7 @@ m.next744:                                        ; preds = %mk.eq.merge783, %m.
 m.empty745:                                       ; preds = %m.loop739
   %m.use.tomb796 = icmp ne i64 %m.tomb748, -1
   %m.ins.idx797 = select i1 %m.use.tomb796, i64 %m.tomb748, i64 %m.idx747
-  %m.key.slot798 = getelementptr ptr, ptr %m.keys719, i64 %m.ins.idx797
+  %m.key.slot798 = getelementptr i64, ptr %m.keys719, i64 %m.ins.idx797
   store ptr %var.load588, ptr %m.key.slot798, align 8
   %m.val.slot799 = getelementptr i64, ptr %m.vals721, i64 %m.ins.idx797
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot799, align 8
@@ -32267,7 +32267,7 @@ m.mem.probe:                                      ; preds = %m.mem.loop
   br i1 %m.mem.is.tomb, label %m.mem.next, label %m.mem.found
 
 m.mem.found:                                      ; preds = %m.mem.probe
-  %m.mem.key.slot = getelementptr ptr, ptr %m.keys7, i64 %m.mem.idx
+  %m.mem.key.slot = getelementptr i64, ptr %m.keys7, i64 %m.mem.idx
   %mk.stored = load ptr, ptr %m.mem.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen13 = load i64, ptr %mk.slen, align 8
@@ -32403,7 +32403,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys41, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys41, i64 %m.idx
   %mk.stored61 = load ptr, ptr %m.key.slot, align 8
   %mk.slen62 = getelementptr inbounds { i64, ptr }, ptr %mk.stored61, i32 0, i32 0
   %mk.slen63 = load i64, ptr %mk.slen62, align 8
@@ -32538,7 +32538,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb278 = icmp ne i64 %m.tomb60, -1
   %m.ins.idx279 = select i1 %m.use.tomb278, i64 %m.tomb60, i64 %m.idx
-  %m.key.slot280 = getelementptr ptr, ptr %m.keys41, i64 %m.ins.idx279
+  %m.key.slot280 = getelementptr i64, ptr %m.keys41, i64 %m.ins.idx279
   store ptr %var.load37, ptr %m.key.slot280, align 8
   %m.val.slot281 = getelementptr i64, ptr %m.vals42, i64 %m.ins.idx279
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot281, align 8
@@ -32590,7 +32590,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal199, label %str_ok201, label %str_gen_check200
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys94, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys94, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals95, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -32648,7 +32648,7 @@ m.tomb126:                                        ; preds = %m.check.tomb125
   br label %m.next129
 
 m.found127:                                       ; preds = %m.check.tomb125
-  %m.key.slot143 = getelementptr ptr, ptr %m.keys104, i64 %m.idx132
+  %m.key.slot143 = getelementptr i64, ptr %m.keys104, i64 %m.idx132
   %mk.stored144 = load ptr, ptr %m.key.slot143, align 8
   %mk.slen145 = getelementptr inbounds { i64, ptr }, ptr %mk.stored144, i32 0, i32 0
   %mk.slen146 = load i64, ptr %mk.slen145, align 8
@@ -32672,7 +32672,7 @@ m.next129:                                        ; preds = %mk.eq.merge168, %m.
 m.empty130:                                       ; preds = %m.loop124
   %m.use.tomb = icmp ne i64 %m.tomb133, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb133, i64 %m.idx132
-  %m.key.slot181 = getelementptr ptr, ptr %m.keys104, i64 %m.ins.idx
+  %m.key.slot181 = getelementptr i64, ptr %m.keys104, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot181, align 8
   %m.val.slot182 = getelementptr i64, ptr %m.vals106, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot182, align 8
@@ -32778,7 +32778,7 @@ m.tomb210:                                        ; preds = %m.check.tomb209
   br label %m.next213
 
 m.found211:                                       ; preds = %m.check.tomb209
-  %m.key.slot227 = getelementptr ptr, ptr %m.keys188, i64 %m.idx216
+  %m.key.slot227 = getelementptr i64, ptr %m.keys188, i64 %m.idx216
   %mk.stored228 = load ptr, ptr %m.key.slot227, align 8
   %mk.slen229 = getelementptr inbounds { i64, ptr }, ptr %mk.stored228, i32 0, i32 0
   %mk.slen230 = load i64, ptr %mk.slen229, align 8
@@ -32802,7 +32802,7 @@ m.next213:                                        ; preds = %mk.eq.merge252, %m.
 m.empty214:                                       ; preds = %m.loop208
   %m.use.tomb265 = icmp ne i64 %m.tomb217, -1
   %m.ins.idx266 = select i1 %m.use.tomb265, i64 %m.tomb217, i64 %m.idx216
-  %m.key.slot267 = getelementptr ptr, ptr %m.keys188, i64 %m.ins.idx266
+  %m.key.slot267 = getelementptr i64, ptr %m.keys188, i64 %m.ins.idx266
   store ptr %var.load37, ptr %m.key.slot267, align 8
   %m.val.slot268 = getelementptr i64, ptr %m.vals190, i64 %m.ins.idx266
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot268, align 8
@@ -34349,7 +34349,7 @@ m.mem.probe:                                      ; preds = %m.mem.loop
   br i1 %m.mem.is.tomb, label %m.mem.next, label %m.mem.found
 
 m.mem.found:                                      ; preds = %m.mem.probe
-  %m.mem.key.slot = getelementptr ptr, ptr %m.keys96, i64 %m.mem.idx
+  %m.mem.key.slot = getelementptr i64, ptr %m.keys96, i64 %m.mem.idx
   %mk.stored = load ptr, ptr %m.mem.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen109 = load i64, ptr %mk.slen, align 8
@@ -34484,7 +34484,7 @@ m.rd.probe:                                       ; preds = %m.rd.loop
   br i1 %m.rd.is.tomb, label %m.rd.next, label %m.rd.found
 
 m.rd.found:                                       ; preds = %m.rd.probe
-  %m.rd.key.slot = getelementptr ptr, ptr %m.keys136, i64 %m.rd.idx
+  %m.rd.key.slot = getelementptr i64, ptr %m.keys136, i64 %m.rd.idx
   %mk.stored156 = load ptr, ptr %m.rd.key.slot, align 8
   %mk.slen157 = getelementptr inbounds { i64, ptr }, ptr %mk.stored156, i32 0, i32 0
   %mk.slen158 = load i64, ptr %mk.slen157, align 8
@@ -34577,7 +34577,7 @@ mk.eq.merge180:                                   ; preds = %mk.eq.else179, %mk.
   br i1 %mk.eq187, label %m.rd.hit, label %m.rd.next
 
 m.rd.hit:                                         ; preds = %mk.eq.merge180
-  %m.rd.val.slot = getelementptr ptr, ptr %m.vals137, i64 %m.rd.idx
+  %m.rd.val.slot = getelementptr i64, ptr %m.vals137, i64 %m.rd.idx
   %m.rd.val = load ptr, ptr %m.rd.val.slot, align 8
   %m.rd.p2i = ptrtoint ptr %m.rd.val to i64
   br label %m.rd.done
@@ -34800,7 +34800,7 @@ m.rd.probe308:                                    ; preds = %m.rd.loop307
   br i1 %m.rd.is.tomb320, label %m.rd.next310, label %m.rd.found309
 
 m.rd.found309:                                    ; preds = %m.rd.probe308
-  %m.rd.key.slot321 = getelementptr ptr, ptr %m.keys287, i64 %m.rd.idx313
+  %m.rd.key.slot321 = getelementptr i64, ptr %m.keys287, i64 %m.rd.idx313
   %mk.stored322 = load ptr, ptr %m.rd.key.slot321, align 8
   %mk.slen323 = getelementptr inbounds { i64, ptr }, ptr %mk.stored322, i32 0, i32 0
   %mk.slen324 = load i64, ptr %mk.slen323, align 8
@@ -34893,7 +34893,7 @@ mk.eq.merge346:                                   ; preds = %mk.eq.else345, %mk.
   br i1 %mk.eq353, label %m.rd.hit354, label %m.rd.next310
 
 m.rd.hit354:                                      ; preds = %mk.eq.merge346
-  %m.rd.val.slot358 = getelementptr ptr, ptr %m.vals289, i64 %m.rd.idx313
+  %m.rd.val.slot358 = getelementptr i64, ptr %m.vals289, i64 %m.rd.idx313
   %m.rd.val359 = load ptr, ptr %m.rd.val.slot358, align 8
   %m.rd.p2i360 = ptrtoint ptr %m.rd.val359 to i64
   br label %m.rd.done312
@@ -35172,7 +35172,7 @@ m.rd.probe519:                                    ; preds = %m.rd.loop518
   br i1 %m.rd.is.tomb531, label %m.rd.next521, label %m.rd.found520
 
 m.rd.found520:                                    ; preds = %m.rd.probe519
-  %m.rd.key.slot532 = getelementptr ptr, ptr %m.keys498, i64 %m.rd.idx524
+  %m.rd.key.slot532 = getelementptr i64, ptr %m.keys498, i64 %m.rd.idx524
   %mk.stored533 = load ptr, ptr %m.rd.key.slot532, align 8
   %mk.slen534 = getelementptr inbounds { i64, ptr }, ptr %mk.stored533, i32 0, i32 0
   %mk.slen535 = load i64, ptr %mk.slen534, align 8
@@ -35265,7 +35265,7 @@ mk.eq.merge557:                                   ; preds = %mk.eq.else556, %mk.
   br i1 %mk.eq564, label %m.rd.hit565, label %m.rd.next521
 
 m.rd.hit565:                                      ; preds = %mk.eq.merge557
-  %m.rd.val.slot569 = getelementptr ptr, ptr %m.vals500, i64 %m.rd.idx524
+  %m.rd.val.slot569 = getelementptr i64, ptr %m.vals500, i64 %m.rd.idx524
   %m.rd.val570 = load ptr, ptr %m.rd.val.slot569, align 8
   %m.rd.p2i571 = ptrtoint ptr %m.rd.val570 to i64
   br label %m.rd.done523
@@ -35422,7 +35422,7 @@ m.mem.probe667:                                   ; preds = %m.mem.loop666
   br i1 %m.mem.is.tomb679, label %m.mem.next669, label %m.mem.found668
 
 m.mem.found668:                                   ; preds = %m.mem.probe667
-  %m.mem.key.slot680 = getelementptr ptr, ptr %m.keys648, i64 %m.mem.idx672
+  %m.mem.key.slot680 = getelementptr i64, ptr %m.keys648, i64 %m.mem.idx672
   %mk.stored681 = load ptr, ptr %m.mem.key.slot680, align 8
   %mk.slen682 = getelementptr inbounds { i64, ptr }, ptr %mk.stored681, i32 0, i32 0
   %mk.slen683 = load i64, ptr %mk.slen682, align 8
@@ -35559,7 +35559,7 @@ m.rd.probe749:                                    ; preds = %m.rd.loop748
   br i1 %m.rd.is.tomb761, label %m.rd.next751, label %m.rd.found750
 
 m.rd.found750:                                    ; preds = %m.rd.probe749
-  %m.rd.key.slot762 = getelementptr ptr, ptr %m.keys728, i64 %m.rd.idx754
+  %m.rd.key.slot762 = getelementptr i64, ptr %m.keys728, i64 %m.rd.idx754
   %mk.stored763 = load ptr, ptr %m.rd.key.slot762, align 8
   %mk.slen764 = getelementptr inbounds { i64, ptr }, ptr %mk.stored763, i32 0, i32 0
   %mk.slen765 = load i64, ptr %mk.slen764, align 8
@@ -35652,7 +35652,7 @@ mk.eq.merge787:                                   ; preds = %mk.eq.else786, %mk.
   br i1 %mk.eq794, label %m.rd.hit795, label %m.rd.next751
 
 m.rd.hit795:                                      ; preds = %mk.eq.merge787
-  %m.rd.val.slot799 = getelementptr ptr, ptr %m.vals730, i64 %m.rd.idx754
+  %m.rd.val.slot799 = getelementptr i64, ptr %m.vals730, i64 %m.rd.idx754
   %m.rd.val800 = load ptr, ptr %m.rd.val.slot799, align 8
   %m.rd.p2i801 = ptrtoint ptr %m.rd.val800 to i64
   br label %m.rd.done753
@@ -36630,7 +36630,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys1337, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys1337, i64 %m.idx
   %mk.stored1358 = load ptr, ptr %m.key.slot, align 8
   %mk.slen1359 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1358, i32 0, i32 0
   %mk.slen1360 = load i64, ptr %mk.slen1359, align 8
@@ -36756,7 +36756,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb1575 = icmp ne i64 %m.tomb1357, -1
   %m.ins.idx1576 = select i1 %m.use.tomb1575, i64 %m.tomb1357, i64 %m.idx
-  %m.key.slot1577 = getelementptr ptr, ptr %m.keys1337, i64 %m.ins.idx1576
+  %m.key.slot1577 = getelementptr i64, ptr %m.keys1337, i64 %m.ins.idx1576
   store ptr %var.load1332, ptr %m.key.slot1577, align 8
   %m.val.slot1578 = getelementptr i64, ptr %m.vals1339, i64 %m.ins.idx1576
   store i64 %slot.p2i, ptr %m.val.slot1578, align 8
@@ -36808,7 +36808,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal1496, label %str_ok1498, label %str_gen_check1497
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys1391, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys1391, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals1392, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -36866,7 +36866,7 @@ m.tomb1423:                                       ; preds = %m.check.tomb1422
   br label %m.next1426
 
 m.found1424:                                      ; preds = %m.check.tomb1422
-  %m.key.slot1440 = getelementptr ptr, ptr %m.keys1401, i64 %m.idx1429
+  %m.key.slot1440 = getelementptr i64, ptr %m.keys1401, i64 %m.idx1429
   %mk.stored1441 = load ptr, ptr %m.key.slot1440, align 8
   %mk.slen1442 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1441, i32 0, i32 0
   %mk.slen1443 = load i64, ptr %mk.slen1442, align 8
@@ -36890,7 +36890,7 @@ m.next1426:                                       ; preds = %mk.eq.merge1465, %m
 m.empty1427:                                      ; preds = %m.loop1421
   %m.use.tomb = icmp ne i64 %m.tomb1430, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb1430, i64 %m.idx1429
-  %m.key.slot1478 = getelementptr ptr, ptr %m.keys1401, i64 %m.ins.idx
+  %m.key.slot1478 = getelementptr i64, ptr %m.keys1401, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot1478, align 8
   %m.val.slot1479 = getelementptr i64, ptr %m.vals1403, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot1479, align 8
@@ -36996,7 +36996,7 @@ m.tomb1507:                                       ; preds = %m.check.tomb1506
   br label %m.next1510
 
 m.found1508:                                      ; preds = %m.check.tomb1506
-  %m.key.slot1524 = getelementptr ptr, ptr %m.keys1485, i64 %m.idx1513
+  %m.key.slot1524 = getelementptr i64, ptr %m.keys1485, i64 %m.idx1513
   %mk.stored1525 = load ptr, ptr %m.key.slot1524, align 8
   %mk.slen1526 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1525, i32 0, i32 0
   %mk.slen1527 = load i64, ptr %mk.slen1526, align 8
@@ -37020,7 +37020,7 @@ m.next1510:                                       ; preds = %mk.eq.merge1549, %m
 m.empty1511:                                      ; preds = %m.loop1505
   %m.use.tomb1562 = icmp ne i64 %m.tomb1514, -1
   %m.ins.idx1563 = select i1 %m.use.tomb1562, i64 %m.tomb1514, i64 %m.idx1513
-  %m.key.slot1564 = getelementptr ptr, ptr %m.keys1485, i64 %m.ins.idx1563
+  %m.key.slot1564 = getelementptr i64, ptr %m.keys1485, i64 %m.ins.idx1563
   store ptr %var.load1332, ptr %m.key.slot1564, align 8
   %m.val.slot1565 = getelementptr i64, ptr %m.vals1487, i64 %m.ins.idx1563
   store i64 %slot.p2i, ptr %m.val.slot1565, align 8
@@ -40155,7 +40155,7 @@ m.rd.probe:                                       ; preds = %m.rd.loop
   br i1 %m.rd.is.tomb, label %m.rd.next, label %m.rd.found
 
 m.rd.found:                                       ; preds = %m.rd.probe
-  %m.rd.key.slot = getelementptr ptr, ptr %m.keys66, i64 %m.rd.idx
+  %m.rd.key.slot = getelementptr i64, ptr %m.keys66, i64 %m.rd.idx
   %mk.stored = load ptr, ptr %m.rd.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen80 = load i64, ptr %mk.slen, align 8
@@ -40248,7 +40248,7 @@ mk.eq.merge:                                      ; preds = %mk.eq.else, %mk.eq.
   br i1 %mk.eq, label %m.rd.hit, label %m.rd.next
 
 m.rd.hit:                                         ; preds = %mk.eq.merge
-  %m.rd.val.slot = getelementptr ptr, ptr %m.vals67, i64 %m.rd.idx
+  %m.rd.val.slot = getelementptr i64, ptr %m.vals67, i64 %m.rd.idx
   %m.rd.val = load ptr, ptr %m.rd.val.slot, align 8
   %m.rd.p2i = ptrtoint ptr %m.rd.val to i64
   br label %m.rd.done
@@ -44514,7 +44514,7 @@ m.rd.probe:                                       ; preds = %m.rd.loop
   br i1 %m.rd.is.tomb, label %m.rd.next, label %m.rd.found
 
 m.rd.found:                                       ; preds = %m.rd.probe
-  %m.rd.key.slot = getelementptr ptr, ptr %m.keys3, i64 %m.rd.idx
+  %m.rd.key.slot = getelementptr i64, ptr %m.keys3, i64 %m.rd.idx
   %mk.stored = load ptr, ptr %m.rd.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen10 = load i64, ptr %mk.slen, align 8
@@ -44607,7 +44607,7 @@ mk.eq.merge:                                      ; preds = %mk.eq.else, %mk.eq.
   br i1 %mk.eq, label %m.rd.hit, label %m.rd.next
 
 m.rd.hit:                                         ; preds = %mk.eq.merge
-  %m.rd.val.slot = getelementptr ptr, ptr %m.vals4, i64 %m.rd.idx
+  %m.rd.val.slot = getelementptr i64, ptr %m.vals4, i64 %m.rd.idx
   %m.rd.val = load ptr, ptr %m.rd.val.slot, align 8
   %m.rd.p2i = ptrtoint ptr %m.rd.val to i64
   br label %m.rd.done
@@ -44939,7 +44939,7 @@ m.rd.probe172:                                    ; preds = %m.rd.loop171
   br i1 %m.rd.is.tomb184, label %m.rd.next174, label %m.rd.found173
 
 m.rd.found173:                                    ; preds = %m.rd.probe172
-  %m.rd.key.slot185 = getelementptr ptr, ptr %m.keys151, i64 %m.rd.idx177
+  %m.rd.key.slot185 = getelementptr i64, ptr %m.keys151, i64 %m.rd.idx177
   %mk.stored186 = load ptr, ptr %m.rd.key.slot185, align 8
   %mk.slen187 = getelementptr inbounds { i64, ptr }, ptr %mk.stored186, i32 0, i32 0
   %mk.slen188 = load i64, ptr %mk.slen187, align 8
@@ -45032,7 +45032,7 @@ mk.eq.merge210:                                   ; preds = %mk.eq.else209, %mk.
   br i1 %mk.eq217, label %m.rd.hit218, label %m.rd.next174
 
 m.rd.hit218:                                      ; preds = %mk.eq.merge210
-  %m.rd.val.slot222 = getelementptr ptr, ptr %m.vals153, i64 %m.rd.idx177
+  %m.rd.val.slot222 = getelementptr i64, ptr %m.vals153, i64 %m.rd.idx177
   %m.rd.val223 = load ptr, ptr %m.rd.val.slot222, align 8
   %m.rd.p2i224 = ptrtoint ptr %m.rd.val223 to i64
   br label %m.rd.done176
@@ -50559,7 +50559,7 @@ m.mem.probe:                                      ; preds = %m.mem.loop
   br i1 %m.mem.is.tomb, label %m.mem.next, label %m.mem.found
 
 m.mem.found:                                      ; preds = %m.mem.probe
-  %m.mem.key.slot = getelementptr ptr, ptr %m.keys28, i64 %m.mem.idx
+  %m.mem.key.slot = getelementptr i64, ptr %m.keys28, i64 %m.mem.idx
   %mk.stored = load ptr, ptr %m.mem.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen41 = load i64, ptr %mk.slen, align 8
@@ -50690,7 +50690,7 @@ m.mem.probe87:                                    ; preds = %m.mem.loop86
   br i1 %m.mem.is.tomb99, label %m.mem.next89, label %m.mem.found88
 
 m.mem.found88:                                    ; preds = %m.mem.probe87
-  %m.mem.key.slot100 = getelementptr ptr, ptr %m.keys68, i64 %m.mem.idx92
+  %m.mem.key.slot100 = getelementptr i64, ptr %m.keys68, i64 %m.mem.idx92
   %mk.stored101 = load ptr, ptr %m.mem.key.slot100, align 8
   %mk.slen102 = getelementptr inbounds { i64, ptr }, ptr %mk.stored101, i32 0, i32 0
   %mk.slen103 = load i64, ptr %mk.slen102, align 8
@@ -50910,7 +50910,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys187, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys187, i64 %m.idx
   %mk.stored207 = load ptr, ptr %m.key.slot, align 8
   %mk.slen208 = getelementptr inbounds { i64, ptr }, ptr %mk.stored207, i32 0, i32 0
   %mk.slen209 = load i64, ptr %mk.slen208, align 8
@@ -51043,7 +51043,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb424 = icmp ne i64 %m.tomb206, -1
   %m.ins.idx425 = select i1 %m.use.tomb424, i64 %m.tomb206, i64 %m.idx
-  %m.key.slot426 = getelementptr ptr, ptr %m.keys187, i64 %m.ins.idx425
+  %m.key.slot426 = getelementptr i64, ptr %m.keys187, i64 %m.ins.idx425
   store ptr %concat.str181, ptr %m.key.slot426, align 8
   %m.val.slot427 = getelementptr i64, ptr %m.vals188, i64 %m.ins.idx425
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot427, align 8
@@ -51095,7 +51095,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal345, label %str_ok347, label %str_gen_check346
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys240, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys240, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals241, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -51153,7 +51153,7 @@ m.tomb272:                                        ; preds = %m.check.tomb271
   br label %m.next275
 
 m.found273:                                       ; preds = %m.check.tomb271
-  %m.key.slot289 = getelementptr ptr, ptr %m.keys250, i64 %m.idx278
+  %m.key.slot289 = getelementptr i64, ptr %m.keys250, i64 %m.idx278
   %mk.stored290 = load ptr, ptr %m.key.slot289, align 8
   %mk.slen291 = getelementptr inbounds { i64, ptr }, ptr %mk.stored290, i32 0, i32 0
   %mk.slen292 = load i64, ptr %mk.slen291, align 8
@@ -51177,7 +51177,7 @@ m.next275:                                        ; preds = %mk.eq.merge314, %m.
 m.empty276:                                       ; preds = %m.loop270
   %m.use.tomb = icmp ne i64 %m.tomb279, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb279, i64 %m.idx278
-  %m.key.slot327 = getelementptr ptr, ptr %m.keys250, i64 %m.ins.idx
+  %m.key.slot327 = getelementptr i64, ptr %m.keys250, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot327, align 8
   %m.val.slot328 = getelementptr i64, ptr %m.vals252, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot328, align 8
@@ -51283,7 +51283,7 @@ m.tomb356:                                        ; preds = %m.check.tomb355
   br label %m.next359
 
 m.found357:                                       ; preds = %m.check.tomb355
-  %m.key.slot373 = getelementptr ptr, ptr %m.keys334, i64 %m.idx362
+  %m.key.slot373 = getelementptr i64, ptr %m.keys334, i64 %m.idx362
   %mk.stored374 = load ptr, ptr %m.key.slot373, align 8
   %mk.slen375 = getelementptr inbounds { i64, ptr }, ptr %mk.stored374, i32 0, i32 0
   %mk.slen376 = load i64, ptr %mk.slen375, align 8
@@ -51307,7 +51307,7 @@ m.next359:                                        ; preds = %mk.eq.merge398, %m.
 m.empty360:                                       ; preds = %m.loop354
   %m.use.tomb411 = icmp ne i64 %m.tomb363, -1
   %m.ins.idx412 = select i1 %m.use.tomb411, i64 %m.tomb363, i64 %m.idx362
-  %m.key.slot413 = getelementptr ptr, ptr %m.keys334, i64 %m.ins.idx412
+  %m.key.slot413 = getelementptr i64, ptr %m.keys334, i64 %m.ins.idx412
   store ptr %concat.str181, ptr %m.key.slot413, align 8
   %m.val.slot414 = getelementptr i64, ptr %m.vals336, i64 %m.ins.idx412
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot414, align 8
@@ -51489,7 +51489,7 @@ m.mem.probe503:                                   ; preds = %m.mem.loop502
   br i1 %m.mem.is.tomb515, label %m.mem.next505, label %m.mem.found504
 
 m.mem.found504:                                   ; preds = %m.mem.probe503
-  %m.mem.key.slot516 = getelementptr ptr, ptr %m.keys484, i64 %m.mem.idx508
+  %m.mem.key.slot516 = getelementptr i64, ptr %m.keys484, i64 %m.mem.idx508
   %mk.stored517 = load ptr, ptr %m.mem.key.slot516, align 8
   %mk.slen518 = getelementptr inbounds { i64, ptr }, ptr %mk.stored517, i32 0, i32 0
   %mk.slen519 = load i64, ptr %mk.slen518, align 8
@@ -51713,7 +51713,7 @@ m.rd.probe:                                       ; preds = %m.rd.loop
   br i1 %m.rd.is.tomb, label %m.rd.next, label %m.rd.found
 
 m.rd.found:                                       ; preds = %m.rd.probe
-  %m.rd.key.slot = getelementptr ptr, ptr %m.keys606, i64 %m.rd.idx
+  %m.rd.key.slot = getelementptr i64, ptr %m.keys606, i64 %m.rd.idx
   %mk.stored627 = load ptr, ptr %m.rd.key.slot, align 8
   %mk.slen628 = getelementptr inbounds { i64, ptr }, ptr %mk.stored627, i32 0, i32 0
   %mk.slen629 = load i64, ptr %mk.slen628, align 8
@@ -51806,7 +51806,7 @@ mk.eq.merge651:                                   ; preds = %mk.eq.else650, %mk.
   br i1 %mk.eq658, label %m.rd.hit, label %m.rd.next
 
 m.rd.hit:                                         ; preds = %mk.eq.merge651
-  %m.rd.val.slot = getelementptr ptr, ptr %m.vals608, i64 %m.rd.idx
+  %m.rd.val.slot = getelementptr i64, ptr %m.vals608, i64 %m.rd.idx
   %m.rd.val = load ptr, ptr %m.rd.val.slot, align 8
   %m.rd.p2i = ptrtoint ptr %m.rd.val to i64
   br label %m.rd.done
@@ -51952,7 +51952,7 @@ m.tomb733:                                        ; preds = %m.check.tomb732
   br label %m.next736
 
 m.found734:                                       ; preds = %m.check.tomb732
-  %m.key.slot750 = getelementptr ptr, ptr %m.keys711, i64 %m.idx739
+  %m.key.slot750 = getelementptr i64, ptr %m.keys711, i64 %m.idx739
   %mk.stored751 = load ptr, ptr %m.key.slot750, align 8
   %mk.slen752 = getelementptr inbounds { i64, ptr }, ptr %mk.stored751, i32 0, i32 0
   %mk.slen753 = load i64, ptr %mk.slen752, align 8
@@ -52077,7 +52077,7 @@ m.grow797:                                        ; preds = %m.empty737
 m.ins.slot798:                                    ; preds = %m.empty737
   %m.use.tomb1028 = icmp ne i64 %m.tomb740, -1
   %m.ins.idx1029 = select i1 %m.use.tomb1028, i64 %m.tomb740, i64 %m.idx739
-  %m.key.slot1030 = getelementptr ptr, ptr %m.keys711, i64 %m.ins.idx1029
+  %m.key.slot1030 = getelementptr i64, ptr %m.keys711, i64 %m.ins.idx1029
   store ptr %concat.str705, ptr %m.key.slot1030, align 8
   %m.val.slot1031 = getelementptr i64, ptr %m.vals713, i64 %m.ins.idx1029
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot1031, align 8
@@ -52129,7 +52129,7 @@ m.re.done830:                                     ; preds = %m.re.loop827
   br i1 %str.immortal949, label %str_ok951, label %str_gen_check950
 
 m.re.ins836:                                      ; preds = %m.re.body828
-  %m.re.key.slot837 = getelementptr ptr, ptr %m.old.keys802, i64 %m.re.i831
+  %m.re.key.slot837 = getelementptr i64, ptr %m.old.keys802, i64 %m.re.i831
   %m.re.val.slot838 = getelementptr i64, ptr %m.old.vals804, i64 %m.re.i831
   %m.re.key839 = load ptr, ptr %m.re.key.slot837, align 8
   %m.re.val840 = load i64, ptr %m.re.val.slot838, align 8
@@ -52187,7 +52187,7 @@ m.tomb866:                                        ; preds = %m.check.tomb865
   br label %m.next869
 
 m.found867:                                       ; preds = %m.check.tomb865
-  %m.key.slot883 = getelementptr ptr, ptr %m.keys844, i64 %m.idx872
+  %m.key.slot883 = getelementptr i64, ptr %m.keys844, i64 %m.idx872
   %mk.stored884 = load ptr, ptr %m.key.slot883, align 8
   %mk.slen885 = getelementptr inbounds { i64, ptr }, ptr %mk.stored884, i32 0, i32 0
   %mk.slen886 = load i64, ptr %mk.slen885, align 8
@@ -52211,7 +52211,7 @@ m.next869:                                        ; preds = %mk.eq.merge908, %m.
 m.empty870:                                       ; preds = %m.loop864
   %m.use.tomb921 = icmp ne i64 %m.tomb873, -1
   %m.ins.idx922 = select i1 %m.use.tomb921, i64 %m.tomb873, i64 %m.idx872
-  %m.key.slot923 = getelementptr ptr, ptr %m.keys844, i64 %m.ins.idx922
+  %m.key.slot923 = getelementptr i64, ptr %m.keys844, i64 %m.ins.idx922
   store ptr %m.re.key839, ptr %m.key.slot923, align 8
   %m.val.slot924 = getelementptr i64, ptr %m.vals846, i64 %m.ins.idx922
   store i64 %m.re.val840, ptr %m.val.slot924, align 8
@@ -52317,7 +52317,7 @@ m.tomb960:                                        ; preds = %m.check.tomb959
   br label %m.next963
 
 m.found961:                                       ; preds = %m.check.tomb959
-  %m.key.slot977 = getelementptr ptr, ptr %m.keys938, i64 %m.idx966
+  %m.key.slot977 = getelementptr i64, ptr %m.keys938, i64 %m.idx966
   %mk.stored978 = load ptr, ptr %m.key.slot977, align 8
   %mk.slen979 = getelementptr inbounds { i64, ptr }, ptr %mk.stored978, i32 0, i32 0
   %mk.slen980 = load i64, ptr %mk.slen979, align 8
@@ -52341,7 +52341,7 @@ m.next963:                                        ; preds = %mk.eq.merge1002, %m
 m.empty964:                                       ; preds = %m.loop958
   %m.use.tomb1015 = icmp ne i64 %m.tomb967, -1
   %m.ins.idx1016 = select i1 %m.use.tomb1015, i64 %m.tomb967, i64 %m.idx966
-  %m.key.slot1017 = getelementptr ptr, ptr %m.keys938, i64 %m.ins.idx1016
+  %m.key.slot1017 = getelementptr i64, ptr %m.keys938, i64 %m.ins.idx1016
   store ptr %concat.str705, ptr %m.key.slot1017, align 8
   %m.val.slot1018 = getelementptr i64, ptr %m.vals940, i64 %m.ins.idx1016
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot1018, align 8
@@ -52441,7 +52441,7 @@ m.rd.probe1069:                                   ; preds = %m.rd.loop1068
   br i1 %m.rd.is.tomb1081, label %m.rd.next1071, label %m.rd.found1070
 
 m.rd.found1070:                                   ; preds = %m.rd.probe1069
-  %m.rd.key.slot1082 = getelementptr ptr, ptr %m.keys1048, i64 %m.rd.idx1074
+  %m.rd.key.slot1082 = getelementptr i64, ptr %m.keys1048, i64 %m.rd.idx1074
   %mk.stored1083 = load ptr, ptr %m.rd.key.slot1082, align 8
   %mk.slen1084 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1083, i32 0, i32 0
   %mk.slen1085 = load i64, ptr %mk.slen1084, align 8
@@ -52534,7 +52534,7 @@ mk.eq.merge1107:                                  ; preds = %mk.eq.else1106, %mk
   br i1 %mk.eq1114, label %m.rd.hit1115, label %m.rd.next1071
 
 m.rd.hit1115:                                     ; preds = %mk.eq.merge1107
-  %m.rd.val.slot1119 = getelementptr ptr, ptr %m.vals1050, i64 %m.rd.idx1074
+  %m.rd.val.slot1119 = getelementptr i64, ptr %m.vals1050, i64 %m.rd.idx1074
   %m.rd.val1120 = load ptr, ptr %m.rd.val.slot1119, align 8
   %m.rd.p2i1121 = ptrtoint ptr %m.rd.val1120 to i64
   br label %m.rd.done1073
@@ -52614,7 +52614,7 @@ m.rd.probe1176:                                   ; preds = %m.rd.loop1175
   br i1 %m.rd.is.tomb1188, label %m.rd.next1178, label %m.rd.found1177
 
 m.rd.found1177:                                   ; preds = %m.rd.probe1176
-  %m.rd.key.slot1189 = getelementptr ptr, ptr %m.keys1155, i64 %m.rd.idx1181
+  %m.rd.key.slot1189 = getelementptr i64, ptr %m.keys1155, i64 %m.rd.idx1181
   %mk.stored1190 = load ptr, ptr %m.rd.key.slot1189, align 8
   %mk.slen1191 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1190, i32 0, i32 0
   %mk.slen1192 = load i64, ptr %mk.slen1191, align 8
@@ -52707,7 +52707,7 @@ mk.eq.merge1214:                                  ; preds = %mk.eq.else1213, %mk
   br i1 %mk.eq1221, label %m.rd.hit1222, label %m.rd.next1178
 
 m.rd.hit1222:                                     ; preds = %mk.eq.merge1214
-  %m.rd.val.slot1226 = getelementptr ptr, ptr %m.vals1157, i64 %m.rd.idx1181
+  %m.rd.val.slot1226 = getelementptr i64, ptr %m.vals1157, i64 %m.rd.idx1181
   %m.rd.val1227 = load ptr, ptr %m.rd.val.slot1226, align 8
   %m.rd.p2i1228 = ptrtoint ptr %m.rd.val1227 to i64
   br label %m.rd.done1180
@@ -52826,7 +52826,7 @@ m.rd.probe1308:                                   ; preds = %m.rd.loop1307
   br i1 %m.rd.is.tomb1320, label %m.rd.next1310, label %m.rd.found1309
 
 m.rd.found1309:                                   ; preds = %m.rd.probe1308
-  %m.rd.key.slot1321 = getelementptr ptr, ptr %m.keys1287, i64 %m.rd.idx1313
+  %m.rd.key.slot1321 = getelementptr i64, ptr %m.keys1287, i64 %m.rd.idx1313
   %mk.stored1322 = load ptr, ptr %m.rd.key.slot1321, align 8
   %mk.slen1323 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1322, i32 0, i32 0
   %mk.slen1324 = load i64, ptr %mk.slen1323, align 8
@@ -52919,7 +52919,7 @@ mk.eq.merge1346:                                  ; preds = %mk.eq.else1345, %mk
   br i1 %mk.eq1353, label %m.rd.hit1354, label %m.rd.next1310
 
 m.rd.hit1354:                                     ; preds = %mk.eq.merge1346
-  %m.rd.val.slot1358 = getelementptr ptr, ptr %m.vals1289, i64 %m.rd.idx1313
+  %m.rd.val.slot1358 = getelementptr i64, ptr %m.vals1289, i64 %m.rd.idx1313
   %m.rd.val1359 = load ptr, ptr %m.rd.val.slot1358, align 8
   %m.rd.p2i1360 = ptrtoint ptr %m.rd.val1359 to i64
   br label %m.rd.done1312
@@ -53059,7 +53059,7 @@ m.rd.probe1440:                                   ; preds = %m.rd.loop1439
   br i1 %m.rd.is.tomb1452, label %m.rd.next1442, label %m.rd.found1441
 
 m.rd.found1441:                                   ; preds = %m.rd.probe1440
-  %m.rd.key.slot1453 = getelementptr ptr, ptr %m.keys1419, i64 %m.rd.idx1445
+  %m.rd.key.slot1453 = getelementptr i64, ptr %m.keys1419, i64 %m.rd.idx1445
   %mk.stored1454 = load ptr, ptr %m.rd.key.slot1453, align 8
   %mk.slen1455 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1454, i32 0, i32 0
   %mk.slen1456 = load i64, ptr %mk.slen1455, align 8
@@ -53152,7 +53152,7 @@ mk.eq.merge1478:                                  ; preds = %mk.eq.else1477, %mk
   br i1 %mk.eq1485, label %m.rd.hit1486, label %m.rd.next1442
 
 m.rd.hit1486:                                     ; preds = %mk.eq.merge1478
-  %m.rd.val.slot1490 = getelementptr ptr, ptr %m.vals1421, i64 %m.rd.idx1445
+  %m.rd.val.slot1490 = getelementptr i64, ptr %m.vals1421, i64 %m.rd.idx1445
   %m.rd.val1491 = load ptr, ptr %m.rd.val.slot1490, align 8
   %m.rd.p2i1492 = ptrtoint ptr %m.rd.val1491 to i64
   br label %m.rd.done1444
@@ -53663,7 +53663,7 @@ m.rd.probe1801:                                   ; preds = %m.rd.loop1800
   br i1 %m.rd.is.tomb1813, label %m.rd.next1803, label %m.rd.found1802
 
 m.rd.found1802:                                   ; preds = %m.rd.probe1801
-  %m.rd.key.slot1814 = getelementptr ptr, ptr %m.keys1780, i64 %m.rd.idx1806
+  %m.rd.key.slot1814 = getelementptr i64, ptr %m.keys1780, i64 %m.rd.idx1806
   %mk.stored1815 = load ptr, ptr %m.rd.key.slot1814, align 8
   %mk.slen1816 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1815, i32 0, i32 0
   %mk.slen1817 = load i64, ptr %mk.slen1816, align 8
@@ -53756,7 +53756,7 @@ mk.eq.merge1839:                                  ; preds = %mk.eq.else1838, %mk
   br i1 %mk.eq1846, label %m.rd.hit1847, label %m.rd.next1803
 
 m.rd.hit1847:                                     ; preds = %mk.eq.merge1839
-  %m.rd.val.slot1851 = getelementptr ptr, ptr %m.vals1782, i64 %m.rd.idx1806
+  %m.rd.val.slot1851 = getelementptr i64, ptr %m.vals1782, i64 %m.rd.idx1806
   %m.rd.val1852 = load ptr, ptr %m.rd.val.slot1851, align 8
   %m.rd.p2i1853 = ptrtoint ptr %m.rd.val1852 to i64
   br label %m.rd.done1805
@@ -55826,7 +55826,7 @@ m.rd.probe:                                       ; preds = %m.rd.loop
   br i1 %m.rd.is.tomb, label %m.rd.next, label %m.rd.found
 
 m.rd.found:                                       ; preds = %m.rd.probe
-  %m.rd.key.slot = getelementptr ptr, ptr %m.keys472, i64 %m.rd.idx
+  %m.rd.key.slot = getelementptr i64, ptr %m.keys472, i64 %m.rd.idx
   %mk.stored = load ptr, ptr %m.rd.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen486 = load i64, ptr %mk.slen, align 8
@@ -55919,7 +55919,7 @@ mk.eq.merge:                                      ; preds = %mk.eq.else, %mk.eq.
   br i1 %mk.eq, label %m.rd.hit, label %m.rd.next
 
 m.rd.hit:                                         ; preds = %mk.eq.merge
-  %m.rd.val.slot = getelementptr ptr, ptr %m.vals473, i64 %m.rd.idx
+  %m.rd.val.slot = getelementptr i64, ptr %m.vals473, i64 %m.rd.idx
   %m.rd.val = load ptr, ptr %m.rd.val.slot, align 8
   %m.rd.p2i = ptrtoint ptr %m.rd.val to i64
   br label %m.rd.done
@@ -56118,7 +56118,7 @@ m.rd.probe596:                                    ; preds = %m.rd.loop595
   br i1 %m.rd.is.tomb608, label %m.rd.next598, label %m.rd.found597
 
 m.rd.found597:                                    ; preds = %m.rd.probe596
-  %m.rd.key.slot609 = getelementptr ptr, ptr %m.keys575, i64 %m.rd.idx601
+  %m.rd.key.slot609 = getelementptr i64, ptr %m.keys575, i64 %m.rd.idx601
   %mk.stored610 = load ptr, ptr %m.rd.key.slot609, align 8
   %mk.slen611 = getelementptr inbounds { i64, ptr }, ptr %mk.stored610, i32 0, i32 0
   %mk.slen612 = load i64, ptr %mk.slen611, align 8
@@ -56211,7 +56211,7 @@ mk.eq.merge634:                                   ; preds = %mk.eq.else633, %mk.
   br i1 %mk.eq641, label %m.rd.hit642, label %m.rd.next598
 
 m.rd.hit642:                                      ; preds = %mk.eq.merge634
-  %m.rd.val.slot646 = getelementptr ptr, ptr %m.vals577, i64 %m.rd.idx601
+  %m.rd.val.slot646 = getelementptr i64, ptr %m.vals577, i64 %m.rd.idx601
   %m.rd.val647 = load ptr, ptr %m.rd.val.slot646, align 8
   %m.rd.p2i648 = ptrtoint ptr %m.rd.val647 to i64
   br label %m.rd.done600
@@ -58469,7 +58469,7 @@ m.mem.probe:                                      ; preds = %m.mem.loop
   br i1 %m.mem.is.tomb, label %m.mem.next, label %m.mem.found
 
 m.mem.found:                                      ; preds = %m.mem.probe
-  %m.mem.key.slot = getelementptr ptr, ptr %m.keys47, i64 %m.mem.idx
+  %m.mem.key.slot = getelementptr i64, ptr %m.keys47, i64 %m.mem.idx
   %mk.stored = load ptr, ptr %m.mem.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen60 = load i64, ptr %mk.slen, align 8
@@ -58607,7 +58607,7 @@ m.rd.probe:                                       ; preds = %m.rd.loop
   br i1 %m.rd.is.tomb, label %m.rd.next, label %m.rd.found
 
 m.rd.found:                                       ; preds = %m.rd.probe
-  %m.rd.key.slot = getelementptr ptr, ptr %m.keys92, i64 %m.rd.idx
+  %m.rd.key.slot = getelementptr i64, ptr %m.keys92, i64 %m.rd.idx
   %mk.stored112 = load ptr, ptr %m.rd.key.slot, align 8
   %mk.slen113 = getelementptr inbounds { i64, ptr }, ptr %mk.stored112, i32 0, i32 0
   %mk.slen114 = load i64, ptr %mk.slen113, align 8
@@ -58700,7 +58700,7 @@ mk.eq.merge136:                                   ; preds = %mk.eq.else135, %mk.
   br i1 %mk.eq143, label %m.rd.hit, label %m.rd.next
 
 m.rd.hit:                                         ; preds = %mk.eq.merge136
-  %m.rd.val.slot = getelementptr ptr, ptr %m.vals93, i64 %m.rd.idx
+  %m.rd.val.slot = getelementptr i64, ptr %m.vals93, i64 %m.rd.idx
   %m.rd.val = load ptr, ptr %m.rd.val.slot, align 8
   %m.rd.p2i = ptrtoint ptr %m.rd.val to i64
   br label %m.rd.done
@@ -59671,7 +59671,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys176, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys176, i64 %m.idx
   %mk.stored = load ptr, ptr %m.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen184 = load i64, ptr %mk.slen, align 8
@@ -59826,7 +59826,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb389 = icmp ne i64 %m.tomb183, -1
   %m.ins.idx390 = select i1 %m.use.tomb389, i64 %m.tomb183, i64 %m.idx
-  %m.key.slot391 = getelementptr ptr, ptr %m.keys176, i64 %m.ins.idx390
+  %m.key.slot391 = getelementptr i64, ptr %m.keys176, i64 %m.ins.idx390
   store ptr %fld.load170, ptr %m.key.slot391, align 8
   %m.val.slot392 = getelementptr i64, ptr %m.vals177, i64 %m.ins.idx390
   store i64 %slot.p2i174, ptr %m.val.slot392, align 8
@@ -59878,7 +59878,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal310, label %str_ok312, label %str_gen_check311
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys205, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys205, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals206, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -59936,7 +59936,7 @@ m.tomb237:                                        ; preds = %m.check.tomb236
   br label %m.next240
 
 m.found238:                                       ; preds = %m.check.tomb236
-  %m.key.slot254 = getelementptr ptr, ptr %m.keys215, i64 %m.idx243
+  %m.key.slot254 = getelementptr i64, ptr %m.keys215, i64 %m.idx243
   %mk.stored255 = load ptr, ptr %m.key.slot254, align 8
   %mk.slen256 = getelementptr inbounds { i64, ptr }, ptr %mk.stored255, i32 0, i32 0
   %mk.slen257 = load i64, ptr %mk.slen256, align 8
@@ -59960,7 +59960,7 @@ m.next240:                                        ; preds = %mk.eq.merge279, %m.
 m.empty241:                                       ; preds = %m.loop235
   %m.use.tomb = icmp ne i64 %m.tomb244, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb244, i64 %m.idx243
-  %m.key.slot292 = getelementptr ptr, ptr %m.keys215, i64 %m.ins.idx
+  %m.key.slot292 = getelementptr i64, ptr %m.keys215, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot292, align 8
   %m.val.slot293 = getelementptr i64, ptr %m.vals217, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot293, align 8
@@ -60066,7 +60066,7 @@ m.tomb321:                                        ; preds = %m.check.tomb320
   br label %m.next324
 
 m.found322:                                       ; preds = %m.check.tomb320
-  %m.key.slot338 = getelementptr ptr, ptr %m.keys299, i64 %m.idx327
+  %m.key.slot338 = getelementptr i64, ptr %m.keys299, i64 %m.idx327
   %mk.stored339 = load ptr, ptr %m.key.slot338, align 8
   %mk.slen340 = getelementptr inbounds { i64, ptr }, ptr %mk.stored339, i32 0, i32 0
   %mk.slen341 = load i64, ptr %mk.slen340, align 8
@@ -60090,7 +60090,7 @@ m.next324:                                        ; preds = %mk.eq.merge363, %m.
 m.empty325:                                       ; preds = %m.loop319
   %m.use.tomb376 = icmp ne i64 %m.tomb328, -1
   %m.ins.idx377 = select i1 %m.use.tomb376, i64 %m.tomb328, i64 %m.idx327
-  %m.key.slot378 = getelementptr ptr, ptr %m.keys299, i64 %m.ins.idx377
+  %m.key.slot378 = getelementptr i64, ptr %m.keys299, i64 %m.ins.idx377
   store ptr %fld.load170, ptr %m.key.slot378, align 8
   %m.val.slot379 = getelementptr i64, ptr %m.vals301, i64 %m.ins.idx377
   store i64 %slot.p2i174, ptr %m.val.slot379, align 8
@@ -70804,7 +70804,7 @@ m.mem.probe:                                      ; preds = %m.mem.loop
   br i1 %m.mem.is.tomb, label %m.mem.next, label %m.mem.found
 
 m.mem.found:                                      ; preds = %m.mem.probe
-  %m.mem.key.slot = getelementptr ptr, ptr %m.keys1975, i64 %m.mem.idx
+  %m.mem.key.slot = getelementptr i64, ptr %m.keys1975, i64 %m.mem.idx
   %mk.stored = load ptr, ptr %m.mem.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen1989 = load i64, ptr %mk.slen, align 8
@@ -70950,7 +70950,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys2018, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys2018, i64 %m.idx
   %mk.stored2039 = load ptr, ptr %m.key.slot, align 8
   %mk.slen2040 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2039, i32 0, i32 0
   %mk.slen2041 = load i64, ptr %mk.slen2040, align 8
@@ -71084,7 +71084,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb2262 = icmp ne i64 %m.tomb2038, -1
   %m.ins.idx2263 = select i1 %m.use.tomb2262, i64 %m.tomb2038, i64 %m.idx
-  %m.key.slot2264 = getelementptr ptr, ptr %m.keys2018, i64 %m.ins.idx2263
+  %m.key.slot2264 = getelementptr i64, ptr %m.keys2018, i64 %m.ins.idx2263
   store ptr %var.load2014, ptr %m.key.slot2264, align 8
   %m.val.slot2265 = getelementptr i64, ptr %m.vals2020, i64 %m.ins.idx2263
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot2265, align 8
@@ -71136,7 +71136,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal2183, label %str_ok2185, label %str_gen_check2184
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys2072, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys2072, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals2073, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -71194,7 +71194,7 @@ m.tomb2110:                                       ; preds = %m.check.tomb2109
   br label %m.next2113
 
 m.found2111:                                      ; preds = %m.check.tomb2109
-  %m.key.slot2127 = getelementptr ptr, ptr %m.keys2088, i64 %m.idx2116
+  %m.key.slot2127 = getelementptr i64, ptr %m.keys2088, i64 %m.idx2116
   %mk.stored2128 = load ptr, ptr %m.key.slot2127, align 8
   %mk.slen2129 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2128, i32 0, i32 0
   %mk.slen2130 = load i64, ptr %mk.slen2129, align 8
@@ -71218,7 +71218,7 @@ m.next2113:                                       ; preds = %mk.eq.merge2152, %m
 m.empty2114:                                      ; preds = %m.loop2108
   %m.use.tomb = icmp ne i64 %m.tomb2117, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb2117, i64 %m.idx2116
-  %m.key.slot2165 = getelementptr ptr, ptr %m.keys2088, i64 %m.ins.idx
+  %m.key.slot2165 = getelementptr i64, ptr %m.keys2088, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot2165, align 8
   %m.val.slot2166 = getelementptr i64, ptr %m.vals2090, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot2166, align 8
@@ -71324,7 +71324,7 @@ m.tomb2194:                                       ; preds = %m.check.tomb2193
   br label %m.next2197
 
 m.found2195:                                      ; preds = %m.check.tomb2193
-  %m.key.slot2211 = getelementptr ptr, ptr %m.keys2172, i64 %m.idx2200
+  %m.key.slot2211 = getelementptr i64, ptr %m.keys2172, i64 %m.idx2200
   %mk.stored2212 = load ptr, ptr %m.key.slot2211, align 8
   %mk.slen2213 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2212, i32 0, i32 0
   %mk.slen2214 = load i64, ptr %mk.slen2213, align 8
@@ -71348,7 +71348,7 @@ m.next2197:                                       ; preds = %mk.eq.merge2236, %m
 m.empty2198:                                      ; preds = %m.loop2192
   %m.use.tomb2249 = icmp ne i64 %m.tomb2201, -1
   %m.ins.idx2250 = select i1 %m.use.tomb2249, i64 %m.tomb2201, i64 %m.idx2200
-  %m.key.slot2251 = getelementptr ptr, ptr %m.keys2172, i64 %m.ins.idx2250
+  %m.key.slot2251 = getelementptr i64, ptr %m.keys2172, i64 %m.ins.idx2250
   store ptr %var.load2014, ptr %m.key.slot2251, align 8
   %m.val.slot2252 = getelementptr i64, ptr %m.vals2174, i64 %m.ins.idx2250
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot2252, align 8
@@ -83865,7 +83865,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys277, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys277, i64 %m.idx
   %mk.stored = load ptr, ptr %m.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen293 = load i64, ptr %mk.slen, align 8
@@ -83998,7 +83998,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb504 = icmp ne i64 %m.tomb292, -1
   %m.ins.idx505 = select i1 %m.use.tomb504, i64 %m.tomb292, i64 %m.idx
-  %m.key.slot506 = getelementptr ptr, ptr %m.keys277, i64 %m.ins.idx505
+  %m.key.slot506 = getelementptr i64, ptr %m.keys277, i64 %m.ins.idx505
   store ptr %concat.str269, ptr %m.key.slot506, align 8
   %m.val.slot507 = getelementptr i64, ptr %m.vals279, i64 %m.ins.idx505
   store i64 %slot.p2i, ptr %m.val.slot507, align 8
@@ -84050,7 +84050,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal425, label %str_ok427, label %str_gen_check426
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys314, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys314, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals315, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -84108,7 +84108,7 @@ m.tomb352:                                        ; preds = %m.check.tomb351
   br label %m.next355
 
 m.found353:                                       ; preds = %m.check.tomb351
-  %m.key.slot369 = getelementptr ptr, ptr %m.keys330, i64 %m.idx358
+  %m.key.slot369 = getelementptr i64, ptr %m.keys330, i64 %m.idx358
   %mk.stored370 = load ptr, ptr %m.key.slot369, align 8
   %mk.slen371 = getelementptr inbounds { i64, ptr }, ptr %mk.stored370, i32 0, i32 0
   %mk.slen372 = load i64, ptr %mk.slen371, align 8
@@ -84132,7 +84132,7 @@ m.next355:                                        ; preds = %mk.eq.merge394, %m.
 m.empty356:                                       ; preds = %m.loop350
   %m.use.tomb = icmp ne i64 %m.tomb359, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb359, i64 %m.idx358
-  %m.key.slot407 = getelementptr ptr, ptr %m.keys330, i64 %m.ins.idx
+  %m.key.slot407 = getelementptr i64, ptr %m.keys330, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot407, align 8
   %m.val.slot408 = getelementptr i64, ptr %m.vals332, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot408, align 8
@@ -84238,7 +84238,7 @@ m.tomb436:                                        ; preds = %m.check.tomb435
   br label %m.next439
 
 m.found437:                                       ; preds = %m.check.tomb435
-  %m.key.slot453 = getelementptr ptr, ptr %m.keys414, i64 %m.idx442
+  %m.key.slot453 = getelementptr i64, ptr %m.keys414, i64 %m.idx442
   %mk.stored454 = load ptr, ptr %m.key.slot453, align 8
   %mk.slen455 = getelementptr inbounds { i64, ptr }, ptr %mk.stored454, i32 0, i32 0
   %mk.slen456 = load i64, ptr %mk.slen455, align 8
@@ -84262,7 +84262,7 @@ m.next439:                                        ; preds = %mk.eq.merge478, %m.
 m.empty440:                                       ; preds = %m.loop434
   %m.use.tomb491 = icmp ne i64 %m.tomb443, -1
   %m.ins.idx492 = select i1 %m.use.tomb491, i64 %m.tomb443, i64 %m.idx442
-  %m.key.slot493 = getelementptr ptr, ptr %m.keys414, i64 %m.ins.idx492
+  %m.key.slot493 = getelementptr i64, ptr %m.keys414, i64 %m.ins.idx492
   store ptr %concat.str269, ptr %m.key.slot493, align 8
   %m.val.slot494 = getelementptr i64, ptr %m.vals416, i64 %m.ins.idx492
   store i64 %slot.p2i, ptr %m.val.slot494, align 8
@@ -84597,7 +84597,7 @@ m.tomb671:                                        ; preds = %m.check.tomb670
   br label %m.next674
 
 m.found672:                                       ; preds = %m.check.tomb670
-  %m.key.slot688 = getelementptr ptr, ptr %m.keys649, i64 %m.idx677
+  %m.key.slot688 = getelementptr i64, ptr %m.keys649, i64 %m.idx677
   %mk.stored689 = load ptr, ptr %m.key.slot688, align 8
   %mk.slen690 = getelementptr inbounds { i64, ptr }, ptr %mk.stored689, i32 0, i32 0
   %mk.slen691 = load i64, ptr %mk.slen690, align 8
@@ -84722,7 +84722,7 @@ m.grow735:                                        ; preds = %m.empty675
 m.ins.slot736:                                    ; preds = %m.empty675
   %m.use.tomb966 = icmp ne i64 %m.tomb678, -1
   %m.ins.idx967 = select i1 %m.use.tomb966, i64 %m.tomb678, i64 %m.idx677
-  %m.key.slot968 = getelementptr ptr, ptr %m.keys649, i64 %m.ins.idx967
+  %m.key.slot968 = getelementptr i64, ptr %m.keys649, i64 %m.ins.idx967
   store ptr %concat.str639, ptr %m.key.slot968, align 8
   %m.val.slot969 = getelementptr i64, ptr %m.vals651, i64 %m.ins.idx967
   store i64 %slot.p2i645, ptr %m.val.slot969, align 8
@@ -84774,7 +84774,7 @@ m.re.done768:                                     ; preds = %m.re.loop765
   br i1 %str.immortal887, label %str_ok889, label %str_gen_check888
 
 m.re.ins774:                                      ; preds = %m.re.body766
-  %m.re.key.slot775 = getelementptr ptr, ptr %m.old.keys740, i64 %m.re.i769
+  %m.re.key.slot775 = getelementptr i64, ptr %m.old.keys740, i64 %m.re.i769
   %m.re.val.slot776 = getelementptr i64, ptr %m.old.vals742, i64 %m.re.i769
   %m.re.key777 = load ptr, ptr %m.re.key.slot775, align 8
   %m.re.val778 = load i64, ptr %m.re.val.slot776, align 8
@@ -84832,7 +84832,7 @@ m.tomb804:                                        ; preds = %m.check.tomb803
   br label %m.next807
 
 m.found805:                                       ; preds = %m.check.tomb803
-  %m.key.slot821 = getelementptr ptr, ptr %m.keys782, i64 %m.idx810
+  %m.key.slot821 = getelementptr i64, ptr %m.keys782, i64 %m.idx810
   %mk.stored822 = load ptr, ptr %m.key.slot821, align 8
   %mk.slen823 = getelementptr inbounds { i64, ptr }, ptr %mk.stored822, i32 0, i32 0
   %mk.slen824 = load i64, ptr %mk.slen823, align 8
@@ -84856,7 +84856,7 @@ m.next807:                                        ; preds = %mk.eq.merge846, %m.
 m.empty808:                                       ; preds = %m.loop802
   %m.use.tomb859 = icmp ne i64 %m.tomb811, -1
   %m.ins.idx860 = select i1 %m.use.tomb859, i64 %m.tomb811, i64 %m.idx810
-  %m.key.slot861 = getelementptr ptr, ptr %m.keys782, i64 %m.ins.idx860
+  %m.key.slot861 = getelementptr i64, ptr %m.keys782, i64 %m.ins.idx860
   store ptr %m.re.key777, ptr %m.key.slot861, align 8
   %m.val.slot862 = getelementptr i64, ptr %m.vals784, i64 %m.ins.idx860
   store i64 %m.re.val778, ptr %m.val.slot862, align 8
@@ -84962,7 +84962,7 @@ m.tomb898:                                        ; preds = %m.check.tomb897
   br label %m.next901
 
 m.found899:                                       ; preds = %m.check.tomb897
-  %m.key.slot915 = getelementptr ptr, ptr %m.keys876, i64 %m.idx904
+  %m.key.slot915 = getelementptr i64, ptr %m.keys876, i64 %m.idx904
   %mk.stored916 = load ptr, ptr %m.key.slot915, align 8
   %mk.slen917 = getelementptr inbounds { i64, ptr }, ptr %mk.stored916, i32 0, i32 0
   %mk.slen918 = load i64, ptr %mk.slen917, align 8
@@ -84986,7 +84986,7 @@ m.next901:                                        ; preds = %mk.eq.merge940, %m.
 m.empty902:                                       ; preds = %m.loop896
   %m.use.tomb953 = icmp ne i64 %m.tomb905, -1
   %m.ins.idx954 = select i1 %m.use.tomb953, i64 %m.tomb905, i64 %m.idx904
-  %m.key.slot955 = getelementptr ptr, ptr %m.keys876, i64 %m.ins.idx954
+  %m.key.slot955 = getelementptr i64, ptr %m.keys876, i64 %m.ins.idx954
   store ptr %concat.str639, ptr %m.key.slot955, align 8
   %m.val.slot956 = getelementptr i64, ptr %m.vals878, i64 %m.ins.idx954
   store i64 %slot.p2i645, ptr %m.val.slot956, align 8
@@ -85184,7 +85184,7 @@ m.tomb1054:                                       ; preds = %m.check.tomb1053
   br label %m.next1057
 
 m.found1055:                                      ; preds = %m.check.tomb1053
-  %m.key.slot1071 = getelementptr ptr, ptr %m.keys1032, i64 %m.idx1060
+  %m.key.slot1071 = getelementptr i64, ptr %m.keys1032, i64 %m.idx1060
   %mk.stored1072 = load ptr, ptr %m.key.slot1071, align 8
   %mk.slen1073 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1072, i32 0, i32 0
   %mk.slen1074 = load i64, ptr %mk.slen1073, align 8
@@ -85309,7 +85309,7 @@ m.grow1118:                                       ; preds = %m.empty1058
 m.ins.slot1119:                                   ; preds = %m.empty1058
   %m.use.tomb1349 = icmp ne i64 %m.tomb1061, -1
   %m.ins.idx1350 = select i1 %m.use.tomb1349, i64 %m.tomb1061, i64 %m.idx1060
-  %m.key.slot1351 = getelementptr ptr, ptr %m.keys1032, i64 %m.ins.idx1350
+  %m.key.slot1351 = getelementptr i64, ptr %m.keys1032, i64 %m.ins.idx1350
   store ptr %fld.load1024, ptr %m.key.slot1351, align 8
   %m.val.slot1352 = getelementptr i64, ptr %m.vals1034, i64 %m.ins.idx1350
   store i64 %slot.p2i1028, ptr %m.val.slot1352, align 8
@@ -85361,7 +85361,7 @@ m.re.done1151:                                    ; preds = %m.re.loop1148
   br i1 %str.immortal1270, label %str_ok1272, label %str_gen_check1271
 
 m.re.ins1157:                                     ; preds = %m.re.body1149
-  %m.re.key.slot1158 = getelementptr ptr, ptr %m.old.keys1123, i64 %m.re.i1152
+  %m.re.key.slot1158 = getelementptr i64, ptr %m.old.keys1123, i64 %m.re.i1152
   %m.re.val.slot1159 = getelementptr i64, ptr %m.old.vals1125, i64 %m.re.i1152
   %m.re.key1160 = load ptr, ptr %m.re.key.slot1158, align 8
   %m.re.val1161 = load i64, ptr %m.re.val.slot1159, align 8
@@ -85419,7 +85419,7 @@ m.tomb1187:                                       ; preds = %m.check.tomb1186
   br label %m.next1190
 
 m.found1188:                                      ; preds = %m.check.tomb1186
-  %m.key.slot1204 = getelementptr ptr, ptr %m.keys1165, i64 %m.idx1193
+  %m.key.slot1204 = getelementptr i64, ptr %m.keys1165, i64 %m.idx1193
   %mk.stored1205 = load ptr, ptr %m.key.slot1204, align 8
   %mk.slen1206 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1205, i32 0, i32 0
   %mk.slen1207 = load i64, ptr %mk.slen1206, align 8
@@ -85443,7 +85443,7 @@ m.next1190:                                       ; preds = %mk.eq.merge1229, %m
 m.empty1191:                                      ; preds = %m.loop1185
   %m.use.tomb1242 = icmp ne i64 %m.tomb1194, -1
   %m.ins.idx1243 = select i1 %m.use.tomb1242, i64 %m.tomb1194, i64 %m.idx1193
-  %m.key.slot1244 = getelementptr ptr, ptr %m.keys1165, i64 %m.ins.idx1243
+  %m.key.slot1244 = getelementptr i64, ptr %m.keys1165, i64 %m.ins.idx1243
   store ptr %m.re.key1160, ptr %m.key.slot1244, align 8
   %m.val.slot1245 = getelementptr i64, ptr %m.vals1167, i64 %m.ins.idx1243
   store i64 %m.re.val1161, ptr %m.val.slot1245, align 8
@@ -85549,7 +85549,7 @@ m.tomb1281:                                       ; preds = %m.check.tomb1280
   br label %m.next1284
 
 m.found1282:                                      ; preds = %m.check.tomb1280
-  %m.key.slot1298 = getelementptr ptr, ptr %m.keys1259, i64 %m.idx1287
+  %m.key.slot1298 = getelementptr i64, ptr %m.keys1259, i64 %m.idx1287
   %mk.stored1299 = load ptr, ptr %m.key.slot1298, align 8
   %mk.slen1300 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1299, i32 0, i32 0
   %mk.slen1301 = load i64, ptr %mk.slen1300, align 8
@@ -85573,7 +85573,7 @@ m.next1284:                                       ; preds = %mk.eq.merge1323, %m
 m.empty1285:                                      ; preds = %m.loop1279
   %m.use.tomb1336 = icmp ne i64 %m.tomb1288, -1
   %m.ins.idx1337 = select i1 %m.use.tomb1336, i64 %m.tomb1288, i64 %m.idx1287
-  %m.key.slot1338 = getelementptr ptr, ptr %m.keys1259, i64 %m.ins.idx1337
+  %m.key.slot1338 = getelementptr i64, ptr %m.keys1259, i64 %m.ins.idx1337
   store ptr %fld.load1024, ptr %m.key.slot1338, align 8
   %m.val.slot1339 = getelementptr i64, ptr %m.vals1261, i64 %m.ins.idx1337
   store i64 %slot.p2i1028, ptr %m.val.slot1339, align 8
@@ -86494,7 +86494,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys353, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys353, i64 %m.idx
   %mk.stored = load ptr, ptr %m.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen367 = load i64, ptr %mk.slen, align 8
@@ -86625,7 +86625,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb572 = icmp ne i64 %m.tomb366, -1
   %m.ins.idx573 = select i1 %m.use.tomb572, i64 %m.tomb366, i64 %m.idx
-  %m.key.slot574 = getelementptr ptr, ptr %m.keys353, i64 %m.ins.idx573
+  %m.key.slot574 = getelementptr i64, ptr %m.keys353, i64 %m.ins.idx573
   store ptr %var.load350, ptr %m.key.slot574, align 8
   %m.val.slot575 = getelementptr i64, ptr %m.vals354, i64 %m.ins.idx573
   store i64 %slot.p2i, ptr %m.val.slot575, align 8
@@ -86677,7 +86677,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal493, label %str_ok495, label %str_gen_check494
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys388, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys388, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals389, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -86735,7 +86735,7 @@ m.tomb420:                                        ; preds = %m.check.tomb419
   br label %m.next423
 
 m.found421:                                       ; preds = %m.check.tomb419
-  %m.key.slot437 = getelementptr ptr, ptr %m.keys398, i64 %m.idx426
+  %m.key.slot437 = getelementptr i64, ptr %m.keys398, i64 %m.idx426
   %mk.stored438 = load ptr, ptr %m.key.slot437, align 8
   %mk.slen439 = getelementptr inbounds { i64, ptr }, ptr %mk.stored438, i32 0, i32 0
   %mk.slen440 = load i64, ptr %mk.slen439, align 8
@@ -86759,7 +86759,7 @@ m.next423:                                        ; preds = %mk.eq.merge462, %m.
 m.empty424:                                       ; preds = %m.loop418
   %m.use.tomb = icmp ne i64 %m.tomb427, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb427, i64 %m.idx426
-  %m.key.slot475 = getelementptr ptr, ptr %m.keys398, i64 %m.ins.idx
+  %m.key.slot475 = getelementptr i64, ptr %m.keys398, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot475, align 8
   %m.val.slot476 = getelementptr i64, ptr %m.vals400, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot476, align 8
@@ -86865,7 +86865,7 @@ m.tomb504:                                        ; preds = %m.check.tomb503
   br label %m.next507
 
 m.found505:                                       ; preds = %m.check.tomb503
-  %m.key.slot521 = getelementptr ptr, ptr %m.keys482, i64 %m.idx510
+  %m.key.slot521 = getelementptr i64, ptr %m.keys482, i64 %m.idx510
   %mk.stored522 = load ptr, ptr %m.key.slot521, align 8
   %mk.slen523 = getelementptr inbounds { i64, ptr }, ptr %mk.stored522, i32 0, i32 0
   %mk.slen524 = load i64, ptr %mk.slen523, align 8
@@ -86889,7 +86889,7 @@ m.next507:                                        ; preds = %mk.eq.merge546, %m.
 m.empty508:                                       ; preds = %m.loop502
   %m.use.tomb559 = icmp ne i64 %m.tomb511, -1
   %m.ins.idx560 = select i1 %m.use.tomb559, i64 %m.tomb511, i64 %m.idx510
-  %m.key.slot561 = getelementptr ptr, ptr %m.keys482, i64 %m.ins.idx560
+  %m.key.slot561 = getelementptr i64, ptr %m.keys482, i64 %m.ins.idx560
   store ptr %var.load350, ptr %m.key.slot561, align 8
   %m.val.slot562 = getelementptr i64, ptr %m.vals484, i64 %m.ins.idx560
   store i64 %slot.p2i, ptr %m.val.slot562, align 8
@@ -87075,7 +87075,7 @@ m.tomb637:                                        ; preds = %m.check.tomb636
   br label %m.next640
 
 m.found638:                                       ; preds = %m.check.tomb636
-  %m.key.slot654 = getelementptr ptr, ptr %m.keys615, i64 %m.idx643
+  %m.key.slot654 = getelementptr i64, ptr %m.keys615, i64 %m.idx643
   %mk.stored655 = load ptr, ptr %m.key.slot654, align 8
   %mk.slen656 = getelementptr inbounds { i64, ptr }, ptr %mk.stored655, i32 0, i32 0
   %mk.slen657 = load i64, ptr %mk.slen656, align 8
@@ -87200,7 +87200,7 @@ m.grow701:                                        ; preds = %m.empty641
 m.ins.slot702:                                    ; preds = %m.empty641
   %m.use.tomb932 = icmp ne i64 %m.tomb644, -1
   %m.ins.idx933 = select i1 %m.use.tomb932, i64 %m.tomb644, i64 %m.idx643
-  %m.key.slot934 = getelementptr ptr, ptr %m.keys615, i64 %m.ins.idx933
+  %m.key.slot934 = getelementptr i64, ptr %m.keys615, i64 %m.ins.idx933
   store ptr %var.load609, ptr %m.key.slot934, align 8
   %m.val.slot935 = getelementptr i64, ptr %m.vals617, i64 %m.ins.idx933
   store i64 %slot.p2i611, ptr %m.val.slot935, align 8
@@ -87252,7 +87252,7 @@ m.re.done734:                                     ; preds = %m.re.loop731
   br i1 %str.immortal853, label %str_ok855, label %str_gen_check854
 
 m.re.ins740:                                      ; preds = %m.re.body732
-  %m.re.key.slot741 = getelementptr ptr, ptr %m.old.keys706, i64 %m.re.i735
+  %m.re.key.slot741 = getelementptr i64, ptr %m.old.keys706, i64 %m.re.i735
   %m.re.val.slot742 = getelementptr i64, ptr %m.old.vals708, i64 %m.re.i735
   %m.re.key743 = load ptr, ptr %m.re.key.slot741, align 8
   %m.re.val744 = load i64, ptr %m.re.val.slot742, align 8
@@ -87310,7 +87310,7 @@ m.tomb770:                                        ; preds = %m.check.tomb769
   br label %m.next773
 
 m.found771:                                       ; preds = %m.check.tomb769
-  %m.key.slot787 = getelementptr ptr, ptr %m.keys748, i64 %m.idx776
+  %m.key.slot787 = getelementptr i64, ptr %m.keys748, i64 %m.idx776
   %mk.stored788 = load ptr, ptr %m.key.slot787, align 8
   %mk.slen789 = getelementptr inbounds { i64, ptr }, ptr %mk.stored788, i32 0, i32 0
   %mk.slen790 = load i64, ptr %mk.slen789, align 8
@@ -87334,7 +87334,7 @@ m.next773:                                        ; preds = %mk.eq.merge812, %m.
 m.empty774:                                       ; preds = %m.loop768
   %m.use.tomb825 = icmp ne i64 %m.tomb777, -1
   %m.ins.idx826 = select i1 %m.use.tomb825, i64 %m.tomb777, i64 %m.idx776
-  %m.key.slot827 = getelementptr ptr, ptr %m.keys748, i64 %m.ins.idx826
+  %m.key.slot827 = getelementptr i64, ptr %m.keys748, i64 %m.ins.idx826
   store ptr %m.re.key743, ptr %m.key.slot827, align 8
   %m.val.slot828 = getelementptr i64, ptr %m.vals750, i64 %m.ins.idx826
   store i64 %m.re.val744, ptr %m.val.slot828, align 8
@@ -87440,7 +87440,7 @@ m.tomb864:                                        ; preds = %m.check.tomb863
   br label %m.next867
 
 m.found865:                                       ; preds = %m.check.tomb863
-  %m.key.slot881 = getelementptr ptr, ptr %m.keys842, i64 %m.idx870
+  %m.key.slot881 = getelementptr i64, ptr %m.keys842, i64 %m.idx870
   %mk.stored882 = load ptr, ptr %m.key.slot881, align 8
   %mk.slen883 = getelementptr inbounds { i64, ptr }, ptr %mk.stored882, i32 0, i32 0
   %mk.slen884 = load i64, ptr %mk.slen883, align 8
@@ -87464,7 +87464,7 @@ m.next867:                                        ; preds = %mk.eq.merge906, %m.
 m.empty868:                                       ; preds = %m.loop862
   %m.use.tomb919 = icmp ne i64 %m.tomb871, -1
   %m.ins.idx920 = select i1 %m.use.tomb919, i64 %m.tomb871, i64 %m.idx870
-  %m.key.slot921 = getelementptr ptr, ptr %m.keys842, i64 %m.ins.idx920
+  %m.key.slot921 = getelementptr i64, ptr %m.keys842, i64 %m.ins.idx920
   store ptr %var.load609, ptr %m.key.slot921, align 8
   %m.val.slot922 = getelementptr i64, ptr %m.vals844, i64 %m.ins.idx920
   store i64 %slot.p2i611, ptr %m.val.slot922, align 8
@@ -87865,7 +87865,7 @@ m.tomb1125:                                       ; preds = %m.check.tomb1124
   br label %m.next1128
 
 m.found1126:                                      ; preds = %m.check.tomb1124
-  %m.key.slot1142 = getelementptr ptr, ptr %m.keys1103, i64 %m.idx1131
+  %m.key.slot1142 = getelementptr i64, ptr %m.keys1103, i64 %m.idx1131
   %mk.stored1143 = load ptr, ptr %m.key.slot1142, align 8
   %mk.slen1144 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1143, i32 0, i32 0
   %mk.slen1145 = load i64, ptr %mk.slen1144, align 8
@@ -87990,7 +87990,7 @@ m.grow1189:                                       ; preds = %m.empty1129
 m.ins.slot1190:                                   ; preds = %m.empty1129
   %m.use.tomb1420 = icmp ne i64 %m.tomb1132, -1
   %m.ins.idx1421 = select i1 %m.use.tomb1420, i64 %m.tomb1132, i64 %m.idx1131
-  %m.key.slot1422 = getelementptr ptr, ptr %m.keys1103, i64 %m.ins.idx1421
+  %m.key.slot1422 = getelementptr i64, ptr %m.keys1103, i64 %m.ins.idx1421
   store ptr %concat.str1095, ptr %m.key.slot1422, align 8
   %m.val.slot1423 = getelementptr i64, ptr %m.vals1105, i64 %m.ins.idx1421
   store i64 %slot.p2i1099, ptr %m.val.slot1423, align 8
@@ -88042,7 +88042,7 @@ m.re.done1222:                                    ; preds = %m.re.loop1219
   br i1 %str.immortal1341, label %str_ok1343, label %str_gen_check1342
 
 m.re.ins1228:                                     ; preds = %m.re.body1220
-  %m.re.key.slot1229 = getelementptr ptr, ptr %m.old.keys1194, i64 %m.re.i1223
+  %m.re.key.slot1229 = getelementptr i64, ptr %m.old.keys1194, i64 %m.re.i1223
   %m.re.val.slot1230 = getelementptr i64, ptr %m.old.vals1196, i64 %m.re.i1223
   %m.re.key1231 = load ptr, ptr %m.re.key.slot1229, align 8
   %m.re.val1232 = load i64, ptr %m.re.val.slot1230, align 8
@@ -88100,7 +88100,7 @@ m.tomb1258:                                       ; preds = %m.check.tomb1257
   br label %m.next1261
 
 m.found1259:                                      ; preds = %m.check.tomb1257
-  %m.key.slot1275 = getelementptr ptr, ptr %m.keys1236, i64 %m.idx1264
+  %m.key.slot1275 = getelementptr i64, ptr %m.keys1236, i64 %m.idx1264
   %mk.stored1276 = load ptr, ptr %m.key.slot1275, align 8
   %mk.slen1277 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1276, i32 0, i32 0
   %mk.slen1278 = load i64, ptr %mk.slen1277, align 8
@@ -88124,7 +88124,7 @@ m.next1261:                                       ; preds = %mk.eq.merge1300, %m
 m.empty1262:                                      ; preds = %m.loop1256
   %m.use.tomb1313 = icmp ne i64 %m.tomb1265, -1
   %m.ins.idx1314 = select i1 %m.use.tomb1313, i64 %m.tomb1265, i64 %m.idx1264
-  %m.key.slot1315 = getelementptr ptr, ptr %m.keys1236, i64 %m.ins.idx1314
+  %m.key.slot1315 = getelementptr i64, ptr %m.keys1236, i64 %m.ins.idx1314
   store ptr %m.re.key1231, ptr %m.key.slot1315, align 8
   %m.val.slot1316 = getelementptr i64, ptr %m.vals1238, i64 %m.ins.idx1314
   store i64 %m.re.val1232, ptr %m.val.slot1316, align 8
@@ -88230,7 +88230,7 @@ m.tomb1352:                                       ; preds = %m.check.tomb1351
   br label %m.next1355
 
 m.found1353:                                      ; preds = %m.check.tomb1351
-  %m.key.slot1369 = getelementptr ptr, ptr %m.keys1330, i64 %m.idx1358
+  %m.key.slot1369 = getelementptr i64, ptr %m.keys1330, i64 %m.idx1358
   %mk.stored1370 = load ptr, ptr %m.key.slot1369, align 8
   %mk.slen1371 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1370, i32 0, i32 0
   %mk.slen1372 = load i64, ptr %mk.slen1371, align 8
@@ -88254,7 +88254,7 @@ m.next1355:                                       ; preds = %mk.eq.merge1394, %m
 m.empty1356:                                      ; preds = %m.loop1350
   %m.use.tomb1407 = icmp ne i64 %m.tomb1359, -1
   %m.ins.idx1408 = select i1 %m.use.tomb1407, i64 %m.tomb1359, i64 %m.idx1358
-  %m.key.slot1409 = getelementptr ptr, ptr %m.keys1330, i64 %m.ins.idx1408
+  %m.key.slot1409 = getelementptr i64, ptr %m.keys1330, i64 %m.ins.idx1408
   store ptr %concat.str1095, ptr %m.key.slot1409, align 8
   %m.val.slot1410 = getelementptr i64, ptr %m.vals1332, i64 %m.ins.idx1408
   store i64 %slot.p2i1099, ptr %m.val.slot1410, align 8
@@ -88589,7 +88589,7 @@ m.tomb1580:                                       ; preds = %m.check.tomb1579
   br label %m.next1583
 
 m.found1581:                                      ; preds = %m.check.tomb1579
-  %m.key.slot1597 = getelementptr ptr, ptr %m.keys1558, i64 %m.idx1586
+  %m.key.slot1597 = getelementptr i64, ptr %m.keys1558, i64 %m.idx1586
   %mk.stored1598 = load ptr, ptr %m.key.slot1597, align 8
   %mk.slen1599 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1598, i32 0, i32 0
   %mk.slen1600 = load i64, ptr %mk.slen1599, align 8
@@ -88714,7 +88714,7 @@ m.grow1644:                                       ; preds = %m.empty1584
 m.ins.slot1645:                                   ; preds = %m.empty1584
   %m.use.tomb1875 = icmp ne i64 %m.tomb1587, -1
   %m.ins.idx1876 = select i1 %m.use.tomb1875, i64 %m.tomb1587, i64 %m.idx1586
-  %m.key.slot1877 = getelementptr ptr, ptr %m.keys1558, i64 %m.ins.idx1876
+  %m.key.slot1877 = getelementptr i64, ptr %m.keys1558, i64 %m.ins.idx1876
   store ptr %concat.str1550, ptr %m.key.slot1877, align 8
   %m.val.slot1878 = getelementptr i64, ptr %m.vals1560, i64 %m.ins.idx1876
   store i64 %slot.p2i1554, ptr %m.val.slot1878, align 8
@@ -88766,7 +88766,7 @@ m.re.done1677:                                    ; preds = %m.re.loop1674
   br i1 %str.immortal1796, label %str_ok1798, label %str_gen_check1797
 
 m.re.ins1683:                                     ; preds = %m.re.body1675
-  %m.re.key.slot1684 = getelementptr ptr, ptr %m.old.keys1649, i64 %m.re.i1678
+  %m.re.key.slot1684 = getelementptr i64, ptr %m.old.keys1649, i64 %m.re.i1678
   %m.re.val.slot1685 = getelementptr i64, ptr %m.old.vals1651, i64 %m.re.i1678
   %m.re.key1686 = load ptr, ptr %m.re.key.slot1684, align 8
   %m.re.val1687 = load i64, ptr %m.re.val.slot1685, align 8
@@ -88824,7 +88824,7 @@ m.tomb1713:                                       ; preds = %m.check.tomb1712
   br label %m.next1716
 
 m.found1714:                                      ; preds = %m.check.tomb1712
-  %m.key.slot1730 = getelementptr ptr, ptr %m.keys1691, i64 %m.idx1719
+  %m.key.slot1730 = getelementptr i64, ptr %m.keys1691, i64 %m.idx1719
   %mk.stored1731 = load ptr, ptr %m.key.slot1730, align 8
   %mk.slen1732 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1731, i32 0, i32 0
   %mk.slen1733 = load i64, ptr %mk.slen1732, align 8
@@ -88848,7 +88848,7 @@ m.next1716:                                       ; preds = %mk.eq.merge1755, %m
 m.empty1717:                                      ; preds = %m.loop1711
   %m.use.tomb1768 = icmp ne i64 %m.tomb1720, -1
   %m.ins.idx1769 = select i1 %m.use.tomb1768, i64 %m.tomb1720, i64 %m.idx1719
-  %m.key.slot1770 = getelementptr ptr, ptr %m.keys1691, i64 %m.ins.idx1769
+  %m.key.slot1770 = getelementptr i64, ptr %m.keys1691, i64 %m.ins.idx1769
   store ptr %m.re.key1686, ptr %m.key.slot1770, align 8
   %m.val.slot1771 = getelementptr i64, ptr %m.vals1693, i64 %m.ins.idx1769
   store i64 %m.re.val1687, ptr %m.val.slot1771, align 8
@@ -88954,7 +88954,7 @@ m.tomb1807:                                       ; preds = %m.check.tomb1806
   br label %m.next1810
 
 m.found1808:                                      ; preds = %m.check.tomb1806
-  %m.key.slot1824 = getelementptr ptr, ptr %m.keys1785, i64 %m.idx1813
+  %m.key.slot1824 = getelementptr i64, ptr %m.keys1785, i64 %m.idx1813
   %mk.stored1825 = load ptr, ptr %m.key.slot1824, align 8
   %mk.slen1826 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1825, i32 0, i32 0
   %mk.slen1827 = load i64, ptr %mk.slen1826, align 8
@@ -88978,7 +88978,7 @@ m.next1810:                                       ; preds = %mk.eq.merge1849, %m
 m.empty1811:                                      ; preds = %m.loop1805
   %m.use.tomb1862 = icmp ne i64 %m.tomb1814, -1
   %m.ins.idx1863 = select i1 %m.use.tomb1862, i64 %m.tomb1814, i64 %m.idx1813
-  %m.key.slot1864 = getelementptr ptr, ptr %m.keys1785, i64 %m.ins.idx1863
+  %m.key.slot1864 = getelementptr i64, ptr %m.keys1785, i64 %m.ins.idx1863
   store ptr %concat.str1550, ptr %m.key.slot1864, align 8
   %m.val.slot1865 = getelementptr i64, ptr %m.vals1787, i64 %m.ins.idx1863
   store i64 %slot.p2i1554, ptr %m.val.slot1865, align 8
@@ -89376,7 +89376,7 @@ m.tomb2066:                                       ; preds = %m.check.tomb2065
   br label %m.next2069
 
 m.found2067:                                      ; preds = %m.check.tomb2065
-  %m.key.slot2083 = getelementptr ptr, ptr %m.keys2044, i64 %m.idx2072
+  %m.key.slot2083 = getelementptr i64, ptr %m.keys2044, i64 %m.idx2072
   %mk.stored2084 = load ptr, ptr %m.key.slot2083, align 8
   %mk.slen2085 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2084, i32 0, i32 0
   %mk.slen2086 = load i64, ptr %mk.slen2085, align 8
@@ -89501,7 +89501,7 @@ m.grow2130:                                       ; preds = %m.empty2070
 m.ins.slot2131:                                   ; preds = %m.empty2070
   %m.use.tomb2361 = icmp ne i64 %m.tomb2073, -1
   %m.ins.idx2362 = select i1 %m.use.tomb2361, i64 %m.tomb2073, i64 %m.idx2072
-  %m.key.slot2363 = getelementptr ptr, ptr %m.keys2044, i64 %m.ins.idx2362
+  %m.key.slot2363 = getelementptr i64, ptr %m.keys2044, i64 %m.ins.idx2362
   store ptr %concat.str2036, ptr %m.key.slot2363, align 8
   %m.val.slot2364 = getelementptr i64, ptr %m.vals2046, i64 %m.ins.idx2362
   store i64 %slot.p2i2040, ptr %m.val.slot2364, align 8
@@ -89553,7 +89553,7 @@ m.re.done2163:                                    ; preds = %m.re.loop2160
   br i1 %str.immortal2282, label %str_ok2284, label %str_gen_check2283
 
 m.re.ins2169:                                     ; preds = %m.re.body2161
-  %m.re.key.slot2170 = getelementptr ptr, ptr %m.old.keys2135, i64 %m.re.i2164
+  %m.re.key.slot2170 = getelementptr i64, ptr %m.old.keys2135, i64 %m.re.i2164
   %m.re.val.slot2171 = getelementptr i64, ptr %m.old.vals2137, i64 %m.re.i2164
   %m.re.key2172 = load ptr, ptr %m.re.key.slot2170, align 8
   %m.re.val2173 = load i64, ptr %m.re.val.slot2171, align 8
@@ -89611,7 +89611,7 @@ m.tomb2199:                                       ; preds = %m.check.tomb2198
   br label %m.next2202
 
 m.found2200:                                      ; preds = %m.check.tomb2198
-  %m.key.slot2216 = getelementptr ptr, ptr %m.keys2177, i64 %m.idx2205
+  %m.key.slot2216 = getelementptr i64, ptr %m.keys2177, i64 %m.idx2205
   %mk.stored2217 = load ptr, ptr %m.key.slot2216, align 8
   %mk.slen2218 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2217, i32 0, i32 0
   %mk.slen2219 = load i64, ptr %mk.slen2218, align 8
@@ -89635,7 +89635,7 @@ m.next2202:                                       ; preds = %mk.eq.merge2241, %m
 m.empty2203:                                      ; preds = %m.loop2197
   %m.use.tomb2254 = icmp ne i64 %m.tomb2206, -1
   %m.ins.idx2255 = select i1 %m.use.tomb2254, i64 %m.tomb2206, i64 %m.idx2205
-  %m.key.slot2256 = getelementptr ptr, ptr %m.keys2177, i64 %m.ins.idx2255
+  %m.key.slot2256 = getelementptr i64, ptr %m.keys2177, i64 %m.ins.idx2255
   store ptr %m.re.key2172, ptr %m.key.slot2256, align 8
   %m.val.slot2257 = getelementptr i64, ptr %m.vals2179, i64 %m.ins.idx2255
   store i64 %m.re.val2173, ptr %m.val.slot2257, align 8
@@ -89741,7 +89741,7 @@ m.tomb2293:                                       ; preds = %m.check.tomb2292
   br label %m.next2296
 
 m.found2294:                                      ; preds = %m.check.tomb2292
-  %m.key.slot2310 = getelementptr ptr, ptr %m.keys2271, i64 %m.idx2299
+  %m.key.slot2310 = getelementptr i64, ptr %m.keys2271, i64 %m.idx2299
   %mk.stored2311 = load ptr, ptr %m.key.slot2310, align 8
   %mk.slen2312 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2311, i32 0, i32 0
   %mk.slen2313 = load i64, ptr %mk.slen2312, align 8
@@ -89765,7 +89765,7 @@ m.next2296:                                       ; preds = %mk.eq.merge2335, %m
 m.empty2297:                                      ; preds = %m.loop2291
   %m.use.tomb2348 = icmp ne i64 %m.tomb2300, -1
   %m.ins.idx2349 = select i1 %m.use.tomb2348, i64 %m.tomb2300, i64 %m.idx2299
-  %m.key.slot2350 = getelementptr ptr, ptr %m.keys2271, i64 %m.ins.idx2349
+  %m.key.slot2350 = getelementptr i64, ptr %m.keys2271, i64 %m.ins.idx2349
   store ptr %concat.str2036, ptr %m.key.slot2350, align 8
   %m.val.slot2351 = getelementptr i64, ptr %m.vals2273, i64 %m.ins.idx2349
   store i64 %slot.p2i2040, ptr %m.val.slot2351, align 8
@@ -90094,7 +90094,7 @@ m.tomb2521:                                       ; preds = %m.check.tomb2520
   br label %m.next2524
 
 m.found2522:                                      ; preds = %m.check.tomb2520
-  %m.key.slot2538 = getelementptr ptr, ptr %m.keys2499, i64 %m.idx2527
+  %m.key.slot2538 = getelementptr i64, ptr %m.keys2499, i64 %m.idx2527
   %mk.stored2539 = load ptr, ptr %m.key.slot2538, align 8
   %mk.slen2540 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2539, i32 0, i32 0
   %mk.slen2541 = load i64, ptr %mk.slen2540, align 8
@@ -90228,7 +90228,7 @@ m.grow2585:                                       ; preds = %m.empty2525
 m.ins.slot2586:                                   ; preds = %m.empty2525
   %m.use.tomb2816 = icmp ne i64 %m.tomb2528, -1
   %m.ins.idx2817 = select i1 %m.use.tomb2816, i64 %m.tomb2528, i64 %m.idx2527
-  %m.key.slot2818 = getelementptr ptr, ptr %m.keys2499, i64 %m.ins.idx2817
+  %m.key.slot2818 = getelementptr i64, ptr %m.keys2499, i64 %m.ins.idx2817
   store ptr %concat.str2491, ptr %m.key.slot2818, align 8
   %m.val.slot2819 = getelementptr i64, ptr %m.vals2501, i64 %m.ins.idx2817
   store i64 %slot.p2i2495, ptr %m.val.slot2819, align 8
@@ -90280,7 +90280,7 @@ m.re.done2618:                                    ; preds = %m.re.loop2615
   br i1 %str.immortal2737, label %str_ok2739, label %str_gen_check2738
 
 m.re.ins2624:                                     ; preds = %m.re.body2616
-  %m.re.key.slot2625 = getelementptr ptr, ptr %m.old.keys2590, i64 %m.re.i2619
+  %m.re.key.slot2625 = getelementptr i64, ptr %m.old.keys2590, i64 %m.re.i2619
   %m.re.val.slot2626 = getelementptr i64, ptr %m.old.vals2592, i64 %m.re.i2619
   %m.re.key2627 = load ptr, ptr %m.re.key.slot2625, align 8
   %m.re.val2628 = load i64, ptr %m.re.val.slot2626, align 8
@@ -90338,7 +90338,7 @@ m.tomb2654:                                       ; preds = %m.check.tomb2653
   br label %m.next2657
 
 m.found2655:                                      ; preds = %m.check.tomb2653
-  %m.key.slot2671 = getelementptr ptr, ptr %m.keys2632, i64 %m.idx2660
+  %m.key.slot2671 = getelementptr i64, ptr %m.keys2632, i64 %m.idx2660
   %mk.stored2672 = load ptr, ptr %m.key.slot2671, align 8
   %mk.slen2673 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2672, i32 0, i32 0
   %mk.slen2674 = load i64, ptr %mk.slen2673, align 8
@@ -90362,7 +90362,7 @@ m.next2657:                                       ; preds = %mk.eq.merge2696, %m
 m.empty2658:                                      ; preds = %m.loop2652
   %m.use.tomb2709 = icmp ne i64 %m.tomb2661, -1
   %m.ins.idx2710 = select i1 %m.use.tomb2709, i64 %m.tomb2661, i64 %m.idx2660
-  %m.key.slot2711 = getelementptr ptr, ptr %m.keys2632, i64 %m.ins.idx2710
+  %m.key.slot2711 = getelementptr i64, ptr %m.keys2632, i64 %m.ins.idx2710
   store ptr %m.re.key2627, ptr %m.key.slot2711, align 8
   %m.val.slot2712 = getelementptr i64, ptr %m.vals2634, i64 %m.ins.idx2710
   store i64 %m.re.val2628, ptr %m.val.slot2712, align 8
@@ -90468,7 +90468,7 @@ m.tomb2748:                                       ; preds = %m.check.tomb2747
   br label %m.next2751
 
 m.found2749:                                      ; preds = %m.check.tomb2747
-  %m.key.slot2765 = getelementptr ptr, ptr %m.keys2726, i64 %m.idx2754
+  %m.key.slot2765 = getelementptr i64, ptr %m.keys2726, i64 %m.idx2754
   %mk.stored2766 = load ptr, ptr %m.key.slot2765, align 8
   %mk.slen2767 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2766, i32 0, i32 0
   %mk.slen2768 = load i64, ptr %mk.slen2767, align 8
@@ -90492,7 +90492,7 @@ m.next2751:                                       ; preds = %mk.eq.merge2790, %m
 m.empty2752:                                      ; preds = %m.loop2746
   %m.use.tomb2803 = icmp ne i64 %m.tomb2755, -1
   %m.ins.idx2804 = select i1 %m.use.tomb2803, i64 %m.tomb2755, i64 %m.idx2754
-  %m.key.slot2805 = getelementptr ptr, ptr %m.keys2726, i64 %m.ins.idx2804
+  %m.key.slot2805 = getelementptr i64, ptr %m.keys2726, i64 %m.ins.idx2804
   store ptr %concat.str2491, ptr %m.key.slot2805, align 8
   %m.val.slot2806 = getelementptr i64, ptr %m.vals2728, i64 %m.ins.idx2804
   store i64 %slot.p2i2495, ptr %m.val.slot2806, align 8
@@ -90759,7 +90759,7 @@ m.tomb2943:                                       ; preds = %m.check.tomb2942
   br label %m.next2946
 
 m.found2944:                                      ; preds = %m.check.tomb2942
-  %m.key.slot2960 = getelementptr ptr, ptr %m.keys2921, i64 %m.idx2949
+  %m.key.slot2960 = getelementptr i64, ptr %m.keys2921, i64 %m.idx2949
   %mk.stored2961 = load ptr, ptr %m.key.slot2960, align 8
   %mk.slen2962 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2961, i32 0, i32 0
   %mk.slen2963 = load i64, ptr %mk.slen2962, align 8
@@ -90884,7 +90884,7 @@ m.grow3007:                                       ; preds = %m.empty2947
 m.ins.slot3008:                                   ; preds = %m.empty2947
   %m.use.tomb3238 = icmp ne i64 %m.tomb2950, -1
   %m.ins.idx3239 = select i1 %m.use.tomb3238, i64 %m.tomb2950, i64 %m.idx2949
-  %m.key.slot3240 = getelementptr ptr, ptr %m.keys2921, i64 %m.ins.idx3239
+  %m.key.slot3240 = getelementptr i64, ptr %m.keys2921, i64 %m.ins.idx3239
   store ptr %concat.str2913, ptr %m.key.slot3240, align 8
   %m.val.slot3241 = getelementptr i64, ptr %m.vals2923, i64 %m.ins.idx3239
   store i64 %slot.p2i2917, ptr %m.val.slot3241, align 8
@@ -90936,7 +90936,7 @@ m.re.done3040:                                    ; preds = %m.re.loop3037
   br i1 %str.immortal3159, label %str_ok3161, label %str_gen_check3160
 
 m.re.ins3046:                                     ; preds = %m.re.body3038
-  %m.re.key.slot3047 = getelementptr ptr, ptr %m.old.keys3012, i64 %m.re.i3041
+  %m.re.key.slot3047 = getelementptr i64, ptr %m.old.keys3012, i64 %m.re.i3041
   %m.re.val.slot3048 = getelementptr i64, ptr %m.old.vals3014, i64 %m.re.i3041
   %m.re.key3049 = load ptr, ptr %m.re.key.slot3047, align 8
   %m.re.val3050 = load i64, ptr %m.re.val.slot3048, align 8
@@ -90994,7 +90994,7 @@ m.tomb3076:                                       ; preds = %m.check.tomb3075
   br label %m.next3079
 
 m.found3077:                                      ; preds = %m.check.tomb3075
-  %m.key.slot3093 = getelementptr ptr, ptr %m.keys3054, i64 %m.idx3082
+  %m.key.slot3093 = getelementptr i64, ptr %m.keys3054, i64 %m.idx3082
   %mk.stored3094 = load ptr, ptr %m.key.slot3093, align 8
   %mk.slen3095 = getelementptr inbounds { i64, ptr }, ptr %mk.stored3094, i32 0, i32 0
   %mk.slen3096 = load i64, ptr %mk.slen3095, align 8
@@ -91018,7 +91018,7 @@ m.next3079:                                       ; preds = %mk.eq.merge3118, %m
 m.empty3080:                                      ; preds = %m.loop3074
   %m.use.tomb3131 = icmp ne i64 %m.tomb3083, -1
   %m.ins.idx3132 = select i1 %m.use.tomb3131, i64 %m.tomb3083, i64 %m.idx3082
-  %m.key.slot3133 = getelementptr ptr, ptr %m.keys3054, i64 %m.ins.idx3132
+  %m.key.slot3133 = getelementptr i64, ptr %m.keys3054, i64 %m.ins.idx3132
   store ptr %m.re.key3049, ptr %m.key.slot3133, align 8
   %m.val.slot3134 = getelementptr i64, ptr %m.vals3056, i64 %m.ins.idx3132
   store i64 %m.re.val3050, ptr %m.val.slot3134, align 8
@@ -91124,7 +91124,7 @@ m.tomb3170:                                       ; preds = %m.check.tomb3169
   br label %m.next3173
 
 m.found3171:                                      ; preds = %m.check.tomb3169
-  %m.key.slot3187 = getelementptr ptr, ptr %m.keys3148, i64 %m.idx3176
+  %m.key.slot3187 = getelementptr i64, ptr %m.keys3148, i64 %m.idx3176
   %mk.stored3188 = load ptr, ptr %m.key.slot3187, align 8
   %mk.slen3189 = getelementptr inbounds { i64, ptr }, ptr %mk.stored3188, i32 0, i32 0
   %mk.slen3190 = load i64, ptr %mk.slen3189, align 8
@@ -91148,7 +91148,7 @@ m.next3173:                                       ; preds = %mk.eq.merge3212, %m
 m.empty3174:                                      ; preds = %m.loop3168
   %m.use.tomb3225 = icmp ne i64 %m.tomb3177, -1
   %m.ins.idx3226 = select i1 %m.use.tomb3225, i64 %m.tomb3177, i64 %m.idx3176
-  %m.key.slot3227 = getelementptr ptr, ptr %m.keys3148, i64 %m.ins.idx3226
+  %m.key.slot3227 = getelementptr i64, ptr %m.keys3148, i64 %m.ins.idx3226
   store ptr %concat.str2913, ptr %m.key.slot3227, align 8
   %m.val.slot3228 = getelementptr i64, ptr %m.vals3150, i64 %m.ins.idx3226
   store i64 %slot.p2i2917, ptr %m.val.slot3228, align 8
@@ -91397,7 +91397,7 @@ m.tomb3346:                                       ; preds = %m.check.tomb3345
   br label %m.next3349
 
 m.found3347:                                      ; preds = %m.check.tomb3345
-  %m.key.slot3363 = getelementptr ptr, ptr %m.keys3324, i64 %m.idx3352
+  %m.key.slot3363 = getelementptr i64, ptr %m.keys3324, i64 %m.idx3352
   %mk.stored3364 = load ptr, ptr %m.key.slot3363, align 8
   %mk.slen3365 = getelementptr inbounds { i64, ptr }, ptr %mk.stored3364, i32 0, i32 0
   %mk.slen3366 = load i64, ptr %mk.slen3365, align 8
@@ -91522,7 +91522,7 @@ m.grow3410:                                       ; preds = %m.empty3350
 m.ins.slot3411:                                   ; preds = %m.empty3350
   %m.use.tomb3641 = icmp ne i64 %m.tomb3353, -1
   %m.ins.idx3642 = select i1 %m.use.tomb3641, i64 %m.tomb3353, i64 %m.idx3352
-  %m.key.slot3643 = getelementptr ptr, ptr %m.keys3324, i64 %m.ins.idx3642
+  %m.key.slot3643 = getelementptr i64, ptr %m.keys3324, i64 %m.ins.idx3642
   store ptr %var.load3318, ptr %m.key.slot3643, align 8
   %m.val.slot3644 = getelementptr i64, ptr %m.vals3326, i64 %m.ins.idx3642
   store i64 %slot.p2i3320, ptr %m.val.slot3644, align 8
@@ -91574,7 +91574,7 @@ m.re.done3443:                                    ; preds = %m.re.loop3440
   br i1 %str.immortal3562, label %str_ok3564, label %str_gen_check3563
 
 m.re.ins3449:                                     ; preds = %m.re.body3441
-  %m.re.key.slot3450 = getelementptr ptr, ptr %m.old.keys3415, i64 %m.re.i3444
+  %m.re.key.slot3450 = getelementptr i64, ptr %m.old.keys3415, i64 %m.re.i3444
   %m.re.val.slot3451 = getelementptr i64, ptr %m.old.vals3417, i64 %m.re.i3444
   %m.re.key3452 = load ptr, ptr %m.re.key.slot3450, align 8
   %m.re.val3453 = load i64, ptr %m.re.val.slot3451, align 8
@@ -91632,7 +91632,7 @@ m.tomb3479:                                       ; preds = %m.check.tomb3478
   br label %m.next3482
 
 m.found3480:                                      ; preds = %m.check.tomb3478
-  %m.key.slot3496 = getelementptr ptr, ptr %m.keys3457, i64 %m.idx3485
+  %m.key.slot3496 = getelementptr i64, ptr %m.keys3457, i64 %m.idx3485
   %mk.stored3497 = load ptr, ptr %m.key.slot3496, align 8
   %mk.slen3498 = getelementptr inbounds { i64, ptr }, ptr %mk.stored3497, i32 0, i32 0
   %mk.slen3499 = load i64, ptr %mk.slen3498, align 8
@@ -91656,7 +91656,7 @@ m.next3482:                                       ; preds = %mk.eq.merge3521, %m
 m.empty3483:                                      ; preds = %m.loop3477
   %m.use.tomb3534 = icmp ne i64 %m.tomb3486, -1
   %m.ins.idx3535 = select i1 %m.use.tomb3534, i64 %m.tomb3486, i64 %m.idx3485
-  %m.key.slot3536 = getelementptr ptr, ptr %m.keys3457, i64 %m.ins.idx3535
+  %m.key.slot3536 = getelementptr i64, ptr %m.keys3457, i64 %m.ins.idx3535
   store ptr %m.re.key3452, ptr %m.key.slot3536, align 8
   %m.val.slot3537 = getelementptr i64, ptr %m.vals3459, i64 %m.ins.idx3535
   store i64 %m.re.val3453, ptr %m.val.slot3537, align 8
@@ -91762,7 +91762,7 @@ m.tomb3573:                                       ; preds = %m.check.tomb3572
   br label %m.next3576
 
 m.found3574:                                      ; preds = %m.check.tomb3572
-  %m.key.slot3590 = getelementptr ptr, ptr %m.keys3551, i64 %m.idx3579
+  %m.key.slot3590 = getelementptr i64, ptr %m.keys3551, i64 %m.idx3579
   %mk.stored3591 = load ptr, ptr %m.key.slot3590, align 8
   %mk.slen3592 = getelementptr inbounds { i64, ptr }, ptr %mk.stored3591, i32 0, i32 0
   %mk.slen3593 = load i64, ptr %mk.slen3592, align 8
@@ -91786,7 +91786,7 @@ m.next3576:                                       ; preds = %mk.eq.merge3615, %m
 m.empty3577:                                      ; preds = %m.loop3571
   %m.use.tomb3628 = icmp ne i64 %m.tomb3580, -1
   %m.ins.idx3629 = select i1 %m.use.tomb3628, i64 %m.tomb3580, i64 %m.idx3579
-  %m.key.slot3630 = getelementptr ptr, ptr %m.keys3551, i64 %m.ins.idx3629
+  %m.key.slot3630 = getelementptr i64, ptr %m.keys3551, i64 %m.ins.idx3629
   store ptr %var.load3318, ptr %m.key.slot3630, align 8
   %m.val.slot3631 = getelementptr i64, ptr %m.vals3553, i64 %m.ins.idx3629
   store i64 %slot.p2i3320, ptr %m.val.slot3631, align 8
@@ -91966,7 +91966,7 @@ m.tomb3718:                                       ; preds = %m.check.tomb3717
   br label %m.next3721
 
 m.found3719:                                      ; preds = %m.check.tomb3717
-  %m.key.slot3735 = getelementptr ptr, ptr %m.keys3696, i64 %m.idx3724
+  %m.key.slot3735 = getelementptr i64, ptr %m.keys3696, i64 %m.idx3724
   %mk.stored3736 = load ptr, ptr %m.key.slot3735, align 8
   %mk.slen3737 = getelementptr inbounds { i64, ptr }, ptr %mk.stored3736, i32 0, i32 0
   %mk.slen3738 = load i64, ptr %mk.slen3737, align 8
@@ -92091,7 +92091,7 @@ m.grow3782:                                       ; preds = %m.empty3722
 m.ins.slot3783:                                   ; preds = %m.empty3722
   %m.use.tomb4013 = icmp ne i64 %m.tomb3725, -1
   %m.ins.idx4014 = select i1 %m.use.tomb4013, i64 %m.tomb3725, i64 %m.idx3724
-  %m.key.slot4015 = getelementptr ptr, ptr %m.keys3696, i64 %m.ins.idx4014
+  %m.key.slot4015 = getelementptr i64, ptr %m.keys3696, i64 %m.ins.idx4014
   store ptr %var.load3690, ptr %m.key.slot4015, align 8
   %m.val.slot4016 = getelementptr i64, ptr %m.vals3698, i64 %m.ins.idx4014
   store i64 %slot.p2i3692, ptr %m.val.slot4016, align 8
@@ -92143,7 +92143,7 @@ m.re.done3815:                                    ; preds = %m.re.loop3812
   br i1 %str.immortal3934, label %str_ok3936, label %str_gen_check3935
 
 m.re.ins3821:                                     ; preds = %m.re.body3813
-  %m.re.key.slot3822 = getelementptr ptr, ptr %m.old.keys3787, i64 %m.re.i3816
+  %m.re.key.slot3822 = getelementptr i64, ptr %m.old.keys3787, i64 %m.re.i3816
   %m.re.val.slot3823 = getelementptr i64, ptr %m.old.vals3789, i64 %m.re.i3816
   %m.re.key3824 = load ptr, ptr %m.re.key.slot3822, align 8
   %m.re.val3825 = load i64, ptr %m.re.val.slot3823, align 8
@@ -92201,7 +92201,7 @@ m.tomb3851:                                       ; preds = %m.check.tomb3850
   br label %m.next3854
 
 m.found3852:                                      ; preds = %m.check.tomb3850
-  %m.key.slot3868 = getelementptr ptr, ptr %m.keys3829, i64 %m.idx3857
+  %m.key.slot3868 = getelementptr i64, ptr %m.keys3829, i64 %m.idx3857
   %mk.stored3869 = load ptr, ptr %m.key.slot3868, align 8
   %mk.slen3870 = getelementptr inbounds { i64, ptr }, ptr %mk.stored3869, i32 0, i32 0
   %mk.slen3871 = load i64, ptr %mk.slen3870, align 8
@@ -92225,7 +92225,7 @@ m.next3854:                                       ; preds = %mk.eq.merge3893, %m
 m.empty3855:                                      ; preds = %m.loop3849
   %m.use.tomb3906 = icmp ne i64 %m.tomb3858, -1
   %m.ins.idx3907 = select i1 %m.use.tomb3906, i64 %m.tomb3858, i64 %m.idx3857
-  %m.key.slot3908 = getelementptr ptr, ptr %m.keys3829, i64 %m.ins.idx3907
+  %m.key.slot3908 = getelementptr i64, ptr %m.keys3829, i64 %m.ins.idx3907
   store ptr %m.re.key3824, ptr %m.key.slot3908, align 8
   %m.val.slot3909 = getelementptr i64, ptr %m.vals3831, i64 %m.ins.idx3907
   store i64 %m.re.val3825, ptr %m.val.slot3909, align 8
@@ -92331,7 +92331,7 @@ m.tomb3945:                                       ; preds = %m.check.tomb3944
   br label %m.next3948
 
 m.found3946:                                      ; preds = %m.check.tomb3944
-  %m.key.slot3962 = getelementptr ptr, ptr %m.keys3923, i64 %m.idx3951
+  %m.key.slot3962 = getelementptr i64, ptr %m.keys3923, i64 %m.idx3951
   %mk.stored3963 = load ptr, ptr %m.key.slot3962, align 8
   %mk.slen3964 = getelementptr inbounds { i64, ptr }, ptr %mk.stored3963, i32 0, i32 0
   %mk.slen3965 = load i64, ptr %mk.slen3964, align 8
@@ -92355,7 +92355,7 @@ m.next3948:                                       ; preds = %mk.eq.merge3987, %m
 m.empty3949:                                      ; preds = %m.loop3943
   %m.use.tomb4000 = icmp ne i64 %m.tomb3952, -1
   %m.ins.idx4001 = select i1 %m.use.tomb4000, i64 %m.tomb3952, i64 %m.idx3951
-  %m.key.slot4002 = getelementptr ptr, ptr %m.keys3923, i64 %m.ins.idx4001
+  %m.key.slot4002 = getelementptr i64, ptr %m.keys3923, i64 %m.ins.idx4001
   store ptr %var.load3690, ptr %m.key.slot4002, align 8
   %m.val.slot4003 = getelementptr i64, ptr %m.vals3925, i64 %m.ins.idx4001
   store i64 %slot.p2i3692, ptr %m.val.slot4003, align 8
@@ -92614,7 +92614,7 @@ m.tomb4121:                                       ; preds = %m.check.tomb4120
   br label %m.next4124
 
 m.found4122:                                      ; preds = %m.check.tomb4120
-  %m.key.slot4138 = getelementptr ptr, ptr %m.keys4099, i64 %m.idx4127
+  %m.key.slot4138 = getelementptr i64, ptr %m.keys4099, i64 %m.idx4127
   %mk.stored4139 = load ptr, ptr %m.key.slot4138, align 8
   %mk.slen4140 = getelementptr inbounds { i64, ptr }, ptr %mk.stored4139, i32 0, i32 0
   %mk.slen4141 = load i64, ptr %mk.slen4140, align 8
@@ -92745,7 +92745,7 @@ m.grow4185:                                       ; preds = %m.empty4125
 m.ins.slot4186:                                   ; preds = %m.empty4125
   %m.use.tomb4416 = icmp ne i64 %m.tomb4128, -1
   %m.ins.idx4417 = select i1 %m.use.tomb4416, i64 %m.tomb4128, i64 %m.idx4127
-  %m.key.slot4418 = getelementptr ptr, ptr %m.keys4099, i64 %m.ins.idx4417
+  %m.key.slot4418 = getelementptr i64, ptr %m.keys4099, i64 %m.ins.idx4417
   store ptr %var.load4093, ptr %m.key.slot4418, align 8
   %m.val.slot4419 = getelementptr i64, ptr %m.vals4101, i64 %m.ins.idx4417
   store i64 %slot.p2i4095, ptr %m.val.slot4419, align 8
@@ -92797,7 +92797,7 @@ m.re.done4218:                                    ; preds = %m.re.loop4215
   br i1 %str.immortal4337, label %str_ok4339, label %str_gen_check4338
 
 m.re.ins4224:                                     ; preds = %m.re.body4216
-  %m.re.key.slot4225 = getelementptr ptr, ptr %m.old.keys4190, i64 %m.re.i4219
+  %m.re.key.slot4225 = getelementptr i64, ptr %m.old.keys4190, i64 %m.re.i4219
   %m.re.val.slot4226 = getelementptr i64, ptr %m.old.vals4192, i64 %m.re.i4219
   %m.re.key4227 = load ptr, ptr %m.re.key.slot4225, align 8
   %m.re.val4228 = load i64, ptr %m.re.val.slot4226, align 8
@@ -92855,7 +92855,7 @@ m.tomb4254:                                       ; preds = %m.check.tomb4253
   br label %m.next4257
 
 m.found4255:                                      ; preds = %m.check.tomb4253
-  %m.key.slot4271 = getelementptr ptr, ptr %m.keys4232, i64 %m.idx4260
+  %m.key.slot4271 = getelementptr i64, ptr %m.keys4232, i64 %m.idx4260
   %mk.stored4272 = load ptr, ptr %m.key.slot4271, align 8
   %mk.slen4273 = getelementptr inbounds { i64, ptr }, ptr %mk.stored4272, i32 0, i32 0
   %mk.slen4274 = load i64, ptr %mk.slen4273, align 8
@@ -92879,7 +92879,7 @@ m.next4257:                                       ; preds = %mk.eq.merge4296, %m
 m.empty4258:                                      ; preds = %m.loop4252
   %m.use.tomb4309 = icmp ne i64 %m.tomb4261, -1
   %m.ins.idx4310 = select i1 %m.use.tomb4309, i64 %m.tomb4261, i64 %m.idx4260
-  %m.key.slot4311 = getelementptr ptr, ptr %m.keys4232, i64 %m.ins.idx4310
+  %m.key.slot4311 = getelementptr i64, ptr %m.keys4232, i64 %m.ins.idx4310
   store ptr %m.re.key4227, ptr %m.key.slot4311, align 8
   %m.val.slot4312 = getelementptr i64, ptr %m.vals4234, i64 %m.ins.idx4310
   store i64 %m.re.val4228, ptr %m.val.slot4312, align 8
@@ -92985,7 +92985,7 @@ m.tomb4348:                                       ; preds = %m.check.tomb4347
   br label %m.next4351
 
 m.found4349:                                      ; preds = %m.check.tomb4347
-  %m.key.slot4365 = getelementptr ptr, ptr %m.keys4326, i64 %m.idx4354
+  %m.key.slot4365 = getelementptr i64, ptr %m.keys4326, i64 %m.idx4354
   %mk.stored4366 = load ptr, ptr %m.key.slot4365, align 8
   %mk.slen4367 = getelementptr inbounds { i64, ptr }, ptr %mk.stored4366, i32 0, i32 0
   %mk.slen4368 = load i64, ptr %mk.slen4367, align 8
@@ -93009,7 +93009,7 @@ m.next4351:                                       ; preds = %mk.eq.merge4390, %m
 m.empty4352:                                      ; preds = %m.loop4346
   %m.use.tomb4403 = icmp ne i64 %m.tomb4355, -1
   %m.ins.idx4404 = select i1 %m.use.tomb4403, i64 %m.tomb4355, i64 %m.idx4354
-  %m.key.slot4405 = getelementptr ptr, ptr %m.keys4326, i64 %m.ins.idx4404
+  %m.key.slot4405 = getelementptr i64, ptr %m.keys4326, i64 %m.ins.idx4404
   store ptr %var.load4093, ptr %m.key.slot4405, align 8
   %m.val.slot4406 = getelementptr i64, ptr %m.vals4328, i64 %m.ins.idx4404
   store i64 %slot.p2i4095, ptr %m.val.slot4406, align 8
@@ -93189,7 +93189,7 @@ m.tomb4493:                                       ; preds = %m.check.tomb4492
   br label %m.next4496
 
 m.found4494:                                      ; preds = %m.check.tomb4492
-  %m.key.slot4510 = getelementptr ptr, ptr %m.keys4471, i64 %m.idx4499
+  %m.key.slot4510 = getelementptr i64, ptr %m.keys4471, i64 %m.idx4499
   %mk.stored4511 = load ptr, ptr %m.key.slot4510, align 8
   %mk.slen4512 = getelementptr inbounds { i64, ptr }, ptr %mk.stored4511, i32 0, i32 0
   %mk.slen4513 = load i64, ptr %mk.slen4512, align 8
@@ -93314,7 +93314,7 @@ m.grow4557:                                       ; preds = %m.empty4497
 m.ins.slot4558:                                   ; preds = %m.empty4497
   %m.use.tomb4788 = icmp ne i64 %m.tomb4500, -1
   %m.ins.idx4789 = select i1 %m.use.tomb4788, i64 %m.tomb4500, i64 %m.idx4499
-  %m.key.slot4790 = getelementptr ptr, ptr %m.keys4471, i64 %m.ins.idx4789
+  %m.key.slot4790 = getelementptr i64, ptr %m.keys4471, i64 %m.ins.idx4789
   store ptr %var.load4465, ptr %m.key.slot4790, align 8
   %m.val.slot4791 = getelementptr i64, ptr %m.vals4473, i64 %m.ins.idx4789
   store i64 %slot.p2i4467, ptr %m.val.slot4791, align 8
@@ -93366,7 +93366,7 @@ m.re.done4590:                                    ; preds = %m.re.loop4587
   br i1 %str.immortal4709, label %str_ok4711, label %str_gen_check4710
 
 m.re.ins4596:                                     ; preds = %m.re.body4588
-  %m.re.key.slot4597 = getelementptr ptr, ptr %m.old.keys4562, i64 %m.re.i4591
+  %m.re.key.slot4597 = getelementptr i64, ptr %m.old.keys4562, i64 %m.re.i4591
   %m.re.val.slot4598 = getelementptr i64, ptr %m.old.vals4564, i64 %m.re.i4591
   %m.re.key4599 = load ptr, ptr %m.re.key.slot4597, align 8
   %m.re.val4600 = load i64, ptr %m.re.val.slot4598, align 8
@@ -93424,7 +93424,7 @@ m.tomb4626:                                       ; preds = %m.check.tomb4625
   br label %m.next4629
 
 m.found4627:                                      ; preds = %m.check.tomb4625
-  %m.key.slot4643 = getelementptr ptr, ptr %m.keys4604, i64 %m.idx4632
+  %m.key.slot4643 = getelementptr i64, ptr %m.keys4604, i64 %m.idx4632
   %mk.stored4644 = load ptr, ptr %m.key.slot4643, align 8
   %mk.slen4645 = getelementptr inbounds { i64, ptr }, ptr %mk.stored4644, i32 0, i32 0
   %mk.slen4646 = load i64, ptr %mk.slen4645, align 8
@@ -93448,7 +93448,7 @@ m.next4629:                                       ; preds = %mk.eq.merge4668, %m
 m.empty4630:                                      ; preds = %m.loop4624
   %m.use.tomb4681 = icmp ne i64 %m.tomb4633, -1
   %m.ins.idx4682 = select i1 %m.use.tomb4681, i64 %m.tomb4633, i64 %m.idx4632
-  %m.key.slot4683 = getelementptr ptr, ptr %m.keys4604, i64 %m.ins.idx4682
+  %m.key.slot4683 = getelementptr i64, ptr %m.keys4604, i64 %m.ins.idx4682
   store ptr %m.re.key4599, ptr %m.key.slot4683, align 8
   %m.val.slot4684 = getelementptr i64, ptr %m.vals4606, i64 %m.ins.idx4682
   store i64 %m.re.val4600, ptr %m.val.slot4684, align 8
@@ -93554,7 +93554,7 @@ m.tomb4720:                                       ; preds = %m.check.tomb4719
   br label %m.next4723
 
 m.found4721:                                      ; preds = %m.check.tomb4719
-  %m.key.slot4737 = getelementptr ptr, ptr %m.keys4698, i64 %m.idx4726
+  %m.key.slot4737 = getelementptr i64, ptr %m.keys4698, i64 %m.idx4726
   %mk.stored4738 = load ptr, ptr %m.key.slot4737, align 8
   %mk.slen4739 = getelementptr inbounds { i64, ptr }, ptr %mk.stored4738, i32 0, i32 0
   %mk.slen4740 = load i64, ptr %mk.slen4739, align 8
@@ -93578,7 +93578,7 @@ m.next4723:                                       ; preds = %mk.eq.merge4762, %m
 m.empty4724:                                      ; preds = %m.loop4718
   %m.use.tomb4775 = icmp ne i64 %m.tomb4727, -1
   %m.ins.idx4776 = select i1 %m.use.tomb4775, i64 %m.tomb4727, i64 %m.idx4726
-  %m.key.slot4777 = getelementptr ptr, ptr %m.keys4698, i64 %m.ins.idx4776
+  %m.key.slot4777 = getelementptr i64, ptr %m.keys4698, i64 %m.ins.idx4776
   store ptr %var.load4465, ptr %m.key.slot4777, align 8
   %m.val.slot4778 = getelementptr i64, ptr %m.vals4700, i64 %m.ins.idx4776
   store i64 %slot.p2i4467, ptr %m.val.slot4778, align 8
@@ -93684,7 +93684,7 @@ m.tomb4832:                                       ; preds = %m.check.tomb4831
   br label %m.next4835
 
 m.found4833:                                      ; preds = %m.check.tomb4831
-  %m.key.slot4849 = getelementptr ptr, ptr %m.keys4810, i64 %m.idx4838
+  %m.key.slot4849 = getelementptr i64, ptr %m.keys4810, i64 %m.idx4838
   %mk.stored4850 = load ptr, ptr %m.key.slot4849, align 8
   %mk.slen4851 = getelementptr inbounds { i64, ptr }, ptr %mk.stored4850, i32 0, i32 0
   %mk.slen4852 = load i64, ptr %mk.slen4851, align 8
@@ -93809,7 +93809,7 @@ m.grow4896:                                       ; preds = %m.empty4836
 m.ins.slot4897:                                   ; preds = %m.empty4836
   %m.use.tomb5127 = icmp ne i64 %m.tomb4839, -1
   %m.ins.idx5128 = select i1 %m.use.tomb5127, i64 %m.tomb4839, i64 %m.idx4838
-  %m.key.slot5129 = getelementptr ptr, ptr %m.keys4810, i64 %m.ins.idx5128
+  %m.key.slot5129 = getelementptr i64, ptr %m.keys4810, i64 %m.ins.idx5128
   store ptr %var.load4804, ptr %m.key.slot5129, align 8
   %m.val.slot5130 = getelementptr i64, ptr %m.vals4812, i64 %m.ins.idx5128
   store i64 %slot.p2i4806, ptr %m.val.slot5130, align 8
@@ -93861,7 +93861,7 @@ m.re.done4929:                                    ; preds = %m.re.loop4926
   br i1 %str.immortal5048, label %str_ok5050, label %str_gen_check5049
 
 m.re.ins4935:                                     ; preds = %m.re.body4927
-  %m.re.key.slot4936 = getelementptr ptr, ptr %m.old.keys4901, i64 %m.re.i4930
+  %m.re.key.slot4936 = getelementptr i64, ptr %m.old.keys4901, i64 %m.re.i4930
   %m.re.val.slot4937 = getelementptr i64, ptr %m.old.vals4903, i64 %m.re.i4930
   %m.re.key4938 = load ptr, ptr %m.re.key.slot4936, align 8
   %m.re.val4939 = load i64, ptr %m.re.val.slot4937, align 8
@@ -93919,7 +93919,7 @@ m.tomb4965:                                       ; preds = %m.check.tomb4964
   br label %m.next4968
 
 m.found4966:                                      ; preds = %m.check.tomb4964
-  %m.key.slot4982 = getelementptr ptr, ptr %m.keys4943, i64 %m.idx4971
+  %m.key.slot4982 = getelementptr i64, ptr %m.keys4943, i64 %m.idx4971
   %mk.stored4983 = load ptr, ptr %m.key.slot4982, align 8
   %mk.slen4984 = getelementptr inbounds { i64, ptr }, ptr %mk.stored4983, i32 0, i32 0
   %mk.slen4985 = load i64, ptr %mk.slen4984, align 8
@@ -93943,7 +93943,7 @@ m.next4968:                                       ; preds = %mk.eq.merge5007, %m
 m.empty4969:                                      ; preds = %m.loop4963
   %m.use.tomb5020 = icmp ne i64 %m.tomb4972, -1
   %m.ins.idx5021 = select i1 %m.use.tomb5020, i64 %m.tomb4972, i64 %m.idx4971
-  %m.key.slot5022 = getelementptr ptr, ptr %m.keys4943, i64 %m.ins.idx5021
+  %m.key.slot5022 = getelementptr i64, ptr %m.keys4943, i64 %m.ins.idx5021
   store ptr %m.re.key4938, ptr %m.key.slot5022, align 8
   %m.val.slot5023 = getelementptr i64, ptr %m.vals4945, i64 %m.ins.idx5021
   store i64 %m.re.val4939, ptr %m.val.slot5023, align 8
@@ -94049,7 +94049,7 @@ m.tomb5059:                                       ; preds = %m.check.tomb5058
   br label %m.next5062
 
 m.found5060:                                      ; preds = %m.check.tomb5058
-  %m.key.slot5076 = getelementptr ptr, ptr %m.keys5037, i64 %m.idx5065
+  %m.key.slot5076 = getelementptr i64, ptr %m.keys5037, i64 %m.idx5065
   %mk.stored5077 = load ptr, ptr %m.key.slot5076, align 8
   %mk.slen5078 = getelementptr inbounds { i64, ptr }, ptr %mk.stored5077, i32 0, i32 0
   %mk.slen5079 = load i64, ptr %mk.slen5078, align 8
@@ -94073,7 +94073,7 @@ m.next5062:                                       ; preds = %mk.eq.merge5101, %m
 m.empty5063:                                      ; preds = %m.loop5057
   %m.use.tomb5114 = icmp ne i64 %m.tomb5066, -1
   %m.ins.idx5115 = select i1 %m.use.tomb5114, i64 %m.tomb5066, i64 %m.idx5065
-  %m.key.slot5116 = getelementptr ptr, ptr %m.keys5037, i64 %m.ins.idx5115
+  %m.key.slot5116 = getelementptr i64, ptr %m.keys5037, i64 %m.ins.idx5115
   store ptr %var.load4804, ptr %m.key.slot5116, align 8
   %m.val.slot5117 = getelementptr i64, ptr %m.vals5039, i64 %m.ins.idx5115
   store i64 %slot.p2i4806, ptr %m.val.slot5117, align 8
@@ -94797,7 +94797,7 @@ m.mem.probe:                                      ; preds = %m.mem.loop
   br i1 %m.mem.is.tomb, label %m.mem.next, label %m.mem.found
 
 m.mem.found:                                      ; preds = %m.mem.probe
-  %m.mem.key.slot = getelementptr ptr, ptr %m.keys140, i64 %m.mem.idx
+  %m.mem.key.slot = getelementptr i64, ptr %m.keys140, i64 %m.mem.idx
   %mk.stored = load ptr, ptr %m.mem.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen153 = load i64, ptr %mk.slen, align 8
@@ -95438,7 +95438,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys130, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys130, i64 %m.idx
   %mk.stored = load ptr, ptr %m.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen144 = load i64, ptr %mk.slen, align 8
@@ -95573,7 +95573,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb349 = icmp ne i64 %m.tomb143, -1
   %m.ins.idx350 = select i1 %m.use.tomb349, i64 %m.tomb143, i64 %m.idx
-  %m.key.slot351 = getelementptr ptr, ptr %m.keys130, i64 %m.ins.idx350
+  %m.key.slot351 = getelementptr i64, ptr %m.keys130, i64 %m.ins.idx350
   store ptr %concat.str125, ptr %m.key.slot351, align 8
   %m.val.slot352 = getelementptr i64, ptr %m.vals131, i64 %m.ins.idx350
   store i64 %slot.p2i, ptr %m.val.slot352, align 8
@@ -95625,7 +95625,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal270, label %str_ok272, label %str_gen_check271
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys165, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys165, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals166, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -95683,7 +95683,7 @@ m.tomb197:                                        ; preds = %m.check.tomb196
   br label %m.next200
 
 m.found198:                                       ; preds = %m.check.tomb196
-  %m.key.slot214 = getelementptr ptr, ptr %m.keys175, i64 %m.idx203
+  %m.key.slot214 = getelementptr i64, ptr %m.keys175, i64 %m.idx203
   %mk.stored215 = load ptr, ptr %m.key.slot214, align 8
   %mk.slen216 = getelementptr inbounds { i64, ptr }, ptr %mk.stored215, i32 0, i32 0
   %mk.slen217 = load i64, ptr %mk.slen216, align 8
@@ -95707,7 +95707,7 @@ m.next200:                                        ; preds = %mk.eq.merge239, %m.
 m.empty201:                                       ; preds = %m.loop195
   %m.use.tomb = icmp ne i64 %m.tomb204, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb204, i64 %m.idx203
-  %m.key.slot252 = getelementptr ptr, ptr %m.keys175, i64 %m.ins.idx
+  %m.key.slot252 = getelementptr i64, ptr %m.keys175, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot252, align 8
   %m.val.slot253 = getelementptr i64, ptr %m.vals177, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot253, align 8
@@ -95813,7 +95813,7 @@ m.tomb281:                                        ; preds = %m.check.tomb280
   br label %m.next284
 
 m.found282:                                       ; preds = %m.check.tomb280
-  %m.key.slot298 = getelementptr ptr, ptr %m.keys259, i64 %m.idx287
+  %m.key.slot298 = getelementptr i64, ptr %m.keys259, i64 %m.idx287
   %mk.stored299 = load ptr, ptr %m.key.slot298, align 8
   %mk.slen300 = getelementptr inbounds { i64, ptr }, ptr %mk.stored299, i32 0, i32 0
   %mk.slen301 = load i64, ptr %mk.slen300, align 8
@@ -95837,7 +95837,7 @@ m.next284:                                        ; preds = %mk.eq.merge323, %m.
 m.empty285:                                       ; preds = %m.loop279
   %m.use.tomb336 = icmp ne i64 %m.tomb288, -1
   %m.ins.idx337 = select i1 %m.use.tomb336, i64 %m.tomb288, i64 %m.idx287
-  %m.key.slot338 = getelementptr ptr, ptr %m.keys259, i64 %m.ins.idx337
+  %m.key.slot338 = getelementptr i64, ptr %m.keys259, i64 %m.ins.idx337
   store ptr %concat.str125, ptr %m.key.slot338, align 8
   %m.val.slot339 = getelementptr i64, ptr %m.vals261, i64 %m.ins.idx337
   store i64 %slot.p2i, ptr %m.val.slot339, align 8
@@ -96066,7 +96066,7 @@ m.tomb442:                                        ; preds = %m.check.tomb441
   br label %m.next445
 
 m.found443:                                       ; preds = %m.check.tomb441
-  %m.key.slot459 = getelementptr ptr, ptr %m.keys420, i64 %m.idx448
+  %m.key.slot459 = getelementptr i64, ptr %m.keys420, i64 %m.idx448
   %mk.stored460 = load ptr, ptr %m.key.slot459, align 8
   %mk.slen461 = getelementptr inbounds { i64, ptr }, ptr %mk.stored460, i32 0, i32 0
   %mk.slen462 = load i64, ptr %mk.slen461, align 8
@@ -96199,7 +96199,7 @@ m.grow506:                                        ; preds = %m.empty446
 m.ins.slot507:                                    ; preds = %m.empty446
   %m.use.tomb737 = icmp ne i64 %m.tomb449, -1
   %m.ins.idx738 = select i1 %m.use.tomb737, i64 %m.tomb449, i64 %m.idx448
-  %m.key.slot739 = getelementptr ptr, ptr %m.keys420, i64 %m.ins.idx738
+  %m.key.slot739 = getelementptr i64, ptr %m.keys420, i64 %m.ins.idx738
   store ptr %var.load414, ptr %m.key.slot739, align 8
   %m.val.slot740 = getelementptr i64, ptr %m.vals422, i64 %m.ins.idx738
   store i64 %slot.p2i416, ptr %m.val.slot740, align 8
@@ -96251,7 +96251,7 @@ m.re.done539:                                     ; preds = %m.re.loop536
   br i1 %str.immortal658, label %str_ok660, label %str_gen_check659
 
 m.re.ins545:                                      ; preds = %m.re.body537
-  %m.re.key.slot546 = getelementptr ptr, ptr %m.old.keys511, i64 %m.re.i540
+  %m.re.key.slot546 = getelementptr i64, ptr %m.old.keys511, i64 %m.re.i540
   %m.re.val.slot547 = getelementptr i64, ptr %m.old.vals513, i64 %m.re.i540
   %m.re.key548 = load ptr, ptr %m.re.key.slot546, align 8
   %m.re.val549 = load i64, ptr %m.re.val.slot547, align 8
@@ -96309,7 +96309,7 @@ m.tomb575:                                        ; preds = %m.check.tomb574
   br label %m.next578
 
 m.found576:                                       ; preds = %m.check.tomb574
-  %m.key.slot592 = getelementptr ptr, ptr %m.keys553, i64 %m.idx581
+  %m.key.slot592 = getelementptr i64, ptr %m.keys553, i64 %m.idx581
   %mk.stored593 = load ptr, ptr %m.key.slot592, align 8
   %mk.slen594 = getelementptr inbounds { i64, ptr }, ptr %mk.stored593, i32 0, i32 0
   %mk.slen595 = load i64, ptr %mk.slen594, align 8
@@ -96333,7 +96333,7 @@ m.next578:                                        ; preds = %mk.eq.merge617, %m.
 m.empty579:                                       ; preds = %m.loop573
   %m.use.tomb630 = icmp ne i64 %m.tomb582, -1
   %m.ins.idx631 = select i1 %m.use.tomb630, i64 %m.tomb582, i64 %m.idx581
-  %m.key.slot632 = getelementptr ptr, ptr %m.keys553, i64 %m.ins.idx631
+  %m.key.slot632 = getelementptr i64, ptr %m.keys553, i64 %m.ins.idx631
   store ptr %m.re.key548, ptr %m.key.slot632, align 8
   %m.val.slot633 = getelementptr i64, ptr %m.vals555, i64 %m.ins.idx631
   store i64 %m.re.val549, ptr %m.val.slot633, align 8
@@ -96439,7 +96439,7 @@ m.tomb669:                                        ; preds = %m.check.tomb668
   br label %m.next672
 
 m.found670:                                       ; preds = %m.check.tomb668
-  %m.key.slot686 = getelementptr ptr, ptr %m.keys647, i64 %m.idx675
+  %m.key.slot686 = getelementptr i64, ptr %m.keys647, i64 %m.idx675
   %mk.stored687 = load ptr, ptr %m.key.slot686, align 8
   %mk.slen688 = getelementptr inbounds { i64, ptr }, ptr %mk.stored687, i32 0, i32 0
   %mk.slen689 = load i64, ptr %mk.slen688, align 8
@@ -96463,7 +96463,7 @@ m.next672:                                        ; preds = %mk.eq.merge711, %m.
 m.empty673:                                       ; preds = %m.loop667
   %m.use.tomb724 = icmp ne i64 %m.tomb676, -1
   %m.ins.idx725 = select i1 %m.use.tomb724, i64 %m.tomb676, i64 %m.idx675
-  %m.key.slot726 = getelementptr ptr, ptr %m.keys647, i64 %m.ins.idx725
+  %m.key.slot726 = getelementptr i64, ptr %m.keys647, i64 %m.ins.idx725
   store ptr %var.load414, ptr %m.key.slot726, align 8
   %m.val.slot727 = getelementptr i64, ptr %m.vals649, i64 %m.ins.idx725
   store i64 %slot.p2i416, ptr %m.val.slot727, align 8
@@ -96657,7 +96657,7 @@ m.tomb823:                                        ; preds = %m.check.tomb822
   br label %m.next826
 
 m.found824:                                       ; preds = %m.check.tomb822
-  %m.key.slot840 = getelementptr ptr, ptr %m.keys801, i64 %m.idx829
+  %m.key.slot840 = getelementptr i64, ptr %m.keys801, i64 %m.idx829
   %mk.stored841 = load ptr, ptr %m.key.slot840, align 8
   %mk.slen842 = getelementptr inbounds { i64, ptr }, ptr %mk.stored841, i32 0, i32 0
   %mk.slen843 = load i64, ptr %mk.slen842, align 8
@@ -96792,7 +96792,7 @@ m.grow887:                                        ; preds = %m.empty827
 m.ins.slot888:                                    ; preds = %m.empty827
   %m.use.tomb1118 = icmp ne i64 %m.tomb830, -1
   %m.ins.idx1119 = select i1 %m.use.tomb1118, i64 %m.tomb830, i64 %m.idx829
-  %m.key.slot1120 = getelementptr ptr, ptr %m.keys801, i64 %m.ins.idx1119
+  %m.key.slot1120 = getelementptr i64, ptr %m.keys801, i64 %m.ins.idx1119
   store ptr %concat.str791, ptr %m.key.slot1120, align 8
   %m.val.slot1121 = getelementptr i64, ptr %m.vals803, i64 %m.ins.idx1119
   store i64 %slot.p2i797, ptr %m.val.slot1121, align 8
@@ -96844,7 +96844,7 @@ m.re.done920:                                     ; preds = %m.re.loop917
   br i1 %str.immortal1039, label %str_ok1041, label %str_gen_check1040
 
 m.re.ins926:                                      ; preds = %m.re.body918
-  %m.re.key.slot927 = getelementptr ptr, ptr %m.old.keys892, i64 %m.re.i921
+  %m.re.key.slot927 = getelementptr i64, ptr %m.old.keys892, i64 %m.re.i921
   %m.re.val.slot928 = getelementptr i64, ptr %m.old.vals894, i64 %m.re.i921
   %m.re.key929 = load ptr, ptr %m.re.key.slot927, align 8
   %m.re.val930 = load i64, ptr %m.re.val.slot928, align 8
@@ -96902,7 +96902,7 @@ m.tomb956:                                        ; preds = %m.check.tomb955
   br label %m.next959
 
 m.found957:                                       ; preds = %m.check.tomb955
-  %m.key.slot973 = getelementptr ptr, ptr %m.keys934, i64 %m.idx962
+  %m.key.slot973 = getelementptr i64, ptr %m.keys934, i64 %m.idx962
   %mk.stored974 = load ptr, ptr %m.key.slot973, align 8
   %mk.slen975 = getelementptr inbounds { i64, ptr }, ptr %mk.stored974, i32 0, i32 0
   %mk.slen976 = load i64, ptr %mk.slen975, align 8
@@ -96926,7 +96926,7 @@ m.next959:                                        ; preds = %mk.eq.merge998, %m.
 m.empty960:                                       ; preds = %m.loop954
   %m.use.tomb1011 = icmp ne i64 %m.tomb963, -1
   %m.ins.idx1012 = select i1 %m.use.tomb1011, i64 %m.tomb963, i64 %m.idx962
-  %m.key.slot1013 = getelementptr ptr, ptr %m.keys934, i64 %m.ins.idx1012
+  %m.key.slot1013 = getelementptr i64, ptr %m.keys934, i64 %m.ins.idx1012
   store ptr %m.re.key929, ptr %m.key.slot1013, align 8
   %m.val.slot1014 = getelementptr i64, ptr %m.vals936, i64 %m.ins.idx1012
   store i64 %m.re.val930, ptr %m.val.slot1014, align 8
@@ -97032,7 +97032,7 @@ m.tomb1050:                                       ; preds = %m.check.tomb1049
   br label %m.next1053
 
 m.found1051:                                      ; preds = %m.check.tomb1049
-  %m.key.slot1067 = getelementptr ptr, ptr %m.keys1028, i64 %m.idx1056
+  %m.key.slot1067 = getelementptr i64, ptr %m.keys1028, i64 %m.idx1056
   %mk.stored1068 = load ptr, ptr %m.key.slot1067, align 8
   %mk.slen1069 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1068, i32 0, i32 0
   %mk.slen1070 = load i64, ptr %mk.slen1069, align 8
@@ -97056,7 +97056,7 @@ m.next1053:                                       ; preds = %mk.eq.merge1092, %m
 m.empty1054:                                      ; preds = %m.loop1048
   %m.use.tomb1105 = icmp ne i64 %m.tomb1057, -1
   %m.ins.idx1106 = select i1 %m.use.tomb1105, i64 %m.tomb1057, i64 %m.idx1056
-  %m.key.slot1107 = getelementptr ptr, ptr %m.keys1028, i64 %m.ins.idx1106
+  %m.key.slot1107 = getelementptr i64, ptr %m.keys1028, i64 %m.ins.idx1106
   store ptr %concat.str791, ptr %m.key.slot1107, align 8
   %m.val.slot1108 = getelementptr i64, ptr %m.vals1030, i64 %m.ins.idx1106
   store i64 %slot.p2i797, ptr %m.val.slot1108, align 8
@@ -97246,7 +97246,7 @@ m.tomb1202:                                       ; preds = %m.check.tomb1201
   br label %m.next1205
 
 m.found1203:                                      ; preds = %m.check.tomb1201
-  %m.key.slot1219 = getelementptr ptr, ptr %m.keys1180, i64 %m.idx1208
+  %m.key.slot1219 = getelementptr i64, ptr %m.keys1180, i64 %m.idx1208
   %mk.stored1220 = load ptr, ptr %m.key.slot1219, align 8
   %mk.slen1221 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1220, i32 0, i32 0
   %mk.slen1222 = load i64, ptr %mk.slen1221, align 8
@@ -97371,7 +97371,7 @@ m.grow1266:                                       ; preds = %m.empty1206
 m.ins.slot1267:                                   ; preds = %m.empty1206
   %m.use.tomb1497 = icmp ne i64 %m.tomb1209, -1
   %m.ins.idx1498 = select i1 %m.use.tomb1497, i64 %m.tomb1209, i64 %m.idx1208
-  %m.key.slot1499 = getelementptr ptr, ptr %m.keys1180, i64 %m.ins.idx1498
+  %m.key.slot1499 = getelementptr i64, ptr %m.keys1180, i64 %m.ins.idx1498
   store ptr %concat.str1174, ptr %m.key.slot1499, align 8
   %m.val.slot1500 = getelementptr i64, ptr %m.vals1182, i64 %m.ins.idx1498
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot1500, align 8
@@ -97423,7 +97423,7 @@ m.re.done1299:                                    ; preds = %m.re.loop1296
   br i1 %str.immortal1418, label %str_ok1420, label %str_gen_check1419
 
 m.re.ins1305:                                     ; preds = %m.re.body1297
-  %m.re.key.slot1306 = getelementptr ptr, ptr %m.old.keys1271, i64 %m.re.i1300
+  %m.re.key.slot1306 = getelementptr i64, ptr %m.old.keys1271, i64 %m.re.i1300
   %m.re.val.slot1307 = getelementptr i64, ptr %m.old.vals1273, i64 %m.re.i1300
   %m.re.key1308 = load ptr, ptr %m.re.key.slot1306, align 8
   %m.re.val1309 = load i64, ptr %m.re.val.slot1307, align 8
@@ -97481,7 +97481,7 @@ m.tomb1335:                                       ; preds = %m.check.tomb1334
   br label %m.next1338
 
 m.found1336:                                      ; preds = %m.check.tomb1334
-  %m.key.slot1352 = getelementptr ptr, ptr %m.keys1313, i64 %m.idx1341
+  %m.key.slot1352 = getelementptr i64, ptr %m.keys1313, i64 %m.idx1341
   %mk.stored1353 = load ptr, ptr %m.key.slot1352, align 8
   %mk.slen1354 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1353, i32 0, i32 0
   %mk.slen1355 = load i64, ptr %mk.slen1354, align 8
@@ -97505,7 +97505,7 @@ m.next1338:                                       ; preds = %mk.eq.merge1377, %m
 m.empty1339:                                      ; preds = %m.loop1333
   %m.use.tomb1390 = icmp ne i64 %m.tomb1342, -1
   %m.ins.idx1391 = select i1 %m.use.tomb1390, i64 %m.tomb1342, i64 %m.idx1341
-  %m.key.slot1392 = getelementptr ptr, ptr %m.keys1313, i64 %m.ins.idx1391
+  %m.key.slot1392 = getelementptr i64, ptr %m.keys1313, i64 %m.ins.idx1391
   store ptr %m.re.key1308, ptr %m.key.slot1392, align 8
   %m.val.slot1393 = getelementptr i64, ptr %m.vals1315, i64 %m.ins.idx1391
   store i64 %m.re.val1309, ptr %m.val.slot1393, align 8
@@ -97611,7 +97611,7 @@ m.tomb1429:                                       ; preds = %m.check.tomb1428
   br label %m.next1432
 
 m.found1430:                                      ; preds = %m.check.tomb1428
-  %m.key.slot1446 = getelementptr ptr, ptr %m.keys1407, i64 %m.idx1435
+  %m.key.slot1446 = getelementptr i64, ptr %m.keys1407, i64 %m.idx1435
   %mk.stored1447 = load ptr, ptr %m.key.slot1446, align 8
   %mk.slen1448 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1447, i32 0, i32 0
   %mk.slen1449 = load i64, ptr %mk.slen1448, align 8
@@ -97635,7 +97635,7 @@ m.next1432:                                       ; preds = %mk.eq.merge1471, %m
 m.empty1433:                                      ; preds = %m.loop1427
   %m.use.tomb1484 = icmp ne i64 %m.tomb1436, -1
   %m.ins.idx1485 = select i1 %m.use.tomb1484, i64 %m.tomb1436, i64 %m.idx1435
-  %m.key.slot1486 = getelementptr ptr, ptr %m.keys1407, i64 %m.ins.idx1485
+  %m.key.slot1486 = getelementptr i64, ptr %m.keys1407, i64 %m.ins.idx1485
   store ptr %concat.str1174, ptr %m.key.slot1486, align 8
   %m.val.slot1487 = getelementptr i64, ptr %m.vals1409, i64 %m.ins.idx1485
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot1487, align 8
@@ -115673,7 +115673,7 @@ m.mem.probe:                                      ; preds = %m.mem.loop
   br i1 %m.mem.is.tomb, label %m.mem.next, label %m.mem.found
 
 m.mem.found:                                      ; preds = %m.mem.probe
-  %m.mem.key.slot = getelementptr ptr, ptr %m.keys82, i64 %m.mem.idx
+  %m.mem.key.slot = getelementptr i64, ptr %m.keys82, i64 %m.mem.idx
   %mk.stored = load ptr, ptr %m.mem.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen95 = load i64, ptr %mk.slen, align 8
@@ -116461,7 +116461,7 @@ m.mem.probe510:                                   ; preds = %m.mem.loop509
   br i1 %m.mem.is.tomb522, label %m.mem.next512, label %m.mem.found511
 
 m.mem.found511:                                   ; preds = %m.mem.probe510
-  %m.mem.key.slot523 = getelementptr ptr, ptr %m.keys491, i64 %m.mem.idx515
+  %m.mem.key.slot523 = getelementptr i64, ptr %m.keys491, i64 %m.mem.idx515
   %mk.stored524 = load ptr, ptr %m.mem.key.slot523, align 8
   %mk.slen525 = getelementptr inbounds { i64, ptr }, ptr %mk.stored524, i32 0, i32 0
   %mk.slen526 = load i64, ptr %mk.slen525, align 8
@@ -116676,7 +116676,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys613, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys613, i64 %m.idx
   %mk.stored633 = load ptr, ptr %m.key.slot, align 8
   %mk.slen634 = getelementptr inbounds { i64, ptr }, ptr %mk.stored633, i32 0, i32 0
   %mk.slen635 = load i64, ptr %mk.slen634, align 8
@@ -116807,7 +116807,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb850 = icmp ne i64 %m.tomb632, -1
   %m.ins.idx851 = select i1 %m.use.tomb850, i64 %m.tomb632, i64 %m.idx
-  %m.key.slot852 = getelementptr ptr, ptr %m.keys613, i64 %m.ins.idx851
+  %m.key.slot852 = getelementptr i64, ptr %m.keys613, i64 %m.ins.idx851
   store ptr %fld.load609, ptr %m.key.slot852, align 8
   %m.val.slot853 = getelementptr i64, ptr %m.vals614, i64 %m.ins.idx851
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot853, align 8
@@ -116859,7 +116859,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal771, label %str_ok773, label %str_gen_check772
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys666, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys666, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals667, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -116917,7 +116917,7 @@ m.tomb698:                                        ; preds = %m.check.tomb697
   br label %m.next701
 
 m.found699:                                       ; preds = %m.check.tomb697
-  %m.key.slot715 = getelementptr ptr, ptr %m.keys676, i64 %m.idx704
+  %m.key.slot715 = getelementptr i64, ptr %m.keys676, i64 %m.idx704
   %mk.stored716 = load ptr, ptr %m.key.slot715, align 8
   %mk.slen717 = getelementptr inbounds { i64, ptr }, ptr %mk.stored716, i32 0, i32 0
   %mk.slen718 = load i64, ptr %mk.slen717, align 8
@@ -116941,7 +116941,7 @@ m.next701:                                        ; preds = %mk.eq.merge740, %m.
 m.empty702:                                       ; preds = %m.loop696
   %m.use.tomb = icmp ne i64 %m.tomb705, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb705, i64 %m.idx704
-  %m.key.slot753 = getelementptr ptr, ptr %m.keys676, i64 %m.ins.idx
+  %m.key.slot753 = getelementptr i64, ptr %m.keys676, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot753, align 8
   %m.val.slot754 = getelementptr i64, ptr %m.vals678, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot754, align 8
@@ -117047,7 +117047,7 @@ m.tomb782:                                        ; preds = %m.check.tomb781
   br label %m.next785
 
 m.found783:                                       ; preds = %m.check.tomb781
-  %m.key.slot799 = getelementptr ptr, ptr %m.keys760, i64 %m.idx788
+  %m.key.slot799 = getelementptr i64, ptr %m.keys760, i64 %m.idx788
   %mk.stored800 = load ptr, ptr %m.key.slot799, align 8
   %mk.slen801 = getelementptr inbounds { i64, ptr }, ptr %mk.stored800, i32 0, i32 0
   %mk.slen802 = load i64, ptr %mk.slen801, align 8
@@ -117071,7 +117071,7 @@ m.next785:                                        ; preds = %mk.eq.merge824, %m.
 m.empty786:                                       ; preds = %m.loop780
   %m.use.tomb837 = icmp ne i64 %m.tomb789, -1
   %m.ins.idx838 = select i1 %m.use.tomb837, i64 %m.tomb789, i64 %m.idx788
-  %m.key.slot839 = getelementptr ptr, ptr %m.keys760, i64 %m.ins.idx838
+  %m.key.slot839 = getelementptr i64, ptr %m.keys760, i64 %m.ins.idx838
   store ptr %fld.load609, ptr %m.key.slot839, align 8
   %m.val.slot840 = getelementptr i64, ptr %m.vals762, i64 %m.ins.idx838
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot840, align 8
@@ -117800,7 +117800,7 @@ m.mem.probe:                                      ; preds = %m.mem.loop
   br i1 %m.mem.is.tomb, label %m.mem.next, label %m.mem.found
 
 m.mem.found:                                      ; preds = %m.mem.probe
-  %m.mem.key.slot = getelementptr ptr, ptr %m.keys27, i64 %m.mem.idx
+  %m.mem.key.slot = getelementptr i64, ptr %m.keys27, i64 %m.mem.idx
   %mk.stored = load ptr, ptr %m.mem.key.slot, align 8
   %mk.slen = getelementptr inbounds { i64, ptr }, ptr %mk.stored, i32 0, i32 0
   %mk.slen35 = load i64, ptr %mk.slen, align 8
@@ -117951,7 +117951,7 @@ m.rd.probe:                                       ; preds = %m.rd.loop
   br i1 %m.rd.is.tomb, label %m.rd.next, label %m.rd.found
 
 m.rd.found:                                       ; preds = %m.rd.probe
-  %m.rd.key.slot = getelementptr ptr, ptr %m.keys60, i64 %m.rd.idx
+  %m.rd.key.slot = getelementptr i64, ptr %m.keys60, i64 %m.rd.idx
   %mk.stored81 = load ptr, ptr %m.rd.key.slot, align 8
   %mk.slen82 = getelementptr inbounds { i64, ptr }, ptr %mk.stored81, i32 0, i32 0
   %mk.slen83 = load i64, ptr %mk.slen82, align 8
@@ -118044,7 +118044,7 @@ mk.eq.merge105:                                   ; preds = %mk.eq.else104, %mk.
   br i1 %mk.eq112, label %m.rd.hit, label %m.rd.next
 
 m.rd.hit:                                         ; preds = %mk.eq.merge105
-  %m.rd.val.slot = getelementptr ptr, ptr %m.vals62, i64 %m.rd.idx
+  %m.rd.val.slot = getelementptr i64, ptr %m.vals62, i64 %m.rd.idx
   %m.rd.val = load ptr, ptr %m.rd.val.slot, align 8
   %m.rd.p2i = ptrtoint ptr %m.rd.val to i64
   br label %m.rd.done
@@ -118184,7 +118184,7 @@ m.tomb:                                           ; preds = %m.check.tomb
   br label %m.next
 
 m.found:                                          ; preds = %m.check.tomb
-  %m.key.slot = getelementptr ptr, ptr %m.keys154, i64 %m.idx
+  %m.key.slot = getelementptr i64, ptr %m.keys154, i64 %m.idx
   %mk.stored175 = load ptr, ptr %m.key.slot, align 8
   %mk.slen176 = getelementptr inbounds { i64, ptr }, ptr %mk.stored175, i32 0, i32 0
   %mk.slen177 = load i64, ptr %mk.slen176, align 8
@@ -118317,7 +118317,7 @@ m.grow:                                           ; preds = %m.empty
 m.ins.slot:                                       ; preds = %m.empty
   %m.use.tomb398 = icmp ne i64 %m.tomb174, -1
   %m.ins.idx399 = select i1 %m.use.tomb398, i64 %m.tomb174, i64 %m.idx
-  %m.key.slot400 = getelementptr ptr, ptr %m.keys154, i64 %m.ins.idx399
+  %m.key.slot400 = getelementptr i64, ptr %m.keys154, i64 %m.ins.idx399
   store ptr %var.load150, ptr %m.key.slot400, align 8
   %m.val.slot401 = getelementptr i64, ptr %m.vals156, i64 %m.ins.idx399
   store i64 ptrtoint (ptr @str.361.struct to i64), ptr %m.val.slot401, align 8
@@ -118369,7 +118369,7 @@ m.re.done:                                        ; preds = %m.re.loop
   br i1 %str.immortal319, label %str_ok321, label %str_gen_check320
 
 m.re.ins:                                         ; preds = %m.re.body
-  %m.re.key.slot = getelementptr ptr, ptr %m.old.keys208, i64 %m.re.i
+  %m.re.key.slot = getelementptr i64, ptr %m.old.keys208, i64 %m.re.i
   %m.re.val.slot = getelementptr i64, ptr %m.old.vals209, i64 %m.re.i
   %m.re.key = load ptr, ptr %m.re.key.slot, align 8
   %m.re.val = load i64, ptr %m.re.val.slot, align 8
@@ -118427,7 +118427,7 @@ m.tomb246:                                        ; preds = %m.check.tomb245
   br label %m.next249
 
 m.found247:                                       ; preds = %m.check.tomb245
-  %m.key.slot263 = getelementptr ptr, ptr %m.keys224, i64 %m.idx252
+  %m.key.slot263 = getelementptr i64, ptr %m.keys224, i64 %m.idx252
   %mk.stored264 = load ptr, ptr %m.key.slot263, align 8
   %mk.slen265 = getelementptr inbounds { i64, ptr }, ptr %mk.stored264, i32 0, i32 0
   %mk.slen266 = load i64, ptr %mk.slen265, align 8
@@ -118451,7 +118451,7 @@ m.next249:                                        ; preds = %mk.eq.merge288, %m.
 m.empty250:                                       ; preds = %m.loop244
   %m.use.tomb = icmp ne i64 %m.tomb253, -1
   %m.ins.idx = select i1 %m.use.tomb, i64 %m.tomb253, i64 %m.idx252
-  %m.key.slot301 = getelementptr ptr, ptr %m.keys224, i64 %m.ins.idx
+  %m.key.slot301 = getelementptr i64, ptr %m.keys224, i64 %m.ins.idx
   store ptr %m.re.key, ptr %m.key.slot301, align 8
   %m.val.slot302 = getelementptr i64, ptr %m.vals226, i64 %m.ins.idx
   store i64 %m.re.val, ptr %m.val.slot302, align 8
@@ -118557,7 +118557,7 @@ m.tomb330:                                        ; preds = %m.check.tomb329
   br label %m.next333
 
 m.found331:                                       ; preds = %m.check.tomb329
-  %m.key.slot347 = getelementptr ptr, ptr %m.keys308, i64 %m.idx336
+  %m.key.slot347 = getelementptr i64, ptr %m.keys308, i64 %m.idx336
   %mk.stored348 = load ptr, ptr %m.key.slot347, align 8
   %mk.slen349 = getelementptr inbounds { i64, ptr }, ptr %mk.stored348, i32 0, i32 0
   %mk.slen350 = load i64, ptr %mk.slen349, align 8
@@ -118581,7 +118581,7 @@ m.next333:                                        ; preds = %mk.eq.merge372, %m.
 m.empty334:                                       ; preds = %m.loop328
   %m.use.tomb385 = icmp ne i64 %m.tomb337, -1
   %m.ins.idx386 = select i1 %m.use.tomb385, i64 %m.tomb337, i64 %m.idx336
-  %m.key.slot387 = getelementptr ptr, ptr %m.keys308, i64 %m.ins.idx386
+  %m.key.slot387 = getelementptr i64, ptr %m.keys308, i64 %m.ins.idx386
   store ptr %var.load150, ptr %m.key.slot387, align 8
   %m.val.slot388 = getelementptr i64, ptr %m.vals310, i64 %m.ins.idx386
   store i64 ptrtoint (ptr @str.361.struct to i64), ptr %m.val.slot388, align 8
@@ -118849,7 +118849,7 @@ m.tomb511:                                        ; preds = %m.check.tomb510
   br label %m.next514
 
 m.found512:                                       ; preds = %m.check.tomb510
-  %m.key.slot528 = getelementptr ptr, ptr %m.keys489, i64 %m.idx517
+  %m.key.slot528 = getelementptr i64, ptr %m.keys489, i64 %m.idx517
   %mk.stored529 = load ptr, ptr %m.key.slot528, align 8
   %mk.slen530 = getelementptr inbounds { i64, ptr }, ptr %mk.stored529, i32 0, i32 0
   %mk.slen531 = load i64, ptr %mk.slen530, align 8
@@ -118974,7 +118974,7 @@ m.grow575:                                        ; preds = %m.empty515
 m.ins.slot576:                                    ; preds = %m.empty515
   %m.use.tomb806 = icmp ne i64 %m.tomb518, -1
   %m.ins.idx807 = select i1 %m.use.tomb806, i64 %m.tomb518, i64 %m.idx517
-  %m.key.slot808 = getelementptr ptr, ptr %m.keys489, i64 %m.ins.idx807
+  %m.key.slot808 = getelementptr i64, ptr %m.keys489, i64 %m.ins.idx807
   store ptr %var.load412, ptr %m.key.slot808, align 8
   %m.val.slot809 = getelementptr i64, ptr %m.vals491, i64 %m.ins.idx807
   store i64 %slot.p2i, ptr %m.val.slot809, align 8
@@ -119026,7 +119026,7 @@ m.re.done608:                                     ; preds = %m.re.loop605
   br i1 %str.immortal727, label %str_ok729, label %str_gen_check728
 
 m.re.ins614:                                      ; preds = %m.re.body606
-  %m.re.key.slot615 = getelementptr ptr, ptr %m.old.keys580, i64 %m.re.i609
+  %m.re.key.slot615 = getelementptr i64, ptr %m.old.keys580, i64 %m.re.i609
   %m.re.val.slot616 = getelementptr i64, ptr %m.old.vals582, i64 %m.re.i609
   %m.re.key617 = load ptr, ptr %m.re.key.slot615, align 8
   %m.re.val618 = load i64, ptr %m.re.val.slot616, align 8
@@ -119084,7 +119084,7 @@ m.tomb644:                                        ; preds = %m.check.tomb643
   br label %m.next647
 
 m.found645:                                       ; preds = %m.check.tomb643
-  %m.key.slot661 = getelementptr ptr, ptr %m.keys622, i64 %m.idx650
+  %m.key.slot661 = getelementptr i64, ptr %m.keys622, i64 %m.idx650
   %mk.stored662 = load ptr, ptr %m.key.slot661, align 8
   %mk.slen663 = getelementptr inbounds { i64, ptr }, ptr %mk.stored662, i32 0, i32 0
   %mk.slen664 = load i64, ptr %mk.slen663, align 8
@@ -119108,7 +119108,7 @@ m.next647:                                        ; preds = %mk.eq.merge686, %m.
 m.empty648:                                       ; preds = %m.loop642
   %m.use.tomb699 = icmp ne i64 %m.tomb651, -1
   %m.ins.idx700 = select i1 %m.use.tomb699, i64 %m.tomb651, i64 %m.idx650
-  %m.key.slot701 = getelementptr ptr, ptr %m.keys622, i64 %m.ins.idx700
+  %m.key.slot701 = getelementptr i64, ptr %m.keys622, i64 %m.ins.idx700
   store ptr %m.re.key617, ptr %m.key.slot701, align 8
   %m.val.slot702 = getelementptr i64, ptr %m.vals624, i64 %m.ins.idx700
   store i64 %m.re.val618, ptr %m.val.slot702, align 8
@@ -119214,7 +119214,7 @@ m.tomb738:                                        ; preds = %m.check.tomb737
   br label %m.next741
 
 m.found739:                                       ; preds = %m.check.tomb737
-  %m.key.slot755 = getelementptr ptr, ptr %m.keys716, i64 %m.idx744
+  %m.key.slot755 = getelementptr i64, ptr %m.keys716, i64 %m.idx744
   %mk.stored756 = load ptr, ptr %m.key.slot755, align 8
   %mk.slen757 = getelementptr inbounds { i64, ptr }, ptr %mk.stored756, i32 0, i32 0
   %mk.slen758 = load i64, ptr %mk.slen757, align 8
@@ -119238,7 +119238,7 @@ m.next741:                                        ; preds = %mk.eq.merge780, %m.
 m.empty742:                                       ; preds = %m.loop736
   %m.use.tomb793 = icmp ne i64 %m.tomb745, -1
   %m.ins.idx794 = select i1 %m.use.tomb793, i64 %m.tomb745, i64 %m.idx744
-  %m.key.slot795 = getelementptr ptr, ptr %m.keys716, i64 %m.ins.idx794
+  %m.key.slot795 = getelementptr i64, ptr %m.keys716, i64 %m.ins.idx794
   store ptr %var.load412, ptr %m.key.slot795, align 8
   %m.val.slot796 = getelementptr i64, ptr %m.vals718, i64 %m.ins.idx794
   store i64 %slot.p2i, ptr %m.val.slot796, align 8
@@ -119344,7 +119344,7 @@ m.tomb850:                                        ; preds = %m.check.tomb849
   br label %m.next853
 
 m.found851:                                       ; preds = %m.check.tomb849
-  %m.key.slot867 = getelementptr ptr, ptr %m.keys828, i64 %m.idx856
+  %m.key.slot867 = getelementptr i64, ptr %m.keys828, i64 %m.idx856
   %mk.stored868 = load ptr, ptr %m.key.slot867, align 8
   %mk.slen869 = getelementptr inbounds { i64, ptr }, ptr %mk.stored868, i32 0, i32 0
   %mk.slen870 = load i64, ptr %mk.slen869, align 8
@@ -119469,7 +119469,7 @@ m.grow914:                                        ; preds = %m.empty854
 m.ins.slot915:                                    ; preds = %m.empty854
   %m.use.tomb1145 = icmp ne i64 %m.tomb857, -1
   %m.ins.idx1146 = select i1 %m.use.tomb1145, i64 %m.tomb857, i64 %m.idx856
-  %m.key.slot1147 = getelementptr ptr, ptr %m.keys828, i64 %m.ins.idx1146
+  %m.key.slot1147 = getelementptr i64, ptr %m.keys828, i64 %m.ins.idx1146
   store ptr %var.load820, ptr %m.key.slot1147, align 8
   %m.val.slot1148 = getelementptr i64, ptr %m.vals830, i64 %m.ins.idx1146
   store i64 %slot.p2i824, ptr %m.val.slot1148, align 8
@@ -119521,7 +119521,7 @@ m.re.done947:                                     ; preds = %m.re.loop944
   br i1 %str.immortal1066, label %str_ok1068, label %str_gen_check1067
 
 m.re.ins953:                                      ; preds = %m.re.body945
-  %m.re.key.slot954 = getelementptr ptr, ptr %m.old.keys919, i64 %m.re.i948
+  %m.re.key.slot954 = getelementptr i64, ptr %m.old.keys919, i64 %m.re.i948
   %m.re.val.slot955 = getelementptr i64, ptr %m.old.vals921, i64 %m.re.i948
   %m.re.key956 = load ptr, ptr %m.re.key.slot954, align 8
   %m.re.val957 = load i64, ptr %m.re.val.slot955, align 8
@@ -119579,7 +119579,7 @@ m.tomb983:                                        ; preds = %m.check.tomb982
   br label %m.next986
 
 m.found984:                                       ; preds = %m.check.tomb982
-  %m.key.slot1000 = getelementptr ptr, ptr %m.keys961, i64 %m.idx989
+  %m.key.slot1000 = getelementptr i64, ptr %m.keys961, i64 %m.idx989
   %mk.stored1001 = load ptr, ptr %m.key.slot1000, align 8
   %mk.slen1002 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1001, i32 0, i32 0
   %mk.slen1003 = load i64, ptr %mk.slen1002, align 8
@@ -119603,7 +119603,7 @@ m.next986:                                        ; preds = %mk.eq.merge1025, %m
 m.empty987:                                       ; preds = %m.loop981
   %m.use.tomb1038 = icmp ne i64 %m.tomb990, -1
   %m.ins.idx1039 = select i1 %m.use.tomb1038, i64 %m.tomb990, i64 %m.idx989
-  %m.key.slot1040 = getelementptr ptr, ptr %m.keys961, i64 %m.ins.idx1039
+  %m.key.slot1040 = getelementptr i64, ptr %m.keys961, i64 %m.ins.idx1039
   store ptr %m.re.key956, ptr %m.key.slot1040, align 8
   %m.val.slot1041 = getelementptr i64, ptr %m.vals963, i64 %m.ins.idx1039
   store i64 %m.re.val957, ptr %m.val.slot1041, align 8
@@ -119709,7 +119709,7 @@ m.tomb1077:                                       ; preds = %m.check.tomb1076
   br label %m.next1080
 
 m.found1078:                                      ; preds = %m.check.tomb1076
-  %m.key.slot1094 = getelementptr ptr, ptr %m.keys1055, i64 %m.idx1083
+  %m.key.slot1094 = getelementptr i64, ptr %m.keys1055, i64 %m.idx1083
   %mk.stored1095 = load ptr, ptr %m.key.slot1094, align 8
   %mk.slen1096 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1095, i32 0, i32 0
   %mk.slen1097 = load i64, ptr %mk.slen1096, align 8
@@ -119733,7 +119733,7 @@ m.next1080:                                       ; preds = %mk.eq.merge1119, %m
 m.empty1081:                                      ; preds = %m.loop1075
   %m.use.tomb1132 = icmp ne i64 %m.tomb1084, -1
   %m.ins.idx1133 = select i1 %m.use.tomb1132, i64 %m.tomb1084, i64 %m.idx1083
-  %m.key.slot1134 = getelementptr ptr, ptr %m.keys1055, i64 %m.ins.idx1133
+  %m.key.slot1134 = getelementptr i64, ptr %m.keys1055, i64 %m.ins.idx1133
   store ptr %var.load820, ptr %m.key.slot1134, align 8
   %m.val.slot1135 = getelementptr i64, ptr %m.vals1057, i64 %m.ins.idx1133
   store i64 %slot.p2i824, ptr %m.val.slot1135, align 8
@@ -120291,7 +120291,7 @@ m.mem.probe1435:                                  ; preds = %m.mem.loop1434
   br i1 %m.mem.is.tomb1447, label %m.mem.next1437, label %m.mem.found1436
 
 m.mem.found1436:                                  ; preds = %m.mem.probe1435
-  %m.mem.key.slot1448 = getelementptr ptr, ptr %m.keys1416, i64 %m.mem.idx1440
+  %m.mem.key.slot1448 = getelementptr i64, ptr %m.keys1416, i64 %m.mem.idx1440
   %mk.stored1449 = load ptr, ptr %m.mem.key.slot1448, align 8
   %mk.slen1450 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1449, i32 0, i32 0
   %mk.slen1451 = load i64, ptr %mk.slen1450, align 8
@@ -120500,7 +120500,7 @@ m.mem.probe1552:                                  ; preds = %m.mem.loop1551
   br i1 %m.mem.is.tomb1564, label %m.mem.next1554, label %m.mem.found1553
 
 m.mem.found1553:                                  ; preds = %m.mem.probe1552
-  %m.mem.key.slot1565 = getelementptr ptr, ptr %m.keys1533, i64 %m.mem.idx1557
+  %m.mem.key.slot1565 = getelementptr i64, ptr %m.keys1533, i64 %m.mem.idx1557
   %mk.stored1566 = load ptr, ptr %m.mem.key.slot1565, align 8
   %mk.slen1567 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1566, i32 0, i32 0
   %mk.slen1568 = load i64, ptr %mk.slen1567, align 8
@@ -120629,7 +120629,7 @@ m.mem.probe1627:                                  ; preds = %m.mem.loop1626
   br i1 %m.mem.is.tomb1639, label %m.mem.next1629, label %m.mem.found1628
 
 m.mem.found1628:                                  ; preds = %m.mem.probe1627
-  %m.mem.key.slot1640 = getelementptr ptr, ptr %m.keys1608, i64 %m.mem.idx1632
+  %m.mem.key.slot1640 = getelementptr i64, ptr %m.keys1608, i64 %m.mem.idx1632
   %mk.stored1641 = load ptr, ptr %m.mem.key.slot1640, align 8
   %mk.slen1642 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1641, i32 0, i32 0
   %mk.slen1643 = load i64, ptr %mk.slen1642, align 8
@@ -120763,7 +120763,7 @@ m.tomb1708:                                       ; preds = %m.check.tomb1707
   br label %m.next1711
 
 m.found1709:                                      ; preds = %m.check.tomb1707
-  %m.key.slot1725 = getelementptr ptr, ptr %m.keys1686, i64 %m.idx1714
+  %m.key.slot1725 = getelementptr i64, ptr %m.keys1686, i64 %m.idx1714
   %mk.stored1726 = load ptr, ptr %m.key.slot1725, align 8
   %mk.slen1727 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1726, i32 0, i32 0
   %mk.slen1728 = load i64, ptr %mk.slen1727, align 8
@@ -120905,7 +120905,7 @@ m.grow1772:                                       ; preds = %m.empty1712
 m.ins.slot1773:                                   ; preds = %m.empty1712
   %m.use.tomb2003 = icmp ne i64 %m.tomb1715, -1
   %m.ins.idx2004 = select i1 %m.use.tomb2003, i64 %m.tomb1715, i64 %m.idx1714
-  %m.key.slot2005 = getelementptr ptr, ptr %m.keys1686, i64 %m.ins.idx2004
+  %m.key.slot2005 = getelementptr i64, ptr %m.keys1686, i64 %m.ins.idx2004
   store ptr %var.load1682, ptr %m.key.slot2005, align 8
   %m.val.slot2006 = getelementptr i64, ptr %m.vals1688, i64 %m.ins.idx2004
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot2006, align 8
@@ -120957,7 +120957,7 @@ m.re.done1805:                                    ; preds = %m.re.loop1802
   br i1 %str.immortal1924, label %str_ok1926, label %str_gen_check1925
 
 m.re.ins1811:                                     ; preds = %m.re.body1803
-  %m.re.key.slot1812 = getelementptr ptr, ptr %m.old.keys1777, i64 %m.re.i1806
+  %m.re.key.slot1812 = getelementptr i64, ptr %m.old.keys1777, i64 %m.re.i1806
   %m.re.val.slot1813 = getelementptr i64, ptr %m.old.vals1779, i64 %m.re.i1806
   %m.re.key1814 = load ptr, ptr %m.re.key.slot1812, align 8
   %m.re.val1815 = load i64, ptr %m.re.val.slot1813, align 8
@@ -121015,7 +121015,7 @@ m.tomb1841:                                       ; preds = %m.check.tomb1840
   br label %m.next1844
 
 m.found1842:                                      ; preds = %m.check.tomb1840
-  %m.key.slot1858 = getelementptr ptr, ptr %m.keys1819, i64 %m.idx1847
+  %m.key.slot1858 = getelementptr i64, ptr %m.keys1819, i64 %m.idx1847
   %mk.stored1859 = load ptr, ptr %m.key.slot1858, align 8
   %mk.slen1860 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1859, i32 0, i32 0
   %mk.slen1861 = load i64, ptr %mk.slen1860, align 8
@@ -121039,7 +121039,7 @@ m.next1844:                                       ; preds = %mk.eq.merge1883, %m
 m.empty1845:                                      ; preds = %m.loop1839
   %m.use.tomb1896 = icmp ne i64 %m.tomb1848, -1
   %m.ins.idx1897 = select i1 %m.use.tomb1896, i64 %m.tomb1848, i64 %m.idx1847
-  %m.key.slot1898 = getelementptr ptr, ptr %m.keys1819, i64 %m.ins.idx1897
+  %m.key.slot1898 = getelementptr i64, ptr %m.keys1819, i64 %m.ins.idx1897
   store ptr %m.re.key1814, ptr %m.key.slot1898, align 8
   %m.val.slot1899 = getelementptr i64, ptr %m.vals1821, i64 %m.ins.idx1897
   store i64 %m.re.val1815, ptr %m.val.slot1899, align 8
@@ -121145,7 +121145,7 @@ m.tomb1935:                                       ; preds = %m.check.tomb1934
   br label %m.next1938
 
 m.found1936:                                      ; preds = %m.check.tomb1934
-  %m.key.slot1952 = getelementptr ptr, ptr %m.keys1913, i64 %m.idx1941
+  %m.key.slot1952 = getelementptr i64, ptr %m.keys1913, i64 %m.idx1941
   %mk.stored1953 = load ptr, ptr %m.key.slot1952, align 8
   %mk.slen1954 = getelementptr inbounds { i64, ptr }, ptr %mk.stored1953, i32 0, i32 0
   %mk.slen1955 = load i64, ptr %mk.slen1954, align 8
@@ -121169,7 +121169,7 @@ m.next1938:                                       ; preds = %mk.eq.merge1977, %m
 m.empty1939:                                      ; preds = %m.loop1933
   %m.use.tomb1990 = icmp ne i64 %m.tomb1942, -1
   %m.ins.idx1991 = select i1 %m.use.tomb1990, i64 %m.tomb1942, i64 %m.idx1941
-  %m.key.slot1992 = getelementptr ptr, ptr %m.keys1913, i64 %m.ins.idx1991
+  %m.key.slot1992 = getelementptr i64, ptr %m.keys1913, i64 %m.ins.idx1991
   store ptr %var.load1682, ptr %m.key.slot1992, align 8
   %m.val.slot1993 = getelementptr i64, ptr %m.vals1915, i64 %m.ins.idx1991
   store i64 ptrtoint (ptr @str.120.struct to i64), ptr %m.val.slot1993, align 8
@@ -121269,7 +121269,7 @@ m.rd.probe2042:                                   ; preds = %m.rd.loop2041
   br i1 %m.rd.is.tomb2054, label %m.rd.next2044, label %m.rd.found2043
 
 m.rd.found2043:                                   ; preds = %m.rd.probe2042
-  %m.rd.key.slot2055 = getelementptr ptr, ptr %m.keys2021, i64 %m.rd.idx2047
+  %m.rd.key.slot2055 = getelementptr i64, ptr %m.keys2021, i64 %m.rd.idx2047
   %mk.stored2056 = load ptr, ptr %m.rd.key.slot2055, align 8
   %mk.slen2057 = getelementptr inbounds { i64, ptr }, ptr %mk.stored2056, i32 0, i32 0
   %mk.slen2058 = load i64, ptr %mk.slen2057, align 8
@@ -121362,7 +121362,7 @@ mk.eq.merge2080:                                  ; preds = %mk.eq.else2079, %mk
   br i1 %mk.eq2087, label %m.rd.hit2088, label %m.rd.next2044
 
 m.rd.hit2088:                                     ; preds = %mk.eq.merge2080
-  %m.rd.val.slot2092 = getelementptr ptr, ptr %m.vals2023, i64 %m.rd.idx2047
+  %m.rd.val.slot2092 = getelementptr i64, ptr %m.vals2023, i64 %m.rd.idx2047
   %m.rd.val2093 = load ptr, ptr %m.rd.val.slot2092, align 8
   %m.rd.p2i2094 = ptrtoint ptr %m.rd.val2093 to i64
   br label %m.rd.done2046

@@ -692,6 +692,15 @@ Block      ::= Indent { Statement } Dedent
    before any call and without a declared signature has unknowable parameter
    types and is rejected (`E3128`) — parameter types are never defaulted to
    `Int`.
+- **Static arity overloads**: top-level functions may share a name when their
+  runtime parameter counts differ. Each variant keeps its separate signature and
+  definition. Calls, including `$` and `$>` applications, select a variant before
+  annotation by argument count. A function-valued reference requires an expected
+  function signature, supplied by an annotation or a declared callback parameter.
+  An ambiguous reference or missing arity is a compile error. There is no dispatch
+  by runtime value or type descriptor; each selected function value retains the
+  ordinary `{ fn_ptr, env_ptr }` representation. Same-arity type overloads are
+  not supported. Export an explicitly typed wrapper for a selected variant.
 - **Unit / void**: the return type `()` is the unit/void type (LLVM
   `void`), the canonical return of a side-effect-only function
   (`tap: Int, (Int => ()) => Int`, `for_each: (Int * 3), (Int => ()) => ()`).

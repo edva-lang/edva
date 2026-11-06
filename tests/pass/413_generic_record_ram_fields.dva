@@ -1,0 +1,17 @@
+#use io
+#type Item (id: Int, label: String)
+Callbacks: #! T: Type => (callback: < (T => Int) | >, enabled: <>)
+// Construct the record inside a payload too: generic literals must retain
+// their declared field representations, including erased callback types.
+wrapped: #! T: Type, (T => Int) => < Callbacks(T) | Error >
+wrapped = callback => <+ (callback = <+ callback +>, enabled = <+>) ->
+get: Item => Int
+get = item => item.id
+run: #! T: Type, Callbacks(T), T => Int
+run = callbacks, item =>
+   callback = callbacks.callback!!
+   callback(item)
+callbacks = wrapped(get)!!
+io::out(run(callbacks, Item(8, "eight")))
+callbacks.callback = <-->
+io::out $ <>(callbacks.callback) | "present" | "absent"

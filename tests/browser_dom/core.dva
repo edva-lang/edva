@@ -1,0 +1,165 @@
+#use dom
+#use str
+
+#foreign "c"
+   dom_test_log: (Addr, Int) => ()
+
+clicks = 0
+saved_event: < dom::Event | >
+saved_event = <-->
+
+check: <>, String => < | Error >
+check = condition, message =>
+   condition | <++> | <- Error(999, message, "tests/browser_dom", 0, 0, (0, 0)) ->
+
+expect_error: < | Error >, Int => < | Error >
+expect_error = result, code =>
+   result
+      | <- Error(999, "Expected failure", "tests/browser_dom", 0, 0, (code, 0)) ->
+      | failure => check(failure.code == code, "Wrong error code")
+
+make_click: Int => (dom::Event => < | Error >)
+make_click = amount => event =>
+   clicks ::= clicks + amount
+   saved_event ::= <+ event +>
+   target = dom::event_target(event)--!
+   dom::attr(target, "data-click", str::from_int(clicks))
+
+core: () => < | Error >
+core = !=>
+   el = dom::find("#out")--!
+   field = dom::find("#input")--!
+   box = dom::find("#check")--!
+   dom::value(el)
+      | value => --| <- Error(999, "Value read accepted a div", "dom test", 0, 0, (0, 0)) ->
+      | failure => check(failure.code == dom::BROWSER_ERROR, "Unsupported value read")--!
+   dom::checked(el)
+      | value => --| <- Error(999, "Checked read accepted a div", "dom test", 0, 0, (0, 0)) ->
+      | failure => check(failure.code == dom::BROWSER_ERROR, "Unsupported checked read")--!
+   dom::text(el, "Ready")--!
+   check(dom::text(el)--! == "Ready", "Text getter")--!
+   dom::value(field, "hello")--!
+   check(dom::value(field)--! == "hello", "Value getter")--!
+   dom::checked(box, <+>)--!
+   check(dom::checked(box)--!, "Checked getter")--!
+   absent = dom::attr(el, "missing")--!
+   check(!<>(absent), "Missing attribute must be absence")--!
+   dom::attr(el, "data-x", "")--!
+   empty = dom::attr(el, "data-x")--!
+   check(<>(empty), "Empty attribute must be present")--!
+   dom::remove_attr(el, "data-x")--!
+   child = dom::create("span")--!
+   dom::text(child, "child")--!
+   dom::append(el, child)--!
+   check(dom::text(el)--! == "Readychild", "Append invalidates parent text")--!
+   dom::text(el, "Ready")--!
+   dom::text(child)
+      | text => --| <- Error(999, "Child survived text replacement",
+         "tests/browser_dom", 0, 0, (0, 0)) ->
+      | failure => check(failure.code == dom::STALE_HANDLE, "Child stale code")--!
+   child2 = dom::create("b")--!
+   dom::append(el, child2)--!
+   dom::detach(child2)--!
+   dom::text(child2, "retained")--!
+   dom::append(el, child2)--!
+   dom::remove(child2)--!
+   dom::text(el, "parent")--!
+   nested = dom::create("span")--!
+   dom::append(el, nested)--!
+   dom::text(el, "parent")--!
+   dom::text(nested, "child")--!
+   dom::text(el, "parent")--!
+   check(dom::text(el)--! == "parent", "Child write must invalidate parent text")--!
+   dom::attr(el, "data-case", "first")--!
+   dom::attr(el, "DATA-CASE", "second")--!
+   dom::attr(el, "data-case", "first")--!
+   case_attr = dom::attr(el, "data-case")--!
+   check(case_attr!! == "first", "Attribute aliases")--!
+   long = {20000}
+   6000 @ i => long += "ā😀"
+   content = +long
+   dom::text(el, content)--!
+   check(dom::text(el)--! == content, "Unicode string was truncated")--!
+   batch = dom::batch!
+   dom::queue_text(batch, el, "Queued")--!
+   dom::text(el)
+      | text => --| <- Error(999, "Read with pending writes", "tests/browser_dom", 0, 0, (0, 0)) ->
+      | failure => check(failure.code == dom::PENDING_WRITES, "Pending read code")--!
+   dom::flush(batch)--!
+   check(dom::text(el)--! == "Queued", "Flush did not apply")--!
+   bad = dom::create("i")--!
+   dom::remove(bad)--!
+   dom::queue_text(batch, el, "prefix")--!
+   dom::queue_text(batch, bad, "fail")--!
+   dom::queue_text(batch, el, "must not run")--!
+   dom::flush(batch)
+      | --| <- Error(999, "Flush should fail", "tests/browser_dom", 0, 0, (0, 0)) ->
+      | failure =>
+         check(failure.context.0 == 1 && failure.context.1 == 1, "Flush error index")--!
+   check(dom::text(el)--! == "prefix", "Flush did not stop at failure")--!
+   dom::queue_text(batch, el, "reused")--!
+   dom::flush(batch)--!
+   check(dom::text(el)--! == "reused", "Batch not reusable after error")--!
+   dom::queue_attr(batch, el, "data-case", "changed")--!
+   dom::queue_attr(batch, el, "data-case", "first")--!
+   dom::flush(batch)--!
+   final_attr = dom::attr(el, "data-case")--!
+   check(final_attr!! == "first", "Batch must retain writes that restore a value")--!
+   dom::close_batch(batch)--!
+   expect_error(dom::flush(batch), dom::CLOSED)--!
+   measures = dom::measurements!
+   rect_index = dom::request_bounds(measures, el)--!
+   style_index = dom::request_style(measures, el, "color")--!
+   dom::measure(measures)--!
+   rect = dom::measured_bounds(measures, rect_index)--!
+   check(rect.width !< 0.0, "Bounds")--!
+   dom::measured_style(measures, style_index)--!
+   dom::close_measurements(measures)--!
+   button = dom::find("#button")--!
+   dom::on(button, "click", make_click(3))--!
+   <++>
+
+#export
+   run_dom_tests: () => Int
+   run_dom_tests = !=>
+      core()
+         | 0
+         | failure =>
+            dom_test_log(&failure.msg, ?failure.msg)
+            failure.code
+
+   get_clicks: () => Int
+   get_clicks = !=> clicks
+
+   expired_code: () => Int
+   expired_code = !=>
+      event = saved_event!!
+      dom::event_key(event) | key => -1 | failure => failure.code
+
+   restore_form: () => ()
+   restore_form = !=>
+      input = dom::find("#input")!!
+      dom::value(input, "hello") !| _
+      box = dom::find("#check")!!
+      dom::checked(box, <+>) !| _
+
+   cache_bench: Int => ()
+   cache_bench = repetitions =>
+      el = dom::find("#out")!!
+      dom::text(el, "tracked") !| _
+      dom::attr(el, "data-a", "a") !| _
+      dom::attr(el, "data-b", "b") !| _
+      dom::class_set(el, "a", <+>) !| _
+      dom::class_set(el, "b", <+>) !| _
+      dom::hidden(el, <+>) !| _
+      batch = dom::batch!
+      repetitions @ i =>
+         dom::text(el, "tracked") !| _
+         dom::attr(el, "data-a", "a") !| _
+         dom::attr(el, "data-b", "b") !| _
+         dom::class_set(el, "a", <+>) !| _
+         dom::class_set(el, "b", <+>) !| _
+         dom::hidden(el, <+>) !| _
+         dom::queue_text(batch, el, "tracked") !| _
+         dom::flush(batch) !| _
+      dom::close_batch(batch) !| _

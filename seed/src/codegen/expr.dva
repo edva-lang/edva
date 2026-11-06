@@ -1269,7 +1269,21 @@ codegen_eval = cg, expr =>
          bv = codegen_eval(cg, b)
          (main::codegen_builder_create(cg, bv.0, "builder.create"), ast::ValueType(Builder))
       [ArrayCreate a]
-         (main::codegen_array_create_cap(cg, a.cap, "a.new"), ast::ValueType(Array))
+         element' = a.elem_type
+         types::g.ct_bind_names @ name, i =>
+            bound = types::g.ct_bind_tis(i)!!
+            element' = subst_mono_ti(element', name, bound,
+               types::vt_from_ti_cg(cg, bound))
+         element = stmt::resolve_ti(cg, element')
+         element_vt = types::vt_from_ti_cg(cg, element)
+         element_vt == ast::ValueType(Unknown)
+            | types::init_error(cg, "E3103", "Cannot determine array element type", 0, 0)
+         capacity = a.cap < 1 | 16 | a.cap
+         dtype = types::ensure_ti_dtype(cg,
+            ast::TypeInfo(Array, (element_vt, element, capacity)))
+         value = main::codegen_array_create_cap(cg, a.cap, "a.new")
+         cg.last_type = dtype
+         (value, ast::ValueType(Array))
       [Exit t]
          runtime::codegen_emit_exit(cg, t)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
@@ -2799,10 +2813,54 @@ codegen_eval_unary = cg, t =>
                   | LLVMBuildIntToPtr(cg.builder, p, i8p, "slot.ptr")
                (tag_addr_with_arena_gen(cg, raw_p), ast::ValueType(RawPtr))
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
-      [Unwrap] codegen_eval_unary_unwrap(cg, ev.0, ev.1, t.1)
-      [Propagate] codegen_eval_unary_propagate(cg, ev.0, ev.1, t.1)
+      [Unwrap, Propagate] codegen_static_ram_unary(cg, t.0, ev, t.1)
       [RuneCount] stmt::codegen_eval_string_rune_count(cg, ev.0)
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
+
+// Generic specializations use the same statically known ram layouts as typed
+// expressions. Reuse their lowering instead of assuming every ram is a heap union.
+codegen_static_ram_unary: types::Cg, ast::UnaryOp, (Addr, ast::ValueType),
+   ast::Expr => (Addr, ast::ValueType)
+codegen_static_ram_unary = cg, op, ev, target =>
+   raw = codegen_ram_type_of_expr(cg, target)
+   ram_ti = raw [Ram] raw | types::typedef_ti(cg, cg.last_type)
+   ram_ti
+      [Ram slots]
+         pos_ti = stmt::resolve_ti(cg,
+            types::norm_slot_ti(slots.0.payload_type, slots.0.payload_record))
+         no_payload = !slots.0.has_payload
+         is_unwrap = op [Unwrap]
+         is_unwrap && no_payload
+            |
+               types::init_error(cg, "E3091", "Operand of '!!' requires a positive payload", 0, 0)
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
+            |
+               result_ti = no_payload | ast::TypeInfo(Prim, ast::ValueType(Unit)) | pos_ti
+               operand = tast::mk_lit_unit(0, 0)
+               operand.ti = ram_ti
+               result = codegen_typed_unary_ready(cg, op, operand,
+                  unify::UType(None), result_ti, ev, <+>)
+               dtype = types::ensure_ti_dtype(cg, result_ti)
+               dtype != "" | cg.last_type = dtype
+               result_ti
+                  [Rec]
+                     meta = runtime::record_meta_from_ti(cg, result_ti)
+                     meta
+                        | m =>
+                           cg.last_rt = <+ m.0 +>
+                           cg.last_fnames = m.1
+                           cg.last_fvts = types::field_vts(cg, result_ti)
+                  [Fn]
+                     signature = types::fn_ret_sig_with_ti(cg, result_ti)
+                     signature != "" | cg.last_closure_fn = signature
+                     return_vt = types::ti_fn_ret_vt(cg, result_ti)
+                     return_vt != ast::ValueType(Unknown)
+                        | cg.last_type = types::value_type_name(return_vt)
+               result
+      |
+         op
+            [Unwrap] codegen_eval_unary_unwrap(cg, ev.0, ev.1, target)
+            | codegen_eval_unary_propagate(cg, ev.0, ev.1, target)
 
 unwrap_pay_value: types::Cg, Addr, ast::ValueType => Addr
 unwrap_pay_value = cg, pay_ptr, pay_type =>
@@ -2971,8 +3029,13 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
                      compat = ram_slot_compatible(cg, neg_slot, fn_neg)
                      !compat
                         |
-                           types::init_error(cg, "E3149", "Cannot propagate " +
-                              "ramification of shape " +
+                           origin = target
+                              [Var v] v
+                              [Call c]
+                                 c.fn_name != "" | c.fn_name | apply_callee_name(c.fn_target)
+                              | "expression"
+                           types::init_error(cg, "E3149", "Cannot propagate from '" +
+                              origin + "': ramification of shape " +
                               ram_shape_str(cg, ti) +
                               " into function returning " +
                               ram_shape_str(cg, ret_ti_res) + ".", 0, 0)
@@ -3487,18 +3550,34 @@ synth_variant_ram_ti = cg, v =>
             [Noth] ast::TypeInfo(Ram, (slot_unk, empty_slot))
             | ast::TypeInfo(Ram, (empty_slot, empty_slot))
 
+ram_result_ti: ast::ValueType, ast::TypeInfo => ast::TypeInfo
+ram_result_ti = vt, ti =>
+   positive = ast::RamSlotInfo(<+>, vt, ti)
+   negative = ast::RamSlotInfo(<+>, ast::ValueType(Error),
+      ast::TypeInfo(Prim, ast::ValueType(Error)))
+   ast::TypeInfo(Ram, (positive, negative))
+
 codegen_ram_type_of_expr: types::Cg, ast::Expr => ast::TypeInfo
 codegen_ram_type_of_expr = cg, expr =>
    expr
       [Var vn]
          vti = var_ti(cg, vn)
          vti [Ram] vti | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      [Member m] stmt::resolve_ti(cg, types::member_target_ti(cg, expr))
       [Call c]
-         real_name = types::resolve_fn_name(cg, c.fn_name)
-         fname = fn_alias(cg, real_name)
-         eff_name = fname != "" | fname | real_name
-         sig_ti = stmt::fn_signature_return_ti(cg, types::g.pstmts, eff_name, 0)
-         stmt::resolve_ti(cg, sig_ti)
+         name = c.fn_name != "" | c.fn_name | apply_callee_name(c.fn_target)
+         target = c.fn_name != "" | ast::Expr(Var, c.fn_name) | c.fn_target
+         target_ti = stmt::resolve_ti(cg, types::member_target_ti(cg, target))
+         target_ti
+            [Array a] ram_result_ti(a.0, a.1)
+            [Fn f] stmt::resolve_ti(cg, f.3)
+            |
+               real_name = types::resolve_fn_name(cg, name)
+               alias = fn_alias(cg, real_name)
+               closure = closure_fn_of(cg, name)
+               eff_name = closure != "" | closure | (alias != "" | alias | real_name)
+               sig_ti = stmt::fn_signature_return_ti(cg, types::g.pstmts, eff_name, 0)
+               stmt::resolve_ti(cg, sig_ti)
       [Variant v] synth_variant_ram_ti(cg, v)
       [Choice c]
          ct = types::ctfe_eval_type_choice(cg, c)
@@ -3636,8 +3715,20 @@ var_forward_ti_rev = cg, stmts, name, at =>
                   | var_forward_ti_rev(cg, stmts, name, at - 1)
             | var_forward_ti_rev(cg, stmts, name, at - 1)
 
+field_path_ti: types::Cg, ast::TypeInfo, String => ast::TypeInfo
+field_path_ti = cg, parent, path =>
+   dot = types::find_dot(path, 0)
+   dot < 0
+      | types::record_field_ti_by_name(cg, parent, path)
+      |
+         next = types::record_field_ti_by_name(cg, parent, path(0..dot))
+         field_path_ti(cg, next, path(dot + 1..))
+
 var_ti: types::Cg, String => ast::TypeInfo
 var_ti = cg, name =>
+   dot = types::find_dot(name, 0)
+   dot > 0
+      | --| field_path_ti(cg, var_ti(cg, name(0..dot)), name(dot + 1..))
    types::has_local_var(cg, name)
       |
          dt = types::var_dtype(cg, name)
@@ -4856,6 +4947,9 @@ codegen_eval_closure_call = cg, t, cfn =>
 codegen_closure_call_indirect_val: types::Cg, ast::CallExpr, Addr,
    ast::ValueType => (Addr, ast::ValueType)
 codegen_closure_call_indirect_val = cg, t, clo_val, ret =>
+   static_name = cg.last_closure_fn
+   ret_ti = stmt::resolve_ti(cg,
+      stmt::fn_signature_return_ti(cg, types::g.pstmts, static_name, 0))
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    clo_t = stmt::closure_struct_type(cg)
    clo_is_ptr = LLVMGetTypeKind(LLVMTypeOf(clo_val)) == 12
@@ -4876,7 +4970,9 @@ codegen_closure_call_indirect_val = cg, t, clo_val, ret =>
    cg.discard_result = saved_discard
 
    n = ?arg_vals
-   ret_ll = ret [Fn] i8p | types::llvm_type_of_vt(ret)
+   ret_ll = types::is_unboxed_ram_ti(cg, ret_ti)
+      | match::unboxed_ram_struct_t(cg)
+      | (ret [Fn] i8p | types::llvm_type_of_vt(ret))
    plain_tys = types::Addrs()
    n @ i => plain_tys += LLVMTypeOf(arg_vals(i)!!)
    plain_ty = stmt::fn_type_n(cg, ret_ll, plain_tys, n)
@@ -4916,7 +5012,7 @@ codegen_closure_call_indirect_val = cg, t, clo_val, ret =>
          stmt::llvm_add_incoming1(cg, phi, cap_res, cap_bb)
          stmt::llvm_add_incoming1(cg, phi, plain_res, plain_bb)
          phi
-   stmt::apply_call_ret_meta(cg, cg.last_closure_fn)
+   stmt::apply_call_ret_meta(cg, static_name)
    coerce_untyped_call_ret(cg, (res, ret))
 
 codegen_closure_call_indirect: types::Cg, ast::CallExpr, ast::ValueType => (Addr, ast::ValueType)
@@ -5557,6 +5653,11 @@ codegen_typed_eval_unary_val: types::Cg, ast::UnaryOp, tast::TypedExpr, unify::U
    ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_unary_val = cg, op, operand, ut, ti =>
    ev = main::codegen_typed_eval(cg, operand)
+   codegen_typed_unary_ready(cg, op, operand, ut, ti, ev, <->)
+
+codegen_typed_unary_ready: types::Cg, ast::UnaryOp, tast::TypedExpr, unify::UType,
+   ast::TypeInfo, (Addr, ast::ValueType), <> => (Addr, ast::ValueType)
+codegen_typed_unary_ready = cg, op, operand, ut, ti, ev, heap_only =>
    ! <>(types::llvm_val_opt(ev.0))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
@@ -5633,7 +5734,7 @@ codegen_typed_eval_unary_val = cg, op, operand, ut, ti =>
             [Unwrap]
                ret_vt' = types::vt_from_ti_cg(cg, ti)
                niche' = types::is_niche_ram_ti(cg, operand.ti)
-               is_niche' = niche'.0
+               is_niche' = !heap_only && niche'.0
                is_unboxed' = !is_niche' && (LLVMGetTypeKind(LLVMTypeOf(ev.0)) == 10)
                i8p = LLVMPointerType(LLVMInt8Type!, 0)
                t0' = types::g.tmpc
@@ -5698,7 +5799,7 @@ codegen_typed_eval_unary_val = cg, op, operand, ut, ti =>
             [Propagate]
                ret_vt' = types::vt_from_ti_cg(cg, ti)
                niche' = types::is_niche_ram_ti(cg, operand.ti)
-               is_niche' = niche'.0
+               is_niche' = !heap_only && niche'.0
                is_niche_pn' = niche'.1
                is_unboxed' = !is_niche' && (LLVMGetTypeKind(LLVMTypeOf(ev.0)) == 10)
                t0' = types::g.tmpc
@@ -8194,7 +8295,7 @@ codegen_typed_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
       LLVMConstInt(LLVMInt8Type!, 2, 0), "m.rd.is.tomb")
    LLVMBuildCondBr(cg.builder, is_tomb, next, found_bb)
    LLVMPositionBuilderAtEnd(cg.builder, found_bb)
-   key_slot = types::gep1(cg, i8p, keys, idx_phi, "m.rd.key.slot")
+   key_slot = types::gep1(cg, i64t, keys, idx_phi, "m.rd.key.slot")
    eq = runtime::codegen_map_key_equal(cg, key_slot, key_val, key_vt)
    hit = LLVMAppendBasicBlock(cg.current_fn, "m.rd.hit")
    LLVMBuildCondBr(cg.builder, eq, hit, next)
@@ -8210,7 +8311,7 @@ codegen_typed_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    val_is_ptr = types::is_ptrish_vt(val_vt)
    val = val_is_ptr
       | LLVMBuildLoad2(cg.builder, i8p,
-         types::gep1(cg, i8p, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
+         types::gep1(cg, i64t, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
       | LLVMBuildLoad2(cg.builder, i64t,
          types::gep1(cg, i64t, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
    hit_pay = val_is_ptr

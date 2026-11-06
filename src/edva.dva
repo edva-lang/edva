@@ -6,6 +6,7 @@
 
 #use "diag"
 #use "annotate"
+#use overloads
 #use "ast"
 #use "codegen"
 #use "fs"
@@ -36,6 +37,7 @@
 #foreign "c"
    write: (fd: Int, buf: Addr, count: Int) => Int
    mkdir: (path: String, mode: Int) => Int
+   chmod: (path: String, mode: i32) => i32
    signal: (sig: Int, handler: Addr) => Addr
    unlink: (path: String) => Int
    rmdir: (path: String) => Int
@@ -1886,7 +1888,21 @@ copy_file = src, dst =>
 // Used by both the batch driver and the REPL.
 compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
    String, ast::Names, ast::Names, ast::Names, ast::Names, ast::Names => < | Int >
-compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs, npkg, lfiles =>
+compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs, npkg, lfiles =>
+   prog = overloads::resolve(raw)
+   dom_source = canonical_path(compiler_std_dir + "/dom.dva")
+   uses_dom = loaded_has(lfiles, dom_source)
+   actual_exports = ++exports
+   uses_dom
+      |
+         !is_wasm_triple(opts.triple)
+            |
+               log::error $ "E5047: std/dom requires a browser WebAssembly target"
+               --| <- 1 ->
+         ("dom_invalidate", "dom_invalidate_kind", "dom_forget", "dom_commit",
+            "dom_measure_result",
+            "dom_dispatch", "dom_release_listener") @ name =>
+            actual_exports += "dom::" + name + "=" + name
    nat_libs = nlibs
    nat_pkg = npkg
    output_ll = out_ll
@@ -1911,7 +1927,7 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
          use_cache = !opts.no_cache && env_or("EDVA_NO_CACHE", "") != "1"
          !use_cache
             | cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
-               output_ll, exports, opts.target, cg_opts)
+               output_ll, actual_exports, opts.target, cg_opts)
             |
                eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
                cache_flags = pkg::CacheCodegenFlags(opts.is_module, opts.is_shared,
@@ -1931,12 +1947,12 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                            !quiet | log::info $ "cached LLVM IR: " + output_ll
                         |
                            cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
-                              output_ll, exports, opts.target, cg_opts)
+                              output_ll, actual_exports, opts.target, cg_opts)
                            cg_ok' != 0
                               | pkg::cache_store(eff_cache_dir, bkr.key, bkr.meta_text, output_ll)
                   |
                      cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
-                        output_ll, exports, opts.target, cg_opts)
+                        output_ll, actual_exports, opts.target, cg_opts)
                      cg_ok' != 0
                         | pkg::cache_store(eff_cache_dir, bkr.key, bkr.meta_text, output_ll)
       | errs =>
@@ -2007,6 +2023,18 @@ compile_ast_to_binary = prog, exports, opts, out_ll, out_bin, dmods, dpaths, nli
                                     str::from_int(lres)
                                  <- lres ->
                               |
+                                 uses_dom
+                                    |
+                                       bridge = dirname(dom_source) + "/dom/bridge.js"
+                                       base = ends_with(output_bin, ".wasm")
+                                          | output_bin(0..?output_bin - 5)
+                                          | output_bin
+                                       !copy_file(bridge, base + ".dom.js")
+                                          |
+                                             log::error $ "E5048: Cannot emit " +
+                                                "std/dom browser adapter"
+                                             --| <- 1 ->
+                                       chmod(base + ".dom.js", 420i32)
                                  !quiet
                                     |
                                        log::info $ "Successfully compiled binary: " +

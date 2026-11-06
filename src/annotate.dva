@@ -10,6 +10,7 @@
 #use "type_env"
 #use "layout"
 #use "dep_graph"
+#use "overloads"
 #use "str"
 #use "show"
 #use "diag"
@@ -6176,7 +6177,8 @@ annotate_exprs = exprs =>
          <- errs +>
 
 annotate_program: ast::Expr => ElabProgResult
-annotate_program = prog =>
+annotate_program = raw_prog =>
+   prog = overloads::resolve(raw_prog)
    exprs' = ast::Exprs()
    prog
       [Block b]

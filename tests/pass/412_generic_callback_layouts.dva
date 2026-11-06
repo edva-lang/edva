@@ -1,0 +1,34 @@
+#use io
+#type Item (id: Int, label: String)
+#type Row (element: Int, state: Item)
+make: Item => < Row | Error >
+make = item => <+ Row(item.id, item) ->
+#type Callbacks (create: < (Item => < Row | Error >) | >, count: Int)
+run: #! C: Type, C, Item => < Int | Error >
+run = callbacks, item =>
+   callback = callbacks.create!!
+   row = callback(item)--!
+   <+ row.element ->
+zero: #! T: Type, T => Int
+zero = value =>
+   callback: T => Int
+   callback = ignored => 0
+   callback(value)
+callbacks = Callbacks(<+ make +>, 0)
+io::out(run(callbacks, Item(7, "seven"))!!)
+io::out(zero(Item(8, "eight")))
+flags = <>{}
+flags += <+>
+flags += <->
+flags @ flag => io::out(flag | "yes" | "no")
+#type Index Int ^ Item
+index = Index()
+48 @ i => index ^ i = Item(i, "value")
+index ^- 9
+io::out $ ?index
+io::out $ index ^ 20 | (.id) | -1
+#type StringIndex String ^ Item
+strings = StringIndex()
+strings ^ "a" = Item(4, "four")
+strings ^ "b" = Item(6, "six")
+io::out $ strings ^ "b" | (.id) | -1

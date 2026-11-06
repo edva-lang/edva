@@ -67,7 +67,7 @@ POLL_BACKEND ?= poll
 
 # --- Modules and Objects -----------------------------------------------------
 STD_MODULES      := const ascii utf str mem sys libc unicode io ccl json uring event path fs cli time log
-COMPILER_MODULES := poll diag ast llvm operators dep_graph layout tast lexer unify type_env show parser annotate version pkg formatter lsp \
+COMPILER_MODULES := poll diag ast llvm operators dep_graph layout tast lexer unify type_env show parser overloads annotate version pkg formatter lsp \
                     codegen/types codegen/runtime codegen/expr codegen/match codegen/stmt codegen/main codegen
 ENTRY_MODULE     := edva
 
@@ -81,7 +81,7 @@ ALL_SRCS      := $(STD_MODULES:%=std/%.dva) $(COMPILER_MODULES:%=src/%.dva) src/
 SCAN_SRCS     := $(shell find src std -name '*.dva')
 DEPS_MK       := build/deps.mk
 
-.PHONY: all build clean test check driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install uninstall
+.PHONY: all build clean test check dom-test driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install uninstall
 
 # Default target: incremental modular build
 all: edva
@@ -243,3 +243,7 @@ check: build driver-test test
 clean:
 	rm -rf build edva_stage1 edva_stage2 edva_stage1.ll edva_stage2.ll
 	rm -f *.ll *.o
+
+# npm ci --prefix tools/browser_dom installs the isolated test dependency.
+dom-test: edva
+	bash tools/browser_dom/run.sh

@@ -1400,7 +1400,16 @@ codegen_emit_plain_assign_val = cg, t =>
    saved_discard = cg.discard_result
    cg.discard_result = <->
    cg.last_closure_fn = ""
+   saved_expected = types::g.expected_fn_ti
+   t.5 [Fn]
+      annotated' = expr::var_ti(cg, t.0)
+      types::g.ct_bind_names @ name, i =>
+         bound = types::g.ct_bind_tis(i)!!
+         annotated' = expr::subst_mono_ti(annotated', name, bound,
+            types::vt_from_ti_cg(cg, bound))
+      annotated' [Fn] types::g.expected_fn_ti = annotated'
    ev = expr::codegen_eval(cg, t.5)
+   types::g.expected_fn_ti = saved_expected
    cg.discard_result = saved_discard
    is_un = ev.1 [Unit]
    is_un
@@ -2386,7 +2395,7 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt, allow_grow =>
       "m.tomb.sel")
    LLVMBuildBr(cg.builder, next)
    LLVMPositionBuilderAtEnd(cg.builder, occ_bb)
-   key_slot = types::gep1(cg, i8p, mf.1, idx_phi, "m.key.slot")
+   key_slot = types::gep1(cg, i64t, mf.1, idx_phi, "m.key.slot")
    eq = codegen_map_key_equal(cg, key_slot, key_val, key_vt)
    occ_end = LLVMGetInsertBlock(cg.builder)
    LLVMBuildCondBr(cg.builder, eq, overwrite, next)
@@ -2434,7 +2443,7 @@ codegen_map_insert_raw = cg, m, key_val, val_val, key_vt, allow_grow =>
    ins_idx = LLVMBuildSelect(cg.builder, use_tomb, tomb_phi, idx_phi,
       "m.ins.idx")
    LLVMBuildStore(cg.builder, key_val,
-      types::gep1(cg, i8p, mf.1, ins_idx, "m.key.slot"))
+      types::gep1(cg, i64t, mf.1, ins_idx, "m.key.slot"))
    LLVMBuildStore(cg.builder, val_val,
       types::gep1(cg, i64t, mf.2, ins_idx, "m.val.slot"))
    LLVMBuildStore(cg.builder,
@@ -2522,7 +2531,7 @@ codegen_map_grow = cg, m, key_vt =>
    ins = LLVMAppendBasicBlock(cg.current_fn, "m.re.ins")
    LLVMBuildCondBr(cg.builder, occupied, ins, cont)
    LLVMPositionBuilderAtEnd(cg.builder, ins)
-   key_slot = types::gep1(cg, i8p, old_keys, i, "m.re.key.slot")
+   key_slot = types::gep1(cg, i64t, old_keys, i, "m.re.key.slot")
    val_slot = types::gep1(cg, i64t, old_vals, i, "m.re.val.slot")
    key = types::is_int_vt(key_vt)
       | LLVMBuildLoad2(cg.builder, i64t, key_slot, "m.re.key")
@@ -2641,7 +2650,7 @@ codegen_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
       LLVMConstInt(LLVMInt8Type!, 2, 0), "m.rd.is.tomb")
    LLVMBuildCondBr(cg.builder, is_tomb, next, found_bb)
    LLVMPositionBuilderAtEnd(cg.builder, found_bb)
-   key_slot = types::gep1(cg, i8p, keys, idx_phi, "m.rd.key.slot")
+   key_slot = types::gep1(cg, i64t, keys, idx_phi, "m.rd.key.slot")
    eq = codegen_map_key_equal(cg, key_slot, key_val, key_vt)
    hit = LLVMAppendBasicBlock(cg.current_fn, "m.rd.hit")
    LLVMBuildCondBr(cg.builder, eq, hit, next)
@@ -2658,7 +2667,7 @@ codegen_map_lookup = cg, m, key_val, key_vt, val_vt, line, col =>
    val_is_ptr = types::is_ptrish_vt(val_vt)
    val = val_is_ptr
       | LLVMBuildLoad2(cg.builder, i8p,
-         types::gep1(cg, i8p, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
+         types::gep1(cg, i64t, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
       | LLVMBuildLoad2(cg.builder, i64t,
          types::gep1(cg, i64t, vals, idx_phi, "m.rd.val.slot"), "m.rd.val")
    val_unpacked = val_is_ptr
@@ -2747,7 +2756,7 @@ codegen_map_membership = cg, m, key_val, key_vt =>
       LLVMConstInt(LLVMInt8Type!, 2, 0), "m.mem.is.tomb")
    LLVMBuildCondBr(cg.builder, is_tomb, next, found)
    LLVMPositionBuilderAtEnd(cg.builder, found)
-   key_slot = types::gep1(cg, i8p, keys, idx_phi, "m.mem.key.slot")
+   key_slot = types::gep1(cg, i64t, keys, idx_phi, "m.mem.key.slot")
    eq = codegen_map_key_equal(cg, key_slot, key_val, key_vt)
    hit = LLVMAppendBasicBlock(cg.current_fn, "m.mem.hit")
    LLVMBuildCondBr(cg.builder, eq, hit, next)
@@ -2815,7 +2824,7 @@ codegen_map_delete = cg, m, key_val, key_vt =>
       LLVMConstInt(LLVMInt8Type!, 2, 0), "m.del.is.tomb")
    LLVMBuildCondBr(cg.builder, is_tomb, next, found)
    LLVMPositionBuilderAtEnd(cg.builder, found)
-   key_slot = types::gep1(cg, i8p, keys, idx_phi, "m.del.key.slot")
+   key_slot = types::gep1(cg, i64t, keys, idx_phi, "m.del.key.slot")
    eq = codegen_map_key_equal(cg, key_slot, key_val, key_vt)
    LLVMBuildCondBr(cg.builder, eq, hit, next)
    LLVMPositionBuilderAtEnd(cg.builder, next)
@@ -2852,26 +2861,26 @@ codegen_map_delete = cg, m, key_val, key_vt =>
 codegen_eval_key_access: types::Cg, ast::KeyAccessExpr => (Addr, ast::ValueType)
 codegen_eval_key_access = cg, t =>
    bv = expr::codegen_eval(cg, t.target)
+   ti = stmt::resolve_ti(cg, types::member_target_ti(cg, t.target))
    kv = expr::codegen_eval(cg, t.key)
-   map_name = t.target [Var v] v | ""
-   map_dt = types::var_dtype(cg, map_name)
-   ti = types::typedef_ti(cg, map_dt)
-   ti_kvt = ti [Map m] m.0 | ast::ValueType(Unknown)
-   key_vt = ti_kvt != ast::ValueType(Unknown) | ti_kvt | kv.1
-   ti_vvt = ti [Map m] m.1 | ast::ValueType(Unknown)
-   val_vt = ti_vvt != ast::ValueType(Unknown) | ti_vvt | ast::ValueType(Int)
-   t.is_delete
-      | (codegen_map_delete(cg, bv.0, kv.0, key_vt),
-         ast::ValueType(Flag))
-      |
-         t.is_membership
-            | (codegen_map_membership(cg, bv.0, kv.0, key_vt),
-               ast::ValueType(Flag))
+   ti
+      [Map m]
+         key_vt = m.0
+         val_vt = m.1
+         t.is_delete
+            | (codegen_map_delete(cg, bv.0, kv.0, key_vt), ast::ValueType(Flag))
             |
-               map_name != "" | cg.last_type = main::map_read_typedef(cg, map_name)
-               ret_u = codegen_map_lookup(cg, bv.0, kv.0, key_vt, val_vt,
-                  t.line, t.col)
-               (ret_u, ast::ValueType(Ram))
+               t.is_membership
+                  | (codegen_map_membership(cg, bv.0, kv.0, key_vt), ast::ValueType(Flag))
+                  |
+                     cg.last_type = types::ensure_ti_dtype(cg,
+                        expr::ram_result_ti(val_vt, m.2))
+                     ret_u = codegen_map_lookup(cg, bv.0, kv.0, key_vt, val_vt,
+                        t.line, t.col)
+                     (ret_u, ast::ValueType(Ram))
+      |
+         types::init_error(cg, "E3103", "Cannot determine map layout statically", t.line, t.col)
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 // "m ^ k = v" — insert/rebind.
 codegen_emit_map_assign: types::Cg,
