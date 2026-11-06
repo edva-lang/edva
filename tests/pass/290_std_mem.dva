@@ -44,6 +44,21 @@ mem::with(a, !=>
    io::out $ sum
 )
 
+with_result = mem::with_value(a, !=> 42)
+io::out $ with_result
+prev_arena = mem::set_current(a.raw)
+escaped_result = mem::escape_value( !=> 84)
+io::out $ escaped_result
+mem::current! == a.raw | io::out $ "current arena selected" | io::out $ "fail"
+mark = mem::save(a)
+mark_ptr = mem::alloc(a, 128)
+mem::restore_to(a, mark)
+reused_ptr = mem::alloc(a, 128)
+reused_ptr == mark_ptr
+   | io::out $ "arena mark restored"
+   | io::out $ "fail"
+mem::set_current(prev_arena)
+
 s_after_with = mem::stats(a)
 s_after_with.bytes_allocated !< (s_after_direct.bytes_allocated + 32)
    | io::out $ "ambient routing tracked"

@@ -11,6 +11,8 @@ meta:
 
 The `mem` module provides unified, explicit memory management:
 low-level byte operations, regional bump arenas, and fixed-capacity object pools.
+The [arena runtime contract](https://gitea.gde.to/ike/dva/wiki/spec-std-mem.-)
+documents scope switching, marks, generation invalidation, and arena lifetimes.
 
 ```{.dva .run}
 #use mem
@@ -42,11 +44,25 @@ within an arena are freed simultaneously when the arena is reset or destroyed.
 |---|---|---|
 | `mem::arena` | `Int => Arena` | Creates an arena with initial chunk capacity (bytes) |
 | `mem::arena_default` | `() => Arena` | Creates an arena with default 64 MB chunk capacity |
+| `mem::current` | `() => Addr` | Returns the active arena descriptor (global arena when no scoped arena is selected) |
+| `mem::set_current` | `Addr => Addr` | Selects an arena and returns the previously active descriptor; `Addr(0)` selects the global arena |
+| `mem::save` | `Arena => Int` | Saves an allocation mark in the given arena |
+| `mem::restore_to` | `Arena, Int => ()` | Restores the arena to a mark returned by `save` |
 | `mem::alloc` | `Arena, Int => Addr` | Allocates uninitialized memory of given byte size |
 | `mem::reset` | `Arena => ()` | Rewinds arena offset to zero, retaining chunks |
+| `mem::release` | `Arena => ()` | Frees backing chunks while keeping the arena descriptor reusable |
 | `mem::destroy` | `Arena => ()` | Frees all backing chunks and arena descriptor |
 | `mem::stats` | `Arena => ArenaStats` | Retrieves allocation metrics and chunk counts |
 | `mem::with` | `Arena, (() => ()) => ()` | Runs action with arena set as ambient allocator |
+| `mem::with_value` | `#! T: Type, Arena, (() => T) => T` | Runs an action in an arena and returns its value |
+| `mem::escape` | `(() => ()) => ()` | Runs action in the global arena, restoring the prior arena afterward |
+| `mem::escape_value` | `#! T: Type, (() => T) => T` | Runs an action in the global arena and returns its value |
+
+`current` and `set_current` are low-level controls for integrations. Prefer
+`with`, `with_value`, `escape`, and `escape_value` for scoped switching because
+they restore the previous arena when the callback returns. Marks belong to the
+arena passed to `save` and must be restored to that same arena. `release` drops
+the arena's chunks but leaves its descriptor valid for later allocations.
 
 ```{.dva .run}
 #use mem

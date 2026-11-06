@@ -2,7 +2,7 @@
 //
 // Unified memory management library:
 // - Low-level utilities (copy, move, zero, set, align_forward, is_aligned)
-// - Regional bump arenas (Arena, alloc, reset, destroy, stats, with)
+// - Regional bump arenas (Arena, alloc, reset, destroy, stats, with/escape)
 // - Fixed-capacity object pools (Pool, alloc, free, count, for_each, destroy)
 
 #use libc
@@ -10,10 +10,11 @@
 #foreign "c"
    dva_arena_init: (Addr, Int) => ()
    dva_arena_alloc: (Addr, Int) => Addr
-   dva_arena_restore: (Addr, Int) => ()
-   dva_arena_destroy: (Addr) => ()
-   dva_arena_current: () => Addr
-   dva_arena_set_current: (Addr) => Addr
+   runtime_arena_restore = dva_arena_restore: (Addr, Int) => ()
+   runtime_arena_destroy = dva_arena_destroy: (Addr) => ()
+   runtime_arena_save = dva_arena_save: (Addr) => Int
+   runtime_arena_current = dva_arena_current: () => Addr
+   runtime_arena_set_current = dva_arena_set_current: (Addr) => Addr
    c_memchr = memchr: (Addr, Int, Int) => Addr
 
 #public
@@ -50,6 +51,20 @@
 
    // --- Regional Bump Arenas -------------------------------------------------
 
+   // Returns the active arena descriptor (the global arena when no scoped
+   // arena is selected). Addr(0) selects the global arena in set_current.
+   current: () => Addr
+   current = !=> runtime_arena_current()
+
+   set_current: Addr => Addr
+   set_current = raw => runtime_arena_set_current(raw)
+
+   save: Arena => Int
+   save = a => runtime_arena_save(a.raw)
+
+   restore_to: Arena, Int => ()
+   restore_to = a, mark => runtime_arena_restore(a.raw, mark)
+
    arena: Int => Arena
    arena = chunk_size =>
       sz = chunk_size !> 0 | 67108864 | chunk_size
@@ -64,11 +79,14 @@
    alloc = a, size => dva_arena_alloc(a.raw, size)
 
    reset: Arena => ()
-   reset = a => dva_arena_restore(a.raw, 0)
+   reset = a => runtime_arena_restore(a.raw, 0)
+
+   release: Arena => ()
+   release = a => runtime_arena_destroy(a.raw)
 
    destroy: Arena => ()
    destroy = a =>
-      dva_arena_destroy(a.raw)
+      release(a)
       libc::free(a.raw)
 
    stats: Arena => ArenaStats
@@ -80,9 +98,29 @@
 
    with: Arena, (() => ()) => ()
    with = a, action =>
-      prev = dva_arena_set_current(a.raw)
+      prev = set_current(a.raw)
       action!
-      dva_arena_set_current(prev)
+      set_current(prev)
+
+   with_value: #! T: Type, Arena, (() => T) => T
+   with_value = a, action =>
+      prev = set_current(a.raw)
+      result = action!
+      set_current(prev)
+      result
+
+   escape: (() => ()) => ()
+   escape = action =>
+      prev = set_current(Addr(0))
+      action!
+      set_current(prev)
+
+   escape_value: #! T: Type, (() => T) => T
+   escape_value = action =>
+      prev = set_current(Addr(0))
+      result = action!
+      set_current(prev)
+      result
 
    // --- Fixed-Capacity Object Pools ------------------------------------------
 

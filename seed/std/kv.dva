@@ -7,6 +7,7 @@
 #use hash
 #use libc
 #use sort
+#use mem
 
 #public
 
@@ -26,22 +27,19 @@
 
 #private
 
-#foreign "c"
-   dva_arena_set_current : (arena: Addr) => Addr
-
 new_keydir: () => KeyDir
 new_keydir = !=>
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    kd = KeyDir()
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
    kd
 
 put_keydir: KeyDir, String, Int, Int => ()
 put_keydir = kdir, key, off, vlen =>
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    hkey = ++key
    kdir ^ hkey = EntryLoc(off, vlen)
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
 
 kv_err: String, Int => Error
 kv_err = msg, off =>
@@ -169,11 +167,11 @@ open = path =>
    existing = read_all_file(path)
    fd = libc::open_mode(path, open_rdwr_creat_append!, 0o644)
    fd < 0 | --| <- kv_err("failed to open KV store file: " + path, 0) +>
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    hpath = ++path
    kdir = KeyDir()
    db = Store(hpath, fd, 0, kdir)
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
    ?existing == 0
       |
          !write_all(fd, KV_MAGIC)

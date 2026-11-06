@@ -2,6 +2,7 @@
 #use libc
 #use str
 #use binary
+#use mem
 
 #foreign "c"
    realloc: (Addr, Int) => Addr
@@ -11,7 +12,6 @@
    edva_dom_measure: (Addr, Int, Addr) => Int
    edva_dom_free: (Addr) => ()
    edva_dom_report: (Addr, Int) => ()
-   dva_arena_set_current: (Addr) => Addr
 
 #public
 #type Element (slot: Int, generation: Int)
@@ -149,9 +149,9 @@ reply_enter = !=>
    reply_depth ::= reply_depth + 1
    index == ?replies
       |
-         prev = dva_arena_set_current(Addr(0))
+         prev = mem::set_current(Addr(0))
          replies += Reply(0, 0, 0.0, 0.0, 0.0, 0.0)
-         dva_arena_set_current(prev)
+         mem::set_current(prev)
    replies(index)!!
 
 reply_leave: () => ()
@@ -183,7 +183,7 @@ cache_row = id =>
    caches ^ id
       | row => row
       |
-         prev = dva_arena_set_current(Addr(0))
+         prev = mem::set_current(Addr(0))
          row = free_count > 0
             |
                free_count ::= free_count - 1
@@ -192,7 +192,7 @@ cache_row = id =>
          row.live = <+>
          row.used = 0
          caches ^ id = row
-         dva_arena_set_current(prev)
+         mem::set_current(prev)
          row
 
 property: Int, Int, String => Property
@@ -201,14 +201,14 @@ property = id, op, key =>
    row.properties @ p, i =>
       i !< row.used | -->
       p.op == op && owned_equal(p.key, key) | --| p
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    row.used == ?row.properties
       | row.properties += Property(op, empty_owned!, empty_owned!, 0, <->)
    p = row.properties(row.used)!!
    row.used = row.used + 1
    p.op = op
    p.valid = <->
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
    owned_store(p.key, key) !| _
    p
 
@@ -220,14 +220,14 @@ property_owned = id, op, key =>
       same = p.key.length == key.length &&
          (key.length == 0 || memcmp(p.key.data, key.data, key.length) == 0)
       p.op == op && same | --| p
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    row.used == ?row.properties
       | row.properties += Property(op, empty_owned!, empty_owned!, 0, <->)
    p = row.properties(row.used)!!
    row.used = row.used + 1
    p.op = op
    p.valid = <->
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
    reserve(p.key, key.length) !| _
    key.length > 0 | %memcpy(p.key.data, key.data, key.length)
    p
@@ -399,10 +399,10 @@ serialize = commands, count, wire =>
 command_slot: Commands, Int => Command
 command_slot = commands, i =>
    i < ?commands | --| commands(i)!!
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    command = Command(0, 0, 0, 0, empty_owned!, empty_owned!)
    commands += command
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
    command
 
 clear_commands: Commands, Int => ()
@@ -441,9 +441,9 @@ queue = batch, op, element, b, c, key, value =>
 #public
 batch: () => Batch
 batch = !=>
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    result = Batch(Commands(), 0, empty_owned!, <->)
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
    result
 
 discard: Batch => < | Error >
@@ -488,9 +488,9 @@ flush = batch =>
 
 measurements: () => Measurements
 measurements = !=>
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    result = Measurements(Commands(), 0, empty_owned!, MeasurementResults(), <->)
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
    result
 
 #private
@@ -506,10 +506,10 @@ request = measurements, op, element, key =>
    i = measurements.count
    i !< ?measurements.results
       |
-         prev = dva_arena_set_current(Addr(0))
+         prev = mem::set_current(Addr(0))
          measurements.results += MeasurementResult(op, Rect(0.0, 0.0, 0.0, 0.0),
             empty_owned!, <->)
-         dva_arena_set_current(prev)
+         mem::set_current(prev)
    result = measurements.results(i)!!
    result.ready = <->
    result.kind = op
@@ -731,9 +731,9 @@ register = element, kind, selector, options, callback =>
          |
             index' = i
             -->
-   prev = dva_arena_set_current(Addr(0))
+   prev = mem::set_current(Addr(0))
    index' == ?callbacks | callbacks += CallbackSlot(<-->, <->)
-   dva_arena_set_current(prev)
+   mem::set_current(prev)
    slot = callbacks(index')!!
    slot.callback = <+ callback +>
    slot.alive = <+>

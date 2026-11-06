@@ -8,6 +8,10 @@ p1 unaligned
 777
 direct alloc tracked
 100
+42
+84
+current arena selected
+arena mark restored
 ambient routing tracked
 0
 arena destroyed
