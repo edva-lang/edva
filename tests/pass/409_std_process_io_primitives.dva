@@ -1,0 +1,72 @@
+// os::fork/dup2/exit_now/socketpair/set_parent_death_signal,
+// net::sendfile, mem::index_byte, time::parse_tm
+#use io
+#use str
+#use os
+#use net
+#use mem
+#use libc
+#use time
+
+pr: String, Int => ()
+pr = label, v => io::out $ label + "=" + str::from_int(v)
+
+// mem::index_byte
+b = {16}
+b += "hello\nworld"
+pr("nl", mem::index_byte(&b, '\n', ?b) | i => i | -1)
+pr("absent", mem::index_byte(&b, 'z', ?b) | i => i | -1)
+pr("empty", mem::index_byte(&b, 'h', 0) | i => i | -1)
+
+// time::parse_tm
+time::parse_tm("Sun, 06 Nov 1994 08:49:37 GMT", "%a, %d %b %Y %H:%M:%S GMT")
+   | tm => io::out $ "tm=" + str::from_int(Int(tm.year) + 1900) + "-" + str::from_int(Int(tm.mon) + 1) + "-" + str::from_int(Int(tm.mday)) + " " + str::from_int(Int(tm.hour)) + ":" + str::from_int(Int(tm.min))
+   | io::out $ "tm=fail"
+io::out $ "trailing=" + (<>(time::parse_tm("06 Nov 1994x", "%d %b %Y")) | "ok" | "rejected")
+
+// os::socketpair + fork + dup2 + exit_now
+os::socketpair!
+   | pair =>
+      pid = os::fork!
+      pid == 0
+         |
+            libc::close(pair.0)
+            os::dup2(pair.1, 9) |
+               libc::write(9, "child", 5)
+               os::exit_now(0)
+            os::exit_now(1)
+         |
+            libc::close(pair.1)
+            buf = {16}
+            ?buf = 16
+            n = libc::read(pair.0, &buf, 16)
+            ?buf = n < 0 | 0 | n
+            io::out $ "pair=" + +buf
+            st = os::wait_pid(pid) | s => s | -1
+            pr("child_status", st)
+            libc::close(pair.0)
+   | io::out $ "pair=fail"
+
+// os::set_parent_death_signal (Linux: succeeds)
+io::out $ "pdeath=" + (os::set_parent_death_signal(0) | "ok" | "unsupported")
+
+// net::sendfile: copy a file into a socket pair and read it back
+src = "/tmp/edva_409_sendfile.txt"
+fd_w = libc::creat(src, 384)
+libc::write(fd_w, "0123456789", 10)
+libc::close(fd_w)
+fd_r = libc::open(src, 0)
+os::socketpair!
+   | sp =>
+      sent = net::sendfile(sp.0, fd_r, 3, 4)
+      pr("sent", sent)
+      rb = {8}
+      ?rb = 8
+      got = libc::read(sp.1, &rb, 8)
+      ?rb = got < 0 | 0 | got
+      io::out $ "sendfile=" + +rb
+      libc::close(sp.0)
+      libc::close(sp.1)
+   | io::out $ "sendfile=fail"
+libc::close(fd_r)
+libc::unlink(src)

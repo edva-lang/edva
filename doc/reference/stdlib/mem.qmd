@@ -26,6 +26,7 @@ low-level byte operations, regional bump arenas, and fixed-capacity object pools
 | `mem::set` | `Addr, Int, Int => ()` | Fills memory range with specified byte value |
 | `mem::align_forward` | `Addr, Int => Addr` | Advances address to meet alignment requirement |
 | `mem::is_aligned` | `Addr, Int => <>` | Checks whether address satisfies alignment |
+| `mem::index_byte` | `Addr, Int, Int => < Int | >` | `memchr(3)`: offset of the first `byte` in `[p, p + len)`, or `<-->` if absent |
 
 ## Regional bump arenas
 

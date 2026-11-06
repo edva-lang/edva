@@ -50,6 +50,7 @@ listener
 | `net::set_nodelay` | `Int, <> => Int` | Disables (`<+>`) or enables (`<->`) Nagle's algorithm (`TCP_NODELAY`) |
 | `net::peer_addr` | `Int => String` | Returns remote peer address `IP:port` formatted string |
 | `net::local_addr` | `Int => String` | Returns local bound address `IP:port` formatted string |
+| `net::sendfile` | `Int, Int, Int, Int => Int` | Linux `sendfile(2)`: `net::sendfile(out_fd, in_fd, offset, count)` copies file bytes from `offset` to `out_fd` in the kernel; returns bytes sent, `0` at EOF, or `-1` with errno set (`-1` on non-Linux) |
 
 ## HTTP protocol support (`net/http`)
 

@@ -53,3 +53,4 @@ io::out $ time::clock(dt)
 | | `time::clock!`, `time::clock(sec_or_dt)` | Polymorphic `=> String` | Formats as `HH:MM:SS` |
 | | `time::format(fmt[, sec_or_dt])` | `String[, Int|DateTime] => String` | `strftime`-style formatting |
 | | `time::parse_iso(s)` | `String => < Int | >` | Parses `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SSZ` into Unix seconds |
+| | `time::parse_tm(s, fmt)` | `String, String => < TmRaw | >` | `strptime(3)` into a zeroed `struct tm`; succeeds only if all of `s` is consumed (no NUL bytes). `year` is years since 1900, `mon` is 0-based |

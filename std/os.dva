@@ -35,6 +35,8 @@
    c_setsid         = setsid:         () => i32
    c_clock_gettime  = clock_gettime:  (clk_id: i32, tp: Addr) => i32
    c_nanosleep      = nanosleep:      (req: Addr, rem: Addr) => i32
+   c_socketpair     = socketpair:     (domain: i32, kind: i32, protocol: i32, fds: Addr) => i32
+   c_prctl          = prctl:          (option: Int, arg2: Int, arg3: Int, arg4: Int, arg5: Int) => Int
 
 O_NONBLOCK_FLAG = #! (os ["darwin"] 4 | 2048)
 O_RDWR_NOCTTY   = #! (os ["darwin"] 0x20002 | 0x102)
@@ -42,6 +44,8 @@ TIOCSCTTY_REQ   = #! (os ["darwin"] 0x20007461 | 0x540E)
 TIOCGWINSZ_REQ  = #! (os ["darwin"] 0x40087468 | 0x5413)
 TIOCSWINSZ_REQ  = #! (os ["darwin"] 0x80087467 | 0x5414)
 CLOCK_MONO_ID   = #! (os ["darwin"] 6 | 1)
+// AF_UNIX + SOCK_STREAM, with SOCK_CLOEXEC where the kernel supports it atomically.
+SOCK_STREAM_CLOEXEC = #! (os ["darwin", "freebsd", "openbsd", "netbsd"] 1 | 0x80001)
 
 // Extracts the exit code from a POSIX wait status word.
 decode_wait_status: Int => Int
@@ -1068,3 +1072,55 @@ append_bytes = b, src, n =>
                | <+ res.output +>
                | <-->
          | <-->
+
+#private
+   #type OsPlatDarwin (a: Int, b: Int)
+   #type OsPlatLinux  (a: Int, b: Int)
+   #type OsPlat #! (os ["darwin", "freebsd", "openbsd", "netbsd"] OsPlatDarwin | OsPlatLinux)
+
+   pdeath_linux: Int => <>
+   pdeath_linux = sig => c_prctl(1, sig, 0, 0, 0) == 0
+
+   pdeath_os: #! OS: Type, Int => <>
+   pdeath_os = #! OS, sig =>
+      OS
+         [OsPlatLinux] pdeath_linux(sig)
+         | <->
+
+   set_cloexec: Int => ()
+   set_cloexec = fd => libc::fcntl(fd, 2, 1)
+
+#public
+   // --- Low-Level Process Primitives -------------------------------------------
+
+   // Forks the calling process (fork(2)). Returns the child's pid in the
+   // parent, 0 in the child, and a negative value on failure (errno is set).
+   fork: () => Int
+   fork = !=> Int(c_fork!)
+
+   // Duplicates `old_fd` onto `new_fd` (dup2(2)). Returns `<+>` on success.
+   dup2: Int, Int => <>
+   dup2 = old_fd, new_fd => Int(c_dup2(i32(old_fd), i32(new_fd))) !< 0
+
+   // Terminates the process immediately with `status` (_exit(2)): no atexit
+   // handlers and no stdio flush. Intended for forked children.
+   exit_now: Int => ()
+   exit_now = status => c_exit(i32(status))
+
+   // Creates a connected pair of AF_UNIX stream sockets with close-on-exec set
+   // on both ends. Returns `<+ (fd0, fd1) +>`, or `<-->` on failure.
+   socketpair: () => < (Int, Int) | >
+   socketpair = !=>
+      fds = PipeFds(0i32, 0i32)
+      c_socketpair(1i32, i32(SOCK_STREAM_CLOEXEC), 0i32, &fds) != 0i32 | --| <-->
+      a = Int(fds.r)
+      b = Int(fds.w)
+      set_cloexec(a)
+      set_cloexec(b)
+      <+ (a, b) +>
+
+   // Linux: requests that the kernel send `sig` to this process when its
+   // parent exits (prctl PR_SET_PDEATHSIG). Returns `<+>` on success; always
+   // `<->` on platforms without this facility.
+   set_parent_death_signal: Int => <>
+   set_parent_death_signal = sig => pdeath_os(OsPlat, sig)

@@ -94,6 +94,11 @@ io::out $ out
 | | `os::exec(cmd)` | `String => < ExecResult | >` | Runs `cmd` via `popen` and returns `(status, output)` |
 | | `os::run(cmd)` | `String => < String | >` | Runs `cmd` via `popen` and returns `<+ output +>` when status is `0` |
 | | `os::spawn(path, argv)` | `String, Addr => Int` | Low-level `posix_spawn` with raw `Addr` `argv` pointer |
+| **Low-Level Process Primitives** | `os::fork!` | `() => Int` | `fork(2)`: child pid in the parent, `0` in the child, negative on failure (errno set) |
+| | `os::dup2(old_fd, new_fd)` | `Int, Int => <>` | `dup2(2)`: duplicates `old_fd` onto `new_fd`; `<+>` on success |
+| | `os::exit_now(status)` | `Int => ()` | `_exit(2)`: terminates immediately without atexit handlers or stdio flush (use in forked children) |
+| | `os::socketpair!` | `() => < (Int, Int) | >` | Connected `AF_UNIX` stream socket pair with close-on-exec set on both ends |
+| | `os::set_parent_death_signal(sig)` | `Int => <>` | Linux `prctl(PR_SET_PDEATHSIG)`: deliver `sig` when the parent exits; always `<->` on other platforms |
 
 ## Usage examples
 

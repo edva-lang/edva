@@ -14,6 +14,7 @@
    dva_arena_destroy: (Addr) => ()
    dva_arena_current: () => Addr
    dva_arena_set_current: (Addr) => Addr
+   c_memchr = memchr: (Addr, Int, Int) => Addr
 
 #public
    #type Arena (raw: Addr, cap: Int)
@@ -149,3 +150,11 @@
       p.capacity @ i =>
          is_act = @[p.active + i u8]
          is_act != 0 | f $ (p.buffer + i * p.elem_size)
+
+   // Returns the offset of the first byte equal to `byte` in `[p, p + len)`
+   // (memchr(3)), or `<-->` if it does not occur.
+   index_byte: Addr, Int, Int => < Int | >
+   index_byte = p, byte, len =>
+      len !> 0 | --| <-->
+      r = c_memchr(p, byte .&. 0xFF, len)
+      r == Addr(0) | <--> | <+ Int(r - p) +>

@@ -568,4 +568,31 @@
       r = get_route_info!
       r.1
 
+#foreign "c"
+   c_sendfile = sendfile: (out_fd: Int, in_fd: Int, offset: Addr, count: Int) => Int
+
+#private
+   #type NetPlatDarwin (a: Int, b: Int)
+   #type NetPlatLinux  (a: Int, b: Int)
+   #type NetPlat #! (os ["darwin", "freebsd", "openbsd", "netbsd"] NetPlatDarwin | NetPlatLinux)
+
+   sendfile_linux: Int, Int, Int, Int => Int
+   sendfile_linux = out_fd, in_fd, offset, count =>
+      off' = offset
+      c_sendfile(out_fd, in_fd, &off', count)
+
+   sendfile_os: #! OS: Type, Int, Int, Int, Int => Int
+   sendfile_os = #! OS, out_fd, in_fd, offset, count =>
+      OS
+         [NetPlatLinux] sendfile_linux(out_fd, in_fd, offset, count)
+         | -1
+
+#public
+   // Copies up to `count` bytes from file `in_fd`, starting at byte `offset`,
+   // to `out_fd` (typically a socket) inside the kernel (Linux sendfile(2));
+   // `in_fd`'s file position is not changed. Returns the number of bytes sent
+   // (0 at end of file), or -1 with errno set (e.g. EAGAIN on a non-blocking
+   // socket). Returns -1 on platforms without Linux sendfile semantics.
+   sendfile: Int, Int, Int, Int => Int
+   sendfile = out_fd, in_fd, offset, count => sendfile_os(NetPlat, out_fd, in_fd, offset, count)
 
