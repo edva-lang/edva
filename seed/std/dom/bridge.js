@@ -491,8 +491,24 @@ export async function instantiateDOM(source, imports = {}, options = {}) {
   const dom = createDOMAdapter(options);
   const merged = { ...imports, env: { ...dom.imports.env, ...imports.env } };
   const input = source instanceof Response ? await source.arrayBuffer() : source;
-  const result = await WebAssembly.instantiate(input, merged);
-  const instance = result.instance || result;
+  const module = input instanceof WebAssembly.Module
+    ? input : await WebAssembly.compile(input);
+  const unresolved = WebAssembly.Module.imports(module).flatMap(item => {
+    const value = merged[item.module]?.[item.name];
+    if (value === undefined || value === null) {
+      return [`${item.module}.${item.name} (${item.kind})`];
+    }
+    if (item.kind === 'function' && typeof value !== 'function') {
+      return [`${item.module}.${item.name} (expected callable function)`];
+    }
+    return [];
+  });
+  if (unresolved.length) {
+    throw new WebAssembly.LinkError(
+      `Unresolved WebAssembly imports: ${unresolved.join(', ')}`
+    );
+  }
+  const instance = await WebAssembly.instantiate(module, merged);
   dom.attach(instance);
   return { instance, dom };
 }

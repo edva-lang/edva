@@ -14,6 +14,8 @@ instance.exports.main(0, 0);
 `instantiateDOM` provides DOM handles, callbacks, memory allocation, and the
 standard libc shims used by the adapter. Callers can still provide additional
 imports with the second argument; their `env` entries override defaults.
+Before instantiation, it checks the compiled module's imports against bridge
+and caller imports, and reports unresolved names in a `WebAssembly.LinkError`.
 
 For a focused end-to-end check, install the isolated browser test dependency
 with `npm ci --prefix tools/browser_dom`, then run `make dom-smoke`. It compiles

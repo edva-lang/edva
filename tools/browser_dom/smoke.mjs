@@ -21,6 +21,16 @@ for (const name of ['sin', 'cos', 'exp2', 'log2', 'pow', 'round']) {
   assert.equal(typeof createDOMAdapter().imports.env[name], 'function');
 }
 assert.equal(createDOMAdapter().imports.env.fma, undefined);
+await assert.rejects(
+  () => instantiateDOM(module),
+  error => error instanceof WebAssembly.LinkError &&
+    /env\.fma \(function\)/.test(error.message)
+);
+await assert.rejects(
+  () => instantiateDOM(module, { env: { fma: 0 } }),
+  error => error instanceof WebAssembly.LinkError &&
+    /env\.fma \(expected callable function\)/.test(error.message)
+);
 const { instance } = await instantiateDOM(
   bytes,
   { env: { fma: (x, y, z) => x * y + z } }
