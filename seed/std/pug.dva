@@ -451,56 +451,43 @@ render_tag_line = line_text, lines, line_idx, cur_indent, env, has_env, out =>
    i' < llen
       |
          rem_c = line_text(i')
-         rem_c == '/'
-            |
-               self_close' = <+>
-            |
-               rem_c == '.' && (i' + 1 == llen || line_text(i' + 1) == ' ')
-                  |
-                     is_dot_block' = <+>
-                  |
-                     rem_c == ':'
-                        |
-                           is_inline_chain' = <+>
-                           inline_child_text' = trim_spaces(line_text((i' + 1)..llen))
-                        |
-                           rem_c == '!' && i' + 1 < llen && line_text(i' + 1) == '='
-                              |
-                                 inline_content' = eval_buffered_expr(line_text((i' + 2)..llen), <->, env, has_env)
-                              |
-                                 rem_c == '='
-                                    |
-                                       inline_content' = eval_buffered_expr(line_text((i' + 1)..llen), <+>, env, has_env)
-                                    |
-                                       (rem_c == ' ' || rem_c == '\t')
-                                          |
-                                             raw_inline = line_text((i' + 1)..llen)
-                                             inline_content' = interpolate_text(raw_inline, env, has_env)
+         rem_c
+            ['/'] self_close' = <+>
+            ['.']
+               i' + 1 == llen || line_text(i' + 1) == ' '
+                  | is_dot_block' = <+>
+            [':']
+               is_inline_chain' = <+>
+               inline_child_text' = trim_spaces(line_text((i' + 1)..llen))
+            ['!']
+               i' + 1 < llen && line_text(i' + 1) == '='
+                  | inline_content' = eval_buffered_expr(
+                     line_text((i' + 2)..llen), <->, env, has_env
+                  )
+            ['=']
+               inline_content' = eval_buffered_expr(
+                  line_text((i' + 1)..llen), <+>, env, has_env
+               )
+            [' ', '\t']
+               raw_inline = line_text((i' + 1)..llen)
+               inline_content' = interpolate_text(raw_inline, env, has_env)
 
    // 5. Emit opening tag `<tag ...>`
-   out += '<'
-   out += tag_name'
+   out += "<${tag_name'}"
    ?id_val' > 0
       |
-         out += " id=\""
-         out += id_val'
-         out += '"'
+         out += " id=\"${id_val'}\""
    cls_str = +classes
    ?cls_str > 0
       |
-         out += " class=\""
-         out += cls_str
-         out += '"'
+         out += " class=\"${cls_str}\""
    extra_attrs' @ a =>
       a.name !["id", "class"]
          |
-            out += ' '
-            out += a.name
+            out += " ${a.name}"
             !a.is_bool
                |
-                  out += "=\""
-                  out += a.val
-                  out += '"'
+                  out += "=\"${a.val}\""
    out += '>'
 
    // 6. Void / self-closing check
@@ -520,9 +507,7 @@ render_tag_line = line_text, lines, line_idx, cur_indent, env, has_env, out =>
                ?inline_content' > 0 | out += inline_content'
                next_idx' = render_block(lines, line_idx + 1, cur_indent, env, has_env, out)
 
-   out += "</"
-   out += tag_name'
-   out += '>'
+   out += "</${tag_name'}>"
    next_idx'
 
 // Skips all lines whose indentation is strictly greater than `parent_indent`.
