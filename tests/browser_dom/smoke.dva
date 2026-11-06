@@ -1,0 +1,21 @@
+#use dom
+
+#export run_smoke: () => ()
+run_smoke = !=>
+   output = dom::find("#out")!!
+   dom::text(output, "Wasm DOM ready") !| _
+
+#export sin_value: Float => Float
+sin_value = x => %sin(x)
+#export cos_value: Float => Float
+cos_value = x => %cos(x)
+#export exp2_value: Float => Float
+exp2_value = x => %exp2(x)
+#export log2_value: Float => Float
+log2_value = x => %log2(x)
+#export pow_value: Float, Float => Float
+pow_value = x, y => %pow(x, y)
+#export round_value: Float => Float
+round_value = x => %round(x)
+#export fma_value: Float, Float, Float => Float
+fma_value = x, y, z => %fma(x, y, z)

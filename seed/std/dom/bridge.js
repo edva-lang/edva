@@ -470,11 +470,13 @@ export function createDOMAdapter(options = {}) {
     exit: code => { throw new Error(`Edva exited with status ${code}`); },
     getpid: () => 1, putchar: c => { console.log(String.fromCharCode(Number(c))); return c; },
     __errno_location: () => 0, __error: () => 0,
-    sin: Math.sin, cos: Math.cos, tan: Math.tan, asin: Math.asin, acos: Math.acos,
+    sin: Math.sin, cos: Math.cos, exp2: x => 2 ** Number(x),
+    tan: Math.tan, asin: Math.asin, acos: Math.acos,
     atan: Math.atan, atan2: Math.atan2, cbrt: Math.cbrt, pow: Math.pow,
     exp: Math.exp, log: Math.log, log2: Math.log2, log10: Math.log10,
     fmod: (a, b) => a % b, hypot: Math.hypot,
-    round: Math.round, floor: Math.floor, ceil: Math.ceil, trunc: Math.trunc,
+    round: x => x < 0 ? -Math.round(-x) : Math.round(x),
+    floor: Math.floor, ceil: Math.ceil, trunc: Math.trunc,
     fabs: Math.abs, sqrt: Math.sqrt
   };
   return {

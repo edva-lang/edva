@@ -81,7 +81,7 @@ ALL_SRCS      := $(STD_MODULES:%=std/%.dva) $(COMPILER_MODULES:%=src/%.dva) src/
 SCAN_SRCS     := $(shell find src std -name '*.dva')
 DEPS_MK       := build/deps.mk
 
-.PHONY: all build clean test check dom-test driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install uninstall
+.PHONY: all build clean test check dom-test dom-smoke driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install uninstall
 
 # Default target: incremental modular build
 all: edva
@@ -245,5 +245,8 @@ clean:
 	rm -f *.ll *.o
 
 # npm ci --prefix tools/browser_dom installs the isolated test dependency.
+dom-smoke: edva
+	bash tools/browser_dom/smoke.sh
+
 dom-test: edva
 	bash tools/browser_dom/run.sh

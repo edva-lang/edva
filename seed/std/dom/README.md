@@ -15,6 +15,18 @@ instance.exports.main(0, 0);
 standard libc shims used by the adapter. Callers can still provide additional
 imports with the second argument; their `env` entries override defaults.
 
+For a focused end-to-end check, install the isolated browser test dependency
+with `npm ci --prefix tools/browser_dom`, then run `make dom-smoke`. It compiles
+`tests/browser_dom/smoke.dva`, loads the emitted `.dom.js` adapter and Wasm
+module, and checks that a DOM text update reaches the document. `make dom-test`
+runs the broader bridge regression suite.
+
+For Wasm scalar math, LLVM lowers operations such as `%sin`, `%exp2`, `%log2`,
+`%pow`, and `%round` to `env` function imports on this target. The bridge
+provides these through JavaScript math functions; `%round` uses ties away from
+zero to match LLVM semantics. `%fma` requires the caller to supply `env.fma`;
+the standard JavaScript `Math` object has no fused multiply-add operation.
+
 ## API coverage
 
 The Dva API covers element lookup and creation, tree edits, text/value/checked
