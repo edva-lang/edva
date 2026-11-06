@@ -14,6 +14,7 @@
    gmtime_r: (timep: Addr, result: Addr) => Addr
    mktime: (tm: Addr) => i64
    strftime: (s: Addr, max: Int, format: String, tm: Addr) => Int
+   strptime: (s: String, format: String, tm: Addr) => Addr
 
 #public
 
@@ -595,3 +596,18 @@ format = #! T, fmt, x => format_dt_pattern(fmt, resolve_local_dt(x))
 //   `time::utc_format("%Y-%m-%d %H:%M", ts)`
 utc_format: #! T: Type, String, T => String
 utc_format = #! T, fmt, x => format_dt_pattern(fmt, resolve_utc_dt(x))
+
+// Parses `value` with a strptime(3) `format` into a zero-initialized struct tm.
+// Succeeds only when the whole input is consumed and contains no NUL byte.
+// Fields the format does not set stay zero (`year` is years since 1900,
+// `mon` is 0-based).
+parse_tm: String, String => < TmRaw | >
+parse_tm = value, format =>
+   ?value @ i =>
+      value(i) == 0 | --| <-->
+   tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, sys::addr_null)
+   end = strptime(value, format, &tm')
+   end == sys::addr_null | --| <-->
+   // The FFI passes a NUL-terminated copy; the cursor must stop at its end.
+   @[end u8] != 0u8 | --| <-->
+   <+ tm' +>

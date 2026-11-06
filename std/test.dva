@@ -64,7 +64,7 @@ check_eq_str = actual, expected, label =>
 
 check_eq_flag: <>, <>, String => <>
 check_eq_flag = actual, expected, label =>
-   same = (actual && expected) || (!actual && !expected)
+   same = actual == expected
    same
       | record_result(<+>, label, "")
       | record_result(<->, label, "got " + (actual | "<+>" | "<->") + ", expected " + (expected | "<+>" | "<->"))
@@ -162,7 +162,7 @@ struct_eq = a, b =>
       [Int, i8, i16, i32, i64, u8, u16, u32, u64] Int(a) == Int(b)
       [Float, f32, f64] Float(a) == Float(b)
       [String] a == b
-      [<>] (a && b) || (!a && !b)
+      [<>] a == b
       [Rune] a == b
       [()] <+>
       [<P|>]
@@ -280,7 +280,7 @@ check_ne_str = actual, unexpected, label =>
 
 check_ne_flag: <>, <>, String => <>
 check_ne_flag = actual, unexpected, label =>
-   diff = (actual && !unexpected) || (!actual && unexpected)
+   diff = actual != unexpected
    diff
       | record_result(<+>, label, "")
       | record_result(<->, label, "got " + (actual | "<+>" | "<->") + " (expected != " + (unexpected | "<+>" | "<->") + ")")

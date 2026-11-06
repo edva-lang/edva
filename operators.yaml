@@ -427,17 +427,17 @@ operators:
     kind: Equals
     kind_self: Eq
     assoc: left
-    operands: "numeric, numeric | String, String | Builder, Builder | enum, enum"
+    operands: "numeric, numeric | String, String | Builder, Builder | enum, enum | Flag, Flag"
     result: "Ramification (bare Flag)"
-    desc: "equality: numeric value equality; String content equality (length short-circuit then memcmp); Builder pointer identity; two ENUM values perform deep structural equality (variant tag and payload). Non-enum rams emit E3084."
+    desc: "equality: numeric value equality; String content equality (length short-circuit then memcmp); Builder pointer identity; two ENUM values perform deep structural equality (variant tag and payload); two bare Flags compare truth values (XNOR). Other rams emit E3027."
   - symbol: "!="
     tier: comparison
     kind: NotEqual
     kind_self: NotEq
     assoc: left
-    operands: "numeric, numeric | String, String | Builder, Builder | enum, enum"
+    operands: "numeric, numeric | String, String | Builder, Builder | enum, enum | Flag, Flag"
     result: "Ramification (bare Flag)"
-    desc: "inequality: the complement of == (unsigned operands use the unsigned NE predicate); on two enums, the complement of deep structural equality."
+    desc: "inequality: the complement of == (unsigned operands use the unsigned NE predicate); on two enums, the complement of deep structural equality; on two bare Flags, logical XOR."
   - symbol: "!<"
     tier: comparison
     kind: NotLess

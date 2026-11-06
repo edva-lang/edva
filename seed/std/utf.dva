@@ -89,3 +89,23 @@
       cp == 0xFFFD && (need != 3 || b0 != 0xEF || s(i + 1) != 0xBF || s(i + 2) != 0xBD)
          | (-1, 1)
          | (cp, need)
+
+   // Byte offset of the next rune boundary after pos (clamped to ?s; an
+   // invalid byte counts as a one-byte rune)
+   next_start: String, Int => Int
+   next_start = s, pos =>
+      n = ?s
+      pos !< n | --| n
+      pos + decode_str_at(s, %max(pos, 0)).1
+
+   // Byte offset of the start of the rune that ends at pos (0 at the start;
+   // skips at most three continuation bytes)
+   prev_start: String, Int => Int
+   prev_start = s, pos =>
+      pos !> 0 | --| 0
+      p' = %min(pos, ?s) - 1
+      0..3 @
+         p' !> 0 | -->
+         (s(p') .&. 0xC0) == 0x80 | p' = p' - 1
+         | -->
+      %max(0, p')

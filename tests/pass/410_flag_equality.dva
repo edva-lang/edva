@@ -1,0 +1,37 @@
+// DVA-35: == / != on two bare Flags (XNOR / XOR).
+#use io
+
+show: <> => String
+show = f => f | "<+>" | "<->"
+
+xor: <>, <> => <>
+xor = a, b => a != b
+
+xnor: <>, <> => <>
+xnor = a, b => a == b
+
+t = 3 > 2
+f = 1 > 2
+
+io::out("xor  ++ " + show(xor(t, t)))
+io::out("xor  +- " + show(xor(t, f)))
+io::out("xor  -+ " + show(xor(f, t)))
+io::out("xor  -- " + show(xor(f, f)))
+io::out("xnor ++ " + show(xnor(t, t)))
+io::out("xnor +- " + show(xnor(t, f)))
+io::out("xnor -+ " + show(xnor(f, t)))
+io::out("xnor -- " + show(xnor(f, f)))
+
+// Literals and negations on either side.
+io::out("lit   " + show(t == <+>))
+io::out("lit'  " + show(f != <->))
+io::out("neg   " + show(!t == f))
+
+// Comparison results as operands (word-boundary style).
+prev = 5 > 0
+curr = 0 > 5
+io::out("bound " + show(prev != curr))
+io::out("cond  " + show((1 == 1) == (2 == 2)))
+
+// Inside a ramification condition.
+t != f | io::out("branch xor") | io::out("branch xnor")

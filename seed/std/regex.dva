@@ -697,8 +697,8 @@ check_anchor = kind, text, sp =>
       |
          prev_w = sp > 0 && is_word_byte(text(sp - 1))
          curr_w = sp < len && is_word_byte(text(sp))
-         is_boundary = (prev_w && !curr_w) || (!prev_w && curr_w)
-         kind == ANCHOR_WORD | is_boundary | !is_boundary
+         is_boundary = prev_w != curr_w
+         (kind == ANCHOR_WORD) == is_boundary
 
 add_thread: Thread{}, Int{}, Int, Instr{}, String, Int, Int, Int{} => Thread{}
 add_thread = list, visited, step_gen, prog, text, sp, pc, saved =>

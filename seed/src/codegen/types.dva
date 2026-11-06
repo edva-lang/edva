@@ -2851,7 +2851,7 @@ ctfe_eval_type_flag_simple = cond =>
                lt.1 && rt.1
                   |
                      eq = type_info_equal(lt.0, rt.0)
-                     flag = is_neq | !eq | eq
+                     flag = is_neq != eq
                      (flag | 1 | 0, <+>)
                   | (0, <->)
             | (0, <->)
@@ -2871,7 +2871,7 @@ ctfe_eval_type_flag = cg, cond =>
                lt.1 && rt.1
                   |
                      eq = type_info_equal(lt.0, rt.0)
-                     flag = is_neq | !eq | eq
+                     flag = is_neq != eq
                      (flag | 1 | 0, <+>)
                   | (0, <->)
             | (0, <->)

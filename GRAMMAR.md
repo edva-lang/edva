@@ -1186,8 +1186,9 @@ runtime (never silently mask/truncate).
 - `String` `-` `*` `/` `%` — no arithmetic on strings.
 - `String` `<` `>` — ordering is meaningless on byte strings; only `==`
   content equality exists (use `str::compare` for ordering).
-- `==` / `!=` on ramifications (`E3027`) — ram tags are tested in choice
-  patterns, not compared.
+- `==` / `!=` on payload-bearing ramifications (`E3027`) — ram tags are tested
+  in choice patterns, not compared. Two bare Flags (`<>`) are the exception:
+  `a == b` is logical XNOR and `a != b` is logical XOR.
 - `<` `>` `!<` `!>` on ramifications (`E3127`) — ramifications have no
   ordering; test their slots with `|` branches instead.
 - `!<` reads as "greater or equal" and `!>` reads as "less or equal". On floats,

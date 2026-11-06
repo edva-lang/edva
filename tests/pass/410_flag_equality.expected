@@ -1,0 +1,14 @@
+xor  ++ <->
+xor  +- <+>
+xor  -+ <+>
+xor  -- <->
+xnor ++ <+>
+xnor +- <->
+xnor -+ <->
+xnor -- <+>
+lit   <+>
+lit'  <->
+neg   <+>
+bound <+>
+cond  <+>
+branch xor

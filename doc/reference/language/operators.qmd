@@ -54,8 +54,8 @@ Comparisons sit at LBP 120, RBP 130 and return a bare flag `<>` (`<+>` or `<->`)
 | `>` | Greater than | Numeric, `Rune`, `String`, `Addr` | Ordered (`OGT`); `<->` if either operand is `NaN`. Rejected on rams/enums (`E3127`) |
 | `!<` | Greater than or equal ($\ge$) | Numeric, `Rune`, `String`, `Addr` | Ordered (`OGE`); `<->` if either operand is `NaN` (distinct from `!(a < b)`) |
 | `!>` | Less than or equal ($\le$) | Numeric, `Rune`, `String`, `Addr` | Ordered (`OLE`); `<->` if either operand is `NaN` (distinct from `!(a > b)`) |
-| `==` | Equal | Scalars, `String`, records, enums, `Type` | Deep structural equality on records and enums (`E3084` on non-enum rams or fn payloads); zero-alloc segment check on `str == (p1, p2, ...)` |
-| `!=` | Not equal | Scalars, `String`, records, enums, `Type` | Logical negation of `==` (`UNE` on floats: `<+>` if either operand is `NaN`) |
+| `==` | Equal | Scalars, `String`, records, enums, `Type`, two bare Flags `<>` | Deep structural equality on records and enums; on two Flags, logical XNOR (`E3027` on other rams, `E3084` on fn payloads); zero-alloc segment check on `str == (p1, p2, ...)` |
+| `!=` | Not equal | Scalars, `String`, records, enums, `Type`, two bare Flags `<>` | Logical negation of `==` (`UNE` on floats: `<+>` if either operand is `NaN`); on two Flags, logical XOR |
 
 ### Chained comparisons
 

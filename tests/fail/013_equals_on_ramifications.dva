@@ -1,2 +1,3 @@
-a = 15 > 10
-b = (a == <+>)
+// Equality on payload-bearing rams stays E3027 (only bare Flags compare; DVA-35).
+a = <+ 15 +>
+b = (a == <+ 15 +>)

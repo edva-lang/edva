@@ -2607,7 +2607,10 @@ unify_cmp_op = ctx, op, t1, t2 =>
    is_ram2 = c2_ord [Ram]
    is_flg1 = c1_ord [Prim p1] (p1 [Flag]) | <->
    is_flg2 = c2_ord [Prim p2] (p2 [Flag]) | <->
-   is_ram_cmp = is_ram1 || is_ram2 || (is_flg1 && is_flg2)
+   // Two bare Flags support equality (== is XNOR, != is XOR); ordering
+   // stays E3127 and every other ram comparison stays E3027.
+   is_flag_eq = is_eq_neq && is_flg1 && is_flg2
+   is_ram_cmp = !is_flag_eq && (is_ram1 || is_ram2 || (is_flg1 && is_flg2))
    is_enum_ord
       |
          unify::add_error(ctx, 3127, "Operator '" + cmp_binop_name(op) +
@@ -2988,12 +2991,9 @@ err_ram_nonram = ctx =>
    unify::add_error(ctx, 3089,
       "Cannot combine ramification and non-ramification in op")
 
-diff_payload: <>, <> => <>
-diff_payload = a, b => a && !b || !a && b
-
 unify_logical_and: unify::Ctx, unify::URam, unify::URam => unify::UType
 unify_logical_and = ctx, r1, r2 =>
-   diff = diff_payload(r1.neg.has_payload, r2.neg.has_payload)
+   diff = r1.neg.has_payload != r2.neg.has_payload
    diff
       |
          err_ram_circuit(ctx)
@@ -3007,7 +3007,7 @@ unify_logical_and = ctx, r1, r2 =>
 
 unify_logical_or: unify::Ctx, unify::URam, unify::URam => unify::UType
 unify_logical_or = ctx, r1, r2 =>
-   diff = diff_payload(r1.pos.has_payload, r2.pos.has_payload)
+   diff = r1.pos.has_payload != r2.pos.has_payload
    diff
       |
          err_ram_circuit(ctx)

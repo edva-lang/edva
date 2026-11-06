@@ -658,9 +658,7 @@ unify_enum = ctx, e1, e2 =>
                all_ok' = <+>
                e1.variants @ v1, i =>
                   v2 = e2.variants(i)!!
-                  diff_payload = v1.has_payload && !v2.has_payload ||
-                     !v1.has_payload && v2.has_payload
-                  v1.label != v2.label || diff_payload
+                  v1.label != v2.label || v1.has_payload != v2.has_payload
                      |
                         add_error(ctx, 3084, "Enum variant mismatch: " +
                            v1.label + " vs " + v2.label)

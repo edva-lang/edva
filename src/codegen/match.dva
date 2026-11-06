@@ -494,9 +494,15 @@ codegen_emit_cmp_nonmixed = cg, op, lr, rr =>
                      slots = find_enum_slots_for_cmp(cg)
                      codegen_emit_enum_deep_cmp(cg, op, lr, rr, slots)
                   |
+                     both_flag = is_eq_op && types::is_flag_vt(lr.1) &&
+                        types::is_flag_vt(rr.1)
                      flag_ram = types::is_any_ram_vt(lr.1) || types::is_any_ram_vt(rr.1)
                      flag_ram
-                        | codegen_emit_cmp_flag_ram_error(cg, op)
+                        |
+                           both_flag
+                              | (codegen_emit_flag_eq(cg, op, l_val, lr.1, r_val, rr.1),
+                                 ast::ValueType(Flag))
+                              | codegen_emit_cmp_flag_ram_error(cg, op)
                         |
                            both_str = types::is_str_vt(lr.1) && types::is_str_vt(rr.1)
                            both_str
@@ -1585,6 +1591,16 @@ codegen_eval_user_diag = cg, ud =>
       |
          types::init_error(cg, "E3174", msg_str, ud.line, ud.col)
          (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
+
+// Equality on two bare Flags: normalize both to i1, then icmp eq (XNOR) or
+// icmp ne (XOR).
+codegen_emit_flag_eq: types::Cg, ast::BinaryOp, Addr, ast::ValueType, Addr,
+   ast::ValueType => Addr
+codegen_emit_flag_eq = cg, op, l, lvt, r, rvt =>
+   l1 = stmt::codegen_cond_value_valid(cg, l, lvt)
+   r1 = stmt::codegen_cond_value_valid(cg, r, rvt)
+   pred = op [NotEq] 33 | 32
+   LLVMBuildICmp(cg.builder, pred, l1, r1, "flag.cmp")
 
 codegen_emit_cmp_flag_ram_error: types::Cg, ast::BinaryOp => (Addr, ast::ValueType)
 codegen_emit_cmp_flag_ram_error = cg, op =>
@@ -4588,7 +4604,7 @@ codegen_niche_ram_construct: types::Cg, <>, <>,
    <tast::TypedExpr|> => (Addr, ast::ValueType)
 codegen_niche_ram_construct = cg, is_pos, is_pn, pay_opt =>
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
-   is_same = is_pos | is_pn | !is_pn
+   is_same = is_pos == is_pn
    is_same
       |
          pay_opt

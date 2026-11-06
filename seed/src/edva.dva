@@ -552,7 +552,7 @@ find_and_load_import_map = target_path, explicit_map_path =>
                lock_stale = file_exists(lock_file) && mtime_map < path_mtime(lock_file)
                ccl_stale || lock_stale
                   |
-                     log::error $ "E5031: import map is older than edva.ccl — run 'edva pkg fetch'"
+                     log::error $ "E5031: import map is older than edva.ccl — run 'edva fetch'"
                      <-->
                   |
                      inst_list = PkgInstances()
@@ -766,7 +766,7 @@ resolve_module = base, mod_path, ldr =>
       | resolve_local_module(base, mod_path, ldr)
       | !ldr.import_map.has_map
          |
-            log::error $ "E5030: #use " + mod_path + ": no import map — run 'edva pkg fetch'"
+            log::error $ "E5030: #use " + mod_path + ": no import map — run 'edva fetch'"
             ResolvedModule(None)
          | resolve_pkg_module(base, mod_path, ldr)
 
@@ -2236,8 +2236,10 @@ active_repl_bin: String
 active_repl_bin = ""
 active_repl_dir: String
 active_repl_dir = ""
-::orig_termios: <Addr|>
-::orig_termios = <-->
+// Saved terminal attributes (struct termios is ~60 bytes; 128 leaves headroom).
+// A Builder gives a stable, writable buffer for tcgetattr/tcsetattr via &buf.
+::orig_termios: Builder
+::orig_termios = {128}
 ::raw_mode_active: <>
 ::raw_mode_active = <->
 
@@ -2246,20 +2248,15 @@ enable_raw_mode = !=>
    libc::isatty(0) == 0
       | <->
       |
-         buf = orig_termios
-            | p => p
-            |
-               p = libc::malloc(128)
-               orig_termios = <+ p +>
-               p
-         libc::tcgetattr(0, buf) != 0
+         ?orig_termios = 128
+         libc::tcgetattr(0, &orig_termios) != 0
             | <->
             |
-               raw = libc::malloc(128)
-               libc::memcpy(raw, buf, 128)
-               libc::cfmakeraw(raw)
-               res = libc::tcsetattr(0, 0, raw)
-               libc::free(raw)
+               raw = {128}
+               ?raw = 128
+               libc::memcpy(&raw, &orig_termios, 128)
+               libc::cfmakeraw(&raw)
+               res = libc::tcsetattr(0, 0, &raw)
                res == 0
                   |
                      raw_mode_active = <+>
@@ -2270,7 +2267,7 @@ disable_raw_mode: () => ()
 disable_raw_mode = !=>
    raw_mode_active
       |
-         orig_termios | p => libc::tcsetattr(0, 0, p)
+         libc::tcsetattr(0, 0, &orig_termios)
          raw_mode_active = <->
 
 write_esc: String => ()
@@ -2580,8 +2577,6 @@ repl_cleanup = sess =>
    ?sess.ll_path > 0 | unlink(sess.ll_path)
    ?sess.bin_path > 0 | unlink(sess.bin_path)
    ?sess.dir > 0 | rmdir(sess.dir)
-   orig_termios | p => libc::free(p)
-   orig_termios = <-->
    active_repl_src ::= ""
    active_repl_ll ::= ""
    active_repl_bin ::= ""
@@ -2705,6 +2700,115 @@ valid_opt_level = s =>
 compiler_cli_opts: () => cli::Opts
 compiler_cli_opts = !=>
    cli::Opts(
+      // Top-level subcommands
+      cli::cmd("init", "Initialize a new Edva package", cli::Opts(
+         cli::pos("dir", ".", "Target directory to initialize"),
+         cli::opt("n:name", "", "Package name (defaults to directory basename)", not_flag),
+         cli::opt("lib", <->, "Initialize a library package without src/main.dva")
+      )),
+      cli::cmd("add", "Add a dependency to edva.ccl and lock it", cli::Opts(
+         cli::pos("spec", cli::Args(), "Dependency spec (<spec> or <alias> <spec>)"),
+         cli::opt("as", "", "Explicit dependency alias", not_flag),
+         cli::opt("rev", "", "Git revision, tag, or branch", not_flag),
+         cli::opt("path", "", "Local directory path dependency", not_flag),
+         cli::opt("git", "", "Git repository URL dependency", not_flag),
+         cli::opt("url", "", "Archive URL dependency (.tar.gz)", not_flag),
+         cli::opt("hash", "", "Expected SHA-256 hash for archive", not_flag),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag),
+         cli::opt("no-cache", <->, "Disable compilation cache")
+      )),
+      cli::cmd("rm|remove", "Remove a dependency from edva.ccl", cli::Opts(
+         cli::pos("alias", String, "Dependency alias to remove", not_flag),
+         cli::pos("dir", ".", "Package root directory"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag),
+         cli::opt("no-cache", <->, "Disable compilation cache")
+      )),
+      cli::cmd("build", "Build package or .dva source file", cli::Opts(
+         cli::pos("target-path", ".", "Package directory or .dva source file"),
+         cli::opt("o:output", "", "Output binary path", not_flag),
+         cli::opt("t:target", "", "Target triple (e.g. x86_64-unknown-linux-gnu)", not_flag),
+         cli::opt("O:opt", "", "Optimization level (0, 1, 2, 3, s, z)", valid_opt_level),
+         cli::opt("cflag", cli::Args(), "Pass additional flag to clang"),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag),
+         cli::opt("no-cache", <->, "Disable compilation cache")
+      )),
+      cli::cmd("run", "Build and run package or .dva source file", cli::Opts(
+         cli::pos("target-path", ".", "Package directory or .dva source file"),
+         cli::opt("o:output", "", "Output binary path", not_flag),
+         cli::opt("t:target", "", "Target triple (e.g. x86_64-unknown-linux-gnu)", not_flag),
+         cli::opt("O:opt", "", "Optimization level (0, 1, 2, 3, s, z)", valid_opt_level),
+         cli::opt("cflag", cli::Args(), "Pass additional flag to clang"),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag),
+         cli::opt("no-cache", <->, "Disable compilation cache")
+      )),
+      cli::cmd("test", "Run package tests or a single test .dva file", cli::Opts(
+         cli::pos("target-path", ".", "Package directory or test .dva file"),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag),
+         cli::opt("no-cache", <->, "Disable compilation cache")
+      )),
+      cli::cmd("fetch", "Resolve dependencies and write edva.lock.ccl", cli::Opts(
+         cli::pos("dir", ".", "Package root directory"),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag),
+         cli::opt("no-cache", <->, "Disable compilation cache")
+      )),
+      cli::cmd("update", "Refresh pinned git dependencies in edva.lock.ccl", cli::Opts(
+         cli::pos("args", cli::Args(), "Optional dependency alias and/or package directory"),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag),
+         cli::opt("no-cache", <->, "Disable compilation cache")
+      )),
+      cli::cmd("tree|graph", "Display resolved package dependency tree", cli::Opts(
+         cli::pos("dir", ".", "Package root directory"),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag)
+      )),
+      cli::cmd("vendor", "Materialize all dependencies into vendor/", cli::Opts(
+         cli::pos("dir", ".", "Package root directory"),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag)
+      )),
+      cli::cmd("cache", "Manage compilation cache (dir, ls, clean)", cli::Opts(
+         cli::cmd("dir", "Print active compilation cache directory", cli::Opts(
+            cli::opt("cache", "", "Compilation cache directory path", not_flag)
+         )),
+         cli::cmd("ls|list|status", "List cached compilation entries", cli::Opts(
+            cli::opt("cache", "", "Compilation cache directory path", not_flag)
+         )),
+         cli::cmd("clean", "Remove all cached compilation entries", cli::Opts(
+            cli::opt("cache", "", "Compilation cache directory path", not_flag)
+         )),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag)
+      )),
+      cli::cmd("fmt", "Format Edva source files", cli::Opts(
+         cli::pos("files", cli::Args(), "Files or directories to format"),
+         cli::opt("check", <->, "Check if files are formatted (exit 1 if changes needed)"),
+         cli::opt("stdout", <->, "Write formatted output to stdout"),
+         cli::opt("stdin", <->, "Read source from stdin and write to stdout")
+      )),
+      cli::cmd("lsp", "Start Edva Language Server (JSON-RPC over stdio)"),
+      cli::cmd("version", "Print compiler version and exit"),
+      // Direct compilation options
       cli::opt("o:output", "", "Output binary or object path", not_flag),
       cli::opt("r:run", <->, "Run binary immediately after linking"),
       cli::opt("ir", <->, "Emit LLVM IR (.ll) only; do not invoke clang"),
@@ -2726,7 +2830,10 @@ compiler_cli_opts = !=>
       cli::opt("import-map", "", "Path to package import map", not_flag),
       cli::opt("cache", "", "Compilation cache directory path"),
       cli::opt("no-cache", <->, "Disable compilation cache"),
-      cli::opt("cflag", cli::Args(), "Pass additional flag to clang")
+      cli::opt("cflag", cli::Args(), "Pass additional flag to clang"),
+      // Direct compilation positional arguments
+      cli::pos("input", "", "Input .dva file or directory"),
+      cli::pos("output", "", "Output binary path")
    )
 
 print_usage: Int => ()
@@ -2738,22 +2845,35 @@ print_usage = ignored =>
       version::VERSION
    )
 
-parse_cli_opts: () => CliOpts
-parse_cli_opts = !=>
+parse_and_dispatch_cli: () => CliOpts
+parse_and_dispatch_cli = !=>
    res = cli::parse(
       compiler_cli_opts!,
       "Edva self-hosted compiler and package driver",
       version::VERSION,
       <+>
    )
+   sub = cli::subcmd(res)
+   sub != ""
+      |
+         sub
+            ["fmt"]
+               rc = formatter::main(2)
+               sys::exit(rc)
+            ["lsp"]
+               rc = lsp::main(compiler_std_dir, lsp_typecheck_doc)
+               sys::exit(rc)
+            ["version"]
+               print $ format_version!
+               sys::exit(0)
+            |
+               rc = pkg::dispatch(sub, res)
+               sys::exit(rc)
+
    opts = init_opts(0)
    pos = cli::rest(res)
    ?pos > 0 | opts.target = (pos(0) | _ | "")
    ?pos > 1 | opts.outpath = (pos(1) | _ | "")
-   ?pos > 2
-      |
-         log::error $ "E5008: Extra argument '" + (pos(2) | _ | "") + "'"
-         sys::exit(1)
 
    out_flag = cli::str(res, "output")
    out_flag != "" | opts.outpath = out_flag
@@ -2828,9 +2948,6 @@ dump_program_ast = prog, as_tree =>
          as_tree
             | print $ show::show_tree(prog, 0)
             | print $ show::show_expr(prog)
-
-is_pkg_subcmd: String => <>
-is_pkg_subcmd = ["init", "add", "fetch", "build", "test", "update", "graph", "tree", "vendor", "cache", "version"]
 
 eval_cleanup: String, String, String, String => ()
 eval_cleanup = dir, src_f, ll_f, bin_f =>
@@ -2973,25 +3090,9 @@ run_driver: Int => ()
 run_driver = ignored =>
    log::set_fd(1)
    log::set_timestamps(<->)
-   sys::argc > 1 && sys::argv_string(1) == "pkg"
-      |
-         rc = pkg::main(2)
-         sys::exit(rc)
-   sys::argc > 1 && is_pkg_subcmd(sys::argv_string(1))
-      |
-         rc = pkg::main(1)
-         sys::exit(rc)
    init_compiler_paths!
-   sys::argc > 1 && sys::argv_string(1) == "fmt"
-      |
-         rc = formatter::main(2)
-         sys::exit(rc)
-   sys::argc > 1 && sys::argv_string(1) == "lsp"
-      |
-         rc = lsp::main(compiler_std_dir, lsp_typecheck_doc)
-         sys::exit(rc)
    ast::cell_var_reset!
-   opts = parse_cli_opts!
+   opts = parse_and_dispatch_cli!
    eff_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
    opts.triple = eff_triple
    parser::set_target_triple(eff_triple)

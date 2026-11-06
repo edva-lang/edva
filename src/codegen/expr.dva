@@ -5391,7 +5391,7 @@ codegen_typed_eval_bin = cg, op, lhs, rhs, ut, ti =>
                eq = types::type_info_equal(types::ctfe_canonical_ti(cg, lt_res.0),
                   types::ctfe_canonical_ti(cg, rt_res.0))
                is_ne = op [NotEq]
-               flag = is_ne | !eq | eq
+               flag = is_ne != eq
                c_flag = LLVMConstInt(LLVMInt1Type!,
                   (flag | 1 | 0), 0)
                (c_flag, ast::ValueType(Flag))
