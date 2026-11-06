@@ -351,6 +351,10 @@ release = element => remove(element)
 
 #private
 #type Command (op: Int, a: Int, b: Int, c: Int, key: Owned, value: Owned)
+#type WireCommand #packed (
+   op: Int, a: Int, b: Int, c: Int,
+   key_data: Int, key_length: Int, value_data: Int, value_length: Int
+)
 #type Commands Command{}
 
 #public
@@ -382,18 +386,14 @@ reserve = buffer, size =>
 
 serialize: Commands, Int, Owned => < | Error >
 serialize = commands, count, wire =>
-   reserve(wire, count * 64)--!
+   reserve(wire, count * #size WireCommand)--!
    commands @ command, i =>
       i !< count | -->
-      p = wire.data + i * 64
-      @[p] = command.op
-      @[p + 8] = command.a
-      @[p + 16] = command.b
-      @[p + 24] = command.c
-      @[p + 32] = Int(command.key.data)
-      @[p + 40] = command.key.length
-      @[p + 48] = Int(command.value.data)
-      @[p + 56] = command.value.length
+      p = wire.data + i * #size WireCommand
+      wire_command = WireCommand(command.op, command.a, command.b, command.c,
+         Int(command.key.data), command.key.length,
+         Int(command.value.data), command.value.length)
+      %memcpy(p, &wire_command, #size WireCommand)
    <++>
 
 command_slot: Commands, Int => Command
