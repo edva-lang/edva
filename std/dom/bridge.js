@@ -6,7 +6,9 @@ export const OPS = Object.freeze({
   REMOVE_ATTR: 16, STYLE: 17, CLASS: 18, CHECKED_GET: 19, CHECKED: 20,
   HIDDEN: 21, INVALIDATE: 22, INVALIDATE_TREE: 23, BOUNDS: 30, COMPUTED: 31,
   ON: 40, OFF: 41, TARGET: 42, MATCHED: 43, EVENT_VALUE: 44, KEY: 45,
-  POINTER: 46, PREVENT: 47, STOP: 48, EMPTY: 49, PARENT: 50, CHILDREN: 51
+  POINTER: 46, PREVENT: 47, STOP: 48, EMPTY: 49, PARENT: 50, CHILDREN: 51,
+  STORAGE_GET: 60, STORAGE_SET: 61, QUERY_GET: 62, QUERY_SET: 63,
+  PAGE_URL: 64, CLIPBOARD_WRITE: 65, DOWNLOAD_TEXT: 66
 });
 export const ERR = Object.freeze({
   NOT_FOUND: 1, INVALID_SELECTOR: 2, STALE_HANDLE: 3, BROWSER: 4,
@@ -342,6 +344,38 @@ export function createDOMAdapter(options = {}) {
         children.forEach((child, i) => view().setBigInt64(ptr + i * 8, handle(child), true));
         result(out, BigInt(ptr), children.length); break;
       }
+      case OPS.STORAGE_GET: {
+        let stored;
+        try { stored = globalThis.localStorage.getItem(name); }
+        catch (error) { throw new Failure(ERR.BROWSER, `Storage read failed: ${error.message}`); }
+        textResult(out, stored ?? ''); break;
+      }
+      case OPS.STORAGE_SET: {
+        try { globalThis.localStorage.setItem(name, value); }
+        catch (error) { throw new Failure(ERR.BROWSER, `Storage write failed: ${error.message}`); }
+        break;
+      }
+      case OPS.QUERY_GET: textResult(out, new URL(location.href).searchParams.get(name) ?? ''); break;
+      case OPS.QUERY_SET: {
+        const url = new URL(location.href);
+        if (value === '') url.searchParams.delete(name);
+        else url.searchParams.set(name, value);
+        history.replaceState(history.state, '', url); break;
+      }
+      case OPS.PAGE_URL: textResult(out, location.origin + location.pathname); break;
+      case OPS.CLIPBOARD_WRITE: {
+        if (!navigator.clipboard?.writeText) throw new Failure(ERR.BROWSER, 'Clipboard API unavailable');
+        navigator.clipboard.writeText(value).catch(error =>
+          (options.onError || console.error)(`Clipboard write failed: ${error.message}`));
+        break;
+      }
+      case OPS.DOWNLOAD_TEXT: {
+        const blob = new Blob([value], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob), anchor = document.createElement('a');
+        anchor.href = url; anchor.download = name;
+        document.body.appendChild(anchor); anchor.click(); anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000); break;
+      }
       case OPS.PARENT: {
         const node = elements.get(a).parentElement;
         result(out, node ? handle(node) : 0n); break;
@@ -435,7 +469,13 @@ export function createDOMAdapter(options = {}) {
     },
     exit: code => { throw new Error(`Edva exited with status ${code}`); },
     getpid: () => 1, putchar: c => { console.log(String.fromCharCode(Number(c))); return c; },
-    __errno_location: () => 0, __error: () => 0
+    __errno_location: () => 0, __error: () => 0,
+    sin: Math.sin, cos: Math.cos, tan: Math.tan, asin: Math.asin, acos: Math.acos,
+    atan: Math.atan, atan2: Math.atan2, cbrt: Math.cbrt, pow: Math.pow,
+    exp: Math.exp, log: Math.log, log2: Math.log2, log10: Math.log10,
+    fmod: (a, b) => a % b, hypot: Math.hypot,
+    round: Math.round, floor: Math.floor, ceil: Math.ceil, trunc: Math.trunc,
+    fabs: Math.abs, sqrt: Math.sqrt
   };
   return {
     imports: { env }, stats,

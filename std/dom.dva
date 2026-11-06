@@ -1,4 +1,5 @@
-// Browser DOM toolkit. The compiler emits the matching dom/bridge.js adapter.
+// Browser toolkit. bridge.js is the host implementation for DOM and browser
+// operations; keep browser policy (what to persist or copy) in the application.
 #use libc
 #use str
 #use binary
@@ -14,6 +15,7 @@
    edva_dom_report: (Addr, Int) => ()
 
 #public
+
 #type Element (slot: Int, generation: Int)
 #type Event (event_slot: Int, generation: Int)
 #type Listener (listener_slot: Int, generation: Int)
@@ -35,6 +37,7 @@ DUPLICATE_KEY = 9
 INVALID_RESULT = 10
 
 #private
+
 Reply: #packed (first: Int, length: Int, x: Float, y: Float, z: Float, w: Float)
 #type Owned (data: Addr, length: Int, capacity: Int)
 #type Property (op: Int, key: Owned, value: Owned, flag: Int, valid: <>)
@@ -320,6 +323,22 @@ bounds = element =>
    <+ Rect(r.x, r.y, r.z, r.w) ->
 computed_style: Element, String => < String | Error >
 computed_style = element, name => string_call(31, token(element), name)
+
+// Browser storage, URL state, clipboard, and plain-text downloads.
+storage_get: String => < String | Error >
+storage_get = key => string_call(60, 0, key)
+storage_set: String, String => < | Error >
+storage_set = key, value => unit_call(61, 0, 0, 0, key, value)
+query_get: String => < String | Error >
+query_get = key => string_call(62, 0, key)
+query_set: String, String => < | Error >
+query_set = key, value => unit_call(63, 0, 0, 0, key, value)
+page_url: () => < String | Error >
+page_url = !=> string_call(64, 0, "")
+clipboard_write: String => < | Error >
+clipboard_write = value => unit_call(65, 0, 0, 0, "", value)
+download_text: String, String => < | Error >
+download_text = filename, value => unit_call(66, 0, 0, 0, filename, value)
 is_empty: Element => < <> | Error >
 is_empty = element =>
    available()--!
