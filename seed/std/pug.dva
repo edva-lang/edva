@@ -1,0 +1,721 @@
+// std/pug.dva - Indentation-driven Pug-style HTML template renderer.
+//
+// Supports:
+// - `doctype html`
+// - Tag names, implicit `div` (`#id`, `.class`), and chained `#id.class1.class2` shorthands
+// - Attribute lists `(href="/path", disabled, title=page_title)` with class merging
+// - Void HTML5 elements (`meta`, `input`, `img`, `br`, `hr`, `link`, etc.)
+// - Inline text (`h1 Hello`), buffered escaped (`h1= title`), unescaped (`div!= raw`),
+//   inline tag chaining (`li: a(href="/") Home`), piped text (`| text`), and `.` text blocks
+// - Comments: unbuffered `//- ...` (omitted) and buffered `// ...` (`<!-- ... -->`)
+// - Data interpolation (`#{var}` escaped, `!{var}` unescaped) with dotted path lookup (`user.name`)
+// - Control flow: `if cond`, `unless cond`, `else if cond`, `else`, and `each item, i in list`
+
+#use str
+#use json
+
+#private
+pug_escape: String => String
+pug_escape = s =>
+   slen = ?s
+   slen == 0 | --| ""
+   out = {slen + 16}
+   ?s @ i =>
+      c = s(i)
+      c
+         ['&'] out += "&amp;"
+         ['<'] out += "&lt;"
+         ['>'] out += "&gt;"
+         ['"'] out += "&quot;"
+         ['\''] out += "&#39;"
+         | out += c
+   +out
+
+#public
+
+#type PugError (code: Int, message: String)
+#type PugLine: (
+   indent: Int,
+   text: String,
+   is_blank: <>
+)
+
+#type PugLines PugLine{}
+
+#type PugBinding: (
+   name: String,
+   val: json::Value
+)
+
+#type PugBindings PugBinding{}
+
+#type PugEnv: (
+   root: json::Value,
+   bindings: PugBindings
+)
+
+#type AttrPair: (
+   name: String,
+   val: String,
+   is_bool: <>
+)
+
+#type AttrPairs AttrPair{}
+
+// --- String & Character Helpers ---
+
+is_ident_char: Int => <>
+is_ident_char = ['a'...'z', 'A'...'Z', '0'...'9', '_', '-']
+
+is_var_path_char: Int => <>
+is_var_path_char = ['a'...'z', 'A'...'Z', '0'...'9', '_', '.']
+
+trim_spaces: String => String
+trim_spaces = s =>
+   slen = ?s
+   slen == 0 | --| ""
+   start' = 0
+   0.. @
+      start' !< slen | -->
+      c = s(start')
+      c [' ', '\t', '\r'] | (start' = start' + 1) | -->
+   start' !< slen | --| ""
+   end' = slen
+   0.. @
+      end' !> start' | -->
+      c = s(end' - 1)
+      c [' ', '\t', '\r'] | (end' = end' - 1) | -->
+   s(start'..end')
+
+starts_with: String, String => <>
+starts_with = s, prefix =>
+   plen = ?prefix
+   ?s < plen |->
+   s(0..plen) == prefix
+
+is_void_tag: String => <>
+is_void_tag = ["area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"]
+
+// Splits source template into lines with measured leading indentation.
+split_pug_lines: String => PugLines
+split_pug_lines = src =>
+   lines = PugLines()
+   slen = ?src
+   i' = 0
+   0.. @
+      i' !< slen | -->
+      line_start = i'
+      0.. @
+         i' !< slen | -->
+         src(i') == '\n' | -->
+         i' = i' + 1
+      line_end' = i'
+      (line_end' > line_start && src(line_end' - 1) == '\r') | line_end' = line_end' - 1
+      raw_line = src(line_start..line_end')
+      rlen = ?raw_line
+      ind' = 0
+      col' = 0
+      0.. @
+         ind' !< rlen | -->
+         ch = raw_line(ind')
+         ch == ' '
+            |
+               col' = col' + 1
+               ind' = ind' + 1
+            |
+               ch == '\t'
+                  |
+                     col' = col' + 2
+                     ind' = ind' + 1
+                  | -->
+      ind' !< rlen
+         | lines += (0, "", <+>)
+         | lines += (col', raw_line(ind'..rlen), <->)
+      i' = i' + 1
+   lines
+
+// --- Data Context & Expression Lookup ---
+
+empty_env: () => PugEnv
+empty_env = !=>
+   (json::Value(Null), PugBindings())
+
+new_env: json::Value => PugEnv
+new_env = root =>
+   (root, PugBindings())
+
+lookup_in_object: json::Value, String => < json::Value | >
+lookup_in_object = obj, key =>
+   obj
+      [Object pairs]
+         hit' = <-->
+         pairs @ p =>
+            p.key == key
+               |
+                  hit' = <+ p.value +>
+                  -->
+         hit'
+      | <-->
+
+lookup_single: PugEnv, String => < json::Value | >
+lookup_single = env, name =>
+   nb = ?env.bindings
+   hit' = <-->
+   nb @ idx =>
+      b = env.bindings(nb - 1 - idx)!!
+      b.name == name
+         |
+            hit' = <+ b.val +>
+            -->
+   hit'
+      | v => <+ v +>
+      | lookup_in_object(env.root, name)
+
+// Resolves a dotted path like `user.name` or simple variable `title` in PugEnv.
+lookup_path: PugEnv, String => < json::Value | >
+lookup_path = env, path =>
+   tpath = trim_spaces(path)
+   plen = ?tpath
+   plen == 0 |-->
+   dot_idx' = -1
+   ?tpath @ i =>
+      tpath(i) == '.'
+         |
+            dot_idx' = i
+            -->
+   dot_idx' < 0
+      | lookup_single(env, tpath)
+      |
+         first = tpath(0..dot_idx')
+         rest_path' = tpath((dot_idx' + 1)..plen)
+         cur_opt' = lookup_single(env, first)
+         0.. @
+            !<>(cur_opt') || ?rest_path' == 0 | -->
+            cur_val = cur_opt'!!
+            next_dot' = -1
+            ?rest_path' @ j =>
+               rest_path'(j) == '.'
+                  |
+                     next_dot' = j
+                     -->
+            seg = next_dot' < 0 | rest_path' | rest_path'(0..next_dot')
+            cur_opt' = lookup_in_object(cur_val, seg)
+            rest_path' = next_dot' < 0 | "" | rest_path'((next_dot' + 1)..?rest_path')
+         cur_opt'
+
+val_to_str: json::Value => String
+val_to_str =
+   [String s] s
+   [Number n]
+      iv = Int(n)
+      Float(iv) == n | str::from_int(iv) | str::from_float(n)
+   [Boolean b] (b | "true" | "false")
+   | ""
+
+is_truthy: json::Value => <>
+is_truthy =
+   [Boolean b] b
+   [String s] ?s > 0
+   [Number n] n != 0.0
+   [Array xs] ?xs > 0
+   [Object ps] ?ps > 0
+   | <->
+
+eval_cond: String, PugEnv, <> => <>
+eval_cond = raw_cond, env, has_env =>
+   !has_env |->
+   c = trim_spaces(raw_cond)
+   ?c == 0 |->
+   c(0) == '!'
+      | !eval_cond(c(1..), env, has_env)
+      |
+         c == "true" |+>
+         c == "false" |->
+         lookup_path(env, c)
+            | v => is_truthy(v)
+            | <->
+
+// Interpolates `#{expr}` (HTML-escaped) and `!{expr}` (raw) in text.
+interpolate_text: String, PugEnv, <> => String
+interpolate_text = text, env, has_env =>
+   !has_env | --| text
+   tlen = ?text
+   tlen < 3 | --| text
+   out = {tlen + 32}
+   i' = 0
+   0.. @
+      i' !< tlen | -->
+      ch = text(i')
+      ch ['#', '!'] && (i' + 1 < tlen && text(i' + 1) == '{')
+         |
+            is_escaped = ch == '#'
+            close_idx' = -1
+            j' = i' + 2
+            0.. @
+               j' !< tlen | -->
+               text(j') == '}'
+                  |
+                     close_idx' = j'
+                     -->
+               j' = j' + 1
+            close_idx' > i' + 2
+               |
+                  expr_s = text((i' + 2)..close_idx')
+                  val_s = lookup_path(env, expr_s) | v => val_to_str(v) | ""
+                  out += is_escaped | pug_escape(val_s) | val_s
+                  i' = close_idx' + 1
+               |
+                  out += ch
+                  i' = i' + 1
+         |
+            out += ch
+            i' = i' + 1
+   +out
+
+is_all_var_path: String => <>
+is_all_var_path = s =>
+   ?s == 0 |->
+   s(0) ['0'...'9', '.'] |->
+   ?s @ i =>
+      !is_var_path_char(s(i)) |->
+   <+>
+
+// Evaluates `= expr` or `!= expr` content on a tag.
+eval_buffered_expr: String, <>, PugEnv, <> => String
+eval_buffered_expr = raw_expr, do_escape, env, has_env =>
+   expr = trim_spaces(raw_expr)
+   elen = ?expr
+   elen == 0 | --| ""
+   // Quoted string literal: `"..."` or `'...'`
+   (elen !< 2 && ((expr(0) == '"' && expr(elen - 1) == '"') || (expr(0) == '\'' && expr(elen - 1) == '\'')))
+      |
+         inner = interpolate_text(expr(1..(elen - 1)), env, has_env)
+         --| (do_escape | pug_escape(inner) | inner)
+   // Variable path lookup when rendering with context
+   has_env && is_all_var_path(expr)
+      |
+         val_s = lookup_path(env, expr) | v => val_to_str(v) | ""
+         --| (do_escape | pug_escape(val_s) | val_s)
+   // Inline text or interpolated expression
+   interp = interpolate_text(expr, env, has_env)
+   do_escape | pug_escape(interp) | interp
+
+// --- Tag & Attribute Parsing ---
+
+append_resolved_attr: AttrPairs, String, json::Value => ()
+append_resolved_attr = attrs, attr_name, v =>
+   v
+      [Boolean b]
+         b | attrs += (attr_name, "", <+>)
+      [String s]
+         attrs += (attr_name, pug_escape(s), <->)
+      [Number n]
+         attrs += (attr_name, pug_escape(val_to_str(v)), <->)
+
+// Parses `(attr1="val", attr2=var, flag)` starting at index `open_idx` (where `line(open_idx) == '('`).
+// Returns `(attrs, next_index_after_close_paren)`.
+parse_attributes: String, Int, PugEnv, <> => (AttrPairs, Int)
+parse_attributes = line, open_idx, env, has_env =>
+   attrs = AttrPairs()
+   llen = ?line
+   i' = open_idx + 1
+   0.. @
+      i' !< llen | -->
+      // Skip whitespace and commas
+      0.. @
+         i' !< llen | -->
+         c = line(i')
+         c [' ', '\t', ','] | (i' = i' + 1) | -->
+      i' !< llen | -->
+      line(i') == ')'
+         |
+            i' = i' + 1
+            -->
+      // Read attribute name
+      nstart = i'
+      0.. @
+         i' !< llen | -->
+         c = line(i')
+         c ['=', ' ', '\t', ',', ')'] | -->
+         i' = i' + 1
+      attr_name = line(nstart..i')
+      // Skip spaces before potential '='
+      0.. @
+         i' !< llen | -->
+         c = line(i')
+         c [' ', '\t'] | (i' = i' + 1) | -->
+      (i' < llen && line(i') == '=')
+         |
+            i' = i' + 1
+            0.. @
+               i' !< llen | -->
+               c = line(i')
+               c [' ', '\t'] | (i' = i' + 1) | -->
+            i' < llen && line(i') ['"', '\'']
+               |
+                  quote_ch = line(i')
+                  i' = i' + 1
+                  vstart = i'
+                  0.. @
+                     i' !< llen | -->
+                     line(i') == quote_ch | -->
+                     i' = i' + 1
+                  raw_v = line(vstart..i')
+                  i' < llen && line(i') == quote_ch | i' = i' + 1
+                  val_s = interpolate_text(raw_v, env, has_env)
+                  ?attr_name > 0 | attrs += (attr_name, val_s, <->)
+               |
+                  vstart = i'
+                  0.. @
+                     i' !< llen | -->
+                     c = line(i')
+                     c [' ', '\t', ',', ')'] | -->
+                     i' = i' + 1
+                  raw_v = line(vstart..i')
+                  has_env && is_all_var_path(raw_v)
+                     |
+                        lookup_path(env, raw_v)
+                           | v => append_resolved_attr(attrs, attr_name, v)
+                     |
+                        ?attr_name > 0 | attrs += (attr_name, pug_escape(raw_v), <->)
+         |
+            ?attr_name > 0 | attrs += (attr_name, "", <+>)
+   (attrs, i')
+
+// Renders a single tag line (and recursively any `: ` inline child or indented block).
+render_tag_line: String, PugLines, Int, Int, PugEnv, <>, Builder => Int
+render_tag_line = line_text, lines, line_idx, cur_indent, env, has_env, out =>
+   llen = ?line_text
+   i' = 0
+
+   // 1. Parse tag name (defaults to "div" if starting with '#' or '.')
+   tag_name' = ++"div"
+   llen > 0 && line_text(0) !['#', '.']
+      |
+         0.. @
+            i' !< llen | -->
+            !is_ident_char(line_text(i')) | -->
+            i' = i' + 1
+         i' > 0 | tag_name' = line_text(0..i')
+
+   // 2. Parse chained #id and .class shorthands
+   id_val' = ++""
+   classes = {64}
+   0.. @
+      i' !< llen | -->
+      ch = line_text(i')
+      ch ['#', '.'] && i' + 1 < llen && is_ident_char(line_text(i' + 1))
+         |
+            is_id = ch == '#'
+            i' = i' + 1
+            sstart = i'
+            0.. @
+               i' !< llen | -->
+               !is_ident_char(line_text(i')) | -->
+               i' = i' + 1
+            seg = line_text(sstart..i')
+            ?seg > 0
+               |
+                  is_id
+                     | (id_val' = seg)
+                     |
+                        ?classes > 0 | classes += ' '
+                        classes += seg
+         | -->
+
+   // 3. Parse optional `(attrs)` block
+   extra_attrs' = AttrPairs()
+   (i' < llen && line_text(i') == '(')
+      |
+         parsed_a = parse_attributes(line_text, i', env, has_env)
+         extra_attrs' = parsed_a.0
+         i' = parsed_a.1
+
+   // Merge any `id` or `class` from `(attrs)`
+   extra_attrs' @ a =>
+      a.name == "id" && !a.is_bool
+         | (id_val' = a.val)
+         |
+            a.name == "class" && !a.is_bool && ?a.val > 0
+               |
+                  ?classes > 0 | classes += ' '
+                  classes += a.val
+
+   // 4. Check suffix after tag/selectors/attrs: `/`, `.`, `:`, `!=`, `=`, or `" "`
+   self_close' = <->
+   is_dot_block' = <->
+   is_inline_chain' = <->
+   inline_child_text' = ++""
+   inline_content' = ++""
+
+   i' < llen
+      |
+         rem_c = line_text(i')
+         rem_c == '/'
+            |
+               self_close' = <+>
+            |
+               rem_c == '.' && (i' + 1 == llen || line_text(i' + 1) == ' ')
+                  |
+                     is_dot_block' = <+>
+                  |
+                     rem_c == ':'
+                        |
+                           is_inline_chain' = <+>
+                           inline_child_text' = trim_spaces(line_text((i' + 1)..llen))
+                        |
+                           rem_c == '!' && i' + 1 < llen && line_text(i' + 1) == '='
+                              |
+                                 inline_content' = eval_buffered_expr(line_text((i' + 2)..llen), <->, env, has_env)
+                              |
+                                 rem_c == '='
+                                    |
+                                       inline_content' = eval_buffered_expr(line_text((i' + 1)..llen), <+>, env, has_env)
+                                    |
+                                       (rem_c == ' ' || rem_c == '\t')
+                                          |
+                                             raw_inline = line_text((i' + 1)..llen)
+                                             inline_content' = interpolate_text(raw_inline, env, has_env)
+
+   // 5. Emit opening tag `<tag ...>`
+   out += '<'
+   out += tag_name'
+   ?id_val' > 0
+      |
+         out += " id=\""
+         out += id_val'
+         out += '"'
+   cls_str = +classes
+   ?cls_str > 0
+      |
+         out += " class=\""
+         out += cls_str
+         out += '"'
+   extra_attrs' @ a =>
+      a.name !["id", "class"]
+         |
+            out += ' '
+            out += a.name
+            !a.is_bool
+               |
+                  out += "=\""
+                  out += a.val
+                  out += '"'
+   out += '>'
+
+   // 6. Void / self-closing check
+   (self_close' || is_void_tag(tag_name'))
+      | --| skip_block(lines, line_idx + 1, cur_indent)
+
+   // 7. Emit body (inline chain, dot text block, inline content + child block) and closing `</tag>`
+   next_idx' = line_idx + 1
+   is_inline_chain' && ?inline_child_text' > 0
+      |
+         next_idx' = render_tag_line(inline_child_text', lines, line_idx, cur_indent, env, has_env, out)
+      |
+         is_dot_block'
+            |
+               next_idx' = render_dot_block(lines, line_idx + 1, cur_indent, env, has_env, out)
+            |
+               ?inline_content' > 0 | out += inline_content'
+               next_idx' = render_block(lines, line_idx + 1, cur_indent, env, has_env, out)
+
+   out += "</"
+   out += tag_name'
+   out += '>'
+   next_idx'
+
+// Skips all lines whose indentation is strictly greater than `parent_indent`.
+skip_block: PugLines, Int, Int => Int
+skip_block = lines, start_idx, parent_indent =>
+   num = ?lines
+   idx' = start_idx
+   0.. @
+      idx' !< num | -->
+      ln = lines(idx')!!
+      !ln.is_blank && ln.indent !> parent_indent | -->
+      idx' = idx' + 1
+   idx'
+
+// Renders a raw `.` text block (e.g. `script.` or `style.` or `p.`).
+render_dot_block: PugLines, Int, Int, PugEnv, <>, Builder => Int
+render_dot_block = lines, start_idx, parent_indent, env, has_env, out =>
+   num = ?lines
+   idx' = start_idx
+   base_indent' = -1
+   first_line' = <+>
+   0.. @
+      idx' !< num | -->
+      ln = lines(idx')!!
+      !ln.is_blank && ln.indent !> parent_indent | -->
+      !ln.is_blank
+         |
+            base_indent' < 0 | base_indent' = ln.indent
+            !first_line' | out += '\n'
+            first_line' = <->
+            extra_spaces = ln.indent > base_indent' | ln.indent - base_indent' | 0
+            extra_spaces @ out += ' '
+            out += interpolate_text(ln.text, env, has_env)
+         |
+            !first_line' | out += '\n'
+      idx' = idx' + 1
+   idx'
+
+// Parses `each item[, idx] in list_expr` header.
+parse_each_header: String => (String, String, String)
+parse_each_header = raw =>
+   s = trim_spaces(raw)
+   slen = ?s
+   in_pos' = -1
+   0.. @
+      i = in_pos' < 0 | 0 | slen
+      i !< slen | -->
+      // Find " in "
+      ?s @ k =>
+         (k + 4 !> slen && s(k..(k + 4)) == " in ")
+            |
+               in_pos' = k
+               -->
+      -->
+   in_pos' < 0 | --| ("", "", "")
+   lhs = trim_spaces(s(0..in_pos'))
+   rhs = trim_spaces(s((in_pos' + 4)..slen))
+   comma_pos' = -1
+   ?lhs @ c_i =>
+      lhs(c_i) == ','
+         |
+            comma_pos' = c_i
+            -->
+   comma_pos' < 0
+      | (lhs, "", rhs)
+      | (trim_spaces(lhs(0..comma_pos')), trim_spaces(lhs((comma_pos' + 1)..?lhs)), rhs)
+
+// Renders a single statement inside `render_block` and returns `(next_line_idx, updated_last_if_taken)`.
+render_statement: String, PugLines, Int, Int, <>, PugEnv, <>, Builder => (Int, <>)
+render_statement = t, lines, idx, cur_indent, last_if_taken, env, has_env, out =>
+   // 1. Unbuffered comment `//-`
+   starts_with(t, "//-")
+      | --| (skip_block(lines, idx + 1, cur_indent), last_if_taken)
+   // 2. Buffered HTML comment `//`
+   starts_with(t, "//")
+      |
+         out += "<!--"
+         out += t(2..)
+         out += "-->"
+         --| (skip_block(lines, idx + 1, cur_indent), last_if_taken)
+   // 3. Doctype
+   (starts_with(t, "doctype ") || t == "doctype")
+      |
+         out += "<!DOCTYPE html>"
+         --| (idx + 1, last_if_taken)
+   // 4. Piped text `| ...`
+   starts_with(t, "|")
+      |
+         pipe_rest = ?t > 1 && t(1) == ' ' | t(2..) | t(1..)
+         out += interpolate_text(pipe_rest, env, has_env)
+         --| (idx + 1, last_if_taken)
+   // 5. `if <cond>`
+   starts_with(t, "if ")
+      |
+         cond_ok = eval_cond(t(3..), env, has_env)
+         next_i = cond_ok
+            | render_block(lines, idx + 1, cur_indent, env, has_env, out)
+            | skip_block(lines, idx + 1, cur_indent)
+         --| (next_i, cond_ok)
+   // 6. `unless <cond>`
+   starts_with(t, "unless ")
+      |
+         cond_ok = !eval_cond(t(7..), env, has_env)
+         next_i = cond_ok
+            | render_block(lines, idx + 1, cur_indent, env, has_env, out)
+            | skip_block(lines, idx + 1, cur_indent)
+         --| (next_i, cond_ok)
+   // 7. `else if <cond>`
+   starts_with(t, "else if ")
+      |
+         last_if_taken
+            | --| (skip_block(lines, idx + 1, cur_indent), <+>)
+         cond_ok = eval_cond(t(8..), env, has_env)
+         next_i = cond_ok
+            | render_block(lines, idx + 1, cur_indent, env, has_env, out)
+            | skip_block(lines, idx + 1, cur_indent)
+         --| (next_i, cond_ok)
+   // 8. `else`
+   (t == "else" || starts_with(t, "else "))
+      |
+         next_i = last_if_taken
+            | skip_block(lines, idx + 1, cur_indent)
+            | render_block(lines, idx + 1, cur_indent, env, has_env, out)
+         --| (next_i, <+>)
+   // 9. `each item in list`
+   starts_with(t, "each ")
+      |
+         eh = parse_each_header(t(5..))
+         item_var = eh.0
+         idx_var = eh.1
+         list_expr = eh.2
+         list_opt = has_env && ?item_var > 0 | lookup_path(env, list_expr) | <-->
+         list_opt
+            | lval =>
+               lval
+                  [Array items]
+                     item_i' = 0
+                     items @ elem =>
+                        child_b = PugBindings()
+                        env.bindings @ b => child_b += b
+                        child_b += (item_var, elem)
+                        ?idx_var > 0 | child_b += (idx_var, json::Value(Number, Float(item_i')))
+                        child_env = (env.root, child_b)
+                        render_block(lines, idx + 1, cur_indent, child_env, has_env, out)
+                        item_i' = item_i' + 1
+         --| (skip_block(lines, idx + 1, cur_indent), <->)
+   // 10. Regular HTML tag / selector line
+   next_i = render_tag_line(t, lines, idx, cur_indent, env, has_env, out)
+   (next_i, <->)
+
+// Renders a block of Pug lines whose indentation is strictly greater than `parent_indent`.
+render_block: PugLines, Int, Int, PugEnv, <>, Builder => Int
+render_block = lines, start_idx, parent_indent, env, has_env, out =>
+   num = ?lines
+   idx' = start_idx
+   last_if_taken' = <->
+
+   0.. @
+      idx' !< num | -->
+      ln = lines(idx')!!
+      ln.is_blank
+         | (idx' = idx' + 1)
+         |
+            ln.indent !> parent_indent
+               | -->
+               |
+                  step = render_statement(ln.text, lines, idx', ln.indent, last_if_taken', env, has_env, out)
+                  idx' = step.0
+                  last_if_taken' = step.1
+   idx'
+
+// --- Public API ---
+
+// Renders an inline Pug template string into HTML.
+render: String => String
+render = src =>
+   lines = split_pug_lines(src)
+   out = {?src * 2 + 128}
+   render_block(lines, 0, -1, empty_env!, <->, out)
+   +out
+
+// Renders a Pug template string with a parsed `json::Value` context (`#{var}`, `if`, `each`).
+render_with: String, json::Value => String
+render_with = src, ctx =>
+   lines = split_pug_lines(src)
+   out = {?src * 2 + 128}
+   render_block(lines, 0, -1, new_env(ctx), <+>, out)
+   +out
+
+// Parse JSON context and render the template. JSON failures are reported with
+// a Pug-owned error type so this module has no HTTP/framework dependency.
+render_json: String, String => < String | PugError >
+render_json = src, json_ctx =>
+   json::parse(json_ctx)
+      | ctx => <+ render_with(src, ctx) ->
+      | err => <- PugError(1, "Invalid JSON context for Pug template: " + err.msg) +>
