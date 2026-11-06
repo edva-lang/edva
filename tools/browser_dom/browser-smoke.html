@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Edva Wasm DOM browser smoke</title>
+<div id="out"></div>
+<button id="button">Click</button>
+<script type="module">
+  try {
+    const { instantiateDOM } = await import('./smoke.dom.js');
+    const { instance } = await instantiateDOM(fetch('./smoke.wasm'), {
+      env: { fma: (x, y, z) => x * y + z }
+    });
+    instance.exports.main(0, 0);
+    instance.exports.run_smoke();
+    if (document.querySelector('#out').textContent !== 'Wasm DOM ready') {
+      throw new Error('Wasm text update did not reach the document');
+    }
+    document.querySelector('#button').click();
+    if (instance.exports.click_count() !== 1n) {
+      throw new Error('Wasm click callback was not invoked');
+    }
+    document.documentElement.dataset.status = 'pass';
+  } catch (error) {
+    document.documentElement.dataset.status = 'fail';
+    document.documentElement.dataset.error = String(error);
+  }
+</script>
+</html>

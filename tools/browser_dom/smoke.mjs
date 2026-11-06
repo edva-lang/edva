@@ -7,7 +7,7 @@ const directory = process.argv[2];
 const { createDOMAdapter, instantiateDOM } = await import(
   pathToFileURL(`${directory}/smoke.dom.js`)
 );
-const browser = new JSDOM('<div id="out"></div>');
+const browser = new JSDOM('<div id="out"></div><button id="button">Click</button>');
 globalThis.document = browser.window.document;
 globalThis.Element = browser.window.Element;
 const bytes = fs.readFileSync(`${directory}/smoke.wasm`);
@@ -38,6 +38,8 @@ const { instance } = await instantiateDOM(
 instance.exports.main(0, 0);
 instance.exports.run_smoke();
 assert.equal(document.querySelector('#out').textContent, 'Wasm DOM ready');
+document.querySelector('#button').click();
+assert.equal(instance.exports.click_count(), 1n);
 assert(Math.abs(instance.exports.sin_value(0.5) - Math.sin(0.5)) < 1e-15);
 assert(Math.abs(instance.exports.cos_value(0.5) - Math.cos(0.5)) < 1e-15);
 assert.equal(instance.exports.exp2_value(3), 8);

@@ -1,9 +1,21 @@
 #use dom
 
+::clicks = 0
+
+on_click: dom::Event => < | Error >
+on_click = event =>
+   clicks = clicks + 1
+   <++>
+
 #export run_smoke: () => ()
 run_smoke = !=>
    output = dom::find("#out")!!
    dom::text(output, "Wasm DOM ready") !| _
+   button = dom::find("#button")!!
+   dom::on(button, "click", on_click) !| _
+
+#export click_count: () => Int
+click_count = !=> clicks
 
 #export sin_value: Float => Float
 sin_value = x => %sin(x)

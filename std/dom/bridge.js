@@ -490,7 +490,8 @@ export function createDOMAdapter(options = {}) {
 export async function instantiateDOM(source, imports = {}, options = {}) {
   const dom = createDOMAdapter(options);
   const merged = { ...imports, env: { ...dom.imports.env, ...imports.env } };
-  const input = source instanceof Response ? await source.arrayBuffer() : source;
+  const resolved = await source;
+  const input = resolved instanceof Response ? await resolved.arrayBuffer() : resolved;
   const module = input instanceof WebAssembly.Module
     ? input : await WebAssembly.compile(input);
   const unresolved = WebAssembly.Module.imports(module).flatMap(item => {
