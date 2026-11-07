@@ -4711,7 +4711,11 @@ parse_key_chain = p, lhs =>
          !p.curr.lead && (p.curr.kind [LParen])
             |
                parser_advance(p)
-               parse_comma_args(p)
+               saved_no_assign = p.no_assign
+               p.no_assign = <->
+               args_res = parse_comma_args(p)
+               p.no_assign = saved_no_assign
+               args_res
                   | args =>
                      p.curr.kind
                         [RParen]
@@ -4720,7 +4724,13 @@ parse_key_chain = p, lhs =>
                            parse_key_chain(p, nc)
                         | <-->
                   | <-->
-            | <+ lhs +>
+            |
+               !p.curr.lead && p.curr.text == "!"
+                  |
+                     parser_advance(p)
+                     nc2 = make_postfix_call(p, lhs, ast::Exprs())
+                     parse_key_chain(p, nc2)
+                  | <+ lhs +>
 
 parse_key_atom: Parser => <ast::Expr|>
 parse_key_atom = p =>
@@ -7734,20 +7744,26 @@ parse_expr_after_lparen = p, name =>
          <-->
       |
          parser_advance(p)
+         saved_no_assign = p.no_assign
+         p.no_assign = <->
          args = name == "%bitcast" | parse_bitcast_args(p) | parse_comma_args(p)
+         p.no_assign = saved_no_assign
          args
             | argv =>
                p.curr.kind
                   [RParen]
                      parser_advance(p)
                      c = make_call(p, name, argv)
-                     pc = parse_postfix_calls(p, c)
-                     pc
-                        | pce =>
-                           p.curr.text
-                              ["="] parse_finish_assignment(p, pce)
-                              | <+ pce +>
-                        | <-->
+                     p.no_assign
+                        | <+ c +>
+                        |
+                           pc = parse_postfix_calls(p, c)
+                           pc
+                              | pce =>
+                                 p.curr.text
+                                    ["="] parse_finish_assignment(p, pce)
+                                    | <+ pce +>
+                              | <-->
                   | <-->
             | <-->
 

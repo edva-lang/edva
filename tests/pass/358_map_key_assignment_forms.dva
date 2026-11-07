@@ -3,6 +3,18 @@
 #type M Int ^ Int
 #type SM String ^ String
 
+key_id: Int => Int
+key_id = value => value
+
+zero_key: () => Int
+zero_key = !=> 42
+
+slot_key: String, String => String
+slot_key = prefix, k => prefix + ":" + k
+
+put_generic = tbl, k, v =>
+   tbl ^ key_id(k) = v
+
 m = M()
 k = 1
 m ^ k = 10
@@ -27,3 +39,15 @@ io::out $ sm ^ "alpha" | _ | "none"
 
 sm ^ "beta" = "third"
 io::out $ sm ^ "beta" | _ | "none"
+
+m ^ key_id(4) = 50
+io::out $ m ^ 4 | _ | -1
+
+m ^ zero_key! = 60
+io::out $ m ^ 42 | _ | -1
+
+put_generic(m, 5, 70)
+io::out $ m ^ 5 | _ | -1
+
+sm ^ slot_key("row", "gamma") = "fourth"
+io::out $ sm ^ "row:gamma" | _ | "none"

@@ -118,7 +118,7 @@ await new Promise(resolve => setTimeout(resolve,40));
 assert.equal(ex.event_count(3n),1n);
 assert.equal(ex.event_count(0n),3n);
 console.log('PASS events',eventModule.dom.stats);
-for (const fixture of ['411_static_arity_overloads','412_generic_callback_layouts','413_generic_record_ram_fields']) {
+for (const fixture of ['358_map_key_assignment_forms','411_static_arity_overloads','412_generic_callback_layouts','413_generic_record_ram_fields']) {
   let module, output = '';
   const loadedCompiler = await instantiateDOM(fs.readFileSync(`${directory}/${fixture}.wasm`), {
     env: { write: (fd, pointer, length) => {

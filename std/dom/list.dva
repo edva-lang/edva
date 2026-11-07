@@ -293,8 +293,7 @@ sync_impl = list, items =>
                   revision = revision_callback(item)
                   set_int(list.revisions, slot', revision)
             apply_entry.slot = <+ slot' +>
-            node_key = id(row.element)
-            list.node_index ^ node_key = slot'
+            list.node_index ^ id(row.element) = slot'
             slot'
       set_int(list.wanted, i, slot)
    mark_stable(list.wanted, ?items, list.positions, list.tails, list.previous, list.stable)
