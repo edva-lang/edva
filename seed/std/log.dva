@@ -25,7 +25,11 @@
    ::color_mode   = 0 // 0=auto (isatty), 1=force on, 2=force off
    ::prefix_tag   = ""
 
-   O_LOG_APPEND = #! (os ["darwin"] 0x0209 | 0x0441) // O_WRONLY | O_CREAT | O_APPEND
+   O_LOG_APPEND = #! (os ["darwin"] 0x0209 ["wasm", "wasi"] 0 | 0x0441) // O_WRONLY | O_CREAT | O_APPEND
+
+   #type LogOsWasm  (wasm: Int, tag: Int)
+   #type LogOsPosix (posix: Int, tag: Int)
+   #type LogOsTarget #! (os ["wasm", "wasi"] LogOsWasm | LogOsPosix)
 
    #type LevelMeta (
       level: Level,
@@ -64,13 +68,19 @@
       raw = c_getenv(name)
       raw == sys::addr_null | "" | sys::c_str(raw)
 
+   auto_color_enabled_os: #! OS: Type => <>
+   auto_color_enabled_os = #! OS =>
+      OS
+         [LogOsWasm] <->
+         |
+            ?env_val("NO_COLOR") > 0 |->
+            fc = env_val("FORCE_COLOR")
+            ?fc > 0 && fc != "0" |+>
+            env_val("TERM") == "dumb" |->
+            libc::isatty(out_fd) == 1
+
    auto_color_enabled: () => <>
-   auto_color_enabled = !=>
-      ?env_val("NO_COLOR") > 0 | --| <->
-      fc = env_val("FORCE_COLOR")
-      ?fc > 0 && fc != "0" | --| <+>
-      env_val("TERM") == "dumb" | --| <->
-      libc::isatty(out_fd) == 1
+   auto_color_enabled = !=> auto_color_enabled_os(LogOsTarget)
 
    should_color: () => <>
    should_color = !=>
@@ -91,7 +101,7 @@
 
    needs_quoting: String => <>
    needs_quoting = s =>
-      ?s == 0 | --| <+>
+      ?s == 0 |+>
       hit' = <->
       ?s @ i =>
          c = s(i)
@@ -205,39 +215,59 @@
    get_prefix: () => String
    get_prefix = !=> prefix_tag
 
+   set_fd_os: #! OS: Type, Int => ()
+   set_fd_os = #! OS, fd =>
+      OS
+         [LogOsWasm]
+            out_fd ::= fd
+         |
+            owned_fd !< 0 && owned_fd != fd
+               |
+                  libc::close(owned_fd)
+                  owned_fd ::= -1
+            out_fd ::= fd
+
    // Sets the output file descriptor (default: `2` for stderr).
    set_fd: Int => ()
-   set_fd = fd =>
-      owned_fd !< 0 && owned_fd != fd
-         |
-            libc::close(owned_fd)
-            owned_fd ::= -1
-      out_fd ::= fd
+   set_fd = fd => set_fd_os(LogOsTarget, fd)
 
    // Returns the current output file descriptor.
    get_fd: () => Int
    get_fd = !=> out_fd
 
+   set_file_os: #! OS: Type, String => <>
+   set_file_os = #! OS, path =>
+      OS
+         [LogOsWasm] <->
+         |
+            fd = libc::open_mode(path, O_LOG_APPEND, 0o644)
+            fd < 0
+               | <->
+               |
+                  owned_fd !< 0 | libc::close(owned_fd)
+                  owned_fd ::= fd
+                  out_fd ::= fd
+                  <+>
+
    // Opens `path` for appending and routes subsequent log output to it.
    set_file: String => <>
-   set_file = path =>
-      fd = libc::open_mode(path, O_LOG_APPEND, 0o644)
-      fd < 0
-         | <->
+   set_file = path => set_file_os(LogOsTarget, path)
+
+   close_file_os: #! OS: Type => ()
+   close_file_os = #! OS =>
+      OS
+         [LogOsWasm]
+            out_fd ::= 2
          |
-            owned_fd !< 0 | libc::close(owned_fd)
-            owned_fd ::= fd
-            out_fd ::= fd
-            <+>
+            owned_fd !< 0
+               |
+                  libc::close(owned_fd)
+                  owned_fd ::= -1
+            out_fd ::= 2
 
    // Closes any log file opened via `set_file` and resets output to stderr (`2`).
    close_file: () => ()
-   close_file = !=>
-      owned_fd !< 0
-         |
-            libc::close(owned_fd)
-            owned_fd ::= -1
-      out_fd ::= 2
+   close_file = !=> close_file_os(LogOsTarget)
 
    // --- Structured `key=value` Field Builders ---------------------------------
 

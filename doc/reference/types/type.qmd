@@ -127,3 +127,35 @@ p = Point(10, 20)
 s = Shape(Circle, 5)
 io::out $ (inspect_record(p), enum_tag_name(s))
 ```
+
+## Target compile-time variables (`os`, `arch`, `target`)
+
+Inside `#! (...)` compile-time value and type expressions, the compiler exposes three built-in `String` variables derived from the active target triple (`--target <triple>`):
+
+| Variable | Type | Values | Description |
+|---|---|---|---|
+| `os` | `String` | `"linux"`, `"darwin"`, `"windows"`, `"freebsd"`, `"openbsd"`, `"netbsd"`, `"wasm"`, `"wasi"`, `"unknown"` | Normalized target operating system (`wasm32-unknown-unknown` $\Rightarrow$ `"wasm"`, `wasm32-wasi` $\Rightarrow$ `"wasi"`) |
+| `arch` | `String` | `"x86_64"`, `"aarch64"`, `"x86"`, `"wasm32"`, ... | Normalized target CPU architecture (first segment of the target triple) |
+| `target` | `String` | e.g. `"x86_64-unknown-linux-gnu"`, `"wasm32-unknown-unknown"` | Full target triple string |
+
+Use `os`, `arch`, and `target` in `#! (...)` constant and `#type` choices to select platform-specific constants, struct layouts, or implementation branches without emitting dead host imports on inactive targets:
+
+```{.dva .run}
+#use io
+
+CLOCK_MONOTONIC = #! (os ["darwin"] 6 ["wasm", "wasi"] 1 | 1)
+
+#type PlatDarwin (darwin: Int, tag: Int)
+#type PlatWasm   (wasm: Int, tag: Int)
+#type PlatPosix  (posix: Int, tag: Int)
+#type PlatTarget #! (os ["darwin", "freebsd", "openbsd", "netbsd"] PlatDarwin ["wasm", "wasi"] PlatWasm | PlatPosix)
+
+platform_kind: #! P: Type => String
+platform_kind = #! P =>
+   P
+      [PlatDarwin] "bsd-darwin"
+      [PlatWasm]   "webassembly"
+      |            "posix"
+
+io::out $ (CLOCK_MONOTONIC, platform_kind(PlatTarget), #! arch)
+```

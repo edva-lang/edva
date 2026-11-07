@@ -572,9 +572,10 @@
    c_sendfile = sendfile: (out_fd: Int, in_fd: Int, offset: Addr, count: Int) => Int
 
 #private
-   #type NetPlatDarwin (a: Int, b: Int)
-   #type NetPlatLinux  (a: Int, b: Int)
-   #type NetPlat #! (os ["darwin", "freebsd", "openbsd", "netbsd"] NetPlatDarwin | NetPlatLinux)
+   #type NetPlatDarwin (darwin: Int, tag: Int)
+   #type NetPlatWasm   (wasm: Int, tag: Int)
+   #type NetPlatLinux  (linux: Int, tag: Int)
+   #type NetPlat #! (os ["darwin", "freebsd", "openbsd", "netbsd"] NetPlatDarwin ["wasm", "wasi"] NetPlatWasm | NetPlatLinux)
 
    sendfile_linux: Int, Int, Int, Int => Int
    sendfile_linux = out_fd, in_fd, offset, count =>

@@ -25,10 +25,11 @@
    arc4random_buf  : (buf: Addr, nbytes: Int) => ()
    BCryptGenRandom : (hAlgorithm: Addr, pbBuffer: Addr, cbBuffer: Int, dwFlags: Int) => Int
 
-#type OsDarwin  (a: Int, b: Int)
-#type OsWindows (a: Int, b: Int)
-#type OsLinux   (a: Int, b: Int)
-#type OsTarget  #! (os ["darwin", "freebsd", "openbsd", "netbsd"] OsDarwin ["windows"] OsWindows | OsLinux)
+#type OsDarwin  (darwin: Int, tag: Int)
+#type OsWindows (windows: Int, tag: Int)
+#type OsWasm    (wasm: Int, tag: Int)
+#type OsLinux   (linux: Int, tag: Int)
+#type OsTarget  #! (os ["darwin", "freebsd", "openbsd", "netbsd"] OsDarwin ["windows"] OsWindows ["wasm", "wasi"] OsWasm | OsLinux)
 
 fill_urandom: Addr, Int => <>
 fill_urandom = ptr, n =>
@@ -65,6 +66,8 @@ fill_os_random = #! OS, ptr, n =>
          <+>
       [OsWindows]
          Int(i32(BCryptGenRandom(sys::addr_null, ptr, n, 2))) == 0
+      [OsWasm]
+         getrandom(ptr, n, 0) == n
       |
          fill_linux_random(ptr, n)
 

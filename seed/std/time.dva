@@ -20,7 +20,7 @@
 
 // POSIX clock IDs
 CLOCK_REALTIME  = 0
-CLOCK_MONOTONIC = #! (os ["darwin"] 6 | 1)
+CLOCK_MONOTONIC = #! (os ["darwin"] 6 ["wasm", "wasi"] 1 | 1)
 
 clock_realtime: () => i32
 clock_realtime = !=> 0i32
@@ -73,6 +73,10 @@ SEC_PER_DAY  = 86400
 )
 
 #private
+
+#type TimeOsWasm  (wasm: Int, tag: Int)
+#type TimeOsPosix (posix: Int, tag: Int)
+#type TimeOsTarget #! (os ["wasm", "wasi"] TimeOsWasm | TimeOsPosix)
 
 floor_div: Int, Int => Int
 floor_div = a, b =>
@@ -364,14 +368,20 @@ elapsed_f64 = start_ns => Float(mono_ns! - start_ns) * 1.0e-9
 
 // --- Sleeping ---------------------------------------------------------------
 
+sleep_ns_os: #! OS: Type, Int => ()
+sleep_ns_os = #! OS, ns =>
+   OS
+      [TimeOsWasm] --|
+      |
+         ns > 0
+            |
+               req' = Timespec(i64(ns / 1000000000), i64(ns % 1000000000))
+               rem' = Timespec(0i64, 0i64)
+               nanosleep(&req', &rem')
+
 // Sleep for `ns` nanoseconds
 sleep_ns: Int => ()
-sleep_ns = ns =>
-   ns > 0
-      |
-         req' = Timespec(i64(ns / 1000000000), i64(ns % 1000000000))
-         rem' = Timespec(0i64, 0i64)
-         nanosleep(&req', &rem')
+sleep_ns = ns => sleep_ns_os(TimeOsTarget, ns)
 
 // Sleep for `ms` milliseconds
 sleep_ms: Int => ()
@@ -423,14 +433,20 @@ datetime_utc = year, month, day, hour, min, sec =>
 
 // --- Broken-Down Local & UTC DateTime (Single-Call or From Epoch) -----------
 
+local_from_sec_os: #! OS: Type, Int, Int => DateTime
+local_from_sec_os = #! OS, sec, nsec =>
+   OS
+      [TimeOsWasm] utc_from_epoch(sec, nsec)
+      |
+         t_val' = i64(sec)
+         tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, sys::addr_null)
+         res = localtime_r(&t_val', &tm')
+         res == sys::addr_null
+            | utc_from_epoch(sec, nsec)
+            | tm_to_datetime(tm', nsec)
+
 local_from_sec: Int, Int => DateTime
-local_from_sec = sec, nsec =>
-   t_val' = i64(sec)
-   tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, sys::addr_null)
-   res = localtime_r(&t_val', &tm')
-   res == sys::addr_null
-      | utc_from_epoch(sec, nsec)
-      | tm_to_datetime(tm', nsec)
+local_from_sec = sec, nsec => local_from_sec_os(TimeOsTarget, sec, nsec)
 
 local_now_dt: () => DateTime
 local_now_dt = !=>
@@ -597,17 +613,23 @@ format = #! T, fmt, x => format_dt_pattern(fmt, resolve_local_dt(x))
 utc_format: #! T: Type, String, T => String
 utc_format = #! T, fmt, x => format_dt_pattern(fmt, resolve_utc_dt(x))
 
+parse_tm_os: #! OS: Type, String, String => < TmRaw | >
+parse_tm_os = #! OS, value, fmt_pat =>
+   OS
+      [TimeOsWasm] <-->
+      |
+         ?value @ i =>
+            value(i) == 0 |-->
+         tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, sys::addr_null)
+         end = strptime(value, fmt_pat, &tm')
+         end == sys::addr_null |-->
+         // The FFI passes a NUL-terminated copy; the cursor must stop at its end.
+         @[end u8] != 0u8 |-->
+         <+ tm' +>
+
 // Parses `value` with a strptime(3) `format` into a zero-initialized struct tm.
 // Succeeds only when the whole input is consumed and contains no NUL byte.
 // Fields the format does not set stay zero (`year` is years since 1900,
 // `mon` is 0-based).
 parse_tm: String, String => < TmRaw | >
-parse_tm = value, format =>
-   ?value @ i =>
-      value(i) == 0 | --| <-->
-   tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, sys::addr_null)
-   end = strptime(value, format, &tm')
-   end == sys::addr_null | --| <-->
-   // The FFI passes a NUL-terminated copy; the cursor must stop at its end.
-   @[end u8] != 0u8 | --| <-->
-   <+ tm' +>
+parse_tm = value, fmt_pat => parse_tm_os(TimeOsTarget, value, fmt_pat)

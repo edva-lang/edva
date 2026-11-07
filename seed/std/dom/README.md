@@ -32,6 +32,14 @@ provides these through JavaScript math functions; `%round` uses ties away from
 zero to match LLVM semantics. `%fma` requires the caller to supply `env.fma`;
 the standard JavaScript `Math` object has no fused multiply-add operation.
 
+For non-DOM Wasm standard-library modules (`std/time`, `std/rand`, `std/crypto`,
+`std/log`), `os` evaluates to `"wasm"` (`"wasi"` on WASI) so compile-time target
+branches avoid POSIX file-descriptor imports (`open`, `read`, `close`,
+`localtime_r`, `strptime`, `nanosleep`, `getenv`, `isatty`) and depend only on
+minimal `env` runtime imports (`malloc`, `free`, `write`, `clock_gettime`,
+`getrandom`), which `bridge.js` also supplies in its `env` table alongside the
+`edva_dom_*` adapter imports.
+
 ## API coverage
 
 The Dva API covers element lookup and creation, tree edits, text/value/checked

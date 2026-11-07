@@ -1064,6 +1064,13 @@ n = #! ?"hello"       // n is the constant 5
 m = #! max2(3, 7)     // 7 — a call to a pure user function
 ```
 
+Inside `#! (...)` value and `#type` expressions, the compiler also binds three
+target-triple `String` constants (`--target <triple>`):
+
+- `os` — normalized target OS (`"linux"`, `"darwin"`, `"windows"`, `"freebsd"`, `"openbsd"`, `"netbsd"`, `"wasm"`, `"wasi"`, `"unknown"`).
+- `arch` — normalized target architecture (`"x86_64"`, `"aarch64"`, `"x86"`, `"wasm32"`, ...).
+- `target` — full target triple string (e.g. `"x86_64-unknown-linux-gnu"`, `"wasm32-unknown-unknown"`).
+
 ---
 
 ## 3. Semantics

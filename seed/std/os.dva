@@ -1074,9 +1074,10 @@ append_bytes = b, src, n =>
          | <-->
 
 #private
-   #type OsPlatDarwin (a: Int, b: Int)
-   #type OsPlatLinux  (a: Int, b: Int)
-   #type OsPlat #! (os ["darwin", "freebsd", "openbsd", "netbsd"] OsPlatDarwin | OsPlatLinux)
+   #type OsPlatDarwin (darwin: Int, tag: Int)
+   #type OsPlatWasm   (wasm: Int, tag: Int)
+   #type OsPlatLinux  (linux: Int, tag: Int)
+   #type OsPlat #! (os ["darwin", "freebsd", "openbsd", "netbsd"] OsPlatDarwin ["wasm", "wasi"] OsPlatWasm | OsPlatLinux)
 
    pdeath_linux: Int => <>
    pdeath_linux = sig => c_prctl(1, sig, 0, 0, 0) == 0

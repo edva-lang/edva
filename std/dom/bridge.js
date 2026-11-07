@@ -470,6 +470,26 @@ export function createDOMAdapter(options = {}) {
     exit: code => { throw new Error(`Edva exited with status ${code}`); },
     getpid: () => 1, putchar: c => { console.log(String.fromCharCode(Number(c))); return c; },
     __errno_location: () => 0, __error: () => 0,
+    clock_gettime: (clkId, tp) => {
+      const ms = Number(clkId) === 0 ? Date.now() : performance.now();
+      const sec = Math.floor(ms / 1000);
+      const nsec = Math.floor((ms - sec * 1000) * 1e6);
+      const v = view(), p = Number(tp);
+      v.setBigInt64(p, BigInt(sec), true);
+      v.setBigInt64(p + 8, BigInt(nsec), true);
+      return 0;
+    },
+    getrandom: (buf, len) => {
+      const n = Number(len);
+      const sub = bytes().subarray(Number(buf), Number(buf) + n);
+      if (globalThis.crypto?.getRandomValues) {
+        for (let off = 0; off < n; off += 65536) {
+          globalThis.crypto.getRandomValues(sub.subarray(off, Math.min(off + 65536, n)));
+        }
+        return BigInt(n);
+      }
+      return -1n;
+    },
     sin: Math.sin, cos: Math.cos, exp2: x => 2 ** Number(x),
     tan: Math.tan, asin: Math.asin, acos: Math.acos,
     atan: Math.atan, atan2: Math.atan2, cbrt: Math.cbrt, pow: Math.pow,

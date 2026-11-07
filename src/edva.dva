@@ -1055,9 +1055,10 @@ rewrite_import_expr = e, table, locals =>
       [Assign a]
          new_rhs = rewrite_import_expr(a.5, table, locals)
          new_lhs = rewrite_import_expr(a.6, table, locals)
+         new_tname = table ^? a.7 | (table ^ a.7 | _ | a.7) | a.7
          new_ti = rewrite_import_type_info(a.8, table)
          ast::Expr(Assign, (a.0, a.1, a.2, a.3, a.4, new_rhs, new_lhs,
-            a.7, new_ti))
+            new_tname, new_ti))
       [TypeDecl td]
          new_ti = rewrite_import_type_info(td.type_info, table)
          ast::Expr(TypeDecl, ast::TypeDeclExpr(td.name, new_ti))
@@ -2780,6 +2781,15 @@ compiler_cli_opts = !=>
          cli::opt("cache", "", "Compilation cache directory path", not_flag),
          cli::opt("no-cache", <->, "Disable compilation cache")
       )),
+      cli::cmd("check", "Type-check and verify package (all declared targets) or .dva source file", cli::Opts(
+         cli::pos("target-path", ".", "Package directory or .dva source file"),
+         cli::opt("t:target", "", "Target triple (e.g. wasm32-unknown-unknown)", not_flag),
+         cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
+         cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
+         cli::opt("store", "", "Package content store directory", not_flag),
+         cli::opt("cache", "", "Compilation cache directory path", not_flag),
+         cli::opt("no-cache", <->, "Disable compilation cache")
+      )),
       cli::cmd("test", "Run package tests or a single test .dva file", cli::Opts(
          cli::pos("target-path", ".", "Package directory or test .dva file"),
          cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
@@ -2790,6 +2800,7 @@ compiler_cli_opts = !=>
       )),
       cli::cmd("fetch", "Resolve dependencies and write edva.lock.ccl", cli::Opts(
          cli::pos("dir", ".", "Package root directory"),
+         cli::opt("t:target", "", "Filter target-scoped dependencies for target triple", not_flag),
          cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
          cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
          cli::opt("store", "", "Package content store directory", not_flag),
@@ -2812,6 +2823,7 @@ compiler_cli_opts = !=>
       )),
       cli::cmd("vendor", "Materialize all dependencies into vendor/", cli::Opts(
          cli::pos("dir", ".", "Package root directory"),
+         cli::opt("t:target", "", "Filter target-scoped dependencies for target triple", not_flag),
          cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
          cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
          cli::opt("store", "", "Package content store directory", not_flag)

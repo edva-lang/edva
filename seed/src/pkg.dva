@@ -39,7 +39,8 @@
    git_rev: String,
    path: String,
    archive_url: String,
-   archive_hash: String
+   archive_hash: String,
+   target: String
 )
 
 #type PackageDeps PackageDep{}
@@ -116,7 +117,8 @@
    cache: String,
    no_cache: <>,
    is_update: <>,
-   update_alias: String
+   update_alias: String,
+   target_filter: String
 )
 
 #type AddOpts (
@@ -275,7 +277,7 @@
 
    is_sha_commit: String => <>
    is_sha_commit = s =>
-      ?s != 40 | --| <->
+      ?s != 40 |->
       ok' = <+>
       0..40 @ i =>
          c = s(i)
@@ -427,11 +429,11 @@
          out: PackageDeps
          deps @ d => out += d
          1..n @ i =>
-            key = out(i) | _ | PackageDep("", DepKind(Path), "", "", "", "", "")
+            key = out(i) | _ | PackageDep("", DepKind(Path), "", "", "", "", "", "")
             j' = i
             0.. @
                j' !> 0 | -->
-               prev = out(j' - 1) | _ | PackageDep("", DepKind(Path), "", "", "", "", "")
+               prev = out(j' - 1) | _ | PackageDep("", DepKind(Path), "", "", "", "", "", "")
                str::cmp(prev.alias, key.alias) > 0
                   |
                      out(j') = prev !| _
@@ -453,7 +455,8 @@
                   ddoc @ dde =>
                      !has_err' |
                         k = dde.key
-                        is_known = k == "git" || k == "rev" || k == "path" || k == "url" || k == "hash"
+                        is_known = k == "git" || k == "rev" || k == "path" ||
+                           k == "url" || k == "hash" || k == "target" || k == "/"
                         !is_known |
                            has_err' = <+>
                            k == "submodule" || k == "submodules"
@@ -479,6 +482,7 @@
                         has_git = ccl::has(ddoc, "git")
                         has_path = ccl::has(ddoc, "path")
                         has_url = ccl::has(ddoc, "url")
+                        dep_target = ccl::get(ddoc, "target") | _ | ""
                         count' = 0
                         has_git | count' = count' + 1
                         has_path | count' = count' + 1
@@ -497,7 +501,7 @@
                                     opt_rev = ccl::get(ddoc, "rev")
                                     opt_rev
                                        | rev =>
-                                          <+ PackageDep(alias, DepKind(Git), g_url, rev, "", "", "") ->
+                                          <+ PackageDep(alias, DepKind(Git), g_url, rev, "", "", "", dep_target) ->
                                        |
                                           <- ccl::ccl_error(file,
                                              "edva.ccl: dependency '" + alias + "' needs 'rev'",
@@ -506,14 +510,14 @@
                                     has_path
                                        |
                                           p = ccl::get(ddoc, "path") | _ | ""
-                                          <+ PackageDep(alias, DepKind(Path), "", "", p, "", "") ->
+                                          <+ PackageDep(alias, DepKind(Path), "", "", p, "", "", dep_target) ->
                                        |
                                           u = ccl::get(ddoc, "url") | _ | ""
                                           opt_hash = ccl::get(ddoc, "hash")
                                           opt_hash
                                              | h =>
                                                 <+ PackageDep(alias, DepKind(Archive),
-                                                   "", "", "", u, h) ->
+                                                   "", "", "", u, h, dep_target) ->
                                              |
                                                 <- ccl::ccl_error(file,
                                                    "edva.ccl: dependency '" + alias + "' needs 'hash'",
@@ -699,7 +703,7 @@
                                  path_opt
                                     | p =>
                                        overrides += PackageDep(oe.key, DepKind(Path),
-                                          "", "", p, "", "")
+                                          "", "", p, "", "", "")
                                     |
                                        has_err' = <+>
                                        err_val' = ccl::ccl_error(file,
@@ -763,6 +767,7 @@
                   [Archive]
                      b += "    url = " + d.archive_url + "\n"
                      b += "    hash = " + d.archive_hash + "\n"
+               d.target != "" | b += "    target = " + d.target + "\n"
 
       has_native = ?m.native_libs > 0 || ?m.native_pkg_config > 0
       has_native
@@ -1508,6 +1513,19 @@
                   | resolve_node(r, f)
          | <-->
 
+   dep_matches_target: String, String => <>
+   dep_matches_target = dep_target, active_target =>
+      dep_target == "" || active_target == "" |+>
+      dep_target == active_target |+>
+      parts = split_char(active_target, '-')
+      names_has(parts, dep_target) |+>
+      is_wasm_active = names_has(parts, "wasm") || names_has(parts, "wasm32") ||
+         names_has(parts, "wasm64") || names_has(parts, "wasi") ||
+         starts_with(active_target, "wasm")
+      dep_target == "wasm" | --| is_wasm_active
+      dep_target == "native" | --| !is_wasm_active
+      <->
+
    resolve_node: Resolver, Fetched => < String | >
    resolve_node = r, f =>
       !check_manifest(r, f.manifest, <->) | <--> |
@@ -1516,11 +1534,12 @@
          ok' = <+>
          is_path = f.pkg.kind [Path]
          f.manifest.deps @ d =>
-            resolve_dep(r, d, f.dir, is_path)
-               | id => deps += LockDep(d.alias, id)
-               |
-                  ok' = <->
-                  -->
+            dep_matches_target(d.target, r.opts.target_filter) |
+               resolve_dep(r, d, f.dir, is_path)
+                  | id => deps += LockDep(d.alias, id)
+                  |
+                     ok' = <->
+                     -->
          pop = Strings()
          0..?r.stack - 1 @ i => pop += (r.stack(i) | _ | "")
          r.stack = pop
@@ -1571,8 +1590,8 @@
             sort_lock_deps(deps) @ d => b += "      " + d.alias + " = " + d.id + "\n"
       +b
 
-   import_map_text: Resolver, String, LockDeps => String
-   import_map_text = r, root_name, root_deps =>
+   import_map_text_for_target: Resolver, String, LockDeps, <> => String
+   import_map_text_for_target = r, root_name, root_deps, is_wasm_target =>
       b = {1024}
       b += "imports = 1\n"
       b += "root = " + r.opts.root + "\n"
@@ -1582,7 +1601,7 @@
       sorted @ p =>
          r.insts @ inst =>
             inst.pkg.id == p.id | b += inst_section(p.id, inst.src, inst.name, p.deps)
-      has_native = ?r.libs > 0 || ?r.pkg_config > 0
+      has_native = !is_wasm_target && (?r.libs > 0 || ?r.pkg_config > 0)
       has_native
          |
             b += "native =\n"
@@ -1595,6 +1614,11 @@
                   b += "  pkg-config =\n"
                   ccl::sort_strings(r.pkg_config) @ l => b += "    = " + l + "\n"
       +b
+
+   import_map_text: Resolver, String, LockDeps => String
+   import_map_text = r, root_name, root_deps =>
+      is_wasm = !dep_matches_target("native", r.opts.target_filter)
+      import_map_text_for_target(r, root_name, root_deps, is_wasm)
 
    lock_pkgs: Resolver => LockPackages
    lock_pkgs = r =>
@@ -1727,11 +1751,11 @@
 
    cache_lookup: String, String => < String | >
    cache_lookup = cache_dir, key =>
-      key == "" || cache_dir == "" | --| <-->
+      key == "" || cache_dir == "" |-->
       entry_dir = path_join(path_join(cache_dir, "entries"), key)
       meta_file = path_join(entry_dir, "meta.ccl")
       ll_file = path_join(entry_dir, "output.ll")
-      !file_exists(meta_file) || !file_exists(ll_file) | --| <-->
+      !file_exists(meta_file) || !file_exists(ll_file) |-->
       doc_res = ccl::parse_file(meta_file)
       doc_res
          | doc =>
@@ -1746,14 +1770,14 @@
 
    cache_store: String, String, String, String => <>
    cache_store = cache_dir, key, meta_text, output_ll =>
-      key == "" || cache_dir == "" | --| <->
+      key == "" || cache_dir == "" |->
       entries_dir = path_join(cache_dir, "entries")
       tmp_parent = path_join(cache_dir, "tmp")
-      !mkdir_p(entries_dir) || !mkdir_p(tmp_parent) | --| <->
+      !mkdir_p(entries_dir) || !mkdir_p(tmp_parent) |->
       tmp_dir = path_join(tmp_parent, "e_" + str::from_int(getpid!) + "_" +
          str::from_int(tmp_seq))
       tmp_seq ::= tmp_seq + 1
-      !mkdir_p(tmp_dir) | --| <->
+      !mkdir_p(tmp_dir) |->
       ll_dest = path_join(tmp_dir, "output.ll")
       meta_dest = path_join(tmp_dir, "meta.ccl")
       ll_content = read_text(output_ll) | t => t | ""
@@ -1798,7 +1822,7 @@
       cache_s = cli::str(p, "cache")
       eff_cache = cache_s != "" | cache_s | default_cache!
       no_cache = cli::flag(p, "no-cache") || env_or("EDVA_NO_CACHE", "") == "1"
-      PkgOpts(eff_root, locked, offline, eff_store, eff_git, eff_cache, no_cache, <->, "")
+      PkgOpts(eff_root, locked, offline, eff_store, eff_git, eff_cache, no_cache, <->, "", "")
 
    cmd_init: String, String, <> => Int
    cmd_init = dir_arg, name_arg, is_lib =>
@@ -2053,7 +2077,8 @@
                add_opts.git_rev,
                add_opts.path,
                add_opts.archive_url,
-               add_opts.archive_hash
+               add_opts.archive_hash,
+               ""
             )
             new_deps: PackageDeps
             found' = <->
@@ -2265,8 +2290,12 @@
                                                 eff_cflags: Strings
                                                 t.cflags @ cf => eff_cflags += cf
                                                 cflags_override @ cf => eff_cflags += cf
-                                                base_cmd = sq(compiler) + " " + sq(src_path) + " -o " + sq(out_path)
-                                                cmd' = append_compiler_flags(base_cmd, eff_target, eff_opt, eff_cflags, opts)
+                                                base_cmd' = sq(compiler) + " " + sq(src_path) + " -o " + sq(out_path)
+                                                scoped_map = path_join(path_join(opts.root, ".edva"),
+                                                   "imports-target-" + t.name + ".ccl")
+                                                target_override == "" && file_exists(scoped_map)
+                                                   | base_cmd' = base_cmd' + " --import-map " + sq(scoped_map)
+                                                cmd' = append_compiler_flags(base_cmd', eff_target, eff_opt, eff_cflags, opts)
                                                 step_rc = sh(cmd')
                                                 libc::unlink(out_path + ".ll")
                                                 step_rc != 0 | rc' = 1
@@ -2292,6 +2321,95 @@
    cmd_build: PkgOpts => Int
    cmd_build = opts =>
       cmd_build_ex(opts, "", "", "", Strings())
+
+   // `edva check [dir|file.dva]`: type-check and verify IR for package (all declared targets) or single file.
+   cmd_check: PkgOpts, String => Int
+   cmd_check = opts, target_override =>
+      is_dva_file_target(opts.root)
+         |
+            src_file = opts.root
+            !file_exists(src_file)
+               |
+                  fail(7019, "source file '" + src_file + "' not found")
+                  --| 1
+            fetch_rc = ensure_pkg_fetched_for_file(src_file, opts)
+            fetch_rc != 0 | --| fetch_rc
+            compiler = sys::argv_string(0)
+            tmp_ll = "/tmp/edva_chk_" + str::from_int(getpid!) + ".ll"
+            base_cmd = "EDVA_LOG=warn " + sq(compiler) + " " + sq(src_file) + " -ir --no-main -o " + sq(tmp_ll)
+            cmd = append_compiler_flags(base_cmd, target_override, "", Strings(), opts)
+            rc = sh(cmd)
+            libc::unlink(tmp_ll)
+            rc == 0 | 0 | 1
+         |
+            root = find_root(opts.root)
+            root == ""
+               |
+                  fail(7015, "no edva.ccl found in '" + opts.root + "' or any parent directory")
+                  1
+               |
+                  opts.root = root
+                  opts.store = canonical_path(opts.store)
+                  fetch_rc = run_fetch(opts)
+                  fetch_rc != 0
+                     | fetch_rc
+                     |
+                        m_res = load_manifest(opts.root)
+                        m_res
+                           | m =>
+                              compiler = sys::argv_string(0)
+                              ?m.targets > 0
+                                 |
+                                    rc' = 0
+                                    m.targets @ t =>
+                                       rc' == 0 |
+                                          src_rel = t.src != "" | t.src | "src/main.dva"
+                                          src_path = path_join(opts.root, src_rel)
+                                          !file_exists(src_path)
+                                             |
+                                                fail(7019, "target '" + t.name + "': source file '" + src_rel + "' not found")
+                                                rc' = 1
+                                             |
+                                                eff_target = target_override != "" | target_override | t.target
+                                                tmp_ll = "/tmp/edva_chk_" + str::from_int(getpid!) + "_" + t.name + ".ll"
+                                                base_cmd' = "EDVA_LOG=warn " + sq(compiler) + " " + sq(src_path) +
+                                                   " -ir --no-main -o " + sq(tmp_ll)
+                                                scoped_map = path_join(path_join(opts.root, ".edva"),
+                                                   "imports-target-" + t.name + ".ccl")
+                                                target_override == "" && file_exists(scoped_map)
+                                                   | base_cmd' = base_cmd' + " --import-map " + sq(scoped_map)
+                                                cmd' = append_compiler_flags(base_cmd', eff_target, "", Strings(), opts)
+                                                step_rc = sh(cmd')
+                                                libc::unlink(tmp_ll)
+                                                step_rc != 0
+                                                   | rc' = 1
+                                                   |
+                                                      tgt_label = eff_target != "" | " (" + eff_target + ")" | " (native)"
+                                                      log::info("checked target '" + t.name + "'" + tgt_label)
+                                    rc'
+                                 |
+                                    main_src = path_join(path_join(opts.root, "src"), "main.dva")
+                                    lib_src = path_join(path_join(opts.root, "src"), m.name + ".dva")
+                                    has_main = file_exists(main_src)
+                                    check_src = has_main
+                                       | main_src
+                                       | (file_exists(lib_src) | lib_src | "")
+                                    check_src == ""
+                                       | 0
+                                       |
+                                          tmp_ll = "/tmp/edva_chk_" + str::from_int(getpid!) + "_" + m.name + ".ll"
+                                          mode_flag = has_main | "--no-main" | ("--module " + sq(m.name))
+                                          base_cmd = "EDVA_LOG=warn " + sq(compiler) + " " + sq(check_src) +
+                                             " -ir " + mode_flag + " -o " + sq(tmp_ll)
+                                          cmd' = append_compiler_flags(base_cmd, target_override, "", Strings(), opts)
+                                          rc = sh(cmd')
+                                          libc::unlink(tmp_ll)
+                                          rc == 0
+                                             |
+                                                log::info("checked package '" + m.name + "'")
+                                                0
+                                             | 1
+                           | 1
 
    // `edva run [dir|file.dva] [-- <args...>]`: build and execute binary or single file.
    cmd_run: PkgOpts, String, String, String, Strings, Strings => Int
@@ -2598,7 +2716,7 @@
          root_deps: LockDeps
          ok' = <+>
          m.deps @ d =>
-            ok' |
+            ok' && dep_matches_target(d.target, r.opts.target_filter) |
                resolve_dep(r, d, r.opts.root, <+>)
                   | id => root_deps += LockDep(d.alias, id)
                   | ok' = <->
@@ -2609,6 +2727,19 @@
                      "' does not name a dependency")
                   ok' = <->
          !ok' | 1 | write_outputs(r, m, prior, has_lock, root_deps)
+
+   filter_root_deps_for_target: PackageDeps, LockDeps, String => LockDeps
+   filter_root_deps_for_target = m_deps, root_deps, active_target =>
+      filtered = LockDeps()
+      root_deps @ rd =>
+         matched' = <+>
+         m_deps @ d =>
+            d.alias == rd.alias
+               |
+                  matched' = dep_matches_target(d.target, active_target)
+                  -->
+         matched' | filtered += rd
+      filtered
 
    write_outputs: Resolver, PackageManifest, Lockfile, <>, LockDeps => Int
    write_outputs = r, m, prior, has_lock, root_deps =>
@@ -2625,10 +2756,19 @@
          |
             lock_ok = !changed || write_text(lock_file, text)
             edva_dir = path_join(r.opts.root, ".edva")
-            map_ok = lock_ok && mkdir_p(edva_dir) &&
+            map_ok' = lock_ok && mkdir_p(edva_dir) &&
                write_text(path_join(edva_dir, "imports.ccl"),
                   import_map_text(r, m.name, root_deps))
-            !map_ok
+            map_ok' && r.opts.target_filter == "" && ?m.targets > 0
+               |
+                  m.targets @ t =>
+                     eff_tgt = t.target != "" | t.target | "native"
+                     is_wasm_tgt = !dep_matches_target("native", eff_tgt)
+                     t_deps = filter_root_deps_for_target(m.deps, root_deps, eff_tgt)
+                     t_map_path = path_join(edva_dir, "imports-target-" + t.name + ".ccl")
+                     t_map_txt = import_map_text_for_target(r, m.name, t_deps, is_wasm_tgt)
+                     !write_text(t_map_path, t_map_txt) | map_ok' = <->
+            !map_ok'
                |
                   fail(7017, "cannot write " + lock_file + " or .edva/imports.ccl")
                   1
@@ -2961,7 +3101,13 @@
          ["fetch"]
             dir_s = cli::str(p, "dir")
             opts = opts_from_parsed(p, dir_s)
+            opts.target_filter = cli::str(p, "target")
             cmd_fetch(opts)
+         ["check"]
+            target_s = cli::str(p, "target-path")
+            opts = opts_from_parsed(p, target_s)
+            triple_s = cli::str(p, "target")
+            cmd_check(opts, triple_s)
          ["build"]
             target_s = cli::str(p, "target-path")
             opts = opts_from_parsed(p, target_s)
@@ -3006,6 +3152,7 @@
          ["vendor"]
             dir_s = cli::str(p, "dir")
             opts = opts_from_parsed(p, dir_s)
+            opts.target_filter = cli::str(p, "target")
             cmd_vendor(opts)
          ["cache"]
             cache_s = cli::str(p, "cache")
