@@ -63,6 +63,9 @@ Browser facilities that are generic across apps are also exposed from
   rejection is sent to the adapter's error reporter.
 - `download_text(filename, text)` downloads UTF-8 text as
   `text/plain;charset=utf-8`.
+- `std/dom/console.dva` (`#use dom/console`) exposes browser console methods
+  (`console::log`, `console::error`, `console::warn`, `console::info`,
+  `console::time`, and `console::time_end`) via `OPS.CONSOLE` (`67`).
 
 These APIs return Edva ramifications, so callers should propagate or handle
 errors rather than silently discard them. Browser permission policies still

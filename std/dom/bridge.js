@@ -8,7 +8,7 @@ export const OPS = Object.freeze({
   ON: 40, OFF: 41, TARGET: 42, MATCHED: 43, EVENT_VALUE: 44, KEY: 45,
   POINTER: 46, PREVENT: 47, STOP: 48, EMPTY: 49, PARENT: 50, CHILDREN: 51,
   STORAGE_GET: 60, STORAGE_SET: 61, QUERY_GET: 62, QUERY_SET: 63,
-  PAGE_URL: 64, CLIPBOARD_WRITE: 65, DOWNLOAD_TEXT: 66
+  PAGE_URL: 64, CLIPBOARD_WRITE: 65, DOWNLOAD_TEXT: 66, CONSOLE: 67
 });
 export const ERR = Object.freeze({
   NOT_FOUND: 1, INVALID_SELECTOR: 2, STALE_HANDLE: 3, BROWSER: 4,
@@ -95,11 +95,13 @@ export function createDOMAdapter(options = {}) {
     }
   }
   function result(out, id = 0n, length = 0, numbers = [0, 0, 0, 0]) {
+    if (!out) return;
     const v = view(), p = Number(out);
     v.setBigInt64(p, BigInt(id), true); v.setBigInt64(p + 8, BigInt(length), true);
     numbers.forEach((x, i) => v.setFloat64(p + 16 + i * 8, Number(x), true));
   }
   function textResult(out, value, present = true) {
+    if (!out) return;
     const data = encoder.encode(value), ptr = malloc(data.length || 1);
     bytes().set(data, ptr); result(out, BigInt(ptr), data.length, [present ? 1 : 0, 0, 0, 0]);
   }
@@ -380,6 +382,7 @@ export function createDOMAdapter(options = {}) {
         const node = elements.get(a).parentElement;
         result(out, node ? handle(node) : 0n); break;
       }
+      case OPS.CONSOLE: globalThis.console?.[name]?.(value); break;
       default: throw new Failure(ERR.BROWSER, `Unknown DOM operation ${op}`);
     }
   }
