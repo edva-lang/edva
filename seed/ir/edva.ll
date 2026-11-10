@@ -14488,14 +14488,16 @@ concat.tot.len18:                                 ; preds = %str_overflow_abort1
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
   %call.res = call ptr @path_join(ptr %var.load, ptr %concat.str)
-  store ptr %call.res, ptr %var.f, align 8
-  %var.load22 = load ptr, ptr %var.dir, align 8
-  %var.load23 = load ptr, ptr %var.mod_path, align 8
-  %call.res24 = call ptr @path_join(ptr %var.load22, ptr %var.load23)
-  store ptr %call.res24, ptr %var.d, align 8
-  %var.load25 = load ptr, ptr %var.f, align 8
-  %call.res26 = call i1 @file_exists(ptr %var.load25)
-  br i1 %call.res26, label %choice.then, label %choice.else
+  %call.res22 = call ptr @"path::normalize"(ptr %call.res)
+  store ptr %call.res22, ptr %var.f, align 8
+  %var.load23 = load ptr, ptr %var.dir, align 8
+  %var.load24 = load ptr, ptr %var.mod_path, align 8
+  %call.res25 = call ptr @path_join(ptr %var.load23, ptr %var.load24)
+  %call.res26 = call ptr @"path::normalize"(ptr %call.res25)
+  store ptr %call.res26, ptr %var.d, align 8
+  %var.load27 = load ptr, ptr %var.f, align 8
+  %call.res28 = call i1 @file_exists(ptr %var.load27)
+  br i1 %call.res28, label %choice.then, label %choice.else
 
 str_overflow_abort19:                             ; preds = %concat.sum.len15
   %7 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
@@ -14503,67 +14505,69 @@ str_overflow_abort19:                             ; preds = %concat.sum.len15
   br label %concat.tot.len18
 
 choice.then:                                      ; preds = %concat.tot.len18
-  %arena.cur27 = call ptr @dva_arena_current()
-  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur27, i64 16)
+  %arena.cur29 = call ptr @dva_arena_current()
+  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur29, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  %var.load28 = load ptr, ptr %var.f, align 8
-  %var.load29 = load ptr, ptr %var.cid, align 8
-  %var.load30 = load i1, ptr %var.is_pkg, align 1
-  %arena.cur31 = call ptr @dva_arena_current()
-  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur31, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1 }, ptr null, i32 1) to i64))
+  %var.load30 = load ptr, ptr %var.f, align 8
+  %var.load31 = load ptr, ptr %var.cid, align 8
+  %var.load32 = load i1, ptr %var.is_pkg, align 1
+  %arena.cur33 = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur33, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %var.load28, ptr %rec.fld, align 8
-  %rec.fld32 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc, i32 0, i32 1
-  store ptr %var.load29, ptr %rec.fld32, align 8
-  %rec.fld33 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc, i32 0, i32 2
-  store i1 %var.load30, ptr %rec.fld33, align 1
+  store ptr %var.load30, ptr %rec.fld, align 8
+  %rec.fld34 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc, i32 0, i32 1
+  store ptr %var.load31, ptr %rec.fld34, align 8
+  %rec.fld35 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc, i32 0, i32 2
+  store i1 %var.load32, ptr %rec.fld35, align 1
   store ptr %rec.alloc, ptr %pay.gep, align 8
   br label %choice.exit
 
 choice.else:                                      ; preds = %concat.tot.len18
-  %var.load34 = load ptr, ptr %var.d, align 8
-  %call.res35 = call i1 @dir_exists(ptr %var.load34)
-  br i1 %call.res35, label %choice.then36, label %choice.else37
+  %var.load36 = load ptr, ptr %var.d, align 8
+  %call.res37 = call i1 @dir_exists(ptr %var.load36)
+  br i1 %call.res37, label %choice.then38, label %choice.else39
 
-choice.exit:                                      ; preds = %choice.exit38, %choice.then
-  %choice.res55 = phi ptr [ %enum.alloc, %choice.then ], [ %choice.res, %choice.exit38 ]
-  ret ptr %choice.res55
+choice.exit:                                      ; preds = %choice.exit40, %choice.then
+  %choice.res57 = phi ptr [ %enum.alloc, %choice.then ], [ %choice.res, %choice.exit40 ]
+  ret ptr %choice.res57
 
-choice.then36:                                    ; preds = %choice.else
-  %arena.cur39 = call ptr @dva_arena_current()
-  %enum.alloc40 = call ptr @dva_arena_alloc(ptr %arena.cur39, i64 16)
-  %tag.gep41 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc40, i32 0, i32 0
-  store i64 1, ptr %tag.gep41, align 8
-  %pay.gep42 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc40, i32 0, i32 1
-  %var.load43 = load ptr, ptr %var.d, align 8
-  %var.load44 = load ptr, ptr %var.cid, align 8
-  %var.load45 = load i1, ptr %var.is_pkg, align 1
-  %arena.cur46 = call ptr @dva_arena_current()
-  %rec.alloc47 = call ptr @dva_arena_alloc(ptr %arena.cur46, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1 }, ptr null, i32 1) to i64))
-  %rec.fld48 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc47, i32 0, i32 0
-  store ptr %var.load43, ptr %rec.fld48, align 8
-  %rec.fld49 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc47, i32 0, i32 1
-  store ptr %var.load44, ptr %rec.fld49, align 8
-  %rec.fld50 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc47, i32 0, i32 2
-  store i1 %var.load45, ptr %rec.fld50, align 1
-  store ptr %rec.alloc47, ptr %pay.gep42, align 8
-  br label %choice.exit38
+choice.then38:                                    ; preds = %choice.else
+  %arena.cur41 = call ptr @dva_arena_current()
+  %enum.alloc42 = call ptr @dva_arena_alloc(ptr %arena.cur41, i64 16)
+  %tag.gep43 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc42, i32 0, i32 0
+  store i64 1, ptr %tag.gep43, align 8
+  %pay.gep44 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc42, i32 0, i32 1
+  %var.load45 = load ptr, ptr %var.d, align 8
+  %var.load46 = load ptr, ptr %var.cid, align 8
+  %var.load47 = load i1, ptr %var.is_pkg, align 1
+  %arena.cur48 = call ptr @dva_arena_current()
+  %rec.alloc49 = call ptr @dva_arena_alloc(ptr %arena.cur48, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, i1 }, ptr null, i32 1) to i64))
+  %rec.fld50 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc49, i32 0, i32 0
+  store ptr %var.load45, ptr %rec.fld50, align 8
+  %rec.fld51 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc49, i32 0, i32 1
+  store ptr %var.load46, ptr %rec.fld51, align 8
+  %rec.fld52 = getelementptr inbounds { ptr, ptr, i1 }, ptr %rec.alloc49, i32 0, i32 2
+  store i1 %var.load47, ptr %rec.fld52, align 1
+  store ptr %rec.alloc49, ptr %pay.gep44, align 8
+  br label %choice.exit40
 
-choice.else37:                                    ; preds = %choice.else
-  %arena.cur51 = call ptr @dva_arena_current()
-  %enum.alloc52 = call ptr @dva_arena_alloc(ptr %arena.cur51, i64 16)
-  %tag.gep53 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc52, i32 0, i32 0
-  store i64 2, ptr %tag.gep53, align 8
-  %pay.gep54 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc52, i32 0, i32 1
-  store ptr null, ptr %pay.gep54, align 8
-  br label %choice.exit38
+choice.else39:                                    ; preds = %choice.else
+  %arena.cur53 = call ptr @dva_arena_current()
+  %enum.alloc54 = call ptr @dva_arena_alloc(ptr %arena.cur53, i64 16)
+  %tag.gep55 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc54, i32 0, i32 0
+  store i64 2, ptr %tag.gep55, align 8
+  %pay.gep56 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc54, i32 0, i32 1
+  store ptr null, ptr %pay.gep56, align 8
+  br label %choice.exit40
 
-choice.exit38:                                    ; preds = %choice.else37, %choice.then36
-  %choice.res = phi ptr [ %enum.alloc40, %choice.then36 ], [ %enum.alloc52, %choice.else37 ]
+choice.exit40:                                    ; preds = %choice.else39, %choice.then38
+  %choice.res = phi ptr [ %enum.alloc42, %choice.then38 ], [ %enum.alloc54, %choice.else39 ]
   br label %choice.exit
 }
+
+declare ptr @"path::normalize"(ptr) #1
 
 define i1 @is_resolved(ptr %0) #1 {
 entry:
@@ -77985,23 +77989,23 @@ str_overflow_abort431:                            ; preds = %concat.sum.len425
 
 define ptr @compiler_cli_opts() #1 {
 entry:
-  %var._arr_lit_3298 = alloca ptr, align 8
-  %var._arr_lit_3288 = alloca ptr, align 8
-  %var._arr_lit_3282 = alloca ptr, align 8
+  %var._arr_lit_3300 = alloca ptr, align 8
+  %var._arr_lit_3290 = alloca ptr, align 8
+  %var._arr_lit_3284 = alloca ptr, align 8
+  %var._arr_lit_3278 = alloca ptr, align 8
   %var._arr_lit_3276 = alloca ptr, align 8
-  %var._arr_lit_3274 = alloca ptr, align 8
-  %var._arr_lit_3255 = alloca ptr, align 8
-  %var._arr_lit_3239 = alloca ptr, align 8
-  %var._arr_lit_3217 = alloca ptr, align 8
-  %var._arr_lit_3192 = alloca ptr, align 8
-  %var._arr_lit_3170 = alloca ptr, align 8
-  %var._arr_lit_3145 = alloca ptr, align 8
-  %var._arr_lit_3111 = alloca ptr, align 8
-  %var._arr_lit_3077 = alloca ptr, align 8
-  %var._arr_lit_3054 = alloca ptr, align 8
-  %var._arr_lit_3014 = alloca ptr, align 8
+  %var._arr_lit_3257 = alloca ptr, align 8
+  %var._arr_lit_3241 = alloca ptr, align 8
+  %var._arr_lit_3219 = alloca ptr, align 8
+  %var._arr_lit_3194 = alloca ptr, align 8
+  %var._arr_lit_3172 = alloca ptr, align 8
+  %var._arr_lit_3147 = alloca ptr, align 8
+  %var._arr_lit_3113 = alloca ptr, align 8
+  %var._arr_lit_3079 = alloca ptr, align 8
+  %var._arr_lit_3056 = alloca ptr, align 8
+  %var._arr_lit_3016 = alloca ptr, align 8
+  %var._arr_lit_3003 = alloca ptr, align 8
   %var._arr_lit_3001 = alloca ptr, align 8
-  %var._arr_lit_2999 = alloca ptr, align 8
   %arena.cur = call ptr @dva_arena_current()
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
   %arena.cur1 = call ptr @dva_arena_current()
@@ -78012,7 +78016,7 @@ entry:
   store ptr %a.buf, ptr %a.data.gep, align 8
   %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
-  store ptr %a.new, ptr %var._arr_lit_2999, align 8
+  store ptr %a.new, ptr %var._arr_lit_3001, align 8
   %arena.cur2 = call ptr @dva_arena_current()
   %a.new3 = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 24)
   %arena.cur4 = call ptr @dva_arena_current()
@@ -78023,9 +78027,9 @@ entry:
   store ptr %a.buf5, ptr %a.data.gep7, align 8
   %a.cap.gep8 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new3, i32 0, i32 2
   store i64 16, ptr %a.cap.gep8, align 8
-  store ptr %a.new3, ptr %var._arr_lit_3001, align 8
+  store ptr %a.new3, ptr %var._arr_lit_3003, align 8
   %call.res = call ptr @"cli::pos$String$String$Unit"(ptr @str.243.struct, ptr @str.15.struct, ptr @str.244.struct, i64 0)
-  %a.load = load ptr, ptr %var._arr_lit_3001, align 8
+  %a.load = load ptr, ptr %var._arr_lit_3003, align 8
   %a.null = icmp eq ptr %a.load, null
   br i1 %a.null, label %a.create, label %a.after
 
@@ -78040,11 +78044,11 @@ a.create:                                         ; preds = %entry
   store ptr %a.buf12, ptr %a.data.gep14, align 8
   %a.cap.gep15 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create10, i32 0, i32 2
   store i64 16, ptr %a.cap.gep15, align 8
-  store ptr %a.create10, ptr %var._arr_lit_3001, align 8
+  store ptr %a.create10, ptr %var._arr_lit_3003, align 8
   br label %a.after
 
 a.after:                                          ; preds = %a.create, %entry
-  %a.load2 = load ptr, ptr %var._arr_lit_3001, align 8
+  %a.load2 = load ptr, ptr %var._arr_lit_3003, align 8
   br label %a.check
 
 a.check:                                          ; preds = %a.after
@@ -78072,7 +78076,7 @@ a.store:                                          ; preds = %a.grow, %a.check
   store i64 %a.next.len, ptr %b.len.gep, align 8
   %var.load = load ptr, ptr @var.not_flag, align 8
   %call.res20 = call ptr @"cli::opt$String$Fn"(ptr @str.245.struct, ptr @str.1.struct, ptr @str.246.struct, ptr %var.load)
-  %a.load21 = load ptr, ptr %var._arr_lit_3001, align 8
+  %a.load21 = load ptr, ptr %var._arr_lit_3003, align 8
   %a.null22 = icmp eq ptr %a.load21, null
   br i1 %a.null22, label %a.create23, label %a.after24
 
@@ -78087,11 +78091,11 @@ a.create23:                                       ; preds = %a.store
   store ptr %a.buf28, ptr %a.data.gep30, align 8
   %a.cap.gep31 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create26, i32 0, i32 2
   store i64 16, ptr %a.cap.gep31, align 8
-  store ptr %a.create26, ptr %var._arr_lit_3001, align 8
+  store ptr %a.create26, ptr %var._arr_lit_3003, align 8
   br label %a.after24
 
 a.after24:                                        ; preds = %a.create23, %a.store
-  %a.load232 = load ptr, ptr %var._arr_lit_3001, align 8
+  %a.load232 = load ptr, ptr %var._arr_lit_3003, align 8
   br label %a.check33
 
 a.check33:                                        ; preds = %a.after24
@@ -78118,7 +78122,7 @@ a.store35:                                        ; preds = %a.grow34, %a.check3
   %b.len.gep48 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load232, i32 0, i32 0
   store i64 %a.next.len47, ptr %b.len.gep48, align 8
   %call.res49 = call ptr @"cli::opt$Flag$Unit"(ptr @str.247.struct, i1 false, ptr @str.248.struct, i64 0)
-  %a.load50 = load ptr, ptr %var._arr_lit_3001, align 8
+  %a.load50 = load ptr, ptr %var._arr_lit_3003, align 8
   %a.null51 = icmp eq ptr %a.load50, null
   br i1 %a.null51, label %a.create52, label %a.after53
 
@@ -78133,11 +78137,11 @@ a.create52:                                       ; preds = %a.store35
   store ptr %a.buf57, ptr %a.data.gep59, align 8
   %a.cap.gep60 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create55, i32 0, i32 2
   store i64 16, ptr %a.cap.gep60, align 8
-  store ptr %a.create55, ptr %var._arr_lit_3001, align 8
+  store ptr %a.create55, ptr %var._arr_lit_3003, align 8
   br label %a.after53
 
 a.after53:                                        ; preds = %a.create52, %a.store35
-  %a.load261 = load ptr, ptr %var._arr_lit_3001, align 8
+  %a.load261 = load ptr, ptr %var._arr_lit_3003, align 8
   br label %a.check62
 
 a.check62:                                        ; preds = %a.after53
@@ -78163,8 +78167,8 @@ a.store64:                                        ; preds = %a.grow63, %a.check6
   %a.next.len76 = add i64 %a.cur.len73, 1
   %b.len.gep77 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load261, i32 0, i32 0
   store i64 %a.next.len76, ptr %b.len.gep77, align 8
-  %var.load78 = load ptr, ptr %var._arr_lit_3001, align 8
-  %a.load79 = load ptr, ptr %var._arr_lit_3001, align 8
+  %var.load78 = load ptr, ptr %var._arr_lit_3003, align 8
+  %a.load79 = load ptr, ptr %var._arr_lit_3003, align 8
   %a.null80 = icmp eq ptr %a.load79, null
   br i1 %a.null80, label %a.create81, label %a.after82
 
@@ -78179,13 +78183,13 @@ a.create81:                                       ; preds = %a.store64
   store ptr %a.buf86, ptr %a.data.gep88, align 8
   %a.cap.gep89 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create84, i32 0, i32 2
   store i64 16, ptr %a.cap.gep89, align 8
-  store ptr %a.create84, ptr %var._arr_lit_3001, align 8
+  store ptr %a.create84, ptr %var._arr_lit_3003, align 8
   br label %a.after82
 
 a.after82:                                        ; preds = %a.create81, %a.store64
-  %a.load290 = load ptr, ptr %var._arr_lit_3001, align 8
+  %a.load290 = load ptr, ptr %var._arr_lit_3003, align 8
   %call.res91 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.241.struct, ptr @str.242.struct, ptr %a.load290)
-  %a.load92 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load92 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null93 = icmp eq ptr %a.load92, null
   br i1 %a.null93, label %a.create94, label %a.after95
 
@@ -78200,11 +78204,11 @@ a.create94:                                       ; preds = %a.after82
   store ptr %a.buf99, ptr %a.data.gep101, align 8
   %a.cap.gep102 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create97, i32 0, i32 2
   store i64 16, ptr %a.cap.gep102, align 8
-  store ptr %a.create97, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create97, ptr %var._arr_lit_3001, align 8
   br label %a.after95
 
 a.after95:                                        ; preds = %a.create94, %a.after82
-  %a.load2103 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load2103 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check104
 
 a.check104:                                       ; preds = %a.after95
@@ -78240,7 +78244,7 @@ a.store106:                                       ; preds = %a.grow105, %a.check
   store ptr %a.buf123, ptr %a.data.gep125, align 8
   %a.cap.gep126 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new121, i32 0, i32 2
   store i64 16, ptr %a.cap.gep126, align 8
-  store ptr %a.new121, ptr %var._arr_lit_3014, align 8
+  store ptr %a.new121, ptr %var._arr_lit_3016, align 8
   %arena.cur127 = call ptr @dva_arena_current()
   %a.new128 = call ptr @dva_arena_alloc(ptr %arena.cur127, i64 24)
   %arena.cur129 = call ptr @dva_arena_current()
@@ -78252,7 +78256,7 @@ a.store106:                                       ; preds = %a.grow105, %a.check
   %a.cap.gep133 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new128, i32 0, i32 2
   store i64 16, ptr %a.cap.gep133, align 8
   %call.res134 = call ptr @"cli::pos$Array(String)$String$Unit"(ptr @str.251.struct, ptr %a.new128, ptr @str.252.struct, i64 0)
-  %a.load135 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load135 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null136 = icmp eq ptr %a.load135, null
   br i1 %a.null136, label %a.create137, label %a.after138
 
@@ -78267,11 +78271,11 @@ a.create137:                                      ; preds = %a.store106
   store ptr %a.buf142, ptr %a.data.gep144, align 8
   %a.cap.gep145 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create140, i32 0, i32 2
   store i64 16, ptr %a.cap.gep145, align 8
-  store ptr %a.create140, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create140, ptr %var._arr_lit_3016, align 8
   br label %a.after138
 
 a.after138:                                       ; preds = %a.create137, %a.store106
-  %a.load2146 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2146 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check147
 
 a.check147:                                       ; preds = %a.after138
@@ -78299,7 +78303,7 @@ a.store149:                                       ; preds = %a.grow148, %a.check
   store i64 %a.next.len161, ptr %b.len.gep162, align 8
   %var.load163 = load ptr, ptr @var.not_flag, align 8
   %call.res164 = call ptr @"cli::opt$String$Fn"(ptr @str.253.struct, ptr @str.1.struct, ptr @str.254.struct, ptr %var.load163)
-  %a.load165 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load165 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null166 = icmp eq ptr %a.load165, null
   br i1 %a.null166, label %a.create167, label %a.after168
 
@@ -78314,11 +78318,11 @@ a.create167:                                      ; preds = %a.store149
   store ptr %a.buf172, ptr %a.data.gep174, align 8
   %a.cap.gep175 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create170, i32 0, i32 2
   store i64 16, ptr %a.cap.gep175, align 8
-  store ptr %a.create170, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create170, ptr %var._arr_lit_3016, align 8
   br label %a.after168
 
 a.after168:                                       ; preds = %a.create167, %a.store149
-  %a.load2176 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2176 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check177
 
 a.check177:                                       ; preds = %a.after168
@@ -78346,7 +78350,7 @@ a.store179:                                       ; preds = %a.grow178, %a.check
   store i64 %a.next.len191, ptr %b.len.gep192, align 8
   %var.load193 = load ptr, ptr @var.not_flag, align 8
   %call.res194 = call ptr @"cli::opt$String$Fn"(ptr @str.255.struct, ptr @str.1.struct, ptr @str.256.struct, ptr %var.load193)
-  %a.load195 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load195 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null196 = icmp eq ptr %a.load195, null
   br i1 %a.null196, label %a.create197, label %a.after198
 
@@ -78361,11 +78365,11 @@ a.create197:                                      ; preds = %a.store179
   store ptr %a.buf202, ptr %a.data.gep204, align 8
   %a.cap.gep205 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create200, i32 0, i32 2
   store i64 16, ptr %a.cap.gep205, align 8
-  store ptr %a.create200, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create200, ptr %var._arr_lit_3016, align 8
   br label %a.after198
 
 a.after198:                                       ; preds = %a.create197, %a.store179
-  %a.load2206 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2206 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check207
 
 a.check207:                                       ; preds = %a.after198
@@ -78393,7 +78397,7 @@ a.store209:                                       ; preds = %a.grow208, %a.check
   store i64 %a.next.len221, ptr %b.len.gep222, align 8
   %var.load223 = load ptr, ptr @var.not_flag, align 8
   %call.res224 = call ptr @"cli::opt$String$Fn"(ptr @str.257.struct, ptr @str.1.struct, ptr @str.258.struct, ptr %var.load223)
-  %a.load225 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load225 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null226 = icmp eq ptr %a.load225, null
   br i1 %a.null226, label %a.create227, label %a.after228
 
@@ -78408,11 +78412,11 @@ a.create227:                                      ; preds = %a.store209
   store ptr %a.buf232, ptr %a.data.gep234, align 8
   %a.cap.gep235 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create230, i32 0, i32 2
   store i64 16, ptr %a.cap.gep235, align 8
-  store ptr %a.create230, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create230, ptr %var._arr_lit_3016, align 8
   br label %a.after228
 
 a.after228:                                       ; preds = %a.create227, %a.store209
-  %a.load2236 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2236 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check237
 
 a.check237:                                       ; preds = %a.after228
@@ -78440,7 +78444,7 @@ a.store239:                                       ; preds = %a.grow238, %a.check
   store i64 %a.next.len251, ptr %b.len.gep252, align 8
   %var.load253 = load ptr, ptr @var.not_flag, align 8
   %call.res254 = call ptr @"cli::opt$String$Fn"(ptr @str.259.struct, ptr @str.1.struct, ptr @str.260.struct, ptr %var.load253)
-  %a.load255 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load255 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null256 = icmp eq ptr %a.load255, null
   br i1 %a.null256, label %a.create257, label %a.after258
 
@@ -78455,11 +78459,11 @@ a.create257:                                      ; preds = %a.store239
   store ptr %a.buf262, ptr %a.data.gep264, align 8
   %a.cap.gep265 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create260, i32 0, i32 2
   store i64 16, ptr %a.cap.gep265, align 8
-  store ptr %a.create260, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create260, ptr %var._arr_lit_3016, align 8
   br label %a.after258
 
 a.after258:                                       ; preds = %a.create257, %a.store239
-  %a.load2266 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2266 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check267
 
 a.check267:                                       ; preds = %a.after258
@@ -78487,7 +78491,7 @@ a.store269:                                       ; preds = %a.grow268, %a.check
   store i64 %a.next.len281, ptr %b.len.gep282, align 8
   %var.load283 = load ptr, ptr @var.not_flag, align 8
   %call.res284 = call ptr @"cli::opt$String$Fn"(ptr @str.261.struct, ptr @str.1.struct, ptr @str.262.struct, ptr %var.load283)
-  %a.load285 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load285 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null286 = icmp eq ptr %a.load285, null
   br i1 %a.null286, label %a.create287, label %a.after288
 
@@ -78502,11 +78506,11 @@ a.create287:                                      ; preds = %a.store269
   store ptr %a.buf292, ptr %a.data.gep294, align 8
   %a.cap.gep295 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create290, i32 0, i32 2
   store i64 16, ptr %a.cap.gep295, align 8
-  store ptr %a.create290, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create290, ptr %var._arr_lit_3016, align 8
   br label %a.after288
 
 a.after288:                                       ; preds = %a.create287, %a.store269
-  %a.load2296 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2296 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check297
 
 a.check297:                                       ; preds = %a.after288
@@ -78534,7 +78538,7 @@ a.store299:                                       ; preds = %a.grow298, %a.check
   store i64 %a.next.len311, ptr %b.len.gep312, align 8
   %var.load313 = load ptr, ptr @var.not_flag, align 8
   %call.res314 = call ptr @"cli::opt$String$Fn"(ptr @str.263.struct, ptr @str.1.struct, ptr @str.264.struct, ptr %var.load313)
-  %a.load315 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load315 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null316 = icmp eq ptr %a.load315, null
   br i1 %a.null316, label %a.create317, label %a.after318
 
@@ -78549,11 +78553,11 @@ a.create317:                                      ; preds = %a.store299
   store ptr %a.buf322, ptr %a.data.gep324, align 8
   %a.cap.gep325 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create320, i32 0, i32 2
   store i64 16, ptr %a.cap.gep325, align 8
-  store ptr %a.create320, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create320, ptr %var._arr_lit_3016, align 8
   br label %a.after318
 
 a.after318:                                       ; preds = %a.create317, %a.store299
-  %a.load2326 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2326 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check327
 
 a.check327:                                       ; preds = %a.after318
@@ -78580,7 +78584,7 @@ a.store329:                                       ; preds = %a.grow328, %a.check
   %b.len.gep342 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2326, i32 0, i32 0
   store i64 %a.next.len341, ptr %b.len.gep342, align 8
   %call.res343 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load344 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load344 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null345 = icmp eq ptr %a.load344, null
   br i1 %a.null345, label %a.create346, label %a.after347
 
@@ -78595,11 +78599,11 @@ a.create346:                                      ; preds = %a.store329
   store ptr %a.buf351, ptr %a.data.gep353, align 8
   %a.cap.gep354 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create349, i32 0, i32 2
   store i64 16, ptr %a.cap.gep354, align 8
-  store ptr %a.create349, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create349, ptr %var._arr_lit_3016, align 8
   br label %a.after347
 
 a.after347:                                       ; preds = %a.create346, %a.store329
-  %a.load2355 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2355 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check356
 
 a.check356:                                       ; preds = %a.after347
@@ -78626,7 +78630,7 @@ a.store358:                                       ; preds = %a.grow357, %a.check
   %b.len.gep371 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2355, i32 0, i32 0
   store i64 %a.next.len370, ptr %b.len.gep371, align 8
   %call.res372 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load373 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load373 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null374 = icmp eq ptr %a.load373, null
   br i1 %a.null374, label %a.create375, label %a.after376
 
@@ -78641,11 +78645,11 @@ a.create375:                                      ; preds = %a.store358
   store ptr %a.buf380, ptr %a.data.gep382, align 8
   %a.cap.gep383 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create378, i32 0, i32 2
   store i64 16, ptr %a.cap.gep383, align 8
-  store ptr %a.create378, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create378, ptr %var._arr_lit_3016, align 8
   br label %a.after376
 
 a.after376:                                       ; preds = %a.create375, %a.store358
-  %a.load2384 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2384 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check385
 
 a.check385:                                       ; preds = %a.after376
@@ -78673,7 +78677,7 @@ a.store387:                                       ; preds = %a.grow386, %a.check
   store i64 %a.next.len399, ptr %b.len.gep400, align 8
   %var.load401 = load ptr, ptr @var.not_flag, align 8
   %call.res402 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load401)
-  %a.load403 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load403 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null404 = icmp eq ptr %a.load403, null
   br i1 %a.null404, label %a.create405, label %a.after406
 
@@ -78688,11 +78692,11 @@ a.create405:                                      ; preds = %a.store387
   store ptr %a.buf410, ptr %a.data.gep412, align 8
   %a.cap.gep413 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create408, i32 0, i32 2
   store i64 16, ptr %a.cap.gep413, align 8
-  store ptr %a.create408, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create408, ptr %var._arr_lit_3016, align 8
   br label %a.after406
 
 a.after406:                                       ; preds = %a.create405, %a.store387
-  %a.load2414 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2414 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check415
 
 a.check415:                                       ; preds = %a.after406
@@ -78720,7 +78724,7 @@ a.store417:                                       ; preds = %a.grow416, %a.check
   store i64 %a.next.len429, ptr %b.len.gep430, align 8
   %var.load431 = load ptr, ptr @var.not_flag, align 8
   %call.res432 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load431)
-  %a.load433 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load433 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null434 = icmp eq ptr %a.load433, null
   br i1 %a.null434, label %a.create435, label %a.after436
 
@@ -78735,11 +78739,11 @@ a.create435:                                      ; preds = %a.store417
   store ptr %a.buf440, ptr %a.data.gep442, align 8
   %a.cap.gep443 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create438, i32 0, i32 2
   store i64 16, ptr %a.cap.gep443, align 8
-  store ptr %a.create438, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create438, ptr %var._arr_lit_3016, align 8
   br label %a.after436
 
 a.after436:                                       ; preds = %a.create435, %a.store417
-  %a.load2444 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2444 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check445
 
 a.check445:                                       ; preds = %a.after436
@@ -78766,7 +78770,7 @@ a.store447:                                       ; preds = %a.grow446, %a.check
   %b.len.gep460 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2444, i32 0, i32 0
   store i64 %a.next.len459, ptr %b.len.gep460, align 8
   %call.res461 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load462 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load462 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null463 = icmp eq ptr %a.load462, null
   br i1 %a.null463, label %a.create464, label %a.after465
 
@@ -78781,11 +78785,11 @@ a.create464:                                      ; preds = %a.store447
   store ptr %a.buf469, ptr %a.data.gep471, align 8
   %a.cap.gep472 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create467, i32 0, i32 2
   store i64 16, ptr %a.cap.gep472, align 8
-  store ptr %a.create467, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create467, ptr %var._arr_lit_3016, align 8
   br label %a.after465
 
 a.after465:                                       ; preds = %a.create464, %a.store447
-  %a.load2473 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2473 = load ptr, ptr %var._arr_lit_3016, align 8
   br label %a.check474
 
 a.check474:                                       ; preds = %a.after465
@@ -78811,8 +78815,8 @@ a.store476:                                       ; preds = %a.grow475, %a.check
   %a.next.len488 = add i64 %a.cur.len485, 1
   %b.len.gep489 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2473, i32 0, i32 0
   store i64 %a.next.len488, ptr %b.len.gep489, align 8
-  %var.load490 = load ptr, ptr %var._arr_lit_3014, align 8
-  %a.load491 = load ptr, ptr %var._arr_lit_3014, align 8
+  %var.load490 = load ptr, ptr %var._arr_lit_3016, align 8
+  %a.load491 = load ptr, ptr %var._arr_lit_3016, align 8
   %a.null492 = icmp eq ptr %a.load491, null
   br i1 %a.null492, label %a.create493, label %a.after494
 
@@ -78827,13 +78831,13 @@ a.create493:                                      ; preds = %a.store476
   store ptr %a.buf498, ptr %a.data.gep500, align 8
   %a.cap.gep501 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create496, i32 0, i32 2
   store i64 16, ptr %a.cap.gep501, align 8
-  store ptr %a.create496, ptr %var._arr_lit_3014, align 8
+  store ptr %a.create496, ptr %var._arr_lit_3016, align 8
   br label %a.after494
 
 a.after494:                                       ; preds = %a.create493, %a.store476
-  %a.load2502 = load ptr, ptr %var._arr_lit_3014, align 8
+  %a.load2502 = load ptr, ptr %var._arr_lit_3016, align 8
   %call.res503 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.249.struct, ptr @str.250.struct, ptr %a.load2502)
-  %a.load504 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load504 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null505 = icmp eq ptr %a.load504, null
   br i1 %a.null505, label %a.create506, label %a.after507
 
@@ -78848,11 +78852,11 @@ a.create506:                                      ; preds = %a.after494
   store ptr %a.buf511, ptr %a.data.gep513, align 8
   %a.cap.gep514 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create509, i32 0, i32 2
   store i64 16, ptr %a.cap.gep514, align 8
-  store ptr %a.create509, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create509, ptr %var._arr_lit_3001, align 8
   br label %a.after507
 
 a.after507:                                       ; preds = %a.create506, %a.after494
-  %a.load2515 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load2515 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check516
 
 a.check516:                                       ; preds = %a.after507
@@ -78888,10 +78892,10 @@ a.store518:                                       ; preds = %a.grow517, %a.check
   store ptr %a.buf535, ptr %a.data.gep537, align 8
   %a.cap.gep538 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new533, i32 0, i32 2
   store i64 16, ptr %a.cap.gep538, align 8
-  store ptr %a.new533, ptr %var._arr_lit_3054, align 8
+  store ptr %a.new533, ptr %var._arr_lit_3056, align 8
   %var.load539 = load ptr, ptr @var.not_flag, align 8
   %call.res540 = call ptr @"cli::pos$Unknown$String$Fn"(ptr @str.277.struct, i64 3, ptr @str.278.struct, ptr %var.load539)
-  %a.load541 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load541 = load ptr, ptr %var._arr_lit_3056, align 8
   %a.null542 = icmp eq ptr %a.load541, null
   br i1 %a.null542, label %a.create543, label %a.after544
 
@@ -78906,11 +78910,11 @@ a.create543:                                      ; preds = %a.store518
   store ptr %a.buf548, ptr %a.data.gep550, align 8
   %a.cap.gep551 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create546, i32 0, i32 2
   store i64 16, ptr %a.cap.gep551, align 8
-  store ptr %a.create546, ptr %var._arr_lit_3054, align 8
+  store ptr %a.create546, ptr %var._arr_lit_3056, align 8
   br label %a.after544
 
 a.after544:                                       ; preds = %a.create543, %a.store518
-  %a.load2552 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load2552 = load ptr, ptr %var._arr_lit_3056, align 8
   br label %a.check553
 
 a.check553:                                       ; preds = %a.after544
@@ -78937,7 +78941,7 @@ a.store555:                                       ; preds = %a.grow554, %a.check
   %b.len.gep568 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2552, i32 0, i32 0
   store i64 %a.next.len567, ptr %b.len.gep568, align 8
   %call.res569 = call ptr @"cli::pos$String$String$Unit"(ptr @str.243.struct, ptr @str.15.struct, ptr @str.279.struct, i64 0)
-  %a.load570 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load570 = load ptr, ptr %var._arr_lit_3056, align 8
   %a.null571 = icmp eq ptr %a.load570, null
   br i1 %a.null571, label %a.create572, label %a.after573
 
@@ -78952,11 +78956,11 @@ a.create572:                                      ; preds = %a.store555
   store ptr %a.buf577, ptr %a.data.gep579, align 8
   %a.cap.gep580 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create575, i32 0, i32 2
   store i64 16, ptr %a.cap.gep580, align 8
-  store ptr %a.create575, ptr %var._arr_lit_3054, align 8
+  store ptr %a.create575, ptr %var._arr_lit_3056, align 8
   br label %a.after573
 
 a.after573:                                       ; preds = %a.create572, %a.store555
-  %a.load2581 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load2581 = load ptr, ptr %var._arr_lit_3056, align 8
   br label %a.check582
 
 a.check582:                                       ; preds = %a.after573
@@ -78983,7 +78987,7 @@ a.store584:                                       ; preds = %a.grow583, %a.check
   %b.len.gep597 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2581, i32 0, i32 0
   store i64 %a.next.len596, ptr %b.len.gep597, align 8
   %call.res598 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load599 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load599 = load ptr, ptr %var._arr_lit_3056, align 8
   %a.null600 = icmp eq ptr %a.load599, null
   br i1 %a.null600, label %a.create601, label %a.after602
 
@@ -78998,11 +79002,11 @@ a.create601:                                      ; preds = %a.store584
   store ptr %a.buf606, ptr %a.data.gep608, align 8
   %a.cap.gep609 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create604, i32 0, i32 2
   store i64 16, ptr %a.cap.gep609, align 8
-  store ptr %a.create604, ptr %var._arr_lit_3054, align 8
+  store ptr %a.create604, ptr %var._arr_lit_3056, align 8
   br label %a.after602
 
 a.after602:                                       ; preds = %a.create601, %a.store584
-  %a.load2610 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load2610 = load ptr, ptr %var._arr_lit_3056, align 8
   br label %a.check611
 
 a.check611:                                       ; preds = %a.after602
@@ -79030,7 +79034,7 @@ a.store613:                                       ; preds = %a.grow612, %a.check
   store i64 %a.next.len625, ptr %b.len.gep626, align 8
   %var.load627 = load ptr, ptr @var.not_flag, align 8
   %call.res628 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load627)
-  %a.load629 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load629 = load ptr, ptr %var._arr_lit_3056, align 8
   %a.null630 = icmp eq ptr %a.load629, null
   br i1 %a.null630, label %a.create631, label %a.after632
 
@@ -79045,11 +79049,11 @@ a.create631:                                      ; preds = %a.store613
   store ptr %a.buf636, ptr %a.data.gep638, align 8
   %a.cap.gep639 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create634, i32 0, i32 2
   store i64 16, ptr %a.cap.gep639, align 8
-  store ptr %a.create634, ptr %var._arr_lit_3054, align 8
+  store ptr %a.create634, ptr %var._arr_lit_3056, align 8
   br label %a.after632
 
 a.after632:                                       ; preds = %a.create631, %a.store613
-  %a.load2640 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load2640 = load ptr, ptr %var._arr_lit_3056, align 8
   br label %a.check641
 
 a.check641:                                       ; preds = %a.after632
@@ -79077,7 +79081,7 @@ a.store643:                                       ; preds = %a.grow642, %a.check
   store i64 %a.next.len655, ptr %b.len.gep656, align 8
   %var.load657 = load ptr, ptr @var.not_flag, align 8
   %call.res658 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load657)
-  %a.load659 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load659 = load ptr, ptr %var._arr_lit_3056, align 8
   %a.null660 = icmp eq ptr %a.load659, null
   br i1 %a.null660, label %a.create661, label %a.after662
 
@@ -79092,11 +79096,11 @@ a.create661:                                      ; preds = %a.store643
   store ptr %a.buf666, ptr %a.data.gep668, align 8
   %a.cap.gep669 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create664, i32 0, i32 2
   store i64 16, ptr %a.cap.gep669, align 8
-  store ptr %a.create664, ptr %var._arr_lit_3054, align 8
+  store ptr %a.create664, ptr %var._arr_lit_3056, align 8
   br label %a.after662
 
 a.after662:                                       ; preds = %a.create661, %a.store643
-  %a.load2670 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load2670 = load ptr, ptr %var._arr_lit_3056, align 8
   br label %a.check671
 
 a.check671:                                       ; preds = %a.after662
@@ -79123,7 +79127,7 @@ a.store673:                                       ; preds = %a.grow672, %a.check
   %b.len.gep686 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2670, i32 0, i32 0
   store i64 %a.next.len685, ptr %b.len.gep686, align 8
   %call.res687 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load688 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load688 = load ptr, ptr %var._arr_lit_3056, align 8
   %a.null689 = icmp eq ptr %a.load688, null
   br i1 %a.null689, label %a.create690, label %a.after691
 
@@ -79138,11 +79142,11 @@ a.create690:                                      ; preds = %a.store673
   store ptr %a.buf695, ptr %a.data.gep697, align 8
   %a.cap.gep698 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create693, i32 0, i32 2
   store i64 16, ptr %a.cap.gep698, align 8
-  store ptr %a.create693, ptr %var._arr_lit_3054, align 8
+  store ptr %a.create693, ptr %var._arr_lit_3056, align 8
   br label %a.after691
 
 a.after691:                                       ; preds = %a.create690, %a.store673
-  %a.load2699 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load2699 = load ptr, ptr %var._arr_lit_3056, align 8
   br label %a.check700
 
 a.check700:                                       ; preds = %a.after691
@@ -79168,8 +79172,8 @@ a.store702:                                       ; preds = %a.grow701, %a.check
   %a.next.len714 = add i64 %a.cur.len711, 1
   %b.len.gep715 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2699, i32 0, i32 0
   store i64 %a.next.len714, ptr %b.len.gep715, align 8
-  %var.load716 = load ptr, ptr %var._arr_lit_3054, align 8
-  %a.load717 = load ptr, ptr %var._arr_lit_3054, align 8
+  %var.load716 = load ptr, ptr %var._arr_lit_3056, align 8
+  %a.load717 = load ptr, ptr %var._arr_lit_3056, align 8
   %a.null718 = icmp eq ptr %a.load717, null
   br i1 %a.null718, label %a.create719, label %a.after720
 
@@ -79184,13 +79188,13 @@ a.create719:                                      ; preds = %a.store702
   store ptr %a.buf724, ptr %a.data.gep726, align 8
   %a.cap.gep727 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create722, i32 0, i32 2
   store i64 16, ptr %a.cap.gep727, align 8
-  store ptr %a.create722, ptr %var._arr_lit_3054, align 8
+  store ptr %a.create722, ptr %var._arr_lit_3056, align 8
   br label %a.after720
 
 a.after720:                                       ; preds = %a.create719, %a.store702
-  %a.load2728 = load ptr, ptr %var._arr_lit_3054, align 8
+  %a.load2728 = load ptr, ptr %var._arr_lit_3056, align 8
   %call.res729 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.275.struct, ptr @str.276.struct, ptr %a.load2728)
-  %a.load730 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load730 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null731 = icmp eq ptr %a.load730, null
   br i1 %a.null731, label %a.create732, label %a.after733
 
@@ -79205,11 +79209,11 @@ a.create732:                                      ; preds = %a.after720
   store ptr %a.buf737, ptr %a.data.gep739, align 8
   %a.cap.gep740 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create735, i32 0, i32 2
   store i64 16, ptr %a.cap.gep740, align 8
-  store ptr %a.create735, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create735, ptr %var._arr_lit_3001, align 8
   br label %a.after733
 
 a.after733:                                       ; preds = %a.create732, %a.after720
-  %a.load2741 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load2741 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check742
 
 a.check742:                                       ; preds = %a.after733
@@ -79245,9 +79249,9 @@ a.store744:                                       ; preds = %a.grow743, %a.check
   store ptr %a.buf761, ptr %a.data.gep763, align 8
   %a.cap.gep764 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new759, i32 0, i32 2
   store i64 16, ptr %a.cap.gep764, align 8
-  store ptr %a.new759, ptr %var._arr_lit_3077, align 8
+  store ptr %a.new759, ptr %var._arr_lit_3079, align 8
   %call.res765 = call ptr @"cli::pos$String$String$Unit"(ptr @str.282.struct, ptr @str.15.struct, ptr @str.283.struct, i64 0)
-  %a.load766 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load766 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null767 = icmp eq ptr %a.load766, null
   br i1 %a.null767, label %a.create768, label %a.after769
 
@@ -79262,11 +79266,11 @@ a.create768:                                      ; preds = %a.store744
   store ptr %a.buf773, ptr %a.data.gep775, align 8
   %a.cap.gep776 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create771, i32 0, i32 2
   store i64 16, ptr %a.cap.gep776, align 8
-  store ptr %a.create771, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create771, ptr %var._arr_lit_3079, align 8
   br label %a.after769
 
 a.after769:                                       ; preds = %a.create768, %a.store744
-  %a.load2777 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load2777 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check778
 
 a.check778:                                       ; preds = %a.after769
@@ -79294,7 +79298,7 @@ a.store780:                                       ; preds = %a.grow779, %a.check
   store i64 %a.next.len792, ptr %b.len.gep793, align 8
   %var.load794 = load ptr, ptr @var.not_flag, align 8
   %call.res795 = call ptr @"cli::opt$String$Fn"(ptr @str.284.struct, ptr @str.1.struct, ptr @str.285.struct, ptr %var.load794)
-  %a.load796 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load796 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null797 = icmp eq ptr %a.load796, null
   br i1 %a.null797, label %a.create798, label %a.after799
 
@@ -79309,11 +79313,11 @@ a.create798:                                      ; preds = %a.store780
   store ptr %a.buf803, ptr %a.data.gep805, align 8
   %a.cap.gep806 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create801, i32 0, i32 2
   store i64 16, ptr %a.cap.gep806, align 8
-  store ptr %a.create801, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create801, ptr %var._arr_lit_3079, align 8
   br label %a.after799
 
 a.after799:                                       ; preds = %a.create798, %a.store780
-  %a.load2807 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load2807 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check808
 
 a.check808:                                       ; preds = %a.after799
@@ -79341,7 +79345,7 @@ a.store810:                                       ; preds = %a.grow809, %a.check
   store i64 %a.next.len822, ptr %b.len.gep823, align 8
   %var.load824 = load ptr, ptr @var.not_flag, align 8
   %call.res825 = call ptr @"cli::opt$String$Fn"(ptr @str.286.struct, ptr @str.1.struct, ptr @str.287.struct, ptr %var.load824)
-  %a.load826 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load826 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null827 = icmp eq ptr %a.load826, null
   br i1 %a.null827, label %a.create828, label %a.after829
 
@@ -79356,11 +79360,11 @@ a.create828:                                      ; preds = %a.store810
   store ptr %a.buf833, ptr %a.data.gep835, align 8
   %a.cap.gep836 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create831, i32 0, i32 2
   store i64 16, ptr %a.cap.gep836, align 8
-  store ptr %a.create831, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create831, ptr %var._arr_lit_3079, align 8
   br label %a.after829
 
 a.after829:                                       ; preds = %a.create828, %a.store810
-  %a.load2837 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load2837 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check838
 
 a.check838:                                       ; preds = %a.after829
@@ -79388,7 +79392,7 @@ a.store840:                                       ; preds = %a.grow839, %a.check
   store i64 %a.next.len852, ptr %b.len.gep853, align 8
   %var.load854 = load ptr, ptr @var.valid_opt_level, align 8
   %call.res855 = call ptr @"cli::opt$String$Fn"(ptr @str.288.struct, ptr @str.1.struct, ptr @str.289.struct, ptr %var.load854)
-  %a.load856 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load856 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null857 = icmp eq ptr %a.load856, null
   br i1 %a.null857, label %a.create858, label %a.after859
 
@@ -79403,11 +79407,11 @@ a.create858:                                      ; preds = %a.store840
   store ptr %a.buf863, ptr %a.data.gep865, align 8
   %a.cap.gep866 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create861, i32 0, i32 2
   store i64 16, ptr %a.cap.gep866, align 8
-  store ptr %a.create861, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create861, ptr %var._arr_lit_3079, align 8
   br label %a.after859
 
 a.after859:                                       ; preds = %a.create858, %a.store840
-  %a.load2867 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load2867 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check868
 
 a.check868:                                       ; preds = %a.after859
@@ -79444,7 +79448,7 @@ a.store870:                                       ; preds = %a.grow869, %a.check
   %a.cap.gep890 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new885, i32 0, i32 2
   store i64 16, ptr %a.cap.gep890, align 8
   %call.res891 = call ptr @"cli::opt$Array(String)$Unit"(ptr @str.290.struct, ptr %a.new885, ptr @str.291.struct, i64 0)
-  %a.load892 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load892 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null893 = icmp eq ptr %a.load892, null
   br i1 %a.null893, label %a.create894, label %a.after895
 
@@ -79459,11 +79463,11 @@ a.create894:                                      ; preds = %a.store870
   store ptr %a.buf899, ptr %a.data.gep901, align 8
   %a.cap.gep902 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create897, i32 0, i32 2
   store i64 16, ptr %a.cap.gep902, align 8
-  store ptr %a.create897, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create897, ptr %var._arr_lit_3079, align 8
   br label %a.after895
 
 a.after895:                                       ; preds = %a.create894, %a.store870
-  %a.load2903 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load2903 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check904
 
 a.check904:                                       ; preds = %a.after895
@@ -79490,7 +79494,7 @@ a.store906:                                       ; preds = %a.grow905, %a.check
   %b.len.gep919 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2903, i32 0, i32 0
   store i64 %a.next.len918, ptr %b.len.gep919, align 8
   %call.res920 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load921 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load921 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null922 = icmp eq ptr %a.load921, null
   br i1 %a.null922, label %a.create923, label %a.after924
 
@@ -79505,11 +79509,11 @@ a.create923:                                      ; preds = %a.store906
   store ptr %a.buf928, ptr %a.data.gep930, align 8
   %a.cap.gep931 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create926, i32 0, i32 2
   store i64 16, ptr %a.cap.gep931, align 8
-  store ptr %a.create926, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create926, ptr %var._arr_lit_3079, align 8
   br label %a.after924
 
 a.after924:                                       ; preds = %a.create923, %a.store906
-  %a.load2932 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load2932 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check933
 
 a.check933:                                       ; preds = %a.after924
@@ -79536,7 +79540,7 @@ a.store935:                                       ; preds = %a.grow934, %a.check
   %b.len.gep948 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load2932, i32 0, i32 0
   store i64 %a.next.len947, ptr %b.len.gep948, align 8
   %call.res949 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load950 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load950 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null951 = icmp eq ptr %a.load950, null
   br i1 %a.null951, label %a.create952, label %a.after953
 
@@ -79551,11 +79555,11 @@ a.create952:                                      ; preds = %a.store935
   store ptr %a.buf957, ptr %a.data.gep959, align 8
   %a.cap.gep960 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create955, i32 0, i32 2
   store i64 16, ptr %a.cap.gep960, align 8
-  store ptr %a.create955, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create955, ptr %var._arr_lit_3079, align 8
   br label %a.after953
 
 a.after953:                                       ; preds = %a.create952, %a.store935
-  %a.load2961 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load2961 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check962
 
 a.check962:                                       ; preds = %a.after953
@@ -79583,7 +79587,7 @@ a.store964:                                       ; preds = %a.grow963, %a.check
   store i64 %a.next.len976, ptr %b.len.gep977, align 8
   %var.load978 = load ptr, ptr @var.not_flag, align 8
   %call.res979 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load978)
-  %a.load980 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load980 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null981 = icmp eq ptr %a.load980, null
   br i1 %a.null981, label %a.create982, label %a.after983
 
@@ -79598,11 +79602,11 @@ a.create982:                                      ; preds = %a.store964
   store ptr %a.buf987, ptr %a.data.gep989, align 8
   %a.cap.gep990 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create985, i32 0, i32 2
   store i64 16, ptr %a.cap.gep990, align 8
-  store ptr %a.create985, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create985, ptr %var._arr_lit_3079, align 8
   br label %a.after983
 
 a.after983:                                       ; preds = %a.create982, %a.store964
-  %a.load2991 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load2991 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check992
 
 a.check992:                                       ; preds = %a.after983
@@ -79630,7 +79634,7 @@ a.store994:                                       ; preds = %a.grow993, %a.check
   store i64 %a.next.len1006, ptr %b.len.gep1007, align 8
   %var.load1008 = load ptr, ptr @var.not_flag, align 8
   %call.res1009 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load1008)
-  %a.load1010 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load1010 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null1011 = icmp eq ptr %a.load1010, null
   br i1 %a.null1011, label %a.create1012, label %a.after1013
 
@@ -79645,11 +79649,11 @@ a.create1012:                                     ; preds = %a.store994
   store ptr %a.buf1017, ptr %a.data.gep1019, align 8
   %a.cap.gep1020 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1015, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1020, align 8
-  store ptr %a.create1015, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create1015, ptr %var._arr_lit_3079, align 8
   br label %a.after1013
 
 a.after1013:                                      ; preds = %a.create1012, %a.store994
-  %a.load21021 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load21021 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check1022
 
 a.check1022:                                      ; preds = %a.after1013
@@ -79676,7 +79680,7 @@ a.store1024:                                      ; preds = %a.grow1023, %a.chec
   %b.len.gep1037 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21021, i32 0, i32 0
   store i64 %a.next.len1036, ptr %b.len.gep1037, align 8
   %call.res1038 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load1039 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load1039 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null1040 = icmp eq ptr %a.load1039, null
   br i1 %a.null1040, label %a.create1041, label %a.after1042
 
@@ -79691,11 +79695,11 @@ a.create1041:                                     ; preds = %a.store1024
   store ptr %a.buf1046, ptr %a.data.gep1048, align 8
   %a.cap.gep1049 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1044, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1049, align 8
-  store ptr %a.create1044, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create1044, ptr %var._arr_lit_3079, align 8
   br label %a.after1042
 
 a.after1042:                                      ; preds = %a.create1041, %a.store1024
-  %a.load21050 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load21050 = load ptr, ptr %var._arr_lit_3079, align 8
   br label %a.check1051
 
 a.check1051:                                      ; preds = %a.after1042
@@ -79721,8 +79725,8 @@ a.store1053:                                      ; preds = %a.grow1052, %a.chec
   %a.next.len1065 = add i64 %a.cur.len1062, 1
   %b.len.gep1066 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21050, i32 0, i32 0
   store i64 %a.next.len1065, ptr %b.len.gep1066, align 8
-  %var.load1067 = load ptr, ptr %var._arr_lit_3077, align 8
-  %a.load1068 = load ptr, ptr %var._arr_lit_3077, align 8
+  %var.load1067 = load ptr, ptr %var._arr_lit_3079, align 8
+  %a.load1068 = load ptr, ptr %var._arr_lit_3079, align 8
   %a.null1069 = icmp eq ptr %a.load1068, null
   br i1 %a.null1069, label %a.create1070, label %a.after1071
 
@@ -79737,13 +79741,13 @@ a.create1070:                                     ; preds = %a.store1053
   store ptr %a.buf1075, ptr %a.data.gep1077, align 8
   %a.cap.gep1078 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1073, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1078, align 8
-  store ptr %a.create1073, ptr %var._arr_lit_3077, align 8
+  store ptr %a.create1073, ptr %var._arr_lit_3079, align 8
   br label %a.after1071
 
 a.after1071:                                      ; preds = %a.create1070, %a.store1053
-  %a.load21079 = load ptr, ptr %var._arr_lit_3077, align 8
+  %a.load21079 = load ptr, ptr %var._arr_lit_3079, align 8
   %call.res1080 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.280.struct, ptr @str.281.struct, ptr %a.load21079)
-  %a.load1081 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load1081 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null1082 = icmp eq ptr %a.load1081, null
   br i1 %a.null1082, label %a.create1083, label %a.after1084
 
@@ -79758,11 +79762,11 @@ a.create1083:                                     ; preds = %a.after1071
   store ptr %a.buf1088, ptr %a.data.gep1090, align 8
   %a.cap.gep1091 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1086, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1091, align 8
-  store ptr %a.create1086, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create1086, ptr %var._arr_lit_3001, align 8
   br label %a.after1084
 
 a.after1084:                                      ; preds = %a.create1083, %a.after1071
-  %a.load21092 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load21092 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check1093
 
 a.check1093:                                      ; preds = %a.after1084
@@ -79798,9 +79802,9 @@ a.store1095:                                      ; preds = %a.grow1094, %a.chec
   store ptr %a.buf1112, ptr %a.data.gep1114, align 8
   %a.cap.gep1115 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new1110, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1115, align 8
-  store ptr %a.new1110, ptr %var._arr_lit_3111, align 8
+  store ptr %a.new1110, ptr %var._arr_lit_3113, align 8
   %call.res1116 = call ptr @"cli::pos$String$String$Unit"(ptr @str.282.struct, ptr @str.15.struct, ptr @str.283.struct, i64 0)
-  %a.load1117 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1117 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1118 = icmp eq ptr %a.load1117, null
   br i1 %a.null1118, label %a.create1119, label %a.after1120
 
@@ -79815,11 +79819,11 @@ a.create1119:                                     ; preds = %a.store1095
   store ptr %a.buf1124, ptr %a.data.gep1126, align 8
   %a.cap.gep1127 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1122, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1127, align 8
-  store ptr %a.create1122, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1122, ptr %var._arr_lit_3113, align 8
   br label %a.after1120
 
 a.after1120:                                      ; preds = %a.create1119, %a.store1095
-  %a.load21128 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21128 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1129
 
 a.check1129:                                      ; preds = %a.after1120
@@ -79847,7 +79851,7 @@ a.store1131:                                      ; preds = %a.grow1130, %a.chec
   store i64 %a.next.len1143, ptr %b.len.gep1144, align 8
   %var.load1145 = load ptr, ptr @var.not_flag, align 8
   %call.res1146 = call ptr @"cli::opt$String$Fn"(ptr @str.284.struct, ptr @str.1.struct, ptr @str.285.struct, ptr %var.load1145)
-  %a.load1147 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1147 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1148 = icmp eq ptr %a.load1147, null
   br i1 %a.null1148, label %a.create1149, label %a.after1150
 
@@ -79862,11 +79866,11 @@ a.create1149:                                     ; preds = %a.store1131
   store ptr %a.buf1154, ptr %a.data.gep1156, align 8
   %a.cap.gep1157 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1152, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1157, align 8
-  store ptr %a.create1152, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1152, ptr %var._arr_lit_3113, align 8
   br label %a.after1150
 
 a.after1150:                                      ; preds = %a.create1149, %a.store1131
-  %a.load21158 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21158 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1159
 
 a.check1159:                                      ; preds = %a.after1150
@@ -79894,7 +79898,7 @@ a.store1161:                                      ; preds = %a.grow1160, %a.chec
   store i64 %a.next.len1173, ptr %b.len.gep1174, align 8
   %var.load1175 = load ptr, ptr @var.not_flag, align 8
   %call.res1176 = call ptr @"cli::opt$String$Fn"(ptr @str.286.struct, ptr @str.1.struct, ptr @str.287.struct, ptr %var.load1175)
-  %a.load1177 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1177 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1178 = icmp eq ptr %a.load1177, null
   br i1 %a.null1178, label %a.create1179, label %a.after1180
 
@@ -79909,11 +79913,11 @@ a.create1179:                                     ; preds = %a.store1161
   store ptr %a.buf1184, ptr %a.data.gep1186, align 8
   %a.cap.gep1187 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1182, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1187, align 8
-  store ptr %a.create1182, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1182, ptr %var._arr_lit_3113, align 8
   br label %a.after1180
 
 a.after1180:                                      ; preds = %a.create1179, %a.store1161
-  %a.load21188 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21188 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1189
 
 a.check1189:                                      ; preds = %a.after1180
@@ -79941,7 +79945,7 @@ a.store1191:                                      ; preds = %a.grow1190, %a.chec
   store i64 %a.next.len1203, ptr %b.len.gep1204, align 8
   %var.load1205 = load ptr, ptr @var.valid_opt_level, align 8
   %call.res1206 = call ptr @"cli::opt$String$Fn"(ptr @str.288.struct, ptr @str.1.struct, ptr @str.289.struct, ptr %var.load1205)
-  %a.load1207 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1207 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1208 = icmp eq ptr %a.load1207, null
   br i1 %a.null1208, label %a.create1209, label %a.after1210
 
@@ -79956,11 +79960,11 @@ a.create1209:                                     ; preds = %a.store1191
   store ptr %a.buf1214, ptr %a.data.gep1216, align 8
   %a.cap.gep1217 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1212, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1217, align 8
-  store ptr %a.create1212, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1212, ptr %var._arr_lit_3113, align 8
   br label %a.after1210
 
 a.after1210:                                      ; preds = %a.create1209, %a.store1191
-  %a.load21218 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21218 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1219
 
 a.check1219:                                      ; preds = %a.after1210
@@ -79997,7 +80001,7 @@ a.store1221:                                      ; preds = %a.grow1220, %a.chec
   %a.cap.gep1241 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new1236, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1241, align 8
   %call.res1242 = call ptr @"cli::opt$Array(String)$Unit"(ptr @str.290.struct, ptr %a.new1236, ptr @str.291.struct, i64 0)
-  %a.load1243 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1243 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1244 = icmp eq ptr %a.load1243, null
   br i1 %a.null1244, label %a.create1245, label %a.after1246
 
@@ -80012,11 +80016,11 @@ a.create1245:                                     ; preds = %a.store1221
   store ptr %a.buf1250, ptr %a.data.gep1252, align 8
   %a.cap.gep1253 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1248, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1253, align 8
-  store ptr %a.create1248, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1248, ptr %var._arr_lit_3113, align 8
   br label %a.after1246
 
 a.after1246:                                      ; preds = %a.create1245, %a.store1221
-  %a.load21254 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21254 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1255
 
 a.check1255:                                      ; preds = %a.after1246
@@ -80043,7 +80047,7 @@ a.store1257:                                      ; preds = %a.grow1256, %a.chec
   %b.len.gep1270 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21254, i32 0, i32 0
   store i64 %a.next.len1269, ptr %b.len.gep1270, align 8
   %call.res1271 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load1272 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1272 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1273 = icmp eq ptr %a.load1272, null
   br i1 %a.null1273, label %a.create1274, label %a.after1275
 
@@ -80058,11 +80062,11 @@ a.create1274:                                     ; preds = %a.store1257
   store ptr %a.buf1279, ptr %a.data.gep1281, align 8
   %a.cap.gep1282 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1277, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1282, align 8
-  store ptr %a.create1277, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1277, ptr %var._arr_lit_3113, align 8
   br label %a.after1275
 
 a.after1275:                                      ; preds = %a.create1274, %a.store1257
-  %a.load21283 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21283 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1284
 
 a.check1284:                                      ; preds = %a.after1275
@@ -80089,7 +80093,7 @@ a.store1286:                                      ; preds = %a.grow1285, %a.chec
   %b.len.gep1299 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21283, i32 0, i32 0
   store i64 %a.next.len1298, ptr %b.len.gep1299, align 8
   %call.res1300 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load1301 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1301 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1302 = icmp eq ptr %a.load1301, null
   br i1 %a.null1302, label %a.create1303, label %a.after1304
 
@@ -80104,11 +80108,11 @@ a.create1303:                                     ; preds = %a.store1286
   store ptr %a.buf1308, ptr %a.data.gep1310, align 8
   %a.cap.gep1311 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1306, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1311, align 8
-  store ptr %a.create1306, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1306, ptr %var._arr_lit_3113, align 8
   br label %a.after1304
 
 a.after1304:                                      ; preds = %a.create1303, %a.store1286
-  %a.load21312 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21312 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1313
 
 a.check1313:                                      ; preds = %a.after1304
@@ -80136,7 +80140,7 @@ a.store1315:                                      ; preds = %a.grow1314, %a.chec
   store i64 %a.next.len1327, ptr %b.len.gep1328, align 8
   %var.load1329 = load ptr, ptr @var.not_flag, align 8
   %call.res1330 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load1329)
-  %a.load1331 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1331 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1332 = icmp eq ptr %a.load1331, null
   br i1 %a.null1332, label %a.create1333, label %a.after1334
 
@@ -80151,11 +80155,11 @@ a.create1333:                                     ; preds = %a.store1315
   store ptr %a.buf1338, ptr %a.data.gep1340, align 8
   %a.cap.gep1341 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1336, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1341, align 8
-  store ptr %a.create1336, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1336, ptr %var._arr_lit_3113, align 8
   br label %a.after1334
 
 a.after1334:                                      ; preds = %a.create1333, %a.store1315
-  %a.load21342 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21342 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1343
 
 a.check1343:                                      ; preds = %a.after1334
@@ -80183,7 +80187,7 @@ a.store1345:                                      ; preds = %a.grow1344, %a.chec
   store i64 %a.next.len1357, ptr %b.len.gep1358, align 8
   %var.load1359 = load ptr, ptr @var.not_flag, align 8
   %call.res1360 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load1359)
-  %a.load1361 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1361 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1362 = icmp eq ptr %a.load1361, null
   br i1 %a.null1362, label %a.create1363, label %a.after1364
 
@@ -80198,11 +80202,11 @@ a.create1363:                                     ; preds = %a.store1345
   store ptr %a.buf1368, ptr %a.data.gep1370, align 8
   %a.cap.gep1371 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1366, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1371, align 8
-  store ptr %a.create1366, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1366, ptr %var._arr_lit_3113, align 8
   br label %a.after1364
 
 a.after1364:                                      ; preds = %a.create1363, %a.store1345
-  %a.load21372 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21372 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1373
 
 a.check1373:                                      ; preds = %a.after1364
@@ -80229,7 +80233,7 @@ a.store1375:                                      ; preds = %a.grow1374, %a.chec
   %b.len.gep1388 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21372, i32 0, i32 0
   store i64 %a.next.len1387, ptr %b.len.gep1388, align 8
   %call.res1389 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load1390 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load1390 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1391 = icmp eq ptr %a.load1390, null
   br i1 %a.null1391, label %a.create1392, label %a.after1393
 
@@ -80244,11 +80248,11 @@ a.create1392:                                     ; preds = %a.store1375
   store ptr %a.buf1397, ptr %a.data.gep1399, align 8
   %a.cap.gep1400 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1395, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1400, align 8
-  store ptr %a.create1395, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1395, ptr %var._arr_lit_3113, align 8
   br label %a.after1393
 
 a.after1393:                                      ; preds = %a.create1392, %a.store1375
-  %a.load21401 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21401 = load ptr, ptr %var._arr_lit_3113, align 8
   br label %a.check1402
 
 a.check1402:                                      ; preds = %a.after1393
@@ -80274,8 +80278,8 @@ a.store1404:                                      ; preds = %a.grow1403, %a.chec
   %a.next.len1416 = add i64 %a.cur.len1413, 1
   %b.len.gep1417 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21401, i32 0, i32 0
   store i64 %a.next.len1416, ptr %b.len.gep1417, align 8
-  %var.load1418 = load ptr, ptr %var._arr_lit_3111, align 8
-  %a.load1419 = load ptr, ptr %var._arr_lit_3111, align 8
+  %var.load1418 = load ptr, ptr %var._arr_lit_3113, align 8
+  %a.load1419 = load ptr, ptr %var._arr_lit_3113, align 8
   %a.null1420 = icmp eq ptr %a.load1419, null
   br i1 %a.null1420, label %a.create1421, label %a.after1422
 
@@ -80290,13 +80294,13 @@ a.create1421:                                     ; preds = %a.store1404
   store ptr %a.buf1426, ptr %a.data.gep1428, align 8
   %a.cap.gep1429 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1424, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1429, align 8
-  store ptr %a.create1424, ptr %var._arr_lit_3111, align 8
+  store ptr %a.create1424, ptr %var._arr_lit_3113, align 8
   br label %a.after1422
 
 a.after1422:                                      ; preds = %a.create1421, %a.store1404
-  %a.load21430 = load ptr, ptr %var._arr_lit_3111, align 8
+  %a.load21430 = load ptr, ptr %var._arr_lit_3113, align 8
   %call.res1431 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.292.struct, ptr @str.293.struct, ptr %a.load21430)
-  %a.load1432 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load1432 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null1433 = icmp eq ptr %a.load1432, null
   br i1 %a.null1433, label %a.create1434, label %a.after1435
 
@@ -80311,11 +80315,11 @@ a.create1434:                                     ; preds = %a.after1422
   store ptr %a.buf1439, ptr %a.data.gep1441, align 8
   %a.cap.gep1442 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1437, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1442, align 8
-  store ptr %a.create1437, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create1437, ptr %var._arr_lit_3001, align 8
   br label %a.after1435
 
 a.after1435:                                      ; preds = %a.create1434, %a.after1422
-  %a.load21443 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load21443 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check1444
 
 a.check1444:                                      ; preds = %a.after1435
@@ -80351,9 +80355,9 @@ a.store1446:                                      ; preds = %a.grow1445, %a.chec
   store ptr %a.buf1463, ptr %a.data.gep1465, align 8
   %a.cap.gep1466 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new1461, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1466, align 8
-  store ptr %a.new1461, ptr %var._arr_lit_3145, align 8
+  store ptr %a.new1461, ptr %var._arr_lit_3147, align 8
   %call.res1467 = call ptr @"cli::pos$String$String$Unit"(ptr @str.282.struct, ptr @str.15.struct, ptr @str.283.struct, i64 0)
-  %a.load1468 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load1468 = load ptr, ptr %var._arr_lit_3147, align 8
   %a.null1469 = icmp eq ptr %a.load1468, null
   br i1 %a.null1469, label %a.create1470, label %a.after1471
 
@@ -80368,11 +80372,11 @@ a.create1470:                                     ; preds = %a.store1446
   store ptr %a.buf1475, ptr %a.data.gep1477, align 8
   %a.cap.gep1478 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1473, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1478, align 8
-  store ptr %a.create1473, ptr %var._arr_lit_3145, align 8
+  store ptr %a.create1473, ptr %var._arr_lit_3147, align 8
   br label %a.after1471
 
 a.after1471:                                      ; preds = %a.create1470, %a.store1446
-  %a.load21479 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load21479 = load ptr, ptr %var._arr_lit_3147, align 8
   br label %a.check1480
 
 a.check1480:                                      ; preds = %a.after1471
@@ -80400,7 +80404,7 @@ a.store1482:                                      ; preds = %a.grow1481, %a.chec
   store i64 %a.next.len1494, ptr %b.len.gep1495, align 8
   %var.load1496 = load ptr, ptr @var.not_flag, align 8
   %call.res1497 = call ptr @"cli::opt$String$Fn"(ptr @str.286.struct, ptr @str.1.struct, ptr @str.296.struct, ptr %var.load1496)
-  %a.load1498 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load1498 = load ptr, ptr %var._arr_lit_3147, align 8
   %a.null1499 = icmp eq ptr %a.load1498, null
   br i1 %a.null1499, label %a.create1500, label %a.after1501
 
@@ -80415,11 +80419,11 @@ a.create1500:                                     ; preds = %a.store1482
   store ptr %a.buf1505, ptr %a.data.gep1507, align 8
   %a.cap.gep1508 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1503, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1508, align 8
-  store ptr %a.create1503, ptr %var._arr_lit_3145, align 8
+  store ptr %a.create1503, ptr %var._arr_lit_3147, align 8
   br label %a.after1501
 
 a.after1501:                                      ; preds = %a.create1500, %a.store1482
-  %a.load21509 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load21509 = load ptr, ptr %var._arr_lit_3147, align 8
   br label %a.check1510
 
 a.check1510:                                      ; preds = %a.after1501
@@ -80446,7 +80450,7 @@ a.store1512:                                      ; preds = %a.grow1511, %a.chec
   %b.len.gep1525 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21509, i32 0, i32 0
   store i64 %a.next.len1524, ptr %b.len.gep1525, align 8
   %call.res1526 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load1527 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load1527 = load ptr, ptr %var._arr_lit_3147, align 8
   %a.null1528 = icmp eq ptr %a.load1527, null
   br i1 %a.null1528, label %a.create1529, label %a.after1530
 
@@ -80461,11 +80465,11 @@ a.create1529:                                     ; preds = %a.store1512
   store ptr %a.buf1534, ptr %a.data.gep1536, align 8
   %a.cap.gep1537 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1532, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1537, align 8
-  store ptr %a.create1532, ptr %var._arr_lit_3145, align 8
+  store ptr %a.create1532, ptr %var._arr_lit_3147, align 8
   br label %a.after1530
 
 a.after1530:                                      ; preds = %a.create1529, %a.store1512
-  %a.load21538 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load21538 = load ptr, ptr %var._arr_lit_3147, align 8
   br label %a.check1539
 
 a.check1539:                                      ; preds = %a.after1530
@@ -80492,7 +80496,7 @@ a.store1541:                                      ; preds = %a.grow1540, %a.chec
   %b.len.gep1554 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21538, i32 0, i32 0
   store i64 %a.next.len1553, ptr %b.len.gep1554, align 8
   %call.res1555 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load1556 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load1556 = load ptr, ptr %var._arr_lit_3147, align 8
   %a.null1557 = icmp eq ptr %a.load1556, null
   br i1 %a.null1557, label %a.create1558, label %a.after1559
 
@@ -80507,11 +80511,11 @@ a.create1558:                                     ; preds = %a.store1541
   store ptr %a.buf1563, ptr %a.data.gep1565, align 8
   %a.cap.gep1566 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1561, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1566, align 8
-  store ptr %a.create1561, ptr %var._arr_lit_3145, align 8
+  store ptr %a.create1561, ptr %var._arr_lit_3147, align 8
   br label %a.after1559
 
 a.after1559:                                      ; preds = %a.create1558, %a.store1541
-  %a.load21567 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load21567 = load ptr, ptr %var._arr_lit_3147, align 8
   br label %a.check1568
 
 a.check1568:                                      ; preds = %a.after1559
@@ -80539,7 +80543,7 @@ a.store1570:                                      ; preds = %a.grow1569, %a.chec
   store i64 %a.next.len1582, ptr %b.len.gep1583, align 8
   %var.load1584 = load ptr, ptr @var.not_flag, align 8
   %call.res1585 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load1584)
-  %a.load1586 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load1586 = load ptr, ptr %var._arr_lit_3147, align 8
   %a.null1587 = icmp eq ptr %a.load1586, null
   br i1 %a.null1587, label %a.create1588, label %a.after1589
 
@@ -80554,11 +80558,11 @@ a.create1588:                                     ; preds = %a.store1570
   store ptr %a.buf1593, ptr %a.data.gep1595, align 8
   %a.cap.gep1596 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1591, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1596, align 8
-  store ptr %a.create1591, ptr %var._arr_lit_3145, align 8
+  store ptr %a.create1591, ptr %var._arr_lit_3147, align 8
   br label %a.after1589
 
 a.after1589:                                      ; preds = %a.create1588, %a.store1570
-  %a.load21597 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load21597 = load ptr, ptr %var._arr_lit_3147, align 8
   br label %a.check1598
 
 a.check1598:                                      ; preds = %a.after1589
@@ -80586,7 +80590,7 @@ a.store1600:                                      ; preds = %a.grow1599, %a.chec
   store i64 %a.next.len1612, ptr %b.len.gep1613, align 8
   %var.load1614 = load ptr, ptr @var.not_flag, align 8
   %call.res1615 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load1614)
-  %a.load1616 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load1616 = load ptr, ptr %var._arr_lit_3147, align 8
   %a.null1617 = icmp eq ptr %a.load1616, null
   br i1 %a.null1617, label %a.create1618, label %a.after1619
 
@@ -80601,11 +80605,11 @@ a.create1618:                                     ; preds = %a.store1600
   store ptr %a.buf1623, ptr %a.data.gep1625, align 8
   %a.cap.gep1626 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1621, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1626, align 8
-  store ptr %a.create1621, ptr %var._arr_lit_3145, align 8
+  store ptr %a.create1621, ptr %var._arr_lit_3147, align 8
   br label %a.after1619
 
 a.after1619:                                      ; preds = %a.create1618, %a.store1600
-  %a.load21627 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load21627 = load ptr, ptr %var._arr_lit_3147, align 8
   br label %a.check1628
 
 a.check1628:                                      ; preds = %a.after1619
@@ -80632,7 +80636,7 @@ a.store1630:                                      ; preds = %a.grow1629, %a.chec
   %b.len.gep1643 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21627, i32 0, i32 0
   store i64 %a.next.len1642, ptr %b.len.gep1643, align 8
   %call.res1644 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load1645 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load1645 = load ptr, ptr %var._arr_lit_3147, align 8
   %a.null1646 = icmp eq ptr %a.load1645, null
   br i1 %a.null1646, label %a.create1647, label %a.after1648
 
@@ -80647,11 +80651,11 @@ a.create1647:                                     ; preds = %a.store1630
   store ptr %a.buf1652, ptr %a.data.gep1654, align 8
   %a.cap.gep1655 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1650, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1655, align 8
-  store ptr %a.create1650, ptr %var._arr_lit_3145, align 8
+  store ptr %a.create1650, ptr %var._arr_lit_3147, align 8
   br label %a.after1648
 
 a.after1648:                                      ; preds = %a.create1647, %a.store1630
-  %a.load21656 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load21656 = load ptr, ptr %var._arr_lit_3147, align 8
   br label %a.check1657
 
 a.check1657:                                      ; preds = %a.after1648
@@ -80677,8 +80681,8 @@ a.store1659:                                      ; preds = %a.grow1658, %a.chec
   %a.next.len1671 = add i64 %a.cur.len1668, 1
   %b.len.gep1672 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21656, i32 0, i32 0
   store i64 %a.next.len1671, ptr %b.len.gep1672, align 8
-  %var.load1673 = load ptr, ptr %var._arr_lit_3145, align 8
-  %a.load1674 = load ptr, ptr %var._arr_lit_3145, align 8
+  %var.load1673 = load ptr, ptr %var._arr_lit_3147, align 8
+  %a.load1674 = load ptr, ptr %var._arr_lit_3147, align 8
   %a.null1675 = icmp eq ptr %a.load1674, null
   br i1 %a.null1675, label %a.create1676, label %a.after1677
 
@@ -80693,13 +80697,13 @@ a.create1676:                                     ; preds = %a.store1659
   store ptr %a.buf1681, ptr %a.data.gep1683, align 8
   %a.cap.gep1684 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1679, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1684, align 8
-  store ptr %a.create1679, ptr %var._arr_lit_3145, align 8
+  store ptr %a.create1679, ptr %var._arr_lit_3147, align 8
   br label %a.after1677
 
 a.after1677:                                      ; preds = %a.create1676, %a.store1659
-  %a.load21685 = load ptr, ptr %var._arr_lit_3145, align 8
+  %a.load21685 = load ptr, ptr %var._arr_lit_3147, align 8
   %call.res1686 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.294.struct, ptr @str.295.struct, ptr %a.load21685)
-  %a.load1687 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load1687 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null1688 = icmp eq ptr %a.load1687, null
   br i1 %a.null1688, label %a.create1689, label %a.after1690
 
@@ -80714,11 +80718,11 @@ a.create1689:                                     ; preds = %a.after1677
   store ptr %a.buf1694, ptr %a.data.gep1696, align 8
   %a.cap.gep1697 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1692, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1697, align 8
-  store ptr %a.create1692, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create1692, ptr %var._arr_lit_3001, align 8
   br label %a.after1690
 
 a.after1690:                                      ; preds = %a.create1689, %a.after1677
-  %a.load21698 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load21698 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check1699
 
 a.check1699:                                      ; preds = %a.after1690
@@ -80754,9 +80758,9 @@ a.store1701:                                      ; preds = %a.grow1700, %a.chec
   store ptr %a.buf1718, ptr %a.data.gep1720, align 8
   %a.cap.gep1721 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new1716, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1721, align 8
-  store ptr %a.new1716, ptr %var._arr_lit_3170, align 8
+  store ptr %a.new1716, ptr %var._arr_lit_3172, align 8
   %call.res1722 = call ptr @"cli::pos$String$String$Unit"(ptr @str.282.struct, ptr @str.15.struct, ptr @str.299.struct, i64 0)
-  %a.load1723 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load1723 = load ptr, ptr %var._arr_lit_3172, align 8
   %a.null1724 = icmp eq ptr %a.load1723, null
   br i1 %a.null1724, label %a.create1725, label %a.after1726
 
@@ -80771,11 +80775,11 @@ a.create1725:                                     ; preds = %a.store1701
   store ptr %a.buf1730, ptr %a.data.gep1732, align 8
   %a.cap.gep1733 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1728, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1733, align 8
-  store ptr %a.create1728, ptr %var._arr_lit_3170, align 8
+  store ptr %a.create1728, ptr %var._arr_lit_3172, align 8
   br label %a.after1726
 
 a.after1726:                                      ; preds = %a.create1725, %a.store1701
-  %a.load21734 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load21734 = load ptr, ptr %var._arr_lit_3172, align 8
   br label %a.check1735
 
 a.check1735:                                      ; preds = %a.after1726
@@ -80802,7 +80806,7 @@ a.store1737:                                      ; preds = %a.grow1736, %a.chec
   %b.len.gep1750 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21734, i32 0, i32 0
   store i64 %a.next.len1749, ptr %b.len.gep1750, align 8
   %call.res1751 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load1752 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load1752 = load ptr, ptr %var._arr_lit_3172, align 8
   %a.null1753 = icmp eq ptr %a.load1752, null
   br i1 %a.null1753, label %a.create1754, label %a.after1755
 
@@ -80817,11 +80821,11 @@ a.create1754:                                     ; preds = %a.store1737
   store ptr %a.buf1759, ptr %a.data.gep1761, align 8
   %a.cap.gep1762 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1757, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1762, align 8
-  store ptr %a.create1757, ptr %var._arr_lit_3170, align 8
+  store ptr %a.create1757, ptr %var._arr_lit_3172, align 8
   br label %a.after1755
 
 a.after1755:                                      ; preds = %a.create1754, %a.store1737
-  %a.load21763 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load21763 = load ptr, ptr %var._arr_lit_3172, align 8
   br label %a.check1764
 
 a.check1764:                                      ; preds = %a.after1755
@@ -80848,7 +80852,7 @@ a.store1766:                                      ; preds = %a.grow1765, %a.chec
   %b.len.gep1779 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21763, i32 0, i32 0
   store i64 %a.next.len1778, ptr %b.len.gep1779, align 8
   %call.res1780 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load1781 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load1781 = load ptr, ptr %var._arr_lit_3172, align 8
   %a.null1782 = icmp eq ptr %a.load1781, null
   br i1 %a.null1782, label %a.create1783, label %a.after1784
 
@@ -80863,11 +80867,11 @@ a.create1783:                                     ; preds = %a.store1766
   store ptr %a.buf1788, ptr %a.data.gep1790, align 8
   %a.cap.gep1791 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1786, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1791, align 8
-  store ptr %a.create1786, ptr %var._arr_lit_3170, align 8
+  store ptr %a.create1786, ptr %var._arr_lit_3172, align 8
   br label %a.after1784
 
 a.after1784:                                      ; preds = %a.create1783, %a.store1766
-  %a.load21792 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load21792 = load ptr, ptr %var._arr_lit_3172, align 8
   br label %a.check1793
 
 a.check1793:                                      ; preds = %a.after1784
@@ -80895,7 +80899,7 @@ a.store1795:                                      ; preds = %a.grow1794, %a.chec
   store i64 %a.next.len1807, ptr %b.len.gep1808, align 8
   %var.load1809 = load ptr, ptr @var.not_flag, align 8
   %call.res1810 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load1809)
-  %a.load1811 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load1811 = load ptr, ptr %var._arr_lit_3172, align 8
   %a.null1812 = icmp eq ptr %a.load1811, null
   br i1 %a.null1812, label %a.create1813, label %a.after1814
 
@@ -80910,11 +80914,11 @@ a.create1813:                                     ; preds = %a.store1795
   store ptr %a.buf1818, ptr %a.data.gep1820, align 8
   %a.cap.gep1821 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1816, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1821, align 8
-  store ptr %a.create1816, ptr %var._arr_lit_3170, align 8
+  store ptr %a.create1816, ptr %var._arr_lit_3172, align 8
   br label %a.after1814
 
 a.after1814:                                      ; preds = %a.create1813, %a.store1795
-  %a.load21822 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load21822 = load ptr, ptr %var._arr_lit_3172, align 8
   br label %a.check1823
 
 a.check1823:                                      ; preds = %a.after1814
@@ -80942,7 +80946,7 @@ a.store1825:                                      ; preds = %a.grow1824, %a.chec
   store i64 %a.next.len1837, ptr %b.len.gep1838, align 8
   %var.load1839 = load ptr, ptr @var.not_flag, align 8
   %call.res1840 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load1839)
-  %a.load1841 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load1841 = load ptr, ptr %var._arr_lit_3172, align 8
   %a.null1842 = icmp eq ptr %a.load1841, null
   br i1 %a.null1842, label %a.create1843, label %a.after1844
 
@@ -80957,11 +80961,11 @@ a.create1843:                                     ; preds = %a.store1825
   store ptr %a.buf1848, ptr %a.data.gep1850, align 8
   %a.cap.gep1851 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1846, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1851, align 8
-  store ptr %a.create1846, ptr %var._arr_lit_3170, align 8
+  store ptr %a.create1846, ptr %var._arr_lit_3172, align 8
   br label %a.after1844
 
 a.after1844:                                      ; preds = %a.create1843, %a.store1825
-  %a.load21852 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load21852 = load ptr, ptr %var._arr_lit_3172, align 8
   br label %a.check1853
 
 a.check1853:                                      ; preds = %a.after1844
@@ -80988,7 +80992,7 @@ a.store1855:                                      ; preds = %a.grow1854, %a.chec
   %b.len.gep1868 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21852, i32 0, i32 0
   store i64 %a.next.len1867, ptr %b.len.gep1868, align 8
   %call.res1869 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load1870 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load1870 = load ptr, ptr %var._arr_lit_3172, align 8
   %a.null1871 = icmp eq ptr %a.load1870, null
   br i1 %a.null1871, label %a.create1872, label %a.after1873
 
@@ -81003,11 +81007,11 @@ a.create1872:                                     ; preds = %a.store1855
   store ptr %a.buf1877, ptr %a.data.gep1879, align 8
   %a.cap.gep1880 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1875, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1880, align 8
-  store ptr %a.create1875, ptr %var._arr_lit_3170, align 8
+  store ptr %a.create1875, ptr %var._arr_lit_3172, align 8
   br label %a.after1873
 
 a.after1873:                                      ; preds = %a.create1872, %a.store1855
-  %a.load21881 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load21881 = load ptr, ptr %var._arr_lit_3172, align 8
   br label %a.check1882
 
 a.check1882:                                      ; preds = %a.after1873
@@ -81033,8 +81037,8 @@ a.store1884:                                      ; preds = %a.grow1883, %a.chec
   %a.next.len1896 = add i64 %a.cur.len1893, 1
   %b.len.gep1897 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21881, i32 0, i32 0
   store i64 %a.next.len1896, ptr %b.len.gep1897, align 8
-  %var.load1898 = load ptr, ptr %var._arr_lit_3170, align 8
-  %a.load1899 = load ptr, ptr %var._arr_lit_3170, align 8
+  %var.load1898 = load ptr, ptr %var._arr_lit_3172, align 8
+  %a.load1899 = load ptr, ptr %var._arr_lit_3172, align 8
   %a.null1900 = icmp eq ptr %a.load1899, null
   br i1 %a.null1900, label %a.create1901, label %a.after1902
 
@@ -81049,13 +81053,13 @@ a.create1901:                                     ; preds = %a.store1884
   store ptr %a.buf1906, ptr %a.data.gep1908, align 8
   %a.cap.gep1909 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1904, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1909, align 8
-  store ptr %a.create1904, ptr %var._arr_lit_3170, align 8
+  store ptr %a.create1904, ptr %var._arr_lit_3172, align 8
   br label %a.after1902
 
 a.after1902:                                      ; preds = %a.create1901, %a.store1884
-  %a.load21910 = load ptr, ptr %var._arr_lit_3170, align 8
+  %a.load21910 = load ptr, ptr %var._arr_lit_3172, align 8
   %call.res1911 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.297.struct, ptr @str.298.struct, ptr %a.load21910)
-  %a.load1912 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load1912 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null1913 = icmp eq ptr %a.load1912, null
   br i1 %a.null1913, label %a.create1914, label %a.after1915
 
@@ -81070,11 +81074,11 @@ a.create1914:                                     ; preds = %a.after1902
   store ptr %a.buf1919, ptr %a.data.gep1921, align 8
   %a.cap.gep1922 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1917, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1922, align 8
-  store ptr %a.create1917, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create1917, ptr %var._arr_lit_3001, align 8
   br label %a.after1915
 
 a.after1915:                                      ; preds = %a.create1914, %a.after1902
-  %a.load21923 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load21923 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check1924
 
 a.check1924:                                      ; preds = %a.after1915
@@ -81110,9 +81114,9 @@ a.store1926:                                      ; preds = %a.grow1925, %a.chec
   store ptr %a.buf1943, ptr %a.data.gep1945, align 8
   %a.cap.gep1946 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new1941, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1946, align 8
-  store ptr %a.new1941, ptr %var._arr_lit_3192, align 8
+  store ptr %a.new1941, ptr %var._arr_lit_3194, align 8
   %call.res1947 = call ptr @"cli::pos$String$String$Unit"(ptr @str.243.struct, ptr @str.15.struct, ptr @str.279.struct, i64 0)
-  %a.load1948 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load1948 = load ptr, ptr %var._arr_lit_3194, align 8
   %a.null1949 = icmp eq ptr %a.load1948, null
   br i1 %a.null1949, label %a.create1950, label %a.after1951
 
@@ -81127,11 +81131,11 @@ a.create1950:                                     ; preds = %a.store1926
   store ptr %a.buf1955, ptr %a.data.gep1957, align 8
   %a.cap.gep1958 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1953, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1958, align 8
-  store ptr %a.create1953, ptr %var._arr_lit_3192, align 8
+  store ptr %a.create1953, ptr %var._arr_lit_3194, align 8
   br label %a.after1951
 
 a.after1951:                                      ; preds = %a.create1950, %a.store1926
-  %a.load21959 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load21959 = load ptr, ptr %var._arr_lit_3194, align 8
   br label %a.check1960
 
 a.check1960:                                      ; preds = %a.after1951
@@ -81159,7 +81163,7 @@ a.store1962:                                      ; preds = %a.grow1961, %a.chec
   store i64 %a.next.len1974, ptr %b.len.gep1975, align 8
   %var.load1976 = load ptr, ptr @var.not_flag, align 8
   %call.res1977 = call ptr @"cli::opt$String$Fn"(ptr @str.286.struct, ptr @str.1.struct, ptr @str.302.struct, ptr %var.load1976)
-  %a.load1978 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load1978 = load ptr, ptr %var._arr_lit_3194, align 8
   %a.null1979 = icmp eq ptr %a.load1978, null
   br i1 %a.null1979, label %a.create1980, label %a.after1981
 
@@ -81174,11 +81178,11 @@ a.create1980:                                     ; preds = %a.store1962
   store ptr %a.buf1985, ptr %a.data.gep1987, align 8
   %a.cap.gep1988 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create1983, i32 0, i32 2
   store i64 16, ptr %a.cap.gep1988, align 8
-  store ptr %a.create1983, ptr %var._arr_lit_3192, align 8
+  store ptr %a.create1983, ptr %var._arr_lit_3194, align 8
   br label %a.after1981
 
 a.after1981:                                      ; preds = %a.create1980, %a.store1962
-  %a.load21989 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load21989 = load ptr, ptr %var._arr_lit_3194, align 8
   br label %a.check1990
 
 a.check1990:                                      ; preds = %a.after1981
@@ -81205,7 +81209,7 @@ a.store1992:                                      ; preds = %a.grow1991, %a.chec
   %b.len.gep2005 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load21989, i32 0, i32 0
   store i64 %a.next.len2004, ptr %b.len.gep2005, align 8
   %call.res2006 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load2007 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load2007 = load ptr, ptr %var._arr_lit_3194, align 8
   %a.null2008 = icmp eq ptr %a.load2007, null
   br i1 %a.null2008, label %a.create2009, label %a.after2010
 
@@ -81220,11 +81224,11 @@ a.create2009:                                     ; preds = %a.store1992
   store ptr %a.buf2014, ptr %a.data.gep2016, align 8
   %a.cap.gep2017 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2012, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2017, align 8
-  store ptr %a.create2012, ptr %var._arr_lit_3192, align 8
+  store ptr %a.create2012, ptr %var._arr_lit_3194, align 8
   br label %a.after2010
 
 a.after2010:                                      ; preds = %a.create2009, %a.store1992
-  %a.load22018 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load22018 = load ptr, ptr %var._arr_lit_3194, align 8
   br label %a.check2019
 
 a.check2019:                                      ; preds = %a.after2010
@@ -81251,7 +81255,7 @@ a.store2021:                                      ; preds = %a.grow2020, %a.chec
   %b.len.gep2034 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22018, i32 0, i32 0
   store i64 %a.next.len2033, ptr %b.len.gep2034, align 8
   %call.res2035 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load2036 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load2036 = load ptr, ptr %var._arr_lit_3194, align 8
   %a.null2037 = icmp eq ptr %a.load2036, null
   br i1 %a.null2037, label %a.create2038, label %a.after2039
 
@@ -81266,11 +81270,11 @@ a.create2038:                                     ; preds = %a.store2021
   store ptr %a.buf2043, ptr %a.data.gep2045, align 8
   %a.cap.gep2046 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2041, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2046, align 8
-  store ptr %a.create2041, ptr %var._arr_lit_3192, align 8
+  store ptr %a.create2041, ptr %var._arr_lit_3194, align 8
   br label %a.after2039
 
 a.after2039:                                      ; preds = %a.create2038, %a.store2021
-  %a.load22047 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load22047 = load ptr, ptr %var._arr_lit_3194, align 8
   br label %a.check2048
 
 a.check2048:                                      ; preds = %a.after2039
@@ -81298,7 +81302,7 @@ a.store2050:                                      ; preds = %a.grow2049, %a.chec
   store i64 %a.next.len2062, ptr %b.len.gep2063, align 8
   %var.load2064 = load ptr, ptr @var.not_flag, align 8
   %call.res2065 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load2064)
-  %a.load2066 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load2066 = load ptr, ptr %var._arr_lit_3194, align 8
   %a.null2067 = icmp eq ptr %a.load2066, null
   br i1 %a.null2067, label %a.create2068, label %a.after2069
 
@@ -81313,11 +81317,11 @@ a.create2068:                                     ; preds = %a.store2050
   store ptr %a.buf2073, ptr %a.data.gep2075, align 8
   %a.cap.gep2076 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2071, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2076, align 8
-  store ptr %a.create2071, ptr %var._arr_lit_3192, align 8
+  store ptr %a.create2071, ptr %var._arr_lit_3194, align 8
   br label %a.after2069
 
 a.after2069:                                      ; preds = %a.create2068, %a.store2050
-  %a.load22077 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load22077 = load ptr, ptr %var._arr_lit_3194, align 8
   br label %a.check2078
 
 a.check2078:                                      ; preds = %a.after2069
@@ -81345,7 +81349,7 @@ a.store2080:                                      ; preds = %a.grow2079, %a.chec
   store i64 %a.next.len2092, ptr %b.len.gep2093, align 8
   %var.load2094 = load ptr, ptr @var.not_flag, align 8
   %call.res2095 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load2094)
-  %a.load2096 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load2096 = load ptr, ptr %var._arr_lit_3194, align 8
   %a.null2097 = icmp eq ptr %a.load2096, null
   br i1 %a.null2097, label %a.create2098, label %a.after2099
 
@@ -81360,11 +81364,11 @@ a.create2098:                                     ; preds = %a.store2080
   store ptr %a.buf2103, ptr %a.data.gep2105, align 8
   %a.cap.gep2106 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2101, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2106, align 8
-  store ptr %a.create2101, ptr %var._arr_lit_3192, align 8
+  store ptr %a.create2101, ptr %var._arr_lit_3194, align 8
   br label %a.after2099
 
 a.after2099:                                      ; preds = %a.create2098, %a.store2080
-  %a.load22107 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load22107 = load ptr, ptr %var._arr_lit_3194, align 8
   br label %a.check2108
 
 a.check2108:                                      ; preds = %a.after2099
@@ -81391,7 +81395,7 @@ a.store2110:                                      ; preds = %a.grow2109, %a.chec
   %b.len.gep2123 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22107, i32 0, i32 0
   store i64 %a.next.len2122, ptr %b.len.gep2123, align 8
   %call.res2124 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load2125 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load2125 = load ptr, ptr %var._arr_lit_3194, align 8
   %a.null2126 = icmp eq ptr %a.load2125, null
   br i1 %a.null2126, label %a.create2127, label %a.after2128
 
@@ -81406,11 +81410,11 @@ a.create2127:                                     ; preds = %a.store2110
   store ptr %a.buf2132, ptr %a.data.gep2134, align 8
   %a.cap.gep2135 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2130, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2135, align 8
-  store ptr %a.create2130, ptr %var._arr_lit_3192, align 8
+  store ptr %a.create2130, ptr %var._arr_lit_3194, align 8
   br label %a.after2128
 
 a.after2128:                                      ; preds = %a.create2127, %a.store2110
-  %a.load22136 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load22136 = load ptr, ptr %var._arr_lit_3194, align 8
   br label %a.check2137
 
 a.check2137:                                      ; preds = %a.after2128
@@ -81436,8 +81440,8 @@ a.store2139:                                      ; preds = %a.grow2138, %a.chec
   %a.next.len2151 = add i64 %a.cur.len2148, 1
   %b.len.gep2152 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22136, i32 0, i32 0
   store i64 %a.next.len2151, ptr %b.len.gep2152, align 8
-  %var.load2153 = load ptr, ptr %var._arr_lit_3192, align 8
-  %a.load2154 = load ptr, ptr %var._arr_lit_3192, align 8
+  %var.load2153 = load ptr, ptr %var._arr_lit_3194, align 8
+  %a.load2154 = load ptr, ptr %var._arr_lit_3194, align 8
   %a.null2155 = icmp eq ptr %a.load2154, null
   br i1 %a.null2155, label %a.create2156, label %a.after2157
 
@@ -81452,13 +81456,13 @@ a.create2156:                                     ; preds = %a.store2139
   store ptr %a.buf2161, ptr %a.data.gep2163, align 8
   %a.cap.gep2164 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2159, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2164, align 8
-  store ptr %a.create2159, ptr %var._arr_lit_3192, align 8
+  store ptr %a.create2159, ptr %var._arr_lit_3194, align 8
   br label %a.after2157
 
 a.after2157:                                      ; preds = %a.create2156, %a.store2139
-  %a.load22165 = load ptr, ptr %var._arr_lit_3192, align 8
+  %a.load22165 = load ptr, ptr %var._arr_lit_3194, align 8
   %call.res2166 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.300.struct, ptr @str.301.struct, ptr %a.load22165)
-  %a.load2167 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load2167 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null2168 = icmp eq ptr %a.load2167, null
   br i1 %a.null2168, label %a.create2169, label %a.after2170
 
@@ -81473,11 +81477,11 @@ a.create2169:                                     ; preds = %a.after2157
   store ptr %a.buf2174, ptr %a.data.gep2176, align 8
   %a.cap.gep2177 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2172, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2177, align 8
-  store ptr %a.create2172, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create2172, ptr %var._arr_lit_3001, align 8
   br label %a.after2170
 
 a.after2170:                                      ; preds = %a.create2169, %a.after2157
-  %a.load22178 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load22178 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check2179
 
 a.check2179:                                      ; preds = %a.after2170
@@ -81513,7 +81517,7 @@ a.store2181:                                      ; preds = %a.grow2180, %a.chec
   store ptr %a.buf2198, ptr %a.data.gep2200, align 8
   %a.cap.gep2201 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new2196, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2201, align 8
-  store ptr %a.new2196, ptr %var._arr_lit_3217, align 8
+  store ptr %a.new2196, ptr %var._arr_lit_3219, align 8
   %arena.cur2202 = call ptr @dva_arena_current()
   %a.new2203 = call ptr @dva_arena_alloc(ptr %arena.cur2202, i64 24)
   %arena.cur2204 = call ptr @dva_arena_current()
@@ -81525,7 +81529,7 @@ a.store2181:                                      ; preds = %a.grow2180, %a.chec
   %a.cap.gep2208 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new2203, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2208, align 8
   %call.res2209 = call ptr @"cli::pos$Array(String)$String$Unit"(ptr @str.305.struct, ptr %a.new2203, ptr @str.306.struct, i64 0)
-  %a.load2210 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load2210 = load ptr, ptr %var._arr_lit_3219, align 8
   %a.null2211 = icmp eq ptr %a.load2210, null
   br i1 %a.null2211, label %a.create2212, label %a.after2213
 
@@ -81540,11 +81544,11 @@ a.create2212:                                     ; preds = %a.store2181
   store ptr %a.buf2217, ptr %a.data.gep2219, align 8
   %a.cap.gep2220 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2215, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2220, align 8
-  store ptr %a.create2215, ptr %var._arr_lit_3217, align 8
+  store ptr %a.create2215, ptr %var._arr_lit_3219, align 8
   br label %a.after2213
 
 a.after2213:                                      ; preds = %a.create2212, %a.store2181
-  %a.load22221 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load22221 = load ptr, ptr %var._arr_lit_3219, align 8
   br label %a.check2222
 
 a.check2222:                                      ; preds = %a.after2213
@@ -81571,7 +81575,7 @@ a.store2224:                                      ; preds = %a.grow2223, %a.chec
   %b.len.gep2237 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22221, i32 0, i32 0
   store i64 %a.next.len2236, ptr %b.len.gep2237, align 8
   %call.res2238 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load2239 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load2239 = load ptr, ptr %var._arr_lit_3219, align 8
   %a.null2240 = icmp eq ptr %a.load2239, null
   br i1 %a.null2240, label %a.create2241, label %a.after2242
 
@@ -81586,11 +81590,11 @@ a.create2241:                                     ; preds = %a.store2224
   store ptr %a.buf2246, ptr %a.data.gep2248, align 8
   %a.cap.gep2249 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2244, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2249, align 8
-  store ptr %a.create2244, ptr %var._arr_lit_3217, align 8
+  store ptr %a.create2244, ptr %var._arr_lit_3219, align 8
   br label %a.after2242
 
 a.after2242:                                      ; preds = %a.create2241, %a.store2224
-  %a.load22250 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load22250 = load ptr, ptr %var._arr_lit_3219, align 8
   br label %a.check2251
 
 a.check2251:                                      ; preds = %a.after2242
@@ -81617,7 +81621,7 @@ a.store2253:                                      ; preds = %a.grow2252, %a.chec
   %b.len.gep2266 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22250, i32 0, i32 0
   store i64 %a.next.len2265, ptr %b.len.gep2266, align 8
   %call.res2267 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load2268 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load2268 = load ptr, ptr %var._arr_lit_3219, align 8
   %a.null2269 = icmp eq ptr %a.load2268, null
   br i1 %a.null2269, label %a.create2270, label %a.after2271
 
@@ -81632,11 +81636,11 @@ a.create2270:                                     ; preds = %a.store2253
   store ptr %a.buf2275, ptr %a.data.gep2277, align 8
   %a.cap.gep2278 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2273, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2278, align 8
-  store ptr %a.create2273, ptr %var._arr_lit_3217, align 8
+  store ptr %a.create2273, ptr %var._arr_lit_3219, align 8
   br label %a.after2271
 
 a.after2271:                                      ; preds = %a.create2270, %a.store2253
-  %a.load22279 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load22279 = load ptr, ptr %var._arr_lit_3219, align 8
   br label %a.check2280
 
 a.check2280:                                      ; preds = %a.after2271
@@ -81664,7 +81668,7 @@ a.store2282:                                      ; preds = %a.grow2281, %a.chec
   store i64 %a.next.len2294, ptr %b.len.gep2295, align 8
   %var.load2296 = load ptr, ptr @var.not_flag, align 8
   %call.res2297 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load2296)
-  %a.load2298 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load2298 = load ptr, ptr %var._arr_lit_3219, align 8
   %a.null2299 = icmp eq ptr %a.load2298, null
   br i1 %a.null2299, label %a.create2300, label %a.after2301
 
@@ -81679,11 +81683,11 @@ a.create2300:                                     ; preds = %a.store2282
   store ptr %a.buf2305, ptr %a.data.gep2307, align 8
   %a.cap.gep2308 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2303, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2308, align 8
-  store ptr %a.create2303, ptr %var._arr_lit_3217, align 8
+  store ptr %a.create2303, ptr %var._arr_lit_3219, align 8
   br label %a.after2301
 
 a.after2301:                                      ; preds = %a.create2300, %a.store2282
-  %a.load22309 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load22309 = load ptr, ptr %var._arr_lit_3219, align 8
   br label %a.check2310
 
 a.check2310:                                      ; preds = %a.after2301
@@ -81711,7 +81715,7 @@ a.store2312:                                      ; preds = %a.grow2311, %a.chec
   store i64 %a.next.len2324, ptr %b.len.gep2325, align 8
   %var.load2326 = load ptr, ptr @var.not_flag, align 8
   %call.res2327 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load2326)
-  %a.load2328 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load2328 = load ptr, ptr %var._arr_lit_3219, align 8
   %a.null2329 = icmp eq ptr %a.load2328, null
   br i1 %a.null2329, label %a.create2330, label %a.after2331
 
@@ -81726,11 +81730,11 @@ a.create2330:                                     ; preds = %a.store2312
   store ptr %a.buf2335, ptr %a.data.gep2337, align 8
   %a.cap.gep2338 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2333, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2338, align 8
-  store ptr %a.create2333, ptr %var._arr_lit_3217, align 8
+  store ptr %a.create2333, ptr %var._arr_lit_3219, align 8
   br label %a.after2331
 
 a.after2331:                                      ; preds = %a.create2330, %a.store2312
-  %a.load22339 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load22339 = load ptr, ptr %var._arr_lit_3219, align 8
   br label %a.check2340
 
 a.check2340:                                      ; preds = %a.after2331
@@ -81757,7 +81761,7 @@ a.store2342:                                      ; preds = %a.grow2341, %a.chec
   %b.len.gep2355 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22339, i32 0, i32 0
   store i64 %a.next.len2354, ptr %b.len.gep2355, align 8
   %call.res2356 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load2357 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load2357 = load ptr, ptr %var._arr_lit_3219, align 8
   %a.null2358 = icmp eq ptr %a.load2357, null
   br i1 %a.null2358, label %a.create2359, label %a.after2360
 
@@ -81772,11 +81776,11 @@ a.create2359:                                     ; preds = %a.store2342
   store ptr %a.buf2364, ptr %a.data.gep2366, align 8
   %a.cap.gep2367 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2362, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2367, align 8
-  store ptr %a.create2362, ptr %var._arr_lit_3217, align 8
+  store ptr %a.create2362, ptr %var._arr_lit_3219, align 8
   br label %a.after2360
 
 a.after2360:                                      ; preds = %a.create2359, %a.store2342
-  %a.load22368 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load22368 = load ptr, ptr %var._arr_lit_3219, align 8
   br label %a.check2369
 
 a.check2369:                                      ; preds = %a.after2360
@@ -81802,8 +81806,8 @@ a.store2371:                                      ; preds = %a.grow2370, %a.chec
   %a.next.len2383 = add i64 %a.cur.len2380, 1
   %b.len.gep2384 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22368, i32 0, i32 0
   store i64 %a.next.len2383, ptr %b.len.gep2384, align 8
-  %var.load2385 = load ptr, ptr %var._arr_lit_3217, align 8
-  %a.load2386 = load ptr, ptr %var._arr_lit_3217, align 8
+  %var.load2385 = load ptr, ptr %var._arr_lit_3219, align 8
+  %a.load2386 = load ptr, ptr %var._arr_lit_3219, align 8
   %a.null2387 = icmp eq ptr %a.load2386, null
   br i1 %a.null2387, label %a.create2388, label %a.after2389
 
@@ -81818,13 +81822,13 @@ a.create2388:                                     ; preds = %a.store2371
   store ptr %a.buf2393, ptr %a.data.gep2395, align 8
   %a.cap.gep2396 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2391, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2396, align 8
-  store ptr %a.create2391, ptr %var._arr_lit_3217, align 8
+  store ptr %a.create2391, ptr %var._arr_lit_3219, align 8
   br label %a.after2389
 
 a.after2389:                                      ; preds = %a.create2388, %a.store2371
-  %a.load22397 = load ptr, ptr %var._arr_lit_3217, align 8
+  %a.load22397 = load ptr, ptr %var._arr_lit_3219, align 8
   %call.res2398 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.303.struct, ptr @str.304.struct, ptr %a.load22397)
-  %a.load2399 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load2399 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null2400 = icmp eq ptr %a.load2399, null
   br i1 %a.null2400, label %a.create2401, label %a.after2402
 
@@ -81839,11 +81843,11 @@ a.create2401:                                     ; preds = %a.after2389
   store ptr %a.buf2406, ptr %a.data.gep2408, align 8
   %a.cap.gep2409 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2404, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2409, align 8
-  store ptr %a.create2404, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create2404, ptr %var._arr_lit_3001, align 8
   br label %a.after2402
 
 a.after2402:                                      ; preds = %a.create2401, %a.after2389
-  %a.load22410 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load22410 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check2411
 
 a.check2411:                                      ; preds = %a.after2402
@@ -81879,9 +81883,9 @@ a.store2413:                                      ; preds = %a.grow2412, %a.chec
   store ptr %a.buf2430, ptr %a.data.gep2432, align 8
   %a.cap.gep2433 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new2428, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2433, align 8
-  store ptr %a.new2428, ptr %var._arr_lit_3239, align 8
+  store ptr %a.new2428, ptr %var._arr_lit_3241, align 8
   %call.res2434 = call ptr @"cli::pos$String$String$Unit"(ptr @str.243.struct, ptr @str.15.struct, ptr @str.279.struct, i64 0)
-  %a.load2435 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load2435 = load ptr, ptr %var._arr_lit_3241, align 8
   %a.null2436 = icmp eq ptr %a.load2435, null
   br i1 %a.null2436, label %a.create2437, label %a.after2438
 
@@ -81896,11 +81900,11 @@ a.create2437:                                     ; preds = %a.store2413
   store ptr %a.buf2442, ptr %a.data.gep2444, align 8
   %a.cap.gep2445 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2440, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2445, align 8
-  store ptr %a.create2440, ptr %var._arr_lit_3239, align 8
+  store ptr %a.create2440, ptr %var._arr_lit_3241, align 8
   br label %a.after2438
 
 a.after2438:                                      ; preds = %a.create2437, %a.store2413
-  %a.load22446 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load22446 = load ptr, ptr %var._arr_lit_3241, align 8
   br label %a.check2447
 
 a.check2447:                                      ; preds = %a.after2438
@@ -81927,7 +81931,7 @@ a.store2449:                                      ; preds = %a.grow2448, %a.chec
   %b.len.gep2462 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22446, i32 0, i32 0
   store i64 %a.next.len2461, ptr %b.len.gep2462, align 8
   %call.res2463 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load2464 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load2464 = load ptr, ptr %var._arr_lit_3241, align 8
   %a.null2465 = icmp eq ptr %a.load2464, null
   br i1 %a.null2465, label %a.create2466, label %a.after2467
 
@@ -81942,11 +81946,11 @@ a.create2466:                                     ; preds = %a.store2449
   store ptr %a.buf2471, ptr %a.data.gep2473, align 8
   %a.cap.gep2474 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2469, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2474, align 8
-  store ptr %a.create2469, ptr %var._arr_lit_3239, align 8
+  store ptr %a.create2469, ptr %var._arr_lit_3241, align 8
   br label %a.after2467
 
 a.after2467:                                      ; preds = %a.create2466, %a.store2449
-  %a.load22475 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load22475 = load ptr, ptr %var._arr_lit_3241, align 8
   br label %a.check2476
 
 a.check2476:                                      ; preds = %a.after2467
@@ -81973,7 +81977,7 @@ a.store2478:                                      ; preds = %a.grow2477, %a.chec
   %b.len.gep2491 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22475, i32 0, i32 0
   store i64 %a.next.len2490, ptr %b.len.gep2491, align 8
   %call.res2492 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load2493 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load2493 = load ptr, ptr %var._arr_lit_3241, align 8
   %a.null2494 = icmp eq ptr %a.load2493, null
   br i1 %a.null2494, label %a.create2495, label %a.after2496
 
@@ -81988,11 +81992,11 @@ a.create2495:                                     ; preds = %a.store2478
   store ptr %a.buf2500, ptr %a.data.gep2502, align 8
   %a.cap.gep2503 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2498, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2503, align 8
-  store ptr %a.create2498, ptr %var._arr_lit_3239, align 8
+  store ptr %a.create2498, ptr %var._arr_lit_3241, align 8
   br label %a.after2496
 
 a.after2496:                                      ; preds = %a.create2495, %a.store2478
-  %a.load22504 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load22504 = load ptr, ptr %var._arr_lit_3241, align 8
   br label %a.check2505
 
 a.check2505:                                      ; preds = %a.after2496
@@ -82020,7 +82024,7 @@ a.store2507:                                      ; preds = %a.grow2506, %a.chec
   store i64 %a.next.len2519, ptr %b.len.gep2520, align 8
   %var.load2521 = load ptr, ptr @var.not_flag, align 8
   %call.res2522 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load2521)
-  %a.load2523 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load2523 = load ptr, ptr %var._arr_lit_3241, align 8
   %a.null2524 = icmp eq ptr %a.load2523, null
   br i1 %a.null2524, label %a.create2525, label %a.after2526
 
@@ -82035,11 +82039,11 @@ a.create2525:                                     ; preds = %a.store2507
   store ptr %a.buf2530, ptr %a.data.gep2532, align 8
   %a.cap.gep2533 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2528, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2533, align 8
-  store ptr %a.create2528, ptr %var._arr_lit_3239, align 8
+  store ptr %a.create2528, ptr %var._arr_lit_3241, align 8
   br label %a.after2526
 
 a.after2526:                                      ; preds = %a.create2525, %a.store2507
-  %a.load22534 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load22534 = load ptr, ptr %var._arr_lit_3241, align 8
   br label %a.check2535
 
 a.check2535:                                      ; preds = %a.after2526
@@ -82065,8 +82069,8 @@ a.store2537:                                      ; preds = %a.grow2536, %a.chec
   %a.next.len2549 = add i64 %a.cur.len2546, 1
   %b.len.gep2550 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22534, i32 0, i32 0
   store i64 %a.next.len2549, ptr %b.len.gep2550, align 8
-  %var.load2551 = load ptr, ptr %var._arr_lit_3239, align 8
-  %a.load2553 = load ptr, ptr %var._arr_lit_3239, align 8
+  %var.load2551 = load ptr, ptr %var._arr_lit_3241, align 8
+  %a.load2553 = load ptr, ptr %var._arr_lit_3241, align 8
   %a.null2554 = icmp eq ptr %a.load2553, null
   br i1 %a.null2554, label %a.create2555, label %a.after2556
 
@@ -82081,13 +82085,13 @@ a.create2555:                                     ; preds = %a.store2537
   store ptr %a.buf2560, ptr %a.data.gep2562, align 8
   %a.cap.gep2563 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2558, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2563, align 8
-  store ptr %a.create2558, ptr %var._arr_lit_3239, align 8
+  store ptr %a.create2558, ptr %var._arr_lit_3241, align 8
   br label %a.after2556
 
 a.after2556:                                      ; preds = %a.create2555, %a.store2537
-  %a.load22564 = load ptr, ptr %var._arr_lit_3239, align 8
+  %a.load22564 = load ptr, ptr %var._arr_lit_3241, align 8
   %call.res2565 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.307.struct, ptr @str.308.struct, ptr %a.load22564)
-  %a.load2566 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load2566 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null2567 = icmp eq ptr %a.load2566, null
   br i1 %a.null2567, label %a.create2568, label %a.after2569
 
@@ -82102,11 +82106,11 @@ a.create2568:                                     ; preds = %a.after2556
   store ptr %a.buf2573, ptr %a.data.gep2575, align 8
   %a.cap.gep2576 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2571, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2576, align 8
-  store ptr %a.create2571, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create2571, ptr %var._arr_lit_3001, align 8
   br label %a.after2569
 
 a.after2569:                                      ; preds = %a.create2568, %a.after2556
-  %a.load22577 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load22577 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check2578
 
 a.check2578:                                      ; preds = %a.after2569
@@ -82142,9 +82146,9 @@ a.store2580:                                      ; preds = %a.grow2579, %a.chec
   store ptr %a.buf2597, ptr %a.data.gep2599, align 8
   %a.cap.gep2600 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new2595, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2600, align 8
-  store ptr %a.new2595, ptr %var._arr_lit_3255, align 8
+  store ptr %a.new2595, ptr %var._arr_lit_3257, align 8
   %call.res2601 = call ptr @"cli::pos$String$String$Unit"(ptr @str.243.struct, ptr @str.15.struct, ptr @str.279.struct, i64 0)
-  %a.load2602 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load2602 = load ptr, ptr %var._arr_lit_3257, align 8
   %a.null2603 = icmp eq ptr %a.load2602, null
   br i1 %a.null2603, label %a.create2604, label %a.after2605
 
@@ -82159,11 +82163,11 @@ a.create2604:                                     ; preds = %a.store2580
   store ptr %a.buf2609, ptr %a.data.gep2611, align 8
   %a.cap.gep2612 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2607, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2612, align 8
-  store ptr %a.create2607, ptr %var._arr_lit_3255, align 8
+  store ptr %a.create2607, ptr %var._arr_lit_3257, align 8
   br label %a.after2605
 
 a.after2605:                                      ; preds = %a.create2604, %a.store2580
-  %a.load22613 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load22613 = load ptr, ptr %var._arr_lit_3257, align 8
   br label %a.check2614
 
 a.check2614:                                      ; preds = %a.after2605
@@ -82191,7 +82195,7 @@ a.store2616:                                      ; preds = %a.grow2615, %a.chec
   store i64 %a.next.len2628, ptr %b.len.gep2629, align 8
   %var.load2630 = load ptr, ptr @var.not_flag, align 8
   %call.res2631 = call ptr @"cli::opt$String$Fn"(ptr @str.286.struct, ptr @str.1.struct, ptr @str.302.struct, ptr %var.load2630)
-  %a.load2632 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load2632 = load ptr, ptr %var._arr_lit_3257, align 8
   %a.null2633 = icmp eq ptr %a.load2632, null
   br i1 %a.null2633, label %a.create2634, label %a.after2635
 
@@ -82206,11 +82210,11 @@ a.create2634:                                     ; preds = %a.store2616
   store ptr %a.buf2639, ptr %a.data.gep2641, align 8
   %a.cap.gep2642 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2637, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2642, align 8
-  store ptr %a.create2637, ptr %var._arr_lit_3255, align 8
+  store ptr %a.create2637, ptr %var._arr_lit_3257, align 8
   br label %a.after2635
 
 a.after2635:                                      ; preds = %a.create2634, %a.store2616
-  %a.load22643 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load22643 = load ptr, ptr %var._arr_lit_3257, align 8
   br label %a.check2644
 
 a.check2644:                                      ; preds = %a.after2635
@@ -82237,7 +82241,7 @@ a.store2646:                                      ; preds = %a.grow2645, %a.chec
   %b.len.gep2659 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22643, i32 0, i32 0
   store i64 %a.next.len2658, ptr %b.len.gep2659, align 8
   %call.res2660 = call ptr @"cli::opt$Flag$Unit"(ptr @str.265.struct, i1 false, ptr @str.266.struct, i64 0)
-  %a.load2661 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load2661 = load ptr, ptr %var._arr_lit_3257, align 8
   %a.null2662 = icmp eq ptr %a.load2661, null
   br i1 %a.null2662, label %a.create2663, label %a.after2664
 
@@ -82252,11 +82256,11 @@ a.create2663:                                     ; preds = %a.store2646
   store ptr %a.buf2668, ptr %a.data.gep2670, align 8
   %a.cap.gep2671 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2666, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2671, align 8
-  store ptr %a.create2666, ptr %var._arr_lit_3255, align 8
+  store ptr %a.create2666, ptr %var._arr_lit_3257, align 8
   br label %a.after2664
 
 a.after2664:                                      ; preds = %a.create2663, %a.store2646
-  %a.load22672 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load22672 = load ptr, ptr %var._arr_lit_3257, align 8
   br label %a.check2673
 
 a.check2673:                                      ; preds = %a.after2664
@@ -82283,7 +82287,7 @@ a.store2675:                                      ; preds = %a.grow2674, %a.chec
   %b.len.gep2688 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22672, i32 0, i32 0
   store i64 %a.next.len2687, ptr %b.len.gep2688, align 8
   %call.res2689 = call ptr @"cli::opt$Flag$Unit"(ptr @str.267.struct, i1 false, ptr @str.268.struct, i64 0)
-  %a.load2690 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load2690 = load ptr, ptr %var._arr_lit_3257, align 8
   %a.null2691 = icmp eq ptr %a.load2690, null
   br i1 %a.null2691, label %a.create2692, label %a.after2693
 
@@ -82298,11 +82302,11 @@ a.create2692:                                     ; preds = %a.store2675
   store ptr %a.buf2697, ptr %a.data.gep2699, align 8
   %a.cap.gep2700 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2695, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2700, align 8
-  store ptr %a.create2695, ptr %var._arr_lit_3255, align 8
+  store ptr %a.create2695, ptr %var._arr_lit_3257, align 8
   br label %a.after2693
 
 a.after2693:                                      ; preds = %a.create2692, %a.store2675
-  %a.load22701 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load22701 = load ptr, ptr %var._arr_lit_3257, align 8
   br label %a.check2702
 
 a.check2702:                                      ; preds = %a.after2693
@@ -82330,7 +82334,7 @@ a.store2704:                                      ; preds = %a.grow2703, %a.chec
   store i64 %a.next.len2716, ptr %b.len.gep2717, align 8
   %var.load2718 = load ptr, ptr @var.not_flag, align 8
   %call.res2719 = call ptr @"cli::opt$String$Fn"(ptr @str.269.struct, ptr @str.1.struct, ptr @str.270.struct, ptr %var.load2718)
-  %a.load2720 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load2720 = load ptr, ptr %var._arr_lit_3257, align 8
   %a.null2721 = icmp eq ptr %a.load2720, null
   br i1 %a.null2721, label %a.create2722, label %a.after2723
 
@@ -82345,11 +82349,11 @@ a.create2722:                                     ; preds = %a.store2704
   store ptr %a.buf2727, ptr %a.data.gep2729, align 8
   %a.cap.gep2730 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2725, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2730, align 8
-  store ptr %a.create2725, ptr %var._arr_lit_3255, align 8
+  store ptr %a.create2725, ptr %var._arr_lit_3257, align 8
   br label %a.after2723
 
 a.after2723:                                      ; preds = %a.create2722, %a.store2704
-  %a.load22731 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load22731 = load ptr, ptr %var._arr_lit_3257, align 8
   br label %a.check2732
 
 a.check2732:                                      ; preds = %a.after2723
@@ -82375,8 +82379,8 @@ a.store2734:                                      ; preds = %a.grow2733, %a.chec
   %a.next.len2746 = add i64 %a.cur.len2743, 1
   %b.len.gep2747 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22731, i32 0, i32 0
   store i64 %a.next.len2746, ptr %b.len.gep2747, align 8
-  %var.load2748 = load ptr, ptr %var._arr_lit_3255, align 8
-  %a.load2749 = load ptr, ptr %var._arr_lit_3255, align 8
+  %var.load2748 = load ptr, ptr %var._arr_lit_3257, align 8
+  %a.load2749 = load ptr, ptr %var._arr_lit_3257, align 8
   %a.null2750 = icmp eq ptr %a.load2749, null
   br i1 %a.null2750, label %a.create2751, label %a.after2752
 
@@ -82391,13 +82395,13 @@ a.create2751:                                     ; preds = %a.store2734
   store ptr %a.buf2756, ptr %a.data.gep2758, align 8
   %a.cap.gep2759 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2754, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2759, align 8
-  store ptr %a.create2754, ptr %var._arr_lit_3255, align 8
+  store ptr %a.create2754, ptr %var._arr_lit_3257, align 8
   br label %a.after2752
 
 a.after2752:                                      ; preds = %a.create2751, %a.store2734
-  %a.load22760 = load ptr, ptr %var._arr_lit_3255, align 8
+  %a.load22760 = load ptr, ptr %var._arr_lit_3257, align 8
   %call.res2761 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.309.struct, ptr @str.310.struct, ptr %a.load22760)
-  %a.load2762 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load2762 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null2763 = icmp eq ptr %a.load2762, null
   br i1 %a.null2763, label %a.create2764, label %a.after2765
 
@@ -82412,11 +82416,11 @@ a.create2764:                                     ; preds = %a.after2752
   store ptr %a.buf2769, ptr %a.data.gep2771, align 8
   %a.cap.gep2772 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2767, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2772, align 8
-  store ptr %a.create2767, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create2767, ptr %var._arr_lit_3001, align 8
   br label %a.after2765
 
 a.after2765:                                      ; preds = %a.create2764, %a.after2752
-  %a.load22773 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load22773 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check2774
 
 a.check2774:                                      ; preds = %a.after2765
@@ -82452,7 +82456,7 @@ a.store2776:                                      ; preds = %a.grow2775, %a.chec
   store ptr %a.buf2793, ptr %a.data.gep2795, align 8
   %a.cap.gep2796 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new2791, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2796, align 8
-  store ptr %a.new2791, ptr %var._arr_lit_3274, align 8
+  store ptr %a.new2791, ptr %var._arr_lit_3276, align 8
   %arena.cur2797 = call ptr @dva_arena_current()
   %a.new2798 = call ptr @dva_arena_alloc(ptr %arena.cur2797, i64 24)
   %arena.cur2799 = call ptr @dva_arena_current()
@@ -82463,10 +82467,10 @@ a.store2776:                                      ; preds = %a.grow2775, %a.chec
   store ptr %a.buf2800, ptr %a.data.gep2802, align 8
   %a.cap.gep2803 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new2798, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2803, align 8
-  store ptr %a.new2798, ptr %var._arr_lit_3276, align 8
+  store ptr %a.new2798, ptr %var._arr_lit_3278, align 8
   %var.load2804 = load ptr, ptr @var.not_flag, align 8
   %call.res2805 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load2804)
-  %a.load2806 = load ptr, ptr %var._arr_lit_3276, align 8
+  %a.load2806 = load ptr, ptr %var._arr_lit_3278, align 8
   %a.null2807 = icmp eq ptr %a.load2806, null
   br i1 %a.null2807, label %a.create2808, label %a.after2809
 
@@ -82481,11 +82485,11 @@ a.create2808:                                     ; preds = %a.store2776
   store ptr %a.buf2813, ptr %a.data.gep2815, align 8
   %a.cap.gep2816 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2811, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2816, align 8
-  store ptr %a.create2811, ptr %var._arr_lit_3276, align 8
+  store ptr %a.create2811, ptr %var._arr_lit_3278, align 8
   br label %a.after2809
 
 a.after2809:                                      ; preds = %a.create2808, %a.store2776
-  %a.load22817 = load ptr, ptr %var._arr_lit_3276, align 8
+  %a.load22817 = load ptr, ptr %var._arr_lit_3278, align 8
   br label %a.check2818
 
 a.check2818:                                      ; preds = %a.after2809
@@ -82511,8 +82515,8 @@ a.store2820:                                      ; preds = %a.grow2819, %a.chec
   %a.next.len2832 = add i64 %a.cur.len2829, 1
   %b.len.gep2833 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22817, i32 0, i32 0
   store i64 %a.next.len2832, ptr %b.len.gep2833, align 8
-  %var.load2834 = load ptr, ptr %var._arr_lit_3276, align 8
-  %a.load2835 = load ptr, ptr %var._arr_lit_3276, align 8
+  %var.load2834 = load ptr, ptr %var._arr_lit_3278, align 8
+  %a.load2835 = load ptr, ptr %var._arr_lit_3278, align 8
   %a.null2836 = icmp eq ptr %a.load2835, null
   br i1 %a.null2836, label %a.create2837, label %a.after2838
 
@@ -82527,13 +82531,13 @@ a.create2837:                                     ; preds = %a.store2820
   store ptr %a.buf2842, ptr %a.data.gep2844, align 8
   %a.cap.gep2845 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2840, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2845, align 8
-  store ptr %a.create2840, ptr %var._arr_lit_3276, align 8
+  store ptr %a.create2840, ptr %var._arr_lit_3278, align 8
   br label %a.after2838
 
 a.after2838:                                      ; preds = %a.create2837, %a.store2820
-  %a.load22846 = load ptr, ptr %var._arr_lit_3276, align 8
+  %a.load22846 = load ptr, ptr %var._arr_lit_3278, align 8
   %call.res2847 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.243.struct, ptr @str.312.struct, ptr %a.load22846)
-  %a.load2848 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load2848 = load ptr, ptr %var._arr_lit_3276, align 8
   %a.null2849 = icmp eq ptr %a.load2848, null
   br i1 %a.null2849, label %a.create2850, label %a.after2851
 
@@ -82548,11 +82552,11 @@ a.create2850:                                     ; preds = %a.after2838
   store ptr %a.buf2855, ptr %a.data.gep2857, align 8
   %a.cap.gep2858 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2853, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2858, align 8
-  store ptr %a.create2853, ptr %var._arr_lit_3274, align 8
+  store ptr %a.create2853, ptr %var._arr_lit_3276, align 8
   br label %a.after2851
 
 a.after2851:                                      ; preds = %a.create2850, %a.after2838
-  %a.load22859 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load22859 = load ptr, ptr %var._arr_lit_3276, align 8
   br label %a.check2860
 
 a.check2860:                                      ; preds = %a.after2851
@@ -82588,10 +82592,10 @@ a.store2862:                                      ; preds = %a.grow2861, %a.chec
   store ptr %a.buf2879, ptr %a.data.gep2881, align 8
   %a.cap.gep2882 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new2877, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2882, align 8
-  store ptr %a.new2877, ptr %var._arr_lit_3282, align 8
+  store ptr %a.new2877, ptr %var._arr_lit_3284, align 8
   %var.load2883 = load ptr, ptr @var.not_flag, align 8
   %call.res2884 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load2883)
-  %a.load2885 = load ptr, ptr %var._arr_lit_3282, align 8
+  %a.load2885 = load ptr, ptr %var._arr_lit_3284, align 8
   %a.null2886 = icmp eq ptr %a.load2885, null
   br i1 %a.null2886, label %a.create2887, label %a.after2888
 
@@ -82606,11 +82610,11 @@ a.create2887:                                     ; preds = %a.store2862
   store ptr %a.buf2892, ptr %a.data.gep2894, align 8
   %a.cap.gep2895 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2890, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2895, align 8
-  store ptr %a.create2890, ptr %var._arr_lit_3282, align 8
+  store ptr %a.create2890, ptr %var._arr_lit_3284, align 8
   br label %a.after2888
 
 a.after2888:                                      ; preds = %a.create2887, %a.store2862
-  %a.load22896 = load ptr, ptr %var._arr_lit_3282, align 8
+  %a.load22896 = load ptr, ptr %var._arr_lit_3284, align 8
   br label %a.check2897
 
 a.check2897:                                      ; preds = %a.after2888
@@ -82636,8 +82640,8 @@ a.store2899:                                      ; preds = %a.grow2898, %a.chec
   %a.next.len2911 = add i64 %a.cur.len2908, 1
   %b.len.gep2912 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22896, i32 0, i32 0
   store i64 %a.next.len2911, ptr %b.len.gep2912, align 8
-  %var.load2913 = load ptr, ptr %var._arr_lit_3282, align 8
-  %a.load2914 = load ptr, ptr %var._arr_lit_3282, align 8
+  %var.load2913 = load ptr, ptr %var._arr_lit_3284, align 8
+  %a.load2914 = load ptr, ptr %var._arr_lit_3284, align 8
   %a.null2915 = icmp eq ptr %a.load2914, null
   br i1 %a.null2915, label %a.create2916, label %a.after2917
 
@@ -82652,13 +82656,13 @@ a.create2916:                                     ; preds = %a.store2899
   store ptr %a.buf2921, ptr %a.data.gep2923, align 8
   %a.cap.gep2924 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2919, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2924, align 8
-  store ptr %a.create2919, ptr %var._arr_lit_3282, align 8
+  store ptr %a.create2919, ptr %var._arr_lit_3284, align 8
   br label %a.after2917
 
 a.after2917:                                      ; preds = %a.create2916, %a.store2899
-  %a.load22925 = load ptr, ptr %var._arr_lit_3282, align 8
+  %a.load22925 = load ptr, ptr %var._arr_lit_3284, align 8
   %call.res2926 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.313.struct, ptr @str.314.struct, ptr %a.load22925)
-  %a.load2927 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load2927 = load ptr, ptr %var._arr_lit_3276, align 8
   %a.null2928 = icmp eq ptr %a.load2927, null
   br i1 %a.null2928, label %a.create2929, label %a.after2930
 
@@ -82673,11 +82677,11 @@ a.create2929:                                     ; preds = %a.after2917
   store ptr %a.buf2934, ptr %a.data.gep2936, align 8
   %a.cap.gep2937 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2932, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2937, align 8
-  store ptr %a.create2932, ptr %var._arr_lit_3274, align 8
+  store ptr %a.create2932, ptr %var._arr_lit_3276, align 8
   br label %a.after2930
 
 a.after2930:                                      ; preds = %a.create2929, %a.after2917
-  %a.load22938 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load22938 = load ptr, ptr %var._arr_lit_3276, align 8
   br label %a.check2939
 
 a.check2939:                                      ; preds = %a.after2930
@@ -82713,10 +82717,10 @@ a.store2941:                                      ; preds = %a.grow2940, %a.chec
   store ptr %a.buf2958, ptr %a.data.gep2960, align 8
   %a.cap.gep2961 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new2956, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2961, align 8
-  store ptr %a.new2956, ptr %var._arr_lit_3288, align 8
+  store ptr %a.new2956, ptr %var._arr_lit_3290, align 8
   %var.load2962 = load ptr, ptr @var.not_flag, align 8
   %call.res2963 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load2962)
-  %a.load2964 = load ptr, ptr %var._arr_lit_3288, align 8
+  %a.load2964 = load ptr, ptr %var._arr_lit_3290, align 8
   %a.null2965 = icmp eq ptr %a.load2964, null
   br i1 %a.null2965, label %a.create2966, label %a.after2967
 
@@ -82731,11 +82735,11 @@ a.create2966:                                     ; preds = %a.store2941
   store ptr %a.buf2971, ptr %a.data.gep2973, align 8
   %a.cap.gep2974 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2969, i32 0, i32 2
   store i64 16, ptr %a.cap.gep2974, align 8
-  store ptr %a.create2969, ptr %var._arr_lit_3288, align 8
+  store ptr %a.create2969, ptr %var._arr_lit_3290, align 8
   br label %a.after2967
 
 a.after2967:                                      ; preds = %a.create2966, %a.store2941
-  %a.load22975 = load ptr, ptr %var._arr_lit_3288, align 8
+  %a.load22975 = load ptr, ptr %var._arr_lit_3290, align 8
   br label %a.check2976
 
 a.check2976:                                      ; preds = %a.after2967
@@ -82761,8 +82765,8 @@ a.store2978:                                      ; preds = %a.grow2977, %a.chec
   %a.next.len2990 = add i64 %a.cur.len2987, 1
   %b.len.gep2991 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load22975, i32 0, i32 0
   store i64 %a.next.len2990, ptr %b.len.gep2991, align 8
-  %var.load2992 = load ptr, ptr %var._arr_lit_3288, align 8
-  %a.load2993 = load ptr, ptr %var._arr_lit_3288, align 8
+  %var.load2992 = load ptr, ptr %var._arr_lit_3290, align 8
+  %a.load2993 = load ptr, ptr %var._arr_lit_3290, align 8
   %a.null2994 = icmp eq ptr %a.load2993, null
   br i1 %a.null2994, label %a.create2995, label %a.after2996
 
@@ -82777,13 +82781,13 @@ a.create2995:                                     ; preds = %a.store2978
   store ptr %a.buf3000, ptr %a.data.gep3002, align 8
   %a.cap.gep3003 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2998, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3003, align 8
-  store ptr %a.create2998, ptr %var._arr_lit_3288, align 8
+  store ptr %a.create2998, ptr %var._arr_lit_3290, align 8
   br label %a.after2996
 
 a.after2996:                                      ; preds = %a.create2995, %a.store2978
-  %a.load23004 = load ptr, ptr %var._arr_lit_3288, align 8
+  %a.load23004 = load ptr, ptr %var._arr_lit_3290, align 8
   %call.res3005 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.315.struct, ptr @str.316.struct, ptr %a.load23004)
-  %a.load3006 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load3006 = load ptr, ptr %var._arr_lit_3276, align 8
   %a.null3007 = icmp eq ptr %a.load3006, null
   br i1 %a.null3007, label %a.create3008, label %a.after3009
 
@@ -82798,11 +82802,11 @@ a.create3008:                                     ; preds = %a.after2996
   store ptr %a.buf3013, ptr %a.data.gep3015, align 8
   %a.cap.gep3016 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3011, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3016, align 8
-  store ptr %a.create3011, ptr %var._arr_lit_3274, align 8
+  store ptr %a.create3011, ptr %var._arr_lit_3276, align 8
   br label %a.after3009
 
 a.after3009:                                      ; preds = %a.create3008, %a.after2996
-  %a.load23017 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load23017 = load ptr, ptr %var._arr_lit_3276, align 8
   br label %a.check3018
 
 a.check3018:                                      ; preds = %a.after3009
@@ -82830,7 +82834,7 @@ a.store3020:                                      ; preds = %a.grow3019, %a.chec
   store i64 %a.next.len3032, ptr %b.len.gep3033, align 8
   %var.load3034 = load ptr, ptr @var.not_flag, align 8
   %call.res3035 = call ptr @"cli::opt$String$Fn"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, ptr %var.load3034)
-  %a.load3036 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load3036 = load ptr, ptr %var._arr_lit_3276, align 8
   %a.null3037 = icmp eq ptr %a.load3036, null
   br i1 %a.null3037, label %a.create3038, label %a.after3039
 
@@ -82845,11 +82849,11 @@ a.create3038:                                     ; preds = %a.store3020
   store ptr %a.buf3043, ptr %a.data.gep3045, align 8
   %a.cap.gep3046 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3041, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3046, align 8
-  store ptr %a.create3041, ptr %var._arr_lit_3274, align 8
+  store ptr %a.create3041, ptr %var._arr_lit_3276, align 8
   br label %a.after3039
 
 a.after3039:                                      ; preds = %a.create3038, %a.store3020
-  %a.load23047 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load23047 = load ptr, ptr %var._arr_lit_3276, align 8
   br label %a.check3048
 
 a.check3048:                                      ; preds = %a.after3039
@@ -82875,8 +82879,8 @@ a.store3050:                                      ; preds = %a.grow3049, %a.chec
   %a.next.len3062 = add i64 %a.cur.len3059, 1
   %b.len.gep3063 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23047, i32 0, i32 0
   store i64 %a.next.len3062, ptr %b.len.gep3063, align 8
-  %var.load3064 = load ptr, ptr %var._arr_lit_3274, align 8
-  %a.load3065 = load ptr, ptr %var._arr_lit_3274, align 8
+  %var.load3064 = load ptr, ptr %var._arr_lit_3276, align 8
+  %a.load3065 = load ptr, ptr %var._arr_lit_3276, align 8
   %a.null3066 = icmp eq ptr %a.load3065, null
   br i1 %a.null3066, label %a.create3067, label %a.after3068
 
@@ -82891,13 +82895,13 @@ a.create3067:                                     ; preds = %a.store3050
   store ptr %a.buf3072, ptr %a.data.gep3074, align 8
   %a.cap.gep3075 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3070, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3075, align 8
-  store ptr %a.create3070, ptr %var._arr_lit_3274, align 8
+  store ptr %a.create3070, ptr %var._arr_lit_3276, align 8
   br label %a.after3068
 
 a.after3068:                                      ; preds = %a.create3067, %a.store3050
-  %a.load23076 = load ptr, ptr %var._arr_lit_3274, align 8
+  %a.load23076 = load ptr, ptr %var._arr_lit_3276, align 8
   %call.res3077 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.271.struct, ptr @str.311.struct, ptr %a.load23076)
-  %a.load3078 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3078 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3079 = icmp eq ptr %a.load3078, null
   br i1 %a.null3079, label %a.create3080, label %a.after3081
 
@@ -82912,11 +82916,11 @@ a.create3080:                                     ; preds = %a.after3068
   store ptr %a.buf3085, ptr %a.data.gep3087, align 8
   %a.cap.gep3088 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3083, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3088, align 8
-  store ptr %a.create3083, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3083, ptr %var._arr_lit_3001, align 8
   br label %a.after3081
 
 a.after3081:                                      ; preds = %a.create3080, %a.after3068
-  %a.load23089 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23089 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3090
 
 a.check3090:                                      ; preds = %a.after3081
@@ -82952,7 +82956,7 @@ a.store3092:                                      ; preds = %a.grow3091, %a.chec
   store ptr %a.buf3109, ptr %a.data.gep3111, align 8
   %a.cap.gep3112 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new3107, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3112, align 8
-  store ptr %a.new3107, ptr %var._arr_lit_3298, align 8
+  store ptr %a.new3107, ptr %var._arr_lit_3300, align 8
   %arena.cur3113 = call ptr @dva_arena_current()
   %a.new3114 = call ptr @dva_arena_alloc(ptr %arena.cur3113, i64 24)
   %arena.cur3115 = call ptr @dva_arena_current()
@@ -82964,7 +82968,7 @@ a.store3092:                                      ; preds = %a.grow3091, %a.chec
   %a.cap.gep3119 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new3114, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3119, align 8
   %call.res3120 = call ptr @"cli::pos$Array(String)$String$Unit"(ptr @str.319.struct, ptr %a.new3114, ptr @str.320.struct, i64 0)
-  %a.load3121 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load3121 = load ptr, ptr %var._arr_lit_3300, align 8
   %a.null3122 = icmp eq ptr %a.load3121, null
   br i1 %a.null3122, label %a.create3123, label %a.after3124
 
@@ -82979,11 +82983,11 @@ a.create3123:                                     ; preds = %a.store3092
   store ptr %a.buf3128, ptr %a.data.gep3130, align 8
   %a.cap.gep3131 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3126, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3131, align 8
-  store ptr %a.create3126, ptr %var._arr_lit_3298, align 8
+  store ptr %a.create3126, ptr %var._arr_lit_3300, align 8
   br label %a.after3124
 
 a.after3124:                                      ; preds = %a.create3123, %a.store3092
-  %a.load23132 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load23132 = load ptr, ptr %var._arr_lit_3300, align 8
   br label %a.check3133
 
 a.check3133:                                      ; preds = %a.after3124
@@ -83010,7 +83014,7 @@ a.store3135:                                      ; preds = %a.grow3134, %a.chec
   %b.len.gep3148 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23132, i32 0, i32 0
   store i64 %a.next.len3147, ptr %b.len.gep3148, align 8
   %call.res3149 = call ptr @"cli::opt$Flag$Unit"(ptr @str.294.struct, i1 false, ptr @str.321.struct, i64 0)
-  %a.load3150 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load3150 = load ptr, ptr %var._arr_lit_3300, align 8
   %a.null3151 = icmp eq ptr %a.load3150, null
   br i1 %a.null3151, label %a.create3152, label %a.after3153
 
@@ -83025,11 +83029,11 @@ a.create3152:                                     ; preds = %a.store3135
   store ptr %a.buf3157, ptr %a.data.gep3159, align 8
   %a.cap.gep3160 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3155, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3160, align 8
-  store ptr %a.create3155, ptr %var._arr_lit_3298, align 8
+  store ptr %a.create3155, ptr %var._arr_lit_3300, align 8
   br label %a.after3153
 
 a.after3153:                                      ; preds = %a.create3152, %a.store3135
-  %a.load23161 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load23161 = load ptr, ptr %var._arr_lit_3300, align 8
   br label %a.check3162
 
 a.check3162:                                      ; preds = %a.after3153
@@ -83056,7 +83060,7 @@ a.store3164:                                      ; preds = %a.grow3163, %a.chec
   %b.len.gep3177 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23161, i32 0, i32 0
   store i64 %a.next.len3176, ptr %b.len.gep3177, align 8
   %call.res3178 = call ptr @"cli::opt$Flag$Unit"(ptr @str.322.struct, i1 false, ptr @str.323.struct, i64 0)
-  %a.load3179 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load3179 = load ptr, ptr %var._arr_lit_3300, align 8
   %a.null3180 = icmp eq ptr %a.load3179, null
   br i1 %a.null3180, label %a.create3181, label %a.after3182
 
@@ -83071,11 +83075,11 @@ a.create3181:                                     ; preds = %a.store3164
   store ptr %a.buf3186, ptr %a.data.gep3188, align 8
   %a.cap.gep3189 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3184, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3189, align 8
-  store ptr %a.create3184, ptr %var._arr_lit_3298, align 8
+  store ptr %a.create3184, ptr %var._arr_lit_3300, align 8
   br label %a.after3182
 
 a.after3182:                                      ; preds = %a.create3181, %a.store3164
-  %a.load23190 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load23190 = load ptr, ptr %var._arr_lit_3300, align 8
   br label %a.check3191
 
 a.check3191:                                      ; preds = %a.after3182
@@ -83102,7 +83106,7 @@ a.store3193:                                      ; preds = %a.grow3192, %a.chec
   %b.len.gep3206 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23190, i32 0, i32 0
   store i64 %a.next.len3205, ptr %b.len.gep3206, align 8
   %call.res3207 = call ptr @"cli::opt$Flag$Unit"(ptr @str.324.struct, i1 false, ptr @str.325.struct, i64 0)
-  %a.load3208 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load3208 = load ptr, ptr %var._arr_lit_3300, align 8
   %a.null3209 = icmp eq ptr %a.load3208, null
   br i1 %a.null3209, label %a.create3210, label %a.after3211
 
@@ -83117,11 +83121,11 @@ a.create3210:                                     ; preds = %a.store3193
   store ptr %a.buf3215, ptr %a.data.gep3217, align 8
   %a.cap.gep3218 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3213, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3218, align 8
-  store ptr %a.create3213, ptr %var._arr_lit_3298, align 8
+  store ptr %a.create3213, ptr %var._arr_lit_3300, align 8
   br label %a.after3211
 
 a.after3211:                                      ; preds = %a.create3210, %a.store3193
-  %a.load23219 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load23219 = load ptr, ptr %var._arr_lit_3300, align 8
   br label %a.check3220
 
 a.check3220:                                      ; preds = %a.after3211
@@ -83147,8 +83151,8 @@ a.store3222:                                      ; preds = %a.grow3221, %a.chec
   %a.next.len3234 = add i64 %a.cur.len3231, 1
   %b.len.gep3235 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23219, i32 0, i32 0
   store i64 %a.next.len3234, ptr %b.len.gep3235, align 8
-  %var.load3236 = load ptr, ptr %var._arr_lit_3298, align 8
-  %a.load3237 = load ptr, ptr %var._arr_lit_3298, align 8
+  %var.load3236 = load ptr, ptr %var._arr_lit_3300, align 8
+  %a.load3237 = load ptr, ptr %var._arr_lit_3300, align 8
   %a.null3238 = icmp eq ptr %a.load3237, null
   br i1 %a.null3238, label %a.create3239, label %a.after3240
 
@@ -83163,13 +83167,13 @@ a.create3239:                                     ; preds = %a.store3222
   store ptr %a.buf3244, ptr %a.data.gep3246, align 8
   %a.cap.gep3247 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3242, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3247, align 8
-  store ptr %a.create3242, ptr %var._arr_lit_3298, align 8
+  store ptr %a.create3242, ptr %var._arr_lit_3300, align 8
   br label %a.after3240
 
 a.after3240:                                      ; preds = %a.create3239, %a.store3222
-  %a.load23248 = load ptr, ptr %var._arr_lit_3298, align 8
+  %a.load23248 = load ptr, ptr %var._arr_lit_3300, align 8
   %call.res3249 = call ptr @"cli::cmd$Array(Rec(short:String,long:String,kind:cli::OptKind,role:cli::OptRole,required:Flag,def_flag:Flag,def_int:Int,def_float:Float,def_str:String,desc:String,val_flag:Fn,val_int:Fn,val_float:Fn,val_str:Fn,aliases:Array(String),sub_opts:cli::SubOpts))"(ptr @str.317.struct, ptr @str.318.struct, ptr %a.load23248)
-  %a.load3250 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3250 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3251 = icmp eq ptr %a.load3250, null
   br i1 %a.null3251, label %a.create3252, label %a.after3253
 
@@ -83184,11 +83188,11 @@ a.create3252:                                     ; preds = %a.after3240
   store ptr %a.buf3257, ptr %a.data.gep3259, align 8
   %a.cap.gep3260 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3255, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3260, align 8
-  store ptr %a.create3255, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3255, ptr %var._arr_lit_3001, align 8
   br label %a.after3253
 
 a.after3253:                                      ; preds = %a.create3252, %a.after3240
-  %a.load23261 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23261 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3262
 
 a.check3262:                                      ; preds = %a.after3253
@@ -83215,7 +83219,7 @@ a.store3264:                                      ; preds = %a.grow3263, %a.chec
   %b.len.gep3277 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23261, i32 0, i32 0
   store i64 %a.next.len3276, ptr %b.len.gep3277, align 8
   %call.res3278 = call ptr @"cli::cmd$Unit"(ptr @str.326.struct, ptr @str.327.struct, i64 0)
-  %a.load3279 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3279 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3280 = icmp eq ptr %a.load3279, null
   br i1 %a.null3280, label %a.create3281, label %a.after3282
 
@@ -83230,11 +83234,11 @@ a.create3281:                                     ; preds = %a.store3264
   store ptr %a.buf3286, ptr %a.data.gep3288, align 8
   %a.cap.gep3289 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3284, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3289, align 8
-  store ptr %a.create3284, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3284, ptr %var._arr_lit_3001, align 8
   br label %a.after3282
 
 a.after3282:                                      ; preds = %a.create3281, %a.store3264
-  %a.load23290 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23290 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3291
 
 a.check3291:                                      ; preds = %a.after3282
@@ -83261,7 +83265,7 @@ a.store3293:                                      ; preds = %a.grow3292, %a.chec
   %b.len.gep3306 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23290, i32 0, i32 0
   store i64 %a.next.len3305, ptr %b.len.gep3306, align 8
   %call.res3307 = call ptr @"cli::cmd$Unit"(ptr @str.328.struct, ptr @str.329.struct, i64 0)
-  %a.load3308 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3308 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3309 = icmp eq ptr %a.load3308, null
   br i1 %a.null3309, label %a.create3310, label %a.after3311
 
@@ -83276,11 +83280,11 @@ a.create3310:                                     ; preds = %a.store3293
   store ptr %a.buf3315, ptr %a.data.gep3317, align 8
   %a.cap.gep3318 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3313, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3318, align 8
-  store ptr %a.create3313, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3313, ptr %var._arr_lit_3001, align 8
   br label %a.after3311
 
 a.after3311:                                      ; preds = %a.create3310, %a.store3293
-  %a.load23319 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23319 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3320
 
 a.check3320:                                      ; preds = %a.after3311
@@ -83308,7 +83312,7 @@ a.store3322:                                      ; preds = %a.grow3321, %a.chec
   store i64 %a.next.len3334, ptr %b.len.gep3335, align 8
   %var.load3336 = load ptr, ptr @var.not_flag, align 8
   %call.res3337 = call ptr @"cli::opt$String$Fn"(ptr @str.284.struct, ptr @str.1.struct, ptr @str.330.struct, ptr %var.load3336)
-  %a.load3338 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3338 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3339 = icmp eq ptr %a.load3338, null
   br i1 %a.null3339, label %a.create3340, label %a.after3341
 
@@ -83323,11 +83327,11 @@ a.create3340:                                     ; preds = %a.store3322
   store ptr %a.buf3345, ptr %a.data.gep3347, align 8
   %a.cap.gep3348 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3343, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3348, align 8
-  store ptr %a.create3343, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3343, ptr %var._arr_lit_3001, align 8
   br label %a.after3341
 
 a.after3341:                                      ; preds = %a.create3340, %a.store3322
-  %a.load23349 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23349 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3350
 
 a.check3350:                                      ; preds = %a.after3341
@@ -83354,7 +83358,7 @@ a.store3352:                                      ; preds = %a.grow3351, %a.chec
   %b.len.gep3365 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23349, i32 0, i32 0
   store i64 %a.next.len3364, ptr %b.len.gep3365, align 8
   %call.res3366 = call ptr @"cli::opt$Flag$Unit"(ptr @str.331.struct, i1 false, ptr @str.332.struct, i64 0)
-  %a.load3367 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3367 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3368 = icmp eq ptr %a.load3367, null
   br i1 %a.null3368, label %a.create3369, label %a.after3370
 
@@ -83369,11 +83373,11 @@ a.create3369:                                     ; preds = %a.store3352
   store ptr %a.buf3374, ptr %a.data.gep3376, align 8
   %a.cap.gep3377 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3372, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3377, align 8
-  store ptr %a.create3372, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3372, ptr %var._arr_lit_3001, align 8
   br label %a.after3370
 
 a.after3370:                                      ; preds = %a.create3369, %a.store3352
-  %a.load23378 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23378 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3379
 
 a.check3379:                                      ; preds = %a.after3370
@@ -83400,7 +83404,7 @@ a.store3381:                                      ; preds = %a.grow3380, %a.chec
   %b.len.gep3394 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23378, i32 0, i32 0
   store i64 %a.next.len3393, ptr %b.len.gep3394, align 8
   %call.res3395 = call ptr @"cli::opt$Flag$Unit"(ptr @str.333.struct, i1 false, ptr @str.334.struct, i64 0)
-  %a.load3396 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3396 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3397 = icmp eq ptr %a.load3396, null
   br i1 %a.null3397, label %a.create3398, label %a.after3399
 
@@ -83415,11 +83419,11 @@ a.create3398:                                     ; preds = %a.store3381
   store ptr %a.buf3403, ptr %a.data.gep3405, align 8
   %a.cap.gep3406 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3401, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3406, align 8
-  store ptr %a.create3401, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3401, ptr %var._arr_lit_3001, align 8
   br label %a.after3399
 
 a.after3399:                                      ; preds = %a.create3398, %a.store3381
-  %a.load23407 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23407 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3408
 
 a.check3408:                                      ; preds = %a.after3399
@@ -83446,7 +83450,7 @@ a.store3410:                                      ; preds = %a.grow3409, %a.chec
   %b.len.gep3423 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23407, i32 0, i32 0
   store i64 %a.next.len3422, ptr %b.len.gep3423, align 8
   %call.res3424 = call ptr @"cli::opt$Flag$Unit"(ptr @str.335.struct, i1 false, ptr @str.336.struct, i64 0)
-  %a.load3425 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3425 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3426 = icmp eq ptr %a.load3425, null
   br i1 %a.null3426, label %a.create3427, label %a.after3428
 
@@ -83461,11 +83465,11 @@ a.create3427:                                     ; preds = %a.store3410
   store ptr %a.buf3432, ptr %a.data.gep3434, align 8
   %a.cap.gep3435 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3430, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3435, align 8
-  store ptr %a.create3430, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3430, ptr %var._arr_lit_3001, align 8
   br label %a.after3428
 
 a.after3428:                                      ; preds = %a.create3427, %a.store3410
-  %a.load23436 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23436 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3437
 
 a.check3437:                                      ; preds = %a.after3428
@@ -83492,7 +83496,7 @@ a.store3439:                                      ; preds = %a.grow3438, %a.chec
   %b.len.gep3452 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23436, i32 0, i32 0
   store i64 %a.next.len3451, ptr %b.len.gep3452, align 8
   %call.res3453 = call ptr @"cli::opt$Flag$Unit"(ptr @str.337.struct, i1 false, ptr @str.338.struct, i64 0)
-  %a.load3454 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3454 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3455 = icmp eq ptr %a.load3454, null
   br i1 %a.null3455, label %a.create3456, label %a.after3457
 
@@ -83507,11 +83511,11 @@ a.create3456:                                     ; preds = %a.store3439
   store ptr %a.buf3461, ptr %a.data.gep3463, align 8
   %a.cap.gep3464 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3459, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3464, align 8
-  store ptr %a.create3459, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3459, ptr %var._arr_lit_3001, align 8
   br label %a.after3457
 
 a.after3457:                                      ; preds = %a.create3456, %a.store3439
-  %a.load23465 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23465 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3466
 
 a.check3466:                                      ; preds = %a.after3457
@@ -83538,7 +83542,7 @@ a.store3468:                                      ; preds = %a.grow3467, %a.chec
   %b.len.gep3481 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23465, i32 0, i32 0
   store i64 %a.next.len3480, ptr %b.len.gep3481, align 8
   %call.res3482 = call ptr @"cli::opt$Flag$Unit"(ptr @str.339.struct, i1 false, ptr @str.340.struct, i64 0)
-  %a.load3483 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3483 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3484 = icmp eq ptr %a.load3483, null
   br i1 %a.null3484, label %a.create3485, label %a.after3486
 
@@ -83553,11 +83557,11 @@ a.create3485:                                     ; preds = %a.store3468
   store ptr %a.buf3490, ptr %a.data.gep3492, align 8
   %a.cap.gep3493 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3488, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3493, align 8
-  store ptr %a.create3488, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3488, ptr %var._arr_lit_3001, align 8
   br label %a.after3486
 
 a.after3486:                                      ; preds = %a.create3485, %a.store3468
-  %a.load23494 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23494 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3495
 
 a.check3495:                                      ; preds = %a.after3486
@@ -83585,7 +83589,7 @@ a.store3497:                                      ; preds = %a.grow3496, %a.chec
   store i64 %a.next.len3509, ptr %b.len.gep3510, align 8
   %var.load3511 = load ptr, ptr @var.not_flag, align 8
   %call.res3512 = call ptr @"cli::opt$String$Fn"(ptr @str.341.struct, ptr @str.1.struct, ptr @str.342.struct, ptr %var.load3511)
-  %a.load3513 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3513 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3514 = icmp eq ptr %a.load3513, null
   br i1 %a.null3514, label %a.create3515, label %a.after3516
 
@@ -83600,11 +83604,11 @@ a.create3515:                                     ; preds = %a.store3497
   store ptr %a.buf3520, ptr %a.data.gep3522, align 8
   %a.cap.gep3523 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3518, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3523, align 8
-  store ptr %a.create3518, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3518, ptr %var._arr_lit_3001, align 8
   br label %a.after3516
 
 a.after3516:                                      ; preds = %a.create3515, %a.store3497
-  %a.load23524 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23524 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3525
 
 a.check3525:                                      ; preds = %a.after3516
@@ -83632,7 +83636,7 @@ a.store3527:                                      ; preds = %a.grow3526, %a.chec
   store i64 %a.next.len3539, ptr %b.len.gep3540, align 8
   %var.load3541 = load ptr, ptr @var.not_flag, align 8
   %call.res3542 = call ptr @"cli::opt$String$Fn"(ptr @str.286.struct, ptr @str.1.struct, ptr @str.287.struct, ptr %var.load3541)
-  %a.load3543 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3543 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3544 = icmp eq ptr %a.load3543, null
   br i1 %a.null3544, label %a.create3545, label %a.after3546
 
@@ -83647,11 +83651,11 @@ a.create3545:                                     ; preds = %a.store3527
   store ptr %a.buf3550, ptr %a.data.gep3552, align 8
   %a.cap.gep3553 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3548, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3553, align 8
-  store ptr %a.create3548, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3548, ptr %var._arr_lit_3001, align 8
   br label %a.after3546
 
 a.after3546:                                      ; preds = %a.create3545, %a.store3527
-  %a.load23554 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23554 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3555
 
 a.check3555:                                      ; preds = %a.after3546
@@ -83679,7 +83683,7 @@ a.store3557:                                      ; preds = %a.grow3556, %a.chec
   store i64 %a.next.len3569, ptr %b.len.gep3570, align 8
   %var.load3571 = load ptr, ptr @var.valid_opt_level, align 8
   %call.res3572 = call ptr @"cli::opt$String$Fn"(ptr @str.288.struct, ptr @str.231.struct, ptr @str.289.struct, ptr %var.load3571)
-  %a.load3573 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3573 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3574 = icmp eq ptr %a.load3573, null
   br i1 %a.null3574, label %a.create3575, label %a.after3576
 
@@ -83694,11 +83698,11 @@ a.create3575:                                     ; preds = %a.store3557
   store ptr %a.buf3580, ptr %a.data.gep3582, align 8
   %a.cap.gep3583 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3578, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3583, align 8
-  store ptr %a.create3578, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3578, ptr %var._arr_lit_3001, align 8
   br label %a.after3576
 
 a.after3576:                                      ; preds = %a.create3575, %a.store3557
-  %a.load23584 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23584 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3585
 
 a.check3585:                                      ; preds = %a.after3576
@@ -83726,7 +83730,7 @@ a.store3587:                                      ; preds = %a.grow3586, %a.chec
   store i64 %a.next.len3599, ptr %b.len.gep3600, align 8
   %var.load3601 = load ptr, ptr @var.not_flag, align 8
   %call.res3602 = call ptr @"cli::opt$String$Fn"(ptr @str.343.struct, ptr @str.1.struct, ptr @str.344.struct, ptr %var.load3601)
-  %a.load3603 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3603 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3604 = icmp eq ptr %a.load3603, null
   br i1 %a.null3604, label %a.create3605, label %a.after3606
 
@@ -83741,11 +83745,11 @@ a.create3605:                                     ; preds = %a.store3587
   store ptr %a.buf3610, ptr %a.data.gep3612, align 8
   %a.cap.gep3613 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3608, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3613, align 8
-  store ptr %a.create3608, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3608, ptr %var._arr_lit_3001, align 8
   br label %a.after3606
 
 a.after3606:                                      ; preds = %a.create3605, %a.store3587
-  %a.load23614 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23614 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3615
 
 a.check3615:                                      ; preds = %a.after3606
@@ -83772,7 +83776,7 @@ a.store3617:                                      ; preds = %a.grow3616, %a.chec
   %b.len.gep3630 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23614, i32 0, i32 0
   store i64 %a.next.len3629, ptr %b.len.gep3630, align 8
   %call.res3631 = call ptr @"cli::opt$String$Unit"(ptr @str.345.struct, ptr @str.1.struct, ptr @str.346.struct, i64 0)
-  %a.load3632 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3632 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3633 = icmp eq ptr %a.load3632, null
   br i1 %a.null3633, label %a.create3634, label %a.after3635
 
@@ -83787,11 +83791,11 @@ a.create3634:                                     ; preds = %a.store3617
   store ptr %a.buf3639, ptr %a.data.gep3641, align 8
   %a.cap.gep3642 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3637, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3642, align 8
-  store ptr %a.create3637, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3637, ptr %var._arr_lit_3001, align 8
   br label %a.after3635
 
 a.after3635:                                      ; preds = %a.create3634, %a.store3617
-  %a.load23643 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23643 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3644
 
 a.check3644:                                      ; preds = %a.after3635
@@ -83818,7 +83822,7 @@ a.store3646:                                      ; preds = %a.grow3645, %a.chec
   %b.len.gep3659 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23643, i32 0, i32 0
   store i64 %a.next.len3658, ptr %b.len.gep3659, align 8
   %call.res3660 = call ptr @"cli::opt$Flag$Unit"(ptr @str.347.struct, i1 false, ptr @str.348.struct, i64 0)
-  %a.load3661 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3661 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3662 = icmp eq ptr %a.load3661, null
   br i1 %a.null3662, label %a.create3663, label %a.after3664
 
@@ -83833,11 +83837,11 @@ a.create3663:                                     ; preds = %a.store3646
   store ptr %a.buf3668, ptr %a.data.gep3670, align 8
   %a.cap.gep3671 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3666, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3671, align 8
-  store ptr %a.create3666, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3666, ptr %var._arr_lit_3001, align 8
   br label %a.after3664
 
 a.after3664:                                      ; preds = %a.create3663, %a.store3646
-  %a.load23672 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23672 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3673
 
 a.check3673:                                      ; preds = %a.after3664
@@ -83864,7 +83868,7 @@ a.store3675:                                      ; preds = %a.grow3674, %a.chec
   %b.len.gep3688 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23672, i32 0, i32 0
   store i64 %a.next.len3687, ptr %b.len.gep3688, align 8
   %call.res3689 = call ptr @"cli::opt$Flag$Unit"(ptr @str.349.struct, i1 false, ptr @str.350.struct, i64 0)
-  %a.load3690 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3690 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3691 = icmp eq ptr %a.load3690, null
   br i1 %a.null3691, label %a.create3692, label %a.after3693
 
@@ -83879,11 +83883,11 @@ a.create3692:                                     ; preds = %a.store3675
   store ptr %a.buf3697, ptr %a.data.gep3699, align 8
   %a.cap.gep3700 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3695, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3700, align 8
-  store ptr %a.create3695, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3695, ptr %var._arr_lit_3001, align 8
   br label %a.after3693
 
 a.after3693:                                      ; preds = %a.create3692, %a.store3675
-  %a.load23701 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23701 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3702
 
 a.check3702:                                      ; preds = %a.after3693
@@ -83910,7 +83914,7 @@ a.store3704:                                      ; preds = %a.grow3703, %a.chec
   %b.len.gep3717 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23701, i32 0, i32 0
   store i64 %a.next.len3716, ptr %b.len.gep3717, align 8
   %call.res3718 = call ptr @"cli::opt$Flag$Unit"(ptr @str.351.struct, i1 false, ptr @str.352.struct, i64 0)
-  %a.load3719 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3719 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3720 = icmp eq ptr %a.load3719, null
   br i1 %a.null3720, label %a.create3721, label %a.after3722
 
@@ -83925,11 +83929,11 @@ a.create3721:                                     ; preds = %a.store3704
   store ptr %a.buf3726, ptr %a.data.gep3728, align 8
   %a.cap.gep3729 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3724, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3729, align 8
-  store ptr %a.create3724, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3724, ptr %var._arr_lit_3001, align 8
   br label %a.after3722
 
 a.after3722:                                      ; preds = %a.create3721, %a.store3704
-  %a.load23730 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23730 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3731
 
 a.check3731:                                      ; preds = %a.after3722
@@ -83956,7 +83960,7 @@ a.store3733:                                      ; preds = %a.grow3732, %a.chec
   %b.len.gep3746 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23730, i32 0, i32 0
   store i64 %a.next.len3745, ptr %b.len.gep3746, align 8
   %call.res3747 = call ptr @"cli::opt$Flag$Unit"(ptr @str.353.struct, i1 false, ptr @str.354.struct, i64 0)
-  %a.load3748 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3748 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3749 = icmp eq ptr %a.load3748, null
   br i1 %a.null3749, label %a.create3750, label %a.after3751
 
@@ -83971,11 +83975,11 @@ a.create3750:                                     ; preds = %a.store3733
   store ptr %a.buf3755, ptr %a.data.gep3757, align 8
   %a.cap.gep3758 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3753, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3758, align 8
-  store ptr %a.create3753, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3753, ptr %var._arr_lit_3001, align 8
   br label %a.after3751
 
 a.after3751:                                      ; preds = %a.create3750, %a.store3733
-  %a.load23759 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23759 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3760
 
 a.check3760:                                      ; preds = %a.after3751
@@ -84002,7 +84006,7 @@ a.store3762:                                      ; preds = %a.grow3761, %a.chec
   %b.len.gep3775 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23759, i32 0, i32 0
   store i64 %a.next.len3774, ptr %b.len.gep3775, align 8
   %call.res3776 = call ptr @"cli::opt$Flag$Unit"(ptr @str.355.struct, i1 false, ptr @str.356.struct, i64 0)
-  %a.load3777 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3777 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3778 = icmp eq ptr %a.load3777, null
   br i1 %a.null3778, label %a.create3779, label %a.after3780
 
@@ -84017,11 +84021,11 @@ a.create3779:                                     ; preds = %a.store3762
   store ptr %a.buf3784, ptr %a.data.gep3786, align 8
   %a.cap.gep3787 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3782, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3787, align 8
-  store ptr %a.create3782, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3782, ptr %var._arr_lit_3001, align 8
   br label %a.after3780
 
 a.after3780:                                      ; preds = %a.create3779, %a.store3762
-  %a.load23788 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23788 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3789
 
 a.check3789:                                      ; preds = %a.after3780
@@ -84048,7 +84052,7 @@ a.store3791:                                      ; preds = %a.grow3790, %a.chec
   %b.len.gep3804 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23788, i32 0, i32 0
   store i64 %a.next.len3803, ptr %b.len.gep3804, align 8
   %call.res3805 = call ptr @"cli::opt$Flag$Unit"(ptr @str.357.struct, i1 false, ptr @str.358.struct, i64 0)
-  %a.load3806 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3806 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3807 = icmp eq ptr %a.load3806, null
   br i1 %a.null3807, label %a.create3808, label %a.after3809
 
@@ -84063,11 +84067,11 @@ a.create3808:                                     ; preds = %a.store3791
   store ptr %a.buf3813, ptr %a.data.gep3815, align 8
   %a.cap.gep3816 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3811, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3816, align 8
-  store ptr %a.create3811, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3811, ptr %var._arr_lit_3001, align 8
   br label %a.after3809
 
 a.after3809:                                      ; preds = %a.create3808, %a.store3791
-  %a.load23817 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23817 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3818
 
 a.check3818:                                      ; preds = %a.after3809
@@ -84094,7 +84098,7 @@ a.store3820:                                      ; preds = %a.grow3819, %a.chec
   %b.len.gep3833 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23817, i32 0, i32 0
   store i64 %a.next.len3832, ptr %b.len.gep3833, align 8
   %call.res3834 = call ptr @"cli::opt$Flag$Unit"(ptr @str.359.struct, i1 false, ptr @str.360.struct, i64 0)
-  %a.load3835 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3835 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3836 = icmp eq ptr %a.load3835, null
   br i1 %a.null3836, label %a.create3837, label %a.after3838
 
@@ -84109,11 +84113,11 @@ a.create3837:                                     ; preds = %a.store3820
   store ptr %a.buf3842, ptr %a.data.gep3844, align 8
   %a.cap.gep3845 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3840, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3845, align 8
-  store ptr %a.create3840, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3840, ptr %var._arr_lit_3001, align 8
   br label %a.after3838
 
 a.after3838:                                      ; preds = %a.create3837, %a.store3820
-  %a.load23846 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23846 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3847
 
 a.check3847:                                      ; preds = %a.after3838
@@ -84141,7 +84145,7 @@ a.store3849:                                      ; preds = %a.grow3848, %a.chec
   store i64 %a.next.len3861, ptr %b.len.gep3862, align 8
   %var.load3863 = load ptr, ptr @var.not_flag, align 8
   %call.res3864 = call ptr @"cli::opt$String$Fn"(ptr @str.361.struct, ptr @str.1.struct, ptr @str.362.struct, ptr %var.load3863)
-  %a.load3865 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3865 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3866 = icmp eq ptr %a.load3865, null
   br i1 %a.null3866, label %a.create3867, label %a.after3868
 
@@ -84156,11 +84160,11 @@ a.create3867:                                     ; preds = %a.store3849
   store ptr %a.buf3872, ptr %a.data.gep3874, align 8
   %a.cap.gep3875 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3870, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3875, align 8
-  store ptr %a.create3870, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3870, ptr %var._arr_lit_3001, align 8
   br label %a.after3868
 
 a.after3868:                                      ; preds = %a.create3867, %a.store3849
-  %a.load23876 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23876 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3877
 
 a.check3877:                                      ; preds = %a.after3868
@@ -84187,7 +84191,7 @@ a.store3879:                                      ; preds = %a.grow3878, %a.chec
   %b.len.gep3892 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23876, i32 0, i32 0
   store i64 %a.next.len3891, ptr %b.len.gep3892, align 8
   %call.res3893 = call ptr @"cli::opt$String$Unit"(ptr @str.271.struct, ptr @str.1.struct, ptr @str.272.struct, i64 0)
-  %a.load3894 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3894 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3895 = icmp eq ptr %a.load3894, null
   br i1 %a.null3895, label %a.create3896, label %a.after3897
 
@@ -84202,11 +84206,11 @@ a.create3896:                                     ; preds = %a.store3879
   store ptr %a.buf3901, ptr %a.data.gep3903, align 8
   %a.cap.gep3904 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3899, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3904, align 8
-  store ptr %a.create3899, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3899, ptr %var._arr_lit_3001, align 8
   br label %a.after3897
 
 a.after3897:                                      ; preds = %a.create3896, %a.store3879
-  %a.load23905 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23905 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3906
 
 a.check3906:                                      ; preds = %a.after3897
@@ -84233,7 +84237,7 @@ a.store3908:                                      ; preds = %a.grow3907, %a.chec
   %b.len.gep3921 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23905, i32 0, i32 0
   store i64 %a.next.len3920, ptr %b.len.gep3921, align 8
   %call.res3922 = call ptr @"cli::opt$Flag$Unit"(ptr @str.273.struct, i1 false, ptr @str.274.struct, i64 0)
-  %a.load3923 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3923 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3924 = icmp eq ptr %a.load3923, null
   br i1 %a.null3924, label %a.create3925, label %a.after3926
 
@@ -84248,11 +84252,11 @@ a.create3925:                                     ; preds = %a.store3908
   store ptr %a.buf3930, ptr %a.data.gep3932, align 8
   %a.cap.gep3933 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3928, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3933, align 8
-  store ptr %a.create3928, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3928, ptr %var._arr_lit_3001, align 8
   br label %a.after3926
 
 a.after3926:                                      ; preds = %a.create3925, %a.store3908
-  %a.load23934 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23934 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3935
 
 a.check3935:                                      ; preds = %a.after3926
@@ -84289,7 +84293,7 @@ a.store3937:                                      ; preds = %a.grow3936, %a.chec
   %a.cap.gep3957 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new3952, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3957, align 8
   %call.res3958 = call ptr @"cli::opt$Array(String)$Unit"(ptr @str.290.struct, ptr %a.new3952, ptr @str.291.struct, i64 0)
-  %a.load3959 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3959 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3960 = icmp eq ptr %a.load3959, null
   br i1 %a.null3960, label %a.create3961, label %a.after3962
 
@@ -84304,11 +84308,11 @@ a.create3961:                                     ; preds = %a.store3937
   store ptr %a.buf3966, ptr %a.data.gep3968, align 8
   %a.cap.gep3969 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3964, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3969, align 8
-  store ptr %a.create3964, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3964, ptr %var._arr_lit_3001, align 8
   br label %a.after3962
 
 a.after3962:                                      ; preds = %a.create3961, %a.store3937
-  %a.load23970 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23970 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check3971
 
 a.check3971:                                      ; preds = %a.after3962
@@ -84335,7 +84339,7 @@ a.store3973:                                      ; preds = %a.grow3972, %a.chec
   %b.len.gep3986 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23970, i32 0, i32 0
   store i64 %a.next.len3985, ptr %b.len.gep3986, align 8
   %call.res3987 = call ptr @"cli::pos$String$String$Unit"(ptr @str.363.struct, ptr @str.1.struct, ptr @str.364.struct, i64 0)
-  %a.load3988 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load3988 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null3989 = icmp eq ptr %a.load3988, null
   br i1 %a.null3989, label %a.create3990, label %a.after3991
 
@@ -84350,11 +84354,11 @@ a.create3990:                                     ; preds = %a.store3973
   store ptr %a.buf3995, ptr %a.data.gep3997, align 8
   %a.cap.gep3998 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create3993, i32 0, i32 2
   store i64 16, ptr %a.cap.gep3998, align 8
-  store ptr %a.create3993, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create3993, ptr %var._arr_lit_3001, align 8
   br label %a.after3991
 
 a.after3991:                                      ; preds = %a.create3990, %a.store3973
-  %a.load23999 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load23999 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check4000
 
 a.check4000:                                      ; preds = %a.after3991
@@ -84381,7 +84385,7 @@ a.store4002:                                      ; preds = %a.grow4001, %a.chec
   %b.len.gep4015 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load23999, i32 0, i32 0
   store i64 %a.next.len4014, ptr %b.len.gep4015, align 8
   %call.res4016 = call ptr @"cli::pos$String$String$Unit"(ptr @str.365.struct, ptr @str.1.struct, ptr @str.285.struct, i64 0)
-  %a.load4017 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load4017 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null4018 = icmp eq ptr %a.load4017, null
   br i1 %a.null4018, label %a.create4019, label %a.after4020
 
@@ -84396,11 +84400,11 @@ a.create4019:                                     ; preds = %a.store4002
   store ptr %a.buf4024, ptr %a.data.gep4026, align 8
   %a.cap.gep4027 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create4022, i32 0, i32 2
   store i64 16, ptr %a.cap.gep4027, align 8
-  store ptr %a.create4022, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create4022, ptr %var._arr_lit_3001, align 8
   br label %a.after4020
 
 a.after4020:                                      ; preds = %a.create4019, %a.store4002
-  %a.load24028 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load24028 = load ptr, ptr %var._arr_lit_3001, align 8
   br label %a.check4029
 
 a.check4029:                                      ; preds = %a.after4020
@@ -84426,8 +84430,8 @@ a.store4031:                                      ; preds = %a.grow4030, %a.chec
   %a.next.len4043 = add i64 %a.cur.len4040, 1
   %b.len.gep4044 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.load24028, i32 0, i32 0
   store i64 %a.next.len4043, ptr %b.len.gep4044, align 8
-  %var.load4045 = load ptr, ptr %var._arr_lit_2999, align 8
-  %a.load4046 = load ptr, ptr %var._arr_lit_2999, align 8
+  %var.load4045 = load ptr, ptr %var._arr_lit_3001, align 8
+  %a.load4046 = load ptr, ptr %var._arr_lit_3001, align 8
   %a.null4047 = icmp eq ptr %a.load4046, null
   br i1 %a.null4047, label %a.create4048, label %a.after4049
 
@@ -84442,11 +84446,11 @@ a.create4048:                                     ; preds = %a.store4031
   store ptr %a.buf4053, ptr %a.data.gep4055, align 8
   %a.cap.gep4056 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create4051, i32 0, i32 2
   store i64 16, ptr %a.cap.gep4056, align 8
-  store ptr %a.create4051, ptr %var._arr_lit_2999, align 8
+  store ptr %a.create4051, ptr %var._arr_lit_3001, align 8
   br label %a.after4049
 
 a.after4049:                                      ; preds = %a.create4048, %a.store4031
-  %a.load24057 = load ptr, ptr %var._arr_lit_2999, align 8
+  %a.load24057 = load ptr, ptr %var._arr_lit_3001, align 8
   ret ptr %a.load24057
 }
 

@@ -2486,7 +2486,8 @@
                                  |
                                     out_dir = dirname(out_abs)
                                     out_dir != "" | mkdir_p(out_dir)
-                              full_cmd = "cd " + sq(root) + " && " + exp.cmd
+                              edva_bin = canonical_path(sys::argv_string(0))
+                              full_cmd = "cd " + sq(root) + " && EDVA=" + sq(edva_bin) + " " + exp.cmd
                               step_rc = sh(full_cmd)
                               step_rc != 0
                                  |

@@ -661,8 +661,8 @@ pop_loading_stack = ldr =>
 // directory module, else None.
 resolve_in_dir: String, String, String, <> => ResolvedModule
 resolve_in_dir = dir, mod_path, cid, is_pkg =>
-   f = path_join(dir, mod_path + ".dva")
-   d = path_join(dir, mod_path)
+   f = path::normalize(path_join(dir, mod_path + ".dva"))
+   d = path::normalize(path_join(dir, mod_path))
    file_exists(f)
       | ResolvedModule(File, ResolvedFile(f, cid, is_pkg))
       | dir_exists(d)
