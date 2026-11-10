@@ -1,9 +1,9 @@
 // selfhost/dep_test.dva — Unit tests for dependency graph and Tarjan's SCC.
 
-#use "src/ast"
-#use "src/dep_graph"
-#use "str"
-#use "sys"
+#use ../../src/ast
+#use ../../src/dep_graph
+#use str
+#use sys
 
 assert_true: <>, String => ()
 assert_true = cond, msg =>

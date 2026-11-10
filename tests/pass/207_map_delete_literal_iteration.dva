@@ -3,7 +3,7 @@
 // pairs; a later mismatched pair is E3137/E3138. Iteration visits live entries
 // in hash order (not insertion order) and skips tombstones after a delete.
 
-#use "str"
+#use str
 #use io
 
 // Literal with inferred String keys / Int values.

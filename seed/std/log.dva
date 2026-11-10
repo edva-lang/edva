@@ -105,7 +105,7 @@
       hit' = <->
       ?s @ i =>
          c = s(i)
-         c [' ', '\t', '\n', '\r', '"', '=']
+         c ['\s, '\t, '\n, '\r, '", '=]
             |
                hit' = <+>
                -->
@@ -115,17 +115,17 @@
    quote_value = s =>
       !needs_quoting(s) | --| s
       b = {?s + 8}
-      b += '"'
+      b += '"
       ?s @ i =>
          c = s(i)
          c
-            ['"']  b += "\\\""
-            ['\\'] b += "\\\\"
-            ['\n'] b += "\\n"
-            ['\r'] b += "\\r"
-            ['\t'] b += "\\t"
+            ['"]  b += "\\\""
+            ['\\] b += "\\\\"
+            ['\n] b += "\\n"
+            ['\r] b += "\\r"
+            ['\t] b += "\\t"
             |      b += c
-      b += '"'
+      b += '"
       +b
 
    append_fields: String, Fields => String
@@ -140,7 +140,7 @@
          f = fields(i)!!
          ?f > 0
             |
-               b += ' '
+               b += '\s
                b += f
       +b
 
@@ -293,29 +293,29 @@
             (v | inner => format_val(P, inner) | "none")
          [E{}]
             b = {32}
-            b += '['
+            b += '[
             v @ elem, i =>
-               i > 0 | b += ','
+               i > 0 | b += ',
                b += format_val(E, elem)
-            b += ']'
+            b += ']
             +b
          [E[]]
             b = {32}
-            b += '['
+            b += '[
             v @ elem, i =>
-               i > 0 | b += ','
+               i > 0 | b += ',
                b += format_val(E, elem)
-            b += ']'
+            b += ']
             +b
          [K ^ M]
             b = {32}
-            b += '{'
+            b += '{
             first' = <+>
             v @ mv, mk =>
-               !first' | b += ','
+               !first' | b += ',
                first' = <->
                b += log_key_str(K, mk) + ":" + format_val(M, mv)
-            b += '}'
+            b += '}
             +b
          [(..)]
             b = {32}
@@ -324,20 +324,20 @@
                f.idx == 0 && f.name == "" | is_tuple' = <+>
             is_tuple'
                |
-                  b += '('
+                  b += '(
                   V @ f =>
-                     f.idx > 0 | b += ','
+                     f.idx > 0 | b += ',
                      f.type
                         [<P|>]
                            vf = v.(f)
                            b += (vf | inner => format_val(P, inner) | "none")
                         |
                            b += format_val(f.type, v.(f))
-                  b += ')'
+                  b += ')
                |
-                  b += '{'
+                  b += '{
                   V @ f =>
-                     f.idx > 0 | b += ','
+                     f.idx > 0 | b += ',
                      b += f.name + "="
                      f.type
                         [<P|>]
@@ -345,7 +345,7 @@
                            b += (vf | inner => format_val(P, inner) | "none")
                         |
                            b += format_val(f.type, v.(f))
-                  b += '}'
+                  b += '}
             +b
          [<..>]
             res' = ++V.name

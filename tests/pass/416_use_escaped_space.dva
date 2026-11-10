@@ -1,0 +1,5 @@
+#use io
+#use str
+#use my_mod = ./416_use_escaped_space/my\ mod
+
+io::out $ str::from_int(my_mod::answer!)

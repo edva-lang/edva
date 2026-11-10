@@ -1,18 +1,18 @@
 // codegen/match.dva
 
-#use(import) llvm
-#use "../ast"
-#use "str"
-#use "../tast"
-#use "../unify"
-#use "mem"
-#use "types"
-#use "runtime"
-#use "expr"
-#use "stmt"
-#use "main"
-#use "../diag"
-#use "log"
+#use(import) ../llvm
+#use ../ast
+#use str
+#use ../tast
+#use ../unify
+#use mem
+#use ./types
+#use ./runtime
+#use ./expr
+#use ./stmt
+#use ./main
+#use ../diag
+#use log
 
 #public
 
@@ -1122,7 +1122,7 @@ is_all_digits_at = s, i, n =>
       | n > 0
       |
          c = s(i)
-         c !< '0' && c !> '9'
+         c !< '0 && c !> '9
             | is_all_digits_at(s, i + 1, n)
             | <->
 

@@ -29,7 +29,7 @@ The `utf` module provides UTF-8 rune encoding and decoding utilities for `String
 #use io
 #use utf
 
-s = utf::encode_rune('λ')
+s = utf::encode_rune('λ)
 io::out(?s)
 // => 2
 ```

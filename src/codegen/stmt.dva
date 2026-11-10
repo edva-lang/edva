@@ -1,17 +1,17 @@
 // codegen/stmt.dva
 
-#use(import) llvm
-#use "../ast"
-#use "str"
-#use "../tast"
-#use "../unify"
-#use "mem"
-#use "types"
-#use "runtime"
-#use "expr"
-#use "match"
-#use "main"
-#use "../diag"
+#use(import) ../llvm
+#use ../ast
+#use str
+#use ../tast
+#use ../unify
+#use mem
+#use ./types
+#use ./runtime
+#use ./expr
+#use ./match
+#use ./main
+#use ../diag
 
 #public
 
@@ -3370,7 +3370,7 @@ find_export_symbol_at = exp, fn_name, bare, i, n =>
 find_export_symbol: ast::Names, String => <String|>
 find_export_symbol = exp, fn_name =>
    bare = types::decl_bare_name(fn_name, 0)
-   clean_bare = (?bare > 0 && bare(0) == '#') | bare(1..) | bare
+   clean_bare = (?bare > 0 && bare(0) == '#) | bare(1..) | bare
    find_export_symbol_at(exp, fn_name, clean_bare, 0, ?exp)
 
 codegen_c_str: types::Cg, String => Addr
@@ -5774,7 +5774,7 @@ name_before_dot: String => String
 name_before_dot = s =>
    cut' = -1
    ?s @ i =>
-      cut' < 0 && s(i) == '.' | cut' = i
+      cut' < 0 && s(i) == '. | cut' = i
    cut' < 0 | s | s(0..cut')
 
 // The receiver of a dotted call ("x.f" -> "x"); a plain call's result is fresh
@@ -5894,7 +5894,7 @@ typed_block_is_binding = exprs =>
    nb > 1
       |
          first = exprs(0) | _ | tast::mk_lit_unit(0, 0)
-         is_synth = first.kind [Assign a] (?a.0 > 0 && a.0(0) == '_') | <->
+         is_synth = first.kind [Assign a] (?a.0 > 0 && a.0(0) == '_) | <->
          is_synth
             | <+>
             |
@@ -7039,7 +7039,7 @@ typed_member_root_name = te =>
 codegen_typed_compile_fn: types::Cg, String, ast::Names, tast::TypedExpr,
    ast::TypeInfo, String => (Addr, String)
 codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
-   is_anon = ?name > 0 && name(0) == '$'
+   is_anon = ?name > 0 && name(0) == '$
    saved_in_fn = cg.in_fn
    is_top = !saved_in_fn && !is_anon
    can_capture = !is_top

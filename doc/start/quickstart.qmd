@@ -132,7 +132,7 @@ io::out $ found | _ | -1
 #use io
 
 b = {64}
-b += ("Welcome, ", "Edva", '!')
+b += ("Welcome, ", "Edva", '!)
 s = +b
 io::out $ "${s} (${?s} bytes)"
 ```

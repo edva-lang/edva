@@ -2,7 +2,7 @@
 // choices (scalar and String), ?s, arithmetic — all JIT-evaluated through the
 // same codegen pipeline and embedded as constants.
 
-#use "str"
+#use str
 #use io
 
 io::out $ #!(2 < 3)

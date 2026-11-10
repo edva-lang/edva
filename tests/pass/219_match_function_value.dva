@@ -8,7 +8,7 @@
 
 #use(import) fp
 
-#use "str"
+#use str
 #use io
 
 dbl: Int => Int

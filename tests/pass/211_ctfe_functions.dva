@@ -3,7 +3,7 @@
 // tree-walking interpreter binds params and recurses; the JIT remains the
 // fallback for the non-interpretable tail.
 
-#use "str"
+#use str
 #use io
 
 double = n => n * 2

@@ -6,7 +6,7 @@
 // archives, or the network. Sources are kept in a minimal content store
 // (git mirrors, extracted trees); verification hardening is #102.
 
-#use "diag"
+#use ./diag
 #use ascii
 #use ccl
 #use cli
@@ -16,7 +16,7 @@
 #use str
 #use sys
 #use unicode
-#use version
+#use ./version
 #use log
 
 #foreign "c"
@@ -56,6 +56,15 @@
 
 #type BuildTargets BuildTarget{}
 
+#type GenerateStep (
+   name: String,
+   cmd: String,
+   src: String,
+   out: String
+)
+
+#type GenerateSteps GenerateStep{}
+
 #type PackageManifest (
    name: String,
    version: String,
@@ -64,6 +73,7 @@
    native_libs: Strings,
    native_pkg_config: Strings,
    overrides: PackageDeps,
+   generate: GenerateSteps,
    targets: BuildTargets
 )
 
@@ -178,7 +188,7 @@
       b = {?v}
       ?v @ i =>
          c = v(i)
-         c == '+' || c == '-' | -->
+         c == '+ || c == '- | -->
          b += c
       +b
 
@@ -240,11 +250,11 @@
       0.. @
          start' !< end' | -->
          c = s(start')
-         c == ' ' || c == '\t' || c == '\n' || c == '\r' | start' = start' + 1 | -->
+         c == '\s || c == '\t || c == '\n || c == '\r | start' = start' + 1 | -->
       0.. @
          end' !> start' | -->
          c = s(end' - 1)
-         c == ' ' || c == '\t' || c == '\n' || c == '\r' | end' = end' - 1 | -->
+         c == '\s || c == '\t || c == '\n || c == '\r | end' = end' - 1 | -->
       s(start'..end')
 
    starts_with: String, String => <>
@@ -264,7 +274,7 @@
          ascii::is_upper(c) | b += ascii::to_lower(c)
          ascii::is_lower(c) | b += c
          ascii::is_digit(c) | b += c
-         c == '-' || c == '_' | b += '_'
+         c == '- || c == '_ | b += '_
       res = +b
       ?res == 0
          | "my_pkg"
@@ -287,7 +297,7 @@
    pkg_base_name: String => String
    pkg_base_name = id =>
       at_idx' = 0 - 1
-      ?id @ i => id(i) == '@' | at_idx' = i; -->
+      ?id @ i => id(i) == '@ | at_idx' = i; -->
       at_idx' < 0 | id | id(..at_idx')
 
    split_char: String, Int => Strings
@@ -354,12 +364,12 @@
    // Dotted-integer version comparison: a < b.
    version_lt: String, String => <>
    version_lt = a, b =>
-      a_parts = split_char(a, '+')
-      b_parts = split_char(b, '+')
+      a_parts = split_char(a, '+)
+      b_parts = split_char(b, '+)
       a_base = a_parts(0) | _ | a
       b_base = b_parts(0) | _ | b
-      pa = split_char(a_base, '.')
-      pb = split_char(b_base, '.')
+      pa = split_char(a_base, '.)
+      pb = split_char(b_base, '.)
       n = ?pa > ?pb | ?pa | ?pb
       res' = <->
       n @ i =>
@@ -381,12 +391,12 @@
       n = ?alias
       n == 0 | <-> |
          first = alias(0)
-         is_start = first ['a'...'z', 'A'...'Z', '_'] || first > 0x7F
+         is_start = first ['a...'z, 'A...'Z, '_] || first > 0x7F
          !is_start | <-> |
             ok' = <+>
             1..n @ i =>
                c = alias(i)
-               is_cont = c ['a'...'z', 'A'...'Z', '0'...'9', '_'] || c > 0x7F
+               is_cont = c ['a...'z, 'A...'Z, '0...'9, '_] || c > 0x7F
                !is_cont | ok' = <->; -->
             ok'
 
@@ -395,11 +405,11 @@
       n = ?name
       n == 0 | <-> |
          first = name(0)
-         first !['a'...'z'] | <-> |
+         first !['a...'z] | <-> |
             ok' = <+>
             1..n @ i =>
                c = name(i)
-               c !['a'...'z', '0'...'9', '_'] | ok' = <->; -->
+               c !['a...'z, '0...'9, '_] | ok' = <->; -->
             ok'
 
    is_valid_version: String => <>
@@ -411,13 +421,13 @@
          dots' = 0
          0..n @ i =>
             c = ver(i)
-            c == '.'
+            c == '.
                |
                   seg_len' == 0 | ok' = <->; -->
                   seg_len' = 0
                   dots' = dots' + 1
                |
-                  c !['0'...'9']
+                  c !['0...'9]
                      | ok' = <->; -->
                      | seg_len' = seg_len' + 1
          ok' && dots' > 0 && seg_len' > 0
@@ -455,27 +465,24 @@
                   ddoc @ dde =>
                      !has_err' |
                         k = dde.key
-                        is_known = k == "git" || k == "rev" || k == "path" ||
-                           k == "url" || k == "hash" || k == "target" || k == "/"
+                        is_known = k ["git", "rev", "path", "url", "hash", "target", "/"]
                         !is_known |
                            has_err' = <+>
-                           k == "submodule" || k == "submodules"
-                              |
+                           k
+                              ["submodule", "submodules"]
                                  err_val' = ccl::ccl_error(file,
                                     "edva.ccl: dependency '" + alias +
                                     "': git submodules are not supported",
                                     dde.line, dde.col)
+                              ["subdir"]
+                                 err_val' = ccl::ccl_error(file,
+                                    "edva.ccl: dependency '" + alias +
+                                    "': package subdirectory selection ('subdir') is not supported in v1",
+                                    dde.line, dde.col)
                               |
-                                 k == "subdir"
-                                    |
-                                       err_val' = ccl::ccl_error(file,
-                                          "edva.ccl: dependency '" + alias +
-                                          "': package subdirectory selection ('subdir') is not supported in v1",
-                                          dde.line, dde.col)
-                                    |
-                                       err_val' = ccl::ccl_error(file,
-                                          "edva.ccl: unknown key 'dependencies." + alias + "." + k + "'",
-                                          dde.line, dde.col)
+                                 err_val' = ccl::ccl_error(file,
+                                    "edva.ccl: unknown key 'dependencies." + alias + "." + k + "'",
+                                    dde.line, dde.col)
                   has_err'
                      | <- err_val' +>
                      |
@@ -554,8 +561,7 @@
                   tdoc @ te =>
                      !has_err' |
                         k = te.key
-                        is_known = k == "src" || k == "out" || k == "target" ||
-                           k == "opt" || k == "cflags" || k == "/"
+                        is_known = k ["src", "out", "target", "opt", "cflags", "/"]
                         !is_known |
                            has_err' = <+>
                            err_val' = ccl::ccl_error(file,
@@ -579,6 +585,40 @@
                   <- ccl::ccl_error(file,
                      "edva.ccl: target '" + tname + "' must be a section", e.line, e.col) +>
 
+   validate_generate: ccl::CclEntry, String => < GenerateStep | Error >
+   validate_generate = e, file =>
+      gname = e.key
+      !is_valid_alias(gname)
+         | <- ccl::ccl_error(file, "edva.ccl: invalid generate step name '" + gname + "'", e.line, e.col) +>
+         |
+            e.val
+               [Block gdoc]
+                  has_err' = <->
+                  err_val' = ccl::ccl_error(file, ++"", 0, 0)
+                  gdoc @ ge =>
+                     !has_err' |
+                        k = ge.key
+                        is_known = k ["cmd", "src", "out", "/"]
+                        !is_known |
+                           has_err' = <+>
+                           err_val' = ccl::ccl_error(file,
+                              "edva.ccl: unknown key 'generate." + gname + "." + k + "'",
+                              ge.line, ge.col)
+                  has_err'
+                     | <- err_val' +>
+                     |
+                        cmd = ccl::get(gdoc, "cmd") | s => s | ""
+                        src = ccl::get(gdoc, "src") | s => s | ""
+                        out_p = ccl::get(gdoc, "out") | s => s | ""
+                        cmd == ""
+                           | <- ccl::ccl_error(file,
+                              "edva.ccl: generate '" + gname + "' needs 'cmd'",
+                              e.line, e.col) +>
+                           | <+ GenerateStep(gname, cmd, src, out_p) ->
+               [Str]
+                  <- ccl::ccl_error(file,
+                     "edva.ccl: generate '" + gname + "' must be a section", e.line, e.col) +>
+
    validate_manifest: ccl::CclDoc, String => < PackageManifest | Error >
    validate_manifest = doc, file =>
       has_err' = <->
@@ -586,9 +626,7 @@
 
       doc @ e =>
          k = e.key
-         is_known = k == "name" || k == "version" || k == "edva" ||
-            k == "dependencies" || k == "native" || k == "overrides" ||
-            k == "targets" || k == "/"
+         is_known = k ["name", "version", "edva", "dependencies", "native", "overrides", "generate", "targets", "/"]
          !is_known && !has_err'
             |
                has_err' = <+>
@@ -674,7 +712,7 @@
                | ndoc =>
                   ndoc @ ne =>
                      k = ne.key
-                     is_k = k == "libs" || k == "pkg-config" || k == "/"
+                     is_k = k ["libs", "pkg-config", "/"]
                      !is_k && !has_err'
                         |
                            has_err' = <+>
@@ -715,6 +753,22 @@
                                     "edva.ccl: override '" + oe.key + "' must be a section",
                                     oe.line, oe.col)
 
+      generate: GenerateSteps
+      !has_err'
+         |
+            opt_gen = ccl::get_section(doc, "generate")
+            opt_gen
+               | gdoc =>
+                  gdoc @ ge =>
+                     ge.key != "/" && !has_err'
+                        |
+                           gres = validate_generate(ge, file)
+                           gres
+                              | gstep => generate += gstep
+                              | e =>
+                                 has_err' = <+>
+                                 err_val' = e
+
       targets: BuildTargets
       !has_err'
          |
@@ -742,6 +796,7 @@
                ccl::sort_strings(native_libs),
                ccl::sort_strings(native_pkg_config),
                sort_deps(overrides),
+               generate,
                targets
             ) ->
 
@@ -793,6 +848,15 @@
             sorted_ovr @ o =>
                b += "  " + o.alias + " =\n"
                b += "    path = " + o.path + "\n"
+
+      ?m.generate > 0
+         |
+            b += "\ngenerate =\n"
+            m.generate @ g =>
+               b += "  " + g.name + " =\n"
+               g.cmd != "" | b += "    cmd = " + g.cmd + "\n"
+               g.src != "" | b += "    src = " + g.src + "\n"
+               g.out != "" | b += "    out = " + g.out + "\n"
 
       ?m.targets > 0
          |
@@ -1235,7 +1299,7 @@
       file_exists(path_join(dir, "edva.ccl")) | dir |
          capture(r, "ls -A " + sq(dir))
             | listing =>
-               entries = split_char(listing, '\n')
+               entries = split_char(listing, '\n)
                only = entries(0) | _ | ""
                ?entries == 1 && dir_exists(path_join(dir, only))
                   | path_join(dir, only)
@@ -1517,7 +1581,7 @@
    dep_matches_target = dep_target, active_target =>
       dep_target == "" || active_target == "" |+>
       dep_target == active_target |+>
-      parts = split_char(active_target, '-')
+      parts = split_char(active_target, '-)
       names_has(parts, dep_target) |+>
       is_wasm_active = names_has(parts, "wasm") || names_has(parts, "wasm32") ||
          names_has(parts, "wasm64") || names_has(parts, "wasi") ||
@@ -1878,7 +1942,7 @@
       idx' = -1
       start_i = starts_with(spec, "git@") | 4 | 0
       start_i..?spec @ i =>
-         spec(i) == '@' | idx' = i
+         spec(i) == '@ | idx' = i
       idx' > 0 && idx' + 1 < ?spec
          | (++ spec(..idx'), ++ spec(idx' + 1..))
          | (spec, "")
@@ -1917,24 +1981,24 @@
 
    is_domain_shorthand: String => <>
    is_domain_shorthand = s =>
-      slash_idx = find_char_idx(s, '/')
+      slash_idx = find_char_idx(s, '/)
       slash_idx !> 0
          | <->
          |
             host = s(..slash_idx)
-            dot_idx = find_char_idx(host, '.')
+            dot_idx = find_char_idx(host, '.)
             dot_idx > 0 && host != "." && host != ".."
 
    is_github_shorthand: String => <>
    is_github_shorthand = s =>
-      slash_idx = find_char_idx(s, '/')
+      slash_idx = find_char_idx(s, '/)
       slash_idx !> 0 || slash_idx + 1 !< ?s
          | <->
          |
             owner = s(..slash_idx)
             rest = s(slash_idx + 1..)
-            owner != "." && owner != ".." && find_char_idx(rest, '/') < 0 &&
-               find_char_idx(owner, '.') < 0 && find_char_idx(owner, ':') < 0
+            owner != "." && owner != ".." && find_char_idx(rest, '/) < 0 &&
+               find_char_idx(owner, '.) < 0 && find_char_idx(owner, ':) < 0
 
    classify_dep_spec: String, String => (DepKind, String, String, String)
    classify_dep_spec = raw_spec, root_dir =>
@@ -2202,13 +2266,235 @@
       target_triple != "" | cmd' = cmd' + " -target " + sq(target_triple)
       opt_level != ""
          |
-            opt_flag = opt_level(0) == '-' | opt_level | "-" + opt_level
+            opt_flag = opt_level(0) == '- | opt_level | "-" + opt_level
             cmd' = cmd' + " " + sq(opt_flag)
       cflags @ cf =>
          cmd' = cmd' + " -cflag " + sq(cf)
       opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
       opts.no_cache | cmd' = cmd' + " --no-cache"
       cmd'
+
+   is_var_cont: Int => <>
+   is_var_cont = c =>
+      c ['a...'z, 'A...'Z, '0...'9, '_, '-]
+
+   #type ExpandedGenCmd (
+      ok: <>,
+      cmd: String,
+      max_tool_mtime: Int
+   )
+
+   max_src_mtime_ns: String => Int
+   max_src_mtime_ns = dir =>
+      !dir_exists(dir) | --| -1
+      max_m' = -1
+      entries = fs::read_dir(dir)
+      entries @ e =>
+         full = path_join(dir, e.name)
+         e.is_dir
+            |
+               sub_m = max_src_mtime_ns(full)
+               sub_m > max_m' | max_m' = sub_m
+            |
+               m = fs::mtime_ns(full)
+               m > max_m' | max_m' = m
+      max_m'
+
+   cmd_build_ex: PkgOpts, String, String, String, Strings => Int
+
+   resolve_dep_tool_bin: String, PkgOpts, String, String => < (String, Int) | >
+   resolve_dep_tool_bin = root, opts, alias, target_name =>
+      imp_file = path_join(path_join(root, ".edva"), "imports.ccl")
+      !file_exists(imp_file)
+         |
+            f_opts = PkgOpts(..opts, root: root, store: canonical_path(opts.store))
+            run_fetch(f_opts) != 0 | --| <-->
+      ccl::parse_file(imp_file)
+         | doc =>
+            inst_sec = ccl::get_section(doc, "instances") | s => s | ccl::CclDoc()
+            root_sec = ccl::get_section(inst_sec, "root") | s => s | ccl::CclDoc()
+            aliases_sec = ccl::get_section(root_sec, "aliases") | s => s | ccl::CclDoc()
+            inst_id = ccl::get(aliases_sec, alias) | s => s | ""
+            inst_id == ""
+               |
+                  fail(7023, "generate: '@" + alias + "' is not a dependency in edva.ccl")
+                  <-->
+               |
+                  dep_sec = ccl::get_section(inst_sec, inst_id) | s => s | ccl::CclDoc()
+                  inst_src_raw = ccl::get(dep_sec, "src") | s => s | ""
+                  inst_src = starts_with(inst_src_raw, "/")
+                     | inst_src_raw
+                     | path_join(root, inst_src_raw)
+                  dep_root = dirname(inst_src)
+                  load_manifest(dep_root)
+                     | dep_m =>
+                        out_rel' = ++ ""
+                        found_tgt' = <->
+                        target_name != ""
+                           |
+                              dep_m.targets @ t =>
+                                 t.name == target_name
+                                    |
+                                       out_rel' = t.out != "" | t.out | t.name
+                                       found_tgt' = <+>
+                              !found_tgt'
+                                 |
+                                    fail(7023, "generate: dependency '@" + alias + "' has no target '" + target_name + "'")
+                           |
+                              ?dep_m.targets > 0
+                                 |
+                                    dep_m.targets @ t =>
+                                       !found_tgt' && dep_matches_target("native", t.target != "" | t.target | "native")
+                                          |
+                                             out_rel' = t.out != "" | t.out | t.name
+                                             found_tgt' = <+>
+                                 |
+                                    out_rel' = dep_m.name
+                                    found_tgt' = <+>
+                        !found_tgt' || out_rel' == ""
+                           | <-->
+                           |
+                              is_path_dep = ends_with(inst_id, "@path")
+                              eff_cache = opts.cache != "" | opts.cache | default_cache!
+                              bin_dir = path_join(path_join(dirname(eff_cache), "bin"), inst_id)
+                              bin_path = is_path_dep
+                                 | (starts_with(out_rel', "/") | out_rel' | path_join(dep_root, out_rel'))
+                                 | path_join(bin_dir, basename(out_rel'))
+                              src_mtime = max_src_mtime_ns(inst_src)
+                              ccl_mtime = fs::mtime_ns(path_join(dep_root, "edva.ccl"))
+                              dep_max = ccl_mtime > src_mtime | ccl_mtime | src_mtime
+                              bin_mtime = file_exists(bin_path) | fs::mtime_ns(bin_path) | -1
+                              needs_build = !file_exists(bin_path) || (dep_max > 0 && bin_mtime < dep_max)
+                              build_ok' = <+>
+                              needs_build
+                                 |
+                                    !is_path_dep | mkdir_p(bin_dir)
+                                    dep_opts = PkgOpts(..opts, root: dep_root, store: canonical_path(opts.store))
+                                    out_ovr = is_path_dep | "" | bin_path
+                                    cmd_build_ex(dep_opts, out_ovr, "", "", Strings()) != 0
+                                       | build_ok' = <->
+                              !build_ok' || !file_exists(bin_path)
+                                 |
+                                    fail(7023, "generate: failed to build tool '@" + alias + "'")
+                                    <-->
+                                 |
+                                    <+ (bin_path, fs::mtime_ns(bin_path)) +>
+                     | <-->
+         |
+            fail(7023, "generate: cannot read .edva/imports.ccl")
+            <-->
+
+   expand_generate_cmd: String, PkgOpts, String, String, String => ExpandedGenCmd
+   expand_generate_cmd = root, opts, cmd, src, out_p =>
+      b = {?cmd + 64}
+      i' = 0
+      n = ?cmd
+      ok' = <+>
+      max_tool_m' = -1
+      0.. @
+         i' !< n || !ok' | -->
+         c = cmd(i')
+         is_at_boundary = i' == 0 || (cmd(i' - 1) ['\s, '\t, ';, '&, '|, '(])
+         c == '@ && is_at_boundary && i' + 1 < n && is_var_cont(cmd(i' + 1))
+            |
+               a_start = i' + 1
+               j' = a_start
+               0.. @
+                  j' !< n || !is_var_cont(cmd(j')) | -->
+                  j' = j' + 1
+               alias = cmd(a_start..j')
+               tgt_name' = ++ ""
+               j' + 1 < n && cmd(j') == '/ && is_var_cont(cmd(j' + 1))
+                  |
+                     t_start = j' + 1
+                     j' = t_start
+                     0.. @
+                        j' !< n || !is_var_cont(cmd(j')) | -->
+                        j' = j' + 1
+                     tgt_name' = cmd(t_start..j')
+               resolve_dep_tool_bin(root, opts, alias, tgt_name')
+                  | pair =>
+                     b += sq(pair.0)
+                     pair.1 > max_tool_m' | max_tool_m' = pair.1
+                     i' = j'
+                  |
+                     ok' = <->
+            |
+               c == '$
+                  |
+                     rem = cmd(i'..)
+                     is_b_src = starts_with(rem, "\${src}")
+                     is_b_out = starts_with(rem, "\${out}")
+                     is_s_src = starts_with(rem, "\$src") && (i' + 4 !< n || !is_var_cont(cmd(i' + 4)))
+                     is_s_out = starts_with(rem, "\$out") && (i' + 4 !< n || !is_var_cont(cmd(i' + 4)))
+                     is_b_src
+                        |
+                           b += sq(src)
+                           i' = i' + 6
+                        |
+                           is_b_out
+                              |
+                                 b += sq(out_p)
+                                 i' = i' + 6
+                              |
+                                 is_s_src
+                                    |
+                                       b += sq(src)
+                                       i' = i' + 4
+                                    |
+                                       is_s_out
+                                          |
+                                             b += sq(out_p)
+                                             i' = i' + 4
+                                          |
+                                             b += '$
+                                             i' = i' + 1
+                  |
+                     b += c
+                     i' = i' + 1
+      ExpandedGenCmd(ok', +b, max_tool_m')
+
+   run_generators: String, PkgOpts, GenerateSteps => Int
+   run_generators = root, opts, steps =>
+      ?steps == 0 | --| 0
+      rc' = 0
+      steps @ g =>
+         rc' == 0 |
+            src_abs = g.src != ""
+               | (starts_with(g.src, "/") | g.src | path_join(root, g.src))
+               | ""
+            out_abs = g.out != ""
+               | (starts_with(g.out, "/") | g.out | path_join(root, g.out))
+               | ""
+            g.src != "" && !fs::exists(src_abs)
+               |
+                  fail(7019, "generate '" + g.name + "': source '" + g.src + "' not found")
+                  rc' = 1
+               |
+                  exp = expand_generate_cmd(root, opts, g.cmd, g.src, g.out)
+                  !exp.ok
+                     | rc' = 1
+                     |
+                        out_m = file_exists(out_abs) | fs::mtime_ns(out_abs) | -1
+                        src_m = g.src != "" | fs::mtime_ns(src_abs) | -1
+                        up_to_date = g.src != "" && g.out != "" && out_m !< 0 &&
+                           src_m !< 0 && out_m !< src_m &&
+                           (exp.max_tool_mtime < 0 || out_m !< exp.max_tool_mtime)
+                        !up_to_date
+                           |
+                              out_abs != ""
+                                 |
+                                    out_dir = dirname(out_abs)
+                                    out_dir != "" | mkdir_p(out_dir)
+                              full_cmd = "cd " + sq(root) + " && " + exp.cmd
+                              step_rc = sh(full_cmd)
+                              step_rc != 0
+                                 |
+                                    fail(7022, "generate '" + g.name + "' failed with exit code " + str::from_int(step_rc))
+                                    rc' = 1
+                                 |
+                                    log::info("generated '" + (g.out != "" | g.out | g.name) + "'")
+      rc'
 
    ensure_pkg_fetched_for_file: String, PkgOpts => Int
    ensure_pkg_fetched_for_file = file_path, opts =>
@@ -2218,15 +2504,20 @@
          | 0
          |
             imp_map = path_join(path_join(pkg_root, ".edva"), "imports.ccl")
-            file_exists(imp_map)
-               | 0
+            fetch_rc' = 0
+            !file_exists(imp_map)
                |
                   opts.root = pkg_root
                   opts.store = canonical_path(opts.store)
-                  run_fetch(opts)
+                  fetch_rc' = run_fetch(opts)
+            fetch_rc' != 0
+               | fetch_rc'
+               |
+                  load_manifest(pkg_root)
+                     | m => run_generators(pkg_root, opts, m.generate)
+                     | 1
 
    // `edva build [dir|file.dva]`: dual-mode package or single-file build.
-   cmd_build_ex: PkgOpts, String, String, String, Strings => Int
    cmd_build_ex = opts, out_override, target_override, opt_override, cflags_override =>
       is_dva_file_target(opts.root)
          |
@@ -2264,6 +2555,8 @@
                         m_res = load_manifest(opts.root)
                         m_res
                            | m =>
+                              gen_rc = run_generators(opts.root, opts, m.generate)
+                              gen_rc != 0 | --| gen_rc
                               ?m.targets > 0
                                  |
                                     compiler = sys::argv_string(0)
@@ -2357,6 +2650,8 @@
                         m_res = load_manifest(opts.root)
                         m_res
                            | m =>
+                              gen_rc = run_generators(opts.root, opts, m.generate)
+                              gen_rc != 0 | --| gen_rc
                               compiler = sys::argv_string(0)
                               ?m.targets > 0
                                  |
@@ -2538,6 +2833,11 @@
                   fetch_rc != 0
                      | fetch_rc
                      |
+                        m_res = load_manifest(opts.root)
+                        gen_rc = m_res
+                           | m => run_generators(opts.root, opts, m.generate)
+                           | 1
+                        gen_rc != 0 | --| gen_rc
                         tests_dir = path_join(opts.root, "tests")
                         !dir_exists(tests_dir)
                            |

@@ -1,4 +1,4 @@
-#use mod
+#use ./mod
 #use io
 
 io::out $ mod::pub_one

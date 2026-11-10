@@ -90,8 +90,8 @@ main = !=>
    io::out $ (x !< y)
 
    // 9. Rune comparisons
-   ch = 'a'
-   io::out $ (ch !< 'a' && ch !> 'z')
+   ch = 'a
+   io::out $ (ch !< 'a && ch !> 'z)
 
    // 10. String byte append vs formatted decimal, and byte indexing
    prefix = "item_"

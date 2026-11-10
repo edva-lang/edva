@@ -5,7 +5,7 @@
 
 #use(import) fp
 
-#use "str"
+#use str
 #use io
 
 io::out $ str::from_int(const(42)("ignored"))

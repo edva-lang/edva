@@ -4,17 +4,17 @@
 // solves them via the unify engine, enforces groundness (no defaulting to Int),
 // and produces a verified tast::TypedExpr. Part of Milestone 2 (Phase 2).
 
-#use "ast"
-#use "unify"
-#use "tast"
-#use "type_env"
-#use "layout"
-#use "dep_graph"
-#use "overloads"
-#use "str"
-#use "show"
-#use "diag"
-#use "log"
+#use ./ast
+#use ./unify
+#use ./tast
+#use ./type_env
+#use ./layout
+#use ./dep_graph
+#use ./overloads
+#use str
+#use ./show
+#use ./diag
+#use log
 
 #foreign "c"
    write: (fd: Int, buf: Addr, count: Int) => Int
@@ -895,8 +895,8 @@ check_swizzle_pattern = ctx, mode, flds, fname =>
                               f_idx !< nf
                                  | (oob' = <+>; bad_ch' = ++ch_str)
                            |
-                              is_xyzw = ch == 'x' || ch == 'y' || ch == 'z' || ch == 'w'
-                              is_rgba = ch == 'r' || ch == 'g' || ch == 'b' || ch == 'a'
+                              is_xyzw = ch == 'x || ch == 'y || ch == 'z || ch == 'w
+                              is_rgba = ch == 'r || ch == 'g || ch == 'b || ch == 'a
                               allowed = mode == "all" | (is_xyzw || is_rgba) |
                                  (mode == "xyzw" | is_xyzw | (mode == "rgba" | is_rgba | <->))
                               !allowed
@@ -904,9 +904,9 @@ check_swizzle_pattern = ctx, mode, flds, fname =>
                                  |
                                     is_xyzw | (has_xyzw' = <+>)
                                     is_rgba | (has_rgba' = <+>)
-                                    p_idx = ch == 'x' || ch == 'r' | 0 |
-                                       (ch == 'y' || ch == 'g' | 1 |
-                                       (ch == 'z' || ch == 'b' | 2 | 3))
+                                    p_idx = ch == 'x || ch == 'r | 0 |
+                                       (ch == 'y || ch == 'g | 1 |
+                                       (ch == 'z || ch == 'b | 2 | 3))
                                     p_idx !< nf
                                        | (oob' = <+>; bad_ch' = ++ch_str)
                      !all_match'
@@ -3270,7 +3270,7 @@ first_rec_field_ut = flds =>
 
 is_intrinsic_name: String => <>
 is_intrinsic_name = name =>
-   ?name > 1 && name(0) == '%'
+   ?name > 1 && name(0) == '%
 
 is_known_intrinsic: String => <>
 is_known_intrinsic = ["%min", "%max", "%clamp", "%abs", "%shuffle",
@@ -4591,7 +4591,7 @@ bare_enum_label = s =>
    n = ?s
    res' = s
    n @ i =>
-      (i + 1 < n && s(i) == ':' && s(i + 1) == ':')
+      (i + 1 < n && s(i) == ': && s(i + 1) == ':)
          | res' = s(i + 2..n)
    res'
 

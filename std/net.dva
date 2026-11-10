@@ -188,7 +188,7 @@
       has_digit' = <->
       slen @ i =>
          c = s(i)
-         c == '.'
+         c == '.
             |
                !has_digit' | -->
                parts += cur'
@@ -197,7 +197,7 @@
             |
                !str::is_digit(c) | -->
                has_digit' = <+>
-               cur' = cur' * 10 + (c - '0')
+               cur' = cur' * 10 + (c - '0)
                cur' > 255 | (has_digit' = <->; -->)
       !has_digit' |-->
       parts += cur'

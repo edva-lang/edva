@@ -562,16 +562,16 @@ format_perms: Int, <> => String
 format_perms = mode, is_d =>
    pb = PermsBits(mode)
    b = {16}
-   b += is_d | 'd' | '-'
-   b += pb.user_r | 'r' | '-'
-   b += pb.user_w | 'w' | '-'
-   b += pb.user_x | 'x' | '-'
-   b += pb.group_r | 'r' | '-'
-   b += pb.group_w | 'w' | '-'
-   b += pb.group_x | 'x' | '-'
-   b += pb.other_r | 'r' | '-'
-   b += pb.other_w | 'w' | '-'
-   b += pb.other_x | 'x' | '-'
+   b += is_d | 'd | '-
+   b += pb.user_r | 'r | '-
+   b += pb.user_w | 'w | '-
+   b += pb.user_x | 'x | '-
+   b += pb.group_r | 'r | '-
+   b += pb.group_w | 'w | '-
+   b += pb.group_x | 'x | '-
+   b += pb.other_r | 'r | '-
+   b += pb.other_w | 'w | '-
+   b += pb.other_x | 'x | '-
    +b
 
 format_time: Int => String
@@ -590,16 +590,16 @@ format_time = ts =>
 format_number: Int => String
 format_number = n =>
    s_full = %to_str(n)
-   is_neg = ?s_full > 0 && s_full(0) == '-'
+   is_neg = ?s_full > 0 && s_full(0) == '-
    s = is_neg | s_full(1..) | s_full
    len = ?s
    len < 4 | --| s_full
    b = {32}
-   is_neg | b += '-'
+   is_neg | b += '-
    rem' = len % 3
    rem' == 0 | rem' = 3
    len @ i =>
-      i > 0 && (i - rem') % 3 == 0 | b += ','
+      i > 0 && (i - rem') % 3 == 0 | b += ',
       b += s(i)
    +b
 
@@ -671,7 +671,7 @@ list_dir = dir_path, show_hidden, sort_mode, sort_rev =>
 
    entries @ e =>
       name = e.name
-      !show_hidden && ?name > 0 && name(0) == '.' | --^
+      !show_hidden && ?name > 0 && name(0) == '. | --^
 
       full_path = join(dir_path, name)
       meta = stat(full_path)

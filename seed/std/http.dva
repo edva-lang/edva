@@ -91,8 +91,8 @@ eq_ci = a, b =>
    ?a @ i =>
       ca = a(i)
       cb = b(i)
-      la = ca ['A'...'Z'] | ca + 32 | ca
-      lb = cb ['A'...'Z'] | cb + 32 | cb
+      la = ca ['A...'Z] | ca + 32 | ca
+      lb = cb ['A...'Z] | cb + 32 | cb
       la != lb
          |
             diff' = <+>
@@ -115,9 +115,9 @@ parse_hex_int = s =>
    ?hex_part @ i =>
       c = hex_part(i)
       d = c
-         ['0'...'9'] c - '0'
-         ['a'...'f'] c - 'a' + 10
-         ['A'...'F'] c - 'A' + 10
+         ['0...'9] c - '0
+         ['a...'f] c - 'a + 10
+         ['A...'F] c - 'A + 10
          |           -1
       d < 0
          |
@@ -702,12 +702,12 @@ sse_parse = raw =>
                   data' = ++""
                   has_data' = <->
                   retry' = 0
-         | ln(0) != ':'
+         | ln(0) != ':
             |
                colon = str::find(ln, ":") | idx => idx | ?ln
                field = ln(0..colon)
                val_raw = colon < ?ln | ln((colon + 1)..) | ""
-               val = (?val_raw > 0 && val_raw(0) == ' ') | val_raw(1..) | val_raw
+               val = (?val_raw > 0 && val_raw(0) == '\s) | val_raw(1..) | val_raw
                field
                   ["id"]    id' = val
                   ["event"] event' = val

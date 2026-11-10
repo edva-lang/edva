@@ -1,6 +1,6 @@
 // Compile-time type shape and capability predicates via type::is_*
-#use "type"
-#use "str"
+#use type
+#use str
 #use io
 
 #type Pt (x: Int, y: Int)

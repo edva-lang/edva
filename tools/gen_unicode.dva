@@ -77,12 +77,12 @@ write_file_text = path, content =>
 hex_val: Int => Int
 hex_val = c =>
    c
-      [< '0'] 0
-      [< ':'] c - '0'
-      [< 'A'] 0
-      [< 'G'] c - 'A' + 10
-      [< 'a'] 0
-      [< 'g'] c - 'a' + 10
+      [< '0] 0
+      [< ':] c - '0
+      [< 'A] 0
+      [< 'G] c - 'A + 10
+      [< 'a] 0
+      [< 'g] c - 'a + 10
       | 0
 
 parse_hex: String, Int, Int => Int
@@ -96,20 +96,20 @@ parse_hex = src, start, len =>
 cat_id_from_chars: Int, Int => Int
 cat_id_from_chars = c0, c1 =>
    c0
-      ['L']
-         c1 ['u'] 0 ['l'] 1 ['t'] 2 ['m'] 3 | 4
-      ['M']
-         c1 ['n'] 5 ['c'] 6 | 7
-      ['N']
-         c1 ['d'] 8 ['l'] 9 | 10
-      ['P']
-         c1 ['c'] 11 ['d'] 12 ['s'] 13 ['e'] 14 ['i'] 15 ['f'] 16 | 17
-      ['S']
-         c1 ['m'] 18 ['c'] 19 ['k'] 20 | 21
-      ['Z']
-         c1 ['s'] 22 ['l'] 23 | 24
-      ['C']
-         c1 ['c'] 25 ['f'] 26 ['s'] 27 ['o'] 28 | 29
+      ['L]
+         c1 ['u] 0 ['l] 1 ['t] 2 ['m] 3 | 4
+      ['M]
+         c1 ['n] 5 ['c] 6 | 7
+      ['N]
+         c1 ['d] 8 ['l] 9 | 10
+      ['P]
+         c1 ['c] 11 ['d] 12 ['s] 13 ['e] 14 ['i] 15 ['f] 16 | 17
+      ['S]
+         c1 ['m] 18 ['c] 19 ['k] 20 | 21
+      ['Z]
+         c1 ['s] 22 ['l] 23 | 24
+      ['C]
+         c1 ['c] 25 ['f] 26 ['s] 27 ['o] 28 | 29
       | 29
 
 has_suffix: String, Int, Int, String => <>
@@ -171,10 +171,10 @@ main = _ =>
             pos' !< len | -->
             line_start = pos'
             0.. @
-               pos' !< len || src(pos') == '\n' | -->
+               pos' !< len || src(pos') == '\n | -->
                pos' = pos' + 1
             line_end = pos'
-            pos' < len && src(pos') == '\n' | pos' = pos' + 1
+            pos' < len && src(pos') == '\n | pos' = pos' + 1
 
             s1' = -1
             s2' = -1
@@ -182,7 +182,7 @@ main = _ =>
             i' = line_start
             0.. @
                i' !< line_end | -->
-               src(i') == ';'
+               src(i') == ';
                   |
                      s1' < 0
                         | s1' = i'

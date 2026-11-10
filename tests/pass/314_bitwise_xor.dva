@@ -21,9 +21,9 @@ n3 = -5 .^. 3
 io::out $ n3
 
 // 4. Rune and character bitwise XOR (case conversion: 'A' ^ 32 == 'a')
-r1 = 'A' .^. 32
+r1 = 'A .^. 32
 io::out $ Int(r1)
-r2 = 'a' .^. 32
+r2 = 'a .^. 32
 io::out $ Int(r2)
 
 // 5. Precedence: .|. < .^. < .&.

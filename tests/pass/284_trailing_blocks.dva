@@ -1,6 +1,6 @@
 // Regression test for Issue #34: Trailing block / block-feed syntax ($)
 
-#use "str"
+#use str
 #use io
 
 vbox: #! T: Type, Int, T => String

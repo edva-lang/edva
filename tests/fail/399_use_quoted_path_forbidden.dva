@@ -1,0 +1,4 @@
+#use "str"
+#use io
+
+io::out $ "unreachable"

@@ -4,13 +4,13 @@
 // lexical type environment scoping, constraint-based typing of expressions,
 // and groundness checking (no defaulting to Int).
 
-#use "src/ast"
-#use "src/unify"
-#use "src/tast"
-#use "src/type_env"
-#use "src/layout"
-#use "src/annotate"
-#use "str"
+#use ../../src/ast
+#use ../../src/unify
+#use ../../src/tast
+#use ../../src/type_env
+#use ../../src/layout
+#use ../../src/annotate
+#use str
 
 test_count: Int
 test_count = 0

@@ -1,7 +1,7 @@
 // Test prelude's generic find function with named functions and closures.
 #use(import) fp
 
-#use "str"
+#use str
 #use io
 
 #type Ints Int{}

@@ -3,9 +3,9 @@
 // Computes byte size, alignment, and field offsets for Dva types without
 // relying on LLVM data layout calls. Part of Milestone 2 (Phase 2).
 
-#use "ast"
-#use "unify"
-#use "tast"
+#use ./ast
+#use ./unify
+#use ./tast
 
 #public
 

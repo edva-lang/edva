@@ -1,19 +1,19 @@
 // codegen/main.dva
 
-#use(import) llvm
-#use "../ast"
-#use "../diag"
-#use "const"
-#use "path"
-#use "str"
-#use "../tast"
-#use "../unify"
-#use "mem"
-#use "types"
-#use "runtime"
-#use "expr"
-#use "match"
-#use "stmt"
+#use(import) ../llvm
+#use ../ast
+#use ../diag
+#use const
+#use path
+#use str
+#use ../tast
+#use ../unify
+#use mem
+#use ./types
+#use ./runtime
+#use ./expr
+#use ./match
+#use ./stmt
 
 #public
 

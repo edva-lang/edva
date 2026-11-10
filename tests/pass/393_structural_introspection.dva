@@ -9,7 +9,7 @@
 //    T @ v => (v.idx, v.name, v.type, val.(v), T(v), T(v, payload))
 // 5. Generic serializer & deserializer round-trip with explicit Type args.
 
-#use "str"
+#use str
 #use io
 
 #type OptInt <Int|>
@@ -69,7 +69,7 @@ describe_enum_variants: #! T: Type => String
 describe_enum_variants = !=>
    out = {64}
    T @ v =>
-      v.idx > 0 | out += ';'
+      v.idx > 0 | out += ';
       out += (str::from_int(v.idx), ":", v.name, ":", describe_type(v.type))
    +out
 
@@ -139,35 +139,35 @@ serialize = buf, val =>
       [Int]
          buf += str::from_int(val)
       [String]
-         buf += ('"', val, '"')
+         buf += ('", val, '")
       [<P|>]
          val
             | p => serialize(buf, p)
             | buf += "null"
       [E{}]
-         buf += '['
+         buf += '[
          val @ elem, i =>
-            i > 0 | buf += ','
+            i > 0 | buf += ',
             serialize(buf, elem)
-         buf += ']'
+         buf += ']
       [(..)]
-         buf += '{'
+         buf += '{
          T @ f =>
-            f.idx > 0 | buf += ','
-            buf += ('"', f.name, "\":")
+            f.idx > 0 | buf += ',
+            buf += ('", f.name, "\":")
             serialize(buf, val.(f))
-         buf += '}'
+         buf += '}
       [<..>]
          T @ v =>
             val.(v)
                | pay =>
                   v.type
                      [()]
-                        buf += ('"', v.name, '"')
+                        buf += ('", v.name, '")
                      |
                         buf += ("{\"", v.name, "\":")
                         serialize(buf, pay)
-                        buf += '}'
+                        buf += '}
 
 u1 = User.zero
 u1.id = 7
@@ -187,9 +187,9 @@ sh3 = Shape(Label, "box")
 
 b_sh = {64}
 serialize(b_sh, sh1)
-b_sh += ' '
+b_sh += '\s
 serialize(b_sh, sh2)
-b_sh += ' '
+b_sh += '\s
 serialize(b_sh, sh3)
 io::out $ +b_sh
 
@@ -199,7 +199,7 @@ inspect_defaults: #! T: Type => String
 inspect_defaults = !=>
    out = {64}
    T @ f =>
-      f.idx > 0 | out += ';'
+      f.idx > 0 | out += ';
       out += (str::from_int(f.idx), ":", f.name, ":", f.type.name, "=")
       f.default
          | d =>
@@ -251,8 +251,8 @@ s_l = make_shape_by_name(Shape, "Label", 0, "hello")
 
 b_made = {64}
 serialize(b_made, s_p)
-b_made += ' '
+b_made += '\s
 serialize(b_made, s_c)
-b_made += ' '
+b_made += '\s
 serialize(b_made, s_l)
 io::out $ +b_made

@@ -107,11 +107,11 @@ io::out $ (nan !< 1.0, !(nan < 1.0), Int(3.99), Float(42))
 #use io
 
 b = {16}
-b += 'A'
-b += 'λ'
-b += '🦀'
+b += 'A
+b += 'λ
+b += '🦀
 s = +b
-io::out $ (?s, ??s, Int('λ'))   // (7, 3, 955)
+io::out $ (?s, ??s, Int('λ))   // (7, 3, 955)
 ```
 
 ## Zero-sized `Unit` type (`()`)

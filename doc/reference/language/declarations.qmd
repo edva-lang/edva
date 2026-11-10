@@ -88,8 +88,9 @@ io::out $ banner!
 
 | Directive | Syntax | Scope & Semantics | Diagnostic |
 |---|---|---|---|
-| **Standard / local import** | `#use io`<br>`#use "lexer"`<br>`#use net/http` | Resolves relative `.dva` files first, then `std/<name>.dva`. Binds module under its last path segment (`io::out`, `http::get`) | `E5001`: module not found<br>`E5002`: circular import |
-| **Package import** | `#use @pkg`<br>`#use @pkg/sub` | Resolves external dependency declared in `edva.ccl` via `.edva/imports.ccl` | `E7001`–`E7021`: package errors |
+| **Standard library import** | `#use io`<br>`#use net/http` | Resolves strictly in `std/<name>.dva` (no `./`, `../`, or `@` prefix; quotes `"` are forbidden, `E1015`). Binds module under its last path segment (`io::out`, `http::get`) | `E5006`: module not found<br>`E1015`: quotes in `#use` |
+| **Local module import** | `#use ./lexer`<br>`#use ./index.vid`<br>`#use ../src/ui` | Resolves strictly relative to the importing file's directory (`./` or `../` required; spaces escaped as `\ `). Binds base stem of last segment (`index.vid.dva` $\to$ `index::`) | `E5006`: local module not found |
+| **Package import** | `#use @pkg`<br>`#use @pkg/sub` | Resolves external dependency declared in `edva.ccl` via `.edva/imports.ccl` | `E5030`–`E5038`, `E7001`–`E7021`: package errors |
 | **Public visibility** | `#public` / `#pub`<br>`#public f: Int => Int` | Alone on a line: sets default visibility to public for subsequent declarations. Prefixing a declaration: exports that single symbol/type | `E3005`: private symbol access |
 | **Private visibility** | `#private` / `#priv`<br>`#private helper = ...` | Alone on a line: resets default visibility to module-private. Prefixing a declaration: marks that single symbol private | — |
 | **Foreign C import** | `#foreign "c" puts: Addr => i32`<br>`#foreign "m" cos: Float => Float` | Declares an external C ABI symbol from library `"c"`, `"m"`, or a library path; requires an explicit type signature | `E2060`: missing foreign signature |

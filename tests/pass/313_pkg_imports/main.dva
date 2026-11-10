@@ -2,8 +2,8 @@
 #use @json_old
 #use(import) @math
 #use my_calc = @math/calc
-#use "str"
-#use "io"
+#use str
+#use io
 
 classify: Int => String
 classify = k =>

@@ -3,9 +3,9 @@
 // Tests Robinson / Union-Find type unification, occurs-check,
 // structural record unification, and ramification shape invariance.
 
-#use "src/ast"
-#use "str"
-#use "src/unify"
+#use ../../src/ast
+#use str
+#use ../../src/unify
 
 test_count: Int
 test_count = 0

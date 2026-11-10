@@ -77,7 +77,7 @@ io::out $ doc
 #use io
 
 b = {64}
-b += ("SELECT ", "id, name", " FROM users WHERE active = ", '1')
+b += ("SELECT ", "id, name", " FROM users WHERE active = ", '1)
 query = +b
 
 io::out $ query

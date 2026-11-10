@@ -5,7 +5,7 @@
 // reverse topological order (leaf-first dependency order).
 // Part of Phase 5 (Roadmap §3.5, Issue #8).
 
-#use "ast"
+#use ./ast
 
 #public
 
@@ -48,18 +48,18 @@ has_name = names, s => has_name_at(names, s, 0, ?names)
 
 name_is_qualified: String, Int => <>
 name_is_qualified = name, i =>
-   i + 1 < ?name && name(i) != '$'
+   i + 1 < ?name && name(i) != '$
       |
-         (name(i) == ':') && (name(i + 1) == ':')
+         (name(i) == ':) && (name(i + 1) == ':)
             | <+>
             | name_is_qualified(name, i + 1)
       | <->
 
 decl_module_find: String, Int, Int => Int
 decl_module_find = name, i, last =>
-   i + 1 < ?name && name(i) != '$'
+   i + 1 < ?name && name(i) != '$
       |
-         (name(i) == ':') && (name(i + 1) == ':')
+         (name(i) == ':) && (name(i + 1) == ':)
             | decl_module_find(name, i + 2, i)
             | decl_module_find(name, i + 1, last)
       | last

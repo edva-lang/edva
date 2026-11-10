@@ -45,7 +45,7 @@ io::out $ 4000
 // String value-guards compare CONTENT, not pointers — a dynamically-built
 // String matches a literal guard.
 sb = {8}
-sb += '/'
+sb += '/
 sp = +sb
 sp ["/"] io::out $ "slash"
 sp ["x"] io::out $ "x-guard"

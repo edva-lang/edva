@@ -3,10 +3,10 @@
 // Tracks symbol bindings across local scopes, functions, and module globals.
 // Part of Milestone 2 (Phase 2).
 
-#use "ast"
-#use "unify"
-#use "tast"
-#use "str"
+#use ./ast
+#use ./unify
+#use ./tast
+#use str
 
 #public
 
@@ -185,18 +185,18 @@ bind_global = env, name, ut, ti =>
 
 name_is_qualified: String, Int => <>
 name_is_qualified = name, i =>
-   i + 1 < ?name && name(i) != '$'
+   i + 1 < ?name && name(i) != '$
       |
-         (name(i) == ':') && (name(i + 1) == ':')
+         (name(i) == ':) && (name(i + 1) == ':)
             | <+>
             | name_is_qualified(name, i + 1)
       | <->
 
 decl_module_find: String, Int, Int => Int
 decl_module_find = name, i, last =>
-   i + 1 < ?name && name(i) != '$'
+   i + 1 < ?name && name(i) != '$
       |
-         (name(i) == ':') && (name(i + 1) == ':')
+         (name(i) == ':) && (name(i + 1) == ':)
             | decl_module_find(name, i + 2, i)
             | decl_module_find(name, i + 1, last)
       | last

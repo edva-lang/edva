@@ -1,19 +1,19 @@
 // codegen/types.dva — Type lowering, GEP helpers, struct/slice/union layouts.
 
-#use(import) llvm
-#use "../ast"
-#use "../diag"
-#use "str"
-#use "../tast"
-#use "../unify"
-#use "mem"
-#use "sys"
-#use "runtime"
-#use "expr"
-#use "match"
-#use "stmt"
-#use "main"
-#use "log"
+#use(import) ../llvm
+#use ../ast
+#use ../diag
+#use str
+#use ../tast
+#use ../unify
+#use mem
+#use sys
+#use ./runtime
+#use ./expr
+#use ./match
+#use ./stmt
+#use ./main
+#use log
 
 #public
 
@@ -294,7 +294,7 @@ has_dcolon_step: String, Int => <>
 has_dcolon_step = s, i =>
    i + 1 < ?s
       |
-         (s(i) == ':' && s(i + 1) == ':')
+         (s(i) == ': && s(i + 1) == ':)
             | <+>
             | has_dcolon_step(s, i + 1)
       | <->
@@ -306,14 +306,14 @@ has_dcolon_hash: String, Int => <>
 has_dcolon_hash = s, i =>
    i + 2 < ?s
       |
-         (s(i) == ':' && s(i + 1) == ':' && s(i + 2) == '#')
+         (s(i) == ': && s(i + 1) == ': && s(i + 2) == '#)
             | <+>
             | has_dcolon_hash(s, i + 1)
       | <->
 
 name_is_private: String => <>
 name_is_private = s =>
-   (?s > 0 && s(0) == '#') || has_dcolon_hash(s, 0)
+   (?s > 0 && s(0) == '#) || has_dcolon_hash(s, 0)
 
 name_is_in_current_module: Cg, String => <>
 name_is_in_current_module = cg, name =>
@@ -330,7 +330,7 @@ name_is_in_current_module = cg, name =>
 has_dollar_step: String, Int => <>
 has_dollar_step = s, i =>
    i < ?s
-      | (s(i) == '$' | <+> | has_dollar_step(s, i + 1))
+      | (s(i) == '$ | <+> | has_dollar_step(s, i + 1))
       | <->
 
 has_dollar: String => <>
@@ -1192,9 +1192,9 @@ llvm_type_of_vt = vt =>
 // spawned threads install their own arena in dva_arena_tls.
 name_is_qualified: String, Int => <>
 name_is_qualified = name, i =>
-   i + 1 < ?name && name(i) != '$'
+   i + 1 < ?name && name(i) != '$
       |
-         (name(i) == ':') && (name(i + 1) == ':')
+         (name(i) == ':) && (name(i + 1) == ':)
             | <+>
             | name_is_qualified(name, i + 1)
       | <->
@@ -1205,9 +1205,9 @@ name_is_qualified = name, i =>
 // not corrupt the function's declaring module.
 decl_module_find: String, Int, Int => Int
 decl_module_find = name, i, last =>
-   i + 1 < ?name && name(i) != '$'
+   i + 1 < ?name && name(i) != '$
       |
-         (name(i) == ':') && (name(i + 1) == ':')
+         (name(i) == ':) && (name(i + 1) == ':)
             | decl_module_find(name, i + 2, i)
             | decl_module_find(name, i + 1, last)
       | last
@@ -1225,9 +1225,9 @@ decl_bare_name = name, ignored =>
 
 bare_name_start: String, Int, Int => Int
 bare_name_start = name, i, last =>
-   i + 1 < ?name && name(i) != '$'
+   i + 1 < ?name && name(i) != '$
       |
-         (name(i) == ':') && (name(i + 1) == ':')
+         (name(i) == ':) && (name(i + 1) == ':)
             | bare_name_start(name, i + 2, i + 2)
             | bare_name_start(name, i + 1, last)
       | last
@@ -1746,8 +1746,8 @@ parse_digits = s, i, acc =>
    (i < ?s)
       |
          c = s(i)
-         c ['0'...'9']
-            | parse_digits(s, i + 1, acc * 10 + (c - '0'))
+         c ['0...'9]
+            | parse_digits(s, i + 1, acc * 10 + (c - '0))
             | -1
       | acc
 

@@ -5,7 +5,7 @@
 //  - A generic serialize iterates a homogeneous-by-type record (element type E
 //    inferred from the per-element serializer), building a String.
 
-#use "str"
+#use str
 #use io
 
 #type Pt (x: Int, y: Int)

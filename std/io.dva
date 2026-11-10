@@ -120,7 +120,7 @@
    show_rec = x =>
       b = {64}
       0..?T @ i =>
-         i > 0 | b += ' '
+         i > 0 | b += '\s
          b += show(x.(i))
       +b
 
@@ -183,7 +183,7 @@
       len @
          i' < len
             |
-               (i' + 1 < len && fmt(i') == '{' && fmt(i' + 1) == '}')
+               (i' + 1 < len && fmt(i') == '{ && fmt(i' + 1) == '})
                   |
                      b += show(x)
                      i' = i' + 2
@@ -225,7 +225,7 @@
       0..?T @ i =>
          nxt' = -1
          j'..len @ k =>
-            k + 1 < len && fmt(k) == '{' && fmt(k + 1) == '}'
+            k + 1 < len && fmt(k) == '{ && fmt(k + 1) == '}
                |
                   nxt' = k
                   -->

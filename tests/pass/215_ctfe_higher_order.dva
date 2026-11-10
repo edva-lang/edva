@@ -3,7 +3,7 @@
 // inside the body (a parameter bound to a CtFn is resolved as the callee).
 // No new syntax; bodies stay in the scalar subset.
 
-#use "str"
+#use str
 #use io
 
 dbl: Int => Int

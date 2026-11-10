@@ -5,14 +5,14 @@
 // strings/heredocs, and vertical alignment, and verifies AST equivalence
 // via `parser::parse_program` + `show::show_expr`.
 
-#use "lexer"
-#use "parser"
-#use "ast"
-#use "show"
-#use "diag"
-#use "str"
-#use "path"
-#use "log"
+#use ./lexer
+#use ./parser
+#use ./ast
+#use ./show
+#use ./diag
+#use str
+#use path
+#use log
 #use fs
 #use libc
 #use sys
@@ -37,7 +37,10 @@
 #type LineInfos LineInfo{}
 
 is_space_or_tab: Int => <>
-is_space_or_tab = [' ', '\t']
+is_space_or_tab = ['\s, '\t]
+
+is_id_byte: Int => <>
+is_id_byte = ['a...'z, 'A...'Z, '0...'9, '_]
 
 // Advance multiline state across one line's content.
 scan_line_state: String, Int => Int
@@ -47,7 +50,6 @@ scan_line_state = line, init_state =>
    i' = 0
    in_str' = <->
    str_triple' = <->
-   in_rune' = <->
    0.. @
       i' !< n | -->
       c = line(i')
@@ -55,96 +57,90 @@ scan_line_state = line, init_state =>
       c2 = i' + 2 < n | line(i' + 2) | 0
       st'
          [1]
-            c == '*' && c1 == '/'
+            c == '* && c1 == '/
                |
                   st' = 0
                   i' = i' + 2
                | i' = i' + 1
          [2]
-            c == '\\'
+            c == '\\
                | i' = i' + 2
                |
-                  c == '"'
+                  c == '"
                      |
                         st' = 0
                         i' = i' + 1
                      | i' = i' + 1
          [3]
-            c == '\\'
+            c == '\\
                | i' = i' + 2
                |
-                  c == '"' && c1 == '"' && c2 == '"'
+                  c == '" && c1 == '" && c2 == '"
                      |
                         st' = 0
                         i' = i' + 3
                      | i' = i' + 1
          |
-            in_rune'
+            in_str'
                |
-                  c == '\\'
+                  c == '\\
                      | i' = i' + 2
                      |
-                        c == '\''
+                        str_triple'
                            |
-                              in_rune' = <->
-                              i' = i' + 1
-                           | i' = i' + 1
+                              c == '" && c1 == '" && c2 == '"
+                                 |
+                                    in_str' = <->
+                                    str_triple' = <->
+                                    i' = i' + 3
+                                 | i' = i' + 1
+                           |
+                              c == '"
+                                 |
+                                    in_str' = <->
+                                    i' = i' + 1
+                                 | i' = i' + 1
                |
-                  in_str'
+                  c == '/ && c1 == '/
+                     | i' = n
                      |
-                        c == '\\'
-                           | i' = i' + 2
+                        c == '/ && c1 == '*
                            |
-                              str_triple'
-                                 |
-                                    c == '"' && c1 == '"' && c2 == '"'
-                                       |
-                                          in_str' = <->
-                                          str_triple' = <->
-                                          i' = i' + 3
-                                       | i' = i' + 1
-                                 |
-                                    c == '"'
-                                       |
-                                          in_str' = <->
-                                          i' = i' + 1
-                                       | i' = i' + 1
-                     |
-                        c == '/' && c1 == '/'
-                           | i' = n
+                              st' = 1
+                              i' = i' + 2
                            |
-                              c == '/' && c1 == '*'
+                              c == ''
                                  |
-                                    st' = 1
-                                    i' = i' + 2
+                                    prev_b = i' > 0 | line(i' - 1) | 0
+                                    step = is_id_byte(prev_b)
+                                       | 1
+                                       | c1 == '\\ && i' + 2 < n
+                                          | 3
+                                          | i' + 1 < n | 2 | 1
+                                    i' = i' + step
                                  |
-                                    c == '\''
+                                    c == '"
                                        |
-                                          in_rune' = <+>
-                                          i' = i' + 1
-                                       |
-                                          c == '"'
+                                          c1 == '" && c2 == '"
                                              |
-                                                c1 == '"' && c2 == '"'
+                                                i' + 3 == n
                                                    |
-                                                      i' + 3 == n
-                                                         |
-                                                            st' = 3
-                                                            i' = n
-                                                         |
-                                                            in_str' = <+>
-                                                            str_triple' = <+>
-                                                            i' = i' + 3
+                                                      st' = 3
+                                                      i' = n
                                                    |
-                                                      i' + 1 == n
-                                                         |
-                                                            st' = 2
-                                                            i' = n
-                                                         |
-                                                            in_str' = <+>
-                                                            str_triple' = <->
-                                                            i' = i' + 1
-                                             | i' = i' + 1
+                                                      in_str' = <+>
+                                                      str_triple' = <+>
+                                                      i' = i' + 3
+                                             |
+                                                i' + 1 == n
+                                                   |
+                                                      st' = 2
+                                                      i' = n
+                                                   |
+                                                      in_str' = <+>
+                                                      str_triple' = <->
+                                                      i' = i' + 1
+                                       | i' = i' + 1
    in_str'
       | (str_triple' | 3 | 2)
       | st'
@@ -155,14 +151,14 @@ strip_cr_and_trailing_ws = s =>
    0.. @
       end' !> 0 | -->
       c = s(end' - 1)
-      c [' ', '\t', '\r']
+      c ['\s, '\t, '\r]
          | end' = end' - 1
          | -->
    s(0..end')
 
 strip_cr_only: String => String
 strip_cr_only = s =>
-   ?s > 0 && s(?s - 1) == '\r'
+   ?s > 0 && s(?s - 1) == '\r
       | s(0..?s - 1)
       | s
 
@@ -176,10 +172,10 @@ split_source_lines = src =>
       pos' !< n | -->
       line_start = pos'
       0.. @
-         pos' !< n || src(pos') == '\n' | -->
+         pos' !< n || src(pos') == '\n | -->
          pos' = pos' + 1
       raw_slice = src(line_start..pos')
-      pos' < n && src(pos') == '\n' | pos' = pos' + 1
+      pos' < n && src(pos') == '\n | pos' = pos' + 1
       cleaned = st' == 0 | strip_cr_and_trailing_ws(raw_slice) | strip_cr_only(raw_slice)
       sp' = 0
       tabs' = 0
@@ -187,12 +183,12 @@ split_source_lines = src =>
       0.. @
          idx' !< ?cleaned | -->
          c = cleaned(idx')
-         c == ' '
+         c == '\s
             |
                sp' = sp' + 1
                idx' = idx' + 1
             |
-               c == '\t'
+               c == '\t
                   |
                      tabs' = tabs' + 1
                      idx' = idx' + 1
@@ -200,7 +196,7 @@ split_source_lines = src =>
       eff_indent = sp' + tabs' * 3
       is_blank = st' == 0 && idx' == ?cleaned
       is_comm = st' == 0 && !is_blank && idx' + 1 < ?cleaned &&
-         cleaned(idx') == '/' && (cleaned(idx' + 1) == '/' || cleaned(idx' + 1) == '*')
+         cleaned(idx') == '/ && (cleaned(idx' + 1) == '/ || cleaned(idx' + 1) == '*)
       next_st = scan_line_state(cleaned, st')
       res += LineInfo(cleaned, st', next_st, eff_indent, tabs' > 0, is_blank, is_comm)
       st' = next_st
@@ -214,7 +210,6 @@ format_code_body = body =>
    i' = 0
    in_str' = <->
    str_triple' = <->
-   in_rune' = <->
    in_blk_comm' = <->
    0.. @
       i' !< n | -->
@@ -224,96 +219,98 @@ format_code_body = body =>
       in_blk_comm'
          |
             b += c
-            c == '*' && c1 == '/'
+            c == '* && c1 == '/
                |
                   b += c1
                   in_blk_comm' = <->
                   i' = i' + 2
                | i' = i' + 1
          |
-            in_rune'
+            in_str'
                |
                   b += c
-                  c == '\\' && i' + 1 < n
+                  c == '\\ && i' + 1 < n
                      |
                         b += c1
                         i' = i' + 2
                      |
-                        c == '\'' | in_rune' = <->
-                        i' = i' + 1
-               |
-                  in_str'
-                     |
-                        b += c
-                        c == '\\' && i' + 1 < n
+                        str_triple'
                            |
-                              b += c1
+                              c == '" && c1 == '" && c2 == '"
+                                 |
+                                    b += c1
+                                    b += c2
+                                    in_str' = <->
+                                    str_triple' = <->
+                                    i' = i' + 3
+                                 | i' = i' + 1
+                           |
+                              c == '" | in_str' = <->
+                              i' = i' + 1
+               |
+                  c == '/ && c1 == '/
+                     |
+                        b += body(i'..n)
+                        i' = n
+                     |
+                        c == '/ && c1 == '*
+                           |
+                              b += "/*"
+                              in_blk_comm' = <+>
                               i' = i' + 2
                            |
-                              str_triple'
+                              c == ''
                                  |
-                                    c == '"' && c1 == '"' && c2 == '"'
-                                       |
-                                          b += c1
-                                          b += c2
-                                          in_str' = <->
-                                          str_triple' = <->
-                                          i' = i' + 3
+                                    prev_b = i' > 0 | body(i' - 1) | 0
+                                    b += c
+                                    is_id_byte(prev_b)
                                        | i' = i' + 1
-                                 |
-                                    c == '"' | in_str' = <->
-                                    i' = i' + 1
-                     |
-                        c == '/' && c1 == '/'
-                           |
-                              b += body(i'..n)
-                              i' = n
-                           |
-                              c == '/' && c1 == '*'
-                                 |
-                                    b += "/*"
-                                    in_blk_comm' = <+>
-                                    i' = i' + 2
-                                 |
-                                    c == '\''
                                        |
-                                          b += c
-                                          in_rune' = <+>
-                                          i' = i' + 1
-                                       |
-                                          c == '"'
+                                          c1 == '\\ && i' + 2 < n
                                              |
-                                                c1 == '"' && c2 == '"'
+                                                b += c1
+                                                b += c2
+                                                i' = i' + 3
+                                             |
+                                                i' + 1 < n
                                                    |
-                                                      b += "\"\"\""
-                                                      in_str' = <+>
-                                                      str_triple' = <+>
-                                                      i' = i' + 3
+                                                      b += c1
+                                                      i' = i' + 2
+                                                   | i' = i' + 1
+                                 |
+                                    c == '"
+                                       |
+                                          c1 == '" && c2 == '"
+                                             |
+                                                b += "\"\"\""
+                                                in_str' = <+>
+                                                str_triple' = <+>
+                                                i' = i' + 3
+                                             |
+                                                b += c
+                                                in_str' = <+>
+                                                str_triple' = <->
+                                                i' = i' + 1
+                                       |
+                                          c [',, ';]
+                                             |
+                                                b += c
+                                                need_sp = i' + 1 < n &&
+                                                   !(c1 ['\s, '\t, '), '], '}, ',, ';])
+                                                need_sp | b += '\s
+                                                i' = i' + 1
+                                             |
+                                                prev_c = i' > 0 | body(i' - 1) | 0
+                                                is_annot_colon = c == ': &&
+                                                   !(prev_c [':, '-, '\s, '\t]) &&
+                                                   !(c1 [':, '=, '\s, '\t, '), '], '}, ',, ';])
+                                                is_annot_colon
+                                                   |
+                                                      b += ": "
+                                                      i' = i' + 1
                                                    |
                                                       b += c
-                                                      in_str' = <+>
-                                                      str_triple' = <->
                                                       i' = i' + 1
-                                             |
-                                                c [',', ';']
-                                                   |
-                                                      b += c
-                                                      need_sp = i' + 1 < n &&
-                                                         !(c1 [' ', '\t', ')', ']', '}', ',', ';'])
-                                                      need_sp | b += ' '
-                                                      i' = i' + 1
-                                                   |
-                                                      prev_c = i' > 0 | body(i' - 1) | 0
-                                                      is_annot_colon = c == ':' &&
-                                                         !(prev_c [':', '-', ' ', '\t']) &&
-                                                         !(c1 [':', '=', ' ', '\t', ')', ']', '}', ',', ';'])
-                                                      is_annot_colon
-                                                         |
-                                                            b += ": "
-                                                            i' = i' + 1
-                                                         |
-                                                            b += c
-                                                            i' = i' + 1
    +b
 
 make_spaces: Int => String
@@ -321,7 +318,7 @@ make_spaces = count =>
    count !> 0 | --| ""
    b = {count}
    count @
-      b += ' '
+      b += '\s
    +b
 
 strip_leading_ws: String => String
@@ -330,7 +327,7 @@ strip_leading_ws = s =>
    n = ?s
    0.. @
       i' !< n | -->
-      s(i') [' ', '\t']
+      s(i') ['\s, '\t]
          | i' = i' + 1
          | -->
    s(i'..n)
@@ -341,45 +338,41 @@ strip_code_comment = body =>
    n = ?body
    i' = 0
    in_str' = <->
-   in_rune' = <->
    end_idx' = n
    0.. @
       i' !< n | -->
       c = body(i')
       c1 = i' + 1 < n | body(i' + 1) | 0
-      in_rune'
+      in_str'
          |
-            c == '\\' && i' + 1 < n
+            c == '\\ && i' + 1 < n
                | i' = i' + 2
                |
-                  c == '\'' | in_rune' = <->
+                  c == '" | in_str' = <->
                   i' = i' + 1
          |
-            in_str'
+            c == '/ && c1 == '/
                |
-                  c == '\\' && i' + 1 < n
-                     | i' = i' + 2
-                     |
-                        c == '"' | in_str' = <->
-                        i' = i' + 1
+                  end_idx' = i'
+                  -->
                |
-                  c == '/' && c1 == '/'
+                  c == ''
                      |
-                        end_idx' = i'
-                        -->
+                        prev_b = i' > 0 | body(i' - 1) | 0
+                        step = is_id_byte(prev_b)
+                           | 1
+                           | c1 == '\\ && i' + 2 < n
+                              | 3
+                              | i' + 1 < n | 2 | 1
+                        i' = i' + step
                      |
-                        c == '\''
+                        c == '"
                            |
-                              in_rune' = <+>
+                              in_str' = <+>
                               i' = i' + 1
-                           |
-                              c == '"'
-                                 |
-                                    in_str' = <+>
-                                    i' = i' + 1
-                                 | i' = i' + 1
+                           | i' = i' + 1
    0.. @
-      end_idx' > 0 && (body(end_idx' - 1) [' ', '\t'])
+      end_idx' > 0 && (body(end_idx' - 1) ['\s, '\t])
          | end_idx' = end_idx' - 1
          | -->
    body(0..end_idx')
@@ -397,10 +390,10 @@ starts_with_choice_sep: String => <>
 starts_with_choice_sep = code =>
    ?code == 0 | --| <->
    c0 = code(0)
-   c0 == '[' | --| <+>
+   c0 == '[ | --| <+>
    starts_with_str(code, "![") | --| <+>
    starts_with_str(code, "!|") | --| <+>
-   c0 == '|' && (?code == 1 || code(1) != '|')
+   c0 == '| && (?code == 1 || code(1) != '|)
 
 // True when a line is an inline pipe arm (`| first_line` or `!| first_line`).
 is_inline_pipe_arm: String => <>
@@ -411,7 +404,7 @@ is_inline_pipe_arm = code =>
       |
          starts_with_str(code, "!|")
             | ?code > 2
-            | (?code > 1 && code(0) == '|' && code(1) != '|')
+            | (?code > 1 && code(0) == '| && code(1) != '|)
 
 // True when a line ends with a token that opens a standard +3 indented block on the next line.
 ends_with_block_opener: String => <>
@@ -423,7 +416,7 @@ ends_with_block_opener = code =>
    ends_with_str(code, "@") || ends_with_str(code, "@@") || ends_with_str(code, ">--") | --| <+>
    ends_with_str(code, "(") || ends_with_str(code, "{") | --| <+>
    starts_with_str(code, "#type ") && ends_with_str(code, "<") | --| <+>
-   (code(0) == '[' || starts_with_str(code, "![")) && ends_with_str(code, "]") | --| <+>
+   (code(0) == '[ || starts_with_str(code, "![")) && ends_with_str(code, "]") | --| <+>
    ends_with_str(code, "=") && !ends_with_str(code, "==") &&
       !ends_with_str(code, "!=") && !ends_with_str(code, "^=") &&
       !ends_with_str(code, "<=") && !ends_with_str(code, ">=")
@@ -514,7 +507,7 @@ format_lines = lines =>
             started' = <+>
             blank_run' = 0
             out += ln.raw
-            out += '\n'
+            out += '\n
          |
             ln.is_blank
                |
@@ -522,7 +515,7 @@ format_lines = lines =>
                      |
                         blank_run' = blank_run' + 1
                         max_blanks = cur_canon_indent' == 0 | 2 | 1
-                        blank_run' !> max_blanks | out += '\n'
+                        blank_run' !> max_blanks | out += '\n
                |
                   started' = <+>
                   blank_run' = 0
@@ -538,7 +531,7 @@ format_lines = lines =>
                            | base_c
                         out += make_spaces(c_indent)
                         out += body
-                        out += '\n'
+                        out += '\n
                      |
                         raw = ln.raw_indent
                         cur_code = strip_code_comment(body)
@@ -588,12 +581,12 @@ format_lines = lines =>
                         cur_canon_indent' = canon_indent
                         out += make_spaces(canon_indent)
                         out += format_code_body(body)
-                        out += '\n'
+                        out += '\n
    res = +out
    // Trim trailing blank lines so file ends with a single newline
    end' = ?res
    0.. @
-      end' > 1 && res(end' - 1) == '\n' && res(end' - 2) == '\n'
+      end' > 1 && res(end' - 1) == '\n && res(end' - 2) == '\n
          | end' = end' - 1
          | -->
    res(0..end')
@@ -604,11 +597,11 @@ format_safe_fallback = lines =>
    out = {4096}
    lines @ ln =>
       out += ln.raw
-      out += '\n'
+      out += '\n
    res = +out
    end' = ?res
    0.. @
-      end' > 1 && res(end' - 1) == '\n' && res(end' - 2) == '\n'
+      end' > 1 && res(end' - 1) == '\n && res(end' - 2) == '\n
          | end' = end' - 1
          | -->
    res(0..end')
@@ -696,7 +689,7 @@ collect_dva_files = target, out =>
                entries = fs::read_dir(target)
                names = ast::Names()
                entries @ ent =>
-                  ent.name(0) != '.' | names += ent.name
+                  ent.name(0) != '. | names += ent.name
                sort_names(names)
                names @ name =>
                   sub = fs::join(target, name)
@@ -753,7 +746,7 @@ main = start_idx =>
          ["--stdin"]
             from_stdin' = <+>
          |
-            ?arg > 0 && arg(0) == '-'
+            ?arg > 0 && arg(0) == '-
                |
                   log::error("edva fmt: unknown option '" + arg + "'")
                   --| 1

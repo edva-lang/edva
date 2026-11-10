@@ -2,10 +2,10 @@
 // format the differential parser harness compares byte-for-byte). Split out of
 // parser.dva so the harness can build it independently of the parser.
 
-#use "ast"
-#use "str"
-#use "tast"
-#use "unify"
+#use ./ast
+#use str
+#use ./tast
+#use ./unify
 
 #foreign "c"
    write: (fd: Int, buf: Addr, count: Int) => Int

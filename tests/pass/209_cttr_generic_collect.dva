@@ -4,7 +4,7 @@
 // existing `@` cycle and `xs(i)` reads, this makes generic collect / map /
 // filter over homogeneous records expressible in plain dva.
 
-#use "str"
+#use str
 #use io
 
 #type Ints Int{}

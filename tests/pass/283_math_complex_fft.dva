@@ -1,5 +1,5 @@
 // Tests for std/math/complex module (Issue #48)
-#use "math/complex"
+#use math/complex
 #use io
 
 // 1. Basic Complex Arithmetic

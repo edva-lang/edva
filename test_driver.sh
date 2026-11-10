@@ -41,7 +41,7 @@ echo "PASS"
 # --- Test 2: F1 - Missing module must fail compilation and emit no files ---
 echo -n "Testing F1 (missing module failure propagation)... "
 cat <<'EOF' > "$TMPDIR/bad_mod.dva"
-#use "definitely_nonexistent_mod_12345"
+#use ./definitely_nonexistent_mod_12345
 x = 42
 EOF
 set +e
@@ -97,9 +97,9 @@ Line 3
 EOF
 cat <<'EOF' > "$TMPDIR/test_f5.dva"
 #use io
-#use "str"
-#use "libc"
-#use "sys"
+#use str
+#use libc
+#use sys
 
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, off, rem =>
@@ -373,7 +373,7 @@ secret = x => x * 100
 EOF
 
 cat <<'EOF' > "$TMPDIR/main_mod.dva"
-#use "lib_mod"
+#use ./lib_mod
 #foreign "c"
    exit: (code: Int) => ()
 
@@ -1125,7 +1125,7 @@ EOF
 cat <<'EOF' > "$DIAMOND_DIR/app/src/main.dva"
 #use @m1
 #use @m2
-#use "libc"
+#use libc
 
 val = m1::mid1_val! + m2::mid2_val!
 val == 127 | libc::exit(0) | libc::exit(1)
@@ -1155,13 +1155,13 @@ echo -n "Testing edva test runner... "
 mkdir -p "$DIAMOND_DIR/app/tests"
 cat <<'EOF' > "$DIAMOND_DIR/app/tests/t1.dva"
 #use @m1
-#use "libc"
+#use libc
 m1::mid1_val! == 43 | libc::exit(0) | libc::exit(1)
 EOF
 
 cat <<'EOF' > "$DIAMOND_DIR/app/tests/t2.dva"
 #use @m2
-#use "libc"
+#use libc
 m2::mid2_val! == 84 | libc::exit(0) | libc::exit(1)
 EOF
 
@@ -1187,7 +1187,7 @@ if [ $rc -ne 0 ] || ! grep -q "test t1.dva ... ok" "$TMPDIR/t28_single.out" || !
 fi
 
 cat <<'EOF' > "$DIAMOND_DIR/app/tests/t3_fail.dva"
-#use "libc"
+#use libc
 libc::exit(1)
 EOF
 
@@ -1218,7 +1218,7 @@ native =
 EOF
 
 cat <<'EOF' > "$NAT_DIR/src/main.dva"
-#use "libc"
+#use libc
 
 #foreign "c"
    cos: (rad: Float) => Float
@@ -1297,7 +1297,7 @@ native =
 EOF
 
 cat <<'EOF' > "$PKGCONF_DIR/src/main.dva"
-#use "libc"
+#use libc
 
 #foreign "c"
    cos: (rad: Float) => Float
@@ -1453,7 +1453,7 @@ cat <<'EOF' > "$PKG_DIR/src/helper.dva"
 EOF
 cat <<'EOF' > "$PKG_DIR/src/main.dva"
 #use io
-#use "helper"
+#use ./helper
 io::out $ helper::msg!
 EOF
 set +e
@@ -1867,7 +1867,7 @@ edva = 0.1.0
 EOF
 echo "MIT License (c) 2026 External Lib Author" > "$VEND_FIXTURE/ext_lib/LICENSE"
 cat <<'EOF' > "$VEND_FIXTURE/ext_lib/src/ext_lib.dva"
-#use utils
+#use ./utils
 
 #public
    ext_calc: Int => Int
@@ -1887,7 +1887,7 @@ edva = 0.1.0
 EOF
 echo "BSD-3-Clause License (c) 2026 Git Dep Author" > "$VEND_FIXTURE/git_dep/LICENSE.txt"
 cat <<'EOF' > "$VEND_FIXTURE/git_dep/src/git_dep.dva"
-#use utils
+#use ./utils
 
 #public
    git_calc: Int => Int
@@ -1907,7 +1907,7 @@ git -C "$VEND_FIXTURE/git_dep" tag v1.0.0
 
 # Add a v2 commit to test selective update later
 cat <<'EOF' > "$VEND_FIXTURE/git_dep/src/git_dep.dva"
-#use utils
+#use ./utils
 
 #public
    git_calc: Int => Int
@@ -1938,8 +1938,8 @@ EOF
 cat <<'EOF' > "$VEND_FIXTURE/root_app/src/main.dva"
 #use @git_lib
 #use @ext_lib
-#use utils
-#use "libc"
+#use ./utils
+#use libc
 
 g = git_lib::git_calc(5)
 e = ext_lib::ext_calc(g)
@@ -2237,6 +2237,52 @@ if ! grep -Fq '"name":"edva-lsp"' <<<"$LSP_OUT" || \
    ! grep -Fq '   str::upper(s)' <<<"$LSP_OUT" || \
    ! grep -Fq '"code":"E3084"' <<<"$LSP_OUT"; then
     echo "FAILED: unexpected edva lsp output: $LSP_OUT"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 51: edva.ccl generate section with @<alias> on-demand tool building ---
+echo -n "Testing edva.ccl generate section with @<alias> tool resolution... "
+GEN_DIR="$TMPDIR/gen_fixture"
+mkdir -p "$GEN_DIR/mygen/src" "$GEN_DIR/myapp/views" "$GEN_DIR/myapp/src"
+cat <<'EOF' > "$GEN_DIR/mygen/edva.ccl"
+name = mygen
+version = 0.1.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$GEN_DIR/mygen/src/main.dva"
+#use fs
+#use sys
+
+out_path = sys::argv_string(2)
+fs::write_file(out_path, "#public\nmsg = \"generated_ok\"\n") !| _
+EOF
+cat <<'EOF' > "$GEN_DIR/myapp/edva.ccl"
+name = myapp
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  mygen =
+    path = ../mygen
+
+generate =
+  view =
+    cmd = @mygen $src $out
+    src = views/hello.txt
+    out = src/hello.gen.dva
+EOF
+printf "generated_ok" > "$GEN_DIR/myapp/views/hello.txt"
+cat <<'EOF' > "$GEN_DIR/myapp/src/main.dva"
+#use io
+#use ./hello.gen
+
+io::out $ hello::msg
+EOF
+./edva build "$GEN_DIR/myapp" >"$TMPDIR/t51.out" 2>"$TMPDIR/t51.err"
+if [ ! -x "$GEN_DIR/mygen/mygen" ] || [ ! -f "$GEN_DIR/myapp/src/hello.gen.dva" ] || [ "$("$GEN_DIR/myapp/myapp")" != "generated_ok" ]; then
+    echo "FAILED: edva.ccl generate @mygen failed"
+    cat "$TMPDIR/t51.out" "$TMPDIR/t51.err"
     exit 1
 fi
 echo "PASS"

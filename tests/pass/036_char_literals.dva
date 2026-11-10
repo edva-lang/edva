@@ -1,15 +1,21 @@
-// Test single-quoted character literals ('a', '0', '-', '\n', '\0')
+// Test leading-apostrophe character literals ('a, '0, '-, '\n, '\0, '\s, '')
 
 #use io
 
-a = '0'
+a = '0
 io::out $ Int(a)
 
-b = '-'
+b = '-
 io::out $ Int(b)
 
-c = '\n'
+c = '\n
 io::out $ ( c == 10 | "Positive" | "Negative")
 
-d = '\0'
+d = '\0
 io::out $ ( d == 0 | "Positive" | "Negative")
+
+sp = '\s
+io::out $ Int(sp)
+
+ap = ''
+io::out $ Int(ap)

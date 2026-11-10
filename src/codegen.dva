@@ -1,7 +1,7 @@
 // selfhost/src/codegen.dva — Facade for modular codegen units.
 
-#use "codegen/types"
-#use "codegen/main"
+#use ./codegen/types
+#use ./codegen/main
 
 #public
 

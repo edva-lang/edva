@@ -2,10 +2,10 @@
 // bell byte exactly as "\a" does.
 #use io
 
-bell = '\a'
+bell = '\a
 io::out $ Int(bell)
 
-tab = '\t'
+tab = '\t
 io::out $ Int(tab)
 
 io::out $ "str \a \t \v"

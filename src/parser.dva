@@ -6,13 +6,13 @@
 // unary atom layer. Choice, assignment, lambda, record/map, call/member,
 // function/type declaration, and the sequence/range/cycle tiers port next.
 
-#use "lexer"
-#use "ast"
-#use "path"
-#use "str"
-#use "operators"
-#use "diag"
-#use "log"
+#use ./lexer
+#use ./ast
+#use path
+#use str
+#use ./operators
+#use ./diag
+#use log
 #use const
 #use unicode
 
@@ -1060,7 +1060,7 @@ atom_pragma_swizzle = p, arg =>
 
 clean_decl_name: String => String
 clean_decl_name = s =>
-   (?s > 0 && s(0) == '#') | s(1..) | s
+   (?s > 0 && s(0) == '#) | s(1..) | s
 
 names_has_at: ast::Names, String, Int => <>
 names_has_at = names, name, i =>
@@ -1704,7 +1704,7 @@ atom_integer = p, text =>
             | <+ ast::Expr(TypeCast, ast::CastExpr(suf.0, iexpr)) +>
             | <+ iexpr +>
       |
-         has_brace = has_char(text, '{')
+         has_brace = has_char(text, '{)
          has_brace
             |
                parser_error(p, 2043,
@@ -4551,13 +4551,13 @@ declare_type = p, name, ti =>
 find_use_eq: String, Int => Int
 find_use_eq = s, i =>
    i < ?s
-      | s(i) == '=' | i | find_use_eq(s, i + 1)
+      | s(i) == '= | i | find_use_eq(s, i + 1)
       | -1
 
 find_use_slash: String, Int => Int
 find_use_slash = s, i =>
    i < ?s
-      | s(i) == '/' | i | find_use_slash(s, i + 1)
+      | s(i) == '/ | i | find_use_slash(s, i + 1)
       | -1
 
 trim_use_str: String => String
@@ -4567,13 +4567,13 @@ trim_use_str = s =>
       start' = 0
       0..n @ i =>
          c = s(i)
-         c [' ', '\t'] (start' = i + 1) | -->
+         c ['\s, '\t] (start' = i + 1) | -->
       end' = n
       0..n @ j =>
          idx = n - 1 - j
          idx < start' | -->
          c = s(idx)
-         c [' ', '\t'] (end' = idx) | -->
+         c ['\s, '\t] (end' = idx) | -->
       start' < end' | s(start'..end') | ""
 
 // "#use module" / "#use "path"" / "#use alias = path" —
@@ -4590,7 +4590,7 @@ parse_import = p, is_dyn, is_imp =>
          path = trim_use_str(raw_path(eq_idx + 1..))
          (name, path)
       |
-         has_at = ?raw_path > 0 && raw_path(0) == '@'
+         has_at = ?raw_path > 0 && raw_path(0) == '@
          has_slash = find_use_slash(raw_path, 0) !< 0
          name = has_at && !has_slash | raw_path(1..) | last_segment(raw_path)
          (name, raw_path)
@@ -4598,7 +4598,7 @@ parse_import = p, is_dyn, is_imp =>
       is_dyn, is_imp)) +>
 
 last_segment: String => String
-last_segment = p => path::basename(p)
+last_segment = p => path::stem(path::basename(p))
 
 // --- postfix (call / member / module / key) --------------------------------
 
@@ -4640,7 +4640,7 @@ parse_primary_atom = p, a =>
 // Continue a member/key chain: ':: name', '. name', '^ key', '^? key'.
 pp_member: Parser, ast::Expr => <ast::Expr|>
 pp_member = p, lhs =>
-   is_dot_float = p.curr.kind [Float] && ?p.curr.text > 1 && p.curr.text(0) == '.'
+   is_dot_float = p.curr.kind [Float] && ?p.curr.text > 1 && p.curr.text(0) == '.
    is_dot_float
       |
          f = p.curr.text(1..)
@@ -5364,7 +5364,7 @@ parse_lit_pattern = p =>
       [Rune]
          txt = p.curr.text
          parser_advance(p)
-         rval = parse_int_text(txt) | n => Rune(n) | ' '
+         rval = parse_int_text(txt) | n => Rune(n) | '\s
          <+ pat_lit(ast::Expr(Rune, rval)) +>
       |
          token_is_op(p.curr, "-")
@@ -7960,9 +7960,9 @@ int_base = text =>
 digit_val: Rune => Int
 digit_val = c =>
    c
-      [(_ > '/' && _ < ':')] c - '0'
-      [(_ > '@' && _ < 'G')] c - 'A' + 10
-      [(_ > '`' && _ < 'g')] c - 'a' + 10
+      [(_ > '/ && _ < ':)] c - '0
+      [(_ > '@ && _ < 'G)] c - 'A + 10
+      [(_ > '` && _ < 'g)] c - 'a + 10
       | -1
 
 has_char: String, Rune => <>
@@ -7975,16 +7975,16 @@ has_char = s, ch =>
 expand_int_repeats: String => <String|>
 expand_int_repeats = s =>
    slen = ?s
-   !has_char(s, '{') | <+ s +> |
+   !has_char(s, '{) | <+ s +> |
       b = {slen * 2}
       i' = 0
       err' = <->
       0.. @
          i' !< slen | -->
          c = s(i')
-         i' + 1 < slen && s(i' + 1) == '{'
+         i' + 1 < slen && s(i' + 1) == '{
             |
-               is_prefix_letter = i' == 1 && s(0) == '0' && (c ['b', 'B', 'x', 'X', 'o', 'O'])
+               is_prefix_letter = i' == 1 && s(0) == '0 && (c ['b, 'B, 'x, 'X, 'o, 'O])
                is_prefix_letter
                   | (err' = <+>; -->)
                   |
@@ -7992,10 +7992,10 @@ expand_int_repeats = s =>
                      j' = i' + 2
                      0.. @
                         j' !< slen | -->
-                        s(j') == '}'
+                        s(j') == '}
                            | (close' = j'; -->)
                            |
-                              s(j') ['0'...'9']
+                              s(j') ['0...'9]
                                  | (j' = j' + 1)
                                  | -->
                      close' < 0
@@ -8076,7 +8076,7 @@ digit_add: <>, Rune, FState, <> => FState
 digit_add = in_exp, c, st, in_frac =>
    in_exp
       |
-         FState(st.val, st.fdig, st.exp * 10 + (c - '0'))
+         FState(st.val, st.fdig, st.exp * 10 + (c - '0))
       |
          st.val > 900000000000000000
             |
@@ -8084,7 +8084,7 @@ digit_add = in_exp, c, st, in_frac =>
                   | st
                   | FState(st.val, st.fdig, st.exp + 1)
             |
-               nv = st.val * 10 + (c - '0')
+               nv = st.val * 10 + (c - '0)
                FState(nv, st.fdig + (in_frac | 1 | 0), st.exp)
 
 parse_float_text: String => <Float|>
@@ -8092,12 +8092,12 @@ parse_float_text = text =>
    clean = float_clean(text)
    i' = 0
    neg' = <->
-   ?clean > 0 && clean(0) == '-'
+   ?clean > 0 && clean(0) == '-
       |
          neg' = <+>
          i' = 1
       |
-         ?clean > 0 && clean(0) == '+'
+         ?clean > 0 && clean(0) == '+
             |
                i' = 1
    st' = FState(0, 0, 0)
@@ -8115,13 +8115,13 @@ parse_float_text = text =>
             has' = <+>
             in_exp' | exp_has' = <+>
             st' = digit_add(in_exp', c, st', in_frac')
-         ['.']
+         ['.]
             in_frac' = <+>
-         ['e', 'E']
+         ['e, 'E]
             in_exp' = <+>
-         ['-']
+         ['-]
             exp_neg' = <+>
-         ['+']
+         ['+]
             exp_neg' = <->
          | -->
    has' && (!in_exp' || exp_has')

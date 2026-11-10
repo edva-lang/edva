@@ -538,10 +538,10 @@ parse_argv = opts, argv, allow_auto_version =>
                                                       err' = "unknown option: " + cur_arg
                                                       -->
                      |
-                        ?cur_arg > 1 && cur_arg(0) == '-'
+                        ?cur_arg > 1 && cur_arg(0) == '-
                            |
                               rem_str = cur_arg(1..?cur_arg)
-                              has_eq = ?rem_str > 1 && rem_str(1) == '='
+                              has_eq = ?rem_str > 1 && rem_str(1) == '=
                               has_eq
                                  |
                                     sname = rem_str(0..1)
@@ -948,7 +948,7 @@ format_help = opts, prog, desc, version =>
       |
          b += "\nCommands:\n"
          ?cmd_lefts @ c_j =>
-            l_col = str::pad_right(cmd_lefts(c_j)!!, col_w, ' ')
+            l_col = str::pad_right(cmd_lefts(c_j)!!, col_w, '\s)
             r_col = cmd_rights(c_j)!!
             b += l_col + r_col + "\n"
 
@@ -956,7 +956,7 @@ format_help = opts, prog, desc, version =>
       |
          b += "\nArguments:\n"
          ?pos_lefts @ p_j =>
-            l_col = str::pad_right(pos_lefts(p_j)!!, col_w, ' ')
+            l_col = str::pad_right(pos_lefts(p_j)!!, col_w, '\s)
             r_col = pos_rights(p_j)!!
             b += l_col + r_col + "\n"
 
@@ -964,7 +964,7 @@ format_help = opts, prog, desc, version =>
       |
          b += "\nOptions:\n"
          ?opt_lefts @ o_j =>
-            l_col = str::pad_right(opt_lefts(o_j)!!, col_w, ' ')
+            l_col = str::pad_right(opt_lefts(o_j)!!, col_w, '\s)
             r_col = opt_rights(o_j)!!
             b += l_col + r_col + "\n"
 

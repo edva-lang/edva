@@ -1,4 +1,4 @@
-#use "str"
+#use str
 #use io
 
 #foreign "c"

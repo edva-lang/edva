@@ -7,19 +7,19 @@
 // (`textDocument/completion`), and canonical formatting
 // (`textDocument/formatting`) powered by Edva's self-hosted frontend.
 
-#use "lexer"
-#use "parser"
-#use "ast"
-#use "tast"
-#use "unify"
-#use "annotate"
-#use "show"
-#use "diag"
-#use "formatter"
-#use "str"
-#use "path"
-#use "log"
-#use "version"
+#use ./lexer
+#use ./parser
+#use ./ast
+#use ./tast
+#use ./unify
+#use ./annotate
+#use ./show
+#use ./diag
+#use ./formatter
+#use str
+#use path
+#use log
+#use ./version
 #use fs
 #use json
 #use libc
@@ -118,8 +118,8 @@ read_header_line = !=>
          |
             ?b == 0 | eof' = <+>
             -->
-      c == '\n' | -->
-      c != '\r' | b += c
+      c == '\n | -->
+      c != '\r | b += c
    eof' | <--> | <+ +b +>
 
 parse_content_length: String => Int
@@ -190,9 +190,9 @@ send_rpc_payload = body =>
 
 hex_val: Int => Int
 hex_val = c =>
-   c ['0'...'9'] c - '0'
-   c ['a'...'f'] c - 'a' + 10
-   c ['A'...'F'] c - 'A' + 10
+   c ['0...'9] c - '0
+   c ['a...'f] c - 'a + 10
+   c ['A...'F] c - 'A + 10
    | -1
 
 uri_to_path: String => String
@@ -207,7 +207,7 @@ uri_to_path = uri =>
    0.. @
       i' !< n | -->
       c = raw(i')
-      c == '%' && i' + 2 < n
+      c == '% && i' + 2 < n
          |
             hi = hex_val(raw(i' + 1))
             lo = hex_val(raw(i' + 2))
@@ -600,7 +600,7 @@ analyze_document = uri, text, tc_hook =>
 
 is_ident_char: Int => <>
 is_ident_char = c =>
-   c ['a'...'z', 'A'...'Z', '0'...'9', '_', '\'', '#', ':']
+   c ['a...'z, 'A...'Z, '0...'9, '_, '', '#, ':]
 
 get_line_at: String, Int => String
 get_line_at = text, target_line =>
@@ -612,14 +612,14 @@ get_line_at = text, target_line =>
       pos' !< n | -->
       lstart = pos'
       0.. @
-         pos' !< n || text(pos') == '\n' | -->
+         pos' !< n || text(pos') == '\n | -->
          pos' = pos' + 1
       cur_line' == target_line
          |
-            lend = pos' > lstart && text(pos' - 1) == '\r' | pos' - 1 | pos'
+            lend = pos' > lstart && text(pos' - 1) == '\r | pos' - 1 | pos'
             res' = text(lstart..lend)
             -->
-      pos' < n && text(pos') == '\n' | pos' = pos' + 1
+      pos' < n && text(pos') == '\n | pos' = pos' + 1
       cur_line' = cur_line' + 1
    res'
 
@@ -627,7 +627,7 @@ count_doc_lines: String => Int
 count_doc_lines = text =>
    cnt' = 1
    ?text @ i =>
-      text(i) == '\n' | cnt' = cnt' + 1
+      text(i) == '\n | cnt' = cnt' + 1
    cnt'
 
 extract_word_at: String, Int, Int => String
@@ -716,7 +716,7 @@ split_qualified = word =>
    found' = -1
    0.. @
       i' + 1 !< n | -->
-      word(i') == ':' && word(i' + 1) == ':'
+      word(i') == ': && word(i' + 1) == ':
          |
             found' = i'
             -->

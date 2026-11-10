@@ -4,7 +4,7 @@
 // worker-env-captures-a-function-value case still needs runtime function
 // metadata (no RTTI) and remains E3145.
 
-#use "str"
+#use str
 #use io
 
 base = 10

@@ -1,19 +1,19 @@
 // codegen/expr.dva
 
-#use(import) llvm
-#use "../ast"
-#use "const"
-#use "ascii"
-#use "str"
-#use "../tast"
-#use "../unify"
-#use "mem"
-#use "types"
-#use "runtime"
-#use "match"
-#use "stmt"
-#use "main"
-#use "../diag"
+#use(import) ../llvm
+#use ../ast
+#use const
+#use ascii
+#use str
+#use ../tast
+#use ../unify
+#use mem
+#use ./types
+#use ./runtime
+#use ./match
+#use ./stmt
+#use ./main
+#use ../diag
 
 #public
 
@@ -766,7 +766,7 @@ block_is_binding = b =>
    nb > 1
       |
          first = b(0) | _ | ast::Expr(Int, 0)
-         is_synth = first [Assign a] (?a.0 > 0 && a.0(0) == '_') | <->
+         is_synth = first [Assign a] (?a.0 > 0 && a.0(0) == '_) | <->
          is_synth
             | <+>
             |
@@ -3358,7 +3358,7 @@ str_index_of_comma: String, Int => Int
 str_index_of_comma = s, i =>
    i < ?s
       |
-         s(i) == ',' | i | str_index_of_comma(s, i + 1)
+         s(i) == ', | i | str_index_of_comma(s, i + 1)
       | -1
 
 split_comma_names_step: String, Int, Int, ast::Names => ast::Names
@@ -3368,7 +3368,7 @@ split_comma_names_step = s, start, i, acc =>
          start < i | acc += s(start..i)
          acc
       |
-         s(i) == ','
+         s(i) == ',
             |
                acc += s(start..i)
                split_comma_names_step(s, i + 1, i + 1, acc)
@@ -4122,9 +4122,9 @@ rec_ti_to_type_key = cg, fts, i, n, b =>
    i == n
       | +b
       |
-         i > 0 | b += ','
+         i > 0 | b += ',
          rf = fts(i)!!
-         rf.name != "" | b += (rf.name, ':')
+         rf.name != "" | b += (rf.name, ':)
          b += ti_to_type_key(cg, rf.rec_type, rf.val_type, "")
          rec_ti_to_type_key(cg, fts, i + 1, n, b)
 
@@ -4148,7 +4148,7 @@ ti_to_type_key = cg, ti, vt, dtype =>
             |
                b = {64}
                k = rec_ti_to_type_key(cg, r.0, 0, ?r.0, {32})
-               eff_dt != "" && eff_dt(0) != '#' && !(?eff_dt !< 9 && eff_dt(0..9) == "__fld_ti_")
+               eff_dt != "" && eff_dt(0) != '# && !(?eff_dt !< 9 && eff_dt(0..9) == "__fld_ti_")
                   | b += ("Rec(", eff_dt, ":", k, ")")
                   | b += ("Rec(", k, ")")
                +b
@@ -4276,13 +4276,13 @@ sanitize_mono_str = s, i, b =>
       | +b
       |
          c = s(i)
-         is_alnum = ascii::is_alnum(c) || c == '_'
+         is_alnum = ascii::is_alnum(c) || c == '_
          is_alnum
             | b += c
             |
                hi = c .>. 4 .&. 15
                lo = c .&. 15
-               b += ('_', hex_char(hi), hex_char(lo))
+               b += ('_, hex_char(hi), hex_char(lo))
          sanitize_mono_str(s, i + 1, b)
 
 slice_exprs_from_at: ast::Exprs, Int, Int, ast::Exprs => ast::Exprs
@@ -4563,7 +4563,7 @@ codegen_eval_named_call = cg, t =>
                   b_vts += cp.val_type
                   b_tis += cp.type_info
                   b_dts += ""
-                  bkey += '$'
+                  bkey += '$
                   ct_val
                      [Int n] bkey += str::from_int(n)
                      [Str s] bkey += sanitize_mono_str(s, 0, {16})
@@ -4581,7 +4581,7 @@ codegen_eval_named_call = cg, t =>
                   b_tis += inf.1
                   b_dts += inf.2
                   b_ct_vals += types::CtVal(None)
-                  bkey += ('$', ti_to_type_key(cg, inf.1, inf.0, inf.2))
+                  bkey += ('$, ti_to_type_key(cg, inf.1, inf.0, inf.2))
          key = +bkey
          kidx = types::fninfo_index(cg, key)
          has_kidx = <>(kidx)
@@ -6253,7 +6253,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
                   b_vts += cp.val_type
                   b_tis += cp.type_info
                   b_dts += ""
-                  bkey += '$'
+                  bkey += '$
                   ct_val
                      [Int n] bkey += str::from_int(n)
                      [Str s] bkey += sanitize_mono_str(s, 0, {16})
@@ -6277,7 +6277,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
                   b_tis += real_ti
                   b_dts += real_dt
                   b_ct_vals += types::CtVal(None)
-                  bkey += ('$', ti_to_type_key(cg, real_ti, real_vt, real_dt))
+                  bkey += ('$, ti_to_type_key(cg, real_ti, real_vt, real_dt))
          key = +bkey
          kidx = types::fninfo_index(cg, key)
          has_kidx = <>(kidx)
@@ -6862,7 +6862,7 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
 
 is_intrinsic_name: String => <>
 is_intrinsic_name = name =>
-   ?name > 1 && name(0) == '%'
+   ?name > 1 && name(0) == '%
 
 get_or_add_intrinsic: types::Cg, String, Addr => Addr
 get_or_add_intrinsic = cg, name, fty =>
@@ -6956,10 +6956,10 @@ swizzle_char_to_idx = cg, ti, fname, mi =>
    idx_fld !< 0
       | idx_fld
       |
-         ch == 'x' || ch == 'r' | 0 |
-         (ch == 'y' || ch == 'g' | 1 |
-         (ch == 'z' || ch == 'b' | 2 |
-         (ch == 'w' || ch == 'a' | 3 | 0)))
+         ch == 'x || ch == 'r | 0 |
+         (ch == 'y || ch == 'g | 1 |
+         (ch == 'z || ch == 'b | 2 |
+         (ch == 'w || ch == 'a | 3 | 0)))
 
 codegen_eval_swizzle: types::Cg, tast::TypedExpr, String,
    ast::TypeInfo => (Addr, ast::ValueType)

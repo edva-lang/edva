@@ -11,17 +11,17 @@
 
 // --- Target-Specific Separators ---
 
-SEP = #! (os ["windows"] '\\' | '/')
+SEP = #! (os ["windows"] '\\ | '/)
 SEP_STR = #! (os ["windows"] "\\" | "/")
-LIST_SEP = #! (os ["windows"] ';' | ':')
+LIST_SEP = #! (os ["windows"] '; | ':)
 LIST_SEP_STR = #! (os ["windows"] ";" | ":")
 IS_WIN = #! (os == "windows")
 
 is_posix_sep: Int => <>
-is_posix_sep = ['/']
+is_posix_sep = ['/]
 
 is_win_sep: Int => <>
-is_win_sep = ['/', '\\']
+is_win_sep = ['/, '\\]
 
 is_sep: Int => <>
 is_sep = c => #! (os == "windows") | is_win_sep(c) | is_posix_sep(c)
@@ -38,7 +38,7 @@ win_root_len: String => Int
 win_root_len = p =>
    len = ?p
    len == 0 | --| 0
-   len !< 2 && ascii::is_alpha(p(0)) && p(1) == ':'
+   len !< 2 && ascii::is_alpha(p(0)) && p(1) == ':
       | (len !< 3 && is_win_sep(p(2)) | 3 | 2)
       | is_win_sep(p(0))
          | (len !< 2 && is_win_sep(p(1)) | 2 | 1)
@@ -46,19 +46,19 @@ win_root_len = p =>
 
 posix_root_len: String => Int
 posix_root_len = p =>
-   ?p > 0 && p(0) == '/' | 1 | 0
+   ?p > 0 && p(0) == '/ | 1 | 0
 
 root_len: String => Int
 root_len = p => #! (os == "windows") | win_root_len(p) | posix_root_len(p)
 
 posix_is_abs: String => <>
-posix_is_abs = p => ?p > 0 && p(0) == '/'
+posix_is_abs = p => ?p > 0 && p(0) == '/
 
 win_is_abs: String => <>
 win_is_abs = p =>
    len = ?p
    (len > 0 && is_win_sep(p(0))) ||
-      (len !< 3 && ascii::is_alpha(p(0)) && p(1) == ':' && is_win_sep(p(2)))
+      (len !< 3 && ascii::is_alpha(p(0)) && p(1) == ': && is_win_sep(p(2)))
 
 is_abs: String => <>
 is_abs = p => #! (os == "windows") | win_is_abs(p) | posix_is_abs(p)
@@ -71,7 +71,7 @@ posix_strip_trailing_sep: String => String
 posix_strip_trailing_sep = p =>
    end' = ?p
    0.. @
-      end' > 1 && p(end' - 1) == '/'
+      end' > 1 && p(end' - 1) == '/
          | end' = end' - 1
          | -->
    end' == ?p | p | p(..end')
@@ -97,7 +97,7 @@ posix_join: String, String => String
 posix_join = a, b =>
    ?b == 0 | --| a
    ?a == 0 || posix_is_abs(b) | --| b
-   a(?a - 1) == '/' | a + b | a + "/" + b
+   a(?a - 1) == '/ | a + b | a + "/" + b
 
 win_join: String, String => String
 win_join = a, b =>
@@ -120,7 +120,7 @@ posix_parent = p =>
    last_sep' = -1
    clen @ i =>
       idx = clen - 1 - i
-      clean(idx) == '/' && last_sep' < 0 | last_sep' = idx
+      clean(idx) == '/ && last_sep' < 0 | last_sep' = idx
    last_sep' < 0
       | "."
       | last_sep' == 0
@@ -164,7 +164,7 @@ posix_basename = p =>
    last_sep' = -1
    clen @ i =>
       idx = clen - 1 - i
-      clean(idx) == '/' && last_sep' < 0 | last_sep' = idx
+      clean(idx) == '/ && last_sep' < 0 | last_sep' = idx
    last_sep' < 0 | clean | clean((last_sep' + 1)..)
 
 win_basename: String => String
@@ -200,7 +200,7 @@ ext_dot_index = b =>
    dot' = -1
    len @ i =>
       idx = len - 1 - i
-      b(idx) == '.' && dot' < 0 && idx > 0 | dot' = idx
+      b(idx) == '. && dot' < 0 && idx > 0 | dot' = idx
    dot'
 
 // Returns the file extension including the leading dot (e.g. ".dva", ".gz", "").
@@ -235,7 +235,7 @@ with_ext = p, new_ext =>
    st = stem(p)
    suf = ?new_ext == 0
       | ""
-      | (new_ext(0) == '.' | new_ext | "." + new_ext)
+      | (new_ext(0) == '. | new_ext | "." + new_ext)
    par == "" | st + suf | join(par, st + suf)
 
 // --- Splitting, Normalization, Relative Paths & Prefix Queries ---
@@ -265,8 +265,8 @@ posix_normalize = p =>
    len = ?p
    (len + 1) @ i =>
       is_end = i == len
-      c = is_end | '/' | p(i)
-      c == '/'
+      c = is_end | '/ | p(i)
+      c == '/
          |
             seg = +cur
             seg != "" && seg != "."
@@ -284,9 +284,9 @@ posix_normalize = p =>
                      | segs += seg
          | cur += c
    out = {?p + 2}
-   abs | out += '/'
+   abs | out += '/
    ?segs @ idx =>
-      idx > 0 | out += '/'
+      idx > 0 | out += '/
       out += (segs(idx) | _ | "")
    ?out == 0 | "." | +out
 
@@ -308,7 +308,7 @@ win_normalize = p =>
    (len - rlen + 1) @ k =>
       i = rlen + k
       is_end = i == len
-      c = is_end | '\\' | p(i)
+      c = is_end | '\\ | p(i)
       is_win_sep(c)
          |
             seg = +cur
@@ -329,7 +329,7 @@ win_normalize = p =>
    out = {?p + 2}
    out += prefix
    ?segs @ idx =>
-      idx > 0 | out += '\\'
+      idx > 0 | out += '\\
       out += (segs(idx) | _ | "")
    ?out == 0 | "." | +out
 
@@ -374,11 +374,11 @@ has_traversal = p =>
    start' = 0
    (len + 1) @ i =>
       is_end = i == len
-      c = is_end | '/' | p(i)
+      c = is_end | '/ | p(i)
       is_win_sep(c)
          |
             seg_len = i - start'
-            seg_len == 2 && p(start') == '.' && p(start' + 1) == '.'
+            seg_len == 2 && p(start') == '. && p(start' + 1) == '.
                |
                   found' = <+>
                   -->

@@ -776,7 +776,7 @@ int_str = n =>
       digits += 48 + (v' % 10)
       v' = v' / 10
    out = {24}
-   neg | out += '-'
+   neg | out += '-
    len = ?digits
    len @ i =>
       out += digits(len - 1 - i)

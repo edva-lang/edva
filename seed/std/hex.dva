@@ -12,19 +12,19 @@ hex_err = msg, col =>
 nibble_lower: Int => Int
 nibble_lower = n =>
    d = n .&. 0x0F
-   d < 10 | '0' + d | 'a' + (d - 10)
+   d < 10 | '0 + d | 'a + (d - 10)
 
 nibble_upper: Int => Int
 nibble_upper = n =>
    d = n .&. 0x0F
-   d < 10 | '0' + d | 'A' + (d - 10)
+   d < 10 | '0 + d | 'A + (d - 10)
 
 from_hex_char: Int => Int
 from_hex_char = c =>
    c
-      ['0'...'9'] c - '0'
-      ['a'...'f'] c - 'a' + 10
-      ['A'...'F'] c - 'A' + 10
+      ['0...'9] c - '0
+      ['a...'f] c - 'a + 10
+      ['A...'F] c - 'A + 10
       |           -1
 
 #public

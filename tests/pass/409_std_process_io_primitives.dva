@@ -14,9 +14,9 @@ pr = label, v => io::out $ label + "=" + str::from_int(v)
 // mem::index_byte
 b = {16}
 b += "hello\nworld"
-pr("nl", mem::index_byte(&b, '\n', ?b) | i => i | -1)
-pr("absent", mem::index_byte(&b, 'z', ?b) | i => i | -1)
-pr("empty", mem::index_byte(&b, 'h', 0) | i => i | -1)
+pr("nl", mem::index_byte(&b, '\n, ?b) | i => i | -1)
+pr("absent", mem::index_byte(&b, 'z, ?b) | i => i | -1)
+pr("empty", mem::index_byte(&b, 'h, 0) | i => i | -1)
 
 // time::parse_tm
 time::parse_tm("Sun, 06 Nov 1994 08:49:37 GMT", "%a, %d %b %Y %H:%M:%S GMT")

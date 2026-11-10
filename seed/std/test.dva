@@ -80,38 +80,38 @@ format_val = v =>
       [<>] (v | "<+>" | "<->")
       [Rune]
          b = {6}
-         b += '\''
+         b += ''
          b += v
-         b += '\''
+         b += ''
          +b
       [()] "()"
       [<P|>]
          (v | inner => "<+ " + format_val(P, inner) + " +>" | "<-->")
       [E{}]
          b = {32}
-         b += '['
+         b += '[
          v @ elem, i =>
             i > 0 | b += ", "
             b += format_val(E, elem)
-         b += ']'
+         b += ']
          +b
       [E[]]
          b = {32}
-         b += '['
+         b += '[
          v @ elem, i =>
             i > 0 | b += ", "
             b += format_val(E, elem)
-         b += ']'
+         b += ']
          +b
       [K ^ V]
          b = {32}
-         b += '{'
+         b += '{
          first' = <+>
          v @ mv, mk =>
             !first' | b += ", "
             first' = <->
             b += format_val(K, mk) + ": " + format_val(V, mv)
-         b += '}'
+         b += '}
          +b
       [(..)]
          b = {32}
@@ -120,7 +120,7 @@ format_val = v =>
             f.idx == 0 && f.name == "" | is_tuple' = <+>
          is_tuple'
             |
-               b += '('
+               b += '(
                T @ f =>
                   f.idx > 0 | b += ", "
                   f.type
@@ -129,7 +129,7 @@ format_val = v =>
                         b += (vf | inner => "<+ " + format_val(P, inner) + " +>" | "<-->")
                      |
                         b += format_val(f.type, v.(f))
-               b += ')'
+               b += ')
             |
                b += T.name + "("
                T @ f =>
@@ -141,7 +141,7 @@ format_val = v =>
                         b += (vf | inner => "<+ " + format_val(P, inner) + " +>" | "<-->")
                      |
                         b += format_val(f.type, v.(f))
-               b += ')'
+               b += ')
          +b
       [<..>]
          res' = ++T.name

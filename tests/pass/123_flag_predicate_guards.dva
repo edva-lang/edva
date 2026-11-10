@@ -10,9 +10,9 @@
 f: Int => String
 f = c =>
    <+>
-      [c == '"'] "str"
-      [c == '+'] "op"
-      [c == '?'] "q"
+      [c == '"] "str"
+      [c == '+] "op"
+      [c == '?] "q"
       | "other"
 
 io::out $ f(34)
@@ -24,8 +24,8 @@ io::out $ f(99)
 g: Int => String
 g = c =>
    <->
-      [c == '"'] "str"
-      [c == '+'] "op"
+      [c == '"] "str"
+      [c == '+] "op"
       | "other"
 
 io::out $ g(34)
@@ -36,7 +36,7 @@ io::out $ g(99)
 h: Int => String
 h = c =>
    <+>
-      [c == '"', c == '+'] "op"
+      [c == '", c == '+] "op"
       | "other"
 
 io::out $ h(34)

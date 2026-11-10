@@ -54,7 +54,7 @@ io::out $ total''
 | **Radix integer** | `0xDEAD`, `0b1011`, `0o755`, `0b1{48}` | `Int` (`i64`) | Hexadecimal (`0x`), binary (`0b`), octal (`0o`), with optional `{N}` bit/digit repetition | `E1004` / `E1005`: invalid radix digit |
 | **Sized integer** | `127i8`, `8080u16`, `1u32`, `9i64`, `9u64` | `i8`..`i64`, `u8`..`u64` | Explicit fixed-width signed or unsigned integer literal | — |
 | **Floating-point** | `3.14`, `1.0e-9`, `-2.5`, `1.25f32` | `Float` (`f64`) or `f32` | Requires decimal point or exponent (`e`/`E`); `f32` suffix yields 32-bit float | `E1019`: `_` in float literal |
-| **Rune** | `'a'`, `'λ'`, `'🦀'`, `'\n'`, `'\x1b'`, `'\u{1F600}'` | `Rune` (`i32`) | Single Unicode scalar value (`U+0000`..`U+10FFFF`). Supports `\n`, `\r`, `\t`, `\0`, `\e`, `\\`, `\'`, `\xHH`, `\u{HEX}` | `E1001` / `E1002`: invalid or unclosed rune |
+| **Rune** | `'a`, `'λ`, `'🦀`, `'\n`, `'\s`, `''`, `'\x1b`, `'\u{1F600}` | `Rune` (`i32`) | Leading-apostrophe Unicode scalar value (`U+0000`..`U+10FFFF`, no closing `'`). Supports `\n`, `\r`, `\t`, `\s` (space `32`), `\0`, `\e`, `\\`, `''` / `\'` (apostrophe `39`), `\xHH`, `\u{HEX}` | `E1009`: bare `'` followed by whitespace/Unicode `Zs`/EOF<br>`E1010`: closing `'` (`'a'`) |
 | **Builder capacity** | `{16}`, `{1024}` | `Builder` | Allocates a mutable arena byte buffer with initial capacity `N` bytes | — |
 
 ### String literals (`"..."`)

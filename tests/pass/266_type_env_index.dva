@@ -1,7 +1,7 @@
-#use "../../src/ast"
-#use "../../src/type_env"
-#use "../../src/unify"
-#use "str"
+#use ../../src/ast
+#use ../../src/type_env
+#use ../../src/unify
+#use str
 #use io
 
 ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))

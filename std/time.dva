@@ -223,42 +223,42 @@ full_month_name =
 
 write_date_into: Builder, DateTime => ()
 write_date_into = b, dt =>
-   dt.year < 0 | b += '-'
+   dt.year < 0 | b += '-
    pad4(b, dt.year)
-   b += '-'
+   b += '-
    pad2(b, dt.month)
-   b += '-'
+   b += '-
    pad2(b, dt.day)
 
 write_clock_into: Builder, DateTime => ()
 write_clock_into = b, dt =>
    pad2(b, dt.hour)
-   b += ':'
+   b += ':
    pad2(b, dt.min)
-   b += ':'
+   b += ':
    pad2(b, dt.sec)
 
 write_tz_iso_into: Builder, Int => ()
 write_tz_iso_into = b, utc_off =>
    utc_off == 0
-      | b += 'Z'
+      | b += 'Z
       |
-         b += (utc_off < 0 | '-' | '+')
+         b += (utc_off < 0 | '- | '+)
          abs_off = utc_off < 0 | -utc_off | utc_off
          pad2(b, abs_off / 3600)
-         b += ':'
+         b += ':
          pad2(b, (abs_off % 3600) / 60)
 
 write_tz_compact_into: Builder, Int => ()
 write_tz_compact_into = b, utc_off =>
-   b += (utc_off < 0 | '-' | '+')
+   b += (utc_off < 0 | '- | '+)
    abs_off = utc_off < 0 | -utc_off | utc_off
    pad2(b, abs_off / 3600)
    pad2(b, (abs_off % 3600) / 60)
 
 write_date_basic_into: Builder, DateTime => ()
 write_date_basic_into = b, dt =>
-   dt.year < 0 | b += '-'
+   dt.year < 0 | b += '-
    pad4(b, dt.year)
    pad2(b, dt.month)
    pad2(b, dt.day)
@@ -272,7 +272,7 @@ write_clock_basic_into = b, dt =>
 write_tz_basic_into: Builder, Int => ()
 write_tz_basic_into = b, utc_off =>
    utc_off == 0
-      | b += 'Z'
+      | b += 'Z
       | write_tz_compact_into(b, utc_off)
 
 #public
@@ -281,7 +281,7 @@ format_dt_iso: DateTime => String
 format_dt_iso = dt =>
    b = {32}
    write_date_into(b, dt)
-   b += 'T'
+   b += 'T
    write_clock_into(b, dt)
    write_tz_iso_into(b, dt.utc_off)
    +b
@@ -290,7 +290,7 @@ format_dt_iso_basic: DateTime => String
 format_dt_iso_basic = dt =>
    b = {24}
    write_date_basic_into(b, dt)
-   b += 'T'
+   b += 'T
    write_clock_basic_into(b, dt)
    write_tz_basic_into(b, dt.utc_off)
    +b
@@ -493,52 +493,52 @@ format_dt_pattern = fmt, dt =>
    0.. @
       i' !< len | -->
       ch = fmt(i')
-      ch == '%' && (i' + 1 < len)
+      ch == '% && (i' + 1 < len)
          |
             spec = fmt(i' + 1)
             spec
-               ['Y'] pad4(b, dt.year)
-               ['y'] pad2(b, dt.year % 100)
-               ['m'] pad2(b, dt.month)
-               ['d'] pad2(b, dt.day)
-               ['e']
+               ['Y] pad4(b, dt.year)
+               ['y] pad2(b, dt.year % 100)
+               ['m] pad2(b, dt.month)
+               ['d] pad2(b, dt.day)
+               ['e]
                   dt.day < 10
                      |
-                        b += ' '
+                        b += '\s
                         b += 48 + dt.day
                      | pad2(b, dt.day)
-               ['H'] pad2(b, dt.hour)
-               ['I']
+               ['H] pad2(b, dt.hour)
+               ['I]
                   h12 = dt.hour % 12
                   pad2(b, h12 == 0 | 12 | h12)
-               ['M'] pad2(b, dt.min)
-               ['S'] pad2(b, dt.sec)
-               ['p'] b += (dt.hour < 12 | "AM" | "PM")
-               ['P'] b += (dt.hour < 12 | "am" | "pm")
-               ['F'] write_date_into(b, dt)
-               ['T'] write_clock_into(b, dt)
-               ['R']
+               ['M] pad2(b, dt.min)
+               ['S] pad2(b, dt.sec)
+               ['p] b += (dt.hour < 12 | "AM" | "PM")
+               ['P] b += (dt.hour < 12 | "am" | "pm")
+               ['F] write_date_into(b, dt)
+               ['T] write_clock_into(b, dt)
+               ['R]
                   pad2(b, dt.hour)
-                  b += ':'
+                  b += ':
                   pad2(b, dt.min)
-               ['a'] b += short_weekday_name(dt.weekday)
-               ['A'] b += full_weekday_name(dt.weekday)
-               ['b', 'h'] b += short_month_name(dt.month)
-               ['B'] b += full_month_name(dt.month)
-               ['j'] pad3(b, dt.yearday)
-               ['w'] b += 48 + dt.weekday
-               ['u'] b += 48 + (dt.weekday == 0 | 7 | dt.weekday)
-               ['z'] write_tz_compact_into(b, dt.utc_off)
-               ['Z']
+               ['a] b += short_weekday_name(dt.weekday)
+               ['A] b += full_weekday_name(dt.weekday)
+               ['b, 'h] b += short_month_name(dt.month)
+               ['B] b += full_month_name(dt.month)
+               ['j] pad3(b, dt.yearday)
+               ['w] b += 48 + dt.weekday
+               ['u] b += 48 + (dt.weekday == 0 | 7 | dt.weekday)
+               ['z] write_tz_compact_into(b, dt.utc_off)
+               ['Z]
                   dt.utc_off == 0
                      | b += "UTC"
                      | write_tz_iso_into(b, dt.utc_off)
-               ['s'] b += str::from_int(epoch(dt))
-               ['n'] b += '\n'
-               ['t'] b += '\t'
-               ['%'] b += '%'
+               ['s] b += str::from_int(epoch(dt))
+               ['n] b += '\n
+               ['t] b += '\t
+               ['%] b += '%
                |
-                  b += '%'
+                  b += '%
                   b += spec
             i' = i' + 2
          |

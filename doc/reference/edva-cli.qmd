@@ -124,6 +124,9 @@ The manifest uses CCL (Categorical Configuration Language) syntax (`key = value`
 | `targets.<id>.target` | `target = wasm32-unknown-unknown` | Target triple passed via `-t` / `--target` |
 | `targets.<id>.opt` | `opt = -O3` | Optimization level (`0`..`3`, `s`, `z`, or `-O0`..`-O3`) |
 | `targets.<id>.cflags` | `= -msimd128` | List or space-separated string of flags forwarded via `--cflag` |
+| `generate.<step>.src` | `src = views/index.vid` | Input source file for pre-build/pre-test code generation step `<step>` |
+| `generate.<step>.out` | `out = src/index.vid.dva` | Generated output path (skipped when up to date with `src` and generator tool binary) |
+| `generate.<step>.cmd` | `cmd = @vid $src $out` | Command executed in package root (`$src`/`$out` expand to step paths; `@<alias>` or `@<alias>/<target>` resolves and builds dependency tool binaries on demand) |
 
 ```{.dva .partial}
 // Importing external packages declared in edva.ccl:

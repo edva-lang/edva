@@ -1,5 +1,5 @@
-#use(import) mod_a
-#use(import) mod_b
+#use(import) ./mod_a
+#use(import) ./mod_b
 #use io
 
 run = x =>

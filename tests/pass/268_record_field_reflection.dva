@@ -5,7 +5,7 @@
 // 4. Concrete type Pt.(i) works directly.
 // 5. Unrolled loops 0..?T @ i allow generic record inspection/serialization.
 
-#use "str"
+#use str
 #use io
 
 #type Pt (x: Int, y: Int)

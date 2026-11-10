@@ -2,7 +2,7 @@
 // and homogeneous SIMD numeric records (Vec2, Vec3, Vec4).
 
 #use(import) io
-#use "math/geom"
+#use math/geom
 
 #type Vec3f (x: f32, y: f32, z: f32)
 #type Vec3i (x: Int, y: Int, z: Int)

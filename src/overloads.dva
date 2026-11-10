@@ -1,5 +1,5 @@
 // Static arity overload resolution, before annotation and type erasure.
-#use ast
+#use ./ast
 #use str
 
 #public

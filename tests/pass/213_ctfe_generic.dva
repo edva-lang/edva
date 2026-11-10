@@ -4,7 +4,7 @@
 // higher-order generic body (a function-value parameter) is not CTFE-callable
 // yet (E3130).
 
-#use "str"
+#use str
 #use io
 
 squared: #! T: Type, T => T

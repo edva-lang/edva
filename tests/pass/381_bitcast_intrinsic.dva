@@ -1,5 +1,5 @@
 #use(import) io
-#use "str"
+#use str
 
 #type Vec4i (x: i32, y: i32, z: i32, w: i32)
 

@@ -6,10 +6,10 @@ io::out $ ??s1
 s2 = "hello 🤔 world"
 io::out $ ??s2
 
-r1 = 'a'
-r2 = 'д'
-r3 = '中'
-r4 = '🤔'
+r1 = 'a
+r2 = 'д
+r3 = '中
+r4 = '🤔
 io::out $ ?r1
 io::out $ ?r2
 io::out $ ?r3
@@ -28,5 +28,5 @@ io::out $ +b
 "a🤔b" @@ c =>
    io::out $ "" + c
 
-'w'..'z' @ r =>
+'w..'z @ r =>
    io::out $ "" + r

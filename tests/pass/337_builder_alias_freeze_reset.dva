@@ -1,5 +1,5 @@
-#use "io"
-#use "str"
+#use io
+#use str
 
 // Test builder aliasing, freeze detach/reset, and immutability of frozen string
 b = {16}

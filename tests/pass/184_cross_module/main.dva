@@ -3,7 +3,7 @@
 // ValueType propagation (enum/array/map resolve to their real ValueType, not
 // the parse-time .Record placeholder).
 
-#use "m"
+#use ./m
 #use io
 
 f: m::Color => Int

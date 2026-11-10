@@ -1,4 +1,4 @@
-#use(import) mod_a
+#use(import) ./mod_a
 #use io
 
 foo: Int => Int

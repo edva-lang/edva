@@ -3,7 +3,7 @@
 // variant's label as a compile-time String. A cycle over "0..?T" is unrolled,
 // so "join_labels"/"labels_arr" work for any enum type with no new syntax.
 
-#use "str"
+#use str
 #use io
 
 #type Color < Red, Green, Blue >

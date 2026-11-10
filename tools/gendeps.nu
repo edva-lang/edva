@@ -15,7 +15,7 @@
 # Usage (run by make; paths are relative to the repo root):
 #   nu tools/gendeps.nu build/deps.mk src/parser.dva std/str.dva ...
 
-const USE_RE = '^\s*#use(?:\([^)]*\))?\s+"?(?<m>[^"\s]+)"?'
+const USE_RE = '^\s*#use(?:\([^)]*\)|-dynamic)?\s+(?:[A-Za-z_][A-Za-z0-9_]*\s*=\s*)?"?(?<m>(?:\\ |[^"\s;])+)"?'
 
 def root [] {
     $env.FILE_PWD | path dirname
@@ -31,17 +31,18 @@ def dir_sources [dir: string] {
 }
 
 # The .dva files a `#use <mod>` from a file in `base` resolves to.
-def resolve [base: string, mod: string] {
-    let parent = ($base | path dirname)
-    mut bases = [$base]
-    if $parent != "" and $parent != "." { $bases = ($bases | append $parent) }
-    $bases = ($bases | append "std")
-    for b in $bases {
-        let f = ($b | path join $"($mod).dva")
-        if ($f | path type) == "file" { return [(rel $f)] }
-        let d = ($b | path join $mod)
-        if ($d | path type) == "dir" { return (dir_sources $d) }
+def resolve [base: string, raw_mod: string] {
+    let mod = ($raw_mod | str replace --all '\ ' ' ')
+    if ($mod | str starts-with "@") { return [] }
+    let search_dir = if ($mod | str starts-with "./") or ($mod | str starts-with "../") {
+        $base
+    } else {
+        "std"
     }
+    let f = ($search_dir | path join $"($mod).dva")
+    if ($f | path type) == "file" { return [(rel $f)] }
+    let d = ($search_dir | path join $mod)
+    if ($d | path type) == "dir" { return (dir_sources $d) }
     []
 }
 

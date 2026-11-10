@@ -4,30 +4,30 @@
 // declarations, then sends one flattened program to the selfhost codegen.
 // Directory modules, stdlib fallback, and CLI flags follow.
 
-#use "diag"
-#use "annotate"
-#use "dep_graph"
-#use overloads
-#use "ast"
-#use "codegen"
-#use "fs"
-#use "path"
-#use "libc"
-#use "parser"
-#use "show"
-#use "str"
-#use "sys"
-#use "tast"
-#use "unify"
-#use "mem"
-#use "ccl"
-#use "pkg"
-#use "formatter"
-#use "lsp"
-#use "version"
-#use "poll"
-#use "cli"
-#use "log"
+#use ./diag
+#use ./annotate
+#use ./dep_graph
+#use ./overloads
+#use ./ast
+#use ./codegen
+#use fs
+#use path
+#use libc
+#use ./parser
+#use ./show
+#use str
+#use sys
+#use ./tast
+#use ./unify
+#use mem
+#use ccl
+#use ./pkg
+#use ./formatter
+#use ./lsp
+#use ./version
+#use ./poll
+#use cli
+#use log
 
 #public
 
@@ -210,7 +210,7 @@ append_names_to = dest, src =>
 
 unmark_private_name: String => String
 unmark_private_name = name =>
-   ?name > 1 && name(0) == '#' | name(1..) | name
+   ?name > 1 && name(0) == '# | name(1..) | name
 
 unmark_private: ast::Expr => ast::Expr
 unmark_private = e =>
@@ -238,7 +238,7 @@ unmark_private_exprs = exprs =>
 has_dcolon_step: String, Int => <>
 has_dcolon_step = s, i =>
    i + 1 !< ?s | --| <->
-   s(i) == ':' && s(i + 1) == ':' | --| <+>
+   s(i) == ': && s(i + 1) == ': | --| <+>
    has_dcolon_step(s, i + 1)
 
 has_dcolon: String => <>
@@ -283,7 +283,7 @@ is_public_name = publics, privates, name =>
 
 decl_clean_name: String => String
 decl_clean_name = s =>
-   (?s > 0 && s(0) == '#') | s(1..) | s
+   (?s > 0 && s(0) == '#) | s(1..) | s
 
 is_generic_fn: ast::Expr => <>
 is_generic_fn = e =>
@@ -313,7 +313,7 @@ acc_has_generic_sig = acc, qname =>
 
 prefix_decl_name: String, String, ast::Names, ast::Names => String
 prefix_decl_name = name, prefix, publics, privates =>
-   has_hash = ?name > 0 && name(0) == '#'
+   has_hash = ?name > 0 && name(0) == '#
    clean = has_hash | name(1..) | name
    is_pub = is_public_name(publics, privates, clean)
    pfx = prefix + "::"
@@ -711,7 +711,7 @@ resolve_pkg_sub = alias, submod, inst_id, inst =>
 resolve_pkg_module: String, String, Loader => ResolvedModule
 resolve_pkg_module = base, mod_path, ldr =>
    curr_inst = get_dir_instance(ldr.import_map, base)
-   slash_idx = find_char_idx(mod_path, '/', 0)
+   slash_idx = find_char_idx(mod_path, '/, 0)
    alias = slash_idx < 0 | mod_path(1..) | mod_path(1..slash_idx)
    submod = slash_idx < 0 | "" | mod_path(slash_idx + 1..)
    alias == curr_inst.name
@@ -733,25 +733,14 @@ resolve_pkg_module = base, mod_path, ldr =>
                      | resolve_pkg_sub(alias, submod, inst_id, inst)
                | ResolvedModule(None)
 
-// A local "#use name": next to the importer, then its parent directory, then the stdlib.
+// A local "#use ./name" or "#use ../name": strictly relative to the importer's directory.
 resolve_local_module: String, String, Loader => ResolvedModule
 resolve_local_module = base, mod_path, ldr =>
    curr_inst = ldr.import_map.has_map
       | get_dir_instance(ldr.import_map, base)
       | empty_pkg_instance()
    cid = compute_local_cid(curr_inst, mod_path)
-   local = resolve_in_dir(base, mod_path, cid, <->)
-   parent_base = dirname(base)
-   has_parent = parent_base != "" && parent_base != "."
-   is_resolved(local)
-      | local
-      |
-         parent = has_parent
-            | resolve_in_dir(parent_base, mod_path, cid, <->)
-            | ResolvedModule(None)
-         is_resolved(parent)
-            | parent
-            | resolve_std_module(mod_path)
+   resolve_in_dir(base, mod_path, cid, <->)
 
 resolve_std_module: String => ResolvedModule
 resolve_std_module = mod_path =>
@@ -761,16 +750,22 @@ resolve_std_module = mod_path =>
       | std
       | resolve_in_dir("std", mod_path, seg, <->)
 
+is_rel_module_path: String => <>
+is_rel_module_path = mod_path =>
+   starts_with(mod_path, "./") || starts_with(mod_path, "../")
+
 resolve_module: String, String, Loader => ResolvedModule
 resolve_module = base, mod_path, ldr =>
-   is_pkg_import = ?mod_path > 0 && mod_path(0) == '@'
-   !is_pkg_import
-      | resolve_local_module(base, mod_path, ldr)
+   is_pkg_import = ?mod_path > 0 && mod_path(0) == '@
+   is_pkg_import
       | !ldr.import_map.has_map
          |
             log::error $ "E5030: #use " + mod_path + ": no import map — run 'edva fetch'"
             ResolvedModule(None)
          | resolve_pkg_module(base, mod_path, ldr)
+      | is_rel_module_path(mod_path)
+         | resolve_local_module(base, mod_path, ldr)
+         | resolve_std_module(mod_path)
 
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, off, rem =>
@@ -1171,9 +1166,11 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                [None]
                   !starts_with(imp.module_path, "@")
                      |
+                        hint = is_rel_module_path(imp.module_path)
+                           | ""
+                           | " in stdlib (use '#use ./" + imp.module_path + "' for a local module)"
                         loader_error(5006, path, "E5006: Imported module '" + imp.module_name +
-                           "' not found at '" + imp.module_path +
-                           "' or in stdlib")
+                           "' not found at '" + imp.module_path + "'" + hint)
                   ok' = <->
                |
                   cid = get_resolved_cid(resolved)
@@ -1759,7 +1756,7 @@ generate_c_header = prog, exports, header_path =>
       dva_name = eq_pos > 0 | item(0..eq_pos) | item
       c_name0 = eq_pos > 0 | item(eq_pos + 1..?item) |
          codegen::decl_bare_name(item, 0)
-      c_name = (?c_name0 > 0 && c_name0(0) == '#') | c_name0(1..) | c_name0
+      c_name = (?c_name0 > 0 && c_name0(0) == '#) | c_name0(1..) | c_name0
       !loaded_has(emitted_symbols, c_name)
          |
             bare = codegen::decl_bare_name(dva_name, 0)
@@ -1850,7 +1847,7 @@ append_pkg_config_words = text, args =>
    w' = {64}
    ?text @ i =>
       c = text(i)
-      c == ' ' || c == '\t' || c == '\n' || c == '\r'
+      c == '\s || c == '\t || c == '\n || c == '\r
          |
             ?w' > 0
                |
@@ -2264,10 +2261,10 @@ line_is_empty = line =>
    0.. @
       i' !< ?line | -->
       c = line(i')
-      c == ' ' || c == '\t' || c == '\r' || c == '\n'
+      c == '\s || c == '\t || c == '\r || c == '\n
          | i' = i' + 1
          | -->
-   i' !< ?line || (i' + 1 < ?line && line(i') == '/' && line(i' + 1) == '/')
+   i' !< ?line || (i' + 1 < ?line && line(i') == '/ && line(i' + 1) == '/)
 
 line_has_decl: String => <>
 line_has_decl = line =>
@@ -2798,7 +2795,7 @@ format_version = !=> "edva " + version::VERSION
 
 not_flag: String => < | String >
 not_flag = s =>
-   (?s > 0 && s(0) == '-') | <- "argument must not begin with '-'; got '" + s + "'" ->
+   (?s > 0 && s(0) == '-) | <- "argument must not begin with '-'; got '" + s + "'" ->
 
 valid_opt_level: String => < | String >
 valid_opt_level = s =>
@@ -3273,7 +3270,7 @@ run_driver = ignored =>
          proj_name != "" && proj_name != "/" | proj_name | raw_base
       | raw_base
 
-   ?base_name > 0 && base_name(0) == '-'
+   ?base_name > 0 && base_name(0) == '-
       |
          log::error $ "E5018: Output name '" + base_name +
             "' begins with '-'; rename the input."

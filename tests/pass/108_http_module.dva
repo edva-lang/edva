@@ -3,7 +3,7 @@
 // checks their lengths and CR-free substrings rather than printing the whole
 // byte sequence.
 
-#use "net/http"
+#use net/http
 #use libc
 #use io
 

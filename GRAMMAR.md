@@ -31,7 +31,7 @@ inline statements. A `;` at the end of a line is an error.
 |------|--------|-------|
 | Integer | `42`, `0xFF`, `0o77`, `0b1010`, `0b1{48}` | optional type suffix (`42u64`, `-5i32`), repeating digits `{N}` |
 | Float | `3.14`, `1.5e-3`, `3.14f32`, `-0.0` | padding zeros mandatory on both sides of `.` (see §1.4) |
-| Rune | `'a'`, `'\n'`, `'λ'` | a single Unicode code point; `Rune`-typed |
+| Rune | `'a`, `'\n`, `'λ`, `'\s`, `''` | leading-apostrophe Unicode code point (`'\s` = space `32`, `''` = apostrophe `39`; no closing `'`); `Rune`-typed |
 | String | `"..."` | C-style escapes, `${expr}` interpolation; multiline with margin stripping when starting with `"\n` |
 
 > **Numeric limits and IEEE-754 constants** — Explicit-width integer bounds (`const::max_i64`, `const::min_i64`, `const::max_i32`, `const::min_i32`, `const::max_i16`, `const::min_i16`, `const::max_i8`, `const::min_i8`, `const::max_u64`, `const::max_u32`, `const::max_u16`, `const::max_u8`) and IEEE-754 floating-point constants (`const::inf_f64`, `const::inf_f32`, `const::nan_f64`, `const::nan_f32`, `const::max_f64`, `const::max_f32`, `const::min_f64`, `const::min_f32`, `const::sub_f64`, `const::sub_f32`, `const::eps_f64`, `const::eps_f32`) are provided by the `std/const` module (`#use const`). Signed negative zero is written directly as `-0.0` (or `-0.0f32`).
@@ -217,17 +217,19 @@ Statement  ::= ImportStmt
 
 ```
 ImportStmt ::= "#use" [ "(" [ "dynamic" | "import" ]
-                          { "," [ "dynamic" | "import" ] } ")" ] ModulePath
+                          { "," [ "dynamic" | "import" ] } ")" ] [ Identifier "=" ] ModulePath
 ```
 
-`#use module_name` imports a module named `module_name`; `#use path/to/module`
-(or quoted `#use "path/to/module"`) imports by filesystem path. Quotes are optional
-unless the path contains whitespace. Module resolution first searches relative to the
-importing file's directory, then the standard-library directory alongside the
-compiler. The loader is **file-first**: a module is `<dir>/<name>.dva`; a
-same-named `<dir>/<name>/` directory is only a fallback (a multi-file module),
-so `std/net.dva` and `std/net/http.dva` can coexist. The module prefix is the
-**last path segment** (`#use net/http` binds as `http::name`). An imported
+`#use` imports a module by an unquoted `ModulePath` (quotes `"` are forbidden and emit `E1015`; spaces in paths may be escaped as `\ `). The module namespace is determined strictly by the prefix of `ModulePath`:
+
+1. **Standard library (`#use str`, `#use math/geom`, `#use dom/console`)**: A bare path without `./`, `../`, or `@` resolves strictly in the compiler's `std/` directory.
+2. **Local module (`#use ./ui`, `#use ./index.vid`, `#use ../src/ui`)**: A path starting with `./` or `../` resolves strictly relative to the importing file's directory (with no implicit parent-directory or stdlib fallback).
+3. **Package dependency (`#use @vid`, `#use @vid/browser`)**: A path starting with `@` resolves strictly via the package's `.edva/imports.ccl` import map (`edva fetch` / `edva build` / `edva test`).
+
+The loader is **file-first**: a module is `<dir>/<name>.dva`; a
+same-named `<dir>/<name>/` directory is a multi-file directory module fallback,
+so `std/net.dva` and `std/net/http.dva` can coexist. The default bound module prefix is the
+base stem of the **last path segment** (`#use net/http` binds as `http::name`; `#use ./index.vid` loads `index.vid.dva` and binds as `index::name`), or `alias` when written `#use alias = path`. An imported
 module's bindings are referenced by `module::name`.
 
 `#use(import) path` brings all public symbols of the module into scope without the

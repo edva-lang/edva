@@ -81,7 +81,7 @@ s10 == expected10 | io::out $ "PASS 10" | io::out $ "FAIL 10"
 
 // 11. Scalar primitives interpolation (Option 1)
 count = 10
-ch = 'Z'
+ch = 'Z
 s11 = "items: ${count}, code: ${ch}"
 expected11 = "items: 10, code: Z"
 s11 == expected11 | io::out $ "PASS 11" | io::out $ "FAIL 11"

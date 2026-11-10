@@ -1,5 +1,5 @@
-#use "io"
-#use "str"
+#use io
+#use str
 
 // Test map string key equality with:
 // 1. Shorter stored key and much longer query (adversarial probe)

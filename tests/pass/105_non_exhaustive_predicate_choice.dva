@@ -8,7 +8,7 @@
 
 fb = v =>
    b = {16}
-   v [< 0] b += '-'
+   v [< 0] b += '-
    +b
 io::out $ fb(-5)
 io::out $ fb(5)
@@ -16,7 +16,7 @@ io::out $ fb(5)
 // Bare-condition single-branch statement, no fallback.
 fg = v =>
    b = {16}
-   v < 0 | b += '-'
+   v < 0 | b += '-
    +b
 io::out $ fg(-5)
 io::out $ fg(5)
@@ -24,7 +24,7 @@ io::out $ fg(5)
 // Predicate with explicit fallback (exhaustive).
 fh = v =>
    b = {16}
-   v [< 0] b += '-' | b
+   v [< 0] b += '- | b
    +b
 io::out $ fh(-5)
 io::out $ fh(5)

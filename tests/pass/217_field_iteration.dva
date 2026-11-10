@@ -4,7 +4,7 @@
 // runtime loop cannot index a heterogeneous record. Uniform operations (==)
 // work across field types without per-field type dispatch.
 
-#use "str"
+#use str
 #use io
 
 #type Pt (x: Int, y: Int)

@@ -12,16 +12,16 @@ bump = v =>
 #type TokKind < Eof, Newline, Ident, Num >
 
 is_ident_char: Rune => <>
-is_ident_char = ['a'...'z', 'A'...'Z', '0'...'9', '_']
+is_ident_char = ['a...'z, 'A...'Z, '0...'9, '_]
 
 is_non_ws: Rune => <>
-is_non_ws = ![' ', '\t', '\n']
+is_non_ws = !['\s, '\t, '\n]
 
 classify_char: Rune => String
 classify_char =
-   ['a'...'z', 'A'...'Z'] "alpha"
-   ['0'...'9']            "digit"
-   ['_']                  "under"
+   ['a...'z, 'A...'Z] "alpha"
+   ['0...'9]            "digit"
+   ['_]                  "under"
    |                      "other"
 
 ct_classify: #! N: Int => String
@@ -58,8 +58,8 @@ test::ok(!(0 < a < c < b), "4-link comparison chain false")
 f = 0.5
 test::ok(0.0 !> f !> 1.0, "float closed interval")
 test::ok(!(0.6 < f < 1.0), "float open miss")
-ch = 'm'
-test::ok('a' !> ch !> 'z', "rune closed interval")
+ch = 'm
+test::ok('a !> ch !> 'z, "rune closed interval")
 
 // 2. Single-evaluation of middle operands & short-circuiting
 eval_calls ::= 0
@@ -97,16 +97,16 @@ test::ok(10 [..=10], "open-ended [..=b] inclusive boundary")
 test::ok(!(11 [...10]), "open-ended [...b] miss")
 
 // Comma-separated ranges and headless functions
-test::ok(is_ident_char('a'), "is_ident_char 'a'")
-test::ok(is_ident_char('Z'), "is_ident_char 'Z'")
-test::ok(is_ident_char('7'), "is_ident_char '7'")
-test::ok(is_ident_char('_'), "is_ident_char '_'")
-test::ok(!is_ident_char('-'), "is_ident_char '-'")
+test::ok(is_ident_char('a), "is_ident_char 'a'")
+test::ok(is_ident_char('Z), "is_ident_char 'Z'")
+test::ok(is_ident_char('7), "is_ident_char '7'")
+test::ok(is_ident_char('_), "is_ident_char '_'")
+test::ok(!is_ident_char('-), "is_ident_char '-'")
 
-test::eq(classify_char('Q'), "alpha", "classify_char alpha")
-test::eq(classify_char('8'), "digit", "classify_char digit")
-test::eq(classify_char('_'), "under", "classify_char under")
-test::eq(classify_char('!'), "other", "classify_char other")
+test::eq(classify_char('Q), "alpha", "classify_char alpha")
+test::eq(classify_char('8), "digit", "classify_char digit")
+test::eq(classify_char('_), "under", "classify_char under")
+test::eq(classify_char('!), "other", "classify_char other")
 
 // Float range guard
 test::ok(0.25 [0.0...1.0], "float range guard hit")
@@ -144,9 +144,9 @@ tk2 = TokKind(Newline)
 test::ok(tk1 ![Eof, Newline], "negated enum variant guard true")
 test::ok(!(tk2 ![Eof, Newline]), "negated enum variant guard false")
 
-test::ok(is_non_ws('x'), "headless ![...] true")
-test::ok(!is_non_ws(' '), "headless ![...] false")
-test::ok(!is_non_ws('\n'), "headless ![...] newline false")
+test::ok(is_non_ws('x), "headless ![...] true")
+test::ok(!is_non_ws('\s), "headless ![...] false")
+test::ok(!is_non_ws('\n), "headless ![...] newline false")
 
 // 9. Bodyless [...] at comparison precedence (&&, ||, |) and uppercase constant ranges
 PAD_R = 10
@@ -157,8 +157,8 @@ my = 12
 mx = 25
 test::ok(my [PAD_R..PAD_R + PAD_H] && mx [PAD_C..PAD_C + PAD_W], "unparenthesized [...] with && and uppercase constants")
 test::ok(!(15 [PAD_R..PAD_R + PAD_H] && mx [PAD_C..PAD_C + PAD_W]), "unparenthesized [...] upper bound miss")
-b_ch = 'G'
-lower_ch = b_ch ['A'...'Z'] | b_ch + 32 | b_ch
-test::eq(lower_ch, 'g', "bodyless [...] driving bare-pipe choice")
+b_ch = 'G
+lower_ch = b_ch ['A...'Z] | b_ch + 32 | b_ch
+test::eq(lower_ch, 'g, "bodyless [...] driving bare-pipe choice")
 
 test::summary!

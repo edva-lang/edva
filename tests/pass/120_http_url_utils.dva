@@ -1,7 +1,7 @@
 // std/net/http URL + query utilities and HTTP request-line parsing (pure
 // string functions — no sockets).
 
-#use "net/http"
+#use net/http
 #use str
 #use io
 

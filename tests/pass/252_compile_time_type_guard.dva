@@ -18,7 +18,7 @@ describe = #! T, x =>
 io::out $ describe(42)
 io::out $ describe("hello")
 io::out $ describe(3.14)
-io::out $ describe('X')
+io::out $ describe('X)
 b = {8}
 b += 65
 io::out $ describe(b)

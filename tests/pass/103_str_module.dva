@@ -4,15 +4,15 @@
 #use io
 
 // Predicates return ramifications: <+> / <-> (printed as Positive/Negative).
-io::out $ ( str::is_digit(Int('5')) | "Positive" | "Negative")
-io::out $ ( str::is_digit(Int('x')) | "Positive" | "Negative")
-io::out $ ( str::is_alpha(Int('a')) | "Positive" | "Negative")
-io::out $ ( str::is_alpha(Int('9')) | "Positive" | "Negative")
-io::out $ ( str::is_alnum(Int('z')) | "Positive" | "Negative")
-io::out $ ( str::is_alnum(Int('!')) | "Positive" | "Negative")
-io::out $ ( str::is_ws(Int(' ')) | "Positive" | "Negative")
-io::out $ ( str::is_hex(Int('f')) | "Positive" | "Negative")
-io::out $ ( str::is_hex(Int('g')) | "Positive" | "Negative")
+io::out $ ( str::is_digit(Int('5)) | "Positive" | "Negative")
+io::out $ ( str::is_digit(Int('x)) | "Positive" | "Negative")
+io::out $ ( str::is_alpha(Int('a)) | "Positive" | "Negative")
+io::out $ ( str::is_alpha(Int('9)) | "Positive" | "Negative")
+io::out $ ( str::is_alnum(Int('z)) | "Positive" | "Negative")
+io::out $ ( str::is_alnum(Int('!)) | "Positive" | "Negative")
+io::out $ ( str::is_ws(Int('\s)) | "Positive" | "Negative")
+io::out $ ( str::is_hex(Int('f)) | "Positive" | "Negative")
+io::out $ ( str::is_hex(Int('g)) | "Positive" | "Negative")
 
 // from_byte: one byte as a 1-byte string.
 io::out $ str::from_byte(65)

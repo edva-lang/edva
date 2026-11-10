@@ -1,4 +1,4 @@
-#use "str"
+#use str
 #use io
 
 format_http: String, String => String

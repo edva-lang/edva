@@ -84,8 +84,8 @@ scan_string = b, k =>
    k !< ?src | <- Error(400, "json: unterminated string", "std/json.dva", 0, 0, (k, 0)) +>
    c = src(k)
    c
-   ['"'] <+ k ->
-   ['\\'] parse_escape(b, k)
+   ['"] <+ k ->
+   ['\\] parse_escape(b, k)
    [< 0x20] <- Error(400, "json: control character in string",
    "std/json.dva", 0, 0, (k, 0)) +>
    [< 0x80]
@@ -99,15 +99,15 @@ parse_escape: Builder, Int => <Int | Error>
 parse_escape = b, k =>
    e = k + 1 [< ?src] src(k + 1) | -1
    e
-   ['"'] b += '"'; scan_string(b, k + 2)
-   ['\\'] b += '\\'; scan_string(b, k + 2)
-   ['/'] b += '/'; scan_string(b, k + 2)
-   ['b'] b += 8; scan_string(b, k + 2)
-   ['f'] b += 12; scan_string(b, k + 2)
-   ['n'] b += 10; scan_string(b, k + 2)
-   ['r'] b += 13; scan_string(b, k + 2)
-   ['t'] b += 9; scan_string(b, k + 2)
-   ['u'] parse_unicode(b, k)
+   ['"] b += '"; scan_string(b, k + 2)
+   ['\\] b += '\\; scan_string(b, k + 2)
+   ['/] b += '/; scan_string(b, k + 2)
+   ['b] b += 8; scan_string(b, k + 2)
+   ['f] b += 12; scan_string(b, k + 2)
+   ['n] b += 10; scan_string(b, k + 2)
+   ['r] b += 13; scan_string(b, k + 2)
+   ['t] b += 9; scan_string(b, k + 2)
+   ['u] parse_unicode(b, k)
    | <- Error(400, "json: bad escape", "std/json.dva", 0, 0, (k, 0)) +>
 
 // A \uXXXX escape at index k (k is the '\', k+1 is 'u'). Supports BMP
@@ -140,7 +140,7 @@ parse_unicode_cp = b, k, cp =>
 
 parse_surrogate_pair: Builder, Int, Int => <Int | Error>
 parse_surrogate_pair = b, k, cp =>
-   has_second = k + 11 < ?src && src(k + 6) == '\\' && src(k + 7) == 'u' && is_hex_at(k + 8) && is_hex_at(k + 9) && is_hex_at(k + 10) && is_hex_at(k + 11)
+   has_second = k + 11 < ?src && src(k + 6) == '\\ && src(k + 7) == 'u && is_hex_at(k + 8) && is_hex_at(k + 9) && is_hex_at(k + 10) && is_hex_at(k + 11)
    has_second |
       l2 = hexval(src(k + 8))
       l3 = hexval(src(k + 9))
@@ -179,7 +179,7 @@ parse_array = !=>
    p = skip_ws(pos)
    pos ::= p
    c = p [< ?src] src(p) | -1
-   c [']']
+   c [']]
       pos ::= pos + 1
       elems = Values()
       <+ Value(Array, elems(0..0)) ->
@@ -199,15 +199,15 @@ parse_array_after_value = elems, v =>
          p = skip_ws(pos)
          pos ::= p
          c = p [< ?src] src(p) | -1
-         c [']']
+         c [']]
             pos ::= pos + 1
             n = ?elems
             <+ Value(Array, elems(0..n)) ->
-         [',']
+         [',]
             pos ::= pos + 1
             p2 = skip_ws(pos)
             c2 = p2 [< ?src] src(p2) | -1
-            c2 [']']
+            c2 [']]
                <- Error(400, "json: trailing comma in array", "std/json.dva", 0, 0, (p2, 0)) +>
             |
                parse_array_loop(elems)
@@ -221,7 +221,7 @@ parse_object = !=>
    p = skip_ws(pos)
    pos ::= p
    c = p [< ?src] src(p) | -1
-   c ['}']
+   c ['}]
       pos ::= pos + 1
       entries = Pairs()
       <+ Value(Object, entries(0..0)) ->
@@ -234,7 +234,7 @@ parse_object_loop = entries =>
    p = skip_ws(pos)
    pos ::= p
    c = p [< ?src] src(p) | -1
-   c ['"']
+   c ['"]
       k = parse_string!
       parse_object_after_key(entries, k)
    |
@@ -246,7 +246,7 @@ parse_object_after_key = entries, k =>
          key [String s]
             p = skip_ws(pos)
             pos ::= p
-            ok_col = p < ?src && src(p) == ':'
+            ok_col = p < ?src && src(p) == ':
             ok_col |
                pos ::= pos + 1
                v = parse_value!
@@ -262,15 +262,15 @@ parse_object_after_val = entries, s, v =>
          p = skip_ws(pos)
          pos ::= p
          c = p [< ?src] src(p) | -1
-         c ['}']
+         c ['}]
             pos ::= pos + 1
             m = ?entries
             <+ Value(Object, entries(0..m)) ->
-         [',']
+         [',]
             pos ::= pos + 1
             p2 = skip_ws(pos)
             c2 = p2 [< ?src] src(p2) | -1
-            c2 ['}']
+            c2 ['}]
                <- Error(400, "json: trailing comma in object", "std/json.dva", 0, 0, (p2, 0)) +>
             |
                parse_object_loop(entries)
@@ -305,13 +305,13 @@ parse_number = !=>
    p' = skip_ws(pos)
    pos ::= p'
    c0 = p' [< ?src] src(p') | -1
-   is_num_start = c0 !< '0' && c0 !> '9' || c0 == '-'
+   is_num_start = c0 !< '0 && c0 !> '9 || c0 == '-
    is_num_start |
       neg' = <->
-      c0 ['-']
+      c0 ['-]
          neg' = <+>
          p' = p' + 1
-      has_leading_zero = p' < ?src && src(p') == '0' && p' + 1 < ?src && is_digit_at(p' + 1)
+      has_leading_zero = p' < ?src && src(p') == '0 && p' + 1 < ?src && is_digit_at(p' + 1)
       has_leading_zero |
          <- Error(400, "json: leading zero not allowed", "std/json.dva", 0, 0, (p', 0)) +>
       |
@@ -323,10 +323,10 @@ parse_number = !=>
          0.. @
             p2' !< ?src | -->
             c = src(p2')
-            c !< '0' && c !> '9'
+            c !< '0 && c !> '9
                |
                   had_int' = <+>
-                  d = c - '0'
+                  d = c - '0
                   sig_digits' > 0 || d != 0
                      |
                         sig_digits' < 17
@@ -337,17 +337,17 @@ parse_number = !=>
                               exp10' = exp10' + 1
                   p2' = p2' + 1
                | -->
-         has_dot = (p2' < ?src && src(p2') == '.')
+         has_dot = (p2' < ?src && src(p2') == '.)
          had_frac' = <->
          has_dot |
             p2' = p2' + 1
             0.. @
                p2' !< ?src | -->
                c = src(p2')
-               c !< '0' && c !> '9'
+               c !< '0 && c !> '9
                   |
                      had_frac' = <+>
-                     d = c - '0'
+                     d = c - '0
                      (sig_digits' == 0 && d == 0)
                         |
                            exp10' = exp10' - 1
@@ -358,16 +358,16 @@ parse_number = !=>
                               exp10' = exp10' - 1
                      p2' = p2' + 1
                   | -->
-         has_exp = (p2' < ?src && (src(p2') == 'e' || src(p2') == 'E'))
+         has_exp = (p2' < ?src && (src(p2') == 'e || src(p2') == 'E))
          had_exp' = <->
          has_exp |
             p3' = p2' + 1
             eneg' = <->
             e0 = p3' [< ?src] src(p3') | -1
-            e0 ['-']
+            e0 ['-]
                eneg' = <+>
                p3' = p3' + 1
-            plus = (e0 == '+')
+            plus = (e0 == '+)
             plus |
                p3' = p3' + 1
             ev' = 0
@@ -376,10 +376,10 @@ parse_number = !=>
             0.. @
                p3' !< ?src | -->
                ec = src(p3')
-               ec ['0'...'9']
+               ec ['0...'9]
                   |
                      had_exp_digits' = <+>
-                     ed = ec - '0'
+                     ed = ec - '0
                      ev' > 0xF4240
                         | (over_exp' = <+>)
                         | (ev' = ev' * 10 + ed)
@@ -438,12 +438,12 @@ parse_value = !=>
    pos ::= p
    c = p [< ?src] src(p) | -1
    c
-   ['"'] parse_string!
-   ['{'] parse_object!
-   ['['] parse_array!
-   ['t'] parse_lit(<+>, 4)
-   ['f'] parse_lit(<->, 5)
-   ['n'] parse_null!
+   ['"] parse_string!
+   ['{] parse_object!
+   ['[] parse_array!
+   ['t] parse_lit(<+>, 4)
+   ['f] parse_lit(<->, 5)
+   ['n] parse_null!
    | parse_number!
 
 // --- Value query and serialization helpers ----------------------------------
@@ -455,17 +455,17 @@ json_type_err = msg =>
 hex_digit: Int => Int
 hex_digit = n =>
    d = n .&. 0x0F
-   d < 10 | '0' + d | 'a' + (d - 10)
+   d < 10 | '0 + d | 'a + (d - 10)
 
 #public
    escape_string_into: Builder, String => ()
    escape_string_into = b, s =>
-      b += '"'
+      b += '"
       ?s @ i =>
          c = s(i) .&. 0xFF
          c
-            ['"'] b += "\\\""
-            ['\\'] b += "\\\\"
+            ['"] b += "\\\""
+            ['\\] b += "\\\\"
             [8] b += "\\b"
             [12] b += "\\f"
             [10] b += "\\n"
@@ -476,7 +476,7 @@ hex_digit = n =>
                b += hex_digit(c .>. 4)
                b += hex_digit(c)
             | b += c
-      b += '"'
+      b += '"
 
    escape_string: String => String
    escape_string = s =>
@@ -503,24 +503,24 @@ stringify_into = b, val =>
       [Boolean flag] b += (flag | "true" | "false")
       [Null] b += "null"
       [Array items]
-         b += '['
+         b += '[
          items @ item, i =>
-            i > 0 | b += ','
+            i > 0 | b += ',
             stringify_into(b, item)
-         b += ']'
+         b += ']
       [Object pairs]
-         b += '{'
+         b += '{
          pairs @ p, i =>
-            i > 0 | b += ','
+            i > 0 | b += ',
             escape_string_into(b, p.key)
-            b += ':'
+            b += ':
             stringify_into(b, p.value)
-         b += '}'
+         b += '}
 
 append_indent: Builder, Int => ()
 append_indent = b, spaces =>
    spaces @
-      b += ' '
+      b += '\s
 
 stringify_pretty_into: Builder, Value, Int, Int => ()
 stringify_pretty_into = b, val, indent, depth =>
@@ -538,9 +538,9 @@ stringify_pretty_into = b, val, indent, depth =>
                   i > 0 | b += ",\n"
                   append_indent(b, (depth + 1) * indent)
                   stringify_pretty_into(b, item, indent, depth + 1)
-               b += '\n'
+               b += '\n
                append_indent(b, depth * indent)
-               b += ']'
+               b += ']
       [Object pairs]
          ?pairs == 0
             | b += "{}"
@@ -552,9 +552,9 @@ stringify_pretty_into = b, val, indent, depth =>
                   escape_string_into(b, p.key)
                   b += ": "
                   stringify_pretty_into(b, p.value, indent, depth + 1)
-               b += '\n'
+               b += '\n
                append_indent(b, depth * indent)
-               b += '}'
+               b += '}
 
 #public
    stringify: Value => String

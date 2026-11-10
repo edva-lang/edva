@@ -867,7 +867,7 @@
    to_upper: Rune => Rune
    to_upper = cp =>
       c = Int(cp)
-      c < 0x80 | --| Rune(c ['a'...'z'] | c - 32 | c)
+      c < 0x80 | --| Rune(c ['a...'z] | c - 32 | c)
       lo' = 0
       hi' = 198
       res' = c
@@ -893,7 +893,7 @@
    to_lower: Rune => Rune
    to_lower = cp =>
       c = Int(cp)
-      c < 0x80 | --| Rune(c ['A'...'Z'] | c + 32 | c)
+      c < 0x80 | --| Rune(c ['A...'Z] | c + 32 | c)
       c == 0x0130 | --| Rune(0x0069)
       lo' = 0
       hi' = 185
@@ -986,7 +986,7 @@
    // Identifier start: XID_Start or '_'
    is_id_start: Rune => <>
    is_id_start = cp =>
-      cp == '_' || is_xid_start(cp)
+      cp == '_ || is_xid_start(cp)
 
    // Identifier continuation: XID_Continue
    is_id_continue: Rune => <>

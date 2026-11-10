@@ -1,4 +1,4 @@
-#use(dynamic) views
+#use(dynamic) ./views
 #use io
 
 s' = views::State(10, "Item")

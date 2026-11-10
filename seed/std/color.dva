@@ -421,7 +421,7 @@
    from_hex_str = s =>
       len = ?s
       len == 0 | --| 0
-      start = s(0) == '#' | 1 | 0
+      start = s(0) == '# | 1 | 0
       n = len - start
       n != 6 && n != 3 | --| 0
       val' = 0
@@ -445,7 +445,7 @@
    to_hex_str: Int => String
    to_hex_str = c =>
       buf = {7}
-      buf += '#'
+      buf += '#
       (red24, green24, blue24) @ fn =>
          ch = fn(c)
          buf += ascii::hex_char_lower(ch .>. 4)

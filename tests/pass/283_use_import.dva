@@ -1,4 +1,4 @@
-#use(import) views
+#use(import) ./views
 #use io
 
 run = x =>

@@ -7,21 +7,21 @@ flag_str: <> => String
 flag_str = f => f | "true" | "false"
 
 // Test is_xid_start
-io::out $ flag_str(unicode::is_xid_start('a'))
-io::out $ flag_str(unicode::is_xid_start('Z'))
-io::out $ flag_str(unicode::is_xid_start('λ'))
-io::out $ flag_str(unicode::is_xid_start('Ⅳ'))
-io::out $ flag_str(unicode::is_xid_start('_'))
-io::out $ flag_str(unicode::is_xid_start('0'))
-io::out $ flag_str(unicode::is_xid_start('+'))
+io::out $ flag_str(unicode::is_xid_start('a))
+io::out $ flag_str(unicode::is_xid_start('Z))
+io::out $ flag_str(unicode::is_xid_start('λ))
+io::out $ flag_str(unicode::is_xid_start('Ⅳ))
+io::out $ flag_str(unicode::is_xid_start('_))
+io::out $ flag_str(unicode::is_xid_start('0))
+io::out $ flag_str(unicode::is_xid_start('+))
 
 // Test is_xid_continue
-io::out $ flag_str(unicode::is_xid_continue('a'))
-io::out $ flag_str(unicode::is_xid_continue('_'))
-io::out $ flag_str(unicode::is_xid_continue('0'))
-io::out $ flag_str(unicode::is_xid_continue('λ'))
+io::out $ flag_str(unicode::is_xid_continue('a))
+io::out $ flag_str(unicode::is_xid_continue('_))
+io::out $ flag_str(unicode::is_xid_continue('0))
+io::out $ flag_str(unicode::is_xid_continue('λ))
 io::out $ flag_str(unicode::is_xid_continue(Rune(0x0300)))
-io::out $ flag_str(unicode::is_xid_continue('+'))
+io::out $ flag_str(unicode::is_xid_continue('+))
 
 // Test is_uax31 on String
 io::out $ flag_str(unicode::is_uax31("hello_world"))

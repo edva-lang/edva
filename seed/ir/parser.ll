@@ -85908,10 +85908,13 @@ entry:
   store ptr %0, ptr %var.p, align 8
   %var.load = load ptr, ptr %var.p, align 8
   %call.res = call ptr @"path::basename"(ptr %var.load)
-  ret ptr %call.res
+  %call.res1 = call ptr @"path::stem"(ptr %call.res)
+  ret ptr %call.res1
 }
 
 declare ptr @"path::basename"(ptr) #1
+
+declare ptr @"path::stem"(ptr) #1
 
 define { i1, i64 } @"parser::atom_spawn"(ptr %0) #1 {
 entry:

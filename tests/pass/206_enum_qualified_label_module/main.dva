@@ -7,7 +7,7 @@
 // "A::X" gave "Undefined variable 'A'". The constructor form "m::A(X)"
 // already worked.
 
-#use "m"
+#use ./m
 #use io
 
 name_a: m::A => String

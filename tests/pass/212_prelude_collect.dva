@@ -4,7 +4,7 @@
 
 #use(import) fp
 
-#use "str"
+#use str
 #use io
 
 #type Ints Int{}

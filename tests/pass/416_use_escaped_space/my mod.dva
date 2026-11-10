@@ -1,0 +1,4 @@
+#public
+
+answer: () => Int
+answer = !=> 42

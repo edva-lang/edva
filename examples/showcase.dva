@@ -309,7 +309,7 @@ run_showcase = !=>
    greeting = "Hello, Edva!"
    raw_json = """{"lang":"edva","id":${id2}}"""
    check(?greeting == 12, "?s measures byte length")
-   check(greeting(0) == 'H' && greeting(?greeting - 1) == '!', "bounds-checked byte indexing")
+   check(greeting(0) == 'H && greeting(?greeting - 1) == '!, "bounds-checked byte indexing")
    check(greeting(0..5) == "Hello" && greeting(7..11) == "Edva", "range slicing")
    check(raw_json == "{\"lang\":\"edva\",\"id\":2}", "triple-quoted string & interpolation")
 
@@ -323,7 +323,7 @@ run_showcase = !=>
    b += ("id=", str::from_int(id2), " status=", "ok",
       " mask=", str::from_int(compile_time_mask))
    // Unfrozen builder supports byte indexing `b(i)` and slicing `b(a..b)`:
-   check(b(0) == 'i' && b(0..4) == "id=2", "unfrozen builder indexing & slicing")
+   check(b(0) == 'i && b(0..4) == "id=2", "unfrozen builder indexing & slicing")
    // Append raw byte tuple (ASCII '!' = 33):
    b += (33, 33)
    // Unary `+b` freezes the Builder into an immutable String in O(1) (zero-copy)
@@ -469,7 +469,7 @@ run_showcase = !=>
    rune_count' = 0
    utf_str @@ r =>
       rune_count' = rune_count' + 1
-      rune_count' [2] check(r == 'λ', "UTF-8 decoded rune")
+      rune_count' [2] check(r == 'λ, "UTF-8 decoded rune")
    check(rune_count' == 3 && ??utf_str == 3 && ?utf_str == 7, "UTF-8 @@ iteration & ??s rune count")
 
    // 3. Cycle with continue (`--^`), break (`-->`), and escape (`>--`):

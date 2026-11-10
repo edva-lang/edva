@@ -8,7 +8,7 @@
 f = bs =>
    out = {2}
    ?bs @ i =>
-      out += 'x'
+      out += 'x
       g = "a" + "b"
    io::out $ +out
    0

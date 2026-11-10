@@ -6,22 +6,22 @@
 #use io
 
 b = {16}
-b += 'H'
-b += 'i'
+b += 'H
+b += 'i
 s = +b             // freeze: consumes b, "Hi"
 io::out $ s
 
 // Builder creation from a variable capacity (a hint, clamped >= 0).
 cap = 32
 out = {cap}
-out += 'A'
-out += 'B'
-out += 'C'
+out += 'A
+out += 'B
+out += 'C
 io::out $ +out
 
 // Capacity can be an arbitrary integerish expression.
 out2 = {1 + 1}
-out2 += '!'
+out2 += '!
 io::out $ +out2
 
 // {n} splices as a plain value; postfix "expr {N}" repetition is unchanged.

@@ -4,9 +4,9 @@
 // representing the explicit typed boundary between semantic inference and
 // LLVM IR emission. Part of Milestone 2 (Phase 2) of unification roadmap.
 
-#use "ast"
-#use "unify"
-#use "str"
+#use ./ast
+#use ./unify
+#use str
 
 #public
 

@@ -33,21 +33,21 @@ url_err = msg, col =>
 hex_upper: Int => Int
 hex_upper = n =>
    d = n .&. 0x0F
-   d < 10 | '0' + d | 'A' + (d - 10)
+   d < 10 | '0 + d | 'A + (d - 10)
 
 from_hex: Int => Int
 from_hex = c =>
    c
-      ['0'...'9'] c - '0'
-      ['a'...'f'] c - 'a' + 10
-      ['A'...'F'] c - 'A' + 10
+      ['0...'9] c - '0
+      ['a...'f] c - 'a + 10
+      ['A...'F] c - 'A + 10
       |           -1
 
 is_unreserved: Int => <>
-is_unreserved = ['A'...'Z', 'a'...'z', '0'...'9', '-', '_', '.', '~']
+is_unreserved = ['A...'Z, 'a...'z, '0...'9, '-, '_, '., '~]
 
 is_path_safe: Int => <>
-is_path_safe = [is_unreserved, '/', ':', '@', '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=']
+is_path_safe = [is_unreserved, '/, ':, '@, '!, '$, '&, '', '(, '), '*, '+, ',, ';, '=]
 
 percent_encode_impl: String, <>, <> => String
 percent_encode_impl = s, space_as_plus, allow_path =>
@@ -56,14 +56,14 @@ percent_encode_impl = s, space_as_plus, allow_path =>
    b = {n + 16}
    n @ i =>
       c = s(i) .&. 0xFF
-      space_as_plus && c == ' '
-         | b += '+'
+      space_as_plus && c == '\s
+         | b += '+
          |
             ok = allow_path | is_path_safe(c) | is_unreserved(c)
             ok
                | b += c
                |
-                  b += '%'
+                  b += '%
                   b += hex_upper(c .>. 4)
                   b += hex_upper(c)
    +b
@@ -78,10 +78,10 @@ percent_decode_impl = s, plus_as_space =>
    (i' < n && bad_idx' < 0) @
       c = s(i') .&. 0xFF
       c
-         ['+']
-            b += (plus_as_space | ' ' | '+')
+         ['+]
+            b += (plus_as_space | '\s | '+)
             i' = i' + 1
-         ['%']
+         ['%]
             i' + 2 !< n
                | bad_idx' = i'
                |
@@ -130,8 +130,8 @@ encode_path = s =>
 normalize_path: String => String
 normalize_path = path =>
    ?path == 0 | --| ""
-   lead_slash = path(0) == '/'
-   trail_slash = ?path > 1 && path(?path - 1) == '/'
+   lead_slash = path(0) == '/
+   trail_slash = ?path > 1 && path(?path - 1) == '/
    parts = str::split(path, "/")
    stack' = String{}
    parts @ seg =>
@@ -145,11 +145,11 @@ normalize_path = path =>
          | stack' += seg
    ends_dot = ?parts > 0 && parts(?parts - 1)!! [".", ".."]
    b = {?path + 4}
-   lead_slash | b += '/'
+   lead_slash | b += '/
    stack' @ item, idx =>
-      idx > 0 | b += '/'
+      idx > 0 | b += '/
       b += item
-   ((trail_slash || ends_dot) && ?stack' > 0) | b += '/'
+   ((trail_slash || ends_dot) && ?stack' > 0) | b += '/
    out = +b
    ?out == 0 && lead_slash | "/" | out
 
@@ -166,7 +166,7 @@ parse_authority = auth =>
          hostport' = pair.1
    hp = hostport'
    ?hp == 0 | --| <+ (uinfo', "", 0) ->
-   hp(0) == '['
+   hp(0) == '[
       |
          // IPv6 literal [::1]:8080
          str::find(hp, "]")
@@ -175,7 +175,7 @@ parse_authority = auth =>
                rest = hp(close_idx + 1..?hp)
                ?rest == 0
                   | <+ (uinfo', h_v6, 0) ->
-                  | rest(0) != ':'
+                  | rest(0) != ':
                      | <- url_err("invalid authority after IPv6 literal", close_idx + 1) +>
                      |
                         pstr = rest(1..?rest)
@@ -231,9 +231,9 @@ parse = raw =>
             |
                cand = rest'(0..cidx)
                c0 = cand(0)
-               valid_sch' = c0 ['A'...'Z', 'a'...'z']
+               valid_sch' = c0 ['A...'Z, 'a...'z]
                1..cidx @ k =>
-                  !(cand(k) ['A'...'Z', 'a'...'z', '0'...'9', '+', '-', '.']) | valid_sch' = <->
+                  !(cand(k) ['A...'Z, 'a...'z, '0...'9, '+, '-, '.]) | valid_sch' = <->
                valid_sch'
                   |
                      scheme' = str::lower(cand)
@@ -258,7 +258,7 @@ format = u =>
    ?u.scheme > 0
       |
          b += u.scheme
-         b += ':'
+         b += ':
    has_auth = (?u.host > 0) || (?u.userinfo > 0) || (u.port > 0)
    has_auth
       |
@@ -266,23 +266,23 @@ format = u =>
          ?u.userinfo > 0
             |
                b += u.userinfo
-               b += '@'
+               b += '@
          b += u.host
          u.port > 0
             |
-               b += ':'
+               b += ':
                b += str::from_int(u.port)
    ?u.path > 0
       |
-         has_auth && (u.path(0) != '/') | b += '/'
+         has_auth && (u.path(0) != '/) | b += '/
          b += u.path
    ?u.query > 0
       |
-         b += '?'
+         b += '?
          b += u.query
    ?u.fragment > 0
       |
-         b += '#'
+         b += '#
          b += u.fragment
    +b
 
@@ -304,7 +304,7 @@ resolve = base, ref_str =>
                            eff_q = ?r.query > 0 | r.query | base.query
                            <+ Url(base.scheme, base.userinfo, base.host, base.port, base.path, eff_q, r.fragment) ->
                         |
-                           merged_path = r.path(0) == '/'
+                           merged_path = r.path(0) == '/
                               | r.path
                               |
                                  (?base.host > 0 && ?base.path == 0)
@@ -352,9 +352,9 @@ format_query = params =>
    ?params == 0 | --| ""
    b = {64}
    params @ e, i =>
-      i > 0 | b += '&'
+      i > 0 | b += '&
       b += encode_form(e.key)
-      b += '='
+      b += '=
       b += encode_form(e.val)
    +b
 

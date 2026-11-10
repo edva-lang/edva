@@ -9,23 +9,23 @@
 char: Int, Flavor => Int
 char = idx, flavor =>
    (idx .&. 63)
-      [0...25]  'A' + (idx .&. 63)
-      [26...51] 'a' + ((idx .&. 63) - 26)
-      [52...61] '0' + ((idx .&. 63) - 52)
-      [62]      (flavor [Url] '-' | '+')
-      |         (flavor [Url] '_' | '/')
+      [0...25]  'A + (idx .&. 63)
+      [26...51] 'a + ((idx .&. 63) - 26)
+      [52...61] '0 + ((idx .&. 63) - 52)
+      [62]      (flavor [Url] '- | '+)
+      |         (flavor [Url] '_ | '/)
 
 // Decodes an RFC 4648 Base64 (`Std`: `+/`) or Base64URL (`Url`: `-_`) ASCII character into `0..63`, or `-1` if invalid.
 val: Int, Flavor => Int
 val = c, flavor =>
    c
-      ['A'...'Z'] c - 'A'
-      ['a'...'z'] c - 'a' + 26
-      ['0'...'9'] c - '0' + 52
-      ['+']       (flavor [Std] 62 | -1)
-      ['/']       (flavor [Std] 63 | -1)
-      ['-']       (flavor [Url] 62 | -1)
-      ['_']       (flavor [Url] 63 | -1)
+      ['A...'Z] c - 'A
+      ['a...'z] c - 'a + 26
+      ['0...'9] c - '0 + 52
+      ['+]       (flavor [Std] 62 | -1)
+      ['/]       (flavor [Std] 63 | -1)
+      ['-]       (flavor [Url] 62 | -1)
+      ['_]       (flavor [Url] 63 | -1)
       |           -1
 
 // Returns `<+>` if `s` is non-empty and consists strictly of unpadded Base64 characters for `flavor`.
@@ -102,7 +102,7 @@ encode = bytes, flavor =>
          c1 = ((b0 .&. 0x03) .<. 4) .|. ((b1 .>. 4) .&. 0x0F)
          c2 = (b1 .&. 0x0F) .<. 2
          b += (char(c0, flavor), char(c1, flavor), char(c2, flavor))
-         pad | b += '='
+         pad | b += '=
    +b
 
 // Decodes a Base64 string into raw bytes for `flavor` (`Std` requires `=` padding, `Url` accepts padded or unpadded).
@@ -112,7 +112,7 @@ decode = s, flavor =>
    clean_b = {?s}
    ?s @ i =>
       ch = s(i)
-      !(ch [' ', '\t', '\n', '\r']) | clean_b += ch
+      !(ch ['\s, '\t, '\n, '\r]) | clean_b += ch
    clean = +clean_b
    n = ?clean
    n == 0 | --| <+ "" ->
@@ -121,11 +121,11 @@ decode = s, flavor =>
    // Strip up to 2 trailing '=' padding chars
    eff_len' = n
    pad_cnt' = 0
-   eff_len' > 0 && clean(eff_len' - 1) == '='
+   eff_len' > 0 && clean(eff_len' - 1) == '=
       |
          eff_len' = eff_len' - 1
          pad_cnt' = pad_cnt' + 1
-   eff_len' > 0 && clean(eff_len' - 1) == '='
+   eff_len' > 0 && clean(eff_len' - 1) == '=
       |
          eff_len' = eff_len' - 1
          pad_cnt' = pad_cnt' + 1

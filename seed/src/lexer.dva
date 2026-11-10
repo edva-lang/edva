@@ -31,8 +31,8 @@
 //   ./edva selfhost/lexer.dva
 //   ./lexer
 
-#use "diag"
-#use "log"
+#use ./diag
+#use log
 #use ascii
 #use libc
 #use str
@@ -186,11 +186,11 @@ pk = lx, off =>
    i = lx.pos + off
    i !> ?lx.src - 1
       | unicode::decode_rune(lx.src, i)
-      | '\0'
+      | '\0
 
 // Consume one rune, maintaining line/col.
 is_nl: Rune => <>
-is_nl = ['\n']
+is_nl = ['\n]
 
 adv: Lx, Rune => Rune
 adv = lx, r => 
@@ -201,18 +201,18 @@ adv = lx, r =>
    r
 
 is_ws: Rune => <>
-is_ws = [' ', '\t', '\r', '\n']
+is_ws = ['\s, '\t, '\r, '\n]
 
 has_more_on_line: Lx => <>
 has_more_on_line = lx =>
    off' = 0
    0.. @
       c = pk(lx, off')
-      c [' ', '\t']
+      c ['\s, '\t]
          | off' = off' + 1
          | -->
    c = pk(lx, off')
-   !(c ['\n', '\r', '\0'] || (c == '/' && pk(lx, off' + 1) == '/'))
+   !(c ['\n, '\r, '\0] || (c == '/ && pk(lx, off' + 1) == '/))
 
 is_inline_block_opener: TokKind, String => <>
 is_inline_block_opener = kind, text =>
@@ -279,26 +279,27 @@ fail = code, line, col, msg =>
 esc_val: Rune => Rune
 esc_val = e =>
    e
-      ['n'] '\n'
-      ['t'] '\t'
-      ['r'] '\r'
-      ['0'] '\0'
-      ['a'] '\a'
-      ['b'] '\b'
-      ['f'] '\f'
-      ['v'] '\v'
-      ['e'] 27
+      ['n] '\n
+      ['t] '\t
+      ['r] '\r
+      ['s] 32
+      ['0] '\0
+      ['a] '\a
+      ['b] '\b
+      ['f] '\f
+      ['v] '\v
+      ['e] 27
       | e
 
 hex_digit_val: Rune => <Int|>
 hex_digit_val = r =>
    ci = Int(r)
-   ci ['0'...'9']
-      | <+ ci - '0' +>
-      | ci ['a'...'f']
-         | <+ ci - 'a' + 10 +>
-         | ci ['A'...'F']
-            | <+ ci - 'A' + 10 +>
+   ci ['0...'9]
+      | <+ ci - '0 +>
+      | ci ['a...'f]
+         | <+ ci - 'a + 10 +>
+         | ci ['A...'F]
+            | <+ ci - 'A + 10 +>
             | <-->
 
 scan_esc_rune: Lx => Rune
@@ -306,7 +307,7 @@ scan_esc_rune = lx =>
    esc_c = pk(lx, 0)
    adv(lx, esc_c)
    esc_c
-      ['x']
+      ['x]
          hex_digit_val(pk(lx, 0))
             | d1 =>
                hex_digit_val(pk(lx, 1))
@@ -314,10 +315,10 @@ scan_esc_rune = lx =>
                      adv(lx, pk(lx, 0))
                      adv(lx, pk(lx, 0))
                      Rune((d1 .<. 4) .|. d2)
-                  | 'x'
-            | 'x'
-      ['u']
-         pk(lx, 0) == '{'
+                  | 'x
+            | 'x
+      ['u]
+         pk(lx, 0) == '{
             |
                adv(lx, pk(lx, 0))
                val' = 0
@@ -329,17 +330,17 @@ scan_esc_rune = lx =>
                         val' = (val' .<. 4) .|. d
                         ndig' = ndig' + 1
                      | -->
-               pk(lx, 0) == '}' && ndig' > 0
+               pk(lx, 0) == '} && ndig' > 0
                   |
                      adv(lx, pk(lx, 0))
                      Rune(val')
-                  | 'u'
-            | 'u'
+                  | 'u
+            | 'u
       | esc_val(esc_c)
 
 scan_esc_byte_opt: Lx => <Int|>
 scan_esc_byte_opt = lx =>
-   pk(lx, 0) == 'x'
+   pk(lx, 0) == 'x
       |
          hex_digit_val(pk(lx, 1))
             | d1 =>
@@ -361,7 +362,7 @@ decode_escapes = raw =>
    0.. @
       lx.pos !< ?lx.src | -->
       c = pk(lx, 0)
-      c == '\\'
+      c == '\\
          |
             adv(lx, c)
             lx.pos < ?lx.src
@@ -371,7 +372,7 @@ decode_escapes = raw =>
                      |
                         er = scan_esc_rune(lx)
                         buf += er
-               | buf += '\\'
+               | buf += '\\
          |
             adv(lx, c)
             buf += c
@@ -380,7 +381,7 @@ decode_escapes = raw =>
 // --- character classes ----------------------------------------------------
 
 is_delim: Rune => <>
-is_delim = ['(', ')', '[', ']', '{', '}', ',', ';']
+is_delim = ['(, '), '[, '], '{, '}, ',, ';]
 
 is_id_start: Rune => <>
 is_id_start = r =>
@@ -397,7 +398,7 @@ is_id_char = r =>
 // references (apply to c), with the branches swapped so a non-special char
 // yields <-> and a special one <+>.
 is_special: Rune => <>
-is_special = ['"', '\'', '#', '\0', is_delim, is_ws, is_id_char] <-> | <+>
+is_special = ['", '', '#, '\0, is_delim, is_ws, is_id_char] <-> | <+>
 
 // < >-returning predicates yield genuine rams (<+>/<->): an Int-yielding
 // body under a <> signature is an E3093 mismatch, and an Int can never
@@ -436,7 +437,7 @@ scan_id = lx, start =>
    0.. @
       i' !< total | -->
       r2 = unicode::decode_rune(lx.src, i')
-      r2 == '\''
+      r2 == ''
          |
             i' = i' + 1
             ncol' = ncol' + 1
@@ -472,7 +473,7 @@ scan_float_suffix = lx, q =>
          1
       |
          pk(lx, 0)
-            ['f', 'F']
+            ['f, 'F]
                lx.pos = lx.pos + 1
                lx.col = lx.col + 1
                1
@@ -480,12 +481,12 @@ scan_float_suffix = lx, q =>
 
 radix_ok: Rune, Rune => <>
 radix_ok = c, kind =>
-   is_b = kind ['b', 'B']
-   is_o = kind ['o', 'O']
-   is_x = kind ['x', 'X']
+   is_b = kind ['b, 'B]
+   is_o = kind ['o, 'O]
+   is_x = kind ['x, 'X]
    ci = Int(c)
-   bin = c ['0', '1']
-   oct = ci ['0'...'7']
+   bin = c ['0, '1]
+   oct = ci ['0...'7]
    hex = ascii::is_hex(ci)
    (is_b && bin) || (is_o && oct) || (is_x && hex)
 
@@ -498,7 +499,7 @@ try_scan_repeat = lx =>
       ascii::is_digit(Int(c))
          | p' = p' + 1
          | -->
-   p' > lx.pos + 1 && p' < ?lx.src && lx.src(p') == '}'
+   p' > lx.pos + 1 && p' < ?lx.src && lx.src(p') == '}
       |
          count = p' + 1 - lx.pos
          count @
@@ -523,9 +524,9 @@ scan_radix_rest = lx, kind, start, line, col =>
       radix_ok(pk(lx, 0), kind)
          | adv(lx, pk(lx, 0))
          |
-            pk(lx, 0) == '_'
+            pk(lx, 0) == '_
                | fail(1019, line, col, "Underscore numeric separators are not supported.")
-            pk(lx, 0) == '{' && lx.pos > start + 2 && try_scan_repeat(lx)
+            pk(lx, 0) == '{ && lx.pos > start + 2 && try_scan_repeat(lx)
                | --^
                | -->
    finish_int(lx, start, line, col)
@@ -541,41 +542,41 @@ finish_float = lx, start, line, col =>
 scan_frac_opt: Lx, Int, Int, Int, Int => <>
 scan_frac_opt = lx, q, start, line, col => 
    d = pk_off(lx, 1)
-   dig = d ['0'...'9']
-   ok = pk(lx, 0) == '.' && pk_off(lx, 1) != '.' && dig
+   dig = d ['0...'9]
+   ok = pk(lx, 0) == '. && pk_off(lx, 1) != '. && dig
    ok
       |
          adv(lx, pk(lx, 0))
          skip_digits(lx, 0)
-         pk(lx, 0) == '_'
+         pk(lx, 0) == '_
             | fail(1019, line, col, "Underscore numeric separators are not supported.")
    ok
 
 // Optional exponent (e[+-]digits). Returns 1 when consumed.
 scan_exp_opt: Lx, Int, Int, Int => <>
 scan_exp_opt = lx, q, line, col => 
-   is_e = pk(lx, 0) ['e', 'E']
+   is_e = pk(lx, 0) ['e, 'E]
    is_e | adv(lx, pk(lx, 0))
-   has_sign = is_e && (pk(lx, 0) == '+' || pk(lx, 0) == '-')
+   has_sign = is_e && (pk(lx, 0) == '+ || pk(lx, 0) == '-)
    has_sign | adv(lx, pk(lx, 0))
    is_e | skip_digits(lx, line)
-   is_e && pk(lx, 0) == '_'
+   is_e && pk(lx, 0) == '_
       | fail(1019, line, col, "Underscore numeric separators are not supported.")
    is_e
 
 scan_dec: Lx, Int, Int, Int => Tok
 scan_dec = lx, start, line, col => 
    skip_digits(lx, 0)
-   pk(lx, 0) == '_'
+   pk(lx, 0) == '_
       | fail(1019, line, col, "Underscore numeric separators are not supported.")
    0.. @
       lx.pos !< ?lx.src | -->
-      pk(lx, 0) == '{' && lx.pos > start && try_scan_repeat(lx)
+      pk(lx, 0) == '{ && lx.pos > start && try_scan_repeat(lx)
          | skip_digits(lx, 0)
          | -->
    f1 = scan_frac_opt(lx, 0, start, line, col)
-   bad_dot = !f1 && pk(lx, 0) == '.' && pk_off(lx, 1) != '.' &&
-      !is_special(pk_off(lx, 1)) && !(start > 0 && lx.src(start - 1) == '.')
+   bad_dot = !f1 && pk(lx, 0) == '. && pk_off(lx, 1) != '. &&
+      !is_special(pk_off(lx, 1)) && !(start > 0 && lx.src(start - 1) == '.)
    bad_dot | fail(1012, line, col,
       "Float literal requires a digit after the decimal point; " +
       "padding zeros are mandatory (write '1.0', not '1.').")
@@ -588,8 +589,8 @@ scan_dec = lx, start, line, col =>
 scan_num: Lx, Int, Int, Int => Tok
 scan_num = lx, start, line, col => 
    k = pk(lx, 0)
-   is_r = pk_off(lx, 1) ['b', 'B', 'o', 'O', 'x', 'X']
-   k == '0' && is_r
+   is_r = pk_off(lx, 1) ['b, 'B, 'o, 'O, 'x, 'X]
+   k == '0 && is_r
       | scan_radix_rest(lx, pk_off(lx, 1), start, line, col)
       | scan_dec(lx, start, line, col)
 
@@ -614,8 +615,8 @@ scan_op = lx, start, line, col =>
    lx.pos = i'
    lx.col = ncol'
 
-   is_dotdotdot = i' - start !< 3 && lx.src(start) == '.' &&
-      lx.src(start + 1) == '.' && (lx.src(start + 2) == '.' || lx.src(start + 2) == '=')
+   is_dotdotdot = i' - start !< 3 && lx.src(start) == '. &&
+      lx.src(start + 1) == '. && (lx.src(start + 2) == '. || lx.src(start + 2) == '=)
    is_dotdotdot |
       lx.pos = start + 3
       lx.col = col + 3
@@ -623,78 +624,78 @@ scan_op = lx, start, line, col =>
 
    // Range ".." followed by negative sign, '?', or other operator characters:
    // split ".." into the range operator and the separate trailing operator.
-   is_dotdot_split = i' - start > 2 && lx.src(start) == '.' &&
-      lx.src(start + 1) == '.'
+   is_dotdot_split = i' - start > 2 && lx.src(start) == '. &&
+      lx.src(start + 1) == '.
    is_dotdot_split |
       lx.pos = start + 2
       lx.col = col + 2
       --| mktok(lx, TokKind(Op), start, 2, line, col, "..")
 
-   is_unwrap_split = i' - start > 2 && lx.src(start) == '!' &&
-      lx.src(start + 1) == '!'
+   is_unwrap_split = i' - start > 2 && lx.src(start) == '! &&
+      lx.src(start + 1) == '!
    is_unwrap_split |
       lx.pos = start + 2
       lx.col = col + 2
       --| mktok(lx, TokKind(Op), start, 2, line, col, "!!")
 
-   is_prop_split = i' - start > 3 && lx.src(start) == '-' &&
-      lx.src(start + 1) == '-' && lx.src(start + 2) == '!'
+   is_prop_split = i' - start > 3 && lx.src(start) == '- &&
+      lx.src(start + 1) == '- && lx.src(start + 2) == '!
    is_prop_split |
       lx.pos = start + 3
       lx.col = col + 3
       --| mktok(lx, TokKind(Op), start, 3, line, col, "--!")
 
-   is_ret_split = i' - start > 3 && lx.src(start) == '-' &&
-      lx.src(start + 1) == '-' && lx.src(start + 2) == '|'
+   is_ret_split = i' - start > 3 && lx.src(start) == '- &&
+      lx.src(start + 1) == '- && lx.src(start + 2) == '|
    is_ret_split |
       lx.pos = start + 3
       lx.col = col + 3
       --| mktok(lx, TokKind(Op), start, 3, line, col, "--|")
 
-   is_bind_split = i' - start > 2 && lx.src(start) == '~' &&
-      lx.src(start + 1) == '~'
+   is_bind_split = i' - start > 2 && lx.src(start) == '~ &&
+      lx.src(start + 1) == '~
    is_bind_split |
       lx.pos = start + 2
       lx.col = col + 2
       --| mktok(lx, TokKind(Op), start, 2, line, col, "~~")
 
-   is_xor_split = i' - start > 3 && lx.src(start) == '.' &&
-      lx.src(start + 1) == '^' && lx.src(start + 2) == '.'
+   is_xor_split = i' - start > 3 && lx.src(start) == '. &&
+      lx.src(start + 1) == '^ && lx.src(start + 2) == '.
    is_xor_split |
       lx.pos = start + 3
       lx.col = col + 3
       --| mktok(lx, TokKind(Op), start, 3, line, col, ".^.")
 
-   is_bang_ram_split = i' - start !< 3 && lx.src(start) == '!' &&
-      lx.src(start + 1) == '<' && lx.src(start + 2) == '>'
+   is_bang_ram_split = i' - start !< 3 && lx.src(start) == '! &&
+      lx.src(start + 1) == '< && lx.src(start + 2) == '>
    is_bang_ram_split |
       lx.pos = start + 1
       lx.col = col + 1
       --| mktok(lx, TokKind(Op), start, 1, line, col, "!")
 
-   is_ret_noth_split = i' - start > 4 && lx.src(start) == '|' &&
-      lx.src(start + 1) == '-' && lx.src(start + 2) == '-' && lx.src(start + 3) == '>'
+   is_ret_noth_split = i' - start > 4 && lx.src(start) == '| &&
+      lx.src(start + 1) == '- && lx.src(start + 2) == '- && lx.src(start + 3) == '>
    is_ret_noth_split |
       lx.pos = start + 4
       lx.col = col + 4
       --| mktok(lx, TokKind(Op), start, 4, line, col, "|-->")
 
-   is_ret_succ_split = i' - start > 4 && lx.src(start) == '|' &&
-      lx.src(start + 1) == '+' && lx.src(start + 2) == '+' && lx.src(start + 3) == '>'
+   is_ret_succ_split = i' - start > 4 && lx.src(start) == '| &&
+      lx.src(start + 1) == '+ && lx.src(start + 2) == '+ && lx.src(start + 3) == '>
    is_ret_succ_split |
       lx.pos = start + 4
       lx.col = col + 4
       --| mktok(lx, TokKind(Op), start, 4, line, col, "|++>")
 
-   is_ret_neg_split = i' - start > 3 && lx.src(start) == '|' &&
-      lx.src(start + 1) == '-' && lx.src(start + 2) == '>'
+   is_ret_neg_split = i' - start > 3 && lx.src(start) == '| &&
+      lx.src(start + 1) == '- && lx.src(start + 2) == '>
    is_ret_neg_split |
       lx.pos = start + 3
       lx.col = col + 3
       --| mktok(lx, TokKind(Op), start, 3, line, col, "|->")
 
-   is_ret_pos_split = i' - start > 3 && lx.src(start) == '|' &&
-      lx.src(start + 1) == '+' && lx.src(start + 2) == '>'
+   is_ret_pos_split = i' - start > 3 && lx.src(start) == '| &&
+      lx.src(start + 1) == '+ && lx.src(start + 2) == '>
    is_ret_pos_split |
       lx.pos = start + 3
       lx.col = col + 3
@@ -728,11 +729,11 @@ scan_string_body = lx, line, col =>
       lx.pos !< ?lx.src | -->
       c = pk(lx, 0)
       c
-         ['"']
+         ['"]
             adv(lx, pk(lx, 0))
             closed' = 1
             -->
-         ['\\'] on_str_esc(lx, c)
+         ['\\] on_str_esc(lx, c)
          | adv(lx, c)
    closed'
 
@@ -742,7 +743,7 @@ skip_multiline_ws = src, i, n =>
    0.. @
       pos' !< n | -->
       c = src(pos')
-      c [' ', '\t'] (pos' = pos' + 1) | -->
+      c ['\s, '\t] (pos' = pos' + 1) | -->
    pos'
 
 skip_eol_comment: String, Int, Int => Int
@@ -751,7 +752,7 @@ skip_eol_comment = src, i, n =>
    0.. @
       pos' !< n | -->
       c = src(pos')
-      c ['\n', '\r'] -->
+      c ['\n, '\r] -->
       pos' = pos' + 1
    pos'
 
@@ -762,19 +763,19 @@ check_multiline_str: Lx => Int
 check_multiline_str = lx =>
    n = ?lx.src
    p1 = skip_multiline_ws(lx.src, lx.pos, n)
-   has_cm = p1 + 1 < n && lx.src(p1) == '/' && lx.src(p1 + 1) == '/'
+   has_cm = p1 + 1 < n && lx.src(p1) == '/ && lx.src(p1 + 1) == '/
    p2 = has_cm | skip_eol_comment(lx.src, p1, n) | p1
    p2 !< n
       | 0
       |
          c1 = lx.src(p2)
-         has_cr = c1 == '\r'
+         has_cr = c1 == '\r
          p3 = has_cr | p2 + 1 | p2
          p3 !< n
             | 0
             |
                c2 = lx.src(p3)
-               c2 != '\n'
+               c2 != '\n
                   | 0
                   |
                      p4 = skip_multiline_ws(lx.src, p3 + 1, n)
@@ -787,9 +788,9 @@ check_multiline_str = lx =>
                               | 0
                               |
                                  c3 = lx.src(p4)
-                                 is_triple = c3 == '"' && p4 + 2 < n &&
-                                    lx.src(p4 + 1) == '"' && lx.src(p4 + 2) == '"'
-                                 is_quote = c3 == '"' && !is_triple
+                                 is_triple = c3 == '" && p4 + 2 < n &&
+                                    lx.src(p4 + 1) == '" && lx.src(p4 + 2) == '"
+                                 is_quote = c3 == '" && !is_triple
                                  is_quote | p4 | 0
 
 adv_to: Lx, Int => ()
@@ -822,23 +823,32 @@ concat_multiline_str = lx, text =>
 
 scan_string: Lx, Int, Int, Int => Tok
 
-// A rune literal: value emitted as decimal text (production parity).
+// True if r is whitespace or in the Unicode Zs (Space Separator) category,
+// which is forbidden directly after a bare leading apostrophe '''.
+is_rune_forbidden_ws: Rune => <>
+is_rune_forbidden_ws = r =>
+   ci = Int(r)
+   ci [0x09, 0x20, 0xA0, 0x1680, 0x2000...0x200A, 0x202F, 0x205F, 0x3000]
+
+// A rune literal ('a, '\s, '', '\n, '\x7f, '\u{03BB}): value emitted as decimal text.
 scan_rune: Lx, Int, Int, Int => Tok
 scan_rune = lx, start, line, col => 
    adv(lx, pk(lx, 0))
-   bad_head = lx.pos !< ?lx.src || pk(lx, 0) == '\''
-   bad_head | fail(1009, line, col,
-      "Empty character literal '' -- expected a character between the quotes")
+   (lx.pos !< ?lx.src || pk(lx, 0) ['\n, '\r]) | fail(1009, line, col,
+      "Unterminated character literal — expected a character after '''")
    v = pk(lx, 0)
-   val = v == '\\'
+   is_rune_forbidden_ws(v) | fail(1009, line, col,
+      "Empty character literal — bare ''' cannot be followed by whitespace; use ''\\s' for space (U+0020) or ''\\u{...}' for Unicode spaces.")
+   val = v == '\\
       |
          adv(lx, v)
          scan_esc_rune(lx)
       | adv(lx, v)
-   pk(lx, 0) == '\''
-      | adv(lx, pk(lx, 0))
-      | fail(1010, line, col,
-         "Unterminated character literal -- missing closing '''")
+   v != '' && pk(lx, 0) == ''
+      |
+         fail(1010, line, col,
+            "Unterminated character literal — closing ''' is not allowed; write ''a' instead of ''a''.")
+         adv(lx, pk(lx, 0))
    mktok(lx, TokKind(Rune), start, lx.pos - start,
       line, col, str::from_int(val))
 
@@ -856,7 +866,7 @@ skip_block_comment = lx, line, col =>
    done' = <->
    0.. @
       lx.pos !< ?lx.src | -->
-      pk(lx, 0) == '*' && pk_off(lx, 1) == '/'
+      pk(lx, 0) == '* && pk_off(lx, 1) == '/
          | adv(lx, pk(lx, 0)); adv(lx, pk(lx, 0)); done' = <+>; -->
          | adv(lx, pk(lx, 0))
    !done' | fail(1007, line, col,
@@ -880,11 +890,11 @@ scan_qp_body = lx, line =>
       lx.pos !< ?lx.src | -->
       c = pk(lx, 0)
       c
-         ['"']
+         ['"]
             adv(lx, pk(lx, 0))
             closed' = 1
             -->
-         ['\\']
+         ['\\]
             adv(lx, pk(lx, 0))
             adv(lx, pk(lx, 0))
          | adv(lx, c)
@@ -903,16 +913,23 @@ scan_quoted_path = lx, line, col =>
 
 // A path character for '#use module': identifier chars plus '/', '.', '-'.
 is_path_rune: Rune => <>
-is_path_rune = r => !is_ws(r) && !is_nl(r) && r != ';' && r != '"' && r != '\0'
+is_path_rune = r => !is_ws(r) && !is_nl(r) && r != '; && r != '" && r != '= && r != '\0
 
 scan_bare_path: Lx, Int => String
 scan_bare_path = lx, line => 
-   p = lx.pos
+   buf = {64}
    0..1000000 @
       c = pk(lx, 0)
-      (!is_path_rune(c) || (c == '/' && pk_off(lx, 1) == '/')) | -->
-      adv(lx, c)
-   lx.src(p..lx.pos)
+      c == '\\ && pk_off(lx, 1) == '\s
+         |
+            adv(lx, c)
+            adv(lx, pk(lx, 0))
+            buf += '\s
+         |
+            (!is_path_rune(c) || (c == '/ && pk_off(lx, 1) == '/)) | -->
+            buf += c
+            adv(lx, c)
+   +buf
 
 scan_use_directive: Lx, Int, Int, Int => Tok
 scan_use_directive = lx, hstart, line, col =>
@@ -925,17 +942,17 @@ scan_use_directive = lx, hstart, line, col =>
          8 @ adv(lx, pk(lx, 0))
          is_dyn' = <+>
       |
-         pk(lx, 0) == '('
+         pk(lx, 0) == '(
             |
                adv(lx, pk(lx, 0))
                0..100 @
                   skip_ws(lx, 0)
                   c = pk(lx, 0)
-                  c == ')'
+                  c == ')
                      |
                         adv(lx, c)
                         -->
-                  c == '\0' || is_nl(c)
+                  c == '\0 || is_nl(c)
                      |
                         fail(1015, line, col,
                            "Unterminated '#use(...)' — expected closing ')'.")
@@ -951,29 +968,35 @@ scan_use_directive = lx, hstart, line, col =>
                            "Invalid #use option '" + word +
                            "' — expected 'dynamic' or 'import'.")
                   skip_ws(lx, 0)
-                  pk(lx, 0) == ',' | adv(lx, pk(lx, 0))
+                  pk(lx, 0) == ', | adv(lx, pk(lx, 0))
                   skip_ws(lx, 0)
-                  pk(lx, 0) == ')'
+                  pk(lx, 0) == ')
                      |
                         adv(lx, pk(lx, 0))
                         -->
    skip_hws(lx, 0)
-   first_seg = pk(lx, 0) == '"'
-      | scan_quoted_path(lx, line, col)
+   first_seg = pk(lx, 0) == '"
+      |
+         fail(1015, line, col,
+            "Quotes are not allowed in '#use' paths — use '#use ./module', '#use @pkg', or '#use std_mod'.")
+         scan_quoted_path(lx, line, col)
       | scan_bare_path(lx, line)
    ?first_seg == 0 | fail(1015, line, col,
-      "Expected a module name or quoted path after '#use'.")
+      "Expected a module path after '#use'.")
    skip_hws(lx, 0)
-   has_alias = pk(lx, 0) == '=' && pk_off(lx, 1) != '=' && pk_off(lx, 1) != '>'
+   has_alias = pk(lx, 0) == '= && pk_off(lx, 1) != '= && pk_off(lx, 1) != '>
    path = has_alias
       |
          adv(lx, pk(lx, 0))
          skip_hws(lx, 0)
-         rhs = pk(lx, 0) == '"'
-            | scan_quoted_path(lx, line, col)
+         rhs = pk(lx, 0) == '"
+            |
+               fail(1015, line, col,
+                  "Quotes are not allowed in '#use' paths — use '#use ./module', '#use @pkg', or '#use std_mod'.")
+               scan_quoted_path(lx, line, col)
             | scan_bare_path(lx, line)
          ?rhs == 0 | fail(1015, line, col,
-            "Expected a module name or quoted path after '='.")
+            "Expected a module path after '='.")
          first_seg + " = " + rhs
       | first_seg
    kind = is_dyn' && is_imp'
@@ -1157,7 +1180,7 @@ scan_hash_name = lx, line, col =>
 
 scan_hash: Lx, Int, Int => Tok
 scan_hash = lx, line, col => 
-   pk_off(lx, 1) == '!'
+   pk_off(lx, 1) == '!
       | scan_hash_ct(lx, line, col)
       | scan_hash_name2(lx, line, col)
 
@@ -1247,8 +1270,8 @@ count_indent = lx, q =>
    sp' = 0
    tabs' = 0
    0.. @
-      is_sp = pk(lx, 0) == ' '
-      is_tab = pk(lx, 0) == '\t'
+      is_sp = pk(lx, 0) == '\s
+      is_tab = pk(lx, 0) == '\t
       done = !(is_sp || is_tab)
       done | -->
       sp' = sp' + (is_sp | 1 | 0)
@@ -1306,8 +1329,8 @@ layout = lx, q =>
 // recurse; anything else hands off to layout_step.
 line_token: Lx, Int => Tok
 line_token = lx, q => 
-   nl = pk(lx, 0) ['\n', '\r']
-   cm = pk(lx, 0) == '/' && pk_off(lx, 1) == '/'
+   nl = pk(lx, 0) ['\n, '\r]
+   cm = pk(lx, 0) == '/ && pk_off(lx, 1) == '/
    nl || cm | skip_blank(lx, q) | layout_step(lx, lx.depth, lx.line)
 
 // Consume one blank or comment-only line at bol (comment first, then the
@@ -1315,9 +1338,9 @@ line_token = lx, q =>
 // swallows blank/comment-only lines without emitting a Newline token.
 skip_blank: Lx, Int => Tok
 skip_blank = lx, q => 
-   cm = pk(lx, 0) == '/' && pk_off(lx, 1) == '/'
+   cm = pk(lx, 0) == '/ && pk_off(lx, 1) == '/
    cm | skip_line_comment(lx, 0)
-   nl = pk(lx, 0) ['\n', '\r']
+   nl = pk(lx, 0) ['\n, '\r]
    nl | adv(lx, pk(lx, 0))
    lx.bol = 1
    layout(lx, q)
@@ -1341,7 +1364,7 @@ layout_step = lx, depth, line =>
 skip_hws: Lx, Int => ()
 skip_hws = lx, q => 
    0.. @
-      is_hws = pk(lx, 0) [' ', '\t', '\r']
+      is_hws = pk(lx, 0) ['\s, '\t, '\r]
       is_hws | adv(lx, pk(lx, 0)); lx.lead = <+> | -->
 
 flush_indents: Lx, Int => Tok
@@ -1370,14 +1393,14 @@ eof_tok = lx, line, col =>
 scan_delim: Lx, Rune, Int, Int => Tok
 scan_delim = lx, c, line, col => 
    kind = c
-      ['('] TokKind(LParen)
-      [')'] TokKind(RParen)
-      ['['] TokKind(LBracket)
-      [']'] TokKind(RBracket)
-      ['{'] TokKind(LBrace)
-      ['}'] TokKind(RBrace)
-      [','] TokKind(Comma)
-      [';'] TokKind(Semi)
+      ['(] TokKind(LParen)
+      [')] TokKind(RParen)
+      ['[] TokKind(LBracket)
+      [']] TokKind(RBracket)
+      ['{] TokKind(LBrace)
+      ['}] TokKind(RBrace)
+      [',] TokKind(Comma)
+      [';] TokKind(Semi)
       | TokKind(Op)
    p = lx.pos
    adv(lx, c)
@@ -1391,7 +1414,7 @@ scan_ident = lx, start, line, col =>
 
 scan_intrinsic: Lx, Int, Int, Int => Tok
 scan_intrinsic = lx, start, line, col =>
-   adv(lx, '%')
+   adv(lx, '%)
    word = scan_id(lx, start + 1)
    mktok(lx, TokKind(Id), start, lx.pos - start, line, col, "%" + word)
 
@@ -1427,7 +1450,7 @@ count_leading_indent = s =>
    0.. @
       sp' !< ?s | -->
       c = s(sp')
-      c [' ', '\t'] (sp' = sp' + 1) | -->
+      c ['\s, '\t] (sp' = sp' + 1) | -->
    sp'
 
 scan_str_expr: Lx, <> => TokArr
@@ -1538,10 +1561,10 @@ scan_single_string = lx, start, start_line, start_col, is_triple =>
             -->
       c = pk(lx, 0)
       c
-         ['"']
+         ['"]
             is_triple
                |
-                  is_close = pk_off(lx, 1) == '"' && pk_off(lx, 2) == '"' && pk_off(lx, 3) != '"'
+                  is_close = pk_off(lx, 1) == '" && pk_off(lx, 2) == '" && pk_off(lx, 3) != '"
                   is_close
                      |
                         adv(lx, pk(lx, 0))
@@ -1562,12 +1585,12 @@ scan_single_string = lx, start, start_line, start_col, is_triple =>
                      |
                         ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
                         -->
-         ['\n', '\r']
+         ['\n, '\r]
             fail(1008, lx.line, lx.col,
                diag::E1008_string_unterminated!)
             -->
-         ['\\']
-            is_triple && pk_off(lx, 1) == '"' && pk_off(lx, 2) == '"' && pk_off(lx, 3) == '"'
+         ['\\]
+            is_triple && pk_off(lx, 1) == '" && pk_off(lx, 2) == '" && pk_off(lx, 3) == '"
                |
                   adv(lx, pk(lx, 0))
                   adv(lx, pk(lx, 0))
@@ -1575,17 +1598,17 @@ scan_single_string = lx, start, start_line, start_col, is_triple =>
                   adv(lx, pk(lx, 0))
                   cur_text' += "\"\"\""
                |
-                  pk_off(lx, 1) == '$'
+                  pk_off(lx, 1) == '$
                      |
                         adv(lx, pk(lx, 0))
                         adv(lx, pk(lx, 0))
-                        cur_text' += '$'
+                        cur_text' += '$
                      |
-                        pk_off(lx, 1) == '"'
+                        pk_off(lx, 1) == '"
                            |
                               adv(lx, pk(lx, 0))
                               adv(lx, pk(lx, 0))
-                              cur_text' += '"'
+                              cur_text' += '"
                            |
                               adv(lx, pk(lx, 0))
                               scan_esc_byte_opt(lx)
@@ -1593,8 +1616,8 @@ scan_single_string = lx, start, start_line, start_col, is_triple =>
                                  |
                                     er = scan_esc_rune(lx)
                                     cur_text' += er
-         ['$']
-            pk_off(lx, 1) == '{'
+         ['$]
+            pk_off(lx, 1) == '{
                |
                   adv(lx, pk(lx, 0))
                   adv(lx, pk(lx, 0))
@@ -1605,7 +1628,7 @@ scan_single_string = lx, start, start_line, start_col, is_triple =>
                   expr_count' = expr_count' + 1
                |
                   adv(lx, pk(lx, 0))
-                  cur_text' += '$'
+                  cur_text' += '$
          |
             adv(lx, c)
             cur_text' += c
@@ -1623,7 +1646,7 @@ scan_single_string = lx, start, start_line, start_col, is_triple =>
 
 scan_multiline_string: Lx, Int, Int, Int, <> => Tok
 scan_multiline_string = lx, start, start_line, start_col, is_triple =>
-   pk(lx, 0) == '\r' | adv(lx, pk(lx, 0))
+   pk(lx, 0) == '\r | adv(lx, pk(lx, 0))
    adv(lx, pk(lx, 0))
 
    lines = HeredocLines()
@@ -1642,9 +1665,9 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
             -->
       c = pk(lx, 0)
       c
-         ['"']
+         ['"]
             is_close = !is_triple ||
-               (pk_off(lx, 1) == '"' && pk_off(lx, 2) == '"' && pk_off(lx, 3) != '"')
+               (pk_off(lx, 1) == '" && pk_off(lx, 2) == '" && pk_off(lx, 3) != '")
             is_close
                |
                   raw_last_s = +cur_text'
@@ -1672,13 +1695,13 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
                   adv(lx, c)
                   cur_text' += c
                   cur_is_blank' = <->
-         ['\\']
-            is_continuation = pk_off(lx, 1) == '\n' ||
-               (pk_off(lx, 1) == '\r' && pk_off(lx, 2) == '\n')
+         ['\\]
+            is_continuation = pk_off(lx, 1) == '\n ||
+               (pk_off(lx, 1) == '\r && pk_off(lx, 2) == '\n)
             is_continuation
                |
                   adv(lx, pk(lx, 0))
-                  pk(lx, 0) == '\r' | adv(lx, pk(lx, 0))
+                  pk(lx, 0) == '\r | adv(lx, pk(lx, 0))
                   adv(lx, pk(lx, 0))
                   ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
                   lines += HeredocLine(cur_parts', cur_is_blank', cur_line_num', <+>, cur_indent')
@@ -1688,7 +1711,7 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
                   cur_is_blank' = <+>
                   cur_indent' = 0
                |
-                  is_triple && pk_off(lx, 1) == '"' && pk_off(lx, 2) == '"' && pk_off(lx, 3) == '"'
+                  is_triple && pk_off(lx, 1) == '" && pk_off(lx, 2) == '" && pk_off(lx, 3) == '"
                      |
                         adv(lx, pk(lx, 0))
                         adv(lx, pk(lx, 0))
@@ -1697,18 +1720,18 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
                         cur_text' += "\"\"\""
                         cur_is_blank' = <->
                      |
-                        pk_off(lx, 1) == '$'
+                        pk_off(lx, 1) == '$
                            |
                               adv(lx, pk(lx, 0))
                               adv(lx, pk(lx, 0))
-                              cur_text' += '$'
+                              cur_text' += '$
                               cur_is_blank' = <->
                            |
-                              pk_off(lx, 1) == '"'
+                              pk_off(lx, 1) == '"
                                  |
                                     adv(lx, pk(lx, 0))
                                     adv(lx, pk(lx, 0))
-                                    cur_text' += '"'
+                                    cur_text' += '"
                                     cur_is_blank' = <->
                                  |
                                     adv(lx, pk(lx, 0))
@@ -1718,8 +1741,8 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
                                           er = scan_esc_rune(lx)
                                           cur_text' += er
                                     cur_is_blank' = <->
-         ['$']
-            pk_off(lx, 1) == '{'
+         ['$]
+            pk_off(lx, 1) == '{
                |
                   adv(lx, pk(lx, 0))
                   adv(lx, pk(lx, 0))
@@ -1731,10 +1754,10 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
                   cur_line_num' = lx.line
                |
                   adv(lx, pk(lx, 0))
-                  cur_text' += '$'
+                  cur_text' += '$
                   cur_is_blank' = <->
-         ['\n', '\r']
-            c == '\r' | adv(lx, pk(lx, 0))
+         ['\n, '\r]
+            c == '\r | adv(lx, pk(lx, 0))
             adv(lx, pk(lx, 0))
             ?cur_text' > 0 | cur_parts' += HeredocPart(Text, +cur_text')
             lines += HeredocLine(cur_parts', cur_is_blank', cur_line_num', <->, cur_indent')
@@ -1747,7 +1770,7 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
             adv(lx, c)
             cur_text' += c
             c
-               [' ', '\t']
+               ['\s, '\t]
                   cur_is_blank' | cur_indent' = cur_indent' + 1
                |
                   cur_is_blank' = <->
@@ -1815,15 +1838,15 @@ scan_multiline_string = lx, start, start_line, start_col, is_triple =>
                emit_interp_tokens(lx, assembled, start, start_line, start_col)
 
 scan_string = lx, start, start_line, start_col =>
-   is_triple = pk_off(lx, 1) == '"' && pk_off(lx, 2) == '"'
+   is_triple = pk_off(lx, 1) == '" && pk_off(lx, 2) == '"
    is_triple
       |
          adv(lx, pk(lx, 0))
          adv(lx, pk(lx, 0))
          adv(lx, pk(lx, 0))
       | adv(lx, pk(lx, 0))
-   is_multiline = pk(lx, 0) == '\n' ||
-      (pk(lx, 0) == '\r' && pk_off(lx, 1) == '\n')
+   is_multiline = pk(lx, 0) == '\n ||
+      (pk(lx, 0) == '\r && pk_off(lx, 1) == '\n)
    is_multiline
       | scan_multiline_string(lx, start, start_line, start_col, is_triple)
       | scan_single_string(lx, start, start_line, start_col, is_triple)
@@ -1841,19 +1864,19 @@ dispatch_scan = lx =>
    skip_hws(lx, 0)
    c = pk(lx, 0)
    c
-      ['\0'] flush_indents(lx, lx.line)
-      [(_ == '/' && pk_off(lx, 1) == '*')] comment_block(lx, lx.line, lx.col)
-      [(_ == '/' && pk_off(lx, 1) == '/')] comment_line(lx, lx.line)
-      ['\n'] nl_tok(lx, lx.line, lx.col)
-      [(_ == '%' && is_id_start(pk_off(lx, 1)))]
+      ['\0] flush_indents(lx, lx.line)
+      [(_ == '/ && pk_off(lx, 1) == '*)] comment_block(lx, lx.line, lx.col)
+      [(_ == '/ && pk_off(lx, 1) == '/)] comment_line(lx, lx.line)
+      ['\n] nl_tok(lx, lx.line, lx.col)
+      [(_ == '% && is_id_start(pk_off(lx, 1)))]
          scan_intrinsic(lx, lx.pos, lx.line, lx.col)
       [is_delim] scan_delim(lx, c, lx.line, lx.col)
-      ['#'] scan_hash(lx, lx.line, lx.col)
+      ['#] scan_hash(lx, lx.line, lx.col)
       [unicode::is_digit] scan_num(lx, lx.pos, lx.line, lx.col)
-      ['\''] scan_rune(lx, lx.pos, lx.line, lx.col)
+      [''] scan_rune(lx, lx.pos, lx.line, lx.col)
       [is_special] scan_op(lx, lx.pos, lx.line, lx.col)
       [is_id_start] scan_ident(lx, lx.pos, lx.line, lx.col)
-      ['"'] scan_string(lx, lx.pos, lx.line, lx.col)
+      ['"] scan_string(lx, lx.pos, lx.line, lx.col)
       | eof_tok(lx, lx.line, lx.col)
 
 // --- public API -----------------------------------------------------------

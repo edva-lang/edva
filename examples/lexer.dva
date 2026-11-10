@@ -33,7 +33,7 @@
 // XID_Start/XID_Continue — no combining marks, joiners, or Other_ID_*).
 is_id_start: Rune => Flag
 is_id_start = r =>
-   unicode::is_alpha(r) || r == '_'
+   unicode::is_alpha(r) || r == '_
 
 is_id_char: Rune => Flag
 is_id_char = r =>
@@ -117,8 +117,8 @@ scan_string = src, start =>
       i' !< total | -->
       c = src(i')
       c
-         ['"'] done' = 1
-         ['\\'] i' = i' + 1
+         ['"] done' = 1
+         ['\\] i' = i' + 1
       i' = i' + 1
    Tok(Str, start, i' - start)
 
@@ -127,7 +127,7 @@ scan_string = src, start =>
 scan_rune: String, Int => Tok
 scan_rune = src, start =>
    c = src(start + 1)
-   c ['\\'] Tok(Rune, start, 4) | Tok(Rune, start, 3)
+   c ['\\] Tok(Rune, start, 4) | Tok(Rune, start, 3)
 
 // --- whitespace / comments / token dispatch -------------------------------
 
@@ -138,14 +138,14 @@ skip_comment = src, start =>
    total = ?src
    i' = total
    (start + 1)..total @ j =>
-      src(j) ['\n'] i' = j; -->
+      src(j) ['\n] i' = j; -->
    i' + 1
 
 // If src[i] starts a "//" comment, skip it; else return i unchanged.
 maybe_comment: String, Int => Int
 maybe_comment = src, i =>
    total = ?src
-   i + 1 < total && src(i + 1) == '/'
+   i + 1 < total && src(i + 1) == '/
       | skip_comment(src, i)
       | i
 
@@ -154,7 +154,7 @@ maybe_comment = src, i =>
 ws_step: String, Int => Int
 ws_step = src, i =>
    c = src(i)
-   c [' ', '\t', '\r', '\n'] i + 1 ['/'] maybe_comment(src, i) | i
+   c ['\s, '\t, '\r, '\n] i + 1 ['/] maybe_comment(src, i) | i
 
 // Skip whitespace and comments from `start`; returns the index of the next
 // token.
