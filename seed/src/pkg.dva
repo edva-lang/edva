@@ -1533,11 +1533,21 @@
                               | <-->
                         | <-->
 
-   check_manifest: Resolver, PackageManifest, <> => <>
-   check_manifest = r, m, is_root =>
+   is_lib_file_path: String => <>
+   is_lib_file_path = l =>
+      ends_with(l, ".a") || ends_with(l, ".o") || ends_with(l, ".so") ||
+         ends_with(l, ".dylib") || starts_with(l, "./") || starts_with(l, "../") ||
+         starts_with(l, "/")
+
+   check_manifest: Resolver, PackageManifest, String, <> => <>
+   check_manifest = r, m, pkg_dir, is_root =>
       !is_root && ?m.overrides > 0
          | log::warn("warning: ignoring 'overrides' in dependency '" + m.name + "'")
-      m.native_libs @ l => r.libs = add_unique(r.libs, l)
+      m.native_libs @ l =>
+         eff_l = is_lib_file_path(l) && !starts_with(l, "/") && pkg_dir != ""
+            | path_join(pkg_dir, l)
+            | l
+         r.libs = add_unique(r.libs, eff_l)
       m.native_pkg_config @ p => r.pkg_config = add_unique(r.pkg_config, p)
       m.edva != "" && version_lt(lang_version, m.edva)
          | fail(7009, "package '" + m.name + "' requires edva >= " + m.edva +
@@ -1592,7 +1602,7 @@
 
    resolve_node: Resolver, Fetched => < String | >
    resolve_node = r, f =>
-      !check_manifest(r, f.manifest, <->) | <--> |
+      !check_manifest(r, f.manifest, f.dir, <->) || (?f.manifest.generate > 0 && run_generators(f.dir, r.opts, f.manifest.generate) != 0) | <--> |
          r.stack += f.id
          deps: LockDeps
          ok' = <+>
@@ -3012,7 +3022,7 @@
 
    resolve_with_root: Resolver, PackageManifest, Lockfile, <> => Int
    resolve_with_root = r, m, prior, has_lock =>
-      !install_overrides(r, m) || !check_manifest(r, m, <+>) | 1 |
+      !install_overrides(r, m) || !check_manifest(r, m, r.opts.root, <+>) | 1 |
          r.stack += m.name + "@path"
          root_deps: LockDeps
          ok' = <+>

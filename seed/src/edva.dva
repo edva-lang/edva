@@ -2147,9 +2147,15 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                            prog_exprs = prog [Block b] b | ast::Exprs()
                            link_libs = collect_link_libs(prog_exprs)
                            link_libs @ lib =>
-                              clang_args += "-l" + lib
+                              is_path_lib = find_char_at(lib, 0, 47) !< 0 ||
+                                 ends_with(lib, ".a") || ends_with(lib, ".o") ||
+                                 ends_with(lib, ".so") || ends_with(lib, ".dylib")
+                              clang_args += (is_path_lib | lib | "-l" + lib)
                            nat_libs @ lib =>
-                              clang_args += "-l" + lib
+                              is_path_lib = find_char_at(lib, 0, 47) !< 0 ||
+                                 ends_with(lib, ".a") || ends_with(lib, ".o") ||
+                                 ends_with(lib, ".so") || ends_with(lib, ".dylib")
+                              clang_args += (is_path_lib | lib | "-l" + lib)
                            nat_pkg @ pname =>
                               !pkg_err'
                                  |
