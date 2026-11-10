@@ -383,7 +383,7 @@ export def sync-helix [] {
   mkdir $hx_edva_dir
   mkdir $hx_dva_dir
   mkdir $repo_hx_dir
-  let queries = ["highlights.scm", "indents.scm", "textobjects.scm"]
+  let queries = ["highlights.scm", "indents.scm", "textobjects.scm", "injections.scm"]
   for q in $queries {
     let src = ($ts_dir | path join $"queries/($q)")
     if ($src | path exists) {
@@ -410,6 +410,32 @@ export def sync-helix [] {
     print $"[✓] Helix edva grammar built and installed to ($out_so)"
   } else {
     print $"[!] Helix build warning: ($res.stderr)"
+  }
+
+  for lang in ["vid", "ccl"] {
+    let lang_ts_dir = ($r | path join $"../tree-sitter-($lang)" | path expand)
+    if ($lang_ts_dir | path exists) {
+      let hx_lang_dir = ($env.HOME | path join $".config/helix/runtime/queries/($lang)")
+      mkdir $hx_lang_dir
+      for q in $queries {
+        let src = ($lang_ts_dir | path join $"queries/($q)")
+        if ($src | path exists) {
+          try { cp -f $src ($hx_lang_dir | path join $q) }
+          print $"[✓] Synced Helix ($lang) query ($q)"
+        }
+      }
+      let lang_parser_c = ($lang_ts_dir | path join "src/parser.c")
+      let lang_scanner_c = ($lang_ts_dir | path join "src/scanner.c")
+      let lang_inc_dir = ($lang_ts_dir | path join "src")
+      let lang_out_so = ($gram_dir | path join $"($lang).so")
+      let lang_res = (do { ^cc -fPIC -shared -O2 -I $lang_inc_dir $lang_parser_c $lang_scanner_c -o $lang_out_so } | complete)
+      if $lang_res.exit_code == 0 {
+        try { cp -f $lang_out_so ($build_hx_dir | path join $"($lang).so") }
+        print $"[✓] Helix ($lang) grammar built and installed to ($lang_out_so)"
+      } else {
+        print $"[!] Helix ($lang) build warning: ($lang_res.stderr)"
+      }
+    }
   }
 }
 

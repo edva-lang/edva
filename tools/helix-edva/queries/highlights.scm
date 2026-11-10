@@ -39,6 +39,9 @@
   "#export"
   "#spawn"
   "#join"
+  "#exit"
+  "#error"
+  "#warn"
   "#!"
   "#size"
   "#packed"
@@ -264,6 +267,7 @@
 ; Cycle jumps and cycle-escape marker.
 (cycle_jump_expr) @keyword.control.repeat
 (cycle_expr "@" @keyword.control.repeat)
+(cycle_expr "@@" @keyword.control.repeat)
 "--:" @keyword.control
 
 ; Choice branch separators and choice headers.
@@ -289,14 +293,19 @@
 (foreign_binding "->" @operator)
 
 ; Infix binary operators (scoped so "<" / ">" don't hit ram/enum type decls).
+(binary_expr "|_|" @operator)
+(binary_expr "^=" @operator)
 (binary_expr "&&" @operator)
 (binary_expr "||" @operator)
 (binary_expr ".|." @operator)
+(binary_expr ".^." @operator)
 (binary_expr ".&." @operator)
 (binary_expr "==" @operator)
 (binary_expr "!=" @operator)
 (binary_expr "<" @operator)
 (binary_expr ">" @operator)
+(binary_expr "<=" @operator)
+(binary_expr ">=" @operator)
 (binary_expr "!<" @operator)
 (binary_expr "!>" @operator)
 (binary_expr ".<." @operator)
