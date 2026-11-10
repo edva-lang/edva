@@ -365,7 +365,11 @@ codegen_named_fn_value = cg, name =>
       | codegen_generic_fn_value_error(cg, target)
       |
          types::has_fn_name(cg, target) && !types::is_fn_name(cg, target)
-            | stmt::compile_fn_lazy(cg, target, ast::VTypes())
+            |
+               types::g.is_typed_pipeline
+                  | stmt::compile_typed_fn_lazy(cg, target)
+               !types::is_fn_name(cg, target)
+                  | stmt::compile_fn_lazy(cg, target, ast::VTypes())
          meta = fn_value_meta(cg, target)
          meta.generic
             | codegen_generic_fn_value_error(cg, target)

@@ -5304,6 +5304,11 @@ pat_record = subs =>
    ast::Pattern(Node, ast::PatternRecord(ast::PatternKind(Record), "", "",
       ast::Expr(Var, ""), subs))
 
+pat_or: ast::Patterns => ast::Pattern
+pat_or = subs =>
+   ast::Pattern(Node, ast::PatternRecord(ast::PatternKind(Or), "", "",
+      ast::Expr(Var, ""), subs))
+
 guard_is_variant: lexer::Tok => <>
 guard_is_variant = t =>
    t.kind
@@ -5315,7 +5320,7 @@ pattern_is_deep: ast::Pattern => <>
 pattern_is_deep = pat_in =>
    pat = pat_rec(pat_in)
    pat.kind
-      [Record] <+>
+      [Record, Or] <+>
       [Variant]
          n = ?pat.subpatterns
          n == 0
@@ -5570,6 +5575,11 @@ pat_is_unconditional = pat_in =>
          pat.subpatterns @ sub =>
             !pat_is_unconditional(sub) | all_unc' = <->
          all_unc'
+      [Or]
+         any_unc' = <->
+         pat.subpatterns @ sub =>
+            pat_is_unconditional(sub) | any_unc' = <+>
+         any_unc'
       | <->
 
 pat_has_binds: ast::Pattern => <>
@@ -5577,12 +5587,38 @@ pat_has_binds = pat_in =>
    pat = pat_rec(pat_in)
    pat.kind
       [Bind] <+>
-      [Variant, Record]
+      [Variant, Record, Or]
          has' = <->
          pat.subpatterns @ sub =>
             pat_has_binds(sub) | has' = <+>
          has'
       | <->
+
+pat_collect_binds_into: ast::Pattern, ast::Names => ()
+pat_collect_binds_into = pat_in, out =>
+   pat = pat_rec(pat_in)
+   pat.kind
+      [Bind] out += pat.name
+      [Variant, Record, Or]
+         pat.subpatterns @ sub =>
+            pat_collect_binds_into(sub, out)
+
+names_has_str: ast::Names, String => <>
+names_has_str = ns, target =>
+   found' = <->
+   ns @ n =>
+      n == target | found' = <+>
+   found'
+
+names_same_bind_set: ast::Names, ast::Names => <>
+names_same_bind_set = a, b =>
+   ?a != ?b | --| <->
+   ok' = <+>
+   a @ na =>
+      !names_has_str(b, na) | ok' = <->
+   b @ nb =>
+      !names_has_str(a, nb) | ok' = <->
+   ok'
 
 pat_extract_bindings: Parser, ast::Expr, ast::Pattern => ast::Exprs
 pat_extract_bindings = p, target, pat_in =>
@@ -5688,11 +5724,46 @@ pat_match_cond = p, target, pat_in =>
                      | cond_ref
                   has_cond' = <+>
          PatCondResult(stmts, acc_cond')
+      [Or]
+         stmts = ast::Exprs()
+         pat_is_unconditional(pat_in)
+            | PatCondResult(stmts,
+               ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
+            |
+               has_cond' = <->
+               acc_cond' = ast::Expr(Variant, (ast::Tag(Negative), ast::Exprs()))
+               k = ?pat.subpatterns
+               k @ idx =>
+                  sub_raw = pat.subpatterns(idx) | _ | pat_wildcard()
+                  sub_res = pat_match_cond(p, target, sub_raw)
+                  sub_res.stmts @ sbs => stmts += sbs
+                  cond_var = fresh_dp_var(p)
+                  stmts += mk_assign(cond_var, sub_res.cond)
+                  cond_ref = ast::Expr(Var, cond_var)
+                  acc_cond' = has_cond'
+                     | ast::Expr(Bin, (ast::BinaryOp(Or), acc_cond', cond_ref))
+                     | cond_ref
+                  has_cond' = <+>
+               PatCondResult(stmts, acc_cond')
       | PatCondResult(ast::Exprs(), ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
+
+expand_or_bind_pbrs: ParsedBranch{} => ParsedBranch{}
+expand_or_bind_pbrs = pbrs =>
+   out = empty_pbrs()
+   pbrs @ pb =>
+      pr = pat_rec(pb.pattern)
+      is_or_with_binds = pb.is_deep && pr.kind [Or] && pat_has_binds(pb.pattern)
+      is_or_with_binds
+         |
+            pr.subpatterns @ sub =>
+               out += ParsedBranch(sub, <+>, pb.branch)
+         | out += pb
+   out
 
 desugar_inner_pattern_group: Parser, ast::Expr, ParsedBranch{},
    ast::Expr => ast::Expr
-desugar_inner_pattern_group = p, target, inner_pbrs, fallback_expr =>
+desugar_inner_pattern_group = p, target, inner_pbrs_in, fallback_expr =>
+   inner_pbrs = expand_or_bind_pbrs(inner_pbrs_in)
    n = ?inner_pbrs
    cur_cont' = fallback_expr
    n @ step =>
@@ -5719,7 +5790,8 @@ desugar_inner_pattern_group = p, target, inner_pbrs, fallback_expr =>
    cur_cont'
 
 desugar_deep_choice: Parser, ast::Expr, ParsedBranch{} => ast::Expr
-desugar_deep_choice = p, lhs, pbrs =>
+desugar_deep_choice = p, lhs, pbrs_in =>
+   pbrs = expand_or_bind_pbrs(pbrs_in)
    n = ?pbrs
    is_var = lhs [Var]
    s_name = is_var | "" | fresh_dp_var(p)
@@ -6198,10 +6270,46 @@ mk_branch = body =>
       ast::GuardKind(Bare), ast::Exprs(), ast::Expr(Var, "?"),
       ast::Names(), ast::Names(), ex, body)
 
+gv: Parser, ast::Exprs => <ast::ChoiceBranch|>
+gv = p, vals =>
+   parser_advance(p)
+   v = parse_range(p)
+   v
+      | ve =>
+         vals += ve
+         p.curr.kind
+            [Comma] gv(p, vals)
+            [RBracket]
+               parser_advance(p)
+               <+ ast::ChoiceBranch(
+                  ast::GuardKind(Case), vals, ast::Expr(Var, "?"),
+                  ast::Names(), ast::Names(), <->,
+                  ast::Expr(Var, "?")) +>
+            | <-->
+      | <-->
+
+guard_is_expr_op_tok: lexer::Tok => <>
+guard_is_expr_op_tok = nxt =>
+   token_is_range_op(nxt) ||
+      (tok_is_op(nxt) && (nxt.text [".", "::", "^", "^?"] || <>(operators::bin_info(nxt.text))))
+
 guard_variants: Parser, ast::Names, ast::Names => <ast::ChoiceBranch|>
 guard_variants = p, vnames, binds =>
    p.curr.kind
       [Comma]
+         ?binds == 0
+            |
+               c = lexer::clone_lx(p.lx)
+               t1 = lexer::next_tok(c, 0)
+               t2 = lexer::next_tok(c, 0)
+               is_next_var = guard_is_variant(t1) && !guard_is_expr_op_tok(t2)
+               is_delim = t1.kind [RBracket, Eof, Newline, Dedent, Semi, Comma]
+               !is_next_var && !is_delim
+                  |
+                     vals = ast::Exprs()
+                     vnames @ vn =>
+                        vals += ast::Expr(Var, vn)
+                     --| gv(p, vals)
          parser_advance(p)
          p.curr.kind
             [Id]
@@ -6235,20 +6343,67 @@ pat_extract_binds = sps =>
       is_b | binds += sp.name | binds += "_"
    binds
 
-choice_guard_deep_variant: Parser, ast::Pattern => <ParsedBranch|>
-choice_guard_deep_variant = p, pat =>
-   is_rb = p.curr.kind [RBracket]
-   is_rb
-      |
+choice_guard_pattern_or_loop: Parser, ast::Patterns, ast::Names, ast::GuardKind, String => <ParsedBranch|>
+choice_guard_pattern_or_loop = p, alts, base_binds, gkind, err_msg =>
+   p.curr.kind
+      [Comma]
          parser_advance(p)
+         next_res = parse_pattern(p)
+         next_res
+            | npat =>
+               nbinds = ast::Names()
+               pat_collect_binds_into(npat, nbinds)
+               !names_same_bind_set(base_binds, nbinds)
+                  |
+                     parser_error(p, 2095,
+                        "Alternatives in a multi-pattern guard must bind the same variables")
+                     <-->
+                  |
+                     alts += npat
+                     choice_guard_pattern_or_loop(p, alts, base_binds, gkind, err_msg)
+            | <-->
+      [RBracket]
+         parser_advance(p)
+         final_pat = ?alts == 1 | (alts(0) | _ | pat_wildcard()) | pat_or(alts)
          dummy_br = ast::ChoiceBranch(
-            ast::GuardKind(Variant), ast::Exprs(),
+            gkind, ast::Exprs(),
             ast::Expr(Var, "?"), ast::Names(), ast::Names(),
             <->, ast::Expr(Var, "?"))
-         <+ ParsedBranch(pat, <+>, dummy_br) +>
+         <+ ParsedBranch(final_pat, <+>, dummy_br) +>
       |
-         parser_error(p, 2095, "Expected ']' after pattern guard")
+         parser_error(p, 2095, err_msg)
          <-->
+
+choice_guard_pattern_or: Parser, ast::Pattern, ast::GuardKind, String => <ParsedBranch|>
+choice_guard_pattern_or = p, first_pat, gkind, err_msg =>
+   alts = ast::Patterns()
+   alts += first_pat
+   base_binds = ast::Names()
+   pat_collect_binds_into(first_pat, base_binds)
+   choice_guard_pattern_or_loop(p, alts, base_binds, gkind, err_msg)
+
+choice_guard_deep_variant: Parser, ast::Pattern => <ParsedBranch|>
+choice_guard_deep_variant = p, pat =>
+   choice_guard_pattern_or(p, pat, ast::GuardKind(Variant),
+      "Expected ']' after pattern guard")
+
+guard_comma_needs_deep_or: Parser, ast::Names => <>
+guard_comma_needs_deep_or = p, binds =>
+   p.curr.kind ![Comma] | --| <->
+   ?binds > 0 | --| <+>
+   c = lexer::clone_lx(p.lx)
+   f_deep' = <->
+   0.. @
+      t1 = lexer::next_tok(c, 0)
+      !guard_is_variant(t1) | -->
+      t2 = lexer::next_tok(c, 0)
+      guard_is_expr_op_tok(t2) | -->
+      !pat_tok_is_delim(t2)
+         |
+            f_deep' = <+>
+            -->
+      t2.kind ![Comma] | -->
+   f_deep'
 
 choice_guard_shallow_variant: Parser, ast::Pattern => <ParsedBranch|>
 choice_guard_shallow_variant = p, pat_in =>
@@ -6256,7 +6411,10 @@ choice_guard_shallow_variant = p, pat_in =>
    vnames = ast::Names()
    vnames += pat.name
    binds = pat_extract_binds(pat.subpatterns)
-   mk_shallow_pb(guard_variants(p, vnames, binds))
+   guard_comma_needs_deep_or(p, binds)
+      | choice_guard_pattern_or(p, pat_in, ast::GuardKind(Variant),
+         "Expected ']' after pattern guard")
+      | mk_shallow_pb(guard_variants(p, vnames, binds))
 
 choice_guard_variant: Parser => <ParsedBranch|>
 choice_guard_variant = p =>
@@ -6274,18 +6432,8 @@ choice_guard_record = p =>
    rpat_res = parse_pattern(p)
    rpat_res
       | rpat =>
-         is_rb = p.curr.kind [RBracket]
-         is_rb
-            |
-               parser_advance(p)
-               dummy_br = ast::ChoiceBranch(
-                  ast::GuardKind(Case), ast::Exprs(),
-                  ast::Expr(Var, "?"), ast::Names(), ast::Names(),
-                  <->, ast::Expr(Var, "?"))
-               <+ ParsedBranch(rpat, <+>, dummy_br) +>
-            |
-               parser_error(p, 2095, "Expected ']' after record pattern guard")
-               <-->
+         choice_guard_pattern_or(p, rpat, ast::GuardKind(Case),
+            "Expected ']' after record pattern guard")
       | <-->
 
 choice_guard_expr: Parser => <ParsedBranch|>
@@ -6556,8 +6704,7 @@ choice_guard = p =>
       | tp => <+ tp +>
       |
          nxt = parser_peek_next(p)
-         nxt_is_expr_op = token_is_range_op(nxt) ||
-            (tok_is_op(nxt) && <>(operators::bin_info(nxt.text)))
+         nxt_is_expr_op = guard_is_expr_op_tok(nxt)
          is_var = guard_is_variant(p.curr) && !nxt_is_expr_op
          is_var
             | choice_guard_variant(p)
@@ -6566,24 +6713,6 @@ choice_guard = p =>
                is_rec
                   | choice_guard_record(p)
                   | choice_guard_expr(p)
-
-gv: Parser, ast::Exprs => <ast::ChoiceBranch|>
-gv = p, vals =>
-   parser_advance(p)
-   v = parse_range(p)
-   v
-      | ve =>
-         vals += ve
-         p.curr.kind
-            [Comma] gv(p, vals)
-            [RBracket]
-               parser_advance(p)
-               <+ ast::ChoiceBranch(
-                  ast::GuardKind(Case), vals, ast::Expr(Var, "?"),
-                  ast::Names(), ast::Names(), <->,
-                  ast::Expr(Var, "?")) +>
-            | <-->
-      | <-->
 
 // A non-variant guard expr: a predicate (Fn/section/fn-ref) or a value guard.
 guard_branch_from: ast::Expr => ast::ChoiceBranch

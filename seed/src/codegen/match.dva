@@ -824,6 +824,18 @@ ctfe_eval_branches = cg, cond_v, branches, i, frames, depth =>
                matched
                   | ctfe_eval(cg, br.block, frames, depth + 1)
                   | ctfe_eval_branches(cg, cond_v, branches, i + 1, frames, depth)
+            [Variant]
+               ?br.case_values == 0 && ?br.variant_names > 0
+                  |
+                     v_cases = ast::Exprs()
+                     br.variant_names @ vn =>
+                        v_cases += ast::Expr(Var, vn)
+                     matched = ctfe_match_cases(cg, cond_v, v_cases, 0,
+                        frames, depth)
+                     matched
+                        | ctfe_eval(cg, br.block, frames, depth + 1)
+                        | ctfe_eval_branches(cg, cond_v, branches, i + 1, frames, depth)
+                  | (types::CtVal(None), ast::ValueType(Unknown))
             | (types::CtVal(None), ast::ValueType(Unknown))
 
 ctfe_eval_choice: types::Cg, ast::ChoiceExpr, types::CtFrames, Int => (types::CtVal, ast::ValueType)
@@ -2957,7 +2969,7 @@ codegen_eval_choice_variant_at = cg, c, cond_val, slots, curr_check_bb, k, nvars
          case_bb = LLVMAppendBasicBlock(cg.current_fn, case_c_name)
          next_bb = LLVMAppendBasicBlock(cg.current_fn, next_c_name)
          br = c.branches(k)!!
-         label = br.variant_names(0) | _ | ""
+         label = types::decl_bare_name(br.variant_names(0) | _ | "", 0)
          LLVMPositionBuilderAtEnd(cg.builder, curr_check_bb)
          tgep = LLVMBuildStructGEP2(cg.builder, cg.union_t, cond_val,
             0, "tag.gep")
@@ -3008,7 +3020,7 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
    ti = types::typedef_ti(cg, dtype)
    slots0 = ti [Enum s] s | ast::EnumSlots()
    first_br = c.branches(0)!!
-   first_lbl = first_br.variant_names(0) | _ | ""
+   first_lbl = types::decl_bare_name(first_br.variant_names(0) | _ | "", 0)
    inferred = ?slots0 == 0 && first_lbl != ""
       | enum_slots_for_label(cg, first_lbl)
       | ("", ast::EnumSlots())

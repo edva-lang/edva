@@ -13,8 +13,8 @@
    #type Vec2   (x: Float, y: Float)
    #type Vec3   (x: Float, y: Float, z: Float)
    #type Vec4   (x: Float, y: Float, z: Float, w: Float)
-   #type Point2 (x: Float, y: Float)
-   #type Point3 (x: Float, y: Float, z: Float)
+   #type Point2 Vec2
+   #type Point3 Vec3
    #type Rect   (x: Float, y: Float, w: Float, h: Float)
 
    // Angle Conversions

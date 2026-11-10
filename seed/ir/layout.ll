@@ -1157,7 +1157,7 @@ loop.body.138:                                    ; preds = %loop.header.138
   store ptr %slot.i2p, ptr %var.f, align 8
   %var.load47 = load ptr, ptr %var.ctx, align 8
   %var.load48 = load ptr, ptr %var.f, align 8
-  %fld.gep = getelementptr inbounds { ptr, ptr }, ptr %var.load48, i32 0, i32 1
+  %fld.gep = getelementptr inbounds { ptr, ptr, ptr }, ptr %var.load48, i32 0, i32 1
   %fld.load = load ptr, ptr %fld.gep, align 8
   %call.res49 = call ptr @"layout::compute_layout"(ptr %var.load47, ptr %fld.load)
   store ptr %call.res49, ptr %var.flay, align 8

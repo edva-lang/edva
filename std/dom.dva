@@ -1,8 +1,6 @@
 // Browser toolkit. bridge.js is the host implementation for DOM and browser
 // operations; keep browser policy (what to persist or copy) in the application.
 #use libc
-#use str
-#use binary
 #use mem
 
 #foreign "c"
@@ -767,9 +765,26 @@ register = element, kind, selector, options, callback =>
          slot.alive = <->
          <- failure +>
 
+int_str: Int => String
+int_str = n =>
+   n == 0 | --| "0"
+   neg = n < 0
+   v' = neg | 0 - n | n
+   digits = {24}
+   0.. @
+      v' !> 0 | -->
+      digits += 48 + (v' % 10)
+      v' = v' / 10
+   out = {24}
+   neg | out += '-'
+   len = ?digits
+   len @ i =>
+      out += digits(len - 1 - i)
+   +out
+
 report: Error => ()
 report = failure =>
-   message = "DOM Error " + str::from_int(failure.code) + ": " + failure.msg
+   message = "DOM Error " + int_str(failure.code) + ": " + failure.msg
    edva_dom_report(&message, ?message)
 #public
 #type ErrorHandlerState (handler: < (Error => ()) | >, busy: <>)

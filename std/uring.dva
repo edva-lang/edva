@@ -301,6 +301,12 @@
       used = Int(tail - head) .&. 0b1{32}
       ring.sq_entries - used
 
+   cq_ready: Ring => Int
+   cq_ready = ring =>
+      head = @[ring.cq_ptr + ring.cq_head_off u32]
+      tail = @[ring.cq_ptr + ring.cq_tail_off u32]
+      Int(tail - head) .&. 0b1{32}
+
    submit_and_wait: Ring, Int => Int
    submit_and_wait = ring, wait_nr =>
       head = @[ring.sq_ptr + ring.sq_head_off u32]

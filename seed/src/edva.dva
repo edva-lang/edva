@@ -6,6 +6,7 @@
 
 #use "diag"
 #use "annotate"
+#use "dep_graph"
 #use overloads
 #use "ast"
 #use "codegen"
@@ -732,8 +733,7 @@ resolve_pkg_module = base, mod_path, ldr =>
                      | resolve_pkg_sub(alias, submod, inst_id, inst)
                | ResolvedModule(None)
 
-// A local "#use name": next to the importer, then its parent directory, then
-// the stdlib. Local modules are scoped to the importer's package instance.
+// A local "#use name": next to the importer, then its parent directory, then the stdlib.
 resolve_local_module: String, String, Loader => ResolvedModule
 resolve_local_module = base, mod_path, ldr =>
    curr_inst = ldr.import_map.has_map
@@ -1047,8 +1047,13 @@ rewrite_import_expr = e, table, locals =>
             new_cases = rewrite_import_exprs(br.case_values, table, br_locals)
             new_pred = rewrite_import_expr(br.pred_fn, table, br_locals)
             new_blk = rewrite_import_expr(br.block, table, br_locals)
+            new_vnames = ast::Names()
+            br.variant_names @ vn =>
+               is_loc = loaded_has(br_locals, vn)
+               new_vn = !is_loc && (table ^? vn) | (table ^ vn | _ | vn) | vn
+               new_vnames += new_vn
             new_branches += ast::ChoiceBranch(br.kind, new_cases, new_pred,
-               br.variant_names, br.bind_vars, br.is_identity_extractor,
+               new_vnames, br.bind_vars, br.is_identity_extractor,
                new_blk)
          ast::Expr(Choice, ast::ChoiceExpr(new_cond, ch.is_exhaustive,
             new_branches))
@@ -1885,6 +1890,77 @@ copy_file = src, dst =>
       | txt => write_file(dst, txt)
       | <->
 
+is_dom_symbol: String => <>
+is_dom_symbol = name =>
+   starts_with(name, "dom::") || starts_with(name, "console::") ||
+      starts_with(name, "edva_dom_")
+
+export_internal_name: String => String
+export_internal_name = item =>
+   eq_pos = find_char_at(item, 0, 61)
+   eq_pos > 0 | item(0..eq_pos) | item
+
+dom_is_reachable: ast::Expr, ast::Names => <>
+dom_is_reachable = prog, exports =>
+   stmts = prog [Block b] b | ast::Exprs()
+   graph = dep_graph::build_dep_graph(stmts)
+   work = ast::Names()
+   seen = dep_graph::NameSet()
+   exports @ exp =>
+      ename = export_internal_name(exp)
+      ename != "" && !(seen ^? ename)
+         |
+            seen ^ ename = <+>
+            work += ename
+   stmts @ st =>
+      st
+         [Assign a]
+            is_dom_var = starts_with(a.0, "dom::") || starts_with(a.0, "console::")
+            is_fn = a.5 [Fn]
+            a.0 == "main" || (!is_fn && !is_dom_var && !dep_graph::is_fwd_assign(a))
+               |
+                  a.0 != "" && !(seen ^? a.0)
+                     |
+                        seen ^ a.0 = <+>
+                        work += a.0
+                  refs = ast::Names()
+                  dep_graph::collect_expr_refs(a.5, ast::Names(), refs)
+                  refs @ r =>
+                     r != "" && !(seen ^? r)
+                        |
+                           seen ^ r = <+>
+                           work += r
+      !(st [Assign, TypeDecl, Foreign])
+         |
+            refs = ast::Names()
+            dep_graph::collect_expr_refs(st, ast::Names(), refs)
+            refs @ r =>
+               r != "" && !(seen ^? r)
+                  |
+                     seen ^ r = <+>
+                     work += r
+   wi' = 0
+   found' = <->
+   0.. @
+      wi' !< ?work || found' | -->
+      cur = work(wi')!!
+      wi' = wi' + 1
+      is_dom_symbol(cur)
+         | found' = <+>
+         |
+            graph.indices ^ cur
+               | idx =>
+                  nd = graph.nodes(idx)!!
+                  nd.deps @ dep =>
+                     is_dom_symbol(dep)
+                        | found' = <+>
+                        |
+                           dep != "" && !(seen ^? dep)
+                              |
+                                 seen ^ dep = <+>
+                                 work += dep
+   found'
+
 // Shared compile pipeline: codegen AST -> LLVM IR -> clang binary.
 // Used by both the batch driver and the REPL.
 compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
@@ -1892,7 +1968,10 @@ compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
 compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs, npkg, lfiles =>
    prog = overloads::resolve(raw)
    dom_source = canonical_path(compiler_std_dir + "/dom.dva")
-   uses_dom = loaded_has(lfiles, dom_source)
+   has_dom_file = loaded_has(lfiles, dom_source)
+   uses_dom = has_dom_file && (is_wasm_triple(opts.triple) ||
+      (?lfiles > 0 && lfiles(0)!! == dom_source) ||
+      dom_is_reachable(prog, exports))
    actual_exports = ++exports
    uses_dom
       |

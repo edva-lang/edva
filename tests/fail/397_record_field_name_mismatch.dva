@@ -1,0 +1,6 @@
+#type Point (x: Int, y: Int)
+
+take_point: Point => Int
+take_point = p => p.x + p.y
+
+x = take_point((w = 10, h = 20))

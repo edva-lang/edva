@@ -2,13 +2,13 @@
 meta:
   audience: "Edva developers"
   status: "current reference"
-  audited: "51081a6"
-  evidence: "`src/parser.dva`, `src/annotate.dva`, `src/codegen/types.dva`, `src/codegen/match.dva`, `GRAMMAR.md`"
+  audited: "1633ab0"
+  evidence: "`src/parser.dva`, `src/annotate.dva`, `src/unify.dva`, `src/codegen/types.dva`, `src/codegen/match.dva`, `tests/pass/414_nominal_and_field_record_unification.dva`, `GRAMMAR.md`"
 ---
 
 # Records, Tuples, Bitfields & Enums
 
-Edva provides **records** for product types (structs, tuples, SIMD vectors, packed headers, and bitfields) and **enums** for nominal tagged unions with $\ge 2$ named variants.
+Edva provides **records** for product types (nominal `#type` structs, anonymous records, positional tuples, SIMD vectors, packed headers, and bitfields) and **enums** for nominal tagged unions with $\ge 2$ named variants.
 
 ## Product types: records, tuples, `#packed`, and bitfields
 
@@ -56,6 +56,49 @@ io::out $ (p.x + p.y, f'.syn, f'.rest, #size Flags)
 p: Point
 p.x = 100
 bad = p.y
+```
+
+### Nominal identity, aliases, and anonymous unification
+
+Concrete `#type` record and bitfield declarations are **nominal**, while anonymous record and tuple literals unify by field structure:
+
+| Unification Case | Example | Outcome | Diagnostic |
+|---|---|---|---|
+| **Two `#type` records** | `#type UserId (id: Int, ver: Int)`<br>`#type PostId (id: Int, ver: Int)` | Must name the **same** nominal `#type`; distinct `#type` records never unify even when field names and types match | `E3084`: `Record name mismatch: UserId vs PostId` |
+| **Type alias (`#type B A`)** | `#type Vec2 (x: Float, y: Float)`<br>`#type Point2 Vec2` | `Point2` aliases `Vec2`'s nominal identity; values of `Vec2` and `Point2` are interchangeable | — |
+| **Named anonymous record** | `(x = 3, y = 4)` $\leftrightarrow$ `Point` | Unifies when field count, field types, and all explicit field names match | `E3084`: `Record field name mismatch: 'x' vs 'w'` |
+| **Positional tuple** | `(3, 4)` $\leftrightarrow$ `Point` | Unnamed fields unify positionally by field count and element types | `E3084`: field count or element type mismatch |
+
+```{.dva .run}
+#use io
+
+#type Point (x: Int, y: Int)
+#type Coord Point
+
+dist_sq: Point => Int
+dist_sq = p => p.x * p.x + p.y * p.y
+
+c = Coord(3, 4)
+io::out $ (dist_sq(c), dist_sq((x = 6, y = 8)), dist_sq((5, 12)))
+```
+
+```{.dva expected-error="E3084"}
+#type UserId (id: Int, ver: Int)
+#type PostId (id: Int, ver: Int)
+
+take_user: UserId => Int
+take_user = u => u.id
+
+bad = take_user(PostId(1, 1))
+```
+
+```{.dva expected-error="E3084"}
+#type Point (x: Int, y: Int)
+
+take_point: Point => Int
+take_point = p => p.x + p.y
+
+bad = take_point((w = 10, h = 20))
 ```
 
 ## Sum types: nominal `Enum` (`< V1, V2(T) >`)

@@ -12,8 +12,8 @@
 #use math
 
 #public
-   #type Color      (r: Float, g: Float, b: Float, a: Float)
    #type Rgba       (r: Float, g: Float, b: Float, a: Float)
+   #type Color      Rgba
    #type LinearRgba (Float, Float, Float, Float)
    #type Oklab      (Float, Float, Float, Float)
    #type Oklch      (Float, Float, Float, Float)
@@ -28,10 +28,10 @@
 
    // Alias constructor
    color: Float, Float, Float => Color
-   color = r, g, b => Color(r, g, b, 1.0)
+   color = r, g, b => Rgba(r, g, b, 1.0)
 
    color_rgba: Float, Float, Float, Float => Color
-   color_rgba = r, g, b, a => Color(r, g, b, a)
+   color_rgba = r, g, b, a => Rgba(r, g, b, a)
 
    // Standard Modern Vibrant Base Colors (4-float RGBA)
    white     = Color(1.00, 1.00, 1.00, 1.0)

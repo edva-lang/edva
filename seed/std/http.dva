@@ -824,7 +824,7 @@ ws_connect = ws_url =>
                net::tcp_connect(u.host, port)
                   | fd =>
                      key_bytes = crypto::random_bytes(16) | b => b | "0123456789abcdef"
-                     sec_key = base64::encode(key_bytes)
+                     sec_key = base64::encode(key_bytes, base64::Flavor(Std))
                      expected_accept = ws_accept_key(sec_key)
                      host_hdr = (port != 80) | u.host + ":" + str::from_int(port) | u.host
                      req_str = "GET " + path_q + " HTTP/1.1\r\n" +

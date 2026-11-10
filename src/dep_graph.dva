@@ -125,6 +125,9 @@ collect_expr_refs = e, locals, refs =>
             collect_expr_refs(br.pred_fn, br_locals, refs)
             br.case_values @ cv =>
                collect_expr_refs(cv, br_locals, refs)
+            br.variant_names @ vn =>
+               vn != "" && !has_name(br_locals, vn) && !has_name(refs, vn)
+                  | refs += vn
       [Record re]
          re.fields @ fld =>
             collect_expr_refs(fld.val, locals, refs)

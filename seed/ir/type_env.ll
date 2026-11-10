@@ -9952,7 +9952,7 @@ loop.body.188:                                    ; preds = %loop.header.188
   store ptr %slot.i2p, ptr %var._13, align 8
   store ptr %slot.i2p, ptr %var.f, align 8
   %var.load14 = load ptr, ptr %var.f, align 8
-  %fld.gep15 = getelementptr inbounds { ptr, ptr }, ptr %var.load14, i32 0, i32 0
+  %fld.gep15 = getelementptr inbounds { ptr, ptr, ptr }, ptr %var.load14, i32 0, i32 0
   %fld.load16 = load ptr, ptr %fld.gep15, align 8
   %eq.lhs.len = getelementptr inbounds { i64, ptr }, ptr %fld.load16, i32 0, i32 0
   %eq.lhs.len17 = load i64, ptr %eq.lhs.len, align 8
@@ -10096,7 +10096,7 @@ concat.tot.len55:                                 ; preds = %str_overflow_abort5
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
   store ptr %concat.buf, ptr %str.build.data.gep, align 8
   %var.load59 = load ptr, ptr %var.f, align 8
-  %fld.gep60 = getelementptr inbounds { ptr, ptr }, ptr %var.load59, i32 0, i32 0
+  %fld.gep60 = getelementptr inbounds { ptr, ptr, ptr }, ptr %var.load59, i32 0, i32 0
   %fld.load61 = load ptr, ptr %fld.gep60, align 8
   %concat.lhs62 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 0
   %concat.lhs63 = load i64, ptr %concat.lhs62, align 8

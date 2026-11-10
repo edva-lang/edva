@@ -1,0 +1,32 @@
+// Browser Console API (std/dom/console.dva)
+// Usage: `#use dom/console` -> `console::log`, `console::error`, `console::warn`,
+// `console::info`, `console::time`, `console::time_end`.
+
+#use dom
+
+#foreign "c"
+   edva_dom_call: (Int, Int, Int, Int, Addr, Int, Addr, Int, Addr) => Int
+
+emit: String, String => ()
+emit = method, msg =>
+   code = edva_dom_call(67, 0, 0, 0, &method, ?method, &msg, ?msg, Addr(0))
+
+#public
+
+log: String => ()
+log = msg => emit("log", msg)
+
+error: String => ()
+error = msg => emit("error", msg)
+
+warn: String => ()
+warn = msg => emit("warn", msg)
+
+info: String => ()
+info = msg => emit("info", msg)
+
+time: String => ()
+time = label => emit("time", label)
+
+time_end: String => ()
+time_end = label => emit("timeEnd", label)

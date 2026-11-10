@@ -232,7 +232,7 @@ append_bytes = b, src, n =>
          | n == 0
             | <-->
             |
-               err = Int(@[libc::__errno_location! i32])
+               err = libc::errno!
                err == 11 || err == 35 || err == 4
                   | <+ "" +>
                   | <-->
@@ -872,7 +872,7 @@ append_bytes = b, src, n =>
                         libc::close(mfd')
                         mfd' = -1
                      |
-                        err = Int(@[libc::__errno_location! i32])
+                        err = libc::errno!
                         (err != 11 && err != 35 && err != 4) || (rev .&. 24) != 0
                            |
                               libc::close(mfd')

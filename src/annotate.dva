@@ -1736,7 +1736,7 @@ annotate_expr = ctx, env, expr =>
                                           | type_env::lookup_fn_body(env, name)
                                           | <-->
                                        saved_assign_exp = cur_expected_ut
-                                       saved_views = view_vars
+                                       saved_views = ++view_vars
                                        cur_expected_ut ::= <+ f.ret +>
                                        body_te = cached
                                           | _
@@ -5415,7 +5415,7 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                           [Prim p] (is_ret_unit' = p [Unit])
                                        env.discard_result = is_ret_unit'
                                        saved_decl_exp = cur_expected_ut
-                                       saved_views = view_vars
+                                       saved_views = ++view_vars
                                        cur_expected_ut ::= <+ f.ret +>
                                        check_no_closing_return(ctx, fe.body)
                                        body_te = annotate_expr(ctx, env,
@@ -5938,6 +5938,14 @@ elaborate_program_with_ctx = exprs =>
                   [Enum ue]
                      td_ut' = unify::UType(Enum, unify::UEnum(td.name,
                         ue.variants))
+                  [Rec flds]
+                     is_alias = td.type_info [TypeVar]
+                     !is_alias
+                        |
+                           named_flds = unify::UFields()
+                           flds @ fld =>
+                              named_flds += unify::UField(fld.name, fld.ut, td.name)
+                           td_ut' = unify::UType(Rec, named_flds)
                old_def = type_env::lookup_user_type_exact(env, td.name)
                old_def
                   | od => unify::unify(ctx, od.ut, td_ut')

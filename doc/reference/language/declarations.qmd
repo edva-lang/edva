@@ -2,8 +2,8 @@
 meta:
   audience: "Edva users"
   status: "current reference"
-  audited: "df88a80"
-  evidence: "`src/parser.dva`, `src/annotate.dva`, `src/unify.dva`, `GRAMMAR.md`, `tests/pass/121_fn_signatures.dva`"
+  audited: "1633ab0"
+  evidence: "`src/parser.dva`, `src/annotate.dva`, `src/unify.dva`, `GRAMMAR.md`, `tests/pass/121_fn_signatures.dva`, `tests/pass/414_nominal_and_field_record_unification.dva`"
 ---
 
 # Declarations, Bindings & Modules
@@ -70,8 +70,8 @@ io::out $ banner!
 
 | Type Category | Syntax | Representation & Semantics |
 |---|---|---|
-| **Scalar / type alias** | `#type UserId Int` | Alias for an existing primitive or composite type |
-| **Named record** | `#type Point (x: Int, y: Int = 0)` | C-ABI aligned product type; fields may specify default values (`= expr`) used by `Point(...)` and `Point.zero` |
+| **Scalar / type alias** | `#type UserId Int`<br>`#type Point2 Vec2` | Transparent alias for an existing primitive, composite, or nominal `#type` (shares the target's nominal identity) |
+| **Named record** | `#type Point (x: Int, y: Int = 0)` | Nominally distinct C-ABI aligned product type (`E3084` on name mismatch against other `#type` records); unifies with matching anonymous records `(x = 1, y = 2)` and tuples `(1, 2)` |
 | **Multiline record** | `#type Point`<br>`   x: Int`<br>`   y: Int` | Indented or parenthesized multiline field list; newline separates aligned fields |
 | **Positional tuple** | `#type Pair (Int, String)` | Positional fields accessed via `.0`, `.1`, ... |
 | **Homogeneous tuple / SIMD** | `#type Vec4 (Float * 4)` | Contiguous inline repetition of `N` elements; supports SIMD arithmetic and intrinsics |

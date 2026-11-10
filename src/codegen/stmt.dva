@@ -175,8 +175,8 @@ refs_name_branches_at = bs, name, i, n =>
       | <->
       |
          b = bs(i)!!
-         refs_name_exprs(b.case_values, name) || refs_name(b.pred_fn, name) ||
-            refs_name(b.block, name)
+         refs_name_exprs(b.case_values, name) || param_in(b.variant_names, name) ||
+            refs_name(b.pred_fn, name) || refs_name(b.block, name)
             | <+>
             | refs_name_branches_at(bs, name, i + 1, n)
 

@@ -1,1 +1,1 @@
-E3084: Type mismatch: cannot unify Int with Float
+E3084: Record name mismatch: A vs B

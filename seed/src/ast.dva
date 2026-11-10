@@ -89,7 +89,7 @@
 
 // --- Expr sub-records ------------------------------------------------------
 
-#type PatternKind < Wildcard, Bind, Lit, Variant, Record >
+#type PatternKind < Wildcard, Bind, Lit, Variant, Record, Or >
 
 #type PatternRecord (
    kind: PatternKind,

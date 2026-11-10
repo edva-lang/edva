@@ -2,30 +2,34 @@
 meta:
   audience: "Edva developers encoding and decoding Base64 and Base64URL payloads"
   status: "current reference"
-  audited: "fb4fbc2"
+  audited: "1633ab0"
   evidence: "`std/base64.dva`, `tests/pass/396_std_hex_base64_hash.dva`"
 ---
 
 # `base64` standard library
 
 The `base64` module implements RFC 4648 Section 4 standard Base64 (`+`, `/`, `=`
-padding) and Section 5 URL/filename-safe Base64URL (`-`, `_`, unpadded or padded).
+padding) and Section 5 URL/filename-safe Base64URL (`-`, `_`, unpadded),
+parameterized by `base64::Flavor` (`< Std, Url >`).
 
 ```{.dva .run}
 #use base64
 #use io
 
-enc = base64::encode("hello world")
+enc = base64::encode("hello world", base64::Flavor::Std)
 io::out $ enc
-base64::decode(enc) | dec => io::out $ dec
+base64::decode(enc, base64::Flavor::Std) | dec => io::out $ dec
 ```
 
-## Function catalog
+## Types and function catalog
 
 | Symbol / Function | Signature | Description |
 |---|---|---|
-| `base64::encode(s)` | `String => String` | Encodes `s` using standard RFC 4648 Base64 (`+`, `/`) with `=` padding |
-| `base64::decode(s)` | `String => < String | Error >` | Decodes standard Base64 (ignoring ASCII whitespace); returns `Error` on invalid characters or quantum lengths |
-| `base64::encode_url(s)` | `String => String` | Encodes `s` using URL-safe RFC 4648 Section 5 Base64URL (`-`, `_`) without `=` padding |
-| `base64::encode_url_padded(s)` | `String => String` | Encodes `s` using URL-safe Base64URL (`-`, `_`) with `=` padding |
-| `base64::decode_url(s)` | `String => < String | Error >` | Decodes URL-safe Base64URL (accepts both padded and unpadded inputs) |
+| `base64::Flavor` | `< Std, Url >` | Alphabet and padding variant (`Std`: `+/=`, `Url`: `-_` unpadded) |
+| `base64::encode(bytes, flavor)` | `String, Flavor => String` | Encodes `bytes` into Base64 (`Std` pads with `=`; `Url` is unpadded) |
+| `base64::decode(s, flavor)` | `String, Flavor => < String | Error >` | Decodes Base64 (ignoring ASCII whitespace; `Url` accepts padded or unpadded) |
+| `base64::from_int(n, len, flavor)` | `Int, Int, Flavor => String` | Encodes `n` as `len` Base64 sextet characters (most-significant sextet first) |
+| `base64::to_int(s, flavor)` | `String, Flavor => < Int | >` | Decodes unpadded Base64 sextet characters into an `Int` |
+| `base64::is_valid(s, flavor)` | `String, Flavor => <>` | Returns `<+>` when `s` is non-empty and consists strictly of valid alphabet chars |
+| `base64::char(idx, flavor)` | `Int, Flavor => Int` | Maps 6-bit value `0..63` to its ASCII character for `flavor` |
+| `base64::val(c, flavor)` | `Int, Flavor => Int` | Maps ASCII character `c` to `0..63` for `flavor`, or `-1` if invalid |

@@ -28,6 +28,10 @@
 - **Clean Choices**: Single-branch choices `cond | action` evaluate as statements. Never supply
   dummy `| 0` fallbacks. In expression position, choices whose branches all return `RamPN`
   (`< T | >`) or `RamNP` (`< | E >`) synthesize an implicit `| <-->` or `| <++>` fallback.
+- **Nominal `#type` Records & Field Checking**: Concrete `#type` record/bitfield declarations are
+  nominally distinct (`E3084: Record name mismatch`); `#type B A` creates a transparent alias for
+  `A`. Anonymous records `(x = 1, y = 2)` check explicit field names (`E3084`), while positional
+  tuples `(1, 2)` unify by field count and element types.
 - **Unquoted Imports**: `#use net`, `#use io`, `#use libc`.
 - **Unified Strings & Interpolation**: Double-quoted strings `"..."` support single-line and
   multiline (margin stripping when starting with `"\n`). Dynamic interpolation `${expr}` supports
@@ -91,7 +95,8 @@ types and cannot be implicitly coerced between one another.
 
 # 4. Essential Control Flow & Error Handling
 
-- **Choice**: `x [100] "perfect" [> 89] "pass" | "fail"`
+- **Choice**: `x [100] "perfect" [90...99] "great" [> 49] "pass" | "fail"` (guards also support negated `x ![...]`, record/tuple OR patterns `[(1, 2), (3, 4)]`, and `#!` type shapes `T [(..)]`).
+- **Unwrap-or-Default (`|_|`)**: `val = opt_or_res |_| fallback`.
 - **Headless Choice Function**: `classify = [100] "perfect" [> 89] "pass" | "fail"` (a scrutinee-less `[guard]` choice outside an `@` cycle body desugars into a 1-argument function over `_`, callable as `classify(95)` or `95 $> [> 89] "pass" | "fail"`).
 - **Cycle**: `0..count @ i => (i == 5 | -->)` or condition cycle `(n' !< 8) @ (n' = n' - 8)`
 - **Cycle Escape**: `found = 0..10 @ i => (i == 3 | -->) >-- 3` (returns `< Int | >`)
@@ -115,4 +120,4 @@ types and cannot be implicitly coerced between one another.
 - [Quickstart](start/quickstart.qmd): Introduction to syntax and essential concepts.
 - [Operators](reference/language/operators.qmd): Detailed operator documentation.
 - [Ramifications & Error Reference](reference/types/ram.qmd): Comprehensive ramification and error specification.
-- [Standard Library](reference/stdlib/index.qmd): Full module reference (`io`, `fs`, `in`, `net`, `json`, `regex`, `crypto`, `flate`, `img`, `kv`, `sort`, `math`, `str`, `unicode`, `utf`, `event`, `uring`, `color`, `fp`, `type`, etc.).
+- [Standard Library](reference/stdlib/index.qmd): Complete 44-module reference (`ascii`, `base64`, `bench`, `binary`, `ccl`, `cli`, `color`, `const`, `crypto`, `csv`, `deque`, `dom`, `event`, `flate`, `fmt`, `fp`, `fs`, `hash`, `heap`, `hex`, `http`, `img`, `in`, `io`, `json`, `kv`, `libc`, `log`, `math`, `mem`, `net`, `os`, `path`, `rand`, `regex`, `set`, `sort`, `str`, `sys`, `test`, `time`, `type`, `unicode`, `uring`, `url`, `utf`).

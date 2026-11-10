@@ -1,16 +1,23 @@
 #use @json
 #use @json_old
-#use @math
+#use(import) @math
 #use my_calc = @math/calc
 #use "str"
 #use "io"
+
+classify: Int => String
+classify = k =>
+   k
+      [KEY_ESC, KEY_ENTER] "control"
+      | "other"
 
 main: Int => Int
 main = x =>
    io::out(json::version(0))
    io::out(json_old::version(0))
-   io::out(str::from_int(math::add(10, 20)))
+   io::out(str::from_int(add(10, 20)))
    io::out(str::from_int(my_calc::mul(6, 7)))
+   io::out(classify(KEY_ESC))
    0
 
 main(0)

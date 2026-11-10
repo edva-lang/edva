@@ -3624,7 +3624,10 @@ enum_choice_has_label = branches, label, at =>
          is_var = br.kind [Variant]
          is_var
             |
-               has_str(br.variant_names, label)
+               found_lbl' = <->
+               br.variant_names @ vn =>
+                  decl_bare_name(vn, 0) == label | (found_lbl' = <+>; -->)
+               found_lbl'
                   | <+>
                   | enum_choice_has_label(branches, label, at + 1)
             | enum_choice_has_label(branches, label, at + 1)

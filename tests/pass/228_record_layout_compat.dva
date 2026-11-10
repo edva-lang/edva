@@ -5,7 +5,7 @@
 #use io
 
 #type A (a: Int, a2: Int)
-#type B (b: Int, b2: Int)
+#type B A
 f: A => Int
 f = r =>
    r.a

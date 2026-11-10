@@ -1,0 +1,7 @@
+#type UserId (id: Int, org: Int)
+#type PostId (id: Int, org: Int)
+
+take_user: UserId => Int
+take_user = u => u.id
+
+x = take_user(PostId(42, 1))

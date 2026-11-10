@@ -256,7 +256,7 @@ sha1 = msg =>
 // Computes the RFC 6455 `Sec-WebSocket-Accept` response header value for a client `Sec-WebSocket-Key`.
 websocket_accept_key: String => String
 websocket_accept_key = client_key =>
-   base64::encode(sha1_bytes(client_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"))
+   base64::encode(sha1_bytes(client_key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"), base64::Flavor(Std))
 
 // Computes the raw 32-byte SHA-256 digest of `msg` (FIPS 180-4 / RFC 6234).
 sha256_bytes: String => String

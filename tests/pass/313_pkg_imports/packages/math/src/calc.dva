@@ -1,3 +1,5 @@
 #public
+KEY_ESC   = 27
+KEY_ENTER = 13
 mul: Int, Int => Int
 mul = a, b => a * b

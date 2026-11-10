@@ -1,0 +1,39 @@
+#use io
+#use str
+
+#type Ev < Click, Input, Change >
+#type Msg < Foo(Int), Bar(Int), Idle >
+
+disp: String, Ev => String
+disp = id, ev => (id, ev)
+   [("btn-load", Click), ("sel-saved", Change)] "load"
+   [("slider", Input), ("slider", Change)]      "slide"
+   |                                            "other"
+
+axis: (Int, Int) => Int
+axis = p => p
+   [(0, v), (v, 0)] v
+   | -1
+
+mv: Msg => Int
+mv = m => m
+   [Foo(10), Bar(20)] 999
+   [Foo x, Bar x]     x + 1
+   |                  0
+
+ok1 = (3, 4) [(1, 2), (3, 4)]
+ok2 = (5, 6) ![(1, 2), (3, 4)]
+ok3 = (1, 9) [(1, 2), (3, 4)]
+
+io::out(ok1 && ok2 && !ok3 | "membership-ok" | "membership-fail")
+io::out(disp("btn-load", Ev(Click)))
+io::out(disp("sel-saved", Ev(Change)))
+io::out(disp("slider", Ev(Input)))
+io::out(disp("slider", Ev(Click)))
+io::out(str::from_int(axis((0, 7))))
+io::out(str::from_int(axis((9, 0))))
+io::out(str::from_int(axis((2, 3))))
+io::out(str::from_int(mv(Msg(Foo, 10))))
+io::out(str::from_int(mv(Msg(Bar, 20))))
+io::out(str::from_int(mv(Msg(Bar, 5))))
+io::out(str::from_int(mv(Msg(Idle))))

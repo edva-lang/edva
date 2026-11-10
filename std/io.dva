@@ -73,7 +73,7 @@
          w = libc::write_ptr(fd, buf_addr, rem)
          w
             [< 0]
-               errno_val = @[libc::__errno_location! i32]
+               errno_val = libc::errno!
                errno_val == 4
                   | --^
                   |
@@ -147,7 +147,7 @@
                w = libc::writev(fd, &iov, 2)
                w < 0
                   |
-                     errno_val = @[libc::__errno_location! i32]
+                     errno_val = libc::errno!
                      errno_val == 4 | --^
                      off' == 0 | --| -1 | -->
                   |
@@ -160,7 +160,7 @@
                w = libc::write_ptr(fd, p2, rem2)
                w < 0
                   |
-                     errno_val = @[libc::__errno_location! i32]
+                     errno_val = libc::errno!
                      errno_val == 4 | --^
                      off' == 0 | --| -1 | -->
                   |
@@ -258,9 +258,9 @@
                n = libc::read(r.fd, &buf + cur, space)
                n < 0
                   |
-                     errno_val = @[libc::__errno_location! i32]
+                     errno_val = libc::errno!
                      errno_val == 4 | --^
-                     r.err = (errno_val == #! (os ["darwin"] 35 | 11) | 11 | Int(errno_val))
+                     r.err = (errno_val == #! (os ["darwin"] 35 | 11) | 11 | errno_val)
                      n' = n
                      -->
                   |
@@ -351,9 +351,9 @@
          n = libc::read(r.fd, &res_b + cur, to_read)
          n < 0
             |
-               errno_val = @[libc::__errno_location! i32]
+               errno_val = libc::errno!
                errno_val == 4 | --^
-               r.err = (errno_val == #! (os ["darwin"] 35 | 11) | 11 | Int(errno_val))
+               r.err = (errno_val == #! (os ["darwin"] 35 | 11) | 11 | errno_val)
                -->
             |
                n == 0

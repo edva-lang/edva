@@ -1,3 +1,7 @@
+#use "calc"
+
 #public
+KEY_ESC   = calc::KEY_ESC
+KEY_ENTER = calc::KEY_ENTER
 add: Int, Int => Int
 add = a, b => a + b

@@ -1,0 +1,18 @@
+#use io
+#use str
+
+#type Point (x: Int, y: Int)
+#type PointAlias Point
+
+sum_point: Point => Int
+sum_point = p => p.x + p.y
+
+p1 = Point(1, 2)
+p2 = PointAlias(3, 4)
+p3 = (x = 5, y = 6)
+p4 = (7, 8)
+
+io::out $ str::from_int(sum_point(p1))
+io::out $ str::from_int(sum_point(p2))
+io::out $ str::from_int(sum_point(p3))
+io::out $ str::from_int(sum_point(p4))

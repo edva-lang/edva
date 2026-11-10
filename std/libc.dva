@@ -80,3 +80,7 @@
     getrlimit : (resource: Int, rlim: Addr) => Int
     setrlimit : (resource: Int, rlim: Addr) => Int
     uname     : (buf: Addr) => Int
+
+#public
+    errno: () => Int
+    errno = !=> Int(@[__errno_location! i32])

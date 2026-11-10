@@ -20,7 +20,7 @@
    Builder, Error, ThreadId, Type, Unknown
 >
 
-#type UField (name: String, ut: UType)
+#type UField (name: String, ut: UType, rec_name: String = "")
 #type UFields UField{}
 
 #type URamShape < RamNN, RamPN, RamNP, RamPP >
@@ -355,10 +355,13 @@ fn_occurs = ctx, v, f =>
 
 rec_occurs: Ctx, Int, UFields => <>
 rec_occurs = ctx, v, r =>
-   found' = <->
-   r @ fld =>
-      occurs(ctx, v, fld.ut) | (found' = <+>; -->)
-   found'
+   (?r > 0 && r(0)!!.rec_name != "")
+      | <->
+      |
+         found' = <->
+         r @ fld =>
+            occurs(ctx, v, fld.ut) | (found' = <+>; -->)
+         found'
 
 ram_occurs: Ctx, Int, URam => <>
 ram_occurs = ctx, v, r =>
@@ -590,18 +593,36 @@ unify_rec_open = ctx, r1, r2, v1, v2 =>
 
 unify_rec: Ctx, UFields, UFields => <>
 unify_rec = ctx, r1, r2 =>
-   ?r1 != ?r2
+   rn1 = ?r1 > 0 | r1(0)!!.rec_name | ""
+   rn2 = ?r2 > 0 | r2(0)!!.rec_name | ""
+   (rn1 != "" && rn2 != "")
       |
-         add_error(ctx, 3084, "Record field count mismatch: " +
-            str::from_int(?r1) + " vs " + str::from_int(?r2))
-         <->
+         rn1 == rn2
+            | <+>
+            |
+               add_error(ctx, 3084, "Record name mismatch: " + rn1 +
+                  " vs " + rn2)
+               <->
       |
-         all_ok' = <+>
-         r1 @ f1, i =>
-            f2 = r2(i)!!
-            ok = unify(ctx, f1.ut, f2.ut)
-            !ok | (all_ok' = <->; -->)
-         all_ok'
+         ?r1 != ?r2
+            |
+               add_error(ctx, 3084, "Record field count mismatch: " +
+                  str::from_int(?r1) + " vs " + str::from_int(?r2))
+               <->
+            |
+               all_ok' = <+>
+               r1 @ f1, i =>
+                  f2 = r2(i)!!
+                  (f1.name != "" && f2.name != "" && f1.name != f2.name)
+                     |
+                        add_error(ctx, 3084, "Record field name mismatch: '" +
+                           f1.name + "' vs '" + f2.name + "'")
+                        all_ok' = <->
+                        -->
+                     |
+                        ok = unify(ctx, f1.ut, f2.ut)
+                        !ok | (all_ok' = <->; -->)
+               all_ok'
 
 is_unbound_var: Ctx, UType => <>
 is_unbound_var = ctx, t =>
@@ -852,10 +873,13 @@ is_ground = ctx, t =>
                all_ok'
             | <->
       [Rec r]
-         all_ok' = <+>
-         r @ f =>
-            !is_ground(ctx, f.ut) | (all_ok' = <->; -->)
-         all_ok'
+         (?r > 0 && r(0)!!.rec_name != "")
+            | <+>
+            |
+               all_ok' = <+>
+               r @ f =>
+                  !is_ground(ctx, f.ut) | (all_ok' = <->; -->)
+               all_ok'
       [Ram r]
          p_ok = !r.pos.has_payload || is_ground(ctx, r.pos.ut)
          n_ok = !r.neg.has_payload || is_ground(ctx, r.neg.ut)

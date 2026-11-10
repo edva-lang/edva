@@ -1,0 +1,527 @@
+// =============================================================================
+// EDVA LANGUAGE SHOWCASE & AGENT REFERENCE (showcase.dva)
+// =============================================================================
+// This self-contained, runnable program demonstrates Edva's syntax, type system,
+// memory model, and unique language constructs. It is designed both as a live
+// verification suite and as a comprehensive training reference for AI agents.
+//
+// Run with:
+//    edva examples/showcase.dva -r
+//
+// CORE DESIGN PRINCIPLES:
+// 1. ZERO BARE KEYWORDS: `if`, `else`, `for`, `while`, `fn`, `return`, `break`,
+//    `continue`, and `import` are ordinary identifiers, NOT keywords. All
+//    control flow, functions, and types are expressed via symbolic operators
+//    and `#` compiler directives.
+// 2. NO RTTI, EVER: Types are fully erased at runtime. Function values are
+//    `{ fn_ptr, env_ptr }` closure pairs. Polymorphism is strictly compile-time.
+// 3. NO DEFAULTING TO INT: Every binding and literal has a concrete static type.
+// 4. VALUE & ARENA SEMANTICS: Immutable bindings by default (`=`), explicit
+//    rebindability via trailing prime (`x'`), high-throughput mutable Builders
+//    (`{cap}`), and region-based memory management without GC pauses.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// 1. COMPILER DIRECTIVES & MODULE IMPORTS
+// -----------------------------------------------------------------------------
+// Directives start with `#`. `#use` imports standard library or package modules
+// using unquoted module paths. Qualified symbols use `module::symbol`.
+#use io
+#use str
+#use mem
+#use const
+
+// `#private` hides declarations from external module importers (registered
+// internally as `module::#name`). Single-line or indented block forms exist.
+#private internal_version = "1.0.0-showcase"
+
+// -----------------------------------------------------------------------------
+// 2. MODULE-LEVEL MARKED GLOBALS (`::`)
+// -----------------------------------------------------------------------------
+// `::name = value` declares a marked module-level global variable.
+// Inside functions, `name = new_val` (or `name ::= new_val`) mutates the global
+// directly instead of creating a function-local shadow binding.
+// Note: Top-level bindings without `::` are local to the implicit top-level
+// entry block and are not visible inside named functions.
+::audit_counter = 0
+
+bump_audit: () => Int
+bump_audit = !=>
+   audit_counter = audit_counter + 1
+   audit_counter
+
+// Helper assertion function demonstrating `!flag` negation and `#exit`:
+check: <>, String => ()
+check = ok, label =>
+   !ok |
+      io::err("FAIL: " + label)
+      #exit 1
+
+// -----------------------------------------------------------------------------
+// 3. NOMINAL TYPES: RECORDS, PACKED LAYOUTS, BITFIELDS & ALGEBRAIC ENUMS
+// -----------------------------------------------------------------------------
+
+// Standard record type with default field values.
+// Multiline declarations allow newline-separated fields without trailing commas.
+// Concrete `#type` records are NOMINAL: two separate `#type` record declarations
+// never unify even if their fields match (`E3084: Record name mismatch`).
+// Use `#type Point2 Vec2` to declare a transparent type alias sharing `Vec2`'s identity.
+#type Vec2 (
+   x: Float = 0.0
+   y: Float = 0.0
+)
+#type Point2 Vec2
+
+// `#packed` eliminates struct padding for cache-dense arrays and C FFI layout.
+#type Pixel #packed (
+   r: u8
+   g: u8
+   b: u8
+   a: u8
+)
+
+// `#packed u16` bitfield record: packs sub-byte integer widths (`3`, `4`, `7`)
+// and 1-bit `<>` Flag fields into a single integer storage unit (`u8`..`u64`).
+#type FrameFlags #packed u16 (
+   fin:     <>
+   rsv:     3
+   opcode:  4
+   masked:  <>
+   payload: 7
+)
+
+// Algebraic Data Types (Sum Types / Enums) use `< Variant(Payload) ... >`.
+// In `#type` declarations, variant payload types are attached in parentheses;
+// in choice pattern guards, payloads are bound by juxtaposition (`[Circle r]`).
+#type Shape <
+   Circle(Float)
+   Rect(w: Float, h: Float)
+   Origin
+>
+
+// Recursive sum types can reference themselves directly without manual boxing:
+#type Expr <
+   Lit(Int)
+   Neg(Expr)
+   Add(lhs: Expr, rhs: Expr)
+>
+
+// -----------------------------------------------------------------------------
+// 4. FUNCTIONS, SIGNATURES, SECTIONS & PARTIAL APPLICATION
+// -----------------------------------------------------------------------------
+// Function signatures are always declared separately from the body using `=>`:
+//    name: ParamType1, ParamType2 => ReturnType
+//    name = param1, param2 => body
+// Inline parameter type annotations (`x: Int => ...`) do NOT exist in Edva.
+// Parameters are strictly immutable and can never carry a prime (`'`).
+
+add: Int, Int => Int
+add = a, b => a + b
+
+// Static arity overloading: the same function name can be overloaded across
+// different parameter counts (`add/2` vs `add/3`), resolved at compile time:
+add: Int, Int, Int => Int
+add = a, b, c => a + b + c
+
+// Zero-argument functions use `() => R` in the signature and `!=>` in the body.
+// They are invoked with postfix `!` (`next_id!`) or empty parens (`next_id()`).
+next_id: () => Int
+next_id = !=> bump_audit!
+
+// Early return uses `--| expr` (or bare `--|` in void `=> ()` functions).
+// HARD RULE: Never place `--|` on the final return expression of a function!
+// The final expression of a function body is returned implicitly.
+clamp_positive: Int, Int => Int
+clamp_positive = val, hi =>
+   val < 0 | --| 0
+   %min(val, hi)
+
+// Point-free choice function: omitting the scrutinee before `[guard]` produces
+// a unary function over an implicit parameter!
+// Note Edva's ordered comparison operators:
+//   `!<` means GREATER THAN OR EQUAL ("not less than", >=)
+//   `!>` means LESS THAN OR EQUAL ("not greater than", <=)
+//   (`>=` and `<=` do NOT exist in Edva!)
+// In choice guards:
+//   - `<` and `>` form operator sections directly (`[< 0]`, `[> 95]`)
+//   - `!`-prefixed binary ops (`!<`, `!>`, `!=`) never form sections; write
+//     a placeholder lambda `[(_ !< 90)]` or range guard `[90...100]`.
+grade_label: Int => String
+grade_label =
+   [100]       "perfect"
+   [(_ !< 90)] "distinction"
+   [70...89]   "merit"
+   [50..70]    "pass"
+   [< 0]       "invalid"
+   |           "retry"
+
+// Recursive evaluation of `Expr` demonstrating variant pattern matching:
+// Variant guards bind payloads by juxtaposition: `[Lit n]`, `[Add (l, r)]`.
+eval_expr: Expr => Int
+eval_expr = e =>
+   e
+      [Lit n]      n
+      [Neg inner]  -eval_expr(inner)
+      [Add (l, r)] eval_expr(l) + eval_expr(r)
+
+//Shape area calculation demonstrating float math:
+shape_area: Shape => Float
+shape_area = s =>
+   s
+      [Circle r]    3.141592653589793 * r * r
+      [Rect (w, h)] w * h
+      [Origin]      0.0
+
+// -----------------------------------------------------------------------------
+// 5. THE FOUR ALGEBRAIC RAMIFICATION SHAPES
+// -----------------------------------------------------------------------------
+// Ramifications are Edva's unified binary outcome types. The 4 shapes are
+// distinct static types with specialized zero-overhead representations:
+//
+// 1. `RamNN` (`<>` / `Flag`): Bare `i1` boolean (`<+>` positive/true, `<->` negative/false).
+// 2. `RamPN` (`< T | >`):     Option-like (`<+ val +>` present, `<-->` absent unit).
+// 3. `RamNP` (`< | E >`):     Void-or-Error (`<++>` success unit, `<- err ->` failure).
+// 4. `RamPP` (`< T | E >`):   Result-like unboxed `{ i1, i64 }` (`<+ val ->`, `<- err +>`).
+//
+// Ramifications have NO slot keywords (`Some`, `None`, `Ok`, `Err` do not exist).
+// They are matched positionally with bare `|` branches:
+//    first `|` branch  = positive (left) slot
+//    second `|` branch = negative (right) slot
+
+// `RamNN` (`<>`) with branch return shortcuts:
+//   `|+>` desugars to `| --| <+>` (early return true)
+//   `|->` desugars to `| --| <->` (early return false)
+is_even_positive: Int => <>
+is_even_positive = n =>
+   n !> 0 |->
+   n % 2 == 0 |+>
+   <->
+
+// `RamPN` (`< Int | >`) with `|-->` shortcut (`| --| <-->` early return absent):
+safe_reciprocal_scaled: Int => < Int | >
+safe_reciprocal_scaled = denom =>
+   denom [0] |-->
+   <+ 1000 / denom +>
+
+// `RamNP` (`< | String >`) with `|++>` shortcut (`| --| <++>` early return ok):
+validate_port: Int => < | String >
+validate_port = port =>
+   in_range = port [1...65535]
+   in_range |++>
+   <- "port out of range (1..65535)" ->
+
+// `RamPP` (`< Int | String >`): carries `Int` on success or `String` on error.
+// Note: `str::parse_int(raw)` parses an entire string into `< Int | >` (`RamPN`),
+// whereas `str::to_int(s)` is a prefix scanner returning `< (Int, String) | >`
+// (the parsed integer paired with the unconsumed tail slice).
+parse_positive_int: String => < Int | String >
+parse_positive_int = raw =>
+   str::parse_int(raw)
+   | n =>
+      n > 0 | <+ n -> | <- "number must be > 0" +>
+   | <- "invalid integer syntax: " + raw +>
+
+// Postfix `--!` (error propagation / try operator):
+// Unwraps the positive slot inline or immediately returns the negative slot
+// from the enclosing function.
+sum_two_parsed: String, String => < Int | String >
+sum_two_parsed = a_str, b_str =>
+   a = parse_positive_int(a_str)--!
+   b = parse_positive_int(b_str)--!
+   <+ a + b ->
+
+// -----------------------------------------------------------------------------
+// 6. CYCLES (`@`, `@@`) AND CYCLE ESCAPES (`>--`)
+// -----------------------------------------------------------------------------
+// `@` is the universal iteration operator.
+// `-->` breaks out of a cycle (`-->2` breaks 2 levels), `--^` continues.
+// Appending `>-- BranchBody` turns a cycle into an expression of type `< T | >`
+// (`RamPN`): if the loop breaks via `-->`, it evaluates the `>--` body and
+// returns `<+ val +>`; if the loop finishes normally without breaking, it
+// returns `<-->`.
+
+find_first_multiple: Int{}, Int => < Int | >
+find_first_multiple = items, factor =>
+   found' = 0
+   items @ val =>
+      val > 0 && val % factor == 0 |
+         found' = val
+         -->
+   >--
+      found'
+
+// -----------------------------------------------------------------------------
+// 7. GENERICS & COMPILE-TIME EVALUATION (`#!`)
+// -----------------------------------------------------------------------------
+// `#! T: Type` in a signature and `#! T` in the parameter list declare a
+// compile-time type parameter (inferred automatically at call sites).
+// Inside the body, `T [TypeA] ... [TypeB] ...` dispatches at compile time and
+// prunes untaken branches before codegen. `#! expr` folds constant expressions
+// at compile time.
+
+describe_type: #! T: Type, T => String
+describe_type = #! T, val =>
+   T
+      [Int]    "Int(" + str::from_int(val) + ")"
+      [Float]  "Float(" + str::from_float(val) + ")"
+      [String] "String(\"" + val + "\")"
+      [(..)]   "Record(" + T.name + ", fields=" + str::from_int(?T) + ")"
+      [<..>]   "Enum(" + T.name + ", variants=" + str::from_int(?T) + ")"
+      |        "Other"
+
+// -----------------------------------------------------------------------------
+// 8. DEMONSTRATION RUNNER
+// -----------------------------------------------------------------------------
+run_showcase: () => ()
+run_showcase = !=>
+   // --- Section A: Zero Keywords & Primed Mutability ---
+   // `if`, `for`, `while`, `return` are ordinary variable names!
+   if = 10
+   while = 20
+   acc' = if + while
+   acc' = acc' + 12
+   check(acc' == 42, "zero keywords & primed variable reassignment")
+
+   // Global state mutation via marked global `::audit_counter`:
+   id1 = next_id!
+   id2 = next_id!
+   check(id1 == 1 && id2 == 2 && audit_counter == 2, "marked global mutation")
+
+   // --- Section B: Numbers, Width Suffixes, `#pragma integer`, Bitwise Ops ---
+   // Note: underscore numeric separators (`1_000`) are not supported in Edva.
+   byte_val = 0xFFu8
+   word_val = 0b10100101u16
+   shifted = (1 .<. 4) .|. (0xFF .&. 0x0F) .^. 0b0001
+   compile_time_mask = #! 16 * 16 - 1
+   check(shifted == 30, "bitwise shifts, OR, AND, XOR")
+   check(Int(byte_val) == 255 && Int(word_val) == 165, "typed integer literals")
+   check(compile_time_mask == 255, "compile-time #! evaluation")
+
+   // `#pragma integer` (and `#pragma float`) switches default literal types positionally:
+   #pragma integer i16
+   small_table = (10, 20, 30, 40)
+   #pragma integer default
+   check(?small_table == 4 && Int(small_table(2)) == 30, "#pragma integer i16")
+
+   // --- Section C: Strings, Triple-Quoted Strings, Interpolation, Slicing & Builders ---
+   // Strings are immutable UTF-8 `{ len, data }` slices. `s(i)` is bounds-checked
+   // (`0 <= i < ?s`; negative or `>= ?s` traps with `E4006`).
+   greeting = "Hello, Edva!"
+   raw_json = """{"lang":"edva","id":${id2}}"""
+   check(?greeting == 12, "?s measures byte length")
+   check(greeting(0) == 'H' && greeting(?greeting - 1) == '!', "bounds-checked byte indexing")
+   check(greeting(0..5) == "Hello" && greeting(7..11) == "Edva", "range slicing")
+   check(raw_json == "{\"lang\":\"edva\",\"id\":2}", "triple-quoted string & interpolation")
+
+   // High-throughput mutable Builder `{cap}`:
+   // Record streaming `b += (a, b, c)` appends multiple items in one pass
+   // without intermediate string allocations.
+   // IMPORTANT: Appending an integer (`0..255`) to a Builder appends a RAW BYTE
+   // (e.g. `b += 33` or `b += (13, 10)`), whereas appending a `String` appends
+   // its text bytes (use `str::from_int(n)` to format integers as decimal text).
+   b = {128}
+   b += ("id=", str::from_int(id2), " status=", "ok",
+      " mask=", str::from_int(compile_time_mask))
+   // Unfrozen builder supports byte indexing `b(i)` and slicing `b(a..b)`:
+   check(b(0) == 'i' && b(0..4) == "id=2", "unfrozen builder indexing & slicing")
+   // Append raw byte tuple (ASCII '!' = 33):
+   b += (33, 33)
+   // Unary `+b` freezes the Builder into an immutable String in O(1) (zero-copy)
+   // and resets `b` to empty `{0, 0, 0}`:
+   built_str = +b
+   check(?b == 0 && built_str == "id=2 status=ok mask=255!!", "builder freeze +b")
+
+   // --- Section D: Definite Field Initialization, Functional Update & Packed Bitfields ---
+   // Forward-annotated records (`v: Vec2`) are NOT zero-filled; the compiler
+   // tracks field initialization statically and rejects reading unwritten fields.
+   v: Vec2
+   v.x = 3.0
+   v.y = 4.0
+   // Nominal functional update `Vec2(..v, x = 6.0)` copies `v` and overrides `x`
+   // (whereas anonymous `(..v, z = 5.0)` extends a record with additional fields).
+   v2 = Vec2(..v, x = 6.0)
+   v_def = Vec2()
+   // `#type Point2 Vec2` aliases `Vec2`; anonymous records `(x = ..., y = ...)` check
+   // explicit field names (`E3084` on mismatch), and tuples `(a, b)` unify positionally:
+   pt_alias: Point2
+   pt_alias = (x = 6.0, y = 4.0)
+   check(v2.x == pt_alias.x && v2.y == pt_alias.y && v_def.x == 0.0,
+      "nominal record alias & field-checked unification")
+   check(add(10, 20) == 30 && add(10, 20, 12) == 42, "static arity function overloading")
+
+   // Packed bitfield manipulation & `#size` compile-time byte size operator:
+   flags = FrameFlags(fin = <+>, opcode = 2, masked = <+>, payload = 125)
+   check(#size FrameFlags == 2 && flags.fin && flags.opcode == 2 && flags.payload == 125,
+      "packed bitfields")
+
+   // Typed memory view `@[addr Type]` over a `#packed` struct:
+   px = Pixel(r = 10u8, g = 20u8, b = 30u8, a = 255u8)
+   px_view = @[&px Pixel]
+   check(#size Pixel == 4 && Int(px_view.r) == 10 && Int(px_view.a) == 255,
+      "typed memory view @[addr Type]")
+
+   // --- Section E: Tuples, Repetition, Growable Arrays & Hash Maps ---
+   // Repetition `expr {N}` creates an N-element homogeneous record; splices flat in tuples:
+   padded = (1, 0 {3}, 9)
+   check(?padded == 5 && padded(0) == 1 && padded(2) == 0 && padded(4) == 9, "tuple repetition {N}")
+
+   // Growable dynamic array `T{}`:
+   nums = Int{8}
+   nums += 10
+   nums += 20
+   nums += 30
+   // Indexing `nums(i)` returns unboxed `RamPP` (`< Int | Error >`):
+   //   - `nums(i)!!` unwraps when index is known in-bounds
+   //   - `nums(i) |_| fallback` coalesces out-of-bounds to `fallback`
+   //   - `nums(i) = val !| _` writes in-bounds or panics on error
+   nums(1) = 25 !| _
+   check(?nums == 3 && nums(1)!! == 25 && (nums(99) |_| -1) == -1, "growable array ops")
+
+   // Explicit structural copy `++` clones growable arrays so mutations don't alias:
+   nums_copy = ++nums
+   nums_copy += 40
+   check(?nums == 3 && ?nums_copy == 4, "explicit ++ array clone")
+
+   // Native hash map constructed with `(key ^= val, ...)` literal syntax:
+   //   - `m ^ k = v` inserts/updates
+   //   - `m ^ k` looks up and returns `< V | Error >`
+   //   - `m ^? k` tests key membership and returns `<>` Flag
+   //   - `m ^- k` deletes key and returns `<>` Flag (true if removed)
+   scores = ("alice" ^= 95, "bob" ^= 82)
+   scores ^ "carol" = 88
+   check(?scores == 3 && (scores ^? "alice"), "map literal, insert & membership ^?")
+   check(((scores ^ "alice") |_| 0) == 95, "map lookup ^")
+   removed_bob = scores ^- "bob"
+   check(removed_bob && !(scores ^? "bob") && ?scores == 2, "map delete ^-")
+
+   // --- Section F: Lambdas, Sections, Partial Application & Pipes (`$>`, `$`) ---
+   // Placeholder lambda `(add(10, _))` (innermost parens around `_` desugar to `_ => ...`),
+   // operator sections `(* 3)`, `(+ 5)`, and field-accessor section `(.0)`:
+   triple = * 3
+   inc_by_5 = + 5
+   first_elem = (.0)
+   add_ten = (add(10, _))
+
+   // Multi-argument feed pipe `$>` (prepends LHS as first argument to RHS call)
+   // and low-precedence right-associative apply `$` (appends RHS as last argument):
+   piped_val = 4 $> add(6) $> triple $> inc_by_5
+   applied_val = add(100) $ 20 + 3
+   check(piped_val == 35 && applied_val == 123, "feed $> and apply $ pipelines")
+   check(first_elem((42, 99)) == 42 && add_ten(7) == 17, "field section (.0) & partial application")
+
+   // --- Section G: Choices, Guards & Empty-Body Flag Extractors ---
+   check(grade_label(100) == "perfect" && grade_label(92) == "distinction", "choice guards")
+   check(grade_label(75) == "merit" && grade_label(60) == "pass", "range guards .. and ...")
+
+   // Empty-body choice `expr [pat1, pat2]` evaluates directly to a `<>` Flag!
+   ext = ".dva"
+   is_source = ext [".dva", ".c", ".h"]
+   check(is_source, "multi-value equality pattern guard [a, b, c]")
+
+   // --- Section H: Enums, Deep Structural Equality & Recursive ADTs ---
+   s1 = Shape(Rect, (w = 3.0, h = 4.0))
+   s2 = Shape(Rect, (w = 3.0, h = 4.0))
+   s3 = Shape(Origin)
+   // `==` and `!=` perform deep structural comparison across enum tags and payloads:
+   check(s1 == s2 && s1 != s3 && shape_area(s1) == 12.0, "enum deep equality & matching")
+
+   ast = Expr(Add, (
+      lhs = Expr(Lit, 50),
+      rhs = Expr(Neg, Expr(Lit, 8))
+   ))
+   check(eval_expr(ast) == 42, "recursive ADT evaluation")
+
+   // --- Section I: All 4 Ramification Shapes, `--!` Propagation & `$>>` Bind ---
+   check(is_even_positive(4) && !is_even_positive(-2) && !is_even_positive(3), "RamNN <> Flag")
+
+   // Automatic `<-->` tail on `RamPN`: matching `< T | >` in statement or transform
+   // position does not require an explicit fallback arm when `<-->` is desired.
+   recip_ok = safe_reciprocal_scaled(25) |_| -1
+   recip_zero = safe_reciprocal_scaled(0) |_| -1
+   check(recip_ok == 40 && recip_zero == -1, "RamPN < T | > & fallback coalescing |_|")
+
+   // Note:
+   // - `_` is strictly for placeholder lambdas (`(_ + 1)`), never in `=>`
+   //   parameter lists (`E2040`). Omit unused binders (`| "ok"`, `utf_str @@ r =>`).
+   // - Redundant boolean tails `| <+> | <->` are forbidden (`E2105`).
+   port_ok = validate_port(8080) | "ok" | err => err
+   port_bad = validate_port(70000) | "ok" | err => err
+   check(port_ok == "ok" && port_bad == "port out of range (1..65535)",
+      "RamNP < | E > positional matching")
+
+   // Monadic bind `$>>` chains operations over positive payloads of RamPP / RamPN:
+   bound_res = parse_positive_int("15") $>> (x => <+ x * 2 ->) $>> (y => <+ y + 12 ->)
+   check((bound_res |_| 0) == 42, "monadic bind $>> over RamPP")
+
+   sum_ok = sum_two_parsed("19", "23") |_| 0
+   sum_err = sum_two_parsed("19", "-5") | "unexpected" | err => err
+   check(sum_ok == 42 && sum_err == "number must be > 0", "postfix error propagation --!")
+
+   // --- Section J: Cycles (`@`, `@@`) and Cycle Escape (`>--`) ---
+   // 1. Direct collection iteration (`arr @ elem, idx =>` yields unwrapped `elem`!):
+   total' = 0
+   nums @ n, idx =>
+      total' = total' + n + idx
+   check(total' == 68, "direct array iteration arr @ elem, idx =>")
+
+   // 2. UTF-8 codepoint iteration (`str @@ rune, byte_pos =>`):
+   utf_str = "Aλ🔥"
+   rune_count' = 0
+   utf_str @@ r =>
+      rune_count' = rune_count' + 1
+      rune_count' [2] check(r == 'λ', "UTF-8 decoded rune")
+   check(rune_count' == 3 && ??utf_str == 3 && ?utf_str == 7, "UTF-8 @@ iteration & ??s rune count")
+
+   // 3. Cycle with continue (`--^`), break (`-->`), and escape (`>--`):
+   hit1 = find_first_multiple(nums, 5) |_| -1
+   hit2 = find_first_multiple(nums, 7) |_| -1
+   check(hit1 == 10 && hit2 == -1, "cycle escape >-- returning RamPN < T | >")
+
+   // 4. Condition-controlled cycle `(cond) @` and multi-level outer break `-->2`:
+   rem' = 16
+   steps' = 0
+   (rem' > 1) @
+      rem' = rem' .>. 1
+      steps' = steps' + 1
+   check(steps' == 4 && rem' == 1, "condition-controlled cycle (cond) @")
+
+   grid_hit' = -1
+   0..4 @ row =>
+      0..4 @ col =>
+         row * 4 + col == 9 |
+            grid_hit' = row * 10 + col
+            -->2
+   check(grid_hit' == 21, "multi-level loop break -->2")
+
+   // --- Section K: Generics, Structural Introspection, Intrinsics, Arenas & Concurrency ---
+   check(describe_type(42) == "Int(42)" && describe_type("hi") == "String(\"hi\")",
+      "generic #!T dispatch")
+   check(describe_type(v2) == "Record(Vec2, fields=2)",
+      "compile-time structural record introspection [(..)]")
+   check(describe_type(s1) == "Enum(Shape, variants=3)",
+      "compile-time structural enum introspection [<..>]")
+
+   // Hardware LLVM intrinsics (`%clamp`, `%abs`, `%sqrt`, SIMD tuple `%sum`, `%dot`):
+   vec_a = (1, 2, 3, 4)
+   vec_b = (10, 20, 30, 40)
+   check(%clamp(150, 0, 100) == 100 && %abs(-42) == 42, "%clamp and %abs intrinsics")
+   check(%sum(vec_a) == 10 && %dot(vec_a, vec_b) == 300, "%sum and %dot vector intrinsics")
+
+   // Scoped regional arena memory management (`mem::arena`, `mem::with_value`, `mem::destroy`):
+   scratch = mem::arena(4096)
+   arena_computed = mem::with_value(scratch, !=>
+      rec = (10, 12, 20)
+      rec.0 + rec.1 + rec.2
+   )
+   mem::destroy(scratch)
+   check(arena_computed == 42, "regional bump arena mem::with_value")
+
+   // Lightweight concurrency with `#spawn` and `#join`
+   // (`#join` returns `< T | Error >`; expressions after `#spawn` are not parenthesized):
+   task = #spawn clamp_positive(50, 42)
+   joined = #join task
+   check((joined |_| 0) == 42, "#spawn and #join concurrency")
+
+   io::out("All Edva showcase checks passed (" + internal_version + ")!")
+
+run_showcase!
