@@ -753,6 +753,46 @@ stringify_pretty_into = b, val, indent, depth =>
    encode_pretty = val, indent =>
       stringify_pretty(to_value(T, val), indent)
 
+   is_valid_int_value: Value => <>
+   is_valid_int_value = val =>
+      val
+         [Number n]
+            iv = Int(n)
+            Float(iv) == n
+         | <->
+
+   unwrap_int_or_zero: Value => Int
+   unwrap_int_or_zero = val =>
+      val
+         [Number n] Int(n)
+         | 0
+
+   is_valid_float_value: Value => <>
+   is_valid_float_value = val =>
+      val [Number]
+
+   unwrap_float_or_zero: Value => Float
+   unwrap_float_or_zero = val =>
+      val
+         [Number n] n
+         | 0.0
+
+   decode_int_value: Value => < Int | Error >
+   decode_int_value = val =>
+      val
+         [Number n]
+            iv = Int(n)
+            Float(iv) == n
+               | <+ iv ->
+               | <- json_type_err("expected integer") +>
+         | <- json_type_err("expected integer") +>
+
+   decode_float_value: Value => < Float | Error >
+   decode_float_value = val =>
+      val
+         [Number n] <+ n ->
+         | <- json_type_err("expected number") +>
+
    from_value: #! T: Type, Value => < T | Error >
    from_value = val =>
       T
@@ -763,17 +803,9 @@ stringify_pretty_into = b, val, indent, depth =>
                [String s] <+ s ->
                | <- json_type_err("expected string") +>
          [Int]
-            val
-               [Number n]
-                  iv = Int(n)
-                  Float(iv) == n
-                     | <+ iv ->
-                     | <- json_type_err("expected integer") +>
-               | <- json_type_err("expected integer") +>
+            decode_int_value(val)
          [Float]
-            val
-               [Number n] <+ n ->
-               | <- json_type_err("expected number") +>
+            decode_float_value(val)
          [<>]
             val
                [Boolean flag] <+ flag ->
@@ -782,10 +814,20 @@ stringify_pretty_into = b, val, indent, depth =>
             val
                [Null] <+ <--> ->
                |
-                  dec_p = from_value(P, val)
-                  dec_p
-                     | inner => <+ <+ inner +> ->
-                     | err => <- err +>
+                  P
+                     [Int]
+                        is_valid_int_value(val)
+                           | <+ <+ unwrap_int_or_zero(val) +> ->
+                           | <- json_type_err("expected integer") +>
+                     [Float]
+                        is_valid_float_value(val)
+                           | <+ <+ unwrap_float_or_zero(val) +> ->
+                           | <- json_type_err("expected number") +>
+                     |
+                        dec_p = from_value(P, val)
+                        dec_p
+                           | inner => <+ <+ inner +> ->
+                           | err => <- err +>
          [E{}]
             !is_array(val)
                | <- json_type_err("expected array") +>
@@ -796,12 +838,27 @@ stringify_pretty_into = b, val, indent, depth =>
                   n_items = array_len(val)
                   0..n_items @ i =>
                      !has_err' |
-                        dec_e = from_value(E, array_at(val, i))
-                        dec_e
-                           | elem => arr' += elem
-                           | e =>
-                              has_err' = <+>
-                              err_val' = e
+                        elem_val = array_at(val, i)
+                        E
+                           [Int]
+                              is_valid_int_value(elem_val)
+                                 | arr' += unwrap_int_or_zero(elem_val)
+                                 |
+                                    has_err' = <+>
+                                    err_val' = json_type_err("expected integer")
+                           [Float]
+                              is_valid_float_value(elem_val)
+                                 | arr' += unwrap_float_or_zero(elem_val)
+                                 |
+                                    has_err' = <+>
+                                    err_val' = json_type_err("expected number")
+                           |
+                              dec_e = from_value(E, elem_val)
+                              dec_e
+                                 | elem => arr' += elem
+                                 | e =>
+                                    has_err' = <+>
+                                    err_val' = e
                   has_err'
                      | <- err_val' +>
                      | <+ arr' ->
@@ -820,12 +877,26 @@ stringify_pretty_into = b, val, indent, depth =>
                         dec_k = from_value(K, Value(String, pk))
                         dec_k
                            | k =>
-                              dec_v = from_value(V, pv)
-                              dec_v
-                                 | mv => mp' ^ k = mv
-                                 | e =>
-                                    has_err' = <+>
-                                    err_val' = e
+                              V
+                                 [Int]
+                                    is_valid_int_value(pv)
+                                       | mp' ^ k = unwrap_int_or_zero(pv)
+                                       |
+                                          has_err' = <+>
+                                          err_val' = json_type_err("expected integer")
+                                 [Float]
+                                    is_valid_float_value(pv)
+                                       | mp' ^ k = unwrap_float_or_zero(pv)
+                                       |
+                                          has_err' = <+>
+                                          err_val' = json_type_err("expected number")
+                                 |
+                                    dec_v = from_value(V, pv)
+                                    dec_v
+                                       | mv => mp' ^ k = mv
+                                       | e =>
+                                          has_err' = <+>
+                                          err_val' = e
                            | e =>
                               has_err' = <+>
                               err_val' = e
@@ -851,12 +922,26 @@ stringify_pretty_into = b, val, indent, depth =>
                                     err_val' = json_type_err("tuple length mismatch")
                                  |
                                     pos_item = array_at(val, f.idx)
-                                    dec_fv = from_value(f.type, pos_item)
-                                    dec_fv
-                                       | fv => rec'.(f) = fv
-                                       | e =>
-                                          has_err' = <+>
-                                          err_val' = e
+                                    f.type
+                                       [Int]
+                                          is_valid_int_value(pos_item)
+                                             | rec'.(f) = unwrap_int_or_zero(pos_item)
+                                             |
+                                                has_err' = <+>
+                                                err_val' = json_type_err("expected integer")
+                                       [Float]
+                                          is_valid_float_value(pos_item)
+                                             | rec'.(f) = unwrap_float_or_zero(pos_item)
+                                             |
+                                                has_err' = <+>
+                                                err_val' = json_type_err("expected number")
+                                       |
+                                          dec_fv = from_value(f.type, pos_item)
+                                          dec_fv
+                                             | fv => rec'.(f) = fv
+                                             | e =>
+                                                has_err' = <+>
+                                                err_val' = e
                      |
                         !is_object(val)
                            |
@@ -866,12 +951,26 @@ stringify_pretty_into = b, val, indent, depth =>
                               fval_opt = get(val, f.name)
                               fval_opt
                                  | fval =>
-                                    dec_fv = from_value(f.type, fval)
-                                    dec_fv
-                                       | fv => rec'.(f) = fv
-                                       | e =>
-                                          has_err' = <+>
-                                          err_val' = e
+                                    f.type
+                                       [Int]
+                                          is_valid_int_value(fval)
+                                             | rec'.(f) = unwrap_int_or_zero(fval)
+                                             |
+                                                has_err' = <+>
+                                                err_val' = json_type_err("expected integer")
+                                       [Float]
+                                          is_valid_float_value(fval)
+                                             | rec'.(f) = unwrap_float_or_zero(fval)
+                                             |
+                                                has_err' = <+>
+                                                err_val' = json_type_err("expected number")
+                                       |
+                                          dec_fv = from_value(f.type, fval)
+                                          dec_fv
+                                             | fv => rec'.(f) = fv
+                                             | e =>
+                                                has_err' = <+>
+                                                err_val' = e
                                  |
                                     f_def = f.default
                                     f_def
