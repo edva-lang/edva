@@ -506,6 +506,14 @@ operators:
     operands: "RamPP/RamPN, fn"
     result: "Ramification (the continuation's monad)"
     desc: "monadic bind over a ramification (RamPP/RamPN only; E3091 otherwise). A negative lhs propagates (its payload for RamPP, its unit for RamPN). The continuation receives the positive payload."
+  - symbol: ".>"
+    tier: feed
+    kind: Compose
+    kind_self: Compose
+    assoc: left
+    operands: "fn, fn | fn, TypeName"
+    result: "composed fn (x => rhs(lhs(x)))"
+    desc: "function composition: (f .> g)(x) == g(f(x)); chains left-to-right in the feed tier."
 
   # ---- multiplication (tier 14) -------------------------------------------
   - symbol: "*"

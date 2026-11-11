@@ -168,8 +168,8 @@ is_continuation_op: lexer::Tok => <>
 is_continuation_op = t =>
    is_delim = t.kind [Comma, LParen, LBracket, LBrace]
    is_op = t.kind [Op] &&
-      (t.text ["+", "-", "*", "/", "%", "$>", "$>>",
-         "..", "...", "..=", "::", "&&", "||", ".<.", ".>.", ".&.", ".|.", ".^."])
+     (t.text ["+", "-", "*", "/", "%", "$>", "$>>", ".>",
+       "..", "...", "..=", "::", "&&", "||", ".<.", ".>.", ".&.", ".|.", ".^."])
    is_delim || is_op
 
 // --- driver ----------------------------------------------------------------
@@ -183,9 +183,9 @@ parser_init = lx =>
    tl = ast::Ints()
    tc = ast::Ints()
    p = Parser(lx, lexer::Tok(lexer::TokKind(Eof), 0, 0, 1, 1, <->, <->, ""),
-      0, 0, 0, 0, 0, 0, 0, user_types, forward_refs, user_ops,
-      <->, <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
-      <->, <->, <->, "", <+>, lexer::lex_get_file(), tl, tc, consts)
+     0, 0, 0, 0, 0, 0, 0, user_types, forward_refs, user_ops,
+     <->, <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
+     <->, <->, <->, "", <+>, lexer::lex_get_file(), tl, tc, consts)
    parser_advance(p)
    p
 
@@ -233,7 +233,7 @@ parser_error = p, code, msg =>
       |
          fn = p.source_file != "" | p.source_file + ":" | ""
          log::error $ fn + str::from_int(p.curr.line) + ":" + str::from_int(p.curr.col) +
-            ": E" + str::from_int(code) + ": " + msg
+           ": E" + str::from_int(code) + ": " + msg
 
 // --- precedence (binary operators) ----------------------------------------
 
@@ -329,7 +329,7 @@ wrap_headless_choice: Parser, <ast::Expr|> => <ast::Expr|>
 wrap_headless_choice = p, res =>
    res
       | ce =>
-         p.cycle_depth > 0 && !p.in_rhs
+         (p.cycle_depth > 0 && !p.in_rhs) || is_compose_fn(ce)
             | <+ ce +>
             |
                params = ast::Names()
@@ -337,33 +337,40 @@ wrap_headless_choice = p, res =>
                <+ ast::Expr(Fn, ast::FnExpr(params, ast::Names(), ce)) +>
       | <-->
 
+is_compose_fn: ast::Expr => <>
+feed_peek_op: Parser, Int => <>
+is_feed_cont_op: lexer::Tok => <>
+choice_cont_at: Parser, ast::Expr, Int => <ast::Expr|>
 tok_is_neg_lbracket: Parser => <>
 token_is_range_op: lexer::Tok => <>
 token_is_range_op = t => token_is_op(t, "..") || token_is_op(t, "...")
 
 parse_choice: Parser => <ast::Expr|>
 parse_choice = p =>
+   choice_entry = p.indent_level
    p.curr.kind [LBracket] || tok_is_neg_lbracket(p)
-      | wrap_headless_choice(p, headless_choice_resume(p))
+      | wrap_headless_choice(p, headless_choice_resume(p, choice_entry))
       |
          token_is_pipe(p.curr)
-            | choice_resume(p, ast::Expr(Var, "_"))
+            | choice_resume(p, ast::Expr(Var, "_"), choice_entry)
             |
                parse_range(p)
                   | r =>
                      r
                         [Assign, Fn, TypeDecl, Import, Foreign, Block] <+ r +>
-                        | choice_resume(p, r)
+                        | choice_resume(p, r, choice_entry)
                   | <-->
 
-headless_choice_resume: Parser => <ast::Expr|>
-headless_choice_resume = p =>
+headless_choice_resume: Parser, Int => <ast::Expr|>
+headless_choice_resume = p, choice_entry =>
    headless_choice_cont(p, ast::Expr(Var, "_"))
       | r =>
-         is_binary_cont(p)
+         min_fi = choice_entry
+         is_binary_cont(p) || feed_peek_op(p, min_fi)
             |
-               parse_bp_lhs(p, 30, r)
-                  | rr => choice_resume(p, rr)
+               bp_entry = choice_entry > 0 | choice_entry - 1 | 0
+               bp_loop(p, r, 30, -1, bp_entry)
+                  | rr => choice_resume(p, rr, choice_entry)
                   | <-->
             | <+ r +>
       | <-->
@@ -376,14 +383,15 @@ headless_choice_resume = p =>
 // (looser than every binary operator), so "text [a] || text [b]" is
 // "((text [a]) || text) [b]" — operating on a choice requires grouping
 // ("(text [a]) || (text [b])").
-choice_resume: Parser, ast::Expr => <ast::Expr|>
-choice_resume = p, lhs =>
-   choice_cont(p, lhs)
+choice_resume: Parser, ast::Expr, Int => <ast::Expr|>
+choice_resume = p, lhs, choice_entry =>
+   choice_cont_at(p, lhs, choice_entry)
       | r =>
-         is_binary_cont(p)
+         min_fi = choice_entry + 1
+         is_binary_cont(p) || feed_peek_op(p, min_fi)
             |
-               parse_bp_lhs(p, 30, r)
-                  | rr => choice_resume(p, rr)
+               bp_loop(p, r, 30, -1, choice_entry)
+                  | rr => choice_resume(p, rr, choice_entry)
                   | <-->
             | <+ r +>
       | <-->
@@ -438,7 +446,7 @@ range_cont = p, lhs =>
                            parse_bp(p, 30)
                               | rr =>
                                  range_cont(p, ast::Expr(Range,
-                                    ast::RangeExpr(<+>, <+>, lhs, rr, is_incl)))
+                                   ast::RangeExpr(<+>, <+>, lhs, rr, is_incl)))
                               | <-->
                   |
                      range_cont(p, ast::Expr(Range, ast::RangeExpr(
@@ -450,7 +458,7 @@ range_cont = p, lhs =>
 is_range_start: lexer::Tok => <>
 is_range_start = t =>
    t.kind [Int, Float, Rune, Id, LParen] || t.text == "?" ||
-      (t.text == "-" && !t.trail)
+     (t.text == "-" && !t.trail)
 
 // Semicolon sequence continuation from an already-parsed lhs (named
 // assignment, member write, choice branch body). Operands parse at the RANGE
@@ -466,7 +474,6 @@ seq_cont_loop = p, lhs =>
                seq_cont_loop(p, n)
             | <-->
       | <+ lhs +>
-
 
 // range_with_lhs: the choice tier's operand continuation for an already-parsed
 // lhs (the identifier dispatch fallback): apply ".."/"..." if present, else
@@ -494,7 +501,7 @@ parse_range_with_lhs = p, lhs =>
                            parse_bp(p, 30)
                               | rr =>
                                  range_cont(p, ast::Expr(Range,
-                                    ast::RangeExpr(<+>, <+>, lhs, rr, is_incl)))
+                                   ast::RangeExpr(<+>, <+>, lhs, rr, is_incl)))
                               | <-->
                   |
                      range_cont(p, ast::Expr(Range, ast::RangeExpr(
@@ -507,7 +514,9 @@ parse_range_with_lhs = p, lhs =>
 // dispatch fallback and member/key writes).
 parse_bp_lhs: Parser, Int, ast::Expr => <ast::Expr|>
 parse_bp_lhs = p, min_bp, lhs =>
-   bp_loop(p, lhs, min_bp, -1)
+   base_ind = p.indent_level - p.cont_depth
+   entry_indent = base_ind < 0 | 0 | base_ind
+   bp_loop(p, lhs, min_bp, -1, entry_indent)
 
 // The Pratt core. parse_bp parses a unary/primary lhs then hands the
 // accumulation to bp_loop, which consumes binary operators while their
@@ -527,8 +536,9 @@ parse_bp_depth_error = p =>
 
 parse_bp_depth_ok: Parser, Int => <ast::Expr|>
 parse_bp_depth_ok = p, min_bp =>
+   entry_indent = p.indent_level
    lr = parse_unary(p)
-   r = lr | lre => bp_loop(p, lre, min_bp, -1) | <-->
+   r = lr | lre => bp_loop(p, lre, min_bp, -1, entry_indent) | <-->
    p.expr_depth = p.expr_depth - 1
    r
 
@@ -537,38 +547,130 @@ lbracket_is_empty_guard: Parser => <>
 parse_pos_guard_choice: Parser, ast::Expr => <ast::Expr|>
 parse_neg_guard_choice: Parser, ast::Expr => <ast::Expr|>
 
-bp_loop: Parser, ast::Expr, Int, Int => <ast::Expr|>
-bp_loop = p, res, min_bp, cmp_line =>
+is_feed_cont_op = t =>
+   tok_is_op(t) && (t.text ["$>", "$>>", ".>"])
+
+feed_scan_op: lexer::Lx, lexer::Tok, Int, Int => <>
+feed_scan_op = lx, tok, cur_indent, min_indent =>
+   tok.kind
+      [Newline]
+         feed_scan_op(lx, lexer::next_tok(lx, 0), cur_indent, min_indent)
+      [Indent]
+         feed_scan_op(lx, lexer::next_tok(lx, 0), cur_indent + 1, min_indent)
+      [Dedent]
+         cur_indent - 1 < min_indent
+            | <->
+            | feed_scan_op(lx, lexer::next_tok(lx, 0), cur_indent - 1, min_indent)
+      |
+         cur_indent !< min_indent && is_feed_cont_op(tok)
+
+feed_peek_op = p, min_indent =>
+   tok_is_nl(p.curr) || tok_is_indent(p.curr)
+      |
+         c = lexer::clone_lx(p.lx)
+         tok = lexer::next_tok(c, 0)
+         init_indent = p.indent_level + (tok_is_indent(p.curr) | 1 | 0)
+         feed_scan_op(c, tok, init_indent, min_indent)
+      | <->
+
+feed_can_skip: Parser, Int => <>
+feed_can_skip = p, min_indent =>
+   tok_is_nl(p.curr) || tok_is_indent(p.curr) ||
+     (tok_is_dedent(p.curr) && p.indent_level > min_indent)
+
+feed_skip_layout: Parser, Int => ()
+feed_skip_layout = p, min_indent =>
+   feed_can_skip(p, min_indent)
+      |
+         ind = tok_is_indent(p.curr)
+         ded = tok_is_dedent(p.curr)
+         p.indent_level = p.indent_level + (ind | 1 | 0) - (ded | 1 | 0)
+         p.cont_depth = p.cont_depth + (ind | 1 | 0) - (ded && p.cont_depth > 0 | 1 | 0)
+         p.just_dedented = <->
+         p.curr = lexer::next_tok(p.lx, 0)
+         feed_skip_layout(p, min_indent)
+
+fresh_compose_var: Parser => String
+fresh_compose_var = p =>
+   p.dp_var_count = p.dp_var_count + 1
+   "_comp_" + str::from_int(p.dp_var_count)
+
+is_compose_fn = e =>
+   e
+      [Fn fe]
+         ?fe.params == 1 && ?fe.ct_params == 0 &&
+           (fe.params(0) | p0 => ?p0 > 6 && p0(0..6) == "_comp_" | <->)
+      | <->
+
+normalize_compose_stage: ast::Expr => ast::Expr
+normalize_compose_stage = e =>
+   e
+      [Choice ce]
+         (ce.cond [Var v] (v == "_") | <->)
+            |
+               params = ast::Names()
+               params += "_"
+               ast::Expr(Fn, ast::FnExpr(params, ast::Names(), e))
+            | e
+      | e
+
+mk_compose_fn: Parser, ast::Expr, ast::Expr => ast::Expr
+mk_compose_fn = p, lhs_raw, rhs_raw =>
+   lhs = normalize_compose_stage(lhs_raw)
+   rhs = normalize_compose_stage(rhs_raw)
+   is_compose_fn(lhs)
+      |
+         lhs
+            [Fn fe]
+               next_body = ast::Expr(Bin, (ast::BinaryOp(Feed), fe.body, rhs))
+               ast::Expr(Fn, ast::FnExpr(fe.params, ast::Names(), next_body))
+            | lhs
+      |
+         param = fresh_compose_var(p)
+         pvar = ast::Expr(Var, param)
+         step1 = ast::Expr(Bin, (ast::BinaryOp(Feed), pvar, lhs))
+         step2 = ast::Expr(Bin, (ast::BinaryOp(Feed), step1, rhs))
+         params = ast::Names()
+         params += param
+         ast::Expr(Fn, ast::FnExpr(params, ast::Names(), step2))
+
+bp_loop: Parser, ast::Expr, Int, Int, Int => <ast::Expr|>
+bp_loop = p, res, min_bp, cmp_line, entry_indent =>
+   min_feed_indent = entry_indent + 1
+   min_bp !> 40 && !p.just_dedented && feed_peek_op(p, min_feed_indent)
+      | feed_skip_layout(p, min_feed_indent)
+   min_bp !> 40 && p.just_dedented && p.indent_level !< min_feed_indent && is_feed_cont_op(p.curr)
+      | p.just_dedented = <->
    p.just_dedented || tok_is_nl(p.curr) || tok_is_eof(p.curr)
       | <+ res +>
       |
          min_bp !> 120 && tok_is_neg_lbracket(p)
             |
                parse_neg_guard_choice(p, res)
-                  | neg_e => bp_loop(p, neg_e, min_bp, -1)
+                  | neg_e => bp_loop(p, neg_e, min_bp, -1, entry_indent)
                   | <-->
             |
                min_bp !> 120 && (p.curr.kind [LBracket]) && lbracket_is_empty_guard(p)
                   |
                      parse_pos_guard_choice(p, res)
-                        | pos_e => bp_loop(p, pos_e, min_bp, -1)
+                        | pos_e => bp_loop(p, pos_e, min_bp, -1, entry_indent)
                         | <-->
                   |
                      !tok_is_op(p.curr)
                         | <+ res +>
                         |
                            operators::bin_info(p.curr.text)
-                              | bp_cont(p, res, min_bp, cmp_line, _)
+                              | bp_cont(p, res, min_bp, cmp_line, entry_indent, _)
                               |
                                  uo = user_op_lookup(p.user_ops, p.curr.text)
                                  uo.0
-                                    | bp_cont_user(p, res, min_bp, cmp_line, uo.1, uo.2)
+                                    | bp_cont_user(p, res, min_bp, cmp_line, entry_indent, uo.1, uo.2)
                                     | <+ res +>
 
-// Whether an operator is apply/feed ($, $>, $>>) — the binary tiers BELOW
+// Whether an operator is apply/feed ($, $>, $>>, .>) — the binary tiers BELOW
 // the choice tier, whose right operand absorbs a choice continuation.
 op_is_apply_feed: ast::BinaryOp => <>
-op_is_apply_feed = [Apply, Feed, Bind]
+op_is_apply_feed = [Apply, Feed, Bind, Compose]
 
 parse_bp_rhs: Parser, operators::BinOpInfo => <ast::Expr|>
 parse_bp_rhs = p, i =>
@@ -618,9 +720,9 @@ chain_cmp = p, prev, op2, rhs =>
 // Consume one binary operator (the token is an Op whose BinOpInfo is in hand):
 // bound check, comparison same-line check, advance, parse the right operand,
 // build the Bin node, then resume the loop.
-bp_cont: Parser, ast::Expr, Int, Int,
-   operators::BinOpInfo => <ast::Expr|>
-bp_cont = p, res, min_bp, cmp_line, i =>
+bp_cont: Parser, ast::Expr, Int, Int, Int,
+  operators::BinOpInfo => <ast::Expr|>
+bp_cont = p, res, min_bp, cmp_line, entry_indent, i =>
    i.lbp < min_bp || i.same_line && cmp_line != -1 && p.curr.line != cmp_line
       | <+ res +>
       |
@@ -629,16 +731,16 @@ bp_cont = p, res, min_bp, cmp_line, i =>
          (i.op [Apply]) && tok_is_nl(p.curr)
             |
                parse_trailing_block_expr(p, res)
-                  | node => bp_loop(p, node, min_bp, cmp_line)
+                  | node => bp_loop(p, node, min_bp, cmp_line, entry_indent)
                   | <-->
             |
                parse_bp_rhs(p, i)
                   | cae =>
                      node = i.same_line && cmp_line != -1
                         | chain_cmp(p, res, i.op, cae)
-                        | ast::Expr(Bin, (i.op, res, cae))
+                        | (i.op [Compose] mk_compose_fn(p, res, cae) | ast::Expr(Bin, (i.op, res, cae)))
                      nc = i.same_line | op_line | -1
-                     bp_loop(p, node, min_bp, nc)
+                     bp_loop(p, node, min_bp, nc, entry_indent)
                   | <-->
 
 // The apply/feed right operand: a full choice ("a $> b | c | d" ==
@@ -662,8 +764,8 @@ user_rhs_min = lbp, rbp =>
 // Consume one user-defined binary operator (custom-operators.md): the bound
 // check, parse the right operand at the derived min, desugar `a <op> b` to
 // the call `<op>(a, b)`, and reject non-associative chains.
-bp_cont_user: Parser, ast::Expr, Int, Int, Int, Int => <ast::Expr|>
-bp_cont_user = p, res, min_bp, cmp_line, lbp, rbp =>
+bp_cont_user: Parser, ast::Expr, Int, Int, Int, Int, Int => <ast::Expr|>
+bp_cont_user = p, res, min_bp, cmp_line, entry_indent, lbp, rbp =>
    lbp < min_bp
       | <+ res +>
       |
@@ -680,10 +782,10 @@ bp_cont_user = p, res, min_bp, cmp_line, lbp, rbp =>
                lbp == rbp && tok_is_op(p.curr) && p.curr.text == text
                   |
                      parser_error(p, 2100, "Non-associative operator '" +
-                        text + "' cannot chain ('a " + text + " b " +
-                        text + " c' is ambiguous).")
+                       text + "' cannot chain ('a " + text + " b " +
+                       text + " c' is ambiguous).")
                      <-->
-                  | bp_loop(p, node, min_bp, cmp_line)
+                  | bp_loop(p, node, min_bp, cmp_line, entry_indent)
             | <-->
 
 // Prefix unary: -x desugars to 0 - x (integers/floats); ! is negation; ++ is
@@ -754,7 +856,7 @@ dotted_to_expr = s =>
    target_str = s(0..dot)
    field_str = s(dot + 1..?s)
    me = ast::MemberExpr(dotted_to_expr(target_str),
-      field_str, <->, ast::Expr(Var, ""), 0, 0)
+     field_str, <->, ast::Expr(Var, ""), 0, 0)
    ast::Expr(Member, me)
 
 mark_lvalue_cell: ast::Expr => ()
@@ -771,8 +873,8 @@ atom_binding_var = p, name =>
    is_mut = name_is_primed(name)
    is_glob = !is_mut
    set_assign = ast::Expr(Assign, (name, is_mut, <->, is_glob, <->,
-      val_var, ast::Expr(Var, ""), "",
-      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+     val_var, ast::Expr(Var, ""), "",
+     ast::TypeInfo(Prim, ast::ValueType(Unknown))))
    set_params = ast::Names()
    set_params += "_v"
    set_fn = ast::Expr(Fn, (set_params, ast::Names(), set_assign))
@@ -786,8 +888,8 @@ atom_binding_module_var = p, target =>
    get_fn = ast::Expr(Fn, (ast::Names(), ast::Names(), target))
    val_var = ast::Expr(Var, "_v")
    set_assign = ast::Expr(Assign, ("", <->, <->, <+>, <->,
-      val_var, target, "",
-      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+     val_var, target, "",
+     ast::TypeInfo(Prim, ast::ValueType(Unknown))))
    set_params = ast::Names()
    set_params += "_v"
    set_fn = ast::Expr(Fn, (set_params, ast::Names(), set_assign))
@@ -811,17 +913,17 @@ atom_binding_member = p, m =>
    rec_assign = is_lv
       | ast::Expr(Var, "")
       | ast::Expr(Assign, (rec_name, <->, <->, <->, <->,
-         m.target, ast::Expr(Var, ""), "",
-         ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+        m.target, ast::Expr(Var, ""), "",
+        ast::TypeInfo(Prim, ast::ValueType(Unknown))))
    bound_mem = is_lv
       | ast::Expr(Member, m)
       | ast::Expr(Member, ast::MemberExpr(rec_var, m.field_name,
-         <->, m.index_expr, m.line, m.col))
+        <->, m.index_expr, m.line, m.col))
    get_fn = ast::Expr(Fn, (ast::Names(), ast::Names(), bound_mem))
    val_var = ast::Expr(Var, "_v")
    set_assign = ast::Expr(Assign, ("", <->, <->, <->, <->,
-      val_var, bound_mem, "",
-      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+     val_var, bound_mem, "",
+     ast::TypeInfo(Prim, ast::ValueType(Unknown))))
    set_params = ast::Names()
    set_params += "_v"
    set_fn = ast::Expr(Fn, (set_params, ast::Names(), set_assign))
@@ -843,8 +945,8 @@ atom_binding_call = p, c =>
    arr_var = ast::Expr(Var, arr_name)
    arr_target = c.fn_name != "" | dotted_to_expr(c.fn_name) | c.fn_target
    arr_assign = ast::Expr(Assign, (arr_name, <->, <->, <->, <->,
-      arr_target, ast::Expr(Var, ""), "",
-      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+     arr_target, ast::Expr(Var, ""), "",
+     ast::TypeInfo(Prim, ast::ValueType(Unknown))))
    stmts = ast::Exprs()
    stmts += arr_assign
    bound_args = ast::Exprs()
@@ -852,18 +954,18 @@ atom_binding_call = p, c =>
       idx_name = fresh_dp_var(p)
       idx_var = ast::Expr(Var, idx_name)
       idx_assign = ast::Expr(Assign, (idx_name, <->, <->, <->, <->,
-         arg_e, ast::Expr(Var, ""), "",
-         ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+        arg_e, ast::Expr(Var, ""), "",
+        ast::TypeInfo(Prim, ast::ValueType(Unknown))))
       stmts += idx_assign
       bound_args += idx_var
    bound_call = ast::Expr(Call, ast::CallExpr("", arr_var, bound_args,
-      c.line, c.col))
+     c.line, c.col))
    unwrapped = ast::Expr(Unary, (ast::UnaryOp(Unwrap), bound_call))
    get_fn = ast::Expr(Fn, (ast::Names(), ast::Names(), unwrapped))
    val_var = ast::Expr(Var, "_v")
    set_assign = ast::Expr(Assign, ("", <->, <->, <->, <->,
-      val_var, bound_call, "",
-      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+     val_var, bound_call, "",
+     ast::TypeInfo(Prim, ast::ValueType(Unknown))))
    set_params = ast::Names()
    set_params += "_v"
    set_fn = ast::Expr(Fn, (set_params, ast::Names(), set_assign))
@@ -952,7 +1054,7 @@ atom_minus_float = p =>
          flt = ast::Expr(Float, neg_val)
          vt [F32]
             <+ ast::Expr(TypeCast, ast::CastExpr(ast::ValueType(F32),
-               flt)) +>
+              flt)) +>
          | <+ flt +>
       | <-->
 
@@ -994,10 +1096,10 @@ parse_atom = p =>
             ["!=>"] atom_to_ram(parse_fn(p))
             ["=>"]
                parser_error(p, 2050, "Function parameters may not be " +
-                  "omitted; write a named parameter (e.g. 'x =>') or use " +
-                  "a parenthesized grouped expression with '_'.")
+                 "omitted; write a named parameter (e.g. 'x =>') or use " +
+                 "a parenthesized grouped expression with '_'.")
                <- Error(2050, "Function parameters may not be omitted", "",
-                  p.curr.line, p.curr.col, (0, 0)) +>
+                 p.curr.line, p.curr.col, (0, 0)) +>
             | atom_to_ram(atom_op(p))
       [LBrace] atom_to_ram(atom_builder(p))
       [Int] atom_to_ram(atom_integer(p, k.text))
@@ -1035,9 +1137,9 @@ parse_atom = p =>
       [Foreign] atom_to_ram(atom_foreign(p))
       |
          parser_error(p, 2064,
-            diag::expected_primary_prefix! + p.curr.text + "'")
+           diag::expected_primary_prefix! + p.curr.text + "'")
          <- Error(2064, diag::expected_primary_prefix! +
-            p.curr.text + "'", "", p.curr.line, p.curr.col, (0, 0)) +>
+           p.curr.text + "'", "", p.curr.line, p.curr.col, (0, 0)) +>
 
 // "#pragma number <type>" — file-scoped directive, already applied by lexer.
 atom_pragma_number: Parser => <ast::Expr|>
@@ -1103,26 +1205,26 @@ mark_decl_item = p, e =>
                      p.export_alias = ""
                   |
                      parser_error(p, 2091, "#export requires a function " +
-                        "definition, got a variable binding '" + t.0 + "'.")
+                       "definition, got a variable binding '" + t.0 + "'.")
             |
                p.is_public | add_public_name(p, t.0) | add_private_name(p, t.0)
       [TypeDecl t]
          p.is_export
             |
                parser_error(p, 2091, "#export requires a function definition, " +
-                  "got a non-function declaration.")
+                 "got a non-function declaration.")
             |
                p.is_public | add_public_name(p, t.name) | add_private_name(p, t.name)
       [Foreign f]
          p.is_export
             |
                parser_error(p, 2091, "#export requires a function definition, " +
-                  "got a non-function declaration.")
+                 "got a non-function declaration.")
             |
                p.is_public | add_public_name(p, f.dva_name) | add_private_name(p, f.dva_name)
       |
          p.is_export | parser_error(p, 2091, "#export requires a function definition, " +
-            "got a non-function declaration.")
+           "got a non-function declaration.")
 
 parser_skip_newlines: Parser => ()
 parser_skip_newlines = p =>
@@ -1290,7 +1392,6 @@ atom_export = p =>
                p.export_alias = alias
                <+ ast::Expr(Block, ast::Exprs()) +>
 
-
 // "#spawn call" — run the call's closure in a new thread (a ThreadId).
 atom_spawn: Parser => <ast::Expr|>
 atom_spawn = p =>
@@ -1340,7 +1441,7 @@ atom_user_diag = p, is_warn =>
          msg = is_warn | "compile-time warning" | "compile-time error"
          me = ast::Expr(Str, msg)
          <+ ast::Expr(UserDiag,
-            ast::UserDiagExpr(is_warn, me, line, col)) +>
+           ast::UserDiagExpr(is_warn, me, line, col)) +>
       |
          msg_e = p.branch_body_depth > 0
             | parse_range(p)
@@ -1348,7 +1449,7 @@ atom_user_diag = p, is_warn =>
          msg_e
             | me =>
                <+ ast::Expr(UserDiag,
-                  ast::UserDiagExpr(is_warn, me, line, col)) +>
+                 ast::UserDiagExpr(is_warn, me, line, col)) +>
             | <-->
 
 // "#foreign [abi] [decl | block]" — foreign function or variable
@@ -1407,8 +1508,8 @@ foreign_decls_other = p, is_block, exprs =>
    is_block
       |
          parser_error(p, 2016,
-            "Expected function name in foreign declaration, got '" +
-            p.curr.text + "'")
+           "Expected function name in foreign declaration, got '" +
+           p.curr.text + "'")
          <-->
       | <+ exprs +>
 
@@ -1422,8 +1523,8 @@ foreign_parse_c_name = p =>
          <+ cn +>
       |
          parser_error(p, 2058,
-            "Expected foreign symbol name after '=', got '" +
-            p.curr.text + "'")
+           "Expected foreign symbol name after '=', got '" +
+           p.curr.text + "'")
          <-->
 
 foreign_decls_id: Parser, String, <>, ast::Exprs => <ast::Exprs|>
@@ -1432,25 +1533,25 @@ foreign_decls_id = p, abi, is_block, exprs =>
    parser_advance(p)
    has_eq = p.curr.text ["="]
    eq_res = has_eq
-         | foreign_parse_c_name(p)
-         | <+ dva_name +>
+      | foreign_parse_c_name(p)
+      | <+ dva_name +>
    eq_res
       | c_name =>
          has_colon = p.curr.text [":"]
          !has_colon
             |
                parser_error(p, 2059,
-                  "Expected ':' after foreign name, got '" +
-                  p.curr.text + "'")
+                 "Expected ':' after foreign name, got '" +
+                 p.curr.text + "'")
                <-->
             |
                parser_advance(p)
                foreign_decl_after_colon(p, abi, is_block, exprs,
-                  dva_name, c_name)
+                 dva_name, c_name)
       | <-->
 
 foreign_decl_after_colon: Parser, String, <>, ast::Exprs, String,
-   String => <ast::Exprs|>
+  String => <ast::Exprs|>
 foreign_decl_after_colon = p, abi, is_block, exprs, dva_name, c_name =>
    is_fn = p.curr.kind [LParen]
    is_fn
@@ -1464,11 +1565,11 @@ foreign_parse_ret_type = p =>
       ["Void", "void"]
          parser_advance(p)
          (ast::ValueType(Unit),
-            ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
+           ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
       | parse_type(p)
 
 foreign_decl_fn: Parser, String, <>, ast::Exprs, String,
-   String => <ast::Exprs|>
+  String => <ast::Exprs|>
 foreign_decl_fn = p, abi, is_block, exprs, dva_name, c_name =>
    parser_advance(p)
    pms = foreign_params(p, ast::FParams())
@@ -1478,8 +1579,8 @@ foreign_decl_fn = p, abi, is_block, exprs, dva_name, c_name =>
          !is_rp
             |
                parser_error(p, 2060,
-                  "Expected ')' in foreign parameter list, got '" +
-                  p.curr.text + "'")
+                 "Expected ')' in foreign parameter list, got '" +
+                 p.curr.text + "'")
                <-->
             |
                parser_advance(p)
@@ -1487,10 +1588,10 @@ foreign_decl_fn = p, abi, is_block, exprs, dva_name, c_name =>
                ret_info = has_arrow
                   | foreign_parse_ret_type(p)
                   | (ast::ValueType(Unit),
-                     ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
+                    ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
                !ret_info.2 | <--> |
                   fdecl = ast::ForeignFnDecl(c_name, dva_name, abi,
-                     pms_val, ret_info.0, ret_info.1, <->)
+                    pms_val, ret_info.0, ret_info.1, <->)
                   next_exprs = exprs
                   next_exprs += ast::Expr(Foreign, fdecl)
                   is_block
@@ -1499,12 +1600,12 @@ foreign_decl_fn = p, abi, is_block, exprs, dva_name, c_name =>
       | <-->
 
 foreign_decl_var: Parser, String, <>, ast::Exprs, String,
-   String => <ast::Exprs|>
+  String => <ast::Exprs|>
 foreign_decl_var = p, abi, is_block, exprs, dva_name, c_name =>
    vt = parse_type(p)
    !vt.2 | <--> |
       vdecl = ast::ForeignFnDecl(c_name, dva_name, abi, ast::FParams(),
-         vt.0, vt.1, <+>)
+        vt.0, vt.1, <+>)
       next_exprs = exprs
       next_exprs += ast::Expr(Foreign, vdecl)
       is_block
@@ -1573,7 +1674,7 @@ atom_raw_memory = p =>
             [RBracket]
                parser_advance(p)
                <+ ast::Expr(RawMemory,
-                  ast::RawMemoryExpr(ae, load', rec_name')) +>
+                 ast::RawMemoryExpr(ae, load', rec_name')) +>
             | <-->
       | <-->
 
@@ -1613,7 +1714,7 @@ atom_op = p =>
                | se => <+ se +>
                |
                   parser_error(p, 2064,
-                     diag::expected_primary_prefix! + p.curr.text + "'")
+                    diag::expected_primary_prefix! + p.curr.text + "'")
                   <-->
          | atom_op_ident(p, p.curr.text)
 
@@ -1650,7 +1751,7 @@ atom_double_colon = p =>
                   | <+ ast::Expr(Var, name) +>
       |
          parser_error(p, 2064,
-            "Expected identifier after '::', got '" + nxt.text + "'")
+           "Expected identifier after '::', got '" + nxt.text + "'")
          <-->
 
 // A non-reserved operator symbol in primary position: mirror of atom_ident for
@@ -1708,7 +1809,7 @@ atom_integer = p, text =>
          has_brace
             |
                parser_error(p, 2043,
-                  "Repeat count in integer literal '" + text + "' must be between 0 and 64")
+                 "Repeat count in integer literal '" + text + "' must be between 0 and 64")
                <-->
             | <-->
 
@@ -1731,7 +1832,7 @@ atom_float = p, text =>
          flt = ast::Expr(Float, v)
          vt [F32]
             <+ ast::Expr(TypeCast, ast::CastExpr(ast::ValueType(F32),
-               flt)) +>
+              flt)) +>
          | <+ flt +>
       |
          parser_error(p, 2033, "Invalid float literal '" + text + "'")
@@ -1784,11 +1885,11 @@ parse_accessor_chain = p, param_name, cur_target =>
                f_col = p.curr.col
                parser_advance(p)
                next_target = ast::Expr(Member, ast::MemberExpr(cur_target, next_field,
-                  <->, ast::Expr(Var, ""), f_line, f_col))
+                 <->, ast::Expr(Var, ""), f_line, f_col))
                parse_accessor_chain(p, param_name, next_target)
             |
                parser_error(p, 2064, "Expected field name or tuple index after '.', got '" +
-                  p.curr.text + "'")
+                 p.curr.text + "'")
                <-->
       |
          p.curr.kind
@@ -1804,7 +1905,7 @@ parse_accessor_chain = p, param_name, cur_target =>
                   | pp_postfix(p, fe)
             |
                parser_error(p, 2027, "Expected ')' after accessor section, got '" +
-                  p.curr.text + "'.")
+                 p.curr.text + "'.")
                <-->
 
 parse_accessor_section: Parser => <ast::Expr|>
@@ -1821,11 +1922,11 @@ parse_accessor_section = p =>
          f_col = p.curr.col
          parser_advance(p)
          cur_target = ast::Expr(Member, ast::MemberExpr(target, first_field,
-            <->, ast::Expr(Var, ""), f_line, f_col))
+           <->, ast::Expr(Var, ""), f_line, f_col))
          parse_accessor_chain(p, param_name, cur_target)
       |
          parser_error(p, 2064, "Expected field name or tuple index after '.', got '" +
-            p.curr.text + "'")
+           p.curr.text + "'")
          <-->
 
 atom_paren: Parser => <ast::Expr|>
@@ -1841,7 +1942,7 @@ atom_paren = p =>
          // declaration. A function declared "=> ()" coerces any value to unit
          // (.Void); the unit itself is never directly constructible.
          parser_error(p, 2104, "unit '()' is only valid in a type " +
-            "declaration, not as a value")
+           "declaration, not as a value")
          <-->
       |
          paren_is_accessor(p)
@@ -1967,7 +2068,7 @@ record_closed = p, fields =>
          ?fields < 2
             |
                parser_error(p, 2084,
-                  "Single-field records are not allowed: a record must have at least 2 fields")
+                 "Single-field records are not allowed: a record must have at least 2 fields")
                <-->
             | <+ ast::Expr(Record, ast::RecordExpr(fields, <->)) +>
 
@@ -1989,8 +2090,8 @@ pr_record_field_loop = p, fields =>
                      nt.text == ":"
                         |
                            parser_error(p, 2107,
-                              "Record literal fields use '=' for values " +
-                              "(e.g. '(x = 10)'); ':' is only for types.")
+                             "Record literal fields use '=' for values " +
+                             "(e.g. '(x = 10)'); ':' is only for types.")
                            <-->
                         | pr_field_value(p, fields, <->, "")
             | pr_field_value(p, fields, <->, "")
@@ -2012,7 +2113,7 @@ pr_field_value = p, fields, has_name, name =>
                   [RParen] record_closed(p, fs)
                   |
                      parser_error(p, 2063, "Expected ')' after record " +
-                        "fields, got '" + p.curr.text + "'.")
+                       "fields, got '" + p.curr.text + "'.")
                      <-->
       | <-->
 
@@ -2021,7 +2122,7 @@ append_field: ast::Fields, <>, String, ast::Expr => ast::Fields
 append_field = fields, has_name, name, v =>
    v
       [Record r]
-          r.is_repeat
+         r.is_repeat
             |
                r.fields @ f =>
                   fields += ast::RecordField(has_name, name, f.val)
@@ -2059,14 +2160,14 @@ parse_trailing_block_expr = p, lhs =>
                      first_e
                         [Fn]
                            <+ ast::Expr(Bin, (ast::BinaryOp(Apply),
-                              lhs, first_e)) +>
+                             lhs, first_e)) +>
                         |
                            fields' = ast::Fields()
                            fields' = trailing_block_field(fields', first_e)
                            rec = ast::Expr(Record,
-                              ast::RecordExpr(fields', <->))
+                             ast::RecordExpr(fields', <->))
                            <+ ast::Expr(Bin, (ast::BinaryOp(Apply),
-                              lhs, rec)) +>
+                             lhs, rec)) +>
                   |
                      fields' = ast::Fields()
                      b @ e =>
@@ -2094,18 +2195,18 @@ parse_paren_group = p =>
             [RParen] group_closed(p, ire)
             |
                parser_error(p, 2027, "Expected ')' after grouped " +
-                  "expression, got '" + p.curr.text + "'.")
+                 "expression, got '" + p.curr.text + "'.")
                <-->
       | <-->
 
 is_single_term_expr: Parser, ast::Expr => <>
 is_single_term_expr = p, e =>
    !has_free_underscore(e) &&
-      (e
-         [Call c] !user_op_lookup(p.user_ops, c.fn_name).0
-         [Record r] !r.is_repeat
-         [Var, Int, Float, Str, Rune, Member, RawMemory, TypeCast,
-            SizeOf, AlignOf, BuilderCreate, ArrayCreate, MapLiteral, Variant])
+     (e
+        [Call c] !user_op_lookup(p.user_ops, c.fn_name).0
+        [Record r] !r.is_repeat
+        [Var, Int, Float, Str, Rune, Member, RawMemory, TypeCast,
+          SizeOf, AlignOf, BuilderCreate, ArrayCreate, MapLiteral, Variant])
 
 group_closed: Parser, ast::Expr => <ast::Expr|>
 group_closed = p, inner =>
@@ -2132,11 +2233,11 @@ group_closed = p, inner =>
                            ?r.fields < 2
                               |
                                  parser_error(p, 2084,
-                                    "Single-field records are not allowed: a record must have at least 2 fields")
+                                   "Single-field records are not allowed: a record must have at least 2 fields")
                                  <-->
                               |
                                  pp_postfix(p, ast::Expr(Record,
-                                    ast::RecordExpr(r.fields, <->)))
+                                   ast::RecordExpr(r.fields, <->)))
                         | pp_postfix(p, inner)
 
 // A growable-array element read that unwraps the `< elem | Error >` ram.
@@ -2174,13 +2275,13 @@ has_free_underscore = e =>
       [Assign t] has_free_underscore(t.5)
       [Choice c]
          has_free_underscore(c.cond) ||
-            has_free_underscore_branches(c.branches)
+           has_free_underscore_branches(c.branches)
       [Block b] has_free_underscore_exprs(b)
       [Call t]
          t.fn_name == ""
             |
                has_free_underscore(t.fn_target) ||
-                  has_free_underscore_exprs(t.args)
+                 has_free_underscore_exprs(t.args)
             | t.fn_name == "_" || has_free_underscore_exprs(t.args)
       [CycleEscape t]
          has_free_underscore(t.cycle) || has_free_underscore(t.branch)
@@ -2188,7 +2289,7 @@ has_free_underscore = e =>
          has_free_underscore(t.iterable) || has_free_underscore(t.body_fn)
       [Range t]
          (t.has_lhs | has_free_underscore(t.lhs) | <->) ||
-            (t.has_rhs | has_free_underscore(t.rhs) | <->)
+           (t.has_rhs | has_free_underscore(t.rhs) | <->)
       [Record r] has_free_underscore_fields(r.fields)
       [MapLiteral t] has_free_underscore_map(t)
       [Member t]
@@ -2205,7 +2306,7 @@ has_free_underscore = e =>
       [CompileTime t] has_free_underscore(t)
       [Spawn t]
          has_free_underscore(t.fn_target) ||
-            has_free_underscore_exprs(t.args)
+           has_free_underscore_exprs(t.args)
       [Join t] has_free_underscore(t)
       | <->
 
@@ -2295,7 +2396,7 @@ atom_cycle_jump = p, is_break =>
                      <+ ast::Expr(CycleJump, (is_break, level')) +>
                   |
                      parser_error(p, 2066, diag::cycle_jump_depth_prefix! +
-                        p.curr.text + "'")
+                       p.curr.text + "'")
                      <-->
             |
                parser_error(p, 2066, diag::cycle_jump_depth_prefix! + p.curr.text + "'")
@@ -2338,7 +2439,7 @@ atom_builder = p =>
             | <-->
       |
          parser_error(p, 2064,
-            diag::expected_primary_prefix! + p.curr.text + "'")
+           diag::expected_primary_prefix! + p.curr.text + "'")
          <-->
 
 // "?operand" — the length operator (String/Builder/array/map/record/slice).
@@ -2366,8 +2467,8 @@ atom_length_set = p, name =>
    rhs
       | re =>
          n = ast::Expr(Assign, (name, <->, <->, <->, <+>, re,
-            ast::Expr(Var, ""), "",
-            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+           ast::Expr(Var, ""), "",
+           ast::TypeInfo(Prim, ast::ValueType(Unknown))))
          seq_cont_loop(p, n)
       | <-->
 
@@ -2397,7 +2498,7 @@ atom_section: Parser => <ast::Expr|>
 atom_section = p =>
    operators::bin_info(p.curr.text)
       | opb =>
-         ex = opb.op [Or, And, Feed, Apply, Bind, NotGt, NotLt, NotEq]
+         ex = opb.op [Or, And, Feed, Apply, Bind, Compose, NotGt, NotLt, NotEq]
          p.curr.trail && !ex
             |
                parser_advance(p)
@@ -2407,7 +2508,7 @@ atom_section = p =>
                      params = ast::Names()
                      params += "_"
                      body = ast::Expr(Bin, (opb.op, ast::Expr(Var, "_"),
-                        rre))
+                       rre))
                      <+ ast::Expr(Fn, (params, ast::Names(), body)) +>
                   | <-->
             |
@@ -2415,8 +2516,8 @@ atom_section = p =>
                   | <-->
                   |
                      parser_error(p, 2031, "Operator section '" +
-                        p.curr.text +
-                        "' requires trailing whitespace after the operator.")
+                       p.curr.text +
+                       "' requires trailing whitespace after the operator.")
                      <-->
       | <-->
 
@@ -2478,7 +2579,7 @@ fn_params = p, params, ct_params =>
                      name_is_primed(pname)
                         |
                            parser_error(p, 2039,
-                              diag::E2039_param_mutable_prefix! + pname + "'.")
+                             diag::E2039_param_mutable_prefix! + pname + "'.")
                            <-->
                         |
                            ct_params += pname
@@ -2487,7 +2588,7 @@ fn_params = p, params, ct_params =>
                            fn_param_next(p, params, ct_params)
             |
                parser_error(p, 2085,
-                  "Expected a name after '#!' in the parameter list.")
+                 "Expected a name after '#!' in the parameter list.")
                <-->
       [Id]
          pname = p.curr.text
@@ -2499,7 +2600,7 @@ fn_params = p, params, ct_params =>
                name_is_primed(pname)
                   |
                      parser_error(p, 2039,
-                        diag::E2039_param_mutable_prefix! + pname + "'.")
+                       diag::E2039_param_mutable_prefix! + pname + "'.")
                      <-->
                   |
                      params += pname
@@ -2508,8 +2609,8 @@ fn_params = p, params, ct_params =>
                      is_colon
                         |
                            parser_error(p, 2067,
-                              "Inline parameter types are removed — declare the " +
-                              "signature separately.")
+                             "Inline parameter types are removed — declare the " +
+                             "signature separately.")
                            <-->
                         | fn_param_next(p, params, ct_params)
       | fn_arrow(p, params, ct_params)
@@ -2543,9 +2644,9 @@ fn_arrow = p, params, ct_params =>
       ["=>", "!=>"]
          parser_advance(p)
          eff_ct_params = (?ct_params == 0 && p.module_level && p.fn_depth == 0 &&
-            p.choice_depth == 0 && p.branch_body_depth == 0 && p.ct_scope != "")
-            | split_ct_scope_names(p.ct_scope, 0, "", ast::Names())
-            | ct_params
+           p.choice_depth == 0 && p.branch_body_depth == 0 && p.ct_scope != "")
+           | split_ct_scope_names(p.ct_scope, 0, "", ast::Names())
+           | ct_params
          saved_rhs = p.in_rhs
          p.in_rhs = <->
          saved_ml = p.module_level
@@ -2561,8 +2662,8 @@ fn_arrow = p, params, ct_params =>
             | <-->
       |
          parser_error(p, 2011,
-            "Expected '=>' after function parameters, got '" +
-            p.curr.text + "'")
+           "Expected '=>' after function parameters, got '" +
+           p.curr.text + "'")
          <-->
 
 peek_has_block_cont: Parser => <>
@@ -2575,7 +2676,7 @@ peek_has_block_cont = p =>
             t2'.kind [Newline]
                | t2' = lexer::next_tok(c, 0)
                | -->
-         !(t2'.kind [LBracket] || token_is_pipe(t2'))
+         !(t2'.kind [LBracket] || token_is_pipe(t2') || is_feed_cont_op(t2'))
       |
          !tok_is_nl(p.curr)
             | <->
@@ -2600,7 +2701,7 @@ peek_has_block_cont = p =>
                         t2'.kind [Newline]
                            | t2' = lexer::next_tok(c, 0)
                            | -->
-                     !(t2'.kind [LBracket] || token_is_pipe(t2'))
+                     !(t2'.kind [LBracket] || token_is_pipe(t2') || is_feed_cont_op(t2'))
 
 maybe_inline_block_cont: Parser, <ast::Expr|> => <ast::Expr|>
 maybe_inline_block_cont = p, first_res =>
@@ -2620,7 +2721,10 @@ maybe_inline_block_cont = p, first_res =>
                stmts += first_e
                saved_fd = p.fn_depth
                p.fn_depth = 0
+               saved_cont = p.cont_depth
+               p.cont_depth = 0
                res = block_stmts(p, stmts)
+               p.cont_depth = saved_cont
                p.fn_depth = saved_fd
                p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
                res
@@ -2640,7 +2744,10 @@ parse_block = p =>
                parser_advance(p)
                saved_fd = p.fn_depth
                p.fn_depth = 0
+               saved_cont = p.cont_depth
+               p.cont_depth = 0
                res = block_stmts(p, ast::Exprs())
+               p.cont_depth = saved_cont
                p.fn_depth = saved_fd
                p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
                res
@@ -2678,8 +2785,8 @@ block_stmts = p, stmts =>
                               | block_stmts(p, stmts)
                         |
                            parser_error(p, 2026,
-                              "Expected newline or dedent after statement " +
-                              "in block, got '" + p.curr.text + "'")
+                             "Expected newline or dedent after statement " +
+                             "in block, got '" + p.curr.text + "'")
                            <-->
                   | <-->
 
@@ -2713,17 +2820,17 @@ resolve_refs = p =>
             |
                diag::is_capturing!
                   | diag::record_diag(3120, p.source_file, fr.tok.line, fr.tok.col,
-                       "Unresolved type name '" + fr.name + "'", <->)
+                    "Unresolved type name '" + fr.name + "'", <->)
                   | log::error $ fn + str::from_int(fr.tok.line) + ":" +
-                       str::from_int(fr.tok.col) + ": E3120: Unresolved type name '" +
-                       fr.name + "'"
+                    str::from_int(fr.tok.col) + ": E3120: Unresolved type name '" +
+                    fr.name + "'"
             |
                diag::is_capturing!
                   | diag::record_diag(2014, p.source_file, fr.tok.line, fr.tok.col,
-                       "Unknown type name '" + fr.name + "'", <->)
+                    "Unknown type name '" + fr.name + "'", <->)
                   | log::error $ fn + str::from_int(fr.tok.line) + ":" +
-                       str::from_int(fr.tok.col) + ": E2014: Unknown type name '" +
-                       fr.name + "'"
+                    str::from_int(fr.tok.col) + ": E2014: Unknown type name '" +
+                    fr.name + "'"
             ok' = <->
    ok'
 
@@ -2743,7 +2850,7 @@ string_has_double_colon = s, i =>
 parser_skip_to_sync_point: Parser, Int => ()
 parser_skip_to_sync_point = p, entry_level =>
    is_sync = tok_is_eof(p.curr) || tok_is_nl(p.curr) ||
-      (tok_is_dedent(p.curr) && p.indent_level !> entry_level)
+     (tok_is_dedent(p.curr) && p.indent_level !> entry_level)
    !is_sync
       |
          ind = tok_is_indent(p.curr)
@@ -2793,9 +2900,9 @@ prog_loop = p, stmts =>
                                     | prog_loop(p, stmts)
                               |
                                  parser_error(p, 2003,
-                                    "Expected newline or EOF after " +
-                                    "statement, got '" + p.curr.text +
-                                    "'")
+                                   "Expected newline or EOF after " +
+                                   "statement, got '" + p.curr.text +
+                                   "'")
                                  <-->
                         |
                            p.recovered_errors = p.recovered_errors + 1
@@ -2858,8 +2965,8 @@ parse_ram_np_type = p =>
                <->, ast::ValueType(Unknown),
                ast::TypeInfo(Prim, ast::ValueType(Unknown)))
             mk_tp(ast::ValueType(Ram),
-               ast::TypeInfo(Ram, (empty_l, ast::RamSlotInfo(
-                  <+>, pt.0, pt.1))), <+>)
+              ast::TypeInfo(Ram, (empty_l, ast::RamSlotInfo(
+                 <+>, pt.0, pt.1))), <+>)
          | mk_tp(pt.0, pt.1, <->)
 
 bitfield_backing_info: String => (ast::ValueType, Int, <>)
@@ -2888,16 +2995,16 @@ parse_align_type = p =>
          !is_pow2
             |
                parser_error(p, 2064,
-                  "Expected positive power-of-two integer after '#align', got '" +
-                  str::from_int(align_val) + "'")
+                 "Expected positive power-of-two integer after '#align', got '" +
+                 str::from_int(align_val) + "'")
          inner = parse_type_atom(p)
          mk_tp(inner.0, ast::TypeInfo(Align, (align_val, inner.1)), inner.2)
       |
          parser_error(p, 2064,
-            "Expected integer alignment value after '#align', got '" +
-            p.curr.text + "'")
+           "Expected integer alignment value after '#align', got '" +
+           p.curr.text + "'")
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 make_ti_packed: ast::TypeInfo => ast::TypeInfo
 make_ti_packed = ti =>
@@ -2922,10 +3029,10 @@ parse_packed_type = p =>
          mk_tp(at.0, make_ti_packed(at.1), at.2)
       |
          parser_error(p, 2064,
-            "Expected '(', integer type, or '#align' after '#packed', got '" +
-            p.curr.text + "'")
+           "Expected '(', integer type, or '#align' after '#packed', got '" +
+           p.curr.text + "'")
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 skip_type_layout: Parser => ()
 skip_type_layout = p =>
@@ -2990,10 +3097,10 @@ parse_packed_record_type = p =>
    parser_advance(p)
    skip_type_layout(p)
    rfields_packed(p, ast::FieldTypes(),
-      (p.curr.col, p.indent_level, lp_line))
+     (p.curr.col, p.indent_level, lp_line))
 
 rfields_packed_after_comma: Parser, ast::FieldTypes,
-   (Int, Int, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  (Int, Int, Int) => (ast::ValueType, ast::TypeInfo, <>)
 rfields_packed_after_comma = p, fields, layout =>
    parser_advance(p)
    skip_type_layout(p)
@@ -3008,24 +3115,24 @@ rfields_packed_finish = p, fields =>
    ?fields < 2
       |
          parser_error(p, 2084,
-            "Single-field records are not allowed: a record must have at least 2 fields")
+           "Single-field records are not allowed: a record must have at least 2 fields")
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
          mk_tp(ast::ValueType(Record),
-            ast::TypeInfo(Rec, (fields, <->, <->,
-               ast::ValueType(Unknown), ?fields, <+>)), <+>)
+           ast::TypeInfo(Rec, (fields, <->, <->,
+             ast::ValueType(Unknown), ?fields, <+>)), <+>)
 
 rfields_packed_misaligned: Parser, Int => (ast::ValueType, ast::TypeInfo, <>)
 rfields_packed_misaligned = p, expected_col =>
    parser_error(p, 2015,
-      "Misaligned field in packed record type declaration: expected column " +
-      str::from_int(expected_col) + ", got column " + str::from_int(p.curr.col))
+     "Misaligned field in packed record type declaration: expected column " +
+     str::from_int(expected_col) + ", got column " + str::from_int(p.curr.col))
    mk_tp(ast::ValueType(Unknown),
-      ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+     ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 rfields_packed: Parser, ast::FieldTypes,
-   (Int, Int, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  (Int, Int, Int) => (ast::ValueType, ast::TypeInfo, <>)
 rfields_packed = p, fields, layout =>
    p.curr.kind
       [RParen]
@@ -3059,10 +3166,10 @@ rfields_packed = p, fields, layout =>
                   !has_nl
                      |
                         parser_error(p, 2015,
-                           "Expected ',' or ')' after packed record field, got '" +
-                           p.curr.text + "'")
+                          "Expected ',' or ')' after packed record field, got '" +
+                          p.curr.text + "'")
                         mk_tp(ast::ValueType(Unknown),
-                           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                          ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                      |
                         unwind_to_indent(p, layout.1)
                         p.curr.kind
@@ -3091,10 +3198,10 @@ parse_bitfield_type = p =>
    !info.2
       |
          parser_error(p, 2064,
-            "Expected integer type (u8, u16, u32, u64) after '#packed', got '" +
-            p.curr.text + "'")
+           "Expected integer type (u8, u16, u32, u64) after '#packed', got '" +
+           p.curr.text + "'")
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
          bvt = info.0
          expected_bits = info.1
@@ -3106,24 +3213,24 @@ parse_bitfield_type = p =>
                parser_advance(p)
                skip_type_layout(p)
                parse_bitfield_fields(p, ast::BitfieldFields(), 0,
-                  expected_bits, bvt, (p.curr.col, p.indent_level, lp_line))
+                 expected_bits, bvt, (p.curr.col, p.indent_level, lp_line))
             |
                parser_error(p, 2015,
-                  "Expected '(' after '#packed " + p.curr.text + "', got '" +
-                  p.curr.text + "'")
+                 "Expected '(' after '#packed " + p.curr.text + "', got '" +
+                 p.curr.text + "'")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 bitfield_misaligned: Parser, Int => (ast::ValueType, ast::TypeInfo, <>)
 bitfield_misaligned = p, expected_col =>
    parser_error(p, 2015,
-      "Misaligned field in bitfield type declaration: expected column " +
-      str::from_int(expected_col) + ", got column " + str::from_int(p.curr.col))
+     "Misaligned field in bitfield type declaration: expected column " +
+     str::from_int(expected_col) + ", got column " + str::from_int(p.curr.col))
    mk_tp(ast::ValueType(Unknown),
-      ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+     ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 parse_bitfield_after_field: Parser, ast::BitfieldFields, Int, Int,
-   ast::ValueType, (Int, Int, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  ast::ValueType, (Int, Int, Int) => (ast::ValueType, ast::TypeInfo, <>)
 parse_bitfield_after_field = p, fields, next_off, expected_bits, bvt, layout =>
    p.curr.kind
       [Comma]
@@ -3133,19 +3240,19 @@ parse_bitfield_after_field = p, fields, next_off, expected_bits, bvt, layout =>
             | (p.curr.col, p.indent_level, 0)
             | layout
          parse_bitfield_fields(p, fields,
-            next_off, expected_bits, bvt, next_layout)
+           next_off, expected_bits, bvt, next_layout)
       [RParen]
          parse_bitfield_fields(p, fields,
-            next_off, expected_bits, bvt, layout)
+           next_off, expected_bits, bvt, layout)
       |
          has_nl = tok_is_nl(p.curr) || tok_is_dedent(p.curr) || p.just_dedented
          !has_nl
             |
                parser_error(p, 2015,
-                  "Expected ',' or ')' after bitfield field, got '" +
-                  p.curr.text + "'")
+                 "Expected ',' or ')' after bitfield field, got '" +
+                 p.curr.text + "'")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                unwind_to_indent(p, layout.1)
                p.curr.kind
@@ -3156,34 +3263,34 @@ parse_bitfield_after_field = p, fields, next_off, expected_bits, bvt, layout =>
                         | (p.curr.col, p.indent_level, 0)
                         | layout
                      parse_bitfield_fields(p, fields,
-                        next_off, expected_bits, bvt, next_layout2)
+                       next_off, expected_bits, bvt, next_layout2)
                   [RParen]
                      parse_bitfield_fields(p, fields,
-                        next_off, expected_bits, bvt, layout)
+                       next_off, expected_bits, bvt, layout)
                   [Dedent]
                      skip_nl_dedent(p)
                      p.curr.kind
                         [RParen]
                            parse_bitfield_fields(p, fields,
-                              next_off, expected_bits, bvt, layout)
+                             next_off, expected_bits, bvt, layout)
                         | bitfield_misaligned(p, layout.0)
                   [Indent]
                      skip_nl_indent(p)
                      p.curr.kind
                         [RParen]
                            parse_bitfield_fields(p, fields,
-                              next_off, expected_bits, bvt, layout)
+                             next_off, expected_bits, bvt, layout)
                         | bitfield_misaligned(p, layout.0)
                   |
                      p.curr.col == layout.0 && p.indent_level == layout.1
                         |
                            parse_bitfield_fields(p, fields,
-                              next_off, expected_bits, bvt,
-                              (layout.0, layout.1, 0))
+                             next_off, expected_bits, bvt,
+                             (layout.0, layout.1, 0))
                         | bitfield_misaligned(p, layout.0)
 
 parse_bitfield_fields: Parser, ast::BitfieldFields, Int, Int,
-   ast::ValueType, (Int, Int, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  ast::ValueType, (Int, Int, Int) => (ast::ValueType, ast::TypeInfo, <>)
 parse_bitfield_fields = p, fields, cur_off, expected_bits, bvt, layout =>
    p.curr.kind
       [RParen]
@@ -3191,25 +3298,25 @@ parse_bitfield_fields = p, fields, cur_off, expected_bits, bvt, layout =>
          cur_off != expected_bits
             |
                parser_error(p, 3153,
-                  "Bitfield total width " + str::from_int(cur_off) +
-                  " does not match backing integer width " +
-                  str::from_int(expected_bits))
+                 "Bitfield total width " + str::from_int(cur_off) +
+                 " does not match backing integer width " +
+                 str::from_int(expected_bits))
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                mk_tp(ast::ValueType(Record),
-                  ast::TypeInfo(Bitfield, ast::BitfieldInfo(fields, bvt,
-                     expected_bits)), <+>)
+                 ast::TypeInfo(Bitfield, ast::BitfieldInfo(fields, bvt,
+                   expected_bits)), <+>)
       [Id]
          fname = p.curr.text
          parser_advance(p)
          p.curr.text != ":"
             |
                parser_error(p, 2015,
-                  "Expected ':' after bitfield field name '" + fname +
-                  "', got '" + p.curr.text + "'")
+                 "Expected ':' after bitfield field name '" + fname +
+                 "', got '" + p.curr.text + "'")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                parser_advance(p)
                tok_is_nl(p.curr) && peek_is_indent_after_nl(p)
@@ -3219,7 +3326,7 @@ parse_bitfield_fields = p, fields, cur_off, expected_bits, bvt, layout =>
                      parser_advance(p)
                      fields += ast::BitfieldField(fname, 1, cur_off, <+>)
                      parse_bitfield_after_field(p, fields, cur_off + 1,
-                        expected_bits, bvt, layout)
+                       expected_bits, bvt, layout)
                   |
                      p.curr.kind
                         [Int]
@@ -3227,29 +3334,28 @@ parse_bitfield_fields = p, fields, cur_off, expected_bits, bvt, layout =>
                            w < 1
                               |
                                  parser_error(p, 2019,
-                                    "Bitfield field width must be positive, got " +
-                                    str::from_int(w))
+                                   "Bitfield field width must be positive, got " +
+                                   str::from_int(w))
                                  mk_tp(ast::ValueType(Unknown),
-                                    ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-                                    <->)
+                                   ast::TypeInfo(Prim, ast::ValueType(Unknown)),
+                                   <->)
                               |
                                  parser_advance(p)
                                  fields += ast::BitfieldField(fname, w, cur_off, <->)
                                  parse_bitfield_after_field(p, fields, cur_off + w,
-                                    expected_bits, bvt, layout)
+                                   expected_bits, bvt, layout)
                         |
                            parser_error(p, 2018,
-                              "Expected bit width integer after ':', got '" +
-                              p.curr.text + "'")
+                             "Expected bit width integer after ':', got '" +
+                             p.curr.text + "'")
                            mk_tp(ast::ValueType(Unknown),
-                              ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                             ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
          parser_error(p, 2064,
-            "Expected field name or ')' in bitfield, got '" + p.curr.text +
-            "'")
+           "Expected field name or ')' in bitfield, got '" + p.curr.text +
+           "'")
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
-
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 eval_ct_type_str: ast::Expr => String
 eval_ct_type_str = e =>
@@ -3309,7 +3415,7 @@ eval_ct_type_expr = p, e =>
                   | vt => mk_tp(vt, ast::TypeInfo(Prim, vt), <+>)
                   |
                      mk_tp(ast::ValueType(Unknown),
-                        ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                       ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       [Choice ch]
          ch.branches @ br => validate_ct_type_branch(p, br.block)
          cond_s = eval_ct_type_str(ch.cond)
@@ -3333,10 +3439,10 @@ eval_ct_type_expr = p, e =>
             | eval_ct_type_expr(p, picked')
             |
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 parse_ct_type_expr: Parser => (ast::ValueType, ast::TypeInfo, <>)
 parse_ct_type_expr = p =>
@@ -3346,7 +3452,7 @@ parse_ct_type_expr = p =>
       | ch_e => eval_ct_type_expr(p, ch_e)
       |
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 // The type atom: a primitive name, a user-declared type, a forward reference,
 // a parenthesized record/slice type, or a ramification '<>' / '<...>'.
@@ -3365,7 +3471,7 @@ parse_type_atom = p =>
             [Id] parse_named_type(p)
             |
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 // The optional capacity inside "{}": a positive integer, or 0 (default) when
 // the braces are empty.
@@ -3389,7 +3495,7 @@ int_of_text = text =>
    str::to_int(text) | (.0) | 0
 
 parse_array_cap_and_close: Parser,
-   (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
+  (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
 parse_array_cap_and_close = p, elem_t =>
    parser_advance(p)
    cap = array_cap(p)
@@ -3400,10 +3506,10 @@ parse_array_cap_and_close = p, elem_t =>
          mk_tp(ast::ValueType(Array), ti, <+>)
       |
          parser_error(p, 2081,
-            "Expected '}' after the array capacity, got '" +
-            p.curr.text + "'")
+           "Expected '}' after the array capacity, got '" +
+           p.curr.text + "'")
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 // The element type of a homogeneous record TypeInfo (its first field's type).
 rec_elem_type: ast::TypeInfo => ast::ValueType
@@ -3442,7 +3548,7 @@ parse_ram_type = p =>
    mk_tp(r.0, r.1, r.2)
 
 slots: Parser, ast::RamSlotInfo,
-   ast::RamSlotInfo => (ast::ValueType, ast::TypeInfo, <>)
+  ast::RamSlotInfo => (ast::ValueType, ast::TypeInfo, <>)
 slots = p, l, r =>
    p.curr.text
       ["|>"]
@@ -3461,8 +3567,8 @@ slots = p, l, r =>
                      [">"]
                         parser_advance(p)
                         mk_tp(ast::ValueType(Ram),
-                           ast::TypeInfo(Ram, (l, ast::RamSlotInfo(
-                              <+>, pt.0, pt.1))), <+>)
+                          ast::TypeInfo(Ram, (l, ast::RamSlotInfo(
+                             <+>, pt.0, pt.1))), <+>)
                      | mk_tp(pt.0, pt.1, <->)
       |
          p.curr.text
@@ -3491,19 +3597,19 @@ parse_record_type_inner = p, allow_single =>
          allow_single
             |
                parser_error(p, 2084,
-                  "Single-field records are not allowed: a record must have at least 2 fields")
+                 "Single-field records are not allowed: a record must have at least 2 fields")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                mk_tp(ast::ValueType(Unit),
-                  ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
+                 ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
       |
          rf = rfields(p, ast::FieldTypes(), allow_single, <->,
-            (p.curr.col, p.indent_level, <->, lp_line))
+           (p.curr.col, p.indent_level, <->, lp_line))
          mk_tp(rf.0, rf.1, rf.2)
 
 rfields: Parser, ast::FieldTypes, <>, <>,
-   (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
 rfields = p, fields, allow_single, is_repeated, layout =>
    p.curr.kind
       [RParen]
@@ -3511,13 +3617,13 @@ rfields = p, fields, allow_single, is_repeated, layout =>
          ?fields < 2
             |
                parser_error(p, 2084,
-                  "Single-field records are not allowed: a record must have at least 2 fields")
+                 "Single-field records are not allowed: a record must have at least 2 fields")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                mk_tp(ast::ValueType(Record),
-                  ast::TypeInfo(Rec, (fields, <->, <->,
-                     ast::ValueType(Unknown), ?fields, <->)), <+>)
+                 ast::TypeInfo(Rec, (fields, <->, <->,
+                   ast::ValueType(Unknown), ?fields, <->)), <+>)
       |
          fname' = ++""
          is_id = p.curr.kind [Id]
@@ -3538,21 +3644,21 @@ rfields = p, fields, allow_single, is_repeated, layout =>
             p.curr.text
                ["*"]
                   rfield_repeat(p, fields, fname', ft, (allow_single, is_repeated),
-                     layout)
+                    layout)
                |
                   rt = rfield_tail(p, fields, fname',
-                     ft, (allow_single, is_repeated, is_inline_rec, is_double_paren), layout)
+                    ft, (allow_single, is_repeated, is_inline_rec, is_double_paren), layout)
                   mk_tp(rt.0, rt.1, rt.2)
 
 rfield_repeat: Parser, ast::FieldTypes, String,
-   (ast::ValueType, ast::TypeInfo, <>), (<>, <>),
-   (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  (ast::ValueType, ast::TypeInfo, <>), (<>, <>),
+  (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
 rfield_repeat = p, fields, fname, ft, sr_flags, layout =>
    fname != ""
       |
          parser_error(p, 2017, "A repeated-type record field cannot be named.")
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
          parser_advance(p)
          p.curr.kind
@@ -3563,42 +3669,42 @@ rfield_repeat = p, fields, fname, ft, sr_flags, layout =>
                      n < 1
                         |
                            parser_error(p, 2019,
-                              diag::record_repeat_count_prefix! + p.curr.text + "'")
+                             diag::record_repeat_count_prefix! + p.curr.text + "'")
                            mk_tp(ast::ValueType(Unknown),
-                              ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                             ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                         |
                            n > 1000000
                               |
                                  parser_error(p, 2055,
-                                    "Record type repetition count " +
-                                    str::from_int(n) +
-                                    diag::record_repeat_limit_suffix!)
+                                   "Record type repetition count " +
+                                   str::from_int(n) +
+                                   diag::record_repeat_limit_suffix!)
                                  mk_tp(ast::ValueType(Unknown),
-                                    ast::TypeInfo(Prim,
-                                       ast::ValueType(Unknown)), <->)
+                                   ast::TypeInfo(Prim,
+                                     ast::ValueType(Unknown)), <->)
                               |
                                  parser_advance(p)
                                  (n - 1) @
                                     fields += ast::RecordFieldType("",
-                                       ft.0, ft.1, <->, ast::Expr(Int, 0))
+                                      ft.0, ft.1, <->, ast::Expr(Int, 0))
                                  rf = ast::RecordFieldType("",
-                                    ft.0, ft.1, <->, ast::Expr(Int, 0))
+                                   ft.0, ft.1, <->, ast::Expr(Int, 0))
                                  rfield_tail_with_rf(p, fields, rf,
-                                    (sr_flags.0, <+>, <->, <->), layout)
+                                   (sr_flags.0, <+>, <->, <->), layout)
                   |
                      parser_error(p, 2019,
-                        diag::record_repeat_count_prefix! + p.curr.text + "'")
+                       diag::record_repeat_count_prefix! + p.curr.text + "'")
                      mk_tp(ast::ValueType(Unknown),
-                        ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                       ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                parser_error(p, 2018,
-                  "Expected an integer repetition count after '*', got '" +
-                  p.curr.text + "'")
+                 "Expected an integer repetition count after '*', got '" +
+                 p.curr.text + "'")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 rfield_fn_type: Parser, ast::FieldTypes, ast::ValueType,
-   ast::TypeInfo => (ast::ValueType, ast::TypeInfo, <>)
+  ast::TypeInfo => (ast::ValueType, ast::TypeInfo, <>)
 rfield_fn_type = p, all_fields, cur_vt, cur_rec =>
    parser_advance(p)
    skip_type_layout(p)
@@ -3609,8 +3715,8 @@ rfield_fn_type = p, all_fields, cur_vt, cur_rec =>
       !is_rp
          |
             parser_error(p, 2015,
-               "Expected ')' to close function type signature, got '" +
-               p.curr.text + "'")
+              "Expected ')' to close function type signature, got '" +
+              p.curr.text + "'")
             mk_tp(ret.0, ret.1, <->)
          |
             parser_advance(p)
@@ -3626,11 +3732,11 @@ rfield_fn_type = p, all_fields, cur_vt, cur_rec =>
                   params += cur_vt
                   infos += cur_rec
             fn_ti = ast::TypeInfo(Fn, (params, infos, ret.0, ret.1,
-               ast::CParams()))
+              ast::CParams()))
             mk_tp(ast::ValueType(Fn), fn_ti, <+>)
 
 rfield_close_rparen: Parser, ast::FieldTypes, ast::RecordFieldType,
-   (<>, <>, <>, <>) => (ast::ValueType, ast::TypeInfo, <>)
+  (<>, <>, <>, <>) => (ast::ValueType, ast::TypeInfo, <>)
 rfield_close_rparen = p, fields, rf, flags =>
    parser_advance(p)
    ?fields == 0 && rf.name == "" && !rf.has_default && !flags.1
@@ -3638,32 +3744,32 @@ rfield_close_rparen = p, fields, rf, flags =>
          flags.3
             |
                parser_error(p, 2083,
-                  "Redundant double parentheses in type: write '(...)', not '((...))'")
+                 "Redundant double parentheses in type: write '(...)', not '((...))'")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                !flags.0
                   |
                      parser_error(p, 2084,
-                        "Single-field records are not allowed: a record must have at least 2 fields")
+                       "Single-field records are not allowed: a record must have at least 2 fields")
                      mk_tp(ast::ValueType(Unknown),
-                        ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                       ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                   | mk_tp(rf.val_type, rf.rec_type, <+>)
       |
          fields += rf
          ?fields < 2
             |
                parser_error(p, 2084,
-                  "Single-field records are not allowed: a record must have at least 2 fields")
+                 "Single-field records are not allowed: a record must have at least 2 fields")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                mk_tp(ast::ValueType(Record),
-                  ast::TypeInfo(Rec, (fields, <->, <->,
-                     ast::ValueType(Unknown), ?fields, <->)), <+>)
+                 ast::TypeInfo(Rec, (fields, <->, <->,
+                   ast::ValueType(Unknown), ?fields, <->)), <+>)
 
 rfield_after_comma: Parser, ast::FieldTypes, ast::RecordFieldType,
-   (<>, <>, <>, <>), (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  (<>, <>, <>, <>), (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
 rfield_after_comma = p, fields, rf, flags, layout =>
    parser_advance(p)
    skip_type_layout(p)
@@ -3676,13 +3782,13 @@ rfield_after_comma = p, fields, rf, flags, layout =>
 rfield_misaligned: Parser, Int => (ast::ValueType, ast::TypeInfo, <>)
 rfield_misaligned = p, expected_col =>
    parser_error(p, 2015,
-      "Misaligned field in record type declaration: expected column " +
-      str::from_int(expected_col) + ", got column " + str::from_int(p.curr.col))
+     "Misaligned field in record type declaration: expected column " +
+     str::from_int(expected_col) + ", got column " + str::from_int(p.curr.col))
    mk_tp(ast::ValueType(Unknown),
-      ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+     ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 rfield_tail_with_rf: Parser, ast::FieldTypes, ast::RecordFieldType,
-   (<>, <>, <>, <>), (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  (<>, <>, <>, <>), (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
 rfield_tail_with_rf = p, fields, rf, flags, layout =>
    p.curr.kind
       [Comma]
@@ -3694,10 +3800,10 @@ rfield_tail_with_rf = p, fields, rf, flags, layout =>
          !has_nl
             |
                parser_error(p, 2015,
-                  "Expected ',' or ')' after record field, got '" +
-                  p.curr.text + "'")
+                 "Expected ',' or ')' after record field, got '" +
+                 p.curr.text + "'")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                unwind_to_indent(p, layout.1)
                p.curr.kind
@@ -3720,30 +3826,30 @@ rfield_tail_with_rf = p, fields, rf, flags, layout =>
                         |
                            fields += rf
                            rfields(p, fields, flags.0, flags.1,
-                              (layout.0, layout.1, <+>, 0))
+                             (layout.0, layout.1, <+>, 0))
                         | rfield_misaligned(p, layout.0)
 
 rfield_tail: Parser, ast::FieldTypes, String,
-   (ast::ValueType, ast::TypeInfo, <>), (<>, <>, <>, <>),
-   (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
+  (ast::ValueType, ast::TypeInfo, <>), (<>, <>, <>, <>),
+  (Int, Int, <>, Int) => (ast::ValueType, ast::TypeInfo, <>)
 rfield_tail = p, fields, fname, ft, flags, layout =>
    p.curr.text
       ["=>"]
          layout.2
             |
                parser_error(p, 2015,
-                  "Function parameter types must be separated by ',', not a newline")
+                 "Function parameter types must be separated by ',', not a newline")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                ?fields == 0 && fname == "" && flags.2
                   |
                      parser_error(p, 2082,
-                        "Function-parameter types are flat and separate: " +
-                        "write '(A, B => C)', not '((A, B) => C)'. The inner " +
-                        "'(A, B)' parsed as a single record parameter.")
+                       "Function-parameter types are flat and separate: " +
+                       "write '(A, B => C)', not '((A, B) => C)'. The inner " +
+                       "'(A, B)' parsed as a single record parameter.")
                      mk_tp(ast::ValueType(Unknown),
-                        ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                       ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                   | rfield_fn_type(p, fields, ft.0, ft.1)
       |
          has_def = p.curr.text == "="
@@ -3758,10 +3864,10 @@ rfield_tail = p, fields, fname, ft, flags, layout =>
                      rfield_tail_with_rf(p, fields, rf, flags, layout)
                   |
                      mk_tp(ast::ValueType(Unknown),
-                        ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                       ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
                rf = ast::RecordFieldType(fname, ft.0, ft.1, <->,
-                  ast::Expr(Int, 0))
+                 ast::Expr(Int, 0))
                rfield_tail_with_rf(p, fields, rf, flags, layout)
 
 ct_scope_has: String, String => <>
@@ -3813,7 +3919,7 @@ ti_is_typevar = ti, name =>
       | <->
 
 ctfe_subst_type: ast::TypeInfo, String, ast::ValueType,
-   ast::TypeInfo => ast::TypeInfo
+  ast::TypeInfo => ast::TypeInfo
 ctfe_subst_type = ti, name, arg_vt, arg_ti =>
    ti
       [TypeVar tv]
@@ -3827,7 +3933,7 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
             sub_ti = ctfe_subst_type(f.rec_type, name, arg_vt, arg_ti)
             sub_vt = ti_is_typevar(f.rec_type, name) | arg_vt | f.val_type
             new_fields += ast::RecordFieldType(f.name, sub_vt, sub_ti,
-               f.has_default, f.default_expr)
+              f.has_default, f.default_expr)
          new_elem_vt = r.1 && ?new_fields > 0
             | (new_fields(0) | nf => nf.val_type | r.3)
             | r.3
@@ -3842,7 +3948,7 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
          new_s0 = s0.has_payload
             |
                sub_ti0 = ctfe_subst_type(s0.payload_record, name,
-                  arg_vt, arg_ti)
+                 arg_vt, arg_ti)
                is_tv0 = ti_is_typevar(s0.payload_record, name)
                sub_vt0 = is_tv0 | arg_vt | s0.payload_type
                ast::RamSlotInfo(<+>, sub_vt0, sub_ti0)
@@ -3850,7 +3956,7 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
          new_s1 = s1.has_payload
             |
                sub_ti1 = ctfe_subst_type(s1.payload_record, name,
-                  arg_vt, arg_ti)
+                 arg_vt, arg_ti)
                is_tv1 = ti_is_typevar(s1.payload_record, name)
                sub_vt1 = is_tv1 | arg_vt | s1.payload_type
                ast::RamSlotInfo(<+>, sub_vt1, sub_ti1)
@@ -3891,21 +3997,21 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
       | ti
 
 subst_type_gen: ast::TypeInfo, ast::CParams, ast::VTypes,
-   ast::VInfos, Int => ast::TypeInfo
+  ast::VInfos, Int => ast::TypeInfo
 subst_type_gen = cur_ti, cps, vts, tis, i =>
    i == ?vts || i == ?cps
       | cur_ti
       |
          cp = cps(i) | _ | ast::CompileTimeParam("",
-            ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+           ast::ValueType(Unknown),
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)))
          vt = vts(i) | _ | ast::ValueType(Unknown)
          ti = tis(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown))
          next_ti = ctfe_subst_type(cur_ti, cp.name, vt, ti)
          subst_type_gen(next_ti, cps, vts, tis, i + 1)
 
 parse_type_gen_args: Parser, ast::VTypes,
-   ast::VInfos => (ast::VTypes, ast::VInfos, <>)
+  ast::VInfos => (ast::VTypes, ast::VInfos, <>)
 parse_type_gen_args = p, vts, tis =>
    p.curr.kind
       [RParen] (vts, tis, <+>)
@@ -3922,23 +4028,23 @@ parse_type_gen_args = p, vts, tis =>
                parse_type_gen_args(p, next_vts, next_tis)
 
 parse_type_gen_call: Parser, String,
-   ast::TypeInfo => (ast::ValueType, ast::TypeInfo, <>)
+  ast::TypeInfo => (ast::ValueType, ast::TypeInfo, <>)
 parse_type_gen_call = p, name, ti =>
    parser_advance(p) // consume '('
    args = parse_type_gen_args(p, ast::VTypes(), ast::VInfos())
    !args.2
       | (ast::ValueType(Unknown),
-         ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+        ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
          p.curr.kind [RParen] parser_advance(p)
          ti
             [Fn fn_info]
                subst_ti = subst_type_gen(fn_info.3, fn_info.4, args.0,
-                  args.1, 0)
+                 args.1, 0)
                subst_vt = type_info_value_type(subst_ti)
                mk_tp(subst_vt, subst_ti, <+>)
             | (ast::ValueType(Unknown),
-               ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+              ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 parse_named_type: Parser => (ast::ValueType, ast::TypeInfo, <>)
 parse_named_type = p =>
@@ -3948,13 +4054,13 @@ parse_named_type = p =>
    name
       ["Void", "void"]
          parser_error(p, 2106,
-            "'Void' is illegal syntax anywhere except #foreign blocks")
+           "'Void' is illegal syntax anywhere except #foreign blocks")
          mk_tp(ast::ValueType(Unknown),
-            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       | parse_named_type_valid(p, tok, name)
 
 parse_named_type_valid: Parser, lexer::Tok,
-   String => (ast::ValueType, ast::TypeInfo, <>)
+  String => (ast::ValueType, ast::TypeInfo, <>)
 parse_named_type_valid = p, tok, name =>
    ct_scope_has(p.ct_scope, name)
       | mk_tp(ast::ValueType(Unknown), ast::TypeInfo(TypeVar, name), <+>)
@@ -4002,10 +4108,10 @@ parse_named_type_valid = p, tok, name =>
                            |
                               frs = p.forward_refs
                               frs += ForwardRef(tok, qual,
-                                 ast::TypeInfo(TypeVar, qual))
+                                ast::TypeInfo(TypeVar, qual))
                               p.forward_refs = frs
                               mk_tp(ast::ValueType(Record),
-                                 ast::TypeInfo(TypeVar, qual), <+>)
+                                ast::TypeInfo(TypeVar, qual), <+>)
                      |
                         // Forward reference: a type name not yet declared
                         // (mutual recursion). A TypeVar placeholder is returned
@@ -4013,10 +4119,10 @@ parse_named_type_valid = p, tok, name =>
                         // undeclared name.
                         frs2 = p.forward_refs
                         frs2 += ForwardRef(tok, name,
-                           ast::TypeInfo(TypeVar, name))
+                          ast::TypeInfo(TypeVar, name))
                         p.forward_refs = frs2
                         mk_tp(ast::ValueType(Record),
-                           ast::TypeInfo(TypeVar, name), <+>)
+                          ast::TypeInfo(TypeVar, name), <+>)
 
 // The user-type table lookup: the map key access unwrapped.
 lookup_type: TypeEntry{}, String => <ast::TypeInfo|>
@@ -4044,7 +4150,7 @@ mk_tp: ast::ValueType, ast::TypeInfo, <> => (ast::ValueType, ast::TypeInfo, <>)
 mk_tp = vt, ti, ok => (vt, ti, ok)
 
 parse_type_suffixes: Parser,
-   (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
+  (ast::ValueType, ast::TypeInfo, <>) => (ast::ValueType, ast::TypeInfo, <>)
 parse_type_suffixes = p, at =>
    p.curr.kind
       [LBrace]
@@ -4061,9 +4167,9 @@ parse_type_suffixes = p, at =>
                parse_type_suffixes(p, mk_tp(ast::ValueType(Slice), sl_ti, <+>))
             |
                parser_error(p, 2015,
-                  "Expected ']' for slice type, got '" + p.curr.text + "'")
+                 "Expected ']' for slice type, got '" + p.curr.text + "'")
                mk_tp(ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       | parse_type_map(p, at)
 
 // The full type: the atom, optional '{}' array suffix, then a '^' map continuation.
@@ -4081,10 +4187,10 @@ parse_type_map = p, at =>
          !vt2.2 | (vt2.0, vt2.1, <->) |
             map_key_ok(at.0)
                | mk_tp(ast::ValueType(Map),
-                  ast::TypeInfo(Map, (at.0, vt2.0, vt2.1)), <+>)
+                 ast::TypeInfo(Map, (at.0, vt2.0, vt2.1)), <+>)
                |
                   parser_error(p, 2090,
-                     "Map key type must be String, Int, or Addr")
+                    "Map key type must be String, Int, or Addr")
                   mk_tp(ast::ValueType(Unknown), at.1, <->)
       |
          mk_tp(at.0, at.1, <+>)
@@ -4132,7 +4238,7 @@ parse_type_decl = p =>
                      decl_is_enum(p)
                         |
                            predeclare(p, name,
-                              ast::TypeInfo(Enum, ast::EnumSlots()))
+                             ast::TypeInfo(Enum, ast::EnumSlots()))
                            parse_enum_decl(p)
                               | ti =>
                                  ok_min = enum_min_variants(p, name, ti)
@@ -4142,8 +4248,8 @@ parse_type_decl = p =>
                               | <-->
                         |
                            slot = ast::RamSlotInfo(<->,
-                              ast::ValueType(Unknown),
-                              ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+                             ast::ValueType(Unknown),
+                             ast::TypeInfo(Prim, ast::ValueType(Unknown)))
                            ram_ti = ast::TypeInfo(Ram, (slot, slot))
                            predeclare(p, name, ram_ti)
                            ty = parse_type(p)
@@ -4157,7 +4263,7 @@ parse_type_decl = p =>
                               rt.1
                                  [Prim, TypeVar]
                                     parser_error(p, 2084,
-                                       "Single-field records are not allowed: a record must have at least 2 fields")
+                                      "Single-field records are not allowed: a record must have at least 2 fields")
                                     <-->
                                  | declare_type(p, name, rt.1)
                         |
@@ -4192,12 +4298,12 @@ indent_field_after = p, fields, block_indent =>
          indent_fields(p, fields, block_indent)
       |
          has_nl = tok_is_nl(p.curr) || tok_is_dedent(p.curr) ||
-            tok_is_eof(p.curr) || p.just_dedented
+           tok_is_eof(p.curr) || p.just_dedented
          !has_nl
             |
                parser_error(p, 2015,
-                  "Expected ',' or newline after field in record type declaration, got '" +
-                  p.curr.text + "'")
+                 "Expected ',' or newline after field in record type declaration, got '" +
+                 p.curr.text + "'")
                <-->
             |
                unwind_to_indent(p, block_indent)
@@ -4233,8 +4339,8 @@ indent_fields = p, fields, block_indent =>
                            indent_fields(p, ast::FieldTypes(), p.indent_level)
                               | nested =>
                                  fields += ast::RecordFieldType(fname,
-                                    ast::ValueType(Record), nested,
-                                    <->, ast::Expr(Int, 0))
+                                   ast::ValueType(Record), nested,
+                                   <->, ast::Expr(Int, 0))
                                  indent_fields(p, fields, block_indent)
                               | <-->
                         | <-->
@@ -4250,22 +4356,22 @@ indent_fields = p, fields, block_indent =>
                               def_opt
                                  | def_e =>
                                     rf = ast::RecordFieldType(fname,
-                                       ft.0, ft.1, <+>, def_e)
+                                      ft.0, ft.1, <+>, def_e)
                                     fields += rf
                                     indent_field_after(p, fields, block_indent)
                                  | <-->
                            |
                               rf = ast::RecordFieldType(fname, ft.0, ft.1,
-                                 <->, ast::Expr(Int, 0))
+                                <->, ast::Expr(Int, 0))
                               fields += rf
                               indent_field_after(p, fields, block_indent)
             |
                parser_error(p, 2042, "Expected ':' after field name '" +
-                  fname + "' in record type declaration block")
+                 fname + "' in record type declaration block")
                <-->
       [Indent]
          parser_error(p, 2041,
-            "Expected a field name in record type declaration block")
+           "Expected a field name in record type declaration block")
          <-->
       | <-->
 
@@ -4276,11 +4382,11 @@ mk_tp_rec = p, fields =>
    ?fields < 2
       |
          parser_error(p, 2084,
-            "Single-field records are not allowed: a record must have at least 2 fields")
+           "Single-field records are not allowed: a record must have at least 2 fields")
          <-->
       |
          <+ ast::TypeInfo(Rec, (fields, <->, <->, ast::ValueType(Unknown),
-            ?fields, <->)) +>
+           ?fields, <->)) +>
 
 // A '<' schema is an enum when its first item is a label (an identifier whose
 // next token is '(' payload, ',' or ')' — the ram forms are '|', a leading
@@ -4358,11 +4464,11 @@ parse_enum_decl = p =>
    p.curr.text
       [">"]
          parser_error(p, 2070,
-            "An enum declaration needs at least two variants")
+           "An enum declaration needs at least two variants")
          <-->
       |
          enum_slots_loop(p, is_block, ast::EnumSlots(),
-            (p.curr.col, p.indent_level))
+           (p.curr.col, p.indent_level))
 
 enum_slots_loop: Parser, <>, ast::EnumSlots, (Int, Int) => <ast::TypeInfo|>
 enum_slots_loop = p, is_block, es, layout =>
@@ -4372,25 +4478,25 @@ enum_slots_loop = p, is_block, es, layout =>
          !guard_is_variant(p.curr)
             |
                parser_error(p, 2071,
-                  "Enum variant label '" + label +
-                  "' must start with an uppercase letter")
+                 "Enum variant label '" + label +
+                 "' must start with an uppercase letter")
                <-->
             |
                parser_advance(p)
                enum_has_label(es, label)
                   |
                      parser_error(p, 2074, "Duplicate variant label '" + label +
-                        "' in enum declaration")
+                       "' in enum declaration")
                      <-->
                   |
                      enum_parse_payload(p, is_block, es, label, layout)
       |
          parser_error(p, 2071,
-            "Expected a variant label in enum declaration")
+           "Expected a variant label in enum declaration")
          <-->
 
 enum_parse_payload: Parser, <>, ast::EnumSlots, String,
-   (Int, Int) => <ast::TypeInfo|>
+  (Int, Int) => <ast::TypeInfo|>
 enum_parse_payload = p, is_block, es, label, layout =>
    p.curr.kind
       [LParen]
@@ -4425,12 +4531,12 @@ enum_block_after_comma = p, es, layout =>
 enum_block_misaligned: Parser, Int => <ast::TypeInfo|>
 enum_block_misaligned = p, expected_col =>
    parser_error(p, 2075,
-      "Misaligned enum variant in type declaration: expected column " +
-      str::from_int(expected_col) + ", got column " + str::from_int(p.curr.col))
+     "Misaligned enum variant in type declaration: expected column " +
+     str::from_int(expected_col) + ", got column " + str::from_int(p.curr.col))
    <-->
 
 enum_after_variant_block: Parser, ast::EnumSlots,
-   (Int, Int) => <ast::TypeInfo|>
+  (Int, Int) => <ast::TypeInfo|>
 enum_after_variant_block = p, es, layout =>
    p.curr.kind
       [Comma]
@@ -4445,7 +4551,7 @@ enum_after_variant_block = p, es, layout =>
                !has_nl
                   |
                      parser_error(p, 2076,
-                        "Expected ',' or '>' after variant label in enum declaration")
+                       "Expected ',' or '>' after variant label in enum declaration")
                      <-->
                   |
                      unwind_to_indent(p, layout.1)
@@ -4479,12 +4585,12 @@ enum_after_variant_block = p, es, layout =>
                                              enum_slots_loop(p, <+>, es, layout)
                                           |
                                              parser_error(p, 2075,
-                                                "Expected a variant label or '>' closing enum declaration")
+                                               "Expected a variant label or '>' closing enum declaration")
                                              <-->
                                     | enum_block_misaligned(p, layout.0)
 
 enum_after_variant_inline: Parser, ast::EnumSlots,
-   (Int, Int) => <ast::TypeInfo|>
+  (Int, Int) => <ast::TypeInfo|>
 enum_after_variant_inline = p, es, layout =>
    p.curr.kind
       [Comma]
@@ -4504,7 +4610,7 @@ enum_after_variant_inline = p, es, layout =>
                <+ ast::TypeInfo(Enum, es) +>
             |
                parser_error(p, 2076,
-                  "Expected ',' or '>' after variant label in enum declaration")
+                 "Expected ',' or '>' after variant label in enum declaration")
                <-->
 
 // Whether a label is already among an enum's declared variants (E2074).
@@ -4530,7 +4636,7 @@ enum_min_variants = p, name, ti =>
    n < 2
       |
          parser_error(p, 2070,
-            "An enum declaration needs at least two variants in '" + name + "'")
+           "An enum declaration needs at least two variants in '" + name + "'")
          <->
       | <+>
 
@@ -4595,7 +4701,7 @@ parse_import = p, is_dyn, is_imp =>
          name = has_at && !has_slash | raw_path(1..) | last_segment(raw_path)
          (name, raw_path)
    <+ ast::Expr(Import, ast::ImportStmt(parsed.0, parsed.1,
-      is_dyn, is_imp)) +>
+     is_dyn, is_imp)) +>
 
 last_segment: String => String
 last_segment = p => path::stem(path::basename(p))
@@ -4646,7 +4752,7 @@ pp_member = p, lhs =>
          f = p.curr.text(1..)
          parser_advance(p)
          pp_member(p, ast::Expr(Member, ast::MemberExpr(lhs, f, <->,
-            ast::Expr(Var, ""), p.curr.line, p.curr.col)))
+           ast::Expr(Var, ""), p.curr.line, p.curr.col)))
       |
          p.curr.text
             ["::"] pp_double_colon(p, lhs)
@@ -4664,7 +4770,7 @@ pp_double_colon = p, lhs =>
          f = p.curr.text
          parser_advance(p)
          pp_member(p, ast::Expr(Member, ast::MemberExpr(lhs, f, <+>,
-            ast::Expr(Var, ""), p.curr.line, p.curr.col)))
+           ast::Expr(Var, ""), p.curr.line, p.curr.col)))
       | <-->
 
 pp_dot: Parser, ast::Expr => <ast::Expr|>
@@ -4681,17 +4787,17 @@ pp_dot = p, lhs =>
                   [RParen]
                      parser_advance(p)
                      pp_member(p, ast::Expr(Member, ast::MemberExpr(lhs, "", <->, idx,
-                        p.curr.line, p.curr.col)))
+                       p.curr.line, p.curr.col)))
                   |
                      parser_error(p, 2027, "Expected ')' after member index, got '" +
-                        p.curr.text + "'.")
+                       p.curr.text + "'.")
                      <-->
             | <-->
       [Id, Int]
          f = p.curr.text
          parser_advance(p)
          pp_member(p, ast::Expr(Member, ast::MemberExpr(lhs, f, <->,
-            ast::Expr(Var, ""), p.curr.line, p.curr.col)))
+           ast::Expr(Var, ""), p.curr.line, p.curr.col)))
       | <-->
 
 parse_key_chain: Parser, ast::Expr => <ast::Expr|>
@@ -4705,7 +4811,7 @@ parse_key_chain = p, lhs =>
                f = p.curr.text
                parser_advance(p)
                parse_key_chain(p, ast::Expr(Member, ast::MemberExpr(lhs, f, is_mod,
-                  ast::Expr(Var, ""), p.curr.line, p.curr.col)))
+                 ast::Expr(Var, ""), p.curr.line, p.curr.col)))
             | <+ lhs +>
       |
          !p.curr.lead && (p.curr.kind [LParen])
@@ -4752,8 +4858,8 @@ pp_caret = p, lhs =>
    parse_key_atom(p)
       | key =>
          pp_member(p, ast::Expr(KeyAccess,
-            ast::KeyAccessExpr(lhs, key, <->, <->,
-               p.curr.line, p.curr.col)))
+           ast::KeyAccessExpr(lhs, key, <->, <->,
+             p.curr.line, p.curr.col)))
       | <-->
 
 pp_caret_mem: Parser, ast::Expr => <ast::Expr|>
@@ -4762,7 +4868,7 @@ pp_caret_mem = p, lhs =>
    parse_key_atom(p)
       | key =>
          <+ ast::Expr(KeyAccess, ast::KeyAccessExpr(lhs, key, <+>, <->,
-            p.curr.line, p.curr.col)) +>
+           p.curr.line, p.curr.col)) +>
       | <-->
 
 // "m ^- k" — delete the entry; a bare Flag (RamNN) for whether it was
@@ -4773,7 +4879,7 @@ pp_caret_del = p, lhs =>
    parse_key_atom(p)
       | key =>
          <+ ast::Expr(KeyAccess, ast::KeyAccessExpr(lhs, key, <->, <+>,
-            p.curr.line, p.curr.col)) +>
+           p.curr.line, p.curr.col)) +>
       | <-->
 
 // A writable member/key: '=' assignment, else postfix calls +
@@ -4870,7 +4976,7 @@ parse_postfix_calls = p, lhs =>
 make_call: Parser, String, ast::Exprs => ast::Expr
 make_call = p, name, args =>
    ast::Expr(Call, ast::CallExpr(name, ast::Expr(Var, ""),
-      args, p.curr.line, p.curr.col))
+     args, p.curr.line, p.curr.col))
 
 make_postfix_call: Parser, ast::Expr, ast::Exprs => ast::Expr
 make_postfix_call = p, lhs, args =>
@@ -4881,9 +4987,9 @@ make_postfix_call = p, lhs, args =>
          n = member_chain_name(lhs)
          n == ""
             | ast::Expr(Call, ast::CallExpr("", lhs, args,
-               p.curr.line, p.curr.col))
+              p.curr.line, p.curr.col))
             | ast::Expr(Call, ast::CallExpr(n, ast::Expr(Var, ""),
-               args, p.curr.line, p.curr.col))
+              args, p.curr.line, p.curr.col))
 
 member_chain_name: ast::Expr => String
 member_chain_name = e =>
@@ -4949,7 +5055,7 @@ expr_to_type_info = p, e =>
             ["Void", "void"] <-->
             ["<>"]
                e_slot = ast::RamSlotInfo(<->, ast::ValueType(Unknown),
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown)))
                <+ ast::TypeInfo(Ram, (e_slot, e_slot)) +>
             |
                pr = parse_dva_type_name(name)
@@ -4989,12 +5095,12 @@ expr_to_type_info = p, e =>
                | ti =>
                   vt = type_info_value_type(ti)
                   fts' += ast::RecordFieldType(f.name, vt, ti, <->,
-                     ast::Expr(Int, 0))
+                    ast::Expr(Int, 0))
                |
                   all_ok' = <->
          all_ok'
             | <+ ast::TypeInfo(Rec, (fts', <->, <->, ast::ValueType(Unknown),
-               ?fts', <->)) +>
+              ?fts', <->)) +>
             | <-->
       | <-->
 
@@ -5016,8 +5122,8 @@ parse_postfix_repetition = p, lhs =>
                <+ ast::Expr(ArrayCreate, ast::ArrayCreateExpr(ti, 0)) +>
             |
                parser_error(p, 2048,
-                  "Expected an integer repetition count after the " +
-                  "opening brace, got '}'")
+                 "Expected an integer repetition count after the " +
+                 "opening brace, got '}'")
                <-->
       |
          is_cnt
@@ -5031,26 +5137,26 @@ parse_postfix_repetition = p, lhs =>
                         [RBrace]
                            parser_advance(p)
                            <+ ast::Expr(ArrayCreate,
-                              ast::ArrayCreateExpr(ti, cap)) +>
+                             ast::ArrayCreateExpr(ti, cap)) +>
                         |
                            parser_error(p, 2049,
-                              "Expected '}' after array capacity, got '" +
-                              p.curr.text + "'")
+                             "Expected '}' after array capacity, got '" +
+                             p.curr.text + "'")
                            <-->
                   |
                      n = rep_count(p)
                      n < 1
                         |
                            parser_error(p, 2065,
-                              "Repetition count must be a positive integer, got '" +
-                              p.curr.text + "'")
+                             "Repetition count must be a positive integer, got '" +
+                             p.curr.text + "'")
                            <-->
                         |
                            n > 1000000
                               |
                                  parser_error(p, 2056,
-                                    "Repetition count " + str::from_int(n) +
-                                    diag::record_repeat_limit_suffix!)
+                                   "Repetition count " + str::from_int(n) +
+                                   diag::record_repeat_limit_suffix!)
                                  <-->
                               |
                                  parser_advance(p)
@@ -5061,13 +5167,13 @@ parse_postfix_repetition = p, lhs =>
                                           repeat_fields(lhs, n), <+>)) +>
                                     |
                                        parser_error(p, 2049,
-                                          "Expected '}' after repetition count, " +
-                                          "got '" + p.curr.text + "'")
+                                         "Expected '}' after repetition count, " +
+                                         "got '" + p.curr.text + "'")
                                        <-->
             |
                parser_error(p, 2048,
-                  "Expected an integer repetition count after the " +
-                  "opening brace, got '" + p.curr.text + "'")
+                 "Expected an integer repetition count after the " +
+                 "opening brace, got '" + p.curr.text + "'")
                <-->
 
 rep_count: Parser => Int
@@ -5103,13 +5209,13 @@ is_binary_cont = p =>
          amb = p.curr.text ["+", "-", "*"]
          uo = user_op_lookup(p.user_ops, p.curr.text)
          (!amb || p.curr.trail) &&
-            (operators::bin_info(p.curr.text) | <+> | uo.0)
+           (operators::bin_info(p.curr.text) | <+> | uo.0)
 
 guard_peek_after_indent: lexer::Lx, lexer::Tok => <>
 guard_peek_after_indent = lx, tok =>
    tok.kind
       [Newline, Indent] guard_peek_after_indent(lx, lexer::next_tok(lx, 0))
-      | !token_is_pipe(tok)
+      | !(token_is_pipe(tok) || is_feed_cont_op(tok))
 
 guard_peek_is_indent: lexer::Lx, lexer::Tok => <>
 guard_peek_is_indent = lx, tok =>
@@ -5144,7 +5250,7 @@ tok_is_empty_guard_follow = p, lx, tok =>
          amb = tok.text ["+", "-", "*"]
          uo = user_op_lookup(p.user_ops, tok.text)
          bstop = tok_is_op(tok) && (!amb || tok.trail) &&
-            (operators::bin_info(tok.text) | <+> | uo.0)
+           (operators::bin_info(tok.text) | <+> | uo.0)
          kstop || tstop || bstop
 
 lbracket_is_empty_guard = p =>
@@ -5277,37 +5383,37 @@ pat_rec = p =>
    p
       [Node pr] pr
       | ast::PatternRecord(ast::PatternKind(Wildcard), "", "",
-         ast::Expr(Var, ""), ast::Patterns())
+        ast::Expr(Var, ""), ast::Patterns())
 
 pat_wildcard: () => ast::Pattern
 pat_wildcard = !=>
    ast::Pattern(Node, ast::PatternRecord(ast::PatternKind(Wildcard), "", "_",
-      ast::Expr(Var, ""), ast::Patterns()))
+     ast::Expr(Var, ""), ast::Patterns()))
 
 pat_bind: String => ast::Pattern
 pat_bind = name =>
    ast::Pattern(Node, ast::PatternRecord(ast::PatternKind(Bind), "", name,
-      ast::Expr(Var, ""), ast::Patterns()))
+     ast::Expr(Var, ""), ast::Patterns()))
 
 pat_lit: ast::Expr => ast::Pattern
 pat_lit = lit =>
    ast::Pattern(Node, ast::PatternRecord(ast::PatternKind(Lit), "", "", lit,
-      ast::Patterns()))
+     ast::Patterns()))
 
 pat_variant: String, ast::Patterns => ast::Pattern
 pat_variant = tag, subs =>
    ast::Pattern(Node, ast::PatternRecord(ast::PatternKind(Variant), "", tag,
-      ast::Expr(Var, ""), subs))
+     ast::Expr(Var, ""), subs))
 
 pat_record: ast::Patterns => ast::Pattern
 pat_record = subs =>
    ast::Pattern(Node, ast::PatternRecord(ast::PatternKind(Record), "", "",
-      ast::Expr(Var, ""), subs))
+     ast::Expr(Var, ""), subs))
 
 pat_or: ast::Patterns => ast::Pattern
 pat_or = subs =>
    ast::Pattern(Node, ast::PatternRecord(ast::PatternKind(Or), "", "",
-      ast::Expr(Var, ""), subs))
+     ast::Expr(Var, ""), subs))
 
 guard_is_variant: lexer::Tok => <>
 guard_is_variant = t =>
@@ -5399,19 +5505,19 @@ scan_record_pattern_comma = lx, tok, depth =>
          tok.kind
             [LParen]
                scan_record_pattern_comma(lx, lexer::next_tok(lx, 0),
-                  depth + 1)
+                 depth + 1)
             [RParen]
                depth == 1
                   | <->
                   |
                      scan_record_pattern_comma(lx, lexer::next_tok(lx, 0),
-                        depth - 1)
+                       depth - 1)
             [Comma]
                depth == 1
                   | <+>
                   |
                      scan_record_pattern_comma(lx, lexer::next_tok(lx, 0),
-                        depth)
+                       depth)
             [Newline, Eof] <->
             |
                scan_record_pattern_comma(lx, lexer::next_tok(lx, 0), depth)
@@ -5525,7 +5631,7 @@ parse_record_pattern_cont = p, subs =>
 mk_assign: String, ast::Expr => ast::Expr
 mk_assign = name, val =>
    ast::Expr(Assign, (name, <->, <->, <->, <->, val, ast::Expr(Var, ""), "",
-      ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+     ast::TypeInfo(Prim, ast::ValueType(Unknown))))
 
 mk_block: ast::Exprs, ast::Expr => ast::Expr
 mk_block = stmts, last =>
@@ -5546,8 +5652,8 @@ tag_names_single = name =>
 mk_choice_flag: ast::Expr, String => ast::Expr
 mk_choice_flag = target, tag_name =>
    br0 = ast::ChoiceBranch(ast::GuardKind(Variant), ast::Exprs(),
-      ast::Expr(Var, "?"), tag_names_single(tag_name), ast::Names(), <->,
-      ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
+     ast::Expr(Var, "?"), tag_names_single(tag_name), ast::Names(), <->,
+     ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
    br1 = mk_branch(ast::Expr(Variant, (ast::Tag(Negative), ast::Exprs())))
    brs = ast::Branches()
    brs += br0
@@ -5558,8 +5664,8 @@ mk_extract_pay: ast::Expr, String, String => ast::Expr
 mk_extract_pay = target, tag_name, out_var =>
    binds = tag_names_single(out_var)
    br0 = ast::ChoiceBranch(ast::GuardKind(Variant), ast::Exprs(),
-      ast::Expr(Var, "?"), tag_names_single(tag_name), binds, <->,
-      ast::Expr(Var, out_var))
+     ast::Expr(Var, "?"), tag_names_single(tag_name), binds, <->,
+     ast::Expr(Var, out_var))
    brs = ast::Branches()
    brs += br0
    rhs = ast::Expr(Choice, ast::ChoiceExpr(target, <+>, brs))
@@ -5658,7 +5764,7 @@ pat_extract_bindings = p, target, pat_in =>
                | sub.field_name
                | str::from_int(idx)
             fld_access = ast::Expr(Member, ast::MemberExpr(target,
-               fld_str, <->, ast::Expr(Var, ""), 0, 0))
+              fld_str, <->, ast::Expr(Var, ""), 0, 0))
             sub_binds = pat_extract_bindings(p, fld_access, sub_raw)
             sub_binds @ sb => res += sb
          res
@@ -5670,7 +5776,7 @@ pat_match_cond = p, target, pat_in =>
    pat.kind
       [Wildcard, Bind]
          PatCondResult(ast::Exprs(),
-            ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
+           ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
       [Lit]
          cond = ast::Expr(Bin, (ast::BinaryOp(Eq), target, pat.lit_val))
          PatCondResult(ast::Exprs(), cond)
@@ -5681,23 +5787,23 @@ pat_match_cond = p, target, pat_in =>
                sub_raw = pat.subpatterns(0) | _ | pat_wildcard()
                pat_is_unconditional(sub_raw)
                   | PatCondResult(ast::Exprs(),
-                     mk_choice_flag(target, pat.name))
+                    mk_choice_flag(target, pat.name))
                   |
                      tmp_p = fresh_dp_var(p)
                      tmp_p_var = ast::Expr(Var, tmp_p)
                      sub_res = pat_match_cond(p, tmp_p_var, sub_raw)
                      sub_body = mk_block(sub_res.stmts, sub_res.cond)
                      br0 = ast::ChoiceBranch(ast::GuardKind(Variant),
-                        ast::Exprs(), ast::Expr(Var, "?"),
-                        tag_names_single(pat.name), tag_names_single(tmp_p),
-                        <->, sub_body)
+                       ast::Exprs(), ast::Expr(Var, "?"),
+                       tag_names_single(pat.name), tag_names_single(tmp_p),
+                       <->, sub_body)
                      br1 = mk_branch(ast::Expr(Variant,
-                        (ast::Tag(Negative), ast::Exprs())))
+                       (ast::Tag(Negative), ast::Exprs())))
                      brs = ast::Branches()
                      brs += br0
                      brs += br1
                      cond = ast::Expr(Choice, ast::ChoiceExpr(target,
-                        <+>, brs))
+                       <+>, brs))
                      PatCondResult(ast::Exprs(), cond)
       [Record]
          stmts = ast::Exprs()
@@ -5713,7 +5819,7 @@ pat_match_cond = p, target, pat_in =>
                      | sub.field_name
                      | str::from_int(idx)
                   fld_access = ast::Expr(Member, ast::MemberExpr(target,
-                     fld_str, <->, ast::Expr(Var, ""), 0, 0))
+                    fld_str, <->, ast::Expr(Var, ""), 0, 0))
                   sub_res = pat_match_cond(p, fld_access, sub_raw)
                   sub_res.stmts @ sbs => stmts += sbs
                   cond_var = fresh_dp_var(p)
@@ -5728,7 +5834,7 @@ pat_match_cond = p, target, pat_in =>
          stmts = ast::Exprs()
          pat_is_unconditional(pat_in)
             | PatCondResult(stmts,
-               ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
+              ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs())))
             |
                has_cond' = <->
                acc_cond' = ast::Expr(Variant, (ast::Tag(Negative), ast::Exprs()))
@@ -5761,7 +5867,7 @@ expand_or_bind_pbrs = pbrs =>
    out
 
 desugar_inner_pattern_group: Parser, ast::Expr, ParsedBranch{},
-   ast::Expr => ast::Expr
+  ast::Expr => ast::Expr
 desugar_inner_pattern_group = p, target, inner_pbrs_in, fallback_expr =>
    inner_pbrs = expand_or_bind_pbrs(inner_pbrs_in)
    n = ?inner_pbrs
@@ -5769,7 +5875,7 @@ desugar_inner_pattern_group = p, target, inner_pbrs_in, fallback_expr =>
    n @ step =>
       idx = (n - 1) - step
       b = inner_pbrs(idx) | _ | ParsedBranch(pat_wildcard(), <->,
-         mk_branch(ast::Expr(Var, "")))
+        mk_branch(ast::Expr(Var, "")))
       is_unc = pat_is_unconditional(b.pattern)
       is_unc
          |
@@ -5785,7 +5891,7 @@ desugar_inner_pattern_group = p, target, inner_pbrs_in, fallback_expr =>
             brs += br0
             brs += br1
             ch = ast::Expr(Choice,
-               ast::ChoiceExpr(res.cond, <+>, brs))
+              ast::ChoiceExpr(res.cond, <+>, brs))
             cur_cont' = mk_block(res.stmts, ch)
    cur_cont'
 
@@ -5799,7 +5905,7 @@ desugar_deep_choice = p, lhs, pbrs_in =>
 
    last_idx = n - 1
    last_pb = pbrs(last_idx) | _ | ParsedBranch(pat_wildcard(), <->,
-      mk_branch(ast::Expr(Var, "")))
+     mk_branch(ast::Expr(Var, "")))
    has_fallback = choice_branch_is_bare(last_pb.branch)
    fallback_expr = has_fallback
       | last_pb.branch.block
@@ -5812,7 +5918,7 @@ desugar_deep_choice = p, lhs, pbrs_in =>
    num_to_fold @ step =>
       idx = end_idx - step
       pb = pbrs(idx) | _ | ParsedBranch(pat_wildcard(), <->,
-         mk_branch(ast::Expr(Var, "")))
+        mk_branch(ast::Expr(Var, "")))
       pb.is_deep
          |
             is_unc = pat_is_unconditional(pb.pattern)
@@ -5830,7 +5936,7 @@ desugar_deep_choice = p, lhs, pbrs_in =>
                   brs += br0
                   brs += br1
                   ch = ast::Expr(Choice,
-                     ast::ChoiceExpr(res.cond, <+>, brs))
+                    ast::ChoiceExpr(res.cond, <+>, brs))
                   cur_cont' = mk_block(res.stmts, ch)
          |
             brs = ast::Branches()
@@ -5842,8 +5948,8 @@ desugar_deep_choice = p, lhs, pbrs_in =>
       | cur_cont'
       |
          assign = ast::Expr(Assign, (s_name, <->, <->, <->, <->, lhs,
-            ast::Expr(Var, ""), "",
-            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+           ast::Expr(Var, ""), "",
+           ast::TypeInfo(Prim, ast::ValueType(Unknown))))
          exprs = ast::Exprs()
          exprs += assign
          exprs += cur_cont'
@@ -5863,11 +5969,11 @@ group_variant_run_deep = pbrs, start_idx, end_idx =>
       | <+>
       |
          pb = pbrs(start_idx) | _ | ParsedBranch(pat_wildcard(), <->,
-            mk_branch(ast::Expr(Var, "")))
+           mk_branch(ast::Expr(Var, "")))
          pb.is_deep
 
 build_grouped_variant: Parser, ParsedBranch{}, Int, Int,
-   String, ast::Expr => ParsedBranch
+  String, ast::Expr => ParsedBranch
 build_grouped_variant = p, pbrs, start_idx, end_idx, tag, fallback_expr =>
    pay_name = fresh_dp_var(p)
    pay_expr = ast::Expr(Var, pay_name)
@@ -5875,7 +5981,7 @@ build_grouped_variant = p, pbrs, start_idx, end_idx, tag, fallback_expr =>
    k = end_idx - start_idx
    k @ i =>
       b = pbrs(start_idx + i) | _ | ParsedBranch(pat_wildcard(), <->,
-         mk_branch(ast::Expr(Var, "")))
+        mk_branch(ast::Expr(Var, "")))
       b_pr = pat_rec(b.pattern)
       sps = b_pr.subpatterns
       ns = ?sps
@@ -5888,13 +5994,13 @@ build_grouped_variant = p, pbrs, start_idx, end_idx, tag, fallback_expr =>
       is_d = pattern_is_deep(sub_pat)
       inner_pbrs += ParsedBranch(sub_pat, is_d, b.branch)
    inner_body = desugar_inner_pattern_group(p, pay_expr, inner_pbrs,
-      fallback_expr)
+     fallback_expr)
    vnames = ast::Names()
    vnames += tag
    binds = ast::Names()
    binds += pay_name
    top_cb = ast::ChoiceBranch(ast::GuardKind(Variant), ast::Exprs(),
-      ast::Expr(Var, "?"), vnames, binds, <->, inner_body)
+     ast::Expr(Var, "?"), vnames, binds, <->, inner_body)
    ParsedBranch(pat_variant(tag, ast::Patterns()), <->, top_cb)
 
 find_variant_run_end: ParsedBranch{}, String, Int, Int => Int
@@ -5903,7 +6009,7 @@ find_variant_run_end = pbrs, tag, j, limit =>
       | limit
       |
          curr = pbrs(j) | _ | ParsedBranch(pat_wildcard(), <->,
-            mk_branch(ast::Expr(Var, "")))
+           mk_branch(ast::Expr(Var, "")))
          curr_pr = pat_rec(curr.pattern)
          is_same = curr_pr.kind [Variant] && (curr_pr.name == tag)
          is_same
@@ -5911,13 +6017,13 @@ find_variant_run_end = pbrs, tag, j, limit =>
             | j
 
 group_variant_branches_loop: Parser, ParsedBranch{}, Int, Int,
-   ast::Expr, ParsedBranch{} => ParsedBranch{}
+  ast::Expr, ParsedBranch{} => ParsedBranch{}
 group_variant_branches_loop = p, pbrs, i, limit, fallback_expr, acc =>
    i !< limit
       | acc
       |
          pb = pbrs(i) | _ | ParsedBranch(pat_wildcard(), <->,
-            mk_branch(ast::Expr(Var, "")))
+           mk_branch(ast::Expr(Var, "")))
          pb_pr = pat_rec(pb.pattern)
          is_var = pb_pr.kind [Variant]
          is_var
@@ -5928,17 +6034,17 @@ group_variant_branches_loop = p, pbrs, i, limit, fallback_expr, acc =>
                is_deep_run
                   |
                      acc += build_grouped_variant(p, pbrs, i, next_i, tag,
-                        fallback_expr)
+                       fallback_expr)
                      group_variant_branches_loop(p, pbrs, next_i, limit,
-                        fallback_expr, acc)
+                       fallback_expr, acc)
                   |
                      acc += pb
                      group_variant_branches_loop(p, pbrs, next_i, limit,
-                        fallback_expr, acc)
+                       fallback_expr, acc)
             |
                acc += pb
                group_variant_branches_loop(p, pbrs, i + 1, limit,
-                  fallback_expr, acc)
+                 fallback_expr, acc)
 
 group_variant_branches: Parser, ParsedBranch{} => ParsedBranch{}
 group_variant_branches = p, pbrs =>
@@ -5948,7 +6054,7 @@ group_variant_branches = p, pbrs =>
       |
          last_idx = n - 1
          last_pb = pbrs(last_idx) | _ | ParsedBranch(pat_wildcard(), <->,
-            mk_branch(ast::Expr(Var, "")))
+           mk_branch(ast::Expr(Var, "")))
          has_fallback = choice_branch_is_bare(last_pb.branch)
          fallback_expr = has_fallback
             | last_pb.branch.block
@@ -5956,7 +6062,7 @@ group_variant_branches = p, pbrs =>
          limit = has_fallback | last_idx | n
          acc = empty_pbrs()
          res = group_variant_branches_loop(p, pbrs, 0, limit,
-            fallback_expr, acc)
+           fallback_expr, acc)
          has_fallback | res += last_pb
          res
 
@@ -5980,15 +6086,15 @@ finish_parsed_choice = p, lhs, pbrs =>
                      ?brs > 1 && choice_branches_first_bare_mix(brs)
                         |
                            parser_error(p, 2054,
-                              "Cannot mix bare '|' branches with " +
-                              "'[pattern]' guards — a choice is either " +
-                              "'| a | b' (ramification) or '[a] [b] ... " +
-                              "| default'.")
+                             "Cannot mix bare '|' branches with " +
+                             "'[pattern]' guards — a choice is either " +
+                             "'| a | b' (ramification) or '[a] [b] ... " +
+                             "| default'.")
                            <-->
                         |
                            ex = choice_branches_exhaustive(brs)
                            <+ ast::Expr(Choice,
-                              ast::ChoiceExpr(lhs, ex, brs)) +>
+                             ast::ChoiceExpr(lhs, ex, brs)) +>
 
 tok_is_neg_lbracket = p =>
    token_is_op(p.curr, "!") && !p.curr.trail && peek_is_lbracket(p)
@@ -6014,25 +6120,36 @@ parse_neg_guard_choice = p, lhs =>
 
 choice_cont: Parser, ast::Expr => <ast::Expr|>
 choice_cont = p, lhs =>
-   choice_cont_init(p, lhs, -1)
+   choice_cont_init_at(p, lhs, p.indent_level, -1)
+
+choice_cont_at = p, lhs, entry_indent =>
+   choice_cont_init_at(p, lhs, entry_indent, -1)
 
 headless_choice_cont: Parser, ast::Expr => <ast::Expr|>
 headless_choice_cont = p, lhs =>
-   choice_cont_init(p, lhs, p.indent_level)
+   choice_cont_init_at(p, lhs, p.indent_level, p.indent_level)
 
 choice_cont_init: Parser, ast::Expr, Int => <ast::Expr|>
 choice_cont_init = p, lhs, init_bi =>
+   choice_cont_init_at(p, lhs, p.indent_level, init_bi)
+
+choice_cont_init_at: Parser, ast::Expr, Int, Int => <ast::Expr|>
+choice_cont_init_at = p, lhs, entry_indent, init_bi =>
    tok_is_neg_lbracket(p)
       |
          parse_neg_guard_choice(p, lhs)
-            | neg_e => choice_cont_init(p, neg_e, init_bi)
+            | neg_e => choice_cont_init_at(p, neg_e, entry_indent, init_bi)
             | <-->
       |
          p.choice_depth = p.choice_depth + 1
-         entry_indent = p.indent_level
          r = choice_cont_loop(p, empty_pbrs(), entry_indent, init_bi)
          p.choice_depth = p.choice_depth - 1
          choice_unwind(p, entry_indent)
+         p.indent_level > entry_indent && is_feed_cont_op(p.curr)
+            |
+               need_cd = p.indent_level - entry_indent
+               p.cont_depth < need_cd | p.cont_depth = need_cd
+               p.just_dedented = <->
          r
             | pbrs => finish_parsed_choice(p, lhs, pbrs)
             | <-->
@@ -6055,25 +6172,26 @@ choice_scan_pipe = lx, tok, cur_indent, min_indent =>
    tok.kind
       [Newline]
          choice_scan_pipe(lx, lexer::next_tok(lx, 0),
-            cur_indent, min_indent)
+           cur_indent, min_indent)
       [Indent]
          choice_scan_pipe(lx, lexer::next_tok(lx, 0), cur_indent + 1,
-            min_indent)
+           min_indent)
       [Dedent]
          cur_indent - 1 < min_indent
             | <-->
             |
                choice_scan_pipe(lx, lexer::next_tok(lx, 0), cur_indent - 1,
-                  min_indent)
-      [LBracket] <+ cur_indent +>
+                 min_indent)
+      [LBracket]
+         cur_indent !< min_indent | <+ cur_indent +> | <-->
       |
-         is_sep = token_is_pipe(tok)
+         is_sep = cur_indent !< min_indent && token_is_pipe(tok)
          is_sep | <+ cur_indent +>
 
 choice_can_skip: Parser, Int => <>
 choice_can_skip = p, entry_indent =>
    tok_is_nl(p.curr) || tok_is_indent(p.curr) ||
-      tok_is_dedent(p.curr) && p.indent_level > entry_indent
+     tok_is_dedent(p.curr) && p.indent_level > entry_indent
 
 choice_skip_layout: Parser, Int => ()
 choice_skip_layout = p, entry_indent =>
@@ -6086,11 +6204,11 @@ choice_cont_nest: Parser, ParsedBranch{}, Int, Int => <ParsedBranch{}|>
 choice_cont_nest = p, brs, entry_indent, branch_indent =>
    last_idx = ?brs - 1
    last = brs(last_idx) | _ | ParsedBranch(pat_wildcard(), <->,
-      mk_branch(ast::Expr(Var, "")))
+     mk_branch(ast::Expr(Var, "")))
    new_brs = empty_pbrs()
    brs @ b, i =>
       i < last_idx | new_brs += b
-   nested = choice_cont(p, last.branch.block)
+   nested = choice_cont_init_at(p, last.branch.block, branch_indent, p.indent_level)
    nested
       | nb =>
          new_brs += ParsedBranch(pat_wildcard(), <->, mk_branch(nb))
@@ -6107,7 +6225,7 @@ choice_cont_next = p, brs, entry_indent, branch_indent, saw_peek =>
       | <+ brs +>
 
 choice_cont_step: Parser, ParsedBranch{}, Int, Int,
-   <Int|> => <ParsedBranch{}|>
+  <Int|> => <ParsedBranch{}|>
 choice_cont_step = p, brs, entry_indent, branch_indent, peek =>
    saw_peek = <>(peek)
    saw_peek | choice_skip_layout(p, entry_indent)
@@ -6115,7 +6233,7 @@ choice_cont_step = p, brs, entry_indent, branch_indent, peek =>
    is_brk = p.curr.kind [LBracket]
    is_sep = is_pipe || is_brk
    nest = branch_indent !< 0 && saw_peek && p.indent_level > branch_indent &&
-      is_sep && ?brs > 0
+     is_sep && ?brs > 0
    nest
       | choice_cont_nest(p, brs, entry_indent, branch_indent)
       | choice_cont_next(p, brs, entry_indent, branch_indent, saw_peek)
@@ -6125,7 +6243,7 @@ choice_cont_loop = p, brs, entry_indent, branch_indent =>
    p.fn_depth > 0 && token_is_pipe(p.curr)
       | <+ brs +>
       |
-         min_indent = branch_indent !< 0 | branch_indent | entry_indent + 1
+         min_indent = branch_indent !< 0 | branch_indent | (?brs > 0 | entry_indent | entry_indent + 1)
          peek = choice_peek_pipe(p, min_indent)
          is_dedent = peek
             | pi => branch_indent !< 0 && pi < branch_indent
@@ -6141,7 +6259,7 @@ check_redundant_flag_pb = p, brs, bd =>
          ?brs > 0
             |
                last = brs(?brs - 1) | _ | ParsedBranch(pat_wildcard(), <->,
-                  mk_branch(ast::Expr(Var, "")))
+                 mk_branch(ast::Expr(Var, "")))
                is_pos = expr_is_pos_flag(last.branch.block)
                is_pos
                   |
@@ -6174,9 +6292,9 @@ choice_step = p, brs, saw_sep =>
                   |
                      b = gb.branch
                      b.block = ast::Expr(Variant,
-                        (ast::Tag(Positive), ast::Exprs()))
+                       (ast::Tag(Positive), ast::Exprs()))
                      neg_b = mk_branch(ast::Expr(Variant,
-                        (ast::Tag(Negative), ast::Exprs())))
+                       (ast::Tag(Negative), ast::Exprs())))
                      brs += ParsedBranch(gb.pattern, gb.is_deep, b)
                      brs += ParsedBranch(pat_wildcard(), <->, neg_b)
                      <+ brs +>
@@ -6206,7 +6324,7 @@ choice_step = p, brs, saw_sep =>
                               | <-->
                               |
                                  brs += ParsedBranch(pat_wildcard(), <->,
-                                    mk_branch(bd))
+                                   mk_branch(bd))
                                  <+ brs +>
                         | <-->
             ["!|"]
@@ -6222,7 +6340,7 @@ choice_step = p, brs, saw_sep =>
                            v0 = mk_branch(ast::Expr(Block, ast::Exprs()))
                            brs += ParsedBranch(pat_wildcard(), <->, v0)
                            brs += ParsedBranch(pat_wildcard(), <->,
-                              mk_branch(bd))
+                             mk_branch(bd))
                            <+ brs +>
                         | <-->
             ["|->", "|+>", "|-->", "|++>"]
@@ -6291,7 +6409,7 @@ gv = p, vals =>
 guard_is_expr_op_tok: lexer::Tok => <>
 guard_is_expr_op_tok = nxt =>
    token_is_range_op(nxt) ||
-      (tok_is_op(nxt) && (nxt.text [".", "::", "^", "^?"] || <>(operators::bin_info(nxt.text))))
+     (tok_is_op(nxt) && (nxt.text [".", "::", "^", "^?"] || <>(operators::bin_info(nxt.text))))
 
 guard_variants: Parser, ast::Names, ast::Names => <ast::ChoiceBranch|>
 guard_variants = p, vnames, binds =>
@@ -6318,7 +6436,7 @@ guard_variants = p, vnames, binds =>
                guard_variants(p, vnames, binds)
             |
                parser_error(p, 2095, "Expected a variant label after " +
-                  "',' in a choice guard, got '" + p.curr.text + "'")
+                 "',' in a choice guard, got '" + p.curr.text + "'")
                <-->
       [RBracket]
          parser_advance(p)
@@ -6356,7 +6474,7 @@ choice_guard_pattern_or_loop = p, alts, base_binds, gkind, err_msg =>
                !names_same_bind_set(base_binds, nbinds)
                   |
                      parser_error(p, 2095,
-                        "Alternatives in a multi-pattern guard must bind the same variables")
+                       "Alternatives in a multi-pattern guard must bind the same variables")
                      <-->
                   |
                      alts += npat
@@ -6385,7 +6503,7 @@ choice_guard_pattern_or = p, first_pat, gkind, err_msg =>
 choice_guard_deep_variant: Parser, ast::Pattern => <ParsedBranch|>
 choice_guard_deep_variant = p, pat =>
    choice_guard_pattern_or(p, pat, ast::GuardKind(Variant),
-      "Expected ']' after pattern guard")
+     "Expected ']' after pattern guard")
 
 guard_comma_needs_deep_or: Parser, ast::Names => <>
 guard_comma_needs_deep_or = p, binds =>
@@ -6413,7 +6531,7 @@ choice_guard_shallow_variant = p, pat_in =>
    binds = pat_extract_binds(pat.subpatterns)
    guard_comma_needs_deep_or(p, binds)
       | choice_guard_pattern_or(p, pat_in, ast::GuardKind(Variant),
-         "Expected ']' after pattern guard")
+        "Expected ']' after pattern guard")
       | mk_shallow_pb(guard_variants(p, vnames, binds))
 
 choice_guard_variant: Parser => <ParsedBranch|>
@@ -6433,7 +6551,7 @@ choice_guard_record = p =>
    rpat_res
       | rpat =>
          choice_guard_pattern_or(p, rpat, ast::GuardKind(Case),
-            "Expected ']' after record pattern guard")
+           "Expected ']' after record pattern guard")
       | <-->
 
 choice_guard_expr: Parser => <ParsedBranch|>
@@ -6449,7 +6567,7 @@ choice_guard_expr = p =>
             [RBracket]
                parser_advance(p)
                <+ ParsedBranch(pat_wildcard(), <->,
-                  guard_branch_from(gv_expr)) +>
+                 guard_branch_from(gv_expr)) +>
             | <-->
       | <-->
 
@@ -6571,67 +6689,67 @@ choice_guard_type_lt = p, c, t1 =>
                   | <-->
             |
                tok_is_op(t1) && t1.text == "|"
+                  |
+                     t2 = lexer::next_tok(c, 0)
+                     tok_is_op(t2) && t2.text == ">"
+                        |
+                           t3 = lexer::next_tok(c, 0)
+                           t3.kind [RBracket]
+                              | mk_type_pat_pb(p, 4, "#type:<>", ast::Names())
+                              | <-->
+                        |
+                           t2.kind [Id]
+                              |
+                                 t3 = lexer::next_tok(c, 0)
+                                 t4 = lexer::next_tok(c, 0)
+                                 tok_is_op(t3) && t3.text == ">" && t4.kind [RBracket]
+                                    |
+                                       binds = ast::Names()
+                                       binds += t2.text
+                                       mk_type_pat_pb(p, 5, "#type:<|N>", binds)
+                                    | <-->
+                              | <-->
+                  |
+                     t1.kind [Id]
                         |
                            t2 = lexer::next_tok(c, 0)
-                           tok_is_op(t2) && t2.text == ">"
+                           tok_is_op(t2) && t2.text == "|>"
                               |
                                  t3 = lexer::next_tok(c, 0)
                                  t3.kind [RBracket]
-                                    | mk_type_pat_pb(p, 4, "#type:<>", ast::Names())
+                                    |
+                                       binds = ast::Names()
+                                       binds += t1.text
+                                       mk_type_pat_pb(p, 4, "#type:<P|>", binds)
                                     | <-->
                               |
-                                 t2.kind [Id]
+                                 tok_is_op(t2) && t2.text == "|"
                                     |
                                        t3 = lexer::next_tok(c, 0)
-                                       t4 = lexer::next_tok(c, 0)
-                                       tok_is_op(t3) && t3.text == ">" && t4.kind [RBracket]
+                                       tok_is_op(t3) && t3.text == ">"
                                           |
-                                             binds = ast::Names()
-                                             binds += t2.text
-                                             mk_type_pat_pb(p, 5, "#type:<|N>", binds)
-                                          | <-->
-                                    | <-->
-                        |
-                           t1.kind [Id]
-                              |
-                                 t2 = lexer::next_tok(c, 0)
-                                 tok_is_op(t2) && t2.text == "|>"
-                                    |
-                                       t3 = lexer::next_tok(c, 0)
-                                       t3.kind [RBracket]
+                                             t4 = lexer::next_tok(c, 0)
+                                             t4.kind [RBracket]
+                                                |
+                                                   binds = ast::Names()
+                                                   binds += t1.text
+                                                   mk_type_pat_pb(p, 5, "#type:<P|>", binds)
+                                                | <-->
                                           |
-                                             binds = ast::Names()
-                                             binds += t1.text
-                                             mk_type_pat_pb(p, 4, "#type:<P|>", binds)
-                                          | <-->
-                                    |
-                                       tok_is_op(t2) && t2.text == "|"
-                                          |
-                                             t3 = lexer::next_tok(c, 0)
-                                             tok_is_op(t3) && t3.text == ">"
+                                             t3.kind [Id]
                                                 |
                                                    t4 = lexer::next_tok(c, 0)
-                                                   t4.kind [RBracket]
+                                                   t5 = lexer::next_tok(c, 0)
+                                                   tok_is_op(t4) && t4.text == ">" && t5.kind [RBracket]
                                                       |
                                                          binds = ast::Names()
                                                          binds += t1.text
-                                                         mk_type_pat_pb(p, 5, "#type:<P|>", binds)
+                                                         binds += t3.text
+                                                         mk_type_pat_pb(p, 6, "#type:<P|N>", binds)
                                                       | <-->
-                                                |
-                                                   t3.kind [Id]
-                                                      |
-                                                         t4 = lexer::next_tok(c, 0)
-                                                         t5 = lexer::next_tok(c, 0)
-                                                         tok_is_op(t4) && t4.text == ">" && t5.kind [RBracket]
-                                                            |
-                                                               binds = ast::Names()
-                                                               binds += t1.text
-                                                               binds += t3.text
-                                                               mk_type_pat_pb(p, 6, "#type:<P|N>", binds)
-                                                            | <-->
-                                                      | <-->
-                                          | <-->
-                              | <-->
+                                                | <-->
+                                    | <-->
+                        | <-->
 
 choice_guard_type_ident: Parser => <ParsedBranch|>
 choice_guard_type_ident = p =>
@@ -6751,7 +6869,10 @@ choice_body_indented = p =>
          parser_advance(p)
          saved_fd = p.fn_depth
          p.fn_depth = 0
+         saved_cont = p.cont_depth
+         p.cont_depth = 0
          body = block_stmts(p, ast::Exprs())
+         p.cont_depth = saved_cont
          p.fn_depth = saved_fd
          p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
          body
@@ -6774,7 +6895,7 @@ choice_same_line_stop: Parser => <>
 choice_same_line_stop = p =>
    is_eof = p.curr.kind [Eof]
    tok_is_nl(p.curr) || tok_is_indent(p.curr) || tok_is_dedent(p.curr) ||
-      is_eof
+     is_eof
 
 choice_same_line_step: Parser, ParsedBranch{} => <ParsedBranch{}|>
 choice_same_line_step = p, brs =>
@@ -6787,9 +6908,9 @@ choice_same_line_step = p, brs =>
                   |
                      b = gb.branch
                      b.block = ast::Expr(Variant,
-                        (ast::Tag(Positive), ast::Exprs()))
+                       (ast::Tag(Positive), ast::Exprs()))
                      neg_b = mk_branch(ast::Expr(Variant,
-                        (ast::Tag(Negative), ast::Exprs())))
+                       (ast::Tag(Negative), ast::Exprs())))
                      brs += ParsedBranch(gb.pattern, gb.is_deep, b)
                      brs += ParsedBranch(pat_wildcard(), <->, neg_b)
                      <+ brs +>
@@ -6822,7 +6943,7 @@ choice_same_line_step = p, brs =>
                               | <-->
                               |
                                  brs += ParsedBranch(pat_wildcard(), <->,
-                                    mk_branch(bd))
+                                   mk_branch(bd))
                                  <+ brs +>
                         | <-->
             ["!|"]
@@ -6838,7 +6959,7 @@ choice_same_line_step = p, brs =>
                            v0 = mk_branch(ast::Expr(Block, ast::Exprs()))
                            brs += ParsedBranch(pat_wildcard(), <->, v0)
                            brs += ParsedBranch(pat_wildcard(), <->,
-                              mk_branch(bd))
+                             mk_branch(bd))
                            <+ brs +>
                         | <-->
             ["|->", "|+>", "|-->", "|++>"]
@@ -6935,8 +7056,8 @@ atom_ident = p, name =>
          is_mod && is_upper && is_stmt
             |
                parser_error(p, 2004,
-                  "Disallowed type alias. '::' is module access; " +
-                  "type declarations use 'TypeName: (field: Type)'.")
+                 "Disallowed type alias. '::' is module access; " +
+                 "type declarations use 'TypeName: (field: Type)'.")
                <-->
             |
                p.no_assign
@@ -6978,7 +7099,7 @@ parse_colon_ctx_g = p, name, is_global =>
          p.in_rhs
             |
                parser_error(p, 2003,
-                  "Expected newline or EOF after statement, got ':'")
+                 "Expected newline or EOF after statement, got ':'")
                <-->
             | parse_colon_g(p, name, is_global)
 
@@ -7011,7 +7132,7 @@ parse_fixity_clause = p, name =>
    op_is_reserved(name)
       |
          parser_error(p, 2097, "Operator '" + name + "' already has a " +
-            "built-in meaning and cannot be re-fixed.")
+           "built-in meaning and cannot be re-fixed.")
          <->
       | p.curr.kind
          [Int]
@@ -7028,13 +7149,13 @@ parse_fixity_clause = p, name =>
                               register_user_op(p, name, lbp_val, rbp_val)
                            |
                               parser_error(p, 2098, diag::infix_right_binding_power_prefix! +
-                                 str::from_int(lbp_val) + "', got '" +
-                                 p.curr.text + "'.")
+                                str::from_int(lbp_val) + "', got '" +
+                                p.curr.text + "'.")
                               <->
                      |
                         parser_error(p, 2098, diag::infix_right_binding_power_prefix! +
-                           str::from_int(lbp_val) + "', got '" +
-                           p.curr.text + "'.")
+                          str::from_int(lbp_val) + "', got '" +
+                          p.curr.text + "'.")
                         <->
                |
                   parser_error(p, 2098, diag::infix_left_binding_power_prefix! + p.curr.text + "'.")
@@ -7049,15 +7170,15 @@ register_user_op = p, name, lbp, rbp =>
    lbp < 0 || rbp < 0 || lbp > 1000 || rbp > 1000
       |
          parser_error(p, 2098, "Operator '" + name + "' binding powers " +
-            "must be 0..1000, got " + str::from_int(lbp) + " and " +
-            str::from_int(rbp) + ".")
+           "must be 0..1000, got " + str::from_int(lbp) + " and " +
+           str::from_int(rbp) + ".")
          <->
       |
          dup = user_op_lookup(p.user_ops, name)
          dup.0
             |
                parser_error(p, 2099, "Operator '" + name +
-                  "' fixity is declared twice.")
+                 "' fixity is declared twice.")
                <->
             |
                p.user_ops = user_op_add(p.user_ops, name, lbp, rbp)
@@ -7110,9 +7231,9 @@ parse_zero_sig_g = p, name, is_global =>
          ret = parse_type(p)
          !ret.2 | <--> |
             sig_ti = ast::TypeInfo(Fn, (ast::VTypes(), ast::VInfos(),
-               ret.0, ret.1, ast::CParams()))
+              ret.0, ret.1, ast::CParams()))
             <+ ast::Expr(Assign, (name, <+>, <->, is_global, <->,
-               fwd_marker(ret.1), ast::Expr(Var, ""), "", sig_ti)) +>
+              fwd_marker(ret.1), ast::Expr(Var, ""), "", sig_ti)) +>
       | <-->
 
 type_atom_name: ast::TypeInfo, String => String
@@ -7164,8 +7285,8 @@ parse_colon_type_vt_rest_g = p, name, is_global =>
                               cs += ConstEntry(name, ast::Expr(Var, ""))
                               p.consts = cs
                         <+ ast::Expr(Assign, (name, <+>, <->, is_global, <->,
-                           fwd_marker(vt.1), ast::Expr(Var, ""), real_tn,
-                           vt.1)) +>
+                          fwd_marker(vt.1), ast::Expr(Var, ""), real_tn,
+                          vt.1)) +>
 
 // The forward-annotation marker: Var("<fwd>") for a non-record type, or
 // Var("<fwd>~<comma-joined field names>") for a record type.
@@ -7183,12 +7304,12 @@ fwd_fields_str = flds =>
    +m
 
 sig_params: Parser, String, ast::VTypes, ast::VInfos,
-   String => <ast::Expr|>
+  String => <ast::Expr|>
 sig_params = p, name, params, infos, first_tn =>
    sig_params_g(p, name, params, infos, first_tn, <->)
 
 sig_params_g: Parser, String, ast::VTypes, ast::VInfos,
-   String, <> => <ast::Expr|>
+  String, <> => <ast::Expr|>
 sig_params_g = p, name, params, infos, first_tn, is_global =>
    parser_advance(p)
    vt = parse_type(p)
@@ -7206,7 +7327,7 @@ sig_params_g = p, name, params, infos, first_tn, is_global =>
 // return marker, since the selfhost Assign has no type slot).
 is_valid_ct_param_type: ast::ValueType => <>
 is_valid_ct_param_type = [Type, Int, Str, Float, F32, Rune, Flag, RawPtr,
-   I8, I16, I32, I64, U8, U16, U32, U64]
+  I8, I16, I32, I64, U8, U16, U32, U64]
 
 ct_signature: Parser, String, String, ast::CParams => <ast::Expr|>
 ct_signature = p, name, prior_names, cps =>
@@ -7239,16 +7360,16 @@ ct_signature_g = p, name, prior_names, cps, is_global =>
                            !is_valid_ct_param_type(vt.0)
                               |
                                  parser_error(p, 2086,
-                                    "Compile-time parameter type must be Type " +
-                                    "or a scalar type.")
+                                   "Compile-time parameter type must be Type " +
+                                   "or a scalar type.")
                                  p.ct_scope = ""
                                  <-->
                               |
                                  next_cps = cps
                                  next_cps += ast::CompileTimeParam(ct_name,
-                                    vt.0, vt.1)
+                                   vt.0, vt.1)
                                  ct_params_tail_g(p, name, names, next_cps,
-                                    is_global)
+                                   is_global)
                   |
                      p.ct_scope = ""
                      <-->
@@ -7286,7 +7407,7 @@ parse_ct_type = p =>
                            nm = p.curr.text
                            parser_advance(p)
                            parse_type_suffixes(p,
-                              mk_tp(ast::ValueType(Unknown), ast::TypeInfo(TypeVar, nm), <+>))
+                             mk_tp(ast::ValueType(Unknown), ast::TypeInfo(TypeVar, nm), <+>))
       | parse_type(p)
 
 // After one "#! Name: Type" group: a comma leads to another "#! T: Type" or to
@@ -7303,18 +7424,18 @@ ct_params_tail_g = p, name, ct_names, cps, is_global =>
          p.curr.kind
             [CT] ct_signature_g(p, name, ct_names, cps, is_global)
             | ct_runtime_params_g(p, name, ct_names, cps, ast::VTypes(),
-               ast::VInfos(), is_global)
+              ast::VInfos(), is_global)
       | ct_signature_arrow_g(p, name, ct_names, cps, ast::VTypes(),
-         ast::VInfos(), is_global)
+        ast::VInfos(), is_global)
 
 // The runtime (positional) params of a generic signature, comma-separated.
 ct_runtime_params: Parser, String, String, ast::CParams,
-   ast::VTypes, ast::VInfos => <ast::Expr|>
+  ast::VTypes, ast::VInfos => <ast::Expr|>
 ct_runtime_params = p, name, ct_names, cps, params, infos =>
    ct_runtime_params_g(p, name, ct_names, cps, params, infos, <->)
 
 ct_runtime_params_g: Parser, String, String, ast::CParams,
-   ast::VTypes, ast::VInfos, <> => <ast::Expr|>
+  ast::VTypes, ast::VInfos, <> => <ast::Expr|>
 ct_runtime_params_g = p, name, ct_names, cps, params, infos, is_global =>
    vt = parse_ct_type(p)
    !vt.2
@@ -7330,14 +7451,14 @@ ct_runtime_params_g = p, name, ct_names, cps, params, infos, is_global =>
             [Comma]
                parser_advance(p)
                ct_runtime_params_g(p, name, ct_names, cps, next_params,
-                  next_infos, is_global)
+                 next_infos, is_global)
             | ct_signature_arrow_g(p, name, ct_names, cps, next_params,
-               next_infos, is_global)
+              next_infos, is_global)
 
 // "=> ReturnType" closes the generic signature; the forward marker carries the
 // return type's record field names (like the single-type form).
 ct_signature_arrow: Parser, String, String, ast::CParams,
-   ast::VTypes, ast::VInfos => <ast::Expr|>
+  ast::VTypes, ast::VInfos => <ast::Expr|>
 ct_signature_arrow = p, name, ct_names, cps, params, infos =>
    ct_signature_arrow_g(p, name, ct_names, cps, params, infos, <->)
 
@@ -7345,7 +7466,7 @@ acc_add_cp: ast::CParams, String => ast::CParams
 acc_add_cp = acc, name =>
    out = acc
    out += ast::CompileTimeParam(name, ast::ValueType(Type),
-      ast::TypeInfo(Prim, ast::ValueType(Type)))
+     ast::TypeInfo(Prim, ast::ValueType(Type)))
    out
 
 cparams_of_names: String, Int, String, ast::CParams => ast::CParams
@@ -7364,7 +7485,7 @@ cparams_of_names = s, i, cur, acc =>
             | cparams_of_names(s, i + 1, cur + s(i..i + 1), acc)
 
 ct_signature_arrow_g: Parser, String, String, ast::CParams,
-   ast::VTypes, ast::VInfos, <> => <ast::Expr|>
+  ast::VTypes, ast::VInfos, <> => <ast::Expr|>
 ct_signature_arrow_g = p, name, ct_names, cps, params, infos, is_global =>
    p.curr.text
       ["=>"]
@@ -7379,19 +7500,19 @@ ct_signature_arrow_g = p, name, ct_names, cps, params, infos, is_global =>
             next_ut = is_gen | gen_ut | p.user_types
             p.user_types = next_ut
             <+ ast::Expr(Assign, (name, <+>, <->, is_global, <->,
-               fwd_marker(ret.1), ast::Expr(Var, ""), marker,
-               sig_ti)) +>
+              fwd_marker(ret.1), ast::Expr(Var, ""), marker,
+              sig_ti)) +>
       |
          p.ct_scope = ""
          <-->
 
 sig_arrow: Parser, String, ast::VTypes, ast::VInfos,
-   String => <ast::Expr|>
+  String => <ast::Expr|>
 sig_arrow = p, name, params, infos, first_tn =>
    sig_arrow_g(p, name, params, infos, first_tn, <->)
 
 sig_arrow_g: Parser, String, ast::VTypes, ast::VInfos,
-   String, <> => <ast::Expr|>
+  String, <> => <ast::Expr|>
 sig_arrow_g = p, name, params, infos, first_tn, is_global =>
    p.curr.text
       ["=>"]
@@ -7404,10 +7525,10 @@ sig_arrow_g = p, name, params, infos, first_tn, is_global =>
             // 9th field carries the full Fn TypeInfo (params + return) for
             // the signature dump and call-return inference.
             sig_ti = ast::TypeInfo(Fn, (params, infos, ret.0, ret.1,
-               ast::CParams()))
+              ast::CParams()))
             marker = "@sig0:" + first_tn
             <+ ast::Expr(Assign, (name, <+>, <->, is_global, <->,
-               fwd_marker(ret.1), ast::Expr(Var, ""), marker, sig_ti)) +>
+              fwd_marker(ret.1), ast::Expr(Var, ""), marker, sig_ti)) +>
       | <-->
 
 parse_indented_rhs: Parser => <ast::Expr|>
@@ -7428,7 +7549,10 @@ parse_indented_rhs = p =>
                p.module_level = <->
                saved_cd = p.cycle_depth
                p.cycle_depth = 0
+               saved_cont = p.cont_depth
+               p.cont_depth = 0
                res = block_stmts(p, ast::Exprs())
+               p.cont_depth = saved_cont
                p.cycle_depth = saved_cd
                p.module_level = saved_ml
                p.in_rhs = saved_rhs
@@ -7445,8 +7569,8 @@ parse_indented_rhs = p =>
                   | <-->
             |
                parser_error(p, 2064,
-                  "Expected indented block after '=', got '" +
-                  p.curr.text + "'")
+                 "Expected indented block after '=', got '" +
+                 p.curr.text + "'")
                <-->
 
 parse_assign_rhs: Parser => <ast::Expr|>
@@ -7517,10 +7641,10 @@ fold_const_unary = op, fo =>
                tc.expr
                   [Int n]
                      ast::Expr(TypeCast, ast::CastExpr(tc.target_type,
-                        ast::Expr(Int, 0 - n)))
+                       ast::Expr(Int, 0 - n)))
                   [Float f]
                      ast::Expr(TypeCast, ast::CastExpr(tc.target_type,
-                        ast::Expr(Float, 0.0 - f)))
+                       ast::Expr(Float, 0.0 - f)))
                   | ast::Expr(Unary, (op, fo))
             | ast::Expr(Unary, (op, fo))
       [BitNot]
@@ -7530,7 +7654,7 @@ fold_const_unary = op, fo =>
                tc.expr
                   [Int n]
                      ast::Expr(TypeCast, ast::CastExpr(tc.target_type,
-                        ast::Expr(Int, .!.n)))
+                       ast::Expr(Int, .!.n)))
                   | ast::Expr(Unary, (op, fo))
             | ast::Expr(Unary, (op, fo))
       | ast::Expr(Unary, (op, fo))
@@ -7607,8 +7731,8 @@ fold_const_bin = op, fl, fr =>
                                  fold_const_bin_int_val(op, a, b)
                                     | v =>
                                        ast::Expr(TypeCast,
-                                          ast::CastExpr(tcl.target_type,
-                                             ast::Expr(Int, v)))
+                                         ast::CastExpr(tcl.target_type,
+                                           ast::Expr(Int, v)))
                                     | orig
                               | orig
                         [Float a]
@@ -7617,8 +7741,8 @@ fold_const_bin = op, fl, fr =>
                                  fold_const_bin_float_val(op, a, b)
                                     | v =>
                                        ast::Expr(TypeCast,
-                                          ast::CastExpr(tcl.target_type,
-                                             ast::Expr(Float, v)))
+                                         ast::CastExpr(tcl.target_type,
+                                           ast::Expr(Float, v)))
                                     | orig
                               | orig
                         | orig
@@ -7644,17 +7768,17 @@ fold_const_cast = vt, fi =>
          fi
             [Int n]
                ast::Expr(TypeCast, ast::CastExpr(vt,
-                  ast::Expr(Float, Float(n))))
+                 ast::Expr(Float, Float(n))))
             [Float f]
                ast::Expr(TypeCast, ast::CastExpr(vt, ast::Expr(Float, f)))
             [TypeCast tc]
                tc.expr
                   [Int n]
                      ast::Expr(TypeCast, ast::CastExpr(vt,
-                        ast::Expr(Float, Float(n))))
+                       ast::Expr(Float, Float(n))))
                   [Float f]
                      ast::Expr(TypeCast, ast::CastExpr(vt,
-                        ast::Expr(Float, f)))
+                       ast::Expr(Float, f)))
                   | orig
             | orig
       [Int, I64]
@@ -7673,15 +7797,15 @@ fold_const_cast = vt, fi =>
                ast::Expr(TypeCast, ast::CastExpr(vt, ast::Expr(Int, n)))
             [Float f]
                ast::Expr(TypeCast, ast::CastExpr(vt,
-                  ast::Expr(Int, Int(f))))
+                 ast::Expr(Int, Int(f))))
             [TypeCast tc]
                tc.expr
                   [Int n]
                      ast::Expr(TypeCast, ast::CastExpr(vt,
-                        ast::Expr(Int, n)))
+                       ast::Expr(Int, n)))
                   [Float f]
                      ast::Expr(TypeCast, ast::CastExpr(vt,
-                        ast::Expr(Int, Int(f))))
+                       ast::Expr(Int, Int(f))))
                   | orig
             | orig
       | orig
@@ -7695,7 +7819,7 @@ fold_const_expr = consts, e =>
          fold_const_unary(u.0, fold_const_expr(consts, u.1))
       [Bin b]
          fold_const_bin(b.0, fold_const_expr(consts, b.1),
-            fold_const_expr(consts, b.2))
+           fold_const_expr(consts, b.2))
       [TypeCast tc]
          fold_const_cast(tc.target_type, fold_const_expr(consts, tc.expr))
       | e
@@ -7734,7 +7858,7 @@ fold_const_expr_mod = consts, cur_mod, e =>
          fold_const_unary(u.0, fold_const_expr_mod(consts, cur_mod, u.1))
       [Bin b]
          fold_const_bin(b.0, fold_const_expr_mod(consts, cur_mod, b.1),
-            fold_const_expr_mod(consts, cur_mod, b.2))
+           fold_const_expr_mod(consts, cur_mod, b.2))
       [TypeCast tc]
          fold_const_cast(tc.target_type, fold_const_expr_mod(consts, cur_mod, tc.expr))
       | e
@@ -7768,7 +7892,7 @@ fold_program_consts = exprs =>
                         !has_prior
                            | consts += ConstEntry(name, ast::Expr(Var, ""))
                   out += ast::Expr(Assign, (a.0, a.1, a.2, a.3, a.4,
-                     eff_re, a.6, a.7, a.8))
+                    eff_re, a.6, a.7, a.8))
          |
             out += e
    out
@@ -7792,40 +7916,40 @@ parse_named_assign_g = p, name, is_compound, is_global =>
          rhs = parse_assign_rhs(p)
          p.in_rhs = <->
          rhs
-                  | re =>
-                     is_mutable = name_is_primed(name)
-                     is_mutable && !is_compound && expr_is_string_literal(re)
+            | re =>
+               is_mutable = name_is_primed(name)
+               is_mutable && !is_compound && expr_is_string_literal(re)
+                  |
+                     parser_error(p, 2001, "Cannot make a mutable binding of " +
+                       "a string literal; assign a copy with '++'.")
+                     <-->
+                  |
+                     is_top = p.module_level && p.fn_depth == 0 &&
+                       p.choice_depth == 0 && p.branch_body_depth == 0
+                     has_prior = const_has_name(p.consts, name)
+                     can_fold = is_top && !is_mutable && !is_compound
+                     folded_re = can_fold | fold_const_expr(p.consts, re) | re
+                     eff_re = can_fold && is_const_folded_expr(folded_re) | folded_re | re
+                     is_top
                         |
-                           parser_error(p, 2001, "Cannot make a mutable binding of " +
-                              "a string literal; assign a copy with '++'.")
-                           <-->
-                        |
-                           is_top = p.module_level && p.fn_depth == 0 &&
-                              p.choice_depth == 0 && p.branch_body_depth == 0
-                           has_prior = const_has_name(p.consts, name)
-                           can_fold = is_top && !is_mutable && !is_compound
-                           folded_re = can_fold | fold_const_expr(p.consts, re) | re
-                           eff_re = can_fold && is_const_folded_expr(folded_re) | folded_re | re
-                           is_top
-                              |
-                                 !is_mutable && !is_compound && !is_global &&
-                                    !has_prior && is_const_folded_expr(eff_re)
-                                    |
-                                       cs = p.consts
-                                       cs += ConstEntry(name, eff_re)
-                                       p.consts = cs
-                                    |
-                                       !has_prior
-                                          |
-                                             cs = p.consts
-                                             cs += ConstEntry(name, ast::Expr(Var, ""))
-                                             p.consts = cs
-                                 p.ct_scope = ""
-                           n = ast::Expr(Assign, (name, is_mutable, is_compound,
-                              is_global, <->, eff_re, ast::Expr(Var, ""), "",
-                              ast::TypeInfo(Prim, ast::ValueType(Unknown))))
-                           seq_cont_loop(p, n)
-                  | <-->
+                           !is_mutable && !is_compound && !is_global &&
+                             !has_prior && is_const_folded_expr(eff_re)
+                             |
+                                cs = p.consts
+                                cs += ConstEntry(name, eff_re)
+                                p.consts = cs
+                             |
+                                !has_prior
+                                   |
+                                      cs = p.consts
+                                      cs += ConstEntry(name, ast::Expr(Var, ""))
+                                      p.consts = cs
+                           p.ct_scope = ""
+                     n = ast::Expr(Assign, (name, is_mutable, is_compound,
+                       is_global, <->, eff_re, ast::Expr(Var, ""), "",
+                       ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+                     seq_cont_loop(p, n)
+            | <-->
 
 expr_is_string_literal: ast::Expr => <>
 expr_is_string_literal = e => e [Str]
@@ -7846,8 +7970,8 @@ parse_global_assign = p, name =>
          rhs
             | re =>
                n = ast::Expr(Assign, (name, <->, <->, <+>, <->, re,
-                  ast::Expr(Var, ""), "",
-                  ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+                 ast::Expr(Var, ""), "",
+                 ast::TypeInfo(Prim, ast::ValueType(Unknown))))
                seq_cont_loop(p, n)
             | <-->
 
@@ -7907,8 +8031,8 @@ parse_finish_assignment = p, lhs =>
       | re =>
          is_mut_lhs = name_is_primed(lhs_name(lhs))
          n = ast::Expr(Assign, (lhs_name(lhs), is_mut_lhs, is_compound,
-            <->, <->, re, lhs, "",
-            ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+           <->, <->, re, lhs, "",
+           ast::TypeInfo(Prim, ast::ValueType(Unknown))))
          lhs
             [Call] choice_cont(p, n)
             | seq_cont_loop(p, n)
@@ -8035,7 +8159,6 @@ parse_int_text = text =>
                   okf' = <->
          okf' | <+ val' +>
       | <-->
-
 
 // Strips a float suffix ("f32", "f64", "f", "F").
 float_clean: String => String

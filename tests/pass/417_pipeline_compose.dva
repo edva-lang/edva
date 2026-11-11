@@ -1,0 +1,179 @@
+// Regression tests for DVA-55:
+// 1. Multiline leading `$>`, `$>>`, and `.>` pipeline continuations
+// 2. Dedicated `.>` function composition operator across unary, partial, curried,
+//    coercion, constructor, choice, accessor, underscore-lambda, and overloaded stages
+
+#use io
+#use str
+
+#type Point (
+   x: Int,
+   y: Int
+)
+
+#type Wrapper (
+   val: Int,
+   tag: Int = 99
+)
+
+inc: Int => Int
+inc = x => x + 1
+
+double: Int => Int
+double = x => x * 2
+
+square: Int => Int
+square = x => x * x
+
+add: Int, Int => Int
+add = x, y => x + y
+
+sub: Int, Int => Int
+sub = x, y => x - y
+
+make_adder: Int => (Int => Int)
+make_adder = d => x => x + d
+
+shift_pt: Point, Int => Point
+shift_pt = p, dx => Point(x = p.x + dx, y = p.y)
+
+safe_div: Int, Int => <Int|>
+safe_div = a, b =>
+   b == 0
+      | <-->
+      | <+ a / b +>
+
+safe_inc: Int => <Int|>
+safe_inc = x => <+ x + 1 +>
+
+// Arity-overloaded family
+pick: Int => Int
+pick = x => x + 100
+
+pick: Int, Int => Int
+pick = x, y => x * y
+
+apply_fn: (Int => Int), Int => Int
+apply_fn = f, x => f(x)
+
+// Top-level composed functions without explicit type annotations
+inc_then_double = inc .> double
+
+pipeline_three = inc
+   .> double
+   .> square
+
+partial_both = add(10)
+   .> sub(3)
+   .> double
+
+curried_comp = inc .> make_adder(10) .> double
+
+overload_comp = pick .> pick(2)
+
+choice_comp = inc .> [1] 10 [2] 20 | 30
+
+accessor_comp = shift_pt(5) .> (.x) .> double
+
+section_comp = inc .> (_ * 3) .> (+ 2)
+
+coercion_comp = inc .> i32 .> Int
+
+ctor_comp = inc .> Wrapper
+
+// 1. Basic unary composition & multiline `.>`
+inc_then_double(4) == 10 | _ | #exit 1
+(4 $> inc_then_double) == 10 | _ | #exit 2
+pipeline_three(2) == 36 | _ | #exit 3
+
+// 2. Multi-arg partial application on LHS and RHS of `.>`
+partial_both(5) == 24 | _ | #exit 4
+
+// 3. Saturated curried calls on RHS of `$>` and `.>`
+(5 $> make_adder(10)) == 15 | _ | #exit 5
+curried_comp(4) == 30 | _ | #exit 6
+
+// 4. Arity-overloaded functions in `.>`
+overload_comp(5) == 210 | _ | #exit 7
+
+// 5. Choice match-functions, accessor sections, operator/underscore sections, coercions, constructors
+choice_comp(0) == 10 | _ | #exit 8
+choice_comp(1) == 20 | _ | #exit 9
+choice_comp(9) == 30 | _ | #exit 10
+
+pt = Point(x = 7, y = 9)
+accessor_comp(pt) == 24 | _ | #exit 11
+
+section_comp(4) == 17 | _ | #exit 12
+coercion_comp(9) == 10 | _ | #exit 13
+
+w = ctor_comp(6)
+w.val == 7 && w.tag == 99 | _ | #exit 14
+
+// 6. Passing composed function as value to higher-order function (both variable and inline)
+apply_fn(inc_then_double, 6) == 14 | _ | #exit 15
+apply_fn(inc .> double, 6) == 14 | _ | #exit 16
+
+// 7. Using composed function directly in `@` cycle
+sum_cyc' = 0
+acc_step: Int => ()
+acc_step = v =>
+   sum_cyc' ::= sum_cyc' + v
+
+(1, 2, 3) @ inc .> double .> acc_step
+sum_cyc' == 18 | _ | #exit 17
+
+// 8. Multiline leading `$>` pipeline
+res_pipe = 5
+   $> inc
+   $> add(10)
+   $> double
+   $> sub(4)
+res_pipe == 28 | _ | #exit 18
+
+// 9. Multiline leading `$>>` monadic bind pipeline
+res_bind = <+ 20 +>
+   $>> safe_div(2)
+   $>> safe_inc
+   | v => v
+   | 0
+res_bind == 11 | _ | #exit 19
+
+res_bind_err = <+ 20 +>
+   $>> safe_div(0)
+   $>> safe_inc
+   | v => v
+   | -1
+res_bind_err == -1 | _ | #exit 20
+
+// 10. Multiline leading `$>` after inline lambda stage and block stage
+res_lambda_stage = 3
+   $> y => y + 4
+   $> z =>
+      t = z * 2
+      t + 1
+   $> double
+res_lambda_stage == 30 | _ | #exit 21
+
+// 11. Multiline choice chained into aligned leading `$>`, plus leading `$>` inside a choice arm
+mode = 2
+res_choice_pipe = mode
+   [1]
+      10
+         $> inc
+   [2]
+      20
+         $> add(5)
+   | 0
+   $> double
+res_choice_pipe == 50 | _ | #exit 22
+
+// 12. Headless choice composed on LHS of `.>`
+match_then_double =
+   [1] 10
+   [2] 20
+   | 30
+   .> double
+match_then_double(2) == 40 | _ | #exit 23
+
+io::out $ str::from_int(res_pipe + res_bind + res_lambda_stage + res_choice_pipe + match_then_double(2))

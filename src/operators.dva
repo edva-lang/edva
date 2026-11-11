@@ -32,6 +32,7 @@ bin_info = text =>
       ["-"]  <+ BinOpInfo(140, 150, ast::BinaryOp(Sub), <->) +>
       ["$>"]  <+ BinOpInfo(40, 50, ast::BinaryOp(Feed), <->) +>
       ["$>>"]  <+ BinOpInfo(40, 50, ast::BinaryOp(Bind), <->) +>
+      [".>"]  <+ BinOpInfo(40, 50, ast::BinaryOp(Compose), <->) +>
       ["*"]  <+ BinOpInfo(150, 160, ast::BinaryOp(Mul), <->) +>
       ["/"]  <+ BinOpInfo(150, 160, ast::BinaryOp(Div), <->) +>
       ["%"]  <+ BinOpInfo(150, 160, ast::BinaryOp(Mod), <->) +>

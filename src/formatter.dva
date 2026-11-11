@@ -196,7 +196,7 @@ split_source_lines = src =>
       eff_indent = sp' + tabs' * 3
       is_blank = st' == 0 && idx' == ?cleaned
       is_comm = st' == 0 && !is_blank && idx' + 1 < ?cleaned &&
-         cleaned(idx') == '/ && (cleaned(idx' + 1) == '/ || cleaned(idx' + 1) == '*)
+        cleaned(idx') == '/ && (cleaned(idx' + 1) == '/ || cleaned(idx' + 1) == '*)
       next_st = scan_line_state(cleaned, st')
       res += LineInfo(cleaned, st', next_st, eff_indent, tabs' > 0, is_blank, is_comm)
       st' = next_st
@@ -296,14 +296,14 @@ format_code_body = body =>
                                              |
                                                 b += c
                                                 need_sp = i' + 1 < n &&
-                                                   !(c1 ['\s, '\t, '), '], '}, ',, ';])
+                                                  !(c1 ['\s, '\t, '), '], '}, ',, ';])
                                                 need_sp | b += '\s
                                                 i' = i' + 1
                                              |
                                                 prev_c = i' > 0 | body(i' - 1) | 0
                                                 is_annot_colon = c == ': &&
-                                                   !(prev_c [':, '-, '\s, '\t]) &&
-                                                   !(c1 [':, '=, '\s, '\t, '), '], '}, ',, ';])
+                                                  !(prev_c [':, '-, '\s, '\t]) &&
+                                                  !(c1 [':, '=, '\s, '\t, '), '], '}, ',, ';])
                                                 is_annot_colon
                                                    |
                                                       b += ": "
@@ -385,7 +385,8 @@ starts_with_str: String, String => <>
 starts_with_str = s, pfx =>
    ?s !< ?pfx && s(0..?pfx) == pfx
 
-// True when a line starts a choice arm (|, !|, |->, |+>, |--> , |++>, [guard], ![guard]).
+// True when a line starts a choice arm (|, !|, |->, |+>, |--> , |++>, [guard], ![guard])
+// or a leading pipeline stage ($>, $>>, .>).
 starts_with_choice_sep: String => <>
 starts_with_choice_sep = code =>
    ?code == 0 | --| <->
@@ -393,18 +394,19 @@ starts_with_choice_sep = code =>
    c0 == '[ | --| <+>
    starts_with_str(code, "![") | --| <+>
    starts_with_str(code, "!|") | --| <+>
+   starts_with_str(code, "$>") || starts_with_str(code, ".>") | --| <+>
    c0 == '| && (?code == 1 || code(1) != '|)
 
 // True when a line is an inline pipe arm (`| first_line` or `!| first_line`).
 is_inline_pipe_arm: String => <>
 is_inline_pipe_arm = code =>
    starts_with_str(code, "|->") || starts_with_str(code, "|+>") ||
-      starts_with_str(code, "|-->") || starts_with_str(code, "|++>")
-      | <->
-      |
-         starts_with_str(code, "!|")
-            | ?code > 2
-            | (?code > 1 && code(0) == '| && code(1) != '|)
+     starts_with_str(code, "|-->") || starts_with_str(code, "|++>")
+     | <->
+     |
+        starts_with_str(code, "!|")
+           | ?code > 2
+           | (?code > 1 && code(0) == '| && code(1) != '|)
 
 // True when a line ends with a token that opens a standard +3 indented block on the next line.
 ends_with_block_opener: String => <>
@@ -418,23 +420,24 @@ ends_with_block_opener = code =>
    starts_with_str(code, "#type ") && ends_with_str(code, "<") | --| <+>
    (code(0) == '[ || starts_with_str(code, "![")) && ends_with_str(code, "]") | --| <+>
    ends_with_str(code, "=") && !ends_with_str(code, "==") &&
-      !ends_with_str(code, "!=") && !ends_with_str(code, "^=") &&
-      !ends_with_str(code, "<=") && !ends_with_str(code, ">=")
+     !ends_with_str(code, "!=") && !ends_with_str(code, "^=") &&
+     !ends_with_str(code, "<=") && !ends_with_str(code, ">=")
 
 // True when a line ends with a continuation operator whose wrapped line indents +2 spaces.
 ends_with_cont_op: String => <>
 ends_with_cont_op = code =>
    ?code == 0 || ends_with_block_opener(code) | --| <->
    ends_with_str(code, "+") && !ends_with_str(code, "++") &&
-      !ends_with_str(code, "<+>") && !ends_with_str(code, "<++>") | --| <+>
+     !ends_with_str(code, "<+>") && !ends_with_str(code, "<++>") | --| <+>
    ends_with_str(code, "-") && !ends_with_str(code, "--") &&
-      !ends_with_str(code, "<->") && !ends_with_str(code, "<-->") | --| <+>
+     !ends_with_str(code, "<->") && !ends_with_str(code, "<-->") | --| <+>
    ends_with_str(code, "*") || ends_with_str(code, "/") || ends_with_str(code, "%") ||
-      ends_with_str(code, "&&") || ends_with_str(code, "||") ||
-      ends_with_str(code, "==") || ends_with_str(code, "!=") ||
-      ends_with_str(code, "!<") || ends_with_str(code, "!>") ||
-      ends_with_str(code, ",") || ends_with_str(code, ";") || ends_with_str(code, "$") ||
-      ends_with_str(code, ".&.") || ends_with_str(code, ".|.") || ends_with_str(code, ".^.")
+     ends_with_str(code, "&&") || ends_with_str(code, "||") ||
+     ends_with_str(code, "==") || ends_with_str(code, "!=") ||
+     ends_with_str(code, "!<") || ends_with_str(code, "!>") ||
+     ends_with_str(code, ",") || ends_with_str(code, ";") || ends_with_str(code, "$") ||
+     ends_with_str(code, "$>") || ends_with_str(code, "$>>") || ends_with_str(code, ".>") ||
+     ends_with_str(code, ".&.") || ends_with_str(code, ".|.") || ends_with_str(code, ".^.")
 
 // Check whether a child line at `raw` under `parent_raw` is followed by an intermediate
 // dedent `mid` (`parent_raw < mid < raw`) before returning to `<= parent_raw`.
@@ -463,9 +466,9 @@ compute_child_delta = lines, idx, parent_code, child_code, parent_raw, child_raw
    is_inline_pipe_arm(parent_code) && !ends_with_block_opener(parent_code)
       |
          ends_with_cont_op(parent_code) &&
-            has_intermediate_dedent(lines, idx, parent_raw, child_raw)
-            | 4
-            | 2
+           has_intermediate_dedent(lines, idx, parent_raw, child_raw)
+           | 4
+           | 2
       |
          ends_with_cont_op(parent_code) | 2 | 3
 
@@ -624,7 +627,7 @@ parse_ast_signature = src, filename =>
                d = diags(0)!!
                fn = d.file != "" | d.file + ":" | ""
                <- fn + str::from_int(d.line) + ":" + str::from_int(d.col) +
-                  ": E" + str::from_int(d.code) + ": " + d.msg +>
+                 ": E" + str::from_int(d.code) + ": " + d.msg +>
             | <+ show::show_expr(prog) ->
       |
          ?diags > 0
@@ -632,7 +635,7 @@ parse_ast_signature = src, filename =>
                d = diags(0)!!
                fn = d.file != "" | d.file + ":" | ""
                <- fn + str::from_int(d.line) + ":" + str::from_int(d.col) +
-                  ": E" + str::from_int(d.code) + ": " + d.msg +>
+                 ": E" + str::from_int(d.code) + ": " + d.msg +>
             | <- filename + ": syntax error" +>
 
 // Format Edva source code and verify AST equivalence.
