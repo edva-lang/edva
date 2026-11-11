@@ -321,7 +321,7 @@ run_showcase = !=>
    // its text bytes (use `str::from_int(n)` to format integers as decimal text).
    b = {128}
    b += ("id=", str::from_int(id2), " status=", "ok",
-      " mask=", str::from_int(compile_time_mask))
+     " mask=", str::from_int(compile_time_mask))
    // Unfrozen builder supports byte indexing `b(i)` and slicing `b(a..b)`:
    check(b(0) == 'i && b(0..4) == "id=2", "unfrozen builder indexing & slicing")
    // Append raw byte tuple (ASCII '!' = 33):
@@ -346,19 +346,19 @@ run_showcase = !=>
    pt_alias: Point2
    pt_alias = (x = 6.0, y = 4.0)
    check(v2.x == pt_alias.x && v2.y == pt_alias.y && v_def.x == 0.0,
-      "nominal record alias & field-checked unification")
+     "nominal record alias & field-checked unification")
    check(add(10, 20) == 30 && add(10, 20, 12) == 42, "static arity function overloading")
 
    // Packed bitfield manipulation & `#size` compile-time byte size operator:
    flags = FrameFlags(fin = <+>, opcode = 2, masked = <+>, payload = 125)
    check(#size FrameFlags == 2 && flags.fin && flags.opcode == 2 && flags.payload == 125,
-      "packed bitfields")
+     "packed bitfields")
 
    // Typed memory view `@[addr Type]` over a `#packed` struct:
    px = Pixel(r = 10u8, g = 20u8, b = 30u8, a = 255u8)
    px_view = @[&px Pixel]
    check(#size Pixel == 4 && Int(px_view.r) == 10 && Int(px_view.a) == 255,
-      "typed memory view @[addr Type]")
+     "typed memory view @[addr Type]")
 
    // --- Section E: Tuples, Repetition, Growable Arrays & Hash Maps ---
    // Repetition `expr {N}` creates an N-element homogeneous record; splices flat in tuples:
@@ -394,7 +394,7 @@ run_showcase = !=>
    removed_bob = scores ^- "bob"
    check(removed_bob && !(scores ^? "bob") && ?scores == 2, "map delete ^-")
 
-   // --- Section F: Lambdas, Sections, Partial Application & Pipes (`$>`, `$`) ---
+   // --- Section F: Lambdas, Sections, Partial Application, Pipes (`$>`, `$`) & Composition (`.>`) ---
    // Placeholder lambda `(add(10, _))` (innermost parens around `_` desugar to `_ => ...`),
    // operator sections `(* 3)`, `(+ 5)`, and field-accessor section `(.0)`:
    triple = * 3
@@ -402,11 +402,16 @@ run_showcase = !=>
    first_elem = (.0)
    add_ten = (add(10, _))
 
-   // Multi-argument feed pipe `$>` (prepends LHS as first argument to RHS call)
-   // and low-precedence right-associative apply `$` (appends RHS as last argument):
-   piped_val = 4 $> add(6) $> triple $> inc_by_5
+   // Multi-argument feed pipe `$>` (prepends LHS as first argument to RHS call),
+   // multiline leading `$>` continuations, function composition `.>`, and right-associative apply `$`:
+   piped_val = 4
+      $> add(6)
+      $> triple
+      $> inc_by_5
+   composed_fn = add(6) .> triple .> inc_by_5
    applied_val = add(100) $ 20 + 3
-   check(piped_val == 35 && applied_val == 123, "feed $> and apply $ pipelines")
+   check(piped_val == 35 && composed_fn(4) == 35 && applied_val == 123,
+     "feed $>, composition .>, and apply $ pipelines")
    check(first_elem((42, 99)) == 42 && add_ten(7) == 17, "field section (.0) & partial application")
 
    // --- Section G: Choices, Guards & Empty-Body Flag Extractors ---
@@ -447,10 +452,12 @@ run_showcase = !=>
    port_ok = validate_port(8080) | "ok" | err => err
    port_bad = validate_port(70000) | "ok" | err => err
    check(port_ok == "ok" && port_bad == "port out of range (1..65535)",
-      "RamNP < | E > positional matching")
+     "RamNP < | E > positional matching")
 
    // Monadic bind `$>>` chains operations over positive payloads of RamPP / RamPN:
-   bound_res = parse_positive_int("15") $>> (x => <+ x * 2 ->) $>> (y => <+ y + 12 ->)
+   bound_res = parse_positive_int("15")
+      $>> (x => <+ x * 2 ->)
+      $>> (y => <+ y + 12 ->)
    check((bound_res |_| 0) == 42, "monadic bind $>> over RamPP")
 
    sum_ok = sum_two_parsed("19", "23") |_| 0
@@ -495,11 +502,11 @@ run_showcase = !=>
 
    // --- Section K: Generics, Structural Introspection, Intrinsics, Arenas & Concurrency ---
    check(describe_type(42) == "Int(42)" && describe_type("hi") == "String(\"hi\")",
-      "generic #!T dispatch")
+     "generic #!T dispatch")
    check(describe_type(v2) == "Record(Vec2, fields=2)",
-      "compile-time structural record introspection [(..)]")
+     "compile-time structural record introspection [(..)]")
    check(describe_type(s1) == "Enum(Shape, variants=3)",
-      "compile-time structural enum introspection [<..>]")
+     "compile-time structural enum introspection [<..>]")
 
    // Hardware LLVM intrinsics (`%clamp`, `%abs`, `%sqrt`, SIMD tuple `%sum`, `%dot`):
    vec_a = (1, 2, 3, 4)

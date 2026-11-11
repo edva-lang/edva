@@ -18,13 +18,12 @@
    apply3: #! T: Type, #! U: Type, #! V: Type, #! W: Type, (T, U, V => W), T, U, V => W
    apply3 = f, a, b, c => f(a, b, c)
 
-   // twice/thrice: apply f 2/3 times to x ("f $ f $ x" is right-assoc, so it is
-   // f(f(x))).
+   // twice/thrice: apply f 2/3 times to x via function composition `.>`.
    twice: #! T: Type, (T => T), T => T
-   twice = f, x => f $ f $ x
+   twice = f, x => x $> (f .> f)
 
    thrice: #! T: Type, (T => T), T => T
-   thrice = f, x => f $ f $ f $ x
+   thrice = f, x => x $> (f .> f .> f)
 
    // flip: call f with the last two arguments swapped.
    flip: #! T: Type, #! U: Type, #! V: Type, (T, U => V), U, T => V
@@ -35,15 +34,15 @@
    on: #! T: Type, #! V: Type, (T, T => V), (T => T), T, T => V
    on = f, g, a, b => f(g(a), g(b))
 
-   // compose: f after g — "f $ g $ x" is f(g(x)). Curried: compose(f, g) is a
-   // function; the type params A/B/C are inferred from the two function args.
+   // compose: f after g — right-to-left composition ("f(g(x))", i.e. `g .> f`).
+   // Curried: compose(f, g) is a function; type params A/B/C are inferred from the two function args.
    compose: #! A: Type, #! B: Type, #! C: Type, (B => C), (A => B) => (A => C)
-   compose = f, g => x => f $ g $ x
+   compose = f, g => g .> f
 
-   // pipe: g after f — left-to-right function composition ("g(f(x))"). Curried:
-   // pipe(f, g) is a function.
+   // pipe: g after f — left-to-right function composition (`f .> g`, i.e. "g(f(x))").
+   // Curried: pipe(f, g) is a function.
    pipe: #! A: Type, #! B: Type, #! C: Type, (A => B), (B => C) => (A => C)
-   pipe = f, g => x => g $ f $ x
+   pipe = f, g => f .> g
 
    // const: return its first argument, ignoring the second. Curried — the second
    // type param B is deferred to the returned lambda's own call site (deferred

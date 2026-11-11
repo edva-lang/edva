@@ -1597,7 +1597,7 @@ annotate_expr = ctx, env, expr =>
                      ce = ast::CallExpr(split.1, split.2, split.3, 0, 0)
                      call_te = annotate_call(ctx, env, ce)
                      c_call = unify::canon(ctx, call_te.ut)
-                     is_match_dispatch = is_feed
+                     is_match_dispatch = is_feed && (b.2 [Choice])
                      is_match_dispatch
                         |
                            c_call

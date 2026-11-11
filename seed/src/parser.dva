@@ -750,7 +750,11 @@ bp_cont = p, res, min_bp, cmp_line, entry_indent, i =>
 apply_feed_rhs: Parser, ast::Expr, ast::BinaryOp => <ast::Expr|>
 apply_feed_rhs = p, rhs, op =>
    p.branch_body_depth == 0 && op_is_apply_feed(op)
-      | choice_cont(p, rhs)
+      |
+         (tok_is_nl(p.curr) || tok_is_indent(p.curr)) &&
+           !<>(choice_peek_pipe(p, p.indent_level + 1))
+              | <+ rhs +>
+              | choice_cont(p, rhs)
       | <+ rhs +>
 
 // The Pratt min for a user operator's right operand: left-assoc (rbp > lbp)
@@ -6243,7 +6247,7 @@ choice_cont_loop = p, brs, entry_indent, branch_indent =>
    p.fn_depth > 0 && token_is_pipe(p.curr)
       | <+ brs +>
       |
-         min_indent = branch_indent !< 0 | branch_indent | (?brs > 0 | entry_indent | entry_indent + 1)
+         min_indent = branch_indent !< 0 | branch_indent | entry_indent
          peek = choice_peek_pipe(p, min_indent)
          is_dedent = peek
             | pi => branch_indent !< 0 && pi < branch_indent

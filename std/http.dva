@@ -181,8 +181,9 @@ with_body = req, body =>
 
 with_json_body: Request, String => Request
 with_json_body = req, json_str =>
-   r1 = with_header(req, "Content-Type", "application/json")
-   with_body(r1, json_str)
+   req
+      $> with_header("Content-Type", "application/json")
+      $> with_body(json_str)
 
 with_bearer: Request, String => Request
 with_bearer = req, token =>
@@ -793,7 +794,7 @@ ws_decode_frame = raw =>
             hdr_len' = 10
             (raw(2) .&. 0x80) != 0 | --| <-->
             plen' = (raw(2) .<. 56) .|. (raw(3) .<. 48) .|. (raw(4) .<. 40) .|. (raw(5) .<. 32) .|.
-               (raw(6) .<. 24) .|. (raw(7) .<. 16) .|. (raw(8) .<. 8) .|. raw(9)
+              (raw(6) .<. 24) .|. (raw(7) .<. 16) .|. (raw(8) .<. 8) .|. raw(9)
    mask_off = hdr_len'
    masked | hdr_len' = hdr_len' + 4
    total = hdr_len' + plen'
@@ -828,11 +829,11 @@ ws_connect = ws_url =>
                      expected_accept = ws_accept_key(sec_key)
                      host_hdr = (port != 80) | u.host + ":" + str::from_int(port) | u.host
                      req_str = "GET " + path_q + " HTTP/1.1\r\n" +
-                        "Host: " + host_hdr + "\r\n" +
-                        "Upgrade: websocket\r\n" +
-                        "Connection: Upgrade\r\n" +
-                        "Sec-WebSocket-Key: " + sec_key + "\r\n" +
-                        "Sec-WebSocket-Version: 13\r\n\r\n"
+                       "Host: " + host_hdr + "\r\n" +
+                       "Upgrade: websocket\r\n" +
+                       "Connection: Upgrade\r\n" +
+                       "Sec-WebSocket-Key: " + sec_key + "\r\n" +
+                       "Sec-WebSocket-Version: 13\r\n\r\n"
                      net::send_str(fd, req_str) != ?req_str
                         |
                            net::close_fd(fd)
