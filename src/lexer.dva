@@ -218,7 +218,7 @@ is_inline_block_opener: TokKind, String => <>
 is_inline_block_opener = kind, text =>
    kind
       [RBracket] <+>
-      [Op] text ["|", "!|", "=>", "!=>", "@", "@@", ">--"]
+      [Op] text ["|", "!|", "=>", "!=>", "@", "@@", "@>", "@@>", ">--"]
       | <->
 
 // Uniform token constructor; reads/clears the leading-ws state and records

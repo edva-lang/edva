@@ -46,7 +46,7 @@
 <!-- BEGIN operators.yaml -->
 | Tier | LBP | RBP | Operators | Associativity |
 |---|---|---|---|---|
-| cycle | 10 | 20 | `@` `@@` `@>` `>--` `-->` `--^` | left |
+| cycle | 10 | 20 | `@` `@@` `@>` `@@>` `>--` `-->` `--^` | left |
 | sequence | 20 | 30 | `;` | left |
 | apply | 30 | 30 | `$` | right |
 | feed | 40 | 50 | `$>` `$>>` `$+>` `$->` `.>` | left |
@@ -112,9 +112,10 @@ types and cannot be implicitly coerced between one another.
     record and override named fields without repeating the type name;
   - Positional `(a, b)` and named `(x, y)` / `(x = lx, y = ly)` destructuring work in `=`
     bindings, `=>` lambda parameters, and `@` / `@>` cycle binders.
-- **Cycle (`@`) & Expression Cycle (`@>`)**:
+- **Cycle (`@`, `@@`) & Expression Cycle (`@>`, `@@>`)**:
   - Statement cycle: `0..count @ i => (i == 5 | -->)` or condition cycle `(n' !< 8) @ (n' = n' - 8)`
-  - Map / Filter-Map: `xs @> (_ * 2)` (`U{}`), `xs @> x => x > 0 | <+ x * 10 +>` (`U{}`)
+  - Map / Filter-Map: `xs @> (_ * 2)` (`U{}`), `xs @> x => x > 0 | <+ x * 10 +>` (`U{}`), `"abc" @@> r => Rune(Int(r) - 32)` (`Builder` when element is `Rune`)
+  - Direct Freeze / Seeded Builder: `+(words @> (_ + ";"))` (`String`), `({}, words) @> (_ + ",")` (`Builder`), `({64}, words) @> b, w => b += (w, "\n")` (`Builder`)
   - Seeded Fold: `(0, xs) @> (+)` (`Acc`), `(0, pairs) @> acc, (a, b) => acc + a * b`
 - **Cycle Escape**: `found = 0..10 @ i => (i == 3 | -->) >-- 3` (returns `< Int | >`)
 - **Early Return**: `--| value` returns value immediately; bare `--|` returns from void functions.

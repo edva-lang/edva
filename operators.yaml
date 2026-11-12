@@ -220,8 +220,16 @@ operators:
     kind_self: null
     assoc: left
     operands: "Iterable (or (seed, Iterable)), body"
-    result: "U{} (map / filter-map) or Acc (seeded fold)"
-    desc: "expression cycle: map or filter-map an iterable into U{} (when body returns U or < U | >), or fold (seed, iterable) into Acc."
+    result: "Builder (when body returns Rune / < Rune | > or seeded with Builder), U{} (map / filter-map), or Acc (seeded fold)"
+    desc: "expression cycle: map or filter-map an iterable into Builder (when body returns Rune or < Rune | >, or under unary + freeze) or U{} (when body returns U or < U | >), or fold (seed, iterable) into Acc."
+  - symbol: "@@>"
+    tier: cycle
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "String or Builder (or (seed, String/Builder)), body"
+    result: "Builder (when body returns Rune / < Rune | > or seeded with Builder), U{} (map / filter-map), or Acc (seeded fold)"
+    desc: "codepoint expression cycle: iterate Unicode codepoints in a String or Builder, returning a Builder (when body yields Rune or < Rune | >), U{}, or folded Acc."
   - symbol: ">--"
     tier: cycle
     kind: null
@@ -721,7 +729,7 @@ operators:
     assoc: left
     operands: "—"
     result: "a literal / identifier / group"
-    desc: "literals, identifiers, () groups, [] arrays, {expr} Builder literals, operator sections, cycle jumps."
+    desc: "literals, identifiers, () groups, [] arrays, {} / {expr} Builder literals, operator sections, cycle jumps."
 
 non_operators:
   - symbol: "=>"

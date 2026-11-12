@@ -416,7 +416,7 @@ ends_with_block_opener = code =>
    code ["|", "!|", "#public", "#private", "#export", "#foreign"] | --| <+>
    starts_with_str(code, "#foreign ") | --| <+>
    ends_with_str(code, "=>") || ends_with_str(code, "!=>") | --| <+>
-   ends_with_str(code, "@") || ends_with_str(code, "@@") || ends_with_str(code, ">--") | --| <+>
+   ends_with_str(code, "@") || ends_with_str(code, "@@") || ends_with_str(code, "@>") || ends_with_str(code, "@@>") || ends_with_str(code, ">--") | --| <+>
    ends_with_str(code, "(") || ends_with_str(code, "{") | --| <+>
    starts_with_str(code, "#type ") && ends_with_str(code, "<") | --| <+>
    (code(0) == '[ || starts_with_str(code, "![")) && ends_with_str(code, "]") | --| <+>

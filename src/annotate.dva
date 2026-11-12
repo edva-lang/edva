@@ -1101,7 +1101,7 @@ cycle_iter_elem_info = ctx, iter_te, is_rune =>
    c_iter = unify::canon(ctx, iter_te.ut)
    is_rune
       |
-         is_s = is_str_ut(ctx, iter_te.ut)
+         is_s = is_str_ut(ctx, iter_te.ut) || is_builder_ut(ctx, iter_te.ut)
          !is_s
             |
                unify::add_error(ctx, 3084,
@@ -1115,7 +1115,7 @@ cycle_iter_elem_info = ctx, iter_te, is_rune =>
             [Map m] (<+>, m.val)
             [Prim p]
                p
-                  [Str] (<+>, unify::prim_int!)
+                  [Str, Builder] (<+>, unify::prim_int!)
                   [Rune] (<+>, unify::prim_rune!)
                   [Int] (<->, unify::prim_int!)
                   | (<->, unify::fresh_var(ctx))
@@ -1509,18 +1509,24 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
    loop_params = step_info.2
    c_body = unify::canon(ctx, fe_body_te.ut)
    c_acc = unify::canon(ctx, acc_ut)
+   is_acc_builder = c_acc [Prim p_ab] (p_ab [Builder]) | <->
+   is_body_unit = c_body [Prim p_bu] (p_bu [Unit]) | <->
    is_cond_fold = c_body
       [Ram uram] uram.pos.has_payload && !(c_acc [Ram])
       | <->
-   is_cond_fold
+   pay_ut = is_cond_fold
+      | (c_body [Ram ur] ur.pos.ut | fe_body_te.ut)
+      | fe_body_te.ut
+   c_pay = unify::canon(ctx, pay_ut)
+   is_pay_builder = c_pay [Prim p_pb] (p_pb [Builder]) | <->
+   is_bld_append_step = is_acc_builder && !is_body_unit && !is_pay_builder &&
+     (c_pay
+        [Prim pr] is_builder_append_prim(pr)
+        [Rec r] is_builder_append_rec(ctx, r, 0, ?r)
+        [Var])
+   !(is_acc_builder && (is_body_unit || is_bld_append_step))
       |
-         pay_ut = c_body [Ram ur] ur.pos.ut | fe_body_te.ut
          ok_u = unify::unify(ctx, acc_ut, pay_ut)
-         !ok_u
-            | unify::add_error(ctx, 3084,
-              "Type mismatch in seeded cycle (@>) accumulator")
-      |
-         ok_u = unify::unify(ctx, acc_ut, fe_body_te.ut)
          !ok_u
             | unify::add_error(ctx, 3084,
               "Type mismatch in seeded cycle (@>) accumulator")
@@ -1536,22 +1542,27 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
          bind_acc_te = tast::mk_typed_assign(p_acc_name, <+>, <->, <->, <->,
            acc_var_te, unit_ut, unit_ti, unit_lay, 0, 0)
          step_stmts += bind_acc_te
-   upd_acc_te = is_cond_fold
+   upd_acc_te = (is_acc_builder && is_body_unit)
+      | fe_body_te
       |
-         val_var_te = tast::mk_typed_var(val_name, 0, <->, acc_ut, acc_ti, acc_lay, 0, 0)
-         assign_val_te = tast::mk_typed_assign(acc_name, <->, <->, <->, <->,
-           val_var_te, unit_ut, unit_ti, unit_lay, 0, 0)
-         bvars = ast::Names()
-         bvars += val_name
-         br = tast::TypedBranch(ast::GuardKind(Bare), tast::TypedExprs(), <-->,
-           ast::Names(), bvars, assign_val_te)
-         brs = tast::TypedBranches()
-         brs += br
-         tast::mk_typed_expr(tast::TypedExprKind(Choice, (fe_body_te, brs)),
-           unit_ut, unit_ti, unit_lay, 0, 0)
-      |
-         tast::mk_typed_assign(acc_name, <->, <->, <->, <->, fe_body_te,
-           unit_ut, unit_ti, unit_lay, 0, 0)
+         is_cond_fold
+            |
+               pay_ti = is_bld_append_step | unify::type_info_from_utype(ctx, pay_ut) | acc_ti
+               pay_lay = is_bld_append_step | layout::compute_layout(ctx, pay_ut) | acc_lay
+               val_var_te = tast::mk_typed_var(val_name, 0, <->, pay_ut, pay_ti, pay_lay, 0, 0)
+               assign_val_te = tast::mk_typed_assign(acc_name, <->, is_bld_append_step, <->, <->,
+                 val_var_te, unit_ut, unit_ti, unit_lay, 0, 0)
+               bvars = ast::Names()
+               bvars += val_name
+               br = tast::TypedBranch(ast::GuardKind(Bare), tast::TypedExprs(), <-->,
+                 ast::Names(), bvars, assign_val_te)
+               brs = tast::TypedBranches()
+               brs += br
+               tast::mk_typed_expr(tast::TypedExprKind(Choice, (fe_body_te, brs)),
+                 unit_ut, unit_ti, unit_lay, 0, 0)
+            |
+               tast::mk_typed_assign(acc_name, <->, is_bld_append_step, <->, <->, fe_body_te,
+                 unit_ut, unit_ti, unit_lay, 0, 0)
    step_stmts += upd_acc_te
    step_te = tast::mk_typed_block(step_stmts, unit_ut, unit_ti, unit_lay, 0, 0)
    param_uts = unify::UTypes()
@@ -1572,8 +1583,8 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
    tast::mk_typed_block(blk_exprs, acc_ut, acc_ti, acc_lay, 0, 0)
 
 annotate_unseeded_cycle_expr: unify::Ctx, type_env::TypeEnv, ast::CycleExpr,
-  tast::TypedExpr, <> => tast::TypedExpr
-annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc =>
+  tast::TypedExpr, <>, <tast::TypedExpr|>, <> => tast::TypedExpr
+annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc, seed_opt, want_builder =>
    c_iter = unify::canon(ctx, iter_te.ut)
    iter_elem_info = cycle_iter_elem_info(ctx, iter_te, c.is_rune)
    has_elem = iter_elem_info.0
@@ -1660,6 +1671,15 @@ annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc =>
    is_out_unit
       | unify::add_error(ctx, 3084,
         "Expression cycle (@>) body must return a value; use '@' for side-effect cycles")
+   has_seed_bld = <>(seed_opt)
+   is_out_rune = c_out_elem [Prim p_r] (p_r [Rune]) | <->
+   is_out_bld_rhs = c_out_elem
+      [Prim pr] is_builder_append_prim(pr)
+      [Rec r] is_builder_append_rec(ctx, r, 0, ?r)
+      [Var]
+   is_out_builder = has_seed_bld || is_out_rune || (want_builder && is_out_bld_rhs)
+   has_seed_bld && !is_out_unit && !is_out_bld_rhs
+      | unify::add_error(ctx, 3084, diag::E3084_builder_append_type!)
    raw_elem_ti = is_filter_map
       | (fe_body_te.ti [Ram r_ti] r_ti.0.payload_record | ti_unk)
       | fe_body_te.ti
@@ -1667,16 +1687,28 @@ annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc =>
    out_elem_ti = !raw_ti_unk | raw_elem_ti | unify::type_info_from_utype(ctx, out_elem_ut)
    out_elem_lay = layout::compute_layout(ctx, out_elem_ut)
    elem_vt = unify::vt_from_utype(ctx, out_elem_ut)
-   arr_ti = ast::TypeInfo(Array, (elem_vt, out_elem_ti, 16))
-   arr_ut = unify::mk_array(out_elem_ut, 16)
-   arr_lay = layout::compute_layout(ctx, arr_ut)
+   out_ut = is_out_builder
+      | unify::prim_builder!
+      | unify::mk_array(out_elem_ut, 16)
+   out_ti = is_out_builder
+      | ast::TypeInfo(Prim, ast::ValueType(Builder))
+      | ast::TypeInfo(Array, (elem_vt, out_elem_ti, 16))
+   out_lay = layout::compute_layout(ctx, out_ut)
    unit_ut = unify::prim_unit!
    unit_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
    unit_lay = tast::layout_void!
-   ac = ast::ArrayCreateExpr(out_elem_ti, 16)
-   arr_new_te = tast::mk_typed_expr(tast::TypedExprKind(ArrayNew, ac),
-     arr_ut, arr_ti, arr_lay, 0, 0)
-   init_out_te = tast::mk_typed_assign(out_name, <+>, <->, <->, <->, arr_new_te,
+   out_new_te = seed_opt
+      | s_te => s_te
+      |
+         is_out_builder
+            |
+               cap_te = tast::mk_lit_int(16, 0, 0)
+               tast::mk_typed_builder_new(cap_te, out_ut, out_ti, out_lay, 0, 0)
+            |
+               ac = ast::ArrayCreateExpr(out_elem_ti, 16)
+               tast::mk_typed_expr(tast::TypedExprKind(ArrayNew, ac),
+                 out_ut, out_ti, out_lay, 0, 0)
+   init_out_te = tast::mk_typed_assign(out_name, <+>, <->, <->, <->, out_new_te,
      unit_ut, unit_ti, unit_lay, 0, 0)
    step_te = is_filter_map
       |
@@ -1703,18 +1735,25 @@ annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc =>
    lambda_te = mk_lambda_te(loop_params, step_te, fn_ut, ti_fn)
    cyc_te = tast::mk_typed_cycle(iter_te, lambda_te, <-->, c.is_rune, unit_ut,
      unit_ti, unit_lay, 0, 0)
-   res_var_te = tast::mk_typed_var(out_name, 0, <+>, arr_ut, arr_ti, arr_lay, 0, 0)
+   res_var_te = tast::mk_typed_var(out_name, 0, <+>, out_ut, out_ti, out_lay, 0, 0)
    blk_exprs = tast::TypedExprs()
    blk_exprs += init_out_te
    blk_exprs += cyc_te
    blk_exprs += res_var_te
-   tast::mk_typed_block(blk_exprs, arr_ut, arr_ti, arr_lay, 0, 0)
+   tast::mk_typed_block(blk_exprs, out_ut, out_ti, out_lay, 0, 0)
 
 annotate_cycle_expr: unify::Ctx, type_env::TypeEnv, ast::CycleExpr => tast::TypedExpr
 annotate_cycle_expr = ctx, env, c =>
    saved_disc = env.discard_result
+   saved_cyc_exp = cur_expected_ut
+   want_builder = cur_expected_ut
+      | exp_ut =>
+         c_exp = unify::canon(ctx, exp_ut)
+         c_exp [Prim p_eb] (p_eb [Builder]) | <->
+      | <->
+   cur_expected_ut ::= <-->
    env.discard_result = <->
-   c.iterable
+   res = c.iterable
       [Record rec]
          (!rec.is_repeat && ?rec.fields == 2)
             |
@@ -1726,18 +1765,30 @@ annotate_cycle_expr = ctx, env, c =>
                      rhs_te = annotate_expr(ctx, env, f1.val)
                      c_seed = unify::canon(ctx, seed_te.ut)
                      c_rhs = unify::canon(ctx, rhs_te.ut)
+                     is_seed_builder = c_seed [Prim p_sb] (p_sb [Builder]) | <->
                      is_rhs_range = f1.val [Range]
                      is_rhs_coll = c_rhs [Array, Slice, Map]
                      is_rhs_str = (c_rhs [Prim p_s] (p_s [Str]) | <->) &&
-                       !(c_seed [Prim p_s0] (p_s0 [Str]) | <->)
+                       (!(c_seed [Prim p_s0] (p_s0 [Str]) | <->) || c.is_rune)
+                     is_rhs_bld = (c_rhs [Prim p_rb] (p_rb [Builder]) | <->) &&
+                       (!is_seed_builder || c.is_rune)
                      is_rhs_rec = (c_rhs [Rec]) && !(c_seed [Rec])
+                     is_rhs_int = c_rhs [Prim p_ri] (p_ri [Int]) | <->
+                     can_rhs_iter = is_rhs_range || is_rhs_coll || is_rhs_str ||
+                       is_rhs_bld || is_rhs_rec || is_rhs_int
                      is_multi_param = c.body_fn [Fn fe_chk] (?fe_chk.params > 1) | <->
                      is_non_fn = !(c.body_fn [Fn]) &&
                        is_pointfree_leaf(ctx, env, leftmost_feed_leaf(c.body_fn))
-                     is_fold = is_rhs_range || is_rhs_coll || is_rhs_str ||
-                       is_rhs_rec || is_multi_param || is_non_fn
+                     is_fold = is_seed_builder || is_rhs_range || is_rhs_coll ||
+                       is_rhs_str || is_rhs_bld || is_rhs_rec ||
+                       (can_rhs_iter && (is_multi_param || is_non_fn))
                      is_fold
-                        | annotate_seeded_cycle_expr(ctx, env, c, seed_te, rhs_te, saved_disc)
+                        |
+                           (is_seed_builder && !is_multi_param)
+                              | annotate_unseeded_cycle_expr(ctx, env, c, rhs_te,
+                                saved_disc, <+ seed_te +>, <+>)
+                              | annotate_seeded_cycle_expr(ctx, env, c, seed_te,
+                                rhs_te, saved_disc)
                         |
                            tfields = tast::TypedFields()
                            tfields += tast::TypedField("", seed_te, 0, seed_te.ut)
@@ -1750,16 +1801,22 @@ annotate_cycle_expr = ctx, env, c =>
                            rec_lay = layout::compute_layout(ctx, rec_ut)
                            iter_te = tast::mk_typed_expr(tast::TypedExprKind(Record, tfields),
                              rec_ut, rec_ti, rec_lay, 0, 0)
-                           annotate_unseeded_cycle_expr(ctx, env, c, iter_te, saved_disc)
+                           annotate_unseeded_cycle_expr(ctx, env, c, iter_te,
+                             saved_disc, <-->, want_builder)
                   |
                      iter_te = annotate_expr(ctx, env, c.iterable)
-                     annotate_unseeded_cycle_expr(ctx, env, c, iter_te, saved_disc)
+                     annotate_unseeded_cycle_expr(ctx, env, c, iter_te,
+                       saved_disc, <-->, want_builder)
             |
                iter_te = annotate_expr(ctx, env, c.iterable)
-               annotate_unseeded_cycle_expr(ctx, env, c, iter_te, saved_disc)
+               annotate_unseeded_cycle_expr(ctx, env, c, iter_te,
+                 saved_disc, <-->, want_builder)
       |
          iter_te = annotate_expr(ctx, env, c.iterable)
-         annotate_unseeded_cycle_expr(ctx, env, c, iter_te, saved_disc)
+         annotate_unseeded_cycle_expr(ctx, env, c, iter_te,
+           saved_disc, <-->, want_builder)
+   cur_expected_ut ::= saved_cyc_exp
+   res
 
 apply_split: ast::Expr => (<>, String, ast::Expr, ast::Exprs)
 apply_split = fn =>
@@ -2145,7 +2202,40 @@ annotate_expr = ctx, env, expr =>
                      is_feed && is_inline_choice_fn | (cur_expected_ut ::= <-->)
                      call_te = annotate_call(ctx, env, ce)
                      cur_expected_ut ::= saved_feed_exp
-                     call_te
+                     c_call = unify::canon(ctx, call_te.ut)
+                     is_match_rhs = b.2
+                        [Choice, Var] <+>
+                        [Fn fe_m] fe_m.body [Choice]
+                        | <->
+                     is_match_dispatch = is_feed && is_match_rhs
+                     is_match_dispatch
+                        |
+                           c_call
+                              [Fn f_res]
+                                 ?f_res.params == 1
+                                    |
+                                       arg_te = annotate_call_arg(ctx, env, b.1)
+                                       p0 = f_res.params(0) | _ |
+                                          unify::UType(None)
+                                       ok_p = unify::unify(ctx, p0, arg_te.ut)
+                                       ok_p
+                                          |
+                                             cargs = tast::TypedExprs()
+                                             cargs += arg_te
+                                             ret_ti =
+                                                unify::type_info_from_utype(
+                                                   ctx, f_res.ret)
+                                             ret_lay =
+                                                layout::compute_layout(ctx,
+                                                  f_res.ret)
+                                             tast::mk_typed_call("",
+                                               <+ call_te +>, cargs,
+                                               f_res.ret, ret_ti, ret_lay,
+                                               0, 0)
+                                          | call_te
+                                    | call_te
+                              | call_te
+                        | call_te
                   |
                      op1 = b.0
                      lhs1 = annotate_expr(ctx, env, b.1)
@@ -2492,7 +2582,10 @@ annotate_expr = ctx, env, expr =>
            map_ut, ti, lay, 0, 0)
       [Unary u]
          op = u.0
+         saved_un_exp = cur_expected_ut
+         op [Freeze] (cur_expected_ut ::= <+ unify::prim_builder! +>)
          inner_te = annotate_expr(ctx, env, u.1)
+         cur_expected_ut ::= saved_un_exp
          res_ut = annotate_unary_op(ctx, env, op, inner_te.ut, u.1)
          ti = unify::type_info_from_utype(ctx, res_ut)
          lay = layout::compute_layout(ctx, res_ut)

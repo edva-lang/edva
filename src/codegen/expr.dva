@@ -2914,8 +2914,11 @@ codegen_eval_unary = cg, t =>
 codegen_static_ram_unary: types::Cg, ast::UnaryOp, (Addr, ast::ValueType),
   ast::Expr => (Addr, ast::ValueType)
 codegen_static_ram_unary = cg, op, ev, target =>
-   raw = codegen_ram_type_of_expr(cg, target)
-   ram_ti = raw [Ram] raw | types::typedef_ti(cg, cg.last_type)
+   last_ti = cg.last_type != ""
+      | types::typedef_ti(cg, cg.last_type)
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+   raw = last_ti [Ram] last_ti | codegen_ram_type_of_expr(cg, target)
+   ram_ti = raw [Ram] raw | last_ti
    ram_ti
       [Ram slots]
          pos_ti = stmt::resolve_ti(cg,
@@ -3098,16 +3101,12 @@ codegen_eval_unary_propagate = cg, val, vt, target =>
                        (vt [Flag] "Flag" | types::value_type_name(vt)), 0, 0)
                      (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
                   |
-                     op_ti0 = codegen_ram_type_of_expr(cg, target)
                      dtype0 = target [Var v] types::var_dtype(cg, v) | ""
                      dtype = dtype0 != "" | dtype0 | cg.last_type
-                     is_ram_ti = op_ti0 [Ram]
-                     ti = is_ram_ti
-                        | op_ti0
-                        |
-                           dtype != ""
-                              | types::typedef_ti(cg, dtype)
-                              | op_ti0
+                     dt_ti = dtype != ""
+                        | types::typedef_ti(cg, dtype)
+                        | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+                     ti = dt_ti [Ram] dt_ti | codegen_ram_type_of_expr(cg, target)
                      pos_slot = ti [Ram s] s.0 | ast::RamSlotInfo(<->,
                        ast::ValueType(Unknown),
                        ast::TypeInfo(Prim, ast::ValueType(Unknown)))
@@ -3667,8 +3666,18 @@ codegen_ram_type_of_expr = cg, expr =>
                alias = fn_alias(cg, real_name)
                closure = closure_fn_of(cg, name)
                eff_name = closure != "" | closure | (alias != "" | alias | real_name)
-               sig_ti = stmt::fn_signature_return_ti(cg, types::g.pstmts, eff_name, 0)
-               stmt::resolve_ti(cg, sig_ti)
+               sig_ti' = stmt::fn_signature_return_ti(cg, types::g.pstmts, eff_name, 0)
+               ct_n0 = stmt::sig_ct0_name(types::g.pstmts, eff_name, 0)
+               ct_names = split_comma_names(ct_n0)
+               (?ct_names == 1 && ?c.args > 0)
+                  |
+                     rtv = types::resolve_type_value(cg, c.args(0)!!)
+                     rtv.1
+                        |
+                           can_arg = types::ctfe_canonical_ti(cg, rtv.0)
+                           sig_ti' = subst_mono_ti(sig_ti', ct_names(0)!!, can_arg,
+                             types::vt_from_ti_cg(cg, can_arg))
+               stmt::resolve_ti(cg, sig_ti')
       [Variant v] synth_variant_ram_ti(cg, v)
       [Choice c]
          ct = types::ctfe_eval_type_choice(cg, c)

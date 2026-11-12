@@ -96,7 +96,7 @@ The operator precedence hierarchy is organized into binding tiers (from loosest 
 <!-- BEGIN operators.yaml -->
 | Tier | LBP | RBP | Operators | Associativity |
 |---|---|---|---|---|
-| cycle | 10 | 20 | `@` `@@` `@>` `>--` `-->` `--^` | left |
+| cycle | 10 | 20 | `@` `@@` `@>` `@@>` `>--` `-->` `--^` | left |
 | sequence | 20 | 30 | `;` | left |
 | apply | 30 | 30 | `$` | right |
 | feed | 40 | 50 | `$>` `$>>` `$+>` `$->` `.>` | left |
@@ -171,7 +171,7 @@ negated boolean tests `s ![guard]`, and headless choice functions):
 - **Skip-First Ram Choice (`!|`)**: `arr(i) = v !| _` skips the unit positive slot and runs the
   negative branch on failure.
 
-## 4.2 Cycles, Expression Cycles (`@>`), Jumps & Cycle Escapes (`@`, `@>`, `-->`, `--^`, `>--`)
+## 4.2 Cycles, Expression Cycles (`@>`, `@@>`), Jumps & Cycle Escapes (`@`, `@@`, `@>`, `@@>`, `-->`, `--^`, `>--`)
 ```dva complete
 find_target: Int, Int => < Int | >
 find_target = count, target =>
@@ -182,12 +182,20 @@ find_target = count, target =>
       target           // evaluates to <+ target +> on break, or <--> on normal completion
 ```
 - Iterables: `N @` (`0..N`), `a..b @ i =>`, `a...b @ i =>`, `arr @ elem, i =>`, `str @ byte, i =>`,
-  `str @@ rune, i =>`, `map @ val, key =>`, infinite `0.. @`, and condition cycles `(cond) @ body`.
-- **Expression-Valued Cycles (`@>`)**:
-  - **Map (`items @> body` -> `U{}`)**: evaluates `body` (`x =>`, `(a, b) =>`, `x, i =>`, `_`, or
-    point-free function/section/choice/type/composition) and collects into a new `U{}`.
-  - **Filter-Map (`items @> body` -> `U{}`)**: when `body` returns `< U | >` or `< U | Error >`,
-    unwraps and appends `u` on `<+ u +>` and skips negative outcomes.
+  `str @@ rune, i =>` (also on `Builder`), `map @ val, key =>`, infinite `0.. @`, and condition
+  cycles `(cond) @ body`.
+- **Expression-Valued Cycles (`@>`, `@@>`)**:
+  - **Map (`items @> body` -> `U{}` or `Builder`)**: evaluates `body` (`x =>`, `(a, b) =>`,
+    `x, i =>`, `_`, or point-free function/section/choice/type/composition) and collects into a new
+    `Builder` (`{16}`) when `U` is `Rune`, or `U{}` otherwise.
+  - **Filter-Map (`items @> body` -> `U{}` or `Builder`)**: when `body` returns `< U | >` or
+    `< U | Error >`, unwraps and appends `u` on `<+ u +>` (`Builder` if `U` is `Rune`, `U{}`
+    otherwise) and skips negative outcomes.
+  - **Direct Freeze (`+(items @> body)` -> `String`)**: under unary `+` (or `Builder` expected
+    type), streams any `Builder`-appendable chunk (`Rune`, `String`, `Int` byte, `Builder`, or
+    tuple) into an implicit `Builder` and freezes to `String`.
+  - **Seeded Builder (`({}, items) @> body` or `({cap}, items) @> body` -> `Builder`)**: seeds a
+    `Builder` and appends each iteration (`x => chunk`, point-free `(.name)`, or `b, x => b += ...`).
   - **Seeded Fold (`(seed, items) @> body` -> `Acc`)**: initializes accumulator to `seed: Acc` and
     folds via `acc, x =>`, `acc, (a, b) =>`, `acc, x, i =>`, `acc =>`, or binary `(Acc, E) => Acc`
     (`(+)`, `(*)`, `fn`); if `body` returns `< Acc | >`, `<+ next +>` updates `acc` and `<-->`
@@ -275,8 +283,9 @@ field_names = #! T, rec =>
 - **Arenas (`std/mem`)**: Allocations default to the thread/process arena. Scoped scratch arenas use
   `mem::arena(cap)`, `mem::with(ar, fn)`, `mem::with_value(ar, fn)`, `mem::escape_value(fn)`,
   `mem::save(ar)`, and `mem::restore_to(ar, mark)`.
-- **Builders**: `b = {256}`, append `b += "str"` / `b += 'c'`, freeze `+b` (O(1) zero-copy transfer
-  to `String`), writable FFI pointer `&b`, set active length `?b = n`.
+- **Builders**: `b = {}` (default `16`-byte capacity) or `b = {256}`, append `b += "str"` /
+  `b += 'c'` / `b = ("a", "b")`, freeze `+b` (O(1) zero-copy transfer to `String`), writable FFI
+  pointer `&b`, set active length `?b = n`.
 - **Intrinsics (`%`)**: `%min`, `%max`, `%clamp`, `%abs`, `%sqrt`, `%uadd_sat`, `%usub_sat`, `%sum`,
   `%prod`, `%dot`, `%popcount`, `%ctlz`, `%cttz`, `%bswap`, `%memcpy`, `%memmove`, `%memset`,
   `%to_str`.

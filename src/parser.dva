@@ -138,7 +138,7 @@ op_is_reserved = text =>
          text
             ["<+", "<-", "<+>", "<->", "<++>", "<-->", "<>", "+>", "->",
             "-->", "--^", "--|", ">--", "@", "[@",
-            "@@", "@>", "^", "^?", "?", "!", "*", "&", "=>",
+            "@@", "@>", "@@>", "^", "^?", "?", "!", "*", "&", "=>",
             "!=>", "|", "|->", "|+>", "|-->", "|++>",
             "=", ":=", "+=", "::=", "..", "...", "..=", "::", ".", ":",
             "??", ".!.", "++", "~~", "--!", "!!", "^-", "^="]
@@ -326,10 +326,11 @@ cycle_cont_at = p, lhs, entry_indent =>
    is_at = token_is_op(p.curr, "@")
    is_atat = token_is_op(p.curr, "@@")
    is_at_gt = token_is_op(p.curr, "@>")
-   is_at || is_atat || is_at_gt
+   is_atat_gt = token_is_op(p.curr, "@@>")
+   is_at || is_atat || is_at_gt || is_atat_gt
       |
-         is_rune = is_atat
-         is_expr = is_at_gt
+         is_rune = is_atat || is_atat_gt
+         is_expr = is_at_gt || is_atat_gt
          parser_advance(p)
          p.cycle_depth = p.cycle_depth + 1
          b_opt = is_expr | parse_cycle_expr_body(p) | parse_block(p)
@@ -581,7 +582,7 @@ is_feed_cont_op = t =>
    tok_is_op(t) && (t.text ["$>", "$>>", "$+>", "$->", ".>"])
 
 is_cycle_cont_op = t =>
-   tok_is_op(t) && (t.text ["@", "@@", "@>"])
+   tok_is_op(t) && (t.text ["@", "@@", "@>", "@@>"])
 
 cycle_scan_op: lexer::Lx, lexer::Tok, Int, Int => <>
 cycle_scan_op = lx, tok, cur_indent, min_indent =>
@@ -2761,22 +2762,31 @@ atom_early_return = p =>
             | v => <+ ast::Expr(Return, ast::ReturnExpr(<+>, v, line, col)) +>
             | <-->
 
-// "{expr}" — Builder literal: a fresh Builder with capacity = expr.
+// "{expr}" or "{}" — Builder literal: a fresh Builder with capacity = expr (default 16).
 atom_builder: Parser => <ast::Expr|>
 atom_builder = p =>
    parser_advance(p)
-   cr = parse_bp(p, 0)
-   cr
-      | cre =>
-         p.curr.kind
-            [RBrace]
-               parser_advance(p)
-               <+ ast::Expr(BuilderCreate, cre) +>
-            | <-->
+   p.curr.kind
+      [RBrace]
+         parser_advance(p)
+         <+ ast::Expr(BuilderCreate, ast::Expr(Int, 16)) +>
       |
-         parser_error(p, 2064,
-           diag::expected_primary_prefix! + p.curr.text + "'")
-         <-->
+         cr = parse_bp(p, 0)
+         cr
+            | cre =>
+               p.curr.kind
+                  [RBrace]
+                     parser_advance(p)
+                     <+ ast::Expr(BuilderCreate, cre) +>
+                  |
+                     parser_error(p, 2110,
+                       "Expected '}' after the Builder capacity, got '" +
+                       p.curr.text + "'")
+                     <-->
+            |
+               parser_error(p, 2064,
+                 diag::expected_primary_prefix! + p.curr.text + "'")
+               <-->
 
 // "?operand" — the length operator (String/Builder/array/map/record/slice).
 atom_length: Parser => <ast::Expr|>

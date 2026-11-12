@@ -146,9 +146,9 @@ Range operators sit at LBP 70, RBP 80. Both `...` and `..=` denote inclusive upp
 | `...b` / `..=b` | Upper-bounded closed | $(-\infty, b]$ | `x !> b` | `i` from `0` through `b` | Subview from `0` through `b` (length `b + 1`) |
 | `..` | Unbounded | $(-\infty, \infty)$ | Always `<+>` | Unbounded cycle starting at `0` | Full view `0..?x` |
 
-## Cycle expressions (`@`, `@@`, `@>`, `-->`, `--^`, `>--`)
+## Cycle expressions (`@`, `@@`, `@>`, `@@>`, `-->`, `--^`, `>--`)
 
-Cycles iterate at LBP 10, RBP 20 without keywords. `@` and `@@` are statement-valued cycles (`()`); `@>` is an expression-valued cycle for map, filter-map, and seeded fold.
+Cycles iterate at LBP 10, RBP 20 without keywords. `@` and `@@` are statement-valued cycles (`()`); `@>` and `@@>` are expression-valued cycles for map, filter-map, `Builder` accumulation, and seeded fold.
 
 ### Iterable forms and loop binders
 
@@ -158,18 +158,20 @@ Cycles iterate at LBP 10, RBP 20 without keywords. `@` and `@@` are statement-va
 | Bounded range | `a..b @ body`<br>`a...b @ body` | `i =>` (`Int`) | `_` (`Int`), `_i` (`Int`) | Iterates integer interval $[a, b)$ or $[a, b]$ |
 | Condition (`Flag` `<>` / `Ram`) | `(cond) @ body` / `cond @ body` | — | — | Re-evaluates `cond` before each iteration; repeats while positive (`<+>` / `<+ ... +>`) |
 | Infinite range | `0.. @ body` | `i =>` (`Int`) | `_` (`Int`), `_i` (`Int`) | Unbounded loop; terminate via `-->` or `--|` |
-| `String` | `s @ body` / `s @@ body` | `b =>` or `b, i =>` | `_` (`Int` byte / `Rune`), `_i` (`Int` index) | `@` iterates raw UTF-8 bytes; `@@` iterates decoded `Rune` codepoints |
+| `String` / `Builder` | `s @ body`<br>`s @@ body` | `b =>` or `b, i =>` | `_` (`Int` byte / `Rune`), `_i` (`Int` index) | `@` / `@>` iterates raw UTF-8 bytes; `@@` / `@@>` iterates decoded `Rune` codepoints |
 | `T{}` / `T[]` / `(T * N)` | `xs @ body` | `elem =>`, `elem, i =>`, or `(a, b) =>` | `_` (`T`), `_i` (`Int` index) | Iterates elements in index order `0..?xs` (supports positional/named tuple or record destructuring) |
 | Map `K ^ V` | `m @ body` | `val =>` or `val, key =>` | `_` (`V` value), `_i` (`K` key) | Iterates live map entries (**value first, key second**) |
 | Record `Type` (`#!`) | `T @ f => body` | `f =>` (field descriptor) | — | Compile-time unrolled over `0..?T` (`f.name`, `f.type`, `f.idx`) |
 | Enum `Type` (`#!`) | `T @ v => body` | `v =>` (variant descriptor) | — | Compile-time unrolled over `0..?T` (`v.name`, `v.type`, `v.idx`) |
 
-### Expression-valued cycles (`@>`): Map, Filter-Map & Seeded Fold
+### Expression-valued cycles (`@>`, `@@>`): Map, Filter-Map, Builder & Seeded Fold
 
 | Form | Syntax | Result Type | Semantics |
 |---|---|---|---|
-| Map (plain body) | `items @> body` | `U{}` | Evaluates `body` for each element (`x =>`, `(a, b) =>`, `x, i =>`, implicit `_`/`_i`, or point-free function/section/type/composition) and collects into a new `U{}` |
-| Filter-Map (`RamPN`/`RamPP` body) | `items @> (x => cond | <+ u +>)` | `U{}` | Unwraps and appends `u` on `<+ u +>`, skipping `<-->` / `<- err ->` |
+| Map (plain body) | `items @> body` | `U{}` (or `Builder` if `U = Rune`) | Evaluates `body` for each element (`x =>`, `(a, b) =>`, `x, i =>`, implicit `_`/`_i`, or point-free function/section/type/composition); returns `Builder` when `U` is `Rune`, or `U{}` otherwise |
+| Filter-Map (`RamPN`/`RamPP` body) | `items @> (x => cond | <+ u +>)` | `U{}` (or `Builder` if `U = Rune`) | Unwraps and appends `u` on `<+ u +>`, skipping `<-->` / `<- err ->` |
+| Direct freeze (`+`) | `+(items @> body)` | `String` | Builds into an implicit `Builder` when `body` returns any `Builder`-appendable chunk (`Rune`, `String`, `Int` byte, `Builder`, or tuple) and freezes directly to `String` |
+| Seeded Builder | `({}, items) @> body`<br>`({cap}, items) @> body` | `Builder` | Initializes `Builder` seed and appends each iteration (`x => chunk`, point-free `(.name)`, or `b, x => b += ...`) |
 | Seeded Fold / Reduce | `(seed, items) @> body` | `Acc` | Initializes accumulator to `seed: Acc` and folds over `items` via `acc, x =>`, `acc, (a, b) =>`, `acc, x, i =>`, `acc =>`, or binary `(Acc, E) => Acc` (`(+)`, `(*)`, `fn`); returns `seed` on empty `items` |
 | Conditional Fold | `(seed, items) @> (acc, x => cond | <+ next +>)` | `Acc` | Updates accumulator on `<+ next +>` and preserves current `acc` on `<-->` |
 
@@ -249,6 +251,6 @@ Assignments sit at LBP 60, RBP 50 (right-associative) and always evaluate to `()
 | `x!!` | `< A | B >` or `< A | >` | `A` | Unwraps positive payload or aborts on negative slot (`E3091` on `<|B>` / `<>`) |
 | `x--!` | `< A | E >`, `< A | >`, `< | E >`, `<>` | `A` or `()` | Unwraps positive slot or early-returns negative slot from enclosing function |
 | `expr {N}` | Any expression, integer literal `N` | `(T * N)` | Repeats `expr` `N` times (splices flat inside tuple literals) |
-| `{cap}` | `Int` capacity expression | `Builder` | Allocates `Builder` with initial byte capacity `cap` |
+| `{}` / `{cap}` | Optional `Int` capacity expression | `Builder` | Allocates `Builder` with default byte capacity (`16`) or explicit `cap` |
 | `@[addr T]` | `Addr`, type `T` | `T` | Volatile typed memory load (or zero-copy record view) |
 | `#size T` | Any type `T` | `Int` | Compile-time byte size of `T` |

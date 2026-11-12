@@ -154,3 +154,23 @@ dup_gen = xs => xs @> x => x
 
 dg = dup_gen(nums)
 io::out $ ("sum_gen:", sum_gen(0, nums), ?dg, dg(0)!!, dg(3)!!)
+
+// 11. Bare {} Builder literal & @> / @@> returning Builder
+b_lit = {}
+b_lit += "ok"
+io::out $ ("b_lit:", +b_lit)
+
+rwx_b = (<+>, <->, <+>) @> f, i => f | Rune{}('r, 'w, 'x)(i)!! | '-
+io::out $ ("rwx_b:", +rwx_b)
+
+stripped_b = "a\rb\rc" @@> r => r != '\r | <+ r +>
+shifted_b = "ab" @@> r => r + 1
+io::out $ ("rune_b:", +stripped_b, +shifted_b)
+
+frozen_map = +(nums @> x => (str::from_int(x), ";"))
+io::out $ ("frozen_map:", frozen_map)
+
+seed_b1 = ({}, nums) @> x => (str::from_int(x), ",")
+seed_b2 = ({}, nums) @> b, x =>
+   b += (str::from_int(x), ":")
+io::out $ ("seed_b:", +seed_b1, +seed_b2)

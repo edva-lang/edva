@@ -2164,6 +2164,8 @@ codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
          exits += <+>
          stmt::branch_to(cg, exit_bb)
    LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   ex_sw = (last_is_bare || c.is_exhaustive) && (choice_count_live(exits, 0, 0) == 0)
+   cg.exited = ex_sw
    cg.discard_result
       | (LLVMConstNull(i64t), ast::ValueType(Unit))
       |
@@ -2248,6 +2250,8 @@ codegen_eval_choice_case_chain = cg, c, cond_val, cond_type =>
          exits += <+>
          stmt::branch_to(cg, exit_bb)
    LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   ex_sw = (last_is_bare || c.is_exhaustive) && (choice_count_live(exits, 0, 0) == 0)
+   cg.exited = ex_sw
    cg.discard_result
       | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
@@ -2376,6 +2380,7 @@ codegen_eval_choice_bare_single = cg, c, cond_val, cond_type, dtype =>
          stmt::branch_to(cg, exit_bb)
 
          LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+         cg.exited = <->
          (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unknown))
 
@@ -3053,6 +3058,8 @@ codegen_eval_choice_variant_valid = cg, c, cond_val, cond_type, dtype =>
          exits += <+>
          stmt::branch_to(cg, exit_bb)
    LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   ex_sw = (last_is_bare || c.is_exhaustive) && (choice_count_live(exits, 0, 0) == 0)
+   cg.exited = ex_sw
    cg.discard_result
       | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |

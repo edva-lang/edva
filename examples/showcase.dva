@@ -313,12 +313,16 @@ run_showcase = !=>
    check(greeting(0..5) == "Hello" && greeting(7..11) == "Edva", "range slicing")
    check(raw_json == "{\"lang\":\"edva\",\"id\":2}", "triple-quoted string & interpolation")
 
-   // High-throughput mutable Builder `{cap}`:
+   // High-throughput mutable Builder `{}` (default 16-byte capacity) or `{cap}`:
    // Record streaming `b += (a, b, c)` appends multiple items in one pass
    // without intermediate string allocations.
    // IMPORTANT: Appending an integer (`0..255`) to a Builder appends a RAW BYTE
    // (e.g. `b += 33` or `b += (13, 10)`), whereas appending a `String` appends
    // its text bytes (use `str::from_int(n)` to format integers as decimal text).
+   b_default = {}
+   b_default += "ready"
+   check(+b_default == "ready", "default-capacity builder literal {}")
+
    b = {128}
    b += ("id=", str::from_int(id2), " status=", "ok",
      " mask=", str::from_int(compile_time_mask))
@@ -470,14 +474,14 @@ run_showcase = !=>
    sum_err = sum_two_parsed("19", "-5") | "unexpected" | err => err
    check(sum_ok == 42 && sum_err == "number must be > 0", "postfix error propagation --!")
 
-   // --- Section J: Cycles (`@`, `@@`, `@>`) and Cycle Escape (`>--`) ---
+   // --- Section J: Cycles (`@`, `@@`, `@>`, `@@>`) and Cycle Escape (`>--`) ---
    // 1. Direct collection iteration (`arr @ elem, idx =>` yields unwrapped `elem`!):
    total' = 0
    nums @ n, idx =>
       total' = total' + n + idx
    check(total' == 68, "direct array iteration arr @ elem, idx =>")
 
-   // 2. Expression-valued cycle (`@>`) for Map, Filter-Map & Seeded Fold (with destructuring):
+   // 2. Expression-valued cycle (`@>`, `@@>`) for Map, Filter-Map, Builder & Seeded Fold:
    doubled_nums = nums @> (_ * 2)
    big_nums = nums @> n => n > 15 | <+ n + 1 +>
    sum_nums = (0, nums) @> (+)
@@ -486,7 +490,15 @@ run_showcase = !=>
    check(?doubled_nums == 3 && doubled_nums(0)!! == 20 && ?big_nums == 2 && sum_nums == 65 && dot_pairs == 26,
      "expression-valued cycle @> map, filter-map, seeded fold, and destructuring")
 
-   // 2. UTF-8 codepoint iteration (`str @@ rune, byte_pos =>`):
+   // 3. `@>` and `@@>` returning `Builder` (Rune body, direct `+` freeze, or `{}` seed):
+   rwx_bld = (<+>, <->, <+>) @> on, i => on | Rune{}('r, 'w, 'x)(i)!! | '-
+   digits_bld = "a1b2c3" @@> r => r ['0...'9] <+ r +>
+   frozen_csv = +(nums @> n => (str::from_int(n), ";"))
+   seeded_bld = ({}, nums) @> n => (str::from_int(n), ",")
+   check(+rwx_bld == "r-x" && +digits_bld == "123" && frozen_csv == "10;25;30;" && +seeded_bld == "10,25,30,",
+     "@> and @@> returning Builder (Rune map/filter-map, +(xs @> ...), and ({}, xs) @> ...)")
+
+   // 4. UTF-8 codepoint iteration (`str @@ rune, byte_pos =>`):
    utf_str = "Aλ🔥"
    rune_count' = 0
    utf_str @@ r =>
@@ -494,12 +506,12 @@ run_showcase = !=>
       rune_count' [2] check(r == 'λ, "UTF-8 decoded rune")
    check(rune_count' == 3 && ??utf_str == 3 && ?utf_str == 7, "UTF-8 @@ iteration & ??s rune count")
 
-   // 3. Cycle with continue (`--^`), break (`-->`), and escape (`>--`):
+   // 5. Cycle with continue (`--^`), break (`-->`), and escape (`>--`):
    hit1 = find_first_multiple(nums, 5) |_| -1
    hit2 = find_first_multiple(nums, 7) |_| -1
    check(hit1 == 10 && hit2 == -1, "cycle escape >-- returning RamPN < T | >")
 
-   // 4. Condition-controlled cycle `(cond) @` and multi-level outer break `-->2`:
+   // 6. Condition-controlled cycle `(cond) @` and multi-level outer break `-->2`:
    rem' = 16
    steps' = 0
    (rem' > 1) @
