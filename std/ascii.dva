@@ -37,13 +37,13 @@
 
    to_lower: Int => Int
    to_lower = c =>
-      ascii::is_upper(c)
+      is_upper(c)
          | c + 32
          | c
 
    to_upper: Int => Int
    to_upper = c =>
-      ascii::is_lower(c)
+      is_lower(c)
          | c - 32
          | c
 
@@ -51,25 +51,20 @@
 
    hex_value: Int => < Int | >
    hex_value = c =>
-      c [48...57]
-         | <+ c - 48 +>
-         | c [65...70]
-            | <+ c - 55 +>
-            | c [97...102]
-               | <+ c - 87 +>
-               | <-->
+      c
+         [48...57]  <+ c - 48 +>
+         [65...70]  <+ c - 55 +>
+         [97...102] <+ c - 87 +>
 
    hex_digit_lower: Int => < Int | >
    hex_digit_lower = n =>
       n [0...15]
          | <+ n < 10 | 48 + n | 87 + n +>
-         | <-->
 
    hex_digit_upper: Int => < Int | >
    hex_digit_upper = n =>
       n [0...15]
          | <+ n < 10 | 48 + n | 55 + n +>
-         | <-->
 
    // Documented precondition: 0 <= n <= 15
    hex_char_lower: Int => Int

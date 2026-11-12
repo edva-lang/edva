@@ -43,19 +43,18 @@ from_int = number, desired_length, flavor =>
    b = {desired_length}
    desired_length @ i =>
       shift = (desired_length - 1 - i) * 6
-      b += char((number .>. shift) .&. 63, flavor)
+      b += char(number .>. shift .&. 63, flavor)
    +b
 
 // Decodes a Base64 character sequence (6 bits per character, most-significant sextet first) into an `Int`.
 to_int: String, Flavor => < Int | >
 to_int = s, flavor =>
    ?s == 0 |-->
-   acc' = 0
-   s @ ch =>
+   res = (0, s) @> acc, ch =>
       v = val(ch, flavor)
       v < 0 |-->
-      acc' = (acc' .<. 6) .|. v
-   <+ acc' +>
+      acc .<. 6 .|. v
+   <+ res +>
 
 #private
 
@@ -80,16 +79,16 @@ encode = bytes, flavor =>
       b0 = bytes(base) .&. 0xFF
       b1 = bytes(base + 1) .&. 0xFF
       b2 = bytes(base + 2) .&. 0xFF
-      triple = (b0 .<. 16) .|. (b1 .<. 8) .|. b2
-      c0 = (triple .>. 18) .&. 0x3F
-      c1 = (triple .>. 12) .&. 0x3F
-      c2 = (triple .>. 6) .&. 0x3F
+      triple = b0 .<. 16 .|. b1 .<. 8 .|. b2
+      c0 = triple .>. 18 .&. 0x3F
+      c1 = triple .>. 12 .&. 0x3F
+      c2 = triple .>. 6 .&. 0x3F
       c3 = triple .&. 0x3F
       b += (char(c0, flavor), char(c1, flavor), char(c2, flavor), char(c3, flavor))
    rem == 1
       |
          b0 = bytes(full_groups * 3) .&. 0xFF
-         c0 = (b0 .>. 2) .&. 0x3F
+         c0 = b0 .>. 2 .&. 0x3F
          c1 = (b0 .&. 0x03) .<. 4
          b += (char(c0, flavor), char(c1, flavor))
          pad | b += "=="
@@ -98,8 +97,8 @@ encode = bytes, flavor =>
          base = full_groups * 3
          b0 = bytes(base) .&. 0xFF
          b1 = bytes(base + 1) .&. 0xFF
-         c0 = (b0 .>. 2) .&. 0x3F
-         c1 = ((b0 .&. 0x03) .<. 4) .|. ((b1 .>. 4) .&. 0x0F)
+         c0 = b0 .>. 2 .&. 0x3F
+         c1 = (b0 .&. 0x03) .<. 4 .|. b1 .>. 4 .&. 0x0F
          c2 = (b1 .&. 0x0F) .<. 2
          b += (char(c0, flavor), char(c1, flavor), char(c2, flavor))
          pad | b += '=
@@ -145,8 +144,8 @@ decode = s, flavor =>
             bad_idx' = base
             -->
          |
-            triple = (v0 .<. 18) .|. (v1 .<. 12) .|. (v2 .<. 6) .|. v3
-            out += (((triple .>. 16) .&. 0xFF), ((triple .>. 8) .&. 0xFF), (triple .&. 0xFF))
+            triple = v0 .<. 18 .|. v1 .<. 12 .|. v2 .<. 6 .|. v3
+            out += (triple .>. 16 .&. 0xFF, triple .>. 8 .&. 0xFF, triple .&. 0xFF)
    bad_idx' < 0 && rem == 2
       |
          base = full_quads * 4
@@ -154,7 +153,7 @@ decode = s, flavor =>
          v1 = val(clean(base + 1), flavor)
          (v0 < 0 || v1 < 0)
             | bad_idx' = base
-            | out += (((v0 .<. 2) .|. (v1 .>. 4)) .&. 0xFF)
+            | out += ((v0 .<. 2 .|. v1 .>. 4) .&. 0xFF)
    bad_idx' < 0 && rem == 3
       |
          base = full_quads * 4
@@ -163,7 +162,7 @@ decode = s, flavor =>
          v2 = val(clean(base + 2), flavor)
          (v0 < 0 || v1 < 0 || v2 < 0)
             | bad_idx' = base
-            | out += ((((v0 .<. 2) .|. (v1 .>. 4)) .&. 0xFF), (((v1 .<. 4) .|. (v2 .>. 2)) .&. 0xFF))
+            | out += ((v0 .<. 2 .|. v1 .>. 4) .&. 0xFF, (v1 .<. 4 .|. v2 .>. 2) .&. 0xFF)
    bad_idx' !< 0
       | <- b64_err("invalid base64 character", bad_idx') +>
       | <+ +out ->

@@ -414,15 +414,19 @@ entry:
   %cmptmp = icmp sge i64 %var.load, 48
   br i1 %cmptmp, label %and.15.then, label %and.15.else
 
-choice.exit:                                      ; preds = %choice.next, %choice.case
-  %choice.res = phi i1 [ true, %choice.case ], [ false, %choice.next ]
-  br i1 %choice.res, label %choice.then, label %choice.else
+choice.exit:                                      ; preds = %choice.next11, %choice.case10, %choice.case3, %choice.case
+  %choice.res = phi { i1, i64 } [ %ram.pay, %choice.case ], [ %ram.pay9, %choice.case3 ], [ %ram.pay16, %choice.case10 ], [ zeroinitializer, %choice.next11 ]
+  ret { i1, i64 } %choice.res
 
 choice.case:                                      ; preds = %and.15.exit
+  %var.load2 = load i64, ptr %var.c, align 8
+  %subtmp = sub i64 %var.load2, 48
+  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp, 1
   br label %choice.exit
 
 choice.next:                                      ; preds = %and.15.exit
-  br label %choice.exit
+  %cmptmp5 = icmp sge i64 %var.load, 65
+  br i1 %cmptmp5, label %and.16.then, label %and.16.else
 
 and.15.then:                                      ; preds = %entry
   %cmptmp1 = icmp sle i64 %var.load, 57
@@ -435,90 +439,46 @@ and.15.exit:                                      ; preds = %and.15.else, %and.1
   %and.15.phi = phi i1 [ %cmptmp1, %and.15.then ], [ %cmptmp, %and.15.else ]
   br i1 %and.15.phi, label %choice.case, label %choice.next
 
-choice.then:                                      ; preds = %choice.exit
-  %var.load3 = load i64, ptr %var.c, align 8
-  %subtmp = sub i64 %var.load3, 48
-  %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp, 1
-  br label %choice.exit2
+choice.case3:                                     ; preds = %and.16.exit
+  %var.load7 = load i64, ptr %var.c, align 8
+  %subtmp8 = sub i64 %var.load7, 55
+  %ram.pay9 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp8, 1
+  br label %choice.exit
 
-choice.else:                                      ; preds = %choice.exit
-  %var.load4 = load i64, ptr %var.c, align 8
-  %cmptmp8 = icmp sge i64 %var.load4, 65
-  br i1 %cmptmp8, label %and.16.then, label %and.16.else
+choice.next4:                                     ; preds = %and.16.exit
+  %cmptmp12 = icmp sge i64 %var.load, 97
+  br i1 %cmptmp12, label %and.17.then, label %and.17.else
 
-choice.exit2:                                     ; preds = %choice.exit13, %choice.then
-  %choice.res32 = phi { i1, i64 } [ %ram.pay, %choice.then ], [ %choice.res31, %choice.exit13 ]
-  ret { i1, i64 } %choice.res32
-
-choice.exit5:                                     ; preds = %choice.next7, %choice.case6
-  %choice.res10 = phi i1 [ true, %choice.case6 ], [ false, %choice.next7 ]
-  br i1 %choice.res10, label %choice.then11, label %choice.else12
-
-choice.case6:                                     ; preds = %and.16.exit
-  br label %choice.exit5
-
-choice.next7:                                     ; preds = %and.16.exit
-  br label %choice.exit5
-
-and.16.then:                                      ; preds = %choice.else
-  %cmptmp9 = icmp sle i64 %var.load4, 70
+and.16.then:                                      ; preds = %choice.next
+  %cmptmp6 = icmp sle i64 %var.load, 70
   br label %and.16.exit
 
-and.16.else:                                      ; preds = %choice.else
+and.16.else:                                      ; preds = %choice.next
   br label %and.16.exit
 
 and.16.exit:                                      ; preds = %and.16.else, %and.16.then
-  %and.16.phi = phi i1 [ %cmptmp9, %and.16.then ], [ %cmptmp8, %and.16.else ]
-  br i1 %and.16.phi, label %choice.case6, label %choice.next7
+  %and.16.phi = phi i1 [ %cmptmp6, %and.16.then ], [ %cmptmp5, %and.16.else ]
+  br i1 %and.16.phi, label %choice.case3, label %choice.next4
 
-choice.then11:                                    ; preds = %choice.exit5
+choice.case10:                                    ; preds = %and.17.exit
   %var.load14 = load i64, ptr %var.c, align 8
-  %subtmp15 = sub i64 %var.load14, 55
+  %subtmp15 = sub i64 %var.load14, 87
   %ram.pay16 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp15, 1
-  br label %choice.exit13
+  br label %choice.exit
 
-choice.else12:                                    ; preds = %choice.exit5
-  %var.load17 = load i64, ptr %var.c, align 8
-  %cmptmp21 = icmp sge i64 %var.load17, 97
-  br i1 %cmptmp21, label %and.17.then, label %and.17.else
+choice.next11:                                    ; preds = %and.17.exit
+  br label %choice.exit
 
-choice.exit13:                                    ; preds = %choice.exit26, %choice.then11
-  %choice.res31 = phi { i1, i64 } [ %ram.pay16, %choice.then11 ], [ %choice.res30, %choice.exit26 ]
-  br label %choice.exit2
-
-choice.exit18:                                    ; preds = %choice.next20, %choice.case19
-  %choice.res23 = phi i1 [ true, %choice.case19 ], [ false, %choice.next20 ]
-  br i1 %choice.res23, label %choice.then24, label %choice.else25
-
-choice.case19:                                    ; preds = %and.17.exit
-  br label %choice.exit18
-
-choice.next20:                                    ; preds = %and.17.exit
-  br label %choice.exit18
-
-and.17.then:                                      ; preds = %choice.else12
-  %cmptmp22 = icmp sle i64 %var.load17, 102
+and.17.then:                                      ; preds = %choice.next4
+  %cmptmp13 = icmp sle i64 %var.load, 102
   br label %and.17.exit
 
-and.17.else:                                      ; preds = %choice.else12
+and.17.else:                                      ; preds = %choice.next4
   br label %and.17.exit
 
 and.17.exit:                                      ; preds = %and.17.else, %and.17.then
-  %and.17.phi = phi i1 [ %cmptmp22, %and.17.then ], [ %cmptmp21, %and.17.else ]
-  br i1 %and.17.phi, label %choice.case19, label %choice.next20
-
-choice.then24:                                    ; preds = %choice.exit18
-  %var.load27 = load i64, ptr %var.c, align 8
-  %subtmp28 = sub i64 %var.load27, 87
-  %ram.pay29 = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %subtmp28, 1
-  br label %choice.exit26
-
-choice.else25:                                    ; preds = %choice.exit18
-  br label %choice.exit26
-
-choice.exit26:                                    ; preds = %choice.else25, %choice.then24
-  %choice.res30 = phi { i1, i64 } [ %ram.pay29, %choice.then24 ], [ zeroinitializer, %choice.else25 ]
-  br label %choice.exit13
+  %and.17.phi = phi i1 [ %cmptmp13, %and.17.then ], [ %cmptmp12, %and.17.else ]
+  br i1 %and.17.phi, label %choice.case10, label %choice.next11
 }
 
 define { i1, i64 } @"ascii::hex_digit_lower"(i64 %0) #1 {
