@@ -23,7 +23,7 @@ structural typed serialization (`put_val`, `get_val`) powered by `std/binary`.
 path = "/tmp/edva_doc_kv_demo.kv"
 libc::unlink(path)
 db = kv::open(path)!!
-kv::put(db, "greeting", "Hello from std/kv!")!!
+kv::put(db, "greeting", "Hello from std/kv!") !| _
 io::out $ (kv::get(db, "greeting") | s => s | "")
 kv::close(db)
 libc::unlink(path)
@@ -38,11 +38,11 @@ libc::unlink(path)
 | `kv::close(db)` | `Store => <>` | Closes the underlying file descriptor of `db` |
 | `kv::len(db)` | `Store => Int` | Number of live keys currently in `db` |
 | `kv::has(db, key)` | `Store, String => <>` | Returns `<+>` if `key` is present in `db` |
-| `kv::put(db, key, val)` | `Store, String, String => < <> | Error >` | Appends a CRC-32-verified `key -> val` record and updates `keydir` |
+| `kv::put(db, key, val)` | `Store, String, String => < | Error >` | Appends a CRC-32-verified `key -> val` record and updates `keydir` |
 | `kv::get(db, key)` | `Store, String => < String | Error >` | Reads the value for `key` (`Error` if missing or on I/O failure) |
 | `kv::get_opt(db, key)` | `Store, String => < String | >` | Reads the value for `key` if present (`<-->` if missing) |
 | `kv::delete(db, key)` | `Store, String => < <> | Error >` | Appends a deletion tombstone for `key` and removes it from `keydir` |
 | `kv::keys(db)` | `Store => String{}` | Returns all live keys in sorted lexicographical order |
-| `kv::compact(db)` | `Store => < <> | Error >` | Rewrites only live entries to a new log file and atomically replaces `db.path` |
-| `kv::put_val(db, key, val)` | `#! T: Type, Store, String, T => < <> | Error >` | Encodes `val` via `binary::encode_le` and stores it under `key` |
+| `kv::compact(db)` | `Store => < | Error >` | Rewrites only live entries to a new log file and atomically replaces `db.path` |
+| `kv::put_val(db, key, val)` | `#! T: Type, Store, String, T => < | Error >` | Encodes `val` via `binary::encode_le` and stores it under `key` |
 | `kv::get_val(T, db, key)` | `#! T: Type, Store, String => < T | Error >` | Reads and decodes a value of type `T` stored under `key` |

@@ -116,10 +116,10 @@ fs::remove(kv_path)
 db = kv::open(kv_path)!!
 test::eq(kv::len(db), 0, "new kv store has 0 keys")
 
-kv::put(db, "alpha", "first")!!
-kv::put(db, "beta", "second")!!
-kv::put(db, "alpha", "updated_first")!!
-kv::put(db, "temp", "to_be_deleted")!!
+kv::put(db, "alpha", "first") !| _
+kv::put(db, "beta", "second") !| _
+kv::put(db, "alpha", "updated_first") !| _
+kv::put(db, "temp", "to_be_deleted") !| _
 del_ok = kv::delete(db, "temp")!!
 test::check(del_ok, "kv::delete existing key returns <+>")
 test::eq(kv::len(db), 2, "kv::len after put + overwrite + delete")
@@ -128,7 +128,7 @@ test::check(!kv::has(db, "temp"), "deleted key not in keydir")
 
 // Typed `#!` structural serialization in KV store
 u1 = UserProfile(42, "Ada Lovelace", <+>, 99.5)
-kv::put_val(db, "user:42", u1)!!
+kv::put_val(db, "user:42", u1) !| _
 u1_out = kv::get_val(UserProfile, db, "user:42")!!
 test::eq(u1_out.id, 42, "kv::get_val struct id")
 test::eq(u1_out.name, "Ada Lovelace", "kv::get_val struct name")
@@ -136,7 +136,7 @@ test::check(u1_out.active, "kv::get_val struct active")
 test::eq(u1_out.score, 99.5, "kv::get_val struct score")
 
 size_before_compact = fs::size(kv_path)
-kv::compact(db)!!
+kv::compact(db) !| _
 size_after_compact = fs::size(kv_path)
 test::check(size_after_compact < size_before_compact, "kv::compact shrinks log file by removing dead records")
 kv::close(db)

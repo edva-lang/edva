@@ -106,12 +106,12 @@ encode_record = flags, key, val =>
    rec += body_str
    +rec
 
-replay_log: Store, String => < <> | Error >
+replay_log: Store, String => < | Error >
 replay_log = db, content =>
    n = ?content
-   n == 0 | --| <+ <+> ->
+   n == 0 |++>
    n < 5 || content(0..5) != KV_MAGIC
-      | --| <- kv_err("invalid KV store header magic", 0) +>
+      | --| <- kv_err("invalid KV store header magic", 0) ->
    off' = 5
    err_opt' = <-->
    (off' < n && !<>(err_opt')) @
@@ -140,10 +140,10 @@ replay_log = db, content =>
                                  | err_opt' = <+ kv_err("unknown record flag in KV log", off') +>
                         off' = rec_end
    err_opt'
-      | e => <- e +>
+      | e => <- e ->
       |
          db.pos = n
-         <+ <+> ->
+         <++>
 
 read_all_file: String => String
 read_all_file = path =>
@@ -183,7 +183,7 @@ open = path =>
                <+ db ->
       |
          replay_log(db, existing)
-            | ok => <+ db ->
+            | <+ db ->
             | err =>
                libc::close(fd)
                <- err +>
@@ -207,18 +207,18 @@ has = db, key =>
    db.keydir ^? key
 
 // Appends a `key -> val` record to disk and updates the in-memory index in O(1) time.
-put: Store, String, String => < <> | Error >
+put: Store, String, String => < | Error >
 put = db, key, val =>
    rec = encode_record(FLAG_PUT, key, val)
    !write_all(db.fd, rec)
-      | <- kv_err("failed to append PUT record to disk", db.pos) +>
+      | <- kv_err("failed to append PUT record to disk", db.pos) ->
       |
          cur_end = libc::lseek(db.fd, 0, 2)
          base_pos = cur_end !< ?rec | (cur_end - ?rec) | db.pos
          val_off = base_pos + 13 + ?key
          put_keydir(db.keydir, key, val_off, ?val)
          db.pos = base_pos + ?rec
-         <+ <+> ->
+         <++>
 
 // Reads the raw `String` value for `key` if present (`<-->` if absent or on I/O error).
 get_opt: Store, String => < String | >
@@ -261,15 +261,15 @@ keys = db =>
 
 // Compacts the log file in-place by writing only live key-value entries to a temporary file
 // and atomically renaming it over `db.path`, reclaiming space from overwritten and deleted keys.
-compact: Store => < <> | Error >
+compact: Store => < | Error >
 compact = db =>
    tmp_path = db.path + ".compact.tmp"
    tmp_fd = libc::open_mode(tmp_path, open_rdwr_creat_trunc!, 0o644)
-   tmp_fd < 0 | --| <- kv_err("failed to open compaction temp file", 0) +>
+   tmp_fd < 0 | --| <- kv_err("failed to open compaction temp file", 0) ->
    !write_all(tmp_fd, KV_MAGIC)
       |
          libc::close(tmp_fd)
-         <- kv_err("failed to write header to compaction temp file", 0) +>
+         --| <- kv_err("failed to write header to compaction temp file", 0) ->
    new_kdir = new_keydir!
    new_pos' = 5
    err_opt' = <-->
@@ -293,25 +293,25 @@ compact = db =>
    err_opt'
       | e =>
          libc::unlink(tmp_path)
-         <- e +>
+         <- e ->
       |
          libc::close(db.fd)
          libc::rename(tmp_path, db.path) != 0
-            | <- kv_err("failed to rename compacted KV store file", 0) +>
+            | <- kv_err("failed to rename compacted KV store file", 0) ->
             |
                new_fd = libc::open_mode(db.path, open_rdwr_creat_append!, 0o644)
                new_fd < 0
-                  | <- kv_err("failed to reopen compacted KV store file", 0) +>
+                  | <- kv_err("failed to reopen compacted KV store file", 0) ->
                   |
                      db.fd = new_fd
                      db.pos = new_pos'
                      db.keydir = new_kdir
-                     <+ <+> ->
+                     <++>
 
 // --- `#!` Compile-Time Structural Typed Serialization -----------------------
 
 // Encodes `val` of any structural type `T` via `binary::encode_le` and stores it under `key`.
-put_val: #! T: Type, Store, String, T => < <> | Error >
+put_val: #! T: Type, Store, String, T => < | Error >
 put_val = db, key, val =>
    put(db, key, binary::encode_le(val))
 
