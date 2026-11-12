@@ -5091,7 +5091,12 @@ choice.next4:                                     ; preds = %choice.next
 
 define ptr @"time::utc_from_epoch"(i64 %0, i64 %1) #1 {
 entry:
-  %var.civ = alloca ptr, align 8
+  %var.yday = alloca i64, align 8
+  %var.wday = alloca i64, align 8
+  %var.mday = alloca i64, align 8
+  %var.mon = alloca i64, align 8
+  %var.year = alloca i64, align 8
+  %var._dp_1 = alloca ptr, align 8
   %var.ss = alloca i64, align 8
   %var.mm = alloca i64, align 8
   %var.hh = alloca i64, align 8
@@ -5186,48 +5191,58 @@ div.ok23:                                         ; preds = %div.ovf_abort24, %d
   store i64 %modtmp25, ptr %var.ss, align 8
   %var.load26 = load i64, ptr %var.days, align 8
   %call.res27 = call ptr @"time::#civil_from_days"(i64 %var.load26)
-  store ptr %call.res27, ptr %var.civ, align 8
-  %var.load28 = load ptr, ptr %var.civ, align 8
+  store ptr %call.res27, ptr %var._dp_1, align 8
+  %var.load28 = load ptr, ptr %var._dp_1, align 8
   %fld.gep = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load28, i32 0, i32 0
   %fld.load = load i64, ptr %fld.gep, align 8
-  %var.load29 = load ptr, ptr %var.civ, align 8
+  store i64 %fld.load, ptr %var.year, align 8
+  %var.load29 = load ptr, ptr %var._dp_1, align 8
   %fld.gep30 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load29, i32 0, i32 1
   %fld.load31 = load i64, ptr %fld.gep30, align 8
-  %var.load32 = load ptr, ptr %var.civ, align 8
+  store i64 %fld.load31, ptr %var.mon, align 8
+  %var.load32 = load ptr, ptr %var._dp_1, align 8
   %fld.gep33 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load32, i32 0, i32 2
   %fld.load34 = load i64, ptr %fld.gep33, align 8
-  %var.load35 = load i64, ptr %var.hh, align 8
-  %var.load36 = load i64, ptr %var.mm, align 8
-  %var.load37 = load i64, ptr %var.ss, align 8
-  %var.load38 = load i64, ptr %var.nsec, align 8
-  %var.load39 = load ptr, ptr %var.civ, align 8
-  %fld.gep40 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load39, i32 0, i32 3
-  %fld.load41 = load i64, ptr %fld.gep40, align 8
-  %var.load42 = load ptr, ptr %var.civ, align 8
-  %fld.gep43 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load42, i32 0, i32 4
-  %fld.load44 = load i64, ptr %fld.gep43, align 8
+  store i64 %fld.load34, ptr %var.mday, align 8
+  %var.load35 = load ptr, ptr %var._dp_1, align 8
+  %fld.gep36 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load35, i32 0, i32 3
+  %fld.load37 = load i64, ptr %fld.gep36, align 8
+  store i64 %fld.load37, ptr %var.wday, align 8
+  %var.load38 = load ptr, ptr %var._dp_1, align 8
+  %fld.gep39 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load38, i32 0, i32 4
+  %fld.load40 = load i64, ptr %fld.gep39, align 8
+  store i64 %fld.load40, ptr %var.yday, align 8
+  %var.load41 = load i64, ptr %var.year, align 8
+  %var.load42 = load i64, ptr %var.mon, align 8
+  %var.load43 = load i64, ptr %var.mday, align 8
+  %var.load44 = load i64, ptr %var.hh, align 8
+  %var.load45 = load i64, ptr %var.mm, align 8
+  %var.load46 = load i64, ptr %var.ss, align 8
+  %var.load47 = load i64, ptr %var.nsec, align 8
+  %var.load48 = load i64, ptr %var.wday, align 8
+  %var.load49 = load i64, ptr %var.yday, align 8
   %arena.cur = call ptr @dva_arena_current()
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store i64 %fld.load, ptr %rec.fld, align 8
-  %rec.fld45 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store i64 %fld.load31, ptr %rec.fld45, align 8
-  %rec.fld46 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
-  store i64 %fld.load34, ptr %rec.fld46, align 8
-  %rec.fld47 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
-  store i64 %var.load35, ptr %rec.fld47, align 8
-  %rec.fld48 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
-  store i64 %var.load36, ptr %rec.fld48, align 8
-  %rec.fld49 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
-  store i64 %var.load37, ptr %rec.fld49, align 8
-  %rec.fld50 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 6
-  store i64 %var.load38, ptr %rec.fld50, align 8
-  %rec.fld51 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 7
-  store i64 %fld.load41, ptr %rec.fld51, align 8
-  %rec.fld52 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 8
-  store i64 %fld.load44, ptr %rec.fld52, align 8
-  %rec.fld53 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 9
-  store i64 0, ptr %rec.fld53, align 8
+  store i64 %var.load41, ptr %rec.fld, align 8
+  %rec.fld50 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load42, ptr %rec.fld50, align 8
+  %rec.fld51 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
+  store i64 %var.load43, ptr %rec.fld51, align 8
+  %rec.fld52 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
+  store i64 %var.load44, ptr %rec.fld52, align 8
+  %rec.fld53 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
+  store i64 %var.load45, ptr %rec.fld53, align 8
+  %rec.fld54 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
+  store i64 %var.load46, ptr %rec.fld54, align 8
+  %rec.fld55 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 6
+  store i64 %var.load47, ptr %rec.fld55, align 8
+  %rec.fld56 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 7
+  store i64 %var.load48, ptr %rec.fld56, align 8
+  %rec.fld57 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 8
+  store i64 %var.load49, ptr %rec.fld57, align 8
+  %rec.fld58 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 9
+  store i64 0, ptr %rec.fld58, align 8
   ret ptr %rec.alloc
 
 div.ovf_abort24:                                  ; preds = %div.not_zero19
@@ -5277,7 +5292,12 @@ entry:
 
 define ptr @"time::datetime_utc"(i64 %0, i64 %1, i64 %2, i64 %3, i64 %4, i64 %5) #1 {
 entry:
-  %var.civ = alloca ptr, align 8
+  %var.yday = alloca i64, align 8
+  %var.wday = alloca i64, align 8
+  %var._dy = alloca i64, align 8
+  %var._mo = alloca i64, align 8
+  %var._yr = alloca i64, align 8
+  %var._dp_2 = alloca ptr, align 8
   %var.z = alloca i64, align 8
   %var.sec = alloca i64, align 8
   %var.min = alloca i64, align 8
@@ -5298,41 +5318,57 @@ entry:
   store i64 %call.res, ptr %var.z, align 8
   %var.load3 = load i64, ptr %var.z, align 8
   %call.res4 = call ptr @"time::#civil_from_days"(i64 %var.load3)
-  store ptr %call.res4, ptr %var.civ, align 8
-  %var.load5 = load i64, ptr %var.year, align 8
-  %var.load6 = load i64, ptr %var.month, align 8
-  %var.load7 = load i64, ptr %var.day, align 8
-  %var.load8 = load i64, ptr %var.hour, align 8
-  %var.load9 = load i64, ptr %var.min, align 8
-  %var.load10 = load i64, ptr %var.sec, align 8
-  %var.load11 = load ptr, ptr %var.civ, align 8
-  %fld.gep = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load11, i32 0, i32 3
+  store ptr %call.res4, ptr %var._dp_2, align 8
+  %var.load5 = load ptr, ptr %var._dp_2, align 8
+  %fld.gep = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load5, i32 0, i32 0
   %fld.load = load i64, ptr %fld.gep, align 8
-  %var.load12 = load ptr, ptr %var.civ, align 8
-  %fld.gep13 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load12, i32 0, i32 4
+  store i64 %fld.load, ptr %var._yr, align 8
+  %var.load6 = load ptr, ptr %var._dp_2, align 8
+  %fld.gep7 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load6, i32 0, i32 1
+  %fld.load8 = load i64, ptr %fld.gep7, align 8
+  store i64 %fld.load8, ptr %var._mo, align 8
+  %var.load9 = load ptr, ptr %var._dp_2, align 8
+  %fld.gep10 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load9, i32 0, i32 2
+  %fld.load11 = load i64, ptr %fld.gep10, align 8
+  store i64 %fld.load11, ptr %var._dy, align 8
+  %var.load12 = load ptr, ptr %var._dp_2, align 8
+  %fld.gep13 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load12, i32 0, i32 3
   %fld.load14 = load i64, ptr %fld.gep13, align 8
+  store i64 %fld.load14, ptr %var.wday, align 8
+  %var.load15 = load ptr, ptr %var._dp_2, align 8
+  %fld.gep16 = getelementptr inbounds { i64, i64, i64, i64, i64 }, ptr %var.load15, i32 0, i32 4
+  %fld.load17 = load i64, ptr %fld.gep16, align 8
+  store i64 %fld.load17, ptr %var.yday, align 8
+  %var.load18 = load i64, ptr %var.year, align 8
+  %var.load19 = load i64, ptr %var.month, align 8
+  %var.load20 = load i64, ptr %var.day, align 8
+  %var.load21 = load i64, ptr %var.hour, align 8
+  %var.load22 = load i64, ptr %var.min, align 8
+  %var.load23 = load i64, ptr %var.sec, align 8
+  %var.load24 = load i64, ptr %var.wday, align 8
+  %var.load25 = load i64, ptr %var.yday, align 8
   %arena.cur = call ptr @dva_arena_current()
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store i64 %var.load5, ptr %rec.fld, align 8
-  %rec.fld15 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store i64 %var.load6, ptr %rec.fld15, align 8
-  %rec.fld16 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
-  store i64 %var.load7, ptr %rec.fld16, align 8
-  %rec.fld17 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
-  store i64 %var.load8, ptr %rec.fld17, align 8
-  %rec.fld18 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
-  store i64 %var.load9, ptr %rec.fld18, align 8
-  %rec.fld19 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
-  store i64 %var.load10, ptr %rec.fld19, align 8
-  %rec.fld20 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 6
-  store i64 0, ptr %rec.fld20, align 8
-  %rec.fld21 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 7
-  store i64 %fld.load, ptr %rec.fld21, align 8
-  %rec.fld22 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 8
-  store i64 %fld.load14, ptr %rec.fld22, align 8
-  %rec.fld23 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 9
-  store i64 0, ptr %rec.fld23, align 8
+  store i64 %var.load18, ptr %rec.fld, align 8
+  %rec.fld26 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load19, ptr %rec.fld26, align 8
+  %rec.fld27 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
+  store i64 %var.load20, ptr %rec.fld27, align 8
+  %rec.fld28 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
+  store i64 %var.load21, ptr %rec.fld28, align 8
+  %rec.fld29 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
+  store i64 %var.load22, ptr %rec.fld29, align 8
+  %rec.fld30 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
+  store i64 %var.load23, ptr %rec.fld30, align 8
+  %rec.fld31 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 6
+  store i64 0, ptr %rec.fld31, align 8
+  %rec.fld32 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 7
+  store i64 %var.load24, ptr %rec.fld32, align 8
+  %rec.fld33 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 8
+  store i64 %var.load25, ptr %rec.fld33, align 8
+  %rec.fld34 = getelementptr inbounds { i64, i64, i64, i64, i64, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 9
+  store i64 0, ptr %rec.fld34, align 8
   ret ptr %rec.alloc
 }
 

@@ -138,10 +138,10 @@ bit_set = b, ch =>
    c = ch .&. 0xFF
    w = c .>. 6
    w
-      [0] ClassBits(b.w0 .|. (1 .<. c), b.w1, b.w2, b.w3)
-      [1] ClassBits(b.w0, b.w1 .|. (1 .<. (c - 64)), b.w2, b.w3)
-      [2] ClassBits(b.w0, b.w1, b.w2 .|. (1 .<. (c - 128)), b.w3)
-      | ClassBits(b.w0, b.w1, b.w2, b.w3 .|. (1 .<. (c - 192)))
+      [0] b(w0 = b.w0 .|. (1 .<. c))
+      [1] b(w1 = b.w1 .|. (1 .<. (c - 64)))
+      [2] b(w2 = b.w2 .|. (1 .<. (c - 128)))
+      | b(w3 = b.w3 .|. (1 .<. (c - 192)))
 
 bit_test: ClassBits, Int => <>
 bit_test = b, ch =>
@@ -214,13 +214,13 @@ add_node = st, nd =>
    nodes = st.nodes
    id = ?nodes
    nodes += nd
-   ParseState(st.pat, st.pos, st.flags, st.num_groups, nodes, id, st.err_msg, st.err_pos)
+   st(nodes = nodes, node_id = id)
 
 fail_state: ParseState, String, Int => ParseState
 fail_state = st, msg, pos =>
    ?st.err_msg > 0
       | st
-      | ParseState(st.pat, st.pos, st.flags, st.num_groups, st.nodes, -1, msg, pos)
+      | st(node_id = -1, err_msg = msg, err_pos = pos)
 
 // Parse an escape sequence starting after '\' at `st.pos`.
 // Returns `(kind, byte_or_anchor, bits, next_pos, err_msg)`:
@@ -339,8 +339,7 @@ parse_class = st =>
    !closed'
       | --| fail_state(st, "unclosed character class '[' in regex", st.pos - 1)
    final_bits = neg' | bits_invert(bits') | bits'
-   st2 = ParseState(st.pat, pos', st.flags, st.num_groups, st.nodes, st.node_id, st.err_msg, st.err_pos)
-   add_node(st2, AstNode(AST_CLASS, 0, 0, 0, 0, <+>, st.flags, final_bits))
+   add_node(st(pos = pos'), AstNode(AST_CLASS, 0, 0, 0, 0, <+>, st.flags, final_bits))
 
 // Parse bounded quantifier `{m}`, `{m,}`, `{m,n}` starting after `{` at `st.pos`.
 #type BraceQuant (
@@ -403,11 +402,11 @@ parse_group_or_flags = st =>
             | --| fail_state(st, "incomplete '(?' group in regex", pos' - 1)
          pat(pos') == ': // '(?:' non-capturing group
             |
-               inner = parse_alt(ParseState(pat, pos' + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos))
+               inner = parse_alt(st(pos = pos' + 1, node_id = -1))
                ?inner.err_msg > 0 | --| inner
                (inner.pos !< len || pat(inner.pos) != '))
                   | --| fail_state(inner, "unclosed '(?:' group in regex", pos' - 2)
-               --| ParseState(pat, inner.pos + 1, st.flags, inner.num_groups, inner.nodes, inner.node_id, inner.err_msg, inner.err_pos)
+               --| inner(pos = inner.pos + 1, flags = st.flags)
          // Parse flags `i`, `m`, `s` (and `-` to clear)
          flags' = st.flags
          neg_flag' = <->
@@ -424,21 +423,21 @@ parse_group_or_flags = st =>
             | --| fail_state(st, "unclosed '(?' flag directive", st.pos)
          pat(pos') == ') // `(?ims)` sets flags for enclosing sequence
             |
-               st_flag = ParseState(pat, pos' + 1, flags', st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
+               st_flag = st(pos = pos' + 1, flags = flags', node_id = -1)
                --| add_node(st_flag, AstNode(AST_EMPTY, 0, 0, 0, 0, <+>, flags', empty_bits!))
          // `(?ims:...)` scoped flags
-         inner = parse_alt(ParseState(pat, pos' + 1, flags', st.num_groups, st.nodes, -1, st.err_msg, st.err_pos))
+         inner = parse_alt(st(pos = pos' + 1, flags = flags', node_id = -1))
          ?inner.err_msg > 0 | --| inner
          (inner.pos !< len || pat(inner.pos) != '))
             | --| fail_state(inner, "unclosed '(?flags:...' group in regex", st.pos - 1)
-         --| ParseState(pat, inner.pos + 1, st.flags, inner.num_groups, inner.nodes, inner.node_id, inner.err_msg, inner.err_pos)
+         --| inner(pos = inner.pos + 1, flags = st.flags)
    // Numbered capture group `(...)`
    grp_idx = st.num_groups + 1
-   inner = parse_alt(ParseState(pat, pos', st.flags, grp_idx, st.nodes, -1, st.err_msg, st.err_pos))
+   inner = parse_alt(st(pos = pos', num_groups = grp_idx, node_id = -1))
    ?inner.err_msg > 0 | --| inner
    (inner.pos !< len || pat(inner.pos) != '))
       | --| fail_state(inner, "unclosed '(' in regex", st.pos - 1)
-   st2 = ParseState(pat, inner.pos + 1, st.flags, inner.num_groups, inner.nodes, inner.node_id, inner.err_msg, inner.err_pos)
+   st2 = inner(pos = inner.pos + 1, flags = st.flags)
    add_node(st2, AstNode(AST_GROUP, inner.node_id, grp_idx, 0, 0, <+>, st.flags, empty_bits!))
 
 parse_atom: ParseState => ParseState
@@ -448,24 +447,21 @@ parse_atom = st =>
    c = pat(pos)
    c
       ['(]
-         parse_group_or_flags(ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos))
+         parse_group_or_flags(st(pos = pos + 1, node_id = -1))
       ['[]
-         parse_class(ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos))
+         parse_class(st(pos = pos + 1, node_id = -1))
       ['.]
-         st2 = ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
-         add_node(st2, AstNode(AST_ANY, 0, 0, 0, 0, <+>, st.flags, empty_bits!))
+         add_node(st(pos = pos + 1, node_id = -1), AstNode(AST_ANY, 0, 0, 0, 0, <+>, st.flags, empty_bits!))
       ['^]
          ak = (st.flags .&. FLAG_MULTILINE) != 0 | ANCHOR_BOL_LINE | ANCHOR_BOL
-         st2 = ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
-         add_node(st2, AstNode(AST_ANCHOR, ak, 0, 0, 0, <+>, st.flags, empty_bits!))
+         add_node(st(pos = pos + 1, node_id = -1), AstNode(AST_ANCHOR, ak, 0, 0, 0, <+>, st.flags, empty_bits!))
       ['$]
          ak = (st.flags .&. FLAG_MULTILINE) != 0 | ANCHOR_EOL_LINE | ANCHOR_EOL
-         st2 = ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
-         add_node(st2, AstNode(AST_ANCHOR, ak, 0, 0, 0, <+>, st.flags, empty_bits!))
+         add_node(st(pos = pos + 1, node_id = -1), AstNode(AST_ANCHOR, ak, 0, 0, 0, <+>, st.flags, empty_bits!))
       ['\\]
          esc = parse_escape(pat, pos + 1, <->)
          esc.kind < 0 | --| fail_state(st, esc.err, pos)
-         st2 = ParseState(pat, esc.next_pos, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
+         st2 = st(pos = esc.next_pos, node_id = -1)
          esc.kind
             [1] add_node(st2, AstNode(AST_CLASS, 0, 0, 0, 0, <+>, st.flags, esc.bits))
             [2] add_node(st2, AstNode(AST_ANCHOR, esc.val, 0, 0, 0, <+>, st.flags, empty_bits!))
@@ -475,8 +471,7 @@ parse_atom = st =>
       [']]
          fail_state(st, "unmatched ']' in regex", pos)
       |
-         st2 = ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
-         add_node(st2, AstNode(AST_CHAR, c, 0, 0, 0, <+>, st.flags, empty_bits!))
+         add_node(st(pos = pos + 1, node_id = -1), AstNode(AST_CHAR, c, 0, 0, 0, <+>, st.flags, empty_bits!))
 
 parse_factor: ParseState => ParseState
 parse_factor = st =>
@@ -500,7 +495,7 @@ parse_factor = st =>
                   greedy' = <->
                   pos' = pos' + 1
             cur' = add_node(
-               ParseState(pat, pos', cur'.flags, cur'.num_groups, cur'.nodes, node', cur'.err_msg, cur'.err_pos),
+               cur'(pos = pos', node_id = node'),
                AstNode(AST_REP, node', 0, min_r, max_r, greedy', cur'.flags, empty_bits!)
             )
             node' = cur'.node_id
@@ -515,7 +510,7 @@ parse_factor = st =>
                   greedy' = <->
                   pos' = pos' + 1
             cur' = add_node(
-               ParseState(pat, pos', cur'.flags, cur'.num_groups, cur'.nodes, node', cur'.err_msg, cur'.err_pos),
+               cur'(pos = pos', node_id = node'),
                AstNode(AST_REP, node', 0, bq.min_r, bq.max_r, greedy', cur'.flags, empty_bits!)
             )
             node' = cur'.node_id
@@ -544,7 +539,7 @@ parse_seq = st =>
             seq_id' = cur'.node_id
    first'
       | add_node(cur', AstNode(AST_EMPTY, 0, 0, 0, 0, <+>, cur'.flags, empty_bits!))
-      | ParseState(pat, cur'.pos, cur'.flags, cur'.num_groups, cur'.nodes, seq_id', cur'.err_msg, cur'.err_pos)
+      | cur'(node_id = seq_id')
 
 parse_alt = st =>
    pat = st.pat
@@ -554,11 +549,11 @@ parse_alt = st =>
    cur' = left
    alt_id' = left.node_id
    (cur'.pos < len && pat(cur'.pos) == '|) @
-      rhs = parse_seq(ParseState(pat, cur'.pos + 1, cur'.flags, cur'.num_groups, cur'.nodes, -1, cur'.err_msg, cur'.err_pos))
+      rhs = parse_seq(cur'(pos = cur'.pos + 1, node_id = -1))
       ?rhs.err_msg > 0 | --| rhs
       cur' = add_node(rhs, AstNode(AST_ALT, alt_id', rhs.node_id, 0, 0, <+>, rhs.flags, empty_bits!))
       alt_id' = cur'.node_id
-   ParseState(pat, cur'.pos, cur'.flags, cur'.num_groups, cur'.nodes, alt_id', cur'.err_msg, cur'.err_pos)
+   cur'(node_id = alt_id')
 
 // --- PikeVM Bytecode Compiler -----------------------------------------------
 
@@ -673,11 +668,7 @@ is_anchored_root = nodes, idx =>
 
 clone_saved: Int{}, Int, Int => Int{}
 clone_saved = src, slot, val =>
-   n = ?src
-   out = Int{}
-   n @ i =>
-      out += (i == slot | val | src(i)!!)
-   out
+   ?src @> i => i == slot | val | src(i)!!
 
 check_anchor: Int, String, Int => <>
 check_anchor = kind, text, sp =>
@@ -870,8 +861,7 @@ match = #! P, pat, text =>
 find_at: Regex, String, Int => < Match >
 find_at = re, text, start_pos =>
    run_vm(re, text, %clamp(start_pos, 0, ?text + 1))
-      | saved => <+ build_match(text, saved, re.num_groups) +>
-      | <-->
+      $+> saved => build_match(text, saved, re.num_groups)
 
 // Finds the first match of `re` in `text`.
 find: Regex, String => < Match >
@@ -898,13 +888,7 @@ find_all = re, text =>
 // Returns the captured strings `[full_match, group1, group2, ...]` for the first match in `text`.
 captures: Regex, String => < String{} >
 captures = re, text =>
-   find(re, text)
-      | m =>
-         res = String{}
-         m.groups @ g =>
-            res += g.text
-         <+ res +>
-      | <-->
+   find(re, text) $+> m => m.groups @> (.text)
 
 // Replaces the first match of `re` in `text` with `repl` (supports `$$`, `$&`, `$0`, `$1`..`$9`).
 replace: Regex, String, String => String

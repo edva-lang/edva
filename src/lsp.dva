@@ -521,11 +521,7 @@ get_doc = uri =>
 
 remove_doc: String => ()
 remove_doc = uri =>
-   docs = open_docs
-   next = DocStates()
-   docs @ d =>
-      d.uri != uri | next += d
-   open_docs ::= next
+   open_docs ::= (open_docs @> d => d.uri != uri | <+ d +>)
 
 has_diag: diag::DiagEntries, diag::DiagEntry => <>
 has_diag = list, item =>

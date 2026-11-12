@@ -691,10 +691,8 @@ collect_dva_files = target, out =>
       |
          fs::is_dir(target)
             |
-               entries = fs::read_dir(target)
-               names = ast::Names()
-               entries @ ent =>
-                  ent.name(0) != '. | names += ent.name
+               names = fs::read_dir(target) @> ent =>
+                  ent.name(0) != '. | <+ ent.name +>
                sort_names(names)
                names @ name =>
                   sub = fs::join(target, name)

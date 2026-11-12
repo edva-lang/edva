@@ -79,11 +79,11 @@ ok_str = v => <++>
 prog_basename: String => String
 prog_basename = p =>
    str::split_once(p, " ")
-      | sp =>
-         base = str::rfind(sp.0, "/")
-            | idx => sp.0(idx + 1..?sp.0)
-            | sp.0
-         base + " " + sp.1
+      | (head, tail) =>
+         base = str::rfind(head, "/")
+            | idx => head(idx + 1..?head)
+            | head
+         base + " " + tail
       |
          str::rfind(p, "/")
             | idx => p(idx + 1..?p)
@@ -91,9 +91,7 @@ prog_basename = p =>
 
 split_spec: String => (String, String)
 split_spec = spec =>
-   str::split_once(spec, ":")
-      | pair => (pair.0, pair.1)
-      | ("", spec)
+   str::split_once(spec, ":") | pair => pair | ("", spec)
 
 split_cmd_spec: String => (String, Args)
 split_cmd_spec = spec =>
@@ -102,18 +100,17 @@ split_cmd_spec = spec =>
       | ("", Args())
       |
          primary = parts(0)!!
-         aliases = Args()
-         1..?parts @ i =>
+         aliases = 1..?parts @> i =>
             a = parts(i)!!
-            a != "" | aliases += a
+            a != "" | <+ a +>
          (primary, aliases)
 
 #public
 
 make_flag_opt: String, <>, String, FlagValidator => Opt
 make_flag_opt = spec, def_v, desc, vf =>
-   sp = split_spec(spec)
-   Opt(sp.0, sp.1, OptKind(KFlag), OptRole(ROpt), <->, def_v, 0, 0.0, "", desc, vf, ok_int, ok_float, ok_str, Args(), SubOpts(SubNone))
+   (short, long) = split_spec(spec)
+   Opt(short, long, OptKind(KFlag), OptRole(ROpt), <->, def_v, 0, 0.0, "", desc, vf, ok_int, ok_float, ok_str, Args(), SubOpts(SubNone))
 
 make_flag_opt_def: String, <>, String => Opt
 make_flag_opt_def = spec, def_v, desc =>
@@ -121,8 +118,8 @@ make_flag_opt_def = spec, def_v, desc =>
 
 make_int_opt: String, Int, String, IntValidator => Opt
 make_int_opt = spec, def_v, desc, vf =>
-   sp = split_spec(spec)
-   Opt(sp.0, sp.1, OptKind(KInt), OptRole(ROpt), <->, <->, def_v, 0.0, "", desc, ok_flag, vf, ok_float, ok_str, Args(), SubOpts(SubNone))
+   (short, long) = split_spec(spec)
+   Opt(short, long, OptKind(KInt), OptRole(ROpt), <->, <->, def_v, 0.0, "", desc, ok_flag, vf, ok_float, ok_str, Args(), SubOpts(SubNone))
 
 make_int_opt_def: String, Int, String => Opt
 make_int_opt_def = spec, def_v, desc =>
@@ -130,8 +127,8 @@ make_int_opt_def = spec, def_v, desc =>
 
 make_float_opt: String, Float, String, FloatValidator => Opt
 make_float_opt = spec, def_v, desc, vf =>
-   sp = split_spec(spec)
-   Opt(sp.0, sp.1, OptKind(KFloat), OptRole(ROpt), <->, <->, 0, def_v, "", desc, ok_flag, ok_int, vf, ok_str, Args(), SubOpts(SubNone))
+   (short, long) = split_spec(spec)
+   Opt(short, long, OptKind(KFloat), OptRole(ROpt), <->, <->, 0, def_v, "", desc, ok_flag, ok_int, vf, ok_str, Args(), SubOpts(SubNone))
 
 make_float_opt_def: String, Float, String => Opt
 make_float_opt_def = spec, def_v, desc =>
@@ -139,8 +136,8 @@ make_float_opt_def = spec, def_v, desc =>
 
 make_str_opt: String, String, String, StrValidator => Opt
 make_str_opt = spec, def_v, desc, vf =>
-   sp = split_spec(spec)
-   Opt(sp.0, sp.1, OptKind(KStr), OptRole(ROpt), <->, <->, 0, 0.0, def_v, desc, ok_flag, ok_int, ok_float, vf, Args(), SubOpts(SubNone))
+   (short, long) = split_spec(spec)
+   Opt(short, long, OptKind(KStr), OptRole(ROpt), <->, <->, 0, 0.0, def_v, desc, ok_flag, ok_int, ok_float, vf, Args(), SubOpts(SubNone))
 
 make_str_opt_def: String, String, String => Opt
 make_str_opt_def = spec, def_v, desc =>
@@ -148,8 +145,8 @@ make_str_opt_def = spec, def_v, desc =>
 
 make_str_list_opt: String, String, StrValidator => Opt
 make_str_list_opt = spec, desc, vf =>
-   sp = split_spec(spec)
-   Opt(sp.0, sp.1, OptKind(KStrList), OptRole(ROpt), <->, <->, 0, 0.0, "", desc, ok_flag, ok_int, ok_float, vf, Args(), SubOpts(SubNone))
+   (short, long) = split_spec(spec)
+   Opt(short, long, OptKind(KStrList), OptRole(ROpt), <->, <->, 0, 0.0, "", desc, ok_flag, ok_int, ok_float, vf, Args(), SubOpts(SubNone))
 
 make_str_list_opt_def: String, String => Opt
 make_str_list_opt_def = spec, desc =>
@@ -157,39 +154,39 @@ make_str_list_opt_def = spec, desc =>
 
 make_req_opt: String, Type, String => Opt
 make_req_opt = spec, ty, desc =>
-   sp = split_spec(spec)
+   (short, long) = split_spec(spec)
    kind = ty == Int
       | OptKind(KInt)
       | (ty == Float | OptKind(KFloat) | (ty == String | OptKind(KStr) | OptKind(KFlag)))
    req = kind ![KFlag]
-   Opt(sp.0, sp.1, kind, OptRole(ROpt), req, <->, 0, 0.0, "", desc, ok_flag, ok_int, ok_float, ok_str, Args(), SubOpts(SubNone))
+   Opt(short, long, kind, OptRole(ROpt), req, <->, 0, 0.0, "", desc, ok_flag, ok_int, ok_float, ok_str, Args(), SubOpts(SubNone))
 
 make_req_int_opt: String, String, IntValidator => Opt
 make_req_int_opt = spec, desc, vf =>
-   sp = split_spec(spec)
-   Opt(sp.0, sp.1, OptKind(KInt), OptRole(ROpt), <+>, <->, 0, 0.0, "", desc, ok_flag, vf, ok_float, ok_str, Args(), SubOpts(SubNone))
+   (short, long) = split_spec(spec)
+   Opt(short, long, OptKind(KInt), OptRole(ROpt), <+>, <->, 0, 0.0, "", desc, ok_flag, vf, ok_float, ok_str, Args(), SubOpts(SubNone))
 
 make_req_float_opt: String, String, FloatValidator => Opt
 make_req_float_opt = spec, desc, vf =>
-   sp = split_spec(spec)
-   Opt(sp.0, sp.1, OptKind(KFloat), OptRole(ROpt), <+>, <->, 0, 0.0, "", desc, ok_flag, ok_int, vf, ok_str, Args(), SubOpts(SubNone))
+   (short, long) = split_spec(spec)
+   Opt(short, long, OptKind(KFloat), OptRole(ROpt), <+>, <->, 0, 0.0, "", desc, ok_flag, ok_int, vf, ok_str, Args(), SubOpts(SubNone))
 
 make_req_str_opt: String, String, StrValidator => Opt
 make_req_str_opt = spec, desc, vf =>
-   sp = split_spec(spec)
-   Opt(sp.0, sp.1, OptKind(KStr), OptRole(ROpt), <+>, <->, 0, 0.0, "", desc, ok_flag, ok_int, ok_float, vf, Args(), SubOpts(SubNone))
+   (short, long) = split_spec(spec)
+   Opt(short, long, OptKind(KStr), OptRole(ROpt), <+>, <->, 0, 0.0, "", desc, ok_flag, ok_int, ok_float, vf, Args(), SubOpts(SubNone))
 
 as_pos_opt: Opt => Opt
 as_pos_opt = o =>
    has_dots = str::ends_with(o.long, "...") && ?o.long > 3
    clean_name = has_dots | o.long(0..?o.long - 3) | o.long
    eff_kind = has_dots | OptKind(KStrList) | o.kind
-   Opt("", clean_name, eff_kind, OptRole(RPos), o.required, o.def_flag, o.def_int, o.def_float, o.def_str, o.desc, o.val_flag, o.val_int, o.val_float, o.val_str, Args(), SubOpts(SubNone))
+   o(short = "", long = clean_name, kind = eff_kind, role = OptRole(RPos), aliases = Args(), sub_opts = SubOpts(SubNone))
 
 make_cmd_opt: String, String, Opts => Opt
 make_cmd_opt = spec, desc, sub_opts =>
-   sp = split_cmd_spec(spec)
-   Opt("", sp.0, OptKind(KFlag), OptRole(RCmd), <->, <->, 0, 0.0, "", desc, ok_flag, ok_int, ok_float, ok_str, sp.1, SubOpts(SubCmd, sub_opts))
+   (primary, aliases) = split_cmd_spec(spec)
+   Opt("", primary, OptKind(KFlag), OptRole(RCmd), <->, <->, 0, 0.0, "", desc, ok_flag, ok_int, ok_float, ok_str, aliases, SubOpts(SubCmd, sub_opts))
 
 #private
 

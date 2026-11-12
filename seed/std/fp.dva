@@ -55,11 +55,7 @@
    // (growable array, slice view, or record), building a new growable array of
    // element type B. Supports arbitrary element type transitions (A => B).
    map: #! A: Type, #! B: Type, #! T: Type, (A => B), T => B{}
-   map = f, xs =>
-      out = B{}
-      xs @ x =>
-         out += f(x)
-      out
+   map = f, xs => xs @> f
 
    filter: #! E: Type, #! T: Type, (E => <>), T => T
    filter = pred, xs =>
@@ -81,18 +77,10 @@
    // reduce / fold: fold collection from left with an initial accumulator value.
    // Safe on empty collections (returns init).
    reduce: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => Acc
-   reduce = f, init, xs =>
-      acc' = init
-      xs @ x =>
-         acc' = f(acc', x)
-      acc'
+   reduce = f, init, xs => (init, xs) @> f
 
    fold: #! E: Type, #! Acc: Type, #! T: Type, (Acc, E => Acc), Acc, T => Acc
-   fold = f, init, xs =>
-      acc' = init
-      xs @ x =>
-         acc' = f(acc', x)
-      acc'
+   fold = f, init, xs => (init, xs) @> f
 
    // scan: running accumulation from left, emitting initial and each
    // intermediate accumulator state into a growable array.
@@ -160,22 +148,14 @@
    all_bit = mask =>
       T
          [i1] mask
-         |
-            acc' = <+>
-            0..?T @ i =>
-               acc' = acc' && mask.(i)
-            acc'
+         | (<+>, 0..?T) @> acc, i => acc && mask.(i)
 
    // any_bit: returns <+> if at least one component of mask is <+>, else <->.
    any_bit: #! T: Type, T => <>
    any_bit = mask =>
       T
          [i1] mask
-         |
-            acc' = <->
-            0..?T @ i =>
-               acc' = acc' || mask.(i)
-            acc'
+         | (<->, 0..?T) @> acc, i => acc || mask.(i)
 
    // --- identity / tap -------------------------------------------------------
 
@@ -274,22 +254,10 @@
    // shorter collection ends.
    zip: #! A: Type, #! B: Type, A[], B[] => (A, B){}
    zip = xs, ys =>
-      na = ?xs
-      nb = ?ys
-      limit = na < nb | na | nb
-      out = (A, B){}
-      0..limit @ i =>
-         out += (xs(i), ys(i))
-      out
+      0..%min(?xs, ?ys) @> i => (xs(i), ys(i))
 
    // zip_with: combine elements of two slices pairwise using a combining
    // function f until the shorter collection ends.
    zip_with: #! A: Type, #! B: Type, #! C: Type, (A, B => C), A[], B[] => C{}
    zip_with = f, xs, ys =>
-      na = ?xs
-      nb = ?ys
-      limit = na < nb | na | nb
-      out = C{}
-      0..limit @ i =>
-         out += f(xs(i), ys(i))
-      out
+      0..%min(?xs, ?ys) @> i => f(xs(i), ys(i))

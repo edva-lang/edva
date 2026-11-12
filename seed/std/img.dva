@@ -80,11 +80,11 @@ from_fn = width, height, f =>
    buf = {width * height * 4}
    height @ y =>
       width @ x =>
-         px = f(x, y)
-         buf += clamp_u8(px.0)
-         buf += clamp_u8(px.1)
-         buf += clamp_u8(px.2)
-         buf += clamp_u8(px.3)
+         (r, g, b, a) = f(x, y)
+         buf += clamp_u8(r)
+         buf += clamp_u8(g)
+         buf += clamp_u8(b)
+         buf += clamp_u8(a)
    Image(width, height, +buf)
 
 // Rasterizes a UV color sampler `(u: Float, v: Float => color::Color)` into an `Image`.
@@ -97,11 +97,11 @@ from_sampler = width, height, sampler =>
       v = (Float(y) + 0.5) / hf
       width @ x =>
          u = (Float(x) + 0.5) / wf
-         c = sampler(u, v)
-         buf += float_to_u8(c.r)
-         buf += float_to_u8(c.g)
-         buf += float_to_u8(c.b)
-         buf += float_to_u8(c.a)
+         (r, g, b, a) = sampler(u, v)
+         buf += float_to_u8(r)
+         buf += float_to_u8(g)
+         buf += float_to_u8(b)
+         buf += float_to_u8(a)
    Image(width, height, +buf)
 
 // Reads pixel `(x, y)` as `(r, g, b, a)` in `0..255` (clamped to image bounds).
@@ -121,17 +121,15 @@ get_rgba = im, x, y =>
 // Reads pixel `(x, y)` as a normalized `color::Color`.
 get_color: Image, Int, Int => color::Color
 get_color = im, x, y =>
-   px = get_rgba(im, x, y)
-   color::color_rgba(Float(px.0) / 255.0, Float(px.1) / 255.0, Float(px.2) / 255.0, Float(px.3) / 255.0)
+   (r, g, b, a) = get_rgba(im, x, y)
+   color::color_rgba(Float(r) / 255.0, Float(g) / 255.0, Float(b) / 255.0, Float(a) / 255.0)
 
 // --- QOI (Quite OK Image Format) Codec --------------------------------------
 
 // Encodes an `Image` into the QOI binary format (14-byte header + chunks + 8-byte end marker).
 encode_qoi: Image => String
 encode_qoi = im =>
-   w = im.width
-   h = im.height
-   px = im.pixels
+   (w, h, px) = im
    num_px = w * h
    out = {num_px * 4 + 64}
    // 14-byte QOI header: magic "qoif", width (u32 BE), height (u32 BE), channels=4, colorspace=0
@@ -292,9 +290,7 @@ PNG_MAGIC = "\x89PNG\r\n\x1A\n"
 // Encodes an `Image` into a lossless RFC 2083 RGBA8 PNG byte string.
 encode_png: Image => String
 encode_png = im =>
-   w = im.width
-   h = im.height
-   px = im.pixels
+   (w, h, px) = im
    stride = w * 4
    // Build filtered scanlines using Sub filter (filter type 1) for crisp compression
    raw = {h * (stride + 1)}

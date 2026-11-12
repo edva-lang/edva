@@ -392,7 +392,7 @@ append_bytes = b, src, n =>
 
    // Returns a copy of `opts` with working directory `dir`.
    with_cwd: SpawnOpts, String => SpawnOpts
-   with_cwd = opts, dir => SpawnOpts(dir, opts.env, opts.clear_env)
+   with_cwd = opts, dir => opts(cwd = dir)
 
    // Returns a copy of `opts` with environment override `key = val`.
    with_env: SpawnOpts, String, String => SpawnOpts
@@ -401,11 +401,11 @@ append_bytes = b, src, n =>
       ?opts.env @ i =>
          evs' += opts.env(i)!!
       evs' += EnvVar(key, val)
-      SpawnOpts(opts.cwd, evs', opts.clear_env)
+      opts(env = evs')
 
    // Returns a copy of `opts` with `clear_env` set to `flag`.
    with_clear_env: SpawnOpts, <> => SpawnOpts
-   with_clear_env = opts, flag => SpawnOpts(opts.cwd, opts.env, flag)
+   with_clear_env = opts, flag => opts(clear_env = flag)
 
    // Spawns `prog` with `args` and `opts` in the background (inheriting stdio).
    // Returns `<+ child_pid +>` or `<-->` if `chdir`/`fork`/`execvp` fails.
@@ -418,7 +418,7 @@ append_bytes = b, src, n =>
       exec_w = Int(exec_p.w)
       libc::fcntl(exec_w, 2, 1)
       ar = mem::arena(512)
-      built = build_argv_args(ar, prog, args)
+      (c_prog, c_argv) = build_argv_args(ar, prog, args)
       child_pid = Int(c_fork!)
       child_pid < 0
          |
@@ -430,7 +430,7 @@ append_bytes = b, src, n =>
             |
                libc::close(exec_r)
                apply_spawn_opts(opts)
-                  | c_execvp(built.0, built.1)
+                  | c_execvp(c_prog, c_argv)
                err_b = 1i32
                libc::write_ptr(exec_w, &err_b, 4)
                libc::close(exec_w)
@@ -504,7 +504,7 @@ append_bytes = b, src, n =>
       exec_w = Int(exec_p.w)
       libc::fcntl(exec_w, 2, 1)
       ar = mem::arena(512)
-      built = build_argv_args(ar, prog, args)
+      (c_prog, c_argv) = build_argv_args(ar, prog, args)
       child_pid = Int(c_fork!)
       child_pid < 0
          |
@@ -531,7 +531,7 @@ append_bytes = b, src, n =>
                libc::close(out_w)
                libc::close(err_w)
                apply_spawn_opts(opts)
-                  | c_execvp(built.0, built.1)
+                  | c_execvp(c_prog, c_argv)
                err_b = 1i32
                libc::write_ptr(exec_w, &err_b, 4)
                libc::close(exec_w)

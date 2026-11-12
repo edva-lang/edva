@@ -2145,40 +2145,7 @@ annotate_expr = ctx, env, expr =>
                      is_feed && is_inline_choice_fn | (cur_expected_ut ::= <-->)
                      call_te = annotate_call(ctx, env, ce)
                      cur_expected_ut ::= saved_feed_exp
-                     c_call = unify::canon(ctx, call_te.ut)
-                     is_match_rhs = b.2
-                        [Choice, Var] <+>
-                        [Fn fe_m] fe_m.body [Choice]
-                        | <->
-                     is_match_dispatch = is_feed && is_match_rhs
-                     is_match_dispatch
-                        |
-                           c_call
-                              [Fn f_res]
-                                 ?f_res.params == 1
-                                    |
-                                       arg_te = annotate_call_arg(ctx, env, b.1)
-                                       p0 = f_res.params(0) | _ |
-                                          unify::UType(None)
-                                       ok_p = unify::unify(ctx, p0, arg_te.ut)
-                                       ok_p
-                                          |
-                                             cargs = tast::TypedExprs()
-                                             cargs += arg_te
-                                             ret_ti =
-                                                unify::type_info_from_utype(
-                                                   ctx, f_res.ret)
-                                             ret_lay =
-                                                layout::compute_layout(ctx,
-                                                  f_res.ret)
-                                             tast::mk_typed_call("",
-                                               <+ call_te +>, cargs,
-                                               f_res.ret, ret_ti, ret_lay,
-                                               0, 0)
-                                          | call_te
-                                    | call_te
-                              | call_te
-                        | call_te
+                     call_te
                   |
                      op1 = b.0
                      lhs1 = annotate_expr(ctx, env, b.1)
@@ -6002,9 +5969,7 @@ prebind_scc = ctx, env, exprs, name =>
                         [Fn fe]
                            ?fe.ct_params == 0
                               |
-                                 p_uts = unify::UTypes()
-                                 ?fe.params @ p_i =>
-                                    p_uts += unify::fresh_var(ctx)
+                                 p_uts = ?fe.params @> _p_i => unify::fresh_var(ctx)
                                  ret_ut = unify::fresh_var(ctx)
                                  fn_ut = unify::mk_fn(p_uts, ret_ut)
                                  fn_ti = unify::type_info_from_utype(ctx,
@@ -6214,15 +6179,13 @@ register_foreign_decl = env, f =>
          type_env::bind_local(env, f.dva_name, ret_ut, ret_ti, <->)
          type_env::init_mark_whole(env, f.dva_name)
       |
-         param_uts = unify::UTypes()
-         ?f.params @ i =>
+         param_uts = ?f.params @> i =>
             p = f.params(i) | _ | ast::ForeignFnParam("",
               ast::ValueType(Unknown),
               ast::TypeInfo(Prim, ast::ValueType(Unknown)))
             is_rec = p.param_type [Record]
-            p_ut = is_rec | utype_from_ti_env(env, p.record_info) |
+            is_rec | utype_from_ti_env(env, p.record_info) |
                unify::UType(Prim, unify::vt_to_uprim(p.param_type))
-            param_uts += p_ut
          fn_ut = unify::UType(Fn, unify::UFn(param_uts, ret_ut))
          type_env::bind_local(env, f.dva_name, fn_ut,
            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
@@ -6256,20 +6219,16 @@ count_expr_nodes: tast::TypedExpr => Int
 
 count_expr_list: tast::TypedExprs => Int
 count_expr_list = exprs =>
-   total' = 0
-   ?exprs @ i =>
+   (0, ?exprs) @> total, i =>
       e = exprs(i) | _ | tast::mk_lit_unit(0, 0)
-      total' = total' + count_expr_nodes(e)
-   total'
+      total + count_expr_nodes(e)
 
 count_record_fields: tast::TypedFields => Int
 count_record_fields = fields =>
-   total' = 0
-   ?fields @ i =>
+   (0, ?fields) @> total, i =>
       f = fields(i) | _ | tast::TypedField("", tast::mk_lit_unit(0, 0),
         0, unify::UType(None))
-      total' = total' + count_expr_nodes(f.val)
-   total'
+      total + count_expr_nodes(f.val)
 
 count_choice_branches: tast::TypedBranches => Int
 count_choice_branches = branches =>

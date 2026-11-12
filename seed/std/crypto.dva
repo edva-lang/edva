@@ -190,10 +190,8 @@ ct_eq = a, b =>
    la = ?a
    lb = ?b
    la != lb | <-> |
-      diff' = 0
-      la @ i =>
-         diff' = diff' .|. ((a(i) .^. b(i)) .&. 0xFF)
-      diff' == 0
+      diff = (0, la) @> acc, i => acc .|. ((a(i) .^. b(i)) .&. 0xFF)
+      diff == 0
 
 // Computes the raw 20-byte SHA-1 digest of `msg` (RFC 3174).
 sha1_bytes: String => String
@@ -504,9 +502,7 @@ pbkdf2_sha256_bytes = password, salt, iterations, dk_len =>
 // PBKDF2-HMAC-SHA256 returning a lowercase hex string of `dk_len * 2` characters.
 pbkdf2_sha256: String, String, Int, Int => < String | Error >
 pbkdf2_sha256 = password, salt, iterations, dk_len =>
-   pbkdf2_sha256_bytes(password, salt, iterations, dk_len)
-      | raw => <+ hex::encode(raw) ->
-      | err => <- err +>
+   pbkdf2_sha256_bytes(password, salt, iterations, dk_len) $+> hex::encode
 
 #private
 
@@ -707,9 +703,7 @@ poly1305_mac = key, msg =>
 // Computes the 32-character lowercase hex Poly1305 tag over `msg` using a 32-byte `key`.
 poly1305_hex: String, String => < String | Error >
 poly1305_hex = key, msg =>
-   poly1305_mac(key, msg)
-      | tag => <+ hex::encode(tag) ->
-      | err => <- err +>
+   poly1305_mac(key, msg) $+> hex::encode
 
 #private
 
@@ -742,10 +736,7 @@ aead_poly1305_tag = key, nonce, aad, ciphertext =>
 aead_seal: String, String, String, String => < String | Error >
 aead_seal = key, nonce, aad, plaintext =>
    chacha20_xor(key, nonce, 1, plaintext)
-      | ct =>
-         aead_poly1305_tag(key, nonce, aad, ct)
-            | tag => <+ ct + tag ->
-            | err => <- err +>
+      | ct => aead_poly1305_tag(key, nonce, aad, ct) $+> tag => ct + tag
       | err => <- err +>
 
 // Verifies and decrypts `sealed` (`ciphertext || 16-byte tag`) with associated data `aad`
@@ -782,13 +773,10 @@ random_bytes = n =>
 // Returns `n` cryptographically secure random bytes encoded as `2 * n` lowercase hex characters.
 random_hex: Int => < String | Error >
 random_hex = n =>
-   random_bytes(n)
-      | raw => <+ hex::encode(raw) ->
-      | err => <- err +>
+   random_bytes(n) $+> hex::encode
 
 // Reads a cryptographically secure 64-bit integer from `/dev/urandom`.
 random_u64: () => < Int | Error >
 random_u64 = !=>
    random_bytes(8)
-      | raw => <+ read_u32_le_raw(raw, 0) .|. (read_u32_le_raw(raw, 4) .<. 32) ->
-      | err => <- err +>
+      $+> raw => read_u32_le_raw(raw, 0) .|. (read_u32_le_raw(raw, 4) .<. 32)

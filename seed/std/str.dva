@@ -386,9 +386,7 @@
 
    split_once: String, String => < (String, String) | >
    split_once = s, sep =>
-      str::find(s, sep)
-         | idx => <+ (s(0..idx), s((idx + ?sep)..?s)) +>
-         | <-->
+      str::find(s, sep) $+> idx => (s(0..idx), s((idx + ?sep)..?s))
 
    split: String, String => Strings
    split = s, sep =>
@@ -456,10 +454,8 @@
       n == 0 | --| ""
       n == 1 | --| parts(0)!!
       lsep = ?sep
-      total' = (n - 1) * lsep
-      parts @ p =>
-         total' = total' + ?p
-      b = {total' + 1}
+      total = ((n - 1) * lsep, parts) @> acc, p => acc + ?p
+      b = {total + 1}
       parts @ p, i =>
          i > 0 && lsep > 0 | b += sep
          b += p
@@ -481,14 +477,14 @@
                b += ascii::to_lower(b0)
                i' = i' + 1
             |
-               dec = utf::decode_str_at(s, i')
-               dec.0 < 0
+               (cp, width) = utf::decode_str_at(s, i')
+               cp < 0
                   |
                      b += b0
                      i' = i' + 1
                   |
-                     utf::append_rune(b, unicode::to_lower(Rune(dec.0)))
-                     i' = i' + dec.1
+                     utf::append_rune(b, unicode::to_lower(Rune(cp)))
+                     i' = i' + width
       +b
 
    upper: String => String
@@ -505,16 +501,16 @@
                b += ascii::to_upper(b0)
                i' = i' + 1
             |
-               dec = utf::decode_str_at(s, i')
-               dec.0 < 0
+               (cp, width) = utf::decode_str_at(s, i')
+               cp < 0
                   |
                      b += b0
                      i' = i' + 1
                   |
-                     dec.0 == 0x00DF
+                     cp == 0x00DF
                         | b += "SS"
-                        | utf::append_rune(b, unicode::to_upper(Rune(dec.0)))
-                     i' = i' + dec.1
+                        | utf::append_rune(b, unicode::to_upper(Rune(cp)))
+                     i' = i' + width
       +b
 
    repeat: String, Int => String

@@ -245,9 +245,7 @@ parse = raw =>
          auth_str = slash_opt | sidx => after_slashes(0..sidx) | after_slashes
          path_str = slash_opt | sidx => after_slashes(sidx..?after_slashes) | ""
          parse_authority(auth_str)
-            | ap =>
-               <+ Url(scheme', ap.0, ap.1, ap.2, path_str, query', frag') ->
-            | err => <- err +>
+            $+> (uinfo, host, port) => Url(scheme', uinfo, host, port, path_str, query', frag')
       |
          <+ Url(scheme', "", "", 0, rest', query', frag') ->
 
@@ -290,19 +288,17 @@ format = u =>
 resolve: Url, String => < Url | Error >
 resolve = base, ref_str =>
    parse(ref_str)
-      | r =>
+      $+> r =>
          ?r.scheme > 0
-            |
-               <+ Url(r.scheme, r.userinfo, r.host, r.port, normalize_path(r.path), r.query, r.fragment) ->
+            | r(path = normalize_path(r.path))
             |
                (?r.host > 0 || ?r.userinfo > 0 || r.port > 0)
-                  |
-                     <+ Url(base.scheme, r.userinfo, r.host, r.port, normalize_path(r.path), r.query, r.fragment) ->
+                  | r(scheme = base.scheme, path = normalize_path(r.path))
                   |
                      ?r.path == 0
                         |
                            eff_q = ?r.query > 0 | r.query | base.query
-                           <+ Url(base.scheme, base.userinfo, base.host, base.port, base.path, eff_q, r.fragment) ->
+                           base(query = eff_q, fragment = r.fragment)
                         |
                            merged_path = r.path(0) == '/
                               | r.path
@@ -313,8 +309,7 @@ resolve = base, ref_str =>
                                        str::rfind(base.path, "/")
                                           | sl_idx => base.path(0..sl_idx + 1) + r.path
                                           | r.path
-                           <+ Url(base.scheme, base.userinfo, base.host, base.port, normalize_path(merged_path), r.query, r.fragment) ->
-      | err => <- err +>
+                           base(path = normalize_path(merged_path), query = r.query, fragment = r.fragment)
 
 // --- Query String Parsing & Structural Codec (#!) ---------------------------
 
@@ -372,10 +367,7 @@ get_query = params, key =>
 // Returns all values associated with `key` in `params`.
 get_query_all: QueryParams, String => String{}
 get_query_all = params, key =>
-   out = String{}
-   params @ e =>
-      e.key == key | out += e.val
-   out
+   params @> e => e.key == key | <+ e.val +>
 
 #private
 

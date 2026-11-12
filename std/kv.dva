@@ -254,10 +254,8 @@ delete = db, key =>
 // Returns all live keys in `db` in sorted lexicographical order.
 keys: Store => String{}
 keys = db =>
-   out = String{}
-   db.keydir @ loc, k =>
-      out += k
-   sort::strings(out)
+   ks = db.keydir @> _loc, k => k
+   sort::strings(ks)
 
 // Compacts the log file in-place by writing only live key-value entries to a temporary file
 // and atomically renaming it over `db.path`, reclaiming space from overwritten and deleted keys.

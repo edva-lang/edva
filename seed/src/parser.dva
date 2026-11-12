@@ -1035,36 +1035,31 @@ parse_unary_op = p =>
 atom_neg: Parser => <ast::Expr|>
 atom_neg = p =>
    parser_advance(p)
-   orr = parse_unary(p)
-   orr | oe => <+ ast::Expr(Unary, (ast::UnaryOp(Not), oe)) +>
+   parse_unary(p) $+> oe => ast::Expr(Unary, (ast::UnaryOp(Not), oe))
 
 // "+x" — Builder freeze into String (no trailing whitespace).
 atom_freeze: Parser => <ast::Expr|>
 atom_freeze = p =>
    parser_advance(p)
-   fr = parse_unary(p)
-   fr | fe => <+ ast::Expr(Unary, (ast::UnaryOp(Freeze), fe)) +>
+   parse_unary(p) $+> fe => ast::Expr(Unary, (ast::UnaryOp(Freeze), fe))
 
 // "&x" — address of a Builder's writable buffer or String pointer (no trailing whitespace).
 atom_addrof: Parser => <ast::Expr|>
 atom_addrof = p =>
    parser_advance(p)
-   ar = parse_unary(p)
-   ar | ae => <+ ast::Expr(Unary, (ast::UnaryOp(AddrOf), ae)) +>
+   parse_unary(p) $+> ae => ast::Expr(Unary, (ast::UnaryOp(AddrOf), ae))
 
 // ".!.x" — bitwise NOT (integerish).
 atom_bitnot: Parser => <ast::Expr|>
 atom_bitnot = p =>
    parser_advance(p)
-   br = parse_unary(p)
-   br | be => <+ ast::Expr(Unary, (ast::UnaryOp(BitNot), be)) +>
+   parse_unary(p) $+> be => ast::Expr(Unary, (ast::UnaryOp(BitNot), be))
 
 // "++x" — the copy operator.
 atom_copy: Parser => <ast::Expr|>
 atom_copy = p =>
    parser_advance(p)
-   orr = parse_unary(p)
-   orr | oe => <+ ast::Expr(Copy, oe) +>
+   parse_unary(p) $+> oe => ast::Expr(Copy, oe)
 
 find_last_dot: String, Int => <Int|>
 find_last_dot = s, i =>
@@ -1293,11 +1288,7 @@ atom_minus_rune = p =>
 atom_minus_other: Parser => <ast::Expr|>
 atom_minus_other = p =>
    parser_advance(p)
-   orr = parse_unary(p)
-   orr
-      | oe =>
-         <+ ast::Expr(Unary, (ast::UnaryOp(Neg), oe)) +>
-      | <-->
+   parse_unary(p) $+> oe => ast::Expr(Unary, (ast::UnaryOp(Neg), oe))
 
 atom_to_ram: <ast::Expr|> => < ast::Expr | Error >
 atom_to_ram = r =>
@@ -1633,8 +1624,7 @@ atom_spawn = p =>
 atom_join: Parser => <ast::Expr|>
 atom_join = p =>
    parser_advance(p)
-   h = parse_expr(p)
-   h | he => <+ ast::Expr(Join, he) +>
+   parse_expr(p) $+> he => ast::Expr(Join, he)
 
 // "#exit code" — terminate the process with the given status. The code is the
 // WHOLE following expression at the choice tier (the lowest precedence): a
@@ -1648,7 +1638,7 @@ atom_exit = p =>
    code = p.branch_body_depth > 0
       | parse_range(p)
       | parse_choice(p)
-   code | ce => <+ ast::Expr(Exit, ce) +>
+   code $+> ce => ast::Expr(Exit, ce)
 
 // "#error <msg>" or "#warn <msg>" — compile-time user diagnostic assertions.
 atom_user_diag: Parser, <> => <ast::Expr|>

@@ -415,8 +415,8 @@ utc_from_epoch = sec, nsec =>
    hh = rem / 3600
    mm = (rem % 3600) / 60
    ss = rem % 60
-   civ = civil_from_days(days)
-   DateTime(civ.0, civ.1, civ.2, hh, mm, ss, nsec, civ.3, civ.4, 0)
+   (year, mon, mday, wday, yday) = civil_from_days(days)
+   DateTime(year, mon, mday, hh, mm, ss, nsec, wday, yday, 0)
 
 // Pure-Edva conversion from DateTime to Unix epoch seconds (adjusts for utc_off)
 epoch: DateTime => Int
@@ -428,8 +428,8 @@ epoch = dt =>
 datetime_utc: Int, Int, Int, Int, Int, Int => DateTime
 datetime_utc = year, month, day, hour, min, sec =>
    z = days_from_civil(year, month, day)
-   civ = civil_from_days(z)
-   DateTime(year, month, day, hour, min, sec, 0, civ.3, civ.4, 0)
+   (_yr, _mo, _dy, wday, yday) = civil_from_days(z)
+   DateTime(year, month, day, hour, min, sec, 0, wday, yday, 0)
 
 // --- Broken-Down Local & UTC DateTime (Single-Call or From Epoch) -----------
 

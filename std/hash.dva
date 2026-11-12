@@ -48,20 +48,15 @@ combine = h1, h2 =>
 // Computes 64-bit FNV-1a hash of `s`.
 fnv1a: String => u64
 fnv1a = s =>
-   h' = FNV64_OFFSET
-   ?s @ i =>
-      b = u64(s(i) .&. 0xFF)
-      h' = (h' .^. b) * FNV64_PRIME
-   h'
+   (FNV64_OFFSET, ?s) @> h, i =>
+      (h .^. u64(s(i) .&. 0xFF)) * FNV64_PRIME
 
 // Computes 32-bit FNV-1a hash of `s`.
 fnv1a32: String => u32
 fnv1a32 = s =>
-   h' = 0x811c9dc5u64
-   ?s @ i =>
-      b = u64(s(i) .&. 0xFF)
-      h' = ((h' .^. b) * 0x01000193u64) .&. 0xFFFFFFFFu64
-   u32(h')
+   h = (0x811c9dc5u64, ?s) @> acc, i =>
+      ((acc .^. u64(s(i) .&. 0xFF)) * 0x01000193u64) .&. 0xFFFFFFFFu64
+   u32(h)
 
 // Computes a fast seeded 64-bit hash of `s`.
 wyhash: String, u64 => u64
@@ -127,15 +122,9 @@ seeded = seed, val =>
       [<P|>]
          (val | inner => seeded(P, wymix(seed, 1u64), inner) | wymix(seed, 0u64))
       [E{}]
-         h' = wymix(seed, u64(?val))
-         val @ elem =>
-            h' = seeded(E, h', elem)
-         h'
+         (wymix(seed, u64(?val)), val) @> h, elem => seeded(E, h, elem)
       [E[]]
-         h' = wymix(seed, u64(?val))
-         val @ elem =>
-            h' = seeded(E, h', elem)
-         h'
+         (wymix(seed, u64(?val)), val) @> h, elem => seeded(E, h, elem)
       [K ^ V]
          // Order-independent XOR/sum combination across map entries
          acc_xor' = 0u64

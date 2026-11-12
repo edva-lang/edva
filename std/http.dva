@@ -162,7 +162,7 @@ with_header = req, name, value =>
    ?req.headers @ i =>
       nh += req.headers(i)!!
    nh += Header(name, value)
-   Request(req.method, req.url, nh, req.body, req.timeout_ms)
+   req(headers = nh)
 
 with_headers: Request, Headers => Request
 with_headers = req, extra =>
@@ -171,11 +171,11 @@ with_headers = req, extra =>
       nh += req.headers(i)!!
    ?extra @ i =>
       nh += extra(i)!!
-   Request(req.method, req.url, nh, req.body, req.timeout_ms)
+   req(headers = nh)
 
 with_body: Request, String => Request
 with_body = req, body =>
-   Request(req.method, req.url, req.headers, body, req.timeout_ms)
+   req(body = body)
 
 with_json_body: Request, String => Request
 with_json_body = req, json_str =>
@@ -189,7 +189,7 @@ with_bearer = req, token =>
 
 with_timeout: Request, Int => Request
 with_timeout = req, timeout_ms =>
-   Request(req.method, req.url, req.headers, req.body, timeout_ms)
+   req(timeout_ms = timeout_ms)
 
 response_header: Response, String => < String | >
 response_header = res, name =>
@@ -291,16 +291,10 @@ parse_head_block = head_str =>
          reason = sp2 < ?rest | str::trim(rest((sp2 + 1)..)) | ""
          str::parse_int(code_str)
             | status =>
-               hdrs = Headers()
-               1..?lines @ i =>
+               hdrs = 1..?lines @> i =>
                   ln = lines(i)!!
-                  ?ln > 0
-                     |
-                        str::find(ln, ":")
-                           | colon =>
-                              hname = str::trim(ln(0..colon))
-                              hval = str::trim(ln((colon + 1)..))
-                              hdrs += Header(hname, hval)
+                  (?ln > 0 | str::find(ln, ":") | <-->)
+                     $+> colon => Header(str::trim(ln(0..colon)), str::trim(ln((colon + 1)..)))
                <+ (status = status, reason = reason, headers = hdrs) ->
             | <- "invalid HTTP status code: " + code_str +>
       | <- "malformed HTTP status line: " + status_line +>
@@ -330,8 +324,7 @@ parse_response = raw =>
                contains_ci(te, "chunked")
                   |
                      decode_chunked(body_raw)
-                        | dec => <+ Response(parsed.status, parsed.reason, parsed.headers, dec) ->
-                        | err => <- err +>
+                        $+> dec => Response(parsed.status, parsed.reason, parsed.headers, dec)
                   |
                      cl_str = get_header(parsed.headers, "Content-Length") | v => v | ""
                      ?cl_str > 0
@@ -420,8 +413,7 @@ read_http_from_fd = fd, req_method =>
                            | chunk => body_buf' = body_buf' + chunk
                            | -->
                      decode_chunked(body_buf')
-                        | dec => <+ (res = Response(status, parsed.reason, hdrs, dec), keep_alive = ka) ->
-                        | err => <- err +>
+                        $+> dec => (res = Response(status, parsed.reason, hdrs, dec), keep_alive = ka)
                   |
                      cl_str = get_header(hdrs, "Content-Length") | v => v | ""
                      ?cl_str > 0

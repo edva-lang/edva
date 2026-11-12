@@ -130,9 +130,7 @@ compiler_exe_path = ""
 
 getenv_opt: String => <String|>
 getenv_opt = name =>
-   sys::addr_opt(getenv(name))
-      | p => <+ sys::c_str(p) +>
-      | <-->
+   sys::addr_opt(getenv(name)) $+> sys::c_str
 
 init_compiler_paths: () => ()
 init_compiler_paths = !=>
@@ -183,10 +181,8 @@ sort_names = names =>
 
 dir_dva_files: String => ast::Names
 dir_dva_files = dir_path =>
-   names = ast::Names()
-   entries = fs::read_dir(dir_path)
-   entries @ e =>
-      !e.is_dir && is_dva_file(e.name) | names += e.name
+   names = fs::read_dir(dir_path) @> e =>
+      !e.is_dir && is_dva_file(e.name) | <+ e.name +>
    sort_names(names)
    names
 
@@ -231,9 +227,7 @@ unmark_private = e =>
 
 unmark_private_exprs: ast::Exprs => ast::Exprs
 unmark_private_exprs = exprs =>
-   out = ast::Exprs()
-   exprs @ e => out += unmark_private(e)
-   out
+   exprs @> unmark_private
 
 has_dcolon_step: String, Int => <>
 has_dcolon_step = s, i =>
@@ -925,9 +919,7 @@ check_file_clash = stmts, table, sources =>
 
 rewrite_import_exprs: ast::Exprs, ImportMap, ast::Names => ast::Exprs
 rewrite_import_exprs = exprs, table, locals =>
-   res = ast::Exprs()
-   exprs @ e => res += rewrite_import_expr(e, table, locals)
-   res
+   exprs @> e => rewrite_import_expr(e, table, locals)
 
 rewrite_import_call: ast::CallExpr, ImportMap, ast::Names => ast::CallExpr
 rewrite_import_call = c, table, locals =>
@@ -940,11 +932,8 @@ rewrite_import_call = c, table, locals =>
 
 rewrite_import_fparams: ast::FParams, ImportMap => ast::FParams
 rewrite_import_fparams = params, table =>
-   res = ast::FParams()
-   params @ p =>
-      new_rec = rewrite_import_type_info(p.record_info, table)
-      res += ast::ForeignFnParam(p.name, p.param_type, new_rec)
-   res
+   params @> p =>
+      ast::ForeignFnParam(p.name, p.param_type, rewrite_import_type_info(p.record_info, table))
 
 rewrite_import_type_info: ast::TypeInfo, ImportMap => ast::TypeInfo
 rewrite_import_type_info = ti, table =>
@@ -957,16 +946,14 @@ rewrite_import_type_info = ti, table =>
          new_inner = rewrite_import_type_info(a.1, table)
          ast::TypeInfo(Align, (a.0, new_inner))
       [Rec r]
-         new_fields = ast::FieldTypes()
-         r.0 @ f =>
+         new_fields = r.0 @> f =>
             new_fti = rewrite_import_type_info(f.rec_type, table)
             new_def = rewrite_import_expr(f.default_expr, table, ast::Names())
-            new_fields += ast::RecordFieldType(f.name, f.val_type, new_fti,
+            ast::RecordFieldType(f.name, f.val_type, new_fti,
               f.has_default, new_def)
          ast::TypeInfo(Rec, (new_fields, r.1, r.2, r.3, r.4, r.5))
       [Fn f]
-         new_p_tis = ast::VInfos()
-         f.1 @ pti => new_p_tis += rewrite_import_type_info(pti, table)
+         new_p_tis = f.1 @> pti => rewrite_import_type_info(pti, table)
          new_ret_ti = rewrite_import_type_info(f.3, table)
          ast::TypeInfo(Fn, (f.0, new_p_tis, f.2, new_ret_ti, f.4))
       [Ram r]
@@ -978,10 +965,9 @@ rewrite_import_type_info = ti, table =>
             ast::RamSlotInfo(s0.has_payload, s0.payload_type, s0_ti),
             ast::RamSlotInfo(s1.has_payload, s1.payload_type, s1_ti)))
       [Enum es]
-         new_es = ast::EnumSlots()
-         es @ s =>
+         new_es = es @> s =>
             new_sti = rewrite_import_type_info(s.payload_record, table)
-            new_es += ast::EnumSlotInfo(s.label, s.has_payload,
+            ast::EnumSlotInfo(s.label, s.has_payload,
               s.payload_type, new_sti)
          ast::TypeInfo(Enum, new_es)
       [Array a]
@@ -1004,6 +990,16 @@ member_chain_name = e =>
          b == "" | "" | b + (t.is_module_access | "::" | ".") + t.field_name
       | ""
 
+collect_assigned_locals: ast::Expr, ast::Names => ()
+collect_assigned_locals = e, locals =>
+   e
+      [Assign ca] (ca.0 != "" | locals += ca.0)
+      [Bin b]
+         b.0
+            [Seq]
+               collect_assigned_locals(b.1, locals)
+               collect_assigned_locals(b.2, locals)
+
 rewrite_import_expr: ast::Expr, ImportMap, ast::Names => ast::Expr
 rewrite_import_expr = e, table, locals =>
    e
@@ -1014,9 +1010,17 @@ rewrite_import_expr = e, table, locals =>
       [Call c]
          ast::Expr(Call, rewrite_import_call(c, table, locals))
       [Bin b]
-         ast::Expr(Bin, (b.0,
-           rewrite_import_expr(b.1, table, locals),
-           rewrite_import_expr(b.2, table, locals)))
+         b.0
+            [Seq]
+               seq_locals = ++locals
+               r1 = rewrite_import_expr(b.1, table, seq_locals)
+               collect_assigned_locals(b.1, seq_locals)
+               r2 = rewrite_import_expr(b.2, table, seq_locals)
+               ast::Expr(Bin, (b.0, r1, r2))
+            |
+               ast::Expr(Bin, (b.0,
+                 rewrite_import_expr(b.1, table, locals),
+                 rewrite_import_expr(b.2, table, locals)))
       [Unary u]
          ast::Expr(Unary, (u.0,
            rewrite_import_expr(u.1, table, locals)))
@@ -1031,7 +1035,7 @@ rewrite_import_expr = e, table, locals =>
          new_exprs = ast::Exprs()
          be @ child =>
             new_exprs += rewrite_import_expr(child, table, blk_locals)
-            child [Assign ca] (ca.0 != "" | blk_locals += ca.0)
+            collect_assigned_locals(child, blk_locals)
          ast::Expr(Block, new_exprs)
       [Choice ch]
          new_cond = rewrite_import_expr(ch.cond, table, locals)
@@ -1080,10 +1084,8 @@ rewrite_import_expr = e, table, locals =>
                ast::Expr(Member, ast::MemberExpr(new_target, m.field_name,
                  m.is_module_access, new_idx, m.line, m.col))
       [Record re]
-         new_fields = ast::Fields()
-         re.fields @ fld =>
-            new_val = rewrite_import_expr(fld.val, table, locals)
-            new_fields += ast::RecordField(fld.has_name, fld.name, new_val)
+         new_fields = re.fields @> fld =>
+            ast::RecordField(fld.has_name, fld.name, rewrite_import_expr(fld.val, table, locals))
          ast::Expr(Record, ast::RecordExpr(new_fields, re.is_repeat))
       [KeyAccess ka]
          new_target = rewrite_import_expr(ka.target, table, locals)
@@ -1137,9 +1139,8 @@ rewrite_import_expr = e, table, locals =>
          new_sti = rewrite_import_type_info(so.rec_type, table)
          ast::Expr(SizeOf, ast::SizeOfExpr(so.val_type, new_sti))
       [MapLiteral ml]
-         new_pairs = ast::MapPairs()
-         ml @ p =>
-            new_pairs += ast::MapPair(rewrite_import_expr(p.key, table, locals),
+         new_pairs = ml @> p =>
+            ast::MapPair(rewrite_import_expr(p.key, table, locals),
               rewrite_import_expr(p.value, table, locals))
          ast::Expr(MapLiteral, new_pairs)
       [CompileTime ct]
@@ -1525,10 +1526,7 @@ collect_link_libs_expr = e, libs =>
 
 collect_link_libs_step: ast::Exprs, ast::Names => ast::Names
 collect_link_libs_step = stmts, libs =>
-   cur' = libs
-   stmts @ child =>
-      cur' = collect_link_libs_expr(child, cur')
-   cur'
+   (libs, stmts) @> cur, child => collect_link_libs_expr(child, cur)
 
 collect_link_libs: ast::Exprs => ast::Names
 collect_link_libs = stmts =>

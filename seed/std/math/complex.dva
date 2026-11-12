@@ -99,33 +99,19 @@
 
    from_real_array: Floats => ComplexArray
    from_real_array = reals =>
-      out = ComplexArray()
-      reals @ x => out += Complex(re = x, im = 0.0)
-      out
+      reals @> x => Complex(re = x, im = 0.0)
 
    real_parts: ComplexArray => Floats
-   real_parts = arr =>
-      out = Floats()
-      arr @ z => out += z.re
-      out
+   real_parts = arr => arr @> (.re)
 
    imag_parts: ComplexArray => Floats
-   imag_parts = arr =>
-      out = Floats()
-      arr @ z => out += z.im
-      out
+   imag_parts = arr => arr @> (.im)
 
    magnitudes: ComplexArray => Floats
-   magnitudes = arr =>
-      out = Floats()
-      arr @ z => out += abs(z)
-      out
+   magnitudes = arr => arr @> abs
 
    power_spectrum: ComplexArray => Floats
-   power_spectrum = arr =>
-      out = Floats()
-      arr @ z => out += norm_sq(z)
-      out
+   power_spectrum = arr => arr @> norm_sq
 
    // --- Fast Fourier Transform (Cooley-Tukey Radix-2) ---
 
