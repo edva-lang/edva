@@ -10115,7 +10115,6 @@ entry:
   %loop.step.96 = alloca i64, align 8
   %loop.idx.96 = alloca i64, align 8
   %"var.start'" = alloca i64, align 8
-  %"var.found'" = alloca i1, align 1
   %var.len = alloca i64, align 8
   %var.p = alloca ptr, align 8
   store ptr %0, ptr %var.p, align 8
@@ -10134,7 +10133,6 @@ str_gen_check:                                    ; preds = %entry
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
   store i64 %str.len.query2, ptr %var.len, align 8
-  store i1 false, ptr %"var.found'", align 1
   store i64 0, ptr %"var.start'", align 8
   %var.load3 = load i64, ptr %var.len, align 8
   %addtmp = add i64 %var.load3, 1
@@ -10173,9 +10171,8 @@ loop.latch.96:                                    ; preds = %choice.exit21
   store i64 %loop.next, ptr %loop.idx.96, align 8
   br label %loop.header.96
 
-loop.exit.96:                                     ; preds = %choice.then73, %loop.exit.nat.96
-  %var.load77 = load i1, ptr %"var.found'", align 1
-  ret i1 %var.load77
+loop.exit.96:                                     ; preds = %loop.exit.nat.96
+  ret i1 false
 
 choice.then:                                      ; preds = %loop.body.96
   br label %choice.exit
@@ -10342,14 +10339,16 @@ idx_oob67:                                        ; preds = %idx_big_check65, %s
   br label %idx_ok66
 
 choice.then73:                                    ; preds = %and.98.exit
-  store i1 true, ptr %"var.found'", align 1
-  br label %loop.exit.96
+  ret i1 true
 
-choice.exit74:                                    ; preds = %and.98.exit
+choice.exit74:                                    ; preds = %ret.dead, %and.98.exit
   %var.load75 = load i64, ptr %var.i, align 8
   %addtmp76 = add i64 %var.load75, 1
   store i64 %addtmp76, ptr %"var.start'", align 8
   br label %choice.exit21
+
+ret.dead:                                         ; No predecessors!
+  br label %choice.exit74
 }
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

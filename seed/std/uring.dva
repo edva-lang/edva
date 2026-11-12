@@ -376,31 +376,26 @@
             |
                prep_pipe_read(ring, fd, &scratch + i * 4096, 4096, i)
                active' = active' + 1
-      err_msg' = ++""
       0.. @
          active' !> 0 | -->
          submit(ring)
-         wait_cqe(ring)
-            | cqe =>
-               idx = cqe.user_data
-               idx !< 0 && idx < n
+         cqe = wait_cqe(ring)--!
+         idx = cqe.user_data
+         idx !< 0 && idx < n
+            |
+               cqe.res > 0
                   |
-                     cqe.res > 0
-                        |
-                           nb = cqe.res
-                           b = {nb + 1}
-                           %memcpy(&b, &scratch + idx * 4096, nb)
-                           @[&b + nb] = 0u8
-                           ?b = nb
-                           prev = outs'(idx)!!
-                           outs'(idx) = prev + (+b)
-                           fd = fds(idx)!!
-                           prep_pipe_read(ring, fd, &scratch + idx * 4096, 4096, idx)
-                        | active' = active' - 1
-            | msg =>
-               err_msg' = msg
-               -->
-      ?err_msg' > 0 | <- err_msg' +> | <+ outs' ->
+                     nb = cqe.res
+                     b = {nb + 1}
+                     %memcpy(&b, &scratch + idx * 4096, nb)
+                     @[&b + nb] = 0u8
+                     ?b = nb
+                     prev = outs'(idx)!!
+                     outs'(idx) = prev + (+b)
+                     fd = fds(idx)!!
+                     prep_pipe_read(ring, fd, &scratch + idx * 4096, 4096, idx)
+                  | active' = active' - 1
+      <+ outs' ->
 
    close: Ring => ()
    close = ring =>

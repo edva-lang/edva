@@ -1781,6 +1781,7 @@ codegen_eval_map_cycle = cg, c, m =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nb - 1)
    LLVMPositionBuilderAtEnd(cg.builder, done)
+   cg.exited = <->
    (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
 
 codegen_eval_cycle_body_cond: types::Cg, ast::Expr => (Addr, ast::ValueType)
@@ -1845,6 +1846,7 @@ codegen_eval_condition_cycle = cg, c =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nb - 1)
    LLVMPositionBuilderAtEnd(cg.builder, done)
+   cg.exited = <->
    is_void = bv.1 [Unit, Unknown]
    is_void
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
@@ -2030,6 +2032,7 @@ codegen_eval_indexed_cycle = cg, c, is_rng, iv_opt =>
    cg.cycle_breaks = cycle_trunc(cg.cycle_breaks, nb - 1)
    cg.cycle_conts = cycle_trunc(cg.cycle_conts, nb - 1)
    LLVMPositionBuilderAtEnd(cg.builder, done)
+   cg.exited = <->
    is_void = bv.1 [Unit, Unknown]
    is_void
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
@@ -6523,13 +6526,18 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       |
          iv' = main::codegen_typed_eval(cg, iterable)
          is_str = iv'.1 [Str]
+         is_bld = iv'.1 [Builder]
          is_arr = iv'.1 [Array]
          is_sl = iv'.1 [Slice]
          is_rec = iv'.1 [Record]
-         is_str
+         is_str || is_bld
             |
-               slen = expr::codegen_string_len(cg, iv'.0, "str.len")
-               sdata = expr::codegen_string_data(cg, iv'.0, "s.read.data")
+               slen = is_bld
+                  | main::builder_len(cg, iv'.0, "b.cycle.len")
+                  | expr::codegen_string_len(cg, iv'.0, "str.len")
+               sdata = is_bld
+                  | main::builder_data(cg, iv'.0, "b.cycle.data")
+                  | expr::codegen_string_data(cg, iv'.0, "s.read.data")
                iter_m = is_rune | 5 | 1
                str_vt = is_rune | ast::ValueType(Rune) | ast::ValueType(Int)
                (LLVMConstInt(i64t, 0, 0), <+ slen +>, <+ sdata +>, iter_m, str_vt)

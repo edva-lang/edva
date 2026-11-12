@@ -112,33 +112,21 @@ decode_sym = br, tree =>
    code' = 0
    first' = 0
    index' = 0
-   hit' = -1
-   eof' = <->
    1..(tree.max_bits + 1) @ len =>
-      !fill_bits(br, 1)
+      !fill_bits(br, 1) | --| <- flate_err("unexpected EOF decoding Huffman symbol", br.pos) +>
+      bit = br.rbuf .&. 1
+      br.rbuf = br.rbuf .>. 1
+      br.nbits = br.nbits - 1
+      code' = (code' .<. 1) .|. bit
+      cnt = tree.counts(len)!!
+      code' - cnt < first'
          |
-            eof' = <+>
-            -->
+            sym_idx = index' + (code' - first')
+            --| <+ tree.symbols(sym_idx)!! ->
          |
-            bit = br.rbuf .&. 1
-            br.rbuf = br.rbuf .>. 1
-            br.nbits = br.nbits - 1
-            code' = (code' .<. 1) .|. bit
-            cnt = tree.counts(len)!!
-            code' - cnt < first'
-               |
-                  sym_idx = index' + (code' - first')
-                  hit' = tree.symbols(sym_idx)!!
-                  -->
-               |
-                  index' = index' + cnt
-                  first' = (first' + cnt) .<. 1
-   eof'
-      | <- flate_err("unexpected EOF decoding Huffman symbol", br.pos) +>
-      |
-         hit' < 0
-            | <- flate_err("invalid Huffman code in DEFLATE stream", br.pos) +>
-            | <+ hit' ->
+            index' = index' + cnt
+            first' = (first' + cnt) .<. 1
+   <- flate_err("invalid Huffman code in DEFLATE stream", br.pos) +>
 
 // Fixed Huffman tables (RFC 1951 Section 3.2.6)
 fixed_lit_tree: () => HuffTree
@@ -201,69 +189,48 @@ decode_dynamic_trees = br =>
    clen_lens = Int{}
    19 @
       clen_lens += 0
-   bad_cl' = <->
    hclen @ i =>
       read_bits(br, 3)
          | v =>
             clen_lens(CLEN_ORDER(i)) = v !| _
          | e =>
-            bad_cl' = <+>
-            -->
-   bad_cl' | --| <- flate_err("unexpected EOF reading code length alphabet", br.pos) +>
+            --| <- flate_err("unexpected EOF reading code length alphabet", br.pos) +>
    cl_tree = build_huff(clen_lens, 19)--!
    total_lens = hlit + hdist
    all_lens = Int{}
    total_lens @
       all_lens += 0
    idx' = 0
-   err_opt' = <-->
-   (idx' < total_lens && !<>(err_opt')) @
-      decode_sym(br, cl_tree)
-         | sym =>
-            sym
-               [0...15]
-                  all_lens(idx') = sym !| _
-                  idx' = idx' + 1
-               [16]
-                  idx' == 0
-                     | err_opt' = <+ flate_err("repeat code 16 with no previous length", br.pos) +>
-                     |
-                        read_bits(br, 2)
-                           | rep_extra =>
-                              rep = 3 + rep_extra
-                              prev = all_lens(idx' - 1)!!
-                              idx' + rep > total_lens
-                                 | err_opt' = <+ flate_err("repeat code 16 exceeds alphabet size", br.pos) +>
-                                 |
-                                    rep @
-                                       all_lens(idx') = prev !| _
-                                       idx' = idx' + 1
-                           | e => err_opt' = <+ e +>
-               [17]
-                  read_bits(br, 3)
-                     | rep_extra =>
-                        rep = 3 + rep_extra
-                        idx' + rep > total_lens
-                           | err_opt' = <+ flate_err("repeat code 17 exceeds alphabet size", br.pos) +>
-                           |
-                              rep @
-                                 all_lens(idx') = 0 !| _
-                                 idx' = idx' + 1
-                     | e => err_opt' = <+ e +>
-               [18]
-                  read_bits(br, 7)
-                     | rep_extra =>
-                        rep = 11 + rep_extra
-                        idx' + rep > total_lens
-                           | err_opt' = <+ flate_err("repeat code 18 exceeds alphabet size", br.pos) +>
-                           |
-                              rep @
-                                 all_lens(idx') = 0 !| _
-                                 idx' = idx' + 1
-                     | e => err_opt' = <+ e +>
-               | err_opt' = <+ flate_err("invalid code length symbol", br.pos) +>
-         | e => err_opt' = <+ e +>
-   err_opt' | e => --| <- e +>
+   idx' < total_lens @
+      sym = decode_sym(br, cl_tree)--!
+      sym
+         [0...15]
+            all_lens(idx') = sym !| _
+            idx' = idx' + 1
+         [16]
+            idx' == 0 | --| <- flate_err("repeat code 16 with no previous length", br.pos) +>
+            rep_extra = read_bits(br, 2)--!
+            rep = 3 + rep_extra
+            prev = all_lens(idx' - 1)!!
+            idx' + rep > total_lens | --| <- flate_err("repeat code 16 exceeds alphabet size", br.pos) +>
+            rep @
+               all_lens(idx') = prev !| _
+               idx' = idx' + 1
+         [17]
+            rep_extra = read_bits(br, 3)--!
+            rep = 3 + rep_extra
+            idx' + rep > total_lens | --| <- flate_err("repeat code 17 exceeds alphabet size", br.pos) +>
+            rep @
+               all_lens(idx') = 0 !| _
+               idx' = idx' + 1
+         [18]
+            rep_extra = read_bits(br, 7)--!
+            rep = 11 + rep_extra
+            idx' + rep > total_lens | --| <- flate_err("repeat code 18 exceeds alphabet size", br.pos) +>
+            rep @
+               all_lens(idx') = 0 !| _
+               idx' = idx' + 1
+         | --| <- flate_err("invalid code length symbol", br.pos) +>
    lit_lens = Int{}
    hlit @ i =>
       lit_lens += all_lens(i)!!
@@ -276,49 +243,33 @@ decode_dynamic_trees = br =>
 
 inflate_huff_block: BitReader, HuffTree, HuffTree, Builder => < <> | Error >
 inflate_huff_block = br, lit_tree, dist_tree, out =>
-   done' = <->
-   err_opt' = <-->
-   (!done' && !<>(err_opt')) @
-      decode_sym(br, lit_tree)
-         | sym =>
-            sym
-               [0...255]
-                  out += sym
-               [256]
-                  done' = <+>
-               [257...285]
-                  l_idx = sym - 257
-                  base_len = LEN_BASE(l_idx)
-                  ext_bits = LEN_EXTRA(l_idx)
-                  read_bits(br, ext_bits)
-                     | ext_v =>
-                        match_len = base_len + ext_v
-                        decode_sym(br, dist_tree)
-                           | d_sym =>
-                              d_sym > 29
-                                 | err_opt' = <+ flate_err("invalid distance symbol", br.pos) +>
-                                 |
-                                    d_base = DIST_BASE(d_sym)
-                                    d_ext = DIST_EXTRA(d_sym)
-                                    read_bits(br, d_ext)
-                                       | d_ext_v =>
-                                          dist = d_base + d_ext_v
-                                          cur_len = ?out
-                                          dist > cur_len
-                                             | err_opt' = <+ flate_err("LZ77 distance exceeds output history", br.pos) +>
-                                             |
-                                                src_start = cur_len - dist
-                                                match_len @ k =>
-                                                   out += out(src_start + k)
-                                       | e => err_opt' = <+ e +>
-                           | e => err_opt' = <+ e +>
-                     | e => err_opt' = <+ e +>
-               |
-                  err_opt' = <+ flate_err("reserved literal/length symbol", br.pos) +>
-         | e => err_opt' = <+ e +>
-   err_opt'
-      | err => <- err +>
-      | <+ <+> ->
+   0.. @
+      sym = decode_sym(br, lit_tree)--!
+      sym
+         [0...255]
+            out += sym
+         [256]
+            --| <+ <+> ->
+         [257...285]
+            l_idx = sym - 257
+            base_len = LEN_BASE(l_idx)
+            ext_bits = LEN_EXTRA(l_idx)
+            ext_v = read_bits(br, ext_bits)--!
+            match_len = base_len + ext_v
+            d_sym = decode_sym(br, dist_tree)--!
+            d_sym > 29 | --| <- flate_err("invalid distance symbol", br.pos) +>
+            d_base = DIST_BASE(d_sym)
+            d_ext = DIST_EXTRA(d_sym)
+            d_ext_v = read_bits(br, d_ext)--!
+            dist = d_base + d_ext_v
+            cur_len = ?out
+            dist > cur_len | --| <- flate_err("LZ77 distance exceeds output history", br.pos) +>
+            src_start = cur_len - dist
+            match_len @ k =>
+               out += out(src_start + k)
+         |
+            --| <- flate_err("reserved literal/length symbol", br.pos) +>
+   <+ <+> ->
 
 inflate_stream: BitReader => < String | Error >
 inflate_stream = br =>
@@ -326,50 +277,30 @@ inflate_stream = br =>
    fix_lit = fixed_lit_tree!
    fix_dist = fixed_dist_tree!
    bfinal' = 0
-   err_opt' = <-->
-   (bfinal' == 0 && !<>(err_opt')) @
-      read_bits(br, 1)
-         | bf =>
-            bfinal' = bf
-            read_bits(br, 2)
-               | btype =>
-                  btype
-                     [0]
-                        // Uncompressed stored block
-                        read_aligned_u16_le(br)
-                           | blk_len =>
-                              read_aligned_u16_le(br)
-                                 | blk_nlen =>
-                                    ((blk_len .^. 0xFFFF) .&. 0xFFFF) != (blk_nlen .&. 0xFFFF)
-                                       | err_opt' = <+ flate_err("stored block LEN/NLEN mismatch", br.pos) +>
-                                       |
-                                          br.pos + blk_len > br.len
-                                             | err_opt' = <+ flate_err("unexpected EOF in stored block", br.pos) +>
-                                             |
-                                                out += br.src(br.pos..br.pos + blk_len)
-                                                br.pos = br.pos + blk_len
-                                 | e => err_opt' = <+ e +>
-                           | e => err_opt' = <+ e +>
-                     [1]
-                        // Fixed Huffman block
-                        inflate_huff_block(br, fix_lit, fix_dist, out)
-                           | ok => _
-                           | e => err_opt' = <+ e +>
-                     [2]
-                        // Dynamic Huffman block
-                        decode_dynamic_trees(br)
-                           | pair =>
-                              inflate_huff_block(br, pair.0, pair.1, out)
-                                 | ok => _
-                                 | e => err_opt' = <+ e +>
-                           | e => err_opt' = <+ e +>
-                     |
-                        err_opt' = <+ flate_err("invalid DEFLATE block BTYPE=3", br.pos) +>
-               | e => err_opt' = <+ e +>
-         | e => err_opt' = <+ e +>
-   err_opt'
-      | err => <- err +>
-      | <+ +out ->
+   bfinal' == 0 @
+      bfinal' = read_bits(br, 1)--!
+      btype = read_bits(br, 2)--!
+      btype
+         [0]
+            // Uncompressed stored block
+            blk_len = read_aligned_u16_le(br)--!
+            blk_nlen = read_aligned_u16_le(br)--!
+            ((blk_len .^. 0xFFFF) .&. 0xFFFF) != (blk_nlen .&. 0xFFFF)
+               | --| <- flate_err("stored block LEN/NLEN mismatch", br.pos) +>
+            br.pos + blk_len > br.len
+               | --| <- flate_err("unexpected EOF in stored block", br.pos) +>
+            out += br.src(br.pos..br.pos + blk_len)
+            br.pos = br.pos + blk_len
+         [1]
+            // Fixed Huffman block
+            inflate_huff_block(br, fix_lit, fix_dist, out)--!
+         [2]
+            // Dynamic Huffman block
+            pair = decode_dynamic_trees(br)--!
+            inflate_huff_block(br, pair.0, pair.1, out)--!
+         |
+            --| <- flate_err("invalid DEFLATE block BTYPE=3", br.pos) +>
+   <+ +out ->
 
 // --- BitWriter & Fixed-Huffman + LZ77 Compressor ----------------------------
 

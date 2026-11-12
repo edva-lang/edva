@@ -503,12 +503,8 @@ remove_all = path =>
       is_dir(path) && !is_symlink(path)
          |
             ents = read_dir(path)
-            all_ok' = <+>
             ents @ e =>
-               sub = join(path, e.name)
-               sub_ok = remove_all(sub)
-               !sub_ok | all_ok' = <->
-            !all_ok' | --| <->
+               !remove_all(join(path, e.name)) |->
             rmdir(path) == 0
          |
             libc::unlink(path) == 0

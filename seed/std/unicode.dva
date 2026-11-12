@@ -868,7 +868,6 @@
       c < 0x80 | --| Rune(c ['a...'z] | c - 32 | c)
       lo' = 0
       hi' = 198
-      res' = c
       0.. @
          lo' > hi' | -->
          mid = (lo' + hi') .>. 1
@@ -883,9 +882,9 @@
                   |
                      step2 = (w .>. 28) .&. 1
                      (step2 == 0 || ((c - start) .&. 1) == 0)
-                        | res' = c + ((w .>. 29) - 0x10000)
-                     -->
-      Rune(res')
+                        | --| Rune(c + ((w .>. 29) - 0x10000))
+                        | --| cp
+      cp
 
    // Simple 1-to-1 Unicode lowercase mapping for a Rune.
    to_lower: Rune => Rune
@@ -895,7 +894,6 @@
       c == 0x0130 | --| Rune(0x0069)
       lo' = 0
       hi' = 185
-      res' = c
       0.. @
          lo' > hi' | -->
          mid = (lo' + hi') .>. 1
@@ -910,9 +908,9 @@
                   |
                      step2 = (w .>. 28) .&. 1
                      (step2 == 0 || ((c - start) .&. 1) == 0)
-                        | res' = c + ((w .>. 29) - 0x10000)
-                     -->
-      Rune(res')
+                        | --| Rune(c + ((w .>. 29) - 0x10000))
+                        | --| cp
+      cp
 
    // Whitespace: space separators (Zs, Zl, Zp) plus ASCII whitespace
    // (\t, \n, \v, \f, \r)

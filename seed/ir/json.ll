@@ -11190,7 +11190,6 @@ entry:
   %var.p = alloca ptr, align 8
   %loop.step.138 = alloca i64, align 8
   %loop.idx.138 = alloca i64, align 8
-  %"var.hit'" = alloca { i1, i64 }, align 8
   %var.pairs = alloca ptr, align 8
   %var._ = alloca ptr, align 8
   %var.key = alloca ptr, align 8
@@ -11204,7 +11203,7 @@ entry:
   br i1 %tag.match, label %choice.case, label %choice.next
 
 choice.exit:                                      ; preds = %choice.next, %loop.exit.138
-  %choice.res = phi { i1, i64 } [ %var.load22, %loop.exit.138 ], [ zeroinitializer, %choice.next ]
+  %choice.res = phi { i1, i64 } [ zeroinitializer, %loop.exit.138 ], [ zeroinitializer, %choice.next ]
   ret { i1, i64 } %choice.res
 
 choice.case:                                      ; preds = %entry
@@ -11212,7 +11211,6 @@ choice.case:                                      ; preds = %entry
   %payload.ptr = load ptr, ptr %pay.gep, align 8
   store ptr %payload.ptr, ptr %var._, align 8
   store ptr %payload.ptr, ptr %var.pairs, align 8
-  store { i1, i64 } zeroinitializer, ptr %"var.hit'", align 8
   %var.load1 = load ptr, ptr %var.pairs, align 8
   %sl.len.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load1, i32 0, i32 1
   %sl.len.raw = load i64, ptr %sl.len.gep, align 8
@@ -11249,9 +11247,8 @@ loop.latch.138:                                   ; preds = %choice.exit18
   store i64 %loop.next, ptr %loop.idx.138, align 8
   br label %loop.header.138
 
-loop.exit.138:                                    ; preds = %choice.then, %loop.exit.nat.138
+loop.exit.138:                                    ; preds = %loop.exit.nat.138
   store ptr %cycle.prev.u, ptr %var._, align 8
-  %var.load22 = load { i1, i64 }, ptr %"var.hit'", align 8
   br label %choice.exit
 
 sl.rec.elem.pbb:                                  ; preds = %loop.body.138
@@ -11333,11 +11330,13 @@ choice.then:                                      ; preds = %str.eq.merge
   %fld.load21 = load ptr, ptr %fld.gep20, align 8
   %p.to.i64 = ptrtoint ptr %fld.load21 to i64
   %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
-  store { i1, i64 } %ram.pay, ptr %"var.hit'", align 8
-  br label %loop.exit.138
+  ret { i1, i64 } %ram.pay
 
-choice.exit18:                                    ; preds = %str.eq.merge
+choice.exit18:                                    ; preds = %ret.dead, %str.eq.merge
   br label %loop.latch.138
+
+ret.dead:                                         ; No predecessors!
+  br label %choice.exit18
 }
 
 define i1 @"json::has"(ptr %0, ptr %1) #1 {

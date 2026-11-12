@@ -423,14 +423,10 @@
       n = len - start
       n != 6 && n != 3 | --| 0
       val' = 0
-      ok' = <+>
       start..len @ i =>
          ascii::hex_value(s(i))
             | d => val' = (val' .<. 4) .|. d
-            |
-               ok' = <->
-               -->
-      !ok' | --| 0
+            | --| 0
       n == 6
          | val'
          |

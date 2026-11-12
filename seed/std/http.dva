@@ -84,18 +84,14 @@ WS_OP_PONG   = 10
 
 eq_ci: String, String => <>
 eq_ci = a, b =>
-   ?a != ?b | --| <->
-   diff' = <->
+   ?a != ?b |->
    ?a @ i =>
       ca = a(i)
       cb = b(i)
-      la = ca ['A...'Z] | ca + 32 | ca
-      lb = cb ['A...'Z] | cb + 32 | cb
-      la != lb
-         |
-            diff' = <+>
-            -->
-   !diff'
+      la = ca ['A...'Z] ca + 32 | ca
+      lb = cb ['A...'Z] cb + 32 | cb
+      la != lb |->
+   <+>
 
 contains_ci: String, String => <>
 contains_ci = hay, needle =>
@@ -109,21 +105,14 @@ parse_hex_int = s =>
    hex_part = str::trim(t(0..semi))
    ?hex_part == 0 | --| <-->
    val' = 0
-   ok' = <+>
-   ?hex_part @ i =>
-      c = hex_part(i)
+   hex_part @ c =>
       d = c
          ['0...'9] c - '0
          ['a...'f] c - 'a + 10
          ['A...'F] c - 'A + 10
-         |           -1
-      d < 0
-         |
-            ok' = <->
-            -->
-         |
-            val' = (val' .<. 4) .|. d
-   ok' | <+ val' +> | <-->
+         |-->
+      val' = (val' .<. 4) .|. d
+   <+ val' +>
 
 #public
 
@@ -139,14 +128,9 @@ add_header = hdrs, name, value =>
 
 get_header: Headers, String => < String | >
 get_header = hdrs, name =>
-   found' = <-->
-   ?hdrs @ i =>
-      h = hdrs(i)!!
-      eq_ci(h.name, name)
-         |
-            found' = <+ h.value +>
-            -->
-   found'
+   hdrs @ h =>
+      eq_ci(h.name, name) | --| <+ h.value +>
+   <-->
 
 has_header: Headers, String => <>
 has_header = hdrs, name =>
@@ -159,18 +143,18 @@ request_new = method, target_url =>
 with_header: Request, String, String => Request
 with_header = req, name, value =>
    nh = Headers()
-   ?req.headers @ i =>
-      nh += req.headers(i)!!
+   req.headers @ h =>
+      nh += h
    nh += Header(name, value)
    req(headers = nh)
 
 with_headers: Request, Headers => Request
 with_headers = req, extra =>
    nh = Headers()
-   ?req.headers @ i =>
-      nh += req.headers(i)!!
-   ?extra @ i =>
-      nh += extra(i)!!
+   req.headers @ h =>
+      nh += h
+   extra @ h =>
+      nh += h
    req(headers = nh)
 
 with_body: Request, String => Request
@@ -211,41 +195,20 @@ decode_chunked = raw =>
    n = ?raw
    out = {n}
    pos' = 0
-   err' = ++""
-   done' = <->
-   0.. @
-      pos' !< n || done' | -->
-      // Find CRLF ending the chunk size line
+   (pos' < n) @
       rem = raw(pos'..n)
-      crlf_opt = str::find(rem, "\r\n")
-      crlf_opt
-         | rel_end =>
-            size_line = rem(0..rel_end)
-            parse_hex_int(size_line)
-               | chunk_len =>
-                  data_start = pos' + rel_end + 2
-                  chunk_len == 0
-                     |
-                        done' = <+>
-                        -->
-                     |
-                        data_end = data_start + chunk_len
-                        data_end > n
-                           |
-                              err' = ++"truncated chunked body"
-                              -->
-                           |
-                              out += raw(data_start..data_end)
-                              pos' = data_end
-                              pos' + 2 !> n && raw(pos'..(pos' + 2)) == "\r\n"
-                                 | pos' = pos' + 2
-               |
-                  err' = "invalid chunk size: " + size_line
-                  -->
-         |
-            err' = ++"missing CRLF in chunked body"
-            -->
-   ?err' > 0 | <- err' +> | <+ +out ->
+      rel_end = str::find(rem, "\r\n") | _ | --| <- "missing CRLF in chunked body" +>
+      size_line = rem(0..rel_end)
+      chunk_len = parse_hex_int(size_line) | _ | --| <- "invalid chunk size: " + size_line +>
+      chunk_len == 0 | -->
+      data_start = pos' + rel_end + 2
+      data_end = data_start + chunk_len
+      data_end > n | --| <- "truncated chunked body" +>
+      out += raw(data_start..data_end)
+      pos' = data_end
+      pos' + 2 !> n && raw(pos'..(pos' + 2)) == "\r\n"
+         | pos' = pos' + 2
+   <+ +out ->
 
 #private
 
@@ -254,28 +217,16 @@ chunked_is_complete: String => <>
 chunked_is_complete = raw =>
    n = ?raw
    pos' = 0
-   complete' = <->
-   0.. @
-      pos' !< n | -->
+   (pos' < n) @
       rem = raw(pos'..n)
-      str::find(rem, "\r\n")
-         | rel_end =>
-            size_line = rem(0..rel_end)
-            parse_hex_int(size_line)
-               | chunk_len =>
-                  data_start = pos' + rel_end + 2
-                  chunk_len == 0
-                     |
-                        // Require trailing CRLF after 0\r\n
-                        n !< data_start + 2 | complete' = <+>
-                        -->
-                     |
-                        next_pos = data_start + chunk_len + 2
-                        next_pos > n | -->
-                        pos' = next_pos
-               | -->
-         | -->
-   complete'
+      rel_end = str::find(rem, "\r\n") | _ |->
+      chunk_len = parse_hex_int(rem(0..rel_end)) | _ |->
+      data_start = pos' + rel_end + 2
+      chunk_len == 0 | --| (n !< data_start + 2)
+      next_pos = data_start + chunk_len + 2
+      next_pos > n |->
+      pos' = next_pos
+   <->
 
 parse_head_block: String => < (status: Int, reason: String, headers: Headers) | String >
 parse_head_block = head_str =>
@@ -440,28 +391,22 @@ read_http_from_fd = fd, req_method =>
 
 take_pooled_fd: Client, String, Int => Int
 take_pooled_fd = client, host, port =>
-   found_fd' = -1
-   ?client.pool @ i =>
-      e = client.pool(i)!!
+   client.pool @ e, i =>
       e.fd !< 0 && e.port == port && eq_ci(e.host, host)
          |
-            found_fd' = e.fd
             client.pool(i) = PoolEntry("", 0, -1)
-            -->
-   found_fd'
+            --| e.fd
+   -1
 
 put_pooled_fd: Client, String, Int, Int => ()
 put_pooled_fd = client, host, port, fd =>
    fd < 0 | --|
-   placed' = <->
-   ?client.pool @ i =>
-      e = client.pool(i)!!
+   client.pool @ e, i =>
       e.fd < 0
          |
             client.pool(i) = PoolEntry(host, port, fd)
-            placed' = <+>
-            -->
-   !placed' | client.pool += PoolEntry(host, port, fd)
+            --|
+   client.pool += PoolEntry(host, port, fd)
 
 #public
 
@@ -478,8 +423,7 @@ client_with_header = client, name, value =>
 
 client_close: Client => ()
 client_close = client =>
-   ?client.pool @ i =>
-      e = client.pool(i)!!
+   client.pool @ e, i =>
       e.fd !< 0
          |
             net::close_fd(e.fd)
@@ -612,8 +556,8 @@ sse_encode = ev =>
 sse_encode_events: SseEvents => String
 sse_encode_events = evs =>
    out = {256}
-   ?evs @ i =>
-      out += sse_encode(evs(i)!!)
+   evs @ ev =>
+      out += sse_encode(ev)
    +out
 
 // Parses a `text/event-stream` payload into an array of `SseEvent` records.
@@ -627,8 +571,7 @@ sse_parse = raw =>
    data' = ++""
    has_data' = <->
    retry' = 0
-   ?lines @ i =>
-      ln = lines(i)!!
+   lines @ ln =>
       ?ln == 0
          |
             (has_data' || ?id' > 0 || ?event' > 0)
@@ -826,18 +769,16 @@ ws_send_binary = conn, data =>
 ws_recv: WsConn => < WsFrame | String >
 ws_recv = conn =>
    buf' = conn.leftover
-   res' = <- "WebSocket connection closed" +>
    0.. @
       ws_decode_frame(buf')
          | f =>
             conn.leftover = buf'(f.consumed..)
-            res' = <+ f ->
-            -->
+            --| <+ f ->
          |
             net::recv(conn.fd, 8192)
                | chunk => buf' = buf' + chunk
                | -->
-   res'
+   <- "WebSocket connection closed" +>
 
 ws_close: WsConn => ()
 ws_close = conn =>

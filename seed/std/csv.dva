@@ -165,14 +165,13 @@ csv_cell_str = v =>
       [<P|>]
          (v | inner => csv_cell_str(inner) | "")
       [<..>]
-         res' = ++""
          V @ vr =>
             v.(vr)
                | pay =>
                   vr.type
-                     [()] res' = vr.name
-                     | res' = vr.name + ":" + csv_cell_str(pay)
-         res'
+                     [()] --| vr.name
+                     | --| vr.name + ":" + csv_cell_str(pay)
+         ""
       | V.name
 
 write_record_header: #! R: Type, Builder, Int => ()
@@ -221,83 +220,52 @@ decode_csv_cell = s, line, col =>
             ["false", "0", "no"] <+ <-> ->
             | <- csv_err("invalid boolean '" + s + "'", line, col) +>
       [<..>]
-         out' = T.zero
-         matched' = <->
          T @ v =>
             v.name == s |
                v.type
-                  [()]
-                     out' = T(v)
-                     matched' = <+>
-         matched'
-            | <+ out' ->
-            | <- csv_err("unknown enum variant '" + s + "' for " + T.name, line, col) +>
+                  [()] --| <+ T(v) ->
+         <- csv_err("unknown enum variant '" + s + "' for " + T.name, line, col) +>
       | <- csv_err("unsupported column type " + T.name + " in csv::decode", line, col) +>
 
 find_col_idx: Row, String => Int
 find_col_idx = hdr, name =>
-   res' = -1
-   ?hdr @ i =>
-      hdr(i)!! == name
-         |
-            res' = i
-            -->
-   res'
+   hdr @ col, i =>
+      col == name | --| i
+   -1
 
 decode_one_row: #! R: Type, Row, Row, <>, Int => < R | Error >
 decode_one_row = hdr, row, has_hdr, line_no =>
    rec' = R.zero
-   has_err' = <->
-   err_val' = csv_err("", line_no, 1)
    R
       [(..)]
          R @ f =>
-            !has_err' |
-               col_idx = has_hdr | find_col_idx(hdr, f.name) | f.idx
-               (col_idx !< 0 && col_idx < ?row)
-                  |
-                     raw_cell = row(col_idx)!!
-                     (?raw_cell == 0)
-                        |
-                           f_def = f.default
-                           f_def
-                              | def => rec'.(f) = def
-                              |
-                                 f.type
-                                    [<P|>] rec'.(f) = <-->
-                                    [String] rec'.(f) = ""
-                                    |
-                                       has_err' = <+>
-                                       err_val' = csv_err("empty required column '" + (f.name != "" | f.name | str::from_int(f.idx)) + "'", line_no, col_idx + 1)
-                        |
-                           f.type
-                              [<P|>]
-                                 dec_p = decode_csv_cell(P, raw_cell, line_no, col_idx + 1)
-                                 dec_p
-                                    | pv => rec'.(f) = <+ pv +>
-                                    | err =>
-                                       has_err' = <+>
-                                       err_val' = err
-                              |
-                                 dec_fv = decode_csv_cell(f.type, raw_cell, line_no, col_idx + 1)
-                                 dec_fv
-                                    | fv => rec'.(f) = fv
-                                    | err =>
-                                       has_err' = <+>
-                                       err_val' = err
-                  |
-                     f_def = f.default
-                     f_def
-                        | def => rec'.(f) = def
-                        |
-                           f.type
-                              [<P|>] rec'.(f) = <-->
-                              |
-                                 has_err' = <+>
-                                 err_val' = csv_err("missing required column '" + (f.name != "" | f.name | str::from_int(f.idx)) + "'", line_no, 1)
-   has_err'
-      | <- err_val' +>
-      | <+ rec' ->
+            col_idx = has_hdr | find_col_idx(hdr, f.name) | f.idx
+            (col_idx !< 0 && col_idx < ?row)
+               |
+                  raw_cell = row(col_idx)!!
+                  (?raw_cell == 0)
+                     |
+                        f.default
+                           | def => rec'.(f) = def
+                           |
+                              f.type
+                                 [<P|>] rec'.(f) = <-->
+                                 [String] rec'.(f) = ""
+                                 | --| <- csv_err("empty required column '" + (f.name != "" | f.name | str::from_int(f.idx)) + "'", line_no, col_idx + 1) +>
+                     |
+                        f.type
+                           [<P|>]
+                              rec'.(f) = <+ decode_csv_cell(P, raw_cell, line_no, col_idx + 1)--! +>
+                           |
+                              rec'.(f) = decode_csv_cell(f.type, raw_cell, line_no, col_idx + 1)--!
+               |
+                  f.default
+                     | def => rec'.(f) = def
+                     |
+                        f.type
+                           [<P|>] rec'.(f) = <-->
+                           | --| <- csv_err("missing required column '" + (f.name != "" | f.name | str::from_int(f.idx)) + "'", line_no, 1) +>
+   <+ rec' ->
 
 decode_table_into: #! ArrType: Type, #! RowType: Type, Table => < ArrType | Error >
 decode_table_into = tbl =>
@@ -310,20 +278,10 @@ decode_table_into = tbl =>
             f.idx == 0 && f.name != "" | has_hdr' = <+>
    hdr = has_hdr' | tbl(0)!! | Row()
    start_idx = has_hdr' | 1 | 0
-   has_err' = <->
-   err_val' = csv_err("", 1, 1)
    start_idx..?tbl @ r_idx =>
-      !has_err' |
-         r_row = tbl(r_idx)!!
-         dec_r = decode_one_row(RowType, hdr, r_row, has_hdr', r_idx + 1)
-         dec_r
-            | rec => out' += rec
-            | err =>
-               has_err' = <+>
-               err_val' = err
-   has_err'
-      | <- err_val' +>
-      | <+ out' ->
+      r_row = tbl(r_idx)!!
+      out' += decode_one_row(RowType, hdr, r_row, has_hdr', r_idx + 1)--!
+   <+ out' ->
 
 #public
 

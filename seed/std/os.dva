@@ -260,15 +260,12 @@ append_bytes = b, src, n =>
          |
             path_env = env_or("PATH", "/usr/local/bin:/usr/bin:/bin")
             dirs = str::split(path_env, path::LIST_SEP_STR)
-            found' = ++""
             dirs @ d =>
                base = ?d == 0 | "." | d
                cand = path::join(base, prog)
                c_access(cand, 1i32) == 0i32
-                  |
-                     found' = cand
-                     -->
-            ?found' > 0 | <+ found' +> | <-->
+                  | --| <+ cand +>
+            <-->
 
    // Spawns a process. Accepts an argv array (Addr) and waits for exit.
    spawn: String, Addr => Int
@@ -367,19 +364,16 @@ append_bytes = b, src, n =>
       child_pid !> 0 | --| <-->
       timeout_ms < 0 | --| wait_pid(child_pid)
       deadline = monotonic_ms! + timeout_ms
-      res' = <-->
       0.. @
          try_wait_pid(child_pid)
-            | code =>
-               res' = <+ code +>
-               -->
+            | code => --| <+ code +>
             |
                now = monotonic_ms!
-               now !< deadline | -->
+               now !< deadline |-->
                rem = deadline - now
                step = rem < 5 | rem | 5
                sleep_ms(step)
-      res'
+      <-->
 
    // Sends signal `sig` to `target_pid`. Returns `<+>` on success.
    kill_pid: Int, Int => <>

@@ -332,37 +332,29 @@ decode_png = data =>
    interlace' = 0
    idat_b = {n}
    seen_iend' = <->
-   err_opt' = <-->
-   (off' + 12 !> n && !seen_iend' && !<>(err_opt')) @
+   (off' + 12 !> n && !seen_iend') @
       clen = Int(binary::read_u32_be(data, off')--!)
       ctype = data(off' + 4..off' + 8)
       data_start = off' + 8
       data_end = data_start + clen
-      data_end + 4 > n
-         | err_opt' = <+ img_err("truncated PNG chunk " + ctype, off') +>
-         |
-            exp_crc = binary::read_u32_be(data, data_end)--!
-            got_crc = hash::crc32(data(off' + 4..data_end))
-            exp_crc != got_crc
-               | err_opt' = <+ img_err("PNG chunk CRC-32 mismatch in " + ctype, data_end) +>
-               |
-                  ctype
-                     ["IHDR"]
-                        clen != 13
-                           | err_opt' = <+ img_err("invalid IHDR chunk length", off') +>
-                           |
-                              w' = Int(binary::read_u32_be(data, data_start)--!)
-                              h' = Int(binary::read_u32_be(data, data_start + 4)--!)
-                              bit_depth' = data(data_start + 8) .&. 0xFF
-                              color_type' = data(data_start + 9) .&. 0xFF
-                              interlace' = data(data_start + 12) .&. 0xFF
-                     ["IDAT"]
-                        idat_b += data(data_start..data_end)
-                     ["IEND"]
-                        seen_iend' = <+>
-                     | _
-            off' = data_end + 4
-   err_opt' | e => --| <- e +>
+      data_end + 4 > n | --| <- img_err("truncated PNG chunk " + ctype, off') +>
+      exp_crc = binary::read_u32_be(data, data_end)--!
+      got_crc = hash::crc32(data(off' + 4..data_end))
+      exp_crc != got_crc | --| <- img_err("PNG chunk CRC-32 mismatch in " + ctype, data_end) +>
+      ctype
+         ["IHDR"]
+            clen != 13 | --| <- img_err("invalid IHDR chunk length", off') +>
+            w' = Int(binary::read_u32_be(data, data_start)--!)
+            h' = Int(binary::read_u32_be(data, data_start + 4)--!)
+            bit_depth' = data(data_start + 8) .&. 0xFF
+            color_type' = data(data_start + 9) .&. 0xFF
+            interlace' = data(data_start + 12) .&. 0xFF
+         ["IDAT"]
+            idat_b += data(data_start..data_end)
+         ["IEND"]
+            seen_iend' = <+>
+         | _
+      off' = data_end + 4
    (w' !> 0 || h' !> 0) | --| <- img_err("missing or invalid PNG IHDR dimensions", 8) +>
    bit_depth' != 8 | --| <- img_err("only 8-bit PNG bit depth is supported", 8) +>
    interlace' != 0 | --| <- img_err("interlaced PNG is not supported", 8) +>
@@ -379,7 +371,6 @@ decode_png = data =>
    ?raw < exp_raw_len | --| <- img_err("decompressed PNG IDAT data shorter than expected scanlines", ?raw) +>
    // Reconstruct scanlines in-place into `recon`
    recon = {h' * stride}
-   bad_filter' = <->
    h' @ y =>
       f_type = raw(y * (stride + 1)) .&. 0xFF
       row_in = y * (stride + 1) + 1
@@ -395,11 +386,8 @@ decode_png = data =>
             [2] (x_byte + b) .&. 0xFF
             [3] (x_byte + ((a + b) .>. 1)) .&. 0xFF
             [4] (x_byte + paeth_predictor(a, b, c)) .&. 0xFF
-            |
-               bad_filter' = <+>
-               0
+            | --| <- img_err("invalid PNG scanline filter type", 0) +>
          recon += val
-   bad_filter' | --| <- img_err("invalid PNG scanline filter type", 0) +>
    recon_str = +recon
    color_type' == 6 | --| <+ Image(w', h', recon_str) ->
    // Expand Grayscale / RGB / Gray+Alpha into RGBA8

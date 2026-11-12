@@ -42,11 +42,9 @@ contains = s, elem =>
       [K ^ V]
          s ^? elem
       [Item{}]
-         found' = <->
          s @ cur =>
-            !found' |
-               test::struct_eq(E, cur, elem) | found' = <+>
-         found'
+            test::struct_eq(E, cur, elem) |+>
+         <->
       | <->
 
 // Inserts `elem` into set `s`. Returns `<+>` if `elem` was newly added, or `<->` if already present.
@@ -165,20 +163,15 @@ symmetric_diff = a, b =>
 // Returns `<+>` if every element of `a` is also in `b` (`a ⊆ b`).
 is_subset: #! S: Type, S, S => <>
 is_subset = a, b =>
-   ?a > ?b
-      | <->
-      |
-         ok' = <+>
-         S
-            [K ^ V]
-               a @ _av, ak =>
-                  ok' |
-                     !(b ^? ak) | ok' = <->
-            [E{}]
-               a @ elem_a =>
-                  ok' |
-                     !contains(S, E, b, elem_a) | ok' = <->
-         ok'
+   ?a > ?b |->
+   S
+      [K ^ V]
+         a @ _av, ak =>
+            !(b ^? ak) |->
+      [E{}]
+         a @ elem_a =>
+            !contains(S, E, b, elem_a) |->
+   <+>
 
 // Returns `<+>` if every element of `b` is also in `a` (`a ⊇ b`).
 is_superset: #! S: Type, S, S => <>
@@ -188,17 +181,14 @@ is_superset = a, b =>
 // Returns `<+>` if `a` and `b` share no common elements (`a ∩ b = ∅`).
 is_disjoint: #! S: Type, S, S => <>
 is_disjoint = a, b =>
-   ok' = <+>
    S
       [K ^ V]
          a @ _av, ak =>
-            ok' |
-               (b ^? ak) | ok' = <->
+            (b ^? ak) |->
       [E{}]
          a @ elem_a =>
-            ok' |
-               contains(S, E, b, elem_a) | ok' = <->
-   ok'
+            contains(S, E, b, elem_a) |->
+   <+>
 
 // Returns `<+>` if `a` and `b` contain the exact same elements.
 equals: #! S: Type, S, S => <>
