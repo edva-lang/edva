@@ -1,0 +1,5 @@
+// DVA-52: $+> requires a positive payload; $-> requires a negative payload.
+opt: <Int|>
+opt = <+ 1 +>
+
+res = opt $-> (e => e)

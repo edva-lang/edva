@@ -1,0 +1,49 @@
+// DVA-54: Tuple and record destructuring in bindings, lambda parameters, choice arms, and `@` / `@>` cycles
+#use io
+#use str
+
+#type Point
+   x: Int
+   y: Int
+
+#type Pair (Int, Int)
+
+// 1. Positional tuple destructuring in `=` bindings
+(a, b) = (10, 20)
+io::out $ str::from_int(a) + "," + str::from_int(b)
+
+// 2. Named record field destructuring and aliasing `(x = px, y = py) = pt`
+pt = Point(3, 4)
+(x, y) = pt
+(x = px, y = py) = pt
+io::out $ str::from_int(x + y) + "," + str::from_int(px * py)
+
+// 3. Nested destructuring, wildcard `_`, and mutable `name'` bindings
+(first, (_, deep')) = (100, (200, 300))
+deep' = deep' + 50
+io::out $ str::from_int(first) + "," + str::from_int(deep')
+
+// 4. Lambda parameter destructuring
+add_pair: (Int, Int) => Int
+add_pair = (u, v) => u + v
+io::out $ str::from_int(add_pair((7, 8)))
+
+// 5. Choice payload destructuring and $+> functor map destructuring
+opt_pair: <(Int, Int)|>
+opt_pair = <+ (12, 30) +>
+mapped = opt_pair $+> (m, n) => m * n
+io::out $ (mapped | v => str::from_int(v) | "none")
+io::out $ (opt_pair | (m, n) => str::from_int(m - n) | "none")
+
+// 6. `@` and `@>` cycle element destructuring
+ps = Pair{}(Pair(1, 2), Pair(3, 4), Pair(5, 6))
+sum_all' = 0
+ps @ (p_a, p_b) =>
+   sum_all' = sum_all' + p_a + p_b
+io::out $ str::from_int(sum_all')
+
+sums = ps @> (p_a, p_b) => p_a * 10 + p_b
+io::out $ str::from_int(sums(0)!!) + "," + str::from_int(sums(1)!!) + "," + str::from_int(sums(2)!!)
+
+folded = (0, ps) @> acc, (p_a, p_b) => acc + p_a * p_b
+io::out $ str::from_int(folded)

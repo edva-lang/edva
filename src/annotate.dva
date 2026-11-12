@@ -1823,6 +1823,11 @@ member_field_ti = env, ti, name =>
                |
                   res' = <+ f.rec_type +>
                   -->
+         !<>(res')
+            |
+               pos = unify::parse_field_digits(name, 0, 0)
+               pos !< 0 && pos < ?r.0
+                  | (res' = <+ r.0(pos)!!.rec_type +>)
          res'
       [Bitfield b]
          res' = <-->
@@ -1851,6 +1856,20 @@ member_field_ti = env, ti, name =>
                   | <-->
             | <-->
       | <-->
+
+wrap_functor_rhs: ast::Tag, ast::Expr => ast::Expr
+wrap_functor_rhs = tag, rhs =>
+   rhs
+      [Fn fe]
+         v_args = ast::Exprs()
+         v_args += fe.body
+         v_body = ast::Expr(Variant, ast::VariantExpr(tag, v_args))
+         ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params, v_body))
+      |
+         fed = ast::Expr(Bin, (ast::BinaryOp(Feed), ast::Expr(Var, "_"), rhs))
+         v_args = ast::Exprs()
+         v_args += fed
+         ast::Expr(Variant, ast::VariantExpr(tag, v_args))
 
 // --- Annotate Expressions --------------------------------------------------
 
@@ -2043,6 +2062,72 @@ annotate_expr = ctx, env, expr =>
                      unify::add_error(ctx, 3091,
                        "Continuation of '$>>' must return a ramification")
                ch_te
+            [MapPos]
+               lhs_te = annotate_expr(ctx, env, b.1)
+               c_lhs = unify::canon(ctx, lhs_te.ut)
+               lhs_is_ram = c_lhs [Ram]
+               !lhs_is_ram
+                  |
+                     unify::add_error(ctx, 3091,
+                       "LHS of '$+>' must be a RamPP or RamPN ramification")
+               no_pos_pay = c_lhs [Ram r] !r.0.has_payload | <->
+               no_pos_pay
+                  |
+                     unify::add_error(ctx, 3091,
+                       "LHS of '$+>' must have a positive payload")
+               has_neg_pay = c_lhs [Ram r] r.1.has_payload | <->
+               pos_tag = has_neg_pay | ast::Tag(Positive) | ast::Tag(Some)
+               pos_body = wrap_functor_rhs(pos_tag, b.2)
+               b0 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
+                 ast::Expr(Var, "?"), ast::Names(), ast::Names(), <->,
+                 pos_body)
+               neg_tag = has_neg_pay | ast::Tag(Negative) | ast::Tag(Noth)
+               neg_args = ast::Exprs()
+               has_neg_pay | neg_args += ast::Expr(Var, "_")
+               neg_body = ast::Expr(Variant,
+                 ast::VariantExpr(neg_tag, neg_args))
+               b1 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
+                 ast::Expr(Var, "?"), ast::Names(), ast::Names(), <->,
+                 neg_body)
+               branches = ast::Branches()
+               branches += b0
+               branches += b1
+               ch_expr = ast::Expr(Choice, ast::ChoiceExpr(b.1, <+>,
+                 branches))
+               annotate_expr(ctx, env, ch_expr)
+            [MapNeg]
+               lhs_te = annotate_expr(ctx, env, b.1)
+               c_lhs = unify::canon(ctx, lhs_te.ut)
+               lhs_is_ram = c_lhs [Ram]
+               !lhs_is_ram
+                  |
+                     unify::add_error(ctx, 3091,
+                       "LHS of '$->' must be a RamPP or RamNP ramification")
+               no_neg_pay = c_lhs [Ram r] !r.1.has_payload | <->
+               no_neg_pay
+                  |
+                     unify::add_error(ctx, 3091,
+                       "LHS of '$->' must have a negative payload")
+               has_pos_pay = c_lhs [Ram r] r.0.has_payload | <->
+               pos_tag = has_pos_pay | ast::Tag(Positive) | ast::Tag(Succ)
+               pos_args = ast::Exprs()
+               has_pos_pay | pos_args += ast::Expr(Var, "_")
+               pos_body = ast::Expr(Variant,
+                 ast::VariantExpr(pos_tag, pos_args))
+               b0 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
+                 ast::Expr(Var, "?"), ast::Names(), ast::Names(), <->,
+                 pos_body)
+               neg_tag = has_pos_pay | ast::Tag(Negative) | ast::Tag(Err)
+               neg_body = wrap_functor_rhs(neg_tag, b.2)
+               b1 = ast::ChoiceBranch(ast::GuardKind(Bare), ast::Exprs(),
+                 ast::Expr(Var, "?"), ast::Names(), ast::Names(), <->,
+                 neg_body)
+               branches = ast::Branches()
+               branches += b0
+               branches += b1
+               ch_expr = ast::Expr(Choice, ast::ChoiceExpr(b.1, <+>,
+                 branches))
+               annotate_expr(ctx, env, ch_expr)
             [Feed, Apply]
                is_feed = b.0 [Feed]
                is_sat_curried = is_feed && is_saturated_curried_call(ctx, env, b.2)
@@ -4485,6 +4570,30 @@ is_splat_expr = expr =>
          !r.has_lhs && r.has_rhs | <+ r.rhs +> | <-->
       | <-->
 
+call_has_named_arg: ast::Exprs => <>
+call_has_named_arg = args =>
+   found' = <->
+   args @ a =>
+      a [NamedArg] (found' = <+>; -->)
+   found'
+
+annotate_record_copy_update: unify::Ctx, type_env::TypeEnv, ast::CallExpr,
+  ast::Expr, unify::UType, ast::TypeInfo, unify::UFields => tast::TypedExpr
+annotate_record_copy_update = ctx, env, ce, base_expr, base_ut, base_ti, rec =>
+   upd_args = ast::Exprs()
+   ce.args @ a => upd_args += a
+   upd_args += ast::Expr(Range, ast::RangeExpr(<->, <+>, ast::Expr(Int, 0), base_expr, <->))
+   tname' = base_ti [TypeVar tv] tv | ""
+   tname' == "" && ?rec > 0
+      | (tname' = rec(0)!!.rec_name)
+   udef_opt = tname' != "" | type_env::lookup_user_type(env, tname') | <-->
+   eff_ti = base_ti [Rec, TypeVar, Align, Bitfield] base_ti | unify::type_info_from_utype(ctx, base_ut)
+   eff_udef = udef_opt
+      | u => u
+      | type_env::UserTypeDef(tname' != "" | tname' | ce.fn_name, eff_ti, base_ut)
+   upd_ce = ast::CallExpr(eff_udef.name, ast::Expr(Var, ""), upd_args, ce.line, ce.col)
+   annotate_record_ctor(ctx, env, upd_ce, eff_udef, rec)
+
 desugar_array_lit_item: unify::Ctx, String, <>, ast::Expr => ast::Expr
 desugar_array_lit_item = ctx, arr_var, elem_ut_is_fn, e =>
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
@@ -4712,6 +4821,10 @@ annotate_call_normal = ctx, env, ce =>
                            sl_ut = unify::mk_slice(elem)
                            index_ret_ut' = is_rng | sl_ut | elem
                         [Rec rec]
+                           call_has_named_arg(ce.args)
+                              |
+                                 --| annotate_record_copy_update(ctx, env, ce,
+                                   ast::Expr(Var, ce.fn_name), c_ut, b.ti, rec)
                            ?ce.args == 1
                               |
                                  is_var_index' = <+>
@@ -4806,6 +4919,22 @@ annotate_call_normal = ctx, env, ce =>
                            sl_ut2 = unify::mk_slice(elem2)
                            index_ret_ut' = is_rng2 | sl_ut2 | elem2
                         [Rec rec2]
+                           !is_lit_rec && call_has_named_arg(ce.args)
+                              |
+                                 upd_v = unify::fresh_var(ctx)
+                                 tmp_id = upd_v [Var id] id | 0
+                                 tmp_name = "__rec_upd_" + str::from_int(tmp_id)
+                                 type_env::bind_local(env, tmp_name, target_te.ut, target_te.ti, <->)
+                                 type_env::init_mark_whole(env, tmp_name)
+                                 as_kind = tast::TypedExprKind(Assign, (tmp_name, <->, <->, <->, <->, target_te))
+                                 as_te = tast::mk_typed_expr(as_kind, target_te.ut, target_te.ti, target_te.layout, ce.line, ce.col)
+                                 ctor_te = annotate_record_copy_update(ctx, env, ce,
+                                   ast::Expr(Var, tmp_name), c_tgt, target_te.ti, rec2)
+                                 blk_es = tast::TypedExprs()
+                                 blk_es += as_te
+                                 blk_es += ctor_te
+                                 --| tast::mk_typed_expr(tast::TypedExprKind(Block, blk_es),
+                                   ctor_te.ut, ctor_te.ti, ctor_te.layout, ce.line, ce.col)
                            !is_lit_rec && ?ce.args == 1
                               |
                                  is_var_index' = <+>

@@ -1791,7 +1791,7 @@ ram_bin_dtype: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => String
 ram_bin_dtype = cg, b =>
    b.0
       [And, Or] ram_expr_dtype(cg, b.2)
-      [Bind] ram_expr_dtype(cg, b.1)
+      [Bind, MapPos, MapNeg] ram_expr_dtype(cg, b.1)
       | ""
 
 ram_expr_call_dtype: types::Cg, ast::Expr => String

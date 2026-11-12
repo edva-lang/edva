@@ -972,13 +972,30 @@ codegen_eval_call_var_dispatch = cg, call =>
    vt = types::var_type(cg, call.fn_name)
    vt
       [Record]
-         fvs = match::var_fvts(cg, call.fn_name)
-         is_hetero = ?fvs > 1
-            | !record_type_is_homogeneous(types::var_rt(cg, call.fn_name), fvs)
-            | <->
-         is_hetero
-            | stmt::codegen_dynamic_record_index_error(cg)
-            | main::codegen_eval_record_index(cg, call)
+         types::call_has_splat_or_named(call.args, 0, ?call.args)
+            |
+               upd_args = ast::Exprs()
+               call.args @ a => upd_args += a
+               upd_args += ast::Expr(Range, ast::RangeExpr(<->, <+>,
+                 ast::Expr(Int, 0), ast::Expr(Var, call.fn_name), <->))
+               dt = types::var_dtype(cg, call.fn_name)
+               rec_ti = dt != ""
+                  | types::typedef_ti(cg, dt)
+                  |
+                     types::var_rt(cg, call.fn_name)
+                        | rt => types::typedef_ti_of_rt(cg, rt)
+                        | ast::TypeInfo(Prim, ast::ValueType(Record))
+               upd_call = ast::CallExpr(dt, ast::Expr(Var, ""), upd_args,
+                 call.line, call.col)
+               types::codegen_eval_record_ctor(cg, rec_ti, upd_call)
+            |
+               fvs = match::var_fvts(cg, call.fn_name)
+               is_hetero = ?fvs > 1
+                  | !record_type_is_homogeneous(types::var_rt(cg, call.fn_name), fvs)
+                  | <->
+               is_hetero
+                  | stmt::codegen_dynamic_record_index_error(cg)
+                  | main::codegen_eval_record_index(cg, call)
       [Str] main::codegen_eval_str_index(cg, call)
       [Builder] main::codegen_eval_builder_index(cg, call)
       [Slice] main::slice_or_range(cg, call)
@@ -1370,6 +1387,12 @@ codegen_eval_bin_op = cg, op, t =>
       [Bind]
          b_res = codegen_emit_bind(cg, t)
          b_res | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
+      [MapPos]
+         mp_res = codegen_emit_map_pos(cg, t)
+         mp_res | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
+      [MapNeg]
+         mn_res = codegen_emit_map_neg(cg, t)
+         mn_res | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
 // "$>>" — monadic bind over a ram with a positive payload slot (RamPP/RamPN).
@@ -1434,6 +1457,48 @@ bind_negative_body = slot =>
    slot.has_payload | args += ast::Expr(Var, "_")
    tag = slot.has_payload | ast::Tag(Err) | ast::Tag(Noth)
    ast::Expr(Variant, ast::VariantExpr(tag, args))
+
+wrap_functor_rhs_cg: ast::Tag, ast::Expr => ast::Expr
+wrap_functor_rhs_cg = tag, rhs =>
+   rhs
+      [Fn fe]
+         v_args = ast::Exprs()
+         v_args += fe.body
+         v_body = ast::Expr(Variant, ast::VariantExpr(tag, v_args))
+         ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params, v_body))
+      |
+         fed = ast::Expr(Bin, (ast::BinaryOp(Feed), ast::Expr(Var, "_"), rhs))
+         v_args = ast::Exprs()
+         v_args += fed
+         ast::Expr(Variant, ast::VariantExpr(tag, v_args))
+
+codegen_emit_map_pos: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => < (Addr, ast::ValueType) | >
+codegen_emit_map_pos = cg, t =>
+   dtype = match::ram_expr_dtype(cg, t.1)
+   slots = match::ram_slots_of(cg, dtype)
+   has_neg_pay = ram_slot_has_payload(slots.1)
+   pos_tag = has_neg_pay | ast::Tag(Positive) | ast::Tag(Some)
+   branches = ast::Branches()
+   branches += bind_choice_branch(wrap_functor_rhs_cg(pos_tag, t.2))
+   branches += bind_choice_branch(bind_negative_body(slots.1))
+   res = match::codegen_eval_choice(cg, ast::ChoiceExpr(t.1, <+>, branches))
+   <+ res +>
+
+codegen_emit_map_neg: types::Cg, (ast::BinaryOp, ast::Expr, ast::Expr) => < (Addr, ast::ValueType) | >
+codegen_emit_map_neg = cg, t =>
+   dtype = match::ram_expr_dtype(cg, t.1)
+   slots = match::ram_slots_of(cg, dtype)
+   has_pos_pay = ram_slot_has_payload(slots.0)
+   pos_tag = has_pos_pay | ast::Tag(Positive) | ast::Tag(Succ)
+   pos_args = ast::Exprs()
+   has_pos_pay | pos_args += ast::Expr(Var, "_")
+   pos_body = ast::Expr(Variant, ast::VariantExpr(pos_tag, pos_args))
+   neg_tag = has_pos_pay | ast::Tag(Negative) | ast::Tag(Err)
+   branches = ast::Branches()
+   branches += bind_choice_branch(pos_body)
+   branches += bind_choice_branch(wrap_functor_rhs_cg(neg_tag, t.2))
+   res = match::codegen_eval_choice(cg, ast::ChoiceExpr(t.1, <+>, branches))
+   <+ res +>
 
 // Calls a compiled closure with pre-evaluated args (the env is passed as the
 // lambda's implicit first param when it captures).
@@ -5476,6 +5541,13 @@ codegen_str_tuple_cmp = cg, eq, s_val, rec_te, rec_val, rec_rt_opt, rec_fvts =>
 codegen_typed_eval_bin: types::Cg, ast::BinaryOp, tast::TypedExpr, tast::TypedExpr,
   unify::UType, ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_bin = cg, op, lhs, rhs, ut, ti =>
+   op [Seq]
+      |
+         saved_disc = cg.discard_result
+         cg.discard_result = <+>
+         lv_seq = main::codegen_typed_eval(cg, lhs)
+         cg.discard_result = saved_disc
+         --| main::codegen_typed_eval(cg, rhs)
    is_logical = op [And, Or]
    is_logical
       |

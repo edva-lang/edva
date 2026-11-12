@@ -514,6 +514,22 @@ operators:
     operands: "RamPP/RamPN, fn"
     result: "Ramification (the continuation's monad)"
     desc: "monadic bind over a ramification (RamPP/RamPN only; E3091 otherwise). A negative lhs propagates (its payload for RamPP, its unit for RamPN). The continuation receives the positive payload."
+  - symbol: "$+>"
+    tier: feed
+    kind: MapPos
+    kind_self: MapPos
+    assoc: left
+    operands: "RamPP/RamPN, fn"
+    result: "Ramification (positive payload mapped)"
+    desc: "functor map over the positive slot of a ramification (RamPP/RamPN only; E3091 otherwise). Wraps the continuation's result in a positive constructor (<+ ... +>); a negative lhs propagates."
+  - symbol: "$->"
+    tier: feed
+    kind: MapNeg
+    kind_self: MapNeg
+    assoc: left
+    operands: "RamPP/RamNP, fn"
+    result: "Ramification (negative payload mapped)"
+    desc: "functor map over the negative slot of a ramification (RamPP/RamNP only; E3091 otherwise). Wraps the continuation's result in a negative constructor (<- ... ->); a positive lhs propagates."
   - symbol: ".>"
     tier: feed
     kind: Compose

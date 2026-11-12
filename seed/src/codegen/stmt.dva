@@ -2291,6 +2291,7 @@ infer_ret = e, params, ptypes =>
             [Gt, Lt, Eq, NotGt, NotLt, NotEq] ast::ValueType(Flag)
             [And, Or] ast::ValueType(Flag)
             [Mod, BitAnd, BitOr, BitXor, Shl, Shr] ast::ValueType(Int)
+            [Bind, MapPos, MapNeg] ast::ValueType(Ram)
             |
                e_is_str(t.1, params, ptypes) || e_is_str(t.2, params, ptypes)
                   | ast::ValueType(Str)

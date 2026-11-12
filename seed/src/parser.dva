@@ -168,7 +168,7 @@ is_continuation_op: lexer::Tok => <>
 is_continuation_op = t =>
    is_delim = t.kind [Comma, LParen, LBracket, LBrace]
    is_op = t.kind [Op] &&
-     (t.text ["+", "-", "*", "/", "%", "$>", "$>>", ".>",
+     (t.text ["+", "-", "*", "/", "%", "$>", "$>>", "$+>", "$->", ".>",
        "..", "...", "..=", "::", "&&", "||", ".<.", ".>.", ".&.", ".|.", ".^."])
    is_delim || is_op
 
@@ -578,7 +578,7 @@ parse_pos_guard_choice: Parser, ast::Expr => <ast::Expr|>
 parse_neg_guard_choice: Parser, ast::Expr => <ast::Expr|>
 
 is_feed_cont_op = t =>
-   tok_is_op(t) && (t.text ["$>", "$>>", ".>"])
+   tok_is_op(t) && (t.text ["$>", "$>>", "$+>", "$->", ".>"])
 
 is_cycle_cont_op = t =>
    tok_is_op(t) && (t.text ["@", "@@", "@>"])
@@ -670,6 +670,146 @@ normalize_compose_stage = e =>
             | e
       | e
 
+subst_free_underscore_exprs: ast::Exprs, String => ast::Exprs
+subst_free_underscore_branches: ast::Branches, String => ast::Branches
+subst_free_underscore_fields: ast::Fields, String => ast::Fields
+subst_free_underscore_map: ast::MapPairs, String => ast::MapPairs
+
+subst_free_underscore: ast::Expr, String => ast::Expr
+subst_free_underscore = e, rvar =>
+   e
+      [Var v] (v == "_" | ast::Expr(Var, rvar) | e)
+      [Fn f]
+         bound' = <->
+         f.params @ pname =>
+            pname == "_" | bound' = <+>; -->
+         bound'
+            | e
+            | ast::Expr(Fn, ast::FnExpr(f.params, f.ct_params,
+                subst_free_underscore(f.body, rvar)))
+      [Bin t]
+         ast::Expr(Bin, (t.0, subst_free_underscore(t.1, rvar),
+           subst_free_underscore(t.2, rvar)))
+      [Unary t]
+         ast::Expr(Unary, (t.0, subst_free_underscore(t.1, rvar)))
+      [Assign t]
+         ast::Expr(Assign, (t.0, t.1, t.2, t.3, t.4,
+           subst_free_underscore(t.5, rvar),
+           subst_free_underscore(t.6, rvar), t.7, t.8))
+      [Choice c]
+         ast::Expr(Choice, ast::ChoiceExpr(
+           subst_free_underscore(c.cond, rvar), c.is_exhaustive,
+           subst_free_underscore_branches(c.branches, rvar)))
+      [Block b]
+         ast::Expr(Block, subst_free_underscore_exprs(b, rvar))
+      [Call t]
+         new_fn = t.fn_name == "_" | rvar | t.fn_name
+         new_tgt = t.fn_name == ""
+            | subst_free_underscore(t.fn_target, rvar)
+            | t.fn_target
+         ast::Expr(Call, ast::CallExpr(new_fn, new_tgt,
+           subst_free_underscore_exprs(t.args, rvar), t.line, t.col))
+      [NamedArg na]
+         ast::Expr(NamedArg, ast::NamedArgExpr(na.name,
+           subst_free_underscore(na.val, rvar)))
+      [CycleEscape t]
+         ast::Expr(CycleEscape, ast::CycleEscapeExpr(
+           subst_free_underscore(t.cycle, rvar),
+           subst_free_underscore(t.branch, rvar)))
+      [Cycle t]
+         ast::Expr(Cycle, ast::CycleExpr(
+           subst_free_underscore(t.iterable, rvar),
+           subst_free_underscore(t.body_fn, rvar), t.is_rune, t.is_expr))
+      [Range t]
+         new_l = t.has_lhs | subst_free_underscore(t.lhs, rvar) | t.lhs
+         new_r = t.has_rhs | subst_free_underscore(t.rhs, rvar) | t.rhs
+         ast::Expr(Range, ast::RangeExpr(t.has_lhs, t.has_rhs,
+           new_l, new_r, t.is_inclusive))
+      [Record r]
+         ast::Expr(Record, ast::RecordExpr(
+           subst_free_underscore_fields(r.fields, rvar), r.is_repeat))
+      [MapLiteral t]
+         ast::Expr(MapLiteral, subst_free_underscore_map(t, rvar))
+      [Member t]
+         new_tgt = t.is_module_access
+            | t.target
+            | subst_free_underscore(t.target, rvar)
+         new_idx = subst_free_underscore(t.index_expr, rvar)
+         ast::Expr(Member, ast::MemberExpr(new_tgt, t.field_name,
+           t.is_module_access, new_idx, t.line, t.col))
+      [KeyAccess t]
+         ast::Expr(KeyAccess, ast::KeyAccessExpr(
+           subst_free_underscore(t.target, rvar),
+           subst_free_underscore(t.key, rvar),
+           t.is_membership, t.is_delete, t.line, t.col))
+      [Variant t]
+         ast::Expr(Variant, ast::VariantExpr(t.tag_name,
+           subst_free_underscore_exprs(t.args, rvar)))
+      [RawMemory t]
+         ast::Expr(RawMemory, ast::RawMemoryExpr(
+           subst_free_underscore(t.addr, rvar), t.load_type, t.rec_name))
+      [TypeCast t]
+         ast::Expr(TypeCast, ast::CastExpr(t.target_type,
+           subst_free_underscore(t.expr, rvar)))
+      [Copy ce]
+         ast::Expr(Copy, subst_free_underscore(ce, rvar))
+      [BuilderCreate ce]
+         ast::Expr(BuilderCreate, subst_free_underscore(ce, rvar))
+      [CompileTime ce]
+         ast::Expr(CompileTime, subst_free_underscore(ce, rvar))
+      [Spawn t]
+         ast::Expr(Spawn, ast::CallExpr(t.fn_name,
+           subst_free_underscore(t.fn_target, rvar),
+           subst_free_underscore_exprs(t.args, rvar), t.line, t.col))
+      [Join ce]
+         ast::Expr(Join, subst_free_underscore(ce, rvar))
+      | e
+
+subst_free_underscore_exprs = xs, rvar =>
+   out = ast::Exprs()
+   xs @ x => out += subst_free_underscore(x, rvar)
+   out
+
+subst_free_underscore_branches = bs, rvar =>
+   out = ast::Branches()
+   bs @ b =>
+      b.is_identity_extractor
+         | out += b
+         |
+            new_vals = subst_free_underscore_exprs(b.case_values, rvar)
+            is_payload_branch = b.kind [Bare, Variant]
+            new_blk = is_payload_branch
+               | b.block
+               | subst_free_underscore(b.block, rvar)
+            out += ast::ChoiceBranch(b.kind, new_vals, b.pred_fn,
+              b.variant_names, b.bind_vars, b.is_identity_extractor, new_blk)
+   out
+
+subst_free_underscore_fields = fs, rvar =>
+   out = ast::Fields()
+   fs @ f =>
+      out += ast::RecordField(f.has_name, f.name,
+        subst_free_underscore(f.val, rvar))
+   out
+
+subst_free_underscore_map = ps, rvar =>
+   out = ast::MapPairs()
+   ps @ pr =>
+      out += ast::MapPair(subst_free_underscore(pr.key, rvar),
+        subst_free_underscore(pr.value, rvar))
+   out
+
+mk_feed_expr: Parser, ast::Expr, ast::Expr => ast::Expr
+mk_feed_expr = p, lhs, rhs =>
+   is_fn_or_choice = rhs [Fn, Choice]
+   !is_fn_or_choice && has_free_underscore(rhs)
+      |
+         tmp = fresh_dp_var(p)
+         asgn = mk_assign(tmp, lhs)
+         sub_rhs = subst_free_underscore(rhs, tmp)
+         ast::Expr(Bin, (ast::BinaryOp(Seq), asgn, sub_rhs))
+      | ast::Expr(Bin, (ast::BinaryOp(Feed), lhs, rhs))
+
 mk_compose_fn: Parser, ast::Expr, ast::Expr => ast::Expr
 mk_compose_fn = p, lhs_raw, rhs_raw =>
    lhs = normalize_compose_stage(lhs_raw)
@@ -678,14 +818,14 @@ mk_compose_fn = p, lhs_raw, rhs_raw =>
       |
          lhs
             [Fn fe]
-               next_body = ast::Expr(Bin, (ast::BinaryOp(Feed), fe.body, rhs))
+               next_body = mk_feed_expr(p, fe.body, rhs)
                ast::Expr(Fn, ast::FnExpr(fe.params, ast::Names(), next_body))
             | lhs
       |
          param = fresh_compose_var(p)
          pvar = ast::Expr(Var, param)
-         step1 = ast::Expr(Bin, (ast::BinaryOp(Feed), pvar, lhs))
-         step2 = ast::Expr(Bin, (ast::BinaryOp(Feed), step1, rhs))
+         step1 = mk_feed_expr(p, pvar, lhs)
+         step2 = mk_feed_expr(p, step1, rhs)
          params = ast::Names()
          params += param
          ast::Expr(Fn, ast::FnExpr(params, ast::Names(), step2))
@@ -723,10 +863,10 @@ bp_loop = p, res, min_bp, cmp_line, entry_indent =>
                                     | bp_cont_user(p, res, min_bp, cmp_line, entry_indent, uo.1, uo.2)
                                     | <+ res +>
 
-// Whether an operator is apply/feed ($, $>, $>>, .>) — the binary tiers BELOW
+// Whether an operator is apply/feed ($, $>, $>>, $+>, $->, .>) — the binary tiers BELOW
 // the choice tier, whose right operand absorbs a choice continuation.
 op_is_apply_feed: ast::BinaryOp => <>
-op_is_apply_feed = [Apply, Feed, Bind, Compose]
+op_is_apply_feed = [Apply, Feed, Bind, MapPos, MapNeg, Compose]
 
 parse_bp_rhs: Parser, operators::BinOpInfo => <ast::Expr|>
 parse_bp_rhs = p, i =>
@@ -802,7 +942,20 @@ bp_cont = p, res, min_bp, cmp_line, entry_indent, i =>
                         |
                            node = i.same_line && cmp_line != -1
                               | chain_cmp(p, res, i.op, cae)
-                              | (i.op [Compose] mk_compose_fn(p, res, cae) | ast::Expr(Bin, (i.op, res, cae)))
+                              |
+                                 i.op
+                                    [Compose] mk_compose_fn(p, res, cae)
+                                    [Feed] mk_feed_expr(p, res, cae)
+                                    [Bind, MapPos, MapNeg]
+                                       is_fn_or_ch = cae [Fn, Choice]
+                                       rhs_norm = !is_fn_or_ch && has_free_underscore(cae)
+                                          |
+                                             u_params = ast::Names()
+                                             u_params += "_"
+                                             ast::Expr(Fn, ast::FnExpr(u_params, ast::Names(), cae))
+                                          | cae
+                                       ast::Expr(Bin, (i.op, res, rhs_norm))
+                                    | ast::Expr(Bin, (i.op, res, cae))
                            nc = i.same_line | op_line | -1
                            bp_loop(p, node, min_bp, nc, entry_indent)
                   | <-->
@@ -1179,7 +1332,10 @@ parse_atom = p =>
          is_fn_start(p)
             | atom_to_ram(parse_fn(p))
             | atom_to_ram(atom_ident(p, k.text))
-      [LParen] atom_to_ram(atom_paren(p))
+      [LParen]
+         is_fn_start(p)
+            | atom_to_ram(parse_fn(p))
+            | atom_to_ram(atom_paren(p))
       [TypeKw] atom_to_ram(parse_type_decl(p))
       [AlignKw]
          parser_advance(p)
@@ -2006,7 +2162,7 @@ paren_is_bin_section = p =>
          nxt.kind [RParen]
             |
                operators::bin_info(p.curr.text)
-                  | opb => !(opb.op [Feed, Apply, Bind, Compose])
+                  | opb => !(opb.op [Feed, Apply, Bind, MapPos, MapNeg, Compose])
                   | user_op_lookup(p.user_ops, p.curr.text).0
             | <->
       | <->
@@ -2170,11 +2326,70 @@ parse_paren_record = p =>
    parser_skip_layout(p)
    pr_record_field_loop(p, ast::Fields())
 
+is_destructure_field: ast::RecordField => <>
+is_destructure_record: ast::Fields => <>
+
+is_destructure_field = f =>
+   f.val
+      [Var v] v != "" && !name_is_upper(v)
+      [Record r] !r.is_repeat && is_destructure_record(r.fields)
+      | <->
+
+is_destructure_record = fields =>
+   ?fields < 2
+      | <->
+      |
+         ok' = <+>
+         fields @ f =>
+            !is_destructure_field(f) | (ok' = <->; -->)
+         ok'
+
+mk_assign_mut: String, <>, ast::Expr => ast::Expr
+mk_assign_mut = name, is_mut, val =>
+   ast::Expr(Assign, (name, is_mut, <->, <->, <->, val, ast::Expr(Var, ""), "",
+     ast::TypeInfo(Prim, ast::ValueType(Unknown))))
+
+build_destructure_stmts: Parser, ast::Expr, ast::Fields, <>, ast::Exprs => <>
+build_destructure_stmts = p, src_expr, fields, allow_mut, out_stmts =>
+   ok' = <+>
+   fields @ f, i =>
+      !ok' | -->
+      fld_name = f.has_name | f.name | str::from_int(i)
+      fld_access = ast::Expr(Member, ast::MemberExpr(src_expr, fld_name,
+        <->, ast::Expr(Var, ""), 0, 0))
+      f.val
+         [Var v]
+            v != "_"
+               |
+                  !allow_mut && name_is_primed(v)
+                     |
+                        parser_error(p, 2039,
+                          diag::E2039_param_mutable_prefix! + v + "'.")
+                        ok' = <->
+                     |
+                        out_stmts += mk_assign_mut(v,
+                          allow_mut && name_is_primed(v), fld_access)
+         [Record r]
+            sub_tmp = fresh_dp_var(p)
+            out_stmts += mk_assign(sub_tmp, fld_access)
+            sub_ok = build_destructure_stmts(p, ast::Expr(Var, sub_tmp), r.fields, allow_mut, out_stmts)
+            !sub_ok | (ok' = <->)
+         | (ok' = <->)
+   ok'
+
+chain_seq_stmts: ast::Exprs => ast::Expr
+chain_seq_stmts = stmts =>
+   acc' = stmts(0)!!
+   ?stmts @ i =>
+      i > 0
+         | acc' = ast::Expr(Bin, (ast::BinaryOp(Seq), acc', stmts(i)!!))
+   acc'
+
 pr_record_field_loop: Parser, ast::Fields => <ast::Expr|>
 record_closed: Parser, ast::Fields => <ast::Expr|>
 record_closed = p, fields =>
    parser_advance(p)
-   p.curr.text == "=>"
+   p.curr.text == "=>" && !is_destructure_record(fields)
       |
          parser_error(p, 2037, diag::E2037_params_parenthesized!)
          <-->
@@ -2184,7 +2399,24 @@ record_closed = p, fields =>
                parser_error(p, 2084,
                  "Single-field records are not allowed: a record must have at least 2 fields")
                <-->
-            | <+ ast::Expr(Record, ast::RecordExpr(fields, <->)) +>
+            |
+               !p.no_assign && p.curr.text == "=" && is_destructure_record(fields)
+                  |
+                     parser_advance(p)
+                     p.in_rhs = <+>
+                     rhs = parse_assign_rhs(p)
+                     p.in_rhs = <->
+                     rhs
+                        | re =>
+                           tmp = fresh_dp_var(p)
+                           stmts = ast::Exprs()
+                           stmts += mk_assign(tmp, re)
+                           ds_ok = build_destructure_stmts(p, ast::Expr(Var, tmp), fields, <+>, stmts)
+                           ds_ok
+                              | seq_cont_loop(p, chain_seq_stmts(stmts))
+                              | <-->
+                        | <-->
+                  | <+ ast::Expr(Record, ast::RecordExpr(fields, <->)) +>
 
 pr_record_field_loop = p, fields =>
    parser_skip_layout(p)
@@ -2612,7 +2844,7 @@ atom_section: Parser => <ast::Expr|>
 atom_section = p =>
    operators::bin_info(p.curr.text)
       | opb =>
-         ex = opb.op [Or, And, Feed, Apply, Bind, Compose, NotGt, NotLt, NotEq]
+         ex = opb.op [Or, And, Feed, Apply, Bind, MapPos, MapNeg, Compose, NotGt, NotLt, NotEq]
          p.curr.trail && !ex
             |
                parser_advance(p)
@@ -2637,6 +2869,31 @@ atom_section = p =>
 
 // --- lambdas & blocks ------------------------------------------------------
 
+scan_paren_param_step: lexer::Lx, Int, <> => <>
+scan_paren_param_step = lx, depth, saw_comma =>
+   t = lexer::next_tok(lx, 0)
+   t.kind
+      [Eof] <->
+      [Newline, Indent, Dedent]
+         scan_paren_param_step(lx, depth, saw_comma)
+      [LParen]
+         scan_paren_param_step(lx, depth + 1, saw_comma)
+      [RParen]
+         depth == 1
+            | saw_comma
+            | scan_paren_param_step(lx, depth - 1, saw_comma)
+      [Comma]
+         scan_paren_param_step(lx, depth, saw_comma || depth == 1)
+      [Id]
+         !name_is_upper(t.text) && scan_paren_param_step(lx, depth, saw_comma)
+      [Op]
+         t.text == "=" && scan_paren_param_step(lx, depth, saw_comma)
+      | <->
+
+scan_paren_param: lexer::Lx => <>
+scan_paren_param = lx =>
+   scan_paren_param_step(lx, 1, <->)
+
 is_fn_scan: lexer::Lx => <>
 is_fn_scan = lx =>
    t = lexer::next_tok(lx, 0)
@@ -2648,6 +2905,7 @@ is_fn_scan = lx =>
          nt = lexer::next_tok(lx, 0)
          nt_id = nt.kind [Id]
          nt_ct = nt.kind [CT]
+         nt_lp = nt.kind [LParen]
          nt_id
             | is_fn_scan(lx)
             | nt_ct
@@ -2655,10 +2913,13 @@ is_fn_scan = lx =>
                   nnt = lexer::next_tok(lx, 0)
                   nnt_id = nnt.kind [Id]
                   nnt_id && is_fn_scan(lx)
-               | <->
+               | nt_lp
+                  | scan_paren_param(lx) && is_fn_scan(lx)
+                  | <->
       | is_op && is_arrow
 
-// An identifier or '#!' starts a lambda when a '=>' or a ',' follows.
+// An identifier, '#!', or destructured tuple/record '(a, b)' starts a lambda
+// when a '=>' or a ',' follows.
 is_fn_start: Parser => <>
 is_fn_start = p =>
    p.curr.kind
@@ -2669,16 +2930,19 @@ is_fn_start = p =>
          c = lexer::clone_lx(p.lx)
          tok = lexer::next_tok(c, 0)
          tok.kind [Id] is_fn_scan(c) | <->
+      [LParen]
+         c = lexer::clone_lx(p.lx)
+         scan_paren_param(c) && is_fn_scan(c)
       | <->
 
 // "x, y => body" / "#! T, x => body" — a bare-parameter lambda. Consumes the
 // param list (and optional compile-time params) then '=>' and a block body.
 parse_fn: Parser => <ast::Expr|>
 parse_fn = p =>
-   fn_params(p, ast::Names(), ast::Names())
+   fn_params(p, ast::Names(), ast::Names(), ast::Exprs())
 
-fn_params: Parser, ast::Names, ast::Names => <ast::Expr|>
-fn_params = p, params, ct_params =>
+fn_params: Parser, ast::Names, ast::Names, ast::Exprs => <ast::Expr|>
+fn_params = p, params, ct_params, pre_stmts =>
    p.curr.kind
       [CT]
          parser_advance(p)
@@ -2699,11 +2963,36 @@ fn_params = p, params, ct_params =>
                            ct_params += pname
                            p.ct_scope = ct_names_append(p.ct_scope, pname)
                            parser_advance(p)
-                           fn_param_next(p, params, ct_params)
+                           fn_param_next(p, params, ct_params, pre_stmts)
             |
                parser_error(p, 2085,
                  "Expected a name after '#!' in the parameter list.")
                <-->
+      [LParen]
+         parser_advance(p)
+         saved_no_assign = p.no_assign
+         p.no_assign = <+>
+         rec_opt = parse_paren_record(p)
+         p.no_assign = saved_no_assign
+         rec_opt
+            | rec_e =>
+               rec_e
+                  [Record r]
+                     is_destructure_record(r.fields)
+                        |
+                           tmp_param = fresh_dp_var(p)
+                           params += tmp_param
+                           ds_ok = build_destructure_stmts(p, ast::Expr(Var, tmp_param), r.fields, <->, pre_stmts)
+                           ds_ok
+                              | fn_param_next(p, params, ct_params, pre_stmts)
+                              | <-->
+                        |
+                           parser_error(p, 2037, diag::E2037_params_parenthesized!)
+                           <-->
+                  |
+                     parser_error(p, 2037, diag::E2037_params_parenthesized!)
+                     <-->
+            | <-->
       [Id]
          pname = p.curr.text
          pname == "_"
@@ -2726,16 +3015,16 @@ fn_params = p, params, ct_params =>
                              "Inline parameter types are removed — declare the " +
                              "signature separately.")
                            <-->
-                        | fn_param_next(p, params, ct_params)
-      | fn_arrow(p, params, ct_params)
+                        | fn_param_next(p, params, ct_params, pre_stmts)
+      | fn_arrow(p, params, ct_params, pre_stmts)
 
-fn_param_next: Parser, ast::Names, ast::Names => <ast::Expr|>
-fn_param_next = p, params, ct_params =>
+fn_param_next: Parser, ast::Names, ast::Names, ast::Exprs => <ast::Expr|>
+fn_param_next = p, params, ct_params, pre_stmts =>
    p.curr.kind
       [Comma]
          parser_advance(p)
-         fn_params(p, params, ct_params)
-      | fn_arrow(p, params, ct_params)
+         fn_params(p, params, ct_params, pre_stmts)
+      | fn_arrow(p, params, ct_params, pre_stmts)
 
 split_ct_scope_names: String, Int, String, ast::Names => ast::Names
 split_ct_scope_names = s, i, cur, acc =>
@@ -2751,8 +3040,8 @@ split_ct_scope_names = s, i, cur, acc =>
                split_ct_scope_names(s, i + 1, "", acc)
             | split_ct_scope_names(s, i + 1, cur + s(i..i + 1), acc)
 
-fn_arrow: Parser, ast::Names, ast::Names => <ast::Expr|>
-fn_arrow = p, params, ct_params =>
+fn_arrow: Parser, ast::Names, ast::Names, ast::Exprs => <ast::Expr|>
+fn_arrow = p, params, ct_params, pre_stmts =>
    p.curr.text
       // "=>" (params already read) and "!=>" (zero-argument) both arrow.
       ["=>", "!=>"]
@@ -2772,7 +3061,17 @@ fn_arrow = p, params, ct_params =>
          p.module_level = saved_ml
          p.in_rhs = saved_rhs
          body
-            | b => <+ ast::Expr(Fn, ast::FnExpr(params, eff_ct_params, b)) +>
+            | b =>
+               eff_b = ?pre_stmts > 0
+                  |
+                     all_stmts = pre_stmts
+                     b
+                        [Block bs]
+                           bs @ st => all_stmts += st
+                        | all_stmts += b
+                     ast::Expr(Block, all_stmts)
+                  | b
+               <+ ast::Expr(Fn, ast::FnExpr(params, eff_ct_params, eff_b)) +>
             | <-->
       |
          parser_error(p, 2011,
@@ -2817,6 +3116,31 @@ peek_has_block_cont = p =>
                            | -->
                      !(t2'.kind [LBracket] || token_is_pipe(t2') || is_feed_cont_op(t2') || is_cycle_cont_op(t2'))
 
+is_destructure_seq: ast::Expr => <>
+is_destructure_seq = e =>
+   e
+      [Bin b]
+         b.0 [Seq] is_destructure_seq(b.1) | <->
+      [Assign a]
+         ?a.0 > 4 && a.0(0..4) == "_dp_"
+      | <->
+
+append_stmt_flat: Parser, ast::Exprs, ast::Expr, Int, Int, <> => ()
+append_stmt_flat = p, stmts, s, s_line, s_col, is_top =>
+   s
+      [Bin b]
+         b.0 [Seq]
+            append_stmt_flat(p, stmts, b.1, s_line, s_col, is_top)
+            append_stmt_flat(p, stmts, b.2, s_line, s_col, is_top)
+         |
+            is_top | (p.top_lines += s_line; p.top_cols += s_col)
+            p.module_level | mark_decl_item(p, s)
+            stmts += s
+      |
+         is_top | (p.top_lines += s_line; p.top_cols += s_col)
+         p.module_level | mark_decl_item(p, s)
+         stmts += s
+
 maybe_inline_block_cont: Parser, <ast::Expr|> => <ast::Expr|>
 maybe_inline_block_cont = p, first_res =>
    first_res
@@ -2824,7 +3148,13 @@ maybe_inline_block_cont = p, first_res =>
          is_empty = first_e [Var v] (v == "<empty>") | <->
          is_cyc_fn = p.cycle_depth > 0 && (first_e [Fn])
          is_empty || is_cyc_fn || !peek_has_block_cont(p)
-            | <+ first_e +>
+            |
+               is_destructure_seq(first_e)
+                  |
+                     ds_stmts = ast::Exprs()
+                     append_stmt_flat(p, ds_stmts, first_e, 0, 0, <->)
+                     <+ ast::Expr(Block, ds_stmts) +>
+                  | <+ first_e +>
             |
                0.. @
                   tok_is_nl(p.curr) || (p.curr.kind [Dedent] && p.cont_depth > 0)
@@ -2832,7 +3162,9 @@ maybe_inline_block_cont = p, first_res =>
                      | -->
                p.curr.kind [Indent] | parser_advance(p)
                stmts = ast::Exprs()
-               stmts += first_e
+               is_destructure_seq(first_e)
+                  | append_stmt_flat(p, stmts, first_e, 0, 0, <->)
+                  | stmts += first_e
                saved_fd = p.fn_depth
                p.fn_depth = 0
                saved_cont = p.cont_depth
@@ -2893,8 +3225,11 @@ block_stmts = p, stmts =>
                      p.is_stmt = <->
                      st
                         | s =>
-                           p.module_level | mark_decl_item(p, s)
-                           stmts += s
+                           is_destructure_seq(s)
+                              | append_stmt_flat(p, stmts, s, 0, 0, <->)
+                              |
+                                 p.module_level | mark_decl_item(p, s)
+                                 stmts += s
                            stmt_end_ok(p)
                               |
                                  tok_is_nl(p.curr)
@@ -3004,10 +3339,13 @@ prog_loop = p, stmts =>
                      p.is_stmt = <->
                      st
                         | s =>
-                           p.top_lines += s_line
-                           p.top_cols += s_col
-                           p.module_level | mark_decl_item(p, s)
-                           stmts += s
+                           is_destructure_seq(s)
+                              | append_stmt_flat(p, stmts, s, s_line, s_col, <+>)
+                              |
+                                 p.top_lines += s_line
+                                 p.top_cols += s_col
+                                 p.module_level | mark_decl_item(p, s)
+                                 stmts += s
                            stmt_end_ok(p)
                               |
                                  tok_is_nl(p.curr)

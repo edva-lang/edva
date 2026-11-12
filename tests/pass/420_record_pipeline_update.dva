@@ -1,0 +1,34 @@
+// DVA-53: Single-evaluation of `_` in `$>` pipelines and anonymous record copy-with-update
+#use io
+#use str
+
+#type State
+   cursor: Int = 0
+   line: Int = 1
+   col: Int = 1
+
+calls' = 0
+next_state: State => State
+next_state = s =>
+   calls' ::= calls' + 1
+   State(cursor = s.cursor + 10, line = s.line, col = s.col + 10)
+
+// 1. LHS of `$>` with multiple `_` occurrences in RHS is evaluated only once
+s0 = State(cursor = 0, line = 2, col = 5)
+s1 = next_state(s0) $> State(cursor = _.cursor + 1, col = _.col + 1, .._)
+io::out $ "calls=" + str::from_int(calls') + " cursor=" + str::from_int(s1.cursor) + " line=" + str::from_int(s1.line) + " col=" + str::from_int(s1.col)
+
+// 2. Anonymous record copy-with-update via `_(field = val)` in pipelines
+s2 = s1
+   $> _(cursor = _.cursor + 5, col = _.col + 5)
+   $> _(line = _.line + 1, col = 1)
+io::out $ "s2 cursor=" + str::from_int(s2.cursor) + " line=" + str::from_int(s2.line) + " col=" + str::from_int(s2.col)
+
+// 3. Direct `rec(field = val)` copy-with-update on nominal and anonymous records
+s3 = s2(cursor = 99)
+io::out $ "s3 cursor=" + str::from_int(s3.cursor) + " line=" + str::from_int(s3.line)
+
+anon = (x = 10, y = 20, z = 30)
+anon2 = anon(y = 200)
+anon3 = anon2 $> _(x = _.x + 5, z = _.z + 5)
+io::out $ str::from_int(anon3.x) + "," + str::from_int(anon3.y) + "," + str::from_int(anon3.z)

@@ -1,2 +1,2 @@
-// Function parameters are parentless: "(x, y) =>" is forbidden.
-add = (x, y) => x + y
+// Single function parameter may not be parenthesized: "(x) =>" is forbidden.
+inc = (x) => x + 1

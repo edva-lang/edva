@@ -203,6 +203,8 @@ show_op =
    [Or] "||"
    [Feed] "$>"
    [Bind] "$>>"
+   [MapPos] "$+>"
+   [MapNeg] "$->"
    [Compose] ".>"
    [Apply] "$"
    [BitAnd] ".&."

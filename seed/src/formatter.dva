@@ -394,7 +394,8 @@ starts_with_choice_sep = code =>
    c0 == '[ | --| <+>
    starts_with_str(code, "![") | --| <+>
    starts_with_str(code, "!|") | --| <+>
-   starts_with_str(code, "$>") || starts_with_str(code, ".>") | --| <+>
+   starts_with_str(code, "$>") || starts_with_str(code, "$+>") ||
+     starts_with_str(code, "$->") || starts_with_str(code, ".>") | --| <+>
    c0 == '| && (?code == 1 || code(1) != '|)
 
 // True when a line is an inline pipe arm (`| first_line` or `!| first_line`).
@@ -436,7 +437,8 @@ ends_with_cont_op = code =>
      ends_with_str(code, "==") || ends_with_str(code, "!=") ||
      ends_with_str(code, "!<") || ends_with_str(code, "!>") ||
      ends_with_str(code, ",") || ends_with_str(code, ";") || ends_with_str(code, "$") ||
-     ends_with_str(code, "$>") || ends_with_str(code, "$>>") || ends_with_str(code, ".>") ||
+     ends_with_str(code, "$>") || ends_with_str(code, "$>>") ||
+     ends_with_str(code, "$+>") || ends_with_str(code, "$->") || ends_with_str(code, ".>") ||
      ends_with_str(code, ".&.") || ends_with_str(code, ".|.") || ends_with_str(code, ".^.")
 
 // Check whether a child line at `raw` under `parent_raw` is followed by an intermediate

@@ -19,7 +19,7 @@
 #type BinaryOp <
    Add, Sub, Mul, Div, Mod,
    Gt, Lt, Eq, NotGt, NotLt, NotEq,
-   And, Or, Feed, Apply, Bind, Compose,
+   And, Or, Feed, Apply, Bind, MapPos, MapNeg, Compose,
    BitAnd, BitOr, BitXor, Shl, Shr, Seq
 >
 

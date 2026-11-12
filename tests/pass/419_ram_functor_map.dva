@@ -1,0 +1,61 @@
+// DVA-52: Functor map over ramifications ($+> for positive slot, $-> for negative slot)
+#use io
+#use str
+
+double: Int => Int
+double = x => x * 2
+
+add: Int, Int => Int
+add = x, y => x + y
+
+wrap_err: String => String
+wrap_err = msg => "[err: " + msg + "]"
+
+// 1. $+> over RamPN (<Int|>)
+some_v: <Int|>
+some_v = <+ 21 +>
+none_v: <Int|>
+none_v = <-->
+
+r1 = some_v $+> double
+r2 = none_v $+> double
+io::out $ (r1 | n => str::from_int(n) | "none")
+io::out $ (r2 | n => str::from_int(n) | "none")
+
+// 2. $+> with inline lambda, underscore expression, and partial application
+r3 = some_v
+   $+> x => x + 9
+   $+> _ * 3
+   $+> add(10)
+   $+> str::from_int
+io::out $ (r3 | s => s | "none")
+
+// 3. $+> and $-> over RamPP (<Int | String>)
+ok_v: <Int | String>
+ok_v = <+ 10 ->
+err_v: <Int | String>
+err_v = <- "bad input" +>
+
+p1 = ok_v
+   $+> _ + 5
+   $+> double
+   $-> wrap_err
+p2 = err_v
+   $+> _ + 5
+   $+> double
+   $-> wrap_err
+   $-> (s => s + "!")
+
+io::out $ (p1 | n => "ok:" + str::from_int(n) | e => "err:" + e)
+io::out $ (p2 | n => "ok:" + str::from_int(n) | e => "err:" + e)
+
+// 4. $-> over RamNP (<|String>)
+pass_v: <|String>
+pass_v = <++>
+fail_v: <|String>
+fail_v = <- "disk full" ->
+
+f1 = pass_v $-> wrap_err
+f2 = fail_v $-> wrap_err
+io::out $ (f1 | "pass" | e => e)
+io::out $ (f2 | "pass" | e => e)
