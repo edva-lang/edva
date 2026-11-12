@@ -57,10 +57,10 @@
 #public
 
 #type ModuleLoad (exprs: ast::Exprs, loaded: ast::Names,
-   exports: ast::Names, dynamic_mods: ast::Names, dynamic_paths: ast::Names,
-   ok: <>, native_libs: ast::Names, native_pkg_config: ast::Names,
-   out_files: ast::Names, out_lines: ast::Ints, out_cols: ast::Ints,
-   loaded_files: ast::Names)
+  exports: ast::Names, dynamic_mods: ast::Names, dynamic_paths: ast::Names,
+  ok: <>, native_libs: ast::Names, native_pkg_config: ast::Names,
+  out_files: ast::Names, out_lines: ast::Ints, out_cols: ast::Ints,
+  loaded_files: ast::Names)
 #type SigResult (ti: ast::TypeInfo, ok: <>)
 #type ImportMap String ^ String
 
@@ -217,14 +217,14 @@ unmark_private = e =>
    e
       [Assign t]
          ast::Expr(Assign, (unmark_private_name(t.0), t.1, t.2, t.3, t.4,
-            t.5, t.6, t.7, t.8))
+           t.5, t.6, t.7, t.8))
       [TypeDecl t]
          ast::Expr(TypeDecl, ast::TypeDeclExpr(unmark_private_name(t.name),
-            t.type_info))
+           t.type_info))
       [Foreign f]
          ast::Expr(Foreign, ast::ForeignFnDecl(f.c_name,
-            unmark_private_name(f.dva_name), f.abi, f.params,
-            f.return_type, f.ret_record_info, f.is_variable))
+           unmark_private_name(f.dva_name), f.abi, f.params,
+           f.return_type, f.ret_record_info, f.is_variable))
       [Block b]
          ast::Expr(Block, unmark_private_exprs(b))
       | e
@@ -251,8 +251,8 @@ prefix_member_root = e, prefix =>
       [Member m]
          new_target = prefix_member_root(m.target, prefix)
          ast::Expr(Member, ast::MemberExpr(new_target,
-            m.field_name, m.is_module_access,
-            m.index_expr, m.line, m.col))
+           m.field_name, m.is_module_access,
+           m.index_expr, m.line, m.col))
       [Var v]
          has_dcolon(v)
             | ast::Expr(Var, v)
@@ -292,7 +292,7 @@ is_generic_fn = e =>
       | <->
 
 is_generic_assign: (String, <>, <>, <>, <>, ast::Expr, ast::Expr,
-   String, ast::TypeInfo) => <>
+  String, ast::TypeInfo) => <>
 is_generic_assign = t =>
    is_ct = ?t.7 > 4 && t.7(0..4) == "@ct0"
    is_ti = t.8 [Fn f] (?f.4 > 0) | <->
@@ -343,7 +343,7 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                         |
                            new_td = prefix + "::" + clean
                            acc += ast::Expr(TypeDecl, ast::TypeDeclExpr(new_td,
-                              t.type_info))
+                             t.type_info))
                   [Foreign f]
                      clean = decl_clean_name(f.dva_name)
                      is_pub = is_public_name(publics, privates, clean)
@@ -351,8 +351,8 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                         |
                            new_f = prefix + "::" + clean
                            acc += ast::Expr(Foreign, ast::ForeignFnDecl(f.c_name,
-                              new_f, f.abi, f.params,
-                              f.return_type, f.ret_record_info, f.is_variable))
+                             new_f, f.abi, f.params,
+                             f.return_type, f.ret_record_info, f.is_variable))
                   [Assign t]
                      t.0 != ""
                         |
@@ -365,7 +365,7 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                                  is_fn
                                     |
                                        is_gen = is_generic_assign(t) ||
-                                          acc_has_generic_sig(acc, new_asgn)
+                                         acc_has_generic_sig(acc, new_asgn)
                                        is_gen
                                           |
                                              acc += ast::Expr(Assign, (
@@ -382,24 +382,24 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                         |
                            new_lhs = prefix_lhs_expr(t.6, prefix)
                            acc += ast::Expr(Assign, (t.0, t.1,
-                              t.2, t.3, t.4, t.5, new_lhs,
-                              t.7, t.8))
+                             t.2, t.3, t.4, t.5, new_lhs,
+                             t.7, t.8))
                         |
                            new_asgn = prefix_decl_name(t.0, prefix,
-                              publics, privates)
+                             publics, privates)
                            acc += ast::Expr(Assign, (
                               new_asgn, t.1, t.2,
                               t.3, t.4, t.5, t.6, t.7, t.8))
                   [TypeDecl t]
                      new_td = prefix_decl_name(t.name, prefix, publics, privates)
                      acc += ast::Expr(TypeDecl, ast::TypeDeclExpr(new_td,
-                        t.type_info))
+                       t.type_info))
                   [Foreign f]
                      new_f = prefix_decl_name(f.dva_name, prefix,
-                        publics, privates)
+                       publics, privates)
                      acc += ast::Expr(Foreign, ast::ForeignFnDecl(f.c_name,
-                        new_f, f.abi, f.params,
-                        f.return_type, f.ret_record_info, f.is_variable))
+                       new_f, f.abi, f.params,
+                       f.return_type, f.ret_record_info, f.is_variable))
                   [Block b]
                      b @ child =>
                         prefix_stmt_to_acc(child, prefix, publics, privates, acc, <->)
@@ -602,7 +602,7 @@ find_and_load_import_map = target_path, explicit_map_path =>
                               | plist =>
                                  plist @ s => nat_pkg' += s
                      <+ ImportMapState(<+>, map_path', eff_root, root_name', inst_list,
-                        nat_libs', nat_pkg') +>
+                       nat_libs', nat_pkg') +>
             |
                log::error $ "E5030: Could not parse import map '" + map_path' + "'"
                <-->
@@ -678,7 +678,7 @@ is_resolved = r =>
 is_internal_path: String => <>
 is_internal_path = p =>
    p == "internal" || starts_with(p, "internal/") ||
-      string_contains(p, "/internal/") || ends_with(p, "/internal")
+     string_contains(p, "/internal/") || ends_with(p, "/internal")
 
 // "@alias" -> the root module src/<name>.dva of the aliased package instance.
 resolve_pkg_root: String, String, PkgInstance => ResolvedModule
@@ -688,7 +688,7 @@ resolve_pkg_root = alias, inst_id, inst =>
       | ResolvedModule(File, ResolvedFile(root_f, inst_id + "::" + inst.name, <+>))
       |
          log::error $ "E5033: #use @" + alias + ": package '" + inst.name +
-            "' has no root module src/" + inst.name + ".dva"
+           "' has no root module src/" + inst.name + ".dva"
          ResolvedModule(None)
 
 // "@alias/submod" -> a public (non-internal) module of the package instance.
@@ -698,13 +698,13 @@ resolve_pkg_sub = alias, submod, inst_id, inst =>
    is_internal_path(submod)
       |
          log::error $ "E5035: " + use_path + ": module is internal to package '" +
-            inst.name + "'"
+           inst.name + "'"
          ResolvedModule(None)
       |
          r = resolve_in_dir(inst.src, submod, inst_id + "::" + submod, <+>)
          !is_resolved(r)
             | log::error $ "E5034: " + use_path + ": package '" + inst.name +
-               "' has no module '" + submod + "'"
+              "' has no module '" + submod + "'"
          r
 
 // "@alias[/submod]": only a direct dependency of the importing package.
@@ -717,12 +717,12 @@ resolve_pkg_module = base, mod_path, ldr =>
    alias == curr_inst.name
       |
          log::error $ "E5037: #use @" + alias +
-            ": a package cannot import itself; use a local #use"
+           ": a package cannot import itself; use a local #use"
          ResolvedModule(None)
       | !(curr_inst.aliases ^? alias)
          |
             log::error $ "E5032: #use @" + alias + ": '" + alias +
-               "' is not a dependency of package '" + curr_inst.name + "'"
+              "' is not a dependency of package '" + curr_inst.name + "'"
             ResolvedModule(None)
          |
             inst_id = curr_inst.aliases ^ alias | _ | ""
@@ -829,9 +829,9 @@ collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sour
                                        |
                                           src = sources ^ bare | _ | ""
                                           log::error $ "E3033: Name clash: symbol '" +
-                                             bare + "' imported from '" + bound_name +
-                                             diag::imported_symbol_conflict_suffix! +
-                                             src + "'"
+                                            bare + "' imported from '" + bound_name +
+                                            diag::imported_symbol_conflict_suffix! +
+                                            src + "'"
                                           ok' = <->
                                  |
                                     table ^ bare = a.0
@@ -853,9 +853,9 @@ collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sour
                                  |
                                     src = sources ^ bare | _ | ""
                                     log::error $ "E3033: Name clash: type '" +
-                                       bare + "' imported from '" + bound_name +
-                                       "' conflicts with type already imported from '" +
-                                       src + "'"
+                                      bare + "' imported from '" + bound_name +
+                                      "' conflicts with type already imported from '" +
+                                      src + "'"
                                     ok' = <->
                            |
                               table ^ bare = td.name
@@ -877,9 +877,9 @@ collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sour
                                  |
                                     src = sources ^ bare | _ | ""
                                     log::error $ diag::E3033_foreign_function_clash_prefix! +
-                                       bare + "' imported from '" + bound_name +
-                                       diag::imported_symbol_conflict_suffix! +
-                                       src + "'"
+                                      bare + "' imported from '" + bound_name +
+                                      diag::imported_symbol_conflict_suffix! +
+                                      src + "'"
                                     ok' = <->
                            |
                               table ^ bare = f.dva_name
@@ -900,8 +900,8 @@ check_file_clash = stmts, table, sources =>
                      |
                         src = sources ^ bare | _ | ""
                         log::error $ "E3033: Name clash: symbol '" + bare +
-                           diag::declared_symbol_conflict_suffix! +
-                           src + "'"
+                          diag::declared_symbol_conflict_suffix! +
+                          src + "'"
                         ok' = <->
          [TypeDecl td]
             bare = decl_clean_name(td.name)
@@ -909,8 +909,8 @@ check_file_clash = stmts, table, sources =>
                |
                   src = sources ^ bare | _ | ""
                   log::error $ "E3033: Name clash: type '" + bare +
-                     "' declared in module conflicts with type imported from '" +
-                     src + "'"
+                    "' declared in module conflicts with type imported from '" +
+                    src + "'"
                   ok' = <->
          [Foreign f]
             bare = decl_clean_name(f.dva_name)
@@ -918,8 +918,8 @@ check_file_clash = stmts, table, sources =>
                |
                   src = sources ^ bare | _ | ""
                   log::error $ diag::E3033_foreign_function_clash_prefix! + bare +
-                     diag::declared_symbol_conflict_suffix! +
-                     src + "'"
+                    diag::declared_symbol_conflict_suffix! +
+                    src + "'"
                   ok' = <->
    ok'
 
@@ -962,7 +962,7 @@ rewrite_import_type_info = ti, table =>
             new_fti = rewrite_import_type_info(f.rec_type, table)
             new_def = rewrite_import_expr(f.default_expr, table, ast::Names())
             new_fields += ast::RecordFieldType(f.name, f.val_type, new_fti,
-               f.has_default, new_def)
+              f.has_default, new_def)
          ast::TypeInfo(Rec, (new_fields, r.1, r.2, r.3, r.4, r.5))
       [Fn f]
          new_p_tis = ast::VInfos()
@@ -982,7 +982,7 @@ rewrite_import_type_info = ti, table =>
          es @ s =>
             new_sti = rewrite_import_type_info(s.payload_record, table)
             new_es += ast::EnumSlotInfo(s.label, s.has_payload,
-               s.payload_type, new_sti)
+              s.payload_type, new_sti)
          ast::TypeInfo(Enum, new_es)
       [Array a]
          new_elem_ti = rewrite_import_type_info(a.1, table)
@@ -1015,11 +1015,11 @@ rewrite_import_expr = e, table, locals =>
          ast::Expr(Call, rewrite_import_call(c, table, locals))
       [Bin b]
          ast::Expr(Bin, (b.0,
-            rewrite_import_expr(b.1, table, locals),
-            rewrite_import_expr(b.2, table, locals)))
+           rewrite_import_expr(b.1, table, locals),
+           rewrite_import_expr(b.2, table, locals)))
       [Unary u]
          ast::Expr(Unary, (u.0,
-            rewrite_import_expr(u.1, table, locals)))
+           rewrite_import_expr(u.1, table, locals)))
       [Fn fe]
          fn_locals = ++locals
          fe.params @ p => (p != "" | fn_locals += p)
@@ -1048,17 +1048,17 @@ rewrite_import_expr = e, table, locals =>
                new_vn = !is_loc && (table ^? vn) | (table ^ vn | _ | vn) | vn
                new_vnames += new_vn
             new_branches += ast::ChoiceBranch(br.kind, new_cases, new_pred,
-               new_vnames, br.bind_vars, br.is_identity_extractor,
-               new_blk)
+              new_vnames, br.bind_vars, br.is_identity_extractor,
+              new_blk)
          ast::Expr(Choice, ast::ChoiceExpr(new_cond, ch.is_exhaustive,
-            new_branches))
+           new_branches))
       [Assign a]
          new_rhs = rewrite_import_expr(a.5, table, locals)
          new_lhs = rewrite_import_expr(a.6, table, locals)
          new_tname = table ^? a.7 | (table ^ a.7 | _ | a.7) | a.7
          new_ti = rewrite_import_type_info(a.8, table)
          ast::Expr(Assign, (a.0, a.1, a.2, a.3, a.4, new_rhs, new_lhs,
-            new_tname, new_ti))
+           new_tname, new_ti))
       [TypeDecl td]
          new_ti = rewrite_import_type_info(td.type_info, table)
          ast::Expr(TypeDecl, ast::TypeDeclExpr(td.name, new_ti))
@@ -1066,7 +1066,7 @@ rewrite_import_expr = e, table, locals =>
          new_params = rewrite_import_fparams(f.params, table)
          new_ret_ti = rewrite_import_type_info(f.ret_record_info, table)
          ast::Expr(Foreign, ast::ForeignFnDecl(f.c_name, f.dva_name,
-            f.abi, new_params, f.return_type, new_ret_ti, f.is_variable))
+           f.abi, new_params, f.return_type, new_ret_ti, f.is_variable))
       [Member m]
          m.is_module_access
             |
@@ -1078,7 +1078,7 @@ rewrite_import_expr = e, table, locals =>
                new_target = rewrite_import_expr(m.target, table, locals)
                new_idx = rewrite_import_expr(m.index_expr, table, locals)
                ast::Expr(Member, ast::MemberExpr(new_target, m.field_name,
-                  m.is_module_access, new_idx, m.line, m.col))
+                 m.is_module_access, new_idx, m.line, m.col))
       [Record re]
          new_fields = ast::Fields()
          re.fields @ fld =>
@@ -1089,11 +1089,11 @@ rewrite_import_expr = e, table, locals =>
          new_target = rewrite_import_expr(ka.target, table, locals)
          new_key = rewrite_import_expr(ka.key, table, locals)
          ast::Expr(KeyAccess, ast::KeyAccessExpr(new_target, new_key,
-            ka.is_membership, ka.is_delete, ka.line, ka.col))
+           ka.is_membership, ka.is_delete, ka.line, ka.col))
       [Cycle cy]
          new_iter = rewrite_import_expr(cy.iterable, table, locals)
          new_fn = rewrite_import_expr(cy.body_fn, table, locals)
-         ast::Expr(Cycle, ast::CycleExpr(new_iter, new_fn, cy.is_rune))
+         ast::Expr(Cycle, ast::CycleExpr(new_iter, new_fn, cy.is_rune, cy.is_expr))
       [CycleEscape ce]
          new_cy = rewrite_import_expr(ce.cycle, table, locals)
          new_br = rewrite_import_expr(ce.branch, table, locals)
@@ -1102,7 +1102,7 @@ rewrite_import_expr = e, table, locals =>
          new_lhs = r.has_lhs | rewrite_import_expr(r.lhs, table, locals) | r.lhs
          new_rhs = r.has_rhs | rewrite_import_expr(r.rhs, table, locals) | r.rhs
          ast::Expr(Range, ast::RangeExpr(r.has_lhs, r.has_rhs, new_lhs,
-            new_rhs, r.is_inclusive))
+           new_rhs, r.is_inclusive))
       [NamedArg na]
          new_val = rewrite_import_expr(na.val, table, locals)
          ast::Expr(NamedArg, ast::NamedArgExpr(na.name, new_val))
@@ -1128,11 +1128,11 @@ rewrite_import_expr = e, table, locals =>
       [UserDiag ud]
          new_msg = rewrite_import_expr(ud.msg, table, locals)
          ast::Expr(UserDiag, ast::UserDiagExpr(ud.is_warn, new_msg,
-            ud.line, ud.col))
+           ud.line, ud.col))
       [RawMemory rm]
          new_addr = rewrite_import_expr(rm.addr, table, locals)
          ast::Expr(RawMemory, ast::RawMemoryExpr(new_addr, rm.load_type,
-            rm.rec_name))
+           rm.rec_name))
       [SizeOf so]
          new_sti = rewrite_import_type_info(so.rec_type, table)
          ast::Expr(SizeOf, ast::SizeOfExpr(so.val_type, new_sti))
@@ -1140,7 +1140,7 @@ rewrite_import_expr = e, table, locals =>
          new_pairs = ast::MapPairs()
          ml @ p =>
             new_pairs += ast::MapPair(rewrite_import_expr(p.key, table, locals),
-               rewrite_import_expr(p.value, table, locals))
+              rewrite_import_expr(p.value, table, locals))
          ast::Expr(MapLiteral, new_pairs)
       [CompileTime ct]
          new_ce = rewrite_import_expr(ct, table, locals)
@@ -1170,7 +1170,7 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                            | ""
                            | " in stdlib (use '#use ./" + imp.module_path + "' for a local module)"
                         loader_error(5006, path, "E5006: Imported module '" + imp.module_name +
-                           "' not found at '" + imp.module_path + "'" + hint)
+                          "' not found at '" + imp.module_path + "'" + hint)
                   ok' = <->
                |
                   cid = get_resolved_cid(resolved)
@@ -1188,10 +1188,10 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                               dpaths += canonical_path(dpath)
                               ldr.dynamic_paths = dpaths
                               decl_code = "#public\n" +
-                                 "reload_so: String => <>\n" +
-                                 "reload_so = p => <+>\n" +
-                                 "reload: () => <>\n" +
-                                 "reload = !=> <+>\n"
+                                "reload_so: String => <>\n" +
+                                "reload_so = p => <+>\n" +
+                                "reload: () => <>\n" +
+                                "reload = !=> <+>\n"
                               dppr = parser::parse_init(decl_code)
                               dprog = parser::parse_program(dppr)
                               dprog | dp =>
@@ -1199,8 +1199,8 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                                     db @ de =>
                                        prev_dlen = ?ldr.out_exprs
                                        prefix_stmt_to_acc(de, cid,
-                                          dppr.publics, dppr.privates,
-                                          ldr.out_exprs, <->)
+                                         dppr.publics, dppr.privates,
+                                         ldr.out_exprs, <->)
                                        added_d = ?ldr.out_exprs - prev_dlen
                                        added_d > 0
                                           |
@@ -1227,7 +1227,7 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
          import_entries @ ientry =>
             !ok' | -->
             cres = collect_module_exports(ldr.out_exprs, ientry.bound_name,
-               ientry.canonical_id, ientry.is_import, import_table, import_source)
+              ientry.canonical_id, ientry.is_import, import_table, import_source)
             !cres | ok' = <->
          !ok'
             | <->
@@ -1247,11 +1247,11 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                            |
                               cur_st = has_imp_mods'
                                  | rewrite_import_expr(st2, import_table,
-                                    ast::Names())
+                                   ast::Names())
                                  | st2
                               prev_len = ?ldr.out_exprs
                               prefix_stmt_to_acc(cur_st, prefix, publics,
-                                 privates, ldr.out_exprs, is_iface)
+                                privates, ldr.out_exprs, is_iface)
                               added = ?ldr.out_exprs - prev_len
                               added > 0
                                  |
@@ -1289,7 +1289,7 @@ load_single_file = path, prefix, is_pkg, imp_path, ldr =>
                      is_pkg && ?ppr.publics == 0
                         |
                            log::error $ "E5036: #use " + imp_path +
-                              ": module exports nothing (no #public)"
+                             ": module exports nothing (no #public)"
                            <->
                         |
                            prog
@@ -1299,8 +1299,8 @@ load_single_file = path, prefix, is_pkg, imp_path, ldr =>
                                        ppr.exports @ exp =>
                                           ldr.exports += exp
                                  load_stmts(b, dirname(path), prefix,
-                                    ppr.publics, ppr.privates, ldr, path,
-                                    ppr.top_lines, ppr.top_cols)
+                                   ppr.publics, ppr.privates, ldr, path,
+                                   ppr.top_lines, ppr.top_cols)
                               | <->
                   | <->
       |
@@ -1392,23 +1392,23 @@ load_all = target, target_prefix, is_modular, import_map_arg =>
    map_res
       | map =>
          ldr = Loader(ast::Exprs(), ast::Names(), ast::Names(),
-            ast::Names(), ast::Names(), is_modular, <->,
-            map, ast::Names(), ast::Names(), ast::Ints(), ast::Ints(),
-            ast::Names())
+           ast::Names(), ast::Names(), is_modular, <->,
+           map, ast::Names(), ast::Names(), ast::Ints(), ast::Ints(),
+           ast::Names())
          map.has_map && map.map_path != "" | ldr.loaded_files += map.map_path
          tres = load_target(target, target_prefix, ldr)
          folded_exprs = tres | parser::fold_program_consts(ldr.out_exprs) | ldr.out_exprs
          ModuleLoad(folded_exprs, ldr.loaded, ldr.exports,
-            ldr.dynamic_mods, ldr.dynamic_paths, tres,
-            map.native_libs, map.native_pkg_config,
-            ldr.out_files, ldr.out_lines, ldr.out_cols,
-            ldr.loaded_files)
+           ldr.dynamic_mods, ldr.dynamic_paths, tres,
+           map.native_libs, map.native_pkg_config,
+           ldr.out_files, ldr.out_lines, ldr.out_cols,
+           ldr.loaded_files)
       |
          ModuleLoad(ast::Exprs(), ast::Names(), ast::Names(),
-            ast::Names(), ast::Names(), <->,
-            ast::Names(), ast::Names(),
-            ast::Names(), ast::Ints(), ast::Ints(),
-            ast::Names())
+           ast::Names(), ast::Names(), <->,
+           ast::Names(), ast::Names(),
+           ast::Names(), ast::Ints(), ast::Ints(),
+           ast::Names())
 
 strip_trailing_slash: String => String
 strip_trailing_slash = s => path::strip_trailing_sep(s)
@@ -1460,7 +1460,7 @@ run_cmd = args =>
          pid_raw' = 0i32
          file = args(0) | _ | ""
          ret = libc::posix_spawnp(&pid_raw', file, sys::addr_null, sys::addr_null,
-            argv_buf, environ)
+           argv_buf, environ)
          ret != 0
             |
                mem::destroy(cmd_a)
@@ -1480,7 +1480,7 @@ run_cmd = args =>
                      sig != 0
                         |
                            log::warn $ "Process terminated by signal " +
-                              str::from_int(sig)
+                             str::from_int(sig)
                            128 + sig
                         |
                            (status .>. 8) .&. 255
@@ -1494,7 +1494,7 @@ get_default_target_triple = ignored =>
          s
       |
          log::error $ "E5016: LLVM could not determine" +
-            " a default target triple; pass one with -target"
+           " a default target triple; pass one with -target"
          sys::exit(1)
          ""
 
@@ -1566,8 +1566,7 @@ collect_link_libs = stmts =>
 init_opts: Int => CliOpts
 init_opts = ignored =>
    CliOpts("", "", <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
-      <->, <+>, "", <->, <->, "", "", "", <->, ast::Names())
-
+     <->, <+>, "", <->, <->, "", "", "", <->, ast::Names())
 
 find_char_at: String, Int, Int => Int
 find_char_at = s, i, ch =>
@@ -1712,10 +1711,10 @@ format_record_c_struct = td =>
       [Bitfield bf]
          b += "typedef struct {\n"
          f_type_bf = c_type_of_ti(bf.backing_type,
-            ast::TypeInfo(Prim, bf.backing_type))
+           ast::TypeInfo(Prim, bf.backing_type))
          bf.fields @ f_bf =>
             b += "    " + f_type_bf + " " + f_bf.name + " : " +
-               str::from_int(f_bf.bit_width) + ";\n"
+              str::from_int(f_bf.bit_width) + ";\n"
          b_name_bf = codegen::decl_bare_name(td.name, 0)
          b += "} __attribute__((packed))" + align_attr + " " + b_name_bf + ";\n\n"
          +b
@@ -1727,13 +1726,13 @@ generate_c_header = prog, exports, header_path =>
    guard = c_header_guard(header_path)
    hdr = {4096}
    hdr += ("#ifndef " + guard + "\n",
-      "#define " + guard + "\n\n",
-      "#include <stdint.h>\n",
-      "#include <stddef.h>\n",
-      "#include <stdbool.h>\n\n",
-      "#ifdef __cplusplus\n",
-      "extern \"C\" {\n",
-      "#endif\n\n")
+     "#define " + guard + "\n\n",
+     "#include <stdint.h>\n",
+     "#include <stddef.h>\n",
+     "#include <stdbool.h>\n\n",
+     "#ifdef __cplusplus\n",
+     "extern \"C\" {\n",
+     "#endif\n\n")
 
    used_records = collect_used_record_types(stmts, exports)
    emitted_structs = ast::Names()
@@ -1765,7 +1764,7 @@ generate_c_header = prog, exports, header_path =>
             !sig_res'.ok
                |
                   log::error $ "E5020: Exported function '" + dva_name +
-                     "' has no type signature."
+                    "' has no type signature."
                   has_error' = <+>
                |
                   sig_ti = sig_res'.ti
@@ -1798,13 +1797,13 @@ generate_c_header = prog, exports, header_path =>
                         emitted_symbols += c_name
                      |
                         log::error $ "E5020: Exported symbol '" + dva_name +
-                           "' is not a function."
+                          "' is not a function."
                         has_error' = <+>
 
    hdr += ("\n#ifdef __cplusplus\n",
-      "}\n",
-      "#endif\n\n",
-      "#endif // " + guard + "\n")
+     "}\n",
+     "#endif\n\n",
+     "#endif // " + guard + "\n")
 
    has_error'
       | <->
@@ -1813,7 +1812,7 @@ generate_c_header = prog, exports, header_path =>
          !ok
             |
                log::error $ "E5021: Could not write header file '" +
-                  header_path + "'"
+                 header_path + "'"
                <->
             | <+>
 
@@ -1890,7 +1889,7 @@ copy_file = src, dst =>
 is_dom_symbol: String => <>
 is_dom_symbol = name =>
    starts_with(name, "dom::") || starts_with(name, "console::") ||
-      starts_with(name, "edva_dom_")
+     starts_with(name, "edva_dom_")
 
 export_internal_name: String => String
 export_internal_name = item =>
@@ -1961,14 +1960,14 @@ dom_is_reachable = prog, exports =>
 // Shared compile pipeline: codegen AST -> LLVM IR -> clang binary.
 // Used by both the batch driver and the REPL.
 compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
-   String, ast::Names, ast::Names, ast::Names, ast::Names, ast::Names => < | Int >
+  String, ast::Names, ast::Names, ast::Names, ast::Names, ast::Names => < | Int >
 compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs, npkg, lfiles =>
    prog = overloads::resolve(raw)
    dom_source = canonical_path(compiler_std_dir + "/dom.dva")
    has_dom_file = loaded_has(lfiles, dom_source)
    uses_dom = has_dom_file && (is_wasm_triple(opts.triple) ||
-      (?lfiles > 0 && lfiles(0)!! == dom_source) ||
-      dom_is_reachable(prog, exports))
+     (?lfiles > 0 && lfiles(0)!! == dom_source) ||
+     dom_is_reachable(prog, exports))
    actual_exports = ++exports
    uses_dom
       |
@@ -1977,9 +1976,9 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                log::error $ "E5047: std/dom requires a browser WebAssembly target"
                --| <- 1 ->
          ("dom_invalidate", "dom_invalidate_kind", "dom_forget", "dom_commit",
-            "dom_measure_result",
-            "dom_dispatch", "dom_release_listener") @ name =>
-            actual_exports += "dom::" + name + "=" + name
+           "dom_measure_result",
+           "dom_dispatch", "dom_release_listener") @ name =>
+           actual_exports += "dom::" + name + "=" + name
    nat_libs = nlibs
    nat_pkg = npkg
    output_ll = out_ll
@@ -1991,8 +1990,8 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    cg_err = opts.repl_mode | 6002 | 5011
    clang_err = opts.repl_mode | 6003 | 5013
    cg_opts = codegen::CodegenOpts(opts.triple, opts.no_runtime, opts.no_main,
-      dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
-      opts.is_module, opts.module_name)
+     dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
+     opts.is_module, opts.module_name)
    src_f = opts.target != "" | opts.target | "<eval>"
    annotate::set_source_file(src_f)
    annotate::set_target_triple(opts.triple)
@@ -2004,16 +2003,16 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
          use_cache = !opts.no_cache && env_or("EDVA_NO_CACHE", "") != "1"
          !use_cache
             | cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
-               output_ll, actual_exports, opts.target, cg_opts)
+              output_ll, actual_exports, opts.target, cg_opts)
             |
                eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
                cache_flags = pkg::CacheCodegenFlags(opts.is_module, opts.is_shared,
-                  opts.no_runtime, opts.no_main, opts.module_name)
+                 opts.no_runtime, opts.no_main, opts.module_name)
                ast_summary = ""
                opt_str = opts.opt != "" | opts.opt | "-O2"
                target_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
                bkr = pkg::compute_ir_cache_key(opts.target, lfiles, nat_libs, nat_pkg,
-                  target_triple, opt_str, cache_flags, ast_summary)
+                 target_triple, opt_str, cache_flags, ast_summary)
                cached_hit = pkg::cache_lookup(eff_cache_dir, bkr.key)
                cached_hit
                   | cached_ll =>
@@ -2024,12 +2023,12 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                            !quiet | log::info $ "cached LLVM IR: " + output_ll
                         |
                            cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
-                              output_ll, actual_exports, opts.target, cg_opts)
+                             output_ll, actual_exports, opts.target, cg_opts)
                            cg_ok' != 0
                               | pkg::cache_store(eff_cache_dir, bkr.key, bkr.meta_text, output_ll)
                   |
                      cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
-                        output_ll, actual_exports, opts.target, cg_opts)
+                       output_ll, actual_exports, opts.target, cg_opts)
                      cg_ok' != 0
                         | pkg::cache_store(eff_cache_dir, bkr.key, bkr.meta_text, output_ll)
       | errs =>
@@ -2038,13 +2037,13 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    cg_ok' == 0
       |
          log::error $ "E" + str::from_int(cg_err) +
-            ": Compilation aborted due to code generation errors."
+           ": Compilation aborted due to code generation errors."
          <- 1 ->
       |
          !quiet && !is_cached'
             |
                log::info $ "Successfully generated LLVM IR via LLVM C API: " +
-                  output_ll
+                 output_ll
          opts.header_path != ""
             |
                hdr_ok = generate_c_header(prog, exports, opts.header_path)
@@ -2075,8 +2074,8 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                      cres != 0
                         |
                            log::error $ "E" + str::from_int(clang_err) +
-                              diag::clang_compilation_failed_suffix! +
-                              str::from_int(cres)
+                             diag::clang_compilation_failed_suffix! +
+                             str::from_int(cres)
                            <- cres ->
                         |
                            ld_args = ast::Names()
@@ -2096,8 +2095,8 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                            lres != 0
                               |
                                  log::error $ "E" + str::from_int(clang_err) +
-                                    ": wasm-ld linking failed with exit code " +
-                                    str::from_int(lres)
+                                   ": wasm-ld linking failed with exit code " +
+                                   str::from_int(lres)
                                  <- lres ->
                               |
                                  uses_dom
@@ -2109,13 +2108,13 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                                        !copy_file(bridge, base + ".dom.js")
                                           |
                                              log::error $ "E5048: Cannot emit " +
-                                                "std/dom browser adapter"
+                                               "std/dom browser adapter"
                                              --| <- 1 ->
                                        chmod(base + ".dom.js", 420i32)
                                  !quiet
                                     |
                                        log::info $ "Successfully compiled binary: " +
-                                          output_bin
+                                         output_bin
                                  <++>
                   |
                      clang_args = ast::Names()
@@ -2148,13 +2147,13 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                            link_libs = collect_link_libs(prog_exprs)
                            link_libs @ lib =>
                               is_path_lib = find_char_at(lib, 0, 47) !< 0 ||
-                                 ends_with(lib, ".a") || ends_with(lib, ".o") ||
-                                 ends_with(lib, ".so") || ends_with(lib, ".dylib")
+                                ends_with(lib, ".a") || ends_with(lib, ".o") ||
+                                ends_with(lib, ".so") || ends_with(lib, ".dylib")
                               clang_args += (is_path_lib | lib | "-l" + lib)
                            nat_libs @ lib =>
                               is_path_lib = find_char_at(lib, 0, 47) !< 0 ||
-                                 ends_with(lib, ".a") || ends_with(lib, ".o") ||
-                                 ends_with(lib, ".so") || ends_with(lib, ".dylib")
+                                ends_with(lib, ".a") || ends_with(lib, ".o") ||
+                                ends_with(lib, ".so") || ends_with(lib, ".dylib")
                               clang_args += (is_path_lib | lib | "-l" + lib)
                            nat_pkg @ pname =>
                               !pkg_err'
@@ -2163,7 +2162,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                                     !ok
                                        |
                                           log::error $ "E5039: missing native requirement: pkg-config '" +
-                                             pname + "' failed"
+                                            pname + "' failed"
                                           pkg_err' = <+>
                            ?dynamic_mods > 0
                               |
@@ -2185,8 +2184,8 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                            cres != 0
                               |
                                  log::error $ "E" + str::from_int(clang_err) +
-                                    diag::clang_compilation_failed_suffix! +
-                                    str::from_int(cres)
+                                   diag::clang_compilation_failed_suffix! +
+                                   str::from_int(cres)
                                  <- cres ->
                               |
                                  !quiet
@@ -2286,14 +2285,14 @@ line_has_decl = line =>
 is_writer_line: String => <>
 is_writer_line = line =>
    line(..6) == "print " ||
-      line(..7) == "print\t" ||
-      line(..7) == "print($" ||
-      line(..6) == "print(" ||
-      line(..9) == "print_int" ||
-      line(..7) == "io::out" ||
-      line(..7) == "writeln" ||
-      line(..11) == "libc::write" ||
-      line(..10) == "libc::puts"
+     line(..7) == "print\t" ||
+     line(..7) == "print($" ||
+     line(..6) == "print(" ||
+     line(..9) == "print_int" ||
+     line(..7) == "io::out" ||
+     line(..7) == "writeln" ||
+     line(..11) == "libc::write" ||
+     line(..10) == "libc::puts"
 
 line_returns_unit: CliOpts, String, String, String => <>
 line_returns_unit = opts, temp_src, session_src, line =>
@@ -2505,7 +2504,7 @@ read_line_raw = sess =>
                         hist_idx' == cur_nh | uncommitted' = ++line'
                         hist_idx' = hist_idx' - 1
                         line' = ++repl_history_get(sess.history, hist_idx',
-                           uncommitted')
+                          uncommitted')
                         pos' = ?line'
                         refresh_line(line', pos')
             b0 == 14
@@ -2515,7 +2514,7 @@ read_line_raw = sess =>
                      |
                         hist_idx' = hist_idx' + 1
                         line' = ++repl_history_get(sess.history, hist_idx',
-                           uncommitted')
+                          uncommitted')
                         pos' = ?line'
                         refresh_line(line', pos')
             b0 == 27
@@ -2577,7 +2576,7 @@ read_line_raw = sess =>
                                           pos' < ?line'
                                              |
                                                 line' = line'(0..pos') +
-                                                   line'((pos' + 1)..)
+                                                  line'((pos' + 1)..)
                                                 refresh_line(line', pos')
                                     b2 == 49 || b2 == 55
                                        |
@@ -2701,7 +2700,7 @@ repl_step = opts, session_src, line, sess =>
       |
          is_decl = line_has_decl(line)
          is_unit = !is_decl && !is_writer_line(line) &&
-            line_returns_unit(opts, sess.src_path, session_src, line)
+           line_returns_unit(opts, sess.src_path, session_src, line)
          candidate = is_decl || is_writer_line(line) || is_unit | line |
             "io::out(" + line + ")"
          full_src = session_src == "" | candidate |
@@ -2718,10 +2717,10 @@ repl_step = opts, session_src, line, sess =>
                   |
                      prog = ast::Expr(Block, load_res.exprs)
                      comp = compile_ast_to_binary(prog, load_res.exports,
-                        opts, sess.ll_path, sess.bin_path,
-                        load_res.dynamic_mods, load_res.dynamic_paths,
-                        load_res.native_libs, load_res.native_pkg_config,
-                        load_res.loaded_files)
+                       opts, sess.ll_path, sess.bin_path,
+                       load_res.dynamic_mods, load_res.dynamic_paths,
+                       load_res.native_libs, load_res.native_pkg_config,
+                       load_res.loaded_files)
                      comp
                         |
                            run_args = ast::Names()
@@ -2730,7 +2729,7 @@ repl_step = opts, session_src, line, sess =>
                            rres != 0
                               |
                                  log::error $ "E6004: Program exited with code " +
-                                    str::from_int(rres)
+                                   str::from_int(rres)
                                  session_src
                               |
                                  is_decl
@@ -2789,7 +2788,7 @@ repl_run = opts =>
          active_repl_dir ::= scratch_dir
          signal(2, @[&on_sigint Addr])
          sess = ReplSession(scratch_dir, session_src, session_ll,
-            session_bin, ast::Names())
+           session_bin, ast::Names())
          repl_opts = opts
          repl_opts.repl_mode = <+>
          repl_opts.no_cache = <+>
@@ -3115,7 +3114,7 @@ run_eval = opts =>
    annotate::set_source_file("<eval>")
    annotate::set_target_triple(opts.triple)
    annotate::set_program_locs(eval_load.out_files,
-      eval_load.out_lines, eval_load.out_cols)
+     eval_load.out_lines, eval_load.out_cols)
    eval_prog' = ast::Expr(Block, eval_load.exprs)
    eval_exports' = eval_load.exports
    eval_dyn_mods' = eval_load.dynamic_mods
@@ -3127,7 +3126,7 @@ run_eval = opts =>
       |
          eval_cleanup(eval_dir, eval_file, "", "")
          verify_typed_ast(eval_prog', opts.ast_dump || opts.ast_tree,
-            opts.ast_tree)
+           opts.ast_tree)
    eval_run_default = !opts.ir_only && !opts.is_module && !opts.is_shared && opts.outpath == ""
    should_wrap = eval_run_default && ?eval_load.exprs == 1 && !line_has_decl(opts.eval_src) && !is_writer_line(opts.eval_src) && prog_is_non_unit_expr(eval_prog')
    should_wrap
@@ -3147,7 +3146,7 @@ run_eval = opts =>
                      eval_nat_pkg' = w_load.native_pkg_config
                      eval_files' = w_load.loaded_files
                      annotate::set_program_locs(w_load.out_files,
-                        w_load.out_lines, w_load.out_cols)
+                       w_load.out_lines, w_load.out_cols)
    eval_opts = opts
    eval_run_default | eval_opts.no_cache = <+>
    def_triple = get_default_target_triple(0)
@@ -3166,8 +3165,8 @@ run_eval = opts =>
    rm_ll = eval_run_default | eval_ll | ""
    rm_bin = eval_run_default | eval_bin | ""
    comp_e = compile_ast_to_binary(eval_prog', eval_exports', eval_opts,
-      out_ll, out_bin, eval_dyn_mods', eval_dyn_paths',
-      eval_nat_libs', eval_nat_pkg', eval_files')
+     out_ll, out_bin, eval_dyn_mods', eval_dyn_paths',
+     eval_nat_libs', eval_nat_pkg', eval_files')
    comp_e !| code =>
       eval_cleanup(eval_dir, eval_file, rm_ll, rm_bin)
       sys::exit(code)
@@ -3182,7 +3181,7 @@ run_eval = opts =>
          rres != 0
             |
                log::error $ "E5014: Compiled program exited with code " +
-                  str::from_int(rres)
+                 str::from_int(rres)
                sys::exit(1)
          sys::exit(0)
       |
@@ -3240,7 +3239,7 @@ run_driver = ignored =>
                sys::exit(1)
          target_prefix_dump = opts.is_module | opts.module_name | ""
          dump_load = load_all(opts.target, target_prefix_dump, opts.is_module,
-            opts.import_map)
+           opts.import_map)
          !dump_load.ok
             | sys::exit(1)
             |
@@ -3264,7 +3263,7 @@ run_driver = ignored =>
    !is_dir && !is_dva_file(opts.target)
       |
          log::error $ "E5010: Input file must have a '.dva' extension, got '" +
-            opts.target + "'"
+           opts.target + "'"
          sys::exit(1)
 
    raw_base = derive_base_name(opts.target)
@@ -3279,7 +3278,7 @@ run_driver = ignored =>
    ?base_name > 0 && base_name(0) == '-
       |
          log::error $ "E5018: Output name '" + base_name +
-            "' begins with '-'; rename the input."
+           "' begins with '-'; rename the input."
          sys::exit(1)
    opts.is_module && opts.no_main && opts.module_name == "" | opts.module_name = base_name
    target_triple = opts.triple != "" | opts.triple |
@@ -3290,7 +3289,7 @@ run_driver = ignored =>
    !opts.ir_only && dir_exists(output_bin)
       |
          log::error $ "E5022: Output name '" + output_bin +
-            "' collides with an existing directory; pass -o <name> to set output name."
+           "' collides with an existing directory; pass -o <name> to set output name."
          sys::exit(1)
    ll_stem = opts.outpath != "" | (opts.is_module | base_name | opts.outpath) | base_name
    has_ll_ext = ?ll_stem !< 3 && ll_stem(?ll_stem - 3..) == ".ll"
@@ -3304,30 +3303,30 @@ run_driver = ignored =>
          annotate::set_source_file(opts.target)
          annotate::set_target_triple(opts.triple)
          annotate::set_program_locs(load_result.out_files,
-            load_result.out_lines, load_result.out_cols)
+           load_result.out_lines, load_result.out_cols)
          program = ast::Expr(Block, load_result.exprs)
          should_verify_only = opts.typed_ast &&
-            !opts.run_exec && !opts.ir_only && (opts.outpath == "")
+           !opts.run_exec && !opts.ir_only && (opts.outpath == "")
          should_verify_only
             |
                verify_typed_ast(program, opts.ast_dump || opts.ast_tree,
-                  opts.ast_tree)
+                 opts.ast_tree)
             |
                res = compile_ast_to_binary(program, load_result.exports, opts,
-                  output_ll, output_bin, load_result.dynamic_mods,
-                  load_result.dynamic_paths, load_result.native_libs,
-                  load_result.native_pkg_config, load_result.loaded_files)
+                 output_ll, output_bin, load_result.dynamic_mods,
+                 load_result.dynamic_paths, load_result.native_libs,
+                 load_result.native_pkg_config, load_result.loaded_files)
                res !| code => sys::exit(code)
 
    opts.run_exec
       |
          log::info $ "--- Running Executable ---"
          exec_bin = path::is_abs(output_bin) ||
-            output_bin(..2) == "./"
-            | output_bin
-            | "./" + output_bin
+           output_bin(..2) == "./"
+           | output_bin
+           | "./" + output_bin
          is_wasm_exec = is_wasm_triple(target_triple) ||
-            path::ext(output_bin) == ".wasm"
+           path::ext(output_bin) == ".wasm"
          run_args = ast::Names()
          is_wasm_exec
             |
@@ -3335,11 +3334,11 @@ run_driver = ignored =>
                run_args += "--disable-wasm-trap-handler"
                run_args += "-e"
                run_args += "const fs=require('fs')," +
-                  "b=fs.readFileSync(process.argv[1]);" +
-                  "WebAssembly.instantiate(b).then(m=>{" +
-                  "const e=m.instance.exports;" +
-                  "if(e._start)e._start();" +
-                  "else if(e.main)process.exit(e.main());});"
+                 "b=fs.readFileSync(process.argv[1]);" +
+                 "WebAssembly.instantiate(b).then(m=>{" +
+                 "const e=m.instance.exports;" +
+                 "if(e._start)e._start();" +
+                 "else if(e.main)process.exit(e.main());});"
                run_args += output_bin
             |
                run_args += exec_bin
@@ -3347,8 +3346,7 @@ run_driver = ignored =>
          rres != 0
             |
                log::error $ "E5014: Compiled program exited with code " +
-                  str::from_int(rres)
+                 str::from_int(rres)
                sys::exit(1)
 
 run_driver(0)
-

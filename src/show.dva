@@ -51,7 +51,7 @@ show_expr = e =>
       [Range t] "Range(" + (t.has_lhs | show_expr(t.lhs) | "_") +
         (t.is_inclusive | "..." | "..") +
         (t.has_rhs | show_expr(t.rhs) | "_") + ")"
-      [Cycle t] "Cycle(" + show_expr(t.iterable) + " " +
+      [Cycle t] (t.is_expr | "CycleExpr(" | "Cycle(") + show_expr(t.iterable) + " " +
         show_expr(t.body_fn) + ")"
       [CycleEscape t] "CycleEscape(" + show_expr(t.cycle) + " " +
         show_expr(t.branch) + ")"

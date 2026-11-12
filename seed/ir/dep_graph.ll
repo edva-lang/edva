@@ -4482,7 +4482,7 @@ choice.case1259:                                  ; preds = %choice.next1193
   store ptr %payload.ptr1265, ptr %var._1266, align 8
   store ptr %payload.ptr1265, ptr %var.cy, align 8
   %var.load1267 = load ptr, ptr %var.cy, align 8
-  %fld.gep1268 = getelementptr inbounds { ptr, ptr, i1 }, ptr %var.load1267, i32 0, i32 0
+  %fld.gep1268 = getelementptr inbounds { ptr, ptr, i1, i1 }, ptr %var.load1267, i32 0, i32 0
   %fld.load1269 = load ptr, ptr %fld.gep1268, align 8
   %var.load1270 = load ptr, ptr %var.locals, align 8
   %a.load1271 = load ptr, ptr %var.locals, align 8
@@ -4534,7 +4534,7 @@ a.after1287:                                      ; preds = %a.create1286, %a.af
   %a.load21295 = load ptr, ptr %var.refs, align 8
   call void @"dep_graph::collect_expr_refs"(ptr %fld.load1269, ptr %a.load21282, ptr %a.load21295)
   %var.load1296 = load ptr, ptr %var.cy, align 8
-  %fld.gep1297 = getelementptr inbounds { ptr, ptr, i1 }, ptr %var.load1296, i32 0, i32 1
+  %fld.gep1297 = getelementptr inbounds { ptr, ptr, i1, i1 }, ptr %var.load1296, i32 0, i32 1
   %fld.load1298 = load ptr, ptr %fld.gep1297, align 8
   %var.load1299 = load ptr, ptr %var.locals, align 8
   %a.load1300 = load ptr, ptr %var.locals, align 8

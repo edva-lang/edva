@@ -1,0 +1,156 @@
+// Regression tests for DVA-51:
+// Expression-valued cycles (`@>`) for map, filter-map, and seeded fold
+
+#use str
+#use io
+
+#type Point (x: Int, y: Int)
+#type Wrapper (v: Int, tag: Int = 99)
+#type FibState (a: Int, b: Int)
+
+inc: Int => Int
+inc = x => x + 1
+
+double: Int => Int
+double = x => x * 2
+
+add: Int, Int => Int
+add = a, b => a + b
+
+max_int: Int, Int => Int
+max_int = a, b => a > b | a | b
+
+parse_pos: Int => < Int | >
+parse_pos = x =>
+   x > 0 | <+ x * 10 +> | <-->
+
+// 1. Unseeded Map: explicit 1-binder, 2-binder, and implicit _ / _i
+nums = Int{}(1, 2, 3, 4)
+m1 = nums @> x => x * 2
+io::out $ ("m1:", m1(0)!!, m1(1)!!, m1(2)!!, m1(3)!!)
+
+m2 = nums @> x, i => x * 10 + i
+io::out $ ("m2:", m2(0)!!, m2(1)!!, m2(2)!!, m2(3)!!)
+
+m3 = nums @> _ + 100
+io::out $ ("m3:", m3(0)!!, m3(1)!!, m3(2)!!, m3(3)!!)
+
+m4 = nums @> _ + _i
+io::out $ ("m4:", m4(0)!!, m4(1)!!, m4(2)!!, m4(3)!!)
+
+// 2. Point-free Map: unary fn, partial call, sections, accessor, headless choice, cast, ctor, .> chain
+pf_unary = nums @> inc
+io::out $ ("pf_unary:", pf_unary(0)!!, pf_unary(3)!!)
+
+pf_partial = nums @> add(10)
+io::out $ ("pf_partial:", pf_partial(0)!!, pf_partial(3)!!)
+
+pf_sec = nums @> (+ 5)
+io::out $ ("pf_sec:", pf_sec(0)!!, pf_sec(3)!!)
+
+pts = Point{}(Point(10, 1), Point(20, 2), Point(30, 3))
+xs1 = pts @> (.x)
+xs2 = pts @> p => p.y
+xs3 = pts @> _.x + _.y
+io::out $ ("pts:", xs1(0)!!, xs1(2)!!, xs2(0)!!, xs2(2)!!, xs3(0)!!, xs3(2)!!)
+
+scores = Int{}(95, 82, 91, 70)
+grades = scores @> [(_ !< 90)] "A" | "B"
+io::out $ ("grades:", grades(0)!!, grades(1)!!, grades(2)!!, grades(3)!!)
+
+flts = nums @> Float
+io::out $ ("flts:", flts(0)!!, flts(3)!!)
+
+wraps = nums @> Wrapper
+io::out $ ("wraps:", wraps(0)!!.v, wraps(0)!!.tag, wraps(3)!!.v, wraps(3)!!.tag)
+
+pf_chain1 = nums @> inc .> double
+pf_chain2 = nums @> (+ 1) .> (* 3)
+io::out $ ("pf_chain:", pf_chain1(0)!!, pf_chain1(3)!!, pf_chain2(0)!!, pf_chain2(3)!!)
+
+// 3. Chained @> pipelines (single-line and multiline)
+chained = nums
+   @> (_ * 2)
+   @> (+ 1)
+io::out $ ("chained:", chained(0)!!, chained(1)!!, chained(2)!!, chained(3)!!)
+
+// 4. Filter-Map & Filter (< U | > and < U | Error >)
+mixed = Int{}(-2, 3, 0, -5, 7)
+fmap1 = mixed @> x => x > 0 | <+ x * 10 +>
+io::out $ ("fmap1:", ?fmap1, fmap1(0)!!, fmap1(1)!!)
+
+fmap2 = mixed @> _ < 0 | <+ -_ +>
+io::out $ ("fmap2:", ?fmap2, fmap2(0)!!, fmap2(1)!!)
+
+fmap3 = mixed @> parse_pos
+io::out $ ("fmap3:", ?fmap3, fmap3(0)!!, fmap3(1)!!)
+
+raw_strs = String{}("12", "bad", "34", "nope", "56")
+parsed = raw_strs @> str::to_int
+io::out $ ("parsed:", ?parsed, parsed(0)!!.0, parsed(1)!!.0, parsed(2)!!.0)
+
+// 5. Flag map (<> has no payload, so it maps to <>{})
+flags = mixed @> (_ > 0)
+io::out $ ("flags:", ?flags, flags(0)!!, flags(1)!!, flags(4)!!)
+
+// 6. Seeded Fold: 2-binder, 3-binder, (+), (*), named binary fn, conditional fold step
+sum1 = (0, nums) @> acc, x => acc + x
+sum2 = (0, nums) @> acc, x, i => acc + x * (i + 1)
+sum3 = (0, nums) @> (+)
+prod = (1, nums) @> (*)
+sum4 = (0, nums) @> add
+mx = (-999, mixed) @> max_int
+io::out $ ("folds:", sum1, sum2, sum3, prod, sum4, mx)
+
+cond_sum = (0, mixed) @> acc, x => x > 0 | <+ acc + x +>
+io::out $ ("cond_sum:", cond_sum)
+
+// 7. Empty collection safety for Map, Filter-Map, and Seeded Fold
+empty_arr = Int{}()
+emp_map = empty_arr @> (_ * 2)
+emp_fold = (42, empty_arr) @> (+)
+emp_range_fold = (99, 0..0) @> (+)
+io::out $ ("empty:", ?emp_map, emp_fold, emp_range_fold)
+
+// 8. Seeded unbounded state loop (seed, 0..) @> ... with -->
+pow2 = (1, 0..) @> acc =>
+   acc > 100 | -->
+   acc * 2
+io::out $ ("pow2:", pow2)
+
+fib_final = (FibState(0, 1), 0..10) @> st => FibState(st.b, st.a + st.b)
+io::out $ ("fib10:", fib_final.a, fib_final.b)
+
+// 9. Control flow (--^ and -->) inside @>
+cf_map = (1..10) @> x =>
+   x % 2 == 0 | --^
+   x > 6 | -->
+   x * 10
+io::out $ ("cf_map:", ?cf_map, cf_map(0)!!, cf_map(1)!!, cf_map(2)!!)
+
+cf_fold = (0, 1..10) @> acc, x =>
+   x % 2 == 0 | --^
+   x > 6 | -->
+   acc + x
+io::out $ ("cf_fold:", cf_fold)
+
+// 10. Inside a regular function & generic #! T: Type function
+run_in_fn: Int{} => (Int{}, Int)
+run_in_fn = xs =>
+   mapped = xs @> (_ * 3)
+   total = (0, mapped) @> (+)
+   (mapped, total)
+
+fn_res = run_in_fn(nums)
+fn_arr = fn_res.0
+fn_tot = fn_res.1
+io::out $ ("in_fn:", ?fn_arr, fn_arr(0)!!, fn_arr(3)!!, fn_tot)
+
+sum_gen: #! T: Type, T, T{} => T
+sum_gen = z, xs => (z, xs) @> acc, x => acc + x
+
+dup_gen: #! T: Type, T{} => T{}
+dup_gen = xs => xs @> x => x
+
+dg = dup_gen(nums)
+io::out $ ("sum_gen:", sum_gen(0, nums), ?dg, dg(0)!!, dg(3)!!)

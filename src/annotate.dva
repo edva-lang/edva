@@ -1078,19 +1078,35 @@ is_cmp_rec = ctx, u =>
                   | <->
       | <->
 
-annotate_cycle: unify::Ctx, type_env::TypeEnv, ast::CycleExpr,
-  <ast::Expr|> => tast::TypedExpr
-annotate_cycle = ctx, env, c, esc_expr_opt =>
-   iter_te = annotate_expr(ctx, env, c.iterable)
+iter_elem_ti: unify::Ctx, ast::TypeInfo, unify::UType => ast::TypeInfo
+iter_elem_ti = ctx, iter_ti, elem_ut =>
+   from_iter = iter_ti
+      [Array a] a.1
+      [Map m] m.2
+      [Rec r]
+         ?r.0 > 0
+            | (r.0(0) | _ | ast::RecordFieldType("", ast::ValueType(Unknown),
+              ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->,
+              ast::Expr(Int, 0))).rec_type
+            | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+   is_unk = from_iter [Prim p] (p [Unknown]) | <->
+   is_tvar = from_iter [TypeVar tv] (?tv > 0 && tv(0) == '?) | <->
+   (is_unk || is_tvar)
+      | unify::type_info_from_utype(ctx, elem_ut)
+      | from_iter
+
+cycle_iter_elem_info: unify::Ctx, tast::TypedExpr, <> => (<>, unify::UType)
+cycle_iter_elem_info = ctx, iter_te, is_rune =>
    c_iter = unify::canon(ctx, iter_te.ut)
-   c.is_rune
+   is_rune
       |
          is_s = is_str_ut(ctx, iter_te.ut)
          !is_s
             |
                unify::add_error(ctx, 3084,
                  "Codepoint cycle (@@) requires String iterable")
-   iter_elem_info = c.is_rune
+   is_rune
       | (<+>, unify::prim_rune())
       |
          c_iter
@@ -1112,8 +1128,16 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
                   | unify::fresh_var(ctx)
                (<+>, r_elem)
             | (<->, unify::fresh_var(ctx))
+
+annotate_cycle: unify::Ctx, type_env::TypeEnv, ast::CycleExpr,
+  <ast::Expr|> => tast::TypedExpr
+annotate_cycle = ctx, env, c, esc_expr_opt =>
+   iter_te = annotate_expr(ctx, env, c.iterable)
+   c_iter = unify::canon(ctx, iter_te.ut)
+   iter_elem_info = cycle_iter_elem_info(ctx, iter_te, c.is_rune)
    has_elem = iter_elem_info.0
    elem_ut = iter_elem_info.1
+   elem_ti = iter_elem_ti(ctx, iter_te.ti, elem_ut)
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
    key_ut' = c_iter [Map m] m.key | unify::prim_int()
    prev_u = type_env::lookup_binding_exact(env, "_")
@@ -1148,7 +1172,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
                   |
                      p0 != "" && p0 != "_"
                         |
-                           type_env::bind_local(env, p0, elem_ut, ti_unk, <->)
+                           type_env::bind_local(env, p0, elem_ut, elem_ti, <->)
                            type_env::init_mark_whole(env, p0)
                   |
                      np > 1
@@ -1158,7 +1182,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
                                  p0 != "" && p0 != "_"
                                     |
                                        type_env::bind_local(env, p0,
-                                         m2.val, ti_unk, <->)
+                                         m2.val, elem_ti, <->)
                                        type_env::init_mark_whole(env, p0)
                                  p1 != "" && p1 != "_"
                                     |
@@ -1169,7 +1193,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
                                  p0 != "" && p0 != "_"
                                     |
                                        type_env::bind_local(env, p0,
-                                         elem_ut, ti_unk, <->)
+                                         elem_ut, elem_ti, <->)
                                        type_env::init_mark_whole(env, p0)
                                  p1 != "" && p1 != "_"
                                     |
@@ -1188,7 +1212,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
                        ti_unk, <->)
                      type_env::init_mark_whole(env, p1)
          type_env::bind_local(env, "_i", key_ut', ti_unk, <->)
-         type_env::bind_local(env, "_", elem_ut, ti_unk, <->)
+         type_env::bind_local(env, "_", elem_ut, elem_ti, <->)
          env.discard_result = <+>
          fe_body_te = annotate_expr(ctx, env, fe.body)
          param_uts = unify::UTypes()
@@ -1209,7 +1233,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
          mk_lambda_te(fe.params, fe_body_te, fn_ut, ti_fn)
       |
          type_env::bind_local(env, "_i", key_ut', ti_unk, <->)
-         type_env::bind_local(env, "_", elem_ut, ti_unk, <->)
+         type_env::bind_local(env, "_", elem_ut, elem_ti, <->)
          env.discard_result = <+>
          callee = apply_callee_name(c.body_fn)
          callee != ""
@@ -1300,6 +1324,442 @@ is_saturated_curried_call = ctx, env, rhs =>
                   | <->
             | <->
       | <->
+
+leftmost_feed_leaf: ast::Expr => ast::Expr
+leftmost_feed_leaf = e =>
+   e
+      [Bin b]
+         is_f = b.0 [Feed]
+         is_f | leftmost_feed_leaf(b.1) | e
+      | e
+
+prepend_feed_arg: ast::Expr, ast::Expr => ast::Expr
+prepend_feed_arg = arg_e, body_e =>
+   body_e
+      [Bin b]
+         is_f = b.0 [Feed]
+         is_f
+            |
+               ast::Expr(Bin, (ast::BinaryOp(Feed),
+                 prepend_feed_arg(arg_e, b.1), b.2))
+            |
+               ast::Expr(Bin, (ast::BinaryOp(Feed), arg_e, body_e))
+      |
+         ast::Expr(Bin, (ast::BinaryOp(Feed), arg_e, body_e))
+
+is_pointfree_leaf: unify::Ctx, type_env::TypeEnv, ast::Expr => <>
+is_pointfree_leaf = ctx, env, leaf =>
+   leaf
+      [Fn] <+>
+      [Call pc]
+         pc.fn_name != ""
+            |
+               type_env::lookup_binding(env, pc.fn_name)
+                  | bnd =>
+                     cb = unify::canon(ctx, bnd.ut)
+                     cb
+                        [Fn f_sig]
+                           is_sat_non_fn = ?f_sig.params == ?pc.args && !(unify::canon(ctx, f_sig.ret) [Fn])
+                           is_sat_non_fn | <-> | <+>
+                        | <+>
+                  | <+>
+            | <->
+      |
+         callee = apply_callee_name(leaf)
+         (callee == "" || callee == "_" || callee == "_i")
+            | <->
+            |
+               type_env::lookup_binding(env, callee)
+                  | bnd =>
+                     cb = unify::canon(ctx, bnd.ut)
+                     (cb [Fn, Var]) || has_name_in(user_fns, callee) ||
+                       has_name_in(declared_fns, callee) ||
+                       type_env::is_generic_binding(env, callee) ||
+                       <>(type_env::lookup_generic(env, callee)) ||
+                       <>(type_env::lookup_user_type(env, callee)) ||
+                       is_reserved_type_name(callee)
+                  | <+>
+
+annotate_seeded_cycle_expr: unify::Ctx, type_env::TypeEnv, ast::CycleExpr,
+  tast::TypedExpr, tast::TypedExpr, <> => tast::TypedExpr
+annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
+   c_iter = unify::canon(ctx, iter_te.ut)
+   iter_elem_info = cycle_iter_elem_info(ctx, iter_te, c.is_rune)
+   has_elem = iter_elem_info.0
+   elem_ut = iter_elem_info.1
+   elem_ti = iter_elem_ti(ctx, iter_te.ti, elem_ut)
+   eff_elem_ut = has_elem | elem_ut | unify::prim_int()
+   eff_elem_ti = has_elem | elem_ti | ast::TypeInfo(Prim, ast::ValueType(Int))
+   ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
+   key_ut = c_iter [Map m] m.key | unify::prim_int()
+   acc_ut = seed_te.ut
+   seed_ti_unk = seed_te.ti [Prim p_st] (p_st [Unknown]) | <->
+   acc_ti0 = !seed_ti_unk | seed_te.ti | unify::type_info_from_utype(ctx, acc_ut)
+   fold_v = unify::fresh_var(ctx)
+   fold_id = fold_v [Var id] id | 0
+   acc_name = "_fold_acc_" + str::from_int(fold_id)
+   val_name = "_fold_v_" + str::from_int(fold_id)
+   step_el_name = "_fold_el_" + str::from_int(fold_id)
+   prev_u = type_env::lookup_binding_exact(env, "_")
+   prev_ui = type_env::lookup_binding_exact(env, "_i")
+   step_info = c.body_fn
+      [Fn fe]
+         np = ?fe.params
+         np > 3
+            | unify::add_error(ctx, 3138,
+              "Seeded cycle (@>) body takes at most three parameters")
+         p_acc = fe.params(0) | _ | ""
+         p_elem = fe.params(1) | _ | ""
+         p_idx = fe.params(2) | _ | ""
+         prev_p0 = p_acc != "" && p_acc != "_"
+            | type_env::lookup_local_exact(env, p_acc)
+            | <-->
+         prev_p1 = p_elem != "" && p_elem != "_"
+            | type_env::lookup_local_exact(env, p_elem)
+            | <-->
+         prev_p2 = p_idx != "" && p_idx != "_"
+            | type_env::lookup_local_exact(env, p_idx)
+            | <-->
+         p_acc != "" && p_acc != "_"
+            |
+               type_env::bind_local(env, p_acc, acc_ut, acc_ti0, <->)
+               type_env::init_mark_whole(env, p_acc)
+         np > 1 && p_elem != "" && p_elem != "_"
+            |
+               type_env::bind_local(env, p_elem, eff_elem_ut, eff_elem_ti, <->)
+               type_env::init_mark_whole(env, p_elem)
+         np > 2 && p_idx != "" && p_idx != "_"
+            |
+               type_env::bind_local(env, p_idx, key_ut, ti_unk, <->)
+               type_env::init_mark_whole(env, p_idx)
+         type_env::bind_local(env, "_i", key_ut, ti_unk, <->)
+         (np == 1 && p_acc == "_")
+            | type_env::bind_local(env, "_", acc_ut, acc_ti0, <->)
+            | type_env::bind_local(env, "_", eff_elem_ut, eff_elem_ti, <->)
+         env.discard_result = <->
+         fe_body_te = annotate_expr(ctx, env, fe.body)
+         p_acc != "" && p_acc != "_"
+            |
+               prev_p0
+                  | pp0 => type_env::bind_local(env, p_acc, pp0.ut, pp0.ti, pp0.is_mut)
+                  | type_env::unbind_local(env, p_acc)
+         p_elem != "" && p_elem != "_"
+            |
+               prev_p1
+                  | pp1 => type_env::bind_local(env, p_elem, pp1.ut, pp1.ti, pp1.is_mut)
+                  | type_env::unbind_local(env, p_elem)
+         p_idx != "" && p_idx != "_"
+            |
+               prev_p2
+                  | pp2 => type_env::bind_local(env, p_idx, pp2.ut, pp2.ti, pp2.is_mut)
+                  | type_env::unbind_local(env, p_idx)
+         lparams = ast::Names()
+         np < 2
+            | lparams += step_el_name
+            |
+               lparams += (p_elem != "" | p_elem | step_el_name)
+               np > 2
+                  | lparams += (p_idx != "" | p_idx | "_i")
+         (fe_body_te, p_acc, lparams)
+      |
+         p_acc = "_fold_a_" + str::from_int(fold_id)
+         p_elem = "_fold_x_" + str::from_int(fold_id)
+         type_env::bind_local(env, p_acc, acc_ut, acc_ti0, <->)
+         type_env::init_mark_whole(env, p_acc)
+         type_env::bind_local(env, p_elem, eff_elem_ut, eff_elem_ti, <->)
+         type_env::init_mark_whole(env, p_elem)
+         type_env::bind_local(env, "_i", key_ut, ti_unk, <->)
+         type_env::bind_local(env, "_", eff_elem_ut, eff_elem_ti, <->)
+         env.discard_result = <->
+         callee = apply_callee_name(c.body_fn)
+         call_e = callee != ""
+            |
+               cargs = ast::Exprs()
+               cargs += ast::Expr(Var, p_acc)
+               cargs += ast::Expr(Var, p_elem)
+               ast::Expr(Call, ast::CallExpr(callee, ast::Expr(Var, ""), cargs, 0, 0))
+            |
+               c.body_fn
+                  [Call pc]
+                     cargs = ast::Exprs()
+                     cargs += ast::Expr(Var, p_acc)
+                     pc.args @ pca => cargs += pca
+                     cargs += ast::Expr(Var, p_elem)
+                     ast::Expr(Call, ast::CallExpr(pc.fn_name, pc.fn_target, cargs, pc.line, pc.col))
+                  |
+                     cargs = ast::Exprs()
+                     cargs += ast::Expr(Var, p_acc)
+                     cargs += ast::Expr(Var, p_elem)
+                     ast::Expr(Call, ast::CallExpr("", c.body_fn, cargs, 0, 0))
+         fe_body_te = annotate_expr(ctx, env, call_e)
+         type_env::unbind_local(env, p_acc)
+         type_env::unbind_local(env, p_elem)
+         lparams = ast::Names()
+         lparams += p_elem
+         (fe_body_te, p_acc, lparams)
+   prev_u
+      | pu => type_env::bind_local(env, "_", pu.ut, pu.ti, pu.is_mut)
+      | type_env::unbind_local(env, "_")
+   prev_ui
+      | pui => type_env::bind_local(env, "_i", pui.ut, pui.ti, pui.is_mut)
+      | type_env::unbind_local(env, "_i")
+   env.discard_result = saved_disc
+   fe_body_te = step_info.0
+   p_acc_name = step_info.1
+   loop_params = step_info.2
+   c_body = unify::canon(ctx, fe_body_te.ut)
+   c_acc = unify::canon(ctx, acc_ut)
+   is_cond_fold = c_body
+      [Ram uram] uram.pos.has_payload && !(c_acc [Ram])
+      | <->
+   is_cond_fold
+      |
+         pay_ut = c_body [Ram ur] ur.pos.ut | fe_body_te.ut
+         ok_u = unify::unify(ctx, acc_ut, pay_ut)
+         !ok_u
+            | unify::add_error(ctx, 3084,
+              "Type mismatch in seeded cycle (@>) accumulator")
+      |
+         ok_u = unify::unify(ctx, acc_ut, fe_body_te.ut)
+         !ok_u
+            | unify::add_error(ctx, 3084,
+              "Type mismatch in seeded cycle (@>) accumulator")
+   acc_ti = !seed_ti_unk | seed_te.ti | unify::type_info_from_utype(ctx, acc_ut)
+   acc_lay = layout::compute_layout(ctx, acc_ut)
+   unit_ut = unify::prim_unit()
+   unit_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
+   unit_lay = tast::layout_void()
+   step_stmts = tast::TypedExprs()
+   p_acc_name != ""
+      |
+         acc_var_te = tast::mk_typed_var(acc_name, 0, <+>, acc_ut, acc_ti, acc_lay, 0, 0)
+         bind_acc_te = tast::mk_typed_assign(p_acc_name, <+>, <->, <->, <->,
+           acc_var_te, unit_ut, unit_ti, unit_lay, 0, 0)
+         step_stmts += bind_acc_te
+   upd_acc_te = is_cond_fold
+      |
+         val_var_te = tast::mk_typed_var(val_name, 0, <->, acc_ut, acc_ti, acc_lay, 0, 0)
+         assign_val_te = tast::mk_typed_assign(acc_name, <->, <->, <->, <->,
+           val_var_te, unit_ut, unit_ti, unit_lay, 0, 0)
+         bvars = ast::Names()
+         bvars += val_name
+         br = tast::TypedBranch(ast::GuardKind(Bare), tast::TypedExprs(), <-->,
+           ast::Names(), bvars, assign_val_te)
+         brs = tast::TypedBranches()
+         brs += br
+         tast::mk_typed_expr(tast::TypedExprKind(Choice, (fe_body_te, brs)),
+           unit_ut, unit_ti, unit_lay, 0, 0)
+      |
+         tast::mk_typed_assign(acc_name, <->, <->, <->, <->, fe_body_te,
+           unit_ut, unit_ti, unit_lay, 0, 0)
+   step_stmts += upd_acc_te
+   step_te = tast::mk_typed_block(step_stmts, unit_ut, unit_ti, unit_lay, 0, 0)
+   param_uts = unify::UTypes()
+   param_uts += eff_elem_ut
+   ?loop_params > 1 | (param_uts += key_ut)
+   fn_ut = unify::mk_fn(param_uts, unit_ut)
+   ti_fn = unify::type_info_from_utype(ctx, fn_ut)
+   lambda_te = mk_lambda_te(loop_params, step_te, fn_ut, ti_fn)
+   init_acc_te = tast::mk_typed_assign(acc_name, <+>, <->, <->, <->, seed_te,
+     unit_ut, unit_ti, unit_lay, 0, 0)
+   cyc_te = tast::mk_typed_cycle(iter_te, lambda_te, <-->, c.is_rune, unit_ut,
+     unit_ti, unit_lay, 0, 0)
+   res_var_te = tast::mk_typed_var(acc_name, 0, <+>, acc_ut, acc_ti, acc_lay, 0, 0)
+   blk_exprs = tast::TypedExprs()
+   blk_exprs += init_acc_te
+   blk_exprs += cyc_te
+   blk_exprs += res_var_te
+   tast::mk_typed_block(blk_exprs, acc_ut, acc_ti, acc_lay, 0, 0)
+
+annotate_unseeded_cycle_expr: unify::Ctx, type_env::TypeEnv, ast::CycleExpr,
+  tast::TypedExpr, <> => tast::TypedExpr
+annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc =>
+   c_iter = unify::canon(ctx, iter_te.ut)
+   iter_elem_info = cycle_iter_elem_info(ctx, iter_te, c.is_rune)
+   has_elem = iter_elem_info.0
+   elem_ut = iter_elem_info.1
+   elem_ti = iter_elem_ti(ctx, iter_te.ti, elem_ut)
+   eff_elem_ut = has_elem | elem_ut | unify::prim_int()
+   eff_elem_ti = has_elem | elem_ti | ast::TypeInfo(Prim, ast::ValueType(Int))
+   ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
+   key_ut = c_iter [Map m] m.key | unify::prim_int()
+   map_v = unify::fresh_var(ctx)
+   map_id = map_v [Var id] id | 0
+   out_name = "_map_out_" + str::from_int(map_id)
+   val_name = "_map_v_" + str::from_int(map_id)
+   prev_u = type_env::lookup_binding_exact(env, "_")
+   prev_ui = type_env::lookup_binding_exact(env, "_i")
+   step_info = c.body_fn
+      [Fn fe]
+         p0 = fe.params(0) | _ | ""
+         p1 = fe.params(1) | _ | ""
+         np = ?fe.params
+         np > 2
+            | unify::add_error(ctx, 3138,
+              "Cycle body takes at most two parameters")
+         prev_p0 = p0 != "" && p0 != "_"
+            | type_env::lookup_local_exact(env, p0)
+            | <-->
+         prev_p1 = p1 != "" && p1 != "_"
+            | type_env::lookup_local_exact(env, p1)
+            | <-->
+         p0 != "" && p0 != "_"
+            |
+               type_env::bind_local(env, p0, eff_elem_ut, eff_elem_ti, <->)
+               type_env::init_mark_whole(env, p0)
+         np > 1 && p1 != "" && p1 != "_"
+            |
+               type_env::bind_local(env, p1, key_ut, ti_unk, <->)
+               type_env::init_mark_whole(env, p1)
+         type_env::bind_local(env, "_i", key_ut, ti_unk, <->)
+         type_env::bind_local(env, "_", eff_elem_ut, eff_elem_ti, <->)
+         env.discard_result = <->
+         fe_body_te = annotate_expr(ctx, env, fe.body)
+         p0 != "" && p0 != "_"
+            |
+               prev_p0
+                  | pp0 => type_env::bind_local(env, p0, pp0.ut, pp0.ti, pp0.is_mut)
+                  | type_env::unbind_local(env, p0)
+         p1 != "" && p1 != "_"
+            |
+               prev_p1
+                  | pp1 => type_env::bind_local(env, p1, pp1.ut, pp1.ti, pp1.is_mut)
+                  | type_env::unbind_local(env, p1)
+         (fe_body_te, fe.params)
+      |
+         type_env::bind_local(env, "_i", key_ut, ti_unk, <->)
+         type_env::bind_local(env, "_", eff_elem_ut, eff_elem_ti, <->)
+         env.discard_result = <->
+         leaf = leftmost_feed_leaf(c.body_fn)
+         is_pf = is_pointfree_leaf(ctx, env, leaf)
+         stage_e = is_pf
+            | prepend_feed_arg(ast::Expr(Var, "_"), c.body_fn)
+            | c.body_fn
+         fe_body_te = annotate_expr(ctx, env, stage_e)
+         lparams = ast::Names()
+         lparams += "_"
+         (fe_body_te, lparams)
+   prev_u
+      | pu => type_env::bind_local(env, "_", pu.ut, pu.ti, pu.is_mut)
+      | type_env::unbind_local(env, "_")
+   prev_ui
+      | pui => type_env::bind_local(env, "_i", pui.ut, pui.ti, pui.is_mut)
+      | type_env::unbind_local(env, "_i")
+   env.discard_result = saved_disc
+   fe_body_te = step_info.0
+   loop_params = step_info.1
+   c_body = unify::canon(ctx, fe_body_te.ut)
+   is_filter_map = c_body
+      [Ram uram] uram.pos.has_payload
+      | <->
+   out_elem_ut = is_filter_map
+      | (c_body [Ram ur] ur.pos.ut | fe_body_te.ut)
+      | fe_body_te.ut
+   c_out_elem = unify::canon(ctx, out_elem_ut)
+   is_out_unit = c_out_elem [Prim p_u] (p_u [Unit]) | <->
+   is_out_unit
+      | unify::add_error(ctx, 3084,
+        "Expression cycle (@>) body must return a value; use '@' for side-effect cycles")
+   raw_elem_ti = is_filter_map
+      | (fe_body_te.ti [Ram r_ti] r_ti.0.payload_record | ti_unk)
+      | fe_body_te.ti
+   raw_ti_unk = raw_elem_ti [Prim p_rt] (p_rt [Unknown]) | <->
+   out_elem_ti = !raw_ti_unk | raw_elem_ti | unify::type_info_from_utype(ctx, out_elem_ut)
+   out_elem_lay = layout::compute_layout(ctx, out_elem_ut)
+   elem_vt = unify::vt_from_utype(ctx, out_elem_ut)
+   arr_ti = ast::TypeInfo(Array, (elem_vt, out_elem_ti, 16))
+   arr_ut = unify::mk_array(out_elem_ut, 16)
+   arr_lay = layout::compute_layout(ctx, arr_ut)
+   unit_ut = unify::prim_unit()
+   unit_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
+   unit_lay = tast::layout_void()
+   ac = ast::ArrayCreateExpr(out_elem_ti, 16)
+   arr_new_te = tast::mk_typed_expr(tast::TypedExprKind(ArrayNew, ac),
+     arr_ut, arr_ti, arr_lay, 0, 0)
+   init_out_te = tast::mk_typed_assign(out_name, <+>, <->, <->, <->, arr_new_te,
+     unit_ut, unit_ti, unit_lay, 0, 0)
+   step_te = is_filter_map
+      |
+         val_var_te = tast::mk_typed_var(val_name, 0, <->, out_elem_ut, out_elem_ti,
+           out_elem_lay, 0, 0)
+         append_te = tast::mk_typed_assign(out_name, <->, <+>, <->, <->, val_var_te,
+           unit_ut, unit_ti, unit_lay, 0, 0)
+         bvars = ast::Names()
+         bvars += val_name
+         br = tast::TypedBranch(ast::GuardKind(Bare), tast::TypedExprs(), <-->,
+           ast::Names(), bvars, append_te)
+         brs = tast::TypedBranches()
+         brs += br
+         tast::mk_typed_expr(tast::TypedExprKind(Choice, (fe_body_te, brs)),
+           unit_ut, unit_ti, unit_lay, 0, 0)
+      |
+         tast::mk_typed_assign(out_name, <->, <+>, <->, <->, fe_body_te,
+           unit_ut, unit_ti, unit_lay, 0, 0)
+   param_uts = unify::UTypes()
+   param_uts += eff_elem_ut
+   ?loop_params > 1 | (param_uts += key_ut)
+   fn_ut = unify::mk_fn(param_uts, unit_ut)
+   ti_fn = unify::type_info_from_utype(ctx, fn_ut)
+   lambda_te = mk_lambda_te(loop_params, step_te, fn_ut, ti_fn)
+   cyc_te = tast::mk_typed_cycle(iter_te, lambda_te, <-->, c.is_rune, unit_ut,
+     unit_ti, unit_lay, 0, 0)
+   res_var_te = tast::mk_typed_var(out_name, 0, <+>, arr_ut, arr_ti, arr_lay, 0, 0)
+   blk_exprs = tast::TypedExprs()
+   blk_exprs += init_out_te
+   blk_exprs += cyc_te
+   blk_exprs += res_var_te
+   tast::mk_typed_block(blk_exprs, arr_ut, arr_ti, arr_lay, 0, 0)
+
+annotate_cycle_expr: unify::Ctx, type_env::TypeEnv, ast::CycleExpr => tast::TypedExpr
+annotate_cycle_expr = ctx, env, c =>
+   saved_disc = env.discard_result
+   env.discard_result = <->
+   c.iterable
+      [Record rec]
+         (!rec.is_repeat && ?rec.fields == 2)
+            |
+               f0 = rec.fields(0)!!
+               f1 = rec.fields(1)!!
+               (!f0.has_name && !f1.has_name)
+                  |
+                     seed_te = annotate_expr(ctx, env, f0.val)
+                     rhs_te = annotate_expr(ctx, env, f1.val)
+                     c_seed = unify::canon(ctx, seed_te.ut)
+                     c_rhs = unify::canon(ctx, rhs_te.ut)
+                     is_rhs_range = f1.val [Range]
+                     is_rhs_coll = c_rhs [Array, Slice, Map]
+                     is_rhs_str = (c_rhs [Prim p_s] (p_s [Str]) | <->) &&
+                       !(c_seed [Prim p_s0] (p_s0 [Str]) | <->)
+                     is_rhs_rec = (c_rhs [Rec]) && !(c_seed [Rec])
+                     is_multi_param = c.body_fn [Fn fe_chk] (?fe_chk.params > 1) | <->
+                     is_non_fn = !(c.body_fn [Fn]) &&
+                       is_pointfree_leaf(ctx, env, leftmost_feed_leaf(c.body_fn))
+                     is_fold = is_rhs_range || is_rhs_coll || is_rhs_str ||
+                       is_rhs_rec || is_multi_param || is_non_fn
+                     is_fold
+                        | annotate_seeded_cycle_expr(ctx, env, c, seed_te, rhs_te, saved_disc)
+                        |
+                           tfields = tast::TypedFields()
+                           tfields += tast::TypedField("", seed_te, 0, seed_te.ut)
+                           tfields += tast::TypedField("", rhs_te, seed_te.layout.size, rhs_te.ut)
+                           uflds = unify::UFields()
+                           uflds += unify::UField("", seed_te.ut)
+                           uflds += unify::UField("", rhs_te.ut)
+                           rec_ut = unify::UType(Rec, uflds)
+                           rec_ti = unify::type_info_from_utype(ctx, rec_ut)
+                           rec_lay = layout::compute_layout(ctx, rec_ut)
+                           iter_te = tast::mk_typed_expr(tast::TypedExprKind(Record, tfields),
+                             rec_ut, rec_ti, rec_lay, 0, 0)
+                           annotate_unseeded_cycle_expr(ctx, env, c, iter_te, saved_disc)
+                  |
+                     iter_te = annotate_expr(ctx, env, c.iterable)
+                     annotate_unseeded_cycle_expr(ctx, env, c, iter_te, saved_disc)
+            |
+               iter_te = annotate_expr(ctx, env, c.iterable)
+               annotate_unseeded_cycle_expr(ctx, env, c, iter_te, saved_disc)
+      |
+         iter_te = annotate_expr(ctx, env, c.iterable)
+         annotate_unseeded_cycle_expr(ctx, env, c, iter_te, saved_disc)
 
 apply_split: ast::Expr => (<>, String, ast::Expr, ast::Exprs)
 apply_split = fn =>
@@ -1595,9 +2055,17 @@ annotate_expr = ctx, env, expr =>
                split.0
                   |
                      ce = ast::CallExpr(split.1, split.2, split.3, 0, 0)
+                     is_inline_choice_fn = b.2 [Fn fe_cf] (fe_cf.body [Choice]) | (b.2 [Choice])
+                     saved_feed_exp = cur_expected_ut
+                     is_feed && is_inline_choice_fn | (cur_expected_ut ::= <-->)
                      call_te = annotate_call(ctx, env, ce)
+                     cur_expected_ut ::= saved_feed_exp
                      c_call = unify::canon(ctx, call_te.ut)
-                     is_match_dispatch = is_feed && (b.2 [Choice])
+                     is_match_rhs = b.2
+                        [Choice, Var] <+>
+                        [Fn fe_m] fe_m.body [Choice]
+                        | <->
+                     is_match_dispatch = is_feed && is_match_rhs
                      is_match_dispatch
                         |
                            c_call
@@ -2088,7 +2556,9 @@ annotate_expr = ctx, env, expr =>
                tast::mk_typed_member(target_te, fname', idx', fld_ut, ti,
                  lay, m.line, m.col)
       [Cycle c]
-         annotate_cycle(ctx, env, c, <-->)
+         c.is_expr
+            | annotate_cycle_expr(ctx, env, c)
+            | annotate_cycle(ctx, env, c, <-->)
       [CycleEscape ce]
          ce.cycle
             [Cycle c2]
@@ -4828,15 +5298,21 @@ annotate_choice = ctx, env, ch, is_disc =>
             is_bare = br.kind [Bare]
             is_bare
                |
-                  i == 0
+                  is_b0_bare = ?ch.branches > 0 && ((ch.branches(0)!!).kind [Bare])
+                  is_b0_bare
                      |
-                        is_flg = c_cond [Prim p] (p [Flag, Unknown]) | (c_cond [Var])
-                        !is_flg
+                        i == 0
                            |
-                              unify::add_error(ctx, 3084,
-                                "Bare '|' condition requires Flag or ramification, got " +
-                                unify::show_utype(ctx, c_cond))
-                  payload_ut' = cond_te.ut
+                              is_flg = c_cond [Prim p] (p [Flag, Unknown]) | (c_cond [Var])
+                              !is_flg
+                                 |
+                                    unify::add_error(ctx, 3084,
+                                      "Bare '|' condition requires Flag or ramification, got " +
+                                      unify::show_utype(ctx, c_cond))
+                        is_unit_slot' = <>(type_env::lookup_binding(env, "_"))
+                        payload_ut' = cond_te.ut
+                     |
+                        payload_ut' = cond_te.ut
                |
                   is_unit_slot' = <+>
                   is_var_br = br.kind [Variant]
@@ -5904,7 +6380,8 @@ refresh_typed_expr = ctx, te =>
       [BuilderNew bn]
          tast::TypedExprKind(BuilderNew, refresh_typed_expr(ctx, bn))
       [ArrayNew an]
-         tast::TypedExprKind(ArrayNew, an)
+         new_elem_ti = new_ti [Array a] a.1 | an.elem_type
+         tast::TypedExprKind(ArrayNew, ast::ArrayCreateExpr(new_elem_ti, an.cap))
       [Copy cp]
          tast::TypedExprKind(Copy, refresh_typed_expr(ctx, cp))
       [RawMemory rm]

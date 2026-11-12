@@ -138,7 +138,7 @@ op_is_reserved = text =>
          text
             ["<+", "<-", "<+>", "<->", "<++>", "<-->", "<>", "+>", "->",
             "-->", "--^", "--|", ">--", "@", "[@",
-            "@@", "^", "^?", "?", "!", "*", "&", "=>",
+            "@@", "@>", "^", "^?", "?", "!", "*", "&", "=>",
             "!=>", "|", "|->", "|+>", "|-->", "|++>",
             "=", ":=", "+=", "::=", "..", "...", "..=", "::", ".", ":",
             "??", ".!.", "++", "~~", "--!", "!!", "^-", "^="]
@@ -293,26 +293,50 @@ seq_loop = p, lhs =>
             | <-->
       | <+ lhs +>
 
+is_cycle_cont_op: lexer::Tok => <>
+cycle_peek_op: Parser, Int => <>
+cycle_cont_at: Parser, ast::Expr, Int => <ast::Expr|>
+
 parse_cycle: Parser => <ast::Expr|>
 parse_cycle = p =>
+   base_ind = p.indent_level - p.cont_depth
+   entry_indent = base_ind < 0 | 0 | base_ind
    parse_choice(p)
-      | c => cycle_cont(p, c)
+      | c => cycle_cont_at(p, c, entry_indent)
       | <-->
 
 cycle_cont: Parser, ast::Expr => <ast::Expr|>
 cycle_cont = p, lhs =>
+   base_ind = p.indent_level - p.cont_depth
+   entry_indent = base_ind < 0 | 0 | base_ind
+   cycle_cont_at(p, lhs, entry_indent)
+
+parse_cycle_expr_body: Parser => <ast::Expr|>
+parse_cycle_expr_body = p =>
+   tok_is_nl(p.curr) || (p.curr.kind [Indent]) || is_fn_start(p)
+      | parse_block(p)
+      | maybe_inline_block_cont(p, parse_choice(p))
+
+cycle_cont_at = p, lhs, entry_indent =>
+   min_cyc_indent = entry_indent + 1
+   !p.just_dedented && cycle_peek_op(p, min_cyc_indent)
+      | feed_skip_layout(p, min_cyc_indent)
+   p.just_dedented && p.indent_level !< min_cyc_indent && is_cycle_cont_op(p.curr)
+      | p.just_dedented = <->
    is_at = token_is_op(p.curr, "@")
    is_atat = token_is_op(p.curr, "@@")
-   is_at || is_atat
+   is_at_gt = token_is_op(p.curr, "@>")
+   is_at || is_atat || is_at_gt
       |
          is_rune = is_atat
+         is_expr = is_at_gt
          parser_advance(p)
          p.cycle_depth = p.cycle_depth + 1
-         b_opt = parse_block(p)
+         b_opt = is_expr | parse_cycle_expr_body(p) | parse_block(p)
          p.cycle_depth = p.cycle_depth - 1
          b_opt
             | body =>
-               cyc = ast::Expr(Cycle, ast::CycleExpr(lhs, body, is_rune))
+               cyc = ast::Expr(Cycle, ast::CycleExpr(lhs, body, is_rune, is_expr))
                token_is_op(p.curr, ">--")
                   |
                      parser_advance(p)
@@ -321,7 +345,13 @@ cycle_cont = p, lhs =>
                            <+ ast::Expr(CycleEscape, ast::CycleEscapeExpr(
                               cyc, br)) +>
                         | <-->
-                  | <+ cyc +>
+                  |
+                     is_expr
+                        |
+                           bp_loop(p, cyc, 30, -1, entry_indent)
+                              | next_lhs => cycle_cont_at(p, next_lhs, entry_indent)
+                              | <-->
+                        | <+ cyc +>
             | <-->
       | <+ lhs +>
 
@@ -550,6 +580,32 @@ parse_neg_guard_choice: Parser, ast::Expr => <ast::Expr|>
 is_feed_cont_op = t =>
    tok_is_op(t) && (t.text ["$>", "$>>", ".>"])
 
+is_cycle_cont_op = t =>
+   tok_is_op(t) && (t.text ["@", "@@", "@>"])
+
+cycle_scan_op: lexer::Lx, lexer::Tok, Int, Int => <>
+cycle_scan_op = lx, tok, cur_indent, min_indent =>
+   tok.kind
+      [Newline]
+         cycle_scan_op(lx, lexer::next_tok(lx, 0), cur_indent, min_indent)
+      [Indent]
+         cycle_scan_op(lx, lexer::next_tok(lx, 0), cur_indent + 1, min_indent)
+      [Dedent]
+         cur_indent - 1 < min_indent
+            | <->
+            | cycle_scan_op(lx, lexer::next_tok(lx, 0), cur_indent - 1, min_indent)
+      |
+         cur_indent !< min_indent && is_cycle_cont_op(tok)
+
+cycle_peek_op = p, min_indent =>
+   tok_is_nl(p.curr) || tok_is_indent(p.curr)
+      |
+         c = lexer::clone_lx(p.lx)
+         tok = lexer::next_tok(c, 0)
+         init_indent = p.indent_level + (tok_is_indent(p.curr) | 1 | 0)
+         cycle_scan_op(c, tok, init_indent, min_indent)
+      | <->
+
 feed_scan_op: lexer::Lx, lexer::Tok, Int, Int => <>
 feed_scan_op = lx, tok, cur_indent, min_indent =>
    tok.kind
@@ -751,10 +807,11 @@ apply_feed_rhs: Parser, ast::Expr, ast::BinaryOp => <ast::Expr|>
 apply_feed_rhs = p, rhs, op =>
    p.branch_body_depth == 0 && op_is_apply_feed(op)
       |
-         (tok_is_nl(p.curr) || tok_is_indent(p.curr)) &&
-           !<>(choice_peek_pipe(p, p.indent_level + 1))
-              | <+ rhs +>
-              | choice_cont(p, rhs)
+         is_nl_no_pipe = (tok_is_nl(p.curr) || tok_is_indent(p.curr)) &&
+           (choice_peek_pipe(p, p.indent_level + 1) | pi => pi !> p.indent_level | <+>)
+         is_nl_no_pipe
+            | <+ rhs +>
+            | choice_cont(p, rhs)
       | <+ rhs +>
 
 // The Pratt min for a user operator's right operand: left-assoc (rbp > lbp)
@@ -1933,6 +1990,49 @@ parse_accessor_section = p =>
            p.curr.text + "'")
          <-->
 
+paren_is_bin_section: Parser => <>
+paren_is_bin_section = p =>
+   p.curr.kind [Op]
+      |
+         nxt = parser_peek_next(p)
+         nxt.kind [RParen]
+            |
+               operators::bin_info(p.curr.text)
+                  | opb => !(opb.op [Feed, Apply, Bind, Compose])
+                  | user_op_lookup(p.user_ops, p.curr.text).0
+            | <->
+      | <->
+
+parse_bin_section: Parser => <ast::Expr|>
+parse_bin_section = p =>
+   op_text = p.curr.text
+   op_line = p.curr.line
+   op_col = p.curr.col
+   parser_advance(p)
+   parser_advance(p)
+   p.curr.text == "=>"
+      |
+         parser_error(p, 2037, diag::E2037_params_parenthesized!)
+         <-->
+      |
+         p.dp_var_count = p.dp_var_count + 1
+         p0 = "_bop_a_" + str::from_int(p.dp_var_count)
+         p1 = "_bop_b_" + str::from_int(p.dp_var_count)
+         params = ast::Names()
+         params += p0
+         params += p1
+         body = operators::bin_info(op_text)
+            | opb =>
+               ast::Expr(Bin, (opb.op, ast::Expr(Var, p0), ast::Expr(Var, p1)))
+            |
+               args = ast::Exprs()
+               args += ast::Expr(Var, p0)
+               args += ast::Expr(Var, p1)
+               ast::Expr(Call, ast::CallExpr(op_text, ast::Expr(Var, ""),
+                 args, op_line, op_col))
+         fe = ast::Expr(Fn, ast::FnExpr(params, ast::Names(), body))
+         pp_postfix(p, fe)
+
 atom_paren: Parser => <ast::Expr|>
 atom_paren = p =>
    saved_no_assign = p.no_assign
@@ -1949,13 +2049,15 @@ atom_paren = p =>
            "declaration, not as a value")
          <-->
       |
-         paren_is_accessor(p)
-            | parse_accessor_section(p)
-            | paren_has_map(p)
-               | parse_paren_map_literal(p)
-               | paren_has_comma(p)
-                  | parse_paren_record(p)
-                  | parse_paren_group(p)
+         paren_is_bin_section(p)
+            | parse_bin_section(p)
+            | paren_is_accessor(p)
+               | parse_accessor_section(p)
+               | paren_has_map(p)
+                  | parse_paren_map_literal(p)
+                  | paren_has_comma(p)
+                     | parse_paren_record(p)
+                     | parse_paren_group(p)
    p.cycle_depth = saved_cd
    p.no_assign = saved_no_assign
    res
@@ -2680,7 +2782,7 @@ peek_has_block_cont = p =>
             t2'.kind [Newline]
                | t2' = lexer::next_tok(c, 0)
                | -->
-         !(t2'.kind [LBracket] || token_is_pipe(t2') || is_feed_cont_op(t2'))
+         !(t2'.kind [LBracket] || token_is_pipe(t2') || is_feed_cont_op(t2') || is_cycle_cont_op(t2'))
       |
          !tok_is_nl(p.curr)
             | <->
@@ -2705,7 +2807,7 @@ peek_has_block_cont = p =>
                         t2'.kind [Newline]
                            | t2' = lexer::next_tok(c, 0)
                            | -->
-                     !(t2'.kind [LBracket] || token_is_pipe(t2') || is_feed_cont_op(t2'))
+                     !(t2'.kind [LBracket] || token_is_pipe(t2') || is_feed_cont_op(t2') || is_cycle_cont_op(t2'))
 
 maybe_inline_block_cont: Parser, <ast::Expr|> => <ast::Expr|>
 maybe_inline_block_cont = p, first_res =>
@@ -2770,29 +2872,32 @@ block_stmts = p, stmts =>
                block_stmts(p, stmts)
             | <+ ast::Expr(Block, stmts) +>
       |
-         tok_is_nl(p.curr)
+         p.choice_depth > 0 && p.just_dedented && token_is_pipe(p.curr)
+            | <+ ast::Expr(Block, stmts) +>
             |
-               parser_advance(p)
-               block_stmts(p, stmts)
-            |
-               p.is_stmt = <+>
-               st = parse_expr(p)
-               p.is_stmt = <->
-               st
-                  | s =>
-                     p.module_level | mark_decl_item(p, s)
-                     stmts += s
-                     stmt_end_ok(p)
-                        |
-                           tok_is_nl(p.curr)
-                              | parser_advance(p); block_stmts(p, stmts)
-                              | block_stmts(p, stmts)
-                        |
-                           parser_error(p, 2026,
-                             "Expected newline or dedent after statement " +
-                             "in block, got '" + p.curr.text + "'")
-                           <-->
-                  | <-->
+               tok_is_nl(p.curr)
+                  |
+                     parser_advance(p)
+                     block_stmts(p, stmts)
+                  |
+                     p.is_stmt = <+>
+                     st = parse_expr(p)
+                     p.is_stmt = <->
+                     st
+                        | s =>
+                           p.module_level | mark_decl_item(p, s)
+                           stmts += s
+                           stmt_end_ok(p)
+                              |
+                                 tok_is_nl(p.curr)
+                                    | parser_advance(p); block_stmts(p, stmts)
+                                    | block_stmts(p, stmts)
+                              |
+                                 parser_error(p, 2026,
+                                   "Expected newline or dedent after statement " +
+                                   "in block, got '" + p.curr.text + "'")
+                                 <-->
+                        | <-->
 
 // A full program: the statement loop (mirrors parser_parse). Each statement is
 // a full expression; newlines separate them. Returns a Block of the statements.
@@ -6186,10 +6291,9 @@ choice_scan_pipe = lx, tok, cur_indent, min_indent =>
             |
                choice_scan_pipe(lx, lexer::next_tok(lx, 0), cur_indent - 1,
                  min_indent)
-      [LBracket]
-         cur_indent !< min_indent | <+ cur_indent +> | <-->
+      [LBracket] <+ cur_indent +>
       |
-         is_sep = cur_indent !< min_indent && token_is_pipe(tok)
+         is_sep = token_is_pipe(tok)
          is_sep | <+ cur_indent +>
 
 choice_can_skip: Parser, Int => <>
@@ -6247,7 +6351,7 @@ choice_cont_loop = p, brs, entry_indent, branch_indent =>
    p.fn_depth > 0 && token_is_pipe(p.curr)
       | <+ brs +>
       |
-         min_indent = branch_indent !< 0 | branch_indent | entry_indent
+         min_indent = branch_indent !< 0 | branch_indent | (?brs > 0 | entry_indent | entry_indent + 1)
          peek = choice_peek_pipe(p, min_indent)
          is_dedent = peek
             | pi => branch_indent !< 0 && pi < branch_indent

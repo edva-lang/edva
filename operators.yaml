@@ -214,6 +214,14 @@ operators:
     operands: "String"
     result: "() statement, or < T | > with >-- escape"
     desc: "codepoint cycle: iterate Unicode codepoints in a String, binding (rune) or (rune, byte_offset) to the body."
+  - symbol: "@>"
+    tier: cycle
+    kind: null
+    kind_self: null
+    assoc: left
+    operands: "Iterable (or (seed, Iterable)), body"
+    result: "U{} (map / filter-map) or Acc (seeded fold)"
+    desc: "expression cycle: map or filter-map an iterable into U{} (when body returns U or < U | >), or fold (seed, iterable) into Acc."
   - symbol: ">--"
     tier: cycle
     kind: null

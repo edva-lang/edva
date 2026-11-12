@@ -122,12 +122,12 @@ walk = e, table, locals =>
                is_family(table, callee) && !contains(locals, callee)
                   | walk(expanded, table, locals)
                   | ast::Expr(Bin, (b.0, walk(b.1, table, locals),
-                     walk(b.2, table, locals)))
+                    walk(b.2, table, locals)))
             | ast::Expr(Bin, (b.0, walk(b.1, table, locals),
-               walk(b.2, table, locals)))
+              walk(b.2, table, locals)))
       [Unary u]
          ast::Expr(Unary, (u.0,
-            walk(u.1, table, locals)))
+           walk(u.1, table, locals)))
       [Fn fe]
          fn_locals = ++locals
          fn_locals += "#overload_local"
@@ -154,10 +154,10 @@ walk = e, table, locals =>
             new_pred = walk(br.pred_fn, table, br_locals)
             new_blk = walk(br.block, table, br_locals)
             new_branches += ast::ChoiceBranch(br.kind, new_cases, new_pred,
-               br.variant_names, br.bind_vars, br.is_identity_extractor,
-               new_blk)
+              br.variant_names, br.bind_vars, br.is_identity_extractor,
+              new_blk)
          ast::Expr(Choice, ast::ChoiceExpr(new_cond, ch.is_exhaustive,
-            new_branches))
+           new_branches))
       [Assign a]
          arity = a.5 [Fn fn] ?fn.params |
             (a.8 [Fn ft] ?ft.0 | -1)
@@ -167,7 +167,7 @@ walk = e, table, locals =>
          new_rhs = select_value(walk(a.5, table, locals), expected, table, locals)
          new_lhs = walk(a.6, table, locals)
          ast::Expr(Assign, (new_name, a.1, a.2, a.3, a.4, new_rhs, new_lhs,
-            a.7, a.8))
+           a.7, a.8))
       [TypeDecl td]
          new_ti = keep_type(td.type_info, table)
          ast::Expr(TypeDecl, ast::TypeDeclExpr(td.name, new_ti))
@@ -175,13 +175,13 @@ walk = e, table, locals =>
          new_params = keep_fparams(f.params, table)
          new_ret_ti = keep_type(f.ret_record_info, table)
          ast::Expr(Foreign, ast::ForeignFnDecl(f.c_name, f.dva_name,
-            f.abi, new_params, f.return_type, new_ret_ti, f.is_variable))
+           f.abi, new_params, f.return_type, new_ret_ti, f.is_variable))
       [Member m]
          m.is_module_access
             | ast::Expr(Var, name_of(e))
             |
                ast::Expr(Member, ast::MemberExpr(walk(m.target, table, locals),
-                  m.field_name, <->, walk(m.index_expr, table, locals), m.line, m.col))
+                 m.field_name, <->, walk(m.index_expr, table, locals), m.line, m.col))
       [Record re]
          new_fields = ast::Fields()
          re.fields @ fld =>
@@ -192,11 +192,11 @@ walk = e, table, locals =>
          new_target = walk(ka.target, table, locals)
          new_key = walk(ka.key, table, locals)
          ast::Expr(KeyAccess, ast::KeyAccessExpr(new_target, new_key,
-            ka.is_membership, ka.is_delete, ka.line, ka.col))
+           ka.is_membership, ka.is_delete, ka.line, ka.col))
       [Cycle cy]
          new_iter = walk(cy.iterable, table, locals)
          new_fn = walk(cy.body_fn, table, locals)
-         ast::Expr(Cycle, ast::CycleExpr(new_iter, new_fn, cy.is_rune))
+         ast::Expr(Cycle, ast::CycleExpr(new_iter, new_fn, cy.is_rune, cy.is_expr))
       [CycleEscape ce]
          new_cy = walk(ce.cycle, table, locals)
          new_br = walk(ce.branch, table, locals)
@@ -205,7 +205,7 @@ walk = e, table, locals =>
          new_lhs = r.has_lhs | walk(r.lhs, table, locals) | r.lhs
          new_rhs = r.has_rhs | walk(r.rhs, table, locals) | r.rhs
          ast::Expr(Range, ast::RangeExpr(r.has_lhs, r.has_rhs, new_lhs,
-            new_rhs, r.is_inclusive))
+           new_rhs, r.is_inclusive))
       [NamedArg na]
          new_val = walk(na.val, table, locals)
          ast::Expr(NamedArg, ast::NamedArgExpr(na.name, new_val))
@@ -231,11 +231,11 @@ walk = e, table, locals =>
       [UserDiag ud]
          new_msg = walk(ud.msg, table, locals)
          ast::Expr(UserDiag, ast::UserDiagExpr(ud.is_warn, new_msg,
-            ud.line, ud.col))
+           ud.line, ud.col))
       [RawMemory rm]
          new_addr = walk(rm.addr, table, locals)
          ast::Expr(RawMemory, ast::RawMemoryExpr(new_addr, rm.load_type,
-            rm.rec_name))
+           rm.rec_name))
       [SizeOf so]
          new_sti = keep_type(so.rec_type, table)
          ast::Expr(SizeOf, ast::SizeOfExpr(so.val_type, new_sti))
@@ -243,7 +243,7 @@ walk = e, table, locals =>
          new_pairs = ast::MapPairs()
          ml @ p =>
             new_pairs += ast::MapPair(walk(p.key, table, locals),
-               walk(p.value, table, locals))
+              walk(p.value, table, locals))
          ast::Expr(MapLiteral, new_pairs)
       [CompileTime ct]
          new_ce = walk(ct, table, locals)

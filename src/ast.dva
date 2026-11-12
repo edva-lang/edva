@@ -127,7 +127,7 @@
 
 #type FnExpr (params: Names, ct_params: Names, body: Expr)
 
-#type CycleExpr (iterable: Expr, body_fn: Expr, is_rune: <>)
+#type CycleExpr (iterable: Expr, body_fn: Expr, is_rune: <>, is_expr: <> = <->)
 
 #type CycleJumpExpr (is_break: <>, level: Int)
 

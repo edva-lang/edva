@@ -149,7 +149,7 @@ truth; the unified operator table with operand and result types is in §3.3):
 <!-- BEGIN operators.yaml -->
 | Tier | LBP | RBP | Operators | Associativity |
 |---|---|---|---|---|
-| cycle | 10 | 20 | `@` `@@` `>--` `-->` `--^` | left |
+| cycle | 10 | 20 | `@` `@@` `@>` `>--` `-->` `--^` | left |
 | sequence | 20 | 30 | `;` | left |
 | apply | 30 | 30 | `$` | right |
 | feed | 40 | 50 | `$>` `$>>` `.>` | left |
