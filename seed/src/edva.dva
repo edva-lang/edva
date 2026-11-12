@@ -482,7 +482,7 @@ starts_with_path = p, prefix => path::has_prefix(p, prefix)
 get_dir_instance: ImportMapState, String => PkgInstance
 get_dir_instance = map, dir =>
    canon_dir = canonical_path(dir)
-   found' = empty_pkg_instance()
+   found' = empty_pkg_instance!
    is_found' = <->
    map.instances @ inst =>
       !is_found' && inst.id != "root" && inst.src != ""
@@ -538,7 +538,7 @@ find_and_load_import_map = target_path, explicit_map_path =>
             curr_dir' = next_d
    !has_map_file'
       |
-         empty_state = empty_import_map_state()
+         empty_state = empty_import_map_state!
          empty_state.root_dir = root_dir'
          <+ empty_state +>
       |
@@ -738,7 +738,7 @@ resolve_local_module: String, String, Loader => ResolvedModule
 resolve_local_module = base, mod_path, ldr =>
    curr_inst = ldr.import_map.has_map
       | get_dir_instance(ldr.import_map, base)
-      | empty_pkg_instance()
+      | empty_pkg_instance!
    cid = compute_local_cid(curr_inst, mod_path)
    resolve_in_dir(base, mod_path, cid, <->)
 

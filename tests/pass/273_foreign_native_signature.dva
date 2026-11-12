@@ -9,7 +9,7 @@
 
 msg = "native foreign signature ok\n"
 write(1, msg, ?msg)
-err_ptr = __errno_location()
+err_ptr = __errno_location!
 io::out $ err_ptr != Addr(0) | "has_errno" | "no_errno"
 
 p = malloc(64)

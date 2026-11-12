@@ -147,7 +147,7 @@ is_generic_sig = a =>
 mk_lambda_te: ast::Names, tast::TypedExpr, unify::UType,
   ast::TypeInfo => tast::TypedExpr
 mk_lambda_te = params, body_te, fn_ut, ti =>
-   lay = tast::layout_closure()
+   lay = tast::layout_closure!
    tast::mk_typed_expr(
       tast::TypedExprKind(Lambda, (params, body_te, tast::TypedCaptures())),
       fn_ut, ti, lay, 0, 0)
@@ -507,7 +507,7 @@ resolve_type_expr_ut_ti = ctx, env, fn_mod, e =>
                         | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       [Record r]
          ?r.fields == 0
-            | (unify::prim_unit(), ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
+            | (unify::prim_unit!, ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
             | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       [Member m]
          m.is_module_access
@@ -544,7 +544,7 @@ instantiate_generic_ti_call = ctx, env, fn_mod, ti, call_args =>
                         rt.2
                            |
                               cur_tvm' += TypeVarMapEntry(cp.0, rt.0)
-                              params += unify::prim_type()
+                              params += unify::prim_type!
                               arg_idx' = arg_idx' + 1
                            |
                               tv_res = tv_get_or_create(ctx, cur_tvm', cp.0)
@@ -581,7 +581,7 @@ utype_from_ti_env = env, ti =>
          s0 = r.0
          s1 = r.1
          (!s0.has_payload && !s1.has_payload)
-            | unify::prim_flag()
+            | unify::prim_flag!
             |
                p_ut = s0.has_payload
                   | utype_from_ti_env(env, s0.payload_record)
@@ -1107,7 +1107,7 @@ cycle_iter_elem_info = ctx, iter_te, is_rune =>
                unify::add_error(ctx, 3084,
                  "Codepoint cycle (@@) requires String iterable")
    is_rune
-      | (<+>, unify::prim_rune())
+      | (<+>, unify::prim_rune!)
       |
          c_iter
             [Array arr] (<+>, arr.elem)
@@ -1115,9 +1115,9 @@ cycle_iter_elem_info = ctx, iter_te, is_rune =>
             [Map m] (<+>, m.val)
             [Prim p]
                p
-                  [Str] (<+>, unify::prim_int())
-                  [Rune] (<+>, unify::prim_rune())
-                  [Int] (<->, unify::prim_int())
+                  [Str] (<+>, unify::prim_int!)
+                  [Rune] (<+>, unify::prim_rune!)
+                  [Int] (<->, unify::prim_int!)
                   | (<->, unify::fresh_var(ctx))
             [Rec r]
                !is_ufields_homogeneous(ctx, r)
@@ -1139,7 +1139,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
    elem_ut = iter_elem_info.1
    elem_ti = iter_elem_ti(ctx, iter_te.ti, elem_ut)
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
-   key_ut' = c_iter [Map m] m.key | unify::prim_int()
+   key_ut' = c_iter [Map m] m.key | unify::prim_int!
    prev_u = type_env::lookup_binding_exact(env, "_")
    prev_ui = type_env::lookup_binding_exact(env, "_i")
    p0_saved = c.body_fn
@@ -1198,17 +1198,17 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
                                  p1 != "" && p1 != "_"
                                     |
                                        type_env::bind_local(env, p1,
-                                         unify::prim_int(), ti_unk, <->)
+                                         unify::prim_int!, ti_unk, <->)
                                        type_env::init_mark_whole(env, p1)
             |
                p0 != "" && p0 != "_"
                   |
-                     type_env::bind_local(env, p0, unify::prim_int(),
+                     type_env::bind_local(env, p0, unify::prim_int!,
                        ti_unk, <->)
                      type_env::init_mark_whole(env, p0)
                np > 1 && p1 != "" && p1 != "_"
                   |
-                     type_env::bind_local(env, p1, unify::prim_int(),
+                     type_env::bind_local(env, p1, unify::prim_int!,
                        ti_unk, <->)
                      type_env::init_mark_whole(env, p1)
          type_env::bind_local(env, "_i", key_ut', ti_unk, <->)
@@ -1228,7 +1228,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
                        "' has no inferred type")
                   unify::fresh_var(ctx)
             param_uts += put
-         fn_ut = unify::mk_fn(param_uts, unify::prim_unit())
+         fn_ut = unify::mk_fn(param_uts, unify::prim_unit!)
          ti_fn = unify::type_info_from_utype(ctx, fn_ut)
          mk_lambda_te(fe.params, fe_body_te, fn_ut, ti_fn)
       |
@@ -1249,7 +1249,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
                fe_body_te = annotate_expr(ctx, env, call_e)
                param_uts = unify::UTypes()
                param_uts += elem_ut
-               fn_ut = unify::mk_fn(param_uts, unify::prim_unit())
+               fn_ut = unify::mk_fn(param_uts, unify::prim_unit!)
                ti_fn = unify::type_info_from_utype(ctx, fn_ut)
                mk_lambda_te(pnames, fe_body_te, fn_ut, ti_fn)
             | annotate_expr(ctx, env, c.body_fn)
@@ -1281,7 +1281,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
          tast::mk_typed_cycle(iter_te, body_te, <+ esc_te +>, c.is_rune,
            ram_ut, ti, lay, 0, 0)
       |
-         ut = unify::prim_unit()
+         ut = unify::prim_unit!
          ti = unify::type_info_from_utype(ctx, ut)
          lay = layout::compute_layout(ctx, ut)
          tast::mk_typed_cycle(iter_te, body_te, <-->, c.is_rune, ut, ti, lay,
@@ -1388,10 +1388,10 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
    has_elem = iter_elem_info.0
    elem_ut = iter_elem_info.1
    elem_ti = iter_elem_ti(ctx, iter_te.ti, elem_ut)
-   eff_elem_ut = has_elem | elem_ut | unify::prim_int()
+   eff_elem_ut = has_elem | elem_ut | unify::prim_int!
    eff_elem_ti = has_elem | elem_ti | ast::TypeInfo(Prim, ast::ValueType(Int))
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
-   key_ut = c_iter [Map m] m.key | unify::prim_int()
+   key_ut = c_iter [Map m] m.key | unify::prim_int!
    acc_ut = seed_te.ut
    seed_ti_unk = seed_te.ti [Prim p_st] (p_st [Unknown]) | <->
    acc_ti0 = !seed_ti_unk | seed_te.ti | unify::type_info_from_utype(ctx, acc_ut)
@@ -1526,9 +1526,9 @@ annotate_seeded_cycle_expr = ctx, env, c, seed_te, iter_te, saved_disc =>
               "Type mismatch in seeded cycle (@>) accumulator")
    acc_ti = !seed_ti_unk | seed_te.ti | unify::type_info_from_utype(ctx, acc_ut)
    acc_lay = layout::compute_layout(ctx, acc_ut)
-   unit_ut = unify::prim_unit()
+   unit_ut = unify::prim_unit!
    unit_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
-   unit_lay = tast::layout_void()
+   unit_lay = tast::layout_void!
    step_stmts = tast::TypedExprs()
    p_acc_name != ""
       |
@@ -1579,10 +1579,10 @@ annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc =>
    has_elem = iter_elem_info.0
    elem_ut = iter_elem_info.1
    elem_ti = iter_elem_ti(ctx, iter_te.ti, elem_ut)
-   eff_elem_ut = has_elem | elem_ut | unify::prim_int()
+   eff_elem_ut = has_elem | elem_ut | unify::prim_int!
    eff_elem_ti = has_elem | elem_ti | ast::TypeInfo(Prim, ast::ValueType(Int))
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
-   key_ut = c_iter [Map m] m.key | unify::prim_int()
+   key_ut = c_iter [Map m] m.key | unify::prim_int!
    map_v = unify::fresh_var(ctx)
    map_id = map_v [Var id] id | 0
    out_name = "_map_out_" + str::from_int(map_id)
@@ -1670,9 +1670,9 @@ annotate_unseeded_cycle_expr = ctx, env, c, iter_te, saved_disc =>
    arr_ti = ast::TypeInfo(Array, (elem_vt, out_elem_ti, 16))
    arr_ut = unify::mk_array(out_elem_ut, 16)
    arr_lay = layout::compute_layout(ctx, arr_ut)
-   unit_ut = unify::prim_unit()
+   unit_ut = unify::prim_unit!
    unit_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
-   unit_lay = tast::layout_void()
+   unit_lay = tast::layout_void!
    ac = ast::ArrayCreateExpr(out_elem_ti, 16)
    arr_new_te = tast::mk_typed_expr(tast::TypedExprKind(ArrayNew, ac),
      arr_ut, arr_ti, arr_lay, 0, 0)
@@ -1866,7 +1866,7 @@ annotate_expr = ctx, env, expr =>
       [Str s]
          tast::mk_lit_str(s, 0, 0)
       [Rune r]
-         ut = unify::prim_rune()
+         ut = unify::prim_rune!
          ti = ast::TypeInfo(Prim, ast::ValueType(Rune))
          lay = layout::compute_layout(ctx, ut)
          tast::mk_typed_expr(tast::TypedExprKind(LitRune, r), ut, ti, lay, 0, 0)
@@ -1918,20 +1918,20 @@ annotate_expr = ctx, env, expr =>
                      ut_opt = type_env::lookup_user_type(env, name)
                      ut_opt
                         | udef =>
-                           type_ut = unify::prim_type()
+                           type_ut = unify::prim_type!
                            type_ti = ast::TypeInfo(Prim,
                              ast::ValueType(Type))
-                           type_lay = tast::layout_void()
+                           type_lay = tast::layout_void!
                            tast::mk_typed_var(name, 0, <->,
                              type_ut, type_ti, type_lay, 0, 0)
                         |
                            cast_opt = type_name_to_uprim(name)
                            cast_opt
                               | uprim =>
-                                 type_ut = unify::prim_type()
+                                 type_ut = unify::prim_type!
                                  type_ti = ast::TypeInfo(Prim,
                                    ast::ValueType(Type))
-                                 type_lay = tast::layout_void()
+                                 type_lay = tast::layout_void!
                                  tast::mk_typed_var(name, 0, <->,
                                    type_ut, type_ti, type_lay, 0, 0)
                               |
@@ -1952,18 +1952,18 @@ annotate_expr = ctx, env, expr =>
                                     |
                                        name == "default"
                                           |
-                                             d_ut = unify::prim_unit()
+                                             d_ut = unify::prim_unit!
                                              d_ti = unify::
                                                 type_info_from_utype(
                                                    ctx, d_ut)
-                                             d_lay = tast::layout_void()
+                                             d_lay = tast::layout_void!
                                              tast::mk_typed_var(
                                                 "default", 0, <->,
                                                 d_ut, d_ti, d_lay, 0, 0)
                                           |
                                              in_ct_expr && (name ["os", "arch", "target"])
                                                 |
-                                                   ct_s_ut = unify::prim_str()
+                                                   ct_s_ut = unify::prim_str!
                                                    ct_s_ti = ast::TypeInfo(Prim,
                                                      ast::ValueType(Str))
                                                    ct_s_lay = layout::compute_layout(
@@ -2197,7 +2197,7 @@ annotate_expr = ctx, env, expr =>
                                           env)
                                        env.in_fn = <+>
                                        env.cur_fn_ret = <+ f.ret +>
-                                       env.init = type_env::new_init()
+                                       env.init = type_env::new_init!
                                        param_uts = unify::UTypes()
                                        ?fe.params @ p_i =>
                                           pname = fe.params(p_i) | _ | ""
@@ -2409,8 +2409,8 @@ annotate_expr = ctx, env, expr =>
                                                 fn_alias_tgts += cbvn
                      tast::mk_typed_assign(name, is_mut,
                        is_compound, is_global,
-                       a.4, rhs', unify::prim_unit(), ast::TypeInfo(Prim,
-                         ast::ValueType(Unit)), tast::layout_void(), 0, 0)
+                       a.4, rhs', unify::prim_unit!, ast::TypeInfo(Prim,
+                         ast::ValueType(Unit)), tast::layout_void!, 0, 0)
       [Call ce]
          annotate_call(ctx, env, ce)
       [Fn fe]
@@ -2505,11 +2505,11 @@ annotate_expr = ctx, env, expr =>
                      rt_idx = resolve_type_expr_ut_ti(ctx, env, "", m.target)
                      rt_idx.2
                         |
-                           rt_idx.0 [Rec, Enum] unify::unify(ctx, fld_ut, unify::prim_str())
+                           rt_idx.0 [Rec, Enum] unify::unify(ctx, fld_ut, unify::prim_str!)
                is_type_tgt && (fname' == "name" || fname' == "zero")
                   |
                      fname' == "name"
-                        | unify::unify(ctx, fld_ut, unify::prim_str())
+                        | unify::unify(ctx, fld_ut, unify::prim_str!)
                         |
                            rt_z = resolve_type_expr_ut_ti(ctx, env, "", m.target)
                            rt_z.2
@@ -2580,7 +2580,7 @@ annotate_expr = ctx, env, expr =>
          tast::mk_typed_copy(inner_te, inner_te.ut, ti, lay, 0, 0)
       [BuilderCreate bc]
          cap_te = annotate_expr(ctx, env, bc)
-         ut = unify::prim_builder()
+         ut = unify::prim_builder!
          ti = ast::TypeInfo(Prim, ast::ValueType(Builder))
          lay = layout::compute_layout(ctx, ut)
          tast::mk_typed_builder_new(cap_te, ut, ti, lay, 0, 0)
@@ -2598,7 +2598,7 @@ annotate_expr = ctx, env, expr =>
       [RawMemory rm]
          addr_te = annotate_expr(ctx, env, rm.addr)
          !is_int_or_ptr_ut(ctx, addr_te.ut)
-            | unify::unify(ctx, addr_te.ut, unify::prim_rawptr())
+            | unify::unify(ctx, addr_te.ut, unify::prim_rawptr!)
          is_unk = rm.load_type [Unknown]
          is_rec = rm.rec_name != ""
          is_rec
@@ -2609,7 +2609,7 @@ annotate_expr = ctx, env, expr =>
                tast::mk_typed_raw_memory(addr_te, rm.load_type, ut, ti,
                  lay, 0, 0)
             |
-               ut = is_unk | unify::prim_rawptr() |
+               ut = is_unk | unify::prim_rawptr! |
                   unify::UType(Prim, unify::vt_to_uprim(rm.load_type))
                ti = is_unk | ast::TypeInfo(Prim, ast::ValueType(RawPtr)) |
                   ast::TypeInfo(Prim, rm.load_type)
@@ -2627,7 +2627,7 @@ annotate_expr = ctx, env, expr =>
             |
                (is_pos || is_neg)
                   |
-                     flg_ut = unify::prim_flag()
+                     flg_ut = unify::prim_flag!
                      flg_ti = ast::TypeInfo(Prim, ast::ValueType(Flag))
                      flg_lay = layout::compute_layout(ctx, flg_ut)
                      flg_val = is_pos
@@ -2680,7 +2680,7 @@ annotate_expr = ctx, env, expr =>
                              "Map key type must be String, Int, or Addr")
                      var_map = unify::mk_map(key_te.ut, unify::fresh_var(ctx))
                      unify::unify(ctx, target_te.ut, var_map)
-               flg_ut = unify::prim_flag()
+               flg_ut = unify::prim_flag!
                flg_ti = ast::TypeInfo(Prim, ast::ValueType(Flag))
                flg_lay = layout::compute_layout(ctx, flg_ut)
                tast::mk_typed_expr(tast::TypedExprKind(KeyAccess,
@@ -2690,10 +2690,10 @@ annotate_expr = ctx, env, expr =>
                elem_ut' = unify::fresh_var(ctx)
                c_tgt
                   [Array arr]
-                     unify::unify(ctx, key_te.ut, unify::prim_int())
+                     unify::unify(ctx, key_te.ut, unify::prim_int!)
                      elem_ut' = arr.elem
                   [Slice sl]
-                     unify::unify(ctx, key_te.ut, unify::prim_int())
+                     unify::unify(ctx, key_te.ut, unify::prim_int!)
                      elem_ut' = sl
                   [Map m]
                      unify::unify(ctx, m.key, key_te.ut)
@@ -2705,7 +2705,7 @@ annotate_expr = ctx, env, expr =>
                              "Map key type must be String, Int, or Addr")
                      var_map2 = unify::mk_map(key_te.ut, elem_ut')
                      unify::unify(ctx, target_te.ut, var_map2)
-               ram_ut = unify::ram_pp(elem_ut', unify::prim_error())
+               ram_ut = unify::ram_pp(elem_ut', unify::prim_error!)
                ti = unify::type_info_from_utype(ctx, ram_ut)
                lay = layout::compute_layout(ctx, ram_ut)
                tast::mk_typed_expr(tast::TypedExprKind(KeyAccess,
@@ -2721,20 +2721,20 @@ annotate_expr = ctx, env, expr =>
            0, 0)
          rhs_te = r.has_rhs && r.is_inclusive | inc_te | rhs_raw
          is_rune = is_rune_ut(ctx, lhs_te.ut) || is_rune_ut(ctx, rhs_te.ut)
-         ut = is_rune | unify::prim_rune() | unify::prim_int()
+         ut = is_rune | unify::prim_rune! | unify::prim_int!
          ti = is_rune | ast::TypeInfo(Prim, ast::ValueType(Rune)) |
             ast::TypeInfo(Prim, ast::ValueType(Int))
          lay = layout::compute_layout(ctx, ut)
          tast::mk_typed_bin(ast::BinaryOp(Seq), lhs_te, rhs_te, ut, ti, lay,
            0, 0)
       [SizeOf so]
-         ut = unify::prim_int()
+         ut = unify::prim_int!
          ti = ast::TypeInfo(Prim, ast::ValueType(Int))
          lay = layout::compute_layout(ctx, ut)
          sz = annotate_type_size(env, so.val_type, so.rec_type)
          tast::mk_lit_int(sz, 0, 0)
       [AlignOf ao]
-         ut = unify::prim_int()
+         ut = unify::prim_int!
          ti = ast::TypeInfo(Prim, ast::ValueType(Int))
          lay = layout::compute_layout(ctx, ut)
          al = annotate_type_align(env, ao.val_type, ao.rec_type)
@@ -2748,7 +2748,7 @@ annotate_expr = ctx, env, expr =>
            lay, 0, 0)
       [Spawn se]
          call_te = annotate_call(ctx, env, se)
-         ret_ram = unify::ram_pp(call_te.ut, unify::prim_error())
+         ret_ram = unify::ram_pp(call_te.ut, unify::prim_error!)
          ti = unify::type_info_from_utype(ctx, ret_ram)
          lay = layout::compute_layout(ctx, ret_ram)
          tast::mk_typed_expr(tast::TypedExprKind(Spawn, se),
@@ -2761,7 +2761,7 @@ annotate_expr = ctx, env, expr =>
             [Ram r] (ret_ut' = handle_te.ut)
             |
                fresh_elem = unify::fresh_var(ctx)
-               ret_ut' = unify::ram_pp(fresh_elem, unify::prim_error())
+               ret_ut' = unify::ram_pp(fresh_elem, unify::prim_error!)
                unify::unify(ctx, handle_te.ut, ret_ut')
          ti = unify::type_info_from_utype(ctx, ret_ut')
          lay = layout::compute_layout(ctx, ret_ut')
@@ -2783,9 +2783,9 @@ annotate_expr = ctx, env, expr =>
          tast::mk_lit_unit(0, 0)
       [Exit ex]
          ex_te = annotate_expr(ctx, env, ex)
-         ut = unify::prim_unit()
+         ut = unify::prim_unit!
          ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
-         lay = tast::layout_void()
+         lay = tast::layout_void!
          tast::mk_typed_expr(tast::TypedExprKind(Exit, ex_te), ut, ti, lay,
            ex_te.line, ex_te.col)
       [Return r]
@@ -2794,8 +2794,8 @@ annotate_expr = ctx, env, expr =>
             |
                unify::add_error(ctx, 3173, diag::E3173_return_outside_fn!)
                val_opt = r.has_val | <+ annotate_expr(ctx, env, r.val) +> | <-->
-               tast::mk_typed_return(val_opt, unify::prim_unit(),
-                 ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+               tast::mk_typed_return(val_opt, unify::prim_unit!,
+                 ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void!, r.line, r.col)
             |
                env.cur_fn_ret
                   | ret_ut =>
@@ -2808,18 +2808,18 @@ annotate_expr = ctx, env, expr =>
                                  unify::add_error(ctx, 3173,
                                    "Cannot return a value from a void function.")
                                  val_te = annotate_expr(ctx, env, r.val)
-                                 tast::mk_typed_return(<+ val_te +>, unify::prim_unit(),
-                                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                                 tast::mk_typed_return(<+ val_te +>, unify::prim_unit!,
+                                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void!, r.line, r.col)
                               |
-                                 tast::mk_typed_return(<-->, unify::prim_unit(),
-                                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                                 tast::mk_typed_return(<-->, unify::prim_unit!,
+                                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void!, r.line, r.col)
                         |
                            !r.has_val
                               |
                                  unify::add_error(ctx, 3173,
                                    "Missing return value in function returning a value.")
-                                 tast::mk_typed_return(<-->, unify::prim_unit(),
-                                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                                 tast::mk_typed_return(<-->, unify::prim_unit!,
+                                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void!, r.line, r.col)
                               |
                                  val_te = annotate_expr(ctx, env, r.val)
                                  ok = unify::unify(ctx, ret_ut, val_te.ut)
@@ -2827,8 +2827,8 @@ annotate_expr = ctx, env, expr =>
                                     |
                                        unify::add_error(ctx, 3084,
                                          "Return expression type mismatch")
-                                 tast::mk_typed_return(<+ val_te +>, unify::prim_unit(),
-                                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                                 tast::mk_typed_return(<+ val_te +>, unify::prim_unit!,
+                                   ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void!, r.line, r.col)
                   |
                      r.has_val
                         |
@@ -2836,18 +2836,18 @@ annotate_expr = ctx, env, expr =>
                            ret_v = unify::fresh_var(ctx)
                            env.cur_fn_ret = <+ ret_v +>
                            unify::unify(ctx, ret_v, val_te.ut)
-                           tast::mk_typed_return(<+ val_te +>, unify::prim_unit(),
-                             ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                           tast::mk_typed_return(<+ val_te +>, unify::prim_unit!,
+                             ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void!, r.line, r.col)
                         |
-                           tast::mk_typed_return(<-->, unify::prim_unit(),
-                             ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void(), r.line, r.col)
+                           tast::mk_typed_return(<-->, unify::prim_unit!,
+                             ast::TypeInfo(Prim, ast::ValueType(Unit)), tast::layout_void!, r.line, r.col)
       [UserDiag diag]
          diag.line > 0 | unify::set_pos(ctx, diag.line, diag.col)
          annotate_expr(ctx, env, diag.msg)
-         ut = diag.is_warn | unify::prim_unit() | unify::fresh_var(ctx)
+         ut = diag.is_warn | unify::prim_unit! | unify::fresh_var(ctx)
          vt = diag.is_warn | ast::ValueType(Unit) | ast::ValueType(Unknown)
          ti = ast::TypeInfo(Prim, vt)
-         lay = tast::layout_void()
+         lay = tast::layout_void!
          tast::mk_typed_expr(tast::TypedExprKind(UserDiag, diag),
            ut, ti, lay, diag.line, diag.col)
       |
@@ -2874,20 +2874,20 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
    op
       [Length]
          check_length_operand(ctx, t)
-         unify::prim_int()
+         unify::prim_int!
       [RuneCount]
-         ok = unify::unify(ctx, t, unify::prim_str())
+         ok = unify::unify(ctx, t, unify::prim_str!)
          !ok
             |
                unify::add_error(ctx, 3084,
                  "Codepoint count (??) requires String operand")
-         unify::prim_int()
+         unify::prim_int!
       [AddrOf]
          c = unify::canon(ctx, t)
          c
             [Prim p]
                p
-                  [Builder, Str] unify::prim_rawptr()
+                  [Builder, Str] unify::prim_rawptr!
                   [Int, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Rune, Flag, RawPtr]
                      operand_expr
                         [Var]
@@ -2898,34 +2898,34 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
                         |
                            unify::add_error(ctx, 3078,
                              "Unary '&' on scalar requires a variable target.")
-                     unify::prim_rawptr()
+                     unify::prim_rawptr!
                   |
                      unify::add_error(ctx, 3078,
                        "Address operator '&' cannot be applied to '" + unify::show_utype(ctx, t) + "\.")
-                     unify::prim_rawptr()
-            [Rec] unify::prim_rawptr()
-            [Array] unify::prim_rawptr()
-            [Slice] unify::prim_rawptr()
-            [Fn] unify::prim_rawptr()
-            [Var] unify::prim_rawptr()
+                     unify::prim_rawptr!
+            [Rec] unify::prim_rawptr!
+            [Array] unify::prim_rawptr!
+            [Slice] unify::prim_rawptr!
+            [Fn] unify::prim_rawptr!
+            [Var] unify::prim_rawptr!
             |
                unify::add_error(ctx, 3078,
                  "Address operator '&' cannot be applied to '" + unify::show_utype(ctx, t) + "\.")
-               unify::prim_rawptr()
+               unify::prim_rawptr!
       [Freeze]
-         ok = unify::unify(ctx, t, unify::prim_builder())
+         ok = unify::unify(ctx, t, unify::prim_builder!)
          !ok
             |
                unify::add_error(ctx, 3084,
                  "Unary '+' freeze requires Builder operand")
-         unify::prim_str()
+         unify::prim_str!
       [BitNot]
-         ok = unify::unify(ctx, t, unify::prim_int())
+         ok = unify::unify(ctx, t, unify::prim_int!)
          !ok
             |
                unify::add_error(ctx, 3084,
                  "Bitwise NOT requires integer operand")
-         unify::prim_int()
+         unify::prim_int!
       [Neg]
          c = unify::canon(ctx, t)
          (is_integerish_ut(ctx, c) || is_float_ut(ctx, c) ||
@@ -2935,24 +2935,24 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
               unify::add_error(ctx, 3084,
                 "Unary '-' requires numeric operand, got '" +
                   unify::show_utype(ctx, t) + "'")
-              unify::prim_unknown()
+              unify::prim_unknown!
       [Not]
          c = unify::canon(ctx, t)
          c
             [Prim p]
                p
-                  [Flag] unify::prim_flag()
+                  [Flag] unify::prim_flag!
                   [Int, I8, I16, I32, I64, U8, U16, U32, U64]
                      unify::add_error(ctx, 3008, diag::E3008_not_integer!)
-                     unify::prim_flag()
+                     unify::prim_flag!
                   |
                      unify::add_error(ctx, 3008, diag::E3008_not_invalid_type!)
-                     unify::prim_flag()
+                     unify::prim_flag!
             [Var]
                unify::fresh_var(ctx)
             |
                unify::add_error(ctx, 3008, diag::E3008_not_invalid_type!)
-               unify::prim_flag()
+               unify::prim_flag!
       [Unwrap]
          c = unify::canon(ctx, t)
          c
@@ -2962,16 +2962,16 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
                   |
                      unify::add_error(ctx, 3091,
                        "Operand of '!!' must have a positive payload")
-                     unify::prim_unknown()
+                     unify::prim_unknown!
             |
                unify::add_error(ctx, 3091,
                  "Operand of '!!' must be a RamPP or RamPN ramification")
-               unify::prim_unknown()
+               unify::prim_unknown!
       [Propagate]
          !env.in_fn
             |
                unify::add_error(ctx, 3173, diag::E3173_propagate_outside_fn!)
-               unify::prim_unknown()
+               unify::prim_unknown!
             |
                env.cur_fn_ret
                   | ret_ut =>
@@ -2993,18 +2993,18 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
                                          "Cannot propagate " +
                                          "ramification: incompatible " +
                                          "ramification shape.")
-                                       unify::prim_unknown()
+                                       unify::prim_unknown!
                                     | (r.pos.has_payload | r.pos.ut | unify::prim_unit!)
                               |
                                  unify::add_error(ctx, 3091,
                                    diag::E3091_propagate_ram_operand!)
-                                 unify::prim_unknown()
+                                 unify::prim_unknown!
                         |
                            unify::add_error(ctx, 3173,
                              "Propagate operator '--!' is only valid " +
                              "inside a function returning a " +
                              "ramification.")
-                           unify::prim_unknown()
+                           unify::prim_unknown!
                   |
                      c = unify::canon(ctx, t)
                      c
@@ -3013,8 +3013,8 @@ annotate_unary_op = ctx, env, op, t, operand_expr =>
                         |
                            unify::add_error(ctx, 3091,
                              diag::E3091_propagate_ram_operand!)
-                           unify::prim_unknown()
-      | unify::prim_unknown()
+                           unify::prim_unknown!
+      | unify::prim_unknown!
 
 is_str_record_fields: unify::Ctx, unify::UFields, Int, Int => <>
 is_str_record_fields = ctx, flds, i, n =>
@@ -3103,7 +3103,7 @@ unify_cmp_op = ctx, op, t1, t2 =>
       |
          unify::add_error(ctx, 3127, "Operator '" + cmp_binop_name(op) +
            diag::E3127_enum_ordering_suffix!)
-         unify::prim_flag()
+         unify::prim_flag!
       |
          is_ram_cmp
             |
@@ -3116,7 +3116,7 @@ unify_cmp_op = ctx, op, t1, t2 =>
                      unify::add_error(ctx, 3127, "Operator '" +
                        cmp_binop_name(op) +
                        diag::E3127_ram_ordering_suffix!)
-               unify::prim_flag()
+               unify::prim_flag!
             |
                is_type1 = c1_ord [Prim p_t1] (p_t1 [Type]) | <->
                is_type2 = c2_ord [Prim p_t2] (p_t2 [Type]) | <->
@@ -3127,7 +3127,7 @@ unify_cmp_op = ctx, op, t1, t2 =>
                  ((is_str_ut(ctx, t1) && is_str_record(ctx, t2)) ||
                    (is_str_record(ctx, t1) && is_str_ut(ctx, t2)))
                is_type_cmp || is_str_tuple
-                  | unify::prim_flag()
+                  | unify::prim_flag!
                   |
                      has_fn = is_eq_neq &&
                        (ut_has_fn(ctx, t1, ast::Names()) || ut_has_fn(ctx, t2, ast::Names()))
@@ -3135,7 +3135,7 @@ unify_cmp_op = ctx, op, t1, t2 =>
                         |
                            unify::add_error(ctx, 3084,
                              "Type containing function does not support equality")
-                           unify::prim_flag()
+                           unify::prim_flag!
                         | unify_cmp(ctx, t1, t2)
 
 annotate_bin_op: unify::Ctx, ast::BinaryOp, unify::UType,
@@ -3168,7 +3168,7 @@ annotate_bin_op = ctx, op, t1, t2 =>
 int_bin_res: unify::UType, unify::UType => unify::UType
 int_bin_res = t1, t2 =>
    same = t1 [Prim p1] (t2 [Prim p2] (p1 == p2) | <->) | <->
-   same | t1 | unify::prim_int()
+   same | t1 | unify::prim_int!
 
 unify_add: unify::Ctx, unify::UType, unify::UType => unify::UType
 unify_add = ctx, t1, t2 =>
@@ -3208,7 +3208,7 @@ unify_add = ctx, t1, t2 =>
                         |
                            s1 = is_str_ut(ctx, t1) && bld_rhs
                            s1
-                              | unify::prim_str()
+                              | unify::prim_str!
                               |
                                  p1 = is_ptr_ut(ctx, t1)
                                  p2 = is_ptr_ut(ctx, t2)
@@ -3223,7 +3223,7 @@ unify_add = ctx, t1, t2 =>
                                           | t2
                                           |
                                              is_rune_ut(ctx, t1) && int2
-                                                | unify::prim_rune()
+                                                | unify::prim_rune!
                                                 |
                                                    fl1 && (int2 || fl2)
                                                       | t1
@@ -3285,7 +3285,7 @@ unify_sub = ctx, t1, t2 =>
                         | t1
                         |
                            p1 && p2
-                              | unify::prim_int()
+                              | unify::prim_int!
                               |
                                  fl1 && (int2 || fl2)
                                     | t1
@@ -3373,26 +3373,26 @@ unify_cmp = ctx, t1, t2 =>
             |
                unify::add_error(ctx, 3084,
                  "Record size mismatch in comparison")
-               unify::prim_flag()
+               unify::prim_flag!
             |
                e1 = rec_elem(ctx, t1)
                e2 = rec_elem(ctx, t2)
                unify_cmp(ctx, e1, e2)
-               make_rec_of(cnt1, unify::prim_flag())
+               make_rec_of(cnt1, unify::prim_flag!)
       |
          r1
             |
                e1 = rec_elem(ctx, t1)
                unify_cmp(ctx, e1, t2)
                cnt1 = rec_count(ctx, t1)
-               make_rec_of(cnt1, unify::prim_flag())
+               make_rec_of(cnt1, unify::prim_flag!)
             |
                r2
                   |
                      e2 = rec_elem(ctx, t2)
                      unify_cmp(ctx, t1, e2)
                      cnt2 = rec_count(ctx, t2)
-                     make_rec_of(cnt2, unify::prim_flag())
+                     make_rec_of(cnt2, unify::prim_flag!)
                   |
                      fl1 = is_float_ut(ctx, t1)
                      fl2 = is_float_ut(ctx, t2)
@@ -3403,27 +3403,27 @@ unify_cmp = ctx, t1, t2 =>
                              "Type mismatch: cannot compare " +
                              unify::show_utype(ctx, t1) + " with " +
                              unify::show_utype(ctx, t2))
-                           unify::prim_flag()
+                           unify::prim_flag!
                         |
                            fl1 && fl2
-                              | unify::prim_flag()
+                              | unify::prim_flag!
                               |
                                  int1 = is_integerish_ut(ctx, t1)
                                  int2 = is_integerish_ut(ctx, t2)
                                  int1 && int2
-                                    | unify::prim_flag()
+                                    | unify::prim_flag!
                                     |
                                        ip1 = is_int_or_ptr_ut(ctx, t1)
                                        ip2 = is_int_or_ptr_ut(ctx, t2)
                                        ip1 && ip2
-                                          | unify::prim_flag()
+                                          | unify::prim_flag!
                                           |
                                              ok = unify::unify(ctx, t1, t2)
                                              !ok
                                                 |
                                                    unify::add_error(ctx, 3084,
                                                      "Comparison type mismatch")
-                                             unify::prim_flag()
+                                             unify::prim_flag!
 
 unify_apply: unify::Ctx, unify::UType, unify::UType => unify::UType
 unify_apply = ctx, fn_ut, arg_ut =>
@@ -3530,7 +3530,7 @@ unify_logical_ram = ctx, is_and, r1, r2 =>
                unify::mk_ram(r1.pos, r1.neg)
             |
                is_bare1 && is_bare2
-                  | unify::prim_flag()
+                  | unify::prim_flag!
                   | unify_logical_heap(ctx, is_and, r1, r2)
 
 unify_logical: unify::Ctx, <>, unify::UType, unify::UType => unify::UType
@@ -3545,25 +3545,25 @@ unify_logical = ctx, is_and, t1, t2 =>
             |
                unify::add_error(ctx, 3084,
                  "Record size mismatch in logical op")
-               unify::prim_flag()
+               unify::prim_flag!
             |
-               unify::unify(ctx, rec_elem(ctx, t1), unify::prim_flag())
-               unify::unify(ctx, rec_elem(ctx, t2), unify::prim_flag())
-               make_rec_of(cnt1, unify::prim_flag())
+               unify::unify(ctx, rec_elem(ctx, t1), unify::prim_flag!)
+               unify::unify(ctx, rec_elem(ctx, t2), unify::prim_flag!)
+               make_rec_of(cnt1, unify::prim_flag!)
       |
          r1
             |
-               unify::unify(ctx, rec_elem(ctx, t1), unify::prim_flag())
-               unify::unify(ctx, t2, unify::prim_flag())
+               unify::unify(ctx, rec_elem(ctx, t1), unify::prim_flag!)
+               unify::unify(ctx, t2, unify::prim_flag!)
                cnt1 = rec_count(ctx, t1)
-               make_rec_of(cnt1, unify::prim_flag())
+               make_rec_of(cnt1, unify::prim_flag!)
             |
                r2
                   |
-                     unify::unify(ctx, t1, unify::prim_flag())
-                     unify::unify(ctx, rec_elem(ctx, t2), unify::prim_flag())
+                     unify::unify(ctx, t1, unify::prim_flag!)
+                     unify::unify(ctx, rec_elem(ctx, t2), unify::prim_flag!)
                      cnt2 = rec_count(ctx, t2)
-                     make_rec_of(cnt2, unify::prim_flag())
+                     make_rec_of(cnt2, unify::prim_flag!)
                   |
                      c1 = unify::canon(ctx, t1)
                      c2 = unify::canon(ctx, t2)
@@ -3585,9 +3585,9 @@ unify_logical = ctx, is_and, t1, t2 =>
                                     | err_ram_nonram(ctx)
                                  t2
                               |
-                                 unify::unify(ctx, t1, unify::prim_flag())
-                                 unify::unify(ctx, t2, unify::prim_flag())
-                                 unify::prim_flag()
+                                 unify::unify(ctx, t1, unify::prim_flag!)
+                                 unify::unify(ctx, t2, unify::prim_flag!)
+                                 unify::prim_flag!
 
 // Leave unresolved operands for call-site inference; never choose an integer
 // type merely because an operand supports length or bitwise operations.
@@ -3650,7 +3650,7 @@ unify_bitwise = ctx, t1, t2 =>
                                  unify::unify(ctx, t1, t2)
                                  unify::add_error(ctx, 3084,
                                    "Bitwise operand mismatch: integer operands required")
-                                 unify::prim_unknown()
+                                 unify::prim_unknown!
 
 unify_shift: unify::Ctx, unify::UType, unify::UType => unify::UType
 unify_shift = ctx, t1, t2 =>
@@ -3687,11 +3687,11 @@ unify_shift = ctx, t1, t2 =>
                      int2_pre = is_integerish_ut(ctx, c2_pre)
                      is_v1
                         |
-                           tgt1 = int2_pre | c2_pre | unify::prim_int()
+                           tgt1 = int2_pre | c2_pre | unify::prim_int!
                            unify::unify(ctx, c1_pre, tgt1)
                      is_v2
                         |
-                           tgt2 = int1_pre | c1_pre | unify::prim_int()
+                           tgt2 = int1_pre | c1_pre | unify::prim_int!
                            unify::unify(ctx, c2_pre, tgt2)
                int1 = is_integerish_ut(ctx, t1)
                int2 = is_integerish_ut(ctx, t2)
@@ -3705,7 +3705,7 @@ annotate_block: unify::Ctx, type_env::TypeEnv, ast::Exprs, <> => tast::TypedExpr
 annotate_block = ctx, env, exprs, is_disc =>
    type_env::enter_scope(env)
    tes = tast::TypedExprs()
-   last_ut' = unify::prim_unit()
+   last_ut' = unify::prim_unit!
    n = ?exprs
    saved_block_exp = cur_expected_ut
    ?exprs @ i =>
@@ -3722,7 +3722,7 @@ annotate_block = ctx, env, exprs, is_disc =>
    cur_expected_ut ::= saved_block_exp
    env.discard_result = is_disc
    type_env::leave_scope(env)
-   block_ut = is_disc | unify::prim_unit() | last_ut'
+   block_ut = is_disc | unify::prim_unit! | last_ut'
    ti = unify::type_info_from_utype(ctx, block_ut)
    lay = layout::compute_layout(ctx, block_ut)
    tast::mk_typed_block(tes, block_ut, ti, lay, 0, 0)
@@ -3750,7 +3750,7 @@ dotted_to_expr = s =>
 first_rec_field_ut: unify::UFields => unify::UType
 first_rec_field_ut = flds =>
    ?flds == 0
-      | unify::prim_int()
+      | unify::prim_int!
       |
          f0 = flds(0) | _ | unify::UField("", unify::UType(None))
          f0.ut
@@ -3851,7 +3851,7 @@ compute_intrinsic_ret_ut: unify::Ctx, String, tast::TypedExprs,
   tast::TypedExpr, tast::TypedExpr, tast::TypedExpr => unify::UType
 compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
    name
-      ["%to_str"] unify::prim_str()
+      ["%to_str"] unify::prim_str!
       ["%ptrmask"]
          check_intrin_arg(ctx, name, is_int_or_ptr_ut(ctx, a0.ut))
          check_intrin_arg(ctx, name, is_integerish_ut(ctx, a1.ut))
@@ -3860,15 +3860,15 @@ compute_intrinsic_ret_ut = ctx, name, args, a0, a1, a2 =>
          ok0 = is_int_or_ptr_ut(ctx, a0.ut) || is_str_ut(ctx, a0.ut) || is_builder_ut(ctx, a0.ut)
          ok1 = is_int_or_ptr_ut(ctx, a1.ut) || is_str_ut(ctx, a1.ut) || is_builder_ut(ctx, a1.ut)
          check_intrin_arg(ctx, name, ok0 && ok1 && is_integerish_ut(ctx, a2.ut))
-         unify::prim_rawptr()
+         unify::prim_rawptr!
       ["%memset"]
          ok0 = is_int_or_ptr_ut(ctx, a0.ut) || is_builder_ut(ctx, a0.ut)
          check_intrin_arg(ctx, name, ok0 && is_integerish_ut(ctx, a1.ut) && is_integerish_ut(ctx, a2.ut))
-         unify::prim_rawptr()
+         unify::prim_rawptr!
       ["%all", "%any"]
          ok_flg = is_cmp_rec(ctx, a0.ut) && is_flag_ut(ctx, rec_elem(ctx, a0.ut))
          check_intrin_arg(ctx, name, ok_flg)
-         unify::prim_flag()
+         unify::prim_flag!
       ["%sum", "%prod"]
          check_intrin_arg(ctx, name, is_numeric_rec(ctx, a0.ut))
          c0 = unify::canon(ctx, a0.ut)
@@ -3954,8 +3954,8 @@ annotate_intrinsic_call = ctx, env, ce =>
          unify::add_error(ctx, 3100,
            "Unknown compiler intrinsic '" + name + "'.")
          ti_err = ast::TypeInfo(Prim, ast::ValueType(Unknown))
-         tast::mk_typed_call(name, <-->, typed_args, unify::prim_unit(),
-           ti_err, tast::layout_void(), ce.line, ce.col)
+         tast::mk_typed_call(name, <-->, typed_args, unify::prim_unit!,
+           ti_err, tast::layout_void!, ce.line, ce.col)
       |
          exp_n = expected_intrinsic_nargs(name)
          nargs_ok = exp_n == 0
@@ -3968,7 +3968,7 @@ annotate_intrinsic_call = ctx, env, ce =>
                  str::from_int(nargs) + " arguments.")
                ti_err = ast::TypeInfo(Prim, ast::ValueType(Unknown))
                tast::mk_typed_call(name, <-->, typed_args,
-                 unify::prim_unit(), ti_err, tast::layout_void(),
+                 unify::prim_unit!, ti_err, tast::layout_void!,
                  ce.line, ce.col)
             |
                def_unit = tast::mk_lit_unit(0, 0)
@@ -4040,7 +4040,7 @@ annotate_call = ctx, env, ce =>
                  "Type 'Builder' cannot be used as a function or constructor. " +
                  "Use '{cap}' to create a Builder.")
                typed_args = annotate_call_args(ctx, env, ce.args)
-               b_ut = unify::prim_builder()
+               b_ut = unify::prim_builder!
                b_ti = ast::TypeInfo(Prim, ast::ValueType(Builder))
                b_lay = layout::compute_layout(ctx, b_ut)
                tast::mk_typed_call(ce.fn_name, <-->, typed_args, b_ut, b_ti,
@@ -4052,9 +4052,9 @@ annotate_call = ctx, env, ce =>
                        "Type '" + ce.fn_name +
                        "' cannot be used as a function or constructor.")
                      typed_args = annotate_call_args(ctx, env, ce.args)
-                     u_ut = unify::prim_unit()
+                     u_ut = unify::prim_unit!
                      u_ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
-                     u_lay = tast::layout_void()
+                     u_lay = tast::layout_void!
                      tast::mk_typed_call(ce.fn_name, <-->, typed_args, u_ut, u_ti,
                        u_lay, ce.line, ce.col)
                   |
@@ -4068,16 +4068,16 @@ annotate_call = ctx, env, ce =>
                                    "Constructor 'Error' takes at most 6 arguments, got " +
                                    str::from_int(nargs_err))
                            nargs_err > 0
-                              | unify::unify(ctx, (typed_args(0)!!).ut, unify::prim_int())
+                              | unify::unify(ctx, (typed_args(0)!!).ut, unify::prim_int!)
                            nargs_err > 1
-                              | unify::unify(ctx, (typed_args(1)!!).ut, unify::prim_str())
+                              | unify::unify(ctx, (typed_args(1)!!).ut, unify::prim_str!)
                            nargs_err > 2
-                              | unify::unify(ctx, (typed_args(2)!!).ut, unify::prim_str())
+                              | unify::unify(ctx, (typed_args(2)!!).ut, unify::prim_str!)
                            nargs_err > 3
-                              | unify::unify(ctx, (typed_args(3)!!).ut, unify::prim_int())
+                              | unify::unify(ctx, (typed_args(3)!!).ut, unify::prim_int!)
                            nargs_err > 4
-                              | unify::unify(ctx, (typed_args(4)!!).ut, unify::prim_int())
-                           err_ut = unify::prim_error()
+                              | unify::unify(ctx, (typed_args(4)!!).ut, unify::prim_int!)
+                           err_ut = unify::prim_error!
                            err_ti = ast::TypeInfo(Prim, ast::ValueType(Error))
                            err_lay = layout::compute_layout(ctx, err_ut)
                            tast::mk_typed_call(ce.fn_name, <-->, typed_args, err_ut,
@@ -4466,7 +4466,7 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
                   [Var]
                      <>(bf_opt) && nf > 1
                         |
-                           unify::unify(ctx, a0_te.ut, unify::prim_int())
+                           unify::unify(ctx, a0_te.ut, unify::prim_int!)
                            is_raw_cast' = <+>
                            raw_te' = a0_te
    is_raw_cast'
@@ -4694,8 +4694,8 @@ annotate_call_normal = ctx, env, ce =>
                                  is_var_index' = <+>
                                  first_a = ce.args(0) | _ | ast::Expr(Int, 0)
                                  is_rng = is_range_expr(first_a)
-                                 index_ret_ut' = is_rng | unify::prim_str() |
-                                    unify::prim_int()
+                                 index_ret_ut' = is_rng | unify::prim_str! |
+                                    unify::prim_int!
                               |
                                  fn_ut' = resolve_fn_ut(ctx, env, ce.fn_name,
                                    b.ut)
@@ -4703,7 +4703,7 @@ annotate_call_normal = ctx, env, ce =>
                            is_var_index' = <+>
                            is_rng = ce.args(0) | a => is_range_expr(a) | <->
                            sl_ut = unify::mk_slice(arr.elem)
-                           err_ut = unify::prim_error()
+                           err_ut = unify::prim_error!
                            elem_ut = unify::ram_pp(arr.elem, err_ut)
                            index_ret_ut' = is_rng | sl_ut | elem_ut
                         [Slice elem]
@@ -4790,14 +4790,14 @@ annotate_call_normal = ctx, env, ce =>
                                  is_var_index' = <+>
                                  first_a2 = ce.args(0) | _ | ast::Expr(Int, 0)
                                  is_rng2 = is_range_expr(first_a2)
-                                 index_ret_ut' = is_rng2 | unify::prim_str() |
-                                    unify::prim_int()
+                                 index_ret_ut' = is_rng2 | unify::prim_str! |
+                                    unify::prim_int!
                               | fn_ut' = instantiate_unbound_fn(ctx, target_te.ut)
                         [Array arr2]
                            is_var_index' = <+>
                            is_rng2 = ce.args(0) | a => is_range_expr(a) | <->
                            sl_ut2 = unify::mk_slice(arr2.elem)
-                           err_ut2 = unify::prim_error()
+                           err_ut2 = unify::prim_error!
                            elem_ut2 = unify::ram_pp(arr2.elem, err_ut2)
                            index_ret_ut' = is_rng2 | sl_ut2 | elem_ut2
                         [Slice elem2]
@@ -4846,7 +4846,7 @@ annotate_call_normal = ctx, env, ce =>
                            | a1_base_ut
                         v_params = unify::UTypes()
                         v_params += opt_v_ut
-                        v_fn_ut = unify::mk_fn(v_params, unify::ram_np(unify::prim_str()))
+                        v_fn_ut = unify::mk_fn(v_params, unify::ram_np(unify::prim_str!))
                         exp_arg' = <+ v_fn_ut +>
                   saved_exp = cur_expected_ut
                   cur_expected_ut ::= exp_arg'
@@ -4871,7 +4871,7 @@ annotate_call_normal = ctx, env, ce =>
                   |
                      a0 = typed_args(0)!!
                      is_rng_ce = ce.args(0) | a => is_range_expr(a) | <->
-                     !is_rng_ce | unify::unify(ctx, a0.ut, unify::prim_int())
+                     !is_rng_ce | unify::unify(ctx, a0.ut, unify::prim_int!)
                ti = unify::type_info_from_utype(ctx, index_ret_ut')
                lay = layout::compute_layout(ctx, index_ret_ut')
                tast::mk_typed_call(ce.fn_name, target_val', typed_args,
@@ -4896,7 +4896,7 @@ annotate_call_normal = ctx, env, ce =>
                                     |
                                        (?arg_uts..?f_sig.params) @ ti_m =>
                                           typed_args += tast::mk_lit_unit(ce.line, ce.col)
-                                          arg_uts += unify::prim_unit()
+                                          arg_uts += unify::prim_unit!
                            ?arg_uts @ ai =>
                               ai < ?f_sig.params
                                  |
@@ -4929,13 +4929,13 @@ annotate_fn = ctx, env, fe, is_disc =>
       | <-->
    exp_ret_ut = exp_fn_opt | ef => <+ ef.ret +> | <-->
    ret_var = is_disc
-      | unify::prim_unit()
+      | unify::prim_unit!
       |
          v = unify::fresh_var(ctx)
          exp_ret_ut | er => unify::unify(ctx, v, er)
          v
    env.cur_fn_ret = <+ ret_var +>
-   env.init = type_env::new_init()
+   env.init = type_env::new_init!
    param_uts = unify::UTypes()
    ?fe.params @ i =>
       pname = fe.params(i) | _ | ""
@@ -4961,7 +4961,7 @@ annotate_fn = ctx, env, fe, is_disc =>
    type_env::leave_scope(env)
    !is_disc && !expr_is_jump(body_te)
       | unify::unify(ctx, ret_var, body_te.ut)
-   ret_ut = is_disc | unify::prim_unit() | ret_var
+   ret_ut = is_disc | unify::prim_unit! | ret_var
    fn_ut = unify::mk_fn(param_uts, ret_ut)
    ti = unify::type_info_from_utype(ctx, fn_ut)
    mk_lambda_te(fe.params, body_te, fn_ut, ti)
@@ -5215,7 +5215,7 @@ annotate_choice = ctx, env, ch, is_disc =>
    tb_list = tast::TypedBranches()
    res_ut = unify::fresh_var(ctx)
    init_pre = type_env::init_snapshot(env)
-   init_merged' = type_env::new_init()
+   init_merged' = type_env::new_init!
    has_merged' = <->
    num_joins' = 0
    ch.branches @ br, i =>
@@ -5343,7 +5343,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                pnames += "_"
                put_list = unify::UTypes()
                put_list += cond_te.ut
-               fn_ut = unify::UType(Fn, (put_list, unify::prim_flag()))
+               fn_ut = unify::UType(Fn, (put_list, unify::prim_flag!))
                fn_ti = unify::type_info_from_utype(ctx, fn_ut)
                typed_cvs += mk_lambda_te(pnames, cmp_te, fn_ut, fn_ti)
             |
@@ -5462,7 +5462,7 @@ annotate_choice = ctx, env, ch, is_disc =>
         br.variant_names, cur_bind_vars, body_te)
       tb_list += tbr
    has_merged' | type_env::init_restore(env, init_merged')
-   final_ut' = unify::prim_unit()
+   final_ut' = unify::prim_unit!
    is_exhaustive' && !is_disc && num_joins' > 0
       | (final_ut' = res_ut)
       |
@@ -5589,7 +5589,7 @@ annotate_record = ctx, env, re =>
                            j < ?lit_fields
                               | (lit_fields(j) | _ | tast::TypedField("",
                                 tast::mk_lit_unit(0, 0), 0,
-                                unify::prim_unit())).val
+                                unify::prim_unit!)).val
                               | tast::mk_typed_expr(tast::TypedExprKind(Member,
                                 (var_s_te, sf.name, j)), sf.ut, sf_ti, sf_lay, 0, 0)
                         | tast::mk_typed_expr(tast::TypedExprKind(Member,
@@ -5712,11 +5712,11 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
    c_tgt
       [Rec r]
          idx' = unify::find_field_idx(r, mm.field_name)
-   ti = unify::type_info_from_utype(ctx, unify::prim_unit())
-   lay = tast::layout_void()
+   ti = unify::type_info_from_utype(ctx, unify::prim_unit!)
+   lay = tast::layout_void!
    tast::mk_typed_expr(tast::TypedExprKind(MemberWrite,
      (target_te, mm.field_name, idx', rhs)),
-     unify::prim_unit(), ti, lay, mm.line, mm.col)
+     unify::prim_unit!, ti, lay, mm.line, mm.col)
 
 annotate_index_write: unify::Ctx, type_env::TypeEnv,
   ast::CallExpr, ast::Expr => tast::TypedExpr
@@ -5730,7 +5730,7 @@ annotate_index_write = ctx, env, cc, val_expr =>
    idx_te = annotate_expr(ctx, env, first_arg)
    rhs = annotate_expr(ctx, env, val_expr)
    c_tgt = unify::canon(ctx, target_te.ut)
-   ret_ut' = unify::prim_unit()
+   ret_ut' = unify::prim_unit!
    c_tgt
       [Prim p]
          p [Str, Builder]
@@ -5743,20 +5743,20 @@ annotate_index_write = ctx, env, cc, val_expr =>
            |
               unify::add_error(ctx, 3131,
                 diag::whole_value_init(cc.fn_name))
-         unify::unify(ctx, idx_te.ut, unify::prim_int())
+         unify::unify(ctx, idx_te.ut, unify::prim_int!)
          ok_elem = unify::unify(ctx, arr.elem, rhs.ut)
          !ok_elem
             |
                unify::add_error(ctx, 3084,
                  "Type mismatch in array index assignment")
-         ret_ut' = unify::ram_np(unify::prim_error())
+         ret_ut' = unify::ram_np(unify::prim_error!)
       [Slice elem]
          cc.fn_name != "" && type_env::init_is_tracked(env, cc.fn_name) &&
            !type_env::init_is_whole(env, cc.fn_name)
            |
               unify::add_error(ctx, 3049,
                 diag::E3049_slice_write_prefix! + cc.fn_name + diag::E3049_slice_write_suffix!)
-         unify::unify(ctx, idx_te.ut, unify::prim_int())
+         unify::unify(ctx, idx_te.ut, unify::prim_int!)
          ok_elem = unify::unify(ctx, elem, rhs.ut)
          !ok_elem
             |
@@ -5771,7 +5771,7 @@ annotate_index_write = ctx, env, cc, val_expr =>
          !is_ufields_homogeneous(ctx, r)
             |
                unify::add_error(ctx, 3051, diag::E3051_dynamic_index_hetero!)
-         unify::unify(ctx, idx_te.ut, unify::prim_int())
+         unify::unify(ctx, idx_te.ut, unify::prim_int!)
          n_flds = ?r
          n_flds > 0
             |
@@ -5802,9 +5802,9 @@ annotate_key_write = ctx, env, ka, val_expr =>
                  "Map key type must be String, Int, or Addr")
          var_map = unify::mk_map(key_te.ut, rhs.ut)
          unify::unify(ctx, target_te.ut, var_map)
-   ut = unify::prim_unit()
+   ut = unify::prim_unit!
    ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
-   lay = tast::layout_void()
+   lay = tast::layout_void!
    tast::mk_typed_expr(tast::TypedExprKind(IndexWrite,
      (target_te, key_te, rhs)), ut, ti, lay, ka.line, ka.col)
 
@@ -5816,7 +5816,7 @@ annotate_raw_write = ctx, env, rm, val_expr =>
          unify::add_error(ctx, 2093, diag::E2093_assign_typed_load!)
    addr_te = annotate_expr(ctx, env, rm.addr)
    !is_int_or_ptr_ut(ctx, addr_te.ut)
-      | unify::unify(ctx, addr_te.ut, unify::prim_rawptr())
+      | unify::unify(ctx, addr_te.ut, unify::prim_rawptr!)
    rhs = annotate_expr(ctx, env, val_expr)
    c_rhs = unify::canon(ctx, rhs.ut)
    ok_w = <->
@@ -5828,9 +5828,9 @@ annotate_raw_write = ctx, env, rm, val_expr =>
    !ok_w
       |
          unify::add_error(ctx, 3142, diag::E3142_raw_write_type!)
-   ut = unify::prim_unit()
+   ut = unify::prim_unit!
    ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
-   lay = tast::layout_void()
+   lay = tast::layout_void!
    tast::mk_typed_expr(tast::TypedExprKind(RawMemoryWrite,
      (addr_te, rhs)), ut, ti, lay, 0, 0)
 
@@ -5919,7 +5919,7 @@ annotate_scc = ctx, env, exprs, name, is_recursive =>
                                           env)
                                        env.in_fn = <+>
                                        env.cur_fn_ret = <+ f.ret +>
-                                       env.init = type_env::new_init()
+                                       env.init = type_env::new_init!
                                        ?fe.params @ p_i =>
                                           pname = fe.params(p_i) | _ | ""
                                           put = f.params(p_i) | _ |
@@ -5981,13 +5981,13 @@ solve_unconstrained_rams = ctx, ut =>
             |
                c_pos = unify::canon(ctx, r.pos.ut)
                c_pos
-                  [Var vid] unify::bind_var(ctx, vid, unify::prim_unit())
+                  [Var vid] unify::bind_var(ctx, vid, unify::prim_unit!)
                   | solve_unconstrained_rams(ctx, r.pos.ut)
          r.neg.has_payload
             |
                c_neg = unify::canon(ctx, r.neg.ut)
                c_neg
-                  [Var vid2] unify::bind_var(ctx, vid2, unify::prim_unit())
+                  [Var vid2] unify::bind_var(ctx, vid2, unify::prim_unit!)
                   | solve_unconstrained_rams(ctx, r.neg.ut)
       [Rec r_flds]
          ?r_flds @ i =>
@@ -6074,7 +6074,7 @@ register_foreign_decl: type_env::TypeEnv, ast::ForeignFnDecl => ()
 register_foreign_decl = env, f =>
    is_ret_rec = f.return_type [Record]
    is_ret_unit = f.return_type [Unit]
-   ret_ut0 = is_ret_unit | unify::prim_unit() |
+   ret_ut0 = is_ret_unit | unify::prim_unit! |
       unify::UType(Prim, unify::vt_to_uprim(f.return_type))
    ret_ut = is_ret_rec | utype_from_ti_env(env, f.ret_record_info) |
       ret_ut0
@@ -6425,9 +6425,9 @@ refresh_program_stmts = ctx, stmts =>
 
 elaborate_program_with_ctx: ast::Exprs => < ElabProgCtx | unify::TypeErrors >
 elaborate_program_with_ctx = exprs =>
-   ctx = unify::new_ctx()
+   ctx = unify::new_ctx!
    unify::set_file(ctx, cur_source_file)
-   env = type_env::new_env()
+   env = type_env::new_env!
    view_vars ::= ast::Names()
    declared_fns ::= ast::Names()
    called_fns ::= ast::Names()
@@ -6651,7 +6651,7 @@ elaborate_program_with_ctx = exprs =>
             te = annotate_expr(ctx, env, e_stmt)
             solve_unconstrained_rams(ctx, te.ut)
             (te.kind [UserDiag])
-               | unify::unify(ctx, te.ut, unify::prim_unit())
+               | unify::unify(ctx, te.ut, unify::prim_unit!)
             ground_ok = unify::is_ground(ctx, te.ut)
             !ground_ok
                |

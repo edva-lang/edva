@@ -15,7 +15,7 @@
 
 checkbox: String, FlagBinding => ()
 checkbox = label, binding =>
-   cur = binding.get()
+   cur = binding.get!
    cur | io::out $ label + ": on" | io::out $ label + ": off"
    binding.set(!cur)
 
@@ -33,9 +33,9 @@ calc_idx = !=>
 // 1. Direct record field lens
 s = Settings(75, <+>)
 b_vol = ~~s.volume
-io::out $ b_vol.get()
+io::out $ b_vol.get!
 b_vol.set(90)
-io::out $ b_vol.get()
+io::out $ b_vol.get!
 io::out $ s.volume
 
 // 2. Widget consumption with record field
@@ -48,33 +48,33 @@ arr = IntArr()
 arr += 10
 arr += 20
 arr += 30
-b_elem = ~~arr(calc_idx())
+b_elem = ~~arr(calc_idx!)
 io::out $ ::idx_evals
-io::out $ b_elem.get()
+io::out $ b_elem.get!
 b_elem.set(99)
-io::out $ b_elem.get()
+io::out $ b_elem.get!
 io::out $ ::idx_evals
 io::out $ arr(1)!!
 
 // 4. Nested record path lens (once-evaluated)
-p_lens = ~~get_player().stats.health
+p_lens = ~~get_player!.stats.health
 io::out $ ::player_evals
-io::out $ p_lens.get()
+io::out $ p_lens.get!
 p_lens.set(85)
-io::out $ p_lens.get()
+io::out $ p_lens.get!
 io::out $ ::player_evals
 
 // 5. Marked global binding
 b_glob = ~~::g_theme
-io::out $ b_glob.get()
+io::out $ b_glob.get!
 b_glob.set(999)
-io::out $ b_glob.get()
+io::out $ b_glob.get!
 io::out $ ::g_theme
 
 // 6. Bidirectional adapter: map_binding (Issue #35 §5)
 map_binding: IntBinding, (Int => Int), (Int => Int) => IntBinding
 map_binding = b, fwd, bwd => (
-   get = !=> fwd(b.get()),
+   get = !=> fwd(b.get!),
    set = _v => b.set(bwd(_v))
 )
 
@@ -86,7 +86,7 @@ f_to_c = f => (f - 30) / 2
 
 c_temp = Settings(25, <+>)
 f_lens = map_binding(~~c_temp.volume, c_to_f, f_to_c)
-io::out $ f_lens.get()
+io::out $ f_lens.get!
 f_lens.set(100)
-io::out $ f_lens.get()
+io::out $ f_lens.get!
 io::out $ c_temp.volume

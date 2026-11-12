@@ -44,8 +44,8 @@ w1 = io::write(1, "F4 write test\n")
 io::outf(w1 > 0, "F4 write ret={}")
 
 // --- Finding 5: in status inspection ---
-io::outf((in::err(), <>(in::eof()), <>(in::would_block()), <>(in::has_err())), "F5 in status err={} eof={} wb={} has_err={}")
-in::clear()
+io::outf((in::err!, <>(in::eof!), <>(in::would_block!), <>(in::has_err!)), "F5 in status err={} eof={} wb={} has_err={}")
+in::clear!
 io::out("F5 in::clear called")
 
 // --- Finding 6: json compensated decimal numbers ---

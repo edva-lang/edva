@@ -49,7 +49,7 @@ compute_prim_layout = p =>
       [Str] tast::layout_scalar(ptr_sz * 2, ptr_align)
       [Rune] tast::layout_scalar(4, 4)
       [Flag] tast::layout_scalar(1, 1)
-      [Unit] tast::layout_void()
+      [Unit] tast::layout_void!
       [RawPtr] tast::layout_scalar(ptr_sz, ptr_align)
       [Builder] tast::layout_scalar(ptr_sz * 3, ptr_align)
       [Error]

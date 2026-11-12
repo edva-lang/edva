@@ -6100,7 +6100,7 @@ builder_typed_append_rec_lens = cg, fields, i, n, vals, vts, lens, total_add =>
       | (vals, vts, lens, total_add)
       |
          rf = fields(i) | _ | tast::TypedField("",
-           tast::mk_lit_unit(0, 0), 0, unify::prim_unit())
+           tast::mk_lit_unit(0, 0), 0, unify::prim_unit!)
          ev = main::codegen_typed_eval(cg, rf.val)
          is_str = types::is_str_vt(ev.1)
          one = LLVMConstInt(LLVMInt64Type!, 1, 0)
@@ -6866,8 +6866,8 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                                                      types::var_type(cg, fname))
                                                    tgt_te = tast::mk_typed_var(
                                                       fname, 0, <->,
-                                                      unify::prim_unit(), v_ti,
-                                                      tast::layout_void(), 0, 0)
+                                                      unify::prim_unit!, v_ti,
+                                                      tast::layout_void!, 0, 0)
                                                    codegen_typed_eval_index(cg,
                                                      tgt_te, arg0', ti)
                                                 | (LLVMConstInt(
@@ -7646,7 +7646,7 @@ codegen_typed_eval_intrinsic = cg, fname, args, ti =>
                   mfld = m_fields(mi) | _ |
                      tast::TypedField("",
                        tast::mk_lit_int(0, 0, 0), 0,
-                       unify::prim_int())
+                       unify::prim_int!)
                   m_kind = mfld.val.kind
                   m_idx = m_kind [LitInt idx_val] idx_val | 0
                   masks += LLVMConstInt(i32t, m_idx, 0)

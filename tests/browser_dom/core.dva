@@ -122,7 +122,7 @@ core = !=>
 #export
    run_dom_tests: () => Int
    run_dom_tests = !=>
-      core()
+      core!
          | 0
          | failure =>
             dom_test_log(&failure.msg, ?failure.msg)

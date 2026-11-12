@@ -2888,7 +2888,7 @@ codegen_typed_eval = cg, te =>
                bty = types::llvm_type_of_vt(bfi.backing_type)
                packed_acc' = LLVMConstInt(bty, 0, 0)
                nf @ j =>
-                  tf = r(j) | _ | tast::TypedField("", tast::mk_lit_unit(0, 0), 0, unify::prim_unit())
+                  tf = r(j) | _ | tast::TypedField("", tast::mk_lit_unit(0, 0), 0, unify::prim_unit!)
                   bf_fld = types::find_bitfield_field(bfi.fields, tf.name)
                   bf = bf_fld | _ | (bfi.fields(j) | _ | ast::BitfieldField("", 0, 0, <->))
                   fev = codegen_typed_eval(cg, tf.val)
@@ -2914,7 +2914,7 @@ codegen_typed_eval = cg, te =>
                first_ty' = LLVMVoidType!
                nf @ i =>
                   tf = r(i) | _ | tast::TypedField("", tast::mk_lit_unit(0, 0), 0,
-                     unify::prim_unit())
+                     unify::prim_unit!)
                   fev = codegen_typed_eval(cg, tf.val)
                   fev_is_rec = types::is_record_vt(fev.1)
                   fev_is_rec | any_rec' = <+>

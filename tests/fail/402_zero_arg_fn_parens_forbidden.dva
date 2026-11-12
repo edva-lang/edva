@@ -1,0 +1,5 @@
+// Zero-argument function calls must use postfix '!' instead of '()'.
+f: () => Int
+f = !=> 42
+
+x = f()

@@ -54,7 +54,7 @@
    // Returns the active arena descriptor (the global arena when no scoped
    // arena is selected). Addr(0) selects the global arena in set_current.
    current: () => Addr
-   current = !=> runtime_arena_current()
+   current = !=> runtime_arena_current!
 
    set_current: Addr => Addr
    set_current = raw => runtime_arena_set_current(raw)

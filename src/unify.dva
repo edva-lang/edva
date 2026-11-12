@@ -439,12 +439,12 @@ bind_open_unit_ram_int = ctx, r =>
    s == URamShape(RamPN)
       |
          c_pos = canon(ctx, r.pos.ut)
-         c_pos [Var vid] bind_var(ctx, vid, prim_int())
+         c_pos [Var vid] bind_var(ctx, vid, prim_int!)
       |
          s == URamShape(RamNP)
             |
                c_neg = canon(ctx, r.neg.ut)
-               c_neg [Var vid] bind_var(ctx, vid, prim_int())
+               c_neg [Var vid] bind_var(ctx, vid, prim_int!)
 
 unify_concrete: Ctx, UType, UType, Int, Int => <>
 unify_concrete = ctx, c1, c2, v1, v2 =>
@@ -719,13 +719,13 @@ solve_constraint = ctx, c =>
             [Slice elem]
                unify(ctx, call.2, elem)
             [Array arr]
-               err_ut = prim_error()
+               err_ut = prim_error!
                elem_ut = ram_pp(arr.elem, err_ut)
                unify(ctx, call.2, elem_ut)
             [Prim p]
                is_str = p [Str]
                is_str
-                  | unify(ctx, call.2, prim_int())
+                  | unify(ctx, call.2, prim_int!)
                   |
                      exp_p = mk_fn(call.1, call.2)
                      unify(ctx, call.0, exp_p)

@@ -185,7 +185,7 @@ parser_init = lx =>
    p = Parser(lx, lexer::Tok(lexer::TokKind(Eof), 0, 0, 1, 1, <->, <->, ""),
      0, 0, 0, 0, 0, 0, 0, user_types, forward_refs, user_ops,
      <->, <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
-     <->, <->, <->, "", <+>, lexer::lex_get_file(), tl, tc, consts)
+     <->, <->, <->, "", <+>, lexer::lex_get_file!, tl, tc, consts)
    parser_advance(p)
    p
 
@@ -4942,9 +4942,15 @@ parse_key_chain = p, lhs =>
                   | args =>
                      p.curr.kind
                         [RParen]
-                           parser_advance(p)
-                           nc = make_postfix_call(p, lhs, args)
-                           parse_key_chain(p, nc)
+                           ?args == 0 && !is_type_ctor_callee(lhs)
+                              |
+                                 parser_error(p, 2104,
+                                   "Empty parentheses '()' are not allowed on function calls; use postfix '!' for zero-argument calls.")
+                                 <-->
+                              |
+                                 parser_advance(p)
+                                 nc = make_postfix_call(p, lhs, args)
+                                 parse_key_chain(p, nc)
                         | <-->
                   | <-->
             |
@@ -5050,9 +5056,15 @@ parse_postfix_calls = p, lhs =>
                   | args =>
                      p.curr.kind
                         [RParen]
-                           parser_advance(p)
-                           nc = make_postfix_call(p, lhs, args)
-                           parse_postfix_calls(p, nc)
+                           ?args == 0 && !is_type_ctor_callee(lhs)
+                              |
+                                 parser_error(p, 2104,
+                                   "Empty parentheses '()' are not allowed on function calls; use postfix '!' for zero-argument calls.")
+                                 <-->
+                              |
+                                 parser_advance(p)
+                                 nc = make_postfix_call(p, lhs, args)
+                                 parse_postfix_calls(p, nc)
                         | <-->
                   | <-->
       [Op]
@@ -5063,7 +5075,9 @@ parse_postfix_calls = p, lhs =>
                      parser_advance(p)
                      args2 = ast::Exprs()
                      nc2 = make_postfix_call(p, lhs, args2)
-                     parse_postfix_calls(p, nc2)
+                     pp_member(p, nc2)
+                        | mu => parse_postfix_calls(p, mu)
+                        | <-->
                   | <+ lhs +>
             ["!!"]
                !p.curr.lead
@@ -5094,6 +5108,16 @@ make_call: Parser, String, ast::Exprs => ast::Expr
 make_call = p, name, args =>
    ast::Expr(Call, ast::CallExpr(name, ast::Expr(Var, ""),
      args, p.curr.line, p.curr.col))
+
+is_type_ctor_callee: ast::Expr => <>
+is_type_ctor_callee = e =>
+   e
+      [ArrayCreate] <+>
+      [Var v] ?v > 0 && ascii::is_upper(v(0))
+      [Member m]
+         m.is_module_access && ?m.field_name > 0 &&
+           ascii::is_upper(m.field_name(0))
+      | <->
 
 make_postfix_call: Parser, ast::Expr, ast::Exprs => ast::Expr
 make_postfix_call = p, lhs, args =>
@@ -5552,7 +5576,7 @@ pattern_is_deep = pat_in =>
                n > 1
                   | <+>
                   |
-                     sub = pat_rec(pat.subpatterns(0) | _ | pat_wildcard())
+                     sub = pat_rec(pat.subpatterns(0) | _ | pat_wildcard!)
                      sub.kind
                         [Bind, Wildcard] <->
                         | <+>
@@ -5655,7 +5679,7 @@ parse_pattern = p =>
          p.curr.text == "_"
             |
                parser_advance(p)
-               <+ pat_wildcard() +>
+               <+ pat_wildcard! +>
             |
                guard_is_variant(p.curr)
                   |
@@ -5856,7 +5880,7 @@ pat_extract_bindings = p, target, pat_in =>
          ?pat.subpatterns == 0
             | res
             |
-               sub_raw = pat.subpatterns(0) | _ | pat_wildcard()
+               sub_raw = pat.subpatterns(0) | _ | pat_wildcard!
                sub = pat_rec(sub_raw)
                sub.kind
                   [Bind]
@@ -5875,7 +5899,7 @@ pat_extract_bindings = p, target, pat_in =>
       [Record]
          k = ?pat.subpatterns
          k @ idx =>
-            sub_raw = pat.subpatterns(idx) | _ | pat_wildcard()
+            sub_raw = pat.subpatterns(idx) | _ | pat_wildcard!
             sub = pat_rec(sub_raw)
             fld_str = sub.field_name != ""
                | sub.field_name
@@ -5901,7 +5925,7 @@ pat_match_cond = p, target, pat_in =>
          ?pat.subpatterns == 0
             | PatCondResult(ast::Exprs(), mk_choice_flag(target, pat.name))
             |
-               sub_raw = pat.subpatterns(0) | _ | pat_wildcard()
+               sub_raw = pat.subpatterns(0) | _ | pat_wildcard!
                pat_is_unconditional(sub_raw)
                   | PatCondResult(ast::Exprs(),
                     mk_choice_flag(target, pat.name))
@@ -5928,7 +5952,7 @@ pat_match_cond = p, target, pat_in =>
          acc_cond' = ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs()))
          k = ?pat.subpatterns
          k @ idx =>
-            sub_raw = pat.subpatterns(idx) | _ | pat_wildcard()
+            sub_raw = pat.subpatterns(idx) | _ | pat_wildcard!
             !pat_is_unconditional(sub_raw)
                |
                   sub = pat_rec(sub_raw)
@@ -5957,7 +5981,7 @@ pat_match_cond = p, target, pat_in =>
                acc_cond' = ast::Expr(Variant, (ast::Tag(Negative), ast::Exprs()))
                k = ?pat.subpatterns
                k @ idx =>
-                  sub_raw = pat.subpatterns(idx) | _ | pat_wildcard()
+                  sub_raw = pat.subpatterns(idx) | _ | pat_wildcard!
                   sub_res = pat_match_cond(p, target, sub_raw)
                   sub_res.stmts @ sbs => stmts += sbs
                   cond_var = fresh_dp_var(p)
@@ -5972,7 +5996,7 @@ pat_match_cond = p, target, pat_in =>
 
 expand_or_bind_pbrs: ParsedBranch{} => ParsedBranch{}
 expand_or_bind_pbrs = pbrs =>
-   out = empty_pbrs()
+   out = empty_pbrs!
    pbrs @ pb =>
       pr = pat_rec(pb.pattern)
       is_or_with_binds = pb.is_deep && pr.kind [Or] && pat_has_binds(pb.pattern)
@@ -5991,7 +6015,7 @@ desugar_inner_pattern_group = p, target, inner_pbrs_in, fallback_expr =>
    cur_cont' = fallback_expr
    n @ step =>
       idx = (n - 1) - step
-      b = inner_pbrs(idx) | _ | ParsedBranch(pat_wildcard(), <->,
+      b = inner_pbrs(idx) | _ | ParsedBranch(pat_wildcard!, <->,
         mk_branch(ast::Expr(Var, "")))
       is_unc = pat_is_unconditional(b.pattern)
       is_unc
@@ -6021,7 +6045,7 @@ desugar_deep_choice = p, lhs, pbrs_in =>
    scrut = is_var | lhs | ast::Expr(Var, s_name)
 
    last_idx = n - 1
-   last_pb = pbrs(last_idx) | _ | ParsedBranch(pat_wildcard(), <->,
+   last_pb = pbrs(last_idx) | _ | ParsedBranch(pat_wildcard!, <->,
      mk_branch(ast::Expr(Var, "")))
    has_fallback = choice_branch_is_bare(last_pb.branch)
    fallback_expr = has_fallback
@@ -6034,7 +6058,7 @@ desugar_deep_choice = p, lhs, pbrs_in =>
    num_to_fold = end_idx + 1
    num_to_fold @ step =>
       idx = end_idx - step
-      pb = pbrs(idx) | _ | ParsedBranch(pat_wildcard(), <->,
+      pb = pbrs(idx) | _ | ParsedBranch(pat_wildcard!, <->,
         mk_branch(ast::Expr(Var, "")))
       pb.is_deep
          |
@@ -6085,7 +6109,7 @@ group_variant_run_deep = pbrs, start_idx, end_idx =>
    k > 1
       | <+>
       |
-         pb = pbrs(start_idx) | _ | ParsedBranch(pat_wildcard(), <->,
+         pb = pbrs(start_idx) | _ | ParsedBranch(pat_wildcard!, <->,
            mk_branch(ast::Expr(Var, "")))
          pb.is_deep
 
@@ -6094,19 +6118,19 @@ build_grouped_variant: Parser, ParsedBranch{}, Int, Int,
 build_grouped_variant = p, pbrs, start_idx, end_idx, tag, fallback_expr =>
    pay_name = fresh_dp_var(p)
    pay_expr = ast::Expr(Var, pay_name)
-   inner_pbrs = empty_pbrs()
+   inner_pbrs = empty_pbrs!
    k = end_idx - start_idx
    k @ i =>
-      b = pbrs(start_idx + i) | _ | ParsedBranch(pat_wildcard(), <->,
+      b = pbrs(start_idx + i) | _ | ParsedBranch(pat_wildcard!, <->,
         mk_branch(ast::Expr(Var, "")))
       b_pr = pat_rec(b.pattern)
       sps = b_pr.subpatterns
       ns = ?sps
       sub_pat = ns == 0
-         | pat_wildcard()
+         | pat_wildcard!
          |
             ns == 1
-               | sps(0) | _ | pat_wildcard()
+               | sps(0) | _ | pat_wildcard!
                | pat_record(sps)
       is_d = pattern_is_deep(sub_pat)
       inner_pbrs += ParsedBranch(sub_pat, is_d, b.branch)
@@ -6125,7 +6149,7 @@ find_variant_run_end = pbrs, tag, j, limit =>
    j !< limit
       | limit
       |
-         curr = pbrs(j) | _ | ParsedBranch(pat_wildcard(), <->,
+         curr = pbrs(j) | _ | ParsedBranch(pat_wildcard!, <->,
            mk_branch(ast::Expr(Var, "")))
          curr_pr = pat_rec(curr.pattern)
          is_same = curr_pr.kind [Variant] && (curr_pr.name == tag)
@@ -6139,7 +6163,7 @@ group_variant_branches_loop = p, pbrs, i, limit, fallback_expr, acc =>
    i !< limit
       | acc
       |
-         pb = pbrs(i) | _ | ParsedBranch(pat_wildcard(), <->,
+         pb = pbrs(i) | _ | ParsedBranch(pat_wildcard!, <->,
            mk_branch(ast::Expr(Var, "")))
          pb_pr = pat_rec(pb.pattern)
          is_var = pb_pr.kind [Variant]
@@ -6170,14 +6194,14 @@ group_variant_branches = p, pbrs =>
       | pbrs
       |
          last_idx = n - 1
-         last_pb = pbrs(last_idx) | _ | ParsedBranch(pat_wildcard(), <->,
+         last_pb = pbrs(last_idx) | _ | ParsedBranch(pat_wildcard!, <->,
            mk_branch(ast::Expr(Var, "")))
          has_fallback = choice_branch_is_bare(last_pb.branch)
          fallback_expr = has_fallback
             | last_pb.branch.block
             | ast::Expr(Block, ast::Exprs())
          limit = has_fallback | last_idx | n
-         acc = empty_pbrs()
+         acc = empty_pbrs!
          res = group_variant_branches_loop(p, pbrs, 0, limit,
            fallback_expr, acc)
          has_fallback | res += last_pb
@@ -6223,9 +6247,9 @@ parse_pos_guard_choice = p, lhs =>
          b = gb.branch
          b.block = ast::Expr(Variant, (ast::Tag(Positive), ast::Exprs()))
          neg_b = mk_branch(ast::Expr(Variant, (ast::Tag(Negative), ast::Exprs())))
-         brs = empty_pbrs()
+         brs = empty_pbrs!
          brs += ParsedBranch(gb.pattern, gb.is_deep, b)
-         brs += ParsedBranch(pat_wildcard(), <->, neg_b)
+         brs += ParsedBranch(pat_wildcard!, <->, neg_b)
          finish_parsed_choice(p, lhs, brs)
       | <-->
 
@@ -6259,7 +6283,7 @@ choice_cont_init_at = p, lhs, entry_indent, init_bi =>
             | <-->
       |
          p.choice_depth = p.choice_depth + 1
-         r = choice_cont_loop(p, empty_pbrs(), entry_indent, init_bi)
+         r = choice_cont_loop(p, empty_pbrs!, entry_indent, init_bi)
          p.choice_depth = p.choice_depth - 1
          choice_unwind(p, entry_indent)
          p.indent_level > entry_indent && is_feed_cont_op(p.curr)
@@ -6319,15 +6343,15 @@ choice_skip_layout = p, entry_indent =>
 choice_cont_nest: Parser, ParsedBranch{}, Int, Int => <ParsedBranch{}|>
 choice_cont_nest = p, brs, entry_indent, branch_indent =>
    last_idx = ?brs - 1
-   last = brs(last_idx) | _ | ParsedBranch(pat_wildcard(), <->,
+   last = brs(last_idx) | _ | ParsedBranch(pat_wildcard!, <->,
      mk_branch(ast::Expr(Var, "")))
-   new_brs = empty_pbrs()
+   new_brs = empty_pbrs!
    brs @ b, i =>
       i < last_idx | new_brs += b
    nested = choice_cont_init_at(p, last.branch.block, branch_indent, p.indent_level)
    nested
       | nb =>
-         new_brs += ParsedBranch(pat_wildcard(), <->, mk_branch(nb))
+         new_brs += ParsedBranch(pat_wildcard!, <->, mk_branch(nb))
          choice_cont_loop(p, new_brs, entry_indent, branch_indent)
       | <-->
 
@@ -6374,7 +6398,7 @@ check_redundant_flag_pb = p, brs, bd =>
       |
          ?brs > 0
             |
-               last = brs(?brs - 1) | _ | ParsedBranch(pat_wildcard(), <->,
+               last = brs(?brs - 1) | _ | ParsedBranch(pat_wildcard!, <->,
                  mk_branch(ast::Expr(Var, "")))
                is_pos = expr_is_pos_flag(last.branch.block)
                is_pos
@@ -6412,7 +6436,7 @@ choice_step = p, brs, saw_sep =>
                      neg_b = mk_branch(ast::Expr(Variant,
                        (ast::Tag(Negative), ast::Exprs())))
                      brs += ParsedBranch(gb.pattern, gb.is_deep, b)
-                     brs += ParsedBranch(pat_wildcard(), <->, neg_b)
+                     brs += ParsedBranch(pat_wildcard!, <->, neg_b)
                      <+ brs +>
                   |
                      body = choice_body(p)
@@ -6439,7 +6463,7 @@ choice_step = p, brs, saw_sep =>
                            check_redundant_flag_pb(p, brs, bd)
                               | <-->
                               |
-                                 brs += ParsedBranch(pat_wildcard(), <->,
+                                 brs += ParsedBranch(pat_wildcard!, <->,
                                    mk_branch(bd))
                                  <+ brs +>
                         | <-->
@@ -6454,15 +6478,15 @@ choice_step = p, brs, saw_sep =>
                      body
                         | bd =>
                            v0 = mk_branch(ast::Expr(Block, ast::Exprs()))
-                           brs += ParsedBranch(pat_wildcard(), <->, v0)
-                           brs += ParsedBranch(pat_wildcard(), <->,
+                           brs += ParsedBranch(pat_wildcard!, <->, v0)
+                           brs += ParsedBranch(pat_wildcard!, <->,
                              mk_branch(bd))
                            <+ brs +>
                         | <-->
             ["|->", "|+>", "|-->", "|++>"]
                bd = mk_ram_return(p, p.curr.text)
                parser_advance(p)
-               brs += ParsedBranch(pat_wildcard(), <->, mk_branch(bd))
+               brs += ParsedBranch(pat_wildcard!, <->, mk_branch(bd))
                <+ brs +>
             | <-->
 
@@ -6565,7 +6589,7 @@ guard_variants = p, vnames, binds =>
 mk_shallow_pb: <ast::ChoiceBranch|> => <ParsedBranch|>
 mk_shallow_pb = res =>
    res
-      | br => <+ ParsedBranch(pat_wildcard(), <->, br) +>
+      | br => <+ ParsedBranch(pat_wildcard!, <->, br) +>
       | <-->
 
 pat_extract_binds: ast::Patterns => ast::Names
@@ -6598,7 +6622,7 @@ choice_guard_pattern_or_loop = p, alts, base_binds, gkind, err_msg =>
             | <-->
       [RBracket]
          parser_advance(p)
-         final_pat = ?alts == 1 | (alts(0) | _ | pat_wildcard()) | pat_or(alts)
+         final_pat = ?alts == 1 | (alts(0) | _ | pat_wildcard!) | pat_or(alts)
          dummy_br = ast::ChoiceBranch(
             gkind, ast::Exprs(),
             ast::Expr(Var, "?"), ast::Names(), ast::Names(),
@@ -6682,7 +6706,7 @@ choice_guard_expr = p =>
                mk_shallow_pb(gv(p, vals))
             [RBracket]
                parser_advance(p)
-               <+ ParsedBranch(pat_wildcard(), <->,
+               <+ ParsedBranch(pat_wildcard!, <->,
                  guard_branch_from(gv_expr)) +>
             | <-->
       | <-->
@@ -6698,7 +6722,7 @@ mk_type_pat_pb = p, n_toks, tag, binds =>
       ast::GuardKind(Variant), ast::Exprs(),
       ast::Expr(Var, "?"), vnames, binds, <->,
       ast::Expr(Var, "?"))
-   <+ ParsedBranch(pat_wildcard(), <->, br) +>
+   <+ ParsedBranch(pat_wildcard!, <->, br) +>
 
 choice_guard_type_lparen: Parser => <ParsedBranch|>
 choice_guard_type_lparen = p =>
@@ -7028,7 +7052,7 @@ choice_same_line_step = p, brs =>
                      neg_b = mk_branch(ast::Expr(Variant,
                        (ast::Tag(Negative), ast::Exprs())))
                      brs += ParsedBranch(gb.pattern, gb.is_deep, b)
-                     brs += ParsedBranch(pat_wildcard(), <->, neg_b)
+                     brs += ParsedBranch(pat_wildcard!, <->, neg_b)
                      <+ brs +>
                   |
                      body = choice_body_inner(p)
@@ -7058,7 +7082,7 @@ choice_same_line_step = p, brs =>
                            check_redundant_flag_pb(p, brs, bd)
                               | <-->
                               |
-                                 brs += ParsedBranch(pat_wildcard(), <->,
+                                 brs += ParsedBranch(pat_wildcard!, <->,
                                    mk_branch(bd))
                                  <+ brs +>
                         | <-->
@@ -7073,15 +7097,15 @@ choice_same_line_step = p, brs =>
                      body
                         | bd =>
                            v0 = mk_branch(ast::Expr(Block, ast::Exprs()))
-                           brs += ParsedBranch(pat_wildcard(), <->, v0)
-                           brs += ParsedBranch(pat_wildcard(), <->,
+                           brs += ParsedBranch(pat_wildcard!, <->, v0)
+                           brs += ParsedBranch(pat_wildcard!, <->,
                              mk_branch(bd))
                            <+ brs +>
                         | <-->
             ["|->", "|+>", "|-->", "|++>"]
                bd = mk_ram_return(p, p.curr.text)
                parser_advance(p)
-               brs += ParsedBranch(pat_wildcard(), <->, mk_branch(bd))
+               brs += ParsedBranch(pat_wildcard!, <->, mk_branch(bd))
                <+ brs +>
             | <-->
 
@@ -7103,7 +7127,7 @@ choice_same_line = p =>
          le2_opt = tok_is_neg_lbracket(p) | parse_neg_guard_choice(p, le) | <+ le +>
          le2_opt
             | le2 =>
-               r = choice_same_line_loop(p, empty_pbrs())
+               r = choice_same_line_loop(p, empty_pbrs!)
                r
                   | brs =>
                      ch_opt = finish_parsed_choice(p, le2, brs)
@@ -8121,18 +8145,24 @@ parse_expr_after_lparen = p, name =>
             | argv =>
                p.curr.kind
                   [RParen]
-                     parser_advance(p)
-                     c = make_call(p, name, argv)
-                     p.no_assign
-                        | <+ c +>
+                     ?argv == 0 && !name_is_upper(name)
                         |
-                           pc = parse_postfix_calls(p, c)
-                           pc
-                              | pce =>
-                                 p.curr.text
-                                    ["="] parse_finish_assignment(p, pce)
-                                    | <+ pce +>
-                              | <-->
+                           parser_error(p, 2104,
+                             "Empty parentheses '()' are not allowed on function calls; use postfix '!' for zero-argument calls.")
+                           <-->
+                        |
+                           parser_advance(p)
+                           c = make_call(p, name, argv)
+                           p.no_assign
+                              | <+ c +>
+                              |
+                                 pc = parse_postfix_calls(p, c)
+                                 pc
+                                    | pce =>
+                                       p.curr.text
+                                          ["="] parse_finish_assignment(p, pce)
+                                          | <+ pce +>
+                                    | <-->
                   | <-->
             | <-->
 

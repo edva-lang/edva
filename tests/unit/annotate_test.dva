@@ -47,8 +47,8 @@ main = !=>
 
    ti_unk = ast::TypeInfo(Prim, ast::ValueType(Unknown))
    // 1. Literal typing and layout
-   ctx = unify::new_ctx()
-   env = type_env::new_env()
+   ctx = unify::new_ctx!
+   env = type_env::new_env!
 
    e_int = ast::Expr(Int, 42)
    te_int = annotate::annotate_expr(ctx, env, e_int)
@@ -81,21 +81,21 @@ main = !=>
    assert_true(is_flag, "Comparison produces Flag type")
 
    // 3. Environment Scoping and Variable Binding
-   type_env::bind_local(env, "x", unify::prim_int(), ti_unk, <->)
+   type_env::bind_local(env, "x", unify::prim_int!, ti_unk, <->)
    te_var_x = annotate::annotate_expr(ctx, env, ast::Expr(Var, "x"))
    c_var_x = unify::canon(ctx, te_var_x.ut)
    is_x_int = c_var_x [Prim p] p == unify::UPrim(Int) | <->
    assert_true(is_x_int, "Variable 'x' resolves to Int")
 
    type_env::enter_scope(env)
-   type_env::bind_local(env, "y", unify::prim_float(), ti_unk, <+>)
+   type_env::bind_local(env, "y", unify::prim_float!, ti_unk, <+>)
    te_var_y = annotate::annotate_expr(ctx, env, ast::Expr(Var, "y"))
    c_var_y = unify::canon(ctx, te_var_y.ut)
    is_y_flt = c_var_y [Prim p] p == unify::UPrim(Float) | <->
    assert_true(is_y_flt, "Inner scope variable 'y' resolves to Float")
 
    // Masking test
-   type_env::bind_local(env, "x", unify::prim_str(), ti_unk, <->)
+   type_env::bind_local(env, "x", unify::prim_str!, ti_unk, <->)
    te_masked_x = annotate::annotate_expr(ctx, env, ast::Expr(Var, "x"))
    c_masked_x = unify::canon(ctx, te_masked_x.ut)
    is_masked_str = c_masked_x [Prim p] p == unify::UPrim(Str) | <->
@@ -108,14 +108,14 @@ main = !=>
    assert_true(is_restored_int, "Outer scope restores 'x' to Int")
 
    // 4. Undefined variable error detection
-   ctx_err = unify::new_ctx()
-   env_err = type_env::new_env()
+   ctx_err = unify::new_ctx!
+   env_err = type_env::new_env!
    annotate::annotate_expr(ctx_err, env_err, ast::Expr(Var, "nonexistent_var"))
    assert_true(unify::has_errors(ctx_err), "Undefined variable produces error")
 
    // 5. Type mismatch in arithmetic
-   ctx_mismatch = unify::new_ctx()
-   env_mismatch = type_env::new_env()
+   ctx_mismatch = unify::new_ctx!
+   env_mismatch = type_env::new_env!
    bad_bin = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Int, 5),
       ast::Expr(Str, "bad")))
    annotate::annotate_expr(ctx_mismatch, env_mismatch, bad_bin)
@@ -123,12 +123,12 @@ main = !=>
       "Int + String produces type mismatch error")
 
    // 6. Function Call Annotation
-   ctx_fn = unify::new_ctx()
-   env_fn = type_env::new_env()
+   ctx_fn = unify::new_ctx!
+   env_fn = type_env::new_env!
    fn_params = unify::UTypes()
-   fn_params += unify::prim_int()
-   fn_params += unify::prim_int()
-   fn_sig = unify::mk_fn(fn_params, unify::prim_int())
+   fn_params += unify::prim_int!
+   fn_params += unify::prim_int!
+   fn_sig = unify::mk_fn(fn_params, unify::prim_int!)
    type_env::bind_local(env_fn, "my_add", fn_sig, ti_unk, <->)
 
    call_args = ast::Exprs()
@@ -143,8 +143,8 @@ main = !=>
    assert_true(is_call_int, "Function call return type inferred as Int")
 
    // Call with bad argument type
-   ctx_bad_call = unify::new_ctx()
-   env_bad_call = type_env::new_env()
+   ctx_bad_call = unify::new_ctx!
+   env_bad_call = type_env::new_env!
    type_env::bind_local(env_bad_call, "my_add", fn_sig, ti_unk, <->)
    bad_args = ast::Exprs()
    bad_args += ast::Expr(Int, 10)
@@ -155,8 +155,8 @@ main = !=>
       "Bad argument type produces error")
 
    // 7. Lambda Expression Typing
-   ctx_lam = unify::new_ctx()
-   env_lam = type_env::new_env()
+   ctx_lam = unify::new_ctx!
+   env_lam = type_env::new_env!
    lam_params = ast::Names()
    lam_params += "a"
    lam_body = ast::Expr(Bin, (ast::BinaryOp(Add), ast::Expr(Var, "a"),
@@ -167,8 +167,8 @@ main = !=>
    assert_eq_int(te_lam.layout.size, 16, "Closure layout size is 16")
 
    // 8. Record Literal Annotation and Layout
-   ctx_rec = unify::new_ctx()
-   env_rec = type_env::new_env()
+   ctx_rec = unify::new_ctx!
+   env_rec = type_env::new_env!
    r_fields = ast::Fields()
    r_fields += ast::RecordField(<+>, "id", ast::Expr(Int, 1))
    r_fields += ast::RecordField(<+>, "name", ast::Expr(Str, "item"))
@@ -180,7 +180,7 @@ main = !=>
       "Record layout has expected composite size")
 
    // 9. Groundness Check Enforcement (No Defaulting to Int)
-   ctx_ground = unify::new_ctx()
+   ctx_ground = unify::new_ctx!
    free_var = unify::fresh_var(ctx_ground)
    is_ground = unify::is_ground(ctx_ground, free_var)
    assert_true(!is_ground, "Free type variable fails groundness check")
@@ -201,8 +201,8 @@ main = !=>
    assert_true(has_prog, "Elaborate program succeeds on well-typed program")
 
    // 11. Unary Operations
-   ctx_u = unify::new_ctx()
-   env_u = type_env::new_env()
+   ctx_u = unify::new_ctx!
+   env_u = type_env::new_env!
    u_not = ast::Expr(Unary, (ast::UnaryOp(Not),
       ast::Expr(Bin, (ast::BinaryOp(Eq), ast::Expr(Int, 1),
          ast::Expr(Int, 1)))))
@@ -224,8 +224,8 @@ main = !=>
    assert_true(is_bnot_int, "Bitwise NOT of int produces Int")
 
    // 12. Member Field Access
-   ctx_m = unify::new_ctx()
-   env_m = type_env::new_env()
+   ctx_m = unify::new_ctx!
+   env_m = type_env::new_env!
    type_env::bind_local(env_m, "rec", te_rec.ut, te_rec.ti, <->)
    type_env::init_mark_whole(env_m, "rec")
    m_expr = ast::Expr(Member, ast::MemberExpr(ast::Expr(Var, "rec"),
@@ -236,8 +236,8 @@ main = !=>
    assert_true(is_m_str, "Member access 'name' resolves to Str")
 
    // 13. Cycle and CycleEscape
-   ctx_cyc = unify::new_ctx()
-   env_cyc = type_env::new_env()
+   ctx_cyc = unify::new_ctx!
+   env_cyc = type_env::new_env!
    cyc_body = ast::Expr(Fn, (ast::Names(), ast::Names(), ast::Expr(Int, 0)))
    cyc_expr = ast::Expr(Cycle,
       ast::CycleExpr(ast::Expr(Int, 5), cyc_body, <->))
@@ -474,8 +474,8 @@ main = !=>
    assert_true(poly_failed, "Ungrounded recursive function reports error")
 
    // 17. RawMemory elaboration
-   rm_ctx = unify::new_ctx()
-   rm_env = type_env::new_env()
+   rm_ctx = unify::new_ctx!
+   rm_env = type_env::new_env!
    rm_expr = ast::Expr(RawMemory, ast::RawMemoryExpr(ast::Expr(Int, 1000),
       ast::ValueType(I32), ""))
    rm_te = annotate::annotate_expr(rm_ctx, rm_env, rm_expr)

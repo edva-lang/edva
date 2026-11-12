@@ -13,7 +13,7 @@
 #use uring
 
 // 1. Non-blocking pipe & try_read
-p = os::pipe()!!
+p = os::pipe!!!
 test::ok(os::set_nonblocking(p.r), "set_nonblocking on pipe read end")
 
 // Nothing written yet -> <+ "" +> (EAGAIN)
@@ -113,7 +113,7 @@ test::eq(r2.stderr, "err-2", "multiplex child 2 stderr")
 uring::new(16)
    | ring =>
       // Test prep_pipe_write + prep_pipe_read on an anonymous pipe
-      up = os::pipe()!!
+      up = os::pipe!!!
       msg = "uring-pipe-msg"
       uring::prep_pipe_write(ring, up.w, &msg, ?msg, 1)
       uring::submit(ring)

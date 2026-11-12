@@ -155,37 +155,37 @@ mk_typed_expr = kind, ut, ti, layout, line, col =>
 
 mk_lit_int: Int, Int, Int => TypedExpr
 mk_lit_int = val, line, col =>
-   ut = unify::prim_int()
+   ut = unify::prim_int!
    ti = ast::TypeInfo(Prim, ast::ValueType(Int))
    lay = layout_scalar(8, 8)
    mk_typed_expr(TypedExprKind(LitInt, val), ut, ti, lay, line, col)
 
 mk_lit_float: Float, Int, Int => TypedExpr
 mk_lit_float = val, line, col =>
-   ut = unify::prim_float()
+   ut = unify::prim_float!
    ti = ast::TypeInfo(Prim, ast::ValueType(Float))
    lay = layout_scalar(8, 8)
    mk_typed_expr(TypedExprKind(LitFloat, val), ut, ti, lay, line, col)
 
 mk_lit_str: String, Int, Int => TypedExpr
 mk_lit_str = val, line, col =>
-   ut = unify::prim_str()
+   ut = unify::prim_str!
    ti = ast::TypeInfo(Prim, ast::ValueType(Str))
    lay = layout_scalar(16, 8)
    mk_typed_expr(TypedExprKind(LitStr, val), ut, ti, lay, line, col)
 
 mk_lit_flag: <>, Int, Int => TypedExpr
 mk_lit_flag = val, line, col =>
-   ut = unify::prim_flag()
+   ut = unify::prim_flag!
    ti = ast::TypeInfo(Prim, ast::ValueType(Flag))
    lay = layout_scalar(1, 1)
    mk_typed_expr(TypedExprKind(LitFlag, val), ut, ti, lay, line, col)
 
 mk_lit_unit: Int, Int => TypedExpr
 mk_lit_unit = line, col =>
-   ut = unify::prim_unit()
+   ut = unify::prim_unit!
    ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
-   lay = layout_void()
+   lay = layout_void!
    mk_typed_expr(TypedExprKind(LitUnit), ut, ti, lay, line, col)
 
 mk_typed_var: String, Int, <>, unify::UType, ast::TypeInfo, TypedLayout,
@@ -245,9 +245,9 @@ mk_typed_builder_new = cap, ut, ti, lay, line, col =>
 
 mk_typed_cycle_jump: <>, Int, Int, Int => TypedExpr
 mk_typed_cycle_jump = is_break, level, line, col =>
-   ut = unify::prim_unit()
+   ut = unify::prim_unit!
    ti = ast::TypeInfo(Prim, ast::ValueType(Unit))
-   lay = layout_void()
+   lay = layout_void!
    mk_typed_expr(TypedExprKind(CycleJump, (is_break, level)), ut, ti, lay,
       line, col)
 

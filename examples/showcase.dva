@@ -124,7 +124,7 @@ add: Int, Int, Int => Int
 add = a, b, c => a + b + c
 
 // Zero-argument functions use `() => R` in the signature and `!=>` in the body.
-// They are invoked with postfix `!` (`next_id!`) or empty parens (`next_id()`).
+// They are invoked with postfix `!` (`next_id!`); empty parens `()` are forbidden on function calls (`E2104`).
 next_id: () => Int
 next_id = !=> bump_audit!
 

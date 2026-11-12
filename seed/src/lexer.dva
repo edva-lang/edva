@@ -631,6 +631,16 @@ scan_op = lx, start, line, col =>
       lx.col = col + 2
       --| mktok(lx, TokKind(Op), start, 2, line, col, "..")
 
+   is_bang_postfix_split = lx.src(start) == '! && (
+      (i' - start !< 3 && lx.src(start + 1) == '! && lx.src(start + 2) == '!) ||
+      (i' - start !< 4 && lx.src(start + 1) == '- && lx.src(start + 2) == '- && lx.src(start + 3) == '!) ||
+      (i' - start !< 2 && (lx.src(start + 1) == '. || lx.src(start + 1) == '^)) ||
+      (i' - start !< 3 && lx.src(start + 1) == '< && lx.src(start + 2) == '>))
+   is_bang_postfix_split |
+      lx.pos = start + 1
+      lx.col = col + 1
+      --| mktok(lx, TokKind(Op), start, 1, line, col, "!")
+
    is_unwrap_split = i' - start > 2 && lx.src(start) == '! &&
       lx.src(start + 1) == '!
    is_unwrap_split |

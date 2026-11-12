@@ -169,13 +169,13 @@ call = op, a, b, c, key, value =>
 
 unit_call: Int, Int, Int, Int, String, String => < | Error >
 unit_call = op, a, b, c, key, value =>
-   available()--!
+   available!--!
    call(op, a, b, c, key, value)--!
    <++>
 
 string_call: Int, Int, String => < String | Error >
 string_call = op, a, key =>
-   available()--!
+   available!--!
    reply = call(op, a, 0, 0, key, "")--!
    <+ reply_string(reply) ->
 
@@ -235,7 +235,7 @@ property_owned = id, op, key =>
 
 write: Int, Element, String, String, Int => < | Error >
 write = op, element, key, value, flag =>
-   available()--!
+   available!--!
    id = token(element)
    p = property(id, op, key)
    // Form state must always validate live browser state; other tracked writes
@@ -252,17 +252,17 @@ write = op, element, key, value, flag =>
 #public
 find: String => < Element | Error >
 find = selector =>
-   available()--!
+   available!--!
    r = call(1, 0, 0, 0, selector, "")--!
    <+ element_from(r.first) ->
 find_in: Element, String => < Element | Error >
 find_in = scope, selector =>
-   available()--!
+   available!--!
    r = call(2, token(scope), 0, 0, selector, "")--!
    <+ element_from(r.first) ->
 create: String => < Element | Error >
 create = tag =>
-   available()--!
+   available!--!
    r = call(3, 0, 0, 0, tag, "")--!
    <+ element_from(r.first) ->
 append: Element, Element => < | Error >
@@ -285,7 +285,7 @@ value: Element, String => < | Error >
 value = element, value => write(13, element, "", value, 0)
 attr: Element, String => < < String | > | Error >
 attr = element, name =>
-   available()--!
+   available!--!
    r = call(14, token(element), 0, 0, name, "")--!
    s = reply_string(r)
    present = r.x != 0.0 | <+ s +> | <-->
@@ -294,7 +294,7 @@ attr: Element, String, String => < | Error >
 attr = element, name, value => write(15, element, name, value, 0)
 remove_attr: Element, String => < | Error >
 remove_attr = element, name =>
-   available()--!
+   available!--!
    invalidate_attribute(token(element), name)
    unit_call(16, token(element), 0, 0, name, "")
 style: Element, String, String => < | Error >
@@ -303,7 +303,7 @@ class_set: Element, String, <> => < | Error >
 class_set = element, name, enabled => write(18, element, name, "", enabled | 1 | 0)
 checked: Element => < <> | Error >
 checked = element =>
-   available()--!
+   available!--!
    r = call(19, token(element), 0, 0, "", "")--!
    <+ r.first != 0 ->
 checked: Element, <> => < | Error >
@@ -316,7 +316,7 @@ invalidate_subtree: Element => < | Error >
 invalidate_subtree = element => unit_call(23, token(element), 0, 0, "", "")
 bounds: Element => < Rect | Error >
 bounds = element =>
-   available()--!
+   available!--!
    r = call(30, token(element), 0, 0, "", "")--!
    <+ Rect(r.x, r.y, r.z, r.w) ->
 computed_style: Element, String => < String | Error >
@@ -339,7 +339,7 @@ download_text: String, String => < | Error >
 download_text = filename, value => unit_call(66, 0, 0, 0, filename, value)
 is_empty: Element => < <> | Error >
 is_empty = element =>
-   available()--!
+   available!--!
    r = call(49, token(element), 0, 0, "", "")--!
    <+ r.first != 0 ->
 
@@ -542,7 +542,7 @@ request_style = measurements, element, name => request(measurements, 31, element
 measure: Measurements => < | Error >
 measure = measurements =>
    measurements.closed | --| <- error(CLOSED, "Measurements are closed") ->
-   available()--!
+   available!--!
    measurements.results @ result => result.ready = <->
    serialize(measurements.commands, measurements.count, measurements.wire)--!
    active_measurements ::= <+ measurements +>
@@ -739,7 +739,7 @@ stop_propagation = event =>
 register: Element, String, String, ListenerOptions,
    (Event => < | Error >) => < Listener | Error >
 register = element, kind, selector, options, callback =>
-   available()--!
+   available!--!
    options.passive && options.prevent_default
       | --| <- error(INVALID_OPTIONS, "Passive listener cannot prevent default") +>
    index' = ?callbacks
@@ -829,7 +829,7 @@ on_error = handler =>
 #type Elements Element{}
 children: Element => < Elements | Error >
 children = parent =>
-   available()--!
+   available!--!
    reply = call(51, token(parent), 0, 0, "", "")--!
    result = Elements()
    reply.length @ i =>

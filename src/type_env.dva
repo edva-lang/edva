@@ -83,7 +83,7 @@ new_env = !=>
    globals: TypeBinding{}
    generics: GenericDecl{}
    user_types: UserTypeDef{}
-   TypeEnv(scopes, 0, 0, globals, new_init(), generics,
+   TypeEnv(scopes, 0, 0, globals, new_init!, generics,
       user_types, CachedBodies(), "", <->, <->, <->, <->,
       ast::Names(), ast::Names(), <-->, "none")
 
@@ -144,7 +144,7 @@ leave_scope = env =>
    cur_idx !< 0
       |
          scs = env.scopes
-         cur_sc = scs(cur_idx) | _ | empty_scope()
+         cur_sc = scs(cur_idx) | _ | empty_scope!
          env.cur_scope = cur_sc.parent
          env.cur_depth > 0
             | env.cur_depth = env.cur_depth - 1
@@ -156,7 +156,7 @@ bind_local = env, name, ut, ti, is_mut =>
    cur_idx !< 0
       |
          scs = env.scopes
-         cur_sc = scs(cur_idx) | _ | empty_scope()
+         cur_sc = scs(cur_idx) | _ | empty_scope!
          bnds = cur_sc.bindings
          indices = cur_sc.indices
          indices ^ name = ?bnds
@@ -171,7 +171,7 @@ unbind_local = env, name =>
    cur_idx !< 0
       |
          scs = env.scopes
-         cur_sc = scs(cur_idx) | _ | empty_scope()
+         cur_sc = scs(cur_idx) | _ | empty_scope!
          indices = cur_sc.indices
          indices ^ name = 0 - 1
          scs(cur_idx) = cur_sc !| _
@@ -217,7 +217,7 @@ lookup_local_exact = env, name =>
       | <-->
       |
          scs = env.scopes
-         cur_sc = scs(cur_idx) | _ | empty_scope()
+         cur_sc = scs(cur_idx) | _ | empty_scope!
          lookup_scope(cur_sc, name)
 
 lookup_scope: TypeScope, String => < TypeBinding | >
@@ -258,7 +258,7 @@ lookup_binding_exact = env, name =>
       curr' < 0
          | -->
          |
-            sc = scs(curr') | _ | empty_scope()
+            sc = scs(curr') | _ | empty_scope!
             lookup_scope(sc, name)
                | binding =>
                   found' = <+ binding +>
