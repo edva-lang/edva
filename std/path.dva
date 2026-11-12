@@ -370,7 +370,6 @@ has_prefix = p, prefix =>
 has_traversal: String => <>
 has_traversal = p =>
    len = ?p
-   found' = <->
    start' = 0
    (len + 1) @ i =>
       is_end = i == len
@@ -378,9 +377,6 @@ has_traversal = p =>
       is_win_sep(c)
          |
             seg_len = i - start'
-            seg_len == 2 && p(start') == '. && p(start' + 1) == '.
-               |
-                  found' = <+>
-                  -->
+            seg_len == 2 && p(start') == '. && p(start' + 1) == '. |+>
             start' = i + 1
-   found'
+   <->

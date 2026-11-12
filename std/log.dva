@@ -102,14 +102,9 @@
    needs_quoting: String => <>
    needs_quoting = s =>
       ?s == 0 |+>
-      hit' = <->
-      ?s @ i =>
-         c = s(i)
-         c ['\s, '\t, '\n, '\r, '", '=]
-            |
-               hit' = <+>
-               -->
-      hit'
+      s @ c =>
+         c ['\s, '\t, '\n, '\r, '", '=] |+>
+      <->
 
    quote_value: String => String
    quote_value = s =>
@@ -348,16 +343,13 @@
                   b += '}
             +b
          [<..>]
-            res' = ++V.name
             V @ vr =>
                v.(vr)
                   | pay =>
                      vr.type
-                        [()]
-                           res' = vr.name
-                        |
-                           res' = vr.name + "(" + format_val(vr.type, pay) + ")"
-            res'
+                        [()] --| vr.name
+                        | --| vr.name + "(" + format_val(vr.type, pay) + ")"
+            V.name
          | V.name
 
    field: #! V: Type, String, V => String

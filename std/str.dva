@@ -186,15 +186,11 @@
       la = ?a
       lb = ?b
       n = la < lb | la | lb
-      r' = 0
       0..n @ i =>
          ca = a(i)
          cb = b(i)
-         ca != cb
-            |
-               r' = ca < cb | -1 | 1
-               -->
-      r' != 0 | r' | (la == lb | 0 | (la < lb | -1 | 1))
+         ca != cb | --| (ca < cb | -1 | 1)
+      la == lb | 0 | (la < lb | -1 | 1)
 
    // "a < b" as a bare Flag — the less-than predicate a sort comparator wants.
    lt: String, String => <>
@@ -258,10 +254,9 @@
 
    is_blank: String => <>
    is_blank = s =>
-      blank' = <+>
-      ?s @ i =>
-         !str::is_ws(s(i)) | (blank' = <->; -->)
-      blank'
+      s @ c =>
+         !str::is_ws(c) |->
+      <+>
 
    starts_with: String, String => <>
    starts_with = s, prefix =>
@@ -291,13 +286,9 @@
                |
                   limit = ls - ln + 1
                   first_b = needle(0)
-                  res' = <-->
                   st..limit @ i =>
-                     s(i) == first_b && s(i..(i + ln)) == needle
-                        |
-                           res' = <+ i +>
-                           -->
-                  res'
+                     s(i) == first_b && s(i..(i + ln)) == needle | --| <+ i +>
+                  <-->
 
    find: String, String => < Int | >
    find = s, needle => str::find_from(s, needle, 0)
@@ -314,14 +305,10 @@
                |
                   span = ls - ln + 1
                   first_b = needle(0)
-                  res' = <-->
                   span @ k =>
                      i = ls - ln - k
-                     s(i) == first_b && s(i..(i + ln)) == needle
-                        |
-                           res' = <+ i +>
-                           -->
-                  res'
+                     s(i) == first_b && s(i..(i + ln)) == needle | --| <+ i +>
+                  <-->
 
    contains: String, String => <>
    contains = s, needle => <>(str::find(s, needle))
@@ -620,15 +607,12 @@
             is_bin_pfx
                |
                   val' = 0
-                  ok' = <+>
                   2..lbody @ i =>
                      ch = body(i)
                      (ch == '0 || ch == '1)
                         | val' = val' * 2 + (ch - '0)
-                        | (ok' = <->; -->)
-                  ok'
-                     | <+ (neg | -val' | val') +>
-                     | <-->
+                        |-->
+                  <+ (neg | -val' | val') +>
                |
                   str::to_int(body)
                      | d =>

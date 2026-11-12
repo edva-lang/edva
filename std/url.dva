@@ -320,26 +320,15 @@ parse_query = raw_qs =>
    out = QueryParams()
    ?qs == 0 | --| <+ out ->
    parts = str::split(qs, "&")
-   has_err' = <->
-   err_val' = url_err("", 0)
    parts @ part =>
-      (!has_err' && ?part > 0) |
+      ?part > 0 |
          eq_opt = str::split_once(part, "=")
          raw_k = eq_opt | p => p.0 | part
          raw_v = eq_opt | p => p.1 | ""
-         decode_form(raw_k)
-            | k =>
-               decode_form(raw_v)
-                  | v => out += QueryEntry(k, v)
-                  | err =>
-                     has_err' = <+>
-                     err_val' = err
-            | err =>
-               has_err' = <+>
-               err_val' = err
-   has_err'
-      | <- err_val' +>
-      | <+ out ->
+         k = decode_form(raw_k)--!
+         v = decode_form(raw_v)--!
+         out += QueryEntry(k, v)
+   <+ out ->
 
 // Formats `QueryParams` into a `k1=v1&k2=v2` query string.
 format_query: QueryParams => String
@@ -356,13 +345,9 @@ format_query = params =>
 // Returns the first value associated with `key` in `params`, or `<-->`.
 get_query: QueryParams, String => < String | >
 get_query = params, key =>
-   hit' = <-->
    params @ e =>
-      e.key == key
-         |
-            hit' = <+ e.val +>
-            -->
-   hit'
+      e.key == key | --| <+ e.val +>
+   <-->
 
 // Returns all values associated with `key` in `params`.
 get_query_all: QueryParams, String => String{}
@@ -380,14 +365,13 @@ query_scalar_str = v =>
       [<>] (v | "true" | "false")
       [Rune] utf::encode_rune(v)
       [<..>]
-         res' = ++V.name
          V @ vr =>
             v.(vr)
                | pay =>
                   vr.type
-                     [()] res' = vr.name
-                     | res' = vr.name + ":" + query_scalar_str(pay)
-         res'
+                     [()] --| vr.name
+                     | --| vr.name + ":" + query_scalar_str(pay)
+         V.name
       | V.name
 
 append_query_field: #! V: Type, QueryParams, String, V => ()
@@ -422,17 +406,11 @@ decode_query_scalar = s =>
             ["false", "0", "no", "off"]  <+ <-> ->
             | <- url_err("invalid boolean in query: '" + s + "'", 0) +>
       [<..>]
-         out' = T.zero
-         matched' = <->
          T @ v =>
             v.name == s |
                v.type
-                  [()]
-                     out' = T(v)
-                     matched' = <+>
-         matched'
-            | <+ out' ->
-            | <- url_err("unknown enum variant '" + s + "' for " + T.name, 0) +>
+                  [()] --| <+ T(v) ->
+         <- url_err("unknown enum variant '" + s + "' for " + T.name, 0) +>
       | <- url_err("unsupported query field type " + T.name, 0) +>
 
 #public
@@ -462,84 +440,39 @@ encode_query = val =>
 // Decodes a URL query string into target type `T` (`[(..)]`, `K ^ V`, or `QueryParams`).
 decode_query: #! T: Type, String => < T | Error >
 decode_query = raw_qs =>
-   parse_query(raw_qs)
-      | params =>
-         T
-            [QueryParams] <+ params ->
-            [K ^ V]
-               mp' = T.zero
-               has_err' = <->
-               err_val' = url_err("", 0)
-               params @ e =>
-                  !has_err' |
-                     dec_k = decode_query_scalar(K, e.key)
-                     dec_k
-                        | k =>
-                           dec_v = decode_query_scalar(V, e.val)
-                           dec_v
-                              | v => mp' ^ k = v
-                              | err =>
-                                 has_err' = <+>
-                                 err_val' = err
-                        | err =>
-                           has_err' = <+>
-                           err_val' = err
-               has_err'
-                  | <- err_val' +>
-                  | <+ mp' ->
-            [(..)]
-               rec' = T.zero
-               has_err' = <->
-               err_val' = url_err("", 0)
-               T @ f =>
-                  !has_err' |
-                     f.type
-                        [E{}]
-                           raw_list = get_query_all(params, f.name)
-                           arr' = f.type.zero
-                           raw_list @ item_s =>
-                              !has_err' |
-                                 dec_e = decode_query_scalar(E, item_s)
-                                 dec_e
-                                    | elem => arr' += elem
-                                    | err =>
-                                       has_err' = <+>
-                                       err_val' = err
-                           rec'.(f) = arr'
-                        [<P|>]
-                           val_opt = get_query(params, f.name)
-                           val_opt
-                              | raw_v =>
-                                 dec_p = decode_query_scalar(P, raw_v)
-                                 dec_p
-                                    | pv => rec'.(f) = <+ pv +>
-                                    | err =>
-                                       has_err' = <+>
-                                       err_val' = err
-                              |
-                                 rec'.(f) = <-->
-                        |
-                           val_opt = get_query(params, f.name)
-                           val_opt
-                              | raw_v =>
-                                 dec_fv = decode_query_scalar(f.type, raw_v)
-                                 dec_fv
-                                    | fv => rec'.(f) = fv
-                                    | err =>
-                                       has_err' = <+>
-                                       err_val' = err
-                              |
-                                 f_def = f.default
-                                 f_def
-                                    | def => rec'.(f) = def
-                                    |
-                                       has_err' = <+>
-                                       err_val' = url_err("missing required query parameter '" + f.name + "'", 0)
-               has_err'
-                  | <- err_val' +>
-                  | <+ rec' ->
-            | <- url_err("unsupported target type " + T.name + " in url::decode_query", 0) +>
-      | err => <- err +>
+   params = parse_query(raw_qs)--!
+   T
+      [QueryParams] <+ params ->
+      [K ^ V]
+         mp' = T.zero
+         params @ e =>
+            k = decode_query_scalar(K, e.key)--!
+            v = decode_query_scalar(V, e.val)--!
+            mp' ^ k = v
+         <+ mp' ->
+      [(..)]
+         rec' = T.zero
+         T @ f =>
+            f.type
+               [E{}]
+                  raw_list = get_query_all(params, f.name)
+                  arr' = f.type.zero
+                  raw_list @ item_s =>
+                     arr' += decode_query_scalar(E, item_s)--!
+                  rec'.(f) = arr'
+               [<P|>]
+                  get_query(params, f.name)
+                     | raw_v => rec'.(f) = <+ decode_query_scalar(P, raw_v)--! +>
+                     | rec'.(f) = <-->
+               |
+                  get_query(params, f.name)
+                     | raw_v => rec'.(f) = decode_query_scalar(f.type, raw_v)--!
+                     |
+                        f.default
+                           | def => rec'.(f) = def
+                           | --| <- url_err("missing required query parameter '" + f.name + "'", 0) +>
+         <+ rec' ->
+      | <- url_err("unsupported target type " + T.name + " in url::decode_query", 0) +>
 
 // Canonical `encode` entry point: formats a `Url` or encodes a query record/map.
 encode: #! T: Type, T => String

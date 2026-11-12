@@ -61,16 +61,12 @@ write_all: Int, String => <>
 write_all = fd, data =>
    n = ?data
    off' = 0
-   ok' = <+>
    (off' < n) @
       slice = data(off'..n)
       w = libc::write(fd, slice, ?slice)
-      w !> 0
-         |
-            ok' = <->
-            -->
-         | off' = off' + w
-   ok'
+      w !> 0 |->
+      off' = off' + w
+   <+>
 
 read_exact_at: Int, Int, Int => < String | Error >
 read_exact_at = fd, off, len =>
@@ -113,37 +109,30 @@ replay_log = db, content =>
    n < 5 || content(0..5) != KV_MAGIC
       | --| <- kv_err("invalid KV store header magic", 0) ->
    off' = 5
-   err_opt' = <-->
-   (off' < n && !<>(err_opt')) @
+   (off' < n) @
       off' + 13 > n
-         | err_opt' = <+ kv_err("truncated record header in KV log", off') +>
+         | --| <- kv_err("truncated record header in KV log", off') ->
+      exp_crc = binary::read_u32_le(content, off')--!
+      flags = content(off' + 4) .&. 0xFF
+      klen = Int(binary::read_u32_le(content, off' + 5)--!)
+      vlen = Int(binary::read_u32_le(content, off' + 9)--!)
+      rec_end = off' + 13 + klen + vlen
+      rec_end > n
+         | --| <- kv_err("truncated record payload in KV log", off') ->
+      got_crc = hash::crc32(content(off' + 4..rec_end))
+      exp_crc != got_crc
+         | --| <- kv_err("CRC-32 mismatch in KV log record", off') ->
+      key = content(off' + 13..off' + 13 + klen)
+      val_off = off' + 13 + klen
+      flags == FLAG_PUT
+         | put_keydir(db.keydir, key, val_off, vlen)
          |
-            exp_crc = binary::read_u32_le(content, off')--!
-            flags = content(off' + 4) .&. 0xFF
-            klen = Int(binary::read_u32_le(content, off' + 5)--!)
-            vlen = Int(binary::read_u32_le(content, off' + 9)--!)
-            rec_end = off' + 13 + klen + vlen
-            rec_end > n
-               | err_opt' = <+ kv_err("truncated record payload in KV log", off') +>
-               |
-                  got_crc = hash::crc32(content(off' + 4..rec_end))
-                  exp_crc != got_crc
-                     | err_opt' = <+ kv_err("CRC-32 mismatch in KV log record", off') +>
-                     |
-                        key = content(off' + 13..off' + 13 + klen)
-                        val_off = off' + 13 + klen
-                        flags == FLAG_PUT
-                           | put_keydir(db.keydir, key, val_off, vlen)
-                           |
-                              flags == FLAG_DEL
-                                 | _rem = db.keydir ^- key
-                                 | err_opt' = <+ kv_err("unknown record flag in KV log", off') +>
-                        off' = rec_end
-   err_opt'
-      | e => <- e ->
-      |
-         db.pos = n
-         <++>
+            flags == FLAG_DEL
+               | _rem = db.keydir ^- key
+               | --| <- kv_err("unknown record flag in KV log", off') ->
+      off' = rec_end
+   db.pos = n
+   <++>
 
 read_all_file: String => String
 read_all_file = path =>

@@ -53,21 +53,13 @@ default_less = a, b =>
       [Rune] Int(a) < Int(b)
       [<>] !a && b
       [(..)]
-         decided' = <->
-         res' = <->
          T @ f =>
-            !decided' |
-               f.type
-                  [<P|>]
-                     decided' = decided'
-                  |
-                     default_less(f.type, a.(f), b.(f)) |
-                        decided' = <+>
-                        res' = <+>
-                     !decided' && default_less(f.type, b.(f), a.(f)) |
-                        decided' = <+>
-                        res' = <->
-         res'
+            f.type
+               [<P|>] _
+               |
+                  default_less(f.type, a.(f), b.(f)) |+>
+                  default_less(f.type, b.(f), a.(f)) |->
+         <->
       | <->
 
 sift_up_default: #! T: Type, (data: T{}, size: Int), Int, <> => ()

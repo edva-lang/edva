@@ -192,71 +192,37 @@ make_cmd_opt = spec, desc, sub_opts =>
 
 has_required_opt: Opts => <>
 has_required_opt = opts =>
-   req' = <->
-   ?opts @ i =>
-      o = opts(i)!!
-      (o.role [ROpt, RPos]) && o.required
-         |
-            req' = <+>
-            -->
-   req'
+   opts @ o =>
+      (o.role [ROpt, RPos]) && o.required |+>
+   <->
 
 find_opt_idx: Opts, String => Int
 find_opt_idx = opts, key =>
-   res' = -1
-   ?opts @ i =>
-      o = opts(i)!!
-      (o.role [ROpt, RPos]) && key != "" && (key [o.long, o.short])
-         |
-            res' = i
-            -->
-   res'
+   opts @ o, i =>
+      (o.role [ROpt, RPos]) && key != "" && (key [o.long, o.short]) | --| i
+   -1
 
 find_long_idx: Opts, String => Int
 find_long_idx = opts, name =>
-   res' = -1
-   ?opts @ i =>
-      o = opts(i)!!
-      (o.role [ROpt]) && o.long != "" && o.long == name
-         |
-            res' = i
-            -->
-   res'
+   opts @ o, i =>
+      (o.role [ROpt]) && o.long != "" && o.long == name | --| i
+   -1
 
 find_short_idx: Opts, String => Int
 find_short_idx = opts, sname =>
-   res' = -1
-   ?opts @ i =>
-      o = opts(i)!!
-      (o.role [ROpt]) && o.short != "" && o.short == sname
-         |
-            res' = i
-            -->
-   res'
+   opts @ o, i =>
+      (o.role [ROpt]) && o.short != "" && o.short == sname | --| i
+   -1
 
 find_cmd_idx: Opts, String => Int
 find_cmd_idx = opts, name =>
-   res' = -1
-   ?opts @ i =>
-      o = opts(i)!!
+   opts @ o, i =>
       o.role [RCmd]
          |
-            o.long == name
-               |
-                  res' = i
-                  -->
-               |
-                  matched' = <->
-                  ?o.aliases @ k =>
-                     o.aliases(k)!! == name
-                        |
-                           matched' = <+>
-                           -->
-                  matched'
-                     |
-                        res' = i
-                        -->
-   res'
+            o.long == name | --| i
+            o.aliases @ alias =>
+               alias == name | --| i
+   -1
 
 has_opt_named: Opts, String, String => <>
 has_opt_named = opts, long_name, short_name =>
@@ -715,19 +681,12 @@ parse_argv = opts, argv, allow_auto_version =>
                subcmd_name' != ""
                   | <+ Parsed(opts, seen, flags, ints, floats, strs, str_lists, pos_list, pass_list, subcmd_name', sub_val', help_req', ver_req') ->
                   |
-                     req_err' = ++""
-                     n_opts @ m =>
-                        o = opts(m)!!
+                     opts @ o, m =>
                         o.required && !(seen(m)!!)
-                           |
-                              is_p = o.role [RPos]
-                              req_err' = is_p
-                                 | "missing required argument: <" + o.long + ">"
-                                 | "missing required option: --" + o.long
-                              -->
-                     req_err' != ""
-                        | <- req_err' +>
-                        | <+ Parsed(opts, seen, flags, ints, floats, strs, str_lists, pos_list, pass_list, subcmd_name', sub_val', help_req', ver_req') ->
+                           | --| <- (o.role [RPos]
+                              | "missing required argument: <" + o.long + ">"
+                              | "missing required option: --" + o.long) +>
+                     <+ Parsed(opts, seen, flags, ints, floats, strs, str_lists, pos_list, pass_list, subcmd_name', sub_val', help_req', ver_req') ->
 
 format_active_help: Parsed, String, String, String => String
 format_active_help = p, prog, desc, version =>
@@ -1167,66 +1126,52 @@ opts_for = !=>
 into: #! T: Type, Parsed => < T | String >
 into = p =>
    rec' = T.zero
-   has_err' = <->
-   err_msg' = ++""
    T
       [(..)]
          T @ f =>
-            !has_err' |
-               opt_name = str::replace(f.name, "_", "-")
-               key = has_spec(p, opt_name) | opt_name | f.name
-               opt_spec = find_active_opt(p, key)
-               has_key = opt_spec | o => <+> | <->
-               is_req = opt_spec | o => o.required | <+>
-               is_pos = opt_spec | o => (o.role [RPos]) | <->
-               is_seen = has(p, key)
-               is_seen
-                  |
-                     f.type
-                        [<>] rec'.(f) = flag(p, key)
-                        [Int] rec'.(f) = int(p, key)
-                        [Float] rec'.(f) = float(p, key)
-                        [String] rec'.(f) = str(p, key)
-                        [Args] rec'.(f) = strs(p, key)
-                        [<P|>]
-                           P
-                              [Int] rec'.(f) = <+ int(p, key) +>
-                              [Float] rec'.(f) = <+ float(p, key) +>
-                              [String] rec'.(f) = <+ str(p, key) +>
-                              [<>] rec'.(f) = <+ flag(p, key) +>
-                  |
-                     f_def = f.default
-                     f_def
-                        | def => rec'.(f) = def
-                        |
-                           f.type
-                              [<P|>] rec'.(f) = <-->
-                              [Args] rec'.(f) = (has_key | strs(p, key) | Args())
-                              [<>] rec'.(f) = (has_key | flag(p, key) | <->)
-                              [Int]
-                                 has_key && !is_req
-                                    | rec'.(f) = int(p, key)
-                                    |
-                                       has_err' = <+>
-                                       err_msg' = (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name)
-                              [Float]
-                                 has_key && !is_req
-                                    | rec'.(f) = float(p, key)
-                                    |
-                                       has_err' = <+>
-                                       err_msg' = (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name)
-                              [String]
-                                 has_key && !is_req
-                                    | rec'.(f) = str(p, key)
-                                    |
-                                       has_err' = <+>
-                                       err_msg' = (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name)
-      |
-         has_err' = <+>
-         err_msg' = ++"cli::into target must be a record type"
-   has_err'
-      | <- err_msg' +>
-      | <+ rec' ->
+            opt_name = str::replace(f.name, "_", "-")
+            key = has_spec(p, opt_name) | opt_name | f.name
+            opt_spec = find_active_opt(p, key)
+            has_key = opt_spec | o => <+> | <->
+            is_req = opt_spec | o => o.required | <+>
+            is_pos = opt_spec | o => (o.role [RPos]) | <->
+            is_seen = has(p, key)
+            is_seen
+               |
+                  f.type
+                     [<>] rec'.(f) = flag(p, key)
+                     [Int] rec'.(f) = int(p, key)
+                     [Float] rec'.(f) = float(p, key)
+                     [String] rec'.(f) = str(p, key)
+                     [Args] rec'.(f) = strs(p, key)
+                     [<P|>]
+                        P
+                           [Int] rec'.(f) = <+ int(p, key) +>
+                           [Float] rec'.(f) = <+ float(p, key) +>
+                           [String] rec'.(f) = <+ str(p, key) +>
+                           [<>] rec'.(f) = <+ flag(p, key) +>
+               |
+                  f.default
+                     | def => rec'.(f) = def
+                     |
+                        f.type
+                           [<P|>] rec'.(f) = <-->
+                           [Args] rec'.(f) = (has_key | strs(p, key) | Args())
+                           [<>] rec'.(f) = (has_key | flag(p, key) | <->)
+                           [Int]
+                              has_key && !is_req
+                                 | rec'.(f) = int(p, key)
+                                 | --| <- (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name) +>
+                           [Float]
+                              has_key && !is_req
+                                 | rec'.(f) = float(p, key)
+                                 | --| <- (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name) +>
+                           [String]
+                              has_key && !is_req
+                                 | rec'.(f) = str(p, key)
+                                 | --| <- (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name) +>
+         <+ rec' ->
+      | <- "cli::into target must be a record type" +>
 
 // Parses `argv` against `opts` (or derives `opts_for(T)` when `opts` is empty)
 // and populates `T`.

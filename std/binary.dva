@@ -290,15 +290,14 @@ read_f64_be = buf, off =>
 write_uleb128: Builder, u64 => ()
 write_uleb128 = b, val =>
    v' = val
-   more' = <+>
-   more' @
+   0.. @
       byte_v = Int(v' .&. 0x7Fu64)
       v' = v' .>. 7u64
       v' != 0u64
          | b += (byte_v .|. 0x80)
          |
             b += byte_v
-            more' = <->
+            -->
 
 // Reads an unsigned LEB128 varint starting at `off`, returning `(value, next_offset)`.
 read_uleb128: String, Int => < (u64, Int) | Error >
@@ -307,31 +306,20 @@ read_uleb128 = buf, off =>
    cur' = off
    res' = 0u64
    shift' = 0u64
-   done' = <->
-   ovf' = <->
-   (!done' && !ovf' && cur' < n) @
+   cur' < n @
       byte_v = u64(buf(cur') .&. 0xFF)
       cur' = cur' + 1
-      shift' !< 64u64
-         | ovf' = <+>
-         |
-            res' = res' .|. ((byte_v .&. 0x7Fu64) .<. shift')
-            (byte_v .&. 0x80u64) == 0u64
-               | done' = <+>
-               | shift' = shift' + 7u64
-   ovf'
-      | <- bin_err("uleb128 overflow", off) +>
-      |
-         !done'
-            | <- bin_err("unexpected EOF in uleb128", cur') +>
-            | <+ (res', cur') ->
+      shift' !< 64u64 | --| <- bin_err("uleb128 overflow", off) +>
+      res' = res' .|. ((byte_v .&. 0x7Fu64) .<. shift')
+      (byte_v .&. 0x80u64) == 0u64 | --| <+ (res', cur') ->
+      shift' = shift' + 7u64
+   <- bin_err("unexpected EOF in uleb128", cur') +>
 
 // Appends signed LEB128 encoding of `val` into `b`.
 write_sleb128: Builder, Int => ()
 write_sleb128 = b, val =>
    v' = val
-   more' = <+>
-   more' @
+   0.. @
       byte_v = v' .&. 0x7F
       // Arithmetic shift right by 7
       v' = v' < 0 | 0 - ((0 - v' - 1) .>. 7) - 1 | v' .>. 7
@@ -339,7 +327,7 @@ write_sleb128 = b, val =>
       (v' == 0 && !sign_bit) || (v' == -1 && sign_bit)
          |
             b += byte_v
-            more' = <->
+            -->
          |
             b += (byte_v .|. 0x80)
 
@@ -350,30 +338,19 @@ read_sleb128 = buf, off =>
    cur' = off
    res' = 0u64
    shift' = 0u64
-   last_byte' = 0u64
-   done' = <->
-   ovf' = <->
-   (!done' && !ovf' && cur' < n) @
+   cur' < n @
       byte_v = u64(buf(cur') .&. 0xFF)
       cur' = cur' + 1
-      shift' !< 64u64
-         | ovf' = <+>
+      shift' !< 64u64 | --| <- bin_err("sleb128 overflow", off) +>
+      res' = res' .|. ((byte_v .&. 0x7Fu64) .<. shift')
+      shift' = shift' + 7u64
+      (byte_v .&. 0x80u64) == 0u64
          |
-            res' = res' .|. ((byte_v .&. 0x7Fu64) .<. shift')
-            shift' = shift' + 7u64
-            last_byte' = byte_v
-            (byte_v .&. 0x80u64) == 0u64 | done' = <+>
-   ovf'
-      | <- bin_err("sleb128 overflow", off) +>
-      |
-         !done'
-            | <- bin_err("unexpected EOF in sleb128", cur') +>
-            |
-               (shift' < 64u64 && (last_byte' .&. 0x40u64) != 0u64)
-                  |
-                     mask = 0xFFFFFFFFFFFFFFFFu64 .<. shift'
-                     res' = res' .|. mask
-               <+ (Int(res'), cur') ->
+            (shift' < 64u64 && (byte_v .&. 0x40u64) != 0u64)
+               |
+                  res' = res' .|. (0xFFFFFFFFFFFFFFFFu64 .<. shift')
+            --| <+ (Int(res'), cur') ->
+   <- bin_err("unexpected EOF in sleb128", cur') +>
 
 // --- Structural Binary Packing (#!) -----------------------------------------
 
@@ -543,81 +520,33 @@ unpack_at = buf, cur, is_be =>
                      <+ buf(start..end) ->
             | err => <- err +>
       [<P|>]
-         read_u8(buf, off_in)
-            | tag =>
-               cur.pos = off_in + 1
-               Int(tag) == 0
-                  | <+ <--> ->
-                  |
-                     dec_p = unpack_at(P, buf, cur, is_be)
-                     dec_p
-                        | pv => <+ <+ pv +> ->
-                        | err => <- err +>
-            | err => <- err +>
+         tag = read_u8(buf, off_in)--!
+         cur.pos = off_in + 1
+         Int(tag) == 0
+            | <+ <--> ->
+            | <+ <+ unpack_at(P, buf, cur, is_be)--! +> ->
       [E{}]
          r = is_be | read_u32_be(buf, off_in) | read_u32_le(buf, off_in)
-         r
-            | cnt_u32 =>
-               cnt = Int(cnt_u32)
-               cur.pos = off_in + 4
-               arr' = T.zero
-               has_err' = <->
-               err_val' = bin_err(+"", 0)
-               cnt @
-                  !has_err' |
-                     dec_e = unpack_at(E, buf, cur, is_be)
-                     dec_e
-                        | elem => arr' += elem
-                        | err =>
-                           has_err' = <+>
-                           err_val' = err
-               has_err'
-                  | <- err_val' +>
-                  | <+ arr' ->
-            | err => <- err +>
+         cnt = Int(r--!)
+         cur.pos = off_in + 4
+         arr' = T.zero
+         cnt @
+            arr' += unpack_at(E, buf, cur, is_be)--!
+         <+ arr' ->
       [(..)]
          rec' = T.zero
-         has_err' = <->
-         err_val' = bin_err(+"", 0)
          T @ f =>
-            !has_err' |
-               dec_fv = unpack_at(f.type, buf, cur, is_be)
-               dec_fv
-                  | fv => rec'.(f) = fv
-                  | err =>
-                     has_err' = <+>
-                     err_val' = err
-         has_err'
-            | <- err_val' +>
-            | <+ rec' ->
+            rec'.(f) = unpack_at(f.type, buf, cur, is_be)--!
+         <+ rec' ->
       [<..>]
-         read_u8(buf, off_in)
-            | tag_u8 =>
-               tag = Int(tag_u8)
-               cur.pos = off_in + 1
-               out' = T.zero
-               matched' = <->
-               has_err' = <->
-               err_val' = bin_err(+"", 0)
-               T @ v =>
-                  v.idx == tag |
-                     matched' = <+>
-                     v.type
-                        [()] out' = T(v)
-                        |
-                           dec_pv = unpack_at(v.type, buf, cur, is_be)
-                           dec_pv
-                              | pv => out' = T(v, pv)
-                              | err =>
-                                 has_err' = <+>
-                                 err_val' = err
-               has_err'
-                  | <- err_val' +>
-                  |
-                     !matched'
-                        | <- bin_err("invalid enum tag for " + T.name, off_in) +>
-                        | <+ out' ->
-            | err => <- err +>
+         tag = Int(read_u8(buf, off_in)--!)
+         cur.pos = off_in + 1
+         T @ v =>
+            v.idx == tag |
+               v.type
+                  [()] --| <+ T(v) ->
+                  | --| <+ T(v, unpack_at(v.type, buf, cur, is_be)--!) ->
+         <- bin_err("invalid enum tag for " + T.name, off_in) +>
       | <- bin_err("unsupported type " + T.name + " in binary::decode", off_in) +>
 
 #public

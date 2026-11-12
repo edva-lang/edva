@@ -378,18 +378,16 @@ to_ccl_val = val =>
             sub += CclEntry(ccl_key_to_str(k), to_ccl_val(v), 0, 0)
          CclVal(Block, sub)
       [<..>]
-         res' = CclVal(Str, "")
          T @ v =>
             val.(v)
                | pay =>
                   v.type
-                     [()]
-                        res' = CclVal(Str, v.name)
+                     [()] --| CclVal(Str, v.name)
                      |
                         sub = doc_new!
                         sub += CclEntry(v.name, to_ccl_val(pay), 0, 0)
-                        res' = CclVal(Block, sub)
-         res'
+                        --| CclVal(Block, sub)
+         CclVal(Str, "")
       [(..)]
          sub = doc_new!
          T @ f =>
@@ -477,33 +475,17 @@ decode_val = cv, file, line, col =>
             [Str s]
                s == ""
                   | <+ <--> ->
-                  |
-                     dec_p = decode_val(P, cv, file, line, col)
-                     dec_p
-                        | pv => <+ <+ pv +> ->
-                        | err => <- err +>
+                  | <+ <+ decode_val(P, cv, file, line, col)--! +> ->
             [Block]
-               dec_p = decode_val(P, cv, file, line, col)
-               dec_p
-                  | pv => <+ <+ pv +> ->
-                  | err => <- err +>
+               <+ <+ decode_val(P, cv, file, line, col)--! +> ->
       [E{}]
          cv
             [Block b]
                arr' = T.zero
-               has_err' = <->
-               err_val' = ccl_error(file, ++"", 0, 0)
                b @ e =>
-                  !has_err' && e.key != "/" |
-                     dec_e = decode_val(E, e.val, file, e.line, e.col)
-                     dec_e
-                        | elem => arr' += elem
-                        | err =>
-                           has_err' = <+>
-                           err_val' = err
-               has_err'
-                  | <- err_val' +>
-                  | <+ arr' ->
+                  e.key != "/" |
+                     arr' += decode_val(E, e.val, file, e.line, e.col)--!
+               <+ arr' ->
             [Str s]
                s == ""
                   | <+ T.zero ->
@@ -512,25 +494,12 @@ decode_val = cv, file, line, col =>
          cv
             [Block b]
                m' = T.zero
-               has_err' = <->
-               err_val' = ccl_error(file, ++"", 0, 0)
                b @ e =>
-                  !has_err' && e.key != "/" |
-                     dec_k = decode_val(K, CclVal(Str, e.key), file, e.line, e.col)
-                     dec_k
-                        | k =>
-                           dec_v = decode_val(V, e.val, file, e.line, e.col)
-                           dec_v
-                              | v => m' ^ k = v
-                              | err =>
-                                 has_err' = <+>
-                                 err_val' = err
-                        | err =>
-                           has_err' = <+>
-                           err_val' = err
-               has_err'
-                  | <- err_val' +>
-                  | <+ m' ->
+                  e.key != "/" |
+                     k = decode_val(K, CclVal(Str, e.key), file, e.line, e.col)--!
+                     v = decode_val(V, e.val, file, e.line, e.col)--!
+                     m' ^ k = v
+               <+ m' ->
             [Str s]
                s == ""
                   | <+ T.zero ->
@@ -538,50 +507,21 @@ decode_val = cv, file, line, col =>
       [<..>]
          cv
             [Str s]
-               out' = T.zero
-               matched' = <->
-               bad_payload' = <->
                T @ v =>
                   v.name == s |
                      v.type
-                        [()]
-                           out' = T(v)
-                           matched' = <+>
-                        |
-                           bad_payload' = <+>
-               matched'
-                  | <+ out' ->
-                  |
-                     bad_payload'
-                        | <- ccl_error(file, "variant '" + s + "' of " + T.name + " requires a payload", line, col) +>
-                        | <- ccl_error(file, "unknown variant '" + s + "' for " + T.name, line, col) +>
+                        [()] --| <+ T(v) ->
+                        | --| <- ccl_error(file, "variant '" + s + "' of " + T.name + " requires a payload", line, col) +>
+               <- ccl_error(file, "unknown variant '" + s + "' for " + T.name, line, col) +>
             [Block b]
-               first_ent = first_non_comment_entry(b)
-               first_ent
+               first_non_comment_entry(b)
                   | ent =>
-                     out' = T.zero
-                     matched' = <->
-                     has_err' = <->
-                     err_val' = ccl_error(file, ++"", 0, 0)
                      T @ v =>
                         v.name == ent.key |
-                           matched' = <+>
                            v.type
-                              [()]
-                                 out' = T(v)
-                              |
-                                 dec_pv = decode_val(v.type, ent.val, file, ent.line, ent.col)
-                                 dec_pv
-                                    | pv => out' = T(v, pv)
-                                    | err =>
-                                       has_err' = <+>
-                                       err_val' = err
-                     has_err'
-                        | <- err_val' +>
-                        |
-                           matched'
-                              | <+ out' ->
-                              | <- ccl_error(file, "unknown variant '" + ent.key + "' for " + T.name, ent.line, ent.col) +>
+                              [()] --| <+ T(v) ->
+                              | --| <+ T(v, decode_val(v.type, ent.val, file, ent.line, ent.col)--!) ->
+                     <- ccl_error(file, "unknown variant '" + ent.key + "' for " + T.name, ent.line, ent.col) +>
                   | <- ccl_error(file, "empty block for enum " + T.name, line, col) +>
       [(..)]
          b_doc = cv
@@ -593,49 +533,27 @@ decode_val = cv, file, line, col =>
             |
                items = non_comment_entries(b_doc)
                rec' = T.zero
-               has_err' = <->
-               err_val' = ccl_error(file, ++"", 0, 0)
                T @ f =>
-                  !has_err' |
-                     f.name == ""
-                        |
-                           f.idx !< ?items
-                              |
-                                 has_err' = <+>
-                                 err_val' = ccl_error(file, "tuple " + T.name + " expects " + str::from_int(?T) + " elements, got " + str::from_int(?items), line, col)
-                              |
-                                 pos_ent = items(f.idx) | _ | CclEntry("", CclVal(Str, ""), line, col)
-                                 dec_fv = decode_val(f.type, pos_ent.val, file, pos_ent.line, pos_ent.col)
-                                 dec_fv
-                                    | fv => rec'.(f) = fv
-                                    | err =>
-                                       has_err' = <+>
-                                       err_val' = err
-                        |
-                           ent_opt = get_entry(b_doc, f.name)
-                           ent_opt
-                              | ent =>
-                                 dec_fv = decode_val(f.type, ent.val, file, ent.line, ent.col)
-                                 dec_fv
-                                    | fv => rec'.(f) = fv
-                                    | err =>
-                                       has_err' = <+>
-                                       err_val' = err
-                              |
-                                 f_def = f.default
-                                 f_def
-                                    | def => rec'.(f) = def
-                                    |
-                                       f.type
-                                          [<P|>] rec'.(f) = <-->
-                                          [E{}] rec'.(f) = f.type.zero
-                                          [K ^ V] rec'.(f) = f.type.zero
-                                          |
-                                             has_err' = <+>
-                                             err_val' = ccl_error(file, "missing required key '" + f.name + "'", line, col)
-               has_err'
-                  | <- err_val' +>
-                  | <+ rec' ->
+                  f.name == ""
+                     |
+                        f.idx !< ?items
+                           | --| <- ccl_error(file, "tuple " + T.name + " expects " + str::from_int(?T) + " elements, got " + str::from_int(?items), line, col) +>
+                        pos_ent = items(f.idx) | _ | CclEntry("", CclVal(Str, ""), line, col)
+                        rec'.(f) = decode_val(f.type, pos_ent.val, file, pos_ent.line, pos_ent.col)--!
+                     |
+                        get_entry(b_doc, f.name)
+                           | ent =>
+                              rec'.(f) = decode_val(f.type, ent.val, file, ent.line, ent.col)--!
+                           |
+                              f.default
+                                 | def => rec'.(f) = def
+                                 |
+                                    f.type
+                                       [<P|>] rec'.(f) = <-->
+                                       [E{}] rec'.(f) = f.type.zero
+                                       [K ^ V] rec'.(f) = f.type.zero
+                                       | --| <- ccl_error(file, "missing required key '" + f.name + "'", line, col) +>
+               <+ rec' ->
       | <- ccl_error(file, "unsupported target type " + T.name + " in ccl::decode", line, col) +>
 
 decode_doc: #! T: Type, CclDoc, String => < T | Error >

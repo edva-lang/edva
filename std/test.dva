@@ -144,16 +144,13 @@ format_val = v =>
                b += ')
          +b
       [<..>]
-         res' = ++T.name
          T @ vr =>
             v.(vr)
                | pay =>
                   vr.type
-                     [()]
-                        res' = vr.name
-                     |
-                        res' = vr.name + "(" + format_val(vr.type, pay) + ")"
-         res'
+                     [()] --| vr.name
+                     | --| vr.name + "(" + format_val(vr.type, pay) + ")"
+         T.name
       | T.name
 
 struct_eq: #! T: Type, T, T => <>
@@ -176,74 +173,53 @@ struct_eq = a, b =>
                   | pb => <->
                   | <+>
       [E{}]
-         ?a != ?b
-            | <->
-            |
-               same' = <+>
-               a @ elem_a, i =>
-                  same' |
-                     b @ elem_b, j =>
-                        i == j |
-                           !struct_eq(E, elem_a, elem_b) | same' = <->
-               same'
+         ?a != ?b |->
+         a @ elem_a, i =>
+            b @ elem_b, j =>
+               i == j && !struct_eq(E, elem_a, elem_b) |->
+         <+>
       [E[]]
-         ?a != ?b
-            | <->
-            |
-               same' = <+>
-               a @ elem_a, i =>
-                  same' |
-                     b @ elem_b, j =>
-                        i == j |
-                           !struct_eq(E, elem_a, elem_b) | same' = <->
-               same'
+         ?a != ?b |->
+         a @ elem_a, i =>
+            b @ elem_b, j =>
+               i == j && !struct_eq(E, elem_a, elem_b) |->
+         <+>
       [K ^ V]
-         ?a != ?b
-            | <->
-            |
-               same' = <+>
-               a @ av, ak =>
-                  same' |
-                     b_opt = b ^ ak
-                     b_opt
-                        | bv =>
-                           !struct_eq(V, av, bv) | same' = <->
-                        |
-                           same' = <->
-               same'
+         ?a != ?b |->
+         a @ av, ak =>
+            b ^ ak
+               | bv =>
+                  !struct_eq(V, av, bv) |->
+               |->
+         <+>
       [(..)]
-         same' = <+>
          T @ f =>
-            same' |
-               f.type
-                  [<P|>]
-                     fa = a.(f)
-                     fb = b.(f)
-                     fa
-                        | pa =>
-                           fb
-                              | pb =>
-                                 !struct_eq(P, pa, pb) | same' = <->
-                              |
-                                 same' = <->
-                        |
-                           fb
-                              | pb => same' = <->
-                              | same' = same'
-                  |
-                     !struct_eq(f.type, a.(f), b.(f)) | same' = <->
-         same'
+            f.type
+               [<P|>]
+                  fa = a.(f)
+                  fb = b.(f)
+                  fa
+                     | pa =>
+                        fb
+                           | pb =>
+                              !struct_eq(P, pa, pb) |->
+                           |->
+                     |
+                        fb | pb => --| <->
+               |
+                  !struct_eq(f.type, a.(f), b.(f)) |->
+         <+>
       [<..>]
-         same' = <->
          T @ vr =>
             a.(vr)
                | pa =>
                   b.(vr)
                      | pb =>
                         vr.type
-                           [()] same' = <+>
-                           | same' = struct_eq(vr.type, pa, pb)
-         same'
+                           [()] --| <+>
+                           | --| struct_eq(vr.type, pa, pb)
+                     |->
+         <->
       | a == b
 
 #private

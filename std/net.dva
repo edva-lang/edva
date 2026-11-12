@@ -186,19 +186,18 @@
       parts = Int{}
       cur' = 0
       has_digit' = <->
-      slen @ i =>
-         c = s(i)
+      s @ c =>
          c == '.
             |
-               !has_digit' | -->
+               !has_digit' |-->
                parts += cur'
                cur' = 0
                has_digit' = <->
             |
-               !str::is_digit(c) | -->
+               !str::is_digit(c) |-->
                has_digit' = <+>
                cur' = cur' * 10 + (c - '0)
-               cur' > 255 | (has_digit' = <->; -->)
+               cur' > 255 |-->
       !has_digit' |-->
       parts += cur'
       ?parts != 4 |-->

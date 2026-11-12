@@ -89,15 +89,12 @@
    mod: Poller, Int, Int, Int => <>
    mod = p, fd, mask, user_data =>
       p.is_closed || fd < 0 | --| <->
-      found' = <->
-      ?p.entries @ i =>
-         e = p.entries(i)!!
+      p.entries @ e, i =>
          e.fd == fd
             |
                p.entries(i) = Event(fd, mask, user_data)
-               found' = <+>
-               -->
-      found'
+               --| <+>
+      <->
 
    // Convenience: modify descriptor mask, using fd as data token
    mod_fd: Poller, Int, Int => <>
@@ -107,15 +104,12 @@
    del: Poller, Int => <>
    del = p, fd =>
       p.is_closed || fd < 0 | --| <->
-      found' = <->
-      ?p.entries @ i =>
-         e = p.entries(i)!!
+      p.entries @ e, i =>
          e.fd == fd
             |
                p.entries(i) = Event(-1, 0, 0)
-               found' = <+>
-               -->
-      found'
+               --| <+>
+      <->
 
    // Wait for readiness events up to timeout_ms (-1 = infinite, 0 = non-blocking poll)
    wait: Poller, Int => Event{}

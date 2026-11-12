@@ -385,17 +385,13 @@
          | <-->
          |
             out = {max}
-            done' = <->
             0.. @
                r.pos !< ?r.buf
                   |
                      n = refill(r)
                      n !> 0 | -->
                rem_budget = max - ?out
-               rem_budget !> 0
-                  |
-                     done' = <+>
-                     -->
+               rem_budget !> 0 | --| <+ +out +>
                in_buf = ?r.buf - r.pos
                scan_count = in_buf < rem_budget | in_buf | rem_budget
                found_idx' = -1
@@ -409,8 +405,7 @@
                      found_idx' > 0
                         | out += r.buf(r.pos..r.pos + found_idx')
                      r.pos = r.pos + found_idx' + 1
-                     done' = <+>
-                     -->
+                     --| <+ +out +>
                   |
                      scan_count > 0
                         | out += r.buf(r.pos..r.pos + scan_count)
@@ -420,14 +415,10 @@
                            has_delim = r.pos < ?r.buf &&
                               r.buf(r.pos) == delim
                            has_delim | r.pos = r.pos + 1
-                           done' = <+>
-                           -->
-            done'
+                           --| <+ +out +>
+            ?out > 0
                | <+ +out +>
-               |
-                  ?out > 0
-                     | <+ +out +>
-                     | <-->
+               | <-->
 
    // Buffered line read: reads until '\n', stripping a trailing '\r'
    // if present. An empty line produces <+ "" +>; EOF produces <-->.

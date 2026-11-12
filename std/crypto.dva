@@ -47,16 +47,13 @@ fill_urandom = ptr, n =>
 fill_linux_random: Addr, Int => <>
 fill_linux_random = ptr, n =>
    got' = 0
-   fallback' = <->
    0.. @
       got' !< n | -->
       r = getrandom(ptr + got', n - got', 0)
       r < 1
-         |
-            got' == 0 | fallback' = <+>
-            -->
+         | --| (got' == 0 | fill_urandom(ptr, n) | <->)
          | got' = got' + r
-   fallback' | fill_urandom(ptr, n) | (got' == n)
+   got' == n
 
 fill_os_random: #! OS: Type, Addr, Int => <>
 fill_os_random = #! OS, ptr, n =>

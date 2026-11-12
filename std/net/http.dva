@@ -105,30 +105,20 @@
    find_char: String, Int, Int => Find
    find_char = s, from, c =>
       total = ?s
-      hit' = Find(<-->)
       from..total @ i =>
-         s(i) == c
-            |
-               hit' = Find(<+ i +>)
-               -->
-      hit'
+         s(i) == c | --| Find(<+ i +>)
+      Find(<-->)
 
    // Index of the first occurrence of `needle` in s. Returns a Find.
    find_str: String, String => Find
    find_str = s, needle =>
       total = ?s
       nlen = ?needle
-      hit' = Find(<-->)
       limit = total - nlen + 1
-      limit !> 0
-         | hit'
-         |
-            limit @ i =>
-               s(i..i + nlen) == needle
-                  |
-                     hit' = Find(<+ i +>)
-                     -->
-            hit'
+      limit !> 0 | --| Find(<-->)
+      limit @ i =>
+         s(i..i + nlen) == needle | --| Find(<+ i +>)
+      Find(<-->)
 
    // The HTTP method: the token before the first space of the request line.
    method_of: String => String
@@ -205,12 +195,9 @@
    // The first '/' or '?' in s (the host/path boundary). Returns a Find.
    path_start: String => Find
    path_start = s =>
-      total = ?s
-      hit' = Find(<-->)
-      total @ i =>
-         c = s(i)
-         c [47, 63] hit' = Find(<+ i +>); -->
-      hit'
+      s @ c, i =>
+         c [47, 63] --| Find(<+ i +>)
+      Find(<-->)
 
    #type Url (
       scheme: String,
@@ -263,7 +250,6 @@
    lookup_header = h, name =>
       nlen = ?name
       out = {0}
-      found' = Chunk(<-->)
       h @ line =>
          llen = ?line
          llen !> nlen + 1 | --^
@@ -271,13 +257,12 @@
          matched' = <+>
          nlen @ j =>
             !http::ci_eq(line(j), name(j))
-               | (matched' = <->)
+               | (matched' = <->; -->)
          matched'
             |
                out += line(nlen + 2..llen)
-               found' = Chunk(<+ +out +>)
-               -->
-      found'
+               --| Chunk(<+ +out +>)
+      Chunk(<-->)
 
    // Build a response header block through the structured API (append, then a
    // case-insensitive lookup, then render) — a pure round-trip that exercises
@@ -328,9 +313,8 @@
    query_param = qs, key =>
       total = ?qs
       klen = ?key
-      klen !> 0 | Chunk(<-->)
+      klen !> 0 | --| Chunk(<-->)
       out = {0}
-      found' = <->
       i' = 0
       0.. @
          i' !< total | -->
@@ -344,12 +328,9 @@
             |
                val_start = has_eq | i' + klen + 1 | seg_end
                out += qs(val_start..seg_end)
-               found' = <+>
-               -->
+               --| Chunk(<+ +out +>)
          i' = amp | pos => pos + 1 | total
-      found'
-         | Chunk(<+ +out +>)
-         | Chunk(<-->)
+      Chunk(<-->)
 
    // --- HTTP request reading ------------------------------------------------
 
@@ -430,24 +411,19 @@
             name_len != tlen
                | Chunk(<-->)
                |
-                  match' = <+>
                   tlen @ j =>
-                     !http::ci_eq(line(j), target_name(j))
-                        | (match' = <->; -->)
-                  match'
-                     |
-                        vstart' = colon + 1
-                        0.. @
-                           vstart' !< total | -->
-                           c = line(vstart')
-                           c [32, 9] (vstart' = vstart' + 1) | -->
-                        vend' = total
-                        0.. @
-                           vend' !> vstart' | -->
-                           c = line(vend' - 1)
-                           c [32, 9, 13, 10] (vend' = vend' - 1) | -->
-                        Chunk(<+ line(vstart'..vend') +>)
-                     | Chunk(<-->)
+                     !http::ci_eq(line(j), target_name(j)) | --| Chunk(<-->)
+                  vstart' = colon + 1
+                  0.. @
+                     vstart' !< total | -->
+                     c = line(vstart')
+                     c [32, 9] (vstart' = vstart' + 1) | -->
+                  vend' = total
+                  0.. @
+                     vend' !> vstart' | -->
+                     c = line(vend' - 1)
+                     c [32, 9, 13, 10] (vend' = vend' - 1) | -->
+                  Chunk(<+ line(vstart'..vend') +>)
          | Chunk(<-->)
 
    // Look up the value of a header in a raw header block "Name: Val\r\n...".
@@ -455,19 +431,15 @@
    find_header = headers, name =>
       total = ?headers
       i' = 0
-      res' = Chunk(<-->)
       0.. @
          i' !< total | -->
          lf = http::find_char(headers, i', 10)
          line_end = lf | _ | total
          line = headers(i'..line_end)
          val = http::header_line_val(line, name)
-         val
-            | v =>
-               res' = Chunk(<+ v +>)
-               -->
+         val | v => --| Chunk(<+ v +>)
          i' = lf | (+ 1) | total
-      res'
+      Chunk(<-->)
 
    // Check whether a header is present in a raw header block.
    has_header: String, String => <>
@@ -481,7 +453,6 @@
       total = ?headers
       i' = 0
       cl_found' = -1
-      cl_invalid' = <->
       0.. @
          i' !< total | -->
          lf = http::find_char(headers, i', 10)
@@ -491,35 +462,26 @@
          val
             | v =>
                vlen = ?v
-               vlen !> 0
-                  | (cl_invalid' = <+>)
-                  |
-                     parsed' = 0
-                     over' = <->
-                     vlen @ j =>
-                        c = v(j)
-                        c [48...57]
-                           |
-                              d = c - 48
-                              is_over = parsed' > const::max_i64 / 10 ||
-                                 (parsed' == const::max_i64 / 10 && d > 7)
-                              is_over
-                                 | (over' = <+>)
-                                 | (parsed' = parsed' * 10 + d)
-                           | (cl_invalid' = <+>; -->)
-                     over'
-                        | (cl_invalid' = <+>)
-                        |
-                           cl_found' !< 0 && parsed' != cl_found'
-                              | (cl_invalid' = <+>)
-                              | (cl_found' = parsed')
+               vlen !> 0 | --| Num(<-->)
+               parsed' = 0
+               vlen @ j =>
+                  c = v(j)
+                  c [48...57]
+                     |
+                        d = c - 48
+                        is_over = parsed' > const::max_i64 / 10 ||
+                           (parsed' == const::max_i64 / 10 && d > 7)
+                        is_over
+                           | --| Num(<-->)
+                           | (parsed' = parsed' * 10 + d)
+                     | --| Num(<-->)
+               cl_found' !< 0 && parsed' != cl_found'
+                  | --| Num(<-->)
+                  | (cl_found' = parsed')
          i' = lf | pos => pos + 1 | total
-      cl_invalid'
+      cl_found' !< 0
+         | Num(<+ cl_found' +>)
          | Num(<-->)
-         |
-            cl_found' !< 0
-               | Num(<+ cl_found' +>)
-               | Num(<-->)
 
    // Read exactly n bytes of body from fd. Returns a Chunk (none on incomplete read).
    read_body: Int, Int => Chunk

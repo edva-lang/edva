@@ -214,27 +214,18 @@
    // holds true.
    take_while: #! T: Type, (T => <>), T[] => T[]
    take_while = pred, xs =>
-      len = ?xs
-      count' = len
-      0..len @ i =>
-         !pred(xs(i))
-            |
-               count' = i
-               -->
-      xs(0..count')
+      xs @ x, i =>
+         !pred(x) | --| xs(0..i)
+      xs
 
    // drop_while: return a zero-copy slice view starting from the first element
    // where pred is false.
    drop_while: #! T: Type, (T => <>), T[] => T[]
    drop_while = pred, xs =>
       len = ?xs
-      start' = len
-      0..len @ i =>
-         !pred(xs(i))
-            |
-               start' = i
-               -->
-      xs(start'..len)
+      xs @ x, i =>
+         !pred(x) | --| xs(i..len)
+      xs(len..len)
 
    // partition: split a collection into two growable arrays (passed, rejected)
    // according to predicate.

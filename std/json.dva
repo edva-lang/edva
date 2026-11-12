@@ -572,13 +572,9 @@ stringify_pretty_into = b, val, indent, depth =>
    get = val, key =>
       val
          [Object pairs]
-            hit' = <-->
             pairs @ p =>
-               p.key == key
-                  |
-                     hit' = <+ p.value +>
-                     -->
-            hit'
+               p.key == key | --| <+ p.value +>
+            <-->
          | <-->
 
    has: Value, String => <>
@@ -730,18 +726,16 @@ stringify_pretty_into = b, val, indent, depth =>
                   m = ?entries
                   Value(Object, entries(0..m))
          [<..>]
-            res' = Value(Null)
             T @ v =>
                val.(v)
                   | pay =>
                      v.type
-                        [()]
-                           res' = Value(String, v.name)
+                        [()] --| Value(String, v.name)
                         |
                            entries = Pairs()
                            entries += (v.name, to_value(v.type, pay))
-                           res' = Value(Object, entries(0..1))
-            res'
+                           --| Value(Object, entries(0..1))
+            Value(Null)
          | Value(Null)
 
    encode: #! T: Type, T => String
@@ -823,190 +817,102 @@ stringify_pretty_into = b, val, indent, depth =>
                            | <+ <+ unwrap_float_or_zero(val) +> ->
                            | <- json_type_err("expected number") +>
                      |
-                        dec_p = from_value(P, val)
-                        dec_p
-                           | inner => <+ <+ inner +> ->
-                           | err => <- err +>
+                        <+ <+ from_value(P, val)--! +> ->
          [E{}]
             !is_array(val)
                | <- json_type_err("expected array") +>
                |
                   arr' = T.zero
-                  has_err' = <->
-                  err_val' = json_type_err(++"")
                   n_items = array_len(val)
                   0..n_items @ i =>
-                     !has_err' |
-                        elem_val = array_at(val, i)
-                        E
-                           [Int]
-                              is_valid_int_value(elem_val)
-                                 | arr' += unwrap_int_or_zero(elem_val)
-                                 |
-                                    has_err' = <+>
-                                    err_val' = json_type_err("expected integer")
-                           [Float]
-                              is_valid_float_value(elem_val)
-                                 | arr' += unwrap_float_or_zero(elem_val)
-                                 |
-                                    has_err' = <+>
-                                    err_val' = json_type_err("expected number")
-                           |
-                              dec_e = from_value(E, elem_val)
-                              dec_e
-                                 | elem => arr' += elem
-                                 | e =>
-                                    has_err' = <+>
-                                    err_val' = e
-                  has_err'
-                     | <- err_val' +>
-                     | <+ arr' ->
+                     elem_val = array_at(val, i)
+                     E
+                        [Int]
+                           is_valid_int_value(elem_val)
+                              | arr' += unwrap_int_or_zero(elem_val)
+                              | --| <- json_type_err("expected integer") +>
+                        [Float]
+                           is_valid_float_value(elem_val)
+                              | arr' += unwrap_float_or_zero(elem_val)
+                              | --| <- json_type_err("expected number") +>
+                        |
+                           arr' += from_value(E, elem_val)--!
+                  <+ arr' ->
          [K ^ V]
             !is_object(val)
                | <- json_type_err("expected object") +>
                |
                   mp' = T.zero
-                  has_err' = <->
-                  err_val' = json_type_err(++"")
                   n_pairs = object_len(val)
                   0..n_pairs @ i =>
-                     !has_err' |
-                        pk = object_key_at(val, i)
-                        pv = object_val_at(val, i)
-                        dec_k = from_value(K, Value(String, pk))
-                        dec_k
-                           | k =>
-                              V
-                                 [Int]
-                                    is_valid_int_value(pv)
-                                       | mp' ^ k = unwrap_int_or_zero(pv)
-                                       |
-                                          has_err' = <+>
-                                          err_val' = json_type_err("expected integer")
-                                 [Float]
-                                    is_valid_float_value(pv)
-                                       | mp' ^ k = unwrap_float_or_zero(pv)
-                                       |
-                                          has_err' = <+>
-                                          err_val' = json_type_err("expected number")
-                                 |
-                                    dec_v = from_value(V, pv)
-                                    dec_v
-                                       | mv => mp' ^ k = mv
-                                       | e =>
-                                          has_err' = <+>
-                                          err_val' = e
-                           | e =>
-                              has_err' = <+>
-                              err_val' = e
-                  has_err'
-                     | <- err_val' +>
-                     | <+ mp' ->
+                     pk = object_key_at(val, i)
+                     pv = object_val_at(val, i)
+                     k = from_value(K, Value(String, pk))--!
+                     V
+                        [Int]
+                           is_valid_int_value(pv)
+                              | mp' ^ k = unwrap_int_or_zero(pv)
+                              | --| <- json_type_err("expected integer") +>
+                        [Float]
+                           is_valid_float_value(pv)
+                              | mp' ^ k = unwrap_float_or_zero(pv)
+                              | --| <- json_type_err("expected number") +>
+                        |
+                           mp' ^ k = from_value(V, pv)--!
+                  <+ mp' ->
          [(..)]
             rec' = T.zero
-            has_err' = <->
-            err_val' = json_type_err(++"")
             T @ f =>
-               !has_err' |
-                  f.name == ""
-                     |
-                        !is_array(val)
-                           |
-                              has_err' = <+>
-                              err_val' = json_type_err("expected array for tuple")
-                           |
-                              f.idx !< array_len(val)
-                                 |
-                                    has_err' = <+>
-                                    err_val' = json_type_err("tuple length mismatch")
-                                 |
-                                    pos_item = array_at(val, f.idx)
-                                    f.type
-                                       [Int]
-                                          is_valid_int_value(pos_item)
-                                             | rec'.(f) = unwrap_int_or_zero(pos_item)
-                                             |
-                                                has_err' = <+>
-                                                err_val' = json_type_err("expected integer")
-                                       [Float]
-                                          is_valid_float_value(pos_item)
-                                             | rec'.(f) = unwrap_float_or_zero(pos_item)
-                                             |
-                                                has_err' = <+>
-                                                err_val' = json_type_err("expected number")
-                                       |
-                                          dec_fv = from_value(f.type, pos_item)
-                                          dec_fv
-                                             | fv => rec'.(f) = fv
-                                             | e =>
-                                                has_err' = <+>
-                                                err_val' = e
-                     |
-                        !is_object(val)
-                           |
-                              has_err' = <+>
-                              err_val' = json_type_err("expected object for " + T.name)
-                           |
-                              fval_opt = get(val, f.name)
-                              fval_opt
-                                 | fval =>
-                                    f.type
-                                       [Int]
-                                          is_valid_int_value(fval)
-                                             | rec'.(f) = unwrap_int_or_zero(fval)
-                                             |
-                                                has_err' = <+>
-                                                err_val' = json_type_err("expected integer")
-                                       [Float]
-                                          is_valid_float_value(fval)
-                                             | rec'.(f) = unwrap_float_or_zero(fval)
-                                             |
-                                                has_err' = <+>
-                                                err_val' = json_type_err("expected number")
-                                       |
-                                          dec_fv = from_value(f.type, fval)
-                                          dec_fv
-                                             | fv => rec'.(f) = fv
-                                             | e =>
-                                                has_err' = <+>
-                                                err_val' = e
-                                 |
-                                    f_def = f.default
-                                    f_def
-                                       | def => rec'.(f) = def
-                                       |
-                                          f.type
-                                             [<P|>] rec'.(f) = <-->
-                                             [E{}] rec'.(f) = f.type.zero
-                                             [K ^ V] rec'.(f) = f.type.zero
-                                             |
-                                                has_err' = <+>
-                                                err_val' = json_type_err("missing required key '" + f.name + "'")
-            has_err'
-               | <- err_val' +>
-               | <+ rec' ->
+               f.name == ""
+                  |
+                     !is_array(val) | --| <- json_type_err("expected array for tuple") +>
+                     f.idx !< array_len(val) | --| <- json_type_err("tuple length mismatch") +>
+                     pos_item = array_at(val, f.idx)
+                     f.type
+                        [Int]
+                           is_valid_int_value(pos_item)
+                              | rec'.(f) = unwrap_int_or_zero(pos_item)
+                              | --| <- json_type_err("expected integer") +>
+                        [Float]
+                           is_valid_float_value(pos_item)
+                              | rec'.(f) = unwrap_float_or_zero(pos_item)
+                              | --| <- json_type_err("expected number") +>
+                        |
+                           rec'.(f) = from_value(f.type, pos_item)--!
+                  |
+                     !is_object(val) | --| <- json_type_err("expected object for " + T.name) +>
+                     get(val, f.name)
+                        | fval =>
+                           f.type
+                              [Int]
+                                 is_valid_int_value(fval)
+                                    | rec'.(f) = unwrap_int_or_zero(fval)
+                                    | --| <- json_type_err("expected integer") +>
+                              [Float]
+                                 is_valid_float_value(fval)
+                                    | rec'.(f) = unwrap_float_or_zero(fval)
+                                    | --| <- json_type_err("expected number") +>
+                              |
+                                 rec'.(f) = from_value(f.type, fval)--!
+                        |
+                           f.default
+                              | def => rec'.(f) = def
+                              |
+                                 f.type
+                                    [<P|>] rec'.(f) = <-->
+                                    [E{}] rec'.(f) = f.type.zero
+                                    [K ^ V] rec'.(f) = f.type.zero
+                                    | --| <- json_type_err("missing required key '" + f.name + "'") +>
+            <+ rec' ->
          [<..>]
-            out' = T.zero
-            matched' = <->
-            has_err' = <->
-            err_val' = json_type_err(++"")
             val
                [String s]
-                  bad_payload' = <->
                   T @ v =>
                      v.name == s |
                         v.type
-                           [()]
-                              out' = T(v)
-                              matched' = <+>
-                           |
-                              bad_payload' = <+>
-                  matched'
-                     | <+ out' ->
-                     |
-                        bad_payload'
-                           | <- json_type_err("variant '" + s + "' of " + T.name + " requires a payload") +>
-                           | <- json_type_err("unknown variant '" + s + "' for " + T.name) +>
+                           [()] --| <+ T(v) ->
+                           | --| <- json_type_err("variant '" + s + "' of " + T.name + " requires a payload") +>
+                  <- json_type_err("unknown variant '" + s + "' for " + T.name) +>
                |
                   !is_object(val)
                      | <- json_type_err("expected string or single-key object for " + T.name) +>
@@ -1018,23 +924,10 @@ stringify_pretty_into = b, val, indent, depth =>
                               p0_val = object_val_at(val, 0)
                               T @ v =>
                                  v.name == p0_key |
-                                    matched' = <+>
                                     v.type
-                                       [()]
-                                          out' = T(v)
-                                       |
-                                          dec_pv = from_value(v.type, p0_val)
-                                          dec_pv
-                                             | pv => out' = T(v, pv)
-                                             | e =>
-                                                has_err' = <+>
-                                                err_val' = e
-                              has_err'
-                                 | <- err_val' +>
-                                 |
-                                    matched'
-                                       | <+ out' ->
-                                       | <- json_type_err("unknown variant '" + p0_key + "' for " + T.name) +>
+                                       [()] --| <+ T(v) ->
+                                       | --| <+ T(v, from_value(v.type, p0_val)--!) ->
+                              <- json_type_err("unknown variant '" + p0_key + "' for " + T.name) +>
          | <- json_type_err("unsupported target type " + T.name + " in json::decode") +>
 
    decode: #! T: Type, String => < T | Error >
