@@ -1,8 +1,7 @@
-// Standard HTTP/1.1, HTTPS, SSE, and WebSocket Client Module (std/http.dva)
+// Standard HTTP/1.1, SSE, and WebSocket Client Module (std/http.dva)
 // Provides:
 // - Outbound HTTP/1.1 client over `std/net` with keep-alive connection pooling,
 //   chunked transfer-encoding decoding, custom headers, bearer auth, and JSON/CCL helpers
-// - Transparent `https://` execution via `std/os` (`curl`) without forcing `-lssl` linkage
 // - Server-Sent Events (`text/event-stream`) encoder and parser (`sse_encode`, `sse_parse`)
 // - RFC 6455 WebSocket handshake (`ws_accept_key`), frame codec (`ws_encode_frame`,
 //   `ws_decode_frame`), and client session (`ws_connect`, `ws_send_text`, `ws_recv`, `ws_close`)
@@ -12,7 +11,6 @@
 #use crypto
 #use json
 #use net
-#use os
 #use str
 #use url
 
@@ -354,25 +352,20 @@ serialize_request = req, u, def_hdrs, keep_alive =>
    target_path = ?u.path > 0 | u.path | "/"
    full_target = ?u.query > 0 | target_path + "?" + u.query | target_path
    out = {512 + ?req.body}
-   out += req.method
-   out += " "
-   out += full_target
-   out += " HTTP/1.1\r\n"
+   out += (req.method, " ", full_target, " HTTP/1.1\r\n")
 
    merged = Headers()
-   ?def_hdrs @ i =>
-      merged += def_hdrs(i)!!
-   ?req.headers @ i =>
-      merged += req.headers(i)!!
+   def_hdrs @ h =>
+      merged += h
+   req.headers @ h =>
+      merged += h
 
    !has_header(merged, "Host")
       |
          host_hdr = (u.port > 0 && u.port != 80 && u.port != 443)
             | u.host + ":" + str::from_int(u.port)
             | u.host
-         out += "Host: "
-         out += host_hdr
-         out += "\r\n"
+         out += ("Host: ", host_hdr, "\r\n")
 
    !has_header(merged, "User-Agent")
       | out += "User-Agent: Edva-HTTP/1.4\r\n"
@@ -382,17 +375,10 @@ serialize_request = req, u, def_hdrs, keep_alive =>
          out += (keep_alive | "Connection: keep-alive\r\n" | "Connection: close\r\n")
 
    (?req.body > 0 && !has_header(merged, "Content-Length"))
-      |
-         out += "Content-Length: "
-         out += str::from_int(?req.body)
-         out += "\r\n"
+      | out += ("Content-Length: ", str::from_int(?req.body), "\r\n")
 
-   ?merged @ i =>
-      h = merged(i)!!
-      out += h.name
-      out += ": "
-      out += h.value
-      out += "\r\n"
+   merged @ h =>
+      out += (h.name, ": ", h.value, "\r\n")
 
    out += "\r\n"
    ?req.body > 0 | out += req.body
@@ -460,32 +446,6 @@ read_http_from_fd = fd, req_method =>
                            <+ (res = Response(status, parsed.reason, hdrs, body_buf'), keep_alive = <->) ->
       | err => <- err +>
 
-send_https_curl: Request, Headers => < Response | String >
-send_https_curl = req, def_hdrs =>
-   args = os::Args("-sS", "-i", "-X", req.method)
-   sec = req.timeout_ms > 0 | (req.timeout_ms + 999) / 1000 | 10
-   args += "--max-time"
-   args += str::from_int(sec)
-   ?def_hdrs @ i =>
-      h = def_hdrs(i)!!
-      args += "-H"
-      args += (h.name + ": " + h.value)
-   ?req.headers @ i =>
-      h = req.headers(i)!!
-      args += "-H"
-      args += (h.name + ": " + h.value)
-   ?req.body > 0
-      |
-         args += "--data-binary"
-         args += "@-"
-   args += req.url
-   os::exec_input("curl", args, req.body)
-      | res =>
-         res.status != 0
-            | <- ("https request failed: " + str::trim(res.stderr)) +>
-            | parse_response(res.stdout)
-      | <- "failed to invoke curl for https request" +>
-
 take_pooled_fd: Client, String, Int => Int
 take_pooled_fd = client, host, port =>
    found_fd' = -1
@@ -537,55 +497,53 @@ client_send: Client, Request => < Response | String >
 client_send = client, req =>
    url::parse(req.url)
       | u =>
-         eq_ci(u.scheme, "https")
-            | send_https_curl(req, client.default_headers)
-            | !eq_ci(u.scheme, "http")
-               | <- ("unsupported URL scheme: " + u.scheme) +>
-               |
-                  port = u.port > 0 | u.port | 80
-                  wire = serialize_request(req, u, client.default_headers, <+>)
-                  t_ms = req.timeout_ms > 0 | req.timeout_ms | client.timeout_ms
-                  pooled_fd = take_pooled_fd(client, u.host, port)
-                  pooled_fd !< 0
-                     |
-                        t_ms > 0
-                           |
-                              net::set_recv_timeout(pooled_fd, t_ms)
-                              net::set_send_timeout(pooled_fd, t_ms)
-                        sent = net::send_str(pooled_fd, wire)
-                        sent == ?wire
-                           |
-                              read_http_from_fd(pooled_fd, req.method)
-                                 | out =>
-                                    out.keep_alive
-                                       | put_pooled_fd(client, u.host, port, pooled_fd)
-                                       | net::close_fd(pooled_fd)
-                                    --| <+ out.res ->
-                                 | err_stale => net::close_fd(pooled_fd)
-                           | net::close_fd(pooled_fd)
-                  // Fresh TCP connection
-                  net::tcp_connect(u.host, port)
-                     | fd =>
-                        t_ms > 0
-                           |
-                              net::set_recv_timeout(fd, t_ms)
-                              net::set_send_timeout(fd, t_ms)
-                        sent = net::send_str(fd, wire)
-                        sent != ?wire
-                           |
-                              net::close_fd(fd)
-                              <- "failed to send HTTP request" +>
-                           |
-                              read_http_from_fd(fd, req.method)
-                                 | out =>
-                                    out.keep_alive
-                                       | put_pooled_fd(client, u.host, port, fd)
-                                       | net::close_fd(fd)
-                                    <+ out.res ->
-                                 | err =>
-                                    net::close_fd(fd)
-                                    <- err +>
-                     | err => <- err +>
+         !eq_ci(u.scheme, "http")
+            | <- ("unsupported URL scheme: " + u.scheme) +>
+            |
+               port = u.port > 0 | u.port | 80
+               wire = serialize_request(req, u, client.default_headers, <+>)
+               t_ms = req.timeout_ms > 0 | req.timeout_ms | client.timeout_ms
+               pooled_fd = take_pooled_fd(client, u.host, port)
+               pooled_fd !< 0
+                  |
+                     t_ms > 0
+                        |
+                           net::set_recv_timeout(pooled_fd, t_ms)
+                           net::set_send_timeout(pooled_fd, t_ms)
+                     sent = net::send_str(pooled_fd, wire)
+                     sent == ?wire
+                        |
+                           read_http_from_fd(pooled_fd, req.method)
+                              | out =>
+                                 out.keep_alive
+                                    | put_pooled_fd(client, u.host, port, pooled_fd)
+                                    | net::close_fd(pooled_fd)
+                                 --| <+ out.res ->
+                              | err_stale => net::close_fd(pooled_fd)
+                        | net::close_fd(pooled_fd)
+               // Fresh TCP connection
+               net::tcp_connect(u.host, port)
+                  | fd =>
+                     t_ms > 0
+                        |
+                           net::set_recv_timeout(fd, t_ms)
+                           net::set_send_timeout(fd, t_ms)
+                     sent = net::send_str(fd, wire)
+                     sent != ?wire
+                        |
+                           net::close_fd(fd)
+                           <- "failed to send HTTP request" +>
+                        |
+                           read_http_from_fd(fd, req.method)
+                              | out =>
+                                 out.keep_alive
+                                    | put_pooled_fd(client, u.host, port, fd)
+                                    | net::close_fd(fd)
+                                 <+ out.res ->
+                              | err =>
+                                 net::close_fd(fd)
+                                 <- err +>
+                  | err => <- err +>
       | err => <- err.msg +>
 
 // --- One-Shot HTTP/HTTPS Convenience Functions -------------------------------
@@ -647,29 +605,15 @@ sse_data = data =>
 sse_encode: SseEvent => String
 sse_encode = ev =>
    out = {?ev.data + 64}
-   ?ev.id > 0
-      |
-         out += "id: "
-         out += ev.id
-         out += "\n"
-   ?ev.event > 0
-      |
-         out += "event: "
-         out += ev.event
-         out += "\n"
-   ev.retry_ms > 0
-      |
-         out += "retry: "
-         out += str::from_int(ev.retry_ms)
-         out += "\n"
+   ?ev.id > 0 | out += ("id: ", ev.id, "\n")
+   ?ev.event > 0 | out += ("event: ", ev.event, "\n")
+   ev.retry_ms > 0 | out += ("retry: ", str::from_int(ev.retry_ms), "\n")
    lines = str::split(ev.data, "\n")
    ?lines == 0
       | out += "data: \n"
       |
-         ?lines @ i =>
-            out += "data: "
-            out += lines(i)!!
-            out += "\n"
+         lines @ ln =>
+            out += ("data: ", ln, "\n")
    out += "\n"
    +out
 
@@ -742,29 +686,30 @@ ws_encode_frame = opcode, payload, masked =>
       | out += (mask_bit .|. plen)
       | plen !> 65535
          |
-            out += (mask_bit .|. 126)
-            out += ((plen .>. 8) .&. 0xFF)
-            out += (plen .&. 0xFF)
+            out += (
+               mask_bit .|. 126,
+               (plen .>. 8) .&. 0xFF,
+               plen .&. 0xFF
+            )
          |
-            out += (mask_bit .|. 127)
-            out += ((plen .>. 56) .&. 0xFF)
-            out += ((plen .>. 48) .&. 0xFF)
-            out += ((plen .>. 40) .&. 0xFF)
-            out += ((plen .>. 32) .&. 0xFF)
-            out += ((plen .>. 24) .&. 0xFF)
-            out += ((plen .>. 16) .&. 0xFF)
-            out += ((plen .>. 8) .&. 0xFF)
-            out += (plen .&. 0xFF)
+            out += (
+               mask_bit .|. 127,
+               (plen .>. 56) .&. 0xFF,
+               (plen .>. 48) .&. 0xFF,
+               (plen .>. 40) .&. 0xFF,
+               (plen .>. 32) .&. 0xFF,
+               (plen .>. 24) .&. 0xFF,
+               (plen .>. 16) .&. 0xFF,
+               (plen .>. 8) .&. 0xFF,
+               plen .&. 0xFF
+            )
    masked
       |
          m0 = 0x37
          m1 = 0xFA
          m2 = 0x21
          m3 = 0x3D
-         out += m0
-         out += m1
-         out += m2
-         out += m3
+         out += (m0, m1, m2, m3)
          plen @ i =>
             kb = (i .&. 3) [0] m0 [1] m1 [2] m2 | m3
             out += (payload(i) .^. kb)
