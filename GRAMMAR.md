@@ -162,7 +162,7 @@ truth; the unified operator table with operand and result types is in §3.3):
 | bitwise xor | 105 | 110 | `.^.` | left |
 | bitwise and | 110 | 120 | `.&.` | left |
 | comparison | 120 | 130 | `<` `>` `==` `!=` `!<` `!>` | left, same-line |
-| shift | 130 | 140 | `.<.` `.>.` | left |
+| shift | 130 | 140 | `.<.` `.>.` | none |
 | addition | 140 | 150 | `+` `-` | left |
 | multiplication | 150 | 160 | `*` `/` `%` | left |
 | unary prefix | 160 | 180 | `!` `+` `&` `++` `.!.` `~~` `?` `??` `-x` `#size` | right |

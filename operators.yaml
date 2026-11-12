@@ -145,7 +145,7 @@ tiers:
     const: SHIFT
     name: shift
     parse_fn: parser_parse_expr_bp (Pratt core)
-    assoc: left
+    assoc: none
     lbp: 130
     rbp: 140
     result: int
@@ -468,18 +468,18 @@ operators:
     tier: shift
     kind: Shl
     kind_self: Shl
-    assoc: left
+    assoc: none
     operands: "integerish, integerish (count)"
     result: "integerish"
-    desc: "zero-fill (logical) left shift. The count is masked to operand width - 1 (wrapping modulo width)."
+    desc: "zero-fill (logical) left shift (non-associative; E2100 when chained without parentheses). The count is masked to operand width - 1 (wrapping modulo width)."
   - symbol: ".>."
     tier: shift
     kind: Shr
     kind_self: Shr
-    assoc: left
+    assoc: none
     operands: "integerish, integerish (count)"
     result: "integerish"
-    desc: "zero-fill (logical) right shift. The count is masked to operand width - 1 (wrapping modulo width)."
+    desc: "zero-fill (logical) right shift (non-associative; E2100 when chained without parentheses). The count is masked to operand width - 1 (wrapping modulo width)."
 
   # ---- addition / feed (tier 13) ------------------------------------------
   - symbol: "+"

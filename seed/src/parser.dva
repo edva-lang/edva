@@ -783,6 +783,7 @@ bp_cont = p, res, min_bp, cmp_line, entry_indent, i =>
       | <+ res +>
       |
          op_line = p.curr.line
+         op_text = p.curr.text
          parser_advance(p)
          (i.op [Apply]) && tok_is_nl(p.curr)
             |
@@ -792,11 +793,18 @@ bp_cont = p, res, min_bp, cmp_line, entry_indent, i =>
             |
                parse_bp_rhs(p, i)
                   | cae =>
-                     node = i.same_line && cmp_line != -1
-                        | chain_cmp(p, res, i.op, cae)
-                        | (i.op [Compose] mk_compose_fn(p, res, cae) | ast::Expr(Bin, (i.op, res, cae)))
-                     nc = i.same_line | op_line | -1
-                     bp_loop(p, node, min_bp, nc, entry_indent)
+                     (i.op [Shl, Shr]) && tok_is_op(p.curr) && (p.curr.text [".<.", ".>."])
+                        |
+                           parser_error(p, 2100, "Non-associative operator '" +
+                             p.curr.text + "' cannot chain ('a " + op_text +
+                             " b " + p.curr.text + " c' is ambiguous).")
+                           <-->
+                        |
+                           node = i.same_line && cmp_line != -1
+                              | chain_cmp(p, res, i.op, cae)
+                              | (i.op [Compose] mk_compose_fn(p, res, cae) | ast::Expr(Bin, (i.op, res, cae)))
+                           nc = i.same_line | op_line | -1
+                           bp_loop(p, node, min_bp, nc, entry_indent)
                   | <-->
 
 // The apply/feed right operand: a full choice ("a $> b | c | d" ==

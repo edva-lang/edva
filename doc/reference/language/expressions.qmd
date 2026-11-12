@@ -174,11 +174,11 @@ Inside `@>`, `--^` skips appending (map) or preserves the current `acc` (seeded 
 ```{.dva .run}
 #use io
 
-nums = (1, 2, 3, 4) $> Int{}
+nums = Int{}(1, 2, 3, 4)
 doubled = nums @> (_ * 2)
 evens_sq = nums @> x => x % 2 == 0 | <+ x * x +>
 total = (0, nums) @> (+)
->| (doubled(0)!!, ?evens_sq, evens_sq(1)!!, total)
+io::out $ (doubled(0)!!, ?evens_sq, evens_sq(1)!!, total)
 ```
 
 ### Cycle jump and escape operators

@@ -63,7 +63,7 @@ def gen_doc_block [] {
             $d.operators | where tier == $t.name | get symbol
             | each { |s| $"`($s)`" } | str join " "
         )
-        let assoc = if $t.assoc == "right" { "right" } else { "left" }
+        let assoc = if $t.assoc == "right" { "right" } else if $t.assoc == "none" { "none" } else { "left" }
         let same = if $t.same_line { ", same-line" } else { "" }
         $"| ($t.name) | ($t.lbp) | ($t.rbp) | ($ops) | ($assoc)($same) |"
     } | str join "\n")
