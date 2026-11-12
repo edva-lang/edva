@@ -690,7 +690,7 @@
                      exp_digits' = exp_digits' + 1
                      i' = i' + 1
                   | -->
-            exp_digits' == 0 | --| <-->
+            exp_digits' == 0 |-->
             pow10 = %pow(10.0, Float(exp_neg | -exp_val' | exp_val'))
             res' = res' * pow10
       i' != len

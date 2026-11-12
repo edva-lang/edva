@@ -34,14 +34,17 @@ Edva has **no reserved keywords**. Every control-flow, declaration, and error-ha
 
 | Construct | Conventional Keyword | Edva Syntax | Example |
 |---|---|---|---|
-| Immutable binding | `let` / `const` | `=` | `x = 42` |
+|Immutable binding | `let` / `const` | `=` | `x = 42` |
+| Tuple / record destructuring | `let (a, b) = p` / `let {x, y} = r` | `(a, b) =` / `(x = lx, y = ly) =` | `(x, y) = pt` |
 | Rebinding / local mutation | `let mut` / `var` | Trailing prime `'` | `x' = 0; x' = x' + 1` |
 | Mutable module global | `static mut` | `::` prefix | `::count = 0` |
 | Function signature | `fn f(a: T) -> R` | `:` and `=>` | `add: Int, Int => Int` |
 | Function definition | `fn` / `def` / `lambda` | `=>` (or `!=>` for 0-arg) | `add = a, b => a + b` |
+| Function composition | `f >> g` / `g . f` | `.>` | `step = parse .> validate` |
 | Conditional branch | `if ... else` | Choice `|` | `x > 0 | "pos" | "non-pos"` |
 | Pattern match / switch | `match` / `switch` | Guarded choice `[...]` | `x [0] "zero" [> 0] "pos" | "neg"` |
 | Loop / iteration | `for` / `while` | Cycle `@` | `0..10 @ i => io::out(i)` |
+| Map / filter-map / fold | `.map()` / `.filter_map()` / `.fold()` | Expression cycle `@>` | `xs @> (_ * 2)`, `(0, xs) @> (+)` |
 | Loop break | `break` / `break 'lbl` | `-->` / `-->N` | `done | -->` / `done | -->2` |
 | Loop continue | `continue` | `--^` / `--^N` | `skip | --^` |
 | Loop value escape | `loop { break val; }` | `>--` (returns `<T|>`) | `xs @ x => ok(x) | --> >-- x` |
@@ -51,6 +54,8 @@ Edva has **no reserved keywords**. Every control-flow, declaration, and error-ha
 | Option / Result values | `Some(v)` / `None` / `Ok` / `Err` | `<+ v +>` / `<-->` / `<+ v ->` / `<- e +>` | `res = <+ 42 ->` |
 | Unwrap or abort | `.unwrap()` | Postfix `!!` | `val = res!!` |
 | Unwrap or propagate | `?` (Rust) | Postfix `--!` or `$>>` | `fd = open(p)--!` |
+| Functor map (`Result::map` / `map_err`) | `.map()` / `.map_err()` | `$+>` / `$->` | `res $+> (* 2) $-> wrap_err` |
+| Record copy-with-update | `{ ..r, x: 1 }` | `r(x = 1)` / `r $> _(x = 1)` | `s2 = s $> _(col = _.col + 1)` |
 | Type definition | `type` / `struct` / `enum` | `#type` | `#type Point (x: Int, y: Int)` |
 | Module import / export | `import` / `pub` / `extern` | `#use` / `#public` / `#foreign` / `#export` | `#use io` |
 
@@ -72,15 +77,17 @@ greet = name, count =>
 io::out $ greet("Alice", 3)
 ```
 
-### 2. Pipelines and application (`$`, `$>`, `$>>`)
+### 2. Pipelines, composition, and application (`$`, `$>`, `$>>`, `$+>`, `$->`, `.>`)
 
 | Operator | Associativity | Tier | Lowering |
 |---|---|---|---|
-| `f(a, b)` | Left | Postfix (LBP 170) | Direct call (no whitespace before `(`, `E2032`) |
+| `f(a, b)` | Left | Postfix (LBP 170) | Direct call (no whitespace before `(`, `E2032`; empty `f()` forbidden, `E2086`) |
 | `f!` | Left | Postfix (LBP 170) | Invokes 0-argument function defined with `!=>` |
-| `x $> f(y)` | Left | Feed (LBP 40) | Prepends `x` as first argument: `f(x, y)` |
+| `x $> f(y)` | Left | Feed (LBP 40) | Prepends `x` as first argument: `f(x, y)` (or updates record `x $> _(k = v)`) |
+| `f .> g` | Left | Feed (LBP 40) | Left-to-right function composition: `(f .> g)(x)` $\equiv$ `g(f(x))` |
 | `f(x) $ y` | Right | Apply (LBP 30) | Appends `y` as final argument: `f(x, y)` |
 | `m $>> cont` | Left | Feed (LBP 40) | Unpacks positive ram payload into ram-returning `cont` |
+| `m $+> f` / `m $-> g` | Left | Feed (LBP 40) | Maps `f` over positive slot (`$+>`) or `g` over negative slot (`$->`) |
 
 ```{.dva .run}
 #use io

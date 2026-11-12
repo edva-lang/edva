@@ -790,17 +790,15 @@
             (cat_s2(page * 32 + ((cp .&. 255) .>. 3)) .>. ((cp .&. 7) .<. 3)) .&. 255
 
    category: Rune => Category
-   category = cp =>
-      id = category_id(cp)
-      id
-         [0] Category(Lu) [1] Category(Ll) [2] Category(Lt) [3] Category(Lm) [4] Category(Lo)
-         [5] Category(Mn) [6] Category(Mc) [7] Category(Me)
-         [8] Category(Nd) [9] Category(Nl) [10] Category(No)
-         [11] Category(Pc) [12] Category(Pd) [13] Category(Ps) [14] Category(Pe) [15] Category(Pi) [16] Category(Pf) [17] Category(Po)
-         [18] Category(Sm) [19] Category(Sc) [20] Category(Sk) [21] Category(So)
-         [22] Category(Zs) [23] Category(Zl) [24] Category(Zp)
-         [25] Category(Cc) [26] Category(Cf) [27] Category(Cs) [28] Category(Co)
-         | Category(Cn)
+   category = category_id .>
+      [0] Category(Lu) [1] Category(Ll) [2] Category(Lt) [3] Category(Lm) [4] Category(Lo)
+      [5] Category(Mn) [6] Category(Mc) [7] Category(Me)
+      [8] Category(Nd) [9] Category(Nl) [10] Category(No)
+      [11] Category(Pc) [12] Category(Pd) [13] Category(Ps) [14] Category(Pe) [15] Category(Pi) [16] Category(Pf) [17] Category(Po)
+      [18] Category(Sm) [19] Category(Sc) [20] Category(Sk) [21] Category(So)
+      [22] Category(Zs) [23] Category(Zl) [24] Category(Zp)
+      [25] Category(Cc) [26] Category(Cf) [27] Category(Cs) [28] Category(Co)
+      | Category(Cn)
 
    // Human-readable description of a Unicode general category.
    category_description: Category => String

@@ -119,11 +119,22 @@ The operator precedence hierarchy is organized into binding tiers (from loosest 
 <!-- END operators.yaml -->
 
 Notable operator and precedence facts:
-- **Infix apply (`$`) & feed (`$>`)**: `f(a) $ b` == `f(a, b)` (append, right-assoc);
-  `x $> f(a)` == `f(x, a)` (prepend, left-assoc). Both sit below the choice tier.
+- **Infix apply (`$`), feed (`$>`), composition (`.>`), and ram maps (`$>>`, `$+>`, `$->`)**:
+  - `f(a) $ b` == `f(a, b)` (append, right-assoc); `x $> f(a)` == `f(x, a)` (prepend, left-assoc;
+    evaluates `x` once into a temporary when RHS references `_` or uses `_(field = val, ...)`).
+  - `f .> g` composes functions left-to-right (`(f .> g)(x)` == `g(f(x))`), usable in pipelines or
+    as a first-class closure value.
+  - `r $>> cont` monadically binds positive ram payloads; `r $+> f` maps `f` over the positive slot
+    of `< T | E >` / `< T | >`, and `r $-> g` maps `g` over the negative slot of `< T | E >` /
+    `< | E >`.
+  - Indented lines starting with `$>`, `$>>`, `$+>`, `$->`, or `.>` continue the preceding
+    expression as a multiline pipeline.
 - **Unwrap-or-default (`|_|`)**: `opt_or_res |_| fallback` unwraps the positive payload of `RamPN`
   or `RamPP`, or evaluates `fallback` when negative.
-- **Nullary call (`f!`)**: Postfix `!` invokes a 0-argument function defined with `!=>`.
+- **Nullary call (`f!`)**: Postfix `!` invokes a 0-argument function defined with `!=>` (`f()` is
+  forbidden on function calls, `E2086`).
+- **Non-associative shifts (`.<.`, `.>.`)**: Bit shifts are `non_assoc` (`E2025` if chained without
+  parentheses).
 - **Negated guard (`s ![guard]`)**: `!` must be adjacent to `[` (`s ![1, 2]`). Do NOT write
   `!s [1, 2]` (`!` binds tighter at unary tier 160 than `[...]` at choice tier 50).
 - **Length / Copy / Freeze**: `?x` returns byte/element length (`String`, `Builder`, arrays, maps,
@@ -160,7 +171,7 @@ negated boolean tests `s ![guard]`, and headless choice functions):
 - **Skip-First Ram Choice (`!|`)**: `arr(i) = v !| _` skips the unit positive slot and runs the
   negative branch on failure.
 
-## 4.2 Cycles, Jumps & Cycle Escapes (`@`, `-->`, `--^`, `>--`)
+## 4.2 Cycles, Expression Cycles (`@>`), Jumps & Cycle Escapes (`@`, `@>`, `-->`, `--^`, `>--`)
 ```dva complete
 find_target: Int, Int => < Int | >
 find_target = count, target =>
@@ -171,7 +182,16 @@ find_target = count, target =>
       target           // evaluates to <+ target +> on break, or <--> on normal completion
 ```
 - Iterables: `N @` (`0..N`), `a..b @ i =>`, `a...b @ i =>`, `arr @ elem, i =>`, `str @ byte, i =>`,
-  `map @ val, key =>`, infinite `0.. @`, and condition cycles `(cond) @ body`.
+  `str @@ rune, i =>`, `map @ val, key =>`, infinite `0.. @`, and condition cycles `(cond) @ body`.
+- **Expression-Valued Cycles (`@>`)**:
+  - **Map (`items @> body` -> `U{}`)**: evaluates `body` (`x =>`, `(a, b) =>`, `x, i =>`, `_`, or
+    point-free function/section/choice/type/composition) and collects into a new `U{}`.
+  - **Filter-Map (`items @> body` -> `U{}`)**: when `body` returns `< U | >` or `< U | Error >`,
+    unwraps and appends `u` on `<+ u +>` and skips negative outcomes.
+  - **Seeded Fold (`(seed, items) @> body` -> `Acc`)**: initializes accumulator to `seed: Acc` and
+    folds via `acc, x =>`, `acc, (a, b) =>`, `acc, x, i =>`, `acc =>`, or binary `(Acc, E) => Acc`
+    (`(+)`, `(*)`, `fn`); if `body` returns `< Acc | >`, `<+ next +>` updates `acc` and `<-->`
+    preserves `acc`.
 
 ## 4.3 Early Return (`--|`) & Ram Branch Return Sugars
 - `--| value` returns `value` from the enclosing function; bare `--|` returns from a `() => ()`
@@ -197,12 +217,21 @@ find_target = count, target =>
   synthesize `| <-->` or `| <++>` automatically.
 - **Error Propagation (`--!`) & Unwrap (`!!`)**: `expr--!` unwraps positive payload or early-returns
   negative error from the enclosing function; `expr!!` unwraps positive payload or aborts on error.
-- **Monadic Bind (`$>>`)**: `ram $>> next_fn` threads positive payloads through ram-returning stages.
+- **Monadic Bind (`$>>`) & Functor Maps (`$+>`, `$->`)**: `ram $>> next_fn` threads positive
+  payloads through ram-returning stages; `ram $+> f` maps `f: T => U` over the positive slot of
+  `< T | E >` or `< T | >`, and `ram $-> g` maps `g: E => F` over the negative slot of `< T | E >`
+  or `< | E >`.
 
-## 5.2 Records, Bitfields, Enums & Containers
+## 5.2 Records, Copy-with-Update, Destructuring, Bitfields, Enums & Containers
 - **Nominal `#type` Records**: `#type Point (x: Int, y: Int = 0)` creates a nominally typed C-ABI
-  struct (`Point.zero` initializes defaults; `Point(..p, x: 5)` or `Point(y = 2, x = 1)` constructs;
+  struct (`Point.zero` initializes defaults; `Point(..p, x = 5)` or `Point(y = 2, x = 1)` constructs;
   distinct `#type` structs do not unify, while `#type Coord Point` creates a transparent alias).
+- **Record Copy-with-Update**: `rec(field = val, ...)` and pipeline `rec $> _(field = val, ...)`
+  copy any nominal or anonymous record and override specified fields without repeating the type name
+  or re-evaluating the LHS expression.
+- **Tuple & Record Destructuring**: Positional `(a, b)` / `(x, _, z)` and named `(x, y)` /
+  `(x = lx, y = ly)` destructuring work in `=` bindings (including primed `(a', b') = (1, 2)`),
+  `=>` lambda parameters (`(x, y) => x + y`), and `@` / `@>` cycle binders (`pairs @ (k, v) =>`).
 - **Packing & Bitfields**: `#type Hdr #packed (a: u8, b: u32)` (1-byte aligned);
   `#type Tcp #packed u16 (syn: <>, ack: <>, win: 14)` (hardware bitfield).
 - **Enums**: `#type Shape < Dot, Circle(Float), Rect(Float, Float) >` (16-byte `{ i64 tag, ptr }`,

@@ -64,14 +64,12 @@ write_i8 = b, v =>
 write_u16_le: Builder, u16 => ()
 write_u16_le = b, v =>
    iv = Int(v)
-   b += (iv .&. 0xFF)
-   b += ((iv .>. 8) .&. 0xFF)
+   b += (iv .&. 0xFF, iv .>. 8 .&. 0xFF)
 
 write_u16_be: Builder, u16 => ()
 write_u16_be = b, v =>
    iv = Int(v)
-   b += ((iv .>. 8) .&. 0xFF)
-   b += (iv .&. 0xFF)
+   b += (iv .>. 8 .&. 0xFF, iv .&. 0xFF)
 
 write_i16_le: Builder, i16 => ()
 write_i16_le = b, v =>
@@ -84,18 +82,12 @@ write_i16_be = b, v =>
 write_u32_le: Builder, u32 => ()
 write_u32_le = b, v =>
    iv = Int(v)
-   b += (iv .&. 0xFF)
-   b += ((iv .>. 8) .&. 0xFF)
-   b += ((iv .>. 16) .&. 0xFF)
-   b += ((iv .>. 24) .&. 0xFF)
+   b += (iv .&. 0xFF, iv .>. 8 .&. 0xFF, iv .>. 16 .&. 0xFF, iv .>. 24 .&. 0xFF)
 
 write_u32_be: Builder, u32 => ()
 write_u32_be = b, v =>
    iv = Int(v)
-   b += ((iv .>. 24) .&. 0xFF)
-   b += ((iv .>. 16) .&. 0xFF)
-   b += ((iv .>. 8) .&. 0xFF)
-   b += (iv .&. 0xFF)
+   b += (iv .>. 24 .&. 0xFF, iv .>. 16 .&. 0xFF, iv .>. 8 .&. 0xFF, iv .&. 0xFF)
 
 write_i32_le: Builder, i32 => ()
 write_i32_le = b, v =>
@@ -107,25 +99,29 @@ write_i32_be = b, v =>
 
 write_u64_le: Builder, u64 => ()
 write_u64_le = b, v =>
-   b += Int(v .&. 0xFFu64)
-   b += Int((v .>. 8u64) .&. 0xFFu64)
-   b += Int((v .>. 16u64) .&. 0xFFu64)
-   b += Int((v .>. 24u64) .&. 0xFFu64)
-   b += Int((v .>. 32u64) .&. 0xFFu64)
-   b += Int((v .>. 40u64) .&. 0xFFu64)
-   b += Int((v .>. 48u64) .&. 0xFFu64)
-   b += Int((v .>. 56u64) .&. 0xFFu64)
+   b += (
+      Int(v .&. 0xFFu64),
+      Int(v .>. 8u64 .&. 0xFFu64),
+      Int(v .>. 16u64 .&. 0xFFu64),
+      Int(v .>. 24u64 .&. 0xFFu64),
+      Int(v .>. 32u64 .&. 0xFFu64),
+      Int(v .>. 40u64 .&. 0xFFu64),
+      Int(v .>. 48u64 .&. 0xFFu64),
+      Int(v .>. 56u64 .&. 0xFFu64)
+   )
 
 write_u64_be: Builder, u64 => ()
 write_u64_be = b, v =>
-   b += Int((v .>. 56u64) .&. 0xFFu64)
-   b += Int((v .>. 48u64) .&. 0xFFu64)
-   b += Int((v .>. 40u64) .&. 0xFFu64)
-   b += Int((v .>. 32u64) .&. 0xFFu64)
-   b += Int((v .>. 24u64) .&. 0xFFu64)
-   b += Int((v .>. 16u64) .&. 0xFFu64)
-   b += Int((v .>. 8u64) .&. 0xFFu64)
-   b += Int(v .&. 0xFFu64)
+   b += (
+      Int(v .>. 56u64 .&. 0xFFu64),
+      Int(v .>. 48u64 .&. 0xFFu64),
+      Int(v .>. 40u64 .&. 0xFFu64),
+      Int(v .>. 32u64 .&. 0xFFu64),
+      Int(v .>. 24u64 .&. 0xFFu64),
+      Int(v .>. 16u64 .&. 0xFFu64),
+      Int(v .>. 8u64 .&. 0xFFu64),
+      Int(v .&. 0xFFu64)
+   )
 
 write_i64_le: Builder, Int => ()
 write_i64_le = b, v =>

@@ -27,11 +27,11 @@ img_err = msg, off =>
 
 clamp_u8: Int => Int
 clamp_u8 = v =>
-   v < 0 | 0 | (v > 255 | 255 | v)
+   %clamp(v, 0, 255)
 
 float_to_u8: Float => Int
 float_to_u8 = v =>
-   c = v < 0.0 | 0.0 | (v > 1.0 | 1.0 | v)
+   c = %clamp(v, 0.0, 1.0)
    Int(%round(c * 255.0))
 
 qoi_hash: Int, Int, Int, Int => Int
@@ -108,8 +108,8 @@ from_sampler = width, height, sampler =>
 get_rgba: Image, Int, Int => (Int, Int, Int, Int)
 get_rgba = im, x, y =>
    (im.width !> 0 || im.height !> 0) | --| (0, 0, 0, 0)
-   cx = x < 0 | 0 | (x !< im.width | im.width - 1 | x)
-   cy = y < 0 | 0 | (y !< im.height | im.height - 1 | y)
+   cx = %clamp(x, 0, im.width - 1)
+   cy = %clamp(y, 0, im.height - 1)
    base = (cy * im.width + cx) * 4
    (
       im.pixels(base) .&. 0xFF,

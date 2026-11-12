@@ -2,8 +2,8 @@
 meta:
   audience: "Edva developers"
   status: "current reference"
-  audited: "51081a6"
-  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `tests/pass/345_implicit_ram_fallback.dva`, `GRAMMAR.md`"
+  audited: "dce4780"
+  evidence: "`src/codegen/types.dva`, `src/codegen/expr.dva`, `tests/pass/345_implicit_ram_fallback.dva`, `tests/pass/419_ram_functor_map.dva`, `GRAMMAR.md`"
 ---
 
 # Flags, Ramifications and `Error`
@@ -57,6 +57,8 @@ io::out $ (flag, opt | _ | 0, stat | "ok" | _, res!!)
 | **Unwrap or abort** | `r!!` | `< T | E >` or `< T | >` | `T` | Extracts positive payload `T` or aborts on negative slot (`E3091` on `<|E>` / `<>`) |
 | **Unwrap or propagate** | `r--!` | `< T | E >`, `< T | >`, `< | E >`, `<>` | `T` or `()` | Extracts positive slot or early-returns the negative ram from the enclosing function |
 | **Monadic bind** | `r $>> cont` | `< T | E >` or `< T | >` | Ram returned by `cont` | Calls `cont(val)` on positive slot; propagates negative slot unchanged (`E3091` if `cont` non-ram) |
+| **Positive functor map** | `r $+> fn` | `< T | E >` or `< T | >` | `< U | E >` or `< U | >` | Maps `fn: T => U` (function, section, choice, or free-`_` expr) over positive slot; passes negative slot through unchanged (`E3091` on `<|E>` / `<>`) |
+| **Negative functor map** | `r $-> fn` | `< T | E >` or `< | E >` | `< T | F >` or `< | F >` | Maps `fn: E => F` over negative slot; passes positive slot through unchanged (`E3091` on `<T|>` / `<>`) |
 | **Early return sugar** | `c |->` `c |+>` `c |-->` `c |++>` | `c: <>` | `()` (returns from fn) | Early-returns `<->`, `<+>`, `<-->`, or `<++>` when `c` is `<+>` |
 
 ```{.dva .run}
@@ -69,11 +71,12 @@ parse_pos = n =>
 
 double_pos: Int => < Int | String >
 double_pos = n =>
-   v = parse_pos(n)--!
-   <+ v * 2 ->
+   parse_pos(n)
+      $+> (* 2)
+      $-> ("err: " + _)
 
-io::out $ double_pos(3) | _ | -1     // 60
-io::out $ double_pos(-1) | _ | -1    // -1
+io::out $ double_pos(3) | _ | -1      // 60
+io::out $ double_pos(-1) | "ok" | _   // err: non-positive
 ```
 
 ## The `Error` type and I/O conventions

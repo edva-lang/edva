@@ -170,47 +170,44 @@ bits_range = b, lo, hi, icase =>
       cur' = bit_set(cur', c')
       icase
          |
-            (c' !< 65 && c' !> 90)
-               | cur' = bit_set(cur', c' + 32)
-            (c' !< 97 && c' !> 122)
-               | cur' = bit_set(cur', c' - 32)
+            c'
+               ['A...'Z] cur' = bit_set(cur', c' + 32)
+               ['a...'z] cur' = bit_set(cur', c' - 32)
       c' = c' + 1
    cur'
 
 bits_digit: () => ClassBits
 bits_digit = !=>
-   bits_range(empty_bits!, 48, 57, <->)
+   bits_range(empty_bits!, '0, '9, <->)
 
 bits_word: () => ClassBits
 bits_word = !=>
-   b0 = bits_range(empty_bits!, 48, 57, <->)
-   b1 = bits_range(b0, 65, 90, <->)
-   b2 = bits_range(b1, 97, 122, <->)
-   bit_set(b2, 95)
+   b0 = bits_range(empty_bits!, '0, '9, <->)
+   b1 = bits_range(b0, 'A, 'Z, <->)
+   b2 = bits_range(b1, 'a, 'z, <->)
+   bit_set(b2, '_)
 
 bits_space: () => ClassBits
 bits_space = !=>
-   b0 = bit_set(empty_bits!, 32)
-   b1 = bit_set(b0, 9)
-   b2 = bit_set(b1, 10)
-   b3 = bit_set(b2, 13)
-   b4 = bit_set(b3, 12)
+   b0 = bit_set(empty_bits!, '\s)
+   b1 = bit_set(b0, '\t)
+   b2 = bit_set(b1, '\n)
+   b3 = bit_set(b2, '\r)
+   b4 = bit_set(b3, '\f)
    bit_set(b4, 11)
 
 is_word_byte: Int => <>
-is_word_byte = c =>
-   (c !< 48 && c !> 57) || (c !< 65 && c !> 90) || (c !< 97 && c !> 122) || c == 95
+is_word_byte = ['0...'9, 'A...'Z, 'a...'z, '_]
 
 ascii_lower: Int => Int
-ascii_lower = c =>
-   (c !< 65 && c !> 90) | (c + 32) | c
+ascii_lower = ['A...'Z] _ + 32 | _
 
 hex_val: Int => Int
-hex_val = c =>
-   (c !< 48 && c !> 57) | --| c - 48
-   (c !< 65 && c !> 70) | --| c - 55
-   (c !< 97 && c !> 102) | --| c - 87
-   -1
+hex_val =
+   ['0...'9] _ - '0
+   ['A...'F] _ - 'A + 10
+   ['a...'f] _ - 'a + 10
+   | -1
 
 add_node: ParseState, AstNode => ParseState
 add_node = st, nd =>
@@ -248,24 +245,24 @@ parse_escape = pat, pos, in_class =>
    !in_class
       |
          c
-            [65]  --| EscResult(2, ANCHOR_START, empty_bits!, next, "")    // \A
-            [122] --| EscResult(2, ANCHOR_END, empty_bits!, next, "")      // \z
-            [98]  --| EscResult(2, ANCHOR_WORD, empty_bits!, next, "")     // \b
-            [66]  --| EscResult(2, ANCHOR_NON_WORD, empty_bits!, next, "") // \B
+            ['A] --| EscResult(2, ANCHOR_START, empty_bits!, next, "")    // \A
+            ['z] --| EscResult(2, ANCHOR_END, empty_bits!, next, "")      // \z
+            ['b] --| EscResult(2, ANCHOR_WORD, empty_bits!, next, "")     // \b
+            ['B] --| EscResult(2, ANCHOR_NON_WORD, empty_bits!, next, "") // \B
    c
-      [110] EscResult(0, 10, empty_bits!, next, "") // \n
-      [114] EscResult(0, 13, empty_bits!, next, "") // \r
-      [116] EscResult(0, 9,  empty_bits!, next, "") // \t
-      [102] EscResult(0, 12, empty_bits!, next, "") // \f
-      [118] EscResult(0, 11, empty_bits!, next, "") // \v
-      [48]  EscResult(0, 0,  empty_bits!, next, "") // \0
-      [100] EscResult(1, 0,  bits_digit!, next, "") // \d
-      [68]  EscResult(1, 0,  bits_invert(bits_digit!), next, "") // \D
-      [119] EscResult(1, 0,  bits_word!, next, "") // \w
-      [87]  EscResult(1, 0,  bits_invert(bits_word!), next, "") // \W
-      [115] EscResult(1, 0,  bits_space!, next, "") // \s
-      [83]  EscResult(1, 0,  bits_invert(bits_space!), next, "") // \S
-      [120] // \xHH
+      ['n] EscResult(0, '\n, empty_bits!, next, "") // \n
+      ['r] EscResult(0, '\r, empty_bits!, next, "") // \r
+      ['t] EscResult(0, '\t, empty_bits!, next, "") // \t
+      ['f] EscResult(0, '\f, empty_bits!, next, "") // \f
+      ['v] EscResult(0, 11,  empty_bits!, next, "") // \v
+      ['0] EscResult(0, '\0, empty_bits!, next, "") // \0
+      ['d] EscResult(1, 0,   bits_digit!, next, "") // \d
+      ['D] EscResult(1, 0,   bits_invert(bits_digit!), next, "") // \D
+      ['w] EscResult(1, 0,   bits_word!, next, "") // \w
+      ['W] EscResult(1, 0,   bits_invert(bits_word!), next, "") // \W
+      ['s] EscResult(1, 0,   bits_space!, next, "") // \s
+      ['S] EscResult(1, 0,   bits_invert(bits_space!), next, "") // \S
+      ['x] // \xHH
          next + 2 > ?pat
             | --| EscResult(-1, 0, empty_bits!, pos, "incomplete \\xHH escape in regex")
          h1 = hex_val(pat(next))
@@ -283,7 +280,7 @@ parse_class = st =>
    pos' = st.pos
    icase = (st.flags .&. FLAG_ICASE) != 0
    neg' = <->
-   (pos' < len && pat(pos') == 94) // '^'
+   (pos' < len && pat(pos') == '^)
       |
          neg' = <+>
          pos' = pos' + 1
@@ -294,19 +291,19 @@ parse_class = st =>
    prev_byte' = 0
    (pos' < len) @
       c = pat(pos')
-      (c == 93 && !first') // ']'
+      (c == '] && !first')
          |
             pos' = pos' + 1
             closed' = <+>
             -->
       first' = <->
       // Check for range `prev-next` when `c == '-'` and not at end of class
-      (c == 45 && have_prev' && (pos' + 1) < len && pat(pos' + 1) != 93)
+      (c == '- && have_prev' && (pos' + 1) < len && pat(pos' + 1) != '])
          |
             pos' = pos' + 1
             rc = pat(pos')
             hi_byte' = 0
-            rc == 92 // '\'
+            rc == '\\
                |
                   esc = parse_escape(pat, pos' + 1, <+>)
                   esc.kind < 0 | --| fail_state(st, esc.err, pos')
@@ -321,7 +318,7 @@ parse_class = st =>
             bits' = bits_range(bits', prev_byte', hi_byte', icase)
             have_prev' = <->
          |
-            c == 92 // '\'
+            c == '\\
                |
                   esc = parse_escape(pat, pos' + 1, <+>)
                   esc.kind < 0 | --| fail_state(st, esc.err, pos')
@@ -360,24 +357,24 @@ parse_brace_quant = pat, pos =>
    p' = pos
    min_v' = 0
    min_digits' = 0
-   (p' < len && pat(p') !< 48 && pat(p') !> 57) @
-      min_v' = min_v' * 10 + (pat(p') - 48)
+   (p' < len && (pat(p') ['0...'9])) @
+      min_v' = min_v' * 10 + (pat(p') - '0)
       min_digits' = min_digits' + 1
       p' = p' + 1
    min_digits' == 0 || p' !< len
       | --| BraceQuant(<->, 0, 0, pos, "invalid '{m,n}' quantifier in regex")
    max_v' = min_v'
-   pat(p') == 44 // ','
+   pat(p') == ',
       |
          p' = p' + 1
          max_digits' = 0
          mv' = 0
-         (p' < len && pat(p') !< 48 && pat(p') !> 57) @
-            mv' = mv' * 10 + (pat(p') - 48)
+         (p' < len && (pat(p') ['0...'9])) @
+            mv' = mv' * 10 + (pat(p') - '0)
             max_digits' = max_digits' + 1
             p' = p' + 1
          max_v' = max_digits' == 0 | -1 | mv'
-   (p' !< len || pat(p') != 125) // '}'
+   (p' !< len || pat(p') != '})
       | --| BraceQuant(<->, 0, 0, pos, "unclosed '{m,n}' quantifier in regex")
    (max_v' != -1 && max_v' < min_v')
       | --| BraceQuant(<->, 0, 0, pos, "quantifier '{m,n}' has max < min")
@@ -399,47 +396,47 @@ parse_group_or_flags = st =>
    pos' = st.pos
    pos' !< len
       | --| fail_state(st, "unclosed '(' in regex", pos' - 1)
-   pat(pos') == 63 // '(?'
+   pat(pos') == '?
       |
          pos' = pos' + 1
          pos' !< len
             | --| fail_state(st, "incomplete '(?' group in regex", pos' - 1)
-         pat(pos') == 58 // '(?:' non-capturing group
+         pat(pos') == ': // '(?:' non-capturing group
             |
                inner = parse_alt(ParseState(pat, pos' + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos))
                ?inner.err_msg > 0 | --| inner
-               (inner.pos !< len || pat(inner.pos) != 41)
+               (inner.pos !< len || pat(inner.pos) != '))
                   | --| fail_state(inner, "unclosed '(?:' group in regex", pos' - 2)
                --| ParseState(pat, inner.pos + 1, st.flags, inner.num_groups, inner.nodes, inner.node_id, inner.err_msg, inner.err_pos)
          // Parse flags `i`, `m`, `s` (and `-` to clear)
          flags' = st.flags
          neg_flag' = <->
-         (pos' < len && pat(pos') != 41 && pat(pos') != 58) @
+         (pos' < len && !(pat(pos') ['), ':])) @
             fc = pat(pos')
             fc
-               [45]  neg_flag' = <+>
-               [105] flags' = apply_flag(flags', FLAG_ICASE, neg_flag')
-               [109] flags' = apply_flag(flags', FLAG_MULTILINE, neg_flag')
-               [115] flags' = apply_flag(flags', FLAG_DOTALL, neg_flag')
+               ['-] neg_flag' = <+>
+               ['i] flags' = apply_flag(flags', FLAG_ICASE, neg_flag')
+               ['m] flags' = apply_flag(flags', FLAG_MULTILINE, neg_flag')
+               ['s] flags' = apply_flag(flags', FLAG_DOTALL, neg_flag')
                | --| fail_state(st, "unknown inline regex flag", pos')
             pos' = pos' + 1
          pos' !< len
             | --| fail_state(st, "unclosed '(?' flag directive", st.pos)
-         pat(pos') == 41 // `(?ims)` sets flags for enclosing sequence
+         pat(pos') == ') // `(?ims)` sets flags for enclosing sequence
             |
                st_flag = ParseState(pat, pos' + 1, flags', st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
                --| add_node(st_flag, AstNode(AST_EMPTY, 0, 0, 0, 0, <+>, flags', empty_bits!))
          // `(?ims:...)` scoped flags
          inner = parse_alt(ParseState(pat, pos' + 1, flags', st.num_groups, st.nodes, -1, st.err_msg, st.err_pos))
          ?inner.err_msg > 0 | --| inner
-         (inner.pos !< len || pat(inner.pos) != 41)
+         (inner.pos !< len || pat(inner.pos) != '))
             | --| fail_state(inner, "unclosed '(?flags:...' group in regex", st.pos - 1)
          --| ParseState(pat, inner.pos + 1, st.flags, inner.num_groups, inner.nodes, inner.node_id, inner.err_msg, inner.err_pos)
    // Numbered capture group `(...)`
    grp_idx = st.num_groups + 1
    inner = parse_alt(ParseState(pat, pos', st.flags, grp_idx, st.nodes, -1, st.err_msg, st.err_pos))
    ?inner.err_msg > 0 | --| inner
-   (inner.pos !< len || pat(inner.pos) != 41)
+   (inner.pos !< len || pat(inner.pos) != '))
       | --| fail_state(inner, "unclosed '(' in regex", st.pos - 1)
    st2 = ParseState(pat, inner.pos + 1, st.flags, inner.num_groups, inner.nodes, inner.node_id, inner.err_msg, inner.err_pos)
    add_node(st2, AstNode(AST_GROUP, inner.node_id, grp_idx, 0, 0, <+>, st.flags, empty_bits!))
@@ -450,22 +447,22 @@ parse_atom = st =>
    pos = st.pos
    c = pat(pos)
    c
-      [40] // '('
+      ['(]
          parse_group_or_flags(ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos))
-      [91] // '['
+      ['[]
          parse_class(ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos))
-      [46] // '.'
+      ['.]
          st2 = ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
          add_node(st2, AstNode(AST_ANY, 0, 0, 0, 0, <+>, st.flags, empty_bits!))
-      [94] // '^'
+      ['^]
          ak = (st.flags .&. FLAG_MULTILINE) != 0 | ANCHOR_BOL_LINE | ANCHOR_BOL
          st2 = ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
          add_node(st2, AstNode(AST_ANCHOR, ak, 0, 0, 0, <+>, st.flags, empty_bits!))
-      [36] // '$'
+      ['$]
          ak = (st.flags .&. FLAG_MULTILINE) != 0 | ANCHOR_EOL_LINE | ANCHOR_EOL
          st2 = ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
          add_node(st2, AstNode(AST_ANCHOR, ak, 0, 0, 0, <+>, st.flags, empty_bits!))
-      [92] // '\'
+      ['\\]
          esc = parse_escape(pat, pos + 1, <->)
          esc.kind < 0 | --| fail_state(st, esc.err, pos)
          st2 = ParseState(pat, esc.next_pos, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
@@ -473,9 +470,9 @@ parse_atom = st =>
             [1] add_node(st2, AstNode(AST_CLASS, 0, 0, 0, 0, <+>, st.flags, esc.bits))
             [2] add_node(st2, AstNode(AST_ANCHOR, esc.val, 0, 0, 0, <+>, st.flags, empty_bits!))
             |   add_node(st2, AstNode(AST_CHAR, esc.val, 0, 0, 0, <+>, st.flags, empty_bits!))
-      [42, 43, 63, 123]
+      ['*, '+, '?, '{]
          fail_state(st, "quantifier has nothing to repeat in regex", pos)
-      [93]
+      [']]
          fail_state(st, "unmatched ']' in regex", pos)
       |
          st2 = ParseState(pat, pos + 1, st.flags, st.num_groups, st.nodes, -1, st.err_msg, st.err_pos)
@@ -492,13 +489,13 @@ parse_factor = st =>
    cur' = st1
    (pos' < len) @
       c = pat(pos')
-      (c == 42 || c == 43 || c == 63) // '*', '+', '?'
-         |
-            min_r = c == 43 | 1 | 0
-            max_r = c == 63 | 1 | -1
+      c
+         ['*, '+, '?]
+            min_r = c == '+ | 1 | 0
+            max_r = c == '? | 1 | -1
             pos' = pos' + 1
             greedy' = <+>
-            (pos' < len && pat(pos') == 63) // lazy '*?', '+?', '??'
+            (pos' < len && pat(pos') == '?) // lazy '*?', '+?', '??'
                |
                   greedy' = <->
                   pos' = pos' + 1
@@ -507,24 +504,22 @@ parse_factor = st =>
                AstNode(AST_REP, node', 0, min_r, max_r, greedy', cur'.flags, empty_bits!)
             )
             node' = cur'.node_id
-         |
-            c == 123 // '{m,n}'
+         ['{]
+            bq = parse_brace_quant(pat, pos' + 1)
+            !bq.ok
+               | --| fail_state(cur', bq.err, pos')
+            pos' = bq.next_pos
+            greedy' = <+>
+            (pos' < len && pat(pos') == '?)
                |
-                  bq = parse_brace_quant(pat, pos' + 1)
-                  !bq.ok
-                     | --| fail_state(cur', bq.err, pos')
-                  pos' = bq.next_pos
-                  greedy' = <+>
-                  (pos' < len && pat(pos') == 63)
-                     |
-                        greedy' = <->
-                        pos' = pos' + 1
-                  cur' = add_node(
-                     ParseState(pat, pos', cur'.flags, cur'.num_groups, cur'.nodes, node', cur'.err_msg, cur'.err_pos),
-                     AstNode(AST_REP, node', 0, bq.min_r, bq.max_r, greedy', cur'.flags, empty_bits!)
-                  )
-                  node' = cur'.node_id
-               | -->
+                  greedy' = <->
+                  pos' = pos' + 1
+            cur' = add_node(
+               ParseState(pat, pos', cur'.flags, cur'.num_groups, cur'.nodes, node', cur'.err_msg, cur'.err_pos),
+               AstNode(AST_REP, node', 0, bq.min_r, bq.max_r, greedy', cur'.flags, empty_bits!)
+            )
+            node' = cur'.node_id
+         | -->
    cur'
 
 parse_seq: ParseState => ParseState
@@ -536,8 +531,7 @@ parse_seq = st =>
    seq_id' = -1
    (cur'.pos < len) @
       c = pat(cur'.pos)
-      (c == 124 || c == 41) // '|' or ')'
-         | -->
+      c ['|, ')] -->
       f = parse_factor(cur')
       ?f.err_msg > 0 | --| f
       first'
@@ -559,7 +553,7 @@ parse_alt = st =>
    ?left.err_msg > 0 | --| left
    cur' = left
    alt_id' = left.node_id
-   (cur'.pos < len && pat(cur'.pos) == 124) @ // '|'
+   (cur'.pos < len && pat(cur'.pos) == '|) @
       rhs = parse_seq(ParseState(pat, cur'.pos + 1, cur'.flags, cur'.num_groups, cur'.nodes, -1, cur'.err_msg, cur'.err_pos))
       ?rhs.err_msg > 0 | --| rhs
       cur' = add_node(rhs, AstNode(AST_ALT, alt_id', rhs.node_id, 0, 0, <+>, rhs.flags, empty_bits!))
@@ -666,9 +660,8 @@ is_anchored_root = nodes, idx =>
    idx < 0 | --| <->
    nd = nodes(idx)!!
    nd.kind
-      [AST_ANCHOR] nd.a == ANCHOR_BOL || nd.a == ANCHOR_START
-      [AST_CAT]    is_anchored_root(nodes, nd.a)
-      [AST_GROUP]  is_anchored_root(nodes, nd.a)
+      [AST_ANCHOR] nd.a [ANCHOR_BOL, ANCHOR_START]
+      [AST_CAT, AST_GROUP] is_anchored_root(nodes, nd.a)
       | <->
 
 // --- PikeVM Runtime Execution -----------------------------------------------
@@ -692,8 +685,8 @@ check_anchor = kind, text, sp =>
    kind
       [ANCHOR_BOL, ANCHOR_START] sp == 0
       [ANCHOR_EOL, ANCHOR_END]   sp == len
-      [ANCHOR_BOL_LINE]          sp == 0 || text(sp - 1) == 10
-      [ANCHOR_EOL_LINE]          sp == len || text(sp) == 10
+      [ANCHOR_BOL_LINE]          sp == 0 || text(sp - 1) == '\n
+      [ANCHOR_EOL_LINE]          sp == len || text(sp) == '\n
       |
          prev_w = sp > 0 && is_word_byte(text(sp - 1))
          curr_w = sp < len && is_word_byte(text(sp))
@@ -735,7 +728,7 @@ char_matches = ins, ch =>
       [OP_ANY]
          (ins.flags .&. FLAG_DOTALL) != 0
             | <+>
-            | ch != 10
+            | ch != '\n
       [OP_CLASS] bit_test(ins.bits, ch)
       | <->
 
@@ -746,7 +739,7 @@ run_vm = re, text, start_pos =>
    prog = re.prog
    n_inst = ?prog
    len = ?text
-   start_pos > len | --| <-->
+   start_pos > len |-->
    n_slots = (re.num_groups + 1) * 2
    visited = Int{}
    n_inst @
@@ -816,28 +809,26 @@ expand_replacement = repl, m =>
    i' = 0
    (i' < len) @
       c = repl(i')
-      (c == 36 && (i' + 1) < len) // '$'
+      (c == '$ && (i' + 1) < len)
          |
             nc = repl(i' + 1)
             nc
-               [36] // '$$' -> '$'
-                  out += 36
+               ['$] // '$$' -> '$'
+                  out += '$
                   i' = i' + 2
-               [38, 48] // '$&' or '$0' -> full match
+               ['&, '0] // '$&' or '$0' -> full match
                   out += m.text
                   i' = i' + 2
+               ['1...'9] // '$1'..'$9'
+                  g_idx = nc - '0
+                  g_idx < ?m.groups
+                     |
+                        sp = m.groups(g_idx)!!
+                        sp.start !< 0 | out += sp.text
+                  i' = i' + 2
                |
-                  (nc !< 49 && nc !> 57) // '$1'..'$9'
-                     |
-                        g_idx = nc - 48
-                        g_idx < ?m.groups
-                           |
-                              sp = m.groups(g_idx)!!
-                              sp.start !< 0 | out += sp.text
-                        i' = i' + 2
-                     |
-                        out += 36
-                        i' = i' + 1
+                  out += '$
+                  i' = i' + 1
          |
             out += c
             i' = i' + 1
@@ -846,7 +837,7 @@ expand_replacement = repl, m =>
 #private
 
 is_meta: Int => <>
-is_meta = [92, 46, 43, 42, 63, 40, 41, 124, 91, 93, 123, 125, 94, 36]
+is_meta = ['\\, '., '+, '*, '?, '(, '), '|, '[, '], '{, '}, '^, '$]
 
 #public
 
@@ -988,6 +979,6 @@ escape = s =>
    out = {n * 2}
    n @ i =>
       c = s(i)
-      is_meta(c) | out += 92
+      is_meta(c) | out += '\\
       out += c
    +out

@@ -69,11 +69,14 @@
 <!-- END operators.yaml -->
 
 Notable precedence rules:
-- Infix apply `$` and feed `$>` sit below the choice tier.
-- Postfix error propagation `--!` sits in the postfix tier (tier 18).
-- Cycle jumps (`-->`, `--^`) and cycle escape (`>--`) sit in the cycle tier (tier 1).
-- Bitwise precedence is C-style: `||` < `&&` < `.|.` < `.&.` < comparison < `.<.` `.>.`
-  < `+` `-` < `*` `/` `%`.
+- Infix apply `$` and feed-tier operators (`$>`, `$>>`, `$+>`, `$->`, `.>`) sit below the choice
+  tier, and feed-tier operators can start indented multiline continuation lines.
+- Postfix error propagation `--!` sits in the postfix tier (tier 18); zero-arg calls use postfix `!`
+  (`f!`; empty `f()` is rejected with `E2086`).
+- Cycle jumps (`-->`, `--^`), cycle escape (`>--`), and expression-valued `@>` sit in the cycle
+  tier (tier 1).
+- Bitwise precedence is C-style: `||` < `&&` < `.|.` < `.^.` < `.&.` < comparison < `.<.` `.>.`
+  (non-associative, `E2025`) < `+` `-` < `*` `/` `%`.
 
 ---
 
@@ -98,7 +101,21 @@ types and cannot be implicitly coerced between one another.
 - **Choice**: `x [100] "perfect" [90...99] "great" [> 49] "pass" | "fail"` (guards also support negated `x ![...]`, record/tuple OR patterns `[(1, 2), (3, 4)]`, and `#!` type shapes `T [(..)]`).
 - **Unwrap-or-Default (`|_|`)**: `val = opt_or_res |_| fallback`.
 - **Headless Choice Function**: `classify = [100] "perfect" [> 89] "pass" | "fail"` (a scrutinee-less `[guard]` choice outside an `@` cycle body desugars into a 1-argument function over `_`, callable as `classify(95)` or `95 $> [> 89] "pass" | "fail"`).
-- **Cycle**: `0..count @ i => (i == 5 | -->)` or condition cycle `(n' !< 8) @ (n' = n' - 8)`
+- **Pipelines, Composition & Functor Maps**:
+  - `x $> f(a)` feeds `x` as first arg (evaluating `x` once when RHS uses `_` or `_(field = val)`);
+  - `f .> g` composes functions left-to-right (`(f .> g)(x)` == `g(f(x))`);
+  - `r $>> cont` binds positive ram payloads into ram-returning `cont`;
+  - `r $+> f` maps `f` over the positive slot (`< T | E >` / `< T | >`), and `r $-> g` maps `g` over
+    the negative slot (`< T | E >` / `< | E >`).
+- **Record Copy-with-Update & Destructuring**:
+  - `rec(field = val, ...)` and pipeline `rec $> _(field = val, ...)` copy a nominal or anonymous
+    record and override named fields without repeating the type name;
+  - Positional `(a, b)` and named `(x, y)` / `(x = lx, y = ly)` destructuring work in `=`
+    bindings, `=>` lambda parameters, and `@` / `@>` cycle binders.
+- **Cycle (`@`) & Expression Cycle (`@>`)**:
+  - Statement cycle: `0..count @ i => (i == 5 | -->)` or condition cycle `(n' !< 8) @ (n' = n' - 8)`
+  - Map / Filter-Map: `xs @> (_ * 2)` (`U{}`), `xs @> x => x > 0 | <+ x * 10 +>` (`U{}`)
+  - Seeded Fold: `(0, xs) @> (+)` (`Acc`), `(0, pairs) @> acc, (a, b) => acc + a * b`
 - **Cycle Escape**: `found = 0..10 @ i => (i == 3 | -->) >-- 3` (returns `< Int | >`)
 - **Early Return**: `--| value` returns value immediately; bare `--|` returns from void functions.
 - **Branch Return Sugars**: `|->` (returns `<->`), `|+>` (returns `<+>`), `|-->` (returns `<-->`),

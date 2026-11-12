@@ -33,7 +33,7 @@
 
 // `#private` hides declarations from external module importers (registered
 // internally as `module::#name`). Single-line or indented block forms exist.
-#private internal_version = "1.0.0-showcase"
+#private internal_version = "1.6.0-showcase"
 
 // -----------------------------------------------------------------------------
 // 2. MODULE-LEVEL MARKED GLOBALS (`::`)
@@ -337,16 +337,18 @@ run_showcase = !=>
    v: Vec2
    v.x = 3.0
    v.y = 4.0
-   // Nominal functional update `Vec2(..v, x = 6.0)` copies `v` and overrides `x`
-   // (whereas anonymous `(..v, z = 5.0)` extends a record with additional fields).
-   v2 = Vec2(..v, x = 6.0)
+   // Nominal functional update `Vec2(..v, x = 6.0)` or direct copy-with-update `v(x = 6.0)`
+   // and pipeline `v $> _(x = _.x + 3.0)` copy `v` and override `x` without re-evaluating `_`:
+   v2 = v(x = 6.0)
+   v3 = v2 $> _(y = _.y + 1.0)
+   (vx, vy) = v3
    v_def = Vec2()
    // `#type Point2 Vec2` aliases `Vec2`; anonymous records `(x = ..., y = ...)` check
    // explicit field names (`E3084` on mismatch), and tuples `(a, b)` unify positionally:
    pt_alias: Point2
    pt_alias = (x = 6.0, y = 4.0)
-   check(v2.x == pt_alias.x && v2.y == pt_alias.y && v_def.x == 0.0,
-     "nominal record alias & field-checked unification")
+   check(v2.x == pt_alias.x && v2.y == pt_alias.y && vx == 6.0 && vy == 5.0 && v_def.x == 0.0,
+     "nominal record alias, copy-with-update, destructuring & field-checked unification")
    check(add(10, 20) == 30 && add(10, 20, 12) == 42, "static arity function overloading")
 
    // Packed bitfield manipulation & `#size` compile-time byte size operator:
@@ -454,11 +456,15 @@ run_showcase = !=>
    check(port_ok == "ok" && port_bad == "port out of range (1..65535)",
      "RamNP < | E > positional matching")
 
-   // Monadic bind `$>>` chains operations over positive payloads of RamPP / RamPN:
+   // Monadic bind `$>>` and functor maps `$+>` (positive) / `$->` (negative) over RamPP / RamPN:
    bound_res = parse_positive_int("15")
       $>> (x => <+ x * 2 ->)
-      $>> (y => <+ y + 12 ->)
-   check((bound_res |_| 0) == 42, "monadic bind $>> over RamPP")
+      $+> (+ 12)
+   mapped_err = parse_positive_int("-3")
+      $+> (* 2)
+      $-> ("err: " + _)
+   check((bound_res |_| 0) == 42 && (mapped_err | "ok" | _) == "err: number must be > 0",
+     "monadic bind $>> and functor maps $+> / $-> over RamPP")
 
    sum_ok = sum_two_parsed("19", "23") |_| 0
    sum_err = sum_two_parsed("19", "-5") | "unexpected" | err => err
@@ -471,12 +477,14 @@ run_showcase = !=>
       total' = total' + n + idx
    check(total' == 68, "direct array iteration arr @ elem, idx =>")
 
-   // 2. Expression-valued cycle (`@>`) for Map, Filter-Map & Seeded Fold:
+   // 2. Expression-valued cycle (`@>`) for Map, Filter-Map & Seeded Fold (with destructuring):
    doubled_nums = nums @> (_ * 2)
    big_nums = nums @> n => n > 15 | <+ n + 1 +>
    sum_nums = (0, nums) @> (+)
-   check(?doubled_nums == 3 && doubled_nums(0)!! == 20 && ?big_nums == 2 && sum_nums == 65,
-     "expression-valued cycle @> map, filter-map, and seeded fold")
+   pairs = (Int, Int){}((2, 3), (4, 5))
+   dot_pairs = (0, pairs) @> acc, (x, y) => acc + x * y
+   check(?doubled_nums == 3 && doubled_nums(0)!! == 20 && ?big_nums == 2 && sum_nums == 65 && dot_pairs == 26,
+     "expression-valued cycle @> map, filter-map, seeded fold, and destructuring")
 
    // 2. UTF-8 codepoint iteration (`str @@ rune, byte_pos =>`):
    utf_str = "Aλ🔥"

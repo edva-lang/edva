@@ -70,7 +70,7 @@
          e = p.entries(i)!!
          e.fd == fd | dup' = <+>
          e.fd < 0 && free_slot' < 0 | free_slot' = i
-      dup' | --| <->
+      dup' |->
       free_slot' !< 0
          |
             p.entries(free_slot') = Event(fd, mask, user_data)

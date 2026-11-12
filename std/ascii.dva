@@ -36,42 +36,33 @@
    // --- Case Conversion ---
 
    to_lower: Int => Int
-   to_lower = c =>
-      is_upper(c)
-         | c + 32
-         | c
+   to_lower = [is_upper] _ + 32 | _
 
    to_upper: Int => Int
-   to_upper = c =>
-      is_lower(c)
-         | c - 32
-         | c
+   to_upper = [is_lower] _ - 32 | _
 
    // --- Hexadecimal Conversion ---
 
    hex_value: Int => < Int | >
-   hex_value = c =>
-      c
-         [48...57]  <+ c - 48 +>
-         [65...70]  <+ c - 55 +>
-         [97...102] <+ c - 87 +>
+   hex_value =
+      [48...57]  <+ _ - 48 +>
+      [65...70]  <+ _ - 55 +>
+      [97...102] <+ _ - 87 +>
 
    hex_digit_lower: Int => < Int | >
-   hex_digit_lower = n =>
-      n [0...15]
-         | <+ n < 10 | 48 + n | 87 + n +>
+   hex_digit_lower =
+      [0...9]   <+ 48 + _ +>
+      [10...15] <+ 87 + _ +>
 
    hex_digit_upper: Int => < Int | >
-   hex_digit_upper = n =>
-      n [0...15]
-         | <+ n < 10 | 48 + n | 55 + n +>
+   hex_digit_upper =
+      [0...9]   <+ 48 + _ +>
+      [10...15] <+ 55 + _ +>
 
    // Documented precondition: 0 <= n <= 15
    hex_char_lower: Int => Int
-   hex_char_lower = n =>
-      n < 10 | 48 + n | 87 + n
+   hex_char_lower = [< 10] 48 + _ | 87 + _
 
    // Documented precondition: 0 <= n <= 15
    hex_char_upper: Int => Int
-   hex_char_upper = n =>
-      n < 10 | 48 + n | 55 + n
+   hex_char_upper = [< 10] 48 + _ | 55 + _

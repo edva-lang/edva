@@ -98,17 +98,16 @@ scan_string = b, k =>
 parse_escape: Builder, Int => <Int | Error>
 parse_escape = b, k =>
    e = k + 1 [< ?src] src(k + 1) | -1
-   e
-   ['"] b += '"; scan_string(b, k + 2)
-   ['\\] b += '\\; scan_string(b, k + 2)
-   ['/] b += '/; scan_string(b, k + 2)
-   ['b] b += 8; scan_string(b, k + 2)
-   ['f] b += 12; scan_string(b, k + 2)
-   ['n] b += 10; scan_string(b, k + 2)
-   ['r] b += 13; scan_string(b, k + 2)
-   ['t] b += 9; scan_string(b, k + 2)
-   ['u] parse_unicode(b, k)
-   | <- Error(400, "json: bad escape", "std/json.dva", 0, 0, (k, 0)) +>
+   e == 'u | --| parse_unicode(b, k)
+   b += (e
+      ['", '\\, '/] e
+      ['b] '\b
+      ['f] '\f
+      ['n] '\n
+      ['r] '\r
+      ['t] '\t
+      | --| <- Error(400, "json: bad escape", "std/json.dva", 0, 0, (k, 0)) +>)
+   scan_string(b, k + 2)
 
 // A \uXXXX escape at index k (k is the '\', k+1 is 'u'). Supports BMP
 // and supplementary characters via UTF-16 surrogate pairs.
@@ -466,11 +465,11 @@ hex_digit = n =>
          c
             ['"] b += "\\\""
             ['\\] b += "\\\\"
-            [8] b += "\\b"
-            [12] b += "\\f"
-            [10] b += "\\n"
-            [13] b += "\\r"
-            [9] b += "\\t"
+            ['\b] b += "\\b"
+            ['\f] b += "\\f"
+            ['\n] b += "\\n"
+            ['\r] b += "\\r"
+            ['\t] b += "\\t"
             [< 0x20]
                b += "\\u00"
                b += hex_digit(c .>. 4)

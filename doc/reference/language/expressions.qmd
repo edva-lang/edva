@@ -2,8 +2,8 @@
 meta:
   audience: "Edva users"
   status: "current reference"
-  audited: "df88a80"
-  evidence: "`operators.yaml`, `src/parser.dva`, `src/annotate.dva`, `src/codegen/match.dva`, `src/codegen/stmt.dva`, `tests/pass/004_choice_inline.dva`, `tests/pass/012_cycle_break.dva`, `tests/pass/345_implicit_ram_fallback.dva`"
+  audited: "dce4780"
+  evidence: "`operators.yaml`, `src/parser.dva`, `src/annotate.dva`, `src/codegen/match.dva`, `src/codegen/stmt.dva`, `tests/pass/004_choice_inline.dva`, `tests/pass/012_cycle_break.dva`, `tests/pass/345_implicit_ram_fallback.dva`, `tests/pass/418_cycle_map_fold.dva`, `tests/pass/419_ram_functor_map.dva`, `tests/pass/420_record_pipeline_update.dva`, `tests/pass/421_destructuring.dva`"
 ---
 
 # Expressions, Choices & Cycles
@@ -16,14 +16,18 @@ Edva programs are composed from expressions: calls, choices, ranges, cycles, ass
 |---|---|---|---|
 | Direct call | `f(a, b)` | left (postfix, LBP 170) | Invokes `f` with positional arguments; no space before `(` (`E2032`) |
 | Chained call | `f(a)(b)` | left (postfix, LBP 170) | Calls the function value returned by `f(a)` with `b` |
-| Nullary call | `f!` | left (postfix, LBP 170) | Invokes 0-argument function `f` (defined with `!=>`) |
+| Nullary call | `f!` | left (postfix, LBP 170) | Invokes 0-argument function `f` (defined with `!=>`; `f()` is rejected with `E2086`) |
+| Record copy-update | `rec(k = v, ...)` | left (postfix, LBP 170) | Copies nominal or anonymous record `rec` and overrides named fields `k` |
 | Infix apply | `f $ x` / `f(a) $ b` | right (LBP 30, RBP 30) | Appends `x` / `b` as last argument: `f(x)` / `f(a, b)` |
 | Block apply | `f $` + indented block | right (LBP 30, RBP 30) | Passes indented `k = v` block as a single record argument |
-| Feed | `x $> f` / `x $> f(a)` | left (LBP 40, RBP 50) | Prepends `x` as first argument: `f(x)` / `f(x, a)` |
+| Feed | `x $> f` / `x $> f(a)` / `x $> _(k = v)` | left (LBP 40, RBP 50) | Prepends `x` as first argument (`f(x)` / `f(x, a)`), or evaluates `x` once into `_` when RHS has free `_` or `_(k = v)` |
 | Ram bind | `ram $>> cont` | left (LBP 40, RBP 50) | Threads positive payload of `RamPN` / `RamPP` into ram-returning `cont` (`E3091`) |
+| Ram positive map | `ram $+> fn` | left (LBP 40, RBP 50) | Maps `fn: T => U` over positive slot of `< T | E >` or `< T | >`, preserving negative slot (`E3091`) |
+| Ram negative map | `ram $-> fn` | left (LBP 40, RBP 50) | Maps `fn: E => F` over negative slot of `< T | E >` or `< | E >`, preserving positive slot (`E3091`) |
+| Composition | `f .> g` | left (LBP 40, RBP 50) | Left-to-right function composition (`(f .> g)(x)` $\equiv$ `g(f(x))`), usable in pipelines or as a closure value |
 | Coercion | `Type(x)` / `x $> Type` | — | Scalar width cast, nominal type construction, or empty container `Type()` |
 
-Both `$` and `$>` sit below the choice tier (LBP 50), so an unparenthesized choice on their right-hand side is absorbed as the operand (`f $ a [1] x | y` $\equiv$ `f(a [1] x | y)`).
+Both `$` and the feed-tier operators (`$>`, `$>>`, `$+>`, `$->`, `.>`) sit below the choice tier (LBP 50), so an unparenthesized choice on their right-hand side is absorbed as the operand (`f $ a [1] x | y` $\equiv$ `f(a [1] x | y)`). Pipeline operators (`$>`, `$>>`, `$+>`, `$->`, `.>`) can also begin an indented continuation line to form multiline pipelines.
 
 ## Choice expressions
 
@@ -155,7 +159,7 @@ Cycles iterate at LBP 10, RBP 20 without keywords. `@` and `@@` are statement-va
 | Condition (`Flag` `<>` / `Ram`) | `(cond) @ body` / `cond @ body` | — | — | Re-evaluates `cond` before each iteration; repeats while positive (`<+>` / `<+ ... +>`) |
 | Infinite range | `0.. @ body` | `i =>` (`Int`) | `_` (`Int`), `_i` (`Int`) | Unbounded loop; terminate via `-->` or `--|` |
 | `String` | `s @ body` / `s @@ body` | `b =>` or `b, i =>` | `_` (`Int` byte / `Rune`), `_i` (`Int` index) | `@` iterates raw UTF-8 bytes; `@@` iterates decoded `Rune` codepoints |
-| `T{}` / `T[]` / `(T * N)` | `xs @ body` | `elem =>` or `elem, i =>` | `_` (`T`), `_i` (`Int` index) | Iterates elements in index order `0..?xs` |
+| `T{}` / `T[]` / `(T * N)` | `xs @ body` | `elem =>`, `elem, i =>`, or `(a, b) =>` | `_` (`T`), `_i` (`Int` index) | Iterates elements in index order `0..?xs` (supports positional/named tuple or record destructuring) |
 | Map `K ^ V` | `m @ body` | `val =>` or `val, key =>` | `_` (`V` value), `_i` (`K` key) | Iterates live map entries (**value first, key second**) |
 | Record `Type` (`#!`) | `T @ f => body` | `f =>` (field descriptor) | — | Compile-time unrolled over `0..?T` (`f.name`, `f.type`, `f.idx`) |
 | Enum `Type` (`#!`) | `T @ v => body` | `v =>` (variant descriptor) | — | Compile-time unrolled over `0..?T` (`v.name`, `v.type`, `v.idx`) |
@@ -164,10 +168,10 @@ Cycles iterate at LBP 10, RBP 20 without keywords. `@` and `@@` are statement-va
 
 | Form | Syntax | Result Type | Semantics |
 |---|---|---|---|
-| Map (plain body) | `items @> body` | `U{}` | Evaluates `body` for each element (`x =>`, `x, i =>`, implicit `_`/`_i`, or point-free function/section/type/composition) and collects into a new `U{}` |
-| Filter-Map (`RamPN`/`RamPP` body) | `items @> (x => cond \| <+ u +>)` | `U{}` | Unwraps and appends `u` on `<+ u +>`, skipping `<-->` / `<- err ->` |
-| Seeded Fold / Reduce | `(seed, items) @> body` | `Acc` | Initializes accumulator to `seed: Acc` and folds over `items` via `acc, x =>`, `acc, x, i =>`, `acc =>`, or binary `(Acc, E) => Acc` (`(+)`, `(*)`, `fn`); returns `seed` on empty `items` |
-| Conditional Fold | `(seed, items) @> (acc, x => cond \| <+ next +>)` | `Acc` | Updates accumulator on `<+ next +>` and preserves current `acc` on `<-->` |
+| Map (plain body) | `items @> body` | `U{}` | Evaluates `body` for each element (`x =>`, `(a, b) =>`, `x, i =>`, implicit `_`/`_i`, or point-free function/section/type/composition) and collects into a new `U{}` |
+| Filter-Map (`RamPN`/`RamPP` body) | `items @> (x => cond | <+ u +>)` | `U{}` | Unwraps and appends `u` on `<+ u +>`, skipping `<-->` / `<- err ->` |
+| Seeded Fold / Reduce | `(seed, items) @> body` | `Acc` | Initializes accumulator to `seed: Acc` and folds over `items` via `acc, x =>`, `acc, (a, b) =>`, `acc, x, i =>`, `acc =>`, or binary `(Acc, E) => Acc` (`(+)`, `(*)`, `fn`); returns `seed` on empty `items` |
+| Conditional Fold | `(seed, items) @> (acc, x => cond | <+ next +>)` | `Acc` | Updates accumulator on `<+ next +>` and preserves current `acc` on `<-->` |
 
 Inside `@>`, `--^` skips appending (map) or preserves the current `acc` (seeded fold), and `-->` stops early and returns the elements collected or `acc` accumulated so far.
 
@@ -209,6 +213,7 @@ Assignments sit at LBP 60, RBP 50 (right-associative) and always evaluate to `()
 |---|---|---|
 | Immutable binding | `x = expr` | Binds immutable local or module constant (`E3033` on reassignment) |
 | Rebindable binding | `x' = expr` | Declares or updates a primed mutable variable (`x'` or `x = new_val`) |
+| Destructuring binding | `(a, b) = pair`<br>`(x, _, z) = triple`<br>`(x = lx, y = ly) = pt` | Positional or named tuple/record destructuring (supports `_` wildcards, `field = local` renaming, and primed `a'` binders) |
 | Marked global | `::g = expr` | Declares a module global mutable inside functions via `g = expr` or `::g = expr` |
 | Forward annotation | `x: Type` | Declares type without allocating storage (`E3045` if read before write) |
 | Append | `b += expr` / `xs += elem` | Appends in-place to `Builder` `b` or growable array `xs` (`T{}`) |

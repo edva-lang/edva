@@ -209,7 +209,7 @@ find_opt_idx = opts, key =>
    res' = -1
    ?opts @ i =>
       o = opts(i)!!
-      (o.role [ROpt, RPos]) && ((o.long != "" && o.long == key) || (o.short != "" && o.short == key))
+      (o.role [ROpt, RPos]) && key != "" && (key [o.long, o.short])
          |
             res' = i
             -->
@@ -346,24 +346,22 @@ apply_opt_val = o, idx, val, flags, ints, floats, strs, str_lists =>
    lbl = opt_err_label(o)
    o.kind
       [KFlag]
-         val == "true" || val == "1" || val == "yes"
-            |
+         val
+            ["true", "1", "yes"]
                v_err = run_flag_val(o.val_flag, <+>)
                v_err != ""
                   | v_err
                   |
                      flags(idx) = <+> !| _
                      ""
-            |
-               val == "false" || val == "0" || val == "no"
+            ["false", "0", "no"]
+               v_err = run_flag_val(o.val_flag, <->)
+               v_err != ""
+                  | v_err
                   |
-                     v_err = run_flag_val(o.val_flag, <->)
-                     v_err != ""
-                        | v_err
-                        |
-                           flags(idx) = <-> !| _
-                           ""
-                  | "invalid boolean value for " + lbl + ": " + val
+                     flags(idx) = <-> !| _
+                     ""
+            | "invalid boolean value for " + lbl + ": " + val
       [KInt]
          str::parse_int(val)
             | v =>

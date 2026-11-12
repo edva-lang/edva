@@ -2,8 +2,8 @@
 meta:
   audience: "Edva users"
   status: "current reference"
-  audited: "df88a80"
-  evidence: "`operators.yaml`, `GRAMMAR.md`, `src/operators.dva`, `src/parser.dva`, `src/annotate.dva`, `tests/pass/027_operator_sections.dva`, `tests/pass/029_implicit_param_lambda.dva`, `tests/pass/347_underscore_implicit_uses.dva`, `tests/pass/363_accessor_sections.dva`"
+  audited: "dce4780"
+  evidence: "`operators.yaml`, `GRAMMAR.md`, `src/operators.dva`, `src/parser.dva`, `src/annotate.dva`, `tests/pass/027_operator_sections.dva`, `tests/pass/029_implicit_param_lambda.dva`, `tests/pass/347_underscore_implicit_uses.dva`, `tests/pass/363_accessor_sections.dva`, `tests/pass/417_pipeline_compose.dva`, `tests/pass/419_ram_functor_map.dva`, `tests/pass/420_record_pipeline_update.dva`"
 ---
 
 # Operators, Sections & Underscore
@@ -41,7 +41,9 @@ Edva uses Pratt parsing to resolve operator precedence and associativity. This c
 |---|---|
 | Left-associative tiers (`RBP > LBP`) | Operator binds tightly on the left (`a - b - c` $\equiv$ `(a - b) - c`) |
 | Right-associative tiers (`RBP <= LBP`) | Operator extends rightward (`f $ g $ x` $\equiv$ `f(g(x))`) |
-| Choice absorption (`$` / `$>`) | `$` (LBP 30) and `$>` (LBP 40) sit below `choice` (LBP 50), absorbing unparenthesized RHS choices (`a $> b | c | d` $\equiv$ `a $> (b | c | d)`) |
+| Non-associative shifts (`.<.`, `.>.`) | Chaining shifts without parentheses (`a .<. b .>. c`) is rejected with `E2025`; parenthesize explicitly (`(a .<. b) .>. c`) |
+| Choice absorption (`$` / feed tier) | `$` (LBP 30) and feed-tier operators (`$>`, `$>>`, `$+>`, `$->`, `.>`, LBP 40) sit below `choice` (LBP 50), absorbing unparenthesized RHS choices (`a $> b | c | d` $\equiv$ `a $> (b | c | d)`) |
+| Multiline pipeline continuation | Indented lines beginning with `$>`, `$>>`, `$+>`, `$->`, or `.>` continue the preceding expression |
 | Operator sections (`op rhs`) | 13 binary operators with a leading operand omitted and mandatory trailing space form a 1-arg function over `_` with RBP 130 |
 
 ## Relational, equality, and chained comparisons
@@ -97,9 +99,10 @@ Range operators sit at LBP 70, RBP 80. Endpoints must be adjacent to the operato
 |---|---|---|---|
 | Arithmetic | `+` `-` `*` `/` `%` | Numeric (`Int`, `Float`, `i8`..`u64`, `f32`, SIMD vectors) | Same numeric type (`+` also concatenates `String`, `Rune`, and `Builder`) |
 | Bitwise | `.|.` `.^.` `.&.` `.!.` | Integerish (`Int`, `i8`..`u64`, integer SIMD vectors) | Same integer type (`.!.` is unary bitwise NOT) |
-| Bit shift | `.<.` `.>.` | Integerish | Left shift (`.<.`) and right shift (`.>.`); sections infer `Int => Int` |
+| Bit shift | `.<.` `.>.` | Integerish | Non-associative left shift (`.<.`) and right shift (`.>.`); unparenthesized chaining emits `E2025`; sections infer `Int => Int` |
 | Logical | `&&` `||` | `<>` (Flag) or compatible heap ramifications | Short-circuiting AND / OR |
 | Map access | `m ^ k`<br>`m ^? k`<br>`m ^- k` | Map `K ^ V`, key `K` | `^`: `< V | Error >` lookup (`m ^ k = v` inserts)<br>`^?`: `<>` key existence check<br>`^-`: `<>` key removal |
+| Pipeline & composition | `$>` `$>>`<br>`$+>` `$->`<br>`.>` | Any value, ramification, or function stage | `$>`: feed (`x $> f(a)` $\equiv$ `f(x, a)`)<br>`$>>`: monadic ram bind<br>`$+>` / `$->`: positive / negative ram functor map<br>`.>`: left-to-right function composition (`(f .> g)(x)` $\equiv$ `g(f(x))`) |
 
 ## Operator sections and field-accessor sections
 
@@ -155,6 +158,7 @@ x = (.)
 | **Enum payload branch** | `box [Item] (+ 2) | 0` | Applies section directly to variant payload (`E3084` on payload-free variant) |
 | **Ordinary value/predicate branch** | `mode [> 0] (* 2) | (+ 1)` | Returns the section **as a function value** (`Int => Int`) without applying to `mode` |
 | **Ram bind (`$>>`)** | `opt $>> (x => <+ x + 1 +>)` | Continuation must return a ramification; `opt $>> (+ 1)` emits `E3091` |
+| **Ram functor map (`$+>`, `$->`)** | `opt $+> (+ 1)`<br>`res $-> ("err: " + _)` | Maps section, function, choice `[guard] ...`, or free-`_` expression over positive (`$+>`) or negative (`$->`) ram payload, preserving the ramification wrapper |
 
 ```{.dva expected-error="E3091"}
 #type Option < Int | >
@@ -169,6 +173,7 @@ The exact identifier `_` has context-dependent implicit roles, governed by stric
 | Context | Syntax | Meaning of `_` / `_i` | Diagnostic on Misuse |
 |---|---|---|---|
 | **Grouped implicit lambda** | `(_ * 2)`, `(10 - _)`, `((a = _, b = 1))` | Innermost enclosing `(...)` group containing a free `_` becomes a 1-arg function (`_` repeated inside the same group refers to the same single parameter) | — |
+| **Pipeline RHS & record update** | `next(s) $> _(cursor = _.cursor + 1)`<br>`res $+> _.val * 2` | Free `_` or `_(field = val, ...)` on RHS of `$>`, `$+>`, `$->` binds to LHS (evaluated **once** into a temporary when referenced multiple times) | — |
 | **Operator section** | `(* 2)`, `(* _)` | Implicit left operand (`* _` $\equiv$ `(_ * _)`) | `E2031` if space omitted |
 | **Headless choice / guard** | `[< 0] -1 | 1`, `['a'...'z']` | Wraps choice/guard into a 1-arg function over `_` (outside statement `@` body) | `E3003` if omitted subject has no `_` |
 | **Implicit cycle body** | `10..12 @ io::out(_ + _i)` | `_` is current element/byte/map-value; `_i` is `0`-based index (or map key `K` in `m @`). Saved/restored across nested cycles; does not survive cycle exit | `E3004`: reading `_` or `_i` after cycle exit |

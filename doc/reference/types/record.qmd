@@ -2,8 +2,8 @@
 meta:
   audience: "Edva developers"
   status: "current reference"
-  audited: "1633ab0"
-  evidence: "`src/parser.dva`, `src/annotate.dva`, `src/unify.dva`, `src/codegen/types.dva`, `src/codegen/match.dva`, `tests/pass/414_nominal_and_field_record_unification.dva`, `GRAMMAR.md`"
+  audited: "dce4780"
+  evidence: "`src/parser.dva`, `src/annotate.dva`, `src/unify.dva`, `src/codegen/types.dva`, `src/codegen/match.dva`, `tests/pass/414_nominal_and_field_record_unification.dva`, `tests/pass/420_record_pipeline_update.dva`, `tests/pass/421_destructuring.dva`, `GRAMMAR.md`"
 ---
 
 # Records, Tuples, Bitfields & Enums
@@ -33,6 +33,8 @@ Edva provides **records** for product types (nominal `#type` structs, anonymous 
 | **Zero/default value** | `Point.zero` | Initializes all fields to `0` / `<->` / `""` or their declared `= default` expression | — |
 | **Forward declaration** | `p: Point` | Allocates uninitialized record storage; **every field must be written before being read** | `E3130`: reading uninitialized field |
 | **Field read / write** | `p.x`, `p.0`, `p.x = 5` | Reads or mutates named, positional, or bitfield slot in place | — |
+| **Copy-with-update** | `p(x = 99)`<br>`p $> _(x = _.x + 1, y = 0)` | Copies nominal or anonymous record `p` and overrides the specified named fields without repeating the type name or re-evaluating the LHS | `E3084`: unknown field or type mismatch |
+| **Destructuring** | `(a, b) = p`<br>`(x, y) = p`<br>`(x = lx, y = ly) = p` | Extracts positional or named fields in `=` bindings, `=>` lambda parameters, and `@` / `@>` cycle binders | — |
 | **Field-accessor section** | `(.x)`, `(.0)`, `(.a.b)` | 1-argument projection function `r => r.x` | `E2064`: bare `(.)` |
 | **Structural equality** | `p1 == p2`, `p1 != p2` | Compares all fields recursively | `E3084`: if record contains fn field |
 
@@ -46,9 +48,14 @@ p: Point
 p.x = 10
 p.y = 20
 
+p2 = p
+   $> _(x = _.x + 5)
+   $> _(y = _.y + 10)
+(px, py) = p2(x = 100)
+
 f' = Flags(fin = <->, syn = <+>, rest = 7)
 
-io::out $ (p.x + p.y, f'.syn, f'.rest, #size Flags)
+io::out $ (px + py, f'.syn, f'.rest, #size Flags)
 ```
 
 ```{.dva expected-error="E3130"}

@@ -89,31 +89,29 @@ read_all_delim = text, delim =>
                   i' = i' + 1
                   col' = col' + 1
                |
-                  c == delim
-                     |
+                  c
+                     [delim]
                         cur_row' += +field_b'
                         field_b' = {32}
                         at_field_start' = <+>
                         i' = i' + 1
                         col' = col' + 1
+                     ['\r, '\n]
+                        cur_row' += +field_b'
+                        rows += cur_row'
+                        cur_row' = Row()
+                        field_b' = {32}
+                        at_field_start' = <+>
+                        (c == '\r && i' + 1 < n && (text(i' + 1) .&. 0xFF) == '\n)
+                           | i' = i' + 2
+                           | i' = i' + 1
+                        line' = line' + 1
+                        col' = 1
                      |
-                        (c == '\r || c == '\n)
-                           |
-                              cur_row' += +field_b'
-                              rows += cur_row'
-                              cur_row' = Row()
-                              field_b' = {32}
-                              at_field_start' = <+>
-                              (c == '\r && i' + 1 < n && (text(i' + 1) .&. 0xFF) == '\n)
-                                 | i' = i' + 2
-                                 | i' = i' + 1
-                              line' = line' + 1
-                              col' = 1
-                           |
-                              field_b' += c
-                              at_field_start' = <->
-                              i' = i' + 1
-                              col' = col' + 1
+                        field_b' += c
+                        at_field_start' = <->
+                        i' = i' + 1
+                        col' = col' + 1
    err_line' > 0
       | <- csv_err(err_msg', err_line', err_col') +>
       |
@@ -218,13 +216,10 @@ decode_csv_cell = s, line, col =>
             | x => <+ x ->
             | <- csv_err("invalid float '" + s + "'", line, col) +>
       [<>]
-         ts = str::lower(str::trim(s))
-         (ts == "true" || ts == "1" || ts == "yes")
-            | <+ <+> ->
-            |
-               (ts == "false" || ts == "0" || ts == "no")
-                  | <+ <-> ->
-                  | <- csv_err("invalid boolean '" + s + "'", line, col) +>
+         str::lower(str::trim(s))
+            ["true", "1", "yes"] <+ <+> ->
+            ["false", "0", "no"] <+ <-> ->
+            | <- csv_err("invalid boolean '" + s + "'", line, col) +>
       [<..>]
          out' = T.zero
          matched' = <->

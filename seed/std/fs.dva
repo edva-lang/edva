@@ -562,16 +562,18 @@ format_perms: Int, <> => String
 format_perms = mode, is_d =>
    pb = PermsBits(mode)
    b = {16}
-   b += is_d | 'd | '-
-   b += pb.user_r | 'r | '-
-   b += pb.user_w | 'w | '-
-   b += pb.user_x | 'x | '-
-   b += pb.group_r | 'r | '-
-   b += pb.group_w | 'w | '-
-   b += pb.group_x | 'x | '-
-   b += pb.other_r | 'r | '-
-   b += pb.other_w | 'w | '-
-   b += pb.other_x | 'x | '-
+   b += (
+      is_d | 'd | '-,
+      pb.user_r | 'r | '-,
+      pb.user_w | 'w | '-,
+      pb.user_x | 'x | '-,
+      pb.group_r | 'r | '-,
+      pb.group_w | 'w | '-,
+      pb.group_x | 'x | '-,
+      pb.other_r | 'r | '-,
+      pb.other_w | 'w | '-,
+      pb.other_x | 'x | '-
+   )
    +b
 
 format_time: Int => String

@@ -2,8 +2,8 @@
 meta:
   audience: "Edva users"
   status: "current reference"
-  audited: "1633ab0"
-  evidence: "`src/parser.dva`, `src/annotate.dva`, `src/unify.dva`, `GRAMMAR.md`, `tests/pass/121_fn_signatures.dva`, `tests/pass/414_nominal_and_field_record_unification.dva`"
+  audited: "dce4780"
+  evidence: "`src/parser.dva`, `src/annotate.dva`, `src/unify.dva`, `GRAMMAR.md`, `tests/pass/121_fn_signatures.dva`, `tests/pass/414_nominal_and_field_record_unification.dva`, `tests/pass/421_destructuring.dva`"
 ---
 
 # Declarations, Bindings & Modules
@@ -16,6 +16,8 @@ This chapter specifies value bindings, mutability rules, separate function signa
 |---|---|---|---|
 | **Immutable binding** | `x = expr` | Local or module constant | Immutable after binding; reassigning `x = v` emits `E3033` |
 | **Primed local rebinding** | `x' = expr`<br>`x'' = expr` | Local mutable / stepped SSA binding | Once primed (`x' = 0`), subsequent updates in the same scope may write `x' = v`, `x = v`, or `x'' = v` |
+| **Positional destructuring** | `(a, b) = pair`<br>`(x, _, z) = triple`<br>`(a', b') = (1, 2)` | Local or module destructuring | Evaluates RHS once and binds positional `.0`, `.1`, ... fields (`_` skips a slot; primed `a'` creates mutable local bindings) |
+| **Named field destructuring** | `(x, y) = pt`<br>`(x = px, y = py) = pt` | Local or module destructuring | Extracts listed named record fields by name (`field = local` renames the local binder; unmentioned fields are ignored) |
 | **Mutable module global** | `::g = expr` | Module-wide mutable state | Readable as `g` or `::g`; writable inside functions as `g = v`, `::g = v`, or `g ::= v` (`E3033` if `g` was not declared with `::`) |
 | **Forward type annotation** | `x: Type` (own line) | Local or module declaration | Declares the static type of `x` before assignment; allocates no zeroed storage (`E3045` if read before write; `E3130` on partial record init) |
 | **Inline type + value** | `x: Type = expr` | **Forbidden** | Rejected with `E2009`; place `x: Type` on the line preceding `x = expr` |
@@ -33,7 +35,9 @@ bump = delta =>
    acc' = acc' * 2
    acc'
 
-io::out $ bump(5)   // 10
+(lo, hi) = (10, 20)
+(x = px, y = py) = (x = 5, y = 9, z = 12)
+io::out $ (bump(5), lo + hi + px + py)   // (10, 44)
 ```
 
 ## Function signatures and definitions
@@ -46,8 +50,8 @@ Function types and parameter names are separated onto consecutive declarations:
 | **Nullary signature** | `f: () => R` | Declares a 0-argument function returning `R` | — |
 | **Void return signature** | `f: T1 => ()` | Declares a side-effecting function returning `Unit` (`void`) | `E2104`: `()` used as value expr |
 | **Compile-time parameter** | `f: #! T: Type, T => R`<br>`f: #! N: Int => R` | Declares compile-time `Type` or constant parameter specialized per call site | `E3129`: `Type` lowered at runtime |
-| **Function definition** | `f = a, b => body` | Bare parameter names (never parenthesized `(a, b) =>`) followed by `=>` and expression or indented block | `E2040`: explicit `_` parameter |
-| **Nullary definition** | `f = !=> body` | 0-argument function body; invoked with postfix `!` (`f!`) | — |
+| **Function definition** | `f = a, b => body`<br>`f = (x, y) => x + y` | Bare parameter names, or parenthesized tuple/record destructuring parameters (`(a, b) =>`, `(x = px, y = py) =>`); single-identifier `(x) =>` is forbidden (`E2037`) | `E2040`: explicit `_` parameter |
+| **Nullary definition** | `f = !=> body` | 0-argument function body; invoked exclusively with postfix `!` (`f!`); `f()` is rejected (`E2086`) | `E2086`: `()` on function call |
 | **Unannotated function** | `f = a, b => a + b` | Inferred via static unification across body and call sites; **never defaults unknown types to `Int`** | `E3103` / `E3128`: ambiguous or underconstrained type |
 
 ```{.dva .run}

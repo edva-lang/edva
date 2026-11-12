@@ -444,6 +444,11 @@ AssignmentStmt ::= Identifier "=" Expr
 
 - `=` declares an **immutable** binding. Re-assigning an immutable binding is
   an error (`E3033`).
+- **Tuple and record destructuring (`=` bindings)**: `(a, b) = pair`,
+  `(x, _, z) = triple`, `(line, col) = tok`, `(line = l, col = c) = tok`,
+  and primed `(a', b') = (1, 2)` evaluate the RHS once into a temporary and
+  bind positional (`.0`, `.1`, ...) or named fields into the enclosing scope.
+  Single-field `(x) = expr` is not destructuring (`E2084`).
 - `::name = v`, `::name := v`, `::name: T` declares a **marked global variable**.
   Inside functions, writing `name = expr` (or `::name = expr` or legacy
   `name ::= expr`) mutates the marked global without creating a local shadow.
@@ -548,6 +553,26 @@ the supplied arguments.
 
 Whitespace between the function expression and the opening parenthesis is
 forbidden (`E2032`): `f (x)` is a syntax error; write `f(x)` or `f $ x`.
+Empty parentheses `()` are forbidden on function calls (`E2086`): zero-argument
+functions (`!=>`) are invoked exclusively with postfix `!` (`f!`), while `()`
+remains valid for empty record/collection constructors (`Rec()`, `Int{}()`).
+
+**Record copy-with-update and `$>` single-evaluation.** Calling a record value
+with named field overrides — `rec(field = val, ...)` — or writing
+`rec $> _(field = val, ...)` in a pipeline copies all unmentioned fields of the
+nominal or anonymous record `rec` and overrides the specified fields without
+repeating the type name. Whenever the RHS of `$>` contains free `_` references
+(including `State(a = _.a + 1, b = _.b + 1, .._)` or `_(a = _.a + 1)`), the LHS
+is evaluated **once** into a compiler-generated temporary.
+
+**Pipeline continuations, `.>` composition, and `$+>` / `$->` ram maps.**
+Indented lines starting with `$>`, `$>>`, `$+>`, `$->`, or `.>` continue the
+preceding expression as a multiline pipeline. `.>` composes functions
+left-to-right (`(f .> g)(x)` ≡ `g(f(x))`) both inside pipelines and as a
+standalone first-class closure. `$+>` maps a function/choice/section/free-`_`
+expression over the positive slot of `< T | E >` or `< T | >`, and `$->` maps
+over the negative slot of `< T | E >` or `< | E >`, passing the opposite slot
+through unchanged (`E3091` on incompatible types).
 
 **Repetition.** `expr {N}` (with `N` a positive integer literal) expands to a
 record of `N` copies of `expr`: `0 {3548}` is 3548 zeros. A `{` that **starts**
@@ -669,8 +694,12 @@ FnExpr     ::= Identifier { "," Identifier } "=>" ( Expr | Block )
 Block      ::= Indent { Statement } Dedent
 ```
 
-- **Bare (parentless) parameters**: `add = a, b => a + b`. Parameter lists
-  are never parenthesized — `(a, b) => ...` is a grammar error. **Inline
+- **Bare parameters & tuple/record destructuring**: `add = a, b => a + b`.
+  Single parameters and parameter lists as a whole are not parenthesized —
+  `(a) => ...` emits `E2037`. However, an individual parameter that is a
+  multi-element tuple or named record pattern destructures that argument:
+  `add_pt = (x, y) => x + y`, `rename = (x = px, y = py) => px + py`,
+  `zip_sum = (a, b), (c, d) => a + b + c + d`. **Inline
   parameter types are removed** — `a: Int, b: Int => ...` is rejected; types
   live only in a separate signature. The parameter list is **mandatory for
   `=>`** — `=> body` with no parameters is a parse error (`E2050`); the one
@@ -877,7 +906,21 @@ xs @ elem, i => print_int $ i
 ```
 
 In the implicit block form (`xs @ ...`), `_` binds the unwrapped element and
-`_i` binds the index.
+`_i` binds the index. Cycle element binders in `@` and `@>` also support
+positional and named tuple/record destructuring (`pairs @ (k, v) => ...`,
+`pts @ (x, y), i => ...`).
+
+**Expression-valued cycles (`@>`).**
+- **Map (`items @> body` -> `U{}`)**: when `body` produces a plain value `U`,
+  collects each iteration's result into a new growable array `U{}`.
+- **Filter-Map (`items @> body` -> `U{}`)**: when `body` produces `< U | >` or
+  `< U | Error >`, unwraps and appends `u` on `<+ u +>` and skips negative
+  outcomes.
+- **Seeded Fold (`(seed, items) @> body` -> `Acc`)**: when the LHS is a 2-tuple
+  `(seed, items)`, initializes the accumulator to `seed` and folds over `items`
+  via `acc, x =>`, `acc, (a, b) =>`, `acc, x, i =>`, `acc =>`, or a binary
+  operator/function `(+)`, `(*)`, `fn`. If `body` returns `< Acc | >`,
+  `<+ next +>` updates `acc` and `<-->` preserves `acc`.
 
 - `-->` breaks out of the innermost enclosing cycle; `--^` skips to the next
   iteration. An integer suffix targets an outer cycle: `-->2` breaks the

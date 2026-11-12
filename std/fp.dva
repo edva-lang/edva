@@ -37,12 +37,12 @@
    // compose: f after g — right-to-left composition ("f(g(x))", i.e. `g .> f`).
    // Curried: compose(f, g) is a function; type params A/B/C are inferred from the two function args.
    compose: #! A: Type, #! B: Type, #! C: Type, (B => C), (A => B) => (A => C)
-   compose = f, g => g .> f
+   compose = f, g => x => x $> (g .> f)
 
    // pipe: g after f — left-to-right function composition (`f .> g`, i.e. "g(f(x))").
    // Curried: pipe(f, g) is a function.
    pipe: #! A: Type, #! B: Type, #! C: Type, (A => B), (B => C) => (A => C)
-   pipe = f, g => f .> g
+   pipe = f, g => x => x $> (f .> g)
 
    // const: return its first argument, ignoring the second. Curried — the second
    // type param B is deferred to the returned lambda's own call site (deferred
@@ -219,7 +219,7 @@
    take: #! T: Type, Int, T[] => T[]
    take = n, xs =>
       len = ?xs
-      k = n < 0 | 0 | (n > len | len | n)
+      k = %clamp(n, 0, len)
       xs(0..k)
 
    // drop: return a zero-copy slice view omitting the first n elements (clamped
@@ -227,7 +227,7 @@
    drop: #! T: Type, Int, T[] => T[]
    drop = n, xs =>
       len = ?xs
-      k = n < 0 | 0 | (n > len | len | n)
+      k = %clamp(n, 0, len)
       xs(k..len)
 
    // take_while: return a zero-copy slice view of leading elements where pred
