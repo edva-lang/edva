@@ -5,7 +5,7 @@ def root [] {
     $env.FILE_PWD | path dirname
 }
 
-def main [] {
+def main [--check] {
     let repo_root = (root)
     let version_file = ($repo_root | path join "VERSION")
     let base_version = if ($version_file | path exists) {
@@ -55,6 +55,7 @@ def main [] {
     }
 
     if $existing != $content {
+        if $check { exit 1 }
         $content | save --raw -f $target
         print $"Generated ($target): version=($version), commit=($commit_str)"
     }

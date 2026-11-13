@@ -80,6 +80,8 @@ ALL_OBJS      := $(STD_OBJS) $(COMPILER_OBJS) $(ENTRY_OBJ)
 ALL_SRCS      := $(STD_MODULES:%=std/%.dva) $(COMPILER_MODULES:%=src/%.dva) src/$(ENTRY_MODULE).dva
 SCAN_SRCS     := $(shell find src std -name '*.dva')
 DEPS_MK       := build/deps.mk
+SEED_IR       := $(shell find seed/ir -name '*.ll')
+BOOTSTRAP_STAMP := build/.seed-stamp
 
 .PHONY: all build clean test check dom-test dom-smoke dom-browser-smoke driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install uninstall
 
@@ -92,15 +94,19 @@ edva: $(ALL_OBJS)
 	$(CC) $(ALL_LDFLAGS) $(ALL_OBJS) $(LIBS) -o $@
 
 # Ensure bootstrap compiler exists before compiling any object
-$(ALL_OBJS): | bootstrap build/obj src/version.dva src/poll.dva
+$(ALL_OBJS): $(BOOTSTRAP_STAMP)
+$(ALL_OBJS): | build/obj src/version.dva src/poll.dva
 
-.PHONY: config-poll
-config-poll:
-	if [ ! -f src/poll.dva ] || ! cmp -s src/poll/$(POLL_BACKEND).dva src/poll.dva; then \
-		cp src/poll/$(POLL_BACKEND).dva src/poll.dva; \
-	fi
+.PHONY: config-poll FORCE
+config-poll: src/poll.dva
+FORCE:
 
-src/poll.dva: config-poll
+# A changed backend forces a copy, but a matching backend stays up to date.
+ifneq ($(shell cmp -s src/poll/$(POLL_BACKEND).dva src/poll.dva; echo $$?),0)
+src/poll.dva: FORCE
+endif
+src/poll.dva: src/poll/$(POLL_BACKEND).dva
+	cp src/poll/$(POLL_BACKEND).dva $@
 
 # Pattern rules for compilation units
 build/obj/%.o: std/%.dva
@@ -118,14 +124,24 @@ build/obj/edva.o: src/edva.dva
 build/obj:
 	mkdir -p $@
 
-# Bootstrap from seed if ./edva binary is missing or older than seed/ir
-bootstrap:
-	if [ ! -x ./edva ] || [ seed/ir/edva.ll -nt ./edva ]; then \
-		rm -rf build/obj; \
+# A real prerequisite invalidates cached objects when the seed changes.
+# Never delete tracked objects from an order-only bootstrap recipe.
+bootstrap: $(BOOTSTRAP_STAMP)
+ifeq ($(shell test -x ./edva || echo missing),missing)
+$(BOOTSTRAP_STAMP): FORCE
+endif
+$(BOOTSTRAP_STAMP): $(SEED_IR)
+	mkdir -p $(dir $@)
+	set -e; bootstrap_needed=0; \
+	for source in $(SEED_IR); do \
+		if [ ! -x ./edva ] || [ "$$source" -nt ./edva ]; then bootstrap_needed=1; fi; \
+	done; \
+	if [ "$$bootstrap_needed" = 1 ]; then \
 		printf '#ifdef __APPLE__\nextern int *__error(void);\nint *__errno_location(void) { return __error(); }\n#else\nextern int *__errno_location(void);\nint *__error(void) { return __errno_location(); }\n#endif\n' > /tmp/edva_seed_shim_$$$$.c; \
 		$(CC) --target=$$($(CC) -dumpmachine) $(ALL_LDFLAGS) $$(find seed/ir -name "*.ll") /tmp/edva_seed_shim_$$$$.c $(LIBS) -o edva; \
-		rc=$$?; rm -f /tmp/edva_seed_shim_$$$$.c; exit $$rc; \
+		rm -f /tmp/edva_seed_shim_$$$$.c; \
 	fi
+	touch $@
 
 # --- Automatic Code Generation -----------------------------------------------
 
@@ -137,9 +153,15 @@ src/operators.dva: operators.yaml
 
 src/version.dva: VERSION tools/gen_version.nu
 	$(NU) tools/gen_version.nu
+	touch $@
 
-gen-version:
-	$(NU) tools/gen_version.nu
+# Check HEAD and dirty state without perpetually invalidating the file.
+ifeq ($(filter clean uninstall,$(MAKECMDGOALS)),)
+ifneq ($(shell $(NU) tools/gen_version.nu --check >/dev/null 2>&1 || echo stale),)
+src/version.dva: FORCE
+endif
+endif
+gen-version: src/version.dva
 
 gen-tokens: src/lexer.dva
 gen-operators: src/operators.dva
@@ -176,7 +198,7 @@ uninstall:
 # Stage 2: ./edva_stage1 compiles all modules to build/stage2/*.ll
 # Fixed-point asserts: diff -u build/stage1 build/stage2 is empty
 
-fixed-point: bootstrap
+fixed-point: edva
 	rm -rf build/stage1 build/stage2 edva_stage1 edva_stage2
 	mkdir -p build/stage1/codegen build/stage2/codegen
 	for m in $(STD_MODULES); do \
