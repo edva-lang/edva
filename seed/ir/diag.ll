@@ -424,58 +424,70 @@ target triple = "x86_64-unknown-linux-gnu"
 @str.111.struct = internal unnamed_addr constant { i64, ptr } { i64 45, ptr @str.111 }
 @clo.const.93 = internal constant { ptr, ptr } { ptr @"diag::E4007_unwrap_empty_or_error", ptr null }
 @"var.diag::E4007_unwrap_empty_or_error" = global ptr null
-@str.112 = internal unnamed_addr constant [32 x i8] c"' is not compile-time evaluable\00"
-@str.112.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.112 }
-@clo.const.94 = internal constant { ptr, ptr } { ptr @"diag::compile_time_parameter_suffix", ptr null }
+@str.112 = internal unnamed_addr constant [1 x i8] zeroinitializer
+@str.112.struct = internal unnamed_addr constant { i64, ptr } { i64 0, ptr @str.112 }
+@str.113 = internal unnamed_addr constant [6 x i8] c" of '\00"
+@str.113.struct = internal unnamed_addr constant { i64, ptr } { i64 5, ptr @str.113 }
+@str.114 = internal unnamed_addr constant [2 x i8] c"'\00"
+@str.114.struct = internal unnamed_addr constant { i64, ptr } { i64 1, ptr @str.114 }
+@str.115 = internal unnamed_addr constant [43 x i8] c"Cannot infer compile-time type parameter '\00"
+@str.115.struct = internal unnamed_addr constant { i64, ptr } { i64 42, ptr @str.115 }
+@str.116 = internal unnamed_addr constant [93 x i8] c": it occurs in no parameter or result type \E2\80\94 pass it explicitly as a leading type argument\00"
+@str.116.struct = internal unnamed_addr constant { i64, ptr } { i64 92, ptr @str.116 }
+@clo.const.94 = internal constant { ptr, ptr } { ptr @"diag::uninferable_type_param", ptr null }
+@"var.diag::uninferable_type_param" = global ptr null
+@str.117 = internal unnamed_addr constant [32 x i8] c"' is not compile-time evaluable\00"
+@str.117.struct = internal unnamed_addr constant { i64, ptr } { i64 31, ptr @str.117 }
+@clo.const.95 = internal constant { ptr, ptr } { ptr @"diag::compile_time_parameter_suffix", ptr null }
 @"var.diag::compile_time_parameter_suffix" = global ptr null
-@str.113 = internal unnamed_addr constant [78 x i8] c"' is ambiguous \E2\80\94 declared by multiple enums; qualify the variant as 'Enum::\00"
-@str.113.struct = internal unnamed_addr constant { i64, ptr } { i64 77, ptr @str.113 }
-@clo.const.95 = internal constant { ptr, ptr } { ptr @"diag::E3105_enum_label_ambiguous_suffix", ptr null }
+@str.118 = internal unnamed_addr constant [78 x i8] c"' is ambiguous \E2\80\94 declared by multiple enums; qualify the variant as 'Enum::\00"
+@str.118.struct = internal unnamed_addr constant { i64, ptr } { i64 77, ptr @str.118 }
+@clo.const.96 = internal constant { ptr, ptr } { ptr @"diag::E3105_enum_label_ambiguous_suffix", ptr null }
 @"var.diag::E3105_enum_label_ambiguous_suffix" = global ptr null
-@str.114 = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@str.114.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.114 }
-@clo.const.96 = internal constant { ptr, ptr } { ptr @"diag::E4008_builder_length_bounds", ptr null }
+@str.119 = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
+@str.119.struct = internal unnamed_addr constant { i64, ptr } { i64 47, ptr @str.119 }
+@clo.const.97 = internal constant { ptr, ptr } { ptr @"diag::E4008_builder_length_bounds", ptr null }
 @"var.diag::E4008_builder_length_bounds" = global ptr null
-@str.115 = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
-@str.115.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.115 }
-@clo.const.97 = internal constant { ptr, ptr } { ptr @"diag::runtime_error_format", ptr null }
+@str.120 = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
+@str.120.struct = internal unnamed_addr constant { i64, ptr } { i64 37, ptr @str.120 }
+@clo.const.98 = internal constant { ptr, ptr } { ptr @"diag::runtime_error_format", ptr null }
 @"var.diag::runtime_error_format" = global ptr null
-@str.116 = internal unnamed_addr constant [83 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk \00"
-@str.116.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.116 }
-@str.117 = internal unnamed_addr constant [17 x i8] c"cap %llu bytes)\0A\00"
-@str.117.struct = internal unnamed_addr constant { i64, ptr } { i64 16, ptr @str.117 }
-@clo.const.98 = internal constant { ptr, ptr } { ptr @"diag::E4004_arena_allocation_too_large", ptr null }
+@str.121 = internal unnamed_addr constant [83 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk \00"
+@str.121.struct = internal unnamed_addr constant { i64, ptr } { i64 82, ptr @str.121 }
+@str.122 = internal unnamed_addr constant [17 x i8] c"cap %llu bytes)\0A\00"
+@str.122.struct = internal unnamed_addr constant { i64, ptr } { i64 16, ptr @str.122 }
+@clo.const.99 = internal constant { ptr, ptr } { ptr @"diag::E4004_arena_allocation_too_large", ptr null }
 @"var.diag::E4004_arena_allocation_too_large" = global ptr null
-@str.118 = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
-@str.118.struct = internal unnamed_addr constant { i64, ptr } { i64 57, ptr @str.118 }
-@clo.const.99 = internal constant { ptr, ptr } { ptr @"diag::E4003_arena_chunk_limit", ptr null }
+@str.123 = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
+@str.123.struct = internal unnamed_addr constant { i64, ptr } { i64 57, ptr @str.123 }
+@clo.const.100 = internal constant { ptr, ptr } { ptr @"diag::E4003_arena_chunk_limit", ptr null }
 @"var.diag::E4003_arena_chunk_limit" = global ptr null
-@str.119 = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
-@str.119.struct = internal unnamed_addr constant { i64, ptr } { i64 49, ptr @str.119 }
-@clo.const.100 = internal constant { ptr, ptr } { ptr @"diag::E4001_arena_exhausted", ptr null }
+@str.124 = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
+@str.124.struct = internal unnamed_addr constant { i64, ptr } { i64 49, ptr @str.124 }
+@clo.const.101 = internal constant { ptr, ptr } { ptr @"diag::E4001_arena_exhausted", ptr null }
 @"var.diag::E4001_arena_exhausted" = global ptr null
-@str.120 = internal unnamed_addr constant [36 x i8] c"E5012: Failed to write LLVM IR to '\00"
-@str.120.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.120 }
-@clo.const.101 = internal constant { ptr, ptr } { ptr @"diag::E5012_write_ir_prefix", ptr null }
+@str.125 = internal unnamed_addr constant [36 x i8] c"E5012: Failed to write LLVM IR to '\00"
+@str.125.struct = internal unnamed_addr constant { i64, ptr } { i64 35, ptr @str.125 }
+@clo.const.102 = internal constant { ptr, ptr } { ptr @"diag::E5012_write_ir_prefix", ptr null }
 @"var.diag::E5012_write_ir_prefix" = global ptr null
-@str.121 = internal unnamed_addr constant [51 x i8] c"Unterminated string literal -- missing closing '\22'\00"
-@str.121.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.121 }
-@clo.const.102 = internal constant { ptr, ptr } { ptr @"diag::E1008_string_unterminated", ptr null }
+@str.126 = internal unnamed_addr constant [51 x i8] c"Unterminated string literal -- missing closing '\22'\00"
+@str.126.struct = internal unnamed_addr constant { i64, ptr } { i64 50, ptr @str.126 }
+@clo.const.103 = internal constant { ptr, ptr } { ptr @"diag::E1008_string_unterminated", ptr null }
 @"var.diag::E1008_string_unterminated" = global ptr null
 @"var.diag::capture_enabled" = global i1 false
 @"var.diag::captured_diags" = global ptr null
-@clo.const.103 = internal constant { ptr, ptr } { ptr @"diag::enable_capture", ptr null }
+@clo.const.104 = internal constant { ptr, ptr } { ptr @"diag::enable_capture", ptr null }
 @"var.diag::enable_capture" = global ptr null
-@clo.const.104 = internal constant { ptr, ptr } { ptr @"diag::disable_capture", ptr null }
+@clo.const.105 = internal constant { ptr, ptr } { ptr @"diag::disable_capture", ptr null }
 @"var.diag::disable_capture" = global ptr null
-@clo.const.105 = internal constant { ptr, ptr } { ptr @"diag::is_capturing", ptr null }
+@clo.const.106 = internal constant { ptr, ptr } { ptr @"diag::is_capturing", ptr null }
 @"var.diag::is_capturing" = global ptr null
-@clo.const.106 = internal constant { ptr, ptr } { ptr @"diag::clear_captured", ptr null }
+@clo.const.107 = internal constant { ptr, ptr } { ptr @"diag::clear_captured", ptr null }
 @"var.diag::clear_captured" = global ptr null
 @arr_overflow_msg = internal unnamed_addr constant [26 x i8] c"E4002: capacity overflow\0A\00"
-@clo.const.107 = internal constant { ptr, ptr } { ptr @"diag::record_diag", ptr null }
+@clo.const.108 = internal constant { ptr, ptr } { ptr @"diag::record_diag", ptr null }
 @"var.diag::record_diag" = global ptr null
-@clo.const.108 = internal constant { ptr, ptr } { ptr @"diag::get_captured", ptr null }
+@clo.const.109 = internal constant { ptr, ptr } { ptr @"diag::get_captured", ptr null }
 @"var.diag::get_captured" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_diag, ptr null }]
 
@@ -602,15 +614,16 @@ entry:
   store ptr @clo.const.91, ptr @"var.diag::E3007_cycle_jump_level_prefix", align 8
   store ptr @clo.const.92, ptr @"var.diag::E3007_cycle_jump_level_suffix", align 8
   store ptr @clo.const.93, ptr @"var.diag::E4007_unwrap_empty_or_error", align 8
-  store ptr @clo.const.94, ptr @"var.diag::compile_time_parameter_suffix", align 8
-  store ptr @clo.const.95, ptr @"var.diag::E3105_enum_label_ambiguous_suffix", align 8
-  store ptr @clo.const.96, ptr @"var.diag::E4008_builder_length_bounds", align 8
-  store ptr @clo.const.97, ptr @"var.diag::runtime_error_format", align 8
-  store ptr @clo.const.98, ptr @"var.diag::E4004_arena_allocation_too_large", align 8
-  store ptr @clo.const.99, ptr @"var.diag::E4003_arena_chunk_limit", align 8
-  store ptr @clo.const.100, ptr @"var.diag::E4001_arena_exhausted", align 8
-  store ptr @clo.const.101, ptr @"var.diag::E5012_write_ir_prefix", align 8
-  store ptr @clo.const.102, ptr @"var.diag::E1008_string_unterminated", align 8
+  store ptr @clo.const.94, ptr @"var.diag::uninferable_type_param", align 8
+  store ptr @clo.const.95, ptr @"var.diag::compile_time_parameter_suffix", align 8
+  store ptr @clo.const.96, ptr @"var.diag::E3105_enum_label_ambiguous_suffix", align 8
+  store ptr @clo.const.97, ptr @"var.diag::E4008_builder_length_bounds", align 8
+  store ptr @clo.const.98, ptr @"var.diag::runtime_error_format", align 8
+  store ptr @clo.const.99, ptr @"var.diag::E4004_arena_allocation_too_large", align 8
+  store ptr @clo.const.100, ptr @"var.diag::E4003_arena_chunk_limit", align 8
+  store ptr @clo.const.101, ptr @"var.diag::E4001_arena_exhausted", align 8
+  store ptr @clo.const.102, ptr @"var.diag::E5012_write_ir_prefix", align 8
+  store ptr @clo.const.103, ptr @"var.diag::E1008_string_unterminated", align 8
   store i1 false, ptr @"var.diag::capture_enabled", align 1
   %arena.cur = call ptr @dva_arena_current()
   %a.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
@@ -623,12 +636,12 @@ entry:
   %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
   store ptr %a.new, ptr @"var.diag::captured_diags", align 8
-  store ptr @clo.const.103, ptr @"var.diag::enable_capture", align 8
-  store ptr @clo.const.104, ptr @"var.diag::disable_capture", align 8
-  store ptr @clo.const.105, ptr @"var.diag::is_capturing", align 8
-  store ptr @clo.const.106, ptr @"var.diag::clear_captured", align 8
-  store ptr @clo.const.107, ptr @"var.diag::record_diag", align 8
-  store ptr @clo.const.108, ptr @"var.diag::get_captured", align 8
+  store ptr @clo.const.104, ptr @"var.diag::enable_capture", align 8
+  store ptr @clo.const.105, ptr @"var.diag::disable_capture", align 8
+  store ptr @clo.const.106, ptr @"var.diag::is_capturing", align 8
+  store ptr @clo.const.107, ptr @"var.diag::clear_captured", align 8
+  store ptr @clo.const.108, ptr @"var.diag::record_diag", align 8
+  store ptr @clo.const.109, ptr @"var.diag::get_captured", align 8
   ret void
 }
 
@@ -4826,29 +4839,548 @@ entry:
   ret ptr @str.111.struct
 }
 
+define ptr @"diag::uninferable_type_param"(ptr %0, ptr %1) #1 {
+entry:
+  %var.who = alloca ptr, align 8
+  %var.fn_name = alloca ptr, align 8
+  %var.tp = alloca ptr, align 8
+  store ptr %0, ptr %var.tp, align 8
+  store ptr %1, ptr %var.fn_name, align 8
+  %var.load = load ptr, ptr %var.fn_name, align 8
+  %eq.lhs.len = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
+  %eq.lhs.len1 = load i64, ptr %eq.lhs.len, align 8
+  %eq.lhs.len2 = and i64 %eq.lhs.len1, 281474976710655
+  %str.tag = lshr i64 %eq.lhs.len1, 48
+  %str.immortal = icmp eq i64 %str.tag, 0
+  br i1 %str.immortal, label %str_ok, label %str_gen_check
+
+str_gen_check:                                    ; preds = %entry
+  %arena.cur = call ptr @dva_arena_current()
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %str.tag)
+  br i1 %tag.valid, label %str_ok, label %str_stale
+
+str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
+  %eq.rhs.len = load i64, ptr @str.112.struct, align 8
+  %eq.rhs.len3 = and i64 %eq.rhs.len, 281474976710655
+  %str.tag4 = lshr i64 %eq.rhs.len, 48
+  %str.immortal5 = icmp eq i64 %str.tag4, 0
+  br i1 %str.immortal5, label %str_ok7, label %str_gen_check6
+
+str_stale:                                        ; preds = %str_gen_check
+  %2 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok
+
+str_gen_check6:                                   ; preds = %str_ok
+  %arena.cur9 = call ptr @dva_arena_current()
+  %tag.valid10 = call i1 @dva_arena_validate_tag(ptr %arena.cur9, i64 %str.tag4)
+  br i1 %tag.valid10, label %str_ok7, label %str_stale8
+
+str_ok7:                                          ; preds = %str_stale8, %str_gen_check6, %str_ok
+  %eq.len = icmp eq i64 %eq.lhs.len2, %eq.rhs.len3
+  br i1 %eq.len, label %str.eq.then, label %str.eq.else
+
+str_stale8:                                       ; preds = %str_gen_check6
+  %3 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok7
+
+str.eq.then:                                      ; preds = %str_ok7
+  %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 1
+  %eq.lhs.data11 = load ptr, ptr %eq.lhs.data, align 8
+  %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.112.struct, i32 0, i32 1), align 8
+  %eq.memcmp = call i32 @memcmp(ptr %eq.lhs.data11, ptr %eq.rhs.data, i64 %eq.lhs.len2)
+  %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
+  br label %str.eq.merge
+
+str.eq.else:                                      ; preds = %str_ok7
+  br label %str.eq.merge
+
+str.eq.merge:                                     ; preds = %str.eq.else, %str.eq.then
+  %str.eq.result = phi i1 [ %eq.cmp.zero, %str.eq.then ], [ false, %str.eq.else ]
+  %str.neq = xor i1 %str.eq.result, true
+  br i1 %str.neq, label %choice.then, label %choice.else
+
+choice.then:                                      ; preds = %str.eq.merge
+  %var.load12 = load ptr, ptr %var.fn_name, align 8
+  %concat.lhs = load i64, ptr @str.113.struct, align 8
+  %concat.lhs13 = and i64 %concat.lhs, 281474976710655
+  %str.tag14 = lshr i64 %concat.lhs, 48
+  %str.immortal15 = icmp eq i64 %str.tag14, 0
+  br i1 %str.immortal15, label %str_ok17, label %str_gen_check16
+
+choice.else:                                      ; preds = %str.eq.merge
+  br label %choice.exit
+
+choice.exit:                                      ; preds = %choice.else, %concat.tot.len70
+  %choice.res = phi ptr [ %concat.str77, %concat.tot.len70 ], [ @str.112.struct, %choice.else ]
+  store ptr %choice.res, ptr %var.who, align 8
+  %var.load80 = load ptr, ptr %var.tp, align 8
+  %concat.lhs81 = load i64, ptr @str.115.struct, align 8
+  %concat.lhs82 = and i64 %concat.lhs81, 281474976710655
+  %str.tag83 = lshr i64 %concat.lhs81, 48
+  %str.immortal84 = icmp eq i64 %str.tag83, 0
+  br i1 %str.immortal84, label %str_ok86, label %str_gen_check85
+
+str_gen_check16:                                  ; preds = %choice.then
+  %arena.cur19 = call ptr @dva_arena_current()
+  %tag.valid20 = call i1 @dva_arena_validate_tag(ptr %arena.cur19, i64 %str.tag14)
+  br i1 %tag.valid20, label %str_ok17, label %str_stale18
+
+str_ok17:                                         ; preds = %str_stale18, %str_gen_check16, %choice.then
+  %concat.lhs21 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.113.struct, i32 0, i32 1), align 8
+  %concat.rhs = getelementptr inbounds { i64, ptr }, ptr %var.load12, i32 0, i32 0
+  %concat.rhs22 = load i64, ptr %concat.rhs, align 8
+  %concat.rhs23 = and i64 %concat.rhs22, 281474976710655
+  %str.tag24 = lshr i64 %concat.rhs22, 48
+  %str.immortal25 = icmp eq i64 %str.tag24, 0
+  br i1 %str.immortal25, label %str_ok27, label %str_gen_check26
+
+str_stale18:                                      ; preds = %str_gen_check16
+  %4 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok17
+
+str_gen_check26:                                  ; preds = %str_ok17
+  %arena.cur29 = call ptr @dva_arena_current()
+  %tag.valid30 = call i1 @dva_arena_validate_tag(ptr %arena.cur29, i64 %str.tag24)
+  br i1 %tag.valid30, label %str_ok27, label %str_stale28
+
+str_ok27:                                         ; preds = %str_stale28, %str_gen_check26, %str_ok17
+  %concat.rhs31 = getelementptr inbounds { i64, ptr }, ptr %var.load12, i32 0, i32 1
+  %concat.rhs32 = load ptr, ptr %concat.rhs31, align 8
+  %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs13, i64 %concat.rhs23)
+  %sum = extractvalue { i64, i1 } %concat.sum.len, 0
+  %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
+  br i1 %ovf, label %str_overflow_abort, label %concat.sum.len33
+
+str_stale28:                                      ; preds = %str_gen_check26
+  %5 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok27
+
+concat.sum.len33:                                 ; preds = %str_overflow_abort, %str_ok27
+  %concat.tot.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum, i64 1)
+  %sum34 = extractvalue { i64, i1 } %concat.tot.len, 0
+  %ovf35 = extractvalue { i64, i1 } %concat.tot.len, 1
+  br i1 %ovf35, label %str_overflow_abort37, label %concat.tot.len36
+
+str_overflow_abort:                               ; preds = %str_ok27
+  %6 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len33
+
+concat.tot.len36:                                 ; preds = %str_overflow_abort37, %concat.sum.len33
+  %arena.cur38 = call ptr @dva_arena_current()
+  %concat.buf = call ptr @dva_arena_alloc(ptr %arena.cur38, i64 %sum34)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf, ptr align 1 %concat.lhs21, i64 %concat.lhs13, i1 false)
+  %concat.mid = getelementptr i8, ptr %concat.buf, i64 %concat.lhs13
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid, ptr align 1 %concat.rhs32, i64 %concat.rhs23, i1 false)
+  %concat.nul = getelementptr i8, ptr %concat.buf, i64 %sum
+  store i8 0, ptr %concat.nul, align 1
+  %arena.cur39 = call ptr @dva_arena_current()
+  %concat.str = call ptr @dva_arena_alloc(ptr %arena.cur39, i64 16)
+  %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 0
+  store i64 %sum, ptr %str.build.len.gep, align 8
+  %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
+  store ptr %concat.buf, ptr %str.build.data.gep, align 8
+  %concat.lhs40 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 0
+  %concat.lhs41 = load i64, ptr %concat.lhs40, align 8
+  %concat.lhs42 = and i64 %concat.lhs41, 281474976710655
+  %str.tag43 = lshr i64 %concat.lhs41, 48
+  %str.immortal44 = icmp eq i64 %str.tag43, 0
+  br i1 %str.immortal44, label %str_ok46, label %str_gen_check45
+
+str_overflow_abort37:                             ; preds = %concat.sum.len33
+  %7 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len36
+
+str_gen_check45:                                  ; preds = %concat.tot.len36
+  %arena.cur48 = call ptr @dva_arena_current()
+  %tag.valid49 = call i1 @dva_arena_validate_tag(ptr %arena.cur48, i64 %str.tag43)
+  br i1 %tag.valid49, label %str_ok46, label %str_stale47
+
+str_ok46:                                         ; preds = %str_stale47, %str_gen_check45, %concat.tot.len36
+  %concat.lhs50 = getelementptr inbounds { i64, ptr }, ptr %concat.str, i32 0, i32 1
+  %concat.lhs51 = load ptr, ptr %concat.lhs50, align 8
+  %concat.rhs52 = load i64, ptr @str.114.struct, align 8
+  %concat.rhs53 = and i64 %concat.rhs52, 281474976710655
+  %str.tag54 = lshr i64 %concat.rhs52, 48
+  %str.immortal55 = icmp eq i64 %str.tag54, 0
+  br i1 %str.immortal55, label %str_ok57, label %str_gen_check56
+
+str_stale47:                                      ; preds = %str_gen_check45
+  %8 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok46
+
+str_gen_check56:                                  ; preds = %str_ok46
+  %arena.cur59 = call ptr @dva_arena_current()
+  %tag.valid60 = call i1 @dva_arena_validate_tag(ptr %arena.cur59, i64 %str.tag54)
+  br i1 %tag.valid60, label %str_ok57, label %str_stale58
+
+str_ok57:                                         ; preds = %str_stale58, %str_gen_check56, %str_ok46
+  %concat.rhs61 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.114.struct, i32 0, i32 1), align 8
+  %concat.sum.len62 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs42, i64 %concat.rhs53)
+  %sum63 = extractvalue { i64, i1 } %concat.sum.len62, 0
+  %ovf64 = extractvalue { i64, i1 } %concat.sum.len62, 1
+  br i1 %ovf64, label %str_overflow_abort66, label %concat.sum.len65
+
+str_stale58:                                      ; preds = %str_gen_check56
+  %9 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok57
+
+concat.sum.len65:                                 ; preds = %str_overflow_abort66, %str_ok57
+  %concat.tot.len67 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum63, i64 1)
+  %sum68 = extractvalue { i64, i1 } %concat.tot.len67, 0
+  %ovf69 = extractvalue { i64, i1 } %concat.tot.len67, 1
+  br i1 %ovf69, label %str_overflow_abort71, label %concat.tot.len70
+
+str_overflow_abort66:                             ; preds = %str_ok57
+  %10 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len65
+
+concat.tot.len70:                                 ; preds = %str_overflow_abort71, %concat.sum.len65
+  %arena.cur72 = call ptr @dva_arena_current()
+  %concat.buf73 = call ptr @dva_arena_alloc(ptr %arena.cur72, i64 %sum68)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf73, ptr align 1 %concat.lhs51, i64 %concat.lhs42, i1 false)
+  %concat.mid74 = getelementptr i8, ptr %concat.buf73, i64 %concat.lhs42
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid74, ptr align 1 %concat.rhs61, i64 %concat.rhs53, i1 false)
+  %concat.nul75 = getelementptr i8, ptr %concat.buf73, i64 %sum63
+  store i8 0, ptr %concat.nul75, align 1
+  %arena.cur76 = call ptr @dva_arena_current()
+  %concat.str77 = call ptr @dva_arena_alloc(ptr %arena.cur76, i64 16)
+  %str.build.len.gep78 = getelementptr inbounds { i64, ptr }, ptr %concat.str77, i32 0, i32 0
+  store i64 %sum63, ptr %str.build.len.gep78, align 8
+  %str.build.data.gep79 = getelementptr inbounds { i64, ptr }, ptr %concat.str77, i32 0, i32 1
+  store ptr %concat.buf73, ptr %str.build.data.gep79, align 8
+  br label %choice.exit
+
+str_overflow_abort71:                             ; preds = %concat.sum.len65
+  %11 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len70
+
+str_gen_check85:                                  ; preds = %choice.exit
+  %arena.cur88 = call ptr @dva_arena_current()
+  %tag.valid89 = call i1 @dva_arena_validate_tag(ptr %arena.cur88, i64 %str.tag83)
+  br i1 %tag.valid89, label %str_ok86, label %str_stale87
+
+str_ok86:                                         ; preds = %str_stale87, %str_gen_check85, %choice.exit
+  %concat.lhs90 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.115.struct, i32 0, i32 1), align 8
+  %concat.rhs91 = getelementptr inbounds { i64, ptr }, ptr %var.load80, i32 0, i32 0
+  %concat.rhs92 = load i64, ptr %concat.rhs91, align 8
+  %concat.rhs93 = and i64 %concat.rhs92, 281474976710655
+  %str.tag94 = lshr i64 %concat.rhs92, 48
+  %str.immortal95 = icmp eq i64 %str.tag94, 0
+  br i1 %str.immortal95, label %str_ok97, label %str_gen_check96
+
+str_stale87:                                      ; preds = %str_gen_check85
+  %12 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok86
+
+str_gen_check96:                                  ; preds = %str_ok86
+  %arena.cur99 = call ptr @dva_arena_current()
+  %tag.valid100 = call i1 @dva_arena_validate_tag(ptr %arena.cur99, i64 %str.tag94)
+  br i1 %tag.valid100, label %str_ok97, label %str_stale98
+
+str_ok97:                                         ; preds = %str_stale98, %str_gen_check96, %str_ok86
+  %concat.rhs101 = getelementptr inbounds { i64, ptr }, ptr %var.load80, i32 0, i32 1
+  %concat.rhs102 = load ptr, ptr %concat.rhs101, align 8
+  %concat.sum.len103 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs82, i64 %concat.rhs93)
+  %sum104 = extractvalue { i64, i1 } %concat.sum.len103, 0
+  %ovf105 = extractvalue { i64, i1 } %concat.sum.len103, 1
+  br i1 %ovf105, label %str_overflow_abort107, label %concat.sum.len106
+
+str_stale98:                                      ; preds = %str_gen_check96
+  %13 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok97
+
+concat.sum.len106:                                ; preds = %str_overflow_abort107, %str_ok97
+  %concat.tot.len108 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum104, i64 1)
+  %sum109 = extractvalue { i64, i1 } %concat.tot.len108, 0
+  %ovf110 = extractvalue { i64, i1 } %concat.tot.len108, 1
+  br i1 %ovf110, label %str_overflow_abort112, label %concat.tot.len111
+
+str_overflow_abort107:                            ; preds = %str_ok97
+  %14 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len106
+
+concat.tot.len111:                                ; preds = %str_overflow_abort112, %concat.sum.len106
+  %arena.cur113 = call ptr @dva_arena_current()
+  %concat.buf114 = call ptr @dva_arena_alloc(ptr %arena.cur113, i64 %sum109)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf114, ptr align 1 %concat.lhs90, i64 %concat.lhs82, i1 false)
+  %concat.mid115 = getelementptr i8, ptr %concat.buf114, i64 %concat.lhs82
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid115, ptr align 1 %concat.rhs102, i64 %concat.rhs93, i1 false)
+  %concat.nul116 = getelementptr i8, ptr %concat.buf114, i64 %sum104
+  store i8 0, ptr %concat.nul116, align 1
+  %arena.cur117 = call ptr @dva_arena_current()
+  %concat.str118 = call ptr @dva_arena_alloc(ptr %arena.cur117, i64 16)
+  %str.build.len.gep119 = getelementptr inbounds { i64, ptr }, ptr %concat.str118, i32 0, i32 0
+  store i64 %sum104, ptr %str.build.len.gep119, align 8
+  %str.build.data.gep120 = getelementptr inbounds { i64, ptr }, ptr %concat.str118, i32 0, i32 1
+  store ptr %concat.buf114, ptr %str.build.data.gep120, align 8
+  %concat.lhs121 = getelementptr inbounds { i64, ptr }, ptr %concat.str118, i32 0, i32 0
+  %concat.lhs122 = load i64, ptr %concat.lhs121, align 8
+  %concat.lhs123 = and i64 %concat.lhs122, 281474976710655
+  %str.tag124 = lshr i64 %concat.lhs122, 48
+  %str.immortal125 = icmp eq i64 %str.tag124, 0
+  br i1 %str.immortal125, label %str_ok127, label %str_gen_check126
+
+str_overflow_abort112:                            ; preds = %concat.sum.len106
+  %15 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len111
+
+str_gen_check126:                                 ; preds = %concat.tot.len111
+  %arena.cur129 = call ptr @dva_arena_current()
+  %tag.valid130 = call i1 @dva_arena_validate_tag(ptr %arena.cur129, i64 %str.tag124)
+  br i1 %tag.valid130, label %str_ok127, label %str_stale128
+
+str_ok127:                                        ; preds = %str_stale128, %str_gen_check126, %concat.tot.len111
+  %concat.lhs131 = getelementptr inbounds { i64, ptr }, ptr %concat.str118, i32 0, i32 1
+  %concat.lhs132 = load ptr, ptr %concat.lhs131, align 8
+  %concat.rhs133 = load i64, ptr @str.114.struct, align 8
+  %concat.rhs134 = and i64 %concat.rhs133, 281474976710655
+  %str.tag135 = lshr i64 %concat.rhs133, 48
+  %str.immortal136 = icmp eq i64 %str.tag135, 0
+  br i1 %str.immortal136, label %str_ok138, label %str_gen_check137
+
+str_stale128:                                     ; preds = %str_gen_check126
+  %16 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok127
+
+str_gen_check137:                                 ; preds = %str_ok127
+  %arena.cur140 = call ptr @dva_arena_current()
+  %tag.valid141 = call i1 @dva_arena_validate_tag(ptr %arena.cur140, i64 %str.tag135)
+  br i1 %tag.valid141, label %str_ok138, label %str_stale139
+
+str_ok138:                                        ; preds = %str_stale139, %str_gen_check137, %str_ok127
+  %concat.rhs142 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.114.struct, i32 0, i32 1), align 8
+  %concat.sum.len143 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs123, i64 %concat.rhs134)
+  %sum144 = extractvalue { i64, i1 } %concat.sum.len143, 0
+  %ovf145 = extractvalue { i64, i1 } %concat.sum.len143, 1
+  br i1 %ovf145, label %str_overflow_abort147, label %concat.sum.len146
+
+str_stale139:                                     ; preds = %str_gen_check137
+  %17 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok138
+
+concat.sum.len146:                                ; preds = %str_overflow_abort147, %str_ok138
+  %concat.tot.len148 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum144, i64 1)
+  %sum149 = extractvalue { i64, i1 } %concat.tot.len148, 0
+  %ovf150 = extractvalue { i64, i1 } %concat.tot.len148, 1
+  br i1 %ovf150, label %str_overflow_abort152, label %concat.tot.len151
+
+str_overflow_abort147:                            ; preds = %str_ok138
+  %18 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len146
+
+concat.tot.len151:                                ; preds = %str_overflow_abort152, %concat.sum.len146
+  %arena.cur153 = call ptr @dva_arena_current()
+  %concat.buf154 = call ptr @dva_arena_alloc(ptr %arena.cur153, i64 %sum149)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf154, ptr align 1 %concat.lhs132, i64 %concat.lhs123, i1 false)
+  %concat.mid155 = getelementptr i8, ptr %concat.buf154, i64 %concat.lhs123
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid155, ptr align 1 %concat.rhs142, i64 %concat.rhs134, i1 false)
+  %concat.nul156 = getelementptr i8, ptr %concat.buf154, i64 %sum144
+  store i8 0, ptr %concat.nul156, align 1
+  %arena.cur157 = call ptr @dva_arena_current()
+  %concat.str158 = call ptr @dva_arena_alloc(ptr %arena.cur157, i64 16)
+  %str.build.len.gep159 = getelementptr inbounds { i64, ptr }, ptr %concat.str158, i32 0, i32 0
+  store i64 %sum144, ptr %str.build.len.gep159, align 8
+  %str.build.data.gep160 = getelementptr inbounds { i64, ptr }, ptr %concat.str158, i32 0, i32 1
+  store ptr %concat.buf154, ptr %str.build.data.gep160, align 8
+  %var.load161 = load ptr, ptr %var.who, align 8
+  %concat.lhs162 = getelementptr inbounds { i64, ptr }, ptr %concat.str158, i32 0, i32 0
+  %concat.lhs163 = load i64, ptr %concat.lhs162, align 8
+  %concat.lhs164 = and i64 %concat.lhs163, 281474976710655
+  %str.tag165 = lshr i64 %concat.lhs163, 48
+  %str.immortal166 = icmp eq i64 %str.tag165, 0
+  br i1 %str.immortal166, label %str_ok168, label %str_gen_check167
+
+str_overflow_abort152:                            ; preds = %concat.sum.len146
+  %19 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len151
+
+str_gen_check167:                                 ; preds = %concat.tot.len151
+  %arena.cur170 = call ptr @dva_arena_current()
+  %tag.valid171 = call i1 @dva_arena_validate_tag(ptr %arena.cur170, i64 %str.tag165)
+  br i1 %tag.valid171, label %str_ok168, label %str_stale169
+
+str_ok168:                                        ; preds = %str_stale169, %str_gen_check167, %concat.tot.len151
+  %concat.lhs172 = getelementptr inbounds { i64, ptr }, ptr %concat.str158, i32 0, i32 1
+  %concat.lhs173 = load ptr, ptr %concat.lhs172, align 8
+  %concat.rhs174 = getelementptr inbounds { i64, ptr }, ptr %var.load161, i32 0, i32 0
+  %concat.rhs175 = load i64, ptr %concat.rhs174, align 8
+  %concat.rhs176 = and i64 %concat.rhs175, 281474976710655
+  %str.tag177 = lshr i64 %concat.rhs175, 48
+  %str.immortal178 = icmp eq i64 %str.tag177, 0
+  br i1 %str.immortal178, label %str_ok180, label %str_gen_check179
+
+str_stale169:                                     ; preds = %str_gen_check167
+  %20 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok168
+
+str_gen_check179:                                 ; preds = %str_ok168
+  %arena.cur182 = call ptr @dva_arena_current()
+  %tag.valid183 = call i1 @dva_arena_validate_tag(ptr %arena.cur182, i64 %str.tag177)
+  br i1 %tag.valid183, label %str_ok180, label %str_stale181
+
+str_ok180:                                        ; preds = %str_stale181, %str_gen_check179, %str_ok168
+  %concat.rhs184 = getelementptr inbounds { i64, ptr }, ptr %var.load161, i32 0, i32 1
+  %concat.rhs185 = load ptr, ptr %concat.rhs184, align 8
+  %concat.sum.len186 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs164, i64 %concat.rhs176)
+  %sum187 = extractvalue { i64, i1 } %concat.sum.len186, 0
+  %ovf188 = extractvalue { i64, i1 } %concat.sum.len186, 1
+  br i1 %ovf188, label %str_overflow_abort190, label %concat.sum.len189
+
+str_stale181:                                     ; preds = %str_gen_check179
+  %21 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok180
+
+concat.sum.len189:                                ; preds = %str_overflow_abort190, %str_ok180
+  %concat.tot.len191 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum187, i64 1)
+  %sum192 = extractvalue { i64, i1 } %concat.tot.len191, 0
+  %ovf193 = extractvalue { i64, i1 } %concat.tot.len191, 1
+  br i1 %ovf193, label %str_overflow_abort195, label %concat.tot.len194
+
+str_overflow_abort190:                            ; preds = %str_ok180
+  %22 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len189
+
+concat.tot.len194:                                ; preds = %str_overflow_abort195, %concat.sum.len189
+  %arena.cur196 = call ptr @dva_arena_current()
+  %concat.buf197 = call ptr @dva_arena_alloc(ptr %arena.cur196, i64 %sum192)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf197, ptr align 1 %concat.lhs173, i64 %concat.lhs164, i1 false)
+  %concat.mid198 = getelementptr i8, ptr %concat.buf197, i64 %concat.lhs164
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid198, ptr align 1 %concat.rhs185, i64 %concat.rhs176, i1 false)
+  %concat.nul199 = getelementptr i8, ptr %concat.buf197, i64 %sum187
+  store i8 0, ptr %concat.nul199, align 1
+  %arena.cur200 = call ptr @dva_arena_current()
+  %concat.str201 = call ptr @dva_arena_alloc(ptr %arena.cur200, i64 16)
+  %str.build.len.gep202 = getelementptr inbounds { i64, ptr }, ptr %concat.str201, i32 0, i32 0
+  store i64 %sum187, ptr %str.build.len.gep202, align 8
+  %str.build.data.gep203 = getelementptr inbounds { i64, ptr }, ptr %concat.str201, i32 0, i32 1
+  store ptr %concat.buf197, ptr %str.build.data.gep203, align 8
+  %concat.lhs204 = getelementptr inbounds { i64, ptr }, ptr %concat.str201, i32 0, i32 0
+  %concat.lhs205 = load i64, ptr %concat.lhs204, align 8
+  %concat.lhs206 = and i64 %concat.lhs205, 281474976710655
+  %str.tag207 = lshr i64 %concat.lhs205, 48
+  %str.immortal208 = icmp eq i64 %str.tag207, 0
+  br i1 %str.immortal208, label %str_ok210, label %str_gen_check209
+
+str_overflow_abort195:                            ; preds = %concat.sum.len189
+  %23 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len194
+
+str_gen_check209:                                 ; preds = %concat.tot.len194
+  %arena.cur212 = call ptr @dva_arena_current()
+  %tag.valid213 = call i1 @dva_arena_validate_tag(ptr %arena.cur212, i64 %str.tag207)
+  br i1 %tag.valid213, label %str_ok210, label %str_stale211
+
+str_ok210:                                        ; preds = %str_stale211, %str_gen_check209, %concat.tot.len194
+  %concat.lhs214 = getelementptr inbounds { i64, ptr }, ptr %concat.str201, i32 0, i32 1
+  %concat.lhs215 = load ptr, ptr %concat.lhs214, align 8
+  %concat.rhs216 = load i64, ptr @str.116.struct, align 8
+  %concat.rhs217 = and i64 %concat.rhs216, 281474976710655
+  %str.tag218 = lshr i64 %concat.rhs216, 48
+  %str.immortal219 = icmp eq i64 %str.tag218, 0
+  br i1 %str.immortal219, label %str_ok221, label %str_gen_check220
+
+str_stale211:                                     ; preds = %str_gen_check209
+  %24 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok210
+
+str_gen_check220:                                 ; preds = %str_ok210
+  %arena.cur223 = call ptr @dva_arena_current()
+  %tag.valid224 = call i1 @dva_arena_validate_tag(ptr %arena.cur223, i64 %str.tag218)
+  br i1 %tag.valid224, label %str_ok221, label %str_stale222
+
+str_ok221:                                        ; preds = %str_stale222, %str_gen_check220, %str_ok210
+  %concat.rhs225 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.116.struct, i32 0, i32 1), align 8
+  %concat.sum.len226 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs206, i64 %concat.rhs217)
+  %sum227 = extractvalue { i64, i1 } %concat.sum.len226, 0
+  %ovf228 = extractvalue { i64, i1 } %concat.sum.len226, 1
+  br i1 %ovf228, label %str_overflow_abort230, label %concat.sum.len229
+
+str_stale222:                                     ; preds = %str_gen_check220
+  %25 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  br label %str_ok221
+
+concat.sum.len229:                                ; preds = %str_overflow_abort230, %str_ok221
+  %concat.tot.len231 = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %sum227, i64 1)
+  %sum232 = extractvalue { i64, i1 } %concat.tot.len231, 0
+  %ovf233 = extractvalue { i64, i1 } %concat.tot.len231, 1
+  br i1 %ovf233, label %str_overflow_abort235, label %concat.tot.len234
+
+str_overflow_abort230:                            ; preds = %str_ok221
+  %26 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.sum.len229
+
+concat.tot.len234:                                ; preds = %str_overflow_abort235, %concat.sum.len229
+  %arena.cur236 = call ptr @dva_arena_current()
+  %concat.buf237 = call ptr @dva_arena_alloc(ptr %arena.cur236, i64 %sum232)
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.buf237, ptr align 1 %concat.lhs215, i64 %concat.lhs206, i1 false)
+  %concat.mid238 = getelementptr i8, ptr %concat.buf237, i64 %concat.lhs206
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %concat.mid238, ptr align 1 %concat.rhs225, i64 %concat.rhs217, i1 false)
+  %concat.nul239 = getelementptr i8, ptr %concat.buf237, i64 %sum227
+  store i8 0, ptr %concat.nul239, align 1
+  %arena.cur240 = call ptr @dva_arena_current()
+  %concat.str241 = call ptr @dva_arena_alloc(ptr %arena.cur240, i64 16)
+  %str.build.len.gep242 = getelementptr inbounds { i64, ptr }, ptr %concat.str241, i32 0, i32 0
+  store i64 %sum227, ptr %str.build.len.gep242, align 8
+  %str.build.data.gep243 = getelementptr inbounds { i64, ptr }, ptr %concat.str241, i32 0, i32 1
+  store ptr %concat.buf237, ptr %str.build.data.gep243, align 8
+  ret ptr %concat.str241
+
+str_overflow_abort235:                            ; preds = %concat.sum.len229
+  %27 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  br label %concat.tot.len234
+}
+
+declare i32 @memcmp(ptr, ptr, i64)
+
 define ptr @"diag::compile_time_parameter_suffix"() #1 {
 entry:
-  ret ptr @str.112.struct
+  ret ptr @str.117.struct
 }
 
 define ptr @"diag::E3105_enum_label_ambiguous_suffix"() #1 {
 entry:
-  ret ptr @str.113.struct
+  ret ptr @str.118.struct
 }
 
 define ptr @"diag::E4008_builder_length_bounds"() #1 {
 entry:
-  ret ptr @str.114.struct
+  ret ptr @str.119.struct
 }
 
 define ptr @"diag::runtime_error_format"() #1 {
 entry:
-  ret ptr @str.115.struct
+  ret ptr @str.120.struct
 }
 
 define ptr @"diag::E4004_arena_allocation_too_large"() #1 {
 entry:
-  %concat.lhs = load i64, ptr @str.116.struct, align 8
+  %concat.lhs = load i64, ptr @str.121.struct, align 8
   %concat.lhs1 = and i64 %concat.lhs, 281474976710655
   %str.tag = lshr i64 %concat.lhs, 48
   %str.immortal = icmp eq i64 %str.tag, 0
@@ -4860,8 +5392,8 @@ str_gen_check:                                    ; preds = %entry
   br i1 %tag.valid, label %str_ok, label %str_stale
 
 str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
-  %concat.lhs2 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.116.struct, i32 0, i32 1), align 8
-  %concat.rhs = load i64, ptr @str.117.struct, align 8
+  %concat.lhs2 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.121.struct, i32 0, i32 1), align 8
+  %concat.rhs = load i64, ptr @str.122.struct, align 8
   %concat.rhs3 = and i64 %concat.rhs, 281474976710655
   %str.tag4 = lshr i64 %concat.rhs, 48
   %str.immortal5 = icmp eq i64 %str.tag4, 0
@@ -4878,7 +5410,7 @@ str_gen_check6:                                   ; preds = %str_ok
   br i1 %tag.valid10, label %str_ok7, label %str_stale8
 
 str_ok7:                                          ; preds = %str_stale8, %str_gen_check6, %str_ok
-  %concat.rhs11 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.117.struct, i32 0, i32 1), align 8
+  %concat.rhs11 = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.122.struct, i32 0, i32 1), align 8
   %concat.sum.len = call { i64, i1 } @llvm.uadd.with.overflow.i64(i64 %concat.lhs1, i64 %concat.rhs3)
   %sum = extractvalue { i64, i1 } %concat.sum.len, 0
   %ovf = extractvalue { i64, i1 } %concat.sum.len, 1
@@ -4924,22 +5456,22 @@ str_overflow_abort16:                             ; preds = %concat.sum.len12
 
 define ptr @"diag::E4003_arena_chunk_limit"() #1 {
 entry:
-  ret ptr @str.118.struct
+  ret ptr @str.123.struct
 }
 
 define ptr @"diag::E4001_arena_exhausted"() #1 {
 entry:
-  ret ptr @str.119.struct
+  ret ptr @str.124.struct
 }
 
 define ptr @"diag::E5012_write_ir_prefix"() #1 {
 entry:
-  ret ptr @str.120.struct
+  ret ptr @str.125.struct
 }
 
 define ptr @"diag::E1008_string_unterminated"() #1 {
 entry:
-  ret ptr @str.121.struct
+  ret ptr @str.126.struct
 }
 
 define void @"diag::enable_capture"() #1 {

@@ -520,9 +520,54 @@ resolve_type_expr_ut_ti = ctx, env, fn_mod, e =>
             | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
+// Does the (parser) TypeInfo mention the compile-time type variable `name`?
+ti_mentions_tv: ast::TypeInfo, String => <>
+ti_mentions_tv = ti, name =>
+   ti
+      [TypeVar tv] tv == name
+      [Align a] ti_mentions_tv(a.1, name)
+      [Rec r]
+         hit' = <->
+         r.0 @ f => ti_mentions_tv(f.rec_type, name) | (hit' = <+>; -->)
+         hit'
+      [Ram r]
+         (r.0.has_payload && ti_mentions_tv(r.0.payload_record, name)) ||
+           (r.1.has_payload && ti_mentions_tv(r.1.payload_record, name))
+      [Enum slots]
+         hit' = <->
+         slots @ sl =>
+            sl.has_payload && ti_mentions_tv(sl.payload_record, name) | (hit' = <+>; -->)
+         hit'
+      [Fn f]
+         hit' = ti_mentions_tv(f.3, name)
+         f.1 @ pi => ti_mentions_tv(pi, name) | (hit' = <+>; -->)
+         hit'
+      [Array a] ti_mentions_tv(a.1, name)
+      [Map m] ti_mentions_tv(m.2, name)
+      [ThreadId t] ti_mentions_tv(t.1, name)
+      | <->
+
+// A compile-time type parameter that is neither passed explicitly nor
+// mentioned by the declared parameter/result types cannot be inferred.
+// Result types can receive later constraints (for example a curried call),
+// and unannotated parameters are inferred from the body instead.
+check_ct_param_inferable: unify::Ctx, ast::VInfos, ast::TypeInfo, String, String => ()
+check_ct_param_inferable = ctx, vinfos, ret_ti, fn_name, cp_name =>
+   inferable' = ti_mentions_tv(ret_ti, cp_name)
+   vinfos @ pi =>
+      unspecified = pi [Prim vt] vt [Unknown] | <->
+      ti_mentions_tv(pi, cp_name) || unspecified | (inferable' = <+>; -->)
+   !inferable'
+      | unify::add_error(ctx, 3176, diag::uninferable_type_param(cp_name, fn_name))
+
 instantiate_generic_ti_call: unify::Ctx, type_env::TypeEnv, String, ast::TypeInfo,
   ast::Exprs => unify::UType
 instantiate_generic_ti_call = ctx, env, fn_mod, ti, call_args =>
+   instantiate_generic_ti_call_named(ctx, env, fn_mod, ti, call_args, "")
+
+instantiate_generic_ti_call_named: unify::Ctx, type_env::TypeEnv, String, ast::TypeInfo,
+  ast::Exprs, String => unify::UType
+instantiate_generic_ti_call_named = ctx, env, fn_mod, ti, call_args, fn_name =>
    ti
       [Fn f]
          cur_tvm' = TypeVarMap()
@@ -547,9 +592,11 @@ instantiate_generic_ti_call = ctx, env, fn_mod, ti, call_args =>
                               params += unify::prim_type!
                               arg_idx' = arg_idx' + 1
                            |
+                              check_ct_param_inferable(ctx, vinfos, f.3, fn_name, cp.0)
                               tv_res = tv_get_or_create(ctx, cur_tvm', cp.0)
                               cur_tvm' = tv_res.0
                      |
+                        check_ct_param_inferable(ctx, vinfos, f.3, fn_name, cp.0)
                         tv_res = tv_get_or_create(ctx, cur_tvm', cp.0)
                         cur_tvm' = tv_res.0
                |
@@ -4944,8 +4991,8 @@ annotate_call_normal = ctx, env, ce =>
                      gen_opt = type_env::lookup_generic(env, ce.fn_name)
                      gen_opt
                         | gen_ti =>
-                           fn_ut' = instantiate_generic_ti_call(ctx, env,
-                             type_env::decl_module(ce.fn_name, 0), gen_ti, ce.args)
+                           fn_ut' = instantiate_generic_ti_call_named(ctx, env,
+                             type_env::decl_module(ce.fn_name, 0), gen_ti, ce.args, ce.fn_name)
                         |
                            unify::add_error(ctx, 3004,
                              "Undefined function: " + ce.fn_name)

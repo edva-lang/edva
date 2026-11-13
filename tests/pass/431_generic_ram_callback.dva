@@ -1,0 +1,10 @@
+#use io
+Slot: #! T: Type => (on: (< T | String > => ()), map: (T => T))
+mk: #! T: Type, (< T | String > => ()), (T => T) => Slot(T)
+mk = f, g => (on = f, map = g)
+on_i: < Int | String > => ()
+on_i = r => r | n => io::out(n) | e => io::out("I:" + e)
+inc: Int => Int
+inc = n => n + 1
+is = mk(on_i, inc)
+is.on(<+ 5 ->)

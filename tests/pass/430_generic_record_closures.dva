@@ -1,0 +1,24 @@
+#use io
+#type User (name: String, age: Int)
+Slot: #! T: Type => (on: (< T | String > => ()), map: (T => T))
+mk: #! T: Type, (< T | String > => ()), (T => T) => Slot(T)
+mk = f, g => (on = f, map = g)
+run: #! T: Type, Slot(T), T => ()
+run = s, v =>
+   w = s.map(v)
+   s.on(<+ w -> )
+   s.on(<- "bad" +> )
+on_u: < User | String > => ()
+on_u = r => r | u => io::out(u.name) | e => io::out("U:" + e)
+map_u: User => User
+map_u = u => User(u.name + "!", u.age)
+us = mk(on_u, map_u)
+run(us, User("ann", 3))
+
+on_i: < Int | String > => ()
+on_i = r => r | n => io::out(n) | e => io::out("I:" + e)
+make_map: Int => (Int => Int)
+make_map = delta => n => n + delta
+mapper = make_map(2)
+is = mk(on_i, mapper)
+run(is, 41)

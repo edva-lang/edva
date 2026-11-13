@@ -342,6 +342,12 @@ E3007_cycle_jump_level_suffix = !=> " enclosing cycle(s) exist at this point."
 E4007_unwrap_empty_or_error: () => String
 E4007_unwrap_empty_or_error = !=> "E4007: unwrap on empty or error ramification\n"
 
+uninferable_type_param: String, String => String
+uninferable_type_param = tp, fn_name =>
+   who = fn_name != "" | " of '" + fn_name + "'" | ""
+   "Cannot infer compile-time type parameter '" + tp + "'" + who +
+     ": it occurs in no parameter or result type — pass it explicitly as a leading type argument"
+
 compile_time_parameter_suffix: () => String
 compile_time_parameter_suffix = !=> "' is not compile-time evaluable"
 

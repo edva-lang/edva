@@ -1,0 +1,2 @@
+Pair: #! A: Type, #! B: Type => (a: A, b: B)
+#type Bad Pair(Int, String, Float)

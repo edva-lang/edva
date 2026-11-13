@@ -3299,6 +3299,7 @@ codegen_fn_param_ll = cg, i8p, params, dtypes, ptis, ptypes, i, n, acc =>
             | types::g.last_compiling_fn + "#" + pname
          pdtype0 = (dtypes(i) | _ | "")
          pti0 = (ptis(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+         pti0 [Fn] runtime::add_type(cg, "#clo_" + target_pname, pti0)
          fti0 = fn_type_from_ti(cg, pti0)
          is_clo = <>(param_clo_ty(cg, pname))
          !is_clo
@@ -3385,7 +3386,9 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
          sl_elem_vt != ast::ValueType(Unknown) | sl_fvts += sl_elem_vt
          pr2 = is_sl | sl_fvts | (prec | p => p.2 | empty_fvts)
          is_rec_ti = pti [Rec]
-         is_anon_param = pdtype' == "" && is_rec && is_rec_ti
+         // Specialization can change nested function signatures even when a
+         // structural dtype was already assigned to the generic parameter.
+         is_anon_param = is_rec && is_rec_ti
          is_anon_param
             |
                param_tname' = "#param_" + types::g.last_compiling_fn + "_" + pname

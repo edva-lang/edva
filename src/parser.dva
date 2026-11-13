@@ -4368,26 +4368,45 @@ type_info_value_type = ti =>
       [Prim vt] vt
       | ast::ValueType(Record)
 
-ti_is_typevar: ast::TypeInfo, String => <>
-ti_is_typevar = ti, name =>
-   ti
-      [TypeVar tv] tv == name
-      | <->
+// Index of a type-parameter name in a simultaneous substitution, or -1.
+subst_name_idx: ast::Names, String => Int
+subst_name_idx = names, name =>
+   res' = -1
+   names @ n, i =>
+      n == name | (res' = i; -->)
+   res'
 
-ctfe_subst_type: ast::TypeInfo, String, ast::ValueType,
-  ast::TypeInfo => ast::TypeInfo
-ctfe_subst_type = ti, name, arg_vt, arg_ti =>
+// The bound index of a TypeVar, or -1 when ti is not a substituted name.
+ti_subst_idx: ast::TypeInfo, ast::Names => Int
+ti_subst_idx = ti, names =>
    ti
-      [TypeVar tv]
-         tv == name
-            | arg_ti
-            | ti
+      [TypeVar tv] subst_name_idx(names, tv)
+      | -1
+
+// The substituted ValueType of a slot typed ti (vt unchanged unless ti is
+// itself one of the substituted type variables).
+subst_slot_vt: ast::TypeInfo, ast::Names, ast::VTypes, ast::ValueType => ast::ValueType
+subst_slot_vt = ti, names, vts, vt =>
+   k = ti_subst_idx(ti, names)
+   k < 0 | vt | (vts(k) | _ | ast::ValueType(Unknown))
+
+// SIMULTANEOUS substitution of the type variables `names` by (vts, tis)
+// (DVA-62). Every name is replaced in a single pass, so an argument that
+// itself mentions another parameter's name (`Pair(B, A)` inside a generic
+// over A, B) is never substituted a second time.
+ctfe_subst_multi: ast::TypeInfo, ast::Names, ast::VTypes,
+  ast::VInfos => ast::TypeInfo
+ctfe_subst_multi = ti, names, vts, tis =>
+   ti
+      [TypeVar]
+         k = ti_subst_idx(ti, names)
+         k < 0 | ti | (tis(k) | _ | ti)
       [Prim] ti
       [Rec r]
          new_fields = ast::FieldTypes()
          r.0 @ f =>
-            sub_ti = ctfe_subst_type(f.rec_type, name, arg_vt, arg_ti)
-            sub_vt = ti_is_typevar(f.rec_type, name) | arg_vt | f.val_type
+            sub_ti = ctfe_subst_multi(f.rec_type, names, vts, tis)
+            sub_vt = subst_slot_vt(f.rec_type, names, vts, f.val_type)
             new_fields += ast::RecordFieldType(f.name, sub_vt, sub_ti,
               f.has_default, f.default_expr)
          new_elem_vt = r.1 && ?new_fields > 0
@@ -4395,7 +4414,7 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
             | r.3
          ast::TypeInfo(Rec, (new_fields, r.1, r.2, new_elem_vt, r.4, r.5))
       [Align a]
-         sub_inner = ctfe_subst_type(a.1, name, arg_vt, arg_ti)
+         sub_inner = ctfe_subst_multi(a.1, names, vts, tis)
          ast::TypeInfo(Align, (a.0, sub_inner))
       [Bitfield b] ast::TypeInfo(Bitfield, b)
       [Ram r]
@@ -4403,18 +4422,14 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
          s1 = r.1
          new_s0 = s0.has_payload
             |
-               sub_ti0 = ctfe_subst_type(s0.payload_record, name,
-                 arg_vt, arg_ti)
-               is_tv0 = ti_is_typevar(s0.payload_record, name)
-               sub_vt0 = is_tv0 | arg_vt | s0.payload_type
+               sub_ti0 = ctfe_subst_multi(s0.payload_record, names, vts, tis)
+               sub_vt0 = subst_slot_vt(s0.payload_record, names, vts, s0.payload_type)
                ast::RamSlotInfo(<+>, sub_vt0, sub_ti0)
             | s0
          new_s1 = s1.has_payload
             |
-               sub_ti1 = ctfe_subst_type(s1.payload_record, name,
-                 arg_vt, arg_ti)
-               is_tv1 = ti_is_typevar(s1.payload_record, name)
-               sub_vt1 = is_tv1 | arg_vt | s1.payload_type
+               sub_ti1 = ctfe_subst_multi(s1.payload_record, names, vts, tis)
+               sub_vt1 = subst_slot_vt(s1.payload_record, names, vts, s1.payload_type)
                ast::RamSlotInfo(<+>, sub_vt1, sub_ti1)
             | s1
          ast::TypeInfo(Ram, (new_s0, new_s1))
@@ -4423,8 +4438,8 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
          slots @ s =>
             new_s = s.has_payload
                |
-                  sub_ti = ctfe_subst_type(s.payload_record, name, arg_vt, arg_ti)
-                  sub_vt = ti_is_typevar(s.payload_record, name) | arg_vt | s.payload_type
+                  sub_ti = ctfe_subst_multi(s.payload_record, names, vts, tis)
+                  sub_vt = subst_slot_vt(s.payload_record, names, vts, s.payload_type)
                   ast::EnumSlotInfo(s.label, <+>, sub_vt, sub_ti)
                | s
             new_slots += new_s
@@ -4435,36 +4450,29 @@ ctfe_subst_type = ti, name, arg_vt, arg_ti =>
          ?f.0 @ k =>
             pvt = f.0(k) | _ | ast::ValueType(Unknown)
             pti = f.1(k) | _ | ast::TypeInfo(Prim, pvt)
-            sub_pti = ctfe_subst_type(pti, name, arg_vt, arg_ti)
-            sub_pvt = ti_is_typevar(pti, name) | arg_vt | pvt
-            new_vts += sub_pvt
-            new_vis += sub_pti
-         sub_ret_ti = ctfe_subst_type(f.3, name, arg_vt, arg_ti)
-         sub_ret_vt = ti_is_typevar(f.3, name) | arg_vt | f.2
+            new_vts += subst_slot_vt(pti, names, vts, pvt)
+            new_vis += ctfe_subst_multi(pti, names, vts, tis)
+         sub_ret_ti = ctfe_subst_multi(f.3, names, vts, tis)
+         sub_ret_vt = subst_slot_vt(f.3, names, vts, f.2)
          ast::TypeInfo(Fn, (new_vts, new_vis, sub_ret_vt, sub_ret_ti, f.4))
       [Array a]
-         sub_elem_ti = ctfe_subst_type(a.1, name, arg_vt, arg_ti)
-         sub_elem_vt = ti_is_typevar(a.1, name) | arg_vt | a.0
+         sub_elem_ti = ctfe_subst_multi(a.1, names, vts, tis)
+         sub_elem_vt = subst_slot_vt(a.1, names, vts, a.0)
          ast::TypeInfo(Array, (sub_elem_vt, sub_elem_ti, a.2))
       [Map m]
-         sub_val_ti = ctfe_subst_type(m.2, name, arg_vt, arg_ti)
-         sub_val_vt = ti_is_typevar(m.2, name) | arg_vt | m.1
+         sub_val_ti = ctfe_subst_multi(m.2, names, vts, tis)
+         sub_val_vt = subst_slot_vt(m.2, names, vts, m.1)
          ast::TypeInfo(Map, (m.0, sub_val_vt, sub_val_ti))
       | ti
 
+// Instantiates a type generator: binds its compile-time parameters (in
+// declaration order) to the type arguments, simultaneously.
 subst_type_gen: ast::TypeInfo, ast::CParams, ast::VTypes,
-  ast::VInfos, Int => ast::TypeInfo
-subst_type_gen = cur_ti, cps, vts, tis, i =>
-   i == ?vts || i == ?cps
-      | cur_ti
-      |
-         cp = cps(i) | _ | ast::CompileTimeParam("",
-           ast::ValueType(Unknown),
-           ast::TypeInfo(Prim, ast::ValueType(Unknown)))
-         vt = vts(i) | _ | ast::ValueType(Unknown)
-         ti = tis(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown))
-         next_ti = ctfe_subst_type(cur_ti, cp.name, vt, ti)
-         subst_type_gen(next_ti, cps, vts, tis, i + 1)
+  ast::VInfos => ast::TypeInfo
+subst_type_gen = cur_ti, cps, vts, tis =>
+   names = ast::Names()
+   cps @ cp => names += cp.name
+   ctfe_subst_multi(cur_ti, names, vts, tis)
 
 parse_type_gen_args: Parser, ast::VTypes,
   ast::VInfos => (ast::VTypes, ast::VInfos, <>)
@@ -4495,10 +4503,19 @@ parse_type_gen_call = p, name, ti =>
          p.curr.kind [RParen] parser_advance(p)
          ti
             [Fn fn_info]
-               subst_ti = subst_type_gen(fn_info.3, fn_info.4, args.0,
-                 args.1, 0)
-               subst_vt = type_info_value_type(subst_ti)
-               mk_tp(subst_vt, subst_ti, <+>)
+               n_params = ?fn_info.4
+               n_args = ?args.0
+               n_args != n_params
+                  |
+                     parser_error(p, 2113, "Type constructor '" + name + "' expects " +
+                       str::from_int(n_params) + " type argument" +
+                       (n_params [1] "" | "s") + ", got " + str::from_int(n_args))
+                     (ast::ValueType(Unknown),
+                       ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                  |
+                     subst_ti = subst_type_gen(fn_info.3, fn_info.4, args.0, args.1)
+                     subst_vt = type_info_value_type(subst_ti)
+                     mk_tp(subst_vt, subst_ti, <+>)
             | (ast::ValueType(Unknown),
               ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
@@ -4553,6 +4570,8 @@ parse_named_type_valid = p, tok, name =>
                         ql
                            | qti =>
                               qtvar = ast::TypeInfo(TypeVar, qual)
+                              q_is_gen = (p.curr.kind [LParen]) && (qti [Fn])
+                              q_is_gen | --| parse_type_gen_call(p, qual, qti)
                               qti
                                  [Ram] mk_tp(ram_ti_vt(qti), qtvar, <+>)
                                  [Enum] mk_tp(ast::ValueType(Enum), qtvar, <+>)

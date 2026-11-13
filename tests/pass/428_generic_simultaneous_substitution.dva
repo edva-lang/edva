@@ -1,0 +1,14 @@
+#use io
+Pair: #! A: Type, #! B: Type => (a: A, b: B)
+swap: #! A: Type, #! B: Type, Pair(A, B) => Pair(B, A)
+swap = p => (a = p.b, b = p.a)
+x = (a = 1, b = "in")
+s = swap(x)
+io::out(s.a)
+io::out(s.b)
+fst: #! A: Type, #! B: Type, Pair(A, B) => A
+fst = p => p.a
+snd: #! A: Type, #! B: Type, Pair(A, B) => B
+snd = p => p.b
+io::out(fst(x))
+io::out(snd(x))

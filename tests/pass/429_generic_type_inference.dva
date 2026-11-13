@@ -1,0 +1,12 @@
+#use io
+#type User (name: String, age: Int)
+#type Req (q: String, n: Int)
+send: #! Resp: Type, #! Rq: Type, String, Rq, (Resp => ()) => Int
+send = url, payload, cb =>
+   io::out(url)
+   7
+h: User => ()
+h = u => io::out(u.name)
+io::out(send(User, "u1", Req("a", 1), h))
+io::out(send(User, Req, "u2", Req("a", 1), h))
+io::out(send("u3", Req("a", 1), h))

@@ -5042,7 +5042,13 @@ codegen_eval_closure_call = cg, t, cfn =>
 codegen_closure_call_indirect_val: types::Cg, ast::CallExpr, Addr,
   ast::ValueType => (Addr, ast::ValueType)
 codegen_closure_call_indirect_val = cg, t, clo_val, ret =>
+   target_ti = t.fn_name != ""
+      | var_ti(cg, t.fn_name)
+      | types::member_target_ti(cg, t.fn_target)
+   target_ti [Fn] (cg.last_closure_fn = types::fn_ret_sig_with_ti(cg, target_ti))
    static_name = cg.last_closure_fn
+   signature = types::typedef_ti(cg, static_name)
+   param_tis = signature [Fn f] f.1 | ast::VInfos()
    ret_ti = stmt::resolve_ti(cg,
      stmt::fn_signature_return_ti(cg, types::g.pstmts, static_name, 0))
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -5060,8 +5066,13 @@ codegen_closure_call_indirect_val = cg, t, clo_val, ret =>
    saved_discard = cg.discard_result
    cg.discard_result = <->
    arg_vals = types::Addrs()
-   t.args @ av =>
-      arg_vals += codegen_eval(cg, av).0
+   t.args @ av, i =>
+      ev = codegen_eval(cg, av)
+      arg_ti = i < ?param_tis | stmt::resolve_ti(cg, param_tis(i)!!) |
+         ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      arg_vals += arg_ti
+         [Ram] match::coerce_ram_repr(cg, ev.0, arg_ti)
+         | ev.0
    cg.discard_result = saved_discard
 
    n = ?arg_vals
@@ -5289,6 +5300,9 @@ codegen_emit_match_feed = cg, arg_expr, fn_expr =>
 codegen_eval_param_call: types::Cg, ast::CallExpr, Addr => (Addr, ast::ValueType)
 codegen_eval_param_call = cg, t, fty =>
    pv = codegen_eval(cg, ast::Expr(Var, t.fn_name))
+   key = "#clo_" + types::g.last_compiling_fn + "#" + t.fn_name
+   sig = types::typedef_ti(cg, key)
+   sig [Fn] (cg.last_closure_fn = types::fn_ret_sig_with_ti(cg, sig))
    ret_vt = stmt::param_clo_ret(cg, t.fn_name)
    codegen_closure_call_indirect_val(cg, t, pv.0, ret_vt)
 

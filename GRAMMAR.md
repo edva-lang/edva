@@ -1081,6 +1081,13 @@ apply: #! T: Type, #! U: Type, (T => U), T => U   // a function-typed param
 apply = f, x => f $ x
 ```
 
+Leading type arguments may be supplied explicitly or inferred from runtime argument
+types, including callback signatures. With multiple parameters, explicit arguments
+bind a leading prefix; the remaining type parameters are inferred. A parameter
+absent from every declared parameter and result type must be supplied explicitly
+(`E3176`). Result types may receive constraints from later applications of a
+returned function; parameters without annotations retain body inference.
+
 The single-type-parameter case may instead be written **inline**, in the
 lambda's parameter list, with the type parameter inferred:
 
@@ -1154,11 +1161,19 @@ type:
 Opt: #! T: Type => < T | >          // the type IS the result; no "=" body
 #type IntOpt Opt(Int)               // IntOpt is the ram < Int | >
 #type StrOpt Opt(String)
+
+Pair: #! A: Type, #! B: Type => (first: A, second: B)
+#type IntString Pair(Int, String)
 ```
 
 A type-generator instantiation (`#type IntOpt Opt(Int)`) is evaluated at
 compile time (the type variable is substituted) and registered as a declared
 type.
+
+Type constructors require exactly their declared number of arguments (`E2113`).
+Substitution is simultaneous, so `Pair(B, A)` inside a generic function preserves
+both type variables when reordering them. Function fields inside generated records
+use their concrete specialized signatures, with no runtime type descriptors.
 
 **`#! expr`.** A `#!` prefix on an expression folds it at compile time (CTFE)
 to a constant. The evaluable subset — literals, `+ - * / %`, comparisons,

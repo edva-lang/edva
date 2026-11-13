@@ -95,7 +95,7 @@
       out
 
    // reverse: return a new container with elements in reversed order.
-   reverse: #! E: Type, #! T: Type, T => T
+   reverse: #! T: Type, T => T
    reverse = xs =>
       out = T
       n = ?xs
