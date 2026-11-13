@@ -28,6 +28,7 @@ Functions and closures in Edva are first-class values with uniform 16-byte repre
 | **Destructuring parameter fn** | `sum_pt = (x, y) => x + y`<br>`add_p = (a, b), (c, d) => (a + c, b + d)` | Positional `(a, b)` or named `(x, y)` / `(x = lx, y = ly)` tuple or record destructuring per parameter | `E2037`: single-param `(x) =>` |
 | **Nullary function** | `tick = !=> count = count + 1` | 0-parameter function; called via `tick!` | `E2086`: `tick()` forbidden |
 | **Grouped implicit lambda** | `(_ * 2)`, `(10 - _)`, `((a = _, b = 1))` | Innermost `(...)` group with free `_` becomes a 1-arg function | — |
+| **Partial application** | `sub(_, 5)`, `sub(100, _)`, `sub(a = _, b = 2)` | A call with `_` as a direct (positional or `name = _`) argument, in a call-argument or `[predicate]` guard position where `_` is not otherwise bound, is the closure `_ => sub(_, 5)` (`apply(sub(_, 5), 20)`, `k [gt(_, 5)] "big" \| "small"`). A bound `_` (payload branch, cycle element, implicit lambda) keeps its meaning | `E3084`: `_` bound where a function was expected |
 | **Operator section** | `(* 2)`, `(+ "!")`, `(.<. 1)` | Space after operator required; RHS binds at RBP 130 (`* 2 + 3` $\equiv$ `_ => _ * (2 + 3)`) | `E2031`: missing space (`>3`) |
 | **Field-accessor section** | `(.name)`, `(.0)`, `(.a.b)` | Parenthesized leading dot projects field/index with a fresh internal parameter (never shadows outer `_`) | `E2064`: bare `(.)` |
 | **Headless choice fn** | `[< 0] "neg" [0] "zero" | "pos"` | Scrutinee-less guarded choice lowers to a 1-arg function over `_` | — |
@@ -80,9 +81,9 @@ io::out $ (scale5(4), scale5(-2))   // (20, 0)
 |---|---|---|---|
 | **Direct call** | `f(a, b)` | Postfix (LBP 170, left) | Direct invocation (no space before `(`, `E2032`; empty `f()` forbidden, `E2086`) |
 | **Nullary call** | `f!` | Postfix (LBP 170, left) | Invokes 0-argument function `f` |
-| **Feed pipeline** | `x $> f` / `x $> f(a)` | Feed (LBP 40, RBP 50, left) | Prepends `x` as first argument: `f(x)` / `f(x, a)` (evaluates `x` once when RHS uses `_`) |
+| **Feed pipeline** | `x $> f` / `x $> f(a)` | Feed (LBP 40, RBP 50, left) | Prepends `x` as first argument: `f(x)` / `f(x, a)`; a `_` argument slot receives `x` instead (`s $> str::split(_, ",")`); evaluates `x` once when RHS uses `_` |
 | **Infix apply** | `f $ x` / `f(a) $ b` | Apply (LBP 30, RBP 30, right) | Appends `x` / `b` as last argument: `f(x)` / `f(a, b)` |
 | **Block apply** | `f $` + indented `k = v` block | Apply (LBP 30, RBP 30, right) | Passes indented key-value block as a single record argument |
-| **Monadic bind** | `ram $>> cont` | Feed (LBP 40, RBP 50, left) | Unwraps positive ram slot into ram-returning `cont`; short-circuits negative slot (`E3091`) |
+| **Monadic bind** | `ram $>> cont` | Feed (LBP 40, RBP 50, left) | Unwraps positive ram slot into ram-returning `cont` (or the `_` slot of a ram-returning `f(_, a)`); short-circuits negative slot (`E3091`) |
 | **Ram functor map** | `ram $+> f` / `ram $-> g` | Feed (LBP 40, RBP 50, left) | Maps `f` over positive slot (`$+>`) or `g` over negative slot (`$->`), preserving the ram wrapper |
 | **Function composition** | `f .> g` | Feed (LBP 40, RBP 50, left) | Composes stages left-to-right: `(f .> g)(x)` $\equiv$ `g(f(x))` |

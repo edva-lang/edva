@@ -20,8 +20,8 @@ Edva programs are composed from expressions: calls, choices, ranges, cycles, ass
 | Record copy-update | `rec(k = v, ...)` | left (postfix, LBP 170) | Copies nominal or anonymous record `rec` and overrides named fields `k` |
 | Infix apply | `f $ x` / `f(a) $ b` | right (LBP 30, RBP 30) | Appends `x` / `b` as last argument: `f(x)` / `f(a, b)` |
 | Block apply | `f $` + indented block | right (LBP 30, RBP 30) | Passes indented `k = v` block as a single record argument |
-| Feed | `x $> f` / `x $> f(a)` / `x $> _(k = v)` | left (LBP 40, RBP 50) | Prepends `x` as first argument (`f(x)` / `f(x, a)`), or evaluates `x` once into `_` when RHS has free `_` or `_(k = v)` |
-| Ram bind | `ram $>> cont` | left (LBP 40, RBP 50) | Threads positive payload of `RamPN` / `RamPP` into ram-returning `cont` (`E3091`) |
+| Feed | `x $> f` / `x $> f(a)` / `x $> f(a, _)` / `x $> _(k = v)` | left (LBP 40, RBP 50) | Prepends `x` as first argument (`f(x)` / `f(x, a)`); with a `_` argument slot, fills that slot instead (`s $> str::split(_, ",")` $\equiv$ `str::split(s, ",")`, `x $> Node(deps = d, ..._)`); otherwise evaluates `x` once into `_` when RHS has free `_` or `_(k = v)` |
+| Ram bind | `ram $>> cont` / `ram $>> f(_, a)` | left (LBP 40, RBP 50) | Threads positive payload of `RamPN` / `RamPP` into ram-returning `cont`, or into the `_` argument slot of ram-returning `f` (`opt $>> sub_opt(_, 3)`) (`E3091`) |
 | Ram positive map | `ram $+> fn` | left (LBP 40, RBP 50) | Maps `fn: T => U` over positive slot of `< T | E >` or `< T | >`, preserving negative slot (`E3091`) |
 | Ram negative map | `ram $-> fn` | left (LBP 40, RBP 50) | Maps `fn: E => F` over negative slot of `< T | E >` or `< | E >`, preserving positive slot (`E3091`) |
 | Composition | `f .> g` | left (LBP 40, RBP 50) | Left-to-right function composition (`(f .> g)(x)` $\equiv$ `g(f(x))`), usable in pipelines or as a closure value |

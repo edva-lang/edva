@@ -103,8 +103,12 @@ types and cannot be implicitly coerced between one another.
 - **Headless Choice Function**: `classify = [100] "perfect" [> 89] "pass" | "fail"` (a scrutinee-less `[guard]` choice outside an `@` cycle body desugars into a 1-argument function over `_`, callable as `classify(95)` or `95 $> [> 89] "pass" | "fail"`).
 - **Pipelines, Composition & Functor Maps**:
   - `x $> f(a)` feeds `x` as first arg (evaluating `x` once when RHS uses `_` or `_(field = val)`);
+    a `_` argument slot receives `x` instead: `s $> str::split(_, ",")` == `str::split(s, ",")`;
+  - Placeholder partial application: `f(_, a)` as a call argument or `[predicate]` guard (with `_`
+    not bound by a payload branch / cycle body / implicit lambda) is `_ => f(_, a)`:
+    `apply(sub(_, 5), 20)`, `k [gt(_, 5)] "big" | "small"`;
   - `f .> g` composes functions left-to-right (`(f .> g)(x)` == `g(f(x))`);
-  - `r $>> cont` binds positive ram payloads into ram-returning `cont`;
+  - `r $>> cont` binds positive ram payloads into ram-returning `cont` (or the `_` slot of a ram-returning call: `r $>> sub_opt(_, 3)`);
   - `r $+> f` maps `f` over the positive slot (`< T | E >` / `< T | >`), and `r $-> g` maps `g` over
     the negative slot (`< T | E >` / `< | E >`).
 - **Record Copy-with-Update & Destructuring**:

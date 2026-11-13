@@ -49,7 +49,8 @@
 - **Uppercase identifiers (`[A-Z]...`)**: Built-in types (`Int`, `Float`, `Rune`, `String`,
   `Builder`, `Addr`, `Error`, `Type`), `#type` declarations, and enum variant labels.
 - **Exact underscore (`_`)**: Implicit 1-argument lambda parameter `(_ * 2)`, operator section
-  parameter `(* 2)`, implicit cycle item, bare ram/variant payload extractor (`x | _ | fallback`),
+  parameter `(* 2)`, partial-application slot `f(_, 5)` / `x $> f(a, _)`, implicit cycle item,
+  bare ram/variant payload extractor (`x | _ | fallback`),
   or pattern wildcard `(a, _)`. Explicit `_ =>` in parameter lists (`E2040`) and `_ = expr`
   (`E2044`) are forbidden.
 - **Cycle index (`_i`)**: Implicit `0`-based index in count/range/string/array cycles, or key in
@@ -122,6 +123,12 @@ Notable operator and precedence facts:
 - **Infix apply (`$`), feed (`$>`), composition (`.>`), and ram maps (`$>>`, `$+>`, `$->`)**:
   - `f(a) $ b` == `f(a, b)` (append, right-assoc); `x $> f(a)` == `f(x, a)` (prepend, left-assoc;
     evaluates `x` once into a temporary when RHS references `_` or uses `_(field = val, ...)`).
+    A `_` argument slot receives `x` instead: `s $> str::split(_, ",")` == `str::split(s, ",")`,
+    `x $> Node(deps = d, ..._)`; `r $>> sub_opt(_, 3)` fills the slot of a ram-returning call with the positive payload.
+  - Placeholder partial application: a call with `_` as a direct (positional or `name = _`)
+    argument, used as a call argument or `[predicate]` guard where `_` is not bound by a payload
+    branch, cycle body, or implicit lambda, is the closure `_ => f(..., _, ...)`:
+    `apply(sub(_, 5), 20)`, `k [gt(_, 5)] "big" | "small"`. A bound `_` keeps its meaning.
   - `f .> g` composes functions left-to-right (`(f .> g)(x)` == `g(f(x))`), usable in pipelines or
     as a first-class closure value.
   - `r $>> cont` monadically binds positive ram payloads; `r $+> f` maps `f` over the positive slot

@@ -28,7 +28,7 @@ Edva has **no reserved keywords**. Identifiers, types, and directives are distin
 |---|---|---|---|
 | **Value / function identifier** | `[a-z_][a-zA-Z0-9_]*` | Lowercase or `_`-prefixed ASCII/Unicode name | — |
 | **Primed identifier** | `name'`, `name''`, ... | Declares a mutable/rebindable variable or stepped SSA version (`x' = x + 1`). Once primed, reassignments may write `x' = v` or `x = v` | `E3033`: reassigning unprimed `x` |
-| **Exact underscore (`_`)** | `_` | Implicit lambda parameter `(_ * 2)`, operator section parameter `(* 2)`, implicit cycle item, bare ram/variant payload, or pattern wildcard `(a, _)` | `E2040`: explicit `_ =>`<br>`E2044`: `_ = expr`<br>`E3004`: unbound `_` |
+| **Exact underscore (`_`)** | `_` | Implicit lambda parameter `(_ * 2)`, operator section parameter `(* 2)`, partial-application slot `f(_, 5)` / `x $> f(a, _)`, implicit cycle item, bare ram/variant payload, or pattern wildcard `(a, _)` | `E2040`: explicit `_ =>`<br>`E2044`: `_ = expr`<br>`E3004`: unbound `_` |
 | **Cycle index (`_i`)** | `_i` | Implicit `0`-based index in count/range/string/array cycles, or key in map cycles (`m @` block); scoped strictly to the cycle body | `E3004`: reading `_i` after cycle exit |
 | **Nominal type / variant** | `[A-Z][a-zA-Z0-9_]*` | Built-in types (`Int`, `Float`, `Rune`, `String`, `Builder`, `Addr`, `Error`, `Type`), `#type` names, and enum variant labels | `E2012`: lowercase enum variant |
 | **Custom operator name** | `(op_chars)` | Symbolic operator function declared/referenced in parentheses, e.g. `(+++): Int, Int => Int` | — |
