@@ -1,0 +1,23 @@
+#use io
+#type P types::Pair(String, Int)
+#type Q alias::Pair(Float, types::Tag)
+#type R Pair(Int, String)
+#type S types::Tagged(Int)
+#type D types::WithDefault(Int)
+p = P("answer", 42)
+q = Q(1.5, types::Tag("qualified", 1))
+r = R(7, "unqualified")
+s = S(9, types::Tag("local type", 2))
+d = D(value: 4)
+io::out(p.first)
+io::out(p.second)
+io::out(q.first)
+io::out(q.second.name)
+io::out(r.second)
+io::out(s.tag.name)
+io::out(d.count)
+
+// Imports may follow the declarations that instantiate their constructors.
+#use ./types
+#use alias = ./types
+#use(import) ./types

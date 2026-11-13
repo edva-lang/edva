@@ -1,0 +1,4 @@
+#public
+#type Tag (name: String, id: Int)
+Pair: #! A: Type, #! B: Type => (first: A, second: B)
+Tagged: #! T: Type => (value: T, tag: Tag)

@@ -1,0 +1,4 @@
+#public
+Pair: #! A: Type, #! B: Type => (a: A, b: B)
+#private
+Hidden: #! T: Type => (value: T, count: Int)

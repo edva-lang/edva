@@ -1245,8 +1245,64 @@ load_functor_import = imp, base, ldr, path, import_entries, param_map, bound_map
               "' not found at '" + imp.module_path + "'")
          <->
 
-load_stmts: ast::Exprs, String, String, ast::Names, ast::Names, Loader, String, ast::Ints, ast::Ints => <>
-load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
+// Scan only dependency directives before parsing declarations. A constructor
+// application needs the imported generator's signature during type parsing.
+scan_module_dependencies: String, String => < ast::Exprs | >
+scan_module_dependencies = src, path =>
+   p = parser::parse_init(src)
+   parser::parser_set_file(p, path)
+   deps = ast::Exprs()
+   ok' = <+>
+   0.. @
+      p.curr.kind [Eof] | -->
+      dep = p.curr.kind
+         [UsePath] parser::parse_import(p, <->, <->)
+         [UseDynamicPath] parser::parse_import(p, <+>, <->)
+         [UseImportPath] parser::parse_import(p, <->, <+>)
+         [UseDynamicImportPath] parser::parse_import(p, <+>, <+>)
+         [ParamKw] parser::parse_mod_param(p)
+         |
+            parser::parser_advance(p)
+            <-->
+      dep | d => deps += d
+      p.recovered_errors > 0 || lexer::lex_failed! | (ok' = <->; -->)
+   ok' | <+ deps +> | <-->
+
+// Seed aliases using the same export table that rewrites value imports.
+// Canonical entries also resolve types referenced inside imported signatures.
+seed_imported_types: parser::Parser, ast::Exprs, ImportMap => ()
+seed_imported_types = p, exprs, table =>
+   exprs @ e =>
+      entry = e
+         [TypeDecl td] <+ parser::TypeEntry(td.name, td.type_info) +>
+         [Assign a]
+            a.8
+               [Fn f]
+                  ?f.4 > 0 && ?f.0 == 0
+                     | <+ parser::TypeEntry(a.0, a.8) +>
+                     | <-->
+               | <-->
+         | <-->
+      entry | te =>
+         local_types = ImportMap()
+         mod = dep_graph::decl_module(te.name, 0)
+         bound = te.ti [Fn f] (f.4 @> cp => cp.name) | ast::Names()
+         exprs @ decl =>
+            name = decl [TypeDecl td] td.name [Assign a] a.0 | ""
+            name != "" && dep_graph::decl_module(name, 0) == mod
+               |
+                  bare = name(?mod + 2..)
+                  clean = starts_with(bare, "#") | bare(1..) | bare
+                  !loaded_has(bound, clean) | local_types ^ clean = name
+         sig = rewrite_import_type_info(te.ti, local_types)
+         p.user_types = parser::add_type(p.user_types, te.name, sig)
+         table @ canonical, alias =>
+            canonical == te.name
+               | p.user_types = parser::add_type(p.user_types, alias, sig)
+
+load_stmts: ast::Exprs, String, String, Loader, String, parser::Parser, <>, String => <>
+load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
+   stmts = deps
    ok' = <+>
    import_entries = ImportEntries()
    has_imp_mods' = <->
@@ -1366,9 +1422,27 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
          !ok'
             | <->
             |
+               seed_imported_types(ppr, ldr.out_exprs, import_table)
+               lexer::lex_set_file(path)
+               parsed = parser::parse_program(ppr)
+               !<>(parsed) | --| <->
+               body = parsed!!
+               actual = body [Block b] b | ast::Exprs()
+               publics = ppr.publics
+               privates = ppr.privates
+               lines = ppr.top_lines
+               cols = ppr.top_cols
+               is_pkg && ?publics == 0
+                  |
+                     log::error $ "E5036: #use " + imp_path +
+                       ": module exports nothing (no #public)"
+                     --| <->
+               !ldr.is_dep
+                  |
+                     ppr.exports @ exp => ldr.exports += exp
                has_imp_mods'
                   |
-                     fcres = check_file_clash(stmts, import_table, import_source)
+                     fcres = check_file_clash(actual, import_table, import_source)
                      !fcres | ok' = <->
                !ok'
                   | <->
@@ -1376,7 +1450,7 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                      // A functor instance is compiled into its importer's unit.
                      is_iface = ldr.is_modular && ldr.is_dep && ?my_args == 0
                      st_idx' = 0
-                     stmts @ st2 =>
+                     actual @ st2 =>
                         is_imp = st2 [Import, ModParam]
                         !is_imp
                            |
@@ -1418,25 +1492,9 @@ load_single_file = path, prefix, is_pkg, imp_path, ldr =>
                parser::parser_set_file(ppr, path)
                lexer::lex_set_file(path)
                ppr.allow_module_refs = <+>
-               prog_res = parser::parse_program(ppr)
-               prog_res
-                  | prog =>
-                     is_pkg && ?ppr.publics == 0
-                        |
-                           log::error $ "E5036: #use " + imp_path +
-                             ": module exports nothing (no #public)"
-                           <->
-                        |
-                           prog
-                              [Block b]
-                                 !ldr.is_dep
-                                    |
-                                       ppr.exports @ exp =>
-                                          ldr.exports += exp
-                                 load_stmts(b, dirname(path), prefix,
-                                   ppr.publics, ppr.privates, ldr, path,
-                                   ppr.top_lines, ppr.top_cols)
-                              | <->
+               scan_module_dependencies(src, path)
+                  | deps => load_stmts(deps, dirname(path), prefix, ldr, path,
+                    ppr, is_pkg, imp_path)
                   | <->
       |
          log::error $ "E5005: Could not read source file '" + path + "'"

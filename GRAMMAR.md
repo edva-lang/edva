@@ -1171,6 +1171,11 @@ compile time (the type variable is substituted) and registered as a declared
 type.
 
 Type constructors require exactly their declared number of arguments (`E2113`).
+Exported constructors can be instantiated through imports: after `#use ./types`,
+write `#type P types::Pair(Int, String)`. Module aliases, package imports and
+functor module parameters use the same syntax; `#use(import)` also exposes the
+constructor's bare name. Dependencies load before declarations are parsed, so
+the import can appear later in the file. Private constructors remain inaccessible.
 Substitution is simultaneous, so `Pair(B, A)` inside a generic function preserves
 both type variables when reordering them. Function fields inside generated records
 use their concrete specialized signatures, with no runtime type descriptors.

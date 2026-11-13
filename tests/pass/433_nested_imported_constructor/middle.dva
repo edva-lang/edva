@@ -1,0 +1,3 @@
+#use ./types
+#public
+Envelope: #! T: Type => (payload: types::Tagged(T), meta: String)

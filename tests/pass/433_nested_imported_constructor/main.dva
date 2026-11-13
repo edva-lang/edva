@@ -1,0 +1,9 @@
+#use ./middle
+#use ./app(types)
+#use ./types
+#use io
+#type E middle::Envelope(Int)
+e = E((value = 3, tag = types::Tag("nested", 7)), "meta")
+io::out(e.payload.tag.name)
+io::out(e.payload.value)
+io::out(app::value.second)

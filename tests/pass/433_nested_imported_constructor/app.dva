@@ -1,0 +1,4 @@
+#param M: Module
+#public
+#type Model M::Pair(Int, String)
+value = Model(5, "functor")

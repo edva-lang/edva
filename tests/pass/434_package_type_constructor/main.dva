@@ -1,0 +1,6 @@
+#use @mvu/types
+#use io
+#type P types::Pair(String, Int)
+p = P("package", 12)
+io::out(p.first)
+io::out(p.second)

@@ -1,0 +1,2 @@
+#use ./mod_generic_types
+#type Bad mod_generic_types::Hidden(Int)
