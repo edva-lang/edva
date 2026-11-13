@@ -388,7 +388,7 @@ parse_choice = p =>
                parse_range(p)
                   | r =>
                      r
-                        [Assign, Fn, TypeDecl, Import, Foreign, Block] <+ r +>
+                        [Assign, Fn, TypeDecl, Import, ModParam, Foreign, Block] <+ r +>
                         | choice_resume(p, r, choice_entry)
                   | <-->
 
@@ -1336,6 +1336,7 @@ parse_atom = p =>
       [UseDynamicPath] atom_to_ram(parse_import(p, <+>, <->))
       [UseImportPath] atom_to_ram(parse_import(p, <->, <+>))
       [UseDynamicImportPath] atom_to_ram(parse_import(p, <+>, <+>))
+      [ParamKw] atom_to_ram(parse_mod_param(p))
       [SpawnKw] atom_to_ram(atom_spawn(p))
       [JoinKw] atom_to_ram(atom_join(p))
       [ExitKw] atom_to_ram(atom_exit(p))
@@ -5145,18 +5146,94 @@ parse_import = p, is_dyn, is_imp =>
    parser_advance(p)
    is_imp | p.has_use_import = <+>
    eq_idx = find_use_eq(raw_path, 0)
-   parsed = eq_idx !< 0
+   alias = eq_idx !< 0 | trim_use_str(raw_path(0..eq_idx)) | ""
+   full = eq_idx !< 0 | trim_use_str(raw_path(eq_idx + 1..)) | raw_path
+   lp_idx = find_use_lparen(full, 0)
+   mod_path = lp_idx !< 0 | full(0..lp_idx) | full
+   args = ast::Names()
+   lp_idx !< 0 | parse_use_args(p, full(lp_idx + 1..), args)
+   is_dyn && ?args > 0
+      | parser_error(p, 2111, "'#use(dynamic)' cannot instantiate a functor module " +
+        "with module arguments: '" + full + "'")
+   name = alias != ""
+      | alias
       |
-         name = trim_use_str(raw_path(0..eq_idx))
-         path = trim_use_str(raw_path(eq_idx + 1..))
-         (name, path)
+         has_at = ?mod_path > 0 && mod_path(0) == '@
+         has_slash = find_use_slash(mod_path, 0) !< 0
+         has_at && !has_slash | mod_path(1..) | last_segment(mod_path)
+   <+ ast::Expr(Import, ast::ImportStmt(name, mod_path, is_dyn, is_imp, args)) +>
+
+find_use_lparen: String, Int => Int
+find_use_lparen = s, i =>
+   i < ?s
+      | s(i) == '( | i | find_use_lparen(s, i + 1)
+      | -1
+
+// The module arguments of '#use path(a, b)': `rest` is the text after '('.
+// Each comma-separated argument must be a plain module name (E2110).
+parse_use_args: Parser, String, ast::Names => ()
+parse_use_args = p, rest, args =>
+   n = ?rest
+   n == 0 || rest(n - 1) != ')
+      | parser_error(p, 2110, "Malformed module argument list in '#use': expected ')'")
       |
-         has_at = ?raw_path > 0 && raw_path(0) == '@
-         has_slash = find_use_slash(raw_path, 0) !< 0
-         name = has_at && !has_slash | raw_path(1..) | last_segment(raw_path)
-         (name, raw_path)
-   <+ ast::Expr(Import, ast::ImportStmt(parsed.0, parsed.1,
-     is_dyn, is_imp)) +>
+         inner = rest(0..n - 1)
+         m = ?inner
+         start' = 0
+         (m + 1) @ i =>
+            i == m || inner(i) == ',
+               |
+                  arg = trim_use_str(inner(start'..i))
+                  is_use_arg_name(arg)
+                     | args += arg
+                     | parser_error(p, 2110, "Invalid module argument '" + arg +
+                       "' in '#use': expected a module name bound by '#use' or '#param'")
+                  start' = i + 1
+
+// A module argument: a non-empty identifier (no path separators, quotes, or
+// nested argument lists).
+is_use_arg_name: String => <>
+is_use_arg_name = s =>
+   ?s == 0 | --| <->
+   ok' = <+>
+   ?s @ i =>
+      c = s(i)
+      c ['/, '., '(, '), '\s, '\t, ':, '@, '"] (ok' = <->; -->)
+   ok'
+
+// "#param M: Module" — a formal module parameter of a functor module (DVA-61).
+// Only the 'Module' kind exists; the alias is used as 'M::name' in the body.
+parse_mod_param: Parser => <ast::Expr|>
+parse_mod_param = p =>
+   line = p.curr.line
+   col = p.curr.col
+   parser_advance(p)
+   bad = !(p.curr.kind [Id]) || has_module_sep(p.curr.text)
+   bad
+      |
+         parser_error(p, 2112, "Expected '#param <Alias>: Module', got '" + p.curr.text + "'")
+         <-->
+      |
+         name = p.curr.text
+         parser_advance(p)
+         p.curr.text != ":"
+            |
+               parser_error(p, 2112, "Expected ':' after '#param " + name +
+                 "' (write '#param " + name + ": Module')")
+               <-->
+            |
+               parser_advance(p)
+               p.curr.kind [Id] && p.curr.text == "Module"
+                  |
+                     parser_advance(p)
+                     <+ ast::Expr(ModParam, ast::ModParamStmt(name, line, col)) +>
+                  |
+                     parser_error(p, 2112, "Unsupported '#param' kind '" + p.curr.text +
+                       "' — only '#param " + name + ": Module' is supported")
+                     <-->
+
+has_module_sep: String => <>
+has_module_sep = s => string_has_double_colon(s, 0)
 
 last_segment: String => String
 last_segment = p => path::stem(path::basename(p))

@@ -68,6 +68,7 @@ show_expr = e =>
       // as "?" (the native dump_expr's default), so the differential harness
       // compares them as opaque.
       [Import t] "Import(" + t.module_name + ")"
+      [ModParam t] "ModParam(" + t.name + ")"
       [Foreign t] "Foreign(" + t.dva_name + ")"
       [TypeDecl t] "TypeDecl(" + t.name + ")"
       [FastMathPragma v] "Fp(" + (v ["all"] "all" | "none") + ")"

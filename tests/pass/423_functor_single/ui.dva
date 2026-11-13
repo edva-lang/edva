@@ -1,0 +1,14 @@
+#use str
+
+#public
+
+#type Model (count: Int, label: String)
+
+init: () => Model
+init = !=> Model(count = 1, label = "ui")
+
+step: Model => Model
+step = m => m(count = m.count * 2)
+
+view: Model => String
+view = m => m.label + ":" + str::from_int(m.count)

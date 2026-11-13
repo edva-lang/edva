@@ -1,0 +1,7 @@
+// Helper functor module for the DVA-61 negative tests.
+#param M: Module
+
+#public
+
+greet: () => String
+greet = !=> "hello " + M::name

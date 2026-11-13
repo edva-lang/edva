@@ -1,0 +1,6 @@
+// A module without '#param' cannot take module arguments.
+#use ./mod_b
+#use ./mod_a(mod_b)
+#use io
+
+io::out $ str::from_int(mod_a::foo(1))

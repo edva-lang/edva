@@ -1,0 +1,4 @@
+// An unterminated module argument list.
+#use ./mod_functor(mod_a
+
+x = 1

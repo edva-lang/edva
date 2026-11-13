@@ -1,0 +1,12 @@
+// ML-style module functor (DVA-61), single instantiation: './app' is
+// parameterized by a user module ('#param App: Module') and instantiated with
+// '#use ./app(ui)'. The functor reaches the argument's type, constructor, and
+// functions through 'App::'; the instance keeps its own module-level state.
+
+#use ./app(ui)
+#use ./ui
+#use io
+
+app::run(3)
+io::out $ app::total!
+io::out $ app::describe(ui::Model(count = 7, label = "seven"))

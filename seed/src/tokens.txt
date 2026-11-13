@@ -37,3 +37,4 @@ UseDynamicPath UseDynamicPath
 PragmaSwizzle PragmaSwizzle
 UseImportPath UseImportPath
 UseDynamicImportPath UseDynamicImportPath
+ParamKw      ParamKw

@@ -1,0 +1,16 @@
+// A functor with two module parameters (DVA-61): './app' is instantiated with
+// a model module and a view module, '#use ./app(ui, index)'. Arguments are
+// positional: the first binds '#param App', the second '#param View'. A
+// '#use(import)' instantiation also exposes the instance's names unqualified.
+
+#use ./ui
+#use ./index
+#use(import) ./app(ui, index)
+#use io
+
+dispatch("inc")
+dispatch("inc")
+dispatch("reset")
+dispatch("inc")
+io::out $ app::render!
+io::out $ render!

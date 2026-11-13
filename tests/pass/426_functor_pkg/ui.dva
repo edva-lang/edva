@@ -1,0 +1,9 @@
+#public
+
+#type Model (n: Int, tag: String)
+
+init: () => Model
+init = !=> Model(n = 0, tag = "ui")
+
+on_click: Model => Model
+on_click = m => m(n = m.n + 1)

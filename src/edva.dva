@@ -100,7 +100,8 @@
    out_files: ast::Names,
    out_lines: ast::Ints,
    out_cols: ast::Ints,
-   loaded_files: ast::Names
+   loaded_files: ast::Names,
+   functor_args: ast::Names
 )
 
 #type ImportEntry (bound_name: String, canonical_id: String, is_import: <>)
@@ -1152,15 +1153,136 @@ rewrite_import_expr = e, table, locals =>
          ast::Expr(BuilderCreate, rewrite_import_expr(bc, table, locals))
       | e
 
+// --- ML-style module functors (DVA-61) -------------------------------------
+
+// The canonical id of a functor instance: the functor's id plus its argument
+// ids, `app[ui,index]`. Instantiation is applicative — the same functor
+// applied to the same argument modules is one shared instance (and one copy
+// of its module-level state); different arguments give distinct instances.
+// '::' inside an argument id is flattened to '.' so the instance id has no
+// inner module separator.
+functor_instance_cid: String, ast::Names => String
+functor_instance_cid = fcid, arg_cids =>
+   b = {64}
+   b += fcid
+   b += '[
+   arg_cids @ a, i =>
+      i > 0 | b += ',
+      b += str::replace(a, "::", ".")
+   b += ']
+   +b
+
+join_names: ast::Names, String => String
+join_names = names, sep =>
+   b = {64}
+   names @ n, i =>
+      i > 0 | b += sep
+      b += n
+   +b
+
+report_functor_arity: ast::Names, ast::Names, String, String => ()
+report_functor_arity = params, args, prefix, path =>
+   np = ?params
+   na = ?args
+   plist = join_names(params, ", ")
+   na == 0
+      |
+         prefix == ""
+            | loader_error(5050, path, "E5050: '#param " + plist + "' is only valid in a " +
+              "functor module instantiated with '#use path(args)', not in the program " +
+              "entry file '" + path + "'")
+            | loader_error(5050, path, "E5050: Module '" + path + "' is a functor (#param " +
+              plist + ") and must be instantiated with module arguments: " +
+              "'#use <path>(" + plist + ")'")
+      | np == 0
+         | loader_error(5051, path, "E5051: Module '" + path + "' is not a functor (it " +
+           "declares no #param) but " + str::from_int(na) + " module argument(s) were given")
+         | loader_error(5051, path, "E5051: Functor module '" + path + "' expects " +
+           str::from_int(np) + " module argument(s) (#param " + plist + ") but " +
+           str::from_int(na) + " were given")
+
+// '#use path(a, b)': resolve the argument names (a '#param' of the importing
+// functor or a module bound by a plain '#use' in this file), then load the
+// functor file once per distinct argument tuple under its instance id.
+load_functor_import: ast::ImportStmt, String, Loader, String, ImportEntries,
+  ImportMap, ImportMap => <>
+load_functor_import = imp, base, ldr, path, import_entries, param_map, bound_map =>
+   arg_cids = ast::Names()
+   ok' = <+>
+   imp.args @ a =>
+      param_map ^? a
+         | arg_cids += (param_map ^ a | _ | a)
+         | bound_map ^? a
+            | arg_cids += (bound_map ^ a | _ | a)
+            |
+               loader_error(5052, path, "E5052: Module argument '" + a + "' of '#use " +
+                 imp.module_path + "(" + join_names(imp.args, ", ") +
+                 ")' is not a module bound by '#use' or '#param' in this file")
+               ok' = <->
+   !ok' | --| <->
+   resolved = resolve_module(base, imp.module_path, ldr)
+   resolved
+      [File f]
+         inst_cid = functor_instance_cid(f.canonical_id, arg_cids)
+         import_entries += ImportEntry(imp.module_name, inst_cid, imp.is_import)
+         loaded_has(ldr.loaded, inst_cid) | --| <+>
+         ldr.loaded += inst_cid
+         saved_dep = ldr.is_dep
+         ldr.is_dep = <+>
+         ldr.functor_args = arg_cids
+         res = load_single_file(f.path, inst_cid, f.is_pkg, imp.module_path, ldr)
+         ldr.functor_args = ast::Names()
+         ldr.is_dep = saved_dep
+         res
+      [Dir d]
+         loader_error(5051, path, "E5051: '#use " + imp.module_path + "(...)': directory " +
+           "module '" + d.path + "' cannot be a functor; module arguments need a single " +
+           "file module")
+         <->
+      |
+         !starts_with(imp.module_path, "@")
+            | loader_error(5006, path, "E5006: Imported module '" + imp.module_name +
+              "' not found at '" + imp.module_path + "'")
+         <->
+
 load_stmts: ast::Exprs, String, String, ast::Names, ast::Names, Loader, String, ast::Ints, ast::Ints => <>
 load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
    ok' = <+>
    import_entries = ImportEntries()
    has_imp_mods' = <->
+   // Functor module parameters (DVA-61): the instance's module arguments are
+   // handed over in ldr.functor_args; each '#param M: Module' binds M like an
+   // import of the corresponding argument module, so 'M::x' rewrites to the
+   // argument's qualified name below. Nested imports see no arguments.
+   my_args = ldr.functor_args
+   ldr.functor_args = ast::Names()
+   params = ast::Names()
+   stmts @ pst => pst [ModParam mp] (params += mp.name)
+   param_map = ImportMap()
+   bound_map = ImportMap()
+   ?params != ?my_args
+      |
+         report_functor_arity(params, my_args, prefix, path)
+         ok' = <->
+      |
+         ?params @ pi =>
+            pname = params(pi)!!
+            acid = my_args(pi)!!
+            param_map ^? pname
+               |
+                  loader_error(5049, path, "E5049: Duplicate '#param " + pname +
+                    ": Module' in functor module '" + path + "'")
+                  ok' = <->
+            param_map ^ pname = acid
+            import_entries += ImportEntry(pname, acid, <->)
+            has_imp_mods' = <+>
+   // Plain imports first, then functor instantiations ('#use ./app(ui)'): a
+   // module argument must be loaded before the functor instance using it.
    stmts @ st =>
       !ok' | -->
       st
          [Import imp]
+            ?imp.args > 0 | --^
             has_imp_mods' = <+>
             resolved = resolve_module(base, imp.module_path, ldr)
             resolved
@@ -1176,6 +1298,7 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                |
                   cid = get_resolved_cid(resolved)
                   import_entries += ImportEntry(imp.module_name, cid, imp.is_import)
+                  bound_map ^ imp.module_name = cid
                   imp.is_dynamic
                      |
                         has_dyn = loaded_has(ldr.dynamic_mods, imp.module_name)
@@ -1220,6 +1343,16 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                   res = load_resolved(resolved, imp.module_path, ldr)
                   ldr.is_dep = saved_dep
                   !res | ok' = <->
+   stmts @ fst =>
+      !ok' | -->
+      fst
+         [Import fimp]
+            ?fimp.args > 0
+               |
+                  has_imp_mods' = <+>
+                  !load_functor_import(fimp, base, ldr, path, import_entries,
+                    param_map, bound_map)
+                     | ok' = <->
    !ok'
       | <->
       |
@@ -1240,10 +1373,11 @@ load_stmts = stmts, base, prefix, publics, privates, ldr, path, lines, cols =>
                !ok'
                   | <->
                   |
-                     is_iface = ldr.is_modular && ldr.is_dep
+                     // A functor instance is compiled into its importer's unit.
+                     is_iface = ldr.is_modular && ldr.is_dep && ?my_args == 0
                      st_idx' = 0
                      stmts @ st2 =>
-                        is_imp = st2 [Import]
+                        is_imp = st2 [Import, ModParam]
                         !is_imp
                            |
                               cur_st = has_imp_mods'
@@ -1395,7 +1529,7 @@ load_all = target, target_prefix, is_modular, import_map_arg =>
          ldr = Loader(ast::Exprs(), ast::Names(), ast::Names(),
            ast::Names(), ast::Names(), is_modular, <->,
            map, ast::Names(), ast::Names(), ast::Ints(), ast::Ints(),
-           ast::Names())
+           ast::Names(), ast::Names())
          map.has_map && map.map_path != "" | ldr.loaded_files += map.map_path
          tres = load_target(target, target_prefix, ldr)
          folded_exprs = tres | parser::fold_program_consts(ldr.out_exprs) | ldr.out_exprs

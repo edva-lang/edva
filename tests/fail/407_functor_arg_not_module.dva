@@ -1,0 +1,6 @@
+// A module argument that is not a module bound by '#use' in this file.
+#use ./mod_functor(nowhere)
+#use io
+
+nowhere = 3
+io::out $ mod_functor::greet!

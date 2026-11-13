@@ -1,0 +1,9 @@
+#use str
+
+#public
+
+title = "Counter"
+
+show: Int, Int => String
+show = count, clicks =>
+   title + ": " + str::from_int(count) + " (" + str::from_int(clicks) + " clicks)"

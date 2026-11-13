@@ -1,0 +1,9 @@
+// A functor that instantiates another functor with its own parameter.
+#param R: Module
+
+#use counter = ./counter(R)
+
+#public
+
+red_hits: () => Int
+red_hits = !=> counter::count!

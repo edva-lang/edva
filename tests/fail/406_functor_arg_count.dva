@@ -1,0 +1,7 @@
+// A one-parameter functor instantiated with two module arguments.
+#use ./mod_a
+#use ./mod_b
+#use ./mod_functor(mod_a, mod_b)
+#use io
+
+io::out $ mod_functor::greet!

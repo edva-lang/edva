@@ -1,0 +1,12 @@
+// A package functor (DVA-61): '#use @mvu/app(ui)' instantiates the package
+// module 'app' of dependency 'mvu' with the local module 'ui' — the shape of
+// a generated '@vid/app(ui, index)' MVU wiring. The functor's own imports
+// still resolve inside its package.
+
+#use ./ui
+#use @mvu/app(ui)
+#use io
+
+app::click!
+app::click!
+io::out $ app::view!

@@ -112995,7 +112995,7 @@ entry:
   %var._p_i = alloca i64, align 8
   %loop.step.900 = alloca i64, align 8
   %loop.idx.900 = alloca i64, align 8
-  %var._map_out_7594 = alloca ptr, align 8
+  %var._map_out_7595 = alloca ptr, align 8
   %var.fe = alloca ptr, align 8
   %var._64 = alloca ptr, align 8
   %var.a = alloca ptr, align 8
@@ -113232,7 +113232,7 @@ choice.then70:                                    ; preds = %choice.case57
   store ptr %a.buf74, ptr %a.data.gep76, align 8
   %a.cap.gep77 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep77, align 8
-  store ptr %a.new, ptr %var._map_out_7594, align 8
+  store ptr %a.new, ptr %var._map_out_7595, align 8
   %var.load78 = load ptr, ptr %var.fe, align 8
   %fld.gep79 = getelementptr inbounds { ptr, ptr, ptr }, ptr %var.load78, i32 0, i32 0
   %fld.load80 = load ptr, ptr %fld.gep79, align 8
@@ -113258,7 +113258,7 @@ loop.body.900:                                    ; preds = %loop.header.900
   store i64 %counter.load, ptr %var._p_i, align 8
   %var.load84 = load ptr, ptr %var.ctx, align 8
   %call.res85 = call ptr @"unify::fresh_var"(ptr %var.load84)
-  %a.load86 = load ptr, ptr %var._map_out_7594, align 8
+  %a.load86 = load ptr, ptr %var._map_out_7595, align 8
   %a.null87 = icmp eq ptr %a.load86, null
   br i1 %a.null87, label %a.create88, label %a.after89
 
@@ -113273,8 +113273,8 @@ loop.latch.900:                                   ; preds = %a.store
 
 loop.exit.900:                                    ; preds = %loop.exit.nat.900
   store i64 %cycle.prev.u, ptr %var._64, align 8
-  %var.load102 = load ptr, ptr %var._map_out_7594, align 8
-  %a.load103 = load ptr, ptr %var._map_out_7594, align 8
+  %var.load102 = load ptr, ptr %var._map_out_7595, align 8
+  %a.load103 = load ptr, ptr %var._map_out_7595, align 8
   %a.null104 = icmp eq ptr %a.load103, null
   br i1 %a.null104, label %a.create105, label %a.after106
 
@@ -113289,11 +113289,11 @@ a.create88:                                       ; preds = %loop.body.900
   store ptr %a.buf93, ptr %a.data.gep95, align 8
   %a.cap.gep96 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create91, i32 0, i32 2
   store i64 16, ptr %a.cap.gep96, align 8
-  store ptr %a.create91, ptr %var._map_out_7594, align 8
+  store ptr %a.create91, ptr %var._map_out_7595, align 8
   br label %a.after89
 
 a.after89:                                        ; preds = %a.create88, %loop.body.900
-  %a.load297 = load ptr, ptr %var._map_out_7594, align 8
+  %a.load297 = load ptr, ptr %var._map_out_7595, align 8
   br label %a.check
 
 a.check:                                          ; preds = %a.after89
@@ -113332,11 +113332,11 @@ a.create105:                                      ; preds = %loop.exit.900
   store ptr %a.buf110, ptr %a.data.gep112, align 8
   %a.cap.gep113 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create108, i32 0, i32 2
   store i64 16, ptr %a.cap.gep113, align 8
-  store ptr %a.create108, ptr %var._map_out_7594, align 8
+  store ptr %a.create108, ptr %var._map_out_7595, align 8
   br label %a.after106
 
 a.after106:                                       ; preds = %a.create105, %loop.exit.900
-  %a.load2114 = load ptr, ptr %var._map_out_7594, align 8
+  %a.load2114 = load ptr, ptr %var._map_out_7595, align 8
   store ptr %a.load2114, ptr %var.p_uts, align 8
   %var.load115 = load ptr, ptr %var.ctx, align 8
   %call.res116 = call ptr @"unify::fresh_var"(ptr %var.load115)
@@ -116717,7 +116717,7 @@ entry:
   %var.i = alloca i64, align 8
   %loop.step.907 = alloca i64, align 8
   %loop.idx.907 = alloca i64, align 8
-  %var._map_out_7856 = alloca ptr, align 8
+  %var._map_out_7857 = alloca ptr, align 8
   %var.ret_ti = alloca ptr, align 8
   %var.ret_ut = alloca ptr, align 8
   %var.ret_ut0 = alloca ptr, align 8
@@ -116857,7 +116857,7 @@ choice.else49:                                    ; preds = %choice.exit33
   store ptr %a.buf, ptr %a.data.gep, align 8
   %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
-  store ptr %a.new, ptr %var._map_out_7856, align 8
+  store ptr %a.new, ptr %var._map_out_7857, align 8
   %var.load63 = load ptr, ptr %var.f, align 8
   %fld.gep64 = getelementptr inbounds { ptr, ptr, ptr, ptr, ptr, ptr, i1 }, ptr %var.load63, i32 0, i32 3
   %fld.load65 = load ptr, ptr %fld.gep64, align 8
@@ -116897,8 +116897,8 @@ loop.latch.907:                                   ; preds = %a.store
   br label %loop.header.907
 
 loop.exit.907:                                    ; preds = %loop.exit.nat.907
-  %var.load149 = load ptr, ptr %var._map_out_7856, align 8
-  %a.load150 = load ptr, ptr %var._map_out_7856, align 8
+  %var.load149 = load ptr, ptr %var._map_out_7857, align 8
+  %a.load150 = load ptr, ptr %var._map_out_7857, align 8
   %a.null151 = icmp eq ptr %a.load150, null
   br i1 %a.null151, label %a.create152, label %a.after153
 
@@ -117051,7 +117051,7 @@ choice.else122:                                   ; preds = %choice.exit113
 
 choice.exit123:                                   ; preds = %choice.else122, %choice.then121
   %choice.res137 = phi ptr [ %call.res128, %choice.then121 ], [ %enum.alloc130, %choice.else122 ]
-  %a.load = load ptr, ptr %var._map_out_7856, align 8
+  %a.load = load ptr, ptr %var._map_out_7857, align 8
   %a.null = icmp eq ptr %a.load, null
   br i1 %a.null, label %a.create, label %a.after
 
@@ -117066,11 +117066,11 @@ a.create:                                         ; preds = %choice.exit123
   store ptr %a.buf141, ptr %a.data.gep143, align 8
   %a.cap.gep144 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create139, i32 0, i32 2
   store i64 16, ptr %a.cap.gep144, align 8
-  store ptr %a.create139, ptr %var._map_out_7856, align 8
+  store ptr %a.create139, ptr %var._map_out_7857, align 8
   br label %a.after
 
 a.after:                                          ; preds = %a.create, %choice.exit123
-  %a.load2 = load ptr, ptr %var._map_out_7856, align 8
+  %a.load2 = load ptr, ptr %var._map_out_7857, align 8
   br label %a.check
 
 a.check:                                          ; preds = %a.after
@@ -117109,11 +117109,11 @@ a.create152:                                      ; preds = %loop.exit.907
   store ptr %a.buf157, ptr %a.data.gep159, align 8
   %a.cap.gep160 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create155, i32 0, i32 2
   store i64 16, ptr %a.cap.gep160, align 8
-  store ptr %a.create155, ptr %var._map_out_7856, align 8
+  store ptr %a.create155, ptr %var._map_out_7857, align 8
   br label %a.after153
 
 a.after153:                                       ; preds = %a.create152, %loop.exit.907
-  %a.load2161 = load ptr, ptr %var._map_out_7856, align 8
+  %a.load2161 = load ptr, ptr %var._map_out_7857, align 8
   store ptr %a.load2161, ptr %var.param_uts, align 8
   %arena.cur162 = call ptr @dva_arena_current()
   %enum.alloc163 = call ptr @dva_arena_alloc(ptr %arena.cur162, i64 16)
@@ -118343,10 +118343,10 @@ entry:
   %var.i = alloca i64, align 8
   %loop.step.910 = alloca i64, align 8
   %loop.idx.910 = alloca i64, align 8
-  %var._fold_acc_7903 = alloca i64, align 8
+  %var._fold_acc_7904 = alloca i64, align 8
   %var.exprs = alloca ptr, align 8
   store ptr %0, ptr %var.exprs, align 8
-  store i64 0, ptr %var._fold_acc_7903, align 8
+  store i64 0, ptr %var._fold_acc_7904, align 8
   %var.load = load ptr, ptr %var.exprs, align 8
   %a.load = load ptr, ptr %var.exprs, align 8
   %a.null = icmp eq ptr %a.load, null
@@ -118384,7 +118384,7 @@ loop.body.910:                                    ; preds = %loop.header.910
   store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
   store i64 %counter.load, ptr %var.i, align 8
-  %var.load4 = load i64, ptr %var._fold_acc_7903, align 8
+  %var.load4 = load i64, ptr %var._fold_acc_7904, align 8
   store i64 %var.load4, ptr %var.total, align 8
   %var.load5 = load ptr, ptr %var.exprs, align 8
   %a.load6 = load ptr, ptr %var.exprs, align 8
@@ -118401,7 +118401,7 @@ loop.latch.910:                                   ; preds = %choice.exit
   br label %loop.header.910
 
 loop.exit.910:                                    ; preds = %loop.exit.nat.910
-  %var.load42 = load i64, ptr %var._fold_acc_7903, align 8
+  %var.load42 = load i64, ptr %var._fold_acc_7904, align 8
   ret i64 %var.load42
 
 a.create8:                                        ; preds = %loop.body.910
@@ -118509,7 +118509,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   %var.load40 = load ptr, ptr %var.e, align 8
   %call.res41 = call i64 @"annotate::count_expr_nodes"(ptr %var.load40)
   %addtmp = add i64 %var.load39, %call.res41
-  store i64 %addtmp, ptr %var._fold_acc_7903, align 8
+  store i64 %addtmp, ptr %var._fold_acc_7904, align 8
   br label %loop.latch.910
 }
 
@@ -118524,10 +118524,10 @@ entry:
   %var.i = alloca i64, align 8
   %loop.step.911 = alloca i64, align 8
   %loop.idx.911 = alloca i64, align 8
-  %var._fold_acc_7896 = alloca i64, align 8
+  %var._fold_acc_7897 = alloca i64, align 8
   %var.fields = alloca ptr, align 8
   store ptr %0, ptr %var.fields, align 8
-  store i64 0, ptr %var._fold_acc_7896, align 8
+  store i64 0, ptr %var._fold_acc_7897, align 8
   %var.load = load ptr, ptr %var.fields, align 8
   %a.load = load ptr, ptr %var.fields, align 8
   %a.null = icmp eq ptr %a.load, null
@@ -118565,7 +118565,7 @@ loop.body.911:                                    ; preds = %loop.header.911
   store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
   store i64 %counter.load, ptr %var.i, align 8
-  %var.load4 = load i64, ptr %var._fold_acc_7896, align 8
+  %var.load4 = load i64, ptr %var._fold_acc_7897, align 8
   store i64 %var.load4, ptr %var.total, align 8
   %var.load5 = load ptr, ptr %var.fields, align 8
   %a.load6 = load ptr, ptr %var.fields, align 8
@@ -118582,7 +118582,7 @@ loop.latch.911:                                   ; preds = %choice.exit
   br label %loop.header.911
 
 loop.exit.911:                                    ; preds = %loop.exit.nat.911
-  %var.load47 = load i64, ptr %var._fold_acc_7896, align 8
+  %var.load47 = load i64, ptr %var._fold_acc_7897, align 8
   ret i64 %var.load47
 
 a.create8:                                        ; preds = %loop.body.911
@@ -118707,7 +118707,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   %fld.gep = getelementptr inbounds { ptr, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, i64, ptr }, ptr %var.load45, i32 0, i32 1
   %call.res46 = call i64 @"annotate::count_expr_nodes"(ptr %fld.gep)
   %addtmp = add i64 %var.load44, %call.res46
-  store i64 %addtmp, ptr %var._fold_acc_7896, align 8
+  store i64 %addtmp, ptr %var._fold_acc_7897, align 8
   br label %loop.latch.911
 }
 

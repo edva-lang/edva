@@ -1,0 +1,4 @@
+// A module argument must be a bound module name, not a path.
+#use ./mod_functor(./mod_a)
+
+x = 1

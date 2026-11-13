@@ -1,0 +1,5 @@
+// #use(dynamic) cannot instantiate a functor.
+#use ./mod_a
+#use(dynamic) ./mod_functor(mod_a)
+
+x = 1

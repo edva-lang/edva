@@ -153,7 +153,17 @@
 
 #type CastExpr (target_type: ValueType, expr: Expr)
 
-#type ImportStmt (module_name: String, module_path: String, is_dynamic: <>, is_import: <>)
+// `args` are the module arguments of a functor instantiation
+// `#use ./app(ui, index)` (bound module names in the importing file); empty
+// for a plain import.
+#type ImportStmt (
+   module_name: String, module_path: String, is_dynamic: <>, is_import: <>,
+   args: Names,
+)
+
+// `#param M: Module` — a formal module parameter of a functor module. Resolved
+// by the loader (src/edva.dva) and never reaches annotate/codegen.
+#type ModParamStmt (name: String, line: Int, col: Int)
 
 #type ForeignFnParam (
    name: String, param_type: ValueType,
@@ -223,6 +233,7 @@
    Return(ReturnExpr)
    UserDiag(UserDiagExpr)
    AlignOf(AlignOfExpr)
+   ModParam(ModParamStmt)
 >
 
 mk_rfield_type: String, ValueType, TypeInfo => RecordFieldType

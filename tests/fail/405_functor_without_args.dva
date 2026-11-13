@@ -1,0 +1,5 @@
+// A functor module ('#param M: Module') used without module arguments.
+#use ./mod_functor
+#use io
+
+io::out $ mod_functor::greet!

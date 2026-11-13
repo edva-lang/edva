@@ -1,0 +1,17 @@
+#param C: Module
+
+#use str
+
+#public
+
+hits = 0
+
+hit: () => ()
+hit = !=>
+   hits ::= hits + C::weight
+
+count: () => Int
+count = !=> hits
+
+show: () => String
+show = !=> C::name + "=" + str::from_int(hits)

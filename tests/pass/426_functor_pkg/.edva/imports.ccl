@@ -1,0 +1,9 @@
+root = .
+instances =
+  root =
+    src = src
+    aliases =
+      mvu = mvu@1
+  mvu@1 =
+    src = packages/mvu/src
+    name = mvu

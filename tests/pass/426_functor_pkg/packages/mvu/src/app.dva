@@ -1,0 +1,15 @@
+#param App: Module
+
+#use ./fmt
+
+#public
+
+model: App::Model
+model = App::init!
+
+click: () => ()
+click = !=>
+   model ::= App::on_click(model)
+
+view: () => String
+view = !=> fmt::pair(model.tag, model.n)

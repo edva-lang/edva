@@ -1,0 +1,19 @@
+// Two instantiations of the same functor (DVA-61) with different module
+// arguments are distinct instances: each has its own copy of the functor's
+// module-level state. Re-instantiating with the same argument (here from
+// './report') shares the existing instance (applicative functors).
+
+#use ./red
+#use ./blue
+#use reds = ./counter(red)
+#use blues = ./counter(blue)
+#use ./report(red)
+#use io
+
+reds::hit!
+reds::hit!
+blues::hit!
+reds::hit!
+io::out $ reds::show!
+io::out $ blues::show!
+io::out $ report::red_hits!

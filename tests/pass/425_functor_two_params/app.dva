@@ -1,0 +1,17 @@
+// MVU wiring as a functor: App supplies Model/Msg/init/update, View renders.
+#param App: Module
+#param View: Module
+
+#public
+
+state: App::Model
+state = App::init!
+
+dispatch: String => ()
+dispatch = id =>
+   id
+      ["inc"] state ::= App::update(state, App::Msg(Inc))
+      ["reset"] state ::= App::update(state, App::Msg(Reset))
+
+render: () => String
+render = !=> View::show(state.count, state.clicks)

@@ -205,6 +205,7 @@ Notable precedence facts:
 Program    ::= { Statement } EOF
 
 Statement  ::= ImportStmt
+             | ParamStmt
              | ForeignDeclStmt
              | PragmaStmt
              | VisibilityStmt
@@ -218,6 +219,9 @@ Statement  ::= ImportStmt
 ```
 ImportStmt ::= "#use" [ "(" [ "dynamic" | "import" ]
                           { "," [ "dynamic" | "import" ] } ")" ] [ Identifier "=" ] ModulePath
+               [ ModuleArgs ]
+ModuleArgs ::= "(" Identifier { "," Identifier } ")"
+ParamStmt  ::= "#param" Identifier ":" "Module"
 ```
 
 `#use` imports a module by an unquoted `ModulePath` (quotes `"` are forbidden and emit `E1015`; spaces in paths may be escaped as `\ `). The module namespace is determined strictly by the prefix of `ModulePath`:
@@ -238,6 +242,59 @@ modules emit `E3033`. Function-local declarations shadow imported symbols.
 
 `#use(dynamic) path` (replacing legacy `#use-dynamic`) enables hot-reloading through
 dynamic function pointer indirection.
+
+#### 2.2.1 Module functors (`#param M: Module`, `#use path(a, b)`)
+
+A module that declares one or more `#param <Alias>: Module` lines is a **functor module**:
+it is parameterized by other modules and is only usable when instantiated with module
+arguments. Inside the functor, `Alias::name` (values, functions, types, constructors, enum
+labels) refers to the corresponding argument module's public `name`:
+
+```dva
+// app.dva — a functor over a model module and a view module
+#param App: Module
+#param View: Module
+
+#public
+
+state: App::Model
+state = App::init!
+
+render: () => String
+render = !=> View::show(state)
+```
+
+```dva
+// main.dva
+#use ./ui
+#use ./index
+#use ./app(ui, index)         // binds app::*; App = ui, View = index
+#use other = ./app(ui, alt)   // a second, distinct instance under an alias
+```
+
+- **Arguments** are positional (the first binds the first `#param`, …) and must be module
+  names bound in the importing file by a plain `#use` (including `alias = path` and package
+  modules) or — inside another functor — one of its own `#param` aliases
+  (`#use counter = ./counter(R)`). Any module path prefix (`./`, `../`, `@pkg/sub`, std) can
+  be a functor; `#use(import)` works on an instance. A functor must be a single-file module.
+- **Instances** are resolved entirely by the module loader before type checking: the functor's
+  AST is re-prefixed under the instance id `<functor>[<arg>,…]` and every `Alias::x` is
+  rewritten to the argument's qualified name. There is no runtime cost (no dictionaries, no
+  indirection), and annotate/unify/codegen never see `#param`.
+- **State and identity are applicative**: each distinct argument tuple is one instance with its
+  own copy of the functor's module-level bindings (and its own nominal `#type`s); instantiating
+  the same functor with the same arguments again (anywhere in the program) shares that
+  instance.
+- Plain imports of a file are loaded before its functor instantiations, so an argument may be
+  bound by a `#use` that appears later in the file.
+
+Diagnostics: a functor used without arguments, or `#param` in the entry file (`E5050`);
+argument count mismatch, module arguments on a non-functor, or a directory functor (`E5051`);
+an argument that is not a bound module (`E5052`); duplicate `#param` (`E5049`); a malformed
+argument list (`E2110`, unterminated: `E1015`); module arguments with `#use(dynamic)`
+(`E2111`); a `#param` that is not `<Alias>: Module` (`E2112`). A member that the argument
+module does not export surfaces as the ordinary `E3004: Undefined identifier: M::name` at the
+use site inside the functor.
 
 ```
 VisibilityStmt ::= PublicStmt | PrivateStmt

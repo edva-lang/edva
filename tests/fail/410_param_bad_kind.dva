@@ -1,0 +1,4 @@
+// Only module parameters exist: '#param M: Module'.
+#param M: Int
+
+x = 1

@@ -1,0 +1,14 @@
+#public
+
+#type Model (count: Int, clicks: Int)
+
+#type Msg <Inc, Reset>
+
+init: () => Model
+init = !=> Model(count = 0, clicks = 0)
+
+update: Model, Msg => Model
+update = m, msg =>
+   msg
+      [Inc] m(count = m.count + 1, clicks = m.clicks + 1)
+      [Reset] m(count = 0, clicks = m.clicks + 1)

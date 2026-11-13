@@ -1,0 +1,7 @@
+// The argument module lacks a member the functor uses via 'M::': surfaces as
+// the ordinary unresolved-name error.
+#use ./mod_a
+#use ./mod_functor(mod_a)
+#use io
+
+io::out $ mod_functor::greet!

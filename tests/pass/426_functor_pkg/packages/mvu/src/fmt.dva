@@ -1,0 +1,6 @@
+#use str
+
+#public
+
+pair: String, Int => String
+pair = s, n => s + "#" + str::from_int(n)

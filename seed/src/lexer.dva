@@ -84,6 +84,7 @@
    PragmaSwizzle
    UseImportPath
    UseDynamicImportPath
+   ParamKw
 >
 // END tokens.txt
 
@@ -939,7 +940,24 @@ scan_bare_path = lx, line =>
             (!is_path_rune(c) || (c == '/ && pk_off(lx, 1) == '/)) | -->
             buf += c
             adv(lx, c)
+            c == '( | scan_use_args(lx, buf, line)
    +buf
+
+// The module-argument list of a functor instantiation '#use ./app(ui, index)':
+// after the '(' copy everything (whitespace included) up to the matching ')'.
+// A newline or EOF before the ')' is E1015.
+scan_use_args: Lx, Builder, Int => ()
+scan_use_args = lx, buf, line =>
+   0..1000000 @
+      c = pk(lx, 0)
+      c == '\0 || is_nl(c)
+         |
+            fail(1015, line, lx.col,
+               "Unterminated module argument list in '#use' — expected closing ')'.")
+            -->
+      buf += c
+      adv(lx, c)
+      c == ') | -->
 
 scan_use_directive: Lx, Int, Int, Int => Tok
 scan_use_directive = lx, hstart, line, col =>
@@ -1173,6 +1191,8 @@ scan_directive = lx, word, hstart, line, col =>
          "#warn")
       ["pragma"] scan_pragma(lx, hstart, line, col)
       ["use"] scan_use_directive(lx, hstart, line, col)
+      ["param"] mktok(lx, TokKind(ParamKw), hstart, ?word + 1, line, col,
+         "#param")
       | mktok(lx, TokKind(Id), hstart, ?word + 1, line, col, "#" + word)
 
 // "#!" compile-time prefix.
@@ -1921,6 +1941,7 @@ kind_name =
    [UseDynamicPath] "#use(dynamic)"
    [UseImportPath] "#use(import)"
    [UseDynamicImportPath] "#use(dynamic, import)"
+   [ParamKw] "#param"
    [Foreign] "#foreign"
    [TypeKw] "#type"
    [PackedKw] "#packed"

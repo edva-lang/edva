@@ -1,0 +1,22 @@
+// A functor module: everything 'App::' resolves against the module argument.
+#param App: Module
+
+#use io
+
+#public
+
+steps = 0
+
+run: Int => ()
+run = n =>
+   m' = App::init!
+   n @
+      m' = App::step(m')
+      steps ::= steps + 1
+      io::out $ App::view(m')
+
+total: () => Int
+total = !=> steps
+
+describe: App::Model => String
+describe = m => "<" + App::view(m) + ">"

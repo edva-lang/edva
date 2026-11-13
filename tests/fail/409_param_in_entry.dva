@@ -1,0 +1,5 @@
+// '#param' in the program entry file: nothing can instantiate it.
+#param M: Module
+#use io
+
+io::out $ "x"
