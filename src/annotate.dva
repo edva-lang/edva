@@ -2998,11 +2998,39 @@ annotate_expr = ctx, env, expr =>
       |
          tast::mk_lit_unit(0, 0)
 
+// Whether call argument `a` is exactly the placeholder `_` (positional or `name = _`).
+is_placeholder_arg: ast::Expr => <>
+is_placeholder_arg = a =>
+   a
+      [Var v] v == "_"
+      [NamedArg na] is_placeholder_arg(na.val)
+      | <->
+
+// DVA-50 partial application: a call `f(a, _, b)` whose direct arguments include the
+// placeholder `_`, appearing where `_` is not bound (no enclosing payload, cycle element,
+// or `_ =>` parameter), desugars to the unary closure `_ => f(a, _, b)`. Used for
+// higher-order call arguments and `[predicate]` choice guards. A bound `_` keeps its
+// existing meaning, and `$>` / `$>>` / `( … )` consume a free `_` before annotation.
+partial_app_closure: type_env::TypeEnv, ast::Expr => ast::Expr
+partial_app_closure = env, e =>
+   e
+      [Call c]
+         has_ph' = <->
+         c.args @ a =>
+            is_placeholder_arg(a) | has_ph' = <+>; -->
+         c.fn_name != "_" && has_ph' && !<>(type_env::lookup_binding(env, "_"))
+            |
+               params = ast::Names()
+               params += "_"
+               ast::Expr(Fn, ast::FnExpr(params, ast::Names(), e))
+            | e
+      | e
+
 annotate_call_arg: unify::Ctx, type_env::TypeEnv, ast::Expr => tast::TypedExpr
 annotate_call_arg = ctx, env, a =>
    saved = cur_is_call_arg
    cur_is_call_arg ::= <+>
-   te = annotate_expr(ctx, env, a)
+   te = annotate_expr(ctx, env, partial_app_closure(env, a))
    cur_is_call_arg ::= saved
    te
 
@@ -5536,7 +5564,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                fn_ti = unify::type_info_from_utype(ctx, fn_ut)
                typed_cvs += mk_lambda_te(pnames, cmp_te, fn_ut, fn_ti)
             |
-               cv_te = annotate_expr(ctx, env, cv)
+               cv_te = annotate_expr(ctx, env, partial_app_closure(env, cv))
                typed_cvs += cv_te
                c_cv = unify::canon(ctx, cv_te.ut)
                c_cv

@@ -749,6 +749,14 @@ Block      ::= Indent { Statement } Dedent
   `3 - 2 * <lambda>` as a plain expression.
   A cycle body `arr @` followed by an indented block is the same implicit form
   (`_` and `_i` bound); `5 @ (print_int $ _)` is the inline spelling.
+- **Placeholder partial application**: a call with `_` as a direct argument
+  (positional or `name = _`) is a partial application. On the RHS of `$>` /
+  `$>>` the LHS (or positive payload) fills the slot: `s $> str::split(_, ",")`
+  ≡ `str::split(s, ",")`, `x $> Node(deps = d, ..._)`. As a call argument or a
+  `[predicate]` guard, where `_` is not bound by an enclosing payload branch,
+  cycle body, or implicit lambda, it desugars to the unary closure
+  `_ => f(…, _, …)`: `apply(sub(_, 5), 20)`, `k [gt(_, 5)] "big" | "small"`.
+  A bound `_` keeps its meaning (`opt | f(g(_, 1)) | 0` passes the payload).
 - **Section**: `+ 10` (an operator with trailing whitespace and an rhs) is
   an implicit single-parameter function over `_`, usable wherever a function is expected.
 - `=>` binds tighter than the infix-apply `$`: `fun $ x => x + 1` is

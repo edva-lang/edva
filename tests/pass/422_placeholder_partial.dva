@@ -1,0 +1,62 @@
+// Regression tests for DVA-50:
+// `_` placeholder partial application in `$>` / `$>>` pipelines, call arguments,
+// and `[predicate]` choice guards.
+
+#use str
+#use io
+
+#type Node (name: String, deps: Int, w: Int)
+
+sub3: Int, Int => Int
+sub3 = a, b => a - b
+
+gt: Int, Int => <>
+gt = a, b => a > b
+
+apply: (Int => Int), Int => Int
+apply = f, x => f(x)
+
+half: Int => < Int | >
+half = x => x % 2 == 0 | <+ x / 2 +> | <-->
+
+sub_opt: Int, Int => < Int | >
+sub_opt = a, b => a > b | <+ a - b +> | <-->
+
+classify: Int => String
+classify = k =>
+   k
+      [gt(_, 100)] "huge"
+      [gt(_, 5)] "big"
+      | "small"
+
+// 1. `$>` feeds the LHS into the placeholder slot (any position)
+parts = "a,b,c" $> str::split(_, ",")
+io::out $ str::from_int(?parts)
+io::out $ parts $> str::join(_, ";")
+io::out $ str::from_int(10 $> sub3(100, _))
+
+// 2. `$>>` binds the positive payload into the placeholder slot
+r = 20 $> half $>> sub_opt(_, 3)
+r
+   | v => io::out $ "bind " + str::from_int(v)
+   | io::out $ "none"
+
+// 3. record constructor splat in a pipeline
+n2 = Node("a", 1, 2) $> Node(deps = 7, ..._)
+io::out $ n2.name + " " + str::from_int(n2.deps) + " " + str::from_int(n2.w)
+
+// 4. standalone partial application in higher-order argument positions
+io::out $ str::from_int(apply(sub3(_, 5), 20))
+io::out $ str::from_int(apply(sub3(100, _), 1))
+io::out $ str::from_int(apply(sub3(a = _, b = 2), 7))
+io::out $ str::from_int(apply(sub3(_, 5)) $ 30)
+
+// 5. `[predicate]` guards
+io::out $ classify(9) + " " + classify(3) + " " + classify(500)
+
+// 6. a bound `_` keeps its meaning: payload and cycle element
+half(8)
+   | io::out $ str::from_int(sub3(sub3(_, 1), 0))
+   | io::out $ "none"
+ys = (1, 2, 3) @> sub3(sub3(_, 1), 10)
+io::out $ str::from_int(ys(0)!!) + " " + str::from_int(ys(2)!!)
