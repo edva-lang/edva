@@ -1089,11 +1089,13 @@ rewrite_import_expr = e, table, locals =>
          is_probe && only_bare' && (new_cond [Variant]) && ?ch.branches > 0
             |
                present = new_cond [Variant v] v.tag_name [Positive] | <->
-               present
+               present && ?ch.branches > 1
                   | --| rewrite_import_expr(ch.branches(0)!!.block, table, locals)
-               ?ch.branches > 1
-                  | --| rewrite_import_expr(ch.branches(1)!!.block, table, locals)
-               --| ast::Expr(Record, ast::RecordExpr(ast::Fields(), <->))
+               !present
+                  |
+                     ?ch.branches > 1
+                        | --| rewrite_import_expr(ch.branches(1)!!.block, table, locals)
+                     --| ast::Expr(Record, ast::RecordExpr(ast::Fields(), <->))
          new_branches = ast::Branches()
          ch.branches @ br =>
             br_locals = ++locals

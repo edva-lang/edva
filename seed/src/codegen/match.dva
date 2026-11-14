@@ -2753,8 +2753,7 @@ eval_heap_branch = cg, body, ppay, pay_type =>
       [Fn f]
          pname = f.params(0)!!
          pv = eval_heap_pay_value(cg, ppay, pay_type)
-         slot = types::hoisted_alloca(cg, LLVMPointerType(LLVMInt8Type!, 0),
-           "var." + pname)
+         slot = types::hoisted_alloca(cg, LLVMTypeOf(pv), "var." + pname)
          LLVMBuildStore(cg.builder, pv, slot)
          rm0 = pay_type [Record] cg.last_rt | <-->
          fn0 = pay_type [Record] cg.last_fnames | ast::Names()
@@ -2792,9 +2791,8 @@ eval_heap_branch = cg, body, ppay, pay_type =>
 // explicit bare payload extractor, but the branch result remains its body.
 eval_heap_branch_with_under: types::Cg, ast::Expr, Addr, ast::ValueType => (Addr, ast::ValueType)
 eval_heap_branch_with_under = cg, body, ppay, pay_type =>
-   slot = types::hoisted_alloca(cg, LLVMPointerType(LLVMInt8Type!, 0),
-     "var._")
    pv = eval_heap_pay_value(cg, ppay, pay_type)
+   slot = types::hoisted_alloca(cg, LLVMTypeOf(pv), "var._")
    LLVMBuildStore(cg.builder, pv, slot)
    rm0 = pay_type [Record] cg.last_rt | <-->
    fn0 = pay_type [Record] cg.last_fnames | ast::Names()

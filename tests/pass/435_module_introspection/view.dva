@@ -15,3 +15,6 @@ loop = !=>
    total' = 0
    App::NUM @ i => total' = total' + 1
    total'
+
+probe_statement: () => ()
+probe_statement = !=> %has_member(App::label) | App::count(App::init!)

@@ -1,0 +1,10 @@
+#use io
+#use json
+read: #! T: Type, String, T => T
+read = raw, fallback =>
+   json::decode(T, raw) | decoded => decoded | error => fallback
+read_under: #! T: Type, String, T => T
+read_under = raw, fallback => json::decode(T, raw) | _ | fallback
+io::out(read("12", 99))
+io::out(read("1.5", 9.0))
+io::out(read_under("42", 99))
