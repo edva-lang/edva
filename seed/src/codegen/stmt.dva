@@ -7248,16 +7248,18 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
       pti = param_tis(j) | _ | ast::TypeInfo(Prim, pvt_j)
       pty = types::is_unboxed_ram_ti(cg, pti) | match::unboxed_ram_struct_t(cg) |
          types::llvm_type_of_vt(pvt_j)
-      pslot = types::create_slot(cg, pname, pty, <+>)
       pv = LLVMGetParam(fn, (is_cap | j + 1 | j))
+      is_ram = pvt_j [Ram]
+      pslot = types::create_slot(cg, pname, pty, <+>)
       LLVMBuildStore(cg.builder, pv, pslot)
       prec = codegen_fn_param_rec(cg, pname, "", pti)
       rm_pti = runtime::record_meta_from_ti(cg, pti)
       prm_0_opt = prec | p => <+ p.0 +> | (rm_pti | m => <+ m.0 +> | <-->)
       prm_1 = prec | p => p.1 | (rm_pti | m => m.1 | ast::Names())
       pfvts = prec | p => p.2 | types::field_vts(cg, pti)
-      pdt = pti [TypeVar tv] tv | ""
-      cg.vars += types::CgVar(pname, pvt_j, types::is_ptrish_vt(pvt_j), pdt,
+      pdt = pti [TypeVar tv] tv |
+         (is_ram | types::ensure_ti_dtype(cg, pti) | "")
+      cg.vars += types::CgVar(pname, pvt_j, types::is_ptrish_vt(pvt_j) && !is_ram, pdt,
         prm_0_opt, prm_1, <+ pslot +>, <+>, <->, pfvts, <-->)
 
    is_rso = is_dyn_reload_so_fn(cg, name)

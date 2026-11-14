@@ -1418,6 +1418,21 @@ count and every index reads one byte. UTF-8 validity is not tracked.
 (`\n \t \r \0 \a \b \f \v \e \" \' \\`), `${expr}` dynamic interpolation, and
 multiline text blocks with baseline margin stripping when starting with `"\n`.
 
+Compile-time module probes are available in functors:
+
+```dva
+%has_member(App::key_escape) | App::key_escape(model)
+%has_field(App::Model, "count") | model.count | App::count(model)
+```
+
+`%has_member(Module::member)` tests whether the bound module exports the member;
+private members are absent. `%has_field(Module::RecordType, "field")` tests record
+fields, following transparent aliases. Both produce a Flag during import expansion.
+A choice directly over either probe with bare branches expands only the selected
+branch, so absent optional members need not typecheck. A false single-branch probe
+produces unit. These probes perform no runtime reflection. Module parameter aliases
+can begin a statement (for example `App::NUM @ i => ...`).
+
 #### 3.6.1 The `{ len, data }` ABI
 
 - `data` points at byte 0; `data + i` is the address of byte `i`. `data[len]`

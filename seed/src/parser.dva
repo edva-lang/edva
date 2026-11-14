@@ -5245,6 +5245,8 @@ parse_mod_param = p =>
                p.curr.kind [Id] && p.curr.text == "Module"
                   |
                      parser_advance(p)
+                     p.user_types = add_type(p.user_types, "$module:" + name,
+                        ast::TypeInfo(Prim, ast::ValueType(Unit)))
                      <+ ast::Expr(ModParam, ast::ModParamStmt(name, line, col)) +>
                   |
                      parser_error(p, 2112, "Unsupported '#param' kind '" + p.curr.text +
@@ -7627,7 +7629,8 @@ atom_ident = p, name =>
          p.is_stmt = <->
          is_mod = p.curr.text ["::"]
          is_upper = name_is_upper(name)
-         is_mod && is_upper && is_stmt
+         is_module_param = <>(lookup_type(p.user_types, "$module:" + name))
+         is_mod && is_upper && is_stmt && !is_module_param
             |
                parser_error(p, 2004,
                  "Disallowed type alias. '::' is module access; " +

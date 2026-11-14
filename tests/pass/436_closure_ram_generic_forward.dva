@@ -1,0 +1,12 @@
+#use io
+#type Payload (count: Int, text: String)
+consume: < Payload | String > => ()
+consume = result => result | p => io::out(p.text) | error => io::out(error)
+relay: #! T: Type, (T => ()), T => ()
+relay = callback, item => callback(item)
+go: () => ()
+go = !=>
+   complete = result => consume(result)
+   relay(complete, <+ Payload(7, "ok") ->)
+   relay(complete, <- "error" +>)
+go!

@@ -794,6 +794,26 @@ read_file_text = path =>
                <+ +b +>
             | <-->
 
+module_record_fields: ast::Exprs, ast::TypeInfo, String, ast::Names => ast::Names
+module_record_fields = exprs, ti, owner, seen =>
+   ti
+      [Rec r]
+         fields = ast::Names()
+         r.0 @ field => fields += field.name
+         fields
+      [Align a] module_record_fields(exprs, a.1, owner, seen)
+      [TypeVar name]
+         loaded_has(seen, name) | --| ast::Names()
+         visited = ++seen
+         visited += name
+         exprs @ e =>
+            e [TypeDecl td]
+               (td.name [name, owner + "::" + name, owner + "::#" + name])
+                  | --| module_record_fields(exprs, td.type_info,
+                     dep_graph::decl_module(td.name, 0), visited)
+         ast::Names()
+      | ast::Names()
+
 collect_module_exports: ast::Exprs, String, String, <>, ImportMap, ImportMap => <>
 collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sources =>
    ok' = <+>
@@ -838,6 +858,11 @@ collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sour
                |
                   bare = td.name(lpfx..)
                   table ^ (alias_pfx + bare) = td.name
+                  fields = module_record_fields(exprs, td.type_info, canonical_id,
+                     ast::Names())
+                  fields @ field =>
+                     table ^ ("#field:" + alias_pfx + bare + "." + field) = td.name
+                     is_import | table ^ ("#field:" + bare + "." + field) = td.name
                   is_import
                      |
                         has_prev = table ^? bare
@@ -1009,6 +1034,24 @@ rewrite_import_expr = e, table, locals =>
             | ast::Expr(Var, (table ^ v | _ | v))
             | e
       [Call c]
+         c.fn_name == "%has_member" && ?c.args == 1
+            |
+               name = parser::member_chain_name(c.args(0)!!)
+               name != ""
+                  |
+                     present = table ^? name
+                     tag = present | ast::Tag(Positive) | ast::Tag(Negative)
+                     --| ast::Expr(Variant, (tag, ast::Exprs()))
+         c.fn_name == "%has_field" && ?c.args == 2
+            |
+               name = parser::member_chain_name(c.args(0)!!)
+               name != ""
+                  |
+                     c.args(1)!!
+                        [Str field]
+                           present = table ^? ("#field:" + name + "." + field)
+                           tag = present | ast::Tag(Positive) | ast::Tag(Negative)
+                           --| ast::Expr(Variant, (tag, ast::Exprs()))
          ast::Expr(Call, rewrite_import_call(c, table, locals))
       [Bin b]
          b.0
@@ -1040,6 +1083,17 @@ rewrite_import_expr = e, table, locals =>
          ast::Expr(Block, new_exprs)
       [Choice ch]
          new_cond = rewrite_import_expr(ch.cond, table, locals)
+         is_probe = ch.cond [Call c] (c.fn_name ["%has_member", "%has_field"]) | <->
+         only_bare' = <+>
+         ch.branches @ br => !(br.kind [Bare]) | only_bare' = <->
+         is_probe && only_bare' && (new_cond [Variant]) && ?ch.branches > 0
+            |
+               present = new_cond [Variant v] v.tag_name [Positive] | <->
+               present
+                  | --| rewrite_import_expr(ch.branches(0)!!.block, table, locals)
+               ?ch.branches > 1
+                  | --| rewrite_import_expr(ch.branches(1)!!.block, table, locals)
+               --| ast::Expr(Record, ast::RecordExpr(ast::Fields(), <->))
          new_branches = ast::Branches()
          ch.branches @ br =>
             br_locals = ++locals

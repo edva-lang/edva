@@ -1,0 +1,8 @@
+#use ./app
+#use ./view(app)
+#use io
+io::out(view::run(app::init!))
+io::out(view::read_label(app::init!))
+io::out(view::present | "present" | "missing")
+io::out(view::private_member | "exposed" | "private")
+io::out(view::loop!)

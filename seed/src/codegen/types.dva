@@ -1783,6 +1783,19 @@ codegen_load = cg, name =>
             | LLVMPointerType(LLVMInt8Type!, 0)
             | llvm_type_of_vt(vt)
          slot_opt = var_slot(cg, name)
+         // A typed closure keeps ram parameters in their ABI representation.
+         // Generic calls may read them through the untyped expression path,
+         // which expects a heap union rather than an unboxed pair or niche.
+         (vt [Ram]) && !is_heap && dt != ""
+            |
+               slot_opt | slot =>
+                  ti = typedef_ti(cg, dt)
+                  abi_type = is_unboxed_ram_ti(cg, ti)
+                     | match::unboxed_ram_struct_t(cg)
+                     | llvm_type_of_vt(vt)
+                  raw = LLVMBuildLoad2(cg.builder, abi_type, slot, "ram.abi.load")
+                  heap = match::convert_abi_ram_to_heap_union(cg, raw, ti)
+                  --| <+ (heap, vt) +>
          uninit = !cg.in_fn && main::var_partial(cg, name) && !init_ok(cg.init, name)
          forward_scalar = uninit && !is_record_vt(vt) &&
             !is_array_vt(vt) && !is_slice_vt(vt)

@@ -1,0 +1,12 @@
+#public
+#type Model (count: Int, text: String)
+init: () => Model
+init = !=> Model(0, "hi")
+label: Model => String
+label = m => m.text
+count: Model => Int
+count = m => 999
+NUM = 2
+#private
+hidden: () => Int
+hidden = !=> 77
