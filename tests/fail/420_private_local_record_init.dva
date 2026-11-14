@@ -1,0 +1,2 @@
+#use ./420_private_local_record_init/records
+records::read_partial(<+>)

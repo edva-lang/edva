@@ -1,0 +1,11 @@
+#use str
+#private
+#type Model (count: Int, text: String)
+::model: Model
+model = Model(5, "plain")
+#public
+update: <>, <> => String
+update = change_count, change_text =>
+   change_count | model.count = model.count + 1
+   change_text | model.text = model.text + "!"
+   model.text + ":" + str::from_int(model.count)

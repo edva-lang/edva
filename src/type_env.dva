@@ -120,8 +120,10 @@ is_marked_global: TypeEnv, String => <>
 is_marked_global = env, name =>
    found' = <->
    qname = env.current_module != "" | env.current_module + "::" + name | name
+   // Bare references inside a module may name its private marked globals.
+   private_name = env.current_module != "" | env.current_module + "::#" + name | name
    env.marked_globals @ n =>
-      match = n == name || n == qname ||
+      match = n == name || n == qname || n == private_name ||
          (env.current_module != "" && name == env.current_module + "::" + n)
       match | (found' = <+>; -->)
    found'

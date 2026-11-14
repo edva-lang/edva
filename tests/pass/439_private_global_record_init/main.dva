@@ -1,0 +1,10 @@
+#use io
+#use ./app
+#use first = ./view(app)
+#use ./ordinary
+io::out(first::update(<+>, <->))
+io::out(first::update(<->, <+>))
+first::reset!
+io::out(first::update(<->, <->))
+io::out(ordinary::update(<+>, <->))
+io::out(ordinary::update(<->, <+>))

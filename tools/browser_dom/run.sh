@@ -19,5 +19,7 @@ for fixture in 358_map_key_assignment_forms 411_static_arity_overloads 412_gener
   timeout 45s ./edva "tests/pass/$fixture.dva" \
     -target wasm32-unknown-unknown --no-cache -o "$work/$fixture.wasm" </dev/null
 done
+timeout 45s ./edva tests/pass/439_private_global_record_init/main.dva \
+  -target wasm32-unknown-unknown --no-cache -o "$work/439_private_global_record_init.wasm" </dev/null
 timeout 45s node --disable-wasm-trap-handler --max-old-space-size=256 \
   tools/browser_dom/test.mjs "$work" </dev/null

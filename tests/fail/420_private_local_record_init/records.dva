@@ -1,0 +1,10 @@
+#private
+#type Model (count: Int, text: String)
+model: Model
+model = Model(8, "module value")
+#public
+read_partial: <> => String
+read_partial = change =>
+   model: Model
+   change | model.count = 1
+   model.text

@@ -1,0 +1,14 @@
+#param App: Module
+#use str
+#private
+::model: App::Model
+model = App::init!
+#public
+update: <>, <> => String
+update = change_count, change_text =>
+   change_count | model.count = model.count + 1
+   change_text | model.text = model.text + "!"
+   change_text | model.details.revision = model.details.revision + 1
+   model.text + ":" + str::from_int(model.count) + ":" + str::from_int(model.details.revision)
+reset: () => ()
+reset = !=> model = App::init!

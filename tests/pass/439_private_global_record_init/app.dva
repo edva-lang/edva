@@ -1,0 +1,5 @@
+#public
+#type Details (enabled: <>, revision: Int)
+#type Model (count: Int, text: String, details: Details)
+init: () => Model
+init = !=> Model(1, "ready", Details(<->, 4))
