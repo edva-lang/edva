@@ -1,0 +1,61 @@
+#use io
+#type Item (id: Int, name: String)
+::callback: < (() => ()) | >
+callback = <-->
+::sentinel = 12345
+::number: < Int | >
+number = <-->
+::failure: < | String >
+failure = <++>
+::result: < Int | String >
+result = <+ 0 ->
+::text: < String | >
+text = <-->
+
+install: (() => ()) => ()
+install = action => callback = <+ action +>
+
+set_values: #! T: Type, T => T
+set_values = amount =>
+   number = <+ amount +>
+   failure = <- "failed" ->
+   result = <- "no result" +>
+   text = <+ "present" +>
+   amount
+
+read_number: #! T: Type, T => T
+read_number = fallback => number | n => n | fallback
+
+through: #! T: Type, T => T
+through = item =>
+   callback | action => action!
+   item
+
+clear: #! T: Type, T => T
+clear = item =>
+   callback = <-->
+   number = <-->
+   failure = <++>
+   result = <+ 42 ->
+   text = <-->
+   item
+
+run: () => ()
+run = !=>
+   install((!=> io::out("callback")))
+   amount = set_values(17)
+   io::out(read_number(99))
+   failure | io::out("success") | e => io::out(e)
+   result | n => io::out(n) | e => io::out(e)
+   text | s => io::out(s)
+   item = through(Item(3, "kept"))
+   io::out(item.name)
+   io::out(sentinel)
+   cleared = clear(item)
+   io::out(read_number(99))
+   failure | io::out("success") | e => io::out(e)
+   result | n => io::out(n) | e => io::out(e)
+   io::out(<>(callback) | "callback present" | "callback absent")
+   io::out(<>(text) | "text present" | "text absent")
+   io::out(sentinel)
+run!

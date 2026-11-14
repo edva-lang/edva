@@ -6057,7 +6057,8 @@ codegen_typed_eval_fwd = cg, name, ti =>
       | bfi =>
          LLVMBuildStore(cg.builder, LLVMConstInt(lt, 0, 0), slot)
          types::init_mark_whole(cg, name)
-   dt0 = ti [TypeVar tv] tv | ""
+   global_ram = !is_loc_fwd && (vt [Ram])
+   dt0 = ti [TypeVar tv] tv | (global_ram | types::ensure_ti_dtype(cg, ti) | "")
    dt' = dt0
    (ti [Array])
       |
@@ -6067,7 +6068,7 @@ codegen_typed_eval_fwd = cg, name, ti =>
          dt' = anon_dt
    rec_m0_opt = rec_m | m => <+ m.0 +> | <-->
    rec_m1 = rec_m | m => m.1 | ast::Names()
-   cg.vars += types::CgVar(name, vt, types::is_ptrish_vt(vt), dt', rec_m0_opt,
+   cg.vars += types::CgVar(name, vt, types::is_ptrish_vt(vt) && !global_ram, dt', rec_m0_opt,
      rec_m1, <+ slot +>, is_loc_fwd, <+>, types::field_vts(cg, ti), <-->)
    (LLVMConstInt(LLVMInt64Type!, 0, 0), vt)
 
@@ -6255,7 +6256,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                        i1_ty = LLVMInt1Type!
                                        is_h_ram = types::is_ram_vt(ev.1) &&
                                          LLVMTypeOf(ev.0) != i1_ty
-                                       is_heap_var = is_sp_var || is_h_ram
+                                       is_heap_var = is_sp_var || (is_h_ram && is_loc)
                                        is_rec = types::is_record_vt(vt) ||
                                          types::is_record_vt(ev.1)
                                        is_bf = <>(types::ti_get_bitfield(cg, eff_ti))
@@ -6274,7 +6275,9 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                              !types::has_type_name(cg, anon_dt)
                                                 | runtime::add_type(cg, anon_dt, eff_ti)
                                              final_dt' = anon_dt
-                                       final_dt = final_dt'
+                                       final_dt = !is_loc && (vt [Ram]) && final_dt' == ""
+                                          | types::ensure_ti_dtype(cg, eff_ti)
+                                          | final_dt'
                                        rm_eff0 = runtime::record_meta_from_ti(cg, eff_ti)
                                        rm_eff1 = <>(rm_eff0) | rm_eff0 |
                                           runtime::record_meta_from_ti(cg, val.ti)
@@ -7380,9 +7383,12 @@ declare_external_var = cg, name, ti =>
       | <+>
       |
          vt = types::vt_from_ti_cg(cg, ti)
-         llvm_ty = types::llvm_type_of_vt(vt)
+         llvm_ty = types::is_unboxed_ram_ti(cg, ti)
+            | match::unboxed_ram_struct_t(cg)
+            | types::llvm_type_of_vt(vt)
+         dtype = vt [Ram] types::ensure_ti_dtype(cg, ti) | ""
          slot = types::codegen_get_global(cg, name, llvm_ty)
-         cg.vars += types::CgVar(name, vt, <->, "", <-->, ast::Names(),
+         cg.vars += types::CgVar(name, vt, <->, dtype, <-->, ast::Names(),
            <+ slot +>, <->, <->, ast::VTypes(), <-->)
          <+>
 

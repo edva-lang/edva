@@ -1063,13 +1063,19 @@ codegen_forward_registry = cg, t =>
    ti_vt = types::vt_from_ti(ti)
    vt_rec = ti_vt != ast::ValueType(Unknown) | ti_vt | rec_vt
    vt' = is_bf_fwd | vt0 | vt_rec
-   lt = is_bf_fwd
+   // This prepass runs before typed declarations reuse the global slot.
+   // Reserve their ABI-sized object, not the untyped heap-union pointer.
+   abi_ram = types::g.is_typed_pipeline && !cg.in_fn && (vt' [Ram])
+   base_lt = is_bf_fwd
       | types::llvm_type_of_vt(vt')
       |
          types::is_record_vt(vt') || types::is_ram_vt(vt') ||
            (vt' [Map, Builder, Fn, Array, Slice, Enum])
            | LLVMPointerType(LLVMInt8Type!, 0)
            | types::llvm_type_of_vt(vt')
+   lt = abi_ram && types::is_unboxed_ram_ti(cg, ti)
+      | match::unboxed_ram_struct_t(cg)
+      | base_lt
    is_ct_sig = t.7(..4) == "@ct0"
    is_sig = t.7(..5) == "@sig0"
    is_fn_ti = ti [Fn]
@@ -1457,7 +1463,10 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    rm = types::rec_meta(cg, ev.1)
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    llvm_type = is_ptr | i8p | types::llvm_type_of_vt(ev.1)
-   is_local = cg.in_fn
+   is_local = cg.in_fn && !is_glob
+   target_ti = expr::var_ti(cg, t.0)
+   abi_global_ram = types::g.is_typed_pipeline && !is_local &&
+      (types::vt_from_ti_cg(cg, target_ti) [Ram])
    slot = fresh_local
       | types::create_slot(cg, t.0, llvm_type, cg.in_fn)
       |
@@ -1465,7 +1474,9 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
             | _
             | types::create_slot(cg, t.0, llvm_type, cg.in_fn)
    store_v = types::llvm_val_opt(ev.0) | _ | LLVMConstNull(llvm_type)
-   LLVMBuildStore(cg.builder, store_v, slot)
+   // Generic bodies produce heap unions, but global storage remains typed.
+   stored = abi_global_ram | match::coerce_ram_repr(cg, store_v, target_ti) | store_v
+   LLVMBuildStore(cg.builder, stored, slot)
    // A heap ram keeps the declared-type name (its payload type resolves from
    // it); an unwrapped scalar does not — the last_type may name an unrelated
    // typedef (e.g. "#arrread") whose dtype would mis-type later choices.
@@ -1483,12 +1494,13 @@ codegen_emit_plain_assign_val_store = cg, t, ev =>
    rm_rt_opt = rm | m => <+ m.0 +> | <-->
    final_rm0_opt = <>(prior_rt) | prior_rt | rm_rt_opt
    final_rm1 = use_prior | prior_fnames | rm_fnames
-   final_dt = use_prior | types::var_dtype(cg, t.0) | dtype
+   final_dt = abi_global_ram | types::ensure_ti_dtype(cg, target_ti) |
+      (use_prior | types::var_dtype(cg, t.0) | dtype)
    final_fvts = (is_rec && ?cg.last_fvts == 0 && final_dt != "")
       | types::field_vts(cg, types::typedef_ti(cg, final_dt))
       | cg.last_fvts
-   cg.vars += types::CgVar(t.0, ev.1, is_heap, final_dt, final_rm0_opt, final_rm1,
-     <+ slot +>, is_local, <->, final_fvts, <-->)
+   cg.vars += types::CgVar(t.0, ev.1, is_heap && !abi_global_ram, final_dt,
+     final_rm0_opt, final_rm1, <+ slot +>, is_local, <->, final_fvts, <-->)
    is_rec_expr = t.5 [Record]
    is_part = !fresh_local | main::var_partial(cg, t.0) | <->
    is_whole = is_composite_vt(ev.1) | <+> | (is_rec_expr | <+> | is_part)
