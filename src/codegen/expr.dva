@@ -4612,6 +4612,7 @@ codegen_eval_named_call = cg, t =>
                               exp_tis += e_info.1
                               exp_dts += e_info.2
                               arg_idx' = arg_idx' + 1
+         lambda_tis = stmt::lambda_call_arg_types(cg, t)
          cargs' = types::Addrs()
          cavts' = ast::VTypes()
          cadts = ast::Names()
@@ -4622,7 +4623,12 @@ codegen_eval_named_call = cg, t =>
             av' = t.args(j)!!
             types::init_check_escape(cg, av', t.line, t.col)
             cg.last_type = ""
+            saved_exp = stmt::lambda_expected_ti
+            expected = r_i < ?lambda_tis | lambda_tis(r_i)!! |
+               ast::TypeInfo(Prim, ast::ValueType(Unknown))
+            stmt::set_lambda_expected_type(expected)
             aev' = codegen_eval(cg, av')
+            stmt::set_lambda_expected_type(saved_exp)
             cargs' += aev'.0
             cavts' += aev'.1
             dt = types::is_user_type(cg, cg.last_type) | cg.last_type | ""
@@ -4899,13 +4905,23 @@ eval_named_args_step = cg, t, fname, fn, is_for, ptypes, i, args =>
                types::init_check_escape(cg, av, t.line, t.col)
                saved_discard = cg.discard_result
                cg.discard_result = <->
+               ptis = stmt::fn_signature_param_tis(types::g.pstmts, fname)
+               saved_exp = stmt::lambda_expected_ti
+               expected = i < ?ptis
+                  | stmt::resolve_ti(cg, ptis(i)!!)
+                  | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+               stmt::set_lambda_expected_type(expected)
                ev = codegen_eval(cg, av)
+               stmt::set_lambda_expected_type(saved_exp)
                cg.discard_result = saved_discard
                is_str = is_for && types::is_str_vt(pt)
                is_ptr = is_for && (types::is_ptr_vt(pt) || types::is_ptr_vt(ev.1))
+               arg_value = expected
+                  [Ram] match::coerce_ram_repr(cg, ev.0, expected)
+                  | ev.0
                a1 = is_str
                   | codegen_ensure_nul_terminated(cg, ev.0, "arg.str.ptr")
-                  | (is_ptr | clean_untagged_addr(cg, ev.0) | ev.0)
+                  | (is_ptr | clean_untagged_addr(cg, arg_value) | arg_value)
                has_fn = (types::llvm_val_opt(fn) | f => i < LLVMCountParams(f) | <->)
                pty_opt = has_fn
                   | <+ LLVMTypeOf(LLVMGetParam(fn, i)) +>
@@ -5067,9 +5083,12 @@ codegen_closure_call_indirect_val = cg, t, clo_val, ret =>
    cg.discard_result = <->
    arg_vals = types::Addrs()
    t.args @ av, i =>
-      ev = codegen_eval(cg, av)
       arg_ti = i < ?param_tis | stmt::resolve_ti(cg, param_tis(i)!!) |
          ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      saved_exp = stmt::lambda_expected_ti
+      stmt::set_lambda_expected_type(arg_ti)
+      ev = codegen_eval(cg, av)
+      stmt::set_lambda_expected_type(saved_exp)
       arg_vals += arg_ti
          [Ram] match::coerce_ram_repr(cg, ev.0, arg_ti)
          | ev.0

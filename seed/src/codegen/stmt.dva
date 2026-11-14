@@ -5,6 +5,8 @@
 #use str
 #use ../tast
 #use ../unify
+#use ../annotate
+#use ../type_env
 #use mem
 #use ./types
 #use ./runtime
@@ -335,11 +337,113 @@ lambda_store_caps_at = cg, caps, cap_vals, est, ep2, j, n =>
            LLVMBuildStructGEP2(cg.builder, est, ep2, j, "env.store.gep"))
          lambda_store_caps_at(cg, caps, cap_vals, est, ep2, j + 1, n)
 
+// Argument expectations are separate from the enclosing function's return type.
+lambda_expected_ti: ast::TypeInfo
+lambda_expected_ti = ast::TypeInfo(Prim, ast::ValueType(Unknown))
+
+set_lambda_expected_type: ast::TypeInfo => ()
+set_lambda_expected_type = ti => lambda_expected_ti ::= ti
+
+// Generic bodies are emitted from AST. Re-enter static unification for their
+// lambdas, retaining complete record, ram and function types from this instance.
+lambda_type_env: types::Cg => type_env::TypeEnv
+lambda_type_env = cg =>
+   env = type_env::new_env!
+   types::g.marked_globals @ name => type_env::mark_global_var(env, name)
+   cg.typedefs @ td =>
+      type_env::bind_user_type(env, td.name, td.ti,
+        unify::utype_from_type_info(td.ti))
+   cg.typedefs @ td =>
+      type_env::bind_user_type(env, td.name, td.ti,
+        annotate::utype_from_ti_env(env, td.ti))
+   ?types::g.ct_bind_names @ i =>
+      name = types::g.ct_bind_names(i)!!
+      ti = types::g.ct_bind_tis(i)!!
+      type_env::bind_user_type(env, name, ti, annotate::utype_from_ti_env(env, ti))
+   types::g.pstmts @ st =>
+      st
+         [Assign a]
+            annotate::is_generic_sig(a)
+               | type_env::bind_generic(env, a.0, a.8)
+               | annotate::is_fwd_assign(a)
+                  | type_env::bind_local(env, a.0,
+                      annotate::utype_from_ti_env(env, a.8), a.8, a.1)
+         [Foreign f] annotate::register_foreign_decl(env, f)
+   types::g.typed_program_stmts @ st =>
+      st
+         [Expr te]
+            te.kind
+               [Assign a]
+                  type_env::bind_local(env, a.0,
+                    annotate::utype_from_ti_env(env, a.5.ti), a.5.ti, a.1)
+         [Binding b]
+            type_env::bind_local(env, b.0,
+              annotate::utype_from_ti_env(env, b.1), b.1, b.3)
+         [GlobalBinding b]
+            type_env::bind_global(env, b.0,
+              annotate::utype_from_ti_env(env, b.1), b.1)
+   type_env::set_current_module(env, cg.current_module)
+   type_env::enter_scope(env)
+   cg.vars @ v =>
+      ti = expr::var_ti(cg, v.name)
+      // Named functions already have a complete signature in the outer scope.
+      !<>(type_env::lookup_generic(env, v.name)) &&
+        !(ti [Prim p] p [Fn, Unknown] | <->)
+         | type_env::bind_local(env, v.name,
+             annotate::utype_from_ti_env(env, ti), ti, <->)
+   env
+
+// Unify the whole generic call before emitting its argument lambdas. This lets
+// sibling value arguments constrain a callback's type without evaluating twice.
+lambda_call_arg_types: types::Cg, ast::CallExpr => ast::VInfos
+lambda_call_arg_types = cg, call =>
+   has_lambda = call.args @> arg => arg [Fn] | <+ arg +>
+   (?has_lambda == 0 || ?types::g.ct_bind_names == 0) | --| ast::VInfos()
+   ctx = unify::new_ctx!
+   env = lambda_type_env(cg)
+   saved_exp = annotate::cur_expected_ut
+   annotate::set_expected_type(<-->)
+   te = annotate::annotate_expr(ctx, env, ast::Expr(Call, call))
+   annotate::set_expected_type(saved_exp)
+   unify::solve_constraints(ctx, ctx.constraints)
+   ctx.errors @ err =>
+      types::init_error(cg, "E" + str::from_int(err.code), err.msg, err.line, err.col)
+   typed = annotate::refresh_typed_expr(ctx, te)
+   tis = ast::VInfos()
+   args = typed.kind [Call c] c.2 | tast::TypedExprs()
+   args @ arg => tis += arg.ti
+   tis
+
+compile_generic_lambda: types::Cg, ast::FnExpr => (Addr, String)
+compile_generic_lambda = cg, f =>
+   ctx = unify::new_ctx!
+   env = lambda_type_env(cg)
+   saved_exp = annotate::cur_expected_ut
+   exp_ti = lambda_expected_ti
+   expected = exp_ti
+      [Fn] <+ annotate::utype_from_ti_env(env, exp_ti) +>
+      | <-->
+   annotate::set_expected_type(expected)
+   te = annotate::annotate_fn(ctx, env, f, <->)
+   annotate::set_expected_type(saved_exp)
+   unify::solve_constraints(ctx, ctx.constraints)
+   annotate::solve_unconstrained_rams(ctx, te.ut)
+   !unify::is_ground(ctx, te.ut)
+      | unify::add_error(ctx, 3103, "Lambda type could not be statically determined.")
+   ctx.errors @ err =>
+      types::init_error(cg, "E" + str::from_int(err.code), err.msg, err.line, err.col)
+   typed = annotate::refresh_typed_expr(ctx, te)
+   name = "$lambda_" + str::from_int(types::g.tmpc)
+   types::g.tmpc = types::g.tmpc + 1
+   lam = (typed.kind [Lambda l] <+ l +> | <-->)!!
+   codegen_typed_compile_fn(cg, name, lam.0, lam.1, typed.ti, "")
+
 // Compiles a lambda used as a VALUE into a fn (with an implicit first env
 // param when it captures enclosing locals), packages its environment + the
 // { fn_ptr, env_ptr } closure, and returns (closure_ptr, synthetic fn name).
 compile_lambda: types::Cg, ast::FnExpr => (Addr, String)
 compile_lambda = cg, f =>
+   ?types::g.ct_bind_names > 0 | --| compile_generic_lambda(cg, f)
    saved_nvars = ?cg.vars
    saved_var_start = cg.fn_var_start
    saved_nbindings = ?cg.bindings
@@ -358,12 +462,12 @@ compile_lambda = cg, f =>
       cap_types += types::var_type(cg, cname)
    fnname = "__anon_fn_" + str::from_int(types::g.tmpc)
    types::g.tmpc = types::g.tmpc + 1
-   exp_ti = types::g.expected_fn_ti
+   exp_ti = lambda_expected_ti
    exp_ptypes = exp_ti [Fn f_info] f_info.0 | ast::VTypes()
    exp_ret_vt = exp_ti [Fn f_info] f_info.2 | ast::ValueType(Unknown)
    exp_ret_ti = exp_ti [Fn f_info] f_info.3 |
       ast::TypeInfo(Prim, ast::ValueType(Unknown))
-   has_exp = ?exp_ptypes > 0
+   has_exp = exp_ti [Fn]
    ptypes = has_exp
       | exp_ptypes
       | infer_param_types_env(types::FnDef(fnname, f.params, f.body), ast::VTypes(), cap_names, cap_types)
@@ -3430,6 +3534,7 @@ codegen_fn_add_params = cg, fn, params, dtypes, ptis, ptypes, i, n =>
                !types::has_type_name(cg, param_tname')
                   | runtime::add_type(cg, param_tname', pti)
                pdtype' = param_tname'
+         pti [Fn] pdtype' = types::ensure_ti_dtype(cg, pti)
          prec_rt_opt = !is_sl | (prec | p => <+ p.0 +> | <-->) | <-->
          prec_fnames = prec | p => p.1 | ast::Names()
          cg.vars += types::CgVar(pname, pvt, is_heap_ram, pdtype',
@@ -3769,7 +3874,10 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    saved_fn_ret_ll = types::g.fn_ret_ll
    types::g.expected_fn_ti = ret_ti
    types::g.fn_ret_ll = <+ ret_ll +>
+   saved_lambda_exp = lambda_expected_ti
+   set_lambda_expected_type(ret_ti)
    bv = expr::codegen_eval(cg, fd.body)
+   set_lambda_expected_type(saved_lambda_exp)
    types::g.expected_fn_ti = saved_expected_ti
    types::g.fn_ret_ll = saved_fn_ret_ll
    cg.discard_result = saved_discard

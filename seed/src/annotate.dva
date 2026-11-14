@@ -39,6 +39,9 @@ in_ct_expr = <->
 cur_expected_ut: <unify::UType|>
 cur_expected_ut = <-->
 
+set_expected_type: <unify::UType|> => ()
+set_expected_type = expected => cur_expected_ut ::= expected
+
 set_source_file: String => ()
 set_source_file = f =>
    cur_source_file ::= f
@@ -5116,6 +5119,11 @@ annotate_call_normal = ctx, env, ce =>
                   cur_expected_ut ::= exp_arg'
                   ta = annotate_call_arg(ctx, env, a)
                   cur_expected_ut ::= saved_exp
+                  // Earlier value arguments ground generic callback parameters
+                  // before a later lambda adds field constraints to them.
+                  exp_arg' | expected =>
+                     is_fresh = expected [Var v] !unify::is_open_var(ctx, v) | <->
+                     is_fresh | unify::unify(ctx, expected, ta.ut)
                   a
                      [Var v]
                         c = unify::canon(ctx, ta.ut)

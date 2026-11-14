@@ -2289,6 +2289,7 @@ echo "PASS"
 
 echo "Testing global ram storage layouts and modular ABI..."
 timeout 240s python3 tools/test_global_ram_storage.py < /dev/null
+timeout 240s python3 tools/test_generic_lambda_abi.py < /dev/null
 
 echo "=== All driver tests PASSED ==="
 

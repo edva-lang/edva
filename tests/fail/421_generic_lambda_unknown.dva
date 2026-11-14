@@ -1,0 +1,6 @@
+#type Item (id: Int, label: String)
+unused: #! T: Type, T => T
+unused = item =>
+   callback = value => value
+   item
+unused(Item(7, "seven"))

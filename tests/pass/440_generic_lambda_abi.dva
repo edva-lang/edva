@@ -1,0 +1,94 @@
+#use io
+#type Item (id: Int, label: String)
+#type Result < Item | String >
+::total = 0
+read_id: Item => Int
+read_id = item => item.id
+apply: Item, (Item => Int) => Int
+apply = item, callback => callback(item)
+apply_result: Result, (Result => Result) => Result
+apply_result = result, callback => callback(result)
+get_item: (() => Item) => Item
+get_item = callback => callback!
+get_text: (() => String) => String
+get_text = callback => callback!
+get_float: (() => Float) => Float
+get_float = callback => callback!
+get_result: (() => Result) => Result
+get_result = callback => callback!
+identity: #! T: Type, T => T
+identity = value => value
+
+record_argument: #! T: Type, T => Int
+record_argument = offset =>
+   apply(Item(7, "seven"), (item => read_id(item) + offset))
+
+expected_argument: #! T: Type, T => Int
+expected_argument = offset =>
+   apply(Item(8, "eight"), (item => item.id + offset))
+
+record_result: #! T: Type, T => T
+record_result = item =>
+   complete = !=> identity(item)
+   get_item(complete)
+
+text_result: #! T: Type, T => T
+text_result = text =>
+   complete = !=> identity(text)
+   get_text(complete)
+
+float_result: #! T: Type, T => T
+float_result = value =>
+   complete = !=> identity(value)
+   get_float(complete)
+
+ram_result: #! T: Type, T => Result
+ram_result = item =>
+   complete: () => Result
+   complete = !=> <+ identity(item) ->
+   get_result(complete)
+
+ram_argument: #! T: Type, T => Result
+ram_argument = text =>
+   callback: Result => Result
+   callback = result =>
+      result | item => <+ item(label = text) -> | e => <- e +>
+   apply_result(<+ Item(9, "nine") ->, callback)
+
+apply_generic: #! T: Type, T, (T => Int) => Int
+apply_generic = item, callback => callback(item)
+generic_expected: #! T: Type, T => Int
+generic_expected = offset =>
+   apply_generic(Item(13, "thirteen"), (item => item.id + offset))
+
+through_fn: #! T: Type, (T => Int), T => Int
+through_fn = project, value =>
+   callback = item => project(item)
+   callback(value)
+
+invoke_action: (() => ()) => ()
+invoke_action = callback => callback!
+generic_action: #! T: Type, T => ()
+generic_action = amount => invoke_action((!=> total = total + amount))
+
+relay_label: Item, (Item => String) => String
+relay_label = item, callback => callback(item)
+closure_expected: #! T: Type, (Item, (Item => String) => String), T => String
+closure_expected = dispatch, suffix =>
+   dispatch(Item(15, "label"), (item => "${item.label}${suffix}"))
+
+run: () => ()
+run = !=>
+   generic_action(6)
+   io::out(total)
+   io::out(closure_expected(relay_label, "!"))
+   io::out(record_argument(3))
+   io::out(expected_argument(4))
+   io::out(generic_expected(2))
+   io::out(through_fn(read_id, Item(14, "fourteen")))
+   io::out(record_result(Item(11, "eleven")).label)
+   io::out(text_result("text"))
+   io::out(float_result(2.5) == 2.5 | "float" | "bad")
+   ram_result(Item(12, "twelve")) | item => io::out(item.label) | io::out
+   ram_argument("updated") | item => io::out(item.label) | io::out
+run!

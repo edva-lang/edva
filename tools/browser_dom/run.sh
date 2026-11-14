@@ -15,7 +15,7 @@ for fixture in core list events; do
   timeout 45s ./edva "tests/browser_dom/$fixture.dva" \
     -target wasm32-unknown-unknown --no-cache -o "$work/$fixture.wasm" </dev/null
 done
-for fixture in 358_map_key_assignment_forms 411_static_arity_overloads 412_generic_callback_layouts 413_generic_record_ram_fields 437_generic_scalar_payload 438_global_ram_storage; do
+for fixture in 358_map_key_assignment_forms 411_static_arity_overloads 412_generic_callback_layouts 413_generic_record_ram_fields 437_generic_scalar_payload 438_global_ram_storage 440_generic_lambda_abi; do
   timeout 45s ./edva "tests/pass/$fixture.dva" \
     -target wasm32-unknown-unknown --no-cache -o "$work/$fixture.wasm" </dev/null
 done

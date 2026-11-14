@@ -1412,16 +1412,17 @@ codegen_emit_plain_assign_val = cg, t =>
    saved_discard = cg.discard_result
    cg.discard_result = <->
    cg.last_closure_fn = ""
-   saved_expected = types::g.expected_fn_ti
+   saved_expected = stmt::lambda_expected_ti
+   stmt::set_lambda_expected_type(ast::TypeInfo(Prim, ast::ValueType(Unknown)))
    t.5 [Fn]
       annotated' = expr::var_ti(cg, t.0)
       types::g.ct_bind_names @ name, i =>
          bound = types::g.ct_bind_tis(i)!!
          annotated' = expr::subst_mono_ti(annotated', name, bound,
            types::vt_from_ti_cg(cg, bound))
-      annotated' [Fn] types::g.expected_fn_ti = annotated'
+      annotated' [Fn] stmt::set_lambda_expected_type(annotated')
    ev = expr::codegen_eval(cg, t.5)
-   types::g.expected_fn_ti = saved_expected
+   stmt::set_lambda_expected_type(saved_expected)
    cg.discard_result = saved_discard
    is_un = ev.1 [Unit]
    is_un
