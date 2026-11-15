@@ -25,13 +25,13 @@ Edva is statically typed with zero runtime type information (RTTI). All types ar
 | **Option / Fallible** | `< T | >`, `< | E >` | 8B (`ptr` niche) or `{ i1, T }` | `ptr` / `{ i1, T }` | [Flags, Ramifications & `Error`](ram.qmd) |
 | **Result (`RamPP`)** | `< T | E >` | 16B unboxed register pair | `{ i1, i64 }` | [Flags, Ramifications & `Error`](ram.qmd) |
 | **Structured error** | `Error` | Pointer to 6-field struct | `ptr` | [Flags, Ramifications & `Error`](ram.qmd) |
-| **Record / Tuple** | `(a: T1, b: T2)`, `(T * N)` | C ABI / `#packed` / `#align N` | `{ T1, T2, ... }` | [Records, Tuples, Bitfields & Enums](record.qmd) |
+| **Record / Tuple** | `(a: T1, b: T2)`, `(T * N)` | C ABI / `#type(packed)` / `#type(align = N)` | `{ T1, T2, ... }` | [Records, Tuples, Bitfields & Enums](record.qmd) |
 | **Nominal enum** | `< V1, V2(T) >` | 16B (align 8) | `{ i64 tag, ptr payload }` | [Records, Tuples, Bitfields & Enums](record.qmd) |
 | **Growable array** | `T{}` / `T{cap}` | 24B (align 8) | `{ i64 len, ptr data, i64 cap }` | [Arrays, Slices & Maps](array.qmd) |
 | **Slice view** | `T[]` | 16B (align 8) | `{ i64 len, ptr data }` | [Arrays, Slices & Maps](array.qmd) |
 | **Hash map** | `K ^ V` | 8B handle (`ptr`) | `ptr` (arena hash table) | [Arrays, Slices & Maps](array.qmd) |
 | **Function / closure** | `A, B => R` | 16B (align 8) | `{ ptr fn_ptr, ptr env_ptr }` | [Functions & Closures](functions.qmd) |
-| **Compile-time type** | `Type` (`#!`) | 0B (erased before codegen) | *Erased* | [Compile-Time (`#!`) & `Type` Reflection](type.qmd) |
+| **Compile-time type** | `Type` (`#param`) | 0B (erased before codegen) | *Erased* | [Compile-Time (`#`) & `Type` Reflection](type.qmd) |
 | **Raw pointer** | `Addr` (`ptr`) | 8B on 64-bit, 4B on 32-bit | `ptr` | [Memory, Arenas, `Addr` & FFI](addr.qmd) |
 
 ## Integer scalars (`Int`, `i8`..`i64`, `u8`..`u64`)
@@ -121,6 +121,6 @@ io::out $ (?s, ??s, Int('λ))   // (7, 3, 955)
 | Context | Syntax | Validity & Semantics | Diagnostic |
 |---|---|---|---|
 | **Type signature** | `log: String => ()`<br>`cb: (Int => ()) => ()` | **Valid**: declares void return or void callback parameter | — |
-| **Type-shape guard (`#!`)** | `T [()] "unit" | "other"` | **Valid**: matches `Unit` at compile time | — |
+| **Type-shape guard (`#param`)** | `T [()] "unit" | "other"` | **Valid**: matches `Unit` at compile time | — |
 | **Value expression** | `x = ()` or `f(())` | **Forbidden**: `()` is strictly a type, never a value literal | `E2104` |
 | **Implicit unit producers** | `x = 10`, `cond | side_effect()`, `--| expr`, empty ram slots | Evaluate to `()` at the expression site with 0 runtime bytes | — |

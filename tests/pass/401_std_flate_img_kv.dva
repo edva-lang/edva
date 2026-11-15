@@ -126,7 +126,7 @@ test::eq(kv::len(db), 2, "kv::len after put + overwrite + delete")
 test::eq(kv::get(db, "alpha") | s => s | "", "updated_first", "kv::get overwritten key")
 test::check(!kv::has(db, "temp"), "deleted key not in keydir")
 
-// Typed `#!` structural serialization in KV store
+// Typed `#` structural serialization in KV store
 u1 = UserProfile(42, "Ada Lovelace", <+>, 99.5)
 kv::put_val(db, "user:42", u1) !| _
 u1_out = kv::get_val(UserProfile, db, "user:42")!!

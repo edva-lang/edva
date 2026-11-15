@@ -4,12 +4,13 @@
 #use libc
 #use io
 #use str
+#use sys
 
-#foreign "c"
+#foreign("c")
    memcmp: (s1: Addr, s2: Addr, n: Int) => Int
    memcpy: (dest: Addr, src: Addr, n: Int) => Addr
 
-#type Ints (Int){}
+#type Ints Int{}
 
 read_fd_bytes_loop: Int, Builder, Int, Int => < Int | >
 read_fd_bytes_loop = fd, b, offset, remaining =>
@@ -146,14 +147,14 @@ format_hex64 = v =>
          +b
 
 main: Int => Int
-main = _ =>
+main = x =>
    src_opt = read_file_text("tools/UnicodeData.txt")
    src0 = src_opt | s => s | ""
    src = ?src0 > 0 | src0 | (read_file_text("/tmp/UnicodeData.txt") | s => s | "")
    ?src == 0
       |
          io::out $ "Cannot read tools/UnicodeData.txt or /tmp/UnicodeData.txt"
-         #exit 1
+         sys::exit(1)
          0
       |
          io::out $ "Parsing UnicodeData.txt in Dva..."
@@ -263,7 +264,7 @@ main = _ =>
             "#type Category < Lu, Ll, Lt, Lm, Lo, Mn, Mc, Me, Nd, Nl, No, Pc,\n" +
             "   Pd, Ps, Pe, Pi, Pf, Po, Sm, Sc, Sk, So, Zs, Zl, Zp,\n" +
             "   Cc, Cf, Cs, Co, Cn >\n\n" +
-            "#pragma integer i16\n" +
+            "#pragma(integer = i16)\n" +
             "#private cat_s1 = (\n"
          out += "   "
 
@@ -299,7 +300,7 @@ main = _ =>
 
          out += "\n)\n\n"
 
-         out += "#pragma integer i64\n"
+         out += "#pragma(integer = i64)\n"
          out += "#private cat_s2 = (\n   "
 
          total_words = num_unique' * 32
@@ -334,10 +335,10 @@ main = _ =>
             wcol' = wcol' + ?wtok
 
          out += "\n)\n\n"
-         out += "#pragma integer default\n\n"
+         out += "#pragma(integer = default)\n\n"
 
          out += "\n"
-         out += "
+         out += """
             #public
                category_id: Rune => Int
                category_id = cp =>
@@ -525,8 +526,8 @@ main = _ =>
                   decode_rune_addr(&b, i)
 
                // Polymorphic UAX #31 identifier check for String, Builder, etc.
-               is_uax31: #! T: Type, T => <>
-               is_uax31 = #! T, target =>
+               is_uax31: #param T: Type, T => <>
+               is_uax31 = target =>
                   n = ?target
                   n == 0 |->
                   p = &target
@@ -546,7 +547,7 @@ main = _ =>
 
                is_uax31_builder: Builder => <>
                is_uax31_builder = b => unicode::is_uax31(b)
-            "
+            """
 
          write_file_text("std/unicode.dva", +out)
          io::out $ "Successfully generated std/unicode.dva in Dva!"

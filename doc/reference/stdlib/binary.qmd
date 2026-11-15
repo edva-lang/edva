@@ -10,7 +10,7 @@ meta:
 
 The `binary` module provides endian-aware scalar readers and writers (`u8`/`i8`,
 `u16`/`i16`, `u32`/`i32`, `u64`/`i64`, `f32`, `f64`), unsigned and signed LEB128
-varints, and `#!` compile-time structural binary packing and unpacking
+varints, and `#param` compile-time structural binary packing and unpacking
 (`binary::encode_le`, `binary::decode_le`, `binary::encode_be`, `binary::decode_be`).
 
 ```{.dva .run}
@@ -51,7 +51,7 @@ binary::decode_le(Header, raw) | h =>
 | `binary::read_uleb128(buf, off)` | `String, Int => < (u64, Int) | Error >` | Reads unsigned LEB128 varint at `off`, returning `(value, next_offset)` |
 | `binary::write_sleb128(b, v)` | `Builder, Int => ()` | Appends signed LEB128 varint to `b` |
 | `binary::read_sleb128(buf, off)` | `String, Int => < (Int, Int) | Error >` | Reads signed LEB128 varint at `off`, returning `(value, next_offset)` |
-| `binary::encode_le(val)` / `encode(val)` | `#! T: Type, T => String` | Packs any scalar, record, tuple, enum, option, or array into little-endian binary |
-| `binary::decode_le(T, buf)` / `decode(T, buf)` | `#! T: Type, String => < T | Error >` | Unpacks `T` from little-endian binary |
-| `binary::encode_be(val)` | `#! T: Type, T => String` | Packs `val` into big-endian (network byte order) binary |
-| `binary::decode_be(T, buf)` | `#! T: Type, String => < T | Error >` | Unpacks `T` from big-endian binary |
+| `binary::encode_le(val)` / `encode(val)` | `#param T: Type, T => String` | Packs any scalar, record, tuple, enum, option, or array into little-endian binary |
+| `binary::decode_le(T, buf)` / `decode(T, buf)` | `#param T: Type, String => < T | Error >` | Unpacks `T` from little-endian binary |
+| `binary::encode_be(val)` | `#param T: Type, T => String` | Packs `val` into big-endian (network byte order) binary |
+| `binary::decode_be(T, buf)` | `#param T: Type, String => < T | Error >` | Unpacks `T` from big-endian binary |

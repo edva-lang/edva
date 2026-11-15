@@ -18,7 +18,7 @@
 
 #public
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
    dva_arena_current: () => Addr
    rename: (oldpath: String, newpath: String) => Int

@@ -8,7 +8,7 @@
 #use time
 #use utf
 
-#foreign "c"
+#foreign("c")
    c_getenv = getenv: (name: String) => Addr
 
 #public
@@ -25,11 +25,11 @@
    ::color_mode   = 0 // 0=auto (isatty), 1=force on, 2=force off
    ::prefix_tag   = ""
 
-   O_LOG_APPEND = #! (os ["darwin"] 0x0209 ["wasm", "wasi"] 0 | 0x0441) // O_WRONLY | O_CREAT | O_APPEND
+   O_LOG_APPEND = #os ["darwin"] 0x0209 ["wasm", "wasi"] 0 | 0x0441 // O_WRONLY | O_CREAT | O_APPEND
 
    #type LogOsWasm  (wasm: Int, tag: Int)
    #type LogOsPosix (posix: Int, tag: Int)
-   #type LogOsTarget #! (os ["wasm", "wasi"] LogOsWasm | LogOsPosix)
+   #type LogOsTarget #os ["wasm", "wasi"] LogOsWasm | LogOsPosix
 
    #type LevelMeta (
       level: Level,
@@ -68,8 +68,8 @@
       raw = c_getenv(name)
       raw == sys::addr_null | "" | sys::c_str(raw)
 
-   auto_color_enabled_os: #! OS: Type => <>
-   auto_color_enabled_os = #! OS =>
+   auto_color_enabled_os: #param OS: Type => <>
+   auto_color_enabled_os = #param OS =>
       OS
          [LogOsWasm] <->
          |
@@ -210,8 +210,8 @@
    get_prefix: () => String
    get_prefix = !=> prefix_tag
 
-   set_fd_os: #! OS: Type, Int => ()
-   set_fd_os = #! OS, fd =>
+   set_fd_os: #param OS: Type, Int => ()
+   set_fd_os = #param OS, fd =>
       OS
          [LogOsWasm]
             out_fd ::= fd
@@ -230,8 +230,8 @@
    get_fd: () => Int
    get_fd = !=> out_fd
 
-   set_file_os: #! OS: Type, String => <>
-   set_file_os = #! OS, path =>
+   set_file_os: #param OS: Type, String => <>
+   set_file_os = #param OS, path =>
       OS
          [LogOsWasm] <->
          |
@@ -248,8 +248,8 @@
    set_file: String => <>
    set_file = path => set_file_os(LogOsTarget, path)
 
-   close_file_os: #! OS: Type => ()
-   close_file_os = #! OS =>
+   close_file_os: #param OS: Type => ()
+   close_file_os = #param OS =>
       OS
          [LogOsWasm]
             out_fd ::= 2
@@ -266,16 +266,16 @@
 
    // --- Structured `key=value` Field Builders ---------------------------------
 
-   log_key_str: #! K: Type, K => String
+   log_key_str: #param K: Type, K => String
    log_key_str = k =>
       K
          [String] k
          [Int, i8, i16, i32, i64, u8, u16, u32, u64] str::from_int(Int(k))
          [<>] (k | "<+>" | "<->")
          [Rune] utf::encode_rune(k)
-         | K.name
+         | #name K
 
-   format_val: #! V: Type, V => String
+   format_val: #param V: Type, V => String
    format_val = v =>
       V
          [String] quote_value(v)
@@ -315,60 +315,60 @@
          [(..)]
             b = {32}
             is_tuple' = <->
-            V @ f =>
+            #members V @ f =>
                f.idx == 0 && f.name == "" | is_tuple' = <+>
             is_tuple'
                |
                   b += '(
-                  V @ f =>
+                  #members V @ f =>
                      f.idx > 0 | b += ',
                      f.type
                         [<P|>]
-                           vf = v.(f)
+                           vf = #member v, f
                            b += (vf | inner => format_val(P, inner) | "none")
                         |
-                           b += format_val(f.type, v.(f))
+                           b += format_val(f.type, (#member v, f))
                   b += ')
                |
                   b += '{
-                  V @ f =>
+                  #members V @ f =>
                      f.idx > 0 | b += ',
                      b += f.name + "="
                      f.type
                         [<P|>]
-                           vf = v.(f)
+                           vf = #member v, f
                            b += (vf | inner => format_val(P, inner) | "none")
                         |
-                           b += format_val(f.type, v.(f))
+                           b += format_val(f.type, (#member v, f))
                   b += '}
             +b
          [<..>]
-            V @ vr =>
-               v.(vr)
+            #members V @ vr =>
+               #member v, vr
                   | pay =>
                      vr.type
                         [()] --| vr.name
                         | --| vr.name + "(" + format_val(vr.type, pay) + ")"
-            V.name
-         | V.name
+            #name V
+         | #name V
 
-   field: #! V: Type, String, V => String
+   field: #param V: Type, String, V => String
    field = k, v =>
       k + "=" + format_val(V, v)
 
-   fields_of: #! R: Type, R => Fields
+   fields_of: #param R: Type, R => Fields
    fields_of = rec =>
       out' = Fields()
       R
          [(..)]
-            R @ f =>
+            #members R @ f =>
                fname = f.name != "" | f.name | str::from_int(f.idx)
                f.type
                   [<P|>]
-                     vf = rec.(f)
+                     vf = #member rec, f
                      vf | inner => out' += fname + "=" + format_val(P, inner)
                   |
-                     out' += fname + "=" + format_val(f.type, rec.(f))
+                     out' += fname + "=" + format_val(f.type, (#member rec, f))
          [K ^ V]
             rec @ mv, mk =>
                out' += log_key_str(K, mk) + "=" + format_val(V, mv)

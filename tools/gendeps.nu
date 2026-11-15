@@ -15,7 +15,7 @@
 # Usage (run by make; paths are relative to the repo root):
 #   nu tools/gendeps.nu build/deps.mk src/parser.dva std/str.dva ...
 
-const USE_RE = '^\s*#use(?:\([^)]*\)|-dynamic)?\s+(?:[A-Za-z_][A-Za-z0-9_]*\s*=\s*)?"?(?<m>(?:\\ |[^"\s;])+)"?'
+const USE_RE = '^\s*#use(?:\([^)]*\))?\s+(?:[A-Za-z_][A-Za-z0-9_]*\s*=\s*)?"?(?<m>(?:\\ |[^"\s;])+)"?'
 
 def root [] {
     $env.FILE_PWD | path dirname

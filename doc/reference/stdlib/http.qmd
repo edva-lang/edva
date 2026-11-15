@@ -72,7 +72,7 @@ io::out $ first.event + ":" + first.data
 | `get_with_headers` | `String, Headers => < Response | String >` | Performs `GET <url>` with custom headers. |
 | `post` | `String, String, String => < Response | String >` | Performs `POST <url>` with content-type and body. |
 | `post_json` | `String, String => < Response | String >` | Performs `POST <url>` with a JSON string body. |
-| `post_json_val` | `#! T: Type, String, T => < Response | String >` | Serializes `val` via `json::encode` and performs `POST <url>`. |
+| `post_json_val` | `#param T: Type, String, T => < Response | String >` | Serializes `val` via `json::encode` and performs `POST <url>`. |
 | `put_json` | `String, String => < Response | String >` | Performs `PUT <url>` with a JSON string body. |
 | `patch_json` | `String, String => < Response | String >` | Performs `PATCH <url>` with a JSON string body. |
 | `delete` | `String => < Response | String >` | Performs `DELETE <url>`. |

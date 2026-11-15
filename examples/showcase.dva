@@ -30,6 +30,8 @@
 #use str
 #use mem
 #use const
+#use sys
+#use task
 
 // `#private` hides declarations from external module importers (registered
 // internally as `module::#name`). Single-line or indented block forms exist.
@@ -50,12 +52,12 @@ bump_audit = !=>
    audit_counter = audit_counter + 1
    audit_counter
 
-// Helper assertion function demonstrating `!flag` negation and `#exit`:
+// Helper assertion function demonstrating `!flag` negation and `sys::exit`:
 check: <>, String => ()
 check = ok, label =>
    !ok |
       io::err("FAIL: " + label)
-      #exit 1
+      sys::exit(1)
 
 // -----------------------------------------------------------------------------
 // 3. NOMINAL TYPES: RECORDS, PACKED LAYOUTS, BITFIELDS & ALGEBRAIC ENUMS
@@ -72,17 +74,17 @@ check = ok, label =>
 )
 #type Point2 Vec2
 
-// `#packed` eliminates struct padding for cache-dense arrays and C FFI layout.
-#type Pixel #packed (
+// `#type(packed)` eliminates struct padding for cache-dense arrays and C FFI layout.
+#type(packed) Pixel (
    r: u8
    g: u8
    b: u8
    a: u8
 )
 
-// `#packed u16` bitfield record: packs sub-byte integer widths (`3`, `4`, `7`)
+// `#type(packed = u16)` bitfield record: packs sub-byte integer widths (`3`, `4`, `7`)
 // and 1-bit `<>` Flag fields into a single integer storage unit (`u8`..`u64`).
-#type FrameFlags #packed u16 (
+#type(packed = u16) FrameFlags (
    fin:     <>
    rsv:     3
    opcode:  4
@@ -251,22 +253,22 @@ find_first_multiple = items, factor =>
       found'
 
 // -----------------------------------------------------------------------------
-// 7. GENERICS & COMPILE-TIME EVALUATION (`#!`)
+// 7. GENERICS & COMPILE-TIME EVALUATION (`#param`, `#const`)
 // -----------------------------------------------------------------------------
-// `#! T: Type` in a signature and `#! T` in the parameter list declare a
-// compile-time type parameter (inferred automatically at call sites).
+// `#param T: Type` in a signature declares a compile-time type parameter
+// (inferred automatically at call sites).
 // Inside the body, `T [TypeA] ... [TypeB] ...` dispatches at compile time and
-// prunes untaken branches before codegen. `#! expr` folds constant expressions
-// at compile time.
+// prunes untaken branches before codegen. `#const expr` folds constant
+// expressions at compile time.
 
-describe_type: #! T: Type, T => String
-describe_type = #! T, val =>
+describe_type: #param T: Type, T => String
+describe_type = val =>
    T
       [Int]    "Int(" + str::from_int(val) + ")"
       [Float]  "Float(" + str::from_float(val) + ")"
       [String] "String(\"" + val + "\")"
-      [(..)]   "Record(" + T.name + ", fields=" + str::from_int(?T) + ")"
-      [<..>]   "Enum(" + T.name + ", variants=" + str::from_int(?T) + ")"
+      [(..)]   "Record(" + (#name T) + ", fields=" + str::from_int(#arity T) + ")"
+      [<..>]   "Enum(" + (#name T) + ", variants=" + str::from_int(#arity T) + ")"
       |        "Other"
 
 // -----------------------------------------------------------------------------
@@ -287,21 +289,21 @@ run_showcase = !=>
    id2 = next_id!
    check(id1 == 1 && id2 == 2 && audit_counter == 2, "marked global mutation")
 
-   // --- Section B: Numbers, Width Suffixes, `#pragma integer`, Bitwise Ops ---
+   // --- Section B: Numbers, Width Suffixes, `#pragma(integer = ...)`, Bitwise Ops ---
    // Note: underscore numeric separators (`1_000`) are not supported in Edva.
    byte_val = 0xFFu8
    word_val = 0b10100101u16
    shifted = (1 .<. 4) .|. (0xFF .&. 0x0F) .^. 0b0001
-   compile_time_mask = #! 16 * 16 - 1
+   compile_time_mask = #const 16 * 16 - 1
    check(shifted == 30, "bitwise shifts, OR, AND, XOR")
    check(Int(byte_val) == 255 && Int(word_val) == 165, "typed integer literals")
-   check(compile_time_mask == 255, "compile-time #! evaluation")
+   check(compile_time_mask == 255, "compile-time #const evaluation")
 
-   // `#pragma integer` (and `#pragma float`) switches default literal types positionally:
-   #pragma integer i16
+   // `#pragma(integer = ...)` (and `#pragma(float = ...)`) switches default literal types positionally:
+   #pragma(integer = i16)
    small_table = (10, 20, 30, 40)
-   #pragma integer default
-   check(?small_table == 4 && Int(small_table(2)) == 30, "#pragma integer i16")
+   #pragma(integer = default)
+   check(?small_table == 4 && Int(small_table(2)) == 30, "#pragma(integer = i16)")
 
    // --- Section C: Strings, Triple-Quoted Strings, Interpolation, Slicing & Builders ---
    // Strings are immutable UTF-8 `{ len, data }` slices. `s(i)` is bounds-checked
@@ -360,7 +362,7 @@ run_showcase = !=>
    check(#size FrameFlags == 2 && flags.fin && flags.opcode == 2 && flags.payload == 125,
      "packed bitfields")
 
-   // Typed memory view `@[addr Type]` over a `#packed` struct:
+   // Typed memory view `@[addr Type]` over a `#type(packed)` struct:
    px = Pixel(r = 10u8, g = 20u8, b = 30u8, a = 255u8)
    px_view = @[&px Pixel]
    check(#size Pixel == 4 && Int(px_view.r) == 10 && Int(px_view.a) == 255,
@@ -529,7 +531,7 @@ run_showcase = !=>
 
    // --- Section K: Generics, Structural Introspection, Intrinsics, Arenas & Concurrency ---
    check(describe_type(42) == "Int(42)" && describe_type("hi") == "String(\"hi\")",
-     "generic #!T dispatch")
+     "generic #param T dispatch")
    check(describe_type(v2) == "Record(Vec2, fields=2)",
      "compile-time structural record introspection [(..)]")
    check(describe_type(s1) == "Enum(Shape, variants=3)",
@@ -550,11 +552,11 @@ run_showcase = !=>
    mem::destroy(scratch)
    check(arena_computed == 42, "regional bump arena mem::with_value")
 
-   // Lightweight concurrency with `#spawn` and `#join`
-   // (`#join` returns `< T | Error >`; expressions after `#spawn` are not parenthesized):
-   task = #spawn clamp_positive(50, 42)
-   joined = #join task
-   check((joined |_| 0) == 42, "#spawn and #join concurrency")
+   // Lightweight concurrency with `task::spawn` and `task::join`
+   // (`task::join` returns `< T | >`):
+   tsk = task::spawn(clamp_positive(50, 42))
+   joined = task::join(tsk)
+   check((joined |_| 0) == 42, "task::spawn and task::join concurrency")
 
    io::out("All Edva showcase checks passed (" + internal_version + ")!")
 

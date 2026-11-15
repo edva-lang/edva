@@ -1,7 +1,7 @@
 #use str
 #use io
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: String, count: Int) => Int
    my_free = free: (ptr: Addr) => ()
    malloc: (size: Int) => Addr

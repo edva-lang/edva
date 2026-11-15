@@ -1,5 +1,5 @@
 // std/ccl.dva — Categorical Configuration Language (CCL) parser, model,
-// deterministic serializer, and structural #! encode/decode.
+// deterministic serializer, and structural `#param` encode/decode.
 //
 // Reference: https://github.com/chshersh/ccl
 
@@ -333,9 +333,9 @@ to_ccl = doc =>
    serialize_doc_indent(doc, 0, b)
    +b
 
-// --- Structural #! Codec (encode / decode) ----------------------------------
+// --- Structural #param Codec (encode / decode) ------------------------------
 
-ccl_key_to_str: #! K: Type, K => String
+ccl_key_to_str: #param K: Type, K => String
 ccl_key_to_str = k =>
    K
       [String] k
@@ -345,9 +345,9 @@ ccl_key_to_str = k =>
          b = {4}
          b += k
          +b
-      | K.name
+      | #name K
 
-to_ccl_val: #! T: Type, T => CclVal
+to_ccl_val: #param T: Type, T => CclVal
 to_ccl_val = val =>
    T
       [CclVal] val
@@ -378,8 +378,8 @@ to_ccl_val = val =>
             sub += CclEntry(ccl_key_to_str(k), to_ccl_val(v), 0, 0)
          CclVal(Block, sub)
       [<..>]
-         T @ v =>
-            val.(v)
+         #members T @ v =>
+            #member val, v
                | pay =>
                   v.type
                      [()] --| CclVal(Str, v.name)
@@ -390,17 +390,17 @@ to_ccl_val = val =>
          CclVal(Str, "")
       [(..)]
          sub = doc_new!
-         T @ f =>
+         #members T @ f =>
             f.type
                [<P|>]
-                  vf = val.(f)
+                  vf = #member val, f
                   vf | inner => sub += CclEntry(f.name, to_ccl_val(inner), 0, 0)
                |
-                  sub += CclEntry(f.name, to_ccl_val(val.(f)), 0, 0)
+                  sub += CclEntry(f.name, to_ccl_val((#member val, f)), 0, 0)
          CclVal(Block, sub)
       | CclVal(Str, "")
 
-to_doc: #! T: Type, T => CclDoc
+to_doc: #param T: Type, T => CclDoc
 to_doc = val =>
    T
       [CclDoc] val
@@ -413,7 +413,7 @@ to_doc = val =>
                d += CclEntry("", CclVal(Str, s), 0, 0)
                d
 
-encode: #! T: Type, T => String
+encode: #param T: Type, T => String
 encode = val =>
    to_ccl(to_doc(val))
 
@@ -428,7 +428,7 @@ non_comment_entries = doc =>
    doc @> e =>
       e.key != "/" | <+ e +>
 
-decode_val: #! T: Type, CclVal, String, Int, Int => < T | Error >
+decode_val: #param T: Type, CclVal, String, Int, Int => < T | Error >
 decode_val = cv, file, line, col =>
    T
       [CclVal] <+ cv ->
@@ -481,19 +481,19 @@ decode_val = cv, file, line, col =>
       [E{}]
          cv
             [Block b]
-               arr' = T.zero
+               arr' = #zero T
                b @ e =>
                   e.key != "/" |
                      arr' += decode_val(E, e.val, file, e.line, e.col)--!
                <+ arr' ->
             [Str s]
                s == ""
-                  | <+ T.zero ->
-                  | <- ccl_error(file, "expected list block for " + T.name, line, col) +>
+                  | <+ (#zero T) ->
+                  | <- ccl_error(file, "expected list block for " + (#name T), line, col) +>
       [K ^ V]
          cv
             [Block b]
-               m' = T.zero
+               m' = #zero T
                b @ e =>
                   e.key != "/" |
                      k = decode_val(K, CclVal(Str, e.key), file, e.line, e.col)--!
@@ -502,73 +502,73 @@ decode_val = cv, file, line, col =>
                <+ m' ->
             [Str s]
                s == ""
-                  | <+ T.zero ->
-                  | <- ccl_error(file, "expected map block for " + T.name, line, col) +>
+                  | <+ (#zero T) ->
+                  | <- ccl_error(file, "expected map block for " + (#name T), line, col) +>
       [<..>]
          cv
             [Str s]
-               T @ v =>
+               #members T @ v =>
                   v.name == s |
                      v.type
-                        [()] --| <+ T(v) ->
-                        | --| <- ccl_error(file, "variant '" + s + "' of " + T.name + " requires a payload", line, col) +>
-               <- ccl_error(file, "unknown variant '" + s + "' for " + T.name, line, col) +>
+                        [()] --| <+ (#member T, v) ->
+                        | --| <- ccl_error(file, "variant '" + s + "' of " + (#name T) + " requires a payload", line, col) +>
+               <- ccl_error(file, "unknown variant '" + s + "' for " + (#name T), line, col) +>
             [Block b]
                first_non_comment_entry(b)
                   | ent =>
-                     T @ v =>
+                     #members T @ v =>
                         v.name == ent.key |
                            v.type
-                              [()] --| <+ T(v) ->
-                              | --| <+ T(v, decode_val(v.type, ent.val, file, ent.line, ent.col)--!) ->
-                     <- ccl_error(file, "unknown variant '" + ent.key + "' for " + T.name, ent.line, ent.col) +>
-                  | <- ccl_error(file, "empty block for enum " + T.name, line, col) +>
+                              [()] --| <+ (#member T, v) ->
+                              | --| <+ (#member T, v, decode_val(v.type, ent.val, file, ent.line, ent.col)--!) ->
+                     <- ccl_error(file, "unknown variant '" + ent.key + "' for " + (#name T), ent.line, ent.col) +>
+                  | <- ccl_error(file, "empty block for enum " + (#name T), line, col) +>
       [(..)]
          b_doc = cv
             [Block b] b
             [Str] doc_new!
          is_non_empty_str = cv [Str s] s != "" | <->
          is_non_empty_str
-            | <- ccl_error(file, "expected block for " + T.name + ", got string '" + (cv [Str s] s | "") + "'", line, col) +>
+            | <- ccl_error(file, "expected block for " + (#name T) + ", got string '" + (cv [Str s] s | "") + "'", line, col) +>
             |
                items = non_comment_entries(b_doc)
-               rec' = T.zero
-               T @ f =>
+               rec' = #zero T
+               #members T @ f =>
                   f.name == ""
                      |
                         f.idx !< ?items
-                           | --| <- ccl_error(file, "tuple " + T.name + " expects " + str::from_int(?T) + " elements, got " + str::from_int(?items), line, col) +>
+                           | --| <- ccl_error(file, "tuple " + (#name T) + " expects " + str::from_int((#arity T)) + " elements, got " + str::from_int(?items), line, col) +>
                         pos_ent = items(f.idx) | _ | CclEntry("", CclVal(Str, ""), line, col)
-                        rec'.(f) = decode_val(f.type, pos_ent.val, file, pos_ent.line, pos_ent.col)--!
+                        #member rec', f = decode_val(f.type, pos_ent.val, file, pos_ent.line, pos_ent.col)--!
                      |
                         get_entry(b_doc, f.name)
                            | ent =>
-                              rec'.(f) = decode_val(f.type, ent.val, file, ent.line, ent.col)--!
+                              #member rec', f = decode_val(f.type, ent.val, file, ent.line, ent.col)--!
                            |
                               f.default
-                                 | def => rec'.(f) = def
+                                 | def => #member rec', f = def
                                  |
                                     f.type
-                                       [<P|>] rec'.(f) = <-->
-                                       [E{}] rec'.(f) = f.type.zero
-                                       [K ^ V] rec'.(f) = f.type.zero
+                                       [<P|>] #member rec', f = <-->
+                                       [E{}] #member rec', f = #zero f.type
+                                       [K ^ V] #member rec', f = #zero f.type
                                        | --| <- ccl_error(file, "missing required key '" + f.name + "'", line, col) +>
                <+ rec' ->
-      | <- ccl_error(file, "unsupported target type " + T.name + " in ccl::decode", line, col) +>
+      | <- ccl_error(file, "unsupported target type " + (#name T) + " in ccl::decode", line, col) +>
 
-decode_doc: #! T: Type, CclDoc, String => < T | Error >
+decode_doc: #param T: Type, CclDoc, String => < T | Error >
 decode_doc = doc, file =>
    T
       [CclDoc] <+ doc ->
       | decode_val(T, CclVal(Block, doc), file, 1, 1)
 
-decode: #! T: Type, String => < T | Error >
+decode: #param T: Type, String => < T | Error >
 decode = src =>
    parse(src, "<ccl>")
       | doc => decode_doc(T, doc, "<ccl>")
       | err => <- err +>
 
-decode_file: #! T: Type, String => < T | Error >
+decode_file: #param T: Type, String => < T | Error >
 decode_file = path =>
    parse_file(path)
       | doc => decode_doc(T, doc, path)

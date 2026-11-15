@@ -1,5 +1,5 @@
 // Custom operators (process/spec/custom-operators.md): operator symbols are
-// ordinary functions; #infix gives them both binding powers.
+// ordinary functions; #infix(lbp, rbp) gives them both binding powers.
 // Prefix call form.
 #use io
 
@@ -9,17 +9,17 @@ io::out $ +++(5, 6)
 io::out $ +++(2, 3)        
 
 // Infix, left-associative (lbp 40, rbp 45 — rbp > lbp groups left).
-<~> : #infix 40 45, Int, Int => Int
+<~> : #infix(40, 45) Int, Int => Int
 <~> = a, b => a * 2 + b
 io::out $ 1 <~> 2 <~> 3    // (1<~>2=4) then 4<~>3 = 11
 
 // Infix, right-associative (lbp 45, rbp 40).
->>> : #infix 45 40, Int, Int => Int
+>>> : #infix(45, 40) Int, Int => Int
 >>> = a, b => a * 2 + b
 io::out $ 1 >>> 2 >>> 3    // 1>>>(2>>>3=7) = 9
 
 // Explicit both weights + precedence vs built-ins.
-=== : #infix 95 90, Int, Int => Int    // looser than + (140)
+=== : #infix(95, 90) Int, Int => Int    // looser than + (140)
 === = a, b => a * 2 + b
 io::out $ 1 + 2 === 3
 io::out $ (1 + 2) === 3
@@ -30,11 +30,11 @@ io::out $ f(2, 3)          // 7
 io::out $ <~>(4, 5)        // 13
 
 // Generic payload (Float).
-<*~> : #infix 40 45, Float, Float => Float
+<*~> : #infix(40, 45) Float, Float => Float
 <*~> = a, b => a * b + 1
 io::out $ 2.5 <*~> 2.0     
 
 // Non-associative (equal weights); chains are a parse error (tests/fail).
-|<>| : #infix 55 55, Int, Int => Int
+|<>| : #infix(55, 55) Int, Int => Int
 |<>| = a, b => a + b
 io::out $ 1 |<>| (2 |<>| 3)   // 6

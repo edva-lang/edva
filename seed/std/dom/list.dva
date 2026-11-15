@@ -3,14 +3,14 @@
 #use str
 
 #public
-Rendered: #! State: Type => (element: dom::Element, state: State)
+Rendered: #param State: Type => (element: dom::Element, state: State)
 #type Entry (slot: < Int | >, seen: Int, key: < String | >)
 #type IntIndex Int ^ Entry
 #type StringIndex String ^ Entry
 #type NodeIndex Int ^ Int
 #type Indices (ints: IntIndex, strings: StringIndex)
 
-List: #! Item: Type, #! State: Type, #! Key: Type => (
+List: #param Item: Type, #param State: Type, #param Key: Type => (
    container: dom::Element,
    keys: Key{}, nodes: dom::Element{}, states: State{}, revisions: Int{},
    active: <>{}, dirty: <>{}, index: Indices, node_index: NodeIndex,
@@ -26,7 +26,7 @@ List: #! Item: Type, #! State: Type, #! Key: Type => (
    revision_fn: < (Item => Int) | >
 )
 
-new: #! Item: Type, #! State: Type, #! Key: Type,
+new: #param Item: Type, #param State: Type, #param Key: Type,
    dom::Element, (Item => Key), (Item => < Rendered(State) | Error >),
    (State, Item => < | Error >), (State => < | Error >) => < List(Item, State, Key) | Error >
 new = container, key_fn, create_fn, update_fn, dispose_fn =>
@@ -52,7 +52,7 @@ new = container, key_fn, create_fn, update_fn, dispose_fn =>
       revision_fn = <-->
    ) ->
 
-with_revisions: #! Item: Type, #! State: Type, #! Key: Type,
+with_revisions: #param Item: Type, #param State: Type, #param Key: Type,
    List(Item, State, Key), (Item => Int) => < | Error >
 with_revisions = list, revision =>
    list.closed || list.started
@@ -65,7 +65,7 @@ with_revisions = list, revision =>
 id: dom::Element => Int
 id = element => element.slot .|. (element.generation .<. 32)
 
-has_entry: #! Key: Type, Indices, Key => <>
+has_entry: #param Key: Type, Indices, Key => <>
 has_entry = index, key =>
    Key
       [Int]
@@ -75,7 +75,7 @@ has_entry = index, key =>
          strings = index.strings
          strings ^? key
       | #error "DOM list keys must be Int or String"
-get_entry: #! Key: Type, Indices, Key => < Entry | Error >
+get_entry: #param Key: Type, Indices, Key => < Entry | Error >
 get_entry = index, key =>
    Key
       [Int]
@@ -85,7 +85,7 @@ get_entry = index, key =>
          strings = index.strings
          strings ^ key
       | #error "DOM list keys must be Int or String"
-put_entry: #! Key: Type, Indices, Key, Entry => ()
+put_entry: #param Key: Type, Indices, Key, Entry => ()
 put_entry = index, key, entry =>
    Key
       [Int]
@@ -95,7 +95,7 @@ put_entry = index, key, entry =>
          strings = index.strings
          strings ^ key = entry
       | #error "DOM list keys must be Int or String"
-delete_entry: #! Key: Type, Indices, Key => ()
+delete_entry: #param Key: Type, Indices, Key => ()
 delete_entry = index, key =>
    Key
       [Int]
@@ -106,7 +106,7 @@ delete_entry = index, key =>
          strings ^- key
       | #error "DOM list keys must be Int or String"
 
-set_item: #! Collection: Type, #! Value: Type, Collection, Int, Value => ()
+set_item: #param Collection: Type, #param Value: Type, Collection, Int, Value => ()
 set_item = array, index, value => array(index) = value
 
 set_int: Int{}, Int, Int => ()
@@ -153,7 +153,7 @@ mark_stable = wanted, count, positions, tails, previous, stable =>
             current' = previous(current')!!
 
 #public
-sync: #! Item: Type, #! State: Type, #! Key: Type,
+sync: #param Item: Type, #param State: Type, #param Key: Type,
    List(Item, State, Key), Item[] => < | Error >
 sync = list, items =>
    result = sync_impl(Item, State, Key, list, items)
@@ -168,7 +168,7 @@ sync = list, items =>
    result
 
 #private
-sync_impl: #! Item: Type, #! State: Type, #! Key: Type,
+sync_impl: #param Item: Type, #param State: Type, #param Key: Type,
    List(Item, State, Key), Item[] => < | Error >
 sync_impl = list, items =>
    list.closed
@@ -317,7 +317,7 @@ sync_impl = list, items =>
    <++>
 
 #public
-close: #! Item: Type, #! State: Type, #! Key: Type,
+close: #param Item: Type, #param State: Type, #param Key: Type,
    List(Item, State, Key) => < | Error >
 close = list =>
    list.closed

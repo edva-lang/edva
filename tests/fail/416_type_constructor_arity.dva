@@ -1,4 +1,4 @@
 #use io
-Pair: #! A: Type, #! B: Type => (a: A, b: B)
+Pair: #param A: Type, #param B: Type => (a: A, b: B)
 #type Bad Pair(Int)
 #type Bad2 Pair(Int, String, Float)

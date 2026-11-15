@@ -17,7 +17,7 @@
 #use unicode
 
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
 
 #private
@@ -95,7 +95,8 @@ set_target_triple = t =>
    source_file: String,
    top_lines: ast::Ints,
    top_cols: ast::Ints,
-   consts: ConstEntry{}
+   consts: ConstEntry{},
+   in_comma_list: <>,
 )
 
 // A binary operator's binding powers + node op, from the precedence tower.
@@ -185,7 +186,7 @@ parser_init = lx =>
    p = Parser(lx, lexer::Tok(lexer::TokKind(Eof), 0, 0, 1, 1, <->, <->, ""),
      0, 0, 0, 0, 0, 0, 0, user_types, forward_refs, user_ops,
      <->, <->, <->, <->, <->, ast::Names(), ast::Names(), ast::Names(), "", 0, 0,
-     <->, <->, <->, "", <+>, lexer::lex_get_file!, tl, tc, consts)
+     <->, <->, <->, "", <+>, lexer::lex_get_file!, tl, tc, consts, <->)
    parser_advance(p)
    p
 
@@ -1329,23 +1330,17 @@ parse_atom = p =>
             | atom_to_ram(parse_fn(p))
             | atom_to_ram(atom_paren(p))
       [TypeKw] atom_to_ram(parse_type_decl(p))
-      [AlignKw]
-         parser_advance(p)
-         atom_to_ram(parse_alignof(p))
       [UsePath] atom_to_ram(parse_import(p, <->, <->))
       [UseDynamicPath] atom_to_ram(parse_import(p, <+>, <->))
       [UseImportPath] atom_to_ram(parse_import(p, <->, <+>))
       [UseDynamicImportPath] atom_to_ram(parse_import(p, <+>, <+>))
-      [ParamKw] atom_to_ram(parse_mod_param(p))
-      [SpawnKw] atom_to_ram(atom_spawn(p))
-      [JoinKw] atom_to_ram(atom_join(p))
-      [ExitKw] atom_to_ram(atom_exit(p))
-      [ErrorKw] atom_to_ram(atom_user_diag(p, <->))
-      [WarnKw] atom_to_ram(atom_user_diag(p, <+>))
-      [CT]
+      [ParamKw]
          is_fn_start(p)
             | atom_to_ram(parse_fn(p))
-            | atom_to_ram(atom_ct(p))
+            | atom_to_ram(parse_mod_param(p))
+      [ErrorKw] atom_to_ram(atom_user_diag(p, <->))
+      [WarnKw] atom_to_ram(atom_user_diag(p, <+>))
+      [ConstKw] atom_to_ram(atom_ct(p))
       [PragmaFP] atom_to_ram(atom_pragma_fp(p, k.text))
       [PragmaKw] atom_to_ram(atom_pragma_number(p))
       [PragmaSwizzle] atom_to_ram(atom_pragma_swizzle(p, k.text))
@@ -1562,85 +1557,87 @@ atom_private = p =>
 // "#export" — marks subsequent functions as linkable external symbols; scoped if introducing an indented block.
 atom_export: Parser => <ast::Expr|>
 atom_export = p =>
-   has_ind' = parser_peek_is_indent(p)
+   exp_tok = p.curr
    parser_advance(p)
-   is_str = p.curr.kind [Str]
-   alias = is_str | p.curr.text | ""
-   is_str | parser_advance(p)
-   has_ind' = has_ind' || (is_str && parser_peek_is_indent(p))
-   is_same_line = !tok_is_nl(p.curr) && !tok_is_eof(p.curr)
-   is_same_line
-      |
-         old_vis = p.is_public
-         old_exp = p.is_export
-         old_alias = p.export_alias
-         p.is_public = <+>
-         p.is_export = <+>
-         p.export_alias = alias
-         res = parse_expr(p)
-         res | s =>
-            p.module_level | mark_decl_item(p, s)
-         p.is_public = old_vis
-         p.is_export = old_exp
-         p.export_alias = old_alias
-         res
-      |
-         has_ind'
+   alias_opt = p.curr.kind
+      [LParen]
+         exp_tok.trail
             |
-               parser_skip_newlines(p)
+               parser_error(p, 2064,
+                 "Expected '#export(\"symbol\")' with no space before '(', or bare '#export'.")
+               <-->
+            |
                parser_advance(p)
-               saved_fd = p.fn_depth
-               p.fn_depth = 0
+               skip_type_layout(p)
+               p.curr.kind
+                  [Str]
+                     sym = p.curr.text
+                     parser_advance(p)
+                     skip_type_layout(p)
+                     p.curr.kind
+                        [RParen]
+                           parser_advance(p)
+                           <+ sym +>
+                        |
+                           parser_error(p, 2064,
+                             "Expected ')' after '#export' symbol name, got '" +
+                             p.curr.text + "'")
+                           <-->
+                  |
+                     parser_error(p, 2064,
+                       "Expected string literal symbol name inside '#export(...)', got '" +
+                       p.curr.text + "'")
+                     <-->
+      [Str]
+         parser_error(p, 2064,
+           "Expected '#export(\"sym\")' with no space before '(', or bare '#export'.")
+         <-->
+      | <+ "" +>
+   alias_opt
+      | alias =>
+         has_ind = tok_is_nl(p.curr) && peek_is_indent_after_nl(p)
+         is_same_line = !tok_is_nl(p.curr) && !tok_is_eof(p.curr)
+         is_same_line
+            |
                old_vis = p.is_public
                old_exp = p.is_export
                old_alias = p.export_alias
                p.is_public = <+>
                p.is_export = <+>
                p.export_alias = alias
-               res = block_stmts(p, ast::Exprs())
-               p.fn_depth = saved_fd
-               p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
+               res = parse_expr(p)
+               res | s =>
+                  p.module_level | mark_decl_item(p, s)
                p.is_public = old_vis
                p.is_export = old_exp
                p.export_alias = old_alias
                res
             |
-               p.is_public = <+>
-               p.is_export = <+>
-               p.export_alias = alias
-               <+ ast::Expr(Block, ast::Exprs()) +>
-
-// "#spawn call" — run the call's closure in a new thread (a ThreadId).
-atom_spawn: Parser => <ast::Expr|>
-atom_spawn = p =>
-   parser_advance(p)
-   operand = parse_expr(p)
-   operand
-      | oe =>
-         oe
-            [Call c] <+ ast::Expr(Spawn, c) +>
-            | <-->
+               has_ind
+                  |
+                     parser_skip_newlines(p)
+                     parser_advance(p)
+                     saved_fd = p.fn_depth
+                     p.fn_depth = 0
+                     old_vis = p.is_public
+                     old_exp = p.is_export
+                     old_alias = p.export_alias
+                     p.is_public = <+>
+                     p.is_export = <+>
+                     p.export_alias = alias
+                     res = block_stmts(p, ast::Exprs())
+                     p.fn_depth = saved_fd
+                     p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
+                     p.is_public = old_vis
+                     p.is_export = old_exp
+                     p.export_alias = old_alias
+                     res
+                  |
+                     p.is_public = <+>
+                     p.is_export = <+>
+                     p.export_alias = alias
+                     <+ ast::Expr(Block, ast::Exprs()) +>
       | <-->
-
-// "#join handle" — wait for a worker; a fallible ram.
-atom_join: Parser => <ast::Expr|>
-atom_join = p =>
-   parser_advance(p)
-   parse_expr(p) $+> he => ast::Expr(Join, he)
-
-// "#exit code" — terminate the process with the given status. The code is the
-// WHOLE following expression at the choice tier (the lowest precedence): a
-// comparison, feed, or choice chain needs no parens. Inside a choice branch
-// body the code parses at the range tier (like any branch body), so a
-// following '|' / '[' belongs to the ENCLOSING choice; the expression never
-// yields a value. Mirrors parser_parse_primary_atom_exit.
-atom_exit: Parser => <ast::Expr|>
-atom_exit = p =>
-   parser_advance(p)
-   code = p.branch_body_depth > 0
-      | parse_range(p)
-      | parse_choice(p)
-   code $+> ce => ast::Expr(Exit, ce)
 
 // "#error <msg>" or "#warn <msg>" — compile-time user diagnostic assertions.
 atom_user_diag: Parser, <> => <ast::Expr|>
@@ -1673,26 +1670,57 @@ atom_user_diag = p, is_warn =>
 // declarations.
 atom_foreign: Parser => <ast::Expr|>
 atom_foreign = p =>
+   for_tok = p.curr
    parser_advance(p)
-   is_str = p.curr.kind [Str]
-   abi = is_str
-      |
-         a = p.curr.text
-         parser_advance(p)
-         a
-      | "c"
-   is_nl = tok_is_nl(p.curr)
-   is_nl | parser_advance(p)
-   is_block = tok_is_indent(p.curr)
-   is_block | parser_advance(p)
-   exprs = foreign_decls(p, abi, is_block, ast::Exprs())
-   exprs
-      | es =>
-         es @ fe =>
-            fe [Foreign f]
-               p.is_public | add_public_name(p, f.dva_name) |
-                  add_private_name(p, f.dva_name)
-         <+ ast::Expr(Block, es) +>
+   abi_opt = p.curr.kind
+      [LParen]
+         for_tok.trail
+            |
+               parser_error(p, 2064,
+                 "Expected '#foreign(\"abi\")' with no space before '(', or bare '#foreign'.")
+               <-->
+            |
+               parser_advance(p)
+               skip_type_layout(p)
+               p.curr.kind
+                  [Str]
+                     a = p.curr.text
+                     parser_advance(p)
+                     skip_type_layout(p)
+                     p.curr.kind
+                        [RParen]
+                           parser_advance(p)
+                           <+ a +>
+                        |
+                           parser_error(p, 2064,
+                             "Expected ')' after '#foreign' ABI string, got '" +
+                             p.curr.text + "'")
+                           <-->
+                  |
+                     parser_error(p, 2064,
+                       "Expected string literal ABI name inside '#foreign(...)', got '" +
+                       p.curr.text + "'")
+                     <-->
+      [Str]
+         parser_error(p, 2064,
+           "Expected '#foreign(\"abi\")' with no space before '(', or bare '#foreign'.")
+         <-->
+      | <+ "c" +>
+   abi_opt
+      | abi =>
+         is_nl = tok_is_nl(p.curr)
+         is_nl | parser_advance(p)
+         is_block = tok_is_indent(p.curr)
+         is_block | parser_advance(p)
+         exprs = foreign_decls(p, abi, is_block, ast::Exprs())
+         exprs
+            | es =>
+               es @ fe =>
+                  fe [Foreign f]
+                     p.is_public | add_public_name(p, f.dva_name) |
+                        add_private_name(p, f.dva_name)
+               <+ ast::Expr(Block, es) +>
+            | <-->
       | <-->
 
 foreign_decls_done: Parser, <>, ast::Exprs => <ast::Exprs|>
@@ -2211,9 +2239,12 @@ atom_paren = p =>
                | parse_accessor_section(p)
                | paren_has_map(p)
                   | parse_paren_map_literal(p)
-                  | paren_has_comma(p)
-                     | parse_paren_record(p)
-                     | parse_paren_group(p)
+                  |
+                     is_multi_hash = p.curr.kind [Id] &&
+                       (p.curr.text ["#member", "#has_member"])
+                     !is_multi_hash && paren_has_comma(p)
+                        | parse_paren_record(p)
+                        | parse_paren_group(p)
    p.cycle_depth = saved_cd
    p.no_assign = saved_no_assign
    res
@@ -2248,7 +2279,11 @@ paren_has_map = p =>
 // "(k1 ^= v1, k2 ^= v2)" — a map literal. Each field is "key ^= value".
 parse_paren_map_literal: Parser => <ast::Expr|>
 parse_paren_map_literal = p =>
-   ml_pairs(p, ast::MapPairs())
+   saved_cl = p.in_comma_list
+   p.in_comma_list = <+>
+   res = ml_pairs(p, ast::MapPairs())
+   p.in_comma_list = saved_cl
+   res
 
 ml_pairs: Parser, ast::MapPairs => <ast::Expr|>
 ml_pairs = p, pairs =>
@@ -2283,23 +2318,29 @@ ml_pair_with_key = p, pairs, key =>
             | <-->
       | <-->
 
-paren_has_comma_step: lexer::Lx, lexer::Tok, Int => <>
-paren_has_comma_step = c, t, depth =>
+paren_has_comma_step: lexer::Lx, lexer::Tok, Int, <> => <>
+paren_has_comma_step = c, t, depth, saw_eq =>
    t.kind
       [Eof] <->
       [Newline, Indent, Dedent]
-         paren_has_comma_step(c, lexer::next_tok(c, 0), depth)
+         paren_has_comma_step(c, lexer::next_tok(c, 0), depth, saw_eq)
       [LParen, LBracket, LBrace]
-         paren_has_comma_step(c, lexer::next_tok(c, 0), depth + 1)
+         paren_has_comma_step(c, lexer::next_tok(c, 0), depth + 1, saw_eq)
       [RParen, RBracket, RBrace]
          depth > 0
-            | paren_has_comma_step(c, lexer::next_tok(c, 0), depth - 1)
+            | paren_has_comma_step(c, lexer::next_tok(c, 0), depth - 1, saw_eq)
             | <->
+      [Op]
+         depth == 0 && !saw_eq && (t.text ["=>", "!=>"])
+            | <->
+            |
+               next_eq = saw_eq || (depth == 0 && t.text == "=")
+               paren_has_comma_step(c, lexer::next_tok(c, 0), depth, next_eq)
       [Comma]
          depth == 0
             | <+>
-            | paren_has_comma_step(c, lexer::next_tok(c, 0), depth)
-      | paren_has_comma_step(c, lexer::next_tok(c, 0), depth)
+            | paren_has_comma_step(c, lexer::next_tok(c, 0), depth, saw_eq)
+      | paren_has_comma_step(c, lexer::next_tok(c, 0), depth, saw_eq)
 
 // A parenthesized list is a RECORD only when it contains a comma at this
 // depth (mirrors parser_parse_record_or_group's lookahead): "(1, 2)" is a
@@ -2308,15 +2349,19 @@ paren_has_comma_step = c, t, depth =>
 paren_has_comma: Parser => <>
 paren_has_comma = p =>
    c = lexer::clone_lx(p.lx)
-   paren_has_comma_step(c, p.curr, 0)
+   paren_has_comma_step(c, p.curr, 0, <->)
 
 // "(expr1, expr2, ...)" — a positional record literal. Fields may be named
 // ("name = value"); a field value that is itself a repetition ("1 {3}")
 // splices its copies flat into THIS record.
 parse_paren_record: Parser => <ast::Expr|>
 parse_paren_record = p =>
+   saved_cl = p.in_comma_list
+   p.in_comma_list = <+>
    parser_skip_layout(p)
-   pr_record_field_loop(p, ast::Fields())
+   res = pr_record_field_loop(p, ast::Fields())
+   p.in_comma_list = saved_cl
+   res
 
 is_destructure_field: ast::RecordField => <>
 is_destructure_record: ast::Fields => <>
@@ -2394,10 +2439,13 @@ record_closed = p, fields =>
             |
                !p.no_assign && p.curr.text == "=" && is_destructure_record(fields)
                   |
+                     saved_rhs_cl = p.in_comma_list
+                     p.in_comma_list = <->
                      parser_advance(p)
                      p.in_rhs = <+>
                      rhs = parse_assign_rhs(p)
                      p.in_rhs = <->
+                     p.in_comma_list = saved_rhs_cl
                      rhs
                         | re =>
                            tmp = fresh_dp_var(p)
@@ -2524,8 +2572,11 @@ parse_trailing_block_expr = p, lhs =>
 // implicit-parameter lambda "_ => expr" ("(3 - 2 * _)" is "_ => 3 - 2 * _").
 parse_paren_group: Parser => <ast::Expr|>
 parse_paren_group = p =>
+   saved_cl = p.in_comma_list
+   p.in_comma_list = <->
    parser_skip_layout(p)
    ir = parse_expr(p)
+   p.in_comma_list = saved_cl
    ir
       | ire =>
          parser_skip_layout(p)
@@ -2537,14 +2588,18 @@ parse_paren_group = p =>
                <-->
       | <-->
 
+is_single_term_inner: Parser, ast::Expr => <>
+is_single_term_inner = p, e =>
+   e
+      [Call c] !user_op_lookup(p.user_ops, c.fn_name).0 && c.fn_name !["#has_member", "#member3"]
+      [Member m] m.is_module_access ||
+         m.field_name !["", "#type_name", "#type_zero", "#type_arity", "#type_size", "#type_align", "#members"]
+      [Record r] !r.is_repeat
+      [Var, Int, Float, Str, Rune, RawMemory, TypeCast, BuilderCreate, ArrayCreate, MapLiteral, Variant]
+
 is_single_term_expr: Parser, ast::Expr => <>
 is_single_term_expr = p, e =>
-   !has_free_underscore(e) &&
-     (e
-        [Call c] !user_op_lookup(p.user_ops, c.fn_name).0
-        [Record r] !r.is_repeat
-        [Var, Int, Float, Str, Rune, Member, RawMemory, TypeCast,
-          SizeOf, AlignOf, BuilderCreate, ArrayCreate, MapLiteral, Variant])
+   !has_free_underscore(e) && is_single_term_inner(p, e)
 
 group_closed: Parser, ast::Expr => <ast::Expr|>
 group_closed = p, inner =>
@@ -2905,7 +2960,7 @@ is_fn_scan = lx =>
       |
          nt = lexer::next_tok(lx, 0)
          nt_id = nt.kind [Id]
-         nt_ct = nt.kind [CT]
+         nt_ct = nt.kind [ParamKw]
          nt_lp = nt.kind [LParen]
          nt_id
             | is_fn_scan(lx)
@@ -2919,7 +2974,7 @@ is_fn_scan = lx =>
                   | <->
       | is_op && is_arrow
 
-// An identifier, '#!', or destructured tuple/record '(a, b)' starts a lambda
+// An identifier, '#param', or destructured tuple/record '(a, b)' starts a lambda
 // when a '=>' or a ',' follows.
 is_fn_start: Parser => <>
 is_fn_start = p =>
@@ -2927,7 +2982,7 @@ is_fn_start = p =>
       [Id]
          c = lexer::clone_lx(p.lx)
          is_fn_scan(c)
-      [CT]
+      [ParamKw]
          c = lexer::clone_lx(p.lx)
          tok = lexer::next_tok(c, 0)
          tok.kind [Id] is_fn_scan(c) | <->
@@ -2936,7 +2991,7 @@ is_fn_start = p =>
          scan_paren_param(c) && is_fn_scan(c)
       | <->
 
-// "x, y => body" / "#! T, x => body" — a bare-parameter lambda. Consumes the
+// "x, y => body" / "#param T, x => body" — a bare-parameter lambda. Consumes the
 // param list (and optional compile-time params) then '=>' and a block body.
 parse_fn: Parser => <ast::Expr|>
 parse_fn = p =>
@@ -2945,7 +3000,7 @@ parse_fn = p =>
 fn_params: Parser, ast::Names, ast::Names, ast::Exprs => <ast::Expr|>
 fn_params = p, params, ct_params, pre_stmts =>
    p.curr.kind
-      [CT]
+      [ParamKw]
          parser_advance(p)
          p.curr.kind
             [Id]
@@ -2967,7 +3022,7 @@ fn_params = p, params, ct_params, pre_stmts =>
                            fn_param_next(p, params, ct_params, pre_stmts)
             |
                parser_error(p, 2085,
-                 "Expected a name after '#!' in the parameter list.")
+                 "Expected a name after '#param' in the parameter list.")
                <-->
       [LParen]
          parser_advance(p)
@@ -3170,7 +3225,10 @@ maybe_inline_block_cont = p, first_res =>
                p.fn_depth = 0
                saved_cont = p.cont_depth
                p.cont_depth = 0
+               saved_cl = p.in_comma_list
+               p.in_comma_list = <->
                res = block_stmts(p, stmts)
+               p.in_comma_list = saved_cl
                p.cont_depth = saved_cont
                p.fn_depth = saved_fd
                p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
@@ -3193,7 +3251,10 @@ parse_block = p =>
                p.fn_depth = 0
                saved_cont = p.cont_depth
                p.cont_depth = 0
+               saved_cl = p.in_comma_list
+               p.in_comma_list = <->
                res = block_stmts(p, ast::Exprs())
+               p.in_comma_list = saved_cl
                p.cont_depth = saved_cont
                p.fn_depth = saved_fd
                p.curr.kind [Dedent] parser_advance(p); p.just_dedented = <+>
@@ -3243,6 +3304,330 @@ block_stmts = p, stmts =>
                                  <-->
                         | <-->
 
+// Target-query compile-time dead-branch pruning (#os, #arch, #target) -------
+
+has_target_query: ast::Expr => <>
+has_target_query = e =>
+   e
+      [Var v] (v ["#os", "#arch", "#target"])
+      [Unary u] has_target_query(u.1)
+      [Bin b] has_target_query(b.1) || has_target_query(b.2)
+      [Choice ch] has_target_query(ch.cond)
+      | <->
+
+try_eval_target_str: ast::Expr => <String|>
+try_eval_target_str = e =>
+   e
+      [Str s] <+ s +>
+      [Var v]
+         v
+            ["#os"] <+ ast::triple_os(cur_target_triple) +>
+            ["#arch"] <+ ast::triple_arch(cur_target_triple) +>
+            ["#target"] <+ cur_target_triple +>
+            | <-->
+      [Bin b]
+         b.0
+            [Add]
+               ls = try_eval_target_str(b.1)
+               rs = try_eval_target_str(b.2)
+               ls
+                  | l => rs $+> (r => l + r)
+                  | <-->
+            | <-->
+      | <-->
+
+try_eval_target_case_match: String, ast::Exprs => (<>, <>)
+try_eval_target_case_match = cond_s, cases =>
+   all_ok' = <+>
+   matched' = <->
+   cases @ cv =>
+      try_eval_target_str(cv)
+         | cs =>
+            cs == cond_s | matched' = <+>
+         | all_ok' = <->
+   (all_ok', matched')
+
+try_eval_target_bool: ast::Expr => < <> | >
+try_eval_target_bool = e =>
+   e
+      [Variant v]
+         v.tag_name
+            [Positive] <+ <+> +>
+            [Negative] <+ <-> +>
+            | <-->
+      [Unary u]
+         u.0 [Not] (try_eval_target_bool(u.1) $+> (b => !b)) | <-->
+      [Bin b]
+         b.0
+            [Eq]
+               try_eval_target_str(b.1)
+                  | l => try_eval_target_str(b.2) $+> (r => l == r)
+                  | <-->
+            [NotEq]
+               try_eval_target_str(b.1)
+                  | l => try_eval_target_str(b.2) $+> (r => l != r)
+                  | <-->
+            [And]
+               lo = try_eval_target_bool(b.1)
+               ro = try_eval_target_bool(b.2)
+               lo
+                  | lv =>
+                     !lv | <+ <-> +> | ro
+                  |
+                     ro
+                        | rv =>
+                           !rv | <+ <-> +> | <-->
+                        | <-->
+            [Or]
+               lo = try_eval_target_bool(b.1)
+               ro = try_eval_target_bool(b.2)
+               lo
+                  | lv =>
+                     lv | <+ <+> +> | ro
+                  |
+                     ro
+                        | rv =>
+                           rv | <+ <+> +> | <-->
+                        | <-->
+            | <-->
+      [Choice ch]
+         try_pick_target_branch(ch)
+            | picked => try_eval_target_bool(picked)
+            | <-->
+      | <-->
+
+try_pick_target_branch: ast::ChoiceExpr => <ast::Expr|>
+try_pick_target_branch = ch =>
+   nbr = ?ch.branches
+   nbr == 0 | --| <-->
+   has_case' = <->
+   all_supported' = <+>
+   ch.branches @ br =>
+      br.kind [Case] | has_case' = <+>
+      !(br.kind [Case, Bare]) | all_supported' = <->
+   !all_supported' | --| <-->
+   cond_s_opt = has_case' | try_eval_target_str(ch.cond) | <-->
+   cond_b_opt = try_eval_target_bool(ch.cond)
+   has_case' && !<>(cond_s_opt) | --| <-->
+   cond_s = cond_s_opt | s => s | ""
+   picked' = ast::Expr(Block, ast::Exprs())
+   found' = <->
+   failed' = <->
+   nbr @ bi =>
+      found' || failed' | -->
+      br = ch.branches(bi)!!
+      br.kind
+         [Case]
+            m = try_eval_target_case_match(cond_s, br.case_values)
+            !m.0
+               | failed' = <+>
+               | m.1
+                  |
+                     picked' = br.block
+                     found' = <+>
+         [Bare]
+            bi > 0 && bi == nbr - 1
+               |
+                  picked' = br.block
+                  found' = <+>
+               |
+                  cond_b_opt
+                     | cb =>
+                        cb
+                           |
+                              picked' = br.block
+                              found' = <+>
+                     | failed' = <+>
+         | failed' = <+>
+   failed' | --| <-->
+   <+ picked' +>
+
+prune_target_type_info: ast::TypeInfo => ast::TypeInfo
+prune_target_type_info = ti =>
+   ti
+      [Align a] ast::TypeInfo(Align, (a.0, prune_target_type_info(a.1)))
+      [Rec r]
+         nflds = r.0 @> f =>
+            nd = f.has_default | prune_target_expr(f.default_expr) | f.default_expr
+            ast::RecordFieldType(f.name, f.val_type, prune_target_type_info(f.rec_type),
+              f.has_default, nd)
+         ast::TypeInfo(Rec, (nflds, r.1, r.2, r.3, r.4, r.5))
+      [Fn f]
+         ninfos = f.1 @> pti => prune_target_type_info(pti)
+         ast::TypeInfo(Fn, (f.0, ninfos, f.2, prune_target_type_info(f.3), f.4))
+      [Ram r]
+         s0 = r.0
+         s1 = r.1
+         ast::TypeInfo(Ram, (
+            ast::RamSlotInfo(s0.has_payload, s0.payload_type, prune_target_type_info(s0.payload_record)),
+            ast::RamSlotInfo(s1.has_payload, s1.payload_type, prune_target_type_info(s1.payload_record))))
+      [Enum es]
+         nes = es @> s =>
+            ast::EnumSlotInfo(s.label, s.has_payload, s.payload_type,
+              prune_target_type_info(s.payload_record))
+         ast::TypeInfo(Enum, nes)
+      [Array a] ast::TypeInfo(Array, (a.0, prune_target_type_info(a.1), a.2))
+      [Map m] ast::TypeInfo(Map, (m.0, m.1, prune_target_type_info(m.2)))
+      [ThreadId t] ast::TypeInfo(ThreadId, (t.0, prune_target_type_info(t.1)))
+      | ti
+
+prune_target_exprs: ast::Exprs => ast::Exprs
+prune_target_exprs = exprs =>
+   exprs @> e => prune_target_expr(e)
+
+prune_target_expr: ast::Expr => ast::Expr
+prune_target_expr = e =>
+   e
+      [Int, Float, Str, Var, Rune, CycleJump, Import, FastMathPragma,
+       SwizzlePragma, ModParam, Foreign] e
+      [Unary u] ast::Expr(Unary, (u.0, prune_target_expr(u.1)))
+      [Copy cp] ast::Expr(Copy, prune_target_expr(cp))
+      [BuilderCreate bc] ast::Expr(BuilderCreate, prune_target_expr(bc))
+      [CompileTime ct] ast::Expr(CompileTime, prune_target_expr(ct))
+      [Join jn] ast::Expr(Join, prune_target_expr(jn))
+      [Exit ex] ast::Expr(Exit, prune_target_expr(ex))
+      [SizeOf so] ast::Expr(SizeOf, ast::SizeOfExpr(so.val_type,
+         prune_target_type_info(so.rec_type)))
+      [AlignOf ao] ast::Expr(AlignOf, ast::AlignOfExpr(ao.val_type,
+         prune_target_type_info(ao.rec_type)))
+      [ArrayCreate ac] ast::Expr(ArrayCreate, ast::ArrayCreateExpr(
+         prune_target_type_info(ac.elem_type), ac.cap))
+      [TypeDecl td] ast::Expr(TypeDecl, ast::TypeDeclExpr(td.name,
+         prune_target_type_info(td.type_info)))
+      [TypeCast tc] ast::Expr(TypeCast, ast::CastExpr(tc.target_type,
+         prune_target_expr(tc.expr)))
+      [Bin b] ast::Expr(Bin, (b.0, prune_target_expr(b.1),
+         prune_target_expr(b.2)))
+      [Assign a] ast::Expr(Assign, (a.0, a.1, a.2, a.3, a.4,
+         prune_target_expr(a.5), prune_target_expr(a.6), a.7,
+         prune_target_type_info(a.8)))
+      [Block be] ast::Expr(Block, prune_target_exprs(be))
+      [Call c] ast::Expr(Call, ast::CallExpr(c.fn_name,
+         prune_target_expr(c.fn_target), prune_target_exprs(c.args),
+         c.line, c.col))
+      [Spawn sp] ast::Expr(Spawn, ast::CallExpr(sp.fn_name,
+         prune_target_expr(sp.fn_target), prune_target_exprs(sp.args),
+         sp.line, sp.col))
+      [CycleEscape ce] ast::Expr(CycleEscape, ast::CycleEscapeExpr(
+         prune_target_expr(ce.cycle), prune_target_expr(ce.branch)))
+      [Cycle cy] ast::Expr(Cycle, ast::CycleExpr(
+         prune_target_expr(cy.iterable), prune_target_expr(cy.body_fn),
+         cy.is_rune, cy.is_expr))
+      [Range r] ast::Expr(Range, ast::RangeExpr(r.has_lhs, r.has_rhs,
+         r.has_lhs | prune_target_expr(r.lhs) | r.lhs,
+         r.has_rhs | prune_target_expr(r.rhs) | r.rhs, r.is_inclusive))
+      [Fn fe] ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params,
+         prune_target_expr(fe.body)))
+      [Record rec]
+         nfs = rec.fields @> fld =>
+            ast::RecordField(fld.has_name, fld.name, prune_target_expr(fld.val))
+         ast::Expr(Record, ast::RecordExpr(nfs, rec.is_repeat))
+      [Member m] ast::Expr(Member, ast::MemberExpr(prune_target_expr(m.target),
+         m.field_name, m.is_module_access, prune_target_expr(m.index_expr),
+         m.line, m.col))
+      [KeyAccess ka] ast::Expr(KeyAccess, ast::KeyAccessExpr(
+         prune_target_expr(ka.target), prune_target_expr(ka.key),
+         ka.is_membership, ka.is_delete, ka.line, ka.col))
+      [Variant v] ast::Expr(Variant, ast::VariantExpr(v.tag_name,
+         prune_target_exprs(v.args)))
+      [RawMemory rm] ast::Expr(RawMemory, ast::RawMemoryExpr(
+         prune_target_expr(rm.addr), rm.load_type, rm.rec_name))
+      [MapLiteral ml]
+         nps = ml @> pr =>
+            ast::MapPair(prune_target_expr(pr.key), prune_target_expr(pr.value))
+         ast::Expr(MapLiteral, nps)
+      [NamedArg na] ast::Expr(NamedArg, ast::NamedArgExpr(na.name,
+         prune_target_expr(na.val)))
+      [Return r] ast::Expr(Return, ast::ReturnExpr(r.has_val,
+         r.has_val | prune_target_expr(r.val) | r.val, r.line, r.col))
+      [UserDiag ud] ast::Expr(UserDiag, ast::UserDiagExpr(ud.is_warn,
+         prune_target_expr(ud.msg), ud.line, ud.col))
+      [Choice ch]
+         has_target_query(ch.cond)
+            |
+               picked_opt = try_pick_target_branch(ch)
+               picked_opt | picked => --| prune_target_expr(picked)
+         ncond = prune_target_expr(ch.cond)
+         nbrs = ch.branches @> br =>
+            ast::ChoiceBranch(br.kind, prune_target_exprs(br.case_values),
+              prune_target_expr(br.pred_fn), br.variant_names, br.bind_vars,
+              br.is_identity_extractor, prune_target_expr(br.block))
+         ast::Expr(Choice, ast::ChoiceExpr(ncond, ch.is_exhaustive, nbrs))
+
+ti_refs_type: ast::TypeInfo, String => <>
+ti_refs_type = ti, name =>
+   ti
+      [TypeVar tn] tn == name
+      [Align a] ti_refs_type(a.1, name)
+      [Rec r]
+         r.0 @ f =>
+            (ti_refs_type(f.rec_type, name) ||
+              (f.has_default && expr_refs_type(f.default_expr, name))) | --| <+>
+         <->
+      [Fn f]
+         f.1 @ pti => ti_refs_type(pti, name) | --| <+>
+         ti_refs_type(f.3, name)
+      [Ram r] ti_refs_type(r.0.payload_record, name) || ti_refs_type(r.1.payload_record, name)
+      [Enum es]
+         es @ s => ti_refs_type(s.payload_record, name) | --| <+>
+         <->
+      [Array a] ti_refs_type(a.1, name)
+      [Map m] ti_refs_type(m.2, name)
+      [ThreadId t] ti_refs_type(t.1, name)
+      | <->
+
+exprs_ref_type: ast::Exprs, String => <>
+exprs_ref_type = exprs, name =>
+   exprs @ e => expr_refs_type(e, name) | --| <+>
+   <->
+
+expr_refs_type: ast::Expr, String => <>
+expr_refs_type = e, name =>
+   e
+      [Unary u] expr_refs_type(u.1, name)
+      [Copy cp] expr_refs_type(cp, name)
+      [BuilderCreate bc] expr_refs_type(bc, name)
+      [CompileTime ct] expr_refs_type(ct, name)
+      [Join jn] expr_refs_type(jn, name)
+      [Exit ex] expr_refs_type(ex, name)
+      [SizeOf so] ti_refs_type(so.rec_type, name)
+      [AlignOf ao] ti_refs_type(ao.rec_type, name)
+      [ArrayCreate ac] ti_refs_type(ac.elem_type, name)
+      [TypeDecl td] ti_refs_type(td.type_info, name)
+      [TypeCast tc] expr_refs_type(tc.expr, name)
+      [Bin b] expr_refs_type(b.1, name) || expr_refs_type(b.2, name)
+      [Assign a] expr_refs_type(a.5, name) || expr_refs_type(a.6, name) || ti_refs_type(a.8, name)
+      [Block be] exprs_ref_type(be, name)
+      [Call c] expr_refs_type(c.fn_target, name) || exprs_ref_type(c.args, name)
+      [Spawn sp] expr_refs_type(sp.fn_target, name) || exprs_ref_type(sp.args, name)
+      [CycleEscape ce] expr_refs_type(ce.cycle, name) || expr_refs_type(ce.branch, name)
+      [Cycle cy] expr_refs_type(cy.iterable, name) || expr_refs_type(cy.body_fn, name)
+      [Range r] (r.has_lhs && expr_refs_type(r.lhs, name)) || (r.has_rhs && expr_refs_type(r.rhs, name))
+      [Fn fe] expr_refs_type(fe.body, name)
+      [Record rec]
+         rec.fields @ fld => expr_refs_type(fld.val, name) | --| <+>
+         <->
+      [Member m] expr_refs_type(m.target, name) || expr_refs_type(m.index_expr, name)
+      [KeyAccess ka] expr_refs_type(ka.target, name) || expr_refs_type(ka.key, name)
+      [Variant v] exprs_ref_type(v.args, name)
+      [RawMemory rm] rm.rec_name == name || expr_refs_type(rm.addr, name)
+      [MapLiteral ml]
+         ml @ pr => (expr_refs_type(pr.key, name) || expr_refs_type(pr.value, name)) | --| <+>
+         <->
+      [NamedArg na] expr_refs_type(na.val, name)
+      [Return r] r.has_val && expr_refs_type(r.val, name)
+      [UserDiag ud] expr_refs_type(ud.msg, name)
+      [Choice ch]
+         expr_refs_type(ch.cond, name)
+            | --| <+>
+            |
+               ch.branches @ br =>
+                  (exprs_ref_type(br.case_values, name) ||
+                    expr_refs_type(br.pred_fn, name) ||
+                    expr_refs_type(br.block, name)) | --| <+>
+               <->
+      | <->
+
 // A full program: the statement loop (mirrors parser_parse). Each statement is
 // a full expression; newlines separate them. Returns a Block of the statements.
 parse_program: Parser => <ast::Expr|>
@@ -3253,21 +3638,23 @@ parse_program = p =>
          p.recovered_errors > 0 || lexer::lex_failed!
             | <-->
             |
-               resolve_refs(p)
-                  | <+ ast::Expr(Block, stmts) +>
+               pruned = prune_target_exprs(stmts)
+               resolve_refs(p, pruned)
+                  | <+ ast::Expr(Block, pruned) +>
                   | <-->
       | <-->
 
 // At EOF, a forward-referenced type name must have been declared; an
 // undeclared name is a typo (E2014).
-resolve_refs: Parser => <>
-resolve_refs = p =>
+resolve_refs: Parser, ast::Exprs => <>
+resolve_refs = p, stmts =>
    ok' = <+>
    p.forward_refs @ fr =>
       has_lt = <>(lookup_type(p.user_types, fr.name))
       has_mod = string_has_double_colon(fr.name, 0)
+      still_used = exprs_ref_type(stmts, fr.name)
       fn = p.source_file != "" | p.source_file + ":" | ""
-      !has_lt && !(has_mod && p.allow_module_refs) && !p.has_use_import
+      still_used && !has_lt && !(has_mod && p.allow_module_refs) && !p.has_use_import
          |
             has_mod
             |
@@ -3438,57 +3825,21 @@ bitfield_backing_info =
    ["Int"] (ast::ValueType(Int), 64, <+>)
    | (ast::ValueType(Unknown), 0, <->)
 
-parse_align_type: Parser => (ast::ValueType, ast::TypeInfo, <>)
-parse_align_type = p =>
-   parser_advance(p)
-   skip_type_layout(p)
-   p.curr.kind
-      [Int]
-         align_val = int_of_text(p.curr.text)
-         parser_advance(p)
-         skip_type_layout(p)
-         is_pow2 = align_val > 0 && ((align_val .&. (align_val - 1)) == 0)
-         !is_pow2
-            |
-               parser_error(p, 2064,
-                 "Expected positive power-of-two integer after '#align', got '" +
-                 str::from_int(align_val) + "'")
-         inner = parse_type_atom(p)
-         mk_tp(inner.0, ast::TypeInfo(Align, (align_val, inner.1)), inner.2)
-      |
-         parser_error(p, 2064,
-           "Expected integer alignment value after '#align', got '" +
-           p.curr.text + "'")
-         mk_tp(ast::ValueType(Unknown),
-           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
-
 make_ti_packed: ast::TypeInfo => ast::TypeInfo
 make_ti_packed = ti =>
    ti
       [Rec r]
-         ast::TypeInfo(Rec, (r.0, r.1, r.2, r.3, r.4, <+>))
+         new_flds = r.0 @> f =>
+            is_int_ft = !f.has_default &&
+              (f.val_type [Int, I8, I16, I32, I64, U8, U16, U32, U64])
+            is_int_ft
+               | ast::RecordFieldType(f.name, f.val_type, f.rec_type, <+>,
+                  ast::Expr(TypeCast, ast::CastExpr(f.val_type, ast::Expr(Int, 0))))
+               | f
+         ast::TypeInfo(Rec, (new_flds, r.1, r.2, r.3, r.4, <+>))
       [Align a]
          ast::TypeInfo(Align, (a.0, make_ti_packed(a.1)))
       | ti
-
-parse_packed_type: Parser => (ast::ValueType, ast::TypeInfo, <>)
-parse_packed_type = p =>
-   parser_advance(p)
-   skip_type_layout(p)
-   p.curr.kind
-      [LParen]
-         parse_packed_record_type(p)
-      [Id]
-         parse_bitfield_type(p)
-      [AlignKw]
-         at = parse_align_type(p)
-         mk_tp(at.0, make_ti_packed(at.1), at.2)
-      |
-         parser_error(p, 2064,
-           "Expected '(', integer type, or '#align' after '#packed', got '" +
-           p.curr.text + "'")
-         mk_tp(ast::ValueType(Unknown),
-           ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 skip_type_layout: Parser => ()
 skip_type_layout = p =>
@@ -3648,20 +3999,19 @@ rfields_packed = p, fields, layout =>
                                  | rfields_packed(p, fields, (layout.0, layout.1, 0))
                                  | rfields_packed_misaligned(p, layout.0)
 
-parse_bitfield_type: Parser => (ast::ValueType, ast::TypeInfo, <>)
-parse_bitfield_type = p =>
-   info = bitfield_backing_info(p.curr.text)
+parse_bitfield_with_backing: Parser, String => (ast::ValueType, ast::TypeInfo, <>)
+parse_bitfield_with_backing = p, backing =>
+   info = bitfield_backing_info(backing)
    !info.2
       |
          parser_error(p, 2064,
-           "Expected integer type (u8, u16, u32, u64) after '#packed', got '" +
-           p.curr.text + "'")
+           "Expected integer type (u8, u16, u32, u64) after 'packed =', got '" +
+           backing + "'")
          mk_tp(ast::ValueType(Unknown),
            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       |
          bvt = info.0
          expected_bits = info.1
-         parser_advance(p)
          skip_type_layout(p)
          p.curr.kind
             [LParen]
@@ -3672,7 +4022,7 @@ parse_bitfield_type = p =>
                  expected_bits, bvt, (p.curr.col, p.indent_level, lp_line))
             |
                parser_error(p, 2015,
-                 "Expected '(' after '#packed " + p.curr.text + "', got '" +
+                 "Expected '(' after packed bitfield type '" + backing + "', got '" +
                  p.curr.text + "'")
                mk_tp(ast::ValueType(Unknown),
                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
@@ -3819,15 +4169,39 @@ eval_ct_type_str = e =>
       [Str s] s
       [Var v]
          v
-            ["os"] ast::triple_os(cur_target_triple)
-            ["arch"] ast::triple_arch(cur_target_triple)
-            ["target"] cur_target_triple
+            ["#os"] ast::triple_os(cur_target_triple)
+            ["#arch"] ast::triple_arch(cur_target_triple)
+            ["#target"] cur_target_triple
             | ""
       | ""
 
 eval_ct_type_bool: ast::Expr => <>
 eval_ct_type_bool = e =>
    e
+      [Variant v]
+         v.tag_name
+            [Positive] <+>
+            [Negative] <->
+            | <->
+      [Choice ch]
+         cond_s = eval_ct_type_str(ch.cond)
+         cond_b = eval_ct_type_bool(ch.cond)
+         nbr = ?ch.branches
+         res' = <->
+         found' = <->
+         nbr @ bi =>
+            br = ch.branches(bi)!!
+            !found'
+               |
+                  is_m = br.kind
+                     [Case] eval_ct_case_match(cond_s, br.case_values)
+                     [Bare] (bi > 0 && bi == nbr - 1) || (bi == 0 && cond_b)
+                     | <->
+                  is_m
+                     |
+                        res' = eval_ct_type_bool(br.block)
+                        found' = <+>
+         res'
       [Bin b]
          b.0
             [Eq] eval_ct_type_str(b.1) == eval_ct_type_str(b.2)
@@ -3844,10 +4218,14 @@ eval_ct_type_bool = e =>
 validate_ct_type_branch: Parser, ast::Expr => ()
 validate_ct_type_branch = p, e =>
    e
-      [Var tname]
-         lt = lookup_type(p.user_types, tname)
-         !<>(lt) && !<>(parse_dva_type_name(tname))
-            | parser_error(p, 2064, "Undeclared type '" + tname + "' in #! type expression")
+      [Var, Member]
+         tname = member_chain_name(e)
+         tname != "" && !(string_has_double_colon(tname, 0) && p.allow_module_refs)
+            |
+               lt = lookup_type(p.user_types, tname)
+               !<>(lt) && !<>(parse_dva_type_name(tname))
+                  | parser_error(p, 2064,
+                    "Undeclared type '" + tname + "' in compile-time type expression")
       [Choice ch]
          ch.branches @ br => validate_ct_type_branch(p, br.block)
 
@@ -3861,19 +4239,29 @@ eval_ct_case_match = cond_s, cases =>
 eval_ct_type_expr: Parser, ast::Expr => (ast::ValueType, ast::TypeInfo, <>)
 eval_ct_type_expr = p, e =>
    e
-      [Var tname]
-         lt = lookup_type(p.user_types, tname)
-         lt
-            | ti => mk_tp(type_info_value_type(ti), ti, <+>)
+      [Var, Member]
+         tname = member_chain_name(e)
+         tname == ""
+            | mk_tp(ast::ValueType(Unknown),
+              ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
-               pr = parse_dva_type_name(tname)
-               pr
-                  | vt => mk_tp(vt, ast::TypeInfo(Prim, vt), <+>)
+               lt = lookup_type(p.user_types, tname)
+               lt
+                  | ti => mk_tp(type_info_value_type(ti), ti, <+>)
                   |
-                     mk_tp(ast::ValueType(Unknown),
-                       ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                     pr = parse_dva_type_name(tname)
+                     pr
+                        | vt => mk_tp(vt, ast::TypeInfo(Prim, vt), <+>)
+                        |
+                           string_has_double_colon(tname, 0) && p.allow_module_refs
+                              | mk_tp(ast::ValueType(Record),
+                                ast::TypeInfo(TypeVar, tname), <+>)
+                              | mk_tp(ast::ValueType(Unknown),
+                                ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      [SizeOf so] mk_tp(so.val_type, so.rec_type, <+>)
+      [ArrayCreate ac] mk_tp(ast::ValueType(Array),
+         ast::TypeInfo(Array, (ast::ValueType(Array), ac.elem_type, ac.cap)), <+>)
       [Choice ch]
-         ch.branches @ br => validate_ct_type_branch(p, br.block)
          cond_s = eval_ct_type_str(ch.cond)
          cond_b = eval_ct_type_bool(ch.cond)
          nbr = ?ch.branches
@@ -3885,14 +4273,16 @@ eval_ct_type_expr = p, e =>
                |
                   is_match = br.kind
                      [Case] eval_ct_case_match(cond_s, br.case_values)
-                     [Bare] (bi == nbr - 1) || cond_b
+                     [Bare] (bi > 0 && bi == nbr - 1) || (bi == 0 && cond_b)
                      | <->
                   is_match
                      |
                         picked' = br.block
                         found' = <+>
          found'
-            | eval_ct_type_expr(p, picked')
+            |
+               validate_ct_type_branch(p, picked')
+               eval_ct_type_expr(p, picked')
             |
                mk_tp(ast::ValueType(Unknown),
                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
@@ -3900,15 +4290,19 @@ eval_ct_type_expr = p, e =>
          mk_tp(ast::ValueType(Unknown),
            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
-parse_ct_type_expr: Parser => (ast::ValueType, ast::TypeInfo, <>)
-parse_ct_type_expr = p =>
-   parser_advance(p)
+parse_ct_type_choice: Parser => (ast::ValueType, ast::TypeInfo, <>)
+parse_ct_type_choice = p =>
    ch_opt = parse_choice(p)
    ch_opt
       | ch_e => eval_ct_type_expr(p, ch_e)
       |
          mk_tp(ast::ValueType(Unknown),
            ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
+parse_ct_type_expr: Parser => (ast::ValueType, ast::TypeInfo, <>)
+parse_ct_type_expr = p =>
+   parser_advance(p)
+   parse_ct_type_choice(p)
 
 // The type atom: a primitive name, a user-declared type, a forward reference,
 // a parenthesized record/slice type, or a ramification '<>' / '<...>'.
@@ -3920,11 +4314,12 @@ parse_type_atom = p =>
       ["<"] parse_ram_type(p)
       |
          p.curr.kind
-            [CT] parse_ct_type_expr(p)
-            [PackedKw] parse_packed_type(p)
-            [AlignKw] parse_align_type(p)
+            [ConstKw] parse_ct_type_expr(p)
             [LParen] parse_record_type(p)
-            [Id] parse_named_type(p)
+            [Id]
+               p.curr.text ["#os", "#arch", "#target"]
+                  | parse_ct_type_choice(p)
+                  | parse_named_type(p)
             |
                mk_tp(ast::ValueType(Unknown),
                  ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
@@ -4673,21 +5068,261 @@ parse_type_map = p, at =>
 map_key_ok: ast::ValueType => <>
 map_key_ok = [Str, Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, RawPtr]
 
+parse_cursor_type_expr: Parser => <ast::Expr|>
+parse_cursor_type_expr = p =>
+   line = p.curr.line
+   col = p.curr.col
+   cname = p.curr.text
+   parser_advance(p) // cursor ident
+   parser_advance(p) // '.'
+   p.curr.kind [Id] && p.curr.text == "type"
+      |
+         parser_advance(p)
+         <+ ast::Expr(Member, ast::MemberExpr(ast::Expr(Var, cname), "type",
+           <->, ast::Expr(Var, ""), line, col)) +>
+      |
+         parser_error(p, 2064,
+           "Expected 'type' after '.' in type query, got '" + p.curr.text + "'")
+         <-->
+
+parse_type_carrier_expr: Parser => <ast::Expr|>
+parse_type_carrier_expr = p =>
+   p.curr.kind [Id] && parser_peek_next(p).text == "."
+      | parse_cursor_type_expr(p)
+      |
+         t = parse_type(p)
+         !t.2
+            | <-->
+            | <+ ast::Expr(SizeOf, ast::SizeOfExpr(t.0, t.1)) +>
+
+parse_type_prop: Parser, String, Int, Int => <ast::Expr|>
+parse_type_prop = p, prop, line, col =>
+   parse_type_carrier_expr(p)
+      | tc =>
+         <+ ast::Expr(Member, ast::MemberExpr(tc, prop, <->,
+           ast::Expr(Var, ""), line, col)) +>
+      | <-->
+
 // Compile-time unary operator "#size T": the byte size of T in bytes.
 parse_sizeof: Parser => <ast::Expr|>
 parse_sizeof = p =>
-   t = parse_type(p)
-   !t.2
-      | <-->
-      | <+ ast::Expr(SizeOf, ast::SizeOfExpr(t.0, t.1)) +>
+   line = p.curr.line
+   col = p.curr.col
+   p.curr.kind [Id] && parser_peek_next(p).text == "."
+      |
+         parse_cursor_type_expr(p)
+            | tc =>
+               <+ ast::Expr(Member, ast::MemberExpr(tc, "#type_size", <->,
+                 ast::Expr(Var, ""), line, col)) +>
+            | <-->
+      |
+         t = parse_type(p)
+         !t.2
+            | <-->
+            | <+ ast::Expr(SizeOf, ast::SizeOfExpr(t.0, t.1)) +>
 
 // Compile-time unary operator "#align T": the byte alignment of T in bytes.
 parse_alignof: Parser => <ast::Expr|>
 parse_alignof = p =>
-   t = parse_type(p)
-   !t.2
-      | <-->
-      | <+ ast::Expr(AlignOf, ast::AlignOfExpr(t.0, t.1)) +>
+   line = p.curr.line
+   col = p.curr.col
+   p.curr.kind [Id] && parser_peek_next(p).text == "."
+      |
+         parse_cursor_type_expr(p)
+            | tc =>
+               <+ ast::Expr(Member, ast::MemberExpr(tc, "#type_align", <->,
+                 ast::Expr(Var, ""), line, col)) +>
+            | <-->
+      |
+         t = parse_type(p)
+         !t.2
+            | <-->
+            | <+ ast::Expr(AlignOf, ast::AlignOfExpr(t.0, t.1)) +>
+
+tok_could_be_type_start: Parser, lexer::Lx, lexer::Tok => <>
+tok_could_be_type_start = p, lx, t =>
+   t.text ["<", "["] || (t.kind [LParen])
+      | --| <+>
+   !(t.kind [Id]) | --| <->
+   <>(parse_dva_type_name(t.text)) || ct_scope_has(p.ct_scope, t.text)
+      | --| <+>
+   c2 = lexer::clone_lx(lx)
+   nt = lexer::next_tok(c2, 0)
+   nt.text == "::"
+      |
+         sym = lexer::next_tok(c2, 0)
+         sym.kind [Id] && name_is_upper(sym.text) &&
+           !(lexer::next_tok(c2, 0).kind [LParen])
+      |
+         lookup_type(p.user_types, t.text)
+            | ti => !(nt.kind [LParen]) || (ti [Fn])
+            | <->
+
+looks_like_paren_type: Parser => <>
+looks_like_paren_type = p =>
+   c = lexer::clone_lx(p.lx)
+   t1 = lexer::next_tok(c, 0)
+   t1.kind [RParen] | --| <+>
+   depth' = 1
+   at_elem' = <+>
+   all_types' = <+>
+   saw_colon' = <->
+   saw_star_or_arrow' = <->
+   saw_comma' = <->
+   saw_other_op' = <->
+   cur' = t1
+   0..256 @
+      cur'.kind [Eof] | -->
+      depth' == 1
+         |
+            at_elem'
+               |
+                  !tok_could_be_type_start(p, c, cur') | all_types' = <->
+                  at_elem' = <->
+               |
+                  cur'.text == ":" | (saw_colon' = <+>; -->)
+                  cur'.kind [Op]
+                     |
+                        cur'.text ["*", "=>"]
+                           | saw_star_or_arrow' = <+>
+                           | saw_other_op' = <+>
+                  cur'.kind [Comma]
+                     |
+                        saw_comma' = <+>
+                        at_elem' = <+>
+      cur'.kind
+         [LParen, LBracket, LBrace] depth' = depth' + 1
+         [RParen, RBracket, RBrace]
+            depth' = depth' - 1
+            depth' == 0 | -->
+      cur' = lexer::next_tok(c, 0)
+   saw_colon' || ((saw_star_or_arrow' || saw_comma' || !saw_other_op') && all_types')
+
+parse_hash_operand: Parser, <> => <ast::Expr|>
+parse_hash_operand = p, is_last =>
+   saved_na = p.no_assign
+   saved_cl = p.in_comma_list
+   p.no_assign = <+>
+   p.in_comma_list = <+>
+   res = (!is_last && p.curr.kind [Id])
+      |
+         atom_ident(p, p.curr.text)
+            | a => parse_primary_atom(p, a)
+            | <-->
+      | parse_unary(p)
+   p.in_comma_list = saved_cl
+   p.no_assign = saved_na
+   res
+
+has_mod_type_call: Parser => <>
+has_mod_type_call = p =>
+   c = lexer::clone_lx(p.lx)
+   t1 = lexer::next_tok(c, 0)
+   t1.text != "::" | --| <->
+   t2 = lexer::next_tok(c, 0)
+   !(t2.kind [Id]) | --| <->
+   t3 = lexer::next_tok(c, 0)
+   t3.kind [LParen] || (t3.text ["{", "[", "^"])
+
+is_user_fn_type: Parser, String => <>
+is_user_fn_type = p, name =>
+   lookup_type(p.user_types, name)
+      | ti =>
+         ti [Fn]
+      | <->
+
+parse_hash_has_member: Parser, Int, Int => <ast::Expr|>
+parse_hash_has_member = p, line, col =>
+   p.in_comma_list
+      |
+         parser_error(p, 2113,
+           "Wrap '#has_member ...' in parentheses when used inside a comma-separated list.")
+         --| <-->
+   tgt_opt = p.curr.kind [Id]
+      |
+         nt = parser_peek_next(p)
+         nt.text == "."
+            | parse_cursor_type_expr(p)
+            | nt.text ["{", "[", "^"]
+               | parse_type_carrier_expr(p)
+               | nt.kind [LParen] && is_user_fn_type(p, p.curr.text)
+                  | parse_type_carrier_expr(p)
+                  | nt.text == "::" && has_mod_type_call(p)
+                     | parse_type_carrier_expr(p)
+                     |
+                        name = p.curr.text
+                        parser_advance(p)
+                        acc' = ast::Expr(Var, name)
+                        ok_chain' = <+>
+                        0..32 @
+                           p.curr.text != "::" | -->
+                           parser_advance(p)
+                           p.curr.kind [Id]
+                              |
+                                 sym = p.curr.text
+                                 parser_advance(p)
+                                 acc' = ast::Expr(Member, ast::MemberExpr(acc',
+                                   sym, <+>, ast::Expr(Var, ""),
+                                   p.curr.line, p.curr.col))
+                              |
+                                 parser_error(p, 2064,
+                                   "Expected identifier after '::' in '#has_member', got '" +
+                                   p.curr.text + "'")
+                                 ok_chain' = <->
+                                 -->
+                        ok_chain' | <+ acc' +> | <-->
+      | parse_type_carrier_expr(p)
+   tgt_e = tgt_opt | v => v | --| <-->
+   !(p.curr.kind [Comma])
+      |
+         parser_error(p, 2064,
+           "Expected ',' after target in '#has_member', got '" + p.curr.text + "'")
+         --| <-->
+   parser_advance(p) // ','
+   mem_e = parse_hash_operand(p, <+>) | v => v | --| <-->
+   args = ast::Exprs()
+   args += tgt_e
+   args += mem_e
+   <+ ast::Expr(Call, ast::CallExpr("#has_member", ast::Expr(Var, ""),
+     args, line, col)) +>
+
+parse_hash_member: Parser, Int, Int => <ast::Expr|>
+parse_hash_member = p, line, col =>
+   p.in_comma_list
+      |
+         parser_error(p, 2113,
+           "Wrap '#member ...' in parentheses when used inside a comma-separated list.")
+         --| <-->
+   is_type_first = p.curr.text == "<" ||
+     (p.curr.kind [LParen] && looks_like_paren_type(p)) ||
+     (p.curr.kind [Id] &&
+       (parser_peek_next(p).text ["{", "[", "^"] ||
+         (<>(parse_dva_type_name(p.curr.text)) && !(parser_peek_next(p).kind [LParen])) ||
+         (is_user_fn_type(p, p.curr.text) && parser_peek_next(p).kind [LParen]) ||
+         (parser_peek_next(p).text == "::" && has_mod_type_call(p))))
+   arg1 = (is_type_first
+      | parse_type_carrier_expr(p)
+      | parse_hash_operand(p, <->)) | v => v | --| <-->
+   !(p.curr.kind [Comma])
+      |
+         parser_error(p, 2064,
+           "Expected ',' after target in '#member', got '" + p.curr.text + "'")
+         --| <-->
+   parser_advance(p) // ','
+   arg2 = parse_hash_operand(p, <->) | v => v | --| <-->
+   p.curr.kind [Comma]
+      |
+         parser_advance(p) // ','
+         arg3_opt = is_fn_start(p) | parse_fn(p) | parse_hash_operand(p, <+>)
+         arg3 = arg3_opt | v => v | --| <-->
+         args = ast::Exprs()
+         args += arg1
+         args += arg2
+         args += arg3
+         <+ ast::Expr(Call, ast::CallExpr("#member3", ast::Expr(Var, ""),
+           args, line, col)) +>
+      |
+         <+ ast::Expr(Member, ast::MemberExpr(arg1, "", <->, arg2, line, col)) +>
 
 // --- type declarations (#type) ----------------------------------------------
 
@@ -4695,73 +5330,232 @@ parse_alignof = p =>
 // name, then dispatches on the schema (a '<' opens an enum or ram, a '(' a
 // record, anything else is parsed as a full type). Registers the type in
 // user_types and returns a TypeDecl node.
+finish_type_decl: Parser, String, ast::TypeInfo, <>, Int => <ast::Expr|>
+finish_type_decl = p, name, ti, is_packed, align_val =>
+   ti1 = is_packed | make_ti_packed(ti) | ti
+   ti2 = align_val > 0 | ast::TypeInfo(Align, (align_val, ti1)) | ti1
+   declare_type(p, name, ti2)
+
+// "(packed, align = 16)" or "(packed = u16)" modifier list on "#type(...)".
+parse_type_mods: Parser => (<>, String, Int, <>)
+parse_type_mods = p =>
+   parser_advance(p) // '('
+   is_packed' = <->
+   bf_backing' = ++ ""
+   align_val' = 0
+   saw_any' = <->
+   ok' = <+>
+   0..64 @
+      skip_type_layout(p)
+      p.curr.kind
+         [RParen]
+            parser_advance(p)
+            -->
+         [Id]
+            mname = p.curr.text
+            parser_advance(p)
+            skip_type_layout(p)
+            saw_any' = <+>
+            mname
+               ["packed"]
+                  p.curr.text == "="
+                     |
+                        parser_advance(p)
+                        skip_type_layout(p)
+                        !(p.curr.kind [Id]) || !bitfield_backing_info(p.curr.text).2
+                           |
+                              parser_error(p, 2064,
+                                "Expected integer type (u8, u16, u32, u64) after 'packed =', got '" +
+                                p.curr.text + "'")
+                              ok' = <->
+                              -->
+                           |
+                              bf_backing' != ""
+                                 |
+                                    parser_error(p, 2064, "Duplicate 'packed = ...' modifier in '#type(...)'.")
+                                    ok' = <->
+                                    -->
+                              bf_backing' = p.curr.text
+                              parser_advance(p)
+                     | is_packed' = <+>
+               ["align"]
+                  p.curr.text != "="
+                     |
+                        parser_error(p, 2064, "Expected '=' after 'align' in '#type(...)'.")
+                        ok' = <->
+                        -->
+                     |
+                        parser_advance(p)
+                        skip_type_layout(p)
+                        av_opt = p.curr.kind
+                           [Int]
+                              v = parse_int_text(p.curr.text)
+                              parser_advance(p)
+                              v
+                           [Id]
+                              cv = lookup_const_int(p.consts, p.curr.text)
+                              <>(cv) | parser_advance(p)
+                              cv
+                           | <-->
+                        av_opt
+                           | av =>
+                              is_pow2 = av > 0 && ((av .&. (av - 1)) == 0)
+                              !is_pow2
+                                 |
+                                    parser_error(p, 2064,
+                                      "Expected positive power-of-two integer after 'align =', got '" +
+                                      str::from_int(av) + "'")
+                                    ok' = <->
+                                    -->
+                                 | align_val' = av
+                           |
+                              parser_error(p, 2064,
+                                "Expected integer alignment value after 'align =', got '" +
+                                p.curr.text + "'")
+                              ok' = <->
+                              -->
+               |
+                  parser_error(p, 2064,
+                    "Unknown '#type' modifier '" + mname +
+                    "' — expected 'packed' or 'align'.")
+                  ok' = <->
+                  -->
+            skip_type_layout(p)
+            p.curr.kind
+               [Comma]
+                  parser_advance(p)
+               [RParen]
+                  parser_advance(p)
+                  -->
+               |
+                  parser_error(p, 2064,
+                    "Expected ',' or ')' in '#type(...)', got '" + p.curr.text + "'")
+                  ok' = <->
+                  -->
+         |
+            parser_error(p, 2064,
+              "Expected modifier name or ')' in '#type(...)', got '" + p.curr.text + "'")
+            ok' = <->
+            -->
+   ok' && !saw_any'
+      |
+         parser_error(p, 2064, "Expected at least one modifier inside '#type(...)'.")
+         ok' = <->
+   is_packed' && bf_backing' != ""
+      |
+         parser_error(p, 2064, "Cannot combine 'packed' and 'packed = " + bf_backing' + "' in '#type(...)'.")
+         ok' = <->
+   (is_packed', bf_backing', align_val', ok')
+
 parse_type_decl: Parser => <ast::Expr|>
 parse_type_decl = p =>
+   type_tok = p.curr
    parser_advance(p)
-   p.curr.kind
-      [Id]
-         name = p.curr.text
-         parser_advance(p)
-         p.curr.text
-            [":"] parser_advance(p)
-         p.curr.kind
-            [Newline]
-               parse_indent_decl(p, name)
+   mods_opt = p.curr.kind
+      [LParen]
+         type_tok.trail
             |
-               p.curr.text
-                  ["<"]
-                     decl_is_enum(p)
-                        |
-                           predeclare(p, name,
-                             ast::TypeInfo(Enum, ast::EnumSlots()))
-                           parse_enum_decl(p)
-                              | ti =>
-                                 ok_min = enum_min_variants(p, name, ti)
-                                 ok_min
-                                    | declare_type(p, name, ti)
-                                    | <-->
-                              | <-->
-                        |
-                           slot = ast::RamSlotInfo(<->,
-                             ast::ValueType(Unknown),
-                             ast::TypeInfo(Prim, ast::ValueType(Unknown)))
-                           ram_ti = ast::TypeInfo(Ram, (slot, slot))
-                           predeclare(p, name, ram_ti)
-                           ty = parse_type(p)
-                           !ty.2 | <--> |
-                              declare_type(p, name, ty.1)
-                  |
-                     p.curr.kind
-                        [LParen]
-                           rt = parse_type(p)
-                           !rt.2 | <--> |
-                              rt.1
-                                 [Prim, TypeVar]
-                                    parser_error(p, 2084,
-                                      "Single-field records are not allowed: a record must have at least 2 fields")
-                                    <-->
-                                 | declare_type(p, name, rt.1)
-                        |
-                           ty2 = parse_type(p)
-                           !ty2.2 | <--> |
-                              declare_type(p, name, ty2.1)
+               parser_error(p, 2064,
+                 "Expected '#type(modifiers) Name' with no space before '(', or '#type Name ...'.")
+               (<->, "", 0, <->)
+            | parse_type_mods(p)
+      | (<->, "", 0, <+>)
+   !mods_opt.3
       | <-->
+      |
+         is_packed = mods_opt.0
+         bf_backing = mods_opt.1
+         align_val = mods_opt.2
+         skip_type_layout(p)
+         p.curr.kind
+            [Id]
+               name = p.curr.text
+               parser_advance(p)
+               p.curr.text
+                  [":"] parser_advance(p)
+               bf_backing != ""
+                  |
+                     skip_type_layout(p)
+                     bt = parse_bitfield_with_backing(p, bf_backing)
+                     !bt.2 | <--> | finish_type_decl(p, name, bt.1, <->, align_val)
+                  | p.curr.kind
+                     [Newline]
+                        parse_indent_decl_mods(p, name, is_packed, align_val)
+                     |
+                        p.curr.text
+                           ["<"]
+                              decl_is_enum(p)
+                                 |
+                                    predeclare(p, name,
+                                      ast::TypeInfo(Enum, ast::EnumSlots()))
+                                    parse_enum_decl(p)
+                                       | ti =>
+                                          ok_min = enum_min_variants(p, name, ti)
+                                          ok_min
+                                             | finish_type_decl(p, name, ti, is_packed, align_val)
+                                             | <-->
+                                       | <-->
+                                 |
+                                    slot = ast::RamSlotInfo(<->,
+                                      ast::ValueType(Unknown),
+                                      ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+                                    ram_ti = ast::TypeInfo(Ram, (slot, slot))
+                                    predeclare(p, name, ram_ti)
+                                    ty = parse_type(p)
+                                    !ty.2 | <--> |
+                                       finish_type_decl(p, name, ty.1, is_packed, align_val)
+                           |
+                              p.curr.kind
+                                 [LParen]
+                                    rt = is_packed
+                                       | parse_packed_record_type(p)
+                                       | parse_type(p)
+                                    !rt.2 | <--> |
+                                       rt.1
+                                          [Prim, TypeVar]
+                                             parser_error(p, 2084,
+                                               "Single-field records are not allowed: a record must have at least 2 fields")
+                                             <-->
+                                          | finish_type_decl(p, name, rt.1, is_packed, align_val)
+                                 |
+                                    ty2 = parse_type(p)
+                                    !ty2.2 | <--> |
+                                       finish_type_decl(p, name, ty2.1, is_packed, align_val)
+            | <-->
 
-// "#type Name" + Newline + Indent + "field: Type" lines — an indented record
-// type declaration block (no parens/commas), mirroring the native's
-// parser_parse_indent_type_fields.
+// "#type Name" + Newline + Indent + "field: Type" lines (or conditional #os choice)
 parse_indent_decl: Parser, String => <ast::Expr|>
 parse_indent_decl = p, name =>
+   parse_indent_decl_mods(p, name, <->, 0)
+
+parse_indent_decl_mods: Parser, String, <>, Int => <ast::Expr|>
+parse_indent_decl_mods = p, name, is_packed, align_val =>
    p.curr.kind
       [Newline]
          parser_advance(p)
-         parse_indent_decl(p, name)
+         parse_indent_decl_mods(p, name, is_packed, align_val)
       [Indent]
+         entry_ind = p.indent_level
          parser_advance(p)
          skip_nl_only(p)
-         indent_fields(p, ast::FieldTypes(), p.indent_level)
-            | ti => declare_type(p, name, ti)
-            | <-->
+         is_ct_cond = p.curr.kind [ConstKw] ||
+           (p.curr.kind [Id] && (p.curr.text ["#os", "#arch", "#target"]))
+         is_ct_cond
+            |
+               ct = (p.curr.kind [ConstKw]
+                  | parse_ct_type_expr(p)
+                  | parse_ct_type_choice(p))
+               !ct.2 | <--> |
+                  unwind_to_indent(p, entry_ind)
+                  p.curr.kind [Dedent]
+                     |
+                        parser_advance(p)
+                        p.just_dedented = <+>
+                  finish_type_decl(p, name, ct.1, is_packed, align_val)
+            |
+               indent_fields(p, ast::FieldTypes(), p.indent_level)
+                  | ti => finish_type_decl(p, name, ti, is_packed, align_val)
+                  | <-->
       | <-->
 
 indent_field_after: Parser, ast::FieldTypes, Int => <ast::TypeInfo|>
@@ -5222,11 +6016,10 @@ is_use_arg_name = s =>
 
 // "#param M: Module" — a formal module parameter of a functor module (DVA-61).
 // Only the 'Module' kind exists; the alias is used as 'M::name' in the body.
-parse_mod_param: Parser => <ast::Expr|>
-parse_mod_param = p =>
+parse_mod_param_one: Parser => <ast::Expr|>
+parse_mod_param_one = p =>
    line = p.curr.line
    col = p.curr.col
-   parser_advance(p)
    bad = !(p.curr.kind [Id]) || has_module_sep(p.curr.text)
    bad
       |
@@ -5252,6 +6045,53 @@ parse_mod_param = p =>
                      parser_error(p, 2112, "Unsupported '#param' kind '" + p.curr.text +
                        "' — only '#param " + name + ": Module' is supported")
                      <-->
+
+looks_like_mod_param: Parser => <>
+looks_like_mod_param = p =>
+   c = lexer::clone_lx(p.lx)
+   prev_comma' = <->
+   res' = <->
+   0..128 @
+      t = lexer::next_tok(c, 0)
+      t.kind
+         [Eof, Semi, Dedent]
+            res' = <+>
+            -->
+         [Indent] res' = res'
+         [Newline]
+            !prev_comma'
+               |
+                  res' = <+>
+                  -->
+         [Op]
+            t.text ["=>", "!=>"]
+               |
+                  res' = <->
+                  -->
+            prev_comma' = <->
+         | prev_comma' = t.kind [Comma]
+   res'
+
+parse_mod_param: Parser => <ast::Expr|>
+parse_mod_param = p =>
+   parser_advance(p)
+   items = ast::Exprs()
+   ok' = <+>
+   0..64 @
+      parse_mod_param_one(p)
+         | item =>
+            items += item
+            p.curr.kind [Comma]
+               | parser_advance(p)
+               | -->
+         |
+            ok' = <->
+            -->
+   !ok' || ?items == 0
+      | <-->
+      | ?items == 1
+         | <+ items(0)!! +>
+         | <+ ast::Expr(Block, items) +>
 
 has_module_sep: String => <>
 has_module_sep = s => string_has_double_colon(s, 0)
@@ -5330,28 +6170,15 @@ pp_dot: Parser, ast::Expr => <ast::Expr|>
 pp_dot = p, lhs =>
    parser_advance(p)
    p.curr.kind
-      [LParen]
-         parser_advance(p)
-         parser_skip_layout(p)
-         parse_expr(p)
-            | idx =>
-               parser_skip_layout(p)
-               p.curr.kind
-                  [RParen]
-                     parser_advance(p)
-                     pp_member(p, ast::Expr(Member, ast::MemberExpr(lhs, "", <->, idx,
-                       p.curr.line, p.curr.col)))
-                  |
-                     parser_error(p, 2027, "Expected ')' after member index, got '" +
-                       p.curr.text + "'.")
-                     <-->
-            | <-->
       [Id, Int]
          f = p.curr.text
          parser_advance(p)
          pp_member(p, ast::Expr(Member, ast::MemberExpr(lhs, f, <->,
            ast::Expr(Var, ""), p.curr.line, p.curr.col)))
-      | <-->
+      |
+         parser_error(p, 2064,
+           "Expected field name or tuple index after '.', got '${p.curr.text}'")
+         <-->
 
 parse_key_chain: Parser, ast::Expr => <ast::Expr|>
 parse_key_chain = p, lhs =>
@@ -5598,14 +6425,18 @@ parse_arg = p =>
 
 parse_comma_args: Parser => <ast::Exprs|>
 parse_comma_args = p =>
+   saved_cl = p.in_comma_list
+   p.in_comma_list = <+>
    args = ast::Exprs()
    parser_skip_layout(p)
-   p.curr.kind [RParen] <+ args +> |
+   res = p.curr.kind [RParen] <+ args +> |
       parse_arg(p)
          | a =>
             args += a
             args_loop(p, args)
          | <-->
+   p.in_comma_list = saved_cl
+   res
 
 args_loop: Parser, ast::Exprs => <ast::Exprs|>
 args_loop = p, args =>
@@ -7619,10 +8450,33 @@ choice_pipe_body = p, saw_sep =>
 // after the atom returns.
 atom_ident: Parser, String => <ast::Expr|>
 atom_ident = p, name =>
-   name == "#size"
-      |
+   line = p.curr.line
+   col = p.curr.col
+   name
+      ["#size"]
          parser_advance(p)
          parse_sizeof(p)
+      ["#align"]
+         parser_advance(p)
+         parse_alignof(p)
+      ["#name"]
+         parser_advance(p)
+         parse_type_prop(p, "#type_name", line, col)
+      ["#zero"]
+         parser_advance(p)
+         parse_type_prop(p, "#type_zero", line, col)
+      ["#arity"]
+         parser_advance(p)
+         parse_type_prop(p, "#type_arity", line, col)
+      ["#members"]
+         parser_advance(p)
+         parse_type_prop(p, "#members", line, col)
+      ["#has_member"]
+         parser_advance(p)
+         parse_hash_has_member(p, line, col)
+      ["#member"]
+         parser_advance(p)
+         parse_hash_member(p, line, col)
       |
          parser_advance(p)
          is_stmt = p.is_stmt
@@ -7689,20 +8543,29 @@ parse_colon_g = p, name, is_global =>
    f = p.curr.text
    f == "#infix"
       |
-         ok = parse_fixity_clause(p, name)
-         !ok | <--> |
-            p.curr.kind
-               [Comma]
-                  parser_advance(p)
-                  parse_colon_type_g(p, name, is_global)
-               | <+ ast::Expr(Var, name) +>
+         inf_tok = p.curr
+         has_lp = parser_peek_next(p).kind [LParen]
+         !has_lp || inf_tok.trail
+            |
+               parser_error(p, 2098,
+                 "Expected '#infix(lbp, rbp)' with no space before '('.")
+               <-->
+            |
+               ok = parse_fixity_clause(p, name)
+               !ok | <--> |
+                  p.curr.kind
+                     [Comma]
+                        parser_error(p, 2098,
+                          "Unexpected ',' after '#infix(...)'; write the type signature directly after ')'.")
+                        <-->
+                     |
+                        stmt_end_ok(p)
+                           | <+ ast::Expr(Var, name) +>
+                           | parse_colon_type_g(p, name, is_global)
       | parse_colon_type_g(p, name, is_global)
 
-// The custom-operator fixity clause: "+++ : #infix 25 20, ..." — the explicit
-// left and right binding powers (custom-operators.md §4). Registers the
-// operator's text in p.user_ops so the Pratt loop can parse it infix; a
-// reserved text (a built-in operator) is rejected. The current token is the
-// "#infix" identifier.
+// The custom-operator fixity clause: "+++ : #infix(25, 20) ..." — explicit
+// left and right binding powers.
 parse_fixity_clause: Parser, String => <>
 parse_fixity_clause = p, name =>
    parser_advance(p)
@@ -7711,35 +8574,54 @@ parse_fixity_clause = p, name =>
          parser_error(p, 2097, "Operator '" + name + "' already has a " +
            "built-in meaning and cannot be re-fixed.")
          <->
-      | p.curr.kind
-         [Int]
-            n1 = parse_int_text(p.curr.text)
-            parser_advance(p)
-            n1
-               | lbp_val =>
-                  p.curr.kind
-                     [Int]
-                        n2 = parse_int_text(p.curr.text)
-                        parser_advance(p)
-                        n2
-                           | rbp_val =>
-                              register_user_op(p, name, lbp_val, rbp_val)
-                           |
-                              parser_error(p, 2098, diag::infix_right_binding_power_prefix! +
-                                str::from_int(lbp_val) + "', got '" +
-                                p.curr.text + "'.")
-                              <->
-                     |
-                        parser_error(p, 2098, diag::infix_right_binding_power_prefix! +
-                          str::from_int(lbp_val) + "', got '" +
-                          p.curr.text + "'.")
-                        <->
-               |
-                  parser_error(p, 2098, diag::infix_left_binding_power_prefix! + p.curr.text + "'.")
-                  <->
-         |
-            parser_error(p, 2098, diag::infix_left_binding_power_prefix! + p.curr.text + "'.")
-            <->
+      |
+         parser_advance(p)
+         skip_type_layout(p)
+         p.curr.kind
+            [Int]
+               n1 = parse_int_text(p.curr.text)
+               parser_advance(p)
+               n1
+                  | lbp_val =>
+                     skip_type_layout(p)
+                     p.curr.kind [Comma]
+                        | parser_advance(p); skip_type_layout(p)
+                        |
+                           parser_error(p, 2098,
+                             "Expected ',' after left binding power inside '#infix(" +
+                             str::from_int(lbp_val) + ", ...)', got '" + p.curr.text + "'.")
+                           --| <->
+                     p.curr.kind
+                        [Int]
+                           n2 = parse_int_text(p.curr.text)
+                           parser_advance(p)
+                           n2
+                              | rbp_val =>
+                                 skip_type_layout(p)
+                                 p.curr.kind [RParen]
+                                    | parser_advance(p)
+                                    |
+                                       parser_error(p, 2098,
+                                         "Expected ')' after '#infix' binding powers, got '" +
+                                         p.curr.text + "'.")
+                                       --| <->
+                                 register_user_op(p, name, lbp_val, rbp_val)
+                              |
+                                 parser_error(p, 2098, diag::infix_right_binding_power_prefix! +
+                                   str::from_int(lbp_val) + ", ...)', got '" +
+                                   p.curr.text + "'.")
+                                 <->
+                        |
+                           parser_error(p, 2098, diag::infix_right_binding_power_prefix! +
+                             str::from_int(lbp_val) + ", ...)', got '" +
+                             p.curr.text + "'.")
+                           <->
+                  |
+                     parser_error(p, 2098, diag::infix_left_binding_power_prefix! + p.curr.text + "'.")
+                     <->
+            |
+               parser_error(p, 2098, diag::infix_left_binding_power_prefix! + p.curr.text + "'.")
+               <->
 
 // Registers a user operator's binding powers (rejecting a duplicate fixity).
 register_user_op: Parser, String, Int, Int => <>
@@ -7772,7 +8654,7 @@ parse_colon_type = p, name => parse_colon_type_g(p, name, <->)
 parse_colon_type_g: Parser, String, <> => <ast::Expr|>
 parse_colon_type_g = p, name, is_global =>
    p.curr.kind
-      [CT] ct_signature_g(p, name, "", ast::CParams(), is_global)
+      [ParamKw] ct_signature_g(p, name, "", ast::CParams(), is_global)
       | parse_colon_type_vt_g(p, name, is_global)
 
 // The non-generic form of the forward annotation: "name: Type" (a forward
@@ -7819,14 +8701,6 @@ type_atom_name = ti, tok_text =>
       [TypeVar n] n
       | tok_text
 
-ti_is_packed: ast::TypeInfo => <>
-ti_is_packed = ti =>
-   ti
-      [Align a] ti_is_packed(a.1)
-      [Bitfield] <+>
-      [Rec r] r.5
-      | <->
-
 parse_colon_type_vt_rest: Parser, String => <ast::Expr|>
 parse_colon_type_vt_rest = p, name => parse_colon_type_vt_rest_g(p, name, <->)
 
@@ -7852,18 +8726,14 @@ parse_colon_type_vt_rest_g = p, name, is_global =>
                   infos2 += vt.1
                   sig_arrow_g(p, name, params2, infos2, real_tn, is_global)
                |
-                  is_packed_type = ti_is_packed(vt.1)
-                  is_packed_type
-                     | declare_type(p, name, vt.1)
+                  p.module_level && p.fn_depth == 0 && p.choice_depth == 0 && p.branch_body_depth == 0
                      |
-                        p.module_level && p.fn_depth == 0 && p.choice_depth == 0 && p.branch_body_depth == 0
-                           |
-                              cs = p.consts
-                              cs += ConstEntry(name, ast::Expr(Var, ""))
-                              p.consts = cs
-                        <+ ast::Expr(Assign, (name, <+>, <->, is_global, <->,
-                          fwd_marker(vt.1), ast::Expr(Var, ""), real_tn,
-                          vt.1)) +>
+                        cs = p.consts
+                        cs += ConstEntry(name, ast::Expr(Var, ""))
+                        p.consts = cs
+                  <+ ast::Expr(Assign, (name, <+>, <->, is_global, <->,
+                    fwd_marker(vt.1), ast::Expr(Var, ""), real_tn,
+                    vt.1)) +>
 
 // The forward-annotation marker: Var("<fwd>") for a non-record type, or
 // Var("<fwd>~<comma-joined field names>") for a record type.
@@ -7898,7 +8768,7 @@ sig_params_g = p, name, params, infos, first_tn, is_global =>
          |
             sig_arrow_g(p, name, params, infos, first_tn, is_global)
 
-// "#! T: Type, ..." — the compile-time parameter list of a generic signature.
+// "#param T: Type, ..." — the compile-time parameter list of a generic signature.
 // Mirrors the native parser_parse_ct_signature's syntax (the ct names and the
 // runtime param types are parsed for syntax; the Assign carries only the
 // return marker, since the selfhost Assign has no type slot).
@@ -7911,8 +8781,12 @@ ct_signature = p, name, prior_names, cps =>
    ct_signature_g(p, name, prior_names, cps, <->)
 
 ct_signature_g: Parser, String, String, ast::CParams, <> => <ast::Expr|>
+ct_signature_param_g: Parser, String, String, ast::CParams, <> => <ast::Expr|>
 ct_signature_g = p, name, prior_names, cps, is_global =>
-   parser_advance(p) // '#!'
+   parser_advance(p) // '#param'
+   ct_signature_param_g(p, name, prior_names, cps, is_global)
+
+ct_signature_param_g = p, name, prior_names, cps, is_global =>
    p.curr.kind
       [Id]
          ct_name = p.curr.text
@@ -7987,7 +8861,7 @@ parse_ct_type = p =>
                              mk_tp(ast::ValueType(Unknown), ast::TypeInfo(TypeVar, nm), <+>))
       | parse_type(p)
 
-// After one "#! Name: Type" group: a comma leads to another "#! T: Type" or to
+// After one "#param Name: Type" group: a comma leads to another "#param T: Type" or to
 // the runtime params; '=>' skips straight to the return type.
 ct_params_tail: Parser, String, String, ast::CParams => <ast::Expr|>
 ct_params_tail = p, name, ct_names, cps =>
@@ -7999,7 +8873,12 @@ ct_params_tail_g = p, name, ct_names, cps, is_global =>
       [Comma]
          parser_advance(p)
          p.curr.kind
-            [CT] ct_signature_g(p, name, ct_names, cps, is_global)
+            [ParamKw] ct_signature_g(p, name, ct_names, cps, is_global)
+            [Id]
+               parser_peek_next(p).text == ":"
+                  | ct_signature_param_g(p, name, ct_names, cps, is_global)
+                  | ct_runtime_params_g(p, name, ct_names, cps, ast::VTypes(),
+                    ast::VInfos(), is_global)
             | ct_runtime_params_g(p, name, ct_names, cps, ast::VTypes(),
               ast::VInfos(), is_global)
       | ct_signature_arrow_g(p, name, ct_names, cps, ast::VTypes(),
@@ -8391,7 +9270,11 @@ fold_const_expr: ConstEntry{}, ast::Expr => ast::Expr
 fold_const_expr = consts, e =>
    e
       [Var v]
-         lookup_const_entry(consts, v) | ce => ce | e
+         v
+            ["#os"] ast::Expr(Str, ast::triple_os(cur_target_triple))
+            ["#arch"] ast::Expr(Str, ast::triple_arch(cur_target_triple))
+            ["#target"] ast::Expr(Str, cur_target_triple)
+            | (lookup_const_entry(consts, v) | ce => ce | e)
       [Unary u]
          fold_const_unary(u.0, fold_const_expr(consts, u.1))
       [Bin b]
@@ -8399,6 +9282,15 @@ fold_const_expr = consts, e =>
            fold_const_expr(consts, b.2))
       [TypeCast tc]
          fold_const_cast(tc.target_type, fold_const_expr(consts, tc.expr))
+      [CompileTime ct]
+         fi = fold_const_expr(consts, ct)
+         is_const_folded_expr(fi) | fi | ast::Expr(CompileTime, fi)
+      [Choice ch]
+         has_target_query(ch.cond)
+            |
+               pr = prune_target_expr(e)
+               pr [Choice] pr | fold_const_expr(consts, pr)
+            | e
       | e
 
 decl_mod_prefix_at: String, Int, Int => Int
@@ -8430,7 +9322,11 @@ fold_const_expr_mod: ConstEntry{}, String, ast::Expr => ast::Expr
 fold_const_expr_mod = consts, cur_mod, e =>
    e
       [Var v]
-         lookup_const_entry_mod(consts, cur_mod, v) | ce => ce | e
+         v
+            ["#os"] ast::Expr(Str, ast::triple_os(cur_target_triple))
+            ["#arch"] ast::Expr(Str, ast::triple_arch(cur_target_triple))
+            ["#target"] ast::Expr(Str, cur_target_triple)
+            | (lookup_const_entry_mod(consts, cur_mod, v) | ce => ce | e)
       [Unary u]
          fold_const_unary(u.0, fold_const_expr_mod(consts, cur_mod, u.1))
       [Bin b]
@@ -8438,6 +9334,15 @@ fold_const_expr_mod = consts, cur_mod, e =>
            fold_const_expr_mod(consts, cur_mod, b.2))
       [TypeCast tc]
          fold_const_cast(tc.target_type, fold_const_expr_mod(consts, cur_mod, tc.expr))
+      [CompileTime ct]
+         fi = fold_const_expr_mod(consts, cur_mod, ct)
+         is_const_folded_expr(fi) | fi | ast::Expr(CompileTime, fi)
+      [Choice ch]
+         has_target_query(ch.cond)
+            |
+               pr = prune_target_expr(e)
+               pr [Choice] pr | fold_const_expr_mod(consts, cur_mod, pr)
+            | e
       | e
 
 is_fwd_marker_expr: ast::Expr => <>
@@ -8555,14 +9460,18 @@ parse_global_assign = p, name =>
 // "%bitcast(T, x)" — first argument is a type T, remaining arguments are expressions.
 parse_bitcast_args: Parser => <ast::Exprs|>
 parse_bitcast_args = p =>
+   saved_cl = p.in_comma_list
+   p.in_comma_list = <+>
    args = ast::Exprs()
-   p.curr.kind [RParen] <+ args +> |
+   res = p.curr.kind [RParen] <+ args +> |
       vt = parse_ct_type(p)
       !vt.2
          | <-->
          |
             args += ast::Expr(SizeOf, ast::SizeOfExpr(vt.0, vt.1))
             args_loop(p, args)
+   p.in_comma_list = saved_cl
+   res
 
 // "name(arg1, arg2)" — a parenthesized call, then postfix calls and the
 // cycle/choice continuation.

@@ -1,9 +1,9 @@
 #use str
 #use io
 
-TABLE = #! (10, 20, 30, 40, 50)
-SQUARES = #! (0 * 0, 1 * 1, 2 * 2, 3 * 3, 4 * 4, 5 * 5)
-MAP = #! ("start" ^= 1, "stop" ^= 2, "pause" ^= 3)
+TABLE = #const (10, 20, 30, 40, 50)
+SQUARES = #const (0 * 0, 1 * 1, 2 * 2, 3 * 3, 4 * 4, 5 * 5)
+MAP = #const ("start" ^= 1, "stop" ^= 2, "pause" ^= 3)
 
 io::out $ str::from_int(TABLE.0)
 io::out $ str::from_int(TABLE.2)

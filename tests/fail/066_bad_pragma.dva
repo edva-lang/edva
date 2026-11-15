@@ -1,2 +1,2 @@
-#pragma integer f32
+#pragma(integer = f32)
 a = 5

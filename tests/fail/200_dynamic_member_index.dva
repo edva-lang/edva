@@ -1,4 +1,4 @@
-// A "x.(i)" member index must be a compile-time constant (an unrolled
+// A "#member x, i" member index must be a compile-time constant (an unrolled
 // per-field cycle index); a runtime value has no meaning for a heterogeneous
 // record.
 
@@ -9,4 +9,4 @@ p: Pt
 p.x = 3
 p.y = 4
 k = 0
-io::out $ p.(k)
+io::out $ (#member p, k)

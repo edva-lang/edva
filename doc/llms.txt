@@ -16,8 +16,8 @@
 - **Integer Literals & Types**:
   - `Int` is fixed 64-bit (`i64`) on all CPU architectures (no target-dependent `isize`/`usize`).
     Machine pointer width is represented by `Addr`.
-  - Unsuffixed integer literals default to `Int` (or the type set by `#pragma integer <type>`).
-  - Unsuffixed float literals default to `Float` (or the type set by `#pragma float <type>`).
+  - Unsuffixed integer literals default to `Int` (or the type set by `#pragma(integer = <type>)`).
+  - Unsuffixed float literals default to `Float` (or the type set by `#pragma(float = <type>)`).
   - The type system never silently coerces ambiguous expressions or unresolved type variables
     to `Int`. Unresolved types emit `E3103`.
 - **Binary Comparisons**: `<`, `>`, `==`, `!=`, `!<` (greater-or-equal), `!>` (less-or-equal).
@@ -32,11 +32,8 @@
   nominally distinct (`E3084: Record name mismatch`); `#type B A` creates a transparent alias for
   `A`. Anonymous records `(x = 1, y = 2)` check explicit field names (`E3084`), while positional
   tuples `(1, 2)` unify by field count and element types.
-- **Unquoted Imports**: `#use net`, `#use io`, `#use libc`.
-- **Unified Strings & Interpolation**: Double-quoted strings `"..."` support single-line and
-  multiline (margin stripping when starting with `"\n`). Dynamic interpolation `${expr}` supports
-  scalar primitives (`Int`, `UInt`, `Float`, `Rune`, `String`), desugaring to `%to_str(expr)`
-  without requiring `#use str`. Triple-quotes `"""` are retired (`E1018`).
+- **Quote-Free 3-Way Imports**: `#use str` (std), `#use ./ui` (local), `#use @vid/browser` (package), `#use ./app(ui, index)` (functor).
+- **Unified Strings & Interpolation**: Double-quoted `"..."` and triple-quoted `"""..."""` (allowing unescaped `"`) support single-line and multiline (margin stripping when starting with `\n`). Dynamic interpolation `${expr}` supports scalar primitives (`Int`, `UInt`, `Float`, `Rune`, `String`), desugaring to `%to_str(expr)` without requiring `#use str`.
 - **Line Length**: Lines must not exceed 100 characters.
 
 ---
@@ -98,7 +95,7 @@ types and cannot be implicitly coerced between one another.
 
 # 4. Essential Control Flow & Error Handling
 
-- **Choice**: `x [100] "perfect" [90...99] "great" [> 49] "pass" | "fail"` (guards also support negated `x ![...]`, record/tuple OR patterns `[(1, 2), (3, 4)]`, and `#!` type shapes `T [(..)]`).
+- **Choice**: `x [100] "perfect" [90...99] "great" [> 49] "pass" | "fail"` (guards also support negated `x ![...]`, record/tuple OR patterns `[(1, 2), (3, 4)]`, and `#param` type shapes `T [(..)]`).
 - **Unwrap-or-Default (`|_|`)**: `val = opt_or_res |_| fallback`.
 - **Headless Choice Function**: `classify = [100] "perfect" [> 89] "pass" | "fail"` (a scrutinee-less `[guard]` choice outside an `@` cycle body desugars into a 1-argument function over `_`, callable as `classify(95)` or `95 $> [> 89] "pass" | "fail"`).
 - **Pipelines, Composition & Functor Maps**:

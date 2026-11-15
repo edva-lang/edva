@@ -2,5 +2,5 @@
 
 #warn "Testing compile-time user warning"
 
-x = #! (1 == 2 | #error "should not be reached" | 42)
+x = #const (1 == 2 | #error "should not be reached" | 42)
 io::out $ x

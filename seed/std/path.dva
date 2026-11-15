@@ -1,6 +1,6 @@
 // Standard Path Module (std/path.dva)
 // Pure lexical path manipulation with zero filesystem or libc dependencies.
-// Uses compile-time target inspection (#! os) to select Windows vs. POSIX
+// Uses compile-time target inspection (#os) to select Windows vs. POSIX
 // separator and drive-prefix semantics, and also exposes explicit posix_*
 // and win_* variants for cross-platform path handling.
 
@@ -11,11 +11,11 @@
 
 // --- Target-Specific Separators ---
 
-SEP = #! (os ["windows"] '\\ | '/)
-SEP_STR = #! (os ["windows"] "\\" | "/")
-LIST_SEP = #! (os ["windows"] '; | ':)
-LIST_SEP_STR = #! (os ["windows"] ";" | ":")
-IS_WIN = #! (os == "windows")
+SEP = #os ["windows"] '\\ | '/
+SEP_STR = #os ["windows"] "\\" | "/"
+LIST_SEP = #os ["windows"] '; | ':
+LIST_SEP_STR = #os ["windows"] ";" | ":"
+IS_WIN = #os == "windows"
 
 is_posix_sep: Int => <>
 is_posix_sep = ['/]
@@ -24,7 +24,7 @@ is_win_sep: Int => <>
 is_win_sep = ['/, '\\]
 
 is_sep: Int => <>
-is_sep = c => #! (os == "windows") | is_win_sep(c) | is_posix_sep(c)
+is_sep = c => #os == "windows" | is_win_sep(c) | is_posix_sep(c)
 
 // --- Root & Prefix Inspection ---
 
@@ -49,7 +49,7 @@ posix_root_len = p =>
    ?p > 0 && p(0) == '/ | 1 | 0
 
 root_len: String => Int
-root_len = p => #! (os == "windows") | win_root_len(p) | posix_root_len(p)
+root_len = p => #os == "windows" | win_root_len(p) | posix_root_len(p)
 
 posix_is_abs: String => <>
 posix_is_abs = p => ?p > 0 && p(0) == '/
@@ -61,7 +61,7 @@ win_is_abs = p =>
       (len !< 3 && ascii::is_alpha(p(0)) && p(1) == ': && is_win_sep(p(2)))
 
 is_abs: String => <>
-is_abs = p => #! (os == "windows") | win_is_abs(p) | posix_is_abs(p)
+is_abs = p => #os == "windows" | win_is_abs(p) | posix_is_abs(p)
 
 is_rel: String => <>
 is_rel = p => !is_abs(p)
@@ -89,7 +89,7 @@ win_strip_trailing_sep = p =>
 
 strip_trailing_sep: String => String
 strip_trailing_sep = p =>
-   #! (os == "windows") | win_strip_trailing_sep(p) | posix_strip_trailing_sep(p)
+   #os == "windows" | win_strip_trailing_sep(p) | posix_strip_trailing_sep(p)
 
 // --- Joining ---
 
@@ -106,7 +106,7 @@ win_join = a, b =>
    is_win_sep(a(?a - 1)) | a + b | a + "\\" + b
 
 join: String, String => String
-join = a, b => #! (os == "windows") | win_join(a, b) | posix_join(a, b)
+join = a, b => #os == "windows" | win_join(a, b) | posix_join(a, b)
 
 // --- Parent / Dirname / Basename ---
 
@@ -146,7 +146,7 @@ win_parent = p =>
          | clean(..last_sep')
 
 parent: String => String
-parent = p => #! (os == "windows") | win_parent(p) | posix_parent(p)
+parent = p => #os == "windows" | win_parent(p) | posix_parent(p)
 
 // Like `parent`, but returns "" instead of "." when `p` has no directory part.
 dirname: String => String
@@ -185,7 +185,7 @@ win_basename = p =>
    start !< clen | "" | clean(start..)
 
 basename: String => String
-basename = p => #! (os == "windows") | win_basename(p) | posix_basename(p)
+basename = p => #os == "windows" | win_basename(p) | posix_basename(p)
 
 base: String => String
 base = p => basename(p)
@@ -334,7 +334,7 @@ win_normalize = p =>
    ?out == 0 | "." | +out
 
 normalize: String => String
-normalize = p => #! (os == "windows") | win_normalize(p) | posix_normalize(p)
+normalize = p => #os == "windows" | win_normalize(p) | posix_normalize(p)
 
 // Relative path from directory `from_dir` to `to_path`.
 rel: String, String => String

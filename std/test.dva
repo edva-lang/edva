@@ -71,7 +71,7 @@ check_eq_flag = actual, expected, label =>
 
 #public
 
-format_val: #! T: Type, T => String
+format_val: #param T: Type, T => String
 format_val = v =>
    T
       [Int, i8, i16, i32, i64, u8, u16, u32, u64] str::from_int(Int(v))
@@ -116,44 +116,44 @@ format_val = v =>
       [(..)]
          b = {32}
          is_tuple' = <->
-         T @ f =>
+         #members T @ f =>
             f.idx == 0 && f.name == "" | is_tuple' = <+>
          is_tuple'
             |
                b += '(
-               T @ f =>
+               #members T @ f =>
                   f.idx > 0 | b += ", "
                   f.type
                      [<P|>]
-                        vf = v.(f)
+                        vf = #member v, f
                         b += (vf | inner => "<+ " + format_val(P, inner) + " +>" | "<-->")
                      |
-                        b += format_val(f.type, v.(f))
+                        b += format_val(f.type, (#member v, f))
                b += ')
             |
-               b += T.name + "("
-               T @ f =>
+               b += (#name T) + "("
+               #members T @ f =>
                   f.idx > 0 | b += ", "
                   b += f.name + "="
                   f.type
                      [<P|>]
-                        vf = v.(f)
+                        vf = #member v, f
                         b += (vf | inner => "<+ " + format_val(P, inner) + " +>" | "<-->")
                      |
-                        b += format_val(f.type, v.(f))
+                        b += format_val(f.type, (#member v, f))
                b += ')
          +b
       [<..>]
-         T @ vr =>
-            v.(vr)
+         #members T @ vr =>
+            #member v, vr
                | pay =>
                   vr.type
                      [()] --| vr.name
                      | --| vr.name + "(" + format_val(vr.type, pay) + ")"
-         T.name
-      | T.name
+         #name T
+      | #name T
 
-struct_eq: #! T: Type, T, T => <>
+struct_eq: #param T: Type, T, T => <>
 struct_eq = a, b =>
    T
       [Int, i8, i16, i32, i64, u8, u16, u32, u64] Int(a) == Int(b)
@@ -193,11 +193,11 @@ struct_eq = a, b =>
                |->
          <+>
       [(..)]
-         T @ f =>
+         #members T @ f =>
             f.type
                [<P|>]
-                  fa = a.(f)
-                  fb = b.(f)
+                  fa = #member a, f
+                  fb = #member b, f
                   fa
                      | pa =>
                         fb
@@ -207,13 +207,13 @@ struct_eq = a, b =>
                      |
                         fb | pb => --| <->
                |
-                  !struct_eq(f.type, a.(f), b.(f)) |->
+                  !struct_eq(f.type, (#member a, f), (#member b, f)) |->
          <+>
       [<..>]
-         T @ vr =>
-            a.(vr)
+         #members T @ vr =>
+            #member a, vr
                | pa =>
-                  b.(vr)
+                  #member b, vr
                      | pb =>
                         vr.type
                            [()] --| <+>
@@ -224,7 +224,7 @@ struct_eq = a, b =>
 
 #private
 
-check_eq_val: #! T: Type, T, T, String => <>
+check_eq_val: #param T: Type, T, T, String => <>
 check_eq_val = actual, expected, label =>
    T
       [Int] check_eq_int(actual, expected, label)
@@ -261,7 +261,7 @@ check_ne_flag = actual, unexpected, label =>
       | record_result(<+>, label, "")
       | record_result(<->, label, "got " + (actual | "<+>" | "<->") + " (expected != " + (unexpected | "<+>" | "<->") + ")")
 
-check_ne_val: #! T: Type, T, T, String => <>
+check_ne_val: #param T: Type, T, T, String => <>
 check_ne_val = actual, unexpected, label =>
    T
       [Int] check_ne_int(actual, unexpected, label)
@@ -305,31 +305,31 @@ all_passed = !=> failed_count == 0
 
 // Checks a boolean condition (`<>`).
 // Accepts `test::check(cond)` or `test::check(cond, "label")`.
-check: #! L: Type, <>, L => <>
-check = #! L, cond, label =>
+check: #param L: Type, <>, L => <>
+check = #param L, cond, label =>
    L
       [String] record_result(cond, label, "")
       | record_result(cond, "", "")
 
 // Checks that `actual == expected`.
 // Accepts `test::eq(actual, expected)` or `test::eq(actual, expected, "label")`.
-eq: #! T: Type, #! L: Type, T, T, L => <>
-eq = #! T, #! L, actual, expected, label =>
+eq: #param T: Type, #param L: Type, T, T, L => <>
+eq = #param T, #param L, actual, expected, label =>
    L
       [String] check_eq_val(T, actual, expected, label)
       | check_eq_val(T, actual, expected, "")
 
 // Checks that `actual != unexpected`.
 // Accepts `test::ne(actual, unexpected)` or `test::ne(actual, unexpected, "label")`.
-ne: #! T: Type, #! L: Type, T, T, L => <>
-ne = #! T, #! L, actual, unexpected, label =>
+ne: #param T: Type, #param L: Type, T, T, L => <>
+ne = #param T, #param L, actual, unexpected, label =>
    L
       [String] check_ne_val(T, actual, unexpected, label)
       | check_ne_val(T, actual, unexpected, "")
 
 // Alias for `test::ne`.
-neq: #! T: Type, #! L: Type, T, T, L => <>
-neq = #! T, #! L, actual, unexpected, label =>
+neq: #param T: Type, #param L: Type, T, T, L => <>
+neq = #param T, #param L, actual, unexpected, label =>
    L
       [String] check_ne_val(actual, unexpected, label)
       | check_ne_val(actual, unexpected, "")
@@ -339,8 +339,8 @@ neq = #! T, #! L, actual, unexpected, label =>
 //   `test::approx(actual, expected)`           (eps = 1e-9)
 //   `test::approx(actual, expected, 1e-6)`     (custom eps)
 //   `test::approx(actual, expected, "label")`  (eps = 1e-9, with label)
-approx: #! A: Type, Float, Float, A => <>
-approx = #! A, actual, expected, arg =>
+approx: #param A: Type, Float, Float, A => <>
+approx = #param A, actual, expected, arg =>
    A
       [Float] check_approx(actual, expected, arg, "")
       [String] check_approx(actual, expected, 0.000000001, arg)
@@ -353,8 +353,8 @@ approx_eps = actual, expected, eps, label =>
 
 // Checks that a ramification or flag is positive (`<>(res)`).
 // Accepts `test::ok(res)` or `test::ok(res, "label")`.
-ok: #! T: Type, #! L: Type, T, L => <>
-ok = #! T, #! L, res, label =>
+ok: #param T: Type, #param L: Type, T, L => <>
+ok = #param T, #param L, res, label =>
    is_ok = T
       [<>] res
       |
@@ -367,8 +367,8 @@ ok = #! T, #! L, res, label =>
 
 // Checks that a ramification or flag is negative (`!<>(res)`).
 // Accepts `test::err(res)` or `test::err(res, "label")`.
-err: #! T: Type, #! L: Type, T, L => <>
-err = #! T, #! L, res, label =>
+err: #param T: Type, #param L: Type, T, L => <>
+err = #param T, #param L, res, label =>
    is_pos = T
       [<>] res
       |

@@ -102,6 +102,7 @@
    Return(<TypedExpr|>)
    UserDiag(ast::UserDiagExpr)
    CompileTime(ast::Expr)
+   CtUnrollCycle(ast::CycleExpr)
 >
 
 #type TypedExpr (

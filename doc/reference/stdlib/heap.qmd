@@ -12,7 +12,7 @@ The `heap` module provides a generic binary priority queue with $O(\log n)$ `pus
 `pop`, `push_max`, `pop_max`, `push_by`, `pop_by`, and $O(1)$ `peek`. It works with
 `heap::IntHeap`, `heap::StrHeap`, `heap::FloatHeap`, or any user record matching
 `(data: T{}, size: Int)`. Composite records and tuples default to lexicographical
-field comparison via `#!` structural introspection.
+field comparison via `#param` structural introspection.
 
 ```{.dva .run}
 #use heap
@@ -35,15 +35,15 @@ io::out $ str::from_int(heap::pop(h)!!)
 | `heap::StrHeap` | Record `(data: String{}, size: Int)` | Binary heap of `String` |
 | `heap::FloatHeap` | Record `(data: Float{}, size: Int)` | Binary heap of `Float` |
 | `heap::new_int!` / `new_str!` / `new_float!` | `() => IntHeap / StrHeap / FloatHeap` | Creates an empty typed heap |
-| `heap::new(H)` | `#! H: Type => H` | Creates a new empty heap of any heap record type `H` |
-| `heap::len(h)` | `#! T: Type, Heap(T) => Int` | Returns the number of active elements in `h` |
-| `heap::is_empty(h)` | `#! T: Type, Heap(T) => <>` | Returns `<+>` if `h` is empty |
-| `heap::clear(h)` | `#! T: Type, Heap(T) => ()` | Resets `h` to empty in $O(1)$ time while keeping capacity |
-| `heap::peek(h)` | `#! T: Type, Heap(T) => < T | >` | Returns the top element without removing it, or `<-->` if empty |
-| `heap::push(h, val)` | `#! T: Type, Heap(T), T => ()` | Inserts `val` into min-heap `h` in $O(\log n)$ time |
-| `heap::pop(h)` | `#! T: Type, Heap(T) => < T | >` | Removes and returns the minimum element of min-heap `h` |
-| `heap::push_max(h, val)` | `#! T: Type, Heap(T), T => ()` | Inserts `val` into max-heap `h` in $O(\log n)$ time |
-| `heap::pop_max(h)` | `#! T: Type, Heap(T) => < T | >` | Removes and returns the maximum element of max-heap `h` |
-| `heap::push_by(h, val, less)` | `#! T: Type, Heap(T), T, (T, T => <>) => ()` | Inserts `val` using custom comparator `less(a, b)` |
-| `heap::pop_by(h, less)` | `#! T: Type, Heap(T), (T, T => <>) => < T | >` | Removes and returns the top element using custom comparator `less(a, b)` |
-| `heap::to_array(h)` | `#! T: Type, Heap(T) => T{}` | Returns a copy of active elements `0..h.size` as `T{}` |
+| `heap::new(H)` | `#param H: Type => H` | Creates a new empty heap of any heap record type `H` |
+| `heap::len(h)` | `#param T: Type, Heap(T) => Int` | Returns the number of active elements in `h` |
+| `heap::is_empty(h)` | `#param T: Type, Heap(T) => <>` | Returns `<+>` if `h` is empty |
+| `heap::clear(h)` | `#param T: Type, Heap(T) => ()` | Resets `h` to empty in $O(1)$ time while keeping capacity |
+| `heap::peek(h)` | `#param T: Type, Heap(T) => < T | >` | Returns the top element without removing it, or `<-->` if empty |
+| `heap::push(h, val)` | `#param T: Type, Heap(T), T => ()` | Inserts `val` into min-heap `h` in $O(\log n)$ time |
+| `heap::pop(h)` | `#param T: Type, Heap(T) => < T | >` | Removes and returns the minimum element of min-heap `h` |
+| `heap::push_max(h, val)` | `#param T: Type, Heap(T), T => ()` | Inserts `val` into max-heap `h` in $O(\log n)$ time |
+| `heap::pop_max(h)` | `#param T: Type, Heap(T) => < T | >` | Removes and returns the maximum element of max-heap `h` |
+| `heap::push_by(h, val, less)` | `#param T: Type, Heap(T), T, (T, T => <>) => ()` | Inserts `val` using custom comparator `less(a, b)` |
+| `heap::pop_by(h, less)` | `#param T: Type, Heap(T), (T, T => <>) => < T | >` | Removes and returns the top element using custom comparator `less(a, b)` |
+| `heap::to_array(h)` | `#param T: Type, Heap(T) => T{}` | Returns a copy of active elements `0..h.size` as `T{}` |

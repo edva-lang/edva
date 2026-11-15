@@ -37,7 +37,7 @@ Use it with a compile-time type parameter rather than a runtime value:
 ```{.dva .run}
 #use type
 
-numeric: #! T: Type, T => <>
+numeric: #param T: Type, T => <>
 numeric = x => type::is_numeric(T)
 ```
 

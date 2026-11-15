@@ -49,11 +49,11 @@ install: (() => ()) => ()
 install = action => callback ::= <+ action +>
 invoke: () => ()
 invoke = !=> callback | action => action!
-assign: #! T: Type, T => ()
+assign: #param T: Type, T => ()
 assign = n => number ::= <+ n +>
 ''')
     (directory / 'ram_consumer.dva').write_text('''#use ./ram_storage
-#foreign "c"
+#foreign("c")
    exit: (code: Int) => ()
 
 finish: Int => ()

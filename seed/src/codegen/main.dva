@@ -17,7 +17,7 @@
 
 #public
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
    dva_arena_current: () => Addr
    rename: (oldpath: String, newpath: String) => Int
@@ -2659,6 +2659,13 @@ codegen_typed_eval = cg, te =>
       [LitUnit]
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
       [Var v]
+         v.0 ["#os", "#arch", "#target"]
+            |
+               s_os = v.0
+                  ["#os"] ast::triple_os(cg.opts.target_triple)
+                  ["#arch"] ast::triple_arch(cg.opts.target_triple)
+                  | cg.opts.target_triple
+               --| (stmt::codegen_string_literal(cg, s_os), ast::ValueType(Str))
          rv = types::resolve_var_name(cg, v.0)
          cg.last_rt = types::var_rt(cg, rv)
          fnames' = types::var_fnames(cg, rv)
@@ -3130,6 +3137,7 @@ codegen_typed_eval = cg, te =>
       [Exit e] expr::codegen_typed_eval_exit(cg, e)
       [Return r] expr::codegen_typed_eval_return(cg, r)
       [UserDiag ud] match::codegen_eval_user_diag(cg, ud)
+      [CtUnrollCycle c] stmt::codegen_eval_cycle(cg, c)
       [CompileTime ct]
          ct_res = match::ctfe_eval(cg, ct, types::CtFrames(), 0)
          match::ctfe_lower(cg, ct_res.0, ct_res.1)

@@ -773,8 +773,8 @@ all_args = !=>
 // - `"bind"` (no `":"`) defines a long-only option `--bind`
 // Next arguments: default value (or primitive type `Int`/`Float`/`String`/`Args` if mandatory),
 // description string, and an optional validator lambda `T => < | String >`.
-opt: #! T: Type, #! V: Type, String, T, String, V => Opt
-opt = #! T, #! V, spec, def_or_ty, desc, vf =>
+opt: #param T: Type, #param V: Type, String, T, String, V => Opt
+opt = #param T, #param V, spec, def_or_ty, desc, vf =>
    T
       [<>]
          V
@@ -809,15 +809,15 @@ opt = #! T, #! V, spec, def_or_ty, desc, vf =>
 // - `cli::pos("dir", ".", "Target directory")` -> optional `[dir]` with default `"."`
 // - `cli::pos("files", cli::Args(), "Source files")` -> optional variadic `[files...]`
 // - `cli::pos("files...", String, "Source files")` -> required variadic `<files...>`
-pos: #! T: Type, #! D: Type, #! V: Type, String, T, D, V => Opt
-pos = #! T, #! D, #! V, name, def_or_ty, desc_or_none, vf =>
+pos: #param T: Type, #param D: Type, #param V: Type, String, T, D, V => Opt
+pos = #param T, #param D, #param V, name, def_or_ty, desc_or_none, vf =>
    as_pos_opt(opt(name, def_or_ty, (D [String] desc_or_none | ""), vf))
 
 // Declares a subcommand specification:
 // - `cli::cmd("lsp", "Start the Language Server")`
 // - `cli::cmd("rm|remove", "Remove a dependency", sub_opts)`
-cmd: #! A: Type, String, String, A => Opt
-cmd = #! A, spec, desc, sub_arg =>
+cmd: #param A: Type, String, String, A => Opt
+cmd = #param A, spec, desc, sub_arg =>
    make_cmd_opt(spec, desc, (A [()] Opts() | sub_arg))
 
 // Formats a help message for `opts` with program name, optional description, and optional version.
@@ -935,8 +935,8 @@ parse_args = opts, argv =>
 // - `cli::parse(opts, "Program description", "1.0.0")`
 // - `cli::parse(opts, "Program description", "1.0.0", <+>)` (where `<+>` triggers help on empty args)
 // Automatically handles `-h`/`--help` (and `-v`/`--version` when version is given) and exits 1 on error.
-parse: #! A: Type, #! B: Type, #! C: Type, Opts, A, B, C => Parsed
-parse = #! A, #! B, #! C, opts, a, b, c =>
+parse: #param A: Type, #param B: Type, #param C: Type, Opts, A, B, C => Parsed
+parse = #param A, #param B, #param C, opts, a, b, c =>
    parse_impl(
       opts,
       (A [String] a | ""),
@@ -1086,12 +1086,12 @@ strs = p, name =>
 
 // Derives an `Opts` specification automatically from a record type `T` (`[(..)]`).
 // Underscores `_` in field names are mapped to hyphens `-` for long option names.
-opts_for: #! T: Type => Opts
+opts_for: #param T: Type => Opts
 opts_for = !=>
    out' = Opts()
    T
       [(..)]
-         T @ f =>
+         #members T @ f =>
             lname = str::replace(f.name, "_", "-")
             f_def = f.default
             f.type
@@ -1123,12 +1123,12 @@ opts_for = !=>
 // Populates a typed record `T` from a `Parsed` CLI result using compile-time field introspection.
 // Field names map `_` to `-` (and also fall back to the exact field name), resolving both
 // `--flag` options and named `cli::pos` positional arguments.
-into: #! T: Type, Parsed => < T | String >
+into: #param T: Type, Parsed => < T | String >
 into = p =>
-   rec' = T.zero
+   rec' = #zero T
    T
       [(..)]
-         T @ f =>
+         #members T @ f =>
             opt_name = str::replace(f.name, "_", "-")
             key = has_spec(p, opt_name) | opt_name | f.name
             opt_spec = find_active_opt(p, key)
@@ -1139,43 +1139,43 @@ into = p =>
             is_seen
                |
                   f.type
-                     [<>] rec'.(f) = flag(p, key)
-                     [Int] rec'.(f) = int(p, key)
-                     [Float] rec'.(f) = float(p, key)
-                     [String] rec'.(f) = str(p, key)
-                     [Args] rec'.(f) = strs(p, key)
+                     [<>] #member rec', f = flag(p, key)
+                     [Int] #member rec', f = int(p, key)
+                     [Float] #member rec', f = float(p, key)
+                     [String] #member rec', f = str(p, key)
+                     [Args] #member rec', f = strs(p, key)
                      [<P|>]
                         P
-                           [Int] rec'.(f) = <+ int(p, key) +>
-                           [Float] rec'.(f) = <+ float(p, key) +>
-                           [String] rec'.(f) = <+ str(p, key) +>
-                           [<>] rec'.(f) = <+ flag(p, key) +>
+                           [Int] #member rec', f = <+ int(p, key) +>
+                           [Float] #member rec', f = <+ float(p, key) +>
+                           [String] #member rec', f = <+ str(p, key) +>
+                           [<>] #member rec', f = <+ flag(p, key) +>
                |
                   f.default
-                     | def => rec'.(f) = def
+                     | def => #member rec', f = def
                      |
                         f.type
-                           [<P|>] rec'.(f) = <-->
-                           [Args] rec'.(f) = (has_key | strs(p, key) | Args())
-                           [<>] rec'.(f) = (has_key | flag(p, key) | <->)
+                           [<P|>] #member rec', f = <-->
+                           [Args] #member rec', f = (has_key | strs(p, key) | Args())
+                           [<>] #member rec', f = (has_key | flag(p, key) | <->)
                            [Int]
                               has_key && !is_req
-                                 | rec'.(f) = int(p, key)
+                                 | #member rec', f = int(p, key)
                                  | --| <- (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name) +>
                            [Float]
                               has_key && !is_req
-                                 | rec'.(f) = float(p, key)
+                                 | #member rec', f = float(p, key)
                                  | --| <- (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name) +>
                            [String]
                               has_key && !is_req
-                                 | rec'.(f) = str(p, key)
+                                 | #member rec', f = str(p, key)
                                  | --| <- (is_pos | "missing required argument: <" + key + ">" | "missing required option: --" + opt_name) +>
          <+ rec' ->
       | <- "cli::into target must be a record type" +>
 
 // Parses `argv` against `opts` (or derives `opts_for(T)` when `opts` is empty)
 // and populates `T`.
-parse_into: #! T: Type, Opts, Args => < T | String >
+parse_into: #param T: Type, Opts, Args => < T | String >
 parse_into = opts, argv =>
    eff_opts = ?opts > 0 | opts | opts_for(T)
    parse_args(eff_opts, argv)

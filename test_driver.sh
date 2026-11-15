@@ -172,7 +172,7 @@ echo "PASS"
 # --- Test 5: F8 - Signal termination under -r must be reported correctly ---
 echo -n "Testing F8 (child signal termination reporting under -r)... "
 cat <<'EOF' > "$TMPDIR/test_sig.dva"
-#foreign "c"
+#foreign("c")
    raise: (sig: Int) -> Int
 
 raise(15)
@@ -374,7 +374,7 @@ EOF
 
 cat <<'EOF' > "$TMPDIR/main_mod.dva"
 #use ./lib_mod
-#foreign "c"
+#foreign("c")
    exit: (code: Int) => ()
 
 pt1 = lib_mod::Point(10, 20)
@@ -1220,7 +1220,7 @@ EOF
 cat <<'EOF' > "$NAT_DIR/src/main.dva"
 #use libc
 
-#foreign "c"
+#foreign("c")
    cos: (rad: Float) => Float
 
 c = cos(0.0)
@@ -1299,7 +1299,7 @@ EOF
 cat <<'EOF' > "$PKGCONF_DIR/src/main.dva"
 #use libc
 
-#foreign "c"
+#foreign("c")
    cos: (rad: Float) => Float
 
 c = cos(0.0)

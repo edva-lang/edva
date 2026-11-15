@@ -1,4 +1,4 @@
 #public
-Pair: #! A: Type, #! B: Type => (a: A, b: B)
+Pair: #param A: Type, #param B: Type => (a: A, b: B)
 #private
-Hidden: #! T: Type => (value: T, count: Int)
+Hidden: #param T: Type => (value: T, count: Int)

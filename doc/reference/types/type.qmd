@@ -6,30 +6,30 @@ meta:
   evidence: "`src/parser.dva`, `src/codegen/types.dva`, `src/codegen/expr.dva`, `src/codegen/match.dva`, `src/codegen/stmt.dva`, `tests/pass/393_structural_introspection.dva`, `GRAMMAR.md`"
 ---
 
-# Compile-Time (`#!`) and `Type` Reflection
+# Compile-Time (`#`) and `Type` Reflection
 
-Edva uses a unified compile-time evaluation and structural reflection model introduced by `#!` and the `Type` primitive. `Type` values, field cursors (`f`), and variant cursors (`v`) exist strictly at compile time and are erased before LLVM code generation with zero runtime footprint (`E2018` / `E3129`).
+Edva uses a unified compile-time evaluation and structural reflection model under `#` directives and the `Type` primitive. `Type` values, field cursors (`f`), and variant cursors (`v`) exist strictly at compile time and are erased before LLVM code generation with zero runtime footprint (`E2018` / `E3129`).
 
-## Compile-time evaluation (`#!`) forms
+## Compile-time evaluation (`#param`, `#const`) forms
 
 | Construct | Syntax | Semantics | Diagnostic |
 |---|---|---|---|
-| **Compile-time expression** | `val = #! expr` | Evaluates pure expression `expr` during compilation and embeds the constant result | `E3129`: runtime-only op in `#!` |
-| **Explicit `Type` parameter** | `f: #! T: Type => Int`<br>`f = #! T => #size T` | Specializes `f` per concrete `Type` passed at the call site (`f(Int)`) | `E2018`: `Type` used as runtime value |
-| **Inferred `Type` parameter** | `f: #! T: Type, T => String`<br>`f = #! T, x => T.name` | Deduces `T` automatically from the runtime argument `x` (`f(42)` $\Rightarrow$ `T = Int`) | — |
-| **Compile-time constant param** | `f: #! N: Int, Int => Int` | Specializes `f` on compile-time constant `N` | — |
-| **Type generator** | `Pair: #! T: Type => (a: T, b: T)`<br>`#type IntPair Pair(Int)` | Compile-time function returning a composite `Type`, registered via `#type` | — |
+| **Compile-time expression** | `val = #const expr` | Evaluates pure expression `expr` during compilation and embeds the constant result | `E3129`: runtime-only op in `#const` |
+| **Explicit `Type` parameter** | `f: #param T: Type => Int`<br>`f = #param T => #size T` | Specializes `f` per concrete `Type` passed at the call site (`f(Int)`) | `E2018`: `Type` used as runtime value |
+| **Inferred `Type` parameter** | `f: #param T: Type, T => String`<br>`f = #param T, x => #name T` | Deduces `T` automatically from the runtime argument `x` (`f(42)` $\Rightarrow$ `T = Int`) | — |
+| **Compile-time constant param** | `f: #param N: Int, Int => Int` | Specializes `f` on compile-time constant `N` | — |
+| **Type generator** | `Pair: #param T: Type => (a: T, b: T)`<br>`#type IntPair Pair(Int)` | Compile-time function returning a composite `Type`, registered via `#type` | — |
 
 ```{.dva .run}
 #use io
 
-Pair: #! T: Type => (first: T, second: T)
+Pair: #param T: Type => (first: T, second: T)
 #type IntPair Pair(Int)
 
 fact: Int => Int
 fact = n => n !> 1 | 1 | n * fact(n - 1)
 
-f5 = #! fact(5)
+f5 = #const fact(5)
 p = IntPair(10, f5)
 io::out $ (p.first, p.second)   // (10, 120)
 ```
@@ -42,10 +42,10 @@ Given `T: Type`, the compiler resolves the following properties as compile-time 
 |---|---|---|
 | `#size T` | `Int` | Target ABI byte size of `T` |
 | `#align T` | `Int` | Target ABI byte alignment of `T` |
-| `T.name` | `String` | Declared `#type` alias name (if nominal) or canonical type name (`"Int"`, `"String"`, etc.) |
-| `T.zero` | `T` | Default/zero-initialized value of `T` (respects `field: Type = default` on records) |
-| `?T` | `Int` | Field count for records, lane count `N` for `(E * N)`, variant count for enums, `0` for `()` |
-| `T.(i)` | `String` | Variant name of the `i`-th enum variant (`0 <= i < ?T`; `i` must be compile-time constant, `E3170`) |
+| `#name T` | `String` | Declared `#type` alias name (if nominal) or canonical type name (`"Int"`, `"String"`, etc.) |
+| `#zero T` | `T` | Default/zero-initialized value of `T` (respects `field: Type = default` on records) |
+| `#arity T` | `Int` | Field count for records, lane count `N` for `(E * N)`, variant count for enums, `0` for `()` |
+| `#member T, i` | `String` | Variant name of the `i`-th enum variant (`0 <= i < #arity T`; `i` must be compile-time constant, `E3170`; wrap in `(...)` inside comma lists) |
 
 ```{.dva .run}
 #use io
@@ -53,8 +53,8 @@ Given `T: Type`, the compiler resolves the following properties as compile-time 
 #type ServerCfg (host: String = "127.0.0.1", port: Int = 8080, tls: <>)
 #type Mode < Fast, Safe >
 
-cfg = ServerCfg.zero
-io::out $ (ServerCfg.name, ?ServerCfg, cfg.host, cfg.port, Mode.(0), #size Int, #align Int)
+cfg = #zero ServerCfg
+io::out $ (#name ServerCfg, #arity ServerCfg, cfg.host, cfg.port, (#member Mode, 0), #size Int, #align Int)
 ```
 
 ## Structural type-shape guards (`T [...]`)
@@ -72,25 +72,25 @@ When the scrutinee of a choice is `T: Type`, the compiler resolves the matching 
 | `[<P | N>]` | `RamPP` result (`< P | N >`) | `P`: positive `Type`, `N`: negative `Type` |
 | `[E{}]` | Growable array (`E{}`) | `E`: element `Type` |
 | `[E[]]` | Slice (`E[]`) | `E`: element `Type` |
-| `[(E * ..)]` | Any homogeneous tuple (`(E * N)`) | `E`: element `Type` (`?T` gives length `N`) |
+| `[(E * ..)]` | Any homogeneous tuple (`(E * N)`) | `E`: element `Type` (`#arity T` gives length `N`) |
 | `[(E * 4)]` | Homogeneous tuple of exact length `4` | `E`: element `Type` |
 | `[K ^ V]` / `[String ^ V]` | Hash map (`K ^ V`) | `K`: key `Type`, `V`: value `Type` |
-| `[(..)]` | Any record type | — (unroll fields with `T @ f =>`) |
-| `[<..>]` | Any nominal enum type | — (unroll variants with `T @ v =>`) |
+| `[(..)]` | Any record type | — (unroll fields with `#members T @ f =>`) |
+| `[<..>]` | Any nominal enum type | — (unroll variants with `#members T @ v =>`) |
 
-## Compile-time record field (`T @ f =>`) and enum variant (`T @ v =>`) unrolling
+## Compile-time record field (`#members T @ f =>`) and enum variant (`#members T @ v =>`) unrolling
 
-Inside a `#!` generic function, iterating over a record `Type` (`[(..)]`) or enum `Type` (`[<..>]`) with `@` unrolls the loop body at compile time across `0..?T`:
+Inside a `#param` generic function, iterating over a record `Type` (`[(..)]`) or enum `Type` (`[<..>]`) with `#members` unrolls the loop body at compile time across `0..#arity T`:
 
-| Cursor Expression | Record Field Cursor (`T @ f =>`) | Enum Variant Cursor (`T @ v =>`) |
+| Cursor Expression | Record Field Cursor (`#members T @ f =>`) | Enum Variant Cursor (`#members T @ v =>`) |
 |---|---|---|
 | `cursor.idx` | `Int`: `0`-based field index | `Int`: `0`-based variant tag index |
 | `cursor.name` | `String`: field name (or `"0"`, `"1"` for tuples) | `String`: declared variant label (`"Red"`, etc.) |
 | `cursor.type` | `Type`: static type of the field (`FT = f.type`) | `Type`: payload type, or `()` for unit variants |
 | `f.default` | `< f.type | >`: `<+ default_val +>` if declared, else `<-->` | — |
-| `val.(cursor)` | Reads field `f` from runtime record `val` (type `f.type`) | Returns `< v.type | >` (`<+ payload +>` / `<++>` if active tag is `v.idx`, else `<-->`) |
-| `val'.(f) = expr` | Writes `expr` to field `f` of `val'` (tracks definite init) | — |
-| `T(v)` / `T(v, p)` | — | Constructs runtime enum `T` for variant `v` |
+| `#member val, cursor` | Reads field `f` from runtime record `val` (type `f.type`) | Returns `< v.type | >` (`<+ payload +>` / `<++>` if active tag is `v.idx`, else `<-->`) |
+| `#member val, f = expr` | Writes `expr` to field `f` of `val` (tracks definite init) | — |
+| `#member T, v` / `#member T, v, p` | — | Constructs runtime enum `T` for variant `v` |
 
 ```{.dva .run}
 #use io
@@ -99,26 +99,26 @@ Inside a `#!` generic function, iterating over a record `Type` (`[(..)]`) or enu
 #type Point (x: Int = 1, y: Int = 2)
 #type Shape < Dot, Circle(Int), Box(Int) >
 
-inspect_record: #! T: Type, T => String
-inspect_record = #! T, rec =>
+inspect_record: #param T: Type, T => String
+inspect_record = #param T, rec =>
    T
       [(..)]
          b = {64}
-         b += T.name + "("
-         T @ f =>
+         b += "${#name T}("
+         #members T @ f =>
             f.idx > 0 | b += ","
-            b += f.name + "=" + "${rec.(f)}"
+            b += "${f.name}=${(#member rec, f)}"
          b += ")"
          +b
       | ""
 
-enum_tag_name: #! T: Type, T => String
-enum_tag_name = #! T, val =>
+enum_tag_name: #param T: Type, T => String
+enum_tag_name = #param T, val =>
    T
       [<..>]
          b = {32}
-         T @ v =>
-            val.(v) | p =>
+         #members T @ v =>
+            #member val, v | p =>
                b += v.name
          +b
       | ""
@@ -128,34 +128,34 @@ s = Shape(Circle, 5)
 io::out $ (inspect_record(p), enum_tag_name(s))
 ```
 
-## Target compile-time variables (`os`, `arch`, `target`)
+## Target compile-time directives (`#os`, `#arch`, `#target`)
 
-Inside `#! (...)` compile-time value and type expressions, the compiler exposes three built-in `String` variables derived from the active target triple (`--target <triple>`):
+In compile-time value and `#type` expressions (without needing `#const`), the compiler exposes three built-in `#`-prefixed `String` directives derived from the active target triple (`--target <triple>`):
 
-| Variable | Type | Values | Description |
+| Directive | Type | Values | Description |
 |---|---|---|---|
-| `os` | `String` | `"linux"`, `"darwin"`, `"windows"`, `"freebsd"`, `"openbsd"`, `"netbsd"`, `"wasm"`, `"wasi"`, `"unknown"` | Normalized target operating system (`wasm32-unknown-unknown` $\Rightarrow$ `"wasm"`, `wasm32-wasi` $\Rightarrow$ `"wasi"`) |
-| `arch` | `String` | `"x86_64"`, `"aarch64"`, `"x86"`, `"wasm32"`, ... | Normalized target CPU architecture (first segment of the target triple) |
-| `target` | `String` | e.g. `"x86_64-unknown-linux-gnu"`, `"wasm32-unknown-unknown"` | Full target triple string |
+| `#os` | `String` | `"linux"`, `"darwin"`, `"windows"`, `"freebsd"`, `"openbsd"`, `"netbsd"`, `"wasm"`, `"wasi"`, `"unknown"` | Normalized target operating system (`wasm32-unknown-unknown` $\Rightarrow$ `"wasm"`, `wasm32-wasi` $\Rightarrow$ `"wasi"`) |
+| `#arch` | `String` | `"x86_64"`, `"aarch64"`, `"x86"`, `"wasm32"`, ... | Normalized target CPU architecture (first segment of the target triple) |
+| `#target` | `String` | e.g. `"x86_64-unknown-linux-gnu"`, `"wasm32-unknown-unknown"` | Full target triple string |
 
-Use `os`, `arch`, and `target` in `#! (...)` constant and `#type` choices to select platform-specific constants, struct layouts, or implementation branches without emitting dead host imports on inactive targets:
+Use `#os`, `#arch`, and `#target` in constant and `#type` choices to select platform-specific constants, struct layouts, or implementation branches without emitting dead host imports on inactive targets:
 
 ```{.dva .run}
 #use io
 
-CLOCK_MONOTONIC = #! (os ["darwin"] 6 ["wasm", "wasi"] 1 | 1)
+CLOCK_MONOTONIC = #os ["darwin"] 6 ["wasm", "wasi"] 1 | 1
 
 #type PlatDarwin (darwin: Int, tag: Int)
 #type PlatWasm   (wasm: Int, tag: Int)
 #type PlatPosix  (posix: Int, tag: Int)
-#type PlatTarget #! (os ["darwin", "freebsd", "openbsd", "netbsd"] PlatDarwin ["wasm", "wasi"] PlatWasm | PlatPosix)
+#type PlatTarget #os ["darwin", "freebsd", "openbsd", "netbsd"] PlatDarwin ["wasm", "wasi"] PlatWasm | PlatPosix
 
-platform_kind: #! P: Type => String
-platform_kind = #! P =>
+platform_kind: #param P: Type => String
+platform_kind = #param P =>
    P
       [PlatDarwin] "bsd-darwin"
       [PlatWasm]   "webassembly"
       |            "posix"
 
-io::out $ (CLOCK_MONOTONIC, platform_kind(PlatTarget), #! arch)
+io::out $ (CLOCK_MONOTONIC, platform_kind(PlatTarget), #arch)
 ```

@@ -1,4 +1,4 @@
-#pragma swizzle xyzw
+#pragma(swizzle = xyzw)
 
 v = (1.0, 2.0)
 z = v.z

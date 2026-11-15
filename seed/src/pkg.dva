@@ -19,7 +19,7 @@
 #use ./version
 #use log
 
-#foreign "c"
+#foreign("c")
    getpid: () => Int
    getenv: (name: String) => Addr
 

@@ -167,7 +167,7 @@ export def gen-vscode [] {
         "patterns": [
           {
             "name": "meta.import.dva",
-            "match": "(#use(?:-dynamic)?(?:\\s*\\((?:dynamic|import|,|\\s)*\\))?)\\s+(\"[^\"]*\"|[^\\s;]+)",
+            "match": "(#use(?:\\s*\\((?:dynamic|import|,|\\s)*\\))?)\\s+(\"[^\"]*\"|[^\\s;]+)",
             "captures": {
               "1": { "name": "keyword.control.directive.dva" },
               "2": { "name": "string.quoted.other.import.dva" }
@@ -175,7 +175,7 @@ export def gen-vscode [] {
           },
           {
             "name": "keyword.control.directive.dva",
-            "match": "#(!|(?:use|type|packed|align|foreign|pragma|public|pub|private|export|spawn|join|exit|error|warn|size)\\b)"
+            "match": "#(?:use|type|foreign|pragma|public|pub|private|export|param|const|os|arch|target|infix|error|warn|size|align|name|zero|arity|members|member|has_member)\\b"
           }
         ]
       },

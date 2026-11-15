@@ -10,7 +10,7 @@ meta:
 
 Edva provides **records** for product types (nominal `#type` structs, anonymous records, positional tuples, SIMD vectors, packed headers, and bitfields) and **enums** for nominal tagged unions with $\ge 2$ named variants.
 
-## Product types: records, tuples, `#packed`, and bitfields
+## Product types: records, tuples, `#type(packed)`, and bitfields
 
 ### Record declaration forms
 
@@ -20,9 +20,9 @@ Edva provides **records** for product types (nominal `#type` structs, anonymous 
 | **Multiline record** | `#type User`<br>`   id: Int`<br>`   name: String` | Indented or parenthesized multiline fields; newline separates aligned entries | — |
 | **Positional tuple** | `#type Pair (Int, String)`<br>`p = (10, "ok")` | Accessed via `.0`, `.1`, ... | — |
 | **Homogeneous / SIMD tuple** | `#type Vec4 (Float * 4)`<br>`v = 0.0 {4}` | Contiguous inline elements; supports `v(i)` indexing, `+`/`-`/`*`/`/` arithmetic, and `%` SIMD intrinsics | — |
-| **Packed record** | `#type Hdr #packed (a: u8, b: u32)` | Alignment `1`, zero interior or tail padding | — |
-| **Explicitly aligned record** | `#type Block #align 64 (data: u8 * 64)` | Power-of-two byte alignment `N`; `#size` tail-padded to multiple of `N` (combinable with `#packed`) | — |
-| **Bitfield record** | `#type Tcp #packed u16 (syn: <>, ack: <>, win: 14)` | Packs 1-bit `<>` flags (`<->` default) and integer bit widths into `u8`, `u16`, `u32`, or `u64` | `E2055`: bit sum exceeds backing width |
+| **Packed record** | `#type(packed) Hdr (a: u8, b: u32)` | Alignment `1`, zero interior or tail padding | — |
+| **Explicitly aligned record** | `#type(align = 64) Block (data: u8 * 64)` | Power-of-two byte alignment `N`; `#size` tail-padded to multiple of `N` (combinable with `packed`) | — |
+| **Bitfield record** | `#type(packed = u16) Tcp (syn: <>, ack: <>, win: 14)` | Packs 1-bit `<>` flags (`<->` default) and integer bit widths into `u8`, `u16`, `u32`, or `u64` | `E2055`: bit sum exceeds backing width |
 
 ### Record construction, access, and definite initialization
 
@@ -30,7 +30,7 @@ Edva provides **records** for product types (nominal `#type` structs, anonymous 
 |---|---|---|---|
 | **Positional construction** | `Point(10, 20)` / `(10, 20)` | Initializes fields in declaration order | `E3084`: field type/count mismatch |
 | **Named construction** | `Point(y = 20, x = 10)` | Initializes by field name; omitted fields with defaults use their declared default value | — |
-| **Zero/default value** | `Point.zero` | Initializes all fields to `0` / `<->` / `""` or their declared `= default` expression | — |
+| **Zero/default value** | `#zero Point` | Initializes all fields to `0` / `<->` / `""` or their declared `= default` expression | — |
 | **Forward declaration** | `p: Point` | Allocates uninitialized record storage; **every field must be written before being read** | `E3130`: reading uninitialized field |
 | **Field read / write** | `p.x`, `p.0`, `p.x = 5` | Reads or mutates named, positional, or bitfield slot in place | — |
 | **Copy-with-update** | `p(x = 99)`<br>`p $> _(x = _.x + 1, y = 0)` | Copies nominal or anonymous record `p` and overrides the specified named fields without repeating the type name or re-evaluating the LHS | `E3084`: unknown field or type mismatch |
@@ -42,7 +42,7 @@ Edva provides **records** for product types (nominal `#type` structs, anonymous 
 #use io
 
 #type Point (x: Int = 0, y: Int = 0)
-#type Flags #packed u8 (fin: <>, syn: <>, rest: 6)
+#type(packed = u8) Flags (fin: <>, syn: <>, rest: 6)
 
 p: Point
 p.x = 10
@@ -129,7 +129,7 @@ Enums model nominal tagged unions of two or more uppercase variants, represented
 | **Payload binder guard** | `[Circle r]` | Matches `Circle` and binds payload to `r` (and implicit `_` in branch body) | — |
 | **Deep nested pattern** | `[Add (Lit a, Neg (Lit b))]` | Recursively destructures nested enum and tuple/record payloads in a single guard | — |
 | **Exhaustiveness** | All variants covered or trailing `|` | Required when choice result is used as a value | `E3102`: uncovered variants |
-| **Compile-time count & label** | `?T`, `T.(i)` (with `#! T: Type`) | `?T` yields variant count; `T.(i)` yields `i`-th variant name (`String`) | `E3170`: non-constant `i` |
+| **Compile-time count & label** | `#arity T`, `#member T, i` (with `#param T: Type`) | `#arity T` yields variant count; `#member T, i` yields `i`-th variant name (`String`) | `E3170`: non-constant `i` |
 
 ```{.dva .run}
 #use io

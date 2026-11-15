@@ -32,7 +32,7 @@ Edva has **no reserved keywords**. Identifiers, types, and directives are distin
 | **Cycle index (`_i`)** | `_i` | Implicit `0`-based index in count/range/string/array cycles, or key in map cycles (`m @` block); scoped strictly to the cycle body | `E3004`: reading `_i` after cycle exit |
 | **Nominal type / variant** | `[A-Z][a-zA-Z0-9_]*` | Built-in types (`Int`, `Float`, `Rune`, `String`, `Builder`, `Addr`, `Error`, `Type`), `#type` names, and enum variant labels | `E2012`: lowercase enum variant |
 | **Custom operator name** | `(op_chars)` | Symbolic operator function declared/referenced in parentheses, e.g. `(+++): Int, Int => Int` | — |
-| **Compiler directive** | `#name` / `#!` | `#type`, `#use`, `#public` (`#pub`), `#private` (`#priv`), `#foreign`, `#export`, `#packed`, `#align`, `#size`, `#!` | `E1015`: unknown directive |
+| **Compiler directive** | `#name` | `#use`, `#public` (`#pub`), `#private` (`#priv`), `#type`, `#foreign`, `#export`, `#pragma`, `#infix`, `#param`, `#const`, `#os`, `#arch`, `#target`, `#size`, `#align`, `#name`, `#zero`, `#arity`, `#members`, `#member`, `#has_member` | `E1015`: unknown directive |
 | **Compiler intrinsic** | `%name(...)` | Direct LLVM-lowered operation (`%min`, `%sqrt`, `%popcount`, `%memcpy`, `%to_str`, etc.); must be called with `(...)` | `E3100`: bare `%name` without call |
 
 ```{.dva .run}

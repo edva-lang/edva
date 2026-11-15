@@ -1,0 +1,1 @@
+Wrap '#member ...' in parentheses when used inside a comma-separated list.

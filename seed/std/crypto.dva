@@ -20,7 +20,7 @@
 
 #private
 
-#foreign "c"
+#foreign("c")
    getrandom       : (buf: Addr, buflen: Int, flags: Int) => Int
    arc4random_buf  : (buf: Addr, nbytes: Int) => ()
    BCryptGenRandom : (hAlgorithm: Addr, pbBuffer: Addr, cbBuffer: Int, dwFlags: Int) => Int
@@ -29,7 +29,8 @@
 #type OsWindows (windows: Int, tag: Int)
 #type OsWasm    (wasm: Int, tag: Int)
 #type OsLinux   (linux: Int, tag: Int)
-#type OsTarget  #! (os ["darwin", "freebsd", "openbsd", "netbsd"] OsDarwin ["windows"] OsWindows ["wasm", "wasi"] OsWasm | OsLinux)
+#type OsTarget #os ["darwin", "freebsd", "openbsd", "netbsd"] OsDarwin
+   ["windows"] OsWindows ["wasm", "wasi"] OsWasm | OsLinux
 
 fill_urandom: Addr, Int => <>
 fill_urandom = ptr, n =>
@@ -55,8 +56,8 @@ fill_linux_random = ptr, n =>
          | got' = got' + r
    got' == n
 
-fill_os_random: #! OS: Type, Addr, Int => <>
-fill_os_random = #! OS, ptr, n =>
+fill_os_random: #param OS: Type, Addr, Int => <>
+fill_os_random = #param OS, ptr, n =>
    OS
       [OsDarwin]
          arc4random_buf(ptr, n)

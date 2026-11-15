@@ -17,30 +17,30 @@ Standard stream writers and readers live in `std/io.dva`.
 | `ascii` | ASCII byte classification and hex conversion | [ascii](ascii.qmd) |
 | `base64` | RFC 4648 standard Base64 and URL-safe Base64URL encoding and decoding | [base64](base64.qmd) |
 | `bench` | monotonic-clock microbenchmarking and throughput reporting | [bench](bench.qmd) |
-| `binary` | endian-aware scalar readers/writers, LEB128 varints, and `#!` binary packing | [binary](binary.qmd) |
-| `ccl` | CCL parser, manifest, lockfile validation, and `#!` typed codec | [ccl](ccl.qmd) |
-| `cli` | declarative and `#!` structural command-line option parsing and `--help` | [cli](cli.qmd) |
+| `binary` | endian-aware scalar readers/writers, LEB128 varints, and `#param` binary packing | [binary](binary.qmd) |
+| `ccl` | CCL parser, manifest, lockfile validation, and `#param` typed codec | [ccl](ccl.qmd) |
+| `cli` | declarative and `#param` structural command-line option parsing and `--help` | [cli](cli.qmd) |
 | `color` | color spaces, alpha compositing, gradients, hex packing; includes `color/palette` | [color](color.qmd) |
 | `const` | fundamental mathematical and geometric constants (`pi`, `tau`, `e`, `phi`, etc.) | [const](const.qmd) |
 | `crypto` | SHA-1/256/512, HMAC, HKDF, PBKDF2, ChaCha20-Poly1305 AEAD, and CSPRNG | [crypto](crypto.qmd) |
-| `csv` | RFC 4180 CSV/TSV reader/writer and `#!` structural typed row codec | [csv](csv.qmd) |
+| `csv` | RFC 4180 CSV/TSV reader/writer and `#param` structural typed row codec | [csv](csv.qmd) |
 | `deque` | generic ring-buffer double-ended queue | [deque](deque.qmd) |
 | `event` | portable descriptor readiness multiplexing (`poll`) | [event](event.qmd) |
 | `flate` | RFC 1951 DEFLATE, RFC 1950 Zlib, and RFC 1952 Gzip compression and decompression | [flate](flate.qmd) |
 | `fmt` | allocation-efficient string formatting | [fmt](fmt.qmd) |
 | `fp` | functional programming combinators | [fp](fp.qmd) |
 | `fs` | paths, file I/O, directory traversal, and filesystem stats | [fs](fs.qmd) |
-| `hash` | FNV-1a, WyHash, CRC-32, Adler-32, and `#!` structural hashing | [hash](hash.qmd) |
+| `hash` | FNV-1a, WyHash, CRC-32, Adler-32, and `#param` structural hashing | [hash](hash.qmd) |
 | `heap` | generic binary min/max/custom priority queue | [heap](heap.qmd) |
 | `hex` | RFC 4648 Base16 hexadecimal encoding and decoding | [hex](hex.qmd) |
 | `http` | outbound HTTP/1.1 client, connection pool, SSE, and RFC 6455 WebSocket client | [http](http.qmd) |
 | `img` | lossless RGBA8 `Image` buffer and QOI / PNG encoders and decoders | [img](img.qmd) |
 | `in` | input readers and line scanning | [in](in.qmd) |
 | `io` | readers, writers, and standard streams | [io](io.qmd) |
-| `json` | JSON parsing, value tree, and `#!` structural typed codec | [json](json.qmd) |
-| `kv` | Bitcask-inspired log-structured persistent key-value store with `#!` typed values | [kv](kv.qmd) |
+| `json` | JSON parsing, value tree, and `#param` structural typed codec | [json](json.qmd) |
+| `kv` | Bitcask-inspired log-structured persistent key-value store with `#param` typed values | [kv](kv.qmd) |
 | `libc` | POSIX and C library bindings | [libc](libc.qmd) |
-| `log` | leveled and `#!` structured `key=value` logging with ANSI color and file routing | [log](log.qmd) |
+| `log` | leveled and `#param` structured `key=value` logging with ANSI color and file routing | [log](log.qmd) |
 | `math` | math bindings, vectors; includes `complex` and `geom` | [math](math.qmd) |
 | `mem` | arenas, fixed object pools, and low-level memory | [mem](mem.qmd) |
 | `net` | network primitives; includes `net/http` | [net](net.qmd) |
@@ -52,12 +52,12 @@ Standard stream writers and readers live in `std/io.dva`.
 | `sort` | sorting helpers and comparator cycles | [sort](sort.qmd) |
 | `str` | string conversion and manipulation | [str](str.qmd) |
 | `sys` | process parameters, arguments, and exit | [sys](sys.qmd) |
-| `test` | unit test assertions, `#!` structural equality, suites, and summary reporting | [test](test.qmd) |
+| `test` | unit test assertions, `#param` structural equality, suites, and summary reporting | [test](test.qmd) |
 | `time` | wall-clock and monotonic timers, civil calendar dates, and ISO/RFC formatting | [time](time.qmd) |
 | `type` | compile-time type predicates | [type](type.qmd) |
 | `unicode` | Unicode and UTF-8 helpers | [unicode](unicode.qmd) |
 | `uring` | Linux io_uring asynchronous I/O | [uring](uring.qmd) |
-| `url` | RFC 3986 URL parsing, resolution, percent-encoding, and `#!` query codec | [url](url.qmd) |
+| `url` | RFC 3986 URL parsing, resolution, percent-encoding, and `#param` query codec | [url](url.qmd) |
 | `utf` | UTF-8 rune encoding and decoding | [utf](utf.qmd) |
 
 Target-support files are implementation probes, not public

@@ -7,7 +7,7 @@
 #use ./tast
 #use ./unify
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
 
 #private

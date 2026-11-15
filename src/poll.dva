@@ -5,7 +5,7 @@
    backend_name: () => String
    backend_name = !=> "poll"
 
-   PollFd: #packed (
+   #type(packed) PollFd (
       fd: i32,
       events: i16,
       revents: i16

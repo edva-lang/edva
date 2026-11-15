@@ -1,9 +1,9 @@
 #use io
 #type User (name: String, age: Int)
-Slot: #! T: Type => (on: (< T | String > => ()), map: (T => T))
-mk: #! T: Type, (< T | String > => ()), (T => T) => Slot(T)
+Slot: #param T: Type => (on: (< T | String > => ()), map: (T => T))
+mk: #param T: Type, (< T | String > => ()), (T => T) => Slot(T)
 mk = f, g => (on = f, map = g)
-run: #! T: Type, Slot(T), T => ()
+run: #param T: Type, Slot(T), T => ()
 run = s, v =>
    w = s.map(v)
    s.on(<+ w -> )

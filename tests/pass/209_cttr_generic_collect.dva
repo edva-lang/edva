@@ -1,4 +1,4 @@
-// Compile-Time Type Reflection (CTTR), no new syntax: a bound "#! T: Type"
+// Compile-Time Type Reflection (CTTR), no new syntax: a bound "#param T: Type"
 // parameter used as a VALUE materializes a fresh value of its bound type
 // ("out = T" gives an empty array/map, or a scalar zero). Combined with the
 // existing `@` cycle and `xs(i)` reads, this makes generic collect / map /
@@ -10,14 +10,14 @@
 #type Ints Int{}
 #type Strs String{}
 
-map_f: #! T: Type, (Int => Int), T => T
+map_f: #param T: Type, (Int => Int), T => T
 map_f = f, xs =>
    out = T
    ?xs @ i =>
       out += f(xs(i) | _ | 0)
    out
 
-filter_f: #! T: Type, (Int => <>), T => T
+filter_f: #param T: Type, (Int => <>), T => T
 filter_f = pred, xs =>
    out = T
    ?xs @ i =>
@@ -26,7 +26,7 @@ filter_f = pred, xs =>
          | out += v
    out
 
-shout: #! T: Type, (String => String), T => T
+shout: #param T: Type, (String => String), T => T
 shout = f, xs =>
    out = T
    ?xs @ i =>

@@ -5,8 +5,8 @@
 
 #use io
 
-describe: #! T: Type, T => String
-describe = #! T, x =>
+describe: #param T: Type, T => String
+describe = #param T, x =>
    T
       [Int] "int"
       [String] "string"
@@ -26,8 +26,8 @@ io::out $ describe((1, 2))
 
 // Branch pruning verification:
 // String branch uses ?x (length), Int branch uses arithmetic + 10.
-test_pruning: #! T: Type, T => Int
-test_pruning = #! T, x =>
+test_pruning: #param T: Type, T => Int
+test_pruning = #param T, x =>
    T
       [String] ?x
       [Int] x + 10
@@ -38,8 +38,8 @@ io::out $ test_pruning(90)
 
 #type Point (x: Int, y: Int)
 
-type_name_check: #! T: Type, T => String
-type_name_check = #! T, val =>
+type_name_check: #param T: Type, T => String
+type_name_check = #param T, val =>
    T
       [u8] "u8"
       [f32] "f32"

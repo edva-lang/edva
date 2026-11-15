@@ -131,8 +131,8 @@ seed = s =>
 // Create an `Rng`:
 //   `rand::new!`    -> auto-seeded from monotonic & wall-clock nanoseconds
 //   `rand::new(42)` -> deterministically seeded with `42`
-new: #! T: Type, T => Rng
-new = #! T, x =>
+new: #param T: Type, T => Rng
+new = #param T, x =>
    T
       [type::is_int] seed(Int(x))
       | Rng(entropy_seed_u64!, DEFAULT_INC)
@@ -206,8 +206,8 @@ bits = !=> global_next_u64!
 // Random `Int` from the global PRNG:
 //   `rand::int!`    -> non-negative 63-bit `Int`
 //   `rand::int(max)` -> uniform `Int` in `0 .. max-1`
-int: #! T: Type, T => Int
-int = #! T, x =>
+int: #param T: Type, T => Int
+int = #param T, x =>
    v = global_next_u64!
    T
       [type::is_int]
@@ -218,8 +218,8 @@ int = #! T, x =>
 // Random `Float` from the global PRNG:
 //   `rand::float!`     -> uniform `Float` in `[0.0, 1.0)`
 //   `rand::float(max)` -> uniform `Float` in `[0.0, max)`
-float: #! T: Type, T => Float
-float = #! T, x =>
+float: #param T: Type, T => Float
+float = #param T, x =>
    u = u64_to_unit_f64(global_next_u64!)
    T
       [type::is_numeric] u * Float(x)
@@ -228,8 +228,8 @@ float = #! T, x =>
 // Random value in `[lo, hi]` (for `Int`) or `[lo, hi)` (for `Float`):
 //   `rand::between(1, 6)`      -> dice roll 1..6 (`Int`)
 //   `rand::between(-1.0, 1.0)` -> uniform `Float` in `[-1.0, 1.0)`
-between: #! T: Type, T, T => T
-between = #! T, lo, hi =>
+between: #param T: Type, T, T => T
+between = #param T, lo, hi =>
    T
       [Float]
          u = u64_to_unit_f64(global_next_u64!)

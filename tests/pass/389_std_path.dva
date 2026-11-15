@@ -1,4 +1,4 @@
-// Test std/path (POSIX + Windows + #! os target dispatch)
+// Test std/path (POSIX + Windows + #os target dispatch)
 
 #use path
 #use test
@@ -37,7 +37,7 @@ test::eq(path::win_basename("C:/Users/ike/dir/"), "dir", "win_basename mixed sep
 test::eq(path::win_basename("C:\\"), "C:\\", "win_basename drive root")
 test::eq(path::win_normalize("C:/Users/ike/../admin/./docs//readme.md"), "C:\\Users\\admin\\docs\\readme.md", "win_normalize")
 
-// 3. Target-dispatched (#! os) operations & extensions/stems
+// 3. Target-dispatched (#os) operations & extensions/stems
 test::eq(path::dirname("/a/b/c.dva"), "/a/b", "dirname with dir")
 test::eq(path::dirname("c.dva"), "", "dirname bare file")
 test::eq(path::ext("/dir.with.dots/archive.tar.gz"), ".gz", "ext with dot")

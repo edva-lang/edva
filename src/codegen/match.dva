@@ -16,7 +16,7 @@
 
 #public
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
    dva_arena_current: () => Addr
    rename: (oldpath: String, newpath: String) => Int
@@ -921,6 +921,27 @@ ctfe_eval_call_val = cg, c, val, frames, depth =>
 
 ctfe_eval_call: types::Cg, ast::CallExpr, types::CtFrames, Int => (types::CtVal, ast::ValueType)
 ctfe_eval_call = cg, c, frames, depth =>
+   c.fn_name == "#has_member" && ?c.args == 2
+      |
+         arg1_str = c.args(1)!!
+            [Str ms] (ms, <+>)
+            |
+               a1_res = ctfe_eval(cg, c.args(1)!!, frames, depth + 1)
+               a1_res.0
+                  [Str ms] (ms, <+>)
+                  | c.args(1)!! [Var vs] (vs, <+>) | ("", <->)
+         --| arg1_str.1
+            |
+               new_args = ast::Exprs()
+               new_args += c.args(0)!!
+               new_args += ast::Expr(Str, arg1_str.0)
+               new_call = ast::Expr(Call,
+                 ast::CallExpr("#has_member", c.fn_target, new_args, c.line, c.col))
+               res = types::ctfe_eval_type_flag(cg, new_call)
+               res.1
+                  | ctfe_int_bool(res.0 != 0)
+                  | (types::CtVal(None), ast::ValueType(Unknown))
+            | (types::CtVal(None), ast::ValueType(Unknown))
    c.fn_name == ""
       |
          callee_res = ctfe_eval(cg, c.fn_target, frames, depth + 1)
@@ -1013,13 +1034,13 @@ ctfe_eval_var = cg, name, frames, depth =>
                               | (val', ast::ValueType(Unknown))
                         |
                            name
-                              ["os"]
+                              ["#os"]
                                  (types::CtVal(Str, ast::triple_os(cg.opts.target_triple)),
                                    ast::ValueType(Str))
-                              ["arch"]
+                              ["#arch"]
                                  (types::CtVal(Str, ast::triple_arch(cg.opts.target_triple)),
                                    ast::ValueType(Str))
-                              ["target"]
+                              ["#target"]
                                  (types::CtVal(Str, cg.opts.target_triple),
                                    ast::ValueType(Str))
                               | ctfe_lookup_top_const(cg, name, frames, depth)
@@ -1135,6 +1156,54 @@ ctfe_map_find_key = keys, k, i =>
             | i
             | ctfe_map_find_key(keys, k, i + 1)
 
+ctfe_target_is_frame_var: ast::Expr, types::CtFrames => <>
+ctfe_target_is_frame_var = tgt, frames =>
+   tgt
+      [Var v] ctfe_lookup_var_at(frames, v, ?frames - 1).1
+      | <->
+
+ctfe_eval_type_prop: types::Cg, ast::MemberExpr, ast::TypeInfo => (types::CtVal, ast::ValueType)
+ctfe_eval_type_prop = cg, m, ti =>
+   m.field_name
+      ["#type_name"]
+         (types::CtVal(Str, types::type_info_display_name(cg, m.target, ti)),
+           ast::ValueType(Str))
+      ["#type_size"]
+         vt = types::vt_from_ti_cg(cg, ti)
+         sz = types::codegen_sizeof_bytes(cg, ast::SizeOfExpr(vt, ti))
+         (types::CtVal(Int, sz), ast::ValueType(Int))
+      ["#type_align"]
+         vt = types::vt_from_ti_cg(cg, ti)
+         al = types::codegen_alignof_bytes(cg, ast::AlignOfExpr(vt, ti))
+         (types::CtVal(Int, al), ast::ValueType(Int))
+      ["#type_arity"]
+         can_ti = types::ctfe_canonical_ti(cg, ti)
+         len = can_ti
+            [Rec r] (!r.1 | ?r.0 | -1)
+            [Enum s] ?s
+            | -1
+         len !< 0
+            | (types::CtVal(Int, len), ast::ValueType(Int))
+            | (types::CtVal(None), ast::ValueType(Unknown))
+      | (types::CtVal(None), ast::ValueType(Unknown))
+
+ctfe_eval_type_index: types::Cg, ast::TypeInfo, Int => (types::CtVal, ast::ValueType)
+ctfe_eval_type_index = cg, ti, idx =>
+   can_ti = types::ctfe_canonical_ti(cg, ti)
+   can_ti
+      [Rec r]
+         !r.1 && idx !< 0 && idx < ?r.0
+            |
+               f = r.0(idx)!!
+               lbl = f.name != "" | f.name | str::from_int(idx)
+               (types::CtVal(Str, lbl), ast::ValueType(Str))
+            | (types::CtVal(None), ast::ValueType(Unknown))
+      [Enum s]
+         idx !< 0 && idx < ?s
+            | (types::CtVal(Str, s(idx)!!.label), ast::ValueType(Str))
+            | (types::CtVal(None), ast::ValueType(Unknown))
+      | (types::CtVal(None), ast::ValueType(Unknown))
+
 ctfe_eval_member: types::Cg, ast::MemberExpr,
   types::CtFrames, Int => (types::CtVal, ast::ValueType)
 ctfe_eval_member = cg, m, frames, depth =>
@@ -1144,6 +1213,22 @@ ctfe_eval_member = cg, m, frames, depth =>
          qname = mod_name + "::" + m.field_name
          ctfe_eval_var(cg, qname, frames, depth)
       |
+         !ctfe_target_is_frame_var(m.target, frames) &&
+           (m.field_name ["#type_name", "#type_arity", "#type_size", "#type_align"])
+            |
+               rtv = types::resolve_type_value(cg, m.target)
+               --| rtv.1
+                  | ctfe_eval_type_prop(cg, m, rtv.0)
+                  | (types::CtVal(None), ast::ValueType(Unknown))
+         rtv_idx = m.field_name == "" && !ctfe_target_is_frame_var(m.target, frames)
+            | types::resolve_type_value(cg, m.target)
+            | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+         rtv_idx.1
+            |
+               idx_res = ctfe_eval(cg, m.index_expr, frames, depth + 1)
+               --| idx_res.0
+                  [Int idx] ctfe_eval_type_index(cg, rtv_idx.0, idx)
+                  | (types::CtVal(None), ast::ValueType(Unknown))
          tgt = ctfe_eval(cg, m.target, frames, depth + 1)
          tgt.0
             [Rec r]
@@ -1157,7 +1242,9 @@ ctfe_eval_member = cg, m, frames, depth =>
                            idx' = parsed
                   |
                      idx_res = ctfe_eval(cg, m.index_expr, frames, depth + 1)
-                     idx_res.0 [Int n] idx' = n
+                     idx_res.0
+                        [Int n] (idx' = n)
+                        [Str s] (idx' = find_name_index_at(r.1, s, 0, ?r.1))
                idx' !< 0 && idx' < ?r.0
                   |
                      elem = r.0(idx')!!
@@ -1335,6 +1422,12 @@ ctfe_eval = cg, expr, frames, depth =>
             [Member m] ctfe_eval_member(cg, m, frames, depth)
             [KeyAccess ka] ctfe_eval_key_access(cg, ka, frames, depth)
             [CompileTime ct] ctfe_eval(cg, ct, frames, depth + 1)
+            [SizeOf so]
+               (types::CtVal(Int, types::codegen_sizeof_bytes(cg, so)),
+                 ast::ValueType(Int))
+            [AlignOf ao]
+               (types::CtVal(Int, types::codegen_alignof_bytes(cg, ao)),
+                 ast::ValueType(Int))
             [Variant v]
                ?v.args == 0
                   |
@@ -1407,7 +1500,7 @@ ctfe_lower_record = cg, r =>
    LLVMSetLinkage(gv, 8)
    (gv, ast::ValueType(Record))
 
-#type CtfeMapRaw #packed (
+#type(packed) CtfeMapRaw (
    count:  Addr,
    cap:    Addr,
    keys:   Addr,
@@ -3721,7 +3814,7 @@ codegen_eval_member_rec_reflect = cg, t, ti =>
    ti
       [Rec r]
          nfields = ?r.0
-         t.field_name == ""
+         !r.1 && t.field_name == ""
             |
                saved_discard = cg.discard_result
                cg.discard_result = <->
@@ -3760,46 +3853,67 @@ codegen_eval_member_rec_reflect = cg, t, ti =>
 codegen_eval_member_type_reflect_ti: types::Cg, ast::MemberExpr,
   ast::TypeInfo => <(Addr, ast::ValueType)|>
 codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
-   nslots = ti_enum_slots_len(ct_ti)
+   can_ti = types::ctfe_canonical_ti(cg, ct_ti)
+   nslots = ti_enum_slots_len(can_ti)
    nslots !< 0
       |
          t.field_name == ""
             |
-               saved_discard = cg.discard_result
-               cg.discard_result = <->
-               idx_v = expr::codegen_eval(cg, t.index_expr)
-               cg.discard_result = saved_discard
-               types::llvm_val_opt(idx_v.0)
-                  | iv =>
-                     LLVMIsConstant(iv) == 0
-                        |
-                           types::init_error(cg, "E3170", diag::enum_variant_index_constant!,
-                             t.line, t.col)
-                           <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) +>
-                        |
-                           idx = LLVMConstIntGetZExtValue(iv)
-                           idx < 0 || idx !< nslots
-                              |
-                                 types::init_error(cg, "E3171",
-                                   "Enum variant index " +
-                                   str::from_int(idx) +
-                                   " out of range (0.." +
-                                   str::from_int(nslots - 1) + ").",
-                                   t.line, t.col)
-                                 <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) +>
-                              |
-                                 lbl = ti_enum_slot_label(ct_ti, idx)
-                                 <+ (stmt::codegen_string_literal(cg, lbl),
-                                   ast::ValueType(Str)) +>
+               vn = t.index_expr [Var v] v | ""
+               is_cur = vn != "" && types::ct_cursor_find(vn).2
+               is_var_store = vn != "" && types::var_has_storage(cg, vn)
+               is_lit_variant = !is_cur && vn != "" && !is_var_store &&
+                  (can_ti [Enum slots] <>(types::enum_slot_index(slots, vn)) | <->)
+               is_cur || is_lit_variant
                   |
-                     types::init_error(cg, "E3170", diag::enum_variant_index_constant!, t.line, t.col)
-                     <+ (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown)) +>
+                     cargs = ast::Exprs()
+                     cargs += t.index_expr
+                     tname = t.target
+                        [Var tv] tv
+                        [SizeOf so] (so.rec_type [TypeVar tv2] tv2 | "")
+                        | ""
+                     ccall = ast::CallExpr(tname, ast::Expr(Var, ""), cargs,
+                       t.line, t.col)
+                     <+ types::codegen_eval_ctor_ex(cg, can_ti, ccall, <+>) +>
+                  |
+                     saved_discard = cg.discard_result
+                     cg.discard_result = <->
+                     idx_v = expr::codegen_eval(cg, t.index_expr)
+                     cg.discard_result = saved_discard
+                     types::llvm_val_opt(idx_v.0)
+                        | iv =>
+                           LLVMIsConstant(iv) == 0
+                              |
+                                 types::init_error(cg, "E3170",
+                                   diag::enum_variant_index_constant!, t.line, t.col)
+                                 <+ (LLVMConstInt(LLVMInt64Type!, 0, 0),
+                                   ast::ValueType(Unknown)) +>
+                              |
+                                 idx = LLVMConstIntGetZExtValue(iv)
+                                 idx < 0 || idx !< nslots
+                                    |
+                                       types::init_error(cg, "E3171",
+                                         "Enum variant index ${idx} out of range (0..${nslots - 1}).",
+                                         t.line, t.col)
+                                       <+ (LLVMConstInt(LLVMInt64Type!, 0, 0),
+                                         ast::ValueType(Unknown)) +>
+                                    |
+                                       lbl = ti_enum_slot_label(can_ti, idx)
+                                       <+ (stmt::codegen_string_literal(cg, lbl),
+                                         ast::ValueType(Str)) +>
+                        |
+                           types::init_error(cg, "E3170",
+                             diag::enum_variant_index_constant!, t.line, t.col)
+                           <+ (LLVMConstInt(LLVMInt64Type!, 0, 0),
+                             ast::ValueType(Unknown)) +>
             | <-->
-      | codegen_eval_member_rec_reflect(cg, t, ct_ti)
+      | codegen_eval_member_rec_reflect(cg, t, can_ti)
 
 codegen_eval_member_enum_reflect: types::Cg, ast::MemberExpr,
   String => <(Addr, ast::ValueType)|>
 codegen_eval_member_enum_reflect = cg, t, v =>
+   types::var_has_storage(cg, v)
+      | --| <-->
    ct = types::ct_bind_find(v)
    ct.1
       |
@@ -3878,16 +3992,38 @@ codegen_eval_cursor_member = cg, t, vname =>
 codegen_eval_type_prop_ti: types::Cg, ast::Expr, ast::TypeInfo,
   String => (Addr, ast::ValueType)
 codegen_eval_type_prop_ti = cg, target_ast, ti, fname =>
-   fname == "name"
-      |
+   fname
+      ["#type_name"]
          dname = types::type_info_display_name(cg, target_ast, ti)
          (stmt::codegen_string_literal(cg, dname), ast::ValueType(Str))
+      ["#type_size"]
+         vt = types::vt_from_ti_cg(cg, ti)
+         sz = types::codegen_sizeof_bytes(cg, ast::SizeOfExpr(vt, ti))
+         (LLVMConstInt(LLVMInt64Type!, sz, 0), ast::ValueType(Int))
+      ["#type_align"]
+         vt = types::vt_from_ti_cg(cg, ti)
+         al = types::codegen_alignof_bytes(cg, ast::AlignOfExpr(vt, ti))
+         (LLVMConstInt(LLVMInt64Type!, al, 0), ast::ValueType(Int))
+      ["#type_arity"]
+         can_ti = types::ctfe_canonical_ti(cg, ti)
+         arity = can_ti
+            [Rec r] (!r.1 | ?r.0 | -1)
+            [Enum s] ?s
+            | -1
+         arity !< 0
+            | (LLVMConstInt(LLVMInt64Type!, arity, 0), ast::ValueType(Int))
+            |
+               types::init_error(cg, "E3084",
+                 "'#arity' requires a record or enum type.", 0, 0)
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       | expr::codegen_materialize_zero(cg, ti)
 
 codegen_eval_type_prop_member: types::Cg,
   ast::MemberExpr => <(Addr, ast::ValueType)|>
 codegen_eval_type_prop_member = cg, t =>
-   t.field_name == "name" || t.field_name == "zero"
+   is_prop = t.field_name ["#type_name", "#type_zero", "#type_arity",
+     "#type_size", "#type_align"]
+   is_prop
       |
          rtv = types::resolve_type_value(cg, t.target)
          rtv.1
@@ -3914,8 +4050,20 @@ codegen_eval_member = cg, t =>
                      er_opt
                         | res => res
                         |
-                           bv = expr::codegen_eval(cg, t.target)
-                           codeg_eval_member_valid(cg, t, vname, bv)
+                           t_rtv = vname == "" && t.field_name == ""
+                              | types::resolve_type_value(cg, t.target)
+                              | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                           t_rtv.1
+                              |
+                                 codegen_eval_member_type_reflect_ti(cg, t,
+                                   types::ctfe_canonical_ti(cg, t_rtv.0))
+                                    | r2 => r2
+                                    |
+                                       bv = expr::codegen_eval(cg, t.target)
+                                       codeg_eval_member_valid(cg, t, vname, bv)
+                              |
+                                 bv = expr::codegen_eval(cg, t.target)
+                                 codeg_eval_member_valid(cg, t, vname, bv)
       | codegen_unresolved_module_member(cg, t)
 
 module_member_name: ast::Expr => String

@@ -1,12 +1,13 @@
 #use io
+#use task
 
 user = (name = "Kea", age = 30)
 
 greet = u =>
    (name = u.name + "!", age = u.age + 1)
 
-h = #spawn greet(user)
-r = #join h
+h = task::spawn(greet(user))
+r = task::join(h)
 p = r | v => v | (name = "?", age = 0)
 io::out $ p.name
 io::out $ p.age

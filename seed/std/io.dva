@@ -2,7 +2,7 @@
 // Single fd-parameterized stdio module. The write surface is console.log-
 // style: io::out(...), io::err(...), io::outf(...), io::errf(...) accept a
 // single value OR a record of values, each formatted at compile time
-// (the '#! T: Type' type dispatch), joined with a single space, and written
+// (the '#param T: Type' type dispatch), joined with a single space, and written
 // + newline to the named descriptor. Reads provide buffered Reader operations
 // (reader, reader_with_cap, read, read_all, read_byte, read_until, read_line).
 
@@ -93,8 +93,8 @@
    show_rune: Rune => String
    show_rune = r => utf::encode_rune(r)
 
-   show: #! T: Type, T => String
-   show = #! T, x =>
+   show: #param T: Type, T => String
+   show = #param T, x =>
       T
          [String] x
          [Rune] show_rune(x)
@@ -116,12 +116,12 @@
 
    // A record rendered space-separated (the unrolled per-field cycle; each
    // copy's field type is known, so show dispatches per field).
-   show_rec: #! T: Type, T => String
+   show_rec: #param T: Type, T => String
    show_rec = x =>
       b = {64}
-      0..?T @ i =>
+      0..(#arity T) @ i =>
          i > 0 | b += '\s
-         b += show(x.(i))
+         b += show((#member x, i))
       +b
 
    clean_addr: Addr => Addr
@@ -169,14 +169,14 @@
       off'
 
    // console.log-style to fd: the value's show text + a newline in a single atomic writev syscall.
-   log: #! T: Type, Int, T => Int
+   log: #param T: Type, Int, T => Int
    log = fd, x =>
       s = show(x)
       nl = "\n"
       writev_all(fd, s, nl)
 
    // Substitutes 'show(x)' for every '{}' in fmt (the scalar form of logf).
-   logf_scalar: #! T: Type, Builder, T, String => ()
+   logf_scalar: #param T: Type, Builder, T, String => ()
    logf_scalar = b, x, fmt =>
       i' = 0
       len = ?fmt
@@ -193,7 +193,7 @@
 
    // Formatted to fd: '{}' placeholders in fmt are replaced by each field
    // (or the single value) in order, then written + newline.
-   logf: #! T: Type, Int, T, String => Int
+   logf: #param T: Type, Int, T, String => Int
    logf = fd, x, fmt =>
       b = {?fmt + 64}
       T
@@ -218,11 +218,11 @@
 
    // A record formatted: each '{}' in fmt is replaced by the next field's
    // show text, in order.
-   logf_rec: #! T: Type, Int, Builder, T, String => ()
+   logf_rec: #param T: Type, Int, Builder, T, String => ()
    logf_rec = fd, b, x, fmt =>
       j' = 0
       len = ?fmt
-      0..?T @ i =>
+      0..(#arity T) @ i =>
          nxt' = -1
          j'..len @ k =>
             k + 1 < len && fmt(k) == '{ && fmt(k + 1) == '}
@@ -232,7 +232,7 @@
          nxt' !< 0
             |
                b += fmt(j'..nxt')
-               b += show(x.(i))
+               b += show((#member x, i))
                j' = nxt' + 2
       j' < len | b += fmt(j'..len)
 
@@ -260,7 +260,7 @@
                   |
                      errno_val = libc::errno!
                      errno_val == 4 | --^
-                     r.err = (errno_val == #! (os ["darwin"] 35 | 11) | 11 | errno_val)
+                     r.err = (errno_val == (#os ["darwin"] 35 | 11) | 11 | errno_val)
                      n' = n
                      -->
                   |
@@ -281,7 +281,7 @@
 
 #public
    // console.log-style to stdout.
-   out: #! T: Type, T => ()
+   out: #param T: Type, T => ()
    out = x =>
       log(io::STDOUT, x)
 
@@ -292,7 +292,7 @@
       writev_all(io::STDOUT, s, nl)
 
    // console.log-style to stderr.
-   err: #! T: Type, T => ()
+   err: #param T: Type, T => ()
    err = x =>
       log(io::STDERR, x)
 
@@ -303,12 +303,12 @@
       writev_all(io::STDERR, s, nl)
 
    // Formatted ('{}' placeholders) to stdout.
-   outf: #! T: Type, T, String => ()
+   outf: #param T: Type, T, String => ()
    outf = x, fmt =>
       logf(io::STDOUT, x, fmt)
 
    // Formatted ('{}' placeholders) to stderr.
-   errf: #! T: Type, T, String => ()
+   errf: #param T: Type, T, String => ()
    errf = x, fmt =>
       logf(io::STDERR, x, fmt)
 
@@ -353,7 +353,7 @@
             |
                errno_val = libc::errno!
                errno_val == 4 | --^
-               r.err = (errno_val == #! (os ["darwin"] 35 | 11) | 11 | errno_val)
+               r.err = (errno_val == (#os ["darwin"] 35 | 11) | 11 | errno_val)
                -->
             |
                n == 0

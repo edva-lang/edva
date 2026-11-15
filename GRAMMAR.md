@@ -69,42 +69,31 @@ decimal point: `.5`, `1.`, `.5e3` are illegal (write `0.5`, `1.0`,
 
 ### 1.4 Directives
 
-A `#`-prefixed word is a directive. Directives are lexed as single tokens.
+A `#`-prefixed word introduces a compile-time or declarative construct:
 
-- `#foreign` — opens a foreign-binding block (§2.4). An optional string
-  argument names the library: `#foreign "c"`.
-- `#pragma integer <type>` — a positional, file-scoped directive that switches
-  the **default integer literal type** for the rest of the file. `<type>` is
-  any integer type name (`i8`/`u8`..`i64`/`u64`) or `default` to restore
-  `Int`. An explicit literal suffix always overrides the pragma. Typical use:
-  `#pragma integer i16` before an i16 table, `#pragma integer i64` before an
-  i64 table. Invalid types produce `E1013`. The directive itself is a no-op
-  statement.
-- `#pragma float <type>` — a positional, file-scoped directive that switches
-  the **default float literal type** for the rest of the file. `<type>` is
-  `f32`, `f64`, `Float`, or `default` (to restore `Float`). An explicit literal
-  suffix (`f32`, `f64`, `f`, `F`) always overrides the pragma. Invalid types
-  produce `E1013`.
-- `#!` — compile-time execution (§2.14). As a prefix on an expression,
-   `#! expr` folds a constant expression at compile time (CTFE). As a prefix on
-   a parameter (`#! T`), it marks a compile-time type parameter.
+- `#foreign("lib")` — opens a foreign-binding block (§2.4), e.g. `#foreign("c")`.
+- `#pragma(integer = <type>, float = <type>, fpfast = <mode>, swizzle = <mode>)` —
+  a positional, file-scoped directive with parenthesized `key = value` options:
+  - `integer`: switches the **default integer literal type** (`i8`/`u8`..`i64`/`u64`,
+    or `default` for `Int`). Invalid types produce `E1013`.
+  - `float`: switches the **default float literal type** (`f32`, `f64`, `Float`, or
+    `default` for `Float`). Invalid types produce `E1013`.
+  - `fpfast`: `"all"` or `"none"`.
+  - `swizzle`: `"all"`, `"xyzw"`, `"rgba"`, or `"none"`.
+- `#param T: Type` / `#const expr` / `#os` / `#arch` / `#target` — compile-time
+  parameters, constant folding, and target triple constants (§2.14).
+- `#type(...)` — record packing/alignment attributes (`#type(packed)`,
+  `#type(packed = u16)`, `#type(align = 32)`, §2.5).
+- `#size T`, `#align T`, `#name T`, `#zero T`, `#arity T`, `#members T @ m =>`,
+  `#member tgt, mem[, pay]`, `#has_member tgt, mem` — compile-time type properties
+  and reflection (§2.14).
 - `#error <msg>` — compile-time error diagnostic reporting (`E3174`).
-   Aborts compilation during code generation or CTFE evaluation with the
-   given message.
+  Aborts compilation during code generation or CTFE evaluation with the
+  given message.
 - `#warn <msg>` — compile-time warning reporting. Emits a non-fatal warning
-   diagnostic during code generation or CTFE evaluation.
- - `#exit <code>` — terminate the process with an integerish status. The code
-    is the whole following expression at the choice tier (the lowest
-    precedence), so a comparison or choice chain needs no parens
-    (`#exit r == 4 | 1 | 0`); inside a choice branch body the code parses at
-    the range tier, so a following `|` stays with the enclosing choice
-    (`x [3] #exit 42 | miss` is `x [3] (#exit 42) | miss`). The expression
-    never yields a value — it is void, compatible with every type (a choice
-    phi skips a Void branch), so anything after it in the same block is dead
-    code. On hosted targets it runs the same epilogue as a
-    normal `main` return (the global arena is destroyed) then calls `exit`;
-    on bare-metal (`-no-runtime`) targets — where there is no libc — the code
-    is parked in a debugger-readable `dva_exit_code` global and control traps.
+  diagnostic during code generation or CTFE evaluation.
+- Process termination (`sys::exit(code)`) and structured concurrency
+  (`task::spawn(expr)`, `task::join(handle)`) live in `std/sys` and `std/task`.
 
 ### 1.5 Tokens
 
@@ -118,9 +107,11 @@ The lexer produces the following token classes:
   error. Operators must be whitespace-separated.
 - **Punctuation** — `( ) [ ] { } , ;` are atomic single tokens (they never
   join an operator run).
-- **Prefix markers** — `#` introduces a directive (`#use` import, `#type`
-  type declaration, `#foreign` foreign binding, `#pragma`, `#private`); `#!`
-  compile-time execution; `@` (cycle) and `\` (lambda) are atomic.
+- **Prefix markers** — `#` introduces all directives and compile-time
+  constructs (`#use` import, `#type` type declaration, `#foreign` foreign
+  binding, `#pragma`, `#private`, `#public`, `#param`, `#const`, `#os`,
+  `#arch`, `#target`, `#size`, `#align`, `#name`, `#zero`, `#arity`, `#members`,
+  `#member`, `#has_member`, `#infix`); `@` (cycle) is atomic.
 
 Operator inventory (see `src/lexer.dva` for the exact table):
 
@@ -240,7 +231,7 @@ module's bindings are referenced by `module::name`.
 `module::` prefix. Name clashes with declarations in the module or other imported
 modules emit `E3033`. Function-local declarations shadow imported symbols.
 
-`#use(dynamic) path` (replacing legacy `#use-dynamic`) enables hot-reloading through
+`#use(dynamic) path` enables hot-reloading through
 dynamic function pointer indirection.
 
 #### 2.2.1 Module functors (`#param M: Module`, `#use path(a, b)`)
@@ -299,17 +290,19 @@ use site inside the functor.
 Compile-time module probes are available in functors:
 
 ```dva
-%has_member(App::key_escape) | App::key_escape(model)
-%has_field(App::Model, "count") | model.count | App::count(model)
+(#has_member App, key_escape) | App::key_escape(model)
+(#has_member App::Model, "count") | model.count | App::count(model)
 ```
 
-`%has_member(Module::member)` tests whether the bound module exports the member;
-private members are absent. `%has_field(Module::RecordType, "field")` tests record
-fields, following transparent aliases. Both produce a Flag during import expansion.
-A choice directly over either probe with bare branches expands only the selected
-branch, so absent optional members need not typecheck. A false single-branch probe
-produces unit. These probes perform no runtime reflection. Module parameter aliases
-can begin a statement (for example `App::NUM @ i => ...`).
+`#has_member Module, member` tests whether the bound module exports `member`
+(private members are absent) and `#has_member Type, "field"` (or unquoted
+`field`) tests record fields and enum variant labels, following transparent
+aliases. Both produce a `<>` (`Flag`) at compile time; wrap as
+`(#has_member ...)` inside comma-separated lists (`E2113`) or before infix
+operators. A choice directly over `#has_member` with bare branches expands only
+the selected branch, so absent optional members need not typecheck. A false
+single-branch probe produces unit. Module parameter aliases can begin a
+statement (for example `App::NUM @ i => ...`).
 
 ```
 VisibilityStmt ::= PublicStmt | PrivateStmt
@@ -336,10 +329,11 @@ public or private.
 ### 2.3 Pragma
 
 ```
-PragmaStmt ::= "#pragma" "integer" ( TypeName | "default" )
-             | "#pragma" "float" ( "f32" | "f64" | "Float" | "default" )
-             | "#pragma" "fpfast" ( "all" | "none" )
-             | "#pragma" "swizzle" ( "all" | "xyzw" | "rgba" | "none" )
+PragmaStmt ::= "#pragma(" PragmaOpt { "," PragmaOpt } ")"
+PragmaOpt  ::= "integer" "=" ( TypeName | "default" )
+             | "float"   "=" ( "f32" | "f64" | "Float" | "default" )
+             | "fpfast"  "=" ( "all" | "none" )
+             | "swizzle" "=" ( "all" | "xyzw" | "rgba" | "none" )
 ```
 
 See §1.4. Positional and file-scoped; a no-op statement.
@@ -347,7 +341,7 @@ See §1.4. Positional and file-scoped; a no-op statement.
 ### 2.4 Foreign Bindings
 
 ```
-ForeignDeclStmt ::= "#foreign" [ StringLiteral ] Indent
+ForeignDeclStmt ::= "#foreign" [ "(" StringLiteral ")" ] Indent
                     { ForeignBinding } Dedent
 
 ForeignBinding  ::= [ Identifier "=" ] Identifier ":"
@@ -382,23 +376,24 @@ EnumVariant   ::= UpperIdentifier [ "(" TypeName ")" ]
 
 Declares a named record, enum, ramification, growable array, or generator instantiation.
 
-**Record declarations.** The parenthesized form (`#type Name (...)`, as well as `#packed (...)` and `#packed uN (...)`) separates fields with commas or, in multiline declarations, with newlines between aligned fields sharing the first field's indentation (`E2015` when multiple fields appear on the same line without a comma or when a comma-free sibling field is misaligned; deeper indentation continues the current field's type or default expression). The indent-based form (`#type Name` followed by an indented block of `field: Type` lines) likewise separates aligned fields by newlines or commas, and a field whose own `field:` is followed by a deeper-indented block declares a nested inline record type. Function parameter lists in `(A, B => C)` always require commas between parameter types. The type name becomes a coercion/constructor function (§2.10) and is reserved. Concrete `#type` record and bitfield declarations are **nominal**: two distinct `#type` record declarations do not unify even when their field names and types are identical (`E3084: Record name mismatch: A vs B`), whereas `#type B A` declares `B` as a transparent type alias sharing `A`'s nominal identity. Anonymous record literals (`(x = 1, y = 2)`) unify with anonymous or nominal records when field counts, field types, and all explicit field names match (`E3084: Record field name mismatch` otherwise); positional tuples (`(1, 2)`) unify by field count and element types.
+**Record declarations.** The parenthesized form (`#type Name (...)`, as well as `#type(packed) Name (...)`, `#type(align = N) Name (...)`, and `#type(packed = uN) Name (...)`) separates fields with commas or, in multiline declarations, with newlines between aligned fields sharing the first field's indentation (`E2015` when multiple fields appear on the same line without a comma or when a comma-free sibling field is misaligned; deeper indentation continues the current field's type or default expression). The indent-based form (`#type Name` followed by an indented block of `field: Type` lines) likewise separates aligned fields by newlines or commas, and a field whose own `field:` is followed by a deeper-indented block declares a nested inline record type. Function parameter lists in `(A, B => C)` always require commas between parameter types. The type name becomes a coercion/constructor function (§2.10) and is reserved. Concrete `#type` record and bitfield declarations are **nominal**: two distinct `#type` record declarations do not unify even when their field names and types are identical (`E3084: Record name mismatch: A vs B`), whereas `#type B A` declares `B` as a transparent type alias sharing `A`'s nominal identity. Anonymous record literals (`(x = 1, y = 2)`) unify with anonymous or nominal records when field counts, field types, and all explicit field names match (`E3084: Record field name mismatch` otherwise); positional tuples (`(1, 2)`) unify by field count and element types.
 
 **Enum declarations (`EnumTypeDecl`).** An enum declares at least **two** named variants (`E2070`) enclosed in `< ... >` (distinguished from a `RamTypeDecl` by the absence of a top-level `|`). Each variant label must start with an uppercase letter (`E2071`) and be unique within the enum (`E2074`). Variants may be bare unit labels (`Red`) or carry a payload type or record field list in a single pair of parentheses (`Some(String)`, `Add(Expr, Expr)`, `Ok(w: Int, h: Int)`; redundant double parentheses `Add((Expr, Expr))` are rejected with `E2083`). Multi-line block declarations may separate aligned variants by newlines with optional commas; multiple variants on the same line require commas (`E2076`), and comma-free sibling variants must align with the first variant (`E2075`).
 - **Construction**: `EnumName(Variant)` constructs a unit variant; `EnumName(Variant, payload)` constructs a payload-bearing variant (`E3096` unknown variant, `E3097` missing payload, `E3098` payload on unit variant, `E3099` payload type mismatch). Unambiguous unit variant labels may also be referenced bare (`Red`) or qualified (`Color::Red`, `mod::Color::Red`; `E3105` when an unqualified unit label is declared by multiple enums).
 - **Pattern matching**: Matched in choice expressions using bracket guards: `[Variant]` (unit or ignored payload; `[Variant _]` is rejected by `E2109`), `[V1, V2]` (multi-variant OR guard), `[Variant x]` (juxtaposed payload binding without parentheses), or deep nested patterns `[Add (Lit a, Lit b)]`. Value-producing choices over an enum must cover all variants or include a trailing `|` fallback (`E3102`).
-- **Equality & Reflection**: Enums support `==` and `!=` (provided no variant payload contains a function type, `E3084`), and reject ordering operators `<, <=, >, >=` (`E3127`). At compile time, `?EnumType` yields the number of variants and `EnumType.(i)` yields the `i`-th variant's label as a `String` (`E3170`, `E3171`).
+- **Equality & Reflection**: Enums support `==` and `!=` (provided no variant payload contains a function type, `E3084`), and reject ordering operators `<, <=, >, >=` (`E3127`). At compile time, `#arity EnumType` yields the number of variants and `#member EnumType, i` yields the `i`-th variant's label as a `String` (`E3170`, `E3171`).
 
-**Packed records and bitfields.** A record declaration or colon type declaration
-can be marked `#packed`:
+**Packed, aligned, and bitfield records.** A record type declaration
+can specify packing and alignment attributes inside `#type(...)`:
 ```dva
-Header: #packed (a: u8, b: u16, c: u8)
+#type(packed) Header (a: u8, b: u16, c: u8)
+#type(align = 32) AlignedVec (a: Int, b: Int)
 ```
 Packed records have byte alignment with zero interior or tail padding
 (`#size Header` is 4 bytes). Integer bitfield definitions specify a backing
 integer type (`u8`, `u16`, `u32`, `u64`) with per-field bit widths:
 ```dva
-TcpFlags: #packed u16 (
+#type(packed = u16) TcpFlags (
    fin: 1, syn: 1, rst: 1, psh: 1,
    ack: 1, urg: 1, ece: 1, cwr: 1,
    ns: 1, res: 7,
@@ -777,7 +772,7 @@ Block      ::= Indent { Statement } Dedent
   `=>`** — `=> body` with no parameters is a parse error (`E2050`); the one
   implicit form is a parenthesized expression containing `_`.
   **Explicit `_` as a function parameter is forbidden**: `_ => ...`,
-  `x, _ => ...`, `items @ _ => ...`, `r | _ => ...`, and `#! _ => ...` emit
+  `x, _ => ...`, `items @ _ => ...`, `r | _ => ...`, and `#param _ => ...` emit
   `E2040`. Use a named parameter (e.g. `ignored`) or omit unused binders.
 - **Signatures**: a full function type is declared separately, as a forward
   annotation whose type is a function signature:
@@ -846,7 +841,7 @@ Block      ::= Indent { Statement } Dedent
   it becomes a closure value stored in a variable. A declared
   function-type return (`fun: ... => (T => U)`) types a nested lambda's
   params.
-- **Generic functions** (`#! T: Type` compile-time parameters, inferred type
+- **Generic functions** (`#param T: Type` compile-time parameters, inferred type
   arguments, monomorphization, compile-time type dispatch) and **type
   generators** are covered in §2.14.
 - **Custom operators** (see `process/spec/custom-operators.md`): a
@@ -855,7 +850,7 @@ Block      ::= Indent { Statement } Dedent
   (`+++ = a, b => ...`), annotated (`+++ : Int, Int => Int`), called prefix
   (`+++(3, 4)`), or taken as a value (`(+++)`). A
   fixity clause in the forward annotation gives it both binding powers,
-  always written explicitly: `+++ : #infix <lbp> <rbp>, Int, Int => Int` —
+  always written explicitly: `+++ : #infix(lbp, rbp) Int, Int => Int` —
   the weights are the Pratt `lhs_bp` / `rhs_bp`, and associativity falls out
   (`rbp > lbp` left, `rbp < lbp` right, `rbp == lbp` non-assoc with chains
   rejected). Infix uses desugar to a call: `a +++ b` ≡ `+++(a, b)`.
@@ -1074,7 +1069,7 @@ TupleExpr    ::= "(" Expr { "," Expr } ")"
   with `.field`, elements with `(i)`. Record value literals use `=` for named
   fields (never `:`; `:` is strictly reserved for type declarations, `E2107`).
 
-### 2.14 Metaprogramming — compile-time types (`#!`, `Type`)
+### 2.14 Metaprogramming — compile-time `#` meta-language (`#param`, `#const`, `Type`)
 
 Compile-Time Function Execution (CTFE): types are first-class values at
 compile time, generic functions are monomorphized per instantiation, and a
@@ -1086,13 +1081,13 @@ type (a primitive, a composite, or a generated type). It is *erased* — usable
 only in compile-time positions, never as a runtime value.
 
 **Compile-time type parameters.** A function signature declares an erased type
-parameter with `#! Name: Type`:
+parameter with `#param Name: Type`:
 
 ```
-identity: #! T: Type, T => T        // signature: T is compile-time, x: T, returns T
+identity: #param T: Type, T => T    // signature: T is compile-time, x: T, returns T
 identity = x => x                   // body binds only the runtime param
 
-apply: #! T: Type, #! U: Type, (T => U), T => U   // a function-typed param
+apply: #param T: Type, #param U: Type, (T => U), T => U   // a function-typed param
 apply = f, x => f $ x
 ```
 
@@ -1107,8 +1102,8 @@ The single-type-parameter case may instead be written **inline**, in the
 lambda's parameter list, with the type parameter inferred:
 
 ```
-id   = #! T, x => x                 // T is the type of x
-add  = #! T, a, b => a + b          // both params typed T; "+" dispatches per T
+id   = #param T, x => x             // T is the type of x
+add  = #param T, a, b => a + b      // both params typed T; "+" dispatches per T
 ```
 
 **Monomorphization.** A generic function is instantiated once per inferred
@@ -1126,7 +1121,7 @@ branch — untaken branches are never codegen'd, so they may use operations
 only valid for the matched shape:
 
 ```
-length_or_id = #! T, x =>
+length_or_id = #param T, x =>
    T == String | ?x | x           // ?x only valid when T is String
 ```
 
@@ -1154,30 +1149,32 @@ Type equality is structural unless a nominal user type or enum is matched.
 
 **Compile-time properties on `T: Type`.**
 - `#size T` / `#align T` — ABI byte size and alignment (`Int`).
-- `T.name` — declared `#type` name if nominal/aliased, or canonical type name (`String`).
-- `T.zero` — zero/default-initialized value of type `T` (honoring `f.default` on record fields and recursively zeroing nested fields; empty `E{}` / `K ^ V` for growable containers; `<->` for `<>`; `<-->` for `<P|>`).
-- `?T` — compile-time arity (`Int`): field count for records, element count `N` for `(E * N)`, variant count for enums, `0` for `()`.
+- `#name T` — declared `#type` name if nominal/aliased, or canonical type name (`String`).
+- `#zero T` — zero/default-initialized value of type `T` (honoring `f.default` on record fields and recursively zeroing nested fields; empty `E{}` / `K ^ V` for growable containers; `<->` for `<>`; `<-->` for `<P|>`).
+- `#arity T` — compile-time arity (`Int`): field count for records, element count `N` for `(E * N)`, variant count for enums, `0` for `()`.
+- `#member T, i` — `i`-th field/variant name (`String`, `0 <= i < #arity T`).
+- `#has_member tgt, mem` — `<+>` if record/enum type `tgt` has field/variant `mem` or module `tgt` exports `mem` (`<->` otherwise).
 
-**Compile-time record & enum unrolling (`T @ f =>`, `T @ v =>`).**
-Iterating a `Type` directly with `@` unrolls the loop body at compile time over `0..?T`:
-- When `T` is a record (`[(..)]`), `T @ f =>` binds a compile-time field cursor `f`:
+**Compile-time record & enum unrolling (`#members T @ f =>`, `#members T @ v =>`).**
+Iterating `#members T` with `@` unrolls the loop body at compile time over `0..(#arity T)`:
+- When `T` is a record (`[(..)]`), `#members T @ f =>` binds a compile-time field cursor `f`:
   - `f.idx` (`Int`), `f.name` (`String`), `f.type` (`Type`), `f.default` (`<f.type|>`).
-  - `val.(f)` reads field `f.idx` with static type `f.type`; `val.(f) = expr` writes field `f.idx` (marking it initialized for definite-assignment tracking).
-- When `T` is an enum (`[<..>]`), `T @ v =>` binds a compile-time variant cursor `v`:
+  - `#member val, f` reads field `f.idx` with static type `f.type` (wrap `(#member val, f)` in comma-separated lists or before infix operators); `#member val, f = expr` writes field `f.idx` (marking it initialized for definite-assignment tracking).
+- When `T` is an enum (`[<..>]`), `#members T @ v =>` binds a compile-time variant cursor `v`:
   - `v.idx` (`Int`), `v.name` (`String`), `v.type` (`Type`, `()` for unit variants).
-  - `val.(v)` inspects whether `val`'s active tag is `v.idx`, returning `<v.type|>` (`<+ payload +>` / `<++>` on match, `<-->` otherwise).
-  - `T(v)` constructs unit variant `v`, and `T(v, payload)` constructs payload variant `v` (or unit variant `v` when `v.type [()]` and `payload` is unit).
+  - `#member val, v` inspects whether `val`'s active tag is `v.idx`, returning `<v.type|>` (`<+ payload +>` / `<++>` on match, `<-->` otherwise).
+  - `#member T, v` constructs unit variant `v`, and `#member T, v, payload` constructs payload variant `v` (or unit variant `v` when `v.type [()]`).
 
 **Type generators.** A signature whose parameters are all compile-time and whose
 return is a type is a *type generator* — a compile-time function yielding a
 type:
 
 ```
-Opt: #! T: Type => < T | >          // the type IS the result; no "=" body
+Opt: #param T: Type => < T | >      // the type IS the result; no "=" body
 #type IntOpt Opt(Int)               // IntOpt is the ram < Int | >
 #type StrOpt Opt(String)
 
-Pair: #! A: Type, #! B: Type => (first: A, second: B)
+Pair: #param A: Type, #param B: Type => (first: A, second: B)
 #type IntString Pair(Int, String)
 ```
 
@@ -1195,7 +1192,7 @@ Substitution is simultaneous, so `Pair(B, A)` inside a generic function preserve
 both type variables when reordering them. Function fields inside generated records
 use their concrete specialized signatures, with no runtime type descriptors.
 
-**`#! expr`.** A `#!` prefix on an expression folds it at compile time (CTFE)
+**`#const expr`.** `#const` on an expression folds it at compile time (CTFE)
 to a constant. The evaluable subset — literals, `+ - * / %`, comparisons,
 bitwise, `&&`/`||`, `!`/`.!.`, string `+`, `?s`, scalar/string compile-time
 choices, and **calls to pure user functions** (including generic and
@@ -1204,17 +1201,17 @@ tree-walking CTFE evaluator with a JIT fallback; anything else is a compile
 error (`E3130`):
 
 ```
-x = #! 2 + 2          // x is the constant 4
-n = #! ?"hello"       // n is the constant 5
-m = #! max2(3, 7)     // 7 — a call to a pure user function
+x = #const 2 + 2          // x is the constant 4
+n = #const ?"hello"       // n is the constant 5
+m = #const max2(3, 7)     // 7 — a call to a pure user function
 ```
 
-Inside `#! (...)` value and `#type` expressions, the compiler also binds three
-target-triple `String` constants (`--target <triple>`):
+**Target compile-time constants (`#os`, `#arch`, `#target`).** The compiler exposes
+three first-class compile-time `String` expressions derived from `--target <triple>`:
 
-- `os` — normalized target OS (`"linux"`, `"darwin"`, `"windows"`, `"freebsd"`, `"openbsd"`, `"netbsd"`, `"wasm"`, `"wasi"`, `"unknown"`).
-- `arch` — normalized target architecture (`"x86_64"`, `"aarch64"`, `"x86"`, `"wasm32"`, ...).
-- `target` — full target triple string (e.g. `"x86_64-unknown-linux-gnu"`, `"wasm32-unknown-unknown"`).
+- `#os` — normalized target OS (`"linux"`, `"darwin"`, `"windows"`, `"freebsd"`, `"openbsd"`, `"netbsd"`, `"wasm"`, `"wasi"`, `"unknown"`).
+- `#arch` — normalized target architecture (`"x86_64"`, `"aarch64"`, `"x86"`, `"wasm32"`, ...).
+- `#target` — full target triple string (e.g. `"x86_64-unknown-linux-gnu"`, `"wasm32-unknown-unknown"`).
 
 ---
 
@@ -1390,7 +1387,7 @@ re-exported as global aliases (`print`, `writeln`, `print_int`, `print_float`,
 
 The **console.log-style writers** are the ergonomic surface: `io::out(...)` /
 `io::err(...)` accept a single value OR a record of values of mixed types,
-each formatted at compile time (the `#! T: Type` type dispatch), joined with a
+each formatted at compile time (the `#param T: Type` type dispatch), joined with a
 single space, and written + newline to stdout/stderr:
 
 ```dva
@@ -1719,7 +1716,7 @@ and case-insensitive lookup are needed.)
 Unicode rune classification via shared stage-2 page tables. Each 256-codepoint
 page is a 256-bit bitmap stored as four 64-bit words; identical pages share
 one pool entry, so an unused predicate contributes nothing to the binary. The
-source uses `#pragma number i16`/`i64` and `{N}` repetition to stay compact.
+source uses `#pragma(integer = i16)`/`#pragma(integer = i64)` and `{N}` repetition to stay compact.
 
 Each predicate takes a `Rune` and returns a ramification (`<+>` in set,
 `<->` not):

@@ -649,19 +649,19 @@ stringify_pretty_into = b, val, indent, depth =>
             p.value
          | Value(Null)
 
-// --- Compile-time structural JSON codec (#!) --------------------------------
+// --- Compile-time structural JSON codec (#param) ----------------------------
 
 #public
-   json_key_to_str: #! K: Type, K => String
+   json_key_to_str: #param K: Type, K => String
    json_key_to_str = k =>
       K
          [String] k
          [Int, i8, i16, i32, i64, u8, u16, u32, u64] str::from_int(Int(k))
          [<>] (k | "true" | "false")
          [Rune] utf::encode_rune(k)
-         | K.name
+         | #name K
 
-   to_value: #! T: Type, T => Value
+   to_value: #param T: Type, T => Value
    to_value = val =>
       T
          [Value] val
@@ -698,36 +698,36 @@ stringify_pretty_into = b, val, indent, depth =>
             Value(Object, entries(0..m))
          [(..)]
             is_tuple' = <->
-            T @ f =>
+            #members T @ f =>
                f.idx == 0 && f.name == "" | is_tuple' = <+>
             is_tuple'
                |
                   elems = Values()
-                  T @ f =>
+                  #members T @ f =>
                      f.type
                         [<P|>]
-                           vf = val.(f)
+                           vf = #member val, f
                            ev = vf | inner => to_value(P, inner) | Value(Null)
                            elems += ev
                         |
-                           elems += to_value(f.type, val.(f))
+                           elems += to_value(f.type, (#member val, f))
                   n = ?elems
                   Value(Array, elems(0..n))
                |
                   entries = Pairs()
-                  T @ f =>
+                  #members T @ f =>
                      f.type
                         [<P|>]
-                           vf = val.(f)
+                           vf = #member val, f
                            ev = vf | inner => to_value(P, inner) | Value(Null)
                            entries += (f.name, ev)
                         |
-                           entries += (f.name, to_value(f.type, val.(f)))
+                           entries += (f.name, to_value(f.type, (#member val, f)))
                   m = ?entries
                   Value(Object, entries(0..m))
          [<..>]
-            T @ v =>
-               val.(v)
+            #members T @ v =>
+               #member val, v
                   | pay =>
                      v.type
                         [()] --| Value(String, v.name)
@@ -738,11 +738,11 @@ stringify_pretty_into = b, val, indent, depth =>
             Value(Null)
          | Value(Null)
 
-   encode: #! T: Type, T => String
+   encode: #param T: Type, T => String
    encode = val =>
       stringify(to_value(T, val))
 
-   encode_pretty: #! T: Type, T, Int => String
+   encode_pretty: #param T: Type, T, Int => String
    encode_pretty = val, indent =>
       stringify_pretty(to_value(T, val), indent)
 
@@ -786,7 +786,7 @@ stringify_pretty_into = b, val, indent, depth =>
          [Number n] <+ n ->
          | <- json_type_err("expected number") +>
 
-   from_value: #! T: Type, Value => < T | Error >
+   from_value: #param T: Type, Value => < T | Error >
    from_value = val =>
       T
          [Value]
@@ -822,7 +822,7 @@ stringify_pretty_into = b, val, indent, depth =>
             !is_array(val)
                | <- json_type_err("expected array") +>
                |
-                  arr' = T.zero
+                  arr' = #zero T
                   n_items = array_len(val)
                   0..n_items @ i =>
                      elem_val = array_at(val, i)
@@ -842,7 +842,7 @@ stringify_pretty_into = b, val, indent, depth =>
             !is_object(val)
                | <- json_type_err("expected object") +>
                |
-                  mp' = T.zero
+                  mp' = #zero T
                   n_pairs = object_len(val)
                   0..n_pairs @ i =>
                      pk = object_key_at(val, i)
@@ -861,8 +861,8 @@ stringify_pretty_into = b, val, indent, depth =>
                            mp' ^ k = from_value(V, pv)--!
                   <+ mp' ->
          [(..)]
-            rec' = T.zero
-            T @ f =>
+            rec' = #zero T
+            #members T @ f =>
                f.name == ""
                   |
                      !is_array(val) | --| <- json_type_err("expected array for tuple") +>
@@ -871,66 +871,66 @@ stringify_pretty_into = b, val, indent, depth =>
                      f.type
                         [Int]
                            is_valid_int_value(pos_item)
-                              | rec'.(f) = unwrap_int_or_zero(pos_item)
+                              | #member rec', f = unwrap_int_or_zero(pos_item)
                               | --| <- json_type_err("expected integer") +>
                         [Float]
                            is_valid_float_value(pos_item)
-                              | rec'.(f) = unwrap_float_or_zero(pos_item)
+                              | #member rec', f = unwrap_float_or_zero(pos_item)
                               | --| <- json_type_err("expected number") +>
                         |
-                           rec'.(f) = from_value(f.type, pos_item)--!
+                           #member rec', f = from_value(f.type, pos_item)--!
                   |
-                     !is_object(val) | --| <- json_type_err("expected object for " + T.name) +>
+                     !is_object(val) | --| <- json_type_err("expected object for " + (#name T)) +>
                      get(val, f.name)
                         | fval =>
                            f.type
                               [Int]
                                  is_valid_int_value(fval)
-                                    | rec'.(f) = unwrap_int_or_zero(fval)
+                                    | #member rec', f = unwrap_int_or_zero(fval)
                                     | --| <- json_type_err("expected integer") +>
                               [Float]
                                  is_valid_float_value(fval)
-                                    | rec'.(f) = unwrap_float_or_zero(fval)
+                                    | #member rec', f = unwrap_float_or_zero(fval)
                                     | --| <- json_type_err("expected number") +>
                               |
-                                 rec'.(f) = from_value(f.type, fval)--!
+                                 #member rec', f = from_value(f.type, fval)--!
                         |
                            f.default
-                              | def => rec'.(f) = def
+                              | def => #member rec', f = def
                               |
                                  f.type
-                                    [<P|>] rec'.(f) = <-->
-                                    [E{}] rec'.(f) = f.type.zero
-                                    [K ^ V] rec'.(f) = f.type.zero
+                                    [<P|>] #member rec', f = <-->
+                                    [E{}] #member rec', f = #zero f.type
+                                    [K ^ V] #member rec', f = #zero f.type
                                     | --| <- json_type_err("missing required key '" + f.name + "'") +>
             <+ rec' ->
          [<..>]
             val
                [String s]
-                  T @ v =>
+                  #members T @ v =>
                      v.name == s |
                         v.type
-                           [()] --| <+ T(v) ->
-                           | --| <- json_type_err("variant '" + s + "' of " + T.name + " requires a payload") +>
-                  <- json_type_err("unknown variant '" + s + "' for " + T.name) +>
+                           [()] --| <+ (#member T, v) ->
+                           | --| <- json_type_err("variant '" + s + "' of " + (#name T) + " requires a payload") +>
+                  <- json_type_err("unknown variant '" + s + "' for " + (#name T)) +>
                |
                   !is_object(val)
-                     | <- json_type_err("expected string or single-key object for " + T.name) +>
+                     | <- json_type_err("expected string or single-key object for " + (#name T)) +>
                      |
                         object_len(val) != 1
-                           | <- json_type_err("expected single-key object for " + T.name) +>
+                           | <- json_type_err("expected single-key object for " + (#name T)) +>
                            |
                               p0_key = object_key_at(val, 0)
                               p0_val = object_val_at(val, 0)
-                              T @ v =>
+                              #members T @ v =>
                                  v.name == p0_key |
                                     v.type
-                                       [()] --| <+ T(v) ->
-                                       | --| <+ T(v, from_value(v.type, p0_val)--!) ->
-                              <- json_type_err("unknown variant '" + p0_key + "' for " + T.name) +>
-         | <- json_type_err("unsupported target type " + T.name + " in json::decode") +>
+                                       [()] --| <+ (#member T, v) ->
+                                       | --| <+ (#member T, v, from_value(v.type, p0_val)--!) ->
+                              <- json_type_err("unknown variant '" + p0_key + "' for " + (#name T)) +>
+         | <- json_type_err("unsupported target type " + (#name T) + " in json::decode") +>
 
-   decode: #! T: Type, String => < T | Error >
+   decode: #param T: Type, String => < T | Error >
    decode = s =>
       parse(s)
          | val => from_value(T, val)

@@ -1,7 +1,7 @@
 #public
 #type Tag (name: String, id: Int)
-Pair: #! A: Type, #! B: Type => (first: A, second: B)
-Tagged: #! T: Type => (value: T, tag: Tag)
-WithDefault: #! T: Type => (value: T, count: Int = base)
+Pair: #param A: Type, #param B: Type => (first: A, second: B)
+Tagged: #param T: Type => (value: T, tag: Tag)
+WithDefault: #param T: Type => (value: T, count: Int = base)
 #private
 base = 9

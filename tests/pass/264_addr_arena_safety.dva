@@ -1,6 +1,6 @@
 #use io
 
-#foreign "c"
+#foreign("c")
    strlen : (s: Addr) -> Int
 
 res =

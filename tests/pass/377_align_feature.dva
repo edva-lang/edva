@@ -1,25 +1,25 @@
-// Verify #align directive and #align compile-time operator:
-// 1. #align N on records and types
-// 2. #align T and #align T operator
-// 3. Combined #align and #packed
+// Verify #type(align = N) directive and #align compile-time operator:
+// 1. #type(align = N) on records and types
+// 2. #align T compile-time operator
+// 3. Combined #type(align = N, packed)
 // 4. Arena auto-alignment to 16 bytes for odd allocations
 
 #use io
 #use mem
 
-#type AlignedVec #align 16 (
+#type(align = 16) AlignedVec (
    x: f32,
    y: f32,
    z: f32,
    w: f32
 )
 
-#type CacheLineBlock #align 64 #packed (
+#type(align = 64, packed) CacheLineBlock (
    flag: u8,
    tag: u8
 )
 
-#type CacheLineBlock2 #packed #align 32 (
+#type(packed, align = 32) CacheLineBlock2 (
    flag: u8,
    tag: u8
 )

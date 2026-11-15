@@ -1,15 +1,15 @@
 #param App: Module
 #public
 read_count = m =>
-   %has_field(App::Model, "count") | m.count | App::count(m)
+   #has_member App::Model, count | m.count | App::count(m)
 read_label = m =>
-   %has_field(App::Model, "label") | m.label | App::label(m)
+   #has_member App::Model, label | m.label | App::label(m)
 run: App::Model => Int
 run = m =>
-   %has_member(App::key_escape) | App::key_escape(m)
+   #has_member App, key_escape | App::key_escape(m)
    read_count(m)
-present = %has_member(App::label)
-private_member = %has_member(App::hidden)
+present = #has_member App, label
+private_member = #has_member App, hidden
 loop: () => Int
 loop = !=>
    total' = 0
@@ -17,4 +17,4 @@ loop = !=>
    total'
 
 probe_statement: () => ()
-probe_statement = !=> %has_member(App::label) | App::count(App::init!)
+probe_statement = !=> #has_member App, label | App::count(App::init!)

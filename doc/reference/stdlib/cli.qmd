@@ -66,11 +66,11 @@ All items in `cli::Opts(...)` have type `Opt`:
 | **Declaration** | `cli::opt(spec, def_or_ty, desc[, validator])` | Polymorphic `=> Opt` | Declares a flag or option (`-s`, `--long`) with default or mandatory type and optional validator |
 | | `cli::pos(name, def_or_ty[, desc[, validator]])` | Polymorphic `=> Opt` | Declares a named positional argument (`<name>`, `[name]`, `[name...]`, `<name...>`) |
 | | `cli::cmd(spec, desc[, sub_opts])` | Polymorphic `=> Opt` | Declares a subcommand (with optional `|` aliases and nested `Opts`) |
-| | `cli::opts_for(T)` | `#! T: Type => Opts` | Generates `Opts` automatically from record `T`'s fields, types, and default values |
+| | `cli::opts_for(T)` | `#param T: Type => Opts` | Generates `Opts` automatically from record `T`'s fields, types, and default values |
 | **Parsing** | `cli::parse(opts[, desc[, version[, empty_is_help]]])` | `Opts, ... => Parsed` | Parses `sys::argv`, handles `--help`/`--version` (including scoped `<subcmd> --help`), and exits `1` on error |
 | | `cli::parse_args(opts, argv)` | `Opts, Args => < Parsed | String >` | Parses an explicit `Args` array without exiting |
-| | `cli::into(T, p)` | `#! T: Type, Parsed => < T | String >` | Materializes a `Parsed` result directly into record `T` (resolving both `opt` and `pos` names) |
-| | `cli::parse_into(opts, argv)` | `#! T: Type, Opts, Args => < T | String >` | Parses `argv` against `opts` (or `opts_for(T)`) and populates record `T` |
+| | `cli::into(T, p)` | `#param T: Type, Parsed => < T | String >` | Materializes a `Parsed` result directly into record `T` (resolving both `opt` and `pos` names) |
+| | `cli::parse_into(opts, argv)` | `#param T: Type, Opts, Args => < T | String >` | Parses `argv` against `opts` (or `opts_for(T)`) and populates record `T` |
 | | `cli::format_help(opts, prog, desc, version)` | `Opts, String, String, String => String` | Formats aligned `Usage:`, `Commands:`, `Arguments:`, and `Options:` help sections |
 | **Querying `Parsed`** | `cli::subcmd(p)` | `Parsed => String` | Canonical name of the matched subcommand at level `p` (or `""` if none) |
 | | `cli::sub(p)` | `Parsed => < Parsed | >` | Returns `<+ sub_parsed +>` for nested subcommand trees, or `<-->` |

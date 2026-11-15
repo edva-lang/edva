@@ -50,9 +50,9 @@ io::out $ line
 | | `log::set_prefix(pfx)` / `log::get_prefix!` | `String => ()` / `() => String` | Sets or queries optional `[prefix]` component tag |
 | | `log::set_fd(fd)` / `log::get_fd!` | `Int => ()` / `() => Int` | Sets or queries output file descriptor (default `2` for stderr) |
 | | `log::set_file(path)` / `log::close_file!` | `String => <>` / `() => ()` | Routes log output to `path` (append mode) or closes it |
-| **Structured Fields** | `log::field(key, val)` | `#! V: Type, String, V => String` | Formats `key=val` for scalars, records, tuples, enums, options, arrays, slices, or maps |
-| | `log::format_val(val)` | `#! V: Type, V => String` | Formats any value `val` into its structured log representation |
-| | `log::fields_of(rec)` | `#! R: Type, R => Fields` | Expands all fields of a record or entries of a map into `Fields` (`key=value` list) |
+| **Structured Fields** | `log::field(key, val)` | `#param V: Type, String, V => String` | Formats `key=val` for scalars, records, tuples, enums, options, arrays, slices, or maps |
+| | `log::format_val(val)` | `#param V: Type, V => String` | Formats any value `val` into its structured log representation |
+| | `log::fields_of(rec)` | `#param R: Type, R => Fields` | Expands all fields of a record or entries of a map into `Fields` (`key=value` list) |
 | **Logging** | `log::debug(msg)` / `info(msg)` / `warn(msg)` / `error(msg)` | `String => ()` | Emits a log line at the corresponding level |
 | | `log::debug_kv` / `info_kv` / `warn_kv` / `error_kv` | `String, Fields => ()` | Emits a log line with structured `key=value` fields |
 | | `log::log(lvl, msg)` / `log::log_kv(lvl, msg, fields)` | `Level, String[, Fields] => ()` | Emits a log line at explicit `lvl` |

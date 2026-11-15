@@ -4,7 +4,7 @@
 // param: i32 now produces an i32 (4-byte) ABI slot.
 #use io
 
-#foreign "c"
+#foreign("c")
     dup2 : (oldfd: i32, newfd: i32) -> Int
 
 io::out $ dup2(1, 2)

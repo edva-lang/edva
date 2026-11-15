@@ -1,5 +1,5 @@
 // Heterogeneous-record auto-iteration (no new syntax, CTTR): a cycle over
-// "0..?T" whose body references "x.(i)" is UNROLLED at compile time, each copy
+// "0..(#arity T)" whose body references "#member x, i" is UNROLLED at compile time, each copy
 // binding i to a constant so the member access resolves to that field — a
 // runtime loop cannot index a heterogeneous record. Uniform operations (==)
 // work across field types without per-field type dispatch.
@@ -11,18 +11,18 @@
 #type Triple (a: Int, b: Int, c: Int)
 #type Mix (a: Int, b: String)
 
-sum_fields: #! T: Type, T => Int
+sum_fields: #param T: Type, T => Int
 sum_fields = x =>
    acc' = 0
-   0..?T @ i =>
-      acc' = acc' + x.(i)
+   0..(#arity T) @ i =>
+      acc' = acc' + (#member x, i)
    acc'
 
-record_eq: #! T: Type, T, T => <>
+record_eq: #param T: Type, T, T => <>
 record_eq = a, b =>
    all' = 1
-   0..?T @ i =>
-      a.(i) != b.(i)
+   0..(#arity T) @ i =>
+      (#member a, i) != (#member b, i)
          |
             all' = 0
    out = all' == 1
@@ -32,8 +32,8 @@ p: Pt
 p.x = 3
 p.y = 4
 io::out $ str::from_int(sum_fields(p))
-io::out $ str::from_int(p.(0))
-io::out $ str::from_int(p.(1))
+io::out $ str::from_int((#member p, 0))
+io::out $ str::from_int((#member p, 1))
 
 t: Triple
 t.a = 1

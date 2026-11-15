@@ -1,6 +1,6 @@
 // Standard Embedded Log-Structured Key-Value Store Module (std/kv.dva)
 // Bitcask-inspired durable append-only key-value store with O(1) in-memory keydir,
-// IEEE CRC-32 per-record integrity verification, log compaction, and `#!` compile-time
+// IEEE CRC-32 per-record integrity verification, log compaction, and `#param` compile-time
 // structural typed serialization (`put_val`, `get_val`).
 
 #use binary
@@ -51,11 +51,11 @@ FLAG_DEL = 2
 
 // O_RDWR | O_CREAT | O_APPEND across Linux and Darwin
 open_rdwr_creat_append: () => Int
-open_rdwr_creat_append = !=> #! (os ["darwin"] 0x020A | 0x0442)
+open_rdwr_creat_append = !=> #os ["darwin"] 0x020A | 0x0442
 
 // O_RDWR | O_CREAT | O_TRUNC across Linux and Darwin
 open_rdwr_creat_trunc: () => Int
-open_rdwr_creat_trunc = !=> #! (os ["darwin"] 0x0602 | 0x0242)
+open_rdwr_creat_trunc = !=> #os ["darwin"] 0x0602 | 0x0242
 
 write_all: Int, String => <>
 write_all = fd, data =>
@@ -295,15 +295,15 @@ compact = db =>
                      db.keydir = new_kdir
                      <++>
 
-// --- `#!` Compile-Time Structural Typed Serialization -----------------------
+// --- `#param` Compile-Time Structural Typed Serialization --------------------
 
 // Encodes `val` of any structural type `T` via `binary::encode_le` and stores it under `key`.
-put_val: #! T: Type, Store, String, T => < | Error >
+put_val: #param T: Type, Store, String, T => < | Error >
 put_val = db, key, val =>
    put(db, key, binary::encode_le(val))
 
 // Reads and decodes a value of target type `T` stored under `key` via `binary::decode_le`.
-get_val: #! T: Type, Store, String => < T | Error >
+get_val: #param T: Type, Store, String => < T | Error >
 get_val = db, key =>
    get(db, key)
       | raw => binary::decode_le(T, raw)

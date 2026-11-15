@@ -1,0 +1,4 @@
+#type P (x: Int, y: Int)
+f: Int, <> => Int
+f = a, b => a
+r = f(1, #has_member P, x)

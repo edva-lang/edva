@@ -33,6 +33,7 @@
 
 #use ./diag
 #use log
+#use sys
 #use ascii
 #use libc
 #use str
@@ -70,21 +71,16 @@
    Private
    Export
    PragmaKw
-   CT
-   SpawnKw
-   JoinKw
-   ExitKw
    ErrorKw
    WarnKw
    PragmaFP
    Public
-   PackedKw
-   AlignKw
    UseDynamicPath
    PragmaSwizzle
    UseImportPath
    UseDynamicImportPath
    ParamKw
+   ConstKw
 >
 // END tokens.txt
 
@@ -233,7 +229,7 @@ mktok = lx, kind, start, len, line, col, text =>
    ws = is_ws(pk(lx, 0))
    trail = kind
       [Newline] <+>
-      [Op, LBracket, Semi, RBracket] ws
+      [Op, LBracket, Semi, RBracket, TypeKw, Export, Foreign, Id, PragmaKw] ws
       | <->
    is_inline_block_opener(kind, text) && has_more_on_line(lx)
       | stack_mark_inline(lx)
@@ -269,7 +265,7 @@ fail = code, line, col, msg =>
          b += (fn, str::from_int(line), ":", str::from_int(col), ": E",
             str::from_int(code), ": ", msg)
          log::error(+b)
-         #exit 1
+         sys::exit(1)
          0
 
 // --- escapes --------------------------------------------------------------
@@ -963,45 +959,38 @@ scan_use_directive: Lx, Int, Int, Int => Tok
 scan_use_directive = lx, hstart, line, col =>
    is_dyn' = <->
    is_imp' = <->
-   is_dash_dyn = lx.pos + 8 !> ?lx.src &&
-      lx.src(lx.pos..lx.pos + 8) == "-dynamic"
-   is_dash_dyn
+   pk(lx, 0) == '(
       |
-         8 @ adv(lx, pk(lx, 0))
-         is_dyn' = <+>
-      |
-         pk(lx, 0) == '(
-            |
-               adv(lx, pk(lx, 0))
-               0..100 @
-                  skip_ws(lx, 0)
-                  c = pk(lx, 0)
-                  c == ')
-                     |
-                        adv(lx, c)
-                        -->
-                  c == '\0 || is_nl(c)
-                     |
-                        fail(1015, line, col,
-                           "Unterminated '#use(...)' — expected closing ')'.")
-                        -->
-                  wstart = lx.pos
-                  scan_while(lx, (is_id_char(_)))
-                  word = lx.src(wstart..lx.pos)
-                  word
-                     ["dynamic"] is_dyn' = <+>
-                     ["import"] is_imp' = <+>
-                     |
-                        fail(1015, line, col,
-                           "Invalid #use option '" + word +
-                           "' — expected 'dynamic' or 'import'.")
-                  skip_ws(lx, 0)
-                  pk(lx, 0) == ', | adv(lx, pk(lx, 0))
-                  skip_ws(lx, 0)
-                  pk(lx, 0) == ')
-                     |
-                        adv(lx, pk(lx, 0))
-                        -->
+         adv(lx, pk(lx, 0))
+         0..100 @
+            skip_ws(lx, 0)
+            c = pk(lx, 0)
+            c == ')
+               |
+                  adv(lx, c)
+                  -->
+            c == '\0 || is_nl(c)
+               |
+                  fail(1015, line, col,
+                     "Unterminated '#use(...)' — expected closing ')'.")
+                  -->
+            wstart = lx.pos
+            scan_while(lx, (is_id_char(_)))
+            word = lx.src(wstart..lx.pos)
+            word
+               ["dynamic"] is_dyn' = <+>
+               ["import"] is_imp' = <+>
+               |
+                  fail(1015, line, col,
+                     "Invalid #use option '" + word +
+                     "' — expected 'dynamic' or 'import'.")
+            skip_ws(lx, 0)
+            pk(lx, 0) == ', | adv(lx, pk(lx, 0))
+            skip_ws(lx, 0)
+            pk(lx, 0) == ')
+               |
+                  adv(lx, pk(lx, 0))
+                  -->
    skip_hws(lx, 0)
    first_seg = pk(lx, 0) == '"
       |
@@ -1058,76 +1047,115 @@ pragma_float_fail = word, line, col =>
 
 scan_pragma: Lx, Int, Int, Int => Tok
 scan_pragma = lx, hstart, line, col =>
-   skip_ws(lx, 0)
-   sint = lx.pos + 7 !> ?lx.src && lx.src(lx.pos..lx.pos + 7) == "integer"
-   sflt = lx.pos + 5 !> ?lx.src && lx.src(lx.pos..lx.pos + 5) == "float"
-   sfp = lx.pos + 6 !> ?lx.src && lx.src(lx.pos..lx.pos + 6) == "fpfast"
-   ssw = lx.pos + 7 !> ?lx.src && lx.src(lx.pos..lx.pos + 7) == "swizzle"
-   sint | --| scan_pragma_integer(lx, hstart, line, col)
-   sflt | --| scan_pragma_float(lx, hstart, line, col)
-   sfp | --| scan_pragma_fp(lx, hstart, line, col)
-   ssw | --| scan_pragma_swizzle(lx, hstart, line, col)
-   pragma_miss_fail(lx, hstart, line, col)
+   pk(lx, 0) == '(
+      | scan_pragma_parens(lx, hstart, line, col)
+      |
+         fail(1013, line, col,
+            "Expected '#pragma(key = value, ...)' with no space before '('.")
+         mktok(lx, TokKind(PragmaKw), hstart, 0, line, col, "#pragma")
 
-pragma_miss_fail: Lx, Int, Int, Int => Tok
-pragma_miss_fail = lx, hstart, line, col =>
-   fail(1013, line, col, "Expected 'integer', 'float', 'fpfast', or 'swizzle' after '#pragma'.")
-   mktok(lx, TokKind(PragmaKw), hstart, 0, line, col, "#pragma")
-
-// "#pragma integer <type>": parse the type word and switch the default integer
-// literal type from this point in the file onward.
-scan_pragma_integer: Lx, Int, Int, Int => Tok
-scan_pragma_integer = lx, hstart, line, col =>
-   0..7 @ t => adv(lx, pk(lx, 0))
-   skip_ws(lx, 0)
-   tstart = lx.pos
-   scan_while(lx, (!is_ws(_)))
-   word = lx.src(tstart..lx.pos)
-   suffix = word
-      ["default"] ""
-      ["i8"] "i8"
-      ["i16"] "i16"
-      ["i32"] "i32"
-      ["i64"] "i64"
-      ["u8"] "u8"
-      ["u16"] "u16"
-      ["u32"] "u32"
-      ["u64"] "u64"
-      | pragma_int_fail(word, line, col)
-   lx.def = suffix
-   scan_while(lx, (!is_nl(_)))
-   mktok(lx, TokKind(PragmaKw), hstart, lx.pos - hstart, line, col, "#pragma")
-
-// "#pragma float <type>": parse the type word and switch the default float
-// literal type from this point in the file onward.
-scan_pragma_float: Lx, Int, Int, Int => Tok
-scan_pragma_float = lx, hstart, line, col =>
-   0..5 @ t => adv(lx, pk(lx, 0))
-   skip_ws(lx, 0)
-   tstart = lx.pos
-   scan_while(lx, (!is_ws(_)))
-   word = lx.src(tstart..lx.pos)
-   suffix = word
-      ["default", "f64", "Float"] ""
-      ["f32"] "f32"
-      | pragma_float_fail(word, line, col)
-   lx.fdef = suffix
-   scan_while(lx, (!is_nl(_)))
-   mktok(lx, TokKind(PragmaKw), hstart, lx.pos - hstart, line, col, "#pragma")
-
-// "#pragma fpfast all|none": a file-scoped switch for the aggressive FP
-// fast-math mask (nnan|ninf|nsz|arcp|contract|reassoc). The parser turns it
-// into a FastMathPragma node codegen applies from this point on.
-scan_pragma_fp: Lx, Int, Int, Int => Tok
-scan_pragma_fp = lx, hstart, line, col =>
-   0..6 @ t => adv(lx, pk(lx, 0))
-   skip_ws(lx, 0)
-   fstart = lx.pos
-   scan_while(lx, (!is_ws(_)))
-   farg = lx.src(fstart..lx.pos)
-   checked = farg ["all", "none"] farg | pragma_fp_fail(farg, line, col)
-   scan_while(lx, (!is_nl(_)))
-   mktok(lx, TokKind(PragmaFP), hstart, lx.pos - hstart, line, col, checked)
+scan_pragma_parens: Lx, Int, Int, Int => Tok
+scan_pragma_parens = lx, hstart, line, col =>
+   adv(lx, pk(lx, 0))
+   fp_val' = ++ ""
+   sw_val' = ++ ""
+   saw_any' = <->
+   0..100 @
+      skip_ws(lx, 0)
+      c = pk(lx, 0)
+      c == ')
+         |
+            adv(lx, c)
+            -->
+      c == '\0
+         |
+            fail(1013, line, col,
+               "Unterminated '#pragma(...)' — expected closing ')'.")
+            -->
+      kstart = lx.pos
+      scan_while(lx, (is_id_char(_)))
+      key = lx.src(kstart..lx.pos)
+      ?key == 0
+         |
+            fail(1013, line, col,
+               "Expected option name inside '#pragma(...)'.")
+            -->
+      skip_ws(lx, 0)
+      pk(lx, 0) != '=
+         |
+            fail(1013, line, col,
+               "Expected '=' after '#pragma' option '" + key + "'.")
+            -->
+      adv(lx, pk(lx, 0))
+      skip_ws(lx, 0)
+      vstart = lx.pos
+      scan_while(lx, (is_id_char(_)))
+      val = lx.src(vstart..lx.pos)
+      key
+         ["integer"]
+            suffix = val
+               ["default"] ""
+               ["i8"] "i8"
+               ["i16"] "i16"
+               ["i32"] "i32"
+               ["i64"] "i64"
+               ["u8"] "u8"
+               ["u16"] "u16"
+               ["u32"] "u32"
+               ["u64"] "u64"
+               | pragma_int_fail(val, line, col)
+            lx.def = suffix
+         ["float"]
+            suffix = val
+               ["default", "f64", "Float"] ""
+               ["f32"] "f32"
+               | pragma_float_fail(val, line, col)
+            lx.fdef = suffix
+         ["fpfast"]
+            fp_val' = val ["all", "none"] val | pragma_fp_fail(val, line, col)
+         ["swizzle"]
+            sw_val' = val ["all", "xyzw", "rgba", "none"] val |
+               pragma_swizzle_fail(val, line, col)
+         |
+            fail(1013, line, col,
+               "Unknown '#pragma' option '" + key +
+               "' — expected 'integer', 'float', 'fpfast', or 'swizzle'.")
+      saw_any' = <+>
+      skip_ws(lx, 0)
+      nx = pk(lx, 0)
+      nx == ',
+         | adv(lx, nx)
+         | nx == ')
+            |
+               adv(lx, nx)
+               -->
+            | nx == '\0
+               |
+                  fail(1013, line, col,
+                     "Unterminated '#pragma(...)' — expected closing ')'.")
+                  -->
+               |
+                  fail(1013, line, col,
+                     "Expected ',' or ')' in '#pragma(...)'.")
+                  -->
+   !saw_any' | fail(1013, line, col,
+      "Expected at least one option inside '#pragma(...)'.")
+   toks = TokArr()
+   fp_val' != "" | toks += mktok(lx, TokKind(PragmaFP), hstart,
+      lx.pos - hstart, line, col, fp_val')
+   sw_val' != "" | toks += mktok(lx, TokKind(PragmaSwizzle), hstart,
+      lx.pos - hstart, line, col, sw_val')
+   ?toks
+      [0] mktok(lx, TokKind(PragmaKw), hstart, lx.pos - hstart, line, col,
+         "#pragma")
+      [1] toks(0)!!
+      |
+         qu = lx.queue
+         qu += toks(0)!!
+         1..?toks @ i =>
+            qu += Tok(TokKind(Newline), hstart, 0, line, col, <->, <+>, "\n")
+            qu += toks(i)!!
+         take_queued(lx, 0)
 
 pragma_fp_fail: String, Int, Int => String
 pragma_fp_fail = word, line, col =>
@@ -1136,27 +1164,12 @@ pragma_fp_fail = word, line, col =>
       "' — expected 'all' or 'none'.")
    ""
 
-// "#pragma swizzle all|xyzw|rgba|none": a file-scoped switch for vector swizzling.
-scan_pragma_swizzle: Lx, Int, Int, Int => Tok
-scan_pragma_swizzle = lx, hstart, line, col =>
-   0..7 @ t => adv(lx, pk(lx, 0))
-   skip_ws(lx, 0)
-   sstart = lx.pos
-   scan_while(lx, (!is_ws(_)))
-   sarg = lx.src(sstart..lx.pos)
-   checked = sarg ["all", "xyzw", "rgba", "none"] sarg |
-      pragma_swizzle_fail(sarg, line, col)
-   scan_while(lx, (!is_nl(_)))
-   mktok(lx, TokKind(PragmaSwizzle), hstart, lx.pos - hstart, line, col, checked)
-
 pragma_swizzle_fail: String, Int, Int => String
 pragma_swizzle_fail = word, line, col =>
    fail(1013, line, col,
       "Invalid '#pragma swizzle' mode '" + word +
       "' — expected 'all', 'xyzw', 'rgba', or 'none'.")
    "none"
-
-
 
 // Dispatch a '#' directive ('#' already consumed); 'word' follows '#',
 // 'hstart' is the '#' position. One multi-guard choice over the word: each
@@ -1169,22 +1182,12 @@ scan_directive = lx, word, hstart, line, col =>
          ?word + 1, line, col, "#foreign")
       ["type"] mktok(lx, TokKind(TypeKw), hstart, ?word + 1, line, col,
          "#type")
-      ["packed"] mktok(lx, TokKind(PackedKw), hstart, ?word + 1, line, col,
-         "#packed")
-      ["align"] mktok(lx, TokKind(AlignKw), hstart, ?word + 1, line, col,
-         "#align")
       ["private"] mktok(lx, TokKind(Private), hstart, ?word + 1, line, col,
          "#private")
       ["public", "pub"] mktok(lx, TokKind(Public), hstart, ?word + 1, line,
          col, "#" + word)
       ["export"] mktok(lx, TokKind(Export), hstart, ?word + 1, line, col,
          "#export")
-      ["spawn"] mktok(lx, TokKind(SpawnKw), hstart, ?word + 1, line, col,
-         "#spawn")
-      ["join"] mktok(lx, TokKind(JoinKw), hstart, ?word + 1, line, col,
-         "#join")
-      ["exit"] mktok(lx, TokKind(ExitKw), hstart, ?word + 1, line, col,
-         "#exit")
       ["error"] mktok(lx, TokKind(ErrorKw), hstart, ?word + 1, line, col,
          "#error")
       ["warn"] mktok(lx, TokKind(WarnKw), hstart, ?word + 1, line, col,
@@ -1193,14 +1196,9 @@ scan_directive = lx, word, hstart, line, col =>
       ["use"] scan_use_directive(lx, hstart, line, col)
       ["param"] mktok(lx, TokKind(ParamKw), hstart, ?word + 1, line, col,
          "#param")
+      ["const"] mktok(lx, TokKind(ConstKw), hstart, ?word + 1, line, col,
+         "#const")
       | mktok(lx, TokKind(Id), hstart, ?word + 1, line, col, "#" + word)
-
-// "#!" compile-time prefix.
-scan_hash_ct: Lx, Int, Int => Tok
-scan_hash_ct = lx, line, col => 
-   adv(lx, pk(lx, 0))
-   adv(lx, pk(lx, 0))
-   mktok(lx, TokKind(CT), lx.pos - 2, 2, line, col, "#!")
 
 // '#' + name -> directive dispatch (or '#name' identifier).
 scan_hash_name: Lx, Int, Int => Tok
@@ -1210,15 +1208,12 @@ scan_hash_name = lx, line, col =>
 
 scan_hash: Lx, Int, Int => Tok
 scan_hash = lx, line, col => 
-   pk_off(lx, 1) == '!
-      | scan_hash_ct(lx, line, col)
-      | scan_hash_name2(lx, line, col)
-
-scan_hash_name2: Lx, Int, Int => Tok
-scan_hash_name2 = lx, line, col => 
    unicode::is_alpha(pk_off(lx, 1))
       | scan_hash_name(lx, line, col)
-      | mktok(lx, TokKind(Op), lx.pos, 1, line, col, "#")
+      |
+         hstart = lx.pos
+         adv(lx, pk(lx, 0))
+         mktok(lx, TokKind(Op), hstart, 1, line, col, "#")
 
 // --- layout engine --------------------------------------------------------
 
@@ -1944,18 +1939,13 @@ kind_name =
    [ParamKw] "#param"
    [Foreign] "#foreign"
    [TypeKw] "#type"
-   [PackedKw] "#packed"
-   [AlignKw] "#align"
    [Private] "#private"
    [Public] "#public"
    [Export] "#export"
-   [SpawnKw] "#spawn"
-   [JoinKw] "#join"
-   [ExitKw] "#exit"
    [ErrorKw] "#error"
    [WarnKw] "#warn"
    [PragmaKw] "#pragma"
    [PragmaSwizzle] "#pragma"
-   [CT] "#!"
+   [ConstKw] "#const"
    [Eof] "eof"
    | "?"

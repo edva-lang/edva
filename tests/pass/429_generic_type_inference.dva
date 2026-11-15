@@ -1,7 +1,7 @@
 #use io
 #type User (name: String, age: Int)
 #type Req (q: String, n: Int)
-send: #! Resp: Type, #! Rq: Type, String, Rq, (Resp => ()) => Int
+send: #param Resp: Type, #param Rq: Type, String, Rq, (Resp => ()) => Int
 send = url, payload, cb =>
    io::out(url)
    7

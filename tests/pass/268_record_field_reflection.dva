@@ -1,9 +1,9 @@
 // Compile-time record field reflection:
-// 1. ?T on a Record type gives field count.
-// 2. T.(i) gives the i-th field's name as a compile-time String constant.
-// 3. T.(i) in type position resolves to the field's static TypeInfo.
-// 4. Concrete type Pt.(i) works directly.
-// 5. Unrolled loops 0..?T @ i allow generic record inspection/serialization.
+// 1. #arity T on a Record type gives field count.
+// 2. #member T, i gives the i-th field's name as a compile-time String constant.
+// 3. #member T, i in type position resolves to the field's static TypeInfo.
+// 4. Concrete type #member Pt, i works directly.
+// 5. Unrolled loops 0..(#arity T) @ i allow generic record inspection/serialization.
 
 #use str
 #use io
@@ -13,42 +13,42 @@
 #type Pair (Int, String)
 
 // Field count reflection:
-nfields: #! T: Type, T => Int
-nfields = x => ?T
+nfields: #param T: Type, T => Int
+nfields = x => #arity T
 
 // Static field name access:
-field0_name: #! T: Type, T => String
-field0_name = x => T.(0)
+field0_name: #param T: Type, T => String
+field0_name = x => #member T, 0
 
-field1_name: #! T: Type, T => String
-field1_name = x => T.(1)
+field1_name: #param T: Type, T => String
+field1_name = x => #member T, 1
 
 // Join field names of any record:
-join_field_names: #! T: Type, T => String
+join_field_names: #param T: Type, T => String
 join_field_names = x =>
    out = {32}
-   0..?T @ i =>
+   0..(#arity T) @ i =>
       i > 0 | out += ","
-      out += T.(i)
+      out += #member T, i
    +out
 
 // Compile-time type check on fields:
-is_field0_int: #! T: Type, T => <>
-is_field0_int = x => T.(0) == Int
+is_field0_int: #param T: Type, T => <>
+is_field0_int = x => (#member T, 0) == Int
 
-is_field0_str: #! T: Type, T => <>
-is_field0_str = x => T.(0) == String
+is_field0_str: #param T: Type, T => <>
+is_field0_str = x => (#member T, 0) == String
 
 // Generic inspect function using compile-time type dispatch:
-inspect: #! T: Type, T => ()
+inspect: #param T: Type, T => ()
 inspect = val =>
-   0..?T @ i =>
-      name = T.(i)
-      T.(i)
+   0..(#arity T) @ i =>
+      name = #member T, i
+      #member T, i
          [Int]
-            io::out $ name + ":int=" + str::from_int(val.(i))
+            io::out $ name + ":int=" + str::from_int((#member val, i))
          [String]
-            io::out $ name + ":str=" + val.(i)
+            io::out $ name + ":str=" + (#member val, i)
          |
             io::out $ name + ":other"
 
@@ -62,8 +62,8 @@ io::out $ field1_name(p)
 io::out $ join_field_names(p)
 
 // Direct reflection on concrete type:
-io::outs $ Pt.(0)
-io::outs $ Pt.(1)
+io::outs $ #member Pt, 0
+io::outs $ #member Pt, 1
 
 per: Person
 per.name = "Alice"
@@ -72,18 +72,18 @@ per.active = <+>
 
 io::out $ str::from_int(nfields(per))
 io::out $ join_field_names(per)
-io::outs $ Person.(0)
-io::outs $ Person.(1)
-io::outs $ Person.(2)
+io::outs $ #member Person, 0
+io::outs $ #member Person, 1
+io::outs $ #member Person, 2
 
 io::out $ is_field0_int(p) | "pt.0 is int" | "pt.0 is not int"
 io::out $ is_field0_str(p) | "pt.0 is str" | "pt.0 is not str"
 io::out $ is_field0_str(per) | "per.0 is str" | "per.0 is not str"
 
 // Type equality check:
-io::out $ Pt.(0) == Int | "Pt.0==Int" | "Pt.0!=Int"
-io::out $ Pt.(1) == Int | "Pt.1==Int" | "Pt.1!=Int"
-io::out $ Person.(0) == String | "Person.0==Str" | "Person.0!=Str"
+io::out $ (#member Pt, 0) == Int | "Pt.0==Int" | "Pt.0!=Int"
+io::out $ (#member Pt, 1) == Int | "Pt.1==Int" | "Pt.1!=Int"
+io::out $ (#member Person, 0) == String | "Person.0==Str" | "Person.0!=Str"
 
 // Positional tuple field names:
 pair = Pair(42, "hello")

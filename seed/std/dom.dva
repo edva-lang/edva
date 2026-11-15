@@ -3,7 +3,7 @@
 #use libc
 #use mem
 
-#foreign "c"
+#foreign("c")
    realloc: (Addr, Int) => Addr
    memcmp: (Addr, Addr, Int) => i32
    edva_dom_call: (Int, Int, Int, Int, Addr, Int, Addr, Int, Addr) => Int
@@ -36,7 +36,7 @@ INVALID_RESULT = 10
 
 #private
 
-Reply: #packed (first: Int, length: Int, x: Float, y: Float, z: Float, w: Float)
+#type(packed) Reply (first: Int, length: Int, x: Float, y: Float, z: Float, w: Float)
 #type Owned (data: Addr, length: Int, capacity: Int)
 #type Property (op: Int, key: Owned, value: Owned, flag: Int, valid: <>)
 #type Properties Property{}
@@ -368,7 +368,7 @@ release = element => remove(element)
 
 #private
 #type Command (op: Int, a: Int, b: Int, c: Int, key: Owned, value: Owned)
-#type WireCommand #packed (
+#type(packed) WireCommand (
    op: Int, a: Int, b: Int, c: Int,
    key_data: Int, key_length: Int, value_data: Int, value_length: Int
 )

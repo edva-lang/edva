@@ -1,4 +1,4 @@
-BadFlags: #packed u16 (
+#type(packed = u16) BadFlags (
    a: 1,
    b: 2,
 )

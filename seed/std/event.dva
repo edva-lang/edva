@@ -4,7 +4,7 @@
 // Relation to `std/poll` and `sys::poll_*`:
 // - `std/poll` (`poll::poll_in`, `poll::stdin_ready`) and `sys::poll_in`/`sys::poll_out`
 //   check readiness of a single file descriptor (`nfds = 1`) using a stack-allocated
-//   `#packed` `PollFd` struct (`libc::poll(&pfd', 1, timeout_ms)`).
+//   `#type(packed)` `PollFd` struct (`libc::poll(&pfd', 1, timeout_ms)`).
 // - `std/event` multiplexes many descriptors simultaneously with associated user-data
 //   tokens (`Poller`: `add`, `mod`, `del`, `wait`).
 // - `Poller` stores its descriptor table in a typed growable array (`Event{}`),
@@ -37,7 +37,7 @@
    )
 
    // Internal C epoll_event layout (retained for compatibility)
-   EpollEvent: #packed (
+   #type(packed) EpollEvent (
       events: u32,
       data:   u64
    )

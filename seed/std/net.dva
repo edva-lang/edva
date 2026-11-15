@@ -1,5 +1,5 @@
 // net module for Dva
-// POSIX socket helpers with compile-time target OS selection (#! os) for
+// POSIX socket helpers with compile-time target OS selection (#os) for
 // struct layouts (Addrinfo) and numeric constants (AF_*, SO_*, SOL_SOCKET,
 // O_NONBLOCK).
 //
@@ -17,7 +17,7 @@
 #public
    // Addr family constants
    AF_INET  = 2
-   AF_INET6 = #! (os ["darwin"] 30 | 10)
+   AF_INET6 = #os ["darwin"] 30 | 10
 
    // Socket type constants
    SOCK_STREAM = 1
@@ -30,23 +30,23 @@
 
    // TCP / IPv6 options
    TCP_NODELAY = 1
-   IPV6_V6ONLY = #! (os ["darwin"] 27 | 26)
+   IPV6_V6ONLY = #os ["darwin"] 27 | 26
 
    // SOL_SOCKET / SO_REUSEADDR / SO_REUSEPORT / SO_*TIMEO
-   SOL_SOCKET   = #! (os ["darwin"] 0xFFFF | 1)
-   SO_REUSEADDR = #! (os ["darwin"] 4 | 2)
-   SO_REUSEPORT = #! (os ["darwin"] 0x0200 | 15)
-   SO_RCVTIMEO  = #! (os ["darwin"] 4102 | 20)
-   SO_SNDTIMEO  = #! (os ["darwin"] 4101 | 21)
+   SOL_SOCKET   = #os ["darwin"] 0xFFFF | 1
+   SO_REUSEADDR = #os ["darwin"] 4 | 2
+   SO_REUSEPORT = #os ["darwin"] 0x0200 | 15
+   SO_RCVTIMEO  = #os ["darwin"] 4102 | 20
+   SO_SNDTIMEO  = #os ["darwin"] 4101 | 21
 
    // fcntl command / flag
    F_GETFL     = 3
    F_SETFL     = 4
-   O_NONBLOCK  = #! (os ["darwin"] 4 | 2048)
+   O_NONBLOCK  = #os ["darwin"] 4 | 2048
 
    // Platform-resolved socket constants and sockaddr_in sin_family field
    sin_fam_inet: () => u16
-   sin_fam_inet = !=> u16(#! (os ["darwin"] ((AF_INET .<. 8) .|. 16) | AF_INET))
+   sin_fam_inet = !=> u16((#os ["darwin"] ((AF_INET .<. 8) .|. 16) | AF_INET))
 
    sol_socket: () => Int
    sol_socket = !=> SOL_SOCKET
@@ -64,7 +64,7 @@
    SHUT_WR = 1
 
    // IPv4 in_addr layout (4 bytes)
-   #type InAddr #packed (
+   #type(packed) InAddr (
       b0: u8,
       b1: u8,
       b2: u8,
@@ -72,7 +72,7 @@
    )
 
    // sockaddr_in layout (16 bytes, matches struct sockaddr_in on Linux x86_64)
-   #type SockAddrIn #packed (
+   #type(packed) SockAddrIn (
       sin_family: u16,
       sin_port:   u16,
       sin_addr:   InAddr,
@@ -80,7 +80,7 @@
    )
 
    // sockaddr_in6 layout (28 bytes, matches struct sockaddr_in6)
-   #type SockAddrIn6 #packed (
+   #type(packed) SockAddrIn6 (
       sin6_family:   u16,
       sin6_port:     u16,
       sin6_flowinfo: u32,
@@ -121,7 +121,7 @@
       ai_next:      Addr,
    )
 
-   #type Addrinfo #! (os ["darwin"] AddrinfoDarwin | AddrinfoLinux)
+   #type Addrinfo #os ["darwin"] AddrinfoDarwin | AddrinfoLinux
 
    // struct ifaddrs for network interface enumeration
    #type IfAddrs (
@@ -519,7 +519,7 @@
          ifa = IfAddrs(curr)
          ifa.ifa_addr == sys::addr_null | find_iface(ifa.ifa_next, target) |
             sa = SockAddrIn(ifa.ifa_addr)
-            fam = Int(sa.sin_family) .>. #! (os ["darwin"] 8 | 0)
+            fam = Int(sa.sin_family) .>. (#os ["darwin"] 8 | 0)
             is_match = (fam == AF_INET) &&
                (sa.sin_addr.b0 == target.b0) && (sa.sin_addr.b1 == target.b1) &&
                (sa.sin_addr.b2 == target.b2) && (sa.sin_addr.b3 == target.b3)
@@ -530,7 +530,7 @@
    // Query local routing IP and default outbound interface
    get_route_info: () => (String, String)
    get_route_info = !=>
-      lo = #! (os ["darwin"] "lo0" | "lo")
+      lo = #os ["darwin"] "lo0" | "lo"
       sock = libc::socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)
       sock [< 0] ("127.0.0.1", lo) |
          dest = SockAddrIn(net::sin_fam_inet!, u16(htons $ 53), InAddr(1u8, 1u8, 1u8, 1u8), 0u64)
@@ -567,22 +567,22 @@
       r = get_route_info!
       r.1
 
-#foreign "c"
+#foreign("c")
    c_sendfile = sendfile: (out_fd: Int, in_fd: Int, offset: Addr, count: Int) => Int
 
 #private
    #type NetPlatDarwin (darwin: Int, tag: Int)
    #type NetPlatWasm   (wasm: Int, tag: Int)
    #type NetPlatLinux  (linux: Int, tag: Int)
-   #type NetPlat #! (os ["darwin", "freebsd", "openbsd", "netbsd"] NetPlatDarwin ["wasm", "wasi"] NetPlatWasm | NetPlatLinux)
+   #type NetPlat #os ["darwin", "freebsd", "openbsd", "netbsd"] NetPlatDarwin ["wasm", "wasi"] NetPlatWasm | NetPlatLinux
 
    sendfile_linux: Int, Int, Int, Int => Int
    sendfile_linux = out_fd, in_fd, offset, count =>
       off' = offset
       c_sendfile(out_fd, in_fd, &off', count)
 
-   sendfile_os: #! OS: Type, Int, Int, Int, Int => Int
-   sendfile_os = #! OS, out_fd, in_fd, offset, count =>
+   sendfile_os: #param OS: Type, Int, Int, Int, Int => Int
+   sendfile_os = #param OS, out_fd, in_fd, offset, count =>
       OS
          [NetPlatLinux] sendfile_linux(out_fd, in_fd, offset, count)
          | -1

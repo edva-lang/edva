@@ -1,1 +1,1 @@
-E2064: Expected positive power-of-two integer after '#align', got '7'
+E2064: Expected positive power-of-two integer after 'align =', got '7'

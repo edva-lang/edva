@@ -54,9 +54,9 @@ within an arena are freed simultaneously when the arena is reset or destroyed.
 | `mem::destroy` | `Arena => ()` | Frees all backing chunks and arena descriptor |
 | `mem::stats` | `Arena => ArenaStats` | Retrieves allocation metrics and chunk counts |
 | `mem::with` | `Arena, (() => ()) => ()` | Runs action with arena set as ambient allocator |
-| `mem::with_value` | `#! T: Type, Arena, (() => T) => T` | Runs an action in an arena and returns its value |
+| `mem::with_value` | `#param T: Type, Arena, (() => T) => T` | Runs an action in an arena and returns its value |
 | `mem::escape` | `(() => ()) => ()` | Runs action in the global arena, restoring the prior arena afterward |
-| `mem::escape_value` | `#! T: Type, (() => T) => T` | Runs an action in the global arena and returns its value |
+| `mem::escape_value` | `#param T: Type, (() => T) => T` | Runs an action in the global arena and returns its value |
 
 `current` and `set_current` are low-level controls for integrations. Prefer
 `with`, `with_value`, `escape`, and `escape_value` for scoped switching because

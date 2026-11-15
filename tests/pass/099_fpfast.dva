@@ -1,11 +1,11 @@
-// "#pragma fpfast all" — the aggressive FP fast-math mask
+// "#pragma(fpfast = all)" — the aggressive FP fast-math mask
 // (nnan|ninf|nsz|arcp|contract|reassoc) on arithmetic (not comparisons).
 // Division keeps no guardrail: a zero denominator is UB per the contract.
 // Exact values (powers of two, small decimals) are unchanged, so the results
 // still verify the plumbing and the emitted IR carries the fast flags.
 #use io
 
-#pragma fpfast all
+#pragma(fpfast = all)
 a = 1.5 + 2.0
 io::out $ a
 b = 3.25 * 2.0

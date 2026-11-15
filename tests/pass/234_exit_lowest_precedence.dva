@@ -1,10 +1,9 @@
-// "#exit <code>" parses at the lowest precedence: the status code is the
-// whole following expression — a comparison and choice chain need no parens
-// ("#exit s == \"hello\" | 7 | 9"). Inside a choice branch body the trailing
-// '|' instead stays with the enclosing choice (see 223_exit_branch).
+// "sys::exit(<code>)" handles a full choice expression as its status code
+// ("sys::exit(s == \"hello\" | 7 | 9)"). Inside a choice branch body see 223_exit_branch.
 #use io
+#use sys
 
 io::out("before")
 s = "he" + "llo"
-#exit s == "hello" | 7 | 9
+sys::exit(s == "hello" | 7 | 9)
 io::out("unreachable")

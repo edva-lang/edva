@@ -55,7 +55,7 @@
    MAP_SHARED    = 1
    MAP_POPULATE  = 0x8000
 
-   #type IoUringParams #packed (
+   #type(packed) IoUringParams (
       sq_entries:      u32,
       cq_entries:      u32,
       flags:           u32,
@@ -88,7 +88,7 @@
       cq_resv2:        u32
    )
 
-   #type SQE #packed (
+   #type(packed) SQE (
       opcode:       u8,
       flags:        u8,
       ioprio:       u16,
@@ -105,7 +105,7 @@
       pad:          Int
    )
 
-   #type CQERaw #packed (
+   #type(packed) CQERaw (
       user_data: Int,
       res:       i32,
       flags:     u32
@@ -119,7 +119,7 @@
 
    #type CQEs CQE{}
 
-   #type Timespec #packed (
+   #type(packed) Timespec (
       tv_sec:  i64,
       tv_nsec: i64
    )

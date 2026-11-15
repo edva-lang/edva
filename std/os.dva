@@ -10,7 +10,7 @@
 #foreign
    environ: Addr
 
-#foreign "c"
+#foreign("c")
    c_getenv      = getenv:      (name: String) => Addr
    c_setenv      = setenv:      (name: String, val: String, overwrite: i32) => i32
    c_unsetenv    = unsetenv:    (name: String) => i32
@@ -38,14 +38,14 @@
    c_socketpair     = socketpair:     (domain: i32, kind: i32, protocol: i32, fds: Addr) => i32
    c_prctl          = prctl:          (option: Int, arg2: Int, arg3: Int, arg4: Int, arg5: Int) => Int
 
-O_NONBLOCK_FLAG = #! (os ["darwin"] 4 | 2048)
-O_RDWR_NOCTTY   = #! (os ["darwin"] 0x20002 | 0x102)
-TIOCSCTTY_REQ   = #! (os ["darwin"] 0x20007461 | 0x540E)
-TIOCGWINSZ_REQ  = #! (os ["darwin"] 0x40087468 | 0x5413)
-TIOCSWINSZ_REQ  = #! (os ["darwin"] 0x80087467 | 0x5414)
-CLOCK_MONO_ID   = #! (os ["darwin"] 6 | 1)
+O_NONBLOCK_FLAG = #os ["darwin"] 4 | 2048
+O_RDWR_NOCTTY   = #os ["darwin"] 0x20002 | 0x102
+TIOCSCTTY_REQ   = #os ["darwin"] 0x20007461 | 0x540E
+TIOCGWINSZ_REQ  = #os ["darwin"] 0x40087468 | 0x5413
+TIOCSWINSZ_REQ  = #os ["darwin"] 0x80087467 | 0x5414
+CLOCK_MONO_ID   = #os ["darwin"] 6 | 1
 // AF_UNIX + SOCK_STREAM, with SOCK_CLOEXEC where the kernel supports it atomically.
-SOCK_STREAM_CLOEXEC = #! (os ["darwin", "freebsd", "openbsd", "netbsd"] 1 | 0x80001)
+SOCK_STREAM_CLOEXEC = #os ["darwin", "freebsd", "openbsd", "netbsd"] 1 | 0x80001
 
 // Extracts the exit code from a POSIX wait status word.
 decode_wait_status: Int => Int
@@ -101,17 +101,17 @@ append_bytes = b, src, n =>
    #type ProcResults ProcResult{}
 
 #private
-   #type PipeFds #packed (
+   #type(packed) PipeFds (
       r: i32,
       w: i32
    )
 
-   #type OsTimespec #packed (
+   #type(packed) OsTimespec (
       sec:  i64,
       nsec: i64
    )
 
-   #type RawWinSize #packed (
+   #type(packed) RawWinSize (
       ws_row:    u16,
       ws_col:    u16,
       ws_xpixel: u16,
@@ -152,7 +152,7 @@ append_bytes = b, src, n =>
          c_setenv(kv.key, kv.val, 1i32)
       <+>
 
-   #type PollFd3 #packed (
+   #type(packed) PollFd3 (
       fd0: i32,
       ev0: i16,
       rev0: i16,
@@ -1071,13 +1071,13 @@ append_bytes = b, src, n =>
    #type OsPlatDarwin (darwin: Int, tag: Int)
    #type OsPlatWasm   (wasm: Int, tag: Int)
    #type OsPlatLinux  (linux: Int, tag: Int)
-   #type OsPlat #! (os ["darwin", "freebsd", "openbsd", "netbsd"] OsPlatDarwin ["wasm", "wasi"] OsPlatWasm | OsPlatLinux)
+   #type OsPlat #os ["darwin", "freebsd", "openbsd", "netbsd"] OsPlatDarwin ["wasm", "wasi"] OsPlatWasm | OsPlatLinux
 
    pdeath_linux: Int => <>
    pdeath_linux = sig => c_prctl(1, sig, 0, 0, 0) == 0
 
-   pdeath_os: #! OS: Type, Int => <>
-   pdeath_os = #! OS, sig =>
+   pdeath_os: #param OS: Type, Int => <>
+   pdeath_os = #param OS, sig =>
       OS
          [OsPlatLinux] pdeath_linux(sig)
          | <->

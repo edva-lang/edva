@@ -9,7 +9,7 @@ meta:
 # `path` standard library
 
 The `path` module provides pure lexical path manipulation with zero filesystem or `libc`
-dependencies. It uses compile-time target inspection (`#! os`) to select native
+dependencies. It uses compile-time target inspection (`#os`) to select native
 Windows vs. POSIX separators and drive-prefix semantics, while also exposing explicit
 `posix_*` and `win_*` functions for cross-platform tooling.
 

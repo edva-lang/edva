@@ -1,9 +1,9 @@
-// A "T.(i)" record field index must be in range (0..?T-1).
+// A "#member T, i" record field index must be in range (0..(#arity T) - 1).
 
 #use io
 
 #type Pt (x: Int, y: Int)
-bad: #! T: Type, T => String
-bad = x => T.(9)
+bad: #param T: Type, T => String
+bad = x => #member T, 9
 p = Pt(1, 2)
 io::out $ bad(p)

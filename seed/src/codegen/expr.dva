@@ -17,7 +17,7 @@
 
 #public
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
    dva_arena_current: () => Addr
    rename: (oldpath: String, newpath: String) => Int
@@ -814,6 +814,32 @@ call_has_target = call =>
 
 codegen_eval_call: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_call = cg, t =>
+   t.fn_name == "#has_member" && ?t.args == 2
+      |
+         res = types::ctfe_eval_type_flag(cg, ast::Expr(Call, t))
+         fval = res.0 != 0 | 1 | 0
+         --| (LLVMConstInt(LLVMInt1Type!, fval, 0), ast::ValueType(Flag))
+   t.fn_name == "#member3" && ?t.args == 3
+      |
+         rtv = types::resolve_type_value(cg, t.args(0)!!)
+         --| rtv.1
+            |
+               can_ti = types::ctfe_canonical_ti(cg, rtv.0)
+               cargs = ast::Exprs()
+               cargs += t.args(1)!!
+               cargs += t.args(2)!!
+               tname = t.args(0)!!
+                  [Var tv] tv
+                  [SizeOf so] (so.rec_type [TypeVar tv2] tv2 | "")
+                  | ""
+               ccall = ast::CallExpr(tname, ast::Expr(Var, ""), cargs,
+                 t.line, t.col)
+               types::codegen_eval_ctor_ex(cg, can_ti, ccall, <+>)
+            |
+               types::init_error(cg, "E3084",
+                 "'#member' 3-argument construction requires an enum type.",
+                 t.line, t.col)
+               (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
    call_pred = types::call_type_pred_name(t)
    call_pred != "" && ?t.args == 1
       |
@@ -1197,6 +1223,13 @@ codegen_eval = cg, expr =>
       [Float f] (LLVMConstReal(LLVMDoubleType!, f), ast::ValueType(Float))
       [Str s] (stmt::codegen_string_literal(cg, s), ast::ValueType(Str))
       [Var v]
+         v ["#os", "#arch", "#target"]
+            |
+               s_os = v
+                  ["#os"] ast::triple_os(cg.opts.target_triple)
+                  ["#arch"] ast::triple_arch(cg.opts.target_triple)
+                  | cg.opts.target_triple
+               --| (stmt::codegen_string_literal(cg, s_os), ast::ValueType(Str))
          rv = types::resolve_var_name(cg, v)
          is_v = types::var_has_storage(cg, v)
          v_opt = is_v
@@ -2814,7 +2847,7 @@ ti_rec_or_enum_len = ti =>
    can_ti = types::ctfe_canonical_ti_simple(ti)
    can_ti
       [Align a] ti_rec_or_enum_len(a.1)
-      [Rec r] ?r.0
+      [Rec r] (!r.1 | ?r.0 | -1)
       [Enum s] ?s
       | -1
 
@@ -2866,25 +2899,7 @@ codegen_eval_unary = cg, t =>
                              "Unary '-' requires a numeric operand.", 0, 0)
                            (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       [Length]
-         rtv = types::resolve_type_value(cg, t.1)
-         rtv.1
-            |
-               count' = ti_rec_or_enum_len(types::ctfe_canonical_ti(cg, rtv.0))
-               count' !< 0
-                  | (LLVMConstInt(LLVMInt64Type!, count', 0),
-                    ast::ValueType(Int))
-                  | codegen_eval_unary_len(cg, ev.0, ev.1)
-            |
-               t.1
-                  [Var v]
-                     is_rec = types::var_type(cg, v) [Record]
-                     is_rec
-                        |
-                           fvs = match::var_fvts(cg, v)
-                           (LLVMConstInt(LLVMInt64Type!,
-                             ?fvs, 0), ast::ValueType(Int))
-                        | codegen_eval_unary_len(cg, ev.0, ev.1)
-                  | codegen_eval_unary_len(cg, ev.0, ev.1)
+         codegen_eval_unary_len(cg, ev.0, ev.1)
       [Freeze]
          (main::codegen_builder_freeze(cg, ev.0, "builder.freeze"),
            ast::ValueType(Str))
@@ -3831,7 +3846,7 @@ var_ti = cg, name =>
    types::has_local_var(cg, name)
       |
          dt = types::var_dtype(cg, name)
-         dt != "" && types::has_type_name(cg, dt)
+         dt != "" && types::is_user_type(cg, dt)
             | types::typedef_ti(cg, dt)
             | ast::TypeInfo(Prim, types::var_type(cg, name))
       |
@@ -3839,7 +3854,7 @@ var_ti = cg, name =>
          ti [Prim vt]
             vt [Unknown]
                dt = types::var_dtype(cg, name)
-               dt != "" && types::has_type_name(cg, dt)
+               dt != "" && types::is_user_type(cg, dt)
                   | types::typedef_ti(cg, dt)
                   | ti
             | ti
@@ -5448,7 +5463,9 @@ resolve_typed_type_value = cg, te =>
       [LitUnit]
          (ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
       [Var v]
-         types::resolve_type_value(cg, ast::Expr(Var, v.0))
+         v.0 == "" && (te.ut [Prim p] p [Type] | <->)
+            | (te.ti, <+>)
+            | types::resolve_type_value(cg, ast::Expr(Var, v.0))
       [Member m]
          m.1 == "Type"
             | resolve_typed_type_value(cg, m.0)
@@ -5772,17 +5789,7 @@ codegen_typed_eval_bin_arith_default = cg, op, lv, rv, ti =>
 codegen_typed_eval_unary: types::Cg, ast::UnaryOp, tast::TypedExpr, unify::UType,
   ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_unary = cg, op, operand, ut, ti =>
-   is_len = op [Length]
-   rtv_len = is_len
-      | resolve_typed_type_value(cg, operand)
-      | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
-   rtv_len.1
-      |
-         count = ti_rec_or_enum_len(types::ctfe_canonical_ti(cg, rtv_len.0))
-         count !< 0
-            | (LLVMConstInt(LLVMInt64Type!, count, 0), ast::ValueType(Int))
-            | codegen_length_error(cg)
-      | codegen_typed_eval_unary_val(cg, op, operand, ut, ti)
+   codegen_typed_eval_unary_val(cg, op, operand, ut, ti)
 
 codegen_typed_eval_unary_val: types::Cg, ast::UnaryOp, tast::TypedExpr, unify::UType,
   ast::TypeInfo => (Addr, ast::ValueType)
@@ -6050,7 +6057,8 @@ codegen_typed_eval_member_normal = cg, target, fname, idx, ti =>
       | types::ct_bind_find(vname)
       | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
    is_ut = !has_var && vname != "" && types::is_user_type(cg, vname)
-   is_type_ref = (ct.1 || is_ut) && fname == "" && idx !< 0
+   is_synth_type = !has_var && vname == "" && (target.ut [Prim p] p [Type] | <->)
+   is_type_ref = (ct.1 || is_ut || is_synth_type) && fname == "" && idx !< 0
    is_type_ref
       |
          tname = ct.1
@@ -6062,7 +6070,7 @@ codegen_typed_eval_member_normal = cg, target, fname, idx, ti =>
             |
                ct.1
                   | ct.0
-                  | types::typedef_ti(cg, vname)
+                  | is_ut | types::typedef_ti(cg, vname) | target.ti
          can_ti = types::ctfe_canonical_ti(cg, ct_ti)
          can_ti
             [Rec r]
@@ -6080,13 +6088,17 @@ codegen_typed_eval_member_normal = cg, target, fname, idx, ti =>
                   | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
-         is_tprop = !has_var && (fname == "name" || fname == "zero")
+         is_tprop_name = fname ["#type_name", "#type_zero", "#type_arity",
+           "#type_size", "#type_align"]
+         is_tprop = !has_var && is_tprop_name
          rtv_prop = is_tprop
             | resolve_typed_type_value(cg, target)
             | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
          rtv_prop.1
             |
-               t_ast = vname != "" | ast::Expr(Var, vname) | ast::Expr(Var, "")
+               t_ast = vname != ""
+                  | ast::Expr(Var, vname)
+                  | ast::Expr(SizeOf, ast::SizeOfExpr(ast::ValueType(Unknown), rtv_prop.0))
                match::codegen_eval_type_prop_ti(cg, t_ast, rtv_prop.0, fname)
             | codegen_typed_eval_member_val(cg, target, vname, fname, idx, ti)
 
@@ -6826,6 +6838,16 @@ codegen_typed_eval_type_pred = cg, pred_name, args =>
 codegen_typed_eval_call: types::Cg, String, <tast::TypedExpr|>, tast::TypedExprs,
   ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
+   ! <>(ftarget) && fname == "#has_member" && ?args == 2
+      |
+         arg0' = args(0)!!
+         arg1' = args(1)!!
+         mname = arg1'.kind [LitStr s] s | ""
+         rtv = resolve_typed_type_value(cg, arg0')
+         hm_flag = rtv.1 && mname != ""
+            | types::ti_has_member_name(cg, rtv.0, mname)
+            | <->
+         --| (LLVMConstInt(LLVMInt1Type!, (hm_flag | 1 | 0), 0), ast::ValueType(Flag))
    has_tgt = <>(ftarget)
    has_tgt
       |

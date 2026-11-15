@@ -12,7 +12,7 @@ The `kv` module implements a Bitcask-inspired embedded log-structured
 key-value store. Writes append CRC-32-protected records to an append-only log
 file while maintaining an in-memory `KeyDir` (`String ^ EntryLoc`) that maps
 every live key to its exact file offset and byte length for $O(1)$ single-seek
-reads. It also provides online log compaction (`compact`) and `#!` compile-time
+reads. It also provides online log compaction (`compact`) and `#param` compile-time
 structural typed serialization (`put_val`, `get_val`) powered by `std/binary`.
 
 ```{.dva .run}
@@ -44,5 +44,5 @@ libc::unlink(path)
 | `kv::delete(db, key)` | `Store, String => < <> | Error >` | Appends a deletion tombstone for `key` and removes it from `keydir` |
 | `kv::keys(db)` | `Store => String{}` | Returns all live keys in sorted lexicographical order |
 | `kv::compact(db)` | `Store => < | Error >` | Rewrites only live entries to a new log file and atomically replaces `db.path` |
-| `kv::put_val(db, key, val)` | `#! T: Type, Store, String, T => < | Error >` | Encodes `val` via `binary::encode_le` and stores it under `key` |
-| `kv::get_val(T, db, key)` | `#! T: Type, Store, String => < T | Error >` | Reads and decodes a value of type `T` stored under `key` |
+| `kv::put_val(db, key, val)` | `#param T: Type, Store, String, T => < | Error >` | Encodes `val` via `binary::encode_le` and stores it under `key` |
+| `kv::get_val(T, db, key)` | `#param T: Type, Store, String => < T | Error >` | Reads and decodes a value of type `T` stored under `key` |

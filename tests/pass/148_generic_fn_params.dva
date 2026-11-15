@@ -4,7 +4,7 @@
 
 #use io
 
-my_apply: #! T: Type, #! U: Type, (T => U), T => U
+my_apply: #param T: Type, #param U: Type, (T => U), T => U
 my_apply = f, x => f $ x
 
 inc: Int => Int
@@ -16,7 +16,7 @@ len_of = s => ?s
 io::out $ my_apply(len_of, "hello")
 
 // A two-argument function-typed param (flat inside the parens).
-my_apply2: #! T: Type, #! U: Type, (T, T => U), T, T => U
+my_apply2: #param T: Type, #param U: Type, (T, T => U), T, T => U
 my_apply2 = f, a, b => f(a, b)
 
 add: Int, Int => Int

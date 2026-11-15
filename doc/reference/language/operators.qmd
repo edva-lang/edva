@@ -182,7 +182,7 @@ The exact identifier `_` has context-dependent implicit roles, governed by stric
 | **Enum payload branch** | `e [Item] _ + 1 | 0` | `_` is the matched variant's payload | `E3004`: `_` on unit variant (`[Empty] _`) |
 | **Ordinary guarded branch** | `x [> 0] x + 1 | 0` | Does **not** bind `_` in the branch body (preserves function-valued branches) | `E3004` on `7 [> 0] _ + 1 | 0` |
 | **Structured pattern wildcard** | `p [(a = _, b = 20)] ...` | Matches component without binding a variable (`[Item _]` is rejected) | `E2109`: redundant `_` in `[Item _]` |
-| **Explicit parameter** | `_ => expr` / `a, _ => expr` | **Forbidden** across all lambdas, functions, cycles, and `#!` params | `E2040`: explicit `_` parameter |
+| **Explicit parameter** | `_ => expr` / `a, _ => expr` | **Forbidden** across all lambdas, functions, cycles, and `#param` params | `E2040`: explicit `_` parameter |
 | **Assignment target** | `_ = expr` / `_ := expr` | **Forbidden** | `E2044`: cannot assign to `_` |
 | **Unbound value reference** | `x = _` | **Forbidden** outside an active implicit binding scope | `E3004`: `Undefined: _` |
 

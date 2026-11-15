@@ -1,6 +1,6 @@
 #use io
-Result: #! T: Type, #! E: Type => < T | E >
-Pair: #! A: Type, #! B: Type => (a: A, b: B)
+Result: #param T: Type, #param E: Type => < T | E >
+Pair: #param A: Type, #param B: Type => (a: A, b: B)
 #type R1 Result(Int, String)
 div: Int, Int => R1
 div = a, b => b [0] <- "div0" +> | <+ a / b ->
@@ -11,7 +11,7 @@ pp: PP
 pp = (a = (a = 1, b = "in"), b = 2.5)
 io::out(pp.a.b)
 io::out(pp.b)
-swap: #! A: Type, #! B: Type, Pair(A, B) => Pair(B, A)
+swap: #param A: Type, #param B: Type, Pair(A, B) => Pair(B, A)
 swap = p => (a = p.b, b = p.a)
 s = swap(pp.a)
 io::out(s.a)

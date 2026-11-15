@@ -55,7 +55,7 @@
    exit: Int => ()
    exit = code => libc::exit $ code
 
-   PollFd: #packed (
+   #type(packed) PollFd (
       fd: i32,
       events: i16,
       revents: i16

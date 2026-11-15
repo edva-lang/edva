@@ -9,7 +9,7 @@ meta:
 # `hash` standard library
 
 The `hash` module provides fast non-cryptographic byte hashing (`fnv1a`, `fnv1a32`,
-`wyhash`), checksums (`crc32`, `adler32`), hash combinators (`combine`), and `#!`
+`wyhash`), checksums (`crc32`, `adler32`), hash combinators (`combine`), and `#param`
 compile-time structural hashing (`hash::of`, `hash::seeded`) over arbitrary records,
 tuples, enums, options, arrays, slices, and maps.
 
@@ -34,5 +34,5 @@ io::out $ str::from_int(Int(hash::of(Point(10, 20)) != hash::of(Point(20, 10))))
 | `hash::crc32(s)` | `String => u32` | IEEE 802.3 CRC-32 checksum (`0xEDB88320` polynomial) |
 | `hash::adler32(s)` | `String => u32` | RFC 1950 Adler-32 checksum |
 | `hash::combine(h1, h2)` | `u64, u64 => u64` | Mixes two 64-bit hashes into a single 64-bit hash |
-| `hash::seeded(seed, val)` | `#! T: Type, u64, T => u64` | Compile-time specialized structural 64-bit hash of `val` with `seed` |
-| `hash::of(val)` | `#! T: Type, T => u64` | Compile-time specialized structural 64-bit hash of `val` (`seed = 0`) |
+| `hash::seeded(seed, val)` | `#param T: Type, u64, T => u64` | Compile-time specialized structural 64-bit hash of `val` with `seed` |
+| `hash::of(val)` | `#param T: Type, T => u64` | Compile-time specialized structural 64-bit hash of `val` (`seed = 0`) |

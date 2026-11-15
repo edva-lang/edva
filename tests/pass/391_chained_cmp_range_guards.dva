@@ -24,15 +24,15 @@ classify_char =
    ['_]                  "under"
    |                      "other"
 
-ct_classify: #! N: Int => String
-ct_classify = #! N =>
+ct_classify: #param N: Int => String
+ct_classify = #param N =>
    N
       [0..10]   "single"
       [10...99] "double"
       |         "large"
 
-ct_chained: #! X: Int => <>
-ct_chained = #! X => 1 !> X !> 10
+ct_chained: #param X: Int => <>
+ct_chained = #param X => 1 !> X !> 10
 
 // 1. Chained comparisons: open, half-open, closed, descending, negated
 x = 5

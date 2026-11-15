@@ -1,6 +1,6 @@
 #use io
 
-#pragma swizzle all
+#pragma(swizzle = all)
 
 // 1. Float vectors with xyzw
 v = (1.0, 2.0)

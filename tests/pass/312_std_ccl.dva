@@ -1,6 +1,6 @@
 // tests/pass/312_std_ccl.dva
 // Comprehensive tests for std/ccl parser, model, deterministic serializer,
-// and structural #! encode / decode.
+// and structural # encode / decode.
 
 #use io
 #use str
@@ -75,9 +75,9 @@ main = !=>
          io::out("parse error:")
          io::out(e.msg)
 
-   // 2. Structural #! encode and decode on records, options, arrays, maps, enums
+   // 2. Structural # encode and decode on records, options, arrays, maps, enums
    io::out("--- test 2: structural encode & decode ---")
-   cfg = ServerCfg.zero
+   cfg = #zero ServerCfg
    cfg.host = "0.0.0.0"
    cfg.port = 9090
    cfg.tls = <+>

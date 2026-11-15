@@ -4,20 +4,27 @@
   <highlighting>
     <list name="directives">
       <item>#type</item>
-      <item>#packed</item>
-      <item>#align</item>
       <item>#foreign</item>
       <item>#pragma</item>
       <item>#public</item>
       <item>#pub</item>
       <item>#private</item>
       <item>#export</item>
-      <item>#spawn</item>
-      <item>#join</item>
-      <item>#exit</item>
+      <item>#param</item>
+      <item>#const</item>
+      <item>#os</item>
+      <item>#arch</item>
+      <item>#target</item>
       <item>#error</item>
       <item>#warn</item>
       <item>#size</item>
+      <item>#align</item>
+      <item>#name</item>
+      <item>#zero</item>
+      <item>#arity</item>
+      <item>#members</item>
+      <item>#member</item>
+      <item>#has_member</item>
     </list>
     <list name="types">
       <item>Int</item>
@@ -52,9 +59,7 @@
         <StringDetect attribute="String" context="TripleString" String="&quot;&quot;&quot;" />
         <DetectChar attribute="String" context="String" char="&quot;" />
         <!-- #use directive: highlight module path/string uniformly -->
-        <RegExpr attribute="Directive" context="UseDirective" String="#use(-dynamic)?\b" />
-        <!-- #! compile-time directive (matched before '#' and '!') -->
-        <StringDetect attribute="Directive" context="#stay" String="#!" />
+        <RegExpr attribute="Directive" context="UseDirective" String="#use(\([^)]*\))?\b" />
         <keyword attribute="Directive" context="#stay" String="directives" />
 
         <!-- Mutables: foo', x', total'' (highlighted in reddish) -->

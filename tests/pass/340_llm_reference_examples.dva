@@ -3,7 +3,7 @@
 
 #use io
 
-#foreign "c"
+#foreign("c")
    open: (path: String, flags: Int) => Int
    close: (fd: Int) => Int
    read: (fd: Int, buf: Addr, count: Int) => Int

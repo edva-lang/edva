@@ -6,7 +6,7 @@
 #use str
 #use sys
 
-#foreign "c"
+#foreign("c")
    lstat: (path: String, buf: Addr) => Int
    readlink: (path: String, buf: Addr, bufsiz: Int) => Int
    mkdir: (path: String, mode: Int) => Int
@@ -20,7 +20,7 @@
 #public
 
 // Linux x86_64 struct stat layout (144 bytes)
-#type StatRawLinux #packed (
+#type(packed) StatRawLinux (
    st_dev:     u64
    st_ino:     u64
    st_nlink:   u64
@@ -44,7 +44,7 @@
 )
 
 // Darwin (macOS arm64 / 64-bit inode) struct stat layout (144 bytes)
-#type StatRawDarwin #packed (
+#type(packed) StatRawDarwin (
    st_dev:         i32
    st_mode:        u16
    st_nlink:       u16
@@ -71,13 +71,13 @@
    st_qspare1:     i64
 )
 
-#type StatRaw #! (os ["darwin"] StatRawDarwin | StatRawLinux)
+#type StatRaw #os ["darwin"] StatRawDarwin | StatRawLinux
 
 empty_stat: () => StatRaw
 empty_stat = !=> StatRaw(..default)
 
 // Linux x86_64 struct dirent prefix (19 bytes up to d_name)
-#type DirentPrefixLinux #packed (
+#type(packed) DirentPrefixLinux (
    d_ino:    u64
    d_off:    u64
    d_reclen: u16
@@ -85,7 +85,7 @@ empty_stat = !=> StatRaw(..default)
 )
 
 // Darwin (macOS 64-bit inode) struct dirent prefix (21 bytes up to d_name)
-#type DirentPrefixDarwin #packed (
+#type(packed) DirentPrefixDarwin (
    d_ino:     u64
    d_seekoff: u64
    d_reclen:  u16
@@ -93,10 +93,10 @@ empty_stat = !=> StatRaw(..default)
    d_type:    u8
 )
 
-#type DirentPrefix #! (os ["darwin"] DirentPrefixDarwin | DirentPrefixLinux)
+#type DirentPrefix #os ["darwin"] DirentPrefixDarwin | DirentPrefixLinux
 
 // Linux x86_64 struct statvfs layout (112 bytes)
-#type StatvfsLinux #packed (
+#type(packed) StatvfsLinux (
    f_bsize:   u64
    f_frsize:  u64
    f_blocks:  u64
@@ -117,7 +117,7 @@ empty_stat = !=> StatRaw(..default)
 )
 
 // Darwin struct statvfs layout (64 bytes)
-#type StatvfsDarwin #packed (
+#type(packed) StatvfsDarwin (
    f_bsize:   u64
    f_frsize:  u64
    f_blocks:  u32
@@ -131,13 +131,13 @@ empty_stat = !=> StatRaw(..default)
    f_namemax: u64
 )
 
-#type Statvfs #! (os ["darwin"] StatvfsDarwin | StatvfsLinux)
+#type Statvfs #os ["darwin"] StatvfsDarwin | StatvfsLinux
 
 empty_statvfs: () => Statvfs
 empty_statvfs = !=> Statvfs(..default)
 
 // POSIX file mode bitfield layout (16 bits)
-#type FileMode #packed u16 (
+#type(packed = u16) FileMode (
    other:   3
    group:   3
    user:    3
@@ -145,7 +145,7 @@ empty_statvfs = !=> Statvfs(..default)
    fmt:     4
 )
 
-#type PermsBits #packed u16 (
+#type(packed = u16) PermsBits (
    other_x: <>
    other_w: <>
    other_r: <>
@@ -387,7 +387,7 @@ read_dir = dir_path =>
 // --- File CRUD & Operations ---
 
 open_wronly_creat_trunc: () => Int
-open_wronly_creat_trunc = !=> #! (os ["darwin"] 1537 | 577)
+open_wronly_creat_trunc = !=> #os ["darwin"] 1537 | 577
 
 read_to_string: String => <String | >
 read_to_string = path =>

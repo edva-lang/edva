@@ -1,6 +1,6 @@
 // Standard Binary Packing, Endian I/O & LEB128 Module (std/binary.dva)
 // Endian-aware scalar readers/writers, unsigned/signed LEB128 varints, and
-// `#!` compile-time structural binary serialization (`encode_le`/`decode_le`,
+// `#param` compile-time structural binary serialization (`encode_le`/`decode_le`,
 // `encode_be`/`decode_be`).
 
 #private
@@ -352,11 +352,11 @@ read_sleb128 = buf, off =>
             --| <+ (Int(res'), cur') ->
    <- bin_err("unexpected EOF in sleb128", cur') +>
 
-// --- Structural Binary Packing (#!) -----------------------------------------
+// --- Structural Binary Packing (#param) -------------------------------------
 
 #private
 
-pack_into: #! T: Type, Builder, T, <> => ()
+pack_into: #param T: Type, Builder, T, <> => ()
 pack_into = b, val, is_be =>
    T
       [u8] write_u8(b, val)
@@ -393,10 +393,10 @@ pack_into = b, val, is_be =>
          val @ elem =>
             pack_into(E, b, elem, is_be)
       [(..)]
-         T @ f =>
+         #members T @ f =>
             f.type
                [<P|>]
-                  vf = val.(f)
+                  vf = (#member val, f)
                   vf
                      | inner =>
                         write_u8(b, 1u8)
@@ -404,10 +404,10 @@ pack_into = b, val, is_be =>
                      |
                         write_u8(b, 0u8)
                |
-                  pack_into(f.type, b, val.(f), is_be)
+                  pack_into(f.type, b, (#member val, f), is_be)
       [<..>]
-         T @ v =>
-            val.(v)
+         #members T @ v =>
+            #member val, v
                | pay =>
                   write_u8(b, u8(v.idx))
                   v.type
@@ -419,7 +419,7 @@ pack_into = b, val, is_be =>
    len: Int
 )
 
-unpack_at: #! T: Type, String, OffsetCursor, <> => < T | Error >
+unpack_at: #param T: Type, String, OffsetCursor, <> => < T | Error >
 unpack_at = buf, cur, is_be =>
    off_in = cur.pos
    T
@@ -529,60 +529,60 @@ unpack_at = buf, cur, is_be =>
          r = is_be | read_u32_be(buf, off_in) | read_u32_le(buf, off_in)
          cnt = Int(r--!)
          cur.pos = off_in + 4
-         arr' = T.zero
+         arr' = #zero T
          cnt @
             arr' += unpack_at(E, buf, cur, is_be)--!
          <+ arr' ->
       [(..)]
-         rec' = T.zero
-         T @ f =>
-            rec'.(f) = unpack_at(f.type, buf, cur, is_be)--!
+         rec' = #zero T
+         #members T @ f =>
+            #member rec', f = unpack_at(f.type, buf, cur, is_be)--!
          <+ rec' ->
       [<..>]
          tag = Int(read_u8(buf, off_in)--!)
          cur.pos = off_in + 1
-         T @ v =>
+         #members T @ v =>
             v.idx == tag |
                v.type
-                  [()] --| <+ T(v) ->
-                  | --| <+ T(v, unpack_at(v.type, buf, cur, is_be)--!) ->
-         <- bin_err("invalid enum tag for " + T.name, off_in) +>
-      | <- bin_err("unsupported type " + T.name + " in binary::decode", off_in) +>
+                  [()] --| <+ (#member T, v) ->
+                  | --| <+ (#member T, v, unpack_at(v.type, buf, cur, is_be)--!) ->
+         <- bin_err("invalid enum tag for " + (#name T), off_in) +>
+      | <- bin_err("unsupported type " + (#name T) + " in binary::decode", off_in) +>
 
 #public
 
 // Packs `val` into a binary byte string in little-endian byte order.
-encode_le: #! T: Type, T => String
+encode_le: #param T: Type, T => String
 encode_le = val =>
    b = {64}
    pack_into(b, val, <->)
    +b
 
 // Packs `val` into a binary byte string in big-endian (network) byte order.
-encode_be: #! T: Type, T => String
+encode_be: #param T: Type, T => String
 encode_be = val =>
    b = {64}
    pack_into(b, val, <+>)
    +b
 
 // Unpacks target type `T` from little-endian `bytes`.
-decode_le: #! T: Type, String => < T | Error >
+decode_le: #param T: Type, String => < T | Error >
 decode_le = bytes =>
    cur = OffsetCursor(0, ?bytes)
    unpack_at(T, bytes, cur, <->)
 
 // Unpacks target type `T` from big-endian `bytes`.
-decode_be: #! T: Type, String => < T | Error >
+decode_be: #param T: Type, String => < T | Error >
 decode_be = bytes =>
    cur = OffsetCursor(0, ?bytes)
    unpack_at(T, bytes, cur, <+>)
 
 // Canonical alias for `encode_le`.
-encode: #! T: Type, T => String
+encode: #param T: Type, T => String
 encode = val =>
    encode_le(val)
 
 // Canonical alias for `decode_le`.
-decode: #! T: Type, String => < T | Error >
+decode: #param T: Type, String => < T | Error >
 decode = bytes =>
    decode_le(T, bytes)

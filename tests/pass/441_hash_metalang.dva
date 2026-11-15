@@ -1,0 +1,133 @@
+#use io
+#use str
+#use sys
+#use task
+#use(import) fp
+
+#foreign("c")
+   strlen: (s: Addr) => Int
+
+dva69_add: Int, Int => Int
+#export("dva69_add") dva69_add = a, b => a + b
+
+#pragma(integer = i16)
+i16_val = 42
+#pragma(integer = default)
+
+|+| : #infix(65, 60) Int, Int => Int
+|+| = a, b => a * 10 + b
+
+#type(packed) PackedHdr (a: u8, b: u32)
+#type(packed = u16) BitFlags (syn: <>, ack: <>, win: 14)
+#type(align = 32) AlignedBlock (x: u64, y: u64)
+
+#type Point (x: Int = 10, y: Int = 20)
+#type Shape < Dot, Circle(Int), Box(String) >
+
+fact: Int => Int
+fact = n => n [0, 1] 1 | n * fact(n - 1)
+
+FACT_5 = #const fact(5)
+
+scale_by: #param K: Int, Int => Int
+scale_by = x => x * K
+
+type_bytes: #param T: Type, T => Int
+type_bytes = unused => #size T
+
+bump_fields: #param T: Type, T => T
+bump_fields = #param T, src =>
+   out: T
+   #members T @ f =>
+      f.type
+         [Int]
+            #member out, f = (#member src, f) + 1
+         |
+            #member out, f = #member src, f
+   out
+
+make_circle: #param T: Type => T
+make_circle = !=>
+   res' = #zero T
+   #members T @ v =>
+      v.type
+         [()]
+            v.name ["Dot"]
+               dot = #member T, v
+               res' = dot
+         [Int]
+            v.name ["Circle"]
+               res' = #member T, v, 77
+         [String]
+            skip_s = v.name
+   res'
+
+read_circle: #param T: Type, T => Int
+read_circle = val =>
+   #members T @ v =>
+      v.type
+         [Int]
+            v.name ["Circle"]
+               #member val, v | n => --| n
+         |
+            skip_other = v.name
+   -1
+
+os = "local-os"
+arch = "local-arch"
+target = "local-target"
+
+has_x = #has_member Point, x
+has_z = #has_member Point, nope
+has_io_out = #has_member io, out
+has_io_bad = #has_member io, nonexistent_sym
+
+pz = #zero Point
+pb = bump_fields(Point(3, 4))
+sh = make_circle(Shape)
+
+mapped = (1, 2, 3) @> (_ + 1)
+fp_sum = fold((+), 0, mapped)
+
+th = task::spawn(dva69_add(19, 23))
+joined = task::join(th) |_| -1
+
+s = "hello"
+c_len = strlen(&s)
+
+report = (
+   #size PackedHdr,
+   #align PackedHdr,
+   #size BitFlags,
+   #align AlignedBlock,
+   #size AlignedBlock,
+   type_bytes(i16_val),
+   #name Point,
+   #arity Point,
+   pz.x,
+   pz.y,
+   pb.x,
+   pb.y,
+   #arity Shape,
+   (#member Shape, 1),
+   read_circle(sh),
+   FACT_5,
+   scale_by(3, 9),
+   2 |+| 5,
+   has_x,
+   has_z,
+   (#has_member Point, y),
+   has_io_out,
+   has_io_bad,
+   ?#os > 0,
+   ?#arch > 0,
+   ?#target > 0,
+   os,
+   arch,
+   target,
+   fp_sum,
+   joined,
+   c_len
+)
+io::out $ report
+sys::exit(0)

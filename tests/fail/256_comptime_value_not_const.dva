@@ -1,4 +1,4 @@
-repeat_str: #! N: Int, String => String
+repeat_str: #param N: Int, String => String
 repeat_str = s => s
 
 x' = 5

@@ -4,8 +4,9 @@
 
 #use dom
 
-#foreign "c"
-   edva_dom_call: (Int, Int, Int, Int, Addr, Int, Addr, Int, Addr) => Int
+#foreign("c")
+   edva_dom_call: (op: Int, arg1: Int, arg2: Int, arg3: Int, ptr1: Addr,
+     len1: Int, ptr2: Addr, len2: Int, out: Addr) => Int
 
 emit: String, String => ()
 emit = method, msg =>

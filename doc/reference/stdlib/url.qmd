@@ -9,7 +9,7 @@ meta:
 # `url` standard library
 
 The `url` module implements RFC 3986 URI/URL parsing, formatting, dot-segment path
-normalization, relative reference resolution, percent-encoding, and `#!` compile-time
+normalization, relative reference resolution, percent-encoding, and `#param` compile-time
 structural query string encoding and decoding (`url::encode_query`, `url::decode_query`).
 
 ```{.dva .run}
@@ -43,7 +43,7 @@ url::decode_query(Filter, qs) | f => io::out $ f.q
 | `url::format_query(params)` | `QueryParams => String` | Formats `QueryParams` into a `k1=v1&k2=v2` query string |
 | `url::get_query(params, key)` | `QueryParams, String => < String | >` | Returns the first value for `key` in `params` |
 | `url::get_query_all(params, key)` | `QueryParams, String => String{}` | Returns all values for `key` in `params` |
-| `url::encode_query(val)` | `#! T: Type, T => String` | Encodes a record `[(..)]`, map `K ^ V`, or `QueryParams` into a query string |
-| `url::decode_query(T, qs)` | `#! T: Type, String => < T | Error >` | Decodes a query string into record `T` (honoring field defaults, `<P|>` options, and `E{}` repeated keys), map `K ^ V`, or `QueryParams` |
-| `url::encode(val)` | `#! T: Type, T => String` | Canonical encoder: formats `Url` or encodes a query record/map |
-| `url::decode(T, s)` | `#! T: Type, String => < T | Error >` | Canonical decoder: parses `Url` when `T` is `Url`, or decodes query string into `T` |
+| `url::encode_query(val)` | `#param T: Type, T => String` | Encodes a record `[(..)]`, map `K ^ V`, or `QueryParams` into a query string |
+| `url::decode_query(T, qs)` | `#param T: Type, String => < T | Error >` | Decodes a query string into record `T` (honoring field defaults, `<P|>` options, and `E{}` repeated keys), map `K ^ V`, or `QueryParams` |
+| `url::encode(val)` | `#param T: Type, T => String` | Canonical encoder: formats `Url` or encodes a query record/map |
+| `url::decode(T, s)` | `#param T: Type, String => < T | Error >` | Canonical decoder: parses `Url` when `T` is `Url`, or decodes query string into `T` |

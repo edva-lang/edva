@@ -2,7 +2,7 @@
 #type Payload (count: Int, text: String)
 consume: < Payload | String > => ()
 consume = result => result | p => io::out(p.text) | error => io::out(error)
-relay: #! T: Type, (T => ()), T => ()
+relay: #param T: Type, (T => ()), T => ()
 relay = callback, item => callback(item)
 go: () => ()
 go = !=>

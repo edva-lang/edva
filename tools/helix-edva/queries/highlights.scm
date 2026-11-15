@@ -29,7 +29,6 @@
 ;; ------------------------------------------------------------------
 [
   "#use"
-  "#use-dynamic"
   "#type"
   "#foreign"
   "#pragma"
@@ -37,15 +36,22 @@
   "#pub"
   "#private"
   "#export"
-  "#spawn"
-  "#join"
-  "#exit"
+  "#param"
+  "#const"
+  "#os"
+  "#arch"
+  "#target"
+  "#infix"
   "#error"
   "#warn"
-  "#!"
   "#size"
-  "#packed"
   "#align"
+  "#name"
+  "#zero"
+  "#arity"
+  "#members"
+  "#member"
+  "#has_member"
 ] @keyword.directive
 
 ;; ------------------------------------------------------------------
@@ -149,7 +155,7 @@
 (foreign_param (identifier) @variable.parameter)
 (foreign_param (variant_name) @variable.parameter)
 
-; Compile-time type-parameter names ("#! T: Type").
+; Compile-time type-parameter names ("#param T: Type").
 (signature_param (identifier) @variable.parameter)
 (signature_param (variant_name) @variable.parameter)
 

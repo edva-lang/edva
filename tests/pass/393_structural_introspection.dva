@@ -1,12 +1,12 @@
-// Comprehensive test for #! Structural Type Introspection:
+// Comprehensive test for # Structural Type Introspection:
 // 1. Structural type-shape patterns in T [...]:
 //    [()], [<>], [<P|>], [<|N>], [<P | N>], [E{}], [E[]],
 //    [(E * 3)], [(E * ..)], [String ^ V], [K ^ V], [(..)], [<..>]
-// 2. Type properties: T.name, T.zero (with record field defaults), ?T
+// 2. Type properties: #name T, #zero T (with record field defaults), #arity T
 // 3. Compile-time unrolled record field cursor:
-//    T @ f => (f.idx, f.name, f.type, f.default, val.(f), res.(f) = ...)
+//    #members T @ f => (f.idx, f.name, f.type, f.default, #member val, f, #member res, f = ...)
 // 4. Compile-time unrolled enum variant cursor:
-//    T @ v => (v.idx, v.name, v.type, val.(v), T(v), T(v, payload))
+//    #members T @ v => (v.idx, v.name, v.type, #member val, v, #member T, v, #member T, v, payload)
 // 5. Generic serializer & deserializer round-trip with explicit Type args.
 
 #use str
@@ -38,37 +38,37 @@
 
 // --- 1. Structural Type-Shape Pattern Matching & Type Bindings ---
 
-describe_type: #! T: Type => String
+describe_type: #param T: Type => String
 describe_type = !=>
    T
-      [()] "unit_type:" + T.name
-      | "non_unit:" + T.name
+      [()] "unit_type:" + #name T
+      | "non_unit:" + #name T
 
-describe_shape: #! T: Type, T => String
+describe_shape: #param T: Type, T => String
 describe_shape = val =>
    T
-      [()] "unit:" + T.name
-      [<>] "flag:" + T.name
-      [Int] "int:" + T.name
-      [String] "str:" + T.name
-      [Float] "float:" + T.name
-      [<P|>] "pos_ram<" + P.name + ">"
-      [<|N>] "neg_ram<" + N.name + ">"
-      [<P | N>] "both_ram<" + P.name + "|" + N.name + ">"
-      [E{}] "array<" + E.name + ">#" + str::from_int(?val)
-      [E[]] "slice<" + E.name + ">#" + str::from_int(?val)
-      [(E * 3)] "vec3<" + E.name + ">"
-      [(E * ..)] "tupleN<" + E.name + ">#" + str::from_int(?T)
-      [String ^ V] "strmap<" + V.name + ">"
-      [K ^ V] "map<" + K.name + "^" + V.name + ">"
-      [(..)] "record:" + T.name + "#" + str::from_int(?T)
-      [<..>] "enum:" + T.name + "#" + str::from_int(?T)
+      [()] "unit:" + #name T
+      [<>] "flag:" + #name T
+      [Int] "int:" + #name T
+      [String] "str:" + #name T
+      [Float] "float:" + #name T
+      [<P|>] "pos_ram<" + (#name P) + ">"
+      [<|N>] "neg_ram<" + (#name N) + ">"
+      [<P | N>] "both_ram<" + (#name P) + "|" + (#name N) + ">"
+      [E{}] "array<" + (#name E) + ">#" + str::from_int(?val)
+      [E[]] "slice<" + (#name E) + ">#" + str::from_int(?val)
+      [(E * 3)] "vec3<" + (#name E) + ">"
+      [(E * ..)] "tupleN<" + (#name E) + ">#" + str::from_int(#arity T)
+      [String ^ V] "strmap<" + (#name V) + ">"
+      [K ^ V] "map<" + (#name K) + "^" + (#name V) + ">"
+      [(..)] "record:" + (#name T) + "#" + str::from_int(#arity T)
+      [<..>] "enum:" + (#name T) + "#" + str::from_int(#arity T)
       | "other"
 
-describe_enum_variants: #! T: Type => String
+describe_enum_variants: #param T: Type => String
 describe_enum_variants = !=>
    out = {64}
-   T @ v =>
+   #members T @ v =>
       v.idx > 0 | out += ';
       out += (str::from_int(v.idx), ":", v.name, ":", describe_type(v.type))
    +out
@@ -107,29 +107,29 @@ sim = StrIntMap()
 ism = IntStrMap()
 io::out $ describe_shape(sim)
 io::out $ describe_shape(ism)
-io::out $ describe_shape(User.zero)
+io::out $ describe_shape(#zero User)
 io::out $ describe_shape(Shape(Point))
 
-// --- 2. Type Properties (T.name, T.zero, ?T) ---
+// --- 2. Type Properties (#name T, #zero T, #arity T) ---
 
-io::out $ User.name + ":" + str::from_int(?User)
-io::out $ Shape.name + ":" + str::from_int(?Shape)
-io::out $ Int.name + ":" + str::from_int(Int.zero)
+io::out $ (#name User) + ":" + str::from_int(#arity User)
+io::out $ (#name Shape) + ":" + str::from_int(#arity Shape)
+io::out $ (#name Int) + ":" + str::from_int(#zero Int)
 
-u_def = User.zero
+u_def = #zero User
 io::out $ "u_def=" + str::from_int(u_def.id) + "," + u_def.name + "," +
    (u_def.active | "true" | "false") + "," + str::from_int(?u_def.tags) + "," +
    (u_def.score | s => str::from_int(s) | "none")
 
-make_zero: #! T: Type => T
-make_zero = !=> T.zero
+make_zero: #param T: Type => T
+make_zero = !=> #zero T
 
 u_def2 = make_zero(User)
 io::out $ "u_def2=" + str::from_int(u_def2.id) + "," + u_def2.name
 
-// --- 3. Generic Serializer using T @ f => and T @ v => ---
+// --- 3. Generic Serializer using #members T @ f => and #members T @ v => ---
 
-serialize: #! T: Type, Builder, T => ()
+serialize: #param T: Type, Builder, T => ()
 serialize = buf, val =>
    T
       [()]
@@ -152,14 +152,14 @@ serialize = buf, val =>
          buf += ']
       [(..)]
          buf += '{
-         T @ f =>
+         #members T @ f =>
             f.idx > 0 | buf += ',
             buf += ('", f.name, "\":")
-            serialize(buf, val.(f))
+            serialize(buf, (#member val, f))
          buf += '}
       [<..>]
-         T @ v =>
-            val.(v)
+         #members T @ v =>
+            #member val, v
                | pay =>
                   v.type
                      [()]
@@ -169,7 +169,7 @@ serialize = buf, val =>
                         serialize(buf, pay)
                         buf += '}
 
-u1 = User.zero
+u1 = #zero User
 u1.id = 7
 u1.name = "Alice"
 u1.active = <+>
@@ -195,12 +195,12 @@ io::out $ +b_sh
 
 // --- 4. Record Field Cursor Mutation & Default Inspection ---
 
-inspect_defaults: #! T: Type => String
+inspect_defaults: #param T: Type => String
 inspect_defaults = !=>
    out = {64}
-   T @ f =>
+   #members T @ f =>
       f.idx > 0 | out += ';
-      out += (str::from_int(f.idx), ":", f.name, ":", f.type.name, "=")
+      out += (str::from_int(f.idx), ":", f.name, ":", (#name f.type), "=")
       f.default
          | d =>
             b_d = {16}
@@ -212,15 +212,15 @@ inspect_defaults = !=>
 
 io::out $ inspect_defaults(User)
 
-clone_and_bump: #! T: Type, T => T
+clone_and_bump: #param T: Type, T => T
 clone_and_bump = src =>
    res: T
-   T @ f =>
+   #members T @ f =>
       f.type
          [Int]
-            res.(f) = src.(f) + 1
+            #member res, f = (#member src, f) + 1
          |
-            res.(f) = src.(f)
+            #member res, f = #member src, f
    res
 
 u2 = clone_and_bump(u1)
@@ -228,21 +228,21 @@ b2 = {128}
 serialize(b2, u2)
 io::out $ +b2
 
-// --- 5. Enum Variant Cursor Construction T(v) and T(v, payload) ---
+// --- 5. Enum Variant Cursor Construction #member T, v and #member T, v, payload ---
 
-make_shape_by_name: #! T: Type, String, Int, String => T
+make_shape_by_name: #param T: Type, String, Int, String => T
 make_shape_by_name = vname, ival, sval =>
-   res' = T.zero
-   T @ v =>
+   res' = #zero T
+   #members T @ v =>
       v.name == vname
          |
             v.type
                [()]
-                  res' = T(v)
+                  res' = #member T, v
                [Int]
-                  res' = T(v, ival)
+                  res' = #member T, v, ival
                [String]
-                  res' = T(v, sval)
+                  res' = #member T, v, sval
    res'
 
 s_p = make_shape_by_name(Shape, "Point", 0, "")

@@ -1,6 +1,7 @@
-// M3: #spawn accepts a lambda / first-class function target.
+// M3: task::spawn accepts a lambda / first-class function target.
 #use io
+#use task
 
-h = #spawn (m => m * 2)(21)
-r = #join h
+h = task::spawn((m => m * 2)(21))
+r = task::join(h)
 io::out $ (r | _ | _)

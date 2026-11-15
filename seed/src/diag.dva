@@ -229,7 +229,7 @@ assignment_type_mismatch_prefix = !=> "Type mismatch in assignment to: "
 
 member_index_constant: () => String
 member_index_constant = !=>
-   "Member index 'x.(i)' must be a compile-time constant (a per-field cycle index)."
+   "Member index '#member x, i' must be a compile-time constant (a per-field cycle index)."
 
 field_assignment_type_mismatch_prefix: () => String
 field_assignment_type_mismatch_prefix = !=> "Type mismatch in field assignment: "
@@ -269,10 +269,10 @@ record_repeat_limit_suffix: () => String
 record_repeat_limit_suffix = !=> " exceeds the maximum of 1000000"
 
 infix_right_binding_power_prefix: () => String
-infix_right_binding_power_prefix = !=> "Expected an integer right binding-power after '#infix "
+infix_right_binding_power_prefix = !=> "Expected an integer right binding-power after '#infix("
 
 infix_left_binding_power_prefix: () => String
-infix_left_binding_power_prefix = !=> "Expected an integer left binding-power after '#infix', got '"
+infix_left_binding_power_prefix = !=> "Expected an integer left binding-power after '#infix(', got '"
 
 imported_symbol_conflict_suffix: () => String
 imported_symbol_conflict_suffix = !=> "' conflicts with symbol already imported from '"
@@ -322,11 +322,11 @@ E3127_enum_ordering_suffix = !=>
 
 record_field_index_constant: () => String
 record_field_index_constant = !=>
-   "Record field index 'T.(i)' must be a compile-time constant (a per-field cycle index)."
+   "Record field index '#member T, i' must be a compile-time constant (a per-field cycle index)."
 
 enum_variant_index_constant: () => String
 enum_variant_index_constant = !=>
-   "Enum variant index 'T.(i)' must be a compile-time constant (a per-variant cycle " +
+   "Enum variant index '#member T, i' must be a compile-time constant (a per-variant cycle " +
    "index)."
 
 E4002_string_length_overflow: () => String

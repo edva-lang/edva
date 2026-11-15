@@ -17,7 +17,7 @@
 
 #public
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
    dva_arena_current: () => Addr
    rename: (oldpath: String, newpath: String) => Int
@@ -2250,46 +2250,121 @@ typed_member_target_ti = cg, te =>
 
 codegen_sizeof_bytes: Cg, ast::SizeOfExpr => Int
 codegen_sizeof_bytes = cg, so =>
-   so.val_type
-      [Record] codegen_record_size_bytes(cg, so.rec_type)
-      | codegen_type_size(cg, so.val_type, so.rec_type)
+   eff_ti = subst_ct_binds_ti(so.rec_type)
+   eff_vt = eff_ti
+      [Prim p] p
+      [Rec] ast::ValueType(Record)
+      [Enum] ast::ValueType(Enum)
+      [Ram] ast::ValueType(Ram)
+      [Array] ast::ValueType(Array)
+      [Map] ast::ValueType(Map)
+      [Fn] ast::ValueType(Fn)
+      [Bitfield b] b.backing_type
+      [Align a] vt_from_ti_cg(cg, a.1)
+      [TypeVar tv]
+         is_user_type(cg, tv)
+            | vt_from_ti_cg(cg, typedef_ti(cg, tv))
+            | so.val_type
+      | so.val_type
+   eff_vt
+      [Record] codegen_record_size_bytes(cg, eff_ti)
+      | codegen_type_size(cg, eff_vt, eff_ti)
 
 codegen_alignof_bytes: Cg, ast::AlignOfExpr => Int
 codegen_alignof_bytes = cg, ao =>
-   codegen_type_align(cg, ao.val_type, ao.rec_type)
+   eff_ti = subst_ct_binds_ti(ao.rec_type)
+   eff_vt = eff_ti
+      [Prim p] p
+      [Rec] ast::ValueType(Record)
+      [Enum] ast::ValueType(Enum)
+      [Ram] ast::ValueType(Ram)
+      [Array] ast::ValueType(Array)
+      [Map] ast::ValueType(Map)
+      [Fn] ast::ValueType(Fn)
+      [Bitfield b] b.backing_type
+      [Align a] vt_from_ti_cg(cg, a.1)
+      [TypeVar tv]
+         is_user_type(cg, tv)
+            | vt_from_ti_cg(cg, typedef_ti(cg, tv))
+            | ao.val_type
+      | ao.val_type
+   codegen_type_align(cg, eff_vt, eff_ti)
 
 codegen_type_size: Cg, ast::ValueType, ast::TypeInfo => Int
 codegen_type_size = cg, vt, ti =>
-   bf_opt = ti_get_bitfield(cg, ti)
-   bf_opt
-      | b => b.total_bits / 8
+   ti
+      [Align a]
+         inner_sz = codegen_type_size(cg, vt, a.1)
+         align_to(inner_sz, a.0)
+      [TypeVar tv]
+         is_user_type(cg, tv)
+            |
+               td_ti = typedef_ti(cg, tv)
+               codegen_type_size(cg, vt_from_ti_cg(cg, td_ti), td_ti)
+            | codegen_prim_type_size(cg, vt, ti)
+      [Rec] codegen_record_size_bytes(cg, ti)
+      [Array] target_ptr_size(cg) * 3
+      [Map, Fn, Enum] target_ptr_size(cg) * 2
+      [Ram r]
+         ptr_sz = target_ptr_size(cg)
+         has0 = r.0.has_payload && r.0.payload_type ![Unit]
+         has1 = r.1.has_payload && r.1.payload_type ![Unit]
+         !has0 && !has1
+            | 1
+            |
+               is_n0 = has0 && !has1 && (r.0.payload_type [Str, Record, Error])
+               is_n1 = !has0 && has1 && (r.1.payload_type [Str, Record, Error])
+               is_n0 || is_n1 | ptr_sz | ptr_sz * 2
       |
-         vt
-            [I8, U8, Flag] 1
-            [I16, U16] 2
-            [I32, U32, F32, Rune] 4
-            [Record] codegen_record_size_bytes(cg, ti)
-            [RawPtr, Fn] target_ptr_size(cg)
-            [Str, Slice, Map] target_ptr_size(cg) * 2
-            [Builder] target_ptr_size(cg) * 3
-            [Error] codegen_error_size(cg)
-            | 8
+         bf_opt = ti_get_bitfield(cg, ti)
+         bf_opt
+            | b => b.total_bits / 8
+            | codegen_prim_type_size(cg, vt, ti)
+
+codegen_prim_type_size: Cg, ast::ValueType, ast::TypeInfo => Int
+codegen_prim_type_size = cg, vt, ti =>
+   vt
+      [I8, U8, Flag] 1
+      [I16, U16] 2
+      [I32, U32, F32, Rune] 4
+      [Record] codegen_record_size_bytes(cg, ti)
+      [RawPtr, Fn] target_ptr_size(cg)
+      [Str, Slice, Map] target_ptr_size(cg) * 2
+      [Builder, Array] target_ptr_size(cg) * 3
+      [Error] codegen_error_size(cg)
+      | 8
 
 codegen_type_align: Cg, ast::ValueType, ast::TypeInfo => Int
 codegen_type_align = cg, vt, ti =>
-   bf_opt = ti_get_bitfield(cg, ti)
-   bf_opt
-      | b => 1
+   ti
+      [Align a]
+         inner_al = codegen_type_align(cg, vt, a.1)
+         a.0 < inner_al | inner_al | a.0
+      [TypeVar tv]
+         is_user_type(cg, tv)
+            |
+               td_ti = typedef_ti(cg, tv)
+               codegen_type_align(cg, vt_from_ti_cg(cg, td_ti), td_ti)
+            | codegen_prim_type_align(cg, vt, ti)
+      [Rec] codegen_record_align(cg, ti)
+      [Array, Map, Fn, Enum] target_ptr_align(cg)
       |
-         vt
-            [I8, U8, Flag] 1
-            [I16, U16] 2
-            [I32, U32, F32, Rune] 4
-            [Record] codegen_record_align(cg, ti)
-            [RawPtr, Fn] target_ptr_align(cg)
-            [Str, Slice, Map, Builder] target_ptr_align(cg)
-            [Error] 8
-            | 8
+         bf_opt = ti_get_bitfield(cg, ti)
+         bf_opt
+            | b => 1
+            | codegen_prim_type_align(cg, vt, ti)
+
+codegen_prim_type_align: Cg, ast::ValueType, ast::TypeInfo => Int
+codegen_prim_type_align = cg, vt, ti =>
+   vt
+      [I8, U8, Flag] 1
+      [I16, U16] 2
+      [I32, U32, F32, Rune] 4
+      [Record] codegen_record_align(cg, ti)
+      [RawPtr, Fn] target_ptr_align(cg)
+      [Str, Slice, Map, Builder, Array] target_ptr_align(cg)
+      [Error] 8
+      | 8
 
 align_to: Int, Int => Int
 align_to = offset, align =>
@@ -2687,6 +2762,12 @@ pstmts_typedef_ti: String => (ast::TypeInfo, <>)
 pstmts_typedef_ti = name =>
    pstmts_typedef_ti_at(g.pstmts, 0, ?g.pstmts, name)
 
+strip_align_ti: ast::TypeInfo => ast::TypeInfo
+strip_align_ti = ti =>
+   ti
+      [Align a] strip_align_ti(a.1)
+      | ti
+
 ctfe_canonical_ti_simple: ast::TypeInfo => ast::TypeInfo
 ctfe_canonical_ti_simple = ti =>
    ti
@@ -2694,7 +2775,7 @@ ctfe_canonical_ti_simple = ti =>
       [TypeVar n]
          pt = pstmts_typedef_ti(n)
          pt.1
-            | pt.0
+            | strip_align_ti(pt.0)
             |
                tn = type_name_to_vt(n)
                tn.1 | ast::TypeInfo(Prim, tn.0) | ti
@@ -2757,9 +2838,112 @@ resolve_type_val_member_type = cg, m =>
             | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
+subst_ct_binds_vt: ast::TypeInfo, ast::ValueType => ast::ValueType
+subst_ct_binds_vt = orig_ti, fallback =>
+   orig_ti
+      [TypeVar n]
+         ct = ct_bind_find(n)
+         ct.1 | vt_from_ti(ct.0) | fallback
+      | fallback
+
+subst_ct_binds_ram_slot: ast::RamSlotInfo => ast::RamSlotInfo
+subst_ct_binds_ram_slot = sl =>
+   !sl.has_payload | --| sl
+   pt = subst_ct_binds_vt(sl.payload_record, sl.payload_type)
+   ast::RamSlotInfo(<+>, pt, subst_ct_binds_ti(sl.payload_record))
+
+subst_ct_binds_ti: ast::TypeInfo => ast::TypeInfo
+subst_ct_binds_ti = ti =>
+   ti
+      [TypeVar name]
+         ct = ct_bind_find(name)
+         ct.1 | ct.0 | ti
+      [Align a]
+         ast::TypeInfo(Align, (a.0, subst_ct_binds_ti(a.1)))
+      [Ram s]
+         ast::TypeInfo(Ram, (subst_ct_binds_ram_slot(s.0),
+           subst_ct_binds_ram_slot(s.1)))
+      [Rec r]
+         new_flds = ast::FieldTypes()
+         elem_vt' = r.3
+         r.0 @ f, i =>
+            new_rti = subst_ct_binds_ti(f.rec_type)
+            sub_vt = subst_ct_binds_vt(f.rec_type, f.val_type)
+            i == 0 && (r.1 || r.2) | (elem_vt' = sub_vt)
+            new_flds += ast::RecordFieldType(f.name, sub_vt, new_rti,
+              f.has_default, f.default_expr)
+         ast::TypeInfo(Rec, (new_flds, r.1, r.2, elem_vt', r.4, r.5))
+      [Array a]
+         new_eti = subst_ct_binds_ti(a.1)
+         new_evt = subst_ct_binds_vt(a.1, a.0)
+         ast::TypeInfo(Array, (new_evt, new_eti, a.2))
+      [Map m]
+         new_vti = subst_ct_binds_ti(m.2)
+         new_vvt = subst_ct_binds_vt(m.2, m.1)
+         ast::TypeInfo(Map, (m.0, new_vvt, new_vti))
+      [Fn f]
+         nvts = ast::VTypes()
+         ntis = ast::VInfos()
+         f.1 @ pi, i =>
+            new_pti = subst_ct_binds_ti(pi)
+            old_vt = f.0(i) | _ | ast::ValueType(Unknown)
+            new_pvt = subst_ct_binds_vt(pi, old_vt)
+            nvts += new_pvt
+            ntis += new_pti
+         new_rti = subst_ct_binds_ti(f.3)
+         new_rvt = subst_ct_binds_vt(f.3, f.2)
+         ast::TypeInfo(Fn, (nvts, ntis, new_rvt, new_rti, f.4))
+      [ThreadId t]
+         new_tti = subst_ct_binds_ti(t.1)
+         new_tvt = subst_ct_binds_vt(t.1, t.0)
+         ast::TypeInfo(ThreadId, (new_tvt, new_tti))
+      | ti
+
+field_types_has_name: ast::FieldTypes, String, Int => <>
+field_types_has_name = fts, name, i =>
+   i !< ?fts | --| <->
+   fts(i)!!.name == name | --| <+>
+   field_types_has_name(fts, name, i + 1)
+
+ti_has_member_name: Cg, ast::TypeInfo, String => <>
+ti_has_member_name = cg, ti, mname =>
+   bf_opt = ti_get_bitfield(cg, ti)
+   bf_opt
+      | bf => <>(find_bitfield_field(bf.fields, mname))
+      |
+         can_ti = ctfe_canonical_ti(cg, ti)
+         can_ti
+            [Rec r] !r.1 && field_types_has_name(r.0, mname, 0)
+            [Bitfield bf] <>(find_bitfield_field(bf.fields, mname))
+            [Enum slots] <>(enum_slot_index(slots, mname))
+            | <->
+
+ti_has_member_name_simple: ast::TypeInfo, String => <>
+ti_has_member_name_simple = ti, mname =>
+   can_ti = ctfe_canonical_ti_simple(ti)
+   can_ti
+      [Rec r] !r.1 && field_types_has_name(r.0, mname, 0)
+      [Bitfield bf] <>(find_bitfield_field(bf.fields, mname))
+      [Enum slots] <>(enum_slot_index(slots, mname))
+      | <->
+
+mod_member_qname: ast::Expr => String
+mod_member_qname = e =>
+   e
+      [Var v] v
+      [Member m]
+         m.is_module_access
+            |
+               p = mod_member_qname(m.target)
+               p != "" | "${p}::${m.field_name}" | ""
+            | ""
+      | ""
+
 resolve_type_value_simple: ast::Expr => (ast::TypeInfo, <>)
 resolve_type_value_simple = expr =>
    expr
+      [SizeOf so]
+         (subst_ct_binds_ti(so.rec_type), <+>)
       [Var v]
          ct = ct_bind_find(v)
          ct.1
@@ -2770,43 +2954,49 @@ resolve_type_value_simple = expr =>
                   | (ast::TypeInfo(Prim, tn.0), <+>)
                   | pstmts_typedef_ti(v)
       [Member m]
-         m.field_name == ""
+         m.is_module_access
             |
-               tgt = resolve_type_value_simple(m.target)
-               tgt.1
-                  |
-                     can_tgt = ctfe_canonical_ti_simple(tgt.0)
-                     can_tgt
-                        [Rec r]
-                           idx_val = m.index_expr
-                              [Int idx] idx
-                              [Var iv]
-                                 cur_i = ct_cursor_find(iv)
-                                 cur_i.2 | cur_i.1 | -1
-                              | -1
-                           idx_val !< 0 && idx_val < ?r.0
-                              |
-                                 fld = r.0(idx_val)!!
-                                 (field_type_info(fld), <+>)
-                              |
-                                 (ast::TypeInfo(Prim,
-                                    ast::ValueType(Unknown)), <->)
-                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
-                  | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+               qn = mod_member_qname(expr)
+               qn != "" | pstmts_typedef_ti(qn) |
+                  (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             |
-               m.field_name == "type" || m.field_name == "Type"
+               m.field_name == ""
                   |
-                     cname = m.target [Var cv] cv | ""
-                     cur = cname != ""
-                        | ct_cursor_find(cname)
-                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
-                     cur.2
-                        | cursor_member_ti(ctfe_canonical_ti_simple(cur.0), cur.1)
+                     tgt = resolve_type_value_simple(m.target)
+                     tgt.1
                         |
-                           m.field_name == "Type"
-                              | resolve_type_value_simple(m.target)
+                           can_tgt = ctfe_canonical_ti_simple(tgt.0)
+                           can_tgt
+                              [Rec r]
+                                 idx_val = m.index_expr
+                                    [Int idx] idx
+                                    [Var iv]
+                                       cur_i = ct_cursor_find(iv)
+                                       cur_i.2 | cur_i.1 | -1
+                                    | -1
+                                 idx_val !< 0 && idx_val < ?r.0
+                                    |
+                                       fld = r.0(idx_val)!!
+                                       (field_type_info(fld), <+>)
+                                    |
+                                       (ast::TypeInfo(Prim,
+                                          ast::ValueType(Unknown)), <->)
                               | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
-                  | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                  |
+                     m.field_name == "type" || m.field_name == "Type"
+                        |
+                           cname = m.target [Var cv] cv | ""
+                           cur = cname != ""
+                              | ct_cursor_find(cname)
+                              | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
+                           cur.2
+                              | cursor_member_ti(ctfe_canonical_ti_simple(cur.0), cur.1)
+                              |
+                                 m.field_name == "Type"
+                                    | resolve_type_value_simple(m.target)
+                                    | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       [Record r]
          ?r.fields == 0
             | (ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
@@ -2825,35 +3015,48 @@ resolve_type_value = cg, expr =>
                   | (typedef_ti(cg, v), <+>)
                   | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             [Member m]
-               m.field_name == ""
+               m.is_module_access
                   |
-                     tgt = resolve_type_value(cg, m.target)
-                     tgt.1
-                        | resolve_type_record_index(cg, tgt.0, m.index_expr)
+                     qn = mod_member_qname(expr)
+                     qn != "" && is_user_type(cg, qn)
+                        | (typedef_ti(cg, qn), <+>)
                         | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                   |
-                     m.field_name == "type" || m.field_name == "Type"
+                     m.field_name == ""
                         |
-                           cname = m.target [Var cv] cv | ""
-                           cur = cname != ""
-                              | ct_cursor_find(cname)
-                              | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
-                           cur.2
-                              | cursor_member_ti(ctfe_canonical_ti(cg, cur.0), cur.1)
+                           tgt = resolve_type_value(cg, m.target)
+                           tgt.1
+                              | resolve_type_record_index(cg, tgt.0, m.index_expr)
+                              | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                        |
+                           m.field_name == "type" || m.field_name == "Type"
                               |
-                                 m.field_name == "Type"
+                                 cname = m.target [Var cv] cv | ""
+                                 cur = cname != ""
+                                    | ct_cursor_find(cname)
+                                    | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
+                                 cur.2
+                                    | cursor_member_ti(ctfe_canonical_ti(cg, cur.0), cur.1)
                                     |
-                                       t_res = resolve_type_value(cg, m.target)
-                                       t_res.1
-                                          | t_res
-                                          | resolve_type_val_member_type(cg, m)
-                                    | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
-                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                                       m.field_name == "Type"
+                                          |
+                                             t_res = resolve_type_value(cg, m.target)
+                                             t_res.1
+                                                | t_res
+                                                | resolve_type_val_member_type(cg, m)
+                                          | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                              | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 ctfe_eval_type_flag_simple: ast::Expr => (Int, <>)
 ctfe_eval_type_flag_simple = cond =>
    cond
+      [Unary u]
+         u.0
+            [Not]
+               inner = ctfe_eval_type_flag_simple(u.1)
+               inner.1 | ((inner.0 == 0 | 1 | 0), <+>) | (0, <->)
+            | (0, <->)
       [Bin t]
          op = t.0
          is_eq = op [Eq]
@@ -2868,12 +3071,51 @@ ctfe_eval_type_flag_simple = cond =>
                      flag = is_neq != eq
                      (flag | 1 | 0, <+>)
                   | (0, <->)
+            |
+               op
+                  [And]
+                     lf = ctfe_eval_type_flag_simple(t.1)
+                     lf.1 && lf.0 == 0
+                        | (0, <+>)
+                        |
+                           rf = ctfe_eval_type_flag_simple(t.2)
+                           lf.1 && rf.1 | (rf.0 != 0 | 1 | 0, <+>) | (0, <->)
+                  [Or]
+                     lf = ctfe_eval_type_flag_simple(t.1)
+                     lf.1 && lf.0 != 0
+                        | (1, <+>)
+                        |
+                           rf = ctfe_eval_type_flag_simple(t.2)
+                           lf.1 && rf.1 | (rf.0 != 0 | 1 | 0, <+>) | (0, <->)
+                  | (0, <->)
+      [Call c]
+         c.fn_name == "#has_member" && ?c.args == 2
+            |
+               rt = resolve_type_value_simple(c.args(0)!!)
+               mname = c.args(1)!!
+                  [Var v] v
+                  [Str s] s
+                  | ""
+               rt.1 && mname != ""
+                  |
+                     can_rt = ctfe_canonical_ti_simple(rt.0)
+                     is_tv = can_rt [TypeVar]
+                     is_tv
+                        | (0, <->)
+                        | (ti_has_member_name_simple(can_rt, mname) | 1 | 0, <+>)
+                  | (0, <->)
             | (0, <->)
       | (0, <->)
 
 ctfe_eval_type_flag: Cg, ast::Expr => (Int, <>)
 ctfe_eval_type_flag = cg, cond =>
    cond
+      [Unary u]
+         u.0
+            [Not]
+               inner = ctfe_eval_type_flag(cg, u.1)
+               inner.1 | ((inner.0 == 0 | 1 | 0), <+>) | (0, <->)
+            | (0, <->)
       [Bin t]
          op = t.0
          is_eq = op [Eq]
@@ -2888,6 +3130,39 @@ ctfe_eval_type_flag = cg, cond =>
                      flag = is_neq != eq
                      (flag | 1 | 0, <+>)
                   | (0, <->)
+            |
+               op
+                  [And]
+                     lf = ctfe_eval_type_flag(cg, t.1)
+                     lf.1 && lf.0 == 0
+                        | (0, <+>)
+                        |
+                           rf = ctfe_eval_type_flag(cg, t.2)
+                           lf.1 && rf.1 | (rf.0 != 0 | 1 | 0, <+>) | (0, <->)
+                  [Or]
+                     lf = ctfe_eval_type_flag(cg, t.1)
+                     lf.1 && lf.0 != 0
+                        | (1, <+>)
+                        |
+                           rf = ctfe_eval_type_flag(cg, t.2)
+                           lf.1 && rf.1 | (rf.0 != 0 | 1 | 0, <+>) | (0, <->)
+                  | (0, <->)
+      [Call c]
+         c.fn_name == "#has_member" && ?c.args == 2
+            |
+               rt = resolve_type_value(cg, c.args(0)!!)
+               mname0 = c.args(1)!!
+                  [Var v] v
+                  [Str s] s
+                  | ""
+               mname = mname0 != ""
+                  | mname0
+                  |
+                     ev_m = match::ctfe_eval(cg, c.args(1)!!, CtFrames(), 0)
+                     ev_m.0 [Str ms] ms | ""
+               rt.1 && mname != ""
+                  | (ti_has_member_name(cg, rt.0, mname) | 1 | 0, <+>)
+                  | (0, <->)
             | (0, <->)
       | (0, <->)
 
@@ -2897,7 +3172,7 @@ ctfe_canonical_ti = cg, ti =>
       [Align a] ctfe_canonical_ti(cg, a.1)
       [TypeVar n]
          is_user_type(cg, n)
-            | typedef_ti(cg, n)
+            | strip_align_ti(typedef_ti(cg, n))
             |
                tn = type_name_to_vt(n)
                tn.1 | ast::TypeInfo(Prim, tn.0) | ti
@@ -3998,7 +4273,10 @@ prim_vt_display_name = vt =>
 
 type_info_display_name: Cg, ast::Expr, ast::TypeInfo => String
 type_info_display_name = cg, expr, ti =>
-   vname = expr [Var v] v | ""
+   vname = expr
+      [Var v] v
+      [SizeOf so] (so.rec_type [TypeVar tv] tv | "")
+      | ""
    dname = vname != "" | ct_bind_find_dname(vname) | ""
    dname != ""
       | dname
@@ -4031,9 +4309,24 @@ type_info_display_name = cg, expr, ti =>
                                  e_ti = ?r.0 > 0
                                     | field_type_info(r.0(0)!!)
                                     | ast::TypeInfo(Prim, r.3)
-                                 type_info_display_name(cg, ast::Expr(Int, 0),
-                                    e_ti) + "[]"
-                              | "(..)"
+                                 "${type_info_display_name(cg, ast::Expr(Int, 0), e_ti)}[]"
+                              | r.2 && r.4 > 0
+                                 |
+                                    e_ti = ?r.0 > 0
+                                       | field_type_info(r.0(0)!!)
+                                       | ast::TypeInfo(Prim, r.3)
+                                    et = type_info_display_name(cg, ast::Expr(Int, 0), e_ti)
+                                    "(${et} * ${r.4})"
+                                 | !r.1 && !r.2 && ?r.0 > 0 && r.0(0)!!.name == ""
+                                    |
+                                       b_tup = {64}
+                                       ?r.0 @ i =>
+                                          i > 0 | b_tup += ", "
+                                          ft_i = field_type_info(r.0(i)!!)
+                                          ts = type_info_display_name(cg, ast::Expr(Int, 0), ft_i)
+                                          b_tup += ts
+                                       "(${+b_tup})"
+                                    | "(..)"
                         [Map m]
                            prim_vt_display_name(m.0) + " ^ " +
                               type_info_display_name(cg, ast::Expr(Int, 0),
@@ -4061,9 +4354,38 @@ type_info_display_name = cg, expr, ti =>
 // A declared type constructor call: an ENUM builds a heap union (tag = the
 // variant label's slot index, payload from the optional second arg); a RAM's
 // single arg is passed through (it is already a heap union).
-codegen_eval_ctor: Cg, ast::TypeInfo, ast::CallExpr => (Addr, ast::ValueType)
-codegen_eval_ctor = cg, ti, t =>
+codegen_eval_enum_idx_ctor: Cg, String, ast::EnumSlots, ast::CallExpr,
+  Int => (Addr, ast::ValueType)
+codegen_eval_enum_idx_ctor = cg, eff_tname, slots, t, idx =>
+   idx < 0 || !(idx < ?slots)
+      |
+         init_error(cg, "E3096",
+           diag::enum_no_variant(eff_tname, str::from_int(idx)), t.line, t.col)
+         (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Enum))
+      |
+         sl = slots(idx)!!
+         na = ?t.args
+         !sl.has_payload && na > 1
+            | init_error(cg, "E3098",
+                diag::enum_unit_payload(eff_tname, sl.label), t.line, t.col)
+         sl.has_payload && na > 1
+            |
+               actual = static_expr_vt(cg, t.args(1)!!)
+               actual != ast::ValueType(Unknown) && actual != sl.payload_type
+                  | init_error(cg, "E3099", diag::enum_payload_type(eff_tname,
+                      sl.label, value_type_name(sl.payload_type),
+                      value_type_name(actual)), t.line, t.col)
+         payargs = ast::Exprs()
+         sl.has_payload && na > 1
+            | payargs += t.args(1)!!
+         u' = codegen_build_union(cg, idx, payargs, "enum.alloc")
+         cg.last_type = eff_tname
+         (u', ast::ValueType(Enum))
+
+codegen_eval_ctor_ex: Cg, ast::TypeInfo, ast::CallExpr, <> => (Addr, ast::ValueType)
+codegen_eval_ctor_ex = cg, ti, t, allow_cursor =>
    ti
+      [Align a] codegen_eval_ctor_ex(cg, a.1, t, allow_cursor)
       [Array ae]
          ?t.args > 0
             |
@@ -4081,18 +4403,21 @@ codegen_eval_ctor = cg, ti, t =>
       [Enum s]
          slots = ti [Enum s2] s2 | ast::EnumSlots()
          lbl = t.args(0)!!
-         lname = lbl [Var v] v | ""
+         lname = lbl
+            [Var v] v
+            [Str sv] (allow_cursor | sv | "")
+            | ""
          dname0 = ct_bind_find_dname(t.fn_name)
          dname1 = dname0 != "" | dname0 | find_typedef_name_for_ti(cg, ti)
          eff_tname = dname1 != "" | dname1 | t.fn_name
-         is_pt = var_dtype(cg, lname) == eff_tname
+         is_pt = lbl [Var] && var_dtype(cg, lname) == eff_tname
          is_pt
             |
                lv = codegen_load(cg, lname)
                cg.last_type = eff_tname
                lv | _ | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |
-               cur = lname != ""
+               cur = allow_cursor && lname != ""
                   | ct_cursor_find(lname)
                   | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
                cur.2
@@ -4117,21 +4442,34 @@ codegen_eval_ctor = cg, ti, t =>
                            cg.last_type = eff_tname
                            (u2, ast::ValueType(Enum))
                   |
-                     codegen_check_enum_ctor(cg, eff_tname, slots, t)
-                     idx = enum_slot_index(slots, lname) | _ | 0
-                     na = ?t.args
-                     na > 1
+                     is_int_lbl = allow_cursor && (lbl [Int])
+                     is_int_lbl
                         |
-                           pv = t.args(1)!!
-                           payargs = ast::Exprs()
-                           payargs += pv
-                           u' = codegen_build_union(cg, idx, payargs, "enum.alloc")
-                           cg.last_type = eff_tname
-                           (u', ast::ValueType(Enum))
+                           idx_lit = lbl [Int ii] ii | -1
+                           codegen_eval_enum_idx_ctor(cg, eff_tname, slots, t, idx_lit)
                         |
-                           u2 = codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
-                           cg.last_type = eff_tname
-                           (u2, ast::ValueType(Enum))
+                           chk_call = (lbl [Str]) && allow_cursor
+                              |
+                                 cargs = ast::Exprs()
+                                 cargs += ast::Expr(Var, lname)
+                                 ?t.args > 1 | (cargs += t.args(1)!!)
+                                 ast::CallExpr(t.fn_name, t.fn_target, cargs, t.line, t.col)
+                              | t
+                           codegen_check_enum_ctor(cg, eff_tname, slots, chk_call)
+                           idx = enum_slot_index(slots, lname) | _ | 0
+                           na = ?t.args
+                           na > 1
+                              |
+                                 pv = t.args(1)!!
+                                 payargs = ast::Exprs()
+                                 payargs += pv
+                                 u' = codegen_build_union(cg, idx, payargs, "enum.alloc")
+                                 cg.last_type = eff_tname
+                                 (u', ast::ValueType(Enum))
+                              |
+                                 u2 = codegen_build_union(cg, idx, ast::Exprs(), "enum.alloc")
+                                 cg.last_type = eff_tname
+                                 (u2, ast::ValueType(Enum))
       [Rec rr]
          codegen_eval_record_ctor(cg, ti, t)
       [Ram slots]
@@ -4139,6 +4477,9 @@ codegen_eval_ctor = cg, ti, t =>
       |
          arg2 = t.args(0)!!
          expr::codegen_eval(cg, arg2)
+
+codegen_eval_ctor: Cg, ast::TypeInfo, ast::CallExpr => (Addr, ast::ValueType)
+codegen_eval_ctor = cg, ti, t => codegen_eval_ctor_ex(cg, ti, t, <->)
 
 // Enum constructor calls are statically checked before their erased union is
 // materialized. The union retains only its tag and payload at runtime; label
@@ -4212,7 +4553,7 @@ static_expr_vt = cg, e =>
                   |
                      is_user_type(cg, c.fn_name)
                         |
-                           ti = typedef_ti(cg, c.fn_name)
+                           ti = ctfe_canonical_ti(cg, typedef_ti(cg, c.fn_name))
                            ti
                               [Enum] ast::ValueType(Enum)
                               [Ram] ast::ValueType(Ram)

@@ -1,7 +1,7 @@
 #use dom
 #use dom/list
 
-#foreign "c"
+#foreign("c")
    dom_test_phase: (Int) => ()
    dom_test_failure: (Int, Int, Int, Int, Int) => ()
 

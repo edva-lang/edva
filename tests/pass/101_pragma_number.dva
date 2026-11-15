@@ -1,12 +1,12 @@
 #use io
 
-#pragma integer i16
+#pragma(integer = i16)
 a = 70000
 io::out $ a      
-#pragma integer i64
+#pragma(integer = i64)
 b = 70000
 io::out $ b      
-#pragma integer default
+#pragma(integer = default)
 c = 70000
 io::out $ c      
 // explicit suffix overrides pragma

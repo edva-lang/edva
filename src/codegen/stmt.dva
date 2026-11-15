@@ -17,7 +17,7 @@
 
 #public
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
    dva_arena_current: () => Addr
    rename: (oldpath: String, newpath: String) => Int
@@ -344,6 +344,24 @@ lambda_expected_ti = ast::TypeInfo(Prim, ast::ValueType(Unknown))
 set_lambda_expected_type: ast::TypeInfo => ()
 set_lambda_expected_type = ti => lambda_expected_ti ::= ti
 
+typedef_mod_name: types::Cg, String => String
+typedef_mod_name = cg, raw_name =>
+   (?raw_name > 5 && raw_name(0..5) == "#ret_")
+      |
+         m = type_env::decl_module(raw_name(5..), 0)
+         m != "" | m | cg.current_module
+      |
+         (?raw_name > 7 && raw_name(0..7) == "#param_")
+            |
+               m = type_env::decl_module(raw_name(7..), 0)
+               m != "" | m | cg.current_module
+            |
+               (?raw_name > 5 && raw_name(0..5) == "#clo_")
+                  |
+                     m = type_env::decl_module(raw_name(5..), 0)
+                     m != "" | m | cg.current_module
+                  | type_env::decl_module(raw_name, 0)
+
 // Generic bodies are emitted from AST. Re-enter static unification for their
 // lambdas, retaining complete record, ram and function types from this instance.
 lambda_type_env: types::Cg => type_env::TypeEnv
@@ -351,18 +369,53 @@ lambda_type_env = cg =>
    env = type_env::new_env!
    types::g.marked_globals @ name => type_env::mark_global_var(env, name)
    cg.typedefs @ td =>
-      type_env::bind_user_type(env, td.name, td.ti,
-        unify::utype_from_type_info(td.ti))
-   cg.typedefs @ td =>
-      type_env::bind_user_type(env, td.name, td.ti,
-        annotate::utype_from_ti_env(env, td.ti))
+      type_env::set_current_module(env, typedef_mod_name(cg, td.name))
+      init_ut = td.ti [Enum] unify::UType(Enum, unify::UEnum(td.name, unify::UEnumVariants())) |
+         unify::utype_from_type_info(td.ti)
+      type_env::bind_user_type(env, td.name, td.ti, init_ut)
+   2 @ _pass =>
+      cg.typedefs @ td =>
+         type_env::set_current_module(env, typedef_mod_name(cg, td.name))
+         td_ut_raw = annotate::utype_from_ti_env(env, td.ti)
+         td_ut' = td_ut_raw
+         is_alias = td.ti [TypeVar]
+         td_ut_raw
+            [Enum ue]
+               td_ut' = unify::UType(Enum, unify::UEnum(td.name, ue.variants))
+            [Rec flds]
+               (td.name != "" && td.name(0) != '# && !(?td.name > 1 && td.name(0..2) == "__") && !is_alias)
+                  |
+                     named_flds = unify::UFields()
+                     flds @ fld =>
+                        named_flds += unify::UField(fld.name, fld.ut, td.name)
+                     td_ut' = unify::UType(Rec, named_flds)
+         type_env::bind_user_type(env, td.name, td.ti, td_ut')
+   cg.typedefs @ td_ev =>
+      ev_opt = type_env::lookup_user_type_exact(env, td_ev.name)
+      ev_opt | udef => annotate::register_enum_variants(env, td_ev.name, udef.ut)
+   type_env::set_current_module(env, cg.current_module)
    ?types::g.ct_bind_names @ i =>
       name = types::g.ct_bind_names(i)!!
       ti = types::g.ct_bind_tis(i)!!
-      type_env::bind_user_type(env, name, ti, annotate::utype_from_ti_env(env, ti))
+      dname = types::g.ct_bind_dnames(i) | _ | ""
+      exact_opt = dname != "" | type_env::lookup_user_type_exact(env, dname) | <-->
+      ut' = exact_opt
+         | udef =>
+            !(udef.ut [None])
+               | udef.ut
+               |
+                  type_env::set_current_module(env, typedef_mod_name(cg, dname))
+                  annotate::utype_from_ti_env(env, ti)
+         |
+            mod_nm = dname != "" | typedef_mod_name(cg, dname) | cg.current_module
+            type_env::set_current_module(env, mod_nm)
+            annotate::utype_from_ti_env(env, ti)
+      type_env::bind_user_type(env, name, ti, ut')
+   type_env::set_current_module(env, cg.current_module)
    types::g.pstmts @ st =>
       st
          [Assign a]
+            type_env::set_current_module(env, type_env::decl_module(a.0, 0))
             annotate::is_generic_sig(a)
                | type_env::bind_generic(env, a.0, a.8)
                | annotate::is_fwd_assign(a)
@@ -374,23 +427,36 @@ lambda_type_env = cg =>
          [Expr te]
             te.kind
                [Assign a]
+                  type_env::set_current_module(env, type_env::decl_module(a.0, 0))
                   type_env::bind_local(env, a.0,
                     annotate::utype_from_ti_env(env, a.5.ti), a.5.ti, a.1)
          [Binding b]
+            type_env::set_current_module(env, type_env::decl_module(b.0, 0))
             type_env::bind_local(env, b.0,
               annotate::utype_from_ti_env(env, b.1), b.1, b.3)
          [GlobalBinding b]
+            type_env::set_current_module(env, type_env::decl_module(b.0, 0))
             type_env::bind_global(env, b.0,
               annotate::utype_from_ti_env(env, b.1), b.1)
    type_env::set_current_module(env, cg.current_module)
    type_env::enter_scope(env)
-   cg.vars @ v =>
-      ti = expr::var_ti(cg, v.name)
-      // Named functions already have a complete signature in the outer scope.
-      !<>(type_env::lookup_generic(env, v.name)) &&
-        !(ti [Prim p] p [Fn, Unknown] | <->)
-         | type_env::bind_local(env, v.name,
-             annotate::utype_from_ti_env(env, ti), ti, <->)
+   cg.vars @ v, vi =>
+      (!v.is_local || vi !< cg.fn_var_start)
+         |
+            ti = expr::var_ti(cg, v.name)
+            dt = types::var_dtype(cg, v.name)
+            rdt = dt != "" | types::resolve_type_name(cg, dt) | ""
+            udef_opt = rdt != "" | type_env::lookup_user_type_exact(env, rdt) | <-->
+            ut = udef_opt
+               | udef =>
+                  udef.ut
+                     [None] annotate::utype_from_ti_env(env, ti)
+                     | udef.ut
+               | annotate::utype_from_ti_env(env, ti)
+            // Named functions already have a complete signature in the outer scope.
+            !<>(type_env::lookup_generic(env, v.name)) &&
+              !(ti [Prim p] p [Fn, Unknown] | <->)
+               | type_env::bind_local(env, v.name, ut, ti, <->)
    env
 
 // Unify the whole generic call before emitting its argument lambdas. This lets
@@ -505,7 +571,6 @@ compile_lambda = cg, f =>
       | ast::VTypes()
    cg.current_fn = fn
    cg.in_fn = <+>
-   cg.fn_var_start = saved_nvars
    cg.fn_binding_start = saved_nbindings
    entry = LLVMAppendBasicBlock(fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
@@ -514,6 +579,7 @@ compile_lambda = cg, f =>
          ep = LLVMBuildBitCast(cg.builder, LLVMGetParam(fn, 0),
            LLVMPointerType(est, 0), "cap.env")
          lambda_add_caps(cg, caps, cap_vts, est, ep, 0, nc)
+   cg.fn_var_start = saved_nvars
    lambda_add_params(cg, fn, f.params, ptypes, is_cap, 0, np)
    saved_discard = cg.discard_result
    is_disc = ret_vt' [Unit]
@@ -1363,22 +1429,28 @@ cycle_has_field_index_fields = flds, idx_name, i, n =>
 
 codegen_cycle_unroll_type: types::Cg, ast::CycleExpr => (ast::TypeInfo, Int, <>)
 codegen_cycle_unroll_type = cg, cyc =>
-   rtv = types::resolve_type_value(cg, cyc.iterable)
-   rtv.1
-      |
-         can_ti = types::ctfe_canonical_ti(cg, rtv.0)
-         can_ti
-            [Rec r]
-               !r.1
-                  | (can_ti, ?r.0, <+>)
+   tgt_opt = cyc.iterable
+      [Member m] (!m.is_module_access && m.field_name == "#members" | <+ m.target +> | <-->)
+      | <-->
+   tgt_opt
+      | iter_e =>
+         rtv = types::resolve_type_value(cg, iter_e)
+         rtv.1
+            |
+               can_ti = types::ctfe_canonical_ti(cg, rtv.0)
+               can_ti
+                  [Rec r]
+                     !r.1
+                        | (can_ti, ?r.0, <+>)
+                        | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
+                  [Enum slots]
+                     (can_ti, ?slots, <+>)
                   | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
-            [Enum slots]
-               (can_ti, ?slots, <+>)
             | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
       | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), 0, <->)
 
 // A compile-time unroll candidate: "0..N @ i => body" where N is a constant
-// and body references "x.(i)" or "T.(i)". Returns (trip_count, <+>) or (0, <->).
+// and body references "#member x, i" or "#member T, i". Returns (trip_count, <+>) or (0, <->).
 codegen_cycle_unroll_range: types::Cg, ast::CycleExpr => (Int, <>)
 codegen_cycle_unroll_range = cg, cyc =>
    cyc.iterable
@@ -1563,6 +1635,11 @@ codegen_eval_cycle_expr_ast = cg, c =>
 
 codegen_eval_cycle: types::Cg, ast::CycleExpr => (Addr, ast::ValueType)
 codegen_eval_cycle = cg, c =>
+   types::resolve_type_value(cg, c.iterable).1
+      |
+         types::init_error(cg, "E3084",
+           "Cannot iterate over a type directly; use '#members T @ m =>'.", 0, 0)
+         --| (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
    c.is_expr
       | codegen_eval_cycle_expr_ast(cg, c)
       |
@@ -2357,7 +2434,10 @@ infer_ret = e, params, ptypes =>
       [Record] ast::ValueType(Record)
       [BuilderCreate] ast::ValueType(Builder)
       [ArrayCreate] ast::ValueType(Array)
-      [Var v] param_vt(v, params, ptypes)
+      [Var v]
+         v ["#os", "#arch", "#target"]
+            | ast::ValueType(Str)
+            | param_vt(v, params, ptypes)
       [Choice c]
          ct = types::ctfe_eval_type_choice_simple(c)
          ct.1
@@ -2375,18 +2455,23 @@ infer_ret = e, params, ptypes =>
             | infer_ret_choice_branches(c.branches, params, ptypes, 0,
               ?c.branches, <->)
       [Member m]
-         m.field_name == "name"
+         rtv = types::resolve_type_value_simple(m.target)
+         !rtv.1 | --| ast::ValueType(Unknown)
+         m.field_name == "#type_name" | --| ast::ValueType(Str)
+         m.field_name ["#type_size", "#type_align", "#type_arity"]
+            | --| ast::ValueType(Int)
+         m.field_name == "#type_zero"
+            | --| types::vt_from_ti(types::ctfe_canonical_ti_simple(rtv.0))
+         m.field_name == ""
             |
-               rtv = types::resolve_type_value_simple(m.target)
-               rtv.1 | ast::ValueType(Str) | ast::ValueType(Unknown)
-            |
-               m.field_name == "zero"
-                  |
-                     rtv = types::resolve_type_value_simple(m.target)
-                     rtv.1
-                        | types::vt_from_ti(types::ctfe_canonical_ti_simple(rtv.0))
-                        | ast::ValueType(Unknown)
-                  | ast::ValueType(Unknown)
+               can_ti = types::ctfe_canonical_ti_simple(rtv.0)
+               can_ti
+                  [Enum]
+                     is_e = m.index_expr [Var vn] !(param_vt(vn, params, ptypes) [Int])
+                        | <->
+                     --| (is_e | ast::ValueType(Enum) | ast::ValueType(Str))
+                  | --| ast::ValueType(Str)
+         ast::ValueType(Unknown)
       [Variant v]
          is_flag = v.tag_name [Positive, Negative] && ?v.args == 0
          is_flag | ast::ValueType(Flag) | ast::ValueType(Ram)
@@ -2426,6 +2511,10 @@ infer_ret = e, params, ptypes =>
       [Return r]
          r.has_val | infer_ret(r.val, params, ptypes) | ast::ValueType(Unit)
       [Call c]
+         c.fn_name == "#has_member" && ?c.args == 2
+            | --| ast::ValueType(Flag)
+         c.fn_name == "#member3" && ?c.args == 3
+            | --| ast::ValueType(Enum)
          c.fn_name == "%bitcast" && ?c.args == 2
             | ((c.args(0)!!) [SizeOf so] so.val_type | ast::ValueType(Unknown))
             |
@@ -5193,6 +5282,11 @@ apply_call_ret_meta = cg, fname =>
                                  cg.last_fnames = m.1
                                  cg.last_fvts = types::field_vts(cg, sig_ti)
                            cg.last_type = ret_tname'
+                        [Fn]
+                           ret_tname' = "#ret_" + fname
+                           !types::has_type_name(cg, ret_tname')
+                              | runtime::add_type(cg, ret_tname', sig_ti)
+                           cg.last_type = ret_tname'
 
 // Pre-pass: a top-level call with a GROWABLE-ARRAY argument means the callee's
 // matching param is an array value — record the param name so the callee body
@@ -7296,7 +7390,6 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
 
    mod_name = types::decl_module(name, 0)
    mod_name != "" | cg.current_module = mod_name
-   cg.fn_var_start = saved_nvars
    cg.bindings = types::BindingMuts()
    cg.fn_binding_start = 0
 
@@ -7352,6 +7445,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
          ep = LLVMBuildBitCast(cg.builder, LLVMGetParam(fn, 0),
            LLVMPointerType(est, 0), "cap.env")
          lambda_add_caps(cg, caps, cap_vts, est, ep, 0, nc)
+   cg.fn_var_start = saved_nvars
 
    nparams @ j =>
       pname = params(j) | _ | ""
@@ -7368,8 +7462,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
       prm_0_opt = prec | p => <+ p.0 +> | (rm_pti | m => <+ m.0 +> | <-->)
       prm_1 = prec | p => p.1 | (rm_pti | m => m.1 | ast::Names())
       pfvts = prec | p => p.2 | types::field_vts(cg, pti)
-      pdt = pti [TypeVar tv] tv |
-         (is_ram | types::ensure_ti_dtype(cg, pti) | "")
+      pdt = types::ensure_ti_dtype(cg, pti)
       cg.vars += types::CgVar(pname, pvt_j, types::is_ptrish_vt(pvt_j) && !is_ram, pdt,
         prm_0_opt, prm_1, <+ pslot +>, <+>, <->, pfvts, <-->)
 

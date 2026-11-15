@@ -8,7 +8,7 @@
 #type Pair (Int, String)
 #type Ints Int{}
 
-classify: #! T: Type, T => String
+classify: #param T: Type, T => String
 classify = x =>
    T
       [Int, String] "exact_primitive"
@@ -17,7 +17,7 @@ classify = x =>
       [type::is_ram] "ram"
       | "other"
 
-cap_check: #! T: Type, T => String
+cap_check: #param T: Type, T => String
 cap_check = x =>
    T
       [type::is_array] "array"
@@ -26,7 +26,7 @@ cap_check = x =>
       [type::is_homogeneous] "homogeneous"
       | "other"
 
-num_check: #! T: Type, T => String
+num_check: #param T: Type, T => String
 num_check = x =>
    T
       [type::is_int] "int"

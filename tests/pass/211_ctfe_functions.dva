@@ -1,4 +1,4 @@
-// CTFE now calls pure user functions: a '#!' expression can invoke any
+// CTFE now calls pure user functions: a '#const' expression can invoke any
 // declared function whose body stays in the CTFE subset (no new syntax). The
 // tree-walking interpreter binds params and recurses; the JIT remains the
 // fallback for the non-interpretable tail.
@@ -14,15 +14,15 @@ max2 = a, b => a > b | a | b
 describe = n => n > 0 | "pos" | "non"
 greet = name => "hi " + name
 
-io::out $ str::from_int(#! double(21))
-io::out $ str::from_int(#! square(9))
-io::out $ str::from_int(#! sum3(1, 2, 3))
-io::out $ str::from_int(#! double(square(3)))
-io::out $ #! is_even(8)
-io::out $ str::from_int(#! max2(3, 7))
-io::out $ str::from_int(#! max2(9, 2))
-io::out $ #! describe(5)
-io::out $ #! describe(-1)
-io::out $ #! greet("dva")
-io::out $ str::from_int(#! (3 > 7 | 100 | 0))
-io::out $ #! (2 < 3 | "yes" | "no")
+io::out $ str::from_int(#const double(21))
+io::out $ str::from_int(#const square(9))
+io::out $ str::from_int(#const sum3(1, 2, 3))
+io::out $ str::from_int(#const double(square(3)))
+io::out $ #const is_even(8)
+io::out $ str::from_int(#const max2(3, 7))
+io::out $ str::from_int(#const max2(9, 2))
+io::out $ #const describe(5)
+io::out $ #const describe(-1)
+io::out $ #const greet("dva")
+io::out $ str::from_int(#const (3 > 7 | 100 | 0))
+io::out $ #const (2 < 3 | "yes" | "no")

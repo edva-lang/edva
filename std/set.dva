@@ -13,30 +13,30 @@
 // Creates a new empty `StrSet`.
 new_str: () => StrSet
 new_str = !=>
-   StrSet.zero
+   #zero StrSet
 
 // Creates a new empty `IntSet`.
 new_int: () => IntSet
 new_int = !=>
-   IntSet.zero
+   #zero IntSet
 
 // Creates a new empty set of type `S` (`StrSet`, `IntSet`, or any `K ^ <>` / `E{}`).
-new: #! S: Type => S
+new: #param S: Type => S
 new = !=>
-   S.zero
+   #zero S
 
 // Returns the number of elements in set `s`.
-len: #! S: Type, S => Int
+len: #param S: Type, S => Int
 len = s =>
    ?s
 
 // Returns `<+>` if set `s` contains no elements.
-is_empty: #! S: Type, S => <>
+is_empty: #param S: Type, S => <>
 is_empty = s =>
    ?s == 0
 
 // Returns `<+>` if `elem` is a member of set `s`.
-contains: #! S: Type, #! E: Type, S, E => <>
+contains: #param S: Type, #param E: Type, S, E => <>
 contains = s, elem =>
    S
       [K ^ V]
@@ -48,7 +48,7 @@ contains = s, elem =>
       | <->
 
 // Inserts `elem` into set `s`. Returns `<+>` if `elem` was newly added, or `<->` if already present.
-add: #! S: Type, #! E: Type, S, E => <>
+add: #param S: Type, #param E: Type, S, E => <>
 add = s, elem =>
    S
       [K ^ V]
@@ -64,7 +64,7 @@ add = s, elem =>
       | <->
 
 // Removes `elem` from hash-backed set `s` (`K ^ <>`). Returns `<+>` if `elem` was present and removed.
-remove: #! S: Type, #! E: Type, S, E => <>
+remove: #param S: Type, #param E: Type, S, E => <>
 remove = s, elem =>
    S
       [K ^ V]
@@ -72,7 +72,7 @@ remove = s, elem =>
       | <->
 
 // Removes all elements from hash-backed set `s` (`K ^ <>`) in place.
-clear: #! S: Type, S => ()
+clear: #param S: Type, S => ()
 clear = s =>
    S
       [K ^ V]
@@ -97,9 +97,9 @@ clear = s =>
                   _rem = s ^- k
 
 // Returns a new set containing all elements present in `a` or `b` (`a ∪ b`).
-union: #! S: Type, S, S => S
+union: #param S: Type, S, S => S
 union = a, b =>
-   out' = S.zero
+   out' = #zero S
    S
       [K ^ V]
          a @ _av, ak =>
@@ -114,9 +114,9 @@ union = a, b =>
    out'
 
 // Returns a new set containing only elements present in both `a` and `b` (`a ∩ b`).
-intersect: #! S: Type, S, S => S
+intersect: #param S: Type, S, S => S
 intersect = a, b =>
-   out' = S.zero
+   out' = #zero S
    S
       [K ^ V]
          a @ _av, ak =>
@@ -128,9 +128,9 @@ intersect = a, b =>
    out'
 
 // Returns a new set containing elements in `a` that are not in `b` (`a \ b`).
-diff: #! S: Type, S, S => S
+diff: #param S: Type, S, S => S
 diff = a, b =>
-   out' = S.zero
+   out' = #zero S
    S
       [K ^ V]
          a @ _av, ak =>
@@ -142,9 +142,9 @@ diff = a, b =>
    out'
 
 // Returns a new set containing elements in `a` or `b` but not both (`a △ b`).
-symmetric_diff: #! S: Type, S, S => S
+symmetric_diff: #param S: Type, S, S => S
 symmetric_diff = a, b =>
-   out' = S.zero
+   out' = #zero S
    S
       [K ^ V]
          a @ _av, ak =>
@@ -161,7 +161,7 @@ symmetric_diff = a, b =>
    out'
 
 // Returns `<+>` if every element of `a` is also in `b` (`a ⊆ b`).
-is_subset: #! S: Type, S, S => <>
+is_subset: #param S: Type, S, S => <>
 is_subset = a, b =>
    ?a > ?b |->
    S
@@ -174,12 +174,12 @@ is_subset = a, b =>
    <+>
 
 // Returns `<+>` if every element of `b` is also in `a` (`a ⊇ b`).
-is_superset: #! S: Type, S, S => <>
+is_superset: #param S: Type, S, S => <>
 is_superset = a, b =>
    is_subset(S, b, a)
 
 // Returns `<+>` if `a` and `b` share no common elements (`a ∩ b = ∅`).
-is_disjoint: #! S: Type, S, S => <>
+is_disjoint: #param S: Type, S, S => <>
 is_disjoint = a, b =>
    S
       [K ^ V]
@@ -191,14 +191,14 @@ is_disjoint = a, b =>
    <+>
 
 // Returns `<+>` if `a` and `b` contain the exact same elements.
-equals: #! S: Type, S, S => <>
+equals: #param S: Type, S, S => <>
 equals = a, b =>
    (?a == ?b) && is_subset(S, a, b)
 
 // Copies all elements of set `s` into a growable array of type `ArrType` (where `#type ArrType Elem{}`).
-to_array: #! ArrType: Type, #! S: Type, S => ArrType
+to_array: #param ArrType: Type, #param S: Type, S => ArrType
 to_array = s =>
-   out' = ArrType.zero
+   out' = #zero ArrType
    S
       [K ^ V]
          s @ _v, k =>
@@ -209,9 +209,9 @@ to_array = s =>
    out'
 
 // Populates a new set of type `S` from a growable array or slice `arr`.
-from_array: #! S: Type, #! A: Type, A => S
+from_array: #param S: Type, #param A: Type, A => S
 from_array = arr =>
-   out' = S.zero
+   out' = #zero S
    A
       [E{}]
          arr @ elem =>

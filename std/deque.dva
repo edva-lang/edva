@@ -28,27 +28,27 @@
 
 #private
 
-make_empty_like: #! A: Type, A => A
+make_empty_like: #param A: Type, A => A
 make_empty_like = _sample =>
-   A.zero
+   (#zero A)
 
-arr_len: #! T: Type, T{} => Int
+arr_len: #param T: Type, T{} => Int
 arr_len = arr =>
    ?arr
 
-arr_get: #! T: Type, T{}, Int => T
+arr_get: #param T: Type, T{}, Int => T
 arr_get = arr, idx =>
    arr(idx)!!
 
-arr_set: #! T: Type, T{}, Int, T => ()
+arr_set: #param T: Type, T{}, Int, T => ()
 arr_set = arr, idx, val =>
    arr(idx) = val
 
-arr_push: #! T: Type, T{}, T => ()
+arr_push: #param T: Type, T{}, T => ()
 arr_push = arr, val =>
    arr += val
 
-ensure_cap: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int), T => ()
+ensure_cap: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int), T => ()
 ensure_cap = d, fill_val =>
    old_cap = arr_len(T, d.buf)
    d.count == old_cap |
@@ -86,29 +86,29 @@ new_float = !=>
    FloatDeque(Float{}(), 0, 0, 0)
 
 // Creates a new empty deque of any deque record type `D` (e.g. `deque::new(deque::IntDeque)`).
-new: #! D: Type => D
+new: #param D: Type => D
 new = !=>
-   D.zero
+   (#zero D)
 
 // Returns the number of elements in `d`.
-len: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => Int
+len: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => Int
 len = d =>
    d.count
 
 // Returns `<+>` if `d` contains no elements.
-is_empty: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => <>
+is_empty: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => <>
 is_empty = d =>
    d.count == 0
 
 // Removes all elements from `d` in O(1) time while retaining allocated capacity.
-clear: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => ()
+clear: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => ()
 clear = d =>
    d.head = 0
    d.tail = 0
    d.count = 0
 
 // Appends `val` to the back of `d` in O(1) amortized time.
-push_back: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int), T => ()
+push_back: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int), T => ()
 push_back = d, val =>
    ensure_cap(T, d, val)
    cap = arr_len(T, d.buf)
@@ -117,7 +117,7 @@ push_back = d, val =>
    d.count = d.count + 1
 
 // Prepends `val` to the front of `d` in O(1) amortized time.
-push_front: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int), T => ()
+push_front: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int), T => ()
 push_front = d, val =>
    ensure_cap(T, d, val)
    cap = arr_len(T, d.buf)
@@ -127,7 +127,7 @@ push_front = d, val =>
    d.count = d.count + 1
 
 // Removes and returns the front element of `d`, or `<-->` if empty.
-pop_front: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => < T | >
+pop_front: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => < T | >
 pop_front = d =>
    d.count == 0
       | <-->
@@ -143,7 +143,7 @@ pop_front = d =>
          <+ val +>
 
 // Removes and returns the back element of `d`, or `<-->` if empty.
-pop_back: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => < T | >
+pop_back: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => < T | >
 pop_back = d =>
    d.count == 0
       | <-->
@@ -160,14 +160,14 @@ pop_back = d =>
          <+ val +>
 
 // Returns the front element of `d` without removing it, or `<-->` if empty.
-peek_front: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => < T | >
+peek_front: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => < T | >
 peek_front = d =>
    d.count == 0
       | <-->
       | <+ arr_get(T, d.buf, d.head) +>
 
 // Returns the back element of `d` without removing it, or `<-->` if empty.
-peek_back: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => < T | >
+peek_back: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => < T | >
 peek_back = d =>
    d.count == 0
       | <-->
@@ -177,7 +177,7 @@ peek_back = d =>
          <+ arr_get(T, d.buf, idx) +>
 
 // Returns the element at logical index `idx` (`0 !> idx < len(d)`), or `<-->` if out of bounds.
-get: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int), Int => < T | >
+get: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int), Int => < T | >
 get = d, idx =>
    (idx < 0 || idx !< d.count)
       | <-->
@@ -187,7 +187,7 @@ get = d, idx =>
          <+ arr_get(T, d.buf, phys) +>
 
 // Overwrites the element at logical index `idx` (`0 !> idx < len(d)`). Returns `<+>` on success.
-set: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int), Int, T => <>
+set: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int), Int, T => <>
 set = d, idx, val =>
    (idx < 0 || idx !< d.count)
       | <->
@@ -198,7 +198,7 @@ set = d, idx, val =>
          <+>
 
 // Copies the elements of `d` in logical front-to-back order into a new growable array `T{}`.
-to_array: #! T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => T{}
+to_array: #param T: Type, (buf: T{}, head: Int, tail: Int, count: Int) => T{}
 to_array = d =>
    out = make_empty_like(d.buf)
    cap = arr_len(T, d.buf)

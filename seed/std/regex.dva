@@ -850,8 +850,8 @@ compile = pattern =>
    <+ Regex(pattern, prog', st.num_groups, anchored) ->
 
 // Returns `<+>` if `pat` (either a compiled `Regex` or a pattern `String`) matches anywhere in `text`.
-match: #! P: Type, P, String => <>
-match = #! P, pat, text =>
+match: #param P: Type, P, String => <>
+match = #param P, pat, text =>
    re = P [String] (compile(pat) | _ |->) | pat
    run_vm(re, text, 0)
       | saved => ?saved !< 0

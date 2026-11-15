@@ -1,8 +1,8 @@
 #use io
 
-Header: #packed (a: u8, b: u16, c: u8)
+#type(packed) Header (a: u8, b: u16, c: u8)
 
-TcpFlags: #packed u16 (
+#type(packed = u16) TcpFlags (
    fin: 1,
    syn: 1,
    rst: 1,
@@ -15,7 +15,7 @@ TcpFlags: #packed u16 (
    res: 7,
 )
 
-Packet: #packed (
+#type(packed) Packet (
    src: u16,
    dst: u16,
    flags: TcpFlags,

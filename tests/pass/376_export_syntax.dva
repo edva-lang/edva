@@ -5,8 +5,8 @@
 
 #use io
 
-#export "aliased_add" add_alias: Int, Int => Int
-#export "aliased_add" add_alias = a, b => a + b
+#export("aliased_add") add_alias: Int, Int => Int
+#export("aliased_add") add_alias = a, b => a + b
 
 #export sub_one: Int => Int
 #export sub_one = x => x - 1

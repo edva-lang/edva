@@ -39,15 +39,15 @@
 )
 
 // 4. Multiline packed record and bitfield without commas
-#type PackedHdr #packed (
+#type(packed) PackedHdr (
    magic: u16
    version: u8
    flags: u8
 )
 
-#type PackedHdrComma #packed (magic: u16, version: u8, flags: u8)
+#type(packed) PackedHdrComma (magic: u16, version: u8, flags: u8)
 
-#type BitFlags #packed u8 (
+#type(packed = u8) BitFlags (
    read: 1
    write: 1
    exec: 1

@@ -9,7 +9,7 @@ meta:
 # `ccl` standard library
 
 The `ccl` module implements the [Categorical Configuration Language (CCL)](https://github.com/chshersh/ccl)
-parser, data model, deterministic serializer, and `#!` compile-time structural encoder/decoder.
+parser, data model, deterministic serializer, and `#param` compile-time structural encoder/decoder.
 
 ```{.dva .run}
 #use ccl
@@ -39,23 +39,23 @@ The core document model represents nested, indentation-delimited key-value entri
 #type CclDoc CclEntry{}
 ```
 
-## Structural encoding and decoding (`#!`)
+## Structural encoding and decoding (`#param`)
 
 `ccl` provides compile-time structural codecs for records, tuples, enums, options, arrays, maps, primitives, and `CclDoc`:
 
 | Function | Signature | Description |
 |---|---|---|
 | `ccl::encode` | `val => String` | Serialize any record, map, or `CclDoc` into a canonical CCL string |
-| `ccl::decode` | `#! T, String => < T | Error >` | Parse CCL text and decode into target type `T` |
-| `ccl::decode_file` | `#! T, String => < T | Error >` | Read a file from disk and decode its CCL contents into `T` |
+| `ccl::decode` | `#param T, String => < T | Error >` | Parse CCL text and decode into target type `T` |
+| `ccl::decode_file` | `#param T, String => < T | Error >` | Read a file from disk and decode its CCL contents into `T` |
 | `ccl::to_doc` | `val => CclDoc` | Convert any record, map, or `CclDoc` into a `CclDoc` |
 | `ccl::to_ccl_val` | `val => CclVal` | Convert any value into a `CclVal` |
-| `ccl::decode_doc` | `#! T, CclDoc => < T | Error >` | Decode a parsed `CclDoc` into target type `T` |
-| `ccl::decode_val` | `#! T, CclVal => < T | Error >` | Decode a `CclVal` into target type `T` |
+| `ccl::decode_doc` | `#param T, CclDoc => < T | Error >` | Decode a parsed `CclDoc` into target type `T` |
+| `ccl::decode_val` | `#param T, CclVal => < T | Error >` | Decode a `CclVal` into target type `T` |
 
 ### Codec conventions
 
-- **Forward-compatible records (`[(..)]`)**: Unknown keys in input are ignored. Missing keys use declared field defaults (`f.default`), `<-->` for option fields (`<P|>`), or `f.type.zero` for emptyable containers (`E{}`, `K ^ V`); an `Error` is returned only when a required non-option field with no default is missing.
+- **Forward-compatible records (`[(..)]`)**: Unknown keys in input are ignored. Missing keys use declared field defaults (`f.default`), `<-->` for option fields (`<P|>`), or `#zero f.type` for emptyable containers (`E{}`, `K ^ V`); an `Error` is returned only when a required non-option field with no default is missing.
 - **External enum tagging (`[<..>]`)**: Unit variants encode and decode as plain strings (`"VariantName"`), while payload variants encode and decode as single-entry blocks (`VariantName = payload`).
 - **Boolean flags (`[<>]`)**: `ccl::to_ccl_val` / `ccl::encode` serializes `<+>` as `"true"` and `<->` as `"false"`. In `ccl::decode_val`, a string entry (`Str s`) decodes to `<+>` (true) when `s` is `"true"`, `"1"`, or `"yes"`, and decodes to `<->` (false) when `s` is `"false"`, `"0"`, or `"no"`; any other string or a block entry returns an `Error`.
 

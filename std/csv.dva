@@ -1,5 +1,5 @@
 // Standard RFC 4180 CSV Reader, Writer & Structural Codec Module (std/csv.dva)
-// Configurable-delimiter CSV parser/serializer and `#!` compile-time structural
+// Configurable-delimiter CSV parser/serializer and `#param` compile-time structural
 // typed row encoder/decoder (`csv::encode`, `csv::decode`).
 
 #use str
@@ -146,11 +146,11 @@ write_all: Table => String
 write_all = rows =>
    write_all_delim(rows, ',)
 
-// --- Structural Typed Row Codec (#!) ----------------------------------------
+// --- Structural Typed Row Codec (#param) ------------------------------------
 
 #private
 
-csv_cell_str: #! V: Type, V => String
+csv_cell_str: #param V: Type, V => String
 csv_cell_str = v =>
    V
       [String] v
@@ -165,44 +165,44 @@ csv_cell_str = v =>
       [<P|>]
          (v | inner => csv_cell_str(inner) | "")
       [<..>]
-         V @ vr =>
-            v.(vr)
+         #members V @ vr =>
+            #member v, vr
                | pay =>
                   vr.type
                      [()] --| vr.name
                      | --| vr.name + ":" + csv_cell_str(pay)
          ""
-      | V.name
+      | #name V
 
-write_record_header: #! R: Type, Builder, Int => ()
+write_record_header: #param R: Type, Builder, Int => ()
 write_record_header = b, delim =>
    R
       [(..)]
          is_named' = <->
-         R @ f =>
+         #members R @ f =>
             f.idx == 0 && f.name != "" | is_named' = <+>
          is_named'
             |
-               R @ f =>
+               #members R @ f =>
                   f.idx > 0 | b += delim
                   write_csv_field(b, f.name, delim)
                b += '\n
 
-write_record_row: #! R: Type, Builder, R, Int => ()
+write_record_row: #param R: Type, Builder, R, Int => ()
 write_record_row = b, rec, delim =>
    R
       [(..)]
-         R @ f =>
+         #members R @ f =>
             f.idx > 0 | b += delim
             f.type
                [<P|>]
-                  vf = rec.(f)
+                  vf = #member rec, f
                   vf | inner => write_csv_field(b, csv_cell_str(inner), delim)
                |
-                  write_csv_field(b, csv_cell_str(rec.(f)), delim)
+                  write_csv_field(b, csv_cell_str((#member rec, f)), delim)
          b += '\n
 
-decode_csv_cell: #! T: Type, String, Int, Int => < T | Error >
+decode_csv_cell: #param T: Type, String, Int, Int => < T | Error >
 decode_csv_cell = s, line, col =>
    T
       [String] <+ s ->
@@ -220,12 +220,12 @@ decode_csv_cell = s, line, col =>
             ["false", "0", "no"] <+ <-> ->
             | <- csv_err("invalid boolean '" + s + "'", line, col) +>
       [<..>]
-         T @ v =>
+         #members T @ v =>
             v.name == s |
                v.type
-                  [()] --| <+ T(v) ->
-         <- csv_err("unknown enum variant '" + s + "' for " + T.name, line, col) +>
-      | <- csv_err("unsupported column type " + T.name + " in csv::decode", line, col) +>
+                  [()] --| <+ (#member T, v) ->
+         <- csv_err("unknown enum variant '" + s + "' for " + (#name T), line, col) +>
+      | <- csv_err("unsupported column type " + (#name T) + " in csv::decode", line, col) +>
 
 find_col_idx: Row, String => Int
 find_col_idx = hdr, name =>
@@ -233,12 +233,12 @@ find_col_idx = hdr, name =>
       col == name | --| i
    -1
 
-decode_one_row: #! R: Type, Row, Row, <>, Int => < R | Error >
+decode_one_row: #param R: Type, Row, Row, <>, Int => < R | Error >
 decode_one_row = hdr, row, has_hdr, line_no =>
-   rec' = R.zero
+   rec' = #zero R
    R
       [(..)]
-         R @ f =>
+         #members R @ f =>
             col_idx = has_hdr | find_col_idx(hdr, f.name) | f.idx
             (col_idx !< 0 && col_idx < ?row)
                |
@@ -246,35 +246,35 @@ decode_one_row = hdr, row, has_hdr, line_no =>
                   (?raw_cell == 0)
                      |
                         f.default
-                           | def => rec'.(f) = def
+                           | def => #member rec', f = def
                            |
                               f.type
-                                 [<P|>] rec'.(f) = <-->
-                                 [String] rec'.(f) = ""
+                                 [<P|>] #member rec', f = <-->
+                                 [String] #member rec', f = ""
                                  | --| <- csv_err("empty required column '" + (f.name != "" | f.name | str::from_int(f.idx)) + "'", line_no, col_idx + 1) +>
                      |
                         f.type
                            [<P|>]
-                              rec'.(f) = <+ decode_csv_cell(P, raw_cell, line_no, col_idx + 1)--! +>
+                              #member rec', f = <+ decode_csv_cell(P, raw_cell, line_no, col_idx + 1)--! +>
                            |
-                              rec'.(f) = decode_csv_cell(f.type, raw_cell, line_no, col_idx + 1)--!
+                              #member rec', f = decode_csv_cell(f.type, raw_cell, line_no, col_idx + 1)--!
                |
                   f.default
-                     | def => rec'.(f) = def
+                     | def => #member rec', f = def
                      |
                         f.type
-                           [<P|>] rec'.(f) = <-->
+                           [<P|>] #member rec', f = <-->
                            | --| <- csv_err("missing required column '" + (f.name != "" | f.name | str::from_int(f.idx)) + "'", line_no, 1) +>
    <+ rec' ->
 
-decode_table_into: #! ArrType: Type, #! RowType: Type, Table => < ArrType | Error >
+decode_table_into: #param ArrType: Type, #param RowType: Type, Table => < ArrType | Error >
 decode_table_into = tbl =>
-   out' = ArrType.zero
+   out' = #zero ArrType
    ?tbl == 0 | --| <+ out' ->
    has_hdr' = <->
    RowType
       [(..)]
-         RowType @ f =>
+         #members RowType @ f =>
             f.idx == 0 && f.name != "" | has_hdr' = <+>
    hdr = has_hdr' | tbl(0)!! | Row()
    start_idx = has_hdr' | 1 | 0
@@ -286,7 +286,7 @@ decode_table_into = tbl =>
 #public
 
 // Encodes `val` (`Table`, `R{}` / `R[]` array of records, or single record `R`) into CSV text with custom delimiter.
-encode_delim: #! T: Type, T, Int => String
+encode_delim: #param T: Type, T, Int => String
 encode_delim = val, delim =>
    T
       [Table] write_all_delim(val, delim)
@@ -310,7 +310,7 @@ encode_delim = val, delim =>
       | ""
 
 // Encodes `val` (`Table`, `R{}` / `R[]` array of records, or single record `R`) into comma-separated CSV text.
-encode: #! T: Type, T => String
+encode: #param T: Type, T => String
 encode = val =>
    encode_delim(T, val, ',)
 
@@ -318,7 +318,7 @@ encode = val =>
 // - `csv::decode_delim(csv::Table, text, delim)` returns `< Table | Error >`
 // - `csv::decode_delim(MyRowList, text, delim)` returns `< MyRowList | Error >` (where `#type MyRowList MyRow{}`)
 // - `csv::decode_delim(MyRow, text, delim)` decodes the first data row into `< MyRow | Error >`
-decode_delim: #! T: Type, String, Int => < T | Error >
+decode_delim: #param T: Type, String, Int => < T | Error >
 decode_delim = text, delim =>
    T
       [Table] read_all_delim(text, delim)
@@ -333,7 +333,7 @@ decode_delim = text, delim =>
                   | <- csv_err("no data rows in CSV", 1, 1) +>
                   |
                      has_hdr' = <->
-                     T @ f =>
+                     #members T @ f =>
                         f.idx == 0 && f.name != "" | has_hdr' = <+>
                      has_hdr' && ?tbl < 2
                         | <- csv_err("no data rows after header in CSV", 1, 1) +>
@@ -343,8 +343,8 @@ decode_delim = text, delim =>
                            line_no = has_hdr' | 2 | 1
                            decode_one_row(T, hdr, data_row, has_hdr', line_no)
             | err => <- err +>
-      | <- csv_err("unsupported target type " + T.name + " in csv::decode", 1, 1) +>
+      | <- csv_err("unsupported target type " + (#name T) + " in csv::decode", 1, 1) +>
 
-decode: #! T: Type, String => < T | Error >
+decode: #param T: Type, String => < T | Error >
 decode = text =>
    decode_delim(T, text, ',)

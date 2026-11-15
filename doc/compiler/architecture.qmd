@@ -26,8 +26,8 @@ flowchart LR
 | **CLI & Driver** | `src/edva.dva`, `src/pkg.dva` | CLI flag/subcommand parsing, module graph loading, IR caching (`~/.cache/edva/ir/`), package manager subcommands, and `clang` invocation |
 | **Operator Table (SSOT)** | `operators.yaml`, `tools/opgen/main.nu`, `src/operators.dva` | Single source of truth for operator tiers, LBP/RBP binding powers, associativity, and generated tables |
 | **Lexical Analysis** | `src/lexer.dva`, `src/token.dva` | UTF-8 scanning, indentation stack (`INDENT`/`DEDENT`), string margin stripping, `${...}` interpolation tokens |
-| **Parsing** | `src/parser.dva`, `src/ast.dva` | Pratt expression parsing, choice guard classification, headless choice/section synthesis, `#type` / `#!` AST nodes |
-| **Annotation & Unification** | `src/annotate.dva`, `src/unify.dva`, `src/layout.dva` | Scope resolution, primed mutability, definite field initialization (`E3130`), Hindley-Milner type unification, `#!` CTFE |
+| **Parsing** | `src/parser.dva`, `src/ast.dva` | Pratt expression parsing, choice guard classification, headless choice/section synthesis, `#type` / `#` meta-language AST nodes |
+| **Annotation & Unification** | `src/annotate.dva`, `src/unify.dva`, `src/layout.dva` | Scope resolution, primed mutability, definite field initialization (`E3130`), Hindley-Milner type unification, `#const` / `#param` CTFE |
 | **LLVM IR Codegen** | `src/codegen/main.dva`, `src/codegen/types.dva`, `src/codegen/expr.dva`, `src/codegen/stmt.dva`, `src/codegen/match.dva`, `src/codegen/runtime.dva` | Lowering to typed LLVM 18 IR: unboxed `{ i1, i64 }` rams, null-niche pointers, arena generation checks (`E4010`), SIMD intrinsics |
 | **Standard Library** | `std/*.dva` | 43 standard library modules resolved via `#use <module>` |
 

@@ -8,7 +8,7 @@ meta:
 
 # `json` standard library
 
-The `json` module provides an RFC 8259 JSON parser, a recursive `json::Value` DOM model, serializer utilities, and `#!` compile-time structural codecs (`json::encode`, `json::encode_pretty`, `json::decode`).
+The `json` module provides an RFC 8259 JSON parser, a recursive `json::Value` DOM model, serializer utilities, and `#param` compile-time structural codecs (`json::encode`, `json::encode_pretty`, `json::decode`).
 
 ```{.dva .run}
 #use io
@@ -18,21 +18,21 @@ value = json::parse("[1, 2, 3]")!!
 value [Array items] io::out(?items) | io::out("not an array")
 ```
 
-## Structural encoding and decoding (`#!`)
+## Structural encoding and decoding (`#param`)
 
 `json` provides compile-time structural codecs over records, tuples, enums, options (`<P|>`), arrays (`E{}`), slices (`E[]`), maps (`K ^ V`), primitives, and `json::Value`:
 
 | Function | Signature | Description |
 |---|---|---|
-| `json::encode` | `#! T: Type, T => String` | Serialize any value into a compact JSON string |
-| `json::encode_pretty` | `#! T: Type, T, Int => String` | Serialize any value into an indented JSON string |
-| `json::decode` | `#! T: Type, String => < T | Error >` | Parse JSON text and decode into target type `T` |
-| `json::to_value` | `#! T: Type, T => Value` | Convert any typed value into a `json::Value` |
-| `json::from_value` | `#! T: Type, Value => < T | Error >` | Decode a `json::Value` into target type `T` |
+| `json::encode` | `#param T: Type, T => String` | Serialize any value into a compact JSON string |
+| `json::encode_pretty` | `#param T: Type, T, Int => String` | Serialize any value into an indented JSON string |
+| `json::decode` | `#param T: Type, String => < T | Error >` | Parse JSON text and decode into target type `T` |
+| `json::to_value` | `#param T: Type, T => Value` | Convert any typed value into a `json::Value` |
+| `json::from_value` | `#param T: Type, Value => < T | Error >` | Decode a `json::Value` into target type `T` |
 
 ### Structural mapping conventions
 
-- **Records (`[(..)]`)**: Encoded as JSON objects `{...}`. Decoding is forward-compatible: unknown keys in the input are ignored; missing keys use declared field defaults (`f.default`), `<-->` for option fields (`<P|>`), or `f.type.zero` for emptyable containers (`E{}`, `K ^ V`). An `Error` is returned when a required field is missing.
+- **Records (`[(..)]`)**: Encoded as JSON objects `{...}`. Decoding is forward-compatible: unknown keys in the input are ignored; missing keys use declared field defaults (`f.default`), `<-->` for option fields (`<P|>`), or `#zero f.type` for emptyable containers (`E{}`, `K ^ V`). An `Error` is returned when a required field is missing.
 - **Positional tuples (`[(..)]` with unnamed fields)**: Encoded and decoded as fixed-length JSON arrays `[...]`.
 - **Enums (`[<..>]`) — External tagging**: Unit variants (`v.type [()]`) encode and decode as JSON strings `"VariantName"`; payload variants encode and decode as single-key JSON objects `{"VariantName": payload}`.
 - **Options (`[<P|>]`)**: `<+ v +>` encodes `v`; `<-->` encodes `null`. `null` or an omitted record field decodes to `<-->`.

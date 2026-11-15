@@ -1,4 +1,5 @@
 #use io
+#use task
 
 build = b =>
    b += 33
@@ -6,6 +7,6 @@ build = b =>
 
 b = {8}
 b += 65
-h = #spawn build(b)
-r = #join h
+h = task::spawn(build(b))
+r = task::join(h)
 io::out $ (r | _ | _)

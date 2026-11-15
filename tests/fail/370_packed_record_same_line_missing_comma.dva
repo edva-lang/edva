@@ -1,1 +1,1 @@
-#type P #packed (a: u8 b: u8)
+#type(packed) P (a: u8 b: u8)

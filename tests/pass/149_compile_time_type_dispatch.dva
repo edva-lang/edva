@@ -2,12 +2,12 @@
 // (or "T != <type>") is resolved at compile time and pruned to the taken
 // branch. The untaken branch is never codegen'd, so it may use operations
 // that would be illegal for the other type. The compile-time parameter is
-// declared inline in the lambda ("#! T, x =>").
+// declared inline in the lambda ("#param T, x =>").
 
 #use io
 
-describe: #! T: Type, T => String
-describe = #! T, x =>
+describe: #param T: Type, T => String
+describe = #param T, x =>
    T == Int | "is an int"
             | "is not an int"
 
@@ -16,8 +16,8 @@ io::out $ describe("hello")
 
 // Pruning proof: "?x" is only valid when T is a String; the Int instantiation
 // compiles only the "x" branch.
-length_or_id: #! T: Type, T => Int
-length_or_id = #! T, x =>
+length_or_id: #param T: Type, T => Int
+length_or_id = #param T, x =>
    T == String | ?x | x
 
 io::out $ length_or_id("abc")

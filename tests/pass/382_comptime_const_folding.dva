@@ -23,7 +23,7 @@ BANNER  = PREFIX + "_comptime"
 get_filament_count: () => Int
 get_filament_count = !=> FILAMENT_COUNT
 
-scale_by: #! N: Int, Int => Int
+scale_by: #param N: Int, Int => Int
 scale_by = x => x * N
 
 io::out $ get_filament_count!

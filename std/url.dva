@@ -1,6 +1,6 @@
 // Standard RFC 3986 URL & Query String Module (std/url.dva)
 // URL parsing, formatting, relative resolution, percent-encoding, and
-// `#!` compile-time structural query string encoding/decoding.
+// `#param` compile-time structural query string encoding/decoding.
 
 #use str
 #use utf
@@ -311,7 +311,7 @@ resolve = base, ref_str =>
                                           | r.path
                            base(path = normalize_path(merged_path), query = r.query, fragment = r.fragment)
 
-// --- Query String Parsing & Structural Codec (#!) ---------------------------
+// --- Query String Parsing & Structural Codec (#param) -----------------------
 
 // Parses a URL query string (with or without leading `?`) into `QueryParams`.
 parse_query: String => < QueryParams | Error >
@@ -356,7 +356,7 @@ get_query_all = params, key =>
 
 #private
 
-query_scalar_str: #! V: Type, V => String
+query_scalar_str: #param V: Type, V => String
 query_scalar_str = v =>
    V
       [String] v
@@ -365,16 +365,16 @@ query_scalar_str = v =>
       [<>] (v | "true" | "false")
       [Rune] utf::encode_rune(v)
       [<..>]
-         V @ vr =>
-            v.(vr)
+         #members V @ vr =>
+            #member v, vr
                | pay =>
                   vr.type
                      [()] --| vr.name
                      | --| vr.name + ":" + query_scalar_str(pay)
-         V.name
-      | V.name
+         #name V
+      | #name V
 
-append_query_field: #! V: Type, QueryParams, String, V => ()
+append_query_field: #param V: Type, QueryParams, String, V => ()
 append_query_field = params, k, v =>
    V
       [<P|>]
@@ -388,7 +388,7 @@ append_query_field = params, k, v =>
       |
          params += QueryEntry(k, query_scalar_str(v))
 
-decode_query_scalar: #! T: Type, String => < T | Error >
+decode_query_scalar: #param T: Type, String => < T | Error >
 decode_query_scalar = s =>
    T
       [String] <+ s ->
@@ -406,17 +406,17 @@ decode_query_scalar = s =>
             ["false", "0", "no", "off"]  <+ <-> ->
             | <- url_err("invalid boolean in query: '" + s + "'", 0) +>
       [<..>]
-         T @ v =>
+         #members T @ v =>
             v.name == s |
                v.type
-                  [()] --| <+ T(v) ->
-         <- url_err("unknown enum variant '" + s + "' for " + T.name, 0) +>
-      | <- url_err("unsupported query field type " + T.name, 0) +>
+                  [()] --| <+ (#member T, v) ->
+         <- url_err("unknown enum variant '" + s + "' for " + (#name T), 0) +>
+      | <- url_err("unsupported query field type " + (#name T), 0) +>
 
 #public
 
 // Encodes a record `[(..)]`, map `K ^ V`, or `QueryParams` into a URL query string.
-encode_query: #! T: Type, T => String
+encode_query: #param T: Type, T => String
 encode_query = val =>
    T
       [QueryParams] format_query(val)
@@ -427,62 +427,62 @@ encode_query = val =>
          format_query(params)
       [(..)]
          params = QueryParams()
-         T @ f =>
+         #members T @ f =>
             f.type
                [<P|>]
-                  vf = val.(f)
+                  vf = #member val, f
                   vf | inner => append_query_field(params, f.name, inner)
                |
-                  append_query_field(params, f.name, val.(f))
+                  append_query_field(params, f.name, (#member val, f))
          format_query(params)
       | ""
 
 // Decodes a URL query string into target type `T` (`[(..)]`, `K ^ V`, or `QueryParams`).
-decode_query: #! T: Type, String => < T | Error >
+decode_query: #param T: Type, String => < T | Error >
 decode_query = raw_qs =>
    params = parse_query(raw_qs)--!
    T
       [QueryParams] <+ params ->
       [K ^ V]
-         mp' = T.zero
+         mp' = #zero T
          params @ e =>
             k = decode_query_scalar(K, e.key)--!
             v = decode_query_scalar(V, e.val)--!
             mp' ^ k = v
          <+ mp' ->
       [(..)]
-         rec' = T.zero
-         T @ f =>
+         rec' = #zero T
+         #members T @ f =>
             f.type
                [E{}]
                   raw_list = get_query_all(params, f.name)
-                  arr' = f.type.zero
+                  arr' = #zero f.type
                   raw_list @ item_s =>
                      arr' += decode_query_scalar(E, item_s)--!
-                  rec'.(f) = arr'
+                  #member rec', f = arr'
                [<P|>]
                   get_query(params, f.name)
-                     | raw_v => rec'.(f) = <+ decode_query_scalar(P, raw_v)--! +>
-                     | rec'.(f) = <-->
+                     | raw_v => #member rec', f = <+ decode_query_scalar(P, raw_v)--! +>
+                     | #member rec', f = <-->
                |
                   get_query(params, f.name)
-                     | raw_v => rec'.(f) = decode_query_scalar(f.type, raw_v)--!
+                     | raw_v => #member rec', f = decode_query_scalar(f.type, raw_v)--!
                      |
                         f.default
-                           | def => rec'.(f) = def
+                           | def => #member rec', f = def
                            | --| <- url_err("missing required query parameter '" + f.name + "'", 0) +>
          <+ rec' ->
-      | <- url_err("unsupported target type " + T.name + " in url::decode_query", 0) +>
+      | <- url_err("unsupported target type " + (#name T) + " in url::decode_query", 0) +>
 
 // Canonical `encode` entry point: formats a `Url` or encodes a query record/map.
-encode: #! T: Type, T => String
+encode: #param T: Type, T => String
 encode = val =>
    T
       [Url] format(val)
       | encode_query(T, val)
 
 // Canonical `decode` entry point: parses a `Url` when `T` is `Url`, or decodes a query string into `T`.
-decode: #! T: Type, String => < T | Error >
+decode: #param T: Type, String => < T | Error >
 decode = s =>
    T
       [Url] parse(s)

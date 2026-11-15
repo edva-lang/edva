@@ -280,7 +280,7 @@ format_type_info = ti =>
                b += ")"
                +b
       [Bitfield bf]
-         "#packed " + format_value_type(bf.backing_type)
+         "#type(packed = " + format_value_type(bf.backing_type) + ")"
       [Ram rm]
          pos = rm.0
          neg = rm.1
@@ -334,7 +334,7 @@ format_type_info = ti =>
          b += (rti != "_" | rti | format_value_type(r_vt))
          +b
       [Align a]
-         "#align " + str::from_int(a.0) + " " + format_type_info(a.1)
+         "#type(align = " + str::from_int(a.0) + ") " + format_type_info(a.1)
       | "_"
 
 is_fwd_marker: ast::Expr => <>
@@ -655,16 +655,28 @@ builtin_hover_doc = word =>
       ["Builder"] "`Builder` — Mutable Arena-backed byte buffer (`{ cap }`)."
       ["Addr"] "`Addr` — Untyped raw memory address (`@[addr]`, `&x`)."
       ["Error"] "`Error` — Structured error record (`code`, `message`, `file`, `line`, `col`, `context`)."
-      ["Type"] "`Type` — First-class compile-time type value (`#! T: Type`)."
+      ["Type"] "`Type` — First-class compile-time type value (`#param T: Type`)."
       ["#use"] "`#use <module>` — Imports a standard library, relative, or `@pkg` module."
-      ["#type"] "`#type <Name> <Def>` — Declares a named record, bitfield, ramification, or enum."
-      ["#foreign"] "`#foreign \"<abi>\"` — Declares external C ABI functions or symbols."
+      ["#type"] "`#type[(mods)] <Name> <Def>` — Declares a named record, bitfield, ramification, or enum."
+      ["#foreign"] "`#foreign(\"<abi>\")` — Declares external C ABI functions or symbols."
       ["#public"] "`#public` — Exports subsequent declarations from the current module."
       ["#private"] "`#private` — Marks subsequent declarations module-private."
-      ["#export"] "`#export` — Exports a function with unmangled C ABI linkage."
+      ["#export"] "`#export[(\"sym\")]` — Exports a function with unmangled C ABI linkage."
+      ["#param"] "`#param <bindings>` — Compile-time functor parameters or function type/value params."
+      ["#const"] "`#const <bindings>` — Compile-time constant bindings (module or local)."
+      ["#pragma"] "`#pragma(<opts>)` — Sets module compiler pragmas (`integer`, `fpfast`, `swizzle`)."
+      ["#infix"] "`#infix(<lbp>, <rbp>) <fn>` — Binds a user-defined infix operator precedence."
+      ["#os"] "`#os` — Target operating system name (`\"linux\"`, `\"macos\"`, `\"windows\"`, ...)."
+      ["#arch"] "`#arch` — Target CPU architecture (`\"x86_64\"`, `\"aarch64\"`, `\"wasm32\"`, ...)."
+      ["#target"] "`#target` — Full target triple string."
       ["#size"] "`#size <Type>` — Compile-time byte size of a type (`Int`)."
       ["#align"] "`#align <Type>` — Compile-time byte alignment of a type (`Int`)."
-      ["#exit"] "`#exit <code>` — Terminates the process with an integer exit status."
+      ["#name"] "`#name <Type>` — Canonical display name of a type (`String`)."
+      ["#zero"] "`#zero <Type>` — Default zero value of a type."
+      ["#arity"] "`#arity <Type>` — Member or variant count of a record or enum (`Int`)."
+      ["#has_member"] "`#has_member <T>, <name>` — Compile-time check whether `<T>` has field/variant `<name>`."
+      ["#members"] "`#members <T> @ m =>` — Compile-time unrolled iteration over fields/variants of `<T>`."
+      ["#member"] "`#member <tgt>, <mem>[, <pay>]` — Accesses or constructs a field/variant dynamically by index/name."
       | ""
 
 // Search an imported module on disk for `mod::member` hover/definition.

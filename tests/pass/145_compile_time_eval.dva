@@ -1,16 +1,16 @@
-// Compile-time execution ("#!"): a compile-time-evaluable expression folds
+// Compile-time execution ("#const"): a compile-time-evaluable expression folds
 // to a constant at codegen. The subset is literals, + - * / % arithmetic,
 // string '+', and the '?s' length query.
 
 #use io
 
-io::out $ #! 2 + 2
-io::out $ #! 3 * 5
-io::out $ #! 10 - 7
-io::out $ #! 20 / 4
-io::out $ #! 17 % 5
-io::out $ #! 1.5 + 2.5
-io::out $ #! "a" + "b"
-io::out $ #! ?"hello"
-x = #! 2 * 3 + 1
+io::out $ #const 2 + 2
+io::out $ #const 3 * 5
+io::out $ #const 10 - 7
+io::out $ #const 20 / 4
+io::out $ #const 17 % 5
+io::out $ #const 1.5 + 2.5
+io::out $ #const "a" + "b"
+io::out $ #const ?"hello"
+x = #const 2 * 3 + 1
 io::out $ x

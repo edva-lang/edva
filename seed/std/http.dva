@@ -508,7 +508,7 @@ post_json: String, String => < Response | String >
 post_json = target_url, json_body =>
    send(with_json_body(request_new("POST", target_url), json_body))
 
-post_json_val: #! T: Type, String, T => < Response | String >
+post_json_val: #param T: Type, String, T => < Response | String >
 post_json_val = target_url, val =>
    post_json(target_url, json::encode(val))
 

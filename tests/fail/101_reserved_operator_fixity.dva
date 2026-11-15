@@ -1,2 +1,2 @@
-+++ : #infix x 90, Int, Int => Int
++++ : #infix(x, 90) Int, Int => Int
 +++ = a, b => a + b

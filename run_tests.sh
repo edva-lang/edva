@@ -68,8 +68,9 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 # Probe whether io_uring is supported and permitted by the kernel / container using Edva
 HAS_IO_URING=0
 cat <<'EOF' > "$TMP_DIR/probe_uring.dva"
+#use sys
 #use uring
-#exit uring::new(2) | 0 | 1
+sys::exit(uring::new(2) | 0 | 1)
 EOF
 if "$DVA_COMPILER" "$TMP_DIR/probe_uring.dva" -o "$TMP_DIR/probe_uring" >/dev/null 2>&1; then
     if "$TMP_DIR/probe_uring" >/dev/null 2>&1; then

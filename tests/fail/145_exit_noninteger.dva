@@ -1,1 +1,2 @@
-#exit "x"
+#use sys
+sys::exit("x")

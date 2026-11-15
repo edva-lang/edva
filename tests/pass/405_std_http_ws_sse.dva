@@ -15,7 +15,7 @@
 #use sys
 #use test
 
-#foreign "c"
+#foreign("c")
    c_fork = fork: () => i32
 
 // 1. Chunked transfer-encoding & response parsing

@@ -3,7 +3,7 @@
 #type MyInt Int
 #type AlsoInt Int
 
-id: #! T: Type, T => T
+id: #param T: Type, T => T
 id = x => x
 
 a: MyInt

@@ -4,9 +4,9 @@
 #type ServerCfg (host: String = "127.0.0.1", port: Int = 8080, tls: <>)
 #type Mode < Fast, Safe >
 
-cfg = ServerCfg.zero
-io::out $ (ServerCfg.name, ?ServerCfg, cfg.host, cfg.port, Mode.(0))
-io::out $ (ServerCfg.(0), ServerCfg.(1), Mode.(1))
+cfg = #zero ServerCfg
+io::out $ (#name ServerCfg, #arity ServerCfg, cfg.host, cfg.port, (#member Mode, 0))
+io::out $ ((#member ServerCfg, 0), (#member ServerCfg, 1), (#member Mode, 1))
 
 // Ordinary inferred length functions still resolve their operand at call sites.
 length = s => ?s

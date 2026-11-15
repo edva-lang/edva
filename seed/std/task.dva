@@ -1,0 +1,9 @@
+// std/task.dva — structured task concurrency (task::spawn, task::join).
+// Direct calls and pipelines lower to concurrency primitives before annotation.
+
+#public
+   spawn: #param T: Type, T => Int
+   spawn = val => 0
+
+   join: #param T: Type, Int => <T|>
+   join = handle => <-->

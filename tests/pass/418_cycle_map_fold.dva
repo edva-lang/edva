@@ -134,7 +134,7 @@ cf_fold = (0, 1..10) @> acc, x =>
    acc + x
 io::out $ ("cf_fold:", cf_fold)
 
-// 10. Inside a regular function & generic #! T: Type function
+// 10. Inside a regular function & generic #param T: Type function
 run_in_fn: Int{} => (Int{}, Int)
 run_in_fn = xs =>
    mapped = xs @> (_ * 3)
@@ -146,10 +146,10 @@ fn_arr = fn_res.0
 fn_tot = fn_res.1
 io::out $ ("in_fn:", ?fn_arr, fn_arr(0)!!, fn_arr(3)!!, fn_tot)
 
-sum_gen: #! T: Type, T, T{} => T
+sum_gen: #param T: Type, T, T{} => T
 sum_gen = z, xs => (z, xs) @> acc, x => acc + x
 
-dup_gen: #! T: Type, T{} => T{}
+dup_gen: #param T: Type, T{} => T{}
 dup_gen = xs => xs @> x => x
 
 dg = dup_gen(nums)

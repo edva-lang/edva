@@ -1,5 +1,5 @@
 // Field-by-field record reflection (CTTR, no new syntax):
-//  - "?T" on a bound record type is the compile-time FIELD COUNT.
+//  - "#arity T" on a bound record type is the compile-time FIELD COUNT.
 //  - A generic can access fields by index ("x.0", "x.1") and monomorphizes to
 //    any record with that shape (per-field type dispatch).
 //  - A generic serialize iterates a homogeneous-by-type record (element type E
@@ -13,14 +13,14 @@
 #type Ints Int{}
 #type Strs String{}
 
-nfields: #! T: Type, T => Int
-nfields = x => ?T
+nfields: #param T: Type, T => Int
+nfields = x => #arity T
 
-show_pair: #! T: Type, T => String
+show_pair: #param T: Type, T => String
 show_pair = x =>
    "(" + str::from_int(x.0) + "," + str::from_int(x.1) + ")"
 
-serialize: #! E: Type, #! T: Type, (E => String), T => String
+serialize: #param E: Type, #param T: Type, (E => String), T => String
 serialize = ser, xs =>
    out = {16}
    out += "["

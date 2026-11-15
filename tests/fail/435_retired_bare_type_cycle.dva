@@ -1,0 +1,7 @@
+#type P (x: Int, y: Int)
+count_f: #param T: Type => Int
+count_f = !=>
+   n' = 0
+   T @ f => n' = n' + 1
+   n'
+x = count_f(P)

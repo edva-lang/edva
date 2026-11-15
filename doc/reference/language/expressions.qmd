@@ -57,7 +57,7 @@ Every bracketed guard `[...]` parses as one of six formal guard kinds:
 | **Predicate** | `[op rhs]`<br>`[(expr_with_underscore)]`<br>`[x => expr]`<br>`[pred_fn]` | `pred(s)` yields `<+>` | Operator section (`[< 0]`), implicit-`_` lambda (`[(0 < _ < 10)]`), explicit lambda, or function name. Commas forbidden (`E2052`) |
 | **Enum Variant** | `[Tag]`<br>`[Tag1, Tag2]`<br>`[Tag x]`<br>`[Tag1 x, Tag2 x]`<br>`[Tag (a, b)]`<br>`[Tag1(a), Tag2(b)]` | Scrutinee enum tag matches (comma OR-list supported for unit, bound, and deep subpatterns) | Juxtaposed identifier `x` binds payload; multi-pattern OR alternatives must bind the same variables (`E2095`). Explicit `[Tag _]` is forbidden (`E2109`; write `[Tag]`) |
 | **Record / Tuple Pattern** | `[(p1, p2)]`<br>`[(p1, p2), (q1, q2)]`<br>`[(f1 = p1, f2 = p2)]` | Structural match across positional or named record fields (comma OR-list supported) | Subpatterns `p_i` may be literals, variable binders, `_` wildcards, nested records, or enum variants; multi-pattern OR alternatives must bind the same variables (`E2095`) |
-| **Type-Shape (`#!`)** | `[Int, f64]`<br>`[()]`, `[<>]`<br>`[<P|>]`, `[<|N>]`, `[<P|N>]`<br>`[E{}]`, `[E[]]`, `[(E * ..)]`, `[(E * N)]`<br>`[K ^ V]`, `[(..)]`, `[<..>]` | Compile-time `Type` equality or structural shape match on `T: Type` | Prunes untaken branches before typecheck/codegen; binds inner `Type` parameters (`P`, `N`, `E`, `K`, `V`) in branch scope |
+| **Type-Shape (`#param`)** | `[Int, f64]`<br>`[()]`, `[<>]`<br>`[<P|>]`, `[<|N>]`, `[<P|N>]`<br>`[E{}]`, `[E[]]`, `[(E * ..)]`, `[(E * N)]`<br>`[K ^ V]`, `[(..)]`, `[<..>]` | Compile-time `Type` equality or structural shape match on `T: Type` | Prunes untaken branches before typecheck/codegen; binds inner `Type` parameters (`P`, `N`, `E`, `K`, `V`) in branch scope |
 
 #### Open, closed, and half-open interval guards
 
@@ -161,8 +161,8 @@ Cycles iterate at LBP 10, RBP 20 without keywords. `@` and `@@` are statement-va
 | `String` / `Builder` | `s @ body`<br>`s @@ body` | `b =>` or `b, i =>` | `_` (`Int` byte / `Rune`), `_i` (`Int` index) | `@` / `@>` iterates raw UTF-8 bytes; `@@` / `@@>` iterates decoded `Rune` codepoints |
 | `T{}` / `T[]` / `(T * N)` | `xs @ body` | `elem =>`, `elem, i =>`, or `(a, b) =>` | `_` (`T`), `_i` (`Int` index) | Iterates elements in index order `0..?xs` (supports positional/named tuple or record destructuring) |
 | Map `K ^ V` | `m @ body` | `val =>` or `val, key =>` | `_` (`V` value), `_i` (`K` key) | Iterates live map entries (**value first, key second**) |
-| Record `Type` (`#!`) | `T @ f => body` | `f =>` (field descriptor) | — | Compile-time unrolled over `0..?T` (`f.name`, `f.type`, `f.idx`) |
-| Enum `Type` (`#!`) | `T @ v => body` | `v =>` (variant descriptor) | — | Compile-time unrolled over `0..?T` (`v.name`, `v.type`, `v.idx`) |
+| Record `Type` (`#members`) | `#members T @ f => body` | `f =>` (field descriptor) | — | Compile-time unrolled over `0..#arity T` (`f.name`, `f.type`, `f.idx`) |
+| Enum `Type` (`#members`) | `#members T @ v => body` | `v =>` (variant descriptor) | — | Compile-time unrolled over `0..#arity T` (`v.name`, `v.type`, `v.idx`) |
 
 ### Expression-valued cycles (`@>`, `@@>`): Map, Filter-Map, Builder & Seeded Fold
 

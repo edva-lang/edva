@@ -1,4 +1,4 @@
-#type BadAlign #align 7 (
+#type(align = 7) BadAlign (
    x: Int,
    y: Int
 )

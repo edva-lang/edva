@@ -1,5 +1,6 @@
 #use io
+#use sys
 
 io::out("before")
-#exit 3
+sys::exit(3)
 io::out("after")

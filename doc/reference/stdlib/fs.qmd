@@ -12,7 +12,7 @@ The `fs` module provides high-level safe abstractions for filesystem path manipu
 file and directory CRUD operations, metadata querying, directory traversal, filesystem
 capacity inspection, and file attribute formatting.
 
-All operations avoid raw pointer arithmetic, using typed `#packed` records (`StatRaw`,
+All operations avoid raw pointer arithmetic, using typed `#type(packed)` records (`StatRaw`,
 `Statvfs`, `DirentPrefix`) and safe options `<T | >`.
 
 ```{.dva .run}
@@ -30,9 +30,9 @@ io::out $ fs::join("/tmp", "example.txt")
 | `fs::DirEntry` | Record | `name, is_dir, is_file, is_symlink` | Directory entry returned by `fs::read_dir` |
 | `fs::Entry` | Record | `name, is_dir, is_exec, size, fmt_size, perms, mtime` | Rich directory entry with formatted strings returned by `fs::list_dir` |
 | `fs::FsSpace` | Record | `total_bytes, free_bytes, available_bytes` | Filesystem capacity statistics returned by `fs::space` |
-| `fs::StatRaw` | `#packed` | POSIX `struct stat` layout (144 bytes) | Low-level stat layout |
-| `fs::Statvfs` | `#packed` | POSIX `struct statvfs` layout (112 bytes) | Low-level statvfs layout |
-| `fs::DirentPrefix` | `#packed` | `d_ino, d_off, d_reclen, d_type` (19 bytes) | Low-level dirent prefix |
+| `fs::StatRaw` | `#type(packed)` | POSIX `struct stat` layout (144 bytes) | Low-level stat layout |
+| `fs::Statvfs` | `#type(packed)` | POSIX `struct statvfs` layout (112 bytes) | Low-level statvfs layout |
+| `fs::DirentPrefix` | `#type(packed)` | `d_ino, d_off, d_reclen, d_type` (19 bytes) | Low-level dirent prefix |
 
 ## Function catalog
 

@@ -16,6 +16,7 @@
 // Change PORT to bind a different port.
 
 #use io
+#use sys
 #use net
 #use libc
 #use net/http
@@ -55,4 +56,4 @@ server
    | srv => serve_loop(srv)
    | err =>
       io::err(("failed to bind port", PORT))
-      #exit 1
+      sys::exit(1)

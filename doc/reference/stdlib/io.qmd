@@ -37,10 +37,10 @@ for file descriptors, standard streams, and sockets.
 
 | Function | Signature | Description | Example |
 |---|---|---|---|
-| `io::out(x)` | `#! T: Type, T => ()` | Prints value or space-separated record + newline to `STDOUT` | `io::out(("Result:", 42))` |
-| `io::err(x)` | `#! T: Type, T => ()` | Prints value or space-separated record + newline to `STDERR` | `io::err(("Error:", code))` |
-| `io::outf(val, fmt)` | `#! T: Type, T, String => ()` | Formatted output to `STDOUT` replacing `{}` placeholders with value | `io::outf((10, <+>), "Val: {}, Flag: {}")` |
-| `io::errf(val, fmt)` | `#! T: Type, T, String => ()` | Formatted output to `STDERR` replacing `{}` placeholders with value | `io::errf(line, "Failed at line {}")` |
+| `io::out(x)` | `#param T: Type, T => ()` | Prints value or space-separated record + newline to `STDOUT` | `io::out(("Result:", 42))` |
+| `io::err(x)` | `#param T: Type, T => ()` | Prints value or space-separated record + newline to `STDERR` | `io::err(("Error:", code))` |
+| `io::outf(val, fmt)` | `#param T: Type, T, String => ()` | Formatted output to `STDOUT` replacing `{}` placeholders with value | `io::outf((10, <+>), "Val: {}, Flag: {}")` |
+| `io::errf(val, fmt)` | `#param T: Type, T, String => ()` | Formatted output to `STDERR` replacing `{}` placeholders with value | `io::errf(line, "Failed at line {}")` |
 | `io::write(fd, s)` | `Int, String => Int` | Raw length-aware write of String `s` to descriptor `fd`, returns bytes written | `io::write(io::STDOUT, "raw\n")` |
 
 ```{.dva .run}

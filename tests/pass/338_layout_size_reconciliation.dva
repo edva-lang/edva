@@ -5,7 +5,7 @@
 
 #use io
 
-PackedRecord: #packed (a: i8, b: i32, c: i16)
+#type(packed) PackedRecord (a: i8, b: i32, c: i16)
 #type AlignedRecord (a: i8, b: i32, c: i16)
 #type ThreeFields (a: Int, b: Int, c: Int)
 #type RecordWithPointer (p: Addr, x: Int)

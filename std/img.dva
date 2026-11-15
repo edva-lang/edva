@@ -428,7 +428,7 @@ decode = data =>
             | <- img_err("unknown image format (expected PNG or QOI)", 0) +>
 
 open_wronly_creat_trunc: () => Int
-open_wronly_creat_trunc = !=> #! (os ["darwin"] 1537 | 577)
+open_wronly_creat_trunc = !=> #os ["darwin"] 1537 | 577
 
 // Loads and decodes a PNG or QOI image file from `path`.
 load: String => < Image | Error >

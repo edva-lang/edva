@@ -1,7 +1,7 @@
 #use dom
 #use str
 
-#foreign "c"
+#foreign("c")
    dom_test_log: (Addr, Int) => ()
 
 clicks = 0

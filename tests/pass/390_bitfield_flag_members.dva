@@ -2,7 +2,7 @@
 #use str
 #use fs
 
-WsHeader: #packed u8 (
+#type(packed = u8) WsHeader (
    opcode: 4,
    rsv3: <>,
    rsv2: <>,
@@ -10,7 +10,7 @@ WsHeader: #packed u8 (
    fin: <>
 )
 
-MixedBits: #packed u16 (
+#type(packed = u16) MixedBits (
    mode: 3,
    enabled: <>,
    raw_bit: 1,
@@ -18,7 +18,7 @@ MixedBits: #packed u16 (
    count: 10
 )
 
-WsFrame: #packed (
+#type(packed) WsFrame (
    hdr: WsHeader,
    payload_len: u8
 )

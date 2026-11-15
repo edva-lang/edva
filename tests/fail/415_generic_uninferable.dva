@@ -1,5 +1,5 @@
 #use io
 #type User (name: String, age: Int)
-mk: #! T: Type, Int => Int
+mk: #param T: Type, Int => Int
 mk = n => n + 1
 io::out(mk(3))

@@ -7,7 +7,7 @@
 
 #public
 
-#foreign "LLVM-18"
+#foreign("LLVM-18")
    LLVMModuleCreateWithName: (ModuleID: String) => Addr
    LLVMDisposeModule: (M: Addr) => ()
    LLVMPrintModuleToFile: (M: Addr, OutputFilename: String, ErrorMessage: Addr) => Int

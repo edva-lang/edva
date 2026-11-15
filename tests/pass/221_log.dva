@@ -1,5 +1,5 @@
 // io::out / io::err — the console.log-style writers from std/io.dva. A single
-// value or a record of values is formatted at compile time (the '#! T: Type'
+// value or a record of values is formatted at compile time (the '#param T: Type'
 // type dispatch), joined with a single space, + newline. io::outf / io::errf
 // substitute '{}' placeholders in a format string. Mixed types in one call.
 

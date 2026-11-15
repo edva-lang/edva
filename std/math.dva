@@ -13,7 +13,7 @@
 
 #use const
 
-#public #foreign "m"
+#public #foreign("m")
    // sqrt      : (x: Float) => Float -- use intrinsic %sqrt(x)
    cbrt      : (x: Float) => Float
    hypot     : (x: Float, y: Float) => Float

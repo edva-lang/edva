@@ -1,7 +1,7 @@
 // Standard C Library (libc) Module for Dva
 // Exposes POSIX libc system calls via foreign "c" bindings
 
-#public #foreign "c"
+#public #foreign("c")
     open      : (path: String, flags: Int) => Int
     open_mode = open: (path: String, flags: Int, mode: Int) => Int
     creat     : (path: String, mode: Int) => Int

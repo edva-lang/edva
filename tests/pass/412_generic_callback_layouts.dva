@@ -4,12 +4,12 @@
 make: Item => < Row | Error >
 make = item => <+ Row(item.id, item) ->
 #type Callbacks (create: < (Item => < Row | Error >) | >, count: Int)
-run: #! C: Type, C, Item => < Int | Error >
+run: #param C: Type, C, Item => < Int | Error >
 run = callbacks, item =>
    callback = callbacks.create!!
    row = callback(item)--!
    <+ row.element ->
-zero: #! T: Type, T => Int
+zero: #param T: Type, T => Int
 zero = value =>
    callback: T => Int
    callback = ignored => 0

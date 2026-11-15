@@ -1,22 +1,22 @@
 #use str
 #use io
 
-make_buffer: #! N: Int => Builder
+make_buffer: #param N: Int => Builder
 make_buffer = !=> {N}
 
-repeat_str: #! N: Int, String => String
+repeat_str: #param N: Int, String => String
 repeat_str = s =>
    b = {N * ?s}
    N @ b += s
    +b
 
-tag_msg: #! Prefix: String, String => String
+tag_msg: #param Prefix: String, String => String
 tag_msg = msg => Prefix + ": " + msg
 
-format_pair: #! S: String, #! N: Int, String => String
+format_pair: #param S: String, #param N: Int, String => String
 format_pair = val => S + " (" + str::from_int(N) + "): " + val
 
-sum_to: #! N: Int => Int
+sum_to: #param N: Int => Int
 sum_to = !=>
    total' = 0
    N @ i => total' = total' + i

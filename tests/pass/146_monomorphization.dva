@@ -1,4 +1,4 @@
-// Monomorphization with type inference: a generic function ("#! T: Type") is
+// Monomorphization with type inference: a generic function ("#param T: Type") is
 // instantiated once per inferred type — the type parameter is inferred from the
 // runtime argument's type, no explicit type argument is written. Each binding
 // compiles a distinct LLVM function, so the body is type-correct: String '+'
@@ -6,14 +6,14 @@
 
 #use io
 
-id: #! T: Type, T => T
+id: #param T: Type, T => T
 id = x => x
 
 io::out $ id(42) + 10
 io::out $ id("hi ") + "there"
 io::out $ id(1.5) + 1.0
 
-add: #! T: Type, T, T => T
+add: #param T: Type, T, T => T
 add = a, b => a + b
 io::out $ add(3, 4)
 io::out $ add("a", "b")

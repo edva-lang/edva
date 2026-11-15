@@ -1,4 +1,5 @@
 #use io
+#use task
 
 #type Ints Int{}
 xs: Ints
@@ -7,6 +8,6 @@ xs += 42
 crash = i =>
    xs(i) | _ | _
 
-h = #spawn crash(5)
-r = #join h
+h = task::spawn(crash(5))
+r = task::join(h)
 io::out $ (r | _ | _)

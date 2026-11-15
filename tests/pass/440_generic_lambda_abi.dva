@@ -16,64 +16,64 @@ get_float: (() => Float) => Float
 get_float = callback => callback!
 get_result: (() => Result) => Result
 get_result = callback => callback!
-identity: #! T: Type, T => T
+identity: #param T: Type, T => T
 identity = value => value
 
-record_argument: #! T: Type, T => Int
+record_argument: #param T: Type, T => Int
 record_argument = offset =>
    apply(Item(7, "seven"), (item => read_id(item) + offset))
 
-expected_argument: #! T: Type, T => Int
+expected_argument: #param T: Type, T => Int
 expected_argument = offset =>
    apply(Item(8, "eight"), (item => item.id + offset))
 
-record_result: #! T: Type, T => T
+record_result: #param T: Type, T => T
 record_result = item =>
    complete = !=> identity(item)
    get_item(complete)
 
-text_result: #! T: Type, T => T
+text_result: #param T: Type, T => T
 text_result = text =>
    complete = !=> identity(text)
    get_text(complete)
 
-float_result: #! T: Type, T => T
+float_result: #param T: Type, T => T
 float_result = value =>
    complete = !=> identity(value)
    get_float(complete)
 
-ram_result: #! T: Type, T => Result
+ram_result: #param T: Type, T => Result
 ram_result = item =>
    complete: () => Result
    complete = !=> <+ identity(item) ->
    get_result(complete)
 
-ram_argument: #! T: Type, T => Result
+ram_argument: #param T: Type, T => Result
 ram_argument = text =>
    callback: Result => Result
    callback = result =>
       result | item => <+ item(label = text) -> | e => <- e +>
    apply_result(<+ Item(9, "nine") ->, callback)
 
-apply_generic: #! T: Type, T, (T => Int) => Int
+apply_generic: #param T: Type, T, (T => Int) => Int
 apply_generic = item, callback => callback(item)
-generic_expected: #! T: Type, T => Int
+generic_expected: #param T: Type, T => Int
 generic_expected = offset =>
    apply_generic(Item(13, "thirteen"), (item => item.id + offset))
 
-through_fn: #! T: Type, (T => Int), T => Int
+through_fn: #param T: Type, (T => Int), T => Int
 through_fn = project, value =>
    callback = item => project(item)
    callback(value)
 
 invoke_action: (() => ()) => ()
 invoke_action = callback => callback!
-generic_action: #! T: Type, T => ()
+generic_action: #param T: Type, T => ()
 generic_action = amount => invoke_action((!=> total = total + amount))
 
 relay_label: Item, (Item => String) => String
 relay_label = item, callback => callback(item)
-closure_expected: #! T: Type, (Item, (Item => String) => String), T => String
+closure_expected: #param T: Type, (Item, (Item => String) => String), T => String
 closure_expected = dispatch, suffix =>
    dispatch(Item(15, "label"), (item => "${item.label}${suffix}"))
 

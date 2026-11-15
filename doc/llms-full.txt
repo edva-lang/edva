@@ -1,7 +1,7 @@
 # Edva Language Guide & Extended Reference (llms-full.txt)
 
 > This document contains the curated language reference, grammar rules, operational semantics,
-> operator tables, compile-time reflection (`#!`), CLI/package system, and complete standard library
+> operator tables, compile-time reflection (`#`), CLI/package system, and complete standard library
 > guide for the Edva programming language (`edva`), synchronized with the Quarto reference book
 > (`doc/`).
 
@@ -13,12 +13,12 @@
   `continue`, `import`, and `break` are ordinary identifiers with no special syntactic
   meaning. Control flow is unified into symbolic expressions.
 - **No RTTI, Ever**: Types are fully erased at runtime. Function values are `{ fn_ptr, env_ptr }`
-  closures. All polymorphism, `#!` reflection, and function types are statically resolved.
+  closures. All polymorphism, `#` compile-time reflection, and function types are statically resolved.
 - **Integer Literals & No Defaulting to Int**:
   - `Int` is fixed 64-bit signed (`i64`) on all architectures (no `isize`/`usize`). Machine pointer
     width is `Addr`.
-  - Unsuffixed integer literals default to `Int` (or `#pragma integer <type>`); unsuffixed float
-    literals default to `Float` (`f64`, or `#pragma float <type>`).
+  - Unsuffixed integer literals default to `Int` (or `#pragma(integer = <type>)`); unsuffixed float
+    literals default to `Float` (`f64`, or `#pragma(float = <type>)`).
   - The type system never silently coerces ambiguous expressions or unresolved type variables to
     `Int` (`E3103`).
 - **Binary Comparisons**: `<`, `>`, `==`, `!=`, `!<` (greater-or-equal), and `!>` (less-or-equal).
@@ -35,8 +35,7 @@
   (`E2084`).
 - **Clean Choices**: A single-branch choice `cond | action` evaluates as a statement. Never supply
   dummy `| 0` fallbacks in statement positions, and never use `()` as a value expression (`E2104`).
-- **Unquoted Stdlib Imports**: Standard library imports use bare identifiers (`#use io`, `#use str`,
-  `#use json`); package imports use `@alias` (`#use @vid`, `#use "@vid/browser"`).
+- **Quote-Free 3-Way `#use` Imports**: Quotes (`"`) are forbidden in `#use` paths (`E1015`). Bare paths resolve in `std/` (`#use io`, `#use str`), `./` or `../` resolves relative to the importing file (`#use ./ui`), and `@alias` resolves via `.edva/imports.ccl` (`#use @vid`, `#use @vid/browser`). Functor modules instantiate via `#use ./app(ui, index)`.
 - **Indentation & Line Length**: Spaces only (no tabs, `E1011`). Line lengths should not exceed 100
   characters.
 
@@ -56,16 +55,17 @@
 - **Cycle index (`_i`)**: Implicit `0`-based index in count/range/string/array cycles, or key in
   map cycles (`m @` block); scoped strictly to the cycle body.
 - **Directives**:
-  - `#use`: imports a module (`#use str`, `#use(import) @edvin`, `#use "local_mod"`).
+  - `#use`: imports a module (`#use str`, `#use ./local_mod`, `#use(import) @edvin`, `#use ./app(ui, index)`).
+  - `#param`: declares a module parameter in a functor module (`#param App: Module`).
   - `#type`: declares a nominal record, bitfield, ram, or enum type, or a transparent alias
     (`#type Coord Point`). Multiline `(...)` and `< ... >` blocks allow aligned newline-separated
     entries; multiple entries on the same line require commas (`E2015`).
-  - `#foreign`: declares foreign ABI functions (`#foreign "c"`).
-  - `#export`: exports top-level functions with C/Wasm symbol names.
+  - `#foreign`: declares foreign ABI functions (`#foreign("c")`).
+  - `#export`: exports top-level functions with C/Wasm symbol names (`#export("sym")`, `#export`).
   - `#public` (`#pub`) / `#private` (`#priv`): module symbol visibility.
-  - `#packed` / `#align N` / `#size T`: ABI packing, alignment, and byte-size query.
-  - `#!`: compile-time evaluation and `Type` reflection.
-  - `#pragma integer <type>` / `#pragma float <type>`: literal default overrides.
+  - `#type(...)` / `#size T` / `#align T`: ABI packing (`#type(packed)`, `#type(packed = u16)`), alignment (`#type(align = N)`), and layout queries.
+  - `#param`, `#const`, `#os`, `#arch`, `#target`, `#name`, `#zero`, `#arity`, `#members`, `#member`, `#has_member`: compile-time evaluation and `Type` reflection.
+  - `#pragma(integer = <type>, float = <type>)`: literal default overrides (also `fpfast`, `swizzle`).
 
 ## 2.2 Literals
 - **Integers**: Decimal (`42`), Hex (`0x2A`), Binary (`0b101010`), Octal (`0o755`), Digit/Bit
@@ -74,16 +74,16 @@
   `std/const` (`const::max_i64`, `const::min_i64`, etc.).
 - **Floats**: `3.14`, `0.5`, `1.0e-5`, `-0.0`, `1.25f32`. Dangling dots (`.5`, `1.`) are illegal.
   IEEE-754 constants live in `std/const` (`const::inf_f64`, `const::nan_f64`, `const::eps_f64`).
-- **Runes**: Single Unicode scalar values (`i32`): `'a'`, `'λ'`, `'🔥'`, `'\n'`, `'\x1b'`,
-  `'\u{1F600}'`.
-- **Unified Strings (`"..."`)**:
-  - Single-line (`"hello\nworld"`) and multiline (`"` followed immediately by `\n`, stripping the
-    opening newline and the first content line's baseline margin from all subsequent lines).
-  - Closing `"` on its own line preserves the trailing `\n`; closing `"` at the end of a content
-    line omits it; trailing `\` joins lines without `\n`.
+- **Runes**: Leading-apostrophe Unicode scalar values (no closing `'`, `E1010`): `'a`, `'λ`,
+  `'🔥`, `'\n`, `'\s` (space), `''` (apostrophe), `'\x1b`, `'\u{1F600}`.
+- **Unified Strings (`"..."` & `"""..."""`)**:
+  - Single-line (`"hello\nworld"`) and multiline (`"` or `"""` followed immediately by `\n`,
+    stripping the opening newline and the first content line's baseline margin from subsequent lines; `"""..."""` also allows unescaped `"` inside single-line or multiline strings).
+  - Closing `"` / `"""` on its own line preserves the trailing `\n`; closing at the end of a
+    content line omits it; trailing `\` joins lines without `\n`.
   - Dynamic `${expr}` interpolation converts scalar primitives (`Int`, `UInt`, `Float`, `Rune`,
     `String`) via `%to_str(expr)` (and streams directly into `b += "..."` without intermediate
-    allocation). Escape literal `${` with `\$`. Triple-quote `"""` is retired (`E1018`).
+    allocation). Escape literal `${` with `\${`.
 - **Tuple Repetition**: `expr {N}` creates an `N`-element homogeneous tuple (`0.0 {4}`).
 - **Builder Literal**: `{cap}` allocates a mutable arena byte `Builder` with capacity `cap`.
 - **Map Literal**: `("a" ^= 1, "b" ^= 2)` constructs and populates an arena hash map `K ^ V`.
@@ -144,8 +144,8 @@ Notable operator and precedence facts:
   parentheses).
 - **Negated guard (`s ![guard]`)**: `!` must be adjacent to `[` (`s ![1, 2]`). Do NOT write
   `!s [1, 2]` (`!` binds tighter at unary tier 160 than `[...]` at choice tier 50).
-- **Length / Copy / Freeze**: `?x` returns byte/element length (`String`, `Builder`, arrays, maps,
-  or `#! Type`); `++x` deep-copies a `String`, array, or map; `+b` freezes a `Builder` into a
+- **Length / Copy / Freeze**: `?x` returns byte/element length (`String`, `Builder`, arrays, maps;
+  use `#arity T` for `Type`); `++x` deep-copies a `String`, array, or map; `+b` freezes a `Builder` into a
   `String` in O(1).
 
 ---
@@ -219,7 +219,7 @@ find_target = count, target =>
 
 ---
 
-# 5. Type System, Ramifications, Records & `#!` Reflection
+# 5. Type System, Ramifications, Records & `#` Reflection
 
 ## 5.1 The Four Ramification Shapes
 1. `RamNN` (`<>` / `Flag`): Bare `i1` (`<+>` positive, `<->` negative).
@@ -239,7 +239,7 @@ find_target = count, target =>
 
 ## 5.2 Records, Copy-with-Update, Destructuring, Bitfields, Enums & Containers
 - **Nominal `#type` Records**: `#type Point (x: Int, y: Int = 0)` creates a nominally typed C-ABI
-  struct (`Point.zero` initializes defaults; `Point(..p, x = 5)` or `Point(y = 2, x = 1)` constructs;
+  struct (`#zero Point` initializes defaults; `Point(..p, x = 5)` or `Point(y = 2, x = 1)` constructs;
   distinct `#type` structs do not unify, while `#type Coord Point` creates a transparent alias).
 - **Record Copy-with-Update**: `rec(field = val, ...)` and pipeline `rec $> _(field = val, ...)`
   copy any nominal or anonymous record and override specified fields without repeating the type name
@@ -247,8 +247,8 @@ find_target = count, target =>
 - **Tuple & Record Destructuring**: Positional `(a, b)` / `(x, _, z)` and named `(x, y)` /
   `(x = lx, y = ly)` destructuring work in `=` bindings (including primed `(a', b') = (1, 2)`),
   `=>` lambda parameters (`(x, y) => x + y`), and `@` / `@>` cycle binders (`pairs @ (k, v) =>`).
-- **Packing & Bitfields**: `#type Hdr #packed (a: u8, b: u32)` (1-byte aligned);
-  `#type Tcp #packed u16 (syn: <>, ack: <>, win: 14)` (hardware bitfield).
+- **Packing & Bitfields**: `#type(packed) Hdr (a: u8, b: u32)` (1-byte aligned);
+  `#type(packed = u16) Tcp (syn: <>, ack: <>, win: 14)` (hardware bitfield).
 - **Enums**: `#type Shape < Dot, Circle(Float), Rect(Float, Float) >` (16-byte `{ i64 tag, ptr }`,
   supporting recursive enums directly; constructed via `Shape(Dot)` / `Dot` or
   `Shape(Circle, 5.0)`).
@@ -258,29 +258,32 @@ find_target = count, target =>
   - `m = Map()` (`#type Map String ^ Int`), insert `m ^ "k" = 1`, lookup `m ^ "k"` (`< V | >`),
     membership `m ^? "k"` (`<>`).
 
-## 5.3 Compile-Time (`#!`) & `Type` Reflection
-Functions parameterized with `#! T: Type` specialize at compile time with zero runtime overhead:
-- **Type Properties**: `#size T`, `#align T`, `T.name`, `T.zero`, `?T` (field/variant/lane count),
-  `T.(i)` (`i`-th enum variant name).
+## 5.3 Compile-Time (`#`) & `Type` Reflection
+Functions parameterized with `#param T: Type` specialize at compile time with zero runtime overhead:
+- **Type Properties**: `#size T`, `#align T`, `#name T`, `#zero T`, `#arity T` (field/variant/lane count),
+  `#member T, i` (`i`-th enum variant name; wrap multi-arg `#member`/`#has_member` in `(...)` inside outer comma lists), `#os`, `#arch`, `#target`, `#const expr`.
 - **Type-Shape Guards (`T [...]`)**: `[Int, f64]`, `[()]`, `[<>]`, `[<P|>]`, `[<|N>]`, `[<P | N>]`,
   `[E{}]`, `[E[]]`, `[(E * ..)]`, `[(E * 4)]`, `[K ^ V]`, `[(..)]` (records), `[<..>]` (enums).
+- **Multi-Parameter Generics & Type Constructors (`DVA-62`)**: Functions and type generators accept one or more `#param T: Type` parameters (`Pair: #param A: Type, #param B: Type => (first: A, second: B)`); leading type arguments at call sites may be explicit or inferred from value/callback arguments (`E3176` if unconstrained, `E2113` on wrong type constructor arity).
+- **Compile-Time Probes (`DVA-63`)**: `#has_member T, name` tests whether record type `T` has field `name`; `#has_member Mod, sym` tests whether module `Mod` exports `sym` (inactive choice branches are not typechecked when guarded by `#const` / `#os` / probe conditions).
+- **Module Functors (`DVA-61`)**: A single-file module declaring `#param M: Module` is instantiated at import sites (`#use ./app(ui, index)`, `#use alt = ./app(ui, other)`) with zero runtime overhead and applicative per-tuple state/type identity.
 - **Compile-Time Unrolling**:
-  - Records (`T @ f =>`): `f.idx`, `f.name`, `f.type`, `f.default`, `rec.(f)`, `rec'.(f) = v`.
-  - Enums (`T @ v =>`): `v.idx`, `v.name`, `v.type`, `val.(v)`, `T(v)`, `T(v, payload)`.
+  - Records (`#members T @ f =>`): `f.idx`, `f.name`, `f.type`, `f.default`, `#member rec, f`, `#member rec, f = v`.
+  - Enums (`#members T @ v =>`): `v.idx`, `v.name`, `v.type`, `#member val, v`, `#member T, v`, `#member T, v, payload`.
 
 ```dva complete
 #use io
 
-field_names: #! T: Type, T => String
-field_names = #! T, rec =>
+field_names: #param T: Type, T => String
+field_names = #param T, rec =>
    T
       [(..)]
          b = {64}
-         T @ f =>
+         #members T @ f =>
             f.idx > 0 | b += ","
             b += f.name
          +b
-      | T.name
+      | #name T
 ```
 
 ---
@@ -297,7 +300,7 @@ field_names = #! T, rec =>
   `%prod`, `%dot`, `%popcount`, `%ctlz`, `%cttz`, `%bswap`, `%memcpy`, `%memmove`, `%memset`,
   `%to_str`.
 - **Raw Memory & FFI**: `@[addr Type]` loads `Type` from `addr: Addr`; `@[addr] = val` stores `val`;
-  `#foreign "c"` binds C ABI symbols; `#export` exposes Edva functions to C or WebAssembly hosts.
+  `#foreign("c")` binds C ABI symbols; `#export` exposes Edva functions to C or WebAssembly hosts.
 
 ---
 
@@ -324,13 +327,13 @@ field_names = #! T, rec =>
 - **`ascii`**: Fast byte-level ASCII predicates (`is_alpha`, `is_digit`, `is_hex`, `to_lower`, `to_upper`).
 - **`base64`**: RFC 4648 standard (`Flavor(Std)`) and URL-safe (`Flavor(Url)`) Base64 codecs and integer packing (`encode`, `decode`, `from_int`, `to_int`).
 - **`bench`**: Monotonic-clock microbenchmarking and throughput reporting (`bench::run`).
-- **`binary`**: Endian-aware readers/writers (`u16_le`, `u32_be`, etc.), LEB128 varints, and `#!` structural binary packing.
-- **`ccl`**: Categorical Configuration Language parser and `#!` structural typed config codec (`ccl::parse`, `ccl::decode`, `ccl::encode`).
-- **`cli`**: Declarative & `#!` structural CLI parser (`Opts`, `opt`, `pos`, `cmd`, `opts_for`, `parse`, `parse_args`, `into`, `flag`, `int`, `float`, `str`, `strs`, `has`, `subcmd`).
+- **`binary`**: Endian-aware readers/writers (`u16_le`, `u32_be`, etc.), LEB128 varints, and `#param` structural binary packing.
+- **`ccl`**: Categorical Configuration Language parser and `#param` structural typed config codec (`ccl::parse`, `ccl::decode`, `ccl::encode`).
+- **`cli`**: Declarative & `#param` structural CLI parser (`Opts`, `opt`, `pos`, `cmd`, `opts_for`, `parse`, `parse_args`, `into`, `flag`, `int`, `float`, `str`, `strs`, `has`, `subcmd`).
 - **`color` & `color/palette`**: Perceptual and display color spaces (`srgb_to_oklch`, `oklch_to_srgb`, `lerp_oklab`, `luminance`, `contrast_ratio`, `blend`, `from_hex_rgb`, `to_hex_rgb`) and curated palettes (Solarized, Catppuccin, Nord, Gruvbox).
 - **`const`**: Mathematical (`pi`, `tau`, `e`, `phi`) and IEEE-754 / integer limit constants (`max_i64`, `min_i64`, `inf_f64`, `nan_f64`, `eps_f64`).
 - **`crypto`**: `sha1`, `sha256`, `sha512`, `hmac_sha256`, `hkdf_sha256`, `pbkdf2_sha256`, ChaCha20-Poly1305 AEAD (`aead_seal`, `aead_open`), CSPRNG (`random_bytes`), `ct_eq`.
-- **`csv`**: RFC 4180 CSV/TSV parser/writer and `#!` structural row codec (`csv::decode`, `csv::encode`).
+- **`csv`**: RFC 4180 CSV/TSV parser/writer and `#param` structural row codec (`csv::decode`, `csv::encode`).
 - **`deque`**: Generic ring-buffer double-ended queue (`push_front`, `push_back`, `pop_front`, `pop_back`).
 - **`dom`**: Browser WebAssembly (`wasm32-unknown-unknown`) DOM toolkit (`find`, `create`, static read/write overloads `text`/`value`/`checked`/`attr`, `batch`, `queue_*`, `flush`, `on`, `delegate`, and auto-emitted `.dom.js` ES module bridge).
 - **`event`**: Portable `poll(2)` descriptor readiness multiplexing (`Poller`, `add`, `mod`, `del`, `wait`).
@@ -338,17 +341,17 @@ field_names = #! T, rec =>
 - **`fmt`**: Allocation-efficient formatting helpers, padding, alignment, and numeric formatting.
 - **`fp`**: Functional collection combinators (`map`, `filter`, `fold`, `reduce`, `any`, `all`, `find`, `take`, `drop`, `reverse`, `zip`).
 - **`fs`**: Safe filesystem I/O, directory traversal, symlinks, permissions, and disk stats (`read_to_string`, `write_file`, `exists`, `is_dir`, `is_file`, `resolve`, `create_dir_all`, `remove`, `remove_all`, `read_dir`, `stat`).
-- **`hash`**: FNV-1a, WyHash, CRC-32, Adler-32, and `#!` compile-time structural hashing (`hash::of`).
+- **`hash`**: FNV-1a, WyHash, CRC-32, Adler-32, and `#param` compile-time structural hashing (`hash::of`).
 - **`heap`**: Generic binary min/max/custom-comparator priority queue.
 - **`hex`**: RFC 4648 Base16 hexadecimal encoding and decoding.
-- **`http`**: Outbound HTTP/1.1 client with keep-alive `Client` pool, chunked decoding, `https://` support, `#!` typed JSON requests (`post_json_val`), Server-Sent Events (`sse_event`, `sse_parse`), and RFC 6455 WebSocket client (`ws_connect`, `ws_send_text`, `ws_recv`).
+- **`http`**: Outbound HTTP/1.1 client with keep-alive `Client` pool, chunked decoding, `https://` support, `#param` typed JSON requests (`post_json_val`), Server-Sent Events (`sse_event`, `sse_parse`), and RFC 6455 WebSocket client (`ws_connect`, `ws_send_text`, `ws_recv`).
 - **`img`**: Lossless RGBA8 `Image` buffer and PNG / QOI image encoders and decoders.
 - **`in`**: Buffered standard-input singleton (`read_line`, `read_bytes`, `read_until`, `eof!`).
 - **`io`**: Buffered stream `Reader` (`read_line`, `read_all`) and EINTR-safe output (`out`, `outs`, `err`, `errs`, `write`).
-- **`json`**: Strict RFC 8259 parser (`parse`, `stringify`, `stringify_pretty`, `get`, `get_str`, `get_int`) and `#!` compile-time structural codecs (`json::encode`, `json::encode_pretty`, `json::decode`, `json::to_value`, `json::from_value`) supporting records with field defaults, `<P|>` nullables, `E{}` arrays, `K ^ V` maps, and externally tagged enums. Note: `json::parse` uses module-global scanner state and is not thread-safe across unsynchronized OS threads.
-- **`kv`**: Bitcask-style log-structured persistent key-value store with CRC-32 integrity and `#!` typed `put_struct` / `get_struct`.
+- **`json`**: Strict RFC 8259 parser (`parse`, `stringify`, `stringify_pretty`, `get`, `get_str`, `get_int`) and `#param` compile-time structural codecs (`json::encode`, `json::encode_pretty`, `json::decode`, `json::to_value`, `json::from_value`) supporting records with field defaults, `<P|>` nullables, `E{}` arrays, `K ^ V` maps, and externally tagged enums. Note: `json::parse` uses module-global scanner state and is not thread-safe across unsynchronized OS threads.
+- **`kv`**: Bitcask-style log-structured persistent key-value store with CRC-32 integrity and `#param` typed `put_struct` / `get_struct`.
 - **`libc`**: Low-level POSIX / C ABI bindings.
-- **`log`**: Leveled (`debug`, `info`, `warn`, `error`) and `#!` structured `key=value` logger.
+- **`log`**: Leveled (`debug`, `info`, `warn`, `error`) and `#param` structured `key=value` logger.
 - **`math` (`math/geom`, `math/complex`)**: Transcendental scalars, 2D/3D/4D vectors & rectangles (`Vec2`, `Vec3`, `Vec4`, `Rect`), and complex arithmetic + FFT (`fft`, `ifft`).
 - **`mem`**: Low-level byte ops (`copy`, `move`, `zero`, `index_byte`), regional bump `Arena` (`arena`, `with`, `with_value`, `escape_value`, `save`, `restore_to`, `reset`, `destroy`), and O(1) fixed-size `Pool`.
 - **`net`**: POSIX TCP/UDP sockets and server HTTP/1.1 wire helpers (`tcp_listen`, `tcp_accept`, `tcp_connect`, `send_str`, `recv`, `close_fd`).
@@ -360,18 +363,18 @@ field_names = #! T, rec =>
 - **`sort`**: Hybrid $O(n \log n)$ merge sort (`ints`, `strings`) and custom comparator sorting.
 - **`str`**: UTF-8/byte string slicing, search, splitting, trimming, case conversion, and numeric parsing (`split`, `split_once`, `trim`, `starts_with`, `ends_with`, `contains`, `find`, `rfind`, `replace`, `lower`, `upper`, `from_int`, `parse_int`, `to_int`).
 - **`sys`**: Raw process `argc`, `argv_string`, and `exit`.
-- **`test`**: Unit test suites and `#!` structural assertions (`suite`, `check`, `eq`, `neq`, `finish!`).
+- **`test`**: Unit test suites and `#param` structural assertions (`suite`, `check`, `eq`, `neq`, `finish!`).
 - **`time`**: Wall-clock and monotonic timestamps, durations, civil calendar dates, and ISO-8601 / RFC-3339 formatting.
 - **`type`**: Compile-time type predicates (`is_int`, `is_float`, `is_numeric`, `is_signed`, `is_unsigned`, `bit_width`).
 - **`unicode` & `utf`**: Unicode category tables and UTF-8 codepoint encoding/decoding (`decode_rune`, `encode_rune`, `utf8_width`).
 - **`uring`**: Linux `io_uring` submission/completion queue bindings.
-- **`url`**: RFC 3986 URL parser, percent-encoding (`encode_component`, `decode_component`), and `#!` query-string struct codec.
+- **`url`**: RFC 3986 URL parser, percent-encoding (`encode_component`, `decode_component`), and `#param` query-string struct codec.
 
 ---
 
 # 9. Key Compiler Diagnostics
 
-- `E1001`–`E1019`: Lexical errors (`E1011` tab indentation, `E1017` multiline string margin, `E1018` retired `"""`, `E1019` `_` in number).
+- `E1001`–`E1019`: Lexical errors (`E1011` tab indentation, `E1017` multiline string margin, `E1018` unterminated multiline/interpolated string, `E1019` `_` in number).
 - `E2001`–`E2109`: Syntax errors (`E2015` missing comma on same line, `E2024` invalid bare `|` position, `E2025` space in range, `E2037` parenthesized fn params, `E2040` explicit `_` param, `E2052` comma in predicate guard, `E2084` single-field record or redundant parens, `E2095` malformed/mismatched pattern guard, `E2096` `|` before `[guard]`, `E2104` `()` used as value, `E2109` `[Variant _]`).
 - `E3004`: Undefined identifier, function, or module symbol.
 - `E3008`: Logical `!` applied to non-`Flag` (use `+b` to freeze `Builder`, `!!` to unwrap, `x ![...]` for negated guard).
@@ -379,5 +382,5 @@ field_names = #! T, rec =>
 - `E3084`: Type unification failure (including nominal record mismatch or field name mismatch).
 - `E3089` / `E3093` / `E3102`: Ram shape mismatch or inexhaustive expression choice.
 - `E3103`: Ambiguous/unresolved type variable (explicit annotation required).
-- `E3129` / `E3130`: Invalid runtime op in `#!`, or reading uninitialized record field.
+- `E3129` / `E3130`: Invalid runtime op in `#const`/`#param`, or reading uninitialized record field.
 - `E5001`–`E7021`: Module loader, linker, and `edva.ccl` package manager diagnostics.

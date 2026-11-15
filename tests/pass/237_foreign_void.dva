@@ -1,5 +1,5 @@
 // A #foreign binding may use 'Void' or 'void' as return type.
-#foreign "c"
+#foreign("c")
    puts: (s: String) -> Void
 
 puts("ok")

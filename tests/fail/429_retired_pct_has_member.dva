@@ -1,0 +1,2 @@
+#use io
+x = %has_member(io::out)

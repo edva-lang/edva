@@ -7,9 +7,9 @@
 #use str
 #use io
 
-squared: #! T: Type, T => T
+squared: #param T: Type, T => T
 squared = x => x * x
 
-io::out $ str::from_int(#! squared(5))
-io::out $ str::from_int(#! squared(12))
-io::out $ str::from_int(#! squared(3) + squared(4))
+io::out $ str::from_int(#const squared(5))
+io::out $ str::from_int(#const squared(12))
+io::out $ str::from_int(#const squared(3) + squared(4))

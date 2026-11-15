@@ -1,10 +1,10 @@
-// A "T.(i)" enum variant index must be in range (0..?T-1).
+// A "#member T, i" enum variant index must be in range (0..(#arity T) - 1).
 
 #use io
 
 #type Color < Red, Green, Blue >
-bad: #! T: Type, T => String
-bad = x => T.(9)
+bad: #param T: Type, T => String
+bad = x => #member T, 9
 c: Color
 c = Red
 io::out $ bad(c)

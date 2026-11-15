@@ -31,11 +31,11 @@
 
 #public
 
-#foreign "LLVM-18"
+#foreign("LLVM-18")
    llvm_get_default_triple = LLVMGetDefaultTargetTriple: () => Addr
    llvm_dispose_message = LLVMDisposeMessage: (msg: Addr) => ()
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
    mkdir: (path: String, mode: Int) => Int
    chmod: (path: String, mode: i32) => i32
@@ -794,16 +794,39 @@ read_file_text = path =>
                <+ +b +>
             | <-->
 
+type_info_known: ast::Exprs, ast::TypeInfo, String, ast::Names => <>
+type_info_known = exprs, ti, owner, seen =>
+   ti
+      [Align a] type_info_known(exprs, a.1, owner, seen)
+      [TypeVar name]
+         loaded_has(seen, name) | --| <+>
+         visited = ++seen
+         visited += name
+         exprs @ e =>
+            e [TypeDecl td]
+               (td.name [name, owner + "::" + name, owner + "::#" + name])
+                  | --| type_info_known(exprs, td.type_info,
+                     dep_graph::decl_module(td.name, 0), visited)
+         <->
+      | <+>
+
 module_record_fields: ast::Exprs, ast::TypeInfo, String, ast::Names => ast::Names
 module_record_fields = exprs, ti, owner, seen =>
+   fields = ast::Names()
    ti
       [Rec r]
-         fields = ast::Names()
-         r.0 @ field => fields += field.name
-         fields
-      [Align a] module_record_fields(exprs, a.1, owner, seen)
+         r.0 @ field =>
+            fields += field.name
+      [Bitfield bf]
+         bf.fields @ field =>
+            fields += field.name
+      [Enum es]
+         es @ slot =>
+            fields += slot.label
+      [Align a]
+         --| module_record_fields(exprs, a.1, owner, seen)
       [TypeVar name]
-         loaded_has(seen, name) | --| ast::Names()
+         loaded_has(seen, name) | --| fields
          visited = ++seen
          visited += name
          exprs @ e =>
@@ -811,8 +834,9 @@ module_record_fields = exprs, ti, owner, seen =>
                (td.name [name, owner + "::" + name, owner + "::#" + name])
                   | --| module_record_fields(exprs, td.type_info,
                      dep_graph::decl_module(td.name, 0), visited)
-         ast::Names()
-      | ast::Names()
+      |
+         noop_ = 0
+   fields
 
 collect_module_exports: ast::Exprs, String, String, <>, ImportMap, ImportMap => <>
 collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sources =>
@@ -822,6 +846,7 @@ collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sour
    lpfx = ?pfx
    lpfx_priv = ?pfx_priv
    alias_pfx = bound_name + "::"
+   table ^ ("#module:" + bound_name) = "1"
    exprs @ e =>
       !ok' | -->
       e
@@ -858,10 +883,18 @@ collect_module_exports = exprs, bound_name, canonical_id, is_import, table, sour
                |
                   bare = td.name(lpfx..)
                   table ^ (alias_pfx + bare) = td.name
+                  ty_known = type_info_known(exprs, td.type_info, canonical_id,
+                     ast::Names())
+                  ty_known
+                     |
+                        table ^ ("#type_exists:" + alias_pfx + bare) = "1"
+                        table ^ ("#type_exists:" + td.name) = "1"
+                        is_import | table ^ ("#type_exists:" + bare) = "1"
                   fields = module_record_fields(exprs, td.type_info, canonical_id,
                      ast::Names())
                   fields @ field =>
                      table ^ ("#field:" + alias_pfx + bare + "." + field) = td.name
+                     table ^ ("#field:" + td.name + "." + field) = td.name
                      is_import | table ^ ("#field:" + bare + "." + field) = td.name
                   is_import
                      |
@@ -1026,6 +1059,82 @@ collect_assigned_locals = e, locals =>
                collect_assigned_locals(b.1, locals)
                collect_assigned_locals(b.2, locals)
 
+has_ct_probe: ast::Expr => <>
+has_ct_probe = e =>
+   e
+      [Call c] c.fn_name == "#has_member"
+      [Unary u] has_ct_probe(u.1)
+      [Bin b] has_ct_probe(b.1) || has_ct_probe(b.2)
+      | <->
+
+eval_ct_probe_bool: ast::Expr => < <> | >
+eval_ct_probe_bool = e =>
+   e
+      [Variant v]
+         v.tag_name
+            [Positive] <+ <+> +>
+            [Negative] <+ <-> +>
+            | <-->
+      [Unary u]
+         u.0 [Not] (eval_ct_probe_bool(u.1) $+> (b => !b)) | <-->
+      [Bin b]
+         b.0
+            [And]
+               eval_ct_probe_bool(b.1)
+                  | lb =>
+                     !lb | <+ <-> +> | eval_ct_probe_bool(b.2)
+                  | <-->
+            [Or]
+               eval_ct_probe_bool(b.1)
+                  | lb =>
+                     lb | <+ <+> +> | eval_ct_probe_bool(b.2)
+                  | <-->
+            | <-->
+      | <-->
+
+expr_root_var: ast::Expr => String
+expr_root_var = e =>
+   e
+      [Var v] v
+      [Member m] expr_root_var(m.target)
+      | ""
+
+try_lower_std_call: String, ast::Exprs => < ast::Expr | >
+try_lower_std_call = canon, args =>
+   ?args != 1 | --| <-->
+   canon
+      ["task::spawn"]
+         args(0)!! [Call inner] <+ ast::Expr(Spawn, inner) +> | <-->
+      ["task::join"] <+ ast::Expr(Join, args(0)!!) +>
+      ["sys::exit"] <+ ast::Expr(Exit, args(0)!!) +>
+      | <-->
+
+try_eval_has_member_static: ast::Expr, ast::Expr, ImportMap, ast::Names => < ast::Expr | >
+try_eval_has_member_static = target, member_arg, table, locals =>
+   troot = expr_root_var(target)
+   troot != "" && loaded_has(locals, "#ct:" + troot) | --| <-->
+   mname_opt = member_arg
+      [Str s] <+ s +>
+      [Var v] (loaded_has(locals, "#ct:" + v) | <--> | <+ v +>)
+      | <-->
+   ! <>(mname_opt) | --| <-->
+   mname = mname_opt | s => s | ""
+   tname = parser::member_chain_name(target)
+   tname == "" | --| <-->
+   table ^? ("#module:" + tname)
+      |
+         present = table ^? (tname + "::" + mname)
+         tag = present | ast::Tag(Positive) | ast::Tag(Negative)
+         --| <+ ast::Expr(Variant, (tag, ast::Exprs())) +>
+   canon_t = table ^? tname | (table ^ tname | _ | tname) | tname
+   has_type = (table ^? ("#type_exists:" + tname)) ||
+      (table ^? ("#type_exists:" + canon_t))
+   !has_type | --| <-->
+   present = (table ^? ("#field:" + tname + "." + mname)) ||
+      (table ^? ("#field:" + canon_t + "." + mname))
+   tag = present | ast::Tag(Positive) | ast::Tag(Negative)
+   <+ ast::Expr(Variant, (tag, ast::Exprs())) +>
+
 rewrite_import_expr: ast::Expr, ImportMap, ast::Names => ast::Expr
 rewrite_import_expr = e, table, locals =>
    e
@@ -1034,25 +1143,26 @@ rewrite_import_expr = e, table, locals =>
             | ast::Expr(Var, (table ^ v | _ | v))
             | e
       [Call c]
-         c.fn_name == "%has_member" && ?c.args == 1
+         c.fn_name == "#has_member" && ?c.args == 2
             |
-               name = parser::member_chain_name(c.args(0)!!)
-               name != ""
-                  |
-                     present = table ^? name
-                     tag = present | ast::Tag(Positive) | ast::Tag(Negative)
-                     --| ast::Expr(Variant, (tag, ast::Exprs()))
-         c.fn_name == "%has_field" && ?c.args == 2
+               hm = try_eval_has_member_static(c.args(0)!!, c.args(1)!!,
+                 table, locals)
+               hm | res => --| res
+               // Keep member arg identifier intact when deferring generic #has_member
+               arg0 = rewrite_import_expr(c.args(0)!!, table, locals)
+               arg1 = c.args(1)!! [Var] c.args(1)!!
+                  | rewrite_import_expr(c.args(1)!!, table, locals)
+               new_args = ast::Exprs()
+               new_args += arg0
+               new_args += arg1
+               --| ast::Expr(Call, ast::CallExpr("#has_member", c.fn_target,
+                 new_args, c.line, c.col))
+         rc = rewrite_import_call(c, table, locals)
+         !loaded_has(locals, c.fn_name) && (table ^? c.fn_name)
             |
-               name = parser::member_chain_name(c.args(0)!!)
-               name != ""
-                  |
-                     c.args(1)!!
-                        [Str field]
-                           present = table ^? ("#field:" + name + "." + field)
-                           tag = present | ast::Tag(Positive) | ast::Tag(Negative)
-                           --| ast::Expr(Variant, (tag, ast::Exprs()))
-         ast::Expr(Call, rewrite_import_call(c, table, locals))
+               canon = table ^ c.fn_name | _ | ""
+               try_lower_std_call(canon, rc.args) | lowered => --| lowered
+         ast::Expr(Call, rc)
       [Bin b]
          b.0
             [Seq]
@@ -1060,6 +1170,28 @@ rewrite_import_expr = e, table, locals =>
                r1 = rewrite_import_expr(b.1, table, seq_locals)
                collect_assigned_locals(b.1, seq_locals)
                r2 = rewrite_import_expr(b.2, table, seq_locals)
+               ast::Expr(Bin, (b.0, r1, r2))
+            [Apply]
+               fname = member_chain_name(b.1)
+               r1 = rewrite_import_expr(b.1, table, locals)
+               r2 = rewrite_import_expr(b.2, table, locals)
+               fname != "" && !loaded_has(locals, fname) && (table ^? fname)
+                  |
+                     canon = table ^ fname | _ | ""
+                     one = ast::Exprs()
+                     one += r2
+                     try_lower_std_call(canon, one) | lowered => --| lowered
+               ast::Expr(Bin, (b.0, r1, r2))
+            [Feed]
+               fname = member_chain_name(b.2)
+               r1 = rewrite_import_expr(b.1, table, locals)
+               r2 = rewrite_import_expr(b.2, table, locals)
+               fname != "" && !loaded_has(locals, fname) && (table ^? fname)
+                  |
+                     canon = table ^ fname | _ | ""
+                     one = ast::Exprs()
+                     one += r1
+                     try_lower_std_call(canon, one) | lowered => --| lowered
                ast::Expr(Bin, (b.0, r1, r2))
             |
                ast::Expr(Bin, (b.0,
@@ -1071,7 +1203,8 @@ rewrite_import_expr = e, table, locals =>
       [Fn fe]
          fn_locals = ++locals
          fe.params @ p => (p != "" | fn_locals += p)
-         fe.ct_params @ cp => (cp != "" | fn_locals += cp)
+         fe.ct_params @ cp =>
+            cp != "" | (fn_locals += cp; fn_locals += "#ct:" + cp)
          new_body = rewrite_import_expr(fe.body, table, fn_locals)
          ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params, new_body))
       [Block be]
@@ -1083,19 +1216,20 @@ rewrite_import_expr = e, table, locals =>
          ast::Expr(Block, new_exprs)
       [Choice ch]
          new_cond = rewrite_import_expr(ch.cond, table, locals)
-         is_probe = ch.cond [Call c] (c.fn_name ["%has_member", "%has_field"]) | <->
+         is_probe = has_ct_probe(ch.cond)
          only_bare' = <+>
          ch.branches @ br => !(br.kind [Bare]) | only_bare' = <->
-         is_probe && only_bare' && (new_cond [Variant]) && ?ch.branches > 0
+         probe_val = is_probe | eval_ct_probe_bool(new_cond) | <-->
+         is_probe && only_bare' && ?ch.branches > 0
             |
-               present = new_cond [Variant v] v.tag_name [Positive] | <->
-               present && ?ch.branches > 1
-                  | --| rewrite_import_expr(ch.branches(0)!!.block, table, locals)
-               !present
-                  |
-                     ?ch.branches > 1
-                        | --| rewrite_import_expr(ch.branches(1)!!.block, table, locals)
-                     --| ast::Expr(Record, ast::RecordExpr(ast::Fields(), <->))
+               probe_val
+                  | present =>
+                     present
+                        | --| rewrite_import_expr(ch.branches(0)!!.block, table, locals)
+                        |
+                           ?ch.branches > 1
+                              | --| rewrite_import_expr(ch.branches(1)!!.block, table, locals)
+                           --| ast::Expr(Block, ast::Exprs())
          new_branches = ast::Branches()
          ch.branches @ br =>
             br_locals = ++locals
@@ -1195,6 +1329,9 @@ rewrite_import_expr = e, table, locals =>
       [SizeOf so]
          new_sti = rewrite_import_type_info(so.rec_type, table)
          ast::Expr(SizeOf, ast::SizeOfExpr(so.val_type, new_sti))
+      [AlignOf ao]
+         new_ati = rewrite_import_type_info(ao.rec_type, table)
+         ast::Expr(AlignOf, ast::AlignOfExpr(ao.val_type, new_ati))
       [MapLiteral ml]
          new_pairs = ml @> p =>
             ast::MapPair(rewrite_import_expr(p.key, table, locals),
@@ -1309,6 +1446,9 @@ scan_module_dependencies = src, path =>
    parser::parser_set_file(p, path)
    deps = ast::Exprs()
    ok' = <+>
+   at_stmt_start' = <+>
+   last_was_colon' = <->
+   indent_depth' = 0
    0.. @
       p.curr.kind [Eof] | -->
       dep = p.curr.kind
@@ -1316,11 +1456,33 @@ scan_module_dependencies = src, path =>
          [UseDynamicPath] parser::parse_import(p, <+>, <->)
          [UseImportPath] parser::parse_import(p, <->, <+>)
          [UseDynamicImportPath] parser::parse_import(p, <+>, <+>)
-         [ParamKw] parser::parse_mod_param(p)
+         [ParamKw]
+            indent_depth' == 0 && !last_was_colon' && at_stmt_start' &&
+              parser::looks_like_mod_param(p)
+               | parser::parse_mod_param(p)
+               |
+                  parser::parser_advance(p)
+                  at_stmt_start' = <->
+                  last_was_colon' = <->
+                  <-->
          |
+            is_brk = p.curr.kind [Newline, Semi, Indent, Dedent]
+            is_ind = p.curr.kind [Indent]
+            is_ded = p.curr.kind [Dedent]
+            is_nl = p.curr.kind [Newline]
+            is_colon = p.curr.text == ":"
+            is_ind | indent_depth' = indent_depth' + 1
+            is_ded && indent_depth' > 0 | indent_depth' = indent_depth' - 1
+            !is_ind && !is_ded && !is_nl | last_was_colon' = is_colon
             parser::parser_advance(p)
+            at_stmt_start' = is_brk
             <-->
-      dep | d => deps += d
+      dep | d =>
+         d
+            [Block b] (b @ item => deps += item)
+            | deps += d
+         at_stmt_start' = p.curr.kind [Eof, Newline, Semi, Indent, Dedent]
+         last_was_colon' = <->
       p.recovered_errors > 0 || lexer::lex_failed! | (ok' = <->; -->)
    ok' | <+ deps +> | <-->
 
@@ -1355,6 +1517,17 @@ seed_imported_types = p, exprs, table =>
          table @ canonical, alias =>
             canonical == te.name
                | p.user_types = parser::add_type(p.user_types, alias, sig)
+
+expr_is_import_or_modparam: ast::Expr => <>
+expr_is_import_or_modparam = st =>
+   st
+      [Import, ModParam] <+>
+      [Block b]
+         ?b == 0 | --| <->
+         ok' = <+>
+         b @ item => !(item [Import, ModParam]) | ok' = <->
+         ok'
+      | <->
 
 load_stmts: ast::Exprs, String, String, Loader, String, parser::Parser, <>, String => <>
 load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
@@ -1503,17 +1676,31 @@ load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
                !ok'
                   | <->
                   |
+                     // Populate local type fields so #has_member works on types in this file
+                     all_decls = ++ldr.out_exprs
+                     actual @ ae => (ae [TypeDecl] (all_decls += ae))
+                     actual @ st =>
+                        st [TypeDecl td]
+                           bare = decl_clean_name(td.name)
+                           resolved_ti = rewrite_import_type_info(td.type_info, import_table)
+                           type_info_known(all_decls, resolved_ti, prefix, ast::Names())
+                              |
+                                 import_table ^ ("#type_exists:" + td.name) = "1"
+                                 import_table ^ ("#type_exists:" + bare) = "1"
+                                 fields = module_record_fields(all_decls, resolved_ti,
+                                    prefix, ast::Names())
+                                 fields @ field =>
+                                    import_table ^ ("#field:" + td.name + "." + field) = td.name
+                                    import_table ^ ("#field:" + bare + "." + field) = td.name
                      // A functor instance is compiled into its importer's unit.
                      is_iface = ldr.is_modular && ldr.is_dep && ?my_args == 0
                      st_idx' = 0
                      actual @ st2 =>
-                        is_imp = st2 [Import, ModParam]
+                        is_imp = expr_is_import_or_modparam(st2)
                         !is_imp
                            |
-                              cur_st = has_imp_mods'
-                                 | rewrite_import_expr(st2, import_table,
-                                   ast::Names())
-                                 | st2
+                              cur_st = rewrite_import_expr(st2, import_table,
+                                ast::Names())
                               prev_len = ?ldr.out_exprs
                               prefix_stmt_to_acc(cur_st, prefix, publics,
                                 privates, ldr.out_exprs, is_iface)

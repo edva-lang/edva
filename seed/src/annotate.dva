@@ -16,7 +16,7 @@
 #use ./diag
 #use log
 
-#foreign "c"
+#foreign("c")
    write: (fd: Int, buf: Addr, count: Int) => Int
 
 #private
@@ -483,6 +483,26 @@ instantiate_generic_ti = ctx, env, fn_mod, ti =>
    res = instantiate_ti_step(ctx, env, fn_mod, TypeVarMap(), ti)
    res.ut
 
+resolve_type_name_ut_ti: unify::Ctx, type_env::TypeEnv, String,
+  String => (unify::UType, ast::TypeInfo, <>)
+resolve_type_name_ut_ti = ctx, env, fn_mod, tv =>
+   cast_opt = type_name_to_uprim(tv)
+   cast_opt
+      | up =>
+         ut = unify::UType(Prim, up)
+         (ut, unify::type_info_from_utype(ctx, ut), <+>)
+      |
+         ut_opt0 = type_env::lookup_user_type(env, tv)
+         ut_opt = <>(ut_opt0)
+            | ut_opt0
+            |
+               (fn_mod != "" && !type_env::name_is_qualified(tv, 0))
+                  | type_env::lookup_user_type_exact(env, fn_mod + "::" + tv)
+                  | <-->
+         ut_opt
+            | udef => (udef.ut, ast::TypeInfo(TypeVar, tv), <+>)
+            | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+
 resolve_type_expr_ut_ti: unify::Ctx, type_env::TypeEnv, String,
   ast::Expr => (unify::UType, ast::TypeInfo, <>)
 resolve_type_expr_ut_ti = ctx, env, fn_mod, e =>
@@ -491,23 +511,7 @@ resolve_type_expr_ut_ti = ctx, env, fn_mod, e =>
          has_bnd = <>(type_env::lookup_binding(env, tv))
          has_bnd
             | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
-            |
-               cast_opt = type_name_to_uprim(tv)
-               cast_opt
-                  | up =>
-                     ut = unify::UType(Prim, up)
-                     (ut, unify::type_info_from_utype(ctx, ut), <+>)
-                  |
-                     ut_opt0 = type_env::lookup_user_type(env, tv)
-                     ut_opt = <>(ut_opt0)
-                        | ut_opt0
-                        |
-                           (fn_mod != "" && !type_env::name_is_qualified(tv, 0))
-                              | type_env::lookup_user_type_exact(env, fn_mod + "::" + tv)
-                              | <-->
-                     ut_opt
-                        | udef => (udef.ut, ast::TypeInfo(TypeVar, tv), <+>)
-                        | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+            | resolve_type_name_ut_ti(ctx, env, fn_mod, tv)
       [Record r]
          ?r.fields == 0
             | (unify::prim_unit!, ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
@@ -521,6 +525,14 @@ resolve_type_expr_ut_ti = ctx, env, fn_mod, e =>
                   | udef => (udef.ut, ast::TypeInfo(TypeVar, qn), <+>)
                   | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+      [SizeOf so]
+         so.rec_type
+            [TypeVar tv] resolve_type_name_ut_ti(ctx, env, fn_mod, tv)
+            |
+               ut = utype_from_ti_env(env, so.rec_type)
+               ut [None]
+                  | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
+                  | (ut, so.rec_type, <+>)
       | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
 
 // Does the (parser) TypeInfo mention the compile-time type variable `name`?
@@ -586,7 +598,7 @@ instantiate_generic_ti_call_named = ctx, env, fn_mod, ti, call_args, fn_name =>
                         arg_e = call_args(arg_idx')!!
                         is_unit_lit = arg_e [Record r_u] (?r_u.fields == 0) | <->
                         has_extra = (n_call - arg_idx') > ?vinfos
-                        rt = (!is_unit_lit || has_extra)
+                        rt = (!(arg_e [SizeOf]) && (!is_unit_lit || has_extra))
                            | resolve_type_expr_ut_ti(ctx, env, fn_mod, arg_e)
                            | (unify::UType(None), ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                         rt.2
@@ -615,6 +627,42 @@ instantiate_generic_ti_call_named = ctx, env, fn_mod, ti, call_args, fn_name =>
          unify::UType(Fn, unify::UFn(params, ret_res.ut))
       | instantiate_generic_ti(ctx, env, fn_mod, ti)
 
+lookup_user_type_any_mod: type_env::TypeEnv, String => < type_env::UserTypeDef | >
+lookup_user_type_any_mod = env, name =>
+   type_env::name_is_qualified(name, 0) | --| <-->
+   pub_sfx = "::" + name
+   priv_sfx = "::#" + name
+   ?env.user_types @ k =>
+      i = (?env.user_types) - 1 - k
+      u = env.user_types(i)!!
+      !(u.ut [None]) && (str::ends_with(u.name, pub_sfx) || str::ends_with(u.name, priv_sfx))
+         | --| <+ u +>
+   <-->
+
+find_enum_utype_by_slots: type_env::TypeEnv, ast::EnumSlots => < unify::UType | >
+find_enum_utype_by_slots = env, slots =>
+   n = ?slots
+   ?env.user_types @ k =>
+      i = (?env.user_types) - 1 - k
+      u = env.user_types(i)!!
+      u.ti
+         [Enum u_slots]
+            u.ut
+               [Enum ue]
+                  (ue.name != "" && ?u_slots == n && ?ue.variants == n)
+                     |
+                        ok' = <+>
+                        n @ idx =>
+                           v = ue.variants(idx)!!
+                           us = u_slots(idx)!!
+                           ss = slots(idx)!!
+                           (us.label != ss.label || us.has_payload != ss.has_payload ||
+                             us.payload_type != ss.payload_type ||
+                             (v.has_payload && (v.payload_type [None])))
+                              | (ok' = <->; -->)
+                        ok' | --| <+ u.ut +>
+   <-->
+
 utype_from_ti_env: type_env::TypeEnv, ast::TypeInfo => unify::UType
 utype_from_ti_env = env, ti =>
    ti
@@ -626,7 +674,10 @@ utype_from_ti_env = env, ti =>
                ut_opt = type_env::lookup_user_type(env, tv)
                ut_opt
                   | udef => udef.ut
-                  | unify::UType(None)
+                  |
+                     lookup_user_type_any_mod(env, tv)
+                        | udef => udef.ut
+                        | unify::UType(None)
       [Ram r]
          s0 = r.0
          s1 = r.1
@@ -689,6 +740,7 @@ utype_from_ti_env = env, ti =>
       [Array a]
          unify::UType(Array, unify::UArray(utype_from_ti_env(env, a.1), a.2))
       [Enum slots]
+         find_enum_utype_by_slots(env, slots) | named_ut => --| named_ut
          vars = unify::UEnumVariants()
          ?slots @ i =>
             sl = slots(i) | _ | ast::EnumSlotInfo("", <->,
@@ -1179,11 +1231,118 @@ cycle_iter_elem_info = ctx, iter_te, is_rune =>
                (<+>, r_elem)
             | (<->, unify::fresh_var(ctx))
 
+collect_ct_cycle_called: ast::Names, String => ()
+collect_ct_cycle_called = aliases_dummy, fname =>
+   fname != ""
+      |
+         !has_name_in(called_fns, fname)
+            | (called_fns += fname)
+         ?fn_alias_vars @ ai =>
+            avn = fn_alias_vars(ai) | _ | ""
+            has_name_in(called_fns, avn)
+               |
+                  tgt = fn_alias_tgts(ai) | _ | ""
+                  tgt != "" && !has_name_in(called_fns, tgt)
+                     | (called_fns += tgt)
+
+collect_ct_cycle_refs_list: unify::Ctx, type_env::TypeEnv, ast::Exprs => ()
+collect_ct_cycle_refs_list = ctx, env, es =>
+   es @ e => collect_ct_cycle_refs(ctx, env, e)
+
+collect_ct_cycle_refs: unify::Ctx, type_env::TypeEnv, ast::Expr => ()
+collect_ct_cycle_refs = ctx, env, e =>
+   e
+      [Call c]
+         collect_ct_cycle_called(called_fns, c.fn_name)
+         collect_ct_cycle_refs(ctx, env, c.fn_target)
+         collect_ct_cycle_refs_list(ctx, env, c.args)
+      [Spawn sp]
+         collect_ct_cycle_called(called_fns, sp.fn_name)
+         collect_ct_cycle_refs(ctx, env, sp.fn_target)
+         collect_ct_cycle_refs_list(ctx, env, sp.args)
+      [Assign a]
+         a.0 != ""
+            | type_env::init_mark_whole(env, a.0)
+            |
+               a.6
+                  [Member mm]
+                     root = member_root_name(mm.target)
+                     root != "" | type_env::init_mark_whole(env, root)
+         collect_ct_cycle_refs(ctx, env, a.5)
+         collect_ct_cycle_refs(ctx, env, a.6)
+      [Var v]
+         has_name_in(user_fns, v) && !has_name_in(value_used_fns, v)
+            | (value_used_fns += v)
+      [Bin b]
+         collect_ct_cycle_refs(ctx, env, b.1)
+         collect_ct_cycle_refs(ctx, env, b.2)
+      [Unary u] collect_ct_cycle_refs(ctx, env, u.1)
+      [Block bs] collect_ct_cycle_refs_list(ctx, env, bs)
+      [Fn fe] collect_ct_cycle_refs(ctx, env, fe.body)
+      [Record rec]
+         rec.fields @ rf => collect_ct_cycle_refs(ctx, env, rf.val)
+      [MapLiteral ml]
+         ml @ p =>
+            collect_ct_cycle_refs(ctx, env, p.key)
+            collect_ct_cycle_refs(ctx, env, p.value)
+      [Member m]
+         collect_ct_cycle_refs(ctx, env, m.target)
+         collect_ct_cycle_refs(ctx, env, m.index_expr)
+      [KeyAccess ka]
+         collect_ct_cycle_refs(ctx, env, ka.target)
+         collect_ct_cycle_refs(ctx, env, ka.key)
+      [NamedArg na] collect_ct_cycle_refs(ctx, env, na.val)
+      [Variant v] collect_ct_cycle_refs_list(ctx, env, v.args)
+      [Choice ch]
+         collect_ct_cycle_refs(ctx, env, ch.cond)
+         ch.branches @ br =>
+            collect_ct_cycle_refs_list(ctx, env, br.case_values)
+            collect_ct_cycle_refs(ctx, env, br.pred_fn)
+            collect_ct_cycle_refs(ctx, env, br.block)
+      [Cycle cy]
+         collect_ct_cycle_refs(ctx, env, cy.iterable)
+         collect_ct_cycle_refs(ctx, env, cy.body_fn)
+      [CycleEscape ce]
+         collect_ct_cycle_refs(ctx, env, ce.cycle)
+         collect_ct_cycle_refs(ctx, env, ce.branch)
+      [Range r]
+         r.has_lhs | collect_ct_cycle_refs(ctx, env, r.lhs)
+         r.has_rhs | collect_ct_cycle_refs(ctx, env, r.rhs)
+      [Return r]
+         r.has_val | collect_ct_cycle_refs(ctx, env, r.val)
+      [Copy cp] collect_ct_cycle_refs(ctx, env, cp)
+      [CompileTime ct] collect_ct_cycle_refs(ctx, env, ct)
+      [Join jn] collect_ct_cycle_refs(ctx, env, jn)
+      [Exit ex] collect_ct_cycle_refs(ctx, env, ex)
+      [BuilderCreate bc] collect_ct_cycle_refs(ctx, env, bc)
+      [TypeCast tc] collect_ct_cycle_refs(ctx, env, tc.expr)
+      [RawMemory rm] collect_ct_cycle_refs(ctx, env, rm.addr)
+      [UserDiag ud] collect_ct_cycle_refs(ctx, env, ud.msg)
+
 annotate_cycle: unify::Ctx, type_env::TypeEnv, ast::CycleExpr,
   <ast::Expr|> => tast::TypedExpr
 annotate_cycle = ctx, env, c, esc_expr_opt =>
+   is_members_iter = c.iterable
+      [Member mi] !mi.is_module_access && mi.field_name == "#members"
+      | <->
+   is_members_iter
+      |
+         mi_tgt = c.iterable [Member mi] mi.target | c.iterable
+         rt = resolve_type_expr_ut_ti(ctx, env, "", mi_tgt)
+         c_rt = rt.2 | unify::canon(ctx, rt.0) | unify::UType(None)
+         ok_t = rt.2 && (c_rt [Rec, Enum, Var])
+         !ok_t
+            | unify::add_error(ctx, 3084, "'#members' requires a record or enum type.")
+         collect_ct_cycle_refs(ctx, env, c.body_fn)
+         --| tast::mk_typed_expr(tast::TypedExprKind(CtUnrollCycle, c),
+           unify::prim_unit!, ast::TypeInfo(Prim, ast::ValueType(Unit)),
+           tast::layout_void!, 0, 0)
    iter_te = annotate_expr(ctx, env, c.iterable)
    c_iter = unify::canon(ctx, iter_te.ut)
+   is_type_iter = c_iter [Prim p] (p [Type]) | <->
+   is_type_iter
+      | unify::add_error(ctx, 3084,
+        "Cannot iterate over a type directly; use '#members T @ m =>'.")
    iter_elem_info = cycle_iter_elem_info(ctx, iter_te, c.is_rune)
    has_elem = iter_elem_info.0
    elem_ut = iter_elem_info.1
@@ -1803,6 +1962,15 @@ annotate_cycle_expr = ctx, env, c =>
       | <->
    cur_expected_ut ::= <-->
    env.discard_result = <->
+   is_members_iter = c.iterable
+      [Member mi] !mi.is_module_access && mi.field_name == "#members"
+      | <->
+   is_members_iter
+      |
+         unify::add_error(ctx, 3084, "'#members' cannot be used with '@>'.")
+         cur_expected_ut ::= saved_cyc_exp
+         env.discard_result = saved_disc
+         --| tast::mk_lit_unit(0, 0)
    res = c.iterable
       [Record rec]
          (!rec.is_repeat && ?rec.fields == 2)
@@ -1980,6 +2148,99 @@ wrap_functor_rhs = tag, rhs =>
 
 // --- Annotate Expressions --------------------------------------------------
 
+annotate_type_carrier_member: unify::Ctx, type_env::TypeEnv,
+  ast::MemberExpr => <tast::TypedExpr|>
+annotate_type_carrier_member = ctx, env, m =>
+   rt = resolve_type_expr_ut_ti(ctx, env, "", m.target)
+   !rt.2 | --| <-->
+   t_vname = m.target [Var v] v | ""
+   target_te = tast::mk_typed_var(t_vname, 0, <->, unify::prim_type!,
+     rt.1, tast::layout_scalar(8, 8), m.line, m.col)
+   c_rt = unify::canon(ctx, rt.0)
+   m.field_name
+      ["#type_name"]
+         <+ tast::mk_typed_member(target_te, m.field_name, -1, unify::prim_str!,
+           ast::TypeInfo(Prim, ast::ValueType(Str)), tast::layout_scalar(16, 8),
+           m.line, m.col) +>
+      ["#type_size", "#type_align"]
+         <+ tast::mk_typed_member(target_te, m.field_name, -1, unify::prim_int!,
+           ast::TypeInfo(Prim, ast::ValueType(Int)), tast::layout_scalar(8, 8),
+           m.line, m.col) +>
+      ["#type_arity"]
+         !(c_rt [Rec, Enum, Var])
+            | unify::add_error(ctx, 3084, "'#arity' requires a record or enum type.")
+         <+ tast::mk_typed_member(target_te, m.field_name, -1, unify::prim_int!,
+           ast::TypeInfo(Prim, ast::ValueType(Int)), tast::layout_scalar(8, 8),
+           m.line, m.col) +>
+      ["#type_zero"]
+         lay = layout::compute_layout(ctx, rt.0)
+         <+ tast::mk_typed_member(target_te, m.field_name, -1, rt.0, rt.1,
+           lay, m.line, m.col) +>
+      [""]
+         is_enum_rt = c_rt [Enum]
+         vn = m.index_expr [Var v] v | ""
+         is_lit_var = is_enum_rt && vn != "" && !<>(type_env::lookup_binding(env, vn))
+         is_lit_var
+            |
+               uenum' = c_rt [Enum ue] ue | unify::UEnum("", unify::UEnumVariants())
+               ?uenum'.variants == 0 && uenum'.name != ""
+                  |
+                     type_env::lookup_user_type(env, uenum'.name)
+                        | udef_e =>
+                           unify::canon(ctx, udef_e.ut)
+                              [Enum ue_res] (uenum' = ue_res)
+               t_disp = t_vname != ""
+                  | t_vname
+                  | (m.target [SizeOf so] (so.rec_type [TypeVar tv] tv | "") | "")
+               enum_disp = uenum'.name != ""
+                  | bare_enum_label(uenum'.name)
+                  | (t_disp != "" | bare_enum_label(t_disp) | "enum")
+               found_idx' = -1
+               has_pay' = <->
+               ?uenum'.variants @ si =>
+                  vi = uenum'.variants(si) | _ |
+                     unify::UEnumVariant("", <->, unify::UType(None))
+                  vi.label == vn | (found_idx' = si; has_pay' = vi.has_payload; -->)
+               found_idx' < 0
+                  | unify::add_error(ctx, 3096, diag::enum_no_variant(enum_disp, vn))
+                  | has_pay'
+                     | unify::add_error(ctx, 3097,
+                       "Enum '${enum_disp}' variant '${vn}' requires a payload argument.")
+               lay = layout::compute_layout(ctx, rt.0)
+               <+ tast::mk_typed_enum_construct(vn, <-->, rt.0, rt.1, lay,
+                 m.line, m.col) +>
+            |
+               !(c_rt [Rec, Enum, Var])
+                  | unify::add_error(ctx, 3084, "'#member' requires a record or enum type.")
+               idx_te = annotate_expr(ctx, env, m.index_expr)
+               unify::unify(ctx, idx_te.ut, unify::prim_int!)
+               has_idx = m.index_expr [Int]
+               idx_n = m.index_expr [Int iv] iv | -1
+               !has_idx
+                  | unify::add_error(ctx, 3170, diag::member_index_constant!)
+                  |
+                     n_mem = c_rt
+                        [Rec flds] ?flds
+                        [Enum ue]
+                           ?ue.variants > 0
+                              | ?ue.variants
+                              | ue.name != ""
+                                 |
+                                    type_env::lookup_user_type(env, ue.name)
+                                       | ude =>
+                                          c_ude = unify::canon(ctx, ude.ut)
+                                          c_ude [Enum ur] ?ur.variants | -1
+                                       | -1
+                                 | -1
+                        | -1
+                     n_mem !< 0 && (idx_n < 0 || idx_n !< n_mem)
+                        | unify::add_error(ctx, 3171,
+                          "Member index ${idx_n} out of range (0..${n_mem - 1}).")
+               <+ tast::mk_typed_member(target_te, "", idx_n, unify::prim_str!,
+                 ast::TypeInfo(Prim, ast::ValueType(Str)), tast::layout_scalar(16, 8),
+                 m.line, m.col) +>
+      | <-->
+
 annotate_expr: unify::Ctx, type_env::TypeEnv, ast::Expr => tast::TypedExpr
 annotate_expr = ctx, env, expr =>
    cur_disc = env.discard_result
@@ -2087,7 +2348,7 @@ annotate_expr = ctx, env, expr =>
                                                 "default", 0, <->,
                                                 d_ut, d_ti, d_lay, 0, 0)
                                           |
-                                             in_ct_expr && (name ["os", "arch", "target"])
+                                             name ["#os", "#arch", "#target"]
                                                 |
                                                    ct_s_ut = unify::prim_str!
                                                    ct_s_ti = ast::TypeInfo(Prim,
@@ -2253,10 +2514,13 @@ annotate_expr = ctx, env, expr =>
                      call_te = annotate_call(ctx, env, ce)
                      cur_expected_ut ::= saved_feed_exp
                      c_call = unify::canon(ctx, call_te.ut)
-                     is_match_rhs = b.2
+                     is_comp_lhs = b.1
+                        [Var v_comp] ?v_comp > 6 && v_comp(0..6) == "_comp_"
+                        | <->
+                     is_match_rhs = !is_comp_lhs && (b.2
                         [Choice, Var] <+>
                         [Fn fe_m] fe_m.body [Choice]
-                        | <->
+                        | <->)
                      is_match_dispatch = is_feed && is_match_rhs
                      is_match_dispatch
                         |
@@ -2267,7 +2531,14 @@ annotate_expr = ctx, env, expr =>
                                        arg_te = annotate_call_arg(ctx, env, b.1)
                                        p0 = f_res.params(0) | _ |
                                           unify::UType(None)
+                                       saved_errs_n = ?ctx.errors
                                        ok_p = unify::unify(ctx, p0, arg_te.ut)
+                                       !ok_p
+                                          |
+                                             trimmed_errs = unify::TypeErrors()
+                                             saved_errs_n @ ei =>
+                                                trimmed_errs += ctx.errors(ei)!!
+                                             ctx.errors = trimmed_errs
                                        ok_p
                                           |
                                              cargs = tast::TypedExprs()
@@ -2649,6 +2920,17 @@ annotate_expr = ctx, env, expr =>
                resolve_module_access(ctx, env, qn,
                  m.line, m.col)
             |
+               m.field_name == "#members"
+                  |
+                     unify::add_error(ctx, 3084,
+                       "'#members' must be followed by '@' in a cycle.")
+                     --| tast::mk_lit_unit(m.line, m.col)
+               tc_opt = (m.field_name ["#type_name", "#type_zero", "#type_arity",
+                 "#type_size", "#type_align"] || m.field_name == "")
+                  | annotate_type_carrier_member(ctx, env, m)
+                  | <-->
+               tc_opt
+                  | te => --| te
                saved_tgt = env.in_member_target
                env.in_member_target = <+>
                target_te = annotate_expr(
@@ -2701,17 +2983,35 @@ annotate_expr = ctx, env, expr =>
                      rt_idx.2
                         |
                            rt_idx.0 [Rec, Enum] unify::unify(ctx, fld_ut, unify::prim_str!)
-               is_type_tgt && (fname' == "name" || fname' == "zero")
+               is_type_prop = fname' ["#type_name", "#type_zero", "#type_arity",
+                 "#type_size", "#type_align"]
+               is_type_tgt && is_type_prop
                   |
-                     fname' == "name"
-                        | unify::unify(ctx, fld_ut, unify::prim_str!)
+                     fname'
+                        ["#type_name"]
+                           unify::unify(ctx, fld_ut, unify::prim_str!)
+                        ["#type_size", "#type_align"]
+                           unify::unify(ctx, fld_ut, unify::prim_int!)
+                        ["#type_arity"]
+                           rt_a = resolve_type_expr_ut_ti(ctx, env, "", m.target)
+                           rt_a.2
+                              |
+                                 c_ra = unify::canon(ctx, rt_a.0)
+                                 !(c_ra [Rec, Enum, Var])
+                                    | unify::add_error(ctx, 3084,
+                                      "'#arity' requires a record or enum type.")
+                           unify::unify(ctx, fld_ut, unify::prim_int!)
                         |
                            rt_z = resolve_type_expr_ut_ti(ctx, env, "", m.target)
                            rt_z.2
                               |
                                  unify::unify(ctx, fld_ut, rt_z.0)
                                  type_prop_ti' = <+ rt_z.1 +>
-               swz_status' = is_type_tgt && (fname' == "name" || fname' == "zero") | 2 | 0
+               has_type_prefix = ?fname' !< 6 && fname'(0..6) == "#type_"
+               !is_type_tgt && has_type_prefix
+                  | unify::add_error(ctx, 3084,
+                    "'#${fname'(6..)}' requires a type operand.")
+               swz_status' = ((is_type_tgt && is_type_prop) || has_type_prefix) | 2 | 0
                c_tgt
                   [Rec r_swz]
                      exact_idx' < 0 && fname' != "" && env.swizzle_mode != "none"
@@ -3818,7 +4118,7 @@ check_length_operand: unify::Ctx, unify::UType => ()
 check_length_operand = ctx, t =>
    c = unify::canon(ctx, t)
    ok = c
-      [Prim p] p [Str, Builder, Rune, Type]
+      [Prim p] p [Str, Builder, Rune]
       | c [Rec, Array, Slice, Map, Var]
    !ok
       | unify::add_error(ctx, 3084, "Length operator requires a countable operand")
@@ -4238,9 +4538,152 @@ annotate_intrinsic_call = ctx, env, ce =>
                      tast::mk_typed_call(name, <-->, typed_args, ret_ut, ti,
                        lay, ce.line, ce.col)
 
+try_eval_has_member: unify::Ctx, type_env::TypeEnv, ast::Expr, String => (<>, <>)
+try_eval_has_member = ctx, env, tgt_e, mem_name =>
+   rt = resolve_type_expr_ut_ti(ctx, env, "", tgt_e)
+   tgt_ut = rt.2
+      | rt.0
+      |
+         tgt_e
+            [Var vn]
+               type_env::lookup_binding(env, vn)
+                  | b => b.ut
+                  | unify::UType(None)
+            | unify::UType(None)
+   tgt_ut [None]
+      | --| (<->, <->)
+   c_ut = unify::canon(ctx, tgt_ut)
+   c_ut
+      [Rec flds]
+         found' = <->
+         flds @ f =>
+            f.name == mem_name | (found' = <+>; -->)
+         (found', <+>)
+      [Enum uenum_raw]
+         uenum' = uenum_raw
+         ?uenum'.variants == 0 && uenum'.name != ""
+            |
+               type_env::lookup_user_type(env, uenum'.name)
+                  | udef_e =>
+                     unify::canon(ctx, udef_e.ut)
+                        [Enum ue_res] (uenum' = ue_res)
+         found' = <->
+         ?uenum'.variants @ vi =>
+            v = uenum'.variants(vi) | _ |
+               unify::UEnumVariant("", <->, unify::UType(None))
+            v.label == mem_name | (found' = <+>; -->)
+         (found', <+>)
+      [Var] (<->, <->)
+      | (<->, <+>)
+
+annotate_hash_member3_call: unify::Ctx, type_env::TypeEnv,
+  ast::CallExpr => tast::TypedExpr
+annotate_hash_member3_call = ctx, env, ce =>
+   ?ce.args != 3
+      |
+         unify::add_error(ctx, 3084,
+           "'#member' 3-argument form expects (EnumType, Variant, payload).")
+         --| tast::mk_lit_unit(ce.line, ce.col)
+   arg0_e = ce.args(0)!!
+   rt = resolve_type_expr_ut_ti(ctx, env, "", arg0_e)
+   c_rt = rt.2 | unify::canon(ctx, rt.0) | unify::UType(None)
+   !(rt.2 && (c_rt [Enum]))
+      |
+         unify::add_error(ctx, 3084,
+           "'#member' 3-argument construction requires an enum type.")
+         --| tast::mk_lit_unit(ce.line, ce.col)
+   uenum' = c_rt [Enum ue] ue | unify::UEnum("", unify::UEnumVariants())
+   ?uenum'.variants == 0 && uenum'.name != ""
+      |
+         type_env::lookup_user_type(env, uenum'.name)
+            | udef_e =>
+               unify::canon(ctx, udef_e.ut)
+                  [Enum ue_res] (uenum' = ue_res)
+   t_vname = arg0_e [Var v] v
+      [SizeOf so] (so.rec_type [TypeVar tv] tv | "")
+      | ""
+   enum_disp = uenum'.name != ""
+      | bare_enum_label(uenum'.name)
+      | (t_vname != "" | bare_enum_label(t_vname) | "enum")
+   lbl_e = ce.args(1)!!
+   found_idx' = -1
+   v_info' = unify::UEnumVariant("", <->, unify::UType(None))
+   eff_lbl' = ++""
+   lbl_e
+      [Int idx]
+         idx !< 0 && idx < ?uenum'.variants
+            |
+               found_idx' = idx
+               v_info' = uenum'.variants(idx) | _ |
+                  unify::UEnumVariant("", <->, unify::UType(None))
+               eff_lbl' = v_info'.label
+            | eff_lbl' = str::from_int(idx)
+      |
+         lbl_str = lbl_e [Str s] s [Var v] v | ""
+         eff_lbl' = lbl_str
+         lbl_str != ""
+            |
+               ?uenum'.variants @ si =>
+                  vi = uenum'.variants(si) | _ |
+                     unify::UEnumVariant("", <->, unify::UType(None))
+                  vi.label == lbl_str | (found_idx' = si; v_info' = vi; -->)
+   found_idx' < 0
+      | unify::add_error(ctx, 3096, diag::enum_no_variant(enum_disp, eff_lbl'))
+      | !v_info'.has_payload
+         | unify::add_error(ctx, 3098, diag::enum_unit_payload(enum_disp, eff_lbl'))
+   saved_exp = cur_expected_ut
+   v_info'.has_payload
+      | (cur_expected_ut ::= <+ v_info'.payload_type +>)
+   pay_te = annotate_call_arg(ctx, env, ce.args(2)!!)
+   cur_expected_ut ::= saved_exp
+   found_idx' !< 0 && v_info'.has_payload
+      |
+         ok_p = unify::unify(ctx, v_info'.payload_type, pay_te.ut)
+         !ok_p
+            |
+               exp_name = unify::show_utype(ctx, v_info'.payload_type)
+               got_name = unify::show_utype(ctx, pay_te.ut)
+               unify::add_error(ctx, 3099,
+                 diag::enum_payload_type(enum_disp, eff_lbl', exp_name, got_name))
+   lay = layout::compute_layout(ctx, rt.0)
+   tast::mk_typed_enum_construct(eff_lbl', <+ pay_te +>, rt.0, rt.1, lay,
+     ce.line, ce.col)
+
 annotate_call: unify::Ctx, type_env::TypeEnv, ast::CallExpr => tast::TypedExpr
 annotate_call = ctx, env, ce =>
    ce.line > 0 | unify::set_pos(ctx, ce.line, ce.col)
+   ce.fn_name == "#has_member"
+      |
+         ?ce.args != 2
+            |
+               unify::add_error(ctx, 3084,
+                 "'#has_member' expects 2 arguments (Target, member).")
+               --| tast::mk_lit_flag(<->, ce.line, ce.col)
+         arg1 = ce.args(1)!!
+         m_info = arg1
+            [Str s] (s, <+>)
+            [Var v] (v, <+>)
+            | ("", <->)
+         !m_info.1
+            |
+               unify::add_error(ctx, 3084,
+                 "'#has_member' member name must be an identifier or string literal.")
+               --| tast::mk_lit_flag(<->, ce.line, ce.col)
+         hm = try_eval_has_member(ctx, env, ce.args(0)!!, m_info.0)
+         hm.1 | --| tast::mk_lit_flag(hm.0, ce.line, ce.col)
+         rt0 = resolve_type_expr_ut_ti(ctx, env, "", ce.args(0)!!)
+         tgt_te = rt0.2
+            | tast::mk_typed_var(ce.args(0)!! [Var v] v | "", 0, <->,
+              unify::prim_type!, rt0.1, tast::layout_scalar(8, 8), ce.line, ce.col)
+            | annotate_expr(ctx, env, ce.args(0)!!)
+         typed_args = tast::TypedExprs()
+         typed_args += tgt_te
+         typed_args += tast::mk_lit_str(m_info.0, ce.line, ce.col)
+         --| tast::mk_typed_call("#has_member", <-->, typed_args, unify::prim_flag!,
+           ast::TypeInfo(Prim, ast::ValueType(Flag)), tast::layout_scalar(1, 1),
+           ce.line, ce.col)
+   ce.fn_name == "#member3"
+      | --| annotate_hash_member3_call(ctx, env, ce)
    is_intrinsic = is_intrinsic_name(ce.fn_name)
    is_intrinsic
       | annotate_intrinsic_call(ctx, env, ce)
@@ -4646,16 +5089,26 @@ annotate_record_ctor_fields = ctx, env, ce, udef, flds, fields, nf, is_bitfield,
            udef.ut, res_ti, lay, ce.line, ce.col)
       | rec_te
 
+unwrap_align_ti: ast::TypeInfo => ast::TypeInfo
+unwrap_align_ti = ti =>
+   ti
+      [Align a] unwrap_align_ti(a.1)
+      | ti
+
 annotate_record_ctor: unify::Ctx, type_env::TypeEnv, ast::CallExpr,
   type_env::UserTypeDef, unify::UFields => tast::TypedExpr
 annotate_record_ctor = ctx, env, ce, udef, flds =>
    resolved_ti' = udef.ti
-   udef.ti
+   unwrap_align_ti(udef.ti)
       [TypeVar tv]
          u_opt = type_env::lookup_user_type(env, tv)
          u_opt
-            | u => (resolved_ti' = u.ti)
-   bf_opt = resolved_ti' [Bitfield b] <+ b +> | <-->
+            | u =>
+               resolved_ti' = udef.ti
+                  [Align a] ast::TypeInfo(Align, (a.0, u.ti))
+                  | u.ti
+   inner_ti = unwrap_align_ti(resolved_ti')
+   bf_opt = inner_ti [Bitfield b] <+ b +> | <-->
    bf_fields = bf_opt
       | bfi =>
          bfs = ast::FieldTypes()
@@ -4664,7 +5117,7 @@ annotate_record_ctor = ctx, env, ce, udef, flds =>
             bfs += ast::mk_rfield_type(bf.name, f_vt, ast::TypeInfo(Prim, f_vt))
          bfs
       | ast::FieldTypes()
-   fields = <>(bf_opt) | bf_fields | (resolved_ti' [Rec rr] rr.0 | ast::FieldTypes())
+   fields = <>(bf_opt) | bf_fields | (inner_ti [Rec rr] rr.0 | ast::FieldTypes())
    nf = ?fields
    is_raw_cast' = <->
    raw_te' = tast::mk_lit_unit(0, 0)
@@ -5449,11 +5902,75 @@ all_tb_unit = ctx, tb_list =>
             !is_u | (all_u' = <->; -->)
    all_u'
 
+try_eval_static_choice_flag: unify::Ctx, type_env::TypeEnv, ast::Expr => (<>, <>)
+try_eval_static_choice_flag = ctx, env, cond_e =>
+   cond_e
+      [Call ce]
+         ce.fn_name == "#has_member" && ?ce.args == 2
+            |
+               m_info = ce.args(1)!!
+                  [Str s] (s, <+>)
+                  [Var v] (v, <+>)
+                  | ("", <->)
+               m_info.1
+                  | try_eval_has_member(ctx, env, ce.args(0)!!, m_info.0)
+                  | (<->, <->)
+            | (<->, <->)
+      [Variant ve]
+         ?ve.args == 0
+            | ve.tag_name [Positive] (<+>, <+>) [Negative] (<->, <+>) | (<->, <->)
+            | (<->, <->)
+      [Unary u]
+         u.0
+            [Not]
+               inner = try_eval_static_choice_flag(ctx, env, u.1)
+               inner.1 | (!inner.0, <+>) | (<->, <->)
+            | (<->, <->)
+      [Bin b]
+         b.0
+            [And]
+               lf = try_eval_static_choice_flag(ctx, env, b.1)
+               !lf.1
+                  | (<->, <->)
+                  | !lf.0
+                     | (<->, <+>)
+                     | try_eval_static_choice_flag(ctx, env, b.2)
+            [Or]
+               lf = try_eval_static_choice_flag(ctx, env, b.1)
+               !lf.1
+                  | (<->, <->)
+                  | lf.0
+                     | (<+>, <+>)
+                     | try_eval_static_choice_flag(ctx, env, b.2)
+            | (<->, <->)
+      | (<->, <->)
+
 annotate_choice: unify::Ctx, type_env::TypeEnv,
   ast::ChoiceExpr, <> => tast::TypedExpr
 annotate_choice = ctx, env, ch, is_disc =>
    saved_choice_exp = cur_expected_ut
    cur_expected_ut ::= <-->
+   all_bare' = ?ch.branches == 1 || ?ch.branches == 2
+   ch.branches @ br_b =>
+      !(br_b.kind [Bare]) | (all_bare' = <->; -->)
+   all_bare'
+      |
+         sf = try_eval_static_choice_flag(ctx, env, ch.cond)
+         sf.1
+            |
+               ?ch.branches == 2
+                  |
+                     cur_expected_ut ::= saved_choice_exp
+                     env.discard_result = is_disc
+                     taken_br = ch.branches(sf.0 | 0 | 1)!!
+                     --| annotate_expr(ctx, env, taken_br.block)
+                  | is_disc
+                     |
+                        cur_expected_ut ::= saved_choice_exp
+                        env.discard_result = is_disc
+                        --| sf.0
+                           | annotate_expr(ctx, env, (ch.branches(0)!!).block)
+                           | tast::mk_lit_unit(0, 0)
    is_disc && choice_has_constant_branch(ch)
       |
          unify::add_error(ctx, 3175, diag::E3175_choice_const_discarded!)
@@ -5913,17 +6430,37 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
    target_te = annotate_expr(ctx, env, mm.target)
    env.in_lvalue = saved_lvalue
    rhs = annotate_expr(ctx, env, val_expr)
-   root = member_root_str(mm.target)
-   root != ""
+   fname' = mm.field_name
+   resolved_idx' = -1
+   c_tgt_w = unify::canon(ctx, target_te.ut)
+   fname' == ""
       |
-         fpath = root + "." + mm.field_name
+         mm.index_expr
+            [Int n]
+               resolved_idx' = n
+               c_tgt_w
+                  [Rec rw]
+                     n < 0 || n !< ?rw
+                        | unify::add_error(ctx, 3171,
+                          "Member index ${n} out of range (0..${?rw - 1}).")
+                        |
+                           fn_n = rw(n)!!.name
+                           fname' = fn_n != "" | fn_n | str::from_int(n)
+                  | unify::add_error(ctx, 3084,
+                    "'#member' write target must be a record value.")
+            | unify::add_error(ctx, 3170, diag::member_index_constant!)
+   root = member_root_str(mm.target)
+   root != "" && fname' != ""
+      |
+         fpath = "${root}.${fname'}"
          type_env::init_mark_written(env, fpath)
          root_var = member_root_name(mm.target)
          !member_has_module_access(mm.target) &&
            !type_env::is_marked_global(env, root_var)
            | type_env::init_mark_tracked(env, root_var)
    fld_ut = unify::fresh_var(ctx)
-   unify::solve_field(ctx, target_te.ut, mm.field_name, fld_ut)
+   fname' != ""
+      | unify::solve_field(ctx, target_te.ut, fname', fld_ut)
    is_compound
       |
          c_fld = unify::canon(ctx, fld_ut)
@@ -5952,15 +6489,14 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
                      !ok
                         |
                            fld_msg = diag::field_assignment_type_mismatch_prefix! +
-                             mm.field_name
+                             fname'
                            unify::add_error(ctx, 3084, fld_msg)
             [Array arr]
                ok = unify::unify(ctx, arr.elem, rhs.ut)
                !ok
                   |
                      unify::add_error(ctx, 3084,
-                       "Type mismatch in array append to field: " +
-                       mm.field_name)
+                       "Type mismatch in array append to field: ${fname'}")
             |
                fld_flag_int = is_flag_ut(ctx, fld_ut) &&
                  is_integerish_ut(ctx, rhs.ut)
@@ -5968,7 +6504,7 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
                !ok
                   |
                      fld_msg = diag::field_assignment_type_mismatch_prefix! +
-                       mm.field_name
+                       fname'
                      unify::add_error(ctx, 3084, fld_msg)
       |
          fld_flag_int = is_flag_ut(ctx, fld_ut) &&
@@ -5977,17 +6513,17 @@ annotate_member_write = ctx, env, mm, val_expr, is_compound =>
          !ok
             |
                fld_msg = diag::field_assignment_type_mismatch_prefix! +
-                 mm.field_name
+                 fname'
                unify::add_error(ctx, 3084, fld_msg)
    c_tgt = unify::canon(ctx, target_te.ut)
-   idx' = -1
+   idx' = resolved_idx'
    c_tgt
       [Rec r]
-         idx' = unify::find_field_idx(r, mm.field_name)
+         fname' != "" | (idx' = unify::find_field_idx(r, fname'))
    ti = unify::type_info_from_utype(ctx, unify::prim_unit!)
    lay = tast::layout_void!
    tast::mk_typed_expr(tast::TypedExprKind(MemberWrite,
-     (target_te, mm.field_name, idx', rhs)),
+     (target_te, fname', idx', rhs)),
      unify::prim_unit!, ti, lay, mm.line, mm.col)
 
 annotate_index_write: unify::Ctx, type_env::TypeEnv,
@@ -6567,7 +7103,9 @@ refresh_typed_expr = ctx, te =>
    is_bf_ti = te.ti [Bitfield]
    is_packed_ti = te.ti [Rec r] r.5 | (te.ti [Align a] (a.1 [Rec r] r.5 | <->) | <->)
    is_align_ti = te.ti [Align]
-   keep_ti = is_named_ti || is_bf_ti || is_packed_ti || is_align_ti
+   is_type_carrier = (c_ut [Prim p] p [Type] | <->) &&
+     !(te.ti [Prim pt] pt [Type, Unknown] | <->)
+   keep_ti = is_named_ti || is_bf_ti || is_packed_ti || is_align_ti || is_type_carrier
    new_ti = keep_ti
       | te.ti
       | unify::type_info_from_utype(ctx, c_ut)

@@ -7,15 +7,15 @@
 
 #use libc
 
-#foreign "c"
-   dva_arena_init: (Addr, Int) => ()
-   dva_arena_alloc: (Addr, Int) => Addr
-   runtime_arena_restore = dva_arena_restore: (Addr, Int) => ()
-   runtime_arena_destroy = dva_arena_destroy: (Addr) => ()
-   runtime_arena_save = dva_arena_save: (Addr) => Int
+#foreign("c")
+   dva_arena_init: (ptr: Addr, size: Int) => ()
+   dva_arena_alloc: (arena: Addr, size: Int) => Addr
+   runtime_arena_restore = dva_arena_restore: (arena: Addr, mark: Int) => ()
+   runtime_arena_destroy = dva_arena_destroy: (arena: Addr) => ()
+   runtime_arena_save = dva_arena_save: (arena: Addr) => Int
    runtime_arena_current = dva_arena_current: () => Addr
-   runtime_arena_set_current = dva_arena_set_current: (Addr) => Addr
-   c_memchr = memchr: (Addr, Int, Int) => Addr
+   runtime_arena_set_current = dva_arena_set_current: (arena: Addr) => Addr
+   c_memchr = memchr: (ptr: Addr, ch: Int, n: Int) => Addr
 
 #public
    #type Arena (raw: Addr, cap: Int)
@@ -102,8 +102,8 @@
       action!
       set_current(prev)
 
-   with_value: #! T: Type, Arena, (() => T) => T
-   with_value = a, action =>
+   with_value: #param T: Type, Arena, (() => T) => T
+   with_value = #param T, a, action =>
       prev = set_current(a.raw)
       result = action!
       set_current(prev)
@@ -115,8 +115,8 @@
       action!
       set_current(prev)
 
-   escape_value: #! T: Type, (() => T) => T
-   escape_value = action =>
+   escape_value: #param T: Type, (() => T) => T
+   escape_value = #param T, action =>
       prev = set_current(Addr(0))
       result = action!
       set_current(prev)

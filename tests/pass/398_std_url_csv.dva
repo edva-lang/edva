@@ -1,7 +1,7 @@
 // Test: std/url.dva and std/csv.dva
 // Covers RFC 3986 URL parsing, formatting, resolution, percent-encoding,
-// `#!` query string codec (`url::encode_query`, `url::decode_query`, `url::encode`, `url::decode`),
-// and RFC 4180 CSV reader/writer plus `#!` typed row codec (`csv::encode`, `csv::decode`).
+// `#` query string codec (`url::encode_query`, `url::decode_query`, `url::encode`, `url::decode`),
+// and RFC 4180 CSV reader/writer plus `#` typed row codec (`csv::encode`, `csv::decode`).
 
 #use url
 #use csv
@@ -100,7 +100,7 @@ url::decode(url::Url, "http://a/b/c/d;p?q")
          | err => test::check(<->, "resolve ?y failed")
    | err => test::check(<->, "url::decode Url base failed: " + err.msg)
 
-// --- 3. Structural Query String Codec (#!) ---
+// --- 3. Structural Query String Codec (#) ---
 tags = String{}("edva", "lang")
 sq = SearchQuery("hello world", 3, <+>, SortOrder(Desc), tags, <+ "cur_42" +>)
 qs_enc = url::encode_query(sq)
@@ -144,7 +144,7 @@ csv::read_all(raw_csv)
 
 test::err(csv::read_all("a,\"unterminated"), "csv::read_all unterminated quote")
 
-// --- 5. CSV Structural Typed Row Codec (#!) ---
+// --- 5. CSV Structural Typed Row Codec (#) ---
 users = UserTable()
 users += UserRow(1, "Ada, Countess", SortOrder(Desc), <+>, 98.5, <+ "math & code" +>)
 users += UserRow(2, "Grace", SortOrder(Asc), <->, 99.0, <-->)

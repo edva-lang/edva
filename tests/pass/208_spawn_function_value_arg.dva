@@ -1,4 +1,4 @@
-// #spawn with a FUNCTION VALUE argument: the worker takes a closure and calls
+// task::spawn with a FUNCTION VALUE argument: the worker takes a closure and calls
 // it. The argument's { fn_ptr, env_ptr } is deep-copied into the child arena
 // (codegen_deep_copy_closure), so the captured env (base) is child-owned. The
 // worker-env-captures-a-function-value case still needs runtime function
@@ -6,6 +6,7 @@
 
 #use str
 #use io
+#use task
 
 base = 10
 g: Int => Int
@@ -16,9 +17,9 @@ w = f => f(5)
 w2: (Int => Int) => Int
 w2 = f => f(7)
 
-h = #spawn w(g)
-r = #join h
+h = task::spawn(w(g))
+r = task::join(h)
 io::out $ str::from_int(r | v => v | -1)
-h2 = #spawn w2(g)
-r2 = #join h2
+h2 = task::spawn(w2(g))
+r2 = task::join(h2)
 io::out $ str::from_int(r2 | v => v | -1)

@@ -15,7 +15,7 @@ text = <-->
 install: (() => ()) => ()
 install = action => callback = <+ action +>
 
-set_values: #! T: Type, T => T
+set_values: #param T: Type, T => T
 set_values = amount =>
    number = <+ amount +>
    failure = <- "failed" ->
@@ -23,15 +23,15 @@ set_values = amount =>
    text = <+ "present" +>
    amount
 
-read_number: #! T: Type, T => T
+read_number: #param T: Type, T => T
 read_number = fallback => number | n => n | fallback
 
-through: #! T: Type, T => T
+through: #param T: Type, T => T
 through = item =>
    callback | action => action!
    item
 
-clear: #! T: Type, T => T
+clear: #param T: Type, T => T
 clear = item =>
    callback = <-->
    number = <-->
