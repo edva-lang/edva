@@ -83,7 +83,11 @@ DEPS_MK       := build/deps.mk
 SEED_IR       := $(shell find seed/ir -name '*.ll')
 BOOTSTRAP_STAMP := build/.seed-stamp
 
-.PHONY: all build clean test check dom-test dom-smoke dom-browser-smoke driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install uninstall
+FUZZ_RUNS    ?= 250
+FUZZ_SEED    ?= 42
+FUZZ_TIME    ?= 0
+
+.PHONY: all build clean test check fuzz fuzz-smoke dom-test dom-smoke dom-browser-smoke driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install install-user link uninstall
 
 # Default target: incremental modular build
 all: edva
@@ -183,11 +187,21 @@ endif
 
 # --- Installation ------------------------------------------------------------
 
+USER_PREFIX ?= $(HOME)/.local
+USER_BINDIR ?= $(USER_PREFIX)/bin
+
 install: edva
 	$(INSTALL_DIR) $(DESTDIR)$(BINDIR)
 	$(INSTALL_PROGRAM) edva $(DESTDIR)$(BINDIR)/edva
 	$(INSTALL_DIR) $(DESTDIR)$(LIBDIR)/edva/std
 	cp -R std/* $(DESTDIR)$(LIBDIR)/edva/std/
+
+install-user:
+	$(MAKE) install PREFIX="$(USER_PREFIX)"
+
+link: edva
+	$(INSTALL_DIR) $(DESTDIR)$(USER_BINDIR)
+	ln -sf "$(CURDIR)/edva" $(DESTDIR)$(USER_BINDIR)/edva
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/edva
@@ -260,7 +274,23 @@ test: edva
 driver-test: edva
 	./test_driver.sh
 
-check: build driver-test test
+fuzz-smoke: edva
+	@tmp=$$(mktemp -d /tmp/edva_fuzz_smoke_XXXXXX); trap 'rm -rf "$$tmp"' EXIT; \
+	./edva tests/fuzz/fuzz_frontend.dva --fuzz-cov --no-cache -O2 -o "$$tmp/fuzz_frontend" && \
+	EDVA_FUZZ_CORPUS="$(CURDIR)/tests/fuzz/corpus" "$$tmp/fuzz_frontend" && \
+	./edva tests/fuzz/fuzz_codecs.dva --fuzz-cov --no-cache -O2 -o "$$tmp/fuzz_codecs" && \
+	EDVA_FUZZ_CORPUS="$(CURDIR)/tests/fuzz/corpus" "$$tmp/fuzz_codecs" && \
+	$(NU) tools/fuzz_diff.nu --runs 3 --seed $(FUZZ_SEED) --self-test-shrink
+
+fuzz: edva
+	@tmp=$$(mktemp -d /tmp/edva_fuzz_full_XXXXXX); trap 'rm -rf "$$tmp"' EXIT; \
+	./edva tests/fuzz/fuzz_frontend.dva --fuzz-cov --no-cache -O2 -o "$$tmp/fuzz_frontend" && \
+	EDVA_FUZZ=1 EDVA_FUZZ_RUNS=$(FUZZ_RUNS) EDVA_FUZZ_SEED=$(FUZZ_SEED) EDVA_FUZZ_TIME=$(FUZZ_TIME) EDVA_FUZZ_CORPUS="$(CURDIR)/tests/fuzz/corpus" "$$tmp/fuzz_frontend" && \
+	./edva tests/fuzz/fuzz_codecs.dva --fuzz-cov --no-cache -O2 -o "$$tmp/fuzz_codecs" && \
+	EDVA_FUZZ=1 EDVA_FUZZ_RUNS=$(FUZZ_RUNS) EDVA_FUZZ_SEED=$(FUZZ_SEED) EDVA_FUZZ_TIME=$(FUZZ_TIME) EDVA_FUZZ_CORPUS="$(CURDIR)/tests/fuzz/corpus" "$$tmp/fuzz_codecs" && \
+	$(NU) tools/fuzz_diff.nu --runs 10 --seed $(FUZZ_SEED) --self-test-shrink
+
+check: build driver-test fuzz-smoke test
 
 clean:
 	rm -rf build edva_stage1 edva_stage2 edva_stage1.ll edva_stage2.ll

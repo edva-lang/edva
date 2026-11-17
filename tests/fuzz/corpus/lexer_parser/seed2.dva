@@ -1,0 +1,9 @@
+id: #param T: Type, T => T
+id = #param T, v => v
+
+pick: <Int|String> => Int
+pick = r =>
+   r | n => n | s => ?s
+
+xs = 0..5 @> (i => id(i * 2))
+(0, xs) @> (+)

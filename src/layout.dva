@@ -68,6 +68,28 @@ is_niche_utype = ctx, ut =>
          ?r > 0
       | <->
 
+// Classifies a ramification's ABI layout from its payload presence and niche
+// eligibility across 32-bit and 64-bit targets.
+classify_ram_layout: <>, <>, <>, <> => tast::TypedLayout
+classify_ram_layout = has_pos, has_neg, pos_is_niche, neg_is_niche =>
+   ptr_sz = is_32bit_target! | 4 | 8
+   ptr_align = is_32bit_target! | 4 | 8
+   has_pos && !has_neg
+      |
+         pos_is_niche
+            | tast::layout_ram_niche_pos(ptr_sz, ptr_align)
+            | tast::layout_ram_unboxed(ptr_sz * 2, ptr_align)
+      |
+         !has_pos && has_neg
+            |
+               neg_is_niche
+                  | tast::layout_ram_niche_neg(ptr_sz, ptr_align)
+                  | tast::layout_ram_unboxed(ptr_sz * 2, ptr_align)
+            |
+               has_pos || has_neg
+                  | tast::layout_ram_unboxed(ptr_sz * 2, ptr_align)
+                  | tast::layout_ram_flag!
+
 compute_layout: unify::Ctx, unify::UType => tast::TypedLayout
 compute_layout = ctx, ut =>
    ptr_sz = is_32bit_target! | 4 | 8
@@ -87,26 +109,11 @@ compute_layout = ctx, ut =>
             cur_off' = align_up(cur_off', f_align) + flay.size
          total_size = align_up(cur_off', max_align')
          fin_size = %max(total_size, min_rec_sz)
-         tast::layout_aggregate(fin_size, max_align')
+         tast::layout_record(fin_size, max_align')
       [Ram r]
-         has_p = r.pos.has_payload
-         has_n = r.neg.has_payload
-         has_p && !has_n
-            |
-               is_niche_utype(ctx, r.pos.ut)
-                  | tast::layout_scalar(ptr_sz, ptr_align)
-                  | tast::layout_ram(ptr_sz * 2, ptr_align)
-            |
-               !has_p && has_n
-                  |
-                     is_niche_utype(ctx, r.neg.ut)
-                        | tast::layout_scalar(ptr_sz, ptr_align)
-                        | tast::layout_ram(ptr_sz * 2, ptr_align)
-                  |
-                     has_p || has_n
-                        | tast::layout_ram(ptr_sz * 2, ptr_align)
-                        | tast::layout_scalar(1, 1)
-      [Enum] tast::layout_aggregate(ptr_sz * 2, ptr_align)
+         classify_ram_layout(r.pos.has_payload, r.neg.has_payload,
+           is_niche_utype(ctx, r.pos.ut), is_niche_utype(ctx, r.neg.ut))
+      [Enum] tast::TypedLayout(ptr_sz * 2, ptr_align, tast::LayoutKind(Enum))
       [Array]
          tast::TypedLayout(
             ptr_sz * 3, ptr_align, tast::LayoutKind(Array)

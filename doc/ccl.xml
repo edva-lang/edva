@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="CCL" version="1" kateversion="5.0" section="Configuration" extensions="*.ccl" mimetype="text/x-ccl" author="baldgeorge" license="BSD-2-Clause">
+  <highlighting>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <!-- CCL comments (/= and #) -->
+        <RegExpr attribute="Comment" context="#stay" String="^\s*(?:/=|#).*$" />
+
+        <!-- Anonymous list entry (`= item`) -->
+        <RegExpr attribute="Operator" context="CclValue" String="^\s*=" />
+
+        <!-- Keys differentiated by nesting / indentation level -->
+        <RegExpr attribute="KeyLevel0" context="CclValue" String="^[^=\s\r\n][^=\r\n]*(?==)" />
+        <RegExpr attribute="KeyLevel1" context="CclValue" String="^[ \t]{1,3}[^=\s\r\n][^=\r\n]*(?==)" />
+        <RegExpr attribute="KeyLevel2" context="CclValue" String="^[ \t]{4,5}[^=\s\r\n][^=\r\n]*(?==)" />
+        <RegExpr attribute="KeyLevel3" context="CclValue" String="^[ \t]{6,}[^=\s\r\n][^=\r\n]*(?==)" />
+
+        <!-- Multiline continuation lines without `=` are uniform string values -->
+        <RegExpr attribute="String" context="#stay" String="^\s*\S.*$" />
+      </context>
+
+      <context name="CclValue" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Operator" context="#stay" char="=" />
+        <DetectSpaces attribute="Normal Text" context="#stay" />
+        <RegExpr attribute="String" context="#stay" String="\S.*$" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="KeyLevel0" defStyleNum="dsKeyword" color="#89b4fa" bold="1" />
+      <itemData name="KeyLevel1" defStyleNum="dsFunction" color="#94e2d5" />
+      <itemData name="KeyLevel2" defStyleNum="dsDataType" color="#f9e2af" />
+      <itemData name="KeyLevel3" defStyleNum="dsSpecialChar" color="#cba6f7" />
+      <itemData name="Operator" defStyleNum="dsOperator" />
+      <itemData name="String" defStyleNum="dsString" />
+    </itemDatas>
+  </highlighting>
+</language>

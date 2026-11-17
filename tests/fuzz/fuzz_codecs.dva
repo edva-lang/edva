@@ -1,0 +1,197 @@
+#use base64
+#use ccl
+#use csv
+#use flate
+#use hex
+#use json
+#use mem
+#use str
+#use test
+#use url
+#use utf
+
+#type Payload (msg: String, count: Int)
+
+// Helper asserting zero global-arena allocation leakage across a codec check.
+no_global_leak: (() => <>) => <>
+no_global_leak = action =>
+   ga = mem::global_arena!
+   before = mem::provenance(ga).bytes_allocated
+   ok = action!
+   after = mem::provenance(ga).bytes_allocated
+   ok && after == before
+
+fuzz_json: String => <>
+fuzz_json = s =>
+   no_global_leak(!=>
+      json::parse(s)
+         | v =>
+            enc = json::stringify(v)
+            json::parse(enc) | _v2 => <+> | <->
+         | <+>
+   )
+
+fuzz_ccl: String => <>
+fuzz_ccl = s =>
+   no_global_leak(!=>
+      _r = ccl::parse(s, "fuzz.ccl")
+      <+>
+   )
+
+fuzz_csv: String => <>
+fuzz_csv = s =>
+   no_global_leak(!=>
+      _r = csv::read_all(s)
+      <+>
+   )
+
+fuzz_url: String => <>
+fuzz_url = s =>
+   no_global_leak(!=>
+      _u = url::parse(s)
+      _d = url::decode_component(s)
+      <+>
+   )
+
+fuzz_utf: String => <>
+fuzz_utf = s =>
+   no_global_leak(!=>
+      i' = 0
+      0.. @
+         i' !< ?s | -->
+         dec = utf::decode_str_at(s, i')
+         step = dec.1 > 0 | dec.1 | 1
+         i' = i' + step
+      <+>
+   )
+
+fuzz_base64: String => <>
+fuzz_base64 = s =>
+   no_global_leak(!=>
+      _r1 = base64::decode(s, base64::Flavor(Std))
+      _r2 = base64::decode(s, base64::Flavor(Url))
+      <+>
+   )
+
+fuzz_hex: String => <>
+fuzz_hex = s =>
+   no_global_leak(!=>
+      _r = hex::decode(s)
+      <+>
+   )
+
+fuzz_flate: String => <>
+fuzz_flate = s =>
+   no_global_leak(!=>
+      _r1 = flate::inflate_raw(s)
+      _r2 = flate::zlib_decompress(s)
+      _r3 = flate::gzip_decompress(s)
+      <+>
+   )
+
+prop_utf_rt: String => <>
+prop_utf_rt = s =>
+   no_global_leak(!=>
+      b = {?s + 4}
+      i' = 0
+      ok' = <+>
+      0.. @
+         i' !< ?s | -->
+         dec = utf::decode_str_at(s, i')
+         dec.0 < 0
+            |
+               ok' = <->
+               -->
+         utf::append_codepoint(b, dec.0)
+         i' = i' + dec.1
+      ok' && +b == s
+   )
+
+prop_base64_rt: String => <>
+prop_base64_rt = s =>
+   no_global_leak(!=>
+      e1 = base64::encode(s, base64::Flavor(Std))
+      e2 = base64::encode(s, base64::Flavor(Url))
+      d1 = base64::decode(e1, base64::Flavor(Std))
+      d2 = base64::decode(e2, base64::Flavor(Url))
+      ok1 = d1 | x => x == s | <->
+      ok2 = d2 | x => x == s | <->
+      ok1 && ok2
+   )
+
+prop_hex_rt: String => <>
+prop_hex_rt = s =>
+   no_global_leak(!=>
+      d1 = hex::decode(hex::encode(s))
+      d2 = hex::decode(hex::encode_upper(s))
+      ok1 = d1 | x => x == s | <->
+      ok2 = d2 | x => x == s | <->
+      ok1 && ok2
+   )
+
+prop_url_rt: String => <>
+prop_url_rt = s =>
+   no_global_leak(!=>
+      enc = url::encode_component(s)
+      url::decode_component(enc) | dec => dec == s | <->
+   )
+
+prop_flate_rt: String => <>
+prop_flate_rt = s =>
+   no_global_leak(!=>
+      r1 = flate::inflate_raw(flate::deflate_raw(s)) | x => x == s | <->
+      r2 = flate::zlib_decompress(flate::zlib_compress(s)) | x => x == s | <->
+      r3 = flate::gzip_decompress(flate::gzip_compress(s)) | x => x == s | <->
+      r1 && r2 && r3
+   )
+
+prop_json_rt: String => <>
+prop_json_rt = s =>
+   no_global_leak(!=>
+      enc = json::encode(Payload(s, ?s))
+      json::decode(Payload, enc) | dec => dec.msg == s && dec.count == ?s | <->
+   )
+
+prop_csv_rt: String => <>
+prop_csv_rt = s =>
+   no_global_leak(!=>
+      tbl = csv::Table(
+         csv::Row("k", "v", "tail"),
+         csv::Row("item", s, "end")
+      )
+      wire = csv::write_all(tbl)
+      csv::read_all(wire)
+         | back =>
+            ?back == 2 && (back(1)!!)(1)!! == s
+         | <->
+   )
+
+codec_seeds = String{}(
+   "{\"a\":[1,2,3],\"b\":true}",
+   "k = v\n[sec]\nx = 1\n",
+   "https://user@host.example:8080/a/b?q=1#f",
+   "c1,c2\n\"hello, world\",\"q\"\"z\"\n",
+   "SGVsbG8=",
+   "48656c6c6f",
+   ""
+)
+
+test::suite("tier3_codecs_fuzz_and_forall")
+test::fuzz("codecs", codec_seeds, fuzz_json)
+test::fuzz("ccl_codec", codec_seeds, fuzz_ccl)
+test::fuzz("csv_codec", codec_seeds, fuzz_csv)
+test::fuzz("url_codec", codec_seeds, fuzz_url)
+test::fuzz("utf_codec", codec_seeds, fuzz_utf)
+test::fuzz("base64_codec", codec_seeds, fuzz_base64)
+test::fuzz("hex_codec", codec_seeds, fuzz_hex)
+test::fuzz("flate_codec", codec_seeds, fuzz_flate)
+
+test::forall("utf_roundtrip", test::gen_utf8(40), prop_utf_rt)
+test::forall("base64_roundtrip", test::gen_ascii(48), prop_base64_rt)
+test::forall("hex_roundtrip", test::gen_ascii(48), prop_hex_rt)
+test::forall("url_component_roundtrip", test::gen_ascii(48), prop_url_rt)
+test::forall("flate_roundtrip", test::gen_ascii(64), prop_flate_rt)
+test::forall("json_string_roundtrip", test::gen_utf8(30), prop_json_rt)
+test::forall("csv_cell_roundtrip", test::gen_ascii(32), prop_csv_rt)
+
+test::finish!

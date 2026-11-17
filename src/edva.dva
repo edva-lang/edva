@@ -60,7 +60,7 @@
   exports: ast::Names, dynamic_mods: ast::Names, dynamic_paths: ast::Names,
   ok: <>, native_libs: ast::Names, native_pkg_config: ast::Names,
   out_files: ast::Names, out_lines: ast::Ints, out_cols: ast::Ints,
-  loaded_files: ast::Names)
+  out_mods: ast::Names, loaded_files: ast::Names)
 #type SigResult (ti: ast::TypeInfo, ok: <>)
 #type ImportMap String ^ String
 
@@ -100,8 +100,14 @@
    out_files: ast::Names,
    out_lines: ast::Ints,
    out_cols: ast::Ints,
+   out_mods: ast::Names,
    loaded_files: ast::Names,
-   functor_args: ast::Names
+   functor_args: ast::Names,
+   in_dir_module: <>,
+   dir_prefix: String,
+   dir_publics: ast::Names,
+   dir_privates: ast::Names,
+   dir_defined: ast::Names
 )
 
 #type ImportEntry (bound_name: String, canonical_id: String, is_import: <>)
@@ -274,7 +280,7 @@ prefix_lhs_expr = lhs, prefix =>
 
 is_public_name: ast::Names, ast::Names, String => <>
 is_public_name = publics, privates, name =>
-   loaded_has(publics, name) && !loaded_has(privates, name)
+   loaded_has(publics, name) && !loaded_has(privates, "#priv:${name}")
 
 decl_clean_name: String => String
 decl_clean_name = s =>
@@ -314,14 +320,213 @@ prefix_decl_name = name, prefix, publics, privates =>
    pfx = prefix + "::"
    is_pub | pfx + clean | pfx + "#" + clean
 
-prefix_stmt_to_acc: ast::Expr, String, ast::Names, ast::Names, ast::Exprs, <> => ()
-prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
+add_priv_dep_cand: String, String, ast::Names, ast::Names, ast::Names => ()
+add_priv_dep_cand = raw, prefix, cands, needed, work =>
+   raw == "" | --|
+   pfx = prefix != "" | "${prefix}::" | ""
+   no_mod = (pfx != "" && starts_with(raw, pfx)) | raw(?pfx..) | raw
+   clean = decl_clean_name(no_mod)
+   clean != "" && loaded_has(cands, clean) && !loaded_has(needed, clean)
+      |
+         needed += clean
+         work += clean
+
+collect_ti_priv_deps: ast::TypeInfo, String, ast::Names, ast::Names, ast::Names => ()
+collect_ti_priv_deps = ti, prefix, cands, needed, work =>
+   ti
+      [TypeVar name] add_priv_dep_cand(name, prefix, cands, needed, work)
+      [Align a] collect_ti_priv_deps(a.1, prefix, cands, needed, work)
+      [Rec r]
+         r.0 @ f => collect_ti_priv_deps(f.rec_type, prefix, cands, needed, work)
+      [Fn f]
+         f.1 @ p => collect_ti_priv_deps(p, prefix, cands, needed, work)
+         collect_ti_priv_deps(f.3, prefix, cands, needed, work)
+      [Ram r]
+         r.0.has_payload | collect_ti_priv_deps(r.0.payload_record, prefix, cands, needed, work)
+         r.1.has_payload | collect_ti_priv_deps(r.1.payload_record, prefix, cands, needed, work)
+      [Enum es]
+         es @ s =>
+            s.has_payload | collect_ti_priv_deps(s.payload_record, prefix, cands, needed, work)
+      [Array a] collect_ti_priv_deps(a.1, prefix, cands, needed, work)
+      [Map m] collect_ti_priv_deps(m.2, prefix, cands, needed, work)
+      [ThreadId t] collect_ti_priv_deps(t.1, prefix, cands, needed, work)
+
+collect_expr_priv_deps_list: ast::Exprs, String, ast::Names, ast::Names, ast::Names => ()
+collect_expr_priv_deps_list = es, prefix, cands, needed, work =>
+   es @ item => collect_expr_priv_deps(item, prefix, cands, needed, work)
+
+collect_expr_priv_deps: ast::Expr, String, ast::Names, ast::Names, ast::Names => ()
+collect_expr_priv_deps = e, prefix, cands, needed, work =>
+   e
+      [Var v] add_priv_dep_cand(v, prefix, cands, needed, work)
+      [Call c]
+         add_priv_dep_cand(c.fn_name, prefix, cands, needed, work)
+         collect_expr_priv_deps(c.fn_target, prefix, cands, needed, work)
+         collect_expr_priv_deps_list(c.args, prefix, cands, needed, work)
+      [Bin b]
+         collect_expr_priv_deps(b.1, prefix, cands, needed, work)
+         collect_expr_priv_deps(b.2, prefix, cands, needed, work)
+      [Unary u] collect_expr_priv_deps(u.1, prefix, cands, needed, work)
+      [Fn fe] collect_expr_priv_deps(fe.body, prefix, cands, needed, work)
+      [Block b] collect_expr_priv_deps_list(b, prefix, cands, needed, work)
+      [Choice ch]
+         collect_expr_priv_deps(ch.cond, prefix, cands, needed, work)
+         ch.branches @ br =>
+            collect_expr_priv_deps_list(br.case_values, prefix, cands, needed, work)
+            collect_expr_priv_deps(br.pred_fn, prefix, cands, needed, work)
+            collect_expr_priv_deps(br.block, prefix, cands, needed, work)
+            br.variant_names @ vn => add_priv_dep_cand(vn, prefix, cands, needed, work)
+      [Assign a]
+         collect_expr_priv_deps(a.5, prefix, cands, needed, work)
+         collect_expr_priv_deps(a.6, prefix, cands, needed, work)
+         add_priv_dep_cand(a.7, prefix, cands, needed, work)
+         collect_ti_priv_deps(a.8, prefix, cands, needed, work)
+      [TypeDecl td] collect_ti_priv_deps(td.type_info, prefix, cands, needed, work)
+      [Foreign f]
+         f.params @ fp => collect_ti_priv_deps(fp.record_info, prefix, cands, needed, work)
+         collect_ti_priv_deps(f.ret_record_info, prefix, cands, needed, work)
+      [Member m]
+         collect_expr_priv_deps(m.target, prefix, cands, needed, work)
+         collect_expr_priv_deps(m.index_expr, prefix, cands, needed, work)
+      [Record re]
+         re.fields @ fld => collect_expr_priv_deps(fld.val, prefix, cands, needed, work)
+      [KeyAccess ka]
+         collect_expr_priv_deps(ka.target, prefix, cands, needed, work)
+         collect_expr_priv_deps(ka.key, prefix, cands, needed, work)
+      [Cycle cy]
+         collect_expr_priv_deps(cy.iterable, prefix, cands, needed, work)
+         collect_expr_priv_deps(cy.body_fn, prefix, cands, needed, work)
+      [CycleEscape ce]
+         collect_expr_priv_deps(ce.cycle, prefix, cands, needed, work)
+         collect_expr_priv_deps(ce.branch, prefix, cands, needed, work)
+      [Range r]
+         r.has_lhs | collect_expr_priv_deps(r.lhs, prefix, cands, needed, work)
+         r.has_rhs | collect_expr_priv_deps(r.rhs, prefix, cands, needed, work)
+      [NamedArg na] collect_expr_priv_deps(na.val, prefix, cands, needed, work)
+      [Variant v] collect_expr_priv_deps_list(v.args, prefix, cands, needed, work)
+      [TypeCast tc] collect_expr_priv_deps(tc.expr, prefix, cands, needed, work)
+      [Spawn sp]
+         add_priv_dep_cand(sp.fn_name, prefix, cands, needed, work)
+         collect_expr_priv_deps(sp.fn_target, prefix, cands, needed, work)
+         collect_expr_priv_deps_list(sp.args, prefix, cands, needed, work)
+      [Join jn] collect_expr_priv_deps(jn, prefix, cands, needed, work)
+      [Exit ex] collect_expr_priv_deps(ex, prefix, cands, needed, work)
+      [Return r]
+         r.has_val | collect_expr_priv_deps(r.val, prefix, cands, needed, work)
+      [ArrayCreate ac] collect_ti_priv_deps(ac.elem_type, prefix, cands, needed, work)
+      [UserDiag ud] collect_expr_priv_deps(ud.msg, prefix, cands, needed, work)
+      [RawMemory rm]
+         collect_expr_priv_deps(rm.addr, prefix, cands, needed, work)
+         add_priv_dep_cand(rm.rec_name, prefix, cands, needed, work)
+      [SizeOf so] collect_ti_priv_deps(so.rec_type, prefix, cands, needed, work)
+      [AlignOf ao] collect_ti_priv_deps(ao.rec_type, prefix, cands, needed, work)
+      [MapLiteral ml]
+         ml @ p =>
+            collect_expr_priv_deps(p.key, prefix, cands, needed, work)
+            collect_expr_priv_deps(p.value, prefix, cands, needed, work)
+      [CompileTime ct] collect_expr_priv_deps(ct, prefix, cands, needed, work)
+      [Copy cp] collect_expr_priv_deps(cp, prefix, cands, needed, work)
+      [BuilderCreate bc] collect_expr_priv_deps(bc, prefix, cands, needed, work)
+
+collect_priv_candidates_step: ast::Exprs, ast::Names, ast::Names, ast::Names => ()
+collect_priv_candidates_step = stmts, publics, privates, out =>
+   stmts @ st =>
+      st
+         [Block b] collect_priv_candidates_step(b, publics, privates, out)
+         [TypeDecl td]
+            clean = decl_clean_name(td.name)
+            clean != "" && !is_public_name(publics, privates, clean) && !loaded_has(out, clean)
+               | (out += clean)
+         [Foreign f]
+            clean = decl_clean_name(f.dva_name)
+            clean != "" && !is_public_name(publics, privates, clean) && !loaded_has(out, clean)
+               | (out += clean)
+         [Assign a]
+            a.0 != ""
+               |
+                  clean = decl_clean_name(a.0)
+                  clean != "" && !is_public_name(publics, privates, clean) && !loaded_has(out, clean)
+                     | (out += clean)
+
+scan_pub_generic_seeds: ast::Exprs, ast::Names, ast::Names, String, ast::Names, ast::Names, ast::Names, ast::Names => ()
+scan_pub_generic_seeds = stmts, publics, privates, prefix, pub_gen_names, cands, needed, work =>
+   stmts @ st =>
+      st
+         [Block b]
+            scan_pub_generic_seeds(b, publics, privates, prefix, pub_gen_names, cands, needed, work)
+         [TypeDecl td]
+            clean = decl_clean_name(td.name)
+            is_public_name(publics, privates, clean)
+               | collect_ti_priv_deps(td.type_info, prefix, cands, needed, work)
+         [Foreign f]
+            clean = decl_clean_name(f.dva_name)
+            is_public_name(publics, privates, clean)
+               | collect_expr_priv_deps(st, prefix, cands, needed, work)
+         [Assign a]
+            a.0 != ""
+               |
+                  clean = decl_clean_name(a.0)
+                  is_public_name(publics, privates, clean)
+                     |
+                        collect_ti_priv_deps(a.8, prefix, cands, needed, work)
+                        loaded_has(pub_gen_names, clean)
+                           | collect_expr_priv_deps(a.5, prefix, cands, needed, work)
+
+expand_priv_dep_item: ast::Exprs, String, String, ast::Names, ast::Names, ast::Names => ()
+expand_priv_dep_item = stmts, target_clean, prefix, cands, needed, work =>
+   stmts @ st =>
+      st
+         [Block b] expand_priv_dep_item(b, target_clean, prefix, cands, needed, work)
+         [TypeDecl td]
+            decl_clean_name(td.name) == target_clean
+               | collect_ti_priv_deps(td.type_info, prefix, cands, needed, work)
+         [Foreign f]
+            decl_clean_name(f.dva_name) == target_clean
+               | collect_expr_priv_deps(st, prefix, cands, needed, work)
+         [Assign a]
+            a.0 != "" && decl_clean_name(a.0) == target_clean
+               | collect_expr_priv_deps(st, prefix, cands, needed, work)
+
+collect_pub_gen_names_step: ast::Exprs, ast::Names, ast::Names, ast::Names => ()
+collect_pub_gen_names_step = stmts, publics, privates, pub_gen_names =>
+   stmts @ st =>
+      st
+         [Block b]
+            collect_pub_gen_names_step(b, publics, privates, pub_gen_names)
+         [Assign a]
+            a.0 != "" && is_generic_assign(a)
+               |
+                  clean = decl_clean_name(a.0)
+                  is_public_name(publics, privates, clean) &&
+                    !loaded_has(pub_gen_names, clean)
+                     | (pub_gen_names += clean)
+
+collect_pub_generic_priv_deps: ast::Exprs, ast::Names, ast::Names, String => ast::Names
+collect_pub_generic_priv_deps = stmts, publics, privates, prefix =>
+   cands = ast::Names()
+   collect_priv_candidates_step(stmts, publics, privates, cands)
+   ?cands == 0 | --| ast::Names()
+   pub_gen_names = ast::Names()
+   collect_pub_gen_names_step(stmts, publics, privates, pub_gen_names)
+   needed = ast::Names()
+   work = ast::Names()
+   scan_pub_generic_seeds(stmts, publics, privates, prefix, pub_gen_names, cands, needed, work)
+   w_idx' = 0
+   0.. @
+      w_idx' !< ?work | -->
+      cur_w = work(w_idx')!!
+      w_idx' = w_idx' + 1
+      expand_priv_dep_item(stmts, cur_w, prefix, cands, needed, work)
+   needed
+
+prefix_stmt_to_acc: ast::Expr, String, ast::Names, ast::Names, ast::Exprs, <>, ast::Names => ()
+prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface, priv_deps =>
    prefix == ""
       |
          e
             [Block b]
                b @ child =>
-                  prefix_stmt_to_acc(child, "", publics, privates, acc, is_interface)
+                  prefix_stmt_to_acc(child, "", publics, privates, acc, is_interface, priv_deps)
             |
                acc += unmark_private(e)
       |
@@ -330,21 +535,23 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                e
                   [Block b]
                      b @ child =>
-                        prefix_stmt_to_acc(child, prefix, publics, privates, acc, <+>)
+                        prefix_stmt_to_acc(child, prefix, publics, privates, acc, <+>, priv_deps)
                   [TypeDecl t]
                      clean = decl_clean_name(t.name)
                      is_pub = is_public_name(publics, privates, clean)
-                     is_pub
+                     keep_priv = !is_pub && loaded_has(priv_deps, clean)
+                     is_pub || keep_priv
                         |
-                           new_td = prefix + "::" + clean
+                           new_td = is_pub | "${prefix}::${clean}" | "${prefix}::#${clean}"
                            acc += ast::Expr(TypeDecl, ast::TypeDeclExpr(new_td,
                              t.type_info))
                   [Foreign f]
                      clean = decl_clean_name(f.dva_name)
                      is_pub = is_public_name(publics, privates, clean)
-                     is_pub
+                     keep_priv = !is_pub && loaded_has(priv_deps, clean)
+                     is_pub || keep_priv
                         |
-                           new_f = prefix + "::" + clean
+                           new_f = is_pub | "${prefix}::${clean}" | "${prefix}::#${clean}"
                            acc += ast::Expr(Foreign, ast::ForeignFnDecl(f.c_name,
                              new_f, f.abi, f.params,
                              f.return_type, f.ret_record_info, f.is_variable))
@@ -353,19 +560,14 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                         |
                            clean = decl_clean_name(t.0)
                            is_pub = is_public_name(publics, privates, clean)
-                           is_pub
+                           keep_priv = !is_pub && loaded_has(priv_deps, clean)
+                           is_pub || keep_priv
                               |
+                                 new_asgn = is_pub | "${prefix}::${clean}" | "${prefix}::#${clean}"
                                  is_fn = t.5 [Fn]
-                                 new_asgn = prefix + "::" + clean
-                                 is_fn
-                                    |
-                                       is_gen = is_generic_assign(t) ||
-                                         acc_has_generic_sig(acc, new_asgn)
-                                       is_gen
-                                          |
-                                             acc += ast::Expr(Assign, (
-                                                new_asgn, t.1, t.2,
-                                                t.3, t.4, t.5, t.6, t.7, t.8))
+                                 should_add = keep_priv || !is_fn ||
+                                   is_generic_assign(t) || acc_has_generic_sig(acc, new_asgn)
+                                 should_add
                                     |
                                        acc += ast::Expr(Assign, (
                                           new_asgn, t.1, t.2,
@@ -397,7 +599,7 @@ prefix_stmt_to_acc = e, prefix, publics, privates, acc, is_interface =>
                        f.return_type, f.ret_record_info, f.is_variable))
                   [Block b]
                      b @ child =>
-                        prefix_stmt_to_acc(child, prefix, publics, privates, acc, <->)
+                        prefix_stmt_to_acc(child, prefix, publics, privates, acc, <->, priv_deps)
                   |
                      acc += e
 
@@ -1206,7 +1408,7 @@ rewrite_import_expr = e, table, locals =>
          fe.ct_params @ cp =>
             cp != "" | (fn_locals += cp; fn_locals += "#ct:" + cp)
          new_body = rewrite_import_expr(fe.body, table, fn_locals)
-         ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params, new_body))
+         ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params, new_body, fe.line, fe.col))
       [Block be]
          blk_locals = ++locals
          new_exprs = ast::Exprs()
@@ -1488,8 +1690,8 @@ scan_module_dependencies = src, path =>
 
 // Seed aliases using the same export table that rewrites value imports.
 // Canonical entries also resolve types referenced inside imported signatures.
-seed_imported_types: parser::Parser, ast::Exprs, ImportMap => ()
-seed_imported_types = p, exprs, table =>
+seed_imported_types: parser::Parser, ast::Exprs, ImportMap, String => ()
+seed_imported_types = p, exprs, table, cur_mod =>
    exprs @ e =>
       entry = e
          [TypeDecl td] <+ parser::TypeEntry(td.name, td.type_info) +>
@@ -1509,11 +1711,16 @@ seed_imported_types = p, exprs, table =>
             name = decl [TypeDecl td] td.name [Assign a] a.0 | ""
             name != "" && dep_graph::decl_module(name, 0) == mod
                |
-                  bare = name(?mod + 2..)
+                  bare = mod == "" | name | name(?mod + 2..)
                   clean = starts_with(bare, "#") | bare(1..) | bare
                   !loaded_has(bound, clean) | local_types ^ clean = name
          sig = rewrite_import_type_info(te.ti, local_types)
          p.user_types = parser::add_type(p.user_types, te.name, sig)
+         cur_mod != "" && mod == cur_mod
+            |
+               own_bare = te.name(?cur_mod + 2..)
+               own_clean = starts_with(own_bare, "#") | own_bare(1..) | own_bare
+               p.user_types = parser::add_type(p.user_types, own_clean, sig)
          table @ canonical, alias =>
             canonical == te.name
                | p.user_types = parser::add_type(p.user_types, alias, sig)
@@ -1528,6 +1735,207 @@ expr_is_import_or_modparam = st =>
          b @ item => !(item [Import, ModParam]) | ok' = <->
          ok'
       | <->
+
+qualify_type_info_map: ast::TypeInfo, ImportMap => ast::TypeInfo
+qualify_type_info_map = ti, table =>
+   ti
+      [TypeVar name]
+         table ^? name
+            | ast::TypeInfo(TypeVar, (table ^ name | _ | name))
+            | ti
+      [Align a]
+         ast::TypeInfo(Align, (a.0, qualify_type_info_map(a.1, table)))
+      [Rec r]
+         new_fields = r.0 @> f =>
+            ast::RecordFieldType(f.name, f.val_type,
+              qualify_type_info_map(f.rec_type, table),
+              f.has_default, f.default_expr)
+         ast::TypeInfo(Rec, (new_fields, r.1, r.2, r.3, r.4, r.5))
+      [Fn f]
+         new_p_tis = f.1 @> pti => qualify_type_info_map(pti, table)
+         new_ret_ti = qualify_type_info_map(f.3, table)
+         ast::TypeInfo(Fn, (f.0, new_p_tis, f.2, new_ret_ti, f.4))
+      [Ram r]
+         s0 = r.0
+         s1 = r.1
+         ast::TypeInfo(Ram, (
+            ast::RamSlotInfo(s0.has_payload, s0.payload_type,
+              qualify_type_info_map(s0.payload_record, table)),
+            ast::RamSlotInfo(s1.has_payload, s1.payload_type,
+              qualify_type_info_map(s1.payload_record, table))))
+      [Enum es]
+         new_es = es @> s =>
+            ast::EnumSlotInfo(s.label, s.has_payload, s.payload_type,
+              qualify_type_info_map(s.payload_record, table))
+         ast::TypeInfo(Enum, new_es)
+      [Array a]
+         ast::TypeInfo(Array, (a.0, qualify_type_info_map(a.1, table), a.2))
+      [Map m]
+         ast::TypeInfo(Map, (m.0, m.1, qualify_type_info_map(m.2, table)))
+      [ThreadId t]
+         ast::TypeInfo(ThreadId, (t.0, qualify_type_info_map(t.1, table)))
+      | ti
+
+qualify_fparams_type_infos: ast::FParams, ImportMap => ast::FParams
+qualify_fparams_type_infos = params, table =>
+   params @> p => ast::ForeignFnParam(p.name, p.param_type,
+     qualify_type_info_map(p.record_info, table))
+
+qualify_decl_type_infos: ast::Expr, ImportMap => ast::Expr
+qualify_decl_type_infos = e, table =>
+   e
+      [Block b]
+         new_bs = b @> child => qualify_decl_type_infos(child, table)
+         ast::Expr(Block, new_bs)
+      [TypeDecl td]
+         ast::Expr(TypeDecl, ast::TypeDeclExpr(td.name,
+           qualify_type_info_map(td.type_info, table)))
+      [Assign a]
+         ast::Expr(Assign, (a.0, a.1, a.2, a.3, a.4,
+           qualify_decl_type_infos(a.5, table),
+           qualify_decl_type_infos(a.6, table),
+           a.7, qualify_type_info_map(a.8, table)))
+      [Foreign f]
+         ast::Expr(Foreign, ast::ForeignFnDecl(f.c_name, f.dva_name, f.abi,
+           qualify_fparams_type_infos(f.params, table), f.return_type,
+           qualify_type_info_map(f.ret_record_info, table), f.is_variable))
+      [Fn fe]
+         ast::Expr(Fn, ast::FnExpr(fe.params, fe.ct_params,
+           qualify_decl_type_infos(fe.body, table), fe.line, fe.col))
+      [Choice ch]
+         new_branches = ch.branches @> br =>
+            new_cases = br.case_values @> cv => qualify_decl_type_infos(cv, table)
+            ast::ChoiceBranch(br.kind, new_cases,
+              qualify_decl_type_infos(br.pred_fn, table),
+              br.variant_names, br.bind_vars, br.is_identity_extractor,
+              qualify_decl_type_infos(br.block, table))
+         ast::Expr(Choice, ast::ChoiceExpr(
+           qualify_decl_type_infos(ch.cond, table), ch.is_exhaustive,
+           new_branches))
+      [Call c]
+         new_args = c.args @> arg => qualify_decl_type_infos(arg, table)
+         ast::Expr(Call, ast::CallExpr(c.fn_name,
+           qualify_decl_type_infos(c.fn_target, table),
+           new_args, c.line, c.col))
+      [Bin b]
+         ast::Expr(Bin, (b.0, qualify_decl_type_infos(b.1, table),
+           qualify_decl_type_infos(b.2, table)))
+      [Unary u]
+         ast::Expr(Unary, (u.0, qualify_decl_type_infos(u.1, table)))
+      [ArrayCreate ac]
+         ast::Expr(ArrayCreate, ast::ArrayCreateExpr(
+           qualify_type_info_map(ac.elem_type, table), ac.cap))
+      [SizeOf so]
+         ast::Expr(SizeOf, ast::SizeOfExpr(so.val_type,
+           qualify_type_info_map(so.rec_type, table)))
+      [AlignOf ao]
+         ast::Expr(AlignOf, ast::AlignOfExpr(ao.val_type,
+           qualify_type_info_map(ao.rec_type, table)))
+      [RawMemory rm]
+         new_rname = table ^? rm.rec_name | (table ^ rm.rec_name | _ | rm.rec_name) | rm.rec_name
+         ast::Expr(RawMemory, ast::RawMemoryExpr(
+           qualify_decl_type_infos(rm.addr, table), rm.load_type, new_rname))
+      | e
+
+collect_self_type_map_exprs: ast::Exprs, String, ast::Names, ast::Names, ImportMap, ImportMap => ()
+collect_self_type_map_exprs = exprs, prefix, publics, privates, shadowed, out =>
+   exprs @ st =>
+      st
+         [Block b]
+            collect_self_type_map_exprs(b, prefix, publics, privates, shadowed, out)
+         [TypeDecl td]
+            clean = decl_clean_name(td.name)
+            clean != "" && !(shadowed ^? clean) && !(out ^? clean)
+               | (out ^ clean = prefix_decl_name(td.name, prefix, publics, privates))
+
+append_unique_names: ast::Names, ast::Names => ()
+append_unique_names = dest, src =>
+   src @ s =>
+      !loaded_has(dest, s) | (dest += s)
+
+is_fwd_assign_expr: ast::Expr => <>
+is_fwd_assign_expr = e =>
+   e [Var v] (v == "<fwd>") | <->
+
+collect_defined_names_in_exprs: ast::Exprs, ast::Names => ()
+collect_defined_names_in_exprs = exprs, out =>
+   exprs @ st =>
+      st
+         [Assign t]
+            t.0 != "" && !is_fwd_assign_expr(t.5)
+               |
+                  clean = decl_clean_name(t.0)
+                  clean != "" && !loaded_has(out, clean) | (out += clean)
+         [Block b]
+            collect_defined_names_in_exprs(b, out)
+
+mark_iface_defined_stubs: ast::Exprs, Int, String, ast::Names => ()
+mark_iface_defined_stubs = exprs, start_idx, prefix, defined =>
+   prefix == "" | --|
+   pfx = "${prefix}::"
+   start_idx..?exprs @ i =>
+      exprs(i)!!
+         [Assign a]
+            a.0 != "" && is_fwd_assign_expr(a.5) && starts_with(a.0, pfx)
+               |
+                  clean = decl_clean_name(a.0(?pfx..))
+                  loaded_has(defined, clean)
+                     |
+                        exprs(i) = ast::Expr(Assign, (a.0, a.1, a.2, a.3, a.4,
+                          a.5, ast::Expr(Var, "<iface>"), a.7, a.8)) !| _
+
+find_visibility_conflict: ast::Names, ast::Names => String
+find_visibility_conflict = pubs, privs =>
+   pubs @ p =>
+      loaded_has(privs, "#priv:${p}") | --| p
+   ""
+
+normalize_dir_module_visibility: Loader, Int, String, ast::Names, ast::Names, <> => ()
+normalize_dir_module_visibility = ldr, start_idx, prefix, pubs, defs, is_iface =>
+   prefix == "" | --|
+   priv_pfx = "${prefix}::#"
+   pub_pfx = "${prefix}::"
+   pub_retype = ImportMap()
+   pubs @ pn => (pub_retype ^ "${priv_pfx}${pn}" = "${pub_pfx}${pn}")
+   start_idx..?ldr.out_exprs @ i =>
+      cur_e = ldr.out_exprs(i)!!
+      retyped_e = qualify_decl_type_infos(cur_e, pub_retype)
+      final_e = retyped_e
+         [Assign a]
+            starts_with(a.0, priv_pfx)
+               |
+                  clean = a.0(?priv_pfx..)
+                  loaded_has(pubs, clean)
+                     |
+                        ast::Expr(Assign, (
+                          "${pub_pfx}${clean}", a.1, a.2, a.3, a.4, a.5, a.6,
+                          a.7, a.8))
+                     | retyped_e
+               | retyped_e
+         [TypeDecl td]
+            starts_with(td.name, priv_pfx)
+               |
+                  clean = td.name(?priv_pfx..)
+                  loaded_has(pubs, clean)
+                     |
+                        ast::Expr(TypeDecl, ast::TypeDeclExpr(
+                          "${pub_pfx}${clean}", td.type_info))
+                     | retyped_e
+               | retyped_e
+         [Foreign f]
+            starts_with(f.dva_name, priv_pfx)
+               |
+                  clean = f.dva_name(?priv_pfx..)
+                  loaded_has(pubs, clean)
+                     |
+                        ast::Expr(Foreign, ast::ForeignFnDecl(
+                          f.c_name, "${pub_pfx}${clean}", f.abi, f.params,
+                          f.return_type, f.ret_record_info, f.is_variable))
+                     | retyped_e
+               | retyped_e
+         | retyped_e
+      ldr.out_exprs(i) = final_e !| _
+   is_iface | mark_iface_defined_stubs(ldr.out_exprs, start_idx, prefix, defs)
 
 load_stmts: ast::Exprs, String, String, Loader, String, parser::Parser, <>, String => <>
 load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
@@ -1609,20 +2017,23 @@ load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
                                        prev_dlen = ?ldr.out_exprs
                                        prefix_stmt_to_acc(de, cid,
                                          dppr.publics, dppr.privates,
-                                         ldr.out_exprs, <->)
+                                         ldr.out_exprs, <->, ast::Names())
                                        added_d = ?ldr.out_exprs - prev_dlen
                                        added_d > 0
                                           |
                                              ldr_df = ldr.out_files
                                              ldr_dl = ldr.out_lines
                                              ldr_dc = ldr.out_cols
+                                             ldr_dm = ldr.out_mods
                                              added_d @ _di =>
                                                 ldr_df += path
                                                 ldr_dl += 1
                                                 ldr_dc += 1
+                                                ldr_dm += cid
                                              ldr.out_files = ldr_df
                                              ldr.out_lines = ldr_dl
                                              ldr.out_cols = ldr_dc
+                                             ldr.out_mods = ldr_dm
                   saved_dep = ldr.is_dep
                   ldr.is_dep = <+>
                   res = load_resolved(resolved, imp.module_path, ldr)
@@ -1651,7 +2062,7 @@ load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
          !ok'
             | <->
             |
-               seed_imported_types(ppr, ldr.out_exprs, import_table)
+               seed_imported_types(ppr, ldr.out_exprs, import_table, prefix)
                lexer::lex_set_file(path)
                parsed = parser::parse_program(ppr)
                !<>(parsed) | --| <->
@@ -1661,10 +2072,15 @@ load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
                privates = ppr.privates
                lines = ppr.top_lines
                cols = ppr.top_cols
-               is_pkg && ?publics == 0
+               in_this_dir = ldr.in_dir_module && ldr.dir_prefix == prefix
+               in_this_dir
                   |
-                     log::error $ "E5036: #use " + imp_path +
-                       ": module exports nothing (no #public)"
+                     append_unique_names(ldr.dir_publics, publics)
+                     append_unique_names(ldr.dir_privates, privates)
+                     collect_defined_names_in_exprs(actual, ldr.dir_defined)
+               !in_this_dir && is_pkg && ?publics == 0
+                  |
+                     log::error $ "E5036: #use ${imp_path}: module exports nothing (no #public)"
                      --| <->
                !ldr.is_dep
                   |
@@ -1692,34 +2108,71 @@ load_stmts = deps, base, prefix, ldr, path, ppr, is_pkg, imp_path =>
                                  fields @ field =>
                                     import_table ^ ("#field:" + td.name + "." + field) = td.name
                                     import_table ^ ("#field:" + bare + "." + field) = td.name
+                     self_type_table = ImportMap()
+                     prefix != ""
+                        |
+                           pfx_d = "${prefix}::"
+                           ldr.out_exprs @ oe =>
+                              oe [TypeDecl otd]
+                                 starts_with(otd.name, pfx_d)
+                                    |
+                                       bare_o = decl_clean_name(otd.name(?pfx_d..))
+                                       bare_o != "" && !(import_table ^? bare_o) &&
+                                         !(self_type_table ^? bare_o)
+                                          | (self_type_table ^ bare_o = otd.name)
+                           collect_self_type_map_exprs(actual, prefix, publics,
+                             privates, import_table, self_type_table)
                      // A functor instance is compiled into its importer's unit.
                      is_iface = ldr.is_modular && ldr.is_dep && ?my_args == 0
+                     rewritten_stmts = ast::Exprs()
+                     rw_lines = ast::Ints()
+                     rw_cols = ast::Ints()
                      st_idx' = 0
                      actual @ st2 =>
                         is_imp = expr_is_import_or_modparam(st2)
                         !is_imp
                            |
-                              cur_st = rewrite_import_expr(st2, import_table,
+                              cur_st0 = rewrite_import_expr(st2, import_table,
                                 ast::Names())
-                              prev_len = ?ldr.out_exprs
-                              prefix_stmt_to_acc(cur_st, prefix, publics,
-                                privates, ldr.out_exprs, is_iface)
-                              added = ?ldr.out_exprs - prev_len
-                              added > 0
-                                 |
-                                    f_line = lines(st_idx') | _ | 1
-                                    f_col = cols(st_idx') | _ | 1
-                                    ldr_f = ldr.out_files
-                                    ldr_l = ldr.out_lines
-                                    ldr_c = ldr.out_cols
-                                    added @ _ai =>
-                                       ldr_f += path
-                                       ldr_l += f_line
-                                       ldr_c += f_col
-                                    ldr.out_files = ldr_f
-                                    ldr.out_lines = ldr_l
-                                    ldr.out_cols = ldr_c
+                              cur_st = prefix != ""
+                                 | qualify_decl_type_infos(cur_st0, self_type_table)
+                                 | cur_st0
+                              rewritten_stmts += cur_st
+                              rw_lines += (lines(st_idx') | _ | 1)
+                              rw_cols += (cols(st_idx') | _ | 1)
                         st_idx' = st_idx' + 1
+                     priv_deps = is_iface
+                        | collect_pub_generic_priv_deps(rewritten_stmts, publics, privates, prefix)
+                        | ast::Names()
+                     file_start_idx = ?ldr.out_exprs
+                     rewritten_stmts @ cur_st, rw_i =>
+                        prev_len = ?ldr.out_exprs
+                        prefix_stmt_to_acc(cur_st, prefix, publics,
+                          privates, ldr.out_exprs, is_iface, priv_deps)
+                        added = ?ldr.out_exprs - prev_len
+                        added > 0
+                           |
+                              f_line = rw_lines(rw_i) | _ | 1
+                              f_col = rw_cols(rw_i) | _ | 1
+                              ldr_f = ldr.out_files
+                              ldr_l = ldr.out_lines
+                              ldr_c = ldr.out_cols
+                              ldr_m = ldr.out_mods
+                              added @ _ai =>
+                                 ldr_f += path
+                                 ldr_l += f_line
+                                 ldr_c += f_col
+                                 ldr_m += prefix
+                              ldr.out_files = ldr_f
+                              ldr.out_lines = ldr_l
+                              ldr.out_cols = ldr_c
+                              ldr.out_mods = ldr_m
+                     is_iface
+                        |
+                           file_defs = ast::Names()
+                           collect_defined_names_in_exprs(actual, file_defs)
+                           mark_iface_defined_stubs(ldr.out_exprs, file_start_idx,
+                             prefix, file_defs)
                      ok'
 
 load_single_file: String, String, <>, String, Loader => <>
@@ -1757,13 +2210,45 @@ load_file = path, prefix, is_pkg, imp_path, ldr =>
 
 load_dir_files: ast::Names, String, String, <>, String, Loader => <>
 load_dir_files = files, dir_path, prefix, is_pkg, imp_path, ldr =>
+   prev_in_dir = ldr.in_dir_module
+   prev_dir_prefix = ldr.dir_prefix
+   prev_pubs = ldr.dir_publics
+   prev_privs = ldr.dir_privates
+   prev_defs = ldr.dir_defined
+   start_idx = ?ldr.out_exprs
+   is_iface_dir = ldr.is_modular && ldr.is_dep && ?ldr.functor_args == 0
+   ldr.in_dir_module = <+>
+   ldr.dir_prefix = prefix
+   ldr.dir_publics = ast::Names()
+   ldr.dir_privates = ast::Names()
+   ldr.dir_defined = ast::Names()
    ok' = <+>
    files @ fname =>
       !ok' | -->
       child_path = path_join(dir_path, fname)
       res = load_single_file(child_path, prefix, is_pkg, imp_path, ldr)
       !res | ok' = <->
-   ok'
+   pubs = ldr.dir_publics
+   privs = ldr.dir_privates
+   defs = ldr.dir_defined
+   ldr.in_dir_module = prev_in_dir
+   ldr.dir_prefix = prev_dir_prefix
+   ldr.dir_publics = prev_pubs
+   ldr.dir_privates = prev_privs
+   ldr.dir_defined = prev_defs
+   !ok' | --| <->
+   conflict = find_visibility_conflict(pubs, privs)
+   conflict != ""
+      |
+         loader_error(3033, dir_path,
+           "E3033: Visibility conflict for '${conflict}': declared both #public and #private")
+         --| <->
+   is_pkg && ?pubs == 0
+      |
+         log::error $ "E5036: #use ${imp_path}: module exports nothing (no #public)"
+         --| <->
+   normalize_dir_module_visibility(ldr, start_idx, prefix, pubs, defs, is_iface_dir)
+   <+>
 
 load_resolved: ResolvedModule, String, Loader => <>
 load_resolved = resolved, imp_path, ldr =>
@@ -1830,7 +2315,8 @@ load_all = target, target_prefix, is_modular, import_map_arg =>
          ldr = Loader(ast::Exprs(), ast::Names(), ast::Names(),
            ast::Names(), ast::Names(), is_modular, <->,
            map, ast::Names(), ast::Names(), ast::Ints(), ast::Ints(),
-           ast::Names(), ast::Names())
+           ast::Names(), ast::Names(), ast::Names(), <->, "",
+           ast::Names(), ast::Names(), ast::Names())
          map.has_map && map.map_path != "" | ldr.loaded_files += map.map_path
          tres = load_target(target, target_prefix, ldr)
          folded_exprs = tres | parser::fold_program_consts(ldr.out_exprs) | ldr.out_exprs
@@ -1838,13 +2324,13 @@ load_all = target, target_prefix, is_modular, import_map_arg =>
            ldr.dynamic_mods, ldr.dynamic_paths, tres,
            map.native_libs, map.native_pkg_config,
            ldr.out_files, ldr.out_lines, ldr.out_cols,
-           ldr.loaded_files)
+           ldr.out_mods, ldr.loaded_files)
       |
          ModuleLoad(ast::Exprs(), ast::Names(), ast::Names(),
            ast::Names(), ast::Names(), <->,
            ast::Names(), ast::Names(),
            ast::Names(), ast::Ints(), ast::Ints(),
-           ast::Names())
+           ast::Names(), ast::Names())
 
 strip_trailing_slash: String => String
 strip_trailing_slash = s => path::strip_trailing_sep(s)
@@ -1993,13 +2479,14 @@ collect_link_libs = stmts =>
    import_map: String,
    cache_dir: String,
    no_cache: <>,
-   cflags: ast::Names
+   cflags: ast::Names,
+   fuzz_cov: <> = <->
 )
 
 init_opts: Int => CliOpts
 init_opts = ignored =>
    CliOpts("", "", <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
-     <->, <+>, "", <->, <->, "", "", "", <->, ast::Names())
+     <->, <+>, "", <->, <->, "", "", "", <->, ast::Names(), <->)
 
 find_char_at: String, Int, Int => Int
 find_char_at = s, i, ch =>
@@ -2424,7 +2911,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    clang_err = opts.repl_mode | 6003 | 5013
    cg_opts = codegen::CodegenOpts(opts.triple, opts.no_runtime, opts.no_main,
      dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
-     opts.is_module, opts.module_name)
+     opts.is_module, opts.module_name, opts.fuzz_cov)
    src_f = opts.target != "" | opts.target | "<eval>"
    annotate::set_source_file(src_f)
    annotate::set_target_triple(opts.triple)
@@ -2441,7 +2928,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
                cache_flags = pkg::CacheCodegenFlags(opts.is_module, opts.is_shared,
                  opts.no_runtime, opts.no_main, opts.module_name)
-               ast_summary = ""
+               ast_summary = opts.fuzz_cov | "fuzz-cov" | ""
                opt_str = opts.opt != "" | opts.opt | "-O2"
                target_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
                bkr = pkg::compute_ir_cache_key(opts.target, lfiles, nat_libs, nat_pkg,
@@ -2727,6 +3214,15 @@ is_writer_line = line =>
      line(..11) == "libc::write" ||
      line(..10) == "libc::puts"
 
+last_non_binding_stmt: tast::TypedStmts => < tast::TypedStmt | >
+last_non_binding_stmt = stmts =>
+   n = ?stmts
+   n @ k =>
+      st = stmts(n - 1 - k)!!
+      is_b = st [Binding]
+      !is_b | --| <+ st +>
+   <-->
+
 line_returns_unit: CliOpts, String, String, String => <>
 line_returns_unit = opts, temp_src, session_src, line =>
    raw_src = session_src == "" | line | session_src + "\n" + line
@@ -2741,16 +3237,15 @@ line_returns_unit = opts, temp_src, session_src, line =>
                el = annotate::annotate_program(prog)
                el
                   | succ =>
-                     n = ?succ.prog
-                     n == 0
-                        | <+>
-                        |
-                           last_st = succ.prog(n - 1)!!
+                     last_opt = last_non_binding_stmt(succ.prog)
+                     last_opt
+                        | last_st =>
                            last_st
                               [Expr te]
                                  c_ut = unify::canon(succ.ctx, te.ut)
                                  c_ut [Prim p] (p [Unit]) | <->
                               | <+>
+                        | <+>
                   | <->
 
 prog_is_non_unit_expr: ast::Expr => <>
@@ -2758,17 +3253,16 @@ prog_is_non_unit_expr = prog =>
    el = annotate::annotate_program(prog)
    el
       | succ =>
-         n = ?succ.prog
-         n == 0
-            | <->
-            |
-               last_st = succ.prog(n - 1)!!
+         last_opt = last_non_binding_stmt(succ.prog)
+         last_opt
+            | last_st =>
                last_st
                   [Expr te]
                      c_ut = unify::canon(succ.ctx, te.ut)
                      is_u = c_ut [Prim p] (p [Unit]) | <->
                      !is_u
                   | <->
+            | <->
       | <->
 
 active_repl_src: String
@@ -3306,6 +3800,7 @@ compiler_cli_opts = !=>
       )),
       cli::cmd("test", "Run package tests or a single test .dva file", cli::Opts(
          cli::pos("target-path", ".", "Package directory or test .dva file"),
+         cli::opt("fuzz", <->, "Enable coverage-guided fuzzing mode"),
          cli::opt("locked", <->, "Require edva.lock.ccl to be up to date"),
          cli::opt("offline", <->, "Resolve dependencies from local store/vendor only"),
          cli::opt("store", "", "Package content store directory", not_flag),
@@ -3385,6 +3880,7 @@ compiler_cli_opts = !=>
       cli::opt("cache", "", "Compilation cache directory path"),
       cli::opt("no-cache", <->, "Disable compilation cache"),
       cli::opt("cflag", cli::Args(), "Pass additional flag to clang"),
+      cli::opt("fuzz-cov", <->, "Instrument branches and functions with coverage bitmap for fuzzing"),
       // Direct compilation positional arguments
       cli::pos("input", "", "Input .dva file or directory"),
       cli::pos("output", "", "Output binary path")
@@ -3453,6 +3949,7 @@ parse_and_dispatch_cli = !=>
    opts.cache_dir = cli::str(res, "cache")
    opts.no_cache = cli::flag(res, "no-cache")
    opts.cflags = cli::strs(res, "cflag")
+   opts.fuzz_cov = cli::flag(res, "fuzz-cov")
 
    opt_lvl = cli::str(res, "opt")
    opt_flag = opt_lvl(..2) == "-O" | opt_lvl | "-O" + opt_lvl
@@ -3548,6 +4045,7 @@ run_eval = opts =>
    annotate::set_target_triple(opts.triple)
    annotate::set_program_locs(eval_load.out_files,
      eval_load.out_lines, eval_load.out_cols)
+   annotate::set_program_mods(eval_load.out_mods)
    eval_prog' = ast::Expr(Block, eval_load.exprs)
    eval_exports' = eval_load.exports
    eval_dyn_mods' = eval_load.dynamic_mods
@@ -3580,6 +4078,7 @@ run_eval = opts =>
                      eval_files' = w_load.loaded_files
                      annotate::set_program_locs(w_load.out_files,
                        w_load.out_lines, w_load.out_cols)
+                     annotate::set_program_mods(w_load.out_mods)
    eval_opts = opts
    eval_run_default | eval_opts.no_cache = <+>
    def_triple = get_default_target_triple(0)
@@ -3632,6 +4131,7 @@ lsp_typecheck_doc = path =>
       |
          annotate::set_source_file(path)
          annotate::set_program_locs(res.out_files, res.out_lines, res.out_cols)
+         annotate::set_program_mods(res.out_mods)
          prog = ast::Expr(Block, res.exprs)
          el_res = annotate::annotate_program(prog)
          el_res
@@ -3737,6 +4237,7 @@ run_driver = ignored =>
          annotate::set_target_triple(opts.triple)
          annotate::set_program_locs(load_result.out_files,
            load_result.out_lines, load_result.out_cols)
+         annotate::set_program_mods(load_result.out_mods)
          program = ast::Expr(Block, load_result.exprs)
          should_verify_only = opts.typed_ast &&
            !opts.run_exec && !opts.ir_only && (opts.outpath == "")

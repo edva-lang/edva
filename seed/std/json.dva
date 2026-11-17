@@ -10,13 +10,11 @@
 // A JSON document parses into a recursive `Value` enum: String(String),
 // Number(Float), Boolean(<>), Null, Array(Value[]) and
 // Object(pairs[]) where pairs are (key, value) records. Array/Object
-// hold slice views over the parse arenas (the module-level `vals`/
-// `pairs` growable arrays), which the parser fills element-by-element.
-// The parser is a stateful recursive descent over the module-level
-// `src`/`pos`; '::=' mutates those globals (a function's '=' would
-// shadow them with a fresh local). Errors are the core Error ram:
-// `parse` returns <Value | Error>, and unwrapping the Error branch
-// aborts with the diagnostic.
+// hold slice views over the parse arenas (`Values`/`Pairs` growable arrays),
+// filled element-by-element. Parsing runs reentrantly over an instance-owned
+// `Scanner` record `(src, pos)` allocated per parse invocation, with zero
+// module-global mutable state. Errors use the core Error ram: `parse` returns
+// `<Value | Error>`, and unwrapping the Error branch aborts with the diagnostic.
 
 #use const
 #use ascii
@@ -37,28 +35,27 @@
    #type Pairs (key: String, value: Value){}
    #type Result <Value | Error>
 
-src: String
-pos: Int
+#type Scanner (src: String, pos: Int)
 
 // --- scanning ------------------------------------------------
 
-// True when src[p] exists and is JSON whitespace.
-is_ws_at: Int => i1
-is_ws_at = p => p < ?src && str::is_ws(src(p))
+// True when sc.src[p] exists and is JSON whitespace.
+is_ws_at: Scanner, Int => i1
+is_ws_at = sc, p => p < ?sc.src && str::is_ws(sc.src(p))
 
 // The first index at or after p that is not whitespace.
-skip_ws: Int => Int
-skip_ws = p =>
-   is_ws_at(p) | skip_ws(p + 1) | p
+skip_ws: Scanner, Int => Int
+skip_ws = sc, p =>
+   is_ws_at(sc, p) | skip_ws(sc, p + 1) | p
 
 // The value of a hex digit, or -1 when not a hex digit.
 hexval: Int => Int
 hexval = h =>
    ascii::hex_value(h) | _ | -1
 
-// True when src[p] exists and is a hex digit.
-is_hex_at: Int => <>
-is_hex_at = p => p < ?src && ascii::is_hex(src(p))
+// True when sc.src[p] exists and is a hex digit.
+is_hex_at: Scanner, Int => <>
+is_hex_at = sc, p => p < ?sc.src && ascii::is_hex(sc.src(p))
 
 // The String spelling of a Flag boolean.
 bool_str: i1 => String
@@ -67,38 +64,38 @@ bool_str = b => b | "true" | "false"
 // --- string scanning ------------------------------------------------
 
 // Validate and append a raw UTF-8 sequence starting at index k with lead byte c0.
-scan_utf8_char: Builder, Int, Int => <Int | Error>
-scan_utf8_char = b, k, _c0 =>
-   dec = utf::decode_str_at(src, k)
+scan_utf8_char: Scanner, Builder, Int, Int => <Int | Error>
+scan_utf8_char = sc, b, k, _c0 =>
+   dec = utf::decode_str_at(sc.src, k)
    dec.0 < 0
       | <- Error(400, "json: invalid UTF-8 in string", "std/json.dva", 0, 0, (k, 0)) +>
       |
-         b += src(k..k + dec.1)
-         scan_string(b, k + dec.1)
+         b += sc.src(k..k + dec.1)
+         scan_string(sc, b, k + dec.1)
 
 // Scan the body of a string literal starting at index k (after the
 // opening quote), appending decoded bytes to b. Returns <Int | Error>:
 // the positive slot is the index of the closing quote.
-scan_string: Builder, Int => <Int | Error>
-scan_string = b, k =>
-   k !< ?src | <- Error(400, "json: unterminated string", "std/json.dva", 0, 0, (k, 0)) +>
-   c = src(k)
+scan_string: Scanner, Builder, Int => <Int | Error>
+scan_string = sc, b, k =>
+   k !< ?sc.src | --| <- Error(400, "json: unterminated string", "std/json.dva", 0, 0, (k, 0)) +>
+   c = sc.src(k)
    c
    ['"] <+ k ->
-   ['\\] parse_escape(b, k)
+   ['\\] parse_escape(sc, b, k)
    [< 0x20] <- Error(400, "json: control character in string",
    "std/json.dva", 0, 0, (k, 0)) +>
    [< 0x80]
       b += c
-      scan_string(b, k + 1)
+      scan_string(sc, b, k + 1)
    |
-      scan_utf8_char(b, k, c)
+      scan_utf8_char(sc, b, k, c)
 
 // Handle a backslash escape at index k (k is the '\').
-parse_escape: Builder, Int => <Int | Error>
-parse_escape = b, k =>
-   e = k + 1 [< ?src] src(k + 1) | -1
-   e == 'u | --| parse_unicode(b, k)
+parse_escape: Scanner, Builder, Int => <Int | Error>
+parse_escape = sc, b, k =>
+   e = k + 1 [< ?sc.src] sc.src(k + 1) | -1
+   e == 'u | --| parse_unicode(sc, b, k)
    b += (e
       ['", '\\, '/] e
       ['b] '\b
@@ -107,210 +104,210 @@ parse_escape = b, k =>
       ['r] '\r
       ['t] '\t
       | --| <- Error(400, "json: bad escape", "std/json.dva", 0, 0, (k, 0)) +>)
-   scan_string(b, k + 2)
+   scan_string(sc, b, k + 2)
 
 // A \uXXXX escape at index k (k is the '\', k+1 is 'u'). Supports BMP
 // and supplementary characters via UTF-16 surrogate pairs.
-parse_unicode: Builder, Int => <Int | Error>
-parse_unicode = b, k =>
-   h2 = is_hex_at(k + 2)
-   h3 = is_hex_at(k + 3)
-   h4 = is_hex_at(k + 4)
-   h5 = is_hex_at(k + 5)
+parse_unicode: Scanner, Builder, Int => <Int | Error>
+parse_unicode = sc, b, k =>
+   h2 = is_hex_at(sc, k + 2)
+   h3 = is_hex_at(sc, k + 3)
+   h4 = is_hex_at(sc, k + 4)
+   h5 = is_hex_at(sc, k + 5)
    ok = h2 && h3 && h4 && h5
    ok |
-      d2 = hexval(src(k + 2))
-      d3 = hexval(src(k + 3))
-      d4 = hexval(src(k + 4))
-      d5 = hexval(src(k + 5))
+      d2 = hexval(sc.src(k + 2))
+      d3 = hexval(sc.src(k + 3))
+      d4 = hexval(sc.src(k + 4))
+      d5 = hexval(sc.src(k + 5))
       cp = d2 * 0x1000 + d3 * 0x100 + d4 * 0x10 + d5
-      parse_unicode_cp(b, k, cp)
+      parse_unicode_cp(sc, b, k, cp)
    | <- Error(400, "json: bad \\u escape",
    "std/json.dva", 0, 0, (k, 0)) +>
 
-parse_unicode_cp: Builder, Int, Int => <Int | Error>
-parse_unicode_cp = b, k, cp =>
+parse_unicode_cp: Scanner, Builder, Int, Int => <Int | Error>
+parse_unicode_cp = sc, b, k, cp =>
    cp
-      [0xD800...0xDBFF] parse_surrogate_pair(b, k, cp)
+      [0xD800...0xDBFF] parse_surrogate_pair(sc, b, k, cp)
       [0xDC00...0xDFFF] <- Error(400, "json: unpaired low surrogate", "std/json.dva", 0, 0, (k, 0)) +>
       |
          utf::append_rune(b, Rune(cp))
-         scan_string(b, k + 6)
+         scan_string(sc, b, k + 6)
 
-parse_surrogate_pair: Builder, Int, Int => <Int | Error>
-parse_surrogate_pair = b, k, cp =>
-   has_second = k + 11 < ?src && src(k + 6) == '\\ && src(k + 7) == 'u && is_hex_at(k + 8) && is_hex_at(k + 9) && is_hex_at(k + 10) && is_hex_at(k + 11)
+parse_surrogate_pair: Scanner, Builder, Int, Int => <Int | Error>
+parse_surrogate_pair = sc, b, k, cp =>
+   has_second = k + 11 < ?sc.src && sc.src(k + 6) == '\\ && sc.src(k + 7) == 'u && is_hex_at(sc, k + 8) && is_hex_at(sc, k + 9) && is_hex_at(sc, k + 10) && is_hex_at(sc, k + 11)
    has_second |
-      l2 = hexval(src(k + 8))
-      l3 = hexval(src(k + 9))
-      l4 = hexval(src(k + 10))
-      l5 = hexval(src(k + 11))
+      l2 = hexval(sc.src(k + 8))
+      l3 = hexval(sc.src(k + 9))
+      l4 = hexval(sc.src(k + 10))
+      l5 = hexval(sc.src(k + 11))
       locp = l2 * 0x1000 + l3 * 0x100 + l4 * 0x10 + l5
       locp [0xDC00...0xDFFF]
          full_cp = 0x10000 + (cp - 0xD800) * 0x400 + (locp - 0xDC00)
          utf::append_rune(b, Rune(full_cp))
-         scan_string(b, k + 12)
+         scan_string(sc, b, k + 12)
       | <- Error(400, "json: bad low surrogate", "std/json.dva", 0, 0, (k, 0)) +>
    | <- Error(400, "json: missing low surrogate", "std/json.dva", 0, 0, (k, 0)) +>
 
 // --- number scanning ------------------------------------------------
 
-// True when src[p] exists and is a digit.
-is_digit_at: Int => i1
-is_digit_at = p => p < ?src && str::is_digit(src(p))
+// True when sc.src[p] exists and is a digit.
+is_digit_at: Scanner, Int => i1
+is_digit_at = sc, p => p < ?sc.src && str::is_digit(sc.src(p))
 
 // --- value parsing ------------------------------------------------
 
-parse_string: () => <Value | Error>
-parse_string = !=>
-   pos ::= pos + 1
+parse_string: Scanner => <Value | Error>
+parse_string = sc =>
+   sc.pos = sc.pos + 1
    b = {64}
-   r = scan_string(b, pos)
+   r = scan_string(sc, b, sc.pos)
    r | end =>
-         pos ::= end + 1
+         sc.pos = end + 1
          <+ Value(String, +b) ->
    | err =>
          <- err +>
 
-parse_array: () => <Value | Error>
-parse_array = !=>
-   pos ::= pos + 1
-   p = skip_ws(pos)
-   pos ::= p
-   c = p [< ?src] src(p) | -1
+parse_array: Scanner => <Value | Error>
+parse_array = sc =>
+   sc.pos = sc.pos + 1
+   p = skip_ws(sc, sc.pos)
+   sc.pos = p
+   c = p [< ?sc.src] sc.src(p) | -1
    c [']]
-      pos ::= pos + 1
+      sc.pos = sc.pos + 1
       elems = Values()
       <+ Value(Array, elems(0..0)) ->
    |
       elems = Values()
-      parse_array_loop(elems)
+      parse_array_loop(sc, elems)
 
-parse_array_loop: Values => <Value | Error>
-parse_array_loop = elems =>
-   v = parse_value!
-   parse_array_after_value(elems, v)
+parse_array_loop: Scanner, Values => <Value | Error>
+parse_array_loop = sc, elems =>
+   v = parse_value(sc)
+   parse_array_after_value(sc, elems, v)
 
-parse_array_after_value: Values, <Value | Error> => <Value | Error>
-parse_array_after_value = elems, v =>
+parse_array_after_value: Scanner, Values, <Value | Error> => <Value | Error>
+parse_array_after_value = sc, elems, v =>
    v | val =>
          elems += val
-         p = skip_ws(pos)
-         pos ::= p
-         c = p [< ?src] src(p) | -1
+         p = skip_ws(sc, sc.pos)
+         sc.pos = p
+         c = p [< ?sc.src] sc.src(p) | -1
          c [']]
-            pos ::= pos + 1
+            sc.pos = sc.pos + 1
             n = ?elems
             <+ Value(Array, elems(0..n)) ->
          [',]
-            pos ::= pos + 1
-            p2 = skip_ws(pos)
-            c2 = p2 [< ?src] src(p2) | -1
+            sc.pos = sc.pos + 1
+            p2 = skip_ws(sc, sc.pos)
+            c2 = p2 [< ?sc.src] sc.src(p2) | -1
             c2 [']]
                <- Error(400, "json: trailing comma in array", "std/json.dva", 0, 0, (p2, 0)) +>
             |
-               parse_array_loop(elems)
+               parse_array_loop(sc, elems)
          |
             <- Error(400, "json: expected ',' or ']' in array", "std/json.dva", 0, 0, (p, 0)) +>
    | e => <- e +>
 
-parse_object: () => <Value | Error>
-parse_object = !=>
-   pos ::= pos + 1
-   p = skip_ws(pos)
-   pos ::= p
-   c = p [< ?src] src(p) | -1
+parse_object: Scanner => <Value | Error>
+parse_object = sc =>
+   sc.pos = sc.pos + 1
+   p = skip_ws(sc, sc.pos)
+   sc.pos = p
+   c = p [< ?sc.src] sc.src(p) | -1
    c ['}]
-      pos ::= pos + 1
+      sc.pos = sc.pos + 1
       entries = Pairs()
       <+ Value(Object, entries(0..0)) ->
    |
       entries = Pairs()
-      parse_object_loop(entries)
+      parse_object_loop(sc, entries)
 
-parse_object_loop: Pairs => <Value | Error>
-parse_object_loop = entries =>
-   p = skip_ws(pos)
-   pos ::= p
-   c = p [< ?src] src(p) | -1
+parse_object_loop: Scanner, Pairs => <Value | Error>
+parse_object_loop = sc, entries =>
+   p = skip_ws(sc, sc.pos)
+   sc.pos = p
+   c = p [< ?sc.src] sc.src(p) | -1
    c ['"]
-      k = parse_string!
-      parse_object_after_key(entries, k)
+      k = parse_string(sc)
+      parse_object_after_key(sc, entries, k)
    |
       <- Error(400, "json: expected string key in object", "std/json.dva", 0, 0, (p, 0)) +>
 
-parse_object_after_key: Pairs, <Value | Error> => <Value | Error>
-parse_object_after_key = entries, k =>
+parse_object_after_key: Scanner, Pairs, <Value | Error> => <Value | Error>
+parse_object_after_key = sc, entries, k =>
    k | key =>
          key [String s]
-            p = skip_ws(pos)
-            pos ::= p
-            ok_col = p < ?src && src(p) == ':
+            p = skip_ws(sc, sc.pos)
+            sc.pos = p
+            ok_col = p < ?sc.src && sc.src(p) == ':
             ok_col |
-               pos ::= pos + 1
-               v = parse_value!
-               parse_object_after_val(entries, s, v)
+               sc.pos = sc.pos + 1
+               v = parse_value(sc)
+               parse_object_after_val(sc, entries, s, v)
             | <- Error(400, "json: expected ':' after object key", "std/json.dva", 0, 0, (p, 0)) +>
          | <- Error(400, "json: object key is not a string", "std/json.dva", 0, 0, (0, 0)) +>
    | e => <- e +>
 
-parse_object_after_val: Pairs, String, <Value | Error> => <Value | Error>
-parse_object_after_val = entries, s, v =>
+parse_object_after_val: Scanner, Pairs, String, <Value | Error> => <Value | Error>
+parse_object_after_val = sc, entries, s, v =>
    v | val =>
          entries += (s, val)
-         p = skip_ws(pos)
-         pos ::= p
-         c = p [< ?src] src(p) | -1
+         p = skip_ws(sc, sc.pos)
+         sc.pos = p
+         c = p [< ?sc.src] sc.src(p) | -1
          c ['}]
-            pos ::= pos + 1
+            sc.pos = sc.pos + 1
             m = ?entries
             <+ Value(Object, entries(0..m)) ->
          [',]
-            pos ::= pos + 1
-            p2 = skip_ws(pos)
-            c2 = p2 [< ?src] src(p2) | -1
+            sc.pos = sc.pos + 1
+            p2 = skip_ws(sc, sc.pos)
+            c2 = p2 [< ?sc.src] sc.src(p2) | -1
             c2 ['}]
                <- Error(400, "json: trailing comma in object", "std/json.dva", 0, 0, (p2, 0)) +>
             |
-               parse_object_loop(entries)
+               parse_object_loop(sc, entries)
          |
             <- Error(400, "json: expected ',' or '}' in object", "std/json.dva", 0, 0, (p, 0)) +>
    | e2 => <- e2 +>
 
-parse_lit: <>, Int => <Value | Error>
-parse_lit = tag, len =>
-   p = skip_ws(pos)
-   pos ::= p
+parse_lit: Scanner, <>, Int => <Value | Error>
+parse_lit = sc, tag, len =>
+   p = skip_ws(sc, sc.pos)
+   sc.pos = p
    word = tag | "true" | "false"
-   ok = p + len !> ?src && src(p..p + len) == word
+   ok = p + len !> ?sc.src && sc.src(p..p + len) == word
    ok |
-      pos ::= p + len
+      sc.pos = p + len
       <+ Value(Boolean, tag) ->
    | <- Error(400, "json: bad literal", "std/json.dva", 0, 0, (p, 0)) +>
 
-parse_null: () => <Value | Error>
-parse_null = !=>
-   p = skip_ws(pos)
-   pos ::= p
-   ok = p + 4 !> ?src && src(p..p + 4) == "null"
+parse_null: Scanner => <Value | Error>
+parse_null = sc =>
+   p = skip_ws(sc, sc.pos)
+   sc.pos = p
+   ok = p + 4 !> ?sc.src && sc.src(p..p + 4) == "null"
    ok |
-      pos ::= p + 4
+      sc.pos = p + 4
       <+ Value(Null) ->
    | <- Error(400, "json: bad null literal",
    "std/json.dva", 0, 0, (p, 0)) +>
 
-parse_number: () => <Value | Error>
-parse_number = !=>
-   p' = skip_ws(pos)
-   pos ::= p'
-   c0 = p' [< ?src] src(p') | -1
-   is_num_start = c0 !< '0 && c0 !> '9 || c0 == '-
+parse_number: Scanner => <Value | Error>
+parse_number = sc =>
+   p' = skip_ws(sc, sc.pos)
+   sc.pos = p'
+   c0 = p' [< ?sc.src] sc.src(p') | -1
+   is_num_start = c0 ['0...'9, '-]
    is_num_start |
       neg' = <->
       c0 ['-]
          neg' = <+>
          p' = p' + 1
-      has_leading_zero = p' < ?src && src(p') == '0 && p' + 1 < ?src && is_digit_at(p' + 1)
+      has_leading_zero = p' < ?sc.src && sc.src(p') == '0 && p' + 1 < ?sc.src && is_digit_at(sc, p' + 1)
       has_leading_zero |
          <- Error(400, "json: leading zero not allowed", "std/json.dva", 0, 0, (p', 0)) +>
       |
@@ -320,9 +317,9 @@ parse_number = !=>
          fv' = 0.0
          exp10' = 0
          0.. @
-            p2' !< ?src | -->
-            c = src(p2')
-            c !< '0 && c !> '9
+            p2' !< ?sc.src | -->
+            c = sc.src(p2')
+            c ['0...'9]
                |
                   had_int' = <+>
                   d = c - '0
@@ -336,14 +333,14 @@ parse_number = !=>
                               exp10' = exp10' + 1
                   p2' = p2' + 1
                | -->
-         has_dot = (p2' < ?src && src(p2') == '.)
+         has_dot = (p2' < ?sc.src && sc.src(p2') == '.)
          had_frac' = <->
          has_dot |
             p2' = p2' + 1
             0.. @
-               p2' !< ?src | -->
-               c = src(p2')
-               c !< '0 && c !> '9
+               p2' !< ?sc.src | -->
+               c = sc.src(p2')
+               c ['0...'9]
                   |
                      had_frac' = <+>
                      d = c - '0
@@ -357,12 +354,12 @@ parse_number = !=>
                               exp10' = exp10' - 1
                      p2' = p2' + 1
                   | -->
-         has_exp = (p2' < ?src && (src(p2') == 'e || src(p2') == 'E))
+         has_exp = (p2' < ?sc.src && (sc.src(p2') ['e, 'E]))
          had_exp' = <->
          has_exp |
             p3' = p2' + 1
             eneg' = <->
-            e0 = p3' [< ?src] src(p3') | -1
+            e0 = p3' [< ?sc.src] sc.src(p3') | -1
             e0 ['-]
                eneg' = <+>
                p3' = p3' + 1
@@ -373,8 +370,8 @@ parse_number = !=>
             over_exp' = <->
             had_exp_digits' = <->
             0.. @
-               p3' !< ?src | -->
-               ec = src(p3')
+               p3' !< ?sc.src | -->
+               ec = sc.src(p3')
                ec ['0...'9]
                   |
                      had_exp_digits' = <+>
@@ -400,7 +397,7 @@ parse_number = !=>
          valid
             |
                f = (neg' | 0 - fv' | fv')
-               pos ::= p2'
+               sc.pos = p2'
                <+ Value(Number, f) ->
             |
                <- Error(400, "json: malformed number",
@@ -415,35 +412,34 @@ parse_number = !=>
 #public
    parse: String => <Value | Error>
    parse = s =>
-      src ::= s
-      pos ::= 0
-      r = parse_value!
-      parse_finish(r)
+      sc = Scanner(s, 0)
+      r = parse_value(sc)
+      parse_finish(sc, r)
 
-parse_finish: <Value | Error> => <Value | Error>
-parse_finish = r =>
+parse_finish: Scanner, <Value | Error> => <Value | Error>
+parse_finish = sc, r =>
    r | val =>
-         p = skip_ws(pos)
-         p == ?src |
+         p = skip_ws(sc, sc.pos)
+         p == ?sc.src |
             <+ val ->
          |
             <- Error(400, "json: trailing characters after value", "std/json.dva", 0, 0, (p, 0)) +>
    | err =>
          <- err +>
 
-parse_value: () => <Value | Error>
-parse_value = !=>
-   p = skip_ws(pos)
-   pos ::= p
-   c = p [< ?src] src(p) | -1
+parse_value: Scanner => <Value | Error>
+parse_value = sc =>
+   p = skip_ws(sc, sc.pos)
+   sc.pos = p
+   c = p [< ?sc.src] sc.src(p) | -1
    c
-   ['"] parse_string!
-   ['{] parse_object!
-   ['[] parse_array!
-   ['t] parse_lit(<+>, 4)
-   ['f] parse_lit(<->, 5)
-   ['n] parse_null!
-   | parse_number!
+   ['"] parse_string(sc)
+   ['{] parse_object(sc)
+   ['[] parse_array(sc)
+   ['t] parse_lit(sc, <+>, 4)
+   ['f] parse_lit(sc, <->, 5)
+   ['n] parse_null(sc)
+   | parse_number(sc)
 
 // --- Value query and serialization helpers ----------------------------------
 

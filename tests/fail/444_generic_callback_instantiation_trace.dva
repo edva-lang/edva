@@ -1,0 +1,11 @@
+#type Item (id: Int, label: String)
+
+inner: #param T: Type, T => Int
+inner = val =>
+   cb = x => x.no_such_field
+   cb(val)
+
+outer: #param T: Type, T => Int
+outer = item => inner(item)
+
+res = outer(Item(7, "ok"))

@@ -38,9 +38,9 @@ with tempfile.TemporaryDirectory(prefix='edva-lambda-abi-') as tmp:
                           ('wasm', ['-target', 'wasm32-unknown-unknown', '-O2'])]:
         output = Path(tmp) / mode
         run([str(COMPILER), str(SOURCE), '--no-cache', '-o', str(output), *options])
-        ir = output.with_suffix('.ll').read_text()
+        ir = output.with_suffix('.ll').read_text().split('define internal i64 @read_id', 1)[-1]
         signatures = Counter(re.findall(
-            r'^define internal (.+?) @"\$lambda_\d+"\((.*?)\)', ir, re.MULTILINE))
+            r'^define internal (.+?) @"(?:\$(?:lambda_|anon_fn\.)\d+|[^"\n]+\$(?:complete|callback)\.\d+)"\((.*?)\)', ir, re.MULTILINE))
         assert signatures == expected_signatures, (mode, signatures)
         if mode.startswith('native'):
             assert run([str(output)]) == SOURCE.with_suffix('.expected').read_text(), mode

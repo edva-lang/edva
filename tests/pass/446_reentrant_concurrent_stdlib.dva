@@ -1,0 +1,124 @@
+#use ccl
+#use csv
+#use io
+#use json
+#use mem
+#use rand
+#use regex
+#use str
+#use task
+#use url
+
+#type InnerCfg (
+   host: String,
+   port: Int,
+   enabled: <> = <+>
+)
+
+#type OuterEntry (
+   name: String,
+   payload: String
+)
+
+// Helper invoked while traversing/decoding outer JSON Value — exercises
+// reentrant `json::decode` and deeply nested `json::parse`.
+decode_embedded_entry: json::Value => String
+decode_embedded_entry = v =>
+   name = json::get_str(v, "name") |_| "?"
+   raw_inner = json::get_str(v, "payload") |_| "{}"
+   cfg = json::decode(InnerCfg, raw_inner)!!
+   arr_val = json::parse("[10, 20, 30]")!!
+   tag = cfg.enabled | "on" | "off"
+   arr_len = json::array_len(arr_val)
+   "${name}=${cfg.host}:${str::from_int(cfg.port)}(${tag},n=${str::from_int(arr_len)})"
+
+test_reentrant_json: () => String
+test_reentrant_json = !=>
+   doc_str = """
+      [
+        {"name": "primary", "payload": "{\\"host\\":\\"db1.local\\",\\"port\\":5432}"},
+        {"name": "replica", "payload": "{\\"host\\":\\"db2.local\\",\\"port\\":5433,\\"enabled\\":false}"}
+      ]
+      """
+   outer = json::parse(doc_str)!!
+   outer
+      [Array items]
+         parts = items @> decode_embedded_entry
+         first = parts(0) |_| "err"
+         second = parts(1) |_| "err"
+         // Also confirm outer `Value` stayed intact after inner parses
+         second_name = json::get_str(items(1), "name") |_| "err"
+         "reentrant:${first}|${second}|${second_name}"
+      | "reentrant:not_array"
+
+run_worker: Int, Int => String
+run_worker = wid, main_ga_raw =>
+   w_ga = mem::global_arena!
+   distinct_ga = Int(w_ga.raw) != 0 && Int(w_ga.raw) != main_ga_raw
+   !distinct_ga | --| "worker:${str::from_int(wid)}:bad_base_arena"
+
+   req = mem::arena(65536)
+   rng = rand::seed(wid + 100)
+   last_summary' = ++""
+   all_owned_ok' = <+>
+
+   0..8 @ iter =>
+      escaped = mem::with_value(req, !=>
+         jtxt = "{\"host\":\"n${str::from_int(wid)}.internal\",\"port\":${str::from_int(8000 + iter)}}"
+         jcfg = json::decode(InnerCfg, jtxt)!!
+         jraw = json::parse("{\"items\":[1,2,${str::from_int(wid)}]}")!!
+         jcnt = json::get(jraw, "items") | iv => json::array_len(iv) | 0
+
+         cdoc = ccl::parse("service = svc_${str::from_int(wid)}\nmode = fast\n", "w.ccl")!!
+         svc = ccl::get(cdoc, "service") |_| "?"
+
+         tbl = csv::read_all("id,role\n${str::from_int(wid)},worker_${str::from_int(iter)}\n")!!
+         row1 = tbl(1)!!
+         csv_role = row1(1)!!
+
+         u = url::parse("https://api.example.com:8443/v1/items?id=${str::from_int(wid)}")!!
+         re = regex::compile("item-([0-9]+)")!!
+         m = regex::find(re, "id=item-${str::from_int(wid * 10 + iter)}")
+         re_txt = m | hit => hit.text | "none"
+
+         summary = "w${str::from_int(wid)}:${jcfg.host}:${str::from_int(jcfg.port)}:${str::from_int(jcnt)}:${svc}:${csv_role}:${u.host}:${re_txt}"
+         mem::escape_value(!=> ++summary)
+      )
+      in_base = mem::owns_addr(w_ga, &escaped)
+      in_req = mem::owns_addr(req, &escaped)
+      (!in_base || in_req) | (all_owned_ok' = <->)
+      mem::reset(req)
+      // Overwrite scratch arena storage after reset
+      mem::with(req, !=>
+         pad = "scratch_${str::from_int(wid)}_${str::from_int(iter)}_0123456789"
+         _len = ?pad
+      )
+      mem::reset(req)
+      last_summary' = escaped
+
+   mem::destroy(req)
+   roll = rand::range(rng, 100, 999)
+   ok_tag = all_owned_ok' | "ok" | "bad"
+   "${last_summary'}:r=${str::from_int(roll)}:${ok_tag}"
+
+main_fn: () => ()
+main_fn = !=>
+   io::out $ test_reentrant_json!
+
+   main_ga = Int(mem::global_arena!.raw)
+   t1 = task::spawn(run_worker(1, main_ga))
+   t2 = task::spawn(run_worker(2, main_ga))
+   t3 = task::spawn(run_worker(3, main_ga))
+   t4 = task::spawn(run_worker(4, main_ga))
+
+   r1 = task::join(t1)!!
+   r2 = task::join(t2)!!
+   r3 = task::join(t3)!!
+   r4 = task::join(t4)!!
+
+   io::out $ r1
+   io::out $ r2
+   io::out $ r3
+   io::out $ r4
+
+main_fn!

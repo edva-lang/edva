@@ -125,7 +125,7 @@
    line: Int, col: Int,
 )
 
-#type FnExpr (params: Names, ct_params: Names, body: Expr)
+#type FnExpr (params: Names, ct_params: Names, body: Expr, line: Int = 0, col: Int = 0)
 
 #type CycleExpr (iterable: Expr, body_fn: Expr, is_rune: <>, is_expr: <> = <->)
 

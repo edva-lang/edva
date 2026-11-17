@@ -154,6 +154,8 @@ codegen_emit_runtime_module = cg =>
    const_string_global(cg, diag::runtime_error_format!, "fmt_error")
    arena_tls = LLVMAddGlobal(cg.module, atp, "dva_arena_tls")
    LLVMSetThreadLocal(arena_tls, 1)
+   arena_base_tls = LLVMAddGlobal(cg.module, atp, "dva_arena_base_tls")
+   LLVMSetThreadLocal(arena_base_tls, 1)
    garena = LLVMAddGlobal(cg.module, at, "global_arena")
 
    cur_t = types::fn_type0(LLVMPointerType(at, 0))
@@ -226,6 +228,23 @@ codegen_emit_runtime_module = cg =>
    hash_params += i64t
    hash_t = stmt::fn_type_n(cg, i64t, hash_params, 2)
    LLVMAddFunction(cg.module, "dva_hash_string", hash_t)
+
+   // Coverage bitmap hooks (declared in module mode, defined in runtime full mode)
+   cov_map_t = types::fn_type0(i8p)
+   LLVMAddFunction(cg.module, "dva_cov_map_ptr", cov_map_t)
+   cov_tr_params = types::Addrs()
+   cov_tr_params += i64t
+   cov_tr_t = stmt::fn_type_n(cg, LLVMVoidType!, cov_tr_params, 1)
+   LLVMAddFunction(cg.module, "dva_cov_trace", cov_tr_t)
+   scov_g_params = types::Addrs()
+   scov_g_params += i8p
+   scov_g_t = stmt::fn_type_n(cg, LLVMVoidType!, scov_g_params, 1)
+   LLVMAddFunction(cg.module, "__sanitizer_cov_trace_pc_guard", scov_g_t)
+   scov_i_params = types::Addrs()
+   scov_i_params += i8p
+   scov_i_params += i8p
+   scov_i_t = stmt::fn_type_n(cg, LLVMVoidType!, scov_i_params, 2)
+   LLVMAddFunction(cg.module, "__sanitizer_cov_trace_pc_guard_init", scov_i_t)
    garena
 
 codegen_emit_runtime: types::Cg => Addr
@@ -252,6 +271,9 @@ codegen_emit_runtime_full = cg =>
    arena_tls = LLVMAddGlobal(cg.module, atp, "dva_arena_tls")
    LLVMSetInitializer(arena_tls, LLVMConstNull(atp))
    LLVMSetThreadLocal(arena_tls, 1)
+   arena_base_tls = LLVMAddGlobal(cg.module, atp, "dva_arena_base_tls")
+   LLVMSetInitializer(arena_base_tls, LLVMConstNull(atp))
+   LLVMSetThreadLocal(arena_base_tls, 1)
    garena = LLVMAddGlobal(cg.module, at, "global_arena")
    LLVMSetInitializer(garena, LLVMConstNull(at))
 
@@ -260,13 +282,21 @@ codegen_emit_runtime_full = cg =>
    cur_fn = LLVMAddFunction(cg.module, "dva_arena_current", cur_t)
    c_bb = LLVMAppendBasicBlock(cur_fn, "entry")
    tls_bb = LLVMAppendBasicBlock(cur_fn, "use_tls")
+   base_chk_bb = LLVMAppendBasicBlock(cur_fn, "check_base")
+   base_bb = LLVMAppendBasicBlock(cur_fn, "use_base")
    fb_bb = LLVMAppendBasicBlock(cur_fn, "fallback")
    LLVMPositionBuilderAtEnd(cg.builder, c_bb)
    tls_v = LLVMBuildLoad2(cg.builder, atp, arena_tls, "arena.tls")
    is_n = LLVMBuildICmp(cg.builder, 32, tls_v, LLVMConstNull(atp), "arena.tls.null")
-   LLVMBuildCondBr(cg.builder, is_n, fb_bb, tls_bb)
+   LLVMBuildCondBr(cg.builder, is_n, base_chk_bb, tls_bb)
    LLVMPositionBuilderAtEnd(cg.builder, tls_bb)
    LLVMBuildRet(cg.builder, tls_v)
+   LLVMPositionBuilderAtEnd(cg.builder, base_chk_bb)
+   base_v = LLVMBuildLoad2(cg.builder, atp, arena_base_tls, "arena.base.tls")
+   is_bn = LLVMBuildICmp(cg.builder, 32, base_v, LLVMConstNull(atp), "arena.base.null")
+   LLVMBuildCondBr(cg.builder, is_bn, fb_bb, base_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, base_bb)
+   LLVMBuildRet(cg.builder, base_v)
    LLVMPositionBuilderAtEnd(cg.builder, fb_bb)
    LLVMBuildRet(cg.builder, garena)
 
@@ -321,6 +351,8 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a0, 4, "gen_ptr"))
    LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a0, 5, "depth_ptr"))
    LLVMBuildStore(cg.builder, one, LLVMBuildStructGEP2(cg.builder, at, a0, 6, "next_gen_ptr"))
+   init_sg0 = types::gep2(cg, sg_arr, LLVMBuildStructGEP2(cg.builder, at, a0, 7, "sg0_ptr"), zero, zero, "resets_init_ptr")
+   LLVMBuildStore(cg.builder, zero, init_sg0)
    LLVMBuildRetVoid(cg.builder)
 
    // dva_arena_alloc(ptr, i64) -> ptr
@@ -360,6 +392,8 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a1, 4, "gen_gep"))
    LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a1, 5, "depth_gep"))
    LLVMBuildStore(cg.builder, one, LLVMBuildStructGEP2(cg.builder, at, a1, 6, "next_gen_gep"))
+   lazy_sg0 = types::gep2(cg, sg_arr, LLVMBuildStructGEP2(cg.builder, at, a1, 7, "sg0_lazy"), zero, zero, "resets_lazy_ptr")
+   LLVMBuildStore(cg.builder, zero, lazy_sg0)
    LLVMBuildBr(cg.builder, al_i)
    LLVMPositionBuilderAtEnd(cg.builder, al_i)
    cap_phi = LLVMBuildPhi(cg.builder, i64t, "cap.phi")
@@ -556,13 +590,30 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, r_new_nc, r_nc_gep)
    LLVMBuildBr(cg.builder, rs_d)
    LLVMPositionBuilderAtEnd(cg.builder, rs_d)
+   r_sg0_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 7, "rs.sg0.gep")
+   r_resets_slot = types::gep2(cg, sg_arr, r_sg0_gep, zero, zero, "rs.resets.slot")
+   r_resets = LLVMBuildLoad2(cg.builder, i64t, r_resets_slot, "rs.resets")
+   LLVMBuildStore(cg.builder, LLVMBuildAdd(cg.builder, r_resets, one, "rs.resets.next"), r_resets_slot)
    r_depth_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 5, "rs.depth.gep")
    r_depth = LLVMBuildLoad2(cg.builder, i64t, r_depth_gep, "rs.depth")
    r_depth_gt0 = LLVMBuildICmp(cg.builder, 38, r_depth, zero, "rs.depth.gt0")
 
    rs_pop = LLVMAppendBasicBlock(rest_fn, "rs_pop")
+   rs_bump_gen = LLVMAppendBasicBlock(rest_fn, "rs_bump_gen")
    rs_fin = LLVMAppendBasicBlock(rest_fn, "rs_fin")
-   LLVMBuildCondBr(cg.builder, r_depth_gt0, rs_pop, rs_fin)
+   LLVMBuildCondBr(cg.builder, r_depth_gt0, rs_pop, rs_bump_gen)
+
+   LLVMPositionBuilderAtEnd(cg.builder, rs_bump_gen)
+   r_ng_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 6, "rs.ng.gep")
+   r_ng_cur0 = LLVMBuildLoad2(cg.builder, i64t, r_ng_gep, "rs.ng.cur0")
+   r_ng_z = LLVMBuildICmp(cg.builder, 32, r_ng_cur0, zero, "rs.ng.z")
+   r_ng_cur = LLVMBuildSelect(cg.builder, r_ng_z, one, r_ng_cur0, "rs.ng.cur")
+   r_ng_inc = LLVMBuildAdd(cg.builder, r_ng_cur, one, "rs.ng.inc")
+   r_ng_wrap = LLVMBuildICmp(cg.builder, 39, r_ng_inc, max_gen, "rs.ng.wrap")
+   r_ng_next = LLVMBuildSelect(cg.builder, r_ng_wrap, one, r_ng_inc, "rs.ng.next")
+   LLVMBuildStore(cg.builder, r_ng_next, r_ng_gep)
+   LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a3, 4, "rs.cg0.gep"))
+   LLVMBuildBr(cg.builder, rs_fin)
 
    LLVMPositionBuilderAtEnd(cg.builder, rs_pop)
    r_sg_gep = LLVMBuildStructGEP2(cg.builder, at, a3, 7, "rs.sg.gep")
@@ -675,6 +726,20 @@ codegen_emit_runtime_full = cg =>
    LLVMPositionBuilderAtEnd(cg.builder, ds_f)
    LLVMBuildStore(cg.builder, zero, d_nc_gep)
    LLVMBuildStore(cg.builder, zero, d_off_gep)
+   LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a4, 4, "ds.gen.gep"))
+   LLVMBuildStore(cg.builder, zero, LLVMBuildStructGEP2(cg.builder, at, a4, 5, "ds.depth.gep"))
+   d_ng_gep = LLVMBuildStructGEP2(cg.builder, at, a4, 6, "ds.ng.gep")
+   d_ng_cur0 = LLVMBuildLoad2(cg.builder, i64t, d_ng_gep, "ds.ng.cur0")
+   d_ng_z = LLVMBuildICmp(cg.builder, 32, d_ng_cur0, zero, "ds.ng.z")
+   d_ng_cur = LLVMBuildSelect(cg.builder, d_ng_z, one, d_ng_cur0, "ds.ng.cur")
+   d_ng_inc = LLVMBuildAdd(cg.builder, d_ng_cur, one, "ds.ng.inc")
+   d_ng_wrap = LLVMBuildICmp(cg.builder, 39, d_ng_inc, max_gen, "ds.ng.wrap")
+   d_ng_next = LLVMBuildSelect(cg.builder, d_ng_wrap, one, d_ng_inc, "ds.ng.next")
+   LLVMBuildStore(cg.builder, d_ng_next, d_ng_gep)
+   d_sg0_gep = LLVMBuildStructGEP2(cg.builder, at, a4, 7, "ds.sg0.gep")
+   d_resets_slot = types::gep2(cg, sg_arr, d_sg0_gep, zero, zero, "ds.resets.slot")
+   d_resets = LLVMBuildLoad2(cg.builder, i64t, d_resets_slot, "ds.resets")
+   LLVMBuildStore(cg.builder, LLVMBuildAdd(cg.builder, d_resets, one, "ds.resets.next"), d_resets_slot)
    LLVMBuildRetVoid(cg.builder)
 
    // dva_arena_adopt(parent, child)
@@ -815,6 +880,65 @@ codegen_emit_runtime_full = cg =>
    LLVMPositionBuilderAtEnd(cg.builder, hs_d)
    res_ret = LLVMBuildRet(cg.builder, h_phi)
 
+   // Built-in 64 KB edge/branch coverage bitmap and sanitizer-coverage hooks
+   i8t = LLVMInt8Type!
+   cov_arr = LLVMArrayType(i8t, 65536)
+   cov_map = LLVMAddGlobal(cg.module, cov_arr, "__dva_cov_map")
+   LLVMSetInitializer(cov_map, LLVMConstNull(cov_arr))
+   cov_prev = LLVMAddGlobal(cg.module, i64t, "__dva_cov_prev")
+   LLVMSetInitializer(cov_prev, zero)
+
+   cov_map_t = types::fn_type0(i8p)
+   cov_map_fn = LLVMAddFunction(cg.module, "dva_cov_map_ptr", cov_map_t)
+   mark_nounwind(cg, cov_map_fn)
+   cm_e = LLVMAppendBasicBlock(cov_map_fn, "entry")
+   LLVMPositionBuilderAtEnd(cg.builder, cm_e)
+   LLVMBuildRet(cg.builder, cov_map)
+
+   cov_tr_params = types::Addrs()
+   cov_tr_params += i64t
+   cov_tr_t = stmt::fn_type_n(cg, LLVMVoidType!, cov_tr_params, 1)
+   cov_trace_fn = LLVMAddFunction(cg.module, "dva_cov_trace", cov_tr_t)
+   mark_nounwind(cg, cov_trace_fn)
+   ct_e = LLVMAppendBasicBlock(cov_trace_fn, "entry")
+   LLVMPositionBuilderAtEnd(cg.builder, ct_e)
+   tr_id = LLVMGetParam(cov_trace_fn, 0)
+   prev_v = LLVMBuildLoad2(cg.builder, i64t, cov_prev, "cov.prev")
+   shr_v = LLVMBuildLShr(cg.builder, prev_v, one, "cov.shr")
+   xor_v = LLVMBuildXor(cg.builder, shr_v, tr_id, "cov.xor")
+   idx_v = LLVMBuildAnd(cg.builder, xor_v, LLVMConstInt(i64t, 65535, 0), "cov.idx")
+   c_gep = types::gep2(cg, cov_arr, cov_map, zero, idx_v, "cov.gep")
+   cur_b = LLVMBuildLoad2(cg.builder, i8t, c_gep, "cov.cur")
+   inc_b = LLVMBuildAdd(cg.builder, cur_b, LLVMConstInt(i8t, 1, 0), "cov.inc")
+   ovf_b = LLVMBuildICmp(cg.builder, 32, inc_b, LLVMConstInt(i8t, 0, 0), "cov.sat")
+   fin_b = LLVMBuildSelect(cg.builder, ovf_b, LLVMConstInt(i8t, 255, 0), inc_b, "cov.fin")
+   LLVMBuildStore(cg.builder, fin_b, c_gep)
+   LLVMBuildStore(cg.builder, tr_id, cov_prev)
+   LLVMBuildRetVoid(cg.builder)
+
+   scov_g_params = types::Addrs()
+   scov_g_params += i8p
+   scov_g_t = stmt::fn_type_n(cg, LLVMVoidType!, scov_g_params, 1)
+   scov_guard_fn = LLVMAddFunction(cg.module, "__sanitizer_cov_trace_pc_guard", scov_g_t)
+   mark_nounwind(cg, scov_guard_fn)
+   sg_e = LLVMAppendBasicBlock(scov_guard_fn, "entry")
+   LLVMPositionBuilderAtEnd(cg.builder, sg_e)
+   sg_ptr = LLVMGetParam(scov_guard_fn, 0)
+   sg_raw = LLVMBuildLoad2(cg.builder, i32t, sg_ptr, "sg.val")
+   sg_id = LLVMBuildZExt(cg.builder, sg_raw, i64t, "sg.id")
+   types::call1(cg, cov_tr_t, cov_trace_fn, sg_id, "")
+   LLVMBuildRetVoid(cg.builder)
+
+   scov_i_params = types::Addrs()
+   scov_i_params += i8p
+   scov_i_params += i8p
+   scov_i_t = stmt::fn_type_n(cg, LLVMVoidType!, scov_i_params, 2)
+   scov_init_fn = LLVMAddFunction(cg.module, "__sanitizer_cov_trace_pc_guard_init", scov_i_t)
+   mark_nounwind(cg, scov_init_fn)
+   si_e = LLVMAppendBasicBlock(scov_init_fn, "entry")
+   LLVMPositionBuilderAtEnd(cg.builder, si_e)
+   LLVMBuildRetVoid(cg.builder)
+
    is_wasm_rt = ast::triple_arch(cg.opts.target_triple) == "wasm32"
    is_wasm_rt |
       LLVMSetLinkage(cur_fn, 8)
@@ -827,6 +951,10 @@ codegen_emit_runtime_full = cg =>
       LLVMSetLinkage(dest_fn, 8)
       LLVMSetLinkage(adopt_fn, 8)
       LLVMSetLinkage(hash_fn, 8)
+      LLVMSetLinkage(cov_map_fn, 8)
+      LLVMSetLinkage(cov_trace_fn, 8)
+      LLVMSetLinkage(scov_guard_fn, 8)
+      LLVMSetLinkage(scov_init_fn, 8)
    res_ret
 
 // "x = <expr>" — evaluate the RHS and store it into the variable's global.
@@ -855,7 +983,7 @@ codegen_emit_assign_after_binding = cg, t =>
 // function-local shadow (the top-level slot for a top-level binding).
 codegen_emit_assign_g: types::Cg, (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 codegen_emit_assign_g = cg, t =>
-   is_glob = t.3 || types::has_str(types::g.marked_globals, t.0)
+   is_glob = t.3 || types::is_marked_global_name(cg, t.0)
    is_glob | codegen_emit_global_assign(cg, t) | codegen_emit_assign_c(cg, t)
 
 is_builder_record_assign: types::Cg,
@@ -1073,8 +1201,8 @@ codegen_forward_registry = cg, t =>
            (vt' [Map, Builder, Fn, Array, Slice, Enum])
            | LLVMPointerType(LLVMInt8Type!, 0)
            | types::llvm_type_of_vt(vt')
-   lt = abi_ram && types::is_unboxed_ram_ti(cg, ti)
-      | match::unboxed_ram_struct_t(cg)
+   lt = abi_ram
+      | types::llvm_abi_type_of_ti(cg, ti)
       | base_lt
    is_ct_sig = t.7(..4) == "@ct0"
    is_sig = t.7(..5) == "@sig0"
@@ -1309,7 +1437,7 @@ codegen_check_binding_valid = cg, t =>
    plain_lhs = !lhs_is_member(t) && !lhs_is_keyaccess(t) &&
      !lhs_is_rawmemory(t) && !lhs_is_call(t)
    is_b_rec = is_builder_record_assign(cg, t)
-   is_glob = t.3 || types::has_str(types::g.marked_globals, t.0)
+   is_glob = t.3 || types::is_marked_global_name(cg, t.0)
    ordinary = !t.2 && !is_glob && !t.4 && !is_fwd_expr(cg, t) &&
      !rhs_is_fn(t) && plain_lhs && !is_b_rec
    ordinary
@@ -1442,7 +1570,7 @@ codegen_emit_plain_assign_val_store: types::Cg,
   (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo),
   (Addr, ast::ValueType) => ()
 codegen_emit_plain_assign_val_store = cg, t, ev =>
-   is_glob = t.3 || types::has_str(types::g.marked_globals, t.0)
+   is_glob = t.3 || types::is_marked_global_name(cg, t.0)
    is_view = types::is_view_expr(cg, t.5)
    is_view && (!cg.in_fn || is_glob)
       | types::init_error(cg, "E3150", diag::E3150_view_escape_frame!, 0, 0)

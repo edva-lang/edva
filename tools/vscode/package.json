@@ -1,8 +1,8 @@
 {
   "name": "dva-lang",
   "displayName": "Dva Language",
-  "description": "Syntax highlighting and language support for the Dva programming language",
-  "version": "0.1.0",
+  "description": "Syntax highlighting and language support for Dva, Vid, and CCL",
+  "version": "0.2.0",
   "publisher": "dva",
   "engines": {
     "vscode": "^1.75.0"
@@ -23,6 +23,28 @@
           ".dva"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "vid",
+        "aliases": [
+          "Vid",
+          "vid"
+        ],
+        "extensions": [
+          ".vid"
+        ],
+        "configuration": "./vid.language-configuration.json"
+      },
+      {
+        "id": "ccl",
+        "aliases": [
+          "CCL",
+          "ccl"
+        ],
+        "extensions": [
+          ".ccl"
+        ],
+        "configuration": "./ccl.language-configuration.json"
       }
     ],
     "grammars": [
@@ -30,6 +52,16 @@
         "language": "dva",
         "scopeName": "source.dva",
         "path": "./syntaxes/dva.tmLanguage.json"
+      },
+      {
+        "language": "vid",
+        "scopeName": "source.vid",
+        "path": "./syntaxes/vid.tmLanguage.json"
+      },
+      {
+        "language": "ccl",
+        "scopeName": "source.ccl",
+        "path": "./syntaxes/ccl.tmLanguage.json"
       }
     ]
   }

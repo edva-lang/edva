@@ -59,7 +59,7 @@
         <StringDetect attribute="String" context="TripleString" String="&quot;&quot;&quot;" />
         <DetectChar attribute="String" context="String" char="&quot;" />
         <!-- #use directive: highlight module path/string uniformly -->
-        <RegExpr attribute="Directive" context="UseDirective" String="#use(\([^)]*\))?\b" />
+        <RegExpr attribute="Directive" context="UseDirective" String="#use(\([^)]*\)|\b)" />
         <keyword attribute="Directive" context="#stay" String="directives" />
 
         <!-- Mutables: foo', x', total'' (highlighted in reddish) -->
@@ -108,7 +108,7 @@
         <StringDetect attribute="Constant" context="#stay" String="&lt;-" />
         <StringDetect attribute="Constant" context="#stay" String="-&gt;" />
 
-        <!-- Postfix --! matched before '-' -->
+        <!-- Postfix operators matched before '-' -->
         <StringDetect attribute="Operator" context="#stay" String="--!" />
         <StringDetect attribute="Operator" context="#stay" String="!!" />
 
@@ -172,10 +172,8 @@
         <DetectSpaces attribute="Normal Text" context="#stay" />
         <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/" />
         <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="BlockComment" />
-        <RegExpr attribute="Directive" context="#stay" String="\((dynamic|import|,|\s)*\)" />
-        <DetectChar attribute="Operator" context="#stay" char="=" />
         <DetectChar attribute="Normal Text" context="#pop" char=";" />
-        <RegExpr attribute="String" context="#stay" String="&quot;[^&quot;]*&quot;|[^\s;]+" />
+        <RegExpr attribute="String" context="#stay" String="&quot;[^&quot;]*&quot;|(?:[^/;\s\r\n]|/(?![/*]))(?:[^/;\r\n]|/(?![/*]))*(?&lt;!\s)" />
       </context>
       <context name="LineComment" attribute="Comment" lineEndContext="#pop" />
       <context name="BlockComment" attribute="Comment" lineEndContext="#stay">

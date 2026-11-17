@@ -73,6 +73,7 @@
    Slice(UType)
    Map(UMap)
    None
+   Poison
 >
 
 // --- Context & Bindings ----------------------------------------------------
@@ -83,12 +84,27 @@
 )
 #type VarBindings VarBinding{}
 
+#type InstFrame (
+   spec_name: String,
+   tmpl_name: String,
+   decl_file: String,
+   decl_line: Int,
+   decl_col: Int,
+   call_file: String,
+   call_line: Int,
+   call_col: Int
+)
+#type InstStack InstFrame{}
+
 #type TypeError (
    code: Int,
    msg: String,
    file: String,
    line: Int,
-   col: Int
+   col: Int,
+   root_file: String = "",
+   root_line: Int = 0,
+   root_col: Int = 0
 )
 #type TypeErrors TypeError{}
 
@@ -110,7 +126,8 @@
    constraints: Constraints,
    cur_file: String,
    cur_line: Int,
-   cur_col: Int
+   cur_col: Int,
+   inst_stack: InstStack
 )
 
 // --- Type Constructors -----------------------------------------------------
@@ -147,6 +164,12 @@ prim_type = !=> UType(Prim, UPrim(Type))
 
 prim_unknown: () => UType
 prim_unknown = !=> UType(Prim, UPrim(Unknown))
+
+poison_utype: () => UType
+poison_utype = !=> UType(Poison)
+
+is_poison: Ctx, UType => <>
+is_poison = ctx, t => canon(ctx, t) [Poison]
 
 error_ufields: () => UFields
 error_ufields = !=>
@@ -212,7 +235,7 @@ mk_map = k, v => UType(Map, UMap(k, v))
 // --- Context Operations ----------------------------------------------------
 
 new_ctx: () => Ctx
-new_ctx = !=> Ctx(0, VarBindings(), TypeErrors(), OpenVars(), Constraints(), "", 0, 0)
+new_ctx = !=> Ctx(0, VarBindings(), TypeErrors(), OpenVars(), Constraints(), "", 0, 0, InstStack())
 
 set_location: Ctx, String, Int, Int => ()
 set_location = ctx, file, line, col =>
@@ -229,6 +252,41 @@ set_file: Ctx, String => ()
 set_file = ctx, file =>
    ctx.cur_file = file
 
+push_inst_frame: Ctx, InstFrame => ()
+push_inst_frame = ctx, frame =>
+   stk = ctx.inst_stack
+   stk += frame
+   ctx.inst_stack = stk
+
+pop_inst_frame: Ctx => ()
+pop_inst_frame = ctx =>
+   n = ?ctx.inst_stack
+   n > 0
+      |
+         out = InstStack()
+         (n - 1) @ i => out += ctx.inst_stack(i)!!
+         ctx.inst_stack = out
+
+format_inst_loc: String, Int, Int => String
+format_inst_loc = file, line, col =>
+   fpart = file != "" | file | "<input>"
+   line > 0
+      | "${fpart}:${str::from_int(line)}:${str::from_int(col)}"
+      | fpart
+
+format_inst_trace: InstStack => String
+format_inst_trace = stk =>
+   n = ?stk
+   n == 0 | --| ""
+   b = {64}
+   last = stk(n - 1)!!
+   b += " [in specialization '${last.spec_name}' instantiated at ${format_inst_loc(last.call_file, last.call_line, last.call_col)}"
+   (n - 1) @ k =>
+      fr = stk(n - 2 - k)!!
+      b += " -> '${fr.spec_name}' at ${format_inst_loc(fr.call_file, fr.call_line, fr.call_col)}"
+   b += "]"
+   +b
+
 add_call_constraint: Ctx, UType, UTypes, UType => ()
 add_call_constraint = ctx, fn_ut, arg_uts, ret_ut =>
    cs = ctx.constraints
@@ -244,19 +302,26 @@ fresh_var = ctx =>
    ctx.bindings = bs
    UType(Var, id)
 
+add_error_loc: Ctx, Int, String, String, Int, Int => ()
+add_error_loc = ctx, code, msg, file, line, col =>
+   has_inst = ?ctx.inst_stack > 0
+   full_msg = has_inst | "${msg}${format_inst_trace(ctx.inst_stack)}" | msg
+   rf = has_inst | ctx.inst_stack(0)!!.call_file | ""
+   rl = has_inst | ctx.inst_stack(0)!!.call_line | 0
+   rc = has_inst | ctx.inst_stack(0)!!.call_col | 0
+   errs = ctx.errors
+   errs += TypeError(code, full_msg, file, line, col, rf, rl, rc)
+   ctx.errors = errs
+
 add_error: Ctx, Int, String => ()
 add_error = ctx, code, msg =>
-   errs = ctx.errors
-   errs += TypeError(code, msg, ctx.cur_file, ctx.cur_line, ctx.cur_col)
-   ctx.errors = errs
+   add_error_loc(ctx, code, msg, ctx.cur_file, ctx.cur_line, ctx.cur_col)
 
 add_error_at: Ctx, Int, String, Int, Int => ()
 add_error_at = ctx, code, msg, line, col =>
-   errs = ctx.errors
    l = line > 0 | line | ctx.cur_line
    c = col > 0 | col | ctx.cur_col
-   errs += TypeError(code, msg, ctx.cur_file, l, c)
-   ctx.errors = errs
+   add_error_loc(ctx, code, msg, ctx.cur_file, l, c)
 
 has_errors: Ctx => <>
 has_errors = ctx => ?ctx.errors > 0
@@ -319,8 +384,11 @@ canon = ctx, t =>
                   |
                      b.bound
                         [Var]
+                           rv = root_var_id(ctx, b.bound)
                            root = canon(ctx, b.bound)
-                           ctx.bindings(id) = VarBinding(<+>, root) !| _
+                           rv !< 0 && is_open_var(ctx, rv)
+                              | (ctx.bindings(id) = VarBinding(<+>, UType(Var, rv)) !| _)
+                              | (ctx.bindings(id) = VarBinding(<+>, root) !| _)
                            root
                         | b.bound
                   | t
@@ -412,15 +480,39 @@ unify = ctx, t1, t2 =>
    c2 = canon(ctx, t2)
    unify_canon(ctx, c1, c2, v1, v2)
 
+bind_var_to_val: Ctx, Int, UType, Int => <>
+bind_var_to_val = ctx, v, c, other_v =>
+   other_v !< 0 && other_v != v && is_open_var(ctx, other_v)
+      |
+         occurs(ctx, v, c)
+            |
+               add_error(ctx, 3103, "Occurs check failed: cyclic type ?T" +
+                  str::from_int(v) + " in " + show_utype(ctx, c))
+               <->
+            | do_bind(ctx, v, UType(Var, other_v))
+      | bind_var(ctx, v, c)
+
 unify_canon: Ctx, UType, UType, Int, Int => <>
 unify_canon = ctx, c1, c2, v1, v2 =>
+   is_p1 = c1 [Poison]
+   is_p2 = c2 [Poison]
+   is_p1 || is_p2
+      |
+         is_p1 && v2 !< 0 | do_bind(ctx, v2, UType(Poison))
+         is_p2 && v1 !< 0 | do_bind(ctx, v1, UType(Poison))
+         --| <+>
    c1 [Var var1]
       c2 [Var var2]
-         var1 == var2 | <+> | bind_var(ctx, var1, c2)
-      | bind_var(ctx, var1, c2)
+         var1 == var2
+            | <+>
+            |
+               is_open_var(ctx, var1) && !is_open_var(ctx, var2)
+                  | (ctx.open_vars += var2)
+               bind_var(ctx, var1, c2)
+      | bind_var_to_val(ctx, var1, c2, v2)
    |
       c2 [Var var2]
-         bind_var(ctx, var2, c1)
+         bind_var_to_val(ctx, var2, c1, v1)
       | unify_concrete(ctx, c1, c2, v1, v2)
 
 is_open_unit_ram: Ctx, URam => <>
@@ -537,17 +629,26 @@ unify_fn = ctx, f1, f2 =>
       |
          add_error(ctx, 3084, "Function arity mismatch: expected " +
             str::from_int(?f1.params) + " params, got " +
-            str::from_int(?f2.params))
+            str::from_int(?f2.params) + " (" + show_utype(ctx, UType(Fn, f1)) +
+            " vs " + show_utype(ctx, UType(Fn, f2)) + ")")
+         c_r0 = canon(ctx, f2.ret)
+         c_r0 [Var rid0] do_bind(ctx, rid0, UType(Poison))
          <->
       |
          all_ok' = <+>
          f1.params @ p1, i =>
             p2 = f2.params(i)!!
             ok = unify(ctx, p1, p2)
-            !ok | (all_ok' = <->; -->)
+            !ok | (all_ok' = <->)
          all_ok'
             | unify(ctx, f1.ret, f2.ret)
-            | <->
+            |
+               c_r2 = canon(ctx, f2.ret)
+               c_r2 [Var rid]
+                  is_ground(ctx, f1.ret)
+                     | do_bind(ctx, rid, canon(ctx, f1.ret))
+                     | do_bind(ctx, rid, UType(Poison))
+               <->
 
 is_sub_record: Ctx, UFields, UFields => <>
 is_sub_record = ctx, sub_flds, full_flds =>
@@ -562,34 +663,77 @@ is_sub_record = ctx, sub_flds, full_flds =>
             !ok | (all_ok' = <->; -->)
    all_ok'
 
+remove_open_var: Ctx, Int => ()
+remove_open_var = ctx, v =>
+   filtered = Int{}
+   ctx.open_vars @ ov =>
+      ov != v | (filtered += ov)
+   ctx.open_vars = filtered
+
+merge_open_records: Ctx, UFields, UFields => < UFields | >
+merge_open_records = ctx, r1, r2 =>
+   merged' = UFields()
+   r1 @ f1 => (merged' += f1)
+   ok' = <+>
+   r2 @ f2 =>
+      idx = find_field_idx(r1, f2.name)
+      idx !< 0
+         |
+            f1 = r1(idx)!!
+            ok = unify(ctx, f1.ut, f2.ut)
+            !ok | (ok' = <->; -->)
+         | (merged' += f2)
+   ok' | <+ merged' +> | <-->
+
 unify_rec_open: Ctx, UFields, UFields, Int, Int => <>
 unify_rec_open = ctx, r1, r2, v1, v2 =>
    open1 = v1 !< 0 && is_open_var(ctx, v1)
-   open1
+   open2 = v2 !< 0 && is_open_var(ctx, v2)
+   open1 && open2
       |
-         sub_ok = is_sub_record(ctx, r1, r2)
-         sub_ok
+         mg = merge_open_records(ctx, r1, r2)
+         mg
+            | m_fields =>
+               m_ut = UType(Rec, m_fields)
+               v1 == v2
+                  | bind_var(ctx, v1, m_ut)
+                  |
+                     ok_b1 = bind_var(ctx, v1, m_ut)
+                     ok_b1
+                        |
+                           do_bind(ctx, v2, UType(Var, v1))
+                           <+>
+                        | <->
             |
-               bind_var(ctx, v1, UType(Rec, r2))
-               <+>
-            |
-               add_error(ctx, 3084,
-                  diag::E3084_open_record_fields!)
+               add_error(ctx, 3084, diag::E3084_open_record_fields!)
                <->
       |
-         open2 = v2 !< 0 && is_open_var(ctx, v2)
-         open2
+         open1
             |
-               sub_ok2 = is_sub_record(ctx, r2, r1)
-               sub_ok2
+               sub_ok = is_sub_record(ctx, r1, r2)
+               sub_ok
                   |
-                     bind_var(ctx, v2, UType(Rec, r1))
-                     <+>
+                     ok_b = bind_var(ctx, v1, UType(Rec, r2))
+                     ok_b | remove_open_var(ctx, v1)
+                     ok_b
                   |
                      add_error(ctx, 3084,
                         diag::E3084_open_record_fields!)
                      <->
-            | unify_rec(ctx, r1, r2)
+            |
+               open2
+                  |
+                     sub_ok2 = is_sub_record(ctx, r2, r1)
+                     sub_ok2
+                        |
+                           ok_b2 = bind_var(ctx, v2, UType(Rec, r1))
+                           ok_b2 | remove_open_var(ctx, v2)
+                           ok_b2
+                        |
+                           add_error(ctx, 3084,
+                              diag::E3084_open_record_fields!)
+                           <->
+                  | unify_rec(ctx, r1, r2)
 
 unify_rec: Ctx, UFields, UFields => <>
 unify_rec = ctx, r1, r2 =>
@@ -638,7 +782,9 @@ unify_ram = ctx, r1, r2 =>
          add_error(ctx, 3089,
             diag::E3089_ram_shape_prefix! +
             show_ram_shape(s1) + " to " +
-            show_ram_shape(s2))
+            show_ram_shape(s2) + " (" +
+            show_utype(ctx, UType(Ram, r1)) + " vs " +
+            show_utype(ctx, UType(Ram, r2)) + ")")
          <->
       |
          pos_ok = r1.pos.has_payload
@@ -707,6 +853,8 @@ solve_constraint = ctx, c =>
       [Call call]
          c0 = canon(ctx, call.0)
          c0
+            [Poison]
+               unify(ctx, call.2, UType(Poison))
             [Rec rec]
                n_flds = ?rec
                n_flds > 0
@@ -773,6 +921,8 @@ solve_field: Ctx, UType, String, UType => <>
 solve_field = ctx, rec_type, name, fld_type =>
    c = canon(ctx, rec_type)
    c
+      [Poison]
+         unify(ctx, fld_type, UType(Poison))
       [Var v]
          flds = UFields()
          flds += UField(name, fld_type)
@@ -796,6 +946,7 @@ solve_field = ctx, rec_type, name, fld_type =>
                   |
                      add_error(ctx, 3130, "Record has no field named '" + name +
                         "': " + show_utype(ctx, c))
+                     unify(ctx, fld_type, UType(Poison))
                      <->
       [Prim p]
          is_err = p [Error]
@@ -810,14 +961,17 @@ solve_field = ctx, rec_type, name, fld_type =>
                   |
                      add_error(ctx, 3130, "Record has no field named '" + name +
                         "': " + show_utype(ctx, c))
+                     unify(ctx, fld_type, UType(Poison))
                      <->
             |
                add_error(ctx, 3084, "Field access '" + name +
                   "' on non-record type: " + show_utype(ctx, c))
+               unify(ctx, fld_type, UType(Poison))
                <->
       |
          add_error(ctx, 3084, "Field access '" + name +
             "' on non-record type: " + show_utype(ctx, c))
+         unify(ctx, fld_type, UType(Poison))
          <->
 
 parse_field_digits: String, Int, Int => Int
@@ -862,6 +1016,7 @@ is_ground = ctx, t =>
    c = canon(ctx, t)
    c
       [Var] <->
+      [Poison] <+>
       [Prim] <+>
       [Fn f]
          ret_ok = is_ground(ctx, f.ret)
@@ -939,6 +1094,7 @@ show_utype = ctx, t =>
          "Map(" + show_utype(ctx, m.key) + ", " + show_utype(ctx, m.val) + ")"
       [Enum e]
          (e.name != "" | e.name | "<enum>")
+      [Poison] "<error>"
       | "?"
 
 show_utypes: Ctx, UTypes => String

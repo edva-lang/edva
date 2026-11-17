@@ -1,0 +1,93 @@
+#use ../../src/ast
+#use ../../src/diag
+#use ../../src/lexer
+#use ../../src/parser
+#use ../../src/formatter
+#use ../../src/annotate
+#use mem
+#use str
+#use test
+
+ast_sigs_equal: String, String => <>
+ast_sigs_equal = a, b =>
+   formatter::parse_ast_signature(a, "fuzz_a.dva")
+      | sa =>
+         formatter::parse_ast_signature(b, "fuzz_b.dva")
+            | sb => sa == sb
+            | <->
+      | <+>
+
+fuzz_lexer_parser_one: String => <>
+fuzz_lexer_parser_one = s =>
+   mem::escape_value(!=>
+      _res = formatter::parse_ast_signature(s, "fuzz.dva")
+      <+>
+   )
+
+fuzz_formatter_one: String => <>
+fuzz_formatter_one = s =>
+   mem::escape_value(!=>
+      sig0 = formatter::parse_ast_signature(s, "fuzz.dva")
+      sig0
+         | sa =>
+            formatter::format_source(s, "fuzz.dva")
+               | f1 =>
+                  sig1 = formatter::parse_ast_signature(f1, "fuzz.dva")
+                  eq_ast = sig1 | sb => sa == sb | <->
+                  !eq_ast | --| <->
+                  formatter::format_source(f1, "fuzz.dva")
+                     | f2 => f2 == f1
+                     | <->
+               | <+>
+         | <+>
+   )
+
+fuzz_annotate_one: String => <>
+fuzz_annotate_one = s =>
+   mem::escape_value(!=>
+      ast::cell_var_reset!
+      parser::set_target_triple("x86_64-unknown-linux-gnu")
+      annotate::set_target_triple("x86_64-unknown-linux-gnu")
+      annotate::set_source_file("fuzz.dva")
+      annotate::set_program_locs(ast::Names(), ast::Ints(), ast::Ints())
+      annotate::set_program_mods(ast::Names())
+      diag::enable_capture!
+      lexer::lex_set_file("fuzz.dva")
+      ppr = parser::parse_init(s)
+      parser::parser_set_file(ppr, "fuzz.dva")
+      prog_opt = parser::parse_program(ppr)
+      diags = diag::get_captured!
+      prog_opt
+         | prog =>
+            ?diags == 0 | (_res = annotate::annotate_program(prog))
+      diag::disable_capture!
+      <+>
+   )
+
+lp_seeds = String{}(
+   "#type R (a: Int, b: Int)\nf = x => x + 1\nf(2)\n",
+   "g = x => x [0] 10 [1...3] 20 | 30\ng(2)\n",
+   "r = <+ 42 +>\nr | n => n | 0\n"
+)
+
+fmt_seeds = String{}(
+   "a = 1 + 2\nb = a * 3\n",
+   "fn = x =>\n   x > 0 | x + 1 | 0\nfn(5)\n",
+   "\"unterminated\n",
+   "x = [\n"
+)
+
+ann_seeds = String{}(
+   "#type Box (v: Int)\nf: Box => Int\nf = b => b.v + 1\nf(Box(4))\n",
+   "id: #param T: Type, T => T\nid = #param T, x => x\nid(10)\n",
+   "bad = unknown_ident + 1\n",
+   "m: Int, String => Int\nm = a, b => a + ?b\nm(1, \"abc\")\n"
+)
+
+test::suite("tier1_frontend_fuzz")
+test::fuzz("lexer_parser", lp_seeds, fuzz_lexer_parser_one)
+test::fuzz("formatter", fmt_seeds, fuzz_formatter_one)
+test::fuzz("annotate_resilience", ann_seeds, fuzz_annotate_one)
+test::check(ast_sigs_equal("x = 1 + 2\n", "x =   1+2\n"), "ast_equivalence_helper")
+
+test::finish!

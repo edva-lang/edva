@@ -1,0 +1,6 @@
+#type Header (a: Int, b: Int)
+
+make_reader: Addr => (() => Int)
+make_reader = p =>
+   v = @[p Header]
+   !=> v.a

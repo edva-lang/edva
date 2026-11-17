@@ -4,7 +4,7 @@ meta:
   status: "current reference"
   audited: "c17e2aa"
   evidence:
-    "`std/mem.dva`, `tests/pass/290_std_mem.dva`, `tests/pass/341_std_mem_pool_reference.dva`"
+    "`std/mem.dva`, `tests/pass/290_std_mem.dva`, `tests/pass/341_std_mem_pool_reference.dva`, `tests/pass/445_arena_lifetime_escape_contract.dva`, `tests/pass/446_reentrant_concurrent_stdlib.dva`"
 ---
 
 # `mem` standard library
@@ -38,12 +38,15 @@ within an arena are freed simultaneously when the arena is reset or destroyed.
 ```{.dva .run}
 #type Arena (raw: Addr, cap: Int)
 #type ArenaStats (bytes_allocated: Int, num_chunks: Int, cap: Int)
+#type ArenaProvenance (arena: Addr, generation: Int, scope_depth: Int,
+   resets: Int, bytes_allocated: Int, num_chunks: Int)
 ```
 
 | Function | Signature | Description |
 |---|---|---|
 | `mem::arena` | `Int => Arena` | Creates an arena with initial chunk capacity (bytes) |
 | `mem::arena_default` | `() => Arena` | Creates an arena with default 64 MB chunk capacity |
+| `mem::global_arena` | `() => Arena` | Returns the persistent thread-default global arena descriptor |
 | `mem::current` | `() => Addr` | Returns the active arena descriptor (global arena when no scoped arena is selected) |
 | `mem::set_current` | `Addr => Addr` | Selects an arena and returns the previously active descriptor; `Addr(0)` selects the global arena |
 | `mem::save` | `Arena => Int` | Saves an allocation mark in the given arena |
@@ -53,6 +56,9 @@ within an arena are freed simultaneously when the arena is reset or destroyed.
 | `mem::release` | `Arena => ()` | Frees backing chunks while keeping the arena descriptor reusable |
 | `mem::destroy` | `Arena => ()` | Frees all backing chunks and arena descriptor |
 | `mem::stats` | `Arena => ArenaStats` | Retrieves allocation metrics and chunk counts |
+| `mem::provenance` | `Arena => ArenaProvenance` | Retrieves generation epoch, scope depth, reset count, and allocation totals |
+| `mem::current_provenance` | `() => ArenaProvenance` | Retrieves provenance for the currently active ambient arena |
+| `mem::owns_addr` | `Arena, Addr => <>` | Returns `<+>` when `ptr` falls within the live allocated chunks of `a` |
 | `mem::with` | `Arena, (() => ()) => ()` | Runs action with arena set as ambient allocator |
 | `mem::with_value` | `#param T: Type, Arena, (() => T) => T` | Runs an action in an arena and returns its value |
 | `mem::escape` | `(() => ()) => ()` | Runs action in the global arena, restoring the prior arena afterward |
@@ -72,6 +78,49 @@ buf = mem::alloc(ar, 256)
 // ... use buf ...
 mem::destroy(ar)
 ```
+
+## Arena Lifetime & Escape Contract
+
+Every Edva thread has an implicit persistent global arena (`mem::global_arena!`) and an ambient current arena (`mem::current!`). Implicit allocations (`String` concatenation, records, `Builder`, dynamic arrays, maps, boxed ramifications/enums, and closure environments) allocate in whichever arena is ambient at the allocation site.
+
+- **Scalars and bitfields** (`Int`, `i8`..`u64`, `Float`, `f32`, `Rune`, `<>`, `()`, fixed bitfields): passed and returned by value with no arena backing; safe to return across any `mem::with_value`, `mem::reset`, `mem::destroy`, or block restore boundary.
+- **Records, nested containers, and boxed unions**: allocated in the ambient arena at construction or growth time (array `+=` doubling, map rehash). A container created in the global arena that grows while a request arena `a` is ambient acquires backing buffers in `a` unless growth runs inside `mem::escape(...)`.
+- **Deep string copies (`++s`)**: always allocate a fresh `{ len, data }` string and byte buffer in the *current* ambient arena (stripping scope generation tags). To promote a `String` built inside a request arena `a` so it survives `mem::reset(a)` or `mem::destroy(a)`, copy it inside `mem::escape` or `mem::escape_value` (e.g. `mem::escape_value((!=> ++s))`).
+- **Closures & asynchronous callbacks**:
+  - Synchronous callbacks invoked strictly before the request arena resets may run inside `mem::with(req, ...)` and capture request-scoped values freely.
+  - Deferred / asynchronous callbacks stored beyond `mem::reset(req)` or `mem::destroy(req)` must allocate both the closure environment and any captured strings/records in the persistent arena (construct or promote the callback and its captured values inside `mem::escape`).
+  - Capturing closures passed to `mem::with` / `mem::with_value` allocate their capture environment in the caller's active arena *before* switching arenas, so unbounded request loops should pass non-capturing closures or bracket each iteration with `mem::set_current` (or `mem::save` and `mem::restore_to` on the outer arena).
+- **Frame-bound views & block-scoped addresses (unsafe boundaries)**:
+  - Typed memory views (`@[ptr RecordType]`) borrow external/frame storage without copying. The compiler statically rejects returning a view directly, wrapped in a composite/variant/map, captured in a closure, written to a global, or stored through a field/index write (`E3150`).
+  - Taking `&builder` / `&local` inside an implicit top-level arena-restore block produces a block-scoped `Addr`. The compiler statically rejects returning it or any composite/closure holding it (`E3133`), as well as writing it or any composite/closure containing it to an outer variable, member, or element (`E3134`).
+  - Runtime scope tags validate mortal `String` reads (`E4010`) and block-scoped `Addr` dereferences (`E4011`) across implicit save/restore scopes. Explicit `mem::save`, `mem::restore_to`, `mem::reset`, and `mem::destroy` bump the arena reset count and generation epoch (`mem::provenance`), and ownership can be queried in tests or debug builds via `mem::owns_addr`.
+
+```{.dva .run}
+#use mem
+
+req = mem::arena(4096)
+retained: String{}
+
+mem::with(req, !=>
+   tmp = "req_" + "ok"
+   safe = mem::escape_value((!=> ++tmp))
+   mem::escape((!=> retained += safe))
+)
+
+mem::reset(req)
+prov = mem::provenance(req)
+// prov.resets == 1, prov.bytes_allocated == 0
+mem::destroy(req)
+```
+
+### Thread & Task Arena Ownership
+
+Concurrent execution with `task::spawn` and `task::join` enforces strict per-thread arena isolation:
+
+- **Thread-default base arenas**: On the main thread, `@global_arena` serves as the persistent fallback base arena. Each `task::spawn` worker receives its own heap-allocated child `Arena`, installed as both its ambient arena (`@dva_arena_tls`) and its thread-local base arena (`@dva_arena_base_tls`).
+- **`mem::escape` & `mem::global_arena!` inside tasks**: Calling `mem::global_arena!`, `mem::escape`, `mem::escape_value`, or `mem::set_current(Addr(0))` inside a worker resolves to that worker thread's own base arena (`@dva_arena_base_tls`), never the main thread's `@global_arena`. Scoped `mem::with(req, ...)` paired with `mem::escape(...)` inside parallel workers therefore runs lock-free without data races.
+- **Handoff & adoption on `task::join`**: `task::spawn` deep-copies arguments and captured closure environments into the worker's child arena before launching the thread. `task::join` waits on the worker (`pthread_join`), deep-copies the returned value (or `Error`) into the joining thread's ambient arena, adopts any surviving chunks from the worker's base arena via `dva_arena_adopt`, and frees the worker's descriptor.
+- **Explicit handle ownership & synchronization**: `Arena` and `Pool` descriptors contain unsynchronized mutable metadata (`offset`, `num_chunks`, `free_stack`, generation stacks). An explicit `Arena` or `Pool` must be owned by one thread at a time or protected with external synchronization if shared across threads.
 
 ## Fixed-capacity object pools
 

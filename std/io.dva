@@ -172,8 +172,7 @@
    log: #param T: Type, Int, T => Int
    log = fd, x =>
       s = show(x)
-      nl = "\n"
-      writev_all(fd, s, nl)
+      writev_all(fd, s, "\n")
 
    // Substitutes 'show(x)' for every '{}' in fmt (the scalar form of logf).
    logf_scalar: #param T: Type, Builder, T, String => ()

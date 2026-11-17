@@ -17,6 +17,7 @@
 #use ./diag
 #use ./formatter
 #use str
+#use mem
 #use path
 #use log
 #use ./version
@@ -95,6 +96,12 @@ record_typecheck_errs = fpath, errs =>
    errs @ e =>
       (e.file == "" || e.file == fpath)
          | add_unique_diag(pending_diags, diag::DiagEntry(e.code, fpath, e.line, e.col, e.msg, <->))
+         |
+            e.root_file == fpath && e.root_line > 0
+               | add_unique_diag(pending_diags, diag::DiagEntry(e.code, fpath,
+                 e.root_line, e.root_col,
+                 "${e.msg} (origin: ${e.file}:${str::from_int(e.line)}:${str::from_int(e.col)})",
+                 <->))
 
 // --- Low-level JSON-RPC 2.0 Framing over fd 0 / fd 1 -----------------------
 
@@ -491,21 +498,34 @@ publish_diagnostics = uri, diags =>
 
 // --- Document Analysis & Caching -------------------------------------------
 
+copy_sym_entries: SymEntries => SymEntries
+copy_sym_entries = src =>
+   out = SymEntries()
+   src @ s =>
+      out += SymEntry(++s.name, ++s.detail, s.kind, s.line, s.col, s.end_line, s.end_col)
+   out
+
 upsert_doc: String, String, String, SymEntries => ()
 upsert_doc = uri, fpath, text, syms =>
-   docs = open_docs
-   found' = <->
-   ?docs @ i =>
-      d = docs(i)!!
-      d.uri == uri
+   mem::escape((!=>
+      esc_uri = ++uri
+      esc_path = ++fpath
+      esc_text = ++text
+      esc_syms = copy_sym_entries(syms)
+      docs = open_docs
+      found' = <->
+      ?docs @ i =>
+         d = docs(i)!!
+         d.uri == esc_uri
+            |
+               docs(i) = DocState(esc_uri, esc_path, esc_text, esc_syms) !| _
+               found' = <+>
+               -->
+      !found'
          |
-            docs(i) = DocState(uri, fpath, text, syms) !| _
-            found' = <+>
-            -->
-   !found'
-      |
-         docs += DocState(uri, fpath, text, syms)
-         open_docs ::= docs
+            docs += DocState(esc_uri, esc_path, esc_text, esc_syms)
+            open_docs ::= docs
+   ))
 
 get_doc: String => < DocState | >
 get_doc = uri =>
@@ -521,7 +541,9 @@ get_doc = uri =>
 
 remove_doc: String => ()
 remove_doc = uri =>
-   open_docs ::= (open_docs @> d => d.uri != uri | <+ d +>)
+   mem::escape((!=>
+      open_docs ::= (open_docs @> d => d.uri != uri | <+ d +>)
+   ))
 
 has_diag: diag::DiagEntries, diag::DiagEntry => <>
 has_diag = list, item =>
@@ -970,52 +992,72 @@ main = stdlib_dir, tc_hook =>
    log::set_timestamps(<->)
    set_stdlib_dir(stdlib_dir)
    shutdown_requested' = <->
+   req_arena = mem::arena(4194304)
 
    0.. @
-      msg_opt = read_rpc_message!
-      msg_opt
-         | raw_json =>
-            parsed = json::parse(raw_json)
-            parsed
-               | msg =>
-                  method = json::get_str(msg, "method") | m => m | ""
-                  id_val = json::get(msg, "id") | v => v | json::Value(Null)
-                  params = json::get(msg, "params") | v => v | json::Value(Null)
-                  method
-                     ["initialize"]
-                        handle_initialize(id_val)
-                     ["initialized"]
-                        --^
-                     ["shutdown"]
-                        shutdown_requested' = <+>
-                        send_result(id_val, "null")
-                     ["exit"]
-                        -->
-                     ["textDocument/didOpen"]
-                        handle_did_open(params, tc_hook)
-                     ["textDocument/didChange"]
-                        handle_did_change(params, tc_hook)
-                     ["textDocument/didSave"]
-                        handle_did_save(params, tc_hook)
-                     ["textDocument/didClose"]
-                        handle_did_close(params)
-                     ["textDocument/hover"]
-                        handle_hover(id_val, params)
-                     ["textDocument/definition"]
-                        handle_definition(id_val, params)
-                     ["textDocument/documentSymbol"]
-                        handle_document_symbol(id_val, params)
-                     ["textDocument/formatting"]
-                        handle_formatting(id_val, params)
-                     ["textDocument/completion"]
-                        handle_completion(id_val, params)
-                     |
-                        // Respond with MethodNotFound (-32601) if request had an id
-                        json::has(msg, "id")
-                           |
-                              err_payload = "{\"jsonrpc\":\"2.0\",\"id\":" +
-                                 format_id_json(id_val) +
-                                 ",\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}"
-                              send_rpc_payload(err_payload)
-         | -->
+      // Return 0 = continue, 1 = shutdown requested, 2 = exit loop.
+      step_rc = mem::with_value(req_arena, !=>
+         msg_opt = read_rpc_message!
+         msg_opt
+            | raw_json =>
+               parsed = json::parse(raw_json)
+               parsed
+                  | msg =>
+                     method = json::get_str(msg, "method") | m => m | ""
+                     id_val = json::get(msg, "id") | v => v | json::Value(Null)
+                     params = json::get(msg, "params") | v => v | json::Value(Null)
+                     method
+                        ["initialize"]
+                           handle_initialize(id_val)
+                           0
+                        ["initialized"]
+                           0
+                        ["shutdown"]
+                           send_result(id_val, "null")
+                           1
+                        ["exit"]
+                           2
+                        ["textDocument/didOpen"]
+                           handle_did_open(params, tc_hook)
+                           0
+                        ["textDocument/didChange"]
+                           handle_did_change(params, tc_hook)
+                           0
+                        ["textDocument/didSave"]
+                           handle_did_save(params, tc_hook)
+                           0
+                        ["textDocument/didClose"]
+                           handle_did_close(params)
+                           0
+                        ["textDocument/hover"]
+                           handle_hover(id_val, params)
+                           0
+                        ["textDocument/definition"]
+                           handle_definition(id_val, params)
+                           0
+                        ["textDocument/documentSymbol"]
+                           handle_document_symbol(id_val, params)
+                           0
+                        ["textDocument/formatting"]
+                           handle_formatting(id_val, params)
+                           0
+                        ["textDocument/completion"]
+                           handle_completion(id_val, params)
+                           0
+                        |
+                           // Respond with MethodNotFound (-32601) if request had an id
+                           json::has(msg, "id")
+                              |
+                                 err_payload = "{\"jsonrpc\":\"2.0\",\"id\":" +
+                                    format_id_json(id_val) +
+                                    ",\"error\":{\"code\":-32601,\"message\":\"Method not found\"}}"
+                                 send_rpc_payload(err_payload)
+                           0
+                  | 0
+            | 2
+      )
+      mem::reset(req_arena)
+      step_rc == 1 | shutdown_requested' = <+>
+      step_rc == 2 | -->
+   mem::destroy(req_arena)
    shutdown_requested' | 0 | 0

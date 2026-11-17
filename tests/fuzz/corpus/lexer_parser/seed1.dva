@@ -1,0 +1,8 @@
+#type Point (x: Int, y: Int = 1)
+#type Opt <Int|>
+
+add_p: Point, Point => Int
+add_p = a, b => a.x + b.x + a.y + b.y
+
+res = add_p(Point(2, 3), Point(4))
+res > 5 | res | 0

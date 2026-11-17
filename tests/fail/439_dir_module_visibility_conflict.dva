@@ -1,0 +1,2 @@
+#use ./mod_dir_vis_conflict
+mod_dir_vis_conflict::foo(1)

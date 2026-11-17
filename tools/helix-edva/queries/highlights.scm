@@ -29,6 +29,7 @@
 ;; ------------------------------------------------------------------
 [
   "#use"
+  "#use-dynamic"
   "#type"
   "#foreign"
   "#pragma"
@@ -42,9 +43,14 @@
   "#arch"
   "#target"
   "#infix"
+  "#spawn"
+  "#join"
+  "#exit"
   "#error"
   "#warn"
+  "#!"
   "#size"
+  "#packed"
   "#align"
   "#name"
   "#zero"
@@ -53,6 +59,8 @@
   "#member"
   "#has_member"
 ] @keyword.directive
+
+(import_statement ["(" ")" "," "dynamic" "import"] @keyword.directive)
 
 ;; ------------------------------------------------------------------
 ;; Literals & Uniform #use Module Paths
@@ -155,7 +163,7 @@
 (foreign_param (identifier) @variable.parameter)
 (foreign_param (variant_name) @variable.parameter)
 
-; Compile-time type-parameter names ("#param T: Type").
+; Compile-time type-parameter names ("#! T: Type").
 (signature_param (identifier) @variable.parameter)
 (signature_param (variant_name) @variable.parameter)
 
@@ -365,3 +373,10 @@
 (postfix_call "!" @operator)
 (postfix_call "!!" @operator)
 (postfix_call "--!" @operator)
+
+;; Uniform #use Module Paths (placed last so punctuation/operator rules do not split imports)
+(import_statement "=" @string)
+(import_statement (module_path) @string)
+(import_statement (module_path (identifier) @string))
+(import_statement (module_path (string_literal) @string))
+(import_statement (module_path ["@" "./" "../" "/" "-" "." "(" ")" ","] @string))

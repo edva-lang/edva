@@ -20,6 +20,8 @@
 #public
    #type Arena (raw: Addr, cap: Int)
    #type ArenaStats (bytes_allocated: Int, num_chunks: Int, cap: Int)
+   #type ArenaProvenance (arena: Addr, generation: Int, scope_depth: Int,
+      resets: Int, bytes_allocated: Int, num_chunks: Int)
    #type Pool (buffer: Addr, free_stack: Addr, active: Addr, state: Addr,
       elem_size: Int, capacity: Int)
 
@@ -95,6 +97,51 @@
       off = @[a.raw + 16 Int]
       allocated = num_chunks > 1 | (num_chunks - 1) * a.cap + off | off
       ArenaStats(allocated, num_chunks, a.cap)
+
+   // Returns the persistent thread-default global arena descriptor.
+   global_arena: () => Arena
+   global_arena = !=>
+      prev = set_current(Addr(0))
+      g_raw = current!
+      set_current(prev)
+      cap = @[g_raw Int]
+      eff_cap = cap > 0 | cap | 67108864
+      Arena(g_raw, eff_cap)
+
+   // Inspects allocation, scope depth, generation epoch, and reset provenance.
+   provenance: Arena => ArenaProvenance
+   provenance = a =>
+      cap = a.cap > 0 | a.cap | @[a.raw Int]
+      num_chunks = @[a.raw + 8 Int]
+      off = @[a.raw + 16 Int]
+      allocated = num_chunks > 1 | (num_chunks - 1) * cap + off | off
+      depth = @[a.raw + 131104 Int]
+      next_gen = @[a.raw + 131112 Int]
+      gen = next_gen > 0 | next_gen | 1
+      resets = @[a.raw + 131120 Int]
+      ArenaProvenance(a.raw, gen, depth, resets, allocated, num_chunks)
+
+   current_provenance: () => ArenaProvenance
+   current_provenance = !=>
+      raw = current!
+      cap = @[raw Int]
+      eff_cap = cap > 0 | cap | 67108864
+      provenance(Arena(raw, eff_cap))
+
+   // Checks whether `ptr` points inside the live allocated region of `a`.
+   owns_addr: Arena, Addr => <>
+   owns_addr = a, ptr =>
+      a.raw == Addr(0) | --| <->
+      raw_addr = Int(ptr) .&. 0xFFFFFFFFFFFF
+      raw_addr == 0 | --| <->
+      cap = a.cap > 0 | a.cap | @[a.raw Int]
+      num_chunks = @[a.raw + 8 Int]
+      off = @[a.raw + 16 Int]
+      0..num_chunks @ i =>
+         c_base = @[a.raw + 24 + i * 8 Int] .&. 0xFFFFFFFFFFFF
+         c_limit = i == num_chunks - 1 | off | cap
+         raw_addr !< c_base && raw_addr < c_base + c_limit | --| <+>
+      <->
 
    with: Arena, (() => ()) => ()
    with = a, action =>

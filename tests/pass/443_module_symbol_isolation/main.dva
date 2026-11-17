@@ -1,0 +1,8 @@
+#use io
+#use ./mod
+
+::total = 100
+add: Int, Int => Int
+add = a, b => a * b
+
+io::out $ "${mod::run!}|${mod::add(4, 5)}|${add(4, 5)}|${total}"

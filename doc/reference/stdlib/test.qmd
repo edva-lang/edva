@@ -2,8 +2,8 @@
 meta:
   audience: "Edva developers writing unit and integration tests"
   status: "current reference"
-  audited: "fb4fbc2"
-  evidence: "`std/test.dva`, `tests/pass/387_str_os_cli_test_bench.dva`"
+  audited: "2026-11-17"
+  evidence: "`std/test.dva`, `tests/pass/387_str_os_cli_test_bench.dva`, `tests/pass/447_fuzz_and_property_testing.dva`"
 ---
 
 # `test` standard library
@@ -38,3 +38,24 @@ test::summary!
 | `test::passed!` / `test::failed!` / `test::total!` | `() => Int` | Queries current assertion counters |
 | `test::summary!` | `() => ()` | Prints `PASS: N passed, 0 failed` (or `FAIL: ...` and exits `1`) |
 | `test::finish!` | `() => Int` | Prints summary and returns `0` if all passed or `1` if any failed |
+| `test::fuzz(name, seeds, prop)` | `String, String{}, (String => <>) => <>` | Coverage-guided mutation fuzzer replaying seeds/disk corpus and shrinking failures |
+| `test::fuzz_opts(name, seeds, runs, seed, prop)` | `String, String{}, Int, Int, (String => <>) => <>` | Configurable coverage-guided fuzz target (supports `EDVA_FUZZ`, `EDVA_FUZZ_RUNS`, `EDVA_FUZZ_TIME`, `EDVA_FUZZ_SEED`, `EDVA_FUZZ_CORPUS`) |
+| `test::forall(name, gen, prop)` | `#param T: Type, String, (rand::Rng => T), (T => <>) => <>` | Runs 100 seeded property checks in a per-iteration scratch arena (shrinks `String` failures) |
+| `test::forall_opts(name, runs, seed, gen, prop)` | `#param T: Type, String, Int, Int, (rand::Rng => T), (T => <>) => <>` | Configurable seeded property-based testing harness |
+| `test::shrink_str(s, prop)` | `String, (String => <>) => String` | Hierarchically reduces a failing `String` via chunk, line, byte, and alphabet passes |
+| `test::gen_int(lo, hi)` / `test::gen_ascii(n)` / `test::gen_utf8(n)` | `Int[, Int] => (rand::Rng => ...)` | Built-in property generators for uniform ints, ASCII strings, and UTF-8 strings |
+| `test::cov_clear!` / `test::cov_edges!` / `test::cov_trace(id)` | `() => ()` / `() => Int` / `Int => ()` | Inspect, clear, or record entries in the built-in 64 KB `@__dva_cov_map` edge bitmap |
+
+## Fuzzing and property testing
+
+```{.dva .run}
+#use json
+#use test
+
+seeds = String{}("{\"ok\":true}", "[1, 2, 3]")
+test::fuzz("json_parse", seeds, (s => _r = json::parse(s); <+>))
+test::forall("int_range", test::gen_int(-10, 10), (n => n !< -10 && n !> 10))
+test::finish!
+```
+
+Compile with `--fuzz-cov` (or run `edva test --fuzz`) to instrument functions, cycles, and choice branches with the built-in 64 KB edge bitmap (`@__dva_cov_map`), plus `__sanitizer_cov_trace_pc_guard` hooks when external sanitizer coverage is enabled. Each iteration runs inside a scratch `mem::Arena` reset between inputs.

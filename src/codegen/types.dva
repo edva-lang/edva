@@ -5,6 +5,7 @@
 #use ../diag
 #use str
 #use ../tast
+#use ../layout
 #use ../unify
 #use mem
 #use sys
@@ -146,11 +147,12 @@ empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
    compiler_exe: String,
    is_module: <>,
    module_name: String,
+   fuzz_cov: <> = <->
 )
 
 default_codegen_opts: () => CodegenOpts
 default_codegen_opts = !=> CodegenOpts("", <->, <->, ast::Names(),
-   ast::Names(), <->, "", <->, "")
+   ast::Names(), <->, "", <->, "", <->)
 
 #type Cg (
    module: Addr,
@@ -251,7 +253,8 @@ param_clo_tys: Addrs,
    marked_globals: ast::Names,
    restore_scope_var_starts: IntArr,
    lambda_env_infos: LambdaEnvInfos,
-   targets_initialized: <>
+   targets_initialized: <>,
+   cov_edge_seq: Int = 1
 )
 
 ::g = GlobalState(
@@ -262,7 +265,24 @@ param_clo_tys: Addrs,
    ast::Names(), ast::VInfos(), ast::Names(),
    ast::Names(), ast::VInfos(), types::IntArr(),
    ast::Names(), types::CtVals(),
-   ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->)
+   ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->, 1)
+
+emit_cov_edge: Cg => ()
+emit_cov_edge = cg =>
+   cg.opts.fuzz_cov && cg.current_module != "test"
+      |
+         cur_bb = LLVMGetInsertBlock(cg.builder)
+         has_bb = cur_bb != sys::addr_null && !<>(llvm_val_opt(LLVMGetBasicBlockTerminator(cur_bb)))
+         has_bb
+            |
+               edge_id = g.cov_edge_seq
+               g.cov_edge_seq = ((edge_id + 1) .&. 65535) + 1
+               fn = LLVMGetNamedFunction(cg.module, "dva_cov_trace")
+               fn != sys::addr_null
+                  |
+                     i64t = LLVMInt64Type!
+                     ft = fn_type1(LLVMVoidType!, i64t)
+                     call1(cg, ft, fn, LLVMConstInt(i64t, edge_id, 0), "")
 
 inc_tmpc: () => Int
 inc_tmpc = !=>
@@ -890,6 +910,7 @@ codegen_init = opts =>
          LLVMDisposeMessage(def_raw)
          def_s
    LLVMSetTarget(module, triple)
+   layout::set_target_triple(triple)
    target_raw' = 0
    err_raw' = 0
    res = LLVMGetTargetFromTriple(triple, &target_raw', &err_raw')
@@ -920,7 +941,7 @@ codegen_init = opts =>
    st2 = struct_type2(i8p, i64t)
    eff_opts = CodegenOpts(triple, opts.no_runtime, opts.no_main,
       opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
-      opts.compiler_exe, opts.is_module, opts.module_name)
+      opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov)
    Cg(module, builder, <-->, CgVars(), <->, st, ut, st2,
       <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
       0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
@@ -1252,12 +1273,10 @@ name_bare_matches = qual, bare =>
    start > 0 && (?qual - start == ?bare) &&
       suffix_matches_step(qual, start, bare, 0, ?bare)
 
-// Whether a signature name matches a function name (exact or bare-to-qualified).
+// Whether a signature name matches a function name (exact).
 sig_name_matches: String, String => <>
 sig_name_matches = sig_name, fn_name =>
-   (sig_name == fn_name) ||
-      name_bare_matches(fn_name, sig_name) ||
-      name_bare_matches(sig_name, fn_name)
+   sig_name == fn_name
 
 // A local must shadow a same-named module global. Only after that check may a
 // bare name resolve to current_module::name (or its private #name spelling).
@@ -1288,25 +1307,30 @@ has_var_name_at = cg, name, i =>
             | <+>
             | has_var_name_at(cg, name, i - 1)
 
-resolve_var_name_at: Cg, String, Int => String
-resolve_var_name_at = cg, name, i =>
+// Scans non-local variables in cg.vars for current-module matches (match_mod = <+>) or bare names (<->).
+resolve_var_name_pass: Cg, String, Int, <> => <String|>
+resolve_var_name_pass = cg, name, i, match_mod =>
    i < 0
-      | name
+      | <-->
       |
          v = cg.vars(i)!!
-         v.is_local
-            | resolve_var_name_at(cg, name, i - 1)
+         hit = !v.is_local && (match_mod
+            | (name_matches_module_public(v.name, cg.current_module, name) ||
+               name_matches_module_private(v.name, cg.current_module, name))
+            | v.name == name)
+         hit | <+ v.name +> | resolve_var_name_pass(cg, name, i - 1, match_mod)
+
+resolve_var_name_at: Cg, String, Int => String
+resolve_var_name_at = cg, name, i =>
+   resolve_var_name_pass(cg, name, i, <+>)
+      | v => v
+      |
+         cg.current_module != ""
+            | "${cg.current_module}::${name}"
             |
-               v.name == name
-                  | v.name
-                  |
-                     name_matches_module_public(v.name, cg.current_module, name)
-                        | v.name
-                        |
-                           name_matches_module_private(v.name,
-                              cg.current_module, name)
-                              | v.name
-                              | resolve_var_name_at(cg, name, i - 1)
+               resolve_var_name_pass(cg, name, i, <->)
+                  | v => v
+                  | name
 
 resolve_var_name: Cg, String => String
 resolve_var_name = cg, name =>
@@ -1322,6 +1346,14 @@ resolve_var_name = cg, name =>
                      has_local_var(cg, name)
                         | name
                         | resolve_var_name_at(cg, name, cg.fn_var_start - 1)
+
+is_marked_global_name: Cg, String => <>
+is_marked_global_name = cg, name =>
+   cg.current_module != "" && !name_is_qualified(name, 0)
+      |
+         has_str(g.marked_globals, "${cg.current_module}::${name}") ||
+           has_str(g.marked_globals, "${cg.current_module}::#${name}")
+      | has_str(g.marked_globals, name)
 
 has_fn_name: Cg, String => <>
 has_fn_name = cg, name => cg.fn_names ^? name
@@ -1393,7 +1425,7 @@ resolve_fn_name = cg, name =>
                   | fd_name
                   |
                      fi_name = find_fi_module_name_at(cg, name, 0, ?cg.fninfos)
-                     fi_name != "" | fi_name | name
+                     fi_name != "" | fi_name | "${cg.current_module}::${name}"
 
 has_type_name: Cg, String => <>
 has_type_name = cg, name => cg.type_indices ^? name
@@ -1445,7 +1477,7 @@ resolve_type_name = cg, name =>
          cg.current_module != ""
             |
                mod_name = find_type_module_name(cg, name)
-               mod_name != "" | mod_name | find_type_bare_name(cg, name)
+               mod_name != "" | mod_name | name
             | find_type_bare_name(cg, name)
 
 find_dot: String, Int => Int
@@ -1790,9 +1822,7 @@ codegen_load = cg, name =>
             |
                slot_opt | slot =>
                   ti = typedef_ti(cg, dt)
-                  abi_type = is_unboxed_ram_ti(cg, ti)
-                     | match::unboxed_ram_struct_t(cg)
-                     | llvm_type_of_vt(vt)
+                  abi_type = llvm_abi_type_of_ti(cg, ti)
                   raw = LLVMBuildLoad2(cg.builder, abi_type, slot, "ram.abi.load")
                   heap = match::convert_abi_ram_to_heap_union(cg, raw, ti)
                   --| <+ (heap, vt) +>
@@ -2027,48 +2057,63 @@ slot_payload_type = cg, slot =>
 is_niche_payload_vt: ast::ValueType => <>
 is_niche_payload_vt = vt => vt [Str, Record, Error]
 
-is_niche_ram_ti: Cg, ast::TypeInfo => (<>, <>, ast::ValueType)
-is_niche_ram_ti = cg, ti =>
+// Classifies a TypeInfo's ramification layout via the centralized layout pass.
+classify_ti_ram_layout: Cg, ast::TypeInfo => tast::TypedLayout
+classify_ti_ram_layout = cg, ti =>
    ti
+      [Align a] classify_ti_ram_layout(cg, a.1)
       [Ram slots]
          s0 = slots.0
          s1 = slots.1
-         s0.has_payload && !s1.has_payload
-            |
-               pvt = slot_payload_type(cg, s0)
-               is_niche_payload_vt(pvt)
-                  | (<+>, <+>, pvt)
-                  | (<->, <->, ast::ValueType(Unknown))
-            |
-               !s0.has_payload && s1.has_payload
-                  |
-                     nvt = slot_payload_type(cg, s1)
-                     is_niche_payload_vt(nvt)
-                        | (<+>, <->, nvt)
-                        | (<->, <->, ast::ValueType(Unknown))
-                  | (<->, <->, ast::ValueType(Unknown))
+         pos_niche = s0.has_payload && is_niche_payload_vt(slot_payload_type(cg, s0))
+         neg_niche = s1.has_payload && is_niche_payload_vt(slot_payload_type(cg, s1))
+         layout::classify_ram_layout(s0.has_payload, s1.has_payload, pos_niche, neg_niche)
       [TypeVar name]
          ?name !< 10 && name(0..10) == "#heap_ram_"
-            | (<->, <->, ast::ValueType(Unknown))
-            | is_niche_ram_ti(cg, typedef_ti(cg, name))
+            | tast::layout_void!
+            | classify_ti_ram_layout(cg, typedef_ti(cg, name))
+      | tast::layout_void!
+
+is_niche_ram_ti: Cg, ast::TypeInfo => (<>, <>, ast::ValueType)
+is_niche_ram_ti = cg, ti =>
+   lay = classify_ti_ram_layout(cg, ti)
+   lay.kind
+      [RamNichePos]
+         can_ti = ctfe_canonical_ti(cg, ti)
+         pvt = can_ti [Ram s] slot_payload_type(cg, s.0) | ast::ValueType(Unknown)
+         (<+>, <+>, pvt)
+      [RamNicheNeg]
+         can_ti = ctfe_canonical_ti(cg, ti)
+         nvt = can_ti [Ram s] slot_payload_type(cg, s.1) | ast::ValueType(Unknown)
+         (<+>, <->, nvt)
       | (<->, <->, ast::ValueType(Unknown))
 
 is_unboxed_ram_ti: Cg, ast::TypeInfo => <>
 is_unboxed_ram_ti = cg, ti =>
-   ti
-      [Ram slots]
-         s0 = slots.0
-         s1 = slots.1
-         s0.has_payload || s1.has_payload
-            |
-               niche = is_niche_ram_ti(cg, ti)
-               !niche.0
-            | <->
-      [TypeVar name]
-         ?name !< 10 && name(0..10) == "#heap_ram_"
-            | <->
-            | is_unboxed_ram_ti(cg, typedef_ti(cg, name))
-      | <->
+   classify_ti_ram_layout(cg, ti).kind [RamUnboxed]
+
+// Centralized LLVM value/storage/parameter type for any resolved TypeInfo.
+// Maps Unit values to i64 so Unit parameters and storage remain valid LLVM IR.
+llvm_abi_type_of_ti: Cg, ast::TypeInfo => Addr
+llvm_abi_type_of_ti = cg, ti =>
+   is_unboxed_ram_ti(cg, ti)
+      | match::unboxed_ram_struct_t(cg)
+      |
+         vt = vt_from_ti_cg(cg, ti)
+         vt [Unit]
+            | LLVMInt64Type!
+            | llvm_type_of_vt(vt)
+
+// Centralized LLVM function return type for any resolved TypeInfo (Unit -> void).
+llvm_abi_ret_type_of_ti: Cg, ast::TypeInfo => Addr
+llvm_abi_ret_type_of_ti = cg, ti =>
+   is_unboxed_ram_ti(cg, ti)
+      | match::unboxed_ram_struct_t(cg)
+      |
+         vt = vt_from_ti_cg(cg, ti)
+         vt [Unit]
+            | LLVMVoidType!
+            | llvm_type_of_vt(vt)
 
 codegen_cond_value_with_ti: Cg, Addr, ast::ValueType, ast::TypeInfo => Addr
 codegen_cond_value_with_ti = cg, v, vt, ti =>
@@ -2760,7 +2805,18 @@ pstmts_typedef_ti_at = stmts, i, n, name =>
 
 pstmts_typedef_ti: String => (ast::TypeInfo, <>)
 pstmts_typedef_ti = name =>
-   pstmts_typedef_ti_at(g.pstmts, 0, ?g.pstmts, name)
+   res = pstmts_typedef_ti_at(g.pstmts, 0, ?g.pstmts, name)
+   res.1
+      |
+         res.0
+            [TypeVar tv]
+               tv != name
+                  |
+                     sub = pstmts_typedef_ti(tv)
+                     sub.1 | sub | res
+                  | res
+            | res
+      | res
 
 strip_align_ti: ast::TypeInfo => ast::TypeInfo
 strip_align_ti = ti =>

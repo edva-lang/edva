@@ -1,0 +1,71 @@
+#use base64
+#use ccl
+#use csv
+#use flate
+#use hex
+#use io
+#use json
+#use mem
+#use str
+#use test
+#use url
+#use utf
+
+#type CodecRec (name: String, count: Int)
+
+branch_hit: Int => Int
+branch_hit = x =>
+   x < 0 | -1 | (x == 0 | 0 | 1)
+
+test_coverage_bitmap: () => ()
+test_coverage_bitmap = !=>
+   test::cov_clear!
+   c0 = test::cov_edges!
+   _a = branch_hit(-5)
+   _b = branch_hit(0)
+   _c = branch_hit(7)
+   test::cov_trace(101)
+   test::cov_trace(202)
+   c1 = test::cov_edges!
+   test::eq(c0, 0, "cov_clear zeroes bitmap")
+   test::check(c1 > 0, "cov_trace populates edges")
+
+test_shrinker: () => ()
+test_shrinker = !=>
+   no_bug: String => <>
+   no_bug = s => !str::contains(s, "BUG")
+   raw = "line1: hello world\nline2: prefix BUG suffix padding 12345\nline3: tail\n"
+   reduced = test::shrink_str(raw, no_bug)
+   test::eq(reduced, "BUG", "hierarchical shrink_str reduces trigger to minimal BUG")
+
+test_fuzz_and_forall: () => ()
+test_fuzz_and_forall = !=>
+   j_seeds = String{}("{\"ok\":true}", "[1, 2, 3]", "\"hi\"", "123")
+   j_prop: String => <>
+   j_prop = s =>
+      _r = json::parse(s)
+      <+>
+   test::fuzz_opts("json_smoke", j_seeds, 40, 1234, j_prop)
+
+   i_prop: Int => <>
+   i_prop = n => n !< -50 && n !> 50
+   test::forall_opts("int_bounds", 50, 99, test::gen_int(-50, 50), i_prop)
+
+   c_prop: String => <>
+   c_prop = s =>
+      ga = mem::global_arena!
+      before = mem::provenance(ga).bytes_allocated
+      b64 = base64::encode(s, base64::Flavor(Std))
+      b64_ok = base64::decode(b64, base64::Flavor(Std)) | d => d == s | <->
+      hx_ok = hex::decode(hex::encode(s)) | d => d == s | <->
+      u_ok = url::decode_component(url::encode_component(s)) | d => d == s | <->
+      fl_ok = flate::gzip_decompress(flate::gzip_compress(s)) | d => d == s | <->
+      j_ok = json::decode(CodecRec, json::encode(CodecRec(s, ?s))) | r => r.name == s && r.count == ?s | <->
+      after = mem::provenance(ga).bytes_allocated
+      b64_ok && hx_ok && u_ok && fl_ok && j_ok && after == before
+   test::forall_opts("codec_roundtrip_no_leak", 30, 777, test::gen_ascii(24), c_prop)
+
+test_coverage_bitmap!
+test_shrinker!
+test_fuzz_and_forall!
+test::finish!

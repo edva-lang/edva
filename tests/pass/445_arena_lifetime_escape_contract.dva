@@ -1,0 +1,128 @@
+#use mem
+#use io
+#use str
+
+#type Item (id: Int, tag: String)
+#type Callback (Int => String)
+#type Result < Item | String >
+#type ResultBox (res: Result, count: Int)
+
+fb: <> => String
+fb = b => b | "<+>" | "<->"
+
+test_provenance_and_escapes: () => ()
+test_provenance_and_escapes = !=>
+   ar = mem::arena(4096)
+   p0 = mem::provenance(ar)
+   io::out $ "init:${p0.generation}:${p0.scope_depth}:${p0.resets}:${p0.bytes_allocated}"
+
+   blk_addr = mem::alloc(ar, 64)
+   owns_local = mem::owns_addr(ar, blk_addr)
+   owns_global = mem::owns_addr(mem::global_arena!, blk_addr)
+   io::out $ "owns:${fb(owns_local)}:${fb(owns_global)}"
+
+   mk = mem::save(ar)
+   ps = mem::provenance(ar)
+   mem::restore_to(ar, mk)
+   pr = mem::provenance(ar)
+   mem::reset(ar)
+   prs = mem::provenance(ar)
+   io::out $ "marks:${ps.scope_depth}:${pr.scope_depth}:${pr.resets}:${prs.resets}:${prs.generation}:${prs.bytes_allocated}:${fb(mem::owns_addr(ar, blk_addr))}"
+
+   in_with_ok = mem::with_value(ar, !=>
+      cp = mem::current_provenance!
+      cp.arena == ar.raw
+   )
+   io::out $ "with_prov:${fb(in_with_ok)}"
+
+   // Cross-boundary escapes from a scoped request arena
+   req = mem::arena(8192)
+   items: Item{}
+   tags_map = ("seed" ^= 0)
+   rbox = ResultBox(<- "init" +>, 0)
+   callbacks: Callback{}
+   seed_count = ?items + ?callbacks
+
+   escaped_item = mem::with_value(req, !=>
+      tmp_s = "item_" + "alpha"
+      tmp_k = "key_" + "one"
+      safe_s = ++tmp_s
+      safe_k = ++tmp_k
+      mem::escape(!=>
+         items += Item(7, ++safe_s)
+         esc_k = ++safe_k
+         tags_map ^ esc_k = 77
+         rbox.res = <+ Item(9, ++safe_s) ->
+         msg_prefix = ++safe_s
+         cb: Callback
+         cb = x => "${msg_prefix}:${str::from_int(x)}"
+         callbacks += cb
+      )
+      mem::escape_value(!=> Item(42, ++safe_s))
+   )
+
+   mem::reset(req)
+   // Overwrite req storage thoroughly after reset
+   noise_len' = 0
+   0..200 @ i =>
+      mem::with(req, !=>
+         junk = "overwrite_" + str::from_int(i) + "_padding_bytes_0123456789"
+         noise_len' = noise_len' + ?junk
+      )
+      mem::reset(req)
+   mem::destroy(req)
+
+   map_v = tags_map ^ "key_one" | v => v | -1
+   res_id = rbox.res | it => it.id | _err => -1
+   cb_out = (callbacks(0)!!)(99)
+   tag_in_global = mem::owns_addr(mem::global_arena!, &escaped_item.tag)
+   io::out $ "escaped:${escaped_item.id}:${escaped_item.tag}:${items(0)!!.tag}:${map_v}:${res_id}:${cb_out}:${fb(tag_in_global)}"
+
+   mem::destroy(ar)
+
+test_provenance_and_escapes!
+
+// Top-level restore block growing an outer array past initial capacity (16)
+top_arr: Int{}
+top_block_res =
+   0..24 @ i =>
+      top_arr += i
+   ?top_arr
+
+// Ensure array growth inside mem::with still uses the active scoped arena (not poisoned by malloc)
+arr_ar = mem::arena(8192)
+b_before = mem::provenance(arr_ar).bytes_allocated
+mem::with(arr_ar, !=>
+   local_arr: Int{}
+   0..32 @ i =>
+      local_arr += i
+)
+b_after = mem::provenance(arr_ar).bytes_allocated
+io::out $ "arr_grow:${top_block_res}:${fb(b_after > b_before)}"
+mem::destroy(arr_ar)
+
+// Bounded-memory request loop regression (500 iterations, constant global & scratch chunks)
+run_request_loop: () => ()
+run_request_loop = !=>
+   loop_ar = mem::arena(65536)
+   g_warmup' = 0
+   g_end' = 0
+   0..500 @ i =>
+      g_bytes = mem::with_value(loop_ar, !=>
+         tmp_rec = Item(1, "req_${str::from_int(1)}")
+         arr: Int{}
+         0..24 @ j =>
+            arr += tmp_rec.id + j
+         buf = {128}
+         buf += "payload_${str::from_int(?arr)}_${tmp_rec.tag}"
+         frozen = +buf
+         ?frozen > 0 | mem::provenance(mem::global_arena!).bytes_allocated | -1
+      )
+      mem::reset(loop_ar)
+      i == 10 | (g_warmup' = g_bytes)
+      i == 499 | (g_end' = g_bytes)
+   lp = mem::provenance(loop_ar)
+   io::out $ "loop:${lp.num_chunks}:${lp.resets}:${fb(g_end' == g_warmup')}"
+   mem::destroy(loop_ar)
+
+run_request_loop!

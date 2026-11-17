@@ -107,10 +107,12 @@ mark_generic_binding = env, name =>
 
 is_generic_binding: TypeEnv, String => <>
 is_generic_binding = env, name =>
-   found' = <->
+   has_mod = env.current_module != "" && !name_is_qualified(name, 0)
+   pub = has_mod | "${env.current_module}::${name}" | ""
+   priv = has_mod | "${env.current_module}::#${name}" | ""
    env.generic_bindings @ n =>
-      n == name | (found' = <+>; -->)
-   found'
+      (has_mod | (n == pub || n == priv) | (n == name)) | --| <+>
+   <->
 
 mark_global_var: TypeEnv, String => ()
 mark_global_var = env, name =>
@@ -118,15 +120,17 @@ mark_global_var = env, name =>
 
 is_marked_global: TypeEnv, String => <>
 is_marked_global = env, name =>
-   found' = <->
-   qname = env.current_module != "" | env.current_module + "::" + name | name
+   has_mod = env.current_module != "" && !name_is_qualified(name, 0)
+   qname = env.current_module != "" | "${env.current_module}::${name}" | name
    // Bare references inside a module may name its private marked globals.
-   private_name = env.current_module != "" | env.current_module + "::#" + name | name
+   private_name = env.current_module != "" | "${env.current_module}::#${name}" | name
    env.marked_globals @ n =>
-      match = n == name || n == qname || n == private_name ||
-         (env.current_module != "" && name == env.current_module + "::" + n)
-      match | (found' = <+>; -->)
-   found'
+      match = has_mod
+         | (n == qname || n == private_name)
+         | (n == name || n == qname || n == private_name ||
+            (env.current_module != "" && name == "${env.current_module}::${n}"))
+      match | --| <+>
+   <->
 
 enter_scope: TypeEnv => ()
 enter_scope = env =>
@@ -238,26 +242,32 @@ lookup_scope = scope, name =>
 
 lookup_local: TypeEnv, String => < TypeBinding | >
 lookup_local = env, name =>
+   env.cur_scope == 0 && env.current_module != "" && !name_is_qualified(name, 0)
+      |
+         pub = lookup_local_exact(env, "${env.current_module}::${name}")
+         pub | p => --| <+ p +>
+         --| lookup_local_exact(env, "${env.current_module}::#${name}")
    exact = lookup_local_exact(env, name)
    exact
       | b => <+ b +>
       |
          env.current_module != "" && !name_is_qualified(name, 0)
             |
-               pub = lookup_local_exact(env, env.current_module + "::" + name)
+               pub = lookup_local_exact(env, "${env.current_module}::${name}")
                pub
                   | p => <+ p +>
-                  | lookup_local_exact(env, env.current_module + "::#" + name)
+                  | lookup_local_exact(env, "${env.current_module}::#${name}")
             | <-->
 
-lookup_binding_exact: TypeEnv, String => < TypeBinding | >
-lookup_binding_exact = env, name =>
+// Walks enclosing scopes down to min_scope (inclusive) looking for an exact binding.
+lookup_scope_chain: TypeEnv, String, Int => < TypeBinding | >
+lookup_scope_chain = env, name, min_scope =>
    curr' = env.cur_scope
    found' = <-->
    scs = env.scopes
    max_iters = ?scs + 1
    max_iters @
-      curr' < 0
+      curr' < min_scope
          | -->
          |
             sc = scs(curr') | _ | empty_scope!
@@ -265,8 +275,18 @@ lookup_binding_exact = env, name =>
                | binding =>
                   found' = <+ binding +>
                   curr' = -1
-            curr' !< 0
+            curr' !< min_scope
                | curr' = sc.parent
+   found'
+
+// Looks up a function parameter or local block binding, skipping root module scope 0 and globals.
+lookup_nonroot_exact: TypeEnv, String => < TypeBinding | >
+lookup_nonroot_exact = env, name =>
+   lookup_scope_chain(env, name, 1)
+
+lookup_binding_exact: TypeEnv, String => < TypeBinding | >
+lookup_binding_exact = env, name =>
+   found' = lookup_scope_chain(env, name, 0)
    found'
       | found'
       |
@@ -281,18 +301,14 @@ lookup_binding_exact = env, name =>
 
 lookup_binding: TypeEnv, String => < TypeBinding | >
 lookup_binding = env, name =>
-   exact = lookup_binding_exact(env, name)
-   exact
-      | b => <+ b +>
+   env.current_module != "" && !name_is_qualified(name, 0)
       |
-         env.current_module != ""
-            |
-               qname = env.current_module + "::" + name
-               pub = lookup_binding_exact(env, qname)
-               pub
-                  | p => <+ p +>
-                  | lookup_binding_exact(env, env.current_module + "::#" + name)
-            | <-->
+         local_b = lookup_nonroot_exact(env, name)
+         local_b | b => --| <+ b +>
+         pub = lookup_binding_exact(env, "${env.current_module}::${name}")
+         pub | p => --| <+ p +>
+         --| lookup_binding_exact(env, "${env.current_module}::#${name}")
+   lookup_binding_exact(env, name)
 
 // --- Field Initialization Tracking -----------------------------------------
 
@@ -445,20 +461,23 @@ lookup_generic_exact = env, name =>
 
 lookup_generic: TypeEnv, String => < ast::TypeInfo | >
 lookup_generic = env, name =>
-   exact = lookup_generic_exact(env, name)
-   exact
-      | ti => <+ ti +>
+   env.current_module != "" && !name_is_qualified(name, 0)
       |
-         env.current_module != "" && !name_is_qualified(name, 0)
-            |
-               pub = lookup_generic_exact(env,
-                  env.current_module + "::" + name)
-               pub
-                  | p => <+ p +>
-                  |
-                     lookup_generic_exact(env,
-                        env.current_module + "::#" + name)
-            | <-->
+         pub = lookup_generic_exact(env, "${env.current_module}::${name}")
+         pub | p => --| <+ p +>
+         --| lookup_generic_exact(env, "${env.current_module}::#${name}")
+   lookup_generic_exact(env, name)
+
+resolve_generic_name: TypeEnv, String => String
+resolve_generic_name = env, name =>
+   env.current_module != "" && !name_is_qualified(name, 0)
+      |
+         pub_name = "${env.current_module}::${name}"
+         <>(lookup_generic_exact(env, pub_name)) | --| pub_name
+         priv_name = "${env.current_module}::#${name}"
+         <>(lookup_generic_exact(env, priv_name)) | --| priv_name
+         name
+      | name
 
 bind_user_type: TypeEnv, String, ast::TypeInfo, unify::UType => ()
 bind_user_type = env, name, ti, ut =>
@@ -477,17 +496,10 @@ lookup_user_type_exact = env, name =>
 
 lookup_user_type: TypeEnv, String => < UserTypeDef | >
 lookup_user_type = env, name =>
-   exact = lookup_user_type_exact(env, name)
-   exact
-      | u => <+ u +>
+   env.current_module != "" && !name_is_qualified(name, 0)
       |
-         env.current_module != "" && !name_is_qualified(name, 0)
-            |
-               pub = lookup_user_type_exact(env,
-                  env.current_module + "::" + name)
-               pub
-                  | p => <+ p +>
-                  |
-                     lookup_user_type_exact(env,
-                        env.current_module + "::#" + name)
-            | <-->
+         pub = lookup_user_type_exact(env, "${env.current_module}::${name}")
+         pub | p => --| <+ p +>
+         priv = lookup_user_type_exact(env, "${env.current_module}::#${name}")
+         priv | pr => --| <+ pr +>
+   lookup_user_type_exact(env, name)

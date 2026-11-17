@@ -411,6 +411,7 @@ lambda_type_env = cg =>
             type_env::set_current_module(env, mod_nm)
             annotate::utype_from_ti_env(env, ti)
       type_env::bind_user_type(env, name, ti, ut')
+      annotate::push_ct_type(name, ut', ti, dname)
    type_env::set_current_module(env, cg.current_module)
    types::g.pstmts @ st =>
       st
@@ -465,12 +466,14 @@ lambda_call_arg_types: types::Cg, ast::CallExpr => ast::VInfos
 lambda_call_arg_types = cg, call =>
    has_lambda = call.args @> arg => arg [Fn] | <+ arg +>
    (?has_lambda == 0 || ?types::g.ct_bind_names == 0) | --| ast::VInfos()
+   saved_ct = ?annotate::cur_ct_types
    ctx = unify::new_ctx!
    env = lambda_type_env(cg)
    saved_exp = annotate::cur_expected_ut
    annotate::set_expected_type(<-->)
    te = annotate::annotate_expr(ctx, env, ast::Expr(Call, call))
    annotate::set_expected_type(saved_exp)
+   annotate::pop_ct_types_to(saved_ct)
    unify::solve_constraints(ctx, ctx.constraints)
    ctx.errors @ err =>
       types::init_error(cg, "E" + str::from_int(err.code), err.msg, err.line, err.col)
@@ -482,6 +485,7 @@ lambda_call_arg_types = cg, call =>
 
 compile_generic_lambda: types::Cg, ast::FnExpr => (Addr, String)
 compile_generic_lambda = cg, f =>
+   saved_ct = ?annotate::cur_ct_types
    ctx = unify::new_ctx!
    env = lambda_type_env(cg)
    saved_exp = annotate::cur_expected_ut
@@ -492,6 +496,7 @@ compile_generic_lambda = cg, f =>
    annotate::set_expected_type(expected)
    te = annotate::annotate_fn(ctx, env, f, <->)
    annotate::set_expected_type(saved_exp)
+   annotate::pop_ct_types_to(saved_ct)
    unify::solve_constraints(ctx, ctx.constraints)
    annotate::solve_unconstrained_rams(ctx, te.ut)
    !unify::is_ground(ctx, te.ut)
@@ -503,6 +508,100 @@ compile_generic_lambda = cg, f =>
    types::g.tmpc = types::g.tmpc + 1
    lam = (typed.kind [Lambda l] <+ l +> | <-->)!!
    codegen_typed_compile_fn(cg, name, lam.0, lam.1, typed.ti, "")
+
+/// Elaborates a specialized function body through `annotate` and compiles it via typed codegen.
+compile_typed_mono_fn: types::Cg, types::FnDef, ast::VTypes, ast::VInfos,
+  ast::TypeInfo => ()
+compile_typed_mono_fn = cg, fd, param_vts, param_tis, ret_ti =>
+   saved_ct = ?annotate::cur_ct_types
+   saved_ct_v = ?annotate::cur_ct_vals
+   saved_fn = annotate::cur_fn_name
+   saved_exp = annotate::cur_expected_ut
+   ctx = unify::new_ctx!
+   env = lambda_type_env(cg)
+   ?types::g.ct_val_names @ vi =>
+      vname = types::g.ct_val_names(vi)!!
+      ctv = types::g.ct_val_vals(vi)!!
+      v_te = ctv
+         [Int n] <+ tast::mk_lit_int(n, 0, 0) +>
+         [Str s] <+ tast::mk_lit_str(s, 0, 0) +>
+         [Float f] <+ tast::mk_lit_float(f, 0, 0) +>
+         | <-->
+      v_te | t => annotate::push_ct_val(vname, t, <+>)
+   annotate::set_fn_name(fd.name)
+   type_env::enter_scope(env)
+   env.in_fn = <+>
+   env.init = type_env::new_init!
+   resolved_ptis = ast::VInfos()
+   resolved_pvts = ast::VTypes()
+   param_uts = unify::UTypes()
+   ?fd.params @ pi =>
+      pname = fd.params(pi)!!
+      raw_pti = pi < ?param_tis | param_tis(pi)!! |
+         ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      res_pti = annotate::resolve_ct_ti_aliases(env, raw_pti)
+      has_decl_p = !(res_pti [Prim vt] vt [Unknown] | <->)
+      put = has_decl_p
+         |
+            ut_p = annotate::utype_from_ti_env(env, res_pti)
+            ut_p [None] unify::fresh_var(ctx) | ut_p
+         | unify::fresh_var(ctx)
+      param_uts += put
+      resolved_ptis += res_pti
+      resolved_pvts += annotate::vt_of_resolved_ti(res_pti)
+      pname != ""
+         |
+            type_env::bind_local(env, pname, put, res_pti, <->)
+            type_env::init_mark_whole(env, pname)
+   res_ret_ti = annotate::resolve_ct_ti_aliases(env, ret_ti)
+   has_ret_decl = !(res_ret_ti [Prim vt] vt [Unknown] | <->) &&
+     !(res_ret_ti [TypeVar tv] tv == "?Ret" | <->)
+   ret_var = has_ret_decl
+      |
+         ut_r = annotate::utype_from_ti_env(env, res_ret_ti)
+         ut_r [None] unify::fresh_var(ctx) | ut_r
+      | unify::fresh_var(ctx)
+   c_ret = unify::canon(ctx, ret_var)
+   is_ret_unit = c_ret [Prim p] p [Unit] | <->
+   env.cur_fn_ret = <+ ret_var +>
+   env.discard_result = is_ret_unit
+   annotate::set_expected_type((has_ret_decl | <+ ret_var +> | <-->))
+   annotate::check_no_closing_return(ctx, fd.body)
+   body_te = annotate::annotate_expr(ctx, env, fd.body)
+   annotate::set_expected_type(saved_exp)
+   type_env::leave_scope(env)
+   unify::solve_constraints(ctx, ctx.constraints)
+   annotate::solve_expr_unconstrained_rams(ctx, body_te)
+   !is_ret_unit && !annotate::expr_is_jump(body_te)
+      | unify::unify(ctx, ret_var, body_te.ut)
+   typed_body = annotate::refresh_typed_expr(ctx, body_te)
+   annotate::verify_typed_expr_ground(ctx, typed_body)
+   annotate::pop_ct_vals_to(saved_ct_v)
+   annotate::pop_ct_types_to(saved_ct)
+   annotate::set_fn_name(saved_fn)
+   ctx.errors @ err =>
+      types::init_error(cg, "E" + str::from_int(err.code), err.msg, err.line, err.col)
+   !cg.error
+      |
+         final_ptis = ast::VInfos()
+         final_pvts = ast::VTypes()
+         ?fd.params @ pi =>
+            c_pu = unify::canon(ctx, param_uts(pi)!!)
+            pti_old = resolved_ptis(pi)!!
+            keep_p = pti_old [TypeVar tv] tv != "" | (pti_old [Bitfield])
+            f_pti = keep_p | pti_old | unify::type_info_from_utype(ctx, c_pu)
+            final_ptis += f_pti
+            final_pvts += annotate::vt_of_resolved_ti(f_pti)
+         final_ret_ut = is_ret_unit
+            | unify::prim_unit!
+            | (annotate::expr_is_jump(typed_body) | unify::canon(ctx, ret_var) | typed_body.ut)
+         final_ret_ti = has_ret_decl
+            | res_ret_ti
+            | unify::type_info_from_utype(ctx, final_ret_ut)
+         final_ret_vt = annotate::vt_of_resolved_ti(final_ret_ti)
+         fn_ti = ast::TypeInfo(Fn, (final_pvts, final_ptis, final_ret_vt,
+           final_ret_ti, ast::CParams()))
+         codegen_typed_compile_fn(cg, fd.name, fd.params, typed_body, fn_ti, fd.name)
 
 // Compiles a lambda used as a VALUE into a fn (with an implicit first env
 // param when it captures enclosing locals), packages its environment + the
@@ -3423,12 +3522,13 @@ fn_type_from_ti = cg, ti =>
    ti
       [Fn f]
          ret_vt = f.2
-         ret_ll = types::llvm_type_of_vt(ret_vt)
+         ret_ll = types::llvm_abi_ret_type_of_ti(cg, f.3)
          param_ll = types::Addrs()
          n = ?f.0
          n @ i =>
             pv = f.0(i) | _ | ast::ValueType(Unknown)
-            param_ll += types::llvm_type_of_vt(pv)
+            pi = f.1(i) | _ | ast::TypeInfo(Prim, pv)
+            param_ll += types::llvm_abi_type_of_ti(cg, pi)
          <+ (fn_type_n(cg, ret_ll, param_ll, n), ret_vt) +>
       | <-->
 
@@ -3959,6 +4059,7 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
    is_disc = ret_vt' [Unit]
    cg.discard_result = is_disc
    cg.exited = <->
+   types::emit_cov_edge(cg)
    saved_expected_ti = types::g.expected_fn_ti
    saved_fn_ret_ll = types::g.fn_ret_ll
    types::g.expected_fn_ti = ret_ti
@@ -6098,12 +6199,13 @@ tast_is_outer_var: types::Cg, String, Int => <>
 tast_is_outer_var = cg, name, threshold =>
    name == "" | --| <->
    idx = expr::var_index(cg, name)
-   (idx !< 0 && idx < threshold) || types::has_str(types::g.marked_globals, name)
+   (idx !< 0 && idx < threshold) || types::is_marked_global_name(cg, name)
 
 // A heap-capable value flowing into the outer place rooted at `name`
 tast_outer_heap_write: types::Cg, String, tast::TypedExpr, Int => <>
 tast_outer_heap_write = cg, name, val, threshold =>
-   !ut_is_scalar(val.ut) && tast_is_outer_var(cg, name, threshold)
+   !ut_is_scalar(val.ut) && !tast_expr_has_scoped_addr(cg, val, threshold) &&
+     tast_is_outer_var(cg, name, threshold)
 
 tast_args_pass_outer_heap: types::Cg, tast::TypedExprs, Int, Int => <>
 tast_args_pass_outer_heap = cg, args, at, threshold =>
@@ -6212,13 +6314,16 @@ typed_block_is_binding = exprs =>
 
 codegen_typed_eval_block: types::Cg, tast::TypedExprs => (Addr, ast::ValueType)
 codegen_typed_eval_block = cg, exprs =>
+   var_threshold = ?cg.vars
    has_alloc = tast_exprs_has_arena_alloc_d(cg, exprs, 0, 0) && !cg.in_fn &&
-     !typed_block_is_binding(exprs) && !tast_exprs_escape(cg, exprs, 0, ?cg.vars)
+     !typed_block_is_binding(exprs) && !tast_exprs_escape(cg, exprs, 0, var_threshold)
    mark = expr::codegen_block_arena_mark(cg, has_alloc)
    expr::codegen_restore_scope_enter(cg, has_alloc)
    last = codegen_typed_eval_block_step(cg, exprs, 0, ?exprs)
    expr::codegen_restore_scope_leave(cg, mark)
-   has_alloc && types::is_ptr_vt(last.1)
+   escapes_addr = types::is_ptr_vt(last.1) ||
+     (?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1)!!, var_threshold))
+   has_alloc && escapes_addr
       |
          types::init_error(cg, "E3133", diag::E3133_addr_escape_restore!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
@@ -6231,16 +6336,8 @@ codegen_typed_eval_fwd = cg, name, ti =>
    vt_bf = bf_opt | b => b.backing_type | vt0
    vt = <>(bf_opt) | vt_bf | vt0
    rec_m = runtime::record_meta_from_ti(cg, ti)
-   lt = types::is_unboxed_ram_ti(cg, ti)
-      | match::unboxed_ram_struct_t(cg)
-      |
-         <>(bf_opt)
-            | types::llvm_type_of_vt(vt)
-            |
-               (types::is_record_vt(vt) || types::is_ptrish_vt(vt))
-                  | LLVMPointerType(LLVMInt8Type!, 0)
-                  | types::llvm_type_of_vt(vt)
-   is_glob_fwd = types::has_str(types::g.marked_globals, name)
+   lt = types::llvm_abi_type_of_ti(cg, ti)
+   is_glob_fwd = types::is_marked_global_name(cg, name)
    is_loc_fwd = !is_glob_fwd && cg.in_fn
    has_slot_fwd = <>(types::var_slot(cg, name))
    fresh_fwd = !has_slot_fwd
@@ -6274,6 +6371,10 @@ codegen_typed_eval_fwd = cg, name, ti =>
      rec_m1, <+ slot +>, is_loc_fwd, <+>, types::field_vts(cg, ti), <-->)
    (LLVMConstInt(LLVMInt64Type!, 0, 0), vt)
 
+ut_is_rawptr: unify::UType => <>
+ut_is_rawptr = ut =>
+   ut [Prim p] (p [RawPtr]) | <->
+
 tast_is_addr_arg_scoped: types::Cg, tast::TypedExpr, Int => <>
 tast_is_addr_arg_scoped = cg, arg, threshold =>
    arg.kind
@@ -6285,16 +6386,22 @@ tast_is_block_scoped_addr: types::Cg, tast::TypedExpr, Int => <>
 tast_is_block_scoped_addr = cg, expr, threshold =>
    expr.kind
       [Var v]
-         idx = expr::var_index(cg, v.0)
-         idx !< threshold
+         !tast_is_outer_var(cg, v.0, threshold)
       [Unary u]
          u.0
-            [AddrOf] <+>
+            [AddrOf]
+               root = tast_root_var(u.1)
+               root == "" || !tast_is_outer_var(cg, root, threshold)
             | tast_is_block_scoped_addr(cg, u.1, threshold)
       [Bin b]
          tast_is_block_scoped_addr(cg, b.1, threshold) ||
            tast_is_block_scoped_addr(cg, b.2, threshold)
-      [Block] <+>
+      [Block exprs]
+         ?exprs == 0 || tast_is_block_scoped_addr(cg, exprs(?exprs - 1)!!, threshold)
+      [Choice ch]
+         tast_branches_have_scoped_addr(cg, ch.1, 0, threshold)
+      [Copy cp]
+         tast_is_block_scoped_addr(cg, cp, threshold)
       [RawMemory] <+>
       [Call c]
          c.0 == "Addr"
@@ -6304,6 +6411,118 @@ tast_is_block_scoped_addr = cg, expr, threshold =>
             | <+>
       | <->
 
+tast_branches_have_scoped_addr: types::Cg, tast::TypedBranches, Int, Int => <>
+tast_branches_have_scoped_addr = cg, bs, at, threshold =>
+   at == ?bs
+      | <->
+      |
+         br = bs(at)!!
+         tast_expr_has_scoped_addr(cg, br.body, threshold) ||
+           tast_branches_have_scoped_addr(cg, bs, at + 1, threshold)
+
+tast_body_uses_scoped_addr: types::Cg, ast::Names, tast::TypedExpr, Int => <>
+tast_body_uses_scoped_addr = cg, params, te, threshold =>
+   te.kind
+      [Var v]
+         !param_in(params, v.0) && !tast_is_outer_var(cg, v.0, threshold) &&
+           (ut_is_rawptr(te.ut) || (te.ti [Prim vt] types::is_ptr_vt(vt) | <->))
+      [Unary u]
+         is_scoped_addrof = u.0
+            [AddrOf]
+               root = tast_root_var(u.1)
+               root != "" && !param_in(params, root) && !tast_is_outer_var(cg, root, threshold)
+            | <->
+         is_scoped_addrof || tast_body_uses_scoped_addr(cg, params, u.1, threshold)
+      [Bin b]
+         tast_body_uses_scoped_addr(cg, params, b.1, threshold) ||
+           tast_body_uses_scoped_addr(cg, params, b.2, threshold)
+      [Call c]
+         (c.1 | t => tast_body_uses_scoped_addr(cg, params, t, threshold) | <->) ||
+           tast_body_exprs_use_scoped_addr(cg, params, c.2, 0, threshold)
+      [Record r]
+         r @ f =>
+            tast_body_uses_scoped_addr(cg, params, f.val, threshold) | --| <+>
+         <->
+      [Member m] tast_body_uses_scoped_addr(cg, params, m.0, threshold)
+      [MemberWrite mw]
+         tast_body_uses_scoped_addr(cg, params, mw.0, threshold) ||
+           tast_body_uses_scoped_addr(cg, params, mw.3, threshold)
+      [Index ix]
+         tast_body_uses_scoped_addr(cg, params, ix.0, threshold) ||
+           tast_body_uses_scoped_addr(cg, params, ix.1, threshold)
+      [IndexWrite iw]
+         tast_body_uses_scoped_addr(cg, params, iw.0, threshold) ||
+           tast_body_uses_scoped_addr(cg, params, iw.1, threshold) ||
+           tast_body_uses_scoped_addr(cg, params, iw.2, threshold)
+      [Choice ch]
+         tast_body_uses_scoped_addr(cg, params, ch.0, threshold) | --| <+>
+         ch.1 @ br =>
+            tast_body_uses_scoped_addr(cg, params, br.body, threshold) | --| <+>
+         <->
+      [Block exprs]
+         tast_body_exprs_use_scoped_addr(cg, params, exprs, 0, threshold)
+      [Assign a]
+         tast_body_uses_scoped_addr(cg, params, a.5, threshold)
+      [RawMemory rm]
+         tast_body_uses_scoped_addr(cg, params, rm.0, threshold)
+      [RawMemoryWrite rw]
+         tast_body_uses_scoped_addr(cg, params, rw.0, threshold) ||
+           tast_body_uses_scoped_addr(cg, params, rw.1, threshold)
+      [RamConstruct rc]
+         rc.2 | pay => tast_body_uses_scoped_addr(cg, params, pay, threshold) | <->
+      [EnumConstruct ec]
+         ec.1 | pay => tast_body_uses_scoped_addr(cg, params, pay, threshold) | <->
+      [Copy cp]
+         tast_body_uses_scoped_addr(cg, params, cp, threshold)
+      [Return r]
+         r | rv => tast_body_uses_scoped_addr(cg, params, rv, threshold) | <->
+      | <->
+
+tast_body_exprs_use_scoped_addr: types::Cg, ast::Names, tast::TypedExprs, Int, Int => <>
+tast_body_exprs_use_scoped_addr = cg, params, es, at, threshold =>
+   at == ?es
+      | <->
+      |
+         tast_body_uses_scoped_addr(cg, params, es(at)!!, threshold) ||
+           tast_body_exprs_use_scoped_addr(cg, params, es, at + 1, threshold)
+
+tast_expr_has_scoped_addr: types::Cg, tast::TypedExpr, Int => <>
+tast_expr_has_scoped_addr = cg, expr, threshold =>
+   is_raw = ut_is_rawptr(expr.ut) || (expr.ti [Prim vt] types::is_ptr_vt(vt) | <->)
+   is_raw
+      | tast_is_block_scoped_addr(cg, expr, threshold)
+      |
+         expr.kind
+            [Record r]
+               r @ f =>
+                  tast_expr_has_scoped_addr(cg, f.val, threshold) | --| <+>
+               <->
+            [RamConstruct rc]
+               rc.2 | pay => tast_expr_has_scoped_addr(cg, pay, threshold) | <->
+            [EnumConstruct ec]
+               ec.1 | pay => tast_expr_has_scoped_addr(cg, pay, threshold) | <->
+            [MapLiteral ml]
+               ml @ p =>
+                  (tast_expr_has_scoped_addr(cg, p.key, threshold) ||
+                    tast_expr_has_scoped_addr(cg, p.val, threshold)) | --| <+>
+               <->
+            [Choice ch]
+               tast_branches_have_scoped_addr(cg, ch.1, 0, threshold)
+            [Block exprs]
+               ?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1)!!, threshold)
+            [Copy cp]
+               tast_expr_has_scoped_addr(cg, cp, threshold)
+            [Call c]
+               types::is_user_type(cg, c.0)
+                  |
+                     c.2 @ a =>
+                        tast_expr_has_scoped_addr(cg, a, threshold) | --| <+>
+                     <->
+                  | <->
+            [Lambda lam]
+               tast_body_uses_scoped_addr(cg, lam.0, lam.1, threshold)
+            | <->
+
 codegen_typed_check_addr_escape: types::Cg, String, tast::TypedExpr,
   ast::TypeInfo => ()
 codegen_typed_check_addr_escape = cg, name, val, ti =>
@@ -6312,13 +6531,14 @@ codegen_typed_check_addr_escape = cg, name, val, ti =>
          threshold = types::g.restore_scope_var_starts(?types::g.restore_scope_var_starts - 1)!!
          tgt_idx = expr::var_index(cg, name)
          is_outer = (tgt_idx !< 0 && tgt_idx < threshold) ||
-           types::has_str(types::g.marked_globals, name)
+           types::is_marked_global_name(cg, name)
          is_outer
             |
                target_vt = types::var_type(cg, name)
                is_addr = types::is_ptr_vt(target_vt) ||
                  (val.ti [Prim vt] types::is_ptr_vt(vt) | <->)
-               is_addr && tast_is_block_scoped_addr(cg, val, threshold)
+               ((is_addr && tast_is_block_scoped_addr(cg, val, threshold)) ||
+                 tast_expr_has_scoped_addr(cg, val, threshold))
                   | types::init_error(cg, "E3134", diag::E3134_addr_escape_lifecycle!, 0, 0)
 
 codegen_typed_eval_assign: types::Cg, String, <>, <>, <>, <>, tast::TypedExpr,
@@ -6328,7 +6548,7 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
    is_fwd
       | codegen_typed_eval_fwd(cg, name, ti)
       |
-         is_glob = glob || types::has_str(types::g.marked_globals, name)
+         is_glob = glob || types::is_marked_global_name(cg, name)
          has_slot = <>(types::var_slot(cg, name))
          has_existing = is_glob | has_slot |
             (cg.in_fn | types::has_local_var(cg, name) | has_slot)
@@ -6405,9 +6625,9 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                            llvm_ty = is_sp
                               | i8p
                               |
-                                 types::is_unboxed_ram_ti(cg, eff_ti)
-                                    | match::unboxed_ram_struct_t(cg)
-                                    | types::llvm_type_of_vt(vt)
+                                 types::vt_from_ti_cg(cg, eff_ti) [Unknown]
+                                    | (vt [Unit] LLVMInt64Type! | types::llvm_type_of_vt(vt))
+                                    | types::llvm_abi_type_of_ti(cg, eff_ti)
                            is_synth_loc = ?name > 5 &&
                              (name(0..5) == "_map_" || (?name > 6 && name(0..6) == "_fold_"))
                            is_loc = !is_glob && (cg.in_fn || ?cg.cycle_breaks > 0 || is_synth_loc)
@@ -6438,9 +6658,15 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                           | ev.0
                                        main::codegen_array_append(cg, a_val, ev0_box, ev.1)
                                     |
-                                       store_val = types::llvm_val_opt(ev.0)
+                                       raw_store_val = types::llvm_val_opt(ev.0)
                                           | evv => evv
                                           | LLVMConstNull(llvm_ty)
+                                       store_val = (!is_sp && (LLVMGetTypeKind(llvm_ty) == 8) &&
+                                         (LLVMGetTypeKind(LLVMTypeOf(raw_store_val)) == 8) &&
+                                         (LLVMTypeOf(raw_store_val) != llvm_ty))
+                                          | coerce_int_ext(cg, raw_store_val, llvm_ty,
+                                            types::is_unsigned_vt(ev.1))
+                                          | raw_store_val
                                        !is_loc && is_fresh &&
                                          (types::is_int_vt(vt) || types::is_float_vt(vt) || types::is_flag_vt(vt)) &&
                                          (LLVMIsConstant(store_val) != 0) &&
@@ -6520,7 +6746,8 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
 try_compile_typed_assign: types::Cg, String, tast::TypedExpr, ast::TypeInfo, String,
   String => <>
 try_compile_typed_assign = cg, tname, val_e, ti, rname, fname =>
-   cg.opts.is_module && types::is_external_module_name(cg, tname)
+   cg.opts.is_module && types::is_external_module_name(cg, tname) &&
+     !types::name_is_private(tname) && !types::has_dollar(tname)
       | <->
       |
          is_match = tname != "" && (tname == rname || tname == fname ||
@@ -6579,13 +6806,8 @@ declare_external_fn = cg, name =>
                nparams @ i =>
                   pvt_i = sig_param_types(i) | _ | ast::ValueType(Int)
                   pti_i = sig_param_tis(i) | _ | ast::TypeInfo(Prim, pvt_i)
-                  param_ll += types::is_unboxed_ram_ti(cg, pti_i) | match::unboxed_ram_struct_t(cg) |
-                     types::llvm_type_of_vt(pvt_i)
-               ret_ll = types::is_unboxed_ram_ti(cg, sig_ret_ti)
-                  | match::unboxed_ram_struct_t(cg)
-                  |
-                     sig_ret_vt [Unit] LLVMVoidType!
-                     | types::llvm_type_of_vt(sig_ret_vt)
+                  param_ll += types::llvm_abi_type_of_ti(cg, pti_i)
+               ret_ll = types::llvm_abi_ret_type_of_ti(cg, sig_ret_ti)
                fty = fn_type_n(cg, ret_ll, param_ll, nparams)
                ext_fn = types::llvm_find_function(cg.module, name)
                   | f => f
@@ -6601,7 +6823,8 @@ declare_external_fn = cg, name =>
 compile_typed_fn_lazy: types::Cg, String => <>
 compile_typed_fn_lazy = cg, name =>
    rname = types::resolve_fn_name(cg, name)
-   cg.opts.is_module && types::is_external_module_name(cg, rname)
+   cg.opts.is_module && types::is_external_module_name(cg, rname) &&
+     !types::name_is_private(rname) && !types::has_dollar(rname)
       | <->
       |
          has_fn = <>(types::fninfo_index(cg, rname)) || <>(types::fninfo_index(cg, name))
@@ -6638,8 +6861,8 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
    done = LLVMAppendBasicBlock(cg.current_fn, "loop.exit." + sc)
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
-   res_lt = (has_esc && types::is_unboxed_ram_ti(cg, ti))
-      | match::unboxed_ram_struct_t(cg)
+   res_lt = has_esc
+      | types::llvm_abi_type_of_ti(cg, ti)
       | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
@@ -6659,6 +6882,7 @@ codegen_typed_eval_condition_cycle = cg, iterable, body_fn, esc_opt, ti =>
    cval = types::codegen_cond_value_with_ti(cg, cv.0, cv.1, iterable.ti)
    LLVMBuildCondBr(cg.builder, cval, body, done)
    LLVMPositionBuilderAtEnd(cg.builder, body)
+   types::emit_cov_edge(cg)
    main::codegen_typed_eval(cg, body_fn)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
@@ -6849,8 +7073,8 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
    done = LLVMAppendBasicBlock(cg.current_fn, "loop.exit." + sc)
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
-   res_lt = (has_esc && types::is_unboxed_ram_ti(cg, ti))
-      | match::unboxed_ram_struct_t(cg)
+   res_lt = has_esc
+      | types::llvm_abi_type_of_ti(cg, ti)
       | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
@@ -6884,6 +7108,7 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
                LLVMBuildStore(cg.builder, rel_end, s)
    branch_to(cg, done)
    LLVMPositionBuilderAtEnd(cg.builder, body)
+   types::emit_cov_edge(cg)
    rel_i = LLVMBuildSub(cg.builder, curr_i, start_val, "loop.rel.i")
    r_dec_opt = iter_mode == 5
       | <+ codegen_decode_rune_at(cg, s_data_opt!!, curr_i) +>
@@ -7107,8 +7332,8 @@ codegen_typed_eval_map_cycle = cg, iterable, body_fn, esc_opt, ti =>
 
    has_esc = <>(esc_opt)
    b_vt = has_esc | types::vt_from_ti(ti) | ast::ValueType(Unit)
-   res_lt = (has_esc && types::is_unboxed_ram_ti(cg, ti))
-      | match::unboxed_ram_struct_t(cg)
+   res_lt = has_esc
+      | types::llvm_abi_type_of_ti(cg, ti)
       | types::llvm_type_of_vt(b_vt)
    esc_blocks = esc_opt
       |
@@ -7400,6 +7625,24 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    ret_ti = ti [Fn f] f.3 | ast::TypeInfo(Prim, ast::ValueType(Unit))
    ret_vt = resolve_sig_vt(cg, ret_vt0, ret_ti)
    types::g.expected_fn_ti = ret_ti
+   !<>(fn_ret_rec_of(cg, name))
+      |
+         ret_rm = runtime::record_meta_from_ti(cg, ret_ti)
+         rm_rt_opt = ret_rm | m => <+ m.0 +> | <-->
+         ret_rm_1 = ret_rm | m => m.1 | ast::Names()
+         ret_fvts = types::field_vts(cg, ret_ti)
+         ret_dtype0 = ret_ti [TypeVar tname] tname | types::ensure_ti_dtype(cg, ret_ti)
+         is_rec_ret = ret_ti [Rec r] !r.1 | <->
+         is_anon_rec = ret_dtype0 == "" && is_rec_ret
+         ret_dtype = is_anon_rec
+            |
+               ret_tname = "#ret_" + name
+               !types::has_type_name(cg, ret_tname)
+                  | runtime::add_type_rec(cg, ret_tname, ret_ti, rm_rt_opt, ret_rm_1)
+               ret_tname
+            | ret_dtype0
+         has_ret_meta = <>(ret_rm) || ret_dtype != ""
+         has_ret_meta | fn_ret_rec_add(cg, name, rm_rt_opt, ret_rm_1, ret_fvts, ret_dtype)
 
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
    cap_tys = is_cap | lambda_caps_types_at(cg, caps, 0, nc, types::Addrs()) | types::Addrs()
@@ -7411,14 +7654,9 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    nparams @ i =>
       pvt_i = param_types(i) | _ | ast::ValueType(Int)
       pti_i = param_tis(i) | _ | ast::TypeInfo(Prim, pvt_i)
-      param_ll += types::is_unboxed_ram_ti(cg, pti_i) | match::unboxed_ram_struct_t(cg) |
-         types::llvm_type_of_vt(pvt_i)
+      param_ll += types::llvm_abi_type_of_ti(cg, pti_i)
 
-   ret_ll = types::is_unboxed_ram_ti(cg, ret_ti)
-      | match::unboxed_ram_struct_t(cg)
-      |
-         ret_vt [Unit] LLVMVoidType!
-         | types::llvm_type_of_vt(ret_vt)
+   ret_ll = types::llvm_abi_ret_type_of_ti(cg, ret_ti)
    types::g.fn_ret_ll = <+ ret_ll +>
    fty = fn_type_n(cg, ret_ll, param_ll, (is_cap | nparams + 1 | nparams))
    exp_sym = find_export_symbol(types::g.pexports, name)
@@ -7426,8 +7664,8 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    is_exp = <>(exp_sym)
    fn = LLVMAddFunction(cg.module, fn_ll_name, fty)
    is_dyn_m = is_module_dynamic(cg, name) || cg.opts.is_shared
-   is_pub_mod = cg.opts.is_module && !is_anon && !types::name_is_private(name) &&
-     types::name_is_in_current_module(cg, name)
+   is_pub_mod = cg.opts.is_module && !is_anon && !types::has_dollar(name) &&
+     !types::name_is_private(name) && types::name_is_in_current_module(cg, name)
    LLVMSetLinkage(fn, (is_exp || is_dyn_m || is_pub_mod) | 0 | 8)
    is_module_dynamic(cg, name)
       |
@@ -7437,6 +7675,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    cg.in_fn = <+>
    entry = LLVMAppendBasicBlock(fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
+   types::emit_cov_edge(cg)
    cg.fninfos += types::FnInfo(name, <+ fn +>, <+ fty +>, nparams, param_types, ret_vt,
      <+>, <->, <+>, !is_cap)
 
@@ -7451,8 +7690,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
       pname = params(j) | _ | ""
       pvt_j = param_types(j) | _ | ast::ValueType(Int)
       pti = param_tis(j) | _ | ast::TypeInfo(Prim, pvt_j)
-      pty = types::is_unboxed_ram_ti(cg, pti) | match::unboxed_ram_struct_t(cg) |
-         types::llvm_type_of_vt(pvt_j)
+      pty = types::llvm_abi_type_of_ti(cg, pti)
       pv = LLVMGetParam(fn, (is_cap | j + 1 | j))
       is_ram = pvt_j [Ram]
       pslot = types::create_slot(cg, pname, pty, <+>)
@@ -7584,33 +7822,50 @@ declare_external_var = cg, name, ti =>
       | <+>
       |
          vt = types::vt_from_ti_cg(cg, ti)
-         llvm_ty = types::is_unboxed_ram_ti(cg, ti)
-            | match::unboxed_ram_struct_t(cg)
-            | types::llvm_type_of_vt(vt)
+         llvm_ty = types::llvm_abi_type_of_ti(cg, ti)
          dtype = vt [Ram] types::ensure_ti_dtype(cg, ti) | ""
          slot = types::codegen_get_global(cg, name, llvm_ty)
          cg.vars += types::CgVar(name, vt, <->, dtype, <-->, ast::Names(),
            <+ slot +>, <->, <->, ast::VTypes(), <-->)
          <+>
 
+// Sets cg.current_module to the module prefix of name (if non-empty) and returns the previous module.
+#private
+   enter_decl_module: types::Cg, String => String
+   enter_decl_module = cg, name =>
+      saved_mod = cg.current_module
+      mod_name = types::decl_module(name, 0)
+      mod_name != "" | cg.current_module = mod_name
+      saved_mod
+
+// Emits a top-level typed binding under the declaring module's namespace.
+   codegen_typed_emit_binding: types::Cg, String, ast::TypeInfo, tast::TypedExpr, <>, <> => ()
+   codegen_typed_emit_binding = cg, name, ti, val, is_mut, is_glob =>
+      cg.opts.is_module && !types::name_is_in_current_module(cg, name)
+         |
+            is_lam = val.kind [Lambda]
+            !is_lam && types::is_external_module_name(cg, name)
+               | declare_external_var(cg, name, ti)
+         |
+            is_mono_lam = types::has_dollar(name) && (val.kind [Lambda])
+            !is_mono_lam
+               |
+                  saved_mod = enter_decl_module(cg, name)
+                  codegen_typed_eval_assign(cg, name, is_mut, <->, is_glob, <->, val, ti)
+                  cg.current_module = saved_mod
+
+#public
 codegen_typed_emit_stmt: types::Cg, tast::TypedStmt => ()
 codegen_typed_emit_stmt = cg, stmt =>
    stmt
       [Expr e]
+         bind_name = e.kind [Assign a] a.0 | ""
+         saved_mod = enter_decl_module(cg, bind_name)
          main::codegen_typed_eval(cg, e)
+         cg.current_module = saved_mod
       [Binding b]
-         cg.opts.is_module && !types::name_is_in_current_module(cg, b.0)
-            |
-               is_lam = b.2.kind [Lambda]
-               !is_lam && types::is_external_module_name(cg, b.0)
-                  | declare_external_var(cg, b.0, b.1)
-            | codegen_typed_eval_assign(cg, b.0, b.3, <->, <->, <->, b.2, b.1)
+         codegen_typed_emit_binding(cg, b.0, b.1, b.2, b.3, <->)
       [GlobalBinding b]
-         cg.opts.is_module && !types::name_is_in_current_module(cg, b.0)
-            |
-               is_lam = b.2.kind [Lambda]
-               !is_lam && types::is_external_module_name(cg, b.0)
-                  | declare_external_var(cg, b.0, b.1)
-            | codegen_typed_eval_assign(cg, b.0, <->, <->, <+>, <->, b.2, b.1)
+         codegen_typed_emit_binding(cg, b.0, b.1, b.2, <->, <+>)
       [TypeDecl t]
          runtime::add_type(cg, t.0, t.1)

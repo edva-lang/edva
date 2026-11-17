@@ -1,0 +1,4 @@
+add = a, b => a + b
+run = !=>
+   total = add(2, 3)
+   total

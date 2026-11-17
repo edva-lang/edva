@@ -14,7 +14,13 @@
 
 #type LayoutKind <
    Scalar
+   BitfieldScalar
    Aggregate
+   RecordAggregate
+   RamFlag
+   RamNichePos
+   RamNicheNeg
+   RamUnboxed
    Ram
    Enum
    Slice
@@ -131,13 +137,37 @@ layout_scalar: Int, Int => TypedLayout
 layout_scalar = size, align =>
    TypedLayout(size, align, LayoutKind(Scalar))
 
+layout_bitfield: Int, Int => TypedLayout
+layout_bitfield = size, align =>
+   TypedLayout(size, align, LayoutKind(BitfieldScalar))
+
 layout_aggregate: Int, Int => TypedLayout
 layout_aggregate = size, align =>
    TypedLayout(size, align, LayoutKind(Aggregate))
 
+layout_record: Int, Int => TypedLayout
+layout_record = size, align =>
+   TypedLayout(size, align, LayoutKind(RecordAggregate))
+
 layout_ram: Int, Int => TypedLayout
 layout_ram = size, align =>
    TypedLayout(size, align, LayoutKind(Ram))
+
+layout_ram_flag: () => TypedLayout
+layout_ram_flag = !=>
+   TypedLayout(1, 1, LayoutKind(RamFlag))
+
+layout_ram_niche_pos: Int, Int => TypedLayout
+layout_ram_niche_pos = size, align =>
+   TypedLayout(size, align, LayoutKind(RamNichePos))
+
+layout_ram_niche_neg: Int, Int => TypedLayout
+layout_ram_niche_neg = size, align =>
+   TypedLayout(size, align, LayoutKind(RamNicheNeg))
+
+layout_ram_unboxed: Int, Int => TypedLayout
+layout_ram_unboxed = size, align =>
+   TypedLayout(size, align, LayoutKind(RamUnboxed))
 
 layout_closure: () => TypedLayout
 layout_closure = !=>

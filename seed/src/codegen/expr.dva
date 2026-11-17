@@ -744,7 +744,7 @@ codegen_check_addr_escape = cg, t =>
          threshold = types::g.restore_scope_var_starts(?types::g.restore_scope_var_starts - 1)!!
          tgt_idx = var_index(cg, t.0)
          is_outer = (tgt_idx !< 0 && tgt_idx < threshold) || t.3 ||
-           types::has_str(types::g.marked_globals, t.0)
+           types::is_marked_global_name(cg, t.0)
          is_outer
             |
                is_addr = types::is_ptr_vt(types::var_type(cg, t.0)) ||
@@ -956,8 +956,7 @@ codegen_eval_call_non_addr = cg, t =>
                is_local_fn = types::has_local_var(cg, t.fn_name) ||
                  <>(stmt::param_clo_ty(cg, t.fn_name))
                rf = is_local_fn | t.fn_name | types::resolve_fn_name(cg, t.fn_name)
-               call = t
-               call.fn_name = rf
+               call = ast::CallExpr(rf, t.fn_target, t.args, t.line, t.col)
                tn = types::type_name_to_vt(t.fn_name)
                tn.1 && is_cast_type_name(t.fn_name)
                   |
@@ -991,7 +990,7 @@ codegen_eval_call_non_addr = cg, t =>
                                                 | codegen_eval_coerce(cg, p, t.args(0)!!)
                                                 | codegen_materialize_zero(cg, can_ct)
                                           | types::codegen_eval_ctor(cg, can_ct, call)
-                                    | codegen_eval_call_var_dispatch(cg, call)
+                                    | codegen_eval_call_var_dispatch(cg, t)
 
 codegen_eval_call_var_dispatch: types::Cg, ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_call_var_dispatch = cg, call =>
@@ -1037,7 +1036,12 @@ codegen_eval_call_var_dispatch = cg, call =>
                         | codegen_indirect_fn_return_unknown(cg, call)
                         | codegen_closure_call_indirect_val(cg, call, mv.0, ret_vt)
                   | codegen_indirect_fn_return_unknown(cg, call)
-            | codegen_eval_fn_call(cg, call)
+            |
+               is_loc = types::has_local_var(cg, call.fn_name) ||
+                 <>(stmt::param_clo_ty(cg, call.fn_name))
+               rf_c = is_loc | call.fn_name | types::resolve_fn_name(cg, call.fn_name)
+               codegen_eval_fn_call(cg, ast::CallExpr(rf_c, call.fn_target,
+                 call.args, call.line, call.col))
 
 ct_ti_resolve: types::Cg, ast::TypeInfo => (ast::TypeInfo, String)
 ct_ti_resolve = cg, ti =>
@@ -4569,8 +4573,7 @@ compile_mono_fn = cg, orig, mono, ct_names, b_vts, b_tis, b_dts, b_ct_vals =>
                has_ret_meta
                   | stmt::fn_ret_rec_add(cg, mono, rm_rt_opt, ret_rm_1,
                     ret_fvts, ret_dtype)
-               stmt::codegen_compile_fn(cg, mono_fd, ptypes', dtypes', ptis',
-                 ret', ret_ti', <+>, <->, <+>, types::g.pexports)
+               stmt::compile_typed_mono_fn(cg, mono_fd, ptypes', ptis', ret_ti')
                cg.vars = stmt::truncate_vars(cg.vars, saved_cg_vars)
                types::ct_bind_pop_to(saved_ct_n)
                types::ct_val_bind_pop_to(saved_ct_v_n)
@@ -5463,10 +5466,12 @@ resolve_typed_type_value = cg, te =>
       [LitUnit]
          (ast::TypeInfo(Prim, ast::ValueType(Unit)), <+>)
       [Var v]
-         v.0 == "" && (te.ut [Prim p] p [Type] | <->)
+         (te.ut [Prim p] p [Type] | <->) && !(te.ti [Prim pt] pt [Type, Unknown] | <->)
             | (te.ti, <+>)
             | types::resolve_type_value(cg, ast::Expr(Var, v.0))
       [Member m]
+         (te.ut [Prim p] p [Type] | <->) && !(te.ti [Prim pt] pt [Type, Unknown] | <->)
+            | --| (te.ti, <+>)
          m.1 == "Type"
             | resolve_typed_type_value(cg, m.0)
             |
@@ -6137,9 +6142,12 @@ codegen_typed_eval_member_val = cg, target, vname, fname, idx, ti =>
                              LLVMInt1Type!, "bf.flag")
                            (flag_v, ast::ValueType(Flag))
                         |
-                           ext = LLVMBuildZExt(cg.builder, masked,
-                             LLVMInt64Type!, "bf.ext")
-                           (ext, ast::ValueType(Int))
+                           tgt_vt = types::vt_from_ti_cg(cg, ti)
+                           use_tgt = tgt_vt [Int, I8, I16, I32, I64, U8, U16, U32, U64]
+                           res_vt = use_tgt | tgt_vt | ast::ValueType(Int)
+                           res_ty = types::llvm_type_of_vt(res_vt)
+                           bf_val = stmt::coerce_int_ext(cg, masked, res_ty, <+>)
+                           (bf_val, res_vt)
                   | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
             |
                rm = runtime::record_meta_from_ti(cg, tgt_ti)
@@ -6460,7 +6468,6 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
             | fidx1
             |
                stmt::compile_typed_fn_lazy(cg, fname)
-               stmt::compile_fn_lazy(cg, fname, ast::VTypes())
                f2 = types::fninfo_index(cg, rname)
                <>(f2) | f2 | types::fninfo_index(cg, fname)
          fidx3 = <>(fidx2)
@@ -6491,9 +6498,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
                ret_vt = known_ret != ast::ValueType(Unknown)
                   | known_ret
                   | types::vt_from_ti_cg(cg, ti)
-               ret_ty = types::is_unboxed_ram_ti(cg, ti)
-                  | match::unboxed_ram_struct_t(cg)
-                  | types::llvm_type_of_vt(ret_vt)
+               ret_ty = types::llvm_abi_ret_type_of_ti(cg, ti)
                fty = fty_opt
                   | fty0 => fty0
                   | stmt::fn_type_n(cg, ret_ty, param_tys', nargs)
@@ -6528,12 +6533,7 @@ codegen_typed_eval_indirect_call = cg, clo_val, args, ti =>
    n = ?arg_vals
    ret_vt = types::vt_from_ti(ti)
    is_void = ret_vt [Unit]
-   ret_ll = is_void
-      | LLVMVoidType!
-      |
-         types::is_unboxed_ram_ti(cg, ti)
-            | match::unboxed_ram_struct_t(cg)
-            | types::llvm_type_of_vt(ret_vt)
+   ret_ll = types::llvm_abi_ret_type_of_ti(cg, ti)
    plain_tys = types::Addrs()
    n @ i => plain_tys += LLVMTypeOf(arg_vals(i)!!)
    plain_ty = stmt::fn_type_n(cg, ret_ll, plain_tys, n)
@@ -6969,8 +6969,7 @@ codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
                              types::has_fn_name(cg, rf) || (fa != "")
                            has_vslot = fname != "" && <>(types::var_slot(cg, fname))
                            is_ext_sig = !has_vslot &&
-                             (stmt::fn_has_signature(types::g.pstmts, rf, 0) ||
-                             stmt::fn_has_signature(types::g.pstmts, fname, 0))
+                             stmt::fn_has_signature(types::g.pstmts, rf, 0)
                            is_fn = !is_local_fn && (has_real_fn || is_ext_sig)
                            is_fn
                               | codegen_typed_eval_fn_call(cg, rf, args, ti)
@@ -8179,6 +8178,7 @@ codegen_typed_eval_index = cg, target, index, ti =>
 codegen_typed_eval_index_write: types::Cg, tast::TypedExpr, tast::TypedExpr,
   tast::TypedExpr, ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_index_write = cg, target, index, val, ti =>
+   stmt::codegen_typed_check_addr_escape(cg, stmt::tast_root_var(target), val, val.ti)
    tv = main::codegen_typed_eval(cg, target)
    iv = main::codegen_typed_eval(cg, index)
    vv = main::codegen_typed_eval(cg, val)

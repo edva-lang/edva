@@ -1,0 +1,7 @@
+score: Int => Int
+score =
+   [0] 10
+   [1...5] 20
+   | 30
+
+(0, 0..4) @> (acc, i => acc + score(i))

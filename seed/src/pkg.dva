@@ -128,7 +128,8 @@
    no_cache: <>,
    is_update: <>,
    update_alias: String,
-   target_filter: String
+   target_filter: String,
+   fuzz: <> = <->
 )
 
 #type AddOpts (
@@ -1750,6 +1751,16 @@
             ?t !< 64 | t(..64) | ""
          | ""
 
+   self_exe_path: () => String
+   self_exe_path = !=>
+      exe = canonical_path("/proc/self/exe")
+      (exe != "/proc/self/exe" && file_exists(exe)) | --| exe
+      pid_exe = "/proc/${str::from_int(getpid!)}/exe"
+      file_exists(pid_exe) | --| pid_exe
+      argv0 = sys::argv_string(0)
+      argv_exe = canonical_path(argv0)
+      file_exists(argv_exe) | argv_exe | argv0
+
    compiler_build_id: () => String
    compiler_build_id = !=>
       cached_compiler_id != "" | --| cached_compiler_id
@@ -1758,13 +1769,8 @@
          |
             cached_compiler_id ::= env_override
             --| env_override
-      exe = canonical_path("/proc/self/exe")
-      pid_exe = "/proc/" + str::from_int(getpid!) + "/exe"
-      // No /proc on macOS: fall back to argv[0], as the stdlib lookup does
-      argv_exe = canonical_path(sys::argv_string(0))
-      eff_exe = (exe != "/proc/self/exe" && file_exists(exe)) | exe |
-         (file_exists(pid_exe) | pid_exe | (file_exists(argv_exe) | argv_exe | ""))
-      h = eff_exe != "" | hash_file(eff_exe) | ""
+      eff_exe = self_exe_path!
+      h = file_exists(eff_exe) | hash_file(eff_exe) | ""
       short_h = ?h > 16 | h(..16) | h
       commit = version::COMMIT_HASH
       id = short_h != ""
@@ -1896,7 +1902,8 @@
       cache_s = cli::str(p, "cache")
       eff_cache = cache_s != "" | cache_s | default_cache!
       no_cache = cli::flag(p, "no-cache") || env_or("EDVA_NO_CACHE", "") == "1"
-      PkgOpts(eff_root, locked, offline, eff_store, eff_git, eff_cache, no_cache, <->, "", "")
+      fuzz = cli::flag(p, "fuzz")
+      PkgOpts(eff_root, locked, offline, eff_store, eff_git, eff_cache, no_cache, <->, "", "", fuzz)
 
    cmd_init: String, String, <> => Int
    cmd_init = dir_arg, name_arg, is_lib =>
@@ -2496,7 +2503,7 @@
                                  |
                                     out_dir = dirname(out_abs)
                                     out_dir != "" | mkdir_p(out_dir)
-                              edva_bin = canonical_path(sys::argv_string(0))
+                              edva_bin = self_exe_path!
                               full_cmd = "cd " + sq(root) + " && EDVA=" + sq(edva_bin) + " " + exp.cmd
                               step_rc = sh(full_cmd)
                               step_rc != 0
@@ -2544,7 +2551,7 @@
                | ++ base_name(..?base_name - 4)
                | base_name + ".out"
             out_path = out_override != "" | out_override | stem
-            compiler = sys::argv_string(0)
+            compiler = self_exe_path!
             base_cmd = sq(compiler) + " " + sq(src_file) + " -o " + sq(out_path)
             cmd = append_compiler_flags(base_cmd, target_override, opt_override, cflags_override, opts)
             rc = sh(cmd)
@@ -2570,7 +2577,7 @@
                               gen_rc != 0 | --| gen_rc
                               ?m.targets > 0
                                  |
-                                    compiler = sys::argv_string(0)
+                                    compiler = self_exe_path!
                                     rc' = 0
                                     m.targets @ t =>
                                        rc' == 0 |
@@ -2582,7 +2589,7 @@
                                           out_path = starts_with(out_rel, "/")
                                              | out_rel
                                              | path_join(opts.root, out_rel)
-                                          !file_exists(src_path)
+                                          !file_exists(src_path) && !dir_exists(src_path)
                                              |
                                                 fail(7019, "target '" + t.name + "': source file '" + src_rel + "' not found")
                                                 rc' = 1
@@ -2614,7 +2621,7 @@
                                           out_bin = out_override != ""
                                              | (starts_with(out_override, "/") | out_override | path_join(opts.root, out_override))
                                              | path_join(opts.root, m.name)
-                                          compiler = sys::argv_string(0)
+                                          compiler = self_exe_path!
                                           base_cmd = sq(compiler) + " " + sq(main_src) + " -o " + sq(out_bin)
                                           cmd' = append_compiler_flags(base_cmd, target_override, opt_override, cflags_override, opts)
                                           rc = sh(cmd')
@@ -2638,7 +2645,7 @@
                   --| 1
             fetch_rc = ensure_pkg_fetched_for_file(src_file, opts)
             fetch_rc != 0 | --| fetch_rc
-            compiler = sys::argv_string(0)
+            compiler = self_exe_path!
             tmp_ll = "/tmp/edva_chk_" + str::from_int(getpid!) + ".ll"
             base_cmd = "EDVA_LOG=warn " + sq(compiler) + " " + sq(src_file) + " -ir --no-main -o " + sq(tmp_ll)
             cmd = append_compiler_flags(base_cmd, target_override, "", Strings(), opts)
@@ -2663,7 +2670,7 @@
                            | m =>
                               gen_rc = run_generators(opts.root, opts, m.generate)
                               gen_rc != 0 | --| gen_rc
-                              compiler = sys::argv_string(0)
+                              compiler = self_exe_path!
                               ?m.targets > 0
                                  |
                                     rc' = 0
@@ -2671,7 +2678,7 @@
                                        rc' == 0 |
                                           src_rel = t.src != "" | t.src | "src/main.dva"
                                           src_path = path_join(opts.root, src_rel)
-                                          !file_exists(src_path)
+                                          !file_exists(src_path) && !dir_exists(src_path)
                                              |
                                                 fail(7019, "target '" + t.name + "': source file '" + src_rel + "' not found")
                                                 rc' = 1
@@ -2736,7 +2743,7 @@
             tmp_bin = out_override != ""
                | out_override
                | "/tmp/edva_run_" + str::from_int(getpid!) + "_" + stem
-            compiler = sys::argv_string(0)
+            compiler = self_exe_path!
             base_cmd = sq(compiler) + " " + sq(src_file) + " -o " + sq(tmp_bin)
             build_cmd = append_compiler_flags(base_cmd, target_override, opt_override, cflags_override, opts)
             b_rc = sh(build_cmd)
@@ -2813,12 +2820,14 @@
             fetch_rc != 0 | --| fetch_rc
             tf = basename(tpath)
             stem = ends_with(tf, ".dva") && ?tf > 4 | tf(..-4) | tf
-            compiler = sys::argv_string(0)
+            compiler = self_exe_path!
             tmp_bin = "/tmp/edva_test_" + str::from_int(getpid!) + "_" + stem
-            cmd' = sq(compiler) + " " + sq(tpath) + " -o " +
+            pfx' = opts.fuzz | "EDVA_FUZZ=1 " | ""
+            cmd' = pfx' + sq(compiler) + " " + sq(tpath) + " -o " +
                sq(tmp_bin) + " -r >/dev/null 2>&1"
+            opts.fuzz | cmd' = cmd' + " --fuzz-cov --no-cache"
             opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
-            opts.no_cache | cmd' = cmd' + " --no-cache"
+            opts.no_cache && !opts.fuzz | cmd' = cmd' + " --no-cache"
             rc = sh(cmd')
             libc::unlink(tmp_bin)
             libc::unlink(tmp_bin + ".ll")
@@ -2863,15 +2872,17 @@
                                  |
                                     passed' = 0
                                     failed' = 0
-                                    compiler = sys::argv_string(0)
+                                    compiler = self_exe_path!
                                     test_files @ tf =>
                                        tpath = path_join(tests_dir, tf)
                                        tmp_bin = "/tmp/edva_test_" + str::from_int(getpid!) +
                                           "_" + tf(..-4)
-                                       cmd' = sq(compiler) + " " + sq(tpath) + " -o " +
+                                       pfx' = opts.fuzz | "EDVA_FUZZ=1 " | ""
+                                       cmd' = pfx' + sq(compiler) + " " + sq(tpath) + " -o " +
                                           sq(tmp_bin) + " -r >/dev/null 2>&1"
+                                       opts.fuzz | cmd' = cmd' + " --fuzz-cov --no-cache"
                                        opts.cache != "" | cmd' = cmd' + " --cache " + sq(opts.cache)
-                                       opts.no_cache | cmd' = cmd' + " --no-cache"
+                                       opts.no_cache && !opts.fuzz | cmd' = cmd' + " --no-cache"
                                        rc = sh(cmd')
                                        libc::unlink(tmp_bin)
                                        libc::unlink(tmp_bin + ".ll")

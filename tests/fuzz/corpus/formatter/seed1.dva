@@ -1,0 +1,7 @@
+#type Pair (a: Int, b: String)
+
+sum_len: Pair => Int
+sum_len = p => p.a + ?p.b
+
+p = Pair(10, "hi")
+sum_len(p)

@@ -1,0 +1,9 @@
+#type PtrPair (id: Int, ptr: Addr)
+#type Box (id: Int, pair: PtrPair)
+
+box = Box(0, PtrPair(0, Addr(0)))
+res =
+   b = {32}
+   b += "tmp"
+   box.pair = PtrPair(1, &b)
+   0

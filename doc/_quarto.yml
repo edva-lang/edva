@@ -93,3 +93,5 @@ format:
       - page-meta.lua
     syntax-definitions:
       - dva.xml
+      - vid.xml
+      - ccl.xml

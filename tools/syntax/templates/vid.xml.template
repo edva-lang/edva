@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Vid" version="1" kateversion="5.0" section="Markup" extensions="*.vid" mimetype="text/x-vid" author="baldgeorge" license="BSD-2-Clause">
+  <highlighting>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces attribute="Normal Text" context="#stay" />
+        <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/" />
+
+        <!-- Uniform #use / #include module paths regardless of @ or ./ -->
+        <RegExpr attribute="Directive" context="UseDirective" String="#(?:use(?:\([^)]*\)|\b)|include\b)" />
+        <RegExpr attribute="Directive" context="DoctypeLine" String="(?:#doctype|doctype)\b" />
+        <RegExpr attribute="Directive" context="EdvaExpr" String="#(?:param|query|route|def|slot)\b" />
+
+        <!-- Control flow & local bindings before tag heads -->
+        <RegExpr attribute="Operator" context="EdvaExpr" String="^\s*!?=" />
+        <RegExpr attribute="Normal Text" context="EdvaExpr" String="^\s*[a-zA-Z_][a-zA-Z0-9_']*\s+=(?!=|&gt;)" />
+        <RegExpr attribute="Control" context="EdvaExpr" String="^\s*(?:\||\[[^\]\n]*\]|.*(?:@(?:(?!=&gt;).)*=&gt;|@|\|)\s*$)" />
+
+        <!-- Quoted text lines -->
+        <DetectChar attribute="String" context="String" char="&quot;" />
+
+        <!-- Partials (+name), HTML tags, reactive $id, static #id, .class -->
+        <RegExpr attribute="Function" context="#stay" String="\+[a-zA-Z][a-zA-Z0-9_-]*" />
+        <RegExpr attribute="Tag" context="#stay" String="(?:^|(?&lt;=:\s)|(?&lt;=^\s))[a-zA-Z][a-zA-Z0-9_-]*(?=$|[\s\$\#\.(\/:=!])" />
+        <RegExpr attribute="ReactiveId" context="#stay" String="\$[a-zA-Z0-9_-]+" />
+        <RegExpr attribute="StaticId" context="#stay" String="#[a-zA-Z0-9_-]+" />
+        <RegExpr attribute="Class" context="#stay" String="\.[a-zA-Z0-9_-]+" />
+
+        <!-- Multiline attribute list -->
+        <DetectChar attribute="Punctuation" context="AttrList" char="(" />
+
+        <!-- Buffered / raw / chain / self-closing tag suffixes -->
+        <StringDetect attribute="Operator" context="EdvaExpr" String="!=" />
+        <DetectChar attribute="Operator" context="EdvaExpr" char="=" />
+        <RegExpr attribute="Operator" context="#stay" String="[:/\.]" />
+
+        <!-- Interpolations in text -->
+        <RegExpr attribute="Special" context="Interpolation" String="[$!#]\{" />
+      </context>
+
+      <context name="UseDirective" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text" context="#stay" />
+        <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/" />
+        <DetectChar attribute="Normal Text" context="#pop" char=";" />
+        <RegExpr attribute="String" context="#stay" String="&quot;[^&quot;]*&quot;|(?:[^/;\s\r\n]|/(?![/*]))(?:[^/;\r\n]|/(?![/*]))*(?&lt;!\s)" />
+      </context>
+
+      <context name="DoctypeLine" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text" context="#stay" />
+        <RegExpr attribute="Constant" context="#pop" String="\S+" />
+      </context>
+
+      <context name="EdvaExpr" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="Normal##Dva" />
+      </context>
+
+      <context name="AttrList" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces attribute="Normal Text" context="#stay" />
+        <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/" />
+        <DetectChar attribute="Punctuation" context="#pop" char=")" />
+        <DetectChar attribute="Punctuation" context="#stay" char="," />
+
+        <!-- Event attributes (@click, @input, @keydown) & reactive id="$..." -->
+        <RegExpr attribute="EventAttr" context="#stay" String="@[a-zA-Z0-9_:-]+" />
+        <RegExpr attribute="AttrName" context="AttrValueOrReactiveId" String="\bid\b(?=\s*=)" />
+        <RegExpr attribute="AttrName" context="AttrValue" String="[a-zA-Z_][a-zA-Z0-9_:-]*(?=\s*=)" />
+        <RegExpr attribute="AttrName" context="#stay" String="[a-zA-Z_][a-zA-Z0-9_:-]*" />
+        <IncludeRules context="Normal##Dva" />
+      </context>
+
+      <context name="AttrValueOrReactiveId" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text" context="#stay" />
+        <DetectChar attribute="Operator" context="#stay" char="=" />
+        <RegExpr attribute="ReactiveId" context="ReactiveIdString" String="&quot;(?=\$[^{])" />
+        <DetectChar attribute="String" context="StringPopParent" char="&quot;" />
+        <DetectChar attribute="String" context="SingleStringPopParent" char="'" />
+        <DetectChar attribute="Punctuation" context="#pop#pop" char=")" />
+        <RegExpr attribute="Normal Text" context="#pop" String="(?=\s|[,\)])" />
+        <IncludeRules context="AttrExpr" />
+      </context>
+
+      <context name="AttrValue" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text" context="#stay" />
+        <DetectChar attribute="Operator" context="#stay" char="=" />
+        <DetectChar attribute="String" context="StringPopParent" char="&quot;" />
+        <DetectChar attribute="String" context="SingleStringPopParent" char="'" />
+        <DetectChar attribute="Punctuation" context="#pop#pop" char=")" />
+        <RegExpr attribute="Normal Text" context="#pop" String="(?=\s|[,\)])" />
+        <IncludeRules context="AttrExpr" />
+      </context>
+
+      <context name="AttrExpr" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Punctuation" context="AttrNestedParen" char="(" />
+        <DetectChar attribute="Punctuation" context="#pop#pop" char=")" />
+        <RegExpr attribute="Punctuation" context="#pop" String="(?=[\s,])" />
+        <IncludeRules context="Normal##Dva" />
+      </context>
+
+      <context name="AttrNestedParen" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Punctuation" context="AttrNestedParen" char="(" />
+        <DetectChar attribute="Punctuation" context="#pop" char=")" />
+        <IncludeRules context="Normal##Dva" />
+      </context>
+
+      <context name="ReactiveIdString" attribute="ReactiveId" lineEndContext="#pop#pop">
+        <DetectChar attribute="Special" context="#stay" char="\" />
+        <RegExpr attribute="Special" context="Interpolation" String="[$!#]\{" />
+        <DetectChar attribute="ReactiveId" context="#pop#pop" char="&quot;" />
+      </context>
+
+      <context name="StringPopParent" attribute="String" lineEndContext="#pop#pop">
+        <DetectChar attribute="Special" context="#stay" char="\" />
+        <RegExpr attribute="Special" context="Interpolation" String="[$!#]\{" />
+        <DetectChar attribute="String" context="#pop#pop" char="&quot;" />
+      </context>
+
+      <context name="SingleStringPopParent" attribute="String" lineEndContext="#pop#pop">
+        <DetectChar attribute="Special" context="#stay" char="\" />
+        <RegExpr attribute="Special" context="Interpolation" String="[$!#]\{" />
+        <DetectChar attribute="String" context="#pop#pop" char="'" />
+      </context>
+
+      <context name="String" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="Special" context="#stay" char="\" />
+        <RegExpr attribute="Special" context="Interpolation" String="[$!#]\{" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+
+      <context name="Interpolation" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Special" context="#pop" char="}" />
+        <IncludeRules context="Normal##Dva" />
+      </context>
+
+      <context name="LineComment" attribute="Comment" lineEndContext="#pop" />
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Directive" defStyleNum="dsKeyword" bold="1" />
+      <itemData name="Tag" defStyleNum="dsKeyword" color="#89b4fa" bold="1" />
+      <itemData name="Function" defStyleNum="dsFunction" />
+      <itemData name="ReactiveId" defStyleNum="dsSpecialChar" color="#cba6f7" selColor="#ffffff" bold="1" italic="0" />
+      <itemData name="StaticId" defStyleNum="dsConstant" color="#f9e2af" bold="1" />
+      <itemData name="Class" defStyleNum="dsDataType" color="#94e2d5" />
+      <itemData name="AttrName" defStyleNum="dsAttribute" />
+      <itemData name="EventAttr" defStyleNum="dsSpecialChar" color="#cba6f7" />
+      <itemData name="Constant" defStyleNum="dsConstant" />
+      <itemData name="Control" defStyleNum="dsControlFlow" />
+      <itemData name="Operator" defStyleNum="dsOperator" />
+      <itemData name="Punctuation" defStyleNum="dsNormal" />
+      <itemData name="Special" defStyleNum="dsSpecialChar" />
+      <itemData name="String" defStyleNum="dsString" />
+    </itemDatas>
+  </highlighting>
+</language>

@@ -19,6 +19,7 @@
 #use sys
 #use net
 #use libc
+#use mem
 #use net/http
 
 PORT = 8080
@@ -46,10 +47,14 @@ serve_client = c_fd =>
 serve_loop: Int => ()
 serve_loop = srv =>
    io::out(("listening on port", PORT))
+   req_arena = mem::arena(1048576)
    0.. @
+      prev = mem::set_current(req_arena.raw)
       client = net::tcp_accept(srv)
-      client
-         | c_fd => serve_client(c_fd)
+      client | c_fd =>
+         ignored = serve_client(c_fd)
+      mem::set_current(prev)
+      mem::reset(req_arena)
 
 server = net::tcp_listen(PORT, 16)
 server

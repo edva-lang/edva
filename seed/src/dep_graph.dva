@@ -71,18 +71,12 @@ decl_module = name, ignored =>
 
 resolve_dep_ref: NameSet, String, String => String
 resolve_dep_ref = defs, mod, ref =>
-   defs ^? ref
-      | ref
+   mod != "" && !name_is_qualified(ref, 0)
       |
-         mod != "" && !name_is_qualified(ref, 0)
-            |
-               defs ^? (mod + "::" + ref)
-                  | mod + "::" + ref
-                  |
-                     defs ^? (mod + "::#" + ref)
-                        | mod + "::#" + ref
-                        | ""
-            | ""
+         defs ^? "${mod}::${ref}"
+            | --| "${mod}::${ref}"
+         --| defs ^? "${mod}::#${ref}" | "${mod}::#${ref}" | ""
+   defs ^? ref | ref | ""
 
 collect_expr_refs: ast::Expr, ast::Names, ast::Names => ()
 collect_expr_refs = e, locals, refs =>

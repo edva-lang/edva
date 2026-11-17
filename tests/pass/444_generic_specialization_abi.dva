@@ -1,0 +1,152 @@
+#use str
+#use io
+
+#type Pt (x: Int, y: Int)
+#type BoxRec (label: String, count: Int)
+#type ErrRec (code: Int, msg: String)
+
+::g_ops = 0
+::g_tag = "init"
+
+make_flag: Int => <>
+make_flag = n =>
+   g_ops = g_ops + 1
+   n > 0
+
+wrap_opt: #param T: Type, <>, T => <T|>
+wrap_opt = ok, x =>
+   g_ops = g_ops + 1
+   ok | <+ x +> | <-->
+
+fail_err: #param E: Type, <>, E => <|E>
+fail_err = ok, err =>
+   g_ops = g_ops + 1
+   ok | <++> | <- err ->
+
+either_pick: #param A: Type, #param B: Type, <>, A, B => <A|B>
+either_pick = ok, a, b =>
+   g_ops = g_ops + 1
+   ok | <+ a -> | <- b +>
+
+apply_twice: #param T: Type, (T => T), T => T
+apply_twice = f, x => f(f(x))
+
+make_scaler: #param T: Type, T => (T => T)
+make_scaler = k => x => x * k
+
+make_tagger: #param T: Type, String => (T => String)
+make_tagger = pfx => v => "${pfx}:${v}"
+
+// Generic lambdas inside generic functions returning all 3 ram shapes
+gen_lam_flag: #param T: Type, <>, T => <>
+gen_lam_flag = ok, x =>
+   cb: T => <>
+   cb = v => ok && v == v
+   cb(x)
+
+gen_lam_wrap: #param T: Type, <>, T => <T|>
+gen_lam_wrap = ok, x =>
+   cb: () => <T|>
+   cb = !=> ok | <+ x +> | <-->
+   cb!
+
+gen_lam_fail: #param E: Type, <>, E => <|E>
+gen_lam_fail = ok, err =>
+   cb: () => <|E>
+   cb = !=> ok | <++> | <- err ->
+   cb!
+
+gen_lam_either: #param A: Type, #param B: Type, <>, A, B => <A|B>
+gen_lam_either = ok, a, b =>
+   cb: <> => <A|B>
+   cb = take_a => take_a | <+ a -> | <- b +>
+   cb(ok)
+
+describe_ram_val: #param T: Type, T => String
+describe_ram_val = val =>
+   T
+      [<>] (val | "flag:true" | "flag:false")
+      [<Int|>] (val | n => "u_int:${str::from_int(n)}" | "u_int:none")
+      [<String|>] (val | s => "n_str:${s}" | "n_str:none")
+      [<Pt|>] (val | p => "n_pt:${str::from_int(p.x)},${str::from_int(p.y)}" | "n_pt:none")
+      [<|ErrRec>] (val | "neg:ok" | e => "neg:err:${str::from_int(e.code)}:${e.msg}")
+      [<Int|String>] (val | n => "pp:int:${str::from_int(n)}" | s => "pp:str:${s}")
+      | "other"
+
+dump_rec: #param T: Type, T => String
+dump_rec = val =>
+   g_tag = #name T
+   T
+      [(..)]
+         b = {64}
+         b += "${#name T}{"
+         #members T @ f =>
+            f.idx > 0 | b += ","
+            g_ops = g_ops + 1
+            fv = #member val, f
+            f.type
+               [Int] b += "${f.name}=${str::from_int(fv)}"
+               [String] b += "${f.name}=${fv}"
+               [<>] b += "${f.name}=${fv | "1" | "0"}"
+               | b += "${f.name}=?"
+         b += "}"
+         +b
+      | "not-record"
+
+g_flag = make_flag(1)
+g_niche_str = wrap_opt(<+>, "gstr")
+g_niche_pt = wrap_opt(<+>, Pt(7, 8))
+g_niche_neg = fail_err(<->, ErrRec(404, "missing"))
+g_unbox_int = wrap_opt(<+>, 55)
+g_unbox_either = either_pick(<->, 1, "alt")
+
+io::out $ describe_ram_val(g_flag)
+io::out $ describe_ram_val(g_niche_str)
+io::out $ describe_ram_val(g_niche_pt)
+io::out $ describe_ram_val(g_niche_neg)
+io::out $ describe_ram_val(g_unbox_int)
+io::out $ describe_ram_val(g_unbox_either)
+
+// Local specialized calls covering both arms of each ram shape
+l_flag = make_flag(0)
+l_nstr_none = wrap_opt(<->, "unused")
+l_npt_none = wrap_opt(<->, Pt(0, 0))
+l_neg_ok = fail_err(<+>, ErrRec(0, ""))
+l_uint_none = wrap_opt(<->, 99)
+l_pp_pos = either_pick(<+>, 12, "no")
+
+io::out $ describe_ram_val(l_flag)
+io::out $ describe_ram_val(l_nstr_none)
+io::out $ describe_ram_val(l_npt_none)
+io::out $ describe_ram_val(l_neg_ok)
+io::out $ describe_ram_val(l_uint_none)
+io::out $ describe_ram_val(l_pp_pos)
+
+// Non-capturing & capturing closures through generic HOFs and generic factories
+io::out $ str::from_int(apply_twice(x => x + 3, 4))
+step = 5
+io::out $ str::from_int(apply_twice(x => x + step, 10))
+p2 = apply_twice(p => Pt(p.x + 1, p.y + 2), Pt(1, 2))
+io::out $ "pt=${str::from_int(p2.x)},${str::from_int(p2.y)}"
+
+scale3 = make_scaler(3)
+tagger = make_tagger("abi")
+io::out $ "${str::from_int(scale3(9))}:${tagger("ok")}"
+
+// Generic lambdas returning each of the 3 ram shapes
+r_gl_f = gen_lam_flag(<+>, 42)
+r_gl_s = gen_lam_wrap(<+>, "lam_str")
+r_gl_e = gen_lam_fail(<->, ErrRec(500, "boom"))
+r_gl_i = gen_lam_wrap(<+>, 77)
+r_gl_pp = gen_lam_either(<->, 1, "right")
+
+io::out $ describe_ram_val(r_gl_f)
+io::out $ describe_ram_val(r_gl_s)
+io::out $ describe_ram_val(r_gl_e)
+io::out $ describe_ram_val(r_gl_i)
+io::out $ describe_ram_val(r_gl_pp)
+
+// Type reflection & #members unrolling on multiple record types
+io::out $ dump_rec(Pt(11, 22))
+io::out $ dump_rec(BoxRec("box", 3))
+io::out $ "globals:${g_tag}:${str::from_int(g_ops)}"

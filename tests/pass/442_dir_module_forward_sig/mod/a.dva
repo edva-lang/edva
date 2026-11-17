@@ -1,0 +1,15 @@
+#use str
+#public
+#type Model (count: Int, text: String)
+
+#private
+hidden = !=> 99
+
+#public
+init = !=> Model(10, "ok")
+heading = m => "${m.text}:${m.count}"
+inc = m => m(count = m.count + 1)
+dec = m => m(count = m.count - 1)
+dual = m => ("${m.count}", dec)
+key_escape: Model => Model
+key_escape = m => m(count = 0)

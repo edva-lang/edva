@@ -1,0 +1,4 @@
+#use ./mod_missing_decl
+add: Int, Int => Int
+add = a, b => a + b
+mod_missing_decl::run!

@@ -1,0 +1,5 @@
+reentrant:primary=db1.local:5432(on,n=3)|replica=db2.local:5433(off,n=3)|replica
+w1:n1.internal:8007:3:svc_1:worker_7:api.example.com:item-17:r=462:ok
+w2:n2.internal:8007:3:svc_2:worker_7:api.example.com:item-27:r=574:ok
+w3:n3.internal:8007:3:svc_3:worker_7:api.example.com:item-37:r=393:ok
+w4:n4.internal:8007:3:svc_4:worker_7:api.example.com:item-47:r=918:ok

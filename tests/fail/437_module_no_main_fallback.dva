@@ -1,0 +1,4 @@
+secret_fn: Int => Int
+secret_fn = x => x + 1
+#use ./mod_no_main_fallback
+mod_no_main_fallback::call_secret!

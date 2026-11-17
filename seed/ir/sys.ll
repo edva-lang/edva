@@ -5,6 +5,7 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
+@dva_arena_base_tls = external thread_local global ptr
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
@@ -69,6 +70,14 @@ declare i1 @dva_arena_validate_tag(ptr, i64)
 declare void @dva_arena_adopt(ptr, ptr)
 
 declare i64 @dva_hash_string(ptr, i64)
+
+declare ptr @dva_cov_map_ptr()
+
+declare void @dva_cov_trace(i64)
+
+declare void @__sanitizer_cov_trace_pc_guard(ptr)
+
+declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
 
 define internal void @__dva_global_init_sys() #1 {
 entry:
@@ -671,23 +680,23 @@ entry:
   store i64 %call.res, ptr %var.res, align 8
   %var.load5 = load i64, ptr %var.res, align 8
   %cmptmp = icmp sgt i64 %var.load5, 0
-  br i1 %cmptmp, label %and.12.then, label %and.12.else
+  br i1 %cmptmp, label %and.14.then, label %and.14.else
 
-and.12.then:                                      ; preds = %entry
+and.14.then:                                      ; preds = %entry
   %var.load6 = load ptr, ptr %"var.pfd'", align 8
   %fld.gep = getelementptr inbounds <{ i32, i16, i16 }>, ptr %var.load6, i32 0, i32 2
   %fld.load = load i16, ptr %fld.gep, align 2
   %coerce.sext = sext i16 %fld.load to i64
   %bandtmp = and i64 %coerce.sext, 1
   %cmptmp7 = icmp ne i64 %bandtmp, 0
-  br label %and.12.exit
+  br label %and.14.exit
 
-and.12.else:                                      ; preds = %entry
-  br label %and.12.exit
+and.14.else:                                      ; preds = %entry
+  br label %and.14.exit
 
-and.12.exit:                                      ; preds = %and.12.else, %and.12.then
-  %and.12.phi = phi i1 [ %cmptmp7, %and.12.then ], [ %cmptmp, %and.12.else ]
-  ret i1 %and.12.phi
+and.14.exit:                                      ; preds = %and.14.else, %and.14.then
+  %and.14.phi = phi i1 [ %cmptmp7, %and.14.then ], [ %cmptmp, %and.14.else ]
+  ret i1 %and.14.phi
 }
 
 define i1 @"sys::poll_out"(i64 %0, i64 %1) #1 {
@@ -718,23 +727,23 @@ entry:
   store i64 %call.res, ptr %var.res, align 8
   %var.load5 = load i64, ptr %var.res, align 8
   %cmptmp = icmp sgt i64 %var.load5, 0
-  br i1 %cmptmp, label %and.13.then, label %and.13.else
+  br i1 %cmptmp, label %and.15.then, label %and.15.else
 
-and.13.then:                                      ; preds = %entry
+and.15.then:                                      ; preds = %entry
   %var.load6 = load ptr, ptr %"var.pfd'", align 8
   %fld.gep = getelementptr inbounds <{ i32, i16, i16 }>, ptr %var.load6, i32 0, i32 2
   %fld.load = load i16, ptr %fld.gep, align 2
   %coerce.sext = sext i16 %fld.load to i64
   %bandtmp = and i64 %coerce.sext, 4
   %cmptmp7 = icmp ne i64 %bandtmp, 0
-  br label %and.13.exit
+  br label %and.15.exit
 
-and.13.else:                                      ; preds = %entry
-  br label %and.13.exit
+and.15.else:                                      ; preds = %entry
+  br label %and.15.exit
 
-and.13.exit:                                      ; preds = %and.13.else, %and.13.then
-  %and.13.phi = phi i1 [ %cmptmp7, %and.13.then ], [ %cmptmp, %and.13.else ]
-  ret i1 %and.13.phi
+and.15.exit:                                      ; preds = %and.15.else, %and.15.then
+  %and.15.phi = phi i1 [ %cmptmp7, %and.15.then ], [ %cmptmp, %and.15.else ]
+  ret i1 %and.15.phi
 }
 
 attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

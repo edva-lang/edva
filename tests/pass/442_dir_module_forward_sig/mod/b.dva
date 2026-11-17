@@ -1,0 +1,43 @@
+#use str
+#public
+init: () => Model
+heading: Model => String
+inc: Model => Model
+dec: Model => Model
+dual: Model => (String, (Model => Model))
+
+#private
+::_m: Model
+_m = init!
+
+#public
+boot_x = !=> _m.count
+
+#public
+run_probe: () => String
+run_probe = !=>
+   m0' = init!
+   h0 = heading(m0')
+   m1 = inc(m0')
+   d = dual(m1)
+   m2 = d.1(m1)
+   m3 = #has_member self, key_escape | key_escape(m2) | m2
+   m4 = #has_member self, navigate | navigate(m3) | m3
+   has_priv = #has_member self, hidden
+   has_cnt = #has_member Model, count
+   cnt_val = has_cnt | m1.count | -1
+   priv_val = has_priv | 1 | 0
+   dummy = Int{}
+   ignore: Model => ()
+   ignore = x => dummy += x.count
+   dispatch: String => ()
+   dispatch = k =>
+      k
+         ["Enter"]
+            #has_member self, missing_fn
+               | ignore(missing_fn(m4))
+         ["Escape"]
+            #has_member self, key_escape
+               | ignore(key_escape(m4))
+   dispatch("Enter")
+   "${h0}|${d.0}|${m2.count}|${m3.count}|${m4.count}|${priv_val}|${cnt_val}"

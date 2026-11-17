@@ -5,6 +5,7 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
+@dva_arena_base_tls = external thread_local global ptr
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
@@ -58,11 +59,11 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.const::min_f32" = external global float
 @"var.const::sub_f32" = external global float
 @"var.const::eps_f32" = external global float
+@"var.layout::target_triple" = external global ptr
 @"var.sys::STDIN" = external global i64
 @"var.sys::STDOUT" = external global i64
 @"var.sys::STDERR" = external global i64
 @"var.sys::addr_null" = external global ptr
-@"var.layout::target_triple" = external global ptr
 @"var.time::CLOCK_REALTIME" = external global i64
 @"var.time::CLOCK_MONOTONIC" = external global i64
 @"var.time::NS_PER_US" = external global i64
@@ -71,13 +72,24 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.time::SEC_PER_MIN" = external global i64
 @"var.time::SEC_PER_HOUR" = external global i64
 @"var.time::SEC_PER_DAY" = external global i64
+@"var.log::#owned_fd" = external global i64
+@"var.log::#O_LOG_APPEND" = external global i64
 @"var.annotate::cur_source_file" = external global ptr
 @"var.annotate::cur_target_triple" = external global ptr
 @"var.annotate::cur_stmt_files" = external global ptr
 @"var.annotate::cur_stmt_lines" = external global ptr
 @"var.annotate::cur_stmt_cols" = external global ptr
+@"var.annotate::cur_stmt_mods" = external global ptr
 @"var.annotate::cur_is_call_arg" = external global i1
 @"var.annotate::in_ct_expr" = external global i1
+@"var.annotate::cur_fn_name" = external global ptr
+@"var.annotate::unroll_seq" = external global i64
+@"var.annotate::cur_program_exprs" = external global ptr
+@"var.annotate::invalid_scc_fns" = external global ptr
+@"var.annotate::cur_ct_types" = external global ptr
+@"var.annotate::cur_ct_vals" = external global ptr
+@"var.annotate::cur_ct_cursors" = external global ptr
+@"var.annotate::cur_ct_ints" = external global ptr
 @"var.annotate::view_vars" = external global ptr
 @"var.annotate::declared_fns" = external global ptr
 @"var.annotate::called_fns" = external global ptr
@@ -126,6 +138,14 @@ declare i1 @dva_arena_validate_tag(ptr, i64)
 declare void @dva_arena_adopt(ptr, ptr)
 
 declare i64 @dva_hash_string(ptr, i64)
+
+declare ptr @dva_cov_map_ptr()
+
+declare void @dva_cov_trace(i64)
+
+declare void @__sanitizer_cov_trace_pc_guard(ptr)
+
+declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
 
 define internal void @__dva_global_init_codegen() #1 {
 entry:
@@ -738,6 +758,12 @@ declare i64 @getrlimit(i64, ptr)
 declare i64 @setrlimit(i64, ptr)
 
 declare i64 @uname(ptr)
+
+declare i32 @nanosleep(ptr, ptr)
+
+declare ptr @localtime_r(ptr, ptr)
+
+declare ptr @strptime(ptr, ptr, ptr)
 
 define ptr @"codegen::default_codegen_opts"() #1 {
 entry:

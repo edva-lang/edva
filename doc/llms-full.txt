@@ -348,7 +348,7 @@ field_names = #param T, rec =>
 - **`img`**: Lossless RGBA8 `Image` buffer and PNG / QOI image encoders and decoders.
 - **`in`**: Buffered standard-input singleton (`read_line`, `read_bytes`, `read_until`, `eof!`).
 - **`io`**: Buffered stream `Reader` (`read_line`, `read_all`) and EINTR-safe output (`out`, `outs`, `err`, `errs`, `write`).
-- **`json`**: Strict RFC 8259 parser (`parse`, `stringify`, `stringify_pretty`, `get`, `get_str`, `get_int`) and `#param` compile-time structural codecs (`json::encode`, `json::encode_pretty`, `json::decode`, `json::to_value`, `json::from_value`) supporting records with field defaults, `<P|>` nullables, `E{}` arrays, `K ^ V` maps, and externally tagged enums. Note: `json::parse` uses module-global scanner state and is not thread-safe across unsynchronized OS threads.
+- **`json`**: Strict RFC 8259 parser (`parse`, `stringify`, `stringify_pretty`, `get`, `get_str`, `get_int`) and `#param` compile-time structural codecs (`json::encode`, `json::encode_pretty`, `json::decode`, `json::to_value`, `json::from_value`) supporting records with field defaults, `<P|>` nullables, `E{}` arrays, `K ^ V` maps, and externally tagged enums. `json::parse` uses instance-owned `Scanner` state with zero mutable globals and is reentrant and thread-safe across `task::spawn` workers (allocating in each thread's ambient arena).
 - **`kv`**: Bitcask-style log-structured persistent key-value store with CRC-32 integrity and `#param` typed `put_struct` / `get_struct`.
 - **`libc`**: Low-level POSIX / C ABI bindings.
 - **`log`**: Leveled (`debug`, `info`, `warn`, `error`) and `#param` structured `key=value` logger.
@@ -363,7 +363,7 @@ field_names = #param T, rec =>
 - **`sort`**: Hybrid $O(n \log n)$ merge sort (`ints`, `strings`) and custom comparator sorting.
 - **`str`**: UTF-8/byte string slicing, search, splitting, trimming, case conversion, and numeric parsing (`split`, `split_once`, `trim`, `starts_with`, `ends_with`, `contains`, `find`, `rfind`, `replace`, `lower`, `upper`, `from_int`, `parse_int`, `to_int`).
 - **`sys`**: Raw process `argc`, `argv_string`, and `exit`.
-- **`test`**: Unit test suites and `#param` structural assertions (`suite`, `check`, `eq`, `neq`, `finish!`).
+- **`test`**: Unit test suites, `#param` structural assertions (`suite`, `check`, `eq`, `neq`, `finish!`), coverage-guided fuzzing (`fuzz`, `fuzz_opts`, `shrink_str`, `cov_edges!`), and seeded property testing (`forall`, `forall_opts`, `gen_int`, `gen_ascii`, `gen_utf8`).
 - **`time`**: Wall-clock and monotonic timestamps, durations, civil calendar dates, and ISO-8601 / RFC-3339 formatting.
 - **`type`**: Compile-time type predicates (`is_int`, `is_float`, `is_numeric`, `is_signed`, `is_unsigned`, `bit_width`).
 - **`unicode` & `utf`**: Unicode category tables and UTF-8 codepoint encoding/decoding (`decode_rune`, `encode_rune`, `utf8_width`).

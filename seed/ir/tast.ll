@@ -5,6 +5,7 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
+@dva_arena_base_tls = external thread_local global ptr
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
@@ -50,55 +51,67 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.const::eps_f32" = external global float
 @clo.const = internal constant { ptr, ptr } { ptr @"tast::layout_scalar", ptr null }
 @"var.tast::layout_scalar" = global ptr null
-@clo.const.1 = internal constant { ptr, ptr } { ptr @"tast::layout_aggregate", ptr null }
+@clo.const.1 = internal constant { ptr, ptr } { ptr @"tast::layout_bitfield", ptr null }
+@"var.tast::layout_bitfield" = global ptr null
+@clo.const.2 = internal constant { ptr, ptr } { ptr @"tast::layout_aggregate", ptr null }
 @"var.tast::layout_aggregate" = global ptr null
-@clo.const.2 = internal constant { ptr, ptr } { ptr @"tast::layout_ram", ptr null }
+@clo.const.3 = internal constant { ptr, ptr } { ptr @"tast::layout_record", ptr null }
+@"var.tast::layout_record" = global ptr null
+@clo.const.4 = internal constant { ptr, ptr } { ptr @"tast::layout_ram", ptr null }
 @"var.tast::layout_ram" = global ptr null
-@clo.const.3 = internal constant { ptr, ptr } { ptr @"tast::layout_closure", ptr null }
+@clo.const.5 = internal constant { ptr, ptr } { ptr @"tast::layout_ram_flag", ptr null }
+@"var.tast::layout_ram_flag" = global ptr null
+@clo.const.6 = internal constant { ptr, ptr } { ptr @"tast::layout_ram_niche_pos", ptr null }
+@"var.tast::layout_ram_niche_pos" = global ptr null
+@clo.const.7 = internal constant { ptr, ptr } { ptr @"tast::layout_ram_niche_neg", ptr null }
+@"var.tast::layout_ram_niche_neg" = global ptr null
+@clo.const.8 = internal constant { ptr, ptr } { ptr @"tast::layout_ram_unboxed", ptr null }
+@"var.tast::layout_ram_unboxed" = global ptr null
+@clo.const.9 = internal constant { ptr, ptr } { ptr @"tast::layout_closure", ptr null }
 @"var.tast::layout_closure" = global ptr null
-@clo.const.4 = internal constant { ptr, ptr } { ptr @"tast::layout_void", ptr null }
+@clo.const.10 = internal constant { ptr, ptr } { ptr @"tast::layout_void", ptr null }
 @"var.tast::layout_void" = global ptr null
-@clo.const.5 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_expr", ptr null }
+@clo.const.11 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_expr", ptr null }
 @"var.tast::mk_typed_expr" = global ptr null
-@clo.const.6 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_int", ptr null }
+@clo.const.12 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_int", ptr null }
 @"var.tast::mk_lit_int" = global ptr null
-@clo.const.7 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_float", ptr null }
+@clo.const.13 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_float", ptr null }
 @"var.tast::mk_lit_float" = global ptr null
-@clo.const.8 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_str", ptr null }
+@clo.const.14 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_str", ptr null }
 @"var.tast::mk_lit_str" = global ptr null
-@clo.const.9 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_flag", ptr null }
+@clo.const.15 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_flag", ptr null }
 @"var.tast::mk_lit_flag" = global ptr null
-@clo.const.10 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_unit", ptr null }
+@clo.const.16 = internal constant { ptr, ptr } { ptr @"tast::mk_lit_unit", ptr null }
 @"var.tast::mk_lit_unit" = global ptr null
-@clo.const.11 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_var", ptr null }
+@clo.const.17 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_var", ptr null }
 @"var.tast::mk_typed_var" = global ptr null
-@clo.const.12 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_bin", ptr null }
+@clo.const.18 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_bin", ptr null }
 @"var.tast::mk_typed_bin" = global ptr null
-@clo.const.13 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_unary", ptr null }
+@clo.const.19 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_unary", ptr null }
 @"var.tast::mk_typed_unary" = global ptr null
-@clo.const.14 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_call", ptr null }
+@clo.const.20 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_call", ptr null }
 @"var.tast::mk_typed_call" = global ptr null
-@clo.const.15 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_block", ptr null }
+@clo.const.21 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_block", ptr null }
 @"var.tast::mk_typed_block" = global ptr null
-@clo.const.16 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_assign", ptr null }
+@clo.const.22 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_assign", ptr null }
 @"var.tast::mk_typed_assign" = global ptr null
-@clo.const.17 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_member", ptr null }
+@clo.const.23 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_member", ptr null }
 @"var.tast::mk_typed_member" = global ptr null
-@clo.const.18 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_cycle", ptr null }
+@clo.const.24 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_cycle", ptr null }
 @"var.tast::mk_typed_cycle" = global ptr null
-@clo.const.19 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_copy", ptr null }
+@clo.const.25 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_copy", ptr null }
 @"var.tast::mk_typed_copy" = global ptr null
-@clo.const.20 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_builder_new", ptr null }
+@clo.const.26 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_builder_new", ptr null }
 @"var.tast::mk_typed_builder_new" = global ptr null
-@clo.const.21 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_cycle_jump", ptr null }
+@clo.const.27 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_cycle_jump", ptr null }
 @"var.tast::mk_typed_cycle_jump" = global ptr null
-@clo.const.22 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_raw_memory", ptr null }
+@clo.const.28 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_raw_memory", ptr null }
 @"var.tast::mk_typed_raw_memory" = global ptr null
-@clo.const.23 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_ram_construct", ptr null }
+@clo.const.29 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_ram_construct", ptr null }
 @"var.tast::mk_typed_ram_construct" = global ptr null
-@clo.const.24 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_enum_construct", ptr null }
+@clo.const.30 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_enum_construct", ptr null }
 @"var.tast::mk_typed_enum_construct" = global ptr null
-@clo.const.25 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_return", ptr null }
+@clo.const.31 = internal constant { ptr, ptr } { ptr @"tast::mk_typed_return", ptr null }
 @"var.tast::mk_typed_return" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_tast, ptr null }]
 
@@ -129,34 +142,48 @@ declare void @dva_arena_adopt(ptr, ptr)
 
 declare i64 @dva_hash_string(ptr, i64)
 
+declare ptr @dva_cov_map_ptr()
+
+declare void @dva_cov_trace(i64)
+
+declare void @__sanitizer_cov_trace_pc_guard(ptr)
+
+declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
+
 define internal void @__dva_global_init_tast() #1 {
 entry:
   store ptr @clo.const, ptr @"var.tast::layout_scalar", align 8
-  store ptr @clo.const.1, ptr @"var.tast::layout_aggregate", align 8
-  store ptr @clo.const.2, ptr @"var.tast::layout_ram", align 8
-  store ptr @clo.const.3, ptr @"var.tast::layout_closure", align 8
-  store ptr @clo.const.4, ptr @"var.tast::layout_void", align 8
-  store ptr @clo.const.5, ptr @"var.tast::mk_typed_expr", align 8
-  store ptr @clo.const.6, ptr @"var.tast::mk_lit_int", align 8
-  store ptr @clo.const.7, ptr @"var.tast::mk_lit_float", align 8
-  store ptr @clo.const.8, ptr @"var.tast::mk_lit_str", align 8
-  store ptr @clo.const.9, ptr @"var.tast::mk_lit_flag", align 8
-  store ptr @clo.const.10, ptr @"var.tast::mk_lit_unit", align 8
-  store ptr @clo.const.11, ptr @"var.tast::mk_typed_var", align 8
-  store ptr @clo.const.12, ptr @"var.tast::mk_typed_bin", align 8
-  store ptr @clo.const.13, ptr @"var.tast::mk_typed_unary", align 8
-  store ptr @clo.const.14, ptr @"var.tast::mk_typed_call", align 8
-  store ptr @clo.const.15, ptr @"var.tast::mk_typed_block", align 8
-  store ptr @clo.const.16, ptr @"var.tast::mk_typed_assign", align 8
-  store ptr @clo.const.17, ptr @"var.tast::mk_typed_member", align 8
-  store ptr @clo.const.18, ptr @"var.tast::mk_typed_cycle", align 8
-  store ptr @clo.const.19, ptr @"var.tast::mk_typed_copy", align 8
-  store ptr @clo.const.20, ptr @"var.tast::mk_typed_builder_new", align 8
-  store ptr @clo.const.21, ptr @"var.tast::mk_typed_cycle_jump", align 8
-  store ptr @clo.const.22, ptr @"var.tast::mk_typed_raw_memory", align 8
-  store ptr @clo.const.23, ptr @"var.tast::mk_typed_ram_construct", align 8
-  store ptr @clo.const.24, ptr @"var.tast::mk_typed_enum_construct", align 8
-  store ptr @clo.const.25, ptr @"var.tast::mk_typed_return", align 8
+  store ptr @clo.const.1, ptr @"var.tast::layout_bitfield", align 8
+  store ptr @clo.const.2, ptr @"var.tast::layout_aggregate", align 8
+  store ptr @clo.const.3, ptr @"var.tast::layout_record", align 8
+  store ptr @clo.const.4, ptr @"var.tast::layout_ram", align 8
+  store ptr @clo.const.5, ptr @"var.tast::layout_ram_flag", align 8
+  store ptr @clo.const.6, ptr @"var.tast::layout_ram_niche_pos", align 8
+  store ptr @clo.const.7, ptr @"var.tast::layout_ram_niche_neg", align 8
+  store ptr @clo.const.8, ptr @"var.tast::layout_ram_unboxed", align 8
+  store ptr @clo.const.9, ptr @"var.tast::layout_closure", align 8
+  store ptr @clo.const.10, ptr @"var.tast::layout_void", align 8
+  store ptr @clo.const.11, ptr @"var.tast::mk_typed_expr", align 8
+  store ptr @clo.const.12, ptr @"var.tast::mk_lit_int", align 8
+  store ptr @clo.const.13, ptr @"var.tast::mk_lit_float", align 8
+  store ptr @clo.const.14, ptr @"var.tast::mk_lit_str", align 8
+  store ptr @clo.const.15, ptr @"var.tast::mk_lit_flag", align 8
+  store ptr @clo.const.16, ptr @"var.tast::mk_lit_unit", align 8
+  store ptr @clo.const.17, ptr @"var.tast::mk_typed_var", align 8
+  store ptr @clo.const.18, ptr @"var.tast::mk_typed_bin", align 8
+  store ptr @clo.const.19, ptr @"var.tast::mk_typed_unary", align 8
+  store ptr @clo.const.20, ptr @"var.tast::mk_typed_call", align 8
+  store ptr @clo.const.21, ptr @"var.tast::mk_typed_block", align 8
+  store ptr @clo.const.22, ptr @"var.tast::mk_typed_assign", align 8
+  store ptr @clo.const.23, ptr @"var.tast::mk_typed_member", align 8
+  store ptr @clo.const.24, ptr @"var.tast::mk_typed_cycle", align 8
+  store ptr @clo.const.25, ptr @"var.tast::mk_typed_copy", align 8
+  store ptr @clo.const.26, ptr @"var.tast::mk_typed_builder_new", align 8
+  store ptr @clo.const.27, ptr @"var.tast::mk_typed_cycle_jump", align 8
+  store ptr @clo.const.28, ptr @"var.tast::mk_typed_raw_memory", align 8
+  store ptr @clo.const.29, ptr @"var.tast::mk_typed_ram_construct", align 8
+  store ptr @clo.const.30, ptr @"var.tast::mk_typed_enum_construct", align 8
+  store ptr @clo.const.31, ptr @"var.tast::mk_typed_return", align 8
   ret void
 }
 
@@ -185,7 +212,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_aggregate"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_bitfield"(i64 %0, i64 %1) #1 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -210,7 +237,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_ram"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_aggregate"(i64 %0, i64 %1) #1 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -235,12 +262,156 @@ entry:
   ret ptr %rec.alloc
 }
 
+define ptr @"tast::layout_record"(i64 %0, i64 %1) #1 {
+entry:
+  %var.align = alloca i64, align 8
+  %var.size = alloca i64, align 8
+  store i64 %0, ptr %var.size, align 8
+  store i64 %1, ptr %var.align, align 8
+  %var.load = load i64, ptr %var.size, align 8
+  %var.load1 = load i64, ptr %var.align, align 8
+  %arena.cur = call ptr @dva_arena_current()
+  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
+  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
+  store i64 3, ptr %tag.gep, align 8
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
+  store ptr null, ptr %pay.gep, align 8
+  %arena.cur2 = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
+  store i64 %var.load, ptr %rec.fld, align 8
+  %rec.fld3 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load1, ptr %rec.fld3, align 8
+  %rec.fld4 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 2
+  store ptr %enum.alloc, ptr %rec.fld4, align 8
+  ret ptr %rec.alloc
+}
+
+define ptr @"tast::layout_ram"(i64 %0, i64 %1) #1 {
+entry:
+  %var.align = alloca i64, align 8
+  %var.size = alloca i64, align 8
+  store i64 %0, ptr %var.size, align 8
+  store i64 %1, ptr %var.align, align 8
+  %var.load = load i64, ptr %var.size, align 8
+  %var.load1 = load i64, ptr %var.align, align 8
+  %arena.cur = call ptr @dva_arena_current()
+  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
+  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
+  store i64 8, ptr %tag.gep, align 8
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
+  store ptr null, ptr %pay.gep, align 8
+  %arena.cur2 = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
+  store i64 %var.load, ptr %rec.fld, align 8
+  %rec.fld3 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load1, ptr %rec.fld3, align 8
+  %rec.fld4 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 2
+  store ptr %enum.alloc, ptr %rec.fld4, align 8
+  ret ptr %rec.alloc
+}
+
+define ptr @"tast::layout_ram_flag"() #1 {
+entry:
+  %arena.cur = call ptr @dva_arena_current()
+  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
+  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
+  store i64 4, ptr %tag.gep, align 8
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
+  store ptr null, ptr %pay.gep, align 8
+  %arena.cur1 = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
+  store i64 1, ptr %rec.fld, align 8
+  %rec.fld2 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 1
+  store i64 1, ptr %rec.fld2, align 8
+  %rec.fld3 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 2
+  store ptr %enum.alloc, ptr %rec.fld3, align 8
+  ret ptr %rec.alloc
+}
+
+define ptr @"tast::layout_ram_niche_pos"(i64 %0, i64 %1) #1 {
+entry:
+  %var.align = alloca i64, align 8
+  %var.size = alloca i64, align 8
+  store i64 %0, ptr %var.size, align 8
+  store i64 %1, ptr %var.align, align 8
+  %var.load = load i64, ptr %var.size, align 8
+  %var.load1 = load i64, ptr %var.align, align 8
+  %arena.cur = call ptr @dva_arena_current()
+  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
+  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
+  store i64 5, ptr %tag.gep, align 8
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
+  store ptr null, ptr %pay.gep, align 8
+  %arena.cur2 = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
+  store i64 %var.load, ptr %rec.fld, align 8
+  %rec.fld3 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load1, ptr %rec.fld3, align 8
+  %rec.fld4 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 2
+  store ptr %enum.alloc, ptr %rec.fld4, align 8
+  ret ptr %rec.alloc
+}
+
+define ptr @"tast::layout_ram_niche_neg"(i64 %0, i64 %1) #1 {
+entry:
+  %var.align = alloca i64, align 8
+  %var.size = alloca i64, align 8
+  store i64 %0, ptr %var.size, align 8
+  store i64 %1, ptr %var.align, align 8
+  %var.load = load i64, ptr %var.size, align 8
+  %var.load1 = load i64, ptr %var.align, align 8
+  %arena.cur = call ptr @dva_arena_current()
+  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
+  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
+  store i64 6, ptr %tag.gep, align 8
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
+  store ptr null, ptr %pay.gep, align 8
+  %arena.cur2 = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
+  store i64 %var.load, ptr %rec.fld, align 8
+  %rec.fld3 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load1, ptr %rec.fld3, align 8
+  %rec.fld4 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 2
+  store ptr %enum.alloc, ptr %rec.fld4, align 8
+  ret ptr %rec.alloc
+}
+
+define ptr @"tast::layout_ram_unboxed"(i64 %0, i64 %1) #1 {
+entry:
+  %var.align = alloca i64, align 8
+  %var.size = alloca i64, align 8
+  store i64 %0, ptr %var.size, align 8
+  store i64 %1, ptr %var.align, align 8
+  %var.load = load i64, ptr %var.size, align 8
+  %var.load1 = load i64, ptr %var.align, align 8
+  %arena.cur = call ptr @dva_arena_current()
+  %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
+  %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
+  store i64 7, ptr %tag.gep, align 8
+  %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
+  store ptr null, ptr %pay.gep, align 8
+  %arena.cur2 = call ptr @dva_arena_current()
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
+  store i64 %var.load, ptr %rec.fld, align 8
+  %rec.fld3 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load1, ptr %rec.fld3, align 8
+  %rec.fld4 = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 2
+  store ptr %enum.alloc, ptr %rec.fld4, align 8
+  ret ptr %rec.alloc
+}
+
 define ptr @"tast::layout_closure"() #1 {
 entry:
   %arena.cur = call ptr @dva_arena_current()
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
-  store i64 6, ptr %tag.gep, align 8
+  store i64 12, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
   %arena.cur1 = call ptr @dva_arena_current()
@@ -259,7 +430,7 @@ entry:
   %arena.cur = call ptr @dva_arena_current()
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
-  store i64 7, ptr %tag.gep, align 8
+  store i64 13, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
   %arena.cur1 = call ptr @dva_arena_current()

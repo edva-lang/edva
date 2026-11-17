@@ -1,0 +1,3 @@
+#public
+call_secret: () => Int
+call_secret = !=> secret_fn(1)

@@ -2,7 +2,7 @@
 # Real-driver regression test suite for edva: verifies CLI behavior,
 # error propagation, signal handling, and atomic file outputs.
 set -e
-ulimit -v 4194304 2>/dev/null || true
+ulimit -S -v 4194304 2>/dev/null || true
 cd "$(dirname "$0")"
 
 if [ ! -x ./edva ]; then
@@ -2239,6 +2239,41 @@ if ! grep -Fq '"name":"edva-lsp"' <<<"$LSP_OUT" || \
     echo "FAILED: unexpected edva lsp output: $LSP_OUT"
     exit 1
 fi
+cat <<'EOF' > "$TMPDIR/lsp_gen_mod.dva"
+#public
+pick_bad: #param T: Type, T => Int
+pick_bad = item =>
+   item.missing_lsp_field
+EOF
+LSP_CALLER_PATH="$TMPDIR/lsp_gen_caller.dva"
+LSP_CALLER_URI="file://$LSP_CALLER_PATH"
+LSP_CALLER_SRC="#use ./lsp_gen_mod
+
+#type LspBox (id: Int, label: String)
+
+res = lsp_gen_mod::pick_bad(LspBox(1, \"ok\"))
+"
+printf "%s" "$LSP_CALLER_SRC" > "$LSP_CALLER_PATH"
+LSP_SPEC_OUT=$( {
+    lsp_frame '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+    lsp_frame "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_CALLER_URI\",\"languageId\":\"edva\",\"version\":1,\"text\":\"#use ./lsp_gen_mod\\n\\n#type LspBox (id: Int, label: String)\\n\\nres = lsp_gen_mod::pick_bad(LspBox(1, \\\"ok\\\"))\\n\"}}}"
+    lsp_frame '{"jsonrpc":"2.0","id":2,"method":"shutdown"}'
+    lsp_frame '{"jsonrpc":"2.0","method":"exit"}'
+} | timeout 15 ./edva lsp )
+if ! grep -Fq '"code":"E3130"' <<<"$LSP_SPEC_OUT" || \
+   ! grep -Fq 'origin:' <<<"$LSP_SPEC_OUT" || \
+   ! grep -Fq 'in specialization' <<<"$LSP_SPEC_OUT"; then
+    echo "FAILED: edva lsp did not mirror cross-file generic diagnostic onto caller: $LSP_SPEC_OUT"
+    exit 1
+fi
+CASCADE_OUT=$(timeout 30 ./edva tests/fail/445_cascade_suppression_single_primary.dva 2>&1 || true)
+if ! grep -Fq 'Undefined function: unknown_mod::missing' <<<"$CASCADE_OUT" || \
+   ! grep -Fq 'Cannot assign ramification of shape RamNP(<|B>) to RamPP(<A|B>) (<|String> vs <Int|' <<<"$CASCADE_OUT" || \
+   grep -Fq 'E3103' <<<"$CASCADE_OUT" || \
+   grep -Fq 'some_field' <<<"$CASCADE_OUT"; then
+    echo "FAILED: cascade suppression check failed: $CASCADE_OUT"
+    exit 1
+fi
 echo "PASS"
 
 # --- Test 51: edva.ccl generate section with @<alias> on-demand tool building ---
@@ -2287,9 +2322,213 @@ if [ ! -x "$GEN_DIR/mygen/mygen" ] || [ ! -f "$GEN_DIR/myapp/src/hello.gen.dva" 
 fi
 echo "PASS"
 
+# --- Test 52: Generic specialization ABI across separate compilation, -O0/-O2, and Wasm ---
+echo -n "Testing generic specialization ABI (separate compilation, -O0/-O2, Wasm)... "
+T52_DIR="$TMPDIR/t52_sep"
+mkdir -p "$T52_DIR"
+cat <<'EOF' > "$T52_DIR/gen_abi_mod.dva"
+#public #type Pair (a: Int, b: Int)
+
+#private
+   scale_add: Int, Int => Int
+   scale_add = x, y => x * 10 + y
+
+   wrap_inner: #param T: Type, <>, T => <T|>
+   wrap_inner = ok, v => ok | <+ v +> | <-->
+
+#public
+   pub_unbox: #param T: Type, <>, T => <T|>
+   pub_unbox = ok, v => wrap_inner(ok, v)
+
+   pub_score: #param T: Type, T, Int => Int
+   pub_score = unused, n => scale_add(n, #size T)
+EOF
+cat <<'EOF' > "$T52_DIR/gen_mid_mod.dva"
+#use ./gen_abi_mod
+
+#public
+   mid_check: () => Int
+   mid_check = !=>
+      r1 = gen_abi_mod::pub_unbox(<+>, 4) | v => v | 0
+      r2 = gen_abi_mod::pub_unbox(<+>, gen_abi_mod::Pair(5, 6)) | p => p.a + p.b | 0
+      r3 = gen_abi_mod::pub_score(gen_abi_mod::Pair(1, 2), 2)
+      r1 + r2 + r3
+EOF
+cat <<'EOF' > "$T52_DIR/gen_main.dva"
+#use ./gen_abi_mod
+#use ./gen_mid_mod
+#foreign("c")
+   exit: (code: Int) => ()
+
+a = gen_abi_mod::pub_unbox(<+>, 7) | v => v | 0
+b = gen_abi_mod::pub_unbox(<+>, gen_abi_mod::Pair(3, 9)) | p => p.a + p.b | 0
+c = gen_abi_mod::pub_score(gen_abi_mod::Pair(0, 0), 1)
+m = gen_mid_mod::mid_check!
+exit(a + b + c + m)
+EOF
+
+set +e
+timeout 30 ./edva -c --module gen_abi_mod "$T52_DIR/gen_abi_mod.dva" -o "$T52_DIR/gen_abi_mod.o" -O2 < /dev/null >"$T52_DIR/c1.out" 2>"$T52_DIR/c1.err"
+rc=$?
+if [ $rc -eq 0 ]; then
+    timeout 30 ./edva -c --module gen_mid_mod "$T52_DIR/gen_mid_mod.dva" -o "$T52_DIR/gen_mid_mod.o" -O2 < /dev/null >"$T52_DIR/c2.out" 2>"$T52_DIR/c2.err"
+    rc=$?
+fi
+if [ $rc -eq 0 ]; then
+    timeout 30 ./edva -c --entry "$T52_DIR/gen_main.dva" -o "$T52_DIR/gen_main.o" -O2 < /dev/null >"$T52_DIR/c3.out" 2>"$T52_DIR/c3.err"
+    rc=$?
+fi
+set -e
+rm -f "gen_abi_mod.ll" "gen_mid_mod.ll" "gen_main.ll"
+if [ $rc -ne 0 ] || [ ! -f "$T52_DIR/gen_abi_mod.o" ] || [ ! -f "$T52_DIR/gen_mid_mod.o" ] || [ ! -f "$T52_DIR/gen_main.o" ]; then
+    echo "FAILED: generic separate compilation failed (rc=$rc)"
+    cat "$T52_DIR/c1.out" "$T52_DIR/c1.err" "$T52_DIR/c2.out" "$T52_DIR/c2.err" "$T52_DIR/c3.out" "$T52_DIR/c3.err" 2>/dev/null || true
+    exit 1
+fi
+clang -Qunused-arguments -Wno-unused-command-line-argument "$T52_DIR/gen_main.o" "$T52_DIR/gen_mid_mod.o" "$T52_DIR/gen_abi_mod.o" -o "$T52_DIR/sep_bin"
+set +e
+"$T52_DIR/sep_bin"
+rc=$?
+set -e
+if [ $rc -ne 96 ]; then
+    echo "FAILED: generic separate compilation expected exit 96, got $rc"
+    exit 1
+fi
+
+# Part B: Native -O0 and -O2 on 444_generic_specialization_abi.dva
+T52_EXP=$(cat tests/pass/444_generic_specialization_abi.expected)
+for opt in -O0 -O2; do
+    timeout 60 ./edva tests/pass/444_generic_specialization_abi.dva "$opt" -o "$T52_DIR/bin${opt}" < /dev/null >"$T52_DIR/o${opt}.log" 2>&1
+    rm -f "$T52_DIR/bin${opt}.ll"
+    T52_ACT=$("$T52_DIR/bin${opt}")
+    if [ "$T52_ACT" != "$T52_EXP" ]; then
+        echo "FAILED: 444_generic_specialization_abi ($opt) output mismatch"
+        exit 1
+    fi
+done
+
+# Part C: WebAssembly target on generic specialization + reflection
+cat <<'EOF' > "$T52_DIR/wasm_gen.dva"
+#type WPair (x: Int, y: Int)
+#type WAcc (val: Int, tag: Int)
+
+w_wrap: #param T: Type, <>, T => <T|>
+w_wrap = ok, v => ok | <+ v +> | <-->
+
+w_sum: #param T: Type, T => Int
+w_sum = val =>
+   T
+      [(..)]
+         sum_box = WAcc(0, 0)
+         #members T @ f =>
+            f.type [Int] (sum_box.val = sum_box.val + (#member val, f))
+         sum_box.val
+      | 0
+
+#export wasm_check: Int => Int
+wasm_check = n =>
+   a = w_wrap(<+>, n) | x => x | 0
+   b = w_wrap(<+>, WPair(3, 4)) | p => w_sum(p) | 0
+   a + b
+EOF
+set +e
+timeout 30 ./edva "$T52_DIR/wasm_gen.dva" -target wasm32-unknown-unknown -o "$T52_DIR/wasm_gen.wasm" < /dev/null \
+    >"$T52_DIR/w.out" 2>"$T52_DIR/w.err"
+rc=$?
+set -e
+rm -f "$T52_DIR/wasm_gen.ll" "wasm_gen.ll"
+if [ $rc -ne 0 ]; then
+    if grep -qE "unhandled target|No available targets are compatible with triple" "$T52_DIR/w.err" 2>/dev/null || grep -q "wasm-ld linking failed" "$T52_DIR/w.out" 2>/dev/null; then
+        echo "PASS (Wasm linking skipped: wasm-ld unavailable)"
+    else
+        echo "FAILED: expected 0 exit on generic wasm compilation, got $rc"
+        cat "$T52_DIR/w.out" "$T52_DIR/w.err"
+        exit 1
+    fi
+elif [ ! -f "$T52_DIR/wasm_gen.wasm" ]; then
+    echo "FAILED: generic wasm binary was not created at expected path"
+    exit 1
+else
+    echo "PASS"
+fi
+
 echo "Testing global ram storage layouts and modular ABI..."
 timeout 240s python3 tools/test_global_ram_storage.py < /dev/null
 timeout 240s python3 tools/test_generic_lambda_abi.py < /dev/null
+
+# --- Test 53: Reentrant stdlib & concurrent thread/arena ownership under ThreadSanitizer ---
+echo -n "Testing reentrant & concurrent stdlib/arena ownership under ThreadSanitizer... "
+T53_DIR="$TMPDIR/t53_tsan"
+mkdir -p "$T53_DIR"
+if printf 'int main(void){return 0;}\n' | clang -Qunused-arguments -Wno-unused-command-line-argument -fsanitize=thread -x c - -o "$T53_DIR/tsan_probe" >/dev/null 2>&1; then
+    timeout 60 ./edva tests/pass/446_reentrant_concurrent_stdlib.dva --ir -O1 -o "$T53_DIR/tsan_446" < /dev/null >"$T53_DIR/c.out" 2>"$T53_DIR/c.err"
+    sed -E 's/^attributes #1 = \{/attributes #1 = { sanitize_thread /; s/^(define .*)\) \{$/\1) #1 {/' "$T53_DIR/tsan_446.ll" > "$T53_DIR/tsan_446_attr.ll"
+    if ! grep -q "sanitize_thread" "$T53_DIR/tsan_446_attr.ll"; then
+        echo "FAILED: failed to attach sanitize_thread attribute to LLVM IR"
+        exit 1
+    fi
+    clang -Qunused-arguments -Wno-unused-command-line-argument -Wno-override-module -fsanitize=thread -O1 -pthread "$T53_DIR/tsan_446_attr.ll" -lm -o "$T53_DIR/tsan_446_bin" 2>"$T53_DIR/link.err"
+    set +e
+    (ulimit -S -v unlimited 2>/dev/null || true; timeout 60 "$T53_DIR/tsan_446_bin" >"$T53_DIR/run.out" 2>"$T53_DIR/run.err")
+    rc=$?
+    set -e
+    if [ $rc -ne 0 ] || grep -q "ThreadSanitizer" "$T53_DIR/run.err"; then
+        echo "FAILED: ThreadSanitizer detected an error or race (rc=$rc)"
+        cat "$T53_DIR/run.out" "$T53_DIR/run.err"
+        exit 1
+    fi
+    T53_EXP=$(cat tests/pass/446_reentrant_concurrent_stdlib.expected)
+    T53_ACT=$(cat "$T53_DIR/run.out")
+    if [ "$T53_ACT" != "$T53_EXP" ]; then
+        echo "FAILED: TSAN binary output mismatch"
+        cat "$T53_DIR/run.out"
+        exit 1
+    fi
+    echo "PASS"
+else
+    echo "SKIP (clang -fsanitize=thread unavailable)"
+fi
+
+# --- Test 54: Coverage-guided fuzzing, edva test --fuzz & 4-way differential harness ---
+echo -n "Testing coverage-guided fuzzing (--fuzz-cov, edva test --fuzz, 4-way diff)... "
+T54_DIR="$TMPDIR/t54_fuzz"
+mkdir -p "$T54_DIR"
+timeout 60 ./edva tests/pass/447_fuzz_and_property_testing.dva --fuzz-cov --ir --no-cache -o "$T54_DIR/cov447" < /dev/null >"$T54_DIR/ir.out" 2>"$T54_DIR/ir.err"
+if ! grep -q "dva_cov_trace" "$T54_DIR/cov447.ll"; then
+    echo "FAILED: --fuzz-cov did not emit dva_cov_trace calls"
+    exit 1
+fi
+timeout 60 ./edva test --fuzz tests/pass/447_fuzz_and_property_testing.dva --no-cache < /dev/null >"$T54_DIR/et.out" 2>"$T54_DIR/et.err"
+if ! grep -q "1 passed, 0 failed" "$T54_DIR/et.out"; then
+    echo "FAILED: edva test --fuzz did not pass 447_fuzz_and_property_testing"
+    cat "$T54_DIR/et.out" "$T54_DIR/et.err"
+    exit 1
+fi
+if ! (ulimit -S -v 8388608 2>/dev/null || true; timeout 90 ./edva tests/fuzz/fuzz_frontend.dva --fuzz-cov --no-cache -O2 -o "$T54_DIR/fuzz_frontend" < /dev/null >"$T54_DIR/ff.log" 2>&1); then
+    echo "FAILED: Tier 1 fuzz_frontend build failed"
+    cat "$T54_DIR/ff.log"
+    exit 1
+fi
+EDVA_FUZZ_CORPUS="$(pwd)/tests/fuzz/corpus" timeout 60 "$T54_DIR/fuzz_frontend" >"$T54_DIR/ff.run" 2>&1
+if ! grep -q "PASS: 4 passed, 0 failed" "$T54_DIR/ff.run"; then
+    echo "FAILED: Tier 1 fuzz_frontend failed"
+    cat "$T54_DIR/ff.run"
+    exit 1
+fi
+timeout 90 ./edva tests/fuzz/fuzz_codecs.dva --fuzz-cov --no-cache -O2 -o "$T54_DIR/fuzz_codecs" < /dev/null >"$T54_DIR/fc.log" 2>&1
+EDVA_FUZZ_CORPUS="$(pwd)/tests/fuzz/corpus" timeout 60 "$T54_DIR/fuzz_codecs" >"$T54_DIR/fc.run" 2>&1
+if ! grep -q "PASS: 15 passed, 0 failed" "$T54_DIR/fc.run"; then
+    echo "FAILED: Tier 3 fuzz_codecs failed"
+    cat "$T54_DIR/fc.run"
+    exit 1
+fi
+timeout 120 nu tools/fuzz_diff.nu --runs 2 --seed 42 --self-test-shrink >"$T54_DIR/fd.run" 2>&1
+if ! grep -q "PASS diff shrinker self-test:" "$T54_DIR/fd.run"; then
+    echo "FAILED: Tier 2 4-way differential harness failed"
+    cat "$T54_DIR/fd.run"
+    exit 1
+fi
+echo "PASS"
 
 echo "=== All driver tests PASSED ==="
 

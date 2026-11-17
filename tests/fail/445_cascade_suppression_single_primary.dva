@@ -1,0 +1,13 @@
+#use io
+
+// Primary error 1: unresolved module function with a callback argument
+x = unknown_mod::missing(y => y + 1)
+
+// Dependent uses of failed binding `x` must NOT cascade into E3004 / E3103
+z1 = x + 10
+z2 = x.some_field
+z3 = x(1, 2)
+
+// Primary error 2 (independent): ramification shape mismatch
+bad_ram: < | String >
+bad_ram = <+ 42 ->

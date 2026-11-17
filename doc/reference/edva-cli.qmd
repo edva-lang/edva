@@ -44,6 +44,7 @@ edva lsp
 | `--import-map` | `<str>` | `""` | Path to package import map (`.edva/imports.ccl`) |
 | `--cache` | `<str>` | `~/.cache/edva/ir` | Compilation cache directory path |
 | `--no-cache` | — | `<->` | Disable compilation cache |
+| `--fuzz-cov` | — | `<->` | Instrument functions, loops, and branches with coverage bitmap (`@__dva_cov_map`) |
 | `--cflag` | `<str>` | `()` | Pass additional flag to `clang` (repeatable, e.g. `--cflag -lm --cflag -msimd128`) |
 | `-v`, `--version` | — | — | Display compiler version (`edva <version>`) and exit |
 | `-h`, `--help` | — | — | Display formatted CLI help and exit |
@@ -70,7 +71,7 @@ All package and cache commands are first-class top-level subcommands (`edva <com
 | `edva rm` | `<alias> [dir]` (alias `remove`) | Removes `<alias>` from `edva.ccl` and updates `edva.lock.ccl` and `.edva/imports.ccl` | `E7004`: dependency not found |
 | `edva build` | `[dir \| file.dva] [-o <out>] [-t <triple>] [-O <opt>] [--cflag <f>] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Dual-mode: builds package targets from `edva.ccl` (or `src/main.dva` $\to$ `./<name>`) or compiles a single `.dva` file | `E5039`: missing `pkg-config` lib |
 | `edva run` | `[dir \| file.dva] [options] [-- <args...>]` | Dual-mode: builds and executes the package binary or single `.dva` file, forwarding arguments after `--` to the program | `E7019`: missing source or target |
-| `edva test` | `[dir \| file.dva] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Compiles and runs all `tests/*.dva` in a package, or a single test `.dva` file if specified | — |
+| `edva test` | `[dir \| file.dva] [--fuzz] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Compiles and runs all `tests/*.dva` in a package, or a single test `.dva` file (`--fuzz` enables `EDVA_FUZZ=1` and `--fuzz-cov`) | — |
 | `edva fetch` | `[dir] [--locked] [--offline] [--store <d>] [--cache <d>] [--no-cache]` | Resolves dependencies, populates content store, writes `edva.lock.ccl` and `.edva/imports.ccl` | `E7007`: lockfile out of date (`--locked`) |
 | `edva update` | `[pkg_name] [dir]` | Refreshes moving Git branches/tags in `edva.lock.ccl` (all or single `<pkg_name>`) | — |
 | `edva tree` | `[dir]` (alias `graph`) | Prints ASCII dependency tree with provenance, duplicate versions, and cycle checks | — |

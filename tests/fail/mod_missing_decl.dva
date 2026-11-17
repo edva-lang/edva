@@ -1,0 +1,4 @@
+#public
+add: Int, Int => Int
+run: () => Int
+run = !=> add(2, 3)

@@ -1,0 +1,6 @@
+name = edva
+version = 1.6.0
+targets =
+  app =
+    opt = -O2
+    flags = a,b

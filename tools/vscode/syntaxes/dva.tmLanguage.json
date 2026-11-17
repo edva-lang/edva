@@ -156,7 +156,7 @@
       "patterns": [
         {
           "name": "meta.import.dva",
-          "match": "(#use(?:\\s*\\((?:dynamic|import|,|\\s)*\\))?)\\s+(\"[^\"]*\"|[^\\s;]+)",
+          "match": "(#use(?:\\s*\\([^)]*\\))?)\\s+(\"(?:\\\\.|[^\"])*\"|(?:[^/;\\r\\n]|/(?![/*]))+?)(?=\\s*(?://|/\\*|;|$))",
           "captures": {
             "1": {
               "name": "keyword.control.directive.dva"

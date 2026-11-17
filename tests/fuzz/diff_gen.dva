@@ -1,0 +1,247 @@
+#use fs
+#use io
+#use path
+#use rand
+#use str
+#use sys
+
+// Parse CSV choice vector `c0,c1,c2,c3,c4,c5` into Int{}.
+parse_choices: String => Int{}
+parse_choices = raw =>
+   out = Int{}
+   parts = str::split(raw, ",")
+   parts @ p =>
+      v = str::parse_int(str::trim(p)) |_| 0
+      out += %max(0, v)
+   0..6 @ i =>
+      i !< ?out | (out += 0)
+   out
+
+format_choices: Int{} => String
+format_choices = cs =>
+   b = {32}
+   6 @ i =>
+      i > 0 | b += ","
+      b += str::from_int(cs(i) |_| 0)
+   +b
+
+// Generates deterministic 6-element choice vector from seed `seed`.
+choices_from_seed: Int => Int{}
+choices_from_seed = seed =>
+   rng = rand::seed(seed)
+   cs = Int{}
+   cs += rand::inclusive(rng, 1, 9)   // c0: base scalar weight
+   cs += rand::inclusive(rng, 0, 5)   // c1: branch / option toggle (0 => <--> paths)
+   cs += rand::inclusive(rng, 1, 7)   // c2: closure capture multiplier
+   cs += rand::inclusive(rng, 1, 15)  // c3: closure capture offset
+   cs += rand::inclusive(rng, 0, 4)   // c4: ram kind selector (<Int|>, <|Int>, <Int|Int>, <>)
+   cs += rand::inclusive(rng, 2, 6)   // c5: cycle iteration bound
+   cs
+
+// Emits single-step delta-reduced choice vectors toward 0,0,0,0,0,0.
+emit_shrink_candidates: Int{} => ()
+emit_shrink_candidates = cs =>
+   6 @ i =>
+      v = cs(i)!!
+      v > 0
+         |
+            // Candidate 1: zero coordinate i
+            z = cs @> x => x
+            z(i) = 0 !| _
+            io::out $ format_choices(z)
+            // Candidate 2: halve coordinate i when > 1
+            v > 1
+               |
+                  h = cs @> x => x
+                  h(i) = v / 2 !| _
+                  io::out $ format_choices(h)
+            // Candidate 3: decrement coordinate i by 1 toward 0/1
+            v > 1
+               |
+                  d = cs @> x => x
+                  d(i) = v - 1 !| _
+                  io::out $ format_choices(d)
+
+// Builds core code shared by module, combined native, and Wasm variants.
+emit_core_body: Int, Int, Int, Int, Int, Int, <> => String
+emit_core_body = c0, c1, c2, c3, c4, c5, is_pub =>
+   vis = is_pub | "#public\n" | ""
+   pfx = is_pub | "mod_lib::" | ""
+   """
+   ${vis}#type Pair (a: Int, b: Int = 5)
+   #type(packed) PackedPair (lo: i32, hi: i32)
+
+   ::g_opt: < Int | >
+   g_opt = <-->
+
+   set_g_opt: Int => ()
+   set_g_opt = v =>
+      v > 0 | (g_opt ::= <+ v +>) | (g_opt ::= <-->)
+
+   read_g_opt: Int => Int
+   read_g_opt = def =>
+      g_opt | n => n | def
+
+   wrap_opt: #param T: Type, <>, T => < T | >
+   wrap_opt = ok, v =>
+      ok | <+ v +> | <-->
+
+   reflect_sum: #param T: Type, T => Int
+   reflect_sum = val =>
+      acc' = 0
+      #members T @ f =>
+         f.type [Int] (acc' = acc' + (#member val, f))
+      acc'
+
+   apply_closure: (Int => Int), Int => Int
+   apply_closure = fn, x =>
+      fn(x) + fn(x + 1)
+
+   ram_score: Int => Int
+   ram_score = k =>
+      r1: < Int | >
+      r1 = k % 2 == 0 | <+ k + 3 +> | <-->
+      r2: < | Int >
+      r2 = k % 3 == 0 | <- k + 7 -> | <++>
+      r3: < Int | Int >
+      r3 = k > ${str::from_int(c4)} | <+ k * 2 -> | <- k + 11 +>
+      s1 = r1 | v => v | 1
+      s2 = r2 | 2 | e => e
+      s3 = r3 | a => a | b => b
+      s1 + s2 + s3
+   """
+
+emit_eval_expr: Int, Int, Int, Int, Int, Int, String => String
+emit_eval_expr = c0, c1, c2, c3, c4, c5, m =>
+   """
+   run_diff: () => Int
+   run_diff = !=>
+      ${m}set_g_opt(${str::from_int(c0 * (c1 > 0 | 1 | 0))})
+      g_v = ${m}read_g_opt(${str::from_int(c0 + 13)})
+      p = ${m}Pair(${str::from_int(c0 + 2)}, ${str::from_int(c1 + 3)})
+      r_sum = ${m}reflect_sum(p)
+      w1 = ${m}wrap_opt(p.a > 2, p) | pp => pp.a + pp.b | 0
+      w2 = ${m}wrap_opt(${str::from_int(c1)} > 0, ${str::from_int(c0 * 5)}) | n => n | 9
+      pk = ${m}PackedPair(i32(${str::from_int(c0 + 4)}), i32(${str::from_int(c3)}))
+      pk_sum = Int(pk.lo) + Int(pk.hi)
+      mul = ${str::from_int(c2)}
+      off = ${str::from_int(c3)}
+      clo: Int => Int
+      clo = x => x * mul + off
+      c_sum = ${m}apply_closure(clo, ${str::from_int(c0)})
+      noncap: Int => Int
+      noncap = x => x * 3 + 1
+      nc_sum = ${m}apply_closure(noncap, ${str::from_int(c1)})
+      loop_vals = 0..${str::from_int(c5 + 1)} @> (i => ${m}ram_score(i + ${str::from_int(c4)}))
+      l_sum = (0, loop_vals) @> (+)
+      g_v + r_sum + w1 + w2 + pk_sum + c_sum + nc_sum + l_sum
+   """
+
+emit_print_int_helper: () => String
+emit_print_int_helper = !=>
+   """
+   #foreign("c")
+      write: (fd: Int, buf: Addr, count: Int) => Int
+
+   append_digits: Builder, Int => ()
+   append_digits = b, n =>
+      n !< 10 | append_digits(b, n / 10)
+      b += (48 + (n % 10))
+
+   print_int: Int => ()
+   print_int = n =>
+      b = {32}
+      n < 0
+         |
+            b += 45
+            append_digits(b, 0 - n)
+         | append_digits(b, n)
+      b += 10
+      _w = write(1, &b, ?b)
+   """
+
+write_diff_program: String, Int{} => ()
+write_diff_program = out_dir, cs =>
+   c0 = cs(0)!!
+   c1 = cs(1)!!
+   c2 = cs(2)!!
+   c3 = cs(3)!!
+   c4 = cs(4)!!
+   c5 = cs(5)!!
+   fs::create_dir_all(out_dir)
+
+   mod_src = emit_core_body(c0, c1, c2, c3, c4, c5, <+>)
+   main_src = """
+      #use ./mod_lib
+
+      ${emit_print_int_helper!}
+      ${emit_eval_expr(c0, c1, c2, c3, c4, c5, "mod_lib::")}
+
+      print_int(run_diff!)
+      """
+   comb_src = """
+      ${emit_core_body(c0, c1, c2, c3, c4, c5, <->)}
+      ${emit_print_int_helper!}
+      ${emit_eval_expr(c0, c1, c2, c3, c4, c5, "")}
+
+      print_int(run_diff!)
+      """
+   wasm_src = """
+      ${emit_core_body(c0, c1, c2, c3, c4, c5, <->)}
+      #export("run_diff")
+      ${emit_eval_expr(c0, c1, c2, c3, c4, c5, "")}
+      """
+
+   fs::write_file(path::join(out_dir, "mod_lib.dva"), mod_src)
+   fs::write_file(path::join(out_dir, "main.dva"), main_src)
+   fs::write_file(path::join(out_dir, "combined.dva"), comb_src)
+   fs::write_file(path::join(out_dir, "wasm_entry.dva"), wasm_src)
+
+run_cli: () => Int
+run_cli = !=>
+   seed' = 42
+   out_dir' = ++""
+   choices_arg' = ++""
+   shrink_arg' = ++""
+   i' = 1
+   (i' < sys::argc) @
+      arg = sys::argv_string(i')
+      arg
+         ["--seed"]
+            i' + 1 < sys::argc
+               |
+                  i' = i' + 1
+                  seed' = str::parse_int(sys::argv_string(i')) |_| 42
+         ["--out-dir"]
+            i' + 1 < sys::argc
+               |
+                  i' = i' + 1
+                  out_dir' = sys::argv_string(i')
+         ["--choices"]
+            i' + 1 < sys::argc
+               |
+                  i' = i' + 1
+                  choices_arg' = sys::argv_string(i')
+         ["--shrink"]
+            i' + 1 < sys::argc
+               |
+                  i' = i' + 1
+                  shrink_arg' = sys::argv_string(i')
+      i' = i' + 1
+
+   shrink_arg' != ""
+      |
+         emit_shrink_candidates(parse_choices(shrink_arg'))
+         --| 0
+
+   out_dir' == ""
+      |
+         io::err("diff_gen: --out-dir is required")
+         --| 1
+
+   cs = choices_arg' != "" | parse_choices(choices_arg') | choices_from_seed(seed')
+   write_diff_program(out_dir', cs)
+   io::out $ format_choices(cs)
+   0
+
+sys::exit(run_cli!)

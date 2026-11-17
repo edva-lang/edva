@@ -1,0 +1,6 @@
+#type PtrBox (tag: Int, ptr: Addr)
+
+leaked =
+   b = {32}
+   b += "tmp"
+   PtrBox(1, &b)

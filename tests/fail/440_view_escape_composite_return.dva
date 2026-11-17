@@ -1,0 +1,7 @@
+#type Header (a: Int, b: Int)
+#type Packet (tag: Int, hdr: Header)
+
+bad: Addr => Packet
+bad = p =>
+   v = @[p Header]
+   Packet(1, v)

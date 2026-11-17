@@ -1,9 +1,22 @@
-// Standard Unit Testing & Assertion Module (std/test.dva)
-// Lightweight, zero-ceremony assertions and test runner utilities.
+// Standard Unit Testing, Property-Testing & Coverage-Guided Fuzzing Module (std/test.dva)
+// Lightweight assertions, `#param` structural equality, seeded `test::forall` property
+// testing, and `test::fuzz` coverage-guided mutation + hierarchical shrinking.
 
+#use fs
 #use io
+#use libc
+#use mem
+#use path
+#use rand
 #use str
 #use sys
+#use time
+#use utf
+
+#foreign("c")
+   dva_cov_map_ptr: () => Addr
+   dva_cov_trace: (edge_id: Int) => ()
+   c_getenv = getenv: (name: String) => Addr
 
 #private
 
@@ -397,3 +410,443 @@ finish: () => ()
 finish = !=>
    !summary!
       | sys::exit(1)
+
+// --- Coverage Bitmap, Shrinking, Fuzzing & Property Testing ----------------
+
+#private
+
+COV_MAP_SIZE = 65536
+COV_WORDS = 8192
+
+env_str: String, String => String
+env_str = name, fallback =>
+   raw = c_getenv(name)
+   raw == sys::addr_null | fallback | sys::c_str(raw)
+
+env_int: String, Int => Int
+env_int = name, fallback =>
+   str::parse_int(env_str(name, "")) |_| fallback
+
+count_nonzero_bytes: Addr => Int
+count_nonzero_bytes = base =>
+   cnt' = 0
+   COV_WORDS @ w =>
+      @[base + w * 8 Int] != 0
+         |
+            base_off = w * 8
+            8 @ b =>
+               @[base + base_off + b u8] != 0u8 | (cnt' = cnt' + 1)
+   cnt'
+
+cov_bucket: Int => Int
+cov_bucket =
+   [0] 0
+   [1] 1
+   [2] 2
+   [3] 4
+   [4...7] 8
+   [8...15] 16
+   [16...31] 32
+   [32...127] 64
+   | 128
+
+cov_merge_novel: Addr, Addr => Int
+cov_merge_novel = map_ptr, seen_ptr =>
+   novel' = 0
+   COV_WORDS @ w =>
+      @[map_ptr + w * 8 Int] != 0
+         |
+            base_off = w * 8
+            8 @ b =>
+               off = base_off + b
+               c = Int(@[map_ptr + off u8])
+               c > 0
+                  |
+                     bkt = cov_bucket(c)
+                     old = Int(@[seen_ptr + off u8])
+                     (bkt .&. (.!. old)) != 0
+                        |
+                           %memset(seen_ptr + off, old .|. bkt, 1)
+                           novel' = novel' + 1
+   novel'
+
+rand_byte_pool: () => String
+rand_byte_pool = !=>
+   "\"\\{}[]:,=\n\r\t \x00\xFF019-+.etfnuaz"
+
+fuzz_splice_delete: String, Int, Int => String
+fuzz_splice_delete = s, lo, hi =>
+   n = ?s
+   lo !< hi || hi > n || lo < 0
+      | --| s
+   b = {n - (hi - lo) + 1}
+   lo > 0 | b += s(0..lo)
+   hi < n | b += s(hi..n)
+   +b
+
+fuzz_insert_str: String, Int, String => String
+fuzz_insert_str = s, pos, ins =>
+   n = ?s
+   p = %clamp(pos, 0, n)
+   b = {n + ?ins + 1}
+   p > 0 | b += s(0..p)
+   b += ins
+   p < n | b += s(p..n)
+   +b
+
+fuzz_flip_byte: String, Int, Int => String
+fuzz_flip_byte = s, idx, val =>
+   n = ?s
+   n == 0 | --| s
+   pos = %clamp(idx, 0, n - 1)
+   b = {n + 1}
+   n @ i =>
+      b += (i == pos | (val .&. 0xFF) | (s(i) .&. 0xFF))
+   +b
+
+fuzz_find_byte_from: String, Int, Int => Int
+fuzz_find_byte_from = s, byte, start =>
+   n = ?s
+   s_idx = %max(start, 0)
+   s_idx..n @ i =>
+      (s(i) .&. 0xFF) == byte | --| i
+   -1
+
+shrink_fails_in: mem::Arena, String, (String => <>) => <>
+shrink_fails_in = ar, cand, prop =>
+   ok = mem::with_value(ar, !=> prop(cand))
+   mem::reset(ar)
+   !ok
+
+load_corpus_dir: String, String{} => ()
+load_corpus_dir = dir, out =>
+   fs::is_dir(dir)
+      |
+         entries = fs::read_dir(dir)
+         entries @ ent =>
+            !ent.is_dir && ?ent.name > 0 && ent.name(0) != '.
+               |
+                  fpath = path::join(dir, ent.name)
+                  fs::is_file(fpath)
+                     |
+                        fs::read_to_string(fpath)
+                           | txt => out += txt
+
+save_reproducer: String, String, String, Int => ()
+save_reproducer = corpus_root, name, payload, seed =>
+   corpus_root != "" && fs::is_dir(corpus_root)
+      |
+         tdir = path::join(corpus_root, name)
+         fs::create_dir_all(tdir)
+         rpath = path::join(tdir, "repro_${str::from_int(seed)}_${str::from_int(?payload)}.txt")
+         fs::write_file(rpath, payload)
+
+#public
+
+// Records a synthetic coverage edge `edge_id` into `@__dva_cov_map`.
+cov_trace: Int => ()
+cov_trace = edge_id =>
+   dva_cov_trace(edge_id)
+
+// Clears all entries in the built-in 64 KB edge/branch coverage bitmap.
+cov_clear: () => ()
+cov_clear = !=>
+   p = dva_cov_map_ptr!
+   p != sys::addr_null | %memset(p, 0, COV_MAP_SIZE)
+
+// Returns the number of covered (non-zero) buckets in `@__dva_cov_map`.
+cov_edges: () => Int
+cov_edges = !=>
+   p = dva_cov_map_ptr!
+   p == sys::addr_null | --| 0
+   count_nonzero_bytes(p)
+
+// Hierarchically reduces a failing `String` input while preserving `!prop(cand)`:
+// 1) delta-chunks (`len/2` down to `4`), 2) line removal, 3) single-byte deletion,
+// and 4) byte simplification toward `'a` / `'0`. Bounded to 200 evaluations.
+shrink_str: String, (String => <>) => String
+shrink_str = initial, prop =>
+   ar = mem::arena(65536)
+   cur' = ++initial
+   evals' = 0
+   budget = 200
+
+   // Stage 1: coarse chunk deletion (binary step down to 4 bytes)
+   chunk' = ?cur' / 2
+   (chunk' !< 4 && evals' < budget) @
+      pos' = 0
+      stepped' = <->
+      (pos' + chunk' !> ?cur' && evals' < budget) @
+         cand = fuzz_splice_delete(cur', pos', pos' + chunk')
+         evals' = evals' + 1
+         shrink_fails_in(ar, cand, prop)
+            |
+               cur' = cand
+               stepped' = <+>
+               pos' = 0
+            | pos' = pos' + chunk'
+      !stepped' | (chunk' = chunk' / 2)
+
+   // Stage 2: line-based deletion if input spans multiple lines
+   (fuzz_find_byte_from(cur', '\n, 0) !< 0 && evals' < budget) @
+      line_start' = 0
+      line_removed' = <->
+      (line_start' < ?cur' && evals' < budget) @
+         nl = fuzz_find_byte_from(cur', '\n, line_start')
+         line_end = nl !< 0 | nl + 1 | ?cur'
+         cand = fuzz_splice_delete(cur', line_start', line_end)
+         evals' = evals' + 1
+         shrink_fails_in(ar, cand, prop)
+            |
+               cur' = cand
+               line_removed' = <+>
+            | line_start' = line_end
+      !line_removed' | -->
+
+   // Stage 3: single-byte deletion
+   changed_byte' = <+>
+   (changed_byte' && ?cur' > 0 && evals' < budget) @
+      changed_byte' = <->
+      i' = 0
+      (i' < ?cur' && evals' < budget) @
+         cand = fuzz_splice_delete(cur', i', i' + 1)
+         evals' = evals' + 1
+         shrink_fails_in(ar, cand, prop)
+            |
+               cur' = cand
+               changed_byte' = <+>
+            | i' = i' + 1
+
+   // Stage 4: simplify remaining bytes toward `'a` or `'0`
+   (?cur' > 0 && evals' < budget) |
+      ?cur' @ i =>
+         evals' !< budget | -->
+         c = cur'(i) .&. 0xFF
+         target = c ['0...'9] '0 | 'a
+         c != target
+            |
+               cand = fuzz_flip_byte(cur', i, target)
+               evals' = evals' + 1
+               shrink_fails_in(ar, cand, prop) | (cur' = cand)
+
+   mem::destroy(ar)
+   cur'
+
+// Applies 1..4 seeded havoc mutations (bit/byte flip, token splice, deletion,
+// duplication, or corpus crossover) to `base`.
+mutate_str: rand::Rng, String, String{} => String
+mutate_str = rng, base, corpus =>
+   tokens = rand_byte_pool!
+   n_ops = rand::range(rng, 1, 5)
+   cur' = base
+   n_ops @ _step =>
+      len = ?cur'
+      op = len == 0 | 2 | rand::range(rng, 0, 5)
+      op
+         [0]
+            // flip/replace one byte
+            pos = rand::range(rng, 0, len)
+            nb = rand::range(rng, 0, 3) == 0
+               | tokens(rand::range(rng, 0, ?tokens))
+               | rand::range(rng, 0, 256)
+            cur' = fuzz_flip_byte(cur', pos, nb)
+         [1]
+            // delete a random subslice
+            a = rand::range(rng, 0, len)
+            max_del = %min(len - a, 16)
+            dlen = rand::range(rng, 1, %max(2, max_del + 1))
+            cur' = fuzz_splice_delete(cur', a, %min(len, a + dlen))
+         [2]
+            // insert a random token/byte (capped at 4 KB)
+            len < 4096 |
+               pos = len == 0 | 0 | rand::range(rng, 0, len + 1)
+               ch = rand::range(rng, 0, 2) == 0
+                  | tokens(rand::range(rng, 0, ?tokens))
+                  | rand::range(rng, 32, 127)
+               b = {1}
+               b += ch
+               cur' = fuzz_insert_str(cur', pos, +b)
+         [3]
+            // duplicate a short slice within cur'
+            len > 0 && len < 4096 |
+               a = rand::range(rng, 0, len)
+               slen = rand::range(rng, 1, %max(2, %min(len - a, 12) + 1))
+               piece = cur'(a..%min(len, a + slen))
+               pos = rand::range(rng, 0, len + 1)
+               cur' = fuzz_insert_str(cur', pos, piece)
+         |
+            // crossover with another corpus entry
+            ?corpus > 1 && len < 4096
+               |
+                  other = corpus(rand::range(rng, 0, ?corpus))!!
+                  ?other > 0 |
+                     a = len > 0 | rand::range(rng, 0, len + 1) | 0
+                     b0 = rand::range(rng, 0, ?other)
+                     b1 = rand::range(rng, b0, ?other + 1)
+                     cur' = fuzz_insert_str(cur', a, other(b0..b1))
+               |
+                  pos = len > 0 | rand::range(rng, 0, len) | 0
+                  nb = cur'(pos) .^. (1 .<. rand::range(rng, 0, 8))
+                  cur' = fuzz_flip_byte(cur', pos, nb)
+   cur'
+
+// Runs coverage-guided fuzzing for target `name` with explicit default mutation
+// budget `default_runs` and deterministic seed `seed` (overridable via `EDVA_FUZZ`,
+// `EDVA_FUZZ_RUNS`, `EDVA_FUZZ_TIME`, `EDVA_FUZZ_SEED`, and `EDVA_FUZZ_CORPUS`).
+fuzz_opts: String, String{}, Int, Int, (String => <>) => <>
+fuzz_opts = name, seeds, default_runs, seed, prop =>
+   fuzz_env = env_str("EDVA_FUZZ", "")
+   time_s = env_int("EDVA_FUZZ_TIME", 0)
+   env_runs_default = fuzz_env == "1" | %max(default_runs, 250) | default_runs
+   eff_runs = env_int("EDVA_FUZZ_RUNS", env_runs_default)
+   eff_seed = env_int("EDVA_FUZZ_SEED", seed)
+   corpus_root = env_str("EDVA_FUZZ_CORPUS", "")
+
+   corpus = String{}
+   seeds @ s => corpus += ++s
+   corpus_root != "" | load_corpus_dir(path::join(corpus_root, name), corpus)
+   ?corpus == 0 | (corpus += ++"")
+
+   seen_cov = libc::malloc(COV_MAP_SIZE)
+   %memset(seen_cov, 0, COV_MAP_SIZE)
+   ar = mem::arena(262144)
+
+   // Replay all seed and disk-corpus entries
+   fail_idx' = -1
+   corpus @ s, idx =>
+      cov_clear!
+      ok = mem::with_value(ar, !=> prop(s))
+      mem::reset(ar)
+      cov_merge_novel(dva_cov_map_ptr!, seen_cov)
+      !ok
+         |
+            fail_idx' = idx
+            -->
+
+   fail_idx' !< 0
+      |
+         bad = corpus(fail_idx')!!
+         minimal = shrink_str(bad, prop)
+         save_reproducer(corpus_root, name, minimal, eff_seed)
+         libc::free(seen_cov)
+         mem::destroy(ar)
+         --| record_result(<->, name, "corpus failure (${str::from_int(?minimal)}B): ${format_val(String, minimal)}")
+
+   // Coverage-guided mutation loop inside bounded scratch arena
+   rng = rand::seed(eff_seed)
+   start_ns = time::mono_ns!
+   budget_ns = time_s * 1000000000
+   mut_fail' = <-->
+   iter' = 0
+   0.. @
+      iter' !< eff_runs && (time_s !> 0 || (time::mono_ns! - start_ns) !< budget_ns) | -->
+      iter' = iter' + 1
+      pick = rand::range(rng, 0, ?corpus)
+      base = corpus(pick)!!
+      cand = mutate_str(rng, base, corpus)
+      cov_clear!
+      ok = mem::with_value(ar, !=> prop(cand))
+      mem::reset(ar)
+      novel = cov_merge_novel(dva_cov_map_ptr!, seen_cov)
+      !ok
+         |
+            mut_fail' = <+ cand +>
+            -->
+      novel > 0 && ?corpus < 512 | (corpus += mem::escape_value(!=> ++cand))
+
+   libc::free(seen_cov)
+   mem::destroy(ar)
+   mut_fail'
+      | bad =>
+         minimal = shrink_str(bad, prop)
+         save_reproducer(corpus_root, name, minimal, eff_seed)
+         record_result(<->, name, "fuzz counterexample (${str::from_int(?minimal)}B): ${format_val(String, minimal)}")
+      | record_result(<+>, name, "")
+
+// Runs coverage-guided fuzzing with default smoke budget (32 mutations) and seed 1337,
+// automatically scaling up under `edva test --fuzz` (`EDVA_FUZZ=1`).
+fuzz: String, String{}, (String => <>) => <>
+fuzz = name, seeds, prop =>
+   fuzz_opts(name, seeds, 32, 1337, prop)
+
+// --- Seeded Property-Based Testing (`test::forall`) ---------------------------
+
+// Generator producing uniform integers in closed interval `[lo, hi]`.
+gen_int: Int, Int => (rand::Rng => Int)
+gen_int = lo, hi =>
+   fn: rand::Rng => Int
+   fn = r => rand::inclusive(r, lo, hi)
+   fn
+
+// Generator producing printable ASCII + structural delimiter strings up to `max_len`.
+gen_ascii: Int => (rand::Rng => String)
+gen_ascii = max_len =>
+   fn: rand::Rng => String
+   fn = r =>
+      lim = %max(0, max_len)
+      len = rand::inclusive(r, 0, lim)
+      b = {len + 1}
+      pool = "abcABC019_-./:,={}[]\"\\ \n"
+      len @ _i =>
+         b += pool(rand::range(r, 0, ?pool))
+      +b
+   fn
+
+// Generator producing valid random multi-byte UTF-8 strings up to `max_len` codepoints.
+gen_utf8: Int => (rand::Rng => String)
+gen_utf8 = max_runes =>
+   fn: rand::Rng => String
+   fn = r =>
+      lim = %max(0, max_runes)
+      n = rand::inclusive(r, 0, lim)
+      b = {n * 4 + 1}
+      n @ _i =>
+         kind = rand::range(r, 0, 5)
+         cp = kind
+            [0, 1] rand::inclusive(r, 0x20, 0x7E)
+            [2] rand::inclusive(r, 0xA0, 0x07FF)
+            [3] rand::inclusive(r, 0x0800, 0xD7FF)
+            | rand::inclusive(r, 0x10000, 0x10FFFF)
+         utf::append_rune(b, Rune(cp))
+      +b
+   fn
+
+// Tests property `prop` over `runs` generated values from `gen` using seed `seed`
+// inside a per-iteration scratch arena. Automatically shrinks `String` counterexamples.
+forall_opts: #param T: Type, String, Int, Int, (rand::Rng => T), (T => <>) => <>
+forall_opts = #param T, name, runs, seed, gen, prop =>
+   fuzz_env = env_str("EDVA_FUZZ", "")
+   def_runs = fuzz_env == "1" | %max(runs, 250) | runs
+   eff_runs = env_int("EDVA_FUZZ_RUNS", def_runs)
+   eff_seed = env_int("EDVA_FUZZ_SEED", seed)
+   rng = rand::seed(eff_seed)
+   ar = mem::arena(65536)
+
+   fail_val' = <-->
+   fail_iter' = -1
+   eff_runs @ i =>
+      sample = mem::with_value(ar, !=> mem::escape_value(!=> gen(rng)))
+      mem::reset(ar)
+      ok = mem::with_value(ar, !=> prop(sample))
+      mem::reset(ar)
+      !ok
+         |
+            fail_val' = <+ sample +>
+            fail_iter' = i
+            -->
+
+   mem::destroy(ar)
+   fail_val'
+      | bad =>
+         shown = T
+            [String]
+               min_s = shrink_str(bad, (s => prop(s)))
+               format_val(String, min_s)
+            | format_val(T, bad)
+         record_result(<->, name, "property falsified at seed=${str::from_int(eff_seed)} iter=${str::from_int(fail_iter')}: ${shown}")
+      | record_result(<+>, name, "")
+
+// Runs `forall_opts` with 100 iterations and default seed 202611.
+forall: #param T: Type, String, (rand::Rng => T), (T => <>) => <>
+forall = #param T, name, gen, prop =>
+   forall_opts(T, name, 100, 202611, gen, prop)

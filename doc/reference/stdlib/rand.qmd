@@ -45,3 +45,9 @@ io::out $ rand::range(r, 1, 100)
 | | `rand::bytes(n)` | `rand::bytes_with(r, n)` | `Int => String` | Generates `n` random bytes |
 | | `rand::hex(n)` | `rand::hex_with(r, n)` | `Int => String` | Generates `n` random lowercase hex characters |
 | | `rand::alnum(n)` | `rand::alnum_with(r, n)` | `Int => String` | Generates `n` random ASCII alphanumeric characters |
+
+## Concurrency contract
+
+- **Stateless hashing and procedural noise**: `hash`, `hash_u64`, `hash1d`, `hash2d`, `noise1d`, `fbm1d`, and `noise2d` are pure functions with no mutable state and are reentrant and thread-safe.
+- **Instance-owned `Rng` (`rand::seed`, `rand::new`)**: Each `Rng` value stores independent `(state, inc)` fields. Concurrent `task::spawn` workers should each create or receive their own `Rng` instance (e.g. `rng = rand::seed(worker_id)`). Do not mutate the same `Rng` concurrently without external synchronization.
+- **Global convenience functions**: Functions operating on module-global state (`srand`, `int`, `float`, `coin`, `between`, etc.) mutate an unsynchronized module variable and are intended for single-threaded use or externally synchronized callers.

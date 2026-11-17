@@ -2,8 +2,8 @@
 meta:
   audience: "Edva users parsing and encoding JSON"
   status: "current parser and codec reference"
-  audited: "2026-11-02"
-  evidence: "`std/json.dva`, `tests/pass/394_std_json_codec.dva`"
+  audited: "2026-11-17"
+  evidence: "`std/json.dva`, `tests/pass/394_std_json_codec.dva`, `tests/pass/446_reentrant_concurrent_stdlib.dva`"
 ---
 
 # `json` standard library
@@ -117,7 +117,7 @@ The parser supports strings and escapes (including UTF-16 surrogate pairs for su
 
 ## Parser state and concurrency contract
 
-The parser operates on an in-memory document slice using module-global scanning state (`::src`, `::pos`) for zero-allocation helper traversal:
-- **Reentrancy**: The parser is **not reentrant**. Calling `json::parse` while another parse is active within the same runtime environment is not supported.
-- **Threading**: The parser is **not thread-safe**. Concurrent calls to `json::parse` across threads must be synchronized with a mutex or delegated to separate processes.
+Each call to `json::parse` (and `json::decode`) allocates a private, instance-owned `Scanner` record `(src, pos)` with zero module-global mutable state:
+- **Reentrancy**: The parser is **fully reentrant**. Calling `json::parse` or `json::decode` while traversing or transforming another parsed `Value` (for example, decoding embedded JSON strings inside callbacks) is safe and isolated per invocation.
+- **Threading**: The parser is **thread-safe** across concurrent `task::spawn` workers. Concurrent parses do not share mutable global state, and all resulting `Value` nodes allocate in the calling thread's ambient arena.
 - **Validation**: Raw string bytes are validated as strict UTF-8 (rejecting invalid lead or continuation bytes, overlong encodings, surrogate code points `0xD800`–`0xDFFF`, and out-of-range scalars). Numbers preserve compensated decimal representations without intermediate overflow or underflow.

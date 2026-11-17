@@ -1,0 +1,5 @@
+#public
+foo: Int => Int
+
+#private
+foo = x => x + 1

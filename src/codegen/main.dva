@@ -1636,7 +1636,8 @@ map_read_typedef = cg, map_name =>
 // Shared untyped growable-array growth engine.
 get_or_emit_array_grow: types::Cg => Addr
 get_or_emit_array_grow = cg =>
-   fn_opt = types::llvm_find_function(cg.module, "dva_array_grow")
+   grow_name = cg.in_restore_scope > 0 | "dva_array_grow_restore" | "dva_array_grow"
+   fn_opt = types::llvm_find_function(cg.module, grow_name)
    fn_opt
       | _
       |
@@ -1647,7 +1648,7 @@ get_or_emit_array_grow = cg =>
          one = LLVMConstInt(i64t, 1, 0)
          b_ty = builder_struct_type(cg)
          grow_ty = types::fn_type1(LLVMVoidType!, i8p)
-         fn = LLVMAddFunction(cg.module, "dva_array_grow", grow_ty)
+         fn = LLVMAddFunction(cg.module, grow_name, grow_ty)
          LLVMSetLinkage(fn, 8)
          runtime::mark_nounwind(cg, fn)
          cg.current_fn = fn
@@ -2175,6 +2176,8 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
    arena_raw = LLVMBuildLoad2(cg.builder, i8p, arena_gep, "rec.arena")
    arena_tls = LLVMGetNamedGlobal(cg.module, "dva_arena_tls")
    LLVMBuildStore(cg.builder, arena_raw, arena_tls)
+   arena_base_tls = LLVMGetNamedGlobal(cg.module, "dva_arena_base_tls")
+   LLVMBuildStore(cg.builder, arena_raw, arena_base_tls)
    LLVMBuildStore(cg.builder, LLVMGetParam(wrapper, 0),
       thread_tls_global(cg))
    fgep = LLVMBuildStructGEP2(cg.builder, rec_t, rec, 2, "rec.fn.gep")
@@ -2219,6 +2222,8 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
    LLVMBuildStore(cg.builder,
       LLVMConstInt(LLVMInt64Type!, 0, 0), hasgep)
    LLVMBuildStore(cg.builder, LLVMConstNull(i8p), thread_tls_global(cg))
+   LLVMBuildStore(cg.builder, LLVMConstNull(i8p), arena_tls)
+   LLVMBuildStore(cg.builder, LLVMConstNull(i8p), arena_base_tls)
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)
    cg.current_fn = saved_fn
@@ -2682,9 +2687,9 @@ codegen_typed_eval = cg, te =>
                eff_ti = vt0 [Unknown, Unit] expr::var_ti(cg, rv) | te.ti
                bf_v_opt = types::ti_get_bitfield(cg, eff_ti)
                vt' = bf_v_opt | b => b.backing_type | vt'
-               ty' = types::is_unboxed_ram_ti(cg, eff_ti)
-                  | match::unboxed_ram_struct_t(cg)
+               ty' = types::vt_from_ti_cg(cg, eff_ti) [Unknown]
                   | types::llvm_type_of_vt(vt')
+                  | types::llvm_abi_type_of_ti(cg, eff_ti)
                is_arr_v = vt' [Array]
                val_v' = LLVMBuildLoad2(cg.builder, ty', slot, "var.load")
                is_arr_v
@@ -2701,9 +2706,15 @@ codegen_typed_eval = cg, te =>
                      mti0 = is_qual | types::typedef_ti(cg, tname) |
                         ast::TypeInfo(Prim, ast::ValueType(Unknown))
                      has_mti0 = mti0 [Enum]
-                     mti = (!has_mti0 && is_qual && cg.current_module != "")
+                     mti1 = (!has_mti0 && is_qual && cg.current_module != "")
                         | types::typedef_ti(cg, cg.current_module + "::" + tname)
                         | mti0
+                     has_mti1 = mti1 [Enum]
+                     mti = is_qual && !has_mti1
+                        |
+                           te.ti [TypeVar tv_e] types::typedef_ti(cg, tv_e)
+                           | mti1
+                        | mti1
                      is_enum_q = mti [Enum slots] <>(types::enum_slot_index(slots, bname)) | <->
                      is_enum_q
                         |
@@ -2728,8 +2739,7 @@ codegen_typed_eval = cg, te =>
                                        rf = types::resolve_fn_name(cg, v.0)
                                        fn_is_val = types::is_fn_name(cg, rf) ||
                                           (expr::fn_alias(cg, rv) != "") || types::has_fn_name(cg, rf) ||
-                                          stmt::fn_has_signature(types::g.pstmts, rf, 0) ||
-                                          stmt::fn_has_signature(types::g.pstmts, v.0, 0)
+                                          stmt::fn_has_signature(types::g.pstmts, rf, 0)
                                        fn_is_val
                                           | expr::codegen_named_fn_value(cg, rf)
                                           |
@@ -2750,6 +2760,7 @@ codegen_typed_eval = cg, te =>
       [Member m]
          expr::codegen_typed_eval_member(cg, m.0, m.1, m.2, te.ti)
       [MemberWrite mw]
+         stmt::codegen_typed_check_addr_escape(cg, stmt::tast_root_var(mw.0), mw.3, mw.3.ti)
          vname' = stmt::typed_member_root_name(mw.0)
          vname' != "" && var_partial(cg, vname') && !types::alloc_rec_has(vname')
             |

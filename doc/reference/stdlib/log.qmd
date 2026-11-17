@@ -57,3 +57,9 @@ io::out $ line
 | | `log::debug_kv` / `info_kv` / `warn_kv` / `error_kv` | `String, Fields => ()` | Emits a log line with structured `key=value` fields |
 | | `log::log(lvl, msg)` / `log::log_kv(lvl, msg, fields)` | `Level, String[, Fields] => ()` | Emits a log line at explicit `lvl` |
 | | `log::format_entry(lvl, msg)` / `format_kv(lvl, msg, fields)` | `Level, String[, Fields] => String` | Formats a log line into a `String` without writing to `fd` |
+
+## Concurrency contract
+
+- **Pure formatting helpers**: `log::field`, `log::fields_of`, `log::format_val`, `log::format_entry`, `log::format_kv`, `log::parse_level`, `log::level_name`, and `log::level_rank` allocate only in the caller's ambient arena and are reentrant.
+- **Process-wide configuration state**: Setters such as `log::set_level`, `log::set_timestamps`, `log::set_utc`, `log::set_basic_iso`, `log::set_color`, `log::use_auto_color!`, `log::set_prefix`, `log::set_fd`, `log::set_file`, and `log::close_file!` mutate unsynchronized module-global settings. Configure logging during single-threaded startup before spawning concurrent `task::spawn` workers.
+- **Log emission**: Logging functions (`log::debug`, `log::info`, `log::warn`, `log::error`, `*_kv`) format the full line into a single contiguous buffer before writing to the configured descriptor, avoiding byte-by-byte interleaving on small lines when configuration globals remain read-only after startup.

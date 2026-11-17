@@ -984,17 +984,19 @@ ctfe_lookup_top_const: types::Cg, String, types::CtFrames, Int => (types::CtVal,
 ctfe_lookup_top_const = cg, name, frames, depth =>
    stmts = types::g.pstmts
    n = ?stmts
-   rname = cg.current_module != "" | cg.current_module + "::" + name | name
-   res0 = ctfe_lookup_top_const_at(cg, stmts, rname, <+>, 0, n, frames, depth)
-   res0.0
-      [None]
-         res1 = rname != name
-            | ctfe_lookup_top_const_at(cg, stmts, name, <+>, 0, n, frames, depth)
-            | (types::CtVal(None), ast::ValueType(Unknown))
-         res1.0
-            [None] ctfe_lookup_top_const_at(cg, stmts, name, <->, 0, n, frames, depth)
-            | res1
-      | res0
+   cg.current_module != "" && !types::name_is_qualified(name, 0)
+      |
+         rname = "${cg.current_module}::${name}"
+         res0 = ctfe_lookup_top_const_at(cg, stmts, rname, <+>, 0, n, frames, depth)
+         res0.0
+            [None]
+               priv_name = "${cg.current_module}::#${name}"
+               --| ctfe_lookup_top_const_at(cg, stmts, priv_name, <+>, 0, n, frames, depth)
+            | --| res0
+   res1 = ctfe_lookup_top_const_at(cg, stmts, name, <+>, 0, n, frames, depth)
+   res1.0
+      [None] ctfe_lookup_top_const_at(cg, stmts, name, <->, 0, n, frames, depth)
+      | res1
 
 ctfe_eval_var: types::Cg, String, types::CtFrames, Int => (types::CtVal, ast::ValueType)
 ctfe_eval_var = cg, name, frames, depth =>
@@ -1798,6 +1800,7 @@ codegen_emit_logical_scalar = cg, is_and, lr, t =>
 
    LLVMPositionBuilderAtEnd(cg.builder, else_bb)
    cg.exited = <->
+   types::emit_cov_edge(cg)
    else_val = is_and | lr | expr::codegen_eval(cg, t.2)
    e_term = cg.exited
    e_end = LLVMGetInsertBlock(cg.builder)
@@ -2187,6 +2190,7 @@ codegen_eval_choice_switch_cases_at = cg, c, sw_inst, i64t, i, nb, vals, vts, bb
                  br.case_values, 0, ncv, case_bb)
                LLVMPositionBuilderAtEnd(cg.builder, case_bb)
                cg.exited = <->
+               types::emit_cov_edge(cg)
                saved_nbindings = ?cg.bindings
                bv = expr::codegen_eval(cg, br.block)
                cg.bindings = runtime::binding_truncate(cg.bindings, saved_nbindings)
@@ -2240,6 +2244,7 @@ codegen_eval_choice_switch_valid = cg, c, cond_val, cond_type =>
    last_is_bare
       |
          cg.exited = <->
+         types::emit_cov_edge(cg)
          types::choice_branch_reset(cg)
          saved_nbindings = ?cg.bindings
          bv = expr::codegen_eval(cg, last_br.block)
@@ -2296,6 +2301,7 @@ codegen_eval_choice_case_chain_at = cg, c, cond_val, cond_type, curr_check_bb, k
          LLVMBuildCondBr(cg.builder, mm, case_bb, next_bb)
          LLVMPositionBuilderAtEnd(cg.builder, case_bb)
          cg.exited = <->
+         types::emit_cov_edge(cg)
          saved_nbindings = ?cg.bindings
          bv = expr::codegen_eval(cg, br.block)
          cg.bindings = runtime::binding_truncate(cg.bindings, saved_nbindings)
@@ -2585,6 +2591,7 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
 
    LLVMPositionBuilderAtEnd(cg.builder, then_bb)
    cg.exited = <->
+   types::emit_cov_edge(cg)
    // The payload is extracted lazily inside the matched branch: a unit slot
    // (e.g. the negative of "< Int | >") has a null payload pointer, and
    // unboxing it would dereference null. A bare '_' on a heap ram with no
@@ -2631,6 +2638,7 @@ codegen_eval_choice_bare_valid = cg, c, cond_val, cond_type, dtype =>
 
    LLVMPositionBuilderAtEnd(cg.builder, else_bb)
    cg.exited = <->
+   types::emit_cov_edge(cg)
    e_is_under = else_b.block [Var vv] (vv == "_") | <->
    pay2_opt = bare_branch_pay(cg, cond_val, niche.0, !niche.1, is_heap, is_unboxed,
      neg_pay_type')
@@ -4230,6 +4238,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          exit_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
          LLVMBuildCondBr(cg.builder, cval, then_bb', exit_bb')
          LLVMPositionBuilderAtEnd(cg.builder, then_bb')
+         types::emit_cov_edge(cg)
          saved_vars_1 = ?cg.vars
          pv_then1_opt = typed_branch_pay(cg, cv.0, is_unboxed, pay_ptr_opt, pos_vt)
          can_pos1 = (is_unboxed || is_heap) &&
@@ -4293,6 +4302,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          LLVMBuildCondBr(cg.builder, cval, then_bb', else_bb)
 
          LLVMPositionBuilderAtEnd(cg.builder, then_bb')
+         types::emit_cov_edge(cg)
          saved_vars_then = ?cg.vars
          pv_then_opt = typed_branch_pay(cg, cv.0, is_unboxed, pay_ptr_opt, pos_vt)
          can_pos = (is_unboxed || is_heap) &&
@@ -4359,6 +4369,7 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
          stmt::branch_to(cg, exit_bb')
 
          LLVMPositionBuilderAtEnd(cg.builder, else_bb)
+         types::emit_cov_edge(cg)
          saved_vars_else = ?cg.vars
          pv_else_opt = typed_branch_pay(cg, cv.0, is_unboxed, pay_ptr_opt, neg_vt)
          can_neg = (is_unboxed || is_heap) && neg_vt ![Unknown, Unit]
@@ -4537,6 +4548,7 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
       br = branches(k)!!
       br.kind
          [Bare]
+            types::emit_cov_edge(cg)
             bv' = main::codegen_typed_eval(cg, br.body)
             b_term = stmt::block_is_terminated(cg)
             !is_void && !b_term
@@ -4589,6 +4601,7 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                           br.case_values, 0, ?br.case_values, <-->)
             LLVMBuildCondBr(cg.builder, match, case_bb, next_bb)
             LLVMPositionBuilderAtEnd(cg.builder, case_bb)
+            types::emit_cov_edge(cg)
             saved_nvars = ?cg.vars
             lbl0' = br.variant_names(0) | _ | ""
             bare_lbl0' = types::decl_bare_name(lbl0', 0)

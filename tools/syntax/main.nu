@@ -1,10 +1,10 @@
 #!/usr/bin/env nu
-# tools/syntax/main.nu — Unified syntax generator for Dva
+# tools/syntax/main.nu — Unified syntax generator for Dva, Vid, and CCL
 # Generates:
-#   1. doc/dva.xml                       (KDE Kate XML for Pandoc / Quarto)
-#   2. tools/vscode/syntaxes/dva.tmLanguage.json (TextMate JSON for VS Code)
-#   3. tools/vscode/package.json         (VS Code extension manifest)
-#   4. tools/vscode/language-configuration.json
+#   1. doc/{dva,vid,ccl}.xml                       (KDE Kate XML for Pandoc / Quarto)
+#   2. tools/vscode/syntaxes/{dva,vid,ccl}.tmLanguage.json (TextMate JSON for VS Code)
+#   3. tools/vscode/package.json                   (VS Code extension manifest)
+#   4. tools/vscode/*language-configuration.json
 #   5. Helix synchronization & grammar compilation
 
 def root [] {
@@ -22,17 +22,19 @@ def root [] {
 
 export def gen-quarto [] {
   let r = (root)
-  let tmpl_path = ($r | path join "tools/syntax/templates/dva.xml.template")
-  let out_path = ($r | path join "doc/dva.xml")
+  for lang in ["dva", "vid", "ccl"] {
+    let tmpl_path = ($r | path join $"tools/syntax/templates/($lang).xml.template")
+    let out_path = ($r | path join $"doc/($lang).xml")
 
-  if not ($tmpl_path | path exists) {
-    print $"[!] Template not found at ($tmpl_path)"
-    return
+    if not ($tmpl_path | path exists) {
+      print $"[!] Template not found at ($tmpl_path)"
+      continue
+    }
+
+    let content = (open --raw $tmpl_path)
+    $content | save -f $out_path
+    print $"[✓] Generated Quarto / Pandoc Kate XML at ($out_path)"
   }
-
-  let content = (open $tmpl_path)
-  $content | save -f $out_path
-  print $"[✓] Generated Quarto / Pandoc Kate XML at ($out_path)"
 }
 
 # -----------------------------------------------------------------------------
@@ -167,7 +169,7 @@ export def gen-vscode [] {
         "patterns": [
           {
             "name": "meta.import.dva",
-            "match": "(#use(?:\\s*\\((?:dynamic|import|,|\\s)*\\))?)\\s+(\"[^\"]*\"|[^\\s;]+)",
+            "match": '(#use(?:\s*\([^)]*\))?)\s+("(?:\\.|[^"])*"|(?:[^/;\r\n]|/(?![/*]))+?)(?=\s*(?://|/\*|;|$))',
             "captures": {
               "1": { "name": "keyword.control.directive.dva" },
               "2": { "name": "string.quoted.other.import.dva" }
@@ -298,11 +300,357 @@ export def gen-vscode [] {
     }
   }
 
+  let vid_tmlanguage = {
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Vid",
+    "scopeName": "source.vid",
+    "patterns": [
+      { "include": "#comments" },
+      { "include": "#directives" },
+      { "include": "#control" },
+      { "include": "#expr_lines" },
+      { "include": "#bindings" },
+      { "include": "#strings" },
+      { "include": "#partials" },
+      { "include": "#tags" },
+      { "include": "#reactive_ids" },
+      { "include": "#static_ids" },
+      { "include": "#classes" },
+      { "include": "#attributes" },
+      { "include": "#interpolations" },
+      { "include": "#tag_suffix" }
+    ],
+    "repository": {
+      "comments": {
+        "patterns": [
+          {
+            "name": "comment.line.double-slash.vid",
+            "match": '//.*$'
+          }
+        ]
+      },
+      "directives": {
+        "patterns": [
+          {
+            "name": "meta.import.vid",
+            "match": '^\s*(#(?:use(?:\([^)]*\))?|include))\s+("(?:\\.|[^"])*"|(?:[^/;\r\n]|/(?![/*]))+?)(?=\s*(?://|;|$))',
+            "captures": {
+              "1": { "name": "keyword.control.directive.vid" },
+              "2": { "name": "string.quoted.other.import.vid" }
+            }
+          },
+          {
+            "name": "meta.doctype.vid",
+            "match": '^\s*(#?doctype)\s+(\S+)',
+            "captures": {
+              "1": { "name": "keyword.control.directive.vid" },
+              "2": { "name": "constant.language.doctype.vid" }
+            }
+          },
+          {
+            "name": "meta.directive.vid",
+            "begin": '^\s*(#(?:param|query|route|def|slot))\b',
+            "beginCaptures": {
+              "1": { "name": "keyword.control.directive.vid" }
+            },
+            "end": '$',
+            "patterns": [
+              { "include": "source.dva" }
+            ]
+          }
+        ]
+      },
+      "control": {
+        "patterns": [
+          {
+            "name": "meta.cycle.vid",
+            "match": '^\s*(.+?)\s+(@)(?:\s+(.+?)\s+(=>))?\s*$',
+            "captures": {
+              "1": { "patterns": [{ "include": "source.dva" }] },
+              "2": { "name": "keyword.control.repeat.vid" },
+              "3": { "patterns": [{ "include": "source.dva" }] },
+              "4": { "name": "keyword.operator.function.vid" }
+            }
+          },
+          {
+            "name": "meta.choice.vid",
+            "match": '^\s*(?:(.+?)\s+)?(\|)\s*$',
+            "captures": {
+              "1": { "patterns": [{ "include": "source.dva" }] },
+              "2": { "name": "keyword.control.conditional.vid" }
+            }
+          },
+          {
+            "name": "meta.guard.vid",
+            "match": '^\s*(\[)([^\]\n]+)(\])\s*$',
+            "captures": {
+              "1": { "name": "punctuation.bracket.vid" },
+              "2": { "patterns": [{ "include": "source.dva" }] },
+              "3": { "name": "punctuation.bracket.vid" }
+            }
+          }
+        ]
+      },
+      "expr_lines": {
+        "patterns": [
+          {
+            "name": "meta.expression.line.vid",
+            "begin": '^\s*(!?=)',
+            "beginCaptures": {
+              "1": { "name": "keyword.operator.assignment.vid" }
+            },
+            "end": '$',
+            "patterns": [
+              { "include": "source.dva" }
+            ]
+          }
+        ]
+      },
+      "bindings": {
+        "patterns": [
+          {
+            "name": "meta.binding.vid",
+            "begin": r#'^\s*([a-zA-Z_][a-zA-Z0-9_']*)\s+(=)(?!=|>)'#,
+            "beginCaptures": {
+              "1": { "name": "variable.other.vid" },
+              "2": { "name": "keyword.operator.assignment.vid" }
+            },
+            "end": '$',
+            "patterns": [
+              { "include": "source.dva" }
+            ]
+          }
+        ]
+      },
+      "partials": {
+        "patterns": [
+          {
+            "name": "entity.name.function.partial.vid",
+            "match": '(?:^|(?<=[\s:]))(\+[a-zA-Z][a-zA-Z0-9_-]*)'
+          }
+        ]
+      },
+      "tags": {
+        "patterns": [
+          {
+            "name": "entity.name.tag.vid",
+            "match": '(?:(?<=^\s)|^|(?<=:\s)|(?<=:))([a-zA-Z][a-zA-Z0-9_-]*)(?=$|[\s\$\#\.\(\/:=!])'
+          }
+        ]
+      },
+      "reactive_ids": {
+        "patterns": [
+          {
+            "name": "entity.other.attribute-name.id.reactive.vid",
+            "match": '\$[a-zA-Z0-9_-]+'
+          }
+        ]
+      },
+      "static_ids": {
+        "patterns": [
+          {
+            "name": "entity.other.attribute-name.id.static.vid",
+            "match": '#[a-zA-Z0-9_-]+'
+          }
+        ]
+      },
+      "classes": {
+        "patterns": [
+          {
+            "name": "entity.other.attribute-name.class.vid",
+            "match": '\.[a-zA-Z0-9_-]+'
+          }
+        ]
+      },
+      "attributes": {
+        "patterns": [
+          {
+            "name": "meta.attribute-list.vid",
+            "begin": '\(',
+            "beginCaptures": { "0": { "name": "punctuation.section.parens.begin.vid" } },
+            "end": '\)',
+            "endCaptures": { "0": { "name": "punctuation.section.parens.end.vid" } },
+            "patterns": [
+              { "include": "#comments" },
+              {
+                "name": "meta.attribute.id.reactive.vid",
+                "begin": '\b(id)\s*(=)\s*(?="\$[^{])',
+                "beginCaptures": {
+                  "1": { "name": "entity.other.attribute-name.vid" },
+                  "2": { "name": "keyword.operator.assignment.vid" }
+                },
+                "end": '(?<=")',
+                "patterns": [
+                  {
+                    "name": "entity.other.attribute-name.id.reactive.vid",
+                    "begin": '"',
+                    "end": '"',
+                    "patterns": [
+                      { "name": "constant.character.escape.vid", "match": '\\.' },
+                      { "include": "#interpolations" }
+                    ]
+                  }
+                ]
+              },
+              {
+                "name": "support.function.event.vid",
+                "match": '@[a-zA-Z0-9_:-]+'
+              },
+              {
+                "name": "entity.other.attribute-name.vid",
+                "match": '[a-zA-Z_][a-zA-Z0-9_:-]*(?=\s*[=,\s\)]|$)'
+              },
+              {
+                "name": "keyword.operator.assignment.vid",
+                "match": '='
+              },
+              { "include": "#strings" },
+              {
+                "name": "meta.attribute.expr.nested.vid",
+                "begin": '\(',
+                "end": '\)',
+                "patterns": [
+                  { "include": "source.dva" }
+                ]
+              },
+              { "include": "source.dva" }
+            ]
+          }
+        ]
+      },
+      "tag_suffix": {
+        "patterns": [
+          {
+            "name": "keyword.operator.assignment.vid",
+            "match": '!=|='
+          },
+          {
+            "name": "punctuation.separator.vid",
+            "match": '[:/\.]'
+          }
+        ]
+      },
+      "strings": {
+        "patterns": [
+          {
+            "name": "string.quoted.double.vid",
+            "begin": '"',
+            "end": '"',
+            "patterns": [
+              { "name": "constant.character.escape.vid", "match": '\\.' },
+              { "include": "#interpolations" }
+            ]
+          },
+          {
+            "name": "string.quoted.single.vid",
+            "begin": "'",
+            "end": "'",
+            "patterns": [
+              { "name": "constant.character.escape.vid", "match": '\\.' },
+              { "include": "#interpolations" }
+            ]
+          }
+        ]
+      },
+      "interpolations": {
+        "patterns": [
+          {
+            "name": "meta.interpolation.vid",
+            "begin": '[$!#]\{',
+            "beginCaptures": { "0": { "name": "punctuation.section.interpolation.begin.vid" } },
+            "end": '\}',
+            "endCaptures": { "0": { "name": "punctuation.section.interpolation.end.vid" } },
+            "patterns": [
+              { "include": "source.dva" }
+            ]
+          }
+        ]
+      }
+    }
+  }
+
+  let ccl_tmlanguage = {
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "CCL",
+    "scopeName": "source.ccl",
+    "patterns": [
+      { "include": "#comments" },
+      { "include": "#entries" },
+      { "include": "#continuation_values" }
+    ],
+    "repository": {
+      "comments": {
+        "patterns": [
+          {
+            "name": "comment.line.ccl",
+            "match": '^\s*(?:/=|#).*$'
+          }
+        ]
+      },
+      "entries": {
+        "patterns": [
+          {
+            "name": "meta.entry.anonymous.ccl",
+            "match": '^\s*(=)(?:\s+(.*))?$',
+            "captures": {
+              "1": { "name": "keyword.operator.assignment.ccl" },
+              "2": { "name": "string.unquoted.value.ccl" }
+            }
+          },
+          {
+            "name": "meta.entry.level0.ccl",
+            "match": '^(?!\s*(?:/=|#))([^=\s\r\n][^=\r\n]*?)\s*(=)(?:\s+(.*))?$',
+            "captures": {
+              "1": { "name": "entity.name.section.key.level0.ccl" },
+              "2": { "name": "keyword.operator.assignment.ccl" },
+              "3": { "name": "string.unquoted.value.ccl" }
+            }
+          },
+          {
+            "name": "meta.entry.level1.ccl",
+            "match": '^[ \t]{1,3}([^=\s\r\n][^=\r\n]*?)\s*(=)(?:\s+(.*))?$',
+            "captures": {
+              "1": { "name": "variable.other.property.key.level1.ccl" },
+              "2": { "name": "keyword.operator.assignment.ccl" },
+              "3": { "name": "string.unquoted.value.ccl" }
+            }
+          },
+          {
+            "name": "meta.entry.level2.ccl",
+            "match": '^[ \t]{4,5}([^=\s\r\n][^=\r\n]*?)\s*(=)(?:\s+(.*))?$',
+            "captures": {
+              "1": { "name": "support.type.property-name.key.level2.ccl" },
+              "2": { "name": "keyword.operator.assignment.ccl" },
+              "3": { "name": "string.unquoted.value.ccl" }
+            }
+          },
+          {
+            "name": "meta.entry.level3.ccl",
+            "match": '^[ \t]{6,}([^=\s\r\n][^=\r\n]*?)\s*(=)(?:\s+(.*))?$',
+            "captures": {
+              "1": { "name": "constant.other.key.level3.ccl" },
+              "2": { "name": "keyword.operator.assignment.ccl" },
+              "3": { "name": "string.unquoted.value.ccl" }
+            }
+          }
+        ]
+      },
+      "continuation_values": {
+        "patterns": [
+          {
+            "name": "string.unquoted.value.ccl",
+            "match": '^\s*\S.*$'
+          }
+        ]
+      }
+    }
+  }
+
   let pkg = {
     "name": "dva-lang",
     "displayName": "Dva Language",
-    "description": "Syntax highlighting and language support for the Dva programming language",
-    "version": "0.1.0",
+    "description": "Syntax highlighting and language support for Dva, Vid, and CCL",
+    "version": "0.2.0",
     "publisher": "dva",
     "engines": {
       "vscode": "^1.75.0"
@@ -315,6 +663,18 @@ export def gen-vscode [] {
           "aliases": ["Dva", "dva", "edva"],
           "extensions": [".dva"],
           "configuration": "./language-configuration.json"
+        },
+        {
+          "id": "vid",
+          "aliases": ["Vid", "vid"],
+          "extensions": [".vid"],
+          "configuration": "./vid.language-configuration.json"
+        },
+        {
+          "id": "ccl",
+          "aliases": ["CCL", "ccl"],
+          "extensions": [".ccl"],
+          "configuration": "./ccl.language-configuration.json"
         }
       ],
       "grammars": [
@@ -322,6 +682,16 @@ export def gen-vscode [] {
           "language": "dva",
           "scopeName": "source.dva",
           "path": "./syntaxes/dva.tmLanguage.json"
+        },
+        {
+          "language": "vid",
+          "scopeName": "source.vid",
+          "path": "./syntaxes/vid.tmLanguage.json"
+        },
+        {
+          "language": "ccl",
+          "scopeName": "source.ccl",
+          "path": "./syntaxes/ccl.tmLanguage.json"
         }
       ]
     }
@@ -353,11 +723,49 @@ export def gen-vscode [] {
     ]
   }
 
+  let vid_lang_cfg = {
+    "comments": {
+      "lineComment": "//"
+    },
+    "brackets": [
+      ["{", "}"],
+      ["[", "]"],
+      ["(", ")"]
+    ],
+    "autoClosingPairs": [
+      { "open": "{", "close": "}" },
+      { "open": "[", "close": "]" },
+      { "open": "(", "close": ")" },
+      { "open": "\"", "close": "\"" },
+      { "open": "'", "close": "'" }
+    ],
+    "surroundingPairs": [
+      ["{", "}"],
+      ["[", "]"],
+      ["(", ")"],
+      ["\"", "\""],
+      ["'", "'"]
+    ]
+  }
+
+  let ccl_lang_cfg = {
+    "comments": {
+      "lineComment": "/="
+    },
+    "brackets": [],
+    "autoClosingPairs": [],
+    "surroundingPairs": []
+  }
+
   ($tmlanguage | to json -i 2) | save -f ($syn_dir | path join "dva.tmLanguage.json")
+  ($vid_tmlanguage | to json -i 2) | save -f ($syn_dir | path join "vid.tmLanguage.json")
+  ($ccl_tmlanguage | to json -i 2) | save -f ($syn_dir | path join "ccl.tmLanguage.json")
   ($pkg | to json -i 2) | save -f ($vs_dir | path join "package.json")
   ($lang_cfg | to json -i 2) | save -f ($vs_dir | path join "language-configuration.json")
+  ($vid_lang_cfg | to json -i 2) | save -f ($vs_dir | path join "vid.language-configuration.json")
+  ($ccl_lang_cfg | to json -i 2) | save -f ($vs_dir | path join "ccl.language-configuration.json")
 
-  print $"[✓] Generated VS Code TextMate grammar and extension in ($vs_dir)"
+  print $"[✓] Generated VS Code TextMate grammars for dva, vid, ccl in ($vs_dir)"
 }
 
 # -----------------------------------------------------------------------------

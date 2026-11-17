@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-ulimit -v 20971520 2>/dev/null || true
+ulimit -S -v 20971520 2>/dev/null || true
 if command -v llvm-config >/dev/null 2>&1; then
     export LIBRARY_PATH="$(llvm-config --libdir 2>/dev/null):$LIBRARY_PATH"
 fi
