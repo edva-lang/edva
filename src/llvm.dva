@@ -235,4 +235,6 @@
    LLVMConsumeError: (Err: Addr) => ()
    LLVMGetGlobalContext: () => Addr
    LLVMCreateStringAttribute: (C: Addr, K: String, KLength: Int, V: String, VLength: Int) => Addr
+   LLVMGetEnumAttributeKindForName: (Name: String, SLen: Int) => Int
+   LLVMCreateEnumAttribute: (C: Addr, KindID: Int, Val: Int) => Addr
    LLVMAddAttributeAtIndex: (F: Addr, Idx: Int, A: Addr) => ()

@@ -1,0 +1,60 @@
+#use io
+#use json
+#use mem
+#use str
+#use sys
+
+parse_n_arg: Int => Int
+parse_n_arg = dflt =>
+   sys::argc < 2
+      | dflt
+      |
+         a1 = sys::argv_string(1)
+         v = str::parse_int(a1) |_| dflt
+         v > 0 | v | dflt
+
+n = parse_n_arg(20000)
+scratch = mem::arena(1048576)
+cur = json::cursor("")
+checksum' = 0
+ok_cnt' = 0
+err_cnt' = 0
+
+n @ i =>
+   row = mem::with_value(scratch, !=>
+      id = i * 7 + 3
+      lat = (i * 131 + 17) % 500 + 1
+      is_ok = (i % 5) != 0
+      ok_s = is_ok | "true" | "false"
+      line = "{\"id\":${str::from_int(id)},\"svc\":\"svc_${str::from_int(i % 4)}\",\"ok\":${ok_s},\"lat\":${str::from_int(lat)}}"
+      json::cursor_reset(cur, line)
+      json::cursor_enter_object(cur)
+         |
+            pid' = 0
+            plat' = 0
+            pok' = <->
+            0.. @
+               json::cursor_next_field(cur)
+                  | key =>
+                     key
+                        ["id"]
+                           pid' = json::cursor_read_int(cur) |_| 0
+                        ["lat"]
+                           plat' = json::cursor_read_int(cur) |_| 0
+                        ["ok"]
+                           pok' = json::cursor_read_bool(cur) |_| <->
+                        |
+                           json::cursor_skip_value(cur)
+                  | -->
+            pok'
+               | (pid' + plat' * 3, 1, 0)
+               | (pid' + plat' * 7, 0, 1)
+         | (0, 0, 0)
+   )
+   ok_cnt' = ok_cnt' + row.1
+   err_cnt' = err_cnt' + row.2
+   checksum' = (checksum' + row.0) % 1000000007
+   (i % 256) == 255 | mem::reset(scratch)
+
+mem::destroy(scratch)
+io::out $ "checksum=${str::from_int(checksum')},ok=${str::from_int(ok_cnt')},err=${str::from_int(err_cnt')}"

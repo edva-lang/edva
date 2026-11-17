@@ -136,3 +136,22 @@ The manifest uses CCL (Categorical Configuration Language) syntax (`key = value`
 
 term::print("ok")
 ```
+
+## Build reproducibility, cache invalidation, and parallel isolation
+
+Edva caches generated LLVM IR under `~/.cache/edva/ir/entries/<sha256>` (`key_version = 2`) and atomically renames completed temporary files into place so concurrent readers never observe partial `.ll` or cache metadata:
+
+- **Invalidation inputs**: Every key hashes the canonical target path, sorted canonical source paths and SHA-256 file digests across `#use` dependencies, target triple, optimization level (`-O0`..`-Oz`), compiler build hash (`EDVA_COMPILER_ID` / `/proc/self/exe`), LLVM major version, module/runtime codegen flags (`is_module`, `is_shared`, `no_runtime`, `no_main`, `module_name`), native `libs`/`pkg-config`, `--fuzz-cov`, `--cflag` values, `#export` symbols, and `#use(dynamic)` modules.
+- **Parallel isolation**: Without `--ir`, `-c --module <name> -o dir/mod.o` writes its transient IR at `<outpath>.ll` rather than `<module>.ll` in the current working directory, allowing parallel `make -j` and concurrent package builds to share a cache directory without colliding on CWD files.
+- **Offline & locked builds**: `edva vendor` copies all resolved Git, archive, and path dependencies into `vendor/` alongside `vendor/vendor.ccl`; subsequent `edva fetch --offline --locked`, `edva build --offline --locked`, and `edva test --offline --locked` verify recorded tree hashes with zero network access. Generator tools invoked via `@<alias>` automatically rebuild when dependency sources or the active `edva` compiler binary become newer than the cached tool binary.
+
+## Host & target support matrix
+
+| Target Triple | Status | Native Linker / Runner | Supported Stdlib & Tooling Notes |
+|---|---|---|---|
+| `x86_64-unknown-linux-gnu` | Tier 1 (Primary) | `clang` + LLVM 18 + POSIX libc | Full stdlib (`io_uring`, POSIX sockets, `task::spawn`, ThreadSanitizer), `edva fmt`, `edva lsp`, `--fuzz-cov` |
+| `aarch64-unknown-linux-gnu` | Supported Target | `clang --target=...` | Linux System V ABI, modular builds, package manager |
+| `x86_64-apple-darwin` | Supported Target | `clang` (`-Wl,-export_dynamic`, `__error`) | POSIX sockets/kqueue-compatible polling, `--shared` (`dynamic_lookup`), package manager |
+| `aarch64-apple-darwin` | Supported Target | `clang` (`aarch64-apple-darwin`) | Apple Silicon native ABI & `--shared` |
+| `wasm32-unknown-unknown` | Tier 1 (Wasm) | `clang -c` + `wasm-ld` (`node` host / browser) | Pure compute, `@vid`/`std/dom` (`.dom.js` bridge), `-target wasm32-unknown-unknown` |
+| `wasm32-wasi` | Supported Target | `clang -c` + `wasm-ld` | Standalone WASI modules (`--no-entry --allow-undefined`) |

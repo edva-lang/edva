@@ -1,0 +1,64 @@
+// Unboxed 8-body 3D integer kinematics kernel shared across native and Wasm targets.
+#public
+   #type Body (x: Int, y: Int, z: Int, vx: Int, vy: Int, vz: Int)
+
+   #type World (
+      b0: Body, b1: Body, b2: Body, b3: Body,
+      b4: Body, b5: Body, b6: Body, b7: Body
+   )
+
+   init_body: Int => Body
+   init_body = k =>
+      Body((k + 1) * 1000, (k + 2) * 2000, (k + 3) * 3000, (k % 3) - 1, ((k + 1) % 3) - 1, ((k + 2) % 3) - 1)
+
+   init_world: () => World
+   init_world = !=>
+      World(init_body(0), init_body(1), init_body(2), init_body(3),
+         init_body(4), init_body(5), init_body(6), init_body(7))
+
+   get_body: World, Int => Body
+   get_body = w, i =>
+      i
+         [0] w.b0
+         [1] w.b1
+         [2] w.b2
+         [3] w.b3
+         [4] w.b4
+         [5] w.b5
+         [6] w.b6
+         |   w.b7
+
+   run_steps: Int => Int
+   run_steps = steps =>
+      w = init_world!
+      steps @
+         8 @ i =>
+            bi = get_body(w, i)
+            ax' = 0
+            ay' = 0
+            az' = 0
+            8 @ j =>
+               j != i
+                  |
+                     bj = get_body(w, j)
+                     dx = bj.x - bi.x
+                     dy = bj.y - bi.y
+                     dz = bj.z - bi.z
+                     r2 = dx * dx + dy * dy + dz * dz + 1000
+                     inv = 1000000000 / r2
+                     ax' = ax' + (dx * inv) / 1024
+                     ay' = ay' + (dy * inv) / 1024
+                     az' = az' + (dz * inv) / 1024
+            bi.vx = (bi.vx + ax') % 100000
+            bi.vy = (bi.vy + ay') % 100000
+            bi.vz = (bi.vz + az') % 100000
+         8 @ i =>
+            bi = get_body(w, i)
+            bi.x = (bi.x + bi.vx) % 1000000
+            bi.y = (bi.y + bi.vy) % 1000000
+            bi.z = (bi.z + bi.vz) % 1000000
+      sum' = 0
+      8 @ i =>
+         bi = get_body(w, i)
+         sum' = (sum' + bi.x * 3 + bi.y * 5 + bi.z * 7 + bi.vx * 11) % 1000000007
+      ((sum' % 1000000007) + 1000000007) % 1000000007

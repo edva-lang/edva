@@ -6,6 +6,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
 @dva_arena_base_tls = external thread_local global ptr
+@dva_active_gen_tls = external thread_local global i64
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
@@ -112,30 +113,31 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.codegen::codegen_typed_program_opts" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_codegen, ptr null }]
 
-declare ptr @dva_arena_current()
+declare ptr @dva_arena_current() #0
 
-declare ptr @dva_arena_set_current(ptr)
+declare ptr @dva_arena_set_current(ptr) #0
 
-declare ptr @malloc(i64)
+declare noalias ptr @malloc(i64) #0
 
-declare void @free(ptr)
+declare void @free(ptr) #0
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
 
-declare void @dva_arena_init(ptr, i64)
+declare void @dva_arena_init(ptr, i64) #0
 
-declare ptr @dva_arena_alloc(ptr, i64)
+declare noalias ptr @dva_arena_alloc(ptr, i64) #0
 
-declare void @dva_arena_destroy(ptr)
+declare void @dva_arena_destroy(ptr) #0
 
-declare i64 @dva_arena_save(ptr)
+declare i64 @dva_arena_save(ptr) #0
 
-declare void @dva_arena_restore(ptr, i64)
+declare void @dva_arena_restore(ptr, i64) #0
 
-declare i1 @dva_arena_validate_tag(ptr, i64)
+; Function Attrs: noinline
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr)
+declare void @dva_arena_adopt(ptr, ptr) #0
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -147,7 +149,7 @@ declare void @__sanitizer_cov_trace_pc_guard(ptr)
 
 declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
 
-define internal void @__dva_global_init_codegen() #1 {
+define internal void @__dva_global_init_codegen() #0 {
 entry:
   store ptr @clo.const, ptr @"var.codegen::default_codegen_opts", align 8
   store ptr @clo.const.1, ptr @"var.codegen::decl_bare_name", align 8
@@ -609,6 +611,10 @@ declare ptr @LLVMGetGlobalContext()
 
 declare ptr @LLVMCreateStringAttribute(ptr, ptr, i64, ptr, i64)
 
+declare i64 @LLVMGetEnumAttributeKindForName(ptr, i64)
+
+declare ptr @LLVMCreateEnumAttribute(ptr, i64, i64)
+
 declare void @LLVMAddAttributeAtIndex(ptr, i64, ptr)
 
 declare i32 @open(ptr, i32)
@@ -693,7 +699,7 @@ declare ptr @readdir(ptr)
 
 declare i64 @closedir(ptr)
 
-declare i64 @strlen(ptr)
+declare i64 @strlen(ptr) #0
 
 declare i64 @strcmp(ptr, ptr)
 
@@ -765,29 +771,32 @@ declare ptr @localtime_r(ptr, ptr)
 
 declare ptr @strptime(ptr, ptr, ptr)
 
-define ptr @"codegen::default_codegen_opts"() #1 {
+define ptr @"codegen::default_codegen_opts"() #0 {
 entry:
   %call.res = call ptr @"types::default_codegen_opts"()
   ret ptr %call.res
 }
 
-declare ptr @"types::default_codegen_opts"() #1
+declare ptr @"types::default_codegen_opts"() #0
 
-define ptr @"codegen::decl_bare_name"(ptr %0, i64 %1) #1 {
+define { i64, ptr } @"codegen::decl_bare_name"(ptr %0, i64 %1) #0 {
 entry:
+  %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
   store i64 %1, ptr %var.i, align 8
   %var.load = load ptr, ptr %var.s, align 8
   %var.load1 = load i64, ptr %var.i, align 8
-  %call.res = call ptr @"types::decl_bare_name"(ptr %var.load, i64 %var.load1)
-  ret ptr %call.res
+  %call.res = call { i64, ptr } @"types::decl_bare_name"(ptr %var.load, i64 %var.load1)
+  store { i64, ptr } %call.res, ptr %ret.ub.salloc, align 8
+  %ret.pack = load { i64, ptr }, ptr %ret.ub.salloc, align 8
+  ret { i64, ptr } %ret.pack
 }
 
-declare ptr @"types::decl_bare_name"(ptr, i64) #1
+declare { i64, ptr } @"types::decl_bare_name"(ptr, i64) #0
 
-define i64 @"codegen::codegen_typed_program_opts"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #1 {
+define i64 @"codegen::codegen_typed_program_opts"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5) #0 {
 entry:
   %var.opts = alloca ptr, align 8
   %var.src_file = alloca ptr, align 8
@@ -851,7 +860,8 @@ a.after9:                                         ; preds = %a.create8, %a.after
   ret i64 %call.res
 }
 
-declare i64 @"main::codegen_typed_program_opts"(ptr, ptr, ptr, ptr, ptr, ptr) #1
+declare i64 @"main::codegen_typed_program_opts"(ptr, ptr, ptr, ptr, ptr, ptr) #0
 
-attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #1 = { "nounwind" }
+attributes #0 = { "nounwind" }
+attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { noinline "nounwind" }

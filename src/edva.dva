@@ -2803,7 +2803,19 @@ env_or = name, fallback =>
 copy_file: String, String => <>
 copy_file = src, dst =>
    read_file_text(src)
-      | txt => write_file(dst, txt)
+      | txt =>
+         tmp = "${dst}.tmp.${str::from_int(getpid!)}"
+         !write_file(tmp, txt)
+            |
+               unlink(tmp)
+               <->
+            |
+               rc = libc::rename(tmp, dst)
+               rc != 0
+                  |
+                     unlink(tmp)
+                     <->
+                  | <+>
       | <->
 
 is_dom_symbol: String => <>
@@ -2877,6 +2889,15 @@ dom_is_reachable = prog, exports =>
                                  work += dep
    found'
 
+build_cache_summary: CliOpts, ast::Names, ast::Names => String
+build_cache_summary = opts, exports, dyn_mods =>
+   b = {256}
+   opts.fuzz_cov | b += "fuzz_cov=1\n"
+   opts.cflags @ cf => b += "cflag=${cf}\n"
+   exports @ ex => b += "export=${ex}\n"
+   dyn_mods @ dm => b += "dyn=${dm}\n"
+   +b
+
 // Shared compile pipeline: codegen AST -> LLVM IR -> clang binary.
 // Used by both the batch driver and the REPL.
 compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
@@ -2928,7 +2949,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
                cache_flags = pkg::CacheCodegenFlags(opts.is_module, opts.is_shared,
                  opts.no_runtime, opts.no_main, opts.module_name)
-               ast_summary = opts.fuzz_cov | "fuzz-cov" | ""
+               ast_summary = build_cache_summary(opts, actual_exports, dynamic_mods)
                opt_str = opts.opt != "" | opts.opt | "-O2"
                target_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
                bkr = pkg::compute_ir_cache_key(opts.target, lfiles, nat_libs, nat_pkg,
@@ -4224,7 +4245,7 @@ run_driver = ignored =>
          log::error $ "E5022: Output name '" + output_bin +
            "' collides with an existing directory; pass -o <name> to set output name."
          sys::exit(1)
-   ll_stem = opts.outpath != "" | (opts.is_module | base_name | opts.outpath) | base_name
+   ll_stem = opts.outpath != "" | (opts.is_module && opts.ir_only | base_name | opts.outpath) | base_name
    has_ll_ext = ?ll_stem !< 3 && ll_stem(?ll_stem - 3..) == ".ll"
    output_ll = has_ll_ext | ll_stem | ll_stem + ".ll"
    ir_only = opts.ir_only

@@ -17,6 +17,25 @@
 #use unicode
 #use utf
 
+#foreign("c")
+   c_memchr = memchr: (ptr: Addr, ch: Int, n: Int) => Addr
+
+#private
+   find_byte_from: String, Int, Int => Int
+   find_byte_from = s, ch, start =>
+      ls = ?s
+      st = start < 0 | 0 | start
+      (st !< ls || ch ![0..256]) | --| -1
+      #arch ["wasm32", "wasm64", "wasm"]
+         st..ls @ i =>
+            s(i) == ch | --| i
+         -1
+      |
+         base = &s
+         raw_base = Int(base) .&. 0xFFFFFFFFFFFF
+         hit = c_memchr(base + st, ch, ls - st)
+         hit == Addr(0) | -1 | (Int(hit) - raw_base)
+
 #public
    is_digit: Int => <>
    is_digit = c => ascii::is_digit(c)
@@ -42,43 +61,12 @@
       out += b
       +out
 
-   // Int to ASCII decimal, as a proper fat String { len, data }. Digits are
-   // pushed LSD-first into a Builder, the sign (if any) appended last, then the
-   // reversed buffer is reversed into a fresh Builder — Strings and Builders
-   // only write forward (B8), so MSD-first output is a two-pass reverse.
+   // Int / u64 to ASCII decimal using inline compiler formatting.
    from_int: Int => String
-   from_int = v =>
-      v [0] --| "0"
-      v == const::min_i64 | --| "-9223372036854775808"
-      b = {32}
-      n' = v [< 0] 0 - v | v
-      32 @
-         n' [> 0]
-            b += ('0 + (n' % 10))
-            n' = n' / 10
-         | -->
-      v < 0 | b += '-
-      s = +b
-      out = {32}
-      ?s @ i =>
-         out += s((?s) - 1 - i)
-      +out
+   from_int = v => %to_str(v)
 
    from_u64: u64 => String
-   from_u64 = v =>
-      v [0] --| "0"
-      b = {32}
-      n' = v
-      32 @
-         n' [> 0]
-            b += ('0 + Int(n' % 10u64))
-            n' = n' / 10u64
-         | -->
-      s = +b
-      out = {32}
-      ?s @ i =>
-         out += s((?s) - 1 - i)
-      +out
+   from_u64 = v => %to_str(v)
 
    // Float to decimal String, "%g"-style: 6 significant digits, fixed notation
    // for exponent in [-4, 5], scientific ("d.ddddd" e ±exp) otherwise; the
@@ -284,11 +272,23 @@
             st + ln > ls
                | <-->
                |
-                  limit = ls - ln + 1
-                  first_b = needle(0)
-                  st..limit @ i =>
-                     s(i) == first_b && s(i..(i + ln)) == needle | --| <+ i +>
-                  <-->
+                  ln == 1
+                     |
+                        pos = find_byte_from(s, needle(0), st)
+                        pos < 0 | <--> | <+ pos +>
+                     |
+                        limit = ls - ln
+                        first_b = needle(0)
+                        last_b = needle(ln - 1)
+                        pos' = st
+                        0.. @
+                           hit = find_byte_from(s, first_b, pos')
+                           (hit < 0 || hit > limit) | --| <-->
+                           s(hit + ln - 1) == last_b &&
+                             (ln == 2 || s((hit + 1)..(hit + ln - 1)) == needle(1..(ln - 1)))
+                              | --| <+ hit +>
+                           pos' = hit + 1
+                        <-->
 
    find: String, String => < Int | >
    find = s, needle => str::find_from(s, needle, 0)
@@ -403,16 +403,18 @@
       ls = ?s
       ls == 0 | --| out
       start' = 0
-      ls @ i =>
-         s(i) == '\n
+      0.. @
+         start' !< ls | -->
+         pos = find_byte_from(s, '\n, start')
+         pos < 0
             |
-               end = (i > start' && s(i - 1) == '\r) | i - 1 | i
+               end = (ls > start' && s(ls - 1) == '\r) | ls - 1 | ls
                out += s(start'..end)
-               start' = i + 1
-      start' < ls
-         |
-            end = (ls > start' && s(ls - 1) == '\r) | ls - 1 | ls
-            out += s(start'..end)
+               -->
+            |
+               end = (pos > start' && s(pos - 1) == '\r) | pos - 1 | pos
+               out += s(start'..end)
+               start' = pos + 1
       out
 
    words: String => Strings

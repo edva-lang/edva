@@ -1,0 +1,4 @@
+scanner differential: ok
+compact and spaced objects: ok
+escaped and Unicode strings: ok
+invalid inputs and cursor positions: ok

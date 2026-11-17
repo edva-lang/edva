@@ -319,6 +319,7 @@ field_names = #param T, rec =>
 - **`edva.ccl` Manifest**: Declares `name`, `version`, `edva`, `dependencies` (`path`, `git`/`rev`,
   `url`/`hash`, optional `target = native`), `native.libs`, and multi-target `targets` (including
   `target = wasm32-unknown-unknown`, which automatically emits `<out>.dom.js` when `std/dom` is used).
+- **Reproducibility, Caching & Targets**: IR cache keys (`key_version = 2`) hash canonical source paths and SHA-256 digests, target triple, `-O` flag, `--cflag`, `--fuzz-cov`, `#export`, `#use(dynamic)`, and compiler build ID; non-`--ir` module builds isolate IR at `<outpath>.ll` for safe parallel builds; `edva vendor` + `--offline --locked` guarantees air-gapped verification. Primary hosts/targets: `x86_64-unknown-linux-gnu` (Tier 1), `aarch64-unknown-linux-gnu`, `x86_64/aarch64-apple-darwin`, `wasm32-unknown-unknown` (Tier 1 Wasm / `std/dom`), and `wasm32-wasi`.
 
 ---
 
@@ -326,7 +327,7 @@ field_names = #param T, rec =>
 
 - **`ascii`**: Fast byte-level ASCII predicates (`is_alpha`, `is_digit`, `is_hex`, `to_lower`, `to_upper`).
 - **`base64`**: RFC 4648 standard (`Flavor(Std)`) and URL-safe (`Flavor(Url)`) Base64 codecs and integer packing (`encode`, `decode`, `from_int`, `to_int`).
-- **`bench`**: Monotonic-clock microbenchmarking and throughput reporting (`bench::run`).
+- **`bench`**: Monotonic-clock microbenchmarking, tail-latency percentiles (`min`, `p50`, `p95`, `p99`, `max`), arena allocation tracking, and throughput reporting (`bench::measure`, `bench::run`, `bench::measure_stats`, `bench::run_stats`).
 - **`binary`**: Endian-aware readers/writers (`u16_le`, `u32_be`, etc.), LEB128 varints, and `#param` structural binary packing.
 - **`ccl`**: Categorical Configuration Language parser and `#param` structural typed config codec (`ccl::parse`, `ccl::decode`, `ccl::encode`).
 - **`cli`**: Declarative & `#param` structural CLI parser (`Opts`, `opt`, `pos`, `cmd`, `opts_for`, `parse`, `parse_args`, `into`, `flag`, `int`, `float`, `str`, `strs`, `has`, `subcmd`).

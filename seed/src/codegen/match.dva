@@ -4185,14 +4185,46 @@ typed_branch_pay = cg, cv, is_unboxed, pay_ptr_opt, vt =>
                   | p => <+ eval_heap_pay_value(cg, p, vt) +>
                   | <-->
 
-codegen_typed_eval_cond_choice: types::Cg, tast::TypedExpr, tast::TypedBranches,
-  ast::TypeInfo => (Addr, ast::ValueType)
-codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
+cond_niche_str_non_escaping: types::Cg, tast::TypedExpr, tast::TypedBranches, <> => <>
+cond_niche_str_non_escaping = cg, cond, branches, is_pn =>
+   is_safe_call = cond.kind [Call c] !types::fn_uses_c_ret_abi(cg, c.0) | <->
+   !is_safe_call || !cg.in_fn || cg.in_restore_scope > 0 | --| <->
+   has_res = ! <>(types::g.current_fn_body) || types::g.current_fn_has_restore
+   has_res | --| <->
+   br_idx = is_pn | 0 | 1
+   br_idx !< ?branches | --| <->
+   br = branches(br_idx)!!
+   eff_body = br.body.kind [Lambda l] l.1 | br.body
+   lam_p = br.body.kind [Lambda l] (l.0(0) | _ | "") | ""
+   !stmt::str_var_only_safe_uses(cg, "_", eff_body, <->) | --| <->
+   lam_bad = lam_p != "" && lam_p != "_" &&
+     (stmt::count_var_assigns(lam_p, eff_body) != 0 ||
+       !stmt::str_var_only_safe_uses(cg, lam_p, eff_body, <->))
+   lam_bad | --| <->
+   ok' = <+>
+   br.bind_vars @ bvn =>
+      bvn != "" && bvn != "_"
+         |
+            bv_bad = stmt::count_var_assigns(bvn, eff_body) != 0 ||
+              !stmt::str_var_only_safe_uses(cg, bvn, eff_body, <->)
+            bv_bad | (ok' = <->)
+   ok'
+
+codegen_typed_eval_cond_choice_tail: types::Cg, tast::TypedExpr, tast::TypedBranches,
+  ast::TypeInfo, Int => (Addr, ast::ValueType)
+codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
    nbranches = ?branches
    b0 = branches(0)!!
+   eff_ti_pre = cond.ti [TypeVar tvar] types::typedef_ti(cg, tvar) | cond.ti
+   niche_pre = types::is_niche_ram_ti(cg, eff_ti_pre)
+   can_cond_s = niche_pre.0 && (niche_pre.2 [Str]) &&
+     cond_niche_str_non_escaping(cg, cond, branches, niche_pre.1)
+   saved_cond_sa = types::g.stack_alloc_next
+   types::g.stack_alloc_next = can_cond_s
    cv = main::codegen_typed_eval(cg, cond)
-   eff_ti = cond.ti [TypeVar tvar] types::typedef_ti(cg, tvar) | cond.ti
-   niche = types::is_niche_ram_ti(cg, eff_ti)
+   types::g.stack_alloc_next = saved_cond_sa
+   eff_ti = eff_ti_pre
+   niche = niche_pre
    is_niche = niche.0
    is_niche_pn = niche.1
    niche_vt = niche.2
@@ -4280,8 +4312,15 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                cg.vars += types::CgVar(p0', pos_vt, types::is_ptrish_vt(pos_vt), "",
                  <-->, ast::Names(), <+ slot_p0' +>, <+>, <->,
                  ast::VTypes(), pv_then1_opt)
-               main::codegen_typed_eval(cg, lam0'.1)
-            | main::codegen_typed_eval(cg, b0.body)
+               types::g.unboxed_ret_tail = tail_k
+               res_l1 = main::codegen_typed_eval(cg, lam0'.1)
+               types::g.unboxed_ret_tail = 0
+               res_l1
+            |
+               types::g.unboxed_ret_tail = tail_k
+               res_b0 = main::codegen_typed_eval(cg, b0.body)
+               types::g.unboxed_ret_tail = 0
+               res_b0
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_1)
          stmt::branch_to(cg, exit_bb')
          LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
@@ -4355,8 +4394,15 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                            cg.vars += types::CgVar(p0', pos_vt,
                              types::is_ptrish_vt(pos_vt), "", pos_rm0_0_opt, pos_rm0_1,
                              <+ slot_p0' +>, <+>, <->, pos_fvts0, pv_then_opt)
-                           main::codegen_typed_eval(cg, lam0'.1)
-                        | main::codegen_typed_eval(cg, b0.body)
+                           types::g.unboxed_ret_tail = tail_k
+                           res_t0 = main::codegen_typed_eval(cg, lam0'.1)
+                           types::g.unboxed_ret_tail = 0
+                           res_t0
+                        |
+                           types::g.unboxed_ret_tail = tail_k
+                           res_tb = main::codegen_typed_eval(cg, b0.body)
+                           types::g.unboxed_ret_tail = 0
+                           res_tb
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_then)
          tv_opt = types::llvm_val_opt(tv.0)
          tv_val_opt = phi_ty_opt
@@ -4423,8 +4469,15 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                            cg.vars += types::CgVar(p1, neg_vt,
                              types::is_ptrish_vt(neg_vt), "", neg_rm0_0_opt, neg_rm0_1,
                              <+ slot_p1' +>, <+>, <->, neg_fvts0, pv_else_opt)
-                           main::codegen_typed_eval(cg, lam1.1)
-                        | main::codegen_typed_eval(cg, b1.body)
+                           types::g.unboxed_ret_tail = tail_k
+                           res_e0 = main::codegen_typed_eval(cg, lam1.1)
+                           types::g.unboxed_ret_tail = 0
+                           res_e0
+                        |
+                           types::g.unboxed_ret_tail = tail_k
+                           res_eb = main::codegen_typed_eval(cg, b1.body)
+                           types::g.unboxed_ret_tail = 0
+                           res_eb
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_else)
          ev_opt = types::llvm_val_opt(ev.0)
          ev_val_opt = phi_ty_opt
@@ -4444,6 +4497,11 @@ codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
                !else_term | stmt::llvm_add_incoming1(cg, phi, ev_val_opt!!, else_end)
                (phi, vt)
             | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
+
+codegen_typed_eval_cond_choice: types::Cg, tast::TypedExpr, tast::TypedBranches,
+  ast::TypeInfo => (Addr, ast::ValueType)
+codegen_typed_eval_cond_choice = cg, cond, branches, ti =>
+   codegen_typed_eval_cond_choice_tail(cg, cond, branches, ti, 0)
 
 codegen_typed_choice_case_match: types::Cg, Addr, ast::ValueType, tast::TypedExpr => Addr
 codegen_typed_choice_case_match = cg, cond_val, cond_vt, cve =>
@@ -4527,9 +4585,106 @@ codegen_typed_eval_predicate = cg, pred_opt, cond_val, cond_vt =>
             | LLVMConstInt(LLVMInt1Type!, 0, 0)
       | LLVMConstInt(LLVMInt1Type!, 0, 0)
 
+homogeneous_rec_field_idx: tast::TypedExpr, String, ast::Names => Int
+homogeneous_rec_field_idx = body, base_name, fnames =>
+   body.kind
+      [Member m]
+         vok = m.0.kind [Var v] (v.0 == base_name) | <->
+         !vok
+            | -1
+            |
+               (m.1 != "" && ?fnames > 0)
+                  | types::member_index(fnames, m.1)
+                  | m.2
+      | -1
+
+try_homogeneous_record_choice: types::Cg, tast::TypedExpr, tast::TypedBranches, ast::TypeInfo => <(Addr, ast::ValueType)|>
+try_homogeneous_record_choice = cg, cond, branches, ti =>
+   nb = ?branches
+   cond_vt = types::vt_from_ti_cg(cg, cond.ti)
+   cond_ok = !cg.opts.fuzz_cov && types::is_int_vt(cond_vt) && !types::is_unsigned_vt(cond_vt) && (nb !< 2)
+   !cond_ok | --| <-->
+   last_br = branches(nb - 1)!!
+   !(last_br.kind [Bare]) | --| <-->
+   mlast_tgt = last_br.body.kind [Member m] <+ m.0 +> | <-->
+   !<>(mlast_tgt) | --| <-->
+   base_te = mlast_tgt!!
+   base_name = base_te.kind [Var v] v.0 | ""
+   base_name == "" | --| <-->
+   res_ti = types::resolve_record_ti(cg, base_te.ti)
+   is_packed = res_ti [Rec rr] rr.5 | <->
+   is_packed | --| <-->
+   rm = runtime::record_meta_from_ti(cg, base_te.ti)
+   st_opt = rm | m => <+ m.0 +> | types::var_rt(cg, base_name)
+   !<>(st_opt) | --| <-->
+   st = st_opt!!
+   LLVMGetTypeKind(st) != 10 | --| <-->
+   LLVMCountStructElementTypes(st) != nb | --| <-->
+   fnames = rm | m => m.1 | types::var_fnames(cg, base_name)
+   homogeneous_rec_field_idx(last_br.body, base_name, fnames) != nb - 1 | --| <-->
+   elem_ty = LLVMStructGetTypeAtIndex(st, 0)
+   uniform' = <+>
+   0..nb @ k =>
+      LLVMStructGetTypeAtIndex(st, k) != elem_ty | uniform' = <->
+   !uniform' | --| <-->
+   cases_ok' = <+>
+   0..(nb - 1) @ k =>
+      br = branches(k)!!
+      br.kind
+         [Case]
+            has_k = ?br.case_values == 1 && (br.case_values(0)!!.kind [LitInt lk] lk == k | <->)
+            (!has_k || homogeneous_rec_field_idx(br.body, base_name, fnames) != k) | cases_ok' = <->
+         | cases_ok' = <->
+   !cases_ok' | --| <-->
+   vt = types::vt_from_ti_cg(cg, ti)
+   is_rec_ret = vt [Record]
+   elem_is_struct = LLVMGetTypeKind(elem_ty) == 10
+   is_rec_ret != elem_is_struct | --| <-->
+   !is_rec_ret && (types::is_unboxed_ram_ti(cg, ti) || (elem_ty != types::llvm_type_of_vt(vt))) | --| <-->
+
+   i64t = LLVMInt64Type!
+   cv = main::codegen_typed_eval(cg, cond)
+   bev = main::codegen_typed_eval(cg, base_te)
+   types::llvm_val_opt(cv.0)
+      | cv0 =>
+         types::llvm_val_opt(bev.0)
+            | bev0 =>
+               idx_i64 = stmt::coerce_int_ext(cg, cv0, i64t, <->)
+               max_idx = LLVMConstInt(i64t, nb - 1, 0)
+               in_rng = LLVMBuildICmp(cg.builder, 36, idx_i64, max_idx, "hrec.in_rng")
+               clamped = LLVMBuildSelect(cg.builder, in_rng, idx_i64, max_idx, "hrec.idx")
+               elem_gep = types::gep1(cg, elem_ty, bev0, clamped, "hrec.gep")
+               is_rec_ret
+                  |
+                     cg.last_rt = <+ elem_ty +>
+                     ti_rm = runtime::record_meta_from_ti(cg, ti)
+                     ti_rm | m => cg.last_fnames = m.1
+                     <+ (elem_gep, vt) +>
+                  |
+                     <+ (LLVMBuildLoad2(cg.builder, elem_ty, elem_gep, "hrec.load"), vt) +>
+            | <-->
+      | <-->
+
+codegen_typed_eval_guarded_choice_tail: types::Cg, tast::TypedExpr, tast::TypedBranches,
+  ast::TypeInfo, Int => (Addr, ast::ValueType)
+codegen_typed_eval_guarded_choice_tail = cg, cond, branches, ti, tail_k =>
+   try_homogeneous_record_choice(cg, cond, branches, ti)
+      | fast => fast
+      | codegen_typed_eval_guarded_choice_slow_tail(cg, cond, branches, ti, tail_k)
+
 codegen_typed_eval_guarded_choice: types::Cg, tast::TypedExpr, tast::TypedBranches,
   ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
+   codegen_typed_eval_guarded_choice_tail(cg, cond, branches, ti, 0)
+
+codegen_typed_eval_guarded_choice_slow: types::Cg, tast::TypedExpr, tast::TypedBranches,
+  ast::TypeInfo => (Addr, ast::ValueType)
+codegen_typed_eval_guarded_choice_slow = cg, cond, branches, ti =>
+   codegen_typed_eval_guarded_choice_slow_tail(cg, cond, branches, ti, 0)
+
+codegen_typed_eval_guarded_choice_slow_tail: types::Cg, tast::TypedExpr, tast::TypedBranches,
+  ast::TypeInfo, Int => (Addr, ast::ValueType)
+codegen_typed_eval_guarded_choice_slow_tail = cg, cond, branches, ti, tail_k =>
    cv = main::codegen_typed_eval(cg, cond)
    exit_bb = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
    vt = types::vt_from_ti_cg(cg, ti)
@@ -4549,7 +4704,9 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
       br.kind
          [Bare]
             types::emit_cov_edge(cg)
+            types::g.unboxed_ret_tail = tail_k
             bv' = main::codegen_typed_eval(cg, br.body)
+            types::g.unboxed_ret_tail = 0
             b_term = stmt::block_is_terminated(cg)
             !is_void && !b_term
                |
@@ -4668,7 +4825,9 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                            LLVMBuildStore(cg.builder, pv, slot)
                            cg.vars += types::CgVar(pname, ptype, <->, v_dtype, rec_info_0_opt,
                              rec_info.1, <+ slot +>, <+>, <->, rec_info.2, <-->)
+            types::g.unboxed_ret_tail = tail_k
             bv' = main::codegen_typed_eval(cg, br.body)
+            types::g.unboxed_ret_tail = 0
             cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
             c_term = stmt::block_is_terminated(cg)
             !is_void && !c_term
@@ -4704,9 +4863,9 @@ codegen_typed_eval_guarded_choice = cg, cond, branches, ti =>
                (phi, vt)
       | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
 
-codegen_typed_eval_choice: types::Cg, tast::TypedExpr, tast::TypedBranches,
-  ast::TypeInfo => (Addr, ast::ValueType)
-codegen_typed_eval_choice = cg, cond, branches, ti =>
+codegen_typed_eval_choice_tail: types::Cg, tast::TypedExpr, tast::TypedBranches,
+  ast::TypeInfo, Int => (Addr, ast::ValueType)
+codegen_typed_eval_choice_tail = cg, cond, branches, ti, tail_k =>
    nbranches = ?branches
    nbranches == 0
       | (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
@@ -4716,17 +4875,22 @@ codegen_typed_eval_choice = cg, cond, branches, ti =>
          nbranches == 1
             |
                is_b0_bare
-                  | codegen_typed_eval_cond_choice(cg, cond, branches, ti)
-                  | codegen_typed_eval_guarded_choice(cg, cond, branches, ti)
+                  | codegen_typed_eval_cond_choice_tail(cg, cond, branches, ti, tail_k)
+                  | codegen_typed_eval_guarded_choice_tail(cg, cond, branches, ti, tail_k)
             |
                nbranches == 2
                   |
                      b1 = branches(1)!!
                      is_b1_bare = b1.kind [Bare]
                      is_b0_bare && is_b1_bare
-                        | codegen_typed_eval_cond_choice(cg, cond, branches, ti)
-                        | codegen_typed_eval_guarded_choice(cg, cond, branches, ti)
-                  | codegen_typed_eval_guarded_choice(cg, cond, branches, ti)
+                        | codegen_typed_eval_cond_choice_tail(cg, cond, branches, ti, tail_k)
+                        | codegen_typed_eval_guarded_choice_tail(cg, cond, branches, ti, tail_k)
+                  | codegen_typed_eval_guarded_choice_tail(cg, cond, branches, ti, tail_k)
+
+codegen_typed_eval_choice: types::Cg, tast::TypedExpr, tast::TypedBranches,
+  ast::TypeInfo => (Addr, ast::ValueType)
+codegen_typed_eval_choice = cg, cond, branches, ti =>
+   codegen_typed_eval_choice_tail(cg, cond, branches, ti, 0)
 
 codegen_typed_build_union: types::Cg, Int, <tast::TypedExpr|>, String => Addr
 codegen_typed_build_union = cg, tid, pay_opt, alloc_name =>

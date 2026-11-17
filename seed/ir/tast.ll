@@ -6,6 +6,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
 @dva_arena_base_tls = external thread_local global ptr
+@dva_active_gen_tls = external thread_local global i64
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
@@ -115,30 +116,31 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.tast::mk_typed_return" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_tast, ptr null }]
 
-declare ptr @dva_arena_current()
+declare ptr @dva_arena_current() #0
 
-declare ptr @dva_arena_set_current(ptr)
+declare ptr @dva_arena_set_current(ptr) #0
 
-declare ptr @malloc(i64)
+declare noalias ptr @malloc(i64) #0
 
-declare void @free(ptr)
+declare void @free(ptr) #0
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
 
-declare void @dva_arena_init(ptr, i64)
+declare void @dva_arena_init(ptr, i64) #0
 
-declare ptr @dva_arena_alloc(ptr, i64)
+declare noalias ptr @dva_arena_alloc(ptr, i64) #0
 
-declare void @dva_arena_destroy(ptr)
+declare void @dva_arena_destroy(ptr) #0
 
-declare i64 @dva_arena_save(ptr)
+declare i64 @dva_arena_save(ptr) #0
 
-declare void @dva_arena_restore(ptr, i64)
+declare void @dva_arena_restore(ptr, i64) #0
 
-declare i1 @dva_arena_validate_tag(ptr, i64)
+; Function Attrs: noinline
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr)
+declare void @dva_arena_adopt(ptr, ptr) #0
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -150,7 +152,7 @@ declare void @__sanitizer_cov_trace_pc_guard(ptr)
 
 declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
 
-define internal void @__dva_global_init_tast() #1 {
+define internal void @__dva_global_init_tast() #0 {
 entry:
   store ptr @clo.const, ptr @"var.tast::layout_scalar", align 8
   store ptr @clo.const.1, ptr @"var.tast::layout_bitfield", align 8
@@ -187,7 +189,7 @@ entry:
   ret void
 }
 
-define ptr @"tast::layout_scalar"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_scalar"(i64 %0, i64 %1) #0 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -212,7 +214,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_bitfield"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_bitfield"(i64 %0, i64 %1) #0 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -237,7 +239,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_aggregate"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_aggregate"(i64 %0, i64 %1) #0 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -262,7 +264,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_record"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_record"(i64 %0, i64 %1) #0 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -287,7 +289,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_ram"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_ram"(i64 %0, i64 %1) #0 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -312,7 +314,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_ram_flag"() #1 {
+define ptr @"tast::layout_ram_flag"() #0 {
 entry:
   %arena.cur = call ptr @dva_arena_current()
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -331,7 +333,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_ram_niche_pos"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_ram_niche_pos"(i64 %0, i64 %1) #0 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -356,7 +358,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_ram_niche_neg"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_ram_niche_neg"(i64 %0, i64 %1) #0 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -381,7 +383,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_ram_unboxed"(i64 %0, i64 %1) #1 {
+define ptr @"tast::layout_ram_unboxed"(i64 %0, i64 %1) #0 {
 entry:
   %var.align = alloca i64, align 8
   %var.size = alloca i64, align 8
@@ -406,7 +408,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_closure"() #1 {
+define ptr @"tast::layout_closure"() #0 {
 entry:
   %arena.cur = call ptr @dva_arena_current()
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -425,7 +427,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::layout_void"() #1 {
+define ptr @"tast::layout_void"() #0 {
 entry:
   %arena.cur = call ptr @dva_arena_current()
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
@@ -444,7 +446,7 @@ entry:
   ret ptr %rec.alloc
 }
 
-define ptr @"tast::mk_typed_expr"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #1 {
+define ptr @"tast::mk_typed_expr"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -482,9 +484,9 @@ entry:
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #3
 
-define ptr @"tast::mk_lit_int"(i64 %0, i64 %1, i64 %2) #1 {
+define ptr @"tast::mk_lit_int"(i64 %0, i64 %1, i64 %2) #0 {
 entry:
   %var.lay = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -532,9 +534,9 @@ entry:
   ret ptr %call.res16
 }
 
-declare ptr @"unify::prim_int"() #1
+declare ptr @"unify::prim_int"() #0
 
-define ptr @"tast::mk_lit_float"(double %0, i64 %1, i64 %2) #1 {
+define ptr @"tast::mk_lit_float"(double %0, i64 %1, i64 %2) #0 {
 entry:
   %var.lay = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -582,9 +584,9 @@ entry:
   ret ptr %call.res16
 }
 
-declare ptr @"unify::prim_float"() #1
+declare ptr @"unify::prim_float"() #0
 
-define ptr @"tast::mk_lit_str"(ptr %0, i64 %1, i64 %2) #1 {
+define ptr @"tast::mk_lit_str"(ptr %0, i64 %1, i64 %2) #0 {
 entry:
   %var.lay = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -628,9 +630,9 @@ entry:
   ret ptr %call.res15
 }
 
-declare ptr @"unify::prim_str"() #1
+declare ptr @"unify::prim_str"() #0
 
-define ptr @"tast::mk_lit_flag"(i1 %0, i64 %1, i64 %2) #1 {
+define ptr @"tast::mk_lit_flag"(i1 %0, i64 %1, i64 %2) #0 {
 entry:
   %var.lay = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -678,9 +680,9 @@ entry:
   ret ptr %call.res16
 }
 
-declare ptr @"unify::prim_flag"() #1
+declare ptr @"unify::prim_flag"() #0
 
-define ptr @"tast::mk_lit_unit"(i64 %0, i64 %1) #1 {
+define ptr @"tast::mk_lit_unit"(i64 %0, i64 %1) #0 {
 entry:
   %var.lay = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -721,9 +723,9 @@ entry:
   ret ptr %call.res14
 }
 
-declare ptr @"unify::prim_unit"() #1
+declare ptr @"unify::prim_unit"() #0
 
-define ptr @"tast::mk_typed_var"(ptr %0, i64 %1, i1 %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #1 {
+define ptr @"tast::mk_typed_var"(ptr %0, i64 %1, i1 %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -767,7 +769,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_bin"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #1 {
+define ptr @"tast::mk_typed_bin"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -811,7 +813,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_unary"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #1 {
+define ptr @"tast::mk_typed_unary"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -850,7 +852,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_call"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #1 {
+define ptr @"tast::mk_typed_call"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -914,7 +916,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_block"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #1 {
+define ptr @"tast::mk_typed_block"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -964,7 +966,7 @@ a.after:                                          ; preds = %a.create, %entry
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_assign"(ptr %0, i1 %1, i1 %2, i1 %3, i1 %4, ptr %5, ptr %6, ptr %7, ptr %8, i64 %9, i64 %10) #1 {
+define ptr @"tast::mk_typed_assign"(ptr %0, i1 %1, i1 %2, i1 %3, i1 %4, ptr %5, ptr %6, ptr %7, ptr %8, i64 %9, i64 %10) #0 {
 entry:
   %var.as_tup = alloca ptr, align 8
   %var.c = alloca i64, align 8
@@ -1026,7 +1028,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_member"(ptr %0, ptr %1, i64 %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #1 {
+define ptr @"tast::mk_typed_member"(ptr %0, ptr %1, i64 %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1070,7 +1072,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_cycle"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, ptr %5, ptr %6, i64 %7, i64 %8) #1 {
+define ptr @"tast::mk_typed_cycle"(ptr %0, ptr %1, ptr %2, i1 %3, ptr %4, ptr %5, ptr %6, i64 %7, i64 %8) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1119,7 +1121,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_copy"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #1 {
+define ptr @"tast::mk_typed_copy"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1149,7 +1151,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_builder_new"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #1 {
+define ptr @"tast::mk_typed_builder_new"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1179,7 +1181,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_cycle_jump"(i1 %0, i64 %1, i64 %2, i64 %3) #1 {
+define ptr @"tast::mk_typed_cycle_jump"(i1 %0, i64 %1, i64 %2, i64 %3) #0 {
 entry:
   %var.lay = alloca ptr, align 8
   %var.ti = alloca ptr, align 8
@@ -1232,7 +1234,7 @@ entry:
   ret ptr %call.res18
 }
 
-define ptr @"tast::mk_typed_raw_memory"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #1 {
+define ptr @"tast::mk_typed_raw_memory"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1271,7 +1273,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_ram_construct"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #1 {
+define ptr @"tast::mk_typed_ram_construct"(ptr %0, i1 %1, ptr %2, ptr %3, ptr %4, ptr %5, i64 %6, i64 %7) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1315,7 +1317,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_enum_construct"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #1 {
+define ptr @"tast::mk_typed_enum_construct"(ptr %0, ptr %1, ptr %2, ptr %3, ptr %4, i64 %5, i64 %6) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1354,7 +1356,7 @@ entry:
   ret ptr %call.res
 }
 
-define ptr @"tast::mk_typed_return"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #1 {
+define ptr @"tast::mk_typed_return"(ptr %0, ptr %1, ptr %2, ptr %3, i64 %4, i64 %5) #0 {
 entry:
   %var.col = alloca i64, align 8
   %var.line = alloca i64, align 8
@@ -1384,6 +1386,7 @@ entry:
   ret ptr %call.res
 }
 
-attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #1 = { "nounwind" }
-attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #0 = { "nounwind" }
+attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

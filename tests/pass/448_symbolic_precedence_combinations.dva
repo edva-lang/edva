@@ -1,0 +1,75 @@
+#use io
+#use str
+
+inc: Int => Int
+inc = (_ + 1)
+
+dbl: Int => Int
+dbl = (* 2)
+
+parse_pos: Int => < Int | String >
+parse_pos = n =>
+   n !> 0 | --| <- "non-positive" +>
+   <+ n ->
+
+step_double: Int => < Int | String >
+step_double = x =>
+   x !< 10 | --| <- "too large" +>
+   <+ x * 2 ->
+
+// 1. `$` absorbs trailing choice (LBP 30 < choice LBP 50)
+show_label: Int => ()
+show_label = n =>
+   io::out $ n [1] "one" [2] "two" | "many"
+
+// 2. `$>>` monadic bind, `$+>` positive map, `--!` propagate
+pipeline_ram: Int => < Int | String >
+pipeline_ram = seed =>
+   v = (parse_pos(seed) $>> step_double $+> (+ 3))--!
+   <+ v ->
+
+// 3. `$->` negative map and `|_|` unwrap-or-default
+mapped_err: Int => < Int | String >
+mapped_err = n =>
+   parse_pos(n)
+      $-> ("err:" + _)
+
+// 4. Function composition `.>` + feed `$>`
+compose_val = 4 $> (inc .> dbl)
+
+// 5. Chained comparison predicate guard, value list, negated closed range guard
+tier_tag: Int => String
+tier_tag = n =>
+   n
+      [(0 < _ < 5)]   "mid"
+      [5, 6]          "top"
+      |               (n ![-10...10] | "far" | "edge")
+
+// 6. `@>` map / filter-map / fold with `--^` continue and `-->` break + `>--` escape
+nums = Int{}(1, 2, 3, 4, 5)
+doubled = nums @> (_ * 2)
+evens = nums @> x => x % 2 == 0 | <+ x +>
+filtered_sum = (0, nums) @> acc, x =>
+   x == 2 | --^
+   x == 5 | -->
+   <+ acc + x +>
+
+esc = nums @ x =>
+   x == 4 | -->
+>--
+   "stopped_at_4"
+
+show_label(1)
+show_label(2)
+show_label(9)
+
+io::out $ pipeline_ram(4) | v => str::from_int(v) | msg => msg
+io::out $ pipeline_ram(8) | v => str::from_int(v) | msg => msg
+io::out $ mapped_err(0) | v => str::from_int(v) | msg => msg
+io::out $ (parse_pos(0) |_| 99)
+io::out $ (parse_pos(7) |_| 99)
+io::out $ (parse_pos(4) $>> step_double $+> (* 10)) | v => str::from_int(v) | "err"
+io::out $ compose_val
+io::out $ "${tier_tag(3)}:${tier_tag(5)}:${tier_tag(20)}:${tier_tag(0)}"
+io::out $ "${str::from_int(doubled(2)!!)}:${str::from_int(?evens)}:${str::from_int(filtered_sum)}"
+io::out $ (esc | s => s | "full")

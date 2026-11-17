@@ -26,8 +26,8 @@ def run(args):
 
 expected_signatures = Counter({
     ('i64', 'ptr %0, ptr %1'): 4,
-    ('ptr', 'ptr %0'): 2,
-    ('ptr', 'ptr %0, ptr %1'): 1,
+    ('{ i64, ptr }', 'ptr %0'): 2,
+    ('{ i64, ptr }', 'ptr %0, ptr %1'): 1,
     ('double', 'ptr %0'): 1,
     ('void', 'ptr %0'): 1,
     ('{ i1, i64 }', 'ptr %0'): 1,

@@ -1,0 +1,16 @@
+#use ./kernel
+#use io
+#use str
+#use sys
+
+parse_n_arg: Int => Int
+parse_n_arg = dflt =>
+   sys::argc < 2
+      | dflt
+      |
+         a1 = sys::argv_string(1)
+         v = str::parse_int(a1) |_| dflt
+         v > 0 | v | dflt
+
+n = parse_n_arg(400000)
+io::out $ "kernel=${str::from_int(kernel::run_steps(n))}"

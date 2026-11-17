@@ -208,6 +208,23 @@ format_code_body = body =>
    n = ?body
    b = {n + 16}
    i' = 0
+   has_lead_pipe = n > 1 && body(0) == '| && body(1) != '| &&
+     !starts_with_str(body, "|->") && !starts_with_str(body, "|+>") &&
+     !starts_with_str(body, "|-->") && !starts_with_str(body, "|++>") &&
+     !starts_with_str(body, "|_|") && !(body(1) ['\s, '\t])
+   has_lead_neg_pipe = n > 2 && starts_with_str(body, "!|") && !(body(2) ['\s, '\t])
+   has_lead_pipe
+      |
+         b += "| "
+         i' = 1
+      |
+         has_lead_neg_pipe
+            |
+               b += "!| "
+               i' = 2
+   has_lead_guard = n > 0 && (body(0) == '[ || starts_with_str(body, "!["))
+   bracket_depth' = 0
+   guard_closed' = <->
    in_str' = <->
    str_triple' = <->
    in_blk_comm' = <->
@@ -300,17 +317,33 @@ format_code_body = body =>
                                                 need_sp | b += '\s
                                                 i' = i' + 1
                                              |
-                                                prev_c = i' > 0 | body(i' - 1) | 0
-                                                is_annot_colon = c == ': &&
-                                                  !(prev_c [':, '-, '\s, '\t]) &&
-                                                  !(c1 [':, '=, '\s, '\t, '), '], '}, ',, ';])
-                                                is_annot_colon
+                                                has_lead_guard && !guard_closed' && c == '[
                                                    |
-                                                      b += ": "
-                                                      i' = i' + 1
-                                                   |
+                                                      bracket_depth' = bracket_depth' + 1
                                                       b += c
                                                       i' = i' + 1
+                                                   |
+                                                      has_lead_guard && !guard_closed' && c == ']
+                                                         |
+                                                            bracket_depth' = bracket_depth' - 1
+                                                            b += c
+                                                            bracket_depth' !> 0
+                                                               |
+                                                                  guard_closed' = <+>
+                                                                  i' + 1 < n && !(c1 ['\s, '\t, '), '], '}, ',, ';, '.]) | b += '\s
+                                                            i' = i' + 1
+                                                         |
+                                                            prev_c = i' > 0 | body(i' - 1) | 0
+                                                            is_annot_colon = c == ': &&
+                                                              !(prev_c [':, '-, '\s, '\t]) &&
+                                                              !(c1 [':, '=, '\s, '\t, '), '], '}, ',, ';])
+                                                            is_annot_colon
+                                                               |
+                                                                  b += ": "
+                                                                  i' = i' + 1
+                                                               |
+                                                                  b += c
+                                                                  i' = i' + 1
    +b
 
 make_spaces: Int => String
@@ -394,15 +427,17 @@ starts_with_choice_sep = code =>
    c0 == '[ | --| <+>
    starts_with_str(code, "![") | --| <+>
    starts_with_str(code, "!|") | --| <+>
-   starts_with_str(code, "$>") || starts_with_str(code, "$+>") ||
-     starts_with_str(code, "$->") || starts_with_str(code, ".>") | --| <+>
+   starts_with_str(code, "$>") || starts_with_str(code, "$>>") ||
+     starts_with_str(code, "$+>") || starts_with_str(code, "$->") ||
+     starts_with_str(code, "|_|") || starts_with_str(code, ".>") | --| <+>
    c0 == '| && (?code == 1 || code(1) != '|)
 
 // True when a line is an inline pipe arm (`| first_line` or `!| first_line`).
 is_inline_pipe_arm: String => <>
 is_inline_pipe_arm = code =>
    starts_with_str(code, "|->") || starts_with_str(code, "|+>") ||
-     starts_with_str(code, "|-->") || starts_with_str(code, "|++>")
+     starts_with_str(code, "|-->") || starts_with_str(code, "|++>") ||
+     starts_with_str(code, "|_|")
      | <->
      |
         starts_with_str(code, "!|")
@@ -441,7 +476,8 @@ ends_with_cont_op = code =>
      ends_with_str(code, "!<") || ends_with_str(code, "!>") ||
      ends_with_str(code, ",") || ends_with_str(code, ";") || ends_with_str(code, "$") ||
      ends_with_str(code, "$>") || ends_with_str(code, "$>>") ||
-     ends_with_str(code, "$+>") || ends_with_str(code, "$->") || ends_with_str(code, ".>") ||
+     ends_with_str(code, "$+>") || ends_with_str(code, "$->") ||
+     ends_with_str(code, "|_|") || ends_with_str(code, ".>") ||
      ends_with_str(code, ".&.") || ends_with_str(code, ".|.") || ends_with_str(code, ".^.")
 
 // Check whether a child line at `raw` under `parent_raw` is followed by an intermediate

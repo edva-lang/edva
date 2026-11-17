@@ -254,7 +254,13 @@ param_clo_tys: Addrs,
    restore_scope_var_starts: IntArr,
    lambda_env_infos: LambdaEnvInfos,
    targets_initialized: <>,
-   cov_edge_seq: Int = 1
+   cov_edge_seq: Int = 1,
+   stack_alloc_next: <> = <->,
+   stack_closure_next: <> = <->,
+   current_fn_body: <tast::TypedExpr|> = <-->,
+   fast_freeze_builders: ast::Names = ast::Names(),
+   unboxed_ret_tail: Int = 0,
+   current_fn_has_restore: <> = <->
 )
 
 ::g = GlobalState(
@@ -265,7 +271,8 @@ param_clo_tys: Addrs,
    ast::Names(), ast::VInfos(), ast::Names(),
    ast::Names(), ast::VInfos(), types::IntArr(),
    ast::Names(), types::CtVals(),
-   ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->, 1)
+   ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->, 1,
+   <->, <->, <-->, ast::Names(), 0, <->)
 
 emit_cov_edge: Cg => ()
 emit_cov_edge = cg =>
@@ -1080,6 +1087,9 @@ ensure_exit_fn = cg =>
          e_fn = llvm_find_function(cg.module, "exit")
             | fn => fn
             | LLVMAddFunction(cg.module, "exit", e_ty)
+         runtime::mark_nounwind(cg, e_fn)
+         runtime::mark_fn_enum_attr(cg, e_fn, "noreturn")
+         runtime::mark_fn_enum_attr(cg, e_fn, "cold")
          cg.exit_t = <+ e_ty +>
          cg.exit_fn = <+ e_fn +>
          (e_ty, e_fn)
@@ -1095,6 +1105,7 @@ ensure_memcmp_fn = cg =>
          mc_fn = llvm_find_function(cg.module, "memcmp")
             | fn => fn
             | LLVMAddFunction(cg.module, "memcmp", mc_ty)
+         runtime::mark_nounwind(cg, mc_fn)
          cg.memcmp_t = <+ mc_ty +>
          cg.memcmp_fn = <+ mc_fn +>
          (mc_ty, mc_fn)
@@ -1262,10 +1273,22 @@ suffix_matches_step = name, offset, bare, j, n =>
             suffix_matches_step(name, offset, bare, j + 1, n)
 
 name_matches_module_public: String, String, String => <>
-name_matches_module_public = qual, mod, bare => qual == (mod, "::", bare)
+name_matches_module_public = qual, mod, bare =>
+   mlen = ?mod
+   blen = ?bare
+   (?qual == mlen + 2 + blen) &&
+     (qual(mlen) == ':) && (qual(mlen + 1) == ':) &&
+     suffix_matches_step(qual, 0, mod, 0, mlen) &&
+     suffix_matches_step(qual, mlen + 2, bare, 0, blen)
 
 name_matches_module_private: String, String, String => <>
-name_matches_module_private = qual, mod, bare => qual == (mod, "::#", bare)
+name_matches_module_private = qual, mod, bare =>
+   mlen = ?mod
+   blen = ?bare
+   (?qual == mlen + 3 + blen) &&
+     (qual(mlen) == ':) && (qual(mlen + 1) == ':) && (qual(mlen + 2) == '#) &&
+     suffix_matches_step(qual, 0, mod, 0, mlen) &&
+     suffix_matches_step(qual, mlen + 3, bare, 0, blen)
 
 name_bare_matches: String, String => <>
 name_bare_matches = qual, bare =>
@@ -2104,9 +2127,72 @@ llvm_abi_type_of_ti = cg, ti =>
             | LLVMInt64Type!
             | llvm_type_of_vt(vt)
 
-// Centralized LLVM function return type for any resolved TypeInfo (Unit -> void).
-llvm_abi_ret_type_of_ti: Cg, ast::TypeInfo => Addr
-llvm_abi_ret_type_of_ti = cg, ti =>
+is_unboxed_ret_field_vt: ast::ValueType => <>
+is_unboxed_ret_field_vt = vt =>
+   vt [Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64, Float, F32, Flag, RawPtr, Str]
+
+rec_fields_unboxed_ok: Cg, ast::FieldTypes, Int, Int => <>
+rec_fields_unboxed_ok = cg, fields, i, n =>
+   i !< n | --| <+>
+   rf = fields(i)!!
+   (rf.rec_type [Align]) || stmt::ti_is_slice(rf.rec_type) | --| <->
+   tv_ok = rf.rec_type
+      [TypeVar tv] type_name_to_vt(tv).1 || is_user_type(cg, tv)
+      | <+>
+   !tv_ok | --| <->
+   fvt = runtime::rec_field_vt(cg, rf)
+   !is_unboxed_ret_field_vt(fvt) | --| <->
+   rec_fields_unboxed_ok(cg, fields, i + 1, n)
+
+unboxed_ret_struct_ti: Cg, ast::TypeInfo => <(Addr, Int)|>
+unboxed_ret_struct_ti = cg, ti =>
+   !g.is_typed_pipeline || cg.opts.no_runtime | --| <-->
+   ti [Align] | --| <-->
+   vt = vt_from_ti_cg(cg, ti)
+   vt [Str] | --| <+ (cg.str_t, 1) +>
+   niche = is_niche_ram_ti(cg, ti)
+   niche.0 && (niche.2 [Str]) | --| <+ (cg.str_t, 2) +>
+   rti = resolve_record_ti(cg, ti)
+   rti
+      [Rec rr]
+         is_bad = rr.1 || rr.5 || <>(ti_get_bitfield(cg, rti))
+         nf = ?rr.0
+         is_ok = !is_bad && nf !< 1 && nf !> 3 && rec_fields_unboxed_ok(cg, rr.0, 0, nf)
+         !is_ok
+            | <-->
+            |
+               rm = runtime::record_meta_from_ti(cg, rti)
+               rm | m => <+ (m.0, 3) +> | <-->
+      | <-->
+
+is_foreign_in_mod_step: String, String, Int, Int => <>
+is_foreign_in_mod_step = mod, bare, i, n =>
+   i !< n | --| <->
+   fnm = g.foreign_fn_names(i) | _ | ""
+   (name_matches_module_public(fnm, mod, bare) ||
+     name_matches_module_private(fnm, mod, bare))
+      | <+>
+      | is_foreign_in_mod_step(mod, bare, i + 1, n)
+
+fn_uses_c_ret_abi: Cg, String => <>
+fn_uses_c_ret_abi = cg, fname =>
+   fname == "" | --| <->
+   bare = decl_bare_name(fname, 0)
+   is_esc_bare = (bare == "escape_value") ||
+     (?bare > 13 && bare(0..13) == "escape_value$")
+   is_esc = is_esc_bare && ((fname == "mem::escape_value") ||
+     (?fname > 18 && fname(0..18) == "mem::escape_value$") ||
+     ((fname == bare) && (cg.current_module == "mem")))
+   is_esc | --| <+>
+   is_exp = (?g.pexports > 0) && <>(stmt::find_export_symbol(g.pexports, fname))
+   is_exp | --| <+>
+   stmt::is_foreign_fn(fname) ||
+     ((fname != bare) && stmt::is_foreign_fn(bare)) ||
+     ((fname == bare) && (cg.current_module != "") &&
+       is_foreign_in_mod_step(cg.current_module, bare, 0, ?g.foreign_fn_names))
+
+llvm_abi_ret_type_of_ti_c: Cg, ast::TypeInfo => Addr
+llvm_abi_ret_type_of_ti_c = cg, ti =>
    is_unboxed_ram_ti(cg, ti)
       | match::unboxed_ram_struct_t(cg)
       |
@@ -2114,6 +2200,19 @@ llvm_abi_ret_type_of_ti = cg, ti =>
          vt [Unit]
             | LLVMVoidType!
             | llvm_type_of_vt(vt)
+
+// Centralized LLVM function return type for any resolved TypeInfo (Unit -> void).
+llvm_abi_ret_type_of_ti: Cg, ast::TypeInfo => Addr
+llvm_abi_ret_type_of_ti = cg, ti =>
+   unboxed_ret_struct_ti(cg, ti)
+      | ub => ub.0
+      | llvm_abi_ret_type_of_ti_c(cg, ti)
+
+llvm_abi_ret_type_of_ti_for_fn: Cg, String, ast::TypeInfo => Addr
+llvm_abi_ret_type_of_ti_for_fn = cg, fname, ti =>
+   fn_uses_c_ret_abi(cg, fname)
+      | llvm_abi_ret_type_of_ti_c(cg, ti)
+      | llvm_abi_ret_type_of_ti(cg, ti)
 
 codegen_cond_value_with_ti: Cg, Addr, ast::ValueType, ast::TypeInfo => Addr
 codegen_cond_value_with_ti = cg, v, vt, ti =>

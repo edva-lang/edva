@@ -1,0 +1,94 @@
+#use io
+#use json
+#use sys
+
+check: <>, String => ()
+check = ok, label =>
+   !ok |
+      io::out(label)
+      sys::exit(1)
+
+// Every byte at every lane across multiple words and unaligned starts.
+// A high byte followed by ASCII is invalid UTF-8; backslash-space is invalid.
+5 @ offset =>
+   25 @ count =>
+      256 @ byte =>
+         b = {64}
+         offset @ b += '\s
+         b += '"
+         count @ b += 'a
+         b += byte
+         b += " !#]aaaaaaaa\""
+         source = +b
+         cur = json::cursor(source)
+         actual = json::cursor_read_str(cur)
+         valid = byte [0x20...0x7F] && byte != '\\
+         check(<>(actual) == valid, "string byte validity")
+         valid |
+            end = byte == '" | offset + 1 + count | ?source - 1
+            check((actual |_| "INVALID") == source(offset + 1..end),
+               "first stopping byte")
+            check(cur.pos == end + 1, "string end position")
+33 @ count =>
+   b = {40}
+   b += '"
+   count @ b += 'a
+   b += '"
+   source = +b
+   cur = json::cursor(source)
+   check((json::cursor_read_str(cur) |_| "INVALID") == source(1..count + 1),
+      "plain short tail")
+   check(json::cursor_eof(cur), "plain tail eof")
+io::out("scanner differential: ok")
+
+// The same object in compact and whitespace-heavy form.
+String{}("{\"id\":7,\"svc\":\"svc_3\",\"ok\":true}",
+   " \t{ \n\"id\" \r: 7 , \t\"svc\" : \"svc_3\" , \"ok\" : true \n} ")
+   @ source =>
+      cur = json::cursor(source)
+      check(json::cursor_enter_object(cur), "object start")
+      check((json::cursor_next_field(cur) |_| "") == "id", "id key")
+      check((json::cursor_read_int(cur) |_| -1) == 7, "id value")
+      check((json::cursor_next_field(cur) |_| "") == "svc", "svc key")
+      check((json::cursor_read_str(cur) |_| "") == "svc_3", "svc value")
+      check((json::cursor_next_field(cur) |_| "") == "ok", "ok key")
+      check(json::cursor_read_bool(cur) |_| <->, "ok value")
+      check(!<>(json::cursor_next_field(cur)), "object end")
+      check(json::cursor_eof(cur), "object eof")
+io::out("compact and spaced objects: ok")
+
+String{}("\"\"", "\"a\\\"b\"", "\"a\\\\b\"", "\"a\\nb\"",
+   "\"\\u00E9\"", "\"\\uD83D\\uDE00\"", "\"é\"")
+   @ source =>
+      cur = json::cursor(source)
+      actual = json::cursor_read_str(cur)
+      parsed = json::parse(source)!!
+      parsed
+         [String expected]
+            check((actual |_| "INVALID") == expected, "escaped/Unicode string")
+         | check(<->, "parser result")
+      check(json::cursor_eof(cur), "string eof")
+io::out("escaped and Unicode strings: ok")
+
+String{}("", " ", "\"", "\"unterminated", "\"bad\nstring\"",
+   "\"bad\x00string\"", "\"\\q\"")
+   @ source =>
+      cur = json::cursor(source)
+      check(!<>(json::cursor_read_str(cur)), "invalid string")
+String{}("", " ", "}", ",}", ", }", ",", "\"key\"", "\"key\" x")
+   @ source =>
+      cur = json::cursor(source)
+      check(!<>(json::cursor_next_field(cur)), "missing field or colon")
+
+// Public expect-byte accepts arbitrary bytes; whitespace still skips first.
+cur = json::cursor(" \t:")
+check(!json::cursor_expect_byte(cur, '\s), "expect whitespace")
+check(cur.pos == 2, "whitespace position")
+check(json::cursor_expect_byte(cur, ':), "expect colon")
+check(!json::cursor_expect_byte(cur, ':), "expect at eof")
+json::cursor_reset(cur, " \v:")
+check(!json::cursor_expect_byte(cur, ':), "reject non-JSON whitespace")
+check(cur.pos == 1, "failed expect position")
+json::cursor_reset(cur, "x")
+check(json::cursor_expect_byte(cur, 'x), "arbitrary expected byte")
+io::out("invalid inputs and cursor positions: ok")

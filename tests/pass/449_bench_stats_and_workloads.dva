@@ -1,0 +1,63 @@
+#use bench
+#use io
+#use json
+#use str
+#use test
+
+test::suite("bench_stats")
+sr = bench::measure_stats(40, i => (i * 17 + 3) % 97)
+test::eq(sr.iters, 40, "measure_stats iters")
+test::check(sr.min_ns > 0, "measure_stats min_ns > 0")
+test::check(sr.min_ns !> sr.p50_ns, "min !> p50")
+test::check(sr.p50_ns !> sr.p95_ns, "p50 !> p95")
+test::check(sr.p95_ns !> sr.p99_ns, "p95 !> p99")
+test::check(sr.p99_ns !> sr.max_ns, "p99 !> max")
+test::check(sr.ops_per_sec > 0.0, "ops_per_sec > 0")
+
+sa = bench::measure_stats(20, i =>
+   b = {64}
+   b += "row_"
+   b += str::from_int(i)
+   s = +b
+   ?s
+)
+test::check(sa.alloc_bytes > 0, "alloc_bytes tracks workload allocations")
+fmt_line = bench::format_stats("workload", sa)
+test::check(str::starts_with(fmt_line, "workload: 20 iters,"), "format_stats prefix")
+test::check(str::contains(fmt_line, "p95=") && str::contains(fmt_line, "alloc="), "format_stats metrics")
+
+// Verify json::Cursor streaming scanner and ASCII slice fast-path (DVA-83)
+cur = json::cursor("{\"id\":42,\"skip\":{\"a\":[1,\"x}y\",true]},\"msg\":\"hi\\n\",\"tag\":\"fast\",\"ok\":false}")
+cid' = 0
+cmsg' = ++""
+ctag' = ++""
+cok' = <+>
+entered = json::cursor_enter_object(cur)
+test::check(entered, "cursor_enter_object")
+0.. @
+   json::cursor_next_field(cur)
+      | k =>
+         k
+            ["id"]
+               cid' = json::cursor_read_int(cur) |_| -1
+            ["msg"]
+               cmsg' = json::cursor_read_str(cur) |_| ""
+            ["tag"]
+               ctag' = json::cursor_read_str(cur) |_| ""
+            ["ok"]
+               cok' = json::cursor_read_bool(cur) |_| <+>
+            |
+               test::check(json::cursor_skip_value(cur), "cursor_skip_value")
+      | -->
+test::eq(cid', 42, "cursor_read_int")
+test::check(cmsg' == "hi\n", "cursor_read_str escaped")
+test::check(ctag' == "fast", "cursor_read_str ASCII fast-path")
+test::check(!cok', "cursor_read_bool false")
+test::check(json::cursor_eof(cur), "cursor_eof")
+
+// Exercise unescaped + escaped DOM string parsing
+dom = json::parse("{\"plain\":\"hello\",\"esc\":\"a\\tb\"}")!!
+test::check((json::get_str(dom, "plain") |_| "") == "hello", "DOM ASCII slice fast-path")
+test::check((json::get_str(dom, "esc") |_| "") == "a\tb", "DOM escaped fallback")
+
+test::summary!

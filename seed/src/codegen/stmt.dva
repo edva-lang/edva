@@ -863,7 +863,29 @@ codegen_string_concat = cg, l, r =>
          LLVMBuildStore(cg.builder, LLVMConstInt(i8t, 0, 0), nul)
          expr::codegen_string_build(cg, sum, buf, "concat.str")
 
-// Content equality: length short-circuit, then memcmp.
+// Content equality for arbitrary (len, data) byte spans: length short-circuit, then memcmp.
+codegen_str_span_eq: types::Cg, Addr, Addr, Addr, Addr => Addr
+codegen_str_span_eq = cg, ll, ldata, rl, rdata =>
+   len_eq = LLVMBuildICmp(cg.builder, 32, ll, rl, "eq.len")
+   eq_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.then")
+   neq_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.else")
+   merge_bb = LLVMAppendBasicBlock(cg.current_fn, "str.eq.merge")
+   LLVMBuildCondBr(cg.builder, len_eq, eq_bb, neq_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, eq_bb)
+   mc = types::ensure_memcmp_fn(cg)
+   cmp_res = types::call3(cg, mc.0, mc.1, ldata, rdata, ll, "eq.memcmp")
+   cmp_zero = LLVMBuildICmp(cg.builder, 32, cmp_res,
+     LLVMConstInt(LLVMInt32Type!, 0, 0), "eq.cmp.zero")
+   branch_to(cg, merge_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, neq_bb)
+   branch_to(cg, merge_bb)
+   LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
+   phi = LLVMBuildPhi(cg.builder, LLVMInt1Type!, "str.eq.result")
+   llvm_add_incoming1(cg, phi, cmp_zero, eq_bb)
+   llvm_add_incoming1(cg, phi, LLVMConstInt(LLVMInt1Type!, 0, 0), neq_bb)
+   phi
+
+// Content equality: length short-circuit, then memcmp (data loads stay in eq_bb).
 codegen_string_eq: types::Cg, Addr, Addr => Addr
 codegen_string_eq = cg, l, r =>
    ll = expr::codegen_string_len(cg, l, "eq.lhs.len")
@@ -1082,6 +1104,108 @@ codegen_rune_to_str: types::Cg, Addr => Addr
 codegen_rune_to_str = cg, rune_val =>
    codegen_string_append_rune(cg, codegen_string_literal(cg, ""), rune_val)
 
+ensure_fmt_i64_buf: types::Cg => (Addr, Addr)
+ensure_fmt_i64_buf = cg =>
+   i64t = LLVMInt64Type!
+   i8t = LLVMInt8Type!
+   i1t = LLVMInt1Type!
+   i8p = LLVMPointerType(i8t, 0)
+   fty = types::fn_type3(i64t, i8p, i64t, i1t)
+   types::llvm_val_opt(LLVMGetNamedFunction(cg.module, "dva_fmt_i64_buf"))
+      | existing => (existing, fty)
+      |
+         fn = LLVMAddFunction(cg.module, "dva_fmt_i64_buf", fty)
+         LLVMSetLinkage(fn, 8)
+         runtime::mark_nounwind(cg, fn)
+         saved_bb = types::llvm_val_opt(LLVMGetInsertBlock(cg.builder))
+         entry_bb = LLVMAppendBasicBlock(fn, "entry")
+         zero_bb = LLVMAppendBasicBlock(fn, "zero")
+         nz_bb = LLVMAppendBasicBlock(fn, "nonzero")
+         div_bb = LLVMAppendBasicBlock(fn, "divloop")
+         sign_bb = LLVMAppendBasicBlock(fn, "sign")
+         neg_bb = LLVMAppendBasicBlock(fn, "negstore")
+         cpre_bb = LLVMAppendBasicBlock(fn, "copypre")
+         cloop_bb = LLVMAppendBasicBlock(fn, "copyloop")
+         done_bb = LLVMAppendBasicBlock(fn, "done")
+
+         dst = LLVMGetParam(fn, 0)
+         val = LLVMGetParam(fn, 1)
+         is_u = LLVMGetParam(fn, 2)
+         zero64 = LLVMConstInt(i64t, 0, 0)
+         one64 = LLVMConstInt(i64t, 1, 0)
+         ten64 = LLVMConstInt(i64t, 10, 0)
+         zero8 = LLVMConstInt(i8t, 0, 0)
+         c48 = LLVMConstInt(i8t, 48, 0)
+         c45 = LLVMConstInt(i8t, 45, 0)
+
+         LLVMPositionBuilderAtEnd(cg.builder, entry_bb)
+         tmp_arr = LLVMBuildAlloca(cg.builder, LLVMArrayType(i8t, 24), "fmt.tmp")
+         tmp_p = LLVMBuildBitCast(cg.builder, tmp_arr, i8p, "fmt.tmp.p")
+         is_z = LLVMBuildICmp(cg.builder, 32, val, zero64, "fmt.is.zero")
+         LLVMBuildCondBr(cg.builder, is_z, zero_bb, nz_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, zero_bb)
+         LLVMBuildStore(cg.builder, c48, dst)
+         LLVMBuildStore(cg.builder, zero8, types::gep1(cg, i8t, dst, one64, "fmt.z.nul"))
+         LLVMBuildRet(cg.builder, one64)
+
+         LLVMPositionBuilderAtEnd(cg.builder, nz_bb)
+         slt = LLVMBuildICmp(cg.builder, 40, val, zero64, "fmt.slt")
+         not_u = LLVMBuildNot(cg.builder, is_u, "fmt.not.u")
+         is_neg = LLVMBuildAnd(cg.builder, not_u, slt, "fmt.is.neg")
+         neg_v = LLVMBuildSub(cg.builder, zero64, val, "fmt.neg")
+         abs_v = LLVMBuildSelect(cg.builder, is_neg, neg_v, val, "fmt.abs")
+         LLVMBuildBr(cg.builder, div_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, div_bb)
+         n_phi = LLVMBuildPhi(cg.builder, i64t, "fmt.n")
+         k_phi = LLVMBuildPhi(cg.builder, i64t, "fmt.k")
+         rem = LLVMBuildURem(cg.builder, n_phi, ten64, "fmt.rem")
+         quot = LLVMBuildUDiv(cg.builder, n_phi, ten64, "fmt.quot")
+         dig = LLVMBuildAdd(cg.builder, LLVMBuildTrunc(cg.builder, rem, i8t, "fmt.r8"), c48, "fmt.dig")
+         LLVMBuildStore(cg.builder, dig, types::gep1(cg, i8t, tmp_p, k_phi, "fmt.tslot"))
+         k_next = LLVMBuildAdd(cg.builder, k_phi, one64, "fmt.k.next")
+         more = LLVMBuildICmp(cg.builder, 33, quot, zero64, "fmt.more")
+         LLVMBuildCondBr(cg.builder, more, div_bb, sign_bb)
+         llvm_add_incoming1(cg, n_phi, abs_v, nz_bb)
+         llvm_add_incoming1(cg, n_phi, quot, div_bb)
+         llvm_add_incoming1(cg, k_phi, zero64, nz_bb)
+         llvm_add_incoming1(cg, k_phi, k_next, div_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, sign_bb)
+         LLVMBuildCondBr(cg.builder, is_neg, neg_bb, cpre_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, neg_bb)
+         LLVMBuildStore(cg.builder, c45, dst)
+         LLVMBuildBr(cg.builder, cpre_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, cpre_bb)
+         off_phi = LLVMBuildPhi(cg.builder, i64t, "fmt.off")
+         llvm_add_incoming1(cg, off_phi, zero64, sign_bb)
+         llvm_add_incoming1(cg, off_phi, one64, neg_bb)
+         LLVMBuildBr(cg.builder, cloop_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, cloop_bb)
+         i_phi = LLVMBuildPhi(cg.builder, i64t, "fmt.i")
+         km1 = LLVMBuildSub(cg.builder, k_next, one64, "fmt.km1")
+         sidx = LLVMBuildSub(cg.builder, km1, i_phi, "fmt.sidx")
+         ch = LLVMBuildLoad2(cg.builder, i8t, types::gep1(cg, i8t, tmp_p, sidx, "fmt.sptr"), "fmt.ch")
+         didx = LLVMBuildAdd(cg.builder, off_phi, i_phi, "fmt.didx")
+         LLVMBuildStore(cg.builder, ch, types::gep1(cg, i8t, dst, didx, "fmt.dptr"))
+         i_next = LLVMBuildAdd(cg.builder, i_phi, one64, "fmt.i.next")
+         cmore = LLVMBuildICmp(cg.builder, 33, i_next, k_next, "fmt.cmore")
+         LLVMBuildCondBr(cg.builder, cmore, cloop_bb, done_bb)
+         llvm_add_incoming1(cg, i_phi, zero64, cpre_bb)
+         llvm_add_incoming1(cg, i_phi, i_next, cloop_bb)
+
+         LLVMPositionBuilderAtEnd(cg.builder, done_bb)
+         tot_len = LLVMBuildAdd(cg.builder, off_phi, k_next, "fmt.tot")
+         LLVMBuildStore(cg.builder, zero8, types::gep1(cg, i8t, dst, tot_len, "fmt.nul"))
+         LLVMBuildRet(cg.builder, tot_len)
+
+         saved_bb | s => LLVMPositionBuilderAtEnd(cg.builder, s)
+         (fn, fty)
+
 codegen_int_to_str: types::Cg, Addr, <> => Addr
 codegen_int_to_str = cg, int_val, is_unsigned =>
    i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -1090,16 +1214,12 @@ codegen_int_to_str = cg, int_val, is_unsigned =>
       | LLVMConstNull(i8p)
       |
          i64t = LLVMInt64Type!
-         snp_info = ensure_snprintf(cg)
-         buf = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 32, 0), "to_str.buf")
-         fmt_str = is_unsigned | "%llu" | "%lld"
-         fmt_name = is_unsigned | "dva_fmt_u64" | "dva_fmt_i64"
-         fmt_gv = runtime::const_string_global(cg, fmt_str, fmt_name)
+         fmt_info = ensure_fmt_i64_buf(cg)
+         buf = expr::codegen_call_arena_alloc(cg, LLVMConstInt(i64t, 24, 0), "to_str.buf")
          ext_val = coerce_int_ext(cg, int_val, i64t, is_unsigned)
-         args = (buf, LLVMConstInt(i64t, 32, 0), fmt_gv, ext_val)
-         n = LLVMBuildCall2(cg.builder, snp_info.1, snp_info.0, &args, 4, "to_str.n")
-         n64 = LLVMBuildZExt(cg.builder, n, i64t, "to_str.len")
-         expr::codegen_string_build(cg, n64, buf, "to_str.res")
+         u_flag = LLVMConstInt(LLVMInt1Type!, (is_unsigned | 1 | 0), 0)
+         n = types::call3(cg, fmt_info.1, fmt_info.0, buf, ext_val, u_flag, "to_str.n")
+         expr::codegen_string_build(cg, n, buf, "to_str.res")
 
 codegen_float_to_str: types::Cg, Addr => Addr
 codegen_float_to_str = cg, fl_val =>
@@ -4308,6 +4428,8 @@ collect_if_foreign_fn = cg, f =>
          llvm_fn = types::llvm_find_function(cg.module, c_name)
             | fn => fn
             | LLVMAddFunction(cg.module, c_name, fn_type)
+         c_name ["memchr", "memcmp", "strlen"]
+            | runtime::mark_nounwind(cg, llvm_fn)
          cg.fninfos += types::FnInfo(f.dva_name, <+ llvm_fn +>, <+ fn_type +>, ?f.params,
            param_vts, f.return_type, <+>, <->, <+>, <+>)
 
@@ -6086,16 +6208,24 @@ infer_expr_type = cg, e =>
             | ast::ValueType(Int)
       | ast::ValueType(Unknown)
 
-codegen_typed_eval_block_step: types::Cg, tast::TypedExprs, Int, Int => (Addr, ast::ValueType)
-codegen_typed_eval_block_step = cg, exprs, i, n =>
+codegen_typed_eval_block_step_tail: types::Cg, tast::TypedExprs, Int, Int,
+  Int => (Addr, ast::ValueType)
+codegen_typed_eval_block_step_tail = cg, exprs, i, n, tail_k =>
    i == n
       | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
       |
          te = exprs(i) | _ | tast::mk_lit_unit(0, 0)
+         is_last = (i == n - 1)
+         is_last && (tail_k != 0) | (types::g.unboxed_ret_tail = tail_k)
          v = main::codegen_typed_eval(cg, te)
-         i == n - 1
+         types::g.unboxed_ret_tail = 0
+         is_last
             | v
-            | codegen_typed_eval_block_step(cg, exprs, i + 1, n)
+            | codegen_typed_eval_block_step_tail(cg, exprs, i + 1, n, tail_k)
+
+codegen_typed_eval_block_step: types::Cg, tast::TypedExprs, Int, Int => (Addr, ast::ValueType)
+codegen_typed_eval_block_step = cg, exprs, i, n =>
+   codegen_typed_eval_block_step_tail(cg, exprs, i, n, 0)
 
 tast_bin_has_arena_alloc: types::Cg, ast::BinaryOp, tast::TypedExpr,
   tast::TypedExpr, Int => <>
@@ -6312,14 +6442,15 @@ typed_block_is_binding = exprs =>
                   | <->
       | <->
 
-codegen_typed_eval_block: types::Cg, tast::TypedExprs => (Addr, ast::ValueType)
-codegen_typed_eval_block = cg, exprs =>
+codegen_typed_eval_block_tail: types::Cg, tast::TypedExprs, Int => (Addr, ast::ValueType)
+codegen_typed_eval_block_tail = cg, exprs, tail_k =>
    var_threshold = ?cg.vars
    has_alloc = tast_exprs_has_arena_alloc_d(cg, exprs, 0, 0) && !cg.in_fn &&
      !typed_block_is_binding(exprs) && !tast_exprs_escape(cg, exprs, 0, var_threshold)
    mark = expr::codegen_block_arena_mark(cg, has_alloc)
    expr::codegen_restore_scope_enter(cg, has_alloc)
-   last = codegen_typed_eval_block_step(cg, exprs, 0, ?exprs)
+   eff_tail = !has_alloc | tail_k | 0
+   last = codegen_typed_eval_block_step_tail(cg, exprs, 0, ?exprs, eff_tail)
    expr::codegen_restore_scope_leave(cg, mark)
    escapes_addr = types::is_ptr_vt(last.1) ||
      (?exprs > 0 && tast_expr_has_scoped_addr(cg, exprs(?exprs - 1)!!, var_threshold))
@@ -6328,6 +6459,10 @@ codegen_typed_eval_block = cg, exprs =>
          types::init_error(cg, "E3133", diag::E3133_addr_escape_restore!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       | last
+
+codegen_typed_eval_block: types::Cg, tast::TypedExprs => (Addr, ast::ValueType)
+codegen_typed_eval_block = cg, exprs =>
+   codegen_typed_eval_block_tail(cg, exprs, 0)
 
 codegen_typed_eval_fwd: types::Cg, String, ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_fwd = cg, name, ti =>
@@ -6541,6 +6676,532 @@ codegen_typed_check_addr_escape = cg, name, val, ti =>
                  tast_expr_has_scoped_addr(cg, val, threshold))
                   | types::init_error(cg, "E3134", diag::E3134_addr_escape_lifecycle!, 0, 0)
 
+names_contain: ast::Names, String => <>
+names_contain = xs, target =>
+   hit' = <->
+   xs @ x =>
+      x == target | hit' = <+>
+   hit'
+
+count_var_assigns: String, tast::TypedExpr => Int
+count_var_assigns = name, te =>
+   te.kind
+      [Assign a]
+         (a.0 == name | 1 | 0) + count_var_assigns(name, a.5)
+      [Block exprs]
+         cnt' = 0
+         exprs @ e => cnt' = cnt' + count_var_assigns(name, e)
+         cnt'
+      [Bin b] count_var_assigns(name, b.1) + count_var_assigns(name, b.2)
+      [Unary u] count_var_assigns(name, u.1)
+      [Choice ch]
+         cnt' = count_var_assigns(name, ch.0)
+         ch.1 @ br =>
+            cnt' = cnt' + count_var_assigns(name, br.body)
+         cnt'
+      [Call c]
+         cnt' = c.1 | r => count_var_assigns(name, r) | 0
+         c.2 @ a => cnt' = cnt' + count_var_assigns(name, a)
+         cnt'
+      [Cycle cy]
+         cnt' = count_var_assigns(name, cy.0) + count_var_assigns(name, cy.1)
+         cnt' + (cy.2 | s => count_var_assigns(name, s) | 0)
+      | 0
+
+str_var_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int, <> => <>
+str_var_exprs_safe = cg, name, es, i, n, safe =>
+   i !< n
+      | <+>
+      |
+         str_var_only_safe_uses(cg, name, es(i)!!, safe) &&
+           str_var_exprs_safe(cg, name, es, i + 1, n, safe)
+
+str_var_branches_safe: types::Cg, String, tast::TypedBranches, Int, Int, <> => <>
+str_var_branches_safe = cg, name, brs, i, n, safe =>
+   i !< n
+      | <+>
+      |
+         br = brs(i)!!
+         !names_contain(br.bind_vars, name) &&
+           str_var_exprs_safe(cg, name, br.case_values, 0, ?br.case_values, <->) &&
+           (br.pred_fn | pf => str_var_only_safe_uses(cg, name, pf, <->) | <+>) &&
+           str_var_only_safe_uses(cg, name, br.body, safe) &&
+           str_var_branches_safe(cg, name, brs, i + 1, n, safe)
+
+str_var_only_safe_uses: types::Cg, String, tast::TypedExpr, <> => <>
+str_var_only_safe_uses = cg, name, te, safe =>
+   te.kind
+      [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, CycleJump] <+>
+      [Var v] (v.0 == name | safe | <+>)
+      [Unary u]
+         u.0 [Length]
+            | str_var_only_safe_uses(cg, name, u.1, <+>)
+            | str_var_only_safe_uses(cg, name, u.1, <->)
+      [Bin b]
+         b.0 [Seq]
+            | str_var_only_safe_uses(cg, name, b.1, <->) &&
+              str_var_only_safe_uses(cg, name, b.2, safe)
+            |
+               b_safe = b.0 [Eq, NotEq, Add]
+               str_var_only_safe_uses(cg, name, b.1, b_safe) &&
+                 str_var_only_safe_uses(cg, name, b.2, b_safe)
+      [Index ix]
+         str_var_only_safe_uses(cg, name, ix.0, <+>) &&
+           str_var_only_safe_uses(cg, name, ix.1, <->)
+      [Call c]
+         is_str_idx = <>(c.1) && (?c.2 == 1) &&
+           types::is_str_vt(types::vt_from_ti_cg(cg, c.1!!.ti))
+         rec_ok = c.1 | r => str_var_only_safe_uses(cg, name, r, is_str_idx) | <+>
+         fn = types::resolve_fn_name(cg, c.0)
+         arg_safe = (!<>(c.1)) && (fn ["str::find", "str::starts_with", "str::ends_with",
+           "str::contains", "str::index_of", "str::parse_int", "str::last_index_of"])
+         rec_ok && str_var_exprs_safe(cg, name, c.2, 0, ?c.2, arg_safe)
+      [Block exprs]
+         ne = ?exprs
+         ne == 0
+            | <+>
+            |
+               str_var_exprs_safe(cg, name, exprs, 0, ne - 1, <->) &&
+                 str_var_only_safe_uses(cg, name, exprs(ne - 1)!!, safe)
+      [Assign a]
+         str_var_only_safe_uses(cg, name, a.5, <->)
+      [Choice ch]
+         str_var_only_safe_uses(cg, name, ch.0, <->) &&
+           str_var_branches_safe(cg, name, ch.1, 0, ?ch.1, safe)
+      [Member m] str_var_only_safe_uses(cg, name, m.0, <->)
+      [MemberWrite mw]
+         str_var_only_safe_uses(cg, name, mw.0, <->) &&
+           str_var_only_safe_uses(cg, name, mw.3, <->)
+      [IndexWrite iw]
+         str_var_only_safe_uses(cg, name, iw.0, <->) &&
+           str_var_only_safe_uses(cg, name, iw.1, <->) &&
+           str_var_only_safe_uses(cg, name, iw.2, <->)
+      [RamConstruct rc]
+         (rc.2 | p => str_var_only_safe_uses(cg, name, p, <->) | <+>)
+      [EnumConstruct ec]
+         (ec.1 | p => str_var_only_safe_uses(cg, name, p, <->) | <+>)
+      [Record r]
+         ok' = <+>
+         r @ f =>
+            !str_var_only_safe_uses(cg, name, f.val, <->) | ok' = <->
+         ok'
+      [Cycle cy]
+         str_var_only_safe_uses(cg, name, cy.0, <->) &&
+           str_var_only_safe_uses(cg, name, cy.1, <->) &&
+           (cy.2 | s => str_var_only_safe_uses(cg, name, s, <->) | <+>)
+      [Return r]
+         (r | rv => str_var_only_safe_uses(cg, name, rv, <->) | <+>)
+      [Exit x] str_var_only_safe_uses(cg, name, x, <->)
+      [Lambda lam]
+         !names_contain(lam.0, name) && !typed_refs_name(lam.1, name)
+      | !typed_refs_name(te, name)
+
+str_slice_var_non_escaping: types::Cg, String => <>
+str_slice_var_non_escaping = cg, name =>
+   types::g.current_fn_body
+      | fn_body =>
+         count_var_assigns(name, fn_body) == 1 &&
+           str_var_only_safe_uses(cg, name, fn_body, <->)
+      | <->
+
+param_proj_exprs_safe: String, tast::TypedExprs, Int, Int => <>
+param_proj_exprs_safe = pname, es, i, n =>
+   i !< n
+      | <+>
+      | param_proj_safe(pname, es(i)!!, <->) &&
+        param_proj_exprs_safe(pname, es, i + 1, n)
+
+param_proj_branches_safe: String, tast::TypedBranches, Int, Int => <>
+param_proj_branches_safe = pname, brs, i, n =>
+   i !< n
+      | <+>
+      |
+         br = brs(i)!!
+         !names_contain(br.bind_vars, pname) &&
+           param_proj_exprs_safe(pname, br.case_values, 0, ?br.case_values) &&
+           (br.pred_fn | pf => param_proj_safe(pname, pf, <->) | <+>) &&
+           param_proj_safe(pname, br.body, <->) &&
+           param_proj_branches_safe(pname, brs, i + 1, n)
+
+param_proj_safe: String, tast::TypedExpr, <> => <>
+param_proj_safe = pname, te, in_mem =>
+   te.kind
+      [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, CycleJump] <+>
+      [Var v] (v.0 == pname | in_mem | <+>)
+      [Member m] param_proj_safe(pname, m.0, <+>)
+      [Bin b] param_proj_safe(pname, b.1, <->) && param_proj_safe(pname, b.2, <->)
+      [Unary u]
+         u.0 [AddrOf] !typed_refs_name(u.1, pname) | param_proj_safe(pname, u.1, <->)
+      [Block es] param_proj_exprs_safe(pname, es, 0, ?es)
+      [Choice ch]
+         param_proj_safe(pname, ch.0, <->) &&
+           param_proj_branches_safe(pname, ch.1, 0, ?ch.1)
+      | !typed_refs_name(te, pname)
+
+find_callee_lambda_param: types::Cg, String, tast::TypedExpr, String, String,
+  Int => <(String, tast::TypedExpr)|>
+find_callee_lambda_param = cg, tname, val_e, rname, fname, param_idx =>
+   is_match = tname != "" && (tname == rname || tname == fname ||
+     types::resolve_fn_name(cg, tname) == rname)
+   !is_match | --| <-->
+   !(val_e.kind [Lambda]) | --| <-->
+   lam = val_e.kind [Lambda l] l |
+      (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
+   param_idx < 0 || param_idx !< ?lam.0 | --| <-->
+   <+ (lam.0(param_idx)!!, lam.1) +>
+
+callee_param_only_projects: types::Cg, String, Int => <>
+callee_param_only_projects = cg, fname, param_idx =>
+   rname = types::resolve_fn_name(cg, fname)
+   stmts = types::g.typed_program_stmts
+   ?stmts @ i =>
+      st = stmts(i)!!
+      found = st
+         [Binding b] find_callee_lambda_param(cg, b.0, b.2, rname, fname, param_idx)
+         [GlobalBinding gb] find_callee_lambda_param(cg, gb.0, gb.2, rname, fname, param_idx)
+         [Expr te]
+            te.kind
+               [Assign a] find_callee_lambda_param(cg, a.0, a.5, rname, fname, param_idx)
+               | <-->
+         | <-->
+      <>(found)
+         |
+            info = found!!
+            --| param_proj_safe(info.0, info.1, <->)
+   <->
+
+rec_var_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
+rec_var_exprs_safe = cg, name, es, i, n =>
+   i !< n
+      | <+>
+      | rec_var_safe_expr(cg, name, es(i)!!, <->) &&
+        rec_var_exprs_safe(cg, name, es, i + 1, n)
+
+rec_var_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int,
+  Int, <> => <>
+rec_var_call_args_safe = cg, name, fname, args, i, n, has_rec =>
+   i !< n
+      | <+>
+      |
+         arg_k = args(i)!!
+         is_direct_var = arg_k.kind [Var v] (v.0 == name) | <->
+         arg_ok = is_direct_var && !has_rec
+            | callee_param_only_projects(cg, fname, i)
+            | rec_var_safe_expr(cg, name, arg_k, <->)
+         arg_ok && rec_var_call_args_safe(cg, name, fname, args, i + 1, n, has_rec)
+
+rec_var_fields_safe: types::Cg, String, tast::TypedFields, Int, Int => <>
+rec_var_fields_safe = cg, name, fs, i, n =>
+   i !< n
+      | <+>
+      | rec_var_safe_expr(cg, name, fs(i)!!.val, <->) &&
+        rec_var_fields_safe(cg, name, fs, i + 1, n)
+
+rec_var_branches_safe: types::Cg, String, tast::TypedBranches, Int, Int => <>
+rec_var_branches_safe = cg, name, brs, i, n =>
+   i !< n
+      | <+>
+      |
+         br = brs(i)!!
+         !names_contain(br.bind_vars, name) &&
+           rec_var_exprs_safe(cg, name, br.case_values, 0, ?br.case_values) &&
+           (br.pred_fn | pf => rec_var_safe_expr(cg, name, pf, <->) | <+>) &&
+           rec_var_safe_expr(cg, name, br.body, <->) &&
+           rec_var_branches_safe(cg, name, brs, i + 1, n)
+
+rec_var_safe_expr: types::Cg, String, tast::TypedExpr, <> => <>
+rec_var_safe_expr = cg, name, te, in_mem =>
+   te.kind
+      [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, CycleJump] <+>
+      [Var v] (v.0 == name | in_mem | <+>)
+      [Unary u]
+         u.0 [AddrOf] !typed_refs_name(u.1, name) | rec_var_safe_expr(cg, name, u.1, <->)
+      [Bin b] rec_var_safe_expr(cg, name, b.1, <->) && rec_var_safe_expr(cg, name, b.2, <->)
+      [Index ix] rec_var_safe_expr(cg, name, ix.0, <->) && rec_var_safe_expr(cg, name, ix.1, <->)
+      [Call c]
+         rec_ok = c.1 | r => rec_var_safe_expr(cg, name, r, <->) | <+>
+         rec_ok && rec_var_call_args_safe(cg, name, c.0, c.2, 0, ?c.2, <>(c.1))
+      [Block exprs] rec_var_exprs_safe(cg, name, exprs, 0, ?exprs)
+      [Assign a]
+         a.0 == name
+            | rec_var_safe_expr(cg, name, a.5, <->)
+            | !typed_refs_name(a.5, name)
+      [Choice ch]
+         rec_var_safe_expr(cg, name, ch.0, <->) &&
+           rec_var_branches_safe(cg, name, ch.1, 0, ?ch.1)
+      [Member m] rec_var_safe_expr(cg, name, m.0, <+>)
+      [MemberWrite mw]
+         tgt_is_name = mw.0.kind [Var v] (v.0 == name) | <->
+         tgt_ok = tgt_is_name | <+> | rec_var_safe_expr(cg, name, mw.0, <+>)
+         tgt_ok && !typed_refs_name(mw.3, name)
+      [IndexWrite iw]
+         rec_var_safe_expr(cg, name, iw.0, <->) &&
+           rec_var_safe_expr(cg, name, iw.1, <->) &&
+           !typed_refs_name(iw.2, name)
+      [Record r] rec_var_fields_safe(cg, name, r, 0, ?r)
+      [Cycle cy]
+         rec_var_safe_expr(cg, name, cy.0, <->) &&
+           rec_var_safe_expr(cg, name, cy.1, <->) &&
+           (cy.2 | s => rec_var_safe_expr(cg, name, s, <->) | <+>)
+      [Copy cp] rec_var_safe_expr(cg, name, cp, <->)
+      [RamConstruct rc]
+         (rc.2 | p => !typed_refs_name(p, name) | <+>)
+      [EnumConstruct ec]
+         (ec.1 | p => !typed_refs_name(p, name) | <+>)
+      [Return r]
+         (r | rv => !typed_refs_name(rv, name) | <+>)
+      [Exit x] !typed_refs_name(x, name)
+      [Lambda lam]
+         !names_contain(lam.0, name) && !typed_refs_name(lam.1, name)
+      [Spawn sp]
+         !refs_name(ast::Expr(Call, sp), name)
+      [MapLiteral ml]
+         !typed_refs_name_map(ml, name, 0, ?ml)
+      [KeyAccess ka]
+         !(typed_refs_name(ka.0, name) || typed_refs_name(ka.1, name))
+      | !typed_refs_name(te, name)
+
+rec_var_non_escaping: types::Cg, String => <>
+rec_var_non_escaping = cg, name =>
+   ret_is_scalar_prim = types::g.expected_fn_ti
+      [Prim p] p ![Str, Unknown, RawPtr]
+      | <->
+   !ret_is_scalar_prim | --| <->
+   types::g.current_fn_body
+      | fn_body =>
+         count_var_assigns(name, fn_body) == 1 &&
+           rec_var_safe_expr(cg, name, fn_body, <->)
+      | <->
+
+call_is_arena_restore_op: types::Cg, String => <>
+call_is_arena_restore_op = cg, fname =>
+   fname == "" | --| <->
+   bare = types::decl_bare_name(fname, 0)
+   bare ["restore_to", "reset", "destroy", "with", "with_value",
+     "escape", "escape_value", "dva_arena_restore", "dva_arena_destroy",
+     "runtime_arena_restore", "runtime_arena_destroy"] ||
+     str::starts_with(bare, "with_value$") ||
+     str::starts_with(bare, "escape_value$")
+
+typed_exprs_have_restore: types::Cg, tast::TypedExprs, Int, Int => <>
+typed_exprs_have_restore = cg, es, i, n =>
+   i < n && (fn_body_has_arena_restore(cg, es(i)!!) ||
+     typed_exprs_have_restore(cg, es, i + 1, n))
+
+typed_branches_have_restore: types::Cg, tast::TypedBranches, Int, Int => <>
+typed_branches_have_restore = cg, brs, i, n =>
+   i !< n | --| <->
+   br = brs(i)!!
+   typed_exprs_have_restore(cg, br.case_values, 0, ?br.case_values) ||
+     (br.pred_fn | pf => fn_body_has_arena_restore(cg, pf) | <->) ||
+     fn_body_has_arena_restore(cg, br.body) ||
+     typed_branches_have_restore(cg, brs, i + 1, n)
+
+fn_body_has_arena_restore: types::Cg, tast::TypedExpr => <>
+fn_body_has_arena_restore = cg, te =>
+   te.kind
+      [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, Var, CycleJump,
+       PoisonError, ArrayNew, UserDiag, CompileTime, CtUnrollCycle] <->
+      [Unary u] fn_body_has_arena_restore(cg, u.1)
+      [Bin b] fn_body_has_arena_restore(cg, b.1) || fn_body_has_arena_restore(cg, b.2)
+      [Member m] fn_body_has_arena_restore(cg, m.0)
+      [MemberWrite mw]
+         fn_body_has_arena_restore(cg, mw.0) || fn_body_has_arena_restore(cg, mw.3)
+      [Index ix] fn_body_has_arena_restore(cg, ix.0) || fn_body_has_arena_restore(cg, ix.1)
+      [IndexWrite iw]
+         fn_body_has_arena_restore(cg, iw.0) || fn_body_has_arena_restore(cg, iw.1) ||
+           fn_body_has_arena_restore(cg, iw.2)
+      [Call c]
+         !(c.1 | r => !fn_body_has_arena_restore(cg, r) | <+>) ||
+           <>(c.1) || types::has_local_var(cg, c.0) ||
+           call_is_arena_restore_op(cg, c.0) ||
+           typed_exprs_have_restore(cg, c.2, 0, ?c.2)
+      [Record r]
+         bad' = <->
+         r @ f =>
+            fn_body_has_arena_restore(cg, f.val) | bad' = <+>
+         bad'
+      [Choice ch]
+         fn_body_has_arena_restore(cg, ch.0) ||
+           typed_branches_have_restore(cg, ch.1, 0, ?ch.1)
+      [Block es] typed_exprs_have_restore(cg, es, 0, ?es)
+      [Assign a] fn_body_has_arena_restore(cg, a.5)
+      [Cycle cy]
+         fn_body_has_arena_restore(cg, cy.0) ||
+           (cy.1.kind [Lambda lam] fn_body_has_arena_restore(cg, lam.1) | <+>) ||
+           (cy.2 | s => fn_body_has_arena_restore(cg, s) | <->)
+      [RamConstruct rc] (rc.2 | p => fn_body_has_arena_restore(cg, p) | <->)
+      [EnumConstruct ec] (ec.1 | p => fn_body_has_arena_restore(cg, p) | <->)
+      [BuilderNew b] fn_body_has_arena_restore(cg, b)
+      [Copy cp] fn_body_has_arena_restore(cg, cp)
+      [RawMemory rm] fn_body_has_arena_restore(cg, rm.0)
+      [RawMemoryWrite rmw]
+         fn_body_has_arena_restore(cg, rmw.0) || fn_body_has_arena_restore(cg, rmw.1)
+      [Exit x] fn_body_has_arena_restore(cg, x)
+      [Return r] (r | rv => fn_body_has_arena_restore(cg, rv) | <->)
+      | <+>
+
+count_builder_inits: String, tast::TypedExpr => Int
+count_builder_inits = name, te =>
+   te.kind
+      [Assign a]
+         is_init = (a.0 == name) && !a.2 && !a.4
+         (is_init | 1 | 0) + count_builder_inits(name, a.5)
+      [Block exprs]
+         cnt' = 0
+         exprs @ e => cnt' = cnt' + count_builder_inits(name, e)
+         cnt'
+      [Bin b] count_builder_inits(name, b.1) + count_builder_inits(name, b.2)
+      [Unary u] count_builder_inits(name, u.1)
+      [Choice ch]
+         cnt' = count_builder_inits(name, ch.0)
+         ch.1 @ br =>
+            cnt' = cnt' + count_builder_inits(name, br.body)
+         cnt'
+      [Call c]
+         cnt' = c.1 | r => count_builder_inits(name, r) | 0
+         c.2 @ a => cnt' = cnt' + count_builder_inits(name, a)
+         cnt'
+      [Cycle cy]
+         cnt' = count_builder_inits(name, cy.0) +
+           (cy.1.kind [Lambda lam] count_builder_inits(name, lam.1) | 0)
+         cnt' + (cy.2 | s => count_builder_inits(name, s) | 0)
+      | 0
+
+bldr_exprs_safe: String, tast::TypedExprs, Int, Int, <>, <> => (<>, Int)
+bldr_exprs_safe = name, es, i, n, safe, in_cycle =>
+   i !< n
+      | (<+>, 0)
+      |
+         r0 = builder_var_safe_uses(name, es(i)!!, safe, in_cycle)
+         !r0.0
+            | (<->, 0)
+            |
+               r1 = bldr_exprs_safe(name, es, i + 1, n, safe, in_cycle)
+               (r1.0, r0.1 + r1.1)
+
+bldr_branches_safe: String, tast::TypedBranches, Int, Int, <> => (<>, Int)
+bldr_branches_safe = name, brs, i, n, in_cycle =>
+   i !< n
+      | (<+>, 0)
+      |
+         br = brs(i)!!
+         names_contain(br.bind_vars, name) | --| (<->, 0)
+         rc = bldr_exprs_safe(name, br.case_values, 0, ?br.case_values, <->, in_cycle)
+         !rc.0 | --| (<->, 0)
+         rp = br.pred_fn | pf => builder_var_safe_uses(name, pf, <->, in_cycle) | (<+>, 0)
+         !rp.0 | --| (<->, 0)
+         rb = builder_var_safe_uses(name, br.body, <->, in_cycle)
+         !rb.0 | --| (<->, 0)
+         rn = bldr_branches_safe(name, brs, i + 1, n, in_cycle)
+         (rn.0, rc.1 + rp.1 + rb.1 + rn.1)
+
+builder_var_safe_uses: String, tast::TypedExpr, <>, <> => (<>, Int)
+builder_var_safe_uses = name, te, safe, in_cycle =>
+   te.kind
+      [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, CycleJump] (<+>, 0)
+      [Var v] ((v.0 == name | safe | <+>), 0)
+      [Unary u]
+         u.0 [Length, RuneCount]
+            | builder_var_safe_uses(name, u.1, <+>, in_cycle)
+            |
+               u.0 [Freeze]
+                  |
+                     u.1.kind
+                        [Var v] (v.0 == name | (!in_cycle, 1) | (<+>, 0))
+                        | builder_var_safe_uses(name, u.1, <->, in_cycle)
+                  | builder_var_safe_uses(name, u.1, <->, in_cycle)
+      [Bin b]
+         r0 = builder_var_safe_uses(name, b.1, <->, in_cycle)
+         r1 = builder_var_safe_uses(name, b.2, <->, in_cycle)
+         (r0.0 && r1.0, r0.1 + r1.1)
+      [Index ix]
+         r0 = builder_var_safe_uses(name, ix.0, <+>, in_cycle)
+         r1 = builder_var_safe_uses(name, ix.1, <->, in_cycle)
+         (r0.0 && r1.0, r0.1 + r1.1)
+      [Call c]
+         is_b_idx = <>(c.1) && (?c.2 == 1) &&
+           types::is_builder_vt(types::vt_from_ti(c.1!!.ti))
+         rr = c.1
+            | r => builder_var_safe_uses(name, r, is_b_idx, in_cycle)
+            | (<+>, 0)
+         !rr.0 | --| (<->, 0)
+         ra = bldr_exprs_safe(name, c.2, 0, ?c.2, <->, in_cycle)
+         (ra.0, rr.1 + ra.1)
+      [Block exprs]
+         ne = ?exprs
+         ne == 0
+            | (<+>, 0)
+            |
+               r0 = bldr_exprs_safe(name, exprs, 0, ne - 1, <->, in_cycle)
+               !r0.0 | --| (<->, 0)
+               r1 = builder_var_safe_uses(name, exprs(ne - 1)!!, safe, in_cycle)
+               (r1.0, r0.1 + r1.1)
+      [Assign a]
+         (a.0 == name) && !a.2 && !a.4
+            | builder_var_safe_uses(name, a.5, <->, in_cycle)
+            |
+               (a.0 == name) && (a.2 || a.4)
+                  | builder_var_safe_uses(name, a.5, <->, in_cycle)
+                  | ((a.0 != name) && builder_var_safe_uses(name, a.5, <->, in_cycle).0,
+                    (a.0 == name | 0 | builder_var_safe_uses(name, a.5, <->, in_cycle).1))
+      [Choice ch]
+         r0 = builder_var_safe_uses(name, ch.0, <->, in_cycle)
+         !r0.0 | --| (<->, 0)
+         rb = bldr_branches_safe(name, ch.1, 0, ?ch.1, in_cycle)
+         (rb.0, r0.1 + rb.1)
+      [BuilderNew bn] builder_var_safe_uses(name, bn, <->, in_cycle)
+      [Record r]
+         ok' = <+>
+         fcnt' = 0
+         r @ f =>
+            rf = builder_var_safe_uses(name, f.val, <->, in_cycle)
+            !rf.0 | ok' = <->
+            fcnt' = fcnt' + rf.1
+         (ok', fcnt')
+      [Cycle cy]
+         r0 = builder_var_safe_uses(name, cy.0, <->, in_cycle)
+         r1 = cy.1.kind
+            [Lambda lam]
+               !names_contain(lam.0, name)
+                  | builder_var_safe_uses(name, lam.1, <->, <+>)
+                  | (<+>, 0)
+            | (<->, 0)
+         r2 = cy.2 | s => builder_var_safe_uses(name, s, <->, <+>) | (<+>, 0)
+         (r0.0 && r1.0 && r2.0, r0.1 + r1.1 + r2.1)
+      [RamConstruct rc]
+         rc.2 | p => builder_var_safe_uses(name, p, <->, in_cycle) | (<+>, 0)
+      [EnumConstruct ec]
+         ec.1 | p => builder_var_safe_uses(name, p, <->, in_cycle) | (<+>, 0)
+      [Return r]
+         r | rv => builder_var_safe_uses(name, rv, <->, in_cycle) | (<+>, 0)
+      [Exit x] builder_var_safe_uses(name, x, <->, in_cycle)
+      [Member m] builder_var_safe_uses(name, m.0, <->, in_cycle)
+      [MemberWrite mw]
+         r0 = builder_var_safe_uses(name, mw.0, <->, in_cycle)
+         r1 = builder_var_safe_uses(name, mw.3, <->, in_cycle)
+         (r0.0 && r1.0, r0.1 + r1.1)
+      [IndexWrite iw]
+         r0 = builder_var_safe_uses(name, iw.0, <->, in_cycle)
+         r1 = builder_var_safe_uses(name, iw.1, <->, in_cycle)
+         r2 = builder_var_safe_uses(name, iw.2, <->, in_cycle)
+         (r0.0 && r1.0 && r2.0, r0.1 + r1.1 + r2.1)
+      [Lambda lam]
+         ((!names_contain(lam.0, name) && !typed_refs_name(lam.1, name)), 0)
+      | (!typed_refs_name(te, name), 0)
+
+builder_var_non_escaping: types::Cg, String => (<>, <>)
+builder_var_non_escaping = cg, name =>
+   types::g.current_fn_body
+      | fn_body =>
+         count_builder_inits(name, fn_body) == 1
+            |
+               res = builder_var_safe_uses(name, fn_body, <->, <->)
+               fast_ok = res.0 && (res.1 == 1) && !types::g.current_fn_has_restore
+               (res.0, fast_ok)
+            | (<->, <->)
+      | (<->, <->)
+
 codegen_typed_eval_assign: types::Cg, String, <>, <>, <>, <>, tast::TypedExpr,
   ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
@@ -6604,7 +7265,36 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                      b_val' = types::ptr_var_value(cg, name, "b.load")
                      expr::codegen_typed_builder_append(cg, b_val', val)
                      --| (b_val', ast::ValueType(Builder))
+               val_is_freeze = val.kind [Unary u] (u.0 [Freeze]) | <->
+               val_is_call_str = val.kind [Call c] !types::fn_uses_c_ret_abi(cg, c.0) | <->
+               val_is_add_str = val.kind [Bin b] (b.0 [Add]) | <->
+               no_fn_restore = <>(types::g.current_fn_body) &&
+                 !types::g.current_fn_has_restore
+               val_vt_pre = types::vt_from_ti_cg(cg, val.ti)
+               is_str_rhs = expr::is_str_slice_range(cg, val).0 || val_is_freeze ||
+                 ((val_is_call_str || val_is_add_str) && types::is_str_vt(val_vt_pre))
+               can_stack_str = is_fresh && !mut && !is_glob && cg.in_fn &&
+                 ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 && no_fn_restore &&
+                 is_str_rhs && str_slice_var_non_escaping(cg, name)
+               can_stack_rec = is_fresh && !mut && !is_glob && cg.in_fn &&
+                 ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 && no_fn_restore &&
+                 (val.kind [Record, Call]) &&
+                 !(val.kind [Call c] types::fn_uses_c_ret_abi(cg, c.0) | <->) &&
+                 types::is_record_vt(val_vt_pre) && !types::is_slice_vt(val_vt_pre) &&
+                 rec_var_non_escaping(cg, name)
+               b_info = (is_fresh && !mut && !is_glob && cg.in_fn &&
+                 ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 &&
+                 (val.kind [BuilderNew]))
+                  | builder_var_non_escaping(cg, name)
+                  | (<->, <->)
+               can_stack_bldr = b_info.0
+               b_info.1
+                  | types::g.fast_freeze_builders += name
+               saved_stack_next = types::g.stack_alloc_next
+               (can_stack_str || can_stack_rec || can_stack_bldr)
+                  | types::g.stack_alloc_next = <+>
                ev = main::codegen_typed_eval(cg, val)
+               types::g.stack_alloc_next = saved_stack_next
                (!is_fresh && block_is_terminated(cg))
                   | (ev.0, ev.1)
                   |
@@ -6795,6 +7485,9 @@ declare_external_fn = cg, name =>
          !declared
             | <->
             |
+               saved_mod' = cg.current_module
+               mod_n' = types::decl_module(name, 0)
+               mod_n' != "" | cg.current_module = mod_n'
                sig_param_types0 = fn_signature_param_types(cg, types::g.pstmts, name, 0)
                sig_param_tis = fn_signature_param_tis(types::g.pstmts, name)
                sig_param_types = resolve_sig_param_types(cg, sig_param_types0, sig_param_tis)
@@ -6807,7 +7500,8 @@ declare_external_fn = cg, name =>
                   pvt_i = sig_param_types(i) | _ | ast::ValueType(Int)
                   pti_i = sig_param_tis(i) | _ | ast::TypeInfo(Prim, pvt_i)
                   param_ll += types::llvm_abi_type_of_ti(cg, pti_i)
-               ret_ll = types::llvm_abi_ret_type_of_ti(cg, sig_ret_ti)
+               ret_ll = types::llvm_abi_ret_type_of_ti_for_fn(cg, name, sig_ret_ti)
+               cg.current_module = saved_mod'
                fty = fn_type_n(cg, ret_ll, param_ll, nparams)
                ext_fn = types::llvm_find_function(cg.module, name)
                   | f => f
@@ -7603,7 +8297,21 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    types::g.last_compiling_fn = name
    saved_expected_ti = types::g.expected_fn_ti
    saved_fn_ret_ll = types::g.fn_ret_ll
+   saved_restore_scope = cg.in_restore_scope
+   saved_breaks = cg.cycle_breaks
+   saved_conts = cg.cycle_conts
+   saved_fn_body = types::g.current_fn_body
+   saved_fn_has_restore = types::g.current_fn_has_restore
+   types::g.current_fn_has_restore = <->
+   saved_fast_freeze_b = types::g.fast_freeze_builders
+   types::g.fast_freeze_builders = ast::Names()
    saved_aliases_n = ?cg.fn_alias_names
+   want_stack_clo = types::g.stack_closure_next && cg.in_restore_scope == 0
+   types::g.stack_closure_next = <->
+   saved_stack_alloc = types::g.stack_alloc_next
+   types::g.stack_alloc_next = <->
+   saved_unboxed_tail = types::g.unboxed_ret_tail
+   types::g.unboxed_ret_tail = 0
    saved_in_fn && orig_name != ""
       |
          cg.fn_alias_names += orig_name
@@ -7656,7 +8364,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
       pti_i = param_tis(i) | _ | ast::TypeInfo(Prim, pvt_i)
       param_ll += types::llvm_abi_type_of_ti(cg, pti_i)
 
-   ret_ll = types::llvm_abi_ret_type_of_ti(cg, ret_ti)
+   ret_ll = types::llvm_abi_ret_type_of_ti_for_fn(cg, name, ret_ti)
    types::g.fn_ret_ll = <+ ret_ll +>
    fty = fn_type_n(cg, ret_ll, param_ll, (is_cap | nparams + 1 | nparams))
    exp_sym = find_export_symbol(types::g.pexports, name)
@@ -7673,6 +8381,11 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    runtime::mark_nounwind(cg, fn)
    cg.current_fn = fn
    cg.in_fn = <+>
+   cg.in_restore_scope = 0
+   cg.cycle_breaks = types::Addrs()
+   cg.cycle_conts = types::Addrs()
+   types::g.current_fn_body = <+ body +>
+   types::g.current_fn_has_restore = fn_body_has_arena_restore(cg, body)
    entry = LLVMAppendBasicBlock(fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
    types::emit_cov_edge(cg)
@@ -7712,7 +8425,16 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
          is_r
             | codegen_emit_reload_body(cg, name, fn)
             |
+               ub_ret = types::fn_uses_c_ret_abi(cg, name)
+                  | <-->
+                  | types::unboxed_ret_struct_ti(cg, ret_ti)
+               can_fn_tail = !types::g.current_fn_has_restore
+               fn_tail_k = can_fn_tail
+                  | (ub_ret | u => u.1 | 0)
+                  | 0
+               types::g.unboxed_ret_tail = fn_tail_k
                bv = main::codegen_typed_eval(cg, body)
+               types::g.unboxed_ret_tail = 0
                is_void = ret_vt [Unit]
                is_void
                   | !block_is_terminated(cg) | LLVMBuildRetVoid(cg.builder)
@@ -7720,28 +8442,31 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
                      bv_val = types::llvm_val_opt(bv.0)
                         | bvv => bvv
                         | LLVMConstNull(ret_ll)
-                     real_ret_ti = ret_ti
-                        [TypeVar tv] types::typedef_ti(cg, tv)
-                        | ret_ti
-                     is_ram_ret = real_ret_ti [Ram]
-                     ret_coerced = is_ram_ret
-                        |
-                           ret_k = LLVMGetTypeKind(ret_ll)
-                           bv_k = LLVMGetTypeKind(
-                              LLVMTypeOf(bv_val))
-                           ret_k == 12 && bv_k == 10
-                              | match::convert_unboxed_ram_to_heap(cg, bv_val,
-                                real_ret_ti)
-                              |
-                                 ret_k == 10 && bv_k == 12
-                                    | match::convert_heap_ram_to_unboxed(cg,
-                                      bv_val, real_ret_ti)
-                                    | bv_val
-                        | bv_val
                      !block_is_terminated(cg)
                         |
-                           LLVMBuildRet(cg.builder,
-                             expr::coerce_ret_ptr_int(cg, ret_coerced, ret_ll, bv.1))
+                           fin_ret_v = ub_ret
+                              | ub => expr::pack_unboxed_ret_val(cg, bv_val, ub.0, ub.1)
+                              |
+                                 real_ret_ti = ret_ti
+                                    [TypeVar tv] types::typedef_ti(cg, tv)
+                                    | ret_ti
+                                 is_ram_ret = real_ret_ti [Ram]
+                                 ret_coerced = is_ram_ret
+                                    |
+                                       ret_k = LLVMGetTypeKind(ret_ll)
+                                       bv_k = LLVMGetTypeKind(LLVMTypeOf(bv_val))
+                                       ret_k == 12 && bv_k == 10
+                                          | match::convert_unboxed_ram_to_heap(cg,
+                                            bv_val, real_ret_ti)
+                                          |
+                                             ret_k == 10 && bv_k == 12
+                                                | match::convert_heap_ram_to_unboxed(
+                                                  cg, bv_val, real_ret_ti)
+                                                | bv_val
+                                    | bv_val
+                                 expr::coerce_ret_ptr_int(cg, ret_coerced, ret_ll,
+                                   bv.1)
+                           LLVMBuildRet(cg.builder, fin_ret_v)
                is_fn_ret = main::is_fn_vt(bv.1) || main::is_fn_vt(ret_vt)
                is_fn_ret && (cg.last_closure_fn != "")
                   | fn_ret_fn_add(name, cg.last_closure_fn)
@@ -7749,6 +8474,11 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    cg.fn_alias_names = types::truncate_names(cg.fn_alias_names, saved_aliases_n)
    cg.fn_alias_tgts = types::truncate_names(cg.fn_alias_tgts, saved_aliases_n)
    cg.in_fn = saved_in_fn
+   cg.in_restore_scope = saved_restore_scope
+   cg.cycle_breaks = saved_breaks
+   cg.cycle_conts = saved_conts
+   types::g.current_fn_body = saved_fn_body
+   types::g.current_fn_has_restore = saved_fn_has_restore
    cg.vars = truncate_vars(cg.vars, saved_nvars)
    cg.bindings = saved_bindings
    cg.fn_var_start = saved_var_start
@@ -7760,19 +8490,36 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    types::g.alloc_rec_names = types::truncate_names(types::g.alloc_rec_names, saved_nalloc_rec)
    types::g.expected_fn_ti = saved_expected_ti
    types::g.fn_ret_ll = saved_fn_ret_ll
+   types::g.stack_alloc_next = saved_stack_alloc
+   types::g.unboxed_ret_tail = saved_unboxed_tail
+   types::g.fast_freeze_builders = saved_fast_freeze_b
 
+   can_stack_clo = want_stack_clo && <>(types::llvm_val_opt(cg.current_fn))
    envp' = LLVMConstNull(i8p)
    est_opt
       | est =>
-         ep2 = expr::codegen_call_arena_alloc(cg,
-           LLVMConstInt(LLVMInt64Type!, nc * 8, 0), "env.alloc")
+         ep2 = can_stack_clo
+            | LLVMBuildBitCast(cg.builder,
+              types::hoisted_alloca(cg, est, "env.salloc"), i8p, "env.sptr")
+            | expr::codegen_call_arena_alloc(cg,
+              LLVMConstInt(LLVMInt64Type!, nc * 8, 0), "env.alloc")
          lambda_store_caps_at(cg, caps, cap_vals, est, ep2, 0, nc)
          envp' = ep2
          lambda_env_add(name, est, nc, cap_vts)
 
    fptr = LLVMBuildBitCast(cg.builder, fn, i8p, "fn.ptr")
    clo = is_cap
-      | codegen_build_closure(cg, fptr, envp', "clo")
+      |
+         can_stack_clo
+            |
+               clo_st = closure_struct_type(cg)
+               cp_s = types::hoisted_alloca(cg, clo_st, "clo.salloc")
+               LLVMBuildStore(cg.builder, fptr,
+                 LLVMBuildStructGEP2(cg.builder, clo_st, cp_s, 0, "clo.fn.gep"))
+               LLVMBuildStore(cg.builder, envp',
+                 LLVMBuildStructGEP2(cg.builder, clo_st, cp_s, 1, "clo.env.gep"))
+               LLVMBuildBitCast(cg.builder, cp_s, i8p, "clo.sptr")
+            | codegen_build_closure(cg, fptr, envp', "clo")
       | expr::noncap_closure(cg, name, fn)
    (clo, name)
 

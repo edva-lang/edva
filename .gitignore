@@ -9,7 +9,6 @@ AGENTS.md
 .envrc
 audits
 process
-benchmarks
 *.ll
 !seed/ir/*.ll
 !seed/ir/**/*.ll

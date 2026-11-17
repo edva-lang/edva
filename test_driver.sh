@@ -403,12 +403,12 @@ if [ $rc -ne 0 ] || [ ! -f "main_mod.ll" ]; then
     exit 1
 fi
 
-if ! grep -q 'declare ptr @"lib_mod::add_pts"' "main_mod.ll"; then
+if ! grep -q 'declare { i64, i64 } @"lib_mod::add_pts"' "main_mod.ll"; then
     echo "FAILED: expected external declaration of lib_mod::add_pts in main_mod.ll"
     cat "main_mod.ll"
     exit 1
 fi
-if grep -q 'define internal %"lib_mod::Point" @"lib_mod::add_pts"' "main_mod.ll"; then
+if grep -qE 'define .* @"lib_mod::add_pts"' "main_mod.ll"; then
     echo "FAILED: dependency function body was compiled into importer in modular mode"
     exit 1
 fi
@@ -2214,6 +2214,14 @@ if ! printf "%s\n" "$GUARD_OUT" | grep -q '\[Ident\]   "ident"'; then
     echo "FAILED: edva fmt did not preserve guard table alignment: $GUARD_OUT"
     exit 1
 fi
+# Normalize cramped leading [guard]/| spacing and $>> / |_| pipelines
+CRAMP_OUT=$(printf "classify = n =>\n   n\n      [0]\"zero\"\n      |\"other\"\npipe = opt =>\n   opt\n      \$>> (x => <+ x +>)\n      |_| 0\n" | ./edva fmt --stdin)
+if ! printf "%s\n" "$CRAMP_OUT" | grep -Fq '[0] "zero"' || \
+   ! printf "%s\n" "$CRAMP_OUT" | grep -Fq '| "other"' || \
+   ! printf "%s\n" "$CRAMP_OUT" | grep -Fq '      $>> (x => <+ x +>)'; then
+    echo "FAILED: edva fmt did not normalize symbolic guard/pipe/$>> spacing: $CRAMP_OUT"
+    exit 1
+fi
 echo "PASS"
 
 # --- Test 50: edva lsp (JSON-RPC 2.0 initialize, diagnostics, hover, definition, formatting) ---
@@ -2227,16 +2235,35 @@ LSP_OUT=$( {
     lsp_frame '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
     lsp_frame "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_URI\",\"languageId\":\"edva\",\"version\":1,\"text\":\"#use str\\n\\nshout = s =>\\n  str::upper(s)\\n\"}}}"
     lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"textDocument/hover\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_URI\"},\"position\":{\"line\":2,\"character\":1}}}"
+    lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":5,\"method\":\"textDocument/inlayHint\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_URI\"},\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":5,\"character\":0}}}}"
     lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"textDocument/formatting\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_URI\"},\"options\":{\"tabSize\":3,\"insertSpaces\":true}}}"
     lsp_frame "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didChange\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_URI\",\"version\":2},\"contentChanges\":[{\"text\":\"#use str\\n\\nbad: Int\\nbad = str::upper(\\\"hi\\\")\\n\"}]}}"
     lsp_frame '{"jsonrpc":"2.0","id":4,"method":"shutdown"}'
     lsp_frame '{"jsonrpc":"2.0","method":"exit"}'
 } | timeout 15 ./edva lsp )
 if ! grep -Fq '"name":"edva-lsp"' <<<"$LSP_OUT" || \
+   ! grep -Fq '"inlayHintProvider":true' <<<"$LSP_OUT" || \
    ! grep -Fq 'shout: (String) => String' <<<"$LSP_OUT" || \
+   ! grep -Fq '": (String) => String"' <<<"$LSP_OUT" || \
    ! grep -Fq '   str::upper(s)' <<<"$LSP_OUT" || \
    ! grep -Fq '"code":"E3084"' <<<"$LSP_OUT"; then
     echo "FAILED: unexpected edva lsp output: $LSP_OUT"
+    exit 1
+fi
+LSP_OP_URI="file://$TMPDIR/lsp_ops.dva"
+LSP_OP_OUT=$( {
+    lsp_frame '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}'
+    lsp_frame "{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/didOpen\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_OP_URI\",\"languageId\":\"edva\",\"version\":1,\"text\":\"inc = x => <+ x + 1 +>\\nf: < Int | > => Int\\nf = r =>\\n   local = (r \$>> inc) |_| 0\\n   local\\n\"}}}"
+    lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"textDocument/hover\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_OP_URI\"},\"position\":{\"line\":3,\"character\":15}}}"
+    lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"textDocument/hover\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_OP_URI\"},\"position\":{\"line\":3,\"character\":25}}}"
+    lsp_frame "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"textDocument/inlayHint\",\"params\":{\"textDocument\":{\"uri\":\"$LSP_OP_URI\"},\"range\":{\"start\":{\"line\":0,\"character\":0},\"end\":{\"line\":6,\"character\":0}}}}"
+    lsp_frame '{"jsonrpc":"2.0","id":5,"method":"shutdown"}'
+    lsp_frame '{"jsonrpc":"2.0","method":"exit"}'
+} | timeout 15 ./edva lsp )
+if ! grep -Fq 'Monadic ram bind' <<<"$LSP_OP_OUT" || \
+   ! grep -Fq 'Unwrap-or-default' <<<"$LSP_OP_OUT" || \
+   ! grep -Fq '": Int"' <<<"$LSP_OP_OUT"; then
+    echo "FAILED: edva lsp did not emit symbolic operator hover or local inlay hints: $LSP_OP_OUT"
     exit 1
 fi
 cat <<'EOF' > "$TMPDIR/lsp_gen_mod.dva"
@@ -2462,7 +2489,7 @@ T53_DIR="$TMPDIR/t53_tsan"
 mkdir -p "$T53_DIR"
 if printf 'int main(void){return 0;}\n' | clang -Qunused-arguments -Wno-unused-command-line-argument -fsanitize=thread -x c - -o "$T53_DIR/tsan_probe" >/dev/null 2>&1; then
     timeout 60 ./edva tests/pass/446_reentrant_concurrent_stdlib.dva --ir -O1 -o "$T53_DIR/tsan_446" < /dev/null >"$T53_DIR/c.out" 2>"$T53_DIR/c.err"
-    sed -E 's/^attributes #1 = \{/attributes #1 = { sanitize_thread /; s/^(define .*)\) \{$/\1) #1 {/' "$T53_DIR/tsan_446.ll" > "$T53_DIR/tsan_446_attr.ll"
+    sed -E 's/^(attributes #[0-9]+ = \{.*"nounwind")/\1 sanitize_thread/; s/^(define .*)\) \{$/\1) #0 {/' "$T53_DIR/tsan_446.ll" > "$T53_DIR/tsan_446_attr.ll"
     if ! grep -q "sanitize_thread" "$T53_DIR/tsan_446_attr.ll"; then
         echo "FAILED: failed to attach sanitize_thread attribute to LLVM IR"
         exit 1
@@ -2526,6 +2553,130 @@ timeout 120 nu tools/fuzz_diff.nu --runs 2 --seed 42 --self-test-shrink >"$T54_D
 if ! grep -q "PASS diff shrinker self-test:" "$T54_DIR/fd.run"; then
     echo "FAILED: Tier 2 4-way differential harness failed"
     cat "$T54_DIR/fd.run"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 55: Build reproducibility, cache invalidation & parallel isolation (DVA-77) ---
+echo -n "Testing build reproducibility, cache invalidation & parallel isolation... "
+T55_DIR="$TMPDIR/t55_repro"
+mkdir -p "$T55_DIR/src" "$T55_DIR/cache" "$T55_DIR/par_work"
+cat <<'EOF' > "$T55_DIR/src/util.dva"
+#public
+   val = !=> "v1"
+EOF
+cat <<'EOF' > "$T55_DIR/src/main.dva"
+#use io
+#use ./util
+io::out $ util::val!
+EOF
+# Clean vs incremental IR & binary equivalence + relative/absolute path cache hit
+timeout 30 ./edva "$T55_DIR/src/main.dva" --ir --no-cache -o "$T55_DIR/clean1.ll" < /dev/null >/dev/null 2>&1
+timeout 30 ./edva "$T55_DIR/src/main.dva" -o "$T55_DIR/cold_bin" --cache "$T55_DIR/cache" < /dev/null >"$T55_DIR/c1.out" 2>&1
+rm -f "$T55_DIR/cold_bin.ll"
+REL_OUT=$(cd "$T55_DIR" && timeout 30 "$ORIG_DIR/edva" src/main.dva -o "$T55_DIR/rel_bin" --cache "$T55_DIR/cache" < /dev/null 2>&1)
+rm -f "$T55_DIR/rel_bin.ll"
+if ! grep -Fq "cached LLVM IR:" <<<"$REL_OUT"; then
+    echo "FAILED: relative path invocation missed warm cache from absolute path build: $REL_OUT"
+    exit 1
+fi
+timeout 30 ./edva "$T55_DIR/src/main.dva" -ir -o "$T55_DIR/warm1.ll" --cache "$T55_DIR/cache" < /dev/null >/dev/null 2>&1
+if ! diff -u "$T55_DIR/clean1.ll" "$T55_DIR/warm1.ll"; then
+    echo "FAILED: clean --no-cache IR and cached IR diverged"
+    exit 1
+fi
+# Transitive dependency change + cflag change must invalidate cache
+cat <<'EOF' > "$T55_DIR/src/util.dva"
+#public
+   val = !=> "v2"
+EOF
+timeout 30 ./edva "$T55_DIR/src/main.dva" -o "$T55_DIR/dep_bin" --cache "$T55_DIR/cache" < /dev/null >"$T55_DIR/c_dep.out" 2>&1
+rm -f "$T55_DIR/dep_bin.ll"
+if [ "$("$T55_DIR/dep_bin")" != "v2" ] || grep -Fq "cached LLVM IR:" "$T55_DIR/c_dep.out"; then
+    echo "FAILED: transitive dependency edit did not invalidate cache cleanly"
+    exit 1
+fi
+CF_OUT1=$(timeout 30 ./edva "$T55_DIR/src/main.dva" --cflag -D_T55=1 -o "$T55_DIR/cf1" --cache "$T55_DIR/cache" < /dev/null 2>&1)
+CF_OUT2=$(timeout 30 ./edva "$T55_DIR/src/main.dva" --cflag -D_T55=2 -o "$T55_DIR/cf2" --cache "$T55_DIR/cache" < /dev/null 2>&1)
+rm -f "$T55_DIR/cf1.ll" "$T55_DIR/cf2.ll"
+if grep -Fq "cached LLVM IR:" <<<"$CF_OUT2"; then
+    echo "FAILED: --cflag change hit stale cache entry"
+    exit 1
+fi
+# Parallel isolated builds sharing one CWD and one --cache directory (no CWD .ll leakage)
+for k in 1 2 3 4; do
+    cat <<EOF > "$T55_DIR/par_work/mod${k}.dva"
+#public
+   get_k = !=> ${k}0 + 7
+EOF
+done
+PIDS=()
+for k in 1 2 3 4; do
+    (cd "$T55_DIR/par_work" && timeout 30 "$ORIG_DIR/edva" "mod${k}.dva" -c --module "mod${k}" -o "$T55_DIR/par_work/mod${k}.o" --cache "$T55_DIR/cache" < /dev/null >"$T55_DIR/p${k}.log" 2>&1) &
+    PIDS+=($!)
+done
+for pid in "${PIDS[@]}"; do
+    if ! wait "$pid"; then
+        echo "FAILED: parallel module compilation failed"
+        exit 1
+    fi
+done
+if [ -n "$(find "$T55_DIR/par_work" -maxdepth 1 -name '*.ll')" ]; then
+    echo "FAILED: -c --module without -ir left .ll files in CWD: $(find "$T55_DIR/par_work" -maxdepth 1 -name '*.ll')"
+    exit 1
+fi
+# Fresh consumer-package offline --locked build & test after vendoring
+mkdir -p "$T55_DIR/cons_lib/src" "$T55_DIR/cons_app/src" "$T55_DIR/cons_app/tests"
+cat <<'EOF' > "$T55_DIR/cons_lib/edva.ccl"
+name = cons_lib
+version = 0.1.0
+edva = 0.1.0
+EOF
+cat <<'EOF' > "$T55_DIR/cons_lib/src/cons_lib.dva"
+#public
+   #type Pair (a: Int, b: Int)
+   add_pair: Pair => Int
+   add_pair = p => p.a + p.b
+EOF
+cat <<'EOF' > "$T55_DIR/cons_app/edva.ccl"
+name = cons_app
+version = 0.1.0
+edva = 0.1.0
+
+dependencies =
+  cons_lib =
+    path = ../cons_lib
+EOF
+cat <<'EOF' > "$T55_DIR/cons_app/src/main.dva"
+#use io
+#use @cons_lib
+io::out $ cons_lib::add_pair(cons_lib::Pair(19, 23))
+EOF
+cat <<'EOF' > "$T55_DIR/cons_app/tests/app_test.dva"
+#use @cons_lib
+#use test
+test::eq(cons_lib::add_pair(cons_lib::Pair(3, 4)), 7, "vendored consumer test")
+test::summary!
+EOF
+timeout 30 ./edva fetch "$T55_DIR/cons_app" --store "$T55_DIR/store" >"$T55_DIR/cfetch.out" 2>&1
+timeout 30 ./edva vendor "$T55_DIR/cons_app" --store "$T55_DIR/store" >"$T55_DIR/cvend.out" 2>&1
+timeout 30 ./edva build "$T55_DIR/cons_app" --offline --locked --store "$T55_DIR/store" --cache "$T55_DIR/cache" >"$T55_DIR/cbuild.out" 2>&1
+timeout 30 ./edva test "$T55_DIR/cons_app" --offline --locked --store "$T55_DIR/store" --cache "$T55_DIR/cache" >"$T55_DIR/ctest.out" 2>&1
+if [ "$("$T55_DIR/cons_app/cons_app")" != "42" ] || ! grep -Fq "1 passed, 0 failed" "$T55_DIR/ctest.out"; then
+    echo "FAILED: vendored --offline --locked consumer package build/test failed"
+    cat "$T55_DIR/cbuild.out" "$T55_DIR/ctest.out"
+    exit 1
+fi
+echo "PASS"
+
+# --- Test 56: Reproducible cross-language & Wasm benchmark harness (DVA-79) ---
+echo -n "Testing reproducible benchmark smoke suite (tools/bench.nu --smoke)... "
+T56_OUT=$(ulimit -S -v 8388608 2>/dev/null || true; timeout 120 nu tools/bench.nu --smoke 2>&1)
+if ! grep -Fq 'cli_log_json' <<<"$T56_OUT" || \
+   ! grep -Fq 'server_http_router' <<<"$T56_OUT" || \
+   ! grep -Fq 'wasm_numeric_kernel' <<<"$T56_OUT" || \
+   ! grep -Fq 'checksum=15902800,ok=1600,err=400' <<<"$T56_OUT"; then
+    echo "FAILED: benchmark smoke suite did not produce verified output: $T56_OUT"
     exit 1
 fi
 echo "PASS"

@@ -34,6 +34,7 @@
    #type Values Value{}
    #type Pairs (key: String, value: Value){}
    #type Result <Value | Error>
+   #type Cursor (src: String, pos: Int)
 
 #type Scanner (src: String, pos: Int)
 
@@ -158,16 +159,67 @@ is_digit_at = sc, p => p < ?sc.src && str::is_digit(sc.src(p))
 
 // --- value parsing ------------------------------------------------
 
-parse_string: Scanner => <Value | Error>
-parse_string = sc =>
-   sc.pos = sc.pos + 1
+scan_plain_ascii_end: String, Int => Int
+scan_plain_ascii_end = src, start =>
+   k' = start
+   n = ?src
+   #arch ["wasm32", "wasm64", "wasm"]
+      0.. @
+         k' !< n | -->
+         c = src(k')
+         c [0x20...0x7F] && c !['", '\\]
+            | k' = k' + 1
+            | -->
+   |
+      k' + 8 !> n
+         |
+            base = &src
+            0.. @
+               k' + 8 > n | -->
+               w = @[base + k' u64]
+               ctrl_or_hi = w .|. (w - 0x2020202020202020u64)
+               x1 = w .^. 0x2222222222222222u64
+               x2 = w .^. 0x5C5C5C5C5C5C5C5Cu64
+               m1 = (x1 - 0x0101010101010101u64) .&. (.!. x1)
+               m2 = (x2 - 0x0101010101010101u64) .&. (.!. x2)
+               bad = (ctrl_or_hi .|. m1 .|. m2) .&. 0x8080808080808080u64
+               bad != 0u64
+                  |
+                     // Subtraction can mark later lanes through borrow, but the
+                     // first marked lane is exact in little-endian byte order.
+                     #arch ["x86_64", "aarch64", "riscv64"]
+                        --| k' + Int(%ctz(bad) .>. 3u64)
+                     -->
+               k' = k' + 8
+      0.. @
+         k' !< n | -->
+         c = src(k')
+         c [0x20...0x7F] && c !['", '\\]
+            | k' = k' + 1
+            | -->
+   k'
+
+parse_string_escaped: Scanner, Int, Int => <Value | Error>
+parse_string_escaped = sc, start, plain_end =>
+   sc.pos = start
    b = {64}
-   r = scan_string(sc, b, sc.pos)
+   plain_end > start | b += sc.src(start..plain_end)
+   r = scan_string(sc, b, plain_end)
    r | end =>
          sc.pos = end + 1
          <+ Value(String, +b) ->
    | err =>
          <- err +>
+
+parse_string: Scanner => <Value | Error>
+parse_string = sc =>
+   start = sc.pos + 1
+   plain_end = scan_plain_ascii_end(sc.src, start)
+   plain_end < ?sc.src && sc.src(plain_end) == '"
+      |
+         sc.pos = plain_end + 1
+         <+ Value(String, sc.src(start..plain_end)) ->
+      | parse_string_escaped(sc, start, plain_end)
 
 parse_array: Scanner => <Value | Error>
 parse_array = sc =>
@@ -931,4 +983,237 @@ stringify_pretty_into = b, val, indent, depth =>
       parse(s)
          | val => from_value(T, val)
          | err => <- err +>
+
+// --- Streaming pull scanner / cursor API ------------------------------------
+
+#private
+   cursor_skip_str: String, Int => < Int | >
+   cursor_skip_str = src, start =>
+      n = ?src
+      k' = scan_plain_ascii_end(src, start)
+      0.. @
+         k' !< n | --| <-->
+         c = src(k')
+         c
+            ['"] --| <+ k' + 1 +>
+            ['\\]
+               k' + 1 !< n | --| <-->
+               k' = k' + 2
+            | k' = k' + 1
+      <-->
+
+   cursor_read_str_escaped: Cursor, Int, Int => < String | >
+   cursor_read_str_escaped = cur, start, plain_end =>
+      sc = Scanner(cur.src, start)
+      b = {64}
+      plain_end > start | b += cur.src(start..plain_end)
+      scan_string(sc, b, plain_end)
+         | end =>
+            cur.pos = end + 1
+            <+ +b +>
+         | <-->
+
+   cursor_skip_compound: Cursor, Int => <>
+   cursor_skip_compound = cur, p =>
+      n = ?cur.src
+      k' = p + 1
+      depth' = 1
+      0.. @
+         k' !< n | --| <->
+         ch = cur.src(k')
+         ch
+            ['"]
+               cursor_skip_str(cur.src, k' + 1)
+                  | end => k' = end
+                  | --| <->
+            ['{, '[]
+               depth' = depth' + 1
+               k' = k' + 1
+            ['}, ']]
+               depth' = depth' - 1
+               k' = k' + 1
+               depth' == 0 |
+                  cur.pos = k'
+                  --| <+>
+            | k' = k' + 1
+      <->
+
+   cursor_skip_number: Cursor, Int, Int => <>
+   cursor_skip_number = cur, p, c0 =>
+      n = ?cur.src
+      has_digit = c0 ['0...'9] || (p + 1 < n && cur.src(p + 1) ['0...'9])
+      !has_digit | --| <->
+      k' = p + 1
+      0.. @
+         k' !< n | -->
+         cur.src(k') ['0...'9, '+, '-, '., 'e, 'E]
+            | k' = k' + 1
+            | -->
+      cur.pos = k'
+      <+>
+
+#public
+   cursor: String => Cursor
+   cursor = s => Cursor(s, 0)
+
+   cursor_reset: Cursor, String => ()
+   cursor_reset = cur, s =>
+      cur.src = s
+      cur.pos = 0
+
+   cursor_skip_ws: Cursor => Int
+   cursor_skip_ws = cur =>
+      p' = cur.pos
+      n = ?cur.src
+      0.. @
+         p' !< n | -->
+         str::is_ws(cur.src(p')) | p' = p' + 1 | -->
+      cur.pos = p'
+      p'
+
+   cursor_eof: Cursor => <>
+   cursor_eof = cur =>
+      cursor_skip_ws(cur) !< ?cur.src
+
+   cursor_peek: Cursor => Int
+   cursor_peek = cur =>
+      p = cursor_skip_ws(cur)
+      p < ?cur.src | cur.src(p) | -1
+
+   cursor_expect_byte: Cursor, Int => <>
+   cursor_expect_byte = cur, ch =>
+      at = cur.pos
+      // Whitespace arguments must retain the skip-before-match behavior.
+      p = at < ?cur.src && cur.src(at) == ch && !str::is_ws(ch)
+         | at
+         | cursor_skip_ws(cur)
+      p < ?cur.src && cur.src(p) == ch
+         |
+            cur.pos = p + 1
+            <+>
+         | <->
+
+   cursor_enter_object: Cursor => <>
+   cursor_enter_object = cur => cursor_expect_byte(cur, '{)
+
+   cursor_enter_array: Cursor => <>
+   cursor_enter_array = cur => cursor_expect_byte(cur, '[)
+
+   cursor_read_str: Cursor => < String | >
+   cursor_read_str = cur =>
+      n = ?cur.src
+      at = cur.pos
+      p = at < n && cur.src(at) == '\"
+         | at
+         | cursor_skip_ws(cur)
+      p !< n || cur.src(p) != '" | --| <-->
+      start = p + 1
+      plain_end = scan_plain_ascii_end(cur.src, start)
+      plain_end < n && cur.src(plain_end) == '"
+         |
+            cur.pos = plain_end + 1
+            --| <+ cur.src(start..plain_end) +>
+      cursor_read_str_escaped(cur, start, plain_end)
+
+   cursor_next_field: Cursor => < String | >
+   cursor_next_field = cur =>
+      n = ?cur.src
+      at = cur.pos
+      p = at < n && (cur.src(at) ['\", ',, '}])
+         | at
+         | cursor_skip_ws(cur)
+      p !< n | --| <-->
+      c = cur.src(p)
+      c ['}]
+         cur.pos = p + 1
+         --| <-->
+      c [',]
+         cur.pos = p + 1
+         at2 = cur.pos
+         p2 = at2 < n && cur.src(at2) == '\"
+            | at2
+            | cursor_skip_ws(cur)
+         p2 !< n || cur.src(p2) == '} | --| <-->
+      cursor_read_str(cur)
+         | k =>
+            cursor_expect_byte(cur, ':)
+               | <+ k +>
+               | <-->
+         | <-->
+
+   cursor_read_int: Cursor => < Int | >
+   cursor_read_int = cur =>
+      p0 = cursor_skip_ws(cur)
+      n = ?cur.src
+      p0 !< n | --| <-->
+      p' = p0
+      neg' = <->
+      cur.src(p') ['-]
+         neg' = <+>
+         p' = p' + 1
+      p' !< n | --| <-->
+      c0 = cur.src(p')
+      c0 !['0...'9] | --| <-->
+      c0 ['0] && p' + 1 < n && ascii::is_digit(cur.src(p' + 1)) | --| <-->
+      v' = 0
+      0.. @
+         p' !< n | -->
+         c = cur.src(p')
+         c ['0...'9]
+            |
+               v' = v' * 10 + (c - '0)
+               p' = p' + 1
+            | -->
+      p' < n && cur.src(p') ['., 'e, 'E] | --| <-->
+      cur.pos = p'
+      <+ (neg' | 0 - v' | v') +>
+
+   cursor_read_bool: Cursor => < <> | >
+   cursor_read_bool = cur =>
+      p = cursor_skip_ws(cur)
+      n = ?cur.src
+      p + 4 !> n && cur.src(p..p + 4) == "true"
+         |
+            cur.pos = p + 4
+            --| <+ <+> +>
+      p + 5 !> n && cur.src(p..p + 5) == "false"
+         |
+            cur.pos = p + 5
+            --| <+ <-> +>
+      <-->
+
+   cursor_skip_value: Cursor => <>
+   cursor_skip_value = cur =>
+      p = cursor_skip_ws(cur)
+      n = ?cur.src
+      p !< n | --| <->
+      c0 = cur.src(p)
+      c0
+         ['"]
+            cursor_skip_str(cur.src, p + 1)
+               | end =>
+                  cur.pos = end
+                  <+>
+               | <->
+         ['{, '[] cursor_skip_compound(cur, p)
+         ['t]
+            p + 4 !> n && cur.src(p..p + 4) == "true"
+               |
+                  cur.pos = p + 4
+                  <+>
+               | <->
+         ['f]
+            p + 5 !> n && cur.src(p..p + 5) == "false"
+               |
+                  cur.pos = p + 5
+                  <+>
+               | <->
+         ['n]
+            p + 4 !> n && cur.src(p..p + 4) == "null"
+               |
+                  cur.pos = p + 4
+                  <+>
+               | <->
+         ['0...'9, '-] cursor_skip_number(cur, p, c0)
+         | <->
 

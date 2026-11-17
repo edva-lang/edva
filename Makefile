@@ -87,7 +87,7 @@ FUZZ_RUNS    ?= 250
 FUZZ_SEED    ?= 42
 FUZZ_TIME    ?= 0
 
-.PHONY: all build clean test check fuzz fuzz-smoke dom-test dom-smoke dom-browser-smoke driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install install-user link uninstall
+.PHONY: all build clean test check fuzz fuzz-smoke bench bench-smoke dom-test dom-smoke dom-browser-smoke driver-test fixed-point rebuild-seed bootstrap gen-tokens gen-operators gen-version install install-user link uninstall
 
 # Default target: incremental modular build
 all: edva
@@ -290,7 +290,13 @@ fuzz: edva
 	EDVA_FUZZ=1 EDVA_FUZZ_RUNS=$(FUZZ_RUNS) EDVA_FUZZ_SEED=$(FUZZ_SEED) EDVA_FUZZ_TIME=$(FUZZ_TIME) EDVA_FUZZ_CORPUS="$(CURDIR)/tests/fuzz/corpus" "$$tmp/fuzz_codecs" && \
 	$(NU) tools/fuzz_diff.nu --runs 10 --seed $(FUZZ_SEED) --self-test-shrink
 
-check: build driver-test fuzz-smoke test
+bench-smoke: edva
+	$(NU) tools/bench.nu --smoke
+
+bench: edva
+	$(NU) tools/bench.nu --runs 5 --save benchmarks/results/baseline_sholl.json
+
+check: build driver-test fuzz-smoke bench-smoke test
 
 clean:
 	rm -rf build edva_stage1 edva_stage2 edva_stage1.ll edva_stage2.ll

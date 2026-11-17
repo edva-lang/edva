@@ -6,6 +6,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
 @dva_arena_base_tls = external thread_local global ptr
+@dva_active_gen_tls = external thread_local global i64
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
@@ -42,30 +43,31 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.ascii::hex_char_upper" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_ascii, ptr null }]
 
-declare ptr @dva_arena_current()
+declare ptr @dva_arena_current() #0
 
-declare ptr @dva_arena_set_current(ptr)
+declare ptr @dva_arena_set_current(ptr) #0
 
-declare ptr @malloc(i64)
+declare noalias ptr @malloc(i64) #0
 
-declare void @free(ptr)
+declare void @free(ptr) #0
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
 
-declare void @dva_arena_init(ptr, i64)
+declare void @dva_arena_init(ptr, i64) #0
 
-declare ptr @dva_arena_alloc(ptr, i64)
+declare noalias ptr @dva_arena_alloc(ptr, i64) #0
 
-declare void @dva_arena_destroy(ptr)
+declare void @dva_arena_destroy(ptr) #0
 
-declare i64 @dva_arena_save(ptr)
+declare i64 @dva_arena_save(ptr) #0
 
-declare void @dva_arena_restore(ptr, i64)
+declare void @dva_arena_restore(ptr, i64) #0
 
-declare i1 @dva_arena_validate_tag(ptr, i64)
+; Function Attrs: noinline
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr)
+declare void @dva_arena_adopt(ptr, ptr) #0
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -77,7 +79,7 @@ declare void @__sanitizer_cov_trace_pc_guard(ptr)
 
 declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
 
-define internal void @__dva_global_init_ascii() #1 {
+define internal void @__dva_global_init_ascii() #0 {
 entry:
   store ptr @clo.const, ptr @"var.ascii::is_ascii", align 8
   store ptr @clo.const.1, ptr @"var.ascii::is_digit", align 8
@@ -96,7 +98,7 @@ entry:
   ret void
 }
 
-define i1 @"ascii::is_ascii"(i64 %0) #1 {
+define i1 @"ascii::is_ascii"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -126,7 +128,7 @@ and.3.exit:                                       ; preds = %and.3.else, %and.3.
   br i1 %and.3.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"ascii::is_digit"(i64 %0) #1 {
+define i1 @"ascii::is_digit"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -156,7 +158,7 @@ and.4.exit:                                       ; preds = %and.4.else, %and.4.
   br i1 %and.4.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"ascii::is_upper"(i64 %0) #1 {
+define i1 @"ascii::is_upper"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -186,7 +188,7 @@ and.5.exit:                                       ; preds = %and.5.else, %and.5.
   br i1 %and.5.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"ascii::is_lower"(i64 %0) #1 {
+define i1 @"ascii::is_lower"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -216,7 +218,7 @@ and.6.exit:                                       ; preds = %and.6.else, %and.6.
   br i1 %and.6.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"ascii::is_alpha"(i64 %0) #1 {
+define i1 @"ascii::is_alpha"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -259,7 +261,7 @@ and.8.exit:                                       ; preds = %and.8.else, %and.8.
   br i1 %case.or, label %choice.case, label %choice.next
 }
 
-define i1 @"ascii::is_alnum"(i64 %0) #1 {
+define i1 @"ascii::is_alnum"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -315,7 +317,7 @@ and.11.exit:                                      ; preds = %and.11.else, %and.1
   br i1 %case.or6, label %choice.case, label %choice.next
 }
 
-define i1 @"ascii::is_hex"(i64 %0) #1 {
+define i1 @"ascii::is_hex"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -371,7 +373,7 @@ and.14.exit:                                      ; preds = %and.14.else, %and.1
   br i1 %case.or6, label %choice.case, label %choice.next
 }
 
-define i64 @"ascii::to_lower"(i64 %0) #1 {
+define i64 @"ascii::to_lower"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -393,7 +395,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i64 @"ascii::to_upper"(i64 %0) #1 {
+define i64 @"ascii::to_upper"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -415,7 +417,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define { i1, i64 } @"ascii::hex_value"(i64 %0) #1 {
+define { i1, i64 } @"ascii::hex_value"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -490,7 +492,7 @@ and.18.exit:                                      ; preds = %and.18.else, %and.1
   br i1 %and.18.phi, label %choice.case10, label %choice.next11
 }
 
-define { i1, i64 } @"ascii::hex_digit_lower"(i64 %0) #1 {
+define { i1, i64 } @"ascii::hex_digit_lower"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -544,7 +546,7 @@ and.20.exit:                                      ; preds = %and.20.else, %and.2
   br i1 %and.20.phi, label %choice.case3, label %choice.next4
 }
 
-define { i1, i64 } @"ascii::hex_digit_upper"(i64 %0) #1 {
+define { i1, i64 } @"ascii::hex_digit_upper"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -598,7 +600,7 @@ and.22.exit:                                      ; preds = %and.22.else, %and.2
   br i1 %and.22.phi, label %choice.case3, label %choice.next4
 }
 
-define i64 @"ascii::hex_char_lower"(i64 %0) #1 {
+define i64 @"ascii::hex_char_lower"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -621,7 +623,7 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-define i64 @"ascii::hex_char_upper"(i64 %0) #1 {
+define i64 @"ascii::hex_char_upper"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -644,5 +646,6 @@ choice.next:                                      ; preds = %entry
   br label %choice.exit
 }
 
-attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #1 = { "nounwind" }
+attributes #0 = { "nounwind" }
+attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { noinline "nounwind" }

@@ -2,6 +2,7 @@
 // High-resolution monotonic timing and micro-benchmarking utilities.
 
 #use io
+#use mem
 #use str
 #use time
 
@@ -11,6 +12,20 @@
       total_ns:    Int
       avg_ns:      Float
       ops_per_sec: Float
+   )
+
+   #type StatsResult (
+      iters:        Int
+      total_ns:     Int
+      avg_ns:       Float
+      min_ns:       Int
+      p50_ns:       Int
+      p95_ns:       Int
+      p99_ns:       Int
+      max_ns:       Int
+      ops_per_sec:  Float
+      alloc_bytes:  Int
+      alloc_chunks: Int
    )
 
    // Captures a monotonic starting timestamp in nanoseconds.
@@ -60,4 +75,92 @@
    run = name, iters, fn =>
       res = measure(iters, fn)
       io::out(format(name, res))
+      res
+
+   sort_samples_range: Int{}, Int, Int => ()
+   sort_samples_range = xs, lo, hi =>
+      lo < hi
+         |
+            hi - lo < 16
+               |
+                  (lo + 1)...hi @ i =>
+                     key = xs(i) | _ | 0
+                     j' = i - 1
+                     0.. @
+                        j' < lo || (xs(j') | _ | 0) !> key | -->
+                        xs(j' + 1) = (xs(j') | _ | 0) !| _
+                        j' = j' - 1
+                     xs(j' + 1) = key !| _
+               |
+                  pivot = xs(lo + (hi - lo) / 2) | _ | 0
+                  i' = lo
+                  j' = hi
+                  0.. @
+                     i' > j' | -->
+                     0.. @
+                        (xs(i') | _ | 0) < pivot | i' = i' + 1 | -->
+                     0.. @
+                        (xs(j') | _ | 0) > pivot | j' = j' - 1 | -->
+                     i' !> j'
+                        |
+                           vi = xs(i') | _ | 0
+                           vj = xs(j') | _ | 0
+                           xs(i') = vj !| _
+                           xs(j') = vi !| _
+                           i' = i' + 1
+                           j' = j' - 1
+                  lo < j' | sort_samples_range(xs, lo, j')
+                  i' < hi | sort_samples_range(xs, i', hi)
+
+   // Runs `fn(i)` with per-iteration latency sampling and arena allocation tracking.
+   measure_stats: Int, (Int => Int) => StatsResult
+   measure_stats = iters, fn =>
+      n = iters > 0 | iters | 1
+      warmup = n / 10
+      w = warmup < 1 | 1 | (warmup > 100 | 100 | warmup)
+      samples = Int{}
+      n @ samples += 0
+      sink' = 0
+      w @ i =>
+         sink' = sink' .^. fn(i)
+      p0 = mem::current_provenance!
+      total' = 0
+      n @ i =>
+         ta = time::mono_ns!
+         sink' = sink' .^. fn(i)
+         tb = time::mono_ns!
+         raw_d = tb - ta
+         d = raw_d > 0 | raw_d | 1
+         samples(i) = d !| _
+         total' = total' + d
+      p1 = mem::current_provenance!
+      raw_ab = p1.bytes_allocated - p0.bytes_allocated
+      raw_ac = p1.num_chunks - p0.num_chunks
+      ab = raw_ab !< 0 | raw_ab | 0
+      ac = raw_ac !< 0 | raw_ac | 0
+      sort_samples_range(samples, 0, n - 1)
+      dt = sink' == 0x7FFFFFFF12345678 | total' + 1 | (total' > 0 | total' | 1)
+      avg = Float(dt) / Float(n)
+      ops = 1000000000.0 / avg
+      min_ns = samples(0) | _ | 0
+      max_ns = samples(n - 1) | _ | 0
+      p50_i = (n * 50) / 100 < n | (n * 50) / 100 | n - 1
+      p95_i = (n * 95) / 100 < n | (n * 95) / 100 | n - 1
+      p99_i = (n * 99) / 100 < n | (n * 99) / 100 | n - 1
+      p50_ns = samples(p50_i) | _ | 0
+      p95_ns = samples(p95_i) | _ | 0
+      p99_ns = samples(p99_i) | _ | 0
+      StatsResult(n, dt, avg, min_ns, p50_ns, p95_ns, p99_ns, max_ns, ops, ab, ac)
+
+   // Formats a `StatsResult` with latency percentiles and arena allocation summary.
+   format_stats: String, StatsResult => String
+   format_stats = name, res =>
+      ops_i = Int(res.ops_per_sec)
+      "${name}: ${str::from_int(res.iters)} iters, avg=${str::from_float(res.avg_ns)} ns, min=${str::from_int(res.min_ns)} ns, p50=${str::from_int(res.p50_ns)} ns, p95=${str::from_int(res.p95_ns)} ns, p99=${str::from_int(res.p99_ns)} ns, max=${str::from_int(res.max_ns)} ns, alloc=${str::from_int(res.alloc_bytes)} B (${str::from_int(res.alloc_chunks)} chunks) (${str::from_int(ops_i)} ops/s)"
+
+   // Runs `measure_stats(iters, fn)`, prints the formatted summary, and returns `StatsResult`.
+   run_stats: String, Int, (Int => Int) => StatsResult
+   run_stats = name, iters, fn =>
+      res = measure_stats(iters, fn)
+      io::out(format_stats(name, res))
       res

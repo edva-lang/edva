@@ -2,31 +2,35 @@
 meta:
   audience: "Edva developers benchmarking functions and hot loops"
   status: "current reference"
-  audited: "fb4fbc2"
-  evidence: "`std/bench.dva`, `tests/pass/387_str_os_cli_test_bench.dva`"
+  audited: "2026-11-17"
+  evidence: "`std/bench.dva`, `tests/pass/387_str_os_cli_test_bench.dva`, `tests/pass/449_bench_stats_and_workloads.dva`"
 ---
 
 # `bench` standard library
 
-The `bench` module provides monotonic-clock microbenchmarking with warmup iterations
-and formatted `ns/op` (or `us/op`, `ms/op`) throughput reporting.
+The `bench` module provides monotonic-clock microbenchmarking with automatic warmup iterations, per-iteration latency percentiles (`min`, `p50`, `p95`, `p99`, `max`), arena allocation tracking (`mem::current_provenance!`), and throughput reporting.
 
 ```{.dva .run}
 #use bench
 #use io
 
 r = bench::measure(100, i => i * i + 1)
-io::out $ r.iters
+s = bench::measure_stats(50, i => (i * 17 + 3) % 97)
+io::out $ (r.iters, s.iters, s.min_ns !> s.p95_ns, s.p95_ns !> s.max_ns)
 ```
 
 ## Types and Function catalog
 
 | Symbol / Function | Signature | Description |
 |---|---|---|
-| `bench::BenchResult` | Record `(name: String, iters: Int, total_ns: Int, ns_per_op: Int)` | Benchmark timing result |
-| `bench::measure_warmup(name, warmup, iters, fn)` | `String, Int, Int, (() => ()) => BenchResult` | Runs `warmup` unmeasured iterations, then times `iters` iterations of `fn` |
-| `bench::measure(name, iters, fn)` | `String, Int, (() => ()) => BenchResult` | Measures `iters` iterations of `fn` with automatic 10% warmup |
-| `bench::format_result(r)` | `BenchResult => String` | Formats result as `BENCH <name>: <iters> iters in <total> (<rate>/op)` |
-| `bench::run(name, iters, fn)` | `String, Int, (() => ()) => BenchResult` | Measures `fn` and prints the formatted benchmark line to stdout |
-| `bench::elapsed_ns(fn)` | `(() => ()) => Int` | Executes `fn` once and returns elapsed monotonic nanoseconds |
-| `bench::elapsed_ms(fn)` | `(() => ()) => Float` | Executes `fn` once and returns elapsed monotonic milliseconds |
+| `bench::BenchResult` | Record `(iters: Int, total_ns: Int, avg_ns: Float, ops_per_sec: Float)` | Aggregate throughput timing result |
+| `bench::StatsResult` | Record `(iters, total_ns, avg_ns, min_ns, p50_ns, p95_ns, p99_ns, max_ns, ops_per_sec, alloc_bytes, alloc_chunks)` | Latency distribution and arena allocation result |
+| `bench::start!` | `() => Int` | Captures a monotonic starting timestamp in nanoseconds |
+| `bench::elapsed_ns(t0)` | `Int => Int` | Returns nanoseconds elapsed since `t0` (from `bench::start!`) |
+| `bench::elapsed_ms(t0)` | `Int => Float` | Returns milliseconds elapsed since `t0` |
+| `bench::measure(iters, fn)` | `Int, (Int => Int) => BenchResult` | Runs 10% warmup iterations then times `iters` invocations of `fn(i)` |
+| `bench::format(name, res)` | `String, BenchResult => String` | Formats `BenchResult` into a single throughput line |
+| `bench::run(name, iters, fn)` | `String, Int, (Int => Int) => BenchResult` | Measures `fn` and prints the formatted line to stdout |
+| `bench::measure_stats(iters, fn)` | `Int, (Int => Int) => StatsResult` | Records per-iteration sorted latencies (`min`..`max`) and active arena byte/chunk allocations |
+| `bench::format_stats(name, res)` | `String, StatsResult => String` | Formats `StatsResult` with `min`/`p50`/`p95`/`p99`/`max` and `alloc=` summary |
+| `bench::run_stats(name, iters, fn)` | `String, Int, (Int => Int) => StatsResult` | Measures `fn` with stats and prints the formatted summary to stdout |

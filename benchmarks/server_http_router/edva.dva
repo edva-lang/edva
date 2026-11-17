@@ -1,0 +1,87 @@
+#use io
+#use mem
+#use str
+#use sys
+
+parse_n_arg: Int => Int
+parse_n_arg = dflt =>
+   sys::argc < 2
+      | dflt
+      |
+         a1 = sys::argv_string(1)
+         v = str::parse_int(a1) |_| dflt
+         v > 0 | v | dflt
+
+#type HttpReq (
+   method: String,
+   path: String,
+   body: String
+)
+
+parse_http_req: String => < HttpReq | >
+parse_http_req = raw =>
+   hdr_end = str::find(raw, "\r\n\r\n") | p => p | --| <-->
+   head = raw(0..hdr_end)
+   body_raw = raw(hdr_end + 4..)
+   eol = str::find(head, "\r\n") | p => p | ?head
+   req_line = head(0..eol)
+   sp1 = str::find(req_line, " ") | p => p | --| <-->
+   method = req_line(0..sp1)
+   rest1 = req_line(sp1 + 1..)
+   sp2 = str::find(rest1, " ") | p => p | ?rest1
+   target = rest1(0..sp2)
+   q_pos = str::find(target, "?") | p => p | ?target
+   path = target(0..q_pos)
+   <+ HttpReq(method, path, body_raw) +>
+
+route_request: HttpReq => (Int, String)
+route_request = req =>
+   req.method == "GET" && req.path == "/health"
+      | --| (200, "{\"status\":\"ok\"}")
+   req.method == "POST" && str::starts_with(req.path, "/items/")
+      | --| (201, "created:${req.path(7..)}:${str::from_int(?req.body)}")
+   req.method == "GET" && str::starts_with(req.path, "/users/")
+      | --| (200, "user:${req.path(7..)}")
+   (404, "not_found")
+
+format_response: Int, String => String
+format_response = status, body =>
+   b = {64 + ?body}
+   b += "HTTP/1.1 ${str::from_int(status)} OK\r\nContent-Length: ${str::from_int(?body)}\r\n\r\n"
+   b += body
+   +b
+
+n = parse_n_arg(40000)
+req_arena = mem::arena(262144)
+digest' = 0
+c200' = 0
+c201' = 0
+c404' = 0
+
+n @ i =>
+   res = mem::with_value(req_arena, !=>
+      m = i % 4
+      raw = m
+         [0] "GET /health HTTP/1.1\r\nHost: localhost\r\nConnection: keep-alive\r\n\r\n"
+         [1] "POST /items/${str::from_int(i % 97)}?mode=fast HTTP/1.1\r\nHost: localhost\r\nContent-Length: 11\r\n\r\nhello=world"
+         [2] "GET /users/${str::from_int(i % 53)} HTTP/1.1\r\nHost: localhost\r\nX-Req-Id: ${str::from_int(i)}\r\n\r\n"
+         |   "GET /unknown/${str::from_int(i % 19)} HTTP/1.1\r\nHost: localhost\r\n\r\n"
+      parse_http_req(raw)
+         | req =>
+            routed = route_request(req)
+            resp = format_response(routed.0, routed.1)
+            (routed.0, ?resp)
+         | (500, 0)
+   )
+   mem::reset(req_arena)
+
+   st = res.0
+   rlen = res.1
+   digest' = (digest' * 31 + st * 131 + rlen) % 1000000007
+   st
+      [200] c200' = c200' + 1
+      [201] c201' = c201' + 1
+      |     c404' = c404' + 1
+
+mem::destroy(req_arena)
+io::out $ "digest=${str::from_int(digest')},200=${str::from_int(c200')},201=${str::from_int(c201')},404=${str::from_int(c404')}"

@@ -6,6 +6,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @fmt_error = internal unnamed_addr constant [38 x i8] c"Error %lld: %.*s\0A  at %.*s:%lld:%lld\0A\00"
 @dva_arena_tls = external thread_local global ptr
 @dva_arena_base_tls = external thread_local global ptr
+@dva_active_gen_tls = external thread_local global i64
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
@@ -144,30 +145,31 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.unicode::is_uax31_builder" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_unicode, ptr null }]
 
-declare ptr @dva_arena_current()
+declare ptr @dva_arena_current() #0
 
-declare ptr @dva_arena_set_current(ptr)
+declare ptr @dva_arena_set_current(ptr) #0
 
-declare ptr @malloc(i64)
+declare noalias ptr @malloc(i64) #0
 
-declare void @free(ptr)
+declare void @free(ptr) #0
 
 ; Function Attrs: nocallback nofree nosync nounwind speculatable willreturn memory(none)
-declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #0
+declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
 
-declare void @dva_arena_init(ptr, i64)
+declare void @dva_arena_init(ptr, i64) #0
 
-declare ptr @dva_arena_alloc(ptr, i64)
+declare noalias ptr @dva_arena_alloc(ptr, i64) #0
 
-declare void @dva_arena_destroy(ptr)
+declare void @dva_arena_destroy(ptr) #0
 
-declare i64 @dva_arena_save(ptr)
+declare i64 @dva_arena_save(ptr) #0
 
-declare void @dva_arena_restore(ptr, i64)
+declare void @dva_arena_restore(ptr, i64) #0
 
-declare i1 @dva_arena_validate_tag(ptr, i64)
+; Function Attrs: noinline
+declare i1 @dva_arena_validate_tag(ptr, i64) #2
 
-declare void @dva_arena_adopt(ptr, ptr)
+declare void @dva_arena_adopt(ptr, ptr) #0
 
 declare i64 @dva_hash_string(ptr, i64)
 
@@ -179,7 +181,7 @@ declare void @__sanitizer_cov_trace_pc_guard(ptr)
 
 declare void @__sanitizer_cov_trace_pc_guard_init(ptr, ptr)
 
-define internal void @__dva_global_init_unicode() #1 {
+define internal void @__dva_global_init_unicode() #0 {
 entry:
   %arena.cur = call ptr @dva_arena_current()
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16, i16 }, ptr null, i32 1) to i64))
@@ -228,9 +230,9 @@ entry:
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #2
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #3
 
-define i64 @"unicode::category_id"(i32 %0) #1 {
+define i64 @"unicode::category_id"(i32 %0) #0 {
 entry:
   %var.page = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -275,14 +277,14 @@ choice.else:                                      ; preds = %choice.exit
   br i1 %idx.neg, label %idx_oob, label %idx_big_check
 
 choice.exit3:                                     ; preds = %idx_ok15, %choice.then
-  %choice.res25 = phi i64 [ 29, %choice.then ], [ %bandtmp24, %idx_ok15 ]
-  ret i64 %choice.res25
+  %choice.res26 = phi i64 [ 29, %choice.then ], [ %bandtmp25, %idx_ok15 ]
+  ret i64 %choice.res26
 
 idx_big_check:                                    ; preds = %choice.else
   %idx.big = icmp sge i64 %idx.sext, 4352
   br i1 %idx.big, label %idx_oob, label %idx_ok
 
-idx_ok:                                           ; preds = %idx_oob, %idx_big_check
+idx_ok:                                           ; preds = %abort.dead, %idx_big_check
   %idx.sext6 = sext i32 %shrtmp to i64
   %rec.elem.gep = getelementptr i16, ptr %var.load4, i64 %idx.sext6
   %rec.elem.val = load i16, ptr %rec.elem.gep, align 2
@@ -302,35 +304,42 @@ idx_ok:                                           ; preds = %idx_oob, %idx_big_c
 idx_oob:                                          ; preds = %idx_big_check, %choice.else
   %1 = call i64 @write(i32 2, ptr @rec_idx_oob_msg, i64 34)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
   br label %idx_ok
 
 idx_big_check14:                                  ; preds = %idx_ok
   %idx.big17 = icmp sge i64 %addtmp, 5312
   br i1 %idx.big17, label %idx_oob16, label %idx_ok15
 
-idx_ok15:                                         ; preds = %idx_oob16, %idx_big_check14
-  %rec.elem.gep18 = getelementptr i64, ptr %var.load8, i64 %addtmp
-  %rec.elem.val19 = load i64, ptr %rec.elem.gep18, align 8
-  %var.load20 = load i32, ptr %var.cp, align 4
-  %coerce.sext21 = sext i32 %var.load20 to i64
-  %bandtmp22 = and i64 %coerce.sext21, 7
-  %shltmp = shl i64 %bandtmp22, 3
+idx_ok15:                                         ; preds = %abort.dead18, %idx_big_check14
+  %rec.elem.gep19 = getelementptr i64, ptr %var.load8, i64 %addtmp
+  %rec.elem.val20 = load i64, ptr %rec.elem.gep19, align 8
+  %var.load21 = load i32, ptr %var.cp, align 4
+  %coerce.sext22 = sext i32 %var.load21 to i64
+  %bandtmp23 = and i64 %coerce.sext22, 7
+  %shltmp = shl i64 %bandtmp23, 3
   %sh.amt.masked = and i64 %shltmp, 63
-  %shrtmp23 = lshr i64 %rec.elem.val19, %sh.amt.masked
-  %bandtmp24 = and i64 %shrtmp23, 255
+  %shrtmp24 = lshr i64 %rec.elem.val20, %sh.amt.masked
+  %bandtmp25 = and i64 %shrtmp24, 255
   br label %choice.exit3
 
 idx_oob16:                                        ; preds = %idx_big_check14, %idx_ok
   %2 = call i64 @write(i32 2, ptr @rec_idx_oob_msg, i64 34)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead18:                                     ; No predecessors!
   br label %idx_ok15
 }
 
 declare i64 @write(i32, ptr, i64)
 
-declare void @exit(i32)
+; Function Attrs: cold noreturn
+declare void @exit(i32) #4
 
-define ptr @"unicode::category"(i32 %0) #1 {
+define ptr @"unicode::category"(i32 %0) #0 {
 entry:
   %var._comp_1 = alloca i32, align 4
   store i32 %0, ptr %var._comp_1, align 4
@@ -354,7 +363,7 @@ clo.merge:                                        ; preds = %clo.plain, %clo.cap
   ret ptr %clo.res
 }
 
-define internal ptr @"$anon_fn.2"(i64 %0) #1 {
+define internal ptr @"$anon_fn.2"(i64 %0) #0 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -749,7 +758,7 @@ choice.next191:                                   ; preds = %choice.next184
   br label %choice.exit
 }
 
-define ptr @"unicode::category_description"(ptr %0) #1 {
+define { i64, ptr } @"unicode::category_description"(ptr %0) #0 {
 entry:
   %var._ = alloca ptr, align 8
   store ptr %0, ptr %var._, align 8
@@ -761,7 +770,8 @@ entry:
 
 choice.exit:                                      ; preds = %choice.next142, %choice.case141, %choice.case136, %choice.case131, %choice.case126, %choice.case121, %choice.case116, %choice.case111, %choice.case106, %choice.case101, %choice.case96, %choice.case91, %choice.case86, %choice.case81, %choice.case76, %choice.case71, %choice.case66, %choice.case61, %choice.case56, %choice.case51, %choice.case46, %choice.case41, %choice.case36, %choice.case31, %choice.case26, %choice.case21, %choice.case16, %choice.case11, %choice.case6, %choice.case1, %choice.case
   %choice.res = phi ptr [ @str.0.struct, %choice.case ], [ @str.1.struct, %choice.case1 ], [ @str.2.struct, %choice.case6 ], [ @str.3.struct, %choice.case11 ], [ @str.4.struct, %choice.case16 ], [ @str.5.struct, %choice.case21 ], [ @str.6.struct, %choice.case26 ], [ @str.7.struct, %choice.case31 ], [ @str.8.struct, %choice.case36 ], [ @str.9.struct, %choice.case41 ], [ @str.10.struct, %choice.case46 ], [ @str.11.struct, %choice.case51 ], [ @str.12.struct, %choice.case56 ], [ @str.13.struct, %choice.case61 ], [ @str.14.struct, %choice.case66 ], [ @str.15.struct, %choice.case71 ], [ @str.16.struct, %choice.case76 ], [ @str.17.struct, %choice.case81 ], [ @str.18.struct, %choice.case86 ], [ @str.19.struct, %choice.case91 ], [ @str.20.struct, %choice.case96 ], [ @str.21.struct, %choice.case101 ], [ @str.22.struct, %choice.case106 ], [ @str.23.struct, %choice.case111 ], [ @str.24.struct, %choice.case116 ], [ @str.25.struct, %choice.case121 ], [ @str.26.struct, %choice.case126 ], [ @str.27.struct, %choice.case131 ], [ @str.28.struct, %choice.case136 ], [ @str.29.struct, %choice.case141 ], [ @str.30.struct, %choice.next142 ]
-  ret ptr %choice.res
+  %ret.pack = load { i64, ptr }, ptr %choice.res, align 8
+  ret { i64, ptr } %ret.pack
 
 choice.case:                                      ; preds = %entry
   br label %choice.exit
@@ -1031,7 +1041,7 @@ choice.next142:                                   ; preds = %choice.next137
   br label %choice.exit
 }
 
-define i1 @"unicode::is_alpha"(i32 %0) #1 {
+define i1 @"unicode::is_alpha"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1044,7 +1054,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"unicode::is_digit"(i32 %0) #1 {
+define i1 @"unicode::is_digit"(i32 %0) #0 {
 entry:
   %var.cp = alloca i32, align 4
   store i32 %0, ptr %var.cp, align 4
@@ -1054,7 +1064,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"unicode::is_upper"(i32 %0) #1 {
+define i1 @"unicode::is_upper"(i32 %0) #0 {
 entry:
   %var.cp = alloca i32, align 4
   store i32 %0, ptr %var.cp, align 4
@@ -1064,7 +1074,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"unicode::is_lower"(i32 %0) #1 {
+define i1 @"unicode::is_lower"(i32 %0) #0 {
 entry:
   %var.cp = alloca i32, align 4
   store i32 %0, ptr %var.cp, align 4
@@ -1074,7 +1084,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"unicode::is_title"(i32 %0) #1 {
+define i1 @"unicode::is_title"(i32 %0) #0 {
 entry:
   %var.cp = alloca i32, align 4
   store i32 %0, ptr %var.cp, align 4
@@ -1084,7 +1094,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i32 @"unicode::to_upper"(i32 %0) #1 {
+define i32 @"unicode::to_upper"(i32 %0) #0 {
 entry:
   %var.step2 = alloca i64, align 8
   %var.span = alloca i64, align 8
@@ -1201,7 +1211,7 @@ idx_big_check:                                    ; preds = %choice.exit15
   %idx.big = icmp sge i64 %var.load19, 199
   br i1 %idx.big, label %idx_oob, label %idx_ok
 
-idx_ok:                                           ; preds = %idx_oob, %idx_big_check
+idx_ok:                                           ; preds = %abort.dead, %idx_big_check
   %rec.elem.gep = getelementptr i64, ptr %var.load18, i64 %var.load19
   %rec.elem.val = load i64, ptr %rec.elem.gep, align 8
   store i64 %rec.elem.val, ptr %var.w, align 8
@@ -1220,6 +1230,9 @@ idx_ok:                                           ; preds = %idx_oob, %idx_big_c
 idx_oob:                                          ; preds = %idx_big_check, %choice.exit15
   %1 = call i64 @write(i32 2, ptr @rec_idx_oob_msg, i64 34)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
   br label %idx_ok
 
 choice.then27:                                    ; preds = %idx_ok
@@ -1295,7 +1308,7 @@ ret.dead63:                                       ; No predecessors!
   br label %choice.exit54
 }
 
-define i32 @"unicode::to_lower"(i32 %0) #1 {
+define i32 @"unicode::to_lower"(i32 %0) #0 {
 entry:
   %var.step2 = alloca i64, align 8
   %var.span = alloca i64, align 8
@@ -1423,7 +1436,7 @@ idx_big_check:                                    ; preds = %choice.exit20
   %idx.big = icmp sge i64 %var.load25, 186
   br i1 %idx.big, label %idx_oob, label %idx_ok
 
-idx_ok:                                           ; preds = %idx_oob, %idx_big_check
+idx_ok:                                           ; preds = %abort.dead, %idx_big_check
   %rec.elem.gep = getelementptr i64, ptr %var.load24, i64 %var.load25
   %rec.elem.val = load i64, ptr %rec.elem.gep, align 8
   store i64 %rec.elem.val, ptr %var.w, align 8
@@ -1442,6 +1455,9 @@ idx_ok:                                           ; preds = %idx_oob, %idx_big_c
 idx_oob:                                          ; preds = %idx_big_check, %choice.exit20
   %1 = call i64 @write(i32 2, ptr @rec_idx_oob_msg, i64 34)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
   br label %idx_ok
 
 choice.then33:                                    ; preds = %idx_ok
@@ -1517,7 +1533,7 @@ ret.dead68:                                       ; No predecessors!
   br label %choice.exit59
 }
 
-define i1 @"unicode::is_space"(i32 %0) #1 {
+define i1 @"unicode::is_space"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1588,7 +1604,7 @@ and.31.exit:                                      ; preds = %and.31.else, %and.3
   br i1 %case.or, label %choice.case5, label %choice.next6
 }
 
-define i1 @"unicode::is_punctuation"(i32 %0) #1 {
+define i1 @"unicode::is_punctuation"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1622,7 +1638,7 @@ and.32.exit:                                      ; preds = %and.32.else, %and.3
   br i1 %and.32.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"unicode::is_symbol"(i32 %0) #1 {
+define i1 @"unicode::is_symbol"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1656,7 +1672,7 @@ and.33.exit:                                      ; preds = %and.33.else, %and.3
   br i1 %and.33.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"unicode::is_mark"(i32 %0) #1 {
+define i1 @"unicode::is_mark"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1690,7 +1706,7 @@ and.34.exit:                                      ; preds = %and.34.else, %and.3
   br i1 %and.34.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"unicode::is_number"(i32 %0) #1 {
+define i1 @"unicode::is_number"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1724,7 +1740,7 @@ and.35.exit:                                      ; preds = %and.35.else, %and.3
   br i1 %and.35.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"unicode::is_control"(i32 %0) #1 {
+define i1 @"unicode::is_control"(i32 %0) #0 {
 entry:
   %var.cp = alloca i32, align 4
   store i32 %0, ptr %var.cp, align 4
@@ -1734,7 +1750,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i1 @"unicode::is_graphic"(i32 %0) #1 {
+define i1 @"unicode::is_graphic"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1747,7 +1763,7 @@ entry:
   ret i1 %cmptmp
 }
 
-define i32 @"unicode::decode_rune"(ptr %0, i64 %1) #1 {
+define i32 @"unicode::decode_rune"(ptr %0, i64 %1) #0 {
 entry:
   %var.n = alloca i64, align 8
   %var.i = alloca i64, align 8
@@ -1759,23 +1775,31 @@ entry:
   %str.len.query1 = load i64, ptr %str.len.query, align 8
   %str.len.query2 = and i64 %str.len.query1, 281474976710655
   %str.tag = lshr i64 %str.len.query1, 48
-  %str.immortal = icmp eq i64 %str.tag, 0
-  br i1 %str.immortal, label %str_ok, label %str_gen_check
+  %tag.immortal = icmp eq i64 %str.tag, 0
+  br i1 %tag.immortal, label %str_ok, label %tag.gen_check
 
-str_gen_check:                                    ; preds = %entry
-  %arena.cur = call ptr @dva_arena_current()
-  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %str.tag)
-  br i1 %tag.valid, label %str_ok, label %str_stale
-
-str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
+str_ok:                                           ; preds = %abort.dead, %tag.slow_check, %tag.gen_check, %entry
   store i64 %str.len.query2, ptr %var.n, align 8
   %var.load3 = load i64, ptr %var.i, align 8
   %cmptmp = icmp sge i64 %var.load3, 0
   br i1 %cmptmp, label %and.36.then, label %and.36.else
 
-str_stale:                                        ; preds = %str_gen_check
+tag.gen_check:                                    ; preds = %entry
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.fast.ok = icmp eq i64 %str.tag, %active.gen
+  br i1 %tag.fast.ok, label %str_ok, label %tag.slow_check
+
+tag.slow_check:                                   ; preds = %tag.gen_check
+  %arena.cur = call ptr @dva_arena_current()
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %str.tag)
+  br i1 %tag.valid, label %str_ok, label %tag.stale
+
+tag.stale:                                        ; preds = %tag.slow_check
   %2 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
   br label %str_ok
 
 choice.exit:                                      ; preds = %choice.next, %choice.case
@@ -1810,69 +1834,57 @@ choice.exit6:                                     ; preds = %ret.dead, %choice.e
   %s.read.len = getelementptr inbounds { i64, ptr }, ptr %var.load8, i32 0, i32 0
   %s.read.len9 = load i64, ptr %s.read.len, align 8
   %s.read.len10 = and i64 %s.read.len9, 281474976710655
-  %str.tag11 = lshr i64 %s.read.len9, 48
-  %str.immortal12 = icmp eq i64 %str.tag11, 0
-  br i1 %str.immortal12, label %str_ok14, label %str_gen_check13
+  %s.read.data = getelementptr inbounds { i64, ptr }, ptr %var.load8, i32 0, i32 1
+  %s.read.data11 = load ptr, ptr %s.read.data, align 8
+  %var.load12 = load i64, ptr %var.i, align 8
+  %idx.neg = icmp slt i64 %var.load12, 0
+  br i1 %idx.neg, label %idx_oob, label %idx_big_check
 
 ret.dead:                                         ; No predecessors!
   br label %choice.exit6
 
-str_gen_check13:                                  ; preds = %choice.exit6
-  %arena.cur16 = call ptr @dva_arena_current()
-  %tag.valid17 = call i1 @dva_arena_validate_tag(ptr %arena.cur16, i64 %str.tag11)
-  br i1 %tag.valid17, label %str_ok14, label %str_stale15
-
-str_ok14:                                         ; preds = %str_stale15, %str_gen_check13, %choice.exit6
-  %s.read.data = getelementptr inbounds { i64, ptr }, ptr %var.load8, i32 0, i32 1
-  %s.read.data18 = load ptr, ptr %s.read.data, align 8
-  %var.load19 = load i64, ptr %var.i, align 8
-  %idx.neg = icmp slt i64 %var.load19, 0
-  br i1 %idx.neg, label %idx_oob, label %idx_big_check
-
-str_stale15:                                      ; preds = %str_gen_check13
-  %3 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
-  call void @exit(i32 1)
-  br label %str_ok14
-
-idx_big_check:                                    ; preds = %str_ok14
-  %idx.big = icmp sge i64 %var.load19, %s.read.len10
+idx_big_check:                                    ; preds = %choice.exit6
+  %idx.big = icmp sge i64 %var.load12, %s.read.len10
   br i1 %idx.big, label %idx_oob, label %idx_ok
 
-idx_ok:                                           ; preds = %idx_oob, %idx_big_check
-  %s.byte.gep = getelementptr i8, ptr %s.read.data18, i64 %var.load19
+idx_ok:                                           ; preds = %abort.dead13, %idx_big_check
+  %s.byte.gep = getelementptr i8, ptr %s.read.data11, i64 %var.load12
   %s.byte = load i8, ptr %s.byte.gep, align 1
   %s.byte.val = zext i8 %s.byte to i64
   %call.res = call i64 @"utf::seq_len"(i64 %s.byte.val)
   %addtmp = add i64 %var.load7, %call.res
-  %var.load20 = load i64, ptr %var.n, align 8
-  %cmptmp21 = icmp sgt i64 %addtmp, %var.load20
-  br i1 %cmptmp21, label %choice.then22, label %choice.exit23
+  %var.load14 = load i64, ptr %var.n, align 8
+  %cmptmp15 = icmp sgt i64 %addtmp, %var.load14
+  br i1 %cmptmp15, label %choice.then16, label %choice.exit17
 
-idx_oob:                                          ; preds = %idx_big_check, %str_ok14
-  %4 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
+idx_oob:                                          ; preds = %idx_big_check, %choice.exit6
+  %3 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead13:                                     ; No predecessors!
   br label %idx_ok
 
-choice.then22:                                    ; preds = %idx_ok
+choice.then16:                                    ; preds = %idx_ok
   ret i32 65533
 
-choice.exit23:                                    ; preds = %ret.dead24, %idx_ok
-  %var.load25 = load ptr, ptr %var.src, align 8
-  %s.ptr = getelementptr inbounds { i64, ptr }, ptr %var.load25, i32 0, i32 1
-  %s.ptr26 = load ptr, ptr %s.ptr, align 8
-  %var.load27 = load i64, ptr %var.i, align 8
-  %call.res28 = call i32 @"utf::decode_rune_addr"(ptr %s.ptr26, i64 %var.load27)
-  ret i32 %call.res28
+choice.exit17:                                    ; preds = %ret.dead18, %idx_ok
+  %var.load19 = load ptr, ptr %var.src, align 8
+  %s.ptr = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
+  %s.ptr20 = load ptr, ptr %s.ptr, align 8
+  %var.load21 = load i64, ptr %var.i, align 8
+  %call.res22 = call i32 @"utf::decode_rune_addr"(ptr %s.ptr20, i64 %var.load21)
+  ret i32 %call.res22
 
-ret.dead24:                                       ; No predecessors!
-  br label %choice.exit23
+ret.dead18:                                       ; No predecessors!
+  br label %choice.exit17
 }
 
-declare i64 @"utf::seq_len"(i64) #1
+declare i64 @"utf::seq_len"(i64) #0
 
-declare i32 @"utf::decode_rune_addr"(ptr, i64) #1
+declare i32 @"utf::decode_rune_addr"(ptr, i64) #0
 
-define i64 @"unicode::utf8_width"(i32 %0) #1 {
+define i64 @"unicode::utf8_width"(i32 %0) #0 {
 entry:
   %var._ = alloca i32, align 4
   store i32 %0, ptr %var._, align 4
@@ -1908,7 +1920,7 @@ choice.next6:                                     ; preds = %choice.next2
   br label %choice.exit
 }
 
-define i1 @"unicode::is_xid_start"(i32 %0) #1 {
+define i1 @"unicode::is_xid_start"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1933,7 +1945,7 @@ or.37.exit:                                       ; preds = %or.37.else, %or.37.
   ret i1 %or.37.phi
 }
 
-define i1 @"unicode::is_xid_continue"(i32 %0) #1 {
+define i1 @"unicode::is_xid_continue"(i32 %0) #0 {
 entry:
   %var.cat = alloca i64, align 8
   %var.cp = alloca i32, align 4
@@ -1982,7 +1994,7 @@ or.40.exit:                                       ; preds = %or.40.else, %or.40.
   ret i1 %or.40.phi
 }
 
-define i1 @"unicode::is_id_start"(i32 %0) #1 {
+define i1 @"unicode::is_id_start"(i32 %0) #0 {
 entry:
   %var.cp = alloca i32, align 4
   store i32 %0, ptr %var.cp, align 4
@@ -2004,7 +2016,7 @@ or.41.exit:                                       ; preds = %or.41.else, %or.41.
   ret i1 %or.41.phi
 }
 
-define i1 @"unicode::is_id_continue"(i32 %0) #1 {
+define i1 @"unicode::is_id_continue"(i32 %0) #0 {
 entry:
   %var.cp = alloca i32, align 4
   store i32 %0, ptr %var.cp, align 4
@@ -2013,7 +2025,7 @@ entry:
   ret i1 %call.res
 }
 
-define i32 @"unicode::decode_rune_addr"(ptr %0, i64 %1) #1 {
+define i32 @"unicode::decode_rune_addr"(ptr %0, i64 %1) #0 {
 entry:
   %var.i = alloca i64, align 8
   %var.p = alloca ptr, align 8
@@ -2025,7 +2037,7 @@ entry:
   ret i32 %call.res
 }
 
-define i32 @"unicode::decode_rune_builder"(ptr %0, i64 %1) #1 {
+define i32 @"unicode::decode_rune_builder"(ptr %0, i64 %1) #0 {
 entry:
   %var.i = alloca i64, align 8
   %var.b = alloca ptr, align 8
@@ -2037,9 +2049,9 @@ entry:
   ret i32 %call.res
 }
 
-declare i32 @"utf::decode_rune_builder"(ptr, i64) #1
+declare i32 @"utf::decode_rune_builder"(ptr, i64) #0
 
-define i1 @"unicode::is_uax31_str"(ptr %0) #1 {
+define i1 @"unicode::is_uax31_str"(ptr %0) #0 {
 entry:
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -2048,7 +2060,7 @@ entry:
   ret i1 %call.res
 }
 
-define internal i1 @"unicode::is_uax31$String"(ptr %0) #1 {
+define internal i1 @"unicode::is_uax31$String"(ptr %0) #0 {
 entry:
   %var.r = alloca i32, align 4
   %var._ = alloca i64, align 8
@@ -2066,23 +2078,31 @@ entry:
   %str.len.query1 = load i64, ptr %str.len.query, align 8
   %str.len.query2 = and i64 %str.len.query1, 281474976710655
   %str.tag = lshr i64 %str.len.query1, 48
-  %str.immortal = icmp eq i64 %str.tag, 0
-  br i1 %str.immortal, label %str_ok, label %str_gen_check
+  %tag.immortal = icmp eq i64 %str.tag, 0
+  br i1 %tag.immortal, label %str_ok, label %tag.gen_check
 
-str_gen_check:                                    ; preds = %entry
-  %arena.cur = call ptr @dva_arena_current()
-  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %str.tag)
-  br i1 %tag.valid, label %str_ok, label %str_stale
-
-str_ok:                                           ; preds = %str_stale, %str_gen_check, %entry
+str_ok:                                           ; preds = %abort.dead, %tag.slow_check, %tag.gen_check, %entry
   store i64 %str.len.query2, ptr %var.n, align 8
   %var.load3 = load i64, ptr %var.n, align 8
   %cmptmp = icmp eq i64 %var.load3, 0
   br i1 %cmptmp, label %choice.then, label %choice.exit
 
-str_stale:                                        ; preds = %str_gen_check
+tag.gen_check:                                    ; preds = %entry
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.fast.ok = icmp eq i64 %str.tag, %active.gen
+  br i1 %tag.fast.ok, label %str_ok, label %tag.slow_check
+
+tag.slow_check:                                   ; preds = %tag.gen_check
+  %arena.cur = call ptr @dva_arena_current()
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %str.tag)
+  br i1 %tag.valid, label %str_ok, label %tag.stale
+
+tag.stale:                                        ; preds = %tag.slow_check
   %1 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
   br label %str_ok
 
 choice.then:                                      ; preds = %str_ok
@@ -2097,67 +2117,55 @@ choice.exit:                                      ; preds = %ret.dead, %str_ok
   %s.read.len = getelementptr inbounds { i64, ptr }, ptr %var.load6, i32 0, i32 0
   %s.read.len7 = load i64, ptr %s.read.len, align 8
   %s.read.len8 = and i64 %s.read.len7, 281474976710655
-  %str.tag9 = lshr i64 %s.read.len7, 48
-  %str.immortal10 = icmp eq i64 %str.tag9, 0
-  br i1 %str.immortal10, label %str_ok12, label %str_gen_check11
+  %s.read.data = getelementptr inbounds { i64, ptr }, ptr %var.load6, i32 0, i32 1
+  %s.read.data9 = load ptr, ptr %s.read.data, align 8
+  br i1 false, label %idx_oob, label %idx_big_check
 
 ret.dead:                                         ; No predecessors!
   br label %choice.exit
 
-str_gen_check11:                                  ; preds = %choice.exit
-  %arena.cur14 = call ptr @dva_arena_current()
-  %tag.valid15 = call i1 @dva_arena_validate_tag(ptr %arena.cur14, i64 %str.tag9)
-  br i1 %tag.valid15, label %str_ok12, label %str_stale13
-
-str_ok12:                                         ; preds = %str_stale13, %str_gen_check11, %choice.exit
-  %s.read.data = getelementptr inbounds { i64, ptr }, ptr %var.load6, i32 0, i32 1
-  %s.read.data16 = load ptr, ptr %s.read.data, align 8
-  br i1 false, label %idx_oob, label %idx_big_check
-
-str_stale13:                                      ; preds = %str_gen_check11
-  %2 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
-  call void @exit(i32 1)
-  br label %str_ok12
-
-idx_big_check:                                    ; preds = %str_ok12
+idx_big_check:                                    ; preds = %choice.exit
   %idx.big = icmp sge i64 0, %s.read.len8
   br i1 %idx.big, label %idx_oob, label %idx_ok
 
-idx_ok:                                           ; preds = %idx_oob, %idx_big_check
-  %s.byte.gep = getelementptr i8, ptr %s.read.data16, i64 0
+idx_ok:                                           ; preds = %abort.dead10, %idx_big_check
+  %s.byte.gep = getelementptr i8, ptr %s.read.data9, i64 0
   %s.byte = load i8, ptr %s.byte.gep, align 1
   %s.byte.val = zext i8 %s.byte to i64
   %call.res = call i64 @"utf::seq_len"(i64 %s.byte.val)
-  %var.load17 = load i64, ptr %var.n, align 8
-  %cmptmp18 = icmp sgt i64 %call.res, %var.load17
-  br i1 %cmptmp18, label %choice.then19, label %choice.exit20
+  %var.load11 = load i64, ptr %var.n, align 8
+  %cmptmp12 = icmp sgt i64 %call.res, %var.load11
+  br i1 %cmptmp12, label %choice.then13, label %choice.exit14
 
-idx_oob:                                          ; preds = %idx_big_check, %str_ok12
-  %3 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
+idx_oob:                                          ; preds = %idx_big_check, %choice.exit
+  %2 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead10:                                     ; No predecessors!
   br label %idx_ok
 
-choice.then19:                                    ; preds = %idx_ok
+choice.then13:                                    ; preds = %idx_ok
   ret i1 false
 
-choice.exit20:                                    ; preds = %ret.dead21, %idx_ok
-  %var.load22 = load ptr, ptr %var.p, align 8
-  %call.res23 = call i32 @"utf::decode_rune_addr"(ptr %var.load22, i64 0)
-  store i32 %call.res23, ptr %var.r0, align 4
-  %var.load24 = load i32, ptr %var.r0, align 4
-  %call.res25 = call i1 @"unicode::is_id_start"(i32 %var.load24)
-  %nottmp = xor i1 %call.res25, true
-  br i1 %nottmp, label %choice.then26, label %choice.exit27
+choice.exit14:                                    ; preds = %ret.dead15, %idx_ok
+  %var.load16 = load ptr, ptr %var.p, align 8
+  %call.res17 = call i32 @"utf::decode_rune_addr"(ptr %var.load16, i64 0)
+  store i32 %call.res17, ptr %var.r0, align 4
+  %var.load18 = load i32, ptr %var.r0, align 4
+  %call.res19 = call i1 @"unicode::is_id_start"(i32 %var.load18)
+  %nottmp = xor i1 %call.res19, true
+  br i1 %nottmp, label %choice.then20, label %choice.exit21
 
-ret.dead21:                                       ; No predecessors!
-  br label %choice.exit20
+ret.dead15:                                       ; No predecessors!
+  br label %choice.exit14
 
-choice.then26:                                    ; preds = %choice.exit20
+choice.then20:                                    ; preds = %choice.exit14
   ret i1 false
 
-choice.exit27:                                    ; preds = %ret.dead28, %choice.exit20
-  %var.load29 = load i32, ptr %var.r0, align 4
-  %coerce.sext = sext i32 %var.load29 to i64
+choice.exit21:                                    ; preds = %ret.dead22, %choice.exit14
+  %var.load23 = load i32, ptr %var.r0, align 4
+  %coerce.sext = sext i32 %var.load23 to i64
   %r.cmp1 = icmp slt i64 %coerce.sext, 128
   %r.cmp2 = icmp slt i64 %coerce.sext, 2048
   %r.cmp3 = icmp slt i64 %coerce.sext, 65536
@@ -2168,10 +2176,10 @@ choice.exit27:                                    ; preds = %ret.dead28, %choice
   store i64 0, ptr %loop.idx.42, align 8
   br label %loop.header.42
 
-ret.dead28:                                       ; No predecessors!
-  br label %choice.exit27
+ret.dead22:                                       ; No predecessors!
+  br label %choice.exit21
 
-loop.header.42:                                   ; preds = %loop.latch.42, %choice.exit27
+loop.header.42:                                   ; preds = %loop.latch.42, %choice.exit21
   %counter.load = load i64, ptr %loop.idx.42, align 8
   br label %loop.body.42
 
@@ -2180,110 +2188,98 @@ loop.body.42:                                     ; preds = %loop.header.42
   store i64 1, ptr %loop.step.42, align 8
   store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
-  %var.load30 = load i64, ptr %"var.i'", align 8
-  %var.load31 = load i64, ptr %var.n, align 8
-  %cmptmp32 = icmp sge i64 %var.load30, %var.load31
-  br i1 %cmptmp32, label %choice.then33, label %choice.exit34
+  %var.load24 = load i64, ptr %"var.i'", align 8
+  %var.load25 = load i64, ptr %var.n, align 8
+  %cmptmp26 = icmp sge i64 %var.load24, %var.load25
+  br i1 %cmptmp26, label %choice.then27, label %choice.exit28
 
 loop.exit.nat.42:                                 ; No predecessors!
   br label %loop.exit.42
 
-loop.latch.42:                                    ; preds = %choice.exit70
+loop.latch.42:                                    ; preds = %choice.exit58
   %step.val = load i64, ptr %loop.step.42, align 8
   %loop.next = add i64 %counter.load, %step.val
   store i64 %loop.next, ptr %loop.idx.42, align 8
   br label %loop.header.42
 
-loop.exit.42:                                     ; preds = %choice.then33, %loop.exit.nat.42
+loop.exit.42:                                     ; preds = %choice.then27, %loop.exit.nat.42
   ret i1 true
 
-choice.then33:                                    ; preds = %loop.body.42
+choice.then27:                                    ; preds = %loop.body.42
   br label %loop.exit.42
 
-choice.exit34:                                    ; preds = %loop.body.42
-  %var.load35 = load i64, ptr %"var.i'", align 8
-  %var.load36 = load ptr, ptr %var.target, align 8
-  %s.read.len37 = getelementptr inbounds { i64, ptr }, ptr %var.load36, i32 0, i32 0
-  %s.read.len38 = load i64, ptr %s.read.len37, align 8
-  %s.read.len39 = and i64 %s.read.len38, 281474976710655
-  %str.tag40 = lshr i64 %s.read.len38, 48
-  %str.immortal41 = icmp eq i64 %str.tag40, 0
-  br i1 %str.immortal41, label %str_ok43, label %str_gen_check42
+choice.exit28:                                    ; preds = %loop.body.42
+  %var.load29 = load i64, ptr %"var.i'", align 8
+  %var.load30 = load ptr, ptr %var.target, align 8
+  %s.read.len31 = getelementptr inbounds { i64, ptr }, ptr %var.load30, i32 0, i32 0
+  %s.read.len32 = load i64, ptr %s.read.len31, align 8
+  %s.read.len33 = and i64 %s.read.len32, 281474976710655
+  %s.read.data34 = getelementptr inbounds { i64, ptr }, ptr %var.load30, i32 0, i32 1
+  %s.read.data35 = load ptr, ptr %s.read.data34, align 8
+  %var.load36 = load i64, ptr %"var.i'", align 8
+  %idx.neg = icmp slt i64 %var.load36, 0
+  br i1 %idx.neg, label %idx_oob39, label %idx_big_check37
 
-str_gen_check42:                                  ; preds = %choice.exit34
-  %arena.cur45 = call ptr @dva_arena_current()
-  %tag.valid46 = call i1 @dva_arena_validate_tag(ptr %arena.cur45, i64 %str.tag40)
-  br i1 %tag.valid46, label %str_ok43, label %str_stale44
+idx_big_check37:                                  ; preds = %choice.exit28
+  %idx.big40 = icmp sge i64 %var.load36, %s.read.len33
+  br i1 %idx.big40, label %idx_oob39, label %idx_ok38
 
-str_ok43:                                         ; preds = %str_stale44, %str_gen_check42, %choice.exit34
-  %s.read.data47 = getelementptr inbounds { i64, ptr }, ptr %var.load36, i32 0, i32 1
-  %s.read.data48 = load ptr, ptr %s.read.data47, align 8
-  %var.load49 = load i64, ptr %"var.i'", align 8
-  %idx.neg = icmp slt i64 %var.load49, 0
-  br i1 %idx.neg, label %idx_oob52, label %idx_big_check50
+idx_ok38:                                         ; preds = %abort.dead41, %idx_big_check37
+  %s.byte.gep42 = getelementptr i8, ptr %s.read.data35, i64 %var.load36
+  %s.byte43 = load i8, ptr %s.byte.gep42, align 1
+  %s.byte.val44 = zext i8 %s.byte43 to i64
+  %call.res45 = call i64 @"utf::seq_len"(i64 %s.byte.val44)
+  %addtmp = add i64 %var.load29, %call.res45
+  %var.load46 = load i64, ptr %var.n, align 8
+  %cmptmp47 = icmp sgt i64 %addtmp, %var.load46
+  br i1 %cmptmp47, label %choice.then48, label %choice.exit49
 
-str_stale44:                                      ; preds = %str_gen_check42
-  %4 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+idx_oob39:                                        ; preds = %idx_big_check37, %choice.exit28
+  %3 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
   call void @exit(i32 1)
-  br label %str_ok43
+  unreachable
 
-idx_big_check50:                                  ; preds = %str_ok43
-  %idx.big53 = icmp sge i64 %var.load49, %s.read.len39
-  br i1 %idx.big53, label %idx_oob52, label %idx_ok51
+abort.dead41:                                     ; No predecessors!
+  br label %idx_ok38
 
-idx_ok51:                                         ; preds = %idx_oob52, %idx_big_check50
-  %s.byte.gep54 = getelementptr i8, ptr %s.read.data48, i64 %var.load49
-  %s.byte55 = load i8, ptr %s.byte.gep54, align 1
-  %s.byte.val56 = zext i8 %s.byte55 to i64
-  %call.res57 = call i64 @"utf::seq_len"(i64 %s.byte.val56)
-  %addtmp = add i64 %var.load35, %call.res57
-  %var.load58 = load i64, ptr %var.n, align 8
-  %cmptmp59 = icmp sgt i64 %addtmp, %var.load58
-  br i1 %cmptmp59, label %choice.then60, label %choice.exit61
-
-idx_oob52:                                        ; preds = %idx_big_check50, %str_ok43
-  %5 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
-  call void @exit(i32 1)
-  br label %idx_ok51
-
-choice.then60:                                    ; preds = %idx_ok51
+choice.then48:                                    ; preds = %idx_ok38
   ret i1 false
 
-choice.exit61:                                    ; preds = %ret.dead62, %idx_ok51
-  %var.load63 = load ptr, ptr %var.p, align 8
-  %var.load64 = load i64, ptr %"var.i'", align 8
-  %call.res65 = call i32 @"utf::decode_rune_addr"(ptr %var.load63, i64 %var.load64)
-  store i32 %call.res65, ptr %var.r, align 4
-  %var.load66 = load i32, ptr %var.r, align 4
-  %call.res67 = call i1 @"unicode::is_id_continue"(i32 %var.load66)
-  %nottmp68 = xor i1 %call.res67, true
-  br i1 %nottmp68, label %choice.then69, label %choice.exit70
+choice.exit49:                                    ; preds = %ret.dead50, %idx_ok38
+  %var.load51 = load ptr, ptr %var.p, align 8
+  %var.load52 = load i64, ptr %"var.i'", align 8
+  %call.res53 = call i32 @"utf::decode_rune_addr"(ptr %var.load51, i64 %var.load52)
+  store i32 %call.res53, ptr %var.r, align 4
+  %var.load54 = load i32, ptr %var.r, align 4
+  %call.res55 = call i1 @"unicode::is_id_continue"(i32 %var.load54)
+  %nottmp56 = xor i1 %call.res55, true
+  br i1 %nottmp56, label %choice.then57, label %choice.exit58
 
-ret.dead62:                                       ; No predecessors!
-  br label %choice.exit61
+ret.dead50:                                       ; No predecessors!
+  br label %choice.exit49
 
-choice.then69:                                    ; preds = %choice.exit61
+choice.then57:                                    ; preds = %choice.exit49
   ret i1 false
 
-choice.exit70:                                    ; preds = %ret.dead71, %choice.exit61
-  %var.load72 = load i64, ptr %"var.i'", align 8
-  %var.load73 = load i32, ptr %var.r, align 4
-  %coerce.sext74 = sext i32 %var.load73 to i64
-  %r.cmp175 = icmp slt i64 %coerce.sext74, 128
-  %r.cmp276 = icmp slt i64 %coerce.sext74, 2048
-  %r.cmp377 = icmp slt i64 %coerce.sext74, 65536
-  %r.w378 = select i1 %r.cmp377, i64 3, i64 4
-  %r.w279 = select i1 %r.cmp276, i64 2, i64 %r.w378
-  %r.width80 = select i1 %r.cmp175, i64 1, i64 %r.w279
-  %addtmp81 = add i64 %var.load72, %r.width80
-  store i64 %addtmp81, ptr %"var.i'", align 8
+choice.exit58:                                    ; preds = %ret.dead59, %choice.exit49
+  %var.load60 = load i64, ptr %"var.i'", align 8
+  %var.load61 = load i32, ptr %var.r, align 4
+  %coerce.sext62 = sext i32 %var.load61 to i64
+  %r.cmp163 = icmp slt i64 %coerce.sext62, 128
+  %r.cmp264 = icmp slt i64 %coerce.sext62, 2048
+  %r.cmp365 = icmp slt i64 %coerce.sext62, 65536
+  %r.w366 = select i1 %r.cmp365, i64 3, i64 4
+  %r.w267 = select i1 %r.cmp264, i64 2, i64 %r.w366
+  %r.width68 = select i1 %r.cmp163, i64 1, i64 %r.w267
+  %addtmp69 = add i64 %var.load60, %r.width68
+  store i64 %addtmp69, ptr %"var.i'", align 8
   br label %loop.latch.42
 
-ret.dead71:                                       ; No predecessors!
-  br label %choice.exit70
+ret.dead59:                                       ; No predecessors!
+  br label %choice.exit58
 }
 
-define i1 @"unicode::is_uax31_builder"(ptr %0) #1 {
+define i1 @"unicode::is_uax31_builder"(ptr %0) #0 {
 entry:
   %var.b = alloca ptr, align 8
   store ptr %0, ptr %var.b, align 8
@@ -2292,7 +2288,7 @@ entry:
   ret i1 %call.res
 }
 
-define internal i1 @"unicode::is_uax31$Builder"(ptr %0) #1 {
+define internal i1 @"unicode::is_uax31$Builder"(ptr %0) #0 {
 entry:
   %var.r = alloca i32, align 4
   %var._ = alloca i64, align 8
@@ -2335,7 +2331,7 @@ idx_big_check:                                    ; preds = %choice.exit
   %idx.big = icmp sge i64 0, %b.read.len6
   br i1 %idx.big, label %idx_oob, label %idx_ok
 
-idx_ok:                                           ; preds = %idx_oob, %idx_big_check
+idx_ok:                                           ; preds = %abort.dead, %idx_big_check
   %s.byte.gep = getelementptr i8, ptr %b.read.data7, i64 0
   %s.byte = load i8, ptr %s.byte.gep, align 1
   %s.byte.val = zext i8 %s.byte to i64
@@ -2347,6 +2343,9 @@ idx_ok:                                           ; preds = %idx_oob, %idx_big_c
 idx_oob:                                          ; preds = %idx_big_check, %choice.exit
   %1 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
   br label %idx_ok
 
 choice.then10:                                    ; preds = %idx_ok
@@ -2400,7 +2399,7 @@ loop.body.43:                                     ; preds = %loop.header.43
 loop.exit.nat.43:                                 ; No predecessors!
   br label %loop.exit.43
 
-loop.latch.43:                                    ; preds = %choice.exit53
+loop.latch.43:                                    ; preds = %choice.exit54
   %step.val = load i64, ptr %loop.step.43, align 8
   %loop.next = add i64 %counter.load, %step.val
   store i64 %loop.next, ptr %loop.idx.43, align 8
@@ -2427,58 +2426,63 @@ idx_big_check33:                                  ; preds = %choice.exit25
   %idx.big36 = icmp sge i64 %var.load32, %b.read.len29
   br i1 %idx.big36, label %idx_oob35, label %idx_ok34
 
-idx_ok34:                                         ; preds = %idx_oob35, %idx_big_check33
-  %s.byte.gep37 = getelementptr i8, ptr %b.read.data31, i64 %var.load32
-  %s.byte38 = load i8, ptr %s.byte.gep37, align 1
-  %s.byte.val39 = zext i8 %s.byte38 to i64
-  %call.res40 = call i64 @"utf::seq_len"(i64 %s.byte.val39)
-  %addtmp = add i64 %var.load26, %call.res40
-  %var.load41 = load i64, ptr %var.n, align 8
-  %cmptmp42 = icmp sgt i64 %addtmp, %var.load41
-  br i1 %cmptmp42, label %choice.then43, label %choice.exit44
+idx_ok34:                                         ; preds = %abort.dead37, %idx_big_check33
+  %s.byte.gep38 = getelementptr i8, ptr %b.read.data31, i64 %var.load32
+  %s.byte39 = load i8, ptr %s.byte.gep38, align 1
+  %s.byte.val40 = zext i8 %s.byte39 to i64
+  %call.res41 = call i64 @"utf::seq_len"(i64 %s.byte.val40)
+  %addtmp = add i64 %var.load26, %call.res41
+  %var.load42 = load i64, ptr %var.n, align 8
+  %cmptmp43 = icmp sgt i64 %addtmp, %var.load42
+  br i1 %cmptmp43, label %choice.then44, label %choice.exit45
 
 idx_oob35:                                        ; preds = %idx_big_check33, %choice.exit25
   %2 = call i64 @write(i32 2, ptr @str_oob_msg, i64 39)
   call void @exit(i32 1)
+  unreachable
+
+abort.dead37:                                     ; No predecessors!
   br label %idx_ok34
 
-choice.then43:                                    ; preds = %idx_ok34
+choice.then44:                                    ; preds = %idx_ok34
   ret i1 false
 
-choice.exit44:                                    ; preds = %ret.dead45, %idx_ok34
-  %var.load46 = load ptr, ptr %var.p, align 8
-  %var.load47 = load i64, ptr %"var.i'", align 8
-  %call.res48 = call i32 @"utf::decode_rune_addr"(ptr %var.load46, i64 %var.load47)
-  store i32 %call.res48, ptr %var.r, align 4
-  %var.load49 = load i32, ptr %var.r, align 4
-  %call.res50 = call i1 @"unicode::is_id_continue"(i32 %var.load49)
-  %nottmp51 = xor i1 %call.res50, true
-  br i1 %nottmp51, label %choice.then52, label %choice.exit53
+choice.exit45:                                    ; preds = %ret.dead46, %idx_ok34
+  %var.load47 = load ptr, ptr %var.p, align 8
+  %var.load48 = load i64, ptr %"var.i'", align 8
+  %call.res49 = call i32 @"utf::decode_rune_addr"(ptr %var.load47, i64 %var.load48)
+  store i32 %call.res49, ptr %var.r, align 4
+  %var.load50 = load i32, ptr %var.r, align 4
+  %call.res51 = call i1 @"unicode::is_id_continue"(i32 %var.load50)
+  %nottmp52 = xor i1 %call.res51, true
+  br i1 %nottmp52, label %choice.then53, label %choice.exit54
 
-ret.dead45:                                       ; No predecessors!
-  br label %choice.exit44
+ret.dead46:                                       ; No predecessors!
+  br label %choice.exit45
 
-choice.then52:                                    ; preds = %choice.exit44
+choice.then53:                                    ; preds = %choice.exit45
   ret i1 false
 
-choice.exit53:                                    ; preds = %ret.dead54, %choice.exit44
-  %var.load55 = load i64, ptr %"var.i'", align 8
-  %var.load56 = load i32, ptr %var.r, align 4
-  %coerce.sext57 = sext i32 %var.load56 to i64
-  %r.cmp158 = icmp slt i64 %coerce.sext57, 128
-  %r.cmp259 = icmp slt i64 %coerce.sext57, 2048
-  %r.cmp360 = icmp slt i64 %coerce.sext57, 65536
-  %r.w361 = select i1 %r.cmp360, i64 3, i64 4
-  %r.w262 = select i1 %r.cmp259, i64 2, i64 %r.w361
-  %r.width63 = select i1 %r.cmp158, i64 1, i64 %r.w262
-  %addtmp64 = add i64 %var.load55, %r.width63
-  store i64 %addtmp64, ptr %"var.i'", align 8
+choice.exit54:                                    ; preds = %ret.dead55, %choice.exit45
+  %var.load56 = load i64, ptr %"var.i'", align 8
+  %var.load57 = load i32, ptr %var.r, align 4
+  %coerce.sext58 = sext i32 %var.load57 to i64
+  %r.cmp159 = icmp slt i64 %coerce.sext58, 128
+  %r.cmp260 = icmp slt i64 %coerce.sext58, 2048
+  %r.cmp361 = icmp slt i64 %coerce.sext58, 65536
+  %r.w362 = select i1 %r.cmp361, i64 3, i64 4
+  %r.w263 = select i1 %r.cmp260, i64 2, i64 %r.w362
+  %r.width64 = select i1 %r.cmp159, i64 1, i64 %r.w263
+  %addtmp65 = add i64 %var.load56, %r.width64
+  store i64 %addtmp65, ptr %"var.i'", align 8
   br label %loop.latch.43
 
-ret.dead54:                                       ; No predecessors!
-  br label %choice.exit53
+ret.dead55:                                       ; No predecessors!
+  br label %choice.exit54
 }
 
-attributes #0 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #1 = { "nounwind" }
-attributes #2 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #0 = { "nounwind" }
+attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
+attributes #2 = { noinline "nounwind" }
+attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #4 = { cold noreturn "nounwind" }

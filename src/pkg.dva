@@ -234,10 +234,14 @@
    read_text: String => < String | >
    read_text = path => fs::read_to_string(path)
 
+   tmp_seq: Int
+   tmp_seq = 0
+
    // Write via a sibling temp file + rename so readers never see a torn file.
    write_text: String, String => <>
    write_text = path, text =>
-      tmp = path + ".tmp" + str::from_int(getpid!)
+      tmp = "${path}.tmp.${str::from_int(getpid!)}.${str::from_int(tmp_seq)}"
+      tmp_seq ::= tmp_seq + 1
       ok = fs::write_file(tmp, text)
       !ok |
          fs::remove(tmp)
@@ -1710,8 +1714,6 @@
 // --- IR caching (Issue #104) --------------------------------------------------
 
 #private
-   tmp_seq: Int
-   tmp_seq = 0
    cached_compiler_id: String
    cached_compiler_id = ""
 
@@ -1784,7 +1786,10 @@
    compute_ir_cache_key = target, loaded_files, nat_libs, nat_pkg, triple, opt, flags, ast_summary =>
       b = {4096}
       b += "key_version = 2\n"
-      b += "target = " + target + "\n"
+      eff_target = target != "" && (file_exists(target) || dir_exists(target))
+         | canonical_path(target)
+         | target
+      b += "target = ${eff_target}\n"
       b += "triple = " + triple + "\n"
       b += "opt = " + opt + "\n"
       b += "compiler = " + version::VERSION + "\n"
@@ -1802,11 +1807,14 @@
       seen = SMap()
       src_lines = Strings()
       loaded_files @ f =>
-         ?f > 0 && !(seen ^? f) && file_exists(f)
+         ?f > 0 && file_exists(f)
             |
-               seen ^ f = "1"
-               h = hash_file(f)
-               src_lines += f + ": " + h
+               cf = canonical_path(f)
+               !(seen ^? cf)
+                  |
+                     seen ^ cf = "1"
+                     h = hash_file(cf)
+                     src_lines += "${cf}: ${h}"
       ccl::sort_strings(src_lines) @ line =>
          b += "  = " + line + "\n"
       has_nat = ?nat_libs > 0 || ?nat_pkg > 0
@@ -2380,8 +2388,9 @@
                               src_mtime = max_src_mtime_ns(inst_src)
                               ccl_mtime = fs::mtime_ns(path_join(dep_root, "edva.ccl"))
                               dep_max = ccl_mtime > src_mtime | ccl_mtime | src_mtime
+                              edva_mtime = fs::mtime_ns(self_exe_path!)
                               bin_mtime = file_exists(bin_path) | fs::mtime_ns(bin_path) | -1
-                              needs_build = !file_exists(bin_path) || (dep_max > 0 && bin_mtime < dep_max)
+                              needs_build = !file_exists(bin_path) || (dep_max > 0 && bin_mtime < dep_max) || (edva_mtime > 0 && bin_mtime < edva_mtime)
                               build_ok' = <+>
                               needs_build
                                  |

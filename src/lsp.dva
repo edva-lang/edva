@@ -42,7 +42,9 @@ SYM_ENUM     = 10
    line: Int,
    col: Int,
    end_line: Int,
-   end_col: Int
+   end_col: Int,
+   has_annot: <> = <->,
+   is_local: <> = <->
 )
 #type SymEntries SymEntry{}
 
@@ -56,6 +58,7 @@ SYM_ENUM     = 10
 
 open_docs = DocStates()
 stdlib_dir_path = ""
+active_doc_text = ""
 pending_syms = SymEntries()
 pending_diags = diag::DiagEntries()
 
@@ -89,7 +92,7 @@ get_override_text = fpath =>
 
 record_typecheck_ok: unify::Ctx, tast::TypedProgram => ()
 record_typecheck_ok = ctx, tprog =>
-   enrich_symbols_with_tast(pending_syms, ctx, tprog)
+   enrich_symbols_with_tast(pending_syms, ctx, tprog, active_doc_text)
 
 record_typecheck_errs: String, unify::TypeErrors => ()
 record_typecheck_errs = fpath, errs =>
@@ -361,7 +364,7 @@ extract_symbols = stmts, lines, cols =>
          [TypeDecl td]
             k = td.type_info [Enum] SYM_ENUM | SYM_STRUCT
             detail = "#type " + td.name + " " + format_type_info(td.type_info)
-            syms += SymEntry(td.name, detail, k, ln, cl, ln, cl + ?td.name)
+            syms += SymEntry(td.name, detail, k, ln, cl, ln, cl + ?td.name, <+>, <->)
          [Foreign fd]
             b = {64}
             b += ("#foreign ", fd.dva_name, ": ")
@@ -375,7 +378,7 @@ extract_symbols = stmts, lines, cols =>
             b += " => "
             rti = format_type_info(fd.ret_record_info)
             b += (rti != "_" | rti | format_value_type(fd.return_type))
-            syms += SymEntry(fd.dva_name, +b, SYM_FUNCTION, ln, cl, ln, cl + ?fd.dva_name)
+            syms += SymEntry(fd.dva_name, +b, SYM_FUNCTION, ln, cl, ln, cl + ?fd.dva_name, <+>, <->)
          [Assign a]
             name = a.0
             rhs = a.5
@@ -384,7 +387,8 @@ extract_symbols = stmts, lines, cols =>
             is_fn = rhs [Fn] || annot_ti [Fn]
             kind = is_fn | SYM_FUNCTION | (a.1 | SYM_VARIABLE | SYM_CONSTANT)
             ti_str = format_type_info(annot_ti)
-            detail = ti_str != "_"
+            has_ann = ti_str != "_"
+            detail = has_ann
                | name + ": " + ti_str
                |
                   rhs
@@ -404,15 +408,133 @@ extract_symbols = stmts, lines, cols =>
                |
                   ?syms @ si =>
                      prev = syms(si)!!
-                     prev.name == name
+                     prev.name == name && !prev.is_local
                         |
                            new_det = prev.detail != name | prev.detail | detail
                            syms(si) = SymEntry(name, new_det, is_fn | SYM_FUNCTION | prev.kind,
-                              prev.line, prev.col, ln, cl + ?name) !| _
+                              prev.line, prev.col, ln, cl + ?name, prev.has_annot || has_ann, <->) !| _
                            updated' = <+>
             !updated'
-               | syms += SymEntry(name, detail, kind, ln, cl, ln, cl + ?name)
+               | syms += SymEntry(name, detail, kind, ln, cl, ln, cl + ?name, has_ann, <->)
    syms
+
+sym_has_loc: SymEntries, Int, Int => <>
+sym_has_loc = syms, ln, cl =>
+   found' = <->
+   syms @ s =>
+      s.line == ln && s.col == cl
+         |
+            found' = <+>
+            -->
+   found'
+
+find_top_sym_line: SymEntries, String => Int
+find_top_sym_line = syms, name =>
+   ln' = 0
+   syms @ s =>
+      !s.is_local && s.name == name
+         |
+            ln' = s.line
+            -->
+   ln'
+
+next_top_sym_line: SymEntries, Int => Int
+next_top_sym_line = syms, start_ln =>
+   best' = 0
+   syms @ s =>
+      !s.is_local && s.line > start_ln && (best' == 0 || s.line < best')
+         | best' = s.line
+   best'
+
+line_has_type_annot: String, Int, Int, String => <>
+line_has_type_annot = text, min_ln, cur_ln, name =>
+   found' = <->
+   ln' = min_ln
+   0.. @
+      ln' < cur_ln |
+         line_s = get_line_at(text, ln' - 1)
+         n = ?line_s
+         i' = 0
+         0.. @
+            i' < n && (line_s(i') ['\s, '\t]) | i' = i' + 1 | -->
+         rest = i' < n | line_s(i'..n) | ""
+         ?rest !< ?name + 1 && rest(..?name) == name && rest(?name) == ':
+            |
+               (?rest == ?name + 1 || rest(?name + 1) != ':)
+                  |
+                     found' = <+>
+                     -->
+         ln' = ln' + 1
+      | -->
+   found'
+
+find_local_binding_loc: String, String, Int, Int, SymEntries => (Int, Int, Int)
+find_local_binding_loc = text, name, min_ln, max_ln, syms =>
+   text == "" || ?name == 0 | --| (0, 0, 0)
+   start_ln = min_ln > 1 | min_ln | 1
+   ln' = start_ln
+   total_lines = count_doc_lines(text)
+   end_ln = max_ln > 0 && max_ln !> total_lines | max_ln | total_lines
+   res' = (0, 0, 0)
+   0.. @
+      ln' > end_ln | -->
+      line_s = get_line_at(text, ln' - 1)
+      n = ?line_s
+      ws' = 0
+      0.. @
+         ws' < n && (line_s(ws') ['\s, '\t]) | ws' = ws' + 1 | -->
+      ws' + ?name < n && line_s(ws'..ws' + ?name) == name
+         |
+            after = ws' + ?name
+            has_prime = line_s(after) == ''
+            p0 = has_prime | after + 1 | after
+            p1' = p0
+            0.. @
+               p1' < n && (line_s(p1') ['\s, '\t]) | p1' = p1' + 1 | -->
+            is_eq = p1' < n && line_s(p1') == '= && (p1' + 1 !< n || !(line_s(p1' + 1) ['=, '>]))
+            is_eq && !sym_has_loc(syms, ln', ws' + 1)
+               |
+                  end_c = ws' + 1 + ?name + (has_prime | 1 | 0)
+                  res' = (ln', ws' + 1, end_c)
+                  -->
+      ln' = ln' + 1
+   res'
+
+collect_local_typed_exprs: SymEntries, unify::Ctx, tast::TypedExpr, String, Int, Int => ()
+collect_local_typed_exprs = syms, ctx, te, text, min_ln, max_ln =>
+   te.kind
+      [Lambda lm]
+         collect_local_typed_exprs(syms, ctx, lm.1, text, min_ln, max_ln)
+      [Block bk]
+         bk @ sub =>
+            collect_local_typed_exprs(syms, ctx, sub, text, min_ln, max_ln)
+      [Choice ch]
+         collect_local_typed_exprs(syms, ctx, ch.0, text, min_ln, max_ln)
+         ch.1 @ br =>
+            collect_local_typed_exprs(syms, ctx, br.body, text, min_ln, max_ln)
+      [Cycle cy]
+         collect_local_typed_exprs(syms, ctx, cy.0, text, min_ln, max_ln)
+         collect_local_typed_exprs(syms, ctx, cy.1, text, min_ln, max_ln)
+         cy.2 | esc =>
+            collect_local_typed_exprs(syms, ctx, esc, text, min_ln, max_ln)
+      [Assign a]
+         collect_local_typed_exprs(syms, ctx, a.5, text, min_ln, max_ln)
+         nm = a.0
+         is_temp = ?nm == 0 || nm == "_" || (?nm !< 2 && nm(0..2) == "__")
+         !is_temp && !a.2 && !a.3 && !a.4
+            |
+               ut_str = unify::show_utype(ctx, a.5.ut)
+               valid_ut = ut_str != "" && ut_str != "?" && ut_str != "_" && ut_str != "()"
+               valid_ut
+                  |
+                     loc = find_local_binding_loc(text, nm, min_ln, max_ln, syms)
+                     loc.0 > 0
+                        |
+                           has_ann = line_has_type_annot(text, min_ln, loc.0, nm)
+                           is_fn = a.5.kind [Lambda]
+                           k = is_fn | SYM_FUNCTION | (a.1 | SYM_VARIABLE | SYM_CONSTANT)
+                           syms += SymEntry(nm, "${nm}: ${ut_str}", k,
+                              loc.0, loc.1, loc.0, loc.2, has_ann, <+>)
 
 update_sym_type: SymEntries, String, String => ()
 update_sym_type = syms, b_name, ut_str =>
@@ -420,14 +542,14 @@ update_sym_type = syms, b_name, ut_str =>
       |
          ?syms @ i =>
             s = syms(i)!!
-            s.name == b_name && (s.detail == b_name || s.detail(?s.detail - 3..) == "...")
+            !s.is_local && s.name == b_name && (s.detail == b_name || (?s.detail !< 3 && s.detail(?s.detail - 3..) == "..."))
                |
                   syms(i) = SymEntry(s.name, b_name + ": " + ut_str,
-                     s.kind, s.line, s.col, s.end_line, s.end_col) !| _
+                     s.kind, s.line, s.col, s.end_line, s.end_col, s.has_annot, s.is_local) !| _
 
 // Enrich symbol details with inferred types from `annotate::annotate_program` when available.
-enrich_symbols_with_tast: SymEntries, unify::Ctx, tast::TypedProgram => ()
-enrich_symbols_with_tast = syms, ctx, tprog =>
+enrich_symbols_with_tast: SymEntries, unify::Ctx, tast::TypedProgram, String => ()
+enrich_symbols_with_tast = syms, ctx, tprog, text =>
    tprog @ tst =>
       tst
          [Expr te]
@@ -437,16 +559,28 @@ enrich_symbols_with_tast = syms, ctx, tprog =>
                   a_val = a.5
                   ut_str = unify::show_utype(ctx, a_val.ut)
                   update_sym_type(syms, a_name, ut_str)
+                  top_ln = find_top_sym_line(syms, a_name)
+                  min_ln = top_ln > 0 | top_ln | 1
+                  max_ln = next_top_sym_line(syms, min_ln)
+                  collect_local_typed_exprs(syms, ctx, a_val, text, min_ln, max_ln)
          [Binding b]
             b_name = b.0
             b_te = b.2
             ut_str = unify::show_utype(ctx, b_te.ut)
             update_sym_type(syms, b_name, ut_str)
+            top_ln = find_top_sym_line(syms, b_name)
+            min_ln = top_ln > 0 | top_ln | 1
+            max_ln = next_top_sym_line(syms, min_ln)
+            collect_local_typed_exprs(syms, ctx, b_te, text, min_ln, max_ln)
          [GlobalBinding gb]
             gb_name = gb.0
             gb_te = gb.2
             ut_str = unify::show_utype(ctx, gb_te.ut)
             update_sym_type(syms, gb_name, ut_str)
+            top_ln = find_top_sym_line(syms, gb_name)
+            min_ln = top_ln > 0 | top_ln | 1
+            max_ln = next_top_sym_line(syms, min_ln)
+            collect_local_typed_exprs(syms, ctx, gb_te, text, min_ln, max_ln)
 
 has_use_imports: ast::Exprs => <>
 has_use_imports = stmts =>
@@ -502,7 +636,7 @@ copy_sym_entries: SymEntries => SymEntries
 copy_sym_entries = src =>
    out = SymEntries()
    src @ s =>
-      out += SymEntry(++s.name, ++s.detail, s.kind, s.line, s.col, s.end_line, s.end_col)
+      out += SymEntry(++s.name, ++s.detail, s.kind, s.line, s.col, s.end_line, s.end_col, s.has_annot, s.is_local)
    out
 
 upsert_doc: String, String, String, SymEntries => ()
@@ -561,6 +695,7 @@ add_unique_diag = list, item =>
 
 analyze_document: String, String, (String => ()) => ()
 analyze_document = uri, text, tc_hook =>
+   active_doc_text ::= text
    fpath = uri_to_path(uri)
    ast::cell_var_reset!
    diag::enable_capture!
@@ -596,7 +731,7 @@ analyze_document = uri, text, tc_hook =>
                            el_res = annotate::annotate_program(ast::Expr(Block, folded))
                            el_res
                               | succ =>
-                                 enrich_symbols_with_tast(syms', succ.ctx, succ.prog)
+                                 enrich_symbols_with_tast(syms', succ.ctx, succ.prog, text)
                               | errs =>
                                  errs @ e =>
                                     add_unique_diag(all_diags, diag::DiagEntry(e.code, e.file, e.line, e.col, e.msg, <->))
@@ -666,6 +801,94 @@ extract_word_at = text, line0, char0 =>
          | e' = e' + 1
          | -->
    line_str(s'..e')
+
+is_op_char: Int => <>
+is_op_char = c =>
+   c ['|, '!, '-, '+, '<, '>, '@, '$, '., '^, ':, '=, '?, '~, '&, '*, '/, '%]
+
+extract_operator_at: String, Int, Int => String
+extract_operator_at = text, line0, char0 =>
+   line_str = get_line_at(text, line0)
+   n = ?line_str
+   n == 0 | --| ""
+   idx = char0 < n | (char0 < 0 | 0 | char0) | n - 1
+   // Check the special 3-byte `|_|` unwrap-or-default token whether hovering `|` or `_`
+   has_def_l = idx + 2 < n && line_str(idx..idx + 3) == "|_|"
+   has_def_m = idx > 0 && idx + 1 < n && line_str(idx - 1..idx + 2) == "|_|"
+   has_def_r = idx !< 2 && line_str(idx - 2..idx + 1) == "|_|"
+   (has_def_l || has_def_m || has_def_r) | --| "|_|"
+   !is_op_char(line_str(idx)) | --| ""
+   s' = idx
+   0.. @
+      s' > 0 && is_op_char(line_str(s' - 1))
+         | s' = s' - 1
+         | -->
+   e' = idx + 1
+   0.. @
+      e' < n && is_op_char(line_str(e'))
+         | e' = e' + 1
+         | -->
+   line_str(s'..e')
+
+operator_hover_doc: String => String
+operator_hover_doc = op =>
+   op
+      ["|"] "**Choice / fallback separator** `|` *(LBP 50 / RBP 60, left)* — Separates positive and negative ramification arms (`r | pos | neg`) or supplies the trailing fallback branch of a guarded choice."
+      ["!|"] "**Skip-positive choice** `!|` *(LBP 50 / RBP 60, left)* — Ignores a unit positive slot (`< | E >` or `<>`) and evaluates its RHS only on negative/failure.\n\n```dva\narr(i) = val !| err => log::error(err.msg)\n```"
+      ["--|"] "**Early return** `--|` — Immediately returns from the enclosing function (`--| value` or unit `--|`)."
+      ["--!"] "**Propagate / unwrap** `--!` *(LBP 170, postfix, left)* — Unwraps the positive payload of a ramification or early-returns its negative slot from the enclosing function.\n\n```dva\nitem = lookup(key)--!\n```"
+      ["-->"] "**Break cycle** `-->` / `-->N` *(LBP 10 / RBP 20)* — Exits the innermost enclosing `@` cycle (or `N` levels out, triggering any `>--` escape branch)."
+      ["--^"] "**Continue cycle** `--^` / `--^N` *(LBP 10 / RBP 20)* — Advances immediately to the next iteration (skipping element emission in `@>`)."
+      [">--"] "**Cycle escape branch** `>--` *(LBP 10 / RBP 20)* — Produces `<+ escape_val +>` when the attached cycle exits via `-->`, or `<-->` on normal completion."
+      ["<+"] "**Positive ramification opener** `<+ expr ...` — Constructs a positive payload: `<+ expr +>` for `< T | >`, or `<+ expr ->` for `< T | E >`."
+      ["+>"] "**Positive / RamPP-neg closer** `+>` — Closes `<+ expr +>` (`< T | >`) or `<- expr +>` (`< T | E >` negative slot)."
+      ["<-"] "**Negative ramification opener** `<- expr ...` — Constructs a negative payload: `<- expr ->` for `< | E >`, or `<- expr +>` for `< T | E >`."
+      ["->"] "**Negative / RamPP-pos closer** `->` — Closes `<- expr ->` (`< | E >`) or `<+ expr ->` (`< T | E >` positive slot)."
+      ["<>"] "**Unit Flag type / negative flag** `<>` — Binary boolean type whose unit constructors are `<+>` (true) and `<->` (false)."
+      ["<+>"] "**Positive Flag literal** `<+>` — True / positive unit value of `<>`."
+      ["<->"] "**Negative Flag literal** `<->` — False / negative unit value of `<>`."
+      ["<-->"] "**Absent RamPN value** `<-->` — Empty negative slot of `< T | >`."
+      ["<++>"] "**Success RamNP value** `<++>` — Unit positive slot of `< | E >`."
+      ["|->"] "**Return false on match** `cond |->` — Sugar for `cond | --| <->` inside `<>`-returning functions."
+      ["|+>"] "**Return true on match** `cond |+>` — Sugar for `cond | --| <+>` inside `<>`-returning functions."
+      ["|-->"] "**Return absence on match** `cond |-->` — Sugar for `cond | --| <-->` inside `< T | >`-returning functions."
+      ["|++>"] "**Return success on match** `cond |++>` — Sugar for `cond | --| <++>` inside `< | E >`-returning functions."
+      ["|_|"] "**Unwrap-or-default** `|_|` *(choice sugar)* — Evaluates to the positive payload of `< T | >` or `< T | E >`, or falls back to the RHS expression (`opt |_| fallback`)."
+      ["@"] "**Cycle** `@` *(LBP 10 / RBP 20, left)* — Statement loop over integers, ranges, collections, maps, or conditions (`i =>`, `_`, `_i`)."
+      ["@@"] "**Rune cycle** `@@` *(LBP 10 / RBP 20, left)* — Iterates decoded UTF-8 Unicode `Rune` codepoints of a `String` or `Builder`."
+      ["@>"] "**Expression cycle** `@>` *(LBP 10 / RBP 20, left)* — Map (`xs @> f`), filter-map (`xs @> (x => cond | <+ y +>)`), direct freeze (`+(xs @> ...)`), or seeded fold (`(acc0, xs) @> f`)."
+      ["@@>"] "**Rune expression cycle** `@@>` *(LBP 10 / RBP 20, left)* — Decodes UTF-8 `Rune`s and collects/folds across `@>`."
+      ["$"] "**Low-precedence apply** `$` *(LBP 30 / RBP 30, right)* — Applies LHS to trailing RHS expression (`f $ x` is `f(x)`), absorbing unparenthesized choices."
+      ["$>"] "**Pipeline feed** `$>` *(LBP 40 / RBP 50, left)* — Passes LHS as first argument (`x $> f(a)` is `f(x, a)`) or into explicit `_` placeholder slots (`x $> f(a, _)`)."
+      ["$>>"] "**Monadic ram bind** `$>>` *(LBP 40 / RBP 50, left)* — Passes positive payload into a ram-returning continuation, short-circuiting negative values (`E3091` if continuation does not return a ram)."
+      ["$+>"] "**Ram positive map** `$+>` *(LBP 40 / RBP 50, left)* — Maps over the positive slot of `< T | E >` or `< T | >`, preserving the negative slot."
+      ["$->"] "**Ram negative map** `$->` *(LBP 40 / RBP 50, left)* — Maps over the negative slot of `< T | E >` or `< | E >`, preserving the positive slot."
+      [".>"] "**Function composition** `.>` *(LBP 40 / RBP 50, left)* — Left-to-right composition: `(f .> g)(x)` evaluates `g(f(x))`."
+      ["!!"] "**Force-unwrap** `!!` *(LBP 170, postfix, left)* — Unwraps positive ram payload (`< T | E >` / `< T | >`), aborting at runtime if negative."
+      ["!<"] "**Greater-or-equal** `!<` *(LBP 120 / RBP 130, left, chainable)* — Ordered \"not less\" (`>=`); yields `<->` on `NaN`."
+      ["!>"] "**Less-or-equal** `!>` *(LBP 120 / RBP 130, left, chainable)* — Ordered \"not greater\" (`<=`); yields `<->` on `NaN`."
+      ["=="] "**Structural equality** `==` *(LBP 120 / RBP 130, left)* — Compares scalars, `String`, records, enums, `Type`, and flags (`<>` XNOR)."
+      ["!="] "**Structural inequality** `!=` *(LBP 120 / RBP 130, left)* — Negation of `==` (`<>` XOR; `NaN != NaN` is `<+>`)."
+      [".."] "**Half-open range** `a..b` *(LBP 70 / RBP 80, left)* — Interval `[a, b)` for choice guards, cycles, and subviews."
+      ["...", "..="] "**Closed range** `a...b` / `a..=b` *(LBP 70 / RBP 80, left)* — Inclusive interval `[a, b]` for choice guards, cycles, and slices."
+      ["^"] "**Map lookup / insert** `m ^ k` — Returns `< V | Error >` on read (`m ^ k = v` inserts/updates)."
+      ["^?"] "**Map key membership** `m ^? k` — Returns `<>` (`<+>` when key `k` exists in `m`)."
+      ["^-"] "**Map key delete** `m ^- k` — Removes key `k` from map `m` and returns `<>`."
+      ["+="] "**Append in-place** `+=` *(LBP 60 / RBP 50, right)* — Appends chunk to `Builder` or element to growable array `T{}`."
+      [":="] "**Dynamic rebinding** `:=` — Rebinds an existing variable slot."
+      ["::="] "**Global mutation** `::=` *(LBP 60 / RBP 50, right)* — Mutates a declared module-level global variable inside a function."
+      ["="] "**Binding / update** `=` *(LBP 60 / RBP 50, right)* — Binds a new identifier or updates an active primed `x'` / field target."
+      ["?"] "**Length / count** `?` *(LBP 160 / RBP 180, prefix)* — Returns byte length (`String`/`Builder`), element count (`T{}`/`T[]`), entry count (`K ^ V`), or member count."
+      ["??"] "**UTF-8 codepoint count** `??` *(LBP 160 / RBP 180, prefix)* — Counts Unicode scalar values in a `String`."
+      ["+"] "**Addition / concat / Builder freeze** `+` — Binary numeric add or string/builder concatenation (LBP 140); unary `+b` freezes `Builder` to `String`."
+      ["++"] "**Deep arena copy** `++` *(LBP 160 / RBP 180, prefix)* — Deep-copies `String`, `Builder`, record, array, or slice into the active `mem::Arena`."
+      ["~~"] "**State lens** `~~` *(LBP 160 / RBP 180, prefix)* — Creates a `(get, set)` two-way binding record over a mutable slot."
+      ["&"] "**Address-of** `&` *(LBP 160 / RBP 180, prefix)* — Extracts raw `Addr` buffer or value pointer."
+      ["=>"] "**Function / lambda arrow** `=>` — Defines function signature/body or parameter binder (`x => expr`)."
+      ["!=>"] "**Nullary function arrow** `!=>` — Defines a 0-argument function invoked as `f!`."
+      [".<.", ".>."] "**Bit shift** `.<.` (left) / `.>.` (right) *(LBP 130 / RBP 140, non-associative)* — Requires parentheses when chained (`E2025`)."
+      [".&.", ".|.", ".^.", ".!."] "**Bitwise operators** `.&.` (AND, LBP 110), `.^.` (XOR, LBP 105), `.|.` (OR, LBP 100), `.!.` (unary NOT)."
+      | ""
 
 builtin_hover_doc: String => String
 builtin_hover_doc = word =>
@@ -778,6 +1001,7 @@ handle_initialize = id_val =>
       "\"definitionProvider\":true," +
       "\"documentSymbolProvider\":true," +
       "\"documentFormattingProvider\":true," +
+      "\"inlayHintProvider\":true," +
       "\"completionProvider\":{\"triggerCharacters\":[\".\",\":\"]}" +
       "},\"serverInfo\":{\"name\":\"edva-lsp\",\"version\":" +
       json::escape_string(version::VERSION) + "}}"
@@ -803,7 +1027,13 @@ handle_hover = id_val, params =>
       | doc =>
          word = extract_word_at(doc.text, line0, char0)
          ?word == 0
-            | send_result(id_val, "null")
+            |
+               op = extract_operator_at(doc.text, line0, char0)
+               odoc = op != "" | operator_hover_doc(op) | ""
+               odoc != ""
+                  | send_result(id_val, "{\"contents\":{\"kind\":\"markdown\",\"value\":" +
+                       json::escape_string(odoc) + "}}")
+                  | send_result(id_val, "null")
             |
                qual = split_qualified(word)
                mod_name = qual.0
@@ -820,11 +1050,18 @@ handle_hover = id_val, params =>
                         | send_result(id_val, "null")
                   |
                      hit_det' = ++""
+                     hit_local_ln' = 0
                      doc.syms @ s =>
                         s.name == bare
                            |
-                              hit_det' = s.detail
-                              -->
+                              s.is_local
+                                 |
+                                    s.line !> line0 + 1 && s.line !< hit_local_ln'
+                                       |
+                                          hit_local_ln' = s.line
+                                          hit_det' = s.detail
+                                 |
+                                    hit_det' == "" | hit_det' = s.detail
                      hit_det' != ""
                         |
                            md = "```dva\n" + hit_det' + "\n```"
@@ -836,7 +1073,13 @@ handle_hover = id_val, params =>
                               |
                                  send_result(id_val, "{\"contents\":{\"kind\":\"markdown\",\"value\":" +
                                     json::escape_string(bdoc) + "}}")
-                              | send_result(id_val, "null")
+                              |
+                                 op = extract_operator_at(doc.text, line0, char0)
+                                 odoc = op != "" | operator_hover_doc(op) | ""
+                                 odoc != ""
+                                    | send_result(id_val, "{\"contents\":{\"kind\":\"markdown\",\"value\":" +
+                                         json::escape_string(odoc) + "}}")
+                                    | send_result(id_val, "null")
       | send_result(id_val, "null")
 
 handle_definition: json::Value, json::Value => ()
@@ -890,14 +1133,18 @@ handle_document_symbol = id_val, params =>
       | doc =>
          b = {512}
          b += "["
-         doc.syms @ s, idx =>
-            idx > 0 | b += ","
-            rng = lsp_range_json(s.line, s.col, s.end_line, s.end_col)
-            b += "{\"name\":" + json::escape_string(s.name) +
-               ",\"detail\":" + json::escape_string(s.detail) +
-               ",\"kind\":" + str::from_int(s.kind) +
-               ",\"range\":" + rng +
-               ",\"selectionRange\":" + rng + "}"
+         emitted' = 0
+         doc.syms @ s =>
+            !s.is_local
+               |
+                  emitted' > 0 | b += ","
+                  rng = lsp_range_json(s.line, s.col, s.end_line, s.end_col)
+                  b += "{\"name\":" + json::escape_string(s.name) +
+                     ",\"detail\":" + json::escape_string(s.detail) +
+                     ",\"kind\":" + str::from_int(s.kind) +
+                     ",\"range\":" + rng +
+                     ",\"selectionRange\":" + rng + "}"
+                  emitted' = emitted' + 1
          b += "]"
          send_result(id_val, +b)
       | send_result(id_val, "[]")
@@ -934,12 +1181,49 @@ handle_completion = id_val, params =>
    doc_opt
       | doc =>
          doc.syms @ s =>
-            count' > 0 | b += ","
-            ckind = s.kind == SYM_FUNCTION | 3 | (s.kind == SYM_STRUCT | 22 | 6)
-            b += "{\"label\":" + json::escape_string(s.name) +
-               ",\"kind\":" + str::from_int(ckind) +
-               ",\"detail\":" + json::escape_string(s.detail) + "}"
-            count' = count' + 1
+            !s.is_local
+               |
+                  count' > 0 | b += ","
+                  ckind = s.kind == SYM_FUNCTION | 3 | (s.kind == SYM_STRUCT | 22 | 6)
+                  b += "{\"label\":" + json::escape_string(s.name) +
+                     ",\"kind\":" + str::from_int(ckind) +
+                     ",\"detail\":" + json::escape_string(s.detail) + "}"
+                  count' = count' + 1
+   b += "]"
+   send_result(id_val, +b)
+
+handle_inlay_hint: json::Value, json::Value => ()
+handle_inlay_hint = id_val, params =>
+   td = json::get(params, "textDocument") | v => v | json::Value(Null)
+   uri = json::get_str(td, "uri") | s => s | ""
+   rng_obj = json::get(params, "range") | v => v | json::Value(Null)
+   r_start_obj = json::get(rng_obj, "start") | v => v | json::Value(Null)
+   r_end_obj = json::get(rng_obj, "end") | v => v | json::Value(Null)
+   r_start = json::get_int(r_start_obj, "line") | l => l | 0
+   r_end = json::get_int(r_end_obj, "line") | l => l | 1000000
+   b = {512}
+   b += "["
+   emitted' = 0
+   doc_opt = get_doc(uri)
+   doc_opt
+      | doc =>
+         doc.syms @ s =>
+            line0 = s.line - 1
+            char0 = s.end_col - 1
+            in_range = s.line > 0 && line0 !< r_start && line0 !> r_end
+            pfx = "${s.name}: "
+            has_type_pfx = ?s.detail > ?pfx && s.detail(0..?pfx) == pfx
+            no_dots = ?s.detail < 3 || s.detail(?s.detail - 3..) != "..."
+            !s.has_annot && in_range && has_type_pfx && no_dots && s.end_col > 0
+               |
+                  ty_str = s.detail(?pfx..)
+                  ty_str != "" && ty_str != "_" && ty_str != "?" && ty_str != "()"
+                     |
+                        emitted' > 0 | b += ","
+                        b += "{\"position\":{\"line\":${str::from_int(line0)},\"character\":${str::from_int(char0)}}"
+                        b += ",\"label\":${json::escape_string(": " + ty_str)}"
+                        b += ",\"kind\":1,\"paddingLeft\":false,\"paddingRight\":true}"
+                        emitted' = emitted' + 1
    b += "]"
    send_result(id_val, +b)
 
@@ -1043,6 +1327,9 @@ main = stdlib_dir, tc_hook =>
                            0
                         ["textDocument/completion"]
                            handle_completion(id_val, params)
+                           0
+                        ["textDocument/inlayHint"]
+                           handle_inlay_hint(id_val, params)
                            0
                         |
                            // Respond with MethodNotFound (-32601) if request had an id

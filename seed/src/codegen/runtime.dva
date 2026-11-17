@@ -113,6 +113,30 @@ mark_nounwind = cg, fn =>
    attr = LLVMCreateStringAttribute(ctx, "nounwind", 8, "", 0)
    LLVMAddAttributeAtIndex(fn, -1, attr)
 
+mark_fn_enum_attr: types::Cg, Addr, String => ()
+mark_fn_enum_attr = cg, fn, name =>
+   ctx = LLVMGetGlobalContext!
+   kind = LLVMGetEnumAttributeKindForName(name, ?name)
+   kind != 0
+      | LLVMAddAttributeAtIndex(fn, -1, LLVMCreateEnumAttribute(ctx, kind, 0))
+
+// The "noalias" return-value attribute (index 0 = return value in LLVM C API).
+mark_return_noalias: types::Cg, Addr => ()
+mark_return_noalias = cg, fn =>
+   ctx = LLVMGetGlobalContext!
+   kind = LLVMGetEnumAttributeKindForName("noalias", 7)
+   kind != 0
+      |
+         attr = LLVMCreateEnumAttribute(ctx, kind, 0)
+         LLVMAddAttributeAtIndex(fn, 0, attr)
+
+emit_sync_active_gen_tls: types::Cg, Addr, Addr, Addr => ()
+emit_sync_active_gen_tls = cg, cur_t, cur_fn, gen_tls =>
+   cur_ar = types::call0(cg, cur_t, cur_fn, "sync.cur.ar")
+   cg_gep = LLVMBuildStructGEP2(cg.builder, arena_type(cg), cur_ar, 4, "sync.cg.gep")
+   cg_val = LLVMBuildLoad2(cg.builder, LLVMInt64Type!, cg_gep, "sync.cg")
+   LLVMBuildStore(cg.builder, cg_val, gen_tls)
+
 // write(2, msg, len); exit(1) — a runtime abort with a fixed message.
 emit_abort_msg: types::Cg, String, String => ()
 emit_abort_msg = cg, msg, gname =>
@@ -140,6 +164,11 @@ emit_abort_msg = cg, msg, gname =>
                wargs = (LLVMConstInt(i32t, 2, 0), msg_ptr, LLVMConstInt(LLVMInt64Type!, mlen, 0))
                LLVMBuildCall2(cg.builder, wf.0, wf.1, &wargs, 3, "")
                types::call1(cg, ef.0, ef.1, LLVMConstInt(i32t, 1, 0), "")
+               LLVMBuildUnreachable(cg.builder)
+               cur_bb = LLVMGetInsertBlock(cg.builder)
+               parent = LLVMGetBasicBlockParent(cur_bb)
+               dead_bb = LLVMAppendBasicBlock(parent, "abort.dead")
+               LLVMPositionBuilderAtEnd(cg.builder, dead_bb)
 
 // Emits the full runtime: the arena globals + helper functions, the message
 // globals, the FNV hash, and the string-overflow intrinsic declaration.
@@ -156,21 +185,29 @@ codegen_emit_runtime_module = cg =>
    LLVMSetThreadLocal(arena_tls, 1)
    arena_base_tls = LLVMAddGlobal(cg.module, atp, "dva_arena_base_tls")
    LLVMSetThreadLocal(arena_base_tls, 1)
+   active_gen_tls = LLVMAddGlobal(cg.module, i64t, "dva_active_gen_tls")
+   LLVMSetThreadLocal(active_gen_tls, 1)
    garena = LLVMAddGlobal(cg.module, at, "global_arena")
 
    cur_t = types::fn_type0(LLVMPointerType(at, 0))
-   LLVMAddFunction(cg.module, "dva_arena_current", cur_t)
+   d_cur = LLVMAddFunction(cg.module, "dva_arena_current", cur_t)
+   mark_nounwind(cg, d_cur)
 
    set_cur_params = types::Addrs()
    set_cur_params += atp
    set_cur_t = stmt::fn_type_n(cg, atp, set_cur_params, 1)
-   LLVMAddFunction(cg.module, "dva_arena_set_current", set_cur_t)
+   d_sc = LLVMAddFunction(cg.module, "dva_arena_set_current", set_cur_t)
+   mark_nounwind(cg, d_sc)
 
    m_ty = types::fn_type1(i8p, i64t)
    cg.malloc_t = <+ m_ty +>
-   cg.malloc_fn = <+ LLVMAddFunction(cg.module, "malloc", m_ty) +>
+   m_fn = LLVMAddFunction(cg.module, "malloc", m_ty)
+   mark_nounwind(cg, m_fn)
+   mark_return_noalias(cg, m_fn)
+   cg.malloc_fn = <+ m_fn +>
    free_t = types::fn_type1(LLVMVoidType!, i8p)
-   LLVMAddFunction(cg.module, "free", free_t)
+   d_free = LLVMAddFunction(cg.module, "free", free_t)
+   mark_nounwind(cg, d_free)
 
    const_string_global(cg, diag::E4002_string_length_overflow!, "str_overflow_msg")
    const_string_global(cg, diag::E4004_arena_allocation_too_large!, "arena_toobig_msg")
@@ -189,39 +226,48 @@ codegen_emit_runtime_module = cg =>
    init_params += atp
    init_params += i64t
    init_t = stmt::fn_type_n(cg, LLVMVoidType!, init_params, 2)
-   LLVMAddFunction(cg.module, "dva_arena_init", init_t)
+   d_init = LLVMAddFunction(cg.module, "dva_arena_init", init_t)
+   mark_nounwind(cg, d_init)
 
    alloc_params = types::Addrs()
    alloc_params += atp
    alloc_params += i64t
    alloc_t = stmt::fn_type_n(cg, i8p, alloc_params, 2)
-   LLVMAddFunction(cg.module, "dva_arena_alloc", alloc_t)
+   d_alloc = LLVMAddFunction(cg.module, "dva_arena_alloc", alloc_t)
+   mark_nounwind(cg, d_alloc)
+   mark_return_noalias(cg, d_alloc)
 
    dest_params = types::Addrs()
    dest_params += atp
    dest_t = stmt::fn_type_n(cg, LLVMVoidType!, dest_params, 1)
-   LLVMAddFunction(cg.module, "dva_arena_destroy", dest_t)
+   d_dest = LLVMAddFunction(cg.module, "dva_arena_destroy", dest_t)
+   mark_nounwind(cg, d_dest)
 
    save_t = stmt::fn_type_n(cg, i64t, dest_params, 1)
-   LLVMAddFunction(cg.module, "dva_arena_save", save_t)
+   d_save = LLVMAddFunction(cg.module, "dva_arena_save", save_t)
+   mark_nounwind(cg, d_save)
 
    rest_params = types::Addrs()
    rest_params += atp
    rest_params += i64t
    rest_t = stmt::fn_type_n(cg, LLVMVoidType!, rest_params, 2)
-   LLVMAddFunction(cg.module, "dva_arena_restore", rest_t)
+   d_rest = LLVMAddFunction(cg.module, "dva_arena_restore", rest_t)
+   mark_nounwind(cg, d_rest)
 
    vt_params = types::Addrs()
    vt_params += atp
    vt_params += i64t
    vt_t = stmt::fn_type_n(cg, LLVMInt1Type!, vt_params, 2)
-   LLVMAddFunction(cg.module, "dva_arena_validate_tag", vt_t)
+   d_vt = LLVMAddFunction(cg.module, "dva_arena_validate_tag", vt_t)
+   mark_nounwind(cg, d_vt)
+   mark_fn_enum_attr(cg, d_vt, "noinline")
 
    adopt_params = types::Addrs()
    adopt_params += atp
    adopt_params += atp
    adopt_t = stmt::fn_type_n(cg, LLVMVoidType!, adopt_params, 2)
-   LLVMAddFunction(cg.module, "dva_arena_adopt", adopt_t)
+   d_adopt = LLVMAddFunction(cg.module, "dva_arena_adopt", adopt_t)
+   mark_nounwind(cg, d_adopt)
 
    hash_params = types::Addrs()
    hash_params += i8p
@@ -274,6 +320,9 @@ codegen_emit_runtime_full = cg =>
    arena_base_tls = LLVMAddGlobal(cg.module, atp, "dva_arena_base_tls")
    LLVMSetInitializer(arena_base_tls, LLVMConstNull(atp))
    LLVMSetThreadLocal(arena_base_tls, 1)
+   active_gen_tls = LLVMAddGlobal(cg.module, i64t, "dva_active_gen_tls")
+   LLVMSetInitializer(active_gen_tls, zero)
+   LLVMSetThreadLocal(active_gen_tls, 1)
    garena = LLVMAddGlobal(cg.module, at, "global_arena")
    LLVMSetInitializer(garena, LLVMConstNull(at))
 
@@ -311,6 +360,7 @@ codegen_emit_runtime_full = cg =>
    sc_new = LLVMGetParam(set_cur_fn, 0)
    sc_prev = types::call0(cg, cur_t, cur_fn, "prev.arena")
    LLVMBuildStore(cg.builder, sc_new, arena_tls)
+   emit_sync_active_gen_tls(cg, cur_t, cur_fn, active_gen_tls)
    LLVMBuildRet(cg.builder, sc_prev)
 
    m_ty2 = types::fn_type1(i8p, i64t)
@@ -353,6 +403,7 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildStore(cg.builder, one, LLVMBuildStructGEP2(cg.builder, at, a0, 6, "next_gen_ptr"))
    init_sg0 = types::gep2(cg, sg_arr, LLVMBuildStructGEP2(cg.builder, at, a0, 7, "sg0_ptr"), zero, zero, "resets_init_ptr")
    LLVMBuildStore(cg.builder, zero, init_sg0)
+   emit_sync_active_gen_tls(cg, cur_t, cur_fn, active_gen_tls)
    LLVMBuildRetVoid(cg.builder)
 
    // dva_arena_alloc(ptr, i64) -> ptr
@@ -411,6 +462,9 @@ codegen_emit_runtime_full = cg =>
          pargs = (LLVMGetNamedGlobal(cg.module, "arena_toobig_msg"), s1_al, cap_phi)
          LLVMBuildCall2(cg.builder, pf.0, pf.1, &pargs, 3, "")
          types::call1(cg, ef.0, ef.1, LLVMConstInt(i32t, 1, 0), "")
+         LLVMBuildUnreachable(cg.builder)
+         al_b_dead = LLVMAppendBasicBlock(alloc_fn, "too_large.dead")
+         LLVMPositionBuilderAtEnd(cg.builder, al_b_dead)
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, al_c)
    no_c = LLVMBuildICmp(cg.builder, 32, nc_vl, zero, "no_chunks")
@@ -541,6 +595,7 @@ codegen_emit_runtime_full = cg =>
    wrap = LLVMBuildICmp(cg.builder, 39, inc, max_gen, "sv.wrap")
    next_val = LLVMBuildSelect(cg.builder, wrap, one, inc, "sv.next_val")
    LLVMBuildStore(cg.builder, next_val, next_gen_gep)
+   emit_sync_active_gen_tls(cg, cur_t, cur_fn, active_gen_tls)
 
    LLVMBuildRet(cg.builder, sv_mark)
 
@@ -647,6 +702,7 @@ codegen_emit_runtime_full = cg =>
    LLVMBuildBr(cg.builder, rs_fin)
 
    LLVMPositionBuilderAtEnd(cg.builder, rs_fin)
+   emit_sync_active_gen_tls(cg, cur_t, cur_fn, active_gen_tls)
    LLVMBuildRetVoid(cg.builder)
 
    // dva_arena_validate_tag(ptr, i64) -> i1
@@ -655,6 +711,8 @@ codegen_emit_runtime_full = cg =>
    vt_params2 += i64t
    vt_t2 = stmt::fn_type_n(cg, LLVMInt1Type!, vt_params2, 2)
    vt_fn = LLVMAddFunction(cg.module, "dva_arena_validate_tag", vt_t2)
+   mark_nounwind(cg, vt_fn)
+   mark_fn_enum_attr(cg, vt_fn, "noinline")
    vt_entry = LLVMAppendBasicBlock(vt_fn, "entry")
    vt_loop = LLVMAppendBasicBlock(vt_fn, "loop")
    vt_cont = LLVMAppendBasicBlock(vt_fn, "cont")
@@ -740,6 +798,7 @@ codegen_emit_runtime_full = cg =>
    d_resets_slot = types::gep2(cg, sg_arr, d_sg0_gep, zero, zero, "ds.resets.slot")
    d_resets = LLVMBuildLoad2(cg.builder, i64t, d_resets_slot, "ds.resets")
    LLVMBuildStore(cg.builder, LLVMBuildAdd(cg.builder, d_resets, one, "ds.resets.next"), d_resets_slot)
+   emit_sync_active_gen_tls(cg, cur_t, cur_fn, active_gen_tls)
    LLVMBuildRetVoid(cg.builder)
 
    // dva_arena_adopt(parent, child)
@@ -938,6 +997,21 @@ codegen_emit_runtime_full = cg =>
    si_e = LLVMAppendBasicBlock(scov_init_fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, si_e)
    LLVMBuildRetVoid(cg.builder)
+
+   mark_nounwind(cg, cur_fn)
+   mark_nounwind(cg, set_cur_fn)
+   mark_nounwind(cg, init_fn)
+   mark_nounwind(cg, alloc_fn)
+   mark_return_noalias(cg, alloc_fn)
+   cg.malloc_fn | mf =>
+      mark_nounwind(cg, mf)
+      mark_return_noalias(cg, mf)
+   mark_nounwind(cg, free_fn)
+   mark_nounwind(cg, save_fn)
+   mark_nounwind(cg, rest_fn)
+   mark_nounwind(cg, vt_fn)
+   mark_nounwind(cg, dest_fn)
+   mark_nounwind(cg, adopt_fn)
 
    is_wasm_rt = ast::triple_arch(cg.opts.target_triple) == "wasm32"
    is_wasm_rt |

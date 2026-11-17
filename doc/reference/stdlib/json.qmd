@@ -82,6 +82,49 @@ The module also exports growable arena types `Values` and `Pairs`, `Result` (`< 
 | `json::get_float` | `Value, String => < Float | >` | Extract a numeric property from an `Object` |
 | `json::get_bool` | `Value, String => < <> | >` | Extract a boolean property from an `Object` |
 
+## Streaming pull scanner (`json::Cursor`)
+
+For high-throughput structured logs or record extraction without building a `json::Value` DOM tree, `json::Cursor` scans keys and primitive values directly over the input `String` slice (`json::cursor_read_str` returns a zero-copy slice when no backslash escapes are present):
+
+| Function | Signature | Description |
+|---|---|---|
+| `json::cursor` | `String => Cursor` | Create a streaming `Cursor` at byte offset `0` |
+| `json::cursor_reset` | `Cursor, String => ()` | Reuse an existing `Cursor` on a new JSON string |
+| `json::cursor_skip_ws` | `Cursor => Int` | Advance past ASCII whitespace and return the new offset |
+| `json::cursor_eof` | `Cursor => <>` | True when no non-whitespace bytes remain |
+| `json::cursor_peek` | `Cursor => Int` | Next non-whitespace byte, or `-1` at EOF |
+| `json::cursor_expect_byte` | `Cursor, Int => <>` | Consume a specific non-whitespace ASCII byte |
+| `json::cursor_enter_object` | `Cursor => <>` | Expect and consume `{` |
+| `json::cursor_enter_array` | `Cursor => <>` | Expect and consume `[` |
+| `json::cursor_next_field` | `Cursor => < String | >` | Read the next object field name and `:`, or consume closing `}` (`<-->`) |
+| `json::cursor_read_str` | `Cursor => < String | >` | Parse a JSON string token (zero-copy slice when unescaped) |
+| `json::cursor_read_int` | `Cursor => < Int | >` | Parse a signed JSON integer token directly without `Float` conversion |
+| `json::cursor_read_bool` | `Cursor => < <> | >` | Parse `true` or `false` |
+| `json::cursor_skip_value` | `Cursor => <>` | Skip any JSON value (scalar, string, nested array, or nested object) |
+
+```{.dva .run}
+#use io
+#use json
+#use str
+
+cur = json::cursor("{\"id\":42,\"tags\":[\"a\",\"b\"],\"ok\":true}")
+id' = 0
+ok' = <->
+json::cursor_enter_object(cur) |
+   0.. @
+      json::cursor_next_field(cur)
+         | k =>
+            k
+               ["id"]
+                  id' = json::cursor_read_int(cur) |_| 0
+               ["ok"]
+                  ok' = json::cursor_read_bool(cur) |_| <->
+               |
+                  json::cursor_skip_value(cur)
+         | -->
+io::out $ "${str::from_int(id')}:${ok' | "true" | "false"}"
+```
+
 ## Parsing and failure
 
 ```{.dva .partial}

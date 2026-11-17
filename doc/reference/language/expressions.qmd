@@ -254,3 +254,5 @@ Assignments sit at LBP 60, RBP 50 (right-associative) and always evaluate to `()
 | `{}` / `{cap}` | Optional `Int` capacity expression | `Builder` | Allocates `Builder` with default byte capacity (`16`) or explicit `cap` |
 | `@[addr T]` | `Addr`, type `T` | `T` | Volatile typed memory load (or zero-copy record view) |
 | `#size T` | Any type `T` | `Int` | Compile-time byte size of `T` |
+
+For preferred idioms across ambiguous-looking symbolic combinations, disambiguating `{.dva .run}` examples, and the 10-task symbolic comprehension baseline, see [Operators, Sections & Underscore](operators.qmd#preferred-idiom-per-operation).
