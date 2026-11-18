@@ -33,22 +33,22 @@ Reproducible workload benchmarks comparing Edva (native and `wasm32-unknown-unkn
 
 | Workload | Target | Cold (ms) | IR Emit (ms) | Warm (ms) | Binary Size (B) | p50 (ms) | p95 (ms) | Peak RSS (KB) | Rate (items/s) |
 |---|---|---|---|---|---|---|---|---|---|
-| `cli_log_json` (`20000`) | Edva `-O2` | `786.343` | `269.591` | `684.33` | `97784` | `5.005` | `5.014` | `2704` | `3996330.6` |
-| `cli_log_json` (`20000`) | Rust `-C opt-level=3` | `242.035` | — | — | `530616` | `3.012` | `3.028` | `2192` | `6639859.3` |
-| `cli_log_json` (`20000`) | Zig `-OReleaseFast` | `12343.354` | — | — | `4221464` | `5.898` | `5.943` | `848` | `3390812.7` |
-| `server_http_router` (`40000`) | Edva `-O2` | `636.659` | `217.24` | `565.095` | `89384` | `7.408` | `7.408` | `2584` | `5399931.8` |
-| `server_http_router` (`40000`) | Rust `-C opt-level=3` | `312.756` | — | — | `530816` | `7.579` | `7.649` | `2264` | `5277928.5` |
-| `server_http_router` (`40000`) | Zig `-OReleaseFast` | `11697.534` | — | — | `4051480` | `4.275` | `4.336` | `848` | `9356136.4` |
-| `wasm_numeric_kernel` (`400000`) | Edva `-O2` | `488.154` | `201.922` | `446.829` | `79536` | `219.474` | `219.569` | `2116` | `1822537.5` |
-| `wasm_numeric_kernel` (`400000`) | Rust `-C opt-level=3` | `215.784` | — | — | `529944` | `221.188` | `221.612` | `2096` | `1808419.0` |
-| `wasm_numeric_kernel` (`400000`) | Zig `-OReleaseFast` | `11515.121` | — | — | `4004992` | `73.007` | `73.048` | `848` | `5478916.2` |
-| `wasm_numeric_kernel` (`400000`) | Edva `wasm32` (Node) | `71.799` | — | — | `2457` | `870.553` | `876.753` | `52800` | `459477.9` |
+| `cli_log_json` (`20000`) | Edva `-O2` | `880.957` | `289.58` | `759.691` | `102352` | `3.672` | `3.725` | `2704` | `5447197.2` |
+| `cli_log_json` (`20000`) | Rust `-C opt-level=3` | `242.97` | — | — | `530616` | `3.019` | `3.04` | `2188` | `6624242.8` |
+| `cli_log_json` (`20000`) | Zig `-OReleaseFast` | `12505.228` | — | — | `4221464` | `5.815` | `5.823` | `844` | `3439362.6` |
+| `server_http_router` (`40000`) | Edva `-O2` | `662.829` | `219.66` | `585.141` | `89920` | `5.862` | `5.895` | `2588` | `6823265.2` |
+| `server_http_router` (`40000`) | Rust `-C opt-level=3` | `310.305` | — | — | `530816` | `8.474` | `9.466` | `2324` | `4720094.3` |
+| `server_http_router` (`40000`) | Zig `-OReleaseFast` | `11921.967` | — | — | `4051480` | `4.3` | `4.325` | `848` | `9302267.2` |
+| `wasm_numeric_kernel` (`400000`) | Edva `-O2` | `521.485` | `207.623` | `443.975` | `80112` | `74.879` | `76.338` | `2084` | `5341969.2` |
+| `wasm_numeric_kernel` (`400000`) | Rust `-C opt-level=3` | `210.262` | — | — | `529944` | `218.714` | `221.735` | `2228` | `1828868.9` |
+| `wasm_numeric_kernel` (`400000`) | Zig `-OReleaseFast` | `11502.01` | — | — | `4004992` | `73.413` | `73.49` | `848` | `5448613.2` |
+| `wasm_numeric_kernel` (`400000`) | Edva `wasm32` (Node) | `71.745` | — | — | `2611` | `286.77` | `293.143` | `52760` | `1394848.4` |
 
 *(Go rows were skipped on `sholl` because `go` is not installed on this host.)*
 
 ### Observed Bottleneck & Optimization Note
-- **Compilation**: Edva frontend + IR emission (`201.9`–`269.6 ms`) accounts for `~34`–`41%` of total cold build time; the remainder (`warm_build_ms` = `446.8`–`684.3 ms`) is `clang -O2` optimizing and linking the emitted single-unit LLVM IR module.
-- **Compiler & Stdlib Runtime Improvements (`DVA-80`..`DVA-83`, `DVA-94`..`DVA-96`)**: Zero-allocation streaming JSON scanning (`std/json::Cursor` + SWAR ASCII/cold-escape outlines + `memchr`-backed `str::find_byte_from`), single-load TLS generation checks + stack-promoted `Builder` header & freeze fast-path, register value-pair `{ i64, ptr }` / small-record return ABI + tail/temporary stack allocation, and unboxed slice spans brought `cli_log_json` to `5.005 ms` (beating Zig `5.898 ms`), `server_http_router` to `7.408 ms` (beating Rust `7.579 ms`), and `wasm_numeric_kernel` to `219.474 ms` (beating Rust `221.188 ms`, with a `2,457 B` `.wasm` binary).
+- **Compilation**: Edva frontend + IR emission (`207.6`–`289.6 ms`) accounts for `~33`–`40%` of total cold build time; the remainder (`warm_build_ms` = `444.0`–`759.7 ms`) is `clang -O2` optimizing and linking the emitted single-unit LLVM IR module.
+- **Compiler & Stdlib Runtime Improvements (`DVA-80`..`DVA-83`, `DVA-94`..`DVA-98`)**: Zero-allocation streaming JSON scanning (`std/json::Cursor` + SWAR ASCII/cold-escape outlines + `memchr`-backed `str::find_byte_from`), single-load TLS generation checks + stack-promoted `Builder` header & freeze fast-path, register value-pair `{ i64, ptr }` / small-record return ABI + tail/temporary stack allocation, unboxed slice spans, and whole-program integer value-range analysis (`!range` metadata + Wasm `udiv`/power-of-2 `ashr` strength reduction + proven-in-bounds `String` byte indexing) brought `cli_log_json` to `3.672 ms` (beating Zig `5.815 ms`), `server_http_router` to `5.862 ms` (beating Rust `8.474 ms`), and `wasm_numeric_kernel` to `74.879 ms` natively (matching Zig `73.413 ms` and **2.92x faster** than Rust `218.714 ms`) and `286.77 ms` on `wasm32` (**3.04x speedup**, `2,611 B` `.wasm` binary).
 
 ## Running
 

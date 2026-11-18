@@ -2,6 +2,7 @@
 
 #use(import) ../llvm
 #use ../ast
+#use const
 #use ../diag
 #use str
 #use ../tast
@@ -66,8 +67,8 @@ dbg = s =>
 // in a choice); rt + fnames are a record variable's LLVM struct type and its
 // named field list ("" for positional fields).
 #type CgVar (name: String, vt: ast::ValueType, is_heap: <>, dtype: String,
-   rt: <Addr|>, fnames: ast::Names, slot: <Addr|>, is_local: <>,
-   is_partial: <>, fvts: ast::VTypes, direct: <Addr|>)
+  rt: <Addr|>, fnames: ast::Names, slot: <Addr|>, is_local: <>,
+  is_partial: <>, fvts: ast::VTypes, direct: <Addr|>)
 #type CgVars CgVar{}
 
 // Binding mutability is separate from CgVar so type/layout metadata remains
@@ -83,7 +84,7 @@ dbg = s =>
 #type ParamRec (name: String, rt: Addr, fnames: ast::Names, fvts: ast::VTypes)
 #type ParamRecs ParamRec{}
 #type FnRetRec (name: String, rt: <Addr|>, fnames: ast::Names,
-   fvts: ast::VTypes, dtype: String)
+  fvts: ast::VTypes, dtype: String)
 #type FnRetRecs FnRetRec{}
 #type Addrs Addr{}
 #type IntArr Int{}
@@ -97,7 +98,7 @@ dbg = s =>
 // from, the running intersection of branch-end states, and whether the choice
 // is exhaustive — no fall-through path).
 #type ChoiceInitFrame (pre: FieldInitState, merged: FieldInitState,
-   started: <>, exhaustive: <>)
+  started: <>, exhaustive: <>)
 #type ChoiceInitFrames ChoiceInitFrame{}
 
 // A user function definition and its compiled LLVM shape.
@@ -105,8 +106,8 @@ dbg = s =>
 #type FnDefs FnDef{}
 #type FnNameIndex String ^ Int
 #type FnInfo (name: String, llvm_fn: <Addr|>, llvm_type: <Addr|>, nparams: Int,
-   param_types: ast::VTypes, ret_vt: ast::ValueType, declared: <>,
-   generic: <>, value_safe: <>, no_capture: <>)
+  param_types: ast::VTypes, ret_vt: ast::ValueType, declared: <>,
+  generic: <>, value_safe: <>, no_capture: <>)
 #type FnInfos FnInfo{}
 
 // A declared '#type' name -> its TypeInfo (for payload resolution).
@@ -152,7 +153,7 @@ empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
 
 default_codegen_opts: () => CodegenOpts
 default_codegen_opts = !=> CodegenOpts("", <->, <->, ast::Names(),
-   ast::Names(), <->, "", <->, "", <->)
+  ast::Names(), <->, "", <->, "", <->)
 
 #type Cg (
    module: Addr,
@@ -189,37 +190,37 @@ default_codegen_opts = !=> CodegenOpts("", <->, <->, ast::Names(),
    current_fn: Addr,
 cycle_breaks: Addrs,
 cycle_conts: Addrs,
-   fn_alias_names: ast::Names,
-   fn_alias_tgts: ast::Names,
-   last_closure_fn: String,
-   closure_vars: ast::Names,
-   closure_tgts: ast::Names,
-   param_clo_names: ast::Names,
+  fn_alias_names: ast::Names,
+  fn_alias_tgts: ast::Names,
+  last_closure_fn: String,
+  closure_vars: ast::Names,
+  closure_tgts: ast::Names,
+  param_clo_names: ast::Names,
 param_clo_tys: Addrs,
-   param_clo_rets: ast::VTypes,
-   param_recs: ParamRecs,
-   param_arr_names: ast::Names,
-   param_sl_names: ast::Names,
-   thread_rec_t: <Addr|>,
-   pthread_create_fn: <Addr|>,
-   pthread_join_fn: <Addr|>,
-   pthread_exit_fn: <Addr|>,
-   thread_tls_rec: <Addr|>,
-   thread_n: Int,
-   builder_t: <Addr|>,
-   closure_t: <Addr|>,
-   init: FieldInitState,
-   choice_frames: ChoiceInitFrames,
-   bindings: BindingMuts,
-   error: <>,
-   escape_bb: <Addr|>,
-   discard_result: <>,
-   noncap_names: ast::Names,
-   noncap_globs: Addrs,
-   source_file: String,
-   fn_var_start: Int,
-   fn_binding_start: Int,
-   opts: CodegenOpts,
+  param_clo_rets: ast::VTypes,
+  param_recs: ParamRecs,
+  param_arr_names: ast::Names,
+  param_sl_names: ast::Names,
+  thread_rec_t: <Addr|>,
+  pthread_create_fn: <Addr|>,
+  pthread_join_fn: <Addr|>,
+  pthread_exit_fn: <Addr|>,
+  thread_tls_rec: <Addr|>,
+  thread_n: Int,
+  builder_t: <Addr|>,
+  closure_t: <Addr|>,
+  init: FieldInitState,
+  choice_frames: ChoiceInitFrames,
+  bindings: BindingMuts,
+  error: <>,
+  escape_bb: <Addr|>,
+  discard_result: <>,
+  noncap_names: ast::Names,
+  noncap_globs: Addrs,
+  source_file: String,
+  fn_var_start: Int,
+  fn_binding_start: Int,
+  opts: CodegenOpts,
 )
 
 #type Flags <>{}
@@ -274,6 +275,58 @@ param_clo_tys: Addrs,
    ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->, 1,
    <->, <->, <-->, ast::Names(), 0, <->)
 
+// Value-Range Analysis (VRA) lattice and per-module state.
+// state: 0 = Bottom (unseen), 1 = Bounded [lo, hi], 2 = Top (unbounded).
+#type VraRange (state: Int, lo: Int, hi: Int)
+#type VraRanges VraRange{}
+#type VraIndex String ^ Int
+#type VraLocal (name: String, rng: VraRange)
+#type VraLocals VraLocal{}
+#type BoundedStrIdx (idx_var: String, str_var: String)
+#type BoundedStrIdxs BoundedStrIdx{}
+#type LenVarEntry (len_var: String, str_var: String)
+#type LenVarEntries LenVarEntry{}
+#type NamedShapeMeta (shape_key: String, anon_sig: String, field_names: ast::Names)
+#type NamedShapeMetas NamedShapeMeta{}
+
+#type VraState (
+   enabled: <>,
+   whole_prog: <>,
+   changed: <>,
+   skip_bot_params: <>,
+   in_narrow: <>,
+   cur_fn_name: String,
+   field_idx: VraIndex,
+   field_rngs: VraRanges,
+   anon_idx: VraIndex,
+   anon_rngs: VraRanges,
+   named_shapes: NamedShapeMetas,
+   named_shape_keys: ast::Names,
+   poison_shapes: ast::Names,
+   param_idx: VraIndex,
+   param_rngs: VraRanges,
+   fn_ret_idx: VraIndex,
+   fn_ret_rngs: VraRanges,
+   poison_fns: ast::Names,
+   locals: VraLocals,
+   cur_muts: ast::Names,
+   bounded_idxs: BoundedStrIdxs,
+   len_vars: LenVarEntries,
+   snap_field_rngs: VraRanges,
+   snap_anon_rngs: VraRanges,
+   snap_param_rngs: VraRanges,
+   snap_fn_ret_rngs: VraRanges
+)
+
+::vra = VraState(
+   <->, <->, <->, <->, <->, "",
+   VraIndex(), VraRanges(), VraIndex(), VraRanges(),
+   NamedShapeMetas(), ast::Names(), ast::Names(),
+   VraIndex(), VraRanges(), VraIndex(), VraRanges(), ast::Names(),
+   VraLocals(), ast::Names(), BoundedStrIdxs(), LenVarEntries(),
+   VraRanges(), VraRanges(), VraRanges(), VraRanges()
+)
+
 emit_cov_edge: Cg => ()
 emit_cov_edge = cg =>
    cg.opts.fuzz_cov && cg.current_module != "test"
@@ -296,7 +349,6 @@ inc_tmpc = !=>
    c = g.tmpc
    g.tmpc = c + 1
    c
-
 
 // --- definite-init helpers ---------------------------------------------------
 
@@ -367,7 +419,6 @@ is_external_module_name: Cg, String => <>
 is_external_module_name = cg, name =>
    !has_dollar(name) && has_dcolon(name) && cg.opts.is_module && !name_is_in_current_module(cg, name)
 
-
 fninfo_index_rev: Cg, String, Int => <Int|>
 fninfo_index_rev = cg, name, i =>
    i < 0
@@ -434,7 +485,7 @@ view_var_add = name =>
 choice_has_view: Cg, ast::Branches, Int => <>
 choice_has_view = cg, bs, i =>
    i < ?bs && (is_view_expr(cg, (bs(i)!!).block) ||
-      choice_has_view(cg, bs, i + 1))
+     choice_has_view(cg, bs, i + 1))
 
 is_view_expr: Cg, ast::Expr => <>
 is_view_expr = cg, e =>
@@ -627,7 +678,7 @@ codegen_scan_partial_escape_expr = cg, e =>
          codegen_scan_partial_escape_expr(cg, m.index_expr)
 
 codegen_scan_partial_escape_assign: Cg,
-   (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
+  (String, <>, <>, <>, <>, ast::Expr, ast::Expr, String, ast::TypeInfo) => ()
 codegen_scan_partial_escape_assign = cg, t =>
    t.6
       [Member m] codegen_scan_partial_write(cg, m)
@@ -645,7 +696,7 @@ codegen_scan_partial_write = cg, m =>
 choice_enter: Cg, <> => ()
 choice_enter = cg, exhaustive =>
    cg.choice_frames += ChoiceInitFrame(init_snapshot(cg.init),
-      FieldInitState(ast::Names(), ast::Names()), <->, exhaustive)
+     FieldInitState(ast::Names(), ast::Names()), <->, exhaustive)
 
 choice_branch_reset: Cg => ()
 choice_branch_reset = cg =>
@@ -662,9 +713,9 @@ choice_branch_capture = cg =>
          fr = cg.choice_frames(i)!!
          fr.started
             | choice_frame_set(cg, i, ChoiceInitFrame(fr.pre,
-               init_merge(fr.merged, cg.init), fr.started, fr.exhaustive))
+              init_merge(fr.merged, cg.init), fr.started, fr.exhaustive))
             | choice_frame_set(cg, i, ChoiceInitFrame(fr.pre,
-               init_snapshot(cg.init), <+>, fr.exhaustive))
+              init_snapshot(cg.init), <+>, fr.exhaustive))
 
 choice_leave: Cg => ()
 choice_leave = cg =>
@@ -689,7 +740,7 @@ choice_frame_set_at = frames, at, fr, j, n, acc =>
 choice_frame_set: Cg, Int, ChoiceInitFrame => ()
 choice_frame_set = cg, i, fr =>
    cg.choice_frames = choice_frame_set_at(cg.choice_frames, i, fr, 0,
-      ?cg.choice_frames, ChoiceInitFrames())
+     ?cg.choice_frames, ChoiceInitFrames())
 
 choice_frame_pop_at: ChoiceInitFrames, Int, Int, Int, ChoiceInitFrames => ChoiceInitFrames
 choice_frame_pop_at = frames, at, j, n, acc =>
@@ -702,7 +753,7 @@ choice_frame_pop_at = frames, at, j, n, acc =>
 choice_frame_pop: Cg, Int => ()
 choice_frame_pop = cg, i =>
    cg.choice_frames = choice_frame_pop_at(cg.choice_frames, i, 0,
-      ?cg.choice_frames, ChoiceInitFrames())
+     ?cg.choice_frames, ChoiceInitFrames())
 
 // --- LLVM pointer-to-array-arg helpers ----------------------------------------
 // The LLVM C API takes pointer-to-array args (`^LLVMTypeRef` etc.) where Dva
@@ -809,7 +860,7 @@ create_slot = cg, name, llvm_type, is_local =>
                sz = LLVMSizeOf(llvm_type)
                raw = expr::codegen_call_arena_alloc(cg, sz, "cell." + name)
                LLVMBuildPointerCast(cg.builder, raw,
-                  LLVMPointerType(llvm_type, 0), "cell." + name + ".ptr")
+                 LLVMPointerType(llvm_type, 0), "cell." + name + ".ptr")
             | hoisted_alloca(cg, llvm_type, "var." + name)
       | codegen_get_global(cg, name, llvm_type)
 
@@ -935,7 +986,7 @@ codegen_init = opts =>
          err_ptr_opt = llvm_val_opt(Addr(err_raw'))
          err_s = c_str_opt(err_ptr_opt)
          log::error $ "E3069: No LLVM target registered for triple '" + triple + "'" +
-            (?err_s > 0 | ": " + err_s | "")
+           (?err_s > 0 | ": " + err_s | "")
          err_ptr_opt | err_ptr => LLVMDisposeMessage(err_ptr)
          codegen_layout
    LLVMSetDataLayout(module, layout)
@@ -947,20 +998,20 @@ codegen_init = opts =>
    ut = struct_type2(i64t, i8p)
    st2 = struct_type2(i8p, i64t)
    eff_opts = CodegenOpts(triple, opts.no_runtime, opts.no_main,
-      opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
-      opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov)
+     opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
+     opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov)
    Cg(module, builder, <-->, CgVars(), <->, st, ut, st2,
-      <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
-      0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
-      ast::Names(),
-      ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", sys::addr_null,
-      Addrs(), Addrs(), ast::Names(), ast::Names(), "", ast::Names(),
-      ast::Names(), ast::Names(), Addrs(), ast::VTypes(), ParamRecs(),
-      ast::Names(), ast::Names(), <-->, <-->, <-->, <-->,
-      <-->, 0, <-->, <-->,
-      FieldInitState(ast::Names(), ast::Names()),
-      ChoiceInitFrames(), BindingMuts(), <->, <-->, <->, ast::Names(),
-      Addrs(), "", 0, 0, eff_opts)
+     <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
+     0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,
+     ast::Names(),
+     ast::VTypes(), FnDefs(), FnNameIndex(), FnInfos(), <->, 0, "", sys::addr_null,
+     Addrs(), Addrs(), ast::Names(), ast::Names(), "", ast::Names(),
+     ast::Names(), ast::Names(), Addrs(), ast::VTypes(), ParamRecs(),
+     ast::Names(), ast::Names(), <-->, <-->, <-->, <-->,
+     <-->, 0, <-->, <-->,
+     FieldInitState(ast::Names(), ast::Names()),
+     ChoiceInitFrames(), BindingMuts(), <->, <-->, <->, ast::Names(),
+     Addrs(), "", 0, 0, eff_opts)
 
 // Define "i32 @main(i32, ptr)" or void @__dva_global_init().
 codegen_build_main: Cg => Addr
@@ -1162,7 +1213,7 @@ is_slice_vt = [Slice]
 
 is_scalar_vt: ast::ValueType => <>
 is_scalar_vt = [Int, Rune, I8, I16, I32, I64, U8, U16, U32, U64,
-   Float, F32, Str, Builder, Unit]
+  Float, F32, Str, Builder, Unit]
 
 is_map_vt: ast::ValueType => <>
 is_map_vt = [Map]
@@ -1270,7 +1321,7 @@ suffix_matches_step = name, offset, bare, j, n =>
       | <+>
       |
          (name(offset + j) == bare(j)) &&
-            suffix_matches_step(name, offset, bare, j + 1, n)
+           suffix_matches_step(name, offset, bare, j + 1, n)
 
 name_matches_module_public: String, String, String => <>
 name_matches_module_public = qual, mod, bare =>
@@ -1294,7 +1345,7 @@ name_bare_matches: String, String => <>
 name_bare_matches = qual, bare =>
    start = bare_name_start(qual, 0, 0)
    start > 0 && (?qual - start == ?bare) &&
-      suffix_matches_step(qual, start, bare, 0, ?bare)
+     suffix_matches_step(qual, start, bare, 0, ?bare)
 
 // Whether a signature name matches a function name (exact).
 sig_name_matches: String, String => <>
@@ -1339,7 +1390,7 @@ resolve_var_name_pass = cg, name, i, match_mod =>
          v = cg.vars(i)!!
          hit = !v.is_local && (match_mod
             | (name_matches_module_public(v.name, cg.current_module, name) ||
-               name_matches_module_private(v.name, cg.current_module, name))
+              name_matches_module_private(v.name, cg.current_module, name))
             | v.name == name)
          hit | <+ v.name +> | resolve_var_name_pass(cg, name, i - 1, match_mod)
 
@@ -1397,11 +1448,11 @@ is_any_fn_name = cg, name =>
    rf = resolve_fn_name(cg, name)
    is_mod_fn = rf != name && (has_fn_name(cg, rf) || is_fn_name(cg, rf))
    is_root_fn = cg.current_module == "" &&
-      (has_fn_name(cg, name) || is_fn_name(cg, name))
+     (has_fn_name(cg, name) || is_fn_name(cg, name))
    is_qual_fn = name_is_qualified(name, 0) &&
-      (has_fn_name(cg, name) || is_fn_name(cg, name))
+     (has_fn_name(cg, name) || is_fn_name(cg, name))
    is_mod_fn || is_root_fn || is_qual_fn ||
-      has_str(g.foreign_fn_names, name)
+     has_str(g.foreign_fn_names, name)
 
 find_fn_module_name: Cg, String => String
 find_fn_module_name = cg, name =>
@@ -1556,7 +1607,7 @@ dotted_var_val = cg, name =>
                            val = is_rec
                               | fgep
                               | LLVMBuildLoad2(cg.builder, ft, fgep,
-                                 "field.load")
+                                "field.load")
                            <+ (val, fvt) +>
                         | <-->
                   | <-->
@@ -1619,7 +1670,7 @@ var_type = cg, name =>
       | dotted_var_type(cg, name)
       |
          vt = find_var_type(cg, resolve_var_name(cg, name), ?cg.vars - 1,
-            ast::ValueType(Unknown))
+           ast::ValueType(Unknown))
          vt != ast::ValueType(Unknown) | vt | dotted_var_type(cg, name)
 
 find_var_type: Cg, String, Int, ast::ValueType => ast::ValueType
@@ -1833,7 +1884,7 @@ codegen_load = cg, name =>
          cfn = main::is_fn_vt(vt) | expr::closure_fn_of(cg, name) | ""
          cfn != "" | cg.last_closure_fn = cfn
          is_ptr = is_heap || is_record_vt(vt) || is_map_vt(vt) ||
-            is_array_vt(vt) || is_slice_vt(vt)
+           is_array_vt(vt) || is_slice_vt(vt)
          lt = is_ptr
             | LLVMPointerType(LLVMInt8Type!, 0)
             | llvm_type_of_vt(vt)
@@ -1851,7 +1902,7 @@ codegen_load = cg, name =>
                   --| <+ (heap, vt) +>
          uninit = !cg.in_fn && main::var_partial(cg, name) && !init_ok(cg.init, name)
          forward_scalar = uninit && !is_record_vt(vt) &&
-            !is_array_vt(vt) && !is_slice_vt(vt)
+           !is_array_vt(vt) && !is_slice_vt(vt)
          forward_scalar
             | codegen_uninitialized_load_error(cg, name)
             |
@@ -1868,8 +1919,8 @@ codegen_load_after_forward = cg, slot_opt, lt, name, vt =>
 codegen_uninitialized_load_error: Cg, String => <(Addr, ast::ValueType)|>
 codegen_uninitialized_load_error = cg, name =>
    init_error(cg, "E3045", diag::uninitialized_variable_prefix! + name +
-      "' — a forward annotation ('name: Type') allocates no storage; assign " +
-      "a value before reading.", 0, 0)
+     "' — a forward annotation ('name: Type') allocates no storage; assign " +
+     "a value before reading.", 0, 0)
    <-->
 
 codegen_missing_load: Cg, String => <(Addr, ast::ValueType)|>
@@ -1879,7 +1930,7 @@ codegen_missing_load = cg, name =>
 codegen_undefined_name_error: Cg, String => <(Addr, ast::ValueType)|>
 codegen_undefined_name_error = cg, name =>
    init_error(cg, "E3004", "Undefined variable '" + name +
-      "' in fn '" + g.last_compiling_fn + "'", 0, 0)
+     "' in fn '" + g.last_compiling_fn + "'", 0, 0)
    <-->
 
 codegen_load_known: Cg, Addr, Addr, String, ast::ValueType => <(Addr, ast::ValueType)|>
@@ -1932,10 +1983,10 @@ ptr_var_value_plain_opt = cg, name, lname =>
                      i8p = LLVMPointerType(LLVMInt8Type!, 0)
                      s_new = create_slot(cg, name, i8p, cg.in_fn)
                      LLVMBuildStore(cg.builder,
-                        LLVMConstNull(i8p), s_new)
+                       LLVMConstNull(i8p), s_new)
                      s_new
                <+ LLVMBuildLoad2(cg.builder,
-                  LLVMPointerType(LLVMInt8Type!, 0), slot, lname) +>
+                 LLVMPointerType(LLVMInt8Type!, 0), slot, lname) +>
 
 ptr_var_value_plain: Cg, String, String => Addr
 ptr_var_value_plain = cg, name, lname =>
@@ -2171,8 +2222,8 @@ is_foreign_in_mod_step = mod, bare, i, n =>
    fnm = g.foreign_fn_names(i) | _ | ""
    (name_matches_module_public(fnm, mod, bare) ||
      name_matches_module_private(fnm, mod, bare))
-      | <+>
-      | is_foreign_in_mod_step(mod, bare, i + 1, n)
+        | <+>
+        | is_foreign_in_mod_step(mod, bare, i + 1, n)
 
 fn_uses_c_ret_abi: Cg, String => <>
 fn_uses_c_ret_abi = cg, fname =>
@@ -2222,10 +2273,10 @@ codegen_cond_value_with_ti = cg, v, vt, ti =>
          niche.1
             |
                LLVMBuildICmp(cg.builder, 33, v,
-                  LLVMConstNull(LLVMTypeOf(v)), "niche.ne.null")
+                 LLVMConstNull(LLVMTypeOf(v)), "niche.ne.null")
             |
                LLVMBuildICmp(cg.builder, 32, v,
-                  LLVMConstNull(LLVMTypeOf(v)), "niche.eq.null")
+                 LLVMConstNull(LLVMTypeOf(v)), "niche.eq.null")
       |
          (LLVMGetTypeKind(LLVMTypeOf(v)) == 10)
             | LLVMBuildExtractValue(cg.builder, v, 0, "ram.tag")
@@ -2253,7 +2304,7 @@ fn_ret_sig_with_ti = cg, ti =>
                fret == ast::ValueType(Unknown)
                   |
                      cg.fninfos += FnInfo(sname, <-->, <-->, 0,
-                        ast::VTypes(), ret_vt, <->, <->, <+>, <->)
+                       ast::VTypes(), ret_vt, <->, <->, <+>, <->)
                ret_ti = f.3
                is_rec = ret_vt [Record]
                is_rec
@@ -2639,7 +2690,7 @@ truncate_ints = arr, n =>
 is_internal_type_name: String => <>
 is_internal_type_name = s =>
    s == "" || (?s !< 2 && s(0..2) == "__") || (?s !< 1 && s(0..1) == "#") ||
-      (?s !< 1 && s(0..1) == "?")
+     (?s !< 1 && s(0..1) == "?")
 
 ct_bind_find_at: String, Int => (ast::TypeInfo, <>)
 ct_bind_find_at = name, i =>
@@ -2780,7 +2831,7 @@ rec_fields_equal_at = f1, f2, i, n =>
          f1i = f1(i)!!
          f2i = f2(i)!!
          match = f1i.name == f2i.name && f1i.val_type == f2i.val_type &&
-            type_info_equal(f1i.rec_type, f2i.rec_type)
+           type_info_equal(f1i.rec_type, f2i.rec_type)
          match
             | rec_fields_equal_at(f1, f2, i + 1, n)
             | <->
@@ -2794,8 +2845,8 @@ enum_slots_equal_at = s1, s2, i, n =>
          s2i = s2(i)!!
          same_p = s1i.has_payload | s2i.has_payload | !s2i.has_payload
          match = s1i.label == s2i.label && same_p &&
-            (!s1i.has_payload || (s1i.payload_type == s2i.payload_type &&
-               type_info_equal(s1i.payload_record, s2i.payload_record)))
+           (!s1i.has_payload || (s1i.payload_type == s2i.payload_type &&
+             type_info_equal(s1i.payload_record, s2i.payload_record)))
          match
             | enum_slots_equal_at(s1, s2, i + 1, n)
             | <->
@@ -2832,7 +2883,7 @@ type_info_equal = a, b =>
             [Rec r2]
                same_sl = r1.1 | r2.1 | !r2.1
                same_sl && ?r1.0 == ?r2.0 &&
-                  rec_fields_equal_at(r1.0, r2.0, 0, ?r1.0)
+                 rec_fields_equal_at(r1.0, r2.0, 0, ?r1.0)
             | <->
       [Ram ram1]
          b
@@ -2844,13 +2895,13 @@ type_info_equal = a, b =>
                r_same_p = ram1.1.has_payload | ram2.1.has_payload |
                   !ram2.1.has_payload
                l_ok = !ram1.0.has_payload ||
-                  (ram1.0.payload_type == ram2.0.payload_type &&
-                     type_info_equal(ram1.0.payload_record,
-                        ram2.0.payload_record))
+                 (ram1.0.payload_type == ram2.0.payload_type &&
+                   type_info_equal(ram1.0.payload_record,
+                     ram2.0.payload_record))
                r_ok = !ram1.1.has_payload ||
-                  (ram1.1.payload_type == ram2.1.payload_type &&
-                     type_info_equal(ram1.1.payload_record,
-                        ram2.1.payload_record))
+                 (ram1.1.payload_type == ram2.1.payload_type &&
+                   type_info_equal(ram1.1.payload_record,
+                     ram2.1.payload_record))
                l_same_p && r_same_p && l_ok && r_ok
             | <->
       [Enum s1]
@@ -2872,7 +2923,7 @@ type_info_equal = a, b =>
          b
             [Fn f2]
                ?f1.1 == ?f2.1 && fn_params_equal_at(f1.1, f2.1, 0, ?f1.1) &&
-                  type_info_equal(f1.3, f2.3)
+                 type_info_equal(f1.3, f2.3)
             | <->
       | <->
 
@@ -2988,7 +3039,7 @@ resolve_type_val_member_type = cg, m =>
                is_user_type(cg, dt)
                   |
                      resolve_type_record_index(cg, typedef_ti(cg, dt),
-                        im.index_expr)
+                       im.index_expr)
                   | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
             | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
       | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
@@ -3135,7 +3186,7 @@ resolve_type_value_simple = expr =>
                                        (field_type_info(fld), <+>)
                                     |
                                        (ast::TypeInfo(Prim,
-                                          ast::ValueType(Unknown)), <->)
+                                         ast::ValueType(Unknown)), <->)
                               | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                         | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
                   |
@@ -3334,7 +3385,7 @@ ctfe_canonical_ti = cg, ti =>
       | ti
 
 is_rec_homo_fields: ast::FieldTypes, ast::TypeInfo, ast::ValueType, Int,
-   Int => <>
+  Int => <>
 is_rec_homo_fields = flds, f0_ti, f0_vt, i, n =>
    i == n
       | <+>
@@ -3589,7 +3640,7 @@ ctfe_bind_matches_simple = bname, slot_ti =>
          fx = ctfe_resolve_fixed_type_simple(bname)
          fx.1
             | type_info_equal(ctfe_canonical_ti_simple(slot_ti),
-               ctfe_canonical_ti_simple(fx.0))
+              ctfe_canonical_ti_simple(fx.0))
             | <+>
 
 ctfe_bind_matches: Cg, String, ast::TypeInfo => <>
@@ -3600,7 +3651,7 @@ ctfe_bind_matches = cg, bname, slot_ti =>
          fx = ctfe_resolve_fixed_type(cg, bname)
          fx.1
             | type_info_equal(ctfe_canonical_ti(cg, slot_ti),
-               ctfe_canonical_ti(cg, fx.0))
+              ctfe_canonical_ti(cg, fx.0))
             | <+>
 
 ctfe_binds_match_slots_simple: ast::Names, ast::VInfos, Int, Int => <>
@@ -3747,13 +3798,13 @@ ctfe_push_branch_type_binds_simple = br, cond =>
                cond_ti.1
                   |
                      ext = ctfe_extract_pattern_slots(tag,
-                        ctfe_canonical_ti_simple(cond_ti.0))
+                       ctfe_canonical_ti_simple(cond_ti.0))
                      ext.1
                         |
                            nb = ?br.bind_vars < ?ext.0 | ?br.bind_vars | ?ext.0
                            nb @ i =>
                               ctfe_bind_push_if_var_simple(br.bind_vars(i)!!,
-                                 ext.0(i)!!)
+                                ext.0(i)!!)
 
 ctfe_push_branch_type_binds: Cg, ast::ChoiceBranch, ast::Expr => ()
 ctfe_push_branch_type_binds = cg, br, cond =>
@@ -3767,16 +3818,16 @@ ctfe_push_branch_type_binds = cg, br, cond =>
                cond_ti.1
                   |
                      ext = ctfe_extract_pattern_slots(tag,
-                        ctfe_canonical_ti(cg, cond_ti.0))
+                       ctfe_canonical_ti(cg, cond_ti.0))
                      ext.1
                         |
                            nb = ?br.bind_vars < ?ext.0 | ?br.bind_vars | ?ext.0
                            nb @ i =>
                               ctfe_bind_push_if_var(cg, br.bind_vars(i)!!,
-                                 ext.0(i)!!)
+                                ext.0(i)!!)
 
 ctfe_variant_names_match: Cg, ast::Names, ast::Names, Int, Int,
-   ast::TypeInfo => <>
+  ast::TypeInfo => <>
 ctfe_variant_names_match = cg, vnames, binds, i, n, target_ti =>
    i == n
       | <->
@@ -3785,21 +3836,21 @@ ctfe_variant_names_match = cg, vnames, binds, i, n, target_ti =>
          ?vname > 6 && vname(0..6) == "#type:"
             |
                ext = ctfe_extract_pattern_slots(vname,
-                  ctfe_canonical_ti(cg, target_ti))
+                 ctfe_canonical_ti(cg, target_ti))
                ext.1 && ctfe_binds_match_slots(cg, binds, ext.0, 0, ?binds)
                   | <+>
                   | ctfe_variant_names_match(cg, vnames, binds, i + 1, n,
-                     target_ti)
+                    target_ti)
             |
                v_res = resolve_type_value(cg, ast::Expr(Var, vname))
                v_res.1 && type_info_equal(ctfe_canonical_ti(cg, target_ti),
-                  ctfe_canonical_ti(cg, v_res.0))
-                  | <+>
-                  | ctfe_variant_names_match(cg, vnames, binds, i + 1, n,
-                     target_ti)
+                 ctfe_canonical_ti(cg, v_res.0))
+                 | <+>
+                 | ctfe_variant_names_match(cg, vnames, binds, i + 1, n,
+                   target_ti)
 
 ctfe_variant_names_match_simple: ast::Names, ast::Names, Int, Int,
-   ast::TypeInfo => <>
+  ast::TypeInfo => <>
 ctfe_variant_names_match_simple = vnames, binds, i, n, target_ti =>
    i == n
       | <->
@@ -3808,18 +3859,18 @@ ctfe_variant_names_match_simple = vnames, binds, i, n, target_ti =>
          ?vname > 6 && vname(0..6) == "#type:"
             |
                ext = ctfe_extract_pattern_slots(vname,
-                  ctfe_canonical_ti_simple(target_ti))
+                 ctfe_canonical_ti_simple(target_ti))
                ext.1 && ctfe_binds_match_slots_simple(binds, ext.0, 0, ?binds)
                   | <+>
                   | ctfe_variant_names_match_simple(vnames, binds, i + 1, n,
-                     target_ti)
+                    target_ti)
             |
                v_res = resolve_type_value_simple(ast::Expr(Var, vname))
                v_res.1 && type_info_equal(ctfe_canonical_ti_simple(target_ti),
-                  ctfe_canonical_ti_simple(v_res.0))
-                  | <+>
-                  | ctfe_variant_names_match_simple(vnames, binds, i + 1, n,
-                     target_ti)
+                 ctfe_canonical_ti_simple(v_res.0))
+                 | <+>
+                 | ctfe_variant_names_match_simple(vnames, binds, i + 1, n,
+                   target_ti)
 
 ctfe_case_values_match: Cg, ast::Exprs, Int, Int, ast::TypeInfo => <>
 ctfe_case_values_match = cg, cvals, i, n, target_ti =>
@@ -3837,9 +3888,9 @@ ctfe_case_values_match = cg, cvals, i, n, target_ti =>
             |
                c_res = resolve_type_value(cg, cval)
                c_res.1 && type_info_equal(ctfe_canonical_ti(cg, target_ti),
-                  ctfe_canonical_ti(cg, c_res.0))
-                  | <+>
-                  | ctfe_case_values_match(cg, cvals, i + 1, n, target_ti)
+                 ctfe_canonical_ti(cg, c_res.0))
+                 | <+>
+                 | ctfe_case_values_match(cg, cvals, i + 1, n, target_ti)
 
 ctfe_case_values_match_simple: ast::Exprs, Int, Int, ast::TypeInfo => <>
 ctfe_case_values_match_simple = cvals, i, n, target_ti =>
@@ -3857,9 +3908,9 @@ ctfe_case_values_match_simple = cvals, i, n, target_ti =>
             |
                c_res = resolve_type_value_simple(cval)
                c_res.1 && type_info_equal(ctfe_canonical_ti_simple(target_ti),
-                  ctfe_canonical_ti_simple(c_res.0))
-                  | <+>
-                  | ctfe_case_values_match_simple(cvals, i + 1, n, target_ti)
+                 ctfe_canonical_ti_simple(c_res.0))
+                 | <+>
+                 | ctfe_case_values_match_simple(cvals, i + 1, n, target_ti)
 
 ctfe_branch_matches_type: Cg, ast::ChoiceBranch, ast::TypeInfo => <>
 ctfe_branch_matches_type = cg, br, target_ti =>
@@ -3870,10 +3921,10 @@ ctfe_branch_matches_type = cg, br, target_ti =>
          br.kind
             [Variant]
                ctfe_variant_names_match(cg, br.variant_names, br.bind_vars, 0,
-                  ?br.variant_names, target_ti)
+                 ?br.variant_names, target_ti)
             [Case]
                ctfe_case_values_match(cg, br.case_values, 0,
-                  ?br.case_values, target_ti)
+                 ?br.case_values, target_ti)
             [Predicate]
                pred = type_pred_name_from_expr(br.pred_fn)
                pred != ""
@@ -3890,10 +3941,10 @@ ctfe_branch_matches_type_simple = br, target_ti =>
          br.kind
             [Variant]
                ctfe_variant_names_match_simple(br.variant_names, br.bind_vars,
-                  0, ?br.variant_names, target_ti)
+                 0, ?br.variant_names, target_ti)
             [Case]
                ctfe_case_values_match_simple(br.case_values, 0,
-                  ?br.case_values, target_ti)
+                 ?br.case_values, target_ti)
             [Predicate]
                pred = type_pred_name_from_expr(br.pred_fn)
                pred != ""
@@ -3902,31 +3953,31 @@ ctfe_branch_matches_type_simple = br, target_ti =>
             | <->
 
 ctfe_find_matching_type_branch: Cg, ast::Branches, Int, Int,
-   ast::TypeInfo => Int
+  ast::TypeInfo => Int
 ctfe_find_matching_type_branch = cg, branches, i, n, target_ti =>
    i == n
       | -1
       |
          br = branches(i) | _ | ast::ChoiceBranch(ast::GuardKind(Bare),
-            ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-            ast::Expr(Int, 0))
+           ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+           ast::Expr(Int, 0))
          ctfe_branch_matches_type(cg, br, target_ti)
             | i
             | ctfe_find_matching_type_branch(cg, branches, i + 1, n, target_ti)
 
 ctfe_find_matching_type_branch_simple: ast::Branches, Int, Int,
-   ast::TypeInfo => Int
+  ast::TypeInfo => Int
 ctfe_find_matching_type_branch_simple = branches, i, n, target_ti =>
    i == n
       | -1
       |
          br = branches(i) | _ | ast::ChoiceBranch(ast::GuardKind(Bare),
-            ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
-            ast::Expr(Int, 0))
+           ast::Exprs(), ast::Expr(Int, 0), ast::Names(), ast::Names(), <->,
+           ast::Expr(Int, 0))
          ctfe_branch_matches_type_simple(br, target_ti)
             | i
             | ctfe_find_matching_type_branch_simple(branches, i + 1, n,
-               target_ti)
+              target_ti)
 
 ctfe_eval_type_choice_simple: ast::ChoiceExpr => (Int, <>)
 ctfe_eval_type_choice_simple = c =>
@@ -3940,7 +3991,7 @@ ctfe_eval_type_choice_simple = c =>
          cond_ti.1
             |
                idx' = ctfe_find_matching_type_branch_simple(c.branches, 0,
-                  ?c.branches, cond_ti.0)
+                 ?c.branches, cond_ti.0)
                (idx', <+>)
             | (-1, <->)
 
@@ -3956,7 +4007,7 @@ ctfe_eval_type_choice = cg, c =>
          cond_ti.1
             |
                idx' = ctfe_find_matching_type_branch(cg, c.branches, 0,
-                  ?c.branches, cond_ti.0)
+                 ?c.branches, cond_ti.0)
                (idx', <+>)
             | (-1, <->)
 
@@ -4028,8 +4079,8 @@ codegen_check_enum_choice_without_bare = cg, slots, branches =>
    missing = enum_choice_missing_labels(slots, branches, 0, "")
    missing != ""
       | init_error(cg, "E3102", "Choice over an enum does not cover " +
-         "variants: " + missing + " — add a branch for each or a trailing " +
-         "'|' fallback.", 0, 0)
+        "variants: " + missing + " — add a branch for each or a trailing " +
+        "'|' fallback.", 0, 0)
 
 enum_choice_has_bare: ast::Branches, Int => <>
 enum_choice_has_bare = branches, at =>
@@ -4095,7 +4146,7 @@ call_has_splat_or_named = args, i, n =>
             | call_has_splat_or_named(args, i + 1, n)
 
 codegen_copy_base_fields: Cg, Addr, Addr, Addr, ast::FieldTypes, ast::VTypes,
-   Flags, Int => ()
+  Flags, Int => ()
 codegen_copy_base_fields = cg, dst, base_ev, tgt_rt, flds, tfvts, fin, n =>
    n @ k =>
       rf_base = flds(k)!!
@@ -4104,7 +4155,7 @@ codegen_copy_base_fields = cg, dst, base_ev, tgt_rt, flds, tfvts, fin, n =>
          |
             src_rt = cg.last_rt | _ | tgt_rt
             src_gep = record_field_gep(cg, src_rt, cg.last_fvts,
-               base_ev, src_idx)
+              base_ev, src_idx)
             dst_gep = record_field_gep(cg, tgt_rt, tfvts, dst, k)
             src_fvt = cg.last_fvts(src_idx)!!
             tgt_fvt = tfvts(k)!!
@@ -4114,13 +4165,13 @@ codegen_copy_base_fields = cg, dst, base_ev, tgt_rt, flds, tfvts, fin, n =>
                   ft_base = LLVMStructGetTypeAtIndex(tgt_rt, k)
                   isz_base = LLVMSizeOf(ft_base)
                   LLVMBuildMemCpy(cg.builder, dst_gep, 1,
-                     src_gep, 1, isz_base, 0)
+                    src_gep, 1, isz_base, 0)
                |
                   sty = src_fvt != ast::ValueType(Unknown)
                      | llvm_type_of_vt(src_fvt)
                      | LLVMStructGetTypeAtIndex(src_rt, src_idx)
                   selem = LLVMBuildLoad2(cg.builder, sty, src_gep,
-                     "base.elem")
+                    "base.elem")
                   dft = LLVMStructGetTypeAtIndex(tgt_rt, k)
                   cval_base = stmt::coerce_int(cg, selem, dft)
                   LLVMBuildStore(cg.builder, cval_base, dst_gep)
@@ -4135,7 +4186,7 @@ coerce_record_field = cg, value, parent, index, llvm_type =>
       | stmt::coerce_int(cg, value, llvm_type)
 
 codegen_eval_record_ctor: Cg, ast::TypeInfo,
-   ast::CallExpr => (Addr, ast::ValueType)
+  ast::CallExpr => (Addr, ast::ValueType)
 codegen_eval_record_ctor = cg, ti, t =>
    rm = runtime::record_meta_from_ti(cg, ti)
    rm_0 = rm | m => m.0 | LLVMInt8Type!
@@ -4145,14 +4196,14 @@ codegen_eval_record_ctor = cg, ti, t =>
    tgt_nf = ?tgt_fvts
    nargs = ?t.args
    is_update = call_has_splat_or_named(t.args, 0, nargs) ||
-      (nargs == 0 && tgt_nf > 0) || nargs > 1
+     (nargs == 0 && tgt_nf > 0) || nargs > 1
    is_update
       |
          sz' = <>(rm) | LLVMSizeOf(rm_0) |
             LLVMConstInt(LLVMInt64Type!, 16, 0)
          dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
          dst' = LLVMBuildPointerCast(cg.builder, dst',
-            LLVMPointerType(rm_0, 0), "record.ptr")
+           LLVMPointerType(rm_0, 0), "record.ptr")
          fields = ti [Rec r] r.0 | ast::FieldTypes()
          f_init = Flags()
          tgt_nf @ f_init += <->
@@ -4169,12 +4220,12 @@ codegen_eval_record_ctor = cg, ti, t =>
                            is_same
                               |
                                  LLVMBuildMemCpy(cg.builder, dst', 1,
-                                    base_ev.0, 1, sz', 0)
+                                   base_ev.0, 1, sz', 0)
                                  tgt_nf @ k =>
                                     f_init(k) = <+> !| _
                               |
                                  codegen_copy_base_fields(cg, dst', base_ev.0,
-                                    rm_0, fields, tgt_fvts, f_init, tgt_nf)
+                                   rm_0, fields, tgt_fvts, f_init, tgt_nf)
          nargs @ i =>
             uarg = t.args(i) | _ | ast::Expr(Int, 0)
             !call_arg_is_splat(uarg)
@@ -4185,55 +4236,55 @@ codegen_eval_record_ctor = cg, ti, t =>
                         idx_named < 0
                            |
                               init_error(cg, "E3117", "Record '" + t.fn_name +
-                                 "' has no field '" + na.name + "'",
-                                 t.line, t.col)
+                                "' has no field '" + na.name + "'",
+                                t.line, t.col)
                            |
                               ev_named = expr::codegen_eval(cg, na.val)
                               dst_gep_named = record_field_gep(cg, rm_0,
-                                 tgt_fvts, dst', idx_named)
+                                tgt_fvts, dst', idx_named)
                               tgt_fvt_named = tgt_fvts(idx_named)!!
                               is_rf_named = ev_named.1 [Record] ||
-                                 (tgt_fvt_named [Record])
+                                (tgt_fvt_named [Record])
                               is_rf_named
                                  |
                                     ft_named' = LLVMStructGetTypeAtIndex(
                                        rm_0, idx_named)
                                     isz_named = LLVMSizeOf(ft_named')
                                     LLVMBuildMemCpy(cg.builder,
-                                       dst_gep_named, 1, ev_named.0, 1,
-                                       isz_named, 0)
+                                      dst_gep_named, 1, ev_named.0, 1,
+                                      isz_named, 0)
                                  |
                                     ft_named' = LLVMStructGetTypeAtIndex(
                                        rm_0, idx_named)
                                     cval_named = coerce_record_field(cg, ev_named.0, ti,
-                                       idx_named, ft_named')
+                                      idx_named, ft_named')
                                     LLVMBuildStore(cg.builder,
-                                       cval_named, dst_gep_named)
+                                      cval_named, dst_gep_named)
                               f_init(idx_named) = <+> !| _
                      |
                         i < tgt_nf
                            |
                               ev_pos = expr::codegen_eval(cg, uarg)
                               dst_gep_pos = record_field_gep(cg, rm_0,
-                                 tgt_fvts, dst', i)
+                                tgt_fvts, dst', i)
                               tgt_fvt_pos = tgt_fvts(i)!!
                               is_rf_pos = ev_pos.1 [Record] ||
-                                 (tgt_fvt_pos [Record])
+                                (tgt_fvt_pos [Record])
                               is_rf_pos
                                  |
                                     ft_pos' = LLVMStructGetTypeAtIndex(
                                        rm_0, i)
                                     isz_pos = LLVMSizeOf(ft_pos')
                                     LLVMBuildMemCpy(cg.builder,
-                                       dst_gep_pos, 1, ev_pos.0, 1,
-                                       isz_pos, 0)
+                                      dst_gep_pos, 1, ev_pos.0, 1,
+                                      isz_pos, 0)
                                  |
                                     ft_pos' = LLVMStructGetTypeAtIndex(
                                        rm_0, i)
                                     cval_pos = coerce_record_field(cg, ev_pos.0, ti,
-                                       i, ft_pos')
+                                      i, ft_pos')
                                     LLVMBuildStore(cg.builder,
-                                       cval_pos, dst_gep_pos)
+                                      cval_pos, dst_gep_pos)
                               f_init(i) = <+> !| _
          tgt_nf @ i =>
             is_init = f_init(i)!!
@@ -4244,7 +4295,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                      |
                         def_ev = expr::codegen_eval(cg, rf_def.default_expr)
                         dst_gep_def = record_field_gep(cg, rm_0, tgt_fvts,
-                           dst', i)
+                          dst', i)
                         tgt_fvt_def = tgt_fvts(i)!!
                         is_rf_def = def_ev.1 [Record] || (tgt_fvt_def [Record])
                         is_rf_def
@@ -4252,16 +4303,16 @@ codegen_eval_record_ctor = cg, ti, t =>
                               ft_def' = LLVMStructGetTypeAtIndex(rm_0, i)
                               isz_def = LLVMSizeOf(ft_def')
                               LLVMBuildMemCpy(cg.builder, dst_gep_def, 1,
-                                 def_ev.0, 1, isz_def, 0)
+                                def_ev.0, 1, isz_def, 0)
                            |
                               ft_def' = LLVMStructGetTypeAtIndex(rm_0, i)
                               cval_def = coerce_record_field(cg, def_ev.0, ti, i, ft_def')
                               LLVMBuildStore(cg.builder, cval_def,
-                                 dst_gep_def)
+                                dst_gep_def)
                      |
                         init_error(cg, "E3130",
-                           diag::record_default_missing(rf_def.name, t.fn_name),
-                           t.line, t.col)
+                          diag::record_default_missing(rf_def.name, t.fn_name),
+                          t.line, t.col)
          cg.last_rt = rm_rt_opt
          cg.last_fnames = rm_1
          cg.last_fvts = tgt_fvts
@@ -4282,7 +4333,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                         LLVMConstInt(LLVMInt64Type!, 16, 0)
                      dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
                      LLVMBuildPointerCast(cg.builder, dst',
-                        LLVMPointerType(rm_0, 0), "record.ptr")
+                       LLVMPointerType(rm_0, 0), "record.ptr")
                      dst_gep' = record_field_gep(cg, rm_0, tgt_fvts, dst', 0)
                      tgt_fvt0 = tgt_fvts(0) | _ | ast::ValueType(Unknown)
                      is_rec_0 = src_vt [Record] || (tgt_fvt0 [Record])
@@ -4291,7 +4342,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                            ft' = LLVMStructGetTypeAtIndex(rm_0, 0)
                            inner_sz' = LLVMSizeOf(ft')
                            LLVMBuildMemCpy(cg.builder, dst_gep', 1,
-                              src_val, 1, inner_sz', 0)
+                             src_val, 1, inner_sz', 0)
                         |
                            LLVMBuildStore(cg.builder, src_val, dst_gep')
                      cg.last_rt = rm_rt_opt
@@ -4307,14 +4358,14 @@ codegen_eval_record_ctor = cg, ti, t =>
                            sz' = <>(rm) | LLVMSizeOf(rm_0) |
                               LLVMConstInt(LLVMInt64Type!, 16, 0)
                            dst' = expr::codegen_call_arena_alloc(cg, sz',
-                              "record.cast.alloc")
+                             "record.cast.alloc")
                            LLVMBuildPointerCast(cg.builder, dst',
-                              LLVMPointerType(rm_0, 0), "record.cast.ptr")
+                             LLVMPointerType(rm_0, 0), "record.cast.ptr")
                            tgt_nf @ i =>
                               src_gep = record_field_gep(cg, src_rt_val, src_fvts,
-                                 src_val, i)
+                                src_val, i)
                               dst_gep' = record_field_gep(cg, rm_0, tgt_fvts,
-                                 dst', i)
+                                dst', i)
                               src_fvt = src_fvts(i) | _ |
                                  ast::ValueType(Unknown)
                               tgt_fvt' = tgt_fvts(i) | _ |
@@ -4326,7 +4377,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                                        rm_0, i)
                                     inner_sz' = LLVMSizeOf(ft')
                                     LLVMBuildMemCpy(cg.builder,
-                                       dst_gep', 1, src_gep, 1, inner_sz', 0)
+                                      dst_gep', 1, src_gep, 1, inner_sz', 0)
                                  |
                                     src_elem_ty =
                                        src_fvt != ast::ValueType(Unknown)
@@ -4334,9 +4385,9 @@ codegen_eval_record_ctor = cg, ti, t =>
                                           | LLVMStructGetTypeAtIndex(
                                              src_rt_val, i)
                                     src_elem = LLVMBuildLoad2(cg.builder,
-                                       src_elem_ty, src_gep, "cast.src.elem")
+                                      src_elem_ty, src_gep, "cast.src.elem")
                                     LLVMBuildStore(cg.builder, src_elem,
-                                       dst_gep')
+                                      dst_gep')
                            cg.last_rt = rm_rt_opt
                            cg.last_fnames = rm_1
                            cg.last_fvts = tgt_fvts
@@ -4347,7 +4398,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                            dst' = is_ptrish_vt(src_vt)
                               | src_val
                               | LLVMBuildIntToPtr(cg.builder, src_val,
-                                 i8p, "cast.int2ptr")
+                                i8p, "cast.int2ptr")
                            cg.last_rt = rm_rt_opt
                            cg.last_fnames = rm_1
                            cg.last_fvts = tgt_fvts
@@ -4358,7 +4409,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                   LLVMConstInt(LLVMInt64Type!, 16, 0)
                dst' = expr::codegen_call_arena_alloc(cg, sz', "record.alloc")
                LLVMBuildPointerCast(cg.builder, dst',
-                  LLVMPointerType(rm_0, 0), "record.ptr")
+                 LLVMPointerType(rm_0, 0), "record.ptr")
                tgt_nf @ i =>
                   av = t.args(i)!!
                   ev = expr::codegen_eval(cg, av)
@@ -4370,7 +4421,7 @@ codegen_eval_record_ctor = cg, ti, t =>
                         ft' = LLVMStructGetTypeAtIndex(rm_0, i)
                         inner_sz' = LLVMSizeOf(ft')
                         LLVMBuildMemCpy(cg.builder, dst_gep', 1, ev.0, 1,
-                           inner_sz', 0)
+                          inner_sz', 0)
                      |
                         LLVMBuildStore(cg.builder, ev.0, dst_gep')
                cg.last_rt = rm_rt_opt
@@ -4457,7 +4508,7 @@ type_info_display_name = cg, expr, ti =>
                         [Prim p] prim_vt_display_name(p)
                         [Array a]
                            type_info_display_name(cg, ast::Expr(Int, 0),
-                              norm_slot_ti(a.0, a.1)) + "{}"
+                             norm_slot_ti(a.0, a.1)) + "{}"
                         [Rec r]
                            r.1
                               |
@@ -4484,8 +4535,8 @@ type_info_display_name = cg, expr, ti =>
                                     | "(..)"
                         [Map m]
                            prim_vt_display_name(m.0) + " ^ " +
-                              type_info_display_name(cg, ast::Expr(Int, 0),
-                                 norm_slot_ti(m.1, m.2))
+                             type_info_display_name(cg, ast::Expr(Int, 0),
+                               norm_slot_ti(m.1, m.2))
                         [Enum] "<..>"
                         [Ram r]
                            !r.0.has_payload && !r.1.has_payload
@@ -4493,15 +4544,15 @@ type_info_display_name = cg, expr, ti =>
                               |
                                  p_str = r.0.has_payload
                                     | type_info_display_name(cg,
-                                       ast::Expr(Int, 0),
-                                       norm_slot_ti(r.0.payload_type,
-                                          r.0.payload_record))
+                                      ast::Expr(Int, 0),
+                                      norm_slot_ti(r.0.payload_type,
+                                        r.0.payload_record))
                                     | ""
                                  n_str = r.1.has_payload
                                     | type_info_display_name(cg,
-                                       ast::Expr(Int, 0),
-                                       norm_slot_ti(r.1.payload_type,
-                                          r.1.payload_record))
+                                      ast::Expr(Int, 0),
+                                      norm_slot_ti(r.1.payload_type,
+                                        r.1.payload_record))
                                     | ""
                                  "<" + p_str + "|" + n_str + ">"
                         | ""
@@ -4522,14 +4573,14 @@ codegen_eval_enum_idx_ctor = cg, eff_tname, slots, t, idx =>
          na = ?t.args
          !sl.has_payload && na > 1
             | init_error(cg, "E3098",
-                diag::enum_unit_payload(eff_tname, sl.label), t.line, t.col)
+              diag::enum_unit_payload(eff_tname, sl.label), t.line, t.col)
          sl.has_payload && na > 1
             |
                actual = static_expr_vt(cg, t.args(1)!!)
                actual != ast::ValueType(Unknown) && actual != sl.payload_type
                   | init_error(cg, "E3099", diag::enum_payload_type(eff_tname,
-                      sl.label, value_type_name(sl.payload_type),
-                      value_type_name(actual)), t.line, t.col)
+                    sl.label, value_type_name(sl.payload_type),
+                    value_type_name(actual)), t.line, t.col)
          payargs = ast::Exprs()
          sl.has_payload && na > 1
             | payargs += t.args(1)!!
@@ -4647,7 +4698,7 @@ codegen_check_enum_ctor = cg, enum_name, slots, call =>
    has_idx = <>(idx_opt)
    !has_idx
       | init_error(cg, "E3096", diag::enum_no_variant(enum_name, label),
-         call.line, call.col)
+        call.line, call.col)
    idx_opt
       |
          payload = enum_slot_payload(slots, label)
@@ -4655,14 +4706,14 @@ codegen_check_enum_ctor = cg, enum_name, slots, call =>
          nargs = ?call.args
          !has_payload && nargs > 1
             | init_error(cg, "E3098", diag::enum_unit_payload(enum_name, label),
-               call.line, call.col)
+              call.line, call.col)
          has_payload && nargs > 1
             |
                actual = static_expr_vt(cg, call.args(1)!!)
                actual != ast::ValueType(Unknown) && actual != payload
                   | init_error(cg, "E3099", diag::enum_payload_type(enum_name,
-                     label, value_type_name(payload), value_type_name(actual)),
-                     call.line, call.col)
+                    label, value_type_name(payload), value_type_name(actual)),
+                    call.line, call.col)
 
 enum_slot_has_payload: ast::EnumSlots, String => <>
 enum_slot_has_payload = slots, label =>
@@ -4690,9 +4741,9 @@ static_expr_vt = cg, e =>
          bt.0
             [Add]
                is_str_vt(static_expr_vt(cg, bt.1)) ||
-                  is_str_vt(static_expr_vt(cg, bt.2))
-                  | ast::ValueType(Str)
-                  | ast::ValueType(Unknown)
+                 is_str_vt(static_expr_vt(cg, bt.2))
+                 | ast::ValueType(Str)
+                 | ast::ValueType(Unknown)
             | ast::ValueType(Unknown)
       [Variant v]
          is_flag = v.tag_name [Positive, Negative] && ?v.args == 0
@@ -4769,38 +4820,38 @@ codegen_check_ram_ctor = cg, name, slots, call, arg =>
          actual = static_expr_vt(cg, arg)
          actual != ast::ValueType(Ram)
             | init_error(cg, "E3055", "Ramification '" + name +
-               "' expects a ramification value, got type " +
-               value_type_name(actual) + ".", call.line, call.col)
+              "' expects a ramification value, got type " +
+              value_type_name(actual) + ".", call.line, call.col)
 
 codegen_check_ram_variant: Cg, String, (ast::RamSlotInfo, ast::RamSlotInfo), ast::CallExpr, ast::VariantExpr => ()
 codegen_check_ram_variant = cg, name, slots, call, variant =>
    ram_slots_are_flag(slots) && ram_tag_is_heap_unit(variant.tag_name)
       | init_error(cg, "E3090", "Ramification '" + name +
-         "' is a Flag (<>), whose unit branches are '<+>' (Positive) or " +
-         "'<->' (Negative), got '" + ram_tag_name(variant.tag_name) +
-         "'. '<++>'/'<-->' are heap-ram units and never coerce down.",
-         call.line, call.col)
+        "' is a Flag (<>), whose unit branches are '<+>' (Positive) or " +
+        "'<->' (Negative), got '" + ram_tag_name(variant.tag_name) +
+        "'. '<++>'/'<-->' are heap-ram units and never coerce down.",
+        call.line, call.col)
    !ram_slots_are_flag(slots) && !ram_tag_is_heap_unit(variant.tag_name) &&
-      (?variant.args == 0)
-      | init_error(cg, "E3083", "Ramification '" + name +
-         "' unit branch must use '<++>' (Succ) or '<-->' (Noth). '<+>' and " +
-         "'<->' are Flags and do not coerce into heap rams.", call.line, call.col)
+     (?variant.args == 0)
+     | init_error(cg, "E3083", "Ramification '" + name +
+       "' unit branch must use '<++>' (Succ) or '<-->' (Noth). '<+>' and " +
+       "'<->' are Flags and do not coerce into heap rams.", call.line, call.col)
    slot = ram_tag_is_positive(variant.tag_name) | slots.0 | slots.1
    has_payload = ?variant.args > 0
    !slot.has_payload && has_payload
       | init_error(cg, "E3053", "Ramification '" + name +
-         "' expects a unit slot here, but this value has a payload. Tag '" +
-         ram_tag_name(variant.tag_name) + "' (" +
-         str::from_int(tag_id_of(variant.tag_name)) + ").", call.line, call.col)
+        "' expects a unit slot here, but this value has a payload. Tag '" +
+        ram_tag_name(variant.tag_name) + "' (" +
+        str::from_int(tag_id_of(variant.tag_name)) + ").", call.line, call.col)
    slot.has_payload && has_payload
       |
          slot_pt = slot_payload_type(cg, slot)
          actual = static_expr_vt(cg, variant.args(0)!!)
          actual != ast::ValueType(Unknown) && actual != slot_pt
             | init_error(cg, "E3054", "Ramification '" + name + "' slot '" +
-               ram_slot_name(variant.tag_name) + "' expects payload of type " +
-               value_type_name(slot_pt) + ", got " +
-               value_type_name(actual) + ".", call.line, call.col)
+              ram_slot_name(variant.tag_name) + "' expects payload of type " +
+              value_type_name(slot_pt) + ", got " +
+              value_type_name(actual) + ".", call.line, call.col)
 
 ram_slots_are_flag: (ast::RamSlotInfo, ast::RamSlotInfo) => <>
 ram_slots_are_flag = slots => !slots.0.has_payload && !slots.1.has_payload
@@ -4837,14 +4888,14 @@ codegen_check_ambiguous_enum_label = cg, label =>
          owners = enum_label_owner_count(cg, label, 0)
          owners > 1
             | init_error(cg, "E3105", "Enum label '" + label +
-               diag::E3105_enum_label_ambiguous_suffix! + label + "'.", 0, 0)
+              diag::E3105_enum_label_ambiguous_suffix! + label + "'.", 0, 0)
 
 codegen_eval_enum_label_val: Cg, String, Int => <(Addr, ast::ValueType)|>
 codegen_eval_enum_label_val = cg, label, owners =>
    owners > 1
       |
          init_error(cg, "E3105", "Enum label '" + label +
-            diag::E3105_enum_label_ambiguous_suffix! + label + "'.", 0, 0)
+           diag::E3105_enum_label_ambiguous_suffix! + label + "'.", 0, 0)
          <-->
       |
          es = match::enum_slots_for_label(cg, label)
@@ -4895,7 +4946,7 @@ codegen_eval_map_literal = cg, pairs =>
          val_rec = vdt != "" | typedef_ti(cg, vdt) |
             ast::TypeInfo(Prim, val_vt)
          tname = "#map_" + value_type_name(key_vt) + "_" +
-            value_type_name(val_vt)
+           value_type_name(val_vt)
          ti = ast::TypeInfo(Map, (key_vt, val_vt, val_rec))
          !has_type_name(cg, tname) | runtime::add_type(cg, tname, ti)
          cg.last_type = tname
@@ -4930,7 +4981,7 @@ codegen_eval_raw_memory = cg, rm =>
                meta = runtime::record_meta_from_ti(cg, ti)
                meta_rt = meta | m => m.0 | LLVMInt8Type!
                typed_ptr = LLVMBuildPointerCast(cg.builder,
-                  ptr_val, LLVMPointerType(meta_rt, 0), "view.ptr")
+                 ptr_val, LLVMPointerType(meta_rt, 0), "view.ptr")
                meta_rt_opt = meta | m => <+ m.0 +> | <-->
                cg.last_rt = meta_rt_opt
                meta_fns = meta | m => m.1 | ast::Names()
@@ -4944,9 +4995,9 @@ codegen_eval_raw_memory = cg, rm =>
                   |
                      elem_ty = llvm_type_of_vt(rm.load_type)
                      elem_ptr = LLVMBuildPointerCast(cg.builder, ptr_val,
-                        LLVMPointerType(elem_ty, 0), "raw.ptr.t")
+                       LLVMPointerType(elem_ty, 0), "raw.ptr.t")
                      loaded = LLVMBuildLoad2(cg.builder, elem_ty,
-                        elem_ptr, "raw.load")
+                       elem_ptr, "raw.load")
                      LLVMSetVolatile(loaded, 1)
                      (loaded, rm.load_type)
 
@@ -4961,8 +5012,8 @@ raw_address_uses_string = cg, e =>
 codegen_raw_string_index_error: Cg => <(Addr, ast::ValueType)|>
 codegen_raw_string_index_error = cg =>
    init_error(cg, "E3063", "'@[...]' does not index a String (the '@[s + i]' " +
-      "sugar was removed, B7). Read a byte with 's(i)' or write one to a " +
-      "Builder.", 0, 0)
+     "sugar was removed, B7). Read a byte with 's(i)' or write one to a " +
+     "Builder.", 0, 0)
    <-->
 
 codegen_check_map_pairs: Cg, ast::MapPairs, Int => ()
@@ -4977,20 +5028,19 @@ codegen_check_map_pairs = cg, pairs, at =>
          val = static_expr_vt(cg, pair.value)
          at > 0 && key != ast::ValueType(Unknown) && key != first_key
             | init_error(cg, "E3137", "Map literal key type mismatch: entry " +
-               str::from_int(at) + " has key type " + value_type_name(key) +
-               ", first entry " + value_type_name(first_key) + ".", 0, 0)
+              str::from_int(at) + " has key type " + value_type_name(key) +
+              ", first entry " + value_type_name(first_key) + ".", 0, 0)
          at > 0 && val != ast::ValueType(Unknown) && val != first_val
             | init_error(cg, "E3138", "Map literal value type mismatch: entry " +
-               str::from_int(at) + " has value type " + value_type_name(val) +
-               ", first entry " + value_type_name(first_val) + ".", 0, 0)
+              str::from_int(at) + " has value type " + value_type_name(val) +
+              ", first entry " + value_type_name(first_val) + ".", 0, 0)
          codegen_check_map_pairs(cg, pairs, at + 1)
-
 
 // A bare declared type name used as an expression: emit E3129.
 codegen_eval_type_value: Cg, String => <(Addr, ast::ValueType)|>
 codegen_eval_type_value = cg, name =>
    init_error(cg, "E3129", "Type name '" + name +
-      "' cannot be used as an expression.", 0, 0)
+     "' cannot be used as an expression.", 0, 0)
    <-->
 
 // The built-in ram tag ids: 1 = positive-ish (Positive/Some), 2 = Succ,
@@ -5015,7 +5065,7 @@ codegen_build_union: Cg, Int, ast::Exprs, String => Addr
 codegen_build_union = cg, tid, args, alloc_name =>
    ut = cg.union_t
    up = expr::codegen_call_arena_alloc(cg,
-      LLVMConstInt(LLVMInt64Type!, 16, 0), alloc_name)
+     LLVMConstInt(LLVMInt64Type!, 16, 0), alloc_name)
    tgep = LLVMBuildStructGEP2(cg.builder, ut, up, 0, "tag.gep")
    LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt64Type!, tid, 0), tgep)
    na = ?args
@@ -5033,14 +5083,14 @@ codegen_build_union = cg, tid, args, alloc_name =>
             |
                box_name = alloc_name == "enum.alloc" | "enum.pay.alloc" | "pay.alloc"
                box = expr::codegen_call_arena_alloc(cg,
-                  LLVMConstInt(LLVMInt64Type!, 8, 0), box_name)
+                 LLVMConstInt(LLVMInt64Type!, 8, 0), box_name)
                LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt64Type!, 0, 0), box)
                LLVMBuildStore(cg.builder, ev.0, box)
                LLVMBuildStore(cg.builder, box, pgep')
       |
          pgep' = LLVMBuildStructGEP2(cg.builder, ut, up, 1, "pay.gep")
          LLVMBuildStore(cg.builder,
-            LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)), pgep')
+           LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)), pgep')
    up
 
 // A variant literal: "<+>" / "<->" with no payload is a bare i1 flag; anything
@@ -5056,7 +5106,7 @@ codegen_eval_variant = cg, t =>
          (LLVMConstInt(LLVMInt1Type!, bit, 0), ast::ValueType(Flag))
       |
          u = codegen_build_union(cg, tag_id_of(t.tag_name), t.args,
-            "variant.alloc")
+           "variant.alloc")
          (u, ast::ValueType(Ram))
 
 // Compute the GEP for a record field: homogeneous records use rec.elem.gep,
@@ -5072,18 +5122,18 @@ record_field_gep_opt = cg, rt, fvts, base, idx =>
          rt_val = rt_opt!!
          base_ptr = LLVMGetTypeKind(LLVMTypeOf(base_val)) == 8
             | LLVMBuildIntToPtr(cg.builder, base_val,
-               LLVMPointerType(LLVMInt8Type!, 0), "rec.base.ptr")
+              LLVMPointerType(LLVMInt8Type!, 0), "rec.base.ptr")
             | base_val
          is_homo = expr::record_type_is_homogeneous(<+ rt_val +>, fvts)
          res = is_homo
             |
                elem_t = LLVMStructGetTypeAtIndex(rt_val, 0)
                typed = LLVMBuildPointerCast(cg.builder, base_ptr,
-                  LLVMPointerType(elem_t, 0), "rec.typed")
+                 LLVMPointerType(elem_t, 0), "rec.typed")
                idx_v = LLVMConstInt(LLVMInt64Type!, idx, 0)
                gep1(cg, elem_t, typed, idx_v, "rec.elem.gep")
             | LLVMBuildStructGEP2(cg.builder, rt_val, base_ptr, idx,
-               "rec.field.gep")
+              "rec.field.gep")
          <+ res +>
 
 record_field_gep: Cg, Addr, ast::VTypes, Addr, Int => Addr
@@ -5112,7 +5162,7 @@ codegen_eval_record = cg, r =>
             r.fields @ field =>
                args += ast::Expr(NamedArg, ast::NamedArgExpr(field.name, field.val))
             --| codegen_eval_record_ctor(cg, ti,
-               ast::CallExpr("", ast::Expr(Var, ""), args, 0, 0))
+              ast::CallExpr("", ast::Expr(Var, ""), args, 0, 0))
    codegen_eval_record_inferred(cg, r)
 
 codegen_eval_record_inferred: Cg, ast::RecordExpr => (Addr, ast::ValueType)
@@ -5135,7 +5185,7 @@ codegen_eval_record_inferred = cg, r =>
       |
          anon_name = "$rec." + str::from_int(?cg.typedefs)
          runtime::push_typedef(cg, TypeDef(anon_name,
-            ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st +>, <->, fnames))
+           ast::TypeInfo(Prim, ast::ValueType(Record)), <+ st +>, <->, fnames))
    cg.last_rt = <+ st +>
    cg.last_fnames = fnames
    cg.last_fvts = fvts
@@ -5148,7 +5198,7 @@ codegen_eval_record_inferred = cg, r =>
    typed = is_homo
       |
          LLVMBuildPointerCast(cg.builder, rp,
-            LLVMPointerType(elem_t, 0), "rec.typed")
+           LLVMPointerType(elem_t, 0), "rec.typed")
       | rp
    nf @ i =>
       ft = LLVMStructGetTypeAtIndex(st, i)
@@ -5163,7 +5213,7 @@ codegen_eval_record_inferred = cg, r =>
          |
             inner_sz = LLVMSizeOf(ft)
             LLVMBuildMemCpy(cg.builder, fgep, 1,
-               fvals(i)!!, 1, inner_sz, 0)
+              fvals(i)!!, 1, inner_sz, 0)
          |
             cval = stmt::coerce_int(cg, fvals(i)!!, ft)
             LLVMBuildStore(cg.builder, cval, fgep)
@@ -5260,9 +5310,9 @@ find_any_typedef_name_for_ti_at = tds, i, n, ti =>
       |
          td = tds(i)!!
          !(?td.name !< 10 && td.name(0..10) == "#heap_ram_") &&
-            type_info_equal(td.ti, ti)
-            | td.name
-            | find_any_typedef_name_for_ti_at(tds, i + 1, n, ti)
+           type_info_equal(td.ti, ti)
+           | td.name
+           | find_any_typedef_name_for_ti_at(tds, i + 1, n, ti)
 
 ensure_ti_dtype: Cg, ast::TypeInfo => String
 ensure_ti_dtype = cg, ti =>
@@ -5272,12 +5322,12 @@ ensure_ti_dtype = cg, ti =>
       [Prim] ""
       |
          existing = find_any_typedef_name_for_ti_at(cg.typedefs, 0,
-            ?cg.typedefs, ti)
+           ?cg.typedefs, ti)
          existing != ""
             | existing
             |
                tname = "__fld_ti_" + str::from_int(?cg.typedefs) + "_" +
-                  str::from_int(g.tmpc)
+                 str::from_int(g.tmpc)
                g.tmpc = g.tmpc + 1
                is_rec_ti = ti [Rec r] !r.1 | <->
                rm = is_rec_ti | runtime::record_meta_from_ti(cg, ti) | <-->
@@ -5301,7 +5351,7 @@ record_field_dtype = cg, ti, idx =>
                      !rr2.1
                         |
                            meta = runtime::build_rec_meta(cg, rr2.0, 0, ?rr2.0,
-                              Addrs(), ast::Names())
+                             Addrs(), ast::Names())
                            tn = typedef_name_of_rt(cg, meta.0)
                            tn != "" | tn | ensure_ti_dtype(cg, rf.rec_type)
                         | ensure_ti_dtype(cg, rf.rec_type)
@@ -5329,9 +5379,9 @@ error_context_ti: () => ast::TypeInfo
 error_context_ti = !=>
    flds = ast::FieldTypes()
    flds += ast::RecordFieldType("", ast::ValueType(Int),
-      ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0))
+     ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0))
    flds += ast::RecordFieldType("", ast::ValueType(Int),
-      ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0))
+     ast::TypeInfo(Prim, ast::ValueType(Int)), <->, ast::Expr(Int, 0))
    ast::TypeInfo(Rec, (flds, <->, <->, ast::ValueType(Record), 2, <->))
 
 error_field_ti_by_idx: Int => ast::TypeInfo
@@ -5377,3 +5427,1936 @@ error_field_names = !=>
    fn += "col"
    fn += "context"
    fn
+
+// --- Intra-module Value-Range Analysis (VRA) --------------------------------
+
+// Range lattice state: 0 = Bottom (unseen), 1 = Bounded [lo, hi], 2 = Top.
+vra_bot: () => VraRange
+vra_bot = !=> VraRange(0, 0, 0)
+
+vra_top: () => VraRange
+vra_top = !=> VraRange(2, 0, 0)
+
+vra_bounded: Int, Int => VraRange
+vra_bounded = lo, hi => lo > hi | vra_bot! | VraRange(1, lo, hi)
+
+vra_const: Int => VraRange
+vra_const = v => VraRange(1, v, v)
+
+vra_is_tracked_int_vt: ast::ValueType => <>
+vra_is_tracked_int_vt = [Int, I64]
+
+vra_eq: VraRange, VraRange => <>
+vra_eq = a, b =>
+   a.state == b.state && (a.state != 1 || (a.lo == b.lo && a.hi == b.hi))
+
+vra_join: VraRange, VraRange => VraRange
+vra_join = a, b =>
+   a.state == 0 | --| b
+   b.state == 0 | --| a
+   a.state == 2 || b.state == 2 | --| vra_top!
+   lo = a.lo < b.lo | a.lo | b.lo
+   hi = a.hi > b.hi | a.hi | b.hi
+   VraRange(1, lo, hi)
+
+vra_meet: VraRange, VraRange => VraRange
+vra_meet = a, b =>
+   a.state == 0 || b.state == 0 | --| vra_bot!
+   a.state == 2 | --| b
+   b.state == 2 | --| a
+   lo = a.lo > b.lo | a.lo | b.lo
+   hi = a.hi < b.hi | a.hi | b.hi
+   lo > hi | vra_bot! | VraRange(1, lo, hi)
+
+vra_reset: () => ()
+vra_reset = !=>
+   vra.enabled = <->
+   vra.whole_prog = <->
+   vra.changed = <->
+   vra.skip_bot_params = <->
+   vra.in_narrow = <->
+   vra.cur_fn_name = ""
+   vra.field_idx = VraIndex()
+   vra.field_rngs = VraRanges()
+   vra.anon_idx = VraIndex()
+   vra.anon_rngs = VraRanges()
+   vra.named_shapes = NamedShapeMetas()
+   vra.named_shape_keys = ast::Names()
+   vra.poison_shapes = ast::Names()
+   vra.param_idx = VraIndex()
+   vra.param_rngs = VraRanges()
+   vra.fn_ret_idx = VraIndex()
+   vra.fn_ret_rngs = VraRanges()
+   vra.poison_fns = ast::Names()
+   vra.locals = VraLocals()
+   vra.cur_muts = ast::Names()
+   vra.bounded_idxs = BoundedStrIdxs()
+   vra.len_vars = LenVarEntries()
+   vra.snap_field_rngs = VraRanges()
+   vra.snap_anon_rngs = VraRanges()
+   vra.snap_param_rngs = VraRanges()
+   vra.snap_fn_ret_rngs = VraRanges()
+
+attach_i64_range_md: Cg, Addr, Int, Int => ()
+attach_i64_range_md = cg, load_val, lo, hi =>
+   near_full = lo == (const::min_i64 + 1) && hi == (const::max_i64 - 1)
+   ok = load_val != sys::addr_null && lo > const::min_i64 &&
+     hi < const::max_i64 && lo !> hi && !near_full
+   ok
+      |
+         ctx = LLVMGetGlobalContext!
+         i64t = LLVMInt64Type!
+         md0 = LLVMValueAsMetadata(LLVMConstInt(i64t, lo, 0))
+         md1 = LLVMValueAsMetadata(LLVMConstInt(i64t, hi + 1, 0))
+         mds = (md0, md1)
+         node = LLVMMDNodeInContext2(ctx, &mds, 2)
+         kind = LLVMGetMDKindIDInContext(ctx, "range", 5)
+         LLVMSetMetadata(load_val, kind, LLVMMetadataAsValue(ctx, node))
+
+vra_checked_add: Int, Int => <Int|>
+vra_checked_add = a, b =>
+   ovf_pos = b > 0 && a > (const::max_i64 - b)
+   ovf_neg = b < 0 && a < (const::min_i64 - b)
+   ovf_pos || ovf_neg | <--> | <+ a + b +>
+
+vra_checked_sub: Int, Int => <Int|>
+vra_checked_sub = a, b =>
+   ovf_pos = b < 0 && a > (const::max_i64 + b)
+   ovf_neg = b > 0 && a < (const::min_i64 + b)
+   ovf_pos || ovf_neg | <--> | <+ a - b +>
+
+vra_checked_mul: Int, Int => <Int|>
+vra_checked_mul = a, b =>
+   a == 0 || b == 0 | --| <+ 0 +>
+   (a == const::min_i64 && b == -1) || (b == const::min_i64 && a == -1) | --| <-->
+   ovf = a > 0 && b > 0
+      | a > (const::max_i64 / b)
+      | a < 0 && b < 0
+         | a < (const::max_i64 / b)
+         | a > 0 && b < 0
+            | b < (const::min_i64 / a)
+            | a < (const::min_i64 / b)
+   ovf | <--> | <+ a * b +>
+
+vra_neg: VraRange => VraRange
+vra_neg = r =>
+   r.state != 1 | --| r
+   r.lo == const::min_i64 | vra_top! | VraRange(1, -r.hi, -r.lo)
+
+vra_add: VraRange, VraRange => VraRange
+vra_add = a, b =>
+   a.state == 0 || b.state == 0 | --| vra_bot!
+   a.state == 2 || b.state == 2 | --| vra_top!
+   lo_opt = vra_checked_add(a.lo, b.lo)
+   hi_opt = vra_checked_add(a.hi, b.hi)
+   lo_opt
+      | lo =>
+         hi_opt
+            | hi => VraRange(1, lo, hi)
+            | vra_top!
+      | vra_top!
+
+vra_sub: VraRange, VraRange => VraRange
+vra_sub = a, b =>
+   a.state == 0 || b.state == 0 | --| vra_bot!
+   a.state == 2 || b.state == 2 | --| vra_top!
+   lo_opt = vra_checked_sub(a.lo, b.hi)
+   hi_opt = vra_checked_sub(a.hi, b.lo)
+   lo_opt
+      | lo =>
+         hi_opt
+            | hi => VraRange(1, lo, hi)
+            | vra_top!
+      | vra_top!
+
+vra_mul: VraRange, VraRange => VraRange
+vra_mul = a, b =>
+   a.state == 0 || b.state == 0 | --| vra_bot!
+   (a.state == 1 && a.lo == 0 && a.hi == 0) || (b.state == 1 && b.lo == 0 && b.hi == 0)
+      | --| vra_const(0)
+   a.state == 2 || b.state == 2 | --| vra_top!
+   p00 = vra_checked_mul(a.lo, b.lo)
+   p01 = vra_checked_mul(a.lo, b.hi)
+   p10 = vra_checked_mul(a.hi, b.lo)
+   p11 = vra_checked_mul(a.hi, b.hi)
+   !(<>(p00) && <>(p01) && <>(p10) && <>(p11)) | --| vra_top!
+   v0 = p00!!
+   v1 = p01!!
+   v2 = p10!!
+   v3 = p11!!
+   lo0 = v0 < v1 | v0 | v1
+   lo1 = v2 < v3 | v2 | v3
+   hi0 = v0 > v1 | v0 | v1
+   hi1 = v2 > v3 | v2 | v3
+   VraRange(1, (lo0 < lo1 | lo0 | lo1), (hi0 > hi1 | hi0 | hi1))
+
+vra_square: VraRange => VraRange
+vra_square = a =>
+   a.state == 0 | --| vra_bot!
+   a.state == 2 | --| vra_top!
+   p_lo = vra_checked_mul(a.lo, a.lo)
+   p_hi = vra_checked_mul(a.hi, a.hi)
+   !(<>(p_lo) && <>(p_hi)) | --| vra_top!
+   s_lo = p_lo!!
+   s_hi = p_hi!!
+   a.lo !< 0
+      | VraRange(1, s_lo, s_hi)
+      | a.hi !> 0
+         | VraRange(1, s_hi, s_lo)
+         | VraRange(1, 0, (s_lo > s_hi | s_lo | s_hi))
+
+vra_mod: VraRange, VraRange => VraRange
+vra_mod = a, b =>
+   a.state == 0 || b.state == 0 | --| vra_bot!
+   b.state != 1 | --| vra_top!
+   b.lo == 0 && b.hi == 0 | --| vra_top!
+   b_lim = b.lo == const::min_i64
+      | const::max_i64
+      |
+         alo = b.lo < 0 | -b.lo | b.lo
+         ahi = b.hi < 0 | -b.hi | b.hi
+         bmax = alo > ahi | alo | ahi
+         bmax == 0 | 0 | bmax - 1
+   a.state == 1 && a.lo !< 0
+      | --| VraRange(1, 0, (a.hi < b_lim | a.hi | b_lim))
+   a.state == 1 && a.hi !> 0
+      | --| VraRange(1, (a.lo > -b_lim | a.lo | -b_lim), 0)
+   lo = a.state == 1 && a.lo > -b_lim | a.lo | -b_lim
+   hi = a.state == 1 && a.hi < b_lim | a.hi | b_lim
+   VraRange(1, lo, hi)
+
+vra_div: VraRange, VraRange => VraRange
+vra_div = a, b =>
+   a.state == 0 || b.state == 0 | --| vra_bot!
+   a.state != 1 || b.state != 1 | --| vra_top!
+   b.lo == 0 && b.hi == 0 | --| vra_top!
+   a.lo == 0 && a.hi == 0 | --| vra_const(0)
+   has_neg_one = b.lo !> -1 && b.hi !< -1
+   a.lo == const::min_i64 && has_neg_one | --| vra_top!
+   b.lo > 0 || b.hi < 0
+      |
+         q00 = a.lo / b.lo
+         q01 = a.lo / b.hi
+         q10 = a.hi / b.lo
+         q11 = a.hi / b.hi
+         lo0 = q00 < q01 | q00 | q01
+         lo1 = q10 < q11 | q10 | q11
+         hi0 = q00 > q01 | q00 | q01
+         hi1 = q10 > q11 | q10 | q11
+         --| VraRange(1, (lo0 < lo1 | lo0 | lo1), (hi0 > hi1 | hi0 | hi1))
+   // b spans 0; non-trapping paths satisfy |b| >= 1.
+   b.lo == 0 && a.lo !< 0
+      | --| VraRange(1, a.lo / b.hi, a.hi)
+   a.lo == const::min_i64 | --| vra_top!
+   abs_alo = a.lo < 0 | -a.lo | a.lo
+   abs_ahi = a.hi < 0 | -a.hi | a.hi
+   max_a = abs_alo > abs_ahi | abs_alo | abs_ahi
+   b.lo == 0
+      | VraRange(1, a.lo, a.hi)
+      | VraRange(1, -max_a, max_a)
+
+vra_bitand: VraRange, VraRange => VraRange
+vra_bitand = a, b =>
+   a.state == 0 || b.state == 0 | --| vra_bot!
+   a.state == 1 && b.state == 1 && a.lo == a.hi && b.lo == b.hi
+      | --| vra_const(a.lo .&. b.lo)
+   a_nn = a.state == 1 && a.lo !< 0
+   b_nn = b.state == 1 && b.lo !< 0
+   a_nn && b_nn
+      | --| VraRange(1, 0, (a.hi < b.hi | a.hi | b.hi))
+   b_nn | --| VraRange(1, 0, b.hi)
+   a_nn | --| VraRange(1, 0, a.hi)
+   vra_top!
+
+vra_shr: VraRange, VraRange => VraRange
+vra_shr = a, b =>
+   a.state == 0 || b.state == 0 | --| vra_bot!
+   a.state != 1 || b.state != 1 | --| vra_top!
+   b.lo < 0 || b.hi !< 64 | --| vra_top!
+   s00 = a.lo .>. b.lo
+   s01 = a.lo .>. b.hi
+   s10 = a.hi .>. b.lo
+   s11 = a.hi .>. b.hi
+   lo0 = s00 < s01 | s00 | s01
+   lo1 = s10 < s11 | s10 | s11
+   hi0 = s00 > s01 | s00 | s01
+   hi1 = s10 > s11 | s10 | s11
+   VraRange(1, (lo0 < lo1 | lo0 | lo1), (hi0 > hi1 | hi0 | hi1))
+
+vra_resolve_ti_name_d: Cg, ast::TypeInfo, Int => String
+vra_resolve_ti_name_d = cg, ti, depth =>
+   depth !< 8 | --| ""
+   ti
+      [Align a] vra_resolve_ti_name_d(cg, a.1, depth + 1)
+      [TypeVar tv]
+         rname = resolve_type_name(cg, tv)
+         under = typedef_ti(cg, rname)
+         under
+            [TypeVar tv2]
+               (tv2 == tv || tv2 == rname)
+                  | rname
+                  | vra_resolve_ti_name_d(cg, under, depth + 1)
+            [Align a2] vra_resolve_ti_name_d(cg, a2.1, depth + 1)
+            | rname
+      | ""
+
+vra_resolve_ti_name: Cg, ast::TypeInfo => String
+vra_resolve_ti_name = cg, ti => vra_resolve_ti_name_d(cg, ti, 0)
+
+vra_vt_tag: ast::ValueType => String
+vra_vt_tag =
+   [Int] "i64"
+   [I64] "i64"
+   [I8] "i8"
+   [I16] "i16"
+   [I32] "i32"
+   [U8] "u8"
+   [U16] "u16"
+   [U32] "u32"
+   [U64] "u64"
+   [Rune] "rune"
+   [Float] "f64"
+   [F32] "f32"
+   [Str] "str"
+   [Flag] "flag"
+   [Unit] "unit"
+   [RawPtr] "ptr"
+   [Builder] "bldr"
+   [Error] "err"
+   [Ram] "ram"
+   [Enum] "enum"
+   [Array] "arr"
+   [Slice] "sl"
+   [Map] "map"
+   [Fn] "fn"
+   [Record] "rec"
+   | "oth"
+
+vra_rf_ti: ast::RecordFieldType => ast::TypeInfo
+vra_rf_ti = rf =>
+   rf.rec_type
+      [Prim up] (up [Unknown] ast::TypeInfo(Prim, rf.val_type) | rf.rec_type)
+      | rf.rec_type
+
+vra_ti_sig_d: Cg, ast::TypeInfo, Int => String
+vra_ti_sig_d = cg, ti, depth =>
+   depth !< 6 | --| ""
+   ti
+      [Prim p] vra_vt_tag(p)
+      [TypeVar tv]
+         rname = vra_resolve_ti_name(cg, ti)
+         under = typedef_ti(cg, rname)
+         under [Prim] "tv:${rname}" | vra_ti_sig_d(cg, under, depth)
+      [Align a] vra_ti_sig_d(cg, a.1, depth)
+      [Rec r]
+         flds = r.0
+         nf = ?flds
+         r.1
+            |
+               fsig0 = nf > 0 | vra_ti_sig_d(cg, vra_rf_ti(flds(0)!!), depth + 1) | ""
+               "sl[${vra_vt_tag(r.3)}:${fsig0}]"
+            | r.2 && r.4 > 0
+               |
+                  fsig0 = nf > 0
+                     | vra_ti_sig_d(cg, vra_rf_ti(flds(0)!!), depth + 1)
+                     | vra_vt_tag(r.3)
+                  "rep${str::from_int(r.4)}[${fsig0}]"
+               | nf > 32
+                  | "rec_large_${str::from_int(nf)}"
+                  |
+                     b = {64}
+                     b += "rec${str::from_int(nf)}["
+                     nf @ i =>
+                        i > 0 | b += ","
+                        rf = flds(i)!!
+                        b += vra_ti_sig_d(cg, vra_rf_ti(rf), depth + 1)
+                     b += "]"
+                     +b
+      [Array a] "arr[${vra_ti_sig_d(cg, norm_slot_ti(a.0, a.1), depth + 1)}]"
+      [Map m] "map[${vra_vt_tag(m.0)},${vra_ti_sig_d(cg, norm_slot_ti(m.1, m.2), depth + 1)}]"
+      [Bitfield bf] "bf[${vra_vt_tag(bf.backing_type)}:${str::from_int(bf.total_bits)}]"
+      [Ram rs]
+         !rs.0.has_payload && !rs.1.has_payload | --| "flag"
+         s0 = rs.0.has_payload
+            | vra_ti_sig_d(cg, norm_slot_ti(rs.0.payload_type, rs.0.payload_record), depth + 1)
+            | "_"
+         s1 = rs.1.has_payload
+            | vra_ti_sig_d(cg, norm_slot_ti(rs.1.payload_type, rs.1.payload_record), depth + 1)
+            | "_"
+         "ram[${s0}|${s1}]"
+      [Enum slots] "enum${str::from_int(?slots)}"
+      [Fn] "fn"
+      | "oth"
+
+vra_rec_anon_sig: Cg, ast::TypeInfo => String
+vra_rec_anon_sig = cg, ti => vra_ti_sig_d(cg, ti, 0)
+
+vra_ti_is_record_like: Cg, ast::TypeInfo => <>
+vra_ti_is_record_like = cg, ti =>
+   ti
+      [Align a] vra_ti_is_record_like(cg, a.1)
+      [Rec r] !r.1
+      [TypeVar tv]
+         rname = vra_resolve_ti_name(cg, ti)
+         rname != "" && vra_ti_is_record_like(cg, typedef_ti(cg, rname))
+      | <->
+
+vra_ti_field_types: Cg, ast::TypeInfo => ast::FieldTypes
+vra_ti_field_types = cg, ti =>
+   ti
+      [Align a] vra_ti_field_types(cg, a.1)
+      [Rec r]
+         res_r = r.1 | ast::FieldTypes() | r.0
+         res_r
+      [TypeVar tv]
+         rname = vra_resolve_ti_name(cg, ti)
+         res_tv = rname != ""
+            | vra_ti_field_types(cg, typedef_ti(cg, rname))
+            | ast::FieldTypes()
+         res_tv
+      | ast::FieldTypes()
+
+vra_resolve_field_idx: Cg, ast::TypeInfo, String, Int => Int
+vra_resolve_field_idx = cg, rec_ti, fname, fidx =>
+   fidx !< 0 | --| fidx
+   fname == "" | --| -1
+   flds = vra_ti_field_types(cg, rec_ti)
+   ?flds @ i =>
+      flds(i)!!.name == fname | --| i
+   -1
+
+vra_add_poison_shape: String => ()
+vra_add_poison_shape = skey =>
+   skey != "" && !has_str(vra.poison_shapes, skey)
+      | vra.poison_shapes += skey
+
+vra_add_poison_fn: String => ()
+vra_add_poison_fn = fname =>
+   fname != "" && !has_str(vra.poison_fns, fname)
+      | vra.poison_fns += fname
+
+vra_poison_ti_shapes_d: Cg, ast::TypeInfo, Int => ()
+vra_poison_ti_shapes_d = cg, ti, depth =>
+   depth < 8
+      |
+         ti
+            [Align a] vra_poison_ti_shapes_d(cg, a.1, depth + 1)
+            [TypeVar]
+               rname = vra_resolve_ti_name(cg, ti)
+               rname != "" && !has_str(vra.poison_shapes, rname)
+                  |
+                     vra_add_poison_shape(rname)
+                     under = typedef_ti(cg, rname)
+                     vra_ti_is_record_like(cg, under)
+                        |
+                           asig = vra_rec_anon_sig(cg, under)
+                           asig != "" | vra_add_poison_shape("anon::${asig}")
+                     vra_poison_ti_shapes_d(cg, under, depth + 1)
+            [Rec r]
+               nf = ?r.0
+               !r.1 && nf !> 32
+                  | vra_add_poison_shape("anon::${vra_ti_sig_d(cg, ti, depth)}")
+               lim = r.2 | (nf > 0 | 1 | 0) | %min(nf, 32)
+               lim @ i =>
+                  rf = r.0(i)!!
+                  fti = vra_rf_ti(rf)
+                  vra_poison_ti_shapes_d(cg, fti, depth + 1)
+            [Array a] vra_poison_ti_shapes_d(cg, norm_slot_ti(a.0, a.1), depth + 1)
+            [Map m] vra_poison_ti_shapes_d(cg, norm_slot_ti(m.1, m.2), depth + 1)
+            [Ram rs]
+               rs.0.has_payload
+                  | vra_poison_ti_shapes_d(cg, norm_slot_ti(rs.0.payload_type, rs.0.payload_record), depth + 1)
+               rs.1.has_payload
+                  | vra_poison_ti_shapes_d(cg, norm_slot_ti(rs.1.payload_type, rs.1.payload_record), depth + 1)
+            [Enum slots]
+               ?slots @ i =>
+                  sl = slots(i)!!
+                  sl.has_payload | vra_poison_ti_shapes_d(cg, sl.payload_record, depth + 1)
+            [Fn f]
+               ?f.1 @ i => vra_poison_ti_shapes_d(cg, f.1(i)!!, depth + 1)
+               vra_poison_ti_shapes_d(cg, f.3, depth + 1)
+            [ThreadId t] vra_poison_ti_shapes_d(cg, t.1, depth + 1)
+
+vra_poison_ti_shapes: Cg, ast::TypeInfo => ()
+vra_poison_ti_shapes = cg, ti => vra_poison_ti_shapes_d(cg, ti, 0)
+
+vra_join_slot: VraIndex, VraRanges, String, VraRange => ()
+vra_join_slot = idx_map, rngs, key, nr =>
+   nr.state != 0
+      |
+         idx_map ^? key
+            |
+               pos = idx_map ^ key | _ | -1
+               pos !< 0
+                  |
+                     old = rngs(pos)!!
+                     merged = vra_join(old, nr)
+                     !vra_eq(old, merged)
+                        |
+                           rngs(pos) = merged !| _
+                           vra.changed = <+>
+            |
+               idx_map ^ key = ?rngs
+               rngs += nr
+               vra.changed = <+>
+
+vra_record_shape_field: Cg, ast::TypeInfo, Int, VraRange => ()
+vra_record_shape_field = cg, rec_ti, fidx, rng =>
+   vra.whole_prog && fidx !< 0 && fidx < 32 && rng.state != 0
+      |
+         ti_is_packed_or_bf(cg, rec_ti)
+            | vra_poison_ti_shapes(cg, rec_ti)
+            |
+               rname = vra_resolve_ti_name(cg, rec_ti)
+               rname != ""
+                  |
+                     !has_str(vra.poison_shapes, rname)
+                        |
+                           key = "${rname}::${str::from_int(fidx)}"
+                           vra_join_slot(vra.field_idx, vra.field_rngs, key, rng)
+                  |
+                     flds = vra_ti_field_types(cg, rec_ti)
+                     ?flds > 0 && ?flds !> 32
+                        |
+                           asig = vra_rec_anon_sig(cg, rec_ti)
+                           !has_str(vra.poison_shapes, "anon::${asig}")
+                              |
+                                 key = "${asig}::${str::from_int(fidx)}"
+                                 vra_join_slot(vra.anon_idx, vra.anon_rngs, key, rng)
+
+vra_read_slot: VraIndex, VraRanges, VraRanges, String => VraRange
+vra_read_slot = idx_map, live_rngs, snap_rngs, key =>
+   !(idx_map ^? key) | --| vra_bot!
+   pos = idx_map ^ key | _ | -1
+   pos < 0 | --| vra_bot!
+   vra.in_narrow && pos < ?snap_rngs
+      | snap_rngs(pos)!!
+      | live_rngs(pos)!!
+
+vra_lookup_field: Cg, ast::TypeInfo, Int, <> => VraRange
+vra_lookup_field = cg, rec_ti, fidx, bot_as_top =>
+   !vra.enabled || !vra.whole_prog || fidx < 0 || fidx !< 32 | --| vra_top!
+   ti_is_packed_or_bf(cg, rec_ti) | --| vra_top!
+   rname = vra_resolve_ti_name(cg, rec_ti)
+   res = rname != ""
+      |
+         has_str(vra.poison_shapes, rname)
+            | vra_top!
+            |
+               key = "${rname}::${str::from_int(fidx)}"
+               vra_read_slot(vra.field_idx, vra.field_rngs, vra.snap_field_rngs, key)
+      |
+         flds = vra_ti_field_types(cg, rec_ti)
+         ?flds == 0 || ?flds > 32
+            | vra_top!
+            |
+               asig = vra_rec_anon_sig(cg, rec_ti)
+               has_str(vra.poison_shapes, "anon::${asig}")
+                  | vra_top!
+                  |
+                     key = "${asig}::${str::from_int(fidx)}"
+                     vra_read_slot(vra.anon_idx, vra.anon_rngs, vra.snap_anon_rngs, key)
+   bot_as_top && res.state == 0 | vra_top! | res
+
+vra_lookup_field_for_load: Cg, ast::TypeInfo, Int => VraRange
+vra_lookup_field_for_load = cg, rec_ti, fidx =>
+   vra_lookup_field(cg, rec_ti, fidx, <+>)
+
+vra_lookup_param_for_codegen: String, Int => VraRange
+vra_lookup_param_for_codegen = fn_name, pidx =>
+   !vra.enabled || !vra.whole_prog | --| vra_top!
+   has_str(vra.poison_fns, fn_name) | --| vra_top!
+   key = "${fn_name}::${str::from_int(pidx)}"
+   !(vra.param_idx ^? key) | --| vra_top!
+   r = vra.param_rngs(vra.param_idx ^ key | _ | 0)!!
+   r.state == 0 | vra_top! | r
+
+vra_lookup_fn_ret: String, <> => VraRange
+vra_lookup_fn_ret = fn_name, bot_as_top =>
+   !vra.enabled || !vra.whole_prog | --| vra_top!
+   has_str(vra.poison_fns, fn_name) | --| vra_top!
+   r = vra_read_slot(vra.fn_ret_idx, vra.fn_ret_rngs, vra.snap_fn_ret_rngs, fn_name)
+   bot_as_top && r.state == 0 | vra_top! | r
+
+vra_finalize_anon_merges: () => ()
+vra_finalize_anon_merges = !=>
+   vra.whole_prog && (?vra.anon_rngs > 0 || ?vra.poison_shapes > 0)
+      |
+         ?vra.named_shapes @ i =>
+            ns = vra.named_shapes(i)!!
+            ap_key = "anon::${ns.anon_sig}"
+            has_str(vra.poison_shapes, ap_key)
+               | vra_add_poison_shape(ns.shape_key)
+            has_str(vra.poison_shapes, ns.shape_key)
+               | vra_add_poison_shape(ap_key)
+            nf = ?ns.field_names
+            nf @ k =>
+               kstr = str::from_int(k)
+               ak = "${ns.anon_sig}::${kstr}"
+               fk = "${ns.shape_key}::${kstr}"
+               vra.anon_idx ^? ak
+                  |
+                     ar = vra.anon_rngs(vra.anon_idx ^ ak | _ | 0)!!
+                     vra_join_slot(vra.field_idx, vra.field_rngs, fk, ar)
+               vra.field_idx ^? fk
+                  |
+                     fr = vra.field_rngs(vra.field_idx ^ fk | _ | 0)!!
+                     vra.anon_idx ^? ak
+                        | vra_join_slot(vra.anon_idx, vra.anon_rngs, ak, fr)
+
+vra_truncate_locals: Int => ()
+vra_truncate_locals = n =>
+   ?vra.locals > n
+      |
+         out = VraLocals()
+         n @ i => out += vra.locals(i)!!
+         vra.locals = out
+
+vra_truncate_bounded: Int => ()
+vra_truncate_bounded = n =>
+   ?vra.bounded_idxs > n
+      |
+         out = BoundedStrIdxs()
+         n @ i => out += vra.bounded_idxs(i)!!
+         vra.bounded_idxs = out
+
+vra_truncate_len_vars: Int => ()
+vra_truncate_len_vars = n =>
+   ?vra.len_vars > n
+      |
+         out = LenVarEntries()
+         n @ i => out += vra.len_vars(i)!!
+         vra.len_vars = out
+
+vra_find_str_idx: ast::Names, String => Int
+vra_find_str_idx = names, target =>
+   ?names @ i =>
+      names(i)!! == target | --| i
+   -1
+
+// Collect variables reassigned, mutated, taken by addr, or shadowed inside a fn.
+// Sibling `Cycle` loop vars stay tracked unless also bound outside Cycle headers.
+vra_bump_bind: ast::Names, ast::Ints, String, Int => ()
+vra_bump_bind = bnames, bcnts, nm, delta =>
+   nm != "" && nm != "_" && nm != "_i"
+      |
+         pos = vra_find_str_idx(bnames, nm)
+         pos !< 0
+            |
+               bcnts(pos) = bcnts(pos)!! + delta !| _
+            |
+               bnames += nm
+               bcnts += delta
+
+vra_scan_muts_list: tast::TypedExprs, ast::Names, ast::Ints, ast::Names => ()
+
+vra_scan_muts_expr: tast::TypedExpr, ast::Names, ast::Ints, ast::Names => ()
+vra_scan_muts_expr = te, bnames, bcnts, cyc_vars =>
+   te.kind
+      [Assign a]
+         delta = (a.1 || a.2 || a.3) | 2 | 1
+         vra_bump_bind(bnames, bcnts, a.0, delta)
+         vra_scan_muts_expr(a.5, bnames, bcnts, cyc_vars)
+      [Unary u]
+         u.0 [AddrOf]
+            u.1.kind [Var v] vra_bump_bind(bnames, bcnts, v.0, 2)
+         vra_scan_muts_expr(u.1, bnames, bcnts, cyc_vars)
+      [Bin b]
+         vra_scan_muts_expr(b.1, bnames, bcnts, cyc_vars)
+         vra_scan_muts_expr(b.2, bnames, bcnts, cyc_vars)
+      [Call c]
+         c.1 | ct => vra_scan_muts_expr(ct, bnames, bcnts, cyc_vars)
+         vra_scan_muts_list(c.2, bnames, bcnts, cyc_vars)
+      [Block bk] vra_scan_muts_list(bk, bnames, bcnts, cyc_vars)
+      [Record rf]
+         ?rf @ i => vra_scan_muts_expr(rf(i)!!.val, bnames, bcnts, cyc_vars)
+      [Member m] vra_scan_muts_expr(m.0, bnames, bcnts, cyc_vars)
+      [MemberWrite mw]
+         vra_scan_muts_expr(mw.0, bnames, bcnts, cyc_vars)
+         vra_scan_muts_expr(mw.3, bnames, bcnts, cyc_vars)
+      [Index ix]
+         vra_scan_muts_expr(ix.0, bnames, bcnts, cyc_vars)
+         vra_scan_muts_expr(ix.1, bnames, bcnts, cyc_vars)
+      [IndexWrite iw]
+         vra_scan_muts_expr(iw.0, bnames, bcnts, cyc_vars)
+         vra_scan_muts_expr(iw.1, bnames, bcnts, cyc_vars)
+         vra_scan_muts_expr(iw.2, bnames, bcnts, cyc_vars)
+      [KeyAccess ka]
+         vra_scan_muts_expr(ka.0, bnames, bcnts, cyc_vars)
+         vra_scan_muts_expr(ka.1, bnames, bcnts, cyc_vars)
+      [Choice ch]
+         vra_scan_muts_expr(ch.0, bnames, bcnts, cyc_vars)
+         ?ch.1 @ i =>
+            br = ch.1(i)!!
+            ?br.bind_vars @ k =>
+               vra_bump_bind(bnames, bcnts, br.bind_vars(k)!!, 1)
+            vra_scan_muts_list(br.case_values, bnames, bcnts, cyc_vars)
+            vra_scan_muts_expr(br.body, bnames, bcnts, cyc_vars)
+      [Cycle cy]
+         vra_scan_muts_expr(cy.0, bnames, bcnts, cyc_vars)
+         cy.1.kind
+            [Lambda lam]
+               ?lam.0 @ i =>
+                  p = lam.0(i)!!
+                  p != "" && p != "_" && !has_str(cyc_vars, p)
+                     | cyc_vars += p
+               vra_scan_muts_expr(lam.1, bnames, bcnts, cyc_vars)
+            | vra_scan_muts_expr(cy.1, bnames, bcnts, cyc_vars)
+         cy.2 | e => vra_scan_muts_expr(e, bnames, bcnts, cyc_vars)
+      [Lambda lam]
+         ?lam.0 @ i => vra_bump_bind(bnames, bcnts, lam.0(i)!!, 1)
+         vra_scan_muts_expr(lam.1, bnames, bcnts, cyc_vars)
+      [Copy cp] vra_scan_muts_expr(cp, bnames, bcnts, cyc_vars)
+      [BuilderNew bn] vra_scan_muts_expr(bn, bnames, bcnts, cyc_vars)
+      [RawMemory rm] vra_scan_muts_expr(rm.0, bnames, bcnts, cyc_vars)
+      [RawMemoryWrite rmw]
+         vra_scan_muts_expr(rmw.0, bnames, bcnts, cyc_vars)
+         vra_scan_muts_expr(rmw.1, bnames, bcnts, cyc_vars)
+      [MapLiteral ml]
+         ?ml @ i =>
+            pr = ml(i)!!
+            vra_scan_muts_expr(pr.key, bnames, bcnts, cyc_vars)
+            vra_scan_muts_expr(pr.val, bnames, bcnts, cyc_vars)
+      [RamConstruct rc]
+         rc.2 | p => vra_scan_muts_expr(p, bnames, bcnts, cyc_vars)
+      [EnumConstruct ec]
+         ec.1 | p => vra_scan_muts_expr(p, bnames, bcnts, cyc_vars)
+      [Exit ex] vra_scan_muts_expr(ex, bnames, bcnts, cyc_vars)
+      [Return r_opt]
+         r_opt | rv => vra_scan_muts_expr(rv, bnames, bcnts, cyc_vars)
+
+vra_scan_muts_list = exprs, bnames, bcnts, cyc_vars =>
+   ?exprs @ i => vra_scan_muts_expr(exprs(i)!!, bnames, bcnts, cyc_vars)
+
+vra_collect_mut_vars: ast::Names, tast::TypedExpr => ast::Names
+vra_collect_mut_vars = fn_params, body =>
+   bnames = ast::Names()
+   bcnts = ast::Ints()
+   cyc_vars = ast::Names()
+   ?fn_params @ i => vra_bump_bind(bnames, bcnts, fn_params(i)!!, 1)
+   vra_scan_muts_expr(body, bnames, bcnts, cyc_vars)
+   muts = ast::Names()
+   muts += "_"
+   muts += "_i"
+   ?bnames @ i =>
+      nm = bnames(i)!!
+      cnt = bcnts(i)!!
+      in_cyc = has_str(cyc_vars, nm)
+      cnt !< 2 || (cnt !< 1 && in_cyc)
+         | muts += nm
+   muts
+
+vra_expr_always_exits: tast::TypedExpr => <>
+vra_expr_always_exits = te =>
+   te.kind
+      [Return] <+>
+      [Exit] <+>
+      [CycleJump] <+>
+      [Block bk]
+         ?bk == 0
+            | <->
+            | vra_expr_always_exits(bk(?bk - 1)!!)
+      [Choice ch]
+         ?ch.1 == 0
+            | <->
+            |
+               last_br = ch.1(?ch.1 - 1)!!
+               last_br.kind [Bare]
+                  |
+                     all_ex' = <+>
+                     ?ch.1 @ i =>
+                        !vra_expr_always_exits(ch.1(i)!!.body)
+                           |
+                              all_ex' = <->
+                              -->
+                     all_ex'
+                  | <->
+      | <->
+
+vra_same_pure_expr: tast::TypedExpr, tast::TypedExpr => <>
+vra_same_pure_expr = a, b =>
+   a.kind
+      [LitInt av]
+         b.kind [LitInt bv] av == bv | <->
+      [Var av]
+         !av.2 && !has_str(vra.cur_muts, av.0)
+            | (b.kind [Var bv] (!bv.2 && av.0 == bv.0) | <->)
+            | <->
+      [Member am]
+         b.kind [Member bm]
+            (am.1 == bm.1 && am.2 == bm.2 && vra_same_pure_expr(am.0, bm.0))
+         | <->
+      [Unary au]
+         au.0 [Neg, Length, BitNot]
+            | (b.kind [Unary bu]
+              (vra_same_pure_expr(au.1, bu.1) &&
+                ((au.0 [Neg] && bu.0 [Neg]) ||
+                  (au.0 [Length] && bu.0 [Length]) ||
+                  (au.0 [BitNot] && bu.0 [BitNot])))
+              | <->)
+            | <->
+      [Bin ab]
+         ab.0 [Add, Sub]
+            | (b.kind [Bin bb]
+              ((ab.0 [Add] && bb.0 [Add]) || (ab.0 [Sub] && bb.0 [Sub])) &&
+                vra_same_pure_expr(ab.1, bb.1) &&
+                vra_same_pure_expr(ab.2, bb.2)
+              | <->)
+            | <->
+      | <->
+
+vra_lookup_local_var: Cg, String => VraRange
+vra_lookup_local_var = cg, vname =>
+   vname == "" || has_str(vra.cur_muts, vname) || is_marked_global_name(cg, vname)
+      | --| vra_top!
+   n = ?vra.locals
+   n @ rev_i =>
+      i = n - 1 - rev_i
+      e = vra.locals(i)!!
+      e.name == vname | --| e.rng
+   vra_top!
+
+vra_narrow_local_var: Cg, String, VraRange => ()
+vra_narrow_local_var = cg, vname, nr =>
+   vname != "" && !has_str(vra.cur_muts, vname) &&
+     !is_marked_global_name(cg, vname)
+        |
+           cur = vra_lookup_local_var(cg, vname)
+           narrowed = vra_meet(cur, nr)
+           vra.locals += VraLocal(vname, narrowed)
+
+vra_imm_var: Cg, tast::TypedExpr, <> => String
+vra_imm_var = cg, te, want_int =>
+   vopt = te.kind [Var v] <+ v +> | <-->
+   vopt
+      | v =>
+         vt = vt_from_ti_cg(cg, te.ti)
+         type_ok = want_int | vra_is_tracked_int_vt(vt) | is_str_vt(vt)
+         imm_ok = !v.2 && !has_str(vra.cur_muts, v.0) &&
+           !is_marked_global_name(cg, v.0)
+         type_ok && imm_ok | v.0 | ""
+      | ""
+
+vra_len_var_root: Cg, String => String
+vra_len_var_root = cg, name =>
+   has_str(vra.cur_muts, name) | --| ""
+   n = ?vra.len_vars
+   n @ rev_i =>
+      i = n - 1 - rev_i
+      lv = vra.len_vars(i)!!
+      lv.len_var == name | --| lv.str_var
+   ""
+
+vra_str_bound_var: Cg, tast::TypedExpr => String
+vra_str_bound_var = cg, te =>
+   te.kind
+      [Unary u]
+         res_u = u.0 [Length] | vra_imm_var(cg, u.1, <->) | ""
+         res_u
+      [Var v]
+         res_v = !v.2 && !has_str(vra.cur_muts, v.0) && !is_marked_global_name(cg, v.0)
+            | vra_len_var_root(cg, v.0)
+            | ""
+         res_v
+      [Bin b]
+         res_b = b.0 [Sub]
+            |
+               k = b.2.kind [LitInt kv] kv | -1
+               k !< 0 | vra_str_bound_var(cg, b.1) | ""
+            | ""
+         res_b
+      [Call c]
+         res_c = c.0 == "%min" && ?c.2 == 2
+            |
+               r0 = vra_str_bound_var(cg, c.2(0)!!)
+               r0 != "" | r0 | vra_str_bound_var(cg, c.2(1)!!)
+            | ""
+         res_c
+      | ""
+
+vra_record_len_var: Cg, String, tast::TypedExpr => ()
+vra_record_len_var = cg, lhs_name, rhs_te =>
+   vra.enabled && lhs_name != "" && !has_str(vra.cur_muts, lhs_name) &&
+     !is_marked_global_name(cg, lhs_name)
+        |
+           sv = vra_str_bound_var(cg, rhs_te)
+           sv != "" | vra.len_vars += LenVarEntry(lhs_name, sv)
+
+vra_fn_exists_in: ast::Names, String => <>
+vra_fn_exists_in = fn_names, target => has_str(fn_names, target)
+
+vra_resolve_callee_in: Cg, String, ast::Names => String
+vra_resolve_callee_in = cg, raw, fn_names =>
+   raw == "" | --| ""
+   vra_fn_exists_in(fn_names, raw) | --| raw
+   rf = resolve_fn_name(cg, raw)
+   vra_fn_exists_in(fn_names, rf) | --| rf
+   cg.current_module != "" && !name_is_qualified(raw, 0)
+      |
+         p0 = "${cg.current_module}::${raw}"
+         vra_fn_exists_in(fn_names, p0) | --| p0
+         p1 = "${cg.current_module}::#${raw}"
+         vra_fn_exists_in(fn_names, p1) | --| p1
+         ""
+      | ""
+
+vra_walk_expr: Cg, tast::TypedExpr, <>, ast::Names => VraRange
+
+vra_narrow_cond: Cg, tast::TypedExpr, <>, ast::Names => ()
+vra_narrow_cond = cg, cond, is_true, fn_names =>
+   cond.kind
+      [Unary u]
+         u.0 [Not] | vra_narrow_cond(cg, u.1, !is_true, fn_names)
+      [Bin b]
+         is_true && (b.0 [And])
+            |
+               vra_narrow_cond(cg, b.1, <+>, fn_names)
+               vra_narrow_cond(cg, b.2, <+>, fn_names)
+         !is_true && (b.0 [Or])
+            |
+               vra_narrow_cond(cg, b.1, <->, fn_names)
+               vra_narrow_cond(cg, b.2, <->, fn_names)
+         !(is_true && (b.0 [And])) && !(!is_true && (b.0 [Or])) &&
+           (b.0 [Eq, NotEq, Lt, Gt, NotLt, NotGt])
+              |
+                 lv = vra_walk_expr(cg, b.1, <->, fn_names)
+                 rv = vra_walk_expr(cg, b.2, <->, fn_names)
+                 l_var = vra_imm_var(cg, b.1, <+>)
+                 r_var = vra_imm_var(cg, b.2, <+>)
+                 // Normalize predicate polarity: NotEq<->==Eq, NotLt<->==Lt, NotGt<->==Gt
+                 eff_eq = (b.0 [Eq] && is_true) || (b.0 [NotEq] && !is_true)
+                 eff_ne = (b.0 [NotEq] && is_true) || (b.0 [Eq] && !is_true)
+                 eff_gt = (b.0 [Gt] && is_true) || (b.0 [NotGt] && !is_true)
+                 eff_nlt = (b.0 [NotLt] && is_true) || (b.0 [Lt] && !is_true)
+                 eff_lt = (b.0 [Lt] && is_true) || (b.0 [NotLt] && !is_true)
+                 eff_ngt = (b.0 [NotGt] && is_true) || (b.0 [Gt] && !is_true)
+                 eff_eq
+                    |
+                       l_var != "" | vra_narrow_local_var(cg, l_var, rv)
+                       r_var != "" | vra_narrow_local_var(cg, r_var, lv)
+                    | eff_ne
+                       |
+                          l_var != "" && rv.state == 1 && rv.lo == rv.hi &&
+                            lv.state == 1
+                               |
+                                  lv.lo == rv.lo && lv.lo < const::max_i64
+                                     | vra_narrow_local_var(cg, l_var,
+                                       vra_bounded(lv.lo + 1, lv.hi))
+                                  lv.hi == rv.lo && lv.hi > const::min_i64
+                                     | vra_narrow_local_var(cg, l_var,
+                                       vra_bounded(lv.lo, lv.hi - 1))
+                          r_var != "" && lv.state == 1 && lv.lo == lv.hi &&
+                            rv.state == 1
+                               |
+                                  rv.lo == lv.lo && rv.lo < const::max_i64
+                                     | vra_narrow_local_var(cg, r_var,
+                                       vra_bounded(rv.lo + 1, rv.hi))
+                                  rv.hi == lv.lo && rv.hi > const::min_i64
+                                     | vra_narrow_local_var(cg, r_var,
+                                       vra_bounded(rv.lo, rv.hi - 1))
+                       |
+                          eff_gt && rv.state == 1 && rv.lo < const::max_i64
+                             | (l_var != "" | vra_narrow_local_var(cg, l_var,
+                               VraRange(1, rv.lo + 1, const::max_i64)))
+                          eff_gt && lv.state == 1 && lv.hi > const::min_i64
+                             | (r_var != "" | vra_narrow_local_var(cg, r_var,
+                               VraRange(1, const::min_i64, lv.hi - 1)))
+                          eff_nlt && rv.state == 1
+                             | (l_var != "" | vra_narrow_local_var(cg, l_var,
+                               VraRange(1, rv.lo, const::max_i64)))
+                          eff_nlt && lv.state == 1
+                             | (r_var != "" | vra_narrow_local_var(cg, r_var,
+                               VraRange(1, const::min_i64, lv.hi)))
+                          eff_lt && rv.state == 1 && rv.hi > const::min_i64
+                             | (l_var != "" | vra_narrow_local_var(cg, l_var,
+                               VraRange(1, const::min_i64, rv.hi - 1)))
+                          eff_lt && lv.state == 1 && lv.lo < const::max_i64
+                             | (r_var != "" | vra_narrow_local_var(cg, r_var,
+                               VraRange(1, lv.lo + 1, const::max_i64)))
+                          eff_ngt && rv.state == 1
+                             | (l_var != "" | vra_narrow_local_var(cg, l_var,
+                               VraRange(1, const::min_i64, rv.hi)))
+                          eff_ngt && lv.state == 1
+                             | (r_var != "" | vra_narrow_local_var(cg, r_var,
+                               VraRange(1, lv.lo, const::max_i64)))
+
+vra_push_cycle_bounds_in: Cg, tast::TypedExpr, <>, ast::Names, <>, ast::Names => ()
+vra_push_cycle_bounds_in = cg, iterable, is_rune, params, rec_eff, fn_names =>
+   vra.enabled
+      |
+         p0 = ?params > 0 | params(0)!! | ""
+         p1 = ?params > 1 | params(1)!! | ""
+         p0_track = p0 != "" && p0 != "_" && !has_str(vra.cur_muts, p0)
+         p1_track = p1 != "" && p1 != "_" && !has_str(vra.cur_muts, p1)
+         bound_pushed' = <->
+         iterable.kind
+            [Bin b]
+               b.0 [Seq]
+                  |
+                     lo_r = vra_walk_expr(cg, b.1, rec_eff, fn_names)
+                     is_unb = b.2.kind [LitUnit]
+                     hi_r = is_unb | vra_top! | vra_walk_expr(cg, b.2, rec_eff, fn_names)
+                     p0_track
+                        |
+                           p0_rng = !is_unb && lo_r.state == 1 && hi_r.state == 1
+                              |
+                                 hi_r.hi !> lo_r.lo
+                                    | vra_bot!
+                                    | VraRange(1, lo_r.lo, hi_r.hi - 1)
+                              | lo_r.state == 1
+                                 | VraRange(1, lo_r.lo, const::max_i64)
+                                 | vra_top!
+                           vra.locals += VraLocal(p0, p0_rng)
+                           is_zero_lo = b.1.kind [LitInt lv] (lv == 0) | <->
+                           sv = is_zero_lo && !is_unb | vra_str_bound_var(cg, b.2) | ""
+                           sv != ""
+                              |
+                                 vra.bounded_idxs += BoundedStrIdx(p0, sv)
+                                 bound_pushed' = <+>
+                     p1_track
+                        |
+                           vra.locals += VraLocal(p1, VraRange(1, 0, const::max_i64))
+                  |
+                     it_r = vra_walk_expr(cg, iterable, rec_eff, fn_names)
+                     p0_track
+                        |
+                           p0_rng = it_r.state == 0
+                              | vra_bot!
+                              | it_r.state == 1
+                                 | (it_r.hi > 0
+                                    | VraRange(1, 0, it_r.hi - 1)
+                                    | vra_bot!)
+                                 | VraRange(1, 0, const::max_i64)
+                           vra.locals += VraLocal(p0, p0_rng)
+                           sv = vra_str_bound_var(cg, iterable)
+                           sv != ""
+                              |
+                                 vra.bounded_idxs += BoundedStrIdx(p0, sv)
+                                 bound_pushed' = <+>
+            |
+               it_vt = vt_from_ti_cg(cg, iterable.ti)
+               is_str_it = is_str_vt(it_vt)
+               is_coll_it = is_str_it || is_builder_vt(it_vt) || is_array_vt(it_vt) ||
+                 is_slice_vt(it_vt) || is_record_vt(it_vt)
+               is_coll_it
+                  |
+                     it_r = vra_walk_expr(cg, iterable, rec_eff, fn_names)
+                     p0_track && is_str_it && !is_rune
+                        | vra.locals += VraLocal(p0, VraRange(1, 0, 255))
+                     p1_track
+                        |
+                           vra.locals += VraLocal(p1, VraRange(1, 0, const::max_i64))
+                           is_str_it && !is_rune
+                              |
+                                 sv = vra_imm_var(cg, iterable, <->)
+                                 sv != ""
+                                    |
+                                       vra.bounded_idxs += BoundedStrIdx(p1, sv)
+                                       vra.bounded_idxs += BoundedStrIdx(p0, "")
+                                       bound_pushed' = <+>
+                  |
+                     it_r = vra_walk_expr(cg, iterable, rec_eff, fn_names)
+                     p0_track
+                        |
+                           p0_rng = it_r.state == 0
+                              | vra_bot!
+                              | it_r.state == 1
+                                 | (it_r.hi > 0
+                                    | VraRange(1, 0, it_r.hi - 1)
+                                    | vra_bot!)
+                                 | VraRange(1, 0, const::max_i64)
+                           vra.locals += VraLocal(p0, p0_rng)
+                           sv = vra_str_bound_var(cg, iterable)
+                           sv != ""
+                              |
+                                 vra.bounded_idxs += BoundedStrIdx(p0, sv)
+                                 bound_pushed' = <+>
+         !bound_pushed' && p0 != "" && p0 != "_"
+            | vra.bounded_idxs += BoundedStrIdx(p0, "")
+         !bound_pushed' && p1 != "" && p1 != "_"
+            | vra.bounded_idxs += BoundedStrIdx(p1, "")
+
+vra_push_cycle_bounds: Cg, tast::TypedExpr, <>, ast::Names, <> => ()
+vra_push_cycle_bounds = cg, iterable, is_rune, params, rec_eff =>
+   vra_push_cycle_bounds_in(cg, iterable, is_rune, params, rec_eff, ast::Names())
+
+vra_eval_intrinsic_call: Cg, String, tast::TypedExprs, <>, ast::Names => <VraRange|>
+vra_eval_intrinsic_call = cg, fname, args, rec_eff, fn_names =>
+   fname == "%min" && ?args == 2
+      |
+         r0 = vra_walk_expr(cg, args(0)!!, rec_eff, fn_names)
+         r1 = vra_walk_expr(cg, args(1)!!, rec_eff, fn_names)
+         res = r0.state == 0 || r1.state == 0
+            | vra_bot!
+            | r0.state == 1 && r1.state == 1
+               | VraRange(1, (r0.lo < r1.lo | r0.lo | r1.lo),
+                 (r0.hi < r1.hi | r0.hi | r1.hi))
+               | r1.state == 1
+                  | VraRange(1, const::min_i64, r1.hi)
+                  | r0.state == 1
+                     | VraRange(1, const::min_i64, r0.hi)
+                     | vra_top!
+         --| <+ res +>
+   fname == "%max" && ?args == 2
+      |
+         r0 = vra_walk_expr(cg, args(0)!!, rec_eff, fn_names)
+         r1 = vra_walk_expr(cg, args(1)!!, rec_eff, fn_names)
+         res = r0.state == 0 || r1.state == 0
+            | vra_bot!
+            | r0.state == 1 && r1.state == 1
+               | VraRange(1, (r0.lo > r1.lo | r0.lo | r1.lo),
+                 (r0.hi > r1.hi | r0.hi | r1.hi))
+               | r1.state == 1
+                  | VraRange(1, r1.lo, const::max_i64)
+                  | r0.state == 1
+                     | VraRange(1, r0.lo, const::max_i64)
+                     | vra_top!
+         --| <+ res +>
+   fname == "%clamp" && ?args == 3
+      |
+         rv = vra_walk_expr(cg, args(0)!!, rec_eff, fn_names)
+         rl = vra_walk_expr(cg, args(1)!!, rec_eff, fn_names)
+         rh = vra_walk_expr(cg, args(2)!!, rec_eff, fn_names)
+         res = rv.state == 0 || rl.state == 0 || rh.state == 0
+            | vra_bot!
+            | rl.state == 1 && rh.state == 1 && rl.hi !> rh.lo
+               |
+                  rv.state == 1
+                     | VraRange(1, (rv.lo > rl.lo | rv.lo | rl.lo),
+                       (rv.hi < rh.hi | rv.hi | rh.hi))
+                     | VraRange(1, rl.lo, rh.hi)
+               | vra_top!
+         --| <+ res +>
+   <-->
+
+vra_rf_default_range: ast::RecordFieldType => VraRange
+vra_rf_default_range = rf =>
+   !rf.has_default | --| vra_const(0)
+   rf.default_expr
+      [Int dv] vra_const(dv)
+      [Unary u]
+         u.0 [Neg]
+            |
+               u.1
+                  [Int dv] vra_const(-dv)
+                  | vra_top!
+            | vra_top!
+      | vra_top!
+
+vra_zero_ti_fields_d: Cg, ast::TypeInfo, Int => ()
+vra_zero_ti_fields_d = cg, ti, depth =>
+   depth < 6 && !ti_is_packed_or_bf(cg, ti)
+      |
+         flds = vra_ti_field_types(cg, ti)
+         ?flds @ i =>
+            rf = flds(i)!!
+            fti = vra_rf_ti(rf)
+            fvt = vt_from_ti_cg(cg, fti)
+            vra_is_tracked_int_vt(fvt)
+               | vra_record_shape_field(cg, ti, i, vra_rf_default_range(rf))
+               | vra_ti_is_record_like(cg, fti)
+                  | vra_zero_ti_fields_d(cg, fti, depth + 1)
+
+vra_walk_expr = cg, te, rec_eff, fn_names =>
+   !vra.enabled | --| vra_top!
+   te_vt = vt_from_ti_cg(cg, te.ti)
+   te.kind
+      [LitInt v]
+         res_lit = vra_is_tracked_int_vt(te_vt) | vra_const(v) | vra_top!
+         res_lit
+      [Var v]
+         res_var = vra_is_tracked_int_vt(te_vt) && !v.2
+            | vra_lookup_local_var(cg, v.0)
+            | vra_top!
+         res_var
+      [Unary u]
+         ur = vra_walk_expr(cg, u.1, rec_eff, fn_names)
+         u.0
+            [Neg]
+               res_neg = vra_is_tracked_int_vt(te_vt) | vra_neg(ur) | vra_top!
+               res_neg
+            [Length] VraRange(1, 0, const::max_i64)
+            [RuneCount] VraRange(1, 0, const::max_i64)
+            | vra_top!
+      [Bin b]
+         b.0 [Seq]
+            |
+               vra_walk_expr(cg, b.1, rec_eff, fn_names)
+               --| vra_walk_expr(cg, b.2, rec_eff, fn_names)
+         lr = vra_walk_expr(cg, b.1, rec_eff, fn_names)
+         rr = vra_walk_expr(cg, b.2, rec_eff, fn_names)
+         !vra_is_tracked_int_vt(te_vt)
+            | vra_top!
+            | b.0
+               [Add] vra_add(lr, rr)
+               [Sub] vra_sub(lr, rr)
+               [Mul]
+                  res_mul = vra_same_pure_expr(b.1, b.2)
+                     | vra_square(lr)
+                     | vra_mul(lr, rr)
+                  res_mul
+               [Div] vra_div(lr, rr)
+               [Mod] vra_mod(lr, rr)
+               [BitAnd] vra_bitand(lr, rr)
+               [Shr] vra_shr(lr, rr)
+               | vra_top!
+      [Copy cp]
+         cpr = vra_walk_expr(cg, cp, rec_eff, fn_names)
+         !vra_is_tracked_int_vt(te_vt)
+            | vra_top!
+            |
+               svt = vt_from_ti_cg(cg, cp.ti)
+               svt
+                  [Int, I64] cpr
+                  [Flag] VraRange(1, 0, 1)
+                  [U8] VraRange(1, 0, 255)
+                  [U16] VraRange(1, 0, 65535)
+                  [U32] VraRange(1, 0, 4294967295)
+                  [I8] VraRange(1, -128, 127)
+                  [I16] VraRange(1, -32768, 32767)
+                  [I32] VraRange(1, -2147483648, 2147483647)
+                  | vra_top!
+      [Assign a]
+         vra_walk_expr(cg, a.5, rec_eff, fn_names)
+      [Block bk]
+         saved_locs = ?vra.locals
+         saved_lvs = ?vra.len_vars
+         last_r' = vra_top!
+         ?bk @ i =>
+            st = bk(i)!!
+            st.kind
+               [Assign a]
+                  vr = vra_walk_expr(cg, a.5, rec_eff, fn_names)
+                  last_r' = vr
+                  !a.1 && !a.2 && !a.3 && !has_str(vra.cur_muts, a.0) &&
+                    !is_marked_global_name(cg, a.0)
+                       |
+                          avt = vt_from_ti_cg(cg, a.5.ti)
+                          vra_is_tracked_int_vt(avt) && vr.state != 2
+                             | vra.locals += VraLocal(a.0, vr)
+                          sv = vra_str_bound_var(cg, a.5)
+                          sv != "" | vra.len_vars += LenVarEntry(a.0, sv)
+               |
+                  sr = vra_walk_expr(cg, st, rec_eff, fn_names)
+                  last_r' = sr
+                  st.kind
+                     [Choice ch]
+                        ?ch.1 == 1
+                           |
+                              b0 = ch.1(0)!!
+                              b0.kind [Bare] && vra_expr_always_exits(b0.body)
+                                 | vra_narrow_cond(cg, ch.0, <->, fn_names)
+                           |
+                              ?ch.1 == 2
+                                 |
+                                    b0 = ch.1(0)!!
+                                    b1 = ch.1(1)!!
+                                    b0.kind [Bare] && b1.kind [Bare]
+                                       |
+                                          ex0 = vra_expr_always_exits(b0.body)
+                                          ex1 = vra_expr_always_exits(b1.body)
+                                          ex0 && !ex1
+                                             | vra_narrow_cond(cg, ch.0, <->, fn_names)
+                                          ex1 && !ex0
+                                             | vra_narrow_cond(cg, ch.0, <+>, fn_names)
+         vra_truncate_locals(saved_locs)
+         vra_truncate_len_vars(saved_lvs)
+         last_r'
+      [Record rfields]
+         track_rf = rec_eff && vra.whole_prog && ?rfields !> 32
+         ?rfields @ i =>
+            tf = rfields(i)!!
+            fr = vra_walk_expr(cg, tf.val, rec_eff, fn_names)
+            track_rf && vra_is_tracked_int_vt(vt_from_ti_cg(cg, tf.val.ti))
+               | vra_record_shape_field(cg, te.ti, i, fr)
+         vra_top!
+      [Member m]
+         vra_walk_expr(cg, m.0, rec_eff, fn_names)
+         fidx = vra_resolve_field_idx(cg, m.0.ti, m.1, m.2)
+         res_mem = vra.whole_prog && vra_is_tracked_int_vt(te_vt) && fidx !< 0
+            | vra_lookup_field(cg, m.0.ti, fidx, !rec_eff)
+            | vra_top!
+         res_mem
+      [MemberWrite mw]
+         vra_walk_expr(cg, mw.0, rec_eff, fn_names)
+         vr = vra_walk_expr(cg, mw.3, rec_eff, fn_names)
+         fidx = vra_resolve_field_idx(cg, mw.0.ti, mw.1, mw.2)
+         rec_eff && vra.whole_prog && fidx !< 0 &&
+           vra_is_tracked_int_vt(vt_from_ti_cg(cg, mw.3.ti))
+              | vra_record_shape_field(cg, mw.0.ti, fidx, vr)
+         vra_top!
+      [Index ix]
+         vra_walk_expr(cg, ix.0, rec_eff, fn_names)
+         vra_walk_expr(cg, ix.1, rec_eff, fn_names)
+         res_ix = is_str_vt(vt_from_ti_cg(cg, ix.0.ti)) && vra_is_tracked_int_vt(te_vt)
+            | VraRange(1, 0, 255)
+            | vra_top!
+         res_ix
+      [IndexWrite iw]
+         vra_walk_expr(cg, iw.0, rec_eff, fn_names)
+         idx_r = vra_walk_expr(cg, iw.1, rec_eff, fn_names)
+         vr = vra_walk_expr(cg, iw.2, rec_eff, fn_names)
+         rec_eff && vra.whole_prog && vra_ti_is_record_like(cg, iw.0.ti) &&
+           vra_is_tracked_int_vt(vt_from_ti_cg(cg, iw.2.ti))
+              |
+                 flds = vra_ti_field_types(cg, iw.0.ti)
+                 ?flds !> 32
+                    |
+                       idx_r.state == 1 && idx_r.lo == idx_r.hi &&
+                         idx_r.lo !< 0 && idx_r.lo < ?flds
+                            | vra_record_shape_field(cg, iw.0.ti, idx_r.lo, vr)
+                            | ?flds @ k =>
+                               vra_record_shape_field(cg, iw.0.ti, k, vr)
+         vra_top!
+      [KeyAccess ka]
+         vra_walk_expr(cg, ka.0, rec_eff, fn_names)
+         vra_walk_expr(cg, ka.1, rec_eff, fn_names)
+         vra_top!
+      [Choice ch]
+         vra_walk_expr(cg, ch.0, rec_eff, fn_names)
+         nb = ?ch.1
+         is_two_bare = nb == 2 && (ch.1(0)!!.kind [Bare]) && (ch.1(1)!!.kind [Bare])
+         is_one_bare = nb == 1 && (ch.1(0)!!.kind [Bare])
+         c_var = vra_imm_var(cg, ch.0, <+>)
+         res_r' = vra_bot!
+         any_non_exit' = <->
+         has_bare' = <->
+         nb @ i =>
+            br = ch.1(i)!!
+            br.kind [Bare] | has_bare' = <+>
+            saved_br_locs = ?vra.locals
+            is_two_bare
+               | vra_narrow_cond(cg, ch.0, i == 0, fn_names)
+               | is_one_bare
+                  | vra_narrow_cond(cg, ch.0, <+>, fn_names)
+                  | br.kind [Case] && c_var != "" && ?br.case_values > 0
+                     |
+                        case_r' = vra_bot!
+                        ?br.case_values @ ci =>
+                           cvr = vra_walk_expr(cg, br.case_values(ci)!!,
+                             rec_eff, fn_names)
+                           case_r' = vra_join(case_r', cvr)
+                        vra_narrow_local_var(cg, c_var, case_r')
+            br.kind ![Case]
+               | ?br.case_values @ ci =>
+                  vra_walk_expr(cg, br.case_values(ci)!!, rec_eff, fn_names)
+            br_r = vra_walk_expr(cg, br.body, rec_eff, fn_names)
+            vra_truncate_locals(saved_br_locs)
+            !vra_expr_always_exits(br.body)
+               |
+                  any_non_exit' = <+>
+                  res_r' = vra_join(res_r', br_r)
+         !vra_is_tracked_int_vt(te_vt)
+            | vra_top!
+            | !any_non_exit'
+               | vra_bot!
+               | (has_bare' || nb == 2) | res_r' | vra_top!
+      [Cycle cy]
+         saved_c_locs = ?vra.locals
+         saved_c_bnds = ?vra.bounded_idxs
+         lam_params = cy.1.kind [Lambda lam] lam.0 | ast::Names()
+         vra_push_cycle_bounds_in(cg, cy.0, cy.3, lam_params, rec_eff, fn_names)
+         cy.1.kind
+            [Lambda lam]
+               vra_walk_expr(cg, lam.1, rec_eff, fn_names)
+            | vra_walk_expr(cg, cy.1, rec_eff, fn_names)
+         vra_truncate_locals(saved_c_locs)
+         vra_truncate_bounded(saved_c_bnds)
+         cy.2 | esc => vra_walk_expr(cg, esc, rec_eff, fn_names)
+         vra_top!
+      [Lambda lam]
+         saved_locs = vra.locals
+         saved_muts = vra.cur_muts
+         saved_bnds = vra.bounded_idxs
+         saved_lvs = vra.len_vars
+         saved_fn = vra.cur_fn_name
+         vra.locals = VraLocals()
+         vra.bounded_idxs = BoundedStrIdxs()
+         vra.len_vars = LenVarEntries()
+         vra.cur_muts = vra_collect_mut_vars(lam.0, lam.1)
+         vra.cur_fn_name = ""
+         vra_walk_expr(cg, lam.1, rec_eff, fn_names)
+         vra.cur_fn_name = saved_fn
+         vra.cur_muts = saved_muts
+         vra.locals = saved_locs
+         vra.bounded_idxs = saved_bnds
+         vra.len_vars = saved_lvs
+         vra_top!
+      [Call c]
+         c.1 | ct => vra_walk_expr(cg, ct, rec_eff, fn_names)
+         c.0 == "#type_zero"
+            |
+               ?c.2 @ ai => vra_walk_expr(cg, c.2(ai)!!, rec_eff, fn_names)
+               rec_eff && vra.whole_prog
+                  | vra_zero_ti_fields_d(cg, te.ti, 0)
+               zero_res = vra_is_tracked_int_vt(te_vt) | vra_const(0) | vra_top!
+               --| zero_res
+         ic_opt = vra_eval_intrinsic_call(cg, c.0, c.2, rec_eff, fn_names)
+         ic_opt
+            | ic_r =>
+               ic_res = vra_is_tracked_int_vt(te_vt) | ic_r | vra_top!
+               --| ic_res
+         callee = vra.whole_prog && ?fn_names > 0
+            | vra_resolve_callee_in(cg, c.0, fn_names)
+            | ""
+         is_known_fn = callee != "" && !has_str(vra.poison_fns, callee)
+         ?c.2 @ ai =>
+            arg_te = c.2(ai)!!
+            ar = vra_walk_expr(cg, arg_te, rec_eff, fn_names)
+            rec_eff && is_known_fn && vra_is_tracked_int_vt(vt_from_ti_cg(cg, arg_te.ti))
+               | vra_join_slot(vra.param_idx, vra.param_rngs,
+                 "${callee}::${str::from_int(ai)}", ar)
+         is_known_fn && vra_is_tracked_int_vt(te_vt)
+            | vra_lookup_fn_ret(callee, !rec_eff)
+            | vra_top!
+      [BuilderNew bn]
+         vra_walk_expr(cg, bn, rec_eff, fn_names)
+         vra_top!
+      [RawMemory rm]
+         vra_walk_expr(cg, rm.0, rec_eff, fn_names)
+         vra_top!
+      [RawMemoryWrite rmw]
+         vra_walk_expr(cg, rmw.0, rec_eff, fn_names)
+         vra_walk_expr(cg, rmw.1, rec_eff, fn_names)
+         vra_top!
+      [MapLiteral ml]
+         ?ml @ i =>
+            pr = ml(i)!!
+            vra_walk_expr(cg, pr.key, rec_eff, fn_names)
+            vra_walk_expr(cg, pr.val, rec_eff, fn_names)
+         vra_top!
+      [RamConstruct rc]
+         rc.2 | p => vra_walk_expr(cg, p, rec_eff, fn_names)
+         vra_top!
+      [EnumConstruct ec]
+         ec.1 | p => vra_walk_expr(cg, p, rec_eff, fn_names)
+         vra_top!
+      [Exit ex]
+         vra_walk_expr(cg, ex, rec_eff, fn_names)
+         vra_bot!
+      [Return r_opt]
+         r_opt
+            | rv =>
+               rr = vra_walk_expr(cg, rv, rec_eff, fn_names)
+               rec_eff && vra.whole_prog && vra.cur_fn_name != "" &&
+                 !has_str(vra.poison_fns, vra.cur_fn_name) &&
+                 vra_is_tracked_int_vt(vt_from_ti_cg(cg, rv.ti))
+                    | vra_join_slot(vra.fn_ret_idx, vra.fn_ret_rngs,
+                      vra.cur_fn_name, rr)
+         vra_bot!
+      | vra_top!
+
+vra_eval: Cg, tast::TypedExpr => VraRange
+vra_eval = cg, te => vra_walk_expr(cg, te, <->, ast::Names())
+
+vra_has_bounded_str_idx: String, String => <>
+vra_has_bounded_str_idx = idx_name, str_name =>
+   n = ?vra.bounded_idxs
+   n @ rev_i =>
+      i = n - 1 - rev_i
+      entry = vra.bounded_idxs(i)!!
+      entry.idx_var == idx_name
+         | --| (entry.str_var == str_name && entry.str_var != "")
+   <->
+
+vra_is_bounded_str_access: Cg, tast::TypedExpr, tast::TypedExpr => <>
+vra_is_bounded_str_access = cg, target, index =>
+   !vra.enabled | --| <->
+   !is_str_vt(vt_from_ti_cg(cg, target.ti)) | --| <->
+   target.kind
+      [LitStr lit]
+         ir = vra_eval(cg, index)
+         (ir.state == 1 && ir.lo !< 0 && ir.hi < ?lit)
+      [Var sv]
+         sv.2 || has_str(vra.cur_muts, sv.0) || is_marked_global_name(cg, sv.0)
+            | <->
+            |
+               idx_name0 = vra_imm_var(cg, index, <+>)
+               idx_name = idx_name0 == ""
+                  |
+                     res_bn = index.kind
+                        [Bin b]
+                           res_add = b.0 [Add]
+                              |
+                                 d = b.2.kind [LitInt dv] dv | -1
+                                 d == 0 | vra_imm_var(cg, b.1, <+>) | ""
+                              | ""
+                           res_add
+                        | ""
+                     res_bn
+                  | idx_name0
+               idx_name == "" | <-> | vra_has_bounded_str_idx(idx_name, sv.0)
+      | <->
+
+vra_register_named_shapes: Cg => ()
+vra_register_named_shapes = cg =>
+   ?cg.typedefs @ i =>
+      td = cg.typedefs(i)!!
+      ti_is_packed_or_bf(cg, td.ti)
+         | vra_add_poison_shape(td.name)
+         | vra_ti_is_record_like(cg, td.ti) && !has_str(vra.named_shape_keys, td.name)
+            |
+               flds = vra_ti_field_types(cg, td.ti)
+               ?flds !> 32
+                  |
+                     asig = vra_rec_anon_sig(cg, td.ti)
+                     fnames = ast::Names()
+                     ?flds @ k => fnames += flds(k)!!.name
+                     vra.named_shape_keys += td.name
+                     vra.named_shapes += NamedShapeMeta(td.name, asig, fnames)
+
+vra_poison_ast_expr: Cg, ast::Expr, ast::Names => ()
+
+vra_poison_ast_list: Cg, ast::Exprs, ast::Names => ()
+vra_poison_ast_list = cg, exprs, fn_names =>
+   ?exprs @ i => vra_poison_ast_expr(cg, exprs(i)!!, fn_names)
+
+vra_poison_ast_expr = cg, e, fn_names =>
+   e
+      [Var v]
+         fn = vra_resolve_callee_in(cg, v, fn_names)
+         fn != "" | vra_add_poison_fn(fn)
+      [Bin b]
+         vra_poison_ast_expr(cg, b.1, fn_names)
+         vra_poison_ast_expr(cg, b.2, fn_names)
+      [Unary u] vra_poison_ast_expr(cg, u.1, fn_names)
+      [Block bk] vra_poison_ast_list(cg, bk, fn_names)
+      [Assign a]
+         vra_poison_ast_expr(cg, a.5, fn_names)
+         vra_poison_ast_expr(cg, a.6, fn_names)
+      [Call c]
+         fn = vra_resolve_callee_in(cg, c.fn_name, fn_names)
+         !(fn != "" && c.fn_name != "")
+            | vra_poison_ast_expr(cg, c.fn_target, fn_names)
+         vra_poison_ast_list(cg, c.args, fn_names)
+      [Record r]
+         ?r.fields @ i => vra_poison_ast_expr(cg, r.fields(i)!!.val, fn_names)
+      [Member m]
+         vra_poison_ast_expr(cg, m.target, fn_names)
+         vra_poison_ast_expr(cg, m.index_expr, fn_names)
+         !m.is_module_access
+            |
+               ?vra.named_shape_keys @ si =>
+                  vra_add_poison_shape(vra.named_shape_keys(si)!!)
+      [Choice ch]
+         vra_poison_ast_expr(cg, ch.cond, fn_names)
+         ?ch.branches @ i => vra_poison_ast_expr(cg, ch.branches(i)!!.block, fn_names)
+      [Cycle cy]
+         vra_poison_ast_expr(cg, cy.iterable, fn_names)
+         vra_poison_ast_expr(cg, cy.body_fn, fn_names)
+      [CycleEscape ce]
+         vra_poison_ast_expr(cg, ce.cycle, fn_names)
+         vra_poison_ast_expr(cg, ce.branch, fn_names)
+      [Fn f] vra_poison_ast_expr(cg, f.body, fn_names)
+      [TypeCast tc] vra_poison_ast_expr(cg, tc.expr, fn_names)
+      [Copy cp] vra_poison_ast_expr(cg, cp, fn_names)
+      [RawMemory rm] vra_poison_ast_expr(cg, rm.addr, fn_names)
+      [Spawn sp] vra_poison_ast_list(cg, sp.args, fn_names)
+      [Join j] vra_poison_ast_expr(cg, j, fn_names)
+      [Exit ex] vra_poison_ast_expr(cg, ex, fn_names)
+
+vra_poison_scan_expr: Cg, tast::TypedExpr, ast::Names, <> => ()
+
+vra_poison_scan_list: Cg, tast::TypedExprs, ast::Names => ()
+vra_poison_scan_list = cg, exprs, fn_names =>
+   ?exprs @ i => vra_poison_scan_expr(cg, exprs(i)!!, fn_names, <->)
+
+vra_poison_scan_expr = cg, te, fn_names, is_top_fn =>
+   ti_is_packed_or_bf(cg, te.ti) | vra_poison_ti_shapes(cg, te.ti)
+   te.kind
+      [Var v]
+         vt_from_ti_cg(cg, te.ti) [Fn]
+            |
+               callee = vra_resolve_callee_in(cg, v.0, fn_names)
+               callee != "" | vra_add_poison_fn(callee)
+      [Unary u]
+         u.0 [AddrOf] | vra_poison_ti_shapes(cg, u.1.ti)
+         vra_ti_is_record_like(cg, te.ti) | vra_poison_ti_shapes(cg, te.ti)
+         vra_poison_scan_expr(cg, u.1, fn_names, <->)
+      [Bin b]
+         b.0 ![Seq] && vra_ti_is_record_like(cg, te.ti)
+            | vra_poison_ti_shapes(cg, te.ti)
+         vra_poison_scan_expr(cg, b.1, fn_names, <->)
+         vra_poison_scan_expr(cg, b.2, fn_names, <->)
+      [Call c]
+         is_unsafe_op = c.0 == "%bitcast" || c.0 == "%memcpy" ||
+           c.0 == "%memset" || c.0 == "%memmove" ||
+           c.0 == "%alloc" || c.0 == "%realloc"
+         has_raw_arg' = <->
+         ?c.2 @ ai =>
+            ate = c.2(ai)!!
+            vt_from_ti_cg(cg, ate.ti) [RawPtr, Type] | has_raw_arg' = <+>
+            ate.kind
+               [Var av] (is_user_type(cg, av.0) | has_raw_arg' = <+>)
+            vra_poison_scan_expr(cg, ate, fn_names, <->)
+         c.1 | ct => vra_poison_scan_expr(cg, ct, fn_names, <->)
+         callee = vra_resolve_callee_in(cg, c.0, fn_names)
+         is_foreign = stmt::is_foreign_fn(c.0) || stmt::is_foreign_fn(callee)
+         is_intrinsic_call = ?c.0 > 0 && (c.0(0) == '% || c.0(0) == '#)
+         is_indirect = c.0 == "" || (callee == "" && !is_foreign && !is_intrinsic_call)
+         is_poison_callee = callee != "" && has_str(vra.poison_fns, callee)
+         is_intrinsic_call && c.0 != "#type_zero" && vra_ti_is_record_like(cg, te.ti)
+            | vra_poison_ti_shapes(cg, te.ti)
+         is_unsafe_op || is_foreign || is_indirect || is_poison_callee || has_raw_arg'
+            |
+               vra_poison_ti_shapes(cg, te.ti)
+               ?c.2 @ ai =>
+                  ate = c.2(ai)!!
+                  vra_poison_ti_shapes(cg, ate.ti)
+                  ate.kind
+                     [Var av]
+                        is_user_type(cg, av.0)
+                           | vra_poison_ti_shapes(cg, typedef_ti(cg, av.0))
+               callee != "" | vra_add_poison_fn(callee)
+      [Record rfields]
+         ?rfields @ i => vra_poison_scan_expr(cg, rfields(i)!!.val, fn_names, <->)
+      [Member m]
+         vra_resolve_field_idx(cg, m.0.ti, m.1, m.2) < 0 &&
+           vra_ti_is_record_like(cg, te.ti)
+              | vra_poison_ti_shapes(cg, te.ti)
+         vra_poison_scan_expr(cg, m.0, fn_names, <->)
+      [MemberWrite mw]
+         vra_poison_scan_expr(cg, mw.0, fn_names, <->)
+         vra_poison_scan_expr(cg, mw.3, fn_names, <->)
+      [Index ix]
+         vra_poison_scan_expr(cg, ix.0, fn_names, <->)
+         vra_poison_scan_expr(cg, ix.1, fn_names, <->)
+      [IndexWrite iw]
+         vra_poison_scan_expr(cg, iw.0, fn_names, <->)
+         vra_poison_scan_expr(cg, iw.1, fn_names, <->)
+         vra_poison_scan_expr(cg, iw.2, fn_names, <->)
+      [KeyAccess ka]
+         vra_poison_scan_expr(cg, ka.0, fn_names, <->)
+         vra_poison_scan_expr(cg, ka.1, fn_names, <->)
+      [Block bk] vra_poison_scan_list(cg, bk, fn_names)
+      [Assign a] vra_poison_scan_expr(cg, a.5, fn_names, <->)
+      [Choice ch]
+         vra_poison_scan_expr(cg, ch.0, fn_names, <->)
+         ?ch.1 @ i =>
+            br = ch.1(i)!!
+            vra_poison_scan_list(cg, br.case_values, fn_names)
+            vra_poison_scan_expr(cg, br.body, fn_names, <->)
+      [Cycle cy]
+         vra_poison_scan_expr(cg, cy.0, fn_names, <->)
+         cy.1.kind
+            [Lambda lam]
+               vra_poison_scan_expr(cg, lam.1, fn_names, <->)
+            | vra_poison_scan_expr(cg, cy.1, fn_names, <->)
+         cy.2 | esc => vra_poison_scan_expr(cg, esc, fn_names, <->)
+      [Lambda lam]
+         !is_top_fn | vra_poison_ti_shapes(cg, te.ti)
+         vra_poison_scan_expr(cg, lam.1, fn_names, <->)
+      [Copy cp] vra_poison_scan_expr(cg, cp, fn_names, <->)
+      [BuilderNew bn] vra_poison_scan_expr(cg, bn, fn_names, <->)
+      [RawMemory rm]
+         vra_poison_ti_shapes(cg, te.ti)
+         vra_poison_scan_expr(cg, rm.0, fn_names, <->)
+      [RawMemoryWrite rmw]
+         vra_poison_ti_shapes(cg, rmw.1.ti)
+         vra_poison_scan_expr(cg, rmw.0, fn_names, <->)
+         vra_poison_scan_expr(cg, rmw.1, fn_names, <->)
+      [MapLiteral ml]
+         ?ml @ i =>
+            pr = ml(i)!!
+            vra_poison_scan_expr(cg, pr.key, fn_names, <->)
+            vra_poison_scan_expr(cg, pr.val, fn_names, <->)
+      [RamConstruct rc]
+         rc.2 | p => vra_poison_scan_expr(cg, p, fn_names, <->)
+      [EnumConstruct ec]
+         ec.1 | p => vra_poison_scan_expr(cg, p, fn_names, <->)
+      [Spawn sp]
+         fn = vra_resolve_callee_in(cg, sp.fn_name, fn_names)
+         fn != "" | vra_add_poison_fn(fn)
+         vra_poison_ti_shapes(cg, te.ti)
+         vra_poison_ast_list(cg, sp.args, fn_names)
+      [Join j]
+         vra_poison_ti_shapes(cg, te.ti)
+         vra_poison_ast_expr(cg, j, fn_names)
+      [CompileTime ct] vra_poison_ast_expr(cg, ct, fn_names)
+      [CtUnrollCycle c]
+         vra.changed = <+>
+         vra_poison_ast_expr(cg, c.iterable, fn_names)
+         vra_poison_ast_expr(cg, c.body_fn, fn_names)
+      [Exit ex] vra_poison_scan_expr(cg, ex, fn_names, <->)
+      [Return r_opt]
+         r_opt | rv => vra_poison_scan_expr(cg, rv, fn_names, <->)
+
+vra_poison_fn_sig_shapes: Cg, ast::TypeInfo => ()
+vra_poison_fn_sig_shapes = cg, fn_ti =>
+   fn_ti
+      [Fn f]
+         ?f.1 @ i => vra_poison_ti_shapes(cg, f.1(i)!!)
+         vra_poison_ti_shapes(cg, f.3)
+
+vra_seed_top_fn_params: Cg, String, ast::Names, ast::TypeInfo => <>
+vra_seed_top_fn_params = cg, fn_name, params, fn_ti =>
+   has_str(vra.poison_fns, fn_name)
+      | --| <+>
+   p_tis = fn_ti [Fn f] f.1 | ast::VInfos()
+   missing_bot' = <->
+   ?params @ i =>
+      pname = params(i)!!
+      pti = i < ?p_tis | p_tis(i)!! | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+      pvt = vt_from_ti_cg(cg, pti)
+      vra_is_tracked_int_vt(pvt) && !has_str(vra.cur_muts, pname)
+         |
+            key = "${fn_name}::${str::from_int(i)}"
+            pr = vra_read_slot(vra.param_idx, vra.param_rngs, vra.snap_param_rngs, key)
+            pr.state == 0
+               | missing_bot' = <+>
+               | pr.state == 1
+                  | vra.locals += VraLocal(pname, pr)
+   !(vra.skip_bot_params && missing_bot')
+
+vra_clone_rngs: VraRanges => VraRanges
+vra_clone_rngs = rngs =>
+   out = VraRanges()
+   ?rngs @ i => out += rngs(i)!!
+   out
+
+vra_save_snapshots: () => ()
+vra_save_snapshots = !=>
+   vra.snap_field_rngs = vra_clone_rngs(vra.field_rngs)
+   vra.snap_anon_rngs = vra_clone_rngs(vra.anon_rngs)
+   vra.snap_param_rngs = vra_clone_rngs(vra.param_rngs)
+   vra.snap_fn_ret_rngs = vra_clone_rngs(vra.fn_ret_rngs)
+
+vra_widen_table_for_narrow: VraRanges, VraRanges => VraRanges
+vra_widen_table_for_narrow = live_rngs, prev_rngs =>
+   out = VraRanges()
+   ?live_rngs @ i =>
+      cur = live_rngs(i)!!
+      prev = i < ?prev_rngs | prev_rngs(i)!! | vra_bot!
+      prev.state != 0 && !vra_eq(cur, prev)
+         |
+            out += vra_top!
+            live_rngs(i) = vra_bot! !| _
+         | out += cur
+   out
+
+vra_prepare_widen_narrow: () => ()
+vra_prepare_widen_narrow = !=>
+   vra.snap_field_rngs = vra_widen_table_for_narrow(vra.field_rngs, vra.snap_field_rngs)
+   vra.snap_anon_rngs = vra_widen_table_for_narrow(vra.anon_rngs, vra.snap_anon_rngs)
+   vra.snap_param_rngs = vra_widen_table_for_narrow(vra.param_rngs, vra.snap_param_rngs)
+   vra.snap_fn_ret_rngs = vra_widen_table_for_narrow(vra.fn_ret_rngs, vra.snap_fn_ret_rngs)
+
+vra_restore_bot_from_snap: VraRanges, VraRanges => ()
+vra_restore_bot_from_snap = live_rngs, snap_rngs =>
+   ?live_rngs @ i =>
+      live_rngs(i)!!.state == 0 && i < ?snap_rngs && snap_rngs(i)!!.state == 2
+         | live_rngs(i) = vra_top! !| _
+
+vra_widen_unconverged_table: VraRanges, VraRanges => <>
+vra_widen_unconverged_table = live_rngs, snap_rngs =>
+   any' = <->
+   ?live_rngs @ i =>
+      cur = live_rngs(i)!!
+      prev = i < ?snap_rngs | snap_rngs(i)!! | vra_bot!
+      !vra_eq(cur, prev) && cur.state != 2
+         |
+            live_rngs(i) = vra_top! !| _
+            any' = <+>
+   any'
+
+vra_widen_unconverged_slots: () => <>
+vra_widen_unconverged_slots = !=>
+   c0 = vra_widen_unconverged_table(vra.field_rngs, vra.snap_field_rngs)
+   c1 = vra_widen_unconverged_table(vra.anon_rngs, vra.snap_anon_rngs)
+   c2 = vra_widen_unconverged_table(vra.param_rngs, vra.snap_param_rngs)
+   c3 = vra_widen_unconverged_table(vra.fn_ret_rngs, vra.snap_fn_ret_rngs)
+   c0 || c1 || c2 || c3
+
+vra_run_one_pass: Cg, tast::TypedExprs, ast::Names, ast::Names,
+  tast::TypedExprs, ast::VInfos => ()
+vra_run_one_pass = cg, top_stmts, top_mods, fn_names, fn_lams, fn_tis =>
+   vra.changed = <->
+   ?top_stmts @ i =>
+      cg.current_module = top_mods(i)!!
+      vra.cur_fn_name = ""
+      vra.locals = VraLocals()
+      vra.bounded_idxs = BoundedStrIdxs()
+      vra.len_vars = LenVarEntries()
+      te = top_stmts(i)!!
+      vra.cur_muts = vra_collect_mut_vars(ast::Names(), te)
+      vra_walk_expr(cg, te, <+>, fn_names)
+   ?fn_names @ fi =>
+      fname = fn_names(fi)!!
+      cg.current_module = decl_module(fname, 0)
+      vra.cur_fn_name = fname
+      vra.locals = VraLocals()
+      vra.bounded_idxs = BoundedStrIdxs()
+      vra.len_vars = LenVarEntries()
+      lam = fn_lams(fi)!!.kind [Lambda l] l |
+         (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
+      fn_ti = fn_tis(fi)!!
+      vra.cur_muts = vra_collect_mut_vars(lam.0, lam.1)
+      run_body = vra_seed_top_fn_params(cg, fname, lam.0, fn_ti)
+      run_body
+         |
+            body_r = vra_walk_expr(cg, lam.1, <+>, fn_names)
+            ret_ti = fn_ti [Fn f] f.3 |
+               ast::TypeInfo(Prim, ast::ValueType(Unknown))
+            !has_str(vra.poison_fns, fname) &&
+              vra_is_tracked_int_vt(vt_from_ti_cg(cg, ret_ti)) &&
+              !vra_expr_always_exits(lam.1)
+                 | vra_join_slot(vra.fn_ret_idx, vra.fn_ret_rngs, fname, body_r)
+   vra_finalize_anon_merges!
+
+vra_widen_unvisited_bot_params: Cg, ast::Names, tast::TypedExprs, ast::VInfos => <>
+vra_widen_unvisited_bot_params = cg, fn_names, fn_lams, fn_tis =>
+   widened' = <->
+   ?fn_names @ fi =>
+      fname = fn_names(fi)!!
+      !has_str(vra.poison_fns, fname)
+         |
+            lam = fn_lams(fi)!!.kind [Lambda l] l |
+               (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
+            fn_ti = fn_tis(fi)!!
+            p_tis = fn_ti [Fn f] f.1 | ast::VInfos()
+            ?lam.0 @ pi =>
+               pti = pi < ?p_tis | p_tis(pi)!! |
+                  ast::TypeInfo(Prim, ast::ValueType(Unknown))
+               vra_is_tracked_int_vt(vt_from_ti_cg(cg, pti))
+                  |
+                     key = "${fname}::${str::from_int(pi)}"
+                     !(vra.param_idx ^? key)
+                        |
+                           vra_join_slot(vra.param_idx, vra.param_rngs, key, vra_top!)
+                           widened' = <+>
+                        |
+                           pos = vra.param_idx ^ key | _ | -1
+                           pos !< 0 && (vra.param_rngs(pos)!!.state == 0)
+                              |
+                                 vra_join_slot(vra.param_idx, vra.param_rngs, key, vra_top!)
+                                 widened' = <+>
+   widened'
+
+run_typed_vra: Cg, tast::TypedStmts => ()
+run_typed_vra = cg, prog =>
+   vra_reset!
+   vra.enabled = !cg.opts.fuzz_cov
+   vra.whole_prog = !cg.opts.is_module
+   vra.enabled && vra.whole_prog
+      |
+         saved_mod = cg.current_module
+         vra_register_named_shapes(cg)
+         fn_names = ast::Names()
+         fn_lams = tast::TypedExprs()
+         fn_tis = ast::VInfos()
+         top_stmts = tast::TypedExprs()
+         top_mods = ast::Names()
+         ?prog @ i =>
+            st = prog(i)!!
+            st
+               [Expr te]
+                  te.kind
+                     [Assign a]
+                        a.5.kind [Lambda]
+                           |
+                              fn_ti = a.5.ti [Fn] a.5.ti | te.ti
+                              fn_names += a.0
+                              fn_lams += a.5
+                              fn_tis += fn_ti
+                           |
+                              top_stmts += te
+                              top_mods += decl_module(a.0, 0)
+                     |
+                        top_stmts += te
+                        top_mods += ""
+               [Binding b]
+                  b.2.kind [Lambda]
+                     |
+                        fn_ti = b.1 [Fn] b.1 | b.2.ti
+                        fn_names += b.0
+                        fn_lams += b.2
+                        fn_tis += fn_ti
+                     |
+                        top_stmts += b.2
+                        top_mods += decl_module(b.0, 0)
+               [GlobalBinding gb]
+                  gb.2.kind [Lambda]
+                     |
+                        fn_ti = gb.1 [Fn] gb.1 | gb.2.ti
+                        fn_names += gb.0
+                        fn_lams += gb.2
+                        fn_tis += fn_ti
+                     |
+                        top_stmts += gb.2
+                        top_mods += decl_module(gb.0, 0)
+         // Pass 0: poison exported / foreign / unsafe functions and record shapes.
+         (?g.pexports > 0)
+            |
+               ?fn_names @ fi =>
+                  fname = fn_names(fi)!!
+                  <>(stmt::find_export_symbol(g.pexports, fname))
+                     |
+                        vra_add_poison_fn(fname)
+                        vra_poison_fn_sig_shapes(cg, fn_tis(fi)!!)
+         ?g.foreign_fn_names @ i => vra_add_poison_fn(g.foreign_fn_names(i)!!)
+         ?fn_names @ fi =>
+            fn_tis(fi)!!
+               [Fn f] (?f.4 > 0 | vra_add_poison_fn(fn_names(fi)!!))
+         ?g.pstmts @ i =>
+            pe = g.pstmts(i)!!
+            pe
+               [Foreign fd]
+                  vra_add_poison_fn(fd.dva_name)
+                  vra_add_poison_fn(fd.c_name)
+                  ?fd.params @ pi => vra_poison_ti_shapes(cg, fd.params(pi)!!.record_info)
+                  vra_poison_ti_shapes(cg, fd.ret_record_info)
+               [Assign t]
+                  has_cp = (t.8 [Fn f] (?f.4 > 0) | <->) ||
+                    (t.5 [Fn fe] (?fe.ct_params > 0) | <->)
+                  has_cp | vra_add_poison_fn(t.0)
+         ?top_stmts @ i =>
+            cg.current_module = top_mods(i)!!
+            vra_poison_scan_expr(cg, top_stmts(i)!!, fn_names, <->)
+         ?fn_names @ fi =>
+            cg.current_module = decl_module(fn_names(fi)!!, 0)
+            vra.changed = <->
+            vra_poison_scan_expr(cg, fn_lams(fi)!!, fn_names, <+>)
+            vra.changed | vra_poison_fn_sig_shapes(cg, fn_tis(fi)!!)
+         vra.changed = <->
+         vra_finalize_anon_merges!
+         // Phase 1: 4 Gauss-Seidel passes; if still changing, widen & narrow.
+         vra.skip_bot_params = <+>
+         4 @ iter_i =>
+            iter_i == 3 | vra_save_snapshots!
+            vra_run_one_pass(cg, top_stmts, top_mods, fn_names, fn_lams, fn_tis)
+            !vra.changed | -->
+         vra.changed
+            |
+               vra_prepare_widen_narrow!
+               vra.in_narrow = <+>
+               vra_run_one_pass(cg, top_stmts, top_mods, fn_names, fn_lams, fn_tis)
+               vra.in_narrow = <->
+               vra_restore_bot_from_snap(vra.field_rngs, vra.snap_field_rngs)
+               vra_restore_bot_from_snap(vra.anon_rngs, vra.snap_anon_rngs)
+               vra_restore_bot_from_snap(vra.param_rngs, vra.snap_param_rngs)
+               vra_restore_bot_from_snap(vra.fn_ret_rngs, vra.snap_fn_ret_rngs)
+               vra_finalize_anon_merges!
+         // Phase 2: Widen any still-Bottom params of unreached functions to Top.
+         widened = vra_widen_unvisited_bot_params(cg, fn_names, fn_lams, fn_tis)
+         widened
+            |
+               vra.skip_bot_params = <->
+               2 @ iter_j =>
+                  vra_run_one_pass(cg, top_stmts, top_mods, fn_names, fn_lams, fn_tis)
+                  !vra.changed | -->
+         // Phase 3: Post-fixed-point verification; widen any still-moving slot to Top.
+         vra.skip_bot_params = <->
+         vra.changed
+            |
+               3 @ iter_v =>
+                  vra_save_snapshots!
+                  vra_run_one_pass(cg, top_stmts, top_mods, fn_names, fn_lams, fn_tis)
+                  !vra.changed | -->
+                  !vra_widen_unconverged_slots! | -->
+                  vra_finalize_anon_merges!
+         cg.current_module = saved_mod
+         vra.cur_fn_name = ""
+         vra.locals = VraLocals()
+         vra.bounded_idxs = BoundedStrIdxs()
+         vra.len_vars = LenVarEntries()
+         vra.cur_muts = ast::Names()

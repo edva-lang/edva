@@ -421,7 +421,7 @@ lambda_type_env = cg =>
                | type_env::bind_generic(env, a.0, a.8)
                | annotate::is_fwd_assign(a)
                   | type_env::bind_local(env, a.0,
-                      annotate::utype_from_ti_env(env, a.8), a.8, a.1)
+                    annotate::utype_from_ti_env(env, a.8), a.8, a.1)
          [Foreign f] annotate::register_foreign_decl(env, f)
    types::g.typed_program_stmts @ st =>
       st
@@ -457,7 +457,7 @@ lambda_type_env = cg =>
             // Named functions already have a complete signature in the outer scope.
             !<>(type_env::lookup_generic(env, v.name)) &&
               !(ti [Prim p] p [Fn, Unknown] | <->)
-               | type_env::bind_local(env, v.name, ut, ti, <->)
+                 | type_env::bind_local(env, v.name, ut, ti, <->)
    env
 
 // Unify the whole generic call before emitting its argument lambdas. This lets
@@ -6674,7 +6674,7 @@ codegen_typed_check_addr_escape = cg, name, val, ti =>
                  (val.ti [Prim vt] types::is_ptr_vt(vt) | <->)
                ((is_addr && tast_is_block_scoped_addr(cg, val, threshold)) ||
                  tast_expr_has_scoped_addr(cg, val, threshold))
-                  | types::init_error(cg, "E3134", diag::E3134_addr_escape_lifecycle!, 0, 0)
+                    | types::init_error(cg, "E3134", diag::E3134_addr_escape_lifecycle!, 0, 0)
 
 names_contain: ast::Names, String => <>
 names_contain = xs, target =>
@@ -7001,7 +7001,7 @@ fn_body_has_arena_restore: types::Cg, tast::TypedExpr => <>
 fn_body_has_arena_restore = cg, te =>
    te.kind
       [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, Var, CycleJump,
-       PoisonError, ArrayNew, UserDiag, CompileTime, CtUnrollCycle] <->
+        PoisonError, ArrayNew, UserDiag, CompileTime, CtUnrollCycle] <->
       [Unary u] fn_body_has_arena_restore(cg, u.1)
       [Bin b] fn_body_has_arena_restore(cg, b.1) || fn_body_has_arena_restore(cg, b.2)
       [Member m] fn_body_has_arena_restore(cg, m.0)
@@ -7285,8 +7285,8 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                b_info = (is_fresh && !mut && !is_glob && cg.in_fn &&
                  ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 &&
                  (val.kind [BuilderNew]))
-                  | builder_var_non_escaping(cg, name)
-                  | (<->, <->)
+                    | builder_var_non_escaping(cg, name)
+                    | (<->, <->)
                can_stack_bldr = b_info.0
                b_info.1
                   | types::g.fast_freeze_builders += name
@@ -7354,9 +7354,9 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                        store_val = (!is_sp && (LLVMGetTypeKind(llvm_ty) == 8) &&
                                          (LLVMGetTypeKind(LLVMTypeOf(raw_store_val)) == 8) &&
                                          (LLVMTypeOf(raw_store_val) != llvm_ty))
-                                          | coerce_int_ext(cg, raw_store_val, llvm_ty,
-                                            types::is_unsigned_vt(ev.1))
-                                          | raw_store_val
+                                            | coerce_int_ext(cg, raw_store_val, llvm_ty,
+                                              types::is_unsigned_vt(ev.1))
+                                            | raw_store_val
                                        !is_loc && is_fresh &&
                                          (types::is_int_vt(vt) || types::is_float_vt(vt) || types::is_flag_vt(vt)) &&
                                          (LLVMIsConstant(store_val) != 0) &&
@@ -7431,6 +7431,15 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                                           |
                                              cg.closure_vars += name
                                              cg.closure_tgts += cg.last_closure_fn
+                           types::vra.enabled && cg.in_fn && is_fresh && !mut &&
+                             !cmp && !is_glob && !types::has_str(types::vra.cur_muts, name)
+                                |
+                                   types::vra_is_tracked_int_vt(vt)
+                                      |
+                                         r_ev = types::vra_eval(cg, val)
+                                         r_ev.state == 1
+                                            | types::vra.locals += types::VraLocal(name, r_ev)
+                                   types::vra_record_len_var(cg, name, val)
                            (ev.0, vt)
 
 try_compile_typed_assign: types::Cg, String, tast::TypedExpr, ast::TypeInfo, String,
@@ -7438,20 +7447,20 @@ try_compile_typed_assign: types::Cg, String, tast::TypedExpr, ast::TypeInfo, Str
 try_compile_typed_assign = cg, tname, val_e, ti, rname, fname =>
    cg.opts.is_module && types::is_external_module_name(cg, tname) &&
      !types::name_is_private(tname) && !types::has_dollar(tname)
-      | <->
-      |
-         is_match = tname != "" && (tname == rname || tname == fname ||
-           types::resolve_fn_name(cg, tname) == rname ||
-           types::decl_bare_name(tname, 0) == fname)
-         is_lam = val_e.kind [Lambda]
-         is_match && is_lam
-            |
-               lam = val_e.kind [Lambda l] l |
-                  (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
-               fn_ti = ti [Fn] ti | val_e.ti
-               codegen_typed_compile_fn(cg, tname, lam.0, lam.1, fn_ti, tname)
-               <+>
-            | <->
+        | <->
+        |
+           is_match = tname != "" && (tname == rname || tname == fname ||
+             types::resolve_fn_name(cg, tname) == rname ||
+             types::decl_bare_name(tname, 0) == fname)
+           is_lam = val_e.kind [Lambda]
+           is_match && is_lam
+              |
+                 lam = val_e.kind [Lambda l] l |
+                    (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
+                 fn_ti = ti [Fn] ti | val_e.ti
+                 codegen_typed_compile_fn(cg, tname, lam.0, lam.1, fn_ti, tname)
+                 <+>
+              | <->
 
 find_and_compile_typed_fn: types::Cg, String, String, Int, Int => <>
 find_and_compile_typed_fn = cg, rname, fname, i, n =>
@@ -7519,17 +7528,17 @@ compile_typed_fn_lazy = cg, name =>
    rname = types::resolve_fn_name(cg, name)
    cg.opts.is_module && types::is_external_module_name(cg, rname) &&
      !types::name_is_private(rname) && !types::has_dollar(rname)
-      | <->
-      |
-         has_fn = <>(types::fninfo_index(cg, rname)) || <>(types::fninfo_index(cg, name))
-         has_fn
-            | <+>
-            |
-               saved_in_fn = cg.in_fn
-               cg.in_fn = <->
-               res = find_and_compile_typed_fn(cg, rname, name, 0, ?types::g.typed_program_stmts)
-               cg.in_fn = saved_in_fn
-               res
+        | <->
+        |
+           has_fn = <>(types::fninfo_index(cg, rname)) || <>(types::fninfo_index(cg, name))
+           has_fn
+              | <+>
+              |
+                 saved_in_fn = cg.in_fn
+                 cg.in_fn = <->
+                 res = find_and_compile_typed_fn(cg, rname, name, 0, ?types::g.typed_program_stmts)
+                 cg.in_fn = saved_in_fn
+                 res
 
 codegen_typed_cycle_escape_construct: types::Cg, <>, <tast::TypedExpr|>, ast::TypeInfo => Addr
 codegen_typed_cycle_escape_construct = cg, is_pos, pay_opt, ti =>
@@ -7893,11 +7902,17 @@ codegen_typed_eval_indexed_cycle = cg, iterable, bfn, esc_opt, is_rune, ti =>
       |
          types::var_slot(cg, p1)
             | s => LLVMBuildStore(cg.builder, rel_i, s)
+   saved_vra_locs = ?types::vra.locals
+   saved_vra_bnds = ?types::vra.bounded_idxs
+   lam_params = bfn.kind [Lambda lam] lam.0 | ast::Names()
+   types::vra_push_cycle_bounds(cg, iterable, is_rune, lam_params, <->)
    bfn.kind
       [Lambda lam]
          main::codegen_typed_eval(cg, lam.1)
       |
          main::codegen_typed_eval(cg, bfn)
+   types::vra_truncate_locals(saved_vra_locs)
+   types::vra_truncate_bounded(saved_vra_bnds)
    cg.vars = truncate_vars(cg.vars, saved_body_vars)
    branch_to(cg, latch)
    LLVMPositionBuilderAtEnd(cg.builder, latch)
@@ -8303,6 +8318,14 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    saved_fn_body = types::g.current_fn_body
    saved_fn_has_restore = types::g.current_fn_has_restore
    types::g.current_fn_has_restore = <->
+   saved_vra_locs = types::vra.locals
+   saved_vra_muts = types::vra.cur_muts
+   saved_vra_bnds = types::vra.bounded_idxs
+   saved_vra_lvs = types::vra.len_vars
+   types::vra.locals = types::VraLocals()
+   types::vra.bounded_idxs = types::BoundedStrIdxs()
+   types::vra.len_vars = types::LenVarEntries()
+   types::vra.cur_muts = types::vra_collect_mut_vars(params, body)
    saved_fast_freeze_b = types::g.fast_freeze_builders
    types::g.fast_freeze_builders = ast::Names()
    saved_aliases_n = ?cg.fn_alias_names
@@ -8416,6 +8439,11 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
       pdt = types::ensure_ti_dtype(cg, pti)
       cg.vars += types::CgVar(pname, pvt_j, types::is_ptrish_vt(pvt_j) && !is_ram, pdt,
         prm_0_opt, prm_1, <+ pslot +>, <+>, <->, pfvts, <-->)
+      types::vra.enabled && types::vra_is_tracked_int_vt(pvt_j) &&
+        !types::has_str(types::vra.cur_muts, pname)
+           |
+              pr = types::vra_lookup_param_for_codegen(name, j)
+              pr.state == 1 | types::vra.locals += types::VraLocal(pname, pr)
 
    is_rso = is_dyn_reload_so_fn(cg, name)
    is_r = is_dyn_reload_fn(cg, name)
@@ -8461,7 +8489,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
                                           |
                                              ret_k == 10 && bv_k == 12
                                                 | match::convert_heap_ram_to_unboxed(
-                                                  cg, bv_val, real_ret_ti)
+                                                   cg, bv_val, real_ret_ti)
                                                 | bv_val
                                     | bv_val
                                  expr::coerce_ret_ptr_int(cg, ret_coerced, ret_ll,
@@ -8479,6 +8507,10 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    cg.cycle_conts = saved_conts
    types::g.current_fn_body = saved_fn_body
    types::g.current_fn_has_restore = saved_fn_has_restore
+   types::vra.locals = saved_vra_locs
+   types::vra.cur_muts = saved_vra_muts
+   types::vra.bounded_idxs = saved_vra_bnds
+   types::vra.len_vars = saved_vra_lvs
    cg.vars = truncate_vars(cg.vars, saved_nvars)
    cg.bindings = saved_bindings
    cg.fn_var_start = saved_var_start

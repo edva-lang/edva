@@ -1518,7 +1518,7 @@ choice.exit:                                      ; preds = %choice.else, %choic
   store i64 %choice.res, ptr %var.ms, align 8
   %var.load2 = load ptr, ptr %var.ts_ptr, align 8
   %var.load3 = load i64, ptr %var.ms, align 8
-  %divtmp = sdiv i64 %var.load3, 1000
+  %divtmp = udiv i64 %var.load3, 1000
   %raw.int = ptrtoint ptr %var.load2 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
@@ -1536,7 +1536,7 @@ addr_ok:                                          ; preds = %tag.slow_check, %ch
   %addtmp = add i64 %ptr.int.l, 8
   %ptr.res = inttoptr i64 %addtmp to ptr
   %var.load5 = load i64, ptr %var.ms, align 8
-  %modtmp = srem i64 %var.load5, 1000
+  %modtmp = urem i64 %var.load5, 1000
   %multmp = mul i64 %modtmp, 1000000
   %raw.int6 = ptrtoint ptr %ptr.res to i64
   %raw.clean.int7 = and i64 %raw.int6, 281474976710655

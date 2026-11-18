@@ -85,6 +85,7 @@
    LLVMBuildXor: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildShl: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildLShr: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
+   LLVMBuildAShr: (Builder: Addr, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMBuildFCmp: (Builder: Addr, Op: Int, LHS: Addr, RHS: Addr, Name: String) => Addr
    LLVMCanValueUseFastMathFlags: (Inst: Addr) => Int
    LLVMGetFastMathFlags: (FPMathInst: Addr) => Int
@@ -238,3 +239,8 @@
    LLVMGetEnumAttributeKindForName: (Name: String, SLen: Int) => Int
    LLVMCreateEnumAttribute: (C: Addr, KindID: Int, Val: Int) => Addr
    LLVMAddAttributeAtIndex: (F: Addr, Idx: Int, A: Addr) => ()
+   LLVMGetMDKindIDInContext: (C: Addr, Name: String, SLen: Int) => Int
+   LLVMValueAsMetadata: (Val: Addr) => Addr
+   LLVMMDNodeInContext2: (C: Addr, MDs: Addr, Count: Int) => Addr
+   LLVMMetadataAsValue: (C: Addr, MD: Addr) => Addr
+   LLVMSetMetadata: (Val: Addr, KindID: Int, Node: Addr) => ()

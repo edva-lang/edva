@@ -246,6 +246,8 @@ declare ptr @LLVMBuildShl(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildLShr(ptr, ptr, ptr, ptr)
 
+declare ptr @LLVMBuildAShr(ptr, ptr, ptr, ptr)
+
 declare ptr @LLVMBuildFCmp(ptr, i64, ptr, ptr, ptr)
 
 declare i64 @LLVMCanValueUseFastMathFlags(ptr)
@@ -551,6 +553,16 @@ declare i64 @LLVMGetEnumAttributeKindForName(ptr, i64)
 declare ptr @LLVMCreateEnumAttribute(ptr, i64, i64)
 
 declare void @LLVMAddAttributeAtIndex(ptr, i64, ptr)
+
+declare i64 @LLVMGetMDKindIDInContext(ptr, ptr, i64)
+
+declare ptr @LLVMValueAsMetadata(ptr)
+
+declare ptr @LLVMMDNodeInContext2(ptr, ptr, i64)
+
+declare ptr @LLVMMetadataAsValue(ptr, ptr)
+
+declare void @LLVMSetMetadata(ptr, i64, ptr)
 
 attributes #0 = { "nounwind" }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

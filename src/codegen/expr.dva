@@ -6102,6 +6102,136 @@ codegen_typed_eval_bin = cg, op, lhs, rhs, ut, ti =>
                            types::g.stack_alloc_next = <->
                            nf_res
 
+codegen_emit_div_guard_sel: types::Cg, Addr, Addr, <>, <> => ()
+codegen_emit_div_guard_sel = cg, l_val, r_val, need_zero, need_ovf =>
+   (need_zero || need_ovf)
+      |
+         l_opt = types::llvm_val_opt(l_val)
+         r_opt = types::llvm_val_opt(r_val)
+         <>(l_opt) && <>(r_opt)
+            |
+               l_ty = LLVMTypeOf(l_opt!!)
+               r_ty = LLVMTypeOf(r_opt!!)
+               (LLVMGetTypeKind(l_ty) == 8 && LLVMGetTypeKind(r_ty) == 8)
+                  |
+                     cur0 = LLVMGetInsertBlock(cg.builder)
+                     parent = LLVMGetBasicBlockParent(cur0)
+                     need_zero
+                        |
+                           zero = LLVMConstInt(r_ty, 0, 0)
+                           is_zero = LLVMBuildICmp(cg.builder, 32, r_opt!!, zero, "div.is.zero")
+                           not_zero_bb = LLVMAppendBasicBlock(parent, "div.notzero")
+                           zero_abort_bb = LLVMAppendBasicBlock(parent, "div.zero_abort")
+                           LLVMBuildCondBr(cg.builder, is_zero, zero_abort_bb, not_zero_bb)
+                           LLVMPositionBuilderAtEnd(cg.builder, zero_abort_bb)
+                           runtime::emit_abort_msg(cg, "E4012: integer division by zero\n",
+                             "div_zero_msg")
+                           LLVMBuildBr(cg.builder, not_zero_bb)
+                           LLVMPositionBuilderAtEnd(cg.builder, not_zero_bb)
+                     need_ovf
+                        |
+                           w = LLVMGetIntTypeWidth(l_ty)
+                           min_val = w
+                              [64] const::min_i64
+                              [32] const::min_i32
+                              [16] const::min_i16
+                              [8]  const::min_i8
+                              | 0 - (1 .<. (w - 1))
+                           int_min = LLVMConstInt(l_ty, min_val, 1)
+                           minus_one = LLVMConstInt(r_ty, -1, 1)
+                           is_min = LLVMBuildICmp(cg.builder, 32, l_opt!!, int_min, "div.is.min")
+                           is_neg_one = LLVMBuildICmp(cg.builder, 32, r_opt!!, minus_one,
+                             "div.is.negone")
+                           is_ovf = LLVMBuildAnd(cg.builder, is_min, is_neg_one, "div.is.ovf")
+                           ok_bb = LLVMAppendBasicBlock(parent, "div.ok")
+                           ovf_abort_bb = LLVMAppendBasicBlock(parent, "div.ovf_abort")
+                           LLVMBuildCondBr(cg.builder, is_ovf, ovf_abort_bb, ok_bb)
+                           LLVMPositionBuilderAtEnd(cg.builder, ovf_abort_bb)
+                           runtime::emit_abort_msg(cg,
+                             "E4013: signed integer division overflow (INT_MIN / -1)\n",
+                             "div_ovf_msg")
+                           LLVMBuildBr(cg.builder, ok_bb)
+                           LLVMPositionBuilderAtEnd(cg.builder, ok_bb)
+
+pow2_shift_at: Int, Int => Int
+pow2_shift_at = d, k =>
+   k !< 62 || (1 .<. k) == d
+      | k
+      | pow2_shift_at(d, k + 1)
+
+codegen_eval_int_divmod_vra: types::Cg, ast::BinaryOp, tast::TypedExpr,
+  tast::TypedExpr, (Addr, ast::ValueType), (Addr, ast::ValueType),
+  ast::TypeInfo => (Addr, ast::ValueType)
+codegen_eval_int_divmod_vra = cg, op, lhs, rhs, lv, rv, ti =>
+   ret_vt = types::vt_from_ti(ti)
+   tgt_vt = ret_vt [Unknown, Unit] lv.1 | ret_vt
+   tgt_ty = LLVMInt64Type!
+   ext_l' = stmt::coerce_int_ext(cg, lv.0, tgt_ty, types::is_unsigned_vt(lv.1))
+   ext_r' = stmt::coerce_int_ext(cg, rv.0, tgt_ty, types::is_unsigned_vt(rv.1))
+   l_rng = types::vra_eval(cg, lhs)
+   r_rng = types::vra_eval(cg, rhs)
+   need_zero = !(r_rng.state == 1 && (r_rng.lo > 0 || r_rng.hi < 0))
+   safe_l_min = l_rng.state == 1 && l_rng.lo > const::min_i64
+   safe_r_m1 = r_rng.state == 1 && (r_rng.lo > -1 || r_rng.hi < -1)
+   need_ovf = !safe_l_min && !safe_r_m1
+   codegen_emit_div_guard_sel(cg, ext_l', ext_r', need_zero, need_ovf)
+   both_nonneg_pos = l_rng.state == 1 && l_rng.lo !< 0 && r_rng.state == 1 && r_rng.lo > 0
+   is_const_pow2 = r_rng.state == 1 && r_rng.lo == r_rng.hi &&
+     r_rng.lo > 1 && (r_rng.lo .&. (r_rng.lo - 1)) == 0
+   res_val = both_nonneg_pos
+      |
+         (op [Div]) && types::is_wasm_target(cg) && !is_const_pow2 && l_rng.hi !> 4294967295
+            |
+               r_rng.hi !> 4294967295
+                  |
+                     i32t = LLVMInt32Type!
+                     l32 = LLVMBuildTrunc(cg.builder, ext_l', i32t, "udiv.l32")
+                     r32 = LLVMBuildTrunc(cg.builder, ext_r', i32t, "udiv.r32")
+                     q32 = LLVMBuildUDiv(cg.builder, l32, r32, "udiv.q32")
+                     LLVMBuildZExt(cg.builder, q32, tgt_ty, "udiv.q64")
+                  |
+                     cur = LLVMGetInsertBlock(cg.builder)
+                     parent = LLVMGetBasicBlockParent(cur)
+                     gt_bb = LLVMAppendBasicBlock(parent, "udiv.gt_zero")
+                     div_bb = LLVMAppendBasicBlock(parent, "udiv.do32")
+                     merge_bb = LLVMAppendBasicBlock(parent, "udiv.merge")
+                     is_gt = LLVMBuildICmp(cg.builder, 34, ext_r', ext_l', "udiv.gt")
+                     LLVMBuildCondBr(cg.builder, is_gt, gt_bb, div_bb)
+                     LLVMPositionBuilderAtEnd(cg.builder, gt_bb)
+                     LLVMBuildBr(cg.builder, merge_bb)
+                     LLVMPositionBuilderAtEnd(cg.builder, div_bb)
+                     i32t = LLVMInt32Type!
+                     l32 = LLVMBuildTrunc(cg.builder, ext_l', i32t, "udiv.l32")
+                     r32 = LLVMBuildTrunc(cg.builder, ext_r', i32t, "udiv.r32")
+                     q32 = LLVMBuildUDiv(cg.builder, l32, r32, "udiv.q32")
+                     q64 = LLVMBuildZExt(cg.builder, q32, tgt_ty, "udiv.q64")
+                     LLVMBuildBr(cg.builder, merge_bb)
+                     LLVMPositionBuilderAtEnd(cg.builder, merge_bb)
+                     phi = LLVMBuildPhi(cg.builder, tgt_ty, "divtmp")
+                     stmt::llvm_add_incoming1(cg, phi, LLVMConstInt(tgt_ty, 0, 0), gt_bb)
+                     stmt::llvm_add_incoming1(cg, phi, q64, div_bb)
+                     phi
+            |
+               op [Div]
+                  | LLVMBuildUDiv(cg.builder, ext_l', ext_r', "divtmp")
+                  | LLVMBuildURem(cg.builder, ext_l', ext_r', "modtmp")
+      |
+         op [Div]
+            |
+               is_const_pow2 && types::is_wasm_target(cg)
+                  |
+                     sh = pow2_shift_at(r_rng.lo, 1)
+                     sign_m = LLVMBuildAShr(cg.builder, ext_l',
+                       LLVMConstInt(tgt_ty, 63, 0), "sdiv.sign")
+                     bias = LLVMBuildAnd(cg.builder, sign_m,
+                       LLVMConstInt(tgt_ty, r_rng.lo - 1, 0), "sdiv.bias")
+                     biased = LLVMBuildAdd(cg.builder, ext_l', bias, "sdiv.biased")
+                     LLVMBuildAShr(cg.builder, biased,
+                       LLVMConstInt(tgt_ty, sh, 0), "divtmp")
+                  | LLVMBuildSDiv(cg.builder, ext_l', ext_r', "divtmp")
+            | LLVMBuildSRem(cg.builder, ext_l', ext_r', "modtmp")
+   (res_val, tgt_vt)
+
 codegen_typed_eval_bin_nonflat: types::Cg, ast::BinaryOp, tast::TypedExpr,
   tast::TypedExpr, unify::UType, ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_bin_nonflat = cg, op, lhs, rhs, ut, ti =>
@@ -6157,9 +6287,23 @@ codegen_typed_eval_bin_nonflat = cg, op, lhs, rhs, ut, ti =>
                           (rv'.0, rv'.1, r_rt', r_fvts', rhs_num))
                         |
                            (op [Add]) && l_is_str |
-                             (types::g.stack_alloc_next = want_nf_sa)
-                           ba_res = codegen_typed_eval_bin_arith_evaled(cg,
-                             op, lv', rv', ut, ti)
+                              (types::g.stack_alloc_next = want_nf_sa)
+                           ret_vt0 = types::vt_from_ti(ti)
+                           tgt_vt0 = ret_vt0 [Unknown, Unit] lv'.1 | ret_vt0
+                           l_is_ptr0 = types::is_ptr_vt(lv'.1) ||
+                             (types::llvm_val_opt(lv'.0) | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 12 | <->)
+                           r_is_ptr0 = types::is_ptr_vt(rv'.1) ||
+                             (types::llvm_val_opt(rv'.0) | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 12 | <->)
+                           use_vra_dm = types::vra.enabled && (op [Div, Mod]) &&
+                             !l_is_ptr0 && !r_is_ptr0 &&
+                             types::vra_is_tracked_int_vt(lv'.1) &&
+                             types::vra_is_tracked_int_vt(rv'.1) &&
+                             types::vra_is_tracked_int_vt(tgt_vt0) &&
+                             <>(types::llvm_val_opt(lv'.0)) && <>(types::llvm_val_opt(rv'.0))
+                           ba_res = use_vra_dm
+                              | codegen_eval_int_divmod_vra(cg, op, lhs, rhs, lv', rv', ti)
+                              | codegen_typed_eval_bin_arith_evaled(cg,
+                                op, lv', rv', ut, ti)
                            types::g.stack_alloc_next = <->
                            ba_res
 
@@ -6173,7 +6317,21 @@ codegen_typed_eval_bin_arith = cg, op, lhs, rhs, ut, ti =>
          tname1 = rhs.ti [TypeVar tv] tv | (rhs.ut [Enum ue] ue.name | "")
          tname = tname0 != "" | tname0 | tname1
          tname != "" | cg.last_type = tname
-   codegen_typed_eval_bin_arith_evaled(cg, op, lv, rv, ut, ti)
+   ret_vt0 = types::vt_from_ti(ti)
+   tgt_vt0 = ret_vt0 [Unknown, Unit] lv.1 | ret_vt0
+   l_is_ptr0 = types::is_ptr_vt(lv.1) ||
+     (types::llvm_val_opt(lv.0) | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 12 | <->)
+   r_is_ptr0 = types::is_ptr_vt(rv.1) ||
+     (types::llvm_val_opt(rv.0) | v => LLVMGetTypeKind(LLVMTypeOf(v)) == 12 | <->)
+   use_vra_dm = types::vra.enabled && (op [Div, Mod]) &&
+     !l_is_ptr0 && !r_is_ptr0 &&
+     types::vra_is_tracked_int_vt(lv.1) &&
+     types::vra_is_tracked_int_vt(rv.1) &&
+     types::vra_is_tracked_int_vt(tgt_vt0) &&
+     <>(types::llvm_val_opt(lv.0)) && <>(types::llvm_val_opt(rv.0))
+   use_vra_dm
+      | codegen_eval_int_divmod_vra(cg, op, lhs, rhs, lv, rv, ti)
+      | codegen_typed_eval_bin_arith_evaled(cg, op, lv, rv, ut, ti)
 
 codegen_typed_eval_bin_arith_evaled: types::Cg, ast::BinaryOp, (Addr, ast::ValueType),
   (Addr, ast::ValueType), unify::UType, ast::TypeInfo => (Addr, ast::ValueType)
@@ -6712,6 +6870,16 @@ codegen_typed_eval_member_val = cg, target, vname, fname, idx, ti =>
                              | types::llvm_type_of_vt(vt)
                            val = LLVMBuildLoad2(
                               cg.builder, ty, fgep, "fld.load")
+                           types::vra.enabled && types::vra.whole_prog &&
+                             (fld_st_ty == LLVMInt64Type!) &&
+                             (ty == LLVMInt64Type!) &&
+                             types::vra_is_tracked_int_vt(vt)
+                                |
+                                   fr = types::vra_lookup_field_for_load(cg, tgt_ti,
+                                     lookup_idx)
+                                   fr.state == 1
+                                      | types::attach_i64_range_md(cg, val,
+                                        fr.lo, fr.hi)
                            (val, vt)
                   | (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
 
@@ -8813,8 +8981,9 @@ codegen_typed_eval_index = cg, target, index, ti =>
                      iv_str = main::codegen_typed_eval(cg, index)
                      idx_i64' = main::codegen_widen_idx_to_i64(cg, iv_str.0, iv_str.1,
                        "idx")
-                     main::codegen_emit_runtime_bounds_check(cg, iv_str.0, iv_str.1,
-                       len_val, "str_oob_msg")
+                     !types::vra_is_bounded_str_access(cg, target, index)
+                        | main::codegen_emit_runtime_bounds_check(cg, iv_str.0,
+                          iv_str.1, len_val, "str_oob_msg")
                      byte_ptr = types::gep1(cg, i8t, data_ptr, idx_i64', "s.byte.gep")
                      byte_val = LLVMBuildLoad2(cg.builder, i8t, byte_ptr,
                        "s.byte")
@@ -8876,7 +9045,13 @@ codegen_typed_eval_index = cg, target, index, ti =>
                                     ast::FieldTypes()
                                  rec_nf = ?r_flds
                                  rec_count = rec_nf > 0 | rec_nf | (tgt_nm != "" | ?match::var_fvts(cg, tgt_nm) | 0)
-                                 rec_count > 0 | main::codegen_emit_index_bounds_check(cg, iv.0, iv.1, rec_count)
+                                 idx_rng_r = types::vra.enabled
+                                    | types::vra_eval(cg, index)
+                                    | types::vra_top!
+                                 need_rec_oob_r = rec_count > 0 && !(idx_rng_r.state == 1 &&
+                                   idx_rng_r.lo !< 0 && idx_rng_r.hi < rec_count)
+                                 need_rec_oob_r
+                                    | main::codegen_emit_index_bounds_check(cg, iv.0, iv.1, rec_count)
                                  has_flds = ?r_flds > 0
                                  elem_ti = has_flds | r_flds(0)!!.rec_type |
                                     ast::TypeInfo(Prim, ret_vt)
@@ -9052,7 +9227,13 @@ codegen_typed_eval_index_write = cg, target, index, val, ti =>
                      r_flds = target.ti [Rec r] r.0 | ast::FieldTypes()
                      rec_nf = ?r_flds
                      rec_count = rec_nf > 0 | rec_nf | (tgt_nm != "" | ?match::var_fvts(cg, tgt_nm) | 0)
-                     rec_count > 0 | main::codegen_emit_index_bounds_check(cg, iv.0, iv.1, rec_count)
+                     idx_rng_w = types::vra.enabled
+                        | types::vra_eval(cg, index)
+                        | types::vra_top!
+                     need_rec_oob_w = rec_count > 0 && !(idx_rng_w.state == 1 &&
+                       idx_rng_w.lo !< 0 && idx_rng_w.hi < rec_count)
+                     need_rec_oob_w
+                        | main::codegen_emit_index_bounds_check(cg, iv.0, iv.1, rec_count)
                      has_flds = ?r_flds > 0
                      elem_ti = has_flds | r_flds(0)!!.rec_type | ast::TypeInfo(Prim, vv.1)
                      elem_vt = types::vt_from_ti(elem_ti)

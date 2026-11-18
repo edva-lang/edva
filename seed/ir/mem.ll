@@ -1939,12 +1939,12 @@ choice.exit11:                                    ; preds = %ret.dead, %choice.e
   %fld.gep14 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load13, i32 0, i32 4
   %fld.load15 = load i64, ptr %fld.gep14, align 8
   %div.is.zero = icmp eq i64 %fld.load15, 0
-  br i1 %div.is.zero, label %div.zero_abort, label %div.not_zero
+  br i1 %div.is.zero, label %div.zero_abort, label %div.notzero
 
 ret.dead:                                         ; No predecessors!
   br label %choice.exit11
 
-div.not_zero:                                     ; preds = %abort.dead, %choice.exit11
+div.notzero:                                      ; preds = %abort.dead, %choice.exit11
   %div.is.min = icmp eq i64 %var.load12, -9223372036854775808
   %div.is.negone = icmp eq i64 %fld.load15, -1
   %div.is.ovf = and i1 %div.is.min, %div.is.negone
@@ -1955,9 +1955,9 @@ div.zero_abort:                                   ; preds = %choice.exit11
   unreachable
 
 abort.dead:                                       ; No predecessors!
-  br label %div.not_zero
+  br label %div.notzero
 
-div.ok:                                           ; preds = %abort.dead16, %div.not_zero
+div.ok:                                           ; preds = %abort.dead16, %div.notzero
   %divtmp = sdiv i64 %var.load12, %fld.load15
   store i64 %divtmp, ptr %var.idx, align 8
   %var.load17 = load i64, ptr %var.off, align 8
@@ -1965,16 +1965,16 @@ div.ok:                                           ; preds = %abort.dead16, %div.
   %fld.gep19 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load18, i32 0, i32 4
   %fld.load20 = load i64, ptr %fld.gep19, align 8
   %div.is.zero21 = icmp eq i64 %fld.load20, 0
-  br i1 %div.is.zero21, label %div.zero_abort23, label %div.not_zero22
+  br i1 %div.is.zero21, label %div.zero_abort23, label %div.notzero22
 
-div.ovf_abort:                                    ; preds = %div.not_zero
+div.ovf_abort:                                    ; preds = %div.notzero
   call void @dva_abort_div_ovf_msg()
   unreachable
 
 abort.dead16:                                     ; No predecessors!
   br label %div.ok
 
-div.not_zero22:                                   ; preds = %abort.dead24, %div.ok
+div.notzero22:                                    ; preds = %abort.dead24, %div.ok
   %div.is.min25 = icmp eq i64 %var.load17, -9223372036854775808
   %div.is.negone26 = icmp eq i64 %fld.load20, -1
   %div.is.ovf27 = and i1 %div.is.min25, %div.is.negone26
@@ -1985,14 +1985,14 @@ div.zero_abort23:                                 ; preds = %div.ok
   unreachable
 
 abort.dead24:                                     ; No predecessors!
-  br label %div.not_zero22
+  br label %div.notzero22
 
-div.ok28:                                         ; preds = %abort.dead30, %div.not_zero22
+div.ok28:                                         ; preds = %abort.dead30, %div.notzero22
   %modtmp = srem i64 %var.load17, %fld.load20
   %cmptmp31 = icmp ne i64 %modtmp, 0
   br i1 %cmptmp31, label %choice.then32, label %choice.exit33
 
-div.ovf_abort29:                                  ; preds = %div.not_zero22
+div.ovf_abort29:                                  ; preds = %div.notzero22
   call void @dva_abort_div_ovf_msg()
   unreachable
 

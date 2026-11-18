@@ -12063,8 +12063,8 @@ choice.then16:                                    ; preds = %str_ok9
   %s.read.data = getelementptr inbounds { i64, ptr }, ptr %var.load19, i32 0, i32 1
   %s.read.data22 = load ptr, ptr %s.read.data, align 8
   %var.load23 = load i64, ptr %var.i, align 8
-  %idx.neg = icmp slt i64 %var.load23, 0
-  br i1 %idx.neg, label %idx_oob, label %idx_big_check
+  %idx.oob = icmp uge i64 %var.load23, %s.read.len21
+  br i1 %idx.oob, label %idx_oob, label %idx_ok
 
 choice.else17:                                    ; preds = %str_ok9
   %var.load37 = load i64, ptr %var.acc, align 8
@@ -12074,11 +12074,7 @@ choice.exit18:                                    ; preds = %choice.else17, %cho
   %choice.res38 = phi i64 [ %choice.res36, %choice.exit30 ], [ %var.load37, %choice.else17 ]
   br label %choice.exit
 
-idx_big_check:                                    ; preds = %choice.then16
-  %idx.big = icmp sge i64 %var.load23, %s.read.len21
-  br i1 %idx.big, label %idx_oob, label %idx_ok
-
-idx_ok:                                           ; preds = %abort.dead, %idx_big_check
+idx_ok:                                           ; preds = %abort.dead, %choice.then16
   %s.byte.gep = getelementptr i8, ptr %s.read.data22, i64 %var.load23
   %s.byte = load i8, ptr %s.byte.gep, align 1
   %s.byte.val = zext i8 %s.byte to i64
@@ -12087,7 +12083,7 @@ idx_ok:                                           ; preds = %abort.dead, %idx_bi
   %cmptmp26 = icmp sge i64 %var.load24, 48
   br i1 %cmptmp26, label %and.164.then, label %and.164.else
 
-idx_oob:                                          ; preds = %idx_big_check, %choice.then16
+idx_oob:                                          ; preds = %choice.then16
   call void @dva_abort_str_oob_msg()
   unreachable
 

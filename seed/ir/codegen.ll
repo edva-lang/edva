@@ -25,8 +25,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.runtime::empty_fndef" = external global ptr
 @"var.types::codegen_layout" = external global ptr
 @"var.ast::cell_var_names" = external global ptr
-@"var.diag::capture_enabled" = external global i1
-@"var.diag::captured_diags" = external global ptr
 @"var.const::pi" = external global double
 @"var.const::tau" = external global double
 @"var.const::e" = external global double
@@ -61,6 +59,8 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.const::min_f32" = external global float
 @"var.const::sub_f32" = external global float
 @"var.const::eps_f32" = external global float
+@"var.diag::capture_enabled" = external global i1
+@"var.diag::captured_diags" = external global ptr
 @"var.layout::target_triple" = external global ptr
 @"var.sys::STDIN" = external global i64
 @"var.sys::STDOUT" = external global i64
@@ -106,6 +106,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.path::IS_WIN" = external global i1
 @"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
+@"var.types::vra" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"codegen::default_codegen_opts", ptr null }
 @"var.codegen::default_codegen_opts" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"codegen::decl_bare_name", ptr null }
@@ -346,6 +347,8 @@ declare ptr @LLVMBuildXor(ptr, ptr, ptr, ptr)
 declare ptr @LLVMBuildShl(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildLShr(ptr, ptr, ptr, ptr)
+
+declare ptr @LLVMBuildAShr(ptr, ptr, ptr, ptr)
 
 declare ptr @LLVMBuildFCmp(ptr, i64, ptr, ptr, ptr)
 
@@ -652,6 +655,16 @@ declare i64 @LLVMGetEnumAttributeKindForName(ptr, i64)
 declare ptr @LLVMCreateEnumAttribute(ptr, i64, i64)
 
 declare void @LLVMAddAttributeAtIndex(ptr, i64, ptr)
+
+declare i64 @LLVMGetMDKindIDInContext(ptr, ptr, i64)
+
+declare ptr @LLVMValueAsMetadata(ptr)
+
+declare ptr @LLVMMDNodeInContext2(ptr, ptr, i64)
+
+declare ptr @LLVMMetadataAsValue(ptr, ptr)
+
+declare void @LLVMSetMetadata(ptr, i64, ptr)
 
 declare i32 @open(ptr, i32)
 

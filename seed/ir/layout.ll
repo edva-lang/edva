@@ -544,13 +544,13 @@ choice.else:                                      ; preds = %entry
   %subtmp = sub i64 %addtmp, 1
   %var.load4 = load i64, ptr %var.align, align 8
   %div.is.zero = icmp eq i64 %var.load4, 0
-  br i1 %div.is.zero, label %div.zero_abort, label %div.not_zero
+  br i1 %div.is.zero, label %div.zero_abort, label %div.notzero
 
 choice.exit:                                      ; preds = %div.ok, %choice.then
   %choice.res = phi i64 [ %var.load1, %choice.then ], [ %multmp, %div.ok ]
   ret i64 %choice.res
 
-div.not_zero:                                     ; preds = %abort.dead, %choice.else
+div.notzero:                                      ; preds = %abort.dead, %choice.else
   %div.is.min = icmp eq i64 %subtmp, -9223372036854775808
   %div.is.negone = icmp eq i64 %var.load4, -1
   %div.is.ovf = and i1 %div.is.min, %div.is.negone
@@ -561,15 +561,15 @@ div.zero_abort:                                   ; preds = %choice.else
   unreachable
 
 abort.dead:                                       ; No predecessors!
-  br label %div.not_zero
+  br label %div.notzero
 
-div.ok:                                           ; preds = %abort.dead5, %div.not_zero
+div.ok:                                           ; preds = %abort.dead5, %div.notzero
   %divtmp = sdiv i64 %subtmp, %var.load4
   %var.load6 = load i64, ptr %var.align, align 8
   %multmp = mul i64 %divtmp, %var.load6
   br label %choice.exit
 
-div.ovf_abort:                                    ; preds = %div.not_zero
+div.ovf_abort:                                    ; preds = %div.notzero
   call void @dva_abort_div_ovf_msg()
   unreachable
 
