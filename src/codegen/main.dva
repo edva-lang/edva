@@ -2239,6 +2239,8 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
    arena_raw = LLVMBuildLoad2(cg.builder, i8p, arena_gep, "rec.arena")
    arena_tls = LLVMGetNamedGlobal(cg.module, "dva_arena_tls")
    LLVMBuildStore(cg.builder, arena_raw, arena_tls)
+   active_arena_tls = LLVMGetNamedGlobal(cg.module, "dva_active_arena_tls")
+   LLVMBuildStore(cg.builder, arena_raw, active_arena_tls)
    arena_base_tls = LLVMGetNamedGlobal(cg.module, "dva_arena_base_tls")
    LLVMBuildStore(cg.builder, arena_raw, arena_base_tls)
    active_gen_tls = LLVMGetNamedGlobal(cg.module, "dva_active_gen_tls")
@@ -2291,6 +2293,8 @@ codegen_emit_thread_wrapper = cg, wfn, wfty, nargs, arg_ts, ret_vt, is_cap =>
    LLVMBuildStore(cg.builder, LLVMConstNull(i8p), thread_tls_global(cg))
    LLVMBuildStore(cg.builder, LLVMConstNull(i8p), arena_tls)
    LLVMBuildStore(cg.builder, LLVMConstNull(i8p), arena_base_tls)
+   LLVMBuildStore(cg.builder, LLVMGetNamedGlobal(cg.module, "global_arena"),
+      active_arena_tls)
    LLVMBuildStore(cg.builder, LLVMConstInt(LLVMInt64Type!, 0, 0), active_gen_tls)
    LLVMBuildRet(cg.builder, LLVMConstNull(i8p))
    LLVMPositionBuilderAtEnd(cg.builder, saved_bb)

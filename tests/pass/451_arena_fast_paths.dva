@@ -1,0 +1,42 @@
+#use io
+#use mem
+#use sys
+
+check: <>, String => ()
+check = ok, label =>
+   !ok |
+      io::out(label)
+      sys::exit(1)
+
+run: () => ()
+run = !=>
+   base = mem::current!
+   a = mem::arena(64)
+   p = mem::alloc(a, 1)
+   q = mem::alloc(a, 17)
+   r = mem::alloc(a, 16)
+   check(mem::is_aligned(p, 16) && mem::is_aligned(q, 16), "alignment")
+   check(Int(q) - Int(p) == 16 && Int(r) - Int(q) == 32, "bump offsets")
+   st = mem::stats(a)
+   check(st.num_chunks == 1 && st.bytes_allocated == 64, "exact chunk fit")
+   mark = mem::save(a)
+   mem::alloc(a, 1)
+   check(mem::stats(a).num_chunks == 2, "chunk growth")
+   mem::restore_to(a, mark)
+   st2 = mem::stats(a)
+   check(st2.bytes_allocated == 64, "restore full chunk")
+   mem::reset(a)
+   check(mem::stats(a).bytes_allocated == 0, "reset")
+   mem::alloc(a, 64)
+   check(mem::stats(a).num_chunks == 1, "allocate after reset")
+   mem::destroy(a)
+
+   selected = mem::arena(65536)
+   old = mem::set_current(selected.raw)
+   check(old == base && mem::current! == selected.raw, "select arena")
+   previous = mem::set_current(Addr(0))
+   check(previous == selected.raw && mem::current! == base, "restore base arena")
+   mem::destroy(selected)
+   io::out("arena bump, growth, restore and TLS: ok")
+
+run!

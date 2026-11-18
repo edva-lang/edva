@@ -1,0 +1,5 @@
+#use mem
+
+// A size whose 16-byte alignment wraps must never reach the bump path.
+a = mem::arena(64)
+mem::alloc(a, -1)

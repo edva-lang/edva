@@ -2496,22 +2496,28 @@ if printf 'int main(void){return 0;}\n' | clang -Qunused-arguments -Wno-unused-c
     fi
     clang -Qunused-arguments -Wno-unused-command-line-argument -Wno-override-module -fsanitize=thread -O1 -pthread "$T53_DIR/tsan_446_attr.ll" -lm -o "$T53_DIR/tsan_446_bin" 2>"$T53_DIR/link.err"
     set +e
-    (ulimit -S -v unlimited 2>/dev/null || true; timeout 60 "$T53_DIR/tsan_446_bin" >"$T53_DIR/run.out" 2>"$T53_DIR/run.err")
+    timeout 60 "$T53_DIR/tsan_446_bin" >"$T53_DIR/run.out" 2>"$T53_DIR/run.err"
     rc=$?
     set -e
-    if [ $rc -ne 0 ] || grep -q "ThreadSanitizer" "$T53_DIR/run.err"; then
-        echo "FAILED: ThreadSanitizer detected an error or race (rc=$rc)"
-        cat "$T53_DIR/run.out" "$T53_DIR/run.err"
-        exit 1
+    if [ $rc -ne 0 ] && \
+       grep -Fq "Program is run with limited virtual address space" "$T53_DIR/run.err" && \
+       grep -Fq "ThreadSanitizer setrlimit() failed" "$T53_DIR/run.err"; then
+        echo "SKIP (ThreadSanitizer cannot start under the caller's address-space limit)"
+    else
+        if [ $rc -ne 0 ] || grep -q "ThreadSanitizer" "$T53_DIR/run.err"; then
+            echo "FAILED: ThreadSanitizer detected an error or race (rc=$rc)"
+            cat "$T53_DIR/run.out" "$T53_DIR/run.err"
+            exit 1
+        fi
+        T53_EXP=$(cat tests/pass/446_reentrant_concurrent_stdlib.expected)
+        T53_ACT=$(cat "$T53_DIR/run.out")
+        if [ "$T53_ACT" != "$T53_EXP" ]; then
+            echo "FAILED: TSAN binary output mismatch"
+            cat "$T53_DIR/run.out"
+            exit 1
+        fi
+        echo "PASS"
     fi
-    T53_EXP=$(cat tests/pass/446_reentrant_concurrent_stdlib.expected)
-    T53_ACT=$(cat "$T53_DIR/run.out")
-    if [ "$T53_ACT" != "$T53_EXP" ]; then
-        echo "FAILED: TSAN binary output mismatch"
-        cat "$T53_DIR/run.out"
-        exit 1
-    fi
-    echo "PASS"
 else
     echo "SKIP (clang -fsanitize=thread unavailable)"
 fi

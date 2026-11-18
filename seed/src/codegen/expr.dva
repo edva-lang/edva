@@ -76,9 +76,8 @@ empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
 codegen_arena_current: types::Cg, String => Addr
 codegen_arena_current = cg, name =>
    atp = LLVMPointerType(runtime::arena_type(cg), 0)
-   fty = types::fn_type0(atp)
-   fn = LLVMGetNamedFunction(cg.module, "dva_arena_current")
-   types::call0(cg, fty, fn, name)
+   active = LLVMGetNamedGlobal(cg.module, "dva_active_arena_tls")
+   LLVMBuildLoad2(cg.builder, atp, active, name)
 
 // Allocate from the active arena. All heap-shaped language values use this
 // funnel, which is what lets save/restore scopes reclaim their temporaries.
@@ -149,33 +148,48 @@ codegen_call_arena_validate_tag = cg, arena, tag =>
    args = (arena, tag)
    LLVMBuildCall2(cg.builder, fn_t, fn, &args, 2, "tag.valid")
 
-// Fast 1-load TLS generation validation with out-of-line slow fallback for nested scopes.
+// Slow nested-scope validation is shared per diagnostic, preserving the
+// distinct stale String and stale Addr errors without expanding every access.
+arena_tag_slow_helper: types::Cg, String, String => Addr
+arena_tag_slow_helper = cg, err_msg, gname =>
+   name = "dva_validate_tag_or_abort_${gname}"
+   types::llvm_val_opt(LLVMGetNamedFunction(cg.module, name))
+      | fn => fn
+      |
+         saved = LLVMGetInsertBlock(cg.builder)
+         ft = types::fn_type1(LLVMVoidType!, LLVMInt64Type!)
+         fn = LLVMAddFunction(cg.module, name, ft)
+         LLVMSetLinkage(fn, 8)
+         runtime::mark_fn_enum_attr(cg, fn, "cold")
+         runtime::mark_fn_enum_attr(cg, fn, "noinline")
+         runtime::mark_nounwind(cg, fn)
+         entry = LLVMAppendBasicBlock(fn, "entry")
+         ok = LLVMAppendBasicBlock(fn, "valid")
+         stale = LLVMAppendBasicBlock(fn, "stale")
+         LLVMPositionBuilderAtEnd(cg.builder, entry)
+         cur = codegen_arena_current(cg, "arena.cur")
+         valid = codegen_call_arena_validate_tag(cg, cur, LLVMGetParam(fn, 0))
+         LLVMBuildCondBr(cg.builder, valid, ok, stale)
+         LLVMPositionBuilderAtEnd(cg.builder, stale)
+         runtime::emit_abort_msg(cg, err_msg, gname)
+         LLVMBuildUnreachable(cg.builder)
+         LLVMPositionBuilderAtEnd(cg.builder, ok)
+         LLVMBuildRetVoid(cg.builder)
+         LLVMPositionBuilderAtEnd(cg.builder, saved)
+         fn
+
 emit_validate_arena_tag: types::Cg, Addr, Addr, Addr, String, String => ()
 emit_validate_arena_tag = cg, tag, zero, ok_bb, err_msg, gname =>
-   i64t = LLVMInt64Type!
    immortal = LLVMBuildICmp(cg.builder, 32, tag, zero, "tag.immortal")
+   active_gen = codegen_arena_generation(cg, "active.gen")
+   current = LLVMBuildICmp(cg.builder, 32, tag, active_gen, "tag.current")
+   fast_ok = LLVMBuildOr(cg.builder, immortal, current, "tag.fast.ok")
    parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
-   check_bb = LLVMAppendBasicBlock(parent, "tag.gen_check")
    slow_bb = LLVMAppendBasicBlock(parent, "tag.slow_check")
-   stale_bb = LLVMAppendBasicBlock(parent, "tag.stale")
-   LLVMBuildCondBr(cg.builder, immortal, ok_bb, check_bb)
-
-   LLVMPositionBuilderAtEnd(cg.builder, check_bb)
-   gen_tls = LLVMGetNamedGlobal(cg.module, "dva_active_gen_tls")
-   fast_ok = types::llvm_val_opt(gen_tls)
-      | gt =>
-         active_gen = LLVMBuildLoad2(cg.builder, i64t, gt, "active.gen")
-         LLVMBuildICmp(cg.builder, 32, tag, active_gen, "tag.fast.ok")
-      | LLVMConstInt(LLVMInt1Type!, 0, 0)
    LLVMBuildCondBr(cg.builder, fast_ok, ok_bb, slow_bb)
-
    LLVMPositionBuilderAtEnd(cg.builder, slow_bb)
-   cur = codegen_arena_current(cg, "arena.cur")
-   valid = codegen_call_arena_validate_tag(cg, cur, tag)
-   LLVMBuildCondBr(cg.builder, valid, ok_bb, stale_bb)
-
-   LLVMPositionBuilderAtEnd(cg.builder, stale_bb)
-   runtime::emit_abort_msg(cg, err_msg, gname)
+   slow = arena_tag_slow_helper(cg, err_msg, gname)
+   types::call1(cg, types::fn_type1(LLVMVoidType!, LLVMInt64Type!), slow, tag, "")
    LLVMBuildBr(cg.builder, ok_bb)
 
 // Reads the stored String length without runtime generation validation.

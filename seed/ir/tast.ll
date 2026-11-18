@@ -8,6 +8,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
+@dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
@@ -129,7 +130,42 @@ declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
 
 declare void @dva_arena_init(ptr, i64) #0
 
-declare noalias ptr @dva_arena_alloc(ptr, i64) #0
+; Function Attrs: alwaysinline
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+entry:
+  %align.add = add i64 %1, 15
+  %aligned = and i64 %align.add, -16
+  %cap.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 0
+  %cap = load i64, ptr %cap.ptr, align 8
+  %nc.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 1
+  %nc = load i64, ptr %nc.ptr, align 8
+  %off.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 2
+  %off = load i64, ptr %off.ptr, align 8
+  %has.chunk = icmp ne i64 %nc, 0
+  %remaining = sub i64 %cap, %off
+  %fits = icmp ule i64 %aligned, %remaining
+  %no.wrap = icmp uge i64 %aligned, %1
+  %fits.safe = and i1 %fits, %no.wrap
+  %fast.ok = and i1 %has.chunk, %fits.safe
+  br i1 %fast.ok, label %bump, label %slow
+
+bump:                                             ; preds = %entry
+  %chunks = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 3
+  %last = sub i64 %nc, 1
+  %slot = getelementptr [16384 x ptr], ptr %chunks, i64 0, i64 %last
+  %chunk = load ptr, ptr %slot, align 8
+  %result = getelementptr i8, ptr %chunk, i64 %off
+  %next = add i64 %off, %aligned
+  store i64 %next, ptr %off.ptr, align 8
+  ret ptr %result
+
+slow:                                             ; preds = %entry
+  %result.slow = call ptr @dva_arena_alloc_slow(ptr %0, i64 %1)
+  ret ptr %result.slow
+}
+
+; Function Attrs: noinline
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
 
 declare void @dva_arena_destroy(ptr) #0
 
@@ -138,7 +174,7 @@ declare i64 @dva_arena_save(ptr) #0
 declare void @dva_arena_restore(ptr, i64) #0
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #2
+declare i1 @dva_arena_validate_tag(ptr, i64) #3
 
 declare void @dva_arena_adopt(ptr, ptr) #0
 
@@ -197,13 +233,13 @@ entry:
   store i64 %1, ptr %var.align, align 8
   %var.load = load i64, ptr %var.size, align 8
   %var.load1 = load i64, ptr %var.align, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 %var.load, ptr %rec.fld, align 8
@@ -222,13 +258,13 @@ entry:
   store i64 %1, ptr %var.align, align 8
   %var.load = load i64, ptr %var.size, align 8
   %var.load1 = load i64, ptr %var.align, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 1, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 %var.load, ptr %rec.fld, align 8
@@ -247,13 +283,13 @@ entry:
   store i64 %1, ptr %var.align, align 8
   %var.load = load i64, ptr %var.size, align 8
   %var.load1 = load i64, ptr %var.align, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 2, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 %var.load, ptr %rec.fld, align 8
@@ -272,13 +308,13 @@ entry:
   store i64 %1, ptr %var.align, align 8
   %var.load = load i64, ptr %var.size, align 8
   %var.load1 = load i64, ptr %var.align, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 3, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 %var.load, ptr %rec.fld, align 8
@@ -297,13 +333,13 @@ entry:
   store i64 %1, ptr %var.align, align 8
   %var.load = load i64, ptr %var.size, align 8
   %var.load1 = load i64, ptr %var.align, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 8, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 %var.load, ptr %rec.fld, align 8
@@ -316,13 +352,13 @@ entry:
 
 define ptr @"tast::layout_ram_flag"() #0 {
 entry:
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 4, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 1, ptr %rec.fld, align 8
@@ -341,13 +377,13 @@ entry:
   store i64 %1, ptr %var.align, align 8
   %var.load = load i64, ptr %var.size, align 8
   %var.load1 = load i64, ptr %var.align, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 5, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 %var.load, ptr %rec.fld, align 8
@@ -366,13 +402,13 @@ entry:
   store i64 %1, ptr %var.align, align 8
   %var.load = load i64, ptr %var.size, align 8
   %var.load1 = load i64, ptr %var.align, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 6, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 %var.load, ptr %rec.fld, align 8
@@ -391,13 +427,13 @@ entry:
   store i64 %1, ptr %var.align, align 8
   %var.load = load i64, ptr %var.size, align 8
   %var.load1 = load i64, ptr %var.align, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 7, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 %var.load, ptr %rec.fld, align 8
@@ -410,13 +446,13 @@ entry:
 
 define ptr @"tast::layout_closure"() #0 {
 entry:
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 12, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 16, ptr %rec.fld, align 8
@@ -429,13 +465,13 @@ entry:
 
 define ptr @"tast::layout_void"() #0 {
 entry:
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 13, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   store ptr null, ptr %pay.gep, align 8
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 ptrtoint (ptr getelementptr ({ i64, i64, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i64, i64, ptr }, ptr %rec.alloc, i32 0, i32 0
   store i64 0, ptr %rec.fld, align 8
@@ -466,7 +502,7 @@ entry:
   %var.load3 = load ptr, ptr %var.layout, align 8
   %var.load4 = load i64, ptr %var.line, align 8
   %var.load5 = load i64, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load, ptr %rec.fld, align 8
@@ -484,7 +520,7 @@ entry:
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #3
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #4
 
 define ptr @"tast::mk_lit_int"(i64 %0, i64 %1, i64 %2) #0 {
 entry:
@@ -499,12 +535,12 @@ entry:
   store i64 %2, ptr %var.col, align 8
   %call.res = call ptr @"unify::prim_int"()
   store ptr %call.res, ptr %var.ut, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc2 = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 16)
   %tag.gep3 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc2, i32 0, i32 0
   store i64 1, ptr %tag.gep3, align 8
@@ -514,13 +550,13 @@ entry:
   store ptr %enum.alloc, ptr %var.ti, align 8
   %call.res5 = call ptr @"tast::layout_scalar"(i64 8, i64 8)
   store ptr %call.res5, ptr %var.lay, align 8
-  %arena.cur6 = call ptr @dva_arena_current()
+  %arena.cur6 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 16)
   %tag.gep8 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 0
   store i64 0, ptr %tag.gep8, align 8
   %pay.gep9 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 1
   %var.load = load i64, ptr %var.val, align 8
-  %arena.cur10 = call ptr @dva_arena_current()
+  %arena.cur10 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 8)
   store i64 0, ptr %enum.pay.alloc, align 8
   store i64 %var.load, ptr %enum.pay.alloc, align 8
@@ -549,12 +585,12 @@ entry:
   store i64 %2, ptr %var.col, align 8
   %call.res = call ptr @"unify::prim_float"()
   store ptr %call.res, ptr %var.ut, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc2 = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 16)
   %tag.gep3 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc2, i32 0, i32 0
   store i64 11, ptr %tag.gep3, align 8
@@ -564,13 +600,13 @@ entry:
   store ptr %enum.alloc, ptr %var.ti, align 8
   %call.res5 = call ptr @"tast::layout_scalar"(i64 8, i64 8)
   store ptr %call.res5, ptr %var.lay, align 8
-  %arena.cur6 = call ptr @dva_arena_current()
+  %arena.cur6 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 16)
   %tag.gep8 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 0
   store i64 1, ptr %tag.gep8, align 8
   %pay.gep9 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 1
   %var.load = load double, ptr %var.val, align 8
-  %arena.cur10 = call ptr @dva_arena_current()
+  %arena.cur10 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 8)
   store i64 0, ptr %enum.pay.alloc, align 8
   store double %var.load, ptr %enum.pay.alloc, align 8
@@ -599,12 +635,12 @@ entry:
   store i64 %2, ptr %var.col, align 8
   %call.res = call ptr @"unify::prim_str"()
   store ptr %call.res, ptr %var.ut, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc2 = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 16)
   %tag.gep3 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc2, i32 0, i32 0
   store i64 13, ptr %tag.gep3, align 8
@@ -614,7 +650,7 @@ entry:
   store ptr %enum.alloc, ptr %var.ti, align 8
   %call.res5 = call ptr @"tast::layout_scalar"(i64 16, i64 8)
   store ptr %call.res5, ptr %var.lay, align 8
-  %arena.cur6 = call ptr @dva_arena_current()
+  %arena.cur6 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 16)
   %tag.gep8 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 0
   store i64 2, ptr %tag.gep8, align 8
@@ -645,12 +681,12 @@ entry:
   store i64 %2, ptr %var.col, align 8
   %call.res = call ptr @"unify::prim_flag"()
   store ptr %call.res, ptr %var.ut, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc2 = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 16)
   %tag.gep3 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc2, i32 0, i32 0
   store i64 26, ptr %tag.gep3, align 8
@@ -660,13 +696,13 @@ entry:
   store ptr %enum.alloc, ptr %var.ti, align 8
   %call.res5 = call ptr @"tast::layout_scalar"(i64 1, i64 1)
   store ptr %call.res5, ptr %var.lay, align 8
-  %arena.cur6 = call ptr @dva_arena_current()
+  %arena.cur6 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 16)
   %tag.gep8 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 0
   store i64 4, ptr %tag.gep8, align 8
   %pay.gep9 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 1
   %var.load = load i1, ptr %var.val, align 1
-  %arena.cur10 = call ptr @dva_arena_current()
+  %arena.cur10 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.pay.alloc = call ptr @dva_arena_alloc(ptr %arena.cur10, i64 8)
   store i64 0, ptr %enum.pay.alloc, align 8
   store i1 %var.load, ptr %enum.pay.alloc, align 1
@@ -693,12 +729,12 @@ entry:
   store i64 %1, ptr %var.col, align 8
   %call.res = call ptr @"unify::prim_unit"()
   store ptr %call.res, ptr %var.ut, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc2 = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 16)
   %tag.gep3 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc2, i32 0, i32 0
   store i64 16, ptr %tag.gep3, align 8
@@ -708,7 +744,7 @@ entry:
   store ptr %enum.alloc, ptr %var.ti, align 8
   %call.res5 = call ptr @"tast::layout_void"()
   store ptr %call.res5, ptr %var.lay, align 8
-  %arena.cur6 = call ptr @dva_arena_current()
+  %arena.cur6 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 16)
   %tag.gep8 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 0
   store i64 5, ptr %tag.gep8, align 8
@@ -743,7 +779,7 @@ entry:
   store ptr %5, ptr %var.lay, align 8
   store i64 %6, ptr %var.line, align 8
   store i64 %7, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 6, ptr %tag.gep, align 8
@@ -751,7 +787,7 @@ entry:
   %var.load = load ptr, ptr %var.name, align 8
   %var.load1 = load i64, ptr %var.depth, align 8
   %var.load2 = load i1, ptr %var.is_mut, align 1
-  %arena.cur3 = call ptr @dva_arena_current()
+  %arena.cur3 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 ptrtoint (ptr getelementptr ({ ptr, i64, i1 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, i64, i1 }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load, ptr %rec.fld, align 8
@@ -787,7 +823,7 @@ entry:
   store ptr %5, ptr %var.lay, align 8
   store i64 %6, ptr %var.line, align 8
   store i64 %7, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 7, ptr %tag.gep, align 8
@@ -795,7 +831,7 @@ entry:
   %var.load = load ptr, ptr %var.op, align 8
   %var.load1 = load ptr, ptr %var.lhs, align 8
   %var.load2 = load ptr, ptr %var.rhs, align 8
-  %arena.cur3 = call ptr @dva_arena_current()
+  %arena.cur3 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 ptrtoint (ptr getelementptr ({ ptr, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load, ptr %rec.fld, align 8
@@ -829,14 +865,14 @@ entry:
   store ptr %4, ptr %var.lay, align 8
   store i64 %5, ptr %var.line, align 8
   store i64 %6, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 8, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   %var.load = load ptr, ptr %var.op, align 8
   %var.load1 = load ptr, ptr %var.operand, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ ptr, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load, ptr %rec.fld, align 8
@@ -870,7 +906,7 @@ entry:
   store ptr %5, ptr %var.lay, align 8
   store i64 %6, ptr %var.line, align 8
   store i64 %7, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 9, ptr %tag.gep, align 8
@@ -883,9 +919,9 @@ entry:
   br i1 %a.null, label %a.create, label %a.after
 
 a.create:                                         ; preds = %entry
-  %arena.cur3 = call ptr @dva_arena_current()
+  %arena.cur3 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create4 = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 24)
-  %arena.cur5 = call ptr @dva_arena_current()
+  %arena.cur5 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.buf = call ptr @dva_arena_alloc(ptr %arena.cur5, i64 128)
   %a.len.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create4, i32 0, i32 0
   store i64 0, ptr %a.len.gep, align 8
@@ -898,7 +934,7 @@ a.create:                                         ; preds = %entry
 
 a.after:                                          ; preds = %a.create, %entry
   %a.load2 = load ptr, ptr %var.args, align 8
-  %arena.cur6 = call ptr @dva_arena_current()
+  %arena.cur6 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, ptr, ptr }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load, ptr %rec.fld, align 8
@@ -930,7 +966,7 @@ entry:
   store ptr %3, ptr %var.lay, align 8
   store i64 %4, ptr %var.line, align 8
   store i64 %5, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 17, ptr %tag.gep, align 8
@@ -941,9 +977,9 @@ entry:
   br i1 %a.null, label %a.create, label %a.after
 
 a.create:                                         ; preds = %entry
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.create2 = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 24)
-  %arena.cur3 = call ptr @dva_arena_current()
+  %arena.cur3 = load ptr, ptr @dva_active_arena_tls, align 8
   %a.buf = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 128)
   %a.len.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create2, i32 0, i32 0
   store i64 0, ptr %a.len.gep, align 8
@@ -997,7 +1033,7 @@ entry:
   %var.load3 = load i1, ptr %var.glob, align 1
   %var.load4 = load i1, ptr %var.len, align 1
   %var.load5 = load ptr, ptr %var.val, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i1, i1, i1, i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, i1, i1, i1, i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load, ptr %rec.fld, align 8
@@ -1012,7 +1048,7 @@ entry:
   %rec.fld10 = getelementptr inbounds { ptr, i1, i1, i1, i1, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 } }, ptr %rec.alloc, i32 0, i32 5
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld10, ptr align 1 %var.load5, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr null, i32 1) to i64), i1 false)
   store ptr %rec.alloc, ptr %var.as_tup, align 8
-  %arena.cur11 = call ptr @dva_arena_current()
+  %arena.cur11 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur11, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 18, ptr %tag.gep, align 8
@@ -1046,7 +1082,7 @@ entry:
   store ptr %5, ptr %var.lay, align 8
   store i64 %6, ptr %var.line, align 8
   store i64 %7, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 11, ptr %tag.gep, align 8
@@ -1054,7 +1090,7 @@ entry:
   %var.load = load ptr, ptr %var.target, align 8
   %var.load1 = load ptr, ptr %var.field_name, align 8
   %var.load2 = load i64, ptr %var.idx, align 8
-  %arena.cur3 = call ptr @dva_arena_current()
+  %arena.cur3 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 ptrtoint (ptr getelementptr ({ { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr, i64 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr, i64 }, ptr %rec.alloc, i32 0, i32 0
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld, ptr align 1 %var.load, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr null, i32 1) to i64), i1 false)
@@ -1092,7 +1128,7 @@ entry:
   store ptr %6, ptr %var.lay, align 8
   store i64 %7, ptr %var.line, align 8
   store i64 %8, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 19, ptr %tag.gep, align 8
@@ -1101,7 +1137,7 @@ entry:
   %var.load1 = load ptr, ptr %var.body_fn, align 8
   %var.load2 = load ptr, ptr %var.esc, align 8
   %var.load3 = load i1, ptr %var.is_rune, align 1
-  %arena.cur4 = call ptr @dva_arena_current()
+  %arena.cur4 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur4, i64 ptrtoint (ptr getelementptr ({ { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr, i1 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr, i1 }, ptr %rec.alloc, i32 0, i32 0
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld, ptr align 1 %var.load, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr null, i32 1) to i64), i1 false)
@@ -1135,7 +1171,7 @@ entry:
   store ptr %3, ptr %var.lay, align 8
   store i64 %4, ptr %var.line, align 8
   store i64 %5, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 25, ptr %tag.gep, align 8
@@ -1165,7 +1201,7 @@ entry:
   store ptr %3, ptr %var.lay, align 8
   store i64 %4, ptr %var.line, align 8
   store i64 %5, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 23, ptr %tag.gep, align 8
@@ -1196,12 +1232,12 @@ entry:
   store i64 %3, ptr %var.col, align 8
   %call.res = call ptr @"unify::prim_unit"()
   store ptr %call.res, ptr %var.ut, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 0, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
-  %arena.cur1 = call ptr @dva_arena_current()
+  %arena.cur1 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc2 = call ptr @dva_arena_alloc(ptr %arena.cur1, i64 16)
   %tag.gep3 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc2, i32 0, i32 0
   store i64 16, ptr %tag.gep3, align 8
@@ -1211,14 +1247,14 @@ entry:
   store ptr %enum.alloc, ptr %var.ti, align 8
   %call.res5 = call ptr @"tast::layout_void"()
   store ptr %call.res5, ptr %var.lay, align 8
-  %arena.cur6 = call ptr @dva_arena_current()
+  %arena.cur6 = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc7 = call ptr @dva_arena_alloc(ptr %arena.cur6, i64 16)
   %tag.gep8 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 0
   store i64 20, ptr %tag.gep8, align 8
   %pay.gep9 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc7, i32 0, i32 1
   %var.load = load i1, ptr %var.is_break, align 1
   %var.load10 = load i64, ptr %var.level, align 8
-  %arena.cur11 = call ptr @dva_arena_current()
+  %arena.cur11 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur11, i64 ptrtoint (ptr getelementptr ({ i1, i64 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { i1, i64 }, ptr %rec.alloc, i32 0, i32 0
   store i1 %var.load, ptr %rec.fld, align 1
@@ -1250,14 +1286,14 @@ entry:
   store ptr %4, ptr %var.lay, align 8
   store i64 %5, ptr %var.line, align 8
   store i64 %6, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 26, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   %var.load = load ptr, ptr %var.addr, align 8
   %var.load1 = load ptr, ptr %var.vt, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { { ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr }, ptr %rec.alloc, i32 0, i32 0
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %rec.fld, ptr align 1 %var.load, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, { i64, i64, ptr }, i64, i64 }, ptr null, i32 1) to i64), i1 false)
@@ -1291,7 +1327,7 @@ entry:
   store ptr %5, ptr %var.lay, align 8
   store i64 %6, ptr %var.line, align 8
   store i64 %7, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 21, ptr %tag.gep, align 8
@@ -1299,7 +1335,7 @@ entry:
   %var.load = load ptr, ptr %var.rsh, align 8
   %var.load1 = load i1, ptr %var.is_pos, align 1
   %var.load2 = load ptr, ptr %var.target_opt, align 8
-  %arena.cur3 = call ptr @dva_arena_current()
+  %arena.cur3 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur3, i64 ptrtoint (ptr getelementptr ({ ptr, i1, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, i1, ptr }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load, ptr %rec.fld, align 8
@@ -1333,14 +1369,14 @@ entry:
   store ptr %4, ptr %var.lay, align 8
   store i64 %5, ptr %var.line, align 8
   store i64 %6, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 22, ptr %tag.gep, align 8
   %pay.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 1
   %var.load = load ptr, ptr %var.name, align 8
   %var.load1 = load ptr, ptr %var.target_opt, align 8
-  %arena.cur2 = call ptr @dva_arena_current()
+  %arena.cur2 = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur2, i64 ptrtoint (ptr getelementptr ({ ptr, ptr }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, ptr }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load, ptr %rec.fld, align 8
@@ -1370,7 +1406,7 @@ entry:
   store ptr %3, ptr %var.lay, align 8
   store i64 %4, ptr %var.line, align 8
   store i64 %5, ptr %var.col, align 8
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %enum.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %tag.gep = getelementptr inbounds { i64, ptr }, ptr %enum.alloc, i32 0, i32 0
   store i64 34, ptr %tag.gep, align 8
@@ -1388,5 +1424,6 @@ entry:
 
 attributes #0 = { "nounwind" }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { noinline "nounwind" }
-attributes #3 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { alwaysinline "nounwind" }
+attributes #3 = { noinline "nounwind" }
+attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }

@@ -138,8 +138,8 @@ emit_sync_active_gen_tls = cg, cur_t, cur_fn, gen_tls =>
    LLVMBuildStore(cg.builder, cg_val, gen_tls)
 
 // write(2, msg, len); exit(1) — a runtime abort with a fixed message.
-emit_abort_msg: types::Cg, String, String => ()
-emit_abort_msg = cg, msg, gname =>
+emit_abort_msg_inline: types::Cg, String, String => ()
+emit_abort_msg_inline = cg, msg, gname =>
    cg.opts.no_runtime
       |
          LLVMBuildUnreachable(cg.builder)
@@ -170,6 +170,86 @@ emit_abort_msg = cg, msg, gname =>
                dead_bb = LLVMAppendBasicBlock(parent, "abort.dead")
                LLVMPositionBuilderAtEnd(cg.builder, dead_bb)
 
+// A single cold abort body per diagnostic and module keeps checks small.
+emit_abort_msg: types::Cg, String, String => ()
+emit_abort_msg = cg, msg, gname =>
+   cg.opts.no_runtime
+      | emit_abort_msg_inline(cg, msg, gname)
+      |
+         saved = LLVMGetInsertBlock(cg.builder)
+         ft = types::fn_type0(LLVMVoidType!)
+         name = "dva_abort_${gname}"
+         fn = types::llvm_val_opt(LLVMGetNamedFunction(cg.module, name))
+            | f => f
+            |
+               f = LLVMAddFunction(cg.module, name, ft)
+               LLVMSetLinkage(f, 8)
+               mark_fn_enum_attr(cg, f, "cold")
+               mark_fn_enum_attr(cg, f, "noinline")
+               mark_fn_enum_attr(cg, f, "noreturn")
+               mark_nounwind(cg, f)
+               bb = LLVMAppendBasicBlock(f, "entry")
+               LLVMPositionBuilderAtEnd(cg.builder, bb)
+               emit_abort_msg_inline(cg, msg, gname)
+               LLVMBuildUnreachable(cg.builder)
+               LLVMPositionBuilderAtEnd(cg.builder, saved)
+               f
+         types::call0(cg, ft, fn, "")
+         LLVMBuildUnreachable(cg.builder)
+         dead = LLVMAppendBasicBlock(LLVMGetBasicBlockParent(saved), "abort.dead")
+         LLVMPositionBuilderAtEnd(cg.builder, dead)
+
+// Emit the small bump path in every module, including separately compiled
+// stdlib modules. Chunk growth and diagnostics stay in the shared slow helper.
+emit_arena_alloc_fast: types::Cg, Addr, Addr, Addr => ()
+emit_arena_alloc_fast = cg, fn, slow, ft =>
+   at = arena_type(cg)
+   i64t = LLVMInt64Type!
+   i8p = LLVMPointerType(LLVMInt8Type!, 0)
+   zero = LLVMConstInt(i64t, 0, 0)
+   one = LLVMConstInt(i64t, 1, 0)
+   mark_nounwind(cg, fn)
+   mark_return_noalias(cg, fn)
+   mark_fn_enum_attr(cg, fn, "alwaysinline")
+   mark_nounwind(cg, slow)
+   mark_return_noalias(cg, slow)
+   mark_fn_enum_attr(cg, slow, "noinline")
+   entry = LLVMAppendBasicBlock(fn, "entry")
+   bump = LLVMAppendBasicBlock(fn, "bump")
+   fallback = LLVMAppendBasicBlock(fn, "slow")
+   LLVMPositionBuilderAtEnd(cg.builder, entry)
+   a = LLVMGetParam(fn, 0)
+   size = LLVMGetParam(fn, 1)
+   aligned = LLVMBuildAnd(cg.builder,
+      LLVMBuildAdd(cg.builder, size, LLVMConstInt(i64t, 15, 0), "align.add"),
+      LLVMConstInt(i64t, -16, 0), "aligned")
+   cap = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, at, a, 0, "cap.ptr"), "cap")
+   nc = LLVMBuildLoad2(cg.builder, i64t,
+      LLVMBuildStructGEP2(cg.builder, at, a, 1, "nc.ptr"), "nc")
+   off_ptr = LLVMBuildStructGEP2(cg.builder, at, a, 2, "off.ptr")
+   off = LLVMBuildLoad2(cg.builder, i64t, off_ptr, "off")
+   has_chunk = LLVMBuildICmp(cg.builder, 33, nc, zero, "has.chunk")
+   fits = LLVMBuildICmp(cg.builder, 37, aligned,
+      LLVMBuildSub(cg.builder, cap, off, "remaining"), "fits")
+   // Guard alignment wrap; normal arena offsets never exceed capacity.
+   no_wrap = LLVMBuildICmp(cg.builder, 35, aligned, size, "no.wrap")
+   ok = LLVMBuildAnd(cg.builder, has_chunk,
+      LLVMBuildAnd(cg.builder, fits, no_wrap, "fits.safe"), "fast.ok")
+   LLVMBuildCondBr(cg.builder, ok, bump, fallback)
+   LLVMPositionBuilderAtEnd(cg.builder, bump)
+   chunks = LLVMBuildStructGEP2(cg.builder, at, a, 3, "chunks")
+   slot = types::gep2(cg, LLVMArrayType(i8p, 16384), chunks, zero,
+      LLVMBuildSub(cg.builder, nc, one, "last"), "slot")
+   chunk = LLVMBuildLoad2(cg.builder, i8p, slot, "chunk")
+   result = types::gep1(cg, LLVMInt8Type!, chunk, off, "result")
+   LLVMBuildStore(cg.builder, LLVMBuildAdd(cg.builder, off, aligned, "next"), off_ptr)
+   LLVMBuildRet(cg.builder, result)
+   LLVMPositionBuilderAtEnd(cg.builder, fallback)
+   args = (a, size)
+   result_slow = LLVMBuildCall2(cg.builder, ft, slow, &args, 2, "result.slow")
+   LLVMBuildRet(cg.builder, result_slow)
+
 // Emits the full runtime: the arena globals + helper functions, the message
 // globals, the FNV hash, and the string-overflow intrinsic declaration.
 codegen_emit_runtime_module: types::Cg => Addr
@@ -188,6 +268,8 @@ codegen_emit_runtime_module = cg =>
    active_gen_tls = LLVMAddGlobal(cg.module, i64t, "dva_active_gen_tls")
    LLVMSetThreadLocal(active_gen_tls, 1)
    garena = LLVMAddGlobal(cg.module, at, "global_arena")
+   active_arena_tls = LLVMAddGlobal(cg.module, atp, "dva_active_arena_tls")
+   LLVMSetThreadLocal(active_arena_tls, 1)
 
    cur_t = types::fn_type0(LLVMPointerType(at, 0))
    d_cur = LLVMAddFunction(cg.module, "dva_arena_current", cur_t)
@@ -236,6 +318,9 @@ codegen_emit_runtime_module = cg =>
    d_alloc = LLVMAddFunction(cg.module, "dva_arena_alloc", alloc_t)
    mark_nounwind(cg, d_alloc)
    mark_return_noalias(cg, d_alloc)
+   LLVMSetLinkage(d_alloc, 8)
+   d_slow = LLVMAddFunction(cg.module, "dva_arena_alloc_slow", alloc_t)
+   emit_arena_alloc_fast(cg, d_alloc, d_slow, alloc_t)
 
    dest_params = types::Addrs()
    dest_params += atp
@@ -324,30 +409,18 @@ codegen_emit_runtime_full = cg =>
    LLVMSetInitializer(active_gen_tls, zero)
    LLVMSetThreadLocal(active_gen_tls, 1)
    garena = LLVMAddGlobal(cg.module, at, "global_arena")
+   active_arena_tls = LLVMAddGlobal(cg.module, atp, "dva_active_arena_tls")
+   LLVMSetThreadLocal(active_arena_tls, 1)
    LLVMSetInitializer(garena, LLVMConstNull(at))
+   LLVMSetInitializer(active_arena_tls, garena)
 
    // dva_arena_current()
    cur_t = types::fn_type0(LLVMPointerType(at, 0))
    cur_fn = LLVMAddFunction(cg.module, "dva_arena_current", cur_t)
    c_bb = LLVMAppendBasicBlock(cur_fn, "entry")
-   tls_bb = LLVMAppendBasicBlock(cur_fn, "use_tls")
-   base_chk_bb = LLVMAppendBasicBlock(cur_fn, "check_base")
-   base_bb = LLVMAppendBasicBlock(cur_fn, "use_base")
-   fb_bb = LLVMAppendBasicBlock(cur_fn, "fallback")
    LLVMPositionBuilderAtEnd(cg.builder, c_bb)
-   tls_v = LLVMBuildLoad2(cg.builder, atp, arena_tls, "arena.tls")
-   is_n = LLVMBuildICmp(cg.builder, 32, tls_v, LLVMConstNull(atp), "arena.tls.null")
-   LLVMBuildCondBr(cg.builder, is_n, base_chk_bb, tls_bb)
-   LLVMPositionBuilderAtEnd(cg.builder, tls_bb)
-   LLVMBuildRet(cg.builder, tls_v)
-   LLVMPositionBuilderAtEnd(cg.builder, base_chk_bb)
-   base_v = LLVMBuildLoad2(cg.builder, atp, arena_base_tls, "arena.base.tls")
-   is_bn = LLVMBuildICmp(cg.builder, 32, base_v, LLVMConstNull(atp), "arena.base.null")
-   LLVMBuildCondBr(cg.builder, is_bn, fb_bb, base_bb)
-   LLVMPositionBuilderAtEnd(cg.builder, base_bb)
-   LLVMBuildRet(cg.builder, base_v)
-   LLVMPositionBuilderAtEnd(cg.builder, fb_bb)
-   LLVMBuildRet(cg.builder, garena)
+   current = LLVMBuildLoad2(cg.builder, atp, active_arena_tls, "active.arena")
+   LLVMBuildRet(cg.builder, current)
 
    // dva_arena_set_current(ptr) -> ptr
    set_cur_params = types::Addrs()
@@ -360,6 +433,12 @@ codegen_emit_runtime_full = cg =>
    sc_new = LLVMGetParam(set_cur_fn, 0)
    sc_prev = types::call0(cg, cur_t, cur_fn, "prev.arena")
    LLVMBuildStore(cg.builder, sc_new, arena_tls)
+   base = LLVMBuildLoad2(cg.builder, atp, arena_base_tls, "base.arena")
+   base_null = LLVMBuildICmp(cg.builder, 32, base, LLVMConstNull(atp), "base.null")
+   fallback = LLVMBuildSelect(cg.builder, base_null, garena, base, "fallback.arena")
+   new_null = LLVMBuildICmp(cg.builder, 32, sc_new, LLVMConstNull(atp), "new.null")
+   active = LLVMBuildSelect(cg.builder, new_null, fallback, sc_new, "active.arena")
+   LLVMBuildStore(cg.builder, active, active_arena_tls)
    emit_sync_active_gen_tls(cg, cur_t, cur_fn, active_gen_tls)
    LLVMBuildRet(cg.builder, sc_prev)
 
@@ -411,7 +490,9 @@ codegen_emit_runtime_full = cg =>
    alloc_params += atp
    alloc_params += i64t
    alloc_t = stmt::fn_type_n(cg, i8p, alloc_params, 2)
-   alloc_fn = LLVMAddFunction(cg.module, "dva_arena_alloc", alloc_t)
+   alloc_fast = LLVMAddFunction(cg.module, "dva_arena_alloc", alloc_t)
+   alloc_fn = LLVMAddFunction(cg.module, "dva_arena_alloc_slow", alloc_t)
+   emit_arena_alloc_fast(cg, alloc_fast, alloc_fn, alloc_t)
    al_e = LLVMAppendBasicBlock(alloc_fn, "entry")
    al_l = LLVMAppendBasicBlock(alloc_fn, "lazy_init")
    al_i = LLVMAppendBasicBlock(alloc_fn, "init_done")
@@ -450,7 +531,9 @@ codegen_emit_runtime_full = cg =>
    cap_phi = LLVMBuildPhi(cg.builder, i64t, "cap.phi")
    stmt::llvm_add_incoming1(cg, cap_phi, cap_v, al_l)
    stmt::llvm_add_incoming1(cg, cap_phi, cap_vl, al_e)
-   too_big = LLVMBuildICmp(cg.builder, 38, s1_al, cap_phi, "size_gt_cap")
+   aligned_big = LLVMBuildICmp(cg.builder, 34, s1_al, cap_phi, "aligned_gt_cap")
+   raw_big = LLVMBuildICmp(cg.builder, 34, s1, cap_phi, "size_gt_cap")
+   too_big = LLVMBuildOr(cg.builder, aligned_big, raw_big, "too.big")
    LLVMBuildCondBr(cg.builder, too_big, al_b, al_c)
    LLVMPositionBuilderAtEnd(cg.builder, al_b)
    types::is_wasm_target(cg)
@@ -459,7 +542,10 @@ codegen_emit_runtime_full = cg =>
       |
          pf = types::ensure_printf_fn(cg)
          ef = types::ensure_exit_fn(cg)
-         pargs = (LLVMGetNamedGlobal(cg.module, "arena_toobig_msg"), s1_al, cap_phi)
+         reported = LLVMBuildSelect(cg.builder,
+            LLVMBuildICmp(cg.builder, 35, s1_al, s1, "aligned.valid"),
+            s1_al, s1, "requested")
+         pargs = (LLVMGetNamedGlobal(cg.module, "arena_toobig_msg"), reported, cap_phi)
          LLVMBuildCall2(cg.builder, pf.0, pf.1, &pargs, 3, "")
          types::call1(cg, ef.0, ef.1, LLVMConstInt(i32t, 1, 0), "")
          LLVMBuildUnreachable(cg.builder)
@@ -1019,6 +1105,7 @@ codegen_emit_runtime_full = cg =>
       LLVMSetLinkage(set_cur_fn, 8)
       LLVMSetLinkage(init_fn, 8)
       LLVMSetLinkage(alloc_fn, 8)
+      LLVMSetLinkage(alloc_fast, 8)
       LLVMSetLinkage(save_fn, 8)
       LLVMSetLinkage(rest_fn, 8)
       LLVMSetLinkage(vt_fn, 8)

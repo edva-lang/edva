@@ -8,6 +8,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @dva_arena_base_tls = external thread_local global ptr
 @dva_active_gen_tls = external thread_local global i64
 @global_arena = external global { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }
+@dva_active_arena_tls = external thread_local global ptr
 @str_overflow_msg = internal unnamed_addr constant [71 x i8] c"E4002: string length overflow (concatenation exceeds 64-bit capacity)\0A\00"
 @arena_toobig_msg = internal unnamed_addr constant [99 x i8] c"E4004: arena allocation too large for a single chunk (requested %llu bytes, chunk cap %llu bytes)\0A\00"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
@@ -58,7 +59,42 @@ declare { i64, i1 } @llvm.uadd.with.overflow.i64(i64, i64) #1
 
 declare void @dva_arena_init(ptr, i64) #0
 
-declare noalias ptr @dva_arena_alloc(ptr, i64) #0
+; Function Attrs: alwaysinline
+define internal noalias ptr @dva_arena_alloc(ptr %0, i64 %1) #2 {
+entry:
+  %align.add = add i64 %1, 15
+  %aligned = and i64 %align.add, -16
+  %cap.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 0
+  %cap = load i64, ptr %cap.ptr, align 8
+  %nc.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 1
+  %nc = load i64, ptr %nc.ptr, align 8
+  %off.ptr = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 2
+  %off = load i64, ptr %off.ptr, align 8
+  %has.chunk = icmp ne i64 %nc, 0
+  %remaining = sub i64 %cap, %off
+  %fits = icmp ule i64 %aligned, %remaining
+  %no.wrap = icmp uge i64 %aligned, %1
+  %fits.safe = and i1 %fits, %no.wrap
+  %fast.ok = and i1 %has.chunk, %fits.safe
+  br i1 %fast.ok, label %bump, label %slow
+
+bump:                                             ; preds = %entry
+  %chunks = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %0, i32 0, i32 3
+  %last = sub i64 %nc, 1
+  %slot = getelementptr [16384 x ptr], ptr %chunks, i64 0, i64 %last
+  %chunk = load ptr, ptr %slot, align 8
+  %result = getelementptr i8, ptr %chunk, i64 %off
+  %next = add i64 %off, %aligned
+  store i64 %next, ptr %off.ptr, align 8
+  ret ptr %result
+
+slow:                                             ; preds = %entry
+  %result.slow = call ptr @dva_arena_alloc_slow(ptr %0, i64 %1)
+  ret ptr %result.slow
+}
+
+; Function Attrs: noinline
+declare noalias ptr @dva_arena_alloc_slow(ptr, i64) #3
 
 declare void @dva_arena_destroy(ptr) #0
 
@@ -67,7 +103,7 @@ declare i64 @dva_arena_save(ptr) #0
 declare void @dva_arena_restore(ptr, i64) #0
 
 ; Function Attrs: noinline
-declare i1 @dva_arena_validate_tag(ptr, i64) #2
+declare i1 @dva_arena_validate_tag(ptr, i64) #3
 
 declare void @dva_arena_adopt(ptr, ptr) #0
 
@@ -123,7 +159,7 @@ declare i64 @writev(i32, ptr, i64)
 declare i32 @ioctl(i32, i64, i64, ...)
 
 ; Function Attrs: cold noreturn
-declare void @exit(i32) #3
+declare void @exit(i32) #4
 
 declare i64 @htons(i64)
 
@@ -294,7 +330,10 @@ choice.then:                                      ; preds = %and.10.exit
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %addr.tag = lshr i64 %raw.int, 48
   %tag.immortal = icmp eq i64 %addr.tag, 0
-  br i1 %tag.immortal, label %addr_ok, label %tag.gen_check
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current = icmp eq i64 %addr.tag, %active.gen
+  %tag.fast.ok = or i1 %tag.immortal, %tag.current
+  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
 
 choice.else:                                      ; preds = %and.10.exit
   %var.load6 = load ptr, ptr @"var.sys::addr_null", align 8
@@ -304,27 +343,42 @@ choice.exit:                                      ; preds = %choice.else, %addr_
   %choice.res = phi ptr [ %raw.load, %addr_ok ], [ %var.load6, %choice.else ]
   ret ptr %choice.res
 
-addr_ok:                                          ; preds = %abort.dead, %tag.slow_check, %tag.gen_check, %choice.then
+addr_ok:                                          ; preds = %tag.slow_check, %choice.then
   %raw.load = load volatile ptr, ptr %raw.clean.ptr, align 8
   br label %choice.exit
 
-tag.gen_check:                                    ; preds = %choice.then
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.fast.ok = icmp eq i64 %addr.tag, %active.gen
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
+tag.slow_check:                                   ; preds = %choice.then
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
+  br label %addr_ok
+}
 
-tag.slow_check:                                   ; preds = %tag.gen_check
-  %arena.cur = call ptr @dva_arena_current()
-  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %addr.tag)
-  br i1 %tag.valid, label %addr_ok, label %tag.stale
+; Function Attrs: cold noinline
+define internal void @dva_validate_tag_or_abort_stale_addr_msg(i64 %0) #5 {
+entry:
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
+  br i1 %tag.valid, label %valid, label %stale
 
-tag.stale:                                        ; preds = %tag.slow_check
-  %1 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+valid:                                            ; preds = %entry
+  ret void
+
+stale:                                            ; preds = %entry
+  call void @dva_abort_stale_addr_msg()
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_stale_addr_msg() #6 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
   call void @exit(i32 1)
   unreachable
 
 abort.dead:                                       ; No predecessors!
-  br label %addr_ok
+  unreachable
 }
 
 define i1 @"sys::argv_matches"(i64 %0, ptr %1) #0 {
@@ -357,37 +411,26 @@ and.11.then:                                      ; preds = %entry
   %arg.str.ptr8 = and i64 %arg.str.ptr7, 281474976710655
   %str.tag = lshr i64 %arg.str.ptr7, 48
   %tag.immortal = icmp eq i64 %str.tag, 0
-  br i1 %tag.immortal, label %str_ok, label %tag.gen_check
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current = icmp eq i64 %str.tag, %active.gen
+  %tag.fast.ok = or i1 %tag.immortal, %tag.current
+  br i1 %tag.fast.ok, label %str_ok, label %tag.slow_check
 
 and.11.else:                                      ; preds = %entry
   br label %and.11.exit
 
 and.11.exit:                                      ; preds = %and.11.else, %nulmerge
-  %and.11.phi = phi i1 [ %cmptmp15, %nulmerge ], [ %cmptmp, %and.11.else ]
+  %and.11.phi = phi i1 [ %cmptmp13, %nulmerge ], [ %cmptmp, %and.11.else ]
   ret i1 %and.11.phi
 
-str_ok:                                           ; preds = %abort.dead, %tag.slow_check, %tag.gen_check, %and.11.then
+str_ok:                                           ; preds = %tag.slow_check, %and.11.then
   %nulcheck.gep = getelementptr i8, ptr %arg.str.ptr5, i64 %arg.str.ptr8
   %nulcheck.byte = load i8, ptr %nulcheck.gep, align 1
   %nulcheck = icmp eq i8 %nulcheck.byte, 0
   br i1 %nulcheck, label %arg.str.ptr9, label %nulcopy
 
-tag.gen_check:                                    ; preds = %and.11.then
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.fast.ok = icmp eq i64 %str.tag, %active.gen
-  br i1 %tag.fast.ok, label %str_ok, label %tag.slow_check
-
-tag.slow_check:                                   ; preds = %tag.gen_check
-  %arena.cur = call ptr @dva_arena_current()
-  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %str.tag)
-  br i1 %tag.valid, label %str_ok, label %tag.stale
-
-tag.stale:                                        ; preds = %tag.slow_check
-  %2 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
-  call void @exit(i32 1)
-  unreachable
-
-abort.dead:                                       ; No predecessors!
+tag.slow_check:                                   ; preds = %and.11.then
+  call void @dva_validate_tag_or_abort_stale_str_msg(i64 %str.tag)
   br label %str_ok
 
 arg.str.ptr9:                                     ; preds = %str_ok
@@ -400,30 +443,69 @@ nulcopy:                                          ; preds = %str_ok
   br i1 %ovf, label %str_overflow_abort, label %nulcopy.len10
 
 nulmerge:                                         ; preds = %nulcopy.len10, %arg.str.ptr9
-  %arg.str.ptr13 = phi ptr [ %arg.str.ptr5, %arg.str.ptr9 ], [ %nulcopy.buf, %nulcopy.len10 ]
-  %call.res14 = call i64 @strcmp(ptr %addr.ffi.clean, ptr %arg.str.ptr13)
-  %cmptmp15 = icmp eq i64 %call.res14, 0
+  %arg.str.ptr11 = phi ptr [ %arg.str.ptr5, %arg.str.ptr9 ], [ %nulcopy.buf, %nulcopy.len10 ]
+  %call.res12 = call i64 @strcmp(ptr %addr.ffi.clean, ptr %arg.str.ptr11)
+  %cmptmp13 = icmp eq i64 %call.res12, 0
   br label %and.11.exit
 
-nulcopy.len10:                                    ; preds = %abort.dead11, %nulcopy
-  %arena.cur12 = call ptr @dva_arena_current()
-  %nulcopy.buf = call ptr @dva_arena_alloc(ptr %arena.cur12, i64 %sum)
+nulcopy.len10:                                    ; preds = %abort.dead, %nulcopy
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %nulcopy.buf = call ptr @dva_arena_alloc(ptr %arena.cur, i64 %sum)
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %nulcopy.buf, ptr align 1 %arg.str.ptr5, i64 %arg.str.ptr8, i1 false)
   %nulcopy.nul = getelementptr i8, ptr %nulcopy.buf, i64 %arg.str.ptr8
   store i8 0, ptr %nulcopy.nul, align 1
   br label %nulmerge
 
 str_overflow_abort:                               ; preds = %nulcopy
-  %3 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
-  call void @exit(i32 1)
+  call void @dva_abort_str_overflow_msg()
   unreachable
 
-abort.dead11:                                     ; No predecessors!
+abort.dead:                                       ; No predecessors!
   br label %nulcopy.len10
 }
 
+; Function Attrs: cold noinline
+define internal void @dva_validate_tag_or_abort_stale_str_msg(i64 %0) #5 {
+entry:
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
+  br i1 %tag.valid, label %valid, label %stale
+
+valid:                                            ; preds = %entry
+  ret void
+
+stale:                                            ; preds = %entry
+  call void @dva_abort_stale_str_msg()
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_stale_str_msg() #6 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_str_overflow_msg() #6 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #4
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #7
 
 define { i64, ptr } @"sys::c_str"(ptr %0) #0 {
 entry:
@@ -451,7 +533,7 @@ choice.else:                                      ; preds = %entry
   store i64 %call.res, ptr %var.len, align 8
   %var.load3 = load i64, ptr %var.len, align 8
   %addtmp = add i64 %var.load3, 1
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %builder.new = call ptr @dva_arena_alloc(ptr %arena.cur, i64 24)
   %cap.neg = icmp slt i64 %addtmp, 0
   %cap.safe = select i1 %cap.neg, i64 0, i64 %addtmp
@@ -469,7 +551,7 @@ choice.exit:                                      ; preds = %b.freeze.done, %cho
   ret { i64, ptr } %ret.pack
 
 b.buf.len4:                                       ; preds = %abort.dead, %choice.else
-  %arena.cur5 = call ptr @dva_arena_current()
+  %arena.cur5 = load ptr, ptr @dva_active_arena_tls, align 8
   %b.buf = call ptr @dva_arena_alloc(ptr %arena.cur5, i64 %sum)
   %b.nul0 = getelementptr i8, ptr %b.buf, i64 0
   store i8 0, ptr %b.nul0, align 1
@@ -488,93 +570,69 @@ b.buf.len4:                                       ; preds = %abort.dead, %choice
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
   %addr.tag = lshr i64 %raw.int, 48
   %tag.immortal = icmp eq i64 %addr.tag, 0
-  br i1 %tag.immortal, label %addr_ok, label %tag.gen_check
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current = icmp eq i64 %addr.tag, %active.gen
+  %tag.fast.ok = or i1 %tag.immortal, %tag.current
+  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
 
 str_overflow_abort:                               ; preds = %choice.else
-  %1 = call i64 @write(i32 2, ptr @str_overflow_msg, i64 70)
-  call void @exit(i32 1)
+  call void @dva_abort_str_overflow_msg()
   unreachable
 
 abort.dead:                                       ; No predecessors!
   br label %b.buf.len4
 
-addr_ok:                                          ; preds = %abort.dead12, %tag.slow_check, %tag.gen_check, %b.buf.len4
-  %raw.int13 = ptrtoint ptr %var.load8 to i64
-  %raw.clean.int14 = and i64 %raw.int13, 281474976710655
-  %raw.clean.ptr15 = inttoptr i64 %raw.clean.int14 to ptr
-  %addr.tag16 = lshr i64 %raw.int13, 48
-  %tag.immortal18 = icmp eq i64 %addr.tag16, 0
-  br i1 %tag.immortal18, label %addr_ok17, label %tag.gen_check19
+addr_ok:                                          ; preds = %tag.slow_check, %b.buf.len4
+  %raw.int11 = ptrtoint ptr %var.load8 to i64
+  %raw.clean.int12 = and i64 %raw.int11, 281474976710655
+  %raw.clean.ptr13 = inttoptr i64 %raw.clean.int12 to ptr
+  %addr.tag14 = lshr i64 %raw.int11, 48
+  %tag.immortal16 = icmp eq i64 %addr.tag14, 0
+  %active.gen17 = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current18 = icmp eq i64 %addr.tag14, %active.gen17
+  %tag.fast.ok19 = or i1 %tag.immortal16, %tag.current18
+  br i1 %tag.fast.ok19, label %addr_ok15, label %tag.slow_check20
 
-tag.gen_check:                                    ; preds = %b.buf.len4
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.fast.ok = icmp eq i64 %addr.tag, %active.gen
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-tag.slow_check:                                   ; preds = %tag.gen_check
-  %arena.cur11 = call ptr @dva_arena_current()
-  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur11, i64 %addr.tag)
-  br i1 %tag.valid, label %addr_ok, label %tag.stale
-
-tag.stale:                                        ; preds = %tag.slow_check
-  %2 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
-  call void @exit(i32 1)
-  unreachable
-
-abort.dead12:                                     ; No predecessors!
+tag.slow_check:                                   ; preds = %b.buf.len4
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
   br label %addr_ok
 
-addr_ok17:                                        ; preds = %abort.dead26, %tag.slow_check20, %tag.gen_check19, %addr_ok
-  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr15, i64 %addtmp10, i1 false)
-  %var.load27 = load i64, ptr %var.len, align 8
+addr_ok15:                                        ; preds = %tag.slow_check20, %addr_ok
+  call void @llvm.memcpy.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr13, i64 %addtmp10, i1 false)
+  %var.load21 = load i64, ptr %var.len, align 8
   %b.load = load ptr, ptr %var.b, align 8
   %b.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 2
-  %b.cap28 = load i64, ptr %b.cap, align 8
-  %b.len.neg = icmp slt i64 %var.load27, 0
+  %b.cap22 = load i64, ptr %b.cap, align 8
+  %b.len.neg = icmp slt i64 %var.load21, 0
   br i1 %b.len.neg, label %b.len_oob, label %b.len_big_check
 
-tag.gen_check19:                                  ; preds = %addr_ok
-  %active.gen22 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.fast.ok23 = icmp eq i64 %addr.tag16, %active.gen22
-  br i1 %tag.fast.ok23, label %addr_ok17, label %tag.slow_check20
+tag.slow_check20:                                 ; preds = %addr_ok
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag14)
+  br label %addr_ok15
 
-tag.slow_check20:                                 ; preds = %tag.gen_check19
-  %arena.cur24 = call ptr @dva_arena_current()
-  %tag.valid25 = call i1 @dva_arena_validate_tag(ptr %arena.cur24, i64 %addr.tag16)
-  br i1 %tag.valid25, label %addr_ok17, label %tag.stale21
-
-tag.stale21:                                      ; preds = %tag.slow_check20
-  %3 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
-  call void @exit(i32 1)
-  unreachable
-
-abort.dead26:                                     ; No predecessors!
-  br label %addr_ok17
-
-b.len_big_check:                                  ; preds = %addr_ok17
-  %b.len.big = icmp sgt i64 %var.load27, %b.cap28
+b.len_big_check:                                  ; preds = %addr_ok15
+  %b.len.big = icmp sgt i64 %var.load21, %b.cap22
   br i1 %b.len.big, label %b.len_oob, label %b.len_ok
 
-b.len_ok:                                         ; preds = %abort.dead29, %b.len_big_check
-  %b.len.gep30 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 0
-  store i64 %var.load27, ptr %b.len.gep30, align 8
-  %var.load31 = load ptr, ptr %var.b, align 8
-  %b.freeze.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load31, i32 0, i32 0
-  %b.freeze.len32 = load i64, ptr %b.freeze.len, align 8
-  %b.freeze.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load31, i32 0, i32 1
-  %b.freeze.data33 = load ptr, ptr %b.freeze.data, align 8
-  %b.freeze.arena = call ptr @dva_arena_current()
+b.len_ok:                                         ; preds = %abort.dead23, %b.len_big_check
+  %b.len.gep24 = getelementptr inbounds { i64, ptr, i64 }, ptr %b.load, i32 0, i32 0
+  store i64 %var.load21, ptr %b.len.gep24, align 8
+  %var.load25 = load ptr, ptr %var.b, align 8
+  %b.freeze.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load25, i32 0, i32 0
+  %b.freeze.len26 = load i64, ptr %b.freeze.len, align 8
+  %b.freeze.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load25, i32 0, i32 1
+  %b.freeze.data27 = load ptr, ptr %b.freeze.data, align 8
+  %b.freeze.arena = load ptr, ptr @dva_active_arena_tls, align 8
   %b.freeze.nc.gep = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %b.freeze.arena, i32 0, i32 1
   %b.freeze.nc = load i64, ptr %b.freeze.nc.gep, align 8
   %b.freeze.has.chunk = icmp sgt i64 %b.freeze.nc, 0
   br i1 %b.freeze.has.chunk, label %b.freeze.check, label %b.freeze.done
 
-b.len_oob:                                        ; preds = %b.len_big_check, %addr_ok17
-  %4 = call i64 @write(i32 2, ptr @builder_len_oob_msg, i64 47)
-  call void @exit(i32 1)
+b.len_oob:                                        ; preds = %b.len_big_check, %addr_ok15
+  call void @dva_abort_builder_len_oob_msg()
   unreachable
 
-abort.dead29:                                     ; No predecessors!
+abort.dead23:                                     ; No predecessors!
   br label %b.len_ok
 
 b.freeze.check:                                   ; preds = %b.len_ok
@@ -588,39 +646,50 @@ b.freeze.check:                                   ; preds = %b.len_ok
   %b.freeze.cap.gep = getelementptr inbounds { i64, i64, i64, [16384 x ptr], i64, i64, i64, [64 x i64] }, ptr %b.freeze.arena, i32 0, i32 0
   %b.freeze.cap = load i64, ptr %b.freeze.cap.gep, align 8
   %b.freeze.chunk.end = getelementptr i8, ptr %b.freeze.last.chunk, i64 %b.freeze.cap
-  %b.freeze.ge.chunk = icmp uge ptr %b.freeze.data33, %b.freeze.last.chunk
-  %b.freeze.lt.end = icmp ult ptr %b.freeze.data33, %b.freeze.chunk.end
+  %b.freeze.ge.chunk = icmp uge ptr %b.freeze.data27, %b.freeze.last.chunk
+  %b.freeze.lt.end = icmp ult ptr %b.freeze.data27, %b.freeze.chunk.end
   %b.freeze.in.chunk = and i1 %b.freeze.ge.chunk, %b.freeze.lt.end
-  %b.freeze.ge.bump = icmp uge ptr %b.freeze.data33, %b.freeze.bump
+  %b.freeze.ge.bump = icmp uge ptr %b.freeze.data27, %b.freeze.bump
   %b.freeze.reaped = and i1 %b.freeze.in.chunk, %b.freeze.ge.bump
   br i1 %b.freeze.reaped, label %b.freeze.copy, label %b.freeze.done
 
 b.freeze.copy:                                    ; preds = %b.freeze.check
-  %b.freeze.alen = add i64 %b.freeze.len32, 1
-  %arena.cur34 = call ptr @dva_arena_current()
-  %b.freeze.fresh = call ptr @dva_arena_alloc(ptr %arena.cur34, i64 %b.freeze.alen)
-  call void @llvm.memmove.p0.p0.i64(ptr align 1 %b.freeze.fresh, ptr align 1 %b.freeze.data33, i64 %b.freeze.len32, i1 false)
-  %b.freeze.nul = getelementptr i8, ptr %b.freeze.fresh, i64 %b.freeze.len32
+  %b.freeze.alen = add i64 %b.freeze.len26, 1
+  %arena.cur28 = load ptr, ptr @dva_active_arena_tls, align 8
+  %b.freeze.fresh = call ptr @dva_arena_alloc(ptr %arena.cur28, i64 %b.freeze.alen)
+  call void @llvm.memmove.p0.p0.i64(ptr align 1 %b.freeze.fresh, ptr align 1 %b.freeze.data27, i64 %b.freeze.len26, i1 false)
+  %b.freeze.nul = getelementptr i8, ptr %b.freeze.fresh, i64 %b.freeze.len26
   store i8 0, ptr %b.freeze.nul, align 1
   br label %b.freeze.done
 
 b.freeze.done:                                    ; preds = %b.freeze.copy, %b.freeze.check, %b.len_ok
-  %b.freeze.data35 = phi ptr [ %b.freeze.data33, %b.len_ok ], [ %b.freeze.data33, %b.freeze.check ], [ %b.freeze.fresh, %b.freeze.copy ]
+  %b.freeze.data29 = phi ptr [ %b.freeze.data27, %b.len_ok ], [ %b.freeze.data27, %b.freeze.check ], [ %b.freeze.fresh, %b.freeze.copy ]
   %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 0
-  store i64 %b.freeze.len32, ptr %str.build.len.gep, align 8
+  store i64 %b.freeze.len26, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
-  store ptr %b.freeze.data35, ptr %str.build.data.gep, align 8
-  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load31, i32 0, i32 0
+  store ptr %b.freeze.data29, ptr %str.build.data.gep, align 8
+  %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load25, i32 0, i32 0
   store i64 0, ptr %b.freeze.rst.len, align 8
-  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load31, i32 0, i32 1
+  %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load25, i32 0, i32 1
   store ptr null, ptr %b.freeze.rst.data, align 8
-  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load31, i32 0, i32 2
+  %b.freeze.rst.cap = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load25, i32 0, i32 2
   store i64 0, ptr %b.freeze.rst.cap, align 8
   br label %choice.exit
 }
 
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_builder_len_oob_msg() #6 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @builder_len_oob_msg, i64 47)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #4
+declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #7
 
 define { i64, ptr } @"sys::argv_string"(i64 %0) #0 {
 entry:
@@ -720,7 +789,7 @@ entry:
   store i64 %1, ptr %var.timeout_ms, align 8
   %var.load = load i64, ptr %var.fd, align 8
   %coerce.trunc = trunc i64 %var.load to i32
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr (<{ i32, i16, i16 }>, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds <{ i32, i16, i16 }>, ptr %rec.alloc, i32 0, i32 0
   store i32 %coerce.trunc, ptr %rec.fld, align 4
@@ -767,7 +836,7 @@ entry:
   store i64 %1, ptr %var.timeout_ms, align 8
   %var.load = load i64, ptr %var.fd, align 8
   %coerce.trunc = trunc i64 %var.load to i32
-  %arena.cur = call ptr @dva_arena_current()
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr (<{ i32, i16, i16 }>, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds <{ i32, i16, i16 }>, ptr %rec.alloc, i32 0, i32 0
   store i32 %coerce.trunc, ptr %rec.fld, align 4
@@ -806,6 +875,9 @@ and.15.exit:                                      ; preds = %and.15.else, %and.1
 
 attributes #0 = { "nounwind" }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
-attributes #2 = { noinline "nounwind" }
-attributes #3 = { cold noreturn "nounwind" }
-attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #2 = { alwaysinline "nounwind" }
+attributes #3 = { noinline "nounwind" }
+attributes #4 = { cold noreturn "nounwind" }
+attributes #5 = { cold noinline "nounwind" }
+attributes #6 = { cold noinline noreturn "nounwind" }
+attributes #7 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
