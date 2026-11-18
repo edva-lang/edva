@@ -14,7 +14,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@stale_addr_msg = internal unnamed_addr constant [51 x i8] c"E4011: stale Addr dereference after arena restore\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"libc::errno", ptr null }
 @"var.libc::errno" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_libc, ptr null }]
@@ -118,8 +117,7 @@ declare i64 @writev(i32, ptr, i64)
 
 declare i32 @ioctl(i32, i64, i64, ...)
 
-; Function Attrs: cold noreturn
-declare void @exit(i32) #4
+declare void @exit(i32)
 
 declare i64 @htons(i64)
 
@@ -251,56 +249,12 @@ entry:
   %raw.int = ptrtoint ptr %call.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i32, ptr %raw.clean.ptr, align 4
   %coerce.sext = sext i32 %raw.load to i64
   ret i64 %coerce.sext
-
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-}
-
-; Function Attrs: cold noinline
-define internal void @dva_validate_tag_or_abort_stale_addr_msg(i64 %0) #5 {
-entry:
-  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
-  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
-  br i1 %tag.valid, label %valid, label %stale
-
-valid:                                            ; preds = %entry
-  ret void
-
-stale:                                            ; preds = %entry
-  call void @dva_abort_stale_addr_msg()
-  unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
-}
-
-; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_stale_addr_msg() #6 {
-entry:
-  %0 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
-  call void @exit(i32 1)
-  unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
 }
 
 attributes #0 = { "nounwind" }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #2 = { alwaysinline "nounwind" }
 attributes #3 = { noinline "nounwind" }
-attributes #4 = { cold noreturn "nounwind" }
-attributes #5 = { cold noinline "nounwind" }
-attributes #6 = { cold noinline noreturn "nounwind" }

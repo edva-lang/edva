@@ -164,7 +164,8 @@ and.3.exit:                                       ; preds = %and.3.else, %and.3.
   br i1 %and.3.phi, label %choice.case, label %choice.next
 }
 
-define i1 @"ascii::is_digit"(i64 %0) #0 {
+; Function Attrs: inlinehint
+define i1 @"ascii::is_digit"(i64 %0) #4 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -297,7 +298,8 @@ and.8.exit:                                       ; preds = %and.8.else, %and.8.
   br i1 %case.or, label %choice.case, label %choice.next
 }
 
-define i1 @"ascii::is_alnum"(i64 %0) #0 {
+; Function Attrs: inlinehint
+define i1 @"ascii::is_alnum"(i64 %0) #4 {
 entry:
   %var._ = alloca i64, align 8
   store i64 %0, ptr %var._, align 8
@@ -686,3 +688,4 @@ attributes #0 = { "nounwind" }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #2 = { alwaysinline "nounwind" }
 attributes #3 = { noinline "nounwind" }
+attributes #4 = { inlinehint "nounwind" }

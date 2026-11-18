@@ -1217,11 +1217,11 @@ ctfe_eval_member = cg, m, frames, depth =>
       |
          !ctfe_target_is_frame_var(m.target, frames) &&
            (m.field_name ["#type_name", "#type_arity", "#type_size", "#type_align"])
-            |
-               rtv = types::resolve_type_value(cg, m.target)
-               --| rtv.1
-                  | ctfe_eval_type_prop(cg, m, rtv.0)
-                  | (types::CtVal(None), ast::ValueType(Unknown))
+              |
+                 rtv = types::resolve_type_value(cg, m.target)
+                 --| rtv.1
+                    | ctfe_eval_type_prop(cg, m, rtv.0)
+                    | (types::CtVal(None), ast::ValueType(Unknown))
          rtv_idx = m.field_name == "" && !ctfe_target_is_frame_var(m.target, frames)
             | types::resolve_type_value(cg, m.target)
             | (ast::TypeInfo(Prim, ast::ValueType(Unknown)), <->)
@@ -3871,7 +3871,7 @@ codegen_eval_member_type_reflect_ti = cg, t, ct_ti =>
                is_cur = vn != "" && types::ct_cursor_find(vn).2
                is_var_store = vn != "" && types::var_has_storage(cg, vn)
                is_lit_variant = !is_cur && vn != "" && !is_var_store &&
-                  (can_ti [Enum slots] <>(types::enum_slot_index(slots, vn)) | <->)
+                 (can_ti [Enum slots] <>(types::enum_slot_index(slots, vn)) | <->)
                is_cur || is_lit_variant
                   |
                      cargs = ast::Exprs()
@@ -4065,10 +4065,10 @@ codegen_eval_member = cg, t =>
                               |
                                  codegen_eval_member_type_reflect_ti(cg, t,
                                    types::ctfe_canonical_ti(cg, t_rtv.0))
-                                    | r2 => r2
-                                    |
-                                       bv = expr::codegen_eval(cg, t.target)
-                                       codeg_eval_member_valid(cg, t, vname, bv)
+                                      | r2 => r2
+                                      |
+                                         bv = expr::codegen_eval(cg, t.target)
+                                         codeg_eval_member_valid(cg, t, vname, bv)
                               |
                                  bv = expr::codegen_eval(cg, t.target)
                                  codeg_eval_member_valid(cg, t, vname, bv)
@@ -4185,8 +4185,8 @@ typed_branch_pay = cg, cv, is_unboxed, pay_ptr_opt, vt =>
                   | p => <+ eval_heap_pay_value(cg, p, vt) +>
                   | <-->
 
-cond_niche_str_non_escaping: types::Cg, tast::TypedExpr, tast::TypedBranches, <> => <>
-cond_niche_str_non_escaping = cg, cond, branches, is_pn =>
+cond_niche_str_non_escaping: types::Cg, tast::TypedExpr, tast::TypedBranches, <>, Int => <>
+cond_niche_str_non_escaping = cg, cond, branches, is_pn, tail_k =>
    is_safe_call = cond.kind [Call c] !types::fn_uses_c_ret_abi(cg, c.0) | <->
    !is_safe_call || !cg.in_fn || cg.in_restore_scope > 0 | --| <->
    has_res = ! <>(types::g.current_fn_body) || types::g.current_fn_has_restore
@@ -4196,17 +4196,47 @@ cond_niche_str_non_escaping = cg, cond, branches, is_pn =>
    br = branches(br_idx)!!
    eff_body = br.body.kind [Lambda l] l.1 | br.body
    lam_p = br.body.kind [Lambda l] (l.0(0) | _ | "") | ""
-   !stmt::str_var_only_safe_uses(cg, "_", eff_body, <->) | --| <->
+   br_safe = (tail_k == 1) || (tail_k == 2)
+   under_bad = (lam_p == "" && ?br.bind_vars == 0) &&
+     !stmt::str_var_only_safe_uses(cg, "_", eff_body, br_safe)
+   under_bad | --| <->
    lam_bad = lam_p != "" && lam_p != "_" &&
      (stmt::count_var_assigns(lam_p, eff_body) != 0 ||
-       !stmt::str_var_only_safe_uses(cg, lam_p, eff_body, <->))
+       !stmt::str_var_only_safe_uses(cg, lam_p, eff_body, br_safe))
    lam_bad | --| <->
    ok' = <+>
    br.bind_vars @ bvn =>
       bvn != "" && bvn != "_"
          |
             bv_bad = stmt::count_var_assigns(bvn, eff_body) != 0 ||
-              !stmt::str_var_only_safe_uses(cg, bvn, eff_body, <->)
+              !stmt::str_var_only_safe_uses(cg, bvn, eff_body, br_safe)
+            bv_bad | (ok' = <->)
+   ok'
+
+cond_niche_rec_non_escaping: types::Cg, tast::TypedExpr, tast::TypedBranches, <> => <>
+cond_niche_rec_non_escaping = cg, cond, branches, is_pn =>
+   is_safe_call = cond.kind [Call c] !types::fn_uses_c_ret_abi(cg, c.0) | <->
+   !is_safe_call || !cg.in_fn || cg.in_restore_scope > 0 | --| <->
+   has_res = ! <>(types::g.current_fn_body) || types::g.current_fn_has_restore
+   has_res | --| <->
+   br_idx = is_pn | 0 | 1
+   br_idx !< ?branches | --| <->
+   br = branches(br_idx)!!
+   eff_body = br.body.kind [Lambda l] l.1 | br.body
+   lam_p = br.body.kind [Lambda l] (l.0(0) | _ | "") | ""
+   under_bad = (lam_p == "" && ?br.bind_vars == 0) &&
+     !stmt::param_proj_safe(cg, "_", eff_body, <->, <->)
+   under_bad | --| <->
+   lam_bad = lam_p != "" && lam_p != "_" &&
+     (stmt::count_var_assigns(lam_p, eff_body) != 0 ||
+       !stmt::param_proj_safe(cg, lam_p, eff_body, <->, <->))
+   lam_bad | --| <->
+   ok' = <+>
+   br.bind_vars @ bvn =>
+      bvn != "" && bvn != "_"
+         |
+            bv_bad = stmt::count_var_assigns(bvn, eff_body) != 0 ||
+              !stmt::param_proj_safe(cg, bvn, eff_body, <->, <->)
             bv_bad | (ok' = <->)
    ok'
 
@@ -4218,9 +4248,12 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
    eff_ti_pre = cond.ti [TypeVar tvar] types::typedef_ti(cg, tvar) | cond.ti
    niche_pre = types::is_niche_ram_ti(cg, eff_ti_pre)
    can_cond_s = niche_pre.0 && (niche_pre.2 [Str]) &&
-     cond_niche_str_non_escaping(cg, cond, branches, niche_pre.1)
+     cond_niche_str_non_escaping(cg, cond, branches, niche_pre.1, tail_k)
+   can_cond_r = niche_pre.0 && (niche_pre.2 [Record]) &&
+     cond_niche_rec_non_escaping(cg, cond, branches, niche_pre.1)
+   can_cond = can_cond_s || can_cond_r
    saved_cond_sa = types::g.stack_alloc_next
-   types::g.stack_alloc_next = can_cond_s
+   types::g.stack_alloc_next = can_cond
    cv = main::codegen_typed_eval(cg, cond)
    types::g.stack_alloc_next = saved_cond_sa
    eff_ti = eff_ti_pre

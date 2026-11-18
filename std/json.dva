@@ -23,12 +23,12 @@
 
 #public
    #type Value <
-       String(String)
-       Number(Float)
-       Boolean(<>)
-       Null
-       Array(Value[])
-       Object((key: String, value: Value)[])
+      String(String)
+      Number(Float)
+      Boolean(<>)
+      Null
+      Array(Value[])
+      Object((key: String, value: Value)[])
    >
 
    #type Values Value{}
@@ -206,10 +206,10 @@ parse_string_escaped = sc, start, plain_end =>
    plain_end > start | b += sc.src(start..plain_end)
    r = scan_string(sc, b, plain_end)
    r | end =>
-         sc.pos = end + 1
-         <+ Value(String, +b) ->
+      sc.pos = end + 1
+      <+ Value(String, +b) ->
    | err =>
-         <- err +>
+      <- err +>
 
 parse_string: Scanner => <Value | Error>
 parse_string = sc =>
@@ -243,24 +243,24 @@ parse_array_loop = sc, elems =>
 parse_array_after_value: Scanner, Values, <Value | Error> => <Value | Error>
 parse_array_after_value = sc, elems, v =>
    v | val =>
-         elems += val
-         p = skip_ws(sc, sc.pos)
-         sc.pos = p
-         c = p [< ?sc.src] sc.src(p) | -1
-         c [']]
-            sc.pos = sc.pos + 1
-            n = ?elems
-            <+ Value(Array, elems(0..n)) ->
-         [',]
-            sc.pos = sc.pos + 1
-            p2 = skip_ws(sc, sc.pos)
-            c2 = p2 [< ?sc.src] sc.src(p2) | -1
-            c2 [']]
-               <- Error(400, "json: trailing comma in array", "std/json.dva", 0, 0, (p2, 0)) +>
-            |
-               parse_array_loop(sc, elems)
+      elems += val
+      p = skip_ws(sc, sc.pos)
+      sc.pos = p
+      c = p [< ?sc.src] sc.src(p) | -1
+      c [']]
+         sc.pos = sc.pos + 1
+         n = ?elems
+         <+ Value(Array, elems(0..n)) ->
+      [',]
+         sc.pos = sc.pos + 1
+         p2 = skip_ws(sc, sc.pos)
+         c2 = p2 [< ?sc.src] sc.src(p2) | -1
+         c2 [']]
+            <- Error(400, "json: trailing comma in array", "std/json.dva", 0, 0, (p2, 0)) +>
          |
-            <- Error(400, "json: expected ',' or ']' in array", "std/json.dva", 0, 0, (p, 0)) +>
+            parse_array_loop(sc, elems)
+      |
+         <- Error(400, "json: expected ',' or ']' in array", "std/json.dva", 0, 0, (p, 0)) +>
    | e => <- e +>
 
 parse_object: Scanner => <Value | Error>
@@ -291,39 +291,39 @@ parse_object_loop = sc, entries =>
 parse_object_after_key: Scanner, Pairs, <Value | Error> => <Value | Error>
 parse_object_after_key = sc, entries, k =>
    k | key =>
-         key [String s]
-            p = skip_ws(sc, sc.pos)
-            sc.pos = p
-            ok_col = p < ?sc.src && sc.src(p) == ':
-            ok_col |
-               sc.pos = sc.pos + 1
-               v = parse_value(sc)
-               parse_object_after_val(sc, entries, s, v)
-            | <- Error(400, "json: expected ':' after object key", "std/json.dva", 0, 0, (p, 0)) +>
-         | <- Error(400, "json: object key is not a string", "std/json.dva", 0, 0, (0, 0)) +>
+      key [String s]
+         p = skip_ws(sc, sc.pos)
+         sc.pos = p
+         ok_col = p < ?sc.src && sc.src(p) == ':
+         ok_col |
+            sc.pos = sc.pos + 1
+            v = parse_value(sc)
+            parse_object_after_val(sc, entries, s, v)
+         | <- Error(400, "json: expected ':' after object key", "std/json.dva", 0, 0, (p, 0)) +>
+      | <- Error(400, "json: object key is not a string", "std/json.dva", 0, 0, (0, 0)) +>
    | e => <- e +>
 
 parse_object_after_val: Scanner, Pairs, String, <Value | Error> => <Value | Error>
 parse_object_after_val = sc, entries, s, v =>
    v | val =>
-         entries += (s, val)
-         p = skip_ws(sc, sc.pos)
-         sc.pos = p
-         c = p [< ?sc.src] sc.src(p) | -1
-         c ['}]
-            sc.pos = sc.pos + 1
-            m = ?entries
-            <+ Value(Object, entries(0..m)) ->
-         [',]
-            sc.pos = sc.pos + 1
-            p2 = skip_ws(sc, sc.pos)
-            c2 = p2 [< ?sc.src] sc.src(p2) | -1
-            c2 ['}]
-               <- Error(400, "json: trailing comma in object", "std/json.dva", 0, 0, (p2, 0)) +>
-            |
-               parse_object_loop(sc, entries)
+      entries += (s, val)
+      p = skip_ws(sc, sc.pos)
+      sc.pos = p
+      c = p [< ?sc.src] sc.src(p) | -1
+      c ['}]
+         sc.pos = sc.pos + 1
+         m = ?entries
+         <+ Value(Object, entries(0..m)) ->
+      [',]
+         sc.pos = sc.pos + 1
+         p2 = skip_ws(sc, sc.pos)
+         c2 = p2 [< ?sc.src] sc.src(p2) | -1
+         c2 ['}]
+            <- Error(400, "json: trailing comma in object", "std/json.dva", 0, 0, (p2, 0)) +>
          |
-            <- Error(400, "json: expected ',' or '}' in object", "std/json.dva", 0, 0, (p, 0)) +>
+            parse_object_loop(sc, entries)
+      |
+         <- Error(400, "json: expected ',' or '}' in object", "std/json.dva", 0, 0, (p, 0)) +>
    | e2 => <- e2 +>
 
 parse_lit: Scanner, <>, Int => <Value | Error>
@@ -471,13 +471,13 @@ parse_number = sc =>
 parse_finish: Scanner, <Value | Error> => <Value | Error>
 parse_finish = sc, r =>
    r | val =>
-         p = skip_ws(sc, sc.pos)
-         p == ?sc.src |
-            <+ val ->
-         |
-            <- Error(400, "json: trailing characters after value", "std/json.dva", 0, 0, (p, 0)) +>
+      p = skip_ws(sc, sc.pos)
+      p == ?sc.src |
+         <+ val ->
+      |
+         <- Error(400, "json: trailing characters after value", "std/json.dva", 0, 0, (p, 0)) +>
    | err =>
-         <- err +>
+      <- err +>
 
 parse_value: Scanner => <Value | Error>
 parse_value = sc =>
@@ -1015,15 +1015,16 @@ stringify_pretty_into = b, val, indent, depth =>
 
    cursor_skip_compound: Cursor, Int => <>
    cursor_skip_compound = cur, p =>
-      n = ?cur.src
+      src = cur.src
+      n = ?src
       k' = p + 1
       depth' = 1
       0.. @
          k' !< n | --| <->
-         ch = cur.src(k')
+         ch = src(k')
          ch
             ['"]
-               cursor_skip_str(cur.src, k' + 1)
+               cursor_skip_str(src, k' + 1)
                   | end => k' = end
                   | --| <->
             ['{, '[]
@@ -1040,13 +1041,14 @@ stringify_pretty_into = b, val, indent, depth =>
 
    cursor_skip_number: Cursor, Int, Int => <>
    cursor_skip_number = cur, p, c0 =>
-      n = ?cur.src
-      has_digit = c0 ['0...'9] || (p + 1 < n && cur.src(p + 1) ['0...'9])
+      src = cur.src
+      n = ?src
+      has_digit = c0 ['0...'9] || (p + 1 < n && src(p + 1) ['0...'9])
       !has_digit | --| <->
       k' = p + 1
       0.. @
          k' !< n | -->
-         cur.src(k') ['0...'9, '+, '-, '., 'e, 'E]
+         src(k') ['0...'9, '+, '-, '., 'e, 'E]
             | k' = k' + 1
             | -->
       cur.pos = k'
@@ -1063,11 +1065,12 @@ stringify_pretty_into = b, val, indent, depth =>
 
    cursor_skip_ws: Cursor => Int
    cursor_skip_ws = cur =>
+      src = cur.src
       p' = cur.pos
-      n = ?cur.src
+      n = ?src
       0.. @
          p' !< n | -->
-         str::is_ws(cur.src(p')) | p' = p' + 1 | -->
+         str::is_ws(src(p')) | p' = p' + 1 | -->
       cur.pos = p'
       p'
 
@@ -1077,17 +1080,20 @@ stringify_pretty_into = b, val, indent, depth =>
 
    cursor_peek: Cursor => Int
    cursor_peek = cur =>
+      src = cur.src
       p = cursor_skip_ws(cur)
-      p < ?cur.src | cur.src(p) | -1
+      p < ?src | src(p) | -1
 
    cursor_expect_byte: Cursor, Int => <>
    cursor_expect_byte = cur, ch =>
+      src = cur.src
+      n = ?src
       at = cur.pos
       // Whitespace arguments must retain the skip-before-match behavior.
-      p = at < ?cur.src && cur.src(at) == ch && !str::is_ws(ch)
+      p = at < n && src(at) == ch && !str::is_ws(ch)
          | at
          | cursor_skip_ws(cur)
-      p < ?cur.src && cur.src(p) == ch
+      p < n && src(p) == ch
          |
             cur.pos = p + 1
             <+>
@@ -1101,39 +1107,41 @@ stringify_pretty_into = b, val, indent, depth =>
 
    cursor_read_str: Cursor => < String | >
    cursor_read_str = cur =>
-      n = ?cur.src
+      src = cur.src
+      n = ?src
       at = cur.pos
-      p = at < n && cur.src(at) == '\"
+      p = at < n && src(at) == '\"
          | at
          | cursor_skip_ws(cur)
-      p !< n || cur.src(p) != '" | --| <-->
+      p !< n || src(p) != '" | --| <-->
       start = p + 1
-      plain_end = scan_plain_ascii_end(cur.src, start)
-      plain_end < n && cur.src(plain_end) == '"
+      plain_end = scan_plain_ascii_end(src, start)
+      plain_end < n && src(plain_end) == '"
          |
             cur.pos = plain_end + 1
-            --| <+ cur.src(start..plain_end) +>
+            --| <+ src(start..plain_end) +>
       cursor_read_str_escaped(cur, start, plain_end)
 
    cursor_next_field: Cursor => < String | >
    cursor_next_field = cur =>
-      n = ?cur.src
+      src = cur.src
+      n = ?src
       at = cur.pos
-      p = at < n && (cur.src(at) ['\", ',, '}])
+      p = at < n && (src(at) ['\", ',, '}])
          | at
          | cursor_skip_ws(cur)
       p !< n | --| <-->
-      c = cur.src(p)
+      c = src(p)
       c ['}]
          cur.pos = p + 1
          --| <-->
       c [',]
          cur.pos = p + 1
          at2 = cur.pos
-         p2 = at2 < n && cur.src(at2) == '\"
+         p2 = at2 < n && src(at2) == '\"
             | at2
             | cursor_skip_ws(cur)
-         p2 !< n || cur.src(p2) == '} | --| <-->
+         p2 !< n || src(p2) == '} | --| <-->
       cursor_read_str(cur)
          | k =>
             cursor_expect_byte(cur, ':)
@@ -1143,40 +1151,42 @@ stringify_pretty_into = b, val, indent, depth =>
 
    cursor_read_int: Cursor => < Int | >
    cursor_read_int = cur =>
+      src = cur.src
       p0 = cursor_skip_ws(cur)
-      n = ?cur.src
+      n = ?src
       p0 !< n | --| <-->
       p' = p0
       neg' = <->
-      cur.src(p') ['-]
+      src(p') ['-]
          neg' = <+>
          p' = p' + 1
       p' !< n | --| <-->
-      c0 = cur.src(p')
+      c0 = src(p')
       c0 !['0...'9] | --| <-->
-      c0 ['0] && p' + 1 < n && ascii::is_digit(cur.src(p' + 1)) | --| <-->
+      c0 ['0] && p' + 1 < n && ascii::is_digit(src(p' + 1)) | --| <-->
       v' = 0
       0.. @
          p' !< n | -->
-         c = cur.src(p')
+         c = src(p')
          c ['0...'9]
             |
                v' = v' * 10 + (c - '0)
                p' = p' + 1
             | -->
-      p' < n && cur.src(p') ['., 'e, 'E] | --| <-->
+      p' < n && src(p') ['., 'e, 'E] | --| <-->
       cur.pos = p'
       <+ (neg' | 0 - v' | v') +>
 
    cursor_read_bool: Cursor => < <> | >
    cursor_read_bool = cur =>
+      src = cur.src
       p = cursor_skip_ws(cur)
-      n = ?cur.src
-      p + 4 !> n && cur.src(p..p + 4) == "true"
+      n = ?src
+      p + 4 !> n && src(p..p + 4) == "true"
          |
             cur.pos = p + 4
             --| <+ <+> +>
-      p + 5 !> n && cur.src(p..p + 5) == "false"
+      p + 5 !> n && src(p..p + 5) == "false"
          |
             cur.pos = p + 5
             --| <+ <-> +>
@@ -1184,36 +1194,36 @@ stringify_pretty_into = b, val, indent, depth =>
 
    cursor_skip_value: Cursor => <>
    cursor_skip_value = cur =>
+      src = cur.src
       p = cursor_skip_ws(cur)
-      n = ?cur.src
+      n = ?src
       p !< n | --| <->
-      c0 = cur.src(p)
+      c0 = src(p)
       c0
          ['"]
-            cursor_skip_str(cur.src, p + 1)
+            cursor_skip_str(src, p + 1)
                | end =>
                   cur.pos = end
                   <+>
                | <->
          ['{, '[] cursor_skip_compound(cur, p)
          ['t]
-            p + 4 !> n && cur.src(p..p + 4) == "true"
+            p + 4 !> n && src(p..p + 4) == "true"
                |
                   cur.pos = p + 4
                   <+>
                | <->
          ['f]
-            p + 5 !> n && cur.src(p..p + 5) == "false"
+            p + 5 !> n && src(p..p + 5) == "false"
                |
                   cur.pos = p + 5
                   <+>
                | <->
          ['n]
-            p + 4 !> n && cur.src(p..p + 4) == "null"
+            p + 4 !> n && src(p..p + 4) == "null"
                |
                   cur.pos = p + 4
                   <+>
                | <->
          ['0...'9, '-] cursor_skip_number(cur, p, c0)
          | <->
-

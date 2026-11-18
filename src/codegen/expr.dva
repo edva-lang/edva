@@ -200,6 +200,12 @@ codegen_string_len_fast = cg, val, name =>
    mask = LLVMConstInt(LLVMInt64Type!, 0xFFFFFFFFFFFF, 0)
    LLVMBuildAnd(cg.builder, raw, mask, name)
 
+has_addr: types::Addrs, Addr => <>
+has_addr = xs, target =>
+   ?xs @ i =>
+      xs(i)!! == target | --| <+>
+   <->
+
 // Reads and validates the stored String length. A value stamped by a
 // save/restore scope must still carry the current arena generation.
 codegen_string_len: types::Cg, Addr, String => Addr
@@ -209,11 +215,16 @@ codegen_string_len = cg, val, name =>
    zero = LLVMConstInt(LLVMInt64Type!, 0, 0)
    mask = LLVMConstInt(LLVMInt64Type!, 0xFFFFFFFFFFFF, 0)
    len = LLVMBuildAnd(cg.builder, raw, mask, name)
+   no_fn_restore = cg.in_fn && !types::g.current_fn_has_restore &&
+     cg.in_restore_scope == 0
+   skip_mod = no_fn_restore && (cg.current_module != "io")
+   already_val = no_fn_restore && has_addr(types::g.validated_str_vals, val)
    skip_check = cg.opts.no_runtime || (LLVMIsConstant(val) != 0) ||
-     (cg.in_fn && ?cg.cycle_breaks > 0)
+     (cg.in_fn && ?cg.cycle_breaks > 0) || skip_mod || already_val
    skip_check
       | len
       |
+         no_fn_restore | (types::g.validated_str_vals += val)
          tag = LLVMBuildLShr(cg.builder, raw,
            LLVMConstInt(LLVMInt64Type!, 48, 0), "str.tag")
          parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
@@ -260,7 +271,11 @@ validate_and_strip_addr_tag = cg, value, i8p =>
            "raw.clean.int")
          clean_p = LLVMBuildIntToPtr(cg.builder, clean_int, i8p,
            "raw.clean.ptr")
-         cg.opts.no_runtime
+         no_fn_restore = cg.in_fn && !types::g.current_fn_has_restore &&
+           cg.in_restore_scope == 0
+         skip_check = cg.opts.no_runtime || no_fn_restore ||
+           (cg.in_fn && ?cg.cycle_breaks > 0 && !types::g.current_fn_has_restore)
+         skip_check
             | clean_p
             |
                zero = LLVMConstInt(i64t, 0, 0)
@@ -349,7 +364,7 @@ codegen_string_build: types::Cg, Addr, Addr, String => Addr
 codegen_string_build = cg, len, data, name =>
    st = cg.str_t
    use_stack = types::g.stack_alloc_next && cg.in_fn &&
-     ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0
+     cg.in_restore_scope == 0
    sp = use_stack
       |
          types::g.stack_alloc_next = <->
@@ -6005,7 +6020,8 @@ codegen_eval_str_span = cg, te =>
                is_bldr
                   | eval_str_range_span(cg, tv, <+>, slc.2, slc.3)
                   |
-                     codegen_string_len(cg, tv, "s.chk.len")
+                     (cg.in_restore_scope > 0 || types::g.current_fn_has_restore)
+                        | codegen_string_len(cg, tv, "s.chk.len")
                      eval_str_range_span(cg, tv, <->, slc.2, slc.3)
             | (LLVMConstInt(i64t, 0, 0), LLVMConstNull(i8p))
       |
@@ -7077,9 +7093,56 @@ rec_factory_expr_pure = te =>
          rec_factory_expr_pure(ch.0) && rec_factory_branches_pure(ch.1, 0, ?ch.1)
       | <->
 
+niche_rec_exprs_inlinable: tast::TypedExprs, Int, Int => <>
+niche_rec_exprs_inlinable = es, i, n =>
+   i !< n
+      | <+>
+      | niche_rec_body_inlinable(es(i)!!) && niche_rec_exprs_inlinable(es, i + 1, n)
+
+niche_rec_branches_inlinable: tast::TypedBranches, Int, Int => <>
+niche_rec_branches_inlinable = bs, i, n =>
+   i !< n
+      | <+>
+      |
+         br = bs(i)!!
+         eff_body = br.body.kind [Lambda l] l.1 | br.body
+         niche_rec_exprs_inlinable(br.case_values, 0, ?br.case_values) &&
+           (br.pred_fn | pf => niche_rec_body_inlinable(pf) | <+>) &&
+           niche_rec_body_inlinable(eff_body) &&
+           niche_rec_branches_inlinable(bs, i + 1, n)
+
+niche_rec_body_inlinable: tast::TypedExpr => <>
+niche_rec_body_inlinable = te =>
+   te.kind
+      [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, Var] <+>
+      [Unary u]
+         u.0 [AddrOf] <-> | niche_rec_body_inlinable(u.1)
+      [Bin b] niche_rec_body_inlinable(b.1) && niche_rec_body_inlinable(b.2)
+      [Member m] niche_rec_body_inlinable(m.0)
+      [Index ix] niche_rec_body_inlinable(ix.0) && niche_rec_body_inlinable(ix.1)
+      [Call c]
+         (c.1 | r => niche_rec_body_inlinable(r) | <+>) &&
+           niche_rec_exprs_inlinable(c.2, 0, ?c.2)
+      [Record r]
+         ok' = <+>
+         r @ f =>
+            !niche_rec_body_inlinable(f.val) | ok' = <->
+         ok'
+      [Block es] niche_rec_exprs_inlinable(es, 0, ?es)
+      [Assign a]
+         !a.1 && !a.2 && !a.3 && !a.4 && niche_rec_body_inlinable(a.5)
+      [Return r]
+         (r | rv => niche_rec_body_inlinable(rv) | <+>)
+      [Copy cp] niche_rec_body_inlinable(cp)
+      [RamConstruct rc] (rc.2 | p => niche_rec_body_inlinable(p) | <+>)
+      [EnumConstruct ec] (ec.1 | p => niche_rec_body_inlinable(p) | <+>)
+      [Choice ch]
+         niche_rec_body_inlinable(ch.0) && niche_rec_branches_inlinable(ch.1, 0, ?ch.1)
+      | <->
+
 unwrap_rec_factory_lambda: types::Cg, String, tast::TypedExpr, ast::TypeInfo,
-  Int, String, String => <(ast::Names, tast::TypedExpr, String, ast::TypeInfo)|>
-unwrap_rec_factory_lambda = cg, tname, val_e, ti, nargs, rname, fname =>
+  Int, String, String, <> => <(ast::Names, tast::TypedExpr, String, ast::TypeInfo)|>
+unwrap_rec_factory_lambda = cg, tname, val_e, ti, nargs, rname, fname, is_niche_rec =>
    is_match = tname != "" && (tname == rname || tname == fname ||
      types::resolve_fn_name(cg, tname) == rname)
    !is_match | --| <-->
@@ -7090,26 +7153,30 @@ unwrap_rec_factory_lambda = cg, tname, val_e, ti, nargs, rname, fname =>
    rec_body = lam.1.kind
       [Block exprs] (?exprs == 1 | exprs(0)!! | lam.1)
       | lam.1
-   !(rec_body.kind [Record]) | --| <-->
+   !is_niche_rec && !(rec_body.kind [Record]) | --| <-->
    stmt::typed_refs_name(rec_body, rname) ||
      stmt::typed_refs_name(rec_body, fname) ||
      stmt::typed_refs_name(rec_body, tname) | --| <-->
-   !rec_factory_expr_pure(rec_body) | --| <-->
+   body_ok = is_niche_rec
+      | (!stmt::fn_body_has_arena_restore(cg, rec_body) &&
+        niche_rec_body_inlinable(rec_body))
+      | rec_factory_expr_pure(rec_body)
+   !body_ok | --| <-->
    fn_ti = ti [Fn] ti | val_e.ti
    <+ (lam.0, rec_body, tname, fn_ti) +>
 
-find_typed_rec_factory: types::Cg, String, String, Int => <(ast::Names,
+find_typed_rec_factory: types::Cg, String, String, Int, <> => <(ast::Names,
   tast::TypedExpr, String, ast::TypeInfo)|>
-find_typed_rec_factory = cg, rname, fname, nargs =>
+find_typed_rec_factory = cg, rname, fname, nargs, is_niche_rec =>
    stmts = types::g.typed_program_stmts
    ?stmts @ i =>
       st = stmts(i)!!
       found = st
-         [Binding b] unwrap_rec_factory_lambda(cg, b.0, b.2, b.1, nargs, rname, fname)
-         [GlobalBinding gb] unwrap_rec_factory_lambda(cg, gb.0, gb.2, gb.1, nargs, rname, fname)
+         [Binding b] unwrap_rec_factory_lambda(cg, b.0, b.2, b.1, nargs, rname, fname, is_niche_rec)
+         [GlobalBinding gb] unwrap_rec_factory_lambda(cg, gb.0, gb.2, gb.1, nargs, rname, fname, is_niche_rec)
          [Expr te]
             te.kind
-               [Assign a] unwrap_rec_factory_lambda(cg, a.0, a.5, te.ti, nargs, rname, fname)
+               [Assign a] unwrap_rec_factory_lambda(cg, a.0, a.5, te.ti, nargs, rname, fname, is_niche_rec)
                | <-->
          | <-->
       <>(found) | --| found
@@ -7118,15 +7185,18 @@ find_typed_rec_factory = cg, rname, fname, nargs =>
 try_inline_rec_factory_call: types::Cg, String, String, tast::TypedExprs,
   ast::TypeInfo, <>, <> => <(Addr, ast::ValueType)|>
 try_inline_rec_factory_call = cg, rname, fname, args, ti, is_generic, want_stack =>
-   !want_stack || !cg.in_fn || ?cg.cycle_breaks > 0 ||
-     cg.in_restore_scope > 0 || is_generic | --| <-->
+   !want_stack || !cg.in_fn || cg.in_restore_scope > 0 || is_generic | --| <-->
    stmt::is_foreign_fn(fname) || stmt::is_module_dynamic(cg, rname) | --| <-->
    ?stmt::fn_signature_cparams(types::g.pstmts, rname) > 0 | --| <-->
    ret_vt = types::vt_from_ti_cg(cg, ti)
-   !types::is_record_vt(ret_vt) || types::is_slice_vt(ret_vt) | --| <-->
+   niche_ret = types::is_niche_ram_ti(cg, ti)
+   is_niche_rec = niche_ret.0 && (niche_ret.2 [Record])
+   is_plain_rec = types::is_record_vt(ret_vt) && !types::is_slice_vt(ret_vt)
+   !(is_plain_rec || is_niche_rec) | --| <-->
+   !is_niche_rec && (?cg.cycle_breaks > 0) | --| <-->
    res_call_ti = types::resolve_record_ti(cg, ti)
-   <>(types::ti_get_bitfield(cg, res_call_ti)) | --| <-->
-   fac_opt = find_typed_rec_factory(cg, rname, fname, ?args)
+   !is_niche_rec && <>(types::ti_get_bitfield(cg, res_call_ti)) | --| <-->
+   fac_opt = find_typed_rec_factory(cg, rname, fname, ?args, is_niche_rec)
    !<>(fac_opt) | --| <-->
    fac = fac_opt!!
    pnames = fac.0
@@ -7134,7 +7204,7 @@ try_inline_rec_factory_call = cg, rname, fname, args, ti, is_generic, want_stack
    tname = fac.2
    fn_ti = fac.3
    res_body_ti = types::resolve_record_ti(cg, rec_body.ti)
-   <>(types::ti_get_bitfield(cg, res_body_ti)) | --| <-->
+   !is_niche_rec && <>(types::ti_get_bitfield(cg, res_body_ti)) | --| <-->
    param_tis = fn_ti [Fn f] f.1 | ast::VInfos()
    param_vts = fn_ti [Fn f] f.0 | ast::VTypes()
    types::g.stack_alloc_next = <->
@@ -7170,16 +7240,68 @@ try_inline_rec_factory_call = cg, rname, fname, args, ti, is_generic, want_stack
         arg_dt, arg_rt, arg_fnames, <-->, <+>, <->, arg_fvts, <+ coerced_a +>)
    !compat' | --| <-->
    saved_nvars = ?cg.vars
+   saved_fn_var_start = cg.fn_var_start
    saved_mod = cg.current_module
-   fac_mod = types::decl_module(tname, 0)
-   fac_mod != "" | cg.current_module = fac_mod
+   cg.current_module = types::decl_module(tname, 0)
+   is_niche_rec | (cg.fn_var_start = saved_nvars)
    param_vars @ pv => cg.vars += pv
-   types::g.stack_alloc_next = <+>
-   res = main::codegen_typed_eval(cg, rec_body)
-   types::g.stack_alloc_next = <->
-   cg.current_module = saved_mod
-   cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
-   <+ res +>
+   is_niche_rec
+      |
+         i8p = LLVMPointerType(LLVMInt8Type!, 0)
+         ret_slot = types::hoisted_alloca(cg, i8p, "inl.ret.slot")
+         ret_bb = LLVMAppendBasicBlock(cg.current_fn, "inl.ret.exit")
+         saved_fn_body = types::g.current_fn_body
+         saved_exp_ti = types::g.expected_fn_ti
+         saved_ret_bb = types::g.inline_ret_bb
+         saved_ret_slot = types::g.inline_ret_slot
+         saved_tail = types::g.unboxed_ret_tail
+         saved_vra_locs = types::vra.locals
+         saved_vra_muts = types::vra.cur_muts
+         saved_vra_bnds = types::vra.bounded_idxs
+         saved_vra_lvs = types::vra.len_vars
+         types::g.current_fn_body = <+ rec_body +>
+         types::g.expected_fn_ti = ti
+         types::g.inline_ret_bb = ret_bb
+         types::g.inline_ret_slot = ret_slot
+         types::vra.locals = types::VraLocals()
+         types::vra.bounded_idxs = types::BoundedStrIdxs()
+         types::vra.len_vars = types::LenVarEntries()
+         types::vra.cur_muts = types::vra_collect_mut_vars(pnames, rec_body)
+         types::g.unboxed_ret_tail = 4
+         res = main::codegen_typed_eval(cg, rec_body)
+         types::g.unboxed_ret_tail = 0
+         !stmt::block_is_terminated(cg)
+            |
+               r_val = types::llvm_val_opt(res.0)
+                  | v0 =>
+                     LLVMGetTypeKind(LLVMTypeOf(v0)) == 12
+                        | LLVMBuildPointerCast(cg.builder, v0, i8p, "inl.res.p")
+                        | LLVMBuildIntToPtr(cg.builder, v0, i8p, "inl.res.i2p")
+                  | LLVMConstNull(i8p)
+               LLVMBuildStore(cg.builder, r_val, ret_slot)
+               LLVMBuildBr(cg.builder, ret_bb)
+         LLVMPositionBuilderAtEnd(cg.builder, ret_bb)
+         out_val = LLVMBuildLoad2(cg.builder, i8p, ret_slot, "inl.ret.val")
+         types::g.current_fn_body = saved_fn_body
+         types::g.expected_fn_ti = saved_exp_ti
+         types::g.inline_ret_bb = saved_ret_bb
+         types::g.inline_ret_slot = saved_ret_slot
+         types::g.unboxed_ret_tail = saved_tail
+         types::vra.locals = saved_vra_locs
+         types::vra.cur_muts = saved_vra_muts
+         types::vra.bounded_idxs = saved_vra_bnds
+         types::vra.len_vars = saved_vra_lvs
+         cg.current_module = saved_mod
+         cg.fn_var_start = saved_fn_var_start
+         cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
+         <+ (out_val, ret_vt) +>
+      |
+         types::g.stack_alloc_next = <+>
+         res = main::codegen_typed_eval(cg, rec_body)
+         types::g.stack_alloc_next = <->
+         cg.current_module = saved_mod
+         cg.vars = stmt::truncate_vars(cg.vars, saved_nvars)
+         <+ res +>
 
 codegen_typed_eval_fn_call: types::Cg, String, tast::TypedExprs,
   ast::TypeInfo => (Addr, ast::ValueType)
@@ -7512,6 +7634,29 @@ codegen_typed_eval_return = cg, val_opt =>
          types::init_error(cg, "E3173", diag::E3173_return_outside_fn!, 0, 0)
          (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unknown))
       |
+         types::g.inline_ret_bb != sys::addr_null
+            |
+               i8p = LLVMPointerType(LLVMInt8Type!, 0)
+               rval = val_opt
+                  | val_te =>
+                     saved_tail = types::g.unboxed_ret_tail
+                     types::g.unboxed_ret_tail = 4
+                     ev = main::codegen_typed_eval(cg, val_te)
+                     types::g.unboxed_ret_tail = saved_tail
+                     types::llvm_val_opt(ev.0)
+                        | v0 =>
+                           LLVMGetTypeKind(LLVMTypeOf(v0)) == 12
+                              | LLVMBuildPointerCast(cg.builder, v0, i8p, "inl.ret.p")
+                              | LLVMBuildIntToPtr(cg.builder, v0, i8p, "inl.ret.i2p")
+                        | LLVMConstNull(i8p)
+                  | LLVMConstNull(i8p)
+               !stmt::block_is_terminated(cg)
+                  |
+                     LLVMBuildStore(cg.builder, rval, types::g.inline_ret_slot)
+                     LLVMBuildBr(cg.builder, types::g.inline_ret_bb)
+               dead = LLVMAppendBasicBlock(cg.current_fn, "inl.ret.dead")
+               LLVMPositionBuilderAtEnd(cg.builder, dead)
+               --| (LLVMConstInt(LLVMInt64Type!, 0, 0), ast::ValueType(Unit))
          val_opt
             | val_te =>
                ret_ti = types::g.expected_fn_ti
@@ -7737,8 +7882,10 @@ eval_typed_fn_call_with_stack = cg, fn_nm, args, ti, want_stack =>
 codegen_typed_eval_call: types::Cg, String, <tast::TypedExpr|>, tast::TypedExprs,
   ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_call = cg, fname, ftarget, args, ti =>
-   want_call_stack = types::g.stack_alloc_next
+   want_call_stack = types::g.stack_alloc_next ||
+     (cg.in_fn && cg.in_restore_scope == 0 && (types::g.unboxed_ret_tail == 3))
    types::g.stack_alloc_next = <->
+   types::g.unboxed_ret_tail = 0
    ! <>(ftarget) && fname == "#has_member" && ?args == 2
       |
          arg0' = args(0)!!

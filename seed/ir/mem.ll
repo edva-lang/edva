@@ -14,7 +14,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @arena_chunklimit_msg = internal unnamed_addr constant [58 x i8] c"E4003: arena chunk limit reached (too many arena chunks)\0A\00"
 @arena_oom_msg = internal unnamed_addr constant [50 x i8] c"E4001: arena allocator exhausted (out of memory)\0A\00"
 @builder_len_oob_msg = internal unnamed_addr constant [48 x i8] c"E4008: Builder length assignment out of bounds\0A\00"
-@stale_addr_msg = internal unnamed_addr constant [51 x i8] c"E4011: stale Addr dereference after arena restore\0A\00"
 @clo.const = internal constant { ptr, ptr } { ptr @"mem::copy", ptr null }
 @"var.mem::copy" = global ptr null
 @clo.const.1 = internal constant { ptr, ptr } { ptr @"mem::move", ptr null }
@@ -353,68 +352,15 @@ entry:
   %raw.int = ptrtoint ptr %var.load to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.int3 = ptrtoint ptr %var.load1 to i64
   %raw.clean.int4 = and i64 %raw.int3, 281474976710655
   %raw.clean.ptr5 = inttoptr i64 %raw.clean.int4 to ptr
-  %addr.tag6 = lshr i64 %raw.int3, 48
-  %tag.immortal8 = icmp eq i64 %addr.tag6, 0
-  %active.gen9 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current10 = icmp eq i64 %addr.tag6, %active.gen9
-  %tag.fast.ok11 = or i1 %tag.immortal8, %tag.current10
-  br i1 %tag.fast.ok11, label %addr_ok7, label %tag.slow_check12
-
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-addr_ok7:                                         ; preds = %tag.slow_check12, %addr_ok
   call void @llvm.memcpy.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr5, i64 %var.load2, i1 false)
   ret ptr %raw.clean.ptr
-
-tag.slow_check12:                                 ; preds = %addr_ok
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag6)
-  br label %addr_ok7
-}
-
-; Function Attrs: cold noinline
-define internal void @dva_validate_tag_or_abort_stale_addr_msg(i64 %0) #5 {
-entry:
-  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
-  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
-  br i1 %tag.valid, label %valid, label %stale
-
-valid:                                            ; preds = %entry
-  ret void
-
-stale:                                            ; preds = %entry
-  call void @dva_abort_stale_addr_msg()
-  unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
-}
-
-; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_stale_addr_msg() #6 {
-entry:
-  %0 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
-  call void @exit(i32 1)
-  unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #7
+declare void @llvm.memcpy.p0.p0.i64(ptr noalias nocapture writeonly, ptr noalias nocapture readonly, i64, i1 immarg) #5
 
 define ptr @"mem::move"(ptr %0, ptr %1, i64 %2) #0 {
 entry:
@@ -430,39 +376,15 @@ entry:
   %raw.int = ptrtoint ptr %var.load to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.int3 = ptrtoint ptr %var.load1 to i64
   %raw.clean.int4 = and i64 %raw.int3, 281474976710655
   %raw.clean.ptr5 = inttoptr i64 %raw.clean.int4 to ptr
-  %addr.tag6 = lshr i64 %raw.int3, 48
-  %tag.immortal8 = icmp eq i64 %addr.tag6, 0
-  %active.gen9 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current10 = icmp eq i64 %addr.tag6, %active.gen9
-  %tag.fast.ok11 = or i1 %tag.immortal8, %tag.current10
-  br i1 %tag.fast.ok11, label %addr_ok7, label %tag.slow_check12
-
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-addr_ok7:                                         ; preds = %tag.slow_check12, %addr_ok
   call void @llvm.memmove.p0.p0.i64(ptr align 1 %raw.clean.ptr, ptr align 1 %raw.clean.ptr5, i64 %var.load2, i1 false)
   ret ptr %raw.clean.ptr
-
-tag.slow_check12:                                 ; preds = %addr_ok
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag6)
-  br label %addr_ok7
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: readwrite)
-declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #7
+declare void @llvm.memmove.p0.p0.i64(ptr nocapture writeonly, ptr nocapture readonly, i64, i1 immarg) #5
 
 define ptr @"mem::zero"(ptr %0, i64 %1) #0 {
 entry:
@@ -475,24 +397,12 @@ entry:
   %raw.int = ptrtoint ptr %var.load to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 0, i64 %var.load1, i1 false)
   ret ptr %raw.clean.ptr
-
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
 }
 
 ; Function Attrs: nocallback nofree nounwind willreturn memory(argmem: write)
-declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #8
+declare void @llvm.memset.p0.i64(ptr nocapture writeonly, i8, i64, i1 immarg) #6
 
 define ptr @"mem::set"(ptr %0, i64 %1, i64 %2) #0 {
 entry:
@@ -508,21 +418,9 @@ entry:
   %raw.int = ptrtoint ptr %var.load to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %coerce.trunc = trunc i64 %var.load1 to i8
   call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 %coerce.trunc, i64 %var.load2, i1 false)
   ret ptr %raw.clean.ptr
-
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
 }
 
 define ptr @"mem::align_forward"(ptr %0, i64 %1) #0 {
@@ -745,14 +643,6 @@ entry:
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   store i64 %raw.load, ptr %var.num_chunks, align 8
   %var.load1 = load ptr, ptr %var.a, align 8
@@ -764,57 +654,41 @@ addr_ok:                                          ; preds = %tag.slow_check, %en
   %raw.int7 = ptrtoint ptr %ptr.res6 to i64
   %raw.clean.int8 = and i64 %raw.int7, 281474976710655
   %raw.clean.ptr9 = inttoptr i64 %raw.clean.int8 to ptr
-  %addr.tag10 = lshr i64 %raw.int7, 48
-  %tag.immortal12 = icmp eq i64 %addr.tag10, 0
-  %active.gen13 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current14 = icmp eq i64 %addr.tag10, %active.gen13
-  %tag.fast.ok15 = or i1 %tag.immortal12, %tag.current14
-  br i1 %tag.fast.ok15, label %addr_ok11, label %tag.slow_check16
-
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-addr_ok11:                                        ; preds = %tag.slow_check16, %addr_ok
-  %raw.load17 = load volatile i64, ptr %raw.clean.ptr9, align 8
-  store i64 %raw.load17, ptr %var.off, align 8
-  %var.load18 = load i64, ptr %var.num_chunks, align 8
-  %cmptmp = icmp sgt i64 %var.load18, 1
+  %raw.load10 = load volatile i64, ptr %raw.clean.ptr9, align 8
+  store i64 %raw.load10, ptr %var.off, align 8
+  %var.load11 = load i64, ptr %var.num_chunks, align 8
+  %cmptmp = icmp sgt i64 %var.load11, 1
   br i1 %cmptmp, label %choice.then, label %choice.else
 
-tag.slow_check16:                                 ; preds = %addr_ok
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag10)
-  br label %addr_ok11
-
-choice.then:                                      ; preds = %addr_ok11
-  %var.load19 = load i64, ptr %var.num_chunks, align 8
-  %subtmp = sub i64 %var.load19, 1
-  %var.load20 = load ptr, ptr %var.a, align 8
-  %fld.gep21 = getelementptr inbounds { ptr, i64 }, ptr %var.load20, i32 0, i32 1
-  %fld.load22 = load i64, ptr %fld.gep21, align 8
-  %multmp = mul i64 %subtmp, %fld.load22
-  %var.load23 = load i64, ptr %var.off, align 8
-  %addtmp24 = add i64 %multmp, %var.load23
+choice.then:                                      ; preds = %entry
+  %var.load12 = load i64, ptr %var.num_chunks, align 8
+  %subtmp = sub i64 %var.load12, 1
+  %var.load13 = load ptr, ptr %var.a, align 8
+  %fld.gep14 = getelementptr inbounds { ptr, i64 }, ptr %var.load13, i32 0, i32 1
+  %fld.load15 = load i64, ptr %fld.gep14, align 8
+  %multmp = mul i64 %subtmp, %fld.load15
+  %var.load16 = load i64, ptr %var.off, align 8
+  %addtmp17 = add i64 %multmp, %var.load16
   br label %choice.exit
 
-choice.else:                                      ; preds = %addr_ok11
-  %var.load25 = load i64, ptr %var.off, align 8
+choice.else:                                      ; preds = %entry
+  %var.load18 = load i64, ptr %var.off, align 8
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.then
-  %choice.res = phi i64 [ %addtmp24, %choice.then ], [ %var.load25, %choice.else ]
+  %choice.res = phi i64 [ %addtmp17, %choice.then ], [ %var.load18, %choice.else ]
   store i64 %choice.res, ptr %var.allocated, align 8
-  %var.load26 = load i64, ptr %var.allocated, align 8
-  %var.load27 = load i64, ptr %var.num_chunks, align 8
-  %var.load28 = load ptr, ptr %var.a, align 8
-  %fld.gep29 = getelementptr inbounds { ptr, i64 }, ptr %var.load28, i32 0, i32 1
-  %fld.load30 = load i64, ptr %fld.gep29, align 8
+  %var.load19 = load i64, ptr %var.allocated, align 8
+  %var.load20 = load i64, ptr %var.num_chunks, align 8
+  %var.load21 = load ptr, ptr %var.a, align 8
+  %fld.gep22 = getelementptr inbounds { ptr, i64 }, ptr %var.load21, i32 0, i32 1
+  %fld.load23 = load i64, ptr %fld.gep22, align 8
   %rec.fld = getelementptr inbounds { i64, i64, i64 }, ptr %rec.salloc, i32 0, i32 0
-  store i64 %var.load26, ptr %rec.fld, align 8
-  %rec.fld31 = getelementptr inbounds { i64, i64, i64 }, ptr %rec.salloc, i32 0, i32 1
-  store i64 %var.load27, ptr %rec.fld31, align 8
-  %rec.fld32 = getelementptr inbounds { i64, i64, i64 }, ptr %rec.salloc, i32 0, i32 2
-  store i64 %fld.load30, ptr %rec.fld32, align 8
+  store i64 %var.load19, ptr %rec.fld, align 8
+  %rec.fld24 = getelementptr inbounds { i64, i64, i64 }, ptr %rec.salloc, i32 0, i32 1
+  store i64 %var.load20, ptr %rec.fld24, align 8
+  %rec.fld25 = getelementptr inbounds { i64, i64, i64 }, ptr %rec.salloc, i32 0, i32 2
+  store i64 %fld.load23, ptr %rec.fld25, align 8
   %ret.pack = load { i64, i64, i64 }, ptr %rec.salloc, align 8
   ret { i64, i64, i64 } %ret.pack
 }
@@ -836,29 +710,17 @@ entry:
   %raw.int = ptrtoint ptr %var.load3 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   store i64 %raw.load, ptr %var.cap, align 8
   %var.load4 = load i64, ptr %var.cap, align 8
   %cmptmp = icmp sgt i64 %var.load4, 0
   br i1 %cmptmp, label %choice.then, label %choice.else
 
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-choice.then:                                      ; preds = %addr_ok
+choice.then:                                      ; preds = %entry
   %var.load5 = load i64, ptr %var.cap, align 8
   br label %choice.exit
 
-choice.else:                                      ; preds = %addr_ok
+choice.else:                                      ; preds = %entry
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.then
@@ -905,15 +767,11 @@ choice.else:                                      ; preds = %entry
   %raw.int = ptrtoint ptr %fld.load6 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
+  %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
+  br label %choice.exit
 
-choice.exit:                                      ; preds = %addr_ok, %choice.then
-  %choice.res = phi i64 [ %fld.load3, %choice.then ], [ %raw.load, %addr_ok ]
+choice.exit:                                      ; preds = %choice.else, %choice.then
+  %choice.res = phi i64 [ %fld.load3, %choice.then ], [ %raw.load, %choice.else ]
   store i64 %choice.res, ptr %var.cap, align 8
   %var.load7 = load ptr, ptr %var.a, align 8
   %fld.gep8 = getelementptr inbounds { ptr, i64 }, ptr %var.load7, i32 0, i32 0
@@ -924,177 +782,109 @@ choice.exit:                                      ; preds = %addr_ok, %choice.th
   %raw.int10 = ptrtoint ptr %ptr.res to i64
   %raw.clean.int11 = and i64 %raw.int10, 281474976710655
   %raw.clean.ptr12 = inttoptr i64 %raw.clean.int11 to ptr
-  %addr.tag13 = lshr i64 %raw.int10, 48
-  %tag.immortal15 = icmp eq i64 %addr.tag13, 0
-  %active.gen16 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current17 = icmp eq i64 %addr.tag13, %active.gen16
-  %tag.fast.ok18 = or i1 %tag.immortal15, %tag.current17
-  br i1 %tag.fast.ok18, label %addr_ok14, label %tag.slow_check19
+  %raw.load13 = load volatile i64, ptr %raw.clean.ptr12, align 8
+  store i64 %raw.load13, ptr %var.num_chunks, align 8
+  %var.load14 = load ptr, ptr %var.a, align 8
+  %fld.gep15 = getelementptr inbounds { ptr, i64 }, ptr %var.load14, i32 0, i32 0
+  %fld.load16 = load ptr, ptr %fld.gep15, align 8
+  %ptr.int.l17 = ptrtoint ptr %fld.load16 to i64
+  %addtmp18 = add i64 %ptr.int.l17, 16
+  %ptr.res19 = inttoptr i64 %addtmp18 to ptr
+  %raw.int20 = ptrtoint ptr %ptr.res19 to i64
+  %raw.clean.int21 = and i64 %raw.int20, 281474976710655
+  %raw.clean.ptr22 = inttoptr i64 %raw.clean.int21 to ptr
+  %raw.load23 = load volatile i64, ptr %raw.clean.ptr22, align 8
+  store i64 %raw.load23, ptr %var.off, align 8
+  %var.load24 = load i64, ptr %var.num_chunks, align 8
+  %cmptmp25 = icmp sgt i64 %var.load24, 1
+  br i1 %cmptmp25, label %choice.then26, label %choice.else27
 
-addr_ok:                                          ; preds = %tag.slow_check, %choice.else
-  %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
-  br label %choice.exit
+choice.then26:                                    ; preds = %choice.exit
+  %var.load29 = load i64, ptr %var.num_chunks, align 8
+  %subtmp = sub i64 %var.load29, 1
+  %var.load30 = load i64, ptr %var.cap, align 8
+  %multmp = mul i64 %subtmp, %var.load30
+  %var.load31 = load i64, ptr %var.off, align 8
+  %addtmp32 = add i64 %multmp, %var.load31
+  br label %choice.exit28
 
-tag.slow_check:                                   ; preds = %choice.else
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
+choice.else27:                                    ; preds = %choice.exit
+  %var.load33 = load i64, ptr %var.off, align 8
+  br label %choice.exit28
 
-addr_ok14:                                        ; preds = %tag.slow_check19, %choice.exit
-  %raw.load20 = load volatile i64, ptr %raw.clean.ptr12, align 8
-  store i64 %raw.load20, ptr %var.num_chunks, align 8
-  %var.load21 = load ptr, ptr %var.a, align 8
-  %fld.gep22 = getelementptr inbounds { ptr, i64 }, ptr %var.load21, i32 0, i32 0
-  %fld.load23 = load ptr, ptr %fld.gep22, align 8
-  %ptr.int.l24 = ptrtoint ptr %fld.load23 to i64
-  %addtmp25 = add i64 %ptr.int.l24, 16
-  %ptr.res26 = inttoptr i64 %addtmp25 to ptr
-  %raw.int27 = ptrtoint ptr %ptr.res26 to i64
-  %raw.clean.int28 = and i64 %raw.int27, 281474976710655
-  %raw.clean.ptr29 = inttoptr i64 %raw.clean.int28 to ptr
-  %addr.tag30 = lshr i64 %raw.int27, 48
-  %tag.immortal32 = icmp eq i64 %addr.tag30, 0
-  %active.gen33 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current34 = icmp eq i64 %addr.tag30, %active.gen33
-  %tag.fast.ok35 = or i1 %tag.immortal32, %tag.current34
-  br i1 %tag.fast.ok35, label %addr_ok31, label %tag.slow_check36
+choice.exit28:                                    ; preds = %choice.else27, %choice.then26
+  %choice.res34 = phi i64 [ %addtmp32, %choice.then26 ], [ %var.load33, %choice.else27 ]
+  store i64 %choice.res34, ptr %var.allocated, align 8
+  %var.load35 = load ptr, ptr %var.a, align 8
+  %fld.gep36 = getelementptr inbounds { ptr, i64 }, ptr %var.load35, i32 0, i32 0
+  %fld.load37 = load ptr, ptr %fld.gep36, align 8
+  %ptr.int.l38 = ptrtoint ptr %fld.load37 to i64
+  %addtmp39 = add i64 %ptr.int.l38, 131104
+  %ptr.res40 = inttoptr i64 %addtmp39 to ptr
+  %raw.int41 = ptrtoint ptr %ptr.res40 to i64
+  %raw.clean.int42 = and i64 %raw.int41, 281474976710655
+  %raw.clean.ptr43 = inttoptr i64 %raw.clean.int42 to ptr
+  %raw.load44 = load volatile i64, ptr %raw.clean.ptr43, align 8
+  store i64 %raw.load44, ptr %var.depth, align 8
+  %var.load45 = load ptr, ptr %var.a, align 8
+  %fld.gep46 = getelementptr inbounds { ptr, i64 }, ptr %var.load45, i32 0, i32 0
+  %fld.load47 = load ptr, ptr %fld.gep46, align 8
+  %ptr.int.l48 = ptrtoint ptr %fld.load47 to i64
+  %addtmp49 = add i64 %ptr.int.l48, 131112
+  %ptr.res50 = inttoptr i64 %addtmp49 to ptr
+  %raw.int51 = ptrtoint ptr %ptr.res50 to i64
+  %raw.clean.int52 = and i64 %raw.int51, 281474976710655
+  %raw.clean.ptr53 = inttoptr i64 %raw.clean.int52 to ptr
+  %raw.load54 = load volatile i64, ptr %raw.clean.ptr53, align 8
+  store i64 %raw.load54, ptr %var.next_gen, align 8
+  %var.load55 = load i64, ptr %var.next_gen, align 8
+  %cmptmp56 = icmp sgt i64 %var.load55, 0
+  br i1 %cmptmp56, label %choice.then57, label %choice.else58
 
-tag.slow_check19:                                 ; preds = %choice.exit
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag13)
-  br label %addr_ok14
+choice.then57:                                    ; preds = %choice.exit28
+  %var.load60 = load i64, ptr %var.next_gen, align 8
+  br label %choice.exit59
 
-addr_ok31:                                        ; preds = %tag.slow_check36, %addr_ok14
-  %raw.load37 = load volatile i64, ptr %raw.clean.ptr29, align 8
-  store i64 %raw.load37, ptr %var.off, align 8
-  %var.load38 = load i64, ptr %var.num_chunks, align 8
-  %cmptmp39 = icmp sgt i64 %var.load38, 1
-  br i1 %cmptmp39, label %choice.then40, label %choice.else41
+choice.else58:                                    ; preds = %choice.exit28
+  br label %choice.exit59
 
-tag.slow_check36:                                 ; preds = %addr_ok14
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag30)
-  br label %addr_ok31
-
-choice.then40:                                    ; preds = %addr_ok31
-  %var.load43 = load i64, ptr %var.num_chunks, align 8
-  %subtmp = sub i64 %var.load43, 1
-  %var.load44 = load i64, ptr %var.cap, align 8
-  %multmp = mul i64 %subtmp, %var.load44
-  %var.load45 = load i64, ptr %var.off, align 8
-  %addtmp46 = add i64 %multmp, %var.load45
-  br label %choice.exit42
-
-choice.else41:                                    ; preds = %addr_ok31
-  %var.load47 = load i64, ptr %var.off, align 8
-  br label %choice.exit42
-
-choice.exit42:                                    ; preds = %choice.else41, %choice.then40
-  %choice.res48 = phi i64 [ %addtmp46, %choice.then40 ], [ %var.load47, %choice.else41 ]
-  store i64 %choice.res48, ptr %var.allocated, align 8
-  %var.load49 = load ptr, ptr %var.a, align 8
-  %fld.gep50 = getelementptr inbounds { ptr, i64 }, ptr %var.load49, i32 0, i32 0
-  %fld.load51 = load ptr, ptr %fld.gep50, align 8
-  %ptr.int.l52 = ptrtoint ptr %fld.load51 to i64
-  %addtmp53 = add i64 %ptr.int.l52, 131104
-  %ptr.res54 = inttoptr i64 %addtmp53 to ptr
-  %raw.int55 = ptrtoint ptr %ptr.res54 to i64
-  %raw.clean.int56 = and i64 %raw.int55, 281474976710655
-  %raw.clean.ptr57 = inttoptr i64 %raw.clean.int56 to ptr
-  %addr.tag58 = lshr i64 %raw.int55, 48
-  %tag.immortal60 = icmp eq i64 %addr.tag58, 0
-  %active.gen61 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current62 = icmp eq i64 %addr.tag58, %active.gen61
-  %tag.fast.ok63 = or i1 %tag.immortal60, %tag.current62
-  br i1 %tag.fast.ok63, label %addr_ok59, label %tag.slow_check64
-
-addr_ok59:                                        ; preds = %tag.slow_check64, %choice.exit42
-  %raw.load65 = load volatile i64, ptr %raw.clean.ptr57, align 8
-  store i64 %raw.load65, ptr %var.depth, align 8
-  %var.load66 = load ptr, ptr %var.a, align 8
-  %fld.gep67 = getelementptr inbounds { ptr, i64 }, ptr %var.load66, i32 0, i32 0
-  %fld.load68 = load ptr, ptr %fld.gep67, align 8
-  %ptr.int.l69 = ptrtoint ptr %fld.load68 to i64
-  %addtmp70 = add i64 %ptr.int.l69, 131112
-  %ptr.res71 = inttoptr i64 %addtmp70 to ptr
-  %raw.int72 = ptrtoint ptr %ptr.res71 to i64
-  %raw.clean.int73 = and i64 %raw.int72, 281474976710655
-  %raw.clean.ptr74 = inttoptr i64 %raw.clean.int73 to ptr
-  %addr.tag75 = lshr i64 %raw.int72, 48
-  %tag.immortal77 = icmp eq i64 %addr.tag75, 0
-  %active.gen78 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current79 = icmp eq i64 %addr.tag75, %active.gen78
-  %tag.fast.ok80 = or i1 %tag.immortal77, %tag.current79
-  br i1 %tag.fast.ok80, label %addr_ok76, label %tag.slow_check81
-
-tag.slow_check64:                                 ; preds = %choice.exit42
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag58)
-  br label %addr_ok59
-
-addr_ok76:                                        ; preds = %tag.slow_check81, %addr_ok59
-  %raw.load82 = load volatile i64, ptr %raw.clean.ptr74, align 8
-  store i64 %raw.load82, ptr %var.next_gen, align 8
-  %var.load83 = load i64, ptr %var.next_gen, align 8
-  %cmptmp84 = icmp sgt i64 %var.load83, 0
-  br i1 %cmptmp84, label %choice.then85, label %choice.else86
-
-tag.slow_check81:                                 ; preds = %addr_ok59
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag75)
-  br label %addr_ok76
-
-choice.then85:                                    ; preds = %addr_ok76
-  %var.load88 = load i64, ptr %var.next_gen, align 8
-  br label %choice.exit87
-
-choice.else86:                                    ; preds = %addr_ok76
-  br label %choice.exit87
-
-choice.exit87:                                    ; preds = %choice.else86, %choice.then85
-  %choice.res89 = phi i64 [ %var.load88, %choice.then85 ], [ 1, %choice.else86 ]
-  store i64 %choice.res89, ptr %var.gen, align 8
-  %var.load90 = load ptr, ptr %var.a, align 8
-  %fld.gep91 = getelementptr inbounds { ptr, i64 }, ptr %var.load90, i32 0, i32 0
-  %fld.load92 = load ptr, ptr %fld.gep91, align 8
-  %ptr.int.l93 = ptrtoint ptr %fld.load92 to i64
-  %addtmp94 = add i64 %ptr.int.l93, 131120
-  %ptr.res95 = inttoptr i64 %addtmp94 to ptr
-  %raw.int96 = ptrtoint ptr %ptr.res95 to i64
-  %raw.clean.int97 = and i64 %raw.int96, 281474976710655
-  %raw.clean.ptr98 = inttoptr i64 %raw.clean.int97 to ptr
-  %addr.tag99 = lshr i64 %raw.int96, 48
-  %tag.immortal101 = icmp eq i64 %addr.tag99, 0
-  %active.gen102 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current103 = icmp eq i64 %addr.tag99, %active.gen102
-  %tag.fast.ok104 = or i1 %tag.immortal101, %tag.current103
-  br i1 %tag.fast.ok104, label %addr_ok100, label %tag.slow_check105
-
-addr_ok100:                                       ; preds = %tag.slow_check105, %choice.exit87
-  %raw.load106 = load volatile i64, ptr %raw.clean.ptr98, align 8
-  store i64 %raw.load106, ptr %var.resets, align 8
-  %var.load107 = load ptr, ptr %var.a, align 8
-  %fld.gep108 = getelementptr inbounds { ptr, i64 }, ptr %var.load107, i32 0, i32 0
-  %fld.load109 = load ptr, ptr %fld.gep108, align 8
-  %var.load110 = load i64, ptr %var.gen, align 8
-  %var.load111 = load i64, ptr %var.depth, align 8
-  %var.load112 = load i64, ptr %var.resets, align 8
-  %var.load113 = load i64, ptr %var.allocated, align 8
-  %var.load114 = load i64, ptr %var.num_chunks, align 8
+choice.exit59:                                    ; preds = %choice.else58, %choice.then57
+  %choice.res61 = phi i64 [ %var.load60, %choice.then57 ], [ 1, %choice.else58 ]
+  store i64 %choice.res61, ptr %var.gen, align 8
+  %var.load62 = load ptr, ptr %var.a, align 8
+  %fld.gep63 = getelementptr inbounds { ptr, i64 }, ptr %var.load62, i32 0, i32 0
+  %fld.load64 = load ptr, ptr %fld.gep63, align 8
+  %ptr.int.l65 = ptrtoint ptr %fld.load64 to i64
+  %addtmp66 = add i64 %ptr.int.l65, 131120
+  %ptr.res67 = inttoptr i64 %addtmp66 to ptr
+  %raw.int68 = ptrtoint ptr %ptr.res67 to i64
+  %raw.clean.int69 = and i64 %raw.int68, 281474976710655
+  %raw.clean.ptr70 = inttoptr i64 %raw.clean.int69 to ptr
+  %raw.load71 = load volatile i64, ptr %raw.clean.ptr70, align 8
+  store i64 %raw.load71, ptr %var.resets, align 8
+  %var.load72 = load ptr, ptr %var.a, align 8
+  %fld.gep73 = getelementptr inbounds { ptr, i64 }, ptr %var.load72, i32 0, i32 0
+  %fld.load74 = load ptr, ptr %fld.gep73, align 8
+  %var.load75 = load i64, ptr %var.gen, align 8
+  %var.load76 = load i64, ptr %var.depth, align 8
+  %var.load77 = load i64, ptr %var.resets, align 8
+  %var.load78 = load i64, ptr %var.allocated, align 8
+  %var.load79 = load i64, ptr %var.num_chunks, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64, i64, i64, i64, i64 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %fld.load109, ptr %rec.fld, align 8
-  %rec.fld115 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store i64 %var.load110, ptr %rec.fld115, align 8
-  %rec.fld116 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
-  store i64 %var.load111, ptr %rec.fld116, align 8
-  %rec.fld117 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
-  store i64 %var.load112, ptr %rec.fld117, align 8
-  %rec.fld118 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
-  store i64 %var.load113, ptr %rec.fld118, align 8
-  %rec.fld119 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
-  store i64 %var.load114, ptr %rec.fld119, align 8
+  store ptr %fld.load74, ptr %rec.fld, align 8
+  %rec.fld80 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load75, ptr %rec.fld80, align 8
+  %rec.fld81 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
+  store i64 %var.load76, ptr %rec.fld81, align 8
+  %rec.fld82 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
+  store i64 %var.load77, ptr %rec.fld82, align 8
+  %rec.fld83 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
+  store i64 %var.load78, ptr %rec.fld83, align 8
+  %rec.fld84 = getelementptr inbounds { ptr, i64, i64, i64, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
+  store i64 %var.load79, ptr %rec.fld84, align 8
   ret ptr %rec.alloc
-
-tag.slow_check105:                                ; preds = %choice.exit87
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag99)
-  br label %addr_ok100
 }
 
 define ptr @"mem::current_provenance"() #0 {
@@ -1108,29 +898,17 @@ entry:
   %raw.int = ptrtoint ptr %var.load to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   store i64 %raw.load, ptr %var.cap, align 8
   %var.load1 = load i64, ptr %var.cap, align 8
   %cmptmp = icmp sgt i64 %var.load1, 0
   br i1 %cmptmp, label %choice.then, label %choice.else
 
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-choice.then:                                      ; preds = %addr_ok
+choice.then:                                      ; preds = %entry
   %var.load2 = load i64, ptr %var.cap, align 8
   br label %choice.exit
 
-choice.else:                                      ; preds = %addr_ok
+choice.else:                                      ; preds = %entry
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.then
@@ -1213,15 +991,11 @@ choice.else:                                      ; preds = %choice.exit5
   %raw.int = ptrtoint ptr %fld.load18 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
+  %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
+  br label %choice.exit12
 
-choice.exit12:                                    ; preds = %addr_ok, %choice.then11
-  %choice.res = phi i64 [ %fld.load15, %choice.then11 ], [ %raw.load, %addr_ok ]
+choice.exit12:                                    ; preds = %choice.else, %choice.then11
+  %choice.res = phi i64 [ %fld.load15, %choice.then11 ], [ %raw.load, %choice.else ]
   store i64 %choice.res, ptr %var.cap, align 8
   %var.load19 = load ptr, ptr %var.a, align 8
   %fld.gep20 = getelementptr inbounds { ptr, i64 }, ptr %var.load19, i32 0, i32 0
@@ -1232,58 +1006,26 @@ choice.exit12:                                    ; preds = %addr_ok, %choice.th
   %raw.int23 = ptrtoint ptr %ptr.res to i64
   %raw.clean.int24 = and i64 %raw.int23, 281474976710655
   %raw.clean.ptr25 = inttoptr i64 %raw.clean.int24 to ptr
-  %addr.tag26 = lshr i64 %raw.int23, 48
-  %tag.immortal28 = icmp eq i64 %addr.tag26, 0
-  %active.gen29 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current30 = icmp eq i64 %addr.tag26, %active.gen29
-  %tag.fast.ok31 = or i1 %tag.immortal28, %tag.current30
-  br i1 %tag.fast.ok31, label %addr_ok27, label %tag.slow_check32
-
-addr_ok:                                          ; preds = %tag.slow_check, %choice.else
-  %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
-  br label %choice.exit12
-
-tag.slow_check:                                   ; preds = %choice.else
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-addr_ok27:                                        ; preds = %tag.slow_check32, %choice.exit12
-  %raw.load33 = load volatile i64, ptr %raw.clean.ptr25, align 8
-  store i64 %raw.load33, ptr %var.num_chunks, align 8
-  %var.load34 = load ptr, ptr %var.a, align 8
-  %fld.gep35 = getelementptr inbounds { ptr, i64 }, ptr %var.load34, i32 0, i32 0
-  %fld.load36 = load ptr, ptr %fld.gep35, align 8
-  %ptr.int.l37 = ptrtoint ptr %fld.load36 to i64
-  %addtmp38 = add i64 %ptr.int.l37, 16
-  %ptr.res39 = inttoptr i64 %addtmp38 to ptr
-  %raw.int40 = ptrtoint ptr %ptr.res39 to i64
-  %raw.clean.int41 = and i64 %raw.int40, 281474976710655
-  %raw.clean.ptr42 = inttoptr i64 %raw.clean.int41 to ptr
-  %addr.tag43 = lshr i64 %raw.int40, 48
-  %tag.immortal45 = icmp eq i64 %addr.tag43, 0
-  %active.gen46 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current47 = icmp eq i64 %addr.tag43, %active.gen46
-  %tag.fast.ok48 = or i1 %tag.immortal45, %tag.current47
-  br i1 %tag.fast.ok48, label %addr_ok44, label %tag.slow_check49
-
-tag.slow_check32:                                 ; preds = %choice.exit12
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag26)
-  br label %addr_ok27
-
-addr_ok44:                                        ; preds = %tag.slow_check49, %addr_ok27
-  %raw.load50 = load volatile i64, ptr %raw.clean.ptr42, align 8
-  store i64 %raw.load50, ptr %var.off, align 8
-  %var.load51 = load i64, ptr %var.num_chunks, align 8
+  %raw.load26 = load volatile i64, ptr %raw.clean.ptr25, align 8
+  store i64 %raw.load26, ptr %var.num_chunks, align 8
+  %var.load27 = load ptr, ptr %var.a, align 8
+  %fld.gep28 = getelementptr inbounds { ptr, i64 }, ptr %var.load27, i32 0, i32 0
+  %fld.load29 = load ptr, ptr %fld.gep28, align 8
+  %ptr.int.l30 = ptrtoint ptr %fld.load29 to i64
+  %addtmp31 = add i64 %ptr.int.l30, 16
+  %ptr.res32 = inttoptr i64 %addtmp31 to ptr
+  %raw.int33 = ptrtoint ptr %ptr.res32 to i64
+  %raw.clean.int34 = and i64 %raw.int33, 281474976710655
+  %raw.clean.ptr35 = inttoptr i64 %raw.clean.int34 to ptr
+  %raw.load36 = load volatile i64, ptr %raw.clean.ptr35, align 8
+  store i64 %raw.load36, ptr %var.off, align 8
+  %var.load37 = load i64, ptr %var.num_chunks, align 8
   store i64 0, ptr %loop.idx.29, align 8
   br label %loop.header.29
 
-tag.slow_check49:                                 ; preds = %addr_ok27
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag43)
-  br label %addr_ok44
-
-loop.header.29:                                   ; preds = %loop.latch.29, %addr_ok44
+loop.header.29:                                   ; preds = %loop.latch.29, %choice.exit12
   %counter.load = load i64, ptr %loop.idx.29, align 8
-  %loop.cond = icmp slt i64 %counter.load, %var.load51
+  %loop.cond = icmp slt i64 %counter.load, %var.load37
   br i1 %loop.cond, label %loop.body.29, label %loop.exit.nat.29
 
 loop.body.29:                                     ; preds = %loop.header.29
@@ -1292,31 +1034,33 @@ loop.body.29:                                     ; preds = %loop.header.29
   store i64 %loop.rel.i, ptr %var._i, align 8
   store i64 %counter.load, ptr %var._, align 8
   store i64 %counter.load, ptr %var.i, align 8
-  %var.load52 = load ptr, ptr %var.a, align 8
-  %fld.gep53 = getelementptr inbounds { ptr, i64 }, ptr %var.load52, i32 0, i32 0
-  %fld.load54 = load ptr, ptr %fld.gep53, align 8
-  %ptr.int.l55 = ptrtoint ptr %fld.load54 to i64
-  %addtmp56 = add i64 %ptr.int.l55, 24
-  %ptr.res57 = inttoptr i64 %addtmp56 to ptr
-  %var.load58 = load i64, ptr %var.i, align 8
-  %multmp = mul i64 %var.load58, 8
-  %ptr.int.l59 = ptrtoint ptr %ptr.res57 to i64
-  %addtmp60 = add i64 %ptr.int.l59, %multmp
-  %ptr.res61 = inttoptr i64 %addtmp60 to ptr
-  %raw.int62 = ptrtoint ptr %ptr.res61 to i64
-  %raw.clean.int63 = and i64 %raw.int62, 281474976710655
-  %raw.clean.ptr64 = inttoptr i64 %raw.clean.int63 to ptr
-  %addr.tag65 = lshr i64 %raw.int62, 48
-  %tag.immortal67 = icmp eq i64 %addr.tag65, 0
-  %active.gen68 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current69 = icmp eq i64 %addr.tag65, %active.gen68
-  %tag.fast.ok70 = or i1 %tag.immortal67, %tag.current69
-  br i1 %tag.fast.ok70, label %addr_ok66, label %tag.slow_check71
+  %var.load38 = load ptr, ptr %var.a, align 8
+  %fld.gep39 = getelementptr inbounds { ptr, i64 }, ptr %var.load38, i32 0, i32 0
+  %fld.load40 = load ptr, ptr %fld.gep39, align 8
+  %ptr.int.l41 = ptrtoint ptr %fld.load40 to i64
+  %addtmp42 = add i64 %ptr.int.l41, 24
+  %ptr.res43 = inttoptr i64 %addtmp42 to ptr
+  %var.load44 = load i64, ptr %var.i, align 8
+  %multmp = mul i64 %var.load44, 8
+  %ptr.int.l45 = ptrtoint ptr %ptr.res43 to i64
+  %addtmp46 = add i64 %ptr.int.l45, %multmp
+  %ptr.res47 = inttoptr i64 %addtmp46 to ptr
+  %raw.int48 = ptrtoint ptr %ptr.res47 to i64
+  %raw.clean.int49 = and i64 %raw.int48, 281474976710655
+  %raw.clean.ptr50 = inttoptr i64 %raw.clean.int49 to ptr
+  %raw.load51 = load volatile i64, ptr %raw.clean.ptr50, align 8
+  %bandtmp52 = and i64 %raw.load51, 281474976710655
+  store i64 %bandtmp52, ptr %var.c_base, align 8
+  %var.load53 = load i64, ptr %var.i, align 8
+  %var.load54 = load i64, ptr %var.num_chunks, align 8
+  %subtmp = sub i64 %var.load54, 1
+  %cmptmp55 = icmp eq i64 %var.load53, %subtmp
+  br i1 %cmptmp55, label %choice.then56, label %choice.else57
 
 loop.exit.nat.29:                                 ; preds = %loop.header.29
   br label %loop.exit.29
 
-loop.latch.29:                                    ; preds = %choice.exit92
+loop.latch.29:                                    ; preds = %choice.exit71
   %step.val = load i64, ptr %loop.step.29, align 8
   %loop.next = add i64 %counter.load, %step.val
   store i64 %loop.next, ptr %loop.idx.29, align 8
@@ -1325,59 +1069,45 @@ loop.latch.29:                                    ; preds = %choice.exit92
 loop.exit.29:                                     ; preds = %loop.exit.nat.29
   ret i1 false
 
-addr_ok66:                                        ; preds = %tag.slow_check71, %loop.body.29
-  %raw.load72 = load volatile i64, ptr %raw.clean.ptr64, align 8
-  %bandtmp73 = and i64 %raw.load72, 281474976710655
-  store i64 %bandtmp73, ptr %var.c_base, align 8
-  %var.load74 = load i64, ptr %var.i, align 8
-  %var.load75 = load i64, ptr %var.num_chunks, align 8
-  %subtmp = sub i64 %var.load75, 1
-  %cmptmp76 = icmp eq i64 %var.load74, %subtmp
-  br i1 %cmptmp76, label %choice.then77, label %choice.else78
+choice.then56:                                    ; preds = %loop.body.29
+  %var.load59 = load i64, ptr %var.off, align 8
+  br label %choice.exit58
 
-tag.slow_check71:                                 ; preds = %loop.body.29
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag65)
-  br label %addr_ok66
+choice.else57:                                    ; preds = %loop.body.29
+  %var.load60 = load i64, ptr %var.cap, align 8
+  br label %choice.exit58
 
-choice.then77:                                    ; preds = %addr_ok66
-  %var.load80 = load i64, ptr %var.off, align 8
-  br label %choice.exit79
+choice.exit58:                                    ; preds = %choice.else57, %choice.then56
+  %choice.res61 = phi i64 [ %var.load59, %choice.then56 ], [ %var.load60, %choice.else57 ]
+  store i64 %choice.res61, ptr %var.c_limit, align 8
+  %var.load62 = load i64, ptr %var.raw_addr, align 8
+  %var.load63 = load i64, ptr %var.c_base, align 8
+  %cmptmp64 = icmp sge i64 %var.load62, %var.load63
+  br i1 %cmptmp64, label %and.30.then, label %and.30.else
 
-choice.else78:                                    ; preds = %addr_ok66
-  %var.load81 = load i64, ptr %var.cap, align 8
-  br label %choice.exit79
-
-choice.exit79:                                    ; preds = %choice.else78, %choice.then77
-  %choice.res82 = phi i64 [ %var.load80, %choice.then77 ], [ %var.load81, %choice.else78 ]
-  store i64 %choice.res82, ptr %var.c_limit, align 8
-  %var.load83 = load i64, ptr %var.raw_addr, align 8
-  %var.load84 = load i64, ptr %var.c_base, align 8
-  %cmptmp85 = icmp sge i64 %var.load83, %var.load84
-  br i1 %cmptmp85, label %and.30.then, label %and.30.else
-
-and.30.then:                                      ; preds = %choice.exit79
-  %var.load86 = load i64, ptr %var.raw_addr, align 8
-  %var.load87 = load i64, ptr %var.c_base, align 8
-  %var.load88 = load i64, ptr %var.c_limit, align 8
-  %addtmp89 = add i64 %var.load87, %var.load88
-  %cmptmp90 = icmp slt i64 %var.load86, %addtmp89
+and.30.then:                                      ; preds = %choice.exit58
+  %var.load65 = load i64, ptr %var.raw_addr, align 8
+  %var.load66 = load i64, ptr %var.c_base, align 8
+  %var.load67 = load i64, ptr %var.c_limit, align 8
+  %addtmp68 = add i64 %var.load66, %var.load67
+  %cmptmp69 = icmp slt i64 %var.load65, %addtmp68
   br label %and.30.exit
 
-and.30.else:                                      ; preds = %choice.exit79
+and.30.else:                                      ; preds = %choice.exit58
   br label %and.30.exit
 
 and.30.exit:                                      ; preds = %and.30.else, %and.30.then
-  %and.30.phi = phi i1 [ %cmptmp90, %and.30.then ], [ %cmptmp85, %and.30.else ]
-  br i1 %and.30.phi, label %choice.then91, label %choice.exit92
+  %and.30.phi = phi i1 [ %cmptmp69, %and.30.then ], [ %cmptmp64, %and.30.else ]
+  br i1 %and.30.phi, label %choice.then70, label %choice.exit71
 
-choice.then91:                                    ; preds = %and.30.exit
+choice.then70:                                    ; preds = %and.30.exit
   ret i1 true
 
-choice.exit92:                                    ; preds = %ret.dead93, %and.30.exit
+choice.exit71:                                    ; preds = %ret.dead72, %and.30.exit
   br label %loop.latch.29
 
-ret.dead93:                                       ; No predecessors!
-  br label %choice.exit92
+ret.dead72:                                       ; No predecessors!
+  br label %choice.exit71
 }
 
 define void @"mem::with"(ptr %0, ptr %1) #0 {
@@ -1540,24 +1270,12 @@ choice.exit6:                                     ; preds = %choice.else5, %choi
   %raw.int = ptrtoint ptr %var.load35 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %choice.exit6
   call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr, i8 0, i64 %var.load36, i1 false)
   %var.load37 = load i64, ptr %var.cap, align 8
   store i64 0, ptr %loop.idx.32, align 8
   br label %loop.header.32
 
-tag.slow_check:                                   ; preds = %choice.exit6
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-loop.header.32:                                   ; preds = %loop.latch.32, %addr_ok
+loop.header.32:                                   ; preds = %loop.latch.32, %choice.exit6
   %counter.load = load i64, ptr %loop.idx.32, align 8
   %loop.cond = icmp slt i64 %counter.load, %var.load37
   br i1 %loop.cond, label %loop.body.32, label %loop.exit.nat.32
@@ -1578,92 +1296,56 @@ loop.body.32:                                     ; preds = %loop.header.32
   %raw.int45 = ptrtoint ptr %ptr.res43 to i64
   %raw.clean.int46 = and i64 %raw.int45, 281474976710655
   %raw.clean.ptr47 = inttoptr i64 %raw.clean.int46 to ptr
-  %addr.tag48 = lshr i64 %raw.int45, 48
-  %tag.immortal50 = icmp eq i64 %addr.tag48, 0
-  %active.gen51 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current52 = icmp eq i64 %addr.tag48, %active.gen51
-  %tag.fast.ok53 = or i1 %tag.immortal50, %tag.current52
-  br i1 %tag.fast.ok53, label %addr_ok49, label %tag.slow_check54
+  store i64 %var.load44, ptr %raw.clean.ptr47, align 8
+  br label %loop.latch.32
 
 loop.exit.nat.32:                                 ; preds = %loop.header.32
   br label %loop.exit.32
 
-loop.latch.32:                                    ; preds = %addr_ok49
+loop.latch.32:                                    ; preds = %loop.body.32
   %step.val = load i64, ptr %loop.step.32, align 8
   %loop.next = add i64 %counter.load, %step.val
   store i64 %loop.next, ptr %loop.idx.32, align 8
   br label %loop.header.32
 
 loop.exit.32:                                     ; preds = %loop.exit.nat.32
-  %var.load55 = load i64, ptr %var.cap, align 8
-  store i64 %var.load55, ptr %var.st_cap, align 8
-  %var.load56 = load ptr, ptr %var.st, align 8
-  %var.load57 = load i64, ptr %var.st_cap, align 8
-  %raw.int58 = ptrtoint ptr %var.load56 to i64
+  %var.load48 = load i64, ptr %var.cap, align 8
+  store i64 %var.load48, ptr %var.st_cap, align 8
+  %var.load49 = load ptr, ptr %var.st, align 8
+  %var.load50 = load i64, ptr %var.st_cap, align 8
+  %raw.int51 = ptrtoint ptr %var.load49 to i64
+  %raw.clean.int52 = and i64 %raw.int51, 281474976710655
+  %raw.clean.ptr53 = inttoptr i64 %raw.clean.int52 to ptr
+  store i64 %var.load50, ptr %raw.clean.ptr53, align 8
+  %var.load54 = load ptr, ptr %var.st, align 8
+  %ptr.int.l55 = ptrtoint ptr %var.load54 to i64
+  %addtmp56 = add i64 %ptr.int.l55, 8
+  %ptr.res57 = inttoptr i64 %addtmp56 to ptr
+  %raw.int58 = ptrtoint ptr %ptr.res57 to i64
   %raw.clean.int59 = and i64 %raw.int58, 281474976710655
   %raw.clean.ptr60 = inttoptr i64 %raw.clean.int59 to ptr
-  %addr.tag61 = lshr i64 %raw.int58, 48
-  %tag.immortal63 = icmp eq i64 %addr.tag61, 0
-  %active.gen64 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current65 = icmp eq i64 %addr.tag61, %active.gen64
-  %tag.fast.ok66 = or i1 %tag.immortal63, %tag.current65
-  br i1 %tag.fast.ok66, label %addr_ok62, label %tag.slow_check67
-
-addr_ok49:                                        ; preds = %tag.slow_check54, %loop.body.32
-  store i64 %var.load44, ptr %raw.clean.ptr47, align 8
-  br label %loop.latch.32
-
-tag.slow_check54:                                 ; preds = %loop.body.32
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag48)
-  br label %addr_ok49
-
-addr_ok62:                                        ; preds = %tag.slow_check67, %loop.exit.32
-  store i64 %var.load57, ptr %raw.clean.ptr60, align 8
-  %var.load68 = load ptr, ptr %var.st, align 8
-  %ptr.int.l69 = ptrtoint ptr %var.load68 to i64
-  %addtmp70 = add i64 %ptr.int.l69, 8
-  %ptr.res71 = inttoptr i64 %addtmp70 to ptr
-  %raw.int72 = ptrtoint ptr %ptr.res71 to i64
-  %raw.clean.int73 = and i64 %raw.int72, 281474976710655
-  %raw.clean.ptr74 = inttoptr i64 %raw.clean.int73 to ptr
-  %addr.tag75 = lshr i64 %raw.int72, 48
-  %tag.immortal77 = icmp eq i64 %addr.tag75, 0
-  %active.gen78 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current79 = icmp eq i64 %addr.tag75, %active.gen78
-  %tag.fast.ok80 = or i1 %tag.immortal77, %tag.current79
-  br i1 %tag.fast.ok80, label %addr_ok76, label %tag.slow_check81
-
-tag.slow_check67:                                 ; preds = %loop.exit.32
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag61)
-  br label %addr_ok62
-
-addr_ok76:                                        ; preds = %tag.slow_check81, %addr_ok62
-  store i64 0, ptr %raw.clean.ptr74, align 8
-  %var.load82 = load ptr, ptr %var.buf, align 8
-  %var.load83 = load ptr, ptr %var.fs, align 8
-  %var.load84 = load ptr, ptr %var.act, align 8
-  %var.load85 = load ptr, ptr %var.st, align 8
-  %var.load86 = load i64, ptr %var.es, align 8
-  %var.load87 = load i64, ptr %var.cap, align 8
+  store i64 0, ptr %raw.clean.ptr60, align 8
+  %var.load61 = load ptr, ptr %var.buf, align 8
+  %var.load62 = load ptr, ptr %var.fs, align 8
+  %var.load63 = load ptr, ptr %var.act, align 8
+  %var.load64 = load ptr, ptr %var.st, align 8
+  %var.load65 = load i64, ptr %var.es, align 8
+  %var.load66 = load i64, ptr %var.cap, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, ptr, i64, i64 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %var.load82, ptr %rec.fld, align 8
-  %rec.fld88 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store ptr %var.load83, ptr %rec.fld88, align 8
-  %rec.fld89 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
-  store ptr %var.load84, ptr %rec.fld89, align 8
-  %rec.fld90 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
-  store ptr %var.load85, ptr %rec.fld90, align 8
-  %rec.fld91 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
-  store i64 %var.load86, ptr %rec.fld91, align 8
-  %rec.fld92 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
-  store i64 %var.load87, ptr %rec.fld92, align 8
+  store ptr %var.load61, ptr %rec.fld, align 8
+  %rec.fld67 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store ptr %var.load62, ptr %rec.fld67, align 8
+  %rec.fld68 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 2
+  store ptr %var.load63, ptr %rec.fld68, align 8
+  %rec.fld69 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 3
+  store ptr %var.load64, ptr %rec.fld69, align 8
+  %rec.fld70 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 4
+  store i64 %var.load65, ptr %rec.fld70, align 8
+  %rec.fld71 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %rec.alloc, i32 0, i32 5
+  store i64 %var.load66, ptr %rec.fld71, align 8
   ret ptr %rec.alloc
-
-tag.slow_check81:                                 ; preds = %addr_ok62
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag75)
-  br label %addr_ok76
 }
 
 define i64 @"mem::pool_count"(ptr %0) #0 {
@@ -1679,20 +1361,8 @@ entry:
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   ret i64 %raw.load
-
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
 }
 
 define i64 @"mem::pool_capacity"(ptr %0) #0 {
@@ -1719,28 +1389,16 @@ entry:
   %raw.int = ptrtoint ptr %fld.load to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   store i64 %raw.load, ptr %var.top, align 8
   %var.load1 = load i64, ptr %var.top, align 8
   %cmptmp = icmp eq i64 %var.load1, 0
   br i1 %cmptmp, label %choice.then, label %choice.exit
 
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-choice.then:                                      ; preds = %addr_ok
+choice.then:                                      ; preds = %entry
   ret { i1, i64 } zeroinitializer
 
-choice.exit:                                      ; preds = %ret.dead, %addr_ok
+choice.exit:                                      ; preds = %ret.dead, %entry
   %var.load2 = load i64, ptr %var.top, align 8
   %subtmp = sub i64 %var.load2, 1
   store i64 %subtmp, ptr %var.top_next, align 8
@@ -1751,131 +1409,71 @@ choice.exit:                                      ; preds = %ret.dead, %addr_ok
   %raw.int7 = ptrtoint ptr %fld.load5 to i64
   %raw.clean.int8 = and i64 %raw.int7, 281474976710655
   %raw.clean.ptr9 = inttoptr i64 %raw.clean.int8 to ptr
-  %addr.tag10 = lshr i64 %raw.int7, 48
-  %tag.immortal12 = icmp eq i64 %addr.tag10, 0
-  %active.gen13 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current14 = icmp eq i64 %addr.tag10, %active.gen13
-  %tag.fast.ok15 = or i1 %tag.immortal12, %tag.current14
-  br i1 %tag.fast.ok15, label %addr_ok11, label %tag.slow_check16
-
-ret.dead:                                         ; No predecessors!
-  br label %choice.exit
-
-addr_ok11:                                        ; preds = %tag.slow_check16, %choice.exit
   store i64 %var.load6, ptr %raw.clean.ptr9, align 8
-  %var.load17 = load ptr, ptr %var.p, align 8
-  %fld.gep18 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load17, i32 0, i32 1
-  %fld.load19 = load ptr, ptr %fld.gep18, align 8
-  %var.load20 = load i64, ptr %var.top_next, align 8
-  %multmp = mul i64 %var.load20, 8
-  %ptr.int.l = ptrtoint ptr %fld.load19 to i64
+  %var.load10 = load ptr, ptr %var.p, align 8
+  %fld.gep11 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load10, i32 0, i32 1
+  %fld.load12 = load ptr, ptr %fld.gep11, align 8
+  %var.load13 = load i64, ptr %var.top_next, align 8
+  %multmp = mul i64 %var.load13, 8
+  %ptr.int.l = ptrtoint ptr %fld.load12 to i64
   %addtmp = add i64 %ptr.int.l, %multmp
   %ptr.res = inttoptr i64 %addtmp to ptr
-  %raw.int21 = ptrtoint ptr %ptr.res to i64
-  %raw.clean.int22 = and i64 %raw.int21, 281474976710655
-  %raw.clean.ptr23 = inttoptr i64 %raw.clean.int22 to ptr
-  %addr.tag24 = lshr i64 %raw.int21, 48
-  %tag.immortal26 = icmp eq i64 %addr.tag24, 0
-  %active.gen27 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current28 = icmp eq i64 %addr.tag24, %active.gen27
-  %tag.fast.ok29 = or i1 %tag.immortal26, %tag.current28
-  br i1 %tag.fast.ok29, label %addr_ok25, label %tag.slow_check30
-
-tag.slow_check16:                                 ; preds = %choice.exit
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag10)
-  br label %addr_ok11
-
-addr_ok25:                                        ; preds = %tag.slow_check30, %addr_ok11
-  %raw.load31 = load volatile i64, ptr %raw.clean.ptr23, align 8
-  store i64 %raw.load31, ptr %var.idx, align 8
-  %var.load32 = load ptr, ptr %var.p, align 8
-  %fld.gep33 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load32, i32 0, i32 2
-  %fld.load34 = load ptr, ptr %fld.gep33, align 8
-  %var.load35 = load i64, ptr %var.idx, align 8
-  %ptr.int.l36 = ptrtoint ptr %fld.load34 to i64
-  %addtmp37 = add i64 %ptr.int.l36, %var.load35
-  %ptr.res38 = inttoptr i64 %addtmp37 to ptr
-  %raw.int39 = ptrtoint ptr %ptr.res38 to i64
-  %raw.clean.int40 = and i64 %raw.int39, 281474976710655
-  %raw.clean.ptr41 = inttoptr i64 %raw.clean.int40 to ptr
-  %addr.tag42 = lshr i64 %raw.int39, 48
-  %tag.immortal44 = icmp eq i64 %addr.tag42, 0
-  %active.gen45 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current46 = icmp eq i64 %addr.tag42, %active.gen45
-  %tag.fast.ok47 = or i1 %tag.immortal44, %tag.current46
-  br i1 %tag.fast.ok47, label %addr_ok43, label %tag.slow_check48
-
-tag.slow_check30:                                 ; preds = %addr_ok11
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag24)
-  br label %addr_ok25
-
-addr_ok43:                                        ; preds = %tag.slow_check48, %addr_ok25
-  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr41, i8 1, i64 1, i1 false)
+  %raw.int14 = ptrtoint ptr %ptr.res to i64
+  %raw.clean.int15 = and i64 %raw.int14, 281474976710655
+  %raw.clean.ptr16 = inttoptr i64 %raw.clean.int15 to ptr
+  %raw.load17 = load volatile i64, ptr %raw.clean.ptr16, align 8
+  store i64 %raw.load17, ptr %var.idx, align 8
+  %var.load18 = load ptr, ptr %var.p, align 8
+  %fld.gep19 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load18, i32 0, i32 2
+  %fld.load20 = load ptr, ptr %fld.gep19, align 8
+  %var.load21 = load i64, ptr %var.idx, align 8
+  %ptr.int.l22 = ptrtoint ptr %fld.load20 to i64
+  %addtmp23 = add i64 %ptr.int.l22, %var.load21
+  %ptr.res24 = inttoptr i64 %addtmp23 to ptr
+  %raw.int25 = ptrtoint ptr %ptr.res24 to i64
+  %raw.clean.int26 = and i64 %raw.int25, 281474976710655
+  %raw.clean.ptr27 = inttoptr i64 %raw.clean.int26 to ptr
+  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr27, i8 1, i64 1, i1 false)
+  %var.load28 = load ptr, ptr %var.p, align 8
+  %fld.gep29 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load28, i32 0, i32 3
+  %fld.load30 = load ptr, ptr %fld.gep29, align 8
+  %ptr.int.l31 = ptrtoint ptr %fld.load30 to i64
+  %addtmp32 = add i64 %ptr.int.l31, 8
+  %ptr.res33 = inttoptr i64 %addtmp32 to ptr
+  %raw.int34 = ptrtoint ptr %ptr.res33 to i64
+  %raw.clean.int35 = and i64 %raw.int34, 281474976710655
+  %raw.clean.ptr36 = inttoptr i64 %raw.clean.int35 to ptr
+  %raw.load37 = load volatile i64, ptr %raw.clean.ptr36, align 8
+  store i64 %raw.load37, ptr %var.cnt, align 8
+  %var.load38 = load ptr, ptr %var.p, align 8
+  %fld.gep39 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load38, i32 0, i32 3
+  %fld.load40 = load ptr, ptr %fld.gep39, align 8
+  %ptr.int.l41 = ptrtoint ptr %fld.load40 to i64
+  %addtmp42 = add i64 %ptr.int.l41, 8
+  %ptr.res43 = inttoptr i64 %addtmp42 to ptr
+  %var.load44 = load i64, ptr %var.cnt, align 8
+  %addtmp45 = add i64 %var.load44, 1
+  %raw.int46 = ptrtoint ptr %ptr.res43 to i64
+  %raw.clean.int47 = and i64 %raw.int46, 281474976710655
+  %raw.clean.ptr48 = inttoptr i64 %raw.clean.int47 to ptr
+  store i64 %addtmp45, ptr %raw.clean.ptr48, align 8
   %var.load49 = load ptr, ptr %var.p, align 8
-  %fld.gep50 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load49, i32 0, i32 3
+  %fld.gep50 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load49, i32 0, i32 0
   %fld.load51 = load ptr, ptr %fld.gep50, align 8
-  %ptr.int.l52 = ptrtoint ptr %fld.load51 to i64
-  %addtmp53 = add i64 %ptr.int.l52, 8
-  %ptr.res54 = inttoptr i64 %addtmp53 to ptr
-  %raw.int55 = ptrtoint ptr %ptr.res54 to i64
-  %raw.clean.int56 = and i64 %raw.int55, 281474976710655
-  %raw.clean.ptr57 = inttoptr i64 %raw.clean.int56 to ptr
-  %addr.tag58 = lshr i64 %raw.int55, 48
-  %tag.immortal60 = icmp eq i64 %addr.tag58, 0
-  %active.gen61 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current62 = icmp eq i64 %addr.tag58, %active.gen61
-  %tag.fast.ok63 = or i1 %tag.immortal60, %tag.current62
-  br i1 %tag.fast.ok63, label %addr_ok59, label %tag.slow_check64
-
-tag.slow_check48:                                 ; preds = %addr_ok25
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag42)
-  br label %addr_ok43
-
-addr_ok59:                                        ; preds = %tag.slow_check64, %addr_ok43
-  %raw.load65 = load volatile i64, ptr %raw.clean.ptr57, align 8
-  store i64 %raw.load65, ptr %var.cnt, align 8
-  %var.load66 = load ptr, ptr %var.p, align 8
-  %fld.gep67 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load66, i32 0, i32 3
-  %fld.load68 = load ptr, ptr %fld.gep67, align 8
-  %ptr.int.l69 = ptrtoint ptr %fld.load68 to i64
-  %addtmp70 = add i64 %ptr.int.l69, 8
-  %ptr.res71 = inttoptr i64 %addtmp70 to ptr
-  %var.load72 = load i64, ptr %var.cnt, align 8
-  %addtmp73 = add i64 %var.load72, 1
-  %raw.int74 = ptrtoint ptr %ptr.res71 to i64
-  %raw.clean.int75 = and i64 %raw.int74, 281474976710655
-  %raw.clean.ptr76 = inttoptr i64 %raw.clean.int75 to ptr
-  %addr.tag77 = lshr i64 %raw.int74, 48
-  %tag.immortal79 = icmp eq i64 %addr.tag77, 0
-  %active.gen80 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current81 = icmp eq i64 %addr.tag77, %active.gen80
-  %tag.fast.ok82 = or i1 %tag.immortal79, %tag.current81
-  br i1 %tag.fast.ok82, label %addr_ok78, label %tag.slow_check83
-
-tag.slow_check64:                                 ; preds = %addr_ok43
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag58)
-  br label %addr_ok59
-
-addr_ok78:                                        ; preds = %tag.slow_check83, %addr_ok59
-  store i64 %addtmp73, ptr %raw.clean.ptr76, align 8
-  %var.load84 = load ptr, ptr %var.p, align 8
-  %fld.gep85 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load84, i32 0, i32 0
-  %fld.load86 = load ptr, ptr %fld.gep85, align 8
-  %var.load87 = load i64, ptr %var.idx, align 8
-  %var.load88 = load ptr, ptr %var.p, align 8
-  %fld.gep89 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load88, i32 0, i32 4
-  %fld.load90 = load i64, ptr %fld.gep89, align 8
-  %multmp91 = mul i64 %var.load87, %fld.load90
-  %ptr.int.l92 = ptrtoint ptr %fld.load86 to i64
-  %addtmp93 = add i64 %ptr.int.l92, %multmp91
-  %ptr.res94 = inttoptr i64 %addtmp93 to ptr
-  %p.to.i64 = ptrtoint ptr %ptr.res94 to i64
+  %var.load52 = load i64, ptr %var.idx, align 8
+  %var.load53 = load ptr, ptr %var.p, align 8
+  %fld.gep54 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load53, i32 0, i32 4
+  %fld.load55 = load i64, ptr %fld.gep54, align 8
+  %multmp56 = mul i64 %var.load52, %fld.load55
+  %ptr.int.l57 = ptrtoint ptr %fld.load51 to i64
+  %addtmp58 = add i64 %ptr.int.l57, %multmp56
+  %ptr.res59 = inttoptr i64 %addtmp58 to ptr
+  %p.to.i64 = ptrtoint ptr %ptr.res59 to i64
   %ram.pay = insertvalue { i1, i64 } { i1 true, i64 0 }, i64 %p.to.i64, 1
   ret { i1, i64 } %ram.pay
 
-tag.slow_check83:                                 ; preds = %addr_ok59
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag77)
-  br label %addr_ok78
+ret.dead:                                         ; No predecessors!
+  br label %choice.exit
 }
 
 define i1 @"mem::pool_free"(ptr %0, ptr %1) #0 {
@@ -2013,17 +1611,6 @@ choice.exit33:                                    ; preds = %ret.dead34, %div.ok
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
-
-ret.dead34:                                       ; No predecessors!
-  br label %choice.exit33
-
-addr_ok:                                          ; preds = %tag.slow_check, %choice.exit33
   %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
   store i8 %raw.load, ptr %var.is_act, align 1
   %var.load39 = load i8, ptr %var.is_act, align 1
@@ -2031,14 +1618,13 @@ addr_ok:                                          ; preds = %tag.slow_check, %ch
   %cmptmp40 = icmp eq i64 %coerce.zext, 0
   br i1 %cmptmp40, label %choice.then41, label %choice.exit42
 
-tag.slow_check:                                   ; preds = %choice.exit33
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
+ret.dead34:                                       ; No predecessors!
+  br label %choice.exit33
 
-choice.then41:                                    ; preds = %addr_ok
+choice.then41:                                    ; preds = %choice.exit33
   ret i1 false
 
-choice.exit42:                                    ; preds = %ret.dead43, %addr_ok
+choice.exit42:                                    ; preds = %ret.dead43, %choice.exit33
   %var.load44 = load ptr, ptr %var.p, align 8
   %fld.gep45 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load44, i32 0, i32 2
   %fld.load46 = load ptr, ptr %fld.gep45, align 8
@@ -2049,140 +1635,68 @@ choice.exit42:                                    ; preds = %ret.dead43, %addr_o
   %raw.int51 = ptrtoint ptr %ptr.res50 to i64
   %raw.clean.int52 = and i64 %raw.int51, 281474976710655
   %raw.clean.ptr53 = inttoptr i64 %raw.clean.int52 to ptr
-  %addr.tag54 = lshr i64 %raw.int51, 48
-  %tag.immortal56 = icmp eq i64 %addr.tag54, 0
-  %active.gen57 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current58 = icmp eq i64 %addr.tag54, %active.gen57
-  %tag.fast.ok59 = or i1 %tag.immortal56, %tag.current58
-  br i1 %tag.fast.ok59, label %addr_ok55, label %tag.slow_check60
+  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr53, i8 0, i64 1, i1 false)
+  %var.load54 = load ptr, ptr %var.p, align 8
+  %fld.gep55 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load54, i32 0, i32 3
+  %fld.load56 = load ptr, ptr %fld.gep55, align 8
+  %raw.int57 = ptrtoint ptr %fld.load56 to i64
+  %raw.clean.int58 = and i64 %raw.int57, 281474976710655
+  %raw.clean.ptr59 = inttoptr i64 %raw.clean.int58 to ptr
+  %raw.load60 = load volatile i64, ptr %raw.clean.ptr59, align 8
+  store i64 %raw.load60, ptr %var.top, align 8
+  %var.load61 = load ptr, ptr %var.p, align 8
+  %fld.gep62 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load61, i32 0, i32 1
+  %fld.load63 = load ptr, ptr %fld.gep62, align 8
+  %var.load64 = load i64, ptr %var.top, align 8
+  %multmp65 = mul i64 %var.load64, 8
+  %ptr.int.l66 = ptrtoint ptr %fld.load63 to i64
+  %addtmp67 = add i64 %ptr.int.l66, %multmp65
+  %ptr.res68 = inttoptr i64 %addtmp67 to ptr
+  %var.load69 = load i64, ptr %var.idx, align 8
+  %raw.int70 = ptrtoint ptr %ptr.res68 to i64
+  %raw.clean.int71 = and i64 %raw.int70, 281474976710655
+  %raw.clean.ptr72 = inttoptr i64 %raw.clean.int71 to ptr
+  store i64 %var.load69, ptr %raw.clean.ptr72, align 8
+  %var.load73 = load ptr, ptr %var.p, align 8
+  %fld.gep74 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load73, i32 0, i32 3
+  %fld.load75 = load ptr, ptr %fld.gep74, align 8
+  %var.load76 = load i64, ptr %var.top, align 8
+  %addtmp77 = add i64 %var.load76, 1
+  %raw.int78 = ptrtoint ptr %fld.load75 to i64
+  %raw.clean.int79 = and i64 %raw.int78, 281474976710655
+  %raw.clean.ptr80 = inttoptr i64 %raw.clean.int79 to ptr
+  store i64 %addtmp77, ptr %raw.clean.ptr80, align 8
+  %var.load81 = load ptr, ptr %var.p, align 8
+  %fld.gep82 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load81, i32 0, i32 3
+  %fld.load83 = load ptr, ptr %fld.gep82, align 8
+  %ptr.int.l84 = ptrtoint ptr %fld.load83 to i64
+  %addtmp85 = add i64 %ptr.int.l84, 8
+  %ptr.res86 = inttoptr i64 %addtmp85 to ptr
+  %raw.int87 = ptrtoint ptr %ptr.res86 to i64
+  %raw.clean.int88 = and i64 %raw.int87, 281474976710655
+  %raw.clean.ptr89 = inttoptr i64 %raw.clean.int88 to ptr
+  %raw.load90 = load volatile i64, ptr %raw.clean.ptr89, align 8
+  store i64 %raw.load90, ptr %var.cnt, align 8
+  %var.load91 = load ptr, ptr %var.p, align 8
+  %fld.gep92 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load91, i32 0, i32 3
+  %fld.load93 = load ptr, ptr %fld.gep92, align 8
+  %ptr.int.l94 = ptrtoint ptr %fld.load93 to i64
+  %addtmp95 = add i64 %ptr.int.l94, 8
+  %ptr.res96 = inttoptr i64 %addtmp95 to ptr
+  %var.load97 = load i64, ptr %var.cnt, align 8
+  %subtmp98 = sub i64 %var.load97, 1
+  %raw.int99 = ptrtoint ptr %ptr.res96 to i64
+  %raw.clean.int100 = and i64 %raw.int99, 281474976710655
+  %raw.clean.ptr101 = inttoptr i64 %raw.clean.int100 to ptr
+  store i64 %subtmp98, ptr %raw.clean.ptr101, align 8
+  ret i1 true
 
 ret.dead43:                                       ; No predecessors!
   br label %choice.exit42
-
-addr_ok55:                                        ; preds = %tag.slow_check60, %choice.exit42
-  call void @llvm.memset.p0.i64(ptr align 1 %raw.clean.ptr53, i8 0, i64 1, i1 false)
-  %var.load61 = load ptr, ptr %var.p, align 8
-  %fld.gep62 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load61, i32 0, i32 3
-  %fld.load63 = load ptr, ptr %fld.gep62, align 8
-  %raw.int64 = ptrtoint ptr %fld.load63 to i64
-  %raw.clean.int65 = and i64 %raw.int64, 281474976710655
-  %raw.clean.ptr66 = inttoptr i64 %raw.clean.int65 to ptr
-  %addr.tag67 = lshr i64 %raw.int64, 48
-  %tag.immortal69 = icmp eq i64 %addr.tag67, 0
-  %active.gen70 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current71 = icmp eq i64 %addr.tag67, %active.gen70
-  %tag.fast.ok72 = or i1 %tag.immortal69, %tag.current71
-  br i1 %tag.fast.ok72, label %addr_ok68, label %tag.slow_check73
-
-tag.slow_check60:                                 ; preds = %choice.exit42
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag54)
-  br label %addr_ok55
-
-addr_ok68:                                        ; preds = %tag.slow_check73, %addr_ok55
-  %raw.load74 = load volatile i64, ptr %raw.clean.ptr66, align 8
-  store i64 %raw.load74, ptr %var.top, align 8
-  %var.load75 = load ptr, ptr %var.p, align 8
-  %fld.gep76 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load75, i32 0, i32 1
-  %fld.load77 = load ptr, ptr %fld.gep76, align 8
-  %var.load78 = load i64, ptr %var.top, align 8
-  %multmp79 = mul i64 %var.load78, 8
-  %ptr.int.l80 = ptrtoint ptr %fld.load77 to i64
-  %addtmp81 = add i64 %ptr.int.l80, %multmp79
-  %ptr.res82 = inttoptr i64 %addtmp81 to ptr
-  %var.load83 = load i64, ptr %var.idx, align 8
-  %raw.int84 = ptrtoint ptr %ptr.res82 to i64
-  %raw.clean.int85 = and i64 %raw.int84, 281474976710655
-  %raw.clean.ptr86 = inttoptr i64 %raw.clean.int85 to ptr
-  %addr.tag87 = lshr i64 %raw.int84, 48
-  %tag.immortal89 = icmp eq i64 %addr.tag87, 0
-  %active.gen90 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current91 = icmp eq i64 %addr.tag87, %active.gen90
-  %tag.fast.ok92 = or i1 %tag.immortal89, %tag.current91
-  br i1 %tag.fast.ok92, label %addr_ok88, label %tag.slow_check93
-
-tag.slow_check73:                                 ; preds = %addr_ok55
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag67)
-  br label %addr_ok68
-
-addr_ok88:                                        ; preds = %tag.slow_check93, %addr_ok68
-  store i64 %var.load83, ptr %raw.clean.ptr86, align 8
-  %var.load94 = load ptr, ptr %var.p, align 8
-  %fld.gep95 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load94, i32 0, i32 3
-  %fld.load96 = load ptr, ptr %fld.gep95, align 8
-  %var.load97 = load i64, ptr %var.top, align 8
-  %addtmp98 = add i64 %var.load97, 1
-  %raw.int99 = ptrtoint ptr %fld.load96 to i64
-  %raw.clean.int100 = and i64 %raw.int99, 281474976710655
-  %raw.clean.ptr101 = inttoptr i64 %raw.clean.int100 to ptr
-  %addr.tag102 = lshr i64 %raw.int99, 48
-  %tag.immortal104 = icmp eq i64 %addr.tag102, 0
-  %active.gen105 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current106 = icmp eq i64 %addr.tag102, %active.gen105
-  %tag.fast.ok107 = or i1 %tag.immortal104, %tag.current106
-  br i1 %tag.fast.ok107, label %addr_ok103, label %tag.slow_check108
-
-tag.slow_check93:                                 ; preds = %addr_ok68
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag87)
-  br label %addr_ok88
-
-addr_ok103:                                       ; preds = %tag.slow_check108, %addr_ok88
-  store i64 %addtmp98, ptr %raw.clean.ptr101, align 8
-  %var.load109 = load ptr, ptr %var.p, align 8
-  %fld.gep110 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load109, i32 0, i32 3
-  %fld.load111 = load ptr, ptr %fld.gep110, align 8
-  %ptr.int.l112 = ptrtoint ptr %fld.load111 to i64
-  %addtmp113 = add i64 %ptr.int.l112, 8
-  %ptr.res114 = inttoptr i64 %addtmp113 to ptr
-  %raw.int115 = ptrtoint ptr %ptr.res114 to i64
-  %raw.clean.int116 = and i64 %raw.int115, 281474976710655
-  %raw.clean.ptr117 = inttoptr i64 %raw.clean.int116 to ptr
-  %addr.tag118 = lshr i64 %raw.int115, 48
-  %tag.immortal120 = icmp eq i64 %addr.tag118, 0
-  %active.gen121 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current122 = icmp eq i64 %addr.tag118, %active.gen121
-  %tag.fast.ok123 = or i1 %tag.immortal120, %tag.current122
-  br i1 %tag.fast.ok123, label %addr_ok119, label %tag.slow_check124
-
-tag.slow_check108:                                ; preds = %addr_ok88
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag102)
-  br label %addr_ok103
-
-addr_ok119:                                       ; preds = %tag.slow_check124, %addr_ok103
-  %raw.load125 = load volatile i64, ptr %raw.clean.ptr117, align 8
-  store i64 %raw.load125, ptr %var.cnt, align 8
-  %var.load126 = load ptr, ptr %var.p, align 8
-  %fld.gep127 = getelementptr inbounds { ptr, ptr, ptr, ptr, i64, i64 }, ptr %var.load126, i32 0, i32 3
-  %fld.load128 = load ptr, ptr %fld.gep127, align 8
-  %ptr.int.l129 = ptrtoint ptr %fld.load128 to i64
-  %addtmp130 = add i64 %ptr.int.l129, 8
-  %ptr.res131 = inttoptr i64 %addtmp130 to ptr
-  %var.load132 = load i64, ptr %var.cnt, align 8
-  %subtmp133 = sub i64 %var.load132, 1
-  %raw.int134 = ptrtoint ptr %ptr.res131 to i64
-  %raw.clean.int135 = and i64 %raw.int134, 281474976710655
-  %raw.clean.ptr136 = inttoptr i64 %raw.clean.int135 to ptr
-  %addr.tag137 = lshr i64 %raw.int134, 48
-  %tag.immortal139 = icmp eq i64 %addr.tag137, 0
-  %active.gen140 = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current141 = icmp eq i64 %addr.tag137, %active.gen140
-  %tag.fast.ok142 = or i1 %tag.immortal139, %tag.current141
-  br i1 %tag.fast.ok142, label %addr_ok138, label %tag.slow_check143
-
-tag.slow_check124:                                ; preds = %addr_ok103
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag118)
-  br label %addr_ok119
-
-addr_ok138:                                       ; preds = %tag.slow_check143, %addr_ok119
-  store i64 %subtmp133, ptr %raw.clean.ptr136, align 8
-  ret i1 true
-
-tag.slow_check143:                                ; preds = %addr_ok119
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag137)
-  br label %addr_ok138
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_zero_msg() #6 {
+define internal void @dva_abort_div_zero_msg() #7 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_zero_msg, i64 32)
   call void @exit(i32 1)
@@ -2193,7 +1707,7 @@ abort.dead:                                       ; No predecessors!
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_ovf_msg() #6 {
+define internal void @dva_abort_div_ovf_msg() #7 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_ovf_msg, i64 55)
   call void @exit(i32 1)
@@ -2256,12 +1770,12 @@ loop.body.36:                                     ; preds = %loop.header.36
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %addr.tag = lshr i64 %raw.int, 48
-  %tag.immortal = icmp eq i64 %addr.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %addr.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
+  %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
+  store i8 %raw.load, ptr %var.is_act, align 1
+  %var.load5 = load i8, ptr %var.is_act, align 1
+  %coerce.zext = zext i8 %var.load5 to i64
+  %cmptmp = icmp ne i64 %coerce.zext, 0
+  br i1 %cmptmp, label %choice.then, label %choice.exit
 
 loop.exit.nat.36:                                 ; preds = %loop.header.36
   br label %loop.exit.36
@@ -2275,19 +1789,7 @@ loop.latch.36:                                    ; preds = %choice.exit
 loop.exit.36:                                     ; preds = %loop.exit.nat.36
   ret void
 
-addr_ok:                                          ; preds = %tag.slow_check, %loop.body.36
-  %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
-  store i8 %raw.load, ptr %var.is_act, align 1
-  %var.load5 = load i8, ptr %var.is_act, align 1
-  %coerce.zext = zext i8 %var.load5 to i64
-  %cmptmp = icmp ne i64 %coerce.zext, 0
-  br i1 %cmptmp, label %choice.then, label %choice.exit
-
-tag.slow_check:                                   ; preds = %loop.body.36
-  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
-  br label %addr_ok
-
-choice.then:                                      ; preds = %addr_ok
+choice.then:                                      ; preds = %loop.body.36
   %clo.load = load ptr, ptr %var.f, align 8
   %clo.fn.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 0
   %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 1
@@ -2307,7 +1809,7 @@ choice.then:                                      ; preds = %addr_ok
   %clo.is_cap = icmp ne ptr %clo.env.load, null
   br i1 %clo.is_cap, label %clo.cap, label %clo.plain
 
-choice.exit:                                      ; preds = %clo.merge, %addr_ok
+choice.exit:                                      ; preds = %clo.merge, %loop.body.36
   br label %loop.latch.36
 
 clo.cap:                                          ; preds = %choice.then
@@ -2378,7 +1880,6 @@ attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memo
 attributes #2 = { alwaysinline "nounwind" }
 attributes #3 = { noinline "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
-attributes #5 = { cold noinline "nounwind" }
-attributes #6 = { cold noinline noreturn "nounwind" }
-attributes #7 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
-attributes #8 = { nocallback nofree nounwind willreturn memory(argmem: write) }
+attributes #5 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
+attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: write) }
+attributes #7 = { cold noinline noreturn "nounwind" }

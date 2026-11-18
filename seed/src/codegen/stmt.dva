@@ -8,6 +8,7 @@
 #use ../annotate
 #use ../type_env
 #use mem
+#use sys
 #use ./types
 #use ./runtime
 #use ./expr
@@ -4167,6 +4168,8 @@ codegen_compile_fn = cg, fd, h, dts, pts, d_ret, d_ret_ti, decl, gen, vs, exp =>
       |
          get_or_create_dyn_fn_ptr(cg, fd.name, <+ fn +>)
    runtime::mark_nounwind(cg, fn)
+   is_inline_hint_fn(fd.name)
+      | runtime::mark_fn_enum_attr(cg, fn, "inlinehint")
    cg.current_fn = fn
    cg.in_fn = <+>
    entry = LLVMAppendBasicBlock(fn, "entry")
@@ -6706,6 +6709,8 @@ count_var_assigns = name, te =>
       [Cycle cy]
          cnt' = count_var_assigns(name, cy.0) + count_var_assigns(name, cy.1)
          cnt' + (cy.2 | s => count_var_assigns(name, s) | 0)
+      [Lambda lam]
+         names_contain(lam.0, name) | 0 | count_var_assigns(name, lam.1)
       | 0
 
 str_var_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int, <> => <>
@@ -6722,10 +6727,12 @@ str_var_branches_safe = cg, name, brs, i, n, safe =>
       | <+>
       |
          br = brs(i)!!
-         !names_contain(br.bind_vars, name) &&
-           str_var_exprs_safe(cg, name, br.case_values, 0, ?br.case_values, <->) &&
+         lam_ps = br.body.kind [Lambda l] l.0 | ast::Names()
+         eff_body = br.body.kind [Lambda l] l.1 | br.body
+         shadowed = names_contain(br.bind_vars, name) || names_contain(lam_ps, name)
+         str_var_exprs_safe(cg, name, br.case_values, 0, ?br.case_values, <->) &&
            (br.pred_fn | pf => str_var_only_safe_uses(cg, name, pf, <->) | <+>) &&
-           str_var_only_safe_uses(cg, name, br.body, safe) &&
+           (shadowed || str_var_only_safe_uses(cg, name, eff_body, safe)) &&
            str_var_branches_safe(cg, name, brs, i + 1, n, safe)
 
 str_var_only_safe_uses: types::Cg, String, tast::TypedExpr, <> => <>
@@ -6752,10 +6759,13 @@ str_var_only_safe_uses = cg, name, te, safe =>
          is_str_idx = <>(c.1) && (?c.2 == 1) &&
            types::is_str_vt(types::vt_from_ti_cg(cg, c.1!!.ti))
          rec_ok = c.1 | r => str_var_only_safe_uses(cg, name, r, is_str_idx) | <+>
-         fn = types::resolve_fn_name(cg, c.0)
-         arg_safe = (!<>(c.1)) && (fn ["str::find", "str::starts_with", "str::ends_with",
-           "str::contains", "str::index_of", "str::parse_int", "str::last_index_of"])
-         rec_ok && str_var_exprs_safe(cg, name, c.2, 0, ?c.2, arg_safe)
+         is_to_str = ! <>(c.1) && (?c.2 == 1) && (c.0 == "%to_str")
+         is_inl_ut = safe && (types::g.inline_ret_bb != sys::addr_null) &&
+           ! <>(c.1) && types::is_user_type(cg, c.0)
+         args_ok = (is_inl_ut || (is_to_str && safe))
+            | str_var_exprs_safe(cg, name, c.2, 0, ?c.2, <+>)
+            | str_var_call_args_safe(cg, name, c.0, c.2, 0, ?c.2, <>(c.1))
+         rec_ok && args_ok
       [Block exprs]
          ne = ?exprs
          ne == 0
@@ -6766,8 +6776,12 @@ str_var_only_safe_uses = cg, name, te, safe =>
       [Assign a]
          str_var_only_safe_uses(cg, name, a.5, <->)
       [Choice ch]
-         str_var_only_safe_uses(cg, name, ch.0, <->) &&
-           str_var_branches_safe(cg, name, ch.1, 0, ?ch.1, safe)
+         cond_vt = types::vt_from_ti_cg(cg, ch.0.ti)
+         cond_is_str = types::is_str_vt(cond_vt)
+         cond_safe = cond_is_str && !choice_branches_bind_or_lam(ch.1, 0, ?ch.1)
+         under_shadowed = (name == "_") && types::is_any_ram_vt(cond_vt)
+         str_var_only_safe_uses(cg, name, ch.0, cond_safe) &&
+           (under_shadowed || str_var_branches_safe(cg, name, ch.1, 0, ?ch.1, safe))
       [Member m] str_var_only_safe_uses(cg, name, m.0, <->)
       [MemberWrite mw]
          str_var_only_safe_uses(cg, name, mw.0, <->) &&
@@ -6777,65 +6791,214 @@ str_var_only_safe_uses = cg, name, te, safe =>
            str_var_only_safe_uses(cg, name, iw.1, <->) &&
            str_var_only_safe_uses(cg, name, iw.2, <->)
       [RamConstruct rc]
-         (rc.2 | p => str_var_only_safe_uses(cg, name, p, <->) | <+>)
+         (rc.2 | p => str_var_only_safe_uses(cg, name, p, safe) | <+>)
       [EnumConstruct ec]
          (ec.1 | p => str_var_only_safe_uses(cg, name, p, <->) | <+>)
       [Record r]
+         fld_safe = safe && (types::g.inline_ret_bb != sys::addr_null)
          ok' = <+>
          r @ f =>
-            !str_var_only_safe_uses(cg, name, f.val, <->) | ok' = <->
+            !str_var_only_safe_uses(cg, name, f.val, fld_safe) | ok' = <->
          ok'
       [Cycle cy]
-         str_var_only_safe_uses(cg, name, cy.0, <->) &&
-           str_var_only_safe_uses(cg, name, cy.1, <->) &&
+         cy_ok = cy.1.kind
+            [Lambda l]
+               names_contain(l.0, name) | <+> | str_var_only_safe_uses(cg, name, l.1, <->)
+            | str_var_only_safe_uses(cg, name, cy.1, <->)
+         str_var_only_safe_uses(cg, name, cy.0, <->) && cy_ok &&
            (cy.2 | s => str_var_only_safe_uses(cg, name, s, <->) | <+>)
       [Return r]
-         (r | rv => str_var_only_safe_uses(cg, name, rv, <->) | <+>)
+         ret_safe = fn_ret_unboxes_str(cg)
+         (r | rv => str_var_only_safe_uses(cg, name, rv, ret_safe) | <+>)
       [Exit x] str_var_only_safe_uses(cg, name, x, <->)
       [Lambda lam]
          !names_contain(lam.0, name) && !typed_refs_name(lam.1, name)
       | !typed_refs_name(te, name)
 
+choice_branches_bind_or_lam: tast::TypedBranches, Int, Int => <>
+choice_branches_bind_or_lam = brs, i, n =>
+   i !< n | --| <->
+   br = brs(i)!!
+   (?br.bind_vars > 0) || (br.body.kind [Lambda]) ||
+     choice_branches_bind_or_lam(brs, i + 1, n)
+
+fn_ret_unboxes_str: types::Cg => <>
+fn_ret_unboxes_str = cg =>
+   types::g.inline_ret_bb != sys::addr_null | --| <+>
+   types::fn_uses_c_ret_abi(cg, types::g.last_compiling_fn) | --| <->
+   types::unboxed_ret_struct_ti(cg, types::g.expected_fn_ti)
+      | u => (u.1 [1, 2])
+      | <->
+
+is_inline_hint_fn: String => <>
+is_inline_hint_fn = fn =>
+   fn ["str::find", "str::find_from", "str::rfind", "str::starts_with",
+     "str::ends_with", "str::contains", "str::index_of", "str::last_index_of",
+     "str::is_empty", "str::is_blank", "str::is_ws", "str::trim_start",
+     "str::trim_end", "str::trim", "str::split_once",
+     "json::#scan_plain_ascii_end", "json::#cursor_skip_str",
+     "json::#cursor_skip_number", "json::cursor_skip_ws",
+     "json::cursor_eof", "json::cursor_peek", "json::cursor_expect_byte",
+     "json::cursor_enter_object", "json::cursor_enter_array",
+     "json::cursor_read_str", "json::cursor_next_field",
+     "json::cursor_read_int", "json::cursor_read_bool",
+     "json::cursor_skip_value", "ascii::is_digit", "ascii::is_alnum"]
+
+is_known_safe_str_callee: String => <>
+is_known_safe_str_callee = fn =>
+   fn ["str::find", "str::find_from", "str::rfind", "str::starts_with",
+     "str::ends_with", "str::contains", "str::index_of", "str::last_index_of",
+     "str::parse_int", "str::count", "str::is_empty", "str::is_blank",
+     "str::cmp", "str::lt", "json::#scan_plain_ascii_end",
+     "json::#cursor_skip_str", "utf::decode_str_at"]
+
+callee_param_str_safe_d: types::Cg, String, Int, Int => <>
+callee_param_str_safe_d = cg, fname, param_idx, depth =>
+   types::g.escape_check_depth > 1 | --| <->
+   rname = types::resolve_fn_name(cg, fname)
+   is_known_safe_str_callee(rname) | --| <+>
+   stmts = types::g.typed_program_stmts
+   ?stmts @ i =>
+      st = stmts(i)!!
+      found = st
+         [Binding b] find_callee_lambda_param(cg, b.0, b.2, rname, fname, param_idx)
+         [GlobalBinding gb] find_callee_lambda_param(cg, gb.0, gb.2, rname, fname, param_idx)
+         [Expr te]
+            te.kind
+               [Assign a] find_callee_lambda_param(cg, a.0, a.5, rname, fname, param_idx)
+               | <-->
+         | <-->
+      <>(found)
+         |
+            info = found!!
+            types::g.escape_check_depth = types::g.escape_check_depth + 1
+            ok = count_var_assigns(info.0, info.1) == 0 &&
+              str_var_only_safe_uses(cg, info.0, info.1, <->)
+            types::g.escape_check_depth = types::g.escape_check_depth - 1
+            --| ok
+   <->
+
+str_var_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int, Int, <> => <>
+str_var_call_args_safe = cg, name, fname, args, i, n, has_rec =>
+   i !< n | --| <+>
+   arg_k = args(i)!!
+   is_direct_var = arg_k.kind [Var v] (v.0 == name) | <->
+   fn = types::resolve_fn_name(cg, fname)
+   arg_ok = !has_rec && is_known_safe_str_callee(fn)
+      | str_var_only_safe_uses(cg, name, arg_k, <+>)
+      |
+         !has_rec && is_direct_var && callee_param_str_safe_d(cg, fname, i, 0)
+            | <+>
+            | str_var_only_safe_uses(cg, name, arg_k, <->)
+   arg_ok && str_var_call_args_safe(cg, name, fname, args, i + 1, n, has_rec)
+
 str_slice_var_non_escaping: types::Cg, String => <>
 str_slice_var_non_escaping = cg, name =>
    types::g.current_fn_body
       | fn_body =>
+         tail_safe = fn_ret_unboxes_str(cg)
          count_var_assigns(name, fn_body) == 1 &&
-           str_var_only_safe_uses(cg, name, fn_body, <->)
+           str_var_only_safe_uses(cg, name, fn_body, tail_safe)
       | <->
 
-param_proj_exprs_safe: String, tast::TypedExprs, Int, Int => <>
-param_proj_exprs_safe = pname, es, i, n =>
+param_proj_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
+param_proj_exprs_safe = cg, pname, es, i, n =>
    i !< n
       | <+>
-      | param_proj_safe(pname, es(i)!!, <->) &&
-        param_proj_exprs_safe(pname, es, i + 1, n)
+      | param_proj_safe(cg, pname, es(i)!!, <->, <->) &&
+        param_proj_exprs_safe(cg, pname, es, i + 1, n)
 
-param_proj_branches_safe: String, tast::TypedBranches, Int, Int => <>
-param_proj_branches_safe = pname, brs, i, n =>
+param_proj_fields_safe: types::Cg, String, tast::TypedFields, Int, Int => <>
+param_proj_fields_safe = cg, pname, fs, i, n =>
+   i !< n
+      | <+>
+      | param_proj_safe(cg, pname, fs(i)!!.val, <->, <->) &&
+        param_proj_fields_safe(cg, pname, fs, i + 1, n)
+
+param_proj_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int,
+  Int, <> => <>
+param_proj_call_args_safe = cg, pname, fname, args, i, n, has_rec =>
+   i !< n | --| <+>
+   arg_k = args(i)!!
+   is_direct_var = arg_k.kind [Var v] (v.0 == pname) | <->
+   fn = types::resolve_fn_name(cg, fname)
+   arg_str_ok = !has_rec && is_known_safe_str_callee(fn)
+   arg_ok = is_direct_var && !has_rec
+      | callee_param_only_projects(cg, fname, i)
+      | param_proj_safe(cg, pname, arg_k, <->, arg_str_ok)
+   arg_ok && param_proj_call_args_safe(cg, pname, fname, args, i + 1, n, has_rec)
+
+param_proj_branches_safe: types::Cg, String, tast::TypedBranches, Int, Int => <>
+param_proj_branches_safe = cg, pname, brs, i, n =>
    i !< n
       | <+>
       |
          br = brs(i)!!
-         !names_contain(br.bind_vars, pname) &&
-           param_proj_exprs_safe(pname, br.case_values, 0, ?br.case_values) &&
-           (br.pred_fn | pf => param_proj_safe(pname, pf, <->) | <+>) &&
-           param_proj_safe(pname, br.body, <->) &&
-           param_proj_branches_safe(pname, brs, i + 1, n)
+         lam_ps = br.body.kind [Lambda l] l.0 | ast::Names()
+         eff_body = br.body.kind [Lambda l] l.1 | br.body
+         shadowed = names_contain(br.bind_vars, pname) || names_contain(lam_ps, pname)
+         param_proj_exprs_safe(cg, pname, br.case_values, 0, ?br.case_values) &&
+           (br.pred_fn | pf => param_proj_safe(cg, pname, pf, <->, <->) | <+>) &&
+           (shadowed || param_proj_safe(cg, pname, eff_body, <->, <->)) &&
+           param_proj_branches_safe(cg, pname, brs, i + 1, n)
 
-param_proj_safe: String, tast::TypedExpr, <> => <>
-param_proj_safe = pname, te, in_mem =>
+param_proj_safe: types::Cg, String, tast::TypedExpr, <>, <> => <>
+param_proj_safe = cg, pname, te, in_mem, str_ok =>
    te.kind
       [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, CycleJump] <+>
       [Var v] (v.0 == pname | in_mem | <+>)
-      [Member m] param_proj_safe(pname, m.0, <+>)
-      [Bin b] param_proj_safe(pname, b.1, <->) && param_proj_safe(pname, b.2, <->)
+      [Member m]
+         fvt = types::vt_from_ti_cg(cg, te.ti)
+         mem_ok = in_mem || !types::is_ptrish_vt(fvt) ||
+           (types::is_str_vt(fvt) && str_ok)
+         mem_ok && param_proj_safe(cg, pname, m.0, <+>, str_ok)
+      [Bin b]
+         b_str_ok = (b.0 [Seq] && str_ok) || (b.0 [Eq, NotEq, Add, Lt, Gt, NotGt, NotLt])
+         param_proj_safe(cg, pname, b.1, <->, b_str_ok) &&
+           param_proj_safe(cg, pname, b.2, <->, b_str_ok)
       [Unary u]
-         u.0 [AddrOf] !typed_refs_name(u.1, pname) | param_proj_safe(pname, u.1, <->)
-      [Block es] param_proj_exprs_safe(pname, es, 0, ?es)
+         u.0 [AddrOf]
+            | !typed_refs_name(u.1, pname)
+            |
+               u_str_ok = u.0 [Length]
+               param_proj_safe(cg, pname, u.1, <->, u_str_ok)
+      [Index ix]
+         param_proj_safe(cg, pname, ix.0, <->, <+>) &&
+           param_proj_safe(cg, pname, ix.1, <->, <->)
+      [Call c]
+         is_str_idx = <>(c.1) && (?c.2 == 1) &&
+           types::is_str_vt(types::vt_from_ti_cg(cg, c.1!!.ti))
+         rec_ok = c.1
+            | r => param_proj_safe(cg, pname, r, <->, is_str_idx)
+            | <+>
+         is_to_str = ! <>(c.1) && (?c.2 == 1) && (c.0 == "%to_str")
+         args_ok = (is_str_idx || is_to_str)
+            | param_proj_safe(cg, pname, c.2(0)!!, <->, str_ok)
+            | param_proj_call_args_safe(cg, pname, c.0, c.2, 0, ?c.2, <>(c.1))
+         rec_ok && args_ok
+      [Block es] param_proj_exprs_safe(cg, pname, es, 0, ?es)
+      [Assign a]
+         a.0 != pname && param_proj_safe(cg, pname, a.5, <->, <->)
       [Choice ch]
-         param_proj_safe(pname, ch.0, <->) &&
-           param_proj_branches_safe(pname, ch.1, 0, ?ch.1)
+         cond_vt = types::vt_from_ti_cg(cg, ch.0.ti)
+         cond_str_ok = types::is_str_vt(cond_vt) &&
+           !choice_branches_bind_or_lam(ch.1, 0, ?ch.1)
+         param_proj_safe(cg, pname, ch.0, <->, cond_str_ok) &&
+           param_proj_branches_safe(cg, pname, ch.1, 0, ?ch.1)
+      [Record r] param_proj_fields_safe(cg, pname, r, 0, ?r)
+      [RamConstruct rc]
+         (rc.2 | p => param_proj_safe(cg, pname, p, <->, <->) | <+>)
+      [EnumConstruct ec]
+         (ec.1 | p => param_proj_safe(cg, pname, p, <->, <->) | <+>)
+      [Return r]
+         (r | rv => param_proj_safe(cg, pname, rv, <->, <->) | <+>)
+      [Cycle cy]
+         cy_ok = cy.1.kind
+            [Lambda l]
+               names_contain(l.0, pname) | <+> | param_proj_safe(cg, pname, l.1, <->, <->)
+            | param_proj_safe(cg, pname, cy.1, <->, <->)
+         param_proj_safe(cg, pname, cy.0, <->, <->) && cy_ok &&
+           (cy.2 | s => param_proj_safe(cg, pname, s, <->, <->) | <+>)
       | !typed_refs_name(te, pname)
 
 find_callee_lambda_param: types::Cg, String, tast::TypedExpr, String, String,
@@ -6852,6 +7015,7 @@ find_callee_lambda_param = cg, tname, val_e, rname, fname, param_idx =>
 
 callee_param_only_projects: types::Cg, String, Int => <>
 callee_param_only_projects = cg, fname, param_idx =>
+   types::g.escape_check_depth > 1 | --| <->
    rname = types::resolve_fn_name(cg, fname)
    stmts = types::g.typed_program_stmts
    ?stmts @ i =>
@@ -6867,7 +7031,11 @@ callee_param_only_projects = cg, fname, param_idx =>
       <>(found)
          |
             info = found!!
-            --| param_proj_safe(info.0, info.1, <->)
+            types::g.escape_check_depth = types::g.escape_check_depth + 1
+            ok = count_var_assigns(info.0, info.1) == 0 &&
+              param_proj_safe(cg, info.0, info.1, <->, <->)
+            types::g.escape_check_depth = types::g.escape_check_depth - 1
+            --| ok
    <->
 
 rec_var_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
@@ -6903,10 +7071,12 @@ rec_var_branches_safe = cg, name, brs, i, n =>
       | <+>
       |
          br = brs(i)!!
-         !names_contain(br.bind_vars, name) &&
-           rec_var_exprs_safe(cg, name, br.case_values, 0, ?br.case_values) &&
+         lam_ps = br.body.kind [Lambda l] l.0 | ast::Names()
+         eff_body = br.body.kind [Lambda l] l.1 | br.body
+         shadowed = names_contain(br.bind_vars, name) || names_contain(lam_ps, name)
+         rec_var_exprs_safe(cg, name, br.case_values, 0, ?br.case_values) &&
            (br.pred_fn | pf => rec_var_safe_expr(cg, name, pf, <->) | <+>) &&
-           rec_var_safe_expr(cg, name, br.body, <->) &&
+           (shadowed || rec_var_safe_expr(cg, name, eff_body, <->)) &&
            rec_var_branches_safe(cg, name, brs, i + 1, n)
 
 rec_var_safe_expr: types::Cg, String, tast::TypedExpr, <> => <>
@@ -6923,13 +7093,13 @@ rec_var_safe_expr = cg, name, te, in_mem =>
          rec_ok && rec_var_call_args_safe(cg, name, c.0, c.2, 0, ?c.2, <>(c.1))
       [Block exprs] rec_var_exprs_safe(cg, name, exprs, 0, ?exprs)
       [Assign a]
-         a.0 == name
-            | rec_var_safe_expr(cg, name, a.5, <->)
-            | !typed_refs_name(a.5, name)
+         rec_var_safe_expr(cg, name, a.5, <->)
       [Choice ch]
          rec_var_safe_expr(cg, name, ch.0, <->) &&
            rec_var_branches_safe(cg, name, ch.1, 0, ?ch.1)
-      [Member m] rec_var_safe_expr(cg, name, m.0, <+>)
+      [Member m]
+         m_is_rec = types::is_record_vt(types::vt_from_ti_cg(cg, te.ti))
+         (!m_is_rec || in_mem) && rec_var_safe_expr(cg, name, m.0, <+>)
       [MemberWrite mw]
          tgt_is_name = mw.0.kind [Var v] (v.0 == name) | <->
          tgt_ok = tgt_is_name | <+> | rec_var_safe_expr(cg, name, mw.0, <+>)
@@ -6940,16 +7110,19 @@ rec_var_safe_expr = cg, name, te, in_mem =>
            !typed_refs_name(iw.2, name)
       [Record r] rec_var_fields_safe(cg, name, r, 0, ?r)
       [Cycle cy]
-         rec_var_safe_expr(cg, name, cy.0, <->) &&
-           rec_var_safe_expr(cg, name, cy.1, <->) &&
+         cy_ok = cy.1.kind
+            [Lambda l]
+               names_contain(l.0, name) | <+> | rec_var_safe_expr(cg, name, l.1, <->)
+            | rec_var_safe_expr(cg, name, cy.1, <->)
+         rec_var_safe_expr(cg, name, cy.0, <->) && cy_ok &&
            (cy.2 | s => rec_var_safe_expr(cg, name, s, <->) | <+>)
       [Copy cp] rec_var_safe_expr(cg, name, cp, <->)
       [RamConstruct rc]
-         (rc.2 | p => !typed_refs_name(p, name) | <+>)
+         (rc.2 | p => rec_var_safe_expr(cg, name, p, <->) | <+>)
       [EnumConstruct ec]
-         (ec.1 | p => !typed_refs_name(p, name) | <+>)
+         (ec.1 | p => rec_var_safe_expr(cg, name, p, <->) | <+>)
       [Return r]
-         (r | rv => !typed_refs_name(rv, name) | <+>)
+         (r | rv => rec_var_safe_expr(cg, name, rv, <->) | <+>)
       [Exit x] !typed_refs_name(x, name)
       [Lambda lam]
          !names_contain(lam.0, name) && !typed_refs_name(lam.1, name)
@@ -6966,7 +7139,9 @@ rec_var_non_escaping = cg, name =>
    ret_is_scalar_prim = types::g.expected_fn_ti
       [Prim p] p ![Str, Unknown, RawPtr]
       | <->
-   !ret_is_scalar_prim | --| <->
+   ret_is_ub = !types::fn_uses_c_ret_abi(cg, types::g.last_compiling_fn) &&
+     <>(types::unboxed_ret_struct_ti(cg, types::g.expected_fn_ti))
+   !(ret_is_scalar_prim || ret_is_ub) | --| <->
    types::g.current_fn_body
       | fn_body =>
          count_var_assigns(name, fn_body) == 1 &&
@@ -7012,8 +7187,13 @@ fn_body_has_arena_restore = cg, te =>
          fn_body_has_arena_restore(cg, iw.0) || fn_body_has_arena_restore(cg, iw.1) ||
            fn_body_has_arena_restore(cg, iw.2)
       [Call c]
+         is_idx = c.1
+            | r => (types::vt_from_ti_cg(cg, r.ti) [Array, Slice, Map, Str, Builder, Record])
+            | <->
+         is_loc_clo = (types::has_local_var(cg, c.0) &&
+           (types::var_type(cg, c.0) [Fn])) || <>(param_clo_ty(cg, c.0))
          !(c.1 | r => !fn_body_has_arena_restore(cg, r) | <+>) ||
-           <>(c.1) || types::has_local_var(cg, c.0) ||
+           (!is_idx && (<>(c.1) || is_loc_clo)) ||
            call_is_arena_restore_op(cg, c.0) ||
            typed_exprs_have_restore(cg, c.2, 0, ?c.2)
       [Record r]
@@ -7027,8 +7207,9 @@ fn_body_has_arena_restore = cg, te =>
       [Block es] typed_exprs_have_restore(cg, es, 0, ?es)
       [Assign a] fn_body_has_arena_restore(cg, a.5)
       [Cycle cy]
+         cy_body = cy.1.kind [Lambda lam] lam.1 | cy.1
          fn_body_has_arena_restore(cg, cy.0) ||
-           (cy.1.kind [Lambda lam] fn_body_has_arena_restore(cg, lam.1) | <+>) ||
+           fn_body_has_arena_restore(cg, cy_body) ||
            (cy.2 | s => fn_body_has_arena_restore(cg, s) | <->)
       [RamConstruct rc] (rc.2 | p => fn_body_has_arena_restore(cg, p) | <->)
       [EnumConstruct ec] (ec.1 | p => fn_body_has_arena_restore(cg, p) | <->)
@@ -7039,6 +7220,7 @@ fn_body_has_arena_restore = cg, te =>
          fn_body_has_arena_restore(cg, rmw.0) || fn_body_has_arena_restore(cg, rmw.1)
       [Exit x] fn_body_has_arena_restore(cg, x)
       [Return r] (r | rv => fn_body_has_arena_restore(cg, rv) | <->)
+      [Lambda lam] fn_body_has_arena_restore(cg, lam.1)
       | <+>
 
 count_builder_inits: String, tast::TypedExpr => Int
@@ -7063,8 +7245,8 @@ count_builder_inits = name, te =>
          c.2 @ a => cnt' = cnt' + count_builder_inits(name, a)
          cnt'
       [Cycle cy]
-         cnt' = count_builder_inits(name, cy.0) +
-           (cy.1.kind [Lambda lam] count_builder_inits(name, lam.1) | 0)
+         cy_body = cy.1.kind [Lambda lam] lam.1 | cy.1
+         cnt' = count_builder_inits(name, cy.0) + count_builder_inits(name, cy_body)
          cnt' + (cy.2 | s => count_builder_inits(name, s) | 0)
       | 0
 
@@ -7166,7 +7348,7 @@ builder_var_safe_uses = name, te, safe, in_cycle =>
                !names_contain(lam.0, name)
                   | builder_var_safe_uses(name, lam.1, <->, <+>)
                   | (<+>, 0)
-            | (<->, 0)
+            | builder_var_safe_uses(name, cy.1, <->, <+>)
          r2 = cy.2 | s => builder_var_safe_uses(name, s, <->, <+>) | (<+>, 0)
          (r0.0 && r1.0 && r2.0, r0.1 + r1.1 + r2.1)
       [RamConstruct rc]
@@ -7268,16 +7450,18 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                val_is_freeze = val.kind [Unary u] (u.0 [Freeze]) | <->
                val_is_call_str = val.kind [Call c] !types::fn_uses_c_ret_abi(cg, c.0) | <->
                val_is_add_str = val.kind [Bin b] (b.0 [Add]) | <->
+               val_is_ch_str = val.kind [Choice]
                no_fn_restore = <>(types::g.current_fn_body) &&
                  !types::g.current_fn_has_restore
                val_vt_pre = types::vt_from_ti_cg(cg, val.ti)
                is_str_rhs = expr::is_str_slice_range(cg, val).0 || val_is_freeze ||
-                 ((val_is_call_str || val_is_add_str) && types::is_str_vt(val_vt_pre))
+                 ((val_is_call_str || val_is_add_str || val_is_ch_str) &&
+                   types::is_str_vt(val_vt_pre))
                can_stack_str = is_fresh && !mut && !is_glob && cg.in_fn &&
-                 ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 && no_fn_restore &&
+                 cg.in_restore_scope == 0 && no_fn_restore &&
                  is_str_rhs && str_slice_var_non_escaping(cg, name)
                can_stack_rec = is_fresh && !mut && !is_glob && cg.in_fn &&
-                 ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 && no_fn_restore &&
+                 cg.in_restore_scope == 0 && no_fn_restore &&
                  (val.kind [Record, Call]) &&
                  !(val.kind [Call c] types::fn_uses_c_ret_abi(cg, c.0) | <->) &&
                  types::is_record_vt(val_vt_pre) && !types::is_slice_vt(val_vt_pre) &&
@@ -8263,6 +8447,7 @@ typed_refs_name = te, name =>
          typed_refs_name(rmw.0, name) || typed_refs_name(rmw.1, name)
       [MapLiteral ml] typed_refs_name_map(ml, name, 0, ?ml)
       [Exit e] typed_refs_name(e, name)
+      [Return r] typed_refs_name_opt(r, name)
       | <->
 
 typed_lambda_captures_at: types::Cg, ast::Names, tast::TypedExpr, String, Int, Int, ast::Names => ast::Names
@@ -8335,6 +8520,12 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    types::g.stack_alloc_next = <->
    saved_unboxed_tail = types::g.unboxed_ret_tail
    types::g.unboxed_ret_tail = 0
+   saved_inline_ret_bb = types::g.inline_ret_bb
+   saved_inline_ret_slot = types::g.inline_ret_slot
+   saved_validated_strs = types::g.validated_str_vals
+   types::g.inline_ret_bb = sys::addr_null
+   types::g.inline_ret_slot = sys::addr_null
+   types::g.validated_str_vals = types::Addrs()
    saved_in_fn && orig_name != ""
       |
          cg.fn_alias_names += orig_name
@@ -8345,7 +8536,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
       ast::VTypes()
 
    mod_name = types::decl_module(name, 0)
-   mod_name != "" | cg.current_module = mod_name
+   !is_anon | (cg.current_module = mod_name)
    cg.bindings = types::BindingMuts()
    cg.fn_binding_start = 0
 
@@ -8402,11 +8593,14 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
       |
          get_or_create_dyn_fn_ptr(cg, name, <+ fn +>)
    runtime::mark_nounwind(cg, fn)
+   is_inline_hint_fn(name)
+      | runtime::mark_fn_enum_attr(cg, fn, "inlinehint")
    cg.current_fn = fn
    cg.in_fn = <+>
    cg.in_restore_scope = 0
    cg.cycle_breaks = types::Addrs()
    cg.cycle_conts = types::Addrs()
+   cg.fn_var_start = saved_nvars
    types::g.current_fn_body = <+ body +>
    types::g.current_fn_has_restore = fn_body_has_arena_restore(cg, body)
    entry = LLVMAppendBasicBlock(fn, "entry")
@@ -8420,7 +8614,6 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
          ep = LLVMBuildBitCast(cg.builder, LLVMGetParam(fn, 0),
            LLVMPointerType(est, 0), "cap.env")
          lambda_add_caps(cg, caps, cap_vts, est, ep, 0, nc)
-   cg.fn_var_start = saved_nvars
 
    nparams @ j =>
       pname = params(j) | _ | ""
@@ -8525,6 +8718,9 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    types::g.stack_alloc_next = saved_stack_alloc
    types::g.unboxed_ret_tail = saved_unboxed_tail
    types::g.fast_freeze_builders = saved_fast_freeze_b
+   types::g.inline_ret_bb = saved_inline_ret_bb
+   types::g.inline_ret_slot = saved_inline_ret_slot
+   types::g.validated_str_vals = saved_validated_strs
 
    can_stack_clo = want_stack_clo && <>(types::llvm_val_opt(cg.current_fn))
    envp' = LLVMConstNull(i8p)
@@ -8613,8 +8809,7 @@ declare_external_var = cg, name, ti =>
    enter_decl_module: types::Cg, String => String
    enter_decl_module = cg, name =>
       saved_mod = cg.current_module
-      mod_name = types::decl_module(name, 0)
-      mod_name != "" | cg.current_module = mod_name
+      cg.current_module = types::decl_module(name, 0)
       saved_mod
 
 // Emits a top-level typed binding under the declaring module's namespace.

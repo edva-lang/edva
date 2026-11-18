@@ -120,7 +120,6 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.unicode::is_control" = global ptr null
 @clo.const.17 = internal constant { ptr, ptr } { ptr @"unicode::is_graphic", ptr null }
 @"var.unicode::is_graphic" = global ptr null
-@stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
 @str_oob_msg = internal unnamed_addr constant [40 x i8] c"E4006: string byte index out of bounds\0A\00"
 @clo.const.18 = internal constant { ptr, ptr } { ptr @"unicode::decode_rune", ptr null }
 @"var.unicode::decode_rune" = global ptr null
@@ -1801,22 +1800,10 @@ entry:
   %str.len.query = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %str.len.query1 = load i64, ptr %str.len.query, align 8
   %str.len.query2 = and i64 %str.len.query1, 281474976710655
-  %str.tag = lshr i64 %str.len.query1, 48
-  %tag.immortal = icmp eq i64 %str.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %str.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %str_ok, label %tag.slow_check
-
-str_ok:                                           ; preds = %tag.slow_check, %entry
   store i64 %str.len.query2, ptr %var.n, align 8
   %var.load3 = load i64, ptr %var.i, align 8
   %cmptmp = icmp sge i64 %var.load3, 0
   br i1 %cmptmp, label %and.36.then, label %and.36.else
-
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_str_msg(i64 %str.tag)
-  br label %str_ok
 
 choice.exit:                                      ; preds = %choice.next, %choice.case
   %choice.res = phi i1 [ true, %choice.case ], [ false, %choice.next ]
@@ -1829,12 +1816,12 @@ choice.case:                                      ; preds = %and.36.exit
 choice.next:                                      ; preds = %and.36.exit
   br label %choice.exit
 
-and.36.then:                                      ; preds = %str_ok
+and.36.then:                                      ; preds = %entry
   %var.load4 = load i64, ptr %var.n, align 8
   %cmptmp5 = icmp slt i64 %var.load3, %var.load4
   br label %and.36.exit
 
-and.36.else:                                      ; preds = %str_ok
+and.36.else:                                      ; preds = %entry
   br label %and.36.exit
 
 and.36.exit:                                      ; preds = %and.36.else, %and.36.then
@@ -1889,35 +1876,6 @@ choice.exit16:                                    ; preds = %ret.dead17, %idx_ok
 
 ret.dead17:                                       ; No predecessors!
   br label %choice.exit16
-}
-
-; Function Attrs: cold noinline
-define internal void @dva_validate_tag_or_abort_stale_str_msg(i64 %0) #7 {
-entry:
-  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
-  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
-  br i1 %tag.valid, label %valid, label %stale
-
-valid:                                            ; preds = %entry
-  ret void
-
-stale:                                            ; preds = %entry
-  call void @dva_abort_stale_str_msg()
-  unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
-}
-
-; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_stale_str_msg() #5 {
-entry:
-  %0 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
-  call void @exit(i32 1)
-  unreachable
-
-abort.dead:                                       ; No predecessors!
-  unreachable
 }
 
 ; Function Attrs: cold noinline noreturn
@@ -2128,27 +2086,15 @@ entry:
   %str.len.query = getelementptr inbounds { i64, ptr }, ptr %var.load, i32 0, i32 0
   %str.len.query1 = load i64, ptr %str.len.query, align 8
   %str.len.query2 = and i64 %str.len.query1, 281474976710655
-  %str.tag = lshr i64 %str.len.query1, 48
-  %tag.immortal = icmp eq i64 %str.tag, 0
-  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %tag.current = icmp eq i64 %str.tag, %active.gen
-  %tag.fast.ok = or i1 %tag.immortal, %tag.current
-  br i1 %tag.fast.ok, label %str_ok, label %tag.slow_check
-
-str_ok:                                           ; preds = %tag.slow_check, %entry
   store i64 %str.len.query2, ptr %var.n, align 8
   %var.load3 = load i64, ptr %var.n, align 8
   %cmptmp = icmp eq i64 %var.load3, 0
   br i1 %cmptmp, label %choice.then, label %choice.exit
 
-tag.slow_check:                                   ; preds = %entry
-  call void @dva_validate_tag_or_abort_stale_str_msg(i64 %str.tag)
-  br label %str_ok
-
-choice.then:                                      ; preds = %str_ok
+choice.then:                                      ; preds = %entry
   ret i1 false
 
-choice.exit:                                      ; preds = %ret.dead, %str_ok
+choice.exit:                                      ; preds = %ret.dead, %entry
   %var.load4 = load ptr, ptr %var.target, align 8
   %s.ptr = getelementptr inbounds { i64, ptr }, ptr %var.load4, i32 0, i32 1
   %s.ptr5 = load ptr, ptr %s.ptr, align 8
@@ -2510,4 +2456,3 @@ attributes #3 = { noinline "nounwind" }
 attributes #4 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 attributes #5 = { cold noinline noreturn "nounwind" }
 attributes #6 = { cold noreturn "nounwind" }
-attributes #7 = { cold noinline "nounwind" }

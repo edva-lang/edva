@@ -2704,8 +2704,7 @@ codegen_typed_eval: types::Cg, tast::TypedExpr => (Addr, ast::ValueType)
 codegen_typed_eval = cg, te =>
    tail_k = types::g.unboxed_ret_tail
    types::g.unboxed_ret_tail = 0
-   can_tail = (tail_k != 0) && cg.in_fn && (?cg.cycle_breaks == 0) &&
-     (cg.in_restore_scope == 0)
+   can_tail = (tail_k != 0) && cg.in_fn && (cg.in_restore_scope == 0)
    can_tail
       |
          te.kind
@@ -2718,7 +2717,7 @@ codegen_typed_eval = cg, te =>
             [Index]
                (tail_k == 1) | (types::g.stack_alloc_next = <+>)
             [Call]
-               (tail_k [1, 2, 3]) | (types::g.stack_alloc_next = <+>)
+               (tail_k [1, 2, 3, 4]) | (types::g.stack_alloc_next = <+>)
             [Record]
                (tail_k == 3) | (types::g.stack_alloc_next = <+>)
             | types::g.unboxed_ret_tail = 0
@@ -2977,6 +2976,8 @@ codegen_typed_eval = cg, te =>
                      (ev'.0, ev'.1)
                   | (ev'.0, ev'.1)
       [Record r]
+         want_rec_stack = types::g.stack_alloc_next || (can_tail && (tail_k == 3))
+         types::g.stack_alloc_next = <->
          nf = ?r
          resolved_ti = te.ti [TypeVar tv] types::typedef_ti(cg, tv) | te.ti
          bf_opt = types::ti_get_bitfield(cg, resolved_ti)
@@ -3009,15 +3010,18 @@ codegen_typed_eval = cg, te =>
                all_same_ty' = <+>
                any_rec' = <->
                first_ty' = LLVMVoidType!
-               want_rec_stack = types::g.stack_alloc_next
-               types::g.stack_alloc_next = <->
                nf @ i =>
                   tf = r(i) | _ | tast::TypedField("", tast::mk_lit_unit(0, 0), 0,
                     unify::prim_unit!)
+                  tf_vt = types::vt_from_ti_cg(cg, tf.val.ti)
                   tf_is_rec = (tf.val.kind [Record, Call]) &&
-                    types::is_record_vt(types::vt_from_ti_cg(cg, tf.val.ti)) &&
+                    types::is_record_vt(tf_vt) &&
                     cg.in_fn && ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0
-                  tf_is_rec | types::g.stack_alloc_next = <+>
+                  tf_is_str = (types::g.inline_ret_bb != sys::addr_null) &&
+                    want_rec_stack && types::is_str_vt(tf_vt) &&
+                    cg.in_fn && cg.in_restore_scope == 0
+                  tf_stack = tf_is_rec || tf_is_str
+                  tf_stack | (types::g.stack_alloc_next = <+>)
                   fev = codegen_typed_eval(cg, tf.val)
                   types::g.stack_alloc_next = <->
                   fev_is_rec = types::is_record_vt(fev.1)
@@ -3053,7 +3057,7 @@ codegen_typed_eval = cg, te =>
                cg.last_fnames = fnames'
                cg.last_fvts = fvts'
                can_rec_stack = want_rec_stack && cg.in_fn &&
-                 ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0
+                 cg.in_restore_scope == 0
                all_const' && all_same_ty' && !any_rec' && !is_packed && (nf !< 64)
                   |
                      arr_ty = LLVMArrayType(first_ty', nf)
@@ -3111,9 +3115,17 @@ codegen_typed_eval = cg, te =>
       [Call c]
          expr::codegen_typed_eval_call(cg, c.0, c.1, c.2, te.ti)
       [Choice c]
-         can_tail
-            | match::codegen_typed_eval_choice_tail(cg, c.0, c.1, te.ti, tail_k)
-            | match::codegen_typed_eval_choice(cg, c.0, c.1, te.ti)
+         want_ch_stack = types::g.stack_alloc_next
+         types::g.stack_alloc_next = <->
+         ch_tail_k = can_tail
+            | tail_k
+            |
+               want_ch_stack
+                  |
+                     ch_vt = types::vt_from_ti_cg(cg, te.ti)
+                     types::is_str_vt(ch_vt) | 1 | (types::is_record_vt(ch_vt) | 3 | 0)
+                  | 0
+         match::codegen_typed_eval_choice_tail(cg, c.0, c.1, te.ti, ch_tail_k)
       [Cycle c]
          stmt::codegen_typed_eval_cycle(cg, c.0, c.1, c.2, c.3, te.ti)
       [CycleJump j]
@@ -3140,8 +3152,13 @@ codegen_typed_eval = cg, te =>
             |
                can_tail && (tail_k == 2) && (is_pos == niche.1) |
                   (types::g.unboxed_ret_tail = 1)
+               can_tail && (tail_k == 4) && (is_pos == niche.1)
+                  |
+                     types::g.unboxed_ret_tail = 3
+                     types::g.stack_alloc_next = <+>
                nres = match::codegen_niche_ram_construct(cg, is_pos, niche.1, rc.2)
                types::g.unboxed_ret_tail = 0
+               types::g.stack_alloc_next = <->
                nres
             |
                is_unboxed = types::is_unboxed_ram_ti(cg, te.ti)
@@ -3312,6 +3329,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    stmt::codegen_scan_enum_variant_indices(cg, raw_exprs)
    types::run_typed_vra(cg, prog)
    cg.current_fn = (cg.main_fn | _ | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)))
+   cg.current_module = ""
    cg.in_fn = <->
    main_entry = LLVMGetEntryBasicBlock(cg.current_fn)
    LLVMPositionBuilderAtEnd(cg.builder, main_entry)

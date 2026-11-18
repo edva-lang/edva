@@ -261,7 +261,11 @@ param_clo_tys: Addrs,
    current_fn_body: <tast::TypedExpr|> = <-->,
    fast_freeze_builders: ast::Names = ast::Names(),
    unboxed_ret_tail: Int = 0,
-   current_fn_has_restore: <> = <->
+   current_fn_has_restore: <> = <->,
+   inline_ret_bb: Addr = sys::addr_null,
+   inline_ret_slot: Addr = sys::addr_null,
+   validated_str_vals: Addrs = Addrs(),
+   escape_check_depth: Int = 0
 )
 
 ::g = GlobalState(
@@ -273,7 +277,8 @@ param_clo_tys: Addrs,
    ast::Names(), ast::VInfos(), types::IntArr(),
    ast::Names(), types::CtVals(),
    ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->, 1,
-   <->, <->, <-->, ast::Names(), 0, <->)
+   <->, <->, <-->, ast::Names(), 0, <->,
+   sys::addr_null, sys::addr_null, types::Addrs(), 0)
 
 // Value-Range Analysis (VRA) lattice and per-module state.
 // state: 0 = Bottom (unseen), 1 = Bounded [lo, hi], 2 = Top (unbounded).
