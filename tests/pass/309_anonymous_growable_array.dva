@@ -12,8 +12,8 @@ io::out $ (xs(2) | _ | _)
 sum: Int{} => Int
 sum = a =>
    tot' = 0
-   ?a @ i =>
-      tot' = tot' + (a(i) | v => v | 0)
+   a @ v =>
+      tot' = tot' + v
    tot'
 
 s = sum(xs)

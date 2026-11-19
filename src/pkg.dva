@@ -187,8 +187,7 @@
    clean_semver: String => String
    clean_semver = v =>
       b = {?v}
-      ?v @ i =>
-         c = v(i)
+      v @ c =>
          c == '+ || c == '- | -->
          b += c
       +b
@@ -274,8 +273,7 @@
    clean_pkg_name: String => String
    clean_pkg_name = s =>
       b = {64}
-      ?s @ i =>
-         c = s(i)
+      s @ c =>
          ascii::is_upper(c) | b += ascii::to_lower(c)
          ascii::is_lower(c) | b += c
          ascii::is_digit(c) | b += c
@@ -302,15 +300,14 @@
    pkg_base_name: String => String
    pkg_base_name = id =>
       at_idx' = 0 - 1
-      ?id @ i => id(i) == '@ | at_idx' = i; -->
+      id @ ch_, i => ch_ == '@ | at_idx' = i; -->
       at_idx' < 0 | id | id(..at_idx')
 
    split_char: String, Int => Strings
    split_char = s, ch =>
       out: Strings
       cur = {32}
-      ?s @ i =>
-         c = s(i)
+      s @ c =>
          c == ch
             | out += +cur
             | cur += c
@@ -322,8 +319,7 @@
    sq = s =>
       b = {?s + 8}
       b += 39
-      ?s @ i =>
-         c = s(i)
+      s @ c =>
          c == 39
             | b += "'\\''"
             | b += c
@@ -344,8 +340,7 @@
    fnv_hex: String => String
    fnv_hex = s =>
       h' = 0x4bf29ce484222325
-      ?s @ i =>
-         c = Int(s(i))
+      s @ c =>
          h' = h' .^. c
          h' = h' * 0x100000001b3
       b = {16}
@@ -1997,8 +1992,8 @@
    find_char_idx: String, Int => Int
    find_char_idx = s, ch =>
       idx' = -1
-      ?s @ i =>
-         s(i) == ch
+      s @ ch_, i =>
+         ch_ == ch
             |
                idx' = i
                -->

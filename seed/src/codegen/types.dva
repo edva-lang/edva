@@ -4531,9 +4531,9 @@ type_info_display_name = cg, expr, ti =>
                                  | !r.1 && !r.2 && ?r.0 > 0 && r.0(0)!!.name == ""
                                     |
                                        b_tup = {64}
-                                       ?r.0 @ i =>
+                                       r.0 @ el_, i =>
                                           i > 0 | b_tup += ", "
-                                          ft_i = field_type_info(r.0(i)!!)
+                                          ft_i = field_type_info(el_)
                                           ts = type_info_display_name(cg, ast::Expr(Int, 0), ft_i)
                                           b_tup += ts
                                        "(${+b_tup})"
@@ -5826,8 +5826,8 @@ vra_resolve_field_idx = cg, rec_ti, fname, fidx =>
    fidx !< 0 | --| fidx
    fname == "" | --| -1
    flds = vra_ti_field_types(cg, rec_ti)
-   ?flds @ i =>
-      flds(i)!!.name == fname | --| i
+   flds @ el_, i =>
+      el_.name == fname | --| i
    -1
 
 vra_add_poison_shape: String => ()
@@ -5874,11 +5874,10 @@ vra_poison_ti_shapes_d = cg, ti, depth =>
                rs.1.has_payload
                   | vra_poison_ti_shapes_d(cg, norm_slot_ti(rs.1.payload_type, rs.1.payload_record), depth + 1)
             [Enum slots]
-               ?slots @ i =>
-                  sl = slots(i)!!
+               slots @ sl =>
                   sl.has_payload | vra_poison_ti_shapes_d(cg, sl.payload_record, depth + 1)
             [Fn f]
-               ?f.1 @ i => vra_poison_ti_shapes_d(cg, f.1(i)!!, depth + 1)
+               f.1 @ el_ => vra_poison_ti_shapes_d(cg, el_, depth + 1)
                vra_poison_ti_shapes_d(cg, f.3, depth + 1)
             [ThreadId t] vra_poison_ti_shapes_d(cg, t.1, depth + 1)
 
@@ -5987,8 +5986,7 @@ vra_finalize_anon_merges: () => ()
 vra_finalize_anon_merges = !=>
    vra.whole_prog && (?vra.anon_rngs > 0 || ?vra.poison_shapes > 0)
       |
-         ?vra.named_shapes @ i =>
-            ns = vra.named_shapes(i)!!
+         vra.named_shapes @ ns =>
             ap_key = "anon::${ns.anon_sig}"
             has_str(vra.poison_shapes, ap_key)
                | vra_add_poison_shape(ns.shape_key)
@@ -6035,8 +6033,8 @@ vra_truncate_len_vars = n =>
 
 vra_find_str_idx: ast::Names, String => Int
 vra_find_str_idx = names, target =>
-   ?names @ i =>
-      names(i)!! == target | --| i
+   names @ el_, i =>
+      el_ == target | --| i
    -1
 
 // Collect variables reassigned, mutated, taken by addr, or shadowed inside a fn.
@@ -6074,7 +6072,7 @@ vra_scan_muts_expr = te, bnames, bcnts, cyc_vars =>
          vra_scan_muts_list(c.2, bnames, bcnts, cyc_vars)
       [Block bk] vra_scan_muts_list(bk, bnames, bcnts, cyc_vars)
       [Record rf]
-         ?rf @ i => vra_scan_muts_expr(rf(i)!!.val, bnames, bcnts, cyc_vars)
+         rf @ el_ => vra_scan_muts_expr(el_.val, bnames, bcnts, cyc_vars)
       [Member m] vra_scan_muts_expr(m.0, bnames, bcnts, cyc_vars)
       [MemberWrite mw]
          vra_scan_muts_expr(mw.0, bnames, bcnts, cyc_vars)
@@ -6091,25 +6089,23 @@ vra_scan_muts_expr = te, bnames, bcnts, cyc_vars =>
          vra_scan_muts_expr(ka.1, bnames, bcnts, cyc_vars)
       [Choice ch]
          vra_scan_muts_expr(ch.0, bnames, bcnts, cyc_vars)
-         ?ch.1 @ i =>
-            br = ch.1(i)!!
-            ?br.bind_vars @ k =>
-               vra_bump_bind(bnames, bcnts, br.bind_vars(k)!!, 1)
+         ch.1 @ br =>
+            br.bind_vars @ el_ =>
+               vra_bump_bind(bnames, bcnts, el_, 1)
             vra_scan_muts_list(br.case_values, bnames, bcnts, cyc_vars)
             vra_scan_muts_expr(br.body, bnames, bcnts, cyc_vars)
       [Cycle cy]
          vra_scan_muts_expr(cy.0, bnames, bcnts, cyc_vars)
          cy.1.kind
             [Lambda lam]
-               ?lam.0 @ i =>
-                  p = lam.0(i)!!
+               lam.0 @ p =>
                   p != "" && p != "_" && !has_str(cyc_vars, p)
                      | cyc_vars += p
                vra_scan_muts_expr(lam.1, bnames, bcnts, cyc_vars)
             | vra_scan_muts_expr(cy.1, bnames, bcnts, cyc_vars)
          cy.2 | e => vra_scan_muts_expr(e, bnames, bcnts, cyc_vars)
       [Lambda lam]
-         ?lam.0 @ i => vra_bump_bind(bnames, bcnts, lam.0(i)!!, 1)
+         lam.0 @ el_ => vra_bump_bind(bnames, bcnts, el_, 1)
          vra_scan_muts_expr(lam.1, bnames, bcnts, cyc_vars)
       [Copy cp] vra_scan_muts_expr(cp, bnames, bcnts, cyc_vars)
       [BuilderNew bn] vra_scan_muts_expr(bn, bnames, bcnts, cyc_vars)
@@ -6118,8 +6114,7 @@ vra_scan_muts_expr = te, bnames, bcnts, cyc_vars =>
          vra_scan_muts_expr(rmw.0, bnames, bcnts, cyc_vars)
          vra_scan_muts_expr(rmw.1, bnames, bcnts, cyc_vars)
       [MapLiteral ml]
-         ?ml @ i =>
-            pr = ml(i)!!
+         ml @ pr =>
             vra_scan_muts_expr(pr.key, bnames, bcnts, cyc_vars)
             vra_scan_muts_expr(pr.val, bnames, bcnts, cyc_vars)
       [RamConstruct rc]
@@ -6131,14 +6126,14 @@ vra_scan_muts_expr = te, bnames, bcnts, cyc_vars =>
          r_opt | rv => vra_scan_muts_expr(rv, bnames, bcnts, cyc_vars)
 
 vra_scan_muts_list = exprs, bnames, bcnts, cyc_vars =>
-   ?exprs @ i => vra_scan_muts_expr(exprs(i)!!, bnames, bcnts, cyc_vars)
+   exprs @ el_ => vra_scan_muts_expr(el_, bnames, bcnts, cyc_vars)
 
 vra_collect_mut_vars: ast::Names, tast::TypedExpr => ast::Names
 vra_collect_mut_vars = fn_params, body =>
    bnames = ast::Names()
    bcnts = ast::Ints()
    cyc_vars = ast::Names()
-   ?fn_params @ i => vra_bump_bind(bnames, bcnts, fn_params(i)!!, 1)
+   fn_params @ el_ => vra_bump_bind(bnames, bcnts, el_, 1)
    vra_scan_muts_expr(body, bnames, bcnts, cyc_vars)
    muts = ast::Names()
    muts += "_"
@@ -6169,8 +6164,8 @@ vra_expr_always_exits = te =>
                last_br.kind [Bare]
                   |
                      all_ex' = <+>
-                     ?ch.1 @ i =>
-                        !vra_expr_always_exits(ch.1(i)!!.body)
+                     ch.1 @ el_ =>
+                        !vra_expr_always_exits(el_.body)
                            |
                               all_ex' = <->
                               -->
@@ -6553,8 +6548,7 @@ vra_zero_ti_fields_d = cg, ti, depth =>
    depth < 6 && !ti_is_packed_or_bf(cg, ti)
       |
          flds = vra_ti_field_types(cg, ti)
-         ?flds @ i =>
-            rf = flds(i)!!
+         flds @ rf, i =>
             fti = vra_rf_ti(rf)
             fvt = vt_from_ti_cg(cg, fti)
             vra_is_tracked_int_vt(fvt)
@@ -6627,8 +6621,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
          saved_locs = ?vra.locals
          saved_lvs = ?vra.len_vars
          last_r' = vra_top!
-         ?bk @ i =>
-            st = bk(i)!!
+         bk @ st =>
             st.kind
                [Assign a]
                   vr = vra_walk_expr(cg, a.5, rec_eff, fn_names)
@@ -6669,8 +6662,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
          last_r'
       [Record rfields]
          track_rf = rec_eff && vra.whole_prog && ?rfields !> 32
-         ?rfields @ i =>
-            tf = rfields(i)!!
+         rfields @ tf, i =>
             fr = vra_walk_expr(cg, tf.val, rec_eff, fn_names)
             track_rf && vra_is_tracked_int_vt(vt_from_ti_cg(cg, tf.val.ti))
                | vra_record_shape_field(cg, te.ti, i, fr)
@@ -6737,8 +6729,8 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
                   | br.kind [Case] && c_var != "" && ?br.case_values > 0
                      |
                         case_r' = vra_bot!
-                        ?br.case_values @ ci =>
-                           cvr = vra_walk_expr(cg, br.case_values(ci)!!,
+                        br.case_values @ el_ =>
+                           cvr = vra_walk_expr(cg, el_,
                              rec_eff, fn_names)
                            case_r' = vra_join(case_r', cvr)
                         vra_narrow_local_var(cg, c_var, case_r')
@@ -6791,7 +6783,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
          c.1 | ct => vra_walk_expr(cg, ct, rec_eff, fn_names)
          c.0 == "#type_zero"
             |
-               ?c.2 @ ai => vra_walk_expr(cg, c.2(ai)!!, rec_eff, fn_names)
+               c.2 @ el_ => vra_walk_expr(cg, el_, rec_eff, fn_names)
                rec_eff && vra.whole_prog
                   | vra_zero_ti_fields_d(cg, te.ti, 0)
                zero_res = vra_is_tracked_int_vt(te_vt) | vra_const(0) | vra_top!
@@ -6825,8 +6817,7 @@ vra_walk_expr = cg, te, rec_eff, fn_names =>
          vra_walk_expr(cg, rmw.1, rec_eff, fn_names)
          vra_top!
       [MapLiteral ml]
-         ?ml @ i =>
-            pr = ml(i)!!
+         ml @ pr =>
             vra_walk_expr(cg, pr.key, rec_eff, fn_names)
             vra_walk_expr(cg, pr.val, rec_eff, fn_names)
          vra_top!
@@ -6895,8 +6886,7 @@ vra_is_bounded_str_access = cg, target, index =>
 
 vra_register_named_shapes: Cg => ()
 vra_register_named_shapes = cg =>
-   ?cg.typedefs @ i =>
-      td = cg.typedefs(i)!!
+   cg.typedefs @ td =>
       ti_is_packed_or_bf(cg, td.ti)
          | vra_add_poison_shape(td.name)
          | vra_ti_is_record_like(cg, td.ti) && !has_str(vra.named_shape_keys, td.name)
@@ -6906,7 +6896,7 @@ vra_register_named_shapes = cg =>
                   |
                      asig = vra_rec_anon_sig(cg, td.ti)
                      fnames = ast::Names()
-                     ?flds @ k => fnames += flds(k)!!.name
+                     flds @ el_ => fnames += el_.name
                      vra.named_shape_keys += td.name
                      vra.named_shapes += NamedShapeMeta(td.name, asig, fnames)
 
@@ -6914,7 +6904,7 @@ vra_poison_ast_expr: Cg, ast::Expr, ast::Names => ()
 
 vra_poison_ast_list: Cg, ast::Exprs, ast::Names => ()
 vra_poison_ast_list = cg, exprs, fn_names =>
-   ?exprs @ i => vra_poison_ast_expr(cg, exprs(i)!!, fn_names)
+   exprs @ el_ => vra_poison_ast_expr(cg, el_, fn_names)
 
 vra_poison_ast_expr = cg, e, fn_names =>
    e
@@ -6935,17 +6925,17 @@ vra_poison_ast_expr = cg, e, fn_names =>
             | vra_poison_ast_expr(cg, c.fn_target, fn_names)
          vra_poison_ast_list(cg, c.args, fn_names)
       [Record r]
-         ?r.fields @ i => vra_poison_ast_expr(cg, r.fields(i)!!.val, fn_names)
+         r.fields @ el_ => vra_poison_ast_expr(cg, el_.val, fn_names)
       [Member m]
          vra_poison_ast_expr(cg, m.target, fn_names)
          vra_poison_ast_expr(cg, m.index_expr, fn_names)
          !m.is_module_access
             |
-               ?vra.named_shape_keys @ si =>
-                  vra_add_poison_shape(vra.named_shape_keys(si)!!)
+               vra.named_shape_keys @ el_ =>
+                  vra_add_poison_shape(el_)
       [Choice ch]
          vra_poison_ast_expr(cg, ch.cond, fn_names)
-         ?ch.branches @ i => vra_poison_ast_expr(cg, ch.branches(i)!!.block, fn_names)
+         ch.branches @ el_ => vra_poison_ast_expr(cg, el_.block, fn_names)
       [Cycle cy]
          vra_poison_ast_expr(cg, cy.iterable, fn_names)
          vra_poison_ast_expr(cg, cy.body_fn, fn_names)
@@ -6964,7 +6954,7 @@ vra_poison_scan_expr: Cg, tast::TypedExpr, ast::Names, <> => ()
 
 vra_poison_scan_list: Cg, tast::TypedExprs, ast::Names => ()
 vra_poison_scan_list = cg, exprs, fn_names =>
-   ?exprs @ i => vra_poison_scan_expr(cg, exprs(i)!!, fn_names, <->)
+   exprs @ el_ => vra_poison_scan_expr(cg, el_, fn_names, <->)
 
 vra_poison_scan_expr = cg, te, fn_names, is_top_fn =>
    ti_is_packed_or_bf(cg, te.ti) | vra_poison_ti_shapes(cg, te.ti)
@@ -6988,8 +6978,7 @@ vra_poison_scan_expr = cg, te, fn_names, is_top_fn =>
            c.0 == "%memset" || c.0 == "%memmove" ||
            c.0 == "%alloc" || c.0 == "%realloc"
          has_raw_arg' = <->
-         ?c.2 @ ai =>
-            ate = c.2(ai)!!
+         c.2 @ ate =>
             vt_from_ti_cg(cg, ate.ti) [RawPtr, Type] | has_raw_arg' = <+>
             ate.kind
                [Var av] (is_user_type(cg, av.0) | has_raw_arg' = <+>)
@@ -7005,8 +6994,7 @@ vra_poison_scan_expr = cg, te, fn_names, is_top_fn =>
          is_unsafe_op || is_foreign || is_indirect || is_poison_callee || has_raw_arg'
             |
                vra_poison_ti_shapes(cg, te.ti)
-               ?c.2 @ ai =>
-                  ate = c.2(ai)!!
+               c.2 @ ate =>
                   vra_poison_ti_shapes(cg, ate.ti)
                   ate.kind
                      [Var av]
@@ -7014,7 +7002,7 @@ vra_poison_scan_expr = cg, te, fn_names, is_top_fn =>
                            | vra_poison_ti_shapes(cg, typedef_ti(cg, av.0))
                callee != "" | vra_add_poison_fn(callee)
       [Record rfields]
-         ?rfields @ i => vra_poison_scan_expr(cg, rfields(i)!!.val, fn_names, <->)
+         rfields @ el_ => vra_poison_scan_expr(cg, el_.val, fn_names, <->)
       [Member m]
          vra_resolve_field_idx(cg, m.0.ti, m.1, m.2) < 0 &&
            vra_ti_is_record_like(cg, te.ti)
@@ -7037,8 +7025,7 @@ vra_poison_scan_expr = cg, te, fn_names, is_top_fn =>
       [Assign a] vra_poison_scan_expr(cg, a.5, fn_names, <->)
       [Choice ch]
          vra_poison_scan_expr(cg, ch.0, fn_names, <->)
-         ?ch.1 @ i =>
-            br = ch.1(i)!!
+         ch.1 @ br =>
             vra_poison_scan_list(cg, br.case_values, fn_names)
             vra_poison_scan_expr(cg, br.body, fn_names, <->)
       [Cycle cy]
@@ -7061,8 +7048,7 @@ vra_poison_scan_expr = cg, te, fn_names, is_top_fn =>
          vra_poison_scan_expr(cg, rmw.0, fn_names, <->)
          vra_poison_scan_expr(cg, rmw.1, fn_names, <->)
       [MapLiteral ml]
-         ?ml @ i =>
-            pr = ml(i)!!
+         ml @ pr =>
             vra_poison_scan_expr(cg, pr.key, fn_names, <->)
             vra_poison_scan_expr(cg, pr.val, fn_names, <->)
       [RamConstruct rc]
@@ -7090,7 +7076,7 @@ vra_poison_fn_sig_shapes: Cg, ast::TypeInfo => ()
 vra_poison_fn_sig_shapes = cg, fn_ti =>
    fn_ti
       [Fn f]
-         ?f.1 @ i => vra_poison_ti_shapes(cg, f.1(i)!!)
+         f.1 @ el_ => vra_poison_ti_shapes(cg, el_)
          vra_poison_ti_shapes(cg, f.3)
 
 vra_seed_top_fn_params: Cg, String, ast::Names, ast::TypeInfo => <>
@@ -7116,7 +7102,7 @@ vra_seed_top_fn_params = cg, fn_name, params, fn_ti =>
 vra_clone_rngs: VraRanges => VraRanges
 vra_clone_rngs = rngs =>
    out = VraRanges()
-   ?rngs @ i => out += rngs(i)!!
+   rngs @ el_ => out += el_
    out
 
 vra_save_snapshots: () => ()
@@ -7251,8 +7237,7 @@ run_typed_vra = cg, prog =>
          fn_tis = ast::VInfos()
          top_stmts = tast::TypedExprs()
          top_mods = ast::Names()
-         ?prog @ i =>
-            st = prog(i)!!
+         prog @ st =>
             st
                [Expr te]
                   te.kind
@@ -7298,17 +7283,16 @@ run_typed_vra = cg, prog =>
                      |
                         vra_add_poison_fn(fname)
                         vra_poison_fn_sig_shapes(cg, fn_tis(fi)!!)
-         ?g.foreign_fn_names @ i => vra_add_poison_fn(g.foreign_fn_names(i)!!)
+         g.foreign_fn_names @ el_ => vra_add_poison_fn(el_)
          ?fn_names @ fi =>
             fn_tis(fi)!!
                [Fn f] (?f.4 > 0 | vra_add_poison_fn(fn_names(fi)!!))
-         ?g.pstmts @ i =>
-            pe = g.pstmts(i)!!
+         g.pstmts @ pe =>
             pe
                [Foreign fd]
                   vra_add_poison_fn(fd.dva_name)
                   vra_add_poison_fn(fd.c_name)
-                  ?fd.params @ pi => vra_poison_ti_shapes(cg, fd.params(pi)!!.record_info)
+                  fd.params @ el_ => vra_poison_ti_shapes(cg, el_.record_info)
                   vra_poison_ti_shapes(cg, fd.ret_record_info)
                [Assign t]
                   has_cp = (t.8 [Fn f] (?f.4 > 0) | <->) ||

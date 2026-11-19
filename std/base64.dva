@@ -109,8 +109,7 @@ decode: String, Flavor => < String | Error >
 decode = s, flavor =>
    // Strip ASCII whitespace first
    clean_b = {?s}
-   ?s @ i =>
-      ch = s(i)
+   s @ ch =>
       !(ch ['\s, '\t, '\n, '\r]) | clean_b += ch
    clean = +clean_b
    n = ?clean

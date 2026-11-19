@@ -2507,8 +2507,8 @@ c_header_guard: String => String
 c_header_guard = p =>
    base = path::basename(p)
    b = {?base + 8}
-   ?base @ i =>
-      b += c_guard_char(base(i))
+   base @ ch_ =>
+      b += c_guard_char(ch_)
    s0 = +b
    s = (?s0 > 0 && s0(0) [48...57]) | "_" + s0 | s0
    has_h = ?s !< 2 && s(-2..) == "_H"
@@ -2753,8 +2753,7 @@ sq: String => String
 sq = s =>
    b = {?s + 8}
    b += 39
-   ?s @ i =>
-      c = s(i)
+   s @ c =>
       c == 39
          | b += "'\\''"
          | b += c
@@ -2764,8 +2763,7 @@ sq = s =>
 append_pkg_config_words: String, ast::Names => ()
 append_pkg_config_words = text, args =>
    w' = {64}
-   ?text @ i =>
-      c = text(i)
+   text @ c =>
       c == '\s || c == '\t || c == '\n || c == '\r
          |
             ?w' > 0

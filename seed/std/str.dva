@@ -143,8 +143,8 @@
                      b += ms(i)
       full = +b
       dot_pos' = -1
-      ?full @ i =>
-         full(i) == '. | dot_pos' = i
+      full @ ch_, i =>
+         ch_ == '. | dot_pos' = i
       len = ?full
       end' = len
       dot_pos' !< 0

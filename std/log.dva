@@ -111,8 +111,7 @@
       !needs_quoting(s) | --| s
       b = {?s + 8}
       b += '"
-      ?s @ i =>
-         c = s(i)
+      s @ c =>
          c
             ['"]  b += "\\\""
             ['\\] b += "\\\\"
@@ -127,12 +126,11 @@
    append_fields = msg, fields =>
       ?fields == 0 | --| msg
       total' = ?msg
-      ?fields @ i =>
-         total' = total' + 1 + ?(fields(i)!!)
+      fields @ f =>
+         total' = total' + 1 + ?f
       b = {total' + 8}
       b += msg
-      ?fields @ i =>
-         f = fields(i)!!
+      fields @ f =>
          ?f > 0
             |
                b += '\s

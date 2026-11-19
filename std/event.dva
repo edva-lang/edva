@@ -66,8 +66,7 @@
       p.is_closed || fd < 0 | --| <->
       dup' = <->
       free_slot' = -1
-      ?p.entries @ i =>
-         e = p.entries(i)!!
+      p.entries @ e, i =>
          e.fd == fd | dup' = <+>
          e.fd < 0 && free_slot' < 0 | free_slot' = i
       dup' |->
@@ -119,8 +118,7 @@
       pfds = {p.max_events * 8}
       idxs = Int{}
       nfds' = 0
-      ?p.entries @ i =>
-         e = p.entries(i)!!
+      p.entries @ e, i =>
          e.fd !< 0
             |
                emask = e.events

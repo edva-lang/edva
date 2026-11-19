@@ -39,8 +39,7 @@ same_line_test = x =>
 // 7. Loop with early return sugar
 find_negative: Int{} => <>
 find_negative = arr =>
-   ?arr @ i =>
-      val = arr(i) | _ | 0
+   arr @ val =>
       val < 0 |->
    <+>
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env nu
-# tools/bench.nu — Reproducible cross-language workload benchmarks (Edva / Rust / Zig / Go).
+# tools/bench.nu — Reproducible workload benchmarks comparing Edva and Clang (C).
 #
 # Measures compilation (cold, IR-only, clang link, warm cached build), binary size,
 # peak RSS memory, throughput, latency distribution (min/p50/p95/p99/max), and
@@ -166,16 +166,11 @@ def collect_env [root: string] {
         | into int
     } catch { 0 }
 
-    let has_zig = (which zig | is-not-empty)
-    let has_go = (which go | is-not-empty)
-    let has_rust = (which rustc | is-not-empty)
+    let has_clang = (which clang | is-not-empty)
     let has_node = (which node | is-not-empty)
 
     let edva_ver = (do { ^($"($root)/edva") --version } | complete | get stdout | str trim)
-    let clang_ver = (do { ^clang --version } | complete | get stdout | lines | first | str trim)
-    let rust_ver = if $has_rust { (do { ^rustc --version } | complete | get stdout | str trim) } else { "skipped (not installed)" }
-    let zig_ver = if $has_zig { (do { ^zig version } | complete | get stdout | str trim) } else { "skipped (not installed)" }
-    let go_ver = if $has_go { (do { ^go version } | complete | get stdout | str trim) } else { "skipped (not installed)" }
+    let clang_ver = if $has_clang { (do { ^clang --version } | complete | get stdout | lines | first | str trim) } else { "skipped (not installed)" }
     let node_ver = if $has_node { (do { ^node --version } | complete | get stdout | str trim) } else { "skipped (not installed)" }
 
     let wasm_ld_ok = try {
@@ -192,10 +187,7 @@ def collect_env [root: string] {
         },
         toolchains: {
             edva: { version: $edva_ver, flags: "-O2", installed: true },
-            clang: { version: $clang_ver, flags: "-O2", installed: true },
-            rust: { version: $rust_ver, flags: "-C opt-level=3", installed: $has_rust },
-            zig: { version: $zig_ver, flags: "-OReleaseFast", installed: $has_zig },
-            go: { version: $go_ver, flags: "go build", installed: $has_go },
+            clang: { version: $clang_ver, flags: "-O2", installed: $has_clang },
             node: { version: $node_ver, flags: "--disable-wasm-trap-handler", installed: $has_node },
             wasm_ld: { installed: $wasm_ld_ok }
         }
@@ -207,9 +199,7 @@ def bench_workload [
     items: int,
     edva_src: string,
     edva_wasm_src: string,
-    rust_src: string,
-    zig_src: string,
-    go_src: string,
+    c_src: string,
     env_info: record,
     probe_bin: string,
     root: string,
@@ -244,61 +234,25 @@ def bench_workload [
     mut langs = { edva: $edva_rec }
     let expected_out = $edva_run.output
 
-    # Rust
-    if $env_info.toolchains.rust.installed and ($rust_src | path exists) {
-        let rust_out = ($wdir | path join $"($name)_rust")
-        let r_build = (measure_cmd $probe_bin $meta ["rustc" "-C" "opt-level=3" $rust_src "-o" $rust_out])
-        let r_run = (measure_runs $probe_bin $meta [$rust_out ($items | into string)] $runs $items)
-        if $r_run.output != $expected_out {
-            error make { msg: $"($name) checksum mismatch rust vs edva: '($r_run.output)' != '($expected_out)'" }
+    # Clang (C)
+    if $env_info.toolchains.clang.installed and ($c_src | path exists) {
+        let clang_out = ($wdir | path join $"($name)_clang")
+        let c_build = (measure_cmd $probe_bin $meta ["clang" "-O2" $c_src "-o" $clang_out])
+        let c_run = (measure_runs $probe_bin $meta [$clang_out ($items | into string)] $runs $items)
+        if $c_run.output != $expected_out {
+            error make { msg: $"($name) checksum mismatch clang vs edva: '($c_run.output)' != '($expected_out)'" }
         }
-        $langs = ($langs | insert rust {
+        $langs = ($langs | insert clang {
             status: "ok",
-            cold_build_ms: $r_build.elapsed_ms,
-            binary_bytes: (file_size_bytes $rust_out),
-            runtime: $r_run
+            cold_build_ms: $c_build.elapsed_ms,
+            binary_bytes: (file_size_bytes $clang_out),
+            runtime: $c_run
         })
     } else {
-        $langs = ($langs | insert rust { status: "skipped (not installed)" })
+        $langs = ($langs | insert clang { status: "skipped (not installed)" })
     }
 
-    # Zig
-    if $env_info.toolchains.zig.installed and ($zig_src | path exists) {
-        let zig_out = ($wdir | path join $"($name)_zig")
-        let z_build = (measure_cmd $probe_bin $meta ["zig" "build-exe" $zig_src "-OReleaseFast" $"-femit-bin=($zig_out)"])
-        let z_run = (measure_runs $probe_bin $meta [$zig_out ($items | into string)] $runs $items)
-        if $z_run.output != $expected_out {
-            error make { msg: $"($name) checksum mismatch zig vs edva: '($z_run.output)' != '($expected_out)'" }
-        }
-        $langs = ($langs | insert zig {
-            status: "ok",
-            cold_build_ms: $z_build.elapsed_ms,
-            binary_bytes: (file_size_bytes $zig_out),
-            runtime: $z_run
-        })
-    } else {
-        $langs = ($langs | insert zig { status: "skipped (not installed)" })
-    }
-
-    # Go
-    if $env_info.toolchains.go.installed and ($go_src | path exists) {
-        let go_out = ($wdir | path join $"($name)_go")
-        let g_build = (measure_cmd $probe_bin $meta ["go" "build" "-o" $go_out $go_src])
-        let g_run = (measure_runs $probe_bin $meta [$go_out ($items | into string)] $runs $items)
-        if $g_run.output != $expected_out {
-            error make { msg: $"($name) checksum mismatch go vs edva: '($g_run.output)' != '($expected_out)'" }
-        }
-        $langs = ($langs | insert go {
-            status: "ok",
-            cold_build_ms: $g_build.elapsed_ms,
-            binary_bytes: (file_size_bytes $go_out),
-            runtime: $g_run
-        })
-    } else {
-        $langs = ($langs | insert go { status: "skipped (not installed)" })
-    }
-
-    # Optional Wasm32 (edva -target wasm32-unknown-unknown + node)
+    # Optional Wasm32 (edva -target wasm32-unknown-unknown + clang --target=wasm32-unknown-unknown via node)
     if ($edva_wasm_src != "") and $env_info.toolchains.wasm_ld.installed and $env_info.toolchains.node.installed {
         let wasm_out = ($wdir | path join $"($name)_edva.wasm")
         let wasm_js = ($wdir | path join "run_wasm.js")
@@ -358,7 +312,7 @@ WebAssembly.instantiate(bytes, { env }).then(m => {
         let n_str = ($items | into string)
         let w_run = (measure_runs $probe_bin $meta ["node" "--disable-wasm-trap-handler" $wasm_js $wasm_out $n_str] $runs $items)
         if $w_run.output != $expected_out {
-            error make { msg: $"($name) checksum mismatch wasm32 vs native: '($w_run.output)' != '($expected_out)'" }
+            error make { msg: $"($name) checksum mismatch edva_wasm32 vs native: '($w_run.output)' != '($expected_out)'" }
         }
         $langs = ($langs | insert edva_wasm32 {
             status: "ok",
@@ -366,6 +320,29 @@ WebAssembly.instantiate(bytes, { env }).then(m => {
             binary_bytes: (file_size_bytes $wasm_out),
             runtime: $w_run
         })
+
+        if $env_info.toolchains.clang.installed and ($c_src | path exists) {
+            let c_wasm_obj = ($wdir | path join $"($name)_clang_wasm.o")
+            let c_wasm_out = ($wdir | path join $"($name)_clang.wasm")
+            let cw_c = (measure_cmd $probe_bin $meta [
+                "clang" "-target" "wasm32-unknown-unknown" "-O2" "-ffreestanding"
+                "-c" $c_src "-o" $c_wasm_obj
+            ])
+            let cw_ld = (measure_cmd $probe_bin $meta [
+                "wasm-ld" "--no-entry" "--export-all" "--allow-undefined"
+                $c_wasm_obj "-o" $c_wasm_out
+            ])
+            let cw_run = (measure_runs $probe_bin $meta ["node" "--disable-wasm-trap-handler" $wasm_js $c_wasm_out $n_str] $runs $items)
+            if $cw_run.output != $expected_out {
+                error make { msg: $"($name) checksum mismatch clang_wasm32 vs native: '($cw_run.output)' != '($expected_out)'" }
+            }
+            $langs = ($langs | insert clang_wasm32 {
+                status: "ok",
+                cold_build_ms: ((($cw_c.elapsed_ns + $cw_ld.elapsed_ns | into float) / 1000000.0) | math round --precision 3),
+                binary_bytes: (file_size_bytes $c_wasm_out),
+                runtime: $cw_run
+            })
+        }
     }
 
     rm -f ($root | path join $"($name)_edva.ll") ($root | path join $"($name)_edva_warm.ll")
@@ -397,24 +374,18 @@ def main [
 
         let b1 = (bench_workload "cli_log_json" $log_n
             ($root | path join "benchmarks/cli_log_json/edva.dva") ""
-            ($root | path join "benchmarks/cli_log_json/rust.rs")
-            ($root | path join "benchmarks/cli_log_json/zig.zig")
-            ($root | path join "benchmarks/cli_log_json/go.go")
+            ($root | path join "benchmarks/cli_log_json/c.c")
             $env_info $probe_bin $root $tmp_dir $eff_runs)
 
         let b2 = (bench_workload "server_http_router" $http_n
             ($root | path join "benchmarks/server_http_router/edva.dva") ""
-            ($root | path join "benchmarks/server_http_router/rust.rs")
-            ($root | path join "benchmarks/server_http_router/zig.zig")
-            ($root | path join "benchmarks/server_http_router/go.go")
+            ($root | path join "benchmarks/server_http_router/c.c")
             $env_info $probe_bin $root $tmp_dir $eff_runs)
 
         let b3 = (bench_workload "wasm_numeric_kernel" $kern_n
             ($root | path join "benchmarks/wasm_numeric_kernel/edva.dva")
             ($root | path join "benchmarks/wasm_numeric_kernel/edva_wasm.dva")
-            ($root | path join "benchmarks/wasm_numeric_kernel/rust.rs")
-            ($root | path join "benchmarks/wasm_numeric_kernel/zig.zig")
-            ($root | path join "benchmarks/wasm_numeric_kernel/go.go")
+            ($root | path join "benchmarks/wasm_numeric_kernel/c.c")
             $env_info $probe_bin $root $tmp_dir $eff_runs)
 
         rm -rf $tmp_dir

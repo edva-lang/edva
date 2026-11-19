@@ -106,8 +106,7 @@ child_pid == 0
             // Extract Sec-WebSocket-Key
             lines = str::split(req_raw, "\r\n")
             key' = ++""
-            ?lines @ i =>
-               ln = lines(i)!!
+            lines @ ln =>
                str::starts_with(ln, "Sec-WebSocket-Key: ")
                   | key' = str::trim(ln(19..))
             acc_key = http::ws_accept_key(key')

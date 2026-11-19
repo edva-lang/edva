@@ -245,8 +245,7 @@ split: String => str::Strings
 split = p =>
    out = str::Strings()
    cur = {32}
-   ?p @ i =>
-      c = p(i)
+   p @ c =>
       is_sep(c)
          |
             ?cur > 0 | out += +cur
@@ -285,9 +284,9 @@ posix_normalize = p =>
          | cur += c
    out = {?p + 2}
    abs | out += '/
-   ?segs @ idx =>
+   segs @ seg, idx =>
       idx > 0 | out += '/
-      out += (segs(idx) | _ | "")
+      out += seg
    ?out == 0 | "." | +out
 
 win_normalize: String => String
@@ -328,9 +327,9 @@ win_normalize = p =>
          | cur += c
    out = {?p + 2}
    out += prefix
-   ?segs @ idx =>
+   segs @ seg, idx =>
       idx > 0 | out += '\\
-      out += (segs(idx) | _ | "")
+      out += seg
    ?out == 0 | "." | +out
 
 normalize: String => String

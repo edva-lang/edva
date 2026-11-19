@@ -61,6 +61,8 @@ io::out $ doc
 | **Rune count** | `??s` | `String` | `Int` | Number of UTF-8 Unicode codepoints |
 | **Data pointer** | `&s` / `&b` | `String` / `Builder` | `Addr` | Raw pointer to byte buffer (`&s` is NUL-terminated for C FFI) |
 | **Byte index** | `s(i)` | `String`, `i: Int` | `Int` | Unsigned byte value (`0..255`) at `i` (aborts on out-of-bounds) |
+| **Byte iteration** | `s @ b => ...`<br>`s @ b, i => ...` | `String` / `Builder` | `()` (or `@>` expression) | Iterates raw UTF-8 bytes (`b: Int`, optional byte index `i: Int`) in `0..?s` without bounds-check overhead |
+| **Rune iteration** | `s @@ r => ...`<br>`s @@ r, i => ...` | `String` / `Builder` | `()` (or `@@>` expression) | Decodes and iterates UTF-8 Unicode codepoints (`r: Rune`, optional byte offset `i: Int`) |
 | **Substring slice** | `s(a..b)` / `s(a...b)` | `String`, range | `String` | Zero-copy sub-range view (`a..`, `..b`, `-k..` supported) |
 | **Concatenation** | `s1 + s2` / `s + byte_or_rune` | `String` | `String` | Allocates concatenated `String` in arena |
 | **Segment equality** | `s == ("pre", mid, "suf")` | `String`, tuple of `String` | `<>` | Zero-allocation length + segment memory comparison |

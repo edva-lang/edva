@@ -188,9 +188,11 @@ find_target = count, target =>
    >--
       target           // evaluates to <+ target +> on break, or <--> on normal completion
 ```
-- Iterables: `N @` (`0..N`), `a..b @ i =>`, `a...b @ i =>`, `arr @ elem, i =>`, `str @ byte, i =>`,
-  `str @@ rune, i =>` (also on `Builder`), `map @ val, key =>`, infinite `0.. @`, and condition
-  cycles `(cond) @ body`.
+- Iterables: `N @` (`0..N`), `a..b @ i =>`, `a...b @ i =>`, `arr @ elem =>` / `arr @ elem, i =>`
+  (direct unwrapped element iteration; prefer over `?arr @ i => arr(i)!!`), `str @ byte =>` /
+  `str @ byte, i =>` (direct raw UTF-8 byte iteration where `?str` is byte length; prefer over
+  `?str @ i => str(i)`), `str @@ rune =>` / `str @@ rune, i =>` (decoded Unicode `Rune` iteration,
+  also on `Builder`), `map @ val, key =>`, infinite `0.. @`, and condition cycles `(cond) @ body`.
 - **Expression-Valued Cycles (`@>`, `@@>`)**:
   - **Map (`items @> body` -> `U{}` or `Builder`)**: evaluates `body` (`x =>`, `(a, b) =>`,
     `x, i =>`, `_`, or point-free function/section/choice/type/composition) and collects into a new

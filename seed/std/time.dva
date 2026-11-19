@@ -618,8 +618,8 @@ parse_tm_os = #param OS, value, fmt_pat =>
    OS
       [TimeOsWasm] <-->
       |
-         ?value @ i =>
-            value(i) == 0 |-->
+         value @ ch_ =>
+            ch_ == 0 |-->
          tm' = TmRaw(0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i32, 0i64, sys::addr_null)
          end = strptime(value, fmt_pat, &tm')
          end == sys::addr_null |-->

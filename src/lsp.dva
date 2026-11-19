@@ -70,8 +70,7 @@ has_override: String => <>
 has_override = fpath =>
    docs = open_docs
    found' = <->
-   ?docs @ i =>
-      d = docs(i)!!
+   docs @ d =>
       d.path == fpath
          |
             found' = <+>
@@ -82,8 +81,7 @@ get_override_text: String => < String | >
 get_override_text = fpath =>
    docs = open_docs
    res' = <-->
-   ?docs @ i =>
-      d = docs(i)!!
+   docs @ d =>
       d.path == fpath
          |
             res' = <+ d.text +>
@@ -665,8 +663,7 @@ get_doc: String => < DocState | >
 get_doc = uri =>
    docs = open_docs
    res' = <-->
-   ?docs @ i =>
-      d = docs(i)!!
+   docs @ d =>
       d.uri == uri
          |
             res' = <+ d +>
@@ -779,8 +776,8 @@ get_line_at = text, target_line =>
 count_doc_lines: String => Int
 count_doc_lines = text =>
    cnt' = 1
-   ?text @ i =>
-      text(i) == '\n | cnt' = cnt' + 1
+   text @ ch_ =>
+      ch_ == '\n | cnt' = cnt' + 1
    cnt'
 
 extract_word_at: String, Int, Int => String

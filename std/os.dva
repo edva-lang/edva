@@ -147,8 +147,7 @@ append_bytes = b, src, n =>
                ?parts > 0 && ?(parts(0)!!) > 0
                   | c_unsetenv(parts(0)!!)
                   | -->
-      ?opts.env @ i =>
-         kv = opts.env(i)!!
+      opts.env @ kv =>
          c_setenv(kv.key, kv.val, 1i32)
       <+>
 
@@ -392,8 +391,8 @@ append_bytes = b, src, n =>
    with_env: SpawnOpts, String, String => SpawnOpts
    with_env = opts, key, val =>
       evs' = EnvVars()
-      ?opts.env @ i =>
-         evs' += opts.env(i)!!
+      opts.env @ el_ =>
+         evs' += el_
       evs' += EnvVar(key, val)
       opts(env = evs')
 

@@ -2472,9 +2472,9 @@ build_destructure_stmts = p, src_expr, fields, allow_mut, out_stmts =>
 chain_seq_stmts: ast::Exprs => ast::Expr
 chain_seq_stmts = stmts =>
    acc' = stmts(0)!!
-   ?stmts @ i =>
+   stmts @ el_, i =>
       i > 0
-         | acc' = ast::Expr(Bin, (ast::BinaryOp(Seq), acc', stmts(i)!!))
+         | acc' = ast::Expr(Bin, (ast::BinaryOp(Seq), acc', el_))
    acc'
 
 pr_record_field_loop: Parser, ast::Fields => <ast::Expr|>
@@ -6073,8 +6073,7 @@ is_use_arg_name: String => <>
 is_use_arg_name = s =>
    ?s == 0 | --| <->
    ok' = <+>
-   ?s @ i =>
-      c = s(i)
+   s @ c =>
       c ['/, '., '(, '), '\s, '\t, ':, '@, '"] (ok' = <->; -->)
    ok'
 
@@ -9645,8 +9644,8 @@ digit_val = c =>
 has_char: String, Rune => <>
 has_char = s, ch =>
    found' = <->
-   ?s @ i =>
-      s(i) == ch | found' = <+>
+   s @ ch_ =>
+      ch_ == ch | found' = <+>
    found'
 
 expand_int_repeats: String => <String|>

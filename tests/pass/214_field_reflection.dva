@@ -24,8 +24,7 @@ serialize: #param E: Type, #param T: Type, (E => String), T => String
 serialize = ser, xs =>
    out = {16}
    out += "["
-   ?xs @ i =>
-      v = xs(i) | _ | E
+   xs @ v, i =>
       out += ser(v)
       i < ?xs - 1 | out += ","
    out += "]"

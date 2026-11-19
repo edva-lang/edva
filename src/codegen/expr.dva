@@ -202,8 +202,8 @@ codegen_string_len_fast = cg, val, name =>
 
 has_addr: types::Addrs, Addr => <>
 has_addr = xs, target =>
-   ?xs @ i =>
-      xs(i)!! == target | --| <+>
+   xs @ el_ =>
+      el_ == target | --| <+>
    <->
 
 // Reads and validates the stored String length. A value stamped by a
@@ -7169,8 +7169,7 @@ find_typed_rec_factory: types::Cg, String, String, Int, <> => <(ast::Names,
   tast::TypedExpr, String, ast::TypeInfo)|>
 find_typed_rec_factory = cg, rname, fname, nargs, is_niche_rec =>
    stmts = types::g.typed_program_stmts
-   ?stmts @ i =>
-      st = stmts(i)!!
+   stmts @ st =>
       found = st
          [Binding b] unwrap_rec_factory_lambda(cg, b.0, b.2, b.1, nargs, rname, fname, is_niche_rec)
          [GlobalBinding gb] unwrap_rec_factory_lambda(cg, gb.0, gb.2, gb.1, nargs, rname, fname, is_niche_rec)

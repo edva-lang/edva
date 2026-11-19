@@ -52,8 +52,7 @@ get_multiplier = factor =>
 
 find_index: Ints, Int => Int
 find_index = arr, target =>
-   ?arr @ i =>
-      val = arr(i) | _ | 0
+   arr @ val, i =>
       val == target | --| i
    -1
 

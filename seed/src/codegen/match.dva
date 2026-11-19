@@ -689,8 +689,7 @@ ctfe_encode_rune = r =>
 str_count_runes: String => Int
 str_count_runes = s =>
    c' = 0
-   ?s @ i =>
-      b = s(i)
+   s @ b =>
       (b .&. 0xC0) != 0x80 | (c' = c' + 1)
    c'
 
@@ -1455,8 +1454,7 @@ ctfe_hash_val = v =>
       [Str s]
          h' = 0xcbf29ce484222325
          p = 0x100000001b3
-         ?s @ i =>
-            b = s(i)
+         s @ b =>
             h' = (h' + b) * p
          h'
       | 0

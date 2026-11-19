@@ -98,6 +98,26 @@ line2 = log::format_kv(log::Level(Warn), "slow query", log::Fields(
 ))
 test::eq(line2, "[WARN] [edvin] slow query ms=142 cached=<-> sql=\"SELECT * FROM users\"", "log::format_kv structured fields")
 
+// DVA-97: quote_value escaping, non-ASCII bytes, embedded NUL, empty fields, and early exit
+test::eq(log::field("empty", ""), "empty=\"\"", "log::field quotes empty string")
+test::eq(log::field("esc", "a\"b\\c\nd\re\tf=g"), "esc=\"a\\\"b\\\\c\\nd\\re\\tf=g\"", "log::field escapes quotes, backslash, control chars, and =")
+test::eq(log::field("utf8", "café=🔥"), "utf8=\"café=🔥\"", "log::field preserves non-ASCII UTF-8 bytes when quoting")
+nul_val = log::field("nul", "a\x00b=1")
+test::eq(?nul_val, 11, "log::field preserves embedded NUL byte length in quoted value")
+test::eq(nul_val(0..5), "nul=\"", "log::field embedded NUL prefix")
+test::eq(nul_val(6), 0, "log::field embedded NUL byte preserved")
+test::eq(nul_val(7..11), "b=1\"", "log::field embedded NUL suffix")
+test::eq(log::format_kv(log::Level(Info), "noop", log::Fields()), "[INFO] [edvin] noop", "log::format_kv empty Fields early return")
+test::eq(log::format_kv(log::Level(Info), "sparse", log::Fields("", log::field("k", "v"), "")), "[INFO] [edvin] sparse k=v", "log::format_kv skips empty field strings")
+
+find_byte_early: String, Int => Int
+find_byte_early = s, target =>
+   s @ b, idx =>
+      b == target | --| idx
+   -1
+test::eq(find_byte_early("a\x00é!", 0), 1, "String @ early return finds embedded NUL byte")
+test::eq(find_byte_early("a\x00é!", 0xA9), 3, "String @ early return finds non-ASCII UTF-8 continuation byte")
+
 // Timestamp format toggles: extended vs basic, zoned vs Zulu/UTC
 log::set_timestamps(<+>)
 log::set_utc(<+>)

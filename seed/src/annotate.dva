@@ -759,11 +759,7 @@ instantiate_ti_step = ctx, env, fn_mod, tvm, ti =>
                fts = r.0
                cur_tvm4' = tvm
                flds = unify::UFields()
-               ?fts @ i =>
-                  ft = fts(i) | _ | ast::RecordFieldType("",
-                    ast::ValueType(Unknown),
-                    ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-                    <->, ast::Expr(Int, 0))
+               fts @ ft =>
                   res_i = instantiate_ti_step(ctx, env, fn_mod, cur_tvm4', ft.rec_type)
                   cur_tvm4' = res_i.tvm
                   flds += unify::UField(ft.name, res_i.ut)
@@ -772,8 +768,7 @@ instantiate_ti_step = ctx, env, fn_mod, tvm, ti =>
          instantiate_ti_step(ctx, env, fn_mod, tvm, a.1)
       [Bitfield b]
          flds = unify::UFields()
-         ?b.fields @ i =>
-            bf = b.fields(i) | _ | ast::BitfieldField("", 0, 0, <->)
+         b.fields @ bf =>
             f_up = bf.is_flag | unify::UPrim(Flag) | unify::vt_to_uprim(b.backing_type)
             flds += unify::UField(bf.name, unify::UType(Prim, f_up))
          TiInstRes(tvm, unify::UType(Rec, flds))
@@ -797,8 +792,7 @@ instantiate_ti_step = ctx, env, fn_mod, tvm, ti =>
 vim_lookup: VarInstMap, Int => < unify::UType | >
 vim_lookup = vim, id =>
    res' = <-->
-   ?vim @ i =>
-      e = vim(i) | _ | VarInstMapEntry(-1, unify::UType(None))
+   vim @ e =>
       e.old_id == id | (res' = <+ e.new_ut +>; -->)
    res'
 
@@ -818,8 +812,7 @@ instantiate_unbound_step = ctx, vim, ut =>
       [Fn f]
          cur_vim' = vim
          new_params = unify::UTypes()
-         ?f.params @ i =>
-            p = f.params(i) | _ | unify::UType(None)
+         f.params @ p =>
             p_res = instantiate_unbound_step(ctx, cur_vim', p)
             cur_vim' = p_res.vim
             new_params += p_res.ut
@@ -1106,8 +1099,7 @@ utype_from_ti_env = env, ti =>
       [Fn f]
          vinfos = f.1
          params = unify::UTypes()
-         ?vinfos @ i =>
-            pi = vinfos(i) | _ | ast::TypeInfo(Prim, ast::ValueType(Unknown))
+         vinfos @ pi =>
             params += utype_from_ti_env(env, pi)
          ret = utype_from_ti_env(env, f.3)
          unify::UType(Fn, unify::UFn(params, ret))
@@ -1131,19 +1123,14 @@ utype_from_ti_env = env, ti =>
             |
                fts = r.0
                flds = unify::UFields()
-               ?fts @ i =>
-                  ft = fts(i) | _ | ast::RecordFieldType("",
-                    ast::ValueType(Unknown),
-                    ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-                    <->, ast::Expr(Int, 0))
+               fts @ ft =>
                   flds += unify::UField(ft.name,
                     utype_from_ti_env(env, ft.rec_type))
                unify::UType(Rec, flds)
       [Align a] utype_from_ti_env(env, a.1)
       [Bitfield b]
          flds = unify::UFields()
-         ?b.fields @ i =>
-            bf = b.fields(i) | _ | ast::BitfieldField("", 0, 0, <->)
+         b.fields @ bf =>
             f_up = bf.is_flag | unify::UPrim(Flag) | unify::vt_to_uprim(b.backing_type)
             flds += unify::UField(bf.name, unify::UType(Prim, f_up))
          unify::UType(Rec, flds)
@@ -1152,10 +1139,7 @@ utype_from_ti_env = env, ti =>
       [Enum slots]
          find_enum_utype_by_slots(env, slots) | named_ut => --| named_ut
          vars = unify::UEnumVariants()
-         ?slots @ i =>
-            sl = slots(i) | _ | ast::EnumSlotInfo("", <->,
-              ast::ValueType(Unknown),
-              ast::TypeInfo(Prim, ast::ValueType(Unknown)))
+         slots @ sl =>
             p_ut = sl.has_payload
                | utype_from_ti_env(env, sl.payload_record)
                | unify::UType(None)
@@ -1199,11 +1183,7 @@ mark_bitfield_fields_whole = env, prefix, ti =>
    eff_ti = resolve_user_ti(env, ti)
    eff_ti
       [Rec r]
-         ?r.0 @ i =>
-            fld = r.0(i) | _ | ast::RecordFieldType("",
-              ast::ValueType(Unknown),
-              ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-              <->, ast::Expr(Int, 0))
+         r.0 @ fld =>
             fld.name != ""
                |
                   sub_path = prefix + "." + fld.name
@@ -1453,8 +1433,7 @@ fn_alias_tgts = ast::Names()
 has_name_in: ast::Names, String => <>
 has_name_in = names, name =>
    found' = <->
-   ?names @ i =>
-      n = names(i) | _ | ""
+   names @ n =>
       n == name | (found' = <+>; -->)
    found'
 
@@ -1586,8 +1565,8 @@ rec_all_fields_homogeneous: unify::Ctx, unify::UFields => <>
 rec_all_fields_homogeneous = ctx, flds =>
    ?flds == 0 | --| <->
    f0_ut = flds(0)!!.ut
-   ?flds @ i =>
-      i > 0 && !utype_eq(ctx, f0_ut, flds(i)!!.ut) | --| <->
+   flds @ el_, i =>
+      i > 0 && !utype_eq(ctx, f0_ut, el_.ut) | --| <->
    <+>
 
 is_known_type_pred: String => <>
@@ -1693,9 +1672,7 @@ is_numeric_rec = ctx, u =>
                is_num
                   |
                      all_same' = <+>
-                     ?flds @ i =>
-                        fi = flds(i) | _ |
-                           unify::UField("", unify::UType(None))
+                     flds @ fi =>
                         fi_ut = unify::canon(ctx, fi.ut)
                         same = is_same_uprim(e_ut, fi_ut)
                         !same | (all_same' = <->; -->)
@@ -1735,9 +1712,7 @@ is_cmp_rec = ctx, u =>
                is_ok
                   |
                      all_same' = <+>
-                     ?flds @ i =>
-                        fi = flds(i) | _ |
-                           unify::UField("", unify::UType(None))
+                     flds @ fi =>
                         fi_ut = unify::canon(ctx, fi.ut)
                         same = is_same_uprim(e_ut, fi_ut)
                         !same | (all_same' = <->; -->)
@@ -2329,8 +2304,7 @@ annotate_cycle = ctx, env, c, esc_expr_opt =>
          env.discard_result = <+>
          fe_body_te = annotate_expr(ctx, env, fe.body)
          param_uts = unify::UTypes()
-         ?fe.params @ pi =>
-            pname = fe.params(pi) | _ | ""
+         fe.params @ pname, pi =>
             bnd = type_env::lookup_local(env, pname)
             put = bnd
                | b => b.ut
@@ -3032,8 +3006,7 @@ apply_split = fn =>
                   |
                      args = ast::Exprs()
                      args += b.1
-                     ?sub.3 @ i =>
-                        arg_i = sub.3(i) | _ | ast::Expr(Int, 0)
+                     sub.3 @ arg_i =>
                         args += arg_i
                      (<+>, sub.1, sub.2, args)
                   |
@@ -3047,8 +3020,7 @@ apply_split = fn =>
                sub.0
                   |
                      args = ast::Exprs()
-                     ?sub.3 @ i =>
-                        arg_i = sub.3(i) | _ | ast::Expr(Int, 0)
+                     sub.3 @ arg_i =>
                         args += arg_i
                      args += b.2
                      (<+>, sub.1, sub.2, args)
@@ -3072,11 +3044,7 @@ member_field_ti = env, ti, name =>
             | <-->
       [Rec r]
          res' = <-->
-         ?r.0 @ i =>
-            f = r.0(i) | _ | ast::RecordFieldType("",
-              ast::ValueType(Unknown),
-              ast::TypeInfo(Prim, ast::ValueType(Unknown)),
-              <->, ast::Expr(Int, 0))
+         r.0 @ f =>
             f.name == name
                |
                   res' = <+ f.rec_type +>
@@ -3089,8 +3057,7 @@ member_field_ti = env, ti, name =>
          res'
       [Bitfield b]
          res' = <-->
-         ?b.fields @ i =>
-            bf = b.fields(i) | _ | ast::BitfieldField("", 0, 0, <->)
+         b.fields @ bf =>
             bf.name == name
                |
                   f_vt = bf.is_flag | ast::ValueType(Flag) | b.backing_type
@@ -3250,9 +3217,7 @@ annotate_type_carrier_member = ctx, env, m =>
                   | (t_disp != "" | bare_enum_label(t_disp) | "enum")
                found_idx' = -1
                has_pay' = <->
-               ?uenum'.variants @ si =>
-                  vi = uenum'.variants(si) | _ |
-                     unify::UEnumVariant("", <->, unify::UType(None))
+               uenum'.variants @ vi, si =>
                   vi.label == vn | (found_idx' = si; has_pay' = vi.has_payload; -->)
                found_idx' < 0
                   | unify::add_error(ctx, 3096, diag::enum_no_variant(enum_disp, vn))
@@ -5523,8 +5488,7 @@ annotate_block = ctx, env, exprs, is_disc =>
    last_ut' = unify::prim_unit!
    n = ?exprs
    saved_block_exp = cur_expected_ut
-   ?exprs @ i =>
-      e = exprs(i) | _ | ast::Expr(Int, 0)
+   exprs @ e, i =>
       is_last = i == n - 1
       disc_val = is_last | is_disc | <+>
       env.discard_result = disc_val
@@ -5881,9 +5845,7 @@ try_eval_has_member = ctx, env, tgt_e, mem_name =>
                      unify::canon(ctx, udef_e.ut)
                         [Enum ue_res] (uenum' = ue_res)
          found' = <->
-         ?uenum'.variants @ vi =>
-            v = uenum'.variants(vi) | _ |
-               unify::UEnumVariant("", <->, unify::UType(None))
+         uenum'.variants @ v =>
             v.label == mem_name | (found' = <+>; -->)
          (found', <+>)
       [Var] (<->, <->)
@@ -5946,9 +5908,7 @@ annotate_hash_member3_call = ctx, env, ce =>
          eff_lbl' = lbl_str
          lbl_str != ""
             |
-               ?uenum'.variants @ si =>
-                  vi = uenum'.variants(si) | _ |
-                     unify::UEnumVariant("", <->, unify::UType(None))
+               uenum'.variants @ vi, si =>
                   vi.label == lbl_str | (found_idx' = si; v_info' = vi; -->)
    found_idx' < 0
       | unify::add_error(ctx, 3096, diag::enum_no_variant(enum_disp, eff_lbl'))
@@ -6720,9 +6680,7 @@ annotate_call_udef = ctx, env, ce, udef =>
                arg0_e = ce.args(0) | _ | ast::Expr(Var, "")
                lbl_str = arg0_e [Var v] v | ""
                idx' = -1
-               ?uenum.variants @ si =>
-                  v_info = uenum.variants(si) | _ |
-                     unify::UEnumVariant("", <->, unify::UType(None))
+               uenum.variants @ v_info, si =>
                   v_info.label == lbl_str | (idx' = si; -->)
                idx' < 0
                   |
@@ -7252,10 +7210,7 @@ choice_check_ram_pn = ctx, tb_list =>
    all_pn' = <+>
    has_non_jump' = <->
    cand_pos = unify::fresh_var(ctx)
-   ?tb_list @ i =>
-      tb = tb_list(i) | _ | tast::TypedBranch(ast::GuardKind(Bare),
-        tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
-        tast::mk_lit_unit(0, 0))
+   tb_list @ tb =>
       is_jump = expr_is_jump(tb.body) || is_error_ut(ctx, tb.body.ut)
       !is_jump
          |
@@ -7291,10 +7246,7 @@ choice_check_ram_np = ctx, tb_list =>
    all_np' = <+>
    has_non_jump' = <->
    cand_neg = unify::fresh_var(ctx)
-   ?tb_list @ i =>
-      tb = tb_list(i) | _ | tast::TypedBranch(ast::GuardKind(Bare),
-        tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
-        tast::mk_lit_unit(0, 0))
+   tb_list @ tb =>
       is_jump = expr_is_jump(tb.body) || is_error_ut(ctx, tb.body.ut)
       !is_jump
          |
@@ -7371,8 +7323,7 @@ enum_branches_missing = variants, branches =>
       | ""
       |
          missing' = ++""
-         ?variants @ i =>
-            v = variants(i) | _ | unify::UEnumVariant("", <->, unify::UType(None))
+         variants @ v =>
             v.label != "" && !enum_branches_cover_label(branches, v.label)
                |
                   missing' = missing' == "" | ++v.label | missing' + ", " + v.label
@@ -7398,10 +7349,7 @@ range_to_cmp_ast = r =>
 all_tb_unit: unify::Ctx, tast::TypedBranches => <>
 all_tb_unit = ctx, tb_list =>
    all_u' = <+>
-   ?tb_list @ i =>
-      tb = tb_list(i) | _ | tast::TypedBranch(ast::GuardKind(Bare),
-        tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
-        tast::mk_lit_unit(0, 0))
+   tb_list @ tb =>
       is_jump = expr_is_jump(tb.body) || is_error_ut(ctx, tb.body.ut)
       !is_jump
          |
@@ -7925,12 +7873,10 @@ annotate_choice = ctx, env, ch, is_disc =>
                         nbv = ?br.bind_vars
                         has_pay' = nbv != 0
                      |
-                        ?br.variant_names @ vn_i =>
-                           vn_raw = br.variant_names(vn_i) | _ | ""
+                        br.variant_names @ vn_raw, vn_i =>
                            vname = bare_enum_label(vn_raw)
                            found_v' = <->
-                           ?uenum'.variants @ v_k =>
-                              v = uenum'.variants(v_k) | _ | def_ev
+                           uenum'.variants @ v =>
                               v.label == vname
                                  |
                                     found_v' = <+>
@@ -7946,8 +7892,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                                    diag::enum_no_variant(enum_disp, vname))
                         is_unit_slot'
                            |
-                              ?br.bind_vars @ bvi =>
-                                 bv_chk = br.bind_vars(bvi) | _ | ""
+                              br.bind_vars @ bv_chk =>
                                  bv_chk != "" && bv_chk != "_"
                                     |
                                        v0_lbl = bare_enum_label(br.variant_names(0) | _ | "")
@@ -7988,8 +7933,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                   is_var_br && !is_var_cond && !is_type_cond
                      |
                         has_named_bind' = <->
-                        ?br.bind_vars @ bvi =>
-                           bv_chk = br.bind_vars(bvi) | _ | ""
+                        br.bind_vars @ bv_chk =>
                            bv_chk != "" && bv_chk != "_" | (has_named_bind' = <+>)
                         has_named_bind'
                            |
@@ -8050,8 +7994,7 @@ annotate_choice = ctx, env, ch, is_disc =>
       !is_unit_slot'
          |
             type_env::bind_local(env, "_", payload_ut', pay_ti, <->)
-      ?br.bind_vars @ bv_i =>
-         bv = br.bind_vars(bv_i) | _ | ""
+      br.bind_vars @ bv =>
          bv != "" && bv != "_"
             |
                type_env::bind_local(env, bv, payload_ut', pay_ti, <->)
@@ -8189,10 +8132,7 @@ annotate_choice = ctx, env, ch, is_disc =>
                         |
                            missing_enum_labels' != "" && !all_tb_unit(ctx, tb_list)
                               |
-                                 ?tb_list @ tbi =>
-                                    tb_item = tb_list(tbi) | _ | tast::TypedBranch(
-                                       ast::GuardKind(Bare), tast::TypedExprs(), <-->,
-                                       ast::Names(), ast::Names(), tast::mk_lit_unit(0, 0))
+                                 tb_list @ tb_item =>
                                     is_j = expr_is_jump(tb_item.body) || is_error_ut(ctx, tb_item.body.ut)
                                     !is_j
                                        |
@@ -8568,8 +8508,7 @@ annotate_raw_write = ctx, env, rm, val_expr =>
 
 find_assign_idx = exprs, target_name =>
    idx' = -1
-   ?exprs @ i =>
-      e = exprs(i) | _ | ast::Expr(Int, 0)
+   exprs @ e, i =>
       e
          [Assign a]
             a.0 == target_name && !is_fwd_assign(a) && !a.2
@@ -8735,8 +8674,7 @@ solve_unconstrained_rams = ctx, ut =>
                   [Var vid2] unify::bind_var(ctx, vid2, unify::prim_unit!)
                   | solve_unconstrained_rams(ctx, r.neg.ut)
       [Rec r_flds]
-         ?r_flds @ i =>
-            fld = r_flds(i) | _ | unify::UField("", unify::UType(None))
+         r_flds @ fld =>
             solve_unconstrained_rams(ctx, fld.ut)
 
 check_ground: unify::Ctx, type_env::TypeEnv, ast::Exprs, String => ()
@@ -8769,9 +8707,7 @@ check_ground = ctx, env, exprs, name =>
                                  ?fe.ct_params == 0
                                     |
                                        all_p_ok' = <+>
-                                       ?f.params @ p_i =>
-                                          p = f.params(p_i) | _ |
-                                             unify::UType(None)
+                                       f.params @ p =>
                                           !unify::is_ground(ctx, p)
                                              |
                                                 all_p_ok' = <->
@@ -8850,9 +8786,7 @@ register_enum_variants = env, td_name, td_ut =>
      td_name(?td_mod + 2) == '#
    td_ut
       [Enum uenum]
-         ?uenum.variants @ v_i =>
-            v = uenum.variants(v_i) | _ |
-               unify::UEnumVariant("", <->, unify::UType(None))
+         uenum.variants @ v =>
             v.label != "" && !v.has_payload
                |
                   short_name = td_mod == ""
@@ -8893,10 +8827,7 @@ count_record_fields = fields =>
 count_choice_branches: tast::TypedBranches => Int
 count_choice_branches = branches =>
    total' = 0
-   ?branches @ i =>
-      br = branches(i) | _ | tast::TypedBranch(ast::GuardKind(Bare),
-        tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
-        tast::mk_lit_unit(0, 0))
+   branches @ br =>
       total' = total' + count_expr_nodes(br.body)
    total'
 
@@ -8942,9 +8873,7 @@ count_expr_nodes = te =>
       [RawMemoryWrite rmw]
          count' = count' + count_expr_nodes(rmw.0) + count_expr_nodes(rmw.1)
       [MapLiteral ml]
-         ?ml @ i =>
-            pr = ml(i) | _ | tast::TypedMapPair(tast::mk_lit_unit(0, 0),
-              tast::mk_lit_unit(0, 0))
+         ml @ pr =>
             count' = count' + count_expr_nodes(pr.key) +
               count_expr_nodes(pr.val)
       [Exit e]
@@ -8956,8 +8885,7 @@ count_expr_nodes = te =>
 count_program_nodes: tast::TypedProgram => Int
 count_program_nodes = prog =>
    total' = 0
-   ?prog @ i =>
-      st = prog(i) | _ | tast::TypedStmt(Expr, tast::mk_lit_unit(0, 0))
+   prog @ st =>
       st
          [Expr te]
             total' = total' + count_expr_nodes(te)
@@ -8967,8 +8895,7 @@ count_program_nodes = prog =>
 program_layout_size: tast::TypedProgram => Int
 program_layout_size = prog =>
    total' = 0
-   ?prog @ i =>
-      st = prog(i) | _ | tast::TypedStmt(Expr, tast::mk_lit_unit(0, 0))
+   prog @ st =>
       st
          [Expr te]
             total' = total' + te.layout.size
@@ -9008,17 +8935,14 @@ refresh_target = ctx, opt =>
 refresh_expr_list: unify::Ctx, tast::TypedExprs => tast::TypedExprs
 refresh_expr_list = ctx, exprs =>
    res = tast::TypedExprs()
-   ?exprs @ i =>
-      e = exprs(i) | _ | tast::mk_lit_unit(0, 0)
+   exprs @ e =>
       res += refresh_typed_expr(ctx, e)
    res
 
 refresh_record_fields: unify::Ctx, tast::TypedFields => tast::TypedFields
 refresh_record_fields = ctx, fields =>
    res = tast::TypedFields()
-   ?fields @ i =>
-      f = fields(i) | _ | tast::TypedField("", tast::mk_lit_unit(0, 0),
-        0, unify::UType(None))
+   fields @ f =>
       ref_val = refresh_typed_expr(ctx, f.val)
       res += tast::TypedField(f.name, ref_val, f.offset, ref_val.ut)
    res
@@ -9026,10 +8950,7 @@ refresh_record_fields = ctx, fields =>
 refresh_choice_branches: unify::Ctx, tast::TypedBranches => tast::TypedBranches
 refresh_choice_branches = ctx, branches =>
    res = tast::TypedBranches()
-   ?branches @ i =>
-      br = branches(i) | _ | tast::TypedBranch(ast::GuardKind(Bare),
-        tast::TypedExprs(), <-->, ast::Names(), ast::Names(),
-        tast::mk_lit_unit(0, 0))
+   branches @ br =>
       ref_body = refresh_typed_expr(ctx, br.body)
       res += tast::TypedBranch(br.kind, br.case_values, br.pred_fn,
         br.variant_names, br.bind_vars, ref_body)
@@ -9038,9 +8959,7 @@ refresh_choice_branches = ctx, branches =>
 refresh_map_pairs: unify::Ctx, tast::TypedMapPairs => tast::TypedMapPairs
 refresh_map_pairs = ctx, pairs =>
    res = tast::TypedMapPairs()
-   ?pairs @ i =>
-      pr = pairs(i) | _ | tast::TypedMapPair(tast::mk_lit_unit(0, 0),
-        tast::mk_lit_unit(0, 0))
+   pairs @ pr =>
       res += tast::TypedMapPair(refresh_typed_expr(ctx, pr.key),
         refresh_typed_expr(ctx, pr.val))
    res
@@ -9157,9 +9076,7 @@ refresh_typed_expr = ctx, te =>
 refresh_program_stmts: unify::Ctx, tast::TypedStmts => tast::TypedStmts
 refresh_program_stmts = ctx, stmts =>
    final_stmts = tast::TypedStmts()
-   ?stmts @ i_fin =>
-      stmt = stmts(i_fin) | _ | tast::TypedStmt(Expr,
-        tast::mk_lit_unit(0, 0))
+   stmts @ stmt =>
       stmt
          [Expr te]
             final_stmts += tast::TypedStmt(Expr, refresh_typed_expr(ctx, te))
@@ -9589,8 +9506,7 @@ extract_ct_from_sig = ctx, env, param_tis, ret_ti, rt_args, call_ret_ut, call_re
 sanitize_mono_key_str: String => String
 sanitize_mono_key_str = s =>
    b = {?s + 4}
-   ?s @ i =>
-      c = s(i)
+   s @ c =>
       c ['a...'z, 'A...'Z, '0...'9, '_]
          | b += c
          | b += ('_, str::from_int(c))
@@ -9653,9 +9569,9 @@ utype_type_key = ctx, env, ut, ti, dtype =>
       [Rec flds]
          b = {64}
          fk = {32}
-         ?flds @ i =>
+         flds @ el_, i =>
             i > 0 | fk += ',
-            fld = flds(i)!!
+            fld = el_
             fld.name != "" | fk += (fld.name, ':)
             f_ti = extract_child_ti(ctx, env, ti, i, fld.ut)
             fk += utype_type_key(ctx, env, fld.ut, f_ti, "")
@@ -9671,9 +9587,9 @@ utype_type_key = ctx, env, ut, ti, dtype =>
       [Fn f]
          b = {48}
          b += "Fn("
-         ?f.params @ i =>
+         f.params @ el_, i =>
             i > 0 | b += ',
-            b += utype_type_key(ctx, env, f.params(i)!!,
+            b += utype_type_key(ctx, env, el_,
               ast::TypeInfo(Prim, ast::ValueType(Unknown)), "")
          b += "=>"
          b += utype_type_key(ctx, env, f.ret,
@@ -10568,17 +10484,14 @@ elaborate_program_with_ctx = exprs =>
    sccs = dep_graph::tarjan_scc(graph)
 
    // 3. Process SCCs in reverse topological order (leaf-first)
-   ?sccs @ s_i =>
-      scc = sccs(s_i) | _ | dep_graph::SCC(ast::Names(), <->)
-      ?scc.names @ n_i =>
-         fname1 = scc.names(n_i) | _ | ""
+   sccs @ scc =>
+      scc.names @ fname1 =>
          fname1 != "" && !dep_graph::has_name(gen_names, fname1)
             |
                m1 = type_env::decl_module(fname1, 0)
                type_env::set_current_module(env, m1)
                prebind_scc(ctx, env, exprs, fname1)
-      ?scc.names @ n_j =>
-         fname2 = scc.names(n_j) | _ | ""
+      scc.names @ fname2 =>
          fname2 != "" && !dep_graph::has_name(gen_names, fname2)
             |
                m2 = type_env::decl_module(fname2, 0)
@@ -10634,10 +10547,8 @@ elaborate_program_with_ctx = exprs =>
    unify::solve_constraints(ctx, ctx.constraints)
 
    // 5. Check that all function parameters in SCCs are ground
-   ?sccs @ s_k =>
-      scc_k = sccs(s_k) | _ | dep_graph::SCC(ast::Names(), <->)
-      ?scc_k.names @ n_k =>
-         fname3 = scc_k.names(n_k) | _ | ""
+   sccs @ scc_k =>
+      scc_k.names @ fname3 =>
          fname3 != "" && !dep_graph::has_name(gen_names, fname3)
             |
                m3 = type_env::decl_module(fname3, 0)
@@ -10651,8 +10562,7 @@ elaborate_program_with_ctx = exprs =>
                tgt = fn_alias_tgts(ai) | _ | ""
                tgt != "" && !has_name_in(called_fns, tgt)
                   | (called_fns += tgt)
-   ?value_used_fns @ vi =>
-      vfn = value_used_fns(vi) | _ | ""
+   value_used_fns @ vfn =>
       vfn != "" && !has_name_in(declared_fns, vfn) && !has_name_in(called_fns, vfn)
          |
             unify::add_error(ctx, 3128,

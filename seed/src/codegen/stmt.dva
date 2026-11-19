@@ -6305,8 +6305,8 @@ ut_is_scalar = ut =>
 name_before_dot: String => String
 name_before_dot = s =>
    cut' = -1
-   ?s @ i =>
-      cut' < 0 && s(i) == '. | cut' = i
+   s @ ch_, i =>
+      cut' < 0 && ch_ == '. | cut' = i
    cut' < 0 | s | s(0..cut')
 
 // The receiver of a dotted call ("x.f" -> "x"); a plain call's result is fresh
@@ -6858,8 +6858,7 @@ callee_param_str_safe_d = cg, fname, param_idx, depth =>
    rname = types::resolve_fn_name(cg, fname)
    is_known_safe_str_callee(rname) | --| <+>
    stmts = types::g.typed_program_stmts
-   ?stmts @ i =>
-      st = stmts(i)!!
+   stmts @ st =>
       found = st
          [Binding b] find_callee_lambda_param(cg, b.0, b.2, rname, fname, param_idx)
          [GlobalBinding gb] find_callee_lambda_param(cg, gb.0, gb.2, rname, fname, param_idx)
@@ -7018,8 +7017,7 @@ callee_param_only_projects = cg, fname, param_idx =>
    types::g.escape_check_depth > 1 | --| <->
    rname = types::resolve_fn_name(cg, fname)
    stmts = types::g.typed_program_stmts
-   ?stmts @ i =>
-      st = stmts(i)!!
+   stmts @ st =>
       found = st
          [Binding b] find_callee_lambda_param(cg, b.0, b.2, rname, fname, param_idx)
          [GlobalBinding gb] find_callee_lambda_param(cg, gb.0, gb.2, rname, fname, param_idx)

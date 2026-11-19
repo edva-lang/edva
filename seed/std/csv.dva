@@ -32,8 +32,8 @@ write_csv_field = b, field, delim =>
       | b += field
       |
          b += '"
-         ?field @ i =>
-            c = field(i) .&. 0xFF
+         field @ ch_ =>
+            c = ch_ .&. 0xFF
             c == '"
                | b += "\"\""
                | b += c

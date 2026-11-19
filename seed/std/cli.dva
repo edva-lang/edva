@@ -239,8 +239,8 @@ cmd_left_col: Opt => String
 cmd_left_col = o =>
    b = {64}
    b += "  " + o.long
-   ?o.aliases @ k =>
-      b += ", " + o.aliases(k)!!
+   o.aliases @ el_ =>
+      b += ", " + el_
    +b
 
 opt_left_col: Opt => String
@@ -841,8 +841,7 @@ format_help = opts, prog, desc, version =>
    max_w' = 18
    has_ropt' = <->
 
-   ?opts @ i =>
-      o = opts(i)!!
+   opts @ o =>
       o.role
          [RCmd]
             cl = cmd_left_col(o)
@@ -883,8 +882,8 @@ format_help = opts, prog, desc, version =>
          ?lh > max_w' | (max_w' = ?lh)
 
    pos_usage' = ++""
-   ?pos_tokens @ p_i =>
-      pos_usage' = pos_usage' + " " + pos_tokens(p_i)!!
+   pos_tokens @ el_ =>
+      pos_usage' = pos_usage' + " " + el_
 
    b += "Usage:\n"
    (?cmd_lefts > 0 && (?pos_tokens > 0 || has_ropt'))

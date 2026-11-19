@@ -82,8 +82,8 @@ wyhash = s, seed =>
 crc32: String => u32
 crc32 = s =>
    crc' = 0xFFFFFFFFu64
-   ?s @ i =>
-      b = u64(s(i) .&. 0xFF)
+   s @ ch_ =>
+      b = u64(ch_ .&. 0xFF)
       crc' = crc' .^. b
       8 @
          (crc' .&. 1u64) != 0u64
@@ -98,8 +98,8 @@ adler32: String => u32
 adler32 = s =>
    a' = 1u64
    b' = 0u64
-   ?s @ i =>
-      byte_val = u64(s(i) .&. 0xFF)
+   s @ ch_ =>
+      byte_val = u64(ch_ .&. 0xFF)
       a' = (a' + byte_val) % 65521u64
       b' = (b' + a') % 65521u64
    u32(((b' .<. 16) .|. a') .&. 0xFFFFFFFFu64)

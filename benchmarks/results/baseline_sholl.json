@@ -19,21 +19,6 @@
         "flags": "-O2",
         "installed": true
       },
-      "rust": {
-        "version": "rustc 1.99.0 (b940084d7 2026-09-28) (built from a source tarball)",
-        "flags": "-C opt-level=3",
-        "installed": true
-      },
-      "zig": {
-        "version": "0.17.0",
-        "flags": "-OReleaseFast",
-        "installed": true
-      },
-      "go": {
-        "version": "skipped (not installed)",
-        "flags": "go build",
-        "installed": false
-      },
       "node": {
         "version": "v22.23.4",
         "flags": "--disable-wasm-trap-handler",
@@ -52,92 +37,61 @@
       "targets": {
         "edva": {
           "status": "ok",
-          "cold_build_ms": 702.13,
-          "ir_emit_ms": 188.435,
-          "warm_build_ms": 588.419,
+          "cold_build_ms": 694.283,
+          "ir_emit_ms": 187.417,
+          "warm_build_ms": 588.379,
           "binary_bytes": 94016,
           "runtime": {
             "runs": 5,
             "items": 20000,
             "latencies_ns": [
-              2693863,
-              2599156,
-              2666456,
-              2642014,
-              2628782
+              2632151,
+              2707365,
+              2695517,
+              2740464,
+              2646326
             ],
-            "min_ns": 2599156,
-            "p50_ns": 2642014,
-            "p95_ns": 2666456,
-            "p99_ns": 2666456,
-            "max_ns": 2693863,
-            "avg_ms": 2.646,
-            "p50_ms": 2.642,
-            "p95_ms": 2.666,
-            "p99_ms": 2.666,
-            "throughput_per_s": 7569982.6,
-            "peak_rss_kb": 2532,
+            "min_ns": 2632151,
+            "p50_ns": 2695517,
+            "p95_ns": 2707365,
+            "p99_ns": 2707365,
+            "max_ns": 2740464,
+            "avg_ms": 2.684,
+            "p50_ms": 2.696,
+            "p95_ms": 2.707,
+            "p99_ms": 2.707,
+            "throughput_per_s": 7419726.9,
+            "peak_rss_kb": 2596,
             "output": "checksum=419027993,ok=16000,err=4000"
           }
         },
-        "rust": {
+        "clang": {
           "status": "ok",
-          "cold_build_ms": 245.362,
-          "binary_bytes": 530616,
+          "cold_build_ms": 102.755,
+          "binary_bytes": 15976,
           "runtime": {
             "runs": 5,
             "items": 20000,
             "latencies_ns": [
-              2972344,
-              3012464,
-              3035872,
-              3014195,
-              3046128
+              3021664,
+              3015508,
+              3036215,
+              3005472,
+              2981407
             ],
-            "min_ns": 2972344,
-            "p50_ns": 3014195,
-            "p95_ns": 3035872,
-            "p99_ns": 3035872,
-            "max_ns": 3046128,
-            "avg_ms": 3.016,
-            "p50_ms": 3.014,
-            "p95_ms": 3.036,
-            "p99_ms": 3.036,
-            "throughput_per_s": 6635270.8,
-            "peak_rss_kb": 2320,
+            "min_ns": 2981407,
+            "p50_ns": 3015508,
+            "p95_ns": 3021664,
+            "p99_ns": 3021664,
+            "max_ns": 3036215,
+            "avg_ms": 3.012,
+            "p50_ms": 3.016,
+            "p95_ms": 3.022,
+            "p99_ms": 3.022,
+            "throughput_per_s": 6632381.7,
+            "peak_rss_kb": 1680,
             "output": "checksum=419027993,ok=16000,err=4000"
           }
-        },
-        "zig": {
-          "status": "ok",
-          "cold_build_ms": 12474.257,
-          "binary_bytes": 4221464,
-          "runtime": {
-            "runs": 5,
-            "items": 20000,
-            "latencies_ns": [
-              5970846,
-              5957673,
-              5925544,
-              5821247,
-              5858024
-            ],
-            "min_ns": 5821247,
-            "p50_ns": 5925544,
-            "p95_ns": 5957673,
-            "p99_ns": 5957673,
-            "max_ns": 5970846,
-            "avg_ms": 5.907,
-            "p50_ms": 5.926,
-            "p95_ms": 5.958,
-            "p99_ms": 5.958,
-            "throughput_per_s": 3375217.5,
-            "peak_rss_kb": 844,
-            "output": "checksum=419027993,ok=16000,err=4000"
-          }
-        },
-        "go": {
-          "status": "skipped (not installed)"
         }
       }
     },
@@ -148,92 +102,61 @@
       "targets": {
         "edva": {
           "status": "ok",
-          "cold_build_ms": 539.008,
-          "ir_emit_ms": 138.497,
-          "warm_build_ms": 460.869,
+          "cold_build_ms": 527.734,
+          "ir_emit_ms": 134.419,
+          "warm_build_ms": 465.259,
           "binary_bytes": 89664,
           "runtime": {
             "runs": 5,
             "items": 40000,
             "latencies_ns": [
-              4560734,
-              4510945,
-              4531988,
-              4533775,
-              4747820
+              4506683,
+              4488061,
+              4531704,
+              4555653,
+              4498113
             ],
-            "min_ns": 4510945,
-            "p50_ns": 4533775,
-            "p95_ns": 4560734,
-            "p99_ns": 4560734,
-            "max_ns": 4747820,
-            "avg_ms": 4.577,
-            "p50_ms": 4.534,
-            "p95_ms": 4.561,
-            "p99_ms": 4.561,
-            "throughput_per_s": 8822669.9,
-            "peak_rss_kb": 2572,
+            "min_ns": 4488061,
+            "p50_ns": 4506683,
+            "p95_ns": 4531704,
+            "p99_ns": 4531704,
+            "max_ns": 4555653,
+            "avg_ms": 4.516,
+            "p50_ms": 4.507,
+            "p95_ms": 4.532,
+            "p99_ms": 4.532,
+            "throughput_per_s": 8875707.5,
+            "peak_rss_kb": 2592,
             "output": "digest=77124860,200=20000,201=10000,404=10000"
           }
         },
-        "rust": {
+        "clang": {
           "status": "ok",
-          "cold_build_ms": 311.936,
-          "binary_bytes": 530816,
+          "cold_build_ms": 89.813,
+          "binary_bytes": 16024,
           "runtime": {
             "runs": 5,
             "items": 40000,
             "latencies_ns": [
-              7626994,
-              7640049,
-              7707314,
-              7557033,
-              7638096
+              7439306,
+              7615589,
+              7504459,
+              7472384,
+              8059130
             ],
-            "min_ns": 7557033,
-            "p50_ns": 7638096,
-            "p95_ns": 7640049,
-            "p99_ns": 7640049,
-            "max_ns": 7707314,
-            "avg_ms": 7.634,
-            "p50_ms": 7.638,
-            "p95_ms": 7.64,
-            "p99_ms": 7.64,
-            "throughput_per_s": 5236907.2,
-            "peak_rss_kb": 2324,
+            "min_ns": 7439306,
+            "p50_ns": 7504459,
+            "p95_ns": 7615589,
+            "p99_ns": 7615589,
+            "max_ns": 8059130,
+            "avg_ms": 7.618,
+            "p50_ms": 7.504,
+            "p95_ms": 7.616,
+            "p99_ms": 7.616,
+            "throughput_per_s": 5330164.4,
+            "peak_rss_kb": 1744,
             "output": "digest=77124860,200=20000,201=10000,404=10000"
           }
-        },
-        "zig": {
-          "status": "ok",
-          "cold_build_ms": 11933.288,
-          "binary_bytes": 4051480,
-          "runtime": {
-            "runs": 5,
-            "items": 40000,
-            "latencies_ns": [
-              4345865,
-              4330655,
-              4459751,
-              4284446,
-              4342021
-            ],
-            "min_ns": 4284446,
-            "p50_ns": 4342021,
-            "p95_ns": 4345865,
-            "p99_ns": 4345865,
-            "max_ns": 4459751,
-            "avg_ms": 4.353,
-            "p50_ms": 4.342,
-            "p95_ms": 4.346,
-            "p99_ms": 4.346,
-            "throughput_per_s": 9212300.0,
-            "peak_rss_kb": 848,
-            "output": "digest=77124860,200=20000,201=10000,404=10000"
-          }
-        },
-        "go": {
-          "status": "skipped (not installed)"
         }
       }
     },
@@ -244,118 +167,115 @@
       "targets": {
         "edva": {
           "status": "ok",
-          "cold_build_ms": 412.562,
-          "ir_emit_ms": 124.683,
-          "warm_build_ms": 350.413,
+          "cold_build_ms": 421.626,
+          "ir_emit_ms": 123.508,
+          "warm_build_ms": 353.193,
           "binary_bytes": 79904,
           "runtime": {
             "runs": 5,
             "items": 400000,
             "latencies_ns": [
-              77748486,
-              77667169,
-              77647077,
-              77825655,
-              79311412
+              81139665,
+              78558492,
+              77458633,
+              77806811,
+              78824623
             ],
-            "min_ns": 77647077,
-            "p50_ns": 77748486,
-            "p95_ns": 77825655,
-            "p99_ns": 77825655,
-            "max_ns": 79311412,
-            "avg_ms": 78.04,
-            "p50_ms": 77.748,
-            "p95_ms": 77.826,
-            "p99_ms": 77.826,
-            "throughput_per_s": 5144794.7,
+            "min_ns": 77458633,
+            "p50_ns": 78558492,
+            "p95_ns": 78824623,
+            "p99_ns": 78824623,
+            "max_ns": 81139665,
+            "avg_ms": 78.758,
+            "p50_ms": 78.558,
+            "p95_ms": 78.825,
+            "p99_ms": 78.825,
+            "throughput_per_s": 5091747.4,
             "peak_rss_kb": 2116,
             "output": "kernel=4439989"
           }
         },
-        "rust": {
+        "clang": {
           "status": "ok",
-          "cold_build_ms": 214.906,
-          "binary_bytes": 529944,
+          "cold_build_ms": 91.813,
+          "binary_bytes": 16008,
           "runtime": {
             "runs": 5,
             "items": 400000,
             "latencies_ns": [
-              219763504,
-              218762006,
-              221564885,
-              222016184,
-              222510791
+              74147034,
+              72669662,
+              73724158,
+              72726606,
+              73219307
             ],
-            "min_ns": 218762006,
-            "p50_ns": 221564885,
-            "p95_ns": 222016184,
-            "p99_ns": 222016184,
-            "max_ns": 222510791,
-            "avg_ms": 220.923,
-            "p50_ms": 221.565,
-            "p95_ms": 222.016,
-            "p99_ms": 222.016,
-            "throughput_per_s": 1805340.2,
-            "peak_rss_kb": 2192,
+            "min_ns": 72669662,
+            "p50_ns": 73219307,
+            "p95_ns": 73724158,
+            "p99_ns": 73724158,
+            "max_ns": 74147034,
+            "avg_ms": 73.297,
+            "p50_ms": 73.219,
+            "p95_ms": 73.724,
+            "p99_ms": 73.724,
+            "throughput_per_s": 5463040.0,
+            "peak_rss_kb": 1744,
             "output": "kernel=4439989"
           }
-        },
-        "zig": {
-          "status": "ok",
-          "cold_build_ms": 11541.391,
-          "binary_bytes": 4004992,
-          "runtime": {
-            "runs": 5,
-            "items": 400000,
-            "latencies_ns": [
-              73650079,
-              72702684,
-              73392491,
-              72991419,
-              72907033
-            ],
-            "min_ns": 72702684,
-            "p50_ns": 72991419,
-            "p95_ns": 73392491,
-            "p99_ns": 73392491,
-            "max_ns": 73650079,
-            "avg_ms": 73.129,
-            "p50_ms": 72.991,
-            "p95_ms": 73.392,
-            "p99_ms": 73.392,
-            "throughput_per_s": 5480096.2,
-            "peak_rss_kb": 848,
-            "output": "kernel=4439989"
-          }
-        },
-        "go": {
-          "status": "skipped (not installed)"
         },
         "edva_wasm32": {
           "status": "ok",
-          "cold_build_ms": 71.174,
+          "cold_build_ms": 72.136,
           "binary_bytes": 2611,
           "runtime": {
             "runs": 5,
             "items": 400000,
             "latencies_ns": [
-              285354546,
-              284743404,
-              285007585,
-              289068767,
-              292935153
+              286606381,
+              287067770,
+              287472489,
+              287653531,
+              286496387
             ],
-            "min_ns": 284743404,
-            "p50_ns": 285354546,
-            "p95_ns": 289068767,
-            "p99_ns": 289068767,
-            "max_ns": 292935153,
-            "avg_ms": 287.422,
-            "p50_ms": 285.355,
-            "p95_ms": 289.069,
-            "p99_ms": 289.069,
-            "throughput_per_s": 1401764.9,
-            "peak_rss_kb": 52708,
+            "min_ns": 286496387,
+            "p50_ns": 287067770,
+            "p95_ns": 287472489,
+            "p99_ns": 287472489,
+            "max_ns": 287653531,
+            "avg_ms": 287.059,
+            "p50_ms": 287.068,
+            "p95_ms": 287.472,
+            "p99_ms": 287.472,
+            "throughput_per_s": 1393399.2,
+            "peak_rss_kb": 52876,
+            "output": "kernel=4439989"
+          }
+        },
+        "clang_wasm32": {
+          "status": "ok",
+          "cold_build_ms": 46.712,
+          "binary_bytes": 1888,
+          "runtime": {
+            "runs": 5,
+            "items": 400000,
+            "latencies_ns": [
+              820276672,
+              817174775,
+              819807622,
+              819161447,
+              818964017
+            ],
+            "min_ns": 817174775,
+            "p50_ns": 819161447,
+            "p95_ns": 819807622,
+            "p99_ns": 819807622,
+            "max_ns": 820276672,
+            "avg_ms": 819.077,
+            "p50_ms": 819.161,
+            "p95_ms": 819.808,
+            "p99_ms": 819.808,
+            "throughput_per_s": 488304.2,
+            "peak_rss_kb": 52684,
             "output": "kernel=4439989"
           }
         }

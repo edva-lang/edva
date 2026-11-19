@@ -508,8 +508,8 @@ hex_digit = n =>
    escape_string_into: Builder, String => ()
    escape_string_into = b, s =>
       b += '"
-      ?s @ i =>
-         c = s(i) .&. 0xFF
+      s @ ch_ =>
+         c = ch_ .&. 0xFF
          c
             ['"] b += "\\\""
             ['\\] b += "\\\\"
