@@ -71,7 +71,7 @@
    arena = chunk_size =>
       sz = chunk_size !> 0 | 67108864 | chunk_size
       raw = libc::malloc(131632)
-      dva_arena_init(raw, sz)
+      raw != Addr(0) | dva_arena_init(raw, sz)
       Arena(raw, sz)
 
    arena_default: () => Arena
@@ -88,8 +88,10 @@
 
    destroy: Arena => ()
    destroy = a =>
-      release(a)
-      libc::free(a.raw)
+      a.raw != Addr(0)
+         |
+            release(a)
+            libc::free(a.raw)
 
    stats: Arena => ArenaStats
    stats = a =>
