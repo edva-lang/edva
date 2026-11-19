@@ -16,3 +16,9 @@ decl_bare_name = s, i => types::decl_bare_name(s, i)
 codegen_typed_program_opts: tast::TypedProgram, ast::Expr, String, ast::Names, String, types::CodegenOpts => Int
 codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    main::codegen_typed_program_opts(prog, raw, out_path, exports, src_file, opts)
+
+last_analysis_ns: () => Int
+last_analysis_ns = !=> types::cg_timings.analysis_ns
+
+last_ir_emit_ns: () => Int
+last_ir_emit_ns = !=> types::cg_timings.ir_emit_ns

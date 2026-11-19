@@ -9,6 +9,7 @@
 #use ../tast
 #use ../unify
 #use mem
+#use time
 #use ./types
 #use ./runtime
 #use ./expr
@@ -3317,11 +3318,13 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
          [Assign amg]
             amg.3 && amg.0 != "" && !types::has_str(types::g.marked_globals, amg.0)
                | types::g.marked_globals += amg.0
+   t_cg_start = time::mono_ns!
    !cg.opts.no_runtime | runtime::codegen_emit_runtime(cg)
    types::codegen_build_main(cg)
    stmt::codegen_collect_fns(cg, raw_exprs)
    runtime::codegen_register_types(cg, raw_exprs)
    runtime::codegen_register_forwards(cg, raw_exprs)
+   t_ana_start = time::mono_ns!
    types::codegen_scan_partial_escapes(cg, raw_exprs)
    stmt::codegen_scan_closure_args(cg, raw_exprs)
    stmt::codegen_scan_record_args(cg, raw_exprs)
@@ -3329,6 +3332,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    stmt::codegen_scan_enum_variant_indices(cg, raw_exprs)
    stmt::run_typed_fn_summaries(cg, prog)
    types::run_typed_vra(cg, prog)
+   t_ana_end = time::mono_ns!
    cg.current_fn = (cg.main_fn | _ | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)))
    cg.current_module = ""
    cg.in_fn = <->
@@ -3343,6 +3347,11 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    !cg.error | runtime::codegen_finish(cg, out_path)
    res = cg.error | 0 | 1
    codegen_destroy(cg)
+   t_cg_end = time::mono_ns!
+   ana_dt = t_ana_end - t_ana_start
+   ir_dt = (t_cg_end - t_cg_start) - ana_dt
+   types::cg_timings.analysis_ns = (ana_dt > 0 | ana_dt | 0)
+   types::cg_timings.ir_emit_ns = (ir_dt > 0 | ir_dt | 0)
    res
 
 codegen_typed_program: tast::TypedProgram, ast::Expr, String,

@@ -2854,5 +2854,112 @@ if ! grep -Fq "dva_validate_tag_or_abort_stale_str_msg" "$T57_DIR/wasm_arena_eff
 fi
 echo "PASS"
 
+# --- Test 58: Compiler phase timings (--timings / EDVA_TIMINGS) & optimized object/artifact caching (DVA-104) ---
+echo -n "Testing phase timings JSON & optimized object/binary artifact caching... "
+T58_DIR="$TMPDIR/t58_timings_cache"
+mkdir -p "$T58_DIR/cache" "$T58_DIR/src"
+
+# Build a small external C object to verify native link input hashing in the cache key
+cat <<'EOF' > "$T58_DIR/ext_add.c"
+#include <stdint.h>
+int64_t ext_magic_val(void) { return 41; }
+EOF
+clang -O2 -c "$T58_DIR/ext_add.c" -o "$T58_DIR/ext_add.o"
+
+cat <<EOF > "$T58_DIR/src/main.dva"
+#use io
+#use str
+
+#foreign("$T58_DIR/ext_add.o")
+   ext_magic_val: () => Int
+
+io::out \$ "magic=\${str::from_int(ext_magic_val! + 1)}"
+EOF
+
+# 1. Cold build with --timings: must report ir_cache_hit=false, artifact_cache_hit=false, backend_opt>0
+T58_COLD=$(timeout 30 ./edva "$T58_DIR/src/main.dva" --timings --cache "$T58_DIR/cache" -o "$T58_DIR/app_cold" < /dev/null 2>&1)
+rm -f "$T58_DIR/app_cold.ll"
+if ! grep -Fq '"ir_cache_hit":false,"artifact_cache_hit":false' <<<"$T58_COLD" || \
+   [ "$("$T58_DIR/app_cold")" != "magic=42" ]; then
+    echo "FAILED: cold build with --timings did not report expected JSON or output: $T58_COLD"
+    exit 1
+fi
+COLD_JSON=$(grep -E '^\{.*"phases_ns":' <<<"$T58_COLD" | tail -n 1)
+if ! python3 -c 'import json,sys; d=json.loads(sys.argv[1]); p=d["phases_ns"]; assert p["load_parse"]>0 and p["type_specialize"]>0 and p["analysis"]>0 and p["ir_emit"]>0 and p["backend_opt"]>0 and p["link"]>0' "$COLD_JSON"; then
+    echo "FAILED: cold build phase timings missing positive phase durations: $COLD_JSON"
+    exit 1
+fi
+
+# 2. Warm build with --timings: must report ir_cache_hit=true, artifact_cache_hit=true, backend_opt=0, link=0
+# Also place a clang shim on PATH that passes --version through to real clang but fails on any compilation/link call!
+REAL_CLANG_BIN=$(command -v clang)
+mkdir -p "$T58_DIR/bad_clang_bin"
+cat <<EOF > "$T58_DIR/bad_clang_bin/clang"
+#!/usr/bin/env bash
+for arg in "\$@"; do
+    if [ "\$arg" = "--version" ]; then
+        exec "$REAL_CLANG_BIN" "\$@"
+    fi
+done
+echo "ERROR: clang was invoked on warm artifact cache hit!" >&2
+exit 99
+EOF
+chmod +x "$T58_DIR/bad_clang_bin/clang"
+T58_WARM=$(PATH="$T58_DIR/bad_clang_bin:$PATH" timeout 30 ./edva "$T58_DIR/src/main.dva" --timings --cache "$T58_DIR/cache" -o "$T58_DIR/app_warm" < /dev/null 2>&1)
+rm -f "$T58_DIR/app_warm.ll"
+if ! grep -Fq '"ir_cache_hit":true,"artifact_cache_hit":true' <<<"$T58_WARM" || \
+   ! grep -Fq '"backend_opt":0,"link":0' <<<"$T58_WARM" || \
+   [ "$("$T58_DIR/app_warm")" != "magic=42" ]; then
+    echo "FAILED: warm build did not hit artifact cache or skip backend/link: $T58_WARM"
+    exit 1
+fi
+
+# 3. Corrupt (0-byte) cached artifact recovery: truncate output.bin in cache -> falls back to clang on cached IR
+find "$T58_DIR/cache/entries" -name "output.bin" -exec truncate -s 0 {} +
+T58_RECOV=$(timeout 30 ./edva "$T58_DIR/src/main.dva" --timings --cache "$T58_DIR/cache" -o "$T58_DIR/app_recov" < /dev/null 2>&1)
+rm -f "$T58_DIR/app_recov.ll"
+if ! grep -Fq '"ir_cache_hit":true,"artifact_cache_hit":false' <<<"$T58_RECOV" || \
+   [ "$("$T58_DIR/app_recov")" != "magic=42" ]; then
+    echo "FAILED: 0-byte cached artifact was not recovered via backend rebuild: $T58_RECOV"
+    exit 1
+fi
+
+# 4. External native object change must invalidate cache key even without .dva source changes
+cat <<'EOF' > "$T58_DIR/ext_add.c"
+#include <stdint.h>
+int64_t ext_magic_val(void) { return 99; }
+EOF
+clang -O2 -c "$T58_DIR/ext_add.c" -o "$T58_DIR/ext_add.o"
+T58_EXT=$(timeout 30 ./edva "$T58_DIR/src/main.dva" --timings --cache "$T58_DIR/cache" -o "$T58_DIR/app_ext" < /dev/null 2>&1)
+rm -f "$T58_DIR/app_ext.ll"
+if ! grep -Fq '"ir_cache_hit":false,"artifact_cache_hit":false' <<<"$T58_EXT" || \
+   [ "$("$T58_DIR/app_ext")" != "magic=100" ]; then
+    echo "FAILED: external native object edit did not invalidate cache: $T58_EXT"
+    exit 1
+fi
+
+# 5. Backend toolchain identity change (EDVA_BACKEND_ID) must invalidate cache
+T58_BK=$(EDVA_BACKEND_ID="clang-custom-toolchain-v99" timeout 30 ./edva "$T58_DIR/src/main.dva" --timings --cache "$T58_DIR/cache" -o "$T58_DIR/app_bk" < /dev/null 2>&1)
+rm -f "$T58_DIR/app_bk.ll"
+if ! grep -Fq '"ir_cache_hit":false,"artifact_cache_hit":false' <<<"$T58_BK"; then
+    echo "FAILED: EDVA_BACKEND_ID change did not invalidate cache: $T58_BK"
+    exit 1
+fi
+
+# 6. Modular object (-c --module) artifact cache hit skips clang -c
+cat <<'EOF' > "$T58_DIR/src/mod_a.dva"
+#public
+   triple_val: Int => Int
+   triple_val = x => x * 3
+EOF
+T58_MOD_COLD=$(timeout 30 ./edva "$T58_DIR/src/mod_a.dva" -c --module mod_a --timings --cache "$T58_DIR/cache" -o "$T58_DIR/mod_a_cold.o" < /dev/null 2>&1)
+T58_MOD_WARM=$(PATH="$T58_DIR/bad_clang_bin:$PATH" timeout 30 ./edva "$T58_DIR/src/mod_a.dva" -c --module mod_a --timings --cache "$T58_DIR/cache" -o "$T58_DIR/mod_a_warm.o" < /dev/null 2>&1)
+if ! grep -Fq '"ir_cache_hit":true,"artifact_cache_hit":true' <<<"$T58_MOD_WARM" || \
+   ! cmp -s "$T58_DIR/mod_a_cold.o" "$T58_DIR/mod_a_warm.o"; then
+    echo "FAILED: modular object (-c --module) warm artifact cache hit failed: $T58_MOD_WARM"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

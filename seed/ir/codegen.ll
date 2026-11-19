@@ -107,6 +107,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
 @"var.types::fneff" = external global ptr
+@"var.types::cg_timings" = external global ptr
 @"var.types::vra" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"codegen::default_codegen_opts", ptr null }
 @"var.codegen::default_codegen_opts" = global ptr null
@@ -114,6 +115,10 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.codegen::decl_bare_name" = global ptr null
 @clo.const.2 = internal constant { ptr, ptr } { ptr @"codegen::codegen_typed_program_opts", ptr null }
 @"var.codegen::codegen_typed_program_opts" = global ptr null
+@clo.const.3 = internal constant { ptr, ptr } { ptr @"codegen::last_analysis_ns", ptr null }
+@"var.codegen::last_analysis_ns" = global ptr null
+@clo.const.4 = internal constant { ptr, ptr } { ptr @"codegen::last_ir_emit_ns", ptr null }
+@"var.codegen::last_ir_emit_ns" = global ptr null
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 65535, ptr @__dva_global_init_codegen, ptr null }]
 
 declare ptr @dva_arena_current() #0
@@ -192,6 +197,8 @@ entry:
   store ptr @clo.const, ptr @"var.codegen::default_codegen_opts", align 8
   store ptr @clo.const.1, ptr @"var.codegen::decl_bare_name", align 8
   store ptr @clo.const.2, ptr @"var.codegen::codegen_typed_program_opts", align 8
+  store ptr @clo.const.3, ptr @"var.codegen::last_analysis_ns", align 8
+  store ptr @clo.const.4, ptr @"var.codegen::last_ir_emit_ns", align 8
   ret void
 }
 
@@ -912,6 +919,22 @@ a.after9:                                         ; preds = %a.create8, %a.after
 }
 
 declare i64 @"main::codegen_typed_program_opts"(ptr, ptr, ptr, ptr, ptr, ptr) #0
+
+define i64 @"codegen::last_analysis_ns"() #0 {
+entry:
+  %var.load = load ptr, ptr @"var.types::cg_timings", align 8
+  %fld.gep = getelementptr inbounds { i64, i64 }, ptr %var.load, i32 0, i32 0
+  %fld.load = load i64, ptr %fld.gep, align 8
+  ret i64 %fld.load
+}
+
+define i64 @"codegen::last_ir_emit_ns"() #0 {
+entry:
+  %var.load = load ptr, ptr @"var.types::cg_timings", align 8
+  %fld.gep = getelementptr inbounds { i64, i64 }, ptr %var.load, i32 0, i32 1
+  %fld.load = load i64, ptr %fld.gep, align 8
+  ret i64 %fld.load
+}
 
 attributes #0 = { "nounwind" }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }

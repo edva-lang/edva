@@ -22,6 +22,7 @@
 #foreign("c")
    getpid: () => Int
    getenv: (name: String) => Addr
+   dva_hash_string: (ptr: Addr, len: Int) => Int
 
 #public
 
@@ -1711,6 +1712,8 @@
 #private
    cached_compiler_id: String
    cached_compiler_id = ""
+   cached_backend_id: String
+   cached_backend_id = ""
 
 #public
    default_cache: () => String
@@ -1718,8 +1721,39 @@
       xdg = env_or("XDG_CACHE_HOME", path_join(env_or("HOME", "/tmp"), ".cache"))
       env_or("EDVA_CACHE", path_join(xdg, "edva/ir"))
 
+   hex_digits: String
+   hex_digits = "0123456789abcdef"
+
+   u64_to_hex16: Int => String
+   u64_to_hex16 = v =>
+      b = {16}
+      16 @ i =>
+         shift = (15 - i) * 4
+         nib = (v .>. shift) .&. 15
+         b += hex_digits(nib)
+      +b
+
+   fast_hash256_bytes: Addr, Int => String
+   fast_hash256_bytes = ptr, len =>
+      h0 = dva_hash_string(ptr, len)
+      salt1 = "edva_k1"
+      salt2 = "edva_k2"
+      salt3 = "edva_k3"
+      m1 = 0x5851f42d4c957f2d
+      m2 = 0x14057b7ef767814f
+      m3 = 0x4f1bbcdcbfa54001
+      h1 = dva_hash_string(ptr, len) .^. (h0 * m1) .^. dva_hash_string(&salt1, ?salt1)
+      h2 = (h1 .>. 17) .^. (h0 * m2) .^. dva_hash_string(&salt2, ?salt2)
+      h3 = (h2 .>. 23) .^. (h1 * m3) .^. dva_hash_string(&salt3, ?salt3)
+      "${u64_to_hex16(h0)}${u64_to_hex16(h1)}${u64_to_hex16(h2)}${u64_to_hex16(h3)}"
+
    hash_file: String => String
    hash_file = path =>
+      env_or("EDVA_TEST_HASH_LOG", "") == ""
+         |
+            read_text(path)
+               | content => --| fast_hash256_bytes(&content, ?content)
+               | --| ""
       tmp = "/tmp/edva_hf_" + str::from_int(getpid!) + "_" + str::from_int(tmp_seq) + ".tmp"
       tmp_seq ::= tmp_seq + 1
       cmd = "sha256sum " + sq(path) + " > " + sq(tmp) + " 2>/dev/null"
@@ -1734,6 +1768,8 @@
 
    hash_string: String => String
    hash_string = s =>
+      env_or("EDVA_TEST_HASH_LOG", "") == ""
+         | --| fast_hash256_bytes(&s, ?s)
       tmp = "/tmp/edva_hs_" + str::from_int(getpid!) + "_" + str::from_int(tmp_seq) + ".tmp"
       tmp_seq ::= tmp_seq + 1
       write_text(tmp, s)
@@ -1766,6 +1802,13 @@
          |
             cached_compiler_id ::= env_override
             --| env_override
+      // Fast-path: use embedded build+commit hash unless an explicit SHA probe log is active
+      env_probe = env_or("EDVA_TEST_HASH_LOG", "")
+      (env_probe == "" && version::COMMIT_HASH != "" && version::COMMIT_HASH != "unknown")
+         |
+            fast_id = "${version::VERSION}:${version::COMMIT_HASH}"
+            cached_compiler_id ::= fast_id
+            --| fast_id
       eff_exe = self_exe_path!
       h = file_exists(eff_exe) | hash_file(eff_exe) | ""
       short_h = ?h > 16 | h(..16) | h
@@ -1776,11 +1819,51 @@
       cached_compiler_id ::= id
       id
 
+   backend_toolchain_id: String => String
+   backend_toolchain_id = cache_dir =>
+      cached_backend_id != "" | --| cached_backend_id
+      env_override = env_or("EDVA_BACKEND_ID", "")
+      env_override != ""
+         |
+            cached_backend_id ::= env_override
+            --| env_override
+      stamp_file = cache_dir != "" | path_join(cache_dir, ".backend_toolchain_id") | ""
+      (stamp_file != "" && file_exists(stamp_file))
+         |
+            st_txt = read_text(stamp_file) | s => trim(s) | ""
+            st_txt != ""
+               |
+                  cached_backend_id ::= st_txt
+                  --| st_txt
+      tmp = "/tmp/edva_bk_" + str::from_int(getpid!) + "_" + str::from_int(tmp_seq) + ".tmp"
+      tmp_seq ::= tmp_seq + 1
+      rc = sh("{ clang --version 2>/dev/null | head -n 1; wasm-ld --version 2>/dev/null | head -n 1; } > " + sq(tmp) + " 2>/dev/null")
+      txt = read_text(tmp)
+      libc::unlink(tmp)
+      raw = rc == 0 | (txt | s => trim(s) | "") | ""
+      id' = raw != "" | raw | "clang-default"
+      b = {?id'}
+      id' @ c =>
+         (c == 10 || c == 13) | b += " | " | b += c
+      clean_id = +b
+      (stamp_file != "" && mkdir_p(cache_dir))
+         | write_text(stamp_file, clean_id)
+      cached_backend_id ::= clean_id
+      clean_id
+
+   is_file_link_input: String => <>
+   is_file_link_input = lib =>
+      str::contains(lib, "/") ||
+         str::ends_with(lib, ".a") ||
+         str::ends_with(lib, ".o") ||
+         str::ends_with(lib, ".so") ||
+         str::ends_with(lib, ".dylib")
+
    compute_ir_cache_key: String, Strings, Strings, Strings, String, String,
       CacheCodegenFlags, String => BuildKeyResult
    compute_ir_cache_key = target, loaded_files, nat_libs, nat_pkg, triple, opt, flags, ast_summary =>
       b = {4096}
-      b += "key_version = 2\n"
+      b += "key_version = 3\n"
       eff_target = target != "" && (file_exists(target) || dir_exists(target))
          | canonical_path(target)
          | target
@@ -1791,6 +1874,7 @@
       b += "compiler_commit = " + version::COMMIT_HASH + "\n"
       b += "compiler_build = " + compiler_build_id! + "\n"
       b += "compiler_id = " + compiler_build_id! + "\n"
+      b += "backend_toolchain = " + backend_toolchain_id(default_cache!) + "\n"
       b += "llvm = 18\n"
       b += "flags =\n"
       b += "  is_module = " + (flags.is_module | "true" | "false") + "\n"
@@ -1819,7 +1903,13 @@
             ?nat_libs > 0
                |
                   b += "  libs =\n"
-                  ccl::sort_strings(nat_libs) @ l => b += "    = " + l + "\n"
+                  ccl::sort_strings(nat_libs) @ l =>
+                     (is_file_link_input(l) && file_exists(l))
+                        |
+                           cl = canonical_path(l)
+                           lh = hash_file(cl)
+                           b += "    = ${cl}:${lh}\n"
+                        | b += "    = " + l + "\n"
             ?nat_pkg > 0
                |
                   b += "  pkg-config =\n"
@@ -1872,6 +1962,50 @@
       target_dir = path_join(entries_dir, key)
       ren_rc = libc::rename(tmp_dir, target_dir)
       ren_rc != 0 | sh("rm -rf " + sq(tmp_dir))
+      <+>
+
+   // Looks up a cached compiled artifact (`output.o`, `output.bin`, `output.so`, `output.wasm`)
+   // inside `entries/<key>/<art_name>`, verifying `meta.ccl` and non-empty artifact size.
+   cache_lookup_artifact: String, String, String => < String | >
+   cache_lookup_artifact = cache_dir, key, art_name =>
+      key == "" || cache_dir == "" || art_name == "" |-->
+      entry_dir = path_join(path_join(cache_dir, "entries"), key)
+      meta_file = path_join(entry_dir, "meta.ccl")
+      art_file = path_join(entry_dir, art_name)
+      !file_exists(meta_file) || !file_exists(art_file) |-->
+      doc_res = ccl::parse_file(meta_file)
+      doc_res
+         | doc =>
+            fs::size(art_file) > 0
+               | <+ art_file +>
+               |
+                  libc::unlink(art_file)
+                  <-->
+         | err =>
+            sh("rm -rf " + sq(entry_dir))
+            <-->
+
+   // Atomically publishes a compiled artifact (`output.o`, `output.bin`, etc.) into
+   // `entries/<key>/<art_name>` via a PID/sequence-scoped temporary file + rename.
+   cache_store_artifact: String, String, String, String => <>
+   cache_store_artifact = cache_dir, key, art_name, src_path =>
+      key == "" || cache_dir == "" || art_name == "" || !file_exists(src_path) |->
+      fs::size(src_path) !> 0 |->
+      entry_dir = path_join(path_join(cache_dir, "entries"), key)
+      tmp_parent = path_join(cache_dir, "tmp")
+      !dir_exists(entry_dir) || !mkdir_p(tmp_parent) |->
+      tmp_file = path_join(tmp_parent, "art_${str::from_int(getpid!)}_${str::from_int(tmp_seq)}_${art_name}")
+      tmp_seq ::= tmp_seq + 1
+      !fs::copy_file(src_path, tmp_file)
+         |
+            libc::unlink(tmp_file)
+            --| <->
+      dest_file = path_join(entry_dir, art_name)
+      ren_rc = libc::rename(tmp_file, dest_file)
+      ren_rc != 0
+         |
+            libc::unlink(tmp_file)
+            --| <->
       <+>
 
 // --- entry point ---------------------------------------------------------------
@@ -3142,12 +3276,13 @@
                   0
                |
                   count' = 0
+                  total_bytes' = 0
                   entries = fs::read_dir(entries_dir)
                   entries @ e =>
                      e.is_dir |
                         kname = e.name
-                        meta_f = path_join(path_join(entries_dir, kname),
-                           "meta.ccl")
+                        edir = path_join(entries_dir, kname)
+                        meta_f = path_join(edir, "meta.ccl")
                         tgt' = ++ ""
                         file_exists(meta_f)
                            |
@@ -3157,9 +3292,14 @@
                                        | s => s
                                        | ""
                                  | ""
-                        out(kname + " (" + (tgt' != "" | tgt' | "unknown") + ")")
+                        sub_files = fs::read_dir(edir)
+                        ebytes' = 0
+                        sub_files @ sf =>
+                           !sf.is_dir | ebytes' = ebytes' + fs::size(path_join(edir, sf.name))
+                        total_bytes' = total_bytes' + ebytes'
+                        out(kname + " (" + (tgt' != "" | tgt' | "unknown") + ", " + str::from_int(ebytes') + " B)")
                         count' = count' + 1
-                  out(str::from_int(count') + (count' == 1 | " entry" | " entries"))
+                  out(str::from_int(count') + (count' == 1 | " entry (" | " entries (") + str::from_int(total_bytes') + " B total)")
                   0
          |
             out("usage: edva cache [dir|ls|clean]")

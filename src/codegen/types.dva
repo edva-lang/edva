@@ -330,6 +330,17 @@ param_clo_tys: Addrs,
    <->, VraIndex(), FnEffectSummaries()
 )
 
+// Codegen Phase Timings in nanoseconds (DVA-104):
+// - analysis_ns: time spent in codegen pre-lowering analyses (closure/record/array scans,
+//   whole-TU FnEffectSummary fixed-point solver, and VRA)
+// - ir_emit_ns: time spent emitting LLVM IR instructions and writing the .ll file
+#type CodegenPhaseTimings (
+   analysis_ns: Int,
+   ir_emit_ns: Int
+)
+
+::cg_timings = CodegenPhaseTimings(0, 0)
+
 #type VraState (
    enabled: <>,
    whole_prog: <>,

@@ -231,6 +231,30 @@ def collect_env [root: string] {
     }
 }
 
+def parse_timings_json [stdout: string] {
+    let lines = ($stdout | lines | where {|l| ($l | str starts-with "{\"target\":") and ($l | str ends-with "}}") })
+    if ($lines | is-empty) {
+        return {}
+    }
+    try {
+        $lines | last | from json
+    } catch {
+        {}
+    }
+}
+
+def dir_total_bytes [d: string] {
+    if not ($d | path exists) { return 0 }
+    let files = (glob $"($d)/**/*")
+    mut total = 0
+    for f in $files {
+        if ($f | path type) == "file" {
+            $total = $total + (file_size_bytes $f)
+        }
+    }
+    $total
+}
+
 def bench_workload [
     name: string,
     items: int,
@@ -258,12 +282,15 @@ def bench_workload [
     let edva_ir_file = $"($edva_ir_base).ll"
     let edva_obj_out = ($wdir | path join $"($name)_edva.o")
 
-    let cold_m = (measure_cmd $probe_bin $meta [$edva_bin_path $edva_src "-O2" "--cache" $cache_dir "-o" $edva_out])
+    let cold_m = (measure_cmd $probe_bin $meta [$edva_bin_path $edva_src "-O2" "--timings" "--cache" $cache_dir "-o" $edva_out])
     let ir_m = (measure_cmd $probe_bin $meta [$edva_bin_path $edva_src "-O2" "--ir" "--no-cache" "-o" $edva_ir_base])
     let obj_m = (measure_cmd $probe_bin $meta [$edva_bin_path $edva_src "-c" "--entry" "-O2" "--no-cache" "-o" $edva_obj_out])
-    let warm_m = (measure_cmd $probe_bin $meta [$edva_bin_path $edva_src "-O2" "--cache" $cache_dir "-o" $edva_out_warm])
+    let warm_m = (measure_cmd $probe_bin $meta [$edva_bin_path $edva_src "-O2" "--timings" "--cache" $cache_dir "-o" $edva_out_warm])
     let edva_run = (measure_runs $probe_bin $meta [$edva_out ($items | into string)] $runs $items)
     let ir_stats = (count_ir_arena_calls $edva_ir_file)
+    let cold_phases = (parse_timings_json $cold_m.stdout)
+    let warm_phases = (parse_timings_json $warm_m.stdout)
+    let cache_bytes = (dir_total_bytes ($cache_dir | path join "entries"))
     let alloc_stats_out = if $check_o0 {
         (do { ^$edva_out ($items | into string) "--alloc-stats" } | complete | get stdout | str trim)
     } else {
@@ -280,6 +307,9 @@ def bench_workload [
         ir_bytes: (file_size_bytes $edva_ir_file),
         object_bytes: (file_size_bytes $edva_obj_out),
         binary_bytes: (file_size_bytes $edva_out),
+        cache_disk_bytes: $cache_bytes,
+        cold_phases: $cold_phases,
+        warm_phases: $warm_phases,
         ir_arena_sites: $ir_stats,
         arena_alloc_stats: $alloc_stats_out,
         runtime: $edva_run
@@ -550,6 +580,7 @@ def bench_incremental_builds [
     if $iface_run.stdout != $cold_run.stdout {
         error make { msg: $"interface edit output mismatch: '($iface_run.stdout)' != '($cold_run.stdout)'" }
     }
+    let inc_cache_bytes = (dir_total_bytes ($cache_dir | path join "entries"))
 
     {
         modules: 7,
@@ -561,7 +592,8 @@ def bench_incremental_builds [
         peak_compile_rss_kb: $cold_max_rss,
         total_ir_bytes: $total_ir_bytes,
         total_object_bytes: $total_obj_bytes,
-        binary_bytes: (file_size_bytes $bin_cold)
+        binary_bytes: (file_size_bytes $bin_cold),
+        cache_disk_bytes: $inc_cache_bytes
     }
 }
 

@@ -28,6 +28,7 @@
 #use ./poll
 #use cli
 #use log
+#use time
 
 #public
 
@@ -2480,13 +2481,15 @@ collect_link_libs = stmts =>
    cache_dir: String,
    no_cache: <>,
    cflags: ast::Names,
-   fuzz_cov: <> = <->
+   fuzz_cov: <> = <->,
+   timings: <> = <->,
+   load_parse_ns: Int = 0
 )
 
 init_opts: Int => CliOpts
 init_opts = ignored =>
    CliOpts("", "", <->, <->, <->, <->, <->, "", "", <->, <->, <->, "",
-     <->, <+>, "", <->, <->, "", "", "", <->, ast::Names(), <->)
+     <->, <+>, "", <->, <->, "", "", "", <->, ast::Names(), <->, <->, 0)
 
 find_char_at: String, Int, Int => Int
 find_char_at = s, i, ch =>
@@ -2896,11 +2899,83 @@ build_cache_summary = opts, exports, dyn_mods =>
    dyn_mods @ dm => b += "dyn=${dm}\n"
    +b
 
+artifact_cache_name: <>, <>, <> => String
+artifact_cache_name = is_wasm, is_module, is_shared =>
+   is_wasm | "output.wasm" | (is_module | "output.o" | (is_shared | "output.so" | "output.bin"))
+
+restore_cached_artifact: String, String, <>, <>, <>, <>, String => <>
+restore_cached_artifact = cached_art, output_bin, is_wasm, is_module, is_shared, uses_dom, dom_source =>
+   tmp_bin = "${output_bin}.tmp.${str::from_int(getpid!)}"
+   !copy_file(cached_art, tmp_bin)
+      |
+         unlink(tmp_bin)
+         --| <->
+   (!is_wasm && !is_module)
+      | chmod(tmp_bin, 493i32)
+   libc::rename(tmp_bin, output_bin) != 0
+      |
+         unlink(tmp_bin)
+         --| <->
+   (is_wasm && uses_dom)
+      |
+         bridge = dirname(dom_source) + "/dom/bridge.js"
+         base = ends_with(output_bin, ".wasm")
+            | output_bin(0..?output_bin - 5)
+            | output_bin
+         !copy_file(bridge, base + ".dom.js") | --| <->
+         chmod(base + ".dom.js", 420i32)
+   <+>
+
+json_escape_simple: String => String
+json_escape_simple = s =>
+   b = {?s + 8}
+   s @ c =>
+      c
+         [34] b += "\\\""
+         [92] b += "\\\\"
+         [10] b += "\\n"
+         [13] b += "\\r"
+         [9]  b += "\\t"
+         |    b += c
+   +b
+
+emit_phase_timings_json: String, String, <>, <>, <>, Int, Int, Int, Int, Int, Int => ()
+emit_phase_timings_json = target, key, cache_en, ir_hit, art_hit, load_ns, type_ns, ana_ns, ir_ns, back_ns, link_ns =>
+   tot_ns = load_ns + type_ns + ana_ns + ir_ns + back_ns + link_ns
+   b = {512}
+   b += "{\"target\":\""
+   b += json_escape_simple(target)
+   b += "\",\"cache_enabled\":"
+   b += (cache_en | "true" | "false")
+   b += ",\"cache_key\":\""
+   b += json_escape_simple(key)
+   b += "\",\"ir_cache_hit\":"
+   b += (ir_hit | "true" | "false")
+   b += ",\"artifact_cache_hit\":"
+   b += (art_hit | "true" | "false")
+   b += ",\"phases_ns\":{\"load_parse\":"
+   b += str::from_int(load_ns)
+   b += ",\"type_specialize\":"
+   b += str::from_int(type_ns)
+   b += ",\"analysis\":"
+   b += str::from_int(ana_ns)
+   b += ",\"ir_emit\":"
+   b += str::from_int(ir_ns)
+   b += ",\"backend_opt\":"
+   b += str::from_int(back_ns)
+   b += ",\"link\":"
+   b += str::from_int(link_ns)
+   b += ",\"total\":"
+   b += str::from_int(tot_ns)
+   b += "}}"
+   print $ +b
+
 // Shared compile pipeline: codegen AST -> LLVM IR -> clang binary.
 // Used by both the batch driver and the REPL.
 compile_ast_to_binary: ast::Expr, ast::Names, CliOpts, String,
   String, ast::Names, ast::Names, ast::Names, ast::Names, ast::Names => < | Int >
 compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlibs, npkg, lfiles =>
+   t_type_start = time::mono_ns!
    prog = overloads::resolve(raw)
    dom_source = canonical_path(compiler_std_dir + "/dom.dva")
    has_dom_file = loaded_has(lfiles, dom_source)
@@ -2918,6 +2993,11 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
            "dom_measure_result",
            "dom_dispatch", "dom_release_listener") @ name =>
            actual_exports += "dom::" + name + "=" + name
+   prog_exprs_link = prog [Block b] b | ast::Exprs()
+   extra_link_libs = collect_link_libs(prog_exprs_link)
+   all_nat_libs = ++nlibs
+   extra_link_libs @ elib =>
+      !loaded_has(all_nat_libs, elib) | all_nat_libs += elib
    nat_libs = nlibs
    nat_pkg = npkg
    output_ll = out_ll
@@ -2926,6 +3006,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    dynamic_paths = dpaths
    is_eval_quiet = opts.eval_src != "" && !opts.ir_only && !opts.is_module && !opts.is_shared && opts.outpath == ""
    quiet = opts.repl_mode || is_eval_quiet
+   want_timings = opts.timings || env_or("EDVA_TIMINGS", "") == "1"
    cg_err = opts.repl_mode | 6002 | 5011
    clang_err = opts.repl_mode | 6003 | 5013
    cg_opts = codegen::CodegenOpts(opts.triple, opts.no_runtime, opts.no_main,
@@ -2935,23 +3016,35 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    annotate::set_source_file(src_f)
    annotate::set_target_triple(opts.triple)
    el_res = annotate::annotate_program(prog)
+   t_type_end = time::mono_ns!
+   type_ns = t_type_end - t_type_start
+   analysis_ns' = 0
+   ir_emit_ns' = 0
+   backend_ns' = 0
+   link_ns' = 0
    cg_ok' = 0
    is_cached' = <->
+   is_art_cached' = <->
+   use_cache = !opts.no_cache && env_or("EDVA_NO_CACHE", "") != "1"
+   eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
+   cache_key' = ++""
    el_res
       | succ =>
-         use_cache = !opts.no_cache && env_or("EDVA_NO_CACHE", "") != "1"
          !use_cache
-            | cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
-              output_ll, actual_exports, opts.target, cg_opts)
             |
-               eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
+               cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
+                 output_ll, actual_exports, opts.target, cg_opts)
+               analysis_ns' = codegen::last_analysis_ns!
+               ir_emit_ns' = codegen::last_ir_emit_ns!
+            |
                cache_flags = pkg::CacheCodegenFlags(opts.is_module, opts.is_shared,
                  opts.no_runtime, opts.no_main, opts.module_name)
                ast_summary = build_cache_summary(opts, actual_exports, dynamic_mods)
                opt_str = opts.opt != "" | opts.opt | "-O2"
                target_triple = opts.triple != "" | opts.triple | get_default_target_triple(0)
-               bkr = pkg::compute_ir_cache_key(opts.target, lfiles, nat_libs, nat_pkg,
+               bkr = pkg::compute_ir_cache_key(opts.target, lfiles, all_nat_libs, nat_pkg,
                  target_triple, opt_str, cache_flags, ast_summary)
+               cache_key' = bkr.key
                cached_hit = pkg::cache_lookup(eff_cache_dir, bkr.key)
                cached_hit
                   | cached_ll =>
@@ -2963,11 +3056,15 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                         |
                            cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
                              output_ll, actual_exports, opts.target, cg_opts)
+                           analysis_ns' = codegen::last_analysis_ns!
+                           ir_emit_ns' = codegen::last_ir_emit_ns!
                            cg_ok' != 0
                               | pkg::cache_store(eff_cache_dir, bkr.key, bkr.meta_text, output_ll)
                   |
                      cg_ok' = codegen::codegen_typed_program_opts(succ.prog, prog,
                        output_ll, actual_exports, opts.target, cg_opts)
+                     analysis_ns' = codegen::last_analysis_ns!
+                     ir_emit_ns' = codegen::last_ir_emit_ns!
                      cg_ok' != 0
                         | pkg::cache_store(eff_cache_dir, bkr.key, bkr.meta_text, output_ll)
       | errs =>
@@ -2988,138 +3085,60 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                hdr_ok = generate_c_header(prog, exports, opts.header_path)
                !hdr_ok | <- 1 ->
          opts.ir_only
-            | <++>
+            |
+               want_timings
+                  | emit_phase_timings_json(src_f, cache_key', use_cache, is_cached',
+                    <->, opts.load_parse_ns, type_ns, analysis_ns', ir_emit_ns', 0, 0)
+               <++>
             |
                target_triple = opts.triple != "" | opts.triple |
                   get_default_target_triple(0)
                is_wasm = is_wasm_triple(target_triple)
-               is_wasm
+               art_name = artifact_cache_name(is_wasm, opts.is_module, opts.is_shared)
+               // Try restoring cached object / binary artifact if IR hit the cache
+               (use_cache && is_cached' && cache_key' != "")
                   |
-                     output_o = output_ll + ".o"
-                     clang_args = ast::Names()
-                     clang_args += "clang"
-                     clang_args += "-Qunused-arguments"
-                     clang_args += "-Wno-unused-command-line-argument"
-                     clang_args += "-w"
-                     clang_args += (opts.opt != "" | opts.opt | "-O2")
-                     clang_args += "--target=" + target_triple
-                     opts.cflags @ cf =>
-                        clang_args += cf
-                     clang_args += "-c"
-                     clang_args += output_ll
-                     clang_args += "-o"
-                     clang_args += output_o
-                     cres = run_cmd(clang_args)
-                     cres != 0
-                        |
-                           log::error $ "E" + str::from_int(clang_err) +
-                             diag::clang_compilation_failed_suffix! +
-                             str::from_int(cres)
-                           <- cres ->
-                        |
-                           ld_args = ast::Names()
-                           ld_args += "wasm-ld"
-                           ld_args += "--no-entry"
-                           ld_args += "--export-all"
-                           ld_args += "--allow-undefined"
-                           ld_args += output_o
-                           ld_args += "-o"
-                           ld_args += output_bin
-                           lres = run_cmd(ld_args)
-                           rm_args = ast::Names()
-                           rm_args += "rm"
-                           rm_args += "-f"
-                           rm_args += output_o
-                           run_cmd(rm_args)
-                           lres != 0
+                     pkg::cache_lookup_artifact(eff_cache_dir, cache_key', art_name)
+                        | cached_art =>
+                           restore_cached_artifact(cached_art, output_bin, is_wasm,
+                             opts.is_module, opts.is_shared, uses_dom, dom_source)
                               |
-                                 log::error $ "E" + str::from_int(clang_err) +
-                                   ": wasm-ld linking failed with exit code " +
-                                   str::from_int(lres)
-                                 <- lres ->
-                              |
-                                 uses_dom
-                                    |
-                                       bridge = dirname(dom_source) + "/dom/bridge.js"
-                                       base = ends_with(output_bin, ".wasm")
-                                          | output_bin(0..?output_bin - 5)
-                                          | output_bin
-                                       !copy_file(bridge, base + ".dom.js")
-                                          |
-                                             log::error $ "E5048: Cannot emit " +
-                                               "std/dom browser adapter"
-                                             --| <- 1 ->
-                                       chmod(base + ".dom.js", 420i32)
-                                 !quiet
-                                    |
-                                       log::info $ "Successfully compiled binary: " +
-                                         output_bin
-                                 <++>
+                                 is_art_cached' = <+>
+               is_art_cached'
                   |
-                     clang_args = ast::Names()
-                     clang_args += "clang"
-                     clang_args += "-Qunused-arguments"
-                     clang_args += "-Wno-unused-command-line-argument"
-                     clang_args += "-w"
-                     clang_args += (opts.opt != "" | opts.opt | "-O2")
-                     clang_args += "--target=" + target_triple
-                     opts.cflags @ cf =>
-                        clang_args += cf
-                     is_darwin = is_darwin_triple(target_triple)
-                     opts.is_shared
+                     opts.is_module && !opts.ir_only
+                        | unlink(output_ll)
+                     !quiet
                         |
-                           clang_args += "-shared"
-                           clang_args += "-fPIC"
-                           is_darwin
-                              |
-                                 clang_args += "-Wl,-undefined,dynamic_lookup"
-                     pkg_err' = <->
-                     opts.is_module
+                           mod_msg = "Successfully compiled module object: "
+                           bin_msg = "Successfully compiled binary: "
+                           msg = opts.is_module | mod_msg | bin_msg
+                           log::info $ msg + output_bin
+                     want_timings
+                        | emit_phase_timings_json(src_f, cache_key', use_cache, is_cached',
+                          <+>, opts.load_parse_ns, type_ns, analysis_ns', ir_emit_ns', 0, 0)
+                     <++>
+                  |
+                     is_wasm
                         |
+                           output_o = output_ll + ".o"
+                           clang_args = ast::Names()
+                           clang_args += "clang"
+                           clang_args += "-Qunused-arguments"
+                           clang_args += "-Wno-unused-command-line-argument"
+                           clang_args += "-w"
+                           clang_args += (opts.opt != "" | opts.opt | "-O2")
+                           clang_args += "--target=" + target_triple
+                           opts.cflags @ cf =>
+                              clang_args += cf
                            clang_args += "-c"
                            clang_args += output_ll
                            clang_args += "-o"
-                           clang_args += output_bin
-                        |
-                           clang_args += output_ll
-                           prog_exprs = prog [Block b] b | ast::Exprs()
-                           link_libs = collect_link_libs(prog_exprs)
-                           link_libs @ lib =>
-                              is_path_lib = find_char_at(lib, 0, 47) !< 0 ||
-                                ends_with(lib, ".a") || ends_with(lib, ".o") ||
-                                ends_with(lib, ".so") || ends_with(lib, ".dylib")
-                              clang_args += (is_path_lib | lib | "-l" + lib)
-                           nat_libs @ lib =>
-                              is_path_lib = find_char_at(lib, 0, 47) !< 0 ||
-                                ends_with(lib, ".a") || ends_with(lib, ".o") ||
-                                ends_with(lib, ".so") || ends_with(lib, ".dylib")
-                              clang_args += (is_path_lib | lib | "-l" + lib)
-                           nat_pkg @ pname =>
-                              !pkg_err'
-                                 |
-                                    ok = resolve_pkg_config(pname, clang_args)
-                                    !ok
-                                       |
-                                          log::error $ "E5039: missing native requirement: pkg-config '" +
-                                            pname + "' failed"
-                                          pkg_err' = <+>
-                           ?dynamic_mods > 0
-                              |
-                                 clang_args += (is_darwin | "-Wl,-export_dynamic" | "-Wl,--export-dynamic")
-                                 !is_darwin | clang_args += "-ldl"
-                           clang_args += "-o"
-                           clang_args += output_bin
-                     pkg_err'
-                        | <- 1 ->
-                        |
+                           clang_args += output_o
+                           t_wb0 = time::mono_ns!
                            cres = run_cmd(clang_args)
-                           opts.is_module && !opts.ir_only
-                              |
-                                 rm_args = ast::Names()
-                                 rm_args += "rm"
-                                 rm_args += "-f"
-                                 rm_args += output_ll
-                                 run_cmd(rm_args)
+                           t_wb1 = time::mono_ns!
+                           backend_ns' = t_wb1 - t_wb0
                            cres != 0
                               |
                                  log::error $ "E" + str::from_int(clang_err) +
@@ -3127,13 +3146,173 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
                                    str::from_int(cres)
                                  <- cres ->
                               |
-                                 !quiet
+                                 ld_args = ast::Names()
+                                 ld_args += "wasm-ld"
+                                 ld_args += "--no-entry"
+                                 ld_args += "--export-all"
+                                 ld_args += "--allow-undefined"
+                                 ld_args += output_o
+                                 ld_args += "-o"
+                                 ld_args += output_bin
+                                 t_wl0 = time::mono_ns!
+                                 lres = run_cmd(ld_args)
+                                 t_wl1 = time::mono_ns!
+                                 link_ns' = t_wl1 - t_wl0
+                                 rm_args = ast::Names()
+                                 rm_args += "rm"
+                                 rm_args += "-f"
+                                 rm_args += output_o
+                                 run_cmd(rm_args)
+                                 lres != 0
                                     |
-                                       mod_msg = "Successfully compiled module object: "
-                                       bin_msg = "Successfully compiled binary: "
-                                       msg = opts.is_module | mod_msg | bin_msg
-                                       log::info $ msg + output_bin
-                                 <++>
+                                       log::error $ "E" + str::from_int(clang_err) +
+                                         ": wasm-ld linking failed with exit code " +
+                                         str::from_int(lres)
+                                       <- lres ->
+                                    |
+                                       (use_cache && cache_key' != "")
+                                          | pkg::cache_store_artifact(eff_cache_dir, cache_key', art_name, output_bin)
+                                       uses_dom
+                                          |
+                                             bridge = dirname(dom_source) + "/dom/bridge.js"
+                                             base = ends_with(output_bin, ".wasm")
+                                                | output_bin(0..?output_bin - 5)
+                                                | output_bin
+                                             !copy_file(bridge, base + ".dom.js")
+                                                |
+                                                   log::error $ "E5048: Cannot emit " +
+                                                     "std/dom browser adapter"
+                                                   --| <- 1 ->
+                                             chmod(base + ".dom.js", 420i32)
+                                       !quiet
+                                          |
+                                             log::info $ "Successfully compiled binary: " +
+                                               output_bin
+                                       want_timings
+                                          | emit_phase_timings_json(src_f, cache_key', use_cache, is_cached',
+                                            <->, opts.load_parse_ns, type_ns, analysis_ns', ir_emit_ns',
+                                            backend_ns', link_ns')
+                                       <++>
+                        |
+                           clang_base = ast::Names()
+                           clang_base += "clang"
+                           clang_base += "-Qunused-arguments"
+                           clang_base += "-Wno-unused-command-line-argument"
+                           clang_base += "-w"
+                           clang_base += (opts.opt != "" | opts.opt | "-O2")
+                           clang_base += "--target=" + target_triple
+                           opts.cflags @ cf =>
+                              clang_base += cf
+                           is_darwin = is_darwin_triple(target_triple)
+                           opts.is_shared
+                              |
+                                 clang_base += "-shared"
+                                 clang_base += "-fPIC"
+                                 is_darwin
+                                    |
+                                       clang_base += "-Wl,-undefined,dynamic_lookup"
+                           opts.is_module
+                              |
+                                 c_args = ++clang_base
+                                 c_args += "-c"
+                                 c_args += output_ll
+                                 c_args += "-o"
+                                 c_args += output_bin
+                                 t_nb0 = time::mono_ns!
+                                 cres = run_cmd(c_args)
+                                 t_nb1 = time::mono_ns!
+                                 backend_ns' = t_nb1 - t_nb0
+                                 !opts.ir_only
+                                    | unlink(output_ll)
+                                 cres != 0
+                                    |
+                                       log::error $ "E" + str::from_int(clang_err) +
+                                         diag::clang_compilation_failed_suffix! +
+                                         str::from_int(cres)
+                                       <- cres ->
+                                    |
+                                       (use_cache && cache_key' != "")
+                                          | pkg::cache_store_artifact(eff_cache_dir, cache_key', art_name, output_bin)
+                                       !quiet
+                                          | log::info $ "Successfully compiled module object: " + output_bin
+                                       want_timings
+                                          | emit_phase_timings_json(src_f, cache_key', use_cache, is_cached',
+                                            <->, opts.load_parse_ns, type_ns, analysis_ns', ir_emit_ns',
+                                            backend_ns', 0)
+                                       <++>
+                              |
+                                 pkg_err' = <->
+                                 link_args = ++clang_base
+                                 tmp_obj = "${output_ll}.tmp.${str::from_int(getpid!)}.o"
+                                 comp_args = ++clang_base
+                                 comp_args += "-c"
+                                 comp_args += output_ll
+                                 comp_args += "-o"
+                                 comp_args += tmp_obj
+                                 link_args += tmp_obj
+                                 prog_exprs = prog [Block b] b | ast::Exprs()
+                                 link_libs = collect_link_libs(prog_exprs)
+                                 link_libs @ lib =>
+                                    is_path_lib = find_char_at(lib, 0, 47) !< 0 ||
+                                      ends_with(lib, ".a") || ends_with(lib, ".o") ||
+                                      ends_with(lib, ".so") || ends_with(lib, ".dylib")
+                                    link_args += (is_path_lib | lib | "-l" + lib)
+                                 nat_libs @ lib =>
+                                    is_path_lib = find_char_at(lib, 0, 47) !< 0 ||
+                                      ends_with(lib, ".a") || ends_with(lib, ".o") ||
+                                      ends_with(lib, ".so") || ends_with(lib, ".dylib")
+                                    link_args += (is_path_lib | lib | "-l" + lib)
+                                 nat_pkg @ pname =>
+                                    !pkg_err'
+                                       |
+                                          ok = resolve_pkg_config(pname, link_args)
+                                          !ok
+                                             |
+                                                log::error $ "E5039: missing native requirement: pkg-config '" +
+                                                  pname + "' failed"
+                                                pkg_err' = <+>
+                                 ?dynamic_mods > 0
+                                    |
+                                       link_args += (is_darwin | "-Wl,-export_dynamic" | "-Wl,--export-dynamic")
+                                       !is_darwin | link_args += "-ldl"
+                                 link_args += "-o"
+                                 link_args += output_bin
+                                 pkg_err'
+                                    | <- 1 ->
+                                    |
+                                       t_nb0 = time::mono_ns!
+                                       cres = run_cmd(comp_args)
+                                       t_nb1 = time::mono_ns!
+                                       backend_ns' = t_nb1 - t_nb0
+                                       cres != 0
+                                          |
+                                             unlink(tmp_obj)
+                                             log::error $ "E" + str::from_int(clang_err) +
+                                               diag::clang_compilation_failed_suffix! +
+                                               str::from_int(cres)
+                                             <- cres ->
+                                          |
+                                             t_nl0 = time::mono_ns!
+                                             lres = run_cmd(link_args)
+                                             t_nl1 = time::mono_ns!
+                                             link_ns' = t_nl1 - t_nl0
+                                             unlink(tmp_obj)
+                                             lres != 0
+                                                |
+                                                   log::error $ "E" + str::from_int(clang_err) +
+                                                     diag::clang_compilation_failed_suffix! +
+                                                     str::from_int(lres)
+                                                   <- lres ->
+                                                |
+                                                   (use_cache && cache_key' != "")
+                                                      | pkg::cache_store_artifact(eff_cache_dir, cache_key', art_name, output_bin)
+                                                   !quiet
+                                                      | log::info $ "Successfully compiled binary: " + output_bin
+                                                   want_timings
+                                                      | emit_phase_timings_json(src_f, cache_key', use_cache, is_cached',
+                                                        <->, opts.load_parse_ns, type_ns, analysis_ns', ir_emit_ns',
+                                                        backend_ns', link_ns')
+                                                   <++>
 
 // --- REPL -------------------------------------------------------------------
 
@@ -3900,6 +4079,7 @@ compiler_cli_opts = !=>
       cli::opt("no-cache", <->, "Disable compilation cache"),
       cli::opt("cflag", cli::Args(), "Pass additional flag to clang"),
       cli::opt("fuzz-cov", <->, "Instrument branches and functions with coverage bitmap for fuzzing"),
+      cli::opt("timings", <->, "Emit machine-readable JSON phase timings"),
       // Direct compilation positional arguments
       cli::pos("input", "", "Input .dva file or directory"),
       cli::pos("output", "", "Output binary path")
@@ -3969,6 +4149,7 @@ parse_and_dispatch_cli = !=>
    opts.no_cache = cli::flag(res, "no-cache")
    opts.cflags = cli::strs(res, "cflag")
    opts.fuzz_cov = cli::flag(res, "fuzz-cov")
+   opts.timings = cli::flag(res, "timings")
 
    opt_lvl = cli::str(res, "opt")
    opt_flag = opt_lvl(..2) == "-O" | opt_lvl | "-O" + opt_lvl
@@ -4055,7 +4236,10 @@ run_eval = opts =>
          log::error $ "E6001: Could not write scratch source file"
          sys::exit(1)
    eval_prefix = opts.is_module && opts.no_main | opts.module_name | ""
+   t_ev_l0 = time::mono_ns!
    eval_load = load_all(eval_file, eval_prefix, opts.is_module, opts.import_map)
+   t_ev_l1 = time::mono_ns!
+   opts.load_parse_ns = t_ev_l1 - t_ev_l0
    !eval_load.ok
       |
          eval_cleanup(eval_dir, eval_file, "", "")
@@ -4248,7 +4432,10 @@ run_driver = ignored =>
    output_ll = has_ll_ext | ll_stem | ll_stem + ".ll"
    ir_only = opts.ir_only
    target_prefix = opts.is_module && opts.no_main | opts.module_name | ""
+   t_ld0 = time::mono_ns!
    load_result = load_all(opts.target, target_prefix, opts.is_module, opts.import_map)
+   t_ld1 = time::mono_ns!
+   opts.load_parse_ns = t_ld1 - t_ld0
    !load_result.ok
       | sys::exit(1)
       |

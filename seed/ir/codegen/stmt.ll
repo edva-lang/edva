@@ -107,6 +107,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
 @"var.types::fneff" = external global ptr
+@"var.types::cg_timings" = external global ptr
 @"var.types::vra" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"stmt::c_str", ptr null }
 @"var.stmt::c_str" = global ptr null
@@ -12379,7 +12380,7 @@ entry:
   %var.ctx = alloca ptr, align 8
   %var.saved_ct = alloca i64, align 8
   %var.has_lambda = alloca ptr, align 8
-  %var._map_v_889 = alloca ptr, align 8
+  %var._map_v_890 = alloca ptr, align 8
   %var._12 = alloca ptr, align 8
   %var._5 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
@@ -12387,7 +12388,7 @@ entry:
   %var.arg = alloca ptr, align 8
   %loop.step.1484 = alloca i64, align 8
   %loop.idx.1484 = alloca i64, align 8
-  %var._map_out_889 = alloca ptr, align 8
+  %var._map_out_890 = alloca ptr, align 8
   %var.call = alloca ptr, align 8
   %var.cg = alloca ptr, align 8
   store ptr %0, ptr %var.cg, align 8
@@ -12402,7 +12403,7 @@ entry:
   store ptr %a.buf, ptr %a.data.gep, align 8
   %a.cap.gep = getelementptr inbounds { i64, ptr, i64 }, ptr %a.new, i32 0, i32 2
   store i64 16, ptr %a.cap.gep, align 8
-  store ptr %a.new, ptr %var._map_out_889, align 8
+  store ptr %a.new, ptr %var._map_out_890, align 8
   %var.load = load ptr, ptr %var.call, align 8
   %fld.gep = getelementptr inbounds { ptr, ptr, ptr, i64, i64 }, ptr %var.load, i32 0, i32 2
   %fld.load = load ptr, ptr %fld.gep, align 8
@@ -12443,8 +12444,8 @@ loop.latch.1484:                                  ; preds = %choice.exit10
   br label %loop.header.1484
 
 loop.exit.1484:                                   ; preds = %loop.exit.nat.1484
-  %var.load25 = load ptr, ptr %var._map_out_889, align 8
-  %a.load26 = load ptr, ptr %var._map_out_889, align 8
+  %var.load25 = load ptr, ptr %var._map_out_890, align 8
+  %a.load26 = load ptr, ptr %var._map_out_890, align 8
   %a.null27 = icmp eq ptr %a.load26, null
   br i1 %a.null27, label %a.create28, label %a.after29
 
@@ -12479,9 +12480,9 @@ choice.then9:                                     ; preds = %choice.exit6
   %ram.pay11 = extractvalue { i1, i64 } %choice.res8, 1
   %pay.ptr = inttoptr i64 %ram.pay11 to ptr
   store ptr %pay.ptr, ptr %var._12, align 8
-  store ptr %pay.ptr, ptr %var._map_v_889, align 8
-  %var.load13 = load ptr, ptr %var._map_v_889, align 8
-  %a.load = load ptr, ptr %var._map_out_889, align 8
+  store ptr %pay.ptr, ptr %var._map_v_890, align 8
+  %var.load13 = load ptr, ptr %var._map_v_890, align 8
+  %a.load = load ptr, ptr %var._map_out_890, align 8
   %a.null = icmp eq ptr %a.load, null
   br i1 %a.null, label %a.create, label %a.after
 
@@ -12499,11 +12500,11 @@ a.create:                                         ; preds = %choice.then9
   store ptr %a.buf17, ptr %a.data.gep19, align 8
   %a.cap.gep20 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create15, i32 0, i32 2
   store i64 16, ptr %a.cap.gep20, align 8
-  store ptr %a.create15, ptr %var._map_out_889, align 8
+  store ptr %a.create15, ptr %var._map_out_890, align 8
   br label %a.after
 
 a.after:                                          ; preds = %a.create, %choice.then9
-  %a.load2 = load ptr, ptr %var._map_out_889, align 8
+  %a.load2 = load ptr, ptr %var._map_out_890, align 8
   br label %a.check
 
 a.check:                                          ; preds = %a.after
@@ -12542,11 +12543,11 @@ a.create28:                                       ; preds = %loop.exit.1484
   store ptr %a.buf33, ptr %a.data.gep35, align 8
   %a.cap.gep36 = getelementptr inbounds { i64, ptr, i64 }, ptr %a.create31, i32 0, i32 2
   store i64 16, ptr %a.cap.gep36, align 8
-  store ptr %a.create31, ptr %var._map_out_889, align 8
+  store ptr %a.create31, ptr %var._map_out_890, align 8
   br label %a.after29
 
 a.after29:                                        ; preds = %a.create28, %loop.exit.1484
-  %a.load237 = load ptr, ptr %var._map_out_889, align 8
+  %a.load237 = load ptr, ptr %var._map_out_890, align 8
   store ptr %a.load237, ptr %var.has_lambda, align 8
   %var.load38 = load ptr, ptr %var.has_lambda, align 8
   %a.load39 = load ptr, ptr %var.has_lambda, align 8

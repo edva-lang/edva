@@ -107,6 +107,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
 @"var.types::fneff" = external global ptr
+@"var.types::cg_timings" = external global ptr
 @"var.types::vra" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"match::c_str", ptr null }
 @"var.match::c_str" = global ptr null
