@@ -2961,5 +2961,93 @@ if ! grep -Fq '"ir_cache_hit":true,"artifact_cache_hit":true' <<<"$T58_MOD_WARM"
 fi
 echo "PASS"
 
+# --- Test 59: Interprocedural escape & argument-retention analysis (DVA-105) ---
+echo -n "Testing interprocedural escape & argument-retention summaries (-O0/-O2/Wasm/modular)... "
+T59_DIR="$TMPDIR/t59_escape_retention"
+mkdir -p "$T59_DIR"
+
+# Part A: Native -O0 and -O2 differential equivalence + stack promotion verification on 454_escape_retention_promotion.dva
+for opt in -O0 -O2; do
+    timeout 30 ./edva tests/pass/454_escape_retention_promotion.dva "$opt" --no-cache -o "$T59_DIR/p454${opt}" < /dev/null >"$T59_DIR/c454${opt}.log" 2>&1
+    "$T59_DIR/p454${opt}" >"$T59_DIR/r454${opt}.out" 2>&1
+    if ! grep -Fq "promo:404:404:112" "$T59_DIR/r454${opt}.out" || \
+       ! grep -Fq "alias:12:120:keep_12" "$T59_DIR/r454${opt}.out" || \
+       ! grep -Fq "retained:100:25:75:retained_25" "$T59_DIR/r454${opt}.out" || \
+       ! grep -Fq "escaped_clo:boxed:57" "$T59_DIR/r454${opt}.out" || \
+       ! grep -Fq "retained_cb:43:53" "$T59_DIR/r454${opt}.out" || \
+       ! grep -Fq "mut_addr:24:24:88" "$T59_DIR/r454${opt}.out" || \
+       ! grep -Fq "scc:78:30:B" "$T59_DIR/r454${opt}.out"; then
+        echo "FAILED: 454_escape_retention_promotion.dva produced unexpected output at $opt:"
+        cat "$T59_DIR/r454${opt}.out"
+        exit 1
+    fi
+done
+if ! diff -u "$T59_DIR/r454-O0.out" "$T59_DIR/r454-O2.out" >/dev/null 2>&1; then
+    echo "FAILED: -O0 and -O2 output diverged for 454_escape_retention_promotion.dva"
+    exit 1
+fi
+if ! grep -Fq "%clo.salloc" "$T59_DIR/p454-O2.ll" || ! grep -Fq "%rec.salloc" "$T59_DIR/p454-O2.ll"; then
+    echo "FAILED: 454_escape_retention_promotion.dva IR did not emit stack-allocated closures/records"
+    exit 1
+fi
+rm -f "$T59_DIR/p454-O0.ll" "$T59_DIR/p454-O2.ll"
+
+# Part B: Separate compilation (-c --module) across imported module boundary preserves retention safety
+cat <<'EOF' > "$T59_DIR/ret_sink_mod.dva"
+#public
+   #type Entry (k: Int, v: Int)
+   ::saved_entries: Entry{}
+
+   retain_ext: Entry => Int
+   retain_ext = e =>
+      saved_entries += e
+      e.k + e.v
+
+   get_saved_sum: Int => Int
+   get_saved_sum = idx =>
+      it = saved_entries(idx) | _ | Entry(0, 0)
+      it.k * 100 + it.v
+EOF
+cat <<'EOF' > "$T59_DIR/ret_main.dva"
+#use io
+#use str
+#use ./ret_sink_mod
+
+push_from_frame: Int => Int
+push_from_frame = n =>
+   // Passed to an imported function without body in this TU (`<fwd>`);
+   // must conservatively treat `e` as escaping/retained and allocate in the arena!
+   e = ret_sink_mod::Entry(n, n + 7)
+   ret_sink_mod::retain_ext(e)
+
+clobber_stack: Int => Int
+clobber_stack = x =>
+   a = ret_sink_mod::Entry(x, x * 2)
+   b = ret_sink_mod::Entry(x + 1, x * 3)
+   a.k + a.v + b.k + b.v
+
+s1 = push_from_frame(4)
+_c = clobber_stack(999)
+s2 = ret_sink_mod::get_saved_sum(0)
+io::out $ "sep_ret:${str::from_int(s1)}:${str::from_int(s2)}"
+EOF
+
+timeout 30 ./edva -c --module ret_sink_mod "$T59_DIR/ret_sink_mod.dva" -o "$T59_DIR/ret_sink_mod.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --entry "$T59_DIR/ret_main.dva" -o "$T59_DIR/ret_main.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+clang -Qunused-arguments -Wno-unused-command-line-argument "$T59_DIR/ret_main.o" "$T59_DIR/ret_sink_mod.o" "$T57_DIR/const.o" "$T57_DIR/ascii.o" "$T57_DIR/utf.o" "$T57_DIR/str.o" "$T57_DIR/mem.o" "$T57_DIR/sys.o" "$T57_DIR/libc.o" "$T57_DIR/unicode.o" "$T57_DIR/io.o" -lm -o "$T59_DIR/ret_sep_bin"
+if [ "$("$T59_DIR/ret_sep_bin")" != "sep_ret:15:411" ]; then
+    echo "FAILED: separate compilation (-c --module) corrupted retained argument across module boundary: $("$T59_DIR/ret_sep_bin")"
+    exit 1
+fi
+
+# Part C: Wasm target (-target wasm32-unknown-unknown) stack promotion & retention soundness
+timeout 30 ./edva tests/pass/454_escape_retention_promotion.dva -target wasm32-unknown-unknown -ir --no-cache -o "$T59_DIR/w454" < /dev/null >"$T59_DIR/w454.out" 2>&1
+if ! grep -Fq "%clo.salloc" "$T59_DIR/w454.ll" || ! grep -Fq "%rec.salloc" "$T59_DIR/w454.ll"; then
+    echo "FAILED: Wasm IR for 454_escape_retention_promotion.dva did not emit stack promotions"
+    exit 1
+fi
+rm -f "$T59_DIR/w454.ll"
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

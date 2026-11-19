@@ -25262,6 +25262,7 @@ declare void @"type_env::init_mark_whole"(ptr, ptr) #0
 define ptr @"annotate::rec_elem_ti_env"(ptr %0) #0 {
 entry:
   %var.f = alloca ptr, align 8
+  %rec.salloc = alloca { ptr, ptr, ptr, i1, ptr }, align 8
   %var._38 = alloca ptr, align 8
   %var._ = alloca ptr, align 8
   %var.fields = alloca ptr, align 8
@@ -25299,23 +25300,23 @@ choice.then:                                      ; preds = %a.after
   br i1 %a.null6, label %a.create7, label %a.after8
 
 choice.else:                                      ; preds = %a.after
-  %arena.cur59 = load ptr, ptr @dva_active_arena_tls, align 8
-  %enum.alloc60 = call ptr @dva_arena_alloc(ptr %arena.cur59, i64 16)
-  %tag.gep61 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc60, i32 0, i32 0
-  store i64 0, ptr %tag.gep61, align 8
-  %pay.gep62 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc60, i32 0, i32 1
-  %arena.cur63 = load ptr, ptr @dva_active_arena_tls, align 8
-  %enum.alloc64 = call ptr @dva_arena_alloc(ptr %arena.cur63, i64 16)
-  %tag.gep65 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc64, i32 0, i32 0
-  store i64 0, ptr %tag.gep65, align 8
-  %pay.gep66 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc64, i32 0, i32 1
-  store ptr null, ptr %pay.gep66, align 8
-  store ptr %enum.alloc64, ptr %pay.gep62, align 8
+  %arena.cur58 = load ptr, ptr @dva_active_arena_tls, align 8
+  %enum.alloc59 = call ptr @dva_arena_alloc(ptr %arena.cur58, i64 16)
+  %tag.gep60 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc59, i32 0, i32 0
+  store i64 0, ptr %tag.gep60, align 8
+  %pay.gep61 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc59, i32 0, i32 1
+  %arena.cur62 = load ptr, ptr @dva_active_arena_tls, align 8
+  %enum.alloc63 = call ptr @dva_arena_alloc(ptr %arena.cur62, i64 16)
+  %tag.gep64 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc63, i32 0, i32 0
+  store i64 0, ptr %tag.gep64, align 8
+  %pay.gep65 = getelementptr inbounds { i64, ptr }, ptr %enum.alloc63, i32 0, i32 1
+  store ptr null, ptr %pay.gep65, align 8
+  store ptr %enum.alloc63, ptr %pay.gep61, align 8
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.exit34
-  %choice.res67 = phi ptr [ %fld.load, %choice.exit34 ], [ %enum.alloc60, %choice.else ]
-  ret ptr %choice.res67
+  %choice.res66 = phi ptr [ %fld.load, %choice.exit34 ], [ %enum.alloc59, %choice.else ]
+  ret ptr %choice.res66
 
 a.create7:                                        ; preds = %choice.then
   %arena.cur9 = load ptr, ptr @dva_active_arena_tls, align 8
@@ -25438,25 +25439,23 @@ choice.else33:                                    ; preds = %a.rd.done
   store i64 0, ptr %enum.pay.alloc, align 8
   store i64 0, ptr %enum.pay.alloc, align 8
   store ptr %enum.pay.alloc, ptr %pay.gep51, align 8
-  %arena.cur53 = load ptr, ptr @dva_active_arena_tls, align 8
-  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur53, i64 ptrtoint (ptr getelementptr ({ ptr, ptr, ptr, i1, ptr }, ptr null, i32 1) to i64))
-  %rec.fld = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc, i32 0, i32 0
+  %rec.fld = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.salloc, i32 0, i32 0
   store ptr @str.0.struct, ptr %rec.fld, align 8
-  %rec.fld54 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc, i32 0, i32 1
-  store ptr %enum.alloc, ptr %rec.fld54, align 8
-  %rec.fld55 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc, i32 0, i32 2
-  store ptr %enum.alloc41, ptr %rec.fld55, align 8
-  %rec.fld56 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc, i32 0, i32 3
-  store i1 false, ptr %rec.fld56, align 1
-  %rec.fld57 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.alloc, i32 0, i32 4
-  store ptr %enum.alloc49, ptr %rec.fld57, align 8
+  %rec.fld53 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.salloc, i32 0, i32 1
+  store ptr %enum.alloc, ptr %rec.fld53, align 8
+  %rec.fld54 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.salloc, i32 0, i32 2
+  store ptr %enum.alloc41, ptr %rec.fld54, align 8
+  %rec.fld55 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.salloc, i32 0, i32 3
+  store i1 false, ptr %rec.fld55, align 1
+  %rec.fld56 = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %rec.salloc, i32 0, i32 4
+  store ptr %enum.alloc49, ptr %rec.fld56, align 8
   br label %choice.exit34
 
 choice.exit34:                                    ; preds = %choice.else33, %choice.then32
-  %choice.res = phi ptr [ %pay.ptr, %choice.then32 ], [ %rec.alloc, %choice.else33 ]
+  %choice.res = phi ptr [ %pay.ptr, %choice.then32 ], [ %rec.salloc, %choice.else33 ]
   store ptr %choice.res, ptr %var.f, align 8
-  %var.load58 = load ptr, ptr %var.f, align 8
-  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %var.load58, i32 0, i32 2
+  %var.load57 = load ptr, ptr %var.f, align 8
+  %fld.gep = getelementptr inbounds { ptr, ptr, ptr, i1, ptr }, ptr %var.load57, i32 0, i32 2
   %fld.load = load ptr, ptr %fld.gep, align 8
   br label %choice.exit
 }

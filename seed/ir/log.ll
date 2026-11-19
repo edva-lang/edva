@@ -3551,6 +3551,7 @@ entry:
 
 define { i64, ptr } @"log::format_kv"(ptr %0, ptr %1, ptr %2) #0 {
 entry:
+  %ret.ub.salloc6 = alloca { i64, ptr }, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.fields = alloca ptr, align 8
   %var.msg = alloca ptr, align 8
@@ -3582,12 +3583,10 @@ a.create:                                         ; preds = %entry
 a.after:                                          ; preds = %a.create, %entry
   %a.load2 = load ptr, ptr %var.fields, align 8
   %call.res = call { i64, ptr } @"log::#append_fields"(ptr %var.load1, ptr %a.load2)
-  %arena.cur5 = load ptr, ptr @dva_active_arena_tls, align 8
-  %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur5, i64 16)
-  store { i64, ptr } %call.res, ptr %ret.ub.alloc, align 8
-  %call.res6 = call { i64, ptr } @"log::format_entry"(ptr %var.load, ptr %ret.ub.alloc)
-  store { i64, ptr } %call.res6, ptr %ret.ub.salloc, align 8
-  %ret.pack = load { i64, ptr }, ptr %ret.ub.salloc, align 8
+  store { i64, ptr } %call.res, ptr %ret.ub.salloc, align 8
+  %call.res5 = call { i64, ptr } @"log::format_entry"(ptr %var.load, ptr %ret.ub.salloc)
+  store { i64, ptr } %call.res5, ptr %ret.ub.salloc6, align 8
+  %ret.pack = load { i64, ptr }, ptr %ret.ub.salloc6, align 8
   ret { i64, ptr } %ret.pack
 }
 

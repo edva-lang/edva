@@ -3102,6 +3102,7 @@ codegen_typed_eval = cg, te =>
          cg.last_closure_fn = lr.1
          (lr.0, ast::ValueType(Fn))
       [Block exprs]
+         types::g.stack_alloc_next = <->
          can_tail
             | stmt::codegen_typed_eval_block_tail(cg, exprs, tail_k)
             | stmt::codegen_typed_eval_block(cg, exprs)
@@ -3124,7 +3125,10 @@ codegen_typed_eval = cg, te =>
                want_ch_stack
                   |
                      ch_vt = types::vt_from_ti_cg(cg, te.ti)
-                     types::is_str_vt(ch_vt) | 1 | (types::is_record_vt(ch_vt) | 3 | 0)
+                     ch_niche = types::is_niche_ram_ti(cg, te.ti)
+                     ch_is_niche_rec = ch_niche.0 && (ch_niche.2 [Record])
+                     ch_k_rec = (types::is_record_vt(ch_vt) || ch_is_niche_rec) | 3 | 0
+                     types::is_str_vt(ch_vt) | 1 | ch_k_rec
                   | 0
          match::codegen_typed_eval_choice_tail(cg, c.0, c.1, te.ti, ch_tail_k)
       [Cycle c]
@@ -3147,16 +3151,20 @@ codegen_typed_eval = cg, te =>
          (codegen_array_create_cap(cg, an.cap, "a.new"),
            ast::ValueType(Array))
       [RamConstruct rc]
+         want_ram_stack = types::g.stack_alloc_next
+         types::g.stack_alloc_next = <->
          is_pos = rc.1
          niche = types::is_niche_ram_ti(cg, te.ti)
          niche.0
             |
                can_tail && (tail_k == 2) && (is_pos == niche.1) |
                   (types::g.unboxed_ret_tail = 1)
-               can_tail && (tail_k == 4) && (is_pos == niche.1)
+               ((can_tail && (tail_k [3, 4])) || want_ram_stack) && (is_pos == niche.1)
                   |
                      types::g.unboxed_ret_tail = 3
-                     types::g.stack_alloc_next = <+>
+                     rc.2 | pay_te =>
+                        (pay_te.kind [Record, Call, Choice])
+                           | (types::g.stack_alloc_next = <+>)
                nres = match::codegen_niche_ram_construct(cg, is_pos, niche.1, rc.2)
                types::g.unboxed_ret_tail = 0
                types::g.stack_alloc_next = <->

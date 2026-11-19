@@ -1,0 +1,191 @@
+// DVA-105: Generalized Interprocedural Escape and Argument-Retention Analysis
+// Verifies:
+// 1. Per-parameter summaries for argument retention (`param_retained_mask`), return aliasing
+//    (`param_ret_alias_mask`), field projection (`param_rec_proj_only_mask`), string read-only
+//    (`param_str_read_only_mask`), callback invocation (`param_invoked_mask`), and mutation (`param_mutated_mask`).
+// 2. Stack placement and copy elimination across user-defined helpers, generic helpers,
+//    niche-ram (`<Rec|>`) unwrapping choices, and synchronous higher-order callbacks.
+// 3. Soundness guards when a parameter or local is retained in global state, returned as an alias,
+//    mutated via member/index write, captured by an escaping closure, or has its address taken (`&`).
+// 4. Recursive call groups (SCCs) solved conservatively to least fixed point.
+
+#use io
+#use mem
+#use str
+
+#type Item (id: Int, weight: Int, tag: String)
+#type BoxedFn (label: String, run: (Int => Int))
+
+// Top-level state used to test retention (`param_retained_mask` & `may_write_global`)
+default_retained_fn: Int => Int
+default_retained_fn = x => x
+
+retained_items: Item{}
+retained_fns: (Int => Int){}
+
+// --- 1. Projection-only & Read-only User and Generic Helpers ---
+
+proj_leaf: Item => Int
+proj_leaf = it => it.id * 10 + it.weight + ?it.tag
+
+proj_mid: Item, Int => Int
+proj_mid = it, bonus => proj_leaf(it) + bonus
+
+generic_proj: #param T: Type, T, (T => Int) => Int
+generic_proj = val, f => f(val)
+
+unwrap_niche_item: <Item|>, Int => Int
+unwrap_niche_item = opt, fallback =>
+   opt
+      | it => proj_mid(it, 3)
+      | fallback
+
+// Synchronous higher-order combinator with non-escaping local composition closure
+compose_apply: (Int => Int), (Int => Int), Int => Int
+compose_apply = f, g, x =>
+   fg = y => g(f(y))
+   fg(fg(x))
+
+run_non_escaping_promotions: Int => Int
+run_non_escaping_promotions = base =>
+   s = "tag_${str::from_int(base)}"
+   it = Item(base, base * 3, s)
+   // Temporary record & string passed to projection-only / read-only helpers
+   r0 = proj_mid(it, 5) + proj_mid(Item(base + 1, 7, "tmp"), 2)
+   // Generic helper with non-escaping capturing lambda
+   r1 = generic_proj(it, (x => x.id + x.weight + base))
+   // Niche-ram `<Item|>` local unwrapped in choice
+   opt_some = (base > 0) | <+ Item(base + 2, 11, s) +> | <-->
+   opt_none = (base < 0) | <+ Item(base, 0, s) +> | <-->
+   r2 = unwrap_niche_item(opt_some, 0) + unwrap_niche_item(opt_none, 9)
+   // Local capturing closures passed to synchronous higher-order helper
+   add_base = v => v + base
+   mul_two = v => v * 2
+   r3 = compose_apply(add_base, mul_two, 4)
+   r0 + r1 + r2 + r3
+
+// --- 2. Return Aliasing (`param_ret_alias_mask`) vs Non-Aliasing Selection ---
+
+return_first_alias: Item, Item => Item
+return_first_alias = a, b =>
+   _ignored = proj_leaf(b)
+   a
+
+make_returned_via_alias: Int => Item
+make_returned_via_alias = n =>
+   // `keep` aliases the return value of `return_first_alias` and escapes `make_returned_via_alias`;
+   // `scratch` is only projected inside `return_first_alias` and does not alias the return value.
+   keep = Item(n, n * 10, "keep_${str::from_int(n)}")
+   scratch = Item(n + 1, 99, "scratch")
+   return_first_alias(keep, scratch)
+
+// --- 3. Argument Retention (`param_retained_mask`) & Escaping Closures ---
+
+retain_in_sink: Item{}, Item => Int
+retain_in_sink = sink, it =>
+   sink += it
+   it.id + it.weight
+
+store_via_helper: Item{}, Int => Int
+store_via_helper = sink, n =>
+   // `it` is retained in `sink` after `store_via_helper` returns, so it MUST live in the arena!
+   it = Item(n, n + 50, "retained_${str::from_int(n)}")
+   retain_in_sink(sink, it)
+
+make_escaping_closure: Int => BoxedFn
+make_escaping_closure = factor =>
+   it = Item(factor, factor * 4, "cap")
+   // Lambda captures `it` and escapes inside `BoxedFn`
+   fn = x => x * it.id + it.weight + ?it.tag
+   BoxedFn("boxed", fn)
+
+retain_callback_in_sink: (Int => Int){}, (Int => Int), Int => Int
+retain_callback_in_sink = sink, cb, x =>
+   sink += cb
+   cb(x)
+
+register_global_callback: (Int => Int){}, Int => Int
+register_global_callback = sink, offset =>
+   // `cb` is retained in `sink`, so its environment MUST be arena-allocated
+   cb = v => v + offset
+   retain_callback_in_sink(sink, cb, 10)
+
+// --- 4. Mutation (`param_mutated_mask`) & Address-Taking (`&`) ---
+
+mutate_item_weight: Item, Int => Int
+mutate_item_weight = it, delta =>
+   it.weight = it.weight + delta
+   it.weight
+
+take_addr_identity: Int => Int
+take_addr_identity = v =>
+   it = Item(v, v + 1, "addr")
+   p = &it
+   @[p Int]
+
+// --- 5. Recursive Call Group (SCC) with Projection vs Return Alias ---
+
+scc_walk_proj: Int, Item => Int
+scc_walk_step: Int, Item => Int
+
+scc_walk_proj = depth, it =>
+   depth !> 0 | proj_leaf(it) | it.id + scc_walk_step(depth - 1, it)
+
+scc_walk_step = depth, it =>
+   depth !> 0 | it.weight | it.weight + scc_walk_proj(depth - 1, it)
+
+scc_find_alias: Int, Item, Item => Item
+scc_find_alias = depth, a, b =>
+   depth !> 0 | a | scc_find_alias(depth - 1, b, a)
+
+main_test: () => ()
+main_test = !=>
+   // 1. Non-escaping stack promotions across helpers, generics, niche-ram, and closures
+   ar = mem::arena(32768)
+   _prev = mem::set_current(ar.raw)
+   b0 = mem::provenance(ar).bytes_allocated
+   promo_sum = run_non_escaping_promotions(7)
+   b1 = mem::provenance(ar).bytes_allocated
+   // Verify that repeated calls to `run_non_escaping_promotions` do not grow arena allocation
+   // for stack-promoted records/closures
+   promo_sum2 = run_non_escaping_promotions(7)
+   b2 = mem::provenance(ar).bytes_allocated
+   _back = mem::set_current(Addr(0))
+   mem::destroy(ar)
+   io::out $ "promo:${str::from_int(promo_sum)}:${str::from_int(promo_sum2)}:${str::from_int(b2 - b1)}"
+
+   // 2. Return aliasing soundness across frame exit
+   aliased = make_returned_via_alias(12)
+   _clobber = run_non_escaping_promotions(99)
+   io::out $ "alias:${str::from_int(aliased.id)}:${str::from_int(aliased.weight)}:${aliased.tag}"
+
+   // 3. Argument retention & escaping closures across frame exit
+   ret_score = store_via_helper(retained_items, 25)
+   _clobber2 = run_non_escaping_promotions(123)
+   saved_it = retained_items(0)!!
+   io::out $ "retained:${str::from_int(ret_score)}:${str::from_int(saved_it.id)}:${str::from_int(saved_it.weight)}:${saved_it.tag}"
+
+   boxed = make_escaping_closure(6)
+   _clobber3 = run_non_escaping_promotions(45)
+   boxed_fn = boxed.run
+   io::out $ "escaped_clo:${boxed.label}:${str::from_int(boxed_fn(5))}"
+
+   cb_first = register_global_callback(retained_fns, 33)
+   _clobber4 = run_non_escaping_promotions(77)
+   rfn = retained_fns(0)!!
+   cb_second = rfn(20)
+   io::out $ "retained_cb:${str::from_int(cb_first)}:${str::from_int(cb_second)}"
+
+   // 4. Mutation & address-taking
+   m_item = Item(3, 15, "mut")
+   w_after = mutate_item_weight(m_item, 9)
+   addr_v = take_addr_identity(88)
+   io::out $ "mut_addr:${str::from_int(w_after)}:${str::from_int(m_item.weight)}:${str::from_int(addr_v)}"
+
+   // 5. Recursive SCC projection & alias
+   scc_it = Item(4, 9, "scc")
+   scc_v = scc_walk_proj(4, scc_it)
+   scc_al = scc_find_alias(3, Item(10, 20, "A"), Item(30, 40, "B"))
+   io::out $ "scc:${str::from_int(scc_v)}:${str::from_int(scc_al.id)}:${scc_al.tag}"
+
+main_test!

@@ -259,6 +259,7 @@ param_clo_tys: Addrs,
    stack_alloc_next: <> = <->,
    stack_closure_next: <> = <->,
    current_fn_body: <tast::TypedExpr|> = <-->,
+   current_fn_params: ast::Names = ast::Names(),
    fast_freeze_builders: ast::Names = ast::Names(),
    unboxed_ret_tail: Int = 0,
    current_fn_has_restore: <> = <->,
@@ -277,7 +278,7 @@ param_clo_tys: Addrs,
    ast::Names(), ast::VInfos(), types::IntArr(),
    ast::Names(), types::CtVals(),
    ast::Names(), types::IntArr(), types::LambdaEnvInfos(), <->, 1,
-   <->, <->, <-->, ast::Names(), 0, <->,
+   <->, <->, <-->, ast::Names(), ast::Names(), 0, <->,
    sys::addr_null, sys::addr_null, types::Addrs(), 0)
 
 // Value-Range Analysis (VRA) lattice and per-module state.
@@ -294,7 +295,7 @@ param_clo_tys: Addrs,
 #type NamedShapeMeta (shape_key: String, anon_sig: String, field_names: ast::Names)
 #type NamedShapeMetas NamedShapeMeta{}
 
-// Reusable Function Effect Summary (DVA-102):
+// Reusable Function Effect Summary (DVA-102, generalized in DVA-105):
 // - may_arena_effect: function may directly or transitively restore, reset, release,
 //   destroy, switch (set_current), or enter a with/escape arena scope.
 // - may_read_global / may_write_global: function may read or mutate global state.
@@ -306,6 +307,9 @@ param_clo_tys: Addrs,
 // - param_invoked_mask: bit i is 1 if parameter i (i < 62) is invoked as a callback.
 // - param_escapes_mask: bit i is 1 if parameter i (i < 62) may escape (returned, stored to
 //   global/outer state, or passed to an escaping/unknown sink).
+// - param_ret_alias_mask: bit i is 1 if parameter i (i < 62) may alias the function's return value.
+// - param_retained_mask: bit i is 1 if parameter i (i < 62) may be retained after the call returns
+//   (stored into global/outer state, captured by an escaping closure, or written into another parameter).
 #type FnEffectSummary (
    name: String,
    nparams: Int,
@@ -317,17 +321,27 @@ param_clo_tys: Addrs,
    param_rec_proj_only_mask: Int,
    param_mutated_mask: Int,
    param_invoked_mask: Int,
-   param_escapes_mask: Int
+   param_escapes_mask: Int,
+   param_ret_alias_mask: Int = 0,
+   param_retained_mask: Int = 0
 )
 #type FnEffectSummaries FnEffectSummary{}
+#type FnBodyEntry (
+   name: String,
+   params: ast::Names,
+   body: tast::TypedExpr,
+   fn_ti: ast::TypeInfo
+)
+#type FnBodyEntries FnBodyEntry{}
 #type FnEffectState (
    ready: <>,
    idx: VraIndex,
-   summaries: FnEffectSummaries
+   summaries: FnEffectSummaries,
+   entries: FnBodyEntries
 )
 
 ::fneff = FnEffectState(
-   <->, VraIndex(), FnEffectSummaries()
+   <->, VraIndex(), FnEffectSummaries(), FnBodyEntries()
 )
 
 // Codegen Phase Timings in nanoseconds (DVA-104):

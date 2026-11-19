@@ -24990,6 +24990,7 @@ abort.dead275:                                    ; No predecessors!
 
 define void @"lsp::handle_document_symbol"(ptr %0, ptr %1) #0 {
 entry:
+  %builder.freeze = alloca { i64, ptr }, align 8
   %var.rng = alloca ptr, align 8
   %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var._42 = alloca ptr, align 8
@@ -25079,8 +25080,8 @@ choice.then14:                                    ; preds = %choice.exit6
   br i1 %ovf, label %str_overflow_abort, label %b.buf.len18
 
 choice.else15:                                    ; preds = %choice.exit6
-  %var.load635 = load ptr, ptr %var.id_val, align 8
-  call void @"lsp::send_result"(ptr %var.load635, ptr @str.35.struct)
+  %var.load634 = load ptr, ptr %var.id_val, align 8
+  call void @"lsp::send_result"(ptr %var.load634, ptr @str.35.struct)
   br label %choice.exit16
 
 choice.exit16:                                    ; preds = %choice.else15, %b.grow_done604
@@ -26157,8 +26158,6 @@ b.grow_done604:                                   ; preds = %b.nogrow2603, %b.ne
   %b.freeze.len632 = load i64, ptr %b.freeze.len, align 8
   %b.freeze.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load631, i32 0, i32 1
   %b.freeze.data633 = load ptr, ptr %b.freeze.data, align 8
-  %arena.cur634 = load ptr, ptr @dva_active_arena_tls, align 8
-  %builder.freeze = call ptr @dva_arena_alloc(ptr %arena.cur634, i64 16)
   %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 0
   store i64 %b.freeze.len632, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
@@ -26533,6 +26532,7 @@ declare { i1, i64 } @"formatter::format_source"(ptr, ptr) #0
 
 define void @"lsp::handle_completion"(ptr %0, ptr %1) #0 {
 entry:
+  %builder.freeze = alloca { i64, ptr }, align 8
   %var.ckind = alloca i64, align 8
   %var._41 = alloca ptr, align 8
   %var._i = alloca i64, align 8
@@ -27426,8 +27426,6 @@ b.grow_done432:                                   ; preds = %b.nogrow2431, %b.ne
   %b.freeze.len460 = load i64, ptr %b.freeze.len, align 8
   %b.freeze.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load459, i32 0, i32 1
   %b.freeze.data461 = load ptr, ptr %b.freeze.data, align 8
-  %arena.cur462 = load ptr, ptr @dva_active_arena_tls, align 8
-  %builder.freeze = call ptr @dva_arena_alloc(ptr %arena.cur462, i64 16)
   %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 0
   store i64 %b.freeze.len460, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
@@ -27463,6 +27461,7 @@ abort.dead447:                                    ; No predecessors!
 
 define void @"lsp::handle_inlay_hint"(ptr %0, ptr %1) #0 {
 entry:
+  %builder.freeze = alloca { i64, ptr }, align 8
   %var.ty_str = alloca ptr, align 8
   %str.view = alloca { i64, ptr }, align 8
   %var.no_dots = alloca i1, align 1
@@ -29001,12 +29000,10 @@ b.grow_done754:                                   ; preds = %b.nogrow2753, %b.ne
   %b.freeze.len782 = load i64, ptr %b.freeze.len, align 8
   %b.freeze.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load781, i32 0, i32 1
   %b.freeze.data783 = load ptr, ptr %b.freeze.data, align 8
-  %arena.cur784 = load ptr, ptr @dva_active_arena_tls, align 8
-  %builder.freeze = call ptr @dva_arena_alloc(ptr %arena.cur784, i64 16)
-  %str.build.len.gep785 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 0
-  store i64 %b.freeze.len782, ptr %str.build.len.gep785, align 8
-  %str.build.data.gep786 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
-  store ptr %b.freeze.data783, ptr %str.build.data.gep786, align 8
+  %str.build.len.gep784 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 0
+  store i64 %b.freeze.len782, ptr %str.build.len.gep784, align 8
+  %str.build.data.gep785 = getelementptr inbounds { i64, ptr }, ptr %builder.freeze, i32 0, i32 1
+  store ptr %b.freeze.data783, ptr %str.build.data.gep785, align 8
   %b.freeze.rst.len = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load781, i32 0, i32 0
   store i64 0, ptr %b.freeze.rst.len, align 8
   %b.freeze.rst.data = getelementptr inbounds { i64, ptr, i64 }, ptr %var.load781, i32 0, i32 1

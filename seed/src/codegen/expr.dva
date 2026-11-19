@@ -530,13 +530,17 @@ fn_has_arena_alloc = cg, name, depth =>
 // allocates and stores there must survive the caller's restore scope.
 fn_writes_outer: types::Cg, String, Int, Int => <>
 fn_writes_outer = cg, name, threshold, depth =>
-   depth > 3
-      | <->
+   sum_opt = stmt::lookup_fn_effect_summary(cg, name)
+   sum_opt
+      | s => s.may_write_global
       |
-         rf = types::resolve_fn_name(cg, name)
-         target = rf != "" | rf | name
-         fd = fn_def_of_rev(cg, target, ?cg.fns - 1)
-         fd.name != "" && expr_writes_outer_d(cg, fd.body, fd.params, threshold, depth)
+         depth > 3
+            | <->
+            |
+               rf = types::resolve_fn_name(cg, name)
+               target = rf != "" | rf | name
+               fd = fn_def_of_rev(cg, target, ?cg.fns - 1)
+               fd.name != "" && expr_writes_outer_d(cg, fd.body, fd.params, threshold, depth)
 
 fn_def_of_rev: types::Cg, String, Int => FnDef
 fn_def_of_rev = cg, name, i =>
@@ -7040,13 +7044,37 @@ is_sync_closure_call = rname =>
      str::starts_with(rname, "mem::with_value$") ||
      str::starts_with(rname, "mem::escape_value$")
 
-eval_call_arg_sync_clo: types::Cg, String, tast::TypedExpr => (Addr, ast::ValueType)
-eval_call_arg_sync_clo = cg, rname, arg_e =>
-   want_sync = is_sync_closure_call(rname) && (arg_e.kind [Lambda]) &&
-     cg.in_restore_scope == 0
+eval_call_arg_sync_clo: types::Cg, String, Int, tast::TypedExpr => (Addr, ast::ValueType)
+eval_call_arg_sync_clo = cg, rname, param_idx, arg_e =>
+   no_fn_res = <>(types::g.current_fn_body) && !types::g.current_fn_has_restore
+   sum_opt = stmt::lookup_fn_effect_summary(cg, rname)
+   sum_clo_sync = sum_opt
+      | s =>
+         param_idx [0...61]
+            |
+               bit = 1 .<. param_idx
+               !s.may_arena_effect && ((s.param_escapes_mask .&. bit) == 0) &&
+                 ((s.param_retained_mask .&. bit) == 0) &&
+                 ((s.param_ret_alias_mask .&. bit) == 0)
+            | <->
+      | <->
+   want_sync = (is_sync_closure_call(rname) || sum_clo_sync) &&
+     (arg_e.kind [Lambda]) && cg.in_restore_scope == 0
+   arg_vt = types::vt_from_ti_cg(cg, arg_e.ti)
+   arg_is_str = types::is_str_vt(arg_vt)
+   arg_is_rec = types::is_record_vt(arg_vt) && !types::is_slice_vt(arg_vt)
+   arg_niche = types::is_niche_ram_ti(cg, arg_e.ti)
+   arg_is_niche_rec = arg_niche.0 && (arg_niche.2 [Record])
+   can_arg_str = cg.in_fn && (cg.in_restore_scope == 0) && no_fn_res &&
+     arg_is_str && !(arg_e.kind [Var, LitStr]) &&
+     stmt::callee_param_str_safe_d(cg, rname, param_idx, 0)
+   can_arg_rec = cg.in_fn && (cg.in_restore_scope == 0) && no_fn_res &&
+     (arg_is_rec || arg_is_niche_rec) && (arg_e.kind [Record, Call, Choice, RamConstruct]) &&
+     !(arg_e.kind [Call c] types::fn_uses_c_ret_abi(cg, c.0) | <->) &&
+     stmt::callee_param_only_projects(cg, rname, param_idx)
    saved_alloc = types::g.stack_alloc_next
    saved_clo = types::g.stack_closure_next
-   types::g.stack_alloc_next = <->
+   types::g.stack_alloc_next = (can_arg_str || can_arg_rec)
    types::g.stack_closure_next = want_sync
    res = main::codegen_typed_eval(cg, arg_e)
    types::g.stack_alloc_next = saved_alloc
@@ -7142,46 +7170,31 @@ niche_rec_body_inlinable = te =>
          niche_rec_body_inlinable(ch.0) && niche_rec_branches_inlinable(ch.1, 0, ?ch.1)
       | <->
 
-unwrap_rec_factory_lambda: types::Cg, String, tast::TypedExpr, ast::TypeInfo,
-  Int, String, String, <> => <(ast::Names, tast::TypedExpr, String, ast::TypeInfo)|>
-unwrap_rec_factory_lambda = cg, tname, val_e, ti, nargs, rname, fname, is_niche_rec =>
-   is_match = tname != "" && (tname == rname || tname == fname ||
-     types::resolve_fn_name(cg, tname) == rname)
-   !is_match | --| <-->
-   !(val_e.kind [Lambda]) | --| <-->
-   lam = val_e.kind [Lambda l] l |
-      (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
-   ?lam.2 != 0 || ?lam.0 != nargs | --| <-->
-   rec_body = lam.1.kind
-      [Block exprs] (?exprs == 1 | exprs(0)!! | lam.1)
-      | lam.1
-   !is_niche_rec && !(rec_body.kind [Record]) | --| <-->
-   stmt::typed_refs_name(rec_body, rname) ||
-     stmt::typed_refs_name(rec_body, fname) ||
-     stmt::typed_refs_name(rec_body, tname) | --| <-->
-   body_ok = is_niche_rec
-      | (!stmt::fn_body_has_arena_restore(cg, rec_body) &&
-        niche_rec_body_inlinable(rec_body))
-      | rec_factory_expr_pure(rec_body)
-   !body_ok | --| <-->
-   fn_ti = ti [Fn] ti | val_e.ti
-   <+ (lam.0, rec_body, tname, fn_ti) +>
-
 find_typed_rec_factory: types::Cg, String, String, Int, <> => <(ast::Names,
   tast::TypedExpr, String, ast::TypeInfo)|>
 find_typed_rec_factory = cg, rname, fname, nargs, is_niche_rec =>
-   stmts = types::g.typed_program_stmts
-   stmts @ st =>
-      found = st
-         [Binding b] unwrap_rec_factory_lambda(cg, b.0, b.2, b.1, nargs, rname, fname, is_niche_rec)
-         [GlobalBinding gb] unwrap_rec_factory_lambda(cg, gb.0, gb.2, gb.1, nargs, rname, fname, is_niche_rec)
-         [Expr te]
-            te.kind
-               [Assign a] unwrap_rec_factory_lambda(cg, a.0, a.5, te.ti, nargs, rname, fname, is_niche_rec)
-               | <-->
-         | <-->
-      <>(found) | --| found
-   <-->
+   info_opt = stmt::lookup_indexed_fn_body(cg, fname)
+   info_opt
+      | info =>
+         params = info.0
+         body = info.1
+         tname = info.2
+         fn_ti = info.3
+         ?params != nargs | --| <-->
+         rec_body = body.kind
+            [Block exprs] (?exprs == 1 | exprs(0)!! | body)
+            | body
+         !is_niche_rec && !(rec_body.kind [Record]) | --| <-->
+         stmt::typed_refs_name(rec_body, rname) ||
+           stmt::typed_refs_name(rec_body, fname) ||
+           stmt::typed_refs_name(rec_body, tname) | --| <-->
+         body_ok = is_niche_rec
+            | (!stmt::fn_body_has_arena_restore(cg, rec_body) &&
+              niche_rec_body_inlinable(rec_body))
+            | rec_factory_expr_pure(rec_body)
+         !body_ok | --| <-->
+         <+ (params, rec_body, tname, fn_ti) +>
+      | <-->
 
 try_inline_rec_factory_call: types::Cg, String, String, tast::TypedExprs,
   ast::TypeInfo, <>, <> => <(Addr, ast::ValueType)|>
@@ -7366,7 +7379,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
          (nargs - arg_idx') @ r_i =>
             j = r_i + arg_idx'
             arg_e' = args(j) | _ | tast::mk_lit_unit(0, 0)
-            aev' = eval_call_arg_sync_clo(cg, rname, arg_e')
+            aev' = eval_call_arg_sync_clo(cg, rname, r_i, arg_e')
             is_str' = is_for' && types::is_str_vt(aev'.1)
             is_ptr' = is_for' && types::is_ptr_vt(aev'.1)
             a0' = is_str'
@@ -7442,7 +7455,7 @@ codegen_typed_eval_fn_call = cg, fname, args, ti =>
          is_for' = stmt::is_foreign_fn(fname)
          nargs @ j =>
             arg_e' = args(j) | _ | tast::mk_lit_unit(0, 0)
-            aev' = eval_call_arg_sync_clo(cg, rname, arg_e')
+            aev' = eval_call_arg_sync_clo(cg, rname, j, arg_e')
             is_str' = is_for' && types::is_str_vt(aev'.1)
             is_ptr' = is_for' && types::is_ptr_vt(aev'.1)
             a0' = is_str'

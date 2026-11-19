@@ -10297,6 +10297,7 @@ choice.exit36:                                    ; preds = %choice.then35, %loo
 
 define { i64, ptr } @"lexer::scan_hash_word"(ptr %0, i64 %1) #0 {
 entry:
+  %str.view = alloca { i64, ptr }, align 8
   %var.start = alloca i64, align 8
   %var.q = alloca i64, align 8
   %var.lx = alloca ptr, align 8
@@ -10342,13 +10343,8 @@ entry:
   %view.len.sub = sub i64 %final.end, %final.start
   %view.len = select i1 %view.empty, i64 0, i64 %view.len.sub
   %view.data = getelementptr i8, ptr %s.read.data11, i64 %final.start
-  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
-  %str.view = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
   %str.build.len.gep = getelementptr inbounds { i64, ptr }, ptr %str.view, i32 0, i32 0
-  %str.tag.gen = load i64, ptr @dva_active_gen_tls, align 8
-  %str.tag.shift = shl i64 %str.tag.gen, 48
-  %str.tagged.len = or i64 %view.len, %str.tag.shift
-  store i64 %str.tagged.len, ptr %str.build.len.gep, align 8
+  store i64 %view.len, ptr %str.build.len.gep, align 8
   %str.build.data.gep = getelementptr inbounds { i64, ptr }, ptr %str.view, i32 0, i32 1
   store ptr %view.data, ptr %str.build.data.gep, align 8
   %ret.pack = load { i64, ptr }, ptr %str.view, align 8

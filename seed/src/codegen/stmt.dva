@@ -602,6 +602,7 @@ compile_typed_mono_fn = cg, fd, param_vts, param_tis, ret_ti =>
          final_ret_vt = annotate::vt_of_resolved_ti(final_ret_ti)
          fn_ti = ast::TypeInfo(Fn, (final_pvts, final_ptis, final_ret_vt,
            final_ret_ti, ast::CParams()))
+         register_mono_fn_summary(cg, fd.name, fd.params, typed_body, fn_ti)
          codegen_typed_compile_fn(cg, fd.name, fd.params, typed_body, fn_ti, fd.name)
 
 // Compiles a lambda used as a VALUE into a fn (with an implicit first env
@@ -6340,14 +6341,25 @@ tast_outer_heap_write = cg, name, val, threshold =>
    !ut_is_scalar(val.ut) && !tast_expr_has_scoped_addr(cg, val, threshold) &&
      tast_is_outer_var(cg, name, threshold)
 
-tast_args_pass_outer_heap: types::Cg, tast::TypedExprs, Int, Int => <>
-tast_args_pass_outer_heap = cg, args, at, threshold =>
+tast_args_pass_outer_heap: types::Cg, String, tast::TypedExprs, Int, Int => <>
+tast_args_pass_outer_heap = cg, fname, args, at, threshold =>
    at == ?args
       | <->
       |
          a = args(at) | _ | tast::mk_lit_unit(0, 0)
-         tast_outer_heap_write(cg, tast_root_var(a), a, threshold) ||
-           tast_args_pass_outer_heap(cg, args, at + 1, threshold)
+         is_outer_w = tast_outer_heap_write(cg, tast_root_var(a), a, threshold)
+         sum_opt = lookup_fn_effect_summary(cg, fname)
+         arg_leaks = is_outer_w && (sum_opt
+            | s =>
+               at < 62
+                  |
+                     bit = 1 .<. at
+                     ((s.param_mutated_mask .&. bit) != 0) ||
+                       ((s.param_escapes_mask .&. bit) != 0) ||
+                       ((s.param_retained_mask .&. bit) != 0)
+                  | <+>
+            | <+>)
+         arg_leaks || tast_args_pass_outer_heap(cg, fname, args, at + 1, threshold)
 
 tast_opt_escapes: types::Cg, <tast::TypedExpr|>, Int => <>
 tast_opt_escapes = cg, o, threshold =>
@@ -6370,7 +6382,7 @@ tast_expr_escapes = cg, te, threshold =>
            tast_expr_escapes(cg, rw.1, threshold)
       [Call c]
          user_fn = !types::has_str(types::g.foreign_fn_names, c.0)
-         hands_out = tast_args_pass_outer_heap(cg, c.2, 0, threshold)
+         hands_out = tast_args_pass_outer_heap(cg, c.0, c.2, 0, threshold)
          leaks = user_fn && (hands_out || expr::fn_writes_outer(cg, c.0, threshold, 0))
          leaks || tast_opt_escapes(cg, c.1, threshold) || tast_exprs_escape(cg, c.2, 0, threshold)
       [Bin b] tast_expr_escapes(cg, b.1, threshold) || tast_expr_escapes(cg, b.2, threshold)
@@ -6774,7 +6786,17 @@ str_var_only_safe_uses = cg, name, te, safe =>
                str_var_exprs_safe(cg, name, exprs, 0, ne - 1, <->) &&
                  str_var_only_safe_uses(cg, name, exprs(ne - 1)!!, safe)
       [Assign a]
-         str_var_only_safe_uses(cg, name, a.5, <->)
+         is_safe_loc_lam = (a.5.kind [Lambda]) && !a.2 && !a.3 && !a.4 &&
+           typed_refs_name(a.5, name) &&
+           (types::g.current_fn_body
+              | fb =>
+                 count_var_assigns(a.0, fb) == 1 && closure_var_safe_expr(cg, a.0, fb)
+              | <->)
+         is_safe_loc_lam
+            |
+               alam = a.5.kind [Lambda l] (names_contain(l.0, name) | tast::mk_lit_unit(0, 0) | l.1) | a.5
+               str_var_only_safe_uses(cg, name, alam, <->)
+            | str_var_only_safe_uses(cg, name, a.5, <->)
       [Choice ch]
          cond_vt = types::vt_from_ti_cg(cg, ch.0.ti)
          cond_is_str = types::is_str_vt(cond_vt)
@@ -6890,38 +6912,64 @@ is_known_arena_pure_callee = fn =>
      "dva_arena_init", "dva_arena_alloc", "dva_arena_save", "dva_arena_current",
      "runtime_arena_save", "runtime_arena_current", "c_memchr"]
 
-lookup_fn_effect_summary: types::Cg, String => < types::FnEffectSummary | >
-lookup_fn_effect_summary = cg, fname =>
-   !types::fneff.ready || fname == "" | --| <-->
+lookup_fn_body_index: types::Cg, String => Int
+lookup_fn_body_index = cg, fname =>
+   !types::fneff.ready || fname == "" | --| -1
    types::fneff.idx ^? fname
       |
          idx0 = types::fneff.idx ^ fname | _ | -1
-         idx0 !< 0 | --| <+ types::fneff.summaries(idx0)!! +>
+         idx0 !< 0 | --| idx0
    rname = types::resolve_fn_name(cg, fname)
    rname != "" && (types::fneff.idx ^? rname)
       |
          idx1 = types::fneff.idx ^ rname | _ | -1
-         idx1 !< 0 | --| <+ types::fneff.summaries(idx1)!! +>
+         idx1 !< 0 | --| idx1
    cg.current_module != "" && !types::name_is_qualified(fname, 0)
       |
          p0 = "${cg.current_module}::${fname}"
          types::fneff.idx ^? p0
             |
                idx2 = types::fneff.idx ^ p0 | _ | -1
-               idx2 !< 0 | --| <+ types::fneff.summaries(idx2)!! +>
+               idx2 !< 0 | --| idx2
          p1 = "${cg.current_module}::#${fname}"
          types::fneff.idx ^? p1
             |
                idx3 = types::fneff.idx ^ p1 | _ | -1
-               idx3 !< 0 | --| <+ types::fneff.summaries(idx3)!! +>
-   <-->
+               idx3 !< 0 | --| idx3
+   dlr = str::find(fname, "$") |_| -1
+   dlr > 0
+      |
+         base_fn = fname(0..dlr)
+         types::fneff.idx ^? base_fn
+            |
+               idx4 = types::fneff.idx ^ base_fn | _ | -1
+               idx4 !< 0 | --| idx4
+         rbase = types::resolve_fn_name(cg, base_fn)
+         rbase != "" && (types::fneff.idx ^? rbase)
+            |
+               idx5 = types::fneff.idx ^ rbase | _ | -1
+               idx5 !< 0 | --| idx5
+   -1
+
+lookup_fn_effect_summary: types::Cg, String => < types::FnEffectSummary | >
+lookup_fn_effect_summary = cg, fname =>
+   idx = lookup_fn_body_index(cg, fname)
+   idx !< 0
+      | <+ types::fneff.summaries(idx)!! +>
+      | <-->
+
+lookup_indexed_fn_body: types::Cg, String => <(ast::Names, tast::TypedExpr, String, ast::TypeInfo)|>
+lookup_indexed_fn_body = cg, fname =>
+   idx = lookup_fn_body_index(cg, fname)
+   idx !< 0 && idx < ?types::fneff.entries
+      |
+         ent = types::fneff.entries(idx)!!
+         <+ (ent.params, ent.body, ent.name, ent.fn_ti) +>
+      | <-->
 
 callee_param_str_safe_d: types::Cg, String, Int, Int => <>
 callee_param_str_safe_d = cg, fname, param_idx, depth =>
    param_idx ![0...61] | --| <->
-   rname = types::resolve_fn_name(cg, fname)
-   eff_name = rname != "" | rname | fname
-   is_known_safe_str_callee(eff_name) | --| <+>
    sum_opt = lookup_fn_effect_summary(cg, fname)
    sum_opt
       | s =>
@@ -6930,39 +6978,32 @@ callee_param_str_safe_d = cg, fname, param_idx, depth =>
            ((s.param_mutated_mask .&. bit) == 0) &&
            ((s.param_escapes_mask .&. bit) == 0)
       |
-         types::g.escape_check_depth > 1 | --| <->
-         stmts = types::g.typed_program_stmts
-         stmts @ st =>
-            found = st
-               [Binding b] find_callee_lambda_param(cg, b.0, b.2, rname, fname, param_idx)
-               [GlobalBinding gb] find_callee_lambda_param(cg, gb.0, gb.2, rname, fname, param_idx)
-               [Expr te]
-                  te.kind
-                     [Assign a] find_callee_lambda_param(cg, a.0, a.5, rname, fname, param_idx)
-                     | <-->
-               | <-->
-            <>(found)
-               |
-                  info = found!!
-                  types::g.escape_check_depth = types::g.escape_check_depth + 1
-                  ok = count_var_assigns(info.0, info.1) == 0 &&
-                    !fn_body_has_arena_restore(cg, info.1) &&
-                    str_var_only_safe_uses(cg, info.0, info.1, <->)
-                  types::g.escape_check_depth = types::g.escape_check_depth - 1
-                  --| ok
-         <->
+         rname = types::resolve_fn_name(cg, fname)
+         eff_name = rname != "" | rname | fname
+         is_known_safe_str_callee(eff_name)
 
 str_var_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int, Int, <> => <>
 str_var_call_args_safe = cg, name, fname, args, i, n, has_rec =>
    i !< n | --| <+>
    arg_k = args(i)!!
    is_direct_var = arg_k.kind [Var v] (v.0 == name) | <->
-   fn = types::resolve_fn_name(cg, fname)
-   arg_ok = !has_rec && is_known_safe_str_callee(fn)
-      | str_var_only_safe_uses(cg, name, arg_k, <+>)
+   arg_is_lam = arg_k.kind [Lambda]
+   arg_lam_safe = arg_is_lam && !has_rec && (i [0...61]) &&
+     (lookup_fn_effect_summary(cg, fname)
+        | s =>
+           cbit = 1 .<. i
+           !s.may_arena_effect && ((s.param_escapes_mask .&. cbit) == 0) &&
+             ((s.param_retained_mask .&. cbit) == 0) &&
+             ((s.param_ret_alias_mask .&. cbit) == 0)
+        | expr::is_sync_closure_call(types::resolve_fn_name(cg, fname)))
+   param_safe = !has_rec && callee_param_str_safe_d(cg, fname, i, 0)
+   arg_ok = param_safe
+      | (is_direct_var | <+> | str_var_only_safe_uses(cg, name, arg_k, <+>))
       |
-         !has_rec && is_direct_var && callee_param_str_safe_d(cg, fname, i, 0)
-            | <+>
+         arg_lam_safe
+            |
+               alam = arg_k.kind [Lambda l] (names_contain(l.0, name) | tast::mk_lit_unit(0, 0) | l.1) | arg_k
+               str_var_only_safe_uses(cg, name, alam, <->)
             | str_var_only_safe_uses(cg, name, arg_k, <->)
    arg_ok && str_var_call_args_safe(cg, name, fname, args, i + 1, n, has_rec)
 
@@ -6995,11 +7036,24 @@ param_proj_call_args_safe = cg, pname, fname, args, i, n, has_rec =>
    i !< n | --| <+>
    arg_k = args(i)!!
    is_direct_var = arg_k.kind [Var v] (v.0 == pname) | <->
-   fn = types::resolve_fn_name(cg, fname)
-   arg_str_ok = !has_rec && is_known_safe_str_callee(fn)
+   arg_is_lam = arg_k.kind [Lambda]
+   arg_lam_safe = arg_is_lam && !has_rec && (i [0...61]) &&
+     (lookup_fn_effect_summary(cg, fname)
+        | s =>
+           cbit = 1 .<. i
+           !s.may_arena_effect && ((s.param_escapes_mask .&. cbit) == 0) &&
+             ((s.param_retained_mask .&. cbit) == 0) &&
+             ((s.param_ret_alias_mask .&. cbit) == 0)
+        | expr::is_sync_closure_call(types::resolve_fn_name(cg, fname)))
+   arg_str_ok = !has_rec && callee_param_str_safe_d(cg, fname, i, 0)
    arg_ok = is_direct_var && !has_rec
       | callee_param_only_projects(cg, fname, i)
-      | param_proj_safe(cg, pname, arg_k, <->, arg_str_ok)
+      |
+         arg_lam_safe
+            |
+               alam = arg_k.kind [Lambda l] (names_contain(l.0, pname) | tast::mk_lit_unit(0, 0) | l.1) | arg_k
+               param_proj_safe(cg, pname, alam, <->, <->)
+            | param_proj_safe(cg, pname, arg_k, <->, arg_str_ok)
    arg_ok && param_proj_call_args_safe(cg, pname, fname, args, i + 1, n, has_rec)
 
 param_proj_branches_safe: types::Cg, String, tast::TypedBranches, Int, Int => <>
@@ -7052,13 +7106,43 @@ param_proj_safe = cg, pname, te, in_mem, str_ok =>
          rec_ok && args_ok
       [Block es] param_proj_exprs_safe(cg, pname, es, 0, ?es)
       [Assign a]
-         a.0 != pname && param_proj_safe(cg, pname, a.5, <->, <->)
+         is_safe_loc_lam = (a.5.kind [Lambda]) && !a.2 && !a.3 && !a.4 &&
+           typed_refs_name(a.5, pname) &&
+           (types::g.current_fn_body
+              | fb =>
+                 count_var_assigns(a.0, fb) == 1 && closure_var_safe_expr(cg, a.0, fb)
+              | <->)
+         rhs_ok = is_safe_loc_lam
+            |
+               alam = a.5.kind [Lambda l] (names_contain(l.0, pname) | tast::mk_lit_unit(0, 0) | l.1) | a.5
+               param_proj_safe(cg, pname, alam, <->, <->)
+            | param_proj_safe(cg, pname, a.5, <->, <->)
+         a.0 != pname && rhs_ok
       [Choice ch]
          cond_vt = types::vt_from_ti_cg(cg, ch.0.ti)
+         cond_niche = types::is_niche_ram_ti(cg, ch.0.ti)
+         cond_is_pname = (ch.0.kind [Var v] (v.0 == pname) | <->) &&
+           cond_niche.0 && (cond_niche.2 [Record])
          cond_str_ok = types::is_str_vt(cond_vt) &&
            !choice_branches_bind_or_lam(ch.1, 0, ?ch.1)
-         param_proj_safe(cg, pname, ch.0, <->, cond_str_ok) &&
-           param_proj_branches_safe(cg, pname, ch.1, 0, ?ch.1)
+         cond_ok = cond_is_pname
+            |
+               ok_b' = <+>
+               ch.1 @ br =>
+                  lam_p = br.body.kind [Lambda l] (l.0(0) | _ | "") | ""
+                  eff_b = br.body.kind [Lambda l] l.1 | br.body
+                  (lam_p == "" && ?br.bind_vars == 0 && !param_proj_safe(cg, "_", eff_b, <->, <->))
+                     | ok_b' = <->
+                  (lam_p != "" && lam_p != "_" &&
+                    (count_var_assigns(lam_p, eff_b) != 0 || !param_proj_safe(cg, lam_p, eff_b, <->, <->)))
+                     | ok_b' = <->
+                  br.bind_vars @ bv =>
+                     (bv != "" && bv != "_" &&
+                       (count_var_assigns(bv, eff_b) != 0 || !param_proj_safe(cg, bv, eff_b, <->, <->)))
+                        | ok_b' = <->
+               ok_b'
+            | param_proj_safe(cg, pname, ch.0, <->, cond_str_ok)
+         cond_ok && param_proj_branches_safe(cg, pname, ch.1, 0, ?ch.1)
       [Record r] param_proj_fields_safe(cg, pname, r, 0, ?r)
       [RamConstruct rc]
          (rc.2 | p => param_proj_safe(cg, pname, p, <->, <->) | <+>)
@@ -7075,18 +7159,6 @@ param_proj_safe = cg, pname, te, in_mem, str_ok =>
            (cy.2 | s => param_proj_safe(cg, pname, s, <->, <->) | <+>)
       | !typed_refs_name(te, pname)
 
-find_callee_lambda_param: types::Cg, String, tast::TypedExpr, String, String,
-  Int => <(String, tast::TypedExpr)|>
-find_callee_lambda_param = cg, tname, val_e, rname, fname, param_idx =>
-   is_match = tname != "" && (tname == rname || tname == fname ||
-     types::resolve_fn_name(cg, tname) == rname)
-   !is_match | --| <-->
-   !(val_e.kind [Lambda]) | --| <-->
-   lam = val_e.kind [Lambda l] l |
-      (ast::Names(), tast::mk_lit_unit(0, 0), tast::TypedCaptures())
-   param_idx < 0 || param_idx !< ?lam.0 | --| <-->
-   <+ (lam.0(param_idx)!!, lam.1) +>
-
 callee_param_only_projects: types::Cg, String, Int => <>
 callee_param_only_projects = cg, fname, param_idx =>
    param_idx ![0...61] | --| <->
@@ -7097,29 +7169,7 @@ callee_param_only_projects = cg, fname, param_idx =>
          !s.may_arena_effect && ((s.param_rec_proj_only_mask .&. bit) != 0) &&
            ((s.param_mutated_mask .&. bit) == 0) &&
            ((s.param_escapes_mask .&. bit) == 0)
-      |
-         types::g.escape_check_depth > 1 | --| <->
-         rname = types::resolve_fn_name(cg, fname)
-         stmts = types::g.typed_program_stmts
-         stmts @ st =>
-            found = st
-               [Binding b] find_callee_lambda_param(cg, b.0, b.2, rname, fname, param_idx)
-               [GlobalBinding gb] find_callee_lambda_param(cg, gb.0, gb.2, rname, fname, param_idx)
-               [Expr te]
-                  te.kind
-                     [Assign a] find_callee_lambda_param(cg, a.0, a.5, rname, fname, param_idx)
-                     | <-->
-               | <-->
-            <>(found)
-               |
-                  info = found!!
-                  types::g.escape_check_depth = types::g.escape_check_depth + 1
-                  ok = count_var_assigns(info.0, info.1) == 0 &&
-                    !fn_body_has_arena_restore(cg, info.1) &&
-                    param_proj_safe(cg, info.0, info.1, <->, <->)
-                  types::g.escape_check_depth = types::g.escape_check_depth - 1
-                  --| ok
-         <->
+      | <->
 
 rec_var_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
 rec_var_exprs_safe = cg, name, es, i, n =>
@@ -7136,9 +7186,23 @@ rec_var_call_args_safe = cg, name, fname, args, i, n, has_rec =>
       |
          arg_k = args(i)!!
          is_direct_var = arg_k.kind [Var v] (v.0 == name) | <->
+         arg_is_lam = arg_k.kind [Lambda]
+         arg_lam_safe = arg_is_lam && !has_rec && (i [0...61]) &&
+           (lookup_fn_effect_summary(cg, fname)
+              | s =>
+                 cbit = 1 .<. i
+                 !s.may_arena_effect && ((s.param_escapes_mask .&. cbit) == 0) &&
+                   ((s.param_retained_mask .&. cbit) == 0) &&
+                   ((s.param_ret_alias_mask .&. cbit) == 0)
+              | expr::is_sync_closure_call(types::resolve_fn_name(cg, fname)))
          arg_ok = is_direct_var && !has_rec
             | callee_param_only_projects(cg, fname, i)
-            | rec_var_safe_expr(cg, name, arg_k, <->)
+            |
+               arg_lam_safe
+                  |
+                     alam = arg_k.kind [Lambda l] (names_contain(l.0, name) | tast::mk_lit_unit(0, 0) | l.1) | arg_k
+                     rec_var_safe_expr(cg, name, alam, <->)
+                  | rec_var_safe_expr(cg, name, arg_k, <->)
          arg_ok && rec_var_call_args_safe(cg, name, fname, args, i + 1, n, has_rec)
 
 rec_var_fields_safe: types::Cg, String, tast::TypedFields, Int, Int => <>
@@ -7176,10 +7240,39 @@ rec_var_safe_expr = cg, name, te, in_mem =>
          rec_ok && rec_var_call_args_safe(cg, name, c.0, c.2, 0, ?c.2, <>(c.1))
       [Block exprs] rec_var_exprs_safe(cg, name, exprs, 0, ?exprs)
       [Assign a]
-         rec_var_safe_expr(cg, name, a.5, <->)
+         is_safe_loc_lam = (a.5.kind [Lambda]) && !a.2 && !a.3 && !a.4 &&
+           typed_refs_name(a.5, name) &&
+           (types::g.current_fn_body
+              | fb =>
+                 count_var_assigns(a.0, fb) == 1 && closure_var_safe_expr(cg, a.0, fb)
+              | <->)
+         is_safe_loc_lam
+            |
+               alam = a.5.kind [Lambda l] (names_contain(l.0, name) | tast::mk_lit_unit(0, 0) | l.1) | a.5
+               rec_var_safe_expr(cg, name, alam, <->)
+            | rec_var_safe_expr(cg, name, a.5, <->)
       [Choice ch]
-         rec_var_safe_expr(cg, name, ch.0, <->) &&
-           rec_var_branches_safe(cg, name, ch.1, 0, ?ch.1)
+         cond_niche = types::is_niche_ram_ti(cg, ch.0.ti)
+         cond_is_name = (ch.0.kind [Var v] (v.0 == name) | <->) &&
+           cond_niche.0 && (cond_niche.2 [Record])
+         cond_ok = cond_is_name
+            |
+               ok_b' = <+>
+               ch.1 @ br =>
+                  lam_p = br.body.kind [Lambda l] (l.0(0) | _ | "") | ""
+                  eff_b = br.body.kind [Lambda l] l.1 | br.body
+                  (lam_p == "" && ?br.bind_vars == 0 && !rec_var_safe_expr(cg, "_", eff_b, <->))
+                     | ok_b' = <->
+                  (lam_p != "" && lam_p != "_" &&
+                    (count_var_assigns(lam_p, eff_b) != 0 || !rec_var_safe_expr(cg, lam_p, eff_b, <->)))
+                     | ok_b' = <->
+                  br.bind_vars @ bv =>
+                     (bv != "" && bv != "_" &&
+                       (count_var_assigns(bv, eff_b) != 0 || !rec_var_safe_expr(cg, bv, eff_b, <->)))
+                        | ok_b' = <->
+               ok_b'
+            | rec_var_safe_expr(cg, name, ch.0, <->)
+         cond_ok && rec_var_branches_safe(cg, name, ch.1, 0, ?ch.1)
       [Member m]
          m_is_rec = types::is_record_vt(types::vt_from_ti_cg(cg, te.ti))
          (!m_is_rec || in_mem) && rec_var_safe_expr(cg, name, m.0, <+>)
@@ -7219,12 +7312,6 @@ rec_var_safe_expr = cg, name, te, in_mem =>
 
 rec_var_non_escaping: types::Cg, String => <>
 rec_var_non_escaping = cg, name =>
-   ret_is_scalar_prim = types::g.expected_fn_ti
-      [Prim p] p ![Str, Unknown, RawPtr]
-      | <->
-   ret_is_ub = !types::fn_uses_c_ret_abi(cg, types::g.last_compiling_fn) &&
-     <>(types::unboxed_ret_struct_ti(cg, types::g.expected_fn_ti))
-   !(ret_is_scalar_prim || ret_is_ub) | --| <->
    types::g.current_fn_body
       | fn_body =>
          count_var_assigns(name, fn_body) == 1 &&
@@ -7252,6 +7339,8 @@ callback_arg_may_arena_effect = cg, arg =>
          vname = v.0
          vname == "" | --| <+>
          call_is_arena_restore_op(cg, vname) | --| <+>
+         (types::g.current_fn_body | fb => local_clo_def_safe(cg, vname, fb) | <->)
+            | --| <->
          sum_opt = lookup_fn_effect_summary(cg, vname)
          sum_opt
             | s => s.may_arena_effect || (s.param_invoked_mask != 0)
@@ -7313,6 +7402,42 @@ typed_branches_have_restore = cg, brs, i, n =>
      fn_body_has_arena_restore(cg, br.body) ||
      typed_branches_have_restore(cg, brs, i + 1, n)
 
+find_local_clo_rhs: String, tast::TypedExpr => <tast::TypedExpr|>
+find_local_clo_rhs = name, te =>
+   te.kind
+      [Assign a]
+         a.0 == name
+            | <+ a.5 +>
+            | find_local_clo_rhs(name, a.5)
+      [Block es]
+         es @ e =>
+            found = find_local_clo_rhs(name, e)
+            <>(found) | --| found
+         <-->
+      [Choice ch]
+         f0 = find_local_clo_rhs(name, ch.0)
+         <>(f0) | --| f0
+         ch.1 @ br =>
+            fb = find_local_clo_rhs(name, br.body)
+            <>(fb) | --| fb
+         <-->
+      [Cycle cy]
+         f0 = find_local_clo_rhs(name, cy.0)
+         <>(f0) | --| f0
+         find_local_clo_rhs(name, cy.1)
+      | <-->
+
+local_clo_def_safe: types::Cg, String, tast::TypedExpr => <>
+local_clo_def_safe = cg, name, fn_body =>
+   count_var_assigns(name, fn_body) != 1 | --| <->
+   rhs_opt = find_local_clo_rhs(name, fn_body)
+   rhs_opt
+      | rhs =>
+         rhs.kind
+            [Lambda lam] !fn_body_has_arena_restore(cg, lam.1)
+            | <->
+      | <->
+
 fn_body_has_arena_restore: types::Cg, tast::TypedExpr => <>
 fn_body_has_arena_restore = cg, te =>
    te.kind
@@ -7331,11 +7456,23 @@ fn_body_has_arena_restore = cg, te =>
          is_idx = c.1
             | r => (types::vt_from_ti_cg(cg, r.ti) [Array, Slice, Map, Str, Builder, Record])
             | <->
-         is_loc_clo = (types::has_local_var(cg, c.0) &&
-           (types::var_type(cg, c.0) [Fn])) || <>(param_clo_ty(cg, c.0))
+         c_tgt = !is_idx && <>(c.1)
+            | (c.1!!.kind [Var v] v.0 | "")
+            | c.0
+         is_param_call = c_tgt != "" &&
+           (names_contain(types::g.current_fn_params, c_tgt) || <>(param_clo_ty(cg, c_tgt)))
+         is_loc_clo = c_tgt != "" && !is_param_call &&
+           ((types::has_local_var(cg, c_tgt) && (types::var_type(cg, c_tgt) [Fn])) ||
+            (types::g.current_fn_body | fb => <>(find_local_clo_rhs(c_tgt, fb)) | <->))
+         is_loc_safe = is_loc_clo &&
+           (types::g.current_fn_body | fb => local_clo_def_safe(cg, c_tgt, fb) | <->)
+         is_unknown_rec_call = !is_idx && <>(c.1) && (c_tgt == "")
+         callee_eff = !is_idx && !is_param_call && !is_loc_clo && !is_unknown_rec_call &&
+           callee_call_may_arena_effect(cg, c_tgt, c.2)
          !(c.1 | r => !fn_body_has_arena_restore(cg, r) | <+>) ||
-           (!is_idx && (<>(c.1) || is_loc_clo)) ||
-           (!is_idx && !<>(c.1) && !is_loc_clo && callee_call_may_arena_effect(cg, c.0, c.2)) ||
+           is_unknown_rec_call ||
+           (!is_idx && is_loc_clo && !is_loc_safe) ||
+           callee_eff ||
            typed_exprs_have_restore(cg, c.2, 0, ?c.2)
       [Record r]
          bad' = <->
@@ -7381,24 +7518,33 @@ fneff_param_index = params, target =>
       params(i)!! == target | --| i
    -1
 
-// Mutable accumulator passed through `fneff_scan_expr` (5 integers: mut, inv, esc, rglob, wglob).
+// Mutable accumulator passed through `fneff_scan_expr`:
+// (7 integers: 0=mut, 1=inv, 2=esc, 3=rglob, 4=wglob, 5=ret_alias, 6=retained).
 fneff_or_slot: ast::Ints, Int, Int => ()
 fneff_or_slot = acc, slot, bits =>
    next = acc(slot)!! .|. bits
    acc(slot) = next !| _
 
-fneff_scan_list: types::Cg, ast::Names, tast::TypedExprs, ast::Ints => ()
+fneff_scan_list: types::Cg, ast::Names, tast::TypedExprs, ast::Ints, <> => ()
 
-fneff_scan_opt: types::Cg, ast::Names, <tast::TypedExpr|>, ast::Ints => ()
+fneff_scan_opt: types::Cg, ast::Names, <tast::TypedExpr|>, ast::Ints, <> => ()
 
-fneff_scan_expr: types::Cg, ast::Names, tast::TypedExpr, ast::Ints => ()
-fneff_scan_expr = cg, params, te, acc =>
+fneff_scan_expr: types::Cg, ast::Names, tast::TypedExpr, ast::Ints, <> => ()
+fneff_scan_expr = cg, params, te, acc, in_tail =>
    te.kind
       [Var v]
          (v.2 || types::is_marked_global_name(cg, v.0))
             | fneff_or_slot(acc, 3, 1)
+         in_tail
+            |
+               pidx = fneff_param_index(params, v.0)
+               pidx [0...61]
+                  |
+                     bit = 1 .<. pidx
+                     fneff_or_slot(acc, 2, bit)
+                     fneff_or_slot(acc, 5, bit)
       [Unary u]
-         fneff_scan_expr(cg, params, u.1, acc)
+         fneff_scan_expr(cg, params, u.1, acc, <->)
          u.0 [AddrOf]
             root = tast_root_var(u.1)
             pidx = fneff_param_index(params, root)
@@ -7407,14 +7553,16 @@ fneff_scan_expr = cg, params, te, acc =>
                   bit = 1 .<. pidx
                   fneff_or_slot(acc, 0, bit)
                   fneff_or_slot(acc, 2, bit)
+                  fneff_or_slot(acc, 6, bit)
       [Bin b]
-         fneff_scan_expr(cg, params, b.1, acc)
-         fneff_scan_expr(cg, params, b.2, acc)
+         is_seq = b.0 [Seq]
+         fneff_scan_expr(cg, params, b.1, acc, <->)
+         fneff_scan_expr(cg, params, b.2, acc, (is_seq && in_tail))
       [Member m]
-         fneff_scan_expr(cg, params, m.0, acc)
+         fneff_scan_expr(cg, params, m.0, acc, <->)
       [MemberWrite mw]
-         fneff_scan_expr(cg, params, mw.0, acc)
-         fneff_scan_expr(cg, params, mw.3, acc)
+         fneff_scan_expr(cg, params, mw.0, acc, <->)
+         fneff_scan_expr(cg, params, mw.3, acc, <->)
          root = tast_root_var(mw.0)
          pidx = fneff_param_index(params, root)
          pidx [0...61]
@@ -7424,14 +7572,17 @@ fneff_scan_expr = cg, params, te, acc =>
          val_root = tast_root_var(mw.3)
          vpidx = fneff_param_index(params, val_root)
          vpidx [0...61]
-            | fneff_or_slot(acc, 2, 1 .<. vpidx)
+            |
+               vbit = 1 .<. vpidx
+               fneff_or_slot(acc, 2, vbit)
+               fneff_or_slot(acc, 6, vbit)
       [Index ix]
-         fneff_scan_expr(cg, params, ix.0, acc)
-         fneff_scan_expr(cg, params, ix.1, acc)
+         fneff_scan_expr(cg, params, ix.0, acc, <->)
+         fneff_scan_expr(cg, params, ix.1, acc, <->)
       [IndexWrite iw]
-         fneff_scan_expr(cg, params, iw.0, acc)
-         fneff_scan_expr(cg, params, iw.1, acc)
-         fneff_scan_expr(cg, params, iw.2, acc)
+         fneff_scan_expr(cg, params, iw.0, acc, <->)
+         fneff_scan_expr(cg, params, iw.1, acc, <->)
+         fneff_scan_expr(cg, params, iw.2, acc, <->)
          root = tast_root_var(iw.0)
          pidx = fneff_param_index(params, root)
          pidx [0...61]
@@ -7441,12 +7592,15 @@ fneff_scan_expr = cg, params, te, acc =>
          val_root = tast_root_var(iw.2)
          vpidx = fneff_param_index(params, val_root)
          vpidx [0...61]
-            | fneff_or_slot(acc, 2, 1 .<. vpidx)
+            |
+               vbit = 1 .<. vpidx
+               fneff_or_slot(acc, 2, vbit)
+               fneff_or_slot(acc, 6, vbit)
       [RawMemory rm]
-         fneff_scan_expr(cg, params, rm.0, acc)
+         fneff_scan_expr(cg, params, rm.0, acc, <->)
       [RawMemoryWrite rmw]
-         fneff_scan_expr(cg, params, rmw.0, acc)
-         fneff_scan_expr(cg, params, rmw.1, acc)
+         fneff_scan_expr(cg, params, rmw.0, acc, <->)
+         fneff_scan_expr(cg, params, rmw.1, acc, <->)
          root = tast_root_var(rmw.0)
          pidx = fneff_param_index(params, root)
          pidx [0...61]
@@ -7454,9 +7608,22 @@ fneff_scan_expr = cg, params, te, acc =>
          val_root = tast_root_var(rmw.1)
          vpidx = fneff_param_index(params, val_root)
          vpidx [0...61]
-            | fneff_or_slot(acc, 2, 1 .<. vpidx)
+            |
+               vbit = 1 .<. vpidx
+               fneff_or_slot(acc, 2, vbit)
+               fneff_or_slot(acc, 6, vbit)
       [Assign a]
-         fneff_scan_expr(cg, params, a.5, acc)
+         is_safe_loc_lam = (a.5.kind [Lambda]) && !a.2 && !a.3 && !a.4 &&
+           (fneff_param_index(params, a.0) < 0) &&
+           (types::g.current_fn_body
+              | fb =>
+                 count_var_assigns(a.0, fb) == 1 && closure_var_safe_expr(cg, a.0, fb)
+              | <->)
+         is_safe_loc_lam
+            |
+               lam_body = a.5.kind [Lambda l] l.1 | a.5
+               fneff_scan_expr(cg, params, lam_body, acc, <->)
+            | fneff_scan_expr(cg, params, a.5, acc, <->)
          lhs_root = name_before_dot(a.0)
          pidx = fneff_param_index(params, lhs_root)
          pidx [0...61] && (a.2 || a.4 || lhs_root != a.0)
@@ -7467,22 +7634,40 @@ fneff_scan_expr = cg, params, te, acc =>
                fneff_or_slot(acc, 4, 1)
                ?params @ pi =>
                   pi < 62 && typed_refs_name(a.5, params(pi)!!)
-                     | fneff_or_slot(acc, 2, 1 .<. pi)
+                     |
+                        pbit = 1 .<. pi
+                        fneff_or_slot(acc, 2, pbit)
+                        fneff_or_slot(acc, 6, pbit)
+         (!is_g_write && (a.2 || a.4))
+            |
+               ?params @ pi =>
+                  pi < 62 && typed_refs_name(a.5, params(pi)!!)
+                     |
+                        pbit = 1 .<. pi
+                        fneff_or_slot(acc, 2, pbit)
+                        (pidx [0...61]) | fneff_or_slot(acc, 6, pbit)
       [Return r_opt]
          r_opt | rv =>
-            fneff_scan_expr(cg, params, rv, acc)
+            fneff_scan_expr(cg, params, rv, acc, <+>)
             ?params @ pi =>
                pi < 62 && typed_refs_name(rv, params(pi)!!)
-                  | fneff_or_slot(acc, 2, 1 .<. pi)
+                  |
+                     pbit = 1 .<. pi
+                     fneff_or_slot(acc, 2, pbit)
+                     fneff_or_slot(acc, 5, pbit)
       [Lambda lam]
-         fneff_scan_expr(cg, params, lam.1, acc)
+         fneff_scan_expr(cg, params, lam.1, acc, <->)
          ?params @ pi =>
             pname = params(pi)!!
             pi < 62 && !names_contain(lam.0, pname) && typed_refs_name(lam.1, pname)
-               | fneff_or_slot(acc, 2, 1 .<. pi)
+               |
+                  pbit = 1 .<. pi
+                  fneff_or_slot(acc, 2, pbit)
+                  fneff_or_slot(acc, 6, pbit)
+                  in_tail | fneff_or_slot(acc, 5, pbit)
       [Call c]
          c.1 | rec_e =>
-            fneff_scan_expr(cg, params, rec_e, acc)
+            fneff_scan_expr(cg, params, rec_e, acc, <->)
             is_idx = types::vt_from_ti_cg(cg, rec_e.ti) [Array, Slice, Map, Str, Builder, Record]
             !is_idx
                |
@@ -7499,7 +7684,20 @@ fneff_scan_expr = cg, params, te, acc =>
             cs.may_write_global | fneff_or_slot(acc, 4, 1)
          ?c.2 @ ai =>
             arg_e = c.2(ai)!!
-            fneff_scan_expr(cg, params, arg_e, acc)
+            arg_is_lam = arg_e.kind [Lambda]
+            arg_lam_safe = arg_is_lam && !<>(c.1) && (pidx_call < 0) && (ai [0...61]) &&
+              (sum_opt
+                 | cs =>
+                    cbit = 1 .<. ai
+                    ((cs.param_escapes_mask .&. cbit) == 0) &&
+                      ((cs.param_retained_mask .&. cbit) == 0) &&
+                      ((cs.param_ret_alias_mask .&. cbit) == 0)
+                 | expr::is_sync_closure_call(types::resolve_fn_name(cg, c.0)))
+            arg_lam_safe
+               |
+                  alam = arg_e.kind [Lambda l] l.1 | arg_e
+                  fneff_scan_expr(cg, params, alam, acc, <->)
+               | fneff_scan_expr(cg, params, arg_e, acc, <->)
             arg_root = tast_root_var(arg_e)
             apidx = fneff_param_index(params, arg_root)
             apidx [0...61]
@@ -7516,73 +7714,130 @@ fneff_scan_expr = cg, params, te, acc =>
                                  | fneff_or_slot(acc, 1, abit)
                               ((cs.param_escapes_mask .&. cbit) != 0)
                                  | fneff_or_slot(acc, 2, abit)
-                           | fneff_or_slot(acc, 2, abit)
+                              ((cs.param_retained_mask .&. cbit) != 0)
+                                 | fneff_or_slot(acc, 6, abit)
+                              (in_tail && ((cs.param_ret_alias_mask .&. cbit) != 0))
+                                 |
+                                    fneff_or_slot(acc, 2, abit)
+                                    fneff_or_slot(acc, 5, abit)
+                           |
+                              fneff_or_slot(acc, 2, abit)
+                              fneff_or_slot(acc, 6, abit)
+                              in_tail | fneff_or_slot(acc, 5, abit)
                      |
                         rname = types::resolve_fn_name(cg, c.0)
                         eff = rname != "" | rname | c.0
-                        !is_known_safe_str_callee(eff) && !types::is_user_type(cg, c.0) &&
-                          !(?c.0 > 1 && (c.0(0) == '% || c.0(0) == '#))
-                           | fneff_or_slot(acc, 2, abit)
+                        is_ut = !<>(c.1) && types::is_user_type(cg, c.0)
+                        is_intr = !<>(c.1) && ?c.0 > 1 && (c.0(0) == '% || c.0(0) == '#)
+                        (!<>(c.1) && is_known_safe_str_callee(eff)) || is_ut || is_intr
+                           |
+                              (is_ut && in_tail)
+                                 |
+                                    fneff_or_slot(acc, 2, abit)
+                                    fneff_or_slot(acc, 5, abit)
+                           |
+                              fneff_or_slot(acc, 2, abit)
+                              fneff_or_slot(acc, 6, abit)
+                              in_tail | fneff_or_slot(acc, 5, abit)
       [Block es]
-         fneff_scan_list(cg, params, es, acc)
+         ne = ?es
+         ne > 0
+            |
+               ?es @ ei =>
+                  fneff_scan_expr(cg, params, es(ei)!!, acc, (in_tail && (ei == ne - 1)))
       [Choice ch]
-         fneff_scan_expr(cg, params, ch.0, acc)
+         fneff_scan_expr(cg, params, ch.0, acc, <->)
          ch.1 @ br =>
-            fneff_scan_list(cg, params, br.case_values, acc)
-            fneff_scan_opt(cg, params, br.pred_fn, acc)
-            fneff_scan_expr(cg, params, br.body, acc)
+            fneff_scan_list(cg, params, br.case_values, acc, <->)
+            fneff_scan_opt(cg, params, br.pred_fn, acc, <->)
+            fneff_scan_expr(cg, params, br.body, acc, in_tail)
       [Cycle cy]
-         fneff_scan_expr(cg, params, cy.0, acc)
+         fneff_scan_expr(cg, params, cy.0, acc, <->)
          cy.1.kind
-            [Lambda lam] fneff_scan_expr(cg, params, lam.1, acc)
-            | fneff_scan_expr(cg, params, cy.1, acc)
-         fneff_scan_opt(cg, params, cy.2, acc)
+            [Lambda lam] fneff_scan_expr(cg, params, lam.1, acc, <->)
+            | fneff_scan_expr(cg, params, cy.1, acc, <->)
+         fneff_scan_opt(cg, params, cy.2, acc, in_tail)
       [Record r]
          r @ f =>
-            fneff_scan_expr(cg, params, f.val, acc)
+            fneff_scan_expr(cg, params, f.val, acc, in_tail)
+            f_root = tast_root_var(f.val)
+            fpidx = fneff_param_index(params, f_root)
+            fpidx [0...61]
+               |
+                  fbit = 1 .<. fpidx
+                  fneff_or_slot(acc, 2, fbit)
+                  in_tail | fneff_or_slot(acc, 5, fbit)
       [RamConstruct rc]
-         fneff_scan_opt(cg, params, rc.2, acc)
+         fneff_scan_opt(cg, params, rc.2, acc, in_tail)
+         rc.2 | p =>
+            p_root = tast_root_var(p)
+            ppidx = fneff_param_index(params, p_root)
+            ppidx [0...61]
+               |
+                  pbit = 1 .<. ppidx
+                  fneff_or_slot(acc, 2, pbit)
+                  in_tail | fneff_or_slot(acc, 5, pbit)
       [EnumConstruct ec]
-         fneff_scan_opt(cg, params, ec.1, acc)
+         fneff_scan_opt(cg, params, ec.1, acc, in_tail)
+         ec.1 | p =>
+            p_root = tast_root_var(p)
+            ppidx = fneff_param_index(params, p_root)
+            ppidx [0...61]
+               |
+                  pbit = 1 .<. ppidx
+                  fneff_or_slot(acc, 2, pbit)
+                  in_tail | fneff_or_slot(acc, 5, pbit)
       [BuilderNew bn]
-         fneff_scan_expr(cg, params, bn, acc)
+         fneff_scan_expr(cg, params, bn, acc, <->)
       [Copy cp]
-         fneff_scan_expr(cg, params, cp, acc)
+         fneff_scan_expr(cg, params, cp, acc, in_tail)
       [KeyAccess ka]
-         fneff_scan_expr(cg, params, ka.0, acc)
-         fneff_scan_expr(cg, params, ka.1, acc)
+         fneff_scan_expr(cg, params, ka.0, acc, <->)
+         fneff_scan_expr(cg, params, ka.1, acc, <->)
       [MapLiteral ml]
          ml @ pr =>
-            fneff_scan_expr(cg, params, pr.key, acc)
-            fneff_scan_expr(cg, params, pr.val, acc)
+            fneff_scan_expr(cg, params, pr.key, acc, in_tail)
+            fneff_scan_expr(cg, params, pr.val, acc, in_tail)
+            ?params @ pi =>
+               pi < 62 && (typed_refs_name(pr.key, params(pi)!!) || typed_refs_name(pr.val, params(pi)!!))
+                  |
+                     pbit = 1 .<. pi
+                     fneff_or_slot(acc, 2, pbit)
+                     in_tail | fneff_or_slot(acc, 5, pbit)
       [Exit x]
-         fneff_scan_expr(cg, params, x, acc)
+         fneff_scan_expr(cg, params, x, acc, <->)
 
-fneff_scan_list = cg, params, es, acc =>
+fneff_scan_list = cg, params, es, acc, in_tail =>
    es @ e =>
-      fneff_scan_expr(cg, params, e, acc)
+      fneff_scan_expr(cg, params, e, acc, in_tail)
 
-fneff_scan_opt = cg, params, opt, acc =>
+fneff_scan_opt = cg, params, opt, acc, in_tail =>
    opt | e =>
-      fneff_scan_expr(cg, params, e, acc)
+      fneff_scan_expr(cg, params, e, acc, in_tail)
 
 // Computes a single function summary step given the current fixed-point table.
 compute_one_fn_summary: types::Cg, String, ast::Names, tast::TypedExpr => types::FnEffectSummary
 compute_one_fn_summary = cg, fname, params, body =>
    nparams = ?params
+   saved_fn_body = types::g.current_fn_body
+   saved_fn_params = types::g.current_fn_params
+   types::g.current_fn_body = <+ body +>
+   types::g.current_fn_params = params
    // If the function is itself a primitive arena restore op (e.g. mem::reset, mem::restore_to),
    // its summary always has may_arena_effect = <+>.
    has_arena = call_is_arena_restore_op(cg, fname) || fn_body_has_arena_restore(cg, body)
    acc = ast::Ints()
-   5 @ acc += 0
-   fneff_scan_expr(cg, params, body, acc)
+   7 @ acc += 0
+   fneff_scan_expr(cg, params, body, acc, <+>)
    mut_mask = acc(0)!!
    inv_mask = acc(1)!!
    esc_mask = acc(2)!!
    rglob = acc(3)!! != 0
    wglob = acc(4)!! != 0
-   5 @ si => acc(si) = 0 !| _
-   fneff_or_slot(acc, 2, esc_mask)
+   ret_alias_mask = acc(5)!!
+   retained_mask = acc(6)!!
+   7 @ si => acc(si) = 0 !| _
+   fneff_or_slot(acc, 2, esc_mask .|. ret_alias_mask .|. retained_mask)
    nparams @ i =>
       i < 62
          |
@@ -7590,15 +7845,21 @@ compute_one_fn_summary = cg, fname, params, body =>
             bit = 1 .<. i
             no_assign = count_var_assigns(pname, body) == 0
             str_ok = no_assign && ((mut_mask .&. bit) == 0) &&
+              ((retained_mask .&. bit) == 0) && ((ret_alias_mask .&. bit) == 0) &&
               str_var_only_safe_uses(cg, pname, body, <->)
             rec_ok = no_assign && ((mut_mask .&. bit) == 0) &&
+              ((retained_mask .&. bit) == 0) && ((ret_alias_mask .&. bit) == 0) &&
               param_proj_safe(cg, pname, body, <->, <->)
             str_ok
                | fneff_or_slot(acc, 0, bit)
             rec_ok
                | fneff_or_slot(acc, 1, bit)
-            (!str_ok && !rec_ok && typed_refs_name(body, pname))
+            (!str_ok && !rec_ok && ((inv_mask .&. bit) == 0) && typed_refs_name(body, pname))
                | fneff_or_slot(acc, 2, bit)
+            (!rec_ok && ((inv_mask .&. bit) == 0) && typed_refs_name(body, pname))
+               | fneff_or_slot(acc, 6, bit)
+   types::g.current_fn_body = saved_fn_body
+   types::g.current_fn_params = saved_fn_params
    types::FnEffectSummary(
       fname,
       nparams,
@@ -7610,8 +7871,59 @@ compute_one_fn_summary = cg, fname, params, body =>
       acc(1)!!,
       mut_mask,
       inv_mask,
-      acc(2)!!
+      acc(2)!!,
+      ret_alias_mask,
+      retained_mask .|. acc(6)!!
    )
+
+// Incrementally registers and computes an effect summary for a newly specialized
+// generic function (`compile_typed_mono_fn`), handling direct recursion conservatively.
+register_mono_fn_summary: types::Cg, String, ast::Names, tast::TypedExpr, ast::TypeInfo => ()
+register_mono_fn_summary = cg, fname, params, body, fn_ti =>
+   !types::fneff.ready || fname == "" || (types::fneff.idx ^? fname) | --|
+   saved_mod = cg.current_module
+   cg.current_module = types::decl_module(fname, 0)
+   idx = ?types::fneff.summaries
+   np = ?params
+   all_bits = np !> 0 | 0 | (np !< 62 | ((1 .<. 62) - 1) | ((1 .<. np) - 1))
+   is_prim_restore = call_is_arena_restore_op(cg, fname)
+   types::fneff.idx ^ fname = idx
+   types::fneff.entries += types::FnBodyEntry(fname, params, body, fn_ti)
+   types::fneff.summaries += types::FnEffectSummary(
+      fname,
+      np,
+      <+>,
+      is_prim_restore,
+      <->,
+      <->,
+      all_bits,
+      all_bits,
+      0,
+      0,
+      0,
+      0,
+      0
+   )
+   3 @ _iter =>
+      old_s = types::fneff.summaries(idx)!!
+      next_s = compute_one_fn_summary(cg, fname, params, body)
+      joined = types::FnEffectSummary(
+         fname,
+         old_s.nparams,
+         <+>,
+         old_s.may_arena_effect || next_s.may_arena_effect,
+         old_s.may_read_global || next_s.may_read_global,
+         old_s.may_write_global || next_s.may_write_global,
+         old_s.param_str_read_only_mask .&. next_s.param_str_read_only_mask,
+         old_s.param_rec_proj_only_mask .&. next_s.param_rec_proj_only_mask,
+         old_s.param_mutated_mask .|. next_s.param_mutated_mask,
+         old_s.param_invoked_mask .|. next_s.param_invoked_mask,
+         old_s.param_escapes_mask .|. next_s.param_escapes_mask,
+         old_s.param_ret_alias_mask .|. next_s.param_ret_alias_mask,
+         old_s.param_retained_mask .|. next_s.param_retained_mask
+      )
+      types::fneff.summaries(idx) = joined !| _
+   cg.current_module = saved_mod
 
 // Runs the whole-TU least-fixed-point solver over all functions with bodies in `prog`.
 run_typed_fn_summaries: types::Cg, tast::TypedStmts => ()
@@ -7619,10 +7931,8 @@ run_typed_fn_summaries = cg, prog =>
    types::fneff.ready = <->
    types::fneff.idx = types::VraIndex()
    types::fneff.summaries = types::FnEffectSummaries()
+   types::fneff.entries = types::FnBodyEntries()
    saved_mod = cg.current_module
-   fn_names = ast::Names()
-   fn_params = ast::Names{}
-   fn_bodies = tast::TypedExprs()
    prog @ st =>
       st
          [Expr te]
@@ -7632,11 +7942,10 @@ run_typed_fn_summaries = cg, prog =>
                      [Lambda lam]
                         a.0 != "" && !(types::fneff.idx ^? a.0)
                            |
-                              idx = ?fn_names
+                              idx = ?types::fneff.entries
                               types::fneff.idx ^ a.0 = idx
-                              fn_names += a.0
-                              fn_params += lam.0
-                              fn_bodies += lam.1
+                              fn_ti = te.ti [Fn] te.ti | a.5.ti
+                              types::fneff.entries += types::FnBodyEntry(a.0, lam.0, lam.1, fn_ti)
                      | _
                | _
          [Binding b]
@@ -7644,30 +7953,36 @@ run_typed_fn_summaries = cg, prog =>
                [Lambda lam]
                   b.0 != "" && !(types::fneff.idx ^? b.0)
                      |
-                        idx = ?fn_names
+                        idx = ?types::fneff.entries
                         types::fneff.idx ^ b.0 = idx
-                        fn_names += b.0
-                        fn_params += lam.0
-                        fn_bodies += lam.1
+                        fn_ti = b.1 [Fn] b.1 | b.2.ti
+                        types::fneff.entries += types::FnBodyEntry(b.0, lam.0, lam.1, fn_ti)
                | _
          [GlobalBinding gb]
             gb.2.kind
                [Lambda lam]
                   gb.0 != "" && !(types::fneff.idx ^? gb.0)
                      |
-                        idx = ?fn_names
+                        idx = ?types::fneff.entries
                         types::fneff.idx ^ gb.0 = idx
-                        fn_names += gb.0
-                        fn_params += lam.0
-                        fn_bodies += lam.1
+                        fn_ti = gb.1 [Fn] gb.1 | gb.2.ti
+                        types::fneff.entries += types::FnBodyEntry(gb.0, lam.0, lam.1, fn_ti)
                | _
          | _
    // Seed initial optimistic lattice state for functions with bodies in the TU
    // (except direct arena primitive wrappers, which start with may_arena_effect = <+>).
-   ?fn_names @ fi =>
-      fname = fn_names(fi)!!
-      ps = fn_params(fi)!!
-      np = ?ps
+   ?types::fneff.entries @ fi =>
+      ent = types::fneff.entries(fi)!!
+      fname = ent.name
+      ps0 = ent.params
+      ct_n0 = sig_ct0_name(types::g.pstmts, fname, 0)
+      ct_ns = expr::split_comma_names(ct_n0)
+      sig_ptis = fn_signature_param_tis(types::g.pstmts, fname)
+      eff_ps = (?ps0 == ?sig_ptis + ?ct_ns) && (?ct_ns > 0)
+         | expr::slice_names_from_at(ps0, ?ct_ns, ?ps0, ast::Names())
+         | ps0
+      types::fneff.entries(fi) = types::FnBodyEntry(fname, eff_ps, ent.body, ent.fn_ti) !| _
+      np = ?eff_ps
       all_bits = np !> 0 | 0 | (np !< 62 | ((1 .<. 62) - 1) | ((1 .<. np) - 1))
       is_prim_restore = call_is_arena_restore_op(cg, fname)
       types::fneff.summaries += types::FnEffectSummary(
@@ -7681,19 +7996,22 @@ run_typed_fn_summaries = cg, prog =>
          all_bits,
          0,
          0,
+         0,
+         0,
          0
       )
    types::fneff.ready = <+>
    // Monotone fixed-point iteration (converges in <= 8 passes on recursive SCCs;
    // any unconverged cycle after 8 passes is already soundly conservative because
-   // may_arena_effect/mut/inv/esc only grow monotonically and str_ro/rec_proj only shrink).
+   // may_arena_effect/mut/inv/esc/ret_alias/retained only grow monotonically and str_ro/rec_proj only shrink).
    8 @ iter_k =>
       changed' = <->
-      ?fn_names @ fi =>
-         fname = fn_names(fi)!!
+      ?types::fneff.entries @ fi =>
+         ent = types::fneff.entries(fi)!!
+         fname = ent.name
          cg.current_module = types::decl_module(fname, 0)
          old_s = types::fneff.summaries(fi)!!
-         next_s = compute_one_fn_summary(cg, fname, fn_params(fi)!!, fn_bodies(fi)!!)
+         next_s = compute_one_fn_summary(cg, fname, ent.params, ent.body)
          joined = types::FnEffectSummary(
             fname,
             old_s.nparams,
@@ -7705,7 +8023,9 @@ run_typed_fn_summaries = cg, prog =>
             old_s.param_rec_proj_only_mask .&. next_s.param_rec_proj_only_mask,
             old_s.param_mutated_mask .|. next_s.param_mutated_mask,
             old_s.param_invoked_mask .|. next_s.param_invoked_mask,
-            old_s.param_escapes_mask .|. next_s.param_escapes_mask
+            old_s.param_escapes_mask .|. next_s.param_escapes_mask,
+            old_s.param_ret_alias_mask .|. next_s.param_ret_alias_mask,
+            old_s.param_retained_mask .|. next_s.param_retained_mask
          )
          same = (joined.may_arena_effect == old_s.may_arena_effect) &&
            (joined.may_read_global == old_s.may_read_global) &&
@@ -7714,7 +8034,9 @@ run_typed_fn_summaries = cg, prog =>
            (joined.param_rec_proj_only_mask == old_s.param_rec_proj_only_mask) &&
            (joined.param_mutated_mask == old_s.param_mutated_mask) &&
            (joined.param_invoked_mask == old_s.param_invoked_mask) &&
-           (joined.param_escapes_mask == old_s.param_escapes_mask)
+           (joined.param_escapes_mask == old_s.param_escapes_mask) &&
+           (joined.param_ret_alias_mask == old_s.param_ret_alias_mask) &&
+           (joined.param_retained_mask == old_s.param_retained_mask)
          !same
             |
                types::fneff.summaries(fi) = joined !| _
@@ -7883,6 +8205,107 @@ builder_var_non_escaping = cg, name =>
             | (<->, <->)
       | (<->, <->)
 
+closure_var_call_args_safe: types::Cg, String, String, tast::TypedExprs, Int, Int, <> => <>
+closure_var_call_args_safe = cg, name, fname, args, i, n, has_rec =>
+   i !< n | --| <+>
+   arg_k = args(i)!!
+   is_direct_var = arg_k.kind [Var v] (v.0 == name) | <->
+   arg_is_lam = arg_k.kind [Lambda]
+   sum_opt = (!has_rec && (i [0...61])) | lookup_fn_effect_summary(cg, fname) | <-->
+   param_clo_safe = (!has_rec && (i [0...61])) &&
+     (sum_opt
+        | s =>
+           bit = 1 .<. i
+           !s.may_arena_effect && ((s.param_escapes_mask .&. bit) == 0) &&
+             ((s.param_retained_mask .&. bit) == 0) &&
+             ((s.param_ret_alias_mask .&. bit) == 0)
+        | expr::is_sync_closure_call(types::resolve_fn_name(cg, fname)))
+   arg_ok = is_direct_var && !has_rec && (i [0...61])
+      | param_clo_safe
+      |
+         arg_is_lam && param_clo_safe
+            |
+               alam = arg_k.kind [Lambda l] (names_contain(l.0, name) | tast::mk_lit_unit(0, 0) | l.1) | arg_k
+               closure_var_safe_expr(cg, name, alam)
+            | closure_var_safe_expr(cg, name, arg_k)
+   arg_ok && closure_var_call_args_safe(cg, name, fname, args, i + 1, n, has_rec)
+
+closure_var_exprs_safe: types::Cg, String, tast::TypedExprs, Int, Int => <>
+closure_var_exprs_safe = cg, name, es, i, n =>
+   i !< n
+      | <+>
+      | closure_var_safe_expr(cg, name, es(i)!!) &&
+        closure_var_exprs_safe(cg, name, es, i + 1, n)
+
+closure_var_branches_safe: types::Cg, String, tast::TypedBranches, Int, Int => <>
+closure_var_branches_safe = cg, name, brs, i, n =>
+   i !< n
+      | <+>
+      |
+         br = brs(i)!!
+         lam_ps = br.body.kind [Lambda l] l.0 | ast::Names()
+         eff_body = br.body.kind [Lambda l] l.1 | br.body
+         shadowed = names_contain(br.bind_vars, name) || names_contain(lam_ps, name)
+         closure_var_exprs_safe(cg, name, br.case_values, 0, ?br.case_values) &&
+           (br.pred_fn | pf => !typed_refs_name(pf, name) | <+>) &&
+           (shadowed || closure_var_safe_expr(cg, name, eff_body)) &&
+           closure_var_branches_safe(cg, name, brs, i + 1, n)
+
+closure_var_safe_expr: types::Cg, String, tast::TypedExpr => <>
+closure_var_safe_expr = cg, name, te =>
+   te.kind
+      [LitInt, LitFloat, LitStr, LitRune, LitFlag, LitUnit, CycleJump] <+>
+      [Var v] v.0 != name
+      [Unary u] !typed_refs_name(u.1, name)
+      [Bin b] closure_var_safe_expr(cg, name, b.1) && closure_var_safe_expr(cg, name, b.2)
+      [Call c]
+         rec_ok = c.1
+            | r =>
+               is_self_call = (r.kind [Var v] (v.0 == name) | <->)
+               is_self_call | <+> | closure_var_safe_expr(cg, name, r)
+            | <+>
+         is_direct_self = !<>(c.1) && (c.0 == name)
+         args_ok = is_direct_self
+            | closure_var_exprs_safe(cg, name, c.2, 0, ?c.2)
+            | closure_var_call_args_safe(cg, name, c.0, c.2, 0, ?c.2, <>(c.1))
+         rec_ok && args_ok
+      [Block es] closure_var_exprs_safe(cg, name, es, 0, ?es)
+      [Assign a]
+         a.0 == name
+            | !typed_refs_name(a.5, name)
+            |
+               is_safe_loc_lam = (a.5.kind [Lambda]) && !a.2 && !a.3 && !a.4 &&
+                 typed_refs_name(a.5, name) &&
+                 (types::g.current_fn_body
+                    | fb =>
+                       count_var_assigns(a.0, fb) == 1 && closure_var_safe_expr(cg, a.0, fb)
+                    | <->)
+               is_safe_loc_lam
+                  |
+                     alam = a.5.kind [Lambda l] (names_contain(l.0, name) | tast::mk_lit_unit(0, 0) | l.1) | a.5
+                     closure_var_safe_expr(cg, name, alam)
+                  | closure_var_safe_expr(cg, name, a.5)
+      [Choice ch]
+         closure_var_safe_expr(cg, name, ch.0) &&
+           closure_var_branches_safe(cg, name, ch.1, 0, ?ch.1)
+      [Cycle cy]
+         cy_ok = cy.1.kind
+            [Lambda l]
+               names_contain(l.0, name) | <+> | closure_var_safe_expr(cg, name, l.1)
+            | closure_var_safe_expr(cg, name, cy.1)
+         closure_var_safe_expr(cg, name, cy.0) && cy_ok &&
+           (cy.2 | s => closure_var_safe_expr(cg, name, s) | <+>)
+      | !typed_refs_name(te, name)
+
+closure_var_non_escaping: types::Cg, String => <>
+closure_var_non_escaping = cg, name =>
+   !cg.in_fn || cg.in_restore_scope > 0 | --| <->
+   types::g.current_fn_body
+      | fn_body =>
+         count_var_assigns(name, fn_body) == 1 &&
+           closure_var_safe_expr(cg, name, fn_body)
+      | <->
+
 codegen_typed_eval_assign: types::Cg, String, <>, <>, <>, <>, tast::TypedExpr,
   ast::TypeInfo => (Addr, ast::ValueType)
 codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
@@ -7920,7 +8343,13 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                      fn_sym = cg.in_fn
                         | (enclosing + "$" + name + "." + str::from_int(?cg.fninfos))
                         | top_name
-                     codegen_typed_compile_fn(cg, fn_sym, lam.0, lam.1, fn_ti, name)
+                     can_stack_loc_clo = is_fresh && !mut && !is_glob && cg.in_fn &&
+                       closure_var_non_escaping(cg, name)
+                     saved_clo_next = types::g.stack_closure_next
+                     types::g.stack_closure_next = can_stack_loc_clo
+                     compiled_clo = codegen_typed_compile_fn(cg, fn_sym, lam.0, lam.1, fn_ti, name)
+                     types::g.stack_closure_next = saved_clo_next
+                     compiled_clo
                cg.last_closure_fn = lr.1
                slot' = is_fresh
                   | types::create_slot(cg, name,
@@ -7959,11 +8388,16 @@ codegen_typed_eval_assign = cg, name, mut, cmp, glob, len, val, ti =>
                can_stack_str = is_fresh && !mut && !is_glob && cg.in_fn &&
                  cg.in_restore_scope == 0 && no_fn_restore &&
                  is_str_rhs && str_slice_var_non_escaping(cg, name)
+               val_niche = types::is_niche_ram_ti(cg, val.ti)
+               val_is_niche_rec = val_niche.0 && (val_niche.2 [Record]) &&
+                 (val.kind [RamConstruct, Choice, Call]) &&
+                 !(val.kind [Call c] types::fn_uses_c_ret_abi(cg, c.0) | <->)
+               val_is_plain_rec = (val.kind [Record, Call, Choice]) &&
+                 !(val.kind [Call c] types::fn_uses_c_ret_abi(cg, c.0) | <->) &&
+                 types::is_record_vt(val_vt_pre) && !types::is_slice_vt(val_vt_pre)
                can_stack_rec = is_fresh && !mut && !is_glob && cg.in_fn &&
                  cg.in_restore_scope == 0 && no_fn_restore &&
-                 (val.kind [Record, Call]) &&
-                 !(val.kind [Call c] types::fn_uses_c_ret_abi(cg, c.0) | <->) &&
-                 types::is_record_vt(val_vt_pre) && !types::is_slice_vt(val_vt_pre) &&
+                 (val_is_plain_rec || val_is_niche_rec) &&
                  rec_var_non_escaping(cg, name)
                b_info = (is_fresh && !mut && !is_glob && cg.in_fn &&
                  ?cg.cycle_breaks == 0 && cg.in_restore_scope == 0 &&
@@ -8219,7 +8653,19 @@ compile_typed_fn_lazy = cg, name =>
               |
                  saved_in_fn = cg.in_fn
                  cg.in_fn = <->
-                 res = find_and_compile_typed_fn(cg, rname, name, 0, ?types::g.typed_program_stmts)
+                 info_opt = lookup_indexed_fn_body(cg, name)
+                 res = info_opt
+                    | info =>
+                       tname = info.2
+                       skip_ext = cg.opts.is_module && types::is_external_module_name(cg, tname) &&
+                         !types::name_is_private(tname) && !types::has_dollar(tname)
+                       !skip_ext && !types::has_dollar(tname) &&
+                         (?fn_signature_cparams(types::g.pstmts, tname) == 0)
+                          |
+                             codegen_typed_compile_fn(cg, tname, info.0, info.1, info.3, tname)
+                             <+>
+                          | find_and_compile_typed_fn(cg, rname, name, 0, ?types::g.typed_program_stmts)
+                    | find_and_compile_typed_fn(cg, rname, name, 0, ?types::g.typed_program_stmts)
                  cg.in_fn = saved_in_fn
                  res
 
@@ -9007,6 +9453,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    saved_breaks = cg.cycle_breaks
    saved_conts = cg.cycle_conts
    saved_fn_body = types::g.current_fn_body
+   saved_fn_params = types::g.current_fn_params
    saved_fn_has_restore = types::g.current_fn_has_restore
    types::g.current_fn_has_restore = <->
    saved_vra_locs = types::vra.locals
@@ -9108,11 +9555,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    cg.cycle_conts = types::Addrs()
    cg.fn_var_start = saved_nvars
    types::g.current_fn_body = <+ body +>
-   fn_sum_opt = lookup_fn_effect_summary(cg, name)
-   has_res_fn = fn_sum_opt
-      | s => s.may_arena_effect || (s.param_invoked_mask != 0)
-      | fn_body_has_arena_restore(cg, body)
-   types::g.current_fn_has_restore = has_res_fn
+   types::g.current_fn_params = params
    entry = LLVMAppendBasicBlock(fn, "entry")
    LLVMPositionBuilderAtEnd(cg.builder, entry)
    types::emit_cov_edge(cg)
@@ -9147,6 +9590,12 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
            |
               pr = types::vra_lookup_param_for_codegen(name, j)
               pr.state == 1 | types::vra.locals += types::VraLocal(pname, pr)
+
+   fn_sum_opt = lookup_fn_effect_summary(cg, name)
+   has_res_fn = fn_sum_opt
+      | s => s.may_arena_effect || (s.param_invoked_mask != 0)
+      | fn_body_has_arena_restore(cg, body)
+   types::g.current_fn_has_restore = has_res_fn
 
    is_rso = is_dyn_reload_so_fn(cg, name)
    is_r = is_dyn_reload_fn(cg, name)
@@ -9209,6 +9658,7 @@ codegen_typed_compile_fn = cg, name, params, body, ti, orig_name =>
    cg.cycle_breaks = saved_breaks
    cg.cycle_conts = saved_conts
    types::g.current_fn_body = saved_fn_body
+   types::g.current_fn_params = saved_fn_params
    types::g.current_fn_has_restore = saved_fn_has_restore
    types::vra.locals = saved_vra_locs
    types::vra.cur_muts = saved_vra_muts
