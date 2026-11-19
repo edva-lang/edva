@@ -4302,6 +4302,7 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
          LLVMBuildCondBr(cg.builder, cval, then_bb', exit_bb')
          LLVMPositionBuilderAtEnd(cg.builder, then_bb')
          types::emit_cov_edge(cg)
+         saved_val_strs_1 = types::g.validated_str_vals
          saved_vars_1 = ?cg.vars
          pv_then1_opt = typed_branch_pay(cg, cv.0, is_unboxed, pay_ptr_opt, pos_vt)
          can_pos1 = (is_unboxed || is_heap) &&
@@ -4355,6 +4356,8 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
          cg.vars = stmt::truncate_vars(cg.vars, saved_vars_1)
          stmt::branch_to(cg, exit_bb')
          LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
+         next_v1 = stmt::fn_body_has_arena_restore(cg, b0.body) | types::Addrs() | saved_val_strs_1
+         types::g.validated_str_vals = next_v1
          (LLVMConstNull(LLVMInt64Type!), ast::ValueType(Unit))
       |
          b1 = branches(1)!!
@@ -4371,6 +4374,7 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
          exit_bb' = LLVMAppendBasicBlock(cg.current_fn, "choice.exit")
          LLVMBuildCondBr(cg.builder, cval, then_bb', else_bb)
 
+         saved_val_strs_2 = types::g.validated_str_vals
          LLVMPositionBuilderAtEnd(cg.builder, then_bb')
          types::emit_cov_edge(cg)
          saved_vars_then = ?cg.vars
@@ -4447,6 +4451,7 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
 
          LLVMPositionBuilderAtEnd(cg.builder, else_bb)
          types::emit_cov_edge(cg)
+         types::g.validated_str_vals = saved_val_strs_2
          saved_vars_else = ?cg.vars
          pv_else_opt = typed_branch_pay(cg, cv.0, is_unboxed, pay_ptr_opt, neg_vt)
          can_neg = (is_unboxed || is_heap) && neg_vt ![Unknown, Unit]
@@ -4521,6 +4526,11 @@ codegen_typed_eval_cond_choice_tail = cg, cond, branches, ti, tail_k =>
          stmt::branch_to(cg, exit_bb')
 
          LLVMPositionBuilderAtEnd(cg.builder, exit_bb')
+         next_v2 = (stmt::fn_body_has_arena_restore(cg, b0.body) ||
+           stmt::fn_body_has_arena_restore(cg, b1.body))
+            | types::Addrs()
+            | saved_val_strs_2
+         types::g.validated_str_vals = next_v2
          phi_ty_opt
             | pty =>
                phi = LLVMBuildPhi(cg.builder, pty, "choice.res")
@@ -4729,8 +4739,10 @@ codegen_typed_eval_guarded_choice_slow_tail = cg, cond, branches, ti, tail_k =>
    incoming_vals = types::Addrs()
    incoming_vts = ast::VTypes()
    incoming_bbs = types::Addrs()
+   saved_val_strs_g = types::g.validated_str_vals
    nbranches = ?branches
    nbranches @ k =>
+      types::g.validated_str_vals = saved_val_strs_g
       br = branches(k)!!
       br.kind
          [Bare]
@@ -4881,6 +4893,10 @@ codegen_typed_eval_guarded_choice_slow_tail = cg, cond, branches, ti, tail_k =>
                incoming_bbs += LLVMGetInsertBlock(cg.builder)
          stmt::branch_to(cg, exit_bb)
    LLVMPositionBuilderAtEnd(cg.builder, exit_bb)
+   next_vg = stmt::typed_branches_have_restore(cg, branches, 0, nbranches)
+      | types::Addrs()
+      | saved_val_strs_g
+   types::g.validated_str_vals = next_vg
    phi_ty_opt
       | pty =>
          ninc = ?incoming_vals

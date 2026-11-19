@@ -2687,5 +2687,167 @@ if ! grep -Fq 'cli_log_json' <<<"$T56_OUT" || \
 fi
 echo "PASS"
 
+# --- Test 57: Transitive arena effects, function summaries & E4010/E4011 lifetime checks (DVA-102) ---
+echo -n "Testing transitive arena effect summaries & E4010/E4011 checks (-O0/-O2, separate compilation, Wasm)... "
+T57_DIR="$TMPDIR/t57_arena_eff"
+mkdir -p "$T57_DIR"
+
+# Part A: Transitive helper-to-helper arena restore inside a function & loop must trigger E4010 on stale String read at -O0 and -O2
+cat <<'EOF' > "$T57_DIR/stale_str_helper.dva"
+#use io
+#use mem
+
+restore_leaf: mem::Arena, Int => ()
+restore_leaf = a, mk => mem::restore_to(a, mk)
+
+restore_mid: mem::Arena, Int => ()
+restore_mid = a, mk => restore_leaf(a, mk)
+
+mk_scoped_in_ar: mem::Arena, Int => (String, Int)
+mk_scoped_in_ar = a, tag =>
+   mk = mem::save(a)
+   s = "stale_" + "payload"
+   (s, mk)
+
+run_bad: () => Int
+run_bad = !=>
+   ar = mem::arena(4096)
+   _prev = mem::set_current(ar.raw)
+   pair = mk_scoped_in_ar(ar, 1)
+   stale = pair.0
+   mk = pair.1
+   total' = 0
+   0..1 @ i =>
+      restore_mid(ar, mk)
+      total' = total' + ?stale
+   total'
+
+io::out $ run_bad!
+EOF
+
+for opt in -O0 -O2; do
+    timeout 30 ./edva "$T57_DIR/stale_str_helper.dva" "$opt" --no-cache -o "$T57_DIR/stale_str${opt}" < /dev/null >"$T57_DIR/ss_c${opt}.log" 2>&1
+    rm -f "$T57_DIR/stale_str${opt}.ll"
+    set +e
+    "$T57_DIR/stale_str${opt}" >"$T57_DIR/ss_r${opt}.out" 2>"$T57_DIR/ss_r${opt}.err"
+    rc=$?
+    set -e
+    if [ $rc -eq 0 ] || ! grep -Fq "E4010: stale String read after arena restore" "$T57_DIR/ss_r${opt}.out" "$T57_DIR/ss_r${opt}.err"; then
+        echo "FAILED: transitive helper reset did not trigger E4010 at $opt (rc=$rc)"
+        cat "$T57_DIR/ss_r${opt}.out" "$T57_DIR/ss_r${opt}.err"
+        exit 1
+    fi
+done
+
+# Part B: Transitive helper-to-helper arena restore must trigger E4011 on stale Addr dereference at -O0 and -O2
+cat <<'EOF' > "$T57_DIR/stale_addr_helper.dva"
+#use io
+#use mem
+
+restore_leaf: mem::Arena, Int => ()
+restore_leaf = a, mk => mem::restore_to(a, mk)
+
+restore_mid: mem::Arena, Int => ()
+restore_mid = a, mk => restore_leaf(a, mk)
+
+run_bad_addr: () => Int
+run_bad_addr = !=>
+   ar = mem::arena(4096)
+   _prev = mem::set_current(ar.raw)
+   mk = mem::save(ar)
+   b = {16}
+   p = &b
+   @[p] = 65i8
+   restore_mid(ar, mk)
+   Int(@[p i8])
+
+io::out $ run_bad_addr!
+EOF
+
+for opt in -O0 -O2; do
+    timeout 30 ./edva "$T57_DIR/stale_addr_helper.dva" "$opt" --no-cache -o "$T57_DIR/stale_addr${opt}" < /dev/null >"$T57_DIR/sa_c${opt}.log" 2>&1
+    rm -f "$T57_DIR/stale_addr${opt}.ll"
+    set +e
+    "$T57_DIR/stale_addr${opt}" >"$T57_DIR/sa_r${opt}.out" 2>"$T57_DIR/sa_r${opt}.err"
+    rc=$?
+    set -e
+    if [ $rc -eq 0 ] || ! grep -Fq "E4011: stale Addr dereference after arena restore" "$T57_DIR/sa_r${opt}.out" "$T57_DIR/sa_r${opt}.err"; then
+        echo "FAILED: transitive helper restore did not trigger E4011 at $opt (rc=$rc)"
+        cat "$T57_DIR/sa_r${opt}.out" "$T57_DIR/sa_r${opt}.err"
+        exit 1
+    fi
+done
+
+# Part C: Separate compilation (-c --module) across imported module boundary preserves E4010 check on unknown/imported helper restore
+cat <<'EOF' > "$T57_DIR/ar_helper_mod.dva"
+#use mem
+
+#public
+   ext_restore: mem::Arena, Int => ()
+   ext_restore = a, mk => mem::restore_to(a, mk)
+EOF
+cat <<'EOF' > "$T57_DIR/ar_sep_main.dva"
+#use io
+#use mem
+#use ./ar_helper_mod
+
+check_sep: () => Int
+check_sep = !=>
+   ar = mem::arena(4096)
+   _prev = mem::set_current(ar.raw)
+   mk = mem::save(ar)
+   s = "sep_" + "stale"
+   ar_helper_mod::ext_restore(ar, mk)
+   ?s
+
+io::out $ check_sep!
+EOF
+
+timeout 30 ./edva -c --module const std/const.dva -o "$T57_DIR/const.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module ascii std/ascii.dva -o "$T57_DIR/ascii.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module utf std/utf.dva -o "$T57_DIR/utf.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module str std/str.dva -o "$T57_DIR/str.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module mem std/mem.dva -o "$T57_DIR/mem.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module sys std/sys.dva -o "$T57_DIR/sys.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module libc std/libc.dva -o "$T57_DIR/libc.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module unicode std/unicode.dva -o "$T57_DIR/unicode.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module io std/io.dva -o "$T57_DIR/io.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --module ar_helper_mod "$T57_DIR/ar_helper_mod.dva" -o "$T57_DIR/ar_helper_mod.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+timeout 30 ./edva -c --entry "$T57_DIR/ar_sep_main.dva" -o "$T57_DIR/ar_sep_main.o" -O2 --no-cache < /dev/null >/dev/null 2>&1
+clang -Qunused-arguments -Wno-unused-command-line-argument "$T57_DIR/ar_sep_main.o" "$T57_DIR/ar_helper_mod.o" "$T57_DIR/const.o" "$T57_DIR/ascii.o" "$T57_DIR/utf.o" "$T57_DIR/str.o" "$T57_DIR/mem.o" "$T57_DIR/sys.o" "$T57_DIR/libc.o" "$T57_DIR/unicode.o" "$T57_DIR/io.o" -lm -o "$T57_DIR/ar_sep_bin"
+set +e
+"$T57_DIR/ar_sep_bin" >"$T57_DIR/sep.out" 2>"$T57_DIR/sep.err"
+rc=$?
+set -e
+if [ $rc -eq 0 ] || ! grep -Fq "E4010: stale String read after arena restore" "$T57_DIR/sep.out" "$T57_DIR/sep.err"; then
+    echo "FAILED: separate compilation (-c --module) missed E4010 check across imported helper (rc=$rc)"
+    cat "$T57_DIR/sep.out" "$T57_DIR/sep.err"
+    exit 1
+fi
+
+# Part D: Wasm target (-target wasm32-unknown-unknown) emits E4010/E4011 lifetime checks across transitive helper reset
+cat <<'EOF' > "$T57_DIR/wasm_arena_eff.dva"
+#use mem
+
+w_reset_leaf: mem::Arena => ()
+w_reset_leaf = a => mem::reset(a)
+
+w_reset_mid: mem::Arena => ()
+w_reset_mid = a => w_reset_leaf(a)
+
+#export wasm_transitive_check: Int => Int
+wasm_transitive_check = n =>
+   ar = mem::arena(4096)
+   s = "wasm_" + "str"
+   w_reset_mid(ar)
+   ?s + n
+EOF
+timeout 30 ./edva "$T57_DIR/wasm_arena_eff.dva" -target wasm32-unknown-unknown -ir --no-cache -o "$T57_DIR/wasm_arena_eff" < /dev/null >"$T57_DIR/w.out" 2>"$T57_DIR/w.err"
+if ! grep -Fq "dva_validate_tag_or_abort_stale_str_msg" "$T57_DIR/wasm_arena_eff.ll"; then
+    echo "FAILED: Wasm IR for wasm_transitive_check did not retain E4010 stale String check across transitive helper reset"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

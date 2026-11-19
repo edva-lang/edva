@@ -48,6 +48,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.mem::destroy" = global ptr null
 @clo.const.16 = internal constant { ptr, ptr } { ptr @"mem::stats", ptr null }
 @"var.mem::stats" = global ptr null
+@stale_addr_msg = internal unnamed_addr constant [51 x i8] c"E4011: stale Addr dereference after arena restore\0A\00"
 @clo.const.17 = internal constant { ptr, ptr } { ptr @"mem::global_arena", ptr null }
 @"var.mem::global_arena" = global ptr null
 @clo.const.18 = internal constant { ptr, ptr } { ptr @"mem::provenance", ptr null }
@@ -519,7 +520,6 @@ entry:
 
 define { ptr, i64 } @"mem::arena"(i64 %0) #0 {
 entry:
-  %rec.salloc = alloca { ptr, i64 }, align 8
   %var.raw = alloca ptr, align 8
   %var.sz = alloca i64, align 8
   %var.chunk_size = alloca i64, align 8
@@ -548,20 +548,23 @@ choice.exit:                                      ; preds = %choice.else, %choic
   call void @dva_arena_init(ptr %addr.ffi.clean, i64 %var.load3)
   %var.load4 = load ptr, ptr %var.raw, align 8
   %var.load5 = load i64, ptr %var.sz, align 8
-  %rec.fld = getelementptr inbounds { ptr, i64 }, ptr %rec.salloc, i32 0, i32 0
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load4, ptr %rec.fld, align 8
-  %rec.fld6 = getelementptr inbounds { ptr, i64 }, ptr %rec.salloc, i32 0, i32 1
+  %rec.fld6 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
   store i64 %var.load5, ptr %rec.fld6, align 8
-  %ret.pack = load { ptr, i64 }, ptr %rec.salloc, align 8
+  %ret.pack = load { ptr, i64 }, ptr %rec.alloc, align 8
   ret { ptr, i64 } %ret.pack
 }
 
 define { ptr, i64 } @"mem::arena_default"() #0 {
 entry:
-  %ret.ub.salloc = alloca { ptr, i64 }, align 8
   %call.res = call { ptr, i64 } @"mem::arena"(i64 67108864)
-  store { ptr, i64 } %call.res, ptr %ret.ub.salloc, align 8
-  %ret.pack = load { ptr, i64 }, ptr %ret.ub.salloc, align 8
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
+  store { ptr, i64 } %call.res, ptr %ret.ub.alloc, align 8
+  %ret.pack = load { ptr, i64 }, ptr %ret.ub.alloc, align 8
   ret { ptr, i64 } %ret.pack
 }
 
@@ -695,7 +698,6 @@ choice.exit:                                      ; preds = %choice.else, %choic
 
 define { ptr, i64 } @"mem::global_arena"() #0 {
 entry:
-  %rec.salloc = alloca { ptr, i64 }, align 8
   %var.eff_cap = alloca i64, align 8
   %var.cap = alloca i64, align 8
   %var.g_raw = alloca ptr, align 8
@@ -710,17 +712,29 @@ entry:
   %raw.int = ptrtoint ptr %var.load3 to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
+  %addr.tag = lshr i64 %raw.int, 48
+  %tag.immortal = icmp eq i64 %addr.tag, 0
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current = icmp eq i64 %addr.tag, %active.gen
+  %tag.fast.ok = or i1 %tag.immortal, %tag.current
+  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
+
+addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   store i64 %raw.load, ptr %var.cap, align 8
   %var.load4 = load i64, ptr %var.cap, align 8
   %cmptmp = icmp sgt i64 %var.load4, 0
   br i1 %cmptmp, label %choice.then, label %choice.else
 
-choice.then:                                      ; preds = %entry
+tag.slow_check:                                   ; preds = %entry
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
+  br label %addr_ok
+
+choice.then:                                      ; preds = %addr_ok
   %var.load5 = load i64, ptr %var.cap, align 8
   br label %choice.exit
 
-choice.else:                                      ; preds = %entry
+choice.else:                                      ; preds = %addr_ok
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.then
@@ -728,12 +742,43 @@ choice.exit:                                      ; preds = %choice.else, %choic
   store i64 %choice.res, ptr %var.eff_cap, align 8
   %var.load6 = load ptr, ptr %var.g_raw, align 8
   %var.load7 = load i64, ptr %var.eff_cap, align 8
-  %rec.fld = getelementptr inbounds { ptr, i64 }, ptr %rec.salloc, i32 0, i32 0
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
+  %rec.fld = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 0
   store ptr %var.load6, ptr %rec.fld, align 8
-  %rec.fld8 = getelementptr inbounds { ptr, i64 }, ptr %rec.salloc, i32 0, i32 1
+  %rec.fld8 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
   store i64 %var.load7, ptr %rec.fld8, align 8
-  %ret.pack = load { ptr, i64 }, ptr %rec.salloc, align 8
+  %ret.pack = load { ptr, i64 }, ptr %rec.alloc, align 8
   ret { ptr, i64 } %ret.pack
+}
+
+; Function Attrs: cold noinline
+define internal void @dva_validate_tag_or_abort_stale_addr_msg(i64 %0) #7 {
+entry:
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
+  br i1 %tag.valid, label %valid, label %stale
+
+valid:                                            ; preds = %entry
+  ret void
+
+stale:                                            ; preds = %entry
+  call void @dva_abort_stale_addr_msg()
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_stale_addr_msg() #8 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @stale_addr_msg, i64 50)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
 }
 
 define ptr @"mem::provenance"(ptr %0) #0 {
@@ -898,17 +943,29 @@ entry:
   %raw.int = ptrtoint ptr %var.load to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
+  %addr.tag = lshr i64 %raw.int, 48
+  %tag.immortal = icmp eq i64 %addr.tag, 0
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current = icmp eq i64 %addr.tag, %active.gen
+  %tag.fast.ok = or i1 %tag.immortal, %tag.current
+  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
+
+addr_ok:                                          ; preds = %tag.slow_check, %entry
   %raw.load = load volatile i64, ptr %raw.clean.ptr, align 8
   store i64 %raw.load, ptr %var.cap, align 8
   %var.load1 = load i64, ptr %var.cap, align 8
   %cmptmp = icmp sgt i64 %var.load1, 0
   br i1 %cmptmp, label %choice.then, label %choice.else
 
-choice.then:                                      ; preds = %entry
+tag.slow_check:                                   ; preds = %entry
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
+  br label %addr_ok
+
+choice.then:                                      ; preds = %addr_ok
   %var.load2 = load i64, ptr %var.cap, align 8
   br label %choice.exit
 
-choice.else:                                      ; preds = %entry
+choice.else:                                      ; preds = %addr_ok
   br label %choice.exit
 
 choice.exit:                                      ; preds = %choice.else, %choice.then
@@ -1696,7 +1753,7 @@ ret.dead43:                                       ; No predecessors!
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_zero_msg() #7 {
+define internal void @dva_abort_div_zero_msg() #8 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_zero_msg, i64 32)
   call void @exit(i32 1)
@@ -1707,7 +1764,7 @@ abort.dead:                                       ; No predecessors!
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_ovf_msg() #7 {
+define internal void @dva_abort_div_ovf_msg() #8 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_ovf_msg, i64 55)
   call void @exit(i32 1)
@@ -1770,12 +1827,12 @@ loop.body.36:                                     ; preds = %loop.header.36
   %raw.int = ptrtoint ptr %ptr.res to i64
   %raw.clean.int = and i64 %raw.int, 281474976710655
   %raw.clean.ptr = inttoptr i64 %raw.clean.int to ptr
-  %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
-  store i8 %raw.load, ptr %var.is_act, align 1
-  %var.load5 = load i8, ptr %var.is_act, align 1
-  %coerce.zext = zext i8 %var.load5 to i64
-  %cmptmp = icmp ne i64 %coerce.zext, 0
-  br i1 %cmptmp, label %choice.then, label %choice.exit
+  %addr.tag = lshr i64 %raw.int, 48
+  %tag.immortal = icmp eq i64 %addr.tag, 0
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current = icmp eq i64 %addr.tag, %active.gen
+  %tag.fast.ok = or i1 %tag.immortal, %tag.current
+  br i1 %tag.fast.ok, label %addr_ok, label %tag.slow_check
 
 loop.exit.nat.36:                                 ; preds = %loop.header.36
   br label %loop.exit.36
@@ -1789,7 +1846,19 @@ loop.latch.36:                                    ; preds = %choice.exit
 loop.exit.36:                                     ; preds = %loop.exit.nat.36
   ret void
 
-choice.then:                                      ; preds = %loop.body.36
+addr_ok:                                          ; preds = %tag.slow_check, %loop.body.36
+  %raw.load = load volatile i8, ptr %raw.clean.ptr, align 1
+  store i8 %raw.load, ptr %var.is_act, align 1
+  %var.load5 = load i8, ptr %var.is_act, align 1
+  %coerce.zext = zext i8 %var.load5 to i64
+  %cmptmp = icmp ne i64 %coerce.zext, 0
+  br i1 %cmptmp, label %choice.then, label %choice.exit
+
+tag.slow_check:                                   ; preds = %loop.body.36
+  call void @dva_validate_tag_or_abort_stale_addr_msg(i64 %addr.tag)
+  br label %addr_ok
+
+choice.then:                                      ; preds = %addr_ok
   %clo.load = load ptr, ptr %var.f, align 8
   %clo.fn.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 0
   %clo.env.gep = getelementptr inbounds { ptr, ptr }, ptr %clo.load, i32 0, i32 1
@@ -1809,7 +1878,7 @@ choice.then:                                      ; preds = %loop.body.36
   %clo.is_cap = icmp ne ptr %clo.env.load, null
   br i1 %clo.is_cap, label %clo.cap, label %clo.plain
 
-choice.exit:                                      ; preds = %clo.merge, %loop.body.36
+choice.exit:                                      ; preds = %clo.merge, %addr_ok
   br label %loop.latch.36
 
 clo.cap:                                          ; preds = %choice.then
@@ -1882,4 +1951,5 @@ attributes #3 = { noinline "nounwind" }
 attributes #4 = { cold noreturn "nounwind" }
 attributes #5 = { nocallback nofree nounwind willreturn memory(argmem: readwrite) }
 attributes #6 = { nocallback nofree nounwind willreturn memory(argmem: write) }
-attributes #7 = { cold noinline noreturn "nounwind" }
+attributes #7 = { cold noinline "nounwind" }
+attributes #8 = { cold noinline noreturn "nounwind" }

@@ -106,6 +106,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.path::IS_WIN" = external global i1
 @"var.types::empty_fndef" = external global ptr
 @"var.types::g" = external global ptr
+@"var.types::fneff" = external global ptr
 @"var.types::vra" = external global ptr
 @clo.const = internal constant { ptr, ptr } { ptr @"codegen::default_codegen_opts", ptr null }
 @"var.codegen::default_codegen_opts" = global ptr null
@@ -830,7 +831,6 @@ declare ptr @"types::default_codegen_opts"() #0
 
 define { i64, ptr } @"codegen::decl_bare_name"(ptr %0, i64 %1) #0 {
 entry:
-  %ret.ub.salloc = alloca { i64, ptr }, align 8
   %var.i = alloca i64, align 8
   %var.s = alloca ptr, align 8
   store ptr %0, ptr %var.s, align 8
@@ -838,8 +838,10 @@ entry:
   %var.load = load ptr, ptr %var.s, align 8
   %var.load1 = load i64, ptr %var.i, align 8
   %call.res = call { i64, ptr } @"types::decl_bare_name"(ptr %var.load, i64 %var.load1)
-  store { i64, ptr } %call.res, ptr %ret.ub.salloc, align 8
-  %ret.pack = load { i64, ptr }, ptr %ret.ub.salloc, align 8
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %ret.ub.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 16)
+  store { i64, ptr } %call.res, ptr %ret.ub.alloc, align 8
+  %ret.pack = load { i64, ptr }, ptr %ret.ub.alloc, align 8
   ret { i64, ptr } %ret.pack
 }
 

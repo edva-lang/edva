@@ -58,6 +58,7 @@ target triple = "x86_64-unknown-linux-gnu"
 @"var.layout::set_target_triple" = global ptr null
 @str.1 = internal unnamed_addr constant [7 x i8] c"wasm32\00"
 @str.1.struct = internal unnamed_addr constant { i64, ptr } { i64 6, ptr @str.1 }
+@stale_str_msg = internal unnamed_addr constant [46 x i8] c"E4010: stale String read after arena restore\0A\00"
 @str.2 = internal unnamed_addr constant [5 x i8] c"wasm\00"
 @str.2.struct = internal unnamed_addr constant { i64, ptr } { i64 4, ptr @str.2 }
 @str.3 = internal unnamed_addr constant [4 x i8] c"x86\00"
@@ -196,10 +197,12 @@ entry:
   %eq.lhs.len = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc, i32 0, i32 0
   %eq.lhs.len1 = load i64, ptr %eq.lhs.len, align 8
   %eq.lhs.len2 = and i64 %eq.lhs.len1, 281474976710655
-  %eq.rhs.len = load i64, ptr @str.1.struct, align 8
-  %eq.rhs.len3 = and i64 %eq.rhs.len, 281474976710655
-  %eq.len = icmp eq i64 %eq.lhs.len2, %eq.rhs.len3
-  br i1 %eq.len, label %str.eq.then, label %str.eq.else
+  %str.tag = lshr i64 %eq.lhs.len1, 48
+  %tag.immortal = icmp eq i64 %str.tag, 0
+  %active.gen = load i64, ptr @dva_active_gen_tls, align 8
+  %tag.current = icmp eq i64 %str.tag, %active.gen
+  %tag.fast.ok = or i1 %tag.immortal, %tag.current
+  br i1 %tag.fast.ok, label %str_ok, label %tag.slow_check
 
 choice.exit:                                      ; preds = %choice.next, %choice.case
   %choice.res = phi i1 [ true, %choice.case ], [ false, %choice.next ]
@@ -211,7 +214,17 @@ choice.case:                                      ; preds = %str.eq.merge108
 choice.next:                                      ; preds = %str.eq.merge108
   br label %choice.exit
 
-str.eq.then:                                      ; preds = %entry
+str_ok:                                           ; preds = %tag.slow_check, %entry
+  %eq.rhs.len = load i64, ptr @str.1.struct, align 8
+  %eq.rhs.len3 = and i64 %eq.rhs.len, 281474976710655
+  %eq.len = icmp eq i64 %eq.lhs.len2, %eq.rhs.len3
+  br i1 %eq.len, label %str.eq.then, label %str.eq.else
+
+tag.slow_check:                                   ; preds = %entry
+  call void @dva_validate_tag_or_abort_stale_str_msg(i64 %str.tag)
+  br label %str_ok
+
+str.eq.then:                                      ; preds = %str_ok
   %eq.lhs.data = getelementptr inbounds { i64, ptr }, ptr %ret.ub.alloc, i32 0, i32 1
   %eq.lhs.data4 = load ptr, ptr %eq.lhs.data, align 8
   %eq.rhs.data = load ptr, ptr getelementptr inbounds ({ i64, ptr }, ptr @str.1.struct, i32 0, i32 1), align 8
@@ -219,7 +232,7 @@ str.eq.then:                                      ; preds = %entry
   %eq.cmp.zero = icmp eq i32 %eq.memcmp, 0
   br label %str.eq.merge
 
-str.eq.else:                                      ; preds = %entry
+str.eq.else:                                      ; preds = %str_ok
   br label %str.eq.merge
 
 str.eq.merge:                                     ; preds = %str.eq.else, %str.eq.then
@@ -383,6 +396,40 @@ str.eq.merge108:                                  ; preds = %str.eq.else107, %st
 
 declare { i64, ptr } @"ast::triple_arch"(ptr) #0
 
+; Function Attrs: cold noinline
+define internal void @dva_validate_tag_or_abort_stale_str_msg(i64 %0) #4 {
+entry:
+  %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
+  %tag.valid = call i1 @dva_arena_validate_tag(ptr %arena.cur, i64 %0)
+  br i1 %tag.valid, label %valid, label %stale
+
+valid:                                            ; preds = %entry
+  ret void
+
+stale:                                            ; preds = %entry
+  call void @dva_abort_stale_str_msg()
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+; Function Attrs: cold noinline noreturn
+define internal void @dva_abort_stale_str_msg() #5 {
+entry:
+  %0 = call i64 @write(i32 2, ptr @stale_str_msg, i64 45)
+  call void @exit(i32 1)
+  unreachable
+
+abort.dead:                                       ; No predecessors!
+  unreachable
+}
+
+declare i64 @write(i32, ptr, i64)
+
+; Function Attrs: cold noreturn
+declare void @exit(i32) #6
+
 declare i32 @memcmp(ptr, ptr, i64) #0
 
 define i1 @"layout::is_32bit_target"() #0 {
@@ -447,7 +494,7 @@ abort.dead5:                                      ; No predecessors!
 }
 
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_zero_msg() #4 {
+define internal void @dva_abort_div_zero_msg() #5 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_zero_msg, i64 32)
   call void @exit(i32 1)
@@ -457,13 +504,8 @@ abort.dead:                                       ; No predecessors!
   unreachable
 }
 
-declare i64 @write(i32, ptr, i64)
-
-; Function Attrs: cold noreturn
-declare void @exit(i32) #5
-
 ; Function Attrs: cold noinline noreturn
-define internal void @dva_abort_div_ovf_msg() #4 {
+define internal void @dva_abort_div_ovf_msg() #5 {
 entry:
   %0 = call i64 @write(i32 2, ptr @div_ovf_msg, i64 55)
   call void @exit(i32 1)
@@ -1328,5 +1370,6 @@ attributes #0 = { "nounwind" }
 attributes #1 = { nocallback nofree nosync nounwind speculatable willreturn memory(none) }
 attributes #2 = { alwaysinline "nounwind" }
 attributes #3 = { noinline "nounwind" }
-attributes #4 = { cold noinline noreturn "nounwind" }
-attributes #5 = { cold noreturn "nounwind" }
+attributes #4 = { cold noinline "nounwind" }
+attributes #5 = { cold noinline noreturn "nounwind" }
+attributes #6 = { cold noreturn "nounwind" }

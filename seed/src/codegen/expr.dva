@@ -218,13 +218,14 @@ codegen_string_len = cg, val, name =>
    no_fn_restore = cg.in_fn && !types::g.current_fn_has_restore &&
      cg.in_restore_scope == 0
    skip_mod = no_fn_restore && (cg.current_module != "io")
-   already_val = no_fn_restore && has_addr(types::g.validated_str_vals, val)
+   already_val = has_addr(types::g.validated_str_vals, val)
    skip_check = cg.opts.no_runtime || (LLVMIsConstant(val) != 0) ||
-     (cg.in_fn && ?cg.cycle_breaks > 0) || skip_mod || already_val
+     (cg.in_fn && ?cg.cycle_breaks > 0 && !types::g.current_fn_has_restore && cg.in_restore_scope == 0) ||
+     skip_mod || already_val
    skip_check
       | len
       |
-         no_fn_restore | (types::g.validated_str_vals += val)
+         types::g.validated_str_vals += val
          tag = LLVMBuildLShr(cg.builder, raw,
            LLVMConstInt(LLVMInt64Type!, 48, 0), "str.tag")
          parent = LLVMGetBasicBlockParent(LLVMGetInsertBlock(cg.builder))
@@ -236,7 +237,7 @@ codegen_string_len = cg, val, name =>
 
 tag_addr_with_arena_gen: types::Cg, Addr => Addr
 tag_addr_with_arena_gen = cg, raw_p =>
-   (!cg.opts.no_runtime && (cg.in_restore_scope > 0))
+   (!cg.opts.no_runtime && (cg.in_restore_scope > 0 || types::g.current_fn_has_restore))
       |
          i64t = LLVMInt64Type!
          i8p = LLVMPointerType(LLVMInt8Type!, 0)
@@ -373,7 +374,7 @@ codegen_string_build = cg, len, data, name =>
          codegen_call_arena_alloc(cg,
            LLVMConstInt(LLVMInt64Type!, 16, 0), name)
    lgep = LLVMBuildStructGEP2(cg.builder, st, sp, 0, "str.build.len.gep")
-   store_len = cg.in_restore_scope > 0
+   store_len = (!use_stack && (cg.in_restore_scope > 0 || types::g.current_fn_has_restore))
       |
          gen = codegen_arena_generation(cg, "str.tag.gen")
          shift = LLVMBuildShl(cg.builder, gen,
@@ -720,6 +721,7 @@ codegen_restore_scope_leave = cg, mark =>
 codegen_restore_scope_leave_yes: types::Cg, Addr => ()
 codegen_restore_scope_leave_yes = cg, mark =>
    !stmt::block_is_terminated(cg) | codegen_call_arena_restore(cg, mark)
+   types::g.validated_str_vals = types::Addrs()
    cg.in_restore_scope = cg.in_restore_scope - 1
    ?types::g.restore_scope_var_starts > 0
       | types::g.restore_scope_var_starts = truncate_ints(types::g.restore_scope_var_starts,
@@ -7564,6 +7566,7 @@ codegen_typed_eval_indirect_call_opt = cg, clo_val, args, ti, want_stack =>
          stmt::llvm_add_incoming1(cg, phi, plain_res, plain_bb)
          phi
    res_u = unpack_unboxed_call_ret(cg, res, ret_vt, want_stack)
+   types::g.validated_str_vals = types::Addrs()
    is_rec_ret = ret_vt [Record]
    is_rec_ret
       |
@@ -7876,6 +7879,8 @@ eval_typed_fn_call_with_stack = cg, fn_nm, args, ti, want_stack =>
    types::g.stack_alloc_next = want_stack
    call_res = codegen_typed_eval_fn_call(cg, fn_nm, args, ti)
    types::g.stack_alloc_next = <->
+   stmt::callee_call_may_arena_effect(cg, fn_nm, args)
+      | types::g.validated_str_vals = types::Addrs()
    call_res
 
 codegen_typed_eval_call: types::Cg, String, <tast::TypedExpr|>, tast::TypedExprs,

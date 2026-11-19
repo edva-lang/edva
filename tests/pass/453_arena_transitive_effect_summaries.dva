@@ -1,0 +1,164 @@
+// DVA-102: Whole-TU Fixed-Point Function Effect Summary Inference & Transitive Arena Audit
+// Verifies:
+// 1. Helper-to-helper arena restore/reset/destroy/set_current chains (h1 -> h2 -> mem::reset/restore_to).
+// 2. Mutual recursion (SCCs) Solved to least fixed point (pure SCC vs. arena-effecting SCC).
+// 3. Higher-order callback invocation (param_invoked_mask): passing a pure callback vs. an arena-resetting callback.
+// 4. Transitive String read-only (param_str_read_only_mask) & Record projection-only (param_rec_proj_only_mask) summaries.
+// 5. Soundness of stack allocation / builder freeze and lifetime checks across transitive arena effects.
+
+#use io
+#use mem
+#use str
+
+#type Pair (x: Int, y: Int, label: String)
+
+// --- 1. Multi-hop Pure String & Record Helpers (Stack Promotion Eligible) ---
+
+leaf_str_len: String => Int
+leaf_str_len = s => ?s
+
+mid_str_check: String, String => Int
+mid_str_check = a, b =>
+   a == b | leaf_str_len(a) | leaf_str_len(a) + leaf_str_len(b)
+
+top_str_reader: String => Int
+top_str_reader = s =>
+   mid_str_check(s, "ref")
+
+leaf_rec_proj: Pair => Int
+leaf_rec_proj = p => p.x + p.y + ?p.label
+
+mid_rec_proj: Pair => Int
+mid_rec_proj = p => leaf_rec_proj(p) * 2
+
+// Caller allocates local string and record that only flow into multi-hop read-only / proj-only helpers:
+run_pure_summary_chain: Int => Int
+run_pure_summary_chain = n =>
+   local_s = "item_" + str::from_int(n)
+   local_p = Pair(n, n + 3, local_s)
+   top_str_reader(local_s) + mid_rec_proj(local_p)
+
+// --- 2. Mutual Recursion (SCC Fixed-Point Convergence) ---
+
+scc_pure_even: Int, String => Int
+scc_pure_odd: Int, String => Int
+
+scc_pure_even = n, s =>
+   n !> 0 | ?s | 1 + scc_pure_odd(n - 1, s)
+
+scc_pure_odd = n, s =>
+   n !> 0 | ?s | 1 + scc_pure_even(n - 1, s)
+
+// An SCC where one branch performs an arena restore on a scratch arena
+scc_restore_a: Int, mem::Arena, Int => Int
+scc_restore_b: Int, mem::Arena, Int => Int
+
+scc_restore_a = n, ar, mk =>
+   n !> 0
+      |
+         mem::restore_to(ar, mk)
+         0
+      | 1 + scc_restore_b(n - 1, ar, mk)
+
+scc_restore_b = n, ar, mk =>
+   n !> 0 | 0 | 1 + scc_restore_a(n - 1, ar, mk)
+
+// --- 3. Helper-to-Helper Arena Restore / Reset / Selection Chains ---
+
+helper_reset_leaf: mem::Arena => ()
+helper_reset_leaf = ar =>
+   mem::reset(ar)
+
+helper_reset_mid: mem::Arena => ()
+helper_reset_mid = ar =>
+   helper_reset_leaf(ar)
+
+helper_restore_leaf: mem::Arena, Int => ()
+helper_restore_leaf = ar, mk =>
+   mem::restore_to(ar, mk)
+
+helper_restore_mid: mem::Arena, Int => ()
+helper_restore_mid = ar, mk =>
+   helper_restore_leaf(ar, mk)
+
+helper_switch_arena: Addr => Addr
+helper_switch_arena = raw =>
+   mem::set_current(raw)
+
+// A function that builds a string, calls a 2-hop arena-resetting helper on a scratch arena,
+// and returns the surviving string from the current arena (must NOT stack-promote across the reset!).
+build_across_transitive_reset: mem::Arena, Int => String
+build_across_transitive_reset = scratch, n =>
+   b = {32}
+   b += "survive_"
+   b += str::from_int(n)
+   s = +b
+   // Allocate inside scratch and then reset scratch via 2-hop helper
+   _p = mem::alloc(scratch, 64)
+   helper_reset_mid(scratch)
+   s
+
+// --- 4. Higher-Order Callback Invocation Summaries (param_invoked_mask) ---
+
+apply_once: (Int => Int), Int => Int
+apply_once = f, x => f(x)
+
+apply_twice_chain: (Int => Int), Int => Int
+apply_twice_chain = cb, v =>
+   r1 = apply_once(cb, v)
+   apply_once(cb, r1)
+
+run_callback_summaries: mem::Arena => String
+run_callback_summaries = scratch =>
+   // Case A: pure callback passed through 2-hop higher-order helper
+   pure_res = apply_twice_chain(x => x + 5, 10)
+
+   // Case B: arena-effecting callback passed through 2-hop higher-order helper
+   mk = mem::save(scratch)
+   _tmp = mem::alloc(scratch, 128)
+   before_bytes = mem::provenance(scratch).bytes_allocated
+   restoring_res = apply_twice_chain(x =>
+      helper_restore_mid(scratch, mk)
+      x * 2
+   , 3)
+   after_bytes = mem::provenance(scratch).bytes_allocated
+   "${str::from_int(pure_res)}:${str::from_int(restoring_res)}:${str::from_int(before_bytes)}:${str::from_int(after_bytes)}"
+
+// --- Main Verification Driver ---
+
+main_test: () => ()
+main_test = !=>
+   ar = mem::arena(16384)
+
+   // 1. Pure multi-hop chain
+   p1 = run_pure_summary_chain(7)
+   io::out $ "pure_chain:${str::from_int(p1)}"
+
+   // 2. Pure vs restoring SCCs
+   scc_p = scc_pure_even(6, "hello")
+   mk0 = mem::save(ar)
+   _a0 = mem::alloc(ar, 96)
+   scc_r = scc_restore_a(4, ar, mk0)
+   after_scc_bytes = mem::provenance(ar).bytes_allocated
+   io::out $ "scc:${str::from_int(scc_p)}:${str::from_int(scc_r)}:${str::from_int(after_scc_bytes)}"
+
+   // 3. Surviving string across transitive helper reset
+   surv = build_across_transitive_reset(ar, 42)
+   io::out $ "survive:${surv}:${str::from_int(mem::provenance(ar).resets)}"
+
+   // 4. Higher-order callback invocation summaries
+   cb_info = run_callback_summaries(ar)
+   io::out $ "callbacks:${cb_info}"
+
+   // 5. Arena selection via helper
+   base_raw = mem::current!
+   prev_raw = helper_switch_arena(ar.raw)
+   in_ar = mem::current! == ar.raw
+   back_raw = helper_switch_arena(Addr(0))
+   restored_ok = (prev_raw == base_raw) && (back_raw == ar.raw) && (mem::current! == base_raw)
+   flag_s = in_ar && restored_ok | "ok" | "fail"
+   io::out $ "select:${flag_s}"
+
+   mem::destroy(ar)
+
+main_test!

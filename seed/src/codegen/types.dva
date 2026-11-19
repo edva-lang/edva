@@ -294,6 +294,42 @@ param_clo_tys: Addrs,
 #type NamedShapeMeta (shape_key: String, anon_sig: String, field_names: ast::Names)
 #type NamedShapeMetas NamedShapeMeta{}
 
+// Reusable Function Effect Summary (DVA-102):
+// - may_arena_effect: function may directly or transitively restore, reset, release,
+//   destroy, switch (set_current), or enter a with/escape arena scope.
+// - may_read_global / may_write_global: function may read or mutate global state.
+// - param_str_read_only_mask: bit i is 1 if parameter i (i < 62) is only used in
+//   non-escaping, non-mutating String read positions.
+// - param_rec_proj_only_mask: bit i is 1 if parameter i (i < 62) is only field-projected
+//   without escaping or address-taking.
+// - param_mutated_mask: bit i is 1 if parameter i (i < 62) is mutated via member/index/raw write.
+// - param_invoked_mask: bit i is 1 if parameter i (i < 62) is invoked as a callback.
+// - param_escapes_mask: bit i is 1 if parameter i (i < 62) may escape (returned, stored to
+//   global/outer state, or passed to an escaping/unknown sink).
+#type FnEffectSummary (
+   name: String,
+   nparams: Int,
+   has_body: <>,
+   may_arena_effect: <>,
+   may_read_global: <>,
+   may_write_global: <>,
+   param_str_read_only_mask: Int,
+   param_rec_proj_only_mask: Int,
+   param_mutated_mask: Int,
+   param_invoked_mask: Int,
+   param_escapes_mask: Int
+)
+#type FnEffectSummaries FnEffectSummary{}
+#type FnEffectState (
+   ready: <>,
+   idx: VraIndex,
+   summaries: FnEffectSummaries
+)
+
+::fneff = FnEffectState(
+   <->, VraIndex(), FnEffectSummaries()
+)
+
 #type VraState (
    enabled: <>,
    whole_prog: <>,

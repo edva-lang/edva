@@ -3327,6 +3327,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    stmt::codegen_scan_record_args(cg, raw_exprs)
    stmt::codegen_scan_array_args(cg, raw_exprs)
    stmt::codegen_scan_enum_variant_indices(cg, raw_exprs)
+   stmt::run_typed_fn_summaries(cg, prog)
    types::run_typed_vra(cg, prog)
    cg.current_fn = (cg.main_fn | _ | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)))
    cg.current_module = ""
