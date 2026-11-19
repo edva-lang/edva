@@ -13,6 +13,12 @@ test::check(crypto::ct_eq("secret-token", "secret-token"), "ct_eq equal")
 test::check(!crypto::ct_eq("secret-token", "secret-tokem"), "ct_eq diff byte")
 test::check(!crypto::ct_eq("secret", "secret-longer"), "ct_eq diff len")
 
+// 1.5. MD5 (RFC 1321)
+test::eq(crypto::md5(""), "d41d8cd98f00b204e9800998ecf8427e", "md5 empty")
+test::eq(crypto::md5("abc"), "900150983cd24fb0d6963f7d28e17f72", "md5 abc")
+test::eq(crypto::md5("message digest"), "f96b697d7cb7938d525a2f31aaf161d0", "md5 message digest")
+test::eq(?crypto::md5_bytes("abc"), 16, "md5_bytes length")
+
 // 2. SHA-1 (RFC 3174) & WebSocket RFC 6455 Sec-WebSocket-Accept
 test::eq(crypto::sha1(""), "da39a3ee5e6b4b0d3255bfef95601890afd80709", "sha1 empty")
 test::eq(crypto::sha1("abc"), "a9993e364706816aba3e25717850c26c9cd0d89d", "sha1 abc")
