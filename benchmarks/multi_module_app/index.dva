@@ -1,0 +1,27 @@
+// DVA-103 Multi-module benchmark: Module 4 (index)
+// Per-tenant summary table accumulation and lookup.
+
+#use ./types
+
+#public
+   init_summaries: Int => types::TenantSummary{}
+   init_summaries = n_tenants =>
+      tbl: types::TenantSummary{}
+      n_tenants @ t =>
+         tbl += types::TenantSummary(t, 0, 0, 0, 0, 0)
+      tbl
+
+   record_enriched: types::TenantSummary{}, types::EnrichedEvent => ()
+   record_enriched = tbl, item =>
+      ev = item.event
+      t = ev.tenant
+      cur = tbl(t)!!
+      ok_inc = ev.ok | 1 | 0
+      err_inc = ev.ok | 0 | 1
+      max_l = ev.latency_ms > cur.max_latency | ev.latency_ms | cur.max_latency
+      next_score = (cur.total_score + item.score + item.weight) % 1000000007
+      cur.count = cur.count + 1
+      cur.ok_count = cur.ok_count + ok_inc
+      cur.err_count = cur.err_count + err_inc
+      cur.total_score = next_score
+      cur.max_latency = max_l

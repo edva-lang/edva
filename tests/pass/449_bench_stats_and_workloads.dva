@@ -60,4 +60,34 @@ dom = json::parse("{\"plain\":\"hello\",\"esc\":\"a\\tb\"}")!!
 test::check((json::get_str(dom, "plain") |_| "") == "hello", "DOM ASCII slice fast-path")
 test::check((json::get_str(dom, "esc") |_| "") == "a\tb", "DOM escaped fallback")
 
+// Verify collection pipelines (`@>`), higher-order composition (`.>`), and generic callbacks (DVA-103)
+#type BenchPair (a: Int, b: Int)
+
+generic_fold_pairs: #param T: Type, Int, T{}, (Int, T => Int) => Int
+generic_fold_pairs = seed, xs, step =>
+   acc' = seed
+   xs @ x =>
+      acc' = step(acc', x)
+   acc'
+
+sc_pipeline = bench::measure_stats(10, iter =>
+   raw: Int{}
+   16 @ k => raw += iter * 16 + k
+   pairs = raw @> (v =>
+      (v % 2 == 0)
+         | <+ BenchPair(v, v * 3 + 1) +>
+         | <-->
+   )
+   f1 = x => x * 2 + 5
+   f2 = x => x + 7
+   comp = f1 .> f2
+   mapped = pairs @> (p => comp(p.a + p.b))
+   fold1 = (0, mapped) @> (acc, m => acc + m)
+   fold2 = generic_fold_pairs(0, pairs, (acc, p => acc + p.a + p.b))
+   fold1 + fold2
+)
+test::eq(sc_pipeline.iters, 10, "pipeline measure_stats iters")
+test::check(sc_pipeline.alloc_bytes > 0, "pipeline measure_stats tracks collection allocations")
+test::check(sc_pipeline.p50_ns > 0 && sc_pipeline.p95_ns !< sc_pipeline.p50_ns, "pipeline percentiles ordered")
+
 test::summary!

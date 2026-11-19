@@ -1,0 +1,87 @@
+// DVA-103: Collection pipelines (`@>`), higher-order callbacks (`.>`), and generic specialization
+// workload shared across native (-O0/-O2) and Wasm32 (-target wasm32-unknown-unknown) targets.
+
+#public
+   #type Sample (id: Int, group: Int, weight: Int, tag: Int)
+   #type Pair (a: Int, b: Int)
+
+   // Generic fold over a growable array with a caller-supplied step callback
+   fold_generic: #param T: Type, #param Acc: Type, Acc, T{}, (Acc, T => Acc) => Acc
+   fold_generic = seed, xs, step =>
+      acc' = seed
+      xs @ x =>
+         acc' = step(acc', x)
+      acc'
+
+   // Generic filter-count helper with a caller-supplied predicate callback
+   count_matching: #param T: Type, T{}, (T => <>) => Int
+   count_matching = xs, pred =>
+      cnt' = 0
+      xs @ x =>
+         pred(x) | cnt' = cnt' + 1
+      cnt'
+
+   // Genericram optional unwrap + transform helper
+   transform_opt: #param T: Type, #param U: Type, <T|>, (T => U), U => U
+   transform_opt = opt, fn, fallback =>
+      opt
+         | v => fn(v)
+         | fallback
+
+   // Higher-order combinator: composes two unary integer transformations and applies twice
+   compose_twice: (Int => Int), (Int => Int), Int => Int
+   compose_twice = f, g, x =>
+      fg = f .> g
+      fg(fg(x))
+
+   // Runs one batch of 64 deterministic items for batch index `b_idx`
+   run_batch: Int => (Int, Int, Int)
+   run_batch = b_idx =>
+      samples: Sample{}
+      64 @ k =>
+         idx = b_idx * 64 + k
+         gid = (idx * 7 + 3) % 8
+         w = (idx * 31 + 17) % 251 + 1
+         tg = (idx * 13 + 5) % 16
+         samples += Sample(idx, gid, w, tg)
+
+      // 1. `@>` filter-map pipeline: keep samples with even group or tag >= 11, project to Pair
+      filtered = samples @> (s =>
+         (s.group % 2 == 0) || (s.tag !< 11)
+            | <+ Pair(s.id % 997, s.weight * (s.group + 1)) +>
+            | <-->
+      )
+
+      // 2. `@>` map pipeline: score each Pair via higher-order composition
+      scale_fn = x => (x * 3 + 7) % 10007
+      shift_fn = x => (x + b_idx % 97 + 11) % 10007
+      scores = filtered @> (p =>
+         compose_twice(scale_fn, shift_fn, p.a + p.b)
+      )
+
+      // 3. `@>` seeded fold over scores
+      fold_sum = (0, scores) @> (acc, sc => (acc * 33 + sc) % 1000000007)
+
+      // 4. Generic fold + generic predicate count + generic optional transform
+      weighted_sum = fold_generic(0, filtered, (acc, p => (acc + p.a * 5 + p.b * 3) % 1000000007))
+      heavy_cnt = count_matching(samples, (s => s.weight > 125))
+      opt_bonus = (heavy_cnt > 20) | <+ Pair(heavy_cnt, ?filtered) +> | <-->
+      bonus = transform_opt(opt_bonus, (p => p.a * 19 + p.b * 7), 13)
+
+      batch_digest = (fold_sum + weighted_sum * 17 + bonus) % 1000000007
+      (batch_digest, ?filtered, heavy_cnt)
+
+   // Runs `n` items (grouped into batches of 64, plus remainder items)
+   run_pipeline_steps: Int => (Int, Int, Int)
+   run_pipeline_steps = n =>
+      batches = n / 64
+      eff_batches = batches > 0 | batches | 1
+      digest' = 0
+      kept' = 0
+      heavy' = 0
+      eff_batches @ b =>
+         r = run_batch(b)
+         digest' = (digest' * 131 + r.0) % 1000000007
+         kept' = kept' + r.1
+         heavy' = heavy' + r.2
+      (digest', kept', heavy')

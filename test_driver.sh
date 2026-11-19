@@ -2675,13 +2675,18 @@ if [ "$("$T55_DIR/cons_app/cons_app")" != "42" ] || ! grep -Fq "1 passed, 0 fail
 fi
 echo "PASS"
 
-# --- Test 56: Reproducible cross-language & Wasm benchmark harness (DVA-79) ---
+# --- Test 56: Reproducible cross-language & Wasm benchmark harness (DVA-79 / DVA-103) ---
 echo -n "Testing reproducible benchmark smoke suite (tools/bench.nu --smoke)... "
-T56_OUT=$(ulimit -S -v 8388608 2>/dev/null || true; timeout 120 nu tools/bench.nu --smoke 2>&1)
+T56_OUT=$(ulimit -S -v 8388608 2>/dev/null || true; timeout 180 nu tools/bench.nu --smoke 2>&1)
 if ! grep -Fq 'cli_log_json' <<<"$T56_OUT" || \
    ! grep -Fq 'server_http_router' <<<"$T56_OUT" || \
    ! grep -Fq 'wasm_numeric_kernel' <<<"$T56_OUT" || \
-   ! grep -Fq 'checksum=15902800,ok=1600,err=400' <<<"$T56_OUT"; then
+   ! grep -Fq 'collections_closures_generics' <<<"$T56_OUT" || \
+   ! grep -Fq 'multi_module_app' <<<"$T56_OUT" || \
+   ! grep -Fq 'incremental_build' <<<"$T56_OUT" || \
+   ! grep -Fq 'checksum=15902800,ok=1600,err=400' <<<"$T56_OUT" || \
+   ! grep -Fq 'pipeline=488857799,kept=1100,heavy=802' <<<"$T56_OUT" || \
+   ! grep -Fq 'app_digest=784521080,kept_ok=992,kept_err=180,roll=697998612' <<<"$T56_OUT"; then
     echo "FAILED: benchmark smoke suite did not produce verified output: $T56_OUT"
     exit 1
 fi

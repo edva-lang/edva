@@ -1,0 +1,30 @@
+// DVA-103 Multi-module benchmark: Module 2 (codec)
+// Deterministic event synthesis and integer/hash encoding.
+
+#use ./types
+
+#public
+   hash_mix: Int, Int => Int
+   hash_mix = a, b =>
+      h0 = (a * 1103515245 + 12345 + b * 2654435761) .&. 0x7FFFFFFF
+      (h0 .^. (h0 .>. 11)) .&. 0x7FFFFFFF
+
+   decode_event: Int => types::MetricEvent
+   decode_event = seq =>
+      h1 = hash_mix(seq, 17)
+      h2 = hash_mix(h1, 53)
+      tenant = (seq * 7 + h1) % 16
+      service = (seq * 13 + h2) % 8
+      raw_lat = (h1 % 480) + 5
+      lat = types::clamp_val(raw_lat, 5, 500)
+      pbytes = ((h2 % 32) + 1) * 64
+      is_ok = ((seq + h1) % 7) != 0
+      types::MetricEvent(seq + 1, tenant, service, lat, pbytes, is_ok)
+
+   classify_bucket: Int => Int
+   classify_bucket = lat =>
+      lat
+         [0...25]    0
+         [26...100]  1
+         [101...250] 2
+         |           3

@@ -1,0 +1,44 @@
+#use ./pipeline
+#use io
+#use mem
+#use str
+#use sys
+
+parse_n_arg: Int => Int
+parse_n_arg = dflt =>
+   sys::argc < 2
+      | dflt
+      |
+         a1 = sys::argv_string(1)
+         v = str::parse_int(a1) |_| dflt
+         v > 0 | v | dflt
+
+n = parse_n_arg(16000)
+dump_alloc = sys::argc !< 3 && sys::argv_string(2) == "--alloc-stats"
+scratch = mem::arena(1048576)
+batches = n / 64
+eff_batches = batches > 0 | batches | 1
+digest' = 0
+kept' = 0
+heavy' = 0
+total_alloc_bytes' = 0
+peak_scratch_bytes' = 0
+
+eff_batches @ b =>
+   before_b = mem::provenance(scratch).bytes_allocated
+   r = mem::with_value(scratch, !=> pipeline::run_batch(b))
+   after_b = mem::provenance(scratch).bytes_allocated
+   delta = after_b - before_b
+   delta > 0 | total_alloc_bytes' = total_alloc_bytes' + delta
+   after_b > peak_scratch_bytes' | peak_scratch_bytes' = after_b
+   digest' = (digest' * 131 + r.0) % 1000000007
+   kept' = kept' + r.1
+   heavy' = heavy' + r.2
+   (b % 16) == 15 | mem::reset(scratch)
+
+sp = mem::provenance(scratch)
+gp = mem::provenance(mem::global_arena!)
+mem::destroy(scratch)
+dump_alloc
+   | io::out $ "alloc_bytes=${str::from_int(total_alloc_bytes')},peak_scratch_bytes=${str::from_int(peak_scratch_bytes')},scratch_chunks=${str::from_int(sp.num_chunks)},scratch_resets=${str::from_int(sp.resets)},global_bytes=${str::from_int(gp.bytes_allocated)}"
+   | io::out $ "pipeline=${str::from_int(digest')},kept=${str::from_int(kept')},heavy=${str::from_int(heavy')}"

@@ -1,0 +1,16 @@
+// DVA-103 Multi-module benchmark: Module 6 (report)
+// Final report digest formatting.
+
+#use ./types
+#use ./query
+#use str
+
+#public
+   REPORT_BIAS: Int
+   REPORT_BIAS = 0
+
+   format_final_report: types::TenantSummary{}, Int => String
+   format_final_report = tbl, batches =>
+      res = query::evaluate_checkpoint(tbl, batches)
+      d = (res.0 + REPORT_BIAS) % 1000000007
+      "app_digest=${str::from_int(d)},kept_ok=${str::from_int(res.1)},kept_err=${str::from_int(res.2)}"

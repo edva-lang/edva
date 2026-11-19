@@ -1,0 +1,24 @@
+// DVA-103 Multi-module benchmark: Module 3 (transform)
+// Higher-order enrichment and filtering pipelines over decoded events.
+
+#use ./types
+#use ./codec
+
+#public
+   compute_weight: types::MetricEvent, Int => Int
+   compute_weight = ev, base_bias =>
+      svc_mult = (ev.service % 4) + 1
+      status_mult = ev.ok | 2 | 5
+      ev.latency_ms * svc_mult * status_mult + (ev.payload_bytes / 32) + base_bias
+
+   enrich_batch: types::MetricEvent{}, (Int => Int) => types::EnrichedEvent{}
+   enrich_batch = events, scorer =>
+      events @> (ev =>
+         bkt = codec::classify_bucket(ev.latency_ms)
+         w = compute_weight(ev, bkt * 11)
+         sc = scorer(w + ev.tenant * 19)
+         // Keep all failed events and any healthy event outside bucket 0 with odd id or high score
+         (!ev.ok || bkt > 0 || (sc % 3 == 0))
+            | <+ types::EnrichedEvent(ev, w, bkt, sc) +>
+            | <-->
+      )

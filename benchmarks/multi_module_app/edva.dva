@@ -1,0 +1,62 @@
+// DVA-103 Multi-module benchmark: Module 7 (edva.dva entry point)
+
+#use ./types
+#use ./codec
+#use ./transform
+#use ./index
+#use ./query
+#use ./report
+#use io
+#use mem
+#use str
+#use sys
+
+parse_n_arg: Int => Int
+parse_n_arg = dflt =>
+   sys::argc < 2
+      | dflt
+      |
+         a1 = sys::argv_string(1)
+         v = str::parse_int(a1) |_| dflt
+         v > 0 | v | dflt
+
+n = parse_n_arg(12000)
+dump_alloc = sys::argc !< 3 && sys::argv_string(2) == "--alloc-stats"
+batch_sz = 60
+batches = n / batch_sz
+eff_batches = batches > 0 | batches | 1
+
+summaries = index::init_summaries(16)
+scratch = mem::arena(1048576)
+rolling_digest' = 0
+total_alloc_bytes' = 0
+peak_scratch_bytes' = 0
+
+eff_batches @ b =>
+   before_b = mem::provenance(scratch).bytes_allocated
+   b_digest = mem::with_value(scratch, !=>
+      raw_events: types::MetricEvent{}
+      batch_sz @ k =>
+         raw_events += codec::decode_event(b * batch_sz + k)
+      bias = (b * 29 + 7) % 101
+      enriched = transform::enrich_batch(raw_events, (x => (x * 17 + bias) % 100003))
+      enriched @ item =>
+         index::record_enriched(summaries, item)
+      chk = query::evaluate_checkpoint(summaries, b)
+      chk.0
+   )
+   after_b = mem::provenance(scratch).bytes_allocated
+   delta = after_b - before_b
+   delta > 0 | total_alloc_bytes' = total_alloc_bytes' + delta
+   after_b > peak_scratch_bytes' | peak_scratch_bytes' = after_b
+   rolling_digest' = (rolling_digest' * 31 + b_digest) % 1000000007
+   (b % 16) == 15 | mem::reset(scratch)
+
+sp = mem::provenance(scratch)
+gp = mem::provenance(mem::global_arena!)
+mem::destroy(scratch)
+_s0 = summaries(0)!!
+final_line = report::format_final_report(summaries, eff_batches)
+dump_alloc
+   | io::out $ "alloc_bytes=${str::from_int(total_alloc_bytes')},peak_scratch_bytes=${str::from_int(peak_scratch_bytes')},scratch_chunks=${str::from_int(sp.num_chunks)},scratch_resets=${str::from_int(sp.resets)},global_bytes=${str::from_int(gp.bytes_allocated)}"
+   | io::out $ "${final_line},roll=${str::from_int(rolling_digest')}"

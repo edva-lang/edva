@@ -1,0 +1,42 @@
+// DVA-103 Multi-module benchmark: Module 1 (types)
+// Core domain types, enums, and generic container helpers.
+
+#public
+   #type Severity < Info, Warn, Alert(Int) >
+
+   #type MetricEvent (
+      id: Int,
+      tenant: Int,
+      service: Int,
+      latency_ms: Int,
+      payload_bytes: Int,
+      ok: <>
+   )
+
+   #type EnrichedEvent (
+      event: MetricEvent,
+      weight: Int,
+      bucket: Int,
+      score: Int
+   )
+
+   #type TenantSummary (
+      tenant: Int,
+      count: Int,
+      ok_count: Int,
+      err_count: Int,
+      total_score: Int,
+      max_latency: Int
+   )
+
+   // Generic option default helper
+   unwrap_or: #param T: Type, <T|>, T => T
+   unwrap_or = opt, fallback =>
+      opt
+         | v => v
+         | fallback
+
+   // Generic range clamp helper
+   clamp_val: Int, Int, Int => Int
+   clamp_val = v, lo, hi =>
+      v < lo | lo | (v > hi | hi | v)

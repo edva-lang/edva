@@ -1,0 +1,6 @@
+#use ./pipeline
+
+#export run_kernel: Int => Int
+run_kernel = n =>
+   r = pipeline::run_pipeline_steps(n)
+   r.0

@@ -1,0 +1,23 @@
+// DVA-103 Multi-module benchmark: Module 5 (query)
+// Aggregation and query evaluation over the tenant summary table.
+
+#use ./types
+
+#public
+   // Generic summary reducer over TenantSummary{}
+   reduce_summaries: #param Acc: Type, Acc, types::TenantSummary{}, (Acc, types::TenantSummary => Acc) => Acc
+   reduce_summaries = seed, tbl, step =>
+      acc' = seed
+      tbl @ row =>
+         acc' = step(acc', row)
+      acc'
+
+   evaluate_checkpoint: types::TenantSummary{}, Int => (Int, Int, Int)
+   evaluate_checkpoint = tbl, epoch =>
+      digest = reduce_summaries(0, tbl, (acc, row =>
+         term = (row.tenant + 1) * 97 + row.count * 13 + row.total_score + row.max_latency * (epoch % 7 + 1)
+         (acc * 131 + term) % 1000000007
+      ))
+      total_ok = reduce_summaries(0, tbl, (acc, row => acc + row.ok_count))
+      total_err = reduce_summaries(0, tbl, (acc, row => acc + row.err_count))
+      (digest, total_ok, total_err)
