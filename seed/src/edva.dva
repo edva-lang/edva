@@ -2198,10 +2198,10 @@ load_single_file = path, prefix, is_pkg, imp_path, ldr =>
 
 load_file: String, String, <>, String, Loader => <>
 load_file = path, prefix, is_pkg, imp_path, ldr =>
-   prefix != "" && loaded_has(ldr.loaded, prefix)
+   prefix != "" && loaded_has(ldr.loaded, prefix) && loaded_has(ldr.loaded_files, path)
       | <+>
       |
-         prefix != ""
+         prefix != "" && !loaded_has(ldr.loaded, prefix)
             |
                loaded = ldr.loaded
                loaded += prefix
@@ -2261,7 +2261,7 @@ load_resolved = resolved, imp_path, ldr =>
                log::error $ diag::E5038_package_import_cycle_prefix! + chain
                <->
             |
-               loaded_has(ldr.loaded, f.canonical_id)
+               loaded_has(ldr.loaded, f.canonical_id) && loaded_has(ldr.loaded_files, f.path)
                   | <+>
                   |
                      f.is_pkg

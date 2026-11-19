@@ -1509,7 +1509,10 @@ is_view_expr = e =>
          b(?b - 1) | last_e => is_view_expr(last_e) | <->
       [Choice c]
          c.branches @ br =>
-            is_view_expr(br.block) | --| <+>
+            br_body = ?br.bind_vars > 0
+               | (br.block [Fn br_fn] br_fn.body | br.block)
+               | br.block
+            is_view_expr(br_body) | --| <+>
          <->
       [Record r]
          r.fields @ f =>
