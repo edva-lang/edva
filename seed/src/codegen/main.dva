@@ -7,6 +7,7 @@
 #use path
 #use str
 #use ../tast
+#use ../typedopt
 #use ../unify
 #use mem
 #use time
@@ -3319,7 +3320,10 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
          init_exprs += raw
          init_exprs
    types::g.pstmts = raw_exprs
-   types::g.typed_program_stmts = prog
+   t_opt_start = time::mono_ns!
+   optimized = opts.no_runtime | prog | typedopt::run(prog)
+   opt_ns = time::mono_ns! - t_opt_start
+   types::g.typed_program_stmts = optimized
    types::g.pexports = exports
    raw_exprs @ e_mg =>
       e_mg
@@ -3338,15 +3342,15 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    stmt::codegen_scan_record_args(cg, raw_exprs)
    stmt::codegen_scan_array_args(cg, raw_exprs)
    stmt::codegen_scan_enum_variant_indices(cg, raw_exprs)
-   stmt::run_typed_fn_summaries(cg, prog)
-   types::run_typed_vra(cg, prog)
+   stmt::run_typed_fn_summaries(cg, optimized)
+   types::run_typed_vra(cg, optimized)
    t_ana_end = time::mono_ns!
    cg.current_fn = (cg.main_fn | _ | LLVMConstNull(LLVMPointerType(LLVMInt8Type!, 0)))
    cg.current_module = ""
    cg.in_fn = <->
    main_entry = LLVMGetEntryBasicBlock(cg.current_fn)
    LLVMPositionBuilderAtEnd(cg.builder, main_entry)
-   codegen_typed_emit_stmts(cg, prog)
+   codegen_typed_emit_stmts(cg, optimized)
    cg.opts.is_module
       |
          cg.fns @ fd_i =>
@@ -3356,8 +3360,8 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
    res = cg.error | 0 | 1
    codegen_destroy(cg)
    t_cg_end = time::mono_ns!
-   ana_dt = t_ana_end - t_ana_start
-   ir_dt = (t_cg_end - t_cg_start) - ana_dt
+   ana_dt = t_ana_end - t_ana_start + opt_ns
+   ir_dt = (t_cg_end - t_cg_start) - (t_ana_end - t_ana_start)
    types::cg_timings.analysis_ns = (ana_dt > 0 | ana_dt | 0)
    types::cg_timings.ir_emit_ns = (ir_dt > 0 | ir_dt | 0)
    res

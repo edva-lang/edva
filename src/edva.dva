@@ -10,6 +10,7 @@
 #use ./overloads
 #use ./ast
 #use ./codegen
+#use ./typedopt
 #use fs
 #use path
 #use libc
@@ -2894,6 +2895,7 @@ build_cache_summary: CliOpts, ast::Names, ast::Names => String
 build_cache_summary = opts, exports, dyn_mods =>
    b = {256}
    opts.fuzz_cov | b += "fuzz_cov=1\n"
+   !typedopt::enabled! | b += "typed_opt=off\n"
    opts.cflags @ cf => b += "cflag=${cf}\n"
    exports @ ex => b += "export=${ex}\n"
    dyn_mods @ dm => b += "dyn=${dm}\n"

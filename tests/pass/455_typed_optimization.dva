@@ -1,0 +1,32 @@
+// Exercise the typed optimizer's four rules and the evaluation it must keep.
+#use io
+
+folded: Int => Int
+folded = input =>
+   n = 20 + 1
+   answer = n * 2
+   answer + (input + 0)
+
+select_literal: () => Int
+select_literal = !=>
+   off = <->
+   condition = !off
+   condition | 7 | 9
+
+project: () => Int
+project = !=> (3, 5, 7).1
+
+wrapping: () => Int
+wrapping = !=> 9223372036854775807 + 1
+
+effect: Int => Int
+effect = n =>
+   io::out(n)
+   n
+
+io::out(folded(1))
+io::out(select_literal!)
+io::out(project!)
+io::out(wrapping!)
+io::out((effect(10), effect(11)).0)
+io::out(effect(12) * 0)

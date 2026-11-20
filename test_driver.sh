@@ -3049,5 +3049,25 @@ fi
 rm -f "$T59_DIR/w454.ll"
 echo "PASS"
 
+# --- Test 60: pre-LLVM typed rewrites and cache isolation between modes ---
+echo -n "Testing typed optimizer and differential cache isolation... "
+T60_DIR="$TMPDIR/t60_typed_opt"
+mkdir -p "$T60_DIR"
+T60_SRC=tests/pass/455_typed_optimization.dva
+for mode in 0 1; do
+    EDVA_NO_TYPED_OPT=$mode timeout 30 ./edva "$T60_SRC" -O0 \
+        --cache "$T60_DIR/cache" -o "$T60_DIR/result" < /dev/null >"$T60_DIR/build.$mode" 2>&1
+    timeout 10 "$T60_DIR/result" >"$T60_DIR/run.$mode"
+    diff -u tests/pass/455_typed_optimization.expected "$T60_DIR/run.$mode"
+    sed -n '/^define internal i64 @project()/,/^}/p' "$T60_DIR/result.ll" >"$T60_DIR/project.$mode"
+done
+if ! grep -Fq 'ret i64 5' "$T60_DIR/project.0" ||
+   ! grep -Fq 'call ptr @dva_arena_alloc' "$T60_DIR/project.1"; then
+    echo "FAILED: expected the typed optimizer alone to eliminate the temporary tuple"
+    cat "$T60_DIR/project.0" "$T60_DIR/project.1"
+    exit 1
+fi
+echo "PASS"
+
 echo "=== All driver tests PASSED ==="
 

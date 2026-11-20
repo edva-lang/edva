@@ -58,6 +58,7 @@ edva lsp
 | `EDVA_STORE` | `~/.cache/edva/store` | Content-addressed package store directory |
 | `EDVA_OFFLINE` | `"0"` | Set to `"1"` to enforce `--offline` mode across package commands |
 | `EDVA_NO_CACHE` | `"0"` | Set to `"1"` to disable IR caching across compiler and package commands |
+| `EDVA_NO_TYPED_OPT` | `"0"` | Set to `"1"` to disable pre-LLVM typed rewrites for differential testing. LLVM optimization flags still apply. Builds with `--no-runtime` always skip these rewrites. |
 | `EDVA_GIT` | `"git"` | Git executable used when fetching git dependencies |
 
 ## Package and cache subcommands

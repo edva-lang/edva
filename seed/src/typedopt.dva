@@ -1,0 +1,202 @@
+// Typed rewrites run after annotation and before LLVM-facing analyses.
+// Only replace expressions whose resolved type and evaluation semantics survive.
+#use ./ast
+#use ./tast
+#use sys
+#use str
+
+#foreign("c")
+   typedopt_getenv = getenv: (name: String) => Addr
+
+#private
+   #type Fact (name: String, value: tast::TypedExpr)
+   #type Context (fact: <Fact|>, in_fn: <>)
+
+   is_int: tast::TypedExpr => <>
+   is_int = e => e.ti [Prim p] (p [Int]) | <->
+
+   scalar_literal: tast::TypedExpr => <>
+   scalar_literal = e =>
+      e.kind
+         [LitInt, LitFlag, LitRune, LitFloat]
+            e.ti [Prim p] (p [Int, I8, I16, I32, I64, U8, U16, U32, U64,
+               Flag, Rune, Float, F32]) | <->
+         | <->
+
+   same_scalar_type: tast::TypedExpr, tast::TypedExpr => <>
+   same_scalar_type = a, b =>
+      a.ti [Prim p] (b.ti [Prim q] p == q | <->) | <->
+
+   replace: tast::TypedExpr, tast::TypedExpr => tast::TypedExpr
+   replace = orig, value => orig(kind = value.kind)
+
+   // Track the preceding local constant. Never carry it across a scope or write.
+   scalar_operand: Context, tast::TypedExpr => tast::TypedExpr
+   scalar_operand = ctx, e =>
+      e.kind
+         [Var v]
+            v.2 | --| e
+            ctx.fact
+               | fact =>
+                  v.0 == fact.name && same_scalar_type(e, fact.value)
+                     | replace(e, fact.value)
+                     | e
+               | e
+         | e
+
+   simplify_bin: Context, tast::TypedExpr, ast::BinaryOp, tast::TypedExpr,
+      tast::TypedExpr => tast::TypedExpr
+   simplify_bin = ctx, orig, op, lhs, rhs =>
+      eligible = is_int(orig) && is_int(lhs) && is_int(rhs) &&
+         (op [Add, Sub, Mul, BitAnd, BitOr, BitXor])
+      !eligible | --| orig(kind = tast::TypedExprKind(Bin, (op, lhs, rhs)))
+      l = scalar_operand(ctx, lhs)
+      r = scalar_operand(ctx, rhs)
+      rv = r.kind [LitInt n] n | 0
+      r_const = r.kind [LitInt]
+      r_const && (l.kind [LitInt])
+         |
+            lv = l.kind [LitInt n] n | 0
+            value = op
+               [Add] lv + rv
+               [Sub] lv - rv
+               [Mul] lv * rv
+               [BitAnd] lv .&. rv
+               [BitOr] lv .|. rv
+               | lv .^. rv
+            --| orig(kind = tast::TypedExprKind(LitInt, value))
+      // Keep the nonconstant operand, including any trap or side effect.
+      r_const && (l.kind [Var]) && ((rv == 0 && (op [Add, Sub, BitOr, BitXor])) ||
+         (rv == 1 && (op [Mul]))) | --| replace(orig, l)
+      orig(kind = tast::TypedExprKind(Bin, (op, l, r)))
+
+   simplify_member: tast::TypedExpr, tast::TypedExpr, String, Int => tast::TypedExpr
+   simplify_member = orig, target, name, idx =>
+      fallback = orig(kind = tast::TypedExprKind(Member, (target, name, idx)))
+      // A positional projection of a plain, fully literal tuple needs no storage.
+      name @ byte =>
+         !str::is_digit(byte) | --| fallback
+      position = name == "" | idx | (str::parse_int(name) |_| -1)
+      position < 0 | --| fallback
+      plain = target.ti [Rec r] (!r.1 && !r.5) | <->
+      !plain | --| fallback
+      target.kind
+         [Record fields]
+            position !< ?fields | --| fallback
+            fields @ f =>
+               f.name != "" || !scalar_literal(f.val) | --| fallback
+            value = fields(position)!!.val
+            same_scalar_type(orig, value) | replace(orig, value) | fallback
+         | fallback
+
+   rewrite: Context, tast::TypedExpr => tast::TypedExpr
+
+   rewrite_list: Context, tast::TypedExprs => tast::TypedExprs
+   rewrite_list = ctx, exprs => exprs @> e => rewrite(ctx, e)
+
+   rewrite_optional: Context, <tast::TypedExpr|> => <tast::TypedExpr|>
+   rewrite_optional = ctx, e => e $+> rewrite(ctx, _)
+
+   rewrite_block: Context, tast::TypedExprs => tast::TypedExprs
+   rewrite_block = ctx, exprs =>
+      local = Context(<-->, ctx.in_fn)
+      out = tast::TypedExprs()
+      exprs @ e =>
+         value = rewrite(local, e)
+         out += value
+         value.kind
+            [Assign a]
+               // Restart at every potentially effectful initializer or write.
+               eligible = ctx.in_fn && !(a.1 || a.2 || a.3 || a.4) &&
+                  a.0 != "" && scalar_literal(a.5)
+               eligible
+                  | local.fact = <+ Fact(a.0, a.5) +>
+                  | local.fact = <-->
+            | local.fact = <-->
+      out
+
+   simplify_choice: Context, tast::TypedExpr, tast::TypedExpr,
+      tast::TypedBranches => tast::TypedExpr
+   simplify_choice = ctx, orig, condition, branches =>
+      cond = scalar_operand(ctx, condition)
+      out = tast::TypedBranches()
+      branch_ctx = Context(<-->, ctx.in_fn)
+      branches @ br =>
+         out += br(body = rewrite(branch_ctx, br.body))
+      fallback = orig(kind = tast::TypedExprKind(Choice, (condition, out)))
+      // Keep branch scopes and codegen diagnostics for nonliteral bodies.
+      !ctx.in_fn || ?out != 2 || !(cond.kind [LitFlag]) | --| fallback
+      yes = out(0)!!
+      no = out(1)!!
+      eligible = (yes.kind [Bare]) && (no.kind [Bare]) &&
+         ?yes.bind_vars == 0 && ?no.bind_vars == 0 &&
+         scalar_literal(yes.body) && scalar_literal(no.body) &&
+         same_scalar_type(orig, yes.body) && same_scalar_type(orig, no.body)
+      !eligible | --| fallback
+      take_yes = cond.kind [LitFlag flag] flag | <->
+      replace(orig, (take_yes | yes.body | no.body))
+
+   rewrite = ctx, e =>
+      e.kind
+         [Bin b] simplify_bin(ctx, e, b.0, rewrite(ctx, b.1), rewrite(ctx, b.2))
+         [Unary u]
+            // Address-taking and reflection depend on operand shape.
+            u.0 [AddrOf] | --| e
+            value = rewrite(ctx, u.1)
+            u.0 [Not] |
+               scalar_operand(ctx, value).kind
+                  [LitFlag flag]
+                     --| e(kind = tast::TypedExprKind(LitFlag, !flag))
+            e(kind = tast::TypedExprKind(Unary, (u.0, value)))
+         [Call c]
+            e(kind = tast::TypedExprKind(Call, (c.0, c.1, rewrite_list(ctx, c.2))))
+         [Record fields]
+            out = fields @> f => f(val = rewrite(ctx, f.val))
+            e(kind = tast::TypedExprKind(Record, out))
+         [Member m] simplify_member(e, rewrite(ctx, m.0), m.1, m.2)
+         [MemberWrite m]
+            e(kind = tast::TypedExprKind(MemberWrite, (m.0, m.1, m.2, rewrite(ctx, m.3))))
+         [Index i]
+            e(kind = tast::TypedExprKind(Index, (i.0, rewrite(ctx, i.1))))
+         [IndexWrite i]
+            e(kind = tast::TypedExprKind(IndexWrite, (i.0, rewrite(ctx, i.1), rewrite(ctx, i.2))))
+         [Choice c] simplify_choice(ctx, e, rewrite(ctx, c.0), c.1)
+         [Lambda l]
+            body = rewrite(Context(<-->, <+>), l.1)
+            e(kind = tast::TypedExprKind(Lambda, (l.0, body, l.2)))
+         [Block b] e(kind = tast::TypedExprKind(Block, rewrite_block(ctx, b)))
+         [Assign a]
+            e(kind = tast::TypedExprKind(Assign, (a.0, a.1, a.2, a.3, a.4, rewrite(ctx, a.5))))
+         [Cycle c]
+            body = rewrite(Context(<-->, ctx.in_fn), c.1)
+            e(kind = tast::TypedExprKind(Cycle, (rewrite(ctx, c.0), body,
+               rewrite_optional(ctx, c.2), c.3)))
+         [RamConstruct r]
+            e(kind = tast::TypedExprKind(RamConstruct, (r.0, r.1, rewrite_optional(ctx, r.2))))
+         [EnumConstruct r]
+            e(kind = tast::TypedExprKind(EnumConstruct, (r.0, rewrite_optional(ctx, r.1))))
+         [Return r] e(kind = tast::TypedExprKind(Return, rewrite_optional(ctx, r)))
+         // Raw AST payloads and other opaque nodes retain their existing lowering.
+         | e
+
+   rewrite_stmt: Context, tast::TypedStmt => tast::TypedStmt
+   rewrite_stmt = ctx, st =>
+      st
+         [Expr e] tast::TypedStmt(Expr, rewrite(ctx, e))
+         [Binding b] tast::TypedStmt(Binding, (b.0, b.1, rewrite(ctx, b.2), b.3))
+         [GlobalBinding b] tast::TypedStmt(GlobalBinding, (b.0, b.1, rewrite(ctx, b.2)))
+         | st
+
+#public
+   enabled: () => <>
+   enabled = !=>
+      raw = typedopt_getenv("EDVA_NO_TYPED_OPT")
+      raw == sys::addr_null || sys::c_str(raw) != "1"
+
+   // Keep the original program for the diagnostic/raw-AST path. Every
+   // downstream analysis is built from the returned tree, not reused.
+   run: tast::TypedProgram => tast::TypedProgram
+   run = prog =>
+      !enabled! | --| prog
+      ctx = Context(<-->, <->)
+      prog @> st => rewrite_stmt(ctx, st)

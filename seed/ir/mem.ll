@@ -541,19 +541,28 @@ choice.exit:                                      ; preds = %choice.else, %choic
   %call.res = call ptr @malloc(i64 131632)
   store ptr %call.res, ptr %var.raw, align 8
   %var.load2 = load ptr, ptr %var.raw, align 8
-  %addr.ffi.int = ptrtoint ptr %var.load2 to i64
+  %ptr.int.l = ptrtoint ptr %var.load2 to i64
+  %cmptmp3 = icmp ne i64 %ptr.int.l, 0
+  br i1 %cmptmp3, label %choice.then4, label %choice.exit5
+
+choice.then4:                                     ; preds = %choice.exit
+  %var.load6 = load ptr, ptr %var.raw, align 8
+  %addr.ffi.int = ptrtoint ptr %var.load6 to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
-  %var.load3 = load i64, ptr %var.sz, align 8
-  call void @dva_arena_init(ptr %addr.ffi.clean, i64 %var.load3)
-  %var.load4 = load ptr, ptr %var.raw, align 8
-  %var.load5 = load i64, ptr %var.sz, align 8
+  %var.load7 = load i64, ptr %var.sz, align 8
+  call void @dva_arena_init(ptr %addr.ffi.clean, i64 %var.load7)
+  br label %choice.exit5
+
+choice.exit5:                                     ; preds = %choice.then4, %choice.exit
+  %var.load8 = load ptr, ptr %var.raw, align 8
+  %var.load9 = load i64, ptr %var.sz, align 8
   %arena.cur = load ptr, ptr @dva_active_arena_tls, align 8
   %rec.alloc = call ptr @dva_arena_alloc(ptr %arena.cur, i64 ptrtoint (ptr getelementptr ({ ptr, i64 }, ptr null, i32 1) to i64))
   %rec.fld = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 0
-  store ptr %var.load4, ptr %rec.fld, align 8
-  %rec.fld6 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
-  store i64 %var.load5, ptr %rec.fld6, align 8
+  store ptr %var.load8, ptr %rec.fld, align 8
+  %rec.fld10 = getelementptr inbounds { ptr, i64 }, ptr %rec.alloc, i32 0, i32 1
+  store i64 %var.load9, ptr %rec.fld10, align 8
   %ret.pack = load { ptr, i64 }, ptr %rec.alloc, align 8
   ret { ptr, i64 } %ret.pack
 }
@@ -618,14 +627,25 @@ entry:
   %var.a = alloca ptr, align 8
   store ptr %0, ptr %var.a, align 8
   %var.load = load ptr, ptr %var.a, align 8
-  call void @"mem::release"(ptr %var.load)
-  %var.load1 = load ptr, ptr %var.a, align 8
-  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load1, i32 0, i32 0
+  %fld.gep = getelementptr inbounds { ptr, i64 }, ptr %var.load, i32 0, i32 0
   %fld.load = load ptr, ptr %fld.gep, align 8
-  %addr.ffi.int = ptrtoint ptr %fld.load to i64
+  %ptr.int.l = ptrtoint ptr %fld.load to i64
+  %cmptmp = icmp ne i64 %ptr.int.l, 0
+  br i1 %cmptmp, label %choice.then, label %choice.exit
+
+choice.then:                                      ; preds = %entry
+  %var.load1 = load ptr, ptr %var.a, align 8
+  call void @"mem::release"(ptr %var.load1)
+  %var.load2 = load ptr, ptr %var.a, align 8
+  %fld.gep3 = getelementptr inbounds { ptr, i64 }, ptr %var.load2, i32 0, i32 0
+  %fld.load4 = load ptr, ptr %fld.gep3, align 8
+  %addr.ffi.int = ptrtoint ptr %fld.load4 to i64
   %addr.ffi.masked = and i64 %addr.ffi.int, 281474976710655
   %addr.ffi.clean = inttoptr i64 %addr.ffi.masked to ptr
   call void @free(ptr %addr.ffi.clean)
+  br label %choice.exit
+
+choice.exit:                                      ; preds = %choice.then, %entry
   ret void
 }
 
