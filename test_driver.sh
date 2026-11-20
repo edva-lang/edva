@@ -1386,40 +1386,15 @@ if [ "$("$PKG_DIR/app")" != "hello cache" ]; then
 fi
 echo "PASS"
 
-# Disabling the IR cache must skip key construction as well as lookup/store.
-echo -n "Testing --no-cache and EDVA_NO_CACHE avoid hashing... "
-HASH_SHIM_DIR="$TMPDIR/hash_shim"
-mkdir -p "$HASH_SHIM_DIR"
-cat <<'EOF' > "$HASH_SHIM_DIR/sha256sum"
-#!/usr/bin/env bash
-printf '%s\n' "$*" >> "$EDVA_TEST_HASH_LOG"
-exec "$EDVA_TEST_REAL_SHA" "$@"
-EOF
-chmod +x "$HASH_SHIM_DIR/sha256sum"
-REAL_SHA_BIN=$(command -v sha256sum)
-HASH_LOG="$TMPDIR/cache_hash_calls"
-for mode in flag env enabled; do
-    cache_args=()
-    cache_env=0
-    [ "$mode" = flag ] && cache_args+=(--no-cache)
-    [ "$mode" = env ] && cache_env=1
-    rm -f "$HASH_LOG"
-    PATH="$HASH_SHIM_DIR:$PATH" EDVA_TEST_REAL_SHA="$REAL_SHA_BIN" \
-        EDVA_TEST_HASH_LOG="$HASH_LOG" EDVA_NO_CACHE="$cache_env" \
-        timeout 30 ./edva "$PKG_DIR/src/main.dva" -ir \
-        -o "$TMPDIR/hash_check.ll" --cache "$TMPDIR/hash_check_cache" \
-        "${cache_args[@]}" < /dev/null >"$TMPDIR/hash_check.out" 2>&1
-    if [ "$mode" = enabled ]; then
-        if [ ! -s "$HASH_LOG" ]; then
-            echo "FAILED: hashing probe did not observe enabled cache key construction"
-            exit 1
-        fi
-    elif [ -s "$HASH_LOG" ]; then
-        echo "FAILED: cache-disabled compilation still invokes sha256sum ($mode)"
-        cat "$HASH_LOG"
-        exit 1
-    fi
-done
+# An explicit cache bypass must not construct a key or initialize the cache.
+echo -n "Testing --no-cache bypasses cache setup... "
+T32_OUT=$(timeout 30 ./edva "$PKG_DIR/src/main.dva" -ir --timings --no-cache \
+    -o "$TMPDIR/no_cache.ll" --cache "$TMPDIR/no_cache_store" < /dev/null 2>&1)
+if ! grep -Fq '"cache_enabled":false,"cache_key":"","ir_cache_hit":false' <<<"$T32_OUT" ||
+   [ -e "$TMPDIR/no_cache_store" ]; then
+    echo "FAILED: --no-cache initialized the cache or constructed a key: $T32_OUT"
+    exit 1
+fi
 echo "PASS"
 
 # --- Test 33: Cache invalidation on source change ---
@@ -1503,14 +1478,16 @@ if [ $rc -ne 0 ] || ! grep -q "cached LLVM IR:" "$TMPDIR/t35_o0_warm.out"; then
 fi
 echo "PASS"
 
-# --- Test 36: Cache invalidation on EDVA_COMPILER_ID change ---
-echo -n "Testing cache invalidation on EDVA_COMPILER_ID change... "
+# --- Test 36: Cache invalidation on compiler binary change ---
+echo -n "Testing cache invalidation on compiler binary change... "
 set +e
-EDVA_COMPILER_ID=test_id_v2 timeout 30 ./edva "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >"$TMPDIR/t36.out" 2>"$TMPDIR/t36.err"
+cp ./edva "$TMPDIR/compiler_variant"
+printf '%s' 'cache identity test' >> "$TMPDIR/compiler_variant"
+timeout 30 "$TMPDIR/compiler_variant" "$PKG_DIR/src/main.dva" -o "$PKG_DIR/app" --cache "$CACHE_DIR" >"$TMPDIR/t36.out" 2>"$TMPDIR/t36.err"
 rc=$?
 set -e
 if [ $rc -ne 0 ] || ! grep -q "Successfully generated LLVM IR" "$TMPDIR/t36.out"; then
-    echo "FAILED: EDVA_COMPILER_ID change should invalidate cache"
+    echo "FAILED: Compiler binary change should invalidate cache"
     cat "$TMPDIR/t36.out" "$TMPDIR/t36.err"
     exit 1
 fi
@@ -1979,7 +1956,7 @@ mkdir -p "$EMPTY_STORE" "$EMPTY_CACHE"
 rm -rf "$VEND_FIXTURE/ext_lib"
 
 # 6. Cold build --locked --offline in relocated directory with empty store/cache
-timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$RELOC_APP" --locked --offline >"$TMPDIR/t46_cold.out" 2>"$TMPDIR/t46_cold.err"
+timeout 30 ./edva build "$RELOC_APP" --locked --offline --store "$EMPTY_STORE" --cache "$EMPTY_CACHE" >"$TMPDIR/t46_cold.out" 2>"$TMPDIR/t46_cold.err"
 rc=$?
 if [ $rc -ne 0 ]; then
     echo "FAILED: cold build --locked --offline in relocated directory failed"
@@ -1995,7 +1972,7 @@ if [ $rc -ne 0 ]; then
 fi
 
 # 7. Warm build --locked --offline
-timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$RELOC_APP" --locked --offline >"$TMPDIR/t46_warm.out" 2>"$TMPDIR/t46_warm.err"
+timeout 30 ./edva build "$RELOC_APP" --locked --offline --store "$EMPTY_STORE" --cache "$EMPTY_CACHE" >"$TMPDIR/t46_warm.out" 2>"$TMPDIR/t46_warm.err"
 rc=$?
 if [ $rc -ne 0 ]; then
     echo "FAILED: warm build --locked --offline failed"
@@ -2007,7 +1984,7 @@ fi
 TAMPER_FILE="$(find "$RELOC_APP/vendor" -name "ext_lib.dva" | head -n 1)"
 echo "// tampered content" >> "$TAMPER_FILE"
 set +e
-timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$RELOC_APP" --locked --offline >"$TMPDIR/t46_tamper.out" 2>"$TMPDIR/t46_tamper.err"
+timeout 30 ./edva build "$RELOC_APP" --locked --offline --store "$EMPTY_STORE" --cache "$EMPTY_CACHE" >"$TMPDIR/t46_tamper.out" 2>"$TMPDIR/t46_tamper.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7005: tampered vendor content: tree hash mismatch" "$TMPDIR/t46_tamper.out"; then
@@ -2021,7 +1998,7 @@ MISSING_APP="$TMPDIR/missing_vend_app"
 cp -R "$VEND_FIXTURE/root_app" "$MISSING_APP"
 rm -rf "$MISSING_APP/vendor/ext_lib@path"
 set +e
-timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$MISSING_APP" --locked --offline >"$TMPDIR/t46_missing.out" 2>"$TMPDIR/t46_missing.err"
+timeout 30 ./edva build "$MISSING_APP" --locked --offline --store "$EMPTY_STORE" --cache "$EMPTY_CACHE" >"$TMPDIR/t46_missing.out" 2>"$TMPDIR/t46_missing.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7014: vendored package 'ext_lib@path' not found" "$TMPDIR/t46_missing.out"; then
@@ -2044,7 +2021,7 @@ cat <<'EOF' >> "$STALE_APP/edva.ccl"
     path = ../new_dep
 EOF
 set +e
-timeout 30 env EDVA_STORE="$EMPTY_STORE" EDVA_CACHE="$EMPTY_CACHE" ./edva build "$STALE_APP" --locked >"$TMPDIR/t46_stale.out" 2>"$TMPDIR/t46_stale.err"
+timeout 30 ./edva build "$STALE_APP" --locked --store "$EMPTY_STORE" --cache "$EMPTY_CACHE" >"$TMPDIR/t46_stale.out" 2>"$TMPDIR/t46_stale.err"
 rc=$?
 set -e
 if [ $rc -eq 0 ] || ! grep -q "E7007: --locked: edva.lock.ccl is out of date" "$TMPDIR/t46_stale.out"; then
@@ -2854,7 +2831,7 @@ if ! grep -Fq "dva_validate_tag_or_abort_stale_str_msg" "$T57_DIR/wasm_arena_eff
 fi
 echo "PASS"
 
-# --- Test 58: Compiler phase timings (--timings / EDVA_TIMINGS) & optimized object/artifact caching (DVA-104) ---
+# --- Test 58: Compiler phase timings (--timings) & optimized object/artifact caching (DVA-104) ---
 echo -n "Testing phase timings JSON & optimized object/binary artifact caching... "
 T58_DIR="$TMPDIR/t58_timings_cache"
 mkdir -p "$T58_DIR/cache" "$T58_DIR/src"
@@ -2938,11 +2915,23 @@ if ! grep -Fq '"ir_cache_hit":false,"artifact_cache_hit":false' <<<"$T58_EXT" ||
     exit 1
 fi
 
-# 5. Backend toolchain identity change (EDVA_BACKEND_ID) must invalidate cache
-T58_BK=$(EDVA_BACKEND_ID="clang-custom-toolchain-v99" timeout 30 ./edva "$T58_DIR/src/main.dva" --timings --cache "$T58_DIR/cache" -o "$T58_DIR/app_bk" < /dev/null 2>&1)
-rm -f "$T58_DIR/app_bk.ll"
+# 5. A different backend executable/version must invalidate the cache.
+T58_REAL_CLANG=$(command -v clang)
+mkdir -p "$T58_DIR/backend"
+cat > "$T58_DIR/backend/clang" <<'EOF'
+#!/usr/bin/env bash
+if [ "${1:-}" = --version ]; then
+    echo 'clang cache test backend'
+else
+    exec "$T58_REAL_CLANG" "$@"
+fi
+EOF
+chmod +x "$T58_DIR/backend/clang"
+T58_BK=$(PATH="$T58_DIR/backend:$PATH" T58_REAL_CLANG="$T58_REAL_CLANG" \
+    timeout 30 ./edva "$T58_DIR/src/main.dva" --timings --cache "$T58_DIR/cache" \
+    -o "$T58_DIR/app_bk" < /dev/null 2>&1)
 if ! grep -Fq '"ir_cache_hit":false,"artifact_cache_hit":false' <<<"$T58_BK"; then
-    echo "FAILED: EDVA_BACKEND_ID change did not invalidate cache: $T58_BK"
+    echo "FAILED: Backend toolchain change did not invalidate cache: $T58_BK"
     exit 1
 fi
 
@@ -2970,13 +2959,7 @@ mkdir -p "$T59_DIR"
 for opt in -O0 -O2; do
     timeout 30 ./edva tests/pass/454_escape_retention_promotion.dva "$opt" --no-cache -o "$T59_DIR/p454${opt}" < /dev/null >"$T59_DIR/c454${opt}.log" 2>&1
     "$T59_DIR/p454${opt}" >"$T59_DIR/r454${opt}.out" 2>&1
-    if ! grep -Fq "promo:404:404:112" "$T59_DIR/r454${opt}.out" || \
-       ! grep -Fq "alias:12:120:keep_12" "$T59_DIR/r454${opt}.out" || \
-       ! grep -Fq "retained:100:25:75:retained_25" "$T59_DIR/r454${opt}.out" || \
-       ! grep -Fq "escaped_clo:boxed:57" "$T59_DIR/r454${opt}.out" || \
-       ! grep -Fq "retained_cb:43:53" "$T59_DIR/r454${opt}.out" || \
-       ! grep -Fq "mut_addr:24:24:88" "$T59_DIR/r454${opt}.out" || \
-       ! grep -Fq "scc:78:30:B" "$T59_DIR/r454${opt}.out"; then
+    if ! diff -u tests/pass/454_escape_retention_promotion.expected "$T59_DIR/r454${opt}.out"; then
         echo "FAILED: 454_escape_retention_promotion.dva produced unexpected output at $opt:"
         cat "$T59_DIR/r454${opt}.out"
         exit 1
@@ -3055,13 +3038,21 @@ T60_DIR="$TMPDIR/t60_typed_opt"
 mkdir -p "$T60_DIR"
 T60_SRC=tests/pass/455_typed_optimization.dva
 for mode in 0 1; do
-    EDVA_NO_TYPED_OPT=$mode timeout 30 ./edva "$T60_SRC" -O0 \
+    typed_args=()
+    [ "$mode" = 1 ] && typed_args+=(--no-typed-opt)
+    EDVA_NO_TYPED_OPT=1 EDVA_NO_CACHE=1 EDVA_TIMINGS=1 \
+      timeout 30 ./edva "$T60_SRC" -O0 "${typed_args[@]}" \
         --cache "$T60_DIR/cache" -o "$T60_DIR/result" < /dev/null >"$T60_DIR/build.$mode" 2>&1
+    if grep -Fq '"phases_ns"' "$T60_DIR/build.$mode"; then
+        echo "FAILED: retired EDVA_TIMINGS environment switch affected the compiler"
+        exit 1
+    fi
     timeout 10 "$T60_DIR/result" >"$T60_DIR/run.$mode"
     diff -u tests/pass/455_typed_optimization.expected "$T60_DIR/run.$mode"
     sed -n '/^define internal i64 @project()/,/^}/p' "$T60_DIR/result.ll" >"$T60_DIR/project.$mode"
 done
-if ! grep -Fq 'ret i64 5' "$T60_DIR/project.0" ||
+if [ "$(find "$T60_DIR/cache/entries" -name output.ll | wc -l)" -ne 2 ] ||
+   ! grep -Fq 'ret i64 5' "$T60_DIR/project.0" ||
    ! grep -Fq 'call ptr @dva_arena_alloc' "$T60_DIR/project.1"; then
     echo "FAILED: expected the typed optimizer alone to eliminate the temporary tuple"
     cat "$T60_DIR/project.0" "$T60_DIR/project.1"

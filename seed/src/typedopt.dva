@@ -2,11 +2,7 @@
 // Only replace expressions whose resolved type and evaluation semantics survive.
 #use ./ast
 #use ./tast
-#use sys
 #use str
-
-#foreign("c")
-   typedopt_getenv = getenv: (name: String) => Addr
 
 #private
    #type Fact (name: String, value: tast::TypedExpr)
@@ -188,15 +184,9 @@
          | st
 
 #public
-   enabled: () => <>
-   enabled = !=>
-      raw = typedopt_getenv("EDVA_NO_TYPED_OPT")
-      raw == sys::addr_null || sys::c_str(raw) != "1"
-
    // Keep the original program for the diagnostic/raw-AST path. Every
    // downstream analysis is built from the returned tree, not reused.
    run: tast::TypedProgram => tast::TypedProgram
    run = prog =>
-      !enabled! | --| prog
       ctx = Context(<-->, <->)
       prog @> st => rewrite_stmt(ctx, st)

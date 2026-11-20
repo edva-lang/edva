@@ -530,17 +530,17 @@ fn_has_arena_alloc = cg, name, depth =>
 // allocates and stores there must survive the caller's restore scope.
 fn_writes_outer: types::Cg, String, Int, Int => <>
 fn_writes_outer = cg, name, threshold, depth =>
-   sum_opt = stmt::lookup_fn_effect_summary(cg, name)
-   sum_opt
+   summary_writes = stmt::lookup_fn_effect_summary(cg, name)
       | s => s.may_write_global
-      |
-         depth > 3
-            | <->
-            |
-               rf = types::resolve_fn_name(cg, name)
-               target = rf != "" | rf | name
-               fd = fn_def_of_rev(cg, target, ?cg.fns - 1)
-               fd.name != "" && expr_writes_outer_d(cg, fd.body, fd.params, threshold, depth)
+      | <->
+   summary_writes | --| <+>
+   // A TU summary may miss an unmarked global that is visible at this
+   // particular caller. Check the raw callee against live outer places.
+   depth > 3 | --| <->
+   rf = types::resolve_fn_name(cg, name)
+   target = rf != "" | rf | name
+   fd = fn_def_of_rev(cg, target, ?cg.fns - 1)
+   fd.name != "" && expr_writes_outer_d(cg, fd.body, fd.params, threshold, depth)
 
 fn_def_of_rev: types::Cg, String, Int => FnDef
 fn_def_of_rev = cg, name, i =>

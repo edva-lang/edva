@@ -690,14 +690,19 @@ mutate_str = rng, base, corpus =>
                   cur' = fuzz_flip_byte(cur', pos, nb)
    cur'
 
+fuzz_mode: () => <>
+fuzz_mode = !=>
+   1..sys::argc @ i =>
+      sys::argv_string(i) == "--fuzz" | --| <+>
+   env_str("EDVA_FUZZ", "") == "1"
+
 // Runs coverage-guided fuzzing for target `name` with explicit default mutation
 // budget `default_runs` and deterministic seed `seed` (overridable via `EDVA_FUZZ`,
 // `EDVA_FUZZ_RUNS`, `EDVA_FUZZ_TIME`, `EDVA_FUZZ_SEED`, and `EDVA_FUZZ_CORPUS`).
 fuzz_opts: String, String{}, Int, Int, (String => <>) => <>
 fuzz_opts = name, seeds, default_runs, seed, prop =>
-   fuzz_env = env_str("EDVA_FUZZ", "")
    time_s = env_int("EDVA_FUZZ_TIME", 0)
-   env_runs_default = fuzz_env == "1" | %max(default_runs, 250) | default_runs
+   env_runs_default = fuzz_mode! | %max(default_runs, 250) | default_runs
    eff_runs = env_int("EDVA_FUZZ_RUNS", env_runs_default)
    eff_seed = env_int("EDVA_FUZZ_SEED", seed)
    corpus_root = env_str("EDVA_FUZZ_CORPUS", "")
@@ -764,7 +769,7 @@ fuzz_opts = name, seeds, default_runs, seed, prop =>
       | record_result(<+>, name, "")
 
 // Runs coverage-guided fuzzing with default smoke budget (32 mutations) and seed 1337,
-// automatically scaling up under `edva test --fuzz` (`EDVA_FUZZ=1`).
+// automatically scaling up under `edva test --fuzz`.
 fuzz: String, String{}, (String => <>) => <>
 fuzz = name, seeds, prop =>
    fuzz_opts(name, seeds, 32, 1337, prop)
@@ -815,8 +820,7 @@ gen_utf8 = max_runes =>
 // inside a per-iteration scratch arena. Automatically shrinks `String` counterexamples.
 forall_opts: #param T: Type, String, Int, Int, (rand::Rng => T), (T => <>) => <>
 forall_opts = #param T, name, runs, seed, gen, prop =>
-   fuzz_env = env_str("EDVA_FUZZ", "")
-   def_runs = fuzz_env == "1" | %max(runs, 250) | runs
+   def_runs = fuzz_mode! | %max(runs, 250) | runs
    eff_runs = env_int("EDVA_FUZZ_RUNS", def_runs)
    eff_seed = env_int("EDVA_FUZZ_SEED", seed)
    rng = rand::seed(eff_seed)

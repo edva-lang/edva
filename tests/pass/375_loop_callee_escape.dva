@@ -10,7 +10,7 @@
 #type Box (cells: Cell{}, id: Int)
 #type Cells Cell{}
 
-cells: Cells
+cells = Cells()
 
 mk: Int => Cell
 mk = v => Cell(v, v)

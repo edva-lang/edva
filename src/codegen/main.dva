@@ -3321,7 +3321,7 @@ codegen_typed_program_opts = prog, raw, out_path, exports, src_file, opts =>
          init_exprs
    types::g.pstmts = raw_exprs
    t_opt_start = time::mono_ns!
-   optimized = opts.no_runtime | prog | typedopt::run(prog)
+   optimized = (opts.no_runtime || opts.no_typed_opt) | prog | typedopt::run(prog)
    opt_ns = time::mono_ns! - t_opt_start
    types::g.typed_program_stmts = optimized
    types::g.pexports = exports

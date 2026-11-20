@@ -148,7 +148,8 @@ empty_fndef = FnDef("", ast::Names(), ast::Expr(Var, ""))
    compiler_exe: String,
    is_module: <>,
    module_name: String,
-   fuzz_cov: <> = <->
+   fuzz_cov: <> = <->,
+   no_typed_opt: <> = <->
 )
 
 default_codegen_opts: () => CodegenOpts
@@ -1065,7 +1066,7 @@ codegen_init = opts =>
    st2 = struct_type2(i8p, i64t)
    eff_opts = CodegenOpts(triple, opts.no_runtime, opts.no_main,
      opts.dynamic_modules, opts.dynamic_paths, opts.is_shared,
-     opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov)
+     opts.compiler_exe, opts.is_module, opts.module_name, opts.fuzz_cov, opts.no_typed_opt)
    Cg(module, builder, <-->, CgVars(), <->, st, ut, st2,
      <-->, <-->, <-->, <-->, <-->, <-->, <-->, <-->,
      0, ast::Names(), Addrs(), TypeDefs(), TypeIndex(), "", <-->,

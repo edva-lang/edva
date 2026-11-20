@@ -10,7 +10,6 @@
 #use ./overloads
 #use ./ast
 #use ./codegen
-#use ./typedopt
 #use fs
 #use path
 #use libc
@@ -45,7 +44,6 @@
    unlink: (path: String) => Int
    rmdir: (path: String) => Int
    getpid: () => Int
-   getenv: (name: String) => Addr
    __errno_location: () => Addr
 
 #private
@@ -137,10 +135,6 @@ compiler_std_dir = "std"
 compiler_exe_path: String
 compiler_exe_path = ""
 
-getenv_opt: String => <String|>
-getenv_opt = name =>
-   sys::addr_opt(getenv(name)) $+> sys::c_str
-
 init_compiler_paths: () => ()
 init_compiler_paths = !=>
    exe = canonical_path("/proc/self/exe")
@@ -152,26 +146,13 @@ init_compiler_paths = !=>
    cand_in_tree = path_join(exe_dir, "std")
    cand_lib = path_join(prefix_dir, "lib/edva/std")
    cand_share = path_join(prefix_dir, "share/edva/std")
-   env_std_opt = getenv_opt("EDVA_PATH")
-      | s => <+ s +>
-      | getenv_opt("EDVA_STDLIB")
-   env_valid = env_std_opt
-      | dir =>
-         dir_exists(dir)
-            | <+ dir +>
-            | <-->
-      | <-->
-   env_valid
-      | dir => compiler_std_dir ::= dir
+   dir_exists(cand_in_tree)
+      | compiler_std_dir ::= cand_in_tree
       |
-         dir_exists(cand_in_tree)
-            | compiler_std_dir ::= cand_in_tree
+         dir_exists(cand_lib)
+            | compiler_std_dir ::= cand_lib
             |
-               dir_exists(cand_lib)
-                  | compiler_std_dir ::= cand_lib
-                  |
-                     dir_exists(cand_share)
-                        | compiler_std_dir ::= cand_share
+               dir_exists(cand_share) | compiler_std_dir ::= cand_share
 
 is_dva_file: String => <>
 is_dva_file = name => path::ext(name) == ".dva"
@@ -2484,7 +2465,8 @@ collect_link_libs = stmts =>
    cflags: ast::Names,
    fuzz_cov: <> = <->,
    timings: <> = <->,
-   load_parse_ns: Int = 0
+   load_parse_ns: Int = 0,
+   no_typed_opt: <> = <->
 )
 
 init_opts: Int => CliOpts
@@ -2796,12 +2778,6 @@ resolve_pkg_config = name, clang_args =>
                <+>
             | <->
 
-env_or: String, String => String
-env_or = name, fallback =>
-   getenv_opt(name)
-      | _
-      | fallback
-
 copy_file: String, String => <>
 copy_file = src, dst =>
    read_file_text(src)
@@ -2895,7 +2871,7 @@ build_cache_summary: CliOpts, ast::Names, ast::Names => String
 build_cache_summary = opts, exports, dyn_mods =>
    b = {256}
    opts.fuzz_cov | b += "fuzz_cov=1\n"
-   !typedopt::enabled! | b += "typed_opt=off\n"
+   opts.no_typed_opt | b += "typed_opt=off\n"
    opts.cflags @ cf => b += "cflag=${cf}\n"
    exports @ ex => b += "export=${ex}\n"
    dyn_mods @ dm => b += "dyn=${dm}\n"
@@ -3008,12 +2984,12 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    dynamic_paths = dpaths
    is_eval_quiet = opts.eval_src != "" && !opts.ir_only && !opts.is_module && !opts.is_shared && opts.outpath == ""
    quiet = opts.repl_mode || is_eval_quiet
-   want_timings = opts.timings || env_or("EDVA_TIMINGS", "") == "1"
+   want_timings = opts.timings
    cg_err = opts.repl_mode | 6002 | 5011
    clang_err = opts.repl_mode | 6003 | 5013
    cg_opts = codegen::CodegenOpts(opts.triple, opts.no_runtime, opts.no_main,
      dynamic_mods, dynamic_paths, opts.is_shared, compiler_exe_path,
-     opts.is_module, opts.module_name, opts.fuzz_cov)
+     opts.is_module, opts.module_name, opts.fuzz_cov, opts.no_typed_opt)
    src_f = opts.target != "" | opts.target | "<eval>"
    annotate::set_source_file(src_f)
    annotate::set_target_triple(opts.triple)
@@ -3027,7 +3003,7 @@ compile_ast_to_binary = raw, exports, opts, out_ll, out_bin, dmods, dpaths, nlib
    cg_ok' = 0
    is_cached' = <->
    is_art_cached' = <->
-   use_cache = !opts.no_cache && env_or("EDVA_NO_CACHE", "") != "1"
+   use_cache = !opts.no_cache
    eff_cache_dir = opts.cache_dir != "" | opts.cache_dir | pkg::default_cache!
    cache_key' = ++""
    el_res
@@ -4076,6 +4052,7 @@ compiler_cli_opts = !=>
       cli::opt("typed-ast-tree", <->, "Elaborate, verify, and dump typed AST tree"),
       cli::opt("no-main", <->, "Emit main with internal linkage"),
       cli::opt("no-runtime", <->, "Omit standard runtime emission"),
+      cli::opt("no-typed-opt", <->, "Skip pre-LLVM typed rewrites"),
       cli::opt("import-map", "", "Path to package import map", not_flag),
       cli::opt("cache", "", "Compilation cache directory path"),
       cli::opt("no-cache", <->, "Disable compilation cache"),
@@ -4132,6 +4109,7 @@ parse_and_dispatch_cli = !=>
    opts.run_exec = cli::flag(res, "run")
    opts.ir_only = cli::flag(res, "ir")
    opts.no_runtime = cli::flag(res, "no-runtime")
+   opts.no_typed_opt = cli::flag(res, "no-typed-opt")
    opts.no_main = cli::flag(res, "no-main")
    opts.repl_mode = cli::flag(res, "repl")
 
